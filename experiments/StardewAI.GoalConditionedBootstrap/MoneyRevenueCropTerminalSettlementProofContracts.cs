@@ -6,7 +6,7 @@ public sealed class MoneyRevenueCropTerminalSettlementProofRequest
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_crop_terminal_settlement_proof_request.v2";
+        "money_revenue_crop_terminal_settlement_proof_request.v3";
 
     [JsonPropertyName("crop_production_plan_path")]
     public string CropProductionPlanPath { get; set; } = string.Empty;
@@ -27,6 +27,11 @@ public sealed class MoneyRevenueCropTerminalSettlementProofRequest
         ShippingDepositTransitions { get; set; } =
             Array.Empty<MoneyRevenueTerminalQueueTransitionProof>();
 
+    [JsonPropertyName("settlement_route_transitions")]
+    public MoneyRevenueTerminalQueueTransitionProof[]
+        SettlementRouteTransitions { get; set; } =
+            Array.Empty<MoneyRevenueTerminalQueueTransitionProof>();
+
     [JsonPropertyName("revenue_recurrence_manifest_path")]
     public string RevenueRecurrenceManifestPath { get; set; } = string.Empty;
 
@@ -41,7 +46,7 @@ public sealed class MoneyRevenueCropTerminalSettlementProof
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_crop_terminal_settlement_proof.v2";
+        "money_revenue_crop_terminal_settlement_proof.v3";
 
     [JsonPropertyName("status")]
     public string Status { get; set; } = string.Empty;
@@ -113,6 +118,11 @@ public sealed class MoneyRevenueCropTerminalSettlementProof
         { get; set; } =
             Array.Empty<MoneyRevenueCropShippingDepositEvidence>();
 
+    [JsonPropertyName("settlement_route_transitions")]
+    public MoneyRevenueTerminalQueueTransitionEvidence[]
+        SettlementRouteTransitions { get; set; } =
+            Array.Empty<MoneyRevenueTerminalQueueTransitionEvidence>();
+
     [JsonPropertyName("slot_index")]
     public int SlotIndex { get; set; }
 
@@ -149,8 +159,9 @@ public sealed class MoneyRevenueCropTerminalSettlementProof
         "independently rebuilding its crop plan and retained-output support, " +
         "then verifying exactly one native settlement mode: either a resource-" +
         "neutral route plus an exact ShopMenu sale, or one exact native shipping " +
-        "deposit per conservative unit followed by one native overnight " +
-        "settlement. The single-transition Revenue recurrence must rebuild the " +
+        "deposit per conservative unit, an explicit resource-neutral route home, " +
+        "and one native overnight settlement. The single-transition Revenue " +
+        "recurrence must rebuild the " +
         "same terminal outcome. Retained output alone is supporting evidence and " +
         "cannot close the request. Aggregate settlement capacity, production " +
         "collection and formal product training remain separate gates.";

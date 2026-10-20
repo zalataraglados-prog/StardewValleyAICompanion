@@ -6,7 +6,7 @@ public sealed class MoneyRevenueCropSharedShippingSettlementProofRequest
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_crop_shared_shipping_settlement_proof_request.v1";
+        "money_revenue_crop_shared_shipping_settlement_proof_request.v2";
 
     [JsonPropertyName("crop_production_plan_path")]
     public string CropProductionPlanPath { get; set; } = string.Empty;
@@ -25,6 +25,11 @@ public sealed class MoneyRevenueCropSharedShippingSettlementProofRequest
     [JsonPropertyName("waves")]
     public MoneyRevenueCropSharedShippingWaveRequest[] Waves { get; set; } =
         Array.Empty<MoneyRevenueCropSharedShippingWaveRequest>();
+
+    [JsonPropertyName("settlement_route_transitions")]
+    public MoneyRevenueTerminalQueueTransitionProof[]
+        SettlementRouteTransitions { get; set; } =
+            Array.Empty<MoneyRevenueTerminalQueueTransitionProof>();
 
     [JsonPropertyName("revenue_recurrence_manifest_path")]
     public string RevenueRecurrenceManifestPath { get; set; } = string.Empty;
@@ -51,7 +56,7 @@ public sealed class MoneyRevenueCropSharedShippingSettlementProof
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_crop_shared_shipping_settlement_proof.v1";
+        "money_revenue_crop_shared_shipping_settlement_proof.v2";
 
     [JsonPropertyName("status")]
     public string Status { get; set; } = string.Empty;
@@ -99,6 +104,11 @@ public sealed class MoneyRevenueCropSharedShippingSettlementProof
     public MoneyRevenueCropSharedShippingWaveEvidence[] Waves { get; set; } =
         Array.Empty<MoneyRevenueCropSharedShippingWaveEvidence>();
 
+    [JsonPropertyName("settlement_route_transitions")]
+    public MoneyRevenueTerminalQueueTransitionEvidence[]
+        SettlementRouteTransitions { get; set; } =
+            Array.Empty<MoneyRevenueTerminalQueueTransitionEvidence>();
+
     [JsonPropertyName("settled_quantity")]
     public int SettledQuantity { get; set; }
 
@@ -133,7 +143,8 @@ public sealed class MoneyRevenueCropSharedShippingSettlementProof
         "plan, aggregate settlement capacity and every retained-output proof. " +
         "The exact native terminal snapshot must contain the aggregate " +
         "conservative inventory denominator. One shared route, a contiguous " +
-        "single-item native deposit chain and one native overnight Revenue " +
+        "single-item native deposit chain, an explicit resource-neutral route " +
+        "home and one native overnight Revenue " +
         "recurrence carry the pending value from zero through all ordered waves. " +
         "No support artifact alone closes a request, and formal product training " +
         "remains a separate gate.";

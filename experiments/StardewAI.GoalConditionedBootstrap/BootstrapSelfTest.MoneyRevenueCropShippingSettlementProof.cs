@@ -89,6 +89,12 @@ internal static partial class BootstrapSelfTest
             current = after;
         }
 
+        var homeIngress = BuildMoneyCropHomeIngressTransition(
+            root,
+            "crop-shipping-home-ingress",
+            current);
+        current = homeIngress.After;
+
         var settlementRoot = Path.Combine(root, "crop-shipping-settlement");
         Directory.CreateDirectory(settlementRoot);
         var settlementAfter = MoneyCropShippingSettlementAfter(
@@ -113,7 +119,8 @@ internal static partial class BootstrapSelfTest
                 }
             });
         var settlementQueuePath = Path.Combine(settlementRoot, "queue.json");
-        var settlementBeforePath = transitions[^1].AfterSnapshotPath;
+        var settlementBeforePath =
+            homeIngress.Transition.AfterSnapshotPath;
         var settlementReceiptPath = Path.Combine(settlementRoot, "receipt.json");
         var settlementAfterPath = Path.Combine(settlementRoot, "after.json");
         Write(settlementQueuePath, settlementQueue);
@@ -161,6 +168,10 @@ internal static partial class BootstrapSelfTest
                 CropProductionPlanPath = planPath,
                 OutputRetentionProofPath = retentionProofPath,
                 ShippingDepositTransitions = transitions.ToArray(),
+                SettlementRouteTransitions = new[]
+                {
+                    homeIngress.Transition
+                },
                 RevenueRecurrenceManifestPath = recurrenceManifestPath,
                 RevenueRecurrenceReceiptPath = recurrenceReceiptPath
             });
@@ -176,10 +187,28 @@ internal static partial class BootstrapSelfTest
                 proof.SettledQuantity == retention.MinimumUnits &&
                 proof.SettledRevenue == retention.MinimumGrossRevenue &&
                 proof.RouteTransitions.Length == 0 &&
+                proof.SettlementRouteTransitions.Length == 1 &&
                 proof.NativeTerminalSettlementVerified &&
                 !proof.FormalProductTrainingAuthorized,
             "Money crop native shipping settlement lost its exact wave chain.");
         Write(proofPath, proof);
+
+        var missingHomeRouteRequestPath = Path.Combine(
+            root,
+            "crop-shipping-missing-home-route-request.json");
+        Write(missingHomeRouteRequestPath,
+            new MoneyRevenueCropTerminalSettlementProofRequest
+            {
+                CropProductionPlanPath = planPath,
+                OutputRetentionProofPath = retentionProofPath,
+                ShippingDepositTransitions = transitions.ToArray(),
+                RevenueRecurrenceManifestPath = recurrenceManifestPath,
+                RevenueRecurrenceReceiptPath = recurrenceReceiptPath
+            });
+        RequireRejects(
+            () => MoneyRevenueCropTerminalSettlementProofBuilder.Build(
+                missingHomeRouteRequestPath),
+            "A crop shipping settlement that slept at the shipping bin was admitted.");
 
         var missingDepositRequestPath = Path.Combine(
             root,
@@ -190,6 +219,10 @@ internal static partial class BootstrapSelfTest
                 CropProductionPlanPath = planPath,
                 OutputRetentionProofPath = retentionProofPath,
                 ShippingDepositTransitions = transitions.Take(1).ToArray(),
+                SettlementRouteTransitions = new[]
+                {
+                    homeIngress.Transition
+                },
                 RevenueRecurrenceManifestPath = recurrenceManifestPath,
                 RevenueRecurrenceReceiptPath = recurrenceReceiptPath
             });
@@ -207,6 +240,10 @@ internal static partial class BootstrapSelfTest
                 OutputRetentionProofPath = retentionProofPath,
                 ShopSaleEpisodePath = "must-not-be-read.json",
                 ShippingDepositTransitions = transitions.ToArray(),
+                SettlementRouteTransitions = new[]
+                {
+                    homeIngress.Transition
+                },
                 RevenueRecurrenceManifestPath = recurrenceManifestPath,
                 RevenueRecurrenceReceiptPath = recurrenceReceiptPath
             });
@@ -215,6 +252,53 @@ internal static partial class BootstrapSelfTest
                 mixedModeRequestPath),
             "A crop settlement mixing ShopMenu and shipping modes was admitted.");
         return proofPath;
+    }
+
+    private static MoneyCropHomeIngressFixture
+        BuildMoneyCropHomeIngressTransition(
+            string root,
+            string transitionId,
+            SnapshotEnvelope before)
+    {
+        var transitionRoot = Path.Combine(root, transitionId);
+        Directory.CreateDirectory(transitionRoot);
+        var after = LifecycleRouteToLocation(before, "FarmHouse");
+        var queue = LifecycleQueue(
+            transitionId,
+            "executor.traverse_connector",
+            before,
+            new[] { 5 },
+            "FarmHouse");
+        var candidateId = "candidate." + transitionId;
+        var receipt = LifecycleReceipt(
+            queue,
+            before,
+            after,
+            "run." + transitionId,
+            candidateId,
+            "traverse_connector");
+        var queuePath = Path.Combine(transitionRoot, "queue.json");
+        var beforePath = Path.Combine(transitionRoot, "before.json");
+        var receiptPath = Path.Combine(transitionRoot, "receipt.json");
+        var afterPath = Path.Combine(transitionRoot, "after.json");
+        Write(queuePath, queue);
+        Write(beforePath, before);
+        Write(receiptPath, receipt);
+        Write(afterPath, after);
+        return new MoneyCropHomeIngressFixture(
+            after,
+            new MoneyRevenueTerminalQueueTransitionProof
+            {
+                TransitionId = transitionId,
+                QueuePath = queuePath,
+                BeforeSnapshotPath = beforePath,
+                ExecutionReceiptPath = receiptPath,
+                AfterSnapshotPath = afterPath,
+                RunId = receipt.RunId,
+                ExecutorVersion =
+                    PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor,
+                SelectedCandidateId = candidateId
+            });
     }
 
     private static ActionQueueEnvelope MoneyCropShippingDepositQueue(
@@ -480,4 +564,8 @@ internal static partial class BootstrapSelfTest
         string field) => JsonNode.Parse(
             snapshot.State["player"].GetRawText())![field]!["value"]!
             .GetValue<int>();
+
+    private sealed record MoneyCropHomeIngressFixture(
+        SnapshotEnvelope After,
+        MoneyRevenueTerminalQueueTransitionProof Transition);
 }

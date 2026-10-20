@@ -1,3 +1,4 @@
+using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
@@ -18,10 +19,49 @@ internal static class MoneyRevenueResourceNeutralTerminalRouteVerifier
         },
         StringComparer.Ordinal);
 
+    private static readonly HashSet<string> HomeIngressOptions = new(
+        new[]
+        {
+            "executor.move_to_tile",
+            "executor.traverse_connector",
+            "executor.wait_ticks"
+        },
+        StringComparer.Ordinal);
+
     internal static MoneyRevenueResourceNeutralTerminalRouteVerification Verify(
         SnapshotEnvelope start,
         MoneyRevenueTerminalQueueTransitionProof[] transitions,
-        MoneyRevenueTerminalContinuationIdentity identity)
+        MoneyRevenueTerminalContinuationIdentity identity) => VerifyCore(
+            start,
+            transitions,
+            identity,
+            ResourceNeutralOptions,
+            targetLocation: string.Empty,
+            requireMovement: false);
+
+    internal static MoneyRevenueResourceNeutralTerminalRouteVerification
+        VerifyHomeIngress(
+            SnapshotEnvelope start,
+            MoneyRevenueTerminalQueueTransitionProof[] transitions)
+    {
+        var homeLocation = ReadHomeLocation(start);
+        return VerifyCore(
+            start,
+            transitions,
+            identity: null,
+            HomeIngressOptions,
+            homeLocation,
+            requireMovement: true);
+    }
+
+    private static MoneyRevenueResourceNeutralTerminalRouteVerification
+        VerifyCore(
+            SnapshotEnvelope start,
+            MoneyRevenueTerminalQueueTransitionProof[] transitions,
+            MoneyRevenueTerminalContinuationIdentity? identity,
+            HashSet<string> allowedOptions,
+            string targetLocation,
+            bool requireMovement)
     {
         transitions ??= Array.Empty<MoneyRevenueTerminalQueueTransitionProof>();
         Require(transitions.All(row => row is not null &&
@@ -81,8 +121,12 @@ internal static class MoneyRevenueResourceNeutralTerminalRouteVerifier
                 .Select(row => row.OptionId)
                 .ToArray();
             Require(optionIds.Length > 0 &&
-                    optionIds.All(ResourceNeutralOptions.Contains) &&
-                    QueueBindsTerminalIdentity(queue, identity),
+                    optionIds.All(allowedOptions.Contains) &&
+                    (!requireMovement || optionIds.Any(row => row is
+                        "executor.move_to_tile" or
+                        "executor.traverse_connector")) &&
+                    (identity is null ||
+                        QueueBindsTerminalIdentity(queue, identity)),
                 "Money Revenue terminal route is not a resource-neutral continuation of its request.");
             Require(FullShipmentRecoverySettlementBoundaryProjector.TryProject(
                         before,
@@ -106,9 +150,58 @@ internal static class MoneyRevenueResourceNeutralTerminalRouteVerifier
                 optionIds));
             expected = after;
         }
+        Require(string.IsNullOrWhiteSpace(targetLocation) ||
+                ReadPlayerLocation(expected) == targetLocation,
+            "Money Revenue terminal route did not reach the required location.");
         return new MoneyRevenueResourceNeutralTerminalRouteVerification(
             expected,
             evidence.ToArray());
+    }
+
+    private static string ReadPlayerLocation(SnapshotEnvelope snapshot)
+    {
+        Require(TryStateFieldValue(
+                    snapshot,
+                    "player",
+                    "location_id",
+                    out var location) &&
+                location.ValueKind == JsonValueKind.String &&
+                !string.IsNullOrWhiteSpace(location.GetString()),
+            "Money Revenue terminal route player location is unavailable.");
+        return location.GetString() ?? string.Empty;
+    }
+
+    private static string ReadHomeLocation(SnapshotEnvelope snapshot)
+    {
+        var location = default(JsonElement);
+        Require(TryStateFieldValue(
+                    snapshot,
+                    "current_location",
+                    "home_context",
+                    out var context) &&
+                context.ValueKind == JsonValueKind.Object &&
+                context.TryGetProperty("home_location_id", out location) &&
+                location.ValueKind == JsonValueKind.String &&
+                !string.IsNullOrWhiteSpace(location.GetString()),
+            "Money Revenue terminal route home location is unavailable.");
+        return location.GetString() ?? string.Empty;
+    }
+
+    private static bool TryStateFieldValue(
+        SnapshotEnvelope snapshot,
+        string section,
+        string field,
+        out JsonElement value)
+    {
+        value = default;
+        return snapshot.State.TryGetValue(section, out var parent) &&
+            parent.ValueKind == JsonValueKind.Object &&
+            parent.TryGetProperty(field, out var envelope) &&
+            envelope.ValueKind == JsonValueKind.Object &&
+            envelope.TryGetProperty("status", out var status) &&
+            status.ValueKind == JsonValueKind.String &&
+            status.GetString() is "available" or "derived" &&
+            envelope.TryGetProperty("value", out value);
     }
 
     private static bool QueueBindsTerminalIdentity(

@@ -39,6 +39,7 @@ internal sealed record MoneyRevenueCropTerminalSettlementVerification(
     string ShopSaleEpisodeSha256,
     string ShopId,
     MoneyRevenueCropShippingDepositEvidence[] ShippingDeposits,
+    MoneyRevenueTerminalQueueTransitionEvidence[] SettlementRouteTransitions,
     int SlotIndex,
     int SettledQuantity,
     int UnitPrice,

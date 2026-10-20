@@ -16,8 +16,9 @@ public static partial class MoneyRevenueCropSharedShippingSettlementProofBuilder
                 fullRequestPath,
                 "Money Revenue shared crop shipping proof request");
         Require(request.SchemaVersion ==
-                    "money_revenue_crop_shared_shipping_settlement_proof_request.v1" &&
+                    "money_revenue_crop_shared_shipping_settlement_proof_request.v2" &&
                 request.RouteTransitions is not null &&
+                request.SettlementRouteTransitions is not null &&
                 request.Waves is { Length: > 1 } &&
                 request.Waves.All(wave => wave is not null &&
                     wave.ShippingDepositTransitions is not null) &&
@@ -26,6 +27,9 @@ public static partial class MoneyRevenueCropSharedShippingSettlementProofBuilder
         var routeTransitions = request.RouteTransitions ??
             throw new InvalidDataException(
                 "Money Revenue shared crop shipping route transitions are missing.");
+        var settlementRouteTransitions = request.SettlementRouteTransitions ??
+            throw new InvalidDataException(
+                "Money Revenue shared crop shipping settlement route transitions are missing.");
         var waveRequests = request.Waves ??
             throw new InvalidDataException(
                 "Money Revenue shared crop shipping waves are missing.");
@@ -148,6 +152,7 @@ public static partial class MoneyRevenueCropSharedShippingSettlementProofBuilder
         var allTransitions = routeTransitions.Concat(
                 waves.SelectMany(wave =>
                     wave.Request.ShippingDepositTransitions))
+            .Concat(settlementRouteTransitions)
             .ToArray();
         Require(allTransitions.All(transition => transition is not null &&
                     !string.IsNullOrWhiteSpace(transition.TransitionId)) &&
@@ -208,13 +213,21 @@ public static partial class MoneyRevenueCropSharedShippingSettlementProofBuilder
         Require(transitionOffset == exactCapacityDay.MinimumShippingUnits &&
                 pendingValue >= exactCapacityDay.MinimumGrossRevenue,
             "Money Revenue shared crop shipping deposits do not cover the aggregate capacity denominator.");
-        var lastTransition = waves[^1].Request.ShippingDepositTransitions[^1];
+        var settlementRoute = MoneyRevenueResourceNeutralTerminalRouteVerifier
+            .VerifyHomeIngress(
+                current,
+                settlementRouteTransitions);
+        var recurrenceBeforePath =
+            settlementRouteTransitions.Length > 0
+                ? settlementRouteTransitions[^1].AfterSnapshotPath
+                : waves[^1].Request.ShippingDepositTransitions[^1]
+                    .AfterSnapshotPath;
         var recurrence = MoneyRevenueCropTerminalSettlementModeVerifier
             .VerifyShippingRecurrence(
                 request.RevenueRecurrenceManifestPath,
                 request.RevenueRecurrenceReceiptPath,
-                lastTransition.AfterSnapshotPath,
-                current.StateHash,
+                recurrenceBeforePath,
+                settlementRoute.TerminalActionBefore.StateHash,
                 pendingValue);
 
         return new MoneyRevenueCropSharedShippingSettlementProof
@@ -234,6 +247,7 @@ public static partial class MoneyRevenueCropSharedShippingSettlementProofBuilder
                 wave.EvidenceRequestId).ToArray(),
             RouteTransitions = routeEvidence,
             Waves = waveEvidence.ToArray(),
+            SettlementRouteTransitions = settlementRoute.Evidence,
             SettledQuantity = transitionOffset,
             SettledRevenue = pendingValue,
             TerminalActionAfterStateHash = recurrence.FinalStateHash,

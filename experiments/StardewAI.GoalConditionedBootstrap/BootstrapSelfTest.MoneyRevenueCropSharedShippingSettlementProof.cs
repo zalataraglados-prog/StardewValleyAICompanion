@@ -133,6 +133,12 @@ internal static partial class BootstrapSelfTest
             });
         }
 
+        var homeIngress = BuildMoneyCropHomeIngressTransition(
+            root,
+            "shared-crop-shipping-home-ingress",
+            current);
+        current = homeIngress.After;
+
         var recurrenceRoot = Path.Combine(root, "shared-shipping-recurrence");
         Directory.CreateDirectory(recurrenceRoot);
         var settlementAfter = MoneyCropShippingSettlementAfter(
@@ -170,7 +176,6 @@ internal static partial class BootstrapSelfTest
         var recurrenceReceiptPath = Path.Combine(
             recurrenceRoot,
             "recurrence-receipt.json");
-        var lastDeposit = waveRequests[^1].ShippingDepositTransitions[^1];
         Write(recurrenceManifestPath,
             new MoneyRevenueRecurrenceProofManifest
             {
@@ -182,7 +187,8 @@ internal static partial class BootstrapSelfTest
                         ProofKind = MoneyRevenueRecurrenceProofKinds
                             .NativeShippingSettlement,
                         QueuePath = settlementQueuePath,
-                        BeforeSnapshotPath = lastDeposit.AfterSnapshotPath,
+                        BeforeSnapshotPath =
+                            homeIngress.Transition.AfterSnapshotPath,
                         ExecutionReceiptPath = settlementReceiptPath,
                         AfterSnapshotPath = settlementAfterPath,
                         RunId = settlementReceipt.RunId,
@@ -204,6 +210,10 @@ internal static partial class BootstrapSelfTest
                 SettlementCapacityProofPath = capacityProofPath,
                 TerminalStartSnapshotPath = terminalStartPath,
                 Waves = waveRequests.ToArray(),
+                SettlementRouteTransitions = new[]
+                {
+                    homeIngress.Transition
+                },
                 RevenueRecurrenceManifestPath = recurrenceManifestPath,
                 RevenueRecurrenceReceiptPath = recurrenceReceiptPath
             });
@@ -221,6 +231,7 @@ internal static partial class BootstrapSelfTest
                 sharedProof.Waves[0].PendingValueAfter == 240 &&
                 sharedProof.Waves[1].PendingValueBefore == 240 &&
                 sharedProof.Waves[1].PendingValueAfter == 600 &&
+                sharedProof.SettlementRouteTransitions.Length == 1 &&
                 sharedProof.SharedNativeShippingSettlementVerified &&
                 !sharedProof.FormalProductTrainingAuthorized,
             "Shared crop shipping settlement lost its aggregate native chain.");
@@ -271,6 +282,10 @@ internal static partial class BootstrapSelfTest
                 SettlementCapacityProofPath = capacityProofPath,
                 TerminalStartSnapshotPath = terminalStartPath,
                 Waves = new[] { waveRequests[0], waveRequests[0] },
+                SettlementRouteTransitions = new[]
+                {
+                    homeIngress.Transition
+                },
                 RevenueRecurrenceManifestPath = recurrenceManifestPath,
                 RevenueRecurrenceReceiptPath = recurrenceReceiptPath
             });
@@ -288,6 +303,10 @@ internal static partial class BootstrapSelfTest
                 SettlementCapacityProofPath = capacityProofPath,
                 TerminalStartSnapshotPath = terminalStartPath,
                 Waves = waveRequests.AsEnumerable().Reverse().ToArray(),
+                SettlementRouteTransitions = new[]
+                {
+                    homeIngress.Transition
+                },
                 RevenueRecurrenceManifestPath = recurrenceManifestPath,
                 RevenueRecurrenceReceiptPath = recurrenceReceiptPath
             });

@@ -27,11 +27,19 @@ internal static partial class MoneyRevenueCropTerminalSettlementModeVerifier
             expectedPendingValue: 0,
             transitionIndexOffset: 0);
         var transitions = request.ShippingDepositTransitions;
+        var settlementRoute = MoneyRevenueResourceNeutralTerminalRouteVerifier
+            .VerifyHomeIngress(
+                batch.After,
+                request.SettlementRouteTransitions);
+        var recurrenceBeforePath =
+            request.SettlementRouteTransitions.Length > 0
+                ? request.SettlementRouteTransitions[^1].AfterSnapshotPath
+                : transitions[^1].AfterSnapshotPath;
         var recurrence = VerifyShippingRecurrence(
             request.RevenueRecurrenceManifestPath,
             request.RevenueRecurrenceReceiptPath,
-            transitions[^1].AfterSnapshotPath,
-            batch.After.StateHash,
+            recurrenceBeforePath,
+            settlementRoute.TerminalActionBefore.StateHash,
             batch.PendingValueAfter);
 
         return new MoneyRevenueCropTerminalSettlementVerification(
@@ -43,6 +51,7 @@ internal static partial class MoneyRevenueCropTerminalSettlementModeVerifier
             string.Empty,
             string.Empty,
             batch.Deposits,
+            settlementRoute.Evidence,
             batch.SlotIndex,
             batch.SettledQuantity,
             batch.UnitPrice,

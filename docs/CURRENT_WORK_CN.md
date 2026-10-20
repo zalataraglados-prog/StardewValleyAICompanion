@@ -9,6 +9,7 @@
 - 首份真实隔离作物运行 `money-crop-native-20261019-v22` 已完成 13 个连续游戏日的机械执行。共享生命周期证明现重放 `48` 条连续 transition，其中作物队列 `12`、作物/睡眠支持路线各 `12`、原生跨日 `12`；验证了 `5` 次播种、`50` 次浇水和 `5` 次收获。逐波留存证明确认 `(O)190` 实际库存从 `0` 增至 `5`，保守毛收入下界为 `1750g`。这些是真实运行 fragment，但尚未形成任一 Money production cell，`Money=0/18`、正式训练仍为 false。
 - 运行后证明构建不再强迫重跑游戏。`RuntimeMoneyCropEvidenceFinalization.ps1` 是原 runner 与离线 finalizer 的唯一共享实现；`Finalize-RuntimeMoneyCropNativeProductionEvidence.ps1` 会重新验证 production input manifest、源存档树、执行过的 run plan 和全部既有 proof，再只补 output-retention、fragment index 与 checkpoint。它不启动游戏、不修改存档，也不另写第二套证明语义。
 - v22 的 checkpoint v12 当前为 `verified fragments=5 / pending requests=1`。已验证：planting layout、exact seed acquisition、exact seed reservation、aggregate daily capacity、shared native lifecycle；output retention 作为 terminal supporting proof 已重建。seed reservation 由透明库存投影生成精确原子 commit request，再通过共享 `ReservationPortfolioLedgerService.Commit` 重放，未手写最终账本。剩余精确 request 只有 `output-retention-terminal:<wave>`。
+- 运输箱终局契约已升级为单波 v3、同日多波共享 v2。两者都显式分离投箱前路线、逐件原生投递、投箱后资源中性回家路线和唯一原生睡眠；回家路线必须由统一队列回执重放并抵达透明 `home_location_id`。在运输箱旁直接构造睡眠、路线夹带资源变化、没有移动 primitive 或睡眠未从回家终态开始均失败关闭。
 - 下一固定顺序：从 v22 已保存的第 18 天原生起点做短 continuation，复用既有收获、单件投箱、回家路线和唯一原生睡眠，生成 settlement-capacity 与 terminal/shared shipping proof。唯一 pending request 清零后，才进入 Teacher comparison 与 criterion-local join。
 - PR #337 的两项明确 P1 review debt 已关闭：递归 source-boundary 归一化会移除所有层级的三个非语义 tick 字段并精确报告持久字段漂移；商店 endpoint 与 entrance 的未来营业窗口会在上游 defer 到两者较晚开放时间，不再被永久 block。当前 GitHub 没有新的明确修复 issue；ongoing/deferred/roadmap issue 只保留为约束，不扩张本轮审计。
 - 验证：PowerShell AST 通过，Core game-free `447/447`，GoalConditionedBootstrap Release `0 warning / 0 error`，完整 hermetic 自测与 v22 离线 finalizer 均成功。下一步不重跑 13 日轨迹。
@@ -43,8 +44,8 @@
 
 ## 已收口 · 2026-10-18 Money 同日多波共享原生结算证明
 
-- 新增 `money_revenue_crop_shared_shipping_settlement_proof.v1`，用于一个收获日存在多个承诺/波次时的真实组合边界。它独立重建作物义务计划、整计划结算容量证明与每份输出留存证明，要求终端 fresh snapshot 在同一存档、玩家和收获日中持有全部保守库存分母。
-- 投箱逻辑没有复制：旧单波 `money_revenue_crop_terminal_settlement_proof.v2` 与新共享证明现在共同调用同一个单件原生投递批次校验器和同一个 Revenue 睡眠 recurrence 校验器。共享模式只允许一条资源中性路线，随后按容量证明固定顺序连续投递全部波次；待结算值必须从 `0` 跨波次严格递增，最后只允许一次原生睡眠结算。
+- 新增的同日多波证明现为 `money_revenue_crop_shared_shipping_settlement_proof.v2`，用于一个收获日存在多个承诺/波次时的真实组合边界。它独立重建作物义务计划、整计划结算容量证明与每份输出留存证明，要求终端 fresh snapshot 在同一存档、玩家和收获日中持有全部保守库存分母。
+- 投箱逻辑没有复制：单波 `money_revenue_crop_terminal_settlement_proof.v3` 与共享证明共同调用同一个单件原生投递批次校验器、资源中性路线校验器和 Revenue 睡眠 recurrence 校验器。共享模式先按容量证明固定顺序连续投递全部波次，待结算值必须从 `0` 跨波次严格递增；投递完成后必须沿显式资源中性路线回到透明 home location，最后才允许一次原生睡眠结算。
 - 当时 fragment index 升级为 v11、checkpoint 升级为 v10；当前已由共享生命周期及显式睡醒路线切片推进到 v13/v12。共享证明覆盖的每个 `output-retention-terminal:*` ID 才进入 request numerator；留存与聚合容量仍只作支持。单波 proof 与共享 proof 重复覆盖同一 request、重复波次、跨日波次、错误顺序、库存不足或金额链断裂均失败关闭。
 - hermetic 正例对同日两个承诺建立 `2+3` 件真实留存支持，执行 5 条连续单件投箱队列并以唯一睡眠结算 `600g`，checkpoint 同时关闭两个终端 request。正式 fragment 仍未采集，所以 Money 保持 `0/18`、`formal_product_training_authorized=false`。下一固定切片是 real Money native production collection runner：从 Teacher 承诺生成有退出条件的逐日队列，复用现有播种/浇水/收获/投箱/睡眠执行器采集上述全部 proof fragment。
 
