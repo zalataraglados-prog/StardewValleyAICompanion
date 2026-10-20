@@ -4,7 +4,16 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
 
-## 当前切片 · 2026-10-20 Money v22 证据恢复与终端结算
+## 当前切片 · 2026-10-21 Money 首条完整原生作物生产段
+
+- `money-crop-native-20261021-pricefix-v10` 已从不可变源存档完整执行并通过。运行先用现有 `economy.buy_supplies` 链完成 `21` 个有界原生过渡、精确购买 `5` 份 `(O)474` 花椰菜种子，再完成场地准备、春 6 日播种、连续条件浇水、春 18 日收获、`5` 次单件原生投箱、资源中性回家和唯一原生睡眠。整条 crop lifecycle 为 `48` 条连续 transition、`12` 个实际作物批次；两个无需浇水的批次按透明状态跳过。
+- checkpoint v12 已达到 `verified fragments=6 / pending requests=0`。planting layout、seed acquisition、seed reservation、aggregate daily capacity、shared native lifecycle 与 terminal settlement 六个请求全部由当前源码独立重建；output retention 和 settlement capacity 继续作为支持证明。终局 recurrence 从 total day `18` 推进到 `19`（春 20 日 06:00），`money 50 -> 925`、`totalMoneyEarned 0 -> 875`，实际原生收入为 `875g`。
+- 源存档目录哈希在运行前后均为 `68ddc8dbbe09382f2e7ba1c9d5d1e8dd6d0ffaef59acf9367415b4678f59366d`，隔离 Mod 根目录也未变化。最终透明状态哈希为 `5d0e30548a10e62a94caef5c241bd439ee3fd68dec11aa48e35d757e4d17d058`，最终隔离存档树哈希为 `9429c6d01d327111af8c81d0c36f2e318ccc4f1b0ea3094d84e19f25308b22e4`。睡眠回执包含确认、跨日、原生保存、菜单关闭、世界稳定和非职业升级菜单原生关闭六项原因。
+- 该结果关闭的是第一条完整生产段，不是 Money threshold cell：`875g` 尚未跨越最低 `50,000g` criterion，且还没有 outcome-backed Teacher comparison 与 criterion-local join。因此 `Money production cells=0/18`、`CoverageGateReady=2/19`、`formal_product_training_authorized=false` 均保持不变。
+- 下一固定顺序：先新增一份只消费既有 production input、run summary、完整 checkpoint、终端 recurrence、最终快照和最终隔离存档树的**生产段结果收据**；再用该收据把已有 Teacher 完整候选分母与实际执行的选中候选连接为 outcome-backed comparison。之后从该段最终隔离存档捕获下一次 Teacher 边界并重复，不从零随机探索。只有累计原生轨迹真实跨越权威 Money 阈值时，才接入既有 criterion-local `6 x 3` production join。
+- 当前代码验证基线：PowerShell AST 通过，Core game-free `451/451`，GoalConditionedBootstrap Release `0 warning / 0 error`。本次原生运行成功本身是新增的 end-to-end 证据；不得把后续结果收据实现成第二套规划器、购买器、作物执行器或阈值捷径。
+
+## 历史记录 · 2026-10-20 Money v22 证据恢复与终端结算
 
 - 首份真实隔离作物运行 `money-crop-native-20261019-v22` 已完成 13 个连续游戏日的机械执行。共享生命周期证明现重放 `48` 条连续 transition，其中作物队列 `12`、作物/睡眠支持路线各 `12`、原生跨日 `12`；验证了 `5` 次播种、`50` 次浇水和 `5` 次收获。逐波留存证明确认 `(O)190` 实际库存从 `0` 增至 `5`，保守毛收入下界为 `1750g`。这些是真实运行 fragment，但尚未形成任一 Money production cell，`Money=0/18`、正式训练仍为 false。
 - 运行后证明构建不再强迫重跑游戏。`RuntimeMoneyCropEvidenceFinalization.ps1` 是原 runner 与离线 finalizer 的唯一共享实现；`Finalize-RuntimeMoneyCropNativeProductionEvidence.ps1` 会重新验证 production input manifest、源存档树、执行过的 run plan 和全部既有 proof，再只补 output-retention、fragment index 与 checkpoint。它不启动游戏、不修改存档，也不另写第二套证明语义。
