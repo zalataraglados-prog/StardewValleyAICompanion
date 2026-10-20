@@ -54,6 +54,7 @@
     <Compile Include="MoneyDependencyExpansionArchitectureTests.cs" />
     <Compile Include="MoneyThresholdNativeOutcomeRunnerSourceGuardTests.cs" />
     <Compile Include="MoneyCropNativeProductionRunnerSourceGuardTests.cs" />
+    <Compile Include="MoneyCropNativeProductionSegmentSourceGuardTests.cs" />
     <Compile Include="MoneyCropNativeProductionInitializerSourceGuardTests.cs" />
     <Compile Include="MoneyCropNativeProductionCompilerTests.cs" />
     <Compile Include="BushHarvestMainlineTests.cs" />

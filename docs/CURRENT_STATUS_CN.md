@@ -69,7 +69,7 @@ PR #298 随后补回 deferred pickup 的精确需求数量绑定。该共享 cor
 
 2026-10-21 更新：`money-crop-native-20261021-pricefix-v10` 已形成第一条完整原生作物生产段。它从不可变源存档执行 `21` 个购种过渡、精确购买 `5` 份 `(O)474`，随后完成场地准备、播种、条件浇水、收获、`5` 次单件投箱、回家和原生过夜结算。整条 shared lifecycle 为 `48` 条连续 transition、`12` 个实际作物批次。checkpoint v12 为 `verified=6 / pending=0`；终局 recurrence 从 total day `18` 推进到 `19`（春 20 日 06:00），`money 50 -> 925`、`totalMoneyEarned 0 -> 875`。源存档与隔离 Mod 哈希均未漂移，最终透明状态哈希与 recurrence 完全一致。
 
-这份成功结果仍不增加 `6 x 3` 分子。它只获得 `875g`，未跨越最低 `50,000g` Money criterion；生产段尚需用统一结果收据绑定已有 Teacher 决策、完整 checkpoint、终端 recurrence、最终快照与最终隔离存档树，然后建立 outcome-backed Teacher comparison。之后从同一最终隔离存档继续下一段 Teacher 决策，直到累计真实原生结果跨越阈值，才进入既有 criterion-local join。因此状态面板继续严格保持 `Money=0/18`、`formal_product_training_authorized=false`。
+这份成功结果仍不增加 `6 x 3` 分子。`money_revenue_crop_native_production_segment_receipt.v1` 已从 v10 摘要深回放并绑定已有 Teacher 决策、完整 checkpoint、终端 recurrence、最终快照与最终隔离存档树；它确认 `50` 个候选、`400g` 实际种子成本、`875g` 毛收入和 `475g` 净现金收入，且没有跨越最低 `50,000g` Money criterion。该回执明确把 Teacher comparison、criterion cell 和正式训练授权保持为 false。当前下一施工单位是 outcome-backed Teacher comparison；之后从同一最终隔离存档继续下一段 Teacher 决策，直到累计真实原生结果跨越阈值，才进入既有 criterion-local join。因此状态面板继续严格保持 `Money=0/18`、`formal_product_training_authorized=false`。
 
 同日终局运输箱契约已经升级为单波 `money_revenue_crop_terminal_settlement_proof.v3` 与多波 `money_revenue_crop_shared_shipping_settlement_proof.v2`。两者都要求投箱前路线、逐件原生投递、投箱后资源中性回家路线和唯一原生睡眠四段连续证据；不能在运输箱旁直接构造睡眠。`v10` 已用单波分支真实通过该边界，但这仍只是生产段 outcome，不是阈值 cell。
 

@@ -80,6 +80,7 @@ var commandDefinitions = new CommandDefinition[]
     new("build-money-revenue-crop-terminal-settlement-proof", BuildMoneyRevenueCropTerminalSettlementProof),
     new("build-money-revenue-crop-shared-shipping-settlement-proof", BuildMoneyRevenueCropSharedShippingSettlementProof),
     new("build-money-revenue-crop-production-proof-checkpoint", BuildMoneyRevenueCropProductionProofCheckpoint),
+    new("build-money-revenue-crop-native-production-segment", BuildMoneyRevenueCropNativeProductionSegment),
     new("build-money-revenue-terminal-proof-collection-checkpoint", BuildMoneyRevenueTerminalProofCollectionCheckpoint),
     new("build-money-revenue-terminal-proof-index", BuildMoneyRevenueTerminalProofIndex),
     new("build-strategy-ledger-boundary-capture", BuildStrategyLedgerBoundaryCapture),
@@ -905,6 +906,15 @@ static void BuildMoneyRevenueCropProductionProofCheckpoint(Arguments options)
     var checkpoint = MoneyRevenueCropProductionProofCheckpointBuilder.Build(
         options.Required("request"));
     Write(options.Required("output"), checkpoint);
+}
+
+static void BuildMoneyRevenueCropNativeProductionSegment(Arguments options)
+{
+    var receipt = MoneyRevenueCropNativeProductionSegmentBuilder.Build(
+        options.Required("summary"));
+    Write(options.Required("output"), receipt);
+    if (!receipt.NativeProductionSegmentVerified)
+        Environment.ExitCode = 2;
 }
 
 static void BuildMoneyRevenueTerminalProofCollectionCheckpoint(Arguments options)

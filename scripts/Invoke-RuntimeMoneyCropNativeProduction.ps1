@@ -631,6 +631,14 @@ try {
     if ($isolatedModsSha256After -ne $isolatedModsSha256Before) {
         throw "Isolated runtime Mods changed during crop native production."
     }
+    $isolatedSaveSha256After = Get-DirectoryContentHash -Path $isolatedSlot
+    $finalSnapshotPath = [IO.Path]::GetFullPath([string]$currentPath)
+    $finalSnapshotSha256 = Get-RuntimeFileSha256 -Path $finalSnapshotPath
+    $finalSnapshot = Get-Content -LiteralPath $finalSnapshotPath -Raw |
+        ConvertFrom-Json
+    if ([string]::IsNullOrWhiteSpace([string]$finalSnapshot.state_hash)) {
+        throw "Money crop native production final snapshot lacks a state hash."
+    }
     $currentProductionInput = Read-MoneyCropNativeProductionInputManifest `
         -ProjectRoot $ProjectRoot -Path $productionInputManifestPath
     if ($currentProductionInput.ManifestSha256 -ne
@@ -638,7 +646,7 @@ try {
         throw "Money crop production input manifest changed during native production."
     }
     $summary = [ordered]@{
-        schema_version = "money_crop_native_production_run_summary.v1"
+        schema_version = "money_crop_native_production_run_summary.v2"
         status = "passed"
         run_id = $RunId
         production_input_manifest_path = $productionInputManifestPath
@@ -652,6 +660,7 @@ try {
         source_preflight_path = $sourcePreflightPath
         isolated_save_slot_path = $isolatedSlot
         isolated_save_sha256_before = $isolatedSaveSha256Before
+        isolated_save_sha256_after = $isolatedSaveSha256After
         isolated_mods_root_path = $isolatedMods
         isolated_mods_sha256_before = $isolatedModsSha256Before
         isolated_mods_sha256_after = $isolatedModsSha256After
@@ -686,6 +695,9 @@ try {
             [int]$checkpoint.verified_fragment_count
         checkpoint_pending_request_count =
             [int]$checkpoint.pending_request_count
+        final_snapshot_path = $finalSnapshotPath
+        final_snapshot_sha256 = $finalSnapshotSha256
+        final_state_hash = [string]$finalSnapshot.state_hash
         formal_product_training_authorized = $false
     }
     Write-JsonFile -Path $summaryPath -Value $summary
