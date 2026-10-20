@@ -364,6 +364,10 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
             TerminalSettlementRuntime, StringComparison.Ordinal);
         Assert.Contains("native_shipping_settlement",
             TerminalSettlementRuntime, StringComparison.Ordinal);
+        Assert.Contains("before_snapshot_path = $currentPath",
+            TerminalSettlementRuntime, StringComparison.Ordinal);
+        Assert.DoesNotContain("before_snapshot_path = $sleep.BeforePath",
+            TerminalSettlementRuntime, StringComparison.Ordinal);
         Assert.Contains(
             "build-money-revenue-crop-terminal-settlement-proof",
             TerminalSettlementRuntime, StringComparison.Ordinal);

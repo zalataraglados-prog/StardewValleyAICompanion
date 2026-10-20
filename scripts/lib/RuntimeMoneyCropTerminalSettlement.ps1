@@ -232,7 +232,7 @@ function Invoke-RuntimeCropTerminalSettlement {
             proof_kind = "native_shipping_settlement"
             shop_sale_episode_path = ""
             queue_path = $sleep.QueuePath
-            before_snapshot_path = $sleep.BeforePath
+            before_snapshot_path = $currentPath
             execution_receipt_path = $sleep.ExecutionPath
             after_snapshot_path = $sleep.AfterPath
             run_id = $RunId
