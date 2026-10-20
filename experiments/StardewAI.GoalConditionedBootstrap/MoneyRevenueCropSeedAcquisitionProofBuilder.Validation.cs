@@ -39,7 +39,7 @@ public static partial class MoneyRevenueCropSeedAcquisitionProofBuilder
         Require(source.StateHash == plan.SourceStateHash,
             "Money Revenue crop seed-acquisition plan source hash drifted.");
         var expectedSourceStateHash = priorBoundary?.StateHash ??
-            plan.SourceStateHash;
+            transitions[0].Before.StateHash;
         Require(manifest.SourceStateHash == expectedSourceStateHash,
             "Money Revenue crop seed-acquisition manifest source boundary drifted.");
 
@@ -59,12 +59,15 @@ public static partial class MoneyRevenueCropSeedAcquisitionProofBuilder
                 index + ".");
             Require(index == 0
                     ? transition.Before.StateHash == expectedSourceStateHash &&
-                        (priorBoundary is null ||
-                         BootstrapArtifactGuard.EqualJson(
-                             priorBoundary,
-                             transition.Before) &&
-                         priorBoundary.GameTick ==
-                             transition.Before.GameTick)
+                        (priorBoundary is null
+                            ? SameRuntimeSourceBoundary(
+                                source,
+                                transition.Before)
+                            : BootstrapArtifactGuard.EqualJson(
+                                  priorBoundary,
+                                  transition.Before) &&
+                              priorBoundary.GameTick ==
+                                  transition.Before.GameTick)
                     : BootstrapArtifactGuard.EqualJson(
                             transitions[index - 1].After,
                             transition.Before) &&
@@ -89,18 +92,21 @@ public static partial class MoneyRevenueCropSeedAcquisitionProofBuilder
                     totalDay <= commitment.SeedSupplyDeadlineTotalDay,
                 "Money Revenue crop seed-acquisition crossed its same-day deadline boundary.");
 
-            var receiptReasons = QueueExecutionReceiptValidator.Validate(
+            var receiptReasons = QueueExecutionReceiptValidator
+                .ValidateContinuationSlice(
                 transition.Queue,
                 transition.Before,
                 transition.Receipt,
                 transition.After,
+                transition.ReceiptPath,
                 transition.Request.RunId,
                 transition.Request.ExecutorVersion,
                 transition.Request.SelectedCandidateId,
                 transition.Before.StateHash,
-                requireTeacherPreferenceStateRebound: false);
+                out var effectiveItems);
             Require(receiptReasons.Length == 0,
-                "Money Revenue crop seed-acquisition queue receipt was rejected: " +
+                "Money Revenue crop seed-acquisition queue receipt was rejected at transition " +
+                index + ": " +
                 string.Join(",", receiptReasons));
 
             var binding = ReadPurchaseBinding(
@@ -112,9 +118,16 @@ public static partial class MoneyRevenueCropSeedAcquisitionProofBuilder
                     "Money Revenue crop seed-acquisition continuation identity drifted before purchase.");
             }
             activeBinding ??= binding;
+            var effectiveBinding = ReadPurchaseBinding(
+                new ActionQueueEnvelope
+                {
+                    Items = effectiveItems
+                },
+                commitment.SeedQualifiedItemId);
+            Require(effectiveBinding == binding,
+                "Money Revenue crop seed-acquisition effective continuation binding drifted.");
 
-            var optionIds = (transition.Queue.Items ??
-                    Array.Empty<ActionQueueItem>())
+            var optionIds = effectiveItems
                 .Select(value => value.OptionId)
                 .ToArray();
             var hasPurchase = optionIds.Contains(
@@ -142,10 +155,12 @@ public static partial class MoneyRevenueCropSeedAcquisitionProofBuilder
                 expectedUnitPrice = VerifyPurchaseSlice(
                     transition,
                     binding,
+                    effectiveItems,
                     beforeQuantity,
                     afterQuantity,
                     beforeMoney,
-                    afterMoney);
+                    afterMoney,
+                    index);
                 verifiedIncrease = checked(
                     verifiedIncrease + afterQuantity - beforeQuantity);
                 purchaseSlices++;
@@ -160,7 +175,8 @@ public static partial class MoneyRevenueCropSeedAcquisitionProofBuilder
                     beforeQuantity,
                     afterQuantity,
                     beforeMoney,
-                    afterMoney);
+                    afterMoney,
+                    index);
             }
 
             proofs.Add(new MoneyRevenueCropSeedAcquisitionTransitionProof(

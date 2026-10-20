@@ -155,6 +155,18 @@ public static class MoneyRevenueCropDailyCapacityProofBuilder
             "Money Revenue crop daily-capacity snapshot dates drifted from the obligation plan.");
 
         var locationId = layouts[0].Proof.LocationId;
+        var refillRequests = request.WateringCanRefillReceipts ??
+            Array.Empty<MoneyRevenueCropDailyCapacityRefillReceiptRequest>();
+        Require(refillRequests.Select(value => value.TotalDay).Distinct().Count() ==
+                    refillRequests.Length &&
+                refillRequests.All(value => requiredDays.Contains(value.TotalDay)),
+            "Money Revenue crop watering-can refill receipt days are duplicated or outside the denominator.");
+        var refillByDay = refillRequests.ToDictionary(
+            value => value.TotalDay,
+            value => ReadRefillReceipt(
+                value,
+                snapshots.Single(day => day.TotalDay == value.TotalDay),
+                locationId));
         var days = snapshots.Select(day =>
         {
             var targets = layouts.SelectMany(layout =>
@@ -167,19 +179,27 @@ public static class MoneyRevenueCropDailyCapacityProofBuilder
                     value.HarvestTotalDay == day.TotalDay);
                 return plant || water || harvest
                     ? layout.Proof.Tiles.Select(tile =>
-                        new CropMaintenanceTileTarget(
+                    {
+                        var tileWater = water && NeedsNativeWatering(
+                            day.Snapshot,
+                            layout.Proof.LocationId,
+                            (tile.TileX, tile.TileY));
+                        return new CropMaintenanceTileTarget(
                             tile.TileX,
                             tile.TileY,
                             plant,
-                            water,
+                            tileWater,
                             harvest,
-                            layout.RaisedCrop))
+                            layout.RaisedCrop);
+                    }).Where(value => value.Plant || value.Water || value.Harvest)
                     : Array.Empty<CropMaintenanceTileTarget>();
             }).ToArray();
+            refillByDay.TryGetValue(day.TotalDay, out var refill);
             var evaluation = CropMaintenanceCapacityEvaluator.Evaluate(
                 day.Snapshot,
                 locationId,
-                targets);
+                targets,
+                refill?.ActualTicks ?? 0);
             Require(evaluation.BlockingReasons.Length == 0 &&
                     evaluation.AllTargetsReachable &&
                     evaluation.TimeBudgetFits &&
@@ -210,11 +230,21 @@ public static class MoneyRevenueCropDailyCapacityProofBuilder
                 evaluation.WateringCanWaterLeft,
                 evaluation.WateringCanCapacity,
                 evaluation.WateringCanBottomless,
+                evaluation.WateringCanRefillRouteVerified,
+                evaluation.WateringCanRefillTicks,
                 evaluation.TimeBudgetFits,
                 evaluation.EnergyBudgetFits,
                 evaluation.WaterBudgetFits,
                 evaluation.AllTargetsReachable);
         }).ToArray();
+        var usedRefillDays = days
+            .Where(value => value.WateringCanRefillRouteVerified)
+            .Select(value => value.TotalDay)
+            .OrderBy(value => value)
+            .ToArray();
+        Require(usedRefillDays.SequenceEqual(
+                refillByDay.Keys.OrderBy(value => value)),
+            "Money Revenue crop watering-can refill evidence was not required by the exact day budget.");
 
         return new MoneyRevenueCropDailyCapacityProof
         {
@@ -239,6 +269,15 @@ public static class MoneyRevenueCropDailyCapacityProofBuilder
                     value.RaisedCrop)).ToArray(),
             RequiredDayCount = requiredDays.Length,
             Days = days,
+            VerifiedWateringCanRefillReceipts = usedRefillDays.Select(day =>
+            {
+                var refill = refillByDay[day];
+                return new MoneyRevenueCropDailyCapacityRefillReceiptProof(
+                    day,
+                    refill.Path,
+                    refill.Sha256,
+                    refill.ActualTicks);
+            }).ToArray(),
             DailyCapacityVerified = true,
             FormalProductTrainingAuthorized = false
         };
@@ -250,6 +289,108 @@ public static class MoneyRevenueCropDailyCapacityProofBuilder
             .Concat(commitment.RequiredWateringTotalDays)
             .Concat(commitment.HarvestWaves.Select(value =>
                 value.HarvestTotalDay));
+
+    private static bool NeedsNativeWatering(
+        SnapshotEnvelope snapshot,
+        string locationId,
+        (int X, int Y)? tile)
+    {
+        if (!string.Equals(locationId, "Farm", StringComparison.OrdinalIgnoreCase) ||
+            !snapshot.State.TryGetValue("farm", out var farm) ||
+            farm.ValueKind != JsonValueKind.Object ||
+            !farm.TryGetProperty("crops", out var field) ||
+            field.ValueKind != JsonValueKind.Object ||
+            !ReadableStatus(field) ||
+            !field.TryGetProperty("value", out var crops) ||
+            crops.ValueKind != JsonValueKind.Array)
+        {
+            return true;
+        }
+        if (!tile.HasValue)
+            return true;
+        var matches = crops.EnumerateArray().Where(row =>
+            row.ValueKind == JsonValueKind.Object &&
+            row.TryGetProperty("tile_x", out var x) &&
+            x.TryGetInt32(out var tileX) && tileX == tile.Value.X &&
+            row.TryGetProperty("tile_y", out var y) &&
+            y.TryGetInt32(out var tileY) && tileY == tile.Value.Y).ToArray();
+        Require(matches.Length <= 1,
+            "Money Revenue crop daily-capacity snapshot has duplicate crop tiles.");
+        if (matches.Length == 0)
+            return true;
+        Require(matches[0].TryGetProperty("needs_watering", out var needs) &&
+                needs.ValueKind is JsonValueKind.True or JsonValueKind.False,
+            "Money Revenue crop daily-capacity crop watering state is missing.");
+        return needs.GetBoolean();
+    }
+
+    private static RefillReceiptState ReadRefillReceipt(
+        MoneyRevenueCropDailyCapacityRefillReceiptRequest request,
+        SnapshotState snapshot,
+        string locationId)
+    {
+        var path = RequiredFile(
+            request.ExecutionReceiptPath,
+            "Money Revenue crop watering-can refill execution receipt");
+        using var document = JsonDocument.Parse(File.ReadAllText(path));
+        var root = document.RootElement;
+        var hasSteps = root.ValueKind == JsonValueKind.Object &&
+            root.TryGetProperty("step_results", out var steps) &&
+            steps.ValueKind == JsonValueKind.Array;
+        Require(root.ValueKind == JsonValueKind.Object &&
+                ReadString(root, "schema_version") ==
+                    "queue_execution_receipt.v1" &&
+                ReadString(root, "status") == "applied" &&
+                ReadRequiredBool(root, "success") &&
+                ReadRequiredBool(root, "after_snapshot_fresh") &&
+                ReadString(root, "source_state_hash") ==
+                    snapshot.Snapshot.StateHash &&
+                hasSteps,
+            "Money Revenue crop watering-can refill receipt is not an exact successful same-state queue receipt.");
+        steps = root.GetProperty("step_results");
+        var refillSteps = steps.EnumerateArray().Where(step =>
+            step.ValueKind == JsonValueKind.Object &&
+            ReadString(step, "option_id") == "executor.water_crop" &&
+            ReadString(step, "status") == "applied" &&
+            ReadString(step, "primitive_kind") == "water_crop" &&
+            ReadString(step, "primitive_verification_status") == "verified" &&
+            string.Equals(
+                ReadString(step, "target_location"),
+                locationId,
+                StringComparison.OrdinalIgnoreCase) &&
+            TryReadInt(step, "water_before", out var before) && before == 0 &&
+            TryReadInt(step, "water_after", out var after) && after > 0 &&
+            TryReadInt(step, "actual_ticks", out var ticks) && ticks > 0)
+            .ToArray();
+        Require(refillSteps.Length == 1,
+            "Money Revenue crop watering-can refill receipt must prove exactly one native refill transition.");
+        var actualTicks = refillSteps.Sum(step =>
+        {
+            _ = TryReadInt(step, "actual_ticks", out var ticks);
+            return ticks;
+        });
+        return new RefillReceiptState(
+            path,
+            CurrentTeacherFrontierSupport.HashFile(path),
+            actualTicks);
+    }
+
+    private static string ReadString(JsonElement value, string name) =>
+        value.TryGetProperty(name, out var property) &&
+        property.ValueKind == JsonValueKind.String
+            ? property.GetString() ?? string.Empty
+            : string.Empty;
+
+    private static bool TryReadInt(
+        JsonElement value,
+        string name,
+        out int result)
+    {
+        result = 0;
+        return value.TryGetProperty(name, out var property) &&
+            property.ValueKind == JsonValueKind.Number &&
+            property.TryGetInt32(out result);
+    }
 
     private static Dictionary<string, JsonElement> ReadCropCatalog(
         SnapshotEnvelope snapshot)
@@ -397,6 +538,11 @@ public static class MoneyRevenueCropDailyCapacityProofBuilder
         string Path,
         SnapshotEnvelope Snapshot,
         int TotalDay);
+
+    private sealed record RefillReceiptState(
+        string Path,
+        string Sha256,
+        int ActualTicks);
 
     private sealed record CalendarIdentity(
         int TotalDay,

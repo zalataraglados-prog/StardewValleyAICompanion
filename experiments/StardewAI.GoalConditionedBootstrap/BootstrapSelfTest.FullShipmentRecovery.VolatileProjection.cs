@@ -108,6 +108,27 @@ internal static partial class BootstrapSelfTest
                 },
                 island_north_bridge_fixed = false
             }));
+        progress["game_state_query_calendar_state"] =
+            JsonSerializer.SerializeToNode(Available(new
+            {
+                current_total_day = 40,
+                time_of_day = variant == 1 ? 600 : 620,
+                days_played = 41,
+                festival_date_keys = new[] { "spring13", "spring24" }
+            }));
+        progress["marriage_house"] = JsonSerializer.SerializeToNode(
+            Available(new
+            {
+                married_or_roommate = false,
+                farmhouse_upgrade_level = 1,
+                robin_present_at_counter = variant == 2,
+                home_renovations = new
+                {
+                    projection_status = "complete",
+                    robin_present_at_service = variant == 2,
+                    native_available_renovation_ids = Array.Empty<string>()
+                }
+            }));
         snapshot.State["world_progress"] =
             JsonSerializer.SerializeToElement(progress);
         snapshot.StateHash = SnapshotHash.ComputeStateHash(snapshot.State);

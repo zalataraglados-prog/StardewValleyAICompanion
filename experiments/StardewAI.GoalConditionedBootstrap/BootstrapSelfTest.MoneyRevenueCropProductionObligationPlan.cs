@@ -1014,6 +1014,10 @@ internal static partial class BootstrapSelfTest
                 "save_id": {"value":"MoneyCropFarm","status":"available"},
                 "player_id": {"value":"123","status":"available"}
               },
+              "environment": {
+                "training_run_id": {"value":"teacher.fixture","status":"available"},
+                "save_isolation_path": {"value":"teacher-fixture-saves","status":"available"}
+              },
               "time": {
                 "total_days": {"value":103,"status":"available"},
                 "year": {"value":1,"status":"available"},

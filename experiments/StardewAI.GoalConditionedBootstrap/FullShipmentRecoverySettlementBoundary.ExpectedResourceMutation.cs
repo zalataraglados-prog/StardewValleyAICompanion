@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using StardewAI.Contracts.State;
 
 namespace StardewAI.GoalConditionedBootstrap;
@@ -53,7 +54,7 @@ internal static partial class FullShipmentRecoverySettlementBoundaryProjector
                 }
                 rows.Add(new KeyValuePair<string, JsonElement>(
                     domain.Key + "." + field.Name,
-                    NormalizePersistentEnvelope(
+                    NormalizeExpectedResourceMutationEnvelope(
                         domain.Key,
                         field.Name,
                         field.Value)));
@@ -74,6 +75,115 @@ internal static partial class FullShipmentRecoverySettlementBoundaryProjector
         string domain,
         string field) =>
         domain == "player" && field is
-            "inventory" or "money" or "shop_currency_balances" ||
+            "inventory" or
+            "inventory_capacity" or
+            "money" or
+            "multiplayer_wallet" or
+            "seed_inventory" or
+            "shop_currency_balances" ||
         domain == "farm" && field == "material_inventory_graph";
+
+    private static JsonElement NormalizeExpectedResourceMutationEnvelope(
+        string domain,
+        string field,
+        JsonElement envelope)
+    {
+        var normalizedEnvelope = NormalizePersistentEnvelope(
+            domain,
+            field,
+            envelope);
+        if (normalizedEnvelope.ValueKind != JsonValueKind.Object)
+            return normalizedEnvelope;
+        var normalized = JsonNode.Parse(normalizedEnvelope.GetRawText())
+            as JsonObject ?? throw new InvalidDataException(
+                $"Expected resource mutation field {domain}.{field} is invalid.");
+        if (normalized["value"] is not JsonNode value)
+            return JsonSerializer.SerializeToElement(normalized);
+
+        switch (domain, field)
+        {
+            case ("player", "prize_ticket_reward"):
+                RemoveFields(value,
+                    "inventory_occupied_slots",
+                    "pending_ticket_capacity_sufficient",
+                    "projection_fingerprint");
+                break;
+            case ("quests", "adventure_guild_reward"):
+                RemoveFields(value,
+                    "inventory_occupied_slots",
+                    "inventory_capacity_sufficient");
+                break;
+            case ("quests", "mailbox_processing"):
+                RemoveFields(value,
+                    "inventory_empty_slots",
+                    "attachment_capacity_sufficient");
+                break;
+            case ("world_progress", "community_center"):
+                NormalizeCommunityCenterResourceProjection(value);
+                break;
+            case ("world_progress", "joja_development"):
+                NormalizeJojaResourceProjection(value);
+                break;
+            case ("world_progress", "marriage_house"):
+                NormalizeMarriageHouseResourceProjection(value);
+                break;
+        }
+        return JsonSerializer.SerializeToElement(normalized);
+    }
+
+    private static void NormalizeCommunityCenterResourceProjection(
+        JsonNode value)
+    {
+        if (value["bundle_rows"] is not JsonArray rows)
+            return;
+        foreach (var payment in rows.OfType<JsonObject>()
+                     .Select(row => row["money_payment"])
+                     .OfType<JsonObject>())
+        {
+            RemoveFields(payment,
+                "money_before",
+                "money_after",
+                "affordable",
+                "action_status");
+        }
+    }
+
+    private static void NormalizeJojaResourceProjection(JsonNode value)
+    {
+        RemoveFields(value, "money", "membership_action_status");
+        if (value["projects"] is not JsonArray projects)
+            return;
+        foreach (var project in projects.OfType<JsonObject>())
+            project.Remove("action_status");
+    }
+
+    private static void NormalizeMarriageHouseResourceProjection(
+        JsonNode value)
+    {
+        RemoveFields(value, "money");
+        if (value["house_upgrade"] is JsonObject upgrade)
+            upgrade.Remove("action_status");
+        if (value["home_renovations"] is not JsonObject renovations ||
+            renovations["options"] is not JsonArray options)
+        {
+            return;
+        }
+        foreach (var option in options.OfType<JsonObject>())
+        {
+            RemoveFields(option,
+                "money_before",
+                "expected_money_after",
+                "availability_status",
+                "availability_block_reasons",
+                "projection_fingerprint");
+        }
+    }
+
+    private static void RemoveFields(JsonNode value, params string[] fields)
+    {
+        if (value is not JsonObject objectValue)
+            return;
+        foreach (var field in fields)
+            objectValue.Remove(field);
+    }
 }

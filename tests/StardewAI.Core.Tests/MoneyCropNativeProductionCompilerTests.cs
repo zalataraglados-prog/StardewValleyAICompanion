@@ -102,6 +102,54 @@ public sealed class MoneyCropNativeProductionCompilerTests
             value.Name == "precondition" && value.Value == "world_ready");
     }
 
+    [Fact]
+    public void CrossLocationCropRouteUsesReachableAlternateConnector()
+    {
+        var snapshot = AlternateRouteSnapshot();
+        var request = new SmallModelPlanEnvelope
+        {
+            PlanId = "plan:route:6:crop-ingress:3",
+            SourceModel = "authoritative_crop_native_route.v1",
+            StateHash = snapshot.StateHash,
+            GoalId = "daily.closed_loop",
+            ExecutionMode = "training_singleplayer",
+            Actor = ExecutionTargetProfiles.CreateActor(
+                ExecutionTargetProfiles.TrainingSingleplayer),
+            PlanType = "mechanical_plan",
+            Steps =
+            [
+                new SmallModelPlanStep
+                {
+                    StepId = "route:6:crop-ingress:3:move",
+                    Kind = "move_to_tile",
+                    TargetLocation = "Farm",
+                    TargetTileX = 0,
+                    TargetTileY = 0,
+                    Preconditions =
+                    [
+                        "candidate_id:route:6:crop-ingress:3",
+                        "world_ready"
+                    ]
+                }
+            ]
+        };
+
+        var queue = new ActionQueueCompiler().Compile(request, snapshot);
+
+        Assert.Equal("pending", queue.Status);
+        var item = Assert.Single(queue.Items);
+        Assert.Equal("executor.traverse_connector", item.OptionId);
+        Assert.Contains(item.NormalizedCommand.Parameters, value =>
+            value.Name == "target_tile_x" && value.Value == "7");
+        Assert.Contains(item.NormalizedCommand.Parameters, value =>
+            value.Name == "target_tile_y" && value.Value == "1");
+        Assert.Contains(item.NormalizedCommand.Parameters, value =>
+            value.Name == "max_movement_tiles" && value.Value == "1");
+        Assert.Contains(item.NormalizedCommand.Parameters, value =>
+            value.Name == "expected_target_location" &&
+            value.Value == "Farm");
+    }
+
     private static SmallModelActionParameter Parameter(
         string name,
         string value) => new() { Name = name, Value = value };
@@ -170,6 +218,39 @@ public sealed class MoneyCropNativeProductionCompilerTests
             StateHash = SnapshotHash.ComputeStateHash(state),
             GameTick = 1,
             RealTimestamp = "2026-10-18T00:00:00Z",
+            Completeness = "complete",
+            State = state
+        };
+    }
+
+    private static SnapshotEnvelope AlternateRouteSnapshot()
+    {
+        var state = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(
+            """
+            {
+              "player": {
+                "location_id": {"value":"BusStop","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+                "tile_x": {"value":5,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+                "tile_y": {"value":1,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+              },
+              "current_location": {
+                "map": {"value":{"width":7,"height":3},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+              },
+              "locations": {
+                "collision_grid": {"value":{"location_id":"BusStop","width":7,"height":3,"notable_tiles":[{"tile_x":3,"tile_y":0,"collision_blocked":true},{"tile_x":3,"tile_y":1,"collision_blocked":true},{"tile_x":3,"tile_y":2,"collision_blocked":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+                "route_action_branch_coverage": {"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+                "route_connectors": {"value":{"location_id":"BusStop","connectors":[{"kind":"warp","tile_x":-1,"tile_y":1,"target_location":"Farm","target_x":79,"target_y":17,"resolved":true},{"kind":"warp","tile_x":7,"tile_y":1,"target_location":"Farm","target_x":79,"target_y":17,"resolved":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+                "route_graph": {"value":{"edges":[{"kind":"warp","from_location":"BusStop","from_x":-1,"from_y":1,"target_location":"Farm","target_x":79,"target_y":17,"resolved":true},{"kind":"warp","from_location":"BusStop","from_x":7,"from_y":1,"target_location":"Farm","target_x":79,"target_y":17,"resolved":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+              }
+            }
+            """,
+            new JsonSerializerOptions(JsonSerializerDefaults.Web))!;
+        return new SnapshotEnvelope
+        {
+            SchemaVersion = "snapshot.v1",
+            StateHash = SnapshotHash.ComputeStateHash(state),
+            GameTick = 1,
+            RealTimestamp = "2026-10-19T00:00:00Z",
             Completeness = "complete",
             State = state
         };

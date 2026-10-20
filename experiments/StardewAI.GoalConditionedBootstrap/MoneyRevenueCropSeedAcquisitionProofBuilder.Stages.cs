@@ -8,18 +8,23 @@ public static partial class MoneyRevenueCropSeedAcquisitionProofBuilder
     private static int VerifyPurchaseSlice(
         LoadedTransition transition,
         PurchaseBinding binding,
+        ActionQueueItem[] effectiveItems,
         int beforeQuantity,
         int afterQuantity,
         int beforeMoney,
-        int afterMoney)
+        int afterMoney,
+        int transitionIndex)
     {
-        var items = transition.Queue.Items ?? Array.Empty<ActionQueueItem>();
+        var items = effectiveItems;
         var purchaseItems = items.Where(value =>
             value.OptionId == "executor.buy_shop_item").ToArray();
         Require(purchaseItems.Length == 1 &&
                 items.All(value => PurchaseQueueOptions.Contains(
-                    value.OptionId)),
-            "Money Revenue crop seed purchase queue shape is invalid.");
+                        value.OptionId) ||
+                    MoneyRevenueResourceNeutralTerminalRouteVerifier
+                        .ResourceNeutralOptions.Contains(value.OptionId)),
+            "Money Revenue crop seed purchase queue shape is invalid at transition " +
+            transitionIndex + ".");
         var parameters = purchaseItems[0].NormalizedCommand?.Parameters ??
             Array.Empty<SmallModelActionParameter>();
         var expectedUnitPrice = SingleIntParameter(
@@ -42,7 +47,8 @@ public static partial class MoneyRevenueCropSeedAcquisitionProofBuilder
                 expectedUnitPrice <= binding.MaxUnitPrice &&
                 afterQuantity - beforeQuantity == binding.OutputStack &&
                 beforeMoney - afterMoney == expectedUnitPrice,
-            "Money Revenue crop seed purchase did not produce its exact bound item and money deltas.");
+            "Money Revenue crop seed purchase did not produce its exact bound item and money deltas at transition " +
+            transitionIndex + ".");
         Require(FullShipmentRecoverySettlementBoundaryProjector
                     .TryProjectExpectedResourceMutationInvariant(
                         transition.Before,
@@ -52,7 +58,8 @@ public static partial class MoneyRevenueCropSeedAcquisitionProofBuilder
                         transition.After,
                         out var afterInvariant) &&
                 beforeInvariant == afterInvariant,
-            "Money Revenue crop seed purchase changed unrelated persistent state.");
+            "Money Revenue crop seed purchase changed unrelated persistent state at transition " +
+            transitionIndex + ".");
         return expectedUnitPrice ?? throw new InvalidDataException(
             "Money Revenue crop seed purchase expected price is missing.");
     }
@@ -63,7 +70,8 @@ public static partial class MoneyRevenueCropSeedAcquisitionProofBuilder
         int beforeQuantity,
         int afterQuantity,
         int beforeMoney,
-        int afterMoney)
+        int afterMoney,
+        int transitionIndex)
     {
         Require(optionIds.Length > 0 &&
                 optionIds.All(
@@ -73,10 +81,12 @@ public static partial class MoneyRevenueCropSeedAcquisitionProofBuilder
                     "executor.move_to_tile" or
                     "executor.traverse_connector" or
                     "executor.interact" or
-                    "executor.choose_dialogue_response") &&
+                    "executor.choose_dialogue_response" or
+                    "executor.wait_ticks") &&
                 beforeQuantity == afterQuantity &&
                 beforeMoney == afterMoney,
-            "Money Revenue crop seed supporting stage is not resource neutral.");
+            "Money Revenue crop seed supporting stage is not resource neutral at transition " +
+            transitionIndex + ".");
         Require(FullShipmentRecoverySettlementBoundaryProjector.TryProject(
                     transition.Before,
                     out var beforeBoundary) &&
@@ -84,7 +94,8 @@ public static partial class MoneyRevenueCropSeedAcquisitionProofBuilder
                     transition.After,
                     out var afterBoundary) &&
                 beforeBoundary == afterBoundary,
-            "Money Revenue crop seed supporting stage changed persistent resources.");
+            "Money Revenue crop seed supporting stage changed persistent resources at transition " +
+            transitionIndex + ".");
     }
 
     private static PurchaseBinding ReadPurchaseBinding(

@@ -186,7 +186,24 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
                         out afterBoundary),
                 "Money Revenue crop supporting route persistent boundary is unavailable.");
             Require(beforeBoundary == afterBoundary,
-                "Money Revenue crop supporting route changed persistent resources.");
+                "Money Revenue crop supporting route changed persistent resources on day " +
+                totalDay + " for queue " + transition.QueuePath +
+                " (receipt " + transition.ReceiptPath + "). " +
+                "Changed components: total_day=" +
+                (beforeBoundary!.TotalDay != afterBoundary!.TotalDay) +
+                ", inventory=" +
+                (beforeBoundary.InventorySha256 != afterBoundary.InventorySha256) +
+                ", currency=" +
+                (beforeBoundary.CurrencySha256 != afterBoundary.CurrencySha256) +
+                ", persistent_state=" +
+                (beforeBoundary.PersistentStateSha256 !=
+                    afterBoundary.PersistentStateSha256) +
+                ", persistent_fields=[" + string.Join(
+                    ",",
+                    FullShipmentRecoverySettlementBoundaryProjector
+                        .ChangedPersistentFields(
+                            transition.Before,
+                            transition.After)) + "].");
         }
         if (transitions.Count > 0)
         {

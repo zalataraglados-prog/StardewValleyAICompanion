@@ -75,6 +75,7 @@ $receiptRaw = [IO.File]::ReadAllText(
     $receiptPath,
     [Text.Encoding]::UTF8)
 $receipt = $receiptRaw | ConvertFrom-Json
+$decision = Get-Content -LiteralPath $decisionPath -Raw | ConvertFrom-Json
 if ([string]$receipt.schema_version -ne
         "money_revenue_crop_production_decision_receipt.v2" -or
     [string]$receipt.status -ne "crop_production_decision_committed" -or
@@ -143,11 +144,42 @@ if ([string]$obligationPlan.schema_version -ne
     throw "Money crop production obligation plan drifted from its decision."
 }
 
+$seedAcquisitionIntents = @($obligationPlan.commitments |
+    Where-Object { [int]$_.seed_quantity_shortfall -gt 0 } |
+    ForEach-Object {
+        $commitment = $_
+        $decisionCommitments = @($decision.commitments | Where-Object {
+            [string]$_.commitment_id -eq [string]$commitment.commitment_id -and
+            ("(O)" + [string]$_.seed_id) -eq
+                [string]$commitment.seed_qualified_item_id
+        })
+        $teacherRows = @($decision.teacher_candidate_evaluations |
+            Where-Object {
+                [bool]$_.selected -and
+                [string]$_.seed_qualified_item_id -eq
+                    [string]$commitment.seed_qualified_item_id
+            })
+        if ($decisionCommitments.Count -ne 1 -or
+            $teacherRows.Count -ne 1 -or
+            [string]::IsNullOrWhiteSpace([string]$teacherRows[0].shop_id) -or
+            [int]$teacherRows[0].seed_unit_price -le 0) {
+            throw "Money crop seed-acquisition intent is not bound to one Teacher selection: $([string]$commitment.commitment_id)"
+        }
+        [ordered]@{
+            commitment_id = [string]$commitment.commitment_id
+            seed_qualified_item_id =
+                [string]$commitment.seed_qualified_item_id
+            shop_id = [string]$teacherRows[0].shop_id
+            max_unit_price = [int]$teacherRows[0].seed_unit_price
+        }
+    })
+
 Write-JsonFile -Path $runPlanRequestPath -Value ([ordered]@{
     schema_version =
-        "money_revenue_crop_native_production_run_plan_request.v1"
+        "money_revenue_crop_native_production_run_plan_request.v2"
     crop_production_plan_path = $obligationPlanPath
     layout_intents = @($receipt.layout_intents)
+    seed_acquisition_intents = $seedAcquisitionIntents
     max_queue_item_count = [int]$receipt.max_queue_item_count
     formal_product_training_authorized = $false
 })
@@ -164,7 +196,7 @@ $actualCommitmentIds = @($runPlan.covered_commitment_ids | ForEach-Object {
     [string]$_
 } | Sort-Object)
 if ([string]$runPlan.schema_version -ne
-        "money_revenue_crop_native_production_run_plan.v2" -or
+        "money_revenue_crop_native_production_run_plan.v3" -or
     [string]$runPlan.status -ne "native_crop_production_run_ready" -or
     -not [bool]$runPlan.native_production_run_ready -or
     [bool]$runPlan.formal_product_training_authorized -or

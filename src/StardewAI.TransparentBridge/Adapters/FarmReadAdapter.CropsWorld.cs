@@ -93,6 +93,8 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                 var cropData = crop.GetData();
                 var experience = ReadCropHarvestExperience(crop);
                 var readyForHarvest = dirt.readyForHarvest();
+                var watered = dirt.isWatered();
+                var requiresWatering = dirt.needsWatering();
                 var harvestIdentity = CropHarvestIdentityResolver.Resolve(crop);
                 var harvestItem = ReadHarvestItemProjection(
                     harvestIdentity.ItemId);
@@ -146,8 +148,9 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                     harvest_max_stack = cropData?.HarvestMaxStack,
                     extra_harvest_chance = cropData?.ExtraHarvestChance,
                     harvest_method = crop.GetHarvestMethod().ToString(),
-                    watered = dirt.isWatered(),
-                    needs_watering = dirt.needsWatering(),
+                    requires_watering_for_growth = requiresWatering,
+                    watered,
+                    needs_watering = requiresWatering && !watered,
                     harvest_experience_skill_id = experience.SkillId,
                     harvest_experience_skill_index = experience.SkillIndex,
                     harvest_experience_on_success_min = experience.Minimum,

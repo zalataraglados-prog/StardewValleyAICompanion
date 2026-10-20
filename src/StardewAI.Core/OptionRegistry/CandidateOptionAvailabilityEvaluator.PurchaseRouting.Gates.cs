@@ -15,17 +15,37 @@ namespace StardewAI.Core.OptionRegistry
             JsonElement[] graphEdges,
             string targetLocation)
         {
-            var reasons = new List<string>();
+            var blockReasons = new List<string>();
+            var gateReasons = new List<string>();
             var openTime = ReadNullableInt(endpoint, "open_time");
             var closeTime = ReadNullableInt(endpoint, "close_time");
-            if (ReadBool(endpoint, "festival_closed") == true)
+            var currentTime = ReadStateFieldInt(snapshot, "time", "time");
+            var nextOpenTime = (int?)null;
+            var allowedNow = true;
+            var allowedToday = true;
+            var festivalClosed = ReadBool(endpoint, "festival_closed") == true;
+            if (festivalClosed)
             {
-                reasons.Add("stores_closed_for_festival");
+                blockReasons.Add("stores_closed_for_festival");
             }
 
+            var endpointCanOpenLaterToday = !festivalClosed &&
+                openTime.HasValue &&
+                closeTime.HasValue &&
+                currentTime < openTime.Value &&
+                currentTime < closeTime.Value;
             if (ReadBool(endpoint, "direct_time_allowed") == false)
             {
-                reasons.Add("shop_endpoint_direct_time_gate_blocked");
+                allowedNow = false;
+                if (endpointCanOpenLaterToday)
+                {
+                    nextOpenTime = LaterTime(nextOpenTime, openTime);
+                    gateReasons.Add("shop_endpoint_not_open_yet");
+                }
+                else
+                {
+                    blockReasons.Add("shop_endpoint_direct_time_gate_blocked");
+                }
             }
 
             if (endpoint.TryGetProperty("owner_service_status", out var ownerStatus) &&
@@ -34,14 +54,24 @@ namespace StardewAI.Core.OptionRegistry
                 ReadBool(ownerStatus, "in_service_area") != true)
             {
                 var ownerBlockReason = ReadString(ownerStatus, "block_reason");
-                reasons.Add(string.IsNullOrWhiteSpace(ownerBlockReason)
+                blockReasons.Add(string.IsNullOrWhiteSpace(ownerBlockReason)
                     ? "shop_owner_not_at_service_counter"
                     : ownerBlockReason);
             }
 
-            if (ReadBool(endpoint, "allowed_now") == false && reasons.Count == 0)
+            if (ReadBool(endpoint, "allowed_now") == false &&
+                blockReasons.Count == 0)
             {
-                reasons.Add("shop_endpoint_direct_time_gate_blocked");
+                allowedNow = false;
+                if (endpointCanOpenLaterToday)
+                {
+                    nextOpenTime = LaterTime(nextOpenTime, openTime);
+                    gateReasons.Add("shop_endpoint_not_open_yet");
+                }
+                else
+                {
+                    blockReasons.Add("shop_endpoint_direct_time_gate_blocked");
+                }
             }
 
             var entranceGates = graphEdges
@@ -64,12 +94,38 @@ namespace StardewAI.Core.OptionRegistry
                 var selected = allowedEntrance.ValueKind == JsonValueKind.Object
                     ? allowedEntrance
                     : entranceGates[0];
-                openTime ??= ReadNullableInt(selected, "effective_open_time") ??
+                var entranceOpenTime =
+                    ReadNullableInt(selected, "effective_open_time") ??
                     ReadNullableInt(selected, "open_time");
-                closeTime ??= ReadNullableInt(selected, "close_time");
-                if (allowedEntrance.ValueKind != JsonValueKind.Object)
+                var entranceCloseTime = ReadNullableInt(selected, "close_time");
+                openTime = LaterTime(openTime, entranceOpenTime);
+                closeTime = EarlierTime(closeTime, entranceCloseTime);
+                var entranceAllowedNow =
+                    allowedEntrance.ValueKind == JsonValueKind.Object;
+                var dateAllowed = ReadBool(selected, "festival_closed") != true &&
+                    ReadBool(selected, "seed_shop_wednesday_closed") != true &&
+                    ReadBool(selected, "friendship_allowed") != false &&
+                    ReadBool(selected, "allowed_on_capture_date") != false &&
+                    string.IsNullOrWhiteSpace(
+                        ReadString(selected, "unresolved_reason"));
+                var canOpenLaterToday = !entranceAllowedNow &&
+                    dateAllowed &&
+                    openTime.HasValue &&
+                    closeTime.HasValue &&
+                    currentTime < openTime.Value &&
+                    currentTime < closeTime.Value;
+
+                allowedNow &= entranceAllowedNow;
+                allowedToday &= entranceAllowedNow || canOpenLaterToday;
+                if (canOpenLaterToday)
                 {
-                    reasons.AddRange(LockedDoorPurchaseGateReasons(selected));
+                    nextOpenTime = LaterTime(nextOpenTime, openTime);
+                    gateReasons.Add("shop_entrance_not_open_yet");
+                }
+                else if (!entranceAllowedNow)
+                {
+                    blockReasons.AddRange(
+                        LockedDoorPurchaseGateReasons(selected));
                 }
             }
 
@@ -78,15 +134,34 @@ namespace StardewAI.Core.OptionRegistry
                 shops.Value.ValueKind == JsonValueKind.Object &&
                 ReadBool(shops.Value, "stores_closed_for_festival") == true)
             {
-                reasons.Add("stores_closed_for_festival");
+                blockReasons.Add("stores_closed_for_festival");
+            }
+
+            if (blockReasons.Count > 0)
+            {
+                allowedNow = false;
+                allowedToday = false;
             }
 
             return new PurchaseServiceGateResult(
-                reasons.Count == 0,
+                allowedNow,
+                allowedToday,
+                nextOpenTime,
                 openTime,
                 closeTime,
-                reasons.Distinct(StringComparer.Ordinal).ToArray());
+                gateReasons.Distinct(StringComparer.Ordinal).ToArray(),
+                blockReasons.Distinct(StringComparer.Ordinal).ToArray());
         }
+
+        private static int? LaterTime(int? left, int? right) =>
+            left.HasValue && right.HasValue
+                ? Math.Max(left.Value, right.Value)
+                : left ?? right;
+
+        private static int? EarlierTime(int? left, int? right) =>
+            left.HasValue && right.HasValue
+                ? Math.Min(left.Value, right.Value)
+                : left ?? right;
 
         private static IEnumerable<string> LockedDoorPurchaseGateReasons(
             JsonElement gate)
@@ -127,8 +202,11 @@ namespace StardewAI.Core.OptionRegistry
 
         private sealed record PurchaseServiceGateResult(
             bool AllowedNow,
+            bool AllowedToday,
+            int? NextOpenTime,
             int? OpenTime,
             int? CloseTime,
+            string[] GateReasons,
             string[] BlockReasons);
     }
 }

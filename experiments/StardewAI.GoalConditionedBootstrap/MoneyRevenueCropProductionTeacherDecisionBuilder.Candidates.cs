@@ -2,6 +2,7 @@ using System.Text.Json;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
 using StardewAI.Core.Infrastructure;
+using StardewAI.Core.OptionRegistry;
 using StardewAI.Core.Strategy;
 
 namespace StardewAI.GoalConditionedBootstrap;
@@ -166,6 +167,17 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
 
     private static SeedStock[] ReadSeedStock(SnapshotEnvelope snapshot)
     {
+        var admittedPurchases = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "economy.buy_supplies" })
+            .Options
+            .Single()
+            .EventCandidates
+            .Where(value => value.Available)
+            .Select(value => new SeedPurchaseKey(
+                value.ShopId,
+                value.QualifiedItemId,
+                value.UnitPrice))
+            .ToHashSet();
         var root = ReadStateValue(snapshot, "locations", "shops");
         var shops = RequiredProperty(root, "shops");
         Require(shops.ValueKind == JsonValueKind.Array,
@@ -184,7 +196,11 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
                     (ReadOptionalInt(value, "currency") ?? -1) == 0 &&
                     (ReadOptionalInt(value, "price") ?? 0) > 0 &&
                     ReadString(value, "qualified_item_id")
-                        .StartsWith("(O)", StringComparison.Ordinal))
+                        .StartsWith("(O)", StringComparison.Ordinal) &&
+                    admittedPurchases.Contains(new SeedPurchaseKey(
+                        shopId,
+                        ReadString(value, "qualified_item_id"),
+                        ReadInt(value, "price"))))
                 .Select(value => new SeedStock(
                     shopId,
                     ReadString(value, "qualified_item_id"),
@@ -194,6 +210,11 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
     }
 
     private sealed record SeedStock(
+        string ShopId,
+        string QualifiedItemId,
+        int UnitPrice);
+
+    private sealed record SeedPurchaseKey(
         string ShopId,
         string QualifiedItemId,
         int UnitPrice);

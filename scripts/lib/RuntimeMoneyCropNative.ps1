@@ -151,6 +151,7 @@ function Invoke-RuntimeCropSitePreparationAction {
 
     $artifacts = Invoke-RuntimePrecompiledQueue -Context $Context `
         -Name $Name -QueuePath $queuePath -BeforePath $source.Path `
+        -BeforeSnapshotProfile "farm_layout" `
         -ExecutionTarget "runtime_harness"
     if ([string]$artifacts.Execution.selected_candidate_id -ne
         $candidateId) {

@@ -15,6 +15,7 @@ public sealed class LiveTrainingOptions
     public string BridgeSnapshotUrl { get; set; } = "http://127.0.0.1:8765/api/v1/snapshot";
     public string ExecutionSnapshotProfile { get; set; } = "full";
     public string SnapshotFile { get; set; } = string.Empty;
+    public string SnapshotFileProfile { get; set; } = string.Empty;
     public string SnapshotArtifactMode { get; set; } =
         ContentAddressedJsonArtifactStore.PlainMode;
     public string ExecutorUrl { get; set; } = "http://127.0.0.1:8767";
@@ -190,6 +191,16 @@ public sealed class LiveTrainingOptions
             else if (current == "--snapshot-file" && i + 1 < args.Length)
             {
                 options.SnapshotFile = args[++i];
+            }
+            else if (current == "--snapshot-file-profile" &&
+                i + 1 < args.Length)
+            {
+                options.SnapshotFileProfile = args[++i].Trim();
+                if (string.IsNullOrWhiteSpace(options.SnapshotFileProfile))
+                {
+                    throw new ArgumentException(
+                        "--snapshot-file-profile cannot be empty.");
+                }
             }
             else if (current == "--snapshot-artifact-mode" && i + 1 < args.Length)
             {

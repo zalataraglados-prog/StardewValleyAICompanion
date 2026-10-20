@@ -65,37 +65,22 @@ namespace StardewAI.Core.Execution
             string targetLocation,
             SmallModelPlanStep sourceStep)
         {
-            var graph = ReadStateFieldValue(snapshot, "locations", "route_graph");
-            if (!graph.HasValue || graph.Value.ValueKind != JsonValueKind.Object)
+            var route = BuildReachableRoutePlan(
+                snapshot,
+                currentLocation,
+                targetLocation);
+            if (route.Step is null)
             {
                 return null;
             }
 
-            var path = FindResolvedRouteGraphPath(graph.Value, currentLocation, targetLocation);
-            if (path.Length == 0 || !path[0].FromX.HasValue || !path[0].FromY.HasValue)
-            {
-                return null;
-            }
-
-            var edge = path[0];
-            var liveConnector = FindMatchingCurrentRouteConnector(snapshot, edge);
-            if (!liveConnector.HasValue ||
-                !string.IsNullOrWhiteSpace(RecoveryConnectorGateBlock(snapshot, edge)))
-            {
-                return null;
-            }
-
-            var pathTiles = RecoveryConnectorPathTiles(snapshot, edge, liveConnector.Value);
-            if (!pathTiles.HasValue)
-            {
-                return null;
-            }
-
+            var edge = route.Step.Edge;
+            var pathTiles = route.Step.PathTiles;
             var parameters = new List<SmallModelActionParameter>
             {
                 Parameter("connector_kind", edge.Kind),
                 Parameter("expected_target_location", edge.TargetLocation),
-                Parameter("max_movement_tiles", Math.Max(1, pathTiles.Value).ToString(CultureInfo.InvariantCulture)),
+                Parameter("max_movement_tiles", Math.Max(1, pathTiles).ToString(CultureInfo.InvariantCulture)),
                 Parameter("cross_location_move_target", targetLocation),
                 Parameter("fresh_snapshot_replan_required", "true")
             };
@@ -114,7 +99,7 @@ namespace StardewAI.Core.Execution
                 TargetLocation = currentLocation,
                 TargetTileX = edge.FromX,
                 TargetTileY = edge.FromY,
-                EstimatedMinutes = GameClockBudgetPolicy.MovementTilesToGameMinutes(pathTiles.Value + 1),
+                EstimatedMinutes = GameClockBudgetPolicy.MovementTilesToGameMinutes(pathTiles + 1),
                 Preconditions = sourceStep.Preconditions
                     .Where(value => value.StartsWith("candidate_id:", StringComparison.Ordinal))
                     .Append("transparent_route_connector_still_matches_snapshot=true")
@@ -543,6 +528,18 @@ namespace StardewAI.Core.Execution
                 return BlockedRecoveryRoute("sleep_target_unavailable");
             }
 
+            return BuildReachableRoutePlan(
+                snapshot,
+                currentLocation,
+                homeLocation);
+        }
+
+        private static RecoveryRoutePlanResult BuildReachableRoutePlan(
+            SnapshotEnvelope snapshot,
+            string currentLocation,
+            string targetLocation)
+        {
+
             var graph = ReadStateFieldValue(snapshot, "locations", "route_graph");
             if (!graph.HasValue || graph.Value.ValueKind != JsonValueKind.Object)
             {
@@ -567,10 +564,10 @@ namespace StardewAI.Core.Execution
             var observedBlocks = new List<string>();
             foreach (var edge in outgoing)
             {
-                var remainingPath = string.Equals(edge.TargetLocation, homeLocation, StringComparison.OrdinalIgnoreCase)
+                var remainingPath = string.Equals(edge.TargetLocation, targetLocation, StringComparison.OrdinalIgnoreCase)
                     ? Array.Empty<RouteGraphEdge>()
-                    : FindResolvedRouteGraphPath(graphEdges, edge.TargetLocation, homeLocation);
-                if (!string.Equals(edge.TargetLocation, homeLocation, StringComparison.OrdinalIgnoreCase) && remainingPath.Length == 0)
+                    : FindResolvedRouteGraphPath(graphEdges, edge.TargetLocation, targetLocation);
+                if (!string.Equals(edge.TargetLocation, targetLocation, StringComparison.OrdinalIgnoreCase) && remainingPath.Length == 0)
                 {
                     observedBlocks.Add("recovery_route_graph_no_path_home");
                     continue;

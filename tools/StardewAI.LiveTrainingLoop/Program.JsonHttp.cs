@@ -48,9 +48,16 @@ static partial class Program
         return builder.Uri.AbsoluteUri;
     }
 
-    private static string SnapshotIngestUrl(LiveTrainingOptions options)
+    private static string SnapshotIngestUrl(
+        LiveTrainingOptions options,
+        string? explicitProfile = null)
     {
         var ingestUrl = options.BackendUrl + "/api/v1/snapshots";
+        if (!string.IsNullOrWhiteSpace(explicitProfile))
+        {
+            return ingestUrl + "?profile=" +
+                Uri.EscapeDataString(explicitProfile);
+        }
         if (!Uri.TryCreate(
                 options.BridgeSnapshotUrl,
                 UriKind.Absolute,

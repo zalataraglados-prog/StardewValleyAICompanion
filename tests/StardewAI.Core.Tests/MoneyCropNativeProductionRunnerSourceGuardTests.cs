@@ -26,6 +26,12 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
             "scripts",
             "lib",
             "RuntimeMoneyCropProductionInput.ps1"));
+    private static readonly string CropProjection = File.ReadAllText(
+        FindRepositoryFile(
+            "src",
+            "StardewAI.TransparentBridge",
+            "Adapters",
+            "FarmReadAdapter.CropsWorld.cs"));
 
     [Fact]
     public void RunnerUsesImmutableSaveAndExactMinimalModSet()
@@ -64,10 +70,17 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains("source_save_unchanged", Runner,
             StringComparison.Ordinal);
-        Assert.Contains("money_crop_native_source_preflight.v1", Runner,
+        Assert.Contains("money_crop_native_source_preflight.v2", Runner,
             StringComparison.Ordinal);
-        Assert.Contains("$initialStateHash -eq [string]$runPlan.source_state_hash",
+        Assert.Contains("Get-MoneyCropSourceBoundaryHash", Runner,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$observedSourceBoundaryHash -eq $expectedSourceBoundaryHash",
             Runner, StringComparison.Ordinal);
+        Assert.Contains("environment.training_run_id", Runner,
+            StringComparison.Ordinal);
+        Assert.Contains("environment.save_isolation_path", Runner,
+            StringComparison.Ordinal);
         Assert.Contains("$initialDay -eq [int]$runPlan.source_total_day",
             Runner, StringComparison.Ordinal);
         Assert.Contains("Stop-RuntimeEvidenceProcesses", Runner,
@@ -100,6 +113,10 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
         Assert.Contains("executor.break_farm_resource_clump", CropRuntime,
             StringComparison.Ordinal);
         Assert.Contains("fresh=true", CropRuntime,
+            StringComparison.Ordinal);
+        Assert.Contains("-BeforeSnapshotProfile \"farm_layout\"", CropRuntime,
+            StringComparison.Ordinal);
+        Assert.Contains("--snapshot-file-profile", CommonRuntime,
             StringComparison.Ordinal);
         Assert.Contains("$step = $pending[0]", CropRuntime,
             StringComparison.Ordinal);
@@ -138,10 +155,30 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains("Invoke-RuntimeDailyPlanStep", SeedAcquisitionRuntime,
             StringComparison.Ordinal);
+        Assert.Contains("-AllowVerifiedContinuation", SeedAcquisitionRuntime,
+            StringComparison.Ordinal);
+        Assert.Contains("VerifiedContinuationPending", CommonRuntime,
+            StringComparison.Ordinal);
+        Assert.Contains("VerifiedObjectiveCompleted", CommonRuntime,
+            StringComparison.Ordinal);
+        Assert.Contains("objective_continuation_completed", CommonRuntime,
+            StringComparison.Ordinal);
+        Assert.Contains("selected_queue_decision_complete", CommonRuntime,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "selected_queue_continuation_retry_next_iteration",
+            CommonRuntime,
+            StringComparison.Ordinal);
         Assert.Contains("economy.buy_supplies", SeedAcquisitionRuntime,
             StringComparison.Ordinal);
         Assert.Contains("continuation.quantity", SeedAcquisitionRuntime,
             StringComparison.Ordinal);
+        Assert.Contains("continuation.shop_id", SeedAcquisitionRuntime,
+            StringComparison.Ordinal);
+        Assert.Contains("continuation.max_unit_price", SeedAcquisitionRuntime,
+            StringComparison.Ordinal);
+        Assert.Contains("timeline_status -eq \"deferred\"",
+            SeedAcquisitionRuntime, StringComparison.Ordinal);
         Assert.Contains("value = \"1\"", SeedAcquisitionRuntime,
             StringComparison.Ordinal);
         Assert.Contains("Import-RuntimeSnapshotFile", SeedAcquisitionRuntime,
@@ -186,6 +223,24 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains("Assert-MoneyCropInputIdSet", ProductionInput,
             StringComparison.Ordinal);
+        Assert.Contains("Get-MoneyCropSourceBoundaryHash", ProductionInput,
+            StringComparison.Ordinal);
+        Assert.Contains("__runtime_identity_excluded__", ProductionInput,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Remove-MoneyCropNonSemanticBoundaryMetadata",
+            ProductionInput,
+            StringComparison.Ordinal);
+        Assert.Contains("CanonicalJson", ProductionInput,
+            StringComparison.Ordinal);
+        Assert.Contains("JsonDocument.Parse", ProductionInput,
+            StringComparison.Ordinal);
+        Assert.Contains("StringComparer.Ordinal", ProductionInput,
+            StringComparison.Ordinal);
+        Assert.Contains("machine_probe_cache_tick", ProductionInput,
+            StringComparison.Ordinal);
+        Assert.Contains("player.movie_theater", ProductionInput,
+            StringComparison.Ordinal);
         Assert.Contains("formal_product_training_authorized", ProductionInput,
             StringComparison.Ordinal);
         Assert.Contains(
@@ -224,6 +279,10 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
             Runner, StringComparison.Ordinal);
         Assert.Contains("build-money-revenue-crop-daily-capacity-proof",
             Runner, StringComparison.Ordinal);
+        Assert.Contains("watering_can_refill_receipts", Runner,
+            StringComparison.Ordinal);
+        Assert.Contains("primitive_verification_status", Runner,
+            StringComparison.Ordinal);
         Assert.Contains("build-money-revenue-crop-native-lifecycle-proof",
             Runner, StringComparison.Ordinal);
         Assert.Contains("build-money-revenue-crop-output-retention-proof",
@@ -246,6 +305,40 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains("$arguments.Add(\"--use-product-executor\")",
             CommonRuntime, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void HttpFailuresPreserveModernResponseBodies()
+    {
+        Assert.Contains("[Net.Http.HttpResponseMessage]", CommonRuntime,
+            StringComparison.Ordinal);
+        Assert.Contains("Content.ReadAsStringAsync()", CommonRuntime,
+            StringComparison.Ordinal);
+        Assert.Contains("GetResponseStream", CommonRuntime,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void CropWaterDemandDistinguishesNativeRequirementFromCurrentState()
+    {
+        Assert.Contains("var watered = dirt.isWatered();", CropProjection,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "var requiresWatering = dirt.needsWatering();",
+            CropProjection,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "requires_watering_for_growth = requiresWatering",
+            CropProjection,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "needs_watering = requiresWatering && !watered",
+            CropProjection,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "needs_watering = dirt.needsWatering()",
+            CropProjection,
+            StringComparison.Ordinal);
     }
 
     private static string FindRepositoryFile(params string[] segments)

@@ -18,15 +18,18 @@ internal static partial class BootstrapSelfTest
         StrategyCommitmentLedger continuationLedger)
     {
         var commitment = plan.Commitments.Single();
+        VerifySeedAcquisitionRuntimeBoundaryNormalization(before);
+        var runtimeBefore = SeedAcquisitionRuntimeBoundary(before);
         var transitions = new List<
             MoneyRevenueCropNativeLifecycleTransitionRequest>();
         var current = AddSeedAcquisitionTransition(
             root,
             transitions,
-            before,
+            runtimeBefore,
             sequence: 1,
             purchaseQuantity: 0,
-            unitPrice: 200);
+            unitPrice: 200,
+            supportingOptionId: "executor.wait_ticks");
         current = AddSeedAcquisitionTransition(
             root,
             transitions,
@@ -53,7 +56,7 @@ internal static partial class BootstrapSelfTest
             CropProductionPlanSha256 =
                 CurrentTeacherFrontierSupport.HashFile(planPath),
             CommitmentId = commitment.CommitmentId,
-            SourceStateHash = plan.SourceStateHash,
+            SourceStateHash = runtimeBefore.StateHash,
             RunId = "run.seed-acquisition.fixture",
             Transitions = transitions.ToArray()
         };
@@ -88,27 +91,31 @@ internal static partial class BootstrapSelfTest
                 !proof.FormalProductTrainingAuthorized,
             "Money crop seed-acquisition proof lost the exact shortfall.");
 
-        var completeTransitions = manifest.Transitions;
-        manifest.Transitions = completeTransitions.Take(2).ToArray();
-        Write(manifestPath, manifest);
-        RequireRejects(
-            () => MoneyRevenueCropSeedAcquisitionProofBuilder.Build(
-                requestPath),
+        var completeTransitions = manifest.Transitions.ToArray();
+        RequireSeedAcquisitionRejects(
+            root,
+            "partial",
+            planPath,
+            commitment,
+            runtimeBefore.StateHash,
+            completeTransitions.Take(2).ToArray(),
             "A partial Money crop seed acquisition was admitted.");
 
-        manifest.Transitions = completeTransitions.ToArray();
-        manifest.Transitions[1] = manifest.Transitions[1] with
+        var discontinuousTransitions = completeTransitions.ToArray();
+        discontinuousTransitions[1] = discontinuousTransitions[1] with
         {
             BeforeSnapshotPath = completeTransitions[0].BeforeSnapshotPath
         };
-        Write(manifestPath, manifest);
-        RequireRejects(
-            () => MoneyRevenueCropSeedAcquisitionProofBuilder.Build(
-                requestPath),
+        RequireSeedAcquisitionRejects(
+            root,
+            "discontinuous",
+            planPath,
+            commitment,
+            runtimeBefore.StateHash,
+            discontinuousTransitions,
             "A discontinuous Money crop seed acquisition was admitted.");
 
-        manifest.Transitions = completeTransitions.ToArray();
-        var purchaseQueuePath = manifest.Transitions[1].QueuePath;
+        var purchaseQueuePath = completeTransitions[1].QueuePath;
         var purchaseQueue = CurrentTeacherFrontierSupport.Read<
             ActionQueueEnvelope>(
                 purchaseQueuePath,
@@ -117,17 +124,304 @@ internal static partial class BootstrapSelfTest
             value.OptionId == "executor.buy_shop_item");
         purchaseItem.NormalizedCommand.Parameters.Single(value =>
             value.Name == "continuation.quantity").Value = "2";
-        Write(purchaseQueuePath, purchaseQueue);
-        Write(manifestPath, manifest);
-        RequireRejects(
-            () => MoneyRevenueCropSeedAcquisitionProofBuilder.Build(
-                requestPath),
+        var nonUnitQueuePath = Path.Combine(
+            root,
+            "seed-acquisition-non-unit-queue.json");
+        Write(nonUnitQueuePath, purchaseQueue);
+        var purchaseReceipt = CurrentTeacherFrontierSupport.Read<
+            QueueExecutionReceiptEnvelope>(
+                completeTransitions[1].ExecutionReceiptPath,
+                "Money crop seed-acquisition purchase receipt fixture");
+        purchaseReceipt.StepResults.Single(value =>
+            value.QueueItemIndex == 0).EffectiveQueueItem =
+                JsonSerializer.SerializeToElement(
+                    purchaseItem,
+                    JsonDefaults.Options);
+        var nonUnitReceiptPath = Path.Combine(
+            root,
+            "seed-acquisition-non-unit-receipt.json");
+        Write(nonUnitReceiptPath, purchaseReceipt);
+        var nonUnitTransitions = completeTransitions.ToArray();
+        nonUnitTransitions[1] = nonUnitTransitions[1] with
+        {
+            QueuePath = nonUnitQueuePath,
+            ExecutionReceiptPath = nonUnitReceiptPath
+        };
+        RequireSeedAcquisitionRejects(
+            root,
+            "non-unit",
+            planPath,
+            commitment,
+            runtimeBefore.StateHash,
+            nonUnitTransitions,
             "A Money crop seed acquisition with a non-unit purchase slice was admitted.");
+
+        var driftedBoundary = SeedAcquisitionSourceDrift(runtimeBefore);
+        var driftedBoundaryPath = Path.Combine(
+            root,
+            "seed-acquisition-drifted-source.json");
+        Write(driftedBoundaryPath, driftedBoundary);
+        var driftedTransitions = completeTransitions.ToArray();
+        driftedTransitions[0] = driftedTransitions[0] with
+        {
+            BeforeSnapshotPath = driftedBoundaryPath
+        };
+        RequireSeedAcquisitionRejects(
+            root,
+            "source-drift",
+            planPath,
+            commitment,
+            driftedBoundary.StateHash,
+            driftedTransitions,
+            "A Money crop seed acquisition with non-runtime source drift was admitted.");
 
         VerifyLinkedSeedAcquisitionProofs(
             root,
             before,
             continuationLedger);
+    }
+
+    private static void VerifySeedAcquisitionRuntimeBoundaryNormalization(
+        SnapshotEnvelope source)
+    {
+        var planned = CloneSnapshot(source);
+        var observed = CloneSnapshot(source);
+        SetSeedAcquisitionMovieTheaterBoundary(
+            planned,
+            projectionFingerprint: "legacy-tag-order",
+            openStatus: "closed");
+        SetSeedAcquisitionMovieTheaterBoundary(
+            observed,
+            projectionFingerprint: "canonical-tag-order",
+            openStatus: "closed");
+        SetSeedAcquisitionNonSemanticMetadata(planned, 100);
+        SetSeedAcquisitionNonSemanticMetadata(observed, 200);
+        observed = SeedAcquisitionRuntimeBoundary(observed);
+        Require(
+            MoneyRevenueCropSeedAcquisitionProofBuilder
+                .SameRuntimeSourceBoundary(planned, observed),
+            "Money crop seed-acquisition rejected non-semantic runtime source drift.");
+
+        SetSeedAcquisitionMovieTheaterBoundary(
+            observed,
+            projectionFingerprint: "canonical-tag-order",
+            openStatus: "open");
+        Require(
+            !MoneyRevenueCropSeedAcquisitionProofBuilder
+                .SameRuntimeSourceBoundary(planned, observed),
+            "Money crop seed-acquisition ignored semantic movie-theater source drift.");
+
+        VerifyDailyQuestOfferLazyDisplayNormalization(source);
+    }
+
+    private static void VerifyDailyQuestOfferLazyDisplayNormalization(
+        SnapshotEnvelope source)
+    {
+        var before = CloneSnapshot(source);
+        var after = CloneSnapshot(source);
+        SetDailyQuestOfferBoundary(
+            before,
+            fingerprint: "unloaded-display",
+            description: string.Empty,
+            descriptionAvailable: false,
+            targetMessage: string.Empty,
+            targetCount: 1);
+        SetDailyQuestOfferBoundary(
+            after,
+            fingerprint: "localized-display",
+            description: "Localized delivery description",
+            descriptionAvailable: true,
+            targetMessage: "Localized completion message",
+            targetCount: 1);
+        Require(
+            FullShipmentRecoverySettlementBoundaryProjector.TryProject(
+                before,
+                out var beforeBoundary) &&
+            FullShipmentRecoverySettlementBoundaryProjector.TryProject(
+                after,
+                out var afterBoundary) &&
+            beforeBoundary == afterBoundary,
+            "Persistent boundary rejected daily-quest lazy display loading.");
+
+        SetDailyQuestOfferBoundary(
+            after,
+            fingerprint: "semantic-drift",
+            description: "Localized delivery description",
+            descriptionAvailable: true,
+            targetMessage: "Localized completion message",
+            targetCount: 2);
+        Require(
+            FullShipmentRecoverySettlementBoundaryProjector.TryProject(
+                after,
+                out afterBoundary) &&
+            beforeBoundary != afterBoundary,
+            "Persistent boundary ignored semantic daily-quest drift.");
+    }
+
+    private static void SetDailyQuestOfferBoundary(
+        SnapshotEnvelope snapshot,
+        string fingerprint,
+        string description,
+        bool descriptionAvailable,
+        string targetMessage,
+        int targetCount)
+    {
+        var quests = snapshot.State.TryGetValue(
+                "quests",
+                out var questsElement)
+            ? JsonNode.Parse(questsElement.GetRawText())!.AsObject()
+            : new JsonObject();
+        quests["daily_quest_offer"] = new JsonObject
+        {
+            ["status"] = "available",
+            ["value"] = new JsonObject
+            {
+                ["available"] = true,
+                ["can_accept"] = true,
+                ["accepted_daily_quest"] = false,
+                ["offer_fingerprint"] = fingerprint,
+                ["quest"] = new JsonObject
+                {
+                    ["quest_type"] = 3,
+                    ["accepted"] = false,
+                    ["completed"] = false,
+                    ["money_reward"] = 90,
+                    ["description"] = description,
+                    ["description_available"] = descriptionAvailable,
+                    ["per_type_fields"] = new JsonObject
+                    {
+                        ["item_id"] = "(O)18",
+                        ["target_npc"] = "Lewis",
+                        ["target_count"] = targetCount,
+                        ["target_message"] = targetMessage
+                    }
+                }
+            }
+        };
+        snapshot.State["quests"] = JsonSerializer.SerializeToElement(
+            quests,
+            JsonDefaults.Options);
+        snapshot.StateHash = SnapshotHash.ComputeStateHash(snapshot.State);
+    }
+
+    private static void SetSeedAcquisitionMovieTheaterBoundary(
+        SnapshotEnvelope snapshot,
+        string projectionFingerprint,
+        string openStatus)
+    {
+        var player = JsonNode.Parse(
+            snapshot.State["player"].GetRawText())!.AsObject();
+        player["movie_theater"] = new JsonObject
+        {
+            ["status"] = "available",
+            ["value"] = new JsonObject
+            {
+                ["projection_fingerprint"] = projectionFingerprint,
+                ["open_status"] = openStatus
+            }
+        };
+        snapshot.State["player"] = JsonSerializer.SerializeToElement(
+            player,
+            JsonDefaults.Options);
+        snapshot.StateHash = SnapshotHash.ComputeStateHash(snapshot.State);
+    }
+
+    private static void SetSeedAcquisitionNonSemanticMetadata(
+        SnapshotEnvelope snapshot,
+        long tick)
+    {
+        var player = JsonNode.Parse(
+            snapshot.State["player"].GetRawText())!.AsObject();
+        var movieTheaterValue = player["movie_theater"]!["value"]!.AsObject();
+        movieTheaterValue["read_at_tick"] = tick;
+        movieTheaterValue["runtime_cache"] = new JsonObject
+        {
+            ["projection_tick"] = tick + 1,
+            ["rows"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["machine_probe_cache_tick"] = tick + 2,
+                    ["semantic_value"] = "stable"
+                }
+            }
+        };
+        snapshot.State["player"] = JsonSerializer.SerializeToElement(
+            player,
+            JsonDefaults.Options);
+        snapshot.StateHash = SnapshotHash.ComputeStateHash(snapshot.State);
+    }
+
+    private static void RequireSeedAcquisitionRejects(
+        string root,
+        string name,
+        string planPath,
+        MoneyRevenueCropProductionCommitmentPlan commitment,
+        string sourceStateHash,
+        MoneyRevenueCropNativeLifecycleTransitionRequest[] transitions,
+        string message)
+    {
+        var manifestPath = Path.Combine(
+            root,
+            "seed-acquisition-" + name + "-manifest.json");
+        var requestPath = Path.Combine(
+            root,
+            "seed-acquisition-" + name + "-request.json");
+        Write(manifestPath,
+            new MoneyRevenueCropSeedAcquisitionExecutionManifest
+            {
+                CropProductionPlanPath = planPath,
+                CropProductionPlanSha256 =
+                    CurrentTeacherFrontierSupport.HashFile(planPath),
+                CommitmentId = commitment.CommitmentId,
+                SourceStateHash = sourceStateHash,
+                RunId = "run.seed-acquisition.fixture",
+                Transitions = transitions
+            });
+        Write(requestPath,
+            new MoneyRevenueCropSeedAcquisitionProofRequest
+            {
+                CropProductionPlanPath = planPath,
+                CommitmentId = commitment.CommitmentId,
+                ExecutionManifestPath = manifestPath
+            });
+        RequireRejects(
+            () => MoneyRevenueCropSeedAcquisitionProofBuilder.Build(
+                requestPath),
+            message);
+    }
+
+    private static SnapshotEnvelope SeedAcquisitionRuntimeBoundary(
+        SnapshotEnvelope source)
+    {
+        var runtime = CloneSnapshot(source);
+        var environment = JsonNode.Parse(
+            runtime.State["environment"].GetRawText())!.AsObject();
+        environment["training_run_id"]!["value"] =
+            "run.seed-acquisition.fixture";
+        environment["save_isolation_path"]!["value"] =
+            Path.Combine(Path.GetTempPath(), "seed-acquisition-fixture");
+        runtime.State["environment"] = JsonSerializer.SerializeToElement(
+            environment,
+            JsonDefaults.Options);
+        runtime.GameTick = source.GameTick + 10;
+        runtime.StateHash = SnapshotHash.ComputeStateHash(runtime.State);
+        return runtime;
+    }
+
+    private static SnapshotEnvelope SeedAcquisitionSourceDrift(
+        SnapshotEnvelope source)
+    {
+        var drifted = CloneSnapshot(source);
+        var player = JsonNode.Parse(
+            drifted.State["player"].GetRawText())!.AsObject();
+        player["money"]!["value"] =
+            player["money"]!["value"]!.GetValue<int>() - 1;
+        drifted.State["player"] = JsonSerializer.SerializeToElement(
+            player,
+            JsonDefaults.Options);
+        drifted.StateHash = SnapshotHash.ComputeStateHash(drifted.State);
+        return drifted;
     }
 
     private static void VerifyLinkedSeedAcquisitionProofs(

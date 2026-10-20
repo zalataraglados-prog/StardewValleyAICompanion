@@ -560,7 +560,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     private static SnapshotEnvelope BuyPreviewSnapshot(
         string entryOverride,
         bool endpointAllowed = true,
-        string endpointExtra = "")
+        string endpointExtra = "",
+        string routeGraphExtra = "")
     {
         return Snapshot("""
         {
@@ -586,7 +587,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             "route_action_branch_coverage": {"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "route_graph": {"value":{"edges":[
               {"kind":"warp","from_location":"FarmHouse","from_x":2,"from_y":3,"target_location":"Blacksmith","target_x":3,"target_y":4,"resolved":true},
-              {"kind":"shop_endpoint","from_location":"Blacksmith","from_x":3,"from_y":5,"shop_id":"Blacksmith","action_type":"Blacksmith","allowed_now":ENDPOINT_ALLOWED ENDPOINT_EXTRA,"resolved":false}
+              {"kind":"shop_endpoint","from_location":"Blacksmith","from_x":3,"from_y":5,"shop_id":"Blacksmith","action_type":"Blacksmith","allowed_now":ENDPOINT_ALLOWED ENDPOINT_EXTRA,"resolved":false} ROUTE_GRAPH_EXTRA
             ]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "current_location": {
@@ -602,7 +603,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             .Replace(
                 "ENDPOINT_ALLOWED",
                 endpointAllowed ? "true" : "false")
-            .Replace("ENDPOINT_EXTRA", endpointExtra));
+            .Replace("ENDPOINT_EXTRA", endpointExtra)
+            .Replace("ROUTE_GRAPH_EXTRA", routeGraphExtra));
     }
 
     private static SnapshotEnvelope SellSnapshot(string inventoryItemOverride, string? sellContextOverride = null)

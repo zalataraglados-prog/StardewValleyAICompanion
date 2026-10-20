@@ -6,7 +6,7 @@ using StardewAI.Core.Training;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
-internal static class QueueExecutionReceiptValidator
+internal static partial class QueueExecutionReceiptValidator
 {
     public static string[] Validate(
         ActionQueueEnvelope queue,
@@ -215,6 +215,41 @@ internal static class QueueExecutionReceiptValidator
 
 internal static class ExecutionReceiptValidationSupport
 {
+    public static bool EffectiveQueueItemSemanticallyMatches(
+        JsonElement effective,
+        ActionQueueItem expected)
+    {
+        if (effective.ValueKind != JsonValueKind.Object ||
+            expected.NormalizedCommand is null)
+        {
+            return false;
+        }
+        try
+        {
+            var actual = JsonSerializer.Deserialize<ActionQueueItem>(
+                effective.GetRawText(),
+                JsonDefaults.Options);
+            var normalizedExpected = JsonSerializer.Deserialize<
+                ActionQueueItem>(
+                    JsonSerializer.Serialize(expected, JsonDefaults.Options),
+                    JsonDefaults.Options);
+            if (actual is null || normalizedExpected is null)
+                return false;
+            NormalizeGeneratedIdentity(actual);
+            NormalizeGeneratedIdentity(normalizedExpected);
+            return string.Equals(
+                JsonSerializer.Serialize(actual, JsonDefaults.Options),
+                JsonSerializer.Serialize(
+                    normalizedExpected,
+                    JsonDefaults.Options),
+                StringComparison.Ordinal);
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
     public static bool EffectiveQueueItemMatches(
         JsonElement effective,
         ActionQueueItem expected,
@@ -242,6 +277,17 @@ internal static class ExecutionReceiptValidationSupport
         catch (JsonException)
         {
             return false;
+        }
+    }
+
+    private static void NormalizeGeneratedIdentity(ActionQueueItem item)
+    {
+        item.QueueItemId = string.Empty;
+        item.NormalizedCommand.StateHash = string.Empty;
+        foreach (var step in item.NormalizedCommand.Steps ??
+                 Array.Empty<CompiledActionStep>())
+        {
+            step.StepId = string.Empty;
         }
     }
 }

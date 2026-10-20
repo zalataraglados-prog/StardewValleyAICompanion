@@ -35,6 +35,8 @@ public sealed record CropMaintenanceCapacityEvaluation(
     int? WateringCanWaterLeft,
     int? WateringCanCapacity,
     bool? WateringCanBottomless,
+    bool WateringCanRefillRouteVerified,
+    int WateringCanRefillTicks,
     bool TimeBudgetFits,
     bool EnergyBudgetFits,
     bool WaterBudgetFits,
@@ -51,7 +53,8 @@ public static class CropMaintenanceCapacityEvaluator
     public static CropMaintenanceCapacityEvaluation Evaluate(
         SnapshotEnvelope snapshot,
         string locationId,
-        IReadOnlyCollection<CropMaintenanceTileTarget> targets)
+        IReadOnlyCollection<CropMaintenanceTileTarget> targets,
+        int verifiedWateringCanRefillTicks = 0)
     {
         if (snapshot is null)
             throw new ArgumentNullException(nameof(snapshot));
@@ -59,8 +62,9 @@ public static class CropMaintenanceCapacityEvaluator
             throw new ArgumentNullException(nameof(targets));
         if (string.IsNullOrWhiteSpace(locationId))
             throw new ArgumentException("Crop location is required.", nameof(locationId));
-        if (targets.Count == 0)
-            throw new ArgumentException("At least one crop tile is required.", nameof(targets));
+        if (verifiedWateringCanRefillTicks < 0)
+            throw new ArgumentOutOfRangeException(
+                nameof(verifiedWateringCanRefillTicks));
         var orderedTargets = targets
             .OrderBy(value => value.TileY)
             .ThenBy(value => value.TileX)
@@ -166,17 +170,10 @@ public static class CropMaintenanceCapacityEvaluator
         var harvestCount = orderedTargets.Count(value => value.Harvest);
         var movementTicks = CropMaintenanceBudgetPolicy.MovementTicks(
             movementTiles);
-        var actionTicks = checked(
+        var baseActionTicks = checked(
             CropMaintenanceBudgetPolicy.PlantingTicks(plantCount) +
             CropMaintenanceBudgetPolicy.WateringTicks(waterCount) +
             CropHarvestBudgetPolicy.HarvestTicksPerCrop * harvestCount);
-        var totalTicks = checked(movementTicks + actionTicks);
-        var requiredMinutes = GameClockBudgetPolicy.TicksToGameMinutes(totalTicks);
-        var availableMinutes = startTime.HasValue
-            ? Math.Max(0, GameClockBudgetPolicy.ClockMinutesBetween(
-                startTime.Value,
-                GameClockBudgetPolicy.AutonomousRecoveryStartTime))
-            : 0;
 
         int? canSlot = null;
         int? waterLeft = null;
@@ -184,6 +181,8 @@ public static class CropMaintenanceCapacityEvaluator
         bool? bottomless = null;
         var energyPerWater = 0d;
         var waterBudgetFits = waterCount == 0;
+        var refillRouteVerified = false;
+        var refillTicks = 0;
         if (waterCount > 0)
         {
             var can = ReadStateFieldValue(snapshot, "player", "watering_can_state");
@@ -204,7 +203,15 @@ public static class CropMaintenanceCapacityEvaluator
             else
             {
                 waterBudgetFits = bottomless == true || waterLeft >= waterCount;
-                if (!waterBudgetFits)
+                if (!waterBudgetFits &&
+                    waterCapacity >= waterCount &&
+                    verifiedWateringCanRefillTicks > 0)
+                {
+                    waterBudgetFits = true;
+                    refillRouteVerified = true;
+                    refillTicks = verifiedWateringCanRefillTicks;
+                }
+                else if (!waterBudgetFits)
                 {
                     reasons.Add(
                         "crop_capacity_watering_can_requires_unmodeled_refill_route");
@@ -212,6 +219,14 @@ public static class CropMaintenanceCapacityEvaluator
             }
         }
 
+        var actionTicks = checked(baseActionTicks + refillTicks);
+        var totalTicks = checked(movementTicks + actionTicks);
+        var requiredMinutes = GameClockBudgetPolicy.TicksToGameMinutes(totalTicks);
+        var availableMinutes = startTime.HasValue
+            ? Math.Max(0, GameClockBudgetPolicy.ClockMinutesBetween(
+                startTime.Value,
+                GameClockBudgetPolicy.AutonomousRecoveryStartTime))
+            : 0;
         var requiredEnergy = waterCount * energyPerWater;
         var timeFits = allTargetsReachable && startTime.HasValue &&
             requiredMinutes <= availableMinutes;
@@ -241,6 +256,8 @@ public static class CropMaintenanceCapacityEvaluator
             waterLeft,
             waterCapacity,
             bottomless,
+            refillRouteVerified,
+            refillTicks,
             timeFits,
             energyFits,
             waterBudgetFits,

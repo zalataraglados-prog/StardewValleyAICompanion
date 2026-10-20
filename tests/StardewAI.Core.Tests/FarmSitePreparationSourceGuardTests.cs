@@ -40,6 +40,10 @@ public sealed class FarmSitePreparationSourceGuardTests
         Assert.Contains("FarmSitePreparationProjector.ReadContext", farmAdapter,
             StringComparison.Ordinal);
         Assert.Contains("Where(clump =>", projector, StringComparison.Ordinal);
+        Assert.Contains("map_width = mapWidth", projector,
+            StringComparison.Ordinal);
+        Assert.Contains("map_height = mapHeight", projector,
+            StringComparison.Ordinal);
         Assert.Contains("if (x == bounds.MaxX)", projector, StringComparison.Ordinal);
         Assert.Contains("if (y == bounds.MaxY)", projector, StringComparison.Ordinal);
         Assert.DoesNotContain(

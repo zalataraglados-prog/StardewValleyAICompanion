@@ -1253,6 +1253,20 @@ public static class SnapshotValidator
         "modded_state"
     };
 
+    private static readonly string[] FarmLayoutRequiredDomains =
+    {
+        "environment",
+        "identity",
+        "time",
+        "player",
+        "options",
+        "menus",
+        "transport",
+        "farm",
+        "current_location",
+        "locations"
+    };
+
     private static readonly string[] SocialRequiredDomains =
     {
         "environment",
@@ -1413,6 +1427,14 @@ public static class SnapshotValidator
         if (string.Equals(profile, "daily", StringComparison.OrdinalIgnoreCase))
         {
             return DailyRequiredDomains;
+        }
+
+        if (string.Equals(
+                profile,
+                "farm_layout",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return FarmLayoutRequiredDomains;
         }
 
         if (string.Equals(profile, "social", StringComparison.OrdinalIgnoreCase) ||

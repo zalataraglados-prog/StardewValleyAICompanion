@@ -229,11 +229,24 @@ function Invoke-JsonPost {
     catch {
         $detail = ""
         if ($null -ne $_.Exception.Response) {
-            $stream = $_.Exception.Response.GetResponseStream()
-            if ($null -ne $stream) {
-                $reader = [IO.StreamReader]::new($stream)
-                try { $detail = $reader.ReadToEnd() }
-                finally { $reader.Dispose() }
+            $errorResponse = $_.Exception.Response
+            try {
+                if ($errorResponse -is [Net.Http.HttpResponseMessage]) {
+                    $detail = $errorResponse.Content.ReadAsStringAsync().
+                        GetAwaiter().GetResult()
+                }
+                elseif ($errorResponse.PSObject.Methods.Name -contains
+                    "GetResponseStream") {
+                    $stream = $errorResponse.GetResponseStream()
+                    if ($null -ne $stream) {
+                        $reader = [IO.StreamReader]::new($stream)
+                        try { $detail = $reader.ReadToEnd() }
+                        finally { $reader.Dispose() }
+                    }
+                }
+            }
+            catch {
+                $detail = "response body unavailable: $($_.Exception.Message)"
             }
         }
         throw "POST $Url failed: $($_.Exception.Message) $detail"
@@ -445,7 +458,8 @@ function Invoke-RuntimeDailyPlanStep {
         [Parameter(Mandatory)] [string] $CandidateKind,
         [Parameter(Mandatory)] [string] $CandidateId,
         [string[]] $CandidateParameters = @(),
-        [string] $SourceSnapshotPath = ""
+        [string] $SourceSnapshotPath = "",
+        [switch] $AllowVerifiedContinuation
     )
     $stepRoot = Join-Path $Context.ArtifactDirectory $Name
     $sourcePath = Join-Path $stepRoot "source-snapshot.json"
@@ -490,13 +504,18 @@ function Invoke-RuntimeDailyPlanStep {
         $arguments.Add($parameter)
     }
     $stdout = & dotnet $arguments
+    $exitCode = $LASTEXITCODE
     $stdout | Set-Content -LiteralPath (Join-Path $stepRoot "loop.stdout.log") `
         -Encoding utf8
-    if ($LASTEXITCODE -ne 0) {
-        throw "Daily plan step $Name failed with exit $LASTEXITCODE."
+    $result = Read-RuntimeLoopArtifacts `
+        -LoopRoot $stepRoot -RunId $Context.RunId `
+        -AllowVerifiedContinuation:$AllowVerifiedContinuation
+    if ($exitCode -ne 0 -and
+        -not $result.VerifiedContinuationPending -and
+        -not $result.VerifiedObjectiveCompleted) {
+        throw "Daily plan step $Name failed with exit $exitCode."
     }
-    return Read-RuntimeLoopArtifacts `
-        -LoopRoot $stepRoot -RunId $Context.RunId
+    return $result
 }
 
 function Invoke-RuntimePrecompiledQueue {
@@ -505,6 +524,7 @@ function Invoke-RuntimePrecompiledQueue {
         [Parameter(Mandatory)] [string] $Name,
         [Parameter(Mandatory)] [string] $QueuePath,
         [Parameter(Mandatory)] [string] $BeforePath,
+        [string] $BeforeSnapshotProfile = "",
         [ValidateSet("product", "runtime_harness")]
         [string] $ExecutionTarget = "product"
     )
@@ -536,6 +556,10 @@ function Invoke-RuntimePrecompiledQueue {
         "--after-snapshot-wait-ms", "1000",
         "--after-snapshot-poll-ms", "250"
     )) { $arguments.Add([string]$value) }
+    if (-not [string]::IsNullOrWhiteSpace($BeforeSnapshotProfile)) {
+        $arguments.Add("--snapshot-file-profile")
+        $arguments.Add($BeforeSnapshotProfile)
+    }
     if ($ExecutionTarget -eq "product") {
         $arguments.Add("--use-product-executor")
     }
@@ -591,7 +615,8 @@ function Invoke-RuntimeTeacherPreferenceQueue {
 function Read-RuntimeLoopArtifacts {
     param(
         [Parameter(Mandatory)] [string] $LoopRoot,
-        [Parameter(Mandatory)] [string] $RunId
+        [Parameter(Mandatory)] [string] $RunId,
+        [switch] $AllowVerifiedContinuation
     )
     $root = Join-Path $LoopRoot "runs\$RunId\live-snapshots"
     $queuePath = Join-Path $root "compiled-queue-0001.json"
@@ -605,7 +630,29 @@ function Read-RuntimeLoopArtifacts {
     }
     $execution = Get-Content -LiteralPath $executionPath -Raw |
         ConvertFrom-Json
-    if ([string]$execution.status -ne "applied" -or
+    $verifiedContinuationPending =
+        $AllowVerifiedContinuation -and
+        [string]$execution.status -eq "blocked" -and
+        [string]$execution.primitive_verification_status -eq "verified" -and
+        [bool]$execution.after_snapshot_fresh -and
+        [bool]$execution.selected_queue_continuation_retry_next_iteration -and
+        [string]$execution.queue_replan_stop_reason -eq
+            "selected_queue_continuation_retry_next_iteration" -and
+        [int]$execution.executed_item_count -gt 0 -and
+        @($execution.block_reasons).Count -eq 0
+    $verifiedObjectiveCompleted =
+        $AllowVerifiedContinuation -and
+        [string]$execution.status -eq "blocked" -and
+        [string]$execution.primitive_verification_status -eq "verified" -and
+        [bool]$execution.after_snapshot_fresh -and
+        [bool]$execution.objective_continuation_completed -and
+        [bool]$execution.selected_queue_decision_complete -and
+        @($execution.completed_objective_continuations).Count -eq 1 -and
+        [int]$execution.executed_item_count -gt 0 -and
+        @($execution.block_reasons).Count -eq 0
+    if (([string]$execution.status -ne "applied" -and
+            -not $verifiedContinuationPending -and
+            -not $verifiedObjectiveCompleted) -or
         -not [bool]$execution.after_snapshot_fresh) {
         throw "Loop execution was not applied with a fresh after snapshot."
     }
@@ -618,6 +665,8 @@ function Read-RuntimeLoopArtifacts {
         Before = Get-Content -LiteralPath $beforePath -Raw | ConvertFrom-Json
         Execution = $execution
         After = Get-Content -LiteralPath $afterPath -Raw | ConvertFrom-Json
+        VerifiedContinuationPending = $verifiedContinuationPending
+        VerifiedObjectiveCompleted = $verifiedObjectiveCompleted
     }
 }
 

@@ -104,6 +104,7 @@ public sealed partial class ModEntry : Mod
         var beforeMoney = Game1.player.Money;
         var beforeCount = CountInventoryItems(qualifiedItemId);
         var beforeStock = stock.Stock;
+        var expectedItemIncrease = itemToAdd.Stack;
         var started = DateTimeOffset.UtcNow.ToString("O");
         Game1.player.Money -= stock.Price * quantity;
         var accepted = Game1.player.addItemToInventoryBool(itemToAdd);
@@ -121,7 +122,6 @@ public sealed partial class ModEntry : Mod
         var afterMoney = Game1.player.Money;
         var afterCount = CountInventoryItems(qualifiedItemId);
         var afterStock = stock.Stock;
-        var expectedItemIncrease = itemToAdd.Stack;
         var verified = afterMoney == beforeMoney - stock.Price * quantity &&
             afterCount == beforeCount + expectedItemIncrease;
         var verificationReasons = verified

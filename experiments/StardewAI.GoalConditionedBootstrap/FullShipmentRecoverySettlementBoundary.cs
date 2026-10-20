@@ -176,6 +176,34 @@ internal static partial class FullShipmentRecoverySettlementBoundaryProjector
     }
 
     private static string HashPersistentState(SnapshotEnvelope snapshot)
+        => HashCanonical(PersistentStateRows(snapshot));
+
+    internal static string[] ChangedPersistentFields(
+        SnapshotEnvelope before,
+        SnapshotEnvelope after)
+    {
+        var beforeRows = PersistentStateRows(before).ToDictionary(
+            pair => pair.Key,
+            pair => SnapshotHash.CanonicalizeSemantic(pair.Value),
+            StringComparer.Ordinal);
+        var afterRows = PersistentStateRows(after).ToDictionary(
+            pair => pair.Key,
+            pair => SnapshotHash.CanonicalizeSemantic(pair.Value),
+            StringComparer.Ordinal);
+        return beforeRows.Keys.Concat(afterRows.Keys)
+            .Distinct(StringComparer.Ordinal)
+            .Where(key => !beforeRows.TryGetValue(key, out var beforeValue) ||
+                !afterRows.TryGetValue(key, out var afterValue) ||
+                !string.Equals(
+                    beforeValue,
+                    afterValue,
+                    StringComparison.Ordinal))
+            .OrderBy(key => key, StringComparer.Ordinal)
+            .ToArray();
+    }
+
+    private static List<KeyValuePair<string, JsonElement>> PersistentStateRows(
+        SnapshotEnvelope snapshot)
     {
         var rows = new List<KeyValuePair<string, JsonElement>>();
         foreach (var domain in snapshot.State.OrderBy(
@@ -205,7 +233,7 @@ internal static partial class FullShipmentRecoverySettlementBoundaryProjector
                         field.Value)));
             }
         }
-        return HashCanonical(rows);
+        return rows;
     }
 
     private static bool IsVolatile(string domain, string field) =>

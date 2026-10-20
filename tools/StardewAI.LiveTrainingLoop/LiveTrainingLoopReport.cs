@@ -31,6 +31,9 @@ public sealed class LiveTrainingLoopReport
     [JsonPropertyName("snapshot_file")]
     public string SnapshotFile { get; set; } = string.Empty;
 
+    [JsonPropertyName("snapshot_file_profile")]
+    public string SnapshotFileProfile { get; set; } = string.Empty;
+
     [JsonPropertyName("snapshot_artifact_mode")]
     public string SnapshotArtifactMode { get; set; } =
         ContentAddressedJsonArtifactStore.PlainMode;

@@ -30,10 +30,20 @@ internal static partial class FullShipmentRecoverySettlementBoundaryProjector
             case ("quests", "adventure_guild_reward"):
                 NormalizeAdventureGuildReward(value);
                 break;
+            case ("quests", "daily_quest_offer"):
+                NormalizeDailyQuestOffer(value);
+                break;
             case ("world_progress", "game_state_query_unlock_state"):
                 NormalizeGameStateQueryUnlockState(value);
                 break;
+            case ("world_progress", "game_state_query_calendar_state"):
+                NormalizeGameStateQueryCalendarState(value);
+                break;
+            case ("world_progress", "marriage_house"):
+                NormalizeMarriageHouse(value);
+                break;
         }
+        RuntimeSnapshotBoundaryNormalization.RemoveNonSemanticMetadata(value);
         return JsonSerializer.SerializeToElement(normalized);
     }
 
@@ -89,6 +99,30 @@ internal static partial class FullShipmentRecoverySettlementBoundaryProjector
             reward.Remove(field);
     }
 
+    private static void NormalizeDailyQuestOffer(JsonNode value)
+    {
+        if (value is not JsonObject offer)
+            return;
+        offer.Remove("offer_fingerprint");
+        if (offer["quest"] is not JsonObject quest)
+            return;
+        foreach (var field in new[]
+                 {
+                     "title",
+                     "title_available",
+                     "description",
+                     "description_available",
+                     "current_objective",
+                     "current_objective_available",
+                     "reward_description"
+                 })
+        {
+            quest.Remove(field);
+        }
+        if (quest["per_type_fields"] is JsonObject perTypeFields)
+            perTypeFields.Remove("target_message");
+    }
+
     private static void NormalizeGameStateQueryUnlockState(JsonNode value)
     {
         if (value["players"] is not JsonArray players)
@@ -98,5 +132,20 @@ internal static partial class FullShipmentRecoverySettlementBoundaryProjector
             if (player["stats"] is JsonObject stats)
                 stats.Remove("stepsTaken");
         }
+    }
+
+    private static void NormalizeGameStateQueryCalendarState(JsonNode value)
+    {
+        if (value is JsonObject calendar)
+            calendar.Remove("time_of_day");
+    }
+
+    private static void NormalizeMarriageHouse(JsonNode value)
+    {
+        if (value is not JsonObject marriageHouse)
+            return;
+        marriageHouse.Remove("robin_present_at_counter");
+        if (marriageHouse["home_renovations"] is JsonObject renovations)
+            renovations.Remove("robin_present_at_service");
     }
 }
