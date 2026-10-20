@@ -81,6 +81,7 @@ var commandDefinitions = new CommandDefinition[]
     new("build-money-revenue-crop-shared-shipping-settlement-proof", BuildMoneyRevenueCropSharedShippingSettlementProof),
     new("build-money-revenue-crop-production-proof-checkpoint", BuildMoneyRevenueCropProductionProofCheckpoint),
     new("build-money-revenue-crop-native-production-segment", BuildMoneyRevenueCropNativeProductionSegment),
+    new("build-money-revenue-crop-production-teacher-comparison", BuildMoneyRevenueCropProductionTeacherComparison),
     new("build-money-revenue-terminal-proof-collection-checkpoint", BuildMoneyRevenueTerminalProofCollectionCheckpoint),
     new("build-money-revenue-terminal-proof-index", BuildMoneyRevenueTerminalProofIndex),
     new("build-strategy-ledger-boundary-capture", BuildStrategyLedgerBoundaryCapture),
@@ -914,6 +915,16 @@ static void BuildMoneyRevenueCropNativeProductionSegment(Arguments options)
         options.Required("summary"));
     Write(options.Required("output"), receipt);
     if (!receipt.NativeProductionSegmentVerified)
+        Environment.ExitCode = 2;
+}
+
+static void BuildMoneyRevenueCropProductionTeacherComparison(
+    Arguments options)
+{
+    var receipt = MoneyRevenueCropProductionTeacherComparisonBuilder.Build(
+        options.Required("segment-receipt"));
+    Write(options.Required("output"), receipt);
+    if (!receipt.OutcomeBackedTeacherComparisonVerified)
         Environment.ExitCode = 2;
 }
 

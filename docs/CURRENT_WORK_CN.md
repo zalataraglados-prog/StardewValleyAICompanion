@@ -10,9 +10,10 @@
 - checkpoint v12 已达到 `verified fragments=6 / pending requests=0`。planting layout、seed acquisition、seed reservation、aggregate daily capacity、shared native lifecycle 与 terminal settlement 六个请求全部由当前源码独立重建；output retention 和 settlement capacity 继续作为支持证明。终局 recurrence 从 total day `18` 推进到 `19`（春 20 日 06:00），`money 50 -> 925`、`totalMoneyEarned 0 -> 875`，实际原生收入为 `875g`。
 - 源存档目录哈希在运行前后均为 `68ddc8dbbe09382f2e7ba1c9d5d1e8dd6d0ffaef59acf9367415b4678f59366d`，隔离 Mod 根目录也未变化。最终透明状态哈希为 `5d0e30548a10e62a94caef5c241bd439ee3fd68dec11aa48e35d757e4d17d058`，最终隔离存档树哈希为 `9429c6d01d327111af8c81d0c36f2e318ccc4f1b0ea3094d84e19f25308b22e4`。睡眠回执包含确认、跨日、原生保存、菜单关闭、世界稳定和非职业升级菜单原生关闭六项原因。
 - `money_revenue_crop_native_production_segment_receipt.v1` 已对 v10 做完整深回放。它从 run summary 逐层重建 Teacher 决策、commit receipt、obligation plan、native run plan、checkpoint 和 terminal recurrence，并重新哈希源存档、双 Mod、最终透明快照及最终隔离存档树。回执确认 Teacher 完整候选数 `50`、选中 `(O)474` 共 `5` 格、购种成本 `400g`、保守/实际毛收入 `875g`、净现金收入 `475g`；结果哈希为 `9cb93fde39c45b8e83cc5f541f64b3de7929985381a79620b3d2724acf04f6ec`。
-- 该结果关闭的是第一条完整生产段，不是 Money threshold cell：`875g` 尚未跨越最低 `50,000g` criterion，且还没有 outcome-backed Teacher comparison 与 criterion-local join。因此 `Money production cells=0/18`、`CoverageGateReady=2/19`、`formal_product_training_authorized=false` 均保持不变。
-- 下一固定顺序：用该回执把已有 Teacher 完整候选分母与实际执行的选中候选连接为 outcome-backed comparison；再从该段最终隔离存档捕获下一次 Teacher 边界并重复，不从零随机探索。只有累计原生轨迹真实跨越权威 Money 阈值时，才接入既有 criterion-local `6 x 3` production join。
-- 未来 runner 摘要升级为 `money_crop_native_production_run_summary.v2`，会直接落盘最终快照路径/哈希、最终状态哈希和最终隔离存档树哈希；回执构建器仍兼容已成功的 v1/v10，但 v2 缺失任一最终身份都会失败关闭。当前验证基线：PowerShell AST 通过，新增守卫 `3/3`，Core game-free `454/454`，GoalConditionedBootstrap Release `0 warning / 0 error`。
+- `money_revenue_crop_production_teacher_comparison_receipt.v1` 已把上述原生结果接回完整 Teacher 分母：`50` 个候选中 `5` 个 admitted、`45` 个带明确原因 blocked，选中候选对另外 `4` 个 admitted 候选形成确定性偏好对。只有选中候选 `crop:474:SeedShop:5` 带原生观测，未执行候选不会伪装成 native outcome。comparison receipt 哈希为 `6ed3e5ab911d6b3c1ce6bca8f3edce7a81de2b6a5ab0293e283792a22874b392`。
+- 该结果关闭的是第一条完整生产段及其 segment-level outcome-backed Teacher comparison，不是 Money threshold cell：`875g` 尚未跨越最低 `50,000g` criterion，且 comparison receipt 明确保持 `criterion_local_join_ready=false`。因此 `Money production cells=0/18`、`CoverageGateReady=2/19`、`formal_product_training_authorized=false` 均保持不变。
+- 下一固定顺序：从该段最终隔离存档捕获下一次 Teacher 边界并重复，不从零随机探索。只有累计原生轨迹真实跨越权威 Money 阈值时，才接入既有 criterion-local `6 x 3` production join。
+- 未来 runner 摘要升级为 `money_crop_native_production_run_summary.v2`，会直接落盘最终快照路径/哈希、最终状态哈希和最终隔离存档树哈希；回执构建器仍兼容已成功的 v1/v10，但 v2 缺失任一最终身份都会失败关闭。当前验证基线：PowerShell AST 通过，Core game-free `455/455`，GoalConditionedBootstrap Release `0 warning / 0 error`。
 
 ## 历史记录 · 2026-10-20 Money v22 证据恢复与终端结算
 

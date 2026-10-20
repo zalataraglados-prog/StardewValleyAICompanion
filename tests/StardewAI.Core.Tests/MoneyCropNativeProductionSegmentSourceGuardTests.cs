@@ -18,6 +18,14 @@ public sealed class MoneyCropNativeProductionSegmentSourceGuardTests
         "experiments",
         "StardewAI.GoalConditionedBootstrap",
         "Program.cs");
+    private static readonly string ComparisonBuilder = ReadRepositoryFile(
+        "experiments",
+        "StardewAI.GoalConditionedBootstrap",
+        "MoneyRevenueCropProductionTeacherComparisonBuilder.cs");
+    private static readonly string ComparisonContracts = ReadRepositoryFile(
+        "experiments",
+        "StardewAI.GoalConditionedBootstrap",
+        "MoneyRevenueCropProductionTeacherComparisonContracts.cs");
     private static readonly string Runner = ReadRepositoryFile(
         "scripts",
         "Invoke-RuntimeMoneyCropNativeProduction.ps1");
@@ -100,6 +108,39 @@ public sealed class MoneyCropNativeProductionSegmentSourceGuardTests
         Assert.Contains(
             "build-money-revenue-crop-native-production-segment",
             Program,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void CropTeacherComparisonKeepsCounterfactualsDistinctFromOutcomes()
+    {
+        Assert.Contains(
+            "MoneyRevenueCropNativeProductionSegmentBuilder.Verify",
+            ComparisonBuilder,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "MoneyRevenueCropProductionTeacherDecisionBuilder.Build",
+            ComparisonBuilder,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "value.Selected ? segment.ActualGrossRevenue : null",
+            ComparisonBuilder,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "CriterionLocalJoinReady = false",
+            ComparisonBuilder,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Unexecuted candidates are never presented as native outcomes",
+            ComparisonContracts,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "MoneyRevenueAlternativeComparer.Compare",
+            ComparisonBuilder,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "FormalProductTrainingAuthorized = true",
+            ComparisonBuilder + ComparisonContracts,
             StringComparison.Ordinal);
     }
 

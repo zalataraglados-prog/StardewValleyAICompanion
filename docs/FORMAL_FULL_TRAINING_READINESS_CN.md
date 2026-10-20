@@ -18,7 +18,9 @@ Money 的第一条完整原生作物生产段 `money-crop-native-20261021-pricef
 
 `money_revenue_crop_native_production_segment_receipt.v1` 已完成并对 v10 深回放：Teacher 决策、commit receipt、obligation/run plan、checkpoint、terminal recurrence、最终透明快照和最终隔离存档树均从路径与哈希重新核验。回执确认 `50` 个 Teacher 候选、选中 `5` 格 `(O)474`、实际购种成本 `400g`、毛收入 `875g`、净现金收入 `475g`，并正确输出空阈值集合；它不创建 Teacher comparison、Money cell 或训练授权。
 
-**准入规则没有降低：**该生产段尚未跨越最低 `50,000g` Money criterion，也尚未通过 outcome-backed Teacher comparison 与 criterion-local join，因此不能增加 `0/18` 分子。下一门是用已验证生产段回执与完整 Teacher 候选分母建立 outcome-backed comparison，随后从最终隔离存档继续下一次 Teacher 决策。只有累计原生轨迹真实跨越阈值，并且相应 train/validation/test 分区的 exact comparison 和 native outcome 均闭合时，Money cell 才能入账。Full Shipment current-authority `26/26` 只证明其 runtime stratum，不改变全局 `2/19`。
+`money_revenue_crop_production_teacher_comparison_receipt.v1` 已关闭 segment-level comparison：完整保留 `50` 候选、`5` admitted、`45` blocked 及 `4` 条选中候选偏好对，并只把真实成本/收入绑定到唯一执行候选。它不把 counterfactual 推演冒充原生结果，也明确保持 `criterion_local_join_ready=false`。
+
+**准入规则没有降低：**该生产段尚未跨越最低 `50,000g` Money criterion，也尚未通过 criterion-local join，因此不能增加 `0/18` 分子。下一门是从最终隔离存档继续下一次 Teacher 决策。只有累计原生轨迹真实跨越阈值，并且相应 train/validation/test 分区的 exact comparison 和 native outcome 均闭合时，Money cell 才能入账。Full Shipment current-authority `26/26` 只证明其 runtime stratum，不改变全局 `2/19`。
 
 ## 已收口待后续证据 · 2026-10-18 Money 种子预留 proof
 
