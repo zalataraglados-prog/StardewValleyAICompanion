@@ -71,9 +71,20 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
             .ThenBy(value => value.LastHarvestTotalDay)
             .ThenBy(value => value.RequiredWateringActionCount)
             .ThenBy(value => value.SeedId, StringComparer.Ordinal)
-            .FirstOrDefault()
-            ?? throw new InvalidDataException(
-                "Money Revenue crop-production Teacher found no admitted crop candidate.");
+            .FirstOrDefault();
+        if (selected is null)
+        {
+            var rejectionSummary = evaluations
+                .SelectMany(value => value.BlockReasons)
+                .GroupBy(value => value, StringComparer.Ordinal)
+                .OrderByDescending(group => group.Count())
+                .ThenBy(group => group.Key, StringComparer.Ordinal)
+                .Select(group => $"{group.Key}={group.Count()}");
+            throw new InvalidDataException(
+                "Money Revenue crop-production Teacher found no admitted " +
+                $"crop candidate among {evaluations.Length} evaluations. " +
+                "Rejections: " + string.Join(",", rejectionSummary));
+        }
         var selectedEvaluations = evaluations.Select(value => value with
         {
             Selected = value.SeedId == selected.SeedId &&

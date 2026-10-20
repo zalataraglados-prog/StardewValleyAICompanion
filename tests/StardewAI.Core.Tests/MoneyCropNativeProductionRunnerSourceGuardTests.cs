@@ -77,6 +77,10 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
             "Item.sellToStorePrice(-1)",
             FarmProjection,
             StringComparison.Ordinal);
+        Assert.Contains(
+            "vanilla_1_6_crop_data",
+            FarmProjection,
+            StringComparison.Ordinal);
     }
 
     [Fact]
