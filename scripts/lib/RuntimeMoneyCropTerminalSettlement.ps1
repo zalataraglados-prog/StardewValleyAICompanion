@@ -118,6 +118,8 @@ function Invoke-RuntimeCropTerminalSettlement {
     $continuationParameters = @(
         [ordered]@{ name = "continuation.option_id"; value =
             "executor.ship_inventory_item_to_bin" },
+        [ordered]@{ name = "continuation.target_location"; value =
+            "Farm" },
         [ordered]@{ name = "continuation.qualified_item_id"; value =
             $qualifiedItemId },
         [ordered]@{ name = "continuation.slot_index"; value =
@@ -152,6 +154,7 @@ function Invoke-RuntimeCropTerminalSettlement {
     $depositTransitions = [Collections.Generic.List[object]]::new()
     for ($index = 1; $index -le $minimumUnits; $index++) {
         $shipParameters = @(
+            [ordered]@{ name = "target_location"; value = "Farm" },
             [ordered]@{ name = "target_tile_x"; value =
                 [string]$binTileX },
             [ordered]@{ name = "target_tile_y"; value =

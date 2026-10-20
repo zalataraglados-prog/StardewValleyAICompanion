@@ -356,6 +356,10 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains("executor.ship_inventory_item_to_bin",
             TerminalSettlementRuntime, StringComparison.Ordinal);
+        Assert.Contains("name = \"target_location\"; value = \"Farm\"",
+            TerminalSettlementRuntime, StringComparison.Ordinal);
+        Assert.Contains("continuation.target_location",
+            TerminalSettlementRuntime, StringComparison.Ordinal);
         Assert.Contains("terminal-settlement-home-ingress",
             TerminalSettlementRuntime, StringComparison.Ordinal);
         Assert.Contains("native_shipping_settlement",
