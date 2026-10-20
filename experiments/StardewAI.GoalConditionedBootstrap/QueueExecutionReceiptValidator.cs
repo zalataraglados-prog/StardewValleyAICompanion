@@ -142,7 +142,7 @@ internal static partial class QueueExecutionReceiptValidator
                 string.Equals(step.SourceStateHash, step.AfterStateHash,
                     StringComparison.Ordinal) ||
                 step.BeforeGameTick != expectedTick ||
-                step.AfterGameTick <= step.BeforeGameTick)
+                step.AfterGameTick < step.BeforeGameTick)
                 reasons.Add("queue_execution_receipt_step_transition_mismatch:" + index);
             if (!string.Equals(step.Status, "applied", StringComparison.Ordinal) ||
                 !step.AfterSnapshotFresh ||

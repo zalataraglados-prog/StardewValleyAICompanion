@@ -41,6 +41,17 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
         FindRepositoryFile(
             "scripts",
             "Finalize-RuntimeMoneyCropNativeProductionEvidence.ps1"));
+    private static readonly string QueueReceiptValidator = File.ReadAllText(
+        FindRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "QueueExecutionReceiptValidator.cs"));
+    private static readonly string ContinuationReceiptValidator =
+        File.ReadAllText(
+            FindRepositoryFile(
+                "experiments",
+                "StardewAI.GoalConditionedBootstrap",
+                "QueueExecutionReceiptValidator.Continuation.cs"));
     private static readonly string SeedReservationCommitBuilder =
         File.ReadAllText(
             FindRepositoryFile(
@@ -470,6 +481,27 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
         Assert.Contains("Content.ReadAsStringAsync()", CommonRuntime,
             StringComparison.Ordinal);
         Assert.Contains("GetResponseStream", CommonRuntime,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void NativeReceiptAllowsSameTickStateChangingSubStepsOnly()
+    {
+        Assert.Contains(
+            "receipt.AfterGameTick <= receipt.BeforeGameTick",
+            QueueReceiptValidator,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "step.AfterGameTick < step.BeforeGameTick",
+            QueueReceiptValidator,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "receipt.AfterGameTick <= receipt.BeforeGameTick",
+            ContinuationReceiptValidator,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "step.AfterGameTick < step.BeforeGameTick",
+            ContinuationReceiptValidator,
             StringComparison.Ordinal);
     }
 

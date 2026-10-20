@@ -223,7 +223,7 @@ internal static partial class QueueExecutionReceiptValidator
                 !step.StateHashChanged ||
                 string.Equals(step.SourceStateHash, step.AfterStateHash,
                     StringComparison.Ordinal) ||
-                step.AfterGameTick <= step.BeforeGameTick)
+                step.AfterGameTick < step.BeforeGameTick)
             {
                 reasons.Add("continuation_receipt_step_boundary_mismatch:" + index);
             }

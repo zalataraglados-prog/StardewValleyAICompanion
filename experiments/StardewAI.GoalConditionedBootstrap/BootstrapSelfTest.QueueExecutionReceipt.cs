@@ -73,6 +73,8 @@ internal static partial class BootstrapSelfTest
                     changedFacts)
             }
         };
+        receipt.StepResults[0].AfterGameTick = receiptBefore.GameTick;
+        receipt.StepResults[1].BeforeGameTick = receiptBefore.GameTick;
 
         var reasons = QueueExecutionReceiptValidator.Validate(
             queue,
@@ -85,8 +87,27 @@ internal static partial class BootstrapSelfTest
             receiptBefore.StateHash,
             requireTeacherPreferenceStateRebound: false);
         Require(reasons.Length == 0,
-            "A valid sequential non-rebound queue receipt was rejected: " +
+            "A valid same-tick native sub-step receipt was rejected: " +
             string.Join(",", reasons));
+
+        receipt.StepResults[0].AfterGameTick = receiptBefore.GameTick - 1;
+        receipt.StepResults[1].BeforeGameTick = receiptBefore.GameTick - 1;
+        reasons = QueueExecutionReceiptValidator.Validate(
+            queue,
+            receiptBefore,
+            receipt,
+            after,
+            receipt.RunId,
+            PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor,
+            selectedCandidateId,
+            receiptBefore.StateHash,
+            requireTeacherPreferenceStateRebound: false);
+        Require(reasons.Contains(
+                "queue_execution_receipt_step_transition_mismatch:0",
+                StringComparer.Ordinal),
+            "A native sub-step with a reversed game-tick boundary was admitted.");
+        receipt.StepResults[0].AfterGameTick = receiptBefore.GameTick;
+        receipt.StepResults[1].BeforeGameTick = receiptBefore.GameTick;
 
         var incorrectlyRebound = CloneQueueItem(second);
         incorrectlyRebound.NormalizedCommand.StateHash =
