@@ -20,6 +20,55 @@ namespace StardewAI.Core.Execution
 {
     public sealed partial class ActionQueueCompiler
     {
+        private static SmallModelPlanStep[] RemoveSatisfiedMovePrefix(
+            SmallModelPlanStep[] steps,
+            SnapshotEnvelope snapshot)
+        {
+            if (steps.Length < 2 || ActiveMenuOpen(snapshot))
+            {
+                return steps;
+            }
+
+            var currentLocation = ReadStateFieldString(
+                snapshot,
+                "player",
+                "location_id");
+            var currentX = ReadStateFieldIntOptional(
+                snapshot,
+                "player",
+                "tile_x");
+            var currentY = ReadStateFieldIntOptional(
+                snapshot,
+                "player",
+                "tile_y");
+            if (string.IsNullOrWhiteSpace(currentLocation) ||
+                !currentX.HasValue ||
+                !currentY.HasValue)
+            {
+                return steps;
+            }
+
+            var first = steps[0];
+            if (!string.Equals(
+                    first.Kind,
+                    "move_to_tile",
+                    StringComparison.Ordinal) ||
+                !first.TargetTileX.HasValue ||
+                !first.TargetTileY.HasValue ||
+                (!string.IsNullOrWhiteSpace(first.TargetLocation) &&
+                 !string.Equals(
+                     first.TargetLocation,
+                     currentLocation,
+                     StringComparison.OrdinalIgnoreCase)) ||
+                first.TargetTileX.Value != currentX.Value ||
+                first.TargetTileY.Value != currentY.Value)
+            {
+                return steps;
+            }
+
+            return steps.Skip(1).ToArray();
+        }
+
         private static SmallModelPlanStep[] ExpandCrossLocationMovePrefix(
             SmallModelPlanStep[] steps,
             SnapshotEnvelope snapshot)
