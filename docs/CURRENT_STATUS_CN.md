@@ -75,6 +75,8 @@ Full Shipment dependency graph 的节点早已声明 `full_recurrence_required_f
 
 2026-10-22 天气族已机器化登记并严格审计“已有 Rain Totem 的消费者”这一叶。它直接复用 EVD-288 的 `executor.use_rain_totem` 原生路径，要求精确 `(O)681`、可生效的 location-context、明日非默认节日、最终天气 Rain 和 fresh 原生回执；篡改最终天气会使绑定失效。该进展没有把 primitive 当成新的模型动作，也没有声称图腾会凭空出现。权威依赖图已锁定 `Data/CraftingRecipes` 的 `709 x1 + 432 x1 + 726 x5`、Foraging `9` 和 `(O)681 x1`，但配方材料生产及“今晚用图腾 -> 明日 `fishing.catch_fish`”调度仍待实现，所以天气族状态为 `runtime_consumer_bound_supply_and_scheduler_missing`，仍计入缺失。最新审计 SHA-256 为 `7dd897e3cfb2a52a5016c4f342eef003b6e6848f5d12d7d44f46aae2f84468a9`，未绑定族仍为 `5`，全局准入指标与训练禁令不变。
 
+2026-10-22 后续只读切片补齐 `player.rain_totem_crafting`：full profile 从实时已学配方与锁定 `Data/CraftingRecipes` 精确筛选 `(O)681`，输出原始配方、制作次数、材料槽、可制作数量、产物容量和 Workbench 来源。它与 `player.crab_pot_crafting` 共用唯一精确单产物扫描器，避免两套制作语义。该切片仅通过 TransparentBridge Release 编译，未启动游戏，也没有原生 Rain Totem 制作回执；材料生产与明日钓鱼调度仍缺失，因此天气族、`5` 个未绑定族、审计 SHA-256 和所有正式准入分子均不变。
+
 ## 2. 已完成并冻结的施工单位
 
 ### Full Shipment runtime evidence
