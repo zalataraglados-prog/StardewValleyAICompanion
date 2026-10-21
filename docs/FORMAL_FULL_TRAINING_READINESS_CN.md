@@ -26,9 +26,9 @@ Master Angler 的 Rusty Key/下水道组合也已闭合到现有上游根：`Ent
 
 蟹笼供应不再是训练前未绑定族。实时隔离快照锁定 FishShop 的等级门和价格：钓鱼 `2` 级出售 `(O)685` 鱼饵 `5g`，钓鱼 `3` 级出售 `(O)710` 蟹笼 `1500g`。实现继续只暴露 `fishing.collect_crab_pots`：远程服务缺饵时先买一个鱼饵；精确随机容量不足时先尝试既有原生制作，制作不可用才购买一个蟹笼，随后保留 continuation 并 fresh replan。该接线复用共享路线、商店交互、购买、关菜单、制作、放置、装饵和收取实现，未创建第二套执行系统。定向回归与防篡改自测通过，但新增运行时材料仅是实时商店投影，不冒充实际购买回执。fresh-save prerequisite 审计 SHA-256 为 `8cd925d8ede0a0c5d3e5b51817095958ffdd7f5ff100d588400f8dda2f46204b`，剩余 `5` 个未绑定族：天气保留或 Rain Totem、姜岛、Mutant Bug Lair、秘密森林或森林农场、女巫沼泽。正式训练和全部准入分子仍保持关闭。
 
-天气控制现只完成已有 Rain Totem 的原生消费叶，尚未完成整个生产者。`dependency.complete_master_angler.consume_owned_rain_totem` 复用 EVD-288 的 `executor.use_rain_totem`，严格绑定 `(O)681 x1`、context 路由、默认节日排除、明日有效天气 Rain 和 fresh 回执；防篡改自测通过。权威配方已经固定为 Foraging `9` 解锁，消耗 `709 x1 + 432 x1 + 726 x5` 并产出 `(O)681 x1`，但材料生产、原生制作和高层明日钓鱼调度尚未接入，因此天气族仍是 blocker，不能增加任何正式准入分子。最新审计 SHA-256 为 `7dd897e3cfb2a52a5016c4f342eef003b6e6848f5d12d7d44f46aae2f84468a9`，剩余 `5` 个未绑定族不变。
+天气控制先完成已有 Rain Totem 的原生消费叶。`dependency.complete_master_angler.consume_owned_rain_totem` 复用 EVD-288 的 `executor.use_rain_totem`，严格绑定 `(O)681 x1`、context 路由、默认节日排除、明日有效天气 Rain 和 fresh 回执；防篡改自测通过。该阶段审计 SHA-256 为 `7dd897e3cfb2a52a5016c4f342eef003b6e6848f5d12d7d44f46aae2f84468a9`。
 
-透明桥已进一步补上 `player.rain_totem_crafting` 的只读生产前态：实时发布配方是否已学、精确材料可用量、可制作数量、产物容量和 Workbench 材料来源，并与 Crab Pot 共用同一精确单产物扫描器。它不等于 `executor.craft_rain_totem`，也不证明材料来源或跨日调度已经闭合；因此不能降低上述 blocker 数量或放宽正式训练门。
+透明桥已进一步补上 `player.rain_totem_crafting` 的只读生产前态：实时发布配方是否已学、精确材料可用量、可制作数量、产物容量和 Workbench 材料来源，并与 Crab Pot 共用同一精确单产物扫描器。依赖图严格锁定 `rain_totem_crafting.v1`、Foraging `9`、`709 x1 + 432 x1 + 726 x5 -> (O)681 x1` 及只读边界；篡改 schema 会使天气状态退回。它不等于 `executor.craft_rain_totem`，也不证明材料来源或跨日调度已经闭合；天气族当前为 `runtime_consumer_and_crafting_read_bound_executor_supply_scheduler_missing`，最新审计 SHA-256 `09d9053c264208f11e95b1080da7b5d4db0958a790aa18d1f2640d76cd4d4748`，剩余 `5` 个未绑定族与正式训练门均不变。
 
 Money 的第一条完整原生作物生产段 `money-crop-native-20261021-pricefix-v10` 已通过：checkpoint v12 为 `6/6 verified、0 pending`，终局含 `5` 次单件原生投箱和唯一睡眠结算，实际收入 `875g`，最终为春 20 日 06:00、`money=925`、`totalMoneyEarned=875`。源存档和隔离 Mod 哈希均未漂移。这证明 native runner、购种、场地准备、作物生命周期、留存、容量和运输箱终局可以在同一连续真实轨迹中闭合。
 

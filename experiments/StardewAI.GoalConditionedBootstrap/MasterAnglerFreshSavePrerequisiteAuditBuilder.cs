@@ -31,6 +31,8 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
         "dependency.complete_master_angler.trap_infrastructure_gate";
     private const string OwnedRainTotemConsumerNode =
         "dependency.complete_master_angler.consume_owned_rain_totem";
+    private const string RainTotemCraftingReadNode =
+        "dependency.complete_master_angler.rain_totem_crafting_read_authority";
     private const string RustyKeyDirection = "obtain_rusty_key";
     private const string RustyKeyCompletionNode =
         "dependency.obtain_rusty_key.has_rusty_key";
@@ -437,10 +439,15 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                 ("current_state_gate_present_future_producer_missing",
                     new[] { "dependency.complete_master_angler.target_date_opportunity_producer" },
                     "Bind one sufficient rod acquisition before target windows; optional equipment upgrades must not become hard prerequisites."),
+            WeatherFamily when graph.HasBoundMasterAnglerOwnedRainTotemUse() &&
+                               graph.HasBoundMasterAnglerRainTotemCraftingRead() =>
+                ("runtime_consumer_and_crafting_read_bound_executor_supply_scheduler_missing",
+                    new[] { OwnedRainTotemConsumerNode, RainTotemCraftingReadNode },
+                    "The exact owned Rain Totem native consumer and live recipe/material read authority are bound. Add native crafting, material production and a high-level tomorrow-fishing preparation intent before marking weather complete."),
             WeatherFamily when graph.HasBoundMasterAnglerOwnedRainTotemUse() =>
-                ("runtime_consumer_bound_supply_and_scheduler_missing",
+                ("runtime_consumer_bound_crafting_read_supply_and_scheduler_missing",
                     new[] { OwnedRainTotemConsumerNode },
-                    "The exact owned Rain Totem native consumer is bound. Add authoritative recipe/material production and a high-level tomorrow-fishing preparation intent before marking weather complete."),
+                    "The exact owned Rain Totem native consumer is bound. Bind the live crafting projection, then add native crafting, material production and tomorrow-fishing scheduling."),
             WeatherFamily =>
                 ("current_state_gate_present_future_producer_missing",
                     new[] { "dependency.complete_master_angler.target_date_opportunity_producer" },
@@ -915,6 +922,56 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                        "replans_after_native_weather_transition"));
         }
 
+        public bool HasBoundMasterAnglerRainTotemCraftingRead()
+        {
+            if (!Directions.TryGetValue(MasterAnglerDirection, out var masterAngler) ||
+                !masterAngler.Nodes.TryGetValue(
+                    RainTotemCraftingReadNode,
+                    out var producer) ||
+                producer.Kind != "state_fact" ||
+                producer.Rule.ValueKind != JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            return producer.RequiredFieldPaths.SetEquals(new[]
+                   {
+                       "player.rain_totem_crafting"
+                   }) &&
+                   RuleString(producer.Rule, "binding_scope") ==
+                       "transparent_read_authority_only" &&
+                   RuleString(producer.Rule, "schema_version") ==
+                       "rain_totem_crafting.v1" &&
+                   RuleString(producer.Rule, "required_recipe_name") ==
+                       "Rain Totem" &&
+                   RuleInt(producer.Rule, "required_foraging_level") == 9 &&
+                   RuleString(producer.Rule, "output_qualified_item_id") ==
+                       "(O)681" &&
+                   RuleInt(producer.Rule, "output_count") == 1 &&
+                   RuleObjectIntsEqual(
+                       producer.Rule,
+                       "ingredient_amounts",
+                       new Dictionary<string, int>(StringComparer.Ordinal)
+                       {
+                           ["(O)709"] = 1,
+                           ["(O)432"] = 1,
+                           ["(O)726"] = 5
+                       }) &&
+                   RuleString(producer.Rule, "shared_projection_implementation") ==
+                       "ReadExactSingleOutputCraftingProjection" &&
+                   RuleFalse(producer.Rule, "native_execution_receipt_present") &&
+                   RuleFalse(producer.Rule, "material_producers_bound") &&
+                   RuleFalse(producer.Rule, "tomorrow_fishing_scheduler_bound") &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       FreshSaveInventoryNode,
+                       RainTotemCraftingReadNode,
+                       "selects_weather_supply_read_authority")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       RainTotemCraftingReadNode,
+                       OwnedRainTotemConsumerNode,
+                       "publishes_current_recipe_and_material_state_only"));
+        }
+
         public bool HasBoundMasterAnglerDesertBusAccess()
         {
             if (!Directions.TryGetValue(MasterAnglerDirection, out var masterAngler) ||
@@ -1059,6 +1116,10 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
         private static bool RuleBool(JsonElement rule, string name) =>
             rule.TryGetProperty(name, out var value) &&
             value.ValueKind is JsonValueKind.True;
+
+        private static bool RuleFalse(JsonElement rule, string name) =>
+            rule.TryGetProperty(name, out var value) &&
+            value.ValueKind is JsonValueKind.False;
 
         private static int RuleInt(JsonElement rule, string name) =>
             rule.TryGetProperty(name, out var value) && value.TryGetInt32(out var result)
