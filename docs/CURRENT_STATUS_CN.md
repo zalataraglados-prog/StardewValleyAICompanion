@@ -69,6 +69,8 @@ Full Shipment dependency graph 的节点早已声明 `full_recurrence_required_f
 
 2026-10-21 后续切片已关闭上述清单中的沙漠巴士前置。唯一共享 connector 链新增 `native_bus_transport`，透明桥实时读取票机、`ccVault`、Pam/自驾、动态票价、余额、坐骑及返回触发状态；编译器仍只产生 `executor.traverse_connector`，运行时调用原生确认框和巴士过场并校验地点/tile/钱款回执。Master Angler 依赖图严格组合现有 Community Center 完成事实、`fishing.catch_fish` 高层目标和单段 fresh 重绑定，篡改 connector 或关键边会失败关闭。当前证据级别是锁定源码核对、编译与离线测试通过，尚无本切片的真实游戏运行回执。最新审计剩余 `7` 个未绑定族，SHA-256 为 `40e3df4d946f9dbf09cf70c399f994b94e7c3038b619f76e7108e05fccd73890`；剩余为蟹笼配方/材料/饵料、姜岛、Mutant Bug Lair、秘密森林或森林农场、Rusty Key/下水道、天气保留或 Rain Totem、女巫沼泽。`training_label_eligible=false`，全局指标仍为 `5/19 executable、6/19 split-complete、5/19 CoverageGateReady、4/11 root ready`。
 
+2026-10-21 下水道切片继续把未绑定族降为 `6`。透明门现在把 `OpenedSewer || hasRustyKey` 视为可执行；Runtime Harness 按锁定 1.6.15 `EnterSewer` 控制流支持“钥匙开锁文本 -> mail 回执 -> 第二次原生交互 -> Sewer(16,11)”，无钥匙在动作入队前排除。Master Angler 节点严格引用 `obtain_rusty_key` 终态和关键 recurrence/event 边，并继续通过唯一 `fishing.catch_fish` 路由出口执行；这只完成跨 root 组合，不等于 Rusty Key root 的 60 件捐赠、Teacher/native 证据已经完成。最新审计 SHA-256 为 `00042d57ed53321e9b7510aa6dc1d8c5502aa11d16496513ced7146bb4e3f04c`；剩余族为蟹笼供应、姜岛、Mutant Bug Lair、秘密森林或森林农场、天气保留或 Rain Totem、女巫沼泽。当前仍只有锁定源码、编译和离线测试，没有本切片真实游戏回执；`training_label_eligible=false` 与全局指标不变。
+
 ## 2. 已完成并冻结的施工单位
 
 ### Full Shipment runtime evidence

@@ -204,6 +204,10 @@ namespace StardewAI.Core.OptionRegistry
                 !string.Equals(
                     gateKind,
                     "native_bus_transport",
+                    StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(
+                    gateKind,
+                    "warp_action",
                     StringComparison.OrdinalIgnoreCase))
             {
                 return null;

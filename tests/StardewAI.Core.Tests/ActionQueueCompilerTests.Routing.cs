@@ -700,6 +700,79 @@ public sealed partial class ActionQueueCompilerTests
     """);
 
     [Fact]
+    public void CompileAcceptsAuditedTwoInteractionSewerConnector()
+    {
+        var snapshot = SewerConnectorSnapshot(allowedNow: true);
+        var plan = Plan(
+            snapshot.StateHash,
+            new SmallModelPlanStep
+            {
+                StepId = "plan.step.town.to.sewer",
+                Kind = "traverse_connector",
+                TargetTileX = 34,
+                TargetTileY = 95,
+                EstimatedMinutes = 10,
+                Parameters = new[]
+                {
+                    new SmallModelActionParameter { Name = "connector_kind", Value = "action_warp" },
+                    new SmallModelActionParameter { Name = "expected_target_location", Value = "Sewer" },
+                    new SmallModelActionParameter { Name = "expected_arrival_tile_x", Value = "16" },
+                    new SmallModelActionParameter { Name = "expected_arrival_tile_y", Value = "11" }
+                }
+            });
+
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+
+        Assert.Equal("pending", queue.Status);
+        var item = Assert.Single(queue.Items);
+        Assert.Equal("executor.traverse_connector", item.OptionId);
+        Assert.Equal("location=Sewer;player.tile=16,11", Assert.Single(item.NormalizedCommand.Steps).ExpectedEffect);
+    }
+
+    [Fact]
+    public void CompileBlocksSewerConnectorWhenRustyKeyGateIsClosed()
+    {
+        var snapshot = SewerConnectorSnapshot(allowedNow: false);
+        var plan = Plan(
+            snapshot.StateHash,
+            new SmallModelPlanStep
+            {
+                StepId = "plan.step.town.to.sewer.blocked",
+                Kind = "traverse_connector",
+                TargetTileX = 34,
+                TargetTileY = 95,
+                Parameters = new[]
+                {
+                    new SmallModelActionParameter { Name = "connector_kind", Value = "action_warp" },
+                    new SmallModelActionParameter { Name = "expected_target_location", Value = "Sewer" },
+                    new SmallModelActionParameter { Name = "expected_arrival_tile_x", Value = "16" },
+                    new SmallModelActionParameter { Name = "expected_arrival_tile_y", Value = "11" }
+                }
+            });
+
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+
+        Assert.Equal("blocked", queue.Status);
+        Assert.Contains("connector_gate_closed", Assert.Single(queue.Items).BlockingReasons);
+    }
+
+    private static SnapshotEnvelope SewerConnectorSnapshot(bool allowedNow) => Snapshot($$"""
+    {
+      "player": {
+        "location_id": {"value":"Town","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+        "tile_x": {"value":33,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+        "tile_y": {"value":95,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+      },
+      "locations": {
+        "collision_grid": {"value":{"location_id":"Town","width":120,"height":120,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+        "route_action_branch_coverage": {"value":{"location_id":"Town","unsupported_for_route_training_count":0,"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+        "route_connectors": {"value":{"location_id":"Town","connectors":[{"kind":"action_warp","tile_x":34,"tile_y":95,"target_location":"Sewer","target_x":16,"target_y":11,"action":"EnterSewer","source_property":"Buildings.Action","resolved":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+        "route_gate_context": {"value":{"location_id":"Town","action_gates":[{"kind":"warp_action","tile_x":34,"tile_y":95,"action":"EnterSewer","rusty_key_available":{{allowedNow.ToString().ToLowerInvariant()}},"required_action_count":{{(allowedNow ? 2 : 0)}},"allowed_now":{{allowedNow.ToString().ToLowerInvariant()}},"unresolved_reason":{{(allowedNow ? "null" : "\"enter_sewer_rusty_key_missing\"")}}}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+      }
+    }
+    """);
+
+    [Fact]
     public void CompileReplacesCrossLocationMoveWithFirstTransparentConnectorAndReplanBoundary()
     {
         var snapshot = Snapshot("""

@@ -236,6 +236,11 @@ public sealed partial class ModEntry : Mod
             }
             else if (string.Equals(parts[0], "EnterSewer", StringComparison.OrdinalIgnoreCase))
             {
+                if (!Game1.player.mailReceived.Contains("OpenedSewer") &&
+                    !Game1.player.hasRustyKey)
+                {
+                    return "connector_enter_sewer_rusty_key_missing";
+                }
                 targetLocation = "Sewer";
                 targetX = 16;
                 targetY = 11;

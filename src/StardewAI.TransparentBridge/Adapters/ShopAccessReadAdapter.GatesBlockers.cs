@@ -233,6 +233,7 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
         {
             var opened = Game1.player?.mailReceived.Contains("OpenedSewer") == true;
             var hasRustyKey = Game1.player?.hasRustyKey == true;
+            var executableNow = opened || hasRustyKey;
             return new
             {
                 kind = "warp_action",
@@ -247,13 +248,11 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
                 mail_requirement_met = opened,
                 rusty_key_available = hasRustyKey,
                 required_action_count = opened ? 1 : hasRustyKey ? 2 : (int?)null,
-                allowed_on_capture_date = opened,
-                allowed_now = opened,
-                unresolved_reason = opened
+                allowed_on_capture_date = executableNow,
+                allowed_now = executableNow,
+                unresolved_reason = executableNow
                     ? (string?)null
-                    : hasRustyKey
-                        ? "enter_sewer_unlock_interaction_required"
-                        : "enter_sewer_rusty_key_missing"
+                    : "enter_sewer_rusty_key_missing"
             };
         }
 

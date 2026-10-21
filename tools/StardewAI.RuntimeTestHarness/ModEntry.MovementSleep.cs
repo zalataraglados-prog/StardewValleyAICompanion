@@ -589,6 +589,7 @@ public sealed partial class ModEntry : Mod
 
         if (Game1.activeClickableMenu is null)
         {
+            ArmNativeSewerUnlockRetry(move);
             return false;
         }
         if (Game1.activeClickableMenu is not DialogueBox dialogue ||
@@ -635,6 +636,36 @@ public sealed partial class ModEntry : Mod
         move.IncidentalDialoguePressAttempts++;
         move.IncidentalDialogueButtonHeld = true;
         return true;
+    }
+
+    private static void ArmNativeSewerUnlockRetry(ActiveTileMove move)
+    {
+        if (move.SewerOpenedAtStart ||
+            move.SewerUnlockObserved ||
+            !move.ConnectorActionAttempted ||
+            !string.Equals(
+                move.Pending.Request.ConnectorKind,
+                "action_warp",
+                StringComparison.OrdinalIgnoreCase) ||
+            Game1.player?.mailReceived.Contains("OpenedSewer") != true)
+        {
+            return;
+        }
+
+        var actionTile = move.ConnectorActionTile ?? move.TargetTile;
+        var action = Game1.currentLocation?.doesTileHaveProperty(
+            actionTile.X,
+            actionTile.Y,
+            "Action",
+            "Buildings");
+        var actionType = action?.Split(
+            ' ',
+            StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+        if (!string.Equals(actionType, "EnterSewer", StringComparison.OrdinalIgnoreCase))
+            return;
+
+        move.SewerUnlockObserved = true;
+        move.ConnectorActionAttempted = false;
     }
 
     private void ReleaseMovementIncidentalDialogueButton(
@@ -827,6 +858,18 @@ public sealed partial class ModEntry : Mod
             observedLocation,
             request.ExpectedTargetLocation,
             StringComparison.Ordinal);
+        if (move.SewerUnlockObserved)
+        {
+            if (!Game1.player.mailReceived.Contains("OpenedSewer"))
+            {
+                verified = false;
+                reasons.Add("connector_enter_sewer_unlock_receipt_missing");
+            }
+            else
+            {
+                reasons.Add("connector_enter_sewer_unlock_then_warp_observed");
+            }
+        }
         if (string.Equals(
                 request.ConnectorKind,
                 "native_bus_transport",

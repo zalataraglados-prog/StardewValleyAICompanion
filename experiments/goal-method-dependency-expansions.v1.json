@@ -533,6 +533,47 @@
           }
         },
         {
+          "id": "dependency.complete_master_angler.sewer_rusty_key_access",
+          "kind": "recurrence_rule",
+          "candidate_kinds": ["route_connector_tile"],
+          "required_field_paths": [
+            "world_progress.fish_collection_progress",
+            "player.has_rusty_key",
+            "quests.mail_received",
+            "time.total_days",
+            "time.time",
+            "player.location_id",
+            "player.tile_x",
+            "player.tile_y",
+            "locations.route_graph",
+            "locations.route_connectors",
+            "locations.route_gate_context",
+            "locations.collision_grid",
+            "menus.active_menu"
+          ],
+          "rule": {
+            "reuses_direction_id": "obtain_rusty_key",
+            "reuses_node_id": "dependency.obtain_rusty_key.has_rusty_key",
+            "reused_option_id": "fishing.catch_fish",
+            "connector_kind": "action_warp",
+            "source_locations": ["Forest", "Town"],
+            "native_action": "EnterSewer",
+            "target_location": "Sewer",
+            "target_x": 16,
+            "target_y": 11,
+            "unlock_mail_key": "OpenedSewer",
+            "locked_action_count": 2,
+            "opened_action_count": 1,
+            "native_gate_contract": "OpenedSewer enters immediately; otherwise an existing Rusty Key authorizes one native unlock interaction and ordinary dialogue dismissal before the second native interaction enters",
+            "queue_shape": "compile one action_warp through executor.traverse_connector; the mechanical executor performs the decompile-required second interaction only when the first native receipt added OpenedSewer",
+            "fresh_snapshot_after_every_native_primitive": true,
+            "fresh_native_receipt_required": true,
+            "deadline_total_day_exclusive": 224,
+            "source_authority": "locked game-1.6.15 GameLocation.performAction case EnterSewer",
+            "model_output_policy": "no new model-facing option; reuse fishing.catch_fish while the compiler and shared connector executor own sewer ingress"
+          }
+        },
+        {
           "id": "dependency.complete_master_angler.target_date_opportunity_producer",
           "kind": "state_fact",
           "required_field_paths": [
@@ -723,6 +764,9 @@
         { "from": "dependency.complete_master_angler.fresh_save_prerequisite_inventory", "to": "dependency.complete_master_angler.desert_bus_access", "kind": "selects_desert_access_requirement" },
         { "from": "dependency.complete_master_angler.desert_bus_access", "to": "dependency.complete_master_angler.target_date_opportunity_producer", "kind": "supplies_desert_location_access" },
         { "from": "dependency.complete_master_angler.desert_bus_access", "to": "dependency.complete_master_angler.acquisition_recurrence", "kind": "replans_after_native_bus_transport" },
+        { "from": "dependency.complete_master_angler.fresh_save_prerequisite_inventory", "to": "dependency.complete_master_angler.sewer_rusty_key_access", "kind": "selects_sewer_access_requirement" },
+        { "from": "dependency.complete_master_angler.sewer_rusty_key_access", "to": "dependency.complete_master_angler.target_date_opportunity_producer", "kind": "supplies_sewer_location_access" },
+        { "from": "dependency.complete_master_angler.sewer_rusty_key_access", "to": "dependency.complete_master_angler.acquisition_recurrence", "kind": "replans_after_native_sewer_primitive" },
         { "from": "dependency.complete_master_angler.target_date_opportunity_producer", "to": "dependency.complete_master_angler.current_legal_rod_attempt", "kind": "binds_current_runtime_candidate" },
         { "from": "dependency.complete_master_angler.trap_species_partition", "to": "dependency.complete_master_angler.trap_infrastructure_gate", "kind": "requires_infrastructure" },
         { "from": "dependency.complete_master_angler.trap_species_partition", "to": "dependency.complete_master_angler.trap_lifecycle_intent", "kind": "binds_high_level_recurrence" },

@@ -65,6 +65,7 @@ public sealed partial class ModEntry : Mod
             }
             StartedAt = DateTimeOffset.UtcNow.ToString("O");
             StartMoney = Game1.player.Money;
+            SewerOpenedAtStart = Game1.player.mailReceived.Contains("OpenedSewer");
         }
 
         public PendingExecution Pending { get; }
@@ -89,6 +90,8 @@ public sealed partial class ModEntry : Mod
         public string StartedAt { get; }
         public int StartMoney { get; }
         public bool NativeBusResponseSelected { get; set; }
+        public bool SewerOpenedAtStart { get; }
+        public bool SewerUnlockObserved { get; set; }
     }
 
     private sealed class ActiveNativeTool

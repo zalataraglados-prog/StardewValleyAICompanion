@@ -23,6 +23,15 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
     private const string CommunityCenterDirection = "complete_community_center";
     private const string CommunityCenterCompletionNode =
         "dependency.complete_community_center.native_completion";
+    private const string SewerAccessProducerNode =
+        "dependency.complete_master_angler.sewer_rusty_key_access";
+    private const string RustyKeyDirection = "obtain_rusty_key";
+    private const string RustyKeyCompletionNode =
+        "dependency.obtain_rusty_key.has_rusty_key";
+    private const string RustyKeyRecurrenceNode =
+        "dependency.obtain_rusty_key.threshold_recurrence";
+    private const string RustyKeyEventNode =
+        "dependency.obtain_rusty_key.native_key_event";
     private const string TargetDateOpportunityNode =
         "dependency.complete_master_angler.target_date_opportunity_producer";
     private const string MasterAnglerRecurrenceNode =
@@ -386,9 +395,13 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                         ? new[] { "raise_skill_levels:mining.reach_depth", "obtain_rusty_key" }
                         : new[] { "raise_skill_levels:mining.reach_depth" },
                     "Select and bind one exact sufficient route; the current baseline can reuse mine depth while sewer, Mutant Bug Lair and Witch's Swamp remain alternatives."),
-            "sewer_rusty_key_access" when graph.HasDirection("obtain_rusty_key") =>
+            "sewer_rusty_key_access" when graph.HasBoundMasterAnglerSewerAccess() =>
+                ("implemented_and_bound",
+                    new[] { SewerAccessProducerNode, RustyKeyCompletionNode },
+                    "The Master Angler recurrence composes the separately governed Rusty Key root with the exact one-or-two-interaction native sewer ingress and a fresh route receipt."),
+            "sewer_rusty_key_access" when graph.HasDirection(RustyKeyDirection) =>
                 ("reusable_but_unbound",
-                    new[] { "obtain_rusty_key" },
+                    new[] { RustyKeyDirection },
                     "Bind the Rusty Key recurrence and sewer ingress to Master Angler before Mutant Carp reserve."),
             "desert_bus_access" when graph.HasBoundMasterAnglerDesertBusAccess() =>
                 ("implemented_and_bound",
@@ -803,6 +816,80 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                        "replans_after_native_bus_transport"));
         }
 
+        public bool HasBoundMasterAnglerSewerAccess()
+        {
+            if (!Directions.TryGetValue(MasterAnglerDirection, out var masterAngler) ||
+                !Directions.TryGetValue(RustyKeyDirection, out var rustyKey) ||
+                !masterAngler.Nodes.TryGetValue(SewerAccessProducerNode, out var producer) ||
+                !rustyKey.Nodes.TryGetValue(RustyKeyCompletionNode, out var completion) ||
+                !rustyKey.Nodes.TryGetValue(RustyKeyRecurrenceNode, out var recurrence) ||
+                !rustyKey.Nodes.TryGetValue(RustyKeyEventNode, out var keyEvent) ||
+                producer.Kind != "recurrence_rule" ||
+                completion.Kind != "terminal_fact" ||
+                recurrence.Kind != "recurrence_rule" ||
+                keyEvent.Kind != "policy_option_transition" ||
+                keyEvent.OptionId != "story.advance_event" ||
+                producer.Rule.ValueKind != JsonValueKind.Object)
+                return false;
+
+            var requiredFields = new[]
+            {
+                "world_progress.fish_collection_progress",
+                "player.has_rusty_key",
+                "quests.mail_received",
+                "time.total_days",
+                "time.time",
+                "player.location_id",
+                "player.tile_x",
+                "player.tile_y",
+                "locations.route_graph",
+                "locations.route_connectors",
+                "locations.route_gate_context",
+                "locations.collision_grid",
+                "menus.active_menu"
+            };
+            return producer.CandidateKinds.SetEquals(new[] { "route_connector_tile" }) &&
+                   requiredFields.All(producer.RequiredFieldPaths.Contains) &&
+                   RuleString(producer.Rule, "reuses_direction_id") == RustyKeyDirection &&
+                   RuleString(producer.Rule, "reuses_node_id") == RustyKeyCompletionNode &&
+                   RuleString(producer.Rule, "reused_option_id") == "fishing.catch_fish" &&
+                   RuleString(producer.Rule, "connector_kind") == "action_warp" &&
+                   RuleStringSetEquals(
+                       producer.Rule,
+                       "source_locations",
+                       new[] { "Forest", "Town" }) &&
+                   RuleString(producer.Rule, "native_action") == "EnterSewer" &&
+                   RuleString(producer.Rule, "target_location") == "Sewer" &&
+                   RuleInt(producer.Rule, "target_x") == 16 &&
+                   RuleInt(producer.Rule, "target_y") == 11 &&
+                   RuleString(producer.Rule, "unlock_mail_key") == "OpenedSewer" &&
+                   RuleInt(producer.Rule, "locked_action_count") == 2 &&
+                   RuleInt(producer.Rule, "opened_action_count") == 1 &&
+                   RuleBool(producer.Rule, "fresh_snapshot_after_every_native_primitive") &&
+                   RuleBool(producer.Rule, "fresh_native_receipt_required") &&
+                   RuleInt(producer.Rule, "deadline_total_day_exclusive") == 224 &&
+                   rustyKey.Edges.Contains(new DependencyEdgeInventory(
+                       RustyKeyRecurrenceNode,
+                       RustyKeyEventNode,
+                       "enables_after_threshold")) &&
+                   rustyKey.Edges.Contains(new DependencyEdgeInventory(
+                       RustyKeyEventNode,
+                       RustyKeyCompletionNode,
+                       "settles")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       FreshSaveInventoryNode,
+                       SewerAccessProducerNode,
+                       "selects_sewer_access_requirement")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       SewerAccessProducerNode,
+                       TargetDateOpportunityNode,
+                       "supplies_sewer_location_access")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       SewerAccessProducerNode,
+                       MasterAnglerRecurrenceNode,
+                       "replans_after_native_sewer_primitive"));
+        }
+
         private static string RuleString(JsonElement rule, string name) =>
             rule.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
                 ? value.GetString() ?? string.Empty
@@ -831,6 +918,20 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                        expected.TryGetValue(property.Name, out var expectedValue) &&
                        property.Value.TryGetInt32(out var actualValue) &&
                        actualValue == expectedValue);
+        }
+
+        private static bool RuleStringSetEquals(
+            JsonElement rule,
+            string name,
+            IEnumerable<string> expected)
+        {
+            if (!rule.TryGetProperty(name, out var value) ||
+                value.ValueKind != JsonValueKind.Array)
+                return false;
+            return value.EnumerateArray()
+                .Select(item => item.GetString() ?? string.Empty)
+                .ToHashSet(StringComparer.Ordinal)
+                .SetEquals(expected);
         }
     }
 }
