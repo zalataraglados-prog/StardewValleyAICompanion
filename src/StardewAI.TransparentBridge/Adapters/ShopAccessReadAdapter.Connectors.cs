@@ -152,6 +152,26 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
                     unresolved_reason = resolved ? (string?)null : "locked_door_warp_parse_failed"
                 });
             }
+            else if (IsOrdinaryMineEntryAction(location, parts))
+            {
+                var mineLevel = ParseIntPart(parts, 1) ?? 1;
+                connectors.Add(new
+                {
+                    kind = "action_warp",
+                    tile_x = actionRow.tile_x,
+                    tile_y = actionRow.tile_y,
+                    target_location = "UndergroundMine" + mineLevel,
+                    target_x = (int?)null,
+                    target_y = (int?)null,
+                    action = actionRow.raw_action,
+                    source_property = actionRow.source_property,
+                    open = (bool?)null,
+                    resolved = mineLevel == 1,
+                    unresolved_reason = mineLevel == 1
+                        ? (string?)null
+                        : "ordinary_mine_lobby_entry_must_target_floor_one"
+                });
+            }
             else if (IsShopEndpointAction(parts[0]))
             {
                 connectors.Add(new
@@ -173,6 +193,14 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
 
         return connectors.ToArray();
     }
+
+    private static bool IsOrdinaryMineEntryAction(
+        GameLocation location,
+        string[] parts) =>
+        parts.Length > 0 &&
+        string.Equals(location.NameOrUniqueName, "Mine", StringComparison.OrdinalIgnoreCase) &&
+        string.Equals(parts[0], "Mine", StringComparison.OrdinalIgnoreCase) &&
+        (ParseIntPart(parts, 1) ?? 1) == 1;
 
     private static object[] ReadBuildingDoorConnectors(GameLocation location)
     {

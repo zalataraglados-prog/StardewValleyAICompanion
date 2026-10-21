@@ -223,6 +223,24 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             };
         }
 
+        if (IsOrdinaryMineEntryAction(location, parts))
+        {
+            return new
+            {
+                kind = "warp_action",
+                tile_x = x,
+                tile_y = y,
+                source_property = sourceProperty,
+                action,
+                target_location = "UndergroundMine1",
+                target_x = (int?)null,
+                target_y = (int?)null,
+                allowed_on_capture_date = true,
+                allowed_now = true,
+                unresolved_reason = (string?)null
+            };
+        }
+
         if (string.Equals(parts[0], "Door", StringComparison.OrdinalIgnoreCase))
         {
             return new

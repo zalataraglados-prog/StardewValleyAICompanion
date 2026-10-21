@@ -479,7 +479,11 @@ namespace StardewAI.Core.OptionRegistry
             SmallModelActionParameter[] parameters,
             StrategyCommitmentLedger? commitmentLedger)
         {
-            if (missingStateFactors.Length > 0)
+            if (missingStateFactors.Length > 0 &&
+                !string.Equals(
+                    optionId,
+                    "mining.reach_depth",
+                    StringComparison.Ordinal))
             {
                 return Array.Empty<EventCandidate>();
             }

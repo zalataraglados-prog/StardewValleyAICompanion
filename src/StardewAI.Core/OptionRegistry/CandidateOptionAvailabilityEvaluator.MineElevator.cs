@@ -5,6 +5,7 @@ using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
+using StardewAI.Core.Execution;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.OptionRegistry;
@@ -14,10 +15,13 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
     private EventCandidate[] MiningReachDepthCandidates(SnapshotEnvelope snapshot, SmallModelActionParameter[] parameters)
     {
         var currentFloorCandidates = MiningReachDepthCandidateBuilder.Build(snapshot, parameters);
-        if (string.Equals(
+        var trainCombat = string.Equals(
                 ReadParameter(parameters, "skill_training_target_id"),
                 "combat",
-                StringComparison.Ordinal))
+                StringComparison.Ordinal);
+        if (!IsOrdinaryMineShaft(snapshot))
+            return MiningReachDepthIngressCandidates(snapshot, parameters);
+        if (trainCombat)
             return currentFloorCandidates;
         var buriedItemCandidates = MiningBuriedItemCandidateBuilder.Build(
             snapshot);
@@ -84,6 +88,158 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         }
         return WithBuriedItems(candidates);
     }
+
+    private EventCandidate[] MiningReachDepthIngressCandidates(
+        SnapshotEnvelope snapshot,
+        SmallModelActionParameter[] parameters)
+    {
+        var targetDepth = ReadParameterInt(parameters, "target_depth");
+        var trainCombat = string.Equals(
+            ReadParameter(parameters, "skill_training_target_id"),
+            "combat",
+            StringComparison.Ordinal);
+        targetDepth ??= trainCombat ? 120 : null;
+        var targetFamily = ReadParameter(parameters, "target_location_family");
+        var reasons = MiningReachDepthCandidateBuilder.ValidateTarget(
+                0,
+                "ordinary_mines",
+                targetDepth,
+                targetFamily)
+            .ToList();
+        var currentLocation = ReadStateFieldString(
+            snapshot,
+            "player",
+            "location_id");
+        if (string.IsNullOrWhiteSpace(currentLocation))
+            return Array.Empty<EventCandidate>();
+
+        var routeTarget = string.Equals(
+            currentLocation,
+            "Mine",
+            StringComparison.OrdinalIgnoreCase)
+            ? "UndergroundMine1"
+            : "Mine";
+        var route = FindResolvedRoutePlan(
+                snapshot,
+                currentLocation,
+                routeTarget,
+                RouteConnectorCandidates(snapshot))
+            ?.FirstActionCandidate;
+        if (route is null)
+        {
+            reasons.Add(string.Equals(routeTarget, "Mine", StringComparison.Ordinal)
+                ? "ordinary_mine_lobby_route_unavailable"
+                : "ordinary_mine_floor_one_entry_unavailable");
+            return new[]
+            {
+                BlockedMineIngressCandidate(
+                    currentLocation,
+                    targetDepth,
+                    reasons.ToArray())
+            };
+        }
+
+        var continuation = new[]
+        {
+            Parameter("continuation.option_id", "mining.reach_depth"),
+            Parameter(
+                "continuation.target_depth",
+                targetDepth?.ToString() ?? string.Empty),
+            Parameter(
+                "continuation.target_location_family",
+                "ordinary_mines"),
+            Parameter(
+                "continuation.skill_training_target_id",
+                trainCombat ? "combat" : string.Empty),
+            Parameter(
+                "continuation.target_skill_level",
+                ReadParameter(parameters, "target_skill_level") ?? string.Empty),
+            Parameter(
+                "continuation.latest_exit_time",
+                ReadParameter(parameters, "latest_exit_time") ?? string.Empty),
+            Parameter(
+                "continuation.minimum_reserve_health",
+                ReadParameter(parameters, "minimum_reserve_health") ?? string.Empty),
+            Parameter(
+                "continuation.minimum_reserve_energy",
+                ReadParameter(parameters, "minimum_reserve_energy") ?? string.Empty),
+            Parameter(
+                "continuation.resource_preservation_policy",
+                ReadParameter(parameters, "resource_preservation_policy") ??
+                    MiningResourcePreservationPolicies.PreserveStaircases)
+        };
+        var blocks = reasons
+            .Concat(route.BlockReasons)
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        return new[]
+        {
+            new EventCandidate
+            {
+                CandidateId =
+                    "mining.reach_depth:ingress:" +
+                    currentLocation + ":to=" + routeTarget + ":" +
+                    (targetDepth?.ToString() ?? "missing"),
+                Kind = "route_connector_tile",
+                Available = route.Available && blocks.Length == 0,
+                LocationId = currentLocation,
+                TileX = route.TileX,
+                TileY = route.TileY,
+                ExpectedEffect =
+                    "ordinary_mine_ingress_progress=true;" +
+                    "expected_target_location=" + routeTarget + ";" +
+                    "reach_depth_objective_target=" +
+                    (targetDepth?.ToString() ?? "missing") + ";" +
+                    "fresh_snapshot_replan_required=true",
+                EstimatedTicks = route.EstimatedTicks,
+                EnergyCost = 0,
+                AvailabilityClass = "ordinary_mine_ingress_route_step",
+                AllowedNow = route.AllowedNow,
+                AllowedToday = route.AllowedToday,
+                NextOpenTime = route.NextOpenTime,
+                EffectiveOpenTime = route.EffectiveOpenTime,
+                ClosesAt = route.ClosesAt,
+                WaitCost = route.WaitCost,
+                GateReasons = route.GateReasons,
+                BlockReasons = blocks,
+                Parameters = route.Parameters
+                    .Where(parameter => !parameter.Name.StartsWith(
+                        "continuation.",
+                        StringComparison.Ordinal))
+                    .Concat(continuation)
+                    .ToArray()
+            }
+        };
+    }
+
+    private static EventCandidate BlockedMineIngressCandidate(
+        string currentLocation,
+        int? targetDepth,
+        params string[] reasons) => new()
+    {
+        CandidateId =
+            "mining.reach_depth:ingress:blocked:" +
+            currentLocation + ":" + (targetDepth?.ToString() ?? "missing"),
+        Kind = "route_connector_tile",
+        Available = false,
+        LocationId = currentLocation,
+        ExpectedEffect = "ordinary_mine_ingress_not_executed",
+        AvailabilityClass = "ordinary_mine_ingress_blocked",
+        BlockReasons = reasons
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray(),
+        Parameters = new[]
+        {
+            Parameter("continuation.option_id", "mining.reach_depth"),
+            Parameter(
+                "continuation.target_depth",
+                targetDepth?.ToString() ?? string.Empty),
+            Parameter(
+                "continuation.target_location_family",
+                "ordinary_mines")
+        }
+    };
 
     private static bool CurrentFloorStepMayYieldToElevator(EventCandidate[] candidates)
     {

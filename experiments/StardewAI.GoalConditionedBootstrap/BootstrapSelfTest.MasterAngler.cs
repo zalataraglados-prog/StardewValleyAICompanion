@@ -53,6 +53,24 @@ internal static partial class BootstrapSelfTest
             !report.MissingOrUnboundProducerFamilies.Contains(
                 "fishing_skill_progression",
                 StringComparer.Ordinal) &&
+            !report.MissingOrUnboundProducerFamilies.Contains(
+                "mine_access_and_depth",
+                StringComparer.Ordinal) &&
+            !report.MissingOrUnboundProducerFamilies.Contains(
+                "mine_depth_or_ginger_island_caldera",
+                StringComparer.Ordinal) &&
+            !report.MissingOrUnboundProducerFamilies.Contains(
+                "one_of_advanced_location_access",
+                StringComparer.Ordinal) &&
+            report.PrerequisiteFamilies.Single(value =>
+                    value.FamilyId == "mine_access_and_depth")
+                .ProducerStatus == "implemented_and_bound" &&
+            report.PrerequisiteFamilies.Single(value =>
+                    value.FamilyId == "mine_depth_or_ginger_island_caldera")
+                .ProducerStatus == "implemented_and_bound" &&
+            report.PrerequisiteFamilies.Single(value =>
+                    value.FamilyId == "one_of_advanced_location_access")
+                .ProducerStatus == "implemented_and_bound" &&
             report.MissingOrUnboundProducerFamilies.Contains(
                 "ginger_island_access",
                 StringComparer.Ordinal) &&
@@ -65,6 +83,67 @@ internal static partial class BootstrapSelfTest
             catalogPath,
             windowIndexPath,
             dependencyExpansionPath);
+        VerifyMasterAnglerMineAccessBindingFailsClosed(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath);
+    }
+
+    private static void VerifyMasterAnglerMineAccessBindingFailsClosed(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath)
+    {
+        var root = JsonNode.Parse(File.ReadAllText(dependencyExpansionPath))?.AsObject() ??
+                   throw new InvalidDataException("Master Angler dependency fixture is null.");
+        var direction = root["directions"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["direction_id"]!.GetValue<string>() ==
+                             "complete_master_angler");
+        var edges = direction["edges"]!.AsArray();
+        var requiredEdge = edges
+            .Single(value =>
+            {
+                var edge = value!.AsObject();
+                return edge["from"]!.GetValue<string>() ==
+                           "dependency.complete_master_angler.ordinary_mine_fishing_access" &&
+                       edge["to"]!.GetValue<string>() ==
+                           "dependency.complete_master_angler.target_date_opportunity_producer";
+            });
+        edges.Remove(requiredEdge);
+
+        var tamperedPath = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-master-angler-mine-binding-" + Guid.NewGuid().ToString("N") + ".json");
+        try
+        {
+            File.WriteAllText(tamperedPath, root.ToJsonString(JsonDefaults.Options));
+            var tampered = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(
+                catalogPath,
+                windowIndexPath,
+                tamperedPath);
+            var affected = new[]
+            {
+                "mine_access_and_depth",
+                "mine_depth_or_ginger_island_caldera",
+                "one_of_advanced_location_access"
+            };
+            Require(
+                affected.All(family =>
+                    tampered.PrerequisiteFamilies.Single(value =>
+                            value.FamilyId == family)
+                        .ProducerStatus != "implemented_and_bound") &&
+                affected.All(family =>
+                    tampered.MissingOrUnboundProducerFamilies.Contains(
+                        family,
+                        StringComparer.Ordinal)),
+                "Master Angler mine-access producer accepted a missing recurrence edge.");
+        }
+        finally
+        {
+            if (File.Exists(tamperedPath))
+                File.Delete(tamperedPath);
+        }
     }
 
     private static void VerifyMasterAnglerFishingSkillBindingFailsClosed(

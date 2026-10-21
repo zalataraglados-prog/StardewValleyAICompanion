@@ -330,6 +330,25 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             };
         }
 
+        if (IsOrdinaryMineEntryAction(location, parts))
+        {
+            return new
+            {
+                kind = "action_warp",
+                from_location = location.NameOrUniqueName,
+                from_x = action.tile_x,
+                from_y = action.tile_y,
+                target_location = "UndergroundMine1",
+                target_x = (int?)null,
+                target_y = (int?)null,
+                source_property = action.source_property,
+                raw_action = action.raw_action,
+                native_dynamic_location = true,
+                resolved = true,
+                unresolved_reason = (string?)null
+            };
+        }
+
         if (IsShopEndpointAction(parts[0]))
         {
             var parsed = CurrentLocationReadAdapter.ParseShopAction(
@@ -490,6 +509,7 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             "WarpWomensLocker" => "covered_for_read",
             "WarpCommunityCenter" => "covered_for_read",
             "EnterSewer" => "covered_for_read",
+            "Mine" => "covered_for_read",
             "LockedDoorWarp" => "covered_for_read",
             "ConditionalDoor" => "covered_for_read",
             "Door" => "covered_for_read",
@@ -520,6 +540,8 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
                 "read-side native CommunityCenter 32,23 target and MasterPlayer ccDoorUnlock-or-JojaMember gate preview exists",
             "EnterSewer" =>
                 "read-side OpenedSewer/RustyKey state and native Sewer 16,11 target preview exists",
+            "Mine" =>
+                "ordinary Mine lobby floor-one entry is projected as native dynamic UndergroundMine1 ingress",
             "LockedDoorWarp" => "read-side time/festival/key/friendship gate preview exists",
             "ConditionalDoor" => "read-side GameStateQuery gate preview exists",
             "Door" => "door branch is recognized but NPC-specific hardcoded details may still block execution",

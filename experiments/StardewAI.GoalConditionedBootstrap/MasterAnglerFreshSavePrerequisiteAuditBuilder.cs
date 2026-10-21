@@ -11,6 +11,13 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
     private const string FishingSkillSourceDirection = "raise_skill_levels";
     private const string FishingSkillSourceNode =
         "dependency.raise_skill_levels.acquire_fishing_xp";
+    private const string MineAccessProducerNode =
+        "dependency.complete_master_angler.ordinary_mine_fishing_access";
+    private const string MineAccessSourceDirection = "raise_skill_levels";
+    private const string MineAccessSourceNode =
+        "dependency.raise_skill_levels.acquire_mining_xp";
+    private const string TargetDateOpportunityNode =
+        "dependency.complete_master_angler.target_date_opportunity_producer";
     private const string MasterAnglerRecurrenceNode =
         "dependency.complete_master_angler.acquisition_recurrence";
     private const string FreshSaveInventoryNode =
@@ -345,14 +352,26 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                 ("reusable_but_unbound",
                     new[] { FishingSkillSourceNode },
                     "Bind fishing-level progression and its time cost into the Master Angler deadline recurrence."),
+            "mine_access_and_depth" when graph.HasBoundMasterAnglerMineAccessProgression() =>
+                ("implemented_and_bound",
+                    new[] { MineAccessProducerNode, MineAccessSourceNode },
+                    "The selected ordinary-mine producer enters floor one natively, reaches the exact sufficient fishing floor and replans from fresh receipts."),
             "mine_access_and_depth" when graph.HasOption("raise_skill_levels", "mining.reach_depth") =>
                 ("reusable_but_unbound",
                     new[] { "raise_skill_levels:mining.reach_depth" },
                     "Bind the existing mine-depth producer to each required fishing floor and deadline."),
+            "mine_depth_or_ginger_island_caldera" when graph.HasBoundMasterAnglerMineAccessProgression() =>
+                ("implemented_and_bound",
+                    new[] { MineAccessProducerNode, MineAccessSourceNode },
+                    "The selected ordinary-mine area-80 branch is sufficient; Ginger Island and Caldera remain valid but unnecessary alternatives."),
             "mine_depth_or_ginger_island_caldera" when graph.HasOption("raise_skill_levels", "mining.reach_depth") =>
                 ("reusable_branch_but_disjunction_unbound",
                     new[] { "raise_skill_levels:mining.reach_depth" },
                     "Prove and schedule either mine area 80 or the complete Ginger Island/Caldera access chain."),
+            "one_of_advanced_location_access" when graph.HasBoundMasterAnglerMineAccessProgression() =>
+                ("implemented_and_bound",
+                    new[] { MineAccessProducerNode, MineAccessSourceNode },
+                    "The selected ordinary-mine branch is sufficient; sewer, Mutant Bug Lair and Witch's Swamp remain valid but unnecessary alternatives."),
             "one_of_advanced_location_access" when
                 graph.HasOption("raise_skill_levels", "mining.reach_depth") =>
                 ("reusable_branch_but_disjunction_unbound",
@@ -575,6 +594,82 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                        "supplies_required_fishing_level"));
         }
 
+        public bool HasBoundMasterAnglerMineAccessProgression()
+        {
+            if (!Directions.TryGetValue(MasterAnglerDirection, out var masterAngler) ||
+                !Directions.TryGetValue(MineAccessSourceDirection, out var skills) ||
+                !masterAngler.Nodes.TryGetValue(MineAccessProducerNode, out var producer) ||
+                !skills.Nodes.TryGetValue(MineAccessSourceNode, out var source) ||
+                producer.Kind != "recurrence_rule" ||
+                source.Kind != "policy_option_transition" ||
+                source.OptionId != "mining.reach_depth" ||
+                producer.Rule.ValueKind != JsonValueKind.Object)
+                return false;
+
+            var requiredFields = new[]
+            {
+                "world_progress.fish_collection_progress",
+                "time.total_days",
+                "time.time",
+                "player.location_id",
+                "player.tile_x",
+                "player.tile_y",
+                "player.deepest_mine_level",
+                "locations.route_graph",
+                "locations.route_connectors",
+                "locations.route_action_branch_coverage",
+                "locations.collision_grid",
+                "mining.current_mine",
+                "mining.tiles",
+                "mining.objects",
+                "mining.resource_clumps",
+                "mining.monsters",
+                "mining.floor_objectives",
+                "mining.reward_chests",
+                "mining.player_resources"
+            };
+            var expectedFloors = new Dictionary<string, int>(StringComparer.Ordinal)
+            {
+                ["(O)156"] = 20,
+                ["(O)157"] = 20,
+                ["(O)158"] = 20,
+                ["(O)161"] = 60,
+                ["(O)162"] = 100,
+                ["(O)CaveJelly"] = 100
+            };
+            var expectedAreas = new Dictionary<string, int>(StringComparer.Ordinal)
+            {
+                ["20"] = 10,
+                ["60"] = 40,
+                ["100"] = 80
+            };
+            return requiredFields.All(producer.RequiredFieldPaths.Contains) &&
+                   RuleString(producer.Rule, "reuses_direction_id") == MineAccessSourceDirection &&
+                   RuleString(producer.Rule, "reuses_node_id") == MineAccessSourceNode &&
+                   RuleString(producer.Rule, "reused_option_id") == "mining.reach_depth" &&
+                   RuleBool(producer.Rule, "ordinary_mine_only") &&
+                   RuleBool(producer.Rule, "native_lobby_ingress_required") &&
+                   RuleString(producer.Rule, "native_lobby_ingress_action") == "Mine 1" &&
+                   RuleString(producer.Rule, "native_lobby_ingress_target") == "UndergroundMine1" &&
+                   RuleObjectIntsEqual(producer.Rule, "target_floor_by_species", expectedFloors) &&
+                   RuleObjectIntsEqual(producer.Rule, "target_area_by_floor", expectedAreas) &&
+                   RuleBool(producer.Rule, "fresh_snapshot_after_every_native_primitive") &&
+                   RuleBool(producer.Rule, "fresh_native_receipt_required") &&
+                   RuleInt(producer.Rule, "deadline_total_day_exclusive") == 224 &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       FreshSaveInventoryNode,
+                       MineAccessProducerNode,
+                       "selects_required_mine_fishing_floor")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       MineAccessProducerNode,
+                       TargetDateOpportunityNode,
+                       "supplies_ordinary_mine_location_access")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       MineAccessProducerNode,
+                       MasterAnglerRecurrenceNode,
+                       "replans_after_native_mine_primitive"));
+        }
+
         private static string RuleString(JsonElement rule, string name) =>
             rule.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
                 ? value.GetString() ?? string.Empty
@@ -588,5 +683,21 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
             rule.TryGetProperty(name, out var value) && value.TryGetInt32(out var result)
                 ? result
                 : int.MinValue;
+
+        private static bool RuleObjectIntsEqual(
+            JsonElement rule,
+            string name,
+            IReadOnlyDictionary<string, int> expected)
+        {
+            if (!rule.TryGetProperty(name, out var value) ||
+                value.ValueKind != JsonValueKind.Object)
+                return false;
+            var actual = value.EnumerateObject().ToArray();
+            return actual.Length == expected.Count &&
+                   actual.All(property =>
+                       expected.TryGetValue(property.Name, out var expectedValue) &&
+                       property.Value.TryGetInt32(out var actualValue) &&
+                       actualValue == expectedValue);
+        }
     }
 }

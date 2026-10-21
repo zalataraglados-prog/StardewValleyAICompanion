@@ -103,6 +103,7 @@ public sealed partial class ModEntry : Mod
         return string.Equals(actionType, "Warp", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(actionType, "WarpCommunityCenter", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(actionType, "EnterSewer", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(actionType, "Mine", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(actionType, "LockedDoorWarp", StringComparison.OrdinalIgnoreCase);
     }
 
@@ -110,7 +111,8 @@ public sealed partial class ModEntry : Mod
     {
         return string.Equals(actionType, "Warp", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(actionType, "WarpCommunityCenter", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(actionType, "EnterSewer", StringComparison.OrdinalIgnoreCase);
+            string.Equals(actionType, "EnterSewer", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(actionType, "Mine", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string? ValidateConnectorTarget(TrainingExecutionRequest request, Point connectorTile)
@@ -175,6 +177,20 @@ public sealed partial class ModEntry : Mod
                 targetLocation = "Sewer";
                 targetX = 16;
                 targetY = 11;
+            }
+            else if (string.Equals(parts[0], "Mine", StringComparison.OrdinalIgnoreCase))
+            {
+                var mineLevel = ParseIntPart(parts, 1) ?? 1;
+                if (!string.Equals(
+                        Game1.currentLocation.NameOrUniqueName,
+                        "Mine",
+                        StringComparison.OrdinalIgnoreCase) ||
+                    mineLevel != 1)
+                {
+                    return "connector_ordinary_mine_entry_source_mismatch";
+                }
+
+                targetLocation = "UndergroundMine1";
             }
             else
             {
