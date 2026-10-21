@@ -96,6 +96,12 @@ public sealed class CrabPotPlacementMainlineTests
         Assert.Equal(
             "craft_crab_pot",
             Assert.Single(item.NormalizedCommand.Steps).StepType);
+        var capability = OptionCapabilityRegistrySource.GetRequired(
+            "executor.craft_crab_pot");
+        Assert.Equal(
+            OptionRuntimeStatus.RuntimeVerified,
+            capability.RuntimeEvidenceStatus);
+        Assert.Equal(new[] { "EVD-339" }, capability.RuntimeEvidenceIds);
     }
 
     [Fact]

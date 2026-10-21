@@ -1430,6 +1430,13 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_crab_pot_crafting_target")
+            {
+                pending.Completion.SetResult(
+                    ExecuteSetupCrabPotCraftingTarget(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_machine_lifecycle_target")
             {
                 pending.Completion.SetResult(

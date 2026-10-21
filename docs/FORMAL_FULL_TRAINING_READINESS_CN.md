@@ -18,7 +18,7 @@ Formal product training: false
 
 Community Center、Pet Love、Skull Key 与 Full Shipment 已通过 current-authority 复核。Full Shipment 由 `154/154` 静态来源/编译完整性、`26/26` 原生执行签名分层和既有三分区 Teacher/native 证据共同关闭训练前置；完整 154 项 recurrence 仍是正常游玩与最终验收能力。新 reconciliation SHA-256 为 `71f0e4ed0e7928c1e63f39641f4b90153674f154a575ec331342a3d5241adf43`。当前准入指标为 `5/19 executable、6/19 split-complete、5/19 CoverageGateReady、4/11 root ready`；下一项是 Master Angler 顶层接线，而不是开始正式训练。
 
-Master Angler 的目标日期机会生成器已经由当前源码闭合，并已从 blocker 列表移除：它把 Stage 1 全窗口索引与当前动态查询、路线计时、可钓 tile、鱼竿装备和完整原生 spawn outcome 绑定到既有 `fishing.catch_fish` 候选。该修正只消除陈旧拓扑描述，不提升准入分子。剩余门槛仍是蟹笼跨日高层意图与 fresh-save 随机重试/截止日前机会保留证明，因此正式训练继续禁止。
+Master Angler 的当前日机会生成器和蟹笼高层生命周期均已由当前源码闭合：前者把 Stage 1 全窗口索引与当前动态查询、路线计时、可钓 tile、鱼竿装备和完整原生 spawn outcome 绑定到既有 `fishing.catch_fish`，后者只通过 `fishing.collect_crab_pots` 一个模型出口复用既有制作、放置、装饵、跨日和收取动作。EVD-339 进一步用原生个人 `CraftingPage` 回执补齐 `executor.craft_crab_pot` 的 runtime evidence，未把测试 fixture 材料误当作新档供应证明。新增 fresh-save prerequisite audit 证明 72/72 均有至少两个静态日历日，但也证明“当前可执行”不等于“新档可达”。训练前仍必须绑定鱼竿/装备、钓鱼等级、天气保留或 Rain Totem、蟹笼供应和全部强制区域解锁生产者，再把它们与随机重试及 Year 3 截止证明组合；因此正式训练继续禁止，准入分子不增加。
 
 Money 的第一条完整原生作物生产段 `money-crop-native-20261021-pricefix-v10` 已通过：checkpoint v12 为 `6/6 verified、0 pending`，终局含 `5` 次单件原生投箱和唯一睡眠结算，实际收入 `875g`，最终为春 20 日 06:00、`money=925`、`totalMoneyEarned=875`。源存档和隔离 Mod 哈希均未漂移。这证明 native runner、购种、场地准备、作物生命周期、留存、容量和运输箱终局可以在同一连续真实轨迹中闭合。
 

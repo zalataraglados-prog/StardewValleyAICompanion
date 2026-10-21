@@ -6,6 +6,56 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 internal static partial class BootstrapSelfTest
 {
+    public static void RunMasterAnglerFreshSavePrerequisiteAudit(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath)
+    {
+        var report = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath);
+        Require(
+            report.Status == "partial_fresh_save_prerequisite_inventory" &&
+            !report.TrainingLabelEligible &&
+            report.NativeDenominatorCount == 72 &&
+            report.RodLocationSpeciesCount == 60 &&
+            report.MineOverrideOnlySpeciesCount == 2 &&
+            report.TrapSpeciesCount == 10 &&
+            report.SpeciesWithTwoOrMoreStaticOpportunityDays == 72 &&
+            report.RainOrStormRequiredSpeciesCount == 4 &&
+            report.MaximumRequiredFishingLevel == 10 &&
+            report.StaticOpportunityInventoryComplete &&
+            report.PrerequisiteFamilyInventoryComplete &&
+            report.UnknownLocationIds.Length == 0,
+            "Master Angler fresh-save prerequisite audit summary drifted.");
+
+        var byId = report.Species.ToDictionary(
+            value => value.QualifiedItemId,
+            StringComparer.Ordinal);
+        Require(
+            byId["(O)162"].RoutePrerequisiteExpression ==
+                "mine_depth_or_ginger_island_caldera" &&
+            byId["(O)734"].RoutePrerequisiteExpression ==
+                "secret_woods_access_or_forest_farm_layout" &&
+            byId["(O)796"].RoutePrerequisiteExpression ==
+                "mutant_bug_lair_story_access" &&
+            byId["(O)715"].TrapRequiredIndependentPotDaysAt95Percent == 59 &&
+            byId["(O)715"].TrapTheoreticalMinimumParallelPotCapacityFromDayOne == 1,
+            "Master Angler fresh-save location or stochastic prerequisite classification drifted.");
+        Require(
+            report.PrerequisiteFamilies.Single(value =>
+                    value.FamilyId == "crab_pot_lifecycle")
+                .ProducerStatus == "implemented_and_bound" &&
+            report.MissingOrUnboundProducerFamilies.Contains(
+                "ginger_island_access",
+                StringComparer.Ordinal) &&
+            report.MissingOrUnboundProducerFamilies.Contains(
+                "rod_and_fishing_equipment_acquisition",
+                StringComparer.Ordinal),
+            "Master Angler fresh-save producer coverage was overstated.");
+    }
+
     private static void VerifyMasterAnglerChanceModifierParsing()
     {
         using var document = JsonDocument.Parse("""

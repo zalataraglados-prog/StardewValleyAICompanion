@@ -16,7 +16,7 @@
 - 当前机器证据重新确认 `154/154` 权威静态需求、`641` 条来源、`26` 个执行签名层、静态 blocker `0`；严格原生 index 为 `26/26 verified、0 missing`，共享 shipping/settlement 通过。完整 154 项 recurrence 仍保留给正常游玩与最终可选验收，不是 Teacher coverage 前置。index SHA-256 为 `e30edb0e6aca07deca484c8b8f1a4437eef68cb01120f13074329d7e2e0830b1`。
 - 移除自相矛盾的过时 blocker 后，Full Shipment 为 `executable_frontier + coverage_ready`，blocker/next action 均为空。新 reconciliation 为 `5/19 executable、6/19 split-complete、5/19 CoverageGateReady、4/11 root ready`；文件为 `E:\StardewAI-TestLab\artifacts\full-shipment-topology-current-source-20261021\goal-method-coverage-reconciliation.json`，SHA-256 `71f0e4ed0e7928c1e63f39641f4b90153674f154a575ec331342a3d5241adf43`。完整 Goal Method coverage 自测以退出码 0 通过。
 - 正式训练仍为 `Money production cells=0/18`、`formal_product_training_authorized=false`。下一步只处理 `complete_master_angler` 的顶层 dependency、日历窗口与 coverage 接线，复用现有钓鱼/蟹笼执行链和已完整的三分区证据。
-- Master Angler 的 Stage 1 窗口到当前原生钓鱼候选并非缺失实现。现行链已联结 72/72 静态窗口、动态查询、地点解锁/路线/计时、可钓 tile、鱼竿装备与完整 live spawn outcome；依赖图现以 `target_date_opportunity_producer` 节点记录该事实，旧 blocker 已删除。当前仍只剩两个真实缺口：编译器拥有的蟹笼跨日高层基础设施意图，以及 fresh-save 下覆盖随机重试并在 Year 3 初次评价前保留至少一次合法机会的完成证明。指标暂不增加。
+- Master Angler 的当前日执行链已闭合：72/72 静态窗口会在 fresh snapshot 上重新核对动态查询、地点/路线/计时、可钓 tile、装备与完整 live spawn outcome；蟹笼也已由唯一模型出口 `fishing.collect_crab_pots` 逐次展开收取、装饵、跨图、放置、制作和原生跨日结算。`executor.craft_crab_pot` 已补 EVD-339 原生个人制作菜单回执，`(O)710` 库存 `0 -> 1`、`timesCrafted 20 -> 21`，不再以调度或单测冒充 runtime evidence。刷新后的 option matrix 为 `235 options / 159 runtime-verified / 66 training-eligible`，该 method 的 `option_blockers=[]`，状态从治理阻塞恢复为 `pending_dependency_expansion`。新 `master_angler_fresh_save_prerequisite_audit.v1` 进一步证明 72/72 都有至少两个**静态日历日**，但明确拒绝把它们冒充新档可达机会。真实剩余工作已细化为：鱼竿/装备获取、钓鱼等级、雨天保留或 Rain Totem、蟹笼配方/材料/饵料，以及矿层、沙漠巴士、Rusty Key/下水道、秘密森林或森林农场、女巫沼泽、Mutant Bug Lair、姜岛/火山口等地点前置；最后才组合随机重试与 Year 3 截止证明。指标暂不增加。
 
 ## 已收口 · 2026-10-21 Money 首条完整原生作物生产段
 
@@ -896,12 +896,12 @@
 <!-- BEGIN GENERATED CURRENT CHECKPOINT -->
 ## Machine-generated current checkpoint
 
-- Source commit: `fb4543b068bc643c80ec3693388f3938e1f563ca` (generation input; must be an ancestor of current HEAD)
-- Latest evidence: `EVD-338`; generated at: `2026-09-25T18:10:25.7803927+00:00`
-- Catalog: `234 registered / 236 semantic / 233 compiler-bound / 155 five-gate / 66 training-allowlist`
-- Execution: `147 product-executor / 2 catalogued-blocked`
+- Source commit: `e4e88246a788b37ab7e64d420cfa1bad1efb5030` (generation input; must be an ancestor of current HEAD)
+- Latest evidence: `EVD-338`; generated at: `2026-10-21T13:49:35.3936563+00:00`
+- Catalog: `235 registered / 237 semantic / 234 compiler-bound / 159 five-gate / 66 training-allowlist`
+- Execution: `148 product-executor / 2 catalogued-blocked`
 - Native evidence: `322 surfaces / 448 branches / 150 map tokens`; fingerprint: `a2ba3ac0193fa78aece39a1eb4c18cb3c9b3248ea7390194dcfe61605af02d0e`
-- Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba`
+- Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `57b094757882294611f5ff1f5f6186b860bf64762f79213e219dc3e7a76a6cc5`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
 ## 历史记录 · 2026-10-04 Full Shipment 普通作物运行时样本闭合

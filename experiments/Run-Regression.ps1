@@ -179,6 +179,40 @@ if ($masterAnglerWindows.status -ne 'complete_static_windows_dynamic_execution_p
     $lavaEelMineWindows.Count -ne 1) {
     throw 'Master Angler Stage 1 static deadline windows are incomplete.'
 }
+$masterAnglerFreshSavePrerequisitePath = Join-Path $output `
+    'master-angler-fresh-save-prerequisite-audit-v1.json'
+dotnet run --project $bootstrap --no-build -- `
+    audit-master-angler-fresh-save-prerequisites `
+    --catalog $masterAnglerOpportunityPath `
+    --windows $masterAnglerWindowsPath `
+    --dependency-expansions $frontierDependencies `
+    --output $masterAnglerFreshSavePrerequisitePath
+if ($LASTEXITCODE -ne 0) {
+    throw 'Master Angler fresh-save prerequisite audit failed.'
+}
+$masterAnglerFreshSavePrerequisite = Get-Content `
+    -LiteralPath $masterAnglerFreshSavePrerequisitePath -Raw | ConvertFrom-Json
+if ($masterAnglerFreshSavePrerequisite.status -ne `
+        'partial_fresh_save_prerequisite_inventory' -or
+    [bool]$masterAnglerFreshSavePrerequisite.training_label_eligible -or
+    [int]$masterAnglerFreshSavePrerequisite.native_denominator_count -ne 72 -or
+    [int]$masterAnglerFreshSavePrerequisite.species_with_two_or_more_static_opportunity_days -ne 72 -or
+    [int]$masterAnglerFreshSavePrerequisite.rain_or_storm_required_species_count -ne 4 -or
+    [int]$masterAnglerFreshSavePrerequisite.maximum_required_fishing_level -ne 10 -or
+    -not [bool]$masterAnglerFreshSavePrerequisite.static_opportunity_inventory_complete -or
+    -not [bool]$masterAnglerFreshSavePrerequisite.prerequisite_family_inventory_complete -or
+    @($masterAnglerFreshSavePrerequisite.unknown_location_ids).Count -ne 0 -or
+    @($masterAnglerFreshSavePrerequisite.missing_or_unbound_producer_families).Count -eq 0) {
+    throw 'Master Angler fresh-save prerequisite inventory was overstated or drifted.'
+}
+dotnet run --project $bootstrap --no-build -- `
+    self-test-master-angler-fresh-save-prerequisites `
+    --catalog $masterAnglerOpportunityPath `
+    --windows $masterAnglerWindowsPath `
+    --dependency-expansions $frontierDependencies
+if ($LASTEXITCODE -ne 0) {
+    throw 'Master Angler fresh-save prerequisite self-test failed.'
+}
 $acquisitionLoweringPath = Join-Path $output 'acquisition-route-option-lowering-v1.json'
 dotnet run --project $bootstrap --no-build -- build-acquisition-route-lowering `
     --requirement-inventory $requirementInventoryPath `

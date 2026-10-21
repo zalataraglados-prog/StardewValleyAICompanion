@@ -269,7 +269,10 @@
         "runtime.goal_index"
       ],
       "blockers": [
-        "fresh-save seed-robust completion proof must cover stochastic retries and preserve one legal opportunity before the initial Year 3 evaluation"
+        "fresh-save recurrence must bind rod and fishing-equipment acquisition, fishing-skill progression, and either natural rainy-window reserve or exact Rain Totem supply and next-day effect",
+        "fresh-save location access must bind mine depth, desert bus, sewer and Rusty Key, Secret Woods or Forest Farm layout, Witch's Swamp, Mutant Bug Lair, and Ginger Island or Caldera alternatives",
+        "fresh-save Crab Pot recurrence must bind recipe or profession unlock, exact crafting materials and bait supply before consuming the implemented lifecycle",
+        "seed-robust deadline proof must compose every selected prerequisite producer with live stochastic retries and preserve one dynamically legal opportunity before the initial Year 3 evaluation"
       ],
       "nodes": [
         {
@@ -359,8 +362,29 @@
           }
         },
         {
+          "id": "dependency.complete_master_angler.fresh_save_prerequisite_inventory",
+          "kind": "state_fact",
+          "required_field_paths": [
+            "world_progress.fish_collection_progress",
+            "player.skills_detail",
+            "time.total_days",
+            "time.weather"
+          ],
+          "rule": {
+            "builder": "MasterAnglerFreshSavePrerequisiteAuditBuilder",
+            "schema": "master_angler_fresh_save_prerequisite_audit.v1",
+            "native_species_count": 72,
+            "static_opportunity_days_with_two_or_more": 72,
+            "rain_or_storm_required_species_count": 4,
+            "maximum_required_fishing_level": 10,
+            "classification_boundary": "static calendar days are not dynamically legal catch opportunities",
+            "status": "partial_fresh_save_prerequisite_inventory",
+            "training_label_eligible": false
+          }
+        },
+        {
           "id": "dependency.complete_master_angler.target_date_opportunity_producer",
-          "kind": "policy_option_binding",
+          "kind": "state_fact",
           "required_field_paths": [
             "world_progress.fish_collection_progress",
             "time.total_days",
@@ -430,7 +454,7 @@
         },
         {
           "id": "dependency.complete_master_angler.trap_lifecycle_intent",
-          "kind": "policy_option_binding",
+          "kind": "policy_option_transition",
           "option_id": "fishing.collect_crab_pots",
           "candidate_kinds": ["collect_crab_pot", "load_crab_pot_bait", "route_connector_tile", "place_crab_pot", "craft_crab_pot", "recovery_close_menu", "recovery_resume_sleep_prompt", "recovery_sleep_immediately", "recovery_return_home", "recovery_sleep_before_collapse"],
           "required_field_paths": [
@@ -535,7 +559,9 @@
         { "from": "dependency.complete_master_angler.native_denominator_and_missing_set", "to": "dependency.complete_master_angler.trap_species_partition", "kind": "partitions_missing_species" },
         { "from": "dependency.complete_master_angler.rod_species_partition", "to": "dependency.complete_master_angler.static_rod_opportunity_windows", "kind": "normalizes_static_calendar" },
         { "from": "dependency.complete_master_angler.static_rod_opportunity_windows", "to": "dependency.complete_master_angler.stage_one_deadline_window_index", "kind": "expands_before_deadline" },
+        { "from": "dependency.complete_master_angler.stage_one_deadline_window_index", "to": "dependency.complete_master_angler.fresh_save_prerequisite_inventory", "kind": "audits_fresh_save_reachability" },
         { "from": "dependency.complete_master_angler.stage_one_deadline_window_index", "to": "dependency.complete_master_angler.target_date_opportunity_producer", "kind": "feeds_authoritative_windows" },
+        { "from": "dependency.complete_master_angler.fresh_save_prerequisite_inventory", "to": "dependency.complete_master_angler.acquisition_recurrence", "kind": "enumerates_missing_prerequisite_producers" },
         { "from": "dependency.complete_master_angler.target_date_opportunity_producer", "to": "dependency.complete_master_angler.current_legal_rod_attempt", "kind": "binds_current_runtime_candidate" },
         { "from": "dependency.complete_master_angler.trap_species_partition", "to": "dependency.complete_master_angler.trap_infrastructure_gate", "kind": "requires_infrastructure" },
         { "from": "dependency.complete_master_angler.trap_species_partition", "to": "dependency.complete_master_angler.trap_lifecycle_intent", "kind": "binds_high_level_recurrence" },

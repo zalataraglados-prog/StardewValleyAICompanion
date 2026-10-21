@@ -6,20 +6,20 @@
     {
       "relative_path": "src/StardewAI.Contracts/Capabilities/OptionCapabilityRegistrySource.cs",
       "normalization": "utf8_lf",
-      "bytes": 121541,
-      "sha256": "c7c63b2ccf2ced395b225af540e7f95854cf554c746645bc921d6d5777b37c0f"
+      "bytes": 123069,
+      "sha256": "d19c578fc2ca484b82a189c9bed375fabaa4d8346cb6b42f3f2aa7bd564efeab"
     },
     {
       "relative_path": "src/StardewAI.Core/OptionRegistry/OptionRegistry.cs",
       "normalization": "utf8_lf",
-      "bytes": 221345,
-      "sha256": "0e679c13ef14db7cfa8ecad1b844718e460468cd822cbdb5e7b16768a02089b9"
+      "bytes": 222446,
+      "sha256": "5c9499de340393f7f7f72077e81f887bded03ad48ea9e659b4d7e1fabdd5685d"
     },
     {
       "relative_path": "src/StardewAI.Core/OptionRegistry/OptionGovernanceCatalog.cs",
       "normalization": "utf8_lf",
-      "bytes": 44644,
-      "sha256": "f751d80f80779f2376eead146da215e332c366c0e83ceddf202db35ebc0b46d9"
+      "bytes": 44819,
+      "sha256": "6aa37359e361219a631fabb25a42881404a1bf9860c3cad98bb6b15ebafc7326"
     },
     {
       "relative_path": "knowledge-artifacts.lock.json",
@@ -37,19 +37,19 @@
   "knowledge_sources": [
     {
       "relative_path": "snapshots/current-live-full-snapshot.json",
-      "bytes": 12026007,
-      "sha256": "a6d2c4c293a91073e757fa6a25175967a56f2d2612c9f963e31c48cf0e85baa0"
+      "bytes": 28220478,
+      "sha256": "c7821202eb0d11c88249a9666c1a98388daf527953d04bfb4cec468ca466ffc6"
     }
   ],
   "output_contract": {
     "schema_version": "stardewai.option_governance_matrix.v3",
-    "option_count": 234,
+    "option_count": 235,
     "goal_template_count": 2,
     "composite_option_count": 88,
-    "primitive_option_count": 144,
+    "primitive_option_count": 145,
     "training_eligible_count": 66,
-    "runtime_verified_count": 155,
-    "bytes": 846321,
-    "sha256": "24e4e4c6504daa37c8fd8e91aab1b3cd104cb23619316b98cbc8f5819f123183"
+    "runtime_verified_count": 159,
+    "bytes": 862113,
+    "sha256": "274ce0813230e962cb8bd1fb8bbbd2d80ce225b736db0988555d4a4a1008565b"
   }
 }

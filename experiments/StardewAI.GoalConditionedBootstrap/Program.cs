@@ -168,6 +168,7 @@ var commandDefinitions = new CommandDefinition[]
     new("build-full-shipment-terminal-settlement-receipt", BuildFullShipmentTerminalSettlementReceipt),
     new("build-master-angler-opportunity-catalog", BuildMasterAnglerOpportunityCatalog),
     new("build-master-angler-stage-one-windows", BuildMasterAnglerStageOneWindows),
+    new("audit-master-angler-fresh-save-prerequisites", AuditMasterAnglerFreshSavePrerequisites),
     new("build-master-angler-target-date-intents", BuildMasterAnglerTargetDateIntents),
     new("build-validation-trace-baseline", BuildValidationTraceBaseline),
     new("rehash-content", RehashContent),
@@ -184,6 +185,11 @@ var commandDefinitions = new CommandDefinition[]
     new("self-test-acquisition-route-dispatch", _ => BootstrapSelfTest.RunAcquisitionRouteDispatch()),
     new("self-test-full-shipment-static-compilability", SelfTestFullShipmentStaticCompilability),
     new("self-test-full-shipment-runtime-sample-evidence", _ => BootstrapSelfTest.RunFullShipmentRuntimeSampleEvidence()),
+    new("self-test-master-angler-fresh-save-prerequisites", options =>
+        BootstrapSelfTest.RunMasterAnglerFreshSavePrerequisiteAudit(
+            options.Required("catalog"),
+            options.Required("windows"),
+            options.Required("dependency-expansions"))),
     new("self-test-machine-input-load-terminal-coverage", SelfTestMachineInputLoadTerminalCoverage),
     new("self-test-machine-material-transfer-terminal-coverage", SelfTestMachineMaterialTransferTerminalCoverage),
     new("self-test-machine-input-purchase-terminal-coverage", SelfTestMachineInputPurchaseTerminalCoverage),
@@ -2753,6 +2759,22 @@ static void BuildMasterAnglerStageOneWindows(Arguments options)
     Write(options.Required("output"), report);
     if (!report.StaticWindowCoverageComplete || report.UnresolvedSpeciesIds.Length > 0)
         Environment.ExitCode = 2;
+}
+
+static void AuditMasterAnglerFreshSavePrerequisites(Arguments options)
+{
+    var report = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(
+        options.Required("catalog"),
+        options.Required("windows"),
+        options.Required("dependency-expansions"));
+    Write(options.Required("output"), report);
+    if (!report.StaticOpportunityInventoryComplete ||
+        !report.PrerequisiteFamilyInventoryComplete ||
+        report.NativeDenominatorCount != 72 ||
+        report.UnknownLocationIds.Length > 0)
+    {
+        Environment.ExitCode = 2;
+    }
 }
 
 static void BuildMasterAnglerTargetDateIntents(Arguments options)
