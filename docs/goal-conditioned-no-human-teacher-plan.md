@@ -2,15 +2,17 @@
 
 > **当前状态入口：** [CURRENT_STATUS_CN.md](CURRENT_STATUS_CN.md)。本文件下方带日期的状态、计数和“下一步”均保留为历史证据；若与当前机器报告或 CURRENT_STATUS_CN.md 冲突，不得按历史数字规划新工作。
 >
-> **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已从 v10 最终隔离存档闭合下一条 Money 连续生产段，Community Center 已按 current authority 重绑并冻结；当前唯一施工项是 `earn_pet_love`。Money 仍须最终满足原 Exit Gate，但已回到复杂度队列第 11 位。
+> **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已从 v10 最终隔离存档闭合下一条 Money 连续生产段，Community Center 与 Pet Love 已按 current authority 重绑并冻结；当前唯一施工项是 `obtain_skull_key`。Money 仍须最终满足原 Exit Gate，但已回到复杂度队列第 11 位。
 
-## Current slice · 2026-10-21: freeze Community Center and rebind Pet Love
+## Current slice · 2026-10-21: freeze Pet Love and rebind Skull Key
 
 The bounded Money continuation `money-crop-native-20261021-v10-continuation-v15-full-chain` passed with 26 continuous transitions, eight executed crop batches, eight native single-item shipping deposits, and a complete six-fragment checkpoint. The immutable source save remained at SHA-256 `9429c6d01d327111af8c81d0c36f2e318ccc4f1b0ea3094d84e19f25308b22e4`; the final state hash is `bb70acbd0b477b7e14d7fe1b4450ee85292fa29e56de854924e4ee67f1216849`. This satisfies the bounded Money exit but closes no Money threshold cell.
 
-The old coverage corpus was not silently reused: deterministic replay rejected its stale target-date time/energy budget. Requirement inventory, acquisition lowering, and the three-partition corpus were rebuilt from the current source and current `game-1.6.15` authority. Reconciliation remains `4/19 executable`, `4/19 split-complete`, `2/19 CoverageGateReady`, and `1/11 root ready`; formal product training remains false. Both Community Center criteria are `coverage_ready`, all Teacher/native train-validation-test partitions are complete, and the method has no blocker or next action, so it is frozen.
+The old Community Center coverage corpus was not silently reused: deterministic replay rejected its stale target-date time/energy budget. Requirement inventory, acquisition lowering, and the three-partition corpus were rebuilt from current source and current `game-1.6.15` authority, then frozen.
 
-The sole active root method is now `earn_pet_love`. Reuse begins by replaying and rebinding the historical three-partition Pet Love artifacts against current authority. Only partitions that fail that replay may be recollected. No second pet candidate generator, action compiler, or executor is permitted.
+The historical Pet Love train, validation, and test native artifacts have now been strictly replayed and rebound without launching the game. The canonical corpus contains three rows across three partitions with verified Teacher comparisons and native terminal outcomes. Its SHA-256 is `99f885037a21a9ae82865cdeec612c61d5bb8018e4701f1d149f8a4738cfb546`; reconciliation SHA-256 is `71781e188410a96eaab7d00ad61b703b4ec1981fdb2a0841c0727e611764b383`. Historical snapshot hashes that include the now-nonsemantic `machine_probe_cache_tick` are accepted only through the shared strict current-or-legacy hash matcher; schema, identity, outcome, and tamper checks remain fail-closed. The complete coverage self-test passed its positive, source-collision, replacement, and tamper cases.
+
+Reconciliation is now `4/19 executable`, `5/19 split-complete`, `3/19 CoverageGateReady`, and `2/11 root ready`; formal product training remains false. Community Center and Pet Love are frozen. The sole active root method is `obtain_skull_key`: replay and rebind its historical three-partition artifacts against current authority, recollect only failed partitions, and do not add a second mine-terminal candidate generator, compiler, or executor.
 
 ## Historical record · 2026-10-21: chain verified crop-production segments into Teacher supervision
 

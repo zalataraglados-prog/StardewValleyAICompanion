@@ -60,6 +60,11 @@ internal static partial class BootstrapSelfTest
                 totalDay,
                 true,
                 true);
+            if (partition == PolicyDatasetPartitions.Train)
+            {
+                UseLegacySnapshotHash(before);
+                UseLegacySnapshotHash(after);
+            }
             var beforePath = Path.Combine(sourceRoot, "before-snapshot.json");
             var afterPath = Path.Combine(sourceRoot, "after-snapshot.json");
             var resultPath = Path.Combine(sourceRoot, "execution-result.json");
@@ -213,6 +218,14 @@ internal static partial class BootstrapSelfTest
         read_at_tick = 1,
         confidence = 1
     };
+
+    private static void UseLegacySnapshotHash(SnapshotEnvelope snapshot)
+    {
+        using var legacyProbe = JsonDocument.Parse(
+            "{\"machine_probe_cache_tick\":42,\"stable\":true}");
+        snapshot.State["legacy_hash_probe"] = legacyProbe.RootElement.Clone();
+        snapshot.StateHash = SnapshotHash.ComputeLegacyStateHash(snapshot.State);
+    }
 
     private static FieldEnvelope<string?> Identity(string value) => new()
     {

@@ -2,15 +2,16 @@
 
 > **当前状态入口：** [CURRENT_STATUS_CN.md](CURRENT_STATUS_CN.md)。本文件下方带日期的状态、计数和“下一步”均保留为历史证据；若与当前机器报告或 CURRENT_STATUS_CN.md 冲突，不得按历史数字规划新工作。
 >
-> **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已完成 v10 之后的一条 Money 连续生产段，Community Center 已按 current authority 重绑并冻结；当前唯一施工项为 `earn_pet_love` 三分区重放与重绑。P0/P1 共享 correctness blocker 可临时中断，但不得静默改序或并行展开多个 root method。
+> **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已完成 v10 之后的一条 Money 连续生产段，Community Center 与 Pet Love 已按 current authority 重绑并冻结；当前唯一施工项为 `obtain_skull_key` 三分区重放与重绑。P0/P1 共享 correctness blocker 可临时中断，但不得静默改序或并行展开多个 root method。
 
-## 当前切片 · 2026-10-21 Community Center 冻结并切换 Pet Love
+## 当前切片 · 2026-10-21 Pet Love 冻结并切换 Skull Key
 
 - `money-crop-native-20261021-v10-continuation-v15-full-chain` 已完成既定的第二条有界 Money 连续段：`26` 条 transition、`8` 个实际作物批次、`8` 次单件投箱、checkpoint `6/6 verified`、pending `0`。购种链精确取得 `8` 份 `(O)475`，源存档哈希保持 `9429c6d01d327111af8c81d0c36f2e318ccc4f1b0ea3094d84e19f25308b22e4`，最终状态哈希为 `bb70acbd0b477b7e14d7fe1b4450ee85292fa29e56de854924e4ee67f1216849`。该有界段没有关闭 Money threshold cell，Money 回到复杂度队列第 11 位。
 - 旧 current-source corpus 直接重放因 target-date time/energy budget 与当前确定性编译结果漂移而失败关闭。随后使用 `game-1.6.15` 原始字典、当前 goal dependency、authoritative graph 和当前源码重新生成 requirement inventory、acquisition lowering 及三分区 corpus；没有把旧漂移结果伪装成当前证据。
-- 新 reconciliation 为 `status=reconciled_open_work`，保持 `4/19 executable、4/19 split-complete、2/19 CoverageGateReady、1/11 root ready`；文件为 `E:\StardewAI-TestLab\artifacts\community-center-current-source-rebind-20261021\coverage\goal-method-coverage-reconciliation.json`，SHA-256 `24dae83e5164cc984486ae9ae008d6899250938da7ff8d695b82a488d3981456`。
-- `complete_community_center` 的两个 criterion 均为 `coverage_ready`，Teacher/native train、validation、test 三分区完整，blocker 与 next action 均为空，现已冻结。下一步只处理 `earn_pet_love`：重放历史生产工件，按当前 authority 重新绑定，通过的分区直接复用，仅重采失效分区。
-- 正式训练状态不变：`Money production cells=0/18`、`CoverageGateReady=2/19`、`formal_product_training_authorized=false`。不新增第二套宠物候选、动作编译器或执行器。
+- Pet Love 三个历史原生运行已按当前 authority 严格重放，无需启动游戏或重采。canonical corpus 为 `ready_split_complete_pet_love_teacher_corpus`，包含 `3 rows / 3 partitions`，Teacher comparison 与 native terminal outcome 的 train、validation、test 均完整；SHA-256 为 `99f885037a21a9ae82865cdeec612c61d5bb8018e4701f1d149f8a4738cfb546`。
+- 历史 `snapshot.v1` 的 hash 含现已非语义的 `machine_probe_cache_tick`；适配器改为复用共享 `SnapshotHash.MatchesStateHash`，仅兼容当前/legacy 两种严格哈希，不放宽 schema、版本、身份、原生结果或篡改门。完整 Goal Method coverage 自测以退出码 0 通过，并覆盖 legacy 正例、来源替换/碰撞和篡改负例。
+- 新 reconciliation 为 `status=reconciled_open_work`，达到 `4/19 executable、5/19 split-complete、3/19 CoverageGateReady、2/11 root ready`；文件为 `E:\StardewAI-TestLab\artifacts\pet-love-current-source-rebind-20261021\goal-method-coverage-reconciliation.json`，SHA-256 `71781e188410a96eaab7d00ad61b703b4ec1981fdb2a0841c0727e611764b383`。Pet Love 为 `coverage_ready`，blocker 与 next action 均为空，现已冻结。
+- 正式训练仍为 `Money production cells=0/18`、`formal_product_training_authorized=false`。下一步只处理 `obtain_skull_key`：重放历史生产工件，按当前 authority 重新绑定，通过的分区直接复用，仅重采失效分区；不新增第二套矿井终局候选、动作编译器或执行器。
 
 ## 已收口 · 2026-10-21 Money 首条完整原生作物生产段
 
