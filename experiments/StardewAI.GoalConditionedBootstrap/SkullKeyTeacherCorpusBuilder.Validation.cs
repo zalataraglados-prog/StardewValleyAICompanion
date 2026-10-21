@@ -218,7 +218,7 @@ public static partial class SkullKeyTeacherCorpusBuilder
             snapshot.GameVersion != "1.6.15" ||
             string.IsNullOrWhiteSpace(snapshot.BridgeVersion) ||
             string.IsNullOrWhiteSpace(snapshot.StateHash) ||
-            snapshot.StateHash != SnapshotHash.ComputeStateHash(snapshot.State))
+            !SnapshotHash.MatchesStateHash(snapshot.State, snapshot.StateHash))
         {
             throw new InvalidDataException(
                 "Skull Key " + label + " snapshot is invalid.");

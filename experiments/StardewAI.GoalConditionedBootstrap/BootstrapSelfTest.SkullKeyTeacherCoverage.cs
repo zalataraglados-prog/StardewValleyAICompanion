@@ -52,6 +52,11 @@ internal static partial class BootstrapSelfTest
                 hasSkullKey: true,
                 hasRewardChest: false,
                 legacySnapshotShape: legacySnapshotShape);
+            if (partition == PolicyDatasetPartitions.Train)
+            {
+                UseLegacySnapshotHash(before);
+                UseLegacySnapshotHash(after);
+            }
             var beforePath = Path.Combine(sourceRoot, "before-snapshot.json");
             var afterPath = Path.Combine(sourceRoot, "after-snapshot.json");
             var resultPath = Path.Combine(sourceRoot, "execution-result.json");

@@ -2,16 +2,18 @@
 
 > **当前状态入口：** [CURRENT_STATUS_CN.md](CURRENT_STATUS_CN.md)。本文件下方带日期的状态、计数和“下一步”均保留为历史证据；若与当前机器报告或 CURRENT_STATUS_CN.md 冲突，不得按历史数字规划新工作。
 >
-> **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已完成 v10 之后的一条 Money 连续生产段，Community Center 与 Pet Love 已按 current authority 重绑并冻结；当前唯一施工项为 `obtain_skull_key` 三分区重放与重绑。P0/P1 共享 correctness blocker 可临时中断，但不得静默改序或并行展开多个 root method。
+> **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已完成 v10 之后的一条 Money 连续生产段，Community Center、Pet Love 与 Skull Key 已按 current authority 重绑并冻结；当前唯一施工项为 `complete_full_shipment` 顶层 dependency/coverage 接线。P0/P1 共享 correctness blocker 可临时中断，但不得静默改序或并行展开多个 root method。
 
-## 当前切片 · 2026-10-21 Pet Love 冻结并切换 Skull Key
+## 当前切片 · 2026-10-21 Skull Key 冻结并切换 Full Shipment
 
 - `money-crop-native-20261021-v10-continuation-v15-full-chain` 已完成既定的第二条有界 Money 连续段：`26` 条 transition、`8` 个实际作物批次、`8` 次单件投箱、checkpoint `6/6 verified`、pending `0`。购种链精确取得 `8` 份 `(O)475`，源存档哈希保持 `9429c6d01d327111af8c81d0c36f2e318ccc4f1b0ea3094d84e19f25308b22e4`，最终状态哈希为 `bb70acbd0b477b7e14d7fe1b4450ee85292fa29e56de854924e4ee67f1216849`。该有界段没有关闭 Money threshold cell，Money 回到复杂度队列第 11 位。
 - 旧 current-source corpus 直接重放因 target-date time/energy budget 与当前确定性编译结果漂移而失败关闭。随后使用 `game-1.6.15` 原始字典、当前 goal dependency、authoritative graph 和当前源码重新生成 requirement inventory、acquisition lowering 及三分区 corpus；没有把旧漂移结果伪装成当前证据。
 - Pet Love 三个历史原生运行已按当前 authority 严格重放，无需启动游戏或重采。canonical corpus 为 `ready_split_complete_pet_love_teacher_corpus`，包含 `3 rows / 3 partitions`，Teacher comparison 与 native terminal outcome 的 train、validation、test 均完整；SHA-256 为 `99f885037a21a9ae82865cdeec612c61d5bb8018e4701f1d149f8a4738cfb546`。
 - 历史 `snapshot.v1` 的 hash 含现已非语义的 `machine_probe_cache_tick`；适配器改为复用共享 `SnapshotHash.MatchesStateHash`，仅兼容当前/legacy 两种严格哈希，不放宽 schema、版本、身份、原生结果或篡改门。完整 Goal Method coverage 自测以退出码 0 通过，并覆盖 legacy 正例、来源替换/碰撞和篡改负例。
-- 新 reconciliation 为 `status=reconciled_open_work`，达到 `4/19 executable、5/19 split-complete、3/19 CoverageGateReady、2/11 root ready`；文件为 `E:\StardewAI-TestLab\artifacts\pet-love-current-source-rebind-20261021\goal-method-coverage-reconciliation.json`，SHA-256 `71781e188410a96eaab7d00ad61b703b4ec1981fdb2a0841c0727e611764b383`。Pet Love 为 `coverage_ready`，blocker 与 next action 均为空，现已冻结。
-- 正式训练仍为 `Money production cells=0/18`、`formal_product_training_authorized=false`。下一步只处理 `obtain_skull_key`：重放历史生产工件，按当前 authority 重新绑定，通过的分区直接复用，仅重采失效分区；不新增第二套矿井终局候选、动作编译器或执行器。
+- Pet Love reconciliation 已达到 `4/19 executable、5/19 split-complete、3/19 CoverageGateReady、2/11 root ready` 并冻结；随后 Skull Key 三条真实普通矿井终端 episode 按当前 authority 严格重放。train 第 209 天 EVD-106、validation/test 两个独立第 223 天运行分别绑定第 6、31、4 步的 `claim_skull_key`，没有混入骷髅洞、火山或 Quarry Mine。
+- Skull Key canonical corpus 为 `ready_split_complete_skull_key_teacher_corpus`、`3 rows / 3 partitions`，Teacher/native train、validation、test 均完整，SHA-256 `ff2afcb27b6e011c3e9261ad1f086f3934cc7710a59adf8f9de021a721df275a`。历史 snapshot hash 通过共享 current-or-legacy matcher；schema、身份、普通矿井 120 层、原生终态和篡改拒绝均未放宽。
+- 新 reconciliation 为 `status=reconciled_open_work`，达到 `4/19 executable、6/19 split-complete、4/19 CoverageGateReady、3/11 root ready`；文件为 `E:\StardewAI-TestLab\artifacts\skull-key-current-source-rebind-20261021\goal-method-coverage-reconciliation.json`，SHA-256 `a6d1ecb14ff9c6a1c8be5d079a69ea95d556760493e7f0d3807cbe8236cea841`。Skull Key blocker 与 next action 均为空，完整 Goal Method coverage 自测以退出码 0 通过。
+- 正式训练仍为 `Money production cells=0/18`、`formal_product_training_authorized=false`。下一步只处理 `complete_full_shipment` 的顶层 Goal Method dependency/coverage 接线，复用当前权威 `26/26` runtime strata 和既有三分区 corpus；不新增第二套获取、投箱、睡眠、动作编译器或执行器。
 
 ## 已收口 · 2026-10-21 Money 首条完整原生作物生产段
 

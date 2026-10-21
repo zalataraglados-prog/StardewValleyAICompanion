@@ -2,9 +2,9 @@
 
 > **当前状态入口：** [CURRENT_STATUS_CN.md](CURRENT_STATUS_CN.md)。本文件下方带日期的状态、计数和“下一步”均保留为历史证据；若与当前机器报告或 CURRENT_STATUS_CN.md 冲突，不得按历史数字规划新工作。
 >
-> **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已从 v10 最终隔离存档闭合下一条 Money 连续生产段，Community Center 与 Pet Love 已按 current authority 重绑并冻结；当前唯一施工项是 `obtain_skull_key`。Money 仍须最终满足原 Exit Gate，但已回到复杂度队列第 11 位。
+> **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已从 v10 最终隔离存档闭合下一条 Money 连续生产段，Community Center、Pet Love 与 Skull Key 已按 current authority 重绑并冻结；当前唯一施工项是 `complete_full_shipment` 顶层 dependency/coverage 接线。Money 仍须最终满足原 Exit Gate，但已回到复杂度队列第 11 位。
 
-## Current slice · 2026-10-21: freeze Pet Love and rebind Skull Key
+## Current slice · 2026-10-21: freeze Skull Key and connect Full Shipment
 
 The bounded Money continuation `money-crop-native-20261021-v10-continuation-v15-full-chain` passed with 26 continuous transitions, eight executed crop batches, eight native single-item shipping deposits, and a complete six-fragment checkpoint. The immutable source save remained at SHA-256 `9429c6d01d327111af8c81d0c36f2e318ccc4f1b0ea3094d84e19f25308b22e4`; the final state hash is `bb70acbd0b477b7e14d7fe1b4450ee85292fa29e56de854924e4ee67f1216849`. This satisfies the bounded Money exit but closes no Money threshold cell.
 
@@ -12,7 +12,9 @@ The old Community Center coverage corpus was not silently reused: deterministic 
 
 The historical Pet Love train, validation, and test native artifacts have now been strictly replayed and rebound without launching the game. The canonical corpus contains three rows across three partitions with verified Teacher comparisons and native terminal outcomes. Its SHA-256 is `99f885037a21a9ae82865cdeec612c61d5bb8018e4701f1d149f8a4738cfb546`; reconciliation SHA-256 is `71781e188410a96eaab7d00ad61b703b4ec1981fdb2a0841c0727e611764b383`. Historical snapshot hashes that include the now-nonsemantic `machine_probe_cache_tick` are accepted only through the shared strict current-or-legacy hash matcher; schema, identity, outcome, and tamper checks remain fail-closed. The complete coverage self-test passed its positive, source-collision, replacement, and tamper cases.
 
-Reconciliation is now `4/19 executable`, `5/19 split-complete`, `3/19 CoverageGateReady`, and `2/11 root ready`; formal product training remains false. Community Center and Pet Love are frozen. The sole active root method is `obtain_skull_key`: replay and rebind its historical three-partition artifacts against current authority, recollect only failed partitions, and do not add a second mine-terminal candidate generator, compiler, or executor.
+The historical Skull Key train, validation, and test terminal episodes have now been strictly replayed and rebound against current authority. They bind exact ordinary-mine floor-120 `claim_skull_key` transitions on days 209 and 223; Skull Cavern, Volcano Dungeon, and Quarry Mine are excluded. The canonical corpus has three rows across three partitions with verified Teacher comparisons and native outcomes. Its SHA-256 is `ff2afcb27b6e011c3e9261ad1f086f3934cc7710a59adf8f9de021a721df275a`; reconciliation SHA-256 is `a6d1ecb14ff9c6a1c8be5d079a69ea95d556760493e7f0d3807cbe8236cea841`. Shared current-or-legacy snapshot hash matching accepts the historical nonsemantic probe field while retaining schema, identity, terminal-outcome, family-isolation, and tamper checks. The complete coverage self-test passed.
+
+Reconciliation is now `4/19 executable`, `6/19 split-complete`, `4/19 CoverageGateReady`, and `3/11 root ready`; formal product training remains false. Community Center, Pet Love, and Skull Key are frozen. The sole active root method is `complete_full_shipment`: connect its existing current-authority `26/26` runtime strata and split-complete Teacher/native corpus to the top-level dependency and coverage graph without adding another acquisition, shipping, sleep, compiler, or executor path.
 
 ## Historical record · 2026-10-21: chain verified crop-production segments into Teacher supervision
 
