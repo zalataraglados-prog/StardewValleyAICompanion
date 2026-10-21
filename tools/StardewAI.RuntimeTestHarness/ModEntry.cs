@@ -2518,6 +2518,7 @@ public sealed partial class ModEntry : Mod
         try
         {
             executorInputTick++;
+            EnsureHeadlessInputPump();
             var shouldPauseForExecutorIdle =
                 config.FreezeClockWhileExecutorIdle &&
                 Context.IsWorldReady &&

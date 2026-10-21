@@ -51,6 +51,7 @@ public sealed partial class ModEntry : Mod
         move.Path = path;
         move.PathIndex = 0;
         move.CurrentDirection = null;
+        move.NeedsPathStartCentering = path.Count > 0;
         move.StuckTicks = 0;
         move.SoftObstacleTicks = 0;
         move.Pending.MovementExtraTicks += 30;

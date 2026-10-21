@@ -1,4 +1,5 @@
 using System.Reflection;
+using StardewAI.RuntimePrimitives;
 using StardewValley;
 using StardewValley.Util;
 
@@ -48,7 +49,8 @@ public sealed partial class ModEntry
         }
 
         headlessInputPump ??= new HeadlessMovementInputSimulator(
-            () => executorMovementLease.Direction);
+            () => executorMovementLease.Direction,
+            () => executorMovementLease.LastTransitionTick);
         if (!ReferenceEquals(GameInputSimulatorField.GetValue(null), headlessInputPump))
         {
             GameInputSimulatorField.SetValue(null, headlessInputPump);
@@ -58,11 +60,19 @@ public sealed partial class ModEntry
     private sealed class HeadlessMovementInputSimulator : IInputSimulator
     {
         private readonly Func<int?> readDirection;
-        private int? previousDirection;
+        private readonly Func<long> readTransitionTick;
+        private readonly MovementInputEdgeTracker edgeTracker = new();
 
-        public HeadlessMovementInputSimulator(Func<int?> readDirection)
+        public int? LastPressedDirection { get; private set; }
+        public int? LastReleasedDirection { get; private set; }
+        public int? LastHeldDirection { get; private set; }
+
+        public HeadlessMovementInputSimulator(
+            Func<int?> readDirection,
+            Func<long> readTransitionTick)
         {
             this.readDirection = readDirection;
+            this.readTransitionTick = readTransitionTick;
         }
 
         public void SimulateInput(
@@ -85,20 +95,24 @@ public sealed partial class ModEntry
             ref bool moveLeftHeld,
             ref bool moveDownHeld)
         {
-            var direction = readDirection();
-            moveUpPressed = direction == 0 && previousDirection != 0;
-            moveRightPressed = direction == 1 && previousDirection != 1;
-            moveDownPressed = direction == 2 && previousDirection != 2;
-            moveLeftPressed = direction == 3 && previousDirection != 3;
-            moveUpReleased = previousDirection == 0 && direction != 0;
-            moveRightReleased = previousDirection == 1 && direction != 1;
-            moveDownReleased = previousDirection == 2 && direction != 2;
-            moveLeftReleased = previousDirection == 3 && direction != 3;
-            moveUpHeld = direction == 0;
-            moveRightHeld = direction == 1;
-            moveDownHeld = direction == 2;
-            moveLeftHeld = direction == 3;
-            previousDirection = direction;
+            var edges = edgeTracker.Observe(
+                readDirection(),
+                readTransitionTick());
+            LastPressedDirection = edges.PressedDirection;
+            LastReleasedDirection = edges.ReleasedDirection;
+            LastHeldDirection = edges.HeldDirection;
+            moveUpPressed = edges.PressedDirection == 0;
+            moveRightPressed = edges.PressedDirection == 1;
+            moveDownPressed = edges.PressedDirection == 2;
+            moveLeftPressed = edges.PressedDirection == 3;
+            moveUpReleased = edges.ReleasedDirection == 0;
+            moveRightReleased = edges.ReleasedDirection == 1;
+            moveDownReleased = edges.ReleasedDirection == 2;
+            moveLeftReleased = edges.ReleasedDirection == 3;
+            moveUpHeld = edges.HeldDirection == 0;
+            moveRightHeld = edges.HeldDirection == 1;
+            moveDownHeld = edges.HeldDirection == 2;
+            moveLeftHeld = edges.HeldDirection == 3;
         }
     }
 }

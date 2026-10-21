@@ -536,7 +536,136 @@ static partial class Program
 
             if (replanDecision.ShouldReplan)
             {
-                if (activeObjectiveContinuation is null)
+                if (HasPriorityStoryEventInterrupt(currentBeforeSnapshot))
+                {
+                    var interruptedBaseAction =
+                        !string.Equals(
+                            ReadString(item, "runtime_priority_interrupt"),
+                            "story_event",
+                            StringComparison.Ordinal) &&
+                        ReadArrayStrings(execution, "block_reasons").Any(reason =>
+                            reason.StartsWith(
+                                "movement_interrupted_by_story_event:",
+                                StringComparison.Ordinal));
+                    if (interruptedBaseAction)
+                    {
+                        // The story event, not the action semantics, blocked this
+                        // attempt. Allow the selected objective to compile the same
+                        // native action again after the interrupt completes.
+                        attemptedSemanticKeys.Remove(itemSemanticKey);
+                        execution[
+                            "priority_interrupt_released_interrupted_semantic_key"] =
+                            true;
+                    }
+                    var interrupt = await BuildPriorityStoryEventQueueAsync(
+                        http,
+                        options,
+                        currentStateHash);
+                    var interruptSuffix = "-item-" +
+                        (attemptedCount + 1).ToString("D4");
+                    var interruptPlanPath = Path.Combine(
+                        options.SnapshotDir,
+                        "interrupt-compiled-plan-" + iteration.ToString("D4") +
+                        interruptSuffix + ".json");
+                    var interruptResponsePath = Path.Combine(
+                        options.SnapshotDir,
+                        "interrupt-compile-response-" + iteration.ToString("D4") +
+                        interruptSuffix + ".json");
+                    var interruptQueuePath = Path.Combine(
+                        options.SnapshotDir,
+                        "interrupt-compiled-queue-" + iteration.ToString("D4") +
+                        interruptSuffix + ".json");
+                    var interruptRankingPath = Path.Combine(
+                        options.SnapshotDir,
+                        "interrupt-ranking-" + iteration.ToString("D4") +
+                        interruptSuffix + ".json");
+                    await File.WriteAllTextAsync(
+                        interruptPlanPath,
+                        interrupt.Plan.ToJsonString(JsonOptions),
+                        Encoding.UTF8);
+                    await File.WriteAllTextAsync(
+                        interruptResponsePath,
+                        interrupt.Response.ToJsonString(JsonOptions),
+                        Encoding.UTF8);
+                    await File.WriteAllTextAsync(
+                        interruptQueuePath,
+                        interrupt.Queue.ToJsonString(JsonOptions),
+                        Encoding.UTF8);
+                    await File.WriteAllTextAsync(
+                        interruptRankingPath,
+                        interrupt.Ranking.ToJsonString(JsonOptions),
+                        Encoding.UTF8);
+
+                    var interruptQueueId = ReadString(
+                        interrupt.Queue,
+                        "queue_id");
+                    var interruptItems = QueueReplanFilter.FilterUnattempted(
+                        ExecutableQueueItems(interrupt.Queue),
+                        attemptedSemanticKeys);
+                    foreach (var interruptItem in interruptItems)
+                    {
+                        interruptItem["runtime_queue_id"] = interruptQueueId;
+                        interruptItem["mechanical_compiled_queue_path"] =
+                            interruptQueuePath;
+                        interruptItem["runtime_priority_interrupt"] =
+                            "story_event";
+                        interruptItem[
+                            "runtime_priority_interrupt_source_state_hash"] =
+                            currentStateHash;
+                        QueueReplanFilter.StampSelectedQueueIdentity(
+                            interruptItem,
+                            selectedCandidateId,
+                            selectedQueueIndex);
+                    }
+
+                    var retainedSuffix = queueItems.Skip(itemIndex + 1);
+                    queueItems = queueItems
+                        .Take(itemIndex + 1)
+                        .Concat(interruptItems)
+                        .Concat(retainedSuffix)
+                        .ToArray();
+                    queueId = interruptQueueId;
+                    execution["queue_replan_applied"] =
+                        interruptItems.Length > 0;
+                    execution["queue_replan_kind"] =
+                        "priority_story_event_interrupt";
+                    execution["selected_queue_lock_preserved"] = true;
+                    execution["queue_replan_trigger_status"] = executionStatus;
+                    execution["queue_replan_trigger_reason"] =
+                        replanDecision.Reason;
+                    execution["queue_replan_source_state_hash"] =
+                        currentStateHash;
+                    execution["queue_replan_previous_queue_id"] =
+                        executionRequest.QueueId;
+                    execution["queue_replan_queue_id"] = interruptQueueId;
+                    execution["queue_replan_trigger_queue_item_id"] =
+                        executionRequest.QueueItemId;
+                    execution["queue_replan_trigger_semantic_key"] =
+                        itemSemanticKey;
+                    execution["queue_replan_remaining_after_filter"] =
+                        interruptItems.Length;
+                    execution["queue_replan_attempted_semantic_key_count"] =
+                        attemptedSemanticKeys.Count;
+                    execution["queue_replan_item_count"] =
+                        queueItems.Length - itemIndex - 1;
+                    execution["queue_replan_plan_path"] = interruptPlanPath;
+                    execution["queue_replan_response_path"] =
+                        interruptResponsePath;
+                    execution["queue_replan_queue_path"] = interruptQueuePath;
+                    execution["queue_replan_ranking_path"] =
+                        interruptRankingPath;
+                    execution["priority_interrupt_selection_policy"] =
+                        "active_native_story_event_preempts_mechanical_continuation;" +
+                        "preserve_selected_queue_lock;resume_after_event";
+                    if (interruptItems.Length == 0)
+                    {
+                        queueItems = queueItems.Take(itemIndex + 1).ToArray();
+                        execution["selected_queue_redecision_required"] = true;
+                        execution["queue_replan_stop_reason"] =
+                            "priority_story_event_interrupt_unavailable";
+                    }
+                }
+                else if (activeObjectiveContinuation is null)
                 {
                     execution["queue_replan_applied"] = false;
                     if (!QueueReplanFilter.IsContinuableExecutionStatus(
@@ -652,7 +781,6 @@ static partial class Program
                     attemptedCount == originalPlannedItemCount
                 : QueueReplanFilter.CompletesSelectedQueueCandidate(
                     executionStatus,
-                    completedContinuationThisStep,
                     activeObjectiveContinuation,
                     selectedCandidateId,
                     nextCandidateId);
@@ -777,6 +905,25 @@ static partial class Program
         }
         await File.WriteAllTextAsync(aggregateExecutionPath, aggregate.ToJsonString(JsonOptions), Encoding.UTF8);
         return aggregate;
+    }
+
+    private static bool HasPriorityStoryEventInterrupt(JsonObject snapshot)
+    {
+        if (snapshot["state"]?["player"]?["story_event"]?["value"] is not
+            JsonObject storyEvent)
+        {
+            return false;
+        }
+
+        return storyEvent["active"]?.GetValue<bool>() == true &&
+            storyEvent["event_up"]?.GetValue<bool>() == true &&
+            storyEvent["is_festival"]?.GetValue<bool>() != true &&
+            storyEvent["skipped"]?.GetValue<bool>() != true &&
+            storyEvent["player_control_sequence"]?.GetValue<bool>() != true &&
+            string.IsNullOrWhiteSpace(
+                storyEvent["active_minigame_type"]?.GetValue<string>()) &&
+            !string.IsNullOrWhiteSpace(
+                storyEvent["event_id"]?.GetValue<string>());
     }
 
 }

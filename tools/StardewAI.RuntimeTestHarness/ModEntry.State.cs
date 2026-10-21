@@ -52,6 +52,7 @@ public sealed partial class ModEntry : Mod
             Path = path;
             ConnectorActionTile = connectorActionTile;
             ConnectorExitDirection = connectorExitDirection;
+            NeedsPathStartCentering = path.Count > 0;
             LastPosition = Game1.player.Position;
             LocationId = Game1.currentLocation.NameOrUniqueName;
             MaxTicks = Math.Max(120, path.Count * 90);
@@ -70,6 +71,7 @@ public sealed partial class ModEntry : Mod
         public int Tick { get; set; }
         public int PathIndex { get; set; }
         public int? CurrentDirection { get; set; }
+        public bool NeedsPathStartCentering { get; set; }
         public int StuckTicks { get; set; }
         public int SoftObstacleTicks { get; set; }
         public bool IncidentalDialogueButtonHeld { get; set; }

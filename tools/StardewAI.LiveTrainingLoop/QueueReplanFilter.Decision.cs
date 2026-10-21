@@ -721,19 +721,17 @@ public static partial class QueueReplanFilter
 
     public static bool CompletesSelectedQueueCandidate(
         string executionStatus,
-        bool objectiveContinuationCompleted,
         JsonObject? activeObjectiveContinuation,
         string selectedCandidateId,
         string nextCandidateId)
     {
         return IsContinuableExecutionStatus(executionStatus) &&
-            (objectiveContinuationCompleted ||
-             activeObjectiveContinuation is null &&
-             (string.IsNullOrWhiteSpace(nextCandidateId) ||
-              !string.Equals(
-                  nextCandidateId,
-                  selectedCandidateId,
-                  StringComparison.Ordinal)));
+            activeObjectiveContinuation is null &&
+            (string.IsNullOrWhiteSpace(nextCandidateId) ||
+             !string.Equals(
+                 nextCandidateId,
+                 selectedCandidateId,
+                 StringComparison.Ordinal));
     }
 }
 

@@ -58,7 +58,9 @@ static partial class Program
         string stateHash,
         IReadOnlyCollection<JsonObject> suppressedObjectiveContinuations,
         IReadOnlyList<string>? candidateOptionIdsOverride = null,
-        IReadOnlyList<SmallModelActionParameter>? candidateParametersOverride = null)
+        IReadOnlyList<SmallModelActionParameter>? candidateParametersOverride = null,
+        string? candidateKindOverride = null,
+        string? candidateIdOverride = null)
     {
         var candidateOptionIds = candidateOptionIdsOverride ??
             options.DailyPlanCandidateOptionIds;
@@ -118,14 +120,14 @@ static partial class Program
             unsuppressedCandidates.ToJsonString())?.AsArray() ?? new JsonArray();
         var effectiveCandidateKind = exclusiveRecovery
             ? string.Empty
-            : options.DailyPlanCandidateKind;
+            : candidateKindOverride ?? options.DailyPlanCandidateKind;
         var selectedCandidates =
             QueueReplanFilter.FilterCandidateKind(
                 continuationCandidates,
                 effectiveCandidateKind);
         var effectiveCandidateId = exclusiveRecovery
             ? string.Empty
-            : options.DailyPlanCandidateId;
+            : candidateIdOverride ?? options.DailyPlanCandidateId;
         selectedCandidates =
             QueueReplanFilter.FilterCandidateId(
                 selectedCandidates,
@@ -191,6 +193,23 @@ static partial class Program
         var queue = response["action_queue"]?.AsObject() ?? throw new InvalidOperationException("daily plan response did not include action_queue");
         return (response, plan, queue, ranking);
     }
+
+    private static Task<(
+        JsonObject Response,
+        JsonObject Plan,
+        JsonObject Queue,
+        JsonObject Ranking)> BuildPriorityStoryEventQueueAsync(
+            HttpClient http,
+            LiveTrainingOptions options,
+            string stateHash) =>
+        BuildQueueFromDailyPlanAsync(
+            http,
+            options,
+            stateHash,
+            Array.Empty<JsonObject>(),
+            new[] { "story.advance_event" },
+            candidateKindOverride: string.Empty,
+            candidateIdOverride: string.Empty);
 
     private static Task<(JsonObject Response, JsonObject Plan, JsonObject Queue, JsonObject Ranking)> BuildNativeSaveBoundaryQueueAsync(
         HttpClient http,

@@ -28,6 +28,17 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
             "tools", "StardewAI.LiveTrainingLoop", "Program.QueueBuilding.cs"));
 
         Assert.Contains("BuildQueueFromSelectedCandidateAsync(", runtimeSource, StringComparison.Ordinal);
+        Assert.Contains("BuildPriorityStoryEventQueueAsync(", runtimeSource, StringComparison.Ordinal);
+        Assert.Contains("runtime_priority_interrupt", runtimeSource, StringComparison.Ordinal);
+        Assert.Contains(
+            "priority_interrupt_released_interrupted_semantic_key",
+            runtimeSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "attemptedSemanticKeys.Remove(itemSemanticKey)",
+            runtimeSource,
+            StringComparison.Ordinal);
+        Assert.Contains("selected_queue_lock_preserved", runtimeSource, StringComparison.Ordinal);
         Assert.Contains("SelectedQueueDecisionLease.Load(", runtimeSource, StringComparison.Ordinal);
         Assert.Contains("StampSelectedQueueIdentity(", runtimeSource, StringComparison.Ordinal);
         Assert.Contains(
@@ -43,6 +54,9 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
         Assert.Contains("/api/v1/planner/options/availability", queueBuildingSource, StringComparison.Ordinal);
         Assert.Contains("policy_model_invoked\"] = false", queueBuildingSource, StringComparison.Ordinal);
         Assert.Contains("no_policy_rerank", queueBuildingSource, StringComparison.Ordinal);
+        Assert.Contains("new[] { \"story.advance_event\" }", queueBuildingSource, StringComparison.Ordinal);
+        Assert.Contains("candidateKindOverride: string.Empty", queueBuildingSource, StringComparison.Ordinal);
+        Assert.Contains("candidateIdOverride: string.Empty", queueBuildingSource, StringComparison.Ordinal);
         Assert.DoesNotContain(
             "selected queue continuation must use deterministic continuation compilation",
             queueBuildingSource,
@@ -291,10 +305,19 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
             expected,
             QueueReplanFilter.CompletesSelectedQueueCandidate(
                 status,
-                objectiveContinuationCompleted: false,
                 activeObjectiveContinuation: null,
                 selectedCandidateId: "candidate.first",
                 nextCandidateId: "candidate.second"));
+    }
+
+    [Fact]
+    public void SelectedCandidateCompletionWaitsForSameCandidateCleanup()
+    {
+        Assert.False(QueueReplanFilter.CompletesSelectedQueueCandidate(
+            "applied",
+            activeObjectiveContinuation: null,
+            selectedCandidateId: "candidate.first",
+            nextCandidateId: "candidate.first"));
     }
 
     [Fact]

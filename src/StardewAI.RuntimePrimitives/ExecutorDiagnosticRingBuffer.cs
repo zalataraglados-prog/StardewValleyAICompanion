@@ -19,6 +19,17 @@ namespace StardewAI.RuntimePrimitives
         public bool CanMove { get; set; }
         public bool CanReleaseTool { get; set; }
         public bool PauseForSingleAnimation { get; set; }
+        public bool GamePaused { get; set; }
+        public bool GlobalFade { get; set; }
+        public bool FreezeControls { get; set; }
+        public bool IsWarping { get; set; }
+        public bool EventUp { get; set; }
+        public int FreezePause { get; set; }
+        public string MovementDirections { get; set; } = string.Empty;
+        public long MovementTransitionTick { get; set; }
+        public int? HeadlessPressedDirection { get; set; }
+        public int? HeadlessReleasedDirection { get; set; }
+        public int? HeadlessHeldDirection { get; set; }
         public string MovementTransitionReason { get; set; } = string.Empty;
     }
 

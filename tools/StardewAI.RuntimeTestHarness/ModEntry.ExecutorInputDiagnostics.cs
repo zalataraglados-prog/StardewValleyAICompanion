@@ -41,6 +41,20 @@ public sealed partial class ModEntry
             CanReleaseTool = player.canReleaseTool,
             PauseForSingleAnimation =
                 player.FarmerSprite.PauseForSingleAnimation,
+            GamePaused = Game1.paused,
+            GlobalFade = Game1.globalFade,
+            FreezeControls = Game1.freezeControls,
+            IsWarping = Game1.isWarping,
+            EventUp = Game1.eventUp,
+            FreezePause = player.freezePause,
+            MovementDirections = string.Join(",", player.movementDirections),
+            MovementTransitionTick = executorMovementLease.LastTransitionTick,
+            HeadlessPressedDirection =
+                (headlessInputPump as HeadlessMovementInputSimulator)?.LastPressedDirection,
+            HeadlessReleasedDirection =
+                (headlessInputPump as HeadlessMovementInputSimulator)?.LastReleasedDirection,
+            HeadlessHeldDirection =
+                (headlessInputPump as HeadlessMovementInputSimulator)?.LastHeldDirection,
             MovementTransitionReason =
                 executorMovementLease.LastTransitionReason
         });

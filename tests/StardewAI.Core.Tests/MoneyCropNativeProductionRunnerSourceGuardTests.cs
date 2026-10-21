@@ -21,6 +21,12 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
             "scripts",
             "lib",
             "RuntimeMoneyCropSeedAcquisition.ps1"));
+    private static readonly string SeedAcquisitionProofStages =
+        File.ReadAllText(
+            FindRepositoryFile(
+                "experiments",
+                "StardewAI.GoalConditionedBootstrap",
+                "MoneyRevenueCropSeedAcquisitionProofBuilder.Stages.cs"));
     private static readonly string ProductionInput = File.ReadAllText(
         FindRepositoryFile(
             "scripts",
@@ -31,6 +37,12 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
             "scripts",
             "lib",
             "RuntimeMoneyCropEvidenceFinalization.ps1"));
+    private static readonly string PersistentBoundaryNormalization =
+        File.ReadAllText(
+            FindRepositoryFile(
+                "experiments",
+                "StardewAI.GoalConditionedBootstrap",
+                "FullShipmentRecoverySettlementBoundary.Normalization.cs"));
     private static readonly string TerminalSettlementRuntime =
         File.ReadAllText(
             FindRepositoryFile(
@@ -236,6 +248,26 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
             "selected_queue_continuation_retry_next_iteration",
             CommonRuntime,
             StringComparison.Ordinal);
+        Assert.Contains("$terminalBlockReasons", CommonRuntime,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "@($stepResults[$stepResults.Count - 1].block_reasons)",
+            CommonRuntime,
+            StringComparison.Ordinal);
+        Assert.Contains("$boundedContinuationPending", CommonRuntime,
+            StringComparison.Ordinal);
+        Assert.Contains("\"--max-queue-item-attempts\", \"12\"",
+            CommonRuntime, StringComparison.Ordinal);
+        Assert.Contains("max_queue_item_attempts_reached", CommonRuntime,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "[string]$execution.objective_continuation.kind",
+            CommonRuntime,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "[string]$lastStep.primitive_verification_status -eq \"verified\"",
+            CommonRuntime,
+            StringComparison.Ordinal);
         Assert.Contains("economy.buy_supplies", SeedAcquisitionRuntime,
             StringComparison.Ordinal);
         Assert.Contains("continuation.quantity", SeedAcquisitionRuntime,
@@ -257,6 +289,74 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
         Assert.DoesNotContain("addItemToInventory", SeedAcquisitionRuntime,
             StringComparison.Ordinal);
         Assert.DoesNotContain("Game1.player.Money", SeedAcquisitionRuntime,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "continuation.option_id\") == \"economy.buy_supplies\"",
+            SeedAcquisitionProofStages,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "IsStoryInterruptContinuation",
+            SeedAcquisitionProofStages,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "optionId == \"executor.advance_story_event\"",
+            SeedAcquisitionProofStages,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "VerifyTransitionStepBoundaries",
+            SeedAcquisitionProofStages,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "allowPurchaseMutation: true",
+            SeedAcquisitionProofStages,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "TryProjectExpectedResourceMutationInvariant",
+            SeedAcquisitionProofStages,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "IsVerifiedNativeStoryInterrupt",
+            SeedAcquisitionProofStages,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "runtime_priority_interrupt",
+            SeedAcquisitionProofStages,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "receiptDirectory + Path.DirectorySeparatorChar",
+            SeedAcquisitionProofStages,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "NormalizeMachineProjectionCache(value)",
+            PersistentBoundaryNormalization,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "machine.Remove(\"machine_probe_cache_tick\")",
+            PersistentBoundaryNormalization,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "calendar.Remove(\"time_of_day\")",
+            PersistentBoundaryNormalization,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "NormalizeIslandFieldOfficeRuntimeState(value)",
+            PersistentBoundaryNormalization,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"menu_clear\"",
+            PersistentBoundaryNormalization,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "NormalizeRemoteRewardRuntimeState(value)",
+            PersistentBoundaryNormalization,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "NormalizeRemoteQuestRuntimeState(value)",
+            PersistentBoundaryNormalization,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "NormalizeSpecialOrderBoardRuntimeState(value)",
+            PersistentBoundaryNormalization,
             StringComparison.Ordinal);
     }
 
@@ -501,6 +601,26 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains(
             "step.AfterGameTick < step.BeforeGameTick",
+            ContinuationReceiptValidator,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "IsRecoverablePriorityStoryInterruptStep",
+            ContinuationReceiptValidator,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "movement_interrupted_by_story_event:",
+            ContinuationReceiptValidator,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "priority_story_event_interrupt",
+            ContinuationReceiptValidator,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "continuation.HasActiveObjectiveContinuation",
+            ContinuationReceiptValidator,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "var completionMarkerMatches = verifiedCompleted",
             ContinuationReceiptValidator,
             StringComparison.Ordinal);
     }

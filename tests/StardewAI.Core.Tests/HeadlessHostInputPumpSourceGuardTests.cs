@@ -22,8 +22,11 @@ public sealed class HeadlessHostInputPumpSourceGuardTests
         Assert.Contains("IsHeadlessTrainingRuntime()", entry, StringComparison.Ordinal);
         Assert.Contains("OnHeadlessTrainingSaveLoaded", entry, StringComparison.Ordinal);
         Assert.Contains("GameInputSimulatorField.SetValue(null, headlessInputPump)", source, StringComparison.Ordinal);
-        Assert.Contains("moveLeftHeld = direction == 3", source, StringComparison.Ordinal);
-        Assert.Contains("moveLeftReleased = previousDirection == 3", source, StringComparison.Ordinal);
+        Assert.Contains("EnsureHeadlessInputPump();", entry, StringComparison.Ordinal);
+        Assert.Contains("executorMovementLease.LastTransitionTick", source, StringComparison.Ordinal);
+        Assert.Contains("MovementInputEdgeTracker", source, StringComparison.Ordinal);
+        Assert.Contains("moveLeftHeld = edges.HeldDirection == 3", source, StringComparison.Ordinal);
+        Assert.Contains("moveLeftReleased = edges.ReleasedDirection == 3", source, StringComparison.Ordinal);
         Assert.DoesNotContain("actionButtonPressed =", source, StringComparison.Ordinal);
         Assert.DoesNotContain("Game1.player.Position =", source, StringComparison.Ordinal);
     }

@@ -28,6 +28,34 @@ public sealed class ExecutorInputLifecycleSourceGuardTests
             "movedSinceLastTick &&",
             movementLoop,
             StringComparison.Ordinal);
+        Assert.Contains(
+            "TickMovementControlGate(move)",
+            movementLoop,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "movement_native_control_gate_settling",
+            movementLoop,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "movement_interrupted_by_story_event:",
+            movementLoop,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "if (move.NeedsPathStartCentering)",
+            movementLoop,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "SettleFarmerOnTile(move, pathStartTile, \"path_start\")",
+            movementLoop,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "SettleFarmerOnTile(move, move.TargetTile, \"target_tile\")",
+            movementLoop,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "SettleFarmerOnTargetTile",
+            movementLoop,
+            StringComparison.Ordinal);
     }
 
     [Fact]
@@ -121,6 +149,52 @@ public sealed class ExecutorInputLifecycleSourceGuardTests
         Assert.Contains("executorDiagnosticFrames.Snapshot()", diagnostics, StringComparison.Ordinal);
         Assert.Contains("lastExecutorDiagnosticDumpTick", diagnostics, StringComparison.Ordinal);
         Assert.DoesNotContain("AppendAllText", diagnostics, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void NativeStoryEventInterruptsAndThenResumesTheSelectedQueue()
+    {
+        var runtime = ReadRepositoryFile(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.RuntimeExecution.cs");
+        var queueBuilding = ReadRepositoryFile(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.QueueBuilding.cs");
+
+        Assert.Contains(
+            "HasPriorityStoryEventInterrupt(currentBeforeSnapshot)",
+            runtime,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "BuildPriorityStoryEventQueueAsync(",
+            runtime,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "runtime_priority_interrupt",
+            runtime,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "priority_story_event_interrupt",
+            runtime,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "selected_queue_lock_preserved",
+            runtime,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "new[] { \"story.advance_event\" }",
+            queueBuilding,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "candidateKindOverride: string.Empty",
+            queueBuilding,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "candidateIdOverride: string.Empty",
+            queueBuilding,
+            StringComparison.Ordinal);
     }
 
     private static string ReadRepositoryFile(params string[] segments)

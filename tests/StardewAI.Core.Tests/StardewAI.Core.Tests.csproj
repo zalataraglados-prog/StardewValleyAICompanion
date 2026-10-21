@@ -84,6 +84,9 @@
     <Compile Include="ValidationImpactAdvisoryTests.cs" />
     <Compile Include="InvocationReadSessionTests.cs" />
     <Compile Include="GenericMovementClearanceBoundarySourceGuardTests.cs" />
+    <Compile Include="ExecutorInputLifecycleTests.cs" />
+    <Compile Include="ExecutorInputLifecycleSourceGuardTests.cs" />
+    <Compile Include="MovementTimingEvidenceSourceGuardTests.cs" />
     <Compile Include="GrandpaDirectionCatalogGovernanceTests.cs" />
     <Compile Include="WildTreeTapperOutputSourceGuardTests.cs" />
     <Compile Include="WildTreeChopAcquisitionMainlineTests.cs" />
@@ -104,7 +107,6 @@
     <PackageReference Update="Pathoschild.Stardew.ModBuildConfig"
                       ExcludeAssets="compile;runtime;build;buildTransitive;native;contentfiles;analyzers" />
     <ProjectReference Remove="..\..\src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj" />
-    <ProjectReference Remove="..\..\src\StardewAI.RuntimePrimitives\StardewAI.RuntimePrimitives.csproj" />
     <ProjectReference Remove="..\..\tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj" />
     <ProjectReference Remove="..\..\tools\StardewAI.FriendshipTeacherRollout\StardewAI.FriendshipTeacherRollout.csproj" />
   </ItemGroup>
