@@ -2,21 +2,21 @@
 
 > **当前状态入口：** [CURRENT_STATUS_CN.md](CURRENT_STATUS_CN.md)。本文件下方带日期的状态、计数和“下一步”均保留为历史证据；若与当前机器报告或 CURRENT_STATUS_CN.md 冲突，不得按历史数字规划新工作。
 >
-> **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已闭合从 v10 最终隔离存档开始的一条 Money 连续生产段，Community Center、Pet Love 与 Skull Key 已通过 current-authority 重绑并冻结；当前唯一施工项是 `complete_full_shipment` 顶层接线。Money Exit Gate 标准不降低，但 Money 已回到复杂度队列第 11 位。
+> **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已闭合从 v10 最终隔离存档开始的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已通过 current-authority 复核并冻结；当前唯一施工项是 `complete_master_angler` 顶层依赖、日历窗口与 coverage 接线。Money Exit Gate 标准不降低，但 Money 已回到复杂度队列第 11 位。
 
 ## 当前准入状态 · 2026-10-21
 
 正式训练准入没有变化：
 
 ```text
-CoverageGateReady:       4/19
+CoverageGateReady:       5/19
 Money production cells:  0/18
 Formal product training: false
 ```
 
 `money-crop-native-20261021-v10-continuation-v15-full-chain` 已完成本轮 Money 有界退出条件，包含 `26` 条连续 transition、`8` 个作物批次、`8` 次单件投箱和 `6/6` checkpoint，源存档保持不变，最终状态哈希为 `bb70acbd0b477b7e14d7fe1b4450ee85292fa29e56de854924e4ee67f1216849`。它没有跨越并接入 Money criterion-local cell，因此 `0/18` 不变。
 
-Community Center、Pet Love 与 Skull Key 已通过当前源码的严格三分区重放与重绑。Skull Key corpus SHA-256 为 `ff2afcb27b6e011c3e9261ad1f086f3934cc7710a59adf8f9de021a721df275a`，新 reconciliation SHA-256 为 `a6d1ecb14ff9c6a1c8be5d079a69ea95d556760493e7f0d3807cbe8236cea841`。当前准入指标为 `4/19 executable、6/19 split-complete、4/19 CoverageGateReady、3/11 root ready`；下一项是 Full Shipment 顶层 Goal Method 接线，而不是开始正式训练。
+Community Center、Pet Love、Skull Key 与 Full Shipment 已通过 current-authority 复核。Full Shipment 由 `154/154` 静态来源/编译完整性、`26/26` 原生执行签名分层和既有三分区 Teacher/native 证据共同关闭训练前置；完整 154 项 recurrence 仍是正常游玩与最终验收能力。新 reconciliation SHA-256 为 `71f0e4ed0e7928c1e63f39641f4b90153674f154a575ec331342a3d5241adf43`。当前准入指标为 `5/19 executable、6/19 split-complete、5/19 CoverageGateReady、4/11 root ready`；下一项是 Master Angler 顶层接线，而不是开始正式训练。
 
 Money 的第一条完整原生作物生产段 `money-crop-native-20261021-pricefix-v10` 已通过：checkpoint v12 为 `6/6 verified、0 pending`，终局含 `5` 次单件原生投箱和唯一睡眠结算，实际收入 `875g`，最终为春 20 日 06:00、`money=925`、`totalMoneyEarned=875`。源存档和隔离 Mod 哈希均未漂移。这证明 native runner、购种、场地准备、作物生命周期、留存、容量和运输箱终局可以在同一连续真实轨迹中闭合。
 
@@ -24,7 +24,7 @@ Money 的第一条完整原生作物生产段 `money-crop-native-20261021-pricef
 
 `money_revenue_crop_production_teacher_comparison_receipt.v1` 已关闭 segment-level comparison：完整保留 `50` 候选、`5` admitted、`45` blocked 及 `4` 条选中候选偏好对，并只把真实成本/收入绑定到唯一执行候选。它不把 counterfactual 推演冒充原生结果，也明确保持 `criterion_local_join_ready=false`。
 
-**准入规则没有降低：**v10 生产段尚未跨越最低 `50,000g` Money criterion，v15 也没有形成 criterion-local cell，因此不能增加 `0/18` 分子。Pet Love 与 Skull Key 的提升都来自三分区 Teacher/native 证据在当前 authority 下完整通过，而非降低门槛；当前按 canonical 复杂度队列进入 Full Shipment 顶层接线。Money 最终返回时，仍只有累计原生轨迹真实跨越阈值，并且相应 train/validation/test 分区的 exact comparison 和 native outcome 均闭合，Money cell 才能入账。Full Shipment current-authority `26/26` 只证明 runtime strata 已闭合，顶层 method 仍必须独立达到 executable。
+**准入规则没有降低：**v10 生产段尚未跨越最低 `50,000g` Money criterion，v15 也没有形成 criterion-local cell，因此不能增加 `0/18` 分子。Full Shipment 的提升来自机器可验的静态全分母、原生分层全覆盖、顶层依赖一致性和三分区双通道共同通过，不是删除游戏能力或缩小目标；当前按 canonical 复杂度队列进入 Master Angler。Money 最终返回时，仍只有累计原生轨迹真实跨越阈值，并且相应 train/validation/test 分区的 exact comparison 和 native outcome 均闭合，Money cell 才能入账。
 
 ## 已收口待后续证据 · 2026-10-18 Money 种子预留 proof
 

@@ -2,9 +2,9 @@
 
 > **当前状态入口：** [CURRENT_STATUS_CN.md](CURRENT_STATUS_CN.md)。本文件下方带日期的状态、计数和“下一步”均保留为历史证据；若与当前机器报告或 CURRENT_STATUS_CN.md 冲突，不得按历史数字规划新工作。
 >
-> **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已从 v10 最终隔离存档闭合下一条 Money 连续生产段，Community Center、Pet Love 与 Skull Key 已按 current authority 重绑并冻结；当前唯一施工项是 `complete_full_shipment` 顶层 dependency/coverage 接线。Money 仍须最终满足原 Exit Gate，但已回到复杂度队列第 11 位。
+> **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已从 v10 最终隔离存档闭合下一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已按 current authority 冻结；当前唯一施工项是 `complete_master_angler` 顶层 dependency、日历窗口与 coverage 接线。Money 仍须最终满足原 Exit Gate，但已回到复杂度队列第 11 位。
 
-## Current slice · 2026-10-21: freeze Skull Key and connect Full Shipment
+## Current slice · 2026-10-21: freeze Full Shipment and connect Master Angler
 
 The bounded Money continuation `money-crop-native-20261021-v10-continuation-v15-full-chain` passed with 26 continuous transitions, eight executed crop batches, eight native single-item shipping deposits, and a complete six-fragment checkpoint. The immutable source save remained at SHA-256 `9429c6d01d327111af8c81d0c36f2e318ccc4f1b0ea3094d84e19f25308b22e4`; the final state hash is `bb70acbd0b477b7e14d7fe1b4450ee85292fa29e56de854924e4ee67f1216849`. This satisfies the bounded Money exit but closes no Money threshold cell.
 
@@ -14,7 +14,11 @@ The historical Pet Love train, validation, and test native artifacts have now be
 
 The historical Skull Key train, validation, and test terminal episodes have now been strictly replayed and rebound against current authority. They bind exact ordinary-mine floor-120 `claim_skull_key` transitions on days 209 and 223; Skull Cavern, Volcano Dungeon, and Quarry Mine are excluded. The canonical corpus has three rows across three partitions with verified Teacher comparisons and native outcomes. Its SHA-256 is `ff2afcb27b6e011c3e9261ad1f086f3934cc7710a59adf8f9de021a721df275a`; reconciliation SHA-256 is `a6d1ecb14ff9c6a1c8be5d079a69ea95d556760493e7f0d3807cbe8236cea841`. Shared current-or-legacy snapshot hash matching accepts the historical nonsemantic probe field while retaining schema, identity, terminal-outcome, family-isolation, and tamper checks. The complete coverage self-test passed.
 
-Reconciliation is now `4/19 executable`, `6/19 split-complete`, `4/19 CoverageGateReady`, and `3/11 root ready`; formal product training remains false. Community Center, Pet Love, and Skull Key are frozen. The sole active root method is `complete_full_shipment`: connect its existing current-authority `26/26` runtime strata and split-complete Teacher/native corpus to the top-level dependency and coverage graph without adding another acquisition, shipping, sleep, compiler, or executor path.
+Full Shipment's dependency nodes already declared `full_recurrence_required_for_training=false`, but the method header still carried a stale blocker requiring a complete fresh-save 154-item recurrence. Current machine evidence confirms the full `154/154` static source/compiler denominator, 641 routes, 26 execution-signature strata, zero static blockers, and a strict `26/26` native evidence index with shared shipping/settlement verified. The full 154-item recurrence remains required for normal gameplay and optional final acceptance; it is not discarded or treated as a repeated training-evidence prerequisite.
+
+After removing the contradictory blocker, Full Shipment is `executable_frontier` and `coverage_ready` with no blockers or next actions. Coverage report SHA-256 is `b2cc9dd87212c9e86324708a38f2545723325b04ed7ea3ce19dc01473bab9743`; reconciliation SHA-256 is `71f0e4ed0e7928c1e63f39641f4b90153674f154a575ec331342a3d5241adf43`. The complete coverage self-test passed, including Pet Love, Skull Key, Money-source replacement/collision, tamper, forged-authorization, and unverified-source cases.
+
+Reconciliation is now `5/19 executable`, `6/19 split-complete`, `5/19 CoverageGateReady`, and `4/11 root ready`; formal product training remains false. Community Center, Pet Love, Skull Key, and Full Shipment are frozen. The sole active root method is `complete_master_angler`: connect its existing split-complete corpus through the authoritative calendar/dependency graph without adding another fishing, crab-pot, compiler, or executor path.
 
 ## Historical record · 2026-10-21: chain verified crop-production segments into Teacher supervision
 

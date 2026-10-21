@@ -1681,7 +1681,7 @@
     },
     {
       "direction_id": "complete_full_shipment",
-      "status": "in_progress",
+      "status": "complete",
       "completion_node_id": "dependency.complete_full_shipment.achievement_received",
       "source_ids": [
         "native.utility",
@@ -1692,10 +1692,7 @@
         "runtime_data_objects",
         "authoritative_dependency_graph"
       ],
-      "blockers": [
-        "emit exact authoritative source identity on every remaining live acquisition candidate and compile any required supporting options until the selected endpoint is current; unsupported or ambiguous source kinds must remain fail-closed",
-        "generate and admit the complete fresh-save 154-item runtime artifact chain through the implemented ordered recurrence verifier before the Year 3 evaluation"
-      ],
+      "blockers": [],
       "nodes": [
         {
           "id": "dependency.complete_full_shipment.achievement_received",

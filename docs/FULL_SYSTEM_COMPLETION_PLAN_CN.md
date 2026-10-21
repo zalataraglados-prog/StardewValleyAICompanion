@@ -2,13 +2,13 @@
 
 > **当前状态入口：** [CURRENT_STATUS_CN.md](CURRENT_STATUS_CN.md)。本文件下方带日期的状态、计数和“下一步”均保留为历史证据；若与当前机器报告或 CURRENT_STATUS_CN.md 冲突，不得按历史数字规划新工作。
 >
-> **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已完成 v10 之后的一条 Money 连续生产段；Community Center、Pet Love 与 Skull Key 已按 current authority 重绑并冻结。当前唯一施工项为 `complete_full_shipment` 顶层 dependency/coverage 接线，之后继续按 CURRENT_STATUS_CN.md 第 6 节顺序推进。Money Exit Gate 保留为 Money 自身退出标准。
+> **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已完成 v10 之后的一条 Money 连续生产段；Community Center、Pet Love、Skull Key 与 Full Shipment 已按 current authority 冻结。当前唯一施工项为 `complete_master_angler` 顶层 dependency、日历窗口与 coverage 接线，之后继续按 CURRENT_STATUS_CN.md 第 6 节顺序推进。Money Exit Gate 保留为 Money 自身退出标准。
 
 ## 当前记录 · 2026-10-21 11 核心复杂度顺序
 
-Money 有界连续段、Community Center、Pet Love 和 Skull Key current-authority 复核均已验收。剩余固定顺序为：`complete_full_shipment`（当前） -> `complete_master_angler` -> `obtain_rusty_key` -> `raise_friendships` -> `complete_museum_collection` -> `raise_skill_levels` -> `marriage_and_house_upgrade` -> `earn_money`。排序按当前增量工程成本，而非玩法名称或 criterion 数量；完整依据、改序条件和 WIP 约束以 `CURRENT_STATUS_CN.md` 第 6 节为准。
+Money 有界连续段、Community Center、Pet Love、Skull Key 和 Full Shipment current-authority 复核均已验收。剩余固定顺序为：`complete_master_angler`（当前） -> `obtain_rusty_key` -> `raise_friendships` -> `complete_museum_collection` -> `raise_skill_levels` -> `marriage_and_house_upgrade` -> `earn_money`。排序按当前增量工程成本，而非玩法名称或 criterion 数量；完整依据、改序条件和 WIP 约束以 `CURRENT_STATUS_CN.md` 第 6 节为准。
 
-Skull Key 历史三分区原生工件已在当前源码下严格重放并重绑，legacy snapshot hash 通过共享兼容校验但仍保留完整篡改拒绝。当前 reconciliation 为 `4/19 executable、6/19 split-complete、4/19 CoverageGateReady、3/11 root ready`，正式训练仍为 false。Full Shipment 只补顶层 method dependency/coverage 接线，必须复用已冻结的 current-authority `26/26` runtime strata 和现有两通道三分区证据。
+Full Shipment 的过时完整-recurrence blocker 已按既有机器规则校正：`154/154` 静态来源/编译完整性、`26/26` 原生执行签名分层和现有两通道三分区证据共同关闭训练前置；完整 154 项 recurrence 仍保留为正常游玩与最终验收能力。当前 reconciliation 为 `5/19 executable、6/19 split-complete、5/19 CoverageGateReady、4/11 root ready`，正式训练仍为 false。Master Angler 只补顶层依赖、日历窗口与 coverage 接线，不重写钓鱼、蟹笼或执行器。
 
 ## 历史记录 · 2026-10-18 Money Exit Gate 施工顺序校正
 

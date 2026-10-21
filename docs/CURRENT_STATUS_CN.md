@@ -10,20 +10,21 @@
 
 | 指标 | 当前值 | 含义 |
 | --- | ---: | --- |
-| Goal Method executable criteria | **4/19** | root method 已达到 `executable_frontier` 的 criterion |
+| Goal Method executable criteria | **5/19** | root method 已达到 `executable_frontier` 的 criterion |
 | Split-complete Teacher/native evidence | **6/19** | train/validation/test 两条证据通道完整的 criterion |
-| Promotion-grade / CoverageGateReady intersection | **4/19** | 同时满足 executable + 正式 Teacher/native 三分区证据 |
-| Coverage-ready root methods | **3/11** | 11 个战略 root method 中正式 coverage-ready 的数量 |
+| Promotion-grade / CoverageGateReady intersection | **5/19** | 同时满足 executable + 正式 Teacher/native 三分区证据 |
+| Coverage-ready root methods | **4/11** | 11 个战略 root method 中正式 coverage-ready 的数量 |
 | Full Shipment runtime strata | **当前权威 26/26** | 固定 26 层均由当前源码原生重采并通过严格索引，**不是全局 /19** |
 | Money production evidence cells | **0/18** | 6 个 Money criterion × 3 partitions；hermetic fixture 不计 production |
 | Formal product training | **false** | 未通过完整正式训练准入 |
 
-当前四个 `CoverageGateReady` criterion 固定为：
+当前五个 `CoverageGateReady` criterion 固定为：
 
 - `community_center_access_or_completion`
 - `community_center_accessible_bonus`
 - `pet_love`
 - `skull_key`
+- `achievement_full_shipment`
 
 ### 不允许再使用的模糊短写
 
@@ -37,10 +38,10 @@
 必须写完整指标名，例如：
 
 ```text
-Executable criteria:       4/19
+Executable criteria:       5/19
 Split-complete evidence:   6/19
-CoverageGateReady:         4/19
-Root methods ready:        3/11
+CoverageGateReady:         5/19
+Root methods ready:        4/11
 Full Shipment runtime:    current authority 26/26
 Money production cells:    0/18
 Formal training:           false
@@ -60,7 +61,9 @@ Pet Love 的历史三分区原生工件已经在当前源码下严格重放并�
 
 Skull Key 的三条真实普通矿井终端 episode 已在当前源码下严格重放：train 为第 209 天 EVD-106，validation/test 为两个独立第 223 天运行；分别精确绑定第 6、31、4 步的 `claim_skull_key`，未混入骷髅洞、火山或 Quarry Mine。canonical corpus 为 `3 rows / 3 partitions`，SHA-256 `ff2afcb27b6e011c3e9261ad1f086f3934cc7710a59adf8f9de021a721df275a`；coverage report SHA-256 `3f33b1b14b78b991c155107106899270e474b8d19f6c59ee149cc2f9de2e3e77`；reconciliation 位于 `E:\StardewAI-TestLab\artifacts\skull-key-current-source-rebind-20261021\goal-method-coverage-reconciliation.json`，SHA-256 `a6d1ecb14ff9c6a1c8be5d079a69ea95d556760493e7f0d3807cbe8236cea841`。结果为 `4/19 executable、6/19 split-complete、4/19 CoverageGateReady、3/11 root ready`，Skull Key blocker/next action 为空，正式训练仍为 false。
 
-Community Center、Pet Love 与 Skull Key 现均冻结。**当前唯一 coverage 主施工项切换为 `complete_full_shipment`**：复用已冻结的 current-authority `26/26` runtime strata 和现有三分区 Teacher/native 证据，只补顶层 Goal Method dependency/coverage 接线，不重写 154 项获取、投箱、睡眠或执行链。
+Full Shipment dependency graph 的节点早已声明 `full_recurrence_required_for_training=false`，但顶层仍残留“完整 fresh-save 154 项 recurrence 是训练前置”的过时 blocker。当前机器证据已重新核实：`154/154` 权威静态需求、`641` 条来源、`26` 个执行签名层、静态 blocker `0`；严格原生索引为 `26/26 verified、0 missing`，共享 shipping/settlement 通过，完整 154 项 recurrence 继续保留给正常游玩与最终可选验收。索引位于 `E:\StardewAI-TestLab\artifacts\runtime-full-shipment-required-amount-current-authority-26-20261016\runtime-sample-evidence-index.json`，SHA-256 `e30edb0e6aca07deca484c8b8f1a4437eef68cb01120f13074329d7e2e0830b1`。
+
+过时 blocker 移除后，current-source coverage report SHA-256 为 `b2cc9dd87212c9e86324708a38f2545723325b04ed7ea3ce19dc01473bab9743`；reconciliation 位于 `E:\StardewAI-TestLab\artifacts\full-shipment-topology-current-source-20261021\goal-method-coverage-reconciliation.json`，SHA-256 `71f0e4ed0e7928c1e63f39641f4b90153674f154a575ec331342a3d5241adf43`。Full Shipment 现为 `executable_frontier + coverage_ready`，blocker/next action 为空；全局达到 `5/19 executable、6/19 split-complete、5/19 CoverageGateReady、4/11 root ready`，正式训练仍为 false。Community Center、Pet Love、Skull Key 与 Full Shipment 均冻结；**当前唯一 coverage 主施工项切换为 `complete_master_angler`**，只补其顶层依赖、日历窗口与 coverage 接线。
 
 ## 2. 已完成并冻结的施工单位
 
@@ -155,10 +158,10 @@ crop-production checkpoint v12 只认可可从精确请求重建的 fragment。�
 ```text
 同一时间只允许 1 个 primary root method / progression family 作为 coverage 施工单位。
 已完成恢复点：v15 已闭合 v10 之后的下一条 Money 连续生产段。
-当前恢复点：`complete_full_shipment` 顶层 dependency/coverage 接线。
+当前恢复点：`complete_master_angler` 顶层 dependency、日历窗口与 coverage 接线。
 ```
 
-Money 的有界段已验收并停止继续深挖。Community Center、Pet Love 与 Skull Key 已在 current authority 下复核冻结，因此当前从第 6 节下一项 `complete_full_shipment` 开始。任何时刻仍只允许一个 primary item；不得以“复杂度排序”为由重新并行展开多个半成品。
+Money 的有界段已验收并停止继续深挖。Community Center、Pet Love、Skull Key 与 Full Shipment 已在 current authority 下复核冻结，因此当前从第 6 节下一项 `complete_master_angler` 开始。任何时刻仍只允许一个 primary item；不得以“复杂度排序”为由重新并行展开多个半成品。
 
 ### 允许的中断
 
@@ -209,8 +212,8 @@ Money 自身最终完成，至少要同时满足：
 | 1 | `complete_community_center` | current-authority 重绑已通过，coverage-ready root | 已冻结；除 authority 漂移外不再施工 |
 | 2 | `earn_pet_love` | current-authority 三分区重放、重绑和篡改回归已通过 | 已冻结；除 authority 漂移外不再施工 |
 | 3 | `obtain_skull_key` | current-authority 三分区重放、重绑和篡改回归已通过 | 已冻结；除 authority 漂移外不再施工 |
-| 4 | `complete_full_shipment` | split-complete，且 runtime strata 当前权威为 `26/26` | **当前活动项**；只补顶层 dependency/coverage 接线，不重写动作链 |
-| 5 | `complete_master_angler` | split-complete，已有钓鱼与蟹笼执行基础 | 补顶层依赖、日历窗口与正式接线 |
+| 4 | `complete_full_shipment` | current-authority `154/154` 静态 + `26/26` 原生分层和顶层接线已通过 | 已冻结；完整 recurrence 保留给正常游玩/最终验收 |
+| 5 | `complete_master_angler` | split-complete，已有钓鱼与蟹笼执行基础 | **当前活动项**；补顶层依赖、日历窗口与正式接线 |
 | 6 | `obtain_rusty_key` | 复用博物馆前 60 件与奖励事件，分母小于全博物馆 | 先闭合阈值子集，再给全博物馆复用 |
 | 7 | `raise_friendships` | 社交执行器可复用，但有多人、多日程与礼物约束 | 建立共享社交 recurrence 后闭合分区 |
 | 8 | `complete_museum_collection` | 大型异构获取分母与捐赠 recurrence | 复用 Rusty Key 的 acquisition/reservation/donation 链 |
@@ -222,18 +225,18 @@ Money 自身最终完成，至少要同时满足：
 
 ## 7. executable / split-complete 差集与恢复队列
 
-当前 `4/19 executable` 与 `6/19 split-complete` 不是同一组，也不能相加：
+当前 `5/19 executable` 与 `6/19 split-complete` 不是同一组，也不能相加：
 
 | 状态 | criterion | 后续缺口 |
 | --- | --- | --- |
-| executable 且 split-complete | Community Center 两项、Pet Love、Skull Key | 已进入 `CoverageGateReady` |
-| 仅 executable | 无 | 当前四个 executable criterion 均已完成正式三分区覆盖 |
-| 仅 split-complete | Full Shipment、Master Angler | 顶层 Goal Method 仍为 `pending_dependency_expansion` |
+| executable 且 split-complete | Community Center 两项、Pet Love、Skull Key、Full Shipment | 已进入 `CoverageGateReady` |
+| 仅 executable | 无 | 当前五个 executable criterion 均已完成正式三分区覆盖 |
+| 仅 split-complete | Master Angler | 顶层 Goal Method 仍为 `pending_dependency_expansion` |
 | 两侧均未闭合 | 其余 13 项 | Method 与生产证据都要闭合 |
 
-Skull Key 与 Pet Love 的旧生产工件均已按当前字典、日历、输入契约和哈希严格重放并冻结。Full Shipment/Master Angler 已有两通道三分区证据，后续只允许补顶层依赖展开，不得另写第二套动作、候选或执行器。
+Skull Key 与 Pet Love 的旧生产工件均已按当前字典、日历、输入契约和哈希严格重放并冻结。Full Shipment 的顶层接线也已完成；Master Angler 已有两通道三分区证据，后续只允许补顶层依赖展开，不得另写第二套动作、候选或执行器。
 
-这些既有成果解释了新队列为何把 Community Center、Pet Love、Skull Key、Full Shipment 和 Master Angler 放在前部。Money 有界段已经验收，前三个 root method 已按 current source 冻结；现在严格进入 Full Shipment 顶层接线，仍然一次只选择一个 root method。这样既避免丢弃历史成果，也不重新引入多个半成品并行推进。
+这些既有成果解释了新队列为何把 Community Center、Pet Love、Skull Key、Full Shipment 和 Master Angler 放在前部。Money 有界段已经验收，前四个 root method 已按 current source 冻结；现在严格进入 Master Angler 顶层接线，仍然一次只选择一个 root method。这样既避免丢弃历史成果，也不重新引入多个半成品并行推进。
 
 ## 8. 最近的深度优化状态
 
@@ -248,7 +251,7 @@ Skull Key 与 Pet Love 的旧生产工件均已按当前字典、日历、输入
 7. acquisition rollout proof 已改为 invocation 内的唯一 heavy verifier：缓存键绑定 manifest 及其全部直接/传递文件身份，缓存值仅保留轻量 receipt/checkpoint certificate；Full Shipment evidence index 先按精确 proof 内容身份去重，再映射回各 stratum。
 
 这些优化减少重复 BFS、重复 frontier 构建、伪输出和伪账本连续性，但它们是 correctness/feedback-time 基础设施，**不直接增加**
-`CoverageGateReady 4/19`。
+`CoverageGateReady 5/19`。
 
 #274 的代码优化阶段已完成：canonical artifact equality 改为流式哈希，read-session 与 deterministic-cache 均有显式总预算、单项预算、逐出与遥测，优先级最高的 DTO/DOM 双表示已收敛为 typed/read-only projection，并完成真实 26-proof 前缀的 A/B/C 测量。最终 C 组墙钟 `7588.7 ms`、CPU `6859.4 ms`、峰值工作集 `525.4 MiB`；相对旧默认实现分别降低约 `55.8%`、`40.2%` 和 `2.9%`。
 
@@ -259,7 +262,7 @@ Skull Key 与 Pet Love 的旧生产工件均已按当前字典、日历、输入
 - 战略分母：`19` 个 criterion、`11` 个 root method。
 - 细粒度证据分母：`19 x 2` 个独立通道（Teacher comparison/native outcome）`x 3` 个分区，共 `114` 个 channel-partition cell；也可视为 `57` 个必须同时具备双通道的 criterion-partition join cell。
 - 当前机器报告实际闭合 `36/114` 个 channel cell，即 `18/57` 个 join cell；仍缺 `78` 个 channel cell。
-- Full Shipment/Master Angler 的 `12` 个 channel cell 已闭合，但缺 Method executable；不再有仅 executable、等待三分区重绑的 criterion。
+- Master Angler 的 `6` 个 channel cell 已闭合但缺 Method executable；Full Shipment 的同类缺口已关闭，不再有仅 executable、等待三分区重绑的 criterion。
 - 其余 `13` 个 criterion 分属 Money、Museum、Friendship、Marriage/House、Skills、Rusty Key 六个根方法，对应 `78` 个尚未闭合的 channel cell。Money 当前以双通道 join 计为 `0/18` production cell。
 
 这些逻辑格不等于同等数量的完整三年运行。相同根方法允许复用权威前缀、checkpoint、原生结果和批量分区编排，但每个逻辑格
