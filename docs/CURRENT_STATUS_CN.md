@@ -73,6 +73,8 @@ Full Shipment dependency graph 的节点早已声明 `full_recurrence_required_f
 
 2026-10-21 蟹笼供应切片把未绑定族进一步降为 `5`。隔离 E 盘存档副本的实时 FishShop 投影证明钓鱼 `2` 级已有 `(O)685` 鱼饵 `5g` 而无蟹笼，钓鱼 `3` 级出现 `(O)710` 蟹笼 `1500g`；原用户存档未被加载或改写。唯一高层出口仍为 `fishing.collect_crab_pots`：缺饵的远程服务先复用 FishShop 单件购买链；精确缺失蟹笼鱼种的随机容量不足时优先制作，只有不能制作才买一个蟹笼，随后关闭菜单、保留 continuation 并 fresh 重算。没有新增平行商店、蟹笼容量或收取系统。定向回归 `48/48` 和防篡改自测通过；实际购买仍沿用既有通用执行器证据，本切片只新增实时库存权威投影，不声称新增原生购买运行回执。最新审计 SHA-256 为 `8cd925d8ede0a0c5d3e5b51817095958ffdd7f5ff100d588400f8dda2f46204b`；剩余族为姜岛、Mutant Bug Lair、秘密森林或森林农场、天气保留或 Rain Totem、女巫沼泽。`training_label_eligible=false`，全局指标不变。
 
+2026-10-22 天气族已机器化登记并严格审计“已有 Rain Totem 的消费者”这一叶。它直接复用 EVD-288 的 `executor.use_rain_totem` 原生路径，要求精确 `(O)681`、可生效的 location-context、明日非默认节日、最终天气 Rain 和 fresh 原生回执；篡改最终天气会使绑定失效。该进展没有把 primitive 当成新的模型动作，也没有声称图腾会凭空出现。权威依赖图已锁定 `Data/CraftingRecipes` 的 `709 x1 + 432 x1 + 726 x5`、Foraging `9` 和 `(O)681 x1`，但配方材料生产及“今晚用图腾 -> 明日 `fishing.catch_fish`”调度仍待实现，所以天气族状态为 `runtime_consumer_bound_supply_and_scheduler_missing`，仍计入缺失。最新审计 SHA-256 为 `7dd897e3cfb2a52a5016c4f342eef003b6e6848f5d12d7d44f46aae2f84468a9`，未绑定族仍为 `5`，全局准入指标与训练禁令不变。
+
 ## 2. 已完成并冻结的施工单位
 
 ### Full Shipment runtime evidence

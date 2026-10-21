@@ -26,6 +26,8 @@ Master Angler 的 Rusty Key/下水道组合也已闭合到现有上游根：`Ent
 
 蟹笼供应不再是训练前未绑定族。实时隔离快照锁定 FishShop 的等级门和价格：钓鱼 `2` 级出售 `(O)685` 鱼饵 `5g`，钓鱼 `3` 级出售 `(O)710` 蟹笼 `1500g`。实现继续只暴露 `fishing.collect_crab_pots`：远程服务缺饵时先买一个鱼饵；精确随机容量不足时先尝试既有原生制作，制作不可用才购买一个蟹笼，随后保留 continuation 并 fresh replan。该接线复用共享路线、商店交互、购买、关菜单、制作、放置、装饵和收取实现，未创建第二套执行系统。定向回归与防篡改自测通过，但新增运行时材料仅是实时商店投影，不冒充实际购买回执。fresh-save prerequisite 审计 SHA-256 为 `8cd925d8ede0a0c5d3e5b51817095958ffdd7f5ff100d588400f8dda2f46204b`，剩余 `5` 个未绑定族：天气保留或 Rain Totem、姜岛、Mutant Bug Lair、秘密森林或森林农场、女巫沼泽。正式训练和全部准入分子仍保持关闭。
 
+天气控制现只完成已有 Rain Totem 的原生消费叶，尚未完成整个生产者。`dependency.complete_master_angler.consume_owned_rain_totem` 复用 EVD-288 的 `executor.use_rain_totem`，严格绑定 `(O)681 x1`、context 路由、默认节日排除、明日有效天气 Rain 和 fresh 回执；防篡改自测通过。权威配方已经固定为 Foraging `9` 解锁，消耗 `709 x1 + 432 x1 + 726 x5` 并产出 `(O)681 x1`，但材料生产、原生制作和高层明日钓鱼调度尚未接入，因此天气族仍是 blocker，不能增加任何正式准入分子。最新审计 SHA-256 为 `7dd897e3cfb2a52a5016c4f342eef003b6e6848f5d12d7d44f46aae2f84468a9`，剩余 `5` 个未绑定族不变。
+
 Money 的第一条完整原生作物生产段 `money-crop-native-20261021-pricefix-v10` 已通过：checkpoint v12 为 `6/6 verified、0 pending`，终局含 `5` 次单件原生投箱和唯一睡眠结算，实际收入 `875g`，最终为春 20 日 06:00、`money=925`、`totalMoneyEarned=875`。源存档和隔离 Mod 哈希均未漂移。这证明 native runner、购种、场地准备、作物生命周期、留存、容量和运输箱终局可以在同一连续真实轨迹中闭合。
 
 `money_revenue_crop_native_production_segment_receipt.v1` 已完成并对 v10 深回放：Teacher 决策、commit receipt、obligation/run plan、checkpoint、terminal recurrence、最终透明快照和最终隔离存档树均从路径与哈希重新核验。回执确认 `50` 个 Teacher 候选、选中 `5` 格 `(O)474`、实际购种成本 `400g`、毛收入 `875g`、净现金收入 `475g`，并正确输出空阈值集合；它不创建 Teacher comparison、Money cell 或训练授权。

@@ -96,6 +96,13 @@ internal static partial class BootstrapSelfTest
             !report.MissingOrUnboundProducerFamilies.Contains(
                 "crab_pot_recipe_material_and_bait_supply",
                 StringComparer.Ordinal) &&
+            report.PrerequisiteFamilies.Single(value =>
+                    value.FamilyId == "weather_reserve_or_control")
+                .ProducerStatus ==
+                    "runtime_consumer_bound_supply_and_scheduler_missing" &&
+            report.MissingOrUnboundProducerFamilies.Contains(
+                "weather_reserve_or_control",
+                StringComparer.Ordinal) &&
             report.MissingOrUnboundProducerFamilies.Contains(
                 "ginger_island_access",
                 StringComparer.Ordinal),
@@ -125,6 +132,57 @@ internal static partial class BootstrapSelfTest
             catalogPath,
             windowIndexPath,
             dependencyExpansionPath);
+        VerifyMasterAnglerOwnedRainTotemBindingFailsClosed(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath);
+    }
+
+    private static void VerifyMasterAnglerOwnedRainTotemBindingFailsClosed(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath)
+    {
+        var root = JsonNode.Parse(File.ReadAllText(dependencyExpansionPath))?.AsObject() ??
+                   throw new InvalidDataException("Master Angler dependency fixture is null.");
+        var direction = root["directions"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["direction_id"]!.GetValue<string>() ==
+                             "complete_master_angler");
+        var consumer = direction["nodes"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["id"]!.GetValue<string>() ==
+                             "dependency.complete_master_angler.consume_owned_rain_totem");
+        consumer["rule"]!["effective_tomorrow_weather"] = "Sun";
+
+        var tamperedPath = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-master-angler-owned-rain-totem-binding-" +
+            Guid.NewGuid().ToString("N") + ".json");
+        try
+        {
+            File.WriteAllText(
+                tamperedPath,
+                root.ToJsonString(JsonDefaults.Options));
+            var tampered = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(
+                catalogPath,
+                windowIndexPath,
+                tamperedPath);
+            Require(
+                tampered.PrerequisiteFamilies.Single(value =>
+                        value.FamilyId == "weather_reserve_or_control")
+                    .ProducerStatus ==
+                        "current_state_gate_present_future_producer_missing" &&
+                tampered.MissingOrUnboundProducerFamilies.Contains(
+                    "weather_reserve_or_control",
+                    StringComparer.Ordinal),
+                "Master Angler weather consumer accepted a drifted effective tomorrow weather.");
+        }
+        finally
+        {
+            if (File.Exists(tamperedPath))
+                File.Delete(tamperedPath);
+        }
     }
 
     private static void VerifyMasterAnglerTrapSupplyBindingFailsClosed(

@@ -29,6 +29,8 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
         "dependency.complete_master_angler.trap_supply_acquisition";
     private const string TrapInfrastructureGateNode =
         "dependency.complete_master_angler.trap_infrastructure_gate";
+    private const string OwnedRainTotemConsumerNode =
+        "dependency.complete_master_angler.consume_owned_rain_totem";
     private const string RustyKeyDirection = "obtain_rusty_key";
     private const string RustyKeyCompletionNode =
         "dependency.obtain_rusty_key.has_rusty_key";
@@ -435,6 +437,10 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                 ("current_state_gate_present_future_producer_missing",
                     new[] { "dependency.complete_master_angler.target_date_opportunity_producer" },
                     "Bind one sufficient rod acquisition before target windows; optional equipment upgrades must not become hard prerequisites."),
+            WeatherFamily when graph.HasBoundMasterAnglerOwnedRainTotemUse() =>
+                ("runtime_consumer_bound_supply_and_scheduler_missing",
+                    new[] { OwnedRainTotemConsumerNode },
+                    "The exact owned Rain Totem native consumer is bound. Add authoritative recipe/material production and a high-level tomorrow-fishing preparation intent before marking weather complete."),
             WeatherFamily =>
                 ("current_state_gate_present_future_producer_missing",
                     new[] { "dependency.complete_master_angler.target_date_opportunity_producer" },
@@ -836,6 +842,77 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                        TrapSupplyProducerNode,
                        MasterAnglerRecurrenceNode,
                        "replans_after_native_purchase"));
+        }
+
+        public bool HasBoundMasterAnglerOwnedRainTotemUse()
+        {
+            if (!Directions.TryGetValue(MasterAnglerDirection, out var masterAngler) ||
+                !masterAngler.Nodes.TryGetValue(
+                    OwnedRainTotemConsumerNode,
+                    out var consumer) ||
+                consumer.Kind != "deterministic_transition" ||
+                consumer.OptionId != "executor.use_rain_totem" ||
+                consumer.Rule.ValueKind != JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            var requiredFields = new[]
+            {
+                "world_progress.fish_collection_progress",
+                "player.inventory",
+                "player.rain_totem",
+                "time.total_days",
+                "time.time",
+                "menus.active_menu"
+            };
+            return consumer.CandidateKinds.SetEquals(new[] { "use_rain_totem" }) &&
+                   requiredFields.All(consumer.RequiredFieldPaths.Contains) &&
+                   RuleString(consumer.Rule, "execution_owner") ==
+                       "compiler_owned_primitive_not_policy_label" &&
+                   RuleString(consumer.Rule, "required_qualified_item_id") ==
+                       "(O)681" &&
+                   RuleInt(consumer.Rule, "required_inventory_stack") == 1 &&
+                   RuleString(consumer.Rule, "affected_weather_after") == "Rain" &&
+                   RuleString(consumer.Rule, "effective_tomorrow_weather") == "Rain" &&
+                   RuleBool(consumer.Rule, "rain_will_take_effect_tomorrow") &&
+                   consumer.Rule.TryGetProperty(
+                       "tomorrow_is_default_festival",
+                       out var festival) &&
+                   festival.ValueKind == JsonValueKind.False &&
+                   RuleString(consumer.Rule, "native_contract") ==
+                       "Object.performUseAction((O)681)->Object.rainTotem->AllowRainTotem->RainTotemAffectsContext_or_location_context->Default_festival_guard_or_context_WeatherForTomorrow=Rain->Default_Game1.getWeatherModificationsForDate" &&
+                   RuleBool(consumer.Rule, "fresh_native_receipt_required") &&
+                   RuleInt(consumer.Rule, "deadline_total_day_exclusive") == 224 &&
+                   RuleString(consumer.Rule, "planner_binding_status") ==
+                       "owned_item_consumer_bound_supply_and_tomorrow_intent_pending" &&
+                   RuleString(consumer.Rule, "pending_recipe_name") ==
+                       "Rain Totem" &&
+                   RuleInt(consumer.Rule, "pending_recipe_required_foraging_level") == 9 &&
+                   RuleString(consumer.Rule, "pending_recipe_output_qualified_item_id") ==
+                       "(O)681" &&
+                   RuleInt(consumer.Rule, "pending_recipe_output_count") == 1 &&
+                   RuleObjectIntsEqual(
+                       consumer.Rule,
+                       "pending_recipe_ingredient_amounts",
+                       new Dictionary<string, int>(StringComparer.Ordinal)
+                       {
+                           ["(O)709"] = 1,
+                           ["(O)432"] = 1,
+                           ["(O)726"] = 5
+                       }) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       FreshSaveInventoryNode,
+                       OwnedRainTotemConsumerNode,
+                       "selects_owned_weather_control")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       OwnedRainTotemConsumerNode,
+                       TargetDateOpportunityNode,
+                       "creates_next_day_weather_precondition")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       OwnedRainTotemConsumerNode,
+                       MasterAnglerRecurrenceNode,
+                       "replans_after_native_weather_transition"));
         }
 
         public bool HasBoundMasterAnglerDesertBusAccess()

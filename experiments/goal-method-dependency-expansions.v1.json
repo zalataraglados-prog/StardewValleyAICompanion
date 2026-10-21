@@ -775,6 +775,44 @@
           }
         },
         {
+          "id": "dependency.complete_master_angler.consume_owned_rain_totem",
+          "kind": "deterministic_transition",
+          "option_id": "executor.use_rain_totem",
+          "candidate_kinds": ["use_rain_totem"],
+          "required_field_paths": [
+            "world_progress.fish_collection_progress",
+            "player.inventory",
+            "player.rain_totem",
+            "time.total_days",
+            "time.time",
+            "menus.active_menu"
+          ],
+          "rule": {
+            "execution_owner": "compiler_owned_primitive_not_policy_label",
+            "required_qualified_item_id": "(O)681",
+            "required_inventory_stack": 1,
+            "affected_weather_after": "Rain",
+            "effective_tomorrow_weather": "Rain",
+            "rain_will_take_effect_tomorrow": true,
+            "tomorrow_is_default_festival": false,
+            "native_contract": "Object.performUseAction((O)681)->Object.rainTotem->AllowRainTotem->RainTotemAffectsContext_or_location_context->Default_festival_guard_or_context_WeatherForTomorrow=Rain->Default_Game1.getWeatherModificationsForDate",
+            "fresh_native_receipt_required": true,
+            "deadline_total_day_exclusive": 224,
+            "source_authority": "locked game-1.6.15 native branch and EVD-288 hidden isolated runtime 4/4",
+            "planner_binding_status": "owned_item_consumer_bound_supply_and_tomorrow_intent_pending",
+            "pending_recipe_name": "Rain Totem",
+            "pending_recipe_required_foraging_level": 9,
+            "pending_recipe_output_qualified_item_id": "(O)681",
+            "pending_recipe_output_count": 1,
+            "pending_recipe_ingredient_amounts": {
+              "(O)709": 1,
+              "(O)432": 1,
+              "(O)726": 5
+            },
+            "pending_recipe_source_authority": "locked game-1.6.15 Data/CraftingRecipes raw 709 1 432 1 726 5/Field/681/false/s Foraging 9/"
+          }
+        },
+        {
           "id": "dependency.complete_master_angler.acquisition_recurrence",
           "kind": "recurrence_rule",
           "required_field_paths": ["world_progress.fish_collection_progress", "time.total_days"],
@@ -812,6 +850,9 @@
         { "from": "dependency.complete_master_angler.fishing_skill_progression", "to": "dependency.complete_master_angler.trap_supply_acquisition", "kind": "unlocks_fish_shop_trap_stock" },
         { "from": "dependency.complete_master_angler.trap_supply_acquisition", "to": "dependency.complete_master_angler.trap_infrastructure_gate", "kind": "supplies_exact_pot_and_bait" },
         { "from": "dependency.complete_master_angler.trap_supply_acquisition", "to": "dependency.complete_master_angler.acquisition_recurrence", "kind": "replans_after_native_purchase" },
+        { "from": "dependency.complete_master_angler.fresh_save_prerequisite_inventory", "to": "dependency.complete_master_angler.consume_owned_rain_totem", "kind": "selects_owned_weather_control" },
+        { "from": "dependency.complete_master_angler.consume_owned_rain_totem", "to": "dependency.complete_master_angler.target_date_opportunity_producer", "kind": "creates_next_day_weather_precondition" },
+        { "from": "dependency.complete_master_angler.consume_owned_rain_totem", "to": "dependency.complete_master_angler.acquisition_recurrence", "kind": "replans_after_native_weather_transition" },
         { "from": "dependency.complete_master_angler.target_date_opportunity_producer", "to": "dependency.complete_master_angler.current_legal_rod_attempt", "kind": "binds_current_runtime_candidate" },
         { "from": "dependency.complete_master_angler.trap_species_partition", "to": "dependency.complete_master_angler.trap_infrastructure_gate", "kind": "requires_infrastructure" },
         { "from": "dependency.complete_master_angler.trap_species_partition", "to": "dependency.complete_master_angler.trap_lifecycle_intent", "kind": "binds_high_level_recurrence" },
