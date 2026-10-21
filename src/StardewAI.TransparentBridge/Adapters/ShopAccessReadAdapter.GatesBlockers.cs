@@ -50,6 +50,31 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
         var height = map.Layers.Cast<xTile.Layers.Layer>().Max(layer => layer.LayerHeight);
         var gates = new List<object>();
 
+        foreach (var warp in location.warps)
+        {
+            if (!IsNativeBusTransportWarp(location, warp.TargetName))
+                continue;
+
+            var toDesert = string.Equals(
+                location.NameOrUniqueName,
+                "BusStop",
+                StringComparison.OrdinalIgnoreCase);
+            if (!toDesert)
+                continue;
+
+            var endpoint = toDesert
+                ? FindBusTicketMachineTile(location)
+                : FindDesertBusTouchTile(location);
+            if (endpoint.HasValue)
+            {
+                gates.Add(ReadNativeBusTransportGate(
+                    location,
+                    endpoint.Value.X,
+                    endpoint.Value.Y,
+                    toDesert));
+            }
+        }
+
         for (var y = 0; y < height; y++)
         {
             for (var x = 0; x < width; x++)
@@ -117,6 +142,15 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
         if (string.Equals(parts[0], "LockedDoorWarp", StringComparison.OrdinalIgnoreCase))
         {
             return ReadLockedDoorWarpGate(location, x, y, action, sourceProperty, parts);
+        }
+
+        if (string.Equals(parts[0], "DesertBus", StringComparison.OrdinalIgnoreCase))
+        {
+            return ReadNativeBusTransportGate(
+                location,
+                x,
+                y,
+                toDesert: false);
         }
 
         if (IsCommunityCenterWarpAction(parts[0]))

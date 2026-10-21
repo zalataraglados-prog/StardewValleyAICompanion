@@ -617,6 +617,89 @@ public sealed partial class ActionQueueCompilerTests
     }
 
     [Fact]
+    public void CompileAcceptsAuditedNativeBusTransportConnector()
+    {
+        var snapshot = NativeBusConnectorSnapshot(allowedNow: true);
+        var plan = Plan(
+            snapshot.StateHash,
+            new SmallModelPlanStep
+            {
+                StepId = "plan.step.bus_stop.to.desert",
+                Kind = "traverse_connector",
+                TargetTileX = 12,
+                TargetTileY = 10,
+                EstimatedMinutes = 20,
+                Parameters = new[]
+                {
+                    new SmallModelActionParameter { Name = "connector_kind", Value = "native_bus_transport" },
+                    new SmallModelActionParameter { Name = "expected_target_location", Value = "Desert" },
+                    new SmallModelActionParameter { Name = "expected_arrival_tile_x", Value = "16" },
+                    new SmallModelActionParameter { Name = "expected_arrival_tile_y", Value = "24" }
+                }
+            });
+
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+
+        Assert.True(
+            queue.Status == "pending",
+            string.Join("|", queue.Items.SelectMany(item => item.BlockingReasons)));
+        var item = Assert.Single(queue.Items);
+        Assert.Equal("executor.traverse_connector", item.OptionId);
+        Assert.Contains(item.NormalizedCommand.Parameters, parameter =>
+            parameter.Name == "connector_kind" &&
+            parameter.Value == "native_bus_transport");
+        var step = Assert.Single(item.NormalizedCommand.Steps);
+        Assert.Equal("traverse_connector", step.StepType);
+        Assert.Equal("current_location(12,10)", step.Target);
+        Assert.Equal("location=Desert;player.tile=16,24", step.ExpectedEffect);
+    }
+
+    [Fact]
+    public void CompileBlocksNativeBusTransportWhenLiveGateIsClosed()
+    {
+        var snapshot = NativeBusConnectorSnapshot(allowedNow: false);
+        var plan = Plan(
+            snapshot.StateHash,
+            new SmallModelPlanStep
+            {
+                StepId = "plan.step.bus_stop.to.desert.blocked",
+                Kind = "traverse_connector",
+                TargetTileX = 12,
+                TargetTileY = 10,
+                Parameters = new[]
+                {
+                    new SmallModelActionParameter { Name = "connector_kind", Value = "native_bus_transport" },
+                    new SmallModelActionParameter { Name = "expected_target_location", Value = "Desert" },
+                    new SmallModelActionParameter { Name = "expected_arrival_tile_x", Value = "16" },
+                    new SmallModelActionParameter { Name = "expected_arrival_tile_y", Value = "24" }
+                }
+            });
+
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+
+        Assert.Equal("blocked", queue.Status);
+        Assert.Contains(
+            "connector_gate_closed",
+            Assert.Single(queue.Items).BlockingReasons);
+    }
+
+    private static SnapshotEnvelope NativeBusConnectorSnapshot(bool allowedNow) => Snapshot($$"""
+    {
+      "player": {
+        "location_id": {"value":"BusStop","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+        "tile_x": {"value":10,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+        "tile_y": {"value":10,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+      },
+      "locations": {
+        "collision_grid": {"value":{"location_id":"BusStop","width":40,"height":30,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+        "route_action_branch_coverage": {"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+        "route_connectors": {"value":{"location_id":"BusStop","connectors":[{"kind":"native_bus_transport","tile_x":12,"tile_y":10,"target_location":"Desert","target_x":16,"target_y":24,"source_property":"BusStop.checkAction Buildings/outdoors tile index 1057","resolved":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+        "route_gate_context": {"value":{"location_id":"BusStop","action_gates":[{"kind":"native_bus_transport","tile_x":12,"tile_y":10,"allowed_now":{{allowedNow.ToString().ToLowerInvariant()}}}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+      }
+    }
+    """);
+
+    [Fact]
     public void CompileReplacesCrossLocationMoveWithFirstTransparentConnectorAndReplanBoundary()
     {
         var snapshot = Snapshot("""

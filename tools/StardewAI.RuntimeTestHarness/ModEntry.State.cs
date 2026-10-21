@@ -56,7 +56,15 @@ public sealed partial class ModEntry : Mod
             LastPosition = Game1.player.Position;
             LocationId = Game1.currentLocation.NameOrUniqueName;
             MaxTicks = Math.Max(120, path.Count * 90);
+            if (string.Equals(
+                    pending.Request.ConnectorKind,
+                    "native_bus_transport",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                MaxTicks = Math.Max(MaxTicks, 2400);
+            }
             StartedAt = DateTimeOffset.UtcNow.ToString("O");
+            StartMoney = Game1.player.Money;
         }
 
         public PendingExecution Pending { get; }
@@ -79,6 +87,8 @@ public sealed partial class ModEntry : Mod
         public int MaxTicks { get; }
         public Vector2 LastPosition { get; set; }
         public string StartedAt { get; }
+        public int StartMoney { get; }
+        public bool NativeBusResponseSelected { get; set; }
     }
 
     private sealed class ActiveNativeTool

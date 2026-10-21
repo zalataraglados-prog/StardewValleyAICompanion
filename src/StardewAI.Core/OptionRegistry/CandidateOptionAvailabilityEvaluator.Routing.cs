@@ -195,8 +195,16 @@ namespace StardewAI.Core.OptionRegistry
                 candidate.ValueKind == JsonValueKind.Object &&
                 ReadNullableInt(candidate, "tile_x") == tileX &&
                 ReadNullableInt(candidate, "tile_y") == tileY);
+            var gateKind = ReadString(gate, "kind");
             if (gate.ValueKind != JsonValueKind.Object ||
-                !string.Equals(ReadString(gate, "kind"), "locked_door_warp", StringComparison.OrdinalIgnoreCase))
+                !string.Equals(
+                    gateKind,
+                    "locked_door_warp",
+                    StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(
+                    gateKind,
+                    "native_bus_transport",
+                    StringComparison.OrdinalIgnoreCase))
             {
                 return null;
             }

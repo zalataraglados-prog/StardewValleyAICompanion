@@ -18,6 +18,11 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
         "dependency.raise_skill_levels.acquire_mining_xp";
     private const string RodEquipmentProducerNode =
         "dependency.complete_master_angler.rod_equipment_acquisition";
+    private const string DesertBusProducerNode =
+        "dependency.complete_master_angler.desert_bus_access";
+    private const string CommunityCenterDirection = "complete_community_center";
+    private const string CommunityCenterCompletionNode =
+        "dependency.complete_community_center.native_completion";
     private const string TargetDateOpportunityNode =
         "dependency.complete_master_angler.target_date_opportunity_producer";
     private const string MasterAnglerRecurrenceNode =
@@ -385,9 +390,13 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                 ("reusable_but_unbound",
                     new[] { "obtain_rusty_key" },
                     "Bind the Rusty Key recurrence and sewer ingress to Master Angler before Mutant Carp reserve."),
-            "desert_bus_access" when graph.HasDirection("complete_community_center") =>
+            "desert_bus_access" when graph.HasBoundMasterAnglerDesertBusAccess() =>
+                ("implemented_and_bound",
+                    new[] { DesertBusProducerNode, CommunityCenterCompletionNode },
+                    "The recurrence composes the existing Community Center completion proof with the locked native bus ticket and return transports, then replans from a fresh receipt."),
+            "desert_bus_access" when graph.HasDirection(CommunityCenterDirection) =>
                 ("upstream_root_present_composed_producer_missing",
-                    new[] { "complete_community_center" },
+                    new[] { CommunityCenterDirection },
                     "Bind the exact bus-repair branch or equivalent Joja unlock plus bus travel; full CC completion alone is not an access proof."),
             "secret_woods_access_or_forest_farm_layout" =>
                 ("alternative_selection_missing",
@@ -502,6 +511,12 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                             option.ValueKind == JsonValueKind.String
                                 ? option.GetString() ?? string.Empty
                                 : string.Empty,
+                            node.TryGetProperty("candidate_kinds", out var candidateKinds) &&
+                            candidateKinds.ValueKind == JsonValueKind.Array
+                                ? candidateKinds.EnumerateArray()
+                                    .Select(candidateKind => candidateKind.GetString() ?? string.Empty)
+                                    .ToHashSet(StringComparer.Ordinal)
+                                : new HashSet<string>(StringComparer.Ordinal),
                             node.TryGetProperty("required_field_paths", out var fields) &&
                             fields.ValueKind == JsonValueKind.Array
                                 ? fields.EnumerateArray()
@@ -538,6 +553,7 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
         string Id,
         string Kind,
         string OptionId,
+        HashSet<string> CandidateKinds,
         HashSet<string> RequiredFieldPaths,
         JsonElement Rule);
 
@@ -723,6 +739,68 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                        RodEquipmentProducerNode,
                        MasterAnglerRecurrenceNode,
                        "replans_after_native_purchase"));
+        }
+
+        public bool HasBoundMasterAnglerDesertBusAccess()
+        {
+            if (!Directions.TryGetValue(MasterAnglerDirection, out var masterAngler) ||
+                !Directions.TryGetValue(CommunityCenterDirection, out var communityCenter) ||
+                !masterAngler.Nodes.TryGetValue(DesertBusProducerNode, out var producer) ||
+                !communityCenter.Nodes.TryGetValue(
+                    CommunityCenterCompletionNode,
+                    out var completion) ||
+                producer.Kind != "recurrence_rule" ||
+                completion.Kind != "terminal_fact" ||
+                producer.Rule.ValueKind != JsonValueKind.Object)
+                return false;
+
+            var requiredFields = new[]
+            {
+                "world_progress.fish_collection_progress",
+                "quests.mail_received",
+                "time.total_days",
+                "time.time",
+                "player.money",
+                "player.location_id",
+                "player.tile_x",
+                "player.tile_y",
+                "locations.route_graph",
+                "locations.route_connectors",
+                "locations.route_gate_context",
+                "locations.collision_grid",
+                "menus.active_menu"
+            };
+            return producer.CandidateKinds.SetEquals(new[] { "route_connector_tile" }) &&
+                   requiredFields.All(producer.RequiredFieldPaths.Contains) &&
+                   RuleString(producer.Rule, "reuses_direction_id") ==
+                       CommunityCenterDirection &&
+                   RuleString(producer.Rule, "reuses_node_id") ==
+                       CommunityCenterCompletionNode &&
+                   RuleString(producer.Rule, "reused_option_id") ==
+                       "fishing.catch_fish" &&
+                   RuleString(producer.Rule, "connector_kind") ==
+                       "native_bus_transport" &&
+                   RuleString(producer.Rule, "forward_source_location") == "BusStop" &&
+                   RuleString(producer.Rule, "forward_target_location") == "Desert" &&
+                   RuleString(producer.Rule, "return_source_location") == "Desert" &&
+                   RuleString(producer.Rule, "return_target_location") == "BusStop" &&
+                   RuleString(producer.Rule, "required_mail_key") == "ccVault" &&
+                   RuleInt(producer.Rule, "maximum_ticket_price") == 500 &&
+                   RuleBool(producer.Rule, "fresh_snapshot_after_every_native_primitive") &&
+                   RuleBool(producer.Rule, "fresh_native_receipt_required") &&
+                   RuleInt(producer.Rule, "deadline_total_day_exclusive") == 224 &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       FreshSaveInventoryNode,
+                       DesertBusProducerNode,
+                       "selects_desert_access_requirement")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       DesertBusProducerNode,
+                       TargetDateOpportunityNode,
+                       "supplies_desert_location_access")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       DesertBusProducerNode,
+                       MasterAnglerRecurrenceNode,
+                       "replans_after_native_bus_transport"));
         }
 
         private static string RuleString(JsonElement rule, string name) =>

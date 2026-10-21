@@ -77,6 +77,12 @@ internal static partial class BootstrapSelfTest
             !report.MissingOrUnboundProducerFamilies.Contains(
                 "rod_and_fishing_equipment_acquisition",
                 StringComparer.Ordinal) &&
+            report.PrerequisiteFamilies.Single(value =>
+                    value.FamilyId == "desert_bus_access")
+                .ProducerStatus == "implemented_and_bound" &&
+            !report.MissingOrUnboundProducerFamilies.Contains(
+                "desert_bus_access",
+                StringComparer.Ordinal) &&
             report.MissingOrUnboundProducerFamilies.Contains(
                 "ginger_island_access",
                 StringComparer.Ordinal),
@@ -94,6 +100,53 @@ internal static partial class BootstrapSelfTest
             catalogPath,
             windowIndexPath,
             dependencyExpansionPath);
+        VerifyMasterAnglerDesertBusBindingFailsClosed(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath);
+    }
+
+    private static void VerifyMasterAnglerDesertBusBindingFailsClosed(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath)
+    {
+        var root = JsonNode.Parse(File.ReadAllText(dependencyExpansionPath))?.AsObject() ??
+                   throw new InvalidDataException("Master Angler dependency fixture is null.");
+        var direction = root["directions"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["direction_id"]!.GetValue<string>() ==
+                             "complete_master_angler");
+        var producer = direction["nodes"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["id"]!.GetValue<string>() ==
+                             "dependency.complete_master_angler.desert_bus_access");
+        producer["rule"]!["connector_kind"] = "warp";
+
+        var tamperedPath = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-master-angler-bus-binding-" + Guid.NewGuid().ToString("N") + ".json");
+        try
+        {
+            File.WriteAllText(tamperedPath, root.ToJsonString(JsonDefaults.Options));
+            var tampered = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(
+                catalogPath,
+                windowIndexPath,
+                tamperedPath);
+            Require(
+                tampered.PrerequisiteFamilies.Single(value =>
+                        value.FamilyId == "desert_bus_access")
+                    .ProducerStatus != "implemented_and_bound" &&
+                tampered.MissingOrUnboundProducerFamilies.Contains(
+                    "desert_bus_access",
+                    StringComparer.Ordinal),
+                "Master Angler desert-bus producer accepted a drifted connector kind.");
+        }
+        finally
+        {
+            if (File.Exists(tamperedPath))
+                File.Delete(tamperedPath);
+        }
     }
 
     private static void VerifyMasterAnglerRodEquipmentBindingFailsClosed(

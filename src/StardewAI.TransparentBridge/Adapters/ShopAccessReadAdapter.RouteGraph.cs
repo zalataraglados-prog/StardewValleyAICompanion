@@ -61,9 +61,11 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             {
                 var targetLoaded = !string.IsNullOrWhiteSpace(warp.TargetName) &&
                     locationNames.Contains(warp.TargetName);
-                var nativeBusTransport = IsNativeBusTransportWarp(
-                    location,
-                    warp.TargetName);
+                if (TryReadNativeBusTransport(location, warp, out var busTransport))
+                {
+                    edges.Add(busTransport);
+                    continue;
+                }
                 edges.Add(new
                 {
                     kind = "warp",
@@ -75,14 +77,12 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
                     target_y = (int?)warp.TargetY,
                     source_property = "GameLocation.warps",
                     raw_action = (string?)null,
-                    native_transport_transition = nativeBusTransport,
-                    transport_executor_supported = !nativeBusTransport,
-                    resolved = targetLoaded && !nativeBusTransport,
+                    native_transport_transition = false,
+                    transport_executor_supported = true,
+                    resolved = targetLoaded,
                     unresolved_reason = !targetLoaded
                         ? "target_location_not_loaded"
-                        : nativeBusTransport
-                            ? "native_bus_transport_executor_required"
-                            : (string?)null
+                        : (string?)null
                 });
             }
 
@@ -133,7 +133,7 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             unresolved_edge_count = edges.Count(edge => ReadBoolProperty(edge, "resolved") != true),
             unsupported_action_branch_count = unsupportedActionBranches,
             route_executor_enabled = true,
-            route_executor_scope = "resolved_walkable_warp_touch_action_warp_action_warp_locked_door_warp_building_door_only;native_transport_transitions_excluded",
+            route_executor_scope = "resolved_walkable_warp_touch_action_warp_action_warp_locked_door_warp_building_door_and_native_bus_transport",
             route_replan_policy = "fresh_snapshot_after_each_location_transition",
             graph_scope = "loaded_locations_only",
             edges = edges
@@ -523,6 +523,7 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             "AdventureGuild" => "covered_for_read",
             "adventureGuild" => "covered_for_read",
             "AdventureShop" => "covered_for_read",
+            "DesertBus" => "covered_for_read",
             "asdlfkjg" => "covered_for_read",
             null or "" => "unsupported_for_route_training",
             _ => "unsupported_for_route_training"
@@ -542,6 +543,8 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
                 "read-side OpenedSewer/RustyKey state and native Sewer 16,11 target preview exists",
             "Mine" =>
                 "ordinary Mine lobby floor-one entry is projected as native dynamic UndergroundMine1 ingress",
+            "DesertBus" =>
+                "native return-bus touch action is projected through the shared native_bus_transport connector",
             "LockedDoorWarp" => "read-side time/festival/key/friendship gate preview exists",
             "ConditionalDoor" => "read-side GameStateQuery gate preview exists",
             "Door" => "door branch is recognized but NPC-specific hardcoded details may still block execution",

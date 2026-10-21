@@ -89,7 +89,8 @@ public sealed partial class ModEntry : Mod
     {
         return string.Equals(kind, "action_warp", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(kind, "locked_door_warp", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(kind, "building_door", StringComparison.OrdinalIgnoreCase);
+            string.Equals(kind, "building_door", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(kind, "native_bus_transport", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsStepOntoConnectorKind(string kind)
@@ -130,7 +131,68 @@ public sealed partial class ModEntry : Mod
         string? targetLocation = null;
         int? targetX = null;
         int? targetY = null;
-        if (string.Equals(request.ConnectorKind, "warp", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(
+                request.ConnectorKind,
+                "native_bus_transport",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            var currentLocation = Game1.currentLocation.NameOrUniqueName;
+            if (string.Equals(currentLocation, "BusStop", StringComparison.OrdinalIgnoreCase))
+            {
+                if (Game1.currentLocation is not BusStop busStop ||
+                    busStop.getTileIndexAt(
+                        connectorTile.X,
+                        connectorTile.Y,
+                        "Buildings",
+                        "outdoors") != 1057)
+                {
+                    return "native_bus_ticket_machine_source_mismatch";
+                }
+                if (!Game1.MasterPlayer.mailReceived.Contains("ccVault"))
+                    return "native_bus_cc_vault_missing";
+                var pam = Game1.getCharacterFromName("Pam");
+                if (!Game1.netWorldState.Value.canDriveYourselfToday.Value &&
+                    (pam is null ||
+                     !busStop.characters.Contains(pam) ||
+                     pam.TilePoint != new Point(21, 10)))
+                {
+                    return "native_bus_driver_unavailable";
+                }
+                if (Game1.player.Money < busStop.TicketPrice)
+                    return "native_bus_ticket_money_insufficient";
+                if (Game1.player.isRidingHorse() && Game1.player.mount is not null)
+                    return "native_bus_player_mounted";
+
+                targetLocation = "Desert";
+                targetX = 16;
+                targetY = 24;
+            }
+            else if (string.Equals(currentLocation, "Desert", StringComparison.OrdinalIgnoreCase))
+            {
+                var rawAction = Game1.currentLocation.doesTileHaveProperty(
+                    connectorTile.X,
+                    connectorTile.Y,
+                    "TouchAction",
+                    "Back");
+                var parts = rawAction?.Split(
+                    ' ',
+                    StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+                if (parts.Length == 0 ||
+                    !string.Equals(parts[0], "DesertBus", StringComparison.OrdinalIgnoreCase))
+                {
+                    return "native_bus_return_touch_source_mismatch";
+                }
+
+                targetLocation = "BusStop";
+                targetX = 22;
+                targetY = 10;
+            }
+            else
+            {
+                return "native_bus_source_location_mismatch";
+            }
+        }
+        else if (string.Equals(request.ConnectorKind, "warp", StringComparison.OrdinalIgnoreCase))
         {
             var warp = Game1.currentLocation.warps.FirstOrDefault(candidate => candidate.X == connectorTile.X && candidate.Y == connectorTile.Y);
             if (warp is null)

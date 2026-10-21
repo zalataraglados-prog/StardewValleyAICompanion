@@ -243,6 +243,11 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
+        if (TickNativeBusTransport(move))
+        {
+            return;
+        }
+
         if (TickMovementIncidentalDialogue(move))
         {
             return;
@@ -726,6 +731,15 @@ public sealed partial class ModEntry : Mod
         move.ConnectorActionAttempted = true;
         var actionTile = move.ConnectorActionTile ?? move.TargetTile;
 
+        if (string.Equals(
+                kind,
+                "native_bus_transport",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            TriggerNativeBusTransport(move, actionTile);
+            return true;
+        }
+
         if (string.Equals(kind, "building_door", StringComparison.OrdinalIgnoreCase))
         {
             if (!ValidateBuildingDoorConnector(move, actionTile))
@@ -813,6 +827,38 @@ public sealed partial class ModEntry : Mod
             observedLocation,
             request.ExpectedTargetLocation,
             StringComparison.Ordinal);
+        if (string.Equals(
+                request.ConnectorKind,
+                "native_bus_transport",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            if (!move.NativeBusResponseSelected)
+            {
+                verified = false;
+                reasons.Add("native_bus_yes_response_not_observed");
+            }
+
+            var expectedMoney = string.Equals(
+                    move.LocationId,
+                    "BusStop",
+                    StringComparison.OrdinalIgnoreCase)
+                ? move.StartMoney - 500
+                : move.StartMoney;
+            if (Game1.player.Money != expectedMoney)
+            {
+                verified = false;
+                reasons.Add("native_bus_money_receipt_mismatch");
+            }
+            else
+            {
+                reasons.Add(string.Equals(
+                        move.LocationId,
+                        "BusStop",
+                        StringComparison.OrdinalIgnoreCase)
+                    ? "native_bus_ticket_price_500_observed"
+                    : "native_bus_return_preserved_money");
+            }
+        }
         if (verified && reasons.Count == 0)
         {
             reasons.Add("connector_location_changed_as_expected");
@@ -834,9 +880,23 @@ public sealed partial class ModEntry : Mod
             PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
             PrimitiveVerificationReasons = reasons.ToArray(),
             RequestedEffect = ConnectorRequestedEffect(request),
-            ObservedEffect = ConnectorObservedEffect() + MovementCostSuffix(move.Pending),
+            ObservedEffect = ConnectorObservedEffect() +
+                ";player.money=" + Game1.player.Money +
+                MovementCostSuffix(move.Pending),
             BlockReasons = verified ? Array.Empty<string>() : reasons.ToArray(),
-            ChangedFacts = ConnectorChangedFacts(move.Pending, move.LocationId, move.StartTile, observedLocation, observedTile)
+            ChangedFacts = ConnectorChangedFacts(
+                    move.Pending,
+                    move.LocationId,
+                    move.StartTile,
+                    observedLocation,
+                    observedTile)
+                .Append(new SimulatedFactChange
+                {
+                    Path = "player.money",
+                    Before = move.StartMoney.ToString(CultureInfo.InvariantCulture),
+                    After = Game1.player.Money.ToString(CultureInfo.InvariantCulture)
+                })
+                .ToArray()
         });
     }
 

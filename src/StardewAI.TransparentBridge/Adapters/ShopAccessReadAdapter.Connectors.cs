@@ -16,19 +16,28 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
         var location = Game1.currentLocation;
         var connectors = new List<object>();
 
-        connectors.AddRange(location.warps.Select(warp => new
+        foreach (var warp in location.warps)
         {
-            kind = "warp",
-            tile_x = warp.X,
-            tile_y = warp.Y,
-            target_location = warp.TargetName,
-            target_x = (int?)warp.TargetX,
-            target_y = (int?)warp.TargetY,
-            action = (string?)null,
-            open = (bool?)null,
-            resolved = true,
-            unresolved_reason = (string?)null
-        }));
+            if (TryReadNativeBusTransport(location, warp, out var busTransport))
+            {
+                connectors.Add(busTransport);
+                continue;
+            }
+
+            connectors.Add(new
+            {
+                kind = "warp",
+                tile_x = warp.X,
+                tile_y = warp.Y,
+                target_location = warp.TargetName,
+                target_x = (int?)warp.TargetX,
+                target_y = (int?)warp.TargetY,
+                action = (string?)null,
+                open = (bool?)null,
+                resolved = true,
+                unresolved_reason = (string?)null
+            });
+        }
 
         connectors.AddRange(location.doors.Pairs.Select(pair => new
         {
