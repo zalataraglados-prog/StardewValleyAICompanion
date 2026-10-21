@@ -234,6 +234,14 @@ try
 }
 catch (Exception ex)
 {
+    if (string.Equals(
+            Environment.GetEnvironmentVariable("STARDEWAI_BOOTSTRAP_DEBUG_EXCEPTIONS"),
+            "1",
+            StringComparison.Ordinal))
+    {
+        throw;
+    }
+
     Console.Error.WriteLine(JsonSerializer.Serialize(new
     {
         status = "error",

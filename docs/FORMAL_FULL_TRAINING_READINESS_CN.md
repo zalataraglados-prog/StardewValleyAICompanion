@@ -2,7 +2,7 @@
 
 > **当前状态入口：** [CURRENT_STATUS_CN.md](CURRENT_STATUS_CN.md)。本文件下方带日期的状态、计数和“下一步”均保留为历史证据；若与当前机器报告或 CURRENT_STATUS_CN.md 冲突，不得按历史数字规划新工作。
 >
-> **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。下次先闭合从 v10 最终隔离存档开始的一条 Money 连续生产段；随后按 CURRENT_STATUS_CN.md 第 6 节锁定的 11 核心增量复杂度顺序逐项施工。Money Exit Gate 标准不降低，但不再要求在其他较小 root method 之前一次做完。
+> **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已闭合从 v10 最终隔离存档开始的一条 Money 连续生产段，Community Center 已通过 current-authority 重绑并冻结；当前唯一施工项是 `earn_pet_love`。Money Exit Gate 标准不降低，但 Money 已回到复杂度队列第 11 位。
 
 ## 当前准入状态 · 2026-10-21
 
@@ -14,13 +14,17 @@ Money production cells:  0/18
 Formal product training: false
 ```
 
+`money-crop-native-20261021-v10-continuation-v15-full-chain` 已完成本轮 Money 有界退出条件，包含 `26` 条连续 transition、`8` 个作物批次、`8` 次单件投箱和 `6/6` checkpoint，源存档保持不变，最终状态哈希为 `bb70acbd0b477b7e14d7fe1b4450ee85292fa29e56de854924e4ee67f1216849`。它没有跨越并接入 Money criterion-local cell，因此 `0/18` 不变。
+
+current-source 三分区 corpus 已重建。旧 corpus 因 target-date time/energy budget 与当前确定性编译结果不一致而被正确拒绝；新 reconciliation SHA-256 为 `24dae83e5164cc984486ae9ae008d6899250938da7ff8d695b82a488d3981456`，Community Center 两项均为 `coverage_ready` 且没有 blocker/next action。当前准入指标仍为 `4/19 executable、4/19 split-complete、2/19 CoverageGateReady、1/11 root ready`；下一项是 Pet Love current-authority 重放与重绑，而不是开始正式训练。
+
 Money 的第一条完整原生作物生产段 `money-crop-native-20261021-pricefix-v10` 已通过：checkpoint v12 为 `6/6 verified、0 pending`，终局含 `5` 次单件原生投箱和唯一睡眠结算，实际收入 `875g`，最终为春 20 日 06:00、`money=925`、`totalMoneyEarned=875`。源存档和隔离 Mod 哈希均未漂移。这证明 native runner、购种、场地准备、作物生命周期、留存、容量和运输箱终局可以在同一连续真实轨迹中闭合。
 
 `money_revenue_crop_native_production_segment_receipt.v1` 已完成并对 v10 深回放：Teacher 决策、commit receipt、obligation/run plan、checkpoint、terminal recurrence、最终透明快照和最终隔离存档树均从路径与哈希重新核验。回执确认 `50` 个 Teacher 候选、选中 `5` 格 `(O)474`、实际购种成本 `400g`、毛收入 `875g`、净现金收入 `475g`，并正确输出空阈值集合；它不创建 Teacher comparison、Money cell 或训练授权。
 
 `money_revenue_crop_production_teacher_comparison_receipt.v1` 已关闭 segment-level comparison：完整保留 `50` 候选、`5` admitted、`45` blocked 及 `4` 条选中候选偏好对，并只把真实成本/收入绑定到唯一执行候选。它不把 counterfactual 推演冒充原生结果，也明确保持 `criterion_local_join_ready=false`。
 
-**准入规则没有降低：**该生产段尚未跨越最低 `50,000g` Money criterion，也尚未通过 criterion-local join，因此不能增加 `0/18` 分子。下次先从最终隔离存档继续一次 Teacher 决策并闭合一条连续生产段，随后按 canonical 复杂度队列转入较小 root method。Money 最终返回时，仍只有累计原生轨迹真实跨越阈值，并且相应 train/validation/test 分区的 exact comparison 和 native outcome 均闭合，Money cell 才能入账。Full Shipment current-authority `26/26` 只证明其 runtime stratum，不改变全局 `2/19`。
+**准入规则没有降低：**v10 生产段尚未跨越最低 `50,000g` Money criterion，v15 也没有形成 criterion-local cell，因此不能增加 `0/18` 分子。既定的下一条连续段已由 v15 闭合；当前按 canonical 复杂度队列进入 Pet Love。Money 最终返回时，仍只有累计原生轨迹真实跨越阈值，并且相应 train/validation/test 分区的 exact comparison 和 native outcome 均闭合，Money cell 才能入账。Full Shipment current-authority `26/26` 只证明其 runtime stratum，不改变全局 `2/19`。
 
 ## 已收口待后续证据 · 2026-10-18 Money 种子预留 proof
 

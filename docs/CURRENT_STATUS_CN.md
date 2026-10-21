@@ -44,6 +44,14 @@ Money production cells:    0/18
 Formal training:           false
 ```
 
+### 2026-10-21 current-authority 复核与主施工项切换
+
+Money 的第二条有界连续生产段 `money-crop-native-20261021-v10-continuation-v15-full-chain` 已通过并完成本轮退出条件。该运行从 v10 不可变终态继续，执行 `25` 个购种过渡、精确取得 `8` 份 `(O)475`，完成 `4` 份场地准备计划中的 `3` 个实际动作、`8` 个作物批次、一次补水、`8` 次单件投箱、回家和唯一原生睡眠；总计 `26` 条连续 transition，checkpoint 为 `verified=6 / pending=0`。源存档哈希前后均为 `9429c6d01d327111af8c81d0c36f2e318ccc4f1b0ea3094d84e19f25308b22e4`，最终状态哈希为 `bb70acbd0b477b7e14d7fe1b4450ee85292fa29e56de854924e4ee67f1216849`。该段仍未形成 Money threshold cell，`Money production cells=0/18`、正式训练关闭。
+
+随后按当前源码、`game-1.6.15` 原始字典、当前 goal dependency 与 authoritative dependency graph 重建 requirement inventory、acquisition lowering 和三分区 current-source corpus。直接复用旧 corpus 被确定性拒绝，原因是 target-date time/energy budget 已随当前编译结果漂移；因此旧工件没有被错误冻结。新 reconciliation 位于 `E:\StardewAI-TestLab\artifacts\community-center-current-source-rebind-20261021\coverage\goal-method-coverage-reconciliation.json`，SHA-256 为 `24dae83e5164cc984486ae9ae008d6899250938da7ff8d695b82a488d3981456`，结果仍为 `4/19 executable、4/19 split-complete、2/19 CoverageGateReady、1/11 root ready`。
+
+`complete_community_center` 的两个 criterion 均为 `coverage_ready`，train/validation/test 的 Teacher 与 native 三分区完整，method blocker 和 next action 均为空，故已按 current authority 复核并冻结。**当前唯一 coverage 主施工项为 `earn_pet_love`**：优先重放并重绑已有历史三分区工件，只重采当前 authority 下失效的分区；不得回到 Money 继续展开，也不得并行开启 Skull Key。
+
 ## 2. 已完成并冻结的施工单位
 
 ### Full Shipment runtime evidence
@@ -65,11 +73,11 @@ PR #298 随后补回 deferred pickup 的精确需求数量绑定。该共享 cor
 
 正常共享代码修复只重验**受影响的代表 strata**，再由 production evidence index 重建确认。
 
-## 3. 当前唯一 Coverage 主施工单位：Money / Revenue
+## 3. 已完成的有界施工单位：Money / Revenue
 
 2026-10-21 更新：`money-crop-native-20261021-pricefix-v10` 已形成第一条完整原生作物生产段。它从不可变源存档执行 `21` 个购种过渡、精确购买 `5` 份 `(O)474`，随后完成场地准备、播种、条件浇水、收获、`5` 次单件投箱、回家和原生过夜结算。整条 shared lifecycle 为 `48` 条连续 transition、`12` 个实际作物批次。checkpoint v12 为 `verified=6 / pending=0`；终局 recurrence 从 total day `18` 推进到 `19`（春 20 日 06:00），`money 50 -> 925`、`totalMoneyEarned 0 -> 875`。源存档与隔离 Mod 哈希均未漂移，最终透明状态哈希与 recurrence 完全一致。
 
-这份成功结果仍不增加 `6 x 3` 分子。`money_revenue_crop_native_production_segment_receipt.v1` 已从 v10 摘要深回放并绑定已有 Teacher 决策、完整 checkpoint、终端 recurrence、最终快照与最终隔离存档树；它确认 `50` 个候选、`400g` 实际种子成本、`875g` 毛收入和 `475g` 净现金收入。`money_revenue_crop_production_teacher_comparison_receipt.v1` 又把唯一原生选中结果接回完整 `50` 项分母，保留 `5` 个 admitted、`45` 个 blocked 和 `4` 条 Teacher 偏好对；未执行候选没有伪装成 native outcome。由于没有跨越最低 `50,000g` criterion，该 comparison 仍明确保持 `criterion_local_join_ready=false`。当前下一施工单位是从同一最终隔离存档继续下一段 Teacher 决策，直到累计真实原生结果跨越阈值，才进入既有 criterion-local join。因此状态面板继续严格保持 `Money=0/18`、`formal_product_training_authorized=false`。
+这份成功结果仍不增加 `6 x 3` 分子。`money_revenue_crop_native_production_segment_receipt.v1` 已从 v10 摘要深回放并绑定已有 Teacher 决策、完整 checkpoint、终端 recurrence、最终快照与最终隔离存档树；它确认 `50` 个候选、`400g` 实际种子成本、`875g` 毛收入和 `475g` 净现金收入。`money_revenue_crop_production_teacher_comparison_receipt.v1` 又把唯一原生选中结果接回完整 `50` 项分母，保留 `5` 个 admitted、`45` 个 blocked 和 `4` 条 Teacher 偏好对；未执行候选没有伪装成 native outcome。由于没有跨越最低 `50,000g` criterion，该 comparison 仍明确保持 `criterion_local_join_ready=false`。v15 已满足“再闭合一条连续 Money 段”的有界退出条件；Money 现暂停在第 11 顺位，等待前十个 root method 收口后再完成 criterion-local join。因此状态面板继续严格保持 `Money=0/18`、`formal_product_training_authorized=false`。
 
 同日终局运输箱契约已经升级为单波 `money_revenue_crop_terminal_settlement_proof.v3` 与多波 `money_revenue_crop_shared_shipping_settlement_proof.v2`。两者都要求投箱前路线、逐件原生投递、投箱后资源中性回家路线和唯一原生睡眠四段连续证据；不能在运输箱旁直接构造睡眠。`v10` 已用单波分支真实通过该边界，但这仍只是生产段 outcome，不是阈值 cell。
 
@@ -136,11 +144,11 @@ crop-production checkpoint v12 只认可可从精确请求重建的 fragment。�
 
 ```text
 同一时间只允许 1 个 primary root method / progression family 作为 coverage 施工单位。
-当前恢复点：从 v10 最终隔离存档闭合下一条 Money 连续生产段。
-该有界段验收后：按第 6 节的 11 核心复杂度顺序施工。
+已完成恢复点：v15 已闭合 v10 之后的下一条 Money 连续生产段。
+当前恢复点：`earn_pet_love` current-authority 三分区重放与重绑。
 ```
 
-当前恢复点只要求再闭合一条连续 Money 段，不要求在切换前把 Money `18/18` 全部做完。该段验收后必须停止继续深挖 Money，按第 6 节从当前增量复杂度最低的未完成 root method 开始。任何时刻仍只允许一个 primary item；不得以“复杂度排序”为由重新并行展开多个半成品。
+Money 的有界段已验收并停止继续深挖。Community Center 已在 current authority 下复核冻结，因此当前从第 6 节增量复杂度最低的未完成 root method `earn_pet_love` 开始。任何时刻仍只允许一个 primary item；不得以“复杂度排序”为由重新并行展开多个半成品。
 
 ### 允许的中断
 
@@ -188,8 +196,8 @@ Money 自身最终完成，至少要同时满足：
 
 | 顺序 | root method | 当前增量判断 | 本轮处理方式 |
 | ---: | --- | --- | --- |
-| 1 | `complete_community_center` | 当前唯一 coverage-ready root，增量近零 | 复核 current authority 后冻结；无漂移则直接跳过 |
-| 2 | `earn_pet_love` | executable，已有历史三分区原生/Teacher 工件 | 优先重放并重绑，仅重采失效分区 |
+| 1 | `complete_community_center` | current-authority 重绑已通过，唯一 coverage-ready root | 已冻结；除 authority 漂移外不再施工 |
+| 2 | `earn_pet_love` | executable，已有历史三分区原生/Teacher 工件 | **当前活动项**；优先重放并重绑，仅重采失效分区 |
 | 3 | `obtain_skull_key` | executable，已有历史三分区工件和矿井终局链 | 优先重放并重绑，仅修当前 authority 差异 |
 | 4 | `complete_full_shipment` | split-complete，且 runtime strata 当前权威为 `26/26` | 只补顶层 dependency/coverage 接线，不重写动作链 |
 | 5 | `complete_master_angler` | split-complete，已有钓鱼与蟹笼执行基础 | 补顶层依赖、日历窗口与正式接线 |
@@ -217,7 +225,7 @@ Skull Key/Pet Love 的旧生产工件仍是待重放证据，不是当前分子�
 完全一致时直接重绑，只有失效分区才重采。Full Shipment/Master Angler 已有两通道三分区证据，后续只允许补顶层依赖展开，
 不得另写第二套动作、候选或执行器。
 
-这些既有成果解释了新队列为何把 Community Center、Pet Love、Skull Key、Full Shipment 和 Master Angler 放在前部。当前恢复点的一条 Money 连续段验收后，重新生成 reconciliation，并严格按第 6 节逐项消费；仍然一次只选择一个 root method。这样既避免丢弃历史成果，也不重新引入多个半成品并行推进。
+这些既有成果解释了新队列为何把 Community Center、Pet Love、Skull Key、Full Shipment 和 Master Angler 放在前部。Money 有界段已经验收，reconciliation 已按 current source 重建，Community Center 已冻结；现在严格从 Pet Love 逐项消费，仍然一次只选择一个 root method。这样既避免丢弃历史成果，也不重新引入多个半成品并行推进。
 
 ## 8. 最近的深度优化状态
 

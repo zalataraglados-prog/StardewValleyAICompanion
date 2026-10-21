@@ -84,6 +84,7 @@
     <Compile Include="ValidationImpactAdvisoryTests.cs" />
     <Compile Include="InvocationReadSessionTests.cs" />
     <Compile Include="GenericMovementClearanceBoundarySourceGuardTests.cs" />
+    <Compile Include="GoalConditionedBootstrapDebugExceptionSourceGuardTests.cs" />
     <Compile Include="ExecutorInputLifecycleTests.cs" />
     <Compile Include="ExecutorInputLifecycleSourceGuardTests.cs" />
     <Compile Include="MovementTimingEvidenceSourceGuardTests.cs" />

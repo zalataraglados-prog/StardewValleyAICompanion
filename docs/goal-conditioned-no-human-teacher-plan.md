@@ -2,11 +2,19 @@
 
 > **当前状态入口：** [CURRENT_STATUS_CN.md](CURRENT_STATUS_CN.md)。本文件下方带日期的状态、计数和“下一步”均保留为历史证据；若与当前机器报告或 CURRENT_STATUS_CN.md 冲突，不得按历史数字规划新工作。
 >
-> **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。下次先从 v10 最终隔离存档闭合一条 Money 连续生产段；随后按 CURRENT_STATUS_CN.md 第 6 节的 11 核心增量复杂度队列从小到大施工。Money 仍须最终满足原 Exit Gate，但不再独占其他较小 root method 之前的全部开发时段。
+> **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已从 v10 最终隔离存档闭合下一条 Money 连续生产段，Community Center 已按 current authority 重绑并冻结；当前唯一施工项是 `earn_pet_love`。Money 仍须最终满足原 Exit Gate，但已回到复杂度队列第 11 位。
 
-## Current slice · 2026-10-21: chain verified crop-production segments into Teacher supervision
+## Current slice · 2026-10-21: freeze Community Center and rebind Pet Love
 
-The architecture remains WIP=1 with **Money / Revenue** as the only formal-coverage primary item. `money-crop-native-20261021-pricefix-v10` is the first complete native crop-production segment: one immutable Teacher boundary, 21 bounded seed-acquisition transitions, five native cauliflower-seed purchases, bounded site preparation, planting, conditional watering, harvest, five single-item shipping deposits, a resource-neutral route home, and one native overnight settlement. Its shared lifecycle contains 48 continuous transitions and 12 executed crop batches.
+The bounded Money continuation `money-crop-native-20261021-v10-continuation-v15-full-chain` passed with 26 continuous transitions, eight executed crop batches, eight native single-item shipping deposits, and a complete six-fragment checkpoint. The immutable source save remained at SHA-256 `9429c6d01d327111af8c81d0c36f2e318ccc4f1b0ea3094d84e19f25308b22e4`; the final state hash is `bb70acbd0b477b7e14d7fe1b4450ee85292fa29e56de854924e4ee67f1216849`. This satisfies the bounded Money exit but closes no Money threshold cell.
+
+The old coverage corpus was not silently reused: deterministic replay rejected its stale target-date time/energy budget. Requirement inventory, acquisition lowering, and the three-partition corpus were rebuilt from the current source and current `game-1.6.15` authority. Reconciliation remains `4/19 executable`, `4/19 split-complete`, `2/19 CoverageGateReady`, and `1/11 root ready`; formal product training remains false. Both Community Center criteria are `coverage_ready`, all Teacher/native train-validation-test partitions are complete, and the method has no blocker or next action, so it is frozen.
+
+The sole active root method is now `earn_pet_love`. Reuse begins by replaying and rebinding the historical three-partition Pet Love artifacts against current authority. Only partitions that fail that replay may be recollected. No second pet candidate generator, action compiler, or executor is permitted.
+
+## Historical record · 2026-10-21: chain verified crop-production segments into Teacher supervision
+
+At that point the architecture remained WIP=1 with **Money / Revenue** as the only formal-coverage primary item. `money-crop-native-20261021-pricefix-v10` was the first complete native crop-production segment: one immutable Teacher boundary, 21 bounded seed-acquisition transitions, five native cauliflower-seed purchases, bounded site preparation, planting, conditional watering, harvest, five single-item shipping deposits, a resource-neutral route home, and one native overnight settlement. Its shared lifecycle contains 48 continuous transitions and 12 executed crop batches.
 
 The v12 crop checkpoint rebuilt all six denominator requests and reports `verified=6 / pending=0`. The terminal recurrence advances total day 18 to 19 (Spring 20 at 06:00), money from 50 to 925, and `totalMoneyEarned` from 0 to 875. Source-save and isolated-Mod hashes are unchanged. The final transparent state hash is `5d0e30548a10e62a94caef5c241bd439ee3fd68dec11aa48e35d757e4d17d058`; the final isolated-save tree hash is `9429c6d01d327111af8c81d0c36f2e318ccc4f1b0ea3094d84e19f25308b22e4`.
 
@@ -16,7 +24,7 @@ The replayable crop-production segment outcome receipt is now complete. `money_r
 
 The outcome-backed comparison slice is now complete. `money_revenue_crop_production_teacher_comparison_receipt.v1` replays the full 50-candidate Teacher denominator, preserves 5 admitted and 45 explicitly blocked candidates, emits four deterministic preferences from the selected admitted candidate, and attaches native observations to that selected candidate only. It does not misrepresent the other 49 counterfactual candidates as executed outcomes. Because v10 crossed no authoritative threshold, `criterion_local_join_ready` remains false.
 
-The next bounded slice captures the next Teacher boundary from the exact final isolated save and closes one more segment through the same chain. After that bounded segment is accepted, development follows the fixed 11-root incremental-complexity order in `CURRENT_STATUS_CN.md` section 6; Money resumes at its assigned position. Only a cumulative native trajectory that actually crosses an authoritative threshold may enter the existing criterion-local `6 x 3` join.
+The next bounded slice captured the next Teacher boundary from the exact final isolated save and closed v15 through the same chain. That bounded segment is now accepted, so development follows the fixed 11-root incremental-complexity order in `CURRENT_STATUS_CN.md` section 6; Money resumes at its assigned position. Only a cumulative native trajectory that actually crosses an authoritative threshold may enter the existing criterion-local `6 x 3` join.
 
 No second crop planner, ledger, purchase path, action compiler, executor, terminal verifier, or threshold shortcut is permitted. Full Shipment current-authority `26/26` remains frozen. Dependency-DAG and incremental-recompute work stays post-correctness unless measured traces show it blocks this segment chain.
 

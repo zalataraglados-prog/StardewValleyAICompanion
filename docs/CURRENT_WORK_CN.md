@@ -2,9 +2,17 @@
 
 > **当前状态入口：** [CURRENT_STATUS_CN.md](CURRENT_STATUS_CN.md)。本文件下方带日期的状态、计数和“下一步”均保留为历史证据；若与当前机器报告或 CURRENT_STATUS_CN.md 冲突，不得按历史数字规划新工作。
 >
-> **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。下次先从 v10 最终隔离存档闭合一条 Money 连续生产段；该有界段验收后，按 CURRENT_STATUS_CN.md 第 6 节的 11 核心增量复杂度队列从小到大施工。P0/P1 共享 correctness blocker 可临时中断，但不得静默改序或并行展开多个 root method。
+> **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已完成 v10 之后的一条 Money 连续生产段，Community Center 已按 current authority 重绑并冻结；当前唯一施工项为 `earn_pet_love` 三分区重放与重绑。P0/P1 共享 correctness blocker 可临时中断，但不得静默改序或并行展开多个 root method。
 
-## 当前切片 · 2026-10-21 Money 首条完整原生作物生产段
+## 当前切片 · 2026-10-21 Community Center 冻结并切换 Pet Love
+
+- `money-crop-native-20261021-v10-continuation-v15-full-chain` 已完成既定的第二条有界 Money 连续段：`26` 条 transition、`8` 个实际作物批次、`8` 次单件投箱、checkpoint `6/6 verified`、pending `0`。购种链精确取得 `8` 份 `(O)475`，源存档哈希保持 `9429c6d01d327111af8c81d0c36f2e318ccc4f1b0ea3094d84e19f25308b22e4`，最终状态哈希为 `bb70acbd0b477b7e14d7fe1b4450ee85292fa29e56de854924e4ee67f1216849`。该有界段没有关闭 Money threshold cell，Money 回到复杂度队列第 11 位。
+- 旧 current-source corpus 直接重放因 target-date time/energy budget 与当前确定性编译结果漂移而失败关闭。随后使用 `game-1.6.15` 原始字典、当前 goal dependency、authoritative graph 和当前源码重新生成 requirement inventory、acquisition lowering 及三分区 corpus；没有把旧漂移结果伪装成当前证据。
+- 新 reconciliation 为 `status=reconciled_open_work`，保持 `4/19 executable、4/19 split-complete、2/19 CoverageGateReady、1/11 root ready`；文件为 `E:\StardewAI-TestLab\artifacts\community-center-current-source-rebind-20261021\coverage\goal-method-coverage-reconciliation.json`，SHA-256 `24dae83e5164cc984486ae9ae008d6899250938da7ff8d695b82a488d3981456`。
+- `complete_community_center` 的两个 criterion 均为 `coverage_ready`，Teacher/native train、validation、test 三分区完整，blocker 与 next action 均为空，现已冻结。下一步只处理 `earn_pet_love`：重放历史生产工件，按当前 authority 重新绑定，通过的分区直接复用，仅重采失效分区。
+- 正式训练状态不变：`Money production cells=0/18`、`CoverageGateReady=2/19`、`formal_product_training_authorized=false`。不新增第二套宠物候选、动作编译器或执行器。
+
+## 已收口 · 2026-10-21 Money 首条完整原生作物生产段
 
 - `money-crop-native-20261021-pricefix-v10` 已从不可变源存档完整执行并通过。运行先用现有 `economy.buy_supplies` 链完成 `21` 个有界原生过渡、精确购买 `5` 份 `(O)474` 花椰菜种子，再完成场地准备、春 6 日播种、连续条件浇水、春 18 日收获、`5` 次单件原生投箱、资源中性回家和唯一原生睡眠。整条 crop lifecycle 为 `48` 条连续 transition、`12` 个实际作物批次；两个无需浇水的批次按透明状态跳过。
 - checkpoint v12 已达到 `verified fragments=6 / pending requests=0`。planting layout、seed acquisition、seed reservation、aggregate daily capacity、shared native lifecycle 与 terminal settlement 六个请求全部由当前源码独立重建；output retention 和 settlement capacity 继续作为支持证明。终局 recurrence 从 total day `18` 推进到 `19`（春 20 日 06:00），`money 50 -> 925`、`totalMoneyEarned 0 -> 875`，实际原生收入为 `875g`。
@@ -12,7 +20,7 @@
 - `money_revenue_crop_native_production_segment_receipt.v1` 已对 v10 做完整深回放。它从 run summary 逐层重建 Teacher 决策、commit receipt、obligation plan、native run plan、checkpoint 和 terminal recurrence，并重新哈希源存档、双 Mod、最终透明快照及最终隔离存档树。回执确认 Teacher 完整候选数 `50`、选中 `(O)474` 共 `5` 格、购种成本 `400g`、保守/实际毛收入 `875g`、净现金收入 `475g`；结果哈希为 `9cb93fde39c45b8e83cc5f541f64b3de7929985381a79620b3d2724acf04f6ec`。
 - `money_revenue_crop_production_teacher_comparison_receipt.v1` 已把上述原生结果接回完整 Teacher 分母：`50` 个候选中 `5` 个 admitted、`45` 个带明确原因 blocked，选中候选对另外 `4` 个 admitted 候选形成确定性偏好对。只有选中候选 `crop:474:SeedShop:5` 带原生观测，未执行候选不会伪装成 native outcome。comparison receipt 哈希为 `6ed3e5ab911d6b3c1ce6bca8f3edce7a81de2b6a5ab0293e283792a22874b392`。
 - 该结果关闭的是第一条完整生产段及其 segment-level outcome-backed Teacher comparison，不是 Money threshold cell：`875g` 尚未跨越最低 `50,000g` criterion，且 comparison receipt 明确保持 `criterion_local_join_ready=false`。因此 `Money production cells=0/18`、`CoverageGateReady=2/19`、`formal_product_training_authorized=false` 均保持不变。
-- 下一固定顺序：从该段最终隔离存档捕获下一次 Teacher 边界并闭合一条连续生产段，不从零随机探索。该有界段验收后暂停 Money，转入 CURRENT_STATUS_CN.md 第 6 节的 11 核心增量复杂度队列；Money 最终返回时，只有累计原生轨迹真实跨越权威阈值，才接入既有 criterion-local `6 x 3` production join。
+- 后续 v15 已从该段最终隔离存档闭合下一次 Teacher 边界，满足有界退出条件。Money 现暂停并回到 CURRENT_STATUS_CN.md 第 6 节第 11 位；最终返回时，只有累计原生轨迹真实跨越权威阈值，才接入既有 criterion-local `6 x 3` production join。
 - 未来 runner 摘要升级为 `money_crop_native_production_run_summary.v2`，会直接落盘最终快照路径/哈希、最终状态哈希和最终隔离存档树哈希；回执构建器仍兼容已成功的 v1/v10，但 v2 缺失任一最终身份都会失败关闭。当前验证基线：PowerShell AST 通过，Core game-free `455/455`，GoalConditionedBootstrap Release `0 warning / 0 error`。
 
 ## 历史记录 · 2026-10-20 Money v22 证据恢复与终端结算
