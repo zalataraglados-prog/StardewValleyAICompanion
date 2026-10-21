@@ -71,6 +71,8 @@ Full Shipment dependency graph 的节点早已声明 `full_recurrence_required_f
 
 2026-10-21 下水道切片继续把未绑定族降为 `6`。透明门现在把 `OpenedSewer || hasRustyKey` 视为可执行；Runtime Harness 按锁定 1.6.15 `EnterSewer` 控制流支持“钥匙开锁文本 -> mail 回执 -> 第二次原生交互 -> Sewer(16,11)”，无钥匙在动作入队前排除。Master Angler 节点严格引用 `obtain_rusty_key` 终态和关键 recurrence/event 边，并继续通过唯一 `fishing.catch_fish` 路由出口执行；这只完成跨 root 组合，不等于 Rusty Key root 的 60 件捐赠、Teacher/native 证据已经完成。最新审计 SHA-256 为 `00042d57ed53321e9b7510aa6dc1d8c5502aa11d16496513ced7146bb4e3f04c`；剩余族为蟹笼供应、姜岛、Mutant Bug Lair、秘密森林或森林农场、天气保留或 Rain Totem、女巫沼泽。当前仍只有锁定源码、编译和离线测试，没有本切片真实游戏回执；`training_label_eligible=false` 与全局指标不变。
 
+2026-10-21 蟹笼供应切片把未绑定族进一步降为 `5`。隔离 E 盘存档副本的实时 FishShop 投影证明钓鱼 `2` 级已有 `(O)685` 鱼饵 `5g` 而无蟹笼，钓鱼 `3` 级出现 `(O)710` 蟹笼 `1500g`；原用户存档未被加载或改写。唯一高层出口仍为 `fishing.collect_crab_pots`：缺饵的远程服务先复用 FishShop 单件购买链；精确缺失蟹笼鱼种的随机容量不足时优先制作，只有不能制作才买一个蟹笼，随后关闭菜单、保留 continuation 并 fresh 重算。没有新增平行商店、蟹笼容量或收取系统。定向回归 `48/48` 和防篡改自测通过；实际购买仍沿用既有通用执行器证据，本切片只新增实时库存权威投影，不声称新增原生购买运行回执。最新审计 SHA-256 为 `8cd925d8ede0a0c5d3e5b51817095958ffdd7f5ff100d588400f8dda2f46204b`；剩余族为姜岛、Mutant Bug Lair、秘密森林或森林农场、天气保留或 Rain Totem、女巫沼泽。`training_label_eligible=false`，全局指标不变。
+
 ## 2. 已完成并冻结的施工单位
 
 ### Full Shipment runtime evidence

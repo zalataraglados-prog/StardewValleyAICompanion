@@ -25,6 +25,10 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
         "dependency.complete_community_center.native_completion";
     private const string SewerAccessProducerNode =
         "dependency.complete_master_angler.sewer_rusty_key_access";
+    private const string TrapSupplyProducerNode =
+        "dependency.complete_master_angler.trap_supply_acquisition";
+    private const string TrapInfrastructureGateNode =
+        "dependency.complete_master_angler.trap_infrastructure_gate";
     private const string RustyKeyDirection = "obtain_rusty_key";
     private const string RustyKeyCompletionNode =
         "dependency.obtain_rusty_key.has_rusty_key";
@@ -415,10 +419,14 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                 ("alternative_selection_missing",
                     Array.Empty<string>(),
                     "Select the actual farm layout; otherwise schedule axe progression and Secret Woods access."),
+            TrapSupplyFamily when graph.HasBoundMasterAnglerTrapSupply() =>
+                ("implemented_and_bound",
+                    new[] { TrapSupplyProducerNode, FishingSkillProducerNode },
+                    "The lifecycle reuses exact one-unit FishShop purchases for Crab Pot capacity and bait deficits after the native fishing-level stock unlock, then replans from a fresh receipt."),
             TrapSupplyFamily =>
                 ("runtime_consumer_present_supply_producer_missing",
                     new[] { "dependency.complete_master_angler.craft_trap_infrastructure" },
-                    "Schedule recipe or profession unlock, exact crafting materials, bait supply and their time/reservations."),
+                    "Bind an exact fresh-save Crab Pot and bait supply producer, including unlock, money, route and native purchase receipts."),
             RodEquipmentFamily when graph.HasBoundMasterAnglerRodEquipmentAcquisition() =>
                 ("implemented_and_bound",
                     new[] { RodEquipmentProducerNode },
@@ -750,6 +758,82 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                        "supplies_required_rod_equipment")) &&
                    masterAngler.Edges.Contains(new DependencyEdgeInventory(
                        RodEquipmentProducerNode,
+                       MasterAnglerRecurrenceNode,
+                       "replans_after_native_purchase"));
+        }
+
+        public bool HasBoundMasterAnglerTrapSupply()
+        {
+            if (!Directions.TryGetValue(MasterAnglerDirection, out var masterAngler) ||
+                !masterAngler.Nodes.TryGetValue(
+                    TrapSupplyProducerNode,
+                    out var producer) ||
+                !masterAngler.Nodes.TryGetValue(
+                    FishingSkillProducerNode,
+                    out var skillProducer) ||
+                producer.Kind != "recurrence_rule" ||
+                producer.OptionId != "fishing.collect_crab_pots" ||
+                skillProducer.Kind != "recurrence_rule" ||
+                producer.Rule.ValueKind != JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            var requiredFields = new[]
+            {
+                "world_progress.fish_collection_progress",
+                "player.skills_detail",
+                "player.inventory",
+                "player.money",
+                "player.location_id",
+                "player.crab_pot_crafting",
+                "player.crab_pot_placement",
+                "player.crab_pot_network",
+                "current_location.objects",
+                "locations.shops",
+                "locations.route_graph",
+                "locations.route_connectors",
+                "menus.active_menu",
+                "time.total_days",
+                "time.time"
+            };
+            return producer.CandidateKinds.SetEquals(new[]
+                   {
+                       "route_connector_tile",
+                       "interact_endpoint",
+                       "buy_shop_item"
+                   }) &&
+                   requiredFields.All(producer.RequiredFieldPaths.Contains) &&
+                   RuleString(producer.Rule, "reused_option_id") ==
+                       "economy.buy_supplies" &&
+                   RuleString(producer.Rule, "required_shop_id") ==
+                       "FishShop" &&
+                   RuleString(producer.Rule, "crab_pot_qualified_item_id") ==
+                       "(O)710" &&
+                   RuleInt(producer.Rule, "crab_pot_minimum_fishing_level") == 3 &&
+                   RuleInt(producer.Rule, "crab_pot_maximum_unit_price") == 1500 &&
+                   RuleString(producer.Rule, "bait_qualified_item_id") ==
+                       "(O)685" &&
+                   RuleInt(producer.Rule, "bait_minimum_fishing_level") == 2 &&
+                   RuleInt(producer.Rule, "bait_maximum_unit_price") == 5 &&
+                   RuleInt(producer.Rule, "required_quantity_per_purchase") == 1 &&
+                   RuleBool(producer.Rule, "fresh_snapshot_after_every_native_primitive") &&
+                   RuleBool(producer.Rule, "fresh_native_receipt_required") &&
+                   RuleInt(producer.Rule, "deadline_total_day_exclusive") == 224 &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       FreshSaveInventoryNode,
+                       TrapSupplyProducerNode,
+                       "selects_trap_supply_requirement")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       FishingSkillProducerNode,
+                       TrapSupplyProducerNode,
+                       "unlocks_fish_shop_trap_stock")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       TrapSupplyProducerNode,
+                       TrapInfrastructureGateNode,
+                       "supplies_exact_pot_and_bait")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       TrapSupplyProducerNode,
                        MasterAnglerRecurrenceNode,
                        "replans_after_native_purchase"));
         }

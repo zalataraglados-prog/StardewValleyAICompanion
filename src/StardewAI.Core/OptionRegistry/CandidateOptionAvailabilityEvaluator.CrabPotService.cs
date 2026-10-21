@@ -19,10 +19,12 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         {
             CrabPotReadyCollectCandidates(snapshot),
             CrabPotBaitCandidates(snapshot),
+            CrabPotBaitSupplyCandidates(snapshot),
             CrabPotRemoteServiceCandidates(snapshot),
             CrabPotPlacementCandidates(snapshot),
             CrabPotRemotePlacementRouteCandidates(snapshot),
             CrabPotCraftingCandidates(snapshot),
+            CrabPotInfrastructureSupplyCandidates(snapshot),
             CrabPotSettlementCandidates(snapshot)
         })
         {

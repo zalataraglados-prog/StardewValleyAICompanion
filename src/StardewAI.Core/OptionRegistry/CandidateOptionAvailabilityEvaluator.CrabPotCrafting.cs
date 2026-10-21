@@ -15,71 +15,10 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
     private EventCandidate[] CrabPotCraftingCandidates(
         SnapshotEnvelope snapshot)
     {
-        if (!MasterAnglerWindowIntentValidator.TryReadExactMissingSpecies(
-                snapshot,
-                out var missing) ||
-            missing.Count == 0 ||
-            !TryReadCompleteCrabPotNetwork(snapshot, out var networkRows))
+        if (!TrySelectCrabPotInfrastructureNeed(snapshot, out var need))
         {
             return Array.Empty<EventCandidate>();
         }
-
-        var placement = ReadStateFieldValue(
-            snapshot,
-            "player",
-            "crab_pot_placement");
-        if (!placement.HasValue ||
-            placement.Value.ValueKind != JsonValueKind.Object ||
-            ReadInt(placement.Value, "inventory_crab_pot_count") > 0 ||
-            !placement.Value.TryGetProperty(
-                "potential_placement_locations",
-                out var locations) ||
-            locations.ValueKind != JsonValueKind.Array)
-        {
-            return Array.Empty<EventCandidate>();
-        }
-
-        var usefulSources = locations.EnumerateArray()
-            .Where(location => location.ValueKind == JsonValueKind.Object &&
-                string.Equals(
-                    ReadString(location, "placement_probe_status"),
-                    "native_legal_water_tiles_available",
-                    StringComparison.Ordinal) &&
-                location.TryGetProperty(
-                    "static_legal_tile_ranges",
-                    out var ranges) &&
-                ranges.ValueKind == JsonValueKind.Array)
-            .SelectMany(location => location
-                .GetProperty("static_legal_tile_ranges")
-                .EnumerateArray()
-                .Select(range => new
-                {
-                    LocationId = ReadString(location, "location_id"),
-                    Range = range,
-                    Possible = CrabPotRangePossibleSpecies(range)
-                }))
-            .Select(entry => new
-            {
-                entry.LocationId,
-                entry.Range,
-                entry.Possible,
-                Targets = entry.Possible
-                    .Where(missing.Contains)
-                    .Where(value => CrabPotAdditionalCapacityCanAdvance(
-                        snapshot,
-                        networkRows,
-                        entry.Range,
-                        value))
-                    .OrderBy(value => value, StringComparer.Ordinal)
-                    .ToArray()
-            })
-            .Where(entry => entry.Targets.Length > 0)
-            .OrderBy(entry => entry.LocationId, StringComparer.Ordinal)
-            .ThenBy(entry => ReadInt(entry.Range, "y"))
-            .ThenBy(entry => ReadInt(entry.Range, "start_x"))
-            .ToArray();
-        if (usefulSources.Length == 0)
-            return Array.Empty<EventCandidate>();
 
         var crafting = ReadStateFieldValue(
             snapshot,
@@ -93,7 +32,6 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             return Array.Empty<EventCandidate>();
         }
 
-        var source = usefulSources[0];
         return rows.EnumerateArray()
             .Where(row => row.ValueKind == JsonValueKind.Object &&
                 string.Equals(
@@ -103,11 +41,11 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             .SelectMany(row => BuildCrabPotCraftingCandidates(
                 snapshot,
                 row,
-                source.LocationId,
-                source.Range,
-                source.Possible,
-                source.Targets,
-                networkRows))
+                need.LocationId,
+                need.ProductionSource,
+                need.PossibleSpecies,
+                need.TargetSpecies,
+                need.NetworkRows))
             .OrderByDescending(candidate => candidate.Available)
             .ThenBy(candidate => candidate.CandidateId, StringComparer.Ordinal)
             .ToArray();

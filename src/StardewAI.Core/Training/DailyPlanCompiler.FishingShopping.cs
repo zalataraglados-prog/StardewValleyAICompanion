@@ -331,7 +331,8 @@ namespace StardewAI.Core.Training
                 Preconditions = new[] { "shop_menu_open=true", "candidate_id:" + candidate.CandidateId, "purchase_attempt_completed=true" },
                 ExpectedEffects = new[] { "menus.active_menu.is_open=false" },
                 SafetyConstraints = new[] { "close_only_safe_whitelisted_menu", "post_purchase_menu_cleanup" },
-                FailurePolicy = new[] { "refresh_snapshot_and_replan" }
+                FailurePolicy = new[] { "refresh_snapshot_and_replan" },
+                Parameters = continuation
             });
             return steps;
         }

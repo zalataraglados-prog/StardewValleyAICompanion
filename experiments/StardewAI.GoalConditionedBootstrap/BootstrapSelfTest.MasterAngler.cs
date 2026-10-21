@@ -89,6 +89,13 @@ internal static partial class BootstrapSelfTest
             !report.MissingOrUnboundProducerFamilies.Contains(
                 "sewer_rusty_key_access",
                 StringComparer.Ordinal) &&
+            report.PrerequisiteFamilies.Single(value =>
+                    value.FamilyId ==
+                        "crab_pot_recipe_material_and_bait_supply")
+                .ProducerStatus == "implemented_and_bound" &&
+            !report.MissingOrUnboundProducerFamilies.Contains(
+                "crab_pot_recipe_material_and_bait_supply",
+                StringComparer.Ordinal) &&
             report.MissingOrUnboundProducerFamilies.Contains(
                 "ginger_island_access",
                 StringComparer.Ordinal),
@@ -114,6 +121,57 @@ internal static partial class BootstrapSelfTest
             catalogPath,
             windowIndexPath,
             dependencyExpansionPath);
+        VerifyMasterAnglerTrapSupplyBindingFailsClosed(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath);
+    }
+
+    private static void VerifyMasterAnglerTrapSupplyBindingFailsClosed(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath)
+    {
+        var root = JsonNode.Parse(File.ReadAllText(dependencyExpansionPath))?.AsObject() ??
+                   throw new InvalidDataException("Master Angler dependency fixture is null.");
+        var direction = root["directions"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["direction_id"]!.GetValue<string>() ==
+                             "complete_master_angler");
+        var producer = direction["nodes"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["id"]!.GetValue<string>() ==
+                             "dependency.complete_master_angler.trap_supply_acquisition");
+        producer["rule"]!["crab_pot_maximum_unit_price"] = 1499;
+
+        var tamperedPath = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-master-angler-trap-supply-binding-" +
+            Guid.NewGuid().ToString("N") + ".json");
+        try
+        {
+            File.WriteAllText(
+                tamperedPath,
+                root.ToJsonString(JsonDefaults.Options));
+            var tampered = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(
+                catalogPath,
+                windowIndexPath,
+                tamperedPath);
+            Require(
+                tampered.PrerequisiteFamilies.Single(value =>
+                        value.FamilyId ==
+                            "crab_pot_recipe_material_and_bait_supply")
+                    .ProducerStatus != "implemented_and_bound" &&
+                tampered.MissingOrUnboundProducerFamilies.Contains(
+                    "crab_pot_recipe_material_and_bait_supply",
+                    StringComparer.Ordinal),
+                "Master Angler trap supply accepted a drifted Crab Pot price bound.");
+        }
+        finally
+        {
+            if (File.Exists(tamperedPath))
+                File.Delete(tamperedPath);
+        }
     }
 
     private static void VerifyMasterAnglerSewerAccessBindingFailsClosed(
