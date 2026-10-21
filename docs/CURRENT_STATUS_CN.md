@@ -65,6 +65,8 @@ Full Shipment dependency graph 的节点早已声明 `full_recurrence_required_f
 
 过时 blocker 移除后，current-source coverage report SHA-256 为 `b2cc9dd87212c9e86324708a38f2545723325b04ed7ea3ce19dc01473bab9743`；reconciliation 位于 `E:\StardewAI-TestLab\artifacts\full-shipment-topology-current-source-20261021\goal-method-coverage-reconciliation.json`，SHA-256 `71f0e4ed0e7928c1e63f39641f4b90153674f154a575ec331342a3d5241adf43`。Full Shipment 现为 `executable_frontier + coverage_ready`，blocker/next action 为空；全局达到 `5/19 executable、6/19 split-complete、5/19 CoverageGateReady、4/11 root ready`，正式训练仍为 false。Community Center、Pet Love、Skull Key 与 Full Shipment 均冻结；**当前唯一 coverage 主施工项切换为 `complete_master_angler`**，只补其顶层依赖、日历窗口与 coverage 接线。
 
+2026-10-21 复核确认 Master Angler 的目标日期机会生成链已经是现行实现，而非待建占位：`MasterAnglerTargetDateIntentBuilder` 消费 72/72 Stage 1 窗口索引，随后由现有候选构建器、`CandidateOptionAvailabilityEvaluator.FishingCandidates` 与 `MasterAnglerCurrentCandidateMatcher` 共同核对动态查询、地点可达性、完整路线与计时、可钓 tile、鱼竿/装备以及完整原生 spawn outcome。依赖图已补入该机器可读节点并移除对应过时 blocker。Master Angler 仍为 `pending_dependency_expansion`，只剩蟹笼跨日高层基础设施意图和 fresh-save 随机重试/截止日前机会保留证明两个 blocker；全局指标保持 `5/19 executable、6/19 split-complete、5/19 CoverageGateReady、4/11 root ready`。
+
 ## 2. 已完成并冻结的施工单位
 
 ### Full Shipment runtime evidence

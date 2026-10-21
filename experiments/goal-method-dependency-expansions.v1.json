@@ -269,7 +269,6 @@
         "runtime.goal_index"
       ],
       "blockers": [
-        "the source-complete Stage 1 static deadline index must be consumed by a target-date opportunity producer that resolves dynamic queries location unlock access route fishable tile rod equipment and the existing live spawn-rule candidate for every uncaught rod species",
         "trap-fish recurrence still needs one compiler-owned high-level infrastructure intent that expands exact crafting placement baiting overnight settlement and collection without making primitives policy labels",
         "fresh-save seed-robust completion proof must cover stochastic retries and preserve one legal opportunity before the initial Year 3 evaluation"
       ],
@@ -358,6 +357,35 @@
             "ranking_signal": "earliest remaining latest_static_total_day first",
             "status": "static_window_coverage_complete_dynamic_execution_pending",
             "training_label_eligible": false
+          }
+        },
+        {
+          "id": "dependency.complete_master_angler.target_date_opportunity_producer",
+          "kind": "policy_option_binding",
+          "required_field_paths": [
+            "world_progress.fish_collection_progress",
+            "time.total_days",
+            "time.time",
+            "player.skills_detail",
+            "player.movement_timing_context",
+            "locations.route_graph",
+            "locations.social_route_date_evidence",
+            "fishing.location_context",
+            "fishing.fishable_tiles",
+            "fishing.rod_inventory",
+            "fishing.rod_contexts",
+            "fishing.spawn_rules",
+            "fishing.special_catch_sources"
+          ],
+          "rule": {
+            "producer": "MasterAnglerTargetDateIntentBuilder",
+            "runtime_binding": "CandidateOptionAvailabilityEvaluator.FishingCandidates plus MasterAnglerCurrentCandidateMatcher",
+            "selection": "missing native species intersect current static window dynamic query result exact location unlock access route fishable tile compatible rod equipment and complete live spawn outcome domain",
+            "remote_location": "emit one rolling connector step while preserving the exact target intent and conservative full-route terminal reserve",
+            "terminal_location": "admit only an available native catch_fish candidate whose complete possible output set contains the target species",
+            "unknown_rng": "do not expose or promise the future catch identity; require a fresh native receipt before training admission",
+            "status": "implemented_and_self_tested",
+            "training_label_eligible": "only_after_current_candidate_binding"
           }
         },
         {
@@ -471,7 +499,8 @@
         { "from": "dependency.complete_master_angler.native_denominator_and_missing_set", "to": "dependency.complete_master_angler.trap_species_partition", "kind": "partitions_missing_species" },
         { "from": "dependency.complete_master_angler.rod_species_partition", "to": "dependency.complete_master_angler.static_rod_opportunity_windows", "kind": "normalizes_static_calendar" },
         { "from": "dependency.complete_master_angler.static_rod_opportunity_windows", "to": "dependency.complete_master_angler.stage_one_deadline_window_index", "kind": "expands_before_deadline" },
-        { "from": "dependency.complete_master_angler.stage_one_deadline_window_index", "to": "dependency.complete_master_angler.current_legal_rod_attempt", "kind": "requires_target_date_resolution" },
+        { "from": "dependency.complete_master_angler.stage_one_deadline_window_index", "to": "dependency.complete_master_angler.target_date_opportunity_producer", "kind": "feeds_authoritative_windows" },
+        { "from": "dependency.complete_master_angler.target_date_opportunity_producer", "to": "dependency.complete_master_angler.current_legal_rod_attempt", "kind": "binds_current_runtime_candidate" },
         { "from": "dependency.complete_master_angler.trap_species_partition", "to": "dependency.complete_master_angler.trap_infrastructure_gate", "kind": "requires_infrastructure" },
         { "from": "dependency.complete_master_angler.trap_infrastructure_gate", "to": "dependency.complete_master_angler.place_trap_infrastructure", "kind": "expands_missing_placement" },
         { "from": "dependency.complete_master_angler.place_trap_infrastructure", "to": "dependency.complete_master_angler.load_trap_bait", "kind": "enables" },

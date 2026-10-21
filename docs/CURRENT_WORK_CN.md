@@ -16,6 +16,7 @@
 - 当前机器证据重新确认 `154/154` 权威静态需求、`641` 条来源、`26` 个执行签名层、静态 blocker `0`；严格原生 index 为 `26/26 verified、0 missing`，共享 shipping/settlement 通过。完整 154 项 recurrence 仍保留给正常游玩与最终可选验收，不是 Teacher coverage 前置。index SHA-256 为 `e30edb0e6aca07deca484c8b8f1a4437eef68cb01120f13074329d7e2e0830b1`。
 - 移除自相矛盾的过时 blocker 后，Full Shipment 为 `executable_frontier + coverage_ready`，blocker/next action 均为空。新 reconciliation 为 `5/19 executable、6/19 split-complete、5/19 CoverageGateReady、4/11 root ready`；文件为 `E:\StardewAI-TestLab\artifacts\full-shipment-topology-current-source-20261021\goal-method-coverage-reconciliation.json`，SHA-256 `71f0e4ed0e7928c1e63f39641f4b90153674f154a575ec331342a3d5241adf43`。完整 Goal Method coverage 自测以退出码 0 通过。
 - 正式训练仍为 `Money production cells=0/18`、`formal_product_training_authorized=false`。下一步只处理 `complete_master_angler` 的顶层 dependency、日历窗口与 coverage 接线，复用现有钓鱼/蟹笼执行链和已完整的三分区证据。
+- Master Angler 的 Stage 1 窗口到当前原生钓鱼候选并非缺失实现。现行链已联结 72/72 静态窗口、动态查询、地点解锁/路线/计时、可钓 tile、鱼竿装备与完整 live spawn outcome；依赖图现以 `target_date_opportunity_producer` 节点记录该事实，旧 blocker 已删除。当前仍只剩两个真实缺口：编译器拥有的蟹笼跨日高层基础设施意图，以及 fresh-save 下覆盖随机重试并在 Year 3 初次评价前保留至少一次合法机会的完成证明。指标暂不增加。
 
 ## 已收口 · 2026-10-21 Money 首条完整原生作物生产段
 
