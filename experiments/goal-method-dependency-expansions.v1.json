@@ -269,7 +269,7 @@
         "runtime.goal_index"
       ],
       "blockers": [
-        "fresh-save recurrence must bind rod and fishing-equipment acquisition, fishing-skill progression, and either natural rainy-window reserve or exact Rain Totem supply and next-day effect",
+        "fresh-save recurrence must bind rod and fishing-equipment acquisition and either natural rainy-window reserve or exact Rain Totem supply and next-day effect",
         "fresh-save location access must bind mine depth, desert bus, sewer and Rusty Key, Secret Woods or Forest Farm layout, Witch's Swamp, Mutant Bug Lair, and Ginger Island or Caldera alternatives",
         "fresh-save Crab Pot recurrence must bind recipe or profession unlock, exact crafting materials and bait supply before consuming the implemented lifecycle",
         "seed-robust deadline proof must compose every selected prerequisite producer with live stochastic retries and preserve one dynamically legal opportunity before the initial Year 3 evaluation"
@@ -380,6 +380,32 @@
             "classification_boundary": "static calendar days are not dynamically legal catch opportunities",
             "status": "partial_fresh_save_prerequisite_inventory",
             "training_label_eligible": false
+          }
+        },
+        {
+          "id": "dependency.complete_master_angler.fishing_skill_progression",
+          "kind": "recurrence_rule",
+          "required_field_paths": [
+            "world_progress.fish_collection_progress",
+            "player.skills_detail",
+            "time.total_days",
+            "time.time",
+            "fishing.location_context",
+            "fishing.fishable_tiles",
+            "fishing.rod_contexts"
+          ],
+          "rule": {
+            "reuses_direction_id": "raise_skill_levels",
+            "reuses_node_id": "dependency.raise_skill_levels.acquire_fishing_xp",
+            "reused_option_id": "fishing.catch_fish",
+            "target_level_policy": "maximum source-required fishing level among currently missing native species, capped at vanilla unmodified level 10",
+            "exact_deficit_source": "player.skills_detail fishing row plus Farmer.getBaseExperienceForLevel threshold ladder",
+            "candidate_policy": "prefer a currently legal Master Angler attempt; when no missing-species attempt is legal, reuse only an admitted catch_fish candidate with complete positive fishing-XP evidence",
+            "resource_policy": "charge the existing catch candidate time, energy, travel and equipment requirements to the same Master Angler deadline recurrence",
+            "fresh_native_receipt_required": true,
+            "recompute_after_every_native_receipt": true,
+            "deadline_total_day_exclusive": 224,
+            "model_output_policy": "no new model-facing option; reuse fishing.catch_fish and its existing candidate compiler executor and receipt"
           }
         },
         {
@@ -562,6 +588,8 @@
         { "from": "dependency.complete_master_angler.stage_one_deadline_window_index", "to": "dependency.complete_master_angler.fresh_save_prerequisite_inventory", "kind": "audits_fresh_save_reachability" },
         { "from": "dependency.complete_master_angler.stage_one_deadline_window_index", "to": "dependency.complete_master_angler.target_date_opportunity_producer", "kind": "feeds_authoritative_windows" },
         { "from": "dependency.complete_master_angler.fresh_save_prerequisite_inventory", "to": "dependency.complete_master_angler.acquisition_recurrence", "kind": "enumerates_missing_prerequisite_producers" },
+        { "from": "dependency.complete_master_angler.fresh_save_prerequisite_inventory", "to": "dependency.complete_master_angler.fishing_skill_progression", "kind": "selects_required_fishing_level" },
+        { "from": "dependency.complete_master_angler.fishing_skill_progression", "to": "dependency.complete_master_angler.acquisition_recurrence", "kind": "supplies_required_fishing_level" },
         { "from": "dependency.complete_master_angler.target_date_opportunity_producer", "to": "dependency.complete_master_angler.current_legal_rod_attempt", "kind": "binds_current_runtime_candidate" },
         { "from": "dependency.complete_master_angler.trap_species_partition", "to": "dependency.complete_master_angler.trap_infrastructure_gate", "kind": "requires_infrastructure" },
         { "from": "dependency.complete_master_angler.trap_species_partition", "to": "dependency.complete_master_angler.trap_lifecycle_intent", "kind": "binds_high_level_recurrence" },

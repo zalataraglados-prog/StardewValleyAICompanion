@@ -5,6 +5,16 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
 {
+    private const string MasterAnglerDirection = "complete_master_angler";
+    private const string FishingSkillProducerNode =
+        "dependency.complete_master_angler.fishing_skill_progression";
+    private const string FishingSkillSourceDirection = "raise_skill_levels";
+    private const string FishingSkillSourceNode =
+        "dependency.raise_skill_levels.acquire_fishing_xp";
+    private const string MasterAnglerRecurrenceNode =
+        "dependency.complete_master_angler.acquisition_recurrence";
+    private const string FreshSaveInventoryNode =
+        "dependency.complete_master_angler.fresh_save_prerequisite_inventory";
     private const string RodEquipmentFamily = "rod_and_fishing_equipment_acquisition";
     private const string FishingSkillFamily = "fishing_skill_progression";
     private const string WeatherFamily = "weather_reserve_or_control";
@@ -327,9 +337,13 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                 ("implemented_and_bound",
                     new[] { "dependency.complete_master_angler.trap_lifecycle_intent" },
                     "No lifecycle implementation is missing; fresh-save supply remains separate."),
-            FishingSkillFamily when graph.HasOption("raise_skill_levels", "fishing.catch_fish") =>
+            FishingSkillFamily when graph.HasBoundMasterAnglerFishingSkillProgression() =>
+                ("implemented_and_bound",
+                    new[] { FishingSkillProducerNode, FishingSkillSourceNode },
+                    "The Master Angler recurrence reuses the existing exact fishing-XP producer, deadline accounting and fresh native receipt."),
+            FishingSkillFamily when graph.HasOption(FishingSkillSourceDirection, "fishing.catch_fish") =>
                 ("reusable_but_unbound",
-                    new[] { "raise_skill_levels:fishing.catch_fish" },
+                    new[] { FishingSkillSourceNode },
                     "Bind fishing-level progression and its time cost into the Master Angler deadline recurrence."),
             "mine_access_and_depth" when graph.HasOption("raise_skill_levels", "mining.reach_depth") =>
                 ("reusable_but_unbound",
@@ -456,13 +470,29 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                 value => value.GetProperty("direction_id").GetString()!,
                 value => new DependencyDirectionInventory(
                     value.GetProperty("nodes").EnumerateArray()
-                        .Select(node => node.GetProperty("id").GetString()!)
-                        .ToHashSet(StringComparer.Ordinal),
-                    value.GetProperty("nodes").EnumerateArray()
-                        .Where(node => node.TryGetProperty("option_id", out var option) &&
-                                       option.ValueKind == JsonValueKind.String)
-                        .Select(node => node.GetProperty("option_id").GetString()!)
-                        .ToHashSet(StringComparer.Ordinal)),
+                        .Select(node => new DependencyNodeInventory(
+                            node.GetProperty("id").GetString()!,
+                            node.GetProperty("kind").GetString()!,
+                            node.TryGetProperty("option_id", out var option) &&
+                            option.ValueKind == JsonValueKind.String
+                                ? option.GetString() ?? string.Empty
+                                : string.Empty,
+                            node.TryGetProperty("required_field_paths", out var fields) &&
+                            fields.ValueKind == JsonValueKind.Array
+                                ? fields.EnumerateArray()
+                                    .Select(field => field.GetString() ?? string.Empty)
+                                    .ToHashSet(StringComparer.Ordinal)
+                                : new HashSet<string>(StringComparer.Ordinal),
+                            node.TryGetProperty("rule", out var rule)
+                                ? rule.Clone()
+                                : default))
+                        .ToDictionary(node => node.Id, StringComparer.Ordinal),
+                    value.GetProperty("edges").EnumerateArray()
+                        .Select(edge => new DependencyEdgeInventory(
+                            edge.GetProperty("from").GetString()!,
+                            edge.GetProperty("to").GetString()!,
+                            edge.GetProperty("kind").GetString()!))
+                        .ToHashSet()),
                 StringComparer.Ordinal);
         return new DependencyGraphInventory(directions);
     }
@@ -479,19 +509,84 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
             throw new InvalidDataException(message);
     }
 
+    private sealed record DependencyNodeInventory(
+        string Id,
+        string Kind,
+        string OptionId,
+        HashSet<string> RequiredFieldPaths,
+        JsonElement Rule);
+
+    private sealed record DependencyEdgeInventory(
+        string From,
+        string To,
+        string Kind);
+
     private sealed record DependencyDirectionInventory(
-        HashSet<string> NodeIds,
-        HashSet<string> OptionIds);
+        Dictionary<string, DependencyNodeInventory> Nodes,
+        HashSet<DependencyEdgeInventory> Edges);
 
     private sealed record DependencyGraphInventory(
         Dictionary<string, DependencyDirectionInventory> Directions)
     {
         public bool HasDirection(string direction) => Directions.ContainsKey(direction);
 
-        public bool HasNode(string node) => Directions.Values.Any(value => value.NodeIds.Contains(node));
+        public bool HasNode(string node) => Directions.Values.Any(value => value.Nodes.ContainsKey(node));
 
         public bool HasOption(string direction, string option) =>
             Directions.TryGetValue(direction, out var value) &&
-            value.OptionIds.Contains(option);
+            value.Nodes.Values.Any(node => node.OptionId == option);
+
+        public bool HasBoundMasterAnglerFishingSkillProgression()
+        {
+            if (!Directions.TryGetValue(MasterAnglerDirection, out var masterAngler) ||
+                !Directions.TryGetValue(FishingSkillSourceDirection, out var skills) ||
+                !masterAngler.Nodes.TryGetValue(FishingSkillProducerNode, out var producer) ||
+                !skills.Nodes.TryGetValue(FishingSkillSourceNode, out var source) ||
+                producer.Kind != "recurrence_rule" ||
+                source.Kind != "policy_option_transition" ||
+                source.OptionId != "fishing.catch_fish" ||
+                producer.Rule.ValueKind != JsonValueKind.Object)
+                return false;
+
+            var requiredFields = new[]
+            {
+                "world_progress.fish_collection_progress",
+                "player.skills_detail",
+                "time.total_days",
+                "time.time",
+                "fishing.location_context",
+                "fishing.fishable_tiles",
+                "fishing.rod_contexts"
+            };
+            return requiredFields.All(producer.RequiredFieldPaths.Contains) &&
+                   RuleString(producer.Rule, "reuses_direction_id") == FishingSkillSourceDirection &&
+                   RuleString(producer.Rule, "reuses_node_id") == FishingSkillSourceNode &&
+                   RuleString(producer.Rule, "reused_option_id") == "fishing.catch_fish" &&
+                   RuleBool(producer.Rule, "fresh_native_receipt_required") &&
+                   RuleBool(producer.Rule, "recompute_after_every_native_receipt") &&
+                   RuleInt(producer.Rule, "deadline_total_day_exclusive") == 224 &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       FreshSaveInventoryNode,
+                       FishingSkillProducerNode,
+                       "selects_required_fishing_level")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       FishingSkillProducerNode,
+                       MasterAnglerRecurrenceNode,
+                       "supplies_required_fishing_level"));
+        }
+
+        private static string RuleString(JsonElement rule, string name) =>
+            rule.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
+                ? value.GetString() ?? string.Empty
+                : string.Empty;
+
+        private static bool RuleBool(JsonElement rule, string name) =>
+            rule.TryGetProperty(name, out var value) &&
+            value.ValueKind is JsonValueKind.True;
+
+        private static int RuleInt(JsonElement rule, string name) =>
+            rule.TryGetProperty(name, out var value) && value.TryGetInt32(out var result)
+                ? result
+                : int.MinValue;
     }
 }

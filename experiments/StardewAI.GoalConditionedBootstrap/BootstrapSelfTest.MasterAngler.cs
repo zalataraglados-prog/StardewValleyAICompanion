@@ -47,6 +47,12 @@ internal static partial class BootstrapSelfTest
             report.PrerequisiteFamilies.Single(value =>
                     value.FamilyId == "crab_pot_lifecycle")
                 .ProducerStatus == "implemented_and_bound" &&
+            report.PrerequisiteFamilies.Single(value =>
+                    value.FamilyId == "fishing_skill_progression")
+                .ProducerStatus == "implemented_and_bound" &&
+            !report.MissingOrUnboundProducerFamilies.Contains(
+                "fishing_skill_progression",
+                StringComparer.Ordinal) &&
             report.MissingOrUnboundProducerFamilies.Contains(
                 "ginger_island_access",
                 StringComparer.Ordinal) &&
@@ -54,6 +60,60 @@ internal static partial class BootstrapSelfTest
                 "rod_and_fishing_equipment_acquisition",
                 StringComparer.Ordinal),
             "Master Angler fresh-save producer coverage was overstated.");
+
+        VerifyMasterAnglerFishingSkillBindingFailsClosed(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath);
+    }
+
+    private static void VerifyMasterAnglerFishingSkillBindingFailsClosed(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath)
+    {
+        var root = JsonNode.Parse(File.ReadAllText(dependencyExpansionPath))?.AsObject() ??
+                   throw new InvalidDataException("Master Angler dependency fixture is null.");
+        var direction = root["directions"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["direction_id"]!.GetValue<string>() ==
+                             "complete_master_angler");
+        var edges = direction["edges"]!.AsArray();
+        var requiredEdge = edges
+            .Single(value =>
+            {
+                var edge = value!.AsObject();
+                return edge["from"]!.GetValue<string>() ==
+                           "dependency.complete_master_angler.fishing_skill_progression" &&
+                       edge["to"]!.GetValue<string>() ==
+                           "dependency.complete_master_angler.acquisition_recurrence";
+            });
+        edges.Remove(requiredEdge);
+
+        var tamperedPath = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-master-angler-skill-binding-" + Guid.NewGuid().ToString("N") + ".json");
+        try
+        {
+            File.WriteAllText(tamperedPath, root.ToJsonString(JsonDefaults.Options));
+            var tampered = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(
+                catalogPath,
+                windowIndexPath,
+                tamperedPath);
+            Require(
+                tampered.PrerequisiteFamilies.Single(value =>
+                        value.FamilyId == "fishing_skill_progression")
+                    .ProducerStatus == "reusable_but_unbound" &&
+                tampered.MissingOrUnboundProducerFamilies.Contains(
+                    "fishing_skill_progression",
+                    StringComparer.Ordinal),
+                "Master Angler fishing-skill producer accepted a missing recurrence edge.");
+        }
+        finally
+        {
+            if (File.Exists(tamperedPath))
+                File.Delete(tamperedPath);
+        }
     }
 
     private static void VerifyMasterAnglerChanceModifierParsing()
