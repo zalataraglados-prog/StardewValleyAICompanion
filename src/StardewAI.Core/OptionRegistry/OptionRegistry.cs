@@ -1747,6 +1747,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "native CraftingPage consumes the rebound ingredient multiset", "exact quest output enters player inventory", "the exact CraftingQuest completes through Quest.OnRecipeCrafted" },
                 new[] { "block_non_CraftingQuest_or_completed_quest", "block_unknown_or_unlearned_target_recipe", "block_recipe_inventory_or_workbench_topology_drift", "block_material_reservation_or_output_capacity", "block_direct_inventory_recipe_stat_or_quest_mutation" }));
 
+            Register(Option("executor.craft_crab_pot", "fishing", "Craft one verified learned Crab Pot for a transparent Master Angler trap-species capacity deficit",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.inventory", "player.crab_pot_crafting", "player.crab_pot_placement", "player.crab_pot_network", "world_progress.fish_collection_progress", "menus.active_menu" },
+                new[] { "native CraftingPage consumes the rebound ingredient multiset", "one exact Crab Pot enters player inventory", "the existing placement, bait, settlement, and collection lifecycle becomes eligible" },
+                new[] { "block_no_missing_trap_species_capacity_deficit", "block_unknown_or_unlearned_crab_pot_recipe", "block_no_native_legal_productive_water_tile", "block_recipe_inventory_or_workbench_topology_drift", "block_material_reservation_or_output_capacity", "block_direct_inventory_recipe_or_progress_mutation" }));
+
             Register(Option("executor.place_machine", "farm", "Place one verified inventory machine at one exact native-legal tile",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,

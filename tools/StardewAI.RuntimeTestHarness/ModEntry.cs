@@ -2070,7 +2070,8 @@ public sealed partial class ModEntry : Mod
 
             if (pending.Request.OptionId == "executor.craft_machine_item" ||
                 pending.Request.OptionId == "executor.craft_storage_item" ||
-                pending.Request.OptionId == "executor.craft_quest_item")
+                pending.Request.OptionId == "executor.craft_quest_item" ||
+                pending.Request.OptionId == "executor.craft_crab_pot")
             {
                 if (string.Equals(
                         pending.Request.CraftingSource,

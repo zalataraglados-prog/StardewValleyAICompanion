@@ -87,14 +87,80 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 intent,
                 terminalReserveTicks: 0))
             .ToArray();
-        return exact.Length > 0
-            ? exact
+        if (exact.Length > 0)
+            return exact;
+
+        var lifecycle = candidates
+            .Where(candidate => candidate.Available &&
+                !string.Equals(
+                    candidate.Kind,
+                    "collect_crab_pot",
+                    StringComparison.Ordinal) &&
+                CrabPotCandidateSupportsSpecies(
+                    candidate,
+                    intent.TargetQualifiedItemId))
+            .Select(candidate => ApplyMasterAnglerTimeBudget(
+                snapshot,
+                CloneCandidate(
+                    candidate,
+                    candidateId: candidate.CandidateId +
+                        ":master-angler:" + intent.TargetQualifiedItemId,
+                    expectedEffect: candidate.ExpectedEffect +
+                        ";master_angler_target_qualified_item_id=" +
+                        intent.TargetQualifiedItemId +
+                        ";master_angler_runtime_terminal_validation_required=true",
+                    parameters: candidate.Parameters
+                        .Concat(intentParameters)
+                        .Concat(continuation)
+                        .ToArray(),
+                    availabilityClass:
+                        "master_angler_crab_pot_lifecycle_support"),
+                intent,
+                terminalReserveTicks: 0))
+            .ToArray();
+        return lifecycle.Length > 0
+            ? lifecycle
             : new[]
             {
                 BlockedMasterAnglerCrabPotCandidate(
-                    "master_angler_no_exact_ready_crab_pot_output",
+                    "master_angler_no_exact_ready_or_supporting_crab_pot_lifecycle_step",
                     intentParameters)
             };
+    }
+
+    private static bool CrabPotCandidateSupportsSpecies(
+        EventCandidate candidate,
+        string qualifiedItemId)
+    {
+        foreach (var name in new[]
+        {
+            "master_angler_target_qualified_item_ids_json",
+            "possible_qualified_item_ids_json"
+        })
+        {
+            var raw = ReadParameter(candidate.Parameters, name);
+            if (string.IsNullOrWhiteSpace(raw))
+                continue;
+            try
+            {
+                using var document = JsonDocument.Parse(raw);
+                if (document.RootElement.ValueKind == JsonValueKind.Array &&
+                    document.RootElement.EnumerateArray().Any(value =>
+                        value.ValueKind == JsonValueKind.String &&
+                        string.Equals(
+                            value.GetString(),
+                            qualifiedItemId,
+                            StringComparison.Ordinal)))
+                {
+                    return true;
+                }
+            }
+            catch (JsonException)
+            {
+                // A malformed transparent binding must fail closed.
+            }
+        }
+        return false;
     }
 
     private static string[] CrabPotRangePossibleSpecies(JsonElement range)

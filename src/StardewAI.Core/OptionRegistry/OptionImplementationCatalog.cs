@@ -193,6 +193,7 @@ public static class OptionImplementationCatalog
         "executor.craft_machine_item",
         "executor.craft_storage_item",
         "executor.craft_quest_item",
+        "executor.craft_crab_pot",
         "executor.place_machine",
         "executor.remove_machine",
         "executor.place_storage",

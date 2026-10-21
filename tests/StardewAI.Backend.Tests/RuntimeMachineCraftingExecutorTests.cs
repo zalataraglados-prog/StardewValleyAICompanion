@@ -70,6 +70,15 @@ public sealed class RuntimeMachineCraftingExecutorTests
         Assert.True(
             RuntimeTestHarnessDispatchCatalog.IsSupported(
                 "executor.craft_machine_item"));
+        Assert.Contains(
+            "pending.Request.OptionId == \"executor.craft_crab_pot\"",
+            dispatch);
+        Assert.True(
+            RuntimeTestHarnessDispatchCatalog.IsSupported(
+                "executor.craft_crab_pot"));
+        Assert.Contains(
+            "? \"craft_crab_pot\"",
+            executor);
     }
 
     [Fact]

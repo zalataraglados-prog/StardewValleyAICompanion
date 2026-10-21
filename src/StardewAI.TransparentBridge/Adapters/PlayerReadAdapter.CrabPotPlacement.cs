@@ -64,8 +64,17 @@ public sealed partial class PlayerReadAdapter
         }
 
         var fishData = DataLoader.Fish(Game1.content);
+        var placementProbe = ItemRegistry.Create<StardewValley.Object>(
+            CrabPotQualifiedItemId);
+        var potentialLocations = locations
+            .Select(location => ReadCrabPotPlacementLocation(
+                placementProbe,
+                location,
+                player,
+                fishData))
+            .ToArray();
         var rows = inventoryPots
-            .Select(row => ReadCrabPotPlacementRow(row, locations, player, fishData))
+            .Select(row => ReadCrabPotPlacementRow(row, potentialLocations))
             .ToArray();
         var context = new
         {
@@ -73,6 +82,11 @@ public sealed partial class PlayerReadAdapter
             projection_status = "complete_inventory_crab_pots_across_loaded_persistent_locations",
             inventory_crab_pot_count = inventoryPots.Length,
             location_count = locations.Length,
+            potential_static_legal_tile_count = potentialLocations.Sum(
+                row => row.StaticLegalTileCount),
+            potential_placement_locations = potentialLocations
+                .Select(row => row.Row)
+                .ToArray(),
             static_projection_fingerprint = fingerprint,
             static_projection_tick = unchecked((long)Game1.ticks),
             qualified_item_id = CrabPotQualifiedItemId,
@@ -102,13 +116,8 @@ public sealed partial class PlayerReadAdapter
 
     private static object ReadCrabPotPlacementRow(
         InventoryCrabPotRef inventoryPot,
-        IReadOnlyList<MachineLocationRef> locations,
-        Farmer player,
-        IDictionary<string, string> fishData)
+        IReadOnlyList<CrabPotPlacementLocationProjection> projections)
     {
-        var projections = locations
-            .Select(location => ReadCrabPotPlacementLocation(inventoryPot.Item, location, player, fishData))
-            .ToArray();
         return new
         {
             inventory_slot_index = inventoryPot.SlotIndex,
@@ -118,7 +127,7 @@ public sealed partial class PlayerReadAdapter
             stack = inventoryPot.Item.Stack,
             inventory_runtime_type = inventoryPot.Item.GetType().FullName,
             placed_runtime_type = typeof(CrabPot).FullName,
-            location_count = projections.Length,
+            location_count = projections.Count,
             static_legal_tile_count = projections.Sum(row => row.StaticLegalTileCount),
             locations = projections.Select(row => row.Row).ToArray()
         };

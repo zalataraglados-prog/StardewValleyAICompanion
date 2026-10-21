@@ -269,7 +269,6 @@
         "runtime.goal_index"
       ],
       "blockers": [
-        "trap-fish recurrence still needs one compiler-owned high-level infrastructure intent that expands exact crafting placement baiting overnight settlement and collection without making primitives policy labels",
         "fresh-save seed-robust completion proof must cover stochastic retries and preserve one legal opportunity before the initial Year 3 evaluation"
       ],
       "nodes": [
@@ -430,6 +429,43 @@
           }
         },
         {
+          "id": "dependency.complete_master_angler.trap_lifecycle_intent",
+          "kind": "policy_option_binding",
+          "option_id": "fishing.collect_crab_pots",
+          "candidate_kinds": ["collect_crab_pot", "load_crab_pot_bait", "route_connector_tile", "place_crab_pot", "craft_crab_pot", "recovery_close_menu", "recovery_resume_sleep_prompt", "recovery_sleep_immediately", "recovery_return_home", "recovery_sleep_before_collapse"],
+          "required_field_paths": [
+            "world_progress.fish_collection_progress",
+            "player.crab_pot_crafting",
+            "player.crab_pot_placement",
+            "player.crab_pot_network",
+            "current_location.objects",
+            "locations.collision_grid",
+            "farm.material_inventory_graph",
+            "time.total_days",
+            "time.time"
+          ],
+          "rule": {
+            "stage_order": ["collect exact ready missing species", "service existing unbaited pot", "route to remote service", "place useful inventory pot", "route to useful remote placement", "craft one useful pot when capacity is deficient", "reuse recovery policy for native overnight settlement"],
+            "queue_shape": "compile exactly one primitive then refresh snapshot and rebind the high-level intent",
+            "policy_boundary": "only fishing.collect_crab_pots is model-facing; crafting placement baiting routing sleep and collection remain compiler-owned primitives",
+            "unknown_rng": "never predict the future output identity; inspect the fresh native CrabPot.DayUpdate receipt",
+            "status": "implemented_and_self_tested"
+          }
+        },
+        {
+          "id": "dependency.complete_master_angler.craft_trap_infrastructure",
+          "kind": "deterministic_transition",
+          "option_id": "executor.craft_crab_pot",
+          "candidate_kinds": ["craft_crab_pot"],
+          "required_field_paths": ["player.inventory", "player.crab_pot_crafting", "player.crab_pot_placement", "player.crab_pot_network", "world_progress.fish_collection_progress", "farm.material_inventory_graph"],
+          "rule": {
+            "execution_owner": "compiler_owned_primitive_not_policy_label",
+            "admit_when": "no inventory Crab Pot exists, exact missing trap-species capacity is below the stochastic reserve, and one native-legal productive water source remains",
+            "native_contract": "shared native personal or Workbench CraftingPage click path with exact material and output delta verification",
+            "postcondition": "one exact inventory Crab Pot exists and the lifecycle replans into placement"
+          }
+        },
+        {
           "id": "dependency.complete_master_angler.trap_infrastructure_gate",
           "kind": "state_gate",
           "required_field_paths": [
@@ -502,7 +538,11 @@
         { "from": "dependency.complete_master_angler.stage_one_deadline_window_index", "to": "dependency.complete_master_angler.target_date_opportunity_producer", "kind": "feeds_authoritative_windows" },
         { "from": "dependency.complete_master_angler.target_date_opportunity_producer", "to": "dependency.complete_master_angler.current_legal_rod_attempt", "kind": "binds_current_runtime_candidate" },
         { "from": "dependency.complete_master_angler.trap_species_partition", "to": "dependency.complete_master_angler.trap_infrastructure_gate", "kind": "requires_infrastructure" },
-        { "from": "dependency.complete_master_angler.trap_infrastructure_gate", "to": "dependency.complete_master_angler.place_trap_infrastructure", "kind": "expands_missing_placement" },
+        { "from": "dependency.complete_master_angler.trap_species_partition", "to": "dependency.complete_master_angler.trap_lifecycle_intent", "kind": "binds_high_level_recurrence" },
+        { "from": "dependency.complete_master_angler.trap_lifecycle_intent", "to": "dependency.complete_master_angler.trap_infrastructure_gate", "kind": "rebinds_current_stage" },
+        { "from": "dependency.complete_master_angler.trap_infrastructure_gate", "to": "dependency.complete_master_angler.craft_trap_infrastructure", "kind": "expands_missing_inventory_capacity" },
+        { "from": "dependency.complete_master_angler.craft_trap_infrastructure", "to": "dependency.complete_master_angler.place_trap_infrastructure", "kind": "enables" },
+        { "from": "dependency.complete_master_angler.trap_infrastructure_gate", "to": "dependency.complete_master_angler.place_trap_infrastructure", "kind": "uses_existing_inventory_capacity" },
         { "from": "dependency.complete_master_angler.place_trap_infrastructure", "to": "dependency.complete_master_angler.load_trap_bait", "kind": "enables" },
         { "from": "dependency.complete_master_angler.load_trap_bait", "to": "dependency.complete_master_angler.native_trap_day_settlement", "kind": "delays_until" },
         { "from": "dependency.complete_master_angler.native_trap_day_settlement", "to": "dependency.complete_master_angler.current_ready_trap_collection", "kind": "may_produce" },
