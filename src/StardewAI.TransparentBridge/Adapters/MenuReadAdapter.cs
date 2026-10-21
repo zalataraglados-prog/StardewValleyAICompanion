@@ -1,4 +1,5 @@
 using System.Reflection;
+using StardewAI.Contracts.Execution;
 using StardewValley;
 using StardewValley.Buildings;
 using StardewValley.Menus;
@@ -654,7 +655,12 @@ public sealed partial class MenuReadAdapter : ReadAdapterBase
                 trade_item_available_count = entry.Value.TradeItem is null ? (int?)null : CountAvailableTradeItem(entry.Value.TradeItem),
                 can_afford_one_with_trade_item = entry.Value.TradeItem is null || CountAvailableTradeItem(entry.Value.TradeItem) >= (entry.Value.TradeItemCount ?? 5),
                 could_inventory_accept = entry.Key.GetSalableInstance() is Item salableItem && Game1.player.couldInventoryAcceptThisItem(salableItem),
-                action_when_purchased_may_discard_or_mutate = entry.Key.IsRecipe || entry.Value.ActionsOnPurchase?.Count > 0 || entry.Key.GetType() != typeof(StardewValley.Object),
+                action_when_purchased_may_discard_or_mutate =
+                    entry.Key.IsRecipe ||
+                    entry.Value.ActionsOnPurchase?.Count > 0 ||
+                    (entry.Key.GetType() != typeof(StardewValley.Object) &&
+                     !AuditedShopPurchasePolicy.IsSideEffectFreeNonObjectPurchase(
+                         entry.Key.QualifiedItemId)),
                 executor_purchase_enabled = PurchaseExecutorBlockReasons(menu, entry.Key, entry.Value).Length == 0,
                 executor_block_reasons = PurchaseExecutorBlockReasons(menu, entry.Key, entry.Value)
             })
@@ -722,7 +728,9 @@ public sealed partial class MenuReadAdapter : ReadAdapterBase
             reasons.Add("recipe_purchase_discards_item_and_learns_recipe");
         }
 
-        if (item.GetType() != typeof(StardewValley.Object))
+        if (item.GetType() != typeof(StardewValley.Object) &&
+            !AuditedShopPurchasePolicy.IsSideEffectFreeNonObjectPurchase(
+                item.QualifiedItemId))
         {
             reasons.Add("non_plain_object_purchase_side_effects_unmodeled");
         }

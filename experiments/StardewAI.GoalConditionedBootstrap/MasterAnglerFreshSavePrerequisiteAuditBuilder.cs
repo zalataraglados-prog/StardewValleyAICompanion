@@ -16,6 +16,8 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
     private const string MineAccessSourceDirection = "raise_skill_levels";
     private const string MineAccessSourceNode =
         "dependency.raise_skill_levels.acquire_mining_xp";
+    private const string RodEquipmentProducerNode =
+        "dependency.complete_master_angler.rod_equipment_acquisition";
     private const string TargetDateOpportunityNode =
         "dependency.complete_master_angler.target_date_opportunity_producer";
     private const string MasterAnglerRecurrenceNode =
@@ -395,10 +397,14 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                 ("runtime_consumer_present_supply_producer_missing",
                     new[] { "dependency.complete_master_angler.craft_trap_infrastructure" },
                     "Schedule recipe or profession unlock, exact crafting materials, bait supply and their time/reservations."),
+            RodEquipmentFamily when graph.HasBoundMasterAnglerRodEquipmentAcquisition() =>
+                ("implemented_and_bound",
+                    new[] { RodEquipmentProducerNode },
+                    "The recurrence reuses the exact FishShop Bamboo Pole purchase chain; later rods, bait and tackle remain optional efficiency improvements."),
             RodEquipmentFamily =>
                 ("current_state_gate_present_future_producer_missing",
                     new[] { "dependency.complete_master_angler.target_date_opportunity_producer" },
-                    "Schedule Willy's rod acquisition and any required rod, bait or tackle upgrades before their target windows."),
+                    "Bind one sufficient rod acquisition before target windows; optional equipment upgrades must not become hard prerequisites."),
             WeatherFamily =>
                 ("current_state_gate_present_future_producer_missing",
                     new[] { "dependency.complete_master_angler.target_date_opportunity_producer" },
@@ -668,6 +674,55 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                        MineAccessProducerNode,
                        MasterAnglerRecurrenceNode,
                        "replans_after_native_mine_primitive"));
+        }
+
+        public bool HasBoundMasterAnglerRodEquipmentAcquisition()
+        {
+            if (!Directions.TryGetValue(MasterAnglerDirection, out var masterAngler) ||
+                !masterAngler.Nodes.TryGetValue(
+                    RodEquipmentProducerNode,
+                    out var producer) ||
+                producer.Kind != "recurrence_rule" ||
+                producer.OptionId != "economy.buy_supplies" ||
+                producer.Rule.ValueKind != JsonValueKind.Object)
+                return false;
+
+            var requiredFields = new[]
+            {
+                "world_progress.fish_collection_progress",
+                "time.total_days",
+                "time.time",
+                "player.inventory",
+                "player.money",
+                "player.location_id",
+                "locations.shops",
+                "locations.route_graph",
+                "locations.route_connectors",
+                "menus.active_menu"
+            };
+            return requiredFields.All(producer.RequiredFieldPaths.Contains) &&
+                   RuleString(producer.Rule, "reused_option_id") ==
+                       "economy.buy_supplies" &&
+                   RuleString(producer.Rule, "required_qualified_item_id") ==
+                       "(T)BambooPole" &&
+                   RuleString(producer.Rule, "required_shop_id") == "FishShop" &&
+                   RuleInt(producer.Rule, "required_quantity") == 1 &&
+                   RuleInt(producer.Rule, "maximum_unit_price") == 500 &&
+                   RuleBool(producer.Rule, "fresh_snapshot_after_every_native_primitive") &&
+                   RuleBool(producer.Rule, "fresh_native_receipt_required") &&
+                   RuleInt(producer.Rule, "deadline_total_day_exclusive") == 224 &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       FreshSaveInventoryNode,
+                       RodEquipmentProducerNode,
+                       "selects_required_rod_equipment")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       RodEquipmentProducerNode,
+                       TargetDateOpportunityNode,
+                       "supplies_required_rod_equipment")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       RodEquipmentProducerNode,
+                       MasterAnglerRecurrenceNode,
+                       "replans_after_native_purchase"));
         }
 
         private static string RuleString(JsonElement rule, string name) =>

@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Net;
 using System.Reflection;
 using System.Text.Json;
+using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Training;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
@@ -318,7 +319,9 @@ public sealed partial class ModEntry : Mod
             reasons.Add("recipe_purchase_discards_item_and_learns_recipe");
         }
 
-        if (salable.GetType() != typeof(StardewValley.Object))
+        if (salable.GetType() != typeof(StardewValley.Object) &&
+            !AuditedShopPurchasePolicy.IsSideEffectFreeNonObjectPurchase(
+                salable.QualifiedItemId))
         {
             reasons.Add("non_plain_object_purchase_side_effects_unmodeled");
         }

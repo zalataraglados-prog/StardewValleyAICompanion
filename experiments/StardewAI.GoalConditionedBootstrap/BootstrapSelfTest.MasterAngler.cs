@@ -71,11 +71,14 @@ internal static partial class BootstrapSelfTest
             report.PrerequisiteFamilies.Single(value =>
                     value.FamilyId == "one_of_advanced_location_access")
                 .ProducerStatus == "implemented_and_bound" &&
-            report.MissingOrUnboundProducerFamilies.Contains(
-                "ginger_island_access",
+            report.PrerequisiteFamilies.Single(value =>
+                    value.FamilyId == "rod_and_fishing_equipment_acquisition")
+                .ProducerStatus == "implemented_and_bound" &&
+            !report.MissingOrUnboundProducerFamilies.Contains(
+                "rod_and_fishing_equipment_acquisition",
                 StringComparer.Ordinal) &&
             report.MissingOrUnboundProducerFamilies.Contains(
-                "rod_and_fishing_equipment_acquisition",
+                "ginger_island_access",
                 StringComparer.Ordinal),
             "Master Angler fresh-save producer coverage was overstated.");
 
@@ -87,6 +90,53 @@ internal static partial class BootstrapSelfTest
             catalogPath,
             windowIndexPath,
             dependencyExpansionPath);
+        VerifyMasterAnglerRodEquipmentBindingFailsClosed(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath);
+    }
+
+    private static void VerifyMasterAnglerRodEquipmentBindingFailsClosed(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath)
+    {
+        var root = JsonNode.Parse(File.ReadAllText(dependencyExpansionPath))?.AsObject() ??
+                   throw new InvalidDataException("Master Angler dependency fixture is null.");
+        var direction = root["directions"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["direction_id"]!.GetValue<string>() ==
+                             "complete_master_angler");
+        var producer = direction["nodes"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["id"]!.GetValue<string>() ==
+                             "dependency.complete_master_angler.rod_equipment_acquisition");
+        producer["rule"]!["required_qualified_item_id"] = "(T)IridiumRod";
+
+        var tamperedPath = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-master-angler-rod-binding-" + Guid.NewGuid().ToString("N") + ".json");
+        try
+        {
+            File.WriteAllText(tamperedPath, root.ToJsonString(JsonDefaults.Options));
+            var tampered = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(
+                catalogPath,
+                windowIndexPath,
+                tamperedPath);
+            Require(
+                tampered.PrerequisiteFamilies.Single(value =>
+                        value.FamilyId == "rod_and_fishing_equipment_acquisition")
+                    .ProducerStatus != "implemented_and_bound" &&
+                tampered.MissingOrUnboundProducerFamilies.Contains(
+                    "rod_and_fishing_equipment_acquisition",
+                    StringComparer.Ordinal),
+                "Master Angler rod-equipment producer accepted a drifted required rod.");
+        }
+        finally
+        {
+            if (File.Exists(tamperedPath))
+                File.Delete(tamperedPath);
+        }
     }
 
     private static void VerifyMasterAnglerMineAccessBindingFailsClosed(
