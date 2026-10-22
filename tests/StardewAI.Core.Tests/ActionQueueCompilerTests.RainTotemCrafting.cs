@@ -91,6 +91,77 @@ public sealed partial class ActionQueueCompilerTests
     }
 
     [Fact]
+    public void MissingPineTarUsesReadyNativeMachineOutputBeforeCrafting()
+    {
+        using var fixture = RainTotemCraftingFixture.Create(
+            pineTarAvailable: 4,
+            readyPineTarMachine: true);
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(
+            fixture.Snapshot,
+            new[]
+            {
+                new OptionAvailabilityCandidate
+                {
+                    OptionId = "fishing.catch_fish",
+                    Parameters = fixture.SupplyParameters
+                }
+            });
+
+        var option = Assert.Single(availability.Options);
+        var candidate = Assert.Single(option.EventCandidates);
+        Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
+        Assert.Equal("collect_machine_output_tile", candidate.Kind);
+        Assert.Equal("(O)726", candidate.QualifiedItemId);
+        Assert.StartsWith("rain-totem-material:(O)726:", candidate.CandidateId);
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "rain_totem_material_producer_stage" &&
+            parameter.Value == "collect_ready_native_machine_output");
+
+        var ranked = new EventCandidateRanker().Rank(
+            new BaselineTrainingReport(),
+            availability,
+            "goal.fishing.complete_master_angler");
+        var plan = new DailyPlanCompiler().Compile(
+            ranked,
+            fixture.Snapshot.StateHash);
+        var item = Assert.Single(
+            new ActionQueueCompiler().Compile(plan, fixture.Snapshot).Items);
+
+        Assert.Equal("executor.collect_machine_output", item.OptionId);
+        Assert.Empty(item.BlockingReasons);
+        Assert.Equal("collect_machine_output", Assert.Single(
+            item.NormalizedCommand.Steps).StepType);
+    }
+
+    [Fact]
+    public void NonExactRainTotemIngredientRowsCannotProduceMaterialCandidates()
+    {
+        using var fixture = RainTotemCraftingFixture.Create(
+            pineTarAvailable: 4,
+            readyPineTarMachine: true,
+            pineTarRequired: 6);
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(
+            fixture.Snapshot,
+            new[]
+            {
+                new OptionAvailabilityCandidate
+                {
+                    OptionId = "fishing.catch_fish",
+                    Parameters = fixture.SupplyParameters
+                }
+            });
+
+        var option = Assert.Single(availability.Options);
+        Assert.NotEmpty(option.EventCandidates);
+        Assert.DoesNotContain(option.EventCandidates, candidate =>
+            candidate.CandidateId.StartsWith(
+                "rain-totem-material:",
+                StringComparison.Ordinal));
+        Assert.DoesNotContain(option.EventCandidates, candidate =>
+            candidate.Available);
+    }
+
+    [Fact]
     public void AuthoritativeWindowProducerBuildsTomorrowRainSupplyIntent()
     {
         using var fixture = RainTotemCraftingFixture.Create();
@@ -278,7 +349,10 @@ public sealed partial class ActionQueueCompilerTests
         public SmallModelActionParameter[] SupplyParameters { get; }
 
         public static RainTotemCraftingFixture Create(
-            bool ownsRainTotem = false)
+            bool ownsRainTotem = false,
+            int? pineTarAvailable = null,
+            bool readyPineTarMachine = false,
+            int pineTarRequired = 5)
         {
             var items = Enumerable.Range(0, 72)
                 .Select(index => new
@@ -345,18 +419,53 @@ public sealed partial class ActionQueueCompilerTests
             var rainTotemRowsJson = ownsRainTotem
                 ? "[{\"inventory_slot_index\":2,\"item_id\":\"681\",\"qualified_item_id\":\"(O)681\",\"inventory_runtime_type\":\"StardewValley.Object\",\"stack_before\":2,\"stack_after\":1,\"temporarily_invisible\":false}]"
                 : "[]";
+            var playerLocation = readyPineTarMachine ? "Farm" : "FarmHouse";
+            var ingredientRowsJson = pineTarAvailable.HasValue
+                ? JsonSerializer.Serialize(new[]
+                {
+                    new
+                    {
+                        requirement_id_or_category = "709",
+                        required_count = 1,
+                        available_count_before_this_ingredient = 1,
+                        satisfied = true
+                    },
+                    new
+                    {
+                        requirement_id_or_category = "432",
+                        required_count = 1,
+                        available_count_before_this_ingredient = 1,
+                        satisfied = true
+                    },
+                    new
+                    {
+                        requirement_id_or_category = "726",
+                        required_count = pineTarRequired,
+                        available_count_before_this_ingredient =
+                            pineTarAvailable.Value,
+                        satisfied = pineTarAvailable.Value >= pineTarRequired
+                    }
+                })
+                : "[]";
+            var craftCandidateStatus = pineTarAvailable.HasValue &&
+                pineTarAvailable.Value < pineTarRequired
+                    ? "blocked_insufficient_player_inventory_materials"
+                    : "ready_for_native_personal_crafting_menu";
+            var machinesJson = readyPineTarMachine
+                ? "[{\"location_id\":\"Farm\",\"location_kind\":\"farm_outdoor\",\"tile_x\":5,\"tile_y\":4,\"qualified_item_id\":\"(BC)105\",\"display_name\":\"Tapper\",\"ready_for_harvest\":true,\"minutes_until_ready\":0,\"harvest_experience_raw\":\"\",\"harvest_experience_entries\":[],\"harvest_experience_deltas\":[],\"harvest_experience_deltas_json\":\"[]\",\"harvest_mastery_experience_delta\":0,\"harvest_experience_projection_status\":\"exact_no_configured_experience\",\"output_authoritative_route_sources\":[\"native_wild_tree_tapper_output\"],\"held_item\":{\"item_id\":\"726\",\"qualified_item_id\":\"(O)726\",\"stack\":1,\"quality\":0,\"sale_price\":300,\"maximum_stack_size\":999}}]"
+                : "[]";
             var snapshot = ActionQueueCompilerTests.Snapshot($$"""
         {
           "time": {
             "total_days": {"value":100,"status":"available"}
           },
           "player": {
-            "location_id": {"value":"FarmHouse","status":"available"},
+            "location_id": {"value":"{{playerLocation}}","status":"available"},
             "tile_x": {"value":4,"status":"available"},
             "tile_y": {"value":4,"status":"available"},
             "energy": {"value":270,"status":"available"},
             "inventory": {"value":{{inventoryJson}},"status":"available"},
-            "inventory_capacity": {"value":{"capacity":12,"occupied_slots":{{(ownsRainTotem ? 1 : 0)}},"free_slots":{{(ownsRainTotem ? 11 : 12)}}},"status":"available"},
+            "inventory_capacity": {"value":{"capacity":12,"occupied_slots":{{(ownsRainTotem ? 1 : 0)}},"free_slots":{{(ownsRainTotem ? 11 : 12)}},"empty_slots":{{(ownsRainTotem ? 11 : 12)}},"has_empty_slot":true},"status":"available"},
             "skills_detail": {"value":{"skills":[{"skill_id":"fishing","effective_level":10}]},"status":"available"},
             "rain_totem": {"value":{
               "projection_status":"complete_current_native_rain_totem_context",
@@ -376,12 +485,15 @@ public sealed partial class ActionQueueCompilerTests
                 "output_item_id":"681",
                 "output_qualified_item_id":"(O)681",
                 "output_count_per_craft":1,
-                "ingredient_rows":[],
+                "ingredient_rows":{{ingredientRowsJson}},
                 "workbench_crafting_sources":[],
                 "output_inventory_acceptance_after_material_consumption":true,
-                "craft_candidate_status":"ready_for_native_personal_crafting_menu"
+                "craft_candidate_status":"{{craftCandidateStatus}}"
               }]
             },"status":"available"}
+          },
+          "farm": {
+            "machines": {"value":{{machinesJson}},"status":"available"}
           },
           "world_progress": {
             "fish_collection_progress": {"value":{
@@ -399,15 +511,16 @@ public sealed partial class ActionQueueCompilerTests
             "active_cast_state": {"value":{"is_active":false},"status":"available"}
           },
           "locations": {
-            "collision_grid": {"value":{"locations":[]},"status":"available"},
+            "collision_grid": {"value":{"location_id":"{{playerLocation}}","width":100,"height":100,"notable_tiles":[]},"status":"available"},
             "social_route_date_evidence": {"value":{"locations":[
+              {"location_id":"Farm","location_context_id":"Default"},
               {"location_id":"FarmHouse","location_context_id":"Default"},
               {"location_id":"Beach","location_context_id":"Default"},
               {"location_id":"Town","location_context_id":"Default"}
             ]},"status":"available"}
           },
           "current_location": {
-            "map": {"value":{"location_id":"FarmHouse"},"status":"available"}
+            "map": {"value":{"location_id":"{{playerLocation}}"},"status":"available"}
           },
           "menus": {
             "active_menu": {"value":{"is_open":false},"status":"available"}

@@ -79,7 +79,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             };
         }
 
-        return ExactSupportCraftingCandidateBindings(
+        var craftingCandidates = ExactSupportCraftingCandidateBindings(
                 snapshot,
                 recipeRows[0],
                 "rain_totem")
@@ -90,6 +90,18 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             .OrderByDescending(candidate => candidate.Available)
             .ThenBy(candidate => candidate.CandidateId, StringComparer.Ordinal)
             .ToArray();
+        if (craftingCandidates.Any(candidate => candidate.Available))
+        {
+            return craftingCandidates;
+        }
+
+        var materialSupply = RainTotemImmediateMaterialSupplyCandidates(
+            snapshot,
+            recipeRows[0],
+            intent);
+        return materialSupply.Length > 0
+            ? materialSupply
+            : craftingCandidates;
     }
 
     private EventCandidate[] RainTotemUseCandidates(

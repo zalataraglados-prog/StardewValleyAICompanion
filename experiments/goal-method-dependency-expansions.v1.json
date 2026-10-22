@@ -795,22 +795,57 @@
             "shared_projection_implementation": "ReadExactSingleOutputCraftingProjection",
             "native_execution_receipt_present": false,
             "material_producers_bound": false,
+            "immediate_material_supply_bound": true,
             "tomorrow_fishing_scheduler_bound": true,
             "source_authority": "live Farmer.craftingRecipes plus locked game-1.6.15 Data/CraftingRecipes"
+          }
+        },
+        {
+          "id": "dependency.complete_master_angler.rain_totem_immediate_material_supply",
+          "kind": "recurrence_rule",
+          "option_id": "fishing.catch_fish",
+          "candidate_kinds": ["clear_obstacle_tile", "collect_machine_output_tile", "load_machine_input_tile", "collect_spawned_object"],
+          "required_field_paths": [
+            "player.rain_totem_crafting",
+            "player.inventory",
+            "farm.machines",
+            "current_location.objects",
+            "locations.collision_grid"
+          ],
+          "rule": {
+            "execution_owner": "deterministic_compiler_owned_material_step_not_policy_label",
+            "ingredient_amounts": {
+              "(O)709": 1,
+              "(O)432": 1,
+              "(O)726": 5
+            },
+            "immediate_stages": [
+              "collect_ready_native_machine_output",
+              "chop_exact_guaranteed_hardwood_tree",
+              "load_native_oil_maker_with_truffle",
+              "collect_native_pig_truffle_input"
+            ],
+            "exact_recipe_rows_required": true,
+            "fresh_snapshot_after_each_primitive": true,
+            "long_horizon_reserve_bound": false,
+            "native_rain_totem_crafting_receipt_present": false
           }
         },
         {
           "id": "dependency.complete_master_angler.weather_supply_scheduler",
           "kind": "recurrence_rule",
           "option_id": "fishing.catch_fish",
-          "candidate_kinds": ["craft_rain_totem", "use_rain_totem", "catch_fish"],
+          "candidate_kinds": ["craft_rain_totem", "use_rain_totem", "catch_fish", "clear_obstacle_tile", "collect_machine_output_tile", "load_machine_input_tile", "collect_spawned_object"],
           "required_field_paths": [
             "world_progress.fish_collection_progress",
             "player.skills_detail",
             "player.inventory",
             "player.rain_totem",
             "player.rain_totem_crafting",
+            "farm.machines",
+            "current_location.objects",
             "fishing.rod_contexts",
+            "locations.collision_grid",
             "locations.social_route_date_evidence",
             "time.total_days",
             "menus.active_menu"
@@ -822,7 +857,7 @@
             "target_horizon_days": 1,
             "required_weather": "Rain",
             "window_scope": "exact_static_location_rule_without_dynamic_conditions",
-            "supply_sequence": "craft_when_absent_then_fresh_replan_use_when_owned_then_fresh_replan_next_day_catch",
+            "supply_sequence": "satisfy_exact_immediate_material_deficit_then_fresh_replan_craft_when_ready_then_fresh_replan_use_when_owned_then_fresh_replan_next_day_catch",
             "window_index_sha256_required": true,
             "fresh_snapshot_after_each_primitive": true,
             "training_label_eligible": false
@@ -908,6 +943,9 @@
         { "from": "dependency.complete_master_angler.stage_one_deadline_window_index", "to": "dependency.complete_master_angler.weather_supply_scheduler", "kind": "feeds_authoritative_tomorrow_weather_windows" },
         { "from": "dependency.complete_master_angler.fresh_save_prerequisite_inventory", "to": "dependency.complete_master_angler.weather_supply_scheduler", "kind": "selects_weather_supply_targets" },
         { "from": "dependency.complete_master_angler.rain_totem_crafting_read_authority", "to": "dependency.complete_master_angler.weather_supply_scheduler", "kind": "supplies_exact_crafting_state" },
+        { "from": "dependency.complete_master_angler.rain_totem_crafting_read_authority", "to": "dependency.complete_master_angler.rain_totem_immediate_material_supply", "kind": "supplies_exact_material_deficits" },
+        { "from": "dependency.complete_master_angler.weather_supply_scheduler", "to": "dependency.complete_master_angler.rain_totem_immediate_material_supply", "kind": "expands_current_material_deficit" },
+        { "from": "dependency.complete_master_angler.rain_totem_immediate_material_supply", "to": "dependency.complete_master_angler.weather_supply_scheduler", "kind": "replans_after_native_material_primitive" },
         { "from": "dependency.complete_master_angler.weather_supply_scheduler", "to": "dependency.complete_master_angler.consume_owned_rain_totem", "kind": "schedules_owned_or_freshly_crafted_use" },
         { "from": "dependency.complete_master_angler.fresh_save_prerequisite_inventory", "to": "dependency.complete_master_angler.consume_owned_rain_totem", "kind": "selects_owned_weather_control" },
         { "from": "dependency.complete_master_angler.consume_owned_rain_totem", "to": "dependency.complete_master_angler.target_date_opportunity_producer", "kind": "creates_next_day_weather_precondition" },

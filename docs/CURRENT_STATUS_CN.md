@@ -79,6 +79,8 @@ Full Shipment dependency graph 的节点早已声明 `full_recurrence_required_f
 
 2026-10-23 明日雨窗调度已接通且继续只暴露 `fishing.catch_fish`：权威生产器从 fresh snapshot 和哈希锁定窗口索引筛出明日仅雨、无动态条件、装备与 location-context 均满足的精确缺鱼集合；候选按“无图腾则制作 -> fresh 重算 -> 有图腾则原生使用 -> fresh 重算 -> 次日捕鱼”滚动展开。Backend 新增与默认候选相加的 `additional_candidates`，当前日与天气意图均在排名前注入。定向回归 `125/125`、防篡改审计和 Release 构建通过，未启动游戏。天气族状态为 `runtime_consumer_crafting_read_and_scheduler_bound_material_supply_and_native_crafting_receipt_missing`，审计 SHA-256 `ee97bff20a4991a8f4db70b6b7cf7e6ad9b1a3749ec89b9a048362c281eb9572`；三种材料生产和原生制作回执仍缺，正式准入分子不变。
 
+2026-10-23 即时材料供应切片已加入同一明日雨窗循环。精确配方缺料时，编译器只复用现有 `clear_obstacle_tile`、`collect_machine_output_tile`、`load_machine_input_tile` 和 `collect_spawned_object`，分别覆盖保证掉落 Hardwood 的树、已完成的 Pine Tar/Truffle Oil、Truffle 投入 Oil Maker 及当前地面 Truffle；材料行不完整、数量漂移或没有可立即执行的原生生产者都会失败关闭。该切片不代表新档已建立长期供应：Pine/Tapper 五日周期、Deluxe Barn/Pig 十日成熟、Oil Maker 容量和 Hardwood 储备仍未绑定，Rain Totem 原生制作回执也未采集。依赖图状态更新为 `runtime_consumer_crafting_read_scheduler_and_immediate_material_supply_bound_long_horizon_reserve_and_native_crafting_receipt_missing`，图 SHA-256 `c437060b231ca4649c96798dfb521fa1bc7767eb5cf5ee2e7dbbabb28c7ccb17`；未绑定族保持 `5`、正式训练仍禁止。离线验证为 Rain Totem `22/22`、Bootstrap Release `0 warning / 0 error`；现存审计夹具早于当前 60/2/10 权威目录，未生成新的正式审计报告哈希。
+
 ## 2. 已完成并冻结的施工单位
 
 ### Full Shipment runtime evidence

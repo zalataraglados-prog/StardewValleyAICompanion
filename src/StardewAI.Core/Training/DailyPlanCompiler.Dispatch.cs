@@ -77,7 +77,13 @@ namespace StardewAI.Core.Training
                 ["social.talk_npc"] = new[] { "route_connector_tile", "recovery_close_menu", "social_continuation_retry_wait", "social_talk_current" },
                 ["social.gift_npc"] = new[] { "route_connector_tile", "recovery_close_menu", "social_continuation_retry_wait", "social_gift_current" },
                 ["social.advance_partnership"] = new[] { "route_connector_tile", "recovery_close_menu", "social_continuation_retry_wait", "partnership_bouquet_current", "partnership_propose_marriage_current", "partnership_propose_roommate_current" },
-                ["fishing.catch_fish"] = new[] { "route_connector_tile", "catch_fish", "craft_rain_totem", "use_rain_totem" },
+                ["fishing.catch_fish"] = new[]
+                {
+                    "route_connector_tile", "catch_fish", "craft_rain_totem",
+                    "use_rain_totem", "clear_obstacle_tile",
+                    "collect_machine_output_tile", "load_machine_input_tile",
+                    "collect_spawned_object"
+                },
                 ["fishing.collect_crab_pots"] = new[] { "route_connector_tile", "clear_obstacle_tile", "interact_endpoint", "buy_shop_item", "collect_crab_pot", "load_crab_pot_bait", "place_crab_pot", "craft_crab_pot", "recovery_close_menu", "recovery_resume_sleep_prompt", "recovery_sleep_immediately", "recovery_return_home", "recovery_sleep_before_collapse" },
                 ["fishing.service_fish_ponds"] = new[] { "collect_fish_pond_output", "complete_fish_pond_request" },
                 ["fishing.manage_fish_pond"] = new[] { "manage_fish_pond" },

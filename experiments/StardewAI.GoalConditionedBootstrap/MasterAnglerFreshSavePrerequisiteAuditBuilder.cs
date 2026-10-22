@@ -35,6 +35,8 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
         "dependency.complete_master_angler.rain_totem_crafting_read_authority";
     private const string WeatherSupplySchedulerNode =
         "dependency.complete_master_angler.weather_supply_scheduler";
+    private const string RainTotemImmediateMaterialSupplyNode =
+        "dependency.complete_master_angler.rain_totem_immediate_material_supply";
     private const string RustyKeyDirection = "obtain_rusty_key";
     private const string RustyKeyCompletionNode =
         "dependency.obtain_rusty_key.has_rusty_key";
@@ -443,10 +445,17 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                     "Bind one sufficient rod acquisition before target windows; optional equipment upgrades must not become hard prerequisites."),
             WeatherFamily when graph.HasBoundMasterAnglerOwnedRainTotemUse() &&
                                graph.HasBoundMasterAnglerRainTotemCraftingRead() &&
+                               graph.HasBoundMasterAnglerRainTotemImmediateMaterialSupply() &&
                                graph.HasBoundMasterAnglerWeatherSupplyScheduler() =>
-                ("runtime_consumer_crafting_read_and_scheduler_bound_material_supply_and_native_crafting_receipt_missing",
-                    new[] { OwnedRainTotemConsumerNode, RainTotemCraftingReadNode, WeatherSupplySchedulerNode },
-                    "The exact tomorrow rain-window scheduler now rolls fishing.catch_fish through craft, fresh replan, owned native use and next-day catch. Bind the three material producers and capture a native Rain Totem crafting receipt before marking weather complete."),
+                ("runtime_consumer_crafting_read_scheduler_and_immediate_material_supply_bound_long_horizon_reserve_and_native_crafting_receipt_missing",
+                    new[] { OwnedRainTotemConsumerNode, RainTotemCraftingReadNode, RainTotemImmediateMaterialSupplyNode, WeatherSupplySchedulerNode },
+                    "The exact tomorrow rain-window scheduler now reuses ready machine outputs, exact Hardwood tree chops, Truffle pickup and Oil Maker loading before craft/use/catch. Bind long-horizon Pine Tar, Pig and Hardwood reserves and capture a native Rain Totem crafting receipt before marking weather complete."),
+            WeatherFamily when graph.HasBoundMasterAnglerOwnedRainTotemUse() &&
+                               graph.HasBoundMasterAnglerRainTotemCraftingRead() &&
+                               graph.HasBoundMasterAnglerRainTotemImmediateMaterialSupply() =>
+                ("runtime_consumer_crafting_read_and_immediate_material_supply_bound_scheduler_long_horizon_reserve_and_native_crafting_receipt_missing",
+                    new[] { OwnedRainTotemConsumerNode, RainTotemCraftingReadNode, RainTotemImmediateMaterialSupplyNode },
+                    "Immediate exact material deficits are bound to existing native primitives. Restore the tomorrow scheduler, then bind long-horizon reserves and the native crafting receipt."),
             WeatherFamily when graph.HasBoundMasterAnglerOwnedRainTotemUse() &&
                                graph.HasBoundMasterAnglerRainTotemCraftingRead() =>
                 ("runtime_consumer_and_crafting_read_bound_executor_supply_scheduler_missing",
@@ -969,6 +978,7 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                        "ReadExactSingleOutputCraftingProjection" &&
                    RuleFalse(producer.Rule, "native_execution_receipt_present") &&
                    RuleFalse(producer.Rule, "material_producers_bound") &&
+                   RuleBool(producer.Rule, "immediate_material_supply_bound") &&
                    RuleBool(producer.Rule, "tomorrow_fishing_scheduler_bound") &&
                    masterAngler.Edges.Contains(new DependencyEdgeInventory(
                        FreshSaveInventoryNode,
@@ -978,6 +988,74 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                        RainTotemCraftingReadNode,
                        WeatherSupplySchedulerNode,
                        "supplies_exact_crafting_state"));
+        }
+
+        public bool HasBoundMasterAnglerRainTotemImmediateMaterialSupply()
+        {
+            if (!Directions.TryGetValue(MasterAnglerDirection, out var masterAngler) ||
+                !masterAngler.Nodes.TryGetValue(
+                    RainTotemImmediateMaterialSupplyNode,
+                    out var supply) ||
+                supply.Kind != "recurrence_rule" ||
+                supply.OptionId != "fishing.catch_fish" ||
+                supply.Rule.ValueKind != JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            var requiredFields = new[]
+            {
+                "player.rain_totem_crafting",
+                "player.inventory",
+                "farm.machines",
+                "current_location.objects",
+                "locations.collision_grid"
+            };
+            return supply.CandidateKinds.SetEquals(new[]
+                   {
+                       "clear_obstacle_tile",
+                       "collect_machine_output_tile",
+                       "load_machine_input_tile",
+                       "collect_spawned_object"
+                   }) &&
+                   requiredFields.All(supply.RequiredFieldPaths.Contains) &&
+                   RuleString(supply.Rule, "execution_owner") ==
+                       "deterministic_compiler_owned_material_step_not_policy_label" &&
+                   RuleObjectIntsEqual(
+                       supply.Rule,
+                       "ingredient_amounts",
+                       new Dictionary<string, int>(StringComparer.Ordinal)
+                       {
+                           ["(O)709"] = 1,
+                           ["(O)432"] = 1,
+                           ["(O)726"] = 5
+                       }) &&
+                   RuleStringSetEquals(
+                       supply.Rule,
+                       "immediate_stages",
+                       new[]
+                       {
+                           "collect_ready_native_machine_output",
+                           "chop_exact_guaranteed_hardwood_tree",
+                           "load_native_oil_maker_with_truffle",
+                           "collect_native_pig_truffle_input"
+                       }) &&
+                   RuleBool(supply.Rule, "exact_recipe_rows_required") &&
+                   RuleBool(supply.Rule, "fresh_snapshot_after_each_primitive") &&
+                   RuleFalse(supply.Rule, "long_horizon_reserve_bound") &&
+                   RuleFalse(supply.Rule, "native_rain_totem_crafting_receipt_present") &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       RainTotemCraftingReadNode,
+                       RainTotemImmediateMaterialSupplyNode,
+                       "supplies_exact_material_deficits")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       WeatherSupplySchedulerNode,
+                       RainTotemImmediateMaterialSupplyNode,
+                       "expands_current_material_deficit")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       RainTotemImmediateMaterialSupplyNode,
+                       WeatherSupplySchedulerNode,
+                       "replans_after_native_material_primitive"));
         }
 
         public bool HasBoundMasterAnglerWeatherSupplyScheduler()
@@ -1000,7 +1078,10 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                 "player.inventory",
                 "player.rain_totem",
                 "player.rain_totem_crafting",
+                "farm.machines",
+                "current_location.objects",
                 "fishing.rod_contexts",
+                "locations.collision_grid",
                 "locations.social_route_date_evidence",
                 "time.total_days",
                 "menus.active_menu"
@@ -1009,7 +1090,11 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                    {
                        "craft_rain_totem",
                        "use_rain_totem",
-                       "catch_fish"
+                       "catch_fish",
+                       "clear_obstacle_tile",
+                       "collect_machine_output_tile",
+                       "load_machine_input_tile",
+                       "collect_spawned_object"
                    }) &&
                    requiredFields.All(scheduler.RequiredFieldPaths.Contains) &&
                    RuleString(scheduler.Rule, "execution_owner") ==
@@ -1023,7 +1108,7 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                    RuleString(scheduler.Rule, "window_scope") ==
                        "exact_static_location_rule_without_dynamic_conditions" &&
                    RuleString(scheduler.Rule, "supply_sequence") ==
-                       "craft_when_absent_then_fresh_replan_use_when_owned_then_fresh_replan_next_day_catch" &&
+                       "satisfy_exact_immediate_material_deficit_then_fresh_replan_craft_when_ready_then_fresh_replan_use_when_owned_then_fresh_replan_next_day_catch" &&
                    RuleBool(scheduler.Rule, "window_index_sha256_required") &&
                    RuleBool(scheduler.Rule, "fresh_snapshot_after_each_primitive") &&
                    RuleFalse(scheduler.Rule, "training_label_eligible") &&
@@ -1035,6 +1120,10 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                        FreshSaveInventoryNode,
                        WeatherSupplySchedulerNode,
                        "selects_weather_supply_targets")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       WeatherSupplySchedulerNode,
+                       RainTotemImmediateMaterialSupplyNode,
+                       "expands_current_material_deficit")) &&
                    masterAngler.Edges.Contains(new DependencyEdgeInventory(
                        WeatherSupplySchedulerNode,
                        OwnedRainTotemConsumerNode,

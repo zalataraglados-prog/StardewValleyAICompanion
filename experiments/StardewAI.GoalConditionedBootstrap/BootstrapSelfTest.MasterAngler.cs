@@ -99,7 +99,7 @@ internal static partial class BootstrapSelfTest
             report.PrerequisiteFamilies.Single(value =>
                     value.FamilyId == "weather_reserve_or_control")
                 .ProducerStatus ==
-                    "runtime_consumer_crafting_read_and_scheduler_bound_material_supply_and_native_crafting_receipt_missing" &&
+                    "runtime_consumer_crafting_read_scheduler_and_immediate_material_supply_bound_long_horizon_reserve_and_native_crafting_receipt_missing" &&
             report.MissingOrUnboundProducerFamilies.Contains(
                 "weather_reserve_or_control",
                 StringComparer.Ordinal) &&
@@ -137,6 +137,10 @@ internal static partial class BootstrapSelfTest
             windowIndexPath,
             dependencyExpansionPath);
         VerifyMasterAnglerRainTotemCraftingReadFailsClosed(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath);
+        VerifyMasterAnglerRainTotemImmediateMaterialSupplyFailsClosed(
             catalogPath,
             windowIndexPath,
             dependencyExpansionPath);
@@ -180,8 +184,52 @@ internal static partial class BootstrapSelfTest
                 tampered.PrerequisiteFamilies.Single(value =>
                         value.FamilyId == "weather_reserve_or_control")
                     .ProducerStatus ==
-                        "runtime_consumer_and_crafting_read_bound_executor_supply_scheduler_missing",
+                        "runtime_consumer_crafting_read_and_immediate_material_supply_bound_scheduler_long_horizon_reserve_and_native_crafting_receipt_missing",
                 "Master Angler weather supply accepted a drifted tomorrow scheduler.");
+        }
+        finally
+        {
+            if (File.Exists(tamperedPath))
+                File.Delete(tamperedPath);
+        }
+    }
+
+    private static void VerifyMasterAnglerRainTotemImmediateMaterialSupplyFailsClosed(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath)
+    {
+        var root = JsonNode.Parse(File.ReadAllText(dependencyExpansionPath))?.AsObject() ??
+                   throw new InvalidDataException("Master Angler dependency fixture is null.");
+        var direction = root["directions"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["direction_id"]!.GetValue<string>() ==
+                             "complete_master_angler");
+        var supply = direction["nodes"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["id"]!.GetValue<string>() ==
+                             "dependency.complete_master_angler.rain_totem_immediate_material_supply");
+        supply["rule"]!["long_horizon_reserve_bound"] = true;
+
+        var tamperedPath = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-master-angler-rain-totem-immediate-material-" +
+            Guid.NewGuid().ToString("N") + ".json");
+        try
+        {
+            File.WriteAllText(
+                tamperedPath,
+                root.ToJsonString(JsonDefaults.Options));
+            var tampered = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(
+                catalogPath,
+                windowIndexPath,
+                tamperedPath);
+            Require(
+                tampered.PrerequisiteFamilies.Single(value =>
+                        value.FamilyId == "weather_reserve_or_control")
+                    .ProducerStatus ==
+                        "runtime_consumer_crafting_read_and_scheduler_bound_material_supply_and_native_crafting_receipt_missing",
+                "Master Angler weather supply accepted a false long-horizon reserve claim.");
         }
         finally
         {
