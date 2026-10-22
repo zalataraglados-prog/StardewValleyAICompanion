@@ -683,6 +683,7 @@ namespace StardewAI.Core.Execution
             var x = ReadIntParameter(action, "target_tile_x");
             var y = ReadIntParameter(action, "target_tile_y");
             var expectedActionType = ReadParameter(action, "expected_action_type") ?? "unknown";
+            var interactionKind = ReadParameter(action, "interaction_kind");
             if (!x.HasValue || !y.HasValue)
             {
                 return Array.Empty<CompiledActionStep>();
@@ -690,7 +691,13 @@ namespace StardewAI.Core.Execution
 
             return new[]
             {
-                Step("interact", "current_location(" + x.Value + "," + y.Value + ")", "interact_map_action_" + expectedActionType, 30)
+                Step(
+                    "interact",
+                    "current_location(" + x.Value + "," + y.Value + ")",
+                    string.Equals(interactionKind, "animal_door", StringComparison.Ordinal)
+                        ? "building.animal_door.is_open=true;fresh_snapshot_replan_required=true"
+                        : "interact_map_action_" + expectedActionType,
+                    30)
             };
         }
 

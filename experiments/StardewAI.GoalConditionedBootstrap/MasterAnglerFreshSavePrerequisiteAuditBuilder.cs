@@ -39,6 +39,8 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
         "dependency.complete_master_angler.rain_totem_immediate_material_supply";
     private const string RainTotemPineTarCapacityReserveNode =
         "dependency.complete_master_angler.rain_totem_pine_tar_capacity_reserve";
+    private const string RainTotemTruffleOilCapacityReserveNode =
+        "dependency.complete_master_angler.rain_totem_truffle_oil_capacity_reserve";
     private const string RustyKeyDirection = "obtain_rusty_key";
     private const string RustyKeyCompletionNode =
         "dependency.obtain_rusty_key.has_rusty_key";
@@ -445,6 +447,15 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                 ("current_state_gate_present_future_producer_missing",
                     new[] { "dependency.complete_master_angler.target_date_opportunity_producer" },
                     "Bind one sufficient rod acquisition before target windows; optional equipment upgrades must not become hard prerequisites."),
+            WeatherFamily when graph.HasBoundMasterAnglerOwnedRainTotemUse() &&
+                               graph.HasBoundMasterAnglerRainTotemCraftingRead() &&
+                               graph.HasBoundMasterAnglerRainTotemImmediateMaterialSupply() &&
+                               graph.HasBoundMasterAnglerRainTotemPineTarCapacityReserve() &&
+                               graph.HasBoundMasterAnglerRainTotemTruffleOilCapacityReserve() &&
+                               graph.HasBoundMasterAnglerWeatherSupplyScheduler() =>
+                ("runtime_consumer_crafting_read_scheduler_immediate_supply_pine_tar_and_pig_truffle_capacity_bound_hardwood_reservation_and_native_crafting_receipt_missing",
+                    new[] { OwnedRainTotemConsumerNode, RainTotemCraftingReadNode, RainTotemImmediateMaterialSupplyNode, RainTotemPineTarCapacityReserveNode, RainTotemTruffleOilCapacityReserveNode, WeatherSupplySchedulerNode },
+                    "The future rain-window scheduler now binds exact Pine Tar and Pig/Truffle Oil capacity through shared native machine, building, animal-purchase and interaction chains. Bind Hardwood reserve, protect committed materials from unrelated consumption, and capture a native Rain Totem crafting receipt before marking weather complete."),
             WeatherFamily when graph.HasBoundMasterAnglerOwnedRainTotemUse() &&
                                graph.HasBoundMasterAnglerRainTotemCraftingRead() &&
                                graph.HasBoundMasterAnglerRainTotemImmediateMaterialSupply() &&
@@ -1090,6 +1101,12 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                 "player.machine_placement",
                 "player.rain_totem",
                 "player.rain_totem_crafting",
+                "player.building_construction_catalog",
+                "player.safe_item_context",
+                "farm.buildings",
+                "farm.animals",
+                "farm.animal_purchase_catalog",
+                "farm.objects",
                 "farm.machines",
                 "current_location.objects",
                 "fishing.rod_contexts",
@@ -1108,7 +1125,14 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                        "load_machine_input_tile",
                        "collect_spawned_object",
                        "craft_machine_item",
-                       "place_machine_item"
+                       "place_machine_item",
+                       "construct_building",
+                       "upgrade_building",
+                       "animal_purchase_select_service",
+                       "animal_purchase_navigate_location_page",
+                       "animal_purchase_select_location",
+                       "purchase_animal",
+                       "toggle_animal_door"
                    }) &&
                    requiredFields.All(scheduler.RequiredFieldPaths.Contains) &&
                    RuleString(scheduler.Rule, "execution_owner") ==
@@ -1212,6 +1236,115 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                        RainTotemPineTarCapacityReserveNode,
                        WeatherSupplySchedulerNode,
                        "replans_after_exact_pine_tapper_capacity_step"));
+        }
+
+        public bool HasBoundMasterAnglerRainTotemTruffleOilCapacityReserve()
+        {
+            if (!Directions.TryGetValue(MasterAnglerDirection, out var masterAngler) ||
+                !masterAngler.Nodes.TryGetValue(
+                    RainTotemTruffleOilCapacityReserveNode,
+                    out var reserve) ||
+                reserve.Kind != "recurrence_rule" ||
+                reserve.OptionId != "fishing.catch_fish" ||
+                reserve.Rule.ValueKind != JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            var requiredFields = new[]
+            {
+                "world_progress.fish_collection_progress",
+                "world_progress.game_state_query_calendar_state",
+                "player.inventory",
+                "player.building_construction_catalog",
+                "player.machine_placement",
+                "player.safe_item_context",
+                "player.rain_totem",
+                "farm.buildings",
+                "farm.animals",
+                "farm.animal_purchase_catalog",
+                "farm.objects",
+                "farm.machines",
+                "current_location.objects",
+                "locations.collision_grid",
+                "locations.social_route_date_evidence",
+                "time.total_days",
+                "time.time"
+            };
+            return reserve.CandidateKinds.SetEquals(new[]
+                   {
+                       "construct_building",
+                       "upgrade_building",
+                       "animal_purchase_select_service",
+                       "animal_purchase_navigate_location_page",
+                       "animal_purchase_select_location",
+                       "purchase_animal",
+                       "toggle_animal_door",
+                       "craft_machine_item",
+                       "place_machine_item",
+                       "collect_machine_output_tile",
+                       "load_machine_input_tile",
+                       "collect_spawned_object",
+                       "route_connector_tile"
+                   }) &&
+                   requiredFields.All(reserve.RequiredFieldPaths.Contains) &&
+                   RuleString(reserve.Rule, "execution_owner") ==
+                       "deterministic_teacher_reserve_compiler_not_policy_label" &&
+                   RuleString(reserve.Rule, "intent_builder") ==
+                       "MasterAnglerWindowIntentValidator.TryBuildRainTotemReserveIntent" &&
+                   RuleString(reserve.Rule, "material_qualified_item_id") == "(O)432" &&
+                   RuleInt(reserve.Rule, "required_material_quantity") == 1 &&
+                   RuleString(reserve.Rule, "input_qualified_item_id") == "(O)430" &&
+                   RuleString(reserve.Rule, "machine_qualified_item_id") == "(BC)19" &&
+                   RuleString(reserve.Rule, "animal_type_id") == "Pig" &&
+                   RuleInt(reserve.Rule, "native_days_to_mature") == 10 &&
+                   RuleStringSetEquals(
+                       reserve.Rule,
+                       "required_building_sequence",
+                       new[] { "Barn", "Big Barn", "Deluxe Barn" }) &&
+                   RuleStringSetEquals(
+                       reserve.Rule,
+                       "reserve_stages",
+                       new[]
+                       {
+                           "collect_ready_truffle_oil",
+                           "collect_spawned_truffle",
+                           "load_truffle_into_oil_maker",
+                           "construct_barn",
+                           "upgrade_big_barn",
+                           "upgrade_deluxe_barn",
+                           "purchase_pig",
+                           "wait_for_barn_upgrade",
+                           "wait_for_pig_maturity",
+                           "open_pig_home_animal_door",
+                           "establish_oil_maker",
+                           "await_native_pig_truffle"
+                       }) &&
+                   RuleString(reserve.Rule, "production_opportunity_scope") ==
+                       "non_winter_days_before_exact_rain_totem_use_day" &&
+                   RuleString(reserve.Rule, "animal_door_authority") ==
+                       "native Building.doAction right_click edge to ToggleAnimalDoor" &&
+                   RuleString(reserve.Rule, "building_authority") ==
+                       "live building construction and upgrade catalog plus native CarpenterMenu receipt" &&
+                   RuleBool(reserve.Rule, "existing_due_output_suppresses_duplicate_reserve") &&
+                   RuleBool(reserve.Rule, "fresh_snapshot_after_each_primitive") &&
+                   RuleBool(reserve.Rule, "pig_truffle_oil_reserve_bound") &&
+                   RuleFalse(reserve.Rule, "hardwood_reserve_bound") &&
+                   RuleFalse(reserve.Rule, "material_consumption_reservation_bound") &&
+                   RuleFalse(reserve.Rule, "native_rain_totem_crafting_receipt_present") &&
+                   RuleFalse(reserve.Rule, "long_horizon_reserve_bound") &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       RainTotemCraftingReadNode,
+                       RainTotemTruffleOilCapacityReserveNode,
+                       "supplies_exact_truffle_oil_requirement")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       WeatherSupplySchedulerNode,
+                       RainTotemTruffleOilCapacityReserveNode,
+                       "expands_future_rain_window_reserve")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       RainTotemTruffleOilCapacityReserveNode,
+                       WeatherSupplySchedulerNode,
+                       "replans_after_exact_pig_truffle_oil_stage"));
         }
 
         public bool HasBoundMasterAnglerDesertBusAccess()

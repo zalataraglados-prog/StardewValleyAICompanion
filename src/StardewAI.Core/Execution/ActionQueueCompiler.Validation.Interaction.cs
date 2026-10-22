@@ -371,6 +371,16 @@ namespace StardewAI.Core.Execution
                 return new[] { "interact_target_not_adjacent" };
             }
 
+            if (string.Equals(interactionKind, "animal_door", StringComparison.Ordinal))
+            {
+                return ValidateAnimalDoorInteraction(
+                    action,
+                    snapshot,
+                    targetX.Value,
+                    targetY.Value,
+                    expectedActionType);
+            }
+
             if (string.Equals(interactionKind, "overlay_object", StringComparison.Ordinal))
             {
                 if (!string.Equals(expectedActionType, "SkullKeyChest", StringComparison.Ordinal))
@@ -420,6 +430,52 @@ namespace StardewAI.Core.Execution
             }
 
             return Array.Empty<string>();
+        }
+
+        private static string[] ValidateAnimalDoorInteraction(
+            SmallModelAction action,
+            SnapshotEnvelope snapshot,
+            int targetX,
+            int targetY,
+            string expectedActionType)
+        {
+            if (!string.Equals(expectedActionType, "AnimalDoor", StringComparison.Ordinal) ||
+                !string.Equals(ReadParameter(action, "expected_animal_door_open_before"), "false", StringComparison.Ordinal) ||
+                !string.Equals(ReadParameter(action, "expected_animal_door_open_after"), "true", StringComparison.Ordinal) ||
+                !string.Equals(
+                    ReadParameter(action, "native_contract"),
+                    "Building.doAction->didPlayerJustRightClick->Building.ToggleAnimalDoor->animalDoorOpen",
+                    StringComparison.Ordinal))
+            {
+                return new[] { "animal_door_interaction_contract_invalid" };
+            }
+            var type = ReadParameter(action, "building_type");
+            var buildingX = ReadIntParameter(action, "building_tile_x");
+            var buildingY = ReadIntParameter(action, "building_tile_y");
+            var safeSlot = ReadIntParameter(action, "safe_slot_index");
+            var buildings = ReadStateFieldValue(snapshot, "farm", "buildings");
+            if (string.IsNullOrWhiteSpace(type) || !buildingX.HasValue ||
+                !buildingY.HasValue || !safeSlot.HasValue ||
+                !buildings.HasValue || buildings.Value.ValueKind != JsonValueKind.Array)
+            {
+                return new[] { "animal_door_transparent_identity_incomplete" };
+            }
+            var matches = buildings.Value.EnumerateArray().Where(row =>
+                row.ValueKind == JsonValueKind.Object &&
+                string.Equals(ReadString(row, "type"), type, StringComparison.Ordinal) &&
+                ReadInt(row, "tile_x") == buildingX.Value &&
+                ReadInt(row, "tile_y") == buildingY.Value &&
+                row.TryGetProperty("animal_door", out var door) &&
+                door.ValueKind == JsonValueKind.Object &&
+                ReadBool(door, "present") == true &&
+                ReadBool(door, "is_open") == false &&
+                ReadInt(door, "target_tile_x", int.MinValue) == targetX &&
+                ReadInt(door, "target_tile_y", int.MinValue) == targetY &&
+                string.Equals(ReadString(door, "interaction_status"), "ready_native_right_click_toggle", StringComparison.Ordinal) &&
+                string.Equals(ReadString(door, "native_contract"), ReadParameter(action, "native_contract"), StringComparison.Ordinal)).ToArray();
+            return matches.Length == 1
+                ? Array.Empty<string>()
+                : new[] { "animal_door_projection_drifted" };
         }
 
         private static bool GoldenScytheAltarMatches(SnapshotEnvelope snapshot, int targetX, int targetY)

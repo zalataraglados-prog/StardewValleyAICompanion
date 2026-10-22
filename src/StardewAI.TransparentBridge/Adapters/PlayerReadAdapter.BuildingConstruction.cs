@@ -147,6 +147,7 @@ public sealed partial class PlayerReadAdapter
         {
             projection_status = "complete_live_native_building_catalog",
             buildable_location_count = locations.Length,
+            upgrade_definitions = ReadBuildingUpgradeDefinitions(),
             rows = rows.ToArray()
         };
     }

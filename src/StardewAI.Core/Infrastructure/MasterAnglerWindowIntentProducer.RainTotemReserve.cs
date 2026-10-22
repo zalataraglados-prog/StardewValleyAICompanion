@@ -24,8 +24,12 @@ public static partial class MasterAnglerWindowIntentValidator
                 windowIndexPath,
                 windowIndexSha256,
                 out var artifact,
-                out rejectionReason) ||
-            !TryProjectRainTotemPineTarReserve(
+                out rejectionReason))
+        {
+            return false;
+        }
+
+        if (!TryProjectRainTotemPineTarReserve(
                 snapshot,
                 artifact,
                 Path.GetFullPath(windowIndexPath),
@@ -33,7 +37,20 @@ public static partial class MasterAnglerWindowIntentValidator
                 out validation,
                 out rejectionReason))
         {
-            return false;
+            if (rejectionReason is not (
+                    "master_angler_weather_reserve_pine_tar_inventory_already_sufficient" or
+                    "master_angler_weather_reserve_existing_pine_tar_capacity_sufficient"))
+            {
+                return false;
+            }
+            return TryBuildRainTotemTruffleOilReserveIntent(
+                snapshot,
+                artifact,
+                Path.GetFullPath(windowIndexPath),
+                windowIndexSha256,
+                out parameters,
+                out validation,
+                out rejectionReason);
         }
 
         parameters =

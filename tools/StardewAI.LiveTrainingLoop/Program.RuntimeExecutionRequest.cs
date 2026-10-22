@@ -250,6 +250,8 @@ static partial class Program
         var constructionReason = ReadQueueParameterString(item, "construction_reason");
         var constructionBuilder = ReadQueueParameterString(item, "construction_builder");
         var builderActionRaw = ReadQueueParameterString(item, "builder_action_raw");
+        var expectedAnimalDoorOpenBefore = ReadNullableBoolQueueParameter(item, "expected_animal_door_open_before");
+        var expectedAnimalDoorOpenAfter = ReadNullableBoolQueueParameter(item, "expected_animal_door_open_after");
         var appearanceReason = ReadQueueParameterString(item, "appearance_reason");
         var buildingIdentity = ReadQueueParameterString(item, "building_identity");
         var buildingLocationId = ReadQueueParameterString(item, "building_location_id");
@@ -858,6 +860,8 @@ static partial class Program
         executionRequest.ConstructionReason = constructionReason;
         executionRequest.ConstructionBuilder = constructionBuilder;
         executionRequest.BuilderActionRaw = builderActionRaw;
+        executionRequest.ExpectedAnimalDoorOpenBefore = expectedAnimalDoorOpenBefore;
+        executionRequest.ExpectedAnimalDoorOpenAfter = expectedAnimalDoorOpenAfter;
         executionRequest.AppearanceReason = appearanceReason;
         executionRequest.BuildingIdentity = buildingIdentity;
         executionRequest.BuildingLocationId = buildingLocationId;

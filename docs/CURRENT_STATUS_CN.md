@@ -85,6 +85,8 @@ Full Shipment dependency graph 的节点早已声明 `full_recurrence_required_f
 
 2026-10-23 Pig/Truffle Oil reserve 的必要建筑升级底座已补齐。此前通用建筑目录显式跳过 `BuildingToUpgrade`，导致 fresh save 无法从 Barn 走到 Deluxe Barn；现在透明目录为每座精确来源建筑生成升级行，候选、日计划和动作队列在唯一 `buildings.construct -> executor.construct_building` 链内以 `project_kind=upgrade` 复用原生 CarpenterMenu。编译与运行均核验来源建筑类型和坐标，成功必须观察到原生 `upgradeName`、`daysUntilUpgrade`、金钱及材料收据，不允许直接写建筑状态。专项测试 `11/11`、Runtime Harness Release 零警告零错误，未启动游戏。这里只修复 Pig reserve 的前置执行硬伤；猪购买/成熟/天气生产、Truffle 与 Oil Maker 容量调度仍是下一固定切片，因此全局准入指标、依赖图哈希、天气族未完成状态和正式训练禁令不变。
 
+2026-10-23 Pig/Truffle Oil reserve 已完成代码级闭环，但未被夸大为整个天气族完成。未来雨窗投影从精确建筑、升级进度、动物购买目录、Pig 年龄、动物门、Farm 地面 Truffle、Oil Maker 和库存状态选择唯一当前阶段；Barn -> Big Barn -> Deluxe Barn、Pig 购买、10 日成熟、非冬季产出机会及 Oil Maker 工期进入同一 lead-time。执行继续复用通用建筑、购畜、机器和采集链；唯一新增原生 primitive 是透明绑定的 Barn 动物门右键，使用 `Building.doAction` 并验证 `animalDoorOpen false -> true`，不直接改状态。已有按期 Truffle Oil 产出会抑制重复 reserve，库存已有 Truffle 时不会重复建设 Pig 产能，远程 Farm Truffle 会先形成去 Farm 的采集连接，冬季无产出机会会跳到更晚的合法雨窗。定向 `ActionQueueCompilerTests` 为 `159/159`，四个 Release 工程与 Master Angler 防篡改自测通过，未启动游戏。依赖图 SHA-256 为 `2178040959b142f04b3d5be0795945d0286a05ccfad405fe6c84ba63c54a5fd3`，天气状态为 `runtime_consumer_crafting_read_scheduler_immediate_supply_pine_tar_and_pig_truffle_capacity_bound_hardwood_reservation_and_native_crafting_receipt_missing`；未绑定族仍为 `5`，`long_horizon_reserve_bound=false`、训练准入分子与正式训练禁令均不变。下一步只做 Hardwood reserve。
+
 ## 2. 已完成并冻结的施工单位
 
 ### Full Shipment runtime evidence

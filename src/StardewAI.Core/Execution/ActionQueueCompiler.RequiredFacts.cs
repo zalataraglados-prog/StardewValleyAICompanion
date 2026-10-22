@@ -65,6 +65,18 @@ namespace StardewAI.Core.Execution
                     .ToArray();
             }
 
+            if (string.Equals(action.OptionId, "executor.interact", StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(action, "interaction_kind"), "animal_door", StringComparison.Ordinal))
+            {
+                return option.RequiredStateFactors
+                    .Where(factor => factor is not (
+                        "current_location.route_context" or
+                        "locations.route_action_branch_coverage"))
+                    .Concat(new[] { "farm.buildings", "player.safe_item_context", "locations.collision_grid" })
+                    .Distinct(StringComparer.Ordinal)
+                    .ToArray();
+            }
+
             return option.RequiredStateFactors;
         }
 

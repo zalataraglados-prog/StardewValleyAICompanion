@@ -99,7 +99,7 @@ internal static partial class BootstrapSelfTest
             report.PrerequisiteFamilies.Single(value =>
                     value.FamilyId == "weather_reserve_or_control")
                 .ProducerStatus ==
-                    "runtime_consumer_crafting_read_scheduler_immediate_supply_and_pine_tar_capacity_bound_pig_truffle_hardwood_reservation_and_native_crafting_receipt_missing" &&
+                    "runtime_consumer_crafting_read_scheduler_immediate_supply_pine_tar_and_pig_truffle_capacity_bound_hardwood_reservation_and_native_crafting_receipt_missing" &&
             report.MissingOrUnboundProducerFamilies.Contains(
                 "weather_reserve_or_control",
                 StringComparer.Ordinal) &&
@@ -148,10 +148,58 @@ internal static partial class BootstrapSelfTest
             catalogPath,
             windowIndexPath,
             dependencyExpansionPath);
+        VerifyMasterAnglerRainTotemTruffleOilCapacityReserveFailsClosed(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath);
         VerifyMasterAnglerWeatherSupplySchedulerFailsClosed(
             catalogPath,
             windowIndexPath,
             dependencyExpansionPath);
+    }
+
+    private static void VerifyMasterAnglerRainTotemTruffleOilCapacityReserveFailsClosed(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath)
+    {
+        var root = JsonNode.Parse(File.ReadAllText(dependencyExpansionPath))?.AsObject() ??
+                   throw new InvalidDataException("Master Angler dependency fixture is null.");
+        var direction = root["directions"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["direction_id"]!.GetValue<string>() ==
+                             "complete_master_angler");
+        var reserve = direction["nodes"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["id"]!.GetValue<string>() ==
+                             "dependency.complete_master_angler.rain_totem_truffle_oil_capacity_reserve");
+        reserve["rule"]!["animal_type_id"] = "Chicken";
+
+        var tamperedPath = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-master-angler-truffle-oil-reserve-" +
+            Guid.NewGuid().ToString("N") + ".json");
+        try
+        {
+            File.WriteAllText(
+                tamperedPath,
+                root.ToJsonString(JsonDefaults.Options));
+            var tampered = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(
+                catalogPath,
+                windowIndexPath,
+                tamperedPath);
+            Require(
+                tampered.PrerequisiteFamilies.Single(value =>
+                        value.FamilyId == "weather_reserve_or_control")
+                    .ProducerStatus ==
+                        "runtime_consumer_crafting_read_scheduler_immediate_supply_and_pine_tar_capacity_bound_pig_truffle_hardwood_reservation_and_native_crafting_receipt_missing",
+                "Master Angler weather reserve accepted a drifted Pig producer identity.");
+        }
+        finally
+        {
+            if (File.Exists(tamperedPath))
+                File.Delete(tamperedPath);
+        }
     }
 
     private static void VerifyMasterAnglerRainTotemPineTarCapacityReserveFailsClosed(
@@ -276,7 +324,7 @@ internal static partial class BootstrapSelfTest
                 tampered.PrerequisiteFamilies.Single(value =>
                         value.FamilyId == "weather_reserve_or_control")
                     .ProducerStatus ==
-                        "runtime_consumer_crafting_read_and_scheduler_bound_material_supply_and_native_crafting_receipt_missing",
+                        "runtime_consumer_and_crafting_read_bound_executor_supply_scheduler_missing",
                 "Master Angler weather supply accepted a false long-horizon reserve claim.");
         }
         finally

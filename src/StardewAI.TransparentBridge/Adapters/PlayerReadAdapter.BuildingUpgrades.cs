@@ -6,6 +6,29 @@ namespace StardewAI.TransparentBridge.Adapters;
 
 public sealed partial class PlayerReadAdapter
 {
+    private static object[] ReadBuildingUpgradeDefinitions() =>
+        Game1.buildingData
+            .Where(pair => !string.IsNullOrWhiteSpace(pair.Value.BuildingToUpgrade) &&
+                pair.Value.Builder is "Robin" or "Wizard")
+            .OrderBy(pair => pair.Key, StringComparer.Ordinal)
+            .Select(pair => (object)new
+            {
+                target_building_type = pair.Key,
+                upgrade_from_building_type = pair.Value.BuildingToUpgrade,
+                builder = pair.Value.Builder,
+                build_condition = pair.Value.BuildCondition ?? string.Empty,
+                build_days = pair.Value.BuildDays,
+                native_countdown_days = Math.Max(pair.Value.BuildDays, 1),
+                build_cost = pair.Value.BuildCost,
+                build_materials = pair.Value.BuildMaterials?.Select(material => (object)new
+                    {
+                        qualified_item_id = material.ItemId,
+                        required_count = material.Amount
+                    }).ToArray() ?? Array.Empty<object>(),
+                native_contract = "CarpenterMenu.BlueprintEntry.IsUpgrade_from_BuildingToUpgrade"
+            })
+            .ToArray();
+
     private static void AddBuildingUpgradeRows(
         Farmer player,
         string targetBuildingType,

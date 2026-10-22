@@ -1023,6 +1023,7 @@ namespace StardewAI.Contracts.Capabilities
                 SupportedCandidate("animal_purchase_navigate_location_page"),
                 SupportedCandidate("animal_purchase_select_location"),
                 SupportedCandidate("purchase_animal"),
+                SupportedCandidate("toggle_animal_door"),
                 SupportedCandidate("manage_animal"),
                 SupportedCandidate("manage_fish_pond"),
                 SupportedCandidate("cook_recipe"),
@@ -1119,6 +1120,7 @@ namespace StardewAI.Contracts.Capabilities
                 SupportedCandidate("water_crop_tile"), SupportedCandidate("sell_shop_item"),
                 BlockedCandidate("purchase_service_gate", "purchase_service_gate_excluded_upstream"),
                 BlockedCandidate("purchase_stage_blocked", "purchase_stage_not_compilable"),
+                BlockedCandidate("rain_totem_truffle_oil_reserve_wait", "rain_totem_truffle_oil_reserve_waits_for_fresh_native_state"),
                 BlockedCandidate("quest_candidate", "quest_objective_binding_not_executable"),
                 BlockedCandidate("special_order_candidate", "special_order_objective_binding_not_executable")
             });

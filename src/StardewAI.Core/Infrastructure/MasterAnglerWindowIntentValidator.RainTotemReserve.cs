@@ -12,6 +12,7 @@ namespace StardewAI.Core.Infrastructure;
 
 public sealed class MasterAnglerRainTotemReserveIntentValidation
 {
+    public string ReserveKind { get; init; } = string.Empty;
     public int TargetTotalDay { get; init; }
     public int UseTotalDay { get; init; }
     public string[] TargetQualifiedItemIds { get; init; } = [];
@@ -22,6 +23,21 @@ public sealed class MasterAnglerRainTotemReserveIntentValidation
     public int ExistingTapperProjectedOutputQuantity { get; init; }
     public int OutputQuantityPerNewTapper { get; init; }
     public int RequiredAdditionalTapperCount { get; init; }
+    public string ReserveStage { get; init; } = string.Empty;
+    public int InventoryTruffleOilQuantity { get; init; }
+    public int InventoryTruffleQuantity { get; init; }
+    public int ExistingOilMakerCount { get; init; }
+    public int ExistingOilMakerProjectedOutputQuantity { get; init; }
+    public int PigCount { get; init; }
+    public int AdultPigCount { get; init; }
+    public int MinimumPigDaysToMaturity { get; init; }
+    public bool TargetAnimalDoorOpen { get; init; }
+    public string TargetBuildingType { get; init; } = string.Empty;
+    public string TargetBuildingLocationId { get; init; } = string.Empty;
+    public int TargetBuildingTileX { get; init; } = -1;
+    public int TargetBuildingTileY { get; init; } = -1;
+    public int RequiredLeadDays { get; init; }
+    public int EligibleTruffleOpportunityDays { get; init; }
 }
 
 public static partial class MasterAnglerWindowIntentValidator
@@ -90,6 +106,15 @@ public static partial class MasterAnglerWindowIntentValidator
         validation = new();
         rejectionReason = string.Empty;
         var values = parameters.ToArray();
+        if (TryRead(values, WeatherReserveStatusParameter, out var reserveStatus) &&
+            string.Equals(reserveStatus, TruffleOilReserveValidationStatus, StringComparison.Ordinal))
+        {
+            return TryValidateRainTotemTruffleOilReserveIntent(
+                snapshot,
+                values,
+                out validation,
+                out rejectionReason);
+        }
         if (!TryRead(values, WeatherReserveStatusParameter, out var status) ||
             !TryReadInt(values, WeatherReserveTargetDayParameter, out var targetDay) ||
             !TryReadInt(values, WeatherReserveUseDayParameter, out var useDay) ||
@@ -166,45 +191,15 @@ public static partial class MasterAnglerWindowIntentValidator
         out string rejectionReason)
     {
         validation = new();
-        rejectionReason = string.Empty;
-        var currentDay = ReadStateFieldInt(snapshot, "time", "total_days");
-        var currentTime = ReadStateFieldInt(snapshot, "time", "time");
-        if (currentDay < 0 ||
-            artifact.DeadlineTotalDayExclusive != 224 ||
-            (!string.IsNullOrWhiteSpace(snapshot.GameVersion) &&
-             !string.Equals(snapshot.GameVersion, artifact.GameVersion, StringComparison.Ordinal)))
-        {
-            rejectionReason = "master_angler_weather_reserve_artifact_identity_mismatch";
+        if (!TryProjectRainTotemReserveWindow(
+                snapshot,
+                artifact,
+                indexPath,
+                indexHash,
+                PineTapperCycleDays,
+                out var window,
+                out rejectionReason))
             return false;
-        }
-        if (!MissingSpecies(snapshot, 72, out var missing) ||
-            !TryReadLocationContexts(snapshot, out var locationContexts) ||
-            !TryReadFutureFestivalDateKeys(snapshot, currentDay, out var festivalKeys))
-        {
-            rejectionReason = "master_angler_weather_reserve_authority_unavailable";
-            return false;
-        }
-
-        var rainTotem = ReadStateFieldValue(snapshot, "player", "rain_totem");
-        if (!rainTotem.HasValue ||
-            rainTotem.Value.ValueKind != JsonValueKind.Object ||
-            !string.Equals(
-                ReadString(rainTotem.Value, "projection_status"),
-                "complete_current_native_rain_totem_context",
-                StringComparison.Ordinal) ||
-            !rainTotem.Value.TryGetProperty("context_routing", out var routing) ||
-            routing.ValueKind != JsonValueKind.Object ||
-            ReadBool(routing, "allow_rain_totem") != true)
-        {
-            rejectionReason = "master_angler_weather_reserve_rain_totem_context_unavailable";
-            return false;
-        }
-        var affectedContext = ReadString(routing, "affected_location_context_id");
-        if (string.IsNullOrWhiteSpace(affectedContext))
-        {
-            rejectionReason = "master_angler_weather_reserve_affected_context_unavailable";
-            return false;
-        }
 
         var inventoryQuantity = InventoryQuantity(snapshot, PineTarQualifiedItemId);
         if (inventoryQuantity >= PineTarRequiredQuantity)
@@ -213,83 +208,37 @@ public static partial class MasterAnglerWindowIntentValidator
             return false;
         }
 
-        var targetsByDay = new SortedDictionary<int, HashSet<string>>();
-        foreach (var target in missing.OrderBy(value => value, StringComparer.Ordinal))
+        var outputPerNewTapper = window.DaysToUse / PineTapperCycleDays;
+        var existingOutput = ProjectExistingPineTapperOutputs(
+            snapshot,
+            window.CurrentTime,
+            window.DaysToUse);
+        var deficit = Math.Max(
+            0,
+            PineTarRequiredQuantity - inventoryQuantity - existingOutput);
+        if (deficit == 0)
         {
-            if (!artifact.WindowsBySpecies.TryGetValue(target, out var windows))
-                continue;
-            foreach (var window in windows.Where(window =>
-                         string.Equals(window.SourceKind, "location_rule", StringComparison.Ordinal) &&
-                         window.DynamicConditionCount == 0 &&
-                         window.WeatherModes.Contains("rain", StringComparer.Ordinal) &&
-                         !window.WeatherModes.Contains("sun", StringComparer.Ordinal) &&
-                         !window.RequireMagicBait &&
-                         locationContexts.TryGetValue(window.LocationId, out var contextId) &&
-                         string.Equals(contextId, affectedContext, StringComparison.Ordinal)))
-            {
-                var first = Math.Max(currentDay + 2, window.FirstTotalDay);
-                var last = Math.Min(
-                    window.LastTotalDay,
-                    artifact.DeadlineTotalDayExclusive - 1);
-                for (var day = first; day <= last; day++)
-                {
-                    if (FutureDateKey(day) is not { } dateKey ||
-                        festivalKeys.Contains(dateKey))
-                    {
-                        continue;
-                    }
-                    if (!targetsByDay.TryGetValue(day, out var ids))
-                    {
-                        ids = new HashSet<string>(StringComparer.Ordinal);
-                        targetsByDay.Add(day, ids);
-                    }
-                    ids.Add(target);
-                }
-            }
-        }
-        foreach (var row in targetsByDay)
-        {
-            var useDay = row.Key - 1;
-            var daysToUse = useDay - currentDay;
-            var outputPerNewTapper = daysToUse / PineTapperCycleDays;
-            var existingOutput = ProjectExistingPineTapperOutputs(
-                snapshot,
-                currentTime,
-                daysToUse);
-            var deficit = Math.Max(
-                0,
-                PineTarRequiredQuantity - inventoryQuantity - existingOutput);
-            if (deficit == 0)
-            {
-                rejectionReason =
-                    "master_angler_weather_reserve_existing_pine_tar_capacity_sufficient";
-                return false;
-            }
-            if (outputPerNewTapper <= 0)
-                continue;
-
-            validation = new MasterAnglerRainTotemReserveIntentValidation
-            {
-                TargetTotalDay = row.Key,
-                UseTotalDay = useDay,
-                TargetQualifiedItemIds = row.Value
-                    .OrderBy(value => value, StringComparer.Ordinal)
-                    .ToArray(),
-                AffectedLocationContextId = affectedContext,
-                WindowIndexPath = indexPath,
-                WindowIndexSha256 = indexHash,
-                InventoryPineTarQuantity = inventoryQuantity,
-                ExistingTapperProjectedOutputQuantity = existingOutput,
-                OutputQuantityPerNewTapper = outputPerNewTapper,
-                RequiredAdditionalTapperCount =
-                    (deficit + outputPerNewTapper - 1) / outputPerNewTapper
-            };
-            return true;
+            rejectionReason =
+                "master_angler_weather_reserve_existing_pine_tar_capacity_sufficient";
+            return false;
         }
 
-        rejectionReason =
-            "master_angler_weather_reserve_no_lead_time_feasible_future_rain_window";
-        return false;
+        validation = new MasterAnglerRainTotemReserveIntentValidation
+        {
+            ReserveKind = "pine_tar_capacity",
+            TargetTotalDay = window.TargetTotalDay,
+            UseTotalDay = window.UseTotalDay,
+            TargetQualifiedItemIds = window.TargetQualifiedItemIds,
+            AffectedLocationContextId = window.AffectedLocationContextId,
+            WindowIndexPath = window.WindowIndexPath,
+            WindowIndexSha256 = window.WindowIndexSha256,
+            InventoryPineTarQuantity = inventoryQuantity,
+            ExistingTapperProjectedOutputQuantity = existingOutput,
+            OutputQuantityPerNewTapper = outputPerNewTapper,
+            RequiredAdditionalTapperCount =
+                (deficit + outputPerNewTapper - 1) / outputPerNewTapper
+        };
+        return true;
     }
 
     private static int InventoryQuantity(

@@ -183,11 +183,14 @@ public static partial class MasterAnglerTargetDateIntentBuilder
                 {
                     new MasterAnglerWeatherSupplyIntent
                     {
-                        IntentId = "master-angler-weather-reserve:pine-tar:" +
+                        IntentId = "master-angler-weather-reserve:" +
+                            weatherReserveValidation.ReserveKind + ":" +
                             weatherReserveValidation.TargetTotalDay.ToString(
                                 CultureInfo.InvariantCulture) + ":" +
                             weatherReserveValidation.AffectedLocationContextId,
-                        IntentKind = "future_rain_totem_pine_tar_reserve",
+                        IntentKind = "future_rain_totem_" +
+                            weatherReserveValidation.ReserveKind +
+                            "_reserve",
                         OptionId = "fishing.catch_fish",
                         TargetTotalDay =
                             weatherReserveValidation.TargetTotalDay,
