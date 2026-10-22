@@ -177,6 +177,29 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             };
         }
 
+        if (string.Equals(parts[0], "WarpBoatTunnel", StringComparison.OrdinalIgnoreCase))
+        {
+            var invitationReceived = Game1.player?.mailReceived.Contains("willyBackRoomInvitation") == true;
+            return new
+            {
+                kind = "warp_action",
+                tile_x = x,
+                tile_y = y,
+                source_property = sourceProperty,
+                action,
+                target_location = "BoatTunnel",
+                target_x = 6,
+                target_y = 12,
+                mail_required = "willyBackRoomInvitation",
+                mail_requirement_met = invitationReceived,
+                allowed_on_capture_date = invitationReceived,
+                allowed_now = invitationReceived,
+                unresolved_reason = invitationReceived
+                    ? (string?)null
+                    : "boat_tunnel_invitation_missing"
+            };
+        }
+
         if (IsDirectWarpActionBranch(parts[0]))
         {
             var standardWarp = string.Equals(

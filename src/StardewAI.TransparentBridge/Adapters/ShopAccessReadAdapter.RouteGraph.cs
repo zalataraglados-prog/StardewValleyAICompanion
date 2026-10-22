@@ -247,6 +247,30 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             };
         }
 
+        if (string.Equals(parts[0], "WarpBoatTunnel", StringComparison.OrdinalIgnoreCase))
+        {
+            var invitationReceived = Game1.player.mailReceived.Contains("willyBackRoomInvitation");
+            var targetLoaded = locationNames.Contains("BoatTunnel");
+            return new
+            {
+                kind = "action_warp",
+                from_location = location.NameOrUniqueName,
+                from_x = action.tile_x,
+                from_y = action.tile_y,
+                target_location = "BoatTunnel",
+                target_x = (int?)6,
+                target_y = (int?)12,
+                source_property = action.source_property,
+                raw_action = action.raw_action,
+                required_mail = "willyBackRoomInvitation",
+                gate_open = invitationReceived,
+                resolved = invitationReceived && targetLoaded,
+                unresolved_reason = !invitationReceived
+                    ? "boat_tunnel_invitation_missing"
+                    : targetLoaded ? (string?)null : "boat_tunnel_target_not_loaded"
+            };
+        }
+
         if (IsDirectWarpActionBranch(parts[0]))
         {
             var touchAction =
@@ -540,6 +564,7 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             "WarpWomensLocker" => "covered_for_read",
             "MagicWarp" => "covered_for_read",
             "WarpCommunityCenter" => "covered_for_read",
+            "WarpBoatTunnel" => "covered_for_read",
             "EnterSewer" => "covered_for_read",
             "Mine" => "covered_for_read",
             "LockedDoorWarp" => "covered_for_read",
@@ -573,6 +598,8 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
                 "read-side target and optional mail gate preview exists; execution walks onto the native Back.TouchAction tile and waits for the delayed warp",
             "WarpCommunityCenter" =>
                 "read-side native CommunityCenter 32,23 target and MasterPlayer ccDoorUnlock-or-JojaMember gate preview exists",
+            "WarpBoatTunnel" =>
+                "FishShop native back-room action is projected as BoatTunnel 6,12 and is gated by willyBackRoomInvitation",
             "EnterSewer" =>
                 "read-side OpenedSewer/RustyKey state and native Sewer 16,11 target preview exists",
             "Mine" =>

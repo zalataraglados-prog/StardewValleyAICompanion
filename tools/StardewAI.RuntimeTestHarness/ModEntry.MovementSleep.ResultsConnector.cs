@@ -104,6 +104,7 @@ public sealed partial class ModEntry : Mod
     {
         return string.Equals(actionType, "Warp", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(actionType, "WarpCommunityCenter", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(actionType, "WarpBoatTunnel", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(actionType, "EnterSewer", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(actionType, "Mine", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(actionType, "LockedDoorWarp", StringComparison.OrdinalIgnoreCase);
@@ -113,6 +114,7 @@ public sealed partial class ModEntry : Mod
     {
         return string.Equals(actionType, "Warp", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(actionType, "WarpCommunityCenter", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(actionType, "WarpBoatTunnel", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(actionType, "EnterSewer", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(actionType, "Mine", StringComparison.OrdinalIgnoreCase);
     }
@@ -237,6 +239,16 @@ public sealed partial class ModEntry : Mod
                 targetLocation = "CommunityCenter";
                 targetX = 32;
                 targetY = 23;
+            }
+            else if (string.Equals(parts[0], "WarpBoatTunnel", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!string.Equals(Game1.currentLocation.NameOrUniqueName, "FishShop", StringComparison.OrdinalIgnoreCase))
+                    return "connector_boat_tunnel_source_location_mismatch";
+                if (!Game1.player.mailReceived.Contains("willyBackRoomInvitation"))
+                    return "connector_boat_tunnel_invitation_missing";
+                targetLocation = "BoatTunnel";
+                targetX = 6;
+                targetY = 12;
             }
             else if (string.Equals(parts[0], "EnterSewer", StringComparison.OrdinalIgnoreCase))
             {
