@@ -97,6 +97,18 @@ internal static partial class BootstrapSelfTest
                 "secret_woods_access_or_forest_farm_layout",
                 StringComparer.Ordinal) &&
             report.PrerequisiteFamilies.Single(value =>
+                    value.FamilyId == "mutant_bug_lair_story_access")
+                .ProducerStatus == "implemented_and_bound" &&
+            report.PrerequisiteFamilies.Single(value =>
+                    value.FamilyId == "witch_swamp_story_access")
+                .ProducerStatus == "implemented_and_bound" &&
+            !report.MissingOrUnboundProducerFamilies.Contains(
+                "mutant_bug_lair_story_access",
+                StringComparer.Ordinal) &&
+            !report.MissingOrUnboundProducerFamilies.Contains(
+                "witch_swamp_story_access",
+                StringComparer.Ordinal) &&
+            report.PrerequisiteFamilies.Single(value =>
                     value.FamilyId ==
                         "crab_pot_recipe_material_and_bait_supply")
                 .ProducerStatus == "implemented_and_bound" &&
@@ -135,6 +147,10 @@ internal static partial class BootstrapSelfTest
             windowIndexPath,
             dependencyExpansionPath);
         VerifyMasterAnglerSecretWoodsAccessBindingFailsClosed(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath);
+        VerifyMasterAnglerDarkTalismanAccessBindingFailsClosed(
             catalogPath,
             windowIndexPath,
             dependencyExpansionPath);
@@ -178,6 +194,55 @@ internal static partial class BootstrapSelfTest
             catalogPath,
             windowIndexPath,
             dependencyExpansionPath);
+    }
+
+    private static void VerifyMasterAnglerDarkTalismanAccessBindingFailsClosed(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath)
+    {
+        var root = JsonNode.Parse(File.ReadAllText(dependencyExpansionPath))?.AsObject() ??
+                   throw new InvalidDataException("Master Angler dependency fixture is null.");
+        var direction = root["directions"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["direction_id"]!.GetValue<string>() ==
+                             "complete_master_angler");
+        var producer = direction["nodes"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["id"]!.GetValue<string>() ==
+                             "dependency.complete_master_angler.dark_talisman_story_access");
+        producer["rule"]!["dark_talisman_special_item_which"] = 5;
+
+        var tamperedPath = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-master-angler-dark-talisman-binding-" +
+            Guid.NewGuid().ToString("N") + ".json");
+        try
+        {
+            File.WriteAllText(tamperedPath, root.ToJsonString(JsonDefaults.Options));
+            var tampered = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(
+                catalogPath,
+                windowIndexPath,
+                tamperedPath);
+            Require(
+                tampered.PrerequisiteFamilies.Single(value =>
+                        value.FamilyId == "mutant_bug_lair_story_access")
+                    .ProducerStatus != "implemented_and_bound" &&
+                tampered.PrerequisiteFamilies.Single(value =>
+                        value.FamilyId == "witch_swamp_story_access")
+                    .ProducerStatus != "implemented_and_bound" &&
+                tampered.MissingOrUnboundProducerFamilies.Contains(
+                    "mutant_bug_lair_story_access",
+                    StringComparer.Ordinal) &&
+                tampered.MissingOrUnboundProducerFamilies.Contains(
+                    "witch_swamp_story_access",
+                    StringComparer.Ordinal),
+                "Master Angler Dark Talisman producer accepted a drifted SpecialItem identity.");
+        }
+        finally
+        {
+            File.Delete(tamperedPath);
+        }
     }
 
     private static void VerifyMasterAnglerSecretWoodsAccessBindingFailsClosed(

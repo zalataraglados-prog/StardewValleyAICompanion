@@ -89,7 +89,9 @@ namespace StardewAI.Core.Training
                     "animal_purchase_navigate_location_page",
                     "animal_purchase_select_location", "purchase_animal",
                     "toggle_animal_door", "submit_tool_upgrade",
-                    "claim_tool_upgrade"
+                    "claim_tool_upgrade", "interact_endpoint",
+                    "advance_story_event_automatic", "advance_story_event_choice",
+                    "recovery_close_menu"
                 },
                 ["fishing.collect_crab_pots"] = new[] { "route_connector_tile", "clear_obstacle_tile", "interact_endpoint", "buy_shop_item", "collect_crab_pot", "load_crab_pot_bait", "place_crab_pot", "craft_crab_pot", "recovery_close_menu", "recovery_resume_sleep_prompt", "recovery_sleep_immediately", "recovery_return_home", "recovery_sleep_before_collapse" },
                 ["fishing.service_fish_ponds"] = new[] { "collect_fish_pond_output", "complete_fish_pond_request" },

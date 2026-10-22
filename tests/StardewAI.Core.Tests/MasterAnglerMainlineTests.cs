@@ -261,7 +261,8 @@ public sealed partial class MasterAnglerMainlineTests
         string sourceKey,
         bool dynamicCondition = false,
         bool runtimeRuleEligible = true,
-        int currentTime = 900)
+        int currentTime = 900,
+        string targetLocation = "Beach")
     {
         var root = Path.Combine(
             Path.GetTempPath(),
@@ -286,7 +287,7 @@ public sealed partial class MasterAnglerMainlineTests
                         {
                             ["source_kind"] = "location_rule",
                             ["source_key"] = sourceKey,
-                            ["location_id"] = "Beach",
+                            ["location_id"] = targetLocation,
                             ["first_total_day"] = 0,
                             ["last_total_day"] = 27,
                             ["minimum_fishing_level"] = 0,
@@ -348,7 +349,7 @@ public sealed partial class MasterAnglerMainlineTests
             new[]
             {
                 Parameter("master_angler_target_qualified_item_id", "(O)145"),
-                Parameter("master_angler_target_location", "Beach"),
+                Parameter("master_angler_target_location", targetLocation),
                 Parameter("master_angler_source_kind", "location_rule"),
                 Parameter("master_angler_source_key", sourceKey),
                 Parameter("master_angler_window_first_total_day", "0"),

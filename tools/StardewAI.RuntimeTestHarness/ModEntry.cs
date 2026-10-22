@@ -132,7 +132,8 @@ public sealed partial class ModEntry : Mod
     private ActiveMenuClose? activeMenuClose;
     private ActiveMailProcessing? activeMailProcessing;
     private ActiveShippingSummaryClose? activeShippingSummaryClose;
-    private ActiveSkullKeyChestInteraction? activeSkullKeyChestInteraction;
+    private ActiveSpecialItemChestInteraction? activeSpecialItemChestInteraction;
+    private ActiveDarkTalismanStatueInteraction? activeDarkTalismanStatueInteraction;
     private ActiveMineRewardChest? activeMineRewardChest;
     private ActivePotOfGoldClaim? activePotOfGoldClaim;
     private ActiveDwarfKingStatueChoice? activeDwarfKingStatueChoice;
@@ -634,7 +635,8 @@ public sealed partial class ModEntry : Mod
         TickMailProcessing();
         TickMineElevatorSelection();
         TickShippingSummaryClose();
-        TickSkullKeyChestInteraction();
+        TickSpecialItemChestInteraction();
+        TickDarkTalismanStatueInteraction();
         TickMineRewardChest();
         TickPotOfGoldClaim();
         TickDwarfKingStatuePowerChoice();
@@ -1512,6 +1514,21 @@ public sealed partial class ModEntry : Mod
                     string.Equals(pending.Request.ExpectedActionType, "SkullKeyChest", StringComparison.Ordinal))
                 {
                     StartSkullKeyChestInteraction(pending);
+                }
+                else if (string.Equals(pending.Request.InteractionKind, "overlay_object", StringComparison.Ordinal) &&
+                    string.Equals(pending.Request.ExpectedActionType, "DarkTalismanChest", StringComparison.Ordinal))
+                {
+                    StartDarkTalismanChestInteraction(pending);
+                }
+                else if (string.Equals(pending.Request.InteractionKind, "npc_check_action", StringComparison.Ordinal) &&
+                    string.Equals(pending.Request.ExpectedActionType, "DarkTalismanKrobus", StringComparison.Ordinal))
+                {
+                    pending.Completion.SetResult(ExecuteDarkTalismanKrobusInteraction(pending.Request));
+                }
+                else if (string.Equals(pending.Request.InteractionKind, "location_check_action", StringComparison.Ordinal) &&
+                    string.Equals(pending.Request.ExpectedActionType, "DarkTalismanStatue", StringComparison.Ordinal))
+                {
+                    StartDarkTalismanStatueInteraction(pending);
                 }
                 else
                 {
@@ -2809,7 +2826,8 @@ public sealed partial class ModEntry : Mod
             activeMailProcessing is not null ||
             activeMineElevatorSelection is not null ||
             activeShippingSummaryClose is not null ||
-            activeSkullKeyChestInteraction is not null ||
+            activeSpecialItemChestInteraction is not null ||
+            activeDarkTalismanStatueInteraction is not null ||
             activeMineRewardChest is not null ||
             activePotOfGoldClaim is not null ||
             activeDwarfKingStatueChoice is not null ||

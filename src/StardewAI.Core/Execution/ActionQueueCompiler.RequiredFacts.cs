@@ -46,6 +46,23 @@ namespace StardewAI.Core.Execution
             }
 
             if (string.Equals(action.OptionId, "executor.interact", StringComparison.Ordinal) &&
+                string.Equals(executorProfile, "dark_talisman_story_executor", StringComparison.Ordinal))
+            {
+                return option.RequiredStateFactors
+                    .Where(factor => factor is not (
+                        "player.facing_direction" or
+                        "current_location.route_context" or
+                        "locations.route_action_branch_coverage"))
+                    .Concat(new[]
+                    {
+                        "locations.dark_talisman_access",
+                        "locations.collision_grid"
+                    })
+                    .Distinct(StringComparer.Ordinal)
+                    .ToArray();
+            }
+
+            if (string.Equals(action.OptionId, "executor.interact", StringComparison.Ordinal) &&
                 string.Equals(
                     ReadParameter(action, "interaction_kind"),
                     "community_center_note",

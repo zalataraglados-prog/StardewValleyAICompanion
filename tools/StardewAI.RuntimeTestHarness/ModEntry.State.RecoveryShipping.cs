@@ -169,7 +169,7 @@ public sealed partial class ModEntry : Mod
         CheckClose
     }
 
-    private enum SkullKeyChestStage
+    private enum SpecialItemChestStage
     {
         OpenChest,
         WaitForOpenAnimation,
@@ -177,20 +177,36 @@ public sealed partial class ModEntry : Mod
         WaitForPostcondition
     }
 
-    private sealed class ActiveSkullKeyChestInteraction
+    private sealed class ActiveSpecialItemChestInteraction
     {
-        public ActiveSkullKeyChestInteraction(PendingExecution pending, MineShaft mine, Point target)
+        public ActiveSpecialItemChestInteraction(
+            PendingExecution pending,
+            GameLocation location,
+            Point target,
+            int specialItemWhich,
+            string expectedActionType,
+            string primitiveKind,
+            string progressFactPath,
+            bool progressBefore)
         {
             Pending = pending;
-            Mine = mine;
+            Location = location;
             Target = target;
-            HasSkullKeyBefore = Game1.player.hasSkullKey;
+            SpecialItemWhich = specialItemWhich;
+            ExpectedActionType = expectedActionType;
+            PrimitiveKind = primitiveKind;
+            ProgressFactPath = progressFactPath;
+            ProgressBefore = progressBefore;
         }
 
         public PendingExecution Pending { get; }
-        public MineShaft Mine { get; }
+        public GameLocation Location { get; }
         public Point Target { get; }
-        public bool HasSkullKeyBefore { get; }
+        public int SpecialItemWhich { get; }
+        public string ExpectedActionType { get; }
+        public string PrimitiveKind { get; }
+        public string ProgressFactPath { get; }
+        public bool ProgressBefore { get; }
         public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
         public int MaxTicks { get; } = 360;
         public int ElapsedTicks { get; set; }
@@ -198,11 +214,11 @@ public sealed partial class ModEntry : Mod
         public int ClaimAttempts { get; set; }
         public bool OpenHandled { get; set; }
         public bool ClaimHandled { get; set; }
-        public int KeyObservedAtTick { get; set; }
+        public int ProgressObservedAtTick { get; set; }
         public int LastDismissAttemptTick { get; set; }
         public int DismissAttempts { get; set; }
         public bool DismissActionHeld { get; set; }
-        public SkullKeyChestStage Stage { get; set; }
+        public SpecialItemChestStage Stage { get; set; }
     }
 
     private sealed class ActiveDialogueAdvance

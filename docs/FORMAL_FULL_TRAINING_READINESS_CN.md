@@ -40,6 +40,8 @@ Master Angler 的 Rusty Key/下水道组合也已闭合到现有上游根：`Ent
 
 秘密森林/森林农场替代分支随后通过严格依赖节点关闭：实时农场类型决定 `Farm_Forest -> Farm` 替代是否成立；非森林农场必须依次满足透明 Secret Woods 门、共享 Axe 升级生命周期、Forest `(1,6)` 的精确 vanilla 602 hollow log 清除和原生 Woods connector。该实现没有新增模型动作或平行执行器，且任何钢斧等级、原木身份、共享执行器或 recurrence 边漂移都会失败关闭。当前只有源码锁定、编译、定向执行链测试和图篡改负例，尚无 602 原木真实运行回执，故该用途仍为 calibration-only，不进入正式训练。最新审计剩余 `3` 个未绑定族：姜岛、Mutant Bug Lair、女巫沼泽；完成它们后仍须组合 Year 3 截止与 seed-robust 随机重试证明。`formal_product_training_authorized=false` 不变。
 
+共享 Dark Talisman 依赖节点现已关闭 Mutant Bug Lair 和 Witch Swamp 两族。它精确组合既有 Community Center/Joja 完成事实、Railroad `529952/C`、quest `28`、Krobus 原生交互、BugLand `(31,5)` 的唯一 `SpecialItem(6)`、Railroad tile `287` 与 WitchWarpCave `MagicWarp`；BugLand 与 WitchSwamp 按各自最短充分终态停止，不要求 BugLand 目标无意义地完成后缀。SpecialItem 宝箱与 Skull Key 共用唯一原生两阶段状态机，Krobus 与雕像只调用原生 `checkAction` 并验证 fresh 后置条件，代码不直接写进度。当前证据是锁定源码、透明投影、编译、`5/5 + 16/16` 定向测试与依赖防篡改自测，不是原生运行回执。fresh-save prerequisite 审计 SHA-256 为 `74460f8612d92ab09ead68aa2c5aeedd7eaa5aaed8dc1a6ced923f84b5578892`，静态未绑定族只剩 `ginger_island_access`；姜岛完成后仍必须建立 Year 3 截止组合和 seed-robust 随机重试证明，故正式训练继续禁止。
+
 Money 的第一条完整原生作物生产段 `money-crop-native-20261021-pricefix-v10` 已通过：checkpoint v12 为 `6/6 verified、0 pending`，终局含 `5` 次单件原生投箱和唯一睡眠结算，实际收入 `875g`，最终为春 20 日 06:00、`money=925`、`totalMoneyEarned=875`。源存档和隔离 Mod 哈希均未漂移。这证明 native runner、购种、场地准备、作物生命周期、留存、容量和运输箱终局可以在同一连续真实轨迹中闭合。
 
 `money_revenue_crop_native_production_segment_receipt.v1` 已完成并对 v10 深回放：Teacher 决策、commit receipt、obligation/run plan、checkpoint、terminal recurrence、最终透明快照和最终隔离存档树均从路径与哈希重新核验。回执确认 `50` 个 Teacher 候选、选中 `5` 格 `(O)474`、实际购种成本 `400g`、毛收入 `875g`、净现金收入 `475g`，并正确输出空阈值集合；它不创建 Teacher comparison、Money cell 或训练授权。

@@ -27,6 +27,8 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
         "dependency.complete_master_angler.sewer_rusty_key_access";
     private const string SecretWoodsAccessProducerNode =
         "dependency.complete_master_angler.secret_woods_or_forest_farm_access";
+    private const string DarkTalismanAccessProducerNode =
+        "dependency.complete_master_angler.dark_talisman_story_access";
     private const string TrapSupplyProducerNode =
         "dependency.complete_master_angler.trap_supply_acquisition";
     private const string TrapInfrastructureGateNode =
@@ -534,10 +536,18 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                         ? new[] { "complete_community_center" }
                         : Array.Empty<string>(),
                     "Schedule Community Center or Joja completion, Willy's boat repair, ticket travel and island sub-area ingress."),
+            "witch_swamp_story_access" when graph.HasBoundMasterAnglerDarkTalismanStoryAccess() =>
+                ("implemented_and_bound",
+                    new[] { DarkTalismanAccessProducerNode, CommunityCenterCompletionNode },
+                    "The target-specific recurrence completes Railroad event 529952, quest 28, Krobus unseal, SpecialItem 6, the native Railroad statue animation and WitchWarpCave MagicWarp before replanning the Witch's Swamp catch."),
             "witch_swamp_story_access" =>
                 ("producer_missing",
                     Array.Empty<string>(),
                     "Schedule Dark Talisman and Goblin Problem progression through Witch's Swamp access."),
+            "mutant_bug_lair_story_access" when graph.HasBoundMasterAnglerDarkTalismanStoryAccess() =>
+                ("implemented_and_bound",
+                    new[] { DarkTalismanAccessProducerNode, CommunityCenterCompletionNode },
+                    "The target-specific recurrence stops after the native Krobus quest-28 interaction adds krobusUnseal, which is the exact Mutant Bug Lair ingress receipt."),
             "mutant_bug_lair_story_access" =>
                 ("producer_missing",
                     Array.Empty<string>(),
@@ -1717,6 +1727,82 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                        SecretWoodsAccessProducerNode,
                        MasterAnglerRecurrenceNode,
                        "replans_after_native_secret_woods_primitive"));
+        }
+
+        public bool HasBoundMasterAnglerDarkTalismanStoryAccess()
+        {
+            if (!Directions.TryGetValue(MasterAnglerDirection, out var masterAngler) ||
+                !Directions.TryGetValue(CommunityCenterDirection, out var communityCenter) ||
+                !masterAngler.Nodes.TryGetValue(DarkTalismanAccessProducerNode, out var producer) ||
+                !communityCenter.Nodes.ContainsKey(CommunityCenterCompletionNode) ||
+                producer.Kind != "recurrence_rule" ||
+                producer.OptionId != "fishing.catch_fish" ||
+                producer.Rule.ValueKind != JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            var requiredFields = new[]
+            {
+                "world_progress.fish_collection_progress",
+                "world_progress.community_center",
+                "locations.dark_talisman_access",
+                "locations.route_graph",
+                "locations.route_connectors",
+                "locations.collision_grid",
+                "player.location_id",
+                "player.tile_x",
+                "player.tile_y",
+                "time.total_days",
+                "time.time",
+                "menus.active_menu",
+                "quests.active_quests",
+                "quests.mail_received"
+            };
+            return producer.CandidateKinds.SetEquals(new[]
+                   {
+                       "route_connector_tile",
+                       "advance_story_event_automatic",
+                       "advance_story_event_choice",
+                       "interact_endpoint",
+                       "recovery_close_menu",
+                       "dark_talisman_access_wait"
+                   }) &&
+                   requiredFields.All(producer.RequiredFieldPaths.Contains) &&
+                   RuleString(producer.Rule, "reuses_direction_id") == CommunityCenterDirection &&
+                   RuleString(producer.Rule, "reuses_node_id") == CommunityCenterCompletionNode &&
+                   RuleString(producer.Rule, "reused_option_id") == "fishing.catch_fish" &&
+                   RuleString(producer.Rule, "shared_prefix_event_id") == "529952" &&
+                   RuleString(producer.Rule, "shared_prefix_event_precondition") == "C" &&
+                   RuleString(producer.Rule, "dark_talisman_quest_id") == "28" &&
+                   RuleString(producer.Rule, "krobus_unseal_mail_key") == "krobusUnseal" &&
+                   RuleString(producer.Rule, "mutant_bug_lair_target_location") == "BugLand" &&
+                   RuleString(producer.Rule, "mutant_bug_lair_terminal_fact") ==
+                       "quests.mail_received.krobusUnseal=true" &&
+                   RuleInt(producer.Rule, "dark_talisman_special_item_which") == 6 &&
+                   RuleString(producer.Rule, "dark_talisman_chest_tile") == "31,5" &&
+                   RuleString(producer.Rule, "witch_statue_tile") == "54,35" &&
+                   RuleInt(producer.Rule, "witch_statue_buildings_tile_index") == 287 &&
+                   RuleString(producer.Rule, "witch_statue_mail_key") == "witchStatueGone" &&
+                   RuleString(producer.Rule, "witch_swamp_target_location") == "WitchSwamp" &&
+                   RuleString(producer.Rule, "witch_swamp_magic_warp") ==
+                       "MagicWarp WitchSwamp 20 42" &&
+                   RuleBool(producer.Rule, "fresh_snapshot_after_each_primitive") &&
+                   RuleBool(producer.Rule, "fresh_native_receipt_required") &&
+                   RuleInt(producer.Rule, "deadline_total_day_exclusive") == 224 &&
+                   RuleFalse(producer.Rule, "training_label_eligible") &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       FreshSaveInventoryNode,
+                       DarkTalismanAccessProducerNode,
+                       "selects_dark_talisman_story_access")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       DarkTalismanAccessProducerNode,
+                       TargetDateOpportunityNode,
+                       "supplies_mutant_bug_lair_and_witch_swamp_access")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       DarkTalismanAccessProducerNode,
+                       MasterAnglerRecurrenceNode,
+                       "replans_after_native_dark_talisman_primitive"));
         }
 
         public bool HasBoundMasterAnglerSewerAccess()

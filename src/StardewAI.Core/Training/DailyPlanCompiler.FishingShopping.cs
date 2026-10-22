@@ -126,7 +126,16 @@ namespace StardewAI.Core.Training
                 return steps;
             }
 
-            var expectedActionType = ParseValue(candidate.ExpectedEffect, "preview_interact=");
+            var interactionKind = CandidateParameter(candidate, "interaction_kind");
+            if (string.IsNullOrWhiteSpace(interactionKind))
+            {
+                interactionKind = "map_action";
+            }
+            var expectedActionType = CandidateParameter(candidate, "expected_action_type");
+            if (string.IsNullOrWhiteSpace(expectedActionType))
+            {
+                expectedActionType = ParseValue(candidate.ExpectedEffect, "preview_interact=");
+            }
             if (string.IsNullOrWhiteSpace(expectedActionType))
             {
                 expectedActionType = "OpenShop";
@@ -142,16 +151,21 @@ namespace StardewAI.Core.Training
                 TargetTileY = candidate.TileY,
                 EstimatedMinutes = 1,
                 Preconditions = new[] { "candidate_id:" + candidate.CandidateId, "target_tile_adjacent=true" },
-                ExpectedEffects = dialogueResponse.HasValue
+                ExpectedEffects = !string.Equals(interactionKind, "map_action", StringComparison.Ordinal)
+                    ? new[] { candidate.ExpectedEffect }
+                    : dialogueResponse.HasValue
                     ? new[] { "menus.active_menu.is_open=true", "DialogueBox", "interact_map_action_" + expectedActionType }
                     : new[] { "menus.active_menu.is_open=true", "interact_map_action_" + expectedActionType },
-                SafetyConstraints = new[] { "interaction_kind=map_action", "expected_action_type=" + expectedActionType },
+                SafetyConstraints = new[] { "interaction_kind=" + interactionKind, "expected_action_type=" + expectedActionType },
                 FailurePolicy = new[] { "refresh_snapshot_and_replan" },
                 Parameters = new[]
                     {
-                        Parameter("interaction_kind", "map_action"),
+                        Parameter("interaction_kind", interactionKind),
                         Parameter("expected_action_type", expectedActionType)
                     }
+                    .Concat(candidate.Parameters.Where(parameter =>
+                        parameter.Name is not ("interaction_kind" or "expected_action_type") &&
+                        !parameter.Name.StartsWith("continuation.", StringComparison.Ordinal)))
                     .Concat(continuation)
                     .ToArray()
             });

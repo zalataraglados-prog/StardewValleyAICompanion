@@ -111,6 +111,15 @@ namespace StardewAI.Core.OptionRegistry
             {
                 return secretWoodsPrerequisites;
             }
+            if (TryBuildDarkTalismanPrerequisiteCandidates(
+                    snapshot,
+                    intent,
+                    intentParameters,
+                    continuation,
+                    out var darkTalismanPrerequisites))
+            {
+                return darkTalismanPrerequisites;
+            }
             if (!string.Equals(
                     currentLocation,
                     intent.TargetLocation,
