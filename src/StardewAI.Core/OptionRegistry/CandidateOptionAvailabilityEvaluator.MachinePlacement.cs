@@ -89,16 +89,22 @@ namespace StardewAI.Core.OptionRegistry
             string projectionFingerprint,
             StrategyCommitmentLedger? commitmentLedger,
             MachineRelocationIntent? relocationIntent,
-            MachineSupportIntent? supportIntent)
+            MachineSupportIntent? supportIntent,
+            MachinePlacementTileSelection? forcedSelection = null)
         {
             var slotIndex = ReadInt(row, "inventory_slot_index", -1);
             var itemId = ReadString(row, "item_id");
             var qualifiedItemId = ReadString(row, "qualified_item_id");
             var stack = Math.Max(0, ReadInt(row, "stack"));
             var location = CurrentMachinePlacementLocation(row, currentLocationId);
-            var selection = location.HasValue
+            var selection = forcedSelection ?? (location.HasValue
                 ? relocationIntent is null
-                    ? supportIntent?.TargetTileX is not null &&
+                    ? SelectAcquisitionTapperPlacement(
+                          snapshot,
+                          location.Value,
+                          currentLocationId,
+                          supportIntent) ??
+                      (supportIntent?.TargetTileX is not null &&
                       supportIntent.TargetTileY is not null
                         ? SelectExactMachinePlacementTile(
                             snapshot,
@@ -109,14 +115,14 @@ namespace StardewAI.Core.OptionRegistry
                         : SelectMachinePlacementTile(
                             snapshot,
                             location.Value,
-                            currentLocationId)
+                            currentLocationId))
                     : SelectExactMachinePlacementTile(
                         snapshot,
                         location.Value,
                         currentLocationId,
                         relocationIntent.TargetTileX,
                         relocationIntent.TargetTileY)
-                : null;
+                : null);
             var reservationGuard =
                 new InventoryPlacementMaterialReservationGuard().Evaluate(
                     commitmentLedger,

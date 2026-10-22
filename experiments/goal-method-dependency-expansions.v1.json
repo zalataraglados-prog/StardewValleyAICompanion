@@ -835,11 +835,13 @@
           "id": "dependency.complete_master_angler.weather_supply_scheduler",
           "kind": "recurrence_rule",
           "option_id": "fishing.catch_fish",
-          "candidate_kinds": ["craft_rain_totem", "use_rain_totem", "catch_fish", "clear_obstacle_tile", "collect_machine_output_tile", "load_machine_input_tile", "collect_spawned_object"],
+          "candidate_kinds": ["craft_rain_totem", "use_rain_totem", "catch_fish", "clear_obstacle_tile", "collect_machine_output_tile", "load_machine_input_tile", "collect_spawned_object", "craft_machine_item", "place_machine_item"],
           "required_field_paths": [
             "world_progress.fish_collection_progress",
+            "world_progress.game_state_query_calendar_state",
             "player.skills_detail",
             "player.inventory",
+            "player.machine_placement",
             "player.rain_totem",
             "player.rain_totem_crafting",
             "farm.machines",
@@ -853,6 +855,7 @@
           "rule": {
             "execution_owner": "deterministic_teacher_scheduler_not_policy_label",
             "intent_builder": "MasterAnglerWindowIntentValidator.TryBuildRainTotemSupplyIntent",
+            "reserve_intent_builder": "MasterAnglerWindowIntentValidator.TryBuildRainTotemReserveIntent",
             "ranking_binding": "BaselinePredictionRequest.additional_candidates",
             "target_horizon_days": 1,
             "required_weather": "Rain",
@@ -861,6 +864,42 @@
             "window_index_sha256_required": true,
             "fresh_snapshot_after_each_primitive": true,
             "training_label_eligible": false
+          }
+        },
+        {
+          "id": "dependency.complete_master_angler.rain_totem_pine_tar_capacity_reserve",
+          "kind": "recurrence_rule",
+          "option_id": "fishing.catch_fish",
+          "candidate_kinds": ["craft_machine_item", "place_machine_item"],
+          "required_field_paths": [
+            "world_progress.fish_collection_progress",
+            "world_progress.game_state_query_calendar_state",
+            "player.inventory",
+            "player.machine_placement",
+            "player.rain_totem",
+            "farm.machines",
+            "locations.collision_grid",
+            "locations.social_route_date_evidence",
+            "time.total_days",
+            "time.time"
+          ],
+          "rule": {
+            "execution_owner": "deterministic_teacher_reserve_compiler_not_policy_label",
+            "intent_builder": "MasterAnglerWindowIntentValidator.TryBuildRainTotemReserveIntent",
+            "material_qualified_item_id": "(O)726",
+            "required_material_quantity": 5,
+            "machine_qualified_item_id": "(BC)105",
+            "source_id": "wild_tree:3:0",
+            "exact_base_cycle_days": 5,
+            "capacity_formula": "ceil(max(0,5-inventory_pine_tar-exact_existing_due_output)/floor(days_before_use/5))",
+            "placement_authority": "native Object.canBePlacedHere plus locked Object.placementAction mature_tappable_tree_branch",
+            "one_machine_per_fresh_replan": true,
+            "pine_tar_capacity_reserve_bound": true,
+            "pig_truffle_oil_reserve_bound": false,
+            "hardwood_reserve_bound": false,
+            "material_consumption_reservation_bound": false,
+            "native_rain_totem_crafting_receipt_present": false,
+            "long_horizon_reserve_bound": false
           }
         },
         {
@@ -946,6 +985,9 @@
         { "from": "dependency.complete_master_angler.rain_totem_crafting_read_authority", "to": "dependency.complete_master_angler.rain_totem_immediate_material_supply", "kind": "supplies_exact_material_deficits" },
         { "from": "dependency.complete_master_angler.weather_supply_scheduler", "to": "dependency.complete_master_angler.rain_totem_immediate_material_supply", "kind": "expands_current_material_deficit" },
         { "from": "dependency.complete_master_angler.rain_totem_immediate_material_supply", "to": "dependency.complete_master_angler.weather_supply_scheduler", "kind": "replans_after_native_material_primitive" },
+        { "from": "dependency.complete_master_angler.rain_totem_crafting_read_authority", "to": "dependency.complete_master_angler.rain_totem_pine_tar_capacity_reserve", "kind": "supplies_exact_pine_tar_requirement" },
+        { "from": "dependency.complete_master_angler.weather_supply_scheduler", "to": "dependency.complete_master_angler.rain_totem_pine_tar_capacity_reserve", "kind": "expands_future_rain_window_reserve" },
+        { "from": "dependency.complete_master_angler.rain_totem_pine_tar_capacity_reserve", "to": "dependency.complete_master_angler.weather_supply_scheduler", "kind": "replans_after_exact_pine_tapper_capacity_step" },
         { "from": "dependency.complete_master_angler.weather_supply_scheduler", "to": "dependency.complete_master_angler.consume_owned_rain_totem", "kind": "schedules_owned_or_freshly_crafted_use" },
         { "from": "dependency.complete_master_angler.fresh_save_prerequisite_inventory", "to": "dependency.complete_master_angler.consume_owned_rain_totem", "kind": "selects_owned_weather_control" },
         { "from": "dependency.complete_master_angler.consume_owned_rain_totem", "to": "dependency.complete_master_angler.target_date_opportunity_producer", "kind": "creates_next_day_weather_precondition" },

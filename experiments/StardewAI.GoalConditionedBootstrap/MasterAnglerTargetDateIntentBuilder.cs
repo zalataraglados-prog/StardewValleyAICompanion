@@ -150,7 +150,15 @@ public static partial class MasterAnglerTargetDateIntentBuilder
                 out var weatherSupplyParameters,
                 out var weatherSupplyValidation,
                 out var weatherSupplyRejectionReason);
-        var weatherSupplyCandidates = weatherSupplyBuilt
+        var weatherReserveBuilt = MasterAnglerWindowIntentValidator
+            .TryBuildRainTotemReserveIntent(
+                snapshotEnvelope,
+                fullIndexPath,
+                indexHash,
+                out var weatherReserveParameters,
+                out var weatherReserveValidation,
+                out var weatherReserveRejectionReason);
+        var weatherSupplyCandidates = (weatherSupplyBuilt
             ? new[]
             {
                 new MasterAnglerWeatherSupplyIntent
@@ -159,6 +167,7 @@ public static partial class MasterAnglerTargetDateIntentBuilder
                         weatherSupplyValidation.TargetTotalDay.ToString(
                             CultureInfo.InvariantCulture) + ":" +
                         weatherSupplyValidation.AffectedLocationContextId,
+                    IntentKind = "tomorrow_rain_totem_supply",
                     OptionId = "fishing.catch_fish",
                     TargetTotalDay = weatherSupplyValidation.TargetTotalDay,
                     TargetQualifiedItemIds =
@@ -168,7 +177,31 @@ public static partial class MasterAnglerTargetDateIntentBuilder
                     Parameters = weatherSupplyParameters
                 }
             }
-            : Array.Empty<MasterAnglerWeatherSupplyIntent>();
+            : Array.Empty<MasterAnglerWeatherSupplyIntent>())
+            .Concat(weatherReserveBuilt
+                ? new[]
+                {
+                    new MasterAnglerWeatherSupplyIntent
+                    {
+                        IntentId = "master-angler-weather-reserve:pine-tar:" +
+                            weatherReserveValidation.TargetTotalDay.ToString(
+                                CultureInfo.InvariantCulture) + ":" +
+                            weatherReserveValidation.AffectedLocationContextId,
+                        IntentKind = "future_rain_totem_pine_tar_reserve",
+                        OptionId = "fishing.catch_fish",
+                        TargetTotalDay =
+                            weatherReserveValidation.TargetTotalDay,
+                        TargetQualifiedItemIds =
+                            weatherReserveValidation.TargetQualifiedItemIds,
+                        AffectedLocationContextId =
+                            weatherReserveValidation.AffectedLocationContextId,
+                        Parameters = weatherReserveParameters
+                    }
+                }
+                : Array.Empty<MasterAnglerWeatherSupplyIntent>())
+            .OrderBy(candidate => candidate.TargetTotalDay)
+            .ThenBy(candidate => candidate.IntentKind, StringComparer.Ordinal)
+            .ToArray();
         var candidates = eligibleWindows
             .Select(candidate => BuildCandidate(
                 candidate.Species,
@@ -217,9 +250,16 @@ public static partial class MasterAnglerTargetDateIntentBuilder
             TrainingLabelEligible = false,
             Candidates = candidates,
             WeatherSupplyCandidates = weatherSupplyCandidates,
-            WeatherSupplyBlockingReasons = weatherSupplyBuilt
+            WeatherSupplyBlockingReasons = weatherSupplyCandidates.Length > 0
                 ? Array.Empty<string>()
-                : new[] { weatherSupplyRejectionReason },
+                : new[]
+                {
+                    weatherSupplyRejectionReason,
+                    weatherReserveRejectionReason
+                }
+                .Where(reason => !string.IsNullOrWhiteSpace(reason))
+                .Distinct(StringComparer.Ordinal)
+                .ToArray(),
             BlockingReasons = candidates.Length > 0
                 ? new[] { "fresh_native_target_catch_receipt_required_before_training_admission" }
                 : new[] { "no_missing_species_has_a_current_full_route_time_feasible_runtime_source" }

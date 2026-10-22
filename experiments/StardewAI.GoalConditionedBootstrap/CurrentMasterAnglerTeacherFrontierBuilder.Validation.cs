@@ -293,32 +293,63 @@ public static partial class CurrentMasterAnglerTeacherFrontierBuilder
         {
             var weatherSupplyRejectionReason = string.Empty;
             MasterAnglerRainTotemSupplyIntentValidation weatherSupply = new();
+            MasterAnglerRainTotemReserveIntentValidation weatherReserve = new();
+            var isTomorrowSupply =
+                MasterAnglerWindowIntentValidator.HasRainTotemSupplyIntent(
+                    intent.Parameters);
+            var isFutureReserve =
+                MasterAnglerWindowIntentValidator.HasRainTotemReserveIntent(
+                    intent.Parameters);
+            var valid = isTomorrowSupply != isFutureReserve &&
+                (isTomorrowSupply
+                    ? MasterAnglerWindowIntentValidator
+                        .TryValidateRainTotemSupplyIntent(
+                            snapshot,
+                            intent.Parameters,
+                            out weatherSupply,
+                            out weatherSupplyRejectionReason)
+                    : MasterAnglerWindowIntentValidator
+                        .TryValidateRainTotemReserveIntent(
+                            snapshot,
+                            intent.Parameters,
+                            out weatherReserve,
+                            out weatherSupplyRejectionReason));
+            var targetDay = isTomorrowSupply
+                ? weatherSupply.TargetTotalDay
+                : weatherReserve.TargetTotalDay;
+            var targetIds = isTomorrowSupply
+                ? weatherSupply.TargetQualifiedItemIds
+                : weatherReserve.TargetQualifiedItemIds;
+            var affectedContext = isTomorrowSupply
+                ? weatherSupply.AffectedLocationContextId
+                : weatherReserve.AffectedLocationContextId;
+            var validatedWindowPath = isTomorrowSupply
+                ? weatherSupply.WindowIndexPath
+                : weatherReserve.WindowIndexPath;
+            var validatedWindowHash = isTomorrowSupply
+                ? weatherSupply.WindowIndexSha256
+                : weatherReserve.WindowIndexSha256;
             if (string.IsNullOrWhiteSpace(intent.IntentId) ||
                 !weatherSupplyIds.Add(intent.IntentId) ||
                 !string.Equals(
                     intent.OptionId,
                     "fishing.catch_fish",
                     StringComparison.Ordinal) ||
-                !MasterAnglerWindowIntentValidator
-                    .TryValidateRainTotemSupplyIntent(
-                        snapshot,
-                        intent.Parameters,
-                        out weatherSupply,
-                        out weatherSupplyRejectionReason) ||
-                intent.TargetTotalDay != weatherSupply.TargetTotalDay ||
+                !valid ||
+                intent.TargetTotalDay != targetDay ||
                 !intent.TargetQualifiedItemIds.SequenceEqual(
-                    weatherSupply.TargetQualifiedItemIds,
+                    targetIds,
                     StringComparer.Ordinal) ||
                 !string.Equals(
                     intent.AffectedLocationContextId,
-                    weatherSupply.AffectedLocationContextId,
+                    affectedContext,
                     StringComparison.Ordinal) ||
                 !string.Equals(
-                    weatherSupply.WindowIndexPath,
+                    validatedWindowPath,
                     windowPath,
                     StringComparison.OrdinalIgnoreCase) ||
                 !string.Equals(
-                    weatherSupply.WindowIndexSha256,
+                    validatedWindowHash,
                     intents.WindowIndexSha256,
                     StringComparison.OrdinalIgnoreCase))
             {

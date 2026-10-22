@@ -115,6 +115,11 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                     row.IsPlayerControlled,
                     player);
                 var harvestExperience = ReadMachineHarvestExperience(liveMachineData, player);
+                var wildTreeTapperProduction =
+                    ReadWildTreeTapperProductionContext(
+                        row.Location,
+                        row.Pair.Key,
+                        row.Pair.Value);
                 object machineData = minimalMachineProfile
                     ? new
                     {
@@ -147,6 +152,8 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                         machineIsIncubator
                             ? "animal_house_hatch_naming_event"
                             : "ordinary_output_collection",
+                    wild_tree_tapper_production =
+                        wildTreeTapperProduction,
                     ordinary_output_collection_supported =
                         !machineIsIncubator,
                     runtime_type = row.Pair.Value.GetType().FullName ?? row.Pair.Value.GetType().Name,

@@ -184,6 +184,7 @@ public sealed partial class PlayerReadAdapter
         var forbidden = Utility.isPlacementForbiddenHere(location);
         var staticRanges = new List<object>();
         var staticCount = 0;
+        object[] nativeTapperTargets = Array.Empty<object>();
         var operationalContext = true;
         string status;
 
@@ -209,12 +210,15 @@ public sealed partial class PlayerReadAdapter
                         staticRanges,
                         y,
                         width,
-                        x => probe.canBePlacedHere(
+                        x => StaticNativePlacementCompatible(
+                            probe,
                             location,
-                            new Vector2(x, y),
-                            ~(CollisionMask.Characters | CollisionMask.Farmers)),
+                            new Vector2(x, y)),
                         ref staticCount);
                 }
+                nativeTapperTargets = ReadNativeTapperPlacementTargets(
+                    probe,
+                    location);
                 status = staticCount > 0
                     ? operationalContext
                         ? "native_legal_tiles_available"
@@ -246,6 +250,8 @@ public sealed partial class PlayerReadAdapter
             placement_probe_status = status,
             static_legal_tile_count = staticCount,
             static_legal_tile_ranges = staticRanges.ToArray(),
+            native_tapper_target_count = nativeTapperTargets.Length,
+            native_tapper_targets = nativeTapperTargets,
             static_collision_mask = "CollisionMask.All_without_Characters_or_Farmers",
             transient_occupancy_policy = "characters_and_farmers_do_not_remove_layout_candidates;exact_current_occupancy_is_rechecked_after_route",
             route_and_time_owner = "small_model",
@@ -319,6 +325,7 @@ public sealed partial class PlayerReadAdapter
             var location = locationRef.Location;
             source.Append("location|").Append(location.NameOrUniqueName).Append('|')
                 .Append(location.map?.Id).Append('|')
+                .Append(location.GetSeason()).Append('|')
                 .Append(Utility.isPlacementForbiddenHere(location)).AppendLine();
             foreach (var pair in location.objects.Pairs.OrderBy(pair => pair.Key.Y).ThenBy(pair => pair.Key.X))
             {
@@ -334,6 +341,14 @@ public sealed partial class PlayerReadAdapter
                     source.Append('|').Append(dirt.crop?.indexOfHarvest.Value ?? string.Empty)
                         .Append('|').Append(dirt.crop?.currentPhase.Value ?? -1)
                         .Append('|').Append(dirt.crop?.dead.Value ?? false);
+                }
+                else if (pair.Value is Tree tree)
+                {
+                    source.Append('|').Append(tree.treeType.Value)
+                        .Append('|').Append(tree.growthStage.Value)
+                        .Append('|').Append(tree.stump.Value)
+                        .Append('|').Append(tree.tapped.Value)
+                        .Append('|').Append(tree.isTemporaryGreenRainTree.Value);
                 }
                 source.AppendLine();
             }

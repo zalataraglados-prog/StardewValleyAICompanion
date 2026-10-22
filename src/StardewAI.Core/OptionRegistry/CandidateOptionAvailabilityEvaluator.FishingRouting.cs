@@ -6,6 +6,7 @@ using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
 using StardewAI.Core.Execution;
 using StardewAI.Core.Infrastructure;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
@@ -37,8 +38,22 @@ namespace StardewAI.Core.OptionRegistry
 
         private EventCandidate[] FishingCandidates(
             SnapshotEnvelope snapshot,
-            SmallModelActionParameter[] boundParameters)
+            SmallModelActionParameter[] boundParameters) =>
+            FishingCandidates(snapshot, boundParameters, null);
+
+        private EventCandidate[] FishingCandidates(
+            SnapshotEnvelope snapshot,
+            SmallModelActionParameter[] boundParameters,
+            StrategyCommitmentLedger? commitmentLedger)
         {
+            if (MasterAnglerWindowIntentValidator.HasRainTotemReserveIntent(
+                    boundParameters))
+            {
+                return RainTotemReserveCandidates(
+                    snapshot,
+                    boundParameters,
+                    commitmentLedger);
+            }
             if (MasterAnglerWindowIntentValidator.HasRainTotemSupplyIntent(
                     boundParameters))
             {

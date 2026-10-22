@@ -37,6 +37,8 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
         "dependency.complete_master_angler.weather_supply_scheduler";
     private const string RainTotemImmediateMaterialSupplyNode =
         "dependency.complete_master_angler.rain_totem_immediate_material_supply";
+    private const string RainTotemPineTarCapacityReserveNode =
+        "dependency.complete_master_angler.rain_totem_pine_tar_capacity_reserve";
     private const string RustyKeyDirection = "obtain_rusty_key";
     private const string RustyKeyCompletionNode =
         "dependency.obtain_rusty_key.has_rusty_key";
@@ -446,10 +448,18 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
             WeatherFamily when graph.HasBoundMasterAnglerOwnedRainTotemUse() &&
                                graph.HasBoundMasterAnglerRainTotemCraftingRead() &&
                                graph.HasBoundMasterAnglerRainTotemImmediateMaterialSupply() &&
+                               graph.HasBoundMasterAnglerRainTotemPineTarCapacityReserve() &&
+                               graph.HasBoundMasterAnglerWeatherSupplyScheduler() =>
+                ("runtime_consumer_crafting_read_scheduler_immediate_supply_and_pine_tar_capacity_bound_pig_truffle_hardwood_reservation_and_native_crafting_receipt_missing",
+                    new[] { OwnedRainTotemConsumerNode, RainTotemCraftingReadNode, RainTotemImmediateMaterialSupplyNode, RainTotemPineTarCapacityReserveNode, WeatherSupplySchedulerNode },
+                    "The future rain-window scheduler now computes exact base-Pine Tapper capacity and reuses the generic machine craft/place ledger one machine per fresh replan. Bind Pig/Truffle Oil and Hardwood reserves, protect committed materials from unrelated consumption, and capture a native Rain Totem crafting receipt before marking weather complete."),
+            WeatherFamily when graph.HasBoundMasterAnglerOwnedRainTotemUse() &&
+                               graph.HasBoundMasterAnglerRainTotemCraftingRead() &&
+                               graph.HasBoundMasterAnglerRainTotemImmediateMaterialSupply() &&
                                graph.HasBoundMasterAnglerWeatherSupplyScheduler() =>
                 ("runtime_consumer_crafting_read_scheduler_and_immediate_material_supply_bound_long_horizon_reserve_and_native_crafting_receipt_missing",
                     new[] { OwnedRainTotemConsumerNode, RainTotemCraftingReadNode, RainTotemImmediateMaterialSupplyNode, WeatherSupplySchedulerNode },
-                    "The exact tomorrow rain-window scheduler now reuses ready machine outputs, exact Hardwood tree chops, Truffle pickup and Oil Maker loading before craft/use/catch. Bind long-horizon Pine Tar, Pig and Hardwood reserves and capture a native Rain Totem crafting receipt before marking weather complete."),
+                    "The exact tomorrow rain-window scheduler reuses current native material primitives, but the verified future Pine Tar capacity reserve is missing. Bind it before Pig/Truffle Oil, Hardwood, material reservation and native crafting receipt work."),
             WeatherFamily when graph.HasBoundMasterAnglerOwnedRainTotemUse() &&
                                graph.HasBoundMasterAnglerRainTotemCraftingRead() &&
                                graph.HasBoundMasterAnglerRainTotemImmediateMaterialSupply() =>
@@ -1074,8 +1084,10 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
             var requiredFields = new[]
             {
                 "world_progress.fish_collection_progress",
+                "world_progress.game_state_query_calendar_state",
                 "player.skills_detail",
                 "player.inventory",
+                "player.machine_placement",
                 "player.rain_totem",
                 "player.rain_totem_crafting",
                 "farm.machines",
@@ -1094,13 +1106,17 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                        "clear_obstacle_tile",
                        "collect_machine_output_tile",
                        "load_machine_input_tile",
-                       "collect_spawned_object"
+                       "collect_spawned_object",
+                       "craft_machine_item",
+                       "place_machine_item"
                    }) &&
                    requiredFields.All(scheduler.RequiredFieldPaths.Contains) &&
                    RuleString(scheduler.Rule, "execution_owner") ==
                        "deterministic_teacher_scheduler_not_policy_label" &&
                    RuleString(scheduler.Rule, "intent_builder") ==
                        "MasterAnglerWindowIntentValidator.TryBuildRainTotemSupplyIntent" &&
+                   RuleString(scheduler.Rule, "reserve_intent_builder") ==
+                       "MasterAnglerWindowIntentValidator.TryBuildRainTotemReserveIntent" &&
                    RuleString(scheduler.Rule, "ranking_binding") ==
                        "BaselinePredictionRequest.additional_candidates" &&
                    RuleInt(scheduler.Rule, "target_horizon_days") == 1 &&
@@ -1128,6 +1144,74 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                        WeatherSupplySchedulerNode,
                        OwnedRainTotemConsumerNode,
                        "schedules_owned_or_freshly_crafted_use"));
+        }
+
+        public bool HasBoundMasterAnglerRainTotemPineTarCapacityReserve()
+        {
+            if (!Directions.TryGetValue(MasterAnglerDirection, out var masterAngler) ||
+                !masterAngler.Nodes.TryGetValue(
+                    RainTotemPineTarCapacityReserveNode,
+                    out var reserve) ||
+                reserve.Kind != "recurrence_rule" ||
+                reserve.OptionId != "fishing.catch_fish" ||
+                reserve.Rule.ValueKind != JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            var requiredFields = new[]
+            {
+                "world_progress.fish_collection_progress",
+                "world_progress.game_state_query_calendar_state",
+                "player.inventory",
+                "player.machine_placement",
+                "player.rain_totem",
+                "farm.machines",
+                "locations.collision_grid",
+                "locations.social_route_date_evidence",
+                "time.total_days",
+                "time.time"
+            };
+            return reserve.CandidateKinds.SetEquals(new[]
+                   {
+                       "craft_machine_item",
+                       "place_machine_item"
+                   }) &&
+                   requiredFields.All(reserve.RequiredFieldPaths.Contains) &&
+                   RuleString(reserve.Rule, "execution_owner") ==
+                       "deterministic_teacher_reserve_compiler_not_policy_label" &&
+                   RuleString(reserve.Rule, "intent_builder") ==
+                       "MasterAnglerWindowIntentValidator.TryBuildRainTotemReserveIntent" &&
+                   RuleString(reserve.Rule, "material_qualified_item_id") ==
+                       "(O)726" &&
+                   RuleInt(reserve.Rule, "required_material_quantity") == 5 &&
+                   RuleString(reserve.Rule, "machine_qualified_item_id") ==
+                       "(BC)105" &&
+                   RuleString(reserve.Rule, "source_id") == "wild_tree:3:0" &&
+                   RuleInt(reserve.Rule, "exact_base_cycle_days") == 5 &&
+                   RuleString(reserve.Rule, "capacity_formula") ==
+                       "ceil(max(0,5-inventory_pine_tar-exact_existing_due_output)/floor(days_before_use/5))" &&
+                   RuleString(reserve.Rule, "placement_authority") ==
+                       "native Object.canBePlacedHere plus locked Object.placementAction mature_tappable_tree_branch" &&
+                   RuleBool(reserve.Rule, "one_machine_per_fresh_replan") &&
+                   RuleBool(reserve.Rule, "pine_tar_capacity_reserve_bound") &&
+                   RuleFalse(reserve.Rule, "pig_truffle_oil_reserve_bound") &&
+                   RuleFalse(reserve.Rule, "hardwood_reserve_bound") &&
+                   RuleFalse(reserve.Rule, "material_consumption_reservation_bound") &&
+                   RuleFalse(reserve.Rule, "native_rain_totem_crafting_receipt_present") &&
+                   RuleFalse(reserve.Rule, "long_horizon_reserve_bound") &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       RainTotemCraftingReadNode,
+                       RainTotemPineTarCapacityReserveNode,
+                       "supplies_exact_pine_tar_requirement")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       WeatherSupplySchedulerNode,
+                       RainTotemPineTarCapacityReserveNode,
+                       "expands_future_rain_window_reserve")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       RainTotemPineTarCapacityReserveNode,
+                       WeatherSupplySchedulerNode,
+                       "replans_after_exact_pine_tapper_capacity_step"));
         }
 
         public bool HasBoundMasterAnglerDesertBusAccess()

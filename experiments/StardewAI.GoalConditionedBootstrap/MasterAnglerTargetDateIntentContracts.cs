@@ -29,6 +29,7 @@ public sealed class MasterAnglerTargetDateIntentSet
 public sealed class MasterAnglerWeatherSupplyIntent
 {
     [JsonPropertyName("intent_id")] public string IntentId { get; set; } = string.Empty;
+    [JsonPropertyName("intent_kind")] public string IntentKind { get; set; } = string.Empty;
     [JsonPropertyName("option_id")] public string OptionId { get; set; } = "fishing.catch_fish";
     [JsonPropertyName("target_total_day")] public int TargetTotalDay { get; set; }
     [JsonPropertyName("target_qualified_item_ids")] public string[] TargetQualifiedItemIds { get; set; } = Array.Empty<string>();

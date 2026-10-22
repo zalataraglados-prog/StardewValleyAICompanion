@@ -81,6 +81,8 @@ Full Shipment dependency graph 的节点早已声明 `full_recurrence_required_f
 
 2026-10-23 即时材料供应切片已加入同一明日雨窗循环。精确配方缺料时，编译器只复用现有 `clear_obstacle_tile`、`collect_machine_output_tile`、`load_machine_input_tile` 和 `collect_spawned_object`，分别覆盖保证掉落 Hardwood 的树、已完成的 Pine Tar/Truffle Oil、Truffle 投入 Oil Maker 及当前地面 Truffle；材料行不完整、数量漂移或没有可立即执行的原生生产者都会失败关闭。该切片不代表新档已建立长期供应：Pine/Tapper 五日周期、Deluxe Barn/Pig 十日成熟、Oil Maker 容量和 Hardwood 储备仍未绑定，Rain Totem 原生制作回执也未采集。依赖图状态更新为 `runtime_consumer_crafting_read_scheduler_and_immediate_material_supply_bound_long_horizon_reserve_and_native_crafting_receipt_missing`，图 SHA-256 `c437060b231ca4649c96798dfb521fa1bc7767eb5cf5ee2e7dbbabb28c7ccb17`；未绑定族保持 `5`、正式训练仍禁止。离线验证为 Rain Totem `22/22`、Bootstrap Release `0 warning / 0 error`；现存审计夹具早于当前 60/2/10 权威目录，未生成新的正式审计报告哈希。
 
+2026-10-23 Pine Tar 长线产能已在既有天气调度和机器链内闭合，没有新增第二套机器执行器。未来雨窗意图会从权威窗口索引、节日日历、fresh 缺鱼、当前库存和精确 Pine Tapper 到期产出计算缺口，再按 5 天基础周期求最少新增 Tapper 数；每次只通过通用 `craft_machine_item` / `place_machine_item` 补一台并 fresh 重算。透明放置同时锁定 `Object.canBePlacedHere` 与 `Object.placementAction` 的成熟可 Tap 树分支，候选测试确认会越过更近的橡树选择松树；季节和树状态已进入缓存指纹。专项回归 `46/46`，Bootstrap Release `0 warning / 0 error`，未启动游戏。依赖图 SHA-256 为 `e6a4637b5501e12bc4f6e45deacd1b551376e0daad838f84ff1b15787ba4dccc`。天气族的新精确状态为 `runtime_consumer_crafting_read_scheduler_immediate_supply_and_pine_tar_capacity_bound_pig_truffle_hardwood_reservation_and_native_crafting_receipt_missing`；Pig/Truffle Oil、Hardwood、材料消费 reservation 和原生 Rain Totem 制作回执仍缺，故未绑定族仍为 `5`、正式训练仍为 `false`，所有全局分子不变。现存审计夹具缺当前 60/2/10 字段，本切片未生成或宣称新的正式 audit hash。
+
 ## 2. 已完成并冻结的施工单位
 
 ### Full Shipment runtime evidence

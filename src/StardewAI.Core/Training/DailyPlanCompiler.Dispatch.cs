@@ -82,7 +82,8 @@ namespace StardewAI.Core.Training
                     "route_connector_tile", "catch_fish", "craft_rain_totem",
                     "use_rain_totem", "clear_obstacle_tile",
                     "collect_machine_output_tile", "load_machine_input_tile",
-                    "collect_spawned_object"
+                    "collect_spawned_object", "craft_machine_item",
+                    "place_machine_item"
                 },
                 ["fishing.collect_crab_pots"] = new[] { "route_connector_tile", "clear_obstacle_tile", "interact_endpoint", "buy_shop_item", "collect_crab_pot", "load_crab_pot_bait", "place_crab_pot", "craft_crab_pot", "recovery_close_menu", "recovery_resume_sleep_prompt", "recovery_sleep_immediately", "recovery_return_home", "recovery_sleep_before_collapse" },
                 ["fishing.service_fish_ponds"] = new[] { "collect_fish_pond_output", "complete_fish_pond_request" },
