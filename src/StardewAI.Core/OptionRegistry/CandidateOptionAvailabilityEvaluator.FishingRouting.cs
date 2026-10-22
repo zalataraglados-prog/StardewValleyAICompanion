@@ -39,6 +39,14 @@ namespace StardewAI.Core.OptionRegistry
             SnapshotEnvelope snapshot,
             SmallModelActionParameter[] boundParameters)
         {
+            if (MasterAnglerWindowIntentValidator.HasRainTotemSupplyIntent(
+                    boundParameters))
+            {
+                return RainTotemCraftingCandidates(
+                    snapshot,
+                    boundParameters);
+            }
+
             if (!HasMasterAnglerIntentParameters(boundParameters))
             {
                 return FishingEventCandidateBuilder.Build(snapshot);

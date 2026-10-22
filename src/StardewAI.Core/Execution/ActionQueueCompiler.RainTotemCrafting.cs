@@ -39,6 +39,23 @@ public sealed partial class ActionQueueCompiler
         if (binding is null)
             return reasons.Distinct(StringComparer.Ordinal).ToArray();
 
+        MasterAnglerRainTotemSupplyIntentValidation? supplyIntent = null;
+        if (!MasterAnglerWindowIntentValidator
+                .TryValidateRainTotemSupplyIntent(
+                    snapshot,
+                    action.Parameters,
+                    out var validatedSupplyIntent,
+                    out var supplyIntentRejection))
+        {
+            reasons.Add(string.IsNullOrWhiteSpace(supplyIntentRejection)
+                ? "craft_rain_totem_weather_supply_intent_invalid"
+                : supplyIntentRejection);
+        }
+        else
+        {
+            supplyIntent = validatedSupplyIntent;
+        }
+
         if (!string.Equals(
                 ReadString(binding.RecipeRow, "recipe_name"),
                 "Rain Totem",
@@ -61,14 +78,21 @@ public sealed partial class ActionQueueCompiler
                 "authoritative_future_window_bound",
                 StringComparison.Ordinal) ||
             string.IsNullOrWhiteSpace(
-                ReadParameter(action, "weather_supply_affected_context_id")))
+                ReadParameter(action, "weather_supply_affected_context_id")) ||
+            supplyIntent is not null && !string.Equals(
+                ReadParameter(action, "weather_supply_affected_context_id"),
+                supplyIntent.AffectedLocationContextId,
+                StringComparison.Ordinal))
         {
             reasons.Add("craft_rain_totem_weather_supply_intent_invalid");
         }
 
         var currentDay = ReadStateFieldInt(snapshot, "time", "total_days");
         if (ReadIntParameter(action, "weather_supply_target_total_day") !=
-            currentDay + 1)
+                currentDay + 1 ||
+            supplyIntent is not null &&
+            ReadIntParameter(action, "weather_supply_target_total_day") !=
+                supplyIntent.TargetTotalDay)
         {
             reasons.Add("craft_rain_totem_target_day_not_tomorrow");
         }
@@ -82,7 +106,11 @@ public sealed partial class ActionQueueCompiler
             !MasterAnglerWindowIntentValidator.TryReadExactMissingSpecies(
                 snapshot,
                 out var missing) ||
-            targets.Any(target => !missing.Contains(target)))
+            targets.Any(target => !missing.Contains(target)) ||
+            supplyIntent is not null &&
+            !targets.SequenceEqual(
+                supplyIntent.TargetQualifiedItemIds,
+                StringComparer.Ordinal))
         {
             reasons.Add("craft_rain_totem_target_not_in_exact_missing_set");
         }

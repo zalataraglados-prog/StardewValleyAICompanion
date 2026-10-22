@@ -117,6 +117,28 @@ function New-TeacherPreferenceArtifacts(
         throw "Backend ingest returned no state hash."
     }
 
+    $intentsPath = Join-Path $ArtifactDirectory `
+        ("master-angler-target-date-intents" + $Suffix + ".json")
+    Invoke-Bootstrap @(
+        "build-master-angler-target-date-intents",
+        "--windows", $MasterAnglerWindowsPath,
+        "--snapshot", $beforeSnapshotPath,
+        "--timing-calibration", $RouteTimingCalibrationPath,
+        "--output", $intentsPath
+    )
+    $intents = Get-Content -LiteralPath $intentsPath -Raw |
+        ConvertFrom-Json
+    $additionalCandidates = @(
+        @($intents.candidates) + @($intents.weather_supply_candidates) |
+            Where-Object { $null -ne $_ } |
+            ForEach-Object {
+                [ordered]@{
+                    option_id = [string]$_.option_id
+                    parameters = @($_.parameters)
+                }
+            }
+    )
+
     $rankRequest = [ordered]@{
         goal_id = $GoalId
         execution_mode = "training_singleplayer"
@@ -127,6 +149,7 @@ function New-TeacherPreferenceArtifacts(
         state_hash = $stateHash
         candidate_option_ids = @()
         candidates = @()
+        additional_candidates = $additionalCandidates
         include_blocked_options = $false
     } | ConvertTo-Json -Depth 16
     $rankResponse = Invoke-WebRequest -UseBasicParsing -Method Post `
@@ -136,15 +159,6 @@ function New-TeacherPreferenceArtifacts(
         ("ranking" + $Suffix + ".json")
     Write-Utf8Json $rankingPath $rankResponse.Content
 
-    $intentsPath = Join-Path $ArtifactDirectory `
-        ("master-angler-target-date-intents" + $Suffix + ".json")
-    Invoke-Bootstrap @(
-        "build-master-angler-target-date-intents",
-        "--windows", $MasterAnglerWindowsPath,
-        "--snapshot", $beforeSnapshotPath,
-        "--timing-calibration", $RouteTimingCalibrationPath,
-        "--output", $intentsPath
-    )
     $preferencePath = Join-Path $ArtifactDirectory `
         ("teacher-preference" + $Suffix + ".json")
     Invoke-Bootstrap @(

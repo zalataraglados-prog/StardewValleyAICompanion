@@ -795,8 +795,37 @@
             "shared_projection_implementation": "ReadExactSingleOutputCraftingProjection",
             "native_execution_receipt_present": false,
             "material_producers_bound": false,
-            "tomorrow_fishing_scheduler_bound": false,
+            "tomorrow_fishing_scheduler_bound": true,
             "source_authority": "live Farmer.craftingRecipes plus locked game-1.6.15 Data/CraftingRecipes"
+          }
+        },
+        {
+          "id": "dependency.complete_master_angler.weather_supply_scheduler",
+          "kind": "recurrence_rule",
+          "option_id": "fishing.catch_fish",
+          "candidate_kinds": ["craft_rain_totem", "use_rain_totem", "catch_fish"],
+          "required_field_paths": [
+            "world_progress.fish_collection_progress",
+            "player.skills_detail",
+            "player.inventory",
+            "player.rain_totem",
+            "player.rain_totem_crafting",
+            "fishing.rod_contexts",
+            "locations.social_route_date_evidence",
+            "time.total_days",
+            "menus.active_menu"
+          ],
+          "rule": {
+            "execution_owner": "deterministic_teacher_scheduler_not_policy_label",
+            "intent_builder": "MasterAnglerWindowIntentValidator.TryBuildRainTotemSupplyIntent",
+            "ranking_binding": "BaselinePredictionRequest.additional_candidates",
+            "target_horizon_days": 1,
+            "required_weather": "Rain",
+            "window_scope": "exact_static_location_rule_without_dynamic_conditions",
+            "supply_sequence": "craft_when_absent_then_fresh_replan_use_when_owned_then_fresh_replan_next_day_catch",
+            "window_index_sha256_required": true,
+            "fresh_snapshot_after_each_primitive": true,
+            "training_label_eligible": false
           }
         },
         {
@@ -876,7 +905,10 @@
         { "from": "dependency.complete_master_angler.trap_supply_acquisition", "to": "dependency.complete_master_angler.trap_infrastructure_gate", "kind": "supplies_exact_pot_and_bait" },
         { "from": "dependency.complete_master_angler.trap_supply_acquisition", "to": "dependency.complete_master_angler.acquisition_recurrence", "kind": "replans_after_native_purchase" },
         { "from": "dependency.complete_master_angler.fresh_save_prerequisite_inventory", "to": "dependency.complete_master_angler.rain_totem_crafting_read_authority", "kind": "selects_weather_supply_read_authority" },
-        { "from": "dependency.complete_master_angler.rain_totem_crafting_read_authority", "to": "dependency.complete_master_angler.consume_owned_rain_totem", "kind": "publishes_current_recipe_and_material_state_only" },
+        { "from": "dependency.complete_master_angler.stage_one_deadline_window_index", "to": "dependency.complete_master_angler.weather_supply_scheduler", "kind": "feeds_authoritative_tomorrow_weather_windows" },
+        { "from": "dependency.complete_master_angler.fresh_save_prerequisite_inventory", "to": "dependency.complete_master_angler.weather_supply_scheduler", "kind": "selects_weather_supply_targets" },
+        { "from": "dependency.complete_master_angler.rain_totem_crafting_read_authority", "to": "dependency.complete_master_angler.weather_supply_scheduler", "kind": "supplies_exact_crafting_state" },
+        { "from": "dependency.complete_master_angler.weather_supply_scheduler", "to": "dependency.complete_master_angler.consume_owned_rain_totem", "kind": "schedules_owned_or_freshly_crafted_use" },
         { "from": "dependency.complete_master_angler.fresh_save_prerequisite_inventory", "to": "dependency.complete_master_angler.consume_owned_rain_totem", "kind": "selects_owned_weather_control" },
         { "from": "dependency.complete_master_angler.consume_owned_rain_totem", "to": "dependency.complete_master_angler.target_date_opportunity_producer", "kind": "creates_next_day_weather_precondition" },
         { "from": "dependency.complete_master_angler.consume_owned_rain_totem", "to": "dependency.complete_master_angler.acquisition_recurrence", "kind": "replans_after_native_weather_transition" },

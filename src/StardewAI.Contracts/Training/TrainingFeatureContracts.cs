@@ -247,6 +247,9 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("candidates")]
         public OptionAvailabilityCandidate[] Candidates { get; set; } = Array.Empty<OptionAvailabilityCandidate>();
 
+        [JsonPropertyName("additional_candidates")]
+        public OptionAvailabilityCandidate[] AdditionalCandidates { get; set; } = Array.Empty<OptionAvailabilityCandidate>();
+
         [JsonPropertyName("training_report")]
         public BaselineTrainingReport? TrainingReport { get; set; }
 

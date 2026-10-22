@@ -296,6 +296,10 @@ public sealed partial class MasterAnglerMainlineTests
                                 ? new JsonArray(
                                     "!PLAYER_SPECIAL_ORDER_RULE_ACTIVE Current LEGENDARY_FAMILY")
                                 : new JsonArray(),
+                            ["weather_modes"] = new JsonArray(
+                                "sun",
+                                "rain",
+                                "storm"),
                             ["time_windows"] = new JsonArray
                             {
                                 new JsonObject
@@ -400,6 +404,10 @@ public sealed partial class MasterAnglerMainlineTests
                             ["require_magic_bait"] = false,
                             ["training_rod_allowed"] = null,
                             ["dynamic_conditions"] = new JsonArray(),
+                            ["weather_modes"] = new JsonArray(
+                                "sun",
+                                "rain",
+                                "storm"),
                             ["time_windows"] = new JsonArray
                             {
                                 new JsonObject

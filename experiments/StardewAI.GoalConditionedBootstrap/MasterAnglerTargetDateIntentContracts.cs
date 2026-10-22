@@ -18,9 +18,22 @@ public sealed class MasterAnglerTargetDateIntentSet
     [JsonPropertyName("current_location_id")] public string CurrentLocationId { get; set; } = string.Empty;
     [JsonPropertyName("missing_species_count")] public int MissingSpeciesCount { get; set; }
     [JsonPropertyName("candidate_count")] public int CandidateCount { get; set; }
+    [JsonPropertyName("weather_supply_candidate_count")] public int WeatherSupplyCandidateCount { get; set; }
     [JsonPropertyName("training_label_eligible")] public bool TrainingLabelEligible { get; set; }
     [JsonPropertyName("candidates")] public MasterAnglerTargetDateIntent[] Candidates { get; set; } = Array.Empty<MasterAnglerTargetDateIntent>();
+    [JsonPropertyName("weather_supply_candidates")] public MasterAnglerWeatherSupplyIntent[] WeatherSupplyCandidates { get; set; } = Array.Empty<MasterAnglerWeatherSupplyIntent>();
+    [JsonPropertyName("weather_supply_blocking_reasons")] public string[] WeatherSupplyBlockingReasons { get; set; } = Array.Empty<string>();
     [JsonPropertyName("blocking_reasons")] public string[] BlockingReasons { get; set; } = Array.Empty<string>();
+}
+
+public sealed class MasterAnglerWeatherSupplyIntent
+{
+    [JsonPropertyName("intent_id")] public string IntentId { get; set; } = string.Empty;
+    [JsonPropertyName("option_id")] public string OptionId { get; set; } = "fishing.catch_fish";
+    [JsonPropertyName("target_total_day")] public int TargetTotalDay { get; set; }
+    [JsonPropertyName("target_qualified_item_ids")] public string[] TargetQualifiedItemIds { get; set; } = Array.Empty<string>();
+    [JsonPropertyName("affected_location_context_id")] public string AffectedLocationContextId { get; set; } = string.Empty;
+    [JsonPropertyName("parameters")] public SmallModelActionParameter[] Parameters { get; set; } = Array.Empty<SmallModelActionParameter>();
 }
 
 public sealed class MasterAnglerTargetDateIntent

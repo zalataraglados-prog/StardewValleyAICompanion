@@ -99,7 +99,7 @@ internal static partial class BootstrapSelfTest
             report.PrerequisiteFamilies.Single(value =>
                     value.FamilyId == "weather_reserve_or_control")
                 .ProducerStatus ==
-                    "runtime_consumer_and_crafting_read_bound_executor_supply_scheduler_missing" &&
+                    "runtime_consumer_crafting_read_and_scheduler_bound_material_supply_and_native_crafting_receipt_missing" &&
             report.MissingOrUnboundProducerFamilies.Contains(
                 "weather_reserve_or_control",
                 StringComparer.Ordinal) &&
@@ -140,6 +140,54 @@ internal static partial class BootstrapSelfTest
             catalogPath,
             windowIndexPath,
             dependencyExpansionPath);
+        VerifyMasterAnglerWeatherSupplySchedulerFailsClosed(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath);
+    }
+
+    private static void VerifyMasterAnglerWeatherSupplySchedulerFailsClosed(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath)
+    {
+        var root = JsonNode.Parse(File.ReadAllText(dependencyExpansionPath))?.AsObject() ??
+                   throw new InvalidDataException("Master Angler dependency fixture is null.");
+        var direction = root["directions"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["direction_id"]!.GetValue<string>() ==
+                             "complete_master_angler");
+        var scheduler = direction["nodes"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["id"]!.GetValue<string>() ==
+                             "dependency.complete_master_angler.weather_supply_scheduler");
+        scheduler["rule"]!["target_horizon_days"] = 2;
+
+        var tamperedPath = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-master-angler-weather-scheduler-" +
+            Guid.NewGuid().ToString("N") + ".json");
+        try
+        {
+            File.WriteAllText(
+                tamperedPath,
+                root.ToJsonString(JsonDefaults.Options));
+            var tampered = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(
+                catalogPath,
+                windowIndexPath,
+                tamperedPath);
+            Require(
+                tampered.PrerequisiteFamilies.Single(value =>
+                        value.FamilyId == "weather_reserve_or_control")
+                    .ProducerStatus ==
+                        "runtime_consumer_and_crafting_read_bound_executor_supply_scheduler_missing",
+                "Master Angler weather supply accepted a drifted tomorrow scheduler.");
+        }
+        finally
+        {
+            if (File.Exists(tamperedPath))
+                File.Delete(tamperedPath);
+        }
     }
 
     private static void VerifyMasterAnglerRainTotemCraftingReadFailsClosed(
@@ -578,6 +626,7 @@ internal static partial class BootstrapSelfTest
                             require_magic_bait = false,
                             training_rod_allowed = true,
                             dynamic_conditions = Array.Empty<string>(),
+                            weather_modes = new[] { "rain", "storm" },
                             time_windows = new[]
                             {
                                 new { start_time = 600, end_time = 2600 }
@@ -665,6 +714,25 @@ internal static partial class BootstrapSelfTest
                             new { skill_id = "fishing", effective_level = 0 }
                         }
                     }),
+                    rain_totem = Field(new
+                    {
+                        projection_status =
+                            "complete_current_native_rain_totem_context",
+                        context_routing = new
+                        {
+                            affected_location_context_id = "Default",
+                            allow_rain_totem = true
+                        },
+                        weather_transition = new
+                        {
+                            tomorrow_is_default_festival = false,
+                            affected_weather_before = "Sun",
+                            affected_weather_after = "Rain",
+                            tomorrow_total_days = 6,
+                            effective_tomorrow_weather = "Rain",
+                            rain_will_take_effect_tomorrow = true
+                        }
+                    }),
                     movement_timing_context = Field(new
                     {
                         projection_status =
@@ -733,6 +801,9 @@ internal static partial class BootstrapSelfTest
             result.Status ==
                 "validated_current_date_full_route_intents_runtime_terminal_pending" &&
             !result.TrainingLabelEligible &&
+            result.WeatherSupplyCandidateCount == 1 &&
+            result.WeatherSupplyCandidates.Single().TargetQualifiedItemIds
+                .SequenceEqual(new[] { "(O)145" }, StringComparer.Ordinal) &&
             candidate.RouteEdgeCount == 2 &&
             candidate.RouteGuaranteedArrivalTime == 807 &&
             candidate.Parameters.Any(parameter =>

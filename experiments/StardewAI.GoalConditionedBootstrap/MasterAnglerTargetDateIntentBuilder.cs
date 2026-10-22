@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.State;
 using StardewAI.Core.Execution;
 using StardewAI.Core.Infrastructure;
 using StardewAI.Core.Training;
@@ -27,8 +28,13 @@ public static partial class MasterAnglerTargetDateIntentBuilder
                 index.Species.Length == 72 && index.UnresolvedSpeciesIds.Length == 0,
             "Master Angler Stage 1 window index is not complete.");
 
-        using var snapshot = JsonDocument.Parse(
-            CurrentTeacherFrontierSupport.ReadArtifactText(fullSnapshotPath));
+        var snapshotText = CurrentTeacherFrontierSupport.ReadArtifactText(
+            fullSnapshotPath);
+        using var snapshot = JsonDocument.Parse(snapshotText);
+        var snapshotEnvelope = JsonSerializer.Deserialize<SnapshotEnvelope>(
+            snapshotText,
+            new JsonSerializerOptions(JsonSerializerDefaults.Web))
+            ?? throw new InvalidDataException("Master Angler snapshot is null.");
         var root = snapshot.RootElement;
         var state = RequiredObject(root, "state");
         var currentTotalDay = RequiredFieldInt(state, "time", "total_days");
@@ -136,6 +142,33 @@ public static partial class MasterAnglerTargetDateIntentBuilder
                 StringComparer.OrdinalIgnoreCase);
 
         var indexHash = ContentInventoryVerifier.HashFile(fullIndexPath);
+        var weatherSupplyBuilt = MasterAnglerWindowIntentValidator
+            .TryBuildRainTotemSupplyIntent(
+                snapshotEnvelope,
+                fullIndexPath,
+                indexHash,
+                out var weatherSupplyParameters,
+                out var weatherSupplyValidation,
+                out var weatherSupplyRejectionReason);
+        var weatherSupplyCandidates = weatherSupplyBuilt
+            ? new[]
+            {
+                new MasterAnglerWeatherSupplyIntent
+                {
+                    IntentId = "master-angler-weather-supply:" +
+                        weatherSupplyValidation.TargetTotalDay.ToString(
+                            CultureInfo.InvariantCulture) + ":" +
+                        weatherSupplyValidation.AffectedLocationContextId,
+                    OptionId = "fishing.catch_fish",
+                    TargetTotalDay = weatherSupplyValidation.TargetTotalDay,
+                    TargetQualifiedItemIds =
+                        weatherSupplyValidation.TargetQualifiedItemIds,
+                    AffectedLocationContextId =
+                        weatherSupplyValidation.AffectedLocationContextId,
+                    Parameters = weatherSupplyParameters
+                }
+            }
+            : Array.Empty<MasterAnglerWeatherSupplyIntent>();
         var candidates = eligibleWindows
             .Select(candidate => BuildCandidate(
                 candidate.Species,
@@ -180,8 +213,13 @@ public static partial class MasterAnglerTargetDateIntentBuilder
             CurrentLocationId = currentLocation,
             MissingSpeciesCount = missing.Count,
             CandidateCount = candidates.Length,
+            WeatherSupplyCandidateCount = weatherSupplyCandidates.Length,
             TrainingLabelEligible = false,
             Candidates = candidates,
+            WeatherSupplyCandidates = weatherSupplyCandidates,
+            WeatherSupplyBlockingReasons = weatherSupplyBuilt
+                ? Array.Empty<string>()
+                : new[] { weatherSupplyRejectionReason },
             BlockingReasons = candidates.Length > 0
                 ? new[] { "fresh_native_target_catch_receipt_required_before_training_admission" }
                 : new[] { "no_missing_species_has_a_current_full_route_time_feasible_runtime_source" }

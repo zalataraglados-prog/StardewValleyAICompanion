@@ -291,6 +291,7 @@ namespace StardewAI.Core.Execution
                 "craft_quest_item" => "executor.craft_quest_item",
                 "craft_crab_pot" => "executor.craft_crab_pot",
                 "craft_rain_totem" => "executor.craft_rain_totem",
+                "use_rain_totem" => "executor.use_rain_totem",
                 "construct_quest_building" => "executor.construct_building",
                 "construct_building" => "executor.construct_building",
                 "change_building_skin" => "executor.change_building_skin",

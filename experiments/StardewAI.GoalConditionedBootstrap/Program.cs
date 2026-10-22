@@ -2784,7 +2784,8 @@ static void BuildMasterAnglerTargetDateIntents(Arguments options)
         options.Required("snapshot"),
         options.Required("timing-calibration"));
     Write(options.Required("output"), report);
-    if (report.CandidateCount == 0)
+    if (report.CandidateCount == 0 &&
+        report.WeatherSupplyCandidateCount == 0)
         Environment.ExitCode = 2;
 }
 

@@ -154,6 +154,8 @@ public static partial class CurrentMasterAnglerTeacherFrontierBuilder
                 "no_authoritative_static_rod_intent_available_now") ||
             intents.TrainingLabelEligible ||
             intents.CandidateCount != intents.Candidates.Length ||
+            intents.WeatherSupplyCandidateCount !=
+                intents.WeatherSupplyCandidates.Length ||
             intents.MissingSpeciesCount != progress.Count(value => !value.Value) ||
             intents.CurrentTotalDay != ReadStateInt(snapshot, "time", "total_days") ||
             intents.CurrentTime != ReadStateInt(snapshot, "time", "time") ||
@@ -285,6 +287,45 @@ public static partial class CurrentMasterAnglerTeacherFrontierBuilder
                     "Master Angler target-date intent fields drifted from shared validation.");
             }
             validated.Add(new ValidatedIntent(intent, validation));
+        }
+        var weatherSupplyIds = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var intent in intents.WeatherSupplyCandidates)
+        {
+            var weatherSupplyRejectionReason = string.Empty;
+            MasterAnglerRainTotemSupplyIntentValidation weatherSupply = new();
+            if (string.IsNullOrWhiteSpace(intent.IntentId) ||
+                !weatherSupplyIds.Add(intent.IntentId) ||
+                !string.Equals(
+                    intent.OptionId,
+                    "fishing.catch_fish",
+                    StringComparison.Ordinal) ||
+                !MasterAnglerWindowIntentValidator
+                    .TryValidateRainTotemSupplyIntent(
+                        snapshot,
+                        intent.Parameters,
+                        out weatherSupply,
+                        out weatherSupplyRejectionReason) ||
+                intent.TargetTotalDay != weatherSupply.TargetTotalDay ||
+                !intent.TargetQualifiedItemIds.SequenceEqual(
+                    weatherSupply.TargetQualifiedItemIds,
+                    StringComparer.Ordinal) ||
+                !string.Equals(
+                    intent.AffectedLocationContextId,
+                    weatherSupply.AffectedLocationContextId,
+                    StringComparison.Ordinal) ||
+                !string.Equals(
+                    weatherSupply.WindowIndexPath,
+                    windowPath,
+                    StringComparison.OrdinalIgnoreCase) ||
+                !string.Equals(
+                    weatherSupply.WindowIndexSha256,
+                    intents.WindowIndexSha256,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidDataException(
+                    "Master Angler weather-supply intent failed shared validation: " +
+                    weatherSupplyRejectionReason);
+            }
         }
         return new ValidatedIntentProvenance(
             CurrentTeacherFrontierSupport.HashFile(catalogPath),

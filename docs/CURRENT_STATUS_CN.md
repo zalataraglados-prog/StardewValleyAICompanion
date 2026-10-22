@@ -77,6 +77,8 @@ Full Shipment dependency graph 的节点早已声明 `full_recurrence_required_f
 
 2026-10-22 后续只读切片补齐 `player.rain_totem_crafting`：full profile 从实时已学配方与锁定 `Data/CraftingRecipes` 精确筛选 `(O)681`，输出原始配方、制作次数、材料槽、可制作数量、产物容量和 Workbench 来源。它与 `player.crab_pot_crafting` 共用唯一精确单产物扫描器，避免两套制作语义。依赖图新增严格只读节点并通过 schema 篡改负例，天气族状态更新为 `runtime_consumer_and_crafting_read_bound_executor_supply_scheduler_missing`。该切片仅通过 TransparentBridge 与 Bootstrap Release 编译及离线专项自测，未启动游戏，也没有原生 Rain Totem 制作回执；材料生产与明日钓鱼调度仍缺失，因此未绑定族仍为 `5`、最新审计 SHA-256 为 `09d9053c264208f11e95b1080da7b5d4db0958a790aa18d1f2640d76cd4d4748`，所有正式准入分子不变。
 
+2026-10-23 明日雨窗调度已接通且继续只暴露 `fishing.catch_fish`：权威生产器从 fresh snapshot 和哈希锁定窗口索引筛出明日仅雨、无动态条件、装备与 location-context 均满足的精确缺鱼集合；候选按“无图腾则制作 -> fresh 重算 -> 有图腾则原生使用 -> fresh 重算 -> 次日捕鱼”滚动展开。Backend 新增与默认候选相加的 `additional_candidates`，当前日与天气意图均在排名前注入。定向回归 `125/125`、防篡改审计和 Release 构建通过，未启动游戏。天气族状态为 `runtime_consumer_crafting_read_and_scheduler_bound_material_supply_and_native_crafting_receipt_missing`，审计 SHA-256 `ee97bff20a4991a8f4db70b6b7cf7e6ad9b1a3749ec89b9a048362c281eb9572`；三种材料生产和原生制作回执仍缺，正式准入分子不变。
+
 ## 2. 已完成并冻结的施工单位
 
 ### Full Shipment runtime evidence

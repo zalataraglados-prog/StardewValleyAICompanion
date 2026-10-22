@@ -30,6 +30,8 @@ Master Angler 的 Rusty Key/下水道组合也已闭合到现有上游根：`Ent
 
 透明桥已进一步补上 `player.rain_totem_crafting` 的只读生产前态：实时发布配方是否已学、精确材料可用量、可制作数量、产物容量和 Workbench 材料来源，并与 Crab Pot 共用同一精确单产物扫描器。依赖图严格锁定 `rain_totem_crafting.v1`、Foraging `9`、`709 x1 + 432 x1 + 726 x5 -> (O)681 x1` 及只读边界；篡改 schema 会使天气状态退回。它不等于 `executor.craft_rain_totem`，也不证明材料来源或跨日调度已经闭合；天气族当前为 `runtime_consumer_and_crafting_read_bound_executor_supply_scheduler_missing`，最新审计 SHA-256 `09d9053c264208f11e95b1080da7b5d4db0958a790aa18d1f2640d76cd4d4748`，剩余 `5` 个未绑定族与正式训练门均不变。
 
+明日天气支援现由权威生产器和共享候选链闭合：它只接受哈希锁定的 72 项窗口索引、精确缺鱼集合、明日仅雨静态窗口、当前装备、location-context 与最终天气投影，并把意图在排名前作为默认候选的附加项注入。唯一高层出口仍是 `fishing.catch_fish`；制作与使用均为编译器拥有的机械 primitive，每步后强制 fresh replan。当前天气族状态为 `runtime_consumer_crafting_read_and_scheduler_bound_material_supply_and_native_crafting_receipt_missing`，审计 SHA-256 `ee97bff20a4991a8f4db70b6b7cf7e6ad9b1a3749ec89b9a048362c281eb9572`。尚缺 `(O)709`、`(O)432`、`(O)726` 的 fresh-save 生产者和一条真实原生 Rain Totem 制作回执，因此训练禁令不变。
+
 Money 的第一条完整原生作物生产段 `money-crop-native-20261021-pricefix-v10` 已通过：checkpoint v12 为 `6/6 verified、0 pending`，终局含 `5` 次单件原生投箱和唯一睡眠结算，实际收入 `875g`，最终为春 20 日 06:00、`money=925`、`totalMoneyEarned=875`。源存档和隔离 Mod 哈希均未漂移。这证明 native runner、购种、场地准备、作物生命周期、留存、容量和运输箱终局可以在同一连续真实轨迹中闭合。
 
 `money_revenue_crop_native_production_segment_receipt.v1` 已完成并对 v10 深回放：Teacher 决策、commit receipt、obligation/run plan、checkpoint、terminal recurrence、最终透明快照和最终隔离存档树均从路径与哈希重新核验。回执确认 `50` 个 Teacher 候选、选中 `5` 格 `(O)474`、实际购种成本 `400g`、毛收入 `875g`、净现金收入 `475g`，并正确输出空阈值集合；它不创建 Teacher comparison、Money cell 或训练授权。
