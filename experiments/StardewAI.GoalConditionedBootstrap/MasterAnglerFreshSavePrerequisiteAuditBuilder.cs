@@ -25,6 +25,8 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
         "dependency.complete_community_center.native_completion";
     private const string SewerAccessProducerNode =
         "dependency.complete_master_angler.sewer_rusty_key_access";
+    private const string SecretWoodsAccessProducerNode =
+        "dependency.complete_master_angler.secret_woods_or_forest_farm_access";
     private const string TrapSupplyProducerNode =
         "dependency.complete_master_angler.trap_supply_acquisition";
     private const string TrapInfrastructureGateNode =
@@ -435,6 +437,11 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                 ("upstream_root_present_composed_producer_missing",
                     new[] { CommunityCenterDirection },
                     "Bind the exact bus-repair branch or equivalent Joja unlock plus bus travel; full CC completion alone is not an access proof."),
+            "secret_woods_access_or_forest_farm_layout" when
+                graph.HasBoundMasterAnglerSecretWoodsAccess() =>
+                ("implemented_and_bound",
+                    new[] { SecretWoodsAccessProducerNode },
+                    "Forest Farm is selected from the live farm type; every other layout reuses the exact Axe upgrade lifecycle, clears the vanilla 602 hollow log at Forest 1,6 and replans before the native Woods warp."),
             "secret_woods_access_or_forest_farm_layout" =>
                 ("alternative_selection_missing",
                     Array.Empty<string>(),
@@ -1632,6 +1639,84 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                        DesertBusProducerNode,
                        MasterAnglerRecurrenceNode,
                        "replans_after_native_bus_transport"));
+        }
+
+        public bool HasBoundMasterAnglerSecretWoodsAccess()
+        {
+            if (!Directions.TryGetValue(MasterAnglerDirection, out var masterAngler) ||
+                !masterAngler.Nodes.TryGetValue(
+                    SecretWoodsAccessProducerNode,
+                    out var producer) ||
+                producer.Kind != "recurrence_rule" ||
+                producer.OptionId != "fishing.catch_fish" ||
+                producer.Rule.ValueKind != JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            var requiredFields = new[]
+            {
+                "world_progress.fish_collection_progress",
+                "farm.farm_type_key",
+                "locations.secret_woods_access",
+                "locations.route_graph",
+                "locations.route_connectors",
+                "locations.collision_grid",
+                "current_location.resource_clumps",
+                "player.tool_upgrade",
+                "player.inventory",
+                "player.money",
+                "player.location_id",
+                "player.tile_x",
+                "player.tile_y",
+                "time.total_days",
+                "time.time",
+                "menus.active_menu"
+            };
+            return producer.CandidateKinds.SetEquals(new[]
+                   {
+                       "route_connector_tile",
+                       "submit_tool_upgrade",
+                       "claim_tool_upgrade",
+                       "clear_current_location_resource_clump",
+                       "secret_woods_access_wait"
+                   }) &&
+                   requiredFields.All(producer.RequiredFieldPaths.Contains) &&
+                   RuleString(producer.Rule, "reused_option_id") ==
+                       "fishing.catch_fish" &&
+                   RuleString(producer.Rule, "active_forest_farm_data_location") ==
+                       "Farm_Forest" &&
+                   RuleString(producer.Rule, "active_forest_farm_runtime_location") ==
+                       "Farm" &&
+                   RuleString(producer.Rule, "required_species_qualified_item_id") ==
+                       "(O)734" &&
+                   RuleString(producer.Rule, "connector_source_location") ==
+                       "Forest" &&
+                   RuleString(producer.Rule, "connector_target_location") ==
+                       "Woods" &&
+                   RuleInt(producer.Rule, "entry_log_parent_sheet_index") == 602 &&
+                   RuleInt(producer.Rule, "entry_log_tile_x") == 1 &&
+                   RuleInt(producer.Rule, "entry_log_tile_y") == 6 &&
+                   RuleInt(producer.Rule, "entry_log_width") == 2 &&
+                   RuleInt(producer.Rule, "entry_log_height") == 2 &&
+                   RuleInt(producer.Rule, "minimum_axe_upgrade_level") == 2 &&
+                   RuleBool(producer.Rule, "tool_upgrade_lifecycle_bound") &&
+                   RuleString(producer.Rule, "current_location_resource_clump_executor") ==
+                       "executor.break_current_location_resource_clump" &&
+                   RuleBool(producer.Rule, "fresh_snapshot_after_each_primitive") &&
+                   RuleFalse(producer.Rule, "training_label_eligible") &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       FreshSaveInventoryNode,
+                       SecretWoodsAccessProducerNode,
+                       "selects_woodskip_access_branch")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       SecretWoodsAccessProducerNode,
+                       TargetDateOpportunityNode,
+                       "supplies_woodskip_location_access")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       SecretWoodsAccessProducerNode,
+                       MasterAnglerRecurrenceNode,
+                       "replans_after_native_secret_woods_primitive"));
         }
 
         public bool HasBoundMasterAnglerSewerAccess()

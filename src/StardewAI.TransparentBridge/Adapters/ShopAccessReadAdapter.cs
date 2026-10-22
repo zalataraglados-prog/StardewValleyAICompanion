@@ -30,7 +30,8 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
                 ["route_gate_context"] = Unavailable("world_not_ready", "GameLocation LockedDoorWarp/ConditionalDoor/Warp action gates", tick, "vanilla_1_6_route"),
                 ["route_action_branch_coverage"] = Unavailable("world_not_ready", "GameLocation performAction branch coverage audit", tick, "vanilla_1_6_route"),
                 ["route_graph"] = Unavailable("world_not_ready", "Game1.locations route graph preview", tick, "vanilla_1_6_route"),
-                ["route_map_summaries"] = Unavailable("world_not_ready", "Game1.locations route map summaries", tick, "vanilla_1_6_route")
+                ["route_map_summaries"] = Unavailable("world_not_ready", "Game1.locations route map summaries", tick, "vanilla_1_6_route"),
+                ["secret_woods_access"] = Unavailable("world_not_ready", "Forest resource clump and active farm type", tick, "vanilla_1_6_15_secret_woods_access")
             };
             var unavailablePaths = new List<string>
             {
@@ -41,7 +42,8 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
                 "locations.route_gate_context",
                 "locations.route_action_branch_coverage",
                 "locations.route_graph",
-                "locations.route_map_summaries"
+                "locations.route_map_summaries",
+                "locations.secret_woods_access"
             };
             if (socialRouteEvidenceRequested)
             {
@@ -64,7 +66,8 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             ["route_gate_context"] = Field(ReadRouteGateContext(), "GameLocation LockedDoorWarp/ConditionalDoor/Warp action gates and map BuildConditions", tick, "vanilla_1_6_route"),
             ["route_action_branch_coverage"] = Field(ReadRouteActionBranchCoverage(), "GameLocation performAction branch coverage audit for current map actions", tick, "vanilla_1_6_route"),
             ["route_graph"] = Field(ReadRouteGraph(), "Game1.locations warps/doors/action-warp route graph preview", tick, "vanilla_1_6_route"),
-            ["route_map_summaries"] = Field(ReadRouteMapSummaries(), "Game1.locations map dimensions and route connector/action summaries", tick, "vanilla_1_6_route")
+            ["route_map_summaries"] = Field(ReadRouteMapSummaries(), "Game1.locations map dimensions and route connector/action summaries", tick, "vanilla_1_6_route"),
+            ["secret_woods_access"] = Field(ReadSecretWoodsAccess(), "Game1.GetFarmTypeKey; Forest constructor ResourceClump(602,2,2,(1,6)); ResourceClump.performToolAction Steel Axe gate; Forest to Woods native warps", tick, "vanilla_1_6_15_secret_woods_access")
         };
         if (socialRouteEvidenceRequested)
         {

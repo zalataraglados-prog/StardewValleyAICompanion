@@ -81,6 +81,7 @@ namespace StardewAI.Core.Training
                 {
                     "route_connector_tile", "catch_fish", "craft_rain_totem",
                     "use_rain_totem", "clear_obstacle_tile",
+                    "clear_current_location_resource_clump",
                     "collect_machine_output_tile", "load_machine_input_tile",
                     "collect_spawned_object", "craft_machine_item",
                     "place_machine_item", "construct_building",
@@ -852,6 +853,11 @@ namespace StardewAI.Core.Training
                     StringComparer.Ordinal))
             {
                 return ClearGreenRainResourceClumpSteps(candidate);
+            }
+
+            if (candidate.Kind == "clear_current_location_resource_clump")
+            {
+                return ClearCurrentLocationResourceClumpSteps(candidate);
             }
 
             if (candidate.Kind == "plant_seed_tile")

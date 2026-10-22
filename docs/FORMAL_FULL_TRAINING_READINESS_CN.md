@@ -38,6 +38,8 @@ Master Angler 的 Rusty Key/下水道组合也已闭合到现有上游根：`Ent
 
 上述审计现已重建，并补上“配方要求觅食 9 级”这一旧版未枚举前置。Master Angler 天气续程在配方未学会时复用已有 `foraging.chop_wild_tree` 原生动作，只接受完整正向 XP 投影并在每棵树后 fresh 重算；依赖图分别校验该 progression、Hardwood/工具升级 reserve、三材料原子 reservation/settlement 与 EVD-340 制作回执，防止用单一布尔值冒充闭环。天气族因此可记为 `implemented_and_bound`，但整个目标仍有 `4` 个未绑定族：姜岛、Mutant Bug Lair、秘密森林或森林农场、女巫沼泽；Year 3 全局截止组合和 seed-robust 随机重试也仍未完成。正式产品训练继续禁止。
 
+秘密森林/森林农场替代分支随后通过严格依赖节点关闭：实时农场类型决定 `Farm_Forest -> Farm` 替代是否成立；非森林农场必须依次满足透明 Secret Woods 门、共享 Axe 升级生命周期、Forest `(1,6)` 的精确 vanilla 602 hollow log 清除和原生 Woods connector。该实现没有新增模型动作或平行执行器，且任何钢斧等级、原木身份、共享执行器或 recurrence 边漂移都会失败关闭。当前只有源码锁定、编译、定向执行链测试和图篡改负例，尚无 602 原木真实运行回执，故该用途仍为 calibration-only，不进入正式训练。最新审计剩余 `3` 个未绑定族：姜岛、Mutant Bug Lair、女巫沼泽；完成它们后仍须组合 Year 3 截止与 seed-robust 随机重试证明。`formal_product_training_authorized=false` 不变。
+
 Money 的第一条完整原生作物生产段 `money-crop-native-20261021-pricefix-v10` 已通过：checkpoint v12 为 `6/6 verified、0 pending`，终局含 `5` 次单件原生投箱和唯一睡眠结算，实际收入 `875g`，最终为春 20 日 06:00、`money=925`、`totalMoneyEarned=875`。源存档和隔离 Mod 哈希均未漂移。这证明 native runner、购种、场地准备、作物生命周期、留存、容量和运输箱终局可以在同一连续真实轨迹中闭合。
 
 `money_revenue_crop_native_production_segment_receipt.v1` 已完成并对 v10 深回放：Teacher 决策、commit receipt、obligation/run plan、checkpoint、terminal recurrence、最终透明快照和最终隔离存档树均从路径与哈希重新核验。回执确认 `50` 个 Teacher 候选、选中 `5` 格 `(O)474`、实际购种成本 `400g`、毛收入 `875g`、净现金收入 `475g`，并正确输出空阈值集合；它不创建 Teacher comparison、Money cell 或训练授权。

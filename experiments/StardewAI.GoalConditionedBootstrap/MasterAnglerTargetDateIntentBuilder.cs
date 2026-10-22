@@ -42,6 +42,7 @@ public static partial class MasterAnglerTargetDateIntentBuilder
         var currentLocation = RequiredFieldString(state, "player", "location_id");
         var currentTileX = RequiredFieldInt(state, "player", "tile_x");
         var currentTileY = RequiredFieldInt(state, "player", "tile_y");
+        var farmTypeKey = RequiredFieldString(state, "farm", "farm_type_key");
         var sourceStateHash = RequiredString(root, "state_hash");
         var gameVersion = RequiredString(root, "game_version");
         Require(currentTotalDay >= 0 && currentTotalDay < index.DeadlineTotalDayExclusive,
@@ -101,6 +102,9 @@ public static partial class MasterAnglerTargetDateIntentBuilder
                 readyCrabPotOutputs.Contains(candidate.Species.QualifiedItemId))
             .Where(candidate => candidate.Window.SourceKind == "crab_pot" ||
                 !string.IsNullOrWhiteSpace(candidate.Window.LocationId))
+            .Where(candidate => WindowMatchesActiveFarm(
+                candidate.Window.LocationId,
+                farmTypeKey))
             .ToArray();
         var targetLocations = eligibleWindows
             .Select(candidate => string.Equals(
@@ -108,7 +112,9 @@ public static partial class MasterAnglerTargetDateIntentBuilder
                     "crab_pot",
                     StringComparison.Ordinal)
                 ? currentLocation
-                : candidate.Window.LocationId)
+                : RuntimeTargetLocation(
+                    candidate.Window.LocationId,
+                    farmTypeKey))
             .Where(location => !string.IsNullOrWhiteSpace(location))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(location => location, StringComparer.OrdinalIgnoreCase)
@@ -215,6 +221,7 @@ public static partial class MasterAnglerTargetDateIntentBuilder
                 currentTotalDay,
                 currentTime,
                 currentLocation,
+                farmTypeKey,
                 routeByLocation,
                 fullTimingPath,
                 timingHash))
@@ -278,6 +285,7 @@ public static partial class MasterAnglerTargetDateIntentBuilder
         int currentTotalDay,
         int currentTime,
         string currentLocation,
+        string farmTypeKey,
         IReadOnlyDictionary<string, FutureLocationRouteDateEvidenceProduction>
             routeByLocation,
         string timingCalibrationPath,
@@ -298,7 +306,9 @@ public static partial class MasterAnglerTargetDateIntentBuilder
             return null;
 
         var isCrabPot = string.Equals(window.SourceKind, "crab_pot", StringComparison.Ordinal);
-        var targetLocation = isCrabPot ? currentLocation : window.LocationId;
+        var targetLocation = isCrabPot
+            ? currentLocation
+            : RuntimeTargetLocation(window.LocationId, farmTypeKey);
         if (!routeByLocation.TryGetValue(
                 targetLocation,
                 out var route) ||
@@ -370,5 +380,22 @@ public static partial class MasterAnglerTargetDateIntentBuilder
             Parameters = parameters
         };
     }
+
+    private static bool WindowMatchesActiveFarm(
+        string locationId,
+        string farmTypeKey) =>
+        !locationId.StartsWith("Farm_", StringComparison.Ordinal) ||
+        string.Equals(
+            locationId,
+            "Farm_" + farmTypeKey,
+            StringComparison.Ordinal);
+
+    private static string RuntimeTargetLocation(
+        string locationId,
+        string farmTypeKey) =>
+        WindowMatchesActiveFarm(locationId, farmTypeKey) &&
+        locationId.StartsWith("Farm_", StringComparison.Ordinal)
+            ? "Farm"
+            : locationId;
 
 }

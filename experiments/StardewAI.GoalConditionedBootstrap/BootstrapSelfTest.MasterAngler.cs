@@ -91,6 +91,13 @@ internal static partial class BootstrapSelfTest
                 StringComparer.Ordinal) &&
             report.PrerequisiteFamilies.Single(value =>
                     value.FamilyId ==
+                        "secret_woods_access_or_forest_farm_layout")
+                .ProducerStatus == "implemented_and_bound" &&
+            !report.MissingOrUnboundProducerFamilies.Contains(
+                "secret_woods_access_or_forest_farm_layout",
+                StringComparer.Ordinal) &&
+            report.PrerequisiteFamilies.Single(value =>
+                    value.FamilyId ==
                         "crab_pot_recipe_material_and_bait_supply")
                 .ProducerStatus == "implemented_and_bound" &&
             !report.MissingOrUnboundProducerFamilies.Contains(
@@ -124,6 +131,10 @@ internal static partial class BootstrapSelfTest
             windowIndexPath,
             dependencyExpansionPath);
         VerifyMasterAnglerSewerAccessBindingFailsClosed(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath);
+        VerifyMasterAnglerSecretWoodsAccessBindingFailsClosed(
             catalogPath,
             windowIndexPath,
             dependencyExpansionPath);
@@ -167,6 +178,51 @@ internal static partial class BootstrapSelfTest
             catalogPath,
             windowIndexPath,
             dependencyExpansionPath);
+    }
+
+    private static void VerifyMasterAnglerSecretWoodsAccessBindingFailsClosed(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath)
+    {
+        var root = JsonNode.Parse(File.ReadAllText(dependencyExpansionPath))?.AsObject() ??
+                   throw new InvalidDataException("Master Angler dependency fixture is null.");
+        var direction = root["directions"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["direction_id"]!.GetValue<string>() ==
+                             "complete_master_angler");
+        var producer = direction["nodes"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["id"]!.GetValue<string>() ==
+                             "dependency.complete_master_angler.secret_woods_or_forest_farm_access");
+        producer["rule"]!["minimum_axe_upgrade_level"] = 1;
+
+        var tamperedPath = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-master-angler-secret-woods-binding-" +
+            Guid.NewGuid().ToString("N") + ".json");
+        try
+        {
+            File.WriteAllText(tamperedPath, root.ToJsonString(JsonDefaults.Options));
+            var tampered = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(
+                catalogPath,
+                windowIndexPath,
+                tamperedPath);
+            Require(
+                tampered.PrerequisiteFamilies.Single(value =>
+                        value.FamilyId ==
+                            "secret_woods_access_or_forest_farm_layout")
+                    .ProducerStatus == "alternative_selection_missing" &&
+                tampered.MissingOrUnboundProducerFamilies.Contains(
+                    "secret_woods_access_or_forest_farm_layout",
+                    StringComparer.Ordinal),
+                "Master Angler Secret Woods producer accepted a drifted Axe gate.");
+        }
+        finally
+        {
+            if (File.Exists(tamperedPath))
+                File.Delete(tamperedPath);
+        }
     }
 
     private static void VerifyMasterAnglerRainTotemForagingSkillProgressionFailsClosed(
@@ -947,6 +1003,10 @@ internal static partial class BootstrapSelfTest
             state_hash = "master-angler-full-route-self-test",
             state = new
             {
+                farm = new
+                {
+                    farm_type_key = Field("Standard")
+                },
                 time = new
                 {
                     total_days = Field(5),

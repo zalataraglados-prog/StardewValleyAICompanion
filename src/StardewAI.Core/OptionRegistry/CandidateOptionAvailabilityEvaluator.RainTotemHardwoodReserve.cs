@@ -73,12 +73,25 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
 
     private EventCandidate[] RouteToHardwoodToolUpgradeCandidates(
         SnapshotEnvelope snapshot,
-        MasterAnglerRainTotemReserveIntentValidation intent)
+        MasterAnglerRainTotemReserveIntentValidation intent) =>
+        RouteToAxeToolUpgradeCandidates(
+            snapshot,
+            intent.ReserveStage,
+            "rain-totem-hardwood-tool-route",
+            "master_angler_hardwood_tool_upgrade_route",
+            "tool_upgrade_continuation=" + intent.ReserveStage);
+
+    private EventCandidate[] RouteToAxeToolUpgradeCandidates(
+        SnapshotEnvelope snapshot,
+        string lifecycleStage,
+        string candidateIdPrefix,
+        string availabilityClass,
+        string continuationEffect)
     {
         var projection = ReadStateFieldValue(snapshot, "player", "tool_upgrade");
         if (!projection.HasValue || projection.Value.ValueKind != JsonValueKind.Object ||
             ReadString(projection.Value, "projection_status") != "complete_live_native_contract" ||
-            ReadString(projection.Value, "lifecycle_stage") != intent.ReserveStage)
+            ReadString(projection.Value, "lifecycle_stage") != lifecycleStage)
         {
             return Array.Empty<EventCandidate>();
         }
@@ -98,24 +111,37 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             [
                 CloneCandidate(
                     route,
-                    candidateId: "rain-totem-hardwood-tool-route:" +
-                        intent.ReserveStage + ":" + currentLocation,
+                    candidateId: candidateIdPrefix + ":" +
+                        lifecycleStage + ":" + currentLocation,
                     expectedEffect: route.ExpectedEffect +
-                        ";tool_upgrade_continuation=" + intent.ReserveStage +
+                        ";" + continuationEffect +
                         ";fresh_snapshot_replan_required=true",
-                    availabilityClass: "master_angler_hardwood_tool_upgrade_route")
+                    availabilityClass: availabilityClass)
             ];
     }
 
     private EventCandidate[] HardwoodToolUpgradeActionCandidates(
         SnapshotEnvelope snapshot,
         MasterAnglerRainTotemReserveIntentValidation intent,
+        bool claim) =>
+        AxeToolUpgradeActionCandidates(
+            snapshot,
+            intent.ReserveStage,
+            "rain-totem-hardwood",
+            "transparent_native_blacksmith_tool_upgrade",
+            claim);
+
+    private EventCandidate[] AxeToolUpgradeActionCandidates(
+        SnapshotEnvelope snapshot,
+        string lifecycleStage,
+        string candidateIdPrefix,
+        string availabilityClass,
         bool claim)
     {
         var projection = ReadStateFieldValue(snapshot, "player", "tool_upgrade");
         if (!projection.HasValue || projection.Value.ValueKind != JsonValueKind.Object ||
             ReadString(projection.Value, "projection_status") != "complete_live_native_contract" ||
-            ReadString(projection.Value, "lifecycle_stage") != intent.ReserveStage ||
+            ReadString(projection.Value, "lifecycle_stage") != lifecycleStage ||
             ReadString(projection.Value, "service_status") != "ready" ||
             !TryResolveHardwoodToolUpgradeTarget(snapshot, projection.Value, out var target))
         {
@@ -137,7 +163,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         var parameters = new System.Collections.Generic.List<SmallModelActionParameter>
         {
             Parameter("tool_upgrade_projection_fingerprint", ReadString(projection.Value, "projection_fingerprint")),
-            Parameter("tool_upgrade_lifecycle_stage", intent.ReserveStage),
+            Parameter("tool_upgrade_lifecycle_stage", lifecycleStage),
             Parameter("target_location", ReadString(projection.Value, "location_id")),
             Parameter("target_tile_x", target.TargetX.ToString(CultureInfo.InvariantCulture)),
             Parameter("target_tile_y", target.TargetY.ToString(CultureInfo.InvariantCulture)),
@@ -184,7 +210,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         [
             new EventCandidate
             {
-                CandidateId = "rain-totem-hardwood-" +
+                CandidateId = candidateIdPrefix + "-" +
                     (claim ? "claim-tool:" : "submit-tool:") + qualifiedItemId,
                 Kind = claim ? "claim_tool_upgrade" : "submit_tool_upgrade",
                 Available = true,
@@ -198,7 +224,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 Quantity = 1,
                 EstimatedTicks = claim ? 180 : 300,
                 EnergyCost = 0,
-                AvailabilityClass = "transparent_native_blacksmith_tool_upgrade",
+                AvailabilityClass = availabilityClass,
                 ExpectedEffect = claim
                     ? "completed_axe_upgrade_claimed_through_native_blacksmith_counter"
                     : "source_axe_money_and_bars_consumed_by_native_ClintUpgrade_purchase",

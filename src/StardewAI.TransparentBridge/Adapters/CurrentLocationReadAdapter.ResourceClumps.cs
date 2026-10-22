@@ -21,6 +21,10 @@ public sealed partial class CurrentLocationReadAdapter
     {
         var isExactVanilla = clump.GetType() == typeof(ResourceClump);
         var isGreenRainBush = clump.parentSheetIndex.Value is ResourceClump.greenRainBush1Index or ResourceClump.greenRainBush2Index;
+        var isHollowLog = isExactVanilla &&
+            clump.parentSheetIndex.Value == 602 &&
+            clump.width.Value == 2 &&
+            clump.height.Value == 2;
         var isGiantCrop = clump is GiantCrop;
         var giantCropOutputs = clump is GiantCrop giantCrop
             ? FarmReadAdapter.ReadGuaranteedGiantCropOutputs(giantCrop)
@@ -45,21 +49,53 @@ public sealed partial class CurrentLocationReadAdapter
         var expectedHits = damagePerHit.HasValue
             ? Math.Max(1, (int)Math.Ceiling(Math.Max(0f, clump.health.Value) / damagePerHit.Value))
             : (int?)null;
-        var outputs = isGreenRainBush ? ProjectGreenRainBushCoreOutputs(clump) : Array.Empty<ClearanceOutputItemProjection>();
+        var outputs = isGreenRainBush
+            ? ProjectGreenRainBushCoreOutputs(clump)
+            : isHollowLog
+                ? ProjectHollowLogCoreOutputs(player)
+                : Array.Empty<ClearanceOutputItemProjection>();
         var outputTagSets = outputs
             .Select(output => ReadResourceClumpOutputTags(output.QualifiedItemId))
             .Where(output => output is not null)
             .ToArray();
-        var secretNote = isGreenRainBush ? ProjectGreenRainBushSecretNote(location, player) : GreenRainSecretNoteProjection.NotApplicable();
-        var status = !isGreenRainBush
-            ? "not_green_rain_bush"
+        var secretNote = isGreenRainBush || isHollowLog
+            ? ProjectGreenRainBushSecretNote(location, player)
+            : GreenRainSecretNoteProjection.NotApplicable();
+        var status = !isGreenRainBush && !isHollowLog
+            ? "not_supported_current_location_resource_clump"
             : !isExactVanilla
                 ? "blocked_custom_resource_clump_runtime_type"
                 : clump.width.Value != 2 || clump.height.Value != 2
-                    ? "blocked_non_vanilla_green_rain_bush_shape"
+                    ? "blocked_non_vanilla_resource_clump_shape"
                     : axe is null
                         ? "blocked_required_axe_missing"
-                        : "ready";
+                        : isHollowLog && effectiveUpgradeLevel < 2
+                            ? "blocked_required_axe_upgrade_missing"
+                            : "ready";
+        var harvestExperienceSkillId = isGreenRainBush || isHollowLog
+            ? "foraging"
+            : giantCropExperience.SkillId;
+        var harvestExperienceSkillIndex = isGreenRainBush || isHollowLog
+            ? 2
+            : giantCropExperience.SkillIndex;
+        var harvestExperienceMinimum = isHollowLog
+            ? 25
+            : isGreenRainBush
+                ? 15
+                : giantCropExperience.Minimum;
+        var harvestExperienceMaximum = isHollowLog
+            ? 25
+            : isGreenRainBush
+                ? 15
+                : giantCropExperience.Maximum;
+        var harvestExperienceCondition = isHollowLog
+            ? "native_axe_destroys_exact_hollow_log"
+            : isGreenRainBush
+                ? "native_axe_destroys_exact_green_rain_resource_clump"
+                : giantCropExperience.Condition;
+        var harvestExperienceStatus = isGreenRainBush || isHollowLog
+            ? "exact"
+            : giantCropExperience.Status;
 
         return new
         {
@@ -82,25 +118,41 @@ public sealed partial class CurrentLocationReadAdapter
                 : "not_applicable",
             required_tool = isGiantCrop ? "axe" : string.Empty,
             executor_status = isGiantCrop ? "runtime_verified" : string.Empty,
-            harvest_experience_skill_id = giantCropExperience.SkillId,
-            harvest_experience_skill_index = giantCropExperience.SkillIndex,
-            harvest_experience_on_success_min = giantCropExperience.Minimum,
-            harvest_experience_on_success_max = giantCropExperience.Maximum,
-            harvest_experience_condition = giantCropExperience.Condition,
-            harvest_experience_projection_status = giantCropExperience.Status,
-            clear_kind = isGreenRainBush ? "green_rain_bush" : string.Empty,
+            harvest_experience_skill_id = harvestExperienceSkillId,
+            harvest_experience_skill_index = harvestExperienceSkillIndex,
+            harvest_experience_on_success_min = harvestExperienceMinimum,
+            harvest_experience_on_success_max = harvestExperienceMaximum,
+            harvest_experience_condition = harvestExperienceCondition,
+            harvest_experience_projection_status = harvestExperienceStatus,
+            clear_kind = isGreenRainBush
+                ? "green_rain_bush"
+                : isHollowLog
+                    ? "hollow_log"
+                    : string.Empty,
             clear_obstacle_executor_status = status,
-            required_tool_kind = isGreenRainBush ? "axe" : string.Empty,
-            minimum_tool_upgrade_level = isGreenRainBush ? 0 : (int?)null,
+            required_tool_kind = isGreenRainBush || isHollowLog ? "axe" : string.Empty,
+            minimum_tool_upgrade_level = isHollowLog
+                ? 2
+                : isGreenRainBush
+                    ? 0
+                    : (int?)null,
             tool_slot_index = axe?.SlotIndex,
             tool_upgrade_level = axe?.Tool?.UpgradeLevel,
             tool_additional_power = additionalPower,
             tool_effective_upgrade_level = effectiveUpgradeLevel,
             damage_per_hit = damagePerHit,
             expected_tool_hits_to_clear = expectedHits,
-            expected_foraging_experience_delta = isGreenRainBush ? 15 : (int?)null,
-            foraging_experience_projection_status = isGreenRainBush ? "exact_from_resource_clump_destroy" : "not_applicable",
-            core_output_projection_status = isGreenRainBush ? "exact_from_day_save_coordinate_rng" : "not_applicable",
+            expected_foraging_experience_delta = isHollowLog
+                ? 25
+                : isGreenRainBush
+                    ? 15
+                    : (int?)null,
+            foraging_experience_projection_status = isGreenRainBush || isHollowLog ? "exact_from_resource_clump_destroy" : "not_applicable",
+            core_output_projection_status = isHollowLog
+                ? "exact_vanilla_hollow_log_output"
+                : isGreenRainBush
+                    ? "exact_from_day_save_coordinate_rng"
+                    : "not_applicable",
             expected_core_output_items = outputs,
             expected_core_output_items_json = JsonSerializer.Serialize(outputs),
             expected_core_output_context_tag_sets = outputTagSets,
@@ -114,14 +166,23 @@ public sealed partial class CurrentLocationReadAdapter
             secret_note_projection_status = secretNote.Status,
             output_distribution_status = secretNote.CombinedProbability > 0
                 ? "exact_seeded_core_plus_bounded_secret_note_probability"
-                : isGreenRainBush
+                : isGreenRainBush || isHollowLog
                     ? "exact_seeded_core_no_secret_note_possible"
                     : "not_applicable",
-            native_contract = isGreenRainBush
+            native_contract = isGreenRainBush || isHollowLog
                 ? "axe_DoFunction_to_GameLocation.performToolAction_then_ResourceClump.destroy"
                 : string.Empty
         };
     }
+
+    private static ClearanceOutputItemProjection[] ProjectHollowLogCoreOutputs(
+        Farmer player) =>
+    new[]
+    {
+        ClearanceOutputItemProjection.FromStandard(
+            "(O)709",
+            player.professions.Contains(12) ? 10 : 8)
+    };
 
     private static ClearanceOutputItemProjection[] ProjectGreenRainBushCoreOutputs(ResourceClump clump)
     {

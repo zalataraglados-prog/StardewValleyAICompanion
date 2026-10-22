@@ -1371,12 +1371,12 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "BFS reaches one exact perimeter stand tile", "native multi-frame axe lifecycle removes the exact resource clump", "natural drops remain game debris" },
                 new[] { "block_unknown_clump", "block_missing_required_axe_upgrade", "block_unverified_perimeter", "block_menu_unsafe_tool_use", "block_direct_resource_clump_mutation" }));
 
-            Register(Option("executor.break_current_location_resource_clump", "foraging", "Remove one verified loaded Green Rain ResourceClump",
+            Register(Option("executor.break_current_location_resource_clump", "foraging", "Remove one verified supported loaded ResourceClump",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,
                 TrainingRoles.ExecutorCalibration,
                 new[] { "current_location.resource_clumps", "current_location.debris", "player.location_id", "player.tile_x", "player.tile_y", "player.energy", "player.inventory", "locations.collision_grid", "menus.active_menu" },
-                new[] { "BFS reaches one exact perimeter stand tile", "native multi-frame axe lifecycle removes the exact clump", "seeded core debris and Foraging XP are verified while optional secret-note output is recorded" },
+                new[] { "BFS reaches one exact perimeter stand tile", "native multi-frame axe lifecycle removes the exact clump", "purpose-specific vanilla identity, output and Foraging XP are verified while optional secret-note output is recorded" },
                 new[] { "block_target_identity_drift", "block_missing_axe", "block_unreachable_perimeter", "block_output_projection_drift", "block_menu_unsafe_tool_use" }));
 
             Register(Option("executor.plant_seed", "farm", "Plant one verified seed on one verified tile",

@@ -131,10 +131,10 @@ namespace StardewAI.Core.Execution
                 Array.Empty<string>(),
                 new[] { "GameLocation.carpenters", "HouseRenovation.GetAvailableRenovations", "HouseRenovation.EnsureNoObstructions", "RenovateMenu.CompleteRenovation", "Data/HomeRenovations" }),
             Assumption(
-                "green_rain_resource_clump",
+                "current_location_resource_clump",
                 new[] { "foraging.clear_green_rain_bushes", "executor.break_current_location_resource_clump" },
-                new[] { "exact_vanilla_resource_clump_44_or_46", "axe_available", "perimeter_stand_tile", "menu_clear" },
-                new[] { "route_length", "native_axe_animation_ticks", "bounded_secret_note_global_rng" },
+                new[] { "exact_supported_vanilla_resource_clump_identity", "axe_available_at_required_upgrade", "perimeter_stand_tile", "menu_clear" },
+                new[] { "route_length", "native_axe_animation_ticks", "purpose_specific_output", "bounded_secret_note_global_rng" },
                 Array.Empty<string>(),
                 new[] { "Axe.DoFunction", "GameLocation.performToolAction", "ResourceClump.performToolAction", "ResourceClump.destroy", "Farmer.gainExperience" }),
             Assumption(

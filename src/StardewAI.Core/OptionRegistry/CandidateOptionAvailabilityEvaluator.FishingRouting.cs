@@ -102,6 +102,15 @@ namespace StardewAI.Core.OptionRegistry
             var continuation = MasterAnglerContinuationParameters(
                 "fishing.catch_fish",
                 intentParameters);
+            if (TryBuildSecretWoodsPrerequisiteCandidates(
+                    snapshot,
+                    intent,
+                    intentParameters,
+                    continuation,
+                    out var secretWoodsPrerequisites))
+            {
+                return secretWoodsPrerequisites;
+            }
             if (!string.Equals(
                     currentLocation,
                     intent.TargetLocation,

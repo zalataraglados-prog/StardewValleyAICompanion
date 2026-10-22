@@ -1022,6 +1022,7 @@ namespace StardewAI.Contracts.Capabilities
                 SupportedCandidate("clear_farm_resource_clump"),
                 SupportedCandidate("till_soil_tile"),
                 SupportedCandidate("clear_green_rain_resource_clump"),
+                SupportedCandidate("clear_current_location_resource_clump"),
                 SupportedCandidate("clear_obstacle_tile"), SupportedCandidate("collect_animal_product"),
                 SupportedCandidate("animal_purchase_select_service"),
                 SupportedCandidate("animal_purchase_navigate_location_page"),
@@ -1128,6 +1129,7 @@ namespace StardewAI.Contracts.Capabilities
                 BlockedCandidate("purchase_stage_blocked", "purchase_stage_not_compilable"),
                 BlockedCandidate("rain_totem_truffle_oil_reserve_wait", "rain_totem_truffle_oil_reserve_waits_for_fresh_native_state"),
                 BlockedCandidate("rain_totem_hardwood_reserve_wait", "rain_totem_hardwood_reserve_waits_for_fresh_native_state_or_tool_upgrade"),
+                BlockedCandidate("secret_woods_access_wait", "secret_woods_access_waits_for_fresh_native_state_or_tool_upgrade"),
                 BlockedCandidate("quest_candidate", "quest_objective_binding_not_executable"),
                 BlockedCandidate("special_order_candidate", "special_order_objective_binding_not_executable")
             });
