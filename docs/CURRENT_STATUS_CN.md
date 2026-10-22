@@ -87,6 +87,8 @@ Full Shipment dependency graph 的节点早已声明 `full_recurrence_required_f
 
 2026-10-23 Pig/Truffle Oil reserve 已完成代码级闭环，但未被夸大为整个天气族完成。未来雨窗投影从精确建筑、升级进度、动物购买目录、Pig 年龄、动物门、Farm 地面 Truffle、Oil Maker 和库存状态选择唯一当前阶段；Barn -> Big Barn -> Deluxe Barn、Pig 购买、10 日成熟、非冬季产出机会及 Oil Maker 工期进入同一 lead-time。执行继续复用通用建筑、购畜、机器和采集链；唯一新增原生 primitive 是透明绑定的 Barn 动物门右键，使用 `Building.doAction` 并验证 `animalDoorOpen false -> true`，不直接改状态。已有按期 Truffle Oil 产出会抑制重复 reserve，库存已有 Truffle 时不会重复建设 Pig 产能，远程 Farm Truffle 会先形成去 Farm 的采集连接，冬季无产出机会会跳到更晚的合法雨窗。定向 `ActionQueueCompilerTests` 为 `159/159`，四个 Release 工程与 Master Angler 防篡改自测通过，未启动游戏。依赖图 SHA-256 为 `2178040959b142f04b3d5be0795945d0286a05ccfad405fe6c84ba63c54a5fd3`，天气状态为 `runtime_consumer_crafting_read_scheduler_immediate_supply_pine_tar_and_pig_truffle_capacity_bound_hardwood_reservation_and_native_crafting_receipt_missing`；未绑定族仍为 `5`，`long_horizon_reserve_bound=false`、训练准入分子与正式训练禁令均不变。下一步只做 Hardwood reserve。
 
+2026-10-23 Hardwood reserve 已完成“现有精确来源”切片，但工具升级生命周期仍未完成。未来雨窗在 Pine Tar 与 Truffle Oil 已满足后继续投影 `(O)709 x1`，按 fresh 状态依次选择当前 Farm 的原版树桩/倒木、当前地图保证掉落 Hardwood 的成熟野树、或先路由到 Farm；来源身份锁定地点、格点、ResourceClump parent index 和保守最低产量，参数漂移会失败关闭。即时材料链也会复用同一 `executor.break_farm_resource_clump`，没有第二套清障执行器。原版树桩 `600 -> Hardwood x2`、倒木 `602 -> x8` 已绑定；斧头等级不足时只产生 `blocked_required_axe_upgrade_missing`，不会伪装成可执行。因此依赖图精确记录 `ready_hardwood_source_reserve_bound=true`、`hardwood_tool_upgrade_lifecycle_bound=false`、`hardwood_reserve_bound=false`，SHA-256 为 `87f9dacd6ed7f85bd8088514da0d4e21308df9d25f4579490740302b866b0802`。Rain Totem 专项回归 `22/22`、Hardwood 专项 `7/7`、依赖图联合回归 `24/24`，均未启动游戏；未绑定族、正式准入分子与训练禁令不变。下一固定切片是原生工具升级 lifecycle，随后才是材料消费 reservation 和 Rain Totem 原生制作回执。
+
 ## 2. 已完成并冻结的施工单位
 
 ### Full Shipment runtime evidence

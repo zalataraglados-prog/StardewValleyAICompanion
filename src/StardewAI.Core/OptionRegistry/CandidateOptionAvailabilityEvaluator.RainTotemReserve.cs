@@ -43,6 +43,16 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 commitmentLedger,
                 intent);
         }
+        if (string.Equals(
+                intent.ReserveKind,
+                "hardwood_reserve",
+                StringComparison.Ordinal))
+        {
+            return RainTotemHardwoodReserveCandidates(
+                snapshot,
+                boundParameters,
+                intent);
+        }
 
         var request = new AcquisitionMachineCapacityRequest(
             "goal.fishing.complete_master_angler",

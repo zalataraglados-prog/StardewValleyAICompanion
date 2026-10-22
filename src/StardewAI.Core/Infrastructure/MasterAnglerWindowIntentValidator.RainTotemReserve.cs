@@ -38,6 +38,15 @@ public sealed class MasterAnglerRainTotemReserveIntentValidation
     public int TargetBuildingTileY { get; init; } = -1;
     public int RequiredLeadDays { get; init; }
     public int EligibleTruffleOpportunityDays { get; init; }
+    public int InventoryHardwoodQuantity { get; init; }
+    public string HardwoodSourceKind { get; init; } = string.Empty;
+    public string HardwoodSourceLocationId { get; init; } = string.Empty;
+    public int HardwoodSourceTileX { get; init; } = -1;
+    public int HardwoodSourceTileY { get; init; } = -1;
+    public int HardwoodSourceGuaranteedQuantity { get; init; }
+    public int HardwoodRequiredAxeUpgradeLevel { get; init; }
+    public int HardwoodSourceParentSheetIndex { get; init; } = -1;
+    public string HardwoodSourceStatus { get; init; } = string.Empty;
 }
 
 public static partial class MasterAnglerWindowIntentValidator
@@ -110,6 +119,17 @@ public static partial class MasterAnglerWindowIntentValidator
             string.Equals(reserveStatus, TruffleOilReserveValidationStatus, StringComparison.Ordinal))
         {
             return TryValidateRainTotemTruffleOilReserveIntent(
+                snapshot,
+                values,
+                out validation,
+                out rejectionReason);
+        }
+        if (string.Equals(
+                reserveStatus,
+                HardwoodReserveValidationStatus,
+                StringComparison.Ordinal))
+        {
+            return TryValidateRainTotemHardwoodReserveIntent(
                 snapshot,
                 values,
                 out validation,

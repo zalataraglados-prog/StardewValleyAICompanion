@@ -956,6 +956,43 @@
           }
         },
         {
+          "id": "dependency.complete_master_angler.rain_totem_hardwood_reserve",
+          "kind": "recurrence_rule",
+          "option_id": "fishing.catch_fish",
+          "candidate_kinds": ["clear_farm_resource_clump", "clear_obstacle_tile", "route_connector_tile", "rain_totem_hardwood_reserve_wait"],
+          "required_field_paths": [
+            "world_progress.fish_collection_progress",
+            "world_progress.game_state_query_calendar_state",
+            "player.inventory",
+            "player.location_id",
+            "farm.resource_clumps",
+            "current_location.terrain_features",
+            "locations.collision_grid",
+            "locations.route_connectors",
+            "locations.route_graph",
+            "time.total_days",
+            "time.time"
+          ],
+          "rule": {
+            "execution_owner": "deterministic_teacher_reserve_compiler_not_policy_label",
+            "intent_builder": "MasterAnglerWindowIntentValidator.TryBuildRainTotemReserveIntent",
+            "material_qualified_item_id": "(O)709",
+            "required_material_quantity": 1,
+            "farm_resource_clump_minimums": { "600": 2, "602": 8 },
+            "reserve_stages": ["clear_loaded_farm_resource_clump", "chop_loaded_wild_tree", "route_to_farm_resource_clump", "blocked_required_axe_upgrade_missing", "blocked_no_exact_hardwood_source"],
+            "source_identity_authority": "fresh exact location tile source kind parent index and conservative guaranteed quantity",
+            "native_execution_reuse": ["executor.break_farm_resource_clump", "executor.clear_obstacle", "executor.move_to_tile"],
+            "fresh_snapshot_after_each_primitive": true,
+            "immediate_material_supply_farm_resource_clump_bound": true,
+            "ready_hardwood_source_reserve_bound": true,
+            "hardwood_tool_upgrade_lifecycle_bound": false,
+            "hardwood_reserve_bound": false,
+            "material_consumption_reservation_bound": false,
+            "native_rain_totem_crafting_receipt_present": false,
+            "long_horizon_reserve_bound": false
+          }
+        },
+        {
           "id": "dependency.complete_master_angler.consume_owned_rain_totem",
           "kind": "deterministic_transition",
           "option_id": "executor.use_rain_totem",
@@ -1044,6 +1081,9 @@
         { "from": "dependency.complete_master_angler.rain_totem_crafting_read_authority", "to": "dependency.complete_master_angler.rain_totem_truffle_oil_capacity_reserve", "kind": "supplies_exact_truffle_oil_requirement" },
         { "from": "dependency.complete_master_angler.weather_supply_scheduler", "to": "dependency.complete_master_angler.rain_totem_truffle_oil_capacity_reserve", "kind": "expands_future_rain_window_reserve" },
         { "from": "dependency.complete_master_angler.rain_totem_truffle_oil_capacity_reserve", "to": "dependency.complete_master_angler.weather_supply_scheduler", "kind": "replans_after_exact_pig_truffle_oil_stage" },
+        { "from": "dependency.complete_master_angler.rain_totem_crafting_read_authority", "to": "dependency.complete_master_angler.rain_totem_hardwood_reserve", "kind": "supplies_exact_hardwood_requirement" },
+        { "from": "dependency.complete_master_angler.weather_supply_scheduler", "to": "dependency.complete_master_angler.rain_totem_hardwood_reserve", "kind": "expands_future_rain_window_reserve" },
+        { "from": "dependency.complete_master_angler.rain_totem_hardwood_reserve", "to": "dependency.complete_master_angler.weather_supply_scheduler", "kind": "replans_after_exact_hardwood_source_step" },
         { "from": "dependency.complete_master_angler.weather_supply_scheduler", "to": "dependency.complete_master_angler.consume_owned_rain_totem", "kind": "schedules_owned_or_freshly_crafted_use" },
         { "from": "dependency.complete_master_angler.fresh_save_prerequisite_inventory", "to": "dependency.complete_master_angler.consume_owned_rain_totem", "kind": "selects_owned_weather_control" },
         { "from": "dependency.complete_master_angler.consume_owned_rain_totem", "to": "dependency.complete_master_angler.target_date_opportunity_producer", "kind": "creates_next_day_weather_precondition" },

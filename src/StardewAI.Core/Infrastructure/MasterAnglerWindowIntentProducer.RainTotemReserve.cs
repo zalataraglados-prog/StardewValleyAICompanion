@@ -43,7 +43,24 @@ public static partial class MasterAnglerWindowIntentValidator
             {
                 return false;
             }
-            return TryBuildRainTotemTruffleOilReserveIntent(
+            if (TryBuildRainTotemTruffleOilReserveIntent(
+                snapshot,
+                artifact,
+                Path.GetFullPath(windowIndexPath),
+                windowIndexSha256,
+                out parameters,
+                out validation,
+                out rejectionReason))
+            {
+                return true;
+            }
+            if (rejectionReason is not (
+                    "master_angler_truffle_oil_inventory_already_sufficient" or
+                    "master_angler_truffle_oil_existing_machine_output_sufficient"))
+            {
+                return false;
+            }
+            return TryBuildRainTotemHardwoodReserveIntent(
                 snapshot,
                 artifact,
                 Path.GetFullPath(windowIndexPath),

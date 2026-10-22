@@ -1122,6 +1122,7 @@ namespace StardewAI.Contracts.Capabilities
                 BlockedCandidate("purchase_service_gate", "purchase_service_gate_excluded_upstream"),
                 BlockedCandidate("purchase_stage_blocked", "purchase_stage_not_compilable"),
                 BlockedCandidate("rain_totem_truffle_oil_reserve_wait", "rain_totem_truffle_oil_reserve_waits_for_fresh_native_state"),
+                BlockedCandidate("rain_totem_hardwood_reserve_wait", "rain_totem_hardwood_reserve_waits_for_fresh_native_state_or_tool_upgrade"),
                 BlockedCandidate("quest_candidate", "quest_objective_binding_not_executable"),
                 BlockedCandidate("special_order_candidate", "special_order_objective_binding_not_executable")
             });

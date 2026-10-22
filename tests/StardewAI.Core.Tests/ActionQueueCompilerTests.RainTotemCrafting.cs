@@ -134,6 +134,32 @@ public sealed partial class ActionQueueCompilerTests
     }
 
     [Fact]
+    public void MissingHardwoodUsesExactFarmResourceClumpProducer()
+    {
+        using var fixture = RainTotemCraftingFixture.Create(
+            pineTarAvailable: 5,
+            hardwoodAvailable: 0,
+            readyHardwoodClump: true);
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(
+            fixture.Snapshot,
+            [new OptionAvailabilityCandidate
+            {
+                OptionId = "fishing.catch_fish",
+                Parameters = fixture.SupplyParameters
+            }]);
+
+        var candidate = Assert.Single(Assert.Single(availability.Options).EventCandidates);
+        Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
+        Assert.Equal("clear_farm_resource_clump", candidate.Kind);
+        Assert.Contains(candidate.Parameters, row =>
+            row.Name == "rain_totem_material_target_qualified_item_id" &&
+            row.Value == "(O)709");
+        Assert.Contains(candidate.Parameters, row =>
+            row.Name == "rain_totem_material_producer_stage" &&
+            row.Value == "clear_exact_farm_resource_clump_for_hardwood");
+    }
+
+    [Fact]
     public void NonExactRainTotemIngredientRowsCannotProduceMaterialCandidates()
     {
         using var fixture = RainTotemCraftingFixture.Create(
@@ -352,7 +378,9 @@ public sealed partial class ActionQueueCompilerTests
             bool ownsRainTotem = false,
             int? pineTarAvailable = null,
             bool readyPineTarMachine = false,
-            int pineTarRequired = 5)
+            int pineTarRequired = 5,
+            int hardwoodAvailable = 1,
+            bool readyHardwoodClump = false)
         {
             var items = Enumerable.Range(0, 72)
                 .Select(index => new
@@ -419,7 +447,9 @@ public sealed partial class ActionQueueCompilerTests
             var rainTotemRowsJson = ownsRainTotem
                 ? "[{\"inventory_slot_index\":2,\"item_id\":\"681\",\"qualified_item_id\":\"(O)681\",\"inventory_runtime_type\":\"StardewValley.Object\",\"stack_before\":2,\"stack_after\":1,\"temporarily_invisible\":false}]"
                 : "[]";
-            var playerLocation = readyPineTarMachine ? "Farm" : "FarmHouse";
+            var playerLocation = readyPineTarMachine || readyHardwoodClump
+                ? "Farm"
+                : "FarmHouse";
             var ingredientRowsJson = pineTarAvailable.HasValue
                 ? JsonSerializer.Serialize(new[]
                 {
@@ -427,8 +457,8 @@ public sealed partial class ActionQueueCompilerTests
                     {
                         requirement_id_or_category = "709",
                         required_count = 1,
-                        available_count_before_this_ingredient = 1,
-                        satisfied = true
+                        available_count_before_this_ingredient = hardwoodAvailable,
+                        satisfied = hardwoodAvailable >= 1
                     },
                     new
                     {
@@ -448,11 +478,15 @@ public sealed partial class ActionQueueCompilerTests
                 })
                 : "[]";
             var craftCandidateStatus = pineTarAvailable.HasValue &&
-                pineTarAvailable.Value < pineTarRequired
+                (pineTarAvailable.Value < pineTarRequired ||
+                    hardwoodAvailable < 1)
                     ? "blocked_insufficient_player_inventory_materials"
                     : "ready_for_native_personal_crafting_menu";
             var machinesJson = readyPineTarMachine
                 ? "[{\"location_id\":\"Farm\",\"location_kind\":\"farm_outdoor\",\"tile_x\":5,\"tile_y\":4,\"qualified_item_id\":\"(BC)105\",\"display_name\":\"Tapper\",\"ready_for_harvest\":true,\"minutes_until_ready\":0,\"harvest_experience_raw\":\"\",\"harvest_experience_entries\":[],\"harvest_experience_deltas\":[],\"harvest_experience_deltas_json\":\"[]\",\"harvest_mastery_experience_delta\":0,\"harvest_experience_projection_status\":\"exact_no_configured_experience\",\"output_authoritative_route_sources\":[\"native_wild_tree_tapper_output\"],\"held_item\":{\"item_id\":\"726\",\"qualified_item_id\":\"(O)726\",\"stack\":1,\"quality\":0,\"sale_price\":300,\"maximum_stack_size\":999}}]"
+                : "[]";
+            var resourceClumpsJson = readyHardwoodClump
+                ? "[{\"tile_x\":7,\"tile_y\":5,\"width\":2,\"height\":2,\"parent_sheet_index\":600,\"clear_kind\":\"resource_stump\",\"minimum_tool_upgrade_level\":1,\"clear_obstacle_executor_status\":\"ready\",\"expected_tool_hits_to_clear\":5,\"tool_slot_index\":1,\"clear_expected_output_items_json\":\"[{\\\"runtimeType\\\":\\\"StardewValley.Object\\\",\\\"qualifiedItemId\\\":\\\"(O)709\\\",\\\"quality\\\":0,\\\"unitStateSha256\\\":\\\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\\\",\\\"quantity\\\":2}]\",\"clear_output_projection_status\":\"exact_vanilla_conservative_minimum\",\"clear_output_native_contract\":\"native_resource_clump_destroy_contract\",\"harvest_experience_projection_status\":\"exact\",\"harvest_experience_skill_id\":\"foraging\",\"harvest_experience_on_success_min\":25,\"harvest_experience_on_success_max\":25,\"harvest_experience_condition\":\"native_player_axe_destroys_resource_stump_or_hollow_log\"}]"
                 : "[]";
             var snapshot = ActionQueueCompilerTests.Snapshot($$"""
         {
@@ -493,7 +527,8 @@ public sealed partial class ActionQueueCompilerTests
             },"status":"available"}
           },
           "farm": {
-            "machines": {"value":{{machinesJson}},"status":"available"}
+            "machines": {"value":{{machinesJson}},"status":"available"},
+            "resource_clumps": {"value":{{resourceClumpsJson}},"status":"available"}
           },
           "world_progress": {
             "fish_collection_progress": {"value":{

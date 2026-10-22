@@ -158,16 +158,140 @@ public sealed partial class ActionQueueCompilerTests
     }
 
     [Fact]
-    public void PendingNativeTruffleOilOutputSuppressesDuplicateReserve()
+    public void PendingNativeTruffleOilOutputAdvancesToHardwoodReserve()
     {
         using var fixture = TruffleReserveFixture.Create(
             "adult_pig_open",
             includePendingTruffleOil: true);
 
-        Assert.False(fixture.TryBuild(out _, out _, out var reason));
+        Assert.True(fixture.TryBuild(out _, out var validation, out var reason), reason);
+        Assert.Equal("hardwood_reserve", validation.ReserveKind);
+        Assert.Equal("blocked_no_exact_hardwood_source", validation.ReserveStage);
+    }
+
+    [Fact]
+    public void HardwoodReserveBindsExactFarmClumpThroughExistingExecutor()
+    {
+        using var fixture = TruffleReserveFixture.Create(
+            "adult_pig_open",
+            includePendingTruffleOil: true,
+            farmResourceClumpStatus: "ready");
+
+        Assert.True(fixture.TryBuild(out var parameters, out var validation, out var reason), reason);
+        Assert.Equal("hardwood_reserve", validation.ReserveKind);
+        Assert.Equal("clear_loaded_farm_resource_clump", validation.ReserveStage);
+        Assert.Equal(2, validation.HardwoodSourceGuaranteedQuantity);
+
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(
+            fixture.Snapshot,
+            [new OptionAvailabilityCandidate
+            {
+                OptionId = "fishing.catch_fish",
+                Parameters = parameters
+            }],
+            includeExecutorCalibrationOptions: true);
+        var candidate = Assert.Single(Assert.Single(availability.Options).EventCandidates);
+        Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
+        Assert.Equal("clear_farm_resource_clump", candidate.Kind);
+        Assert.Contains(candidate.Parameters, row =>
+            row.Name == MasterAnglerWindowIntentValidator.HardwoodReserveStageParameter &&
+            row.Value == "clear_loaded_farm_resource_clump");
+
+        Assert.Contains(candidate.Parameters, row =>
+            row.Name == "expected_output_items_json" &&
+            row.Value.Contains("\"quantity\":2", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void HardwoodReserveMissingAxeUpgradeFailsClosedWithPreciseStage()
+    {
+        using var fixture = TruffleReserveFixture.Create(
+            "adult_pig_open",
+            includePendingTruffleOil: true,
+            farmResourceClumpStatus: "blocked_required_axe_upgrade_missing");
+
+        Assert.True(fixture.TryBuild(out var parameters, out var validation, out var reason), reason);
+        Assert.Equal("blocked_required_axe_upgrade_missing", validation.ReserveStage);
+        Assert.Equal(1, validation.HardwoodRequiredAxeUpgradeLevel);
+
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(
+            fixture.Snapshot,
+            [new OptionAvailabilityCandidate
+            {
+                OptionId = "fishing.catch_fish",
+                Parameters = parameters
+            }],
+            includeExecutorCalibrationOptions: true);
+        var candidate = Assert.Single(Assert.Single(availability.Options).EventCandidates);
+        Assert.False(candidate.Available);
+        Assert.Contains(
+            "master_angler_hardwood_reserve_blocked_required_axe_upgrade_missing",
+            candidate.BlockReasons);
+    }
+
+    [Fact]
+    public void HardwoodReserveSourceTamperFailsFreshValidation()
+    {
+        using var fixture = TruffleReserveFixture.Create(
+            "adult_pig_open",
+            includePendingTruffleOil: true,
+            farmResourceClumpStatus: "ready");
+        Assert.True(fixture.TryBuild(out var parameters, out _, out var reason), reason);
+        var tampered = parameters.Select(row =>
+            row.Name == MasterAnglerWindowIntentValidator.HardwoodReserveSourceQuantityParameter
+                ? RainReserveParameter(row.Name, "8")
+                : row).ToArray();
+
+        Assert.False(MasterAnglerWindowIntentValidator.TryValidateRainTotemReserveIntent(
+            fixture.Snapshot,
+            tampered,
+            out _,
+            out var rejectionReason));
         Assert.Equal(
-            "master_angler_truffle_oil_existing_machine_output_sufficient",
-            reason);
+            "master_angler_hardwood_reserve_projection_drifted",
+            rejectionReason);
+    }
+
+    [Fact]
+    public void ExistingHardwoodSuppressesDuplicateReserveAfterOtherMaterialsSatisfied()
+    {
+        using var fixture = TruffleReserveFixture.Create(
+            "adult_pig_open",
+            includePendingTruffleOil: true,
+            hardwoodInventory: 1,
+            farmResourceClumpStatus: "ready");
+
+        Assert.False(fixture.TryBuild(out _, out _, out var reason));
+        Assert.Equal("master_angler_hardwood_inventory_already_sufficient", reason);
+    }
+
+    [Fact]
+    public void RemoteFarmHardwoodSourceRoutesBeforeFreshReplan()
+    {
+        using var fixture = TruffleReserveFixture.Create(
+            "adult_pig_open",
+            includePendingTruffleOil: true,
+            currentLocation: "Town",
+            farmResourceClumpStatus: "ready");
+
+        Assert.True(fixture.TryBuild(out var parameters, out var validation, out var reason), reason);
+        Assert.Equal("route_to_farm_resource_clump", validation.ReserveStage);
+
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(
+            fixture.Snapshot,
+            [new OptionAvailabilityCandidate
+            {
+                OptionId = "fishing.catch_fish",
+                Parameters = parameters
+            }],
+            includeExecutorCalibrationOptions: true);
+        var candidate = Assert.Single(Assert.Single(availability.Options).EventCandidates);
+        Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
+        Assert.Equal("route_connector_tile", candidate.Kind);
+        Assert.Contains(
+            "fresh_snapshot_replan_required=true",
+            candidate.ExpectedEffect,
+            StringComparison.Ordinal);
     }
 
     [Fact]
@@ -247,7 +371,9 @@ public sealed partial class ActionQueueCompilerTests
             int[]? rainyTargetDays = null,
             int truffleInventory = 0,
             bool farmTruffle = false,
-            string currentLocation = "Farm")
+            string currentLocation = "Farm",
+            int hardwoodInventory = 0,
+            string? farmResourceClumpStatus = null)
         {
             rainyTargetDays ??= [139];
             var windowPath = WriteWindowIndex(rainyTargetDays);
@@ -339,6 +465,83 @@ public sealed partial class ActionQueueCompilerTests
                     stack = truffleInventory
                 });
             }
+            if (hardwoodInventory > 0)
+            {
+                inventory.Add(new
+                {
+                    slot_index = 2,
+                    item_id = "709",
+                    qualified_item_id = "(O)709",
+                    stack = hardwoodInventory
+                });
+            }
+            var resourceClumps = farmResourceClumpStatus is null
+                ? Array.Empty<object>()
+                : new object[]
+                {
+                    new
+                    {
+                        tile_x = 7,
+                        tile_y = 5,
+                        width = 2,
+                        height = 2,
+                        parent_sheet_index = 600,
+                        clear_kind = "resource_stump",
+                        minimum_tool_upgrade_level = 1,
+                        tool_slot_index = farmResourceClumpStatus == "ready" ? 1 : -1,
+                        expected_tool_hits_to_clear = 5,
+                        clear_obstacle_executor_status = farmResourceClumpStatus,
+                        clear_expected_output_items_json =
+                            "[{\"runtimeType\":\"StardewValley.Object\",\"qualifiedItemId\":\"(O)709\",\"quality\":0,\"unitStateSha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"quantity\":2}]",
+                        clear_output_projection_status =
+                            "exact_vanilla_conservative_minimum",
+                        clear_output_native_contract =
+                            "native_resource_clump_destroy_contract",
+                        harvest_experience_projection_status = "exact",
+                        harvest_experience_skill_id = "foraging",
+                        harvest_experience_on_success_min = 25,
+                        harvest_experience_on_success_max = 25,
+                        harvest_experience_condition =
+                            "native_player_axe_destroys_resource_stump_or_hollow_log"
+                    }
+                };
+            var routeConnectors = string.Equals(
+                    currentLocation,
+                    "Farm",
+                    StringComparison.OrdinalIgnoreCase)
+                ? Array.Empty<object>()
+                : new object[]
+                {
+                    new
+                    {
+                        kind = "warp",
+                        tile_x = 10,
+                        tile_y = 13,
+                        target_location = "Farm",
+                        target_x = 9,
+                        target_y = 13,
+                        resolved = true
+                    }
+                };
+            var routeEdges = string.Equals(
+                    currentLocation,
+                    "Farm",
+                    StringComparison.OrdinalIgnoreCase)
+                ? Array.Empty<object>()
+                : new object[]
+                {
+                    new
+                    {
+                        kind = "warp",
+                        from_location = currentLocation,
+                        from_x = 10,
+                        from_y = 13,
+                        target_location = "Farm",
+                        target_x = 9,
+                        target_y = 13,
+                        resolved = true
+                    }
+                };
             var state = new
             {
                 time = new
@@ -395,6 +598,7 @@ public sealed partial class ActionQueueCompilerTests
                         }
                         : Array.Empty<object>()),
                     machines = Field(machines),
+                    resource_clumps = Field(resourceClumps),
                     animal_purchase_catalog = Field(AnimalPurchaseCatalog())
                 },
                 fishing = new
@@ -427,10 +631,30 @@ public sealed partial class ActionQueueCompilerTests
                 {
                     collision_grid = Field(new
                     {
-                        location_id = "Farm",
+                        location_id = currentLocation,
                         width = 40,
                         height = 40,
                         notable_tiles = Array.Empty<object>()
+                    }),
+                    route_connectors = Field(new
+                    {
+                        location_id = currentLocation,
+                        connectors = routeConnectors
+                    }),
+                    route_graph = Field(new
+                    {
+                        status = "complete",
+                        edges = routeEdges
+                    }),
+                    route_gate_context = Field(new
+                    {
+                        location_id = currentLocation,
+                        action_gates = Array.Empty<object>()
+                    }),
+                    route_action_branch_coverage = Field(new
+                    {
+                        location_id = currentLocation,
+                        rows = Array.Empty<object>()
                     }),
                     social_route_date_evidence = Field(new
                     {
@@ -443,7 +667,7 @@ public sealed partial class ActionQueueCompilerTests
                 },
                 current_location = new
                 {
-                    map = Field(new { location_id = "Farm", width = 40, height = 40 }),
+                    map = Field(new { location_id = currentLocation, width = 40, height = 40 }),
                     objects = Field(Array.Empty<object>())
                 },
                 menus = new

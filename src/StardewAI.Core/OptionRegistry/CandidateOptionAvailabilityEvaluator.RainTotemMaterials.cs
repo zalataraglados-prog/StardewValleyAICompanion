@@ -54,6 +54,9 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         var wildTrees = WildTreeChopAcquisitionCandidates(snapshot)
             .Where(candidate => candidate.Available)
             .ToArray();
+        var farmResourceClumps = ClearFarmResourceClumpCandidates(snapshot)
+            .Where(candidate => candidate.Available)
+            .ToArray();
 
         var candidates = new List<EventCandidate>();
         foreach (var deficit in deficits)
@@ -83,6 +86,15 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                         deficit,
                         intent,
                         "chop_exact_guaranteed_hardwood_tree")));
+                candidates.AddRange(farmResourceClumps
+                    .Where(candidate => CandidateGuaranteesItem(
+                        candidate,
+                        deficit.QualifiedItemId))
+                    .Select(candidate => BindRainTotemMaterialSupplyCandidate(
+                        candidate,
+                        deficit,
+                        intent,
+                        "clear_exact_farm_resource_clump_for_hardwood")));
             }
 
             if (string.Equals(
@@ -263,30 +275,47 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
 
     private static bool CandidateGuaranteesItem(
         EventCandidate candidate,
+        string qualifiedItemId) =>
+        CandidateGuaranteedItemQuantity(candidate, qualifiedItemId) > 0;
+
+    private static int CandidateGuaranteedItemQuantity(
+        EventCandidate candidate,
         string qualifiedItemId)
     {
         var json = ReadParameter(
             candidate.Parameters,
             "tree_chop_guaranteed_minimum_outputs_json");
         if (string.IsNullOrWhiteSpace(json))
-            return false;
+        {
+            json = ReadParameter(
+                candidate.Parameters,
+                "expected_output_items_json");
+        }
+        if (string.IsNullOrWhiteSpace(json))
+            return 0;
         try
         {
             using var document = JsonDocument.Parse(json);
-            return document.RootElement.ValueKind == JsonValueKind.Array &&
-                document.RootElement.EnumerateArray().Any(row =>
+            return document.RootElement.ValueKind == JsonValueKind.Array
+                ? document.RootElement.EnumerateArray()
+                    .Where(row =>
                     string.Equals(
                         ReadStringEither(
                             row,
                             "qualified_item_id",
                             "qualifiedItemId"),
                         qualifiedItemId,
-                        StringComparison.Ordinal) &&
-                    ReadIntEither(row, "quantity_min", "quantityMin") > 0);
+                        StringComparison.Ordinal))
+                    .Sum(row => Math.Max(
+                        0,
+                        ReadIntEither(row, "quantity_min", "quantityMin") is > 0
+                            ? ReadIntEither(row, "quantity_min", "quantityMin")
+                            : ReadIntEither(row, "quantity", "Quantity")))
+                : 0;
         }
         catch (JsonException)
         {
-            return false;
+            return 0;
         }
     }
 
