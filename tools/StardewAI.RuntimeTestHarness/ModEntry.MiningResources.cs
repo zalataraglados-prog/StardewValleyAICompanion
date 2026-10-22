@@ -662,7 +662,29 @@ public sealed partial class ModEntry : Mod
         var outputCountsBefore = Array.Empty<int>();
         var possibleSecretNoteQualifiedItemId = string.Empty;
         var secretNoteCountBefore = 0;
-        if (currentLocationRequest)
+        if (farmRequest &&
+            !string.IsNullOrWhiteSpace(request.ExpectedOutputItemsJson))
+        {
+            if (!TryParseClearanceOutputItems(
+                    request.ExpectedOutputItemsJson,
+                    out expectedOutputs) ||
+                !FarmResourceClumpMinimumProjectionMatches(
+                    clump,
+                    expectedOutputs))
+            {
+                pending.Completion.SetResult(BlockedWithPrimitive(
+                    request,
+                    "break_resource_clump",
+                    requested,
+                    ResourceClumpObservedEffect(location, anchor),
+                    "farm_resource_clump_output_projection_drifted"));
+                return;
+            }
+            outputCountsBefore = expectedOutputs
+                .Select(output => CountResourceClumpOutput(location, output))
+                .ToArray();
+        }
+        else if (currentLocationRequest)
         {
             if (request.ExpectedForagingExperienceDelta != 15 ||
                 !TryParseClearanceOutputItems(request.ExpectedOutputItemsJson, out expectedOutputs) ||
@@ -1399,6 +1421,29 @@ public sealed partial class ModEntry : Mod
             }
         }
         return true;
+    }
+
+    private static bool FarmResourceClumpMinimumProjectionMatches(
+        ResourceClump clump,
+        IReadOnlyList<ClearanceOutputItemExpectation> expected)
+    {
+        var minimum = clump.parentSheetIndex.Value switch
+        {
+            ResourceClump.stumpIndex => 2,
+            ResourceClump.hollowLogIndex => 8,
+            _ => 0
+        };
+        if (minimum == 0 || expected.Count != 1)
+        {
+            return false;
+        }
+
+        var hardwood = expected[0];
+        var hardwoodKey = ResourceClumpOutputKey(
+            ItemRegistry.Create("(O)709"));
+        return hardwood.Key == hardwoodKey &&
+            hardwood.Quality == 0 &&
+            hardwood.Quantity == minimum;
     }
 
     private static bool MiningResourceClumpCoreProjectionMatches(

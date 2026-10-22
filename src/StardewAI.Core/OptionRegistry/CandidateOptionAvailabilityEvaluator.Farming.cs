@@ -847,6 +847,9 @@ namespace StardewAI.Core.OptionRegistry
                     var skillMaximum = NullableReadInt(clump, "harvest_experience_on_success_max");
                     var skillCondition = ReadString(clump, "harvest_experience_condition");
                     var skillStatus = ReadString(clump, "harvest_experience_projection_status");
+                    var expectedOutputs = ReadString(clump, "clear_expected_output_items_json");
+                    var outputStatus = ReadString(clump, "clear_output_projection_status");
+                    var outputNativeContract = ReadString(clump, "clear_output_native_contract");
                     var executionParameters = new[]
                     {
                         Parameter("target_location", "Farm"),
@@ -862,7 +865,10 @@ namespace StardewAI.Core.OptionRegistry
                         Parameter("resource_clump_parent_sheet_index", ReadInt(clump, "parent_sheet_index").ToString()),
                         Parameter("tool_slot_index", ReadInt(clump, "tool_slot_index").ToString()),
                         Parameter("required_tool_kind", "axe"),
-                        Parameter("max_tool_swings", hits.ToString())
+                        Parameter("max_tool_swings", hits.ToString()),
+                        Parameter("expected_output_items_json", expectedOutputs),
+                        Parameter("clear_output_projection_status", outputStatus),
+                        Parameter("clear_output_native_contract", outputNativeContract)
                     };
                     var blockReasons = CompilerProbeBlockingReasons(snapshot, new OptionAvailabilityCandidate
                     {
@@ -876,6 +882,15 @@ namespace StardewAI.Core.OptionRegistry
                     if (standTile is null)
                     {
                         blockReasons.Add("resource_clump_no_adjacent_route_stand_tile");
+                    }
+                    if (!string.Equals(
+                            outputStatus,
+                            "exact_vanilla_conservative_minimum",
+                            StringComparison.Ordinal) ||
+                        string.IsNullOrWhiteSpace(expectedOutputs) ||
+                        string.IsNullOrWhiteSpace(outputNativeContract))
+                    {
+                        blockReasons.Add("resource_clump_clear_output_projection_unavailable");
                     }
 
                     var distance = standTile is null
@@ -893,6 +908,9 @@ namespace StardewAI.Core.OptionRegistry
                         ";max_movement_tiles=512" +
                         ";tool_slot_index=" + ReadInt(clump, "tool_slot_index") +
                         ";required_tool_kind=axe" +
+                        ";expected_output_items_json=" + expectedOutputs +
+                        ";clear_output_projection_status=" + outputStatus +
+                        ";clear_output_native_contract=" + outputNativeContract +
                         SkillExperienceEffect(clump);
                     return new EventCandidate
                     {

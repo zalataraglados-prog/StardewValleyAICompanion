@@ -183,6 +183,7 @@ namespace StardewAI.Core.Execution
             new Dictionary<string, ActionParameterCompiler>(StringComparer.Ordinal)
             {
                 ["executor.move_to_tile"] = BuildMoveToTileParameters,
+                ["executor.break_farm_resource_clump"] = BuildFarmResourceClumpParameters,
                 ["exploration.visit_location"] = BuildRoutePreviewParameters,
                 ["executor.traverse_connector"] = BuildTraverseConnectorParameters,
                 ["executor.select_safe_item_slot"] = BuildSelectSafeItemSlotParameters,

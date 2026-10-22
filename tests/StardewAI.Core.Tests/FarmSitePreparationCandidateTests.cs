@@ -1,6 +1,9 @@
 using System.Text.Json;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Training;
+using StardewAI.Core.Execution;
 using StardewAI.Core.OptionRegistry;
+using StardewAI.Core.Training;
 
 namespace StardewAI.Core.Tests;
 
@@ -127,6 +130,9 @@ public sealed class FarmSitePreparationCandidateTests
                 "tile_x":7,"tile_y":5,"width":2,"height":2,
                 "parent_sheet_index":600,"clear_kind":"resource_stump",
                 "clear_obstacle_executor_status":"ready","expected_tool_hits_to_clear":5,
+                "clear_expected_output_items_json":"[{\"runtimeType\":\"StardewValley.Object\",\"qualifiedItemId\":\"(O)709\",\"quality\":0,\"unitStateSha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"quantity\":2}]",
+                "clear_output_projection_status":"exact_vanilla_conservative_minimum",
+                "clear_output_native_contract":"native_resource_clump_destroy_contract",
                 "tool_slot_index":1,"harvest_experience_projection_status":"exact",
                 "harvest_experience_skill_id":"foraging","harvest_experience_on_success_min":25,
                 "harvest_experience_on_success_max":25,
@@ -144,12 +150,12 @@ public sealed class FarmSitePreparationCandidateTests
             }
             """);
 
-        var option = Assert.Single(new CandidateOptionAvailabilityEvaluator()
+        var availability = new CandidateOptionAvailabilityEvaluator()
             .Evaluate(
                 snapshot,
                 new[] { "executor.break_farm_resource_clump" },
-                includeExecutorCalibrationOptions: true)
-            .Options);
+                includeExecutorCalibrationOptions: true);
+        var option = Assert.Single(availability.Options);
         var candidate = Assert.Single(option.EventCandidates);
 
         Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
@@ -161,6 +167,34 @@ public sealed class FarmSitePreparationCandidateTests
             value.Name == "tool_slot_index" && value.Value == "1");
         Assert.Contains(candidate.Parameters, value =>
             value.Name == "max_tool_swings" && value.Value == "5");
+        Assert.Contains(candidate.Parameters, value =>
+            value.Name == "expected_output_items_json" &&
+            value.Value.Contains("(O)709", StringComparison.Ordinal));
+
+        var plan = new DailyPlanCompiler().Compile(
+            new EventCandidateRanker().Rank(
+                new BaselineTrainingReport(),
+                availability),
+            snapshot.StateHash);
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+        var queueItem = Assert.Single(queue.Items);
+        Assert.Equal("pending", queueItem.Status);
+        Assert.Contains(queueItem.NormalizedCommand.Parameters, value =>
+            value.Name == "expected_output_items_json" &&
+            value.Value.Contains("\"quantity\":2", StringComparison.Ordinal));
+
+        var outputParameter = Assert.Single(
+            plan.Steps[0].Parameters,
+            value => value.Name == "expected_output_items_json");
+        outputParameter.Value = outputParameter.Value.Replace(
+            "\"quantity\":2",
+            "\"quantity\":8",
+            StringComparison.Ordinal);
+        var tamperedQueue = new ActionQueueCompiler().Compile(plan, snapshot);
+        Assert.Equal("blocked", tamperedQueue.Status);
+        Assert.Contains(
+            "farm_resource_clump_output_projection_drifted",
+            Assert.Single(tamperedQueue.Items).BlockingReasons);
     }
 
     [Fact]
@@ -182,6 +216,9 @@ public sealed class FarmSitePreparationCandidateTests
                 "tile_x":8,"tile_y":5,"width":2,"height":2,
                 "parent_sheet_index":600,"clear_kind":"resource_stump",
                 "clear_obstacle_executor_status":"ready","expected_tool_hits_to_clear":5,
+                "clear_expected_output_items_json":"[{\"runtimeType\":\"StardewValley.Object\",\"qualifiedItemId\":\"(O)709\",\"quality\":0,\"unitStateSha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"quantity\":2}]",
+                "clear_output_projection_status":"exact_vanilla_conservative_minimum",
+                "clear_output_native_contract":"native_resource_clump_destroy_contract",
                 "tool_slot_index":1,"harvest_experience_projection_status":"exact",
                 "harvest_experience_skill_id":"foraging","harvest_experience_on_success_min":25,
                 "harvest_experience_on_success_max":25,

@@ -332,7 +332,8 @@ namespace StardewAI.Contracts.Capabilities
             "mining.acquire_golden_scythe", "mining.obtain_skull_key",
             "volcano.reach_caldera", "recovery.stabilize_day", "recovery.escape_object_trap", "rewards.claim_pot_of_gold", "mining.choose_dwarf_statue_power", "rewards.claim_statue_blessing", "fishing.manage_fish_pond", "housing.renovate", "executor.renovate_home", "executor.buy_shop_item",
             "social.talk_npc", "social.gift_npc", "social.advance_partnership",
-            "inventory.transfer_item", "executor.transfer_material");
+            "inventory.transfer_item", "executor.transfer_material",
+            "executor.break_farm_resource_clump");
 
         private static readonly HashSet<string> HarnessDispatchIds = Set(
             "executor.play_calico_jack", "executor.play_slots", "executor.play_crane_game", "executor.play_darts", "executor.play_prairie_king",
@@ -618,7 +619,7 @@ namespace StardewAI.Contracts.Capabilities
                         "vanilla_current_location_one_exact_candidate_per_fresh_snapshot_native_terrain_HoeDirt_water_plant_fertilize_grab_or_scythe_harvest_IndoorPot_fertilize_and_giant_crop_axe_lifecycle",
                         "EVD-226"),
                     ["executor.break_farm_resource_clump"] = VerifiedEvidence(
-                        "vanilla_exact_base_farm_stump_and_hollow_log_transparent_identity_geometry_tool_power_hit_budget_native_cross_frame_axe_lifecycle_natural_removal_and_foraging_xp_receipt",
+                        "vanilla_exact_base_farm_stump_and_hollow_log_transparent_identity_geometry_tool_power_hit_budget_conservative_hardwood_minimum_parameter_rebinding_native_cross_frame_axe_lifecycle_natural_removal_output_and_foraging_xp_receipt",
                         "EVD-112"),
                     ["exploration.visit_location"] = BoundedEvidence(
                         "vanilla_current_location_one_exact_resolved_cross_location_connector_or_one_exact_clearable_route_obstacle_then_fresh_snapshot",

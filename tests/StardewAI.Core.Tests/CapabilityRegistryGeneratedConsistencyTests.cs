@@ -800,6 +800,11 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             Assert.Equal(new[] { pair.Value }, declaration.CompilerEvidenceIds);
             Assert.Equal(new[] { pair.Value }, declaration.RuntimeEvidenceIds);
             Assert.Equal(new[] { pair.Value }, declaration.OutputEvidenceIds);
+            Assert.Equal(
+                pair.Key == "executor.break_farm_resource_clump"
+                    ? CapabilityCompilerStatus.StepAndParameterCompilerDeclared
+                    : CapabilityCompilerStatus.StepCompilerDeclared,
+                declaration.CompilerStatus);
             Assert.Contains(
                 TrainingAdmissionExclusionReason.NotPolicyTrainingOption,
                 declaration.TrainingExclusionReasons);

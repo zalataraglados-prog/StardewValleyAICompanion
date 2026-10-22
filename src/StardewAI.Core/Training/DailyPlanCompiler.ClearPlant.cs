@@ -201,7 +201,10 @@ namespace StardewAI.Core.Training
                 Parameter("tool_slot_index", ParseValue(candidate.ExpectedEffect, "tool_slot_index=")),
                 Parameter("required_tool_kind", ParseValue(candidate.ExpectedEffect, "required_tool_kind=")),
                 Parameter("max_tool_swings", ParseValue(candidate.ExpectedEffect, "max_tool_swings=")),
-                Parameter("max_movement_tiles", ParseValue(candidate.ExpectedEffect, "max_movement_tiles="))
+                Parameter("max_movement_tiles", ParseValue(candidate.ExpectedEffect, "max_movement_tiles=")),
+                Parameter("expected_output_items_json", ParseValue(candidate.ExpectedEffect, "expected_output_items_json=")),
+                Parameter("clear_output_projection_status", ParseValue(candidate.ExpectedEffect, "clear_output_projection_status=")),
+                Parameter("clear_output_native_contract", ParseValue(candidate.ExpectedEffect, "clear_output_native_contract="))
             };
             AddSkillExperienceParameters(parameters, candidate.ExpectedEffect);
             return new[]

@@ -384,8 +384,70 @@ namespace StardewAI.Core.Execution
             {
                 reasons.Add("farm_resource_clump_tool_slot_drifted");
             }
+            var expectedOutputs = ReadString(
+                clump,
+                "clear_expected_output_items_json");
+            if (!string.Equals(
+                    ReadString(clump, "clear_output_projection_status"),
+                    "exact_vanilla_conservative_minimum",
+                    StringComparison.Ordinal) ||
+                string.IsNullOrWhiteSpace(expectedOutputs) ||
+                string.IsNullOrWhiteSpace(
+                    ReadString(clump, "clear_output_native_contract")) ||
+                !FruitTreeJsonEquivalent(
+                    ReadParameter(action, "expected_output_items_json") ??
+                        string.Empty,
+                    expectedOutputs) ||
+                !string.Equals(
+                    ReadParameter(action, "clear_output_projection_status"),
+                    ReadString(clump, "clear_output_projection_status"),
+                    StringComparison.Ordinal) ||
+                !string.Equals(
+                    ReadParameter(action, "clear_output_native_contract"),
+                    ReadString(clump, "clear_output_native_contract"),
+                    StringComparison.Ordinal))
+            {
+                reasons.Add("farm_resource_clump_output_projection_drifted");
+            }
 
             return reasons.Distinct(StringComparer.Ordinal).ToArray();
+        }
+
+        private static SmallModelActionParameter[] BuildFarmResourceClumpParameters(
+            SmallModelAction action,
+            SnapshotEnvelope snapshot)
+        {
+            var boundNames = new HashSet<string>(StringComparer.Ordinal)
+            {
+                "expected_output_items_json",
+                "clear_output_projection_status",
+                "clear_output_native_contract"
+            };
+            var parameters = action.Parameters
+                .Where(parameter => !boundNames.Contains(parameter.Name))
+                .ToList();
+            var anchorX = ReadIntParameter(action, "resource_clump_tile_x");
+            var anchorY = ReadIntParameter(action, "resource_clump_tile_y");
+            var clumps = ReadStateFieldValue(snapshot, "farm", "resource_clumps");
+            var clump = anchorX.HasValue && anchorY.HasValue &&
+                clumps.HasValue && clumps.Value.ValueKind == JsonValueKind.Array
+                    ? clumps.Value.EnumerateArray().FirstOrDefault(row =>
+                        ReadInt(row, "tile_x") == anchorX.Value &&
+                        ReadInt(row, "tile_y") == anchorY.Value)
+                    : default;
+            if (clump.ValueKind == JsonValueKind.Object)
+            {
+                parameters.Add(Parameter(
+                    "expected_output_items_json",
+                    ReadString(clump, "clear_expected_output_items_json")));
+                parameters.Add(Parameter(
+                    "clear_output_projection_status",
+                    ReadString(clump, "clear_output_projection_status")));
+                parameters.Add(Parameter(
+                    "clear_output_native_contract",
+                    ReadString(clump, "clear_output_native_contract")));
+            }
+            return parameters.ToArray();
         }
 
         private static bool TileInsideRectangle(int x, int y, int anchorX, int anchorY, int width, int height)

@@ -284,6 +284,9 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                 var giantCropOutputs = clump is GiantCrop giantCrop
                     ? ReadGuaranteedGiantCropOutputs(giantCrop)
                     : Array.Empty<GiantCropOutputProjection>();
+                var clearOutputs = clump is GiantCrop
+                    ? Array.Empty<ClearanceOutputItemProjection>()
+                    : ReadFarmResourceClumpGuaranteedOutputs(clump);
                 return new
                 {
                     tile_x = (int)clump.Tile.X,
@@ -314,6 +317,15 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                     damage_per_hit = clearance.DamagePerHit,
                     expected_tool_hits_to_clear = clearance.ExpectedToolHits,
                     clear_obstacle_executor_status = clearance.Status,
+                    clear_guaranteed_minimum_outputs = clearOutputs,
+                    clear_expected_output_items_json =
+                        System.Text.Json.JsonSerializer.Serialize(clearOutputs),
+                    clear_output_projection_status = clearOutputs.Length > 0
+                        ? "exact_vanilla_conservative_minimum"
+                        : "not_applicable_or_unverified",
+                    clear_output_native_contract = clearOutputs.Length > 0
+                        ? FarmResourceClumpOutputNativeContract
+                        : string.Empty,
                     harvest_experience_skill_id = experience.SkillId,
                     harvest_experience_skill_index = experience.SkillIndex,
                     harvest_experience_on_success_min = experience.Minimum,

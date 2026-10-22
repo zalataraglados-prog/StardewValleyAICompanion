@@ -6,6 +6,9 @@ namespace StardewAI.TransparentBridge.Adapters;
 
 public sealed partial class FarmReadAdapter
 {
+    private const string FarmResourceClumpOutputNativeContract =
+        "ResourceClump.performToolAction -> ResourceClump.destroy stump/log branch, vanilla parent index 600 guarantees Hardwood x2 and parent index 602 guarantees Hardwood x8, optional profession/enchantment/seed/note/Qi-bean/special-order branches excluded from the conservative minimum";
+
     private static HarvestExperienceProjection ReadCropHarvestExperience(Crop crop)
     {
         if (crop.GetType() != typeof(Crop))
@@ -130,6 +133,30 @@ public sealed partial class FarmReadAdapter
             ExpectedToolHits = expectedHits,
             Status = "ready"
         };
+    }
+
+    private static ClearanceOutputItemProjection[] ReadFarmResourceClumpGuaranteedOutputs(
+        ResourceClump clump)
+    {
+        if (clump.GetType() != typeof(ResourceClump))
+        {
+            return Array.Empty<ClearanceOutputItemProjection>();
+        }
+
+        var hardwoodMinimum = clump.parentSheetIndex.Value switch
+        {
+            ResourceClump.stumpIndex => 2,
+            ResourceClump.hollowLogIndex => 8,
+            _ => 0
+        };
+        return hardwoodMinimum == 0
+            ? Array.Empty<ClearanceOutputItemProjection>()
+            : new[]
+            {
+                ClearanceOutputItemProjection.FromStandard(
+                    "(O)709",
+                    hardwoodMinimum)
+            };
     }
 
     private static HarvestExperienceProjection ReadFarmResourceClumpExperience(ResourceClump clump)
