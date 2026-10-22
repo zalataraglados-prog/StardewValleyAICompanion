@@ -655,6 +655,53 @@ public sealed partial class ActionQueueCompilerTests
     }
 
     [Fact]
+    public void CompileAcceptsAuditedMagicWarpTouchConnector()
+    {
+        var snapshot = Snapshot("""
+        {
+          "player": {
+            "location_id": {"value":"WitchWarpCave","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_x": {"value":4,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":8,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "collision_grid": {"value":{"location_id":"WitchWarpCave","width":9,"height":12,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_action_branch_coverage": {"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_connectors": {"value":{"location_id":"WitchWarpCave","connectors":[{"kind":"magic_warp","tile_x":4,"tile_y":5,"target_location":"WitchSwamp","target_x":20,"target_y":42,"action":"MagicWarp WitchSwamp 20 42","source_property":"Back.TouchAction","open":true,"resolved":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """);
+        var plan = Plan(
+            snapshot.StateHash,
+            new SmallModelPlanStep
+            {
+                StepId = "plan.step.witch-cave.to-swamp",
+                Kind = "traverse_connector",
+                TargetTileX = 4,
+                TargetTileY = 5,
+                EstimatedMinutes = 10,
+                Parameters = new[]
+                {
+                    new SmallModelActionParameter { Name = "connector_kind", Value = "magic_warp" },
+                    new SmallModelActionParameter { Name = "expected_target_location", Value = "WitchSwamp" },
+                    new SmallModelActionParameter { Name = "expected_arrival_tile_x", Value = "20" },
+                    new SmallModelActionParameter { Name = "expected_arrival_tile_y", Value = "42" }
+                }
+            });
+
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+
+        Assert.Equal("pending", queue.Status);
+        var item = Assert.Single(queue.Items);
+        Assert.Equal("executor.traverse_connector", item.OptionId);
+        Assert.Contains(item.NormalizedCommand.Parameters, parameter =>
+            parameter.Name == "connector_kind" && parameter.Value == "magic_warp");
+        Assert.Equal(
+            "location=WitchSwamp;player.tile=20,42",
+            Assert.Single(item.NormalizedCommand.Steps).ExpectedEffect);
+    }
+
+    [Fact]
     public void CompileBlocksNativeBusTransportWhenLiveGateIsClosed()
     {
         var snapshot = NativeBusConnectorSnapshot(allowedNow: false);

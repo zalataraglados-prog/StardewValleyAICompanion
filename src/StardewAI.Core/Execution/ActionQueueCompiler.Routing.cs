@@ -676,7 +676,7 @@ namespace StardewAI.Core.Execution
 
         private static bool IsRecoveryConnectorKind(string kind)
         {
-            return kind is "warp" or "touch_action_warp" or "action_warp" or "locked_door_warp" or "building_door" or "native_bus_transport";
+            return kind is "warp" or "touch_action_warp" or "magic_warp" or "action_warp" or "locked_door_warp" or "building_door" or "native_bus_transport";
         }
 
         private static JsonElement? FindMatchingCurrentRouteConnector(SnapshotEnvelope snapshot, RouteGraphEdge edge)
@@ -716,7 +716,7 @@ namespace StardewAI.Core.Execution
                     continue;
                 }
 
-                if (edge.Kind == "touch_action_warp" &&
+                if (edge.Kind is "touch_action_warp" or "magic_warp" &&
                     !string.Equals(sourceProperty, "Back.TouchAction", StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
@@ -748,7 +748,7 @@ namespace StardewAI.Core.Execution
 
         private static string? RecoveryConnectorGateBlock(SnapshotEnvelope snapshot, RouteGraphEdge edge)
         {
-            if (edge.Kind is "warp" or "building_door")
+            if (edge.Kind is "warp" or "building_door" or "magic_warp")
             {
                 return null;
             }

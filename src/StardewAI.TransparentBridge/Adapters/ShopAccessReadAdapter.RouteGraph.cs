@@ -275,6 +275,37 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             };
         }
 
+        if (string.Equals(parts[0], "MagicWarp", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(action.source_property, "Back.TouchAction", StringComparison.OrdinalIgnoreCase))
+        {
+            var targetLocation = Part(parts, 1);
+            var targetX = ParseIntPart(parts, 2);
+            var targetY = ParseIntPart(parts, 3);
+            var requiredMail = Part(parts, 4);
+            var gateOpen = string.IsNullOrWhiteSpace(requiredMail) ||
+                Game1.player.mailReceived.Contains(requiredMail);
+            var resolved = gateOpen && !string.IsNullOrWhiteSpace(targetLocation) &&
+                targetX.HasValue && targetY.HasValue && locationNames.Contains(targetLocation);
+            return new
+            {
+                kind = "magic_warp",
+                from_location = location.NameOrUniqueName,
+                from_x = action.tile_x,
+                from_y = action.tile_y,
+                target_location = targetLocation,
+                target_x = targetX,
+                target_y = targetY,
+                source_property = action.source_property,
+                raw_action = action.raw_action,
+                required_mail = requiredMail,
+                gate_open = gateOpen,
+                resolved,
+                unresolved_reason = !gateOpen
+                    ? "magic_warp_required_mail_missing"
+                    : resolved ? (string?)null : "magic_warp_target_not_resolved"
+            };
+        }
+
         if (string.Equals(parts[0], "EnterSewer", StringComparison.OrdinalIgnoreCase))
         {
             var resolved = locationNames.Contains("Sewer");
@@ -507,6 +538,7 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             "Warp" => "covered_for_read",
             "WarpMensLocker" => "covered_for_read",
             "WarpWomensLocker" => "covered_for_read",
+            "MagicWarp" => "covered_for_read",
             "WarpCommunityCenter" => "covered_for_read",
             "EnterSewer" => "covered_for_read",
             "Mine" => "covered_for_read",
@@ -537,6 +569,8 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             "Warp" => "read-side target/mail gate preview exists where Stardew action format exposes it",
             "WarpMensLocker" or "WarpWomensLocker" =>
                 "read-side target and native player-gender gate preview exists",
+            "MagicWarp" =>
+                "read-side target and optional mail gate preview exists; execution walks onto the native Back.TouchAction tile and waits for the delayed warp",
             "WarpCommunityCenter" =>
                 "read-side native CommunityCenter 32,23 target and MasterPlayer ccDoorUnlock-or-JojaMember gate preview exists",
             "EnterSewer" =>

@@ -206,7 +206,7 @@ namespace StardewAI.Core.Training
             allowed = true;
             openTime = null;
             closeTime = null;
-            if (edge.Kind is "warp" or "building_door")
+            if (edge.Kind is "warp" or "building_door" or "magic_warp")
                 return true;
             if (edge.Kind is not ("action_warp" or "touch_action_warp" or "locked_door_warp"))
                 return false;

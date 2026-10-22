@@ -96,7 +96,8 @@ public sealed partial class ModEntry : Mod
     private static bool IsStepOntoConnectorKind(string kind)
     {
         return string.Equals(kind, "warp", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(kind, "touch_action_warp", StringComparison.OrdinalIgnoreCase);
+            string.Equals(kind, "touch_action_warp", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(kind, "magic_warp", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsConnectorActionTypeWhitelisted(string actionType)
@@ -206,7 +207,8 @@ public sealed partial class ModEntry : Mod
         }
         else
         {
-            var sourceProperty = string.Equals(request.ConnectorKind, "touch_action_warp", StringComparison.OrdinalIgnoreCase)
+            var sourceProperty = string.Equals(request.ConnectorKind, "touch_action_warp", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(request.ConnectorKind, "magic_warp", StringComparison.OrdinalIgnoreCase)
                 ? "TouchAction"
                 : "Action";
             var layer = string.Equals(sourceProperty, "TouchAction", StringComparison.Ordinal) ? "Back" : "Buildings";
@@ -220,6 +222,8 @@ public sealed partial class ModEntry : Mod
             var touchAction = string.Equals(sourceProperty, "TouchAction", StringComparison.Ordinal);
             var actionTypeMatches = string.Equals(request.ConnectorKind, "locked_door_warp", StringComparison.OrdinalIgnoreCase)
                 ? string.Equals(parts[0], "LockedDoorWarp", StringComparison.OrdinalIgnoreCase)
+                : string.Equals(request.ConnectorKind, "magic_warp", StringComparison.OrdinalIgnoreCase)
+                    ? string.Equals(parts[0], "MagicWarp", StringComparison.OrdinalIgnoreCase)
                 : touchAction
                     ? string.Equals(parts[0], "Warp", StringComparison.OrdinalIgnoreCase)
                     : IsActionWarpConnectorActionType(parts[0]);
@@ -265,9 +269,16 @@ public sealed partial class ModEntry : Mod
                 {
                     return "connector_action_source_missing_or_unparseable";
                 }
-                targetLocation = touchAction ? parts[1] : parts[3];
-                targetX = ParseIntPart(parts, touchAction ? 2 : 1);
-                targetY = ParseIntPart(parts, touchAction ? 3 : 2);
+                var touchTargetFormat = touchAction;
+                targetLocation = touchTargetFormat ? parts[1] : parts[3];
+                targetX = ParseIntPart(parts, touchTargetFormat ? 2 : 1);
+                targetY = ParseIntPart(parts, touchTargetFormat ? 3 : 2);
+                if (string.Equals(parts[0], "MagicWarp", StringComparison.OrdinalIgnoreCase) &&
+                    parts.Length > 4 &&
+                    !Game1.player.mailReceived.Contains(parts[4]))
+                {
+                    return "connector_magic_warp_required_mail_missing";
+                }
             }
         }
 

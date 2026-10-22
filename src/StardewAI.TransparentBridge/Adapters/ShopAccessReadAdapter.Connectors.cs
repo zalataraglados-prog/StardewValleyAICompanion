@@ -140,6 +140,35 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
                     unresolved_reason = resolved ? (string?)null : "warp_action_parse_failed"
                 });
             }
+            else if (string.Equals(parts[0], "MagicWarp", StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(actionRow.source_property, "Back.TouchAction", StringComparison.OrdinalIgnoreCase))
+            {
+                var targetLocation = Part(parts, 1);
+                var targetX = ParseIntPart(parts, 2);
+                var targetY = ParseIntPart(parts, 3);
+                var requiredMail = Part(parts, 4);
+                var gateOpen = string.IsNullOrWhiteSpace(requiredMail) ||
+                    Game1.player.mailReceived.Contains(requiredMail);
+                var resolved = !string.IsNullOrWhiteSpace(targetLocation) &&
+                    targetX.HasValue && targetY.HasValue && gateOpen;
+                connectors.Add(new
+                {
+                    kind = "magic_warp",
+                    tile_x = actionRow.tile_x,
+                    tile_y = actionRow.tile_y,
+                    target_location = targetLocation,
+                    target_x = targetX,
+                    target_y = targetY,
+                    action = actionRow.raw_action,
+                    source_property = actionRow.source_property,
+                    required_mail = requiredMail,
+                    open = (bool?)gateOpen,
+                    resolved,
+                    unresolved_reason = !gateOpen
+                        ? "magic_warp_required_mail_missing"
+                        : resolved ? (string?)null : "magic_warp_parse_failed"
+                });
+            }
             else if (string.Equals(parts[0], "LockedDoorWarp", StringComparison.OrdinalIgnoreCase))
             {
                 var targetLocation = Part(parts, 3);
