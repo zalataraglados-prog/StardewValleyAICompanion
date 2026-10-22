@@ -4,9 +4,9 @@
   "native_action_denominator_status": "native_action_denominator_frozen",
   "native_action_surface_fingerprint_sha256": "a2ba3ac0193fa78aece39a1eb4c18cb3c9b3248ea7390194dcfe61605af02d0e",
   "planning_semantic_catalog_fingerprint_schema": "stardewai.planning_semantic_catalog_fingerprint.v1",
-  "planning_semantic_catalog_fingerprint_sha256": "57b094757882294611f5ff1f5f6186b860bf64762f79213e219dc3e7a76a6cc5",
-  "action_count": 237,
-  "registered_option_spec_count": 235,
+  "planning_semantic_catalog_fingerprint_sha256": "0e2754e7318bef92581bd504b9f1ccaa2c3ae59fe50095359545d05b5bf2a93f",
+  "action_count": 238,
+  "registered_option_spec_count": 236,
   "catalogued_blocked_count": 2,
   "uncatalogued_native_action_count": 0,
   "pending_catalog_without_surface_count": 0,
@@ -562,6 +562,15 @@
     {
       "action_id": "executor.craft_quest_item",
       "domain": "quest",
+      "semantic_kind": "PrimitiveOptionSpec",
+      "primary_engine_id": "engine.farm_machine",
+      "catalog_status": "registered_option_spec",
+      "block_reason": "",
+      "native_runtime_types": []
+    },
+    {
+      "action_id": "executor.craft_rain_totem",
+      "domain": "fishing",
       "semantic_kind": "PrimitiveOptionSpec",
       "primary_engine_id": "engine.farm_machine",
       "catalog_status": "registered_option_spec",

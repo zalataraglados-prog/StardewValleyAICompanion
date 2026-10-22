@@ -903,12 +903,12 @@
 <!-- BEGIN GENERATED CURRENT CHECKPOINT -->
 ## Machine-generated current checkpoint
 
-- Source commit: `e4e88246a788b37ab7e64d420cfa1bad1efb5030` (generation input; must be an ancestor of current HEAD)
-- Latest evidence: `EVD-338`; generated at: `2026-10-21T13:49:35.3936563+00:00`
-- Catalog: `235 registered / 237 semantic / 234 compiler-bound / 159 five-gate / 66 training-allowlist`
-- Execution: `148 product-executor / 2 catalogued-blocked`
+- Source commit: `52b04da2cd54da816bfed35993a4ecf387ac974b` (generation input; must be an ancestor of current HEAD)
+- Latest evidence: `EVD-338`; generated at: `2026-10-22T18:36:15.4649676+00:00`
+- Catalog: `236 registered / 238 semantic / 235 compiler-bound / 159 five-gate / 66 training-allowlist`
+- Execution: `149 product-executor / 2 catalogued-blocked`
 - Native evidence: `322 surfaces / 448 branches / 150 map tokens`; fingerprint: `a2ba3ac0193fa78aece39a1eb4c18cb3c9b3248ea7390194dcfe61605af02d0e`
-- Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `57b094757882294611f5ff1f5f6186b860bf64762f79213e219dc3e7a76a6cc5`
+- Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `0e2754e7318bef92581bd504b9f1ccaa2c3ae59fe50095359545d05b5bf2a93f`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
 ## 历史记录 · 2026-10-04 Full Shipment 普通作物运行时样本闭合
