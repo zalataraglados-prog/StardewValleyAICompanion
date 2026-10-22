@@ -1755,6 +1755,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "native CraftingPage consumes the rebound ingredient multiset", "one exact Crab Pot enters player inventory", "the existing placement, bait, settlement, and collection lifecycle becomes eligible" },
                 new[] { "block_no_missing_trap_species_capacity_deficit", "block_unknown_or_unlearned_crab_pot_recipe", "block_no_native_legal_productive_water_tile", "block_recipe_inventory_or_workbench_topology_drift", "block_material_reservation_or_output_capacity", "block_direct_inventory_recipe_or_progress_mutation" }));
 
+            Register(Option("executor.craft_rain_totem", "fishing", "Craft one verified learned Rain Totem for an authoritative next-day Master Angler rain-window supply deficit",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "time.total_days", "player.location_id", "player.inventory", "player.rain_totem_crafting", "world_progress.fish_collection_progress", "menus.active_menu" },
+                new[] { "native CraftingPage consumes the rebound ingredient multiset", "one exact Rain Totem enters player inventory", "the weather-supply scheduler replans before any use" },
+                new[] { "block_without_authoritative_tomorrow_rain_window", "block_target_not_in_exact_missing_fish_set", "block_existing_owned_rain_totem_supply", "block_unknown_or_unlearned_rain_totem_recipe", "block_recipe_inventory_or_workbench_topology_drift", "block_material_reservation_or_output_capacity", "block_direct_inventory_recipe_weather_or_progress_mutation" }));
+
             Register(Option("executor.place_machine", "farm", "Place one verified inventory machine at one exact native-legal tile",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,

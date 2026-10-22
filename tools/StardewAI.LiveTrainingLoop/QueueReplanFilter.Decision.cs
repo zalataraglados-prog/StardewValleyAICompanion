@@ -540,6 +540,8 @@ public static partial class QueueReplanFilter
                         ? "executor.craft_storage_item"
                     : string.Equals(kind, "craft_crab_pot", StringComparison.Ordinal)
                         ? "executor.craft_crab_pot"
+                    : string.Equals(kind, "craft_rain_totem", StringComparison.Ordinal)
+                        ? "executor.craft_rain_totem"
                     : string.Empty;
             candidateLocation = ReadString(candidate, "location_id");
             candidateX = candidate["tile_x"]?.ToString() ?? string.Empty;

@@ -79,6 +79,15 @@ public sealed class RuntimeMachineCraftingExecutorTests
         Assert.Contains(
             "? \"craft_crab_pot\"",
             executor);
+        Assert.Contains(
+            "pending.Request.OptionId == \"executor.craft_rain_totem\"",
+            dispatch);
+        Assert.True(
+            RuntimeTestHarnessDispatchCatalog.IsSupported(
+                "executor.craft_rain_totem"));
+        Assert.Contains(
+            "? \"craft_rain_totem\"",
+            executor);
     }
 
     [Fact]
