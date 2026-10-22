@@ -1439,6 +1439,13 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_rain_totem_crafting_target")
+            {
+                pending.Completion.SetResult(
+                    ExecuteSetupRainTotemCraftingTarget(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_machine_lifecycle_target")
             {
                 pending.Completion.SetResult(

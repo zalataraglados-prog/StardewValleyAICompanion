@@ -941,6 +941,23 @@ app.MapPost("/api/v1/planner/daily-plan/compile", (DailyPlanCompileRequest reque
     }
     commitmentLedger = supportBinding?.Ledger ??
         commitmentLedger;
+    var rainTotemMaterialBinding =
+        RainTotemMaterialReservationPlanBinder.Bind(
+            plan,
+            snapshot,
+            commitmentRepository);
+    if (rainTotemMaterialBinding is not null &&
+        (!rainTotemMaterialBinding.Accepted ||
+         rainTotemMaterialBinding.Ledger is null))
+    {
+        return Results.UnprocessableEntity(new
+        {
+            detail = "rain totem material reservation binding rejected",
+            errors = rainTotemMaterialBinding.Errors
+        });
+    }
+    commitmentLedger = rainTotemMaterialBinding?.Ledger ??
+        commitmentLedger;
     var actionQueue = actionQueueCompiler.Compile(
         plan,
         snapshot,

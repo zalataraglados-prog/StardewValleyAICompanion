@@ -575,6 +575,9 @@ namespace StardewAI.Contracts.Capabilities
                     ["executor.craft_crab_pot"] = VerifiedEvidence(
                         "vanilla_exact_learned_Crab_Pot_recipe_native_personal_CraftingPage_click_exact_material_output_multiset_timesCrafted_quest_callback_and_achievement_check_receipt",
                         "EVD-339"),
+                    ["executor.craft_rain_totem"] = VerifiedEvidence(
+                        "vanilla_exact_learned_Rain_Totem_recipe_native_personal_CraftingPage_click_exact_material_output_multiset_timesCrafted_quest_callback_and_achievement_check_receipt",
+                        "EVD-340"),
                     ["executor.place_fence"] = VerifiedEvidence(
                         "vanilla_all_five_exact_inventory_fence_identities_native_Utility_tryToPlaceItem_Fence_health_draw_gate_stack_and_route_safe_receipt",
                         "EVD-259"),

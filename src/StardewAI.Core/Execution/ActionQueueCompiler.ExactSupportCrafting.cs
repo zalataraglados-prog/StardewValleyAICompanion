@@ -128,12 +128,15 @@ public sealed partial class ActionQueueCompiler
         if (usesWorkbench)
             ValidateStorageWorkbenchBinding(action, source.Value, reasons);
 
+        var reservationAuthorization =
+            ReadMaterialReservationAuthorization(action, reasonPrefix, reasons);
         var reservation = new MachineCraftingMaterialReservationGuard()
             .Evaluate(
                 snapshot,
                 ingredients,
                 usesWorkbench,
-                commitmentLedger);
+                commitmentLedger,
+                reservationAuthorization);
         if (!reservation.Ready)
             foreach (var reason in reservation.BlockingReasons)
                 reasons.Add(reason);
@@ -142,6 +145,14 @@ public sealed partial class ActionQueueCompiler
                 reservation.LedgerId,
                 StringComparison.Ordinal) ||
             ReadIntParameter(action, "commitment_ledger_revision") !=
+                reservation.LedgerRevision ||
+            !string.Equals(
+                ReadParameter(action, "material_reservation_ledger_id"),
+                reservation.LedgerId,
+                StringComparison.Ordinal) ||
+            ReadIntParameter(
+                action,
+                "material_reservation_ledger_revision") !=
                 reservation.LedgerRevision ||
             !string.Equals(
                 ReadParameter(action, "material_reservation_guard_status"),
@@ -161,6 +172,39 @@ public sealed partial class ActionQueueCompiler
             source.Value,
             ingredients,
             usesWorkbench);
+    }
+
+    private static MaterialReservationConsumptionAuthorization?
+        ReadMaterialReservationAuthorization(
+            SmallModelAction action,
+            string reasonPrefix,
+            ICollection<string> reasons)
+    {
+        var goalId = ReadParameter(
+            action,
+            "material_reservation_goal_id");
+        var sourceDecisionId = ReadParameter(
+            action,
+            "material_reservation_source_decision_id");
+        var purpose = ReadParameter(
+            action,
+            "material_reservation_purpose");
+        var suppliedCount = new[] { goalId, sourceDecisionId, purpose }
+            .Count(value => !string.IsNullOrWhiteSpace(value));
+        if (suppliedCount == 0)
+            return null;
+        if (suppliedCount != 3)
+        {
+            reasons.Add(
+                reasonPrefix +
+                "_material_reservation_authorization_incomplete");
+            return null;
+        }
+
+        return new MaterialReservationConsumptionAuthorization(
+            goalId!,
+            sourceDecisionId!,
+            purpose!);
     }
 
     private static JsonElement? ExactSupportCraftingRow(

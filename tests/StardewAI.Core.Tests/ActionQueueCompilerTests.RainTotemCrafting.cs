@@ -5,10 +5,12 @@ using StardewAI.Contracts.Capabilities;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
 using StardewAI.Core.Infrastructure;
 using StardewAI.Core.OptionRegistry;
+using StardewAI.Core.Strategy;
 using StardewAI.Core.Training;
 
 namespace StardewAI.Core.Tests;
@@ -88,6 +90,64 @@ public sealed partial class ActionQueueCompilerTests
 
         Assert.Equal("executor.craft_rain_totem", item.OptionId);
         Assert.Empty(item.BlockingReasons);
+    }
+
+    [Fact]
+    public void RainTotemCandidateRejectsMaterialsReservedForAnotherGoal()
+    {
+        using var fixture = RainTotemCraftingFixture.Create(
+            exactMaterialTopology: true);
+        var ledger = RainTotemMaterialLedger(
+            "goal.other",
+            "decision:other",
+            "consume elsewhere");
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(
+            fixture.Snapshot,
+            [new OptionAvailabilityCandidate
+            {
+                OptionId = "fishing.catch_fish",
+                Parameters = fixture.SupplyParameters
+            }],
+            commitmentLedger: ledger);
+
+        var candidate = Assert.Single(
+            Assert.Single(availability.Options).EventCandidates);
+        Assert.False(candidate.Available);
+        Assert.Contains(
+            "machine_recipe_material_reserved_for_other_goal:player:123#0",
+            candidate.BlockReasons);
+    }
+
+    [Fact]
+    public void RainTotemCandidateCanConsumeItsOwnExactMaterialReservation()
+    {
+        using var fixture = RainTotemCraftingFixture.Create(
+            exactMaterialTopology: true);
+        var authorization = RainTotemMaterialReservationContract.Authorization(
+            101,
+            "Default");
+        var ledger = RainTotemMaterialLedger(
+            authorization.GoalId,
+            authorization.SourceDecisionId,
+            authorization.Purpose);
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(
+            fixture.Snapshot,
+            [new OptionAvailabilityCandidate
+            {
+                OptionId = "fishing.catch_fish",
+                Parameters = fixture.SupplyParameters
+            }],
+            commitmentLedger: ledger);
+
+        var candidate = Assert.Single(
+            Assert.Single(availability.Options).EventCandidates);
+        Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "material_reservation_ids_json" &&
+            parameter.Value == "[\"rain-material\"]");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "commitment_ledger_revision" &&
+            parameter.Value == "4");
     }
 
     [Fact]
@@ -251,13 +311,13 @@ public sealed partial class ActionQueueCompilerTests
     }
 
     [Fact]
-    public void CraftRainTotemRemainsCalibrationOnlyUntilNativeReceiptExists()
+    public void CraftRainTotemIsRuntimeVerifiedButRemainsCalibrationOnly()
     {
         var declaration = OptionCapabilityRegistrySource.GetRequired(
             "executor.craft_rain_totem");
 
         Assert.Equal(
-            OptionRuntimeStatus.RegisteredOnly,
+            OptionRuntimeStatus.RuntimeVerified,
             declaration.RuntimeEvidenceStatus);
         Assert.True(declaration.HarnessDispatchSupported);
         Assert.DoesNotContain(
@@ -270,10 +330,15 @@ public sealed partial class ActionQueueCompilerTests
     }
 
     private static SmallModelPlanEnvelope RainTotemCraftingPlan(
-        RainTotemCraftingFixture fixture) => Plan(
-        fixture.Snapshot.StateHash,
-        new SmallModelPlanStep
-        {
+        RainTotemCraftingFixture fixture)
+    {
+        var authorization = RainTotemMaterialReservationContract.Authorization(
+            101,
+            "Default");
+        return Plan(
+            fixture.Snapshot.StateHash,
+            new SmallModelPlanStep
+            {
             StepId = "plan.step.craft.rain-totem",
             Kind = "craft_rain_totem",
             TargetLocation = "FarmHouse",
@@ -322,9 +387,24 @@ public sealed partial class ActionQueueCompilerTests
                 RainParameter(
                     "material_reservation_ledger_revision",
                     "0"),
-                RainParameter("material_reservation_ids_json", "[]")
-            }.Concat(fixture.SupplyParameters).ToArray()
-        });
+                RainParameter("material_reservation_ids_json", "[]"),
+                RainParameter(
+                    "material_reservation_goal_id",
+                    authorization.GoalId),
+                RainParameter(
+                    "material_reservation_source_decision_id",
+                    authorization.SourceDecisionId),
+                RainParameter(
+                    "material_reservation_purpose",
+                    authorization.Purpose),
+                RainParameter(
+                    "material_reservation_portfolio_id",
+                    RainTotemMaterialReservationContract.PortfolioId(
+                        101,
+                        "Default"))
+                }.Concat(fixture.SupplyParameters).ToArray()
+            });
+    }
 
     private sealed class RainTotemCraftingFixture : IDisposable
     {
@@ -380,7 +460,8 @@ public sealed partial class ActionQueueCompilerTests
             bool readyPineTarMachine = false,
             int pineTarRequired = 5,
             int hardwoodAvailable = 1,
-            bool readyHardwoodClump = false)
+            bool readyHardwoodClump = false,
+            bool exactMaterialTopology = false)
         {
             var items = Enumerable.Range(0, 72)
                 .Select(index => new
@@ -450,7 +531,11 @@ public sealed partial class ActionQueueCompilerTests
             var playerLocation = readyPineTarMachine || readyHardwoodClump
                 ? "Farm"
                 : "FarmHouse";
-            var ingredientRowsJson = pineTarAvailable.HasValue
+            var ingredientRowsJson = exactMaterialTopology
+                ? """
+                  [{"requirement_id_or_category":"709","required_count":1,"available_count_before_this_ingredient":1,"satisfied":true,"reverse_slot_consumption_plan":[{"slot_index":0,"qualified_item_id":"(O)709","amount":1}]},{"requirement_id_or_category":"432","required_count":1,"available_count_before_this_ingredient":1,"satisfied":true,"reverse_slot_consumption_plan":[{"slot_index":1,"qualified_item_id":"(O)432","amount":1}]},{"requirement_id_or_category":"726","required_count":5,"available_count_before_this_ingredient":5,"satisfied":true,"reverse_slot_consumption_plan":[{"slot_index":2,"qualified_item_id":"(O)726","amount":5}]}]
+                  """
+                : pineTarAvailable.HasValue
                 ? JsonSerializer.Serialize(new[]
                 {
                     new
@@ -488,6 +573,11 @@ public sealed partial class ActionQueueCompilerTests
             var resourceClumpsJson = readyHardwoodClump
                 ? "[{\"tile_x\":7,\"tile_y\":5,\"width\":2,\"height\":2,\"parent_sheet_index\":600,\"clear_kind\":\"resource_stump\",\"minimum_tool_upgrade_level\":1,\"clear_obstacle_executor_status\":\"ready\",\"expected_tool_hits_to_clear\":5,\"tool_slot_index\":1,\"clear_expected_output_items_json\":\"[{\\\"runtimeType\\\":\\\"StardewValley.Object\\\",\\\"qualifiedItemId\\\":\\\"(O)709\\\",\\\"quality\\\":0,\\\"unitStateSha256\\\":\\\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\\\",\\\"quantity\\\":2}]\",\"clear_output_projection_status\":\"exact_vanilla_conservative_minimum\",\"clear_output_native_contract\":\"native_resource_clump_destroy_contract\",\"harvest_experience_projection_status\":\"exact\",\"harvest_experience_skill_id\":\"foraging\",\"harvest_experience_on_success_min\":25,\"harvest_experience_on_success_max\":25,\"harvest_experience_condition\":\"native_player_axe_destroys_resource_stump_or_hollow_log\"}]"
                 : "[]";
+            var materialGraphJson = exactMaterialTopology
+                ? """
+                  {"schema_version":"material_inventory_graph.v1","status":"available","player_id":123,"inventory_nodes":[{"node_id":"player:123","inventory_kind":"player_inventory","supply_state":"available","owner_player_id":123,"actor_use_authorized":true,"capacity":12,"slots":[{"slot_index":0,"item_id":"709","qualified_item_id":"(O)709","stack":1,"maximum_stack_size":999,"quality":0},{"slot_index":1,"item_id":"432","qualified_item_id":"(O)432","stack":1,"maximum_stack_size":999,"quality":0},{"slot_index":2,"item_id":"726","qualified_item_id":"(O)726","stack":5,"maximum_stack_size":999,"quality":0}]}],"access_points":[],"workbench_links":[],"quantity_rows":[]}
+                  """
+                : "null";
             var snapshot = ActionQueueCompilerTests.Snapshot($$"""
         {
           "time": {
@@ -528,7 +618,8 @@ public sealed partial class ActionQueueCompilerTests
           },
           "farm": {
             "machines": {"value":{{machinesJson}},"status":"available"},
-            "resource_clumps": {"value":{{resourceClumpsJson}},"status":"available"}
+            "resource_clumps": {"value":{{resourceClumpsJson}},"status":"available"},
+            "material_inventory_graph": {"value":{{materialGraphJson}},"status":"{{(exactMaterialTopology ? "available" : "unavailable")}}"}
           },
           "world_progress": {
             "fish_collection_progress": {"value":{
@@ -578,4 +669,28 @@ public sealed partial class ActionQueueCompilerTests
     private static SmallModelActionParameter RainParameter(
         string name,
         string value) => new() { Name = name, Value = value };
+
+    private static StrategyCommitmentLedger RainTotemMaterialLedger(
+        string goalId,
+        string sourceDecisionId,
+        string purpose) => new()
+        {
+            LedgerId = "ledger:rain-totem",
+            Revision = 4,
+            MaterialReservations =
+            [
+                new MaterialReservation
+                {
+                    ReservationId = "rain-material",
+                    Status = StrategyCommitmentStatuses.Active,
+                    GoalId = goalId,
+                    SourceDecisionId = sourceDecisionId,
+                    Purpose = purpose,
+                    NodeId = "player:123",
+                    SlotIndex = 0,
+                    QualifiedItemId = "(O)709",
+                    Quantity = 1
+                }
+            ]
+        };
 }

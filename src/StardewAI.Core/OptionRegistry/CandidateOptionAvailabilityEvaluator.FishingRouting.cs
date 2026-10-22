@@ -59,7 +59,8 @@ namespace StardewAI.Core.OptionRegistry
             {
                 return RainTotemCraftingCandidates(
                     snapshot,
-                    boundParameters);
+                    boundParameters,
+                    commitmentLedger);
             }
 
             if (!HasMasterAnglerIntentParameters(boundParameters))

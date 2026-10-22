@@ -6,6 +6,7 @@ using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
 using StardewAI.Core.Infrastructure;
+using StardewAI.Core.Strategy;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.Execution;
@@ -54,6 +55,42 @@ public sealed partial class ActionQueueCompiler
         else
         {
             supplyIntent = validatedSupplyIntent;
+            var authorization =
+                RainTotemMaterialReservationContract.Authorization(
+                    supplyIntent.TargetTotalDay,
+                    supplyIntent.AffectedLocationContextId);
+            if (!string.Equals(
+                    ReadParameter(action, "material_reservation_goal_id"),
+                    authorization.GoalId,
+                    StringComparison.Ordinal) ||
+                !string.Equals(
+                    ReadParameter(
+                        action,
+                        "material_reservation_source_decision_id"),
+                    authorization.SourceDecisionId,
+                    StringComparison.Ordinal) ||
+                !string.Equals(
+                    ReadParameter(action, "material_reservation_purpose"),
+                    authorization.Purpose,
+                    StringComparison.Ordinal) ||
+                !string.Equals(
+                    ReadParameter(
+                        action,
+                        "material_reservation_portfolio_id"),
+                    RainTotemMaterialReservationContract.PortfolioId(
+                        supplyIntent.TargetTotalDay,
+                        supplyIntent.AffectedLocationContextId),
+                    StringComparison.Ordinal))
+            {
+                reasons.Add(
+                    "craft_rain_totem_material_reservation_identity_invalid");
+            }
+            ValidateRainTotemSettlementConsumptions(
+                action,
+                snapshot,
+                binding,
+                authorization,
+                reasons);
         }
 
         if (!string.Equals(
@@ -132,6 +169,52 @@ public sealed partial class ActionQueueCompiler
         }
 
         return reasons.Distinct(StringComparer.Ordinal).ToArray();
+    }
+
+    private static void ValidateRainTotemSettlementConsumptions(
+        SmallModelAction action,
+        SnapshotEnvelope snapshot,
+        ExactSupportCraftingBinding binding,
+        MaterialReservationConsumptionAuthorization authorization,
+        ICollection<string> reasons)
+    {
+        var supplied = ReadParameter(
+            action,
+            "material_reservation_consumptions_json");
+        if (string.IsNullOrWhiteSpace(supplied) || supplied == "[]")
+        {
+            if (ReadParameter(action, "material_reservation_ids_json") !=
+                "[]")
+            {
+                reasons.Add(
+                    "craft_rain_totem_material_settlement_projection_missing");
+            }
+            return;
+        }
+
+        if (!MaterialInventoryGraphReader.TryRead(snapshot, out var graph) ||
+            graph is null)
+        {
+            reasons.Add("material_inventory_graph_unavailable");
+            return;
+        }
+
+        var exact = ExactCraftingMaterialConsumptionReader.Read(
+            binding.Ingredients,
+            binding.UsesWorkbench,
+            graph.PlayerId);
+        var expected = JsonSerializer.Serialize(
+            RainTotemMaterialReservationContract.SettlementConsumptions(
+                authorization,
+                exact));
+        if (!string.Equals(
+                supplied,
+                expected,
+                StringComparison.Ordinal))
+        {
+            reasons.Add(
+                "craft_rain_totem_material_settlement_projection_drifted");
+        }
     }
 
     private static string[] ReadQualifiedItemIds(string json)

@@ -91,6 +91,41 @@ public sealed class RuntimeMachineCraftingExecutorTests
     }
 
     [Fact]
+    public void RainTotemSmokeUsesSharedExactCraftingFixtureAndNativeExecutor()
+    {
+        var script = RuntimeHarnessSources.RepositoryFile(
+            "scripts",
+            "Invoke-RuntimeRainTotemCraftingSmoke.ps1");
+        var fixture = RuntimeHarnessSources.File(
+            "ModEntry.CraftingFixtures.cs");
+        var dispatch = RuntimeHarnessSources.File("ModEntry.cs");
+
+        Assert.Contains(
+            "Invoke-RuntimeStorageCraftingSmoke.ps1",
+            script);
+        Assert.Contains(
+            "debug.setup_rain_totem_crafting_target",
+            script);
+        Assert.Contains("executor.craft_rain_totem", script);
+        Assert.Contains("ExpectedPrimitiveKind = \"craft_rain_totem\"", script);
+        Assert.Contains(
+            "ExecuteSetupExactCraftingTarget(",
+            fixture);
+        Assert.Contains(
+            "learned_rain_totem_recipe_preserved",
+            fixture);
+        Assert.Contains(
+            "native_rain_totem_output=true",
+            fixture);
+        Assert.Contains(
+            "ExecuteSetupRainTotemCraftingTarget(pending.Request)",
+            dispatch);
+        Assert.Contains(
+            "\"debug.setup_rain_totem_crafting_target\"",
+            RuntimeHarnessSources.File("ModEntry.SupportedOptions.cs"));
+    }
+
+    [Fact]
     public void QuestCraftingReusesTheSameNativeMenuAndVerifiesQuestTerminal()
     {
         var dispatch = RuntimeHarnessSources.File("ModEntry.cs");

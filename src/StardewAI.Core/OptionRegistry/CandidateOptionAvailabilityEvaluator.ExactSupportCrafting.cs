@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
@@ -15,13 +16,15 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         ExactSupportCraftingCandidateBindings(
             SnapshotEnvelope snapshot,
             JsonElement recipeRow,
-            string blockReasonPrefix)
+            string blockReasonPrefix,
+            MaterialReservationConsumptionAuthorization? authorization = null)
     {
         yield return BindExactSupportCraftingCandidate(
             snapshot,
             recipeRow,
             null,
-            blockReasonPrefix);
+            blockReasonPrefix,
+            authorization);
         if (!recipeRow.TryGetProperty(
                 "workbench_crafting_sources",
                 out var sources) ||
@@ -37,7 +40,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 snapshot,
                 recipeRow,
                 source,
-                blockReasonPrefix);
+                blockReasonPrefix,
+                authorization);
         }
     }
 
@@ -46,7 +50,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             SnapshotEnvelope snapshot,
             JsonElement recipeRow,
             JsonElement? workbenchSource,
-            string blockReasonPrefix)
+            string blockReasonPrefix,
+            MaterialReservationConsumptionAuthorization? authorization)
     {
         var usesWorkbench = workbenchSource.HasValue;
         var source = workbenchSource ?? recipeRow;
@@ -69,7 +74,12 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             ? ingredientRows
             : default;
         var reservation = new MachineCraftingMaterialReservationGuard()
-            .Evaluate(snapshot, ingredients, usesWorkbench, null);
+            .Evaluate(
+                snapshot,
+                ingredients,
+                usesWorkbench,
+                null,
+                authorization);
         var expectedReady = usesWorkbench
             ? "ready_for_native_workbench_crafting_menu"
             : "ready_for_native_personal_crafting_menu";
@@ -160,7 +170,20 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             Parameter(
                 "material_reservation_ids_json",
                 JsonSerializer.Serialize(reservation.ReservationIds))
-        };
+        }.Concat(authorization is null
+            ? Array.Empty<SmallModelActionParameter>()
+            : new[]
+            {
+                Parameter(
+                    "material_reservation_goal_id",
+                    authorization.GoalId),
+                Parameter(
+                    "material_reservation_source_decision_id",
+                    authorization.SourceDecisionId),
+                Parameter(
+                    "material_reservation_purpose",
+                    authorization.Purpose)
+            }).ToArray();
         return new ExactSupportCraftingCandidateBinding(
             recipeRow,
             source,

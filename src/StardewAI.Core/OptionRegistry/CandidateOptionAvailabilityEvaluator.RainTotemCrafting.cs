@@ -6,7 +6,9 @@ using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
 using StardewAI.Core.Infrastructure;
+using StardewAI.Core.Strategy;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.OptionRegistry;
@@ -15,7 +17,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
 {
     private EventCandidate[] RainTotemCraftingCandidates(
         SnapshotEnvelope snapshot,
-        SmallModelActionParameter[] boundParameters)
+        SmallModelActionParameter[] boundParameters,
+        StrategyCommitmentLedger? commitmentLedger)
     {
         if (!MasterAnglerWindowIntentValidator
                 .TryValidateRainTotemSupplyIntent(
@@ -79,14 +82,20 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             };
         }
 
+        var authorization = RainTotemMaterialReservationContract.Authorization(
+            intent.TargetTotalDay,
+            intent.AffectedLocationContextId);
         var craftingCandidates = ExactSupportCraftingCandidateBindings(
                 snapshot,
                 recipeRows[0],
-                "rain_totem")
+                "rain_totem",
+                authorization)
             .Select(binding => BuildRainTotemCraftingCandidate(
                 snapshot,
                 binding,
-                intent))
+                intent,
+                commitmentLedger,
+                authorization))
             .OrderByDescending(candidate => candidate.Available)
             .ThenBy(candidate => candidate.CandidateId, StringComparer.Ordinal)
             .ToArray();
@@ -302,12 +311,62 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
     private EventCandidate BuildRainTotemCraftingCandidate(
         SnapshotEnvelope snapshot,
         ExactSupportCraftingCandidateBinding binding,
-        MasterAnglerRainTotemSupplyIntentValidation intent)
+        MasterAnglerRainTotemSupplyIntentValidation intent,
+        StrategyCommitmentLedger? commitmentLedger,
+        MaterialReservationConsumptionAuthorization authorization)
     {
+        var reservation = new MachineCraftingMaterialReservationGuard()
+            .Evaluate(
+                snapshot,
+                binding.Source.TryGetProperty(
+                    "ingredient_rows",
+                    out var ingredientRows)
+                        ? ingredientRows
+                        : default,
+                binding.UsesWorkbench,
+                commitmentLedger,
+                authorization);
         var parameters = binding.Parameters
+            .Where(parameter =>
+                parameter.Name is not "commitment_ledger_id" and
+                not "commitment_ledger_revision" and
+                not "material_reservation_guard_status" and
+                not "material_reservation_ledger_id" and
+                not "material_reservation_ledger_revision" and
+                not "material_reservation_ids_json" and
+                not "material_reservation_consumptions_json")
             .Concat(CanonicalRainTotemSupplyParameters(intent))
             .Concat(new[]
             {
+                Parameter("commitment_ledger_id", reservation.LedgerId),
+                Parameter(
+                    "commitment_ledger_revision",
+                    reservation.LedgerRevision.ToString(
+                        CultureInfo.InvariantCulture)),
+                Parameter(
+                    "material_reservation_guard_status",
+                    reservation.Status),
+                Parameter(
+                    "material_reservation_ledger_id",
+                    reservation.LedgerId),
+                Parameter(
+                    "material_reservation_ledger_revision",
+                    reservation.LedgerRevision.ToString(
+                        CultureInfo.InvariantCulture)),
+                Parameter(
+                    "material_reservation_ids_json",
+                    JsonSerializer.Serialize(reservation.ReservationIds)),
+                Parameter(
+                    "material_reservation_consumptions_json",
+                    RainTotemSettlementConsumptionsJson(
+                        snapshot,
+                        binding,
+                        authorization)),
+                Parameter(
+                    "material_reservation_portfolio_id",
+                    RainTotemMaterialReservationContract.PortfolioId(
+                        intent.TargetTotalDay,
+                        intent.AffectedLocationContextId)),
                 Parameter(
                     "rain_totem_crafting_reason",
                     "master_angler_future_rain_window"),
@@ -329,13 +388,15 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             })
             .ToArray();
         var reasons = new List<string>(binding.BlockingReasons);
+        reasons.AddRange(reservation.BlockingReasons);
         reasons.AddRange(CompilerProbeBlockingReasons(
             snapshot,
             new OptionAvailabilityCandidate
             {
                 OptionId = "executor.craft_rain_totem",
                 Parameters = parameters
-            }));
+            },
+            commitmentLedger));
 
         return new EventCandidate
         {
@@ -369,6 +430,30 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 .ToArray(),
             Parameters = parameters
         };
+    }
+
+    private static string RainTotemSettlementConsumptionsJson(
+        SnapshotEnvelope snapshot,
+        ExactSupportCraftingCandidateBinding binding,
+        MaterialReservationConsumptionAuthorization authorization)
+    {
+        if (!MaterialInventoryGraphReader.TryRead(snapshot, out var graph) ||
+            graph is null ||
+            !binding.Source.TryGetProperty(
+                "ingredient_rows",
+                out var ingredients))
+        {
+            return "[]";
+        }
+
+        var exact = ExactCraftingMaterialConsumptionReader.Read(
+            ingredients,
+            binding.UsesWorkbench,
+            graph.PlayerId);
+        return JsonSerializer.Serialize(
+            RainTotemMaterialReservationContract.SettlementConsumptions(
+                authorization,
+                exact));
     }
 
     private static SmallModelActionParameter[]

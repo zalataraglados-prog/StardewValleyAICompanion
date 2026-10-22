@@ -6,6 +6,7 @@ namespace StardewAI.RuntimeTestHarness;
 public sealed partial class ModEntry
 {
     private const string CrabPotQualifiedItemId = "(O)710";
+    private const string RainTotemQualifiedItemId = "(O)681";
 
     private TrainingExecutionResult
         ExecuteSetupCrabPotCraftingTarget(
@@ -31,6 +32,33 @@ public sealed partial class ModEntry
                 return accepted
                     ? (true, "native_crab_pot_output=true")
                     : (false, "requires_native_crab_pot_output");
+            });
+    }
+
+    private TrainingExecutionResult
+        ExecuteSetupRainTotemCraftingTarget(
+            TrainingExecutionRequest request)
+    {
+        return ExecuteSetupExactCraftingTarget(
+            request,
+            defaultRecipeName: "Rain Totem",
+            primitiveKind: "debug_setup_rain_totem_crafting_target",
+            requestedEffect:
+                "player.rain_totem_crafting.recipe_ready=true",
+            fixturePrefix: "rain_totem_crafting_fixture",
+            learnedRecipeReason:
+                "learned_rain_totem_recipe_preserved",
+            validateOutput: output =>
+            {
+                var accepted =
+                    output is StardewValley.Object &&
+                    string.Equals(
+                        output.QualifiedItemId,
+                        RainTotemQualifiedItemId,
+                        StringComparison.Ordinal);
+                return accepted
+                    ? (true, "native_rain_totem_output=true")
+                    : (false, "requires_native_rain_totem_output");
             });
     }
 

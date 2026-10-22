@@ -453,6 +453,12 @@ static partial class Program
                 execution["primitive_verification_status"] = "stale_after_snapshot";
                 execution["primitive_verification_reasons"] = new JsonArray("after_snapshot_not_fresh");
             }
+            await SettleRainTotemMaterialReservationsAsync(
+                http,
+                options,
+                item,
+                execution,
+                afterSnapshot.Snapshot);
             execution["source"] = options.ExecutorFeedbackSource;
             currentBeforeSnapshot = afterSnapshot.Snapshot;
             currentBeforeSnapshotPath = afterPath;
