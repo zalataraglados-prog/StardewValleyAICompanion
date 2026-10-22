@@ -98,9 +98,8 @@ internal static partial class BootstrapSelfTest
                 StringComparer.Ordinal) &&
             report.PrerequisiteFamilies.Single(value =>
                     value.FamilyId == "weather_reserve_or_control")
-                .ProducerStatus ==
-                    "runtime_consumer_crafting_read_scheduler_immediate_supply_pine_tar_and_pig_truffle_capacity_bound_hardwood_reservation_and_native_crafting_receipt_missing" &&
-            report.MissingOrUnboundProducerFamilies.Contains(
+                .ProducerStatus == "implemented_and_bound" &&
+            !report.MissingOrUnboundProducerFamilies.Contains(
                 "weather_reserve_or_control",
                 StringComparer.Ordinal) &&
             report.MissingOrUnboundProducerFamilies.Contains(
@@ -152,10 +151,117 @@ internal static partial class BootstrapSelfTest
             catalogPath,
             windowIndexPath,
             dependencyExpansionPath);
+        VerifyMasterAnglerRainTotemForagingSkillProgressionFailsClosed(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath);
+        VerifyMasterAnglerRainTotemHardwoodReserveFailsClosed(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath);
+        VerifyMasterAnglerRainTotemCraftingExecutionFailsClosed(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath);
         VerifyMasterAnglerWeatherSupplySchedulerFailsClosed(
             catalogPath,
             windowIndexPath,
             dependencyExpansionPath);
+    }
+
+    private static void VerifyMasterAnglerRainTotemForagingSkillProgressionFailsClosed(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath)
+    {
+        VerifyMasterAnglerWeatherNodeTamperFailsClosed(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath,
+            "dependency.complete_master_angler.rain_totem_foraging_skill_progression",
+            "required_unmodified_foraging_level",
+            JsonValue.Create(8),
+            "foraging-skill");
+    }
+
+    private static void VerifyMasterAnglerRainTotemHardwoodReserveFailsClosed(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath)
+    {
+        VerifyMasterAnglerWeatherNodeTamperFailsClosed(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath,
+            "dependency.complete_master_angler.rain_totem_hardwood_reserve",
+            "hardwood_tool_upgrade_lifecycle_bound",
+            JsonValue.Create(false),
+            "hardwood-reserve");
+    }
+
+    private static void VerifyMasterAnglerRainTotemCraftingExecutionFailsClosed(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath)
+    {
+        VerifyMasterAnglerWeatherNodeTamperFailsClosed(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath,
+            "dependency.complete_master_angler.rain_totem_crafting_execution",
+            "runtime_evidence_id",
+            JsonValue.Create("EVD-000"),
+            "crafting-execution");
+    }
+
+    private static void VerifyMasterAnglerWeatherNodeTamperFailsClosed(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath,
+        string nodeId,
+        string ruleName,
+        JsonNode? tamperedValue,
+        string artifactName)
+    {
+        var root = JsonNode.Parse(File.ReadAllText(dependencyExpansionPath))?.AsObject() ??
+                   throw new InvalidDataException("Master Angler dependency fixture is null.");
+        var direction = root["directions"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["direction_id"]!.GetValue<string>() ==
+                             "complete_master_angler");
+        var node = direction["nodes"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["id"]!.GetValue<string>() == nodeId);
+        node["rule"]![ruleName] = tamperedValue;
+
+        var tamperedPath = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-master-angler-" + artifactName + "-" +
+            Guid.NewGuid().ToString("N") + ".json");
+        try
+        {
+            File.WriteAllText(
+                tamperedPath,
+                root.ToJsonString(JsonDefaults.Options));
+            var tampered = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(
+                catalogPath,
+                windowIndexPath,
+                tamperedPath);
+            Require(
+                tampered.PrerequisiteFamilies.Single(value =>
+                        value.FamilyId == "weather_reserve_or_control")
+                    .ProducerStatus != "implemented_and_bound" &&
+                tampered.MissingOrUnboundProducerFamilies.Contains(
+                    "weather_reserve_or_control",
+                    StringComparer.Ordinal),
+                "Master Angler weather supply accepted a drifted " +
+                artifactName + " contract.");
+        }
+        finally
+        {
+            if (File.Exists(tamperedPath))
+                File.Delete(tamperedPath);
+        }
     }
 
     private static void VerifyMasterAnglerRainTotemTruffleOilCapacityReserveFailsClosed(

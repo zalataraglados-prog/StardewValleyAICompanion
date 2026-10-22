@@ -801,6 +801,33 @@
           }
         },
         {
+          "id": "dependency.complete_master_angler.rain_totem_foraging_skill_progression",
+          "kind": "recurrence_rule",
+          "option_id": "fishing.catch_fish",
+          "candidate_kinds": ["clear_obstacle_tile"],
+          "required_field_paths": [
+            "world_progress.fish_collection_progress",
+            "player.skills_detail",
+            "player.energy",
+            "current_location.terrain_features",
+            "locations.collision_grid",
+            "time.total_days",
+            "time.time"
+          ],
+          "rule": {
+            "reuses_direction_id": "raise_skill_levels",
+            "reuses_node_id": "dependency.raise_skill_levels.acquire_foraging_xp_from_wild_tree",
+            "reused_option_id": "foraging.chop_wild_tree",
+            "required_unmodified_foraging_level": 9,
+            "exact_deficit_source": "player.skills_detail foraging row plus Farmer.getBaseExperienceForLevel threshold ladder",
+            "candidate_policy": "reuse one currently legal mature wild-tree chop with complete positive Foraging XP evidence, then refresh and replan",
+            "fresh_native_receipt_required": true,
+            "recompute_after_every_native_receipt": true,
+            "deadline_total_day_exclusive": 224,
+            "model_output_policy": "no new model-facing option; reuse fishing.catch_fish while the compiler emits the existing foraging.chop_wild_tree primitive"
+          }
+        },
+        {
           "id": "dependency.complete_master_angler.rain_totem_immediate_material_supply",
           "kind": "recurrence_rule",
           "option_id": "fishing.catch_fish",
@@ -959,12 +986,13 @@
           "id": "dependency.complete_master_angler.rain_totem_hardwood_reserve",
           "kind": "recurrence_rule",
           "option_id": "fishing.catch_fish",
-          "candidate_kinds": ["clear_farm_resource_clump", "clear_obstacle_tile", "route_connector_tile", "rain_totem_hardwood_reserve_wait"],
+          "candidate_kinds": ["clear_farm_resource_clump", "clear_obstacle_tile", "route_connector_tile", "submit_tool_upgrade", "claim_tool_upgrade", "rain_totem_hardwood_reserve_wait"],
           "required_field_paths": [
             "world_progress.fish_collection_progress",
             "world_progress.game_state_query_calendar_state",
             "player.inventory",
             "player.location_id",
+            "player.tool_upgrade",
             "farm.resource_clumps",
             "current_location.terrain_features",
             "locations.collision_grid",
@@ -985,11 +1013,36 @@
             "fresh_snapshot_after_each_primitive": true,
             "immediate_material_supply_farm_resource_clump_bound": true,
             "ready_hardwood_source_reserve_bound": true,
-            "hardwood_tool_upgrade_lifecycle_bound": false,
-            "hardwood_reserve_bound": false,
+            "hardwood_tool_upgrade_lifecycle_bound": true,
+            "hardwood_reserve_bound": true,
             "material_consumption_reservation_bound": false,
             "native_rain_totem_crafting_receipt_present": false,
             "long_horizon_reserve_bound": false
+          }
+        },
+        {
+          "id": "dependency.complete_master_angler.rain_totem_crafting_execution",
+          "kind": "deterministic_transition",
+          "option_id": "executor.craft_rain_totem",
+          "candidate_kinds": ["craft_rain_totem"],
+          "required_field_paths": [
+            "player.inventory",
+            "player.rain_totem_crafting",
+            "farm.material_inventory_graph",
+            "time.total_days"
+          ],
+          "rule": {
+            "execution_owner": "compiler_owned_primitive_not_policy_label",
+            "required_qualified_item_id": "(O)681",
+            "material_reservation_goal_id": "goal.fishing.complete_master_angler",
+            "exact_source_slot_reservation_bound": true,
+            "atomic_three_claim_commit_bound": true,
+            "fresh_verified_receipt_required": true,
+            "post_receipt_reservation_settlement_bound": true,
+            "runtime_evidence_id": "EVD-340",
+            "training_label_eligible": false,
+            "native_contract": "CraftingPage recipe click and inventory click consume exact 709x1 432x1 726x5, create (O)681x1, update timesCrafted, run quest callbacks and checkForCraftingAchievements",
+            "settlement_contract": "after a fresh applied-and-verified native receipt, settle the exact hash-bound three-claim supporting transition or reject the training row"
           }
         },
         {
@@ -1069,6 +1122,9 @@
         { "from": "dependency.complete_master_angler.trap_supply_acquisition", "to": "dependency.complete_master_angler.trap_infrastructure_gate", "kind": "supplies_exact_pot_and_bait" },
         { "from": "dependency.complete_master_angler.trap_supply_acquisition", "to": "dependency.complete_master_angler.acquisition_recurrence", "kind": "replans_after_native_purchase" },
         { "from": "dependency.complete_master_angler.fresh_save_prerequisite_inventory", "to": "dependency.complete_master_angler.rain_totem_crafting_read_authority", "kind": "selects_weather_supply_read_authority" },
+        { "from": "dependency.complete_master_angler.fresh_save_prerequisite_inventory", "to": "dependency.complete_master_angler.rain_totem_foraging_skill_progression", "kind": "selects_rain_totem_foraging_level" },
+        { "from": "dependency.complete_master_angler.rain_totem_foraging_skill_progression", "to": "dependency.complete_master_angler.rain_totem_crafting_read_authority", "kind": "unlocks_native_rain_totem_recipe" },
+        { "from": "dependency.complete_master_angler.rain_totem_foraging_skill_progression", "to": "dependency.complete_master_angler.acquisition_recurrence", "kind": "replans_after_native_foraging_xp_receipt" },
         { "from": "dependency.complete_master_angler.stage_one_deadline_window_index", "to": "dependency.complete_master_angler.weather_supply_scheduler", "kind": "feeds_authoritative_tomorrow_weather_windows" },
         { "from": "dependency.complete_master_angler.fresh_save_prerequisite_inventory", "to": "dependency.complete_master_angler.weather_supply_scheduler", "kind": "selects_weather_supply_targets" },
         { "from": "dependency.complete_master_angler.rain_totem_crafting_read_authority", "to": "dependency.complete_master_angler.weather_supply_scheduler", "kind": "supplies_exact_crafting_state" },
@@ -1084,6 +1140,11 @@
         { "from": "dependency.complete_master_angler.rain_totem_crafting_read_authority", "to": "dependency.complete_master_angler.rain_totem_hardwood_reserve", "kind": "supplies_exact_hardwood_requirement" },
         { "from": "dependency.complete_master_angler.weather_supply_scheduler", "to": "dependency.complete_master_angler.rain_totem_hardwood_reserve", "kind": "expands_future_rain_window_reserve" },
         { "from": "dependency.complete_master_angler.rain_totem_hardwood_reserve", "to": "dependency.complete_master_angler.weather_supply_scheduler", "kind": "replans_after_exact_hardwood_source_step" },
+        { "from": "dependency.complete_master_angler.rain_totem_crafting_read_authority", "to": "dependency.complete_master_angler.rain_totem_crafting_execution", "kind": "supplies_exact_native_recipe" },
+        { "from": "dependency.complete_master_angler.rain_totem_pine_tar_capacity_reserve", "to": "dependency.complete_master_angler.rain_totem_crafting_execution", "kind": "supplies_reserved_pine_tar" },
+        { "from": "dependency.complete_master_angler.rain_totem_truffle_oil_capacity_reserve", "to": "dependency.complete_master_angler.rain_totem_crafting_execution", "kind": "supplies_reserved_truffle_oil" },
+        { "from": "dependency.complete_master_angler.rain_totem_hardwood_reserve", "to": "dependency.complete_master_angler.rain_totem_crafting_execution", "kind": "supplies_reserved_hardwood" },
+        { "from": "dependency.complete_master_angler.rain_totem_crafting_execution", "to": "dependency.complete_master_angler.weather_supply_scheduler", "kind": "replans_after_native_crafting_and_reservation_settlement" },
         { "from": "dependency.complete_master_angler.weather_supply_scheduler", "to": "dependency.complete_master_angler.consume_owned_rain_totem", "kind": "schedules_owned_or_freshly_crafted_use" },
         { "from": "dependency.complete_master_angler.fresh_save_prerequisite_inventory", "to": "dependency.complete_master_angler.consume_owned_rain_totem", "kind": "selects_owned_weather_control" },
         { "from": "dependency.complete_master_angler.consume_owned_rain_totem", "to": "dependency.complete_master_angler.target_date_opportunity_producer", "kind": "creates_next_day_weather_precondition" },
@@ -1424,6 +1485,20 @@
           }
         },
         {
+          "id": "dependency.raise_skill_levels.acquire_foraging_xp_from_wild_tree",
+          "kind": "policy_option_transition",
+          "option_id": "foraging.chop_wild_tree",
+          "candidate_kinds": ["clear_obstacle_tile"],
+          "required_field_paths": ["player.skills_detail", "player.energy", "current_location.terrain_features", "locations.collision_grid"],
+          "binding": {
+            "skill_id": "foraging",
+            "positive_evidence": "exact mature wild-tree candidate plus fresh native foraging experience delta",
+            "target_selection": "shortest currently legal mature unprotected base wild tree with complete positive Foraging XP evidence",
+            "fresh_snapshot_replan_after_each_step": true,
+            "missing_current_tree": "refresh or continue other admitted work without fabricating Foraging XP"
+          }
+        },
+        {
           "id": "dependency.raise_skill_levels.acquire_mining_xp",
           "kind": "policy_option_transition",
           "option_id": "mining.reach_depth",
@@ -1495,6 +1570,7 @@
         {"from": "dependency.raise_skill_levels.maintain_crops_for_farming_xp", "to": "dependency.raise_skill_levels.skill_portfolio_recurrence", "kind": "may_advance_farming"},
         {"from": "dependency.raise_skill_levels.acquire_fishing_xp", "to": "dependency.raise_skill_levels.skill_portfolio_recurrence", "kind": "may_advance_fishing"},
         {"from": "dependency.raise_skill_levels.acquire_foraging_xp", "to": "dependency.raise_skill_levels.skill_portfolio_recurrence", "kind": "may_advance_foraging"},
+        {"from": "dependency.raise_skill_levels.acquire_foraging_xp_from_wild_tree", "to": "dependency.raise_skill_levels.skill_portfolio_recurrence", "kind": "may_advance_foraging"},
         {"from": "dependency.raise_skill_levels.acquire_mining_xp", "to": "dependency.raise_skill_levels.skill_portfolio_recurrence", "kind": "may_advance_mining"},
         {"from": "dependency.raise_skill_levels.read_exact_xp_book", "to": "dependency.raise_skill_levels.skill_portfolio_recurrence", "kind": "may_advance_exact_skills"},
         {"from": "dependency.raise_skill_levels.acquire_combat_xp", "to": "dependency.raise_skill_levels.skill_portfolio_recurrence", "kind": "may_advance_combat"},

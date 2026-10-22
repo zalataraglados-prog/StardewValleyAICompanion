@@ -59,6 +59,12 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                     CanonicalRainTotemSupplyParameters(intent))
             };
         }
+        if (ReadBool(crafting.Value, "recipe_learned") == false)
+        {
+            return RainTotemForagingSkillProgressionCandidates(
+                snapshot,
+                intent);
+        }
 
         var recipeRows = rows.EnumerateArray()
             .Where(row => row.ValueKind == JsonValueKind.Object &&

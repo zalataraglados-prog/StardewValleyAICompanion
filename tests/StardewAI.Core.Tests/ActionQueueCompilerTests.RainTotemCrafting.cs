@@ -93,6 +93,51 @@ public sealed partial class ActionQueueCompilerTests
     }
 
     [Fact]
+    public void UnlearnedRainTotemRecipeReusesExactWildTreeForagingXpStep()
+    {
+        using var fixture = RainTotemCraftingFixture.Create(
+            recipeLearned: false,
+            foragingLevel: 8,
+            readyWildTree: true);
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(
+            fixture.Snapshot,
+            [new OptionAvailabilityCandidate
+            {
+                OptionId = "fishing.catch_fish",
+                Parameters = fixture.SupplyParameters
+            }]);
+
+        var candidate = Assert.Single(
+            Assert.Single(availability.Options).EventCandidates);
+        Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
+        Assert.Equal("clear_obstacle_tile", candidate.Kind);
+        Assert.StartsWith("rain-totem-foraging-xp:", candidate.CandidateId);
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "rain_totem_foraging_current_unmodified_level" &&
+            parameter.Value == "8");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "rain_totem_foraging_required_level" &&
+            parameter.Value == "9");
+
+        var ranked = new EventCandidateRanker().Rank(
+            new BaselineTrainingReport(),
+            availability,
+            "goal.fishing.complete_master_angler");
+        var plan = new DailyPlanCompiler().Compile(
+            ranked,
+            fixture.Snapshot.StateHash);
+        var queue = new ActionQueueCompiler().Compile(
+            plan,
+            fixture.Snapshot);
+        var item = Assert.Single(
+            queue.Items.Where(value =>
+                value.OptionId == "executor.clear_obstacle"));
+
+        Assert.Equal("executor.clear_obstacle", item.OptionId);
+        Assert.Empty(item.BlockingReasons);
+    }
+
+    [Fact]
     public void RainTotemCandidateRejectsMaterialsReservedForAnotherGoal()
     {
         using var fixture = RainTotemCraftingFixture.Create(
@@ -461,7 +506,10 @@ public sealed partial class ActionQueueCompilerTests
             int pineTarRequired = 5,
             int hardwoodAvailable = 1,
             bool readyHardwoodClump = false,
-            bool exactMaterialTopology = false)
+            bool exactMaterialTopology = false,
+            bool recipeLearned = true,
+            int foragingLevel = 9,
+            bool readyWildTree = false)
         {
             var items = Enumerable.Range(0, 72)
                 .Select(index => new
@@ -528,7 +576,8 @@ public sealed partial class ActionQueueCompilerTests
             var rainTotemRowsJson = ownsRainTotem
                 ? "[{\"inventory_slot_index\":2,\"item_id\":\"681\",\"qualified_item_id\":\"(O)681\",\"inventory_runtime_type\":\"StardewValley.Object\",\"stack_before\":2,\"stack_after\":1,\"temporarily_invisible\":false}]"
                 : "[]";
-            var playerLocation = readyPineTarMachine || readyHardwoodClump
+            var playerLocation = readyPineTarMachine || readyHardwoodClump ||
+                readyWildTree
                 ? "Farm"
                 : "FarmHouse";
             var ingredientRowsJson = exactMaterialTopology
@@ -573,6 +622,24 @@ public sealed partial class ActionQueueCompilerTests
             var resourceClumpsJson = readyHardwoodClump
                 ? "[{\"tile_x\":7,\"tile_y\":5,\"width\":2,\"height\":2,\"parent_sheet_index\":600,\"clear_kind\":\"resource_stump\",\"minimum_tool_upgrade_level\":1,\"clear_obstacle_executor_status\":\"ready\",\"expected_tool_hits_to_clear\":5,\"tool_slot_index\":1,\"clear_expected_output_items_json\":\"[{\\\"runtimeType\\\":\\\"StardewValley.Object\\\",\\\"qualifiedItemId\\\":\\\"(O)709\\\",\\\"quality\\\":0,\\\"unitStateSha256\\\":\\\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\\\",\\\"quantity\\\":2}]\",\"clear_output_projection_status\":\"exact_vanilla_conservative_minimum\",\"clear_output_native_contract\":\"native_resource_clump_destroy_contract\",\"harvest_experience_projection_status\":\"exact\",\"harvest_experience_skill_id\":\"foraging\",\"harvest_experience_on_success_min\":25,\"harvest_experience_on_success_max\":25,\"harvest_experience_condition\":\"native_player_axe_destroys_resource_stump_or_hollow_log\"}]"
                 : "[]";
+            var terrainFeaturesJson = readyWildTree
+                ? "[{\"tile_x\":12,\"tile_y\":10,\"type\":\"StardewValley.TerrainFeatures.Tree\",\"runtime_type\":\"StardewValley.TerrainFeatures.Tree\",\"tree_type\":\"1\",\"growth_stage\":5,\"health\":10,\"stump\":false,\"tapped\":false,\"falling\":false,\"has_moss\":false,\"has_seed\":false,\"max_shake\":0,\"tree_chop_acquisition_status\":\"ready\",\"tree_chop_data_contract_status\":\"exact_locked_base_1.6.15_chop\",\"tree_chop_protection_status\":\"unprotected\",\"tree_chop_completion_mode\":\"wild_tree_removed\",\"tree_chop_tool_slot_index\":2,\"tree_chop_required_tool_kind\":\"axe\",\"tree_chop_expected_tool_swings\":6,\"tree_chop_energy_cost\":7.2,\"tree_chop_guaranteed_minimum_outputs\":[{\"qualifiedItemId\":\"(O)388\",\"quality\":0,\"quantityMin\":17},{\"qualifiedItemId\":\"(O)92\",\"quality\":0,\"quantityMin\":6}],\"tree_chop_optional_output_domain\":[{\"kind\":\"exact\",\"qualified_item_id\":\"(O)388\",\"quality\":0,\"quantity_max\":null,\"branch\":\"quantity_above_guaranteed\"}],\"tree_chop_authoritative_route_sources\":[{\"route_kind\":\"native_wild_tree_chop_drop\",\"source_id\":\"wild_tree:1:0\",\"qualified_item_id\":\"(O)92\"}],\"tree_chop_output_distribution_status\":\"complete_stochastic_native_branch_domain_no_rng_consumed\",\"tree_chop_projection_status\":\"exact_live_tree_and_locked_wild_tree_chop_domain\",\"tree_chop_foraging_experience_before\":6900,\"tree_chop_foraging_experience_delta\":16,\"tree_chop_foraging_experience_after\":6916,\"tree_chop_trees_chopped_before\":25,\"tree_chop_trees_chopped_delta\":1,\"tree_chop_trees_chopped_after\":26,\"tree_chop_expected_tree_present_after\":false,\"tree_chop_native_contract\":\"Axe native tool lifecycle -> Tree.performToolAction -> Tree.performTreeFall(trunk,stump) -> Tree.tickUpdate falling settlement; locked Data/WildTrees DropWoodOnChop, DropHardwoodOnLumberChop, ChopItems, SeedItemId, and SeedOnChopChance; complete stochastic output domain; no direct tree, RNG, debris, inventory, stats, or skill mutation\"}]"
+                : "[]";
+            var rainTotemCraftingRowsJson = recipeLearned
+                ? $$"""
+                  [{
+                    "recipe_name":"Rain Totem",
+                    "times_crafted":0,
+                    "output_item_id":"681",
+                    "output_qualified_item_id":"(O)681",
+                    "output_count_per_craft":1,
+                    "ingredient_rows":{{ingredientRowsJson}},
+                    "workbench_crafting_sources":[],
+                    "output_inventory_acceptance_after_material_consumption":true,
+                    "craft_candidate_status":"{{craftCandidateStatus}}"
+                  }]
+                  """
+                : "[]";
             var materialGraphJson = exactMaterialTopology
                 ? """
                   {"schema_version":"material_inventory_graph.v1","status":"available","player_id":123,"inventory_nodes":[{"node_id":"player:123","inventory_kind":"player_inventory","supply_state":"available","owner_player_id":123,"actor_use_authorized":true,"capacity":12,"slots":[{"slot_index":0,"item_id":"709","qualified_item_id":"(O)709","stack":1,"maximum_stack_size":999,"quality":0},{"slot_index":1,"item_id":"432","qualified_item_id":"(O)432","stack":1,"maximum_stack_size":999,"quality":0},{"slot_index":2,"item_id":"726","qualified_item_id":"(O)726","stack":5,"maximum_stack_size":999,"quality":0}]}],"access_points":[],"workbench_links":[],"quantity_rows":[]}
@@ -581,7 +648,8 @@ public sealed partial class ActionQueueCompilerTests
             var snapshot = ActionQueueCompilerTests.Snapshot($$"""
         {
           "time": {
-            "total_days": {"value":100,"status":"available"}
+            "total_days": {"value":100,"status":"available"},
+            "time": {"value":900,"status":"available"}
           },
           "player": {
             "location_id": {"value":"{{playerLocation}}","status":"available"},
@@ -590,7 +658,7 @@ public sealed partial class ActionQueueCompilerTests
             "energy": {"value":270,"status":"available"},
             "inventory": {"value":{{inventoryJson}},"status":"available"},
             "inventory_capacity": {"value":{"capacity":12,"occupied_slots":{{(ownsRainTotem ? 1 : 0)}},"free_slots":{{(ownsRainTotem ? 11 : 12)}},"empty_slots":{{(ownsRainTotem ? 11 : 12)}},"has_empty_slot":true},"status":"available"},
-            "skills_detail": {"value":{"skills":[{"skill_id":"fishing","effective_level":10}]},"status":"available"},
+            "skills_detail": {"value":{"skills":[{"skill_id":"fishing","effective_level":10,"unmodified_level":10,"experience":15000},{"skill_id":"foraging","effective_level":{{foragingLevel}},"unmodified_level":{{foragingLevel}},"experience":6900}]} ,"status":"available"},
             "rain_totem": {"value":{
               "projection_status":"complete_current_native_rain_totem_context",
               "projection_fingerprint":"rain-totem-fingerprint",
@@ -603,17 +671,8 @@ public sealed partial class ActionQueueCompilerTests
             },"status":"available"},
             "rain_totem_crafting": {"value":{
               "projection_status":"complete_learned_rain_totem_recipe_projection",
-              "rows":[{
-                "recipe_name":"Rain Totem",
-                "times_crafted":0,
-                "output_item_id":"681",
-                "output_qualified_item_id":"(O)681",
-                "output_count_per_craft":1,
-                "ingredient_rows":{{ingredientRowsJson}},
-                "workbench_crafting_sources":[],
-                "output_inventory_acceptance_after_material_consumption":true,
-                "craft_candidate_status":"{{craftCandidateStatus}}"
-              }]
+              "recipe_learned":{{recipeLearned.ToString().ToLowerInvariant()}},
+              "rows":{{rainTotemCraftingRowsJson}}
             },"status":"available"}
           },
           "farm": {
@@ -638,6 +697,7 @@ public sealed partial class ActionQueueCompilerTests
           },
           "locations": {
             "collision_grid": {"value":{"location_id":"{{playerLocation}}","width":100,"height":100,"notable_tiles":[]},"status":"available"},
+            "route_action_branch_coverage": {"value":{"rows":[]},"status":"available"},
             "social_route_date_evidence": {"value":{"locations":[
               {"location_id":"Farm","location_context_id":"Default"},
               {"location_id":"FarmHouse","location_context_id":"Default"},
@@ -646,7 +706,10 @@ public sealed partial class ActionQueueCompilerTests
             ]},"status":"available"}
           },
           "current_location": {
-            "map": {"value":{"location_id":"{{playerLocation}}"},"status":"available"}
+            "map": {"value":{"location_id":"{{playerLocation}}"},"status":"available"},
+            "objects": {"value":[],"status":"available"},
+            "debris": {"value":[],"status":"available"},
+            "terrain_features": {"value":{{terrainFeaturesJson}},"status":"available"}
           },
           "menus": {
             "active_menu": {"value":{"is_open":false},"status":"available"}
