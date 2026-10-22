@@ -83,6 +83,8 @@ Full Shipment dependency graph 的节点早已声明 `full_recurrence_required_f
 
 2026-10-23 Pine Tar 长线产能已在既有天气调度和机器链内闭合，没有新增第二套机器执行器。未来雨窗意图会从权威窗口索引、节日日历、fresh 缺鱼、当前库存和精确 Pine Tapper 到期产出计算缺口，再按 5 天基础周期求最少新增 Tapper 数；每次只通过通用 `craft_machine_item` / `place_machine_item` 补一台并 fresh 重算。透明放置同时锁定 `Object.canBePlacedHere` 与 `Object.placementAction` 的成熟可 Tap 树分支，候选测试确认会越过更近的橡树选择松树；季节和树状态已进入缓存指纹。专项回归 `46/46`，Bootstrap Release `0 warning / 0 error`，未启动游戏。依赖图 SHA-256 为 `e6a4637b5501e12bc4f6e45deacd1b551376e0daad838f84ff1b15787ba4dccc`。天气族的新精确状态为 `runtime_consumer_crafting_read_scheduler_immediate_supply_and_pine_tar_capacity_bound_pig_truffle_hardwood_reservation_and_native_crafting_receipt_missing`；Pig/Truffle Oil、Hardwood、材料消费 reservation 和原生 Rain Totem 制作回执仍缺，故未绑定族仍为 `5`、正式训练仍为 `false`，所有全局分子不变。现存审计夹具缺当前 60/2/10 字段，本切片未生成或宣称新的正式 audit hash。
 
+2026-10-23 Pig/Truffle Oil reserve 的必要建筑升级底座已补齐。此前通用建筑目录显式跳过 `BuildingToUpgrade`，导致 fresh save 无法从 Barn 走到 Deluxe Barn；现在透明目录为每座精确来源建筑生成升级行，候选、日计划和动作队列在唯一 `buildings.construct -> executor.construct_building` 链内以 `project_kind=upgrade` 复用原生 CarpenterMenu。编译与运行均核验来源建筑类型和坐标，成功必须观察到原生 `upgradeName`、`daysUntilUpgrade`、金钱及材料收据，不允许直接写建筑状态。专项测试 `11/11`、Runtime Harness Release 零警告零错误，未启动游戏。这里只修复 Pig reserve 的前置执行硬伤；猪购买/成熟/天气生产、Truffle 与 Oil Maker 容量调度仍是下一固定切片，因此全局准入指标、依赖图哈希、天气族未完成状态和正式训练禁令不变。
+
 ## 2. 已完成并冻结的施工单位
 
 ### Full Shipment runtime evidence

@@ -15,12 +15,14 @@ public sealed partial class DailyPlanCompiler
         {
             return Array.Empty<SmallModelPlanStep>();
         }
+        var projectKind = CandidateParameter(candidate, "construction_project_kind");
+        var stepKind = projectKind == "upgrade" ? "upgrade_building" : "construct_building";
         return new[]
         {
             new SmallModelPlanStep
             {
-                StepId = StepId(candidate, "construct_building", 0),
-                Kind = "construct_building",
+                StepId = StepId(candidate, stepKind, 0),
+                Kind = stepKind,
                 TargetLocation = candidate.LocationId,
                 TargetTileX = candidate.TileX,
                 TargetTileY = candidate.TileY,

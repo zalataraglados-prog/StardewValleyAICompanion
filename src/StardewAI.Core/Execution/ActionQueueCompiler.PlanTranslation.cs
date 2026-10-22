@@ -294,6 +294,7 @@ namespace StardewAI.Core.Execution
                 "use_rain_totem" => "executor.use_rain_totem",
                 "construct_quest_building" => "executor.construct_building",
                 "construct_building" => "executor.construct_building",
+                "upgrade_building" => "executor.construct_building",
                 "change_building_skin" => "executor.change_building_skin",
                 "paint_building_region" => "executor.change_building_skin",
                 "place_machine_item" => "executor.place_machine",

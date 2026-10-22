@@ -240,6 +240,8 @@ static partial class Program
         var expectedDaysUntilHouseUpgradeBefore = ReadQueueParameterInt(item, "expected_days_until_house_upgrade_before");
         var expectedDaysUntilHouseUpgradeAfter = ReadQueueParameterInt(item, "expected_days_until_house_upgrade_after");
         var constructionBuildingType = ReadQueueParameterString(item, "construction_building_type");
+        var constructionProjectKind = ReadQueueParameterString(item, "construction_project_kind");
+        var constructionUpgradeFromBuildingType = ReadQueueParameterString(item, "construction_upgrade_from_building_type");
         var constructionBuildDays = ReadQueueParameterInt(item, "construction_build_days");
         var constructionMaterialsJson = ReadQueueParameterString(item, "construction_materials_json");
         var placementLocationId = ReadQueueParameterString(item, "placement_location_id");
@@ -846,6 +848,8 @@ static partial class Program
         executionRequest.ExpectedDaysUntilHouseUpgradeBefore = expectedDaysUntilHouseUpgradeBefore;
         executionRequest.ExpectedDaysUntilHouseUpgradeAfter = expectedDaysUntilHouseUpgradeAfter;
         executionRequest.ConstructionBuildingType = constructionBuildingType;
+        executionRequest.ConstructionProjectKind = constructionProjectKind;
+        executionRequest.ConstructionUpgradeFromBuildingType = constructionUpgradeFromBuildingType;
         executionRequest.ConstructionBuildDays = constructionBuildDays;
         executionRequest.ConstructionMaterialsJson = constructionMaterialsJson;
         executionRequest.PlacementLocationId = placementLocationId;

@@ -18,7 +18,7 @@ namespace StardewAI.Core.Training
                 ["crafting.cook_recipe"] = new[] { "route_connector_tile", "cook_recipe" },
                 ["crafting.forge_item"] = new[] { "route_connector_tile", "forge_item" },
                 ["tailoring.sew_item"] = new[] { "route_connector_tile", "tailor_item" },
-                ["buildings.construct"] = new[] { "route_connector_tile", "construct_building" },
+                ["buildings.construct"] = new[] { "route_connector_tile", "construct_building", "upgrade_building" },
                 ["buildings.change_skin"] = new[] { "route_connector_tile", "change_building_skin" },
                 ["buildings.paint"] = new[] { "route_connector_tile", "paint_building_region" },
                 ["farm.care_for_pets"] = new[] { "pet_daily_interaction", "fill_pet_bowl" },
@@ -778,7 +778,7 @@ namespace StardewAI.Core.Training
                 return ConstructQuestBuildingSteps(candidate);
             }
 
-            if (candidate.Kind == "construct_building")
+            if (candidate.Kind is "construct_building" or "upgrade_building")
             {
                 return ConstructBuildingSteps(candidate);
             }

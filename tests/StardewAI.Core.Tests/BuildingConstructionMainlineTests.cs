@@ -66,6 +66,99 @@ public sealed class BuildingConstructionMainlineTests
     }
 
     [Fact]
+    public void PurposeBoundUpgradeCompilesToSharedConstructionExecutorWithExactSourceIdentity()
+    {
+        var snapshot = UpgradeSnapshot();
+        var intent = new OptionAvailabilityCandidate
+        {
+            OptionId = "buildings.construct",
+            ActorIsHost = true,
+            Parameters = new[]
+            {
+                Parameter("building_type", "Big Barn"),
+                Parameter("placement_location_id", "Farm"),
+                Parameter("construction_reason", "pig_capacity")
+            }
+        };
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(snapshot, new[] { intent }, true);
+        var candidate = Assert.Single(Assert.Single(availability.Options).EventCandidates);
+        Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
+        Assert.Equal("upgrade_building", candidate.Kind);
+        Assert.Contains(candidate.Parameters, value => value.Name == "construction_upgrade_from_building_type" && value.Value == "Barn");
+
+        var plan = new DailyPlanCompiler().Compile(
+            new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability),
+            snapshot.StateHash);
+        Assert.Equal("upgrade_building", Assert.Single(plan.Steps).Kind);
+        var item = Assert.Single(new StardewAI.Core.Execution.ActionQueueCompiler().Compile(plan, snapshot).Items);
+        Assert.Equal("executor.construct_building", item.OptionId);
+        Assert.Equal("pending", item.Status);
+        Assert.Equal("upgrade_building", Assert.Single(item.NormalizedCommand.Steps).StepType);
+    }
+
+    [Fact]
+    public void UpgradeSourceTypeTamperIsBlockedByCompilerRebinding()
+    {
+        var snapshot = UpgradeSnapshot();
+        var candidate = Assert.Single(Assert.Single(new CandidateOptionAvailabilityEvaluator().Evaluate(
+            snapshot,
+            new[]
+            {
+                new OptionAvailabilityCandidate
+                {
+                    OptionId = "buildings.construct",
+                    ActorIsHost = true,
+                    Parameters = new[]
+                    {
+                        Parameter("building_type", "Big Barn"),
+                        Parameter("placement_location_id", "Farm"),
+                        Parameter("construction_reason", "pig_capacity")
+                    }
+                }
+            },
+            true).Options).EventCandidates);
+        var output = new SmallModelActionEnvelope
+        {
+            ModelOutputId = "upgrade-tamper",
+            SourceModel = "test",
+            StateHash = snapshot.StateHash,
+            GoalId = "test",
+            ExecutionMode = "training_singleplayer",
+            Actor = new ActionActorRef { ActorId = "training_farmer.test", ActorType = "training_farmer", ControlSurface = "training_sandbox" },
+            Actions = new[]
+            {
+                new SmallModelAction
+                {
+                    ActionId = "upgrade",
+                    OptionId = "executor.construct_building",
+                    Rationale = "test",
+                    Parameters = candidate.Parameters.Select(value => value.Name == "construction_upgrade_from_building_type"
+                        ? Parameter(value.Name, "Coop")
+                        : value).ToArray()
+                }
+            }
+        };
+
+        Assert.Contains("construct_building_general_projection_drifted",
+            Assert.Single(new StardewAI.Core.Execution.ActionQueueCompiler().Compile(output, snapshot).Items).BlockingReasons);
+    }
+
+    [Fact]
+    public void RuntimeUpgradeUsesNativeCarpenterReceiptWithoutDirectBuildingMutation()
+    {
+        var root = FindRepositoryRoot();
+        var runtime = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.BuildingConstruction.cs"));
+        var bridge = File.ReadAllText(Path.Combine(root, "src", "StardewAI.TransparentBridge", "Adapters", "PlayerReadAdapter.BuildingUpgrades.cs"));
+
+        Assert.Contains("CarpenterMenu.Action.Upgrade", runtime, StringComparison.Ordinal);
+        Assert.Contains("menu.receiveLeftClick", runtime, StringComparison.Ordinal);
+        Assert.Contains("building.upgradeName.Value == request.ConstructionBuildingType", runtime, StringComparison.Ordinal);
+        Assert.DoesNotContain("building.upgradeName.Value = request.ConstructionBuildingType", runtime, StringComparison.Ordinal);
+        Assert.Contains("data.BuildingToUpgrade!", bridge, StringComparison.Ordinal);
+        Assert.Contains("native_upgrade_source_type_and_tile_verified_runtime_recheck_required", bridge, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void ConstructionCapabilityIsBoundedByItsRuntimeEvidence()
     {
         var highLevel = StardewAI.Contracts.Capabilities.OptionCapabilityRegistrySource.GetRequired("buildings.construct");
@@ -148,6 +241,36 @@ public sealed class BuildingConstructionMainlineTests
             Completeness = "complete",
             State = state
         };
+    }
+
+    private static SnapshotEnvelope UpgradeSnapshot()
+    {
+        var snapshot = Snapshot();
+        var root = System.Text.Json.Nodes.JsonNode.Parse(JsonSerializer.Serialize(snapshot.State))!.AsObject();
+        var row = root["player"]!["building_construction_catalog"]!["value"]!["rows"]![0]!.AsObject();
+        row["project_kind"] = "upgrade";
+        row["building_type"] = "Big Barn";
+        row["upgrade_from_building_type"] = "Barn";
+        row["display_name"] = "Big Barn";
+        row["placement_tile_x"] = 12;
+        row["placement_tile_y"] = 8;
+        row["placement_verification"] = "native_upgrade_source_type_and_tile_verified_runtime_recheck_required";
+        row["action_status"] = "ready_for_native_upgrade";
+        row["native_contract"] = "GameLocation.checkAction->ShowConstructOptions->CarpenterMenu.Action.Upgrade->receiveLeftClick->ConsumeResources->Building.upgradeName_and_daysUntilUpgrade";
+        var state = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(root.ToJsonString())!;
+        snapshot.State = state;
+        snapshot.StateHash = SnapshotHash.ComputeStateHash(state);
+        return snapshot;
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        var current = new DirectoryInfo(AppContext.BaseDirectory);
+        while (current is not null && !File.Exists(Path.Combine(current.FullName, "StardewValleyAICompanion.sln")))
+        {
+            current = current.Parent;
+        }
+        return current?.FullName ?? throw new InvalidOperationException("repository root not found");
     }
 
     private static SmallModelActionParameter Parameter(string name, string value) => new() { Name = name, Value = value };

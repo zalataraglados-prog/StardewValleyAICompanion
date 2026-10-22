@@ -43,6 +43,13 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         {
             return Array.Empty<EventCandidate>();
         }
+        var projectKind = ReadString(row, "project_kind");
+        if (string.IsNullOrWhiteSpace(projectKind))
+        {
+            projectKind = "construction";
+        }
+        var candidateKind = projectKind == "upgrade" ? "upgrade_building" : "construct_building";
+        var readyStatus = projectKind == "upgrade" ? "ready_for_native_upgrade" : "ready_for_native_construction";
 
         var serviceLocation = ReadString(row, "service_location_id");
         var currentLocation = ReadStateFieldString(snapshot, "player", "location_id");
@@ -66,7 +73,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             ? materialRows.GetRawText()
             : "[]";
         var reasons = new List<string>();
-        if (ReadString(row, "action_status") != "ready_for_native_construction")
+        if (ReadString(row, "action_status") != readyStatus)
         {
             reasons.Add("building_construction_not_ready:" + ReadString(row, "action_status"));
         }
@@ -88,8 +95,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         {
             new EventCandidate
             {
-                CandidateId = "building-construct:" + buildingType + ":" + placementLocation,
-                Kind = "construct_building",
+                CandidateId = "building-" + projectKind + ":" + buildingType + ":" + placementLocation + ":" + placementX + "," + placementY,
+                Kind = candidateKind,
                 Available = reasons.Count == 0,
                 LocationId = serviceLocation,
                 TileX = actionX,
@@ -100,9 +107,9 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 TotalValue = ReadInt(row, "build_cost"),
                 EstimatedTicks = 600,
                 EnergyCost = 0,
-                AvailabilityClass = "transparent_purpose_bound_native_construction",
+                AvailabilityClass = "transparent_purpose_bound_native_" + projectKind,
                 ExpectedEffect = "building=" + buildingType + ";location=" + placementLocation +
-                    ";construction_reason=" + reason + ";native_construction_started=true;fresh_snapshot_replan_required=true",
+                    ";construction_reason=" + reason + ";native_" + projectKind + "_started=true;fresh_snapshot_replan_required=true",
                 BlockReasons = reasons.ToArray(),
                 Parameters = parameters
             }
@@ -153,8 +160,10 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         int placementY) => new[]
     {
         Parameter("construction_purpose", "general_strategy"),
+        Parameter("construction_project_kind", string.IsNullOrWhiteSpace(ReadString(row, "project_kind")) ? "construction" : ReadString(row, "project_kind")),
         Parameter("construction_reason", reason),
         Parameter("construction_building_type", ReadString(row, "building_type")),
+        Parameter("construction_upgrade_from_building_type", ReadString(row, "upgrade_from_building_type")),
         Parameter("project_id", ReadString(row, "building_type")),
         Parameter("construction_builder", ReadString(row, "builder")),
         Parameter("construction_build_days", ReadInt(row, "build_days").ToString(CultureInfo.InvariantCulture)),

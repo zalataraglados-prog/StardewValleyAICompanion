@@ -11,6 +11,7 @@ public sealed partial class ModEntry
 {
     private const string QuestBuildingConstructionNativeContract = "GameLocation.checkAction_Carpenter->answerDialogue_carpenter_Construct->CarpenterMenu.receiveLeftClick->tryToBuild->Building.FinishConstruction->HaveBuildingQuest.OnBuildingExists";
     private const string GeneralBuildingConstructionNativeContract = "GameLocation.checkAction->ShowConstructOptions->CarpenterMenu.receiveLeftClick->tryToBuild->ConsumeResources->Building.FinishConstruction";
+    private const string GeneralBuildingUpgradeNativeContract = "GameLocation.checkAction->ShowConstructOptions->CarpenterMenu.Action.Upgrade->receiveLeftClick->ConsumeResources->Building.upgradeName_and_daysUntilUpgrade";
 
     private sealed class ActiveBuildingConstruction
     {
@@ -268,9 +269,12 @@ public sealed partial class ModEntry
     {
         var request = active.Pending.Request;
         var farm = Game1.getLocationFromName(request.PlacementLocationId);
+        var isUpgrade = request.ConstructionProjectKind == "upgrade";
         var building = farm?.buildings.FirstOrDefault(value =>
-            value.buildingType.Value == request.ConstructionBuildingType &&
-            value.tileX.Value == request.BuildingTileX && value.tileY.Value == request.BuildingTileY);
+            value.tileX.Value == request.BuildingTileX && value.tileY.Value == request.BuildingTileY &&
+            (isUpgrade
+                ? value.buildingType.Value == request.ConstructionUpgradeFromBuildingType
+                : value.buildingType.Value == request.ConstructionBuildingType));
         if (building is null)
         {
             if (active.ElapsedTicks < 4100)
@@ -280,7 +284,11 @@ public sealed partial class ModEntry
             CompleteBuildingConstructionBlocked(active, "construct_building_native_settlement_missing");
             return;
         }
-        if (building.daysOfConstructionLeft.Value != request.ConstructionBuildDays ||
+        var nativeCountdownMatches = isUpgrade
+            ? building.upgradeName.Value == request.ConstructionBuildingType &&
+              building.daysUntilUpgrade.Value == Math.Max(request.ConstructionBuildDays ?? 0, 1)
+            : building.daysOfConstructionLeft.Value == request.ConstructionBuildDays;
+        if (!nativeCountdownMatches ||
             Game1.player.Money != request.ExpectedMoneyAfter ||
             active.MaterialCountsBefore.Any(pair => Game1.player.Items.CountId(pair.Key) != pair.Value - RequiredMaterialCount(request, pair.Key)))
         {
@@ -299,11 +307,17 @@ public sealed partial class ModEntry
             FeedbackAvailable = true,
             StartedAt = active.StartedAt,
             CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
-            PrimitiveKind = "construct_building",
+            PrimitiveKind = isUpgrade ? "upgrade_building" : "construct_building",
             PrimitiveVerificationStatus = "verified",
-            PrimitiveVerificationReasons = new[] { "native_Carpenter_Construct_selected", "native_CarpenterMenu_blueprint_and_placement_clicked", "native_building_countdown_and_resource_consumption_verified" },
-            RequestedEffect = "farm.buildings[" + request.ConstructionBuildingType + "].days_of_construction_left=" + request.ConstructionBuildDays,
-            ObservedEffect = "building=" + request.ConstructionBuildingType + ";tile=" + request.BuildingTileX + "," + request.BuildingTileY + ";days_left=" + building.daysOfConstructionLeft.Value,
+            PrimitiveVerificationReasons = isUpgrade
+                ? new[] { "native_Carpenter_Construct_selected", "native_CarpenterMenu_upgrade_blueprint_and_source_building_clicked", "native_upgrade_name_countdown_and_resource_consumption_verified" }
+                : new[] { "native_Carpenter_Construct_selected", "native_CarpenterMenu_blueprint_and_placement_clicked", "native_building_countdown_and_resource_consumption_verified" },
+            RequestedEffect = isUpgrade
+                ? "farm.buildings[" + request.BuildingTileX + "," + request.BuildingTileY + "].upgrade_name=" + request.ConstructionBuildingType
+                : "farm.buildings[" + request.ConstructionBuildingType + "].days_of_construction_left=" + request.ConstructionBuildDays,
+            ObservedEffect = isUpgrade
+                ? "building=" + building.buildingType.Value + ";upgrade_name=" + building.upgradeName.Value + ";tile=" + request.BuildingTileX + "," + request.BuildingTileY + ";days_until_upgrade=" + building.daysUntilUpgrade.Value
+                : "building=" + request.ConstructionBuildingType + ";tile=" + request.BuildingTileX + "," + request.BuildingTileY + ";days_left=" + building.daysOfConstructionLeft.Value,
             ActualTicks = active.ElapsedTicks,
             TargetLocation = request.PlacementLocationId,
             TargetTileX = request.BuildingTileX,
@@ -323,17 +337,29 @@ public sealed partial class ModEntry
         materials = new Dictionary<string, int>(StringComparer.Ordinal);
         reason = "construct_building_typed_request_invalid";
         var questPurpose = request.ConstructionPurpose != "general_strategy";
+        var projectKind = questPurpose || string.IsNullOrWhiteSpace(request.ConstructionProjectKind)
+            ? "construction"
+            : request.ConstructionProjectKind;
+        var expectedContract = projectKind == "upgrade"
+            ? GeneralBuildingUpgradeNativeContract
+            : GeneralBuildingConstructionNativeContract;
+        var expectedPlacementVerification = projectKind == "upgrade"
+            ? "native_upgrade_source_type_and_tile_verified_runtime_recheck_required"
+            : "static_native_predicates_passed_runtime_recheck_required";
         var purposeExact = questPurpose
             ? request.QuestFamily == "ordinary_quest" && request.QuestRuntimeType == "HaveBuildingQuest" && request.NativeContract == QuestBuildingConstructionNativeContract
             : request.QuestFamily.Length == 0 && request.QuestRuntimeType.Length == 0 && request.QuestId.Length == 0 &&
-              !string.IsNullOrWhiteSpace(request.ConstructionReason) && request.NativeContract == GeneralBuildingConstructionNativeContract;
+              !string.IsNullOrWhiteSpace(request.ConstructionReason) && request.NativeContract == expectedContract;
         if (!purposeExact || request.ConstructionBuilder is not ("Robin" or "Wizard") ||
             request.BuilderActionRaw != ExpectedBuildingServiceAction(request) ||
             request.ConstructionBuildingType != request.ProjectId || string.IsNullOrWhiteSpace(request.PlacementLocationId) ||
+            projectKind is not ("construction" or "upgrade") ||
+            (projectKind == "upgrade" && string.IsNullOrWhiteSpace(request.ConstructionUpgradeFromBuildingType)) ||
+            (projectKind == "construction" && !string.IsNullOrWhiteSpace(request.ConstructionUpgradeFromBuildingType)) ||
             !request.BuildingTileX.HasValue || !request.BuildingTileY.HasValue ||
             !request.ConstructionBuildDays.HasValue || !request.Price.HasValue || request.Price < 0 ||
             request.ExpectedMoneyAfter != request.ExpectedMoneyBefore - request.Price ||
-            request.PlacementVerification != "static_native_predicates_passed_runtime_recheck_required")
+            request.PlacementVerification != expectedPlacementVerification)
         {
             return false;
         }
@@ -365,7 +391,12 @@ public sealed partial class ModEntry
         var purposeReady = request.ConstructionPurpose == "general_strategy" || Game1.player.questLog.OfType<HaveBuildingQuest>().Any(value =>
             value.id.Value == request.QuestId && value.buildingType.Value == request.ConstructionBuildingType &&
             value.accepted.Value && !value.completed.Value);
-        return purposeReady && !Game1.IsThereABuildingUnderConstruction() &&
+        var exactUpgradeSourceReady = request.ConstructionProjectKind != "upgrade" ||
+            Game1.getLocationFromName(request.PlacementLocationId)?.buildings.Any(value =>
+                value.tileX.Value == request.BuildingTileX && value.tileY.Value == request.BuildingTileY &&
+                value.buildingType.Value == request.ConstructionUpgradeFromBuildingType &&
+                string.IsNullOrWhiteSpace(value.upgradeName.Value) && value.daysUntilUpgrade.Value <= 0) == true;
+        return purposeReady && exactUpgradeSourceReady && !Game1.IsThereABuildingUnderConstruction() &&
             Game1.player.Money == request.ExpectedMoneyBefore &&
             materials.All(pair => Game1.player.Items.CountId(pair.Key) == pair.Value);
     }
@@ -390,8 +421,8 @@ public sealed partial class ModEntry
     }
 
     private static TrainingExecutionResult BuildingConstructionBlocked(TrainingExecutionRequest request, string reason) =>
-        BlockedWithPrimitive(request, "construct_building",
-            "farm.buildings[" + request.ConstructionBuildingType + "].construction_started=true",
+        BlockedWithPrimitive(request, request.ConstructionProjectKind == "upgrade" ? "upgrade_building" : "construct_building",
+            "farm.buildings[" + request.ConstructionBuildingType + "]." + (request.ConstructionProjectKind == "upgrade" ? "upgrade_started" : "construction_started") + "=true",
             "location=" + (Game1.currentLocation?.NameOrUniqueName ?? "none") + ";menu=" + (Game1.activeClickableMenu?.GetType().Name ?? "none") + ";money=" + Game1.player.Money,
             reason);
 }

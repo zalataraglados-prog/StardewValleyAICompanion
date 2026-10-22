@@ -7,6 +7,12 @@ public sealed partial class TrainingExecutionRequest
     [JsonPropertyName("construction_building_type")]
     public string ConstructionBuildingType { get; set; } = string.Empty;
 
+    [JsonPropertyName("construction_project_kind")]
+    public string ConstructionProjectKind { get; set; } = string.Empty;
+
+    [JsonPropertyName("construction_upgrade_from_building_type")]
+    public string ConstructionUpgradeFromBuildingType { get; set; } = string.Empty;
+
     [JsonPropertyName("construction_build_days")]
     public int? ConstructionBuildDays { get; set; }
 
