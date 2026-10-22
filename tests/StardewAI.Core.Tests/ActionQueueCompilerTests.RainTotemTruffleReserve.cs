@@ -211,7 +211,7 @@ public sealed partial class ActionQueueCompilerTests
             farmResourceClumpStatus: "blocked_required_axe_upgrade_missing");
 
         Assert.True(fixture.TryBuild(out var parameters, out var validation, out var reason), reason);
-        Assert.Equal("blocked_required_axe_upgrade_missing", validation.ReserveStage);
+        Assert.Equal("blocked_tool_upgrade_projection_missing", validation.ReserveStage);
         Assert.Equal(1, validation.HardwoodRequiredAxeUpgradeLevel);
 
         var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(
@@ -225,8 +225,114 @@ public sealed partial class ActionQueueCompilerTests
         var candidate = Assert.Single(Assert.Single(availability.Options).EventCandidates);
         Assert.False(candidate.Available);
         Assert.Contains(
-            "master_angler_hardwood_reserve_blocked_required_axe_upgrade_missing",
+            "master_angler_hardwood_reserve_blocked_tool_upgrade_projection_missing",
             candidate.BlockReasons);
+    }
+
+    [Fact]
+    public void HardwoodReserveCompilesExactNativeAxeUpgradeSubmission()
+    {
+        using var fixture = TruffleReserveFixture.Create(
+            "adult_pig_open",
+            includePendingTruffleOil: true,
+            currentLocation: "Blacksmith",
+            farmResourceClumpStatus: "blocked_required_axe_upgrade_missing",
+            toolUpgradeStage: "submit_next_axe_upgrade");
+
+        Assert.True(fixture.TryBuild(out var parameters, out var validation, out var reason), reason);
+        Assert.Equal("submit_next_axe_upgrade", validation.ReserveStage);
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(
+            fixture.Snapshot,
+            [new OptionAvailabilityCandidate
+            {
+                OptionId = "fishing.catch_fish",
+                Parameters = parameters
+            }],
+            includeExecutorCalibrationOptions: true);
+        var candidate = Assert.Single(Assert.Single(availability.Options).EventCandidates);
+        Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
+        Assert.Equal("submit_tool_upgrade", candidate.Kind);
+
+        var plan = new DailyPlanCompiler().Compile(
+            new EventCandidateRanker().Rank(new(), availability),
+            fixture.Snapshot.StateHash);
+        var queue = new ActionQueueCompiler().Compile(plan, fixture.Snapshot);
+        var item = Assert.Single(queue.Items.Where(row =>
+            row.OptionId == "executor.submit_tool_upgrade"));
+        Assert.Equal("pending", item.Status);
+        Assert.Contains(item.NormalizedCommand.Parameters, row =>
+            row.Name == "tool_upgrade_target_qualified_item_id" &&
+            row.Value == "(T)CopperAxe");
+        Assert.Contains(item.NormalizedCommand.Parameters, row =>
+            row.Name == "tool_upgrade_trade_qualified_item_id" &&
+            row.Value == "(O)334");
+    }
+
+    [Fact]
+    public void NativeAxeUpgradePriceTamperFailsClosedBeforeExecution()
+    {
+        using var fixture = TruffleReserveFixture.Create(
+            "adult_pig_open",
+            includePendingTruffleOil: true,
+            currentLocation: "Blacksmith",
+            farmResourceClumpStatus: "blocked_required_axe_upgrade_missing",
+            toolUpgradeStage: "submit_next_axe_upgrade");
+        Assert.True(fixture.TryBuild(out var parameters, out _, out var reason), reason);
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(
+            fixture.Snapshot,
+            [new OptionAvailabilityCandidate
+            {
+                OptionId = "fishing.catch_fish",
+                Parameters = parameters
+            }],
+            includeExecutorCalibrationOptions: true);
+        var plan = new DailyPlanCompiler().Compile(
+            new EventCandidateRanker().Rank(new(), availability),
+            fixture.Snapshot.StateHash);
+        var step = Assert.Single(plan.Steps.Where(row =>
+            row.Kind == "submit_tool_upgrade"));
+        step.Parameters = step.Parameters.Select(row =>
+            row.Name == "tool_upgrade_price_gold"
+                ? RainReserveParameter(row.Name, "1999")
+                : row).ToArray();
+
+        var item = Assert.Single(new ActionQueueCompiler()
+            .Compile(plan, fixture.Snapshot).Items.Where(row =>
+                row.OptionId == "executor.submit_tool_upgrade"));
+        Assert.Equal("blocked", item.Status);
+        Assert.Contains(
+            "tool_upgrade_submission_state_or_cost_drifted",
+            item.BlockingReasons);
+    }
+
+    [Fact]
+    public void HardwoodReserveCompilesCompletedNativeAxeClaim()
+    {
+        using var fixture = TruffleReserveFixture.Create(
+            "adult_pig_open",
+            includePendingTruffleOil: true,
+            currentLocation: "Blacksmith",
+            farmResourceClumpStatus: "blocked_required_axe_upgrade_missing",
+            toolUpgradeStage: "claim_ready_axe_upgrade");
+        Assert.True(fixture.TryBuild(out var parameters, out var validation, out var reason), reason);
+        Assert.Equal("claim_ready_axe_upgrade", validation.ReserveStage);
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(
+            fixture.Snapshot,
+            [new OptionAvailabilityCandidate
+            {
+                OptionId = "fishing.catch_fish",
+                Parameters = parameters
+            }],
+            includeExecutorCalibrationOptions: true);
+        var candidate = Assert.Single(Assert.Single(availability.Options).EventCandidates);
+        Assert.Equal("claim_tool_upgrade", candidate.Kind);
+        var plan = new DailyPlanCompiler().Compile(
+            new EventCandidateRanker().Rank(new(), availability),
+            fixture.Snapshot.StateHash);
+        var item = Assert.Single(new ActionQueueCompiler()
+            .Compile(plan, fixture.Snapshot).Items.Where(row =>
+                row.OptionId == "executor.claim_tool_upgrade"));
+        Assert.Equal("pending", item.Status);
     }
 
     [Fact]
@@ -373,7 +479,8 @@ public sealed partial class ActionQueueCompilerTests
             bool farmTruffle = false,
             string currentLocation = "Farm",
             int hardwoodInventory = 0,
-            string? farmResourceClumpStatus = null)
+            string? farmResourceClumpStatus = null,
+            string? toolUpgradeStage = null)
         {
             rainyTargetDays ??= [139];
             var windowPath = WriteWindowIndex(rainyTargetDays);
@@ -542,6 +649,9 @@ public sealed partial class ActionQueueCompilerTests
                         resolved = true
                     }
                 };
+            object toolUpgrade = toolUpgradeStage is null
+                ? new { projection_status = "unavailable" }
+                : ToolUpgradeProjection(toolUpgradeStage, currentLocation);
             var state = new
             {
                 time = new
@@ -577,7 +687,8 @@ public sealed partial class ActionQueueCompilerTests
                             affected_location_context_id = "Default",
                             allow_rain_totem = true
                         }
-                    })
+                    }),
+                    tool_upgrade = Field(toolUpgrade)
                 },
                 farm = new
                 {
@@ -679,6 +790,77 @@ public sealed partial class ActionQueueCompilerTests
                 Snapshot(JsonSerializer.Serialize(state)),
                 windowPath,
                 windowHash);
+        }
+
+        private static object ToolUpgradeProjection(
+            string lifecycleStage,
+            string currentLocation)
+        {
+            const string contract =
+                "shared_route->Blacksmith_checkAction->answerDialogue(Upgrade)->ShopMenu(ClintUpgrade).receiveLeftClick_exact_row->Tool.actionWhenPurchased->two_day_wait->Blacksmith_checkAction->native_tool_claim";
+            var claim = lifecycleStage == "claim_ready_axe_upgrade";
+            return new
+            {
+                schema_version = "tool_upgrade.v1",
+                projection_status = "complete_live_native_contract",
+                projection_fingerprint = new string('b', 64),
+                location_id = "Blacksmith",
+                counter_action_tiles = new[]
+                {
+                    new
+                    {
+                        tile_x = 5,
+                        tile_y = 5,
+                        action_raw = "Blacksmith",
+                        action_token = "Blacksmith"
+                    }
+                },
+                current_location_id = currentLocation,
+                actor_control_ready = true,
+                free_inventory_slots = 11,
+                money_before = 100000,
+                service_status = "ready",
+                lifecycle_stage = lifecycleStage,
+                pending_tool = new
+                {
+                    present = claim,
+                    qualified_item_id = claim ? "(T)CopperAxe" : string.Empty,
+                    item_id = claim ? "CopperAxe" : string.Empty,
+                    runtime_type = claim ? "StardewValley.Tools.Axe" : string.Empty,
+                    upgrade_level = claim ? 1 : -1,
+                    days_left = claim ? 0 : -1,
+                    claim_ready = claim,
+                    claim_capacity_satisfied = true
+                },
+                current_axe = new
+                {
+                    present = !claim,
+                    slot_index = claim ? -1 : 1,
+                    qualified_item_id = claim ? string.Empty : "(T)Axe",
+                    item_id = claim ? string.Empty : "Axe",
+                    upgrade_level = claim ? -1 : 0
+                },
+                next_axe_upgrade = claim ? null : new
+                {
+                    available = true,
+                    source_slot_index = 1,
+                    source_qualified_item_id = "(T)Axe",
+                    source_item_id = "Axe",
+                    source_upgrade_level = 0,
+                    target_qualified_item_id = "(T)CopperAxe",
+                    target_item_id = "CopperAxe",
+                    target_upgrade_level = 1,
+                    price_gold = 2000,
+                    trade_item_qualified_item_id = "(O)334",
+                    trade_item_id = "334",
+                    trade_item_amount = 5,
+                    trade_item_available = 5,
+                    money_available = 100000,
+                    requirements_satisfied = true,
+                    source_contract = "Game1.toolData.ConventionalUpgradeFrom+ShopBuilder.GetToolUpgradeData"
+                },
+                native_contract = contract
+            };
         }
 
         private static object Building(

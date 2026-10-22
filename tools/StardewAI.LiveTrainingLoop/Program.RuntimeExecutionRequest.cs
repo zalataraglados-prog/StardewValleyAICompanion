@@ -1494,6 +1494,9 @@ static partial class Program
         ApplyGeodeProcessingRequestFields(
             executionRequest,
             item);
+        ApplyToolUpgradeRequestFields(
+            executionRequest,
+            item);
         ApplyQuestCancellationRequestFields(
             executionRequest,
             item);

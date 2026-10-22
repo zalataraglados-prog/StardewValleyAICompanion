@@ -89,6 +89,8 @@ Full Shipment dependency graph 的节点早已声明 `full_recurrence_required_f
 
 2026-10-23 Hardwood reserve 已完成“现有精确来源”切片，但工具升级生命周期仍未完成。未来雨窗在 Pine Tar 与 Truffle Oil 已满足后继续投影 `(O)709 x1`，按 fresh 状态依次选择当前 Farm 的原版树桩/倒木、当前地图保证掉落 Hardwood 的成熟野树、或先路由到 Farm；来源身份锁定地点、格点、ResourceClump parent index 和保守最低产量，参数漂移会失败关闭。即时材料链也会复用同一 `executor.break_farm_resource_clump`，没有第二套清障执行器。原版树桩 `600 -> Hardwood x2`、倒木 `602 -> x8` 已绑定；斧头等级不足时只产生 `blocked_required_axe_upgrade_missing`，不会伪装成可执行。因此依赖图精确记录 `ready_hardwood_source_reserve_bound=true`、`hardwood_tool_upgrade_lifecycle_bound=false`、`hardwood_reserve_bound=false`，SHA-256 为 `87f9dacd6ed7f85bd8088514da0d4e21308df9d25f4579490740302b866b0802`。Rain Totem 专项回归 `22/22`、Hardwood 专项 `7/7`、依赖图联合回归 `24/24`，均未启动游戏；未绑定族、正式准入分子与训练禁令不变。下一固定切片是原生工具升级 lifecycle，随后才是材料消费 reservation 和 Rain Totem 原生制作回执。
 
+2026-10-23 原生 Axe 升级 lifecycle 已完成代码级接线，未冒充真实运行证据。透明桥实时投影下一等级 Axe、来源槽、Clint/Blacksmith 状态、原生价格与 5 根对应金属锭、两日等待和待领取工具；Hardwood reserve 据此滚动生成提交、等待、领取或显式失败阶段。编译链 fresh 锁定投影指纹、端点、站位、工具身份和成本；Runtime Harness 只调用原生 Blacksmith 对话、`ClintUpgrade` ShopMenu 与原生领取，不直接改写生产状态。E 盘隔离存档的隐藏静音 full snapshot 已通过 `177 required / 160 readable / 17 contextual / 0 blocking`，新增链路和目录测试 `12/12` 通过，完整 Core 为 `2791/2805`；剩余 14 个均为此前其他模块的已知失败。`executor.submit_tool_upgrade` 与 `executor.claim_tool_upgrade` 仍是 `RegisteredOnly`，runtime/output gate 为空，因此 `hardwood_tool_upgrade_lifecycle_bound` 当前只表示离线实现完成、原生回执待采，不改变任何训练分子。下一步固定为材料消费 reservation，再做原生 Rain Totem 制作回执。
+
 ## 2. 已完成并冻结的施工单位
 
 ### Full Shipment runtime evidence

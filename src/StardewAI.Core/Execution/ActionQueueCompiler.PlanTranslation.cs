@@ -210,6 +210,8 @@ namespace StardewAI.Core.Execution
                 "wait_ticks" => "executor.wait_ticks",
                 "close_menu" => "executor.close_menu",
                 "buy_shop_item" => "executor.buy_shop_item",
+                "submit_tool_upgrade" => "executor.submit_tool_upgrade",
+                "claim_tool_upgrade" => "executor.claim_tool_upgrade",
                 "sell_shop_item" => "executor.sell_shop_item",
                 "choose_dialogue_response" => "executor.choose_dialogue_response",
                 "choose_animal_purchase_response" => "executor.choose_animal_purchase_response",

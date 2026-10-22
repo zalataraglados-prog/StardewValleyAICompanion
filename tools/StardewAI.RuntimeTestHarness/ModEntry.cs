@@ -59,6 +59,7 @@ public sealed partial class ModEntry : Mod
     private ActiveJukeboxSelection? activeJukeboxSelection;
     private ActivePlayerCustomization? activePlayerCustomization;
     private ActiveGeodeProcessing? activeGeodeProcessing;
+    private ActiveToolUpgrade? activeToolUpgrade;
     private ActiveCraneGame? activeCraneGame;
     private ActiveDartsGame? activeDartsGame;
     private ActivePrairieKing? activePrairieKing;
@@ -586,6 +587,7 @@ public sealed partial class ModEntry : Mod
         TickJukeboxSelection();
         TickPlayerCustomization();
         TickGeodeProcessing();
+        TickToolUpgrade();
         TickCraneGame();
         TickDartsGame();
         TickPrairieKing();
@@ -1771,6 +1773,18 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "executor.submit_tool_upgrade")
+            {
+                StartToolUpgrade(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.claim_tool_upgrade")
+            {
+                StartToolUpgrade(pending);
+                return;
+            }
+
             if (pending.Request.OptionId == "executor.play_crane_game")
             {
                 StartCraneGame(pending);
@@ -2460,6 +2474,7 @@ public sealed partial class ModEntry : Mod
             activeJukeboxSelection = null;
             activePlayerCustomization = null;
             activeGeodeProcessing = null;
+            activeToolUpgrade = null;
             activeStatueBlessingClaim = null;
             ResetNativeObjectInteractionDomain();
             activeAnimalProductHarvest = null;
@@ -2724,6 +2739,7 @@ public sealed partial class ModEntry : Mod
             activeJukeboxSelection is not null ||
             activePlayerCustomization is not null ||
             activeGeodeProcessing is not null ||
+            activeToolUpgrade is not null ||
             activeCraneGame is not null ||
             activeDartsGame is not null ||
             activePrairieKing is not null ||

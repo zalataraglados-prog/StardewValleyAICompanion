@@ -56,6 +56,8 @@ public static class OptionImplementationCatalog
         "executor.claim_prize_ticket",
         "executor.claim_mastery",
         "executor.buy_shop_item",
+        "executor.submit_tool_upgrade",
+        "executor.claim_tool_upgrade",
         "executor.sell_shop_item",
         "executor.choose_dialogue_response",
         "executor.choose_animal_purchase_response",

@@ -949,6 +949,22 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "safe shop item purchased" },
                 new[] { "block_unmodeled_purchase_side_effects", "block_unknown_ui_clicks", "block_budget_mismatch" }));
 
+            Register(Option("executor.submit_tool_upgrade", "economy", "Submit one exact tool upgrade through Clint's native service",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.tool_upgrade", "player.money", "player.inventory", "player.location_id", "player.tile_x", "player.tile_y", "locations.collision_grid", "menus.active_menu" },
+                new[] { "shared BFS reaches the exact Blacksmith counter", "native ClintUpgrade row consumes the exact source tool, price and trade bars", "exact upgraded pending tool and two-day timer are verified" },
+                new[] { "block_tool_source_target_cost_or_endpoint_drift", "block_pending_tool_or_blacksmith_service_conflict", "block_native_shop_or_receipt_mismatch", "block_direct_money_inventory_pending_tool_or_timer_mutation" }));
+
+            Register(Option("executor.claim_tool_upgrade", "economy", "Claim one completed tool upgrade through Clint's native counter",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.tool_upgrade", "player.inventory", "player.inventory_capacity", "player.location_id", "player.tile_x", "player.tile_y", "locations.collision_grid", "menus.active_menu" },
+                new[] { "shared BFS reaches the exact Blacksmith counter", "native completed-tool intercept clears the pending slot", "exact upgraded tool returns to inventory" },
+                new[] { "block_pending_tool_timer_capacity_or_endpoint_drift", "block_native_claim_or_receipt_mismatch", "block_direct_inventory_pending_tool_or_timer_mutation" }));
+
             Register(Option("executor.sell_shop_item", "economy", "Sell one exact inventory stack through the active shop",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,

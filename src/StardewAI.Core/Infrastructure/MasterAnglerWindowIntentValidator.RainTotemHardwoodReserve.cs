@@ -258,7 +258,18 @@ public static partial class MasterAnglerWindowIntentValidator
         var blockedUpgrade = farmRows.FirstOrDefault(row =>
             row.Status == "blocked_required_axe_upgrade_missing");
         if (blockedUpgrade is not null)
-            return blockedUpgrade with { Stage = "blocked_required_axe_upgrade_missing" };
+        {
+            var upgrade = ReadStateFieldValue(snapshot, "player", "tool_upgrade");
+            var lifecycleStage = upgrade.HasValue &&
+                upgrade.Value.ValueKind == JsonValueKind.Object &&
+                string.Equals(
+                    ReadString(upgrade.Value, "projection_status"),
+                    "complete_live_native_contract",
+                    StringComparison.Ordinal)
+                    ? ReadString(upgrade.Value, "lifecycle_stage")
+                    : "blocked_tool_upgrade_projection_missing";
+            return blockedUpgrade with { Stage = lifecycleStage };
+        }
 
         return new HardwoodReserveSource(
             "blocked_no_exact_hardwood_source",

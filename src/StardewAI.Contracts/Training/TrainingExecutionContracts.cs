@@ -939,6 +939,75 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("native_contract")]
         public string NativeContract { get; set; } = string.Empty;
 
+        [JsonPropertyName("tool_upgrade_projection_fingerprint")]
+        public string ToolUpgradeProjectionFingerprint { get; set; } = string.Empty;
+
+        [JsonPropertyName("tool_upgrade_lifecycle_stage")]
+        public string ToolUpgradeLifecycleStage { get; set; } = string.Empty;
+
+        [JsonPropertyName("tool_upgrade_action_raw")]
+        public string ToolUpgradeActionRaw { get; set; } = string.Empty;
+
+        [JsonPropertyName("tool_upgrade_action_token")]
+        public string ToolUpgradeActionToken { get; set; } = string.Empty;
+
+        [JsonPropertyName("tool_upgrade_source_slot_index")]
+        public int? ToolUpgradeSourceSlotIndex { get; set; }
+
+        [JsonPropertyName("tool_upgrade_source_qualified_item_id")]
+        public string ToolUpgradeSourceQualifiedItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("tool_upgrade_source_item_id")]
+        public string ToolUpgradeSourceItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("tool_upgrade_source_level")]
+        public int? ToolUpgradeSourceLevel { get; set; }
+
+        [JsonPropertyName("tool_upgrade_target_qualified_item_id")]
+        public string ToolUpgradeTargetQualifiedItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("tool_upgrade_target_item_id")]
+        public string ToolUpgradeTargetItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("tool_upgrade_target_level")]
+        public int? ToolUpgradeTargetLevel { get; set; }
+
+        [JsonPropertyName("tool_upgrade_money_before")]
+        public int? ToolUpgradeMoneyBefore { get; set; }
+
+        [JsonPropertyName("tool_upgrade_price_gold")]
+        public int? ToolUpgradePriceGold { get; set; }
+
+        [JsonPropertyName("tool_upgrade_trade_qualified_item_id")]
+        public string ToolUpgradeTradeQualifiedItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("tool_upgrade_trade_item_id")]
+        public string ToolUpgradeTradeItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("tool_upgrade_trade_amount")]
+        public int? ToolUpgradeTradeAmount { get; set; }
+
+        [JsonPropertyName("tool_upgrade_trade_available_before")]
+        public int? ToolUpgradeTradeAvailableBefore { get; set; }
+
+        [JsonPropertyName("tool_upgrade_expected_days_left_after")]
+        public int? ToolUpgradeExpectedDaysLeftAfter { get; set; }
+
+        [JsonPropertyName("tool_upgrade_pending_qualified_item_id")]
+        public string ToolUpgradePendingQualifiedItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("tool_upgrade_pending_item_id")]
+        public string ToolUpgradePendingItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("tool_upgrade_pending_level")]
+        public int? ToolUpgradePendingLevel { get; set; }
+
+        [JsonPropertyName("tool_upgrade_days_left_before")]
+        public int? ToolUpgradeDaysLeftBefore { get; set; }
+
+        [JsonPropertyName("tool_upgrade_free_slots_before")]
+        public int? ToolUpgradeFreeSlotsBefore { get; set; }
+
         [JsonPropertyName("joja_fixture_case")]
         public string JojaFixtureCase { get; set; } = string.Empty;
 

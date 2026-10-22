@@ -332,6 +332,8 @@ namespace StardewAI.Core.OptionRegistry
                 P("executor.claim_prize_ticket", Primitive, R1, None, NoConfirm, Actor, Inventory, Allowed),
                 P("executor.claim_mastery", Primitive, R1, None, NoConfirm, Actor, Mixed, Allowed),
                 P("executor.buy_shop_item", Primitive, R2, Consume, PolicyConfirm, Actor, Inventory, Policy),
+                P("executor.submit_tool_upgrade", Primitive, R3, CrossDay, PolicyConfirm, Actor, Inventory, Policy),
+                P("executor.claim_tool_upgrade", Primitive, R1, None, NoConfirm, Actor, Inventory, Allowed),
                 P("executor.sell_shop_item", Primitive, R2, Consume, PolicyConfirm, Actor, Inventory, Policy),
                 P("executor.choose_dialogue_response", Primitive, R5, Route, ExplicitConfirm, Actor, Mixed, Explicit),
                 P("executor.answer_field_office_survey", Primitive, R1, None, NoConfirm, Actor, World, Allowed),

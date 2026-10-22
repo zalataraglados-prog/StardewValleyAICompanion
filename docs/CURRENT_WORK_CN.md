@@ -30,6 +30,7 @@
 - Pig reserve 的建筑前置不再被目录静默丢弃。`building_construction_catalog` 现同时公开新建与升级项目；升级行逐个绑定实时来源建筑类型和坐标，并锁定反编译确认的 `CarpenterMenu.Action.Upgrade -> ConsumeResources -> upgradeName + daysUntilUpgrade` 原生收据。高层仍只有 `buildings.construct`，底层仍复用 `executor.construct_building`，以 `construction_project_kind` 分支，未增加第二套建筑规划器或执行器。编译时会 fresh 重绑来源类型、坐标、价格、材料和原生契约；运行时点击前再次核对来源建筑，点击后同时验证升级名、倒计时、金钱和材料变化。专项测试 `11/11`、Runtime Harness Release `0 warning / 0 error`，未启动游戏。该切片只解除 Barn -> Big Barn -> Deluxe Barn 的执行硬阻塞，尚未建立 Pig 购买、成熟、出门产 Truffle 与 Oil Maker 的跨日 reserve，因此天气族、依赖图哈希、未绑定族 `5` 和正式训练禁令均不变。
 - Pig/Truffle Oil 长线 reserve 已接入同一个未来雨窗意图和 `fishing.catch_fish` 出口。Teacher 按 fresh 状态逐次选择 Barn 新建、Big/Deluxe Barn 原生升级、精确猪舍购买 Pig、等待 10 日成熟、用 `Building.doAction` 原生右键开动物门、建立 Oil Maker、拾取 Truffle、投料或领取 `(O)432`；每个会改变世界的 primitive 后都重新投影，不跨状态边界预编译后续动作。非冬季产出机会、建筑/升级工期和 Pig 成熟期进入使用日前 lead-time，已有按期完成的 Truffle Oil 会抑制重复建设；库存已有 Truffle 时会直接建立 Oil Maker，远程 Farm 地面 Truffle 会先路由采集，不会误判为缺 Pig 产能。动物门透明层公开精确建筑/门坐标，编译器会对建筑身份漂移失败关闭，运行时不直接写 `animalDoorOpen`。`ActionQueueCompilerTests` 定向集合 `159/159`、Core/TransparentBridge/Runtime Harness/Bootstrap Release 均零警告零错误，Master Angler fresh-save 防篡改自测通过，未启动游戏。依赖图 SHA-256 为 `2178040959b142f04b3d5be0795945d0286a05ccfad405fe6c84ba63c54a5fd3`；本机审计报告仍为 partial、未绑定族 `5`，状态精确更新为 `runtime_consumer_crafting_read_scheduler_immediate_supply_pine_tar_and_pig_truffle_capacity_bound_hardwood_reservation_and_native_crafting_receipt_missing`。`long_horizon_reserve_bound=false` 与正式训练禁令不变；下一固定切片是 Hardwood reserve，其后是材料消费 reservation 与原生 Rain Totem 制作回执。
 - Hardwood reserve 的现有来源链已接入同一未来雨窗意图。Pine Tar 与 Truffle Oil 已满足后，Teacher 会从 fresh snapshot 选择当前 Farm 的 `ResourceClump`、当前地图保证掉落 `(O)709` 的成熟野树，或先执行去 Farm 的 route connector；每次仅执行一个既有 primitive 后重新规划。树桩 parent `600` 绑定保守最低 `2`，倒木 parent `602` 绑定最低 `8`，来源地点、格点、parent、最低产量和状态都进入 canonical 参数与 fresh 验证。即时缺料链同步复用 `executor.break_farm_resource_clump`，没有平行执行器。当前只可宣称 `ready_hardwood_source_reserve_bound=true`：缺铜斧/钢斧时精确阻塞于 `blocked_required_axe_upgrade_missing`，通用商店购买器又刻意禁止工具与 on-purchase action，因此 `hardwood_tool_upgrade_lifecycle_bound=false`、`hardwood_reserve_bound=false`。依赖图 SHA-256 为 `87f9dacd6ed7f85bd8088514da0d4e21308df9d25f4579490740302b866b0802`；Rain Totem `22/22`、Hardwood `7/7`、图联合回归 `24/24` 均通过且未启动游戏。下一固定切片只做原生工具升级 lifecycle，之后才进入材料消费 reservation 与 Rain Totem 原生制作回执。
+- 原生 Axe 升级 lifecycle 已完成代码级纵向闭环，但尚未提升为运行时证据。`player.tool_upgrade` 从实时 `Game1.toolData.ConventionalUpgradeFrom` 与 `ShopBuilder.GetToolUpgradeData` 发布下一等级 Axe、精确来源槽、价格、5 根对应金属锭、Clint/Blacksmith 端点、两日等待和待领取工具；Hardwood reserve 据此只生成一个 `submit_tool_upgrade`、一个 `claim_tool_upgrade` 或显式等待/阻塞阶段。日计划与动作编译器 fresh 重绑全部身份、成本、站位和投影指纹，Runtime Harness 仅通过原生 `Blacksmith` 对话、`ClintUpgrade` ShopMenu 行点击、`Tool.actionWhenPurchased` 及 Blacksmith 原生领取完成动作，不直接写钱、库存、`toolBeingUpgraded` 或升级计时器。隐藏静音 E 盘 full snapshot 已将透明模式刷新为 `177 required / 160 readable / 17 contextual / 0 blocking`；目录为 `238 registered / 240 semantic / 237 compiler-bound / 151 product-executor`。新增链路与目录定向测试 `12/12` 通过，完整 Core 为 `2791/2805`，剩余 14 个是本切片前已存在的其他模块失败。两个新 executor 仍为 `RegisteredOnly`、runtime/output gate 缺失，不得训练；`hardwood_tool_upgrade_lifecycle_bound` 只能解释为“源码锁定的离线实现已接线、原生提交/领取回执待采”。下一固定切片为三种材料的消费 reservation，随后接入一次原生 Rain Totem 制作回执；正式训练禁令不变。
 
 ## 已收口 · 2026-10-21 Money 首条完整原生作物生产段
 
@@ -909,12 +910,12 @@
 <!-- BEGIN GENERATED CURRENT CHECKPOINT -->
 ## Machine-generated current checkpoint
 
-- Source commit: `52b04da2cd54da816bfed35993a4ecf387ac974b` (generation input; must be an ancestor of current HEAD)
-- Latest evidence: `EVD-338`; generated at: `2026-10-22T18:36:15.4649676+00:00`
-- Catalog: `236 registered / 238 semantic / 235 compiler-bound / 159 five-gate / 66 training-allowlist`
-- Execution: `149 product-executor / 2 catalogued-blocked`
+- Source commit: `839524ca5a17d1ccaf356ee24eb785ca28d371f9` (generation input; must be an ancestor of current HEAD)
+- Latest evidence: `EVD-338`; generated at: `2026-10-22T22:03:03.0757342+00:00`
+- Catalog: `238 registered / 240 semantic / 237 compiler-bound / 159 five-gate / 66 training-allowlist`
+- Execution: `151 product-executor / 2 catalogued-blocked`
 - Native evidence: `322 surfaces / 448 branches / 150 map tokens`; fingerprint: `a2ba3ac0193fa78aece39a1eb4c18cb3c9b3248ea7390194dcfe61605af02d0e`
-- Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `0e2754e7318bef92581bd504b9f1ccaa2c3ae59fe50095359545d05b5bf2a93f`
+- Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `3fbc54a707c8ac023de7b38b4c0323f04321badcfb7f24688492b3409f66eab7`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
 ## 历史记录 · 2026-10-04 Full Shipment 普通作物运行时样本闭合
