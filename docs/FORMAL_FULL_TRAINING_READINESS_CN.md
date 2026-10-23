@@ -50,6 +50,8 @@ Master Angler 的 Rusty Key/下水道组合也已闭合到现有上游根：`Ent
 
 正式日期证据现在必须经过 `golden_walnut_fresh_save_unlock_timeline_proof.v1`。该投影要求上游新档计划输出首次登岛日、每个确定性核桃来源的计划完成日，以及 First Parrot/Turtle/House 三次原生交互的计划执行日，并用原文件 SHA-256 绑定；它从来源日程计算 `1/11/31` 三个钱包就绪日，再验证实际计划交互日不早于就绪日。任何未知、重复、超原生数量、随机、未绑定、前置阶段尚未开放的来源，或钱包未就绪就安排支出的计划都会失败关闭。Master Angler 审计只有在传入 `--golden-walnut-source-schedule` 且投影完整时才关闭 Gourmand 日期组合；目前仓库没有这份真实新档产物，所以训练准入分子不变。下一准入顺序固定为：上游 Teacher/日计划导出真实来源与交互日程并重建审计，再在同一连续原生存档采集 Gourmand 第 2、3 单回执；两者都完成前不得开始正式全量训练。
 
+日程导出不读取“候选带了哪个 source key”来推断完成，因为路线步骤也会携带该参数。正式入口 `build-golden-walnut-fresh-save-source-schedule` 只接受显式、同 run/save、状态哈希连续的成功 fresh episode 清单，并从每对前后透明快照中的来源数量增量与原生解锁状态跃迁生成 schedule；schedule 还必须携带 manifest SHA-256、全部 episode/快照的有序证据根及 run/save 身份，时间线证明拒绝无来源归属的旧格式。该入口现已通过聚焦回归，但仓库仍没有真实连续新档清单；因此准入顺序更新为：先运行 fresh-save Teacher 闭环并导出清单及 schedule，再重建 Master Angler 审计，最后采集 Gourmand 第 2、3 单连续回执。任何一步缺失都保持 `formal_product_training_authorized=false`。
+
 Money 的第一条完整原生作物生产段 `money-crop-native-20261021-pricefix-v10` 已通过：checkpoint v12 为 `6/6 verified、0 pending`，终局含 `5` 次单件原生投箱和唯一睡眠结算，实际收入 `875g`，最终为春 20 日 06:00、`money=925`、`totalMoneyEarned=875`。源存档和隔离 Mod 哈希均未漂移。这证明 native runner、购种、场地准备、作物生命周期、留存、容量和运输箱终局可以在同一连续真实轨迹中闭合。
 
 `money_revenue_crop_native_production_segment_receipt.v1` 已完成并对 v10 深回放：Teacher 决策、commit receipt、obligation/run plan、checkpoint、terminal recurrence、最终透明快照和最终隔离存档树均从路径与哈希重新核验。回执确认 `50` 个 Teacher 候选、选中 `5` 格 `(O)474`、实际购种成本 `400g`、毛收入 `875g`、净现金收入 `475g`，并正确输出空阈值集合；它不创建 Teacher comparison、Money cell 或训练授权。

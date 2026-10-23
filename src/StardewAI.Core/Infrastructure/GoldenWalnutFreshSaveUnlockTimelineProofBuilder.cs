@@ -17,6 +17,11 @@ public sealed record GoldenWalnutFreshSaveSourceSchedule(
     [property: JsonPropertyName("goal_id")] string GoalId,
     [property: JsonPropertyName("game_version")] string GameVersion,
     [property: JsonPropertyName("training_label_eligible")] bool TrainingLabelEligible,
+    [property: JsonPropertyName("source_episode_manifest_sha256")] string SourceEpisodeManifestSha256,
+    [property: JsonPropertyName("source_episode_evidence_root_sha256")] string SourceEpisodeEvidenceRootSha256,
+    [property: JsonPropertyName("source_run_id")] string SourceRunId,
+    [property: JsonPropertyName("source_save_id")] string SourceSaveId,
+    [property: JsonPropertyName("source_episode_count")] int SourceEpisodeCount,
     [property: JsonPropertyName("first_island_arrival_total_day")] int FirstIslandArrivalTotalDay,
     [property: JsonPropertyName("planned_first_parrot_unlock_total_day")] int PlannedFirstParrotUnlockTotalDay,
     [property: JsonPropertyName("planned_western_turtle_unlock_total_day")] int PlannedWesternTurtleUnlockTotalDay,
@@ -83,6 +88,11 @@ public static class GoldenWalnutFreshSaveUnlockTimelineProofBuilder
             schedule.GameVersion == GameVersion &&
             !schedule.TrainingLabelEligible &&
             !string.IsNullOrWhiteSpace(schedule.ScheduleId) &&
+            IsSha256(schedule.SourceEpisodeManifestSha256) &&
+            IsSha256(schedule.SourceEpisodeEvidenceRootSha256) &&
+            !string.IsNullOrWhiteSpace(schedule.SourceRunId) &&
+            !string.IsNullOrWhiteSpace(schedule.SourceSaveId) &&
+            schedule.SourceEpisodeCount > 0 &&
             schedule.FirstIslandArrivalTotalDay >= 0 &&
             schedule.PlannedFirstParrotUnlockTotalDay >= schedule.FirstIslandArrivalTotalDay &&
             schedule.PlannedWesternTurtleUnlockTotalDay >= schedule.PlannedFirstParrotUnlockTotalDay &&
