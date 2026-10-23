@@ -18,6 +18,7 @@ public sealed class GoldenWalnutUnlockScheduleProofTests
         Assert.False(proof.YearThreeDeadlineCompositionComplete);
         Assert.False(proof.TrainingAdmissionEligible);
         Assert.Equal(new[] { 1, 10, 20, 20 }, proof.Milestones.Select(row => row.WalnutCost));
+        Assert.Equal(new[] { 7, 25, 51, 51 }, proof.Milestones.Select(row => row.CumulativeCapacity));
         Assert.All(proof.Milestones, row => Assert.True(row.CapacitySufficient));
         Assert.All(proof.Milestones.Take(3), row => Assert.True(row.DeterministicCapacitySufficient));
         Assert.False(proof.Milestones[3].DeterministicCapacitySufficient);

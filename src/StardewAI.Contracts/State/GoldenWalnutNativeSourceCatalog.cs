@@ -108,7 +108,7 @@ public static class GoldenWalnutNativeSourceCatalog
         rows.Add(Limited("MusselStone", 5, "IslandWest", "executor.clear_obstacle",
             "west_after_turtle", "Island_Turtle", "bounded_native_rng_0.10_per_mussel_node"));
         rows.Add(Limited("IslandFarming", 5, "IslandWest", "farm.maintain_crops",
-            "house_after_upgrade", "Island_UpgradeHouse", "bounded_native_rng_0.05_per_island_crop_harvest"));
+            "west_after_turtle", "Island_Turtle", "bounded_native_rng_0.05_per_island_crop_harvest"));
         rows.Add(Limited("IslandFishing", 5, "IslandSouth", "fishing.catch_fish",
             "island_south_initial", "", "bounded_native_rng_0.15_per_successful_catch"));
 

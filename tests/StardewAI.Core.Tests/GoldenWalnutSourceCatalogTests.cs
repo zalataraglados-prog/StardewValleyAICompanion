@@ -110,5 +110,9 @@ public sealed class GoldenWalnutSourceCatalogTests
             source.TileX == 104 &&
             source.TileY == 74 &&
             source.RequiredSecretNoteId == 1006);
+        Assert.Contains(sources, source =>
+            source.SourceKey == "IslandFarming" &&
+            source.AccessPhase == "west_after_turtle" &&
+            source.RequiredMailKey == "Island_Turtle");
     }
 }
