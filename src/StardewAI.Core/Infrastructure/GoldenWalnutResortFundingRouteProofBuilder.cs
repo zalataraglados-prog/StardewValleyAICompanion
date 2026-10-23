@@ -79,7 +79,7 @@ public static class GoldenWalnutResortFundingRouteProofBuilder
         var stochasticActionBindingsComplete = stochastic.All(source =>
             GoldenWalnutUnlockScheduleProofBuilder.BoundAcquisitionOptionIds.Contains(
                 source.AcquisitionOptionId));
-        const bool gourmandActionBindingsComplete = false;
+        const bool gourmandActionBindingsComplete = true;
         const bool stochasticSupplyScheduleComplete = false;
         const bool gourmandSupplyScheduleComplete = false;
 
@@ -115,10 +115,14 @@ public static class GoldenWalnutResortFundingRouteProofBuilder
                 gourmandSupplyScheduleComplete,
                 false,
                 false,
-                new[] { "island_gourmand_progress.v1" },
                 new[]
                 {
-                    "island_gourmand_candidate_and_compiled_action_binding",
+                    "island_gourmand_progress.v1",
+                    "island.complete_gourmand_request",
+                    "executor.advance_gourmand_request"
+                },
+                new[]
+                {
                     "island_gourmand_native_interaction_and_reward_receipt",
                     "melon_wheat_garlic_seed_growth_and_ready_crop_schedule",
                     "gourmand_route_and_unlock_days_before_day_224"
@@ -131,7 +135,7 @@ public static class GoldenWalnutResortFundingRouteProofBuilder
 
         return new GoldenWalnutResortFundingRouteProof(
             SchemaVersion,
-            "deterministic_gourmand_alternative_identified_implementation_pending",
+            "deterministic_gourmand_action_bound_runtime_supply_and_deadline_pending",
             RequiredWalnutQuantity,
             PreferredRouteId,
             "same_exact_15_walnut_capacity_without_random_retry_or_daily_mussel_spawn_dependency",

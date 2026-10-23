@@ -1,7 +1,9 @@
 using Microsoft.Xna.Framework;
+using System.Reflection;
 using StardewAI.Contracts.State;
 using StardewValley;
 using StardewValley.Locations;
+using StardewValley.Network;
 using StardewValley.TerrainFeatures;
 
 namespace StardewAI.TransparentBridge.Adapters;
@@ -10,6 +12,10 @@ public sealed partial class WorldProgressReadAdapter
 {
     private const string IslandGourmandSchemaVersion = "island_gourmand_progress.v1";
     private const string IslandGourmandRequiredMail = "Island_UpgradeHouse";
+    private static readonly FieldInfo? IslandGourmandMutexField =
+        typeof(IslandFarmCave).GetField(
+            "gourmandMutex",
+            BindingFlags.Instance | BindingFlags.NonPublic);
 
     private static IslandGourmandProgressRef? ReadIslandGourmand(
         Farmer? master,
@@ -25,6 +31,8 @@ public sealed partial class WorldProgressReadAdapter
             IslandFarmCave.TOTAL_GOURMAND_REQUESTS);
         var complete = fulfilled >= IslandFarmCave.TOTAL_GOURMAND_REQUESTS;
         var houseUnlocked = master.hasOrWillReceiveMail(IslandGourmandRequiredMail);
+        var mutex = IslandGourmandMutexField?.GetValue(cave) as NetMutex;
+        var menuClear = Game1.activeClickableMenu is null && !Game1.dialogueUp && !Game1.eventUp;
         var requestItemId = complete ? string.Empty : GourmandRequestItemId(fulfilled);
         var matchingCrops = houseUnlocked && !complete && west is not null
             ? ReadGourmandMatchingCrops(west, requestItemId)
@@ -38,9 +46,19 @@ public sealed partial class WorldProgressReadAdapter
                 ? "complete_native_three_requests"
                 : !houseUnlocked
                     ? "blocked_island_house_upgrade_missing"
+                    : mutex is null
+                        ? "blocked_gourmand_mutex_projection_unavailable"
                     : west is null
                         ? "blocked_island_west_unavailable"
                         : "exact_native_active_request_projected",
+            LocationId = cave.NameOrUniqueName,
+            IsCurrentLocation = ReferenceEquals(Game1.currentLocation, cave),
+            HostAuthority = Game1.IsMasterGame,
+            MenuClear = menuClear,
+            MutexProjectionAvailable = mutex is not null,
+            MutexLocked = mutex?.IsLocked() == true,
+            MutexHeldByLocalPlayer = mutex?.IsLockHeld() == true,
+            TriggeredGourmand = cave.triggeredGourmand,
             RequiredMailSatisfied = houseUnlocked,
             TalkedToGourmandReceivedOrPending = master.hasOrWillReceiveMail("talkedToGourmand"),
             RequestsFulfilled = fulfilled,

@@ -199,6 +199,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "the unique next survey and locked vanilla numeric answer selected", "route continuation retains survey identity", "native survey dialogues and plant/nut/debris/finale settlement handed to the mechanical executor" },
                 new[] { "block_locked_or_completed_field_office", "block_failed_survey_today", "block_missing_professor_or_survey_endpoint", "block_unverified_route", "block_projection_drift", "block_direct_plant_failed_lock_nut_debris_mail_or_finale_mutation" }));
 
+            Register(Option("island.complete_gourmand_request", "island", "Advance the exact active Island Gourmand crop request",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "world_progress.island_gourmand", "world_progress.golden_walnuts", "locations.collision_grid", "locations.route_connectors", "menus.active_menu" },
+                new[] { "the exact active Melon, Wheat, or Garlic request and ready IslandWest crop are rebound", "rolling route reaches IslandFarmCave", "one native Gourmand introduction or successful request event is handed to the mechanical executor" },
+                new[] { "block_island_house_or_host_authority_missing", "block_required_crop_not_ready", "block_gourmand_mutex_menu_or_event_busy", "block_unverified_route", "block_projection_drift", "block_direct_request_tracker_walnut_or_debris_mutation" }));
+
             Register(Option("festival.manage_grange_display", "festival", "Prepare the best available Stardew Valley Fair grange display and retrieve it after judging",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,
@@ -1562,6 +1570,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "world_progress.island_field_office", "current_location.debris", "locations.collision_grid", "menus.active_menu" },
                 new[] { "BFS reaches the Field Office survey wall", "native Survey Yes and exact Correct responses answer the unique next question", "native plant restore, collected-nut, walnut debris and finale trigger match the locked projection" },
                 new[] { "block_field_office_not_current", "block_failed_survey_today", "block_question_or_answer_projection_drift", "block_unverified_route", "block_direct_plant_failed_lock_nut_debris_mail_or_finale_mutation" }));
+
+            Register(Option("executor.advance_gourmand_request", "island", "Advance one verified Gourmand request through its native dialogue and event flow",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "world_progress.island_gourmand", "world_progress.golden_walnuts", "locations.collision_grid", "menus.active_menu" },
+                new[] { "BFS reaches the exact Gourmand action tile", "native introductory dialogue or Gourmand Yes response runs without direct state mutation", "request index, collected-nut marker and five walnut debris are verified after the native event" },
+                new[] { "block_gourmand_not_current_or_non_host", "block_mutex_menu_event_or_player_busy", "block_ready_crop_or_request_identity_drift", "block_unverified_route", "block_direct_request_tracker_walnut_or_debris_mutation" }));
 
             Register(Option("executor.manage_grange_display", "festival", "Apply one verified Fair grange display mutation through the native shared StorageContainer",
                 OptionBehaviorCategories.Mechanical,

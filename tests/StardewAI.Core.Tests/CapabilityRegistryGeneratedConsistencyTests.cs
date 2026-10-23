@@ -114,7 +114,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
             .EnumerateFiles(optionRegistryRoot, "*.cs", SearchOption.TopDirectoryOnly)
             .SelectMany(path => Regex.Matches(
                     File.ReadAllText(path),
-                    "Kind = \"(?<kind>[^\"]+)\"",
+                    "(?<![A-Za-z0-9_])Kind = \"(?<kind>[^\"]+)\"",
                     RegexOptions.CultureInvariant)
                 .Select(match => match.Groups["kind"].Value))
             .ToHashSet(StringComparer.Ordinal);

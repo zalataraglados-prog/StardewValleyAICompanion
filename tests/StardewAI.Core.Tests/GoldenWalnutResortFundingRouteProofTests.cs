@@ -30,9 +30,11 @@ public sealed class GoldenWalnutResortFundingRouteProofTests
             route.RouteId == "deterministic_gourmand_requests");
         Assert.Equal(15, gourmand.NativeWalnutQuantity);
         Assert.True(gourmand.Deterministic);
-        Assert.False(gourmand.ActionBindingsComplete);
+        Assert.True(gourmand.ActionBindingsComplete);
         Assert.False(gourmand.SupplyScheduleComplete);
         Assert.Contains("island_gourmand_progress.v1", gourmand.BoundEvidenceIds);
+        Assert.Contains("island.complete_gourmand_request", gourmand.BoundEvidenceIds);
+        Assert.Contains("executor.advance_gourmand_request", gourmand.BoundEvidenceIds);
         Assert.DoesNotContain(
             "island_gourmand_transparent_request_projection",
             gourmand.MissingEvidenceIds);

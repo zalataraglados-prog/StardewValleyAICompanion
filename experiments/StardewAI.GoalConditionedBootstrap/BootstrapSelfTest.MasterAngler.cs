@@ -80,7 +80,7 @@ internal static partial class BootstrapSelfTest
             {
                 NativeWalnutQuantity: 15,
                 Deterministic: true,
-                ActionBindingsComplete: false,
+                ActionBindingsComplete: true,
                 SupplyScheduleComplete: false
             },
             "Master Angler Golden Walnut funding-route preference drifted.");

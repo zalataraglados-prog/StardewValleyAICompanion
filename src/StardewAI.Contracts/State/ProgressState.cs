@@ -2040,6 +2040,27 @@ namespace StardewAI.Contracts.State
         [JsonPropertyName("location_id")]
         public string LocationId { get; set; } = "IslandFarmCave";
 
+        [JsonPropertyName("is_current_location")]
+        public bool IsCurrentLocation { get; set; }
+
+        [JsonPropertyName("host_authority")]
+        public bool HostAuthority { get; set; }
+
+        [JsonPropertyName("menu_clear")]
+        public bool MenuClear { get; set; }
+
+        [JsonPropertyName("mutex_projection_available")]
+        public bool MutexProjectionAvailable { get; set; }
+
+        [JsonPropertyName("mutex_locked")]
+        public bool MutexLocked { get; set; }
+
+        [JsonPropertyName("mutex_held_by_local_player")]
+        public bool MutexHeldByLocalPlayer { get; set; }
+
+        [JsonPropertyName("triggered_gourmand")]
+        public bool TriggeredGourmand { get; set; }
+
         [JsonPropertyName("required_mail_key")]
         public string RequiredMailKey { get; set; } = "Island_UpgradeHouse";
 
