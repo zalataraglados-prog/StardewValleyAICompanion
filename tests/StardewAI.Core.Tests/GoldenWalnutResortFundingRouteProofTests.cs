@@ -47,12 +47,46 @@ public sealed class GoldenWalnutResortFundingRouteProofTests
             "melon_wheat_garlic_seed_growth_and_ready_crop_schedule",
             gourmand.MissingEvidenceIds);
         Assert.Equal(
-            new[] { "gourmand_route_and_unlock_days_before_day_224" },
+            new[]
+            {
+                "gourmand_route_and_unlock_days_before_day_224",
+                "second_and_third_gourmand_native_continuation_receipts"
+            },
             gourmand.MissingEvidenceIds);
         Assert.Equal(
             new[] { "IslandGourmand1", "IslandGourmand2", "IslandGourmand3" },
             gourmand.SourceKeys);
         Assert.Equal(new[] { "island.complete_gourmand_request" }, gourmand.AcquisitionOptionIds);
+    }
+
+    [Fact]
+    public void SelectsRouteWithBoundUnlockDaysWithoutPromotingMissingRuntimeReceipts()
+    {
+        var proof = GoldenWalnutResortFundingRouteProofBuilder.Build(211, 223);
+
+        Assert.True(proof.RouteSelectionComplete);
+        Assert.False(proof.TrainingAdmissionEligible);
+        Assert.Equal(
+            "deterministic_gourmand_route_selected_training_runtime_evidence_pending",
+            proof.Status);
+        var gourmand = proof.Alternatives.Single(route =>
+            route.RouteId == GoldenWalnutResortFundingRouteProofBuilder.PreferredRouteId);
+        Assert.True(gourmand.DeadlineCompositionComplete);
+        Assert.False(gourmand.TrainingAdmissionEligible);
+        Assert.Equal(
+            new[] { "second_and_third_gourmand_native_continuation_receipts" },
+            gourmand.MissingEvidenceIds);
+    }
+
+    [Fact]
+    public void KeepsLateUnlockCompositionClosed()
+    {
+        var proof = GoldenWalnutResortFundingRouteProofBuilder.Build(212, 223);
+
+        Assert.False(proof.RouteSelectionComplete);
+        Assert.False(proof.Alternatives.Single(route =>
+            route.RouteId == GoldenWalnutResortFundingRouteProofBuilder.PreferredRouteId)
+            .DeadlineCompositionComplete);
     }
 
     [Fact]

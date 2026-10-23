@@ -50,10 +50,20 @@ public static class GoldenWalnutResortFundingRouteProofBuilder
     };
 
     public static GoldenWalnutResortFundingRouteProof Build() =>
-        Build(GoldenWalnutNativeSourceCatalog.Sources);
+        Build(GoldenWalnutNativeSourceCatalog.Sources, null, null);
 
     public static GoldenWalnutResortFundingRouteProof Build(
-        IReadOnlyCollection<GoldenWalnutNativeSourceDefinition> sources)
+        int westernTurtleUnlockTotalDay,
+        int islandHouseUnlockTotalDay) =>
+        Build(
+            GoldenWalnutNativeSourceCatalog.Sources,
+            westernTurtleUnlockTotalDay,
+            islandHouseUnlockTotalDay);
+
+    public static GoldenWalnutResortFundingRouteProof Build(
+        IReadOnlyCollection<GoldenWalnutNativeSourceDefinition> sources,
+        int? westernTurtleUnlockTotalDay = null,
+        int? islandHouseUnlockTotalDay = null)
     {
         if (sources is null)
             throw new ArgumentNullException(nameof(sources));
@@ -81,8 +91,12 @@ public static class GoldenWalnutResortFundingRouteProofBuilder
                 source.AcquisitionOptionId));
         const bool gourmandActionBindingsComplete = true;
         const bool stochasticSupplyScheduleComplete = false;
-        var gourmandSupplyProof = IslandGourmandSupplyScheduleProofBuilder.Build();
+        var gourmandSupplyProof = IslandGourmandSupplyScheduleProofBuilder.Build(
+            westernTurtleUnlockTotalDay,
+            islandHouseUnlockTotalDay);
         var gourmandSupplyScheduleComplete = gourmandSupplyProof.SupplyScheduleComplete;
+        var gourmandDeadlineCompositionComplete =
+            gourmandSupplyProof.DeadlineCompositionComplete;
 
         var alternatives = new[]
         {
@@ -114,7 +128,7 @@ public static class GoldenWalnutResortFundingRouteProofBuilder
                 true,
                 gourmandActionBindingsComplete,
                 gourmandSupplyScheduleComplete,
-                false,
+                gourmandDeadlineCompositionComplete,
                 false,
                 new[]
                 {
@@ -124,10 +138,11 @@ public static class GoldenWalnutResortFundingRouteProofBuilder
                     IslandGourmandSupplyScheduleProofBuilder.SchemaVersion,
                     "EVD-341"
                 },
-                new[]
-                {
-                    "gourmand_route_and_unlock_days_before_day_224"
-                })
+                (gourmandDeadlineCompositionComplete
+                    ? Array.Empty<string>()
+                    : new[] { "gourmand_route_and_unlock_days_before_day_224" })
+                    .Append("second_and_third_gourmand_native_continuation_receipts")
+                    .ToArray())
         };
         var preferred = alternatives.Single(route => route.RouteId == PreferredRouteId);
         var routeSelectionComplete = preferred.ActionBindingsComplete &&
@@ -136,7 +151,9 @@ public static class GoldenWalnutResortFundingRouteProofBuilder
 
         return new GoldenWalnutResortFundingRouteProof(
             SchemaVersion,
-            "deterministic_gourmand_runtime_and_supply_bound_deadline_pending",
+            routeSelectionComplete
+                ? "deterministic_gourmand_route_selected_training_runtime_evidence_pending"
+                : "deterministic_gourmand_runtime_and_supply_bound_deadline_pending",
             RequiredWalnutQuantity,
             PreferredRouteId,
             "same_exact_15_walnut_capacity_without_random_retry_or_daily_mussel_spawn_dependency",
