@@ -46,6 +46,11 @@ public sealed partial class ActionQueueCompiler
         var after = ReadIntParameter(action, "request_index_after");
         var readyCount = ReadIntParameter(action, "ready_matching_crop_count");
         var walnutCount = ReadIntParameter(action, "expected_walnut_debris_spawn_count");
+        var walnutDebrisBefore = ReadIntParameter(action, "walnut_debris_count_before");
+        var walnutDebrisAfter = ReadIntParameter(action, "walnut_debris_count_after");
+        var walnutsFoundBefore = ReadIntParameter(action, "golden_walnuts_found_before");
+        var walnutsFoundDelta = ReadIntParameter(action, "golden_walnuts_found_delta");
+        var walnutsFoundAfter = ReadIntParameter(action, "golden_walnuts_found_after");
         var stage = ReadParameter(action, "gourmand_interaction_stage");
         var cropItemId = ReadParameter(action, "required_crop_item_id");
         var qualifiedCrop = ReadParameter(action, "required_crop_qualified_item_id");
@@ -55,7 +60,13 @@ public sealed partial class ActionQueueCompiler
             !before.HasValue || before is < 0 or > 2 || !after.HasValue ||
             after.Value != (completing ? before.Value + 1 : before.Value) ||
             !readyCount.HasValue || readyCount < 1 || !walnutCount.HasValue ||
+            !walnutDebrisBefore.HasValue || walnutDebrisBefore.Value != 0 ||
+            !walnutDebrisAfter.HasValue || walnutDebrisAfter.Value != 0 ||
+            !walnutsFoundBefore.HasValue || walnutsFoundBefore is < 0 or > 130 ||
+            !walnutsFoundDelta.HasValue || !walnutsFoundAfter.HasValue ||
             walnutCount.Value != (completing ? 5 : 0) ||
+            walnutsFoundDelta.Value != (completing ? Math.Min(5, 130 - walnutsFoundBefore.Value) : 0) ||
+            walnutsFoundAfter.Value != walnutsFoundBefore.Value + walnutsFoundDelta.Value ||
             (stage != "introduce_request" && !completing) ||
             !GourmandCompilerCropMatchesRequest(before.Value, cropItemId) ||
             qualifiedCrop != "(O)" + cropItemId ||
@@ -66,6 +77,10 @@ public sealed partial class ActionQueueCompiler
             !TryBoolParameter(action, "talked_to_gourmand_before", out var talkedBefore) ||
             !TryBoolParameter(action, "talked_to_gourmand_after", out var talkedAfter) || !talkedAfter ||
             talkedBefore != completing ||
+            ReadParameter(action, "gourmand_question_key") != (completing ? "Gourmand" : string.Empty) ||
+            ReadParameter(action, "gourmand_response_key") != (completing ? "Yes" : string.Empty) ||
+            ReadParameter(action, "output_delivery") !=
+                (completing ? "native_five_debris_then_magnet_pickup" : "none_introduction_only") ||
             ReadParameter(action, "expected_collected_nut_key") !=
                 (completing ? "IslandGourmand" + after.Value : string.Empty))
             return new[] { "gourmand_request_typed_projection_required" };
@@ -88,6 +103,7 @@ public sealed partial class ActionQueueCompiler
             ReadBool(progress.Value, "mutex_projection_available") != true ||
             ReadBool(progress.Value, "mutex_locked") == true ||
             ReadBool(progress.Value, "triggered_gourmand") == true ||
+            ReadInt(progress.Value, "walnut_debris_count") != walnutDebrisBefore.Value ||
             ReadBool(progress.Value, "complete") == true ||
             ReadNullableInt(progress.Value, "active_request_index") != before.Value ||
             ReadString(progress.Value, "required_crop_item_id") != cropItemId ||
@@ -97,6 +113,10 @@ public sealed partial class ActionQueueCompiler
             !GourmandCompilerHasReadyCrop(progress.Value, cropItemId) ||
             !GourmandCompilerActionTileMatches(progress.Value, actionX.Value, actionY.Value))
             reasons.Add("gourmand_request_projection_drifted");
+        var walnuts = ReadStateFieldValue(snapshot, "world_progress", "golden_walnuts");
+        if (!walnuts.HasValue || walnuts.Value.ValueKind != JsonValueKind.Object ||
+            ReadInt(walnuts.Value, "found") != walnutsFoundBefore.Value)
+            reasons.Add("gourmand_walnut_projection_drifted");
         return reasons.Distinct(StringComparer.Ordinal).ToArray();
     }
 

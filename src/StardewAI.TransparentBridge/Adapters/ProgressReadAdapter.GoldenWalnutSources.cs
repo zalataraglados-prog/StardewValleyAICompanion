@@ -151,6 +151,7 @@ public sealed partial class WorldProgressReadAdapter
         "processing.crack_geode" or
         "island.field_office_donate" or
         "island.field_office_survey" or
+        "island.complete_gourmand_request" or
         "minigame.play_darts" or
         "farm.maintain_crops" or
         "executor.clear_obstacle" or

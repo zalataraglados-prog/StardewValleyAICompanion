@@ -2100,6 +2100,9 @@ namespace StardewAI.Contracts.State
         [JsonPropertyName("ready_matching_crop_count")]
         public int ReadyMatchingCropCount { get; set; }
 
+        [JsonPropertyName("walnut_debris_count")]
+        public int WalnutDebrisCount { get; set; }
+
         [JsonPropertyName("matching_crops")]
         public IslandGourmandCropRef[] MatchingCrops { get; set; } = System.Array.Empty<IslandGourmandCropRef>();
 

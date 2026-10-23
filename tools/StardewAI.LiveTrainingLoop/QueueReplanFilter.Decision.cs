@@ -330,6 +330,12 @@ public static partial class QueueReplanFilter
             return CandidateParameterMatchesContinuation(candidate, continuation, "survey_kind") &&
                 CandidateParameterMatchesContinuation(candidate, continuation, "survey_answer");
         }
+        if (string.Equals(ReadString(continuation, "kind"), "island_gourmand", StringComparison.Ordinal))
+        {
+            return CandidateParameterMatchesContinuation(candidate, continuation, "request_index_before") &&
+                CandidateParameterMatchesContinuation(candidate, continuation, "required_crop_item_id") &&
+                CandidateParameterMatchesContinuation(candidate, continuation, "gourmand_interaction_stage");
+        }
         if (string.Equals(ReadString(continuation, "kind"), "calico_jack", StringComparison.Ordinal))
         {
             return CandidateParameterMatchesContinuation(candidate, continuation, "calico_target_club_coins") &&

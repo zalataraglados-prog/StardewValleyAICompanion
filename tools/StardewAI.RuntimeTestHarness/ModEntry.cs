@@ -102,6 +102,7 @@ public sealed partial class ModEntry : Mod
     private ActiveMuseumDonation? activeMuseumDonation;
     private ActiveFieldOfficeDonation? activeFieldOfficeDonation;
     private ActiveFieldOfficeSurvey? activeFieldOfficeSurvey;
+    private ActiveGourmandRequest? activeGourmandRequest;
     private ActiveQuestDropBoxDonation? activeQuestDropBoxDonation;
     private ActiveCommunityCenterDonation? activeCommunityCenterDonation;
     private ActiveCommunityCenterVaultPayment? activeCommunityCenterVaultPayment;
@@ -661,6 +662,7 @@ public sealed partial class ModEntry : Mod
         TickMuseumDonation();
         TickFieldOfficeDonation();
         TickFieldOfficeSurvey();
+        TickGourmandRequest();
         TickQuestDropBoxDonation();
         TickCommunityCenterDonation();
         TickCommunityCenterVaultPayment();
@@ -2221,6 +2223,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "executor.advance_gourmand_request")
+            {
+                StartGourmandRequest(pending);
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.answer_field_office_survey_wrong")
             {
                 StartFieldOfficeSurvey(pending, intentionallyWrong: true);
@@ -2513,6 +2521,7 @@ public sealed partial class ModEntry : Mod
             activeMuseumDonation = null;
             activeFieldOfficeDonation = null;
             activeFieldOfficeSurvey = null;
+            activeGourmandRequest = null;
             activeQuestDropBoxDonation = null;
             activeCommunityCenterDonation = null;
             activeCommunityCenterVaultPayment = null;
@@ -2804,6 +2813,7 @@ public sealed partial class ModEntry : Mod
             activeMuseumDonation is not null ||
             activeFieldOfficeDonation is not null ||
             activeFieldOfficeSurvey is not null ||
+            activeGourmandRequest is not null ||
             activeQuestDropBoxDonation is not null ||
             activeCommunityCenterDonation is not null ||
             activeCommunityCenterVaultPayment is not null ||

@@ -83,6 +83,10 @@ public sealed partial class WorldProgressReadAdapter
                             : "matching_crop_absent",
             MatchingCropCount = matchingCrops.Length,
             ReadyMatchingCropCount = readyCount,
+            WalnutDebrisCount = cave.debris.Count(debris =>
+                (debris.item?.QualifiedItemId ??
+                 ItemRegistry.QualifyItemId(debris.itemId.Value) ??
+                 debris.itemId.Value) == "(O)73"),
             MatchingCrops = matchingCrops,
             ActionTiles = ReadGourmandActionTiles(cave),
             NativeContract = "IslandFarmCave.performAction_Gourmand_then_Gourmand_Yes_then_OnRequestGourmandCheck_then_native_event_then_GiveReward"

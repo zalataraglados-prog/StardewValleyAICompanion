@@ -298,6 +298,13 @@ public static partial class QueueReplanFilter
                 string.Equals(ReadParameter(queueItem, "survey_kind"), ReadString(continuation, "survey_kind"), StringComparison.Ordinal) &&
                 string.Equals(ReadParameter(queueItem, "survey_answer"), ReadString(continuation, "survey_answer"), StringComparison.Ordinal);
         }
+        if (string.Equals(continuationKind, "island_gourmand", StringComparison.Ordinal))
+        {
+            return string.Equals(optionId, "executor.advance_gourmand_request", StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "request_index_before"), ReadString(continuation, "request_index_before"), StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "required_crop_item_id"), ReadString(continuation, "required_crop_item_id"), StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "gourmand_interaction_stage"), ReadString(continuation, "gourmand_interaction_stage"), StringComparison.Ordinal);
+        }
         if (string.Equals(continuationKind, "calico_jack", StringComparison.Ordinal))
         {
             return string.Equals(optionId, "executor.play_calico_jack", StringComparison.Ordinal) &&

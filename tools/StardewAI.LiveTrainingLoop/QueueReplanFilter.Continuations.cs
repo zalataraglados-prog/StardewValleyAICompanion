@@ -253,6 +253,23 @@ public static partial class QueueReplanFilter
                 ["survey_answer"] = fieldOfficeSurveyAnswer
             };
         }
+        var gourmandRequestIndex = ReadParameter(queueItem, "continuation.gourmand_request_index");
+        var gourmandCropItemId = ReadParameter(queueItem, "continuation.gourmand_crop_item_id");
+        var gourmandInteractionStage = ReadParameter(queueItem, "continuation.gourmand_interaction_stage");
+        if (string.Equals(optionId, "island.complete_gourmand_request", StringComparison.Ordinal) &&
+            !string.IsNullOrWhiteSpace(gourmandRequestIndex) &&
+            !string.IsNullOrWhiteSpace(gourmandCropItemId) &&
+            !string.IsNullOrWhiteSpace(gourmandInteractionStage))
+        {
+            return new JsonObject
+            {
+                ["kind"] = "island_gourmand",
+                ["option_id"] = optionId,
+                ["request_index_before"] = gourmandRequestIndex,
+                ["required_crop_item_id"] = gourmandCropItemId,
+                ["gourmand_interaction_stage"] = gourmandInteractionStage
+            };
+        }
         var calicoTargetCoins = ReadParameter(queueItem, "continuation.calico_target_club_coins");
         var calicoTargetItem = ReadParameter(queueItem, "continuation.calico_target_item_id");
         if (string.Equals(optionId, "minigame.play_calico_jack", StringComparison.Ordinal) &&

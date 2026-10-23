@@ -1467,6 +1467,9 @@ static partial class Program
         ApplyFieldOfficeRequestFields(
             executionRequest,
             item);
+        ApplyIslandGourmandRequestFields(
+            executionRequest,
+            item);
         ApplyCalicoJackRequestFields(
             executionRequest,
             item);

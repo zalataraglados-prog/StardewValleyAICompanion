@@ -350,7 +350,7 @@ namespace StardewAI.Contracts.Capabilities
             "executor.collect_fish_pond_output", "executor.complete_fish_pond_request",
             "fishing.manage_fish_pond",
             "executor.collect_animal_product", "executor.pet_interact", "executor.fill_pet_bowl",
-            "executor.donate_museum_item", "executor.donate_field_office_piece", "executor.answer_field_office_survey", "executor.manage_grange_display", "executor.donate_community_center_item", "executor.claim_community_center_bundle_reward", "executor.pay_community_center_vault_bundle",
+            "executor.donate_museum_item", "executor.donate_field_office_piece", "executor.answer_field_office_survey", "executor.advance_gourmand_request", "executor.manage_grange_display", "executor.donate_community_center_item", "executor.claim_community_center_bundle_reward", "executor.pay_community_center_vault_bundle",
             "executor.purchase_joja_membership", "executor.purchase_joja_project",
             "executor.purchase_farmhouse_upgrade", "executor.renovate_home", "executor.construct_building", "executor.pan_ore_spot",
             "executor.collect_machine_output", "executor.load_machine_input",

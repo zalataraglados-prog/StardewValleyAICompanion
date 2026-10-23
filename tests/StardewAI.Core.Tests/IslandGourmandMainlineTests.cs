@@ -1,9 +1,13 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
+using StardewAI.Contracts.Capabilities;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
 using StardewAI.Core.OptionRegistry;
 using StardewAI.Core.Training;
+using StardewAI.LiveTrainingLoop;
 
 namespace StardewAI.Core.Tests;
 
@@ -28,6 +32,9 @@ public sealed class IslandGourmandMainlineTests
         AssertParameter(candidate.Parameters, "gourmand_interaction_stage", expectedStage);
         AssertParameter(candidate.Parameters, "request_index_after", requestAfter.ToString());
         AssertParameter(candidate.Parameters, "required_crop_item_id", "254");
+        AssertParameter(candidate.Parameters, "walnut_debris_count_before", "0");
+        AssertParameter(candidate.Parameters, "golden_walnuts_found_before", "0");
+        AssertParameter(candidate.Parameters, "golden_walnuts_found_after", talked ? "5" : "0");
 
         var plan = new DailyPlanCompiler().Compile(
             new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability),
@@ -71,6 +78,64 @@ public sealed class IslandGourmandMainlineTests
         Assert.Contains("gourmand_request_projection_drifted", Assert.Single(queue.Items).BlockingReasons);
     }
 
+    [Fact]
+    public void RollingRouteContinuationLocksRequestCropAndStage()
+    {
+        var routeItem = JsonNode.Parse("""
+        {"option_id":"executor.traverse_connector","normalized_command":{"parameters":[
+          {"name":"continuation.option_id","value":"island.complete_gourmand_request"},
+          {"name":"continuation.gourmand_request_index","value":"1"},
+          {"name":"continuation.gourmand_crop_item_id","value":"262"},
+          {"name":"continuation.gourmand_interaction_stage","value":"complete_request"}
+        ]}}
+        """)!.AsObject();
+        var continuation = QueueReplanFilter.ReadObjectiveContinuation(routeItem);
+        Assert.Equal("island_gourmand", continuation!["kind"]!.GetValue<string>());
+
+        var ranked = JsonNode.Parse("""
+        [{"option_id":"island.complete_gourmand_request","parameters":[
+          {"name":"request_index_before","value":"1"},
+          {"name":"required_crop_item_id","value":"262"},
+          {"name":"gourmand_interaction_stage","value":"complete_request"}
+        ]},{"option_id":"island.complete_gourmand_request","parameters":[
+          {"name":"request_index_before","value":"2"},
+          {"name":"required_crop_item_id","value":"248"},
+          {"name":"gourmand_interaction_stage","value":"complete_request"}
+        ]}]
+        """)!.AsArray();
+        Assert.Single(QueueReplanFilter.FilterRankedCandidates(ranked, continuation));
+
+        var terminal = JsonNode.Parse("""
+        {"option_id":"executor.advance_gourmand_request","normalized_command":{"parameters":[
+          {"name":"request_index_before","value":"1"},
+          {"name":"required_crop_item_id","value":"262"},
+          {"name":"gourmand_interaction_stage","value":"complete_request"}
+        ]}}
+        """)!.AsObject();
+        Assert.True(QueueReplanFilter.CompletesObjectiveContinuation(terminal, continuation, "applied"));
+    }
+
+    [Fact]
+    public void RuntimeHarnessUsesNativeFlowWithoutDirectProgressMutation()
+    {
+        var capability = OptionCapabilityRegistrySource.GetRequired("executor.advance_gourmand_request");
+        Assert.True(capability.HarnessDispatchSupported);
+        Assert.Equal(CapabilityVerifierStatus.PendingRuntimeEvidence, capability.AfterVerifierStatus);
+        Assert.Empty(capability.RuntimeEvidenceIds);
+
+        var runtime = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.RuntimeTestHarness", "ModEntry.IslandGourmand.cs"));
+        var validation = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.RuntimeTestHarness", "ModEntry.IslandGourmand.Validation.cs"));
+        var production = runtime + validation;
+        Assert.Contains(".checkAction(", production, StringComparison.Ordinal);
+        Assert.Contains(".answerDialogue(", production, StringComparison.Ordinal);
+        Assert.DoesNotContain("GiveReward(", production, StringComparison.Ordinal);
+        Assert.DoesNotContain("MarkCollectedNut", production, StringComparison.Ordinal);
+        Assert.DoesNotMatch(new Regex(@"gourmandRequestsFulfilled\.Value\s*=(?!=)"), production);
+        Assert.DoesNotMatch(new Regex(@"GoldenWalnutsFound\s*=(?!=)"), production);
+    }
+
     private static SnapshotEnvelope Snapshot(bool talked, int requestIndex, bool ready = true)
     {
         var cropId = requestIndex switch
@@ -96,7 +161,7 @@ public sealed class IslandGourmandMainlineTests
               "requests_fulfilled":{{{requestIndex}}},"total_requests":3,"complete":false,"active_request_index":{{{requestIndex}}},
               "required_crop_item_id":"{{{cropId}}}","required_crop_qualified_item_id":"(O){{{cropId}}}","required_crop_display_name":"test",
               "request_state":"{{{(ready ? "ready_matching_crop_present" : "matching_crop_growing")}}}",
-              "matching_crop_count":1,"ready_matching_crop_count":{{{(ready ? 1 : 0)}}},
+              "matching_crop_count":1,"ready_matching_crop_count":{{{(ready ? 1 : 0)}}},"walnut_debris_count":0,
               "matching_crops":[{"tile_x":10,"tile_y":10,"harvest_item_id":"{{{cropId}}}","current_phase":5,"final_phase_index":5,"fully_grown":false,"day_of_current_phase":0,"ready_for_request":{{{ready.ToString().ToLowerInvariant()}}}}],
               "action_tiles":[{"tile_x":4,"tile_y":3,"action":"Gourmand"}],
               "native_contract":"IslandFarmCave.performAction_Gourmand_then_Gourmand_Yes_then_OnRequestGourmandCheck_then_native_event_then_GiveReward"
@@ -127,6 +192,19 @@ public sealed class IslandGourmandMainlineTests
         string name,
         string value) =>
         Assert.Contains(parameters, parameter => parameter.Name == name && parameter.Value == value);
+
+    private static string FindRepositoryFile(params string[] relativeSegments)
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            var candidate = Path.Combine(new[] { directory.FullName }.Concat(relativeSegments).ToArray());
+            if (File.Exists(candidate))
+                return candidate;
+            directory = directory.Parent;
+        }
+        throw new FileNotFoundException(string.Join(Path.DirectorySeparatorChar, relativeSegments));
+    }
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 }
