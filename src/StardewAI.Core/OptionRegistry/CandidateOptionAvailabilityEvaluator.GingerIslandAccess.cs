@@ -12,6 +12,9 @@ namespace StardewAI.Core.OptionRegistry;
 
 public sealed partial class CandidateOptionAvailabilityEvaluator
 {
+    private static readonly IslandGourmandSupplyScheduleProof GourmandSupplyDeadline =
+        IslandGourmandSupplyScheduleProofBuilder.Build();
+
     private bool TryBuildGingerIslandPrerequisiteCandidates(
         SnapshotEnvelope snapshot,
         SmallModelActionParameter[] intentParameters,
@@ -52,6 +55,23 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         }
 
         var status = ReadString(row, "status");
+        var resortAccessRequired =
+            targetLocation is "IslandSouthEast" or "IslandSouthEastCave";
+        var deadlineBlockReason = resortAccessRequired
+            ? GingerIslandResortDeadlineBlockReason(
+                snapshot,
+                ReadBool(targetAccess, "island_west_accessible") == true)
+            : null;
+        if (deadlineBlockReason is not null)
+        {
+            candidates = new[]
+            {
+                BlockedGingerIslandCandidate(
+                    deadlineBlockReason,
+                    intentParameters)
+            };
+            return true;
+        }
         if (ActiveMenuOpenForCandidate(snapshot) &&
             status is not ("process_invitation_mail" or "advance_boat_departure_event" or "advance_boat_journey"))
         {
@@ -127,7 +147,43 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         };
         if (candidates.Length == 0)
             candidates = new[] { BlockedGingerIslandCandidate("master_angler_ginger_island_native_subflow_unavailable", intentParameters) };
+        if (resortAccessRequired)
+        {
+            candidates = candidates.Select(candidate => CloneCandidate(
+                candidate,
+                expectedEffect: candidate.ExpectedEffect +
+                    ";gourmand_latest_western_turtle_unlock_total_day=" +
+                    GourmandSupplyDeadline.LatestWesternTurtleUnlockTotalDayInclusive +
+                    ";gourmand_latest_island_house_unlock_total_day=" +
+                    GourmandSupplyDeadline.LatestIslandHouseUnlockTotalDayInclusive,
+                parameters: candidate.Parameters.Concat(new[]
+                {
+                    Parameter(
+                        "ginger_island_latest_western_turtle_unlock_total_day_inclusive",
+                        GourmandSupplyDeadline.LatestWesternTurtleUnlockTotalDayInclusive
+                            .ToString(CultureInfo.InvariantCulture)),
+                    Parameter(
+                        "ginger_island_latest_island_house_unlock_total_day_inclusive",
+                        GourmandSupplyDeadline.LatestIslandHouseUnlockTotalDayInclusive
+                            .ToString(CultureInfo.InvariantCulture))
+                }).ToArray())).ToArray();
+        }
         return true;
+    }
+
+    private static string? GingerIslandResortDeadlineBlockReason(
+        SnapshotEnvelope snapshot,
+        bool westernTurtleComplete)
+    {
+        var currentTotalDay = ReadStateFieldInt(
+            snapshot,
+            "time",
+            "total_days");
+        return !westernTurtleComplete &&
+               currentTotalDay >
+               GourmandSupplyDeadline.LatestWesternTurtleUnlockTotalDayInclusive
+            ? "master_angler_ginger_island_western_turtle_deadline_exceeded"
+            : null;
     }
 
     private EventCandidate[] GingerIslandRepairCandidates(

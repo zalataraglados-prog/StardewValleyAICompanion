@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using StardewAI.Contracts.Execution;
@@ -11,6 +12,155 @@ namespace StardewAI.Core.Tests;
 
 public sealed partial class MasterAnglerMainlineTests
 {
+    [Fact]
+    public void GingerIslandResortRouteFailsClosedAfterWesternTurtleDeadlineBoundary()
+    {
+        var fixture = CreateFixture(
+            "IslandSouthEastCave:5",
+            targetLocation: "IslandSouthEastCave");
+        try
+        {
+            var snapshot = GingerIslandSnapshot(
+                fixture.Before,
+                "IslandSouth",
+                5,
+                9,
+                GingerIslandAccessBeforeWesternTurtle(
+                    "requires_western_turtle_walnuts"));
+            snapshot = RewriteGingerIslandDeadlineState(snapshot, 212);
+            var parameters = RebindGingerIslandDeadlineIntent(fixture, 212);
+
+            var candidate = EvaluateGingerIslandCandidate(
+                snapshot,
+                parameters);
+
+            Assert.False(candidate.Available);
+            Assert.Contains(
+                "master_angler_ginger_island_western_turtle_deadline_exceeded",
+                candidate.BlockReasons);
+        }
+        finally
+        {
+            fixture.Dispose();
+        }
+    }
+
+    [Fact]
+    public void GingerIslandResortRouteCarriesGourmandDeadlineBoundsBeforeCutoff()
+    {
+        var fixture = CreateFixture(
+            "IslandSouthEastCave:5",
+            targetLocation: "IslandSouthEastCave");
+        try
+        {
+            var access = GingerIslandAccessBeforeWesternTurtle(
+                "requires_western_turtle_walnuts");
+            access["walnuts"]!["current"] = 0;
+            var snapshot = GingerIslandSnapshot(
+                fixture.Before,
+                "IslandWest",
+                10,
+                10,
+                access);
+            snapshot = RewriteGingerIslandState(snapshot, state =>
+            {
+                state["current_location"]!["debris"] = Field(new JsonArray());
+                state["current_location"]!["large_terrain_features"] = Field(new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["tile_x"] = 12,
+                        ["tile_y"] = 10,
+                        ["runtime_type"] = "StardewValley.TerrainFeatures.Bush",
+                        ["bounding_tile_width"] = 2,
+                        ["bounding_tile_height"] = 1,
+                        ["is_bush"] = true,
+                        ["bush_size"] = 4,
+                        ["bush_kind"] = "golden_walnut",
+                        ["ready_for_harvest"] = true,
+                        ["in_bloom"] = true,
+                        ["tile_sheet_offset_before"] = 1,
+                        ["tile_sheet_offset_expected_after"] = 0,
+                        ["bush_harvest_status"] = "ready",
+                        ["bush_projection_status"] = "exact_from_native_bush_shake",
+                        ["bush_output_qualified_item_id"] = "(O)73",
+                        ["bush_authoritative_route_sources"] = new JsonArray(),
+                        ["bush_output_quantity_min"] = 1,
+                        ["bush_output_quantity_max"] = 1,
+                        ["bush_output_quality"] = 0,
+                        ["bush_foraging_experience_on_success_min"] = 0,
+                        ["bush_foraging_experience_on_success_max"] = 0,
+                        ["bush_nut_key"] = "IslandWestBushDeadlineTest",
+                        ["bush_nut_collected_before"] = false,
+                        ["bush_nut_collected_expected_after"] = true
+                    }
+                });
+            });
+            snapshot = RewriteGingerIslandDeadlineState(snapshot, 211);
+            var parameters = RebindGingerIslandDeadlineIntent(fixture, 211);
+
+            var candidate = EvaluateGingerIslandCandidate(
+                snapshot,
+                parameters);
+
+            Assert.True(candidate.Available, GingerIslandCandidateDiagnostic(candidate));
+            Assert.Contains(candidate.Parameters, row =>
+                row.Name == "ginger_island_latest_western_turtle_unlock_total_day_inclusive" &&
+                row.Value == "211");
+            Assert.Contains(candidate.Parameters, row =>
+                row.Name == "ginger_island_latest_island_house_unlock_total_day_inclusive" &&
+                row.Value == "223");
+        }
+        finally
+        {
+            fixture.Dispose();
+        }
+    }
+
+    private static SnapshotEnvelope RewriteGingerIslandDeadlineState(
+        SnapshotEnvelope source,
+        int totalDay) => RewriteGingerIslandState(source, state =>
+    {
+        state["time"]!["total_days"] = Field(totalDay);
+        state["locations"]!["social_route_date_evidence"]!["value"]!["capture_total_days"] =
+            totalDay;
+    });
+
+    private static JsonObject GingerIslandAccessBeforeWesternTurtle(string status)
+    {
+        var access = GingerIslandAccess(status);
+        access["target_access"]!["island_west_accessible"] = false;
+        access["target_access"]!["island_south_east_accessible"] = false;
+        access["target_access"]!["island_south_east_cave_accessible"] = false;
+        return access;
+    }
+
+    private static SmallModelActionParameter[] RebindGingerIslandDeadlineIntent(
+        Fixture fixture,
+        int totalDay)
+    {
+        var artifact = JsonNode.Parse(
+            File.ReadAllText(fixture.WindowIndexPath))!.AsObject();
+        var window = artifact["species"]![0]!["windows"]![0]!.AsObject();
+        window["first_total_day"] = 0;
+        window["last_total_day"] = 223;
+        File.WriteAllText(
+            fixture.WindowIndexPath,
+            artifact.ToJsonString(JsonOptions));
+        var hash = Convert.ToHexString(
+                SHA256.HashData(File.ReadAllBytes(fixture.WindowIndexPath)))
+            .ToLowerInvariant();
+        return fixture.Parameters.Select(parameter => parameter.Name switch
+        {
+            "master_angler_window_last_total_day" => Parameter(parameter.Name, "223"),
+            "master_angler_target_total_day" => Parameter(
+                parameter.Name,
+                totalDay.ToString(System.Globalization.CultureInfo.InvariantCulture)),
+            "master_angler_window_index_sha256" => Parameter(parameter.Name, hash),
+            _ => parameter
+        }).ToArray();
+    }
+
     [Fact]
     public void GingerIslandBatteryDeficitReusesReadyMachineOutputCandidate()
     {
