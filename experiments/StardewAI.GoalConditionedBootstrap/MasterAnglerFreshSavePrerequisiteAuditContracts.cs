@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using StardewAI.Core.Infrastructure;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -35,6 +36,8 @@ public sealed class MasterAnglerFreshSavePrerequisiteAuditReport
     public bool StaticOpportunityInventoryComplete { get; set; }
     [JsonPropertyName("prerequisite_family_inventory_complete")]
     public bool PrerequisiteFamilyInventoryComplete { get; set; }
+    [JsonPropertyName("golden_walnut_unlock_schedule")]
+    public GoldenWalnutUnlockScheduleProof? GoldenWalnutUnlockSchedule { get; set; }
     [JsonPropertyName("species")]
     public MasterAnglerFreshSaveSpeciesPrerequisite[] Species { get; set; } =
         Array.Empty<MasterAnglerFreshSaveSpeciesPrerequisite>();

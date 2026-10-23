@@ -27,6 +27,13 @@ internal static partial class BootstrapSelfTest
             report.MaximumRequiredFishingLevel == 10 &&
             report.StaticOpportunityInventoryComplete &&
             report.PrerequisiteFamilyInventoryComplete &&
+            report.GoldenWalnutUnlockSchedule is
+            {
+                PhaseCapacityComplete: true,
+                IndependentRetryBudgetComplete: true,
+                YearThreeDeadlineCompositionComplete: false,
+                TrainingAdmissionEligible: false
+            } &&
             report.UnknownLocationIds.Length == 0,
             "Master Angler fresh-save prerequisite audit summary drifted.");
 
@@ -123,7 +130,11 @@ internal static partial class BootstrapSelfTest
                 StringComparer.Ordinal) &&
             report.MissingOrUnboundProducerFamilies.Contains(
                 "ginger_island_access",
-                StringComparer.Ordinal),
+                StringComparer.Ordinal) &&
+            report.PrerequisiteFamilies.Single(value =>
+                    value.FamilyId == "ginger_island_access")
+                .ProducerStatus ==
+                "phase_capacity_and_retry_budget_bound_deadline_composition_missing",
             "Master Angler fresh-save producer coverage was overstated.");
 
         VerifyMasterAnglerFishingSkillBindingFailsClosed(

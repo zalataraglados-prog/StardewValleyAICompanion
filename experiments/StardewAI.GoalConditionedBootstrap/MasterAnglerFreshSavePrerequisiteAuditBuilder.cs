@@ -6,6 +6,7 @@ namespace StardewAI.GoalConditionedBootstrap;
 public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
 {
     private const string MasterAnglerDirection = "complete_master_angler";
+    private const string DependencyExpansionGoal = "grandpa.maximum_21";
     private const string FishingSkillProducerNode =
         "dependency.complete_master_angler.fishing_skill_progression";
     private const string FishingSkillSourceDirection = "raise_skill_levels";
@@ -118,7 +119,7 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
         var windows = Read<MasterAnglerStageOneWindowIndex>(
             windowFullPath,
             "Master Angler window index");
-        var graph = ReadDependencyGraph(dependencyFullPath, catalog.GoalId);
+        var graph = ReadDependencyGraph(dependencyFullPath);
 
         ValidateAuthority(catalogFullPath, catalog, windows);
         var catalogById = catalog.Species.ToDictionary(
@@ -143,7 +144,8 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
         Require(species.All(value => value.StaticOpportunityDayCount >= 2),
             "At least one Master Angler species has fewer than two static opportunity days.");
 
-        var families = BuildFamilies(species, graph);
+        var goldenWalnutSchedule = GoldenWalnutUnlockScheduleProofBuilder.Build();
+        var families = BuildFamilies(species, graph, goldenWalnutSchedule);
         var missing = families
             .Where(value => value.ProducerStatus != "implemented_and_bound")
             .Select(value => value.FamilyId)
@@ -175,6 +177,7 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                 species.Max(value => value.MaximumSourceRequiredFishingLevel),
             StaticOpportunityInventoryComplete = true,
             PrerequisiteFamilyInventoryComplete = true,
+            GoldenWalnutUnlockSchedule = goldenWalnutSchedule,
             Species = species,
             PrerequisiteFamilies = families,
             MissingOrUnboundProducerFamilies = missing,
@@ -338,7 +341,8 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
 
     private static MasterAnglerFreshSavePrerequisiteFamily[] BuildFamilies(
         MasterAnglerFreshSaveSpeciesPrerequisite[] species,
-        DependencyGraphInventory graph)
+        DependencyGraphInventory graph,
+        GoldenWalnutUnlockScheduleProof goldenWalnutSchedule)
     {
         var required = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
         void Add(string family, IEnumerable<string> ids)
@@ -372,14 +376,15 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
         return required
             .Where(pair => pair.Value.Count > 0)
             .OrderBy(pair => pair.Key, StringComparer.Ordinal)
-            .Select(pair => Family(pair.Key, pair.Value, graph))
+            .Select(pair => Family(pair.Key, pair.Value, graph, goldenWalnutSchedule))
             .ToArray();
     }
 
     private static MasterAnglerFreshSavePrerequisiteFamily Family(
         string family,
         IEnumerable<string> species,
-        DependencyGraphInventory graph)
+        DependencyGraphInventory graph,
+        GoldenWalnutUnlockScheduleProof goldenWalnutSchedule)
     {
         var (status, evidence, work) = family switch
         {
@@ -530,12 +535,25 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                 ("current_state_gate_present_future_producer_missing",
                     new[] { "dependency.complete_master_angler.target_date_opportunity_producer" },
                     "Reserve natural rainy opportunities or bind the existing native Rain Totem primitive with exact acquisition and next-day effect."),
+            "ginger_island_access" when
+                goldenWalnutSchedule.PhaseCapacityComplete &&
+                goldenWalnutSchedule.IndependentRetryBudgetComplete &&
+                !goldenWalnutSchedule.YearThreeDeadlineCompositionComplete =>
+                ("phase_capacity_and_retry_budget_bound_deadline_composition_missing",
+                    graph.HasDirection("complete_community_center")
+                        ? new[]
+                        {
+                            "complete_community_center",
+                            GoldenWalnutUnlockScheduleProofBuilder.SchemaVersion
+                        }
+                        : new[] { GoldenWalnutUnlockScheduleProofBuilder.SchemaVersion },
+                    "The exact 1+10+20+20 unlock sequence has sufficient phased capacity and finite independent retry budgets. Compose Mussel Stone regeneration, Island crop growth/seed/harvest capacity and all attempt durations with the Year 3 deadline before marking this family bound."),
             "ginger_island_access" =>
                 ("composed_producer_missing",
                     graph.HasDirection("complete_community_center")
                         ? new[] { "complete_community_center" }
                         : Array.Empty<string>(),
-                    "Schedule Community Center or Joja completion, Willy's boat repair, ticket travel and island sub-area ingress."),
+                    "Schedule Community Center or Joja completion, Willy's boat repair, ticket travel, phased Golden Walnut capacity and island sub-area ingress."),
             "witch_swamp_story_access" when graph.HasBoundMasterAnglerDarkTalismanStoryAccess() =>
                 ("implemented_and_bound",
                     new[] { DarkTalismanAccessProducerNode, CommunityCenterCompletionNode },
@@ -608,16 +626,14 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
             "Master Angler catalog and window species denominators disagree.");
     }
 
-    private static DependencyGraphInventory ReadDependencyGraph(
-        string path,
-        string goalId)
+    private static DependencyGraphInventory ReadDependencyGraph(string path)
     {
         using var document = JsonDocument.Parse(
             CurrentTeacherFrontierSupport.ReadArtifactText(path));
         var root = document.RootElement;
         Require(root.GetProperty("schema_version").GetString() ==
                 "goal_method_dependency_expansions.v1" &&
-                root.GetProperty("goal_id").GetString() == goalId,
+                root.GetProperty("goal_id").GetString() == DependencyExpansionGoal,
             "Unsupported or mismatched goal-method dependency expansion.");
         var directions = root.GetProperty("directions").EnumerateArray()
             .ToDictionary(
