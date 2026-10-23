@@ -150,13 +150,24 @@ public sealed partial class ModEntry
                 Game1.activeClickableMenu is DialogueBox question && question.isQuestion &&
                 string.Equals(Game1.currentLocation?.lastQuestionKey, request.GourmandQuestionKey, StringComparison.Ordinal))
             {
-                var yes = question.responses?.FirstOrDefault(response =>
-                    response.responseKey == request.GourmandResponseKey);
-                if (yes is null || !active.Cave.answerDialogue(yes))
+                if (question.transitioning || question.safetyTimer > 0)
+                    return;
+                var responseIndex = Array.FindIndex(
+                    question.responses,
+                    response => response.responseKey == request.GourmandResponseKey);
+                if (responseIndex < 0)
                 {
-                    CompleteGourmandBlocked(active, "gourmand_yes_response_failed");
+                    CompleteGourmandBlocked(active, "gourmand_yes_response_missing");
                     return;
                 }
+                var response = StoryEventResponseCenter(question, responseIndex);
+                question.performHoverAction(response.X, response.Y);
+                if (question.selectedResponse != responseIndex)
+                {
+                    CompleteGourmandBlocked(active, "gourmand_yes_response_not_bound");
+                    return;
+                }
+                question.receiveLeftClick(response.X, response.Y);
                 active.YesAnswered = true;
                 active.Cooldown = 8;
                 return;
@@ -164,10 +175,20 @@ public sealed partial class ModEntry
 
             if (Game1.activeClickableMenu is DialogueBox dialogue)
             {
-                if (++active.DialogueTicks % 12 == 0)
-                    dialogue.receiveLeftClick(
-                        dialogue.xPositionOnScreen + dialogue.width / 2,
-                        dialogue.yPositionOnScreen + dialogue.height / 2);
+                if (++active.DialogueTicks % 12 != 0 || dialogue.transitioning ||
+                    dialogue.safetyTimer > 0)
+                    return;
+                if (dialogue.characterIndexInDialogue < dialogue.getCurrentString().Length - 1)
+                {
+                    dialogue.receiveLeftClick(0, 0);
+                    return;
+                }
+                if (dialogue.isQuestion)
+                {
+                    CompleteGourmandBlocked(active, "gourmand_event_unexpected_question");
+                    return;
+                }
+                dialogue.receiveLeftClick(0, 0);
                 return;
             }
             if (Game1.activeClickableMenu is not null)

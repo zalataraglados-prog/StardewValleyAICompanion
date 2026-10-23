@@ -119,11 +119,11 @@ public static class GoldenWalnutResortFundingRouteProofBuilder
                 {
                     "island_gourmand_progress.v1",
                     "island.complete_gourmand_request",
-                    "executor.advance_gourmand_request"
+                    "executor.advance_gourmand_request",
+                    "EVD-341"
                 },
                 new[]
                 {
-                    "island_gourmand_native_interaction_and_reward_receipt",
                     "melon_wheat_garlic_seed_growth_and_ready_crop_schedule",
                     "gourmand_route_and_unlock_days_before_day_224"
                 })
@@ -135,7 +135,7 @@ public static class GoldenWalnutResortFundingRouteProofBuilder
 
         return new GoldenWalnutResortFundingRouteProof(
             SchemaVersion,
-            "deterministic_gourmand_action_bound_runtime_supply_and_deadline_pending",
+            "deterministic_gourmand_runtime_bound_supply_and_deadline_pending",
             RequiredWalnutQuantity,
             PreferredRouteId,
             "same_exact_15_walnut_capacity_without_random_retry_or_daily_mussel_spawn_dependency",

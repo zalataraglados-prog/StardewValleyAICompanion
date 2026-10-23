@@ -674,6 +674,9 @@ namespace StardewAI.Contracts.Capabilities
                     ["executor.answer_field_office_survey"] = VerifiedEvidence(
                         "vanilla_native_FieldOfficeSurvey_Survey_Yes_exact_Correct_response_plant_collected_nut_walnut_debris_and_finale_receipt",
                         "EVD-303"),
+                    ["executor.advance_gourmand_request"] = VerifiedEvidence(
+                        "vanilla_native_Gourmand_introduction_or_Gourmand_Yes_crop_event_return_five_walnut_debris_pickup_request_tracker_and_mutex_release_receipt",
+                        "EVD-341"),
                     ["minigame.play_calico_jack"] = VerifiedEvidence(
                         "vanilla_missing_(BC)126_rarecrow_currency_demand_exact_ClubCards_table_seed_replay_hidden_card_future_draw_native_round_coin_settlement_and_single_round_exit_receipt",
                         "EVD-304"),

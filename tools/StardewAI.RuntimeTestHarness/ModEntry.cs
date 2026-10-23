@@ -2065,6 +2065,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_island_gourmand")
+            {
+                pending.Completion.SetResult(ExecuteSetupIslandGourmandFixture(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.field_office_survey_day_update")
             {
                 pending.Completion.SetResult(ExecuteFieldOfficeSurveyDayUpdate(pending.Request));

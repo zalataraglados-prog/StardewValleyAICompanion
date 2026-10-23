@@ -120,8 +120,8 @@ public sealed class IslandGourmandMainlineTests
     {
         var capability = OptionCapabilityRegistrySource.GetRequired("executor.advance_gourmand_request");
         Assert.True(capability.HarnessDispatchSupported);
-        Assert.Equal(CapabilityVerifierStatus.PendingRuntimeEvidence, capability.AfterVerifierStatus);
-        Assert.Empty(capability.RuntimeEvidenceIds);
+        Assert.Equal(CapabilityVerifierStatus.RuntimeVerified, capability.AfterVerifierStatus);
+        Assert.Contains("EVD-341", capability.RuntimeEvidenceIds);
 
         var runtime = File.ReadAllText(FindRepositoryFile(
             "tools", "StardewAI.RuntimeTestHarness", "ModEntry.IslandGourmand.cs"));
@@ -129,11 +129,33 @@ public sealed class IslandGourmandMainlineTests
             "tools", "StardewAI.RuntimeTestHarness", "ModEntry.IslandGourmand.Validation.cs"));
         var production = runtime + validation;
         Assert.Contains(".checkAction(", production, StringComparison.Ordinal);
-        Assert.Contains(".answerDialogue(", production, StringComparison.Ordinal);
+        Assert.Contains("question.receiveLeftClick", production, StringComparison.Ordinal);
+        Assert.Contains("StoryEventResponseCenter(question, responseIndex)", production, StringComparison.Ordinal);
+        Assert.Contains("question.performHoverAction", production, StringComparison.Ordinal);
+        Assert.DoesNotContain("active.Cave.answerDialogue", production, StringComparison.Ordinal);
         Assert.DoesNotContain("GiveReward(", production, StringComparison.Ordinal);
         Assert.DoesNotContain("MarkCollectedNut", production, StringComparison.Ordinal);
         Assert.DoesNotMatch(new Regex(@"gourmandRequestsFulfilled\.Value\s*=(?!=)"), production);
         Assert.DoesNotMatch(new Regex(@"GoldenWalnutsFound\s*=(?!=)"), production);
+    }
+
+    [Fact]
+    public void RuntimeSmokeKeepsFixtureMutationOutsideTheNativeExecutor()
+    {
+        var fixture = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.RuntimeTestHarness", "ModEntry.IslandGourmandFixture.cs"));
+        var dispatch = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var smoke = File.ReadAllText(FindRepositoryFile(
+            "scripts", "Invoke-RuntimeIslandGourmandSmoke.ps1"));
+
+        Assert.Contains("debug.setup_island_gourmand", dispatch, StringComparison.Ordinal);
+        Assert.Contains("ExecuteSetupIslandGourmandFixture", fixture, StringComparison.Ordinal);
+        Assert.Contains("gourmandRequestsFulfilled.Value = requestIndex", fixture, StringComparison.Ordinal);
+        Assert.Contains("new Crop(seedItemId", fixture, StringComparison.Ordinal);
+        Assert.Contains("executor.advance_gourmand_request", smoke, StringComparison.Ordinal);
+        Assert.Contains("-WindowStyle Hidden", smoke, StringComparison.Ordinal);
+        Assert.Contains("STARDEWAI_SUPPRESS_LOCAL_RENDER", smoke, StringComparison.Ordinal);
     }
 
     private static SnapshotEnvelope Snapshot(bool talked, int requestIndex, bool ready = true)

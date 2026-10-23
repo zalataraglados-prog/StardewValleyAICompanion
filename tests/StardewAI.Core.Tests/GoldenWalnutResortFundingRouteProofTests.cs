@@ -35,8 +35,12 @@ public sealed class GoldenWalnutResortFundingRouteProofTests
         Assert.Contains("island_gourmand_progress.v1", gourmand.BoundEvidenceIds);
         Assert.Contains("island.complete_gourmand_request", gourmand.BoundEvidenceIds);
         Assert.Contains("executor.advance_gourmand_request", gourmand.BoundEvidenceIds);
+        Assert.Contains("EVD-341", gourmand.BoundEvidenceIds);
         Assert.DoesNotContain(
             "island_gourmand_transparent_request_projection",
+            gourmand.MissingEvidenceIds);
+        Assert.DoesNotContain(
+            "island_gourmand_native_interaction_and_reward_receipt",
             gourmand.MissingEvidenceIds);
         Assert.Equal(
             new[] { "IslandGourmand1", "IslandGourmand2", "IslandGourmand3" },
