@@ -1131,6 +1131,7 @@ namespace StardewAI.Contracts.Capabilities
                 BlockedCandidate("rain_totem_hardwood_reserve_wait", "rain_totem_hardwood_reserve_waits_for_fresh_native_state_or_tool_upgrade"),
                 BlockedCandidate("secret_woods_access_wait", "secret_woods_access_waits_for_fresh_native_state_or_tool_upgrade"),
                 BlockedCandidate("dark_talisman_access_wait", "dark_talisman_access_waits_for_fresh_native_state_or_story_progress"),
+                BlockedCandidate("ginger_island_access_wait", "ginger_island_access_waits_for_fresh_native_state_resources_or_story_progress"),
                 BlockedCandidate("quest_candidate", "quest_objective_binding_not_executable"),
                 BlockedCandidate("special_order_candidate", "special_order_objective_binding_not_executable")
             });

@@ -134,6 +134,7 @@ public sealed partial class ModEntry : Mod
     private ActiveShippingSummaryClose? activeShippingSummaryClose;
     private ActiveSpecialItemChestInteraction? activeSpecialItemChestInteraction;
     private ActiveDarkTalismanStatueInteraction? activeDarkTalismanStatueInteraction;
+    private ActiveGingerIslandInteraction? activeGingerIslandInteraction;
     private ActiveMineRewardChest? activeMineRewardChest;
     private ActivePotOfGoldClaim? activePotOfGoldClaim;
     private ActiveDwarfKingStatueChoice? activeDwarfKingStatueChoice;
@@ -637,6 +638,7 @@ public sealed partial class ModEntry : Mod
         TickShippingSummaryClose();
         TickSpecialItemChestInteraction();
         TickDarkTalismanStatueInteraction();
+        TickGingerIslandInteraction();
         TickMineRewardChest();
         TickPotOfGoldClaim();
         TickDwarfKingStatuePowerChoice();
@@ -1529,6 +1531,10 @@ public sealed partial class ModEntry : Mod
                     string.Equals(pending.Request.ExpectedActionType, "DarkTalismanStatue", StringComparison.Ordinal))
                 {
                     StartDarkTalismanStatueInteraction(pending);
+                }
+                else if (pending.Request.InteractionKind is "boat_tunnel_check_action" or "parrot_upgrade_perch")
+                {
+                    StartGingerIslandInteraction(pending);
                 }
                 else
                 {
@@ -2828,6 +2834,7 @@ public sealed partial class ModEntry : Mod
             activeShippingSummaryClose is not null ||
             activeSpecialItemChestInteraction is not null ||
             activeDarkTalismanStatueInteraction is not null ||
+            activeGingerIslandInteraction is not null ||
             activeMineRewardChest is not null ||
             activePotOfGoldClaim is not null ||
             activeDwarfKingStatueChoice is not null ||

@@ -32,7 +32,8 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
                 ["route_graph"] = Unavailable("world_not_ready", "Game1.locations route graph preview", tick, "vanilla_1_6_route"),
                 ["route_map_summaries"] = Unavailable("world_not_ready", "Game1.locations route map summaries", tick, "vanilla_1_6_route"),
                 ["secret_woods_access"] = Unavailable("world_not_ready", "Forest resource clump and active farm type", tick, "vanilla_1_6_15_secret_woods_access"),
-                ["dark_talisman_access"] = Unavailable("world_not_ready", "Railroad event 529952, quest 28, Krobus sewer unseal, BugLand SpecialItem 6, Railroad statue and WitchWarpCave MagicWarp", tick, "vanilla_1_6_15_dark_talisman_access")
+                ["dark_talisman_access"] = Unavailable("world_not_ready", "Railroad event 529952, quest 28, Krobus sewer unseal, BugLand SpecialItem 6, Railroad statue and WitchWarpCave MagicWarp", tick, "vanilla_1_6_15_dark_talisman_access"),
+                ["ginger_island_access"] = Unavailable("world_not_ready", "Willy invitation, BoatTunnel repairs/ticket, boat journey and Island parrot perches", tick, "vanilla_1_6_15_ginger_island_access")
             };
             var unavailablePaths = new List<string>
             {
@@ -45,7 +46,8 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
                 "locations.route_graph",
                 "locations.route_map_summaries",
                 "locations.secret_woods_access",
-                "locations.dark_talisman_access"
+                "locations.dark_talisman_access",
+                "locations.ginger_island_access"
             };
             if (socialRouteEvidenceRequested)
             {
@@ -70,7 +72,8 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             ["route_graph"] = Field(ReadRouteGraph(), "Game1.locations warps/doors/action-warp route graph preview", tick, "vanilla_1_6_route"),
             ["route_map_summaries"] = Field(ReadRouteMapSummaries(), "Game1.locations map dimensions and route connector/action summaries", tick, "vanilla_1_6_route"),
             ["secret_woods_access"] = Field(ReadSecretWoodsAccess(), "Game1.GetFarmTypeKey; Forest constructor ResourceClump(602,2,2,(1,6)); ResourceClump.performToolAction Steel Axe gate; Forest to Woods native warps", tick, "vanilla_1_6_15_secret_woods_access"),
-            ["dark_talisman_access"] = Field(ReadDarkTalismanAccess(), "Events/Railroad 529952/C; quest 28; NPC.checkAction Krobus; BugLand overlay Chest SpecialItem(6); Railroad.checkAction tile 287; WitchWarpCave Back.TouchAction MagicWarp WitchSwamp 20 42", tick, "vanilla_1_6_15_dark_talisman_access")
+            ["dark_talisman_access"] = Field(ReadDarkTalismanAccess(), "Events/Railroad 529952/C; quest 28; NPC.checkAction Krobus; BugLand overlay Chest SpecialItem(6); Railroad.checkAction tile 287; WitchWarpCave Back.TouchAction MagicWarp WitchSwamp 20 42", tick, "vanilla_1_6_15_dark_talisman_access"),
+            ["ginger_island_access"] = Field(ReadGingerIslandAccess(), "Willy invitation; FishShop WarpBoatTunnel; BoatTunnel BoatTicket/checkAction/answerDialogue; WorldChangeEvent 13; BoatJourney; IslandHut and IslandSouth ParrotUpgradePerch", tick, "vanilla_1_6_15_ginger_island_access")
         };
         if (socialRouteEvidenceRequested)
         {

@@ -429,6 +429,26 @@ namespace StardewAI.Core.Execution
                         : new[] { "dark_talisman_statue_not_observed_at_target" };
             }
 
+            if (string.Equals(interactionKind, "boat_tunnel_check_action", StringComparison.Ordinal))
+            {
+                return ValidateGingerIslandBoatInteraction(
+                    action,
+                    snapshot,
+                    targetX.Value,
+                    targetY.Value,
+                    expectedActionType);
+            }
+
+            if (string.Equals(interactionKind, "parrot_upgrade_perch", StringComparison.Ordinal))
+            {
+                return ValidateGingerIslandPerchInteraction(
+                    action,
+                    snapshot,
+                    targetX.Value,
+                    targetY.Value,
+                    expectedActionType);
+            }
+
             if (!string.Equals(interactionKind, "map_action", StringComparison.Ordinal))
             {
                 return new[] { "interact_kind_unsupported" };

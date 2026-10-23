@@ -95,13 +95,21 @@ namespace StardewAI.Core.OptionRegistry
                 };
             }
 
+            var continuation = MasterAnglerContinuationParameters(
+                "fishing.catch_fish",
+                intentParameters);
+            if (TryBuildGingerIslandPrerequisiteCandidates(
+                    snapshot,
+                    intentParameters,
+                    continuation,
+                    out var gingerIslandPrerequisites))
+            {
+                return gingerIslandPrerequisites;
+            }
             var currentLocation = ReadStateFieldString(
                 snapshot,
                 "player",
                 "location_id");
-            var continuation = MasterAnglerContinuationParameters(
-                "fishing.catch_fish",
-                intentParameters);
             if (TryBuildSecretWoodsPrerequisiteCandidates(
                     snapshot,
                     intent,
