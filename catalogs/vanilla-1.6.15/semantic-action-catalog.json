@@ -4,9 +4,9 @@
   "native_action_denominator_status": "native_action_denominator_frozen",
   "native_action_surface_fingerprint_sha256": "a2ba3ac0193fa78aece39a1eb4c18cb3c9b3248ea7390194dcfe61605af02d0e",
   "planning_semantic_catalog_fingerprint_schema": "stardewai.planning_semantic_catalog_fingerprint.v1",
-  "planning_semantic_catalog_fingerprint_sha256": "3fbc54a707c8ac023de7b38b4c0323f04321badcfb7f24688492b3409f66eab7",
-  "action_count": 240,
-  "registered_option_spec_count": 238,
+  "planning_semantic_catalog_fingerprint_sha256": "897269ec75b9db73846ee1afad3696faf66b4b1c717ab6787879e503f392106b",
+  "action_count": 242,
+  "registered_option_spec_count": 240,
   "catalogued_blocked_count": 2,
   "uncatalogued_native_action_count": 0,
   "pending_catalog_without_surface_count": 0,
@@ -177,6 +177,15 @@
       "domain": "mining",
       "semantic_kind": "PrimitiveOptionSpec",
       "primary_engine_id": "engine.dungeon_traversal",
+      "catalog_status": "registered_option_spec",
+      "block_reason": "",
+      "native_runtime_types": []
+    },
+    {
+      "action_id": "executor.advance_gourmand_request",
+      "domain": "island",
+      "semantic_kind": "PrimitiveOptionSpec",
+      "primary_engine_id": "engine.interaction_menu",
       "catalog_status": "registered_option_spec",
       "block_reason": "",
       "native_runtime_types": []
@@ -1698,6 +1707,15 @@
       "domain": "inventory",
       "semantic_kind": "CompositeOptionSpec",
       "primary_engine_id": "engine.inventory_transfer",
+      "catalog_status": "registered_option_spec",
+      "block_reason": "",
+      "native_runtime_types": []
+    },
+    {
+      "action_id": "island.complete_gourmand_request",
+      "domain": "island",
+      "semantic_kind": "CompositeOptionSpec",
+      "primary_engine_id": "engine.strategy_orchestration",
       "catalog_status": "registered_option_spec",
       "block_reason": "",
       "native_runtime_types": []
