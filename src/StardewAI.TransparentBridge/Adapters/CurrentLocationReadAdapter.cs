@@ -259,7 +259,9 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             harvest_experience_projection_status = clearance.ExperienceStatus,
             clear_output_projection_status = clearance.OutputStatus,
             clear_output_items = clearance.OutputItems,
-            clear_output_items_json = System.Text.Json.JsonSerializer.Serialize(clearance.OutputItems),
+            clear_output_items_json = clearance.OutputStatus == "native_stochastic_receipt"
+                ? string.Empty
+                : System.Text.Json.JsonSerializer.Serialize(clearance.OutputItems),
             clear_authoritative_route_sources = clearance.AuthoritativeRouteSources,
             clear_output_qualified_item_id = clearance.OutputQualifiedItemId,
             clear_output_quantity_min = clearance.OutputQuantity,

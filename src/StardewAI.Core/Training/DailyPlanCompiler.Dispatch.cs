@@ -84,7 +84,7 @@ namespace StardewAI.Core.Training
                     "clear_farm_resource_clump", "ship_inventory_item_to_bin",
                     "clear_current_location_resource_clump",
                     "collect_machine_output_tile", "load_machine_input_tile",
-                    "collect_spawned_object", "harvest_bush", "crack_geode",
+                    "collect_spawned_object", "harvest_bush", "harvest_crop_tile", "till_soil_tile", "crack_geode",
                     "answer_field_office_survey", "craft_machine_item",
                     "place_machine_item", "construct_building",
                     "upgrade_building", "animal_purchase_select_service",
@@ -310,6 +310,11 @@ namespace StardewAI.Core.Training
             if (candidate.Kind == "harvest_crop_tile")
             {
                 return HarvestCropTileSteps(candidate);
+            }
+
+            if (candidate.Kind == "till_soil_tile")
+            {
+                return TillSoilTileSteps(candidate);
             }
 
             if (candidate.Kind == "harvest_giant_crop_tile")

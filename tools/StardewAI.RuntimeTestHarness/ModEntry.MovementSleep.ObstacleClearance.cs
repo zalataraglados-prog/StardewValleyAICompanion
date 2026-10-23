@@ -190,7 +190,12 @@ public sealed partial class ModEntry : Mod
         var expectedOutputItems = TryParseClearanceOutputItems(request.ClearOutputItemsJson, out var parsedOutputItems)
             ? parsedOutputItems
             : null;
+        var stochasticReceipt = string.Equals(
+            request.ClearOutputProjectionStatus,
+            "native_stochastic_receipt",
+            StringComparison.Ordinal);
         if (!string.IsNullOrWhiteSpace(request.ClearOutputProjectionStatus) &&
+            !stochasticReceipt &&
             (!string.Equals(request.ClearOutputProjectionStatus, "exact", StringComparison.Ordinal) || expectedOutputItems is null))
         {
             pending.Completion.SetResult(BlockedWithPrimitive(request, "clear_obstacle", requested, ClearObstacleObservedEffect(target), "clear_obstacle_output_multiset_projection_invalid"));
@@ -786,7 +791,9 @@ public sealed partial class ModEntry : Mod
     {
         return location.objects.TryGetValue(tile.ToVector2(), out var item) &&
             item.GetType() == typeof(StardewValley.Object) &&
-            (item.IsTwig() || item.QualifiedItemId is "(O)590" or "(O)SeedSpot");
+            (item.IsTwig() ||
+             item.QualifiedItemId is "(O)590" or "(O)SeedSpot" ||
+             (location is IslandLocation && item.QualifiedItemId == "(O)25"));
     }
 
     private static string? ValidateArtifactSpotExecutionRequest(TrainingExecutionRequest request)

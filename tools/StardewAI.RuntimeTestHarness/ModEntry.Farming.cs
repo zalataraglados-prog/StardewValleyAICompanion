@@ -168,7 +168,7 @@ public sealed partial class ModEntry : Mod
         var estimatedTicks = EstimateRuntimeToolTicks(target);
         var requested = TillSoilRequestedEffect(location, target);
 
-        if (location is not Farm && location is not MineShaft)
+        if (location is not Farm && location is not MineShaft && location is not IslandLocation)
         {
             pending.Completion.SetResult(NativeToolBlocked(request, "till_soil", target, hoe, null, staminaBefore, started, estimatedTicks, "unsupported_location", requested, TillSoilObservedEffect(location, target)));
             return;

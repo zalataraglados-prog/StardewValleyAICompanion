@@ -233,6 +233,357 @@ public sealed partial class MasterAnglerMainlineTests
     }
 
     [Fact]
+    public void GingerIslandWalnutDeficitReusesNativeMusselStoneAttemptAndFreshReceipt()
+    {
+        var fixture = CreateFixture("IslandSouthEastCave:5", targetLocation: "IslandSouthEastCave");
+        try
+        {
+            var access = GingerIslandAccess("requires_western_turtle_walnuts");
+            access["walnuts"]!["current"] = 0;
+            var snapshot = GingerIslandSnapshot(fixture.Before, "IslandWest", 10, 10, access);
+            snapshot = RewriteGingerIslandState(snapshot, state =>
+            {
+                state["current_location"]!["terrain_features"] = Field(new JsonArray());
+                state["current_location"]!["objects"] = Field(new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["tile_x"] = 11,
+                        ["tile_y"] = 10,
+                        ["qualified_item_id"] = "(O)25",
+                        ["name"] = "Stone",
+                        ["clear_kind"] = "mussel_stone",
+                        ["clear_obstacle_executor_status"] = "ready",
+                        ["required_tool_kind"] = "pickaxe",
+                        ["tool_slot_index"] = 0,
+                        ["expected_tool_hits_to_clear"] = 8,
+                        ["harvest_experience_skill_id"] = "mining",
+                        ["harvest_experience_on_success_min"] = 5,
+                        ["harvest_experience_on_success_max"] = 5,
+                        ["harvest_experience_condition"] = "native_pickaxe_breaks_island_mussel_stone",
+                        ["harvest_experience_projection_status"] = "exact",
+                        ["clear_output_projection_status"] = "native_stochastic_receipt",
+                        ["clear_output_items_json"] = string.Empty,
+                        ["clear_output_qualified_item_id"] = string.Empty,
+                        ["clear_bonus_output_qualified_item_id"] = string.Empty
+                    }
+                });
+                state["world_progress"]!["golden_walnut_sources"] = Field(new JsonObject
+                {
+                    ["schema_version"] = "golden_walnut_sources.v1",
+                    ["projection_status"] = "complete_locked_base_1.6.15_island_hut_denominator",
+                    ["native_source_key_count"] = 69,
+                    ["native_walnut_total"] = 130,
+                    ["sources"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["source_key"] = "MusselStone",
+                            ["tracking_kind"] = "limited_drop",
+                            ["location_id"] = "IslandWest",
+                            ["native_quantity"] = 5,
+                            ["remaining_quantity"] = 5,
+                            ["acquisition_option_id"] = "executor.clear_obstacle",
+                            ["action_binding_status"] = "existing_action_family_bound",
+                            ["required_mail_satisfied"] = true,
+                            ["pre_resort_eligible"] = true,
+                            ["spend_safe_before_resort"] = true,
+                            ["probability_status"] = "bounded_native_rng_0.10_per_mussel_node"
+                        }
+                    }
+                });
+            });
+
+            var clearOption = Assert.Single(
+                new CandidateOptionAvailabilityEvaluator().Evaluate(
+                    snapshot,
+                    new[] { "executor.clear_obstacle" },
+                    includeExecutorCalibrationOptions: true).Options);
+            var clearCandidate = clearOption.EventCandidates.SingleOrDefault(row =>
+                row.Parameters.Any(parameter =>
+                    parameter.Name == "clear_source_id" && parameter.Value == "(O)25"));
+            Assert.True(clearCandidate is not null,
+                "missing=" + string.Join(",", clearOption.MissingStateFactors) +
+                ";blocks=" + string.Join(",", clearOption.BlockingReasons) +
+                ";objects=" + JsonSerializer.SerializeToNode(snapshot.State, JsonOptions)!["current_location"]!["objects"]!.ToJsonString());
+            Assert.NotNull(clearCandidate);
+            Assert.True(clearCandidate.Available, GingerIslandCandidateDiagnostic(clearCandidate));
+
+            var candidate = EvaluateGingerIslandCandidate(snapshot, fixture.Parameters);
+            Assert.True(candidate.Available, GingerIslandCandidateDiagnostic(candidate));
+            Assert.Equal("clear_obstacle_tile", candidate.Kind);
+            Assert.Contains(candidate.Parameters, row =>
+                row.Name == "ginger_island_walnut_source_key" && row.Value == "MusselStone");
+            Assert.Contains(candidate.Parameters, row =>
+                row.Name == "ginger_island_walnut_source_replan_policy" &&
+                row.Value == "execute_one_native_attempt_then_fresh_limited_drop_counter");
+
+            var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(
+                snapshot,
+                new[]
+                {
+                    new OptionAvailabilityCandidate
+                    {
+                        OptionId = "fishing.catch_fish",
+                        Parameters = fixture.Parameters
+                    }
+                });
+            var plan = new DailyPlanCompiler().Compile(
+                new EventCandidateRanker().Rank(
+                    new StardewAI.Contracts.Training.BaselineTrainingReport(),
+                    availability,
+                    "goal.fishing.complete_master_angler"),
+                snapshot.StateHash);
+            Assert.Equal("clear_obstacle", Assert.Single(plan.Steps).Kind);
+            var queueItem = Assert.Single(new ActionQueueCompiler().Compile(plan, snapshot).Items);
+            Assert.Equal("executor.clear_obstacle", queueItem.OptionId);
+            Assert.Empty(queueItem.BlockingReasons);
+        }
+        finally
+        {
+            fixture.Dispose();
+        }
+    }
+
+    [Fact]
+    public void GingerIslandWalnutDeficitReusesNativeIslandCropHarvestAttempt()
+    {
+        var fixture = CreateFixture("IslandSouthEastCave:5", targetLocation: "IslandSouthEastCave");
+        try
+        {
+            var access = GingerIslandAccess("requires_western_turtle_walnuts");
+            access["walnuts"]!["current"] = 0;
+            var snapshot = GingerIslandSnapshot(fixture.Before, "IslandWest", 10, 10, access);
+            snapshot = RewriteGingerIslandState(snapshot, state =>
+            {
+                state["current_location"]!["crops"] = Field(new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["tile_x"] = 11,
+                        ["tile_y"] = 10,
+                        ["ready_for_harvest"] = true,
+                        ["harvest_item_id"] = "24",
+                        ["harvest_item_qualified_id"] = "(O)24",
+                        ["harvest_source_seed_id"] = "472",
+                        ["harvest_item_projection_status"] = "exact_from_native_crop_data",
+                        ["harvest_item_category"] = -75,
+                        ["harvest_context_tags"] = new JsonArray("category_vegetable"),
+                        ["harvest_authoritative_route_sources"] = new JsonArray(),
+                        ["harvest_min_stack"] = 1,
+                        ["harvest_method"] = "Grab",
+                        ["harvest_experience_skill_id"] = "farming",
+                        ["harvest_experience_on_success_min"] = 8,
+                        ["harvest_experience_on_success_max"] = 8,
+                        ["harvest_experience_condition"] = "native_crop_harvest",
+                        ["harvest_experience_projection_status"] = "exact"
+                    }
+                });
+                state["world_progress"]!["golden_walnut_sources"] = Field(
+                    GoldenWalnutSourceCatalog(
+                        GoldenWalnutSource(
+                            "IslandFarming",
+                            "IslandWest",
+                            5,
+                            "farm.maintain_crops",
+                            "bounded_native_rng_0.05_per_harvest")));
+            });
+
+            var candidate = EvaluateGingerIslandCandidate(snapshot, fixture.Parameters);
+            Assert.True(candidate.Available, GingerIslandCandidateDiagnostic(candidate));
+            Assert.Equal("harvest_crop_tile", candidate.Kind);
+            Assert.Contains(candidate.Parameters, row =>
+                row.Name == "ginger_island_walnut_source_key" && row.Value == "IslandFarming");
+            Assert.Contains(candidate.Parameters, row =>
+                row.Name == "ginger_island_walnut_source_replan_policy" &&
+                row.Value == "execute_one_native_attempt_then_fresh_limited_drop_counter");
+
+            var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(
+                snapshot,
+                new[]
+                {
+                    new OptionAvailabilityCandidate
+                    {
+                        OptionId = "fishing.catch_fish",
+                        Parameters = fixture.Parameters
+                    }
+                });
+            var plan = new DailyPlanCompiler().Compile(
+                new EventCandidateRanker().Rank(
+                    new StardewAI.Contracts.Training.BaselineTrainingReport(),
+                    availability,
+                    "goal.fishing.complete_master_angler"),
+                snapshot.StateHash);
+            Assert.Equal("harvest_crop", Assert.Single(plan.Steps).Kind);
+            var queueItem = Assert.Single(new ActionQueueCompiler().Compile(plan, snapshot).Items);
+            Assert.Equal("executor.harvest_crop", queueItem.OptionId);
+            Assert.Empty(queueItem.BlockingReasons);
+        }
+        finally
+        {
+            fixture.Dispose();
+        }
+    }
+
+    [Fact]
+    public void GingerIslandWalnutDeficitReusesNativeIslandFishingAttempt()
+    {
+        var fixture = CreateFixture("IslandSouthEastCave:5", targetLocation: "IslandSouthEastCave");
+        try
+        {
+            var access = GingerIslandAccess("requires_western_turtle_walnuts");
+            access["walnuts"]!["current"] = 0;
+            var snapshot = GingerIslandSnapshot(fixture.Before, "IslandSouth", 1, 5, access);
+            snapshot = RewriteGingerIslandState(snapshot, state =>
+            {
+                state["fishing"]!["location_context"]!["value"]!["location_id"] = "IslandSouth";
+                state["world_progress"]!["golden_walnut_sources"] = Field(
+                    GoldenWalnutSourceCatalog(
+                        GoldenWalnutSource(
+                            "IslandFishing",
+                            "IslandSouth",
+                            5,
+                            "fishing.catch_fish",
+                            "bounded_native_rng_0.15_per_catch")));
+            });
+
+            var candidate = EvaluateGingerIslandCandidate(snapshot, fixture.Parameters);
+            Assert.True(candidate.Available, GingerIslandCandidateDiagnostic(candidate));
+            Assert.Equal("catch_fish", candidate.Kind);
+            Assert.Contains(candidate.Parameters, row =>
+                row.Name == "ginger_island_walnut_source_key" && row.Value == "IslandFishing");
+            Assert.Contains(candidate.Parameters, row =>
+                row.Name == "ginger_island_walnut_source_replan_policy" &&
+                row.Value == "execute_one_native_attempt_then_fresh_limited_drop_counter");
+
+            var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(
+                snapshot,
+                new[]
+                {
+                    new OptionAvailabilityCandidate
+                    {
+                        OptionId = "fishing.catch_fish",
+                        Parameters = fixture.Parameters
+                    }
+                });
+            var plan = new DailyPlanCompiler().Compile(
+                new EventCandidateRanker().Rank(
+                    new StardewAI.Contracts.Training.BaselineTrainingReport(),
+                    availability,
+                    "goal.fishing.complete_master_angler"),
+                snapshot.StateHash);
+            Assert.Equal("catch_fish", Assert.Single(plan.Steps).Kind);
+            var queueItem = Assert.Single(new ActionQueueCompiler().Compile(plan, snapshot).Items);
+            Assert.Equal("executor.catch_fish", queueItem.OptionId);
+            Assert.Empty(queueItem.BlockingReasons);
+        }
+        finally
+        {
+            fixture.Dispose();
+        }
+    }
+
+    [Theory]
+    [InlineData(
+        "Buried_IslandWest_21_81",
+        21,
+        81,
+        "tracker",
+        "exact_native_one_time",
+        "exact_current_world_buried_nut_point_present",
+        "execute_once_then_fresh_collected_nut_tracker")]
+    [InlineData(
+        "Island_W_BuriedTreasureNut",
+        18,
+        42,
+        "limited_drop",
+        "exact_native_journal_tile",
+        "exact_current_world_journal_buried_tile_present_and_note_seen",
+        "execute_once_then_fresh_limited_drop_counter")]
+    public void GingerIslandWalnutDeficitReusesNativeBuriedNutHoeAttemptAndFailsClosedOnDrift(
+        string sourceKey,
+        int targetX,
+        int targetY,
+        string trackingKind,
+        string probabilityStatus,
+        string runtimeValidationStatus,
+        string replanPolicy)
+    {
+        var fixture = CreateFixture("IslandSouthEastCave:5", targetLocation: "IslandSouthEastCave");
+        try
+        {
+            var access = GingerIslandAccess("requires_western_turtle_walnuts");
+            access["walnuts"]!["current"] = 0;
+            var snapshot = GingerIslandSnapshot(fixture.Before, "IslandWest", targetX - 1, targetY, access);
+            snapshot = RewriteGingerIslandState(snapshot, state =>
+            {
+                state["player"]!["inventory"]!["value"]!.AsArray().Add(new JsonObject
+                {
+                    ["slot_index"] = 1,
+                    ["qualified_item_id"] = "(T)Hoe"
+                });
+                state["world_progress"]!["golden_walnut_sources"] = Field(
+                    GoldenWalnutSourceCatalog(
+                        GoldenWalnutSource(
+                            sourceKey,
+                            "IslandWest",
+                            1,
+                            "executor.till_soil",
+                            probabilityStatus,
+                            trackingKind: trackingKind,
+                            tileX: targetX,
+                            tileY: targetY,
+                            runtimeSourceValidationStatus: runtimeValidationStatus)));
+            });
+
+            var candidate = EvaluateGingerIslandCandidate(snapshot, fixture.Parameters);
+            Assert.True(candidate.Available, GingerIslandCandidateDiagnostic(candidate));
+            Assert.Equal("till_soil_tile", candidate.Kind);
+            Assert.Equal(targetX, candidate.TileX);
+            Assert.Equal(targetY, candidate.TileY);
+            Assert.Contains(candidate.Parameters, row =>
+                row.Name == "ginger_island_walnut_source_key" &&
+                row.Value == sourceKey);
+            Assert.Contains(candidate.Parameters, row =>
+                row.Name == "ginger_island_walnut_source_replan_policy" &&
+                row.Value == replanPolicy);
+
+            var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(
+                snapshot,
+                new[]
+                {
+                    new OptionAvailabilityCandidate
+                    {
+                        OptionId = "fishing.catch_fish",
+                        Parameters = fixture.Parameters
+                    }
+                });
+            var plan = new DailyPlanCompiler().Compile(
+                new EventCandidateRanker().Rank(
+                    new StardewAI.Contracts.Training.BaselineTrainingReport(),
+                    availability,
+                    "goal.fishing.complete_master_angler"),
+                snapshot.StateHash);
+            Assert.Equal("till_soil", Assert.Single(plan.Steps).Kind);
+            var queueItem = Assert.Single(new ActionQueueCompiler().Compile(plan, snapshot).Items);
+            Assert.Equal("executor.till_soil", queueItem.OptionId);
+            Assert.Empty(queueItem.BlockingReasons);
+
+            var drifted = RewriteGingerIslandState(snapshot, state =>
+                state["world_progress"]!["golden_walnut_sources"]!["value"]!["sources"]![0]!["runtime_source_validation_status"] =
+                    "blocked_runtime_buried_nut_point_absent");
+            var blocked = Assert.Single(new ActionQueueCompiler().Compile(plan, drifted).Items);
+            Assert.Contains(
+                "till_soil_buried_nut_source_projection_drifted",
+                blocked.BlockingReasons);
+        }
+        finally
+        {
+            fixture.Dispose();
+        }
+    }
+
+    [Fact]
     public void GingerIslandWalnutDeficitFailsClosedWithoutExactCurrentProducer()
     {
         var fixture = CreateFixture("IslandSouthEastCave:5", targetLocation: "IslandSouthEastCave");
@@ -253,8 +604,191 @@ public sealed partial class MasterAnglerMainlineTests
             Assert.False(candidate.Available);
             Assert.Equal("ginger_island_access_wait", candidate.Kind);
             Assert.Contains(
-                "master_angler_ginger_island_no_exact_current_walnut_producer:first_parrot",
+                "master_angler_ginger_island_walnut_source_catalog_missing",
                 candidate.BlockReasons);
+        }
+        finally
+        {
+            fixture.Dispose();
+        }
+    }
+
+    [Fact]
+    public void GingerIslandWalnutDeficitRoutesToSpendSafeCataloguedBushThenReplans()
+    {
+        var fixture = CreateFixture("IslandSouthEastCave:5", targetLocation: "IslandSouthEastCave");
+        try
+        {
+            var access = GingerIslandAccess("requires_first_parrot_walnut");
+            access["walnuts"]!["current"] = 0;
+            var snapshot = GingerIslandSnapshot(fixture.Before, "IslandHut", 7, 8, access);
+            snapshot = RewriteGingerIslandState(snapshot, state =>
+            {
+                state["current_location"]!["large_terrain_features"] = Field(new JsonArray());
+                state["current_location"]!["objects"] = Field(new JsonArray());
+                state["world_progress"]!["golden_walnut_sources"] = Field(new JsonObject
+                {
+                    ["schema_version"] = "golden_walnut_sources.v1",
+                    ["projection_status"] = "complete_locked_base_1.6.15_island_hut_denominator",
+                    ["native_source_key_count"] = 69,
+                    ["native_walnut_total"] = 130,
+                    ["sources"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["source_key"] = "Bush_IslandSouth_31_5",
+                            ["tracking_kind"] = "tracker",
+                            ["location_id"] = "IslandSouth",
+                            ["tile_x"] = 31,
+                            ["tile_y"] = 5,
+                            ["native_quantity"] = 1,
+                            ["remaining_quantity"] = 1,
+                            ["acquisition_option_id"] = "foraging.harvest_bushes",
+                            ["action_binding_status"] = "existing_action_family_bound",
+                            ["required_mail_satisfied"] = true,
+                            ["pre_resort_eligible"] = true,
+                            ["spend_safe_before_resort"] = true,
+                            ["probability_status"] = "exact_native_one_time"
+                        },
+                        new JsonObject
+                        {
+                            ["source_key"] = "Darts",
+                            ["tracking_kind"] = "limited_drop",
+                            ["location_id"] = "IslandSouthEastCave",
+                            ["native_quantity"] = 3,
+                            ["remaining_quantity"] = 3,
+                            ["acquisition_option_id"] = "minigame.play_darts",
+                            ["action_binding_status"] = "existing_action_family_bound",
+                            ["required_mail_satisfied"] = false,
+                            ["pre_resort_eligible"] = false,
+                            ["spend_safe_before_resort"] = false,
+                            ["probability_status"] = "bounded_native_three_reward_stages"
+                        }
+                    }
+                });
+                state["locations"]!["route_graph"] = Field(new JsonObject
+                {
+                    ["edges"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["kind"] = "building_door",
+                            ["from_location"] = "IslandHut",
+                            ["from_x"] = 8,
+                            ["from_y"] = 8,
+                            ["target_location"] = "IslandSouth",
+                            ["target_x"] = 15,
+                            ["target_y"] = 24,
+                            ["resolved"] = true
+                        },
+                        new JsonObject
+                        {
+                            ["kind"] = "warp",
+                            ["from_location"] = "IslandSouth",
+                            ["from_x"] = 30,
+                            ["from_y"] = 12,
+                            ["target_location"] = "IslandSouthEastCave",
+                            ["target_x"] = 1,
+                            ["target_y"] = 1,
+                            ["resolved"] = true
+                        }
+                    }
+                });
+                state["locations"]!["route_connectors"] = Field(new JsonObject
+                {
+                    ["location_id"] = "IslandHut",
+                    ["connectors"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["tile_x"] = 8,
+                            ["tile_y"] = 8,
+                            ["kind"] = "building_door",
+                            ["target_location"] = "IslandSouth",
+                            ["target_x"] = 15,
+                            ["target_y"] = 24,
+                            ["resolved"] = true
+                        }
+                    }
+                });
+                state["locations"]!["route_action_branch_coverage"] = Field(new JsonObject
+                {
+                    ["rows"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["tile_x"] = 8,
+                            ["tile_y"] = 8,
+                            ["branch"] = "BuildingDoor",
+                            ["route_training_blocked"] = false
+                        }
+                    }
+                });
+                state["locations"]!["social_route_date_evidence"] = Field(new JsonObject
+                {
+                    ["schema_version"] = "social_route_date_evidence.v2",
+                    ["capture_total_days"] = 5,
+                    ["all_location_static_walkability_complete"] = true,
+                    ["projection_status"] = "current_date_static_route_and_gate_evidence_complete_movement_timing_pending",
+                    ["location_count"] = 3,
+                    ["locations"] = new JsonArray
+                    {
+                        RouteLocationEvidence("IslandHut", 120, 120),
+                        RouteLocationEvidence("IslandSouth", 120, 120),
+                        RouteLocationEvidence("IslandSouthEastCave", 120, 120)
+                    }
+                });
+            });
+
+            var projectedState = JsonSerializer.SerializeToNode(snapshot.State, JsonOptions)!.AsObject();
+            Assert.Equal("IslandSouth",
+                projectedState["locations"]!["route_connectors"]!["value"]!["connectors"]![0]!["target_location"]!.GetValue<string>());
+            var routeOption = Assert.Single(
+                new CandidateOptionAvailabilityEvaluator().Evaluate(
+                    snapshot,
+                    new[] { "exploration.visit_location" }).Options);
+            Assert.True(routeOption.MissingStateFactors.Length == 0,
+                "missing=" + string.Join(",", routeOption.MissingStateFactors) +
+                ";blocking=" + string.Join(",", routeOption.BlockingReasons));
+            var routeCandidates = routeOption.EventCandidates;
+            Assert.Contains(routeCandidates, route =>
+                route.Kind == "route_connector_tile" &&
+                route.Available &&
+                route.Parameters.Any(parameter =>
+                    parameter.Name == "expected_target_location" &&
+                    parameter.Value == "IslandSouth"));
+
+            var candidate = EvaluateGingerIslandCandidate(snapshot, fixture.Parameters);
+            Assert.True(candidate.Available, GingerIslandCandidateDiagnostic(candidate));
+            Assert.Equal("route_connector_tile", candidate.Kind);
+            Assert.Contains(candidate.Parameters, row =>
+                row.Name == "ginger_island_walnut_source_key" &&
+                row.Value == "Bush_IslandSouth_31_5");
+            Assert.Contains(candidate.Parameters, row =>
+                row.Name == "ginger_island_walnut_source_replan_policy" &&
+                row.Value == "route_one_connector_then_fresh_current_location_candidate");
+            Assert.DoesNotContain(candidate.Parameters, row =>
+                row.Name == "ginger_island_walnut_source_key" && row.Value == "Darts");
+
+            var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(
+                snapshot,
+                new[]
+                {
+                    new OptionAvailabilityCandidate
+                    {
+                        OptionId = "fishing.catch_fish",
+                        Parameters = fixture.Parameters
+                    }
+                });
+            var plan = new DailyPlanCompiler().Compile(
+                new EventCandidateRanker().Rank(
+                    new StardewAI.Contracts.Training.BaselineTrainingReport(),
+                    availability,
+                    "goal.fishing.complete_master_angler"),
+                snapshot.StateHash);
+            var queueItem = Assert.Single(new ActionQueueCompiler().Compile(plan, snapshot).Items);
+            Assert.Equal("executor.traverse_connector", queueItem.OptionId);
+            Assert.Empty(queueItem.BlockingReasons);
         }
         finally
         {
@@ -511,6 +1045,43 @@ public sealed partial class MasterAnglerMainlineTests
             ["resort_parrot"] = Perch("IslandSouth", 17, 22, "Resort", 20, "Island_UpgradeHouse", !readyResort)
         };
     }
+
+    private static JsonObject GoldenWalnutSourceCatalog(params JsonObject[] sources) => new()
+    {
+        ["schema_version"] = "golden_walnut_sources.v1",
+        ["projection_status"] = "complete_locked_base_1.6.15_island_hut_denominator",
+        ["native_source_key_count"] = 69,
+        ["native_walnut_total"] = 130,
+        ["sources"] = new JsonArray(sources)
+    };
+
+    private static JsonObject GoldenWalnutSource(
+        string sourceKey,
+        string locationId,
+        int nativeQuantity,
+        string acquisitionOptionId,
+        string probabilityStatus,
+        string trackingKind = "limited_drop",
+        int? tileX = null,
+        int? tileY = null,
+        string runtimeSourceValidationStatus = "not_required_for_action_family") => new()
+    {
+        ["source_key"] = sourceKey,
+        ["tracking_kind"] = trackingKind,
+        ["location_id"] = locationId,
+        ["tile_x"] = tileX,
+        ["tile_y"] = tileY,
+        ["native_quantity"] = nativeQuantity,
+        ["remaining_quantity"] = nativeQuantity,
+        ["acquisition_option_id"] = acquisitionOptionId,
+        ["action_binding_status"] = "existing_action_family_bound",
+        ["required_mail_satisfied"] = true,
+        ["pre_resort_eligible"] = true,
+        ["spend_safe_before_resort"] = true,
+        ["probability_status"] = probabilityStatus,
+        ["runtime_source_validation_status"] = runtimeSourceValidationStatus,
+        ["required_secret_note_satisfied"] = true
+    };
 
     private static JsonObject Repair(
         string qualifiedItemId,

@@ -1924,6 +1924,111 @@ namespace StardewAI.Contracts.State
         public bool QiRoomUnlocked { get; set; }
     }
 
+    public sealed class GoldenWalnutSourceCatalogRef
+    {
+        [JsonPropertyName("schema_version")]
+        public string SchemaVersion { get; set; } = string.Empty;
+
+        [JsonPropertyName("projection_status")]
+        public string ProjectionStatus { get; set; } = string.Empty;
+
+        [JsonPropertyName("native_source_key_count")]
+        public int NativeSourceKeyCount { get; set; }
+
+        [JsonPropertyName("native_walnut_total")]
+        public int NativeWalnutTotal { get; set; }
+
+        [JsonPropertyName("tracked_collected_quantity")]
+        public int TrackedCollectedQuantity { get; set; }
+
+        [JsonPropertyName("tracked_remaining_quantity")]
+        public int TrackedRemainingQuantity { get; set; }
+
+        [JsonPropertyName("pre_resort_remaining_gross_quantity")]
+        public int PreResortRemainingGrossQuantity { get; set; }
+
+        [JsonPropertyName("pre_resort_spend_safe_remaining_quantity")]
+        public int PreResortSpendSafeRemainingQuantity { get; set; }
+
+        [JsonPropertyName("world_golden_walnuts_found")]
+        public int WorldGoldenWalnutsFound { get; set; }
+
+        [JsonPropertyName("tracker_to_world_found_delta")]
+        public int TrackerToWorldFoundDelta { get; set; }
+
+        [JsonPropertyName("sources")]
+        public GoldenWalnutSourceProgressRef[] Sources { get; set; } = System.Array.Empty<GoldenWalnutSourceProgressRef>();
+    }
+
+    public sealed class GoldenWalnutSourceProgressRef
+    {
+        [JsonPropertyName("source_key")]
+        public string SourceKey { get; set; } = string.Empty;
+
+        [JsonPropertyName("tracking_kind")]
+        public string TrackingKind { get; set; } = string.Empty;
+
+        [JsonPropertyName("location_id")]
+        public string LocationId { get; set; } = string.Empty;
+
+        [JsonPropertyName("tile_x")]
+        public int? TileX { get; set; }
+
+        [JsonPropertyName("tile_y")]
+        public int? TileY { get; set; }
+
+        [JsonPropertyName("native_quantity")]
+        public int NativeQuantity { get; set; }
+
+        [JsonPropertyName("collected_quantity")]
+        public int CollectedQuantity { get; set; }
+
+        [JsonPropertyName("remaining_quantity")]
+        public int RemainingQuantity { get; set; }
+
+        [JsonPropertyName("acquisition_option_id")]
+        public string AcquisitionOptionId { get; set; } = string.Empty;
+
+        [JsonPropertyName("action_binding_status")]
+        public string ActionBindingStatus { get; set; } = string.Empty;
+
+        [JsonPropertyName("access_phase")]
+        public string AccessPhase { get; set; } = string.Empty;
+
+        [JsonPropertyName("required_mail_key")]
+        public string RequiredMailKey { get; set; } = string.Empty;
+
+        [JsonPropertyName("required_mail_satisfied")]
+        public bool RequiredMailSatisfied { get; set; }
+
+        [JsonPropertyName("resort_only")]
+        public bool ResortOnly { get; set; }
+
+        [JsonPropertyName("pre_resort_eligible")]
+        public bool PreResortEligible { get; set; }
+
+        [JsonPropertyName("optional_unlock_walnut_cost")]
+        public int OptionalUnlockWalnutCost { get; set; }
+
+        [JsonPropertyName("remaining_optional_unlock_walnut_cost")]
+        public int RemainingOptionalUnlockWalnutCost { get; set; }
+
+        [JsonPropertyName("spend_safe_before_resort")]
+        public bool SpendSafeBeforeResort { get; set; }
+
+        [JsonPropertyName("probability_status")]
+        public string ProbabilityStatus { get; set; } = string.Empty;
+
+        [JsonPropertyName("runtime_source_validation_status")]
+        public string RuntimeSourceValidationStatus { get; set; } = string.Empty;
+
+        [JsonPropertyName("required_secret_note_id")]
+        public int? RequiredSecretNoteId { get; set; }
+
+        [JsonPropertyName("required_secret_note_satisfied")]
+        public bool RequiredSecretNoteSatisfied { get; set; }
+    }
+
     public sealed class FullShipmentProgressRef
     {
         [JsonPropertyName("eligible_item_count")]

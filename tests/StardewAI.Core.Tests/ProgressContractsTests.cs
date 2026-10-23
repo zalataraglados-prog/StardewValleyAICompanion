@@ -123,6 +123,43 @@ public sealed partial class ProgressContractsTests
     }
 
     [Fact]
+    public void GoldenWalnutSourceCatalogSerializesRoutingAndSpendGuards()
+    {
+        var catalog = new GoldenWalnutSourceCatalogRef
+        {
+            SchemaVersion = GoldenWalnutNativeSourceCatalog.SchemaVersion,
+            ProjectionStatus = GoldenWalnutNativeSourceCatalog.ProjectionStatus,
+            NativeSourceKeyCount = 69,
+            NativeWalnutTotal = 130,
+            PreResortSpendSafeRemainingQuantity = 51,
+            Sources = new[]
+            {
+                new GoldenWalnutSourceProgressRef
+                {
+                    SourceKey = "Bush_IslandSouth_31_5",
+                    LocationId = "IslandSouth",
+                    TileX = 31,
+                    TileY = 5,
+                    NativeQuantity = 1,
+                    RemainingQuantity = 1,
+                    AcquisitionOptionId = "foraging.harvest_bushes",
+                    ActionBindingStatus = "existing_action_family_bound",
+                    PreResortEligible = true,
+                    SpendSafeBeforeResort = true
+                }
+            }
+        };
+
+        var json = JsonSerializer.Serialize(catalog, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+
+        Assert.Contains("\"native_source_key_count\":69", json);
+        Assert.Contains("\"native_walnut_total\":130", json);
+        Assert.Contains("\"pre_resort_spend_safe_remaining_quantity\":51", json);
+        Assert.Contains("\"source_key\":\"Bush_IslandSouth_31_5\"", json);
+        Assert.Contains("\"action_binding_status\":\"existing_action_family_bound\"", json);
+    }
+
+    [Fact]
     public void QuestCandidateRefSerializesWithSnakeCaseJsonNames()
     {
         var candidate = new QuestCandidateRef
