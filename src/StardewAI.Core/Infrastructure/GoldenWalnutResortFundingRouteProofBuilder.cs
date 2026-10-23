@@ -81,7 +81,8 @@ public static class GoldenWalnutResortFundingRouteProofBuilder
                 source.AcquisitionOptionId));
         const bool gourmandActionBindingsComplete = true;
         const bool stochasticSupplyScheduleComplete = false;
-        const bool gourmandSupplyScheduleComplete = false;
+        var gourmandSupplyProof = IslandGourmandSupplyScheduleProofBuilder.Build();
+        var gourmandSupplyScheduleComplete = gourmandSupplyProof.SupplyScheduleComplete;
 
         var alternatives = new[]
         {
@@ -120,11 +121,11 @@ public static class GoldenWalnutResortFundingRouteProofBuilder
                     "island_gourmand_progress.v1",
                     "island.complete_gourmand_request",
                     "executor.advance_gourmand_request",
+                    IslandGourmandSupplyScheduleProofBuilder.SchemaVersion,
                     "EVD-341"
                 },
                 new[]
                 {
-                    "melon_wheat_garlic_seed_growth_and_ready_crop_schedule",
                     "gourmand_route_and_unlock_days_before_day_224"
                 })
         };
@@ -135,7 +136,7 @@ public static class GoldenWalnutResortFundingRouteProofBuilder
 
         return new GoldenWalnutResortFundingRouteProof(
             SchemaVersion,
-            "deterministic_gourmand_runtime_bound_supply_and_deadline_pending",
+            "deterministic_gourmand_runtime_and_supply_bound_deadline_pending",
             RequiredWalnutQuantity,
             PreferredRouteId,
             "same_exact_15_walnut_capacity_without_random_retry_or_daily_mussel_spawn_dependency",

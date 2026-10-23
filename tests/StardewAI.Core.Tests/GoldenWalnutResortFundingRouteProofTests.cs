@@ -6,7 +6,7 @@ namespace StardewAI.Core.Tests;
 public sealed class GoldenWalnutResortFundingRouteProofTests
 {
     [Fact]
-    public void PrefersExactDeterministicGourmandCapacityWithoutPretendingItIsImplemented()
+    public void PrefersExactDeterministicGourmandCapacityWithoutPretendingDeadlineIsBound()
     {
         var proof = GoldenWalnutResortFundingRouteProofBuilder.Build();
 
@@ -31,16 +31,23 @@ public sealed class GoldenWalnutResortFundingRouteProofTests
         Assert.Equal(15, gourmand.NativeWalnutQuantity);
         Assert.True(gourmand.Deterministic);
         Assert.True(gourmand.ActionBindingsComplete);
-        Assert.False(gourmand.SupplyScheduleComplete);
+        Assert.True(gourmand.SupplyScheduleComplete);
         Assert.Contains("island_gourmand_progress.v1", gourmand.BoundEvidenceIds);
         Assert.Contains("island.complete_gourmand_request", gourmand.BoundEvidenceIds);
         Assert.Contains("executor.advance_gourmand_request", gourmand.BoundEvidenceIds);
+        Assert.Contains("island_gourmand_supply_schedule.v1", gourmand.BoundEvidenceIds);
         Assert.Contains("EVD-341", gourmand.BoundEvidenceIds);
         Assert.DoesNotContain(
             "island_gourmand_transparent_request_projection",
             gourmand.MissingEvidenceIds);
         Assert.DoesNotContain(
             "island_gourmand_native_interaction_and_reward_receipt",
+            gourmand.MissingEvidenceIds);
+        Assert.DoesNotContain(
+            "melon_wheat_garlic_seed_growth_and_ready_crop_schedule",
+            gourmand.MissingEvidenceIds);
+        Assert.Equal(
+            new[] { "gourmand_route_and_unlock_days_before_day_224" },
             gourmand.MissingEvidenceIds);
         Assert.Equal(
             new[] { "IslandGourmand1", "IslandGourmand2", "IslandGourmand3" },

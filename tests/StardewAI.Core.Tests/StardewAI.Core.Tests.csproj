@@ -70,6 +70,7 @@
     <Compile Include="FarmSitePreparationCandidateTests.cs" />
     <Compile Include="FarmSitePreparationSourceGuardTests.cs" />
     <Compile Include="GingerHarvestMainlineTests.cs" />
+    <Compile Include="IslandGourmandSupplyScheduleProofTests.cs" />
     <Compile Include="WildTreeProductMainlineTests.cs" />
     <Compile Include="DailyPlanCompilerSources.cs" />
     <Compile Include="DeployScriptSourceGuardTests.cs" />

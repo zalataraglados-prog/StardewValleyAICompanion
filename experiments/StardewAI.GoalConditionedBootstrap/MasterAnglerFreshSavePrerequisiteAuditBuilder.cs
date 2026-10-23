@@ -551,8 +551,16 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
             "ginger_island_access" when
                 goldenWalnutSchedule.PhaseCapacityComplete &&
                 goldenWalnutSchedule.IndependentRetryBudgetComplete &&
+                goldenWalnutFundingRoutes.Alternatives.Single(route =>
+                    route.RouteId == GoldenWalnutResortFundingRouteProofBuilder.PreferredRouteId)
+                    is
+                    {
+                        ActionBindingsComplete: true,
+                        SupplyScheduleComplete: true,
+                        DeadlineCompositionComplete: false
+                    } &&
                 !goldenWalnutSchedule.YearThreeDeadlineCompositionComplete =>
-                ("phase_capacity_and_retry_budget_bound_deadline_composition_missing",
+                ("phase_capacity_retry_budget_and_deterministic_supply_bound_deadline_composition_missing",
                     graph.HasDirection("complete_community_center")
                         ? new[]
                         {
@@ -565,7 +573,7 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                             GoldenWalnutUnlockScheduleProofBuilder.SchemaVersion,
                             GoldenWalnutResortFundingRouteProofBuilder.SchemaVersion
                         },
-                    "The exact 1+10+20+20 unlock sequence has sufficient phased capacity and finite independent retry budgets. The exact deterministic 15-walnut Gourmand alternative is now preferred over the three-family random route, but its native action, crop supply schedule and Year 3 deadline composition remain unbound."),
+                    "The exact 1+10+20+20 unlock sequence has sufficient phased capacity and finite independent retry budgets. The preferred deterministic 15-walnut Gourmand route now binds its native action and exact Melon/Wheat/Garlic purchase, planting, watering and standing-crop schedule; compose the Western Turtle and Island House unlock dates with the day-224 deadline before marking the route complete."),
             "ginger_island_access" =>
                 ("composed_producer_missing",
                     graph.HasDirection("complete_community_center")

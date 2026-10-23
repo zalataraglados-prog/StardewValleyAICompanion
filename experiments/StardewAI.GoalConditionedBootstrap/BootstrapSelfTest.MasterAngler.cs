@@ -81,7 +81,8 @@ internal static partial class BootstrapSelfTest
                 NativeWalnutQuantity: 15,
                 Deterministic: true,
                 ActionBindingsComplete: true,
-                SupplyScheduleComplete: false
+                SupplyScheduleComplete: true,
+                DeadlineCompositionComplete: false
             },
             "Master Angler Golden Walnut funding-route preference drifted.");
 
