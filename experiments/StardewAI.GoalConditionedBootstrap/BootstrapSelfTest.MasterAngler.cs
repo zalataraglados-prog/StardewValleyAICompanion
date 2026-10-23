@@ -31,11 +31,42 @@ internal static partial class BootstrapSelfTest
             {
                 PhaseCapacityComplete: true,
                 IndependentRetryBudgetComplete: true,
+                DeadlineCapacityRequirementsComplete: false,
                 YearThreeDeadlineCompositionComplete: false,
                 TrainingAdmissionEligible: false
             } &&
             report.UnknownLocationIds.Length == 0,
             "Master Angler fresh-save prerequisite audit summary drifted.");
+        var goldenWalnutSchedule = report.GoldenWalnutUnlockSchedule ??
+            throw new InvalidOperationException(
+                "Master Angler Golden Walnut schedule is missing after summary validation.");
+        Require(
+            goldenWalnutSchedule.DeadlineTotalDayExclusive == 224 &&
+            goldenWalnutSchedule.DeadlineCapacityRequirements.Length == 3 &&
+            goldenWalnutSchedule.DeadlineCapacityRequirements.Single(value =>
+                value.SourceKey == "IslandFishing") is
+            {
+                RequiredAttemptCount: 69,
+                AttemptActionBudgetBound: true,
+                SourceAvailabilityCapacityBound: true,
+                EarliestAccessDayBound: false,
+                DeadlineCompositionComplete: false
+            } &&
+            goldenWalnutSchedule.DeadlineCapacityRequirements.Single(value =>
+                value.SourceKey == "MusselStone") is
+            {
+                RequiredAttemptCount: 105,
+                ConservativeActionMinutes: null,
+                SourceAvailabilityCapacityBound: false
+            } &&
+            goldenWalnutSchedule.DeadlineCapacityRequirements.Single(value =>
+                value.SourceKey == "IslandFarming") is
+            {
+                RequiredAttemptCount: 214,
+                AttemptActionBudgetBound: true,
+                SourceAvailabilityCapacityBound: false
+            },
+            "Master Angler Golden Walnut deadline-capacity requirements drifted.");
 
         var byId = report.Species.ToDictionary(
             value => value.QualifiedItemId,
