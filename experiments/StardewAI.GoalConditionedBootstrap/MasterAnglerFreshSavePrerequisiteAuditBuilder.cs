@@ -108,7 +108,14 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
     public static MasterAnglerFreshSavePrerequisiteAuditReport Build(
         string catalogPath,
         string windowIndexPath,
-        string dependencyExpansionPath)
+        string dependencyExpansionPath) =>
+        Build(catalogPath, windowIndexPath, dependencyExpansionPath, null);
+
+    public static MasterAnglerFreshSavePrerequisiteAuditReport Build(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath,
+        string? goldenWalnutFreshSaveSourceSchedulePath)
     {
         var catalogFullPath = Path.GetFullPath(catalogPath);
         var windowFullPath = Path.GetFullPath(windowIndexPath);
@@ -145,7 +152,24 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
             "At least one Master Angler species has fewer than two static opportunity days.");
 
         var goldenWalnutSchedule = GoldenWalnutUnlockScheduleProofBuilder.Build();
-        var goldenWalnutFundingRoutes = GoldenWalnutResortFundingRouteProofBuilder.Build();
+        var sourceScheduleFullPath = string.IsNullOrWhiteSpace(
+            goldenWalnutFreshSaveSourceSchedulePath)
+            ? string.Empty
+            : Path.GetFullPath(goldenWalnutFreshSaveSourceSchedulePath);
+        var sourceScheduleSha256 = string.IsNullOrEmpty(sourceScheduleFullPath)
+            ? string.Empty
+            : CurrentTeacherFrontierSupport.HashFile(sourceScheduleFullPath);
+        var unlockTimeline = string.IsNullOrEmpty(sourceScheduleFullPath)
+            ? null
+            : GoldenWalnutFreshSaveUnlockTimelineProofBuilder.Build(
+                Read<GoldenWalnutFreshSaveSourceSchedule>(
+                    sourceScheduleFullPath,
+                    "Golden Walnut fresh-save source schedule"),
+                sourceScheduleSha256);
+        var goldenWalnutFundingRoutes = unlockTimeline is
+            { SourceScheduleComplete: true, NativePhaseOrderingComplete: true }
+            ? GoldenWalnutResortFundingRouteProofBuilder.Build(unlockTimeline)
+            : GoldenWalnutResortFundingRouteProofBuilder.Build();
         var families = BuildFamilies(
             species,
             graph,
@@ -184,6 +208,9 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
             PrerequisiteFamilyInventoryComplete = true,
             GoldenWalnutUnlockSchedule = goldenWalnutSchedule,
             GoldenWalnutResortFundingRoutes = goldenWalnutFundingRoutes,
+            GoldenWalnutFreshSaveSourceSchedulePath = sourceScheduleFullPath,
+            GoldenWalnutFreshSaveSourceScheduleSha256 = sourceScheduleSha256,
+            GoldenWalnutFreshSaveUnlockTimeline = unlockTimeline,
             Species = species,
             PrerequisiteFamilies = families,
             MissingOrUnboundProducerFamilies = missing,
@@ -548,6 +575,33 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                 ("current_state_gate_present_future_producer_missing",
                     new[] { "dependency.complete_master_angler.target_date_opportunity_producer" },
                     "Reserve natural rainy opportunities or bind the existing native Rain Totem primitive with exact acquisition and next-day effect."),
+            "ginger_island_access" when
+                goldenWalnutFundingRoutes.RouteSelectionComplete &&
+                goldenWalnutFundingRoutes.Alternatives.Single(route =>
+                    route.RouteId == GoldenWalnutResortFundingRouteProofBuilder.PreferredRouteId)
+                    is
+                    {
+                        ActionBindingsComplete: true,
+                        SupplyScheduleComplete: true,
+                        DeadlineCompositionComplete: true,
+                        TrainingAdmissionEligible: false
+                    } =>
+                ("fresh_save_unlock_timeline_bound_runtime_continuation_receipts_missing",
+                    graph.HasDirection("complete_community_center")
+                        ? new[]
+                        {
+                            "complete_community_center",
+                            GoldenWalnutUnlockScheduleProofBuilder.SchemaVersion,
+                            GoldenWalnutFreshSaveUnlockTimelineProofBuilder.SchemaVersion,
+                            GoldenWalnutResortFundingRouteProofBuilder.SchemaVersion
+                        }
+                        : new[]
+                        {
+                            GoldenWalnutUnlockScheduleProofBuilder.SchemaVersion,
+                            GoldenWalnutFreshSaveUnlockTimelineProofBuilder.SchemaVersion,
+                            GoldenWalnutResortFundingRouteProofBuilder.SchemaVersion
+                        },
+                    "The hash-bound fresh-save source schedule derives the First Parrot, Western Turtle and Island House dates and closes the Gourmand day-224 composition. Capture requests two and three on one continuous native save before marking Ginger Island complete."),
             "ginger_island_access" when
                 goldenWalnutSchedule.PhaseCapacityComplete &&
                 goldenWalnutSchedule.IndependentRetryBudgetComplete &&

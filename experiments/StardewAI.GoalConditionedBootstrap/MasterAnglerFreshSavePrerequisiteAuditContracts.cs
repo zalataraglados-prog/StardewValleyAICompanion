@@ -40,6 +40,12 @@ public sealed class MasterAnglerFreshSavePrerequisiteAuditReport
     public GoldenWalnutUnlockScheduleProof? GoldenWalnutUnlockSchedule { get; set; }
     [JsonPropertyName("golden_walnut_resort_funding_routes")]
     public GoldenWalnutResortFundingRouteProof? GoldenWalnutResortFundingRoutes { get; set; }
+    [JsonPropertyName("golden_walnut_fresh_save_source_schedule_path")]
+    public string GoldenWalnutFreshSaveSourceSchedulePath { get; set; } = string.Empty;
+    [JsonPropertyName("golden_walnut_fresh_save_source_schedule_sha256")]
+    public string GoldenWalnutFreshSaveSourceScheduleSha256 { get; set; } = string.Empty;
+    [JsonPropertyName("golden_walnut_fresh_save_unlock_timeline")]
+    public GoldenWalnutFreshSaveUnlockTimelineProof? GoldenWalnutFreshSaveUnlockTimeline { get; set; }
     [JsonPropertyName("species")]
     public MasterAnglerFreshSaveSpeciesPrerequisite[] Species { get; set; } =
         Array.Empty<MasterAnglerFreshSaveSpeciesPrerequisite>();

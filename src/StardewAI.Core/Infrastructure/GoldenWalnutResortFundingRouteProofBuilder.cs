@@ -61,9 +61,44 @@ public static class GoldenWalnutResortFundingRouteProofBuilder
             islandHouseUnlockTotalDay);
 
     public static GoldenWalnutResortFundingRouteProof Build(
+        GoldenWalnutFreshSaveUnlockTimelineProof timeline)
+    {
+        if (timeline is null)
+            throw new ArgumentNullException(nameof(timeline));
+        Require(
+            timeline.SchemaVersion == GoldenWalnutFreshSaveUnlockTimelineProofBuilder.SchemaVersion &&
+            timeline.SourceScheduleComplete &&
+            timeline.NativePhaseOrderingComplete &&
+            !timeline.TrainingAdmissionEligible &&
+            timeline.SourceCompletions is { Length: > 0 } &&
+            timeline.SourceScheduleSha256 is { Length: 64 } &&
+            timeline.SourceScheduleSha256.All(character =>
+                character is >= '0' and <= '9' or >= 'a' and <= 'f'),
+            "Golden Walnut fresh-save unlock timeline is incomplete.");
+        var westernTurtleUnlockTotalDay = timeline.WesternTurtleUnlockTotalDay ??
+            throw new InvalidOperationException(
+                "Golden Walnut fresh-save unlock timeline has no Western Turtle date.");
+        var islandHouseUnlockTotalDay = timeline.IslandHouseUnlockTotalDay ??
+            throw new InvalidOperationException(
+                "Golden Walnut fresh-save unlock timeline has no Island House date.");
+        return Build(
+            GoldenWalnutNativeSourceCatalog.Sources,
+            westernTurtleUnlockTotalDay,
+            islandHouseUnlockTotalDay,
+            timeline);
+    }
+
+    public static GoldenWalnutResortFundingRouteProof Build(
         IReadOnlyCollection<GoldenWalnutNativeSourceDefinition> sources,
         int? westernTurtleUnlockTotalDay = null,
-        int? islandHouseUnlockTotalDay = null)
+        int? islandHouseUnlockTotalDay = null) =>
+        Build(sources, westernTurtleUnlockTotalDay, islandHouseUnlockTotalDay, null);
+
+    private static GoldenWalnutResortFundingRouteProof Build(
+        IReadOnlyCollection<GoldenWalnutNativeSourceDefinition> sources,
+        int? westernTurtleUnlockTotalDay,
+        int? islandHouseUnlockTotalDay,
+        GoldenWalnutFreshSaveUnlockTimelineProof? timeline)
     {
         if (sources is null)
             throw new ArgumentNullException(nameof(sources));
@@ -137,7 +172,13 @@ public static class GoldenWalnutResortFundingRouteProofBuilder
                     "executor.advance_gourmand_request",
                     IslandGourmandSupplyScheduleProofBuilder.SchemaVersion,
                     "EVD-341"
-                },
+                }.Concat(timeline is null
+                    ? Array.Empty<string>()
+                    : new[]
+                    {
+                        GoldenWalnutFreshSaveUnlockTimelineProofBuilder.SchemaVersion,
+                        "sha256:" + timeline.SourceScheduleSha256
+                    }).ToArray(),
                 (gourmandDeadlineCompositionComplete
                     ? Array.Empty<string>()
                     : new[] { "gourmand_route_and_unlock_days_before_day_224" })

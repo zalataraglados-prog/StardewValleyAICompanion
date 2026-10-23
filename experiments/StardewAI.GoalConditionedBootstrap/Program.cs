@@ -2766,7 +2766,8 @@ static void AuditMasterAnglerFreshSavePrerequisites(Arguments options)
     var report = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(
         options.Required("catalog"),
         options.Required("windows"),
-        options.Required("dependency-expansions"));
+        options.Required("dependency-expansions"),
+        options.Optional("golden-walnut-source-schedule"));
     Write(options.Required("output"), report);
     if (!report.StaticOpportunityInventoryComplete ||
         !report.PrerequisiteFamilyInventoryComplete ||
