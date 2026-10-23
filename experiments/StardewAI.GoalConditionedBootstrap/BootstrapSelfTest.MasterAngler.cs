@@ -183,7 +183,7 @@ internal static partial class BootstrapSelfTest
             report.PrerequisiteFamilies.Single(value =>
                     value.FamilyId == "ginger_island_access")
                 .ProducerStatus ==
-                "phase_capacity_and_retry_budget_bound_deadline_composition_missing",
+                "phase_capacity_retry_budget_and_deterministic_supply_bound_deadline_composition_missing",
             "Master Angler fresh-save producer coverage was overstated.");
 
         VerifyMasterAnglerFishingSkillBindingFailsClosed(
