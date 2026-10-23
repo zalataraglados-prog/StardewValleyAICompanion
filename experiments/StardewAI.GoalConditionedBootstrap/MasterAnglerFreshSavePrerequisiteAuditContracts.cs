@@ -38,6 +38,8 @@ public sealed class MasterAnglerFreshSavePrerequisiteAuditReport
     public bool PrerequisiteFamilyInventoryComplete { get; set; }
     [JsonPropertyName("golden_walnut_unlock_schedule")]
     public GoldenWalnutUnlockScheduleProof? GoldenWalnutUnlockSchedule { get; set; }
+    [JsonPropertyName("golden_walnut_resort_funding_routes")]
+    public GoldenWalnutResortFundingRouteProof? GoldenWalnutResortFundingRoutes { get; set; }
     [JsonPropertyName("species")]
     public MasterAnglerFreshSaveSpeciesPrerequisite[] Species { get; set; } =
         Array.Empty<MasterAnglerFreshSaveSpeciesPrerequisite>();

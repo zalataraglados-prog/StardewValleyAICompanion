@@ -145,7 +145,12 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
             "At least one Master Angler species has fewer than two static opportunity days.");
 
         var goldenWalnutSchedule = GoldenWalnutUnlockScheduleProofBuilder.Build();
-        var families = BuildFamilies(species, graph, goldenWalnutSchedule);
+        var goldenWalnutFundingRoutes = GoldenWalnutResortFundingRouteProofBuilder.Build();
+        var families = BuildFamilies(
+            species,
+            graph,
+            goldenWalnutSchedule,
+            goldenWalnutFundingRoutes);
         var missing = families
             .Where(value => value.ProducerStatus != "implemented_and_bound")
             .Select(value => value.FamilyId)
@@ -178,6 +183,7 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
             StaticOpportunityInventoryComplete = true,
             PrerequisiteFamilyInventoryComplete = true,
             GoldenWalnutUnlockSchedule = goldenWalnutSchedule,
+            GoldenWalnutResortFundingRoutes = goldenWalnutFundingRoutes,
             Species = species,
             PrerequisiteFamilies = families,
             MissingOrUnboundProducerFamilies = missing,
@@ -342,7 +348,8 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
     private static MasterAnglerFreshSavePrerequisiteFamily[] BuildFamilies(
         MasterAnglerFreshSaveSpeciesPrerequisite[] species,
         DependencyGraphInventory graph,
-        GoldenWalnutUnlockScheduleProof goldenWalnutSchedule)
+        GoldenWalnutUnlockScheduleProof goldenWalnutSchedule,
+        GoldenWalnutResortFundingRouteProof goldenWalnutFundingRoutes)
     {
         var required = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
         void Add(string family, IEnumerable<string> ids)
@@ -376,7 +383,12 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
         return required
             .Where(pair => pair.Value.Count > 0)
             .OrderBy(pair => pair.Key, StringComparer.Ordinal)
-            .Select(pair => Family(pair.Key, pair.Value, graph, goldenWalnutSchedule))
+            .Select(pair => Family(
+                pair.Key,
+                pair.Value,
+                graph,
+                goldenWalnutSchedule,
+                goldenWalnutFundingRoutes))
             .ToArray();
     }
 
@@ -384,7 +396,8 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
         string family,
         IEnumerable<string> species,
         DependencyGraphInventory graph,
-        GoldenWalnutUnlockScheduleProof goldenWalnutSchedule)
+        GoldenWalnutUnlockScheduleProof goldenWalnutSchedule,
+        GoldenWalnutResortFundingRouteProof goldenWalnutFundingRoutes)
     {
         var (status, evidence, work) = family switch
         {
@@ -544,10 +557,15 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                         ? new[]
                         {
                             "complete_community_center",
-                            GoldenWalnutUnlockScheduleProofBuilder.SchemaVersion
+                            GoldenWalnutUnlockScheduleProofBuilder.SchemaVersion,
+                            GoldenWalnutResortFundingRouteProofBuilder.SchemaVersion
                         }
-                        : new[] { GoldenWalnutUnlockScheduleProofBuilder.SchemaVersion },
-                    "The exact 1+10+20+20 unlock sequence has sufficient phased capacity and finite independent retry budgets. Compose Mussel Stone regeneration, Island crop growth/seed/harvest capacity and all attempt durations with the Year 3 deadline before marking this family bound."),
+                        : new[]
+                        {
+                            GoldenWalnutUnlockScheduleProofBuilder.SchemaVersion,
+                            GoldenWalnutResortFundingRouteProofBuilder.SchemaVersion
+                        },
+                    "The exact 1+10+20+20 unlock sequence has sufficient phased capacity and finite independent retry budgets. The exact deterministic 15-walnut Gourmand alternative is now preferred over the three-family random route, but its native action, crop supply schedule and Year 3 deadline composition remain unbound."),
             "ginger_island_access" =>
                 ("composed_producer_missing",
                     graph.HasDirection("complete_community_center")

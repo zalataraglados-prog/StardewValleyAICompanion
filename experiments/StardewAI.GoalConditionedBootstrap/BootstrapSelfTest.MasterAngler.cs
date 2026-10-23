@@ -40,6 +40,9 @@ internal static partial class BootstrapSelfTest
         var goldenWalnutSchedule = report.GoldenWalnutUnlockSchedule ??
             throw new InvalidOperationException(
                 "Master Angler Golden Walnut schedule is missing after summary validation.");
+        var goldenWalnutFundingRoutes = report.GoldenWalnutResortFundingRoutes ??
+            throw new InvalidOperationException(
+                "Master Angler Golden Walnut funding routes are missing after summary validation.");
         Require(
             goldenWalnutSchedule.DeadlineTotalDayExclusive == 224 &&
             goldenWalnutSchedule.DeadlineCapacityRequirements.Length == 3 &&
@@ -67,6 +70,20 @@ internal static partial class BootstrapSelfTest
                 SourceAvailabilityCapacityBound: false
             },
             "Master Angler Golden Walnut deadline-capacity requirements drifted.");
+        Require(
+            goldenWalnutFundingRoutes.PreferredRouteId ==
+                GoldenWalnutResortFundingRouteProofBuilder.PreferredRouteId &&
+            !goldenWalnutFundingRoutes.RouteSelectionComplete &&
+            !goldenWalnutFundingRoutes.TrainingAdmissionEligible &&
+            goldenWalnutFundingRoutes.Alternatives.Single(route =>
+                route.RouteId == GoldenWalnutResortFundingRouteProofBuilder.PreferredRouteId) is
+            {
+                NativeWalnutQuantity: 15,
+                Deterministic: true,
+                ActionBindingsComplete: false,
+                SupplyScheduleComplete: false
+            },
+            "Master Angler Golden Walnut funding-route preference drifted.");
 
         var byId = report.Species.ToDictionary(
             value => value.QualifiedItemId,

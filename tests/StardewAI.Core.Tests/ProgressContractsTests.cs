@@ -160,6 +160,53 @@ public sealed partial class ProgressContractsTests
     }
 
     [Fact]
+    public void IslandGourmandProgressSerializesExactRequestAndCropReadiness()
+    {
+        var progress = new IslandGourmandProgressRef
+        {
+            ProjectionStatus = "exact_native_active_request_projected",
+            RequiredMailSatisfied = true,
+            RequestsFulfilled = 1,
+            TotalRequests = 3,
+            ActiveRequestIndex = 1,
+            RequiredCropItemId = "262",
+            RequiredCropQualifiedItemId = "(O)262",
+            RequestState = "ready_matching_crop_present",
+            MatchingCropCount = 1,
+            ReadyMatchingCropCount = 1,
+            MatchingCrops = new[]
+            {
+                new IslandGourmandCropRef
+                {
+                    TileX = 80,
+                    TileY = 40,
+                    HarvestItemId = "262",
+                    CurrentPhase = 4,
+                    FinalPhaseIndex = 4,
+                    ReadyForRequest = true
+                }
+            },
+            ActionTiles = new[]
+            {
+                new IslandGourmandActionTileRef
+                {
+                    TileX = 4,
+                    TileY = 4,
+                    Action = "Gourmand"
+                }
+            }
+        };
+
+        var json = JsonSerializer.Serialize(progress, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+
+        Assert.Contains("\"schema_version\":\"island_gourmand_progress.v1\"", json);
+        Assert.Contains("\"required_crop_qualified_item_id\":\"(O)262\"", json);
+        Assert.Contains("\"ready_matching_crop_count\":1", json);
+        Assert.Contains("\"ready_for_request\":true", json);
+        Assert.Contains("\"action\":\"Gourmand\"", json);
+    }
+
+    [Fact]
     public void QuestCandidateRefSerializesWithSnakeCaseJsonNames()
     {
         var candidate = new QuestCandidateRef

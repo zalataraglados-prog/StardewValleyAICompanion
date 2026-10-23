@@ -2029,6 +2029,105 @@ namespace StardewAI.Contracts.State
         public bool RequiredSecretNoteSatisfied { get; set; }
     }
 
+    public sealed class IslandGourmandProgressRef
+    {
+        [JsonPropertyName("schema_version")]
+        public string SchemaVersion { get; set; } = "island_gourmand_progress.v1";
+
+        [JsonPropertyName("projection_status")]
+        public string ProjectionStatus { get; set; } = string.Empty;
+
+        [JsonPropertyName("location_id")]
+        public string LocationId { get; set; } = "IslandFarmCave";
+
+        [JsonPropertyName("required_mail_key")]
+        public string RequiredMailKey { get; set; } = "Island_UpgradeHouse";
+
+        [JsonPropertyName("required_mail_satisfied")]
+        public bool RequiredMailSatisfied { get; set; }
+
+        [JsonPropertyName("talked_to_gourmand_received_or_pending")]
+        public bool TalkedToGourmandReceivedOrPending { get; set; }
+
+        [JsonPropertyName("requests_fulfilled")]
+        public int RequestsFulfilled { get; set; }
+
+        [JsonPropertyName("total_requests")]
+        public int TotalRequests { get; set; }
+
+        [JsonPropertyName("complete")]
+        public bool Complete { get; set; }
+
+        [JsonPropertyName("active_request_index")]
+        public int? ActiveRequestIndex { get; set; }
+
+        [JsonPropertyName("required_crop_item_id")]
+        public string RequiredCropItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("required_crop_qualified_item_id")]
+        public string RequiredCropQualifiedItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("required_crop_display_name")]
+        public string RequiredCropDisplayName { get; set; } = string.Empty;
+
+        [JsonPropertyName("request_state")]
+        public string RequestState { get; set; } = string.Empty;
+
+        [JsonPropertyName("matching_crop_count")]
+        public int MatchingCropCount { get; set; }
+
+        [JsonPropertyName("ready_matching_crop_count")]
+        public int ReadyMatchingCropCount { get; set; }
+
+        [JsonPropertyName("matching_crops")]
+        public IslandGourmandCropRef[] MatchingCrops { get; set; } = System.Array.Empty<IslandGourmandCropRef>();
+
+        [JsonPropertyName("action_tiles")]
+        public IslandGourmandActionTileRef[] ActionTiles { get; set; } = System.Array.Empty<IslandGourmandActionTileRef>();
+
+        [JsonPropertyName("native_contract")]
+        public string NativeContract { get; set; } = string.Empty;
+    }
+
+    public sealed class IslandGourmandCropRef
+    {
+        [JsonPropertyName("tile_x")]
+        public int TileX { get; set; }
+
+        [JsonPropertyName("tile_y")]
+        public int TileY { get; set; }
+
+        [JsonPropertyName("harvest_item_id")]
+        public string HarvestItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("current_phase")]
+        public int CurrentPhase { get; set; }
+
+        [JsonPropertyName("final_phase_index")]
+        public int FinalPhaseIndex { get; set; }
+
+        [JsonPropertyName("fully_grown")]
+        public bool FullyGrown { get; set; }
+
+        [JsonPropertyName("day_of_current_phase")]
+        public int DayOfCurrentPhase { get; set; }
+
+        [JsonPropertyName("ready_for_request")]
+        public bool ReadyForRequest { get; set; }
+    }
+
+    public sealed class IslandGourmandActionTileRef
+    {
+        [JsonPropertyName("tile_x")]
+        public int TileX { get; set; }
+
+        [JsonPropertyName("tile_y")]
+        public int TileY { get; set; }
+
+        [JsonPropertyName("action")]
+        public string Action { get; set; } = string.Empty;
+    }
+
     public sealed class FullShipmentProgressRef
     {
         [JsonPropertyName("eligible_item_count")]
