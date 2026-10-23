@@ -81,9 +81,11 @@ namespace StardewAI.Core.Training
                 {
                     "route_connector_tile", "catch_fish", "craft_rain_totem",
                     "use_rain_totem", "clear_obstacle_tile",
+                    "clear_farm_resource_clump", "ship_inventory_item_to_bin",
                     "clear_current_location_resource_clump",
                     "collect_machine_output_tile", "load_machine_input_tile",
-                    "collect_spawned_object", "craft_machine_item",
+                    "collect_spawned_object", "harvest_bush", "crack_geode",
+                    "answer_field_office_survey", "craft_machine_item",
                     "place_machine_item", "construct_building",
                     "upgrade_building", "animal_purchase_select_service",
                     "animal_purchase_navigate_location_page",

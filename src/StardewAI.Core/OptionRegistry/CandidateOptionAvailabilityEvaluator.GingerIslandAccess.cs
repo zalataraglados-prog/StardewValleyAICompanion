@@ -75,6 +75,22 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 snapshot, row, "hull", intentParameters, continuation),
             "ready_to_donate_iridium" => GingerIslandRepairCandidates(
                 snapshot, row, "anchor", intentParameters, continuation),
+            "requires_battery_packs" => GingerIslandMaterialSupplyCandidates(
+                snapshot, row, "battery", intentParameters, continuation),
+            "requires_hardwood" => GingerIslandMaterialSupplyCandidates(
+                snapshot, row, "hull", intentParameters, continuation),
+            "requires_iridium_bars" => GingerIslandMaterialSupplyCandidates(
+                snapshot, row, "anchor", intentParameters, continuation),
+            "requires_ticket_money" => GingerIslandTicketMoneyCandidates(
+                snapshot, row, intentParameters, continuation),
+            "requires_first_parrot_walnut" => GingerIslandWalnutSupplyCandidates(
+                snapshot, row, "first_parrot", intentParameters, continuation),
+            "requires_western_turtle_walnuts" => GingerIslandWalnutSupplyCandidates(
+                snapshot, row, "western_turtle_parrot", intentParameters, continuation),
+            "requires_island_house_walnuts" => GingerIslandWalnutSupplyCandidates(
+                snapshot, row, "island_house_parrot", intentParameters, continuation),
+            "requires_resort_walnuts" => GingerIslandWalnutSupplyCandidates(
+                snapshot, row, "resort_parrot", intentParameters, continuation),
             "ready_to_buy_ticket" => GingerIslandTicketCandidates(
                 snapshot, row, intentParameters, continuation),
             "advance_boat_departure_event" => GingerIslandClone(

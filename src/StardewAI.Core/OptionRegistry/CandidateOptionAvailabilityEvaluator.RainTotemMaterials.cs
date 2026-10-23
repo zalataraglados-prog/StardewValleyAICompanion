@@ -293,6 +293,15 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         }
         if (string.IsNullOrWhiteSpace(json))
             return 0;
+        return CandidateJsonItemQuantity(json, qualifiedItemId);
+    }
+
+    private static int CandidateJsonItemQuantity(
+        string json,
+        string qualifiedItemId)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+            return 0;
         try
         {
             using var document = JsonDocument.Parse(json);
