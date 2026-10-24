@@ -85,6 +85,17 @@ var nativeSaveBoundaryPhaseStarted = false;
 var nativeSaveBoundaryVerified = false;
 var nativeSaveBoundaryInitialDayKey = string.Empty;
 var nativeSaveBoundaryCurrentDayKey = string.Empty;
+var goldenWalnutSourceMilestone =
+    new GoldenWalnutFreshSaveMilestoneAssessment(
+        false,
+        -1,
+        0,
+        false,
+        false,
+        false,
+        false,
+        new[] { "not_evaluated" });
+var goldenWalnutSourceMilestoneSignature = string.Empty;
 var initialSaveFingerprint = options.RequireNativeSaveBoundary
     ? await NativeSaveBoundaryVerifier.CaptureWithRetryAsync(
         options.SaveIsolationPath,
@@ -94,7 +105,8 @@ var currentSaveFingerprint = initialSaveFingerprint;
 var hasExplicitPrimaryTarget =
     options.RequiredVerifiedActions > 0 ||
     options.StopAfterObjectiveComplete ||
-    options.StopAfterSocialObjectiveComplete;
+    options.StopAfterSocialObjectiveComplete ||
+    options.RequireGoldenWalnutSourceScheduleReady;
 var noProgressBackoff = new NoProgressBackoffPolicy(
     options.NoProgressBackoffMs,
     options.NoProgressMaxBackoffMs);
@@ -108,8 +120,11 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         (options.RequiredVerifiedActions <= 0 ||
          verifiedActions >= options.RequiredVerifiedActions) &&
         (!options.StopAfterObjectiveComplete || objectiveCompleted) &&
-        (!options.StopAfterSocialObjectiveComplete || socialObjectiveCompleted);
-    var effectivePrimaryAttempts = cropTeacherFirstDayCompleted
+        (!options.StopAfterSocialObjectiveComplete || socialObjectiveCompleted) &&
+        (!options.RequireGoldenWalnutSourceScheduleReady ||
+         goldenWalnutSourceMilestone.Ready);
+    var effectivePrimaryAttempts = cropTeacherFirstDayCompleted &&
+        !options.RequireGoldenWalnutSourceScheduleReady
         ? Math.Max(primaryAttemptsStarted, options.MaxAttempts)
         : primaryAttemptsStarted;
     var phaseDecision = activeCropTeacherRunPlan is null
@@ -228,6 +243,56 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 pendingCropTeacherDayBoundary.FromTotalDay +
                 " receipt_count=" + cropTeacherDayBoundaryReceiptCount);
             pendingCropTeacherDayBoundary = null;
+        }
+        if (options.RequireGoldenWalnutSourceScheduleReady &&
+            !closingNativeSaveBoundary)
+        {
+            goldenWalnutSourceMilestone =
+                EvaluateGoldenWalnutSourceMilestone(rawSnapshotJson);
+            var milestoneSignature =
+                GoldenWalnutSourceMilestoneSignature(
+                    goldenWalnutSourceMilestone);
+            if (!string.Equals(
+                    milestoneSignature,
+                    goldenWalnutSourceMilestoneSignature,
+                    StringComparison.Ordinal))
+            {
+                goldenWalnutSourceMilestoneSignature = milestoneSignature;
+                AppendGoldenWalnutSourceMilestoneProgress(
+                    options,
+                    goldenWalnutSourceMilestone,
+                    iteration,
+                    lastStateHash,
+                    lastQueueId);
+            }
+            if (goldenWalnutSourceMilestone.CurrentTotalDay >=
+                GoldenWalnutUnlockScheduleProofBuilder
+                    .DeadlineTotalDayExclusive)
+            {
+                stopReason =
+                    "golden_walnut_deadline_total_day_reached current=" +
+                    goldenWalnutSourceMilestone.CurrentTotalDay +
+                    " deadline_exclusive=" +
+                    GoldenWalnutUnlockScheduleProofBuilder
+                        .DeadlineTotalDayExclusive;
+                AppendProgress(
+                    options,
+                    "stopped",
+                    iteration,
+                    lastStateHash,
+                    lastQueueId,
+                    stopReason);
+                break;
+            }
+            if (goldenWalnutSourceMilestone.Ready)
+            {
+                activeCropTeacherRunPlan = null;
+                activeCropTeacherRunPlanRequest = null;
+                activeCropTeacherTransitionLedger = null;
+                pendingCropTeacherDayBoundary = null;
+                await DelayBeforeNextAttemptAsync(options, attemptOrdinal);
+                continue;
+            }
         }
         if (options.RequireNativeSaveBoundary)
         {
@@ -990,6 +1055,63 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 leasedSelectedQueueIndex = -1;
             }
             WritePlanExecutionEpisode(options, iteration, snapshotPath, modelPlanPath, queuePath, queue, execution, realAppend, lastStateHash, lastQueueId);
+            if (options.RequireGoldenWalnutSourceScheduleReady &&
+                execution["after_snapshot_fresh"]?.GetValue<bool>() == true)
+            {
+                var milestoneAfterPath = ReadString(
+                    execution,
+                    "after_snapshot_path");
+                if (!string.IsNullOrWhiteSpace(milestoneAfterPath) &&
+                    File.Exists(milestoneAfterPath))
+                {
+                    goldenWalnutSourceMilestone =
+                        await EvaluateGoldenWalnutSourceMilestoneArtifactAsync(
+                            milestoneAfterPath);
+                    var milestoneSignature =
+                        GoldenWalnutSourceMilestoneSignature(
+                            goldenWalnutSourceMilestone);
+                    if (!string.Equals(
+                            milestoneSignature,
+                            goldenWalnutSourceMilestoneSignature,
+                            StringComparison.Ordinal))
+                    {
+                        goldenWalnutSourceMilestoneSignature =
+                            milestoneSignature;
+                        AppendGoldenWalnutSourceMilestoneProgress(
+                            options,
+                            goldenWalnutSourceMilestone,
+                            iteration,
+                            ReadString(execution, "after_state_hash"),
+                            lastQueueId);
+                    }
+                    if (goldenWalnutSourceMilestone.CurrentTotalDay >=
+                        GoldenWalnutUnlockScheduleProofBuilder
+                            .DeadlineTotalDayExclusive)
+                    {
+                        stopReason =
+                            "golden_walnut_deadline_total_day_reached current=" +
+                            goldenWalnutSourceMilestone.CurrentTotalDay +
+                            " deadline_exclusive=" +
+                            GoldenWalnutUnlockScheduleProofBuilder
+                                .DeadlineTotalDayExclusive;
+                        AppendProgress(
+                            options,
+                            "stopped",
+                            iteration,
+                            ReadString(execution, "after_state_hash"),
+                            lastQueueId,
+                            stopReason);
+                        break;
+                    }
+                    if (goldenWalnutSourceMilestone.Ready)
+                    {
+                        activeCropTeacherRunPlan = null;
+                        activeCropTeacherRunPlanRequest = null;
+                        activeCropTeacherTransitionLedger = null;
+                        pendingCropTeacherDayBoundary = null;
+                    }
+                }
+            }
             var horizonObservations = AppendClosedHorizonObservations(options, beforeSnapshot, execution);
             var policyAppend = executionNoProgress.NoProgress ||
                 closingNativeSaveBoundary
@@ -1111,22 +1233,10 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
     }
 }
 
-var ordinaryTargetMet =
-    (options.RequiredVerifiedActions <= 0 ||
-        verifiedActions >= options.RequiredVerifiedActions) &&
-    (!options.StopAfterObjectiveComplete || objectiveCompleted) &&
-    (!options.StopAfterSocialObjectiveComplete || socialObjectiveCompleted) &&
-    (!options.RequireNativeSaveBoundary || nativeSaveBoundaryVerified);
-var verifiedTargetMet = string.IsNullOrWhiteSpace(stopReason) &&
-    ordinaryTargetMet;
-var loopStatus = verifiedTargetMet ? "ok" : "incomplete";
-if (!verifiedTargetMet)
-{
-    Environment.ExitCode = 2;
-}
-
 var goldenWalnutFreshSaveEpisodeManifestPath = string.Empty;
 var goldenWalnutFreshSaveEpisodeCount = 0;
+var goldenWalnutSourceSchedulePath = string.Empty;
+var goldenWalnutSourceScheduleVerified = false;
 if (options.CaptureGoldenWalnutFreshSaveEvidence)
 {
     goldenWalnutFreshSaveEpisodeCount = Directory.EnumerateFiles(
@@ -1143,6 +1253,50 @@ if (options.CaptureGoldenWalnutFreshSaveEvidence)
         goldenWalnutFreshSaveEpisodeManifestPath =
             options.GoldenWalnutFreshSaveEpisodeManifestPath;
     }
+}
+if (options.RequireGoldenWalnutSourceScheduleReady &&
+    goldenWalnutSourceMilestone.Ready &&
+    !string.IsNullOrWhiteSpace(goldenWalnutFreshSaveEpisodeManifestPath))
+{
+    try
+    {
+        GoldenWalnutFreshSaveEpisodeScheduleBuilder.Write(
+            options.GoldenWalnutFreshSaveSourceSchedulePath,
+            goldenWalnutFreshSaveEpisodeManifestPath);
+        goldenWalnutSourceSchedulePath =
+            options.GoldenWalnutFreshSaveSourceSchedulePath;
+        goldenWalnutSourceScheduleVerified = true;
+    }
+    catch (Exception ex) when (
+        ex is IOException or InvalidOperationException or JsonException or
+            ArgumentException)
+    {
+        stopReason = "golden_walnut_source_schedule_invalid message=" +
+            SanitizeProgressValue(ex.Message);
+    }
+}
+else if (options.RequireGoldenWalnutSourceScheduleReady &&
+    goldenWalnutSourceMilestone.Ready)
+{
+    stopReason = "golden_walnut_source_schedule_invalid message=" +
+        "fresh_save_episode_manifest_missing";
+}
+
+var ordinaryTargetMet =
+    (options.RequiredVerifiedActions <= 0 ||
+        verifiedActions >= options.RequiredVerifiedActions) &&
+    (!options.StopAfterObjectiveComplete || objectiveCompleted) &&
+    (!options.StopAfterSocialObjectiveComplete || socialObjectiveCompleted) &&
+    (!options.RequireGoldenWalnutSourceScheduleReady ||
+        (goldenWalnutSourceMilestone.Ready &&
+         goldenWalnutSourceScheduleVerified)) &&
+    (!options.RequireNativeSaveBoundary || nativeSaveBoundaryVerified);
+var verifiedTargetMet = string.IsNullOrWhiteSpace(stopReason) &&
+    ordinaryTargetMet;
+var loopStatus = verifiedTargetMet ? "ok" : "incomplete";
+if (!verifiedTargetMet)
+{
+    Environment.ExitCode = 2;
 }
 trainingDataTransaction.Complete(verifiedTargetMet);
 if (trainingDataTransaction.CanonicalArtifactsUpdated &&
@@ -1191,6 +1345,17 @@ var report = new LiveTrainingLoopReport
     GoldenWalnutFreshSaveEpisodeManifestPath =
         goldenWalnutFreshSaveEpisodeManifestPath,
     GoldenWalnutFreshSaveEpisodeCount = goldenWalnutFreshSaveEpisodeCount,
+    GoldenWalnutSourceScheduleRequired =
+        options.RequireGoldenWalnutSourceScheduleReady,
+    GoldenWalnutSourceMilestoneReady = goldenWalnutSourceMilestone.Ready,
+    GoldenWalnutSourceCurrentTotalDay =
+        goldenWalnutSourceMilestone.CurrentTotalDay,
+    GoldenWalnutDeadlineTotalDayExclusive =
+        GoldenWalnutUnlockScheduleProofBuilder.DeadlineTotalDayExclusive,
+    GoldenWalnutSourceMilestoneBlockingReasons =
+        goldenWalnutSourceMilestone.BlockingReasons,
+    GoldenWalnutSourceScheduleVerified = goldenWalnutSourceScheduleVerified,
+    GoldenWalnutSourceSchedulePath = goldenWalnutSourceSchedulePath,
     PlanningHandoffCaptureManifestPath =
         lastPlanningHandoffCaptureManifestPath,
     PlanningHandoffTeacherDispatchManifestPath =
@@ -1268,6 +1433,19 @@ Console.WriteLine(JsonSerializer.Serialize(new
         goldenWalnutFreshSaveEpisodeManifestPath,
     golden_walnut_fresh_save_episode_count =
         goldenWalnutFreshSaveEpisodeCount,
+    golden_walnut_source_schedule_required =
+        options.RequireGoldenWalnutSourceScheduleReady,
+    golden_walnut_source_milestone_ready =
+        goldenWalnutSourceMilestone.Ready,
+    golden_walnut_source_current_total_day =
+        goldenWalnutSourceMilestone.CurrentTotalDay,
+    golden_walnut_deadline_total_day_exclusive =
+        GoldenWalnutUnlockScheduleProofBuilder.DeadlineTotalDayExclusive,
+    golden_walnut_source_milestone_blocking_reasons =
+        goldenWalnutSourceMilestone.BlockingReasons,
+    golden_walnut_source_schedule_verified =
+        goldenWalnutSourceScheduleVerified,
+    golden_walnut_source_schedule_path = goldenWalnutSourceSchedulePath,
     progress_log_path = options.ProgressLogPath,
     concurrency = 1,
     execution = options.TargetExecutionMode,

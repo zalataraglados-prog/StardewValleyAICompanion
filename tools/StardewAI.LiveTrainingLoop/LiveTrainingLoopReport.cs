@@ -56,6 +56,28 @@ public sealed class LiveTrainingLoopReport
     [JsonPropertyName("golden_walnut_fresh_save_episode_count")]
     public int GoldenWalnutFreshSaveEpisodeCount { get; set; }
 
+    [JsonPropertyName("golden_walnut_source_schedule_required")]
+    public bool GoldenWalnutSourceScheduleRequired { get; set; }
+
+    [JsonPropertyName("golden_walnut_source_milestone_ready")]
+    public bool GoldenWalnutSourceMilestoneReady { get; set; }
+
+    [JsonPropertyName("golden_walnut_source_current_total_day")]
+    public int GoldenWalnutSourceCurrentTotalDay { get; set; } = -1;
+
+    [JsonPropertyName("golden_walnut_deadline_total_day_exclusive")]
+    public int GoldenWalnutDeadlineTotalDayExclusive { get; set; }
+
+    [JsonPropertyName("golden_walnut_source_milestone_blocking_reasons")]
+    public string[] GoldenWalnutSourceMilestoneBlockingReasons { get; set; } =
+        Array.Empty<string>();
+
+    [JsonPropertyName("golden_walnut_source_schedule_verified")]
+    public bool GoldenWalnutSourceScheduleVerified { get; set; }
+
+    [JsonPropertyName("golden_walnut_source_schedule_path")]
+    public string GoldenWalnutSourceSchedulePath { get; set; } = string.Empty;
+
     [JsonPropertyName("planning_handoff_capture_manifest_path")]
     public string PlanningHandoffCaptureManifestPath { get; set; } =
         string.Empty;

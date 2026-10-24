@@ -228,6 +228,36 @@ public static class GoldenWalnutFreshSaveEpisodeScheduleBuilder
                 .ToArray());
     }
 
+    public static GoldenWalnutFreshSaveSourceSchedule Write(
+        string outputPath,
+        string manifestPath)
+    {
+        if (string.IsNullOrWhiteSpace(outputPath))
+            throw new ArgumentException("Schedule output path is required.", nameof(outputPath));
+        var schedule = Build(manifestPath);
+        var fullOutputPath = Path.GetFullPath(outputPath);
+        Directory.CreateDirectory(
+            Path.GetDirectoryName(fullOutputPath) ?? Directory.GetCurrentDirectory());
+        var temporaryPath = fullOutputPath + ".tmp." + Guid.NewGuid().ToString("N");
+        try
+        {
+            File.WriteAllText(
+                temporaryPath,
+                JsonSerializer.Serialize(schedule, JsonOptions),
+                new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+            if (File.Exists(fullOutputPath))
+                File.Replace(temporaryPath, fullOutputPath, null);
+            else
+                File.Move(temporaryPath, fullOutputPath);
+        }
+        finally
+        {
+            if (File.Exists(temporaryPath))
+                File.Delete(temporaryPath);
+        }
+        return schedule;
+    }
+
     private static bool IsEligibleDeterministicSource(
         GoldenWalnutNativeSourceDefinition source) =>
         GoldenWalnutUnlockScheduleProofBuilder.BoundAcquisitionOptionIds.Contains(

@@ -19,6 +19,7 @@ public sealed class LiveTrainingOptions
     public string SnapshotArtifactMode { get; set; } =
         ContentAddressedJsonArtifactStore.PlainMode;
     public bool CaptureGoldenWalnutFreshSaveEvidence { get; set; }
+    public bool RequireGoldenWalnutSourceScheduleReady { get; set; }
     public string ExecutorUrl { get; set; } = "http://127.0.0.1:8767";
     public int ExecutorTimeoutSeconds { get; set; } = 600;
     public string ManifestPath { get; set; } = ReadTextOrEmpty(@"E:\StardewAITraining\last-manifest-path.txt");
@@ -115,6 +116,9 @@ public sealed class LiveTrainingOptions
     public string GoldenWalnutFreshSaveEpisodeManifestPath => Path.Combine(
         RunDir,
         "golden-walnut-fresh-save-episode-manifest.json");
+    public string GoldenWalnutFreshSaveSourceSchedulePath => Path.Combine(
+        RunDir,
+        "golden-walnut-fresh-save-source-schedule.json");
     public string GoldenWalnutFreshSaveScheduleId =>
         "golden-walnut-fresh-save:" + RunId;
     public string TrainingDataRoot => string.IsNullOrWhiteSpace(TrainingDataRootOverride)
@@ -224,6 +228,10 @@ public sealed class LiveTrainingOptions
             else if (current == "--capture-golden-walnut-fresh-save-evidence")
             {
                 options.CaptureGoldenWalnutFreshSaveEvidence = true;
+            }
+            else if (current == "--require-golden-walnut-source-schedule-ready")
+            {
+                options.RequireGoldenWalnutSourceScheduleReady = true;
             }
             else if (current == "--executor-url" && i + 1 < args.Length)
             {
@@ -584,6 +592,13 @@ public sealed class LiveTrainingOptions
 
     public void ValidateGoldenWalnutFreshSaveEvidenceMode()
     {
+        if (RequireGoldenWalnutSourceScheduleReady &&
+            !CaptureGoldenWalnutFreshSaveEvidence)
+        {
+            throw new ArgumentException(
+                "--require-golden-walnut-source-schedule-ready requires " +
+                "--capture-golden-walnut-fresh-save-evidence.");
+        }
         if (!CaptureGoldenWalnutFreshSaveEvidence)
             return;
         if (SnapshotArtifactMode !=
@@ -610,6 +625,13 @@ public sealed class LiveTrainingOptions
             throw new ArgumentException(
                 "--capture-golden-walnut-fresh-save-evidence requires the " +
                 "maximum Grandpa score goal.");
+        }
+        if (RequireGoldenWalnutSourceScheduleReady &&
+            (!UseDailyPlan || !RequireNativeSaveBoundary))
+        {
+            throw new ArgumentException(
+                "--require-golden-walnut-source-schedule-ready requires " +
+                "--use-daily-plan and --require-native-save-boundary.");
         }
     }
 

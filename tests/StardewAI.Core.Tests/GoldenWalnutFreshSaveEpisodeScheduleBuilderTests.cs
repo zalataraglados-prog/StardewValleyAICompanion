@@ -35,6 +35,10 @@ public sealed class GoldenWalnutFreshSaveEpisodeScheduleBuilderTests
             "fresh-save-run");
 
         var schedule = GoldenWalnutFreshSaveEpisodeScheduleBuilder.Build(manifestPath);
+        var writtenPath = Path.Combine(fixture.Root, "source-schedule.json");
+        var written = GoldenWalnutFreshSaveEpisodeScheduleBuilder.Write(
+            writtenPath,
+            manifestPath);
 
         Assert.Equal(4, manifest.EpisodePaths.Length);
         Assert.Equal("fresh-save-run", manifest.SourceRunId);
@@ -52,6 +56,14 @@ public sealed class GoldenWalnutFreshSaveEpisodeScheduleBuilderTests
         Assert.Equal(1, completion.PlannedQuantity);
         Assert.Equal(100, completion.PlannedCompletionTotalDay);
         Assert.False(schedule.TrainingLabelEligible);
+        Assert.Equal(schedule.ScheduleId, written.ScheduleId);
+        Assert.Equal(
+            schedule.SourceEpisodeEvidenceRootSha256,
+            written.SourceEpisodeEvidenceRootSha256);
+        Assert.True(File.Exists(writtenPath));
+        Assert.DoesNotContain(
+            Directory.EnumerateFiles(fixture.Root),
+            path => Path.GetFileName(path).Contains(".tmp.", StringComparison.Ordinal));
     }
 
     [Fact]

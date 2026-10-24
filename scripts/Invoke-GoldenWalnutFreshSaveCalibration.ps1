@@ -8,6 +8,9 @@ param(
     [int] $ProductPort = 8768,
     [ValidateRange(1, 64)]
     [int] $MaxAttempts = 8,
+    [switch] $RequireSourceScheduleReady,
+    [ValidateRange(65, 1000000)]
+    [int] $LongRunMaxAttempts = 100000,
     [ValidateRange(1, 64)]
     [int] $RequiredVerifiedActions = 4,
     [ValidateRange(1, 128)]
@@ -21,7 +24,13 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-if ($RequiredVerifiedActions -gt $MaxAttempts) {
+$effectiveMaxAttempts = if ($RequireSourceScheduleReady) {
+    $LongRunMaxAttempts
+} else {
+    $MaxAttempts
+}
+
+if ($RequiredVerifiedActions -gt $effectiveMaxAttempts) {
     throw "RequiredVerifiedActions must not exceed MaxAttempts."
 }
 
@@ -63,13 +72,14 @@ $calibrationOutput = & (Join-Path $PSScriptRoot `
     -RunId $RunId `
     -BackendPort $BackendPort `
     -ProductPort $ProductPort `
-    -MaxAttempts $MaxAttempts `
+    -MaxAttempts $effectiveMaxAttempts `
     -RequiredVerifiedActions $RequiredVerifiedActions `
     -SaveBoundaryMaxAttempts $SaveBoundaryMaxAttempts `
     -ArtifactRetentionMode rolling `
     -MaxPersistedIterations $MaxPersistedIterations `
     -MinFreeSpaceMb $MinFreeSpaceMb `
     -CaptureGoldenWalnutFreshSaveEvidence `
+    -RequireGoldenWalnutSourceScheduleReady:$RequireSourceScheduleReady `
     -StartupTimeoutSeconds $StartupTimeoutSeconds
 if ($LASTEXITCODE -ne 0) {
     throw "Product calibration stage failed with exit code $LASTEXITCODE."
@@ -81,6 +91,13 @@ if ($calibrationSummary.status -ne "passed" -or
     [int]$calibrationSummary.golden_walnut_fresh_save_episode_count -lt $RequiredVerifiedActions -or
     -not [bool]$calibrationSummary.native_save_boundary_verified) {
     throw "Product calibration did not produce Golden Walnut fresh-save evidence."
+}
+if ($RequireSourceScheduleReady -and
+    (-not [bool]$calibrationSummary.golden_walnut_source_milestone_ready -or
+     -not [bool]$calibrationSummary.golden_walnut_source_schedule_verified -or
+     [string]::IsNullOrWhiteSpace(
+         [string]$calibrationSummary.golden_walnut_source_schedule_path))) {
+    throw "Product calibration did not produce a verified Golden Walnut source schedule."
 }
 
 $freshSummaryPath = Join-Path (
@@ -102,12 +119,23 @@ $summary = [ordered]@{
         [string]$calibrationSummary.golden_walnut_fresh_save_episode_manifest_path
     episode_count =
         [int]$calibrationSummary.golden_walnut_fresh_save_episode_count
-    max_attempts = $MaxAttempts
+    max_attempts = $effectiveMaxAttempts
     verified_actions = [int]$calibrationSummary.verified_actions
     required_verified_actions = $RequiredVerifiedActions
     save_boundary_max_attempts = $SaveBoundaryMaxAttempts
     native_save_boundary_verified =
         [bool]$calibrationSummary.native_save_boundary_verified
+    source_schedule_required = [bool]$RequireSourceScheduleReady
+    source_milestone_ready =
+        [bool]$calibrationSummary.golden_walnut_source_milestone_ready
+    source_current_total_day =
+        [int]$calibrationSummary.golden_walnut_source_current_total_day
+    deadline_total_day_exclusive =
+        [int]$calibrationSummary.golden_walnut_deadline_total_day_exclusive
+    source_schedule_verified =
+        [bool]$calibrationSummary.golden_walnut_source_schedule_verified
+    source_schedule_path =
+        [string]$calibrationSummary.golden_walnut_source_schedule_path
     artifact_retention_mode = "rolling"
     min_free_space_mb = $MinFreeSpaceMb
     snapshot_artifact_mode = "content_addressed_gzip"

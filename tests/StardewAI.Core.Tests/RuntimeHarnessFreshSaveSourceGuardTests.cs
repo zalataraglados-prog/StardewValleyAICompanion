@@ -93,6 +93,14 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             "-MinFreeSpaceMb $MinFreeSpaceMb",
             workflow,
             StringComparison.Ordinal);
+        Assert.Contains(
+            "-RequireGoldenWalnutSourceScheduleReady:$RequireSourceScheduleReady",
+            workflow,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$effectiveMaxAttempts",
+            workflow,
+            StringComparison.Ordinal);
         Assert.DoesNotContain("Start-Process", workflow, StringComparison.Ordinal);
         Assert.DoesNotContain("Remove-Item", workflow, StringComparison.Ordinal);
 
@@ -138,6 +146,10 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             calibration,
             StringComparison.Ordinal);
         Assert.Contains(
+            "--require-golden-walnut-source-schedule-ready",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "--require-native-save-boundary",
             calibration,
             StringComparison.Ordinal);
@@ -155,6 +167,10 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains(
             "Golden Walnut fresh-save evidence capture produced no durable episode manifest.",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Golden Walnut long-run milestone did not produce a verified source schedule.",
             calibration,
             StringComparison.Ordinal);
         Assert.Contains(

@@ -16,7 +16,9 @@ Spring 1 新档首轮排序暴露的不是社交评分错误，而是上游缺�
 
 隐藏静音运行 `golden-walnut-starter-fix-v6-20261024-2140` 已证明同一新档可以按“领取礼物策略选择 -> 作物 Teacher 机械展开 -> 12 次原生跨日 -> 收获”生成 `82/82` 连续耐久 episode。`farm_layout` 保持有界地图读取，同时加入核桃来源证据域；相邻 episode 只允许最多 `4` tick 且岛屿/来源状态完全不变的被动观察间隙。运行目录内隔离发布 Backend、Product Executor 和 LiveTrainingLoop，避免共享 Release 锁导致旧二进制启动。该结果关闭采集、rolling retention、manifest 和中间场地准备的连续性基础设施，不等于 Golden Walnut 日程完成。
 
-正式 schedule 导出已对该真实 manifest 运行，并因缺少首次登岛原生跃迁失败关闭。所以下一步不得再次做固定动作数短跑，也不得把作物 Teacher 完成当作全局目标完成。固定实现顺序为：新增 Golden Walnut 专用长期里程碑状态 -> 每个有界 Teacher handoff 收口后重新读取 fresh Grandpa/日计划 -> 只有首次登岛、核桃来源增量、First Parrot、Western Turtle、Island House 三次跃迁全部出现才允许成功退出 -> 日数、attempt、磁盘或连续错误上限先到则保留 checkpoint 并失败关闭 -> 从同一 manifest 导出 schedule 并重建 Master Angler prerequisite audit。长期控制面只编排既有候选、Teacher 和执行器，不创建第二套姜岛动作系统。
+正式 schedule 导出已对该真实 manifest 运行，并因缺少首次登岛原生跃迁失败关闭。Golden Walnut 专用长期控制面现已按原定边界实现：显式模式要求 full/content-addressed 证据、日计划和 native save boundary；每个有界 Teacher handoff 收口后回到 fresh Grandpa/日计划，作物首日完成不再冒充全局完成；before 与 fresh after 都会用同一个严格 evaluator 核对锁定版本、存档、完整 `69/130` 来源目录、真实来源增量和四个姜岛里程碑。`total_days >= 224`、attempt、磁盘或连续错误上限先到均保留耐久证据并失败关闭。里程碑达到后仍由既有 episode schedule builder 从同一 manifest 证明四个原生跃迁并写出 schedule，当前状态本身不能替代历史证明。长期控制面只编排既有候选、Teacher 和执行器，没有创建第二套姜岛动作系统。
+
+下一固定执行顺序为：确认训练位置满足空间门 -> 运行一次受限长期新档并生成 `golden-walnut-fresh-save-source-schedule.json` -> 将该 schedule 交给现有 timeline proof 和 Master Angler prerequisite audit -> audit 通过后采集同一连续存档中的 Gourmand 第 2、3 单回执。任何一步失败都从耐久 manifest/报告诊断，不通过增大动作数、手填日期或忽略缺失跃迁绕过。
 
 ## 当前记录 · 2026-10-21 11 核心复杂度顺序
 

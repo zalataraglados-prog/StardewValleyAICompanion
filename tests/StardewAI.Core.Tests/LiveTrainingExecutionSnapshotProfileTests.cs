@@ -165,6 +165,78 @@ public sealed class LiveTrainingExecutionSnapshotProfileTests
     }
 
     [Fact]
+    public void GoldenWalnutLongRunRequiresEvidenceCapture()
+    {
+        Assert.Throws<ArgumentException>(() => LiveTrainingOptions.Parse(new[]
+        {
+            "--require-golden-walnut-source-schedule-ready"
+        }));
+    }
+
+    [Fact]
+    public void GoldenWalnutLongRunRequiresDailyPlanAndDurableBoundary()
+    {
+        Assert.Throws<ArgumentException>(() => LiveTrainingOptions.Parse(new[]
+        {
+            "--run-id",
+            "fresh-save-run",
+            "--snapshot-artifact-mode",
+            ContentAddressedJsonArtifactStore.ContentAddressedGzipMode,
+            "--capture-golden-walnut-fresh-save-evidence",
+            "--require-golden-walnut-source-schedule-ready"
+        }));
+    }
+
+    [Fact]
+    public void GoldenWalnutLongRunHasDeterministicSchedulePath()
+    {
+        var options = LiveTrainingOptions.Parse(new[]
+        {
+            "--run-id",
+            "fresh-save-run",
+            "--snapshot-artifact-mode",
+            ContentAddressedJsonArtifactStore.ContentAddressedGzipMode,
+            "--capture-golden-walnut-fresh-save-evidence",
+            "--require-golden-walnut-source-schedule-ready",
+            "--use-daily-plan",
+            "--require-native-save-boundary"
+        });
+
+        Assert.True(options.RequireGoldenWalnutSourceScheduleReady);
+        Assert.EndsWith(
+            "golden-walnut-fresh-save-source-schedule.json",
+            options.GoldenWalnutFreshSaveSourceSchedulePath,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void GoldenWalnutLongRunUsesMilestoneThenExistingEpisodeScheduleProof()
+    {
+        var program = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.cs"));
+        var milestone = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.GoldenWalnutMilestone.cs"));
+
+        Assert.Contains(
+            "GoldenWalnutFreshSaveMilestoneEvaluator.Evaluate",
+            milestone,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "GoldenWalnutFreshSaveEpisodeScheduleBuilder.Write",
+            program,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "cropTeacherFirstDayCompleted &&\n" +
+            "        !options.RequireGoldenWalnutSourceScheduleReady",
+            program.Replace("\r\n", "\n", StringComparison.Ordinal),
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void AfterExecutionReadsTheConfiguredProfile()
     {
         var source = File.ReadAllText(FindRepositoryFile(

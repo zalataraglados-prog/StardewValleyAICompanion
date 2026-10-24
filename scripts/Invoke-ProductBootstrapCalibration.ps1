@@ -21,6 +21,7 @@ param(
     [ValidateRange(1024, [int]::MaxValue)]
     [int] $MinFreeSpaceMb = 8192,
     [switch] $CaptureGoldenWalnutFreshSaveEvidence,
+    [switch] $RequireGoldenWalnutSourceScheduleReady,
     [int] $StartupTimeoutSeconds = 180
 )
 
@@ -28,6 +29,10 @@ $ErrorActionPreference = "Stop"
 
 if ($RequiredVerifiedActions -gt $MaxAttempts) {
     throw "RequiredVerifiedActions must not exceed MaxAttempts."
+}
+if ($RequireGoldenWalnutSourceScheduleReady -and
+    -not $CaptureGoldenWalnutFreshSaveEvidence) {
+    throw "RequireGoldenWalnutSourceScheduleReady requires CaptureGoldenWalnutFreshSaveEvidence."
 }
 
 function Write-Json([string] $Path, $Value) {
@@ -231,6 +236,9 @@ try {
             "--save-boundary-max-attempts", $SaveBoundaryMaxAttempts
         )
     }
+    if ($RequireGoldenWalnutSourceScheduleReady) {
+        $arguments += "--require-golden-walnut-source-schedule-ready"
+    }
     $loopOutput = & dotnet $arguments
     $loopOutput | Set-Content -LiteralPath (Join-Path $artifactDirectory "loop.stdout.log") -Encoding utf8
     if ($LASTEXITCODE -ne 0) {
@@ -285,6 +293,16 @@ try {
              -PathType Leaf))) {
         throw "Golden Walnut fresh-save evidence capture produced no durable episode manifest."
     }
+    if ($RequireGoldenWalnutSourceScheduleReady -and
+        (-not [bool]$loopReport.golden_walnut_source_milestone_ready -or
+         -not [bool]$loopReport.golden_walnut_source_schedule_verified -or
+         [string]::IsNullOrWhiteSpace(
+             [string]$loopReport.golden_walnut_source_schedule_path) -or
+         -not (Test-Path -LiteralPath (
+             [string]$loopReport.golden_walnut_source_schedule_path) `
+             -PathType Leaf))) {
+        throw "Golden Walnut long-run milestone did not produce a verified source schedule."
+    }
 
     $summary = [ordered]@{
         schema_version = "stardewai.product_bootstrap_calibration.v1"
@@ -312,6 +330,18 @@ try {
             [string]$loopReport.golden_walnut_fresh_save_episode_manifest_path
         golden_walnut_fresh_save_episode_count =
             [int]$loopReport.golden_walnut_fresh_save_episode_count
+        golden_walnut_source_schedule_required =
+            [bool]$loopReport.golden_walnut_source_schedule_required
+        golden_walnut_source_milestone_ready =
+            [bool]$loopReport.golden_walnut_source_milestone_ready
+        golden_walnut_source_current_total_day =
+            [int]$loopReport.golden_walnut_source_current_total_day
+        golden_walnut_deadline_total_day_exclusive =
+            [int]$loopReport.golden_walnut_deadline_total_day_exclusive
+        golden_walnut_source_schedule_verified =
+            [bool]$loopReport.golden_walnut_source_schedule_verified
+        golden_walnut_source_schedule_path =
+            [string]$loopReport.golden_walnut_source_schedule_path
         max_attempts = $MaxAttempts
         verified_actions = [int]$loopReport.verified_actions
         required_verified_actions = $RequiredVerifiedActions
