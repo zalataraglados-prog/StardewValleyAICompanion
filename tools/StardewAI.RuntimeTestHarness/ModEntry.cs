@@ -77,6 +77,7 @@ public sealed partial class ModEntry : Mod
     private ActiveVolcanoSetup? activeVolcanoSetup;
     private ActiveNativeTool? activeNativeTool;
     private ActiveAdjacentTileAction? activeAdjacentTileAction;
+    private ActiveClearObstacleApproach? activeClearObstacleApproach;
     private ActiveClearObstacle? activeClearObstacle;
     private ActiveMineStone? activeMineStone;
     private ActiveResourceClump? activeResourceClump;
@@ -602,6 +603,7 @@ public sealed partial class ModEntry : Mod
         TickDeferredCombatRestore();
         TickNativeTool();
         TickAdjacentTileAction();
+        TickClearObstacleApproach();
         TickClearObstacle();
         TickMineStone();
         TickResourceClump();
@@ -2803,6 +2805,7 @@ public sealed partial class ModEntry : Mod
             activeVolcanoSetup is not null ||
             activeNativeTool is not null ||
             activeAdjacentTileAction is not null ||
+            activeClearObstacleApproach is not null ||
             activeClearObstacle is not null ||
             activeMineStone is not null ||
             activeResourceClump is not null ||

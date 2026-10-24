@@ -127,6 +127,48 @@ internal static partial class BootstrapSelfTest
                     value.TileCount == 8),
             "A reachable native refill source did not admit a low-water crop plan.");
 
+        var clearanceLayoutPath = Path.Combine(
+            root,
+            "low-water-clearance-refill-layout-snapshot.json");
+        Write(clearanceLayoutPath,
+            MoneyCropTeacherLayoutSnapshot(
+                3,
+                includeRefillSource: true,
+                existingSeedId: "472",
+                existingSeedQuantity: 14,
+                requireRefillClearance: true));
+        var clearanceRequestPath = Path.Combine(
+            root,
+            "low-water-clearance-refill-request.json");
+        Write(clearanceRequestPath,
+            new MoneyRevenueCropProductionTeacherRequest
+            {
+                SnapshotPath = lowWaterSourcePath,
+                FarmLayoutSnapshotPaths = new[] { clearanceLayoutPath },
+                DecisionId =
+                    "teacher.money.crop.spring7.low-water-clearance-refill",
+                DecisionRecordedAt = "2026-10-18T00:00:00Z",
+                MaximumTileCount = 8,
+                MaxQueueItemCount = 8
+            });
+        var clearanceDecision =
+            MoneyRevenueCropProductionTeacherDecisionBuilder.Build(
+                clearanceRequestPath);
+        var clearanceCommitment = clearanceDecision.Commitments.Single();
+        Require(clearanceDecision.TeacherCandidateEvaluations.Any(value =>
+                    value.SeedId == "472" &&
+                    value.Admitted &&
+                    value.WateringRefillRouteVerified &&
+                    value.TileCount == 8) &&
+                clearanceCommitment.WateringRefillPreparationTiles
+                    .SequenceEqual(new[]
+                    {
+                        new MoneyRevenueCropPlantingTile(2, 2)
+                    }) &&
+                !clearanceCommitment.Tiles.Contains(
+                    clearanceCommitment.WateringRefillPreparationTiles[0]),
+            "A bounded one-clearance native refill corridor was not bound separately from crop tiles.");
+
         var noRefillLayoutPath = Path.Combine(
             root,
             "low-water-no-refill-layout-snapshot.json");
@@ -557,7 +599,8 @@ internal static partial class BootstrapSelfTest
         int wateringCanWaterLeft = 40,
         bool includeRefillSource = true,
         string existingSeedId = "476",
-        int existingSeedQuantity = 1)
+        int existingSeedQuantity = 1,
+        bool requireRefillClearance = false)
     {
         var source = MoneyCropTeacherSourceSnapshot(
             wateringCanWaterLeft,
@@ -591,18 +634,31 @@ internal static partial class BootstrapSelfTest
                     {
                         tile_x = index % 4,
                         tile_y = index / 4,
-                        status = includeRefillSource && index == 11
+                        status = includeRefillSource &&
+                                index == (requireRefillClearance ? 0 : 11)
                             ? "blocked_not_diggable"
+                            : requireRefillClearance && index is 2 or 6
+                                ? "blocked_not_diggable"
+                            : requireRefillClearance && index == 10
+                                ? "requires_single_clearance_then_till"
                             : index == 0
                                 ? "already_prepared"
                                 : "ready_to_till",
-                        map_passable = !includeRefillSource || index != 11,
+                        map_passable = !includeRefillSource ||
+                            index != (requireRefillClearance ? 0 : 11) &&
+                            (!requireRefillClearance || index is not (2 or 6)),
                         native_blocked_without_characters =
-                            includeRefillSource && index == 11,
+                            includeRefillSource &&
+                            index == (requireRefillClearance ? 0 : 11) ||
+                            requireRefillClearance && index is 2 or 6 or 10,
                         watering_can_refill_source =
-                            includeRefillSource && index == 11,
+                            includeRefillSource &&
+                            index == (requireRefillClearance ? 0 : 11),
                         watering_refill_approach_standable =
-                            !includeRefillSource || index != 11
+                            (!includeRefillSource ||
+                                index != (requireRefillClearance ? 0 : 11)) &&
+                            (!requireRefillClearance ||
+                                index is not (2 or 6 or 10))
                     }).ToArray()
                 })
             }, JsonDefaults.Options)

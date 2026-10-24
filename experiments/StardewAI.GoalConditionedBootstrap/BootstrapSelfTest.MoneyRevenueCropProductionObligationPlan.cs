@@ -576,6 +576,8 @@ internal static partial class BootstrapSelfTest
 
         Require(plan.Status == "site_preparation_plan_ready" &&
                 plan.TileCount == 100 &&
+                plan.PlantingTileCount == 100 &&
+                plan.WateringRefillPreparationTileCount == 0 &&
                 plan.AlreadyPreparedCount == 0 &&
                 plan.DirectTillCount == 100 &&
                 plan.ClearThenRebindCount == 0 &&

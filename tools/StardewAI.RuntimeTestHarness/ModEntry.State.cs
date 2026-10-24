@@ -228,7 +228,7 @@ public sealed partial class ModEntry : Mod
             Target = target;
             Path = path;
             RequiredStand = requiredStand;
-            LastPosition = Game1.player.Position;
+            PathCursor = new ExecutorPathCursor();
             MaxTicks = Math.Max(180, path.Count * 90 + 180);
         }
 
@@ -238,11 +238,9 @@ public sealed partial class ModEntry : Mod
         public Point Target { get; }
         public Point? RequiredStand { get; }
         public List<Point> Path { get; }
-        public int PathIndex { get; set; }
+        public ExecutorPathCursor PathCursor { get; }
         public int ElapsedTicks { get; set; }
-        public int StuckTicks { get; set; }
         public int MaxTicks { get; }
-        public Vector2 LastPosition { get; set; }
     }
 
     private sealed class ActiveCatchFish

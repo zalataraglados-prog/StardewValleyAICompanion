@@ -64,6 +64,14 @@ public static class MoneyRevenueCropNativeProductionRunPlanBuilder
             var matches = requestedIntents.Where(value =>
                     value.CommitmentId == commitment.CommitmentId)
                 .ToArray();
+            var refillPreparationTiles = matches.Length == 1
+                ? matches[0].WateringRefillPreparationTiles ??
+                    Array.Empty<MoneyRevenueCropPlantingTile>()
+                : Array.Empty<MoneyRevenueCropPlantingTile>();
+            var completePreparationLayout = matches.Length == 1 &&
+                    matches[0].Tiles is not null
+                ? matches[0].Tiles.Concat(refillPreparationTiles).ToArray()
+                : Array.Empty<MoneyRevenueCropPlantingTile>();
             Require(matches.Length == 1 &&
                     string.Equals(
                         matches[0].LocationId,
@@ -75,7 +83,16 @@ public static class MoneyRevenueCropNativeProductionRunPlanBuilder
                         tile.TileX >= 0 && tile.TileY >= 0) &&
                     matches[0].Tiles.Distinct().Count() ==
                         matches[0].Tiles.Length &&
-                    FitsFarmLayoutProjection(matches[0].Tiles),
+                    refillPreparationTiles.Length <=
+                        MoneyRevenueCropProductionTeacherDecisionBuilder
+                            .MaxWateringRefillPreparationTileCount &&
+                    refillPreparationTiles.All(tile =>
+                        tile.TileX >= 0 && tile.TileY >= 0) &&
+                    refillPreparationTiles.Distinct().Count() ==
+                        refillPreparationTiles.Length &&
+                    completePreparationLayout.Distinct().Count() ==
+                        completePreparationLayout.Length &&
+                    FitsFarmLayoutProjection(completePreparationLayout),
                 "Money Revenue crop native-production layout intent is invalid for " +
                 commitment.CommitmentId + ".");
             return new LayoutState(
@@ -88,6 +105,13 @@ public static class MoneyRevenueCropNativeProductionRunPlanBuilder
                     .Distinct().Count() ==
                 intents.Sum(value => value.Tiles.Length),
             "Money Revenue crop native-production layout intents overlap.");
+        var plantingTiles = intents.SelectMany(value => value.Tiles)
+            .ToHashSet();
+        Require(requestedIntents.SelectMany(value =>
+                    value.WateringRefillPreparationTiles ??
+                    Array.Empty<MoneyRevenueCropPlantingTile>())
+                .All(tile => !plantingTiles.Contains(tile)),
+            "Money Revenue crop native-production refill preparation overlaps a crop layout.");
 
         var firstPlantingDay = plan.Commitments.Min(value =>
             value.PlantingTotalDay);

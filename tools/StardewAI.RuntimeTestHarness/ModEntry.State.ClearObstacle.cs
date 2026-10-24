@@ -6,6 +6,33 @@ namespace StardewAI.RuntimeTestHarness;
 
 public sealed partial class ModEntry
 {
+    private sealed class ActiveClearObstacleApproach
+    {
+        public ActiveClearObstacleApproach(
+            PendingExecution pending,
+            GameLocation location,
+            Point target,
+            string requested,
+            List<Point> path)
+        {
+            Pending = pending;
+            Location = location;
+            Target = target;
+            Requested = requested;
+            Path = path;
+            MaxTicks = Math.Max(180, path.Count * 90 + 180);
+        }
+
+        public PendingExecution Pending { get; }
+        public GameLocation Location { get; }
+        public Point Target { get; }
+        public string Requested { get; }
+        public List<Point> Path { get; }
+        public ExecutorPathCursor PathCursor { get; } = new();
+        public int MaxTicks { get; }
+        public int ElapsedTicks { get; set; }
+    }
+
     private sealed class ActiveClearObstacle
     {
         public ActiveClearObstacle(

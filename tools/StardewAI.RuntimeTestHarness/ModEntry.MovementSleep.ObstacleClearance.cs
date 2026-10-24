@@ -102,11 +102,6 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
-        if (ManhattanDistance(Game1.player.TilePoint, target) > 1)
-        {
-            pending.Completion.SetResult(BlockedWithPrimitive(request, "clear_obstacle", requested, ClearObstacleObservedEffect(target), "clear_obstacle_target_not_adjacent"));
-            return;
-        }
         var targetIsArtifactSpot = location.objects.TryGetValue(target.ToVector2(), out var targetObject) &&
             targetObject.QualifiedItemId is "(O)590" or "(O)SeedSpot";
         if (targetIsTreeMoss)
@@ -201,6 +196,33 @@ public sealed partial class ModEntry : Mod
             pending.Completion.SetResult(BlockedWithPrimitive(request, "clear_obstacle", requested, ClearObstacleObservedEffect(target), "clear_obstacle_output_multiset_projection_invalid"));
             return;
         }
+        if (ManhattanDistance(Game1.player.TilePoint, target) > 1)
+        {
+            var path = BuildAdjacentToolPath(
+                location,
+                target,
+                request.MaxMovementTiles ?? 512,
+                out var moveReason,
+                avoidSoftObstacles: false,
+                allowRemovableObstacles: false);
+            if (path is null || path.Count == 0)
+            {
+                pending.Completion.SetResult(BlockedWithPrimitive(
+                    request,
+                    "clear_obstacle",
+                    requested,
+                    ClearObstacleObservedEffect(target),
+                    "clear_obstacle_approach_" + moveReason));
+                return;
+            }
+            activeClearObstacleApproach = new ActiveClearObstacleApproach(
+                pending,
+                location,
+                target,
+                requested,
+                path);
+            return;
+        }
         Dictionary<ClearanceOutputItemKey, int>? outputItemMultisetBefore = null;
         if (expectedOutputItems is not null &&
             !TryReadClearanceDebrisItemMultiset(location, out outputItemMultisetBefore))
@@ -252,6 +274,76 @@ public sealed partial class ModEntry : Mod
             defenseBookMailBefore,
             targetTerrainFeatureBefore,
             Math.Clamp(request.MaxCrops, 1, 64));
+    }
+
+    private void TickClearObstacleApproach()
+    {
+        if (activeClearObstacleApproach is null)
+            return;
+
+        var active = activeClearObstacleApproach;
+        try
+        {
+            active.ElapsedTicks++;
+            if (!Context.IsWorldReady ||
+                !ReferenceEquals(Game1.currentLocation, active.Location))
+            {
+                CompleteClearObstacleApproach(
+                    active,
+                    "clear_obstacle_approach_location_changed_or_world_unavailable");
+                return;
+            }
+            if (active.ElapsedTicks > active.MaxTicks)
+            {
+                WriteExecutorDiagnosticDump("clear_obstacle_approach_timeout");
+                CompleteClearObstacleApproach(
+                    active,
+                    "clear_obstacle_approach_timeout");
+                return;
+            }
+            if (ManhattanDistance(Game1.player.TilePoint, active.Target) <= 1)
+            {
+                StopAllMovement("clear_obstacle_approach_completed");
+                activeClearObstacleApproach = null;
+                StartClearObstacle(active.Pending);
+                return;
+            }
+            if (!TryAdvanceExecutorPath(
+                    active.Location,
+                    active.Path,
+                    active.PathCursor,
+                    out var reason))
+            {
+                WriteExecutorDiagnosticDump(
+                    "clear_obstacle_approach_" + reason);
+                CompleteClearObstacleApproach(
+                    active,
+                    "clear_obstacle_approach_" + reason);
+            }
+        }
+        catch (Exception ex)
+        {
+            WriteExecutorDiagnosticDump(
+                "clear_obstacle_approach_exception:" + ex.GetType().Name);
+            CompleteClearObstacleApproach(
+                active,
+                "clear_obstacle_approach_execution_exception:" +
+                    ex.GetType().Name);
+        }
+    }
+
+    private void CompleteClearObstacleApproach(
+        ActiveClearObstacleApproach active,
+        string reason)
+    {
+        StopAllMovement(reason);
+        activeClearObstacleApproach = null;
+        active.Pending.Completion.SetResult(BlockedWithPrimitive(
+            active.Pending.Request,
+            "clear_obstacle",
+            active.Requested,
+            ClearObstacleObservedEffect(active.Target),
+            reason));
     }
 
     private void TickClearObstacle()

@@ -26,6 +26,8 @@ Golden Walnut 新档日程的证据保存硬伤已修复，但准入结论不变
 
 首次正式长期尝试 `golden-walnut-source-schedule-v1-20261024-222622` 进一步证明控制面能持续跨日，但也在 Spring 17 暴露真实阻塞：Teacher 看到 `(O)472 x14` 和水壶 `3/40`，却因没有读取运行时已有的原生补水能力而连续五次拒绝。修正把 `CanRefillWateringCanOnTile` 事实加入 `farm_site_preparation_context.v2`，并复用共享网格寻路做 Teacher 准入；只有确证补水连通才按 `capacity=40` 预算，否则仍按当前余水保守限制。连续错误形成的 episode 间隙仍由原验证器拒绝，绝不回填；manifest 收尾失败改为结构化 incomplete。故该 run 不得进入训练或 schedule，必须从新隔离存档重跑，正式训练状态仍为 `false`。
 
+补水准入现进一步失败关闭到“确切可建设通道”，不再把地图静态可达性误当作当前已可走。完整 Farm 证据上的最优通道只需清除 `(70,23)` 的一棵树；Teacher 将最多 4 个透明、单一可清障格显式绑定为准备义务，并在 decision/receipt/run-plan/site-preparation 全链重放。额外格不参与任何作物动作或训练标签；清障仍使用唯一原生执行器，只新增共享 BFS 到相邻格的前置阶段，抵达后重新采集严格前态。v3 暴露并关闭相邻地块动作的旧转向路径循环后，v4 `golden-walnut-source-schedule-v4-20261025-0003` 已连续取得两格清障/锄地、`(70,23)` 树木 Axe 清除、`6/6` 播种、`6/6` 首日浇水、原生睡眠/存档边界和次日 `6/6` 浇水回执。该证据只关闭补水通道的真实执行缺口；Golden Walnut source schedule 仍未生成，所以正式训练依旧为 `false`。
+
 该首轮的排序产物还证明最大分数目标别名和编译边界存在断链：`grandpa.maximum_21` 被旧解析器当成无关目标，62 个候选同分后按 ID 误选商店。现在三种最大分数 ID 由 Contracts 单一契约识别，运行脚本传权威 ID；解析成功后，完整候选仍留在响应中供审计，但日计划只编译 `bound_candidate_ids`。同一真实 Spring 1 快照的离线回放已解析到 `raise_friendships` 并绑定 28 个 NPC 候选。`initial-snapshot.json` 同时改为保存桥返回的原始 JSON，避免 PowerShell 反序列化/重序列化造成 state hash 不自洽。聚焦回归 `164/164`；这只恢复 Teacher 目标到候选的正确入口，不等于模型训练、连续新档证据或正式准入。
 
 采集脚本此前虽然声明最多 8 次尝试，却把退出目标固定为 1 个 verified 动作；因此首轮得到 1 条 episode 是入口配置的必然结果。现默认目标改为 `4 verified / 8 attempts`，成功后还必须完成现有原生跨日存档边界，并同时验证 verified、episode 与 boundary 报告字段。该变更只修复下一次证据采集的退出条件；尚未产生新的真实运行，所以不改变任何 coverage 分子或 `formal_product_training_authorized=false`。

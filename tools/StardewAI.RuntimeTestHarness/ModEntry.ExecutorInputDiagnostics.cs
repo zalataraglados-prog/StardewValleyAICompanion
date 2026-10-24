@@ -126,6 +126,10 @@ public sealed partial class ModEntry
             return activeNativeTool.Pending.Request.OptionId;
         }
 
+        if (activeClearObstacleApproach is not null)
+        {
+            return activeClearObstacleApproach.Pending.Request.OptionId;
+        }
         if (activeClearObstacle is not null)
         {
             return activeClearObstacle.Pending.Request.OptionId;

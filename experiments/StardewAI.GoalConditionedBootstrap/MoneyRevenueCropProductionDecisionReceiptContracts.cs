@@ -165,6 +165,10 @@ public sealed class MoneyRevenueCropProductionDecisionCommitment
     [JsonPropertyName("tiles")]
     public MoneyRevenueCropPlantingTile[] Tiles { get; set; } =
         Array.Empty<MoneyRevenueCropPlantingTile>();
+
+    [JsonPropertyName("watering_refill_preparation_tiles")]
+    public MoneyRevenueCropPlantingTile[] WateringRefillPreparationTiles
+        { get; set; } = Array.Empty<MoneyRevenueCropPlantingTile>();
 }
 
 public sealed record MoneyRevenueCropProductionDecisionMutationReceipt(

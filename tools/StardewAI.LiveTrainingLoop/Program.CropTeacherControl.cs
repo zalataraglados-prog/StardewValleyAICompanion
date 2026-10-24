@@ -241,10 +241,23 @@ static partial class Program
             throw new InvalidDataException(
                 "crop_teacher_site_preparation_layout_empty");
         }
-        var minX = layout.Tiles.Min(tile => tile.TileX);
-        var minY = layout.Tiles.Min(tile => tile.TileY);
-        var maxX = layout.Tiles.Max(tile => tile.TileX);
-        var maxY = layout.Tiles.Max(tile => tile.TileY);
+        var refillPreparationTiles =
+            layout.WateringRefillPreparationTiles ??
+            Array.Empty<MoneyRevenueCropPlantingTile>();
+        var preparationTiles = layout.Tiles
+            .Concat(refillPreparationTiles)
+            .Distinct()
+            .ToArray();
+        if (preparationTiles.Length !=
+            layout.Tiles.Length + refillPreparationTiles.Length)
+        {
+            throw new InvalidDataException(
+                "crop_teacher_site_preparation_layout_overlap");
+        }
+        var minX = preparationTiles.Min(tile => tile.TileX);
+        var minY = preparationTiles.Min(tile => tile.TileY);
+        var maxX = preparationTiles.Max(tile => tile.TileX);
+        var maxY = preparationTiles.Max(tile => tile.TileY);
         var snapshotUrl = PlanningHandoffCapture.BuildFarmLayoutSnapshotUrl(
             options.BridgeSnapshotUrl,
             minX,
@@ -284,6 +297,7 @@ static partial class Program
             PreparationSnapshotPath = Path.GetFullPath(snapshotPath),
             LocationId = layout.LocationId,
             Tiles = layout.Tiles,
+            WateringRefillPreparationTiles = refillPreparationTiles,
             FormalProductTrainingAuthorized = false
         };
         var prefix = CropTeacherArtifactPrefix(options, iteration, "site");

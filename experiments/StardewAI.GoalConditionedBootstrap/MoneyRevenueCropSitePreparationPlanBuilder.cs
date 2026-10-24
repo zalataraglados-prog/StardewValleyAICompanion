@@ -14,8 +14,9 @@ public static partial class MoneyRevenueCropSitePreparationPlanBuilder
             MoneyRevenueCropSitePreparationPlanRequest>(
                 fullRequestPath,
                 "Money Revenue crop site-preparation plan request");
-        Require(request.SchemaVersion ==
-                    "money_revenue_crop_site_preparation_plan_request.v1" &&
+        Require(request.SchemaVersion is
+                    "money_revenue_crop_site_preparation_plan_request.v1" or
+                    "money_revenue_crop_site_preparation_plan_request.v2" &&
                 !string.IsNullOrWhiteSpace(request.CommitmentId) &&
                 !string.IsNullOrWhiteSpace(request.LocationId) &&
                 request.Tiles is not null &&
@@ -73,8 +74,28 @@ public static partial class MoneyRevenueCropSitePreparationPlanBuilder
             .OrderBy(value => value.TileY)
             .ThenBy(value => value.TileX)
             .ToArray();
+        var refillPreparationTiles =
+            request.WateringRefillPreparationTiles ??
+            Array.Empty<MoneyRevenueCropPlantingTile>();
+        Require(request.SchemaVersion.EndsWith(".v2", StringComparison.Ordinal) ||
+                refillPreparationTiles.Length == 0,
+            "Money Revenue crop site-preparation v1 request cannot add refill preparation tiles.");
+        var allPreparationTiles = requestedTiles
+            .Concat(refillPreparationTiles)
+            .OrderBy(value => value.TileY)
+            .ThenBy(value => value.TileX)
+            .ToArray();
         Require(requestedTiles.Length == commitment.TileCount &&
-                requestedTiles.Distinct().Count() == requestedTiles.Length,
+                requestedTiles.Distinct().Count() == requestedTiles.Length &&
+                refillPreparationTiles.Length <=
+                    MoneyRevenueCropProductionTeacherDecisionBuilder
+                        .MaxWateringRefillPreparationTileCount &&
+                refillPreparationTiles.Distinct().Count() ==
+                    refillPreparationTiles.Length &&
+                allPreparationTiles.Distinct().Count() ==
+                    allPreparationTiles.Length &&
+                allPreparationTiles.All(value =>
+                    value.TileX >= 0 && value.TileY >= 0),
             "Money Revenue crop site-preparation layout does not contain the exact unique tile count.");
         var context = ReadStateValue(
             preparationSnapshot,
@@ -108,7 +129,7 @@ public static partial class MoneyRevenueCropSitePreparationPlanBuilder
         var tillCandidates = Candidates(
             availability.Options,
             "executor.till_soil");
-        var steps = requestedTiles.Select(tile => BuildStep(
+        var steps = allPreparationTiles.Select(tile => BuildStep(
                 tile,
                 contextTiles,
                 clearCandidates,
@@ -137,6 +158,9 @@ public static partial class MoneyRevenueCropSitePreparationPlanBuilder
             PlantingTotalDay = commitment.PlantingTotalDay,
             LocationId = request.LocationId,
             TileCount = steps.Length,
+            PlantingTileCount = requestedTiles.Length,
+            WateringRefillPreparationTileCount =
+                refillPreparationTiles.Length,
             AlreadyPreparedCount = steps.Count(step =>
                 step.PlanStatus == "already_prepared"),
             DirectTillCount = steps.Count(step =>

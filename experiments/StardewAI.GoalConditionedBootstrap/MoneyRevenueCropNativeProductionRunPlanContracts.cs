@@ -32,7 +32,9 @@ public sealed record MoneyRevenueCropNativeProductionLayoutIntent(
     [property: JsonPropertyName("commitment_id")] string CommitmentId,
     [property: JsonPropertyName("location_id")] string LocationId,
     [property: JsonPropertyName("tiles")]
-    MoneyRevenueCropPlantingTile[] Tiles);
+    MoneyRevenueCropPlantingTile[] Tiles,
+    [property: JsonPropertyName("watering_refill_preparation_tiles")]
+    MoneyRevenueCropPlantingTile[]? WateringRefillPreparationTiles = null);
 
 public sealed record MoneyRevenueCropNativeSeedAcquisitionIntent(
     [property: JsonPropertyName("commitment_id")] string CommitmentId,

@@ -67,6 +67,9 @@ public sealed class ExecutorInputLifecycleSourceGuardTests
             "ModEntry.MovementSleep.ObstacleClearance.cs");
 
         Assert.Contains("private void StartClearObstacle(", source, StringComparison.Ordinal);
+        Assert.Contains("BuildAdjacentToolPath(", source, StringComparison.Ordinal);
+        Assert.Contains("TryAdvanceExecutorPath(", source, StringComparison.Ordinal);
+        Assert.Contains("private void TickClearObstacleApproach(", source, StringComparison.Ordinal);
         Assert.Contains("private void TickClearObstacleCore(", source, StringComparison.Ordinal);
         Assert.Contains("active.Lifecycle.Advance(ObserveNativeToolAction())", source, StringComparison.Ordinal);
         Assert.Contains("Game1.player.BeginUsingTool();", source, StringComparison.Ordinal);
@@ -131,6 +134,24 @@ public sealed class ExecutorInputLifecycleSourceGuardTests
             "active.StuckTicks",
             obstacle,
             StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AdjacentTileActionsUseSharedTurnAwarePathFollower()
+    {
+        var action = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.CropTileActions.cs");
+        var state = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.State.cs");
+
+        Assert.Contains("TryAdvanceExecutorPath(", action, StringComparison.Ordinal);
+        Assert.Contains("ExecutorPathCursor PathCursor", state, StringComparison.Ordinal);
+        Assert.DoesNotContain("action.PathIndex", action, StringComparison.Ordinal);
+        Assert.DoesNotContain("action.StuckTicks", action, StringComparison.Ordinal);
     }
 
     [Fact]

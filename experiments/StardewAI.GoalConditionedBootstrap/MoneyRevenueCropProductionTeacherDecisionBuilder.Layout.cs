@@ -118,7 +118,9 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
         return result.ToArray();
     }
 
-    private static bool HasVerifiedWateringRefillRoute(
+    public const int MaxWateringRefillPreparationTileCount = 4;
+
+    private static WateringRefillRouteProof BuildWateringRefillRouteProof(
         IReadOnlyCollection<LayoutTile> tiles,
         IReadOnlyCollection<LayoutTile> viableTiles,
         int mapWidth,
@@ -137,49 +139,116 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
             .ThenBy(value => value.TileX)
             .FirstOrDefault();
         if (start is null)
-            return false;
+            return WateringRefillRouteProof.Unverified;
 
-        var blocked = tiles
-            .Where(value => !value.WateringRefillApproachStandable)
-            .Select(value => RouteGridPathfinder.Key(
+        var byCoordinate = tiles.ToDictionary(
+            value => (value.TileX, value.TileY));
+        var goals = tiles
+            .Where(value => value.WateringCanRefillSource)
+            .SelectMany(value => RouteGridPathfinder.Neighbors(
                 value.TileX,
                 value.TileY))
-            .ToHashSet(StringComparer.Ordinal);
-        var noExtraBlockedTiles = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var source in tiles.Where(value =>
-                     value.WateringCanRefillSource))
+            .Where(value =>
+                RouteGridPathfinder.InBounds(
+                    value.X,
+                    value.Y,
+                    mapWidth,
+                    mapHeight) &&
+                byCoordinate.TryGetValue((value.X, value.Y), out var tile) &&
+                (tile.WateringRefillApproachStandable ||
+                    tile.Status == "requires_single_clearance_then_till"))
+            .Select(value => (value.X, value.Y))
+            .ToHashSet();
+        if (goals.Count == 0)
+            return WateringRefillRouteProof.Unverified;
+
+        var startCoordinate = (start.TileX, start.TileY);
+        var costs = new Dictionary<(int X, int Y), RouteCost>
         {
-            foreach (var stand in RouteGridPathfinder.Neighbors(
-                         source.TileX,
-                         source.TileY))
+            [startCoordinate] = new RouteCost(0, 0)
+        };
+        var previous = new Dictionary<(int X, int Y), (int X, int Y)>();
+        var frontier = new PriorityQueue<
+            (int X, int Y),
+            (int ClearanceCount, int PathLength, int Y, int X)>();
+        frontier.Enqueue(
+            startCoordinate,
+            (0, 0, start.TileY, start.TileX));
+        (int X, int Y)? reached = null;
+        while (frontier.TryDequeue(out var current, out var priority))
+        {
+            if (!costs.TryGetValue(current, out var currentCost) ||
+                currentCost.ClearanceCount != priority.ClearanceCount ||
+                currentCost.PathLength != priority.PathLength)
+            {
+                continue;
+            }
+            if (goals.Contains(current))
+            {
+                reached = current;
+                break;
+            }
+
+            foreach (var next in RouteGridPathfinder.Neighbors(
+                         current.X,
+                         current.Y))
             {
                 if (!RouteGridPathfinder.InBounds(
-                        stand.X,
-                        stand.Y,
+                        next.X,
+                        next.Y,
                         mapWidth,
                         mapHeight) ||
-                    blocked.Contains(RouteGridPathfinder.Key(
-                        stand.X,
-                        stand.Y)))
+                    !byCoordinate.TryGetValue((next.X, next.Y), out var tile))
                 {
                     continue;
                 }
-
-                if (RouteGridPathfinder.ShortestPathLength(
-                        start.TileX,
-                        start.TileY,
-                        stand.X,
-                        stand.Y,
-                        mapWidth,
-                        mapHeight,
-                        blocked,
-                        noExtraBlockedTiles).HasValue)
+                var requiresClearance = tile.Status ==
+                    "requires_single_clearance_then_till";
+                if (!tile.WateringRefillApproachStandable &&
+                    !requiresClearance)
                 {
-                    return true;
+                    continue;
                 }
+                var nextCost = new RouteCost(
+                    currentCost.ClearanceCount + (requiresClearance ? 1 : 0),
+                    currentCost.PathLength + 1);
+                if (nextCost.ClearanceCount >
+                    MaxWateringRefillPreparationTileCount ||
+                    costs.TryGetValue((next.X, next.Y), out var oldCost) &&
+                    oldCost.CompareTo(nextCost) <= 0)
+                {
+                    continue;
+                }
+                costs[(next.X, next.Y)] = nextCost;
+                previous[(next.X, next.Y)] = current;
+                frontier.Enqueue(
+                    (next.X, next.Y),
+                    (nextCost.ClearanceCount,
+                        nextCost.PathLength,
+                        next.Y,
+                        next.X));
             }
         }
-        return false;
+        if (!reached.HasValue)
+            return WateringRefillRouteProof.Unverified;
+
+        var path = new List<(int X, int Y)> { reached.Value };
+        while (path[^1] != startCoordinate)
+            path.Add(previous[path[^1]]);
+        path.Reverse();
+        var preparationTiles = path
+            .Select(value => byCoordinate[value])
+            .Where(value => value.Status ==
+                "requires_single_clearance_then_till")
+            .Select(value => new MoneyRevenueCropPlantingTile(
+                value.TileX,
+                value.TileY))
+            .Distinct()
+            .ToArray();
+        return new WateringRefillRouteProof(
+            true,
+            path.Count - 1,
+            preparationTiles);
     }
 
     private static bool ReadRequiredBool(JsonElement value, string name)
@@ -275,4 +344,28 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
         bool NativeBlockedWithoutCharacters,
         bool WateringCanRefillSource,
         bool WateringRefillApproachStandable);
+
+    private readonly record struct RouteCost(
+        int ClearanceCount,
+        int PathLength) : IComparable<RouteCost>
+    {
+        public int CompareTo(RouteCost other)
+        {
+            var clearance = ClearanceCount.CompareTo(other.ClearanceCount);
+            return clearance != 0
+                ? clearance
+                : PathLength.CompareTo(other.PathLength);
+        }
+    }
+
+    private sealed record WateringRefillRouteProof(
+        bool Verified,
+        int PathLength,
+        MoneyRevenueCropPlantingTile[] PreparationTiles)
+    {
+        public static WateringRefillRouteProof Unverified { get; } = new(
+            false,
+            0,
+            Array.Empty<MoneyRevenueCropPlantingTile>());
+    }
 }

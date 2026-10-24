@@ -32,6 +32,10 @@ Golden Walnut 日程专用长期模式现已接入同一个 LiveTrainingLoop，�
 
 首次受限长跑 `golden-walnut-source-schedule-v1-20261024-222622` 已在 E 盘运行游戏/存档、I 盘保存证据的隔离布局中推进到 Spring 17（`total_days=16`）。它完成了两轮作物 Teacher，但第三次派发在背包仍有 `(O)472 x14` 时因水壶只剩 `3/40` 被错误拒绝；这是 Teacher 的跨周期水量预算缺口，不是种子、执行器或动作缺失。透明农场布局现升级为 `farm_site_preparation_context.v2`，逐格绑定游戏原生补水判定与可站立事实，并由 Teacher 复用共享 `RouteGridPathfinder`；存在已验证补水路线时按单日容量计划，缺证时继续保守拒绝。原运行随后因五次无动作失败形成真实 episode 间隙，严格 manifest 校验正确拒绝；收尾路径也已改为结构化 incomplete，而非未捕获异常。该 run 仅作诊断，禁止拼接或恢复；必须从新隔离存档重跑。当前仍无 source schedule，所有准入分子和 `formal_product_training=false` 保持不变。
 
+第二次隔离诊断 `golden-walnut-source-schedule-v2-20261024-230638` 证明 Teacher 并非停滞：content-addressed 快照中的时间从 06:00 正常推进到 07:40，单份购种切片是在等待 Pierre 09:00 开门，随后按诊断要求主动停止。完整 80×65 Farm 证据进一步给出从紧凑作物区到原生补水源的最小路线：18 步、只需清除 `(70,23)` 一棵树。Teacher 策略现升级为“先最少清障、再最短路”，最多接受 4 个逐格透明证明为 `requires_single_clearance_then_till` 的通道格；这些格作为 `watering_refill_preparation_tiles` 贯穿 decision、receipt、native run request 和 site-preparation plan，但永不进入播种、浇水或收获批次。唯一 `executor.clear_obstacle` 已复用共享 BFS/逐帧移动，走到相邻格后才重新验证请求、采集输出前态并执行原生工具生命周期；没有作物专用移动器，也没有放宽浇水穿障规则。
+
+真实 v3 隔离运行先证明两格补水通道均能完成原生清障和 fresh rebind 后锄地，随后暴露相邻地块动作仍保留旧逐帧路径循环，长距离播种在转向时被误判为 `adjacent_action_route_drifted`。该旧循环现已并入唯一 `TryAdvanceExecutorPath`，并由源码守卫禁止重新分叉。全新 v4 `golden-walnut-source-schedule-v4-20261025-0003` 随后从 Spring 1 新档完成 6 次原生购种、返场、两格通道清障（含 `(70,23)` 树的 Axe 生命周期）、每次清障后的锄地、`6/6` 原生播种、`6/6` 原生浇水、回家睡眠、日期加一和存档边界；Spring 2 又完成 `6/6` 浇水后按本切片验收要求主动停止。该结果关闭“可建设补水通道能否进入真实作物闭环”的问题，但没有生成 Golden Walnut source schedule，也不提升 Master Angler 或正式训练分子。下一步是在提交当前修复后启动新的隔离长期运行，继续首次登岛与来源日程，不再扩张作物专用系统。
+
 当前五个 `CoverageGateReady` criterion 固定为：
 
 - `community_center_access_or_completion`

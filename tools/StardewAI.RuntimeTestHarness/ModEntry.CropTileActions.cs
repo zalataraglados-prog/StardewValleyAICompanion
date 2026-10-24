@@ -117,39 +117,21 @@ public sealed partial class ModEntry
             : AreAdjacent(Game1.player.TilePoint, action.Target);
         if (!reachedStand)
         {
-            if (action.PathIndex >= action.Path.Count)
+            if (!TryAdvanceExecutorPath(
+                    location,
+                    action.Path,
+                    action.PathCursor,
+                    out var pathReason))
             {
-                CompleteAdjacentTileActionBlocked(action, "adjacent_action_target_not_adjacent");
-                return;
-            }
-
-            var next = action.Path[action.PathIndex];
-            if (Game1.player.TilePoint == next)
-            {
-                action.PathIndex++;
-                action.StuckTicks = 0;
-                action.LastPosition = Game1.player.Position;
-                return;
-            }
-            if (!IsTileWalkable(location, next) || IsTileOccupiedByCharacter(location, next))
-            {
-                CompleteAdjacentTileActionBlocked(action, "adjacent_action_route_drifted");
-                return;
-            }
-
-            var direction = DirectionTo(Game1.player.TilePoint, next);
-            var moved = Vector2.DistanceSquared(action.LastPosition, Game1.player.Position) >= 0.01f;
-            action.LastPosition = Game1.player.Position;
-            StartMoving(direction);
-            MovePlayerForTick();
-            if (Game1.player.TilePoint == next)
-            {
-                action.PathIndex++;
-            }
-            action.StuckTicks = moved ? 0 : action.StuckTicks + 1;
-            if (action.StuckTicks > 45)
-            {
-                CompleteAdjacentTileActionBlocked(action, "adjacent_action_movement_stuck");
+                CompleteAdjacentTileActionBlocked(
+                    action,
+                    pathReason switch
+                    {
+                        "dynamic_path_blocked" => "adjacent_action_route_drifted",
+                        "movement_stuck" => "adjacent_action_movement_stuck",
+                        "path_exhausted_before_target" => "adjacent_action_target_not_adjacent",
+                        _ => "adjacent_action_" + pathReason
+                    });
             }
             return;
         }
