@@ -156,6 +156,39 @@ public sealed class ExecutorInputLifecycleSourceGuardTests
     }
 
     [Fact]
+    public void AdjacentPathObstaclePolicyFailsSafeUnlessExplicitlyEnabled()
+    {
+        var farming = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.Farming.cs");
+        var ginger = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.Ginger.cs");
+        var pets = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.Pets.cs");
+        var miningCombat = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.Mining.Combat.cs");
+        var normalizedFarming = farming.Replace("\r\n", "\n");
+        var normalizedGinger = ginger.Replace("\r\n", "\n");
+        var normalizedPets = pets.Replace("\r\n", "\n");
+
+        Assert.Contains(
+            "bool allowRemovableObstacles = false",
+            farming,
+            StringComparison.Ordinal);
+        Assert.Contains("avoidSoftObstacles: true,\n            allowRemovableObstacles: false", normalizedFarming, StringComparison.Ordinal);
+        Assert.Contains("avoidSoftObstacles: true,\n            allowRemovableObstacles: false", normalizedGinger, StringComparison.Ordinal);
+        Assert.Contains("avoidSoftObstacles: true,\n            allowRemovableObstacles: false", normalizedPets, StringComparison.Ordinal);
+        Assert.Contains("allowRemovableObstacles: true", miningCombat, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void DiagnosticsAreBoundedAndDumpOnlyOnTrigger()
     {
         var host = ReadRepositoryFile(

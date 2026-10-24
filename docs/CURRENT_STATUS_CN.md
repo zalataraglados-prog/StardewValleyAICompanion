@@ -36,7 +36,7 @@ Golden Walnut 日程专用长期模式现已接入同一个 LiveTrainingLoop，�
 
 真实 v3 隔离运行先证明两格补水通道均能完成原生清障和 fresh rebind 后锄地，随后暴露相邻地块动作仍保留旧逐帧路径循环，长距离播种在转向时被误判为 `adjacent_action_route_drifted`。该旧循环现已并入唯一 `TryAdvanceExecutorPath`，并由源码守卫禁止重新分叉。全新 v4 `golden-walnut-source-schedule-v4-20261025-0003` 随后从 Spring 1 新档完成 6 次原生购种、返场、两格通道清障（含 `(70,23)` 树的 Axe 生命周期）、每次清障后的锄地、`6/6` 原生播种、`6/6` 原生浇水、回家睡眠、日期加一和存档边界；Spring 2 又完成 `6/6` 浇水后按本切片验收要求主动停止。该结果关闭“可建设补水通道能否进入真实作物闭环”的问题，但没有生成 Golden Walnut source schedule，也不提升 Master Angler 或正式训练分子。下一步是在提交当前修复后启动新的隔离长期运行，继续首次登岛与来源日程，不再扩张作物专用系统。
 
-v4 的 `55` 个耐久 episode 已成功重建为合法 manifest，但 Spring 2 的停止点晚于最近一次原生存档边界，因此该尾部禁止跨进程续接。全新 v5 `golden-walnut-source-schedule-v5-20261025-001624` 已真实完成礼盒、Teacher 派发、购种、返场与场地准备，随后暴露普通相邻动作仍用“允许可清除障碍”的路径规划参数，而执行跟随器不会且不应隐式清障，导致首批播种稳定失败为 `adjacent_action_route_drifted`。停止后正式 builder 已接纳 success-only 的 `46` 条连续 episode，阻塞尾部未进入 manifest。相邻动作现只在真实可走格上建路，清障继续唯一归属 site preparation / `executor.clear_obstacle`；定向源码守卫通过，尚待全新隔离运行验证首日播种、浇水和存档边界。Golden Walnut source schedule 与正式训练授权仍为 false。
+v4 的 `55` 个耐久 episode 已成功重建为合法 manifest，但 Spring 2 的停止点晚于最近一次原生存档边界，因此该尾部禁止跨进程续接。全新 v5 `golden-walnut-source-schedule-v5-20261025-001624` 已真实完成礼盒、Teacher 派发、购种、返场与场地准备，随后暴露普通相邻动作仍用“允许可清除障碍”的路径规划参数，而执行跟随器不会且不应隐式清障，导致首批播种稳定失败为 `adjacent_action_route_drifted`。停止后正式 builder 已接纳 success-only 的 `46` 条连续 episode，阻塞尾部未进入 manifest。相邻动作以及浇水、锄地、姜和宠物水碗现只在真实可走格上建路，helper 默认也改为 fail-safe false；只有具备主动破障循环的矿井/火山战斗显式允许可清障格。清障继续唯一归属 site preparation / `executor.clear_obstacle`；定向源码守卫通过，尚待全新隔离运行验证首日播种、浇水和存档边界。Golden Walnut source schedule 与正式训练授权仍为 false。
 
 当前五个 `CoverageGateReady` criterion 固定为：
 

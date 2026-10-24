@@ -83,7 +83,13 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
-        var path = BuildAdjacentToolPath(location, target, request.MaxMovementTiles ?? 512, out var moveReason);
+        var path = BuildAdjacentToolPath(
+            location,
+            target,
+            request.MaxMovementTiles ?? 512,
+            out var moveReason,
+            avoidSoftObstacles: true,
+            allowRemovableObstacles: false);
         if (path is null)
         {
             pending.Completion.SetResult(NativeToolBlocked(request, "water_crop", target, can, waterBefore, staminaBefore, started, estimatedTicks, moveReason, requested, WaterCropObservedEffect(location, target)));
@@ -181,7 +187,13 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
-        var path = BuildAdjacentToolPath(location, target, request.MaxMovementTiles ?? 512, out var moveReason);
+        var path = BuildAdjacentToolPath(
+            location,
+            target,
+            request.MaxMovementTiles ?? 512,
+            out var moveReason,
+            avoidSoftObstacles: true,
+            allowRemovableObstacles: false);
         if (path is null)
         {
             pending.Completion.SetResult(NativeToolBlocked(request, "till_soil", target, hoe, null, staminaBefore, started, estimatedTicks, moveReason, requested, TillSoilObservedEffect(location, target)));
@@ -267,7 +279,7 @@ public sealed partial class ModEntry : Mod
         return reasons.Distinct(StringComparer.Ordinal).ToArray();
     }
 
-    private static List<Point>? BuildAdjacentToolPath(GameLocation location, Point target, int maxTiles, out string blockReason, bool avoidSoftObstacles = false, bool allowRemovableObstacles = true)
+    private static List<Point>? BuildAdjacentToolPath(GameLocation location, Point target, int maxTiles, out string blockReason, bool avoidSoftObstacles = false, bool allowRemovableObstacles = false)
     {
         blockReason = string.Empty;
         if (AreAdjacent(Game1.player.TilePoint, target))

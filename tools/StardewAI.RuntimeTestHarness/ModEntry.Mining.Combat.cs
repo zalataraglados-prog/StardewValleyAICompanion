@@ -474,7 +474,13 @@ public sealed partial class ModEntry : Mod
 
             if (active.PathIndex >= active.Path.Count || ManhattanDistance(active.PathTarget, targetTile) > 4)
             {
-                var path = BuildAdjacentToolPath(mine, targetTile, Math.Max(1, active.MaxMovementTiles - active.MovementTiles), out var pathReason, avoidSoftObstacles: true);
+                var path = BuildAdjacentToolPath(
+                    mine,
+                    targetTile,
+                    Math.Max(1, active.MaxMovementTiles - active.MovementTiles),
+                    out var pathReason,
+                    avoidSoftObstacles: true,
+                    allowRemovableObstacles: true);
                 if (path is null)
                 {
                     if (active.Target.isGlider.Value)
