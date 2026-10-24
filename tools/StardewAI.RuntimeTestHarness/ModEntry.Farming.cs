@@ -367,51 +367,38 @@ public sealed partial class ModEntry : Mod
         if (tool.Lifecycle.Phase == NativeToolActionPhase.Ready &&
             !AreAdjacent(Game1.player.TilePoint, tool.Target))
         {
-            if (tool.PathIndex >= tool.Path.Count)
+            if (!TryAdvanceExecutorPath(
+                    Game1.currentLocation,
+                    tool.Path,
+                    tool.ActionPathCursor,
+                    out var movementReason,
+                    waitForSoftObstacle: false))
             {
-                CompleteNativeToolBlocked(tool, "unreachable_target");
+                CompleteNativeToolBlocked(tool, movementReason);
+            }
+
+            return;
+        }
+
+        if (tool.Lifecycle.Phase == NativeToolActionPhase.Ready &&
+            tool.NeedsActionCentering)
+        {
+            // Character.GetToolLocation ignores lastClick in background operation.
+            // Centering makes the requested adjacent tile deterministic from facing.
+            if (!TryCenterExecutorOnCurrentTile(
+                    tool.ActionPathCursor,
+                    out var centered,
+                    out var centeringReason))
+            {
+                CompleteNativeToolBlocked(tool, centeringReason);
+                return;
+            }
+            if (!centered)
+            {
                 return;
             }
 
-            var next = tool.Path[tool.PathIndex];
-            if (Game1.player.TilePoint == next)
-            {
-                tool.PathIndex++;
-                tool.StuckTicks = 0;
-                tool.LastPosition = Game1.player.Position;
-                return;
-            }
-
-            if (!IsTileWalkable(Game1.currentLocation, next) || IsTileOccupiedByCharacter(Game1.currentLocation, next))
-            {
-                CompleteNativeToolBlocked(tool, "unreachable_target");
-                return;
-            }
-
-            var direction = DirectionTo(Game1.player.TilePoint, next);
-            var movedSinceLastTick = Vector2.DistanceSquared(tool.LastPosition, Game1.player.Position) >= 0.01f;
-            tool.LastPosition = Game1.player.Position;
-            StartMoving(direction);
-            MovePlayerForTick();
-            if (Game1.player.TilePoint == next)
-            {
-                tool.PathIndex++;
-            }
-
-            if (!movedSinceLastTick)
-            {
-                tool.StuckTicks++;
-                if (tool.StuckTicks > 45)
-                {
-                    CompleteNativeToolBlocked(tool, "movement_stuck_or_collision_blocked");
-                }
-            }
-            else
-            {
-                tool.StuckTicks = 0;
-                tool.LastPosition = Game1.player.Position;
-            }
-
+            tool.NeedsActionCentering = false;
             return;
         }
 

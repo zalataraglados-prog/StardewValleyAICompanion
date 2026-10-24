@@ -179,6 +179,14 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             calibration,
             StringComparison.Ordinal);
         Assert.Contains(
+            "--max-unverified-execution-streak\", $MaxUnverifiedExecutionStreak",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "-MaxUnverifiedExecutionStreak $MaxUnverifiedExecutionStreak",
+            workflow,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "--save-boundary-max-attempts\", $SaveBoundaryMaxAttempts",
             calibration,
             StringComparison.Ordinal);

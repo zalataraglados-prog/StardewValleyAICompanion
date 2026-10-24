@@ -156,6 +156,42 @@ public sealed class ExecutorInputLifecycleSourceGuardTests
     }
 
     [Fact]
+    public void NativeFarmingToolsUseSharedPathingAndCenterBeforeToolInput()
+    {
+        var farming = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.Farming.cs");
+        var state = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.State.cs");
+        var follower = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.MovementSleep.PathFollower.cs");
+
+        Assert.Contains("TryAdvanceExecutorPath(", farming, StringComparison.Ordinal);
+        Assert.Contains("tool.ActionPathCursor", farming, StringComparison.Ordinal);
+        Assert.Contains("TryCenterExecutorOnCurrentTile(", farming, StringComparison.Ordinal);
+        Assert.Contains("tool.NeedsActionCentering = false", farming, StringComparison.Ordinal);
+        Assert.Contains("ExecutorPathCursor ActionPathCursor", state, StringComparison.Ordinal);
+        Assert.Contains("IsFarmerCenteredOnTile(tile)", follower, StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "DirectionTo(Game1.player.TilePoint, next)",
+            farming,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "movement_stuck_or_collision_blocked",
+            farming,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "Game1.player.Position =",
+            farming,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void AdjacentPathObstaclePolicyFailsSafeUnlessExplicitlyEnabled()
     {
         var farming = ReadRepositoryFile(

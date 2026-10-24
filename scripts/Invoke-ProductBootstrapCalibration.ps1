@@ -18,6 +18,8 @@ param(
     [string] $ArtifactRetentionMode = "stop",
     [ValidateRange(1, 1000000)]
     [int] $MaxPersistedIterations = 64,
+    [ValidateRange(1, 64)]
+    [int] $MaxUnverifiedExecutionStreak = 8,
     [ValidateRange(1024, [int]::MaxValue)]
     [int] $MinFreeSpaceMb = 8192,
     [switch] $CaptureGoldenWalnutFreshSaveEvidence,
@@ -223,6 +225,7 @@ try {
         "--execution-snapshot-profile", "full",
         "--artifact-retention-mode", $ArtifactRetentionMode,
         "--max-persisted-iterations", $MaxPersistedIterations,
+        "--max-unverified-execution-streak", $MaxUnverifiedExecutionStreak,
         "--min-free-space-mb", $MinFreeSpaceMb,
         "--sleep-ms", 1000,
         "--after-snapshot-wait-ms", 500

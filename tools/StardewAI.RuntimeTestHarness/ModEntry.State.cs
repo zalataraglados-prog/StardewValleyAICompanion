@@ -120,6 +120,7 @@ public sealed partial class ModEntry : Mod
             DebrisBefore = debrisBefore;
             ChunksBefore = chunksBefore;
             LastPosition = Game1.player.Position;
+            ActionPathCursor = new ExecutorPathCursor();
             MaxMovementTicks = Math.Max(120, path.Count * 90);
             MaxTicks = MaxMovementTicks + 240;
             MaxMovementTiles = Math.Clamp(
@@ -181,6 +182,8 @@ public sealed partial class ModEntry : Mod
         public HashSet<Debris>? DebrisBefore { get; }
         public HashSet<Chunk>? ChunksBefore { get; }
         public int ElapsedTicks { get; set; }
+        public ExecutorPathCursor ActionPathCursor { get; }
+        public bool NeedsActionCentering { get; set; } = true;
         public int PathIndex { get; set; }
         public int StuckTicks { get; set; }
         public int MaxMovementTicks { get; private set; }
@@ -203,6 +206,8 @@ public sealed partial class ModEntry : Mod
             PathIndex = 0;
             StuckTicks = 0;
             LastPosition = Game1.player.Position;
+            ResetExecutorPathCursor(ActionPathCursor);
+            NeedsActionCentering = true;
             RefillingWateringCan = false;
             CropTargetAfterRefill = null;
             Lifecycle = new NativeToolActionLifecycle();

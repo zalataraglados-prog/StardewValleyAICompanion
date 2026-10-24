@@ -109,4 +109,56 @@ public sealed partial class ModEntry
         reason = string.Empty;
         return true;
     }
+
+    private bool TryCenterExecutorOnCurrentTile(
+        ExecutorPathCursor cursor,
+        out bool centered,
+        out string reason)
+    {
+        centered = false;
+        var tile = Game1.player.TilePoint;
+        if (IsFarmerCenteredOnTile(tile))
+        {
+            StopAllMovement("action_stand_centered");
+            ResetExecutorPathCursor(cursor);
+            centered = true;
+            reason = string.Empty;
+            return true;
+        }
+
+        var currentPosition = Game1.player.Position;
+        var movedSinceLastTick =
+            Vector2.DistanceSquared(cursor.LastPosition, currentPosition) >= 0.01f;
+        var center = Game1.player.StandingPixel;
+        var targetCenter = new Point(
+            tile.X * Game1.tileSize + Game1.tileSize / 2,
+            tile.Y * Game1.tileSize + Game1.tileSize / 2);
+        var direction = DirectionToPixel(
+            center,
+            targetCenter,
+            Game1.player.FacingDirection);
+
+        cursor.LastPosition = currentPosition;
+        StartMovingIfNeeded(cursor, direction);
+        MovePlayerForTick();
+        cursor.StuckTicks = movedSinceLastTick
+            ? 0
+            : cursor.StuckTicks + 1;
+        if (cursor.StuckTicks > 45)
+        {
+            reason = "movement_action_stand_centering_stuck";
+            return false;
+        }
+
+        reason = string.Empty;
+        return true;
+    }
+
+    private static void ResetExecutorPathCursor(ExecutorPathCursor cursor)
+    {
+        cursor.PathIndex = 0;
+        cursor.StuckTicks = 0;
+        cursor.LastPosition = Game1.player.Position;
+        cursor.CurrentDirection = null;
+    }
 }
