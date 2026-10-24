@@ -1,5 +1,7 @@
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
 
 namespace StardewAI.GoalConditionedBootstrap;
@@ -117,6 +119,8 @@ internal static partial class BootstrapSelfTest
                 "rod-prerequisite-shop-endpoint",
                 2);
             endpoint.Kind = "interact_endpoint";
+            endpoint.TileX = 1;
+            endpoint.TileY = 4;
             Require(
                 MasterAnglerRodEquipmentAcquisitionProtocol.TryMatchCandidate(
                     endpoint,
@@ -148,6 +152,155 @@ internal static partial class BootstrapSelfTest
                     overpriced,
                     out _),
                 "An over-cap Bamboo Pole purchase was admitted as the rod prerequisite.");
+
+            var endpointFrontier = BuildRodPrerequisiteFrontier(
+                "stage-one-rod-prerequisite-endpoint",
+                Array.Empty<object>(),
+                new[] { endpoint },
+                SetInteractionContext);
+            var endpointPreference =
+                CurrentStageOneCollectionTeacherPreferenceBuilder.Build(
+                    inventoryPath,
+                    loweringPath,
+                    rankingPath,
+                    snapshotPath,
+                    intentsPath,
+                    endpointFrontier.Denominator);
+            Write(preferencePath, endpointPreference);
+            Require(
+                endpointPreference.CompiledQueue?.Items.Length == 1 &&
+                endpointPreference.CompiledQueue.Items[0]
+                    .NormalizedCommand.Steps.Single().StepType ==
+                        "interact",
+                "The exact FishShop endpoint did not compile through the existing single interaction primitive.");
+            const string endpointRunId = "fixture-rod-prerequisite-endpoint";
+            const string endpointAfterStateHash =
+                "stage-one-rod-prerequisite-endpoint-after";
+            WriteStageOneCollectionSnapshot(
+                afterSnapshotPath,
+                endpointAfterStateHash,
+                fish,
+                gameTick: 2,
+                rodInventory: Array.Empty<object>());
+            MutateSnapshot(
+                afterSnapshotPath,
+                endpointAfterStateHash,
+                SetOpenFishShop);
+            Write(
+                receiptPath,
+                StageOneRouteReceipt(
+                    endpointPreference,
+                    endpointRunId,
+                    endpointAfterStateHash,
+                    2,
+                    snapshotPath,
+                    afterSnapshotPath));
+            var endpointReceipt =
+                CurrentStageOneCollectionTeacherReceiptBuilder.Build(
+                    inventoryPath,
+                    loweringPath,
+                    rankingPath,
+                    snapshotPath,
+                    intentsPath,
+                    preferencePath,
+                    receiptPath,
+                    afterSnapshotPath,
+                    "fixture-rod-prerequisite-endpoint-trajectory",
+                    endpointRunId,
+                    PolicyTrajectoryVersionPins.KnowledgeDictionary,
+                    PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor,
+                    endpointFrontier.Denominator);
+            Require(
+                endpointReceipt.Status == "ready" &&
+                endpointReceipt.TeacherTrainingRowEligible &&
+                endpointReceipt.VerifiedRequirementTransitions.Single()
+                    .BindingKind ==
+                        "authoritative_supporting_prerequisite_shop_endpoint_open" &&
+                endpointReceipt.VerifiedRequirementTransitions[0].Verified,
+                "Opening the exact writable FishShop menu did not produce a verified prerequisite transition.");
+
+            var terminalFrontier = BuildRodPrerequisiteFrontier(
+                "stage-one-rod-prerequisite-terminal",
+                Array.Empty<object>(),
+                new[] { terminal },
+                SetOpenFishShop);
+            var terminalPreference =
+                CurrentStageOneCollectionTeacherPreferenceBuilder.Build(
+                    inventoryPath,
+                    loweringPath,
+                    rankingPath,
+                    snapshotPath,
+                    intentsPath,
+                    terminalFrontier.Denominator);
+            Write(preferencePath, terminalPreference);
+            var terminalQueue = terminalPreference.CompiledQueue ??
+                throw new InvalidDataException(
+                    "The Bamboo Pole terminal queue is missing.");
+            Require(
+                terminalQueue.Items.Length == 2 &&
+                terminalQueue.Items[0]
+                    .NormalizedCommand.Steps.Single().StepType ==
+                        "buy_shop_item" &&
+                terminalQueue.Items[1]
+                    .NormalizedCommand.Steps.Single().StepType ==
+                        "close_menu",
+                "The Bamboo Pole terminal stage did not reuse the existing purchase-and-close queue.");
+            const string terminalRunId = "fixture-rod-prerequisite-terminal";
+            const string terminalAfterStateHash =
+                "stage-one-rod-prerequisite-terminal-after";
+            var terminalAfterTick = 1 + terminalQueue.Items.Length;
+            WriteStageOneCollectionSnapshot(
+                afterSnapshotPath,
+                terminalAfterStateHash,
+                fish,
+                gameTick: terminalAfterTick,
+                rodInventory: new object[]
+                {
+                    new
+                    {
+                        slot_index = 4,
+                        qualified_item_id = "(T)BambooPole"
+                    }
+                });
+            var terminalBefore = CurrentTeacherFrontierSupport.Read<
+                SnapshotEnvelope>(snapshotPath, "Rod purchase before snapshot");
+            var terminalAfter = CurrentTeacherFrontierSupport.Read<
+                SnapshotEnvelope>(afterSnapshotPath, "Rod purchase after snapshot");
+            Write(
+                receiptPath,
+                RodPurchaseQueueReceipt(
+                    terminalPreference,
+                    terminalBefore,
+                    terminalAfter,
+                    terminalRunId));
+            var terminalReceipt =
+                CurrentStageOneCollectionTeacherReceiptBuilder.Build(
+                    inventoryPath,
+                    loweringPath,
+                    rankingPath,
+                    snapshotPath,
+                    intentsPath,
+                    preferencePath,
+                    receiptPath,
+                    afterSnapshotPath,
+                    "fixture-rod-prerequisite-terminal-trajectory",
+                    terminalRunId,
+                    PolicyTrajectoryVersionPins.KnowledgeDictionary,
+                    PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor,
+                    terminalFrontier.Denominator);
+            Write(
+                Path.Combine(root, "rod-terminal-receipt-admission.json"),
+                terminalReceipt);
+            Require(
+                terminalReceipt.Status == "ready" &&
+                terminalReceipt.TeacherTrainingRowEligible &&
+                terminalReceipt.VerifiedRequirementTransitions.Single()
+                    .BindingKind ==
+                        "authoritative_supporting_prerequisite_terminal_purchase" &&
+                terminalReceipt.VerifiedRequirementTransitions[0].Verified,
+                "The exact Bamboo Pole zero-to-owned transition did not produce a verified prerequisite receipt: " +
+                terminalReceipt.Status + ":" +
+                string.Join(",", terminalReceipt.BlockingReasons));
 
             var ownedRod = BuildRodPrerequisiteFrontier(
                 "stage-one-rod-prerequisite-owned",
@@ -335,6 +488,189 @@ internal static partial class BootstrapSelfTest
             candidate.TileY = 4;
             candidate.EstimatedTicks = 120;
             return candidate;
+        }
+
+        private static void SetOpenFishShop(JsonObject snapshot)
+        {
+            SetInteractionContext(snapshot);
+            var player = snapshot["state"]!["player"]!.AsObject();
+            player["money"] = JsonSerializer.SerializeToNode(
+                NativeField(500, "vanilla_1_6"),
+                JsonDefaults.Options);
+            player["inventory"] = JsonSerializer.SerializeToNode(
+                NativeField(Array.Empty<object>(), "vanilla_1_6"),
+                JsonDefaults.Options);
+            var menus = snapshot["state"]!["menus"]!.AsObject();
+            menus["active_menu"] = JsonSerializer.SerializeToNode(
+                NativeField(new { is_open = true, type = "ShopMenu" },
+                    "vanilla_1_6"),
+                JsonDefaults.Options);
+            menus["sleep_prompt_context"] = JsonSerializer.SerializeToNode(
+                NativeField(
+                    new
+                    {
+                        prompt_open = false,
+                        prompt_text = string.Empty,
+                        yes_response_key = string.Empty
+                    },
+                    "vanilla_1_6"),
+                JsonDefaults.Options);
+            menus["shop_stock"] = JsonSerializer.SerializeToNode(
+                NativeField(new
+                {
+                    shop_id = MasterAnglerRodEquipmentAcquisitionProtocol.ShopId,
+                    read_only = false,
+                    safety_timer = 0,
+                    held_item_present = false,
+                    currency = 0,
+                    shop_on_purchase_present = false,
+                    executor_purchase_enabled = true,
+                    entries = new[]
+                    {
+                        new
+                        {
+                            item_id = "BambooPole",
+                            qualified_item_id = "(T)BambooPole",
+                            synced_key = "(T)BambooPole",
+                            stack = 1,
+                            quality = 0,
+                            price = 450,
+                            stock = int.MaxValue,
+                            infinite_stock = true,
+                            can_buy_item = true,
+                            can_afford_one_with_currency = true,
+                            can_afford_one_with_trade_item = true,
+                            could_inventory_accept = true,
+                            executor_purchase_enabled = true
+                        }
+                    }
+                }, "vanilla_1_6"),
+                JsonDefaults.Options);
+        }
+
+        private static void SetInteractionContext(JsonObject snapshot)
+        {
+            var state = snapshot["state"]!.AsObject();
+            var player = state["player"]!.AsObject();
+            player["facing_direction"] = JsonSerializer.SerializeToNode(
+                NativeField(0, "vanilla_1_6"),
+                JsonDefaults.Options);
+            var currentLocation = state["current_location"]!.AsObject();
+            currentLocation["route_context"] = JsonSerializer.SerializeToNode(
+                NativeField(
+                    new { probes = Array.Empty<object>() },
+                    "vanilla_1_6_route"),
+                JsonDefaults.Options);
+            var menus = state["menus"]!.AsObject();
+            menus["active_menu"] = JsonSerializer.SerializeToNode(
+                NativeField(
+                    new { is_open = false, type = "none" },
+                    "vanilla_1_6"),
+                JsonDefaults.Options);
+            var locations = state["locations"]!.AsObject();
+            locations["route_action_branch_coverage"] =
+                JsonSerializer.SerializeToNode(
+                    NativeField(new
+                    {
+                        rows = new[]
+                        {
+                            new
+                            {
+                                tile_x = 1,
+                                tile_y = 4,
+                                branch = "OpenShop",
+                                route_training_blocked = false
+                            }
+                        }
+                    }, "vanilla_1_6_route"),
+                    JsonDefaults.Options);
+        }
+
+        private static void MutateSnapshot(
+            string path,
+            string stateHash,
+            Action<JsonObject> mutation)
+        {
+            var snapshot = JsonNode.Parse(File.ReadAllText(path))!.AsObject();
+            mutation(snapshot);
+            snapshot["state_hash"] = stateHash;
+            File.WriteAllText(
+                path,
+                snapshot.ToJsonString(JsonDefaults.Options));
+        }
+
+        private static QueueExecutionReceiptEnvelope RodPurchaseQueueReceipt(
+            CurrentStageOneCollectionTeacherPreferenceLabel preference,
+            SnapshotEnvelope before,
+            SnapshotEnvelope after,
+            string runId)
+        {
+            var queue = preference.CompiledQueue ?? throw new InvalidDataException(
+                "Rod purchase queue is missing.");
+            var boundaries = new List<string> { before.StateHash };
+            boundaries.AddRange(Enumerable.Range(0, queue.Items.Length - 1)
+                .Select(index => new string((char)('a' + index), 64)));
+            boundaries.Add(after.StateHash);
+            var steps = queue.Items.Select((item, index) =>
+            {
+                var effectiveItem = JsonSerializer.Deserialize<ActionQueueItem>(
+                    JsonSerializer.Serialize(item, JsonDefaults.Options),
+                    JsonDefaults.Options) ?? throw new InvalidDataException(
+                    "Rod purchase queue item clone failed.");
+                effectiveItem.NormalizedCommand.StateHash = boundaries[index];
+                return new QueueExecutionStepReceipt
+                {
+                    QueueItemIndex = index,
+                    QueueItemCount = queue.Items.Length,
+                    OriginalPlannedItemCount = queue.Items.Length,
+                    QueueId = queue.QueueId,
+                    QueueItemId = item.QueueItemId,
+                    OptionId = item.OptionId,
+                    SourceStateHash = boundaries[index],
+                    CompiledCommandStateHash = before.StateHash,
+                    TeacherPreferenceStateRebound = true,
+                    SelectedQueueCandidateCompleted =
+                        index == queue.Items.Length - 1,
+                    AfterStateHash = boundaries[index + 1],
+                    StateHashChanged = true,
+                    BeforeGameTick = before.GameTick + index,
+                    AfterGameTick = before.GameTick + index + 1,
+                    AfterSnapshotFresh = true,
+                    Status = "applied",
+                    PrimitiveKind = item.NormalizedCommand.Steps.Single().StepType,
+                    PrimitiveVerificationStatus = "verified",
+                    PrimitiveVerificationReasons = new[]
+                    {
+                        "native_rod_purchase_macro_step_observed"
+                    },
+                    EffectiveQueueItem = JsonSerializer.SerializeToElement(
+                        effectiveItem,
+                        JsonDefaults.Options),
+                    ChangedFacts = JsonSerializer.SerializeToElement(
+                        new[] { "native_rod_purchase_state_changed" },
+                        JsonDefaults.Options)
+                };
+            }).ToArray();
+            return new QueueExecutionReceiptEnvelope
+            {
+                RunId = runId,
+                QueueId = queue.QueueId,
+                SourceStateHash = before.StateHash,
+                AfterStateHash = after.StateHash,
+                BeforeGameTick = before.GameTick,
+                AfterGameTick = after.GameTick,
+                AfterSnapshotFresh = true,
+                QueueExecutionMode = "sequential_queue_items",
+                Status = "applied",
+                Success = true,
+                PlannedItemCount = queue.Items.Length,
+                ExecutedItemCount = queue.Items.Length,
+                FinalPendingItemCount = 0,
+                MaxQueueItemAttempts = queue.Items.Length,
+                SelectedCandidateId = preference.SelectedCandidate!.CandidateId,
+                SelectedCandidateCompleted = true,
+                StepResults = steps
+            };
         }
     }
 }
