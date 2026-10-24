@@ -41,13 +41,15 @@ public static class CropTeacherRunPlanner
         MoneyRevenueCropNativeProductionRunPlanRequest request,
         SnapshotEnvelope snapshot,
         IReadOnlySet<string>? preparedCommitmentIds = null,
-        IReadOnlySet<string>? completedHarvestTileKeys = null)
+        IReadOnlySet<string>? completedHarvestTileKeys = null,
+        IReadOnlySet<string>? completedDayBoundaryKeys = null)
     {
         ArgumentNullException.ThrowIfNull(plan);
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(snapshot);
         preparedCommitmentIds ??= new HashSet<string>(StringComparer.Ordinal);
         completedHarvestTileKeys ??= new HashSet<string>(StringComparer.Ordinal);
+        completedDayBoundaryKeys ??= new HashSet<string>(StringComparer.Ordinal);
 
         ValidatePlan(plan, request);
         var totalDay = ReadRequiredInt(snapshot, "time", "total_days");
@@ -55,6 +57,18 @@ public static class CropTeacherRunPlanner
         {
             throw new InvalidDataException(
                 "crop_teacher_snapshot_precedes_first_run_day");
+        }
+        var unsettledDayBoundary = plan.Days.FirstOrDefault(day =>
+            day.TotalDay < totalDay &&
+            day.NativeSleepRequired &&
+            !completedDayBoundaryKeys.Contains(
+                CropTeacherTransitionLedger.DayBoundaryKey(day.TotalDay)));
+        if (unsettledDayBoundary is not null)
+        {
+            return Step(
+                CropTeacherRunStageKinds.ReplanRequired,
+                totalDay,
+                reason: "crop_teacher_run_day_advanced_without_verified_save_boundary");
         }
         var unsettledPastHarvest = plan.Days
             .Where(day => day.TotalDay < totalDay)

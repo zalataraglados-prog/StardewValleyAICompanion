@@ -50,11 +50,28 @@ public sealed class CropTeacherTransitionLedgerTests
                     11,
                     12),
                 ledger.CompletedHarvestTileKeys);
+            var boundary = new CropTeacherDayBoundaryReceipt(
+                CropTeacherTransitionLedger.DayBoundaryKey(3),
+                3,
+                4,
+                "1:spring:4",
+                "1:spring:5",
+                "queue:sleep",
+                "item:sleep",
+                "state:before:sleep",
+                "state:after:sleep",
+                "save:before:sleep",
+                "save:after:sleep",
+                "2026-10-24T00:00:30.0000000+00:00");
+            Assert.True(ledger.RecordVerifiedDayBoundary(boundary));
+            Assert.False(ledger.RecordVerifiedDayBoundary(boundary));
+            Assert.Single(ledger.DayBoundaryReceipts);
 
             var resumed = CropTeacherTransitionLedger.Open(
                 ledgerPath,
                 planPath);
             Assert.Single(resumed.HarvestReceipts);
+            Assert.Single(resumed.DayBoundaryReceipts);
             Assert.Equal(
                 0,
                 resumed.RecordVerifiedHarvestResults(

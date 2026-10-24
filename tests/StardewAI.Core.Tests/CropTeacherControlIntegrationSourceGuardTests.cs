@@ -31,6 +31,14 @@ public sealed class CropTeacherControlIntegrationSourceGuardTests
             "RecordVerifiedHarvestResults",
             program,
             StringComparison.Ordinal);
+        Assert.Contains(
+            "CheckCropTeacherDayBoundaryAsync",
+            program,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "RecordVerifiedDayBoundary",
+            program,
+            StringComparison.Ordinal);
         Assert.DoesNotContain(
             "planning_handoff_dispatched_native_run_plan_ready",
             program,

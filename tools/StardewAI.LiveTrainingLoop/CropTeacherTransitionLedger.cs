@@ -22,6 +22,22 @@ public sealed record CropTeacherHarvestReceipt(
     [property: JsonPropertyName("observed_effect")] string ObservedEffect,
     [property: JsonPropertyName("recorded_at_utc")] string RecordedAtUtc);
 
+public sealed record CropTeacherDayBoundaryReceipt(
+    [property: JsonPropertyName("day_boundary_key")] string DayBoundaryKey,
+    [property: JsonPropertyName("from_total_day")] int FromTotalDay,
+    [property: JsonPropertyName("to_total_day")] int ToTotalDay,
+    [property: JsonPropertyName("from_day_key")] string FromDayKey,
+    [property: JsonPropertyName("to_day_key")] string ToDayKey,
+    [property: JsonPropertyName("queue_id")] string QueueId,
+    [property: JsonPropertyName("queue_item_id")] string QueueItemId,
+    [property: JsonPropertyName("before_state_hash")] string BeforeStateHash,
+    [property: JsonPropertyName("after_state_hash")] string AfterStateHash,
+    [property: JsonPropertyName("before_save_sha256")]
+    string BeforeSaveSha256,
+    [property: JsonPropertyName("after_save_sha256")]
+    string AfterSaveSha256,
+    [property: JsonPropertyName("recorded_at_utc")] string RecordedAtUtc);
+
 public sealed class CropTeacherTransitionLedger
 {
     private const string CurrentSchemaVersion =
@@ -44,12 +60,21 @@ public sealed class CropTeacherTransitionLedger
     [JsonPropertyName("harvest_receipts")]
     public List<CropTeacherHarvestReceipt> HarvestReceipts { get; set; } = [];
 
+    [JsonPropertyName("day_boundary_receipts")]
+    public List<CropTeacherDayBoundaryReceipt> DayBoundaryReceipts
+        { get; set; } = [];
+
     [JsonIgnore]
     public string LedgerPath { get; private set; } = string.Empty;
 
     [JsonIgnore]
     public IReadOnlySet<string> CompletedHarvestTileKeys =>
         HarvestReceipts.Select(receipt => receipt.HarvestTileKey)
+            .ToHashSet(StringComparer.Ordinal);
+
+    [JsonIgnore]
+    public IReadOnlySet<string> CompletedDayBoundaryKeys =>
+        DayBoundaryReceipts.Select(receipt => receipt.DayBoundaryKey)
             .ToHashSet(StringComparer.Ordinal);
 
     public static CropTeacherTransitionLedger Open(
@@ -83,9 +108,14 @@ public sealed class CropTeacherTransitionLedger
                     runPlanSha256,
                     StringComparison.Ordinal) ||
                 ledger.HarvestReceipts is null ||
+                ledger.DayBoundaryReceipts is null ||
                 ledger.HarvestReceipts.Select(receipt => receipt.HarvestTileKey)
                     .Distinct(StringComparer.Ordinal).Count() !=
-                    ledger.HarvestReceipts.Count)
+                    ledger.HarvestReceipts.Count ||
+                ledger.DayBoundaryReceipts.Select(receipt =>
+                        receipt.DayBoundaryKey)
+                    .Distinct(StringComparer.Ordinal).Count() !=
+                    ledger.DayBoundaryReceipts.Count)
             {
                 throw new InvalidDataException(
                     "crop_teacher_transition_ledger_binding_invalid");
@@ -193,6 +223,38 @@ public sealed class CropTeacherTransitionLedger
         return appended;
     }
 
+    public bool RecordVerifiedDayBoundary(
+        CropTeacherDayBoundaryReceipt receipt)
+    {
+        ArgumentNullException.ThrowIfNull(receipt);
+        var expectedKey = DayBoundaryKey(receipt.FromTotalDay);
+        if (receipt.DayBoundaryKey != expectedKey ||
+            receipt.ToTotalDay != receipt.FromTotalDay + 1 ||
+            string.IsNullOrWhiteSpace(receipt.FromDayKey) ||
+            string.IsNullOrWhiteSpace(receipt.ToDayKey) ||
+            receipt.FromDayKey == receipt.ToDayKey ||
+            string.IsNullOrWhiteSpace(receipt.QueueId) ||
+            string.IsNullOrWhiteSpace(receipt.QueueItemId) ||
+            string.IsNullOrWhiteSpace(receipt.BeforeStateHash) ||
+            string.IsNullOrWhiteSpace(receipt.AfterStateHash) ||
+            receipt.BeforeStateHash == receipt.AfterStateHash ||
+            string.IsNullOrWhiteSpace(receipt.BeforeSaveSha256) ||
+            string.IsNullOrWhiteSpace(receipt.AfterSaveSha256) ||
+            receipt.BeforeSaveSha256 == receipt.AfterSaveSha256 ||
+            string.IsNullOrWhiteSpace(receipt.RecordedAtUtc))
+        {
+            throw new InvalidDataException(
+                "crop_teacher_day_boundary_receipt_invalid");
+        }
+        if (CompletedDayBoundaryKeys.Contains(expectedKey))
+        {
+            return false;
+        }
+        DayBoundaryReceipts.Add(receipt);
+        Persist();
+        return true;
+    }
+
     public static string HarvestTileKey(
         string commitmentId,
         int totalDay,
@@ -208,6 +270,15 @@ public sealed class CropTeacherTransitionLedger
                 "crop_teacher_harvest_tile_key_invalid");
         }
         return $"{commitmentId}|day={totalDay}|tile={tileX},{tileY}";
+    }
+
+    public static string DayBoundaryKey(int fromTotalDay)
+    {
+        if (fromTotalDay < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(fromTotalDay));
+        }
+        return $"day={fromTotalDay}->day={fromTotalDay + 1}";
     }
 
     private void Persist()

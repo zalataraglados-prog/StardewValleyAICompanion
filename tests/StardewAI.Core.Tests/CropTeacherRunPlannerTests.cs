@@ -83,7 +83,8 @@ public sealed class CropTeacherRunPlannerTests
             plan,
             request,
             Snapshot("Farm", 0, cropsNeedWater, totalDay: 2),
-            prepared);
+            prepared,
+            completedDayBoundaries: DayBoundariesThrough(2));
         Assert.Equal(CropTeacherRunStageKinds.ExecuteCropBatch, nextDayWater.Stage);
         Assert.Equal("executor.water_crop", nextDayWater.ActionBatch!.OptionId);
 
@@ -96,7 +97,8 @@ public sealed class CropTeacherRunPlannerTests
             plan,
             request,
             Snapshot("Farm", 0, harvestCrops, totalDay: 4),
-            prepared);
+            prepared,
+            completedDayBoundaries: DayBoundariesThrough(4));
         Assert.Equal(CropTeacherRunStageKinds.ExecuteCropBatch, harvest.Stage);
         Assert.Equal("executor.harvest_crop", harvest.ActionBatch!.OptionId);
 
@@ -111,7 +113,8 @@ public sealed class CropTeacherRunPlannerTests
             request,
             Snapshot("Farm", 0, [], totalDay: 4),
             prepared,
-            receipts);
+            receipts,
+            DayBoundariesThrough(4));
         Assert.Equal(CropTeacherRunStageKinds.Complete, complete.Stage);
     }
 
@@ -154,11 +157,33 @@ public sealed class CropTeacherRunPlannerTests
                 0,
                 [Crop(10, 12, needsWatering: true)],
                 totalDay: 2),
-            new HashSet<string>(StringComparer.Ordinal) { CommitmentId });
+            new HashSet<string>(StringComparer.Ordinal) { CommitmentId },
+            completedDayBoundaries: DayBoundariesThrough(2));
 
         Assert.Equal(CropTeacherRunStageKinds.ReplanRequired, step.Stage);
         Assert.Equal(
             "crop_teacher_water_target_crop_missing",
+            step.Reason);
+    }
+
+    [Fact]
+    public void RefusesToStartTheNextDayWithoutADurableSaveReceipt()
+    {
+        var (plan, request) = BuildPlan();
+        var crops = new[]
+        {
+            Crop(10, 12, needsWatering: true),
+            Crop(11, 12, needsWatering: true)
+        };
+
+        var step = Evaluate(
+            plan,
+            request,
+            Snapshot("Farm", 0, crops, totalDay: 2));
+
+        Assert.Equal(CropTeacherRunStageKinds.ReplanRequired, step.Stage);
+        Assert.Equal(
+            "crop_teacher_run_day_advanced_without_verified_save_boundary",
             step.Reason);
     }
 
@@ -169,7 +194,8 @@ public sealed class CropTeacherRunPlannerTests
         var step = Evaluate(
             plan,
             request,
-            Snapshot("Farm", 0, [], totalDay: 4));
+            Snapshot("Farm", 0, [], totalDay: 4),
+            completedDayBoundaries: DayBoundariesThrough(4));
 
         Assert.Equal(CropTeacherRunStageKinds.ReplanRequired, step.Stage);
         Assert.Equal(
@@ -184,7 +210,8 @@ public sealed class CropTeacherRunPlannerTests
         var step = Evaluate(
             plan,
             request,
-            Snapshot("FarmHouse", 0, [], totalDay: 5));
+            Snapshot("FarmHouse", 0, [], totalDay: 5),
+            completedDayBoundaries: DayBoundariesThrough(5));
 
         Assert.Equal(CropTeacherRunStageKinds.ReplanRequired, step.Stage);
         Assert.Equal(
@@ -197,13 +224,22 @@ public sealed class CropTeacherRunPlannerTests
         MoneyRevenueCropNativeProductionRunPlanRequest request,
         SnapshotEnvelope snapshot,
         IReadOnlySet<string>? prepared = null,
-        IReadOnlySet<string>? harvestReceipts = null) =>
+        IReadOnlySet<string>? harvestReceipts = null,
+        IReadOnlySet<string>? completedDayBoundaries = null) =>
         CropTeacherRunPlanner.Evaluate(
             plan,
             request,
             snapshot,
             prepared,
-            harvestReceipts);
+            harvestReceipts,
+            completedDayBoundaries);
+
+    private static IReadOnlySet<string> DayBoundariesThrough(
+        int currentTotalDay) => Enumerable.Range(
+            1,
+            Math.Max(0, currentTotalDay - 1))
+        .Select(CropTeacherTransitionLedger.DayBoundaryKey)
+        .ToHashSet(StringComparer.Ordinal);
 
     private static (MoneyRevenueCropNativeProductionRunPlan Plan,
         MoneyRevenueCropNativeProductionRunPlanRequest Request) BuildPlan()
