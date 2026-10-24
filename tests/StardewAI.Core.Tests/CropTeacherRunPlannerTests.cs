@@ -10,6 +10,21 @@ public sealed class CropTeacherRunPlannerTests
     private const string CommitmentId = "crop:parsnip:first";
     private const string SeedId = "(O)472";
 
+    [Theory]
+    [InlineData("crop_teacher_water_target_crop_missing", true)]
+    [InlineData("crop_teacher_harvest_target_not_ready_on_planned_day", true)]
+    [InlineData("crop_teacher_run_day_advanced_with_unsettled_harvest", true)]
+    [InlineData("crop_teacher_run_day_advanced_without_verified_save_boundary", false)]
+    [InlineData("unexpected_failure", false)]
+    public void ClassifiesOnlyStrategicDriftForTeacherRedispatch(
+        string reason,
+        bool expected)
+    {
+        Assert.Equal(
+            expected,
+            CropTeacherRunPlanner.IsTeacherRedispatchReason(reason));
+    }
+
     [Fact]
     public void AdvancesThroughTheAuthoritativeFirstDayWithoutReplayingCompletedWork()
     {

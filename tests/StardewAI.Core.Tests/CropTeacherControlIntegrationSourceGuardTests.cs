@@ -6,6 +6,10 @@ public sealed class CropTeacherControlIntegrationSourceGuardTests
     public void TeacherDispatchContinuesIntoTheFreshSnapshotControlLoop()
     {
         var program = Read("tools", "StardewAI.LiveTrainingLoop", "Program.cs");
+        var dispatch = Read(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.CropTeacherDispatch.cs");
 
         Assert.Contains(
             "activeCropTeacherRunPlan =",
@@ -25,7 +29,7 @@ public sealed class CropTeacherControlIntegrationSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains(
             "CropTeacherTransitionLedger.Open",
-            program,
+            dispatch,
             StringComparison.Ordinal);
         Assert.Contains(
             "RecordVerifiedHarvestResults",
@@ -37,6 +41,18 @@ public sealed class CropTeacherControlIntegrationSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains(
             "RecordVerifiedDayBoundary",
+            program,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "DispatchCropTeacherAsync(",
+            program,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "BuildCropTeacherReplanHandoff(",
+            dispatch,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "crop_teacher_replanned",
             program,
             StringComparison.Ordinal);
         Assert.DoesNotContain(

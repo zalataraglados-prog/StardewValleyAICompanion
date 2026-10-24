@@ -36,6 +36,15 @@ public static class CropTeacherRunPlanner
     private const string WaterOptionId = "executor.water_crop";
     private const string HarvestOptionId = "executor.harvest_crop";
 
+    public static bool IsTeacherRedispatchReason(string reason) => reason is
+        "crop_teacher_seed_acquisition_deadline_missed" or
+        "crop_teacher_water_target_crop_missing" or
+        "crop_teacher_water_target_seed_identity_mismatch" or
+        "crop_teacher_harvest_target_crop_missing_without_receipt" or
+        "crop_teacher_harvest_target_seed_identity_mismatch" or
+        "crop_teacher_harvest_target_not_ready_on_planned_day" or
+        "crop_teacher_run_day_advanced_with_unsettled_harvest";
+
     public static CropTeacherRunStep Evaluate(
         MoneyRevenueCropNativeProductionRunPlan plan,
         MoneyRevenueCropNativeProductionRunPlanRequest request,

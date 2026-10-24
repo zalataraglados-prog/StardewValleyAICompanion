@@ -54,6 +54,7 @@ var cropTeacherFirstDayCompleted = false;
 var cropTeacherRunCompleted = false;
 var cropTeacherReplanRequired = false;
 var cropTeacherReplanReason = string.Empty;
+var cropTeacherReplanCount = 0;
 var cropTeacherTransitionLedgerPath = string.Empty;
 var cropTeacherHarvestReceiptCount = 0;
 var cropTeacherDayBoundaryReceiptCount = 0;
@@ -393,6 +394,72 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         }
         if (cropStep.Stage == CropTeacherRunStageKinds.ReplanRequired)
         {
+            if (CropTeacherRunPlanner.IsTeacherRedispatchReason(
+                    cropStep.Reason) &&
+                cropTeacherReplanCount < 8)
+            {
+                var supersededLedger =
+                    activeCropTeacherTransitionLedger ??
+                    throw new InvalidOperationException(
+                        "crop_teacher_transition_ledger_missing");
+                var supersededRunPlanPath =
+                    supersededLedger.RunPlanPath;
+                var replanHandoff = BuildCropTeacherReplanHandoff(
+                    cropStep.Reason,
+                    supersededRunPlanPath,
+                    supersededLedger.RunPlanSha256);
+                var dispatch = await DispatchCropTeacherAsync(
+                    http,
+                    options,
+                    iteration,
+                    rawSnapshotJson,
+                    replanHandoff,
+                    "replan");
+                cropTeacherReplanCount++;
+                cropTeacherReplanReason = cropStep.Reason;
+                lastPlanningHandoffCaptureManifestPath =
+                    dispatch.Capture.ManifestPath;
+                lastPlanningHandoffTeacherDispatchManifestPath =
+                    dispatch.TeacherDispatchManifestPath;
+                lastPlanningHandoffNativeRunPlanPath =
+                    dispatch.NativeRunPlanPath;
+                activeCropTeacherRunPlanRequest = dispatch.RunPlanRequest;
+                activeCropTeacherRunPlan = dispatch.RunPlan;
+                cropTeacherTransitionLedgerPath =
+                    dispatch.TransitionLedgerPath;
+                activeCropTeacherTransitionLedger =
+                    dispatch.TransitionLedger;
+                cropTeacherHarvestReceiptCount =
+                    dispatch.TransitionLedger.HarvestReceipts.Count;
+                cropTeacherDayBoundaryReceiptCount =
+                    dispatch.TransitionLedger.DayBoundaryReceipts.Count;
+                pendingCropTeacherDayBoundary = null;
+                cropTeacherPreparedCommitmentIds.Clear();
+                activeObjectiveContinuation = null;
+                leasedDecisionModelPlanPath = string.Empty;
+                leasedDecisionRankingPath = string.Empty;
+                leasedDecisionCompiledQueuePath = string.Empty;
+                leasedDecisionSnapshotPath = string.Empty;
+                leasedDecisionSourceStateHash = string.Empty;
+                leasedDecisionGoalId = string.Empty;
+                leasedSelectedCandidateId = string.Empty;
+                leasedSelectedQueueIndex = -1;
+                AppendProgress(
+                    options,
+                    "crop_teacher_replanned",
+                    iteration,
+                    lastStateHash,
+                    string.Empty,
+                    "reason=" + cropStep.Reason +
+                    " replan_count=" + cropTeacherReplanCount +
+                    " superseded_run_plan=" + supersededRunPlanPath +
+                    " native_run_plan=" + dispatch.NativeRunPlanPath +
+                    " actions=" + dispatch.ActionCount);
+                await DelayBeforeNextAttemptAsync(
+                    options,
+                    attemptOrdinal);
+                continue;
+            }
             cropTeacherReplanRequired = true;
             cropTeacherReplanReason = cropStep.Reason;
             stopReason = "crop_teacher_replan_required reason=" +
@@ -578,52 +645,25 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                     dailyPlanRanking,
                     out var planningHandoff))
             {
-                var capture = await PlanningHandoffCapture.CaptureAsync(
+                var dispatch = await DispatchCropTeacherAsync(
                     http,
-                    options.BridgeSnapshotUrl,
-                    Path.Combine(
-                        options.SnapshotDir,
-                        "planning-handoff-" + iteration.ToString("D4")),
+                    options,
+                    iteration,
                     rawSnapshotJson,
-                    planningHandoff);
+                    planningHandoff,
+                    "initial");
                 lastPlanningHandoffCaptureManifestPath =
-                    capture.ManifestPath;
-                var teacherDispatchDirectory = Path.Combine(
-                    Path.GetDirectoryName(capture.ManifestPath)!,
-                    "teacher-dispatch");
-                var teacherDispatch =
-                    MoneyRevenueCropTeacherDispatchBuilder.Build(
-                        capture.ManifestPath,
-                        teacherDispatchDirectory,
-                        options.RunId + ".crop-teacher." +
-                            iteration.ToString("D4"),
-                        DateTimeOffset.UtcNow.ToString("O"));
-                lastPlanningHandoffTeacherDispatchManifestPath = Path.Combine(
-                    teacherDispatchDirectory,
-                    "teacher-dispatch-manifest.json");
+                    dispatch.Capture.ManifestPath;
+                lastPlanningHandoffTeacherDispatchManifestPath =
+                    dispatch.TeacherDispatchManifestPath;
                 lastPlanningHandoffNativeRunPlanPath =
-                    teacherDispatch.NativeRunPlanPath;
-                activeCropTeacherRunPlanRequest =
-                    JsonSerializer.Deserialize<
-                        MoneyRevenueCropNativeProductionRunPlanRequest>(
-                            await File.ReadAllTextAsync(
-                                teacherDispatch.NativeRunPlanRequestPath),
-                            JsonOptions) ?? throw new InvalidDataException(
-                                "crop_teacher_run_plan_request_invalid");
-                activeCropTeacherRunPlan =
-                    JsonSerializer.Deserialize<
-                        MoneyRevenueCropNativeProductionRunPlan>(
-                            await File.ReadAllTextAsync(
-                                teacherDispatch.NativeRunPlanPath),
-                            JsonOptions) ?? throw new InvalidDataException(
-                                "crop_teacher_native_run_plan_invalid");
-                cropTeacherTransitionLedgerPath = Path.Combine(
-                    teacherDispatchDirectory,
-                    "crop-teacher-transition-ledger.json");
+                    dispatch.NativeRunPlanPath;
+                activeCropTeacherRunPlanRequest = dispatch.RunPlanRequest;
+                activeCropTeacherRunPlan = dispatch.RunPlan;
+                cropTeacherTransitionLedgerPath =
+                    dispatch.TransitionLedgerPath;
                 activeCropTeacherTransitionLedger =
-                    CropTeacherTransitionLedger.Open(
-                        cropTeacherTransitionLedgerPath,
-                        teacherDispatch.NativeRunPlanPath);
+                    dispatch.TransitionLedger;
                 cropTeacherHarvestReceiptCount =
                     activeCropTeacherTransitionLedger.HarvestReceipts.Count;
                 cropTeacherDayBoundaryReceiptCount =
@@ -650,14 +690,14 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                     lastStateHash,
                     string.Empty,
                     "kind=crop_production_teacher manifest=" +
-                    capture.ManifestPath +
-                    " map=" + capture.MapWidth + "x" +
-                    capture.MapHeight +
+                    dispatch.Capture.ManifestPath +
+                    " map=" + dispatch.Capture.MapWidth + "x" +
+                    dispatch.Capture.MapHeight +
                     " layout_snapshots=" +
-                    capture.LayoutSnapshotCount +
+                    dispatch.Capture.LayoutSnapshotCount +
                     " native_run_plan=" +
-                    teacherDispatch.NativeRunPlanPath +
-                    " actions=" + teacherDispatch.ActionCount);
+                    dispatch.NativeRunPlanPath +
+                    " actions=" + dispatch.ActionCount);
                 await DelayBeforeNextAttemptAsync(options, attemptOrdinal);
                 continue;
             }
@@ -1142,6 +1182,7 @@ var report = new LiveTrainingLoopReport
     CropTeacherRunCompleted = cropTeacherRunCompleted,
     CropTeacherReplanRequired = cropTeacherReplanRequired,
     CropTeacherReplanReason = cropTeacherReplanReason,
+    CropTeacherReplanCount = cropTeacherReplanCount,
     CropTeacherTransitionLedgerPath = cropTeacherTransitionLedgerPath,
     CropTeacherHarvestReceiptCount = cropTeacherHarvestReceiptCount,
     CropTeacherDayBoundaryReceiptCount =
@@ -1219,6 +1260,7 @@ Console.WriteLine(JsonSerializer.Serialize(new
     crop_teacher_run_completed = cropTeacherRunCompleted,
     crop_teacher_replan_required = cropTeacherReplanRequired,
     crop_teacher_replan_reason = cropTeacherReplanReason,
+    crop_teacher_replan_count = cropTeacherReplanCount,
     crop_teacher_transition_ledger_path = cropTeacherTransitionLedgerPath,
     crop_teacher_harvest_receipt_count = cropTeacherHarvestReceiptCount,
     crop_teacher_day_boundary_receipt_count =

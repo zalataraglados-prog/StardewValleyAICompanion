@@ -80,6 +80,9 @@ public sealed class LiveTrainingLoopReport
     [JsonPropertyName("crop_teacher_replan_reason")]
     public string CropTeacherReplanReason { get; set; } = string.Empty;
 
+    [JsonPropertyName("crop_teacher_replan_count")]
+    public int CropTeacherReplanCount { get; set; }
+
     [JsonPropertyName("crop_teacher_transition_ledger_path")]
     public string CropTeacherTransitionLedgerPath { get; set; } = string.Empty;
 
