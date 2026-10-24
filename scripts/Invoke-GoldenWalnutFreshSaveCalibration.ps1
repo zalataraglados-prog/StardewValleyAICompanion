@@ -2,6 +2,7 @@ param(
     [string] $ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path,
     [string] $RuntimeRoot = "E:\StardewValleyAICompanion-runtime",
     [string] $OutputRoot = "E:\StardewAITraining\golden-walnut-fresh-save-calibration",
+    [string] $FreshSaveOutputRoot = "",
     [string] $RunId = (
         "golden-walnut-fresh-save-" + (Get-Date -Format "yyyyMMdd-HHmmss")),
     [int] $BackendPort = 8795,
@@ -44,7 +45,12 @@ function Write-Utf8Json([string] $Path, $Value) {
 }
 
 $resolvedOutputRoot = [IO.Path]::GetFullPath($OutputRoot)
-$freshSaveOutputRoot = Join-Path $resolvedOutputRoot "fresh-save"
+$freshSaveOutputRoot = if ([string]::IsNullOrWhiteSpace(
+        $FreshSaveOutputRoot)) {
+    Join-Path $resolvedOutputRoot "fresh-save"
+} else {
+    [IO.Path]::GetFullPath($FreshSaveOutputRoot)
+}
 $calibrationOutputRoot = Join-Path $resolvedOutputRoot "product-calibration"
 $workflowDirectory = Join-Path (Join-Path $resolvedOutputRoot "workflows") $RunId
 
@@ -111,6 +117,8 @@ $summary = [ordered]@{
     run_id = $RunId
     native_save_slot = [string]$freshSummary.native_save_slot
     isolated_save_root = [string]$freshSummary.isolated_save_root
+    fresh_save_output_root = $freshSaveOutputRoot
+    evidence_output_root = $resolvedOutputRoot
     fresh_save_summary_path = $freshSummaryPath
     product_calibration_summary_path = $calibrationSummaryPath
     live_training_loop_report_path =

@@ -101,6 +101,18 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             "$effectiveMaxAttempts",
             workflow,
             StringComparison.Ordinal);
+        Assert.Contains(
+            "$FreshSaveOutputRoot",
+            workflow,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "fresh_save_output_root = $freshSaveOutputRoot",
+            workflow,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "evidence_output_root = $resolvedOutputRoot",
+            workflow,
+            StringComparison.Ordinal);
         Assert.DoesNotContain("Start-Process", workflow, StringComparison.Ordinal);
         Assert.DoesNotContain("Remove-Item", workflow, StringComparison.Ordinal);
 
