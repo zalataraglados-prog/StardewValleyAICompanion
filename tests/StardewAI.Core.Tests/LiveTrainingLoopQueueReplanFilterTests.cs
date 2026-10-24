@@ -66,6 +66,30 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
         Assert.Empty(filtered);
     }
 
+    [Fact]
+    public void PlanningHandoffFailsClosedInsteadOfCompilingBroadCandidates()
+    {
+        var candidates = new JsonArray
+        {
+            Candidate("unrelated", "social.talk_npc")
+        };
+
+        var filtered = QueueReplanFilter
+            .FilterGoalResolutionBoundCandidates(
+                candidates,
+                new JsonObject
+                {
+                    ["status"] = "planning_handoff_required",
+                    ["planning_handoff"] = new JsonObject
+                    {
+                        ["handoff_kind"] = "crop_production_teacher"
+                    }
+                });
+
+        Assert.Empty(filtered);
+        Assert.Single(candidates);
+    }
+
     [Theory]
     [InlineData(9, 6, 3)]
     [InlineData(4, 4, 0)]

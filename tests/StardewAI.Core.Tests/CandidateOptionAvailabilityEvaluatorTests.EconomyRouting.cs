@@ -689,6 +689,42 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     }
 
     [Fact]
+    public void SellItemsRejectsLegacyUnprotectedPlantableSeedProjection()
+    {
+        var option = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(SellSnapshot(
+                inventoryItemOverride: """
+                  {
+                    "slot_index":0,
+                    "item_id":"472",
+                    "qualified_item_id":"(O)472",
+                    "stack":15,
+                    "category":-74,
+                    "can_be_shipped":true,
+                    "sell_to_store_price":10,
+                    "sale_price":10,
+                    "protected_from_auto_sell":false,
+                    "auto_sell_protection_reasons":[],
+                    "is_empty":false
+                  }
+                """,
+                seedInventoryOverride: """
+                  [{"slot_index":0,"item_id":"472","qualified_item_id":"(O)472","stack":15,"seed_id":"472","crop_catalog_match":true}]
+                """), new[] { "economy.sell_items" })
+            .Options[0];
+
+        Assert.False(option.Available);
+        Assert.Contains(
+            "plantable_seed_requires_explicit_surplus_authorization",
+            option.BlockingReasons);
+        var candidate = Assert.Single(option.EconomicCandidates);
+        Assert.False(candidate.Available);
+        Assert.Contains(
+            "plantable_seed_requires_explicit_surplus_authorization",
+            candidate.BlockReasons);
+    }
+
+    [Fact]
     public void BoundRouteCandidateReusesCompilerTargetBranchGate()
     {
         var snapshot = Snapshot("""

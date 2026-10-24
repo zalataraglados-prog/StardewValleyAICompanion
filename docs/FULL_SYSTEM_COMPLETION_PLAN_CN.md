@@ -8,7 +8,9 @@
 
 Spring 1 新档首轮排序暴露的不是社交评分错误，而是上游缺少开局礼盒候选。唯一实现现为 `rewards.claim_starter_gift`：小模型只决定是否领取，C# 编译器从 fresh snapshot 绑定礼盒、输出、站位和任务，运行时通过原生农舍 Chest 交互执行。它属于 `earn_money` 的支撑转移，领取后必须 fresh replan 到作物生产；不得并存第二套礼盒、库存或任务写入逻辑。
 
-`runtime-starter-gift-20261024-172156` 已按该顺序完成新桥领取前 full snapshot、原生领取、领取后 full snapshot 和守恒回执；`EVD-342` 将该动作提升为 five-gate / training-eligible。执行器还修正了新档淡入控制门等待和失败回执真实 after 状态。06:00 商店 `allowed_now` 已在共享路线层修正，未开门服务不会再以 ready-now 进入当前方向绑定。剩余顺序固定为：Grandpa 首日队列重放 -> 验证 15 粒防风草种子进入既有清障/耕地/播种/浇水链 -> 若存在缺口只补唯一既有链，不新增第二套开局逻辑。全局正式训练仍受 19 criterion 和 11 root method 准入约束。
+`runtime-starter-gift-20261024-172156` 已按该顺序完成新桥领取前 full snapshot、原生领取、领取后 full snapshot 和守恒回执；`EVD-342` 将该动作提升为 five-gate / training-eligible。执行器还修正了新档淡入控制门等待和失败回执真实 after 状态。06:00 商店 `allowed_now` 已在共享路线层修正，未开门服务不会再以 ready-now 进入当前方向绑定。
+
+领取后快照回放证明，原计划中“fresh replan 会自然进入作物链”的表述少了一层战略交接。已有 `farm.maintain_crops` 只能机械维护透明快照中的确定地块，不负责选择新地块。修正后的固定顺序为：保护普通可种种子不被通用售卖/出货消耗 -> Grandpa 在空农场/已有种子边界发出类型化 `crop_production_teacher` 交接 -> LiveTrainingLoop 按需采集完整但分块不超过 `32x32` 的 `farm_layout` -> 复用唯一 Money Revenue Crop Teacher 选择作物与紧凑布局 -> 将其承诺交回既有清障/耕地/播种/浇水和跨日链。当前前两步已由真实快照回放通过，普通候选编译已在交接状态失败关闭；自动布局采集和 Teacher 调度仍是下一步，未完成前不得进入该首日链的训练。全局正式训练仍受 19 criterion 和 11 root method 准入约束。
 
 ## 当前记录 · 2026-10-21 11 核心复杂度顺序
 

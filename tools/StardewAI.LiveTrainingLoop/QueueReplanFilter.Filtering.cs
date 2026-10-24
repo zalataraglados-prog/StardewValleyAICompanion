@@ -8,10 +8,16 @@ public static partial class QueueReplanFilter
         JsonArray rankedCandidates,
         JsonObject? goalResolution)
     {
-        if (!string.Equals(
-                ReadString(goalResolution, "status"),
-                "resolved",
+        var status = ReadString(goalResolution, "status");
+        if (string.Equals(
+                status,
+                "planning_handoff_required",
                 StringComparison.Ordinal))
+        {
+            return new JsonArray();
+        }
+
+        if (!string.Equals(status, "resolved", StringComparison.Ordinal))
         {
             return JsonNode.Parse(rankedCandidates.ToJsonString())?
                 .AsArray() ?? new JsonArray();

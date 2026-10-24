@@ -14,38 +14,44 @@ public sealed partial class PlayerReadAdapter : ReadAdapterBase
     {
         var player = Context.IsWorldReady ? Game1.player : null;
         var inventory = player?.Items
-            .Select((item, index) => new
+            .Select((item, index) =>
             {
-                slot_index = index,
-                item_id = item?.ItemId,
-                qualified_item_id = item?.QualifiedItemId,
-                display_name = item?.DisplayName,
-                stack = item?.Stack,
-                quality = item?.Quality,
-                category = item?.Category,
-                maximum_stack_size = item?.maximumStackSize(),
-                can_be_shipped = item?.canBeShipped(),
-                can_be_trashed = item?.canBeTrashed(),
-                sell_to_store_price = item?.sellToStorePrice(-1L),
-                sale_price = item?.salePrice(),
-                runtime_type = item?.GetType().FullName,
-                special_state = item is null
-                    ? null
-                    : FarmReadAdapter.ReadItemSpecialState(item),
-                special_item = item?.specialItem,
-                context_tags = item?.GetContextTags().OrderBy(tag => tag, StringComparer.Ordinal).ToArray(),
-                donate_color_context = ReadDonateColorContext(item),
-                base_tag_not_giftable = item is null ? (bool?)null : StardewValley.ItemContextTagManager.HasBaseTag(item.QualifiedItemId, "not_giftable"),
-                is_object = item is StardewValley.Object,
-                object_type = item is StardewValley.Object obj ? obj.Type : null,
-                object_quest_item = item is StardewValley.Object objQuest ? (bool?)objQuest.questItem.Value : null,
-                object_big_craftable = item is StardewValley.Object objBig ? (bool?)objBig.bigCraftable.Value : null,
-                can_be_given_as_gift = item?.canBeGivenAsGift(),
-                is_furniture = item is StardewValley.Objects.Furniture,
-                is_wallpaper = item is StardewValley.Objects.Wallpaper,
-                protected_from_auto_sell = SellProtectionReasons(item).Length > 0,
-                auto_sell_protection_reasons = SellProtectionReasons(item),
-                is_empty = item is null
+                var protectionReasons = SellProtectionReasons(
+                    item,
+                    player.currentLocation);
+                return new
+                {
+                    slot_index = index,
+                    item_id = item?.ItemId,
+                    qualified_item_id = item?.QualifiedItemId,
+                    display_name = item?.DisplayName,
+                    stack = item?.Stack,
+                    quality = item?.Quality,
+                    category = item?.Category,
+                    maximum_stack_size = item?.maximumStackSize(),
+                    can_be_shipped = item?.canBeShipped(),
+                    can_be_trashed = item?.canBeTrashed(),
+                    sell_to_store_price = item?.sellToStorePrice(-1L),
+                    sale_price = item?.salePrice(),
+                    runtime_type = item?.GetType().FullName,
+                    special_state = item is null
+                        ? null
+                        : FarmReadAdapter.ReadItemSpecialState(item),
+                    special_item = item?.specialItem,
+                    context_tags = item?.GetContextTags().OrderBy(tag => tag, StringComparer.Ordinal).ToArray(),
+                    donate_color_context = ReadDonateColorContext(item),
+                    base_tag_not_giftable = item is null ? (bool?)null : StardewValley.ItemContextTagManager.HasBaseTag(item.QualifiedItemId, "not_giftable"),
+                    is_object = item is StardewValley.Object,
+                    object_type = item is StardewValley.Object obj ? obj.Type : null,
+                    object_quest_item = item is StardewValley.Object objQuest ? (bool?)objQuest.questItem.Value : null,
+                    object_big_craftable = item is StardewValley.Object objBig ? (bool?)objBig.bigCraftable.Value : null,
+                    can_be_given_as_gift = item?.canBeGivenAsGift(),
+                    is_furniture = item is StardewValley.Objects.Furniture,
+                    is_wallpaper = item is StardewValley.Objects.Wallpaper,
+                    protected_from_auto_sell = protectionReasons.Length > 0,
+                    auto_sell_protection_reasons = protectionReasons,
+                    is_empty = item is null
+                };
             })
             .ToArray();
         var seedInventory = player?.Items
@@ -251,7 +257,7 @@ public sealed partial class PlayerReadAdapter : ReadAdapterBase
 
         var resolvedSeedId = Crop.ResolveSeedId(item.ItemId, location);
         var cropCatalogMatch = Game1.cropData.ContainsKey(resolvedSeedId);
-        if (item.Category != StardewValley.Object.SeedsCategory && !cropCatalogMatch)
+        if (!IsPlantableSeed(item, location))
         {
             return null;
         }
@@ -345,7 +351,9 @@ public sealed partial class PlayerReadAdapter : ReadAdapterBase
         };
     }
 
-    private static string[] SellProtectionReasons(Item? item)
+    private static string[] SellProtectionReasons(
+        Item? item,
+        GameLocation? location)
     {
         if (item is null)
         {
@@ -353,6 +361,11 @@ public sealed partial class PlayerReadAdapter : ReadAdapterBase
         }
 
         var reasons = new List<string>();
+        if (IsPlantableSeed(item, location))
+        {
+            reasons.Add("plantable_seed_requires_explicit_surplus_authorization");
+        }
+
         if (item.specialItem)
         {
             reasons.Add("special_item");
@@ -397,6 +410,13 @@ public sealed partial class PlayerReadAdapter : ReadAdapterBase
         }
 
         return reasons.Distinct(StringComparer.Ordinal).ToArray();
+    }
+
+    private static bool IsPlantableSeed(Item item, GameLocation? location)
+    {
+        var resolvedSeedId = Crop.ResolveSeedId(item.ItemId, location);
+        return item.Category == StardewValley.Object.SeedsCategory ||
+            Game1.cropData.ContainsKey(resolvedSeedId);
     }
 
     private static int? ReadFarmhouseUpgradeLevel(Farmer? player)

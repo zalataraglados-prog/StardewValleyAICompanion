@@ -8,7 +8,9 @@
 
 `rewards.claim_starter_gift` 已完成透明投影、候选、日计划、fresh 编译和原生 `GameLocation.checkAction` 执行路径，并作为 `earn_money` 的 fresh-save 支撑转移。实现锁定 owned FarmHouse、唯一 starter gift Chest、精确 contents、背包容量、相邻站位和农场类型任务；运行时不得直接写 Chest、库存或任务。
 
-`runtime-starter-gift-20261024-172156` 已从更新后的桥采集同一真实隔离新档的领取前/后 full snapshot 与原生回执：共享 BFS 到精确相邻格，405 tick 内由原生交互生成 `(O)472 x15`、任务 `6` 并移除空礼盒，状态哈希同步变化，只加载 TransparentBridge 与 RuntimeTestHarness。`EVD-342` 因此关闭 read/candidate/compiler/runtime/output 五门，本项进入 training allowlist。该局部动作准入不改变全局 `CoverageGateReady 5/19`、Money production `0/18` 或 `formal_product_training=false`；下一步是按领取后 fresh 状态重放 Grandpa 首日候选并核对作物生产链。
+`runtime-starter-gift-20261024-172156` 已从更新后的桥采集同一真实隔离新档的领取前/后 full snapshot 与原生回执：共享 BFS 到精确相邻格，405 tick 内由原生交互生成 `(O)472 x15`、任务 `6` 并移除空礼盒，状态哈希同步变化，只加载 TransparentBridge 与 RuntimeTestHarness。`EVD-342` 因此关闭 read/candidate/compiler/runtime/output 五门，本项进入 training allowlist。该局部动作准入不改变全局 `CoverageGateReady 5/19`、Money production `0/18` 或 `formal_product_training=false`。
+
+领取后 fresh 状态已完成真实快照离线回放：普通种子在 bridge 与 planner 两层均受显式 surplus authorization 保护，不能作为通用售卖/出货候选；Grandpa 不再越过最高优先级 `earn_money` 去执行社交，而是发布 `planning_goal_handoff.v1`，请求现有 `crop_production_teacher` 和按需 `farm_layout`。队列层已对交接状态失败关闭。该结果只是正确的控制面入口，不是可训练执行 episode；仍须接通自动分块采集、Teacher 决策、承诺提交以及既有原生作物动作链，才能把首日种植计入闭环证据。
 
 ## 当前准入状态 · 2026-10-21
 

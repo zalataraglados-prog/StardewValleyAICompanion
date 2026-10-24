@@ -60,7 +60,7 @@ namespace StardewAI.Core.OptionRegistry
 
             if (optionId == "economy.ship_items")
             {
-                return ShipItemsValueBlockReasons(snapshot);
+                return ShipItemsValueBlockReasons(snapshot, eventCandidates);
             }
 
             return Array.Empty<string>();
@@ -144,7 +144,9 @@ namespace StardewAI.Core.OptionRegistry
                 .ToArray();
         }
 
-        private static string[] ShipItemsValueBlockReasons(SnapshotEnvelope snapshot)
+        private static string[] ShipItemsValueBlockReasons(
+            SnapshotEnvelope snapshot,
+            EventCandidate[] candidates)
         {
             var shippingBins = ReadStateFieldValue(snapshot, "farm", "shipping_bins");
             if (!HasCompletedShippingBin(shippingBins))
@@ -158,7 +160,17 @@ namespace StardewAI.Core.OptionRegistry
                 return new[] { "player_inventory_unavailable" };
             }
 
-            return Array.Empty<string>();
+            if (candidates.Any(candidate => candidate.Available))
+            {
+                return Array.Empty<string>();
+            }
+
+            return (candidates.Length == 0
+                    ? new[] { "inventory_has_no_shippable_positive_value_items" }
+                    : candidates.SelectMany(candidate => candidate.BlockReasons))
+                .Concat(new[] { "no_value_available_shipping_candidates" })
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
         }
 
         private static EconomicCandidate[] BuyCandidates(
@@ -420,6 +432,7 @@ namespace StardewAI.Core.OptionRegistry
                 {
                     var acceptedByShop = ShopAcceptsItem(item, categories, tagGroups);
                     var blockReasons = SellItemBlockReasons(
+                        snapshot,
                         item,
                         shopSellAvailable,
                         acceptedByShop,
@@ -478,7 +491,6 @@ namespace StardewAI.Core.OptionRegistry
             return inventory.Value.EnumerateArray()
                 .Where(item => ReadBool(item, "is_empty") != true)
                 .Where(item => ReadBool(item, "can_be_shipped") == true && ReadInt(item, "sell_to_store_price") > 0 && ReadInt(item, "stack") > 0)
-                .Where(item => ReadBool(item, "protected_from_auto_sell") != true && !HasArrayItems(item, "auto_sell_protection_reasons"))
                 .Select(item => ShipCandidateForItem(snapshot, item, fullShipmentIndex, binBounds, binContents)!)
                 .ToArray();
         }
@@ -492,6 +504,17 @@ namespace StardewAI.Core.OptionRegistry
         {
             var blockReasons = new List<string>();
             var locationId = "Farm";
+
+            if (ReadBool(item, "protected_from_auto_sell") == true ||
+                HasArrayItems(item, "auto_sell_protection_reasons"))
+            {
+                blockReasons.Add("inventory_item_protected_from_auto_sell");
+            }
+            if (IsPlantableSeedInventoryItem(snapshot, item))
+            {
+                blockReasons.Add(
+                    "plantable_seed_requires_explicit_surplus_authorization");
+            }
 
             var itemId = ReadString(item, "item_id");
             var qualifiedItemId = ReadString(item, "qualified_item_id");
@@ -659,6 +682,7 @@ namespace StardewAI.Core.OptionRegistry
         }
 
         private static string[] SellItemBlockReasons(
+            SnapshotEnvelope snapshot,
             JsonElement item,
             bool shopSellAvailable,
             bool acceptedByShop,
@@ -668,6 +692,11 @@ namespace StardewAI.Core.OptionRegistry
             if (ReadBool(item, "protected_from_auto_sell") == true || HasArrayItems(item, "auto_sell_protection_reasons"))
             {
                 reasons.Add("inventory_item_protected_from_auto_sell");
+            }
+            if (IsPlantableSeedInventoryItem(snapshot, item))
+            {
+                reasons.Add(
+                    "plantable_seed_requires_explicit_surplus_authorization");
             }
 
             var stack = ReadInt(item, "stack");
@@ -685,6 +714,32 @@ namespace StardewAI.Core.OptionRegistry
             }
 
             return reasons.Distinct(StringComparer.Ordinal).ToArray();
+        }
+
+        private static bool IsPlantableSeedInventoryItem(
+            SnapshotEnvelope snapshot,
+            JsonElement inventoryItem)
+        {
+            var seeds = ReadStateFieldValue(
+                snapshot,
+                "player",
+                "seed_inventory");
+            if (!seeds.HasValue || seeds.Value.ValueKind != JsonValueKind.Array)
+            {
+                return false;
+            }
+
+            var slotIndex = ReadInt(inventoryItem, "slot_index", -1);
+            var qualifiedItemId = ReadString(
+                inventoryItem,
+                "qualified_item_id");
+            return seeds.Value.EnumerateArray().Any(seed =>
+                seed.ValueKind == JsonValueKind.Object &&
+                ReadInt(seed, "slot_index", -2) == slotIndex &&
+                string.Equals(
+                    ReadString(seed, "qualified_item_id"),
+                    qualifiedItemId,
+                    StringComparison.Ordinal));
         }
 
         private static bool HasUsableShippingBin(JsonElement? shippingBins)

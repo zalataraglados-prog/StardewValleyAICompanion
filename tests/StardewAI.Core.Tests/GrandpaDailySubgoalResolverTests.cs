@@ -131,6 +131,91 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
     }
 
     [Fact]
+    public void UnplantedSeedsRequireCropTeacherBeforeLowerPrioritySocialWork()
+    {
+        var snapshot = GrandpaSnapshot(withUnplantedSeedInventory: true);
+        var socialCandidate = new PolicyEventCandidatePrediction
+        {
+            CandidateId = "social_talk:Abigail:Farm",
+            OptionId = "social.talk_npc",
+            Kind = "social_talk_current",
+            Rank = 1,
+            Score = 0.35,
+            Available = true,
+            LocationId = "Farm",
+            AllowedNow = true,
+            AllowedToday = true,
+            TimelineStatus = "ready_now",
+            Parameters = new[]
+            {
+                Parameter("npc_name", "Abigail"),
+                Parameter("npc_location", "Farm"),
+                Parameter("friendship_row_exists_before", "false"),
+                Parameter("friendship_points_before", "0"),
+                Parameter("expected_friendship_delta", "20"),
+                Parameter("expected_friendship_points_after", "20")
+            }
+        };
+
+        var result = new GrandpaDailySubgoalResolver().Resolve(
+            snapshot,
+            GrandpaEvaluationGoalDefinition.StrategicGoal,
+            new[] { socialCandidate });
+
+        Assert.Equal("planning_handoff_required", result.Status);
+        Assert.Equal("earn_money", result.DirectionId);
+        Assert.Equal("goal.economy.earn_money", result.EffectiveGoalId);
+        Assert.Empty(result.BoundCandidateIds);
+        Assert.NotNull(result.PlanningHandoff);
+        Assert.Equal(
+            "crop_production_teacher",
+            result.PlanningHandoff!.HandoffKind);
+        Assert.Equal(
+            new[] { "farm_layout" },
+            result.PlanningHandoff.RequiredSnapshotProfiles);
+        Assert.True(result.PlanningHandoff.AutomaticDispatchRequired);
+    }
+
+    [Fact]
+    public void ExistingCropPreventsRepeatedInitialCropTeacherHandoff()
+    {
+        var snapshot = GrandpaSnapshot(
+            withUnplantedSeedInventory: true,
+            withExistingCrop: true);
+        var socialCandidate = new PolicyEventCandidatePrediction
+        {
+            CandidateId = "social_talk:Abigail:Farm",
+            OptionId = "social.talk_npc",
+            Kind = "social_talk_current",
+            Available = true,
+            AllowedNow = true,
+            AllowedToday = true,
+            TimelineStatus = "ready_now",
+            Parameters = new[]
+            {
+                Parameter("npc_name", "Abigail"),
+                Parameter("npc_location", "Farm"),
+                Parameter("friendship_row_exists_before", "false"),
+                Parameter("friendship_points_before", "0"),
+                Parameter("expected_friendship_delta", "20"),
+                Parameter("expected_friendship_points_after", "20")
+            }
+        };
+
+        var result = new GrandpaDailySubgoalResolver().Resolve(
+            snapshot,
+            GrandpaEvaluationGoalDefinition.StrategicGoal,
+            new[] { socialCandidate });
+
+        Assert.Equal("resolved", result.Status);
+        Assert.Equal("raise_friendships", result.DirectionId);
+        Assert.Null(result.PlanningHandoff);
+        Assert.Equal(
+            new[] { socialCandidate.CandidateId },
+            result.BoundCandidateIds);
+    }
+
+    [Fact]
     public void DailySubgoalResolverStopsWhenMaximumScoreIsComplete()
     {
         var snapshot = TargetCompleteSnapshot();

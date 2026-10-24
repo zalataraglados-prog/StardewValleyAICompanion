@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
@@ -371,7 +372,9 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
         Assert.Equal(35, bound.TotalValue);
     }
 
-    private static SnapshotEnvelope GrandpaSnapshot()
+    private static SnapshotEnvelope GrandpaSnapshot(
+        bool withUnplantedSeedInventory = false,
+        bool withExistingCrop = false)
     {
         var state = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>("""
         {
@@ -424,6 +427,61 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
           }
         }
         """, JsonOptions)!;
+        if (withUnplantedSeedInventory)
+        {
+            var player = JsonNode.Parse(state["player"].GetRawText())!
+                .AsObject();
+            player["seed_inventory"] = JsonNode.Parse("""
+                {
+                  "value":[{
+                    "slot_index":5,
+                    "item_id":"472",
+                    "qualified_item_id":"(O)472",
+                    "display_name":"Parsnip Seeds",
+                    "stack":15,
+                    "quality":0,
+                    "category":-74,
+                    "seed_id":"472",
+                    "crop_catalog_match":true
+                  }],
+                  "status":"available",
+                  "source":{"kind":"game_object","path":"test"},
+                  "adapter":"test",
+                  "read_at_tick":1,
+                  "confidence":1
+                }
+                """);
+            state["player"] = JsonSerializer.Deserialize<JsonElement>(
+                player.ToJsonString(),
+                JsonOptions);
+        }
+
+        if (withExistingCrop)
+        {
+            var farm = JsonNode.Parse(state["farm"].GetRawText())!
+                .AsObject();
+            farm["crops"] = JsonNode.Parse("""
+                {
+                  "value":[{
+                    "location_id":"Farm",
+                    "tile_x":10,
+                    "tile_y":10,
+                    "seed_id":"472",
+                    "current_phase":0,
+                    "day_of_current_phase":0
+                  }],
+                  "status":"available",
+                  "source":{"kind":"game_object","path":"test"},
+                  "adapter":"test",
+                  "read_at_tick":1,
+                  "confidence":1
+                }
+                """);
+            state["farm"] = JsonSerializer.Deserialize<JsonElement>(
+                farm.ToJsonString(),
+                JsonOptions);
+        }
+
         return SnapshotFromState(state);
     }
 

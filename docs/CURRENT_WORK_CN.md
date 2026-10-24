@@ -9,7 +9,9 @@
 - 真实 Spring 1 旧快照只有商店、社交和小游戏候选，缺少领取农舍开局礼盒这一必经前置，导致 Grandpa 最大分数目标只能在低价值候选中选择。现已新增唯一高层项 `rewards.claim_starter_gift`，并贯通透明读取、候选生成、日计划、fresh 编译重绑和 Product Executor 共用的原生运行状态机。
 - 透明桥只在当前玩家拥有的 `FarmHouse` 中发布唯一 `giftbox + starterGift` Chest，绑定精确 tile/runtime/item 身份、实时 contents、背包容量、相邻站位和农场类型对应任务（普通农场 `6`、Meadowlands `132`）。运行时只调用原生 `GameLocation.checkAction`，由 `Chest.dumpContents` 完成任务、背包/举起物品和空礼盒移除；禁止直接改 Chest、背包或任务。
 - 该项已进入 `earn_money` 的 fresh-save 支撑转移。隐藏静音原生运行 `runtime-starter-gift-20261024-172156` 在真实隔离新档中通过：领取前后 full snapshot 哈希分别为 `e31c45f8cb50c9a9576cab27a5769faf6f193bfffdc80e3a2465c29d8369204f` 与 `eed1329a1bee2d239da5e35961ede172e865f3e0b7b99987dc087e1df608bb71`，405 tick 后 `(O)472 x15`、任务 `6` 和空礼盒移除均由原生回执验证。`EVD-342` 已将本项提升为 five-gate / training-eligible；目录预期为 `241 registered / 162 five-gate / 67 training allowlist`，以本轮生成报告为最终事实源。
-- 首次原生运行同时暴露新档淡入时控制门未开放和失败回执写死后状态两处硬伤。执行器现在在 paused/global-fade/freeze/warp 门关闭时只等待且不累计 stuck，故事事件会显式失败关闭；无论成功或失败，回执均从当前 Chest 与任务读取真实 after 状态。下一步重放领取后的 Grandpa 首日候选，确认 15 粒防风草种子进入既有清障、耕地、播种和浇水链，而不是回退到社交或闭门商店。
+- 首次原生运行同时暴露新档淡入时控制门未开放和失败回执写死后状态两处硬伤。执行器现在在 paused/global-fade/freeze/warp 门关闭时只等待且不累计 stuck，故事事件会显式失败关闭；无论成功或失败，回执均从当前 Chest 与任务读取真实 after 状态。
+- 领取后真实快照已重放。通用售卖/出货现在对 `player.seed_inventory` 的精确槽位与 qualified ID 双重保护可种种子；透明桥的新快照也直接发布同一保护原因。真实旧快照回放中，种子售卖/出货可用候选为 `0`。
+- 新地块布局不属于 `farm.maintain_crops` 的机械职责。Grandpa 解析器现于“赚钱方向优先、已有可种种子、农场无作物、没有精确 ready 赚钱候选”时发出 `planning_handoff_required`，携带 `crop_production_teacher`、`farm_layout` 和 `establish_initial_crop_production`；LiveTrainingLoop 在该状态下禁止把完整候选池交给日计划，因此不会再回退到社交。下一步只接通现有 Money Revenue Crop Teacher 的按需分块布局采集与自动调度，不新增第二套清障/耕地/播种/浇水实现。
 - 06:00 商店门已在共享 `ShopObjectiveStageCandidates` 路线层修正：跨图候选现在同时合并第一段 connector 与最终商店服务的 `AllowedNow/AllowedToday`、最晚开门、最早关门和等待成本。商店尚未开门时保留“今日稍后可用”，但不得进入 ready-now 或 Grandpa 当前方向绑定；排序器将其延后，不再先走到闭门商店。该修复同时覆盖购买、售卖、动物购买和蟹笼补给，没有新增分支实现。精确受影响回归 `88/88` 通过；一次宽筛另暴露 4 个与本改动无关的既有 fixture 失败（清障 2、特别订单候选身份 1、浇水耗时旧期望 1），未混入本切片。
 
 ## 当前增量 · Golden Walnut 新档证据归档

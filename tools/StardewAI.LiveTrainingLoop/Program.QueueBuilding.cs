@@ -151,14 +151,22 @@ static partial class Program
         ranking["objective_continuation_filter"] = objectiveContinuationFilter;
         ranking["goal_resolution_binding_filter"] = new JsonObject
         {
-            ["active"] = string.Equals(
+            ["active"] =
+                string.Equals(
+                    ReadString(goalResolution, "status"),
+                    "resolved",
+                    StringComparison.Ordinal) ||
+                string.Equals(
+                    ReadString(goalResolution, "status"),
+                    "planning_handoff_required",
+                    StringComparison.Ordinal),
+            ["resolution_status"] =
                 ReadString(goalResolution, "status"),
-                "resolved",
-                StringComparison.Ordinal),
             ["input_candidate_count"] = rankedCandidates.Count,
             ["selected_candidate_count"] = goalBoundCandidates.Count,
             ["policy"] =
                 "resolved_goal_compiles_only_exact_bound_candidate_ids;" +
+                "planning_handoff_compiles_no_broad_candidates;" +
                 "unresolved_or_not_applicable_goal_preserves_ranked_candidates;" +
                 "fail_closed_when_resolved_binding_is_empty"
         };

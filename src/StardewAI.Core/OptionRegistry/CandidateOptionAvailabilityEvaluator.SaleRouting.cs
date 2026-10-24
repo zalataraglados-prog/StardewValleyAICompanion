@@ -92,6 +92,11 @@ namespace StardewAI.Core.OptionRegistry
                     {
                         reasons.Add("inventory_item_protected_from_auto_sell");
                     }
+                    if (IsPlantableSeedInventoryItem(snapshot, item))
+                    {
+                        reasons.Add(
+                            "plantable_seed_requires_explicit_surplus_authorization");
+                    }
 
                     var stack = ReadInt(item, "stack");
                     var unitPrice = (int)(ReadInt(

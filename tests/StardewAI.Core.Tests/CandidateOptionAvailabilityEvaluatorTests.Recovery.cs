@@ -611,7 +611,10 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
                 currentTime.ToString(System.Globalization.CultureInfo.InvariantCulture)));
     }
 
-    private static SnapshotEnvelope SellSnapshot(string inventoryItemOverride, string? sellContextOverride = null)
+    private static SnapshotEnvelope SellSnapshot(
+        string inventoryItemOverride,
+        string? sellContextOverride = null,
+        string seedInventoryOverride = "[]")
     {
         return Snapshot("""
         {
@@ -620,7 +623,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
           },
           "player": {
             "location_id": {"value":"SeedShop","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
-            "inventory": {"value":[ITEM],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            "inventory": {"value":[ITEM],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "seed_inventory": {"value":SEED_INVENTORY,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "locations": {
             "shops": {"value":{"stores_closed_for_festival":false,"shops":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
@@ -636,6 +640,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         }
         """
             .Replace("ITEM", inventoryItemOverride)
+            .Replace("SEED_INVENTORY", seedInventoryOverride)
             .Replace(
                 "SELL_CONTEXT",
                 sellContextOverride ??
