@@ -10,6 +10,11 @@ param(
     [int] $BackendPort = 8795,
     [int] $ProductPort = 8768,
     [int] $MaxAttempts = 8,
+    [ValidateSet("stop", "rolling")]
+    [string] $ArtifactRetentionMode = "stop",
+    [ValidateRange(1, 1000000)]
+    [int] $MaxPersistedIterations = 64,
+    [switch] $CaptureGoldenWalnutFreshSaveEvidence,
     [int] $StartupTimeoutSeconds = 180
 )
 
@@ -155,15 +160,25 @@ try {
         "--no-manifest",
         "--run-id", $RunId,
         "--save-isolation-path", $savesFullPath,
+        "--goal", "grandpa.maximum_21",
         "--max-attempts", $MaxAttempts,
         "--required-verified-actions", 1,
         "--skip-training",
         "--use-daily-plan",
         "--daily-plan-max-candidates", 4,
         "--continue-after-blocked-queue-items",
+        "--execution-snapshot-profile", "full",
+        "--artifact-retention-mode", $ArtifactRetentionMode,
+        "--max-persisted-iterations", $MaxPersistedIterations,
         "--sleep-ms", 1000,
         "--after-snapshot-wait-ms", 500
     )
+    if ($CaptureGoldenWalnutFreshSaveEvidence) {
+        $arguments += @(
+            "--snapshot-artifact-mode", "content_addressed_gzip",
+            "--capture-golden-walnut-fresh-save-evidence"
+        )
+    }
     $loopOutput = & dotnet $arguments
     $loopOutput | Set-Content -LiteralPath (Join-Path $artifactDirectory "loop.stdout.log") -Encoding utf8
     if ($LASTEXITCODE -ne 0) {
@@ -171,10 +186,19 @@ try {
     }
 
     $trajectoryPath = Join-Path $trainingRoot "datasets\policy-decision-trajectories.jsonl"
-    if (-not (Test-Path -LiteralPath $trajectoryPath -PathType Leaf)) {
+    $trajectoryExists = Test-Path -LiteralPath $trajectoryPath -PathType Leaf
+    if (-not $trajectoryExists -and
+        -not $CaptureGoldenWalnutFreshSaveEvidence) {
         throw "Bootstrap calibration produced no policy trajectory file."
     }
-    $trajectories = @(Get-Content -LiteralPath $trajectoryPath | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | ForEach-Object { $_ | ConvertFrom-Json })
+    $trajectories = if ($trajectoryExists) {
+        @(Get-Content -LiteralPath $trajectoryPath |
+            Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+            ForEach-Object { $_ | ConvertFrom-Json })
+    }
+    else {
+        @()
+    }
     $accepted = @($trajectories | Where-Object {
         $_.schema_version -eq "policy_decision_trajectory.v2" -and
         $_.versions.executor -eq "product_executor.v1" -and
@@ -183,8 +207,27 @@ try {
         $_.outcome.after_snapshot_fresh -eq $true -and
         @($_.candidates | Where-Object { $_.available -and $_.admitted_for_policy }).Count -ge 2
     })
-    if ($accepted.Count -lt 1) {
+    if ($accepted.Count -lt 1 -and
+        -not $CaptureGoldenWalnutFreshSaveEvidence) {
         throw "Bootstrap calibration produced no Product trajectory with at least two admitted candidates."
+    }
+
+    $runDirectory = Join-Path (Join-Path $trainingRoot "runs") $RunId
+    $loopReportPath = Join-Path $runDirectory "live-training-loop-report.json"
+    if (-not (Test-Path -LiteralPath $loopReportPath -PathType Leaf)) {
+        throw "Bootstrap calibration produced no LiveTrainingLoop report: $loopReportPath"
+    }
+    $loopReport = Get-Content -LiteralPath $loopReportPath -Raw |
+        ConvertFrom-Json
+    if ($CaptureGoldenWalnutFreshSaveEvidence -and
+        (-not [bool]$loopReport.golden_walnut_fresh_save_evidence_capture_enabled -or
+         [int]$loopReport.golden_walnut_fresh_save_episode_count -lt 1 -or
+         [string]::IsNullOrWhiteSpace(
+             [string]$loopReport.golden_walnut_fresh_save_episode_manifest_path) -or
+         -not (Test-Path -LiteralPath (
+             [string]$loopReport.golden_walnut_fresh_save_episode_manifest_path) `
+             -PathType Leaf))) {
+        throw "Golden Walnut fresh-save evidence capture produced no durable episode manifest."
     }
 
     $summary = [ordered]@{
@@ -198,9 +241,21 @@ try {
         trajectory_path = $trajectoryPath
         trajectory_count = $trajectories.Count
         accepted_multi_candidate_count = $accepted.Count
-        selected_option_id = [string]$accepted[0].selection.option_id
-        admitted_candidate_count = @($accepted[0].candidates | Where-Object { $_.available -and $_.admitted_for_policy }).Count
+        selected_option_id = if ($accepted.Count -gt 0) {
+            [string]$accepted[0].selection.option_id
+        } else { "" }
+        admitted_candidate_count = if ($accepted.Count -gt 0) {
+            @($accepted[0].candidates | Where-Object {
+                $_.available -and $_.admitted_for_policy }).Count
+        } else { 0 }
         product_executor_count = [int]$productHealth.product_executor_count
+        live_training_loop_report_path = $loopReportPath
+        golden_walnut_fresh_save_evidence_capture_enabled =
+            [bool]$loopReport.golden_walnut_fresh_save_evidence_capture_enabled
+        golden_walnut_fresh_save_episode_manifest_path =
+            [string]$loopReport.golden_walnut_fresh_save_episode_manifest_path
+        golden_walnut_fresh_save_episode_count =
+            [int]$loopReport.golden_walnut_fresh_save_episode_count
         formal_training_started = $false
     }
     Write-Json (Join-Path $artifactDirectory "summary.json") $summary

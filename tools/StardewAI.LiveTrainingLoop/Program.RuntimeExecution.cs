@@ -806,6 +806,8 @@ static partial class Program
             finalAfterJson,
             options.SnapshotArtifactMode);
         var aggregate = JsonNode.Parse((finalExecution ?? new JsonObject()).ToJsonString(JsonOptions))?.AsObject() ?? new JsonObject();
+        aggregate["effective_before_state_hash"] = stateHash;
+        aggregate["effective_before_snapshot_path"] = beforeSnapshotPath;
         aggregate["queue_execution_mode"] = "sequential_queue_items";
         aggregate["planned_item_count"] = originalPlannedItemCount;
         aggregate["final_pending_item_count"] = QueueReplanFilter.RemainingQueueItemCount(

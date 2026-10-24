@@ -14,7 +14,7 @@ Money production cells:  0/18
 Formal product training: false
 ```
 
-Golden Walnut 新档日程的证据保存硬伤已修复，但准入结论不变。LiveTrainingLoop 只有在显式启用捕获、提供稳定 run ID、选择最大 Grandpa 分数目标并使用 `full + content_addressed_gzip` 时，才会归档 success + fresh episode；首条记录还必须证明 day 0、同一 save/run/state/tick、姜岛/鹦鹉均未推进，并逐行核对完整且零进度的 `69 keys / 130 walnuts` 初始目录。前后快照清单和 episode 使用 rolling retention 不会删除的耐久别名。正常退出在 canonical 训练事务提交前生成 episode manifest；异常退出可通过 Bootstrap 从耐久目录重建。schedule verifier 对普通/内容寻址 JSON 使用同一逻辑内容哈希。当前只有滚动清理后的恢复回归，没有真实连续新档运行，因此该能力不能提升任何 coverage 分子，也不能解除 `formal_product_training_authorized=false`。
+Golden Walnut 新档日程的证据保存硬伤已修复，但准入结论不变。LiveTrainingLoop 只有在显式启用捕获、提供稳定 run ID、选择最大 Grandpa 分数目标并使用 `full + content_addressed_gzip` 时，才会归档 success + fresh episode；首条记录还必须证明 day 0、同一 save/run/state/tick、姜岛/鹦鹉均未推进，并逐行核对完整且零进度的 `69 keys / 130 walnuts` 初始目录。前后快照清单和 episode 使用 rolling retention 不会删除的耐久别名。正常退出在 canonical 训练事务提交前生成 episode manifest；异常退出可通过 Bootstrap 从耐久目录重建。真实隐藏静音运行 `golden-walnut-fresh-save-smoke-20261024-161207` 已产出 `1` 条 verified episode、initial boundary 和 manifest，并据此修复顺序队列聚合回执起点 tick/path 不一致；定向回归 `23/23`。这不是连续新档日程，尚无首次登岛、51 来源、三次鹦鹉跃迁或后续审计闭合，因此不能提升任何 coverage 分子，也不能解除 `formal_product_training_authorized=false`。
 
 `money-crop-native-20261021-v10-continuation-v15-full-chain` 已完成本轮 Money 有界退出条件，包含 `26` 条连续 transition、`8` 个作物批次、`8` 次单件投箱和 `6/6` checkpoint，源存档保持不变，最终状态哈希为 `bb70acbd0b477b7e14d7fe1b4450ee85292fa29e56de854924e4ee67f1216849`。它没有跨越并接入 Money criterion-local cell，因此 `0/18` 不变。
 
