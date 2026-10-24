@@ -80,6 +80,7 @@ public sealed class LiveTrainingOptions
     public string DailyPlanCandidateId { get; set; } = string.Empty;
     public bool StopAfterObjectiveComplete { get; set; }
     public bool StopAfterSocialObjectiveComplete { get; set; }
+    public bool StopAfterCropTeacherFirstDay { get; set; }
     public string TargetExecutionMode { get; set; } = ExecutionTargetProfiles.TrainingSingleplayer;
     public ActionActorRef TargetActor => ExecutionTargetProfiles.CreateActor(TargetExecutionMode);
     public string FeedbackMode => RequireExecutorFeedback
@@ -523,6 +524,10 @@ public sealed class LiveTrainingOptions
             else if (current == "--stop-after-objective-complete")
             {
                 options.StopAfterObjectiveComplete = true;
+            }
+            else if (current == "--stop-after-crop-teacher-first-day")
+            {
+                options.StopAfterCropTeacherFirstDay = true;
             }
         }
 

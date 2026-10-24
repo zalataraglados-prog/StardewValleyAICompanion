@@ -24,7 +24,7 @@ static partial class Program
             HttpClient http,
             LiveTrainingOptions options,
             int iteration,
-            CropTeacherFirstDayStep step,
+            CropTeacherRunStep step,
             MoneyRevenueCropNativeProductionRunPlan runPlan,
             MoneyRevenueCropNativeProductionRunPlanRequest runPlanRequest,
             string beforeSnapshotPath,
@@ -33,7 +33,7 @@ static partial class Program
     {
         return step.Stage switch
         {
-            CropTeacherFirstDayStageKinds.AcquireSeed =>
+            CropTeacherRunStageKinds.AcquireSeed =>
                 await BuildCropTeacherSeedQueueAsync(
                     http,
                     options,
@@ -42,8 +42,8 @@ static partial class Program
                     beforeSnapshotPath,
                     beforeSnapshot,
                     stateHash),
-            CropTeacherFirstDayStageKinds.RouteToFarm or
-            CropTeacherFirstDayStageKinds.RouteHome =>
+            CropTeacherRunStageKinds.RouteToFarm or
+            CropTeacherRunStageKinds.RouteHome =>
                 await BuildCropTeacherRouteQueueAsync(
                     http,
                     options,
@@ -52,7 +52,7 @@ static partial class Program
                     beforeSnapshotPath,
                     beforeSnapshot,
                     stateHash),
-            CropTeacherFirstDayStageKinds.PrepareSite =>
+            CropTeacherRunStageKinds.PrepareSite =>
                 await BuildCropTeacherSitePreparationQueueAsync(
                     http,
                     options,
@@ -60,7 +60,7 @@ static partial class Program
                     step,
                     runPlan,
                     runPlanRequest),
-            CropTeacherFirstDayStageKinds.ExecuteCropBatch =>
+            CropTeacherRunStageKinds.ExecuteCropBatch =>
                 await BuildCropTeacherActionBatchQueueAsync(
                     http,
                     options,
@@ -69,7 +69,7 @@ static partial class Program
                     beforeSnapshotPath,
                     beforeSnapshot,
                     stateHash),
-            CropTeacherFirstDayStageKinds.NativeSleep =>
+            CropTeacherRunStageKinds.NativeSleep =>
                 await BuildCropTeacherSleepQueueAsync(
                     http,
                     options,
@@ -87,7 +87,7 @@ static partial class Program
             HttpClient http,
             LiveTrainingOptions options,
             int iteration,
-            CropTeacherFirstDayStep step,
+            CropTeacherRunStep step,
             string beforeSnapshotPath,
             JsonObject beforeSnapshot,
             string stateHash)
@@ -146,7 +146,7 @@ static partial class Program
             HttpClient http,
             LiveTrainingOptions options,
             int iteration,
-            CropTeacherFirstDayStep step,
+            CropTeacherRunStep step,
             string beforeSnapshotPath,
             JsonObject beforeSnapshot,
             string stateHash)
@@ -228,7 +228,7 @@ static partial class Program
             HttpClient http,
             LiveTrainingOptions options,
             int iteration,
-            CropTeacherFirstDayStep step,
+            CropTeacherRunStep step,
             MoneyRevenueCropNativeProductionRunPlan runPlan,
             MoneyRevenueCropNativeProductionRunPlanRequest runPlanRequest)
     {
@@ -375,7 +375,7 @@ static partial class Program
             HttpClient http,
             LiveTrainingOptions options,
             int iteration,
-            CropTeacherFirstDayStep step,
+            CropTeacherRunStep step,
             string beforeSnapshotPath,
             JsonObject beforeSnapshot,
             string stateHash)
@@ -384,7 +384,9 @@ static partial class Program
             "crop_teacher_action_batch_missing");
         if (batch.Tiles.Length is < 1 or > 8 ||
             batch.OptionId is not (
-                "executor.plant_seed" or "executor.water_crop"))
+                "executor.plant_seed" or
+                "executor.water_crop" or
+                "executor.harvest_crop"))
         {
             throw new InvalidDataException(
                 "crop_teacher_action_batch_invalid");

@@ -19,6 +19,18 @@ public sealed class CropTeacherControlIntegrationSourceGuardTests
             "crop_teacher_first_day_complete",
             program,
             StringComparison.Ordinal);
+        Assert.Contains(
+            "crop_teacher_run_complete",
+            program,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "CropTeacherTransitionLedger.Open",
+            program,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "RecordVerifiedHarvestResults",
+            program,
+            StringComparison.Ordinal);
         Assert.DoesNotContain(
             "planning_handoff_dispatched_native_run_plan_ready",
             program,
@@ -74,6 +86,10 @@ public sealed class CropTeacherControlIntegrationSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains(
             "PlanningHandoffCapture.BuildFarmLayoutSnapshotUrl",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "executor.harvest_crop",
             source,
             StringComparison.Ordinal);
         Assert.DoesNotContain(

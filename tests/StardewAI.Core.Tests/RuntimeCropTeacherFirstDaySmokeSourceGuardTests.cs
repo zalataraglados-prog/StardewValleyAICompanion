@@ -40,6 +40,10 @@ public sealed class RuntimeCropTeacherFirstDaySmokeSourceGuardTests
             Source,
             StringComparison.Ordinal);
         Assert.Contains(
+            "--stop-after-crop-teacher-first-day",
+            Source,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "crop_teacher_first_day_completed",
             Source,
             StringComparison.Ordinal);

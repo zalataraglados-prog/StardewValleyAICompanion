@@ -5,7 +5,7 @@ using StardewAI.LiveTrainingLoop;
 
 namespace StardewAI.Core.Tests;
 
-public sealed class CropTeacherFirstDayPlannerTests
+public sealed class CropTeacherRunPlannerTests
 {
     private const string CommitmentId = "crop:parsnip:first";
     private const string SeedId = "(O)472";
@@ -16,22 +16,22 @@ public sealed class CropTeacherFirstDayPlannerTests
         var (plan, request) = BuildPlan();
 
         var acquire = Evaluate(plan, request, Snapshot("FarmHouse", 0, []));
-        Assert.Equal(CropTeacherFirstDayStageKinds.AcquireSeed, acquire.Stage);
+        Assert.Equal(CropTeacherRunStageKinds.AcquireSeed, acquire.Stage);
         Assert.Equal(2, acquire.RemainingQuantity);
         Assert.Equal(SeedId, acquire.SeedQualifiedItemId);
         Assert.Equal("SeedShop", acquire.ShopId);
 
         var routeFarm = Evaluate(plan, request, Snapshot("FarmHouse", 2, []));
-        Assert.Equal(CropTeacherFirstDayStageKinds.RouteToFarm, routeFarm.Stage);
+        Assert.Equal(CropTeacherRunStageKinds.RouteToFarm, routeFarm.Stage);
         Assert.Equal("Farm", routeFarm.TargetLocationId);
 
         var prepare = Evaluate(plan, request, Snapshot("Farm", 2, []));
-        Assert.Equal(CropTeacherFirstDayStageKinds.PrepareSite, prepare.Stage);
+        Assert.Equal(CropTeacherRunStageKinds.PrepareSite, prepare.Stage);
         Assert.Equal(CommitmentId, prepare.CommitmentId);
 
         var prepared = new HashSet<string>(StringComparer.Ordinal) { CommitmentId };
         var plant = Evaluate(plan, request, Snapshot("Farm", 2, []), prepared);
-        Assert.Equal(CropTeacherFirstDayStageKinds.ExecuteCropBatch, plant.Stage);
+        Assert.Equal(CropTeacherRunStageKinds.ExecuteCropBatch, plant.Stage);
         Assert.Equal("executor.plant_seed", plant.ActionBatch!.OptionId);
         Assert.Equal(2, plant.ActionBatch.Tiles.Length);
 
@@ -55,7 +55,7 @@ public sealed class CropTeacherFirstDayPlannerTests
             request,
             Snapshot("Farm", 0, cropsNeedWater),
             prepared);
-        Assert.Equal(CropTeacherFirstDayStageKinds.ExecuteCropBatch, water.Stage);
+        Assert.Equal(CropTeacherRunStageKinds.ExecuteCropBatch, water.Stage);
         Assert.Equal("executor.water_crop", water.ActionBatch!.OptionId);
         Assert.Equal(2, water.ActionBatch.Tiles.Length);
 
@@ -69,7 +69,7 @@ public sealed class CropTeacherFirstDayPlannerTests
             request,
             Snapshot("Farm", 0, wateredCrops),
             prepared);
-        Assert.Equal(CropTeacherFirstDayStageKinds.RouteHome, routeHome.Stage);
+        Assert.Equal(CropTeacherRunStageKinds.RouteHome, routeHome.Stage);
         Assert.Equal("FarmHouse", routeHome.TargetLocationId);
 
         var sleep = Evaluate(
@@ -77,14 +77,42 @@ public sealed class CropTeacherFirstDayPlannerTests
             request,
             Snapshot("FarmHouse", 0, wateredCrops),
             prepared);
-        Assert.Equal(CropTeacherFirstDayStageKinds.NativeSleep, sleep.Stage);
+        Assert.Equal(CropTeacherRunStageKinds.NativeSleep, sleep.Stage);
 
+        var nextDayWater = Evaluate(
+            plan,
+            request,
+            Snapshot("Farm", 0, cropsNeedWater, totalDay: 2),
+            prepared);
+        Assert.Equal(CropTeacherRunStageKinds.ExecuteCropBatch, nextDayWater.Stage);
+        Assert.Equal("executor.water_crop", nextDayWater.ActionBatch!.OptionId);
+
+        var harvestCrops = new[]
+        {
+            Crop(10, 12, needsWatering: false, readyForHarvest: true),
+            Crop(11, 12, needsWatering: false, readyForHarvest: true)
+        };
+        var harvest = Evaluate(
+            plan,
+            request,
+            Snapshot("Farm", 0, harvestCrops, totalDay: 4),
+            prepared);
+        Assert.Equal(CropTeacherRunStageKinds.ExecuteCropBatch, harvest.Stage);
+        Assert.Equal("executor.harvest_crop", harvest.ActionBatch!.OptionId);
+
+        var receipts = harvest.ActionBatch.Tiles.Select(tile =>
+            CropTeacherTransitionLedger.HarvestTileKey(
+                CommitmentId,
+                4,
+                tile.TileX,
+                tile.TileY)).ToHashSet(StringComparer.Ordinal);
         var complete = Evaluate(
             plan,
             request,
-            Snapshot("FarmHouse", 0, wateredCrops, totalDay: 2),
-            prepared);
-        Assert.Equal(CropTeacherFirstDayStageKinds.Complete, complete.Stage);
+            Snapshot("Farm", 0, [], totalDay: 4),
+            prepared,
+            receipts);
+        Assert.Equal(CropTeacherRunStageKinds.Complete, complete.Stage);
     }
 
     [Fact]
@@ -114,12 +142,68 @@ public sealed class CropTeacherFirstDayPlannerTests
             error.Message);
     }
 
-    private static CropTeacherFirstDayStep Evaluate(
+    [Fact]
+    public void RequiresStrategicReplanWhenAPlannedCropDisappearsOvernight()
+    {
+        var (plan, request) = BuildPlan();
+        var step = Evaluate(
+            plan,
+            request,
+            Snapshot(
+                "Farm",
+                0,
+                [Crop(10, 12, needsWatering: true)],
+                totalDay: 2),
+            new HashSet<string>(StringComparer.Ordinal) { CommitmentId });
+
+        Assert.Equal(CropTeacherRunStageKinds.ReplanRequired, step.Stage);
+        Assert.Equal(
+            "crop_teacher_water_target_crop_missing",
+            step.Reason);
+    }
+
+    [Fact]
+    public void DoesNotTreatAMissingHarvestCropAsCompleteWithoutAReceipt()
+    {
+        var (plan, request) = BuildPlan();
+        var step = Evaluate(
+            plan,
+            request,
+            Snapshot("Farm", 0, [], totalDay: 4));
+
+        Assert.Equal(CropTeacherRunStageKinds.ReplanRequired, step.Stage);
+        Assert.Equal(
+            "crop_teacher_harvest_target_crop_missing_without_receipt",
+            step.Reason);
+    }
+
+    [Fact]
+    public void RequiresReplanAfterAdvancingPastAnUnsettledHarvest()
+    {
+        var (plan, request) = BuildPlan();
+        var step = Evaluate(
+            plan,
+            request,
+            Snapshot("FarmHouse", 0, [], totalDay: 5));
+
+        Assert.Equal(CropTeacherRunStageKinds.ReplanRequired, step.Stage);
+        Assert.Equal(
+            "crop_teacher_run_day_advanced_with_unsettled_harvest",
+            step.Reason);
+    }
+
+    private static CropTeacherRunStep Evaluate(
         MoneyRevenueCropNativeProductionRunPlan plan,
         MoneyRevenueCropNativeProductionRunPlanRequest request,
         SnapshotEnvelope snapshot,
-        IReadOnlySet<string>? prepared = null) =>
-        CropTeacherFirstDayPlanner.Evaluate(plan, request, snapshot, prepared);
+        IReadOnlySet<string>? prepared = null,
+        IReadOnlySet<string>? harvestReceipts = null) =>
+        CropTeacherRunPlanner.Evaluate(
+            plan,
+            request,
+            snapshot,
+            prepared,
+            harvestReceipts);
 
     private static (MoneyRevenueCropNativeProductionRunPlan Plan,
         MoneyRevenueCropNativeProductionRunPlanRequest Request) BuildPlan()
@@ -164,6 +248,14 @@ public sealed class CropTeacherFirstDayPlannerTests
             "Farm",
             string.Empty,
             tiles);
+        var harvest = new MoneyRevenueCropNativeProductionActionBatch(
+            1,
+            CommitmentId,
+            "executor.harvest_crop",
+            "always",
+            "Farm",
+            string.Empty,
+            tiles);
         var plan = new MoneyRevenueCropNativeProductionRunPlan
         {
             Status = "native_crop_production_run_ready",
@@ -173,8 +265,8 @@ public sealed class CropTeacherFirstDayPlannerTests
             FirstTotalDay = 1,
             LastTotalDay = 4,
             DayCount = 4,
-            ActionBatchCount = 2,
-            ActionCount = 4,
+            ActionBatchCount = 5,
+            ActionCount = 10,
             MaxQueueItemCount = 8,
             SeedAcquisitionCount = 1,
             SeedAcquisitions =
@@ -196,7 +288,25 @@ public sealed class CropTeacherFirstDayPlannerTests
                     [CommitmentId],
                     true,
                     [plant, water],
-                    true)
+                    true),
+                new MoneyRevenueCropNativeProductionRunDay(
+                    2,
+                    [],
+                    true,
+                    [water with { BatchIndex = 1 }],
+                    true),
+                new MoneyRevenueCropNativeProductionRunDay(
+                    3,
+                    [],
+                    true,
+                    [water with { BatchIndex = 1 }],
+                    true),
+                new MoneyRevenueCropNativeProductionRunDay(
+                    4,
+                    [],
+                    true,
+                    [harvest],
+                    false)
             ],
             NativeProductionRunReady = true
         };
@@ -245,13 +355,18 @@ public sealed class CropTeacherFirstDayPlannerTests
         };
     }
 
-    private static object Crop(int x, int y, bool needsWatering) => new
+    private static object Crop(
+        int x,
+        int y,
+        bool needsWatering,
+        bool readyForHarvest = false) => new
     {
         location_id = "Farm",
         tile_x = x,
         tile_y = y,
         harvest_source_seed_id = "472",
-        needs_watering = needsWatering
+        needs_watering = needsWatering,
+        ready_for_harvest = readyForHarvest
     };
 
     private static object Field(object value) => new

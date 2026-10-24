@@ -45,10 +45,16 @@ var lastPlanningHandoffNativeRunPlanPath = string.Empty;
 MoneyRevenueCropNativeProductionRunPlan? activeCropTeacherRunPlan = null;
 MoneyRevenueCropNativeProductionRunPlanRequest?
     activeCropTeacherRunPlanRequest = null;
+CropTeacherTransitionLedger? activeCropTeacherTransitionLedger = null;
 var cropTeacherPreparedCommitmentIds = new HashSet<string>(
     StringComparer.Ordinal);
 var cropTeacherControlAttemptsStarted = 0;
 var cropTeacherFirstDayCompleted = false;
+var cropTeacherRunCompleted = false;
+var cropTeacherReplanRequired = false;
+var cropTeacherReplanReason = string.Empty;
+var cropTeacherTransitionLedgerPath = string.Empty;
+var cropTeacherHarvestReceiptCount = 0;
 JsonObject? activeObjectiveContinuation = null;
 var suppressedObjectiveContinuations = new List<JsonObject>();
 var suppressionDayKey = string.Empty;
@@ -116,7 +122,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         : cropTeacherControlAttemptsStarted >= 256
             ? new LiveTrainingPhaseDecision(
                 LiveTrainingPhase.Incomplete,
-                "crop_teacher_first_day_attempt_limit_reached")
+                "crop_teacher_run_attempt_limit_reached")
             : new LiveTrainingPhaseDecision(LiveTrainingPhase.Primary);
     if (phaseDecision.Phase is LiveTrainingPhase.Complete or LiveTrainingPhase.Incomplete)
     {
@@ -284,6 +290,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
     var useDailyPlanDecisionLease = options.UseDailyPlan;
     var executionSnapshotProfile = options.ExecutionSnapshotProfile;
     var executionSnapshotUrl = options.BridgeSnapshotUrl;
+    CropTeacherRunStep? cropTeacherStepForExecution = null;
     JsonObject? dailyPlanRanking = null;
     JsonObject queue;
     if (options.UsePrecompiledQueue)
@@ -309,18 +316,19 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             snapshotJson,
             JsonOptions) ?? throw new InvalidDataException(
                 "crop_teacher_full_snapshot_invalid");
-        var cropStep = CropTeacherFirstDayPlanner.Evaluate(
+        var cropStep = CropTeacherRunPlanner.Evaluate(
             activeCropTeacherRunPlan,
             activeCropTeacherRunPlanRequest ??
                 throw new InvalidOperationException(
                     "crop_teacher_run_plan_request_missing"),
             typedSnapshot,
-            cropTeacherPreparedCommitmentIds);
-        if (cropStep.Stage == CropTeacherFirstDayStageKinds.Complete)
+            cropTeacherPreparedCommitmentIds,
+            activeCropTeacherTransitionLedger?.CompletedHarvestTileKeys);
+        if (!cropTeacherFirstDayCompleted &&
+            (cropStep.TotalDay > activeCropTeacherRunPlan.FirstTotalDay ||
+             cropStep.Stage == CropTeacherRunStageKinds.Complete))
         {
             cropTeacherFirstDayCompleted = true;
-            activeCropTeacherRunPlan = null;
-            activeCropTeacherRunPlanRequest = null;
             AppendProgress(
                 options,
                 "crop_teacher_first_day_complete",
@@ -330,15 +338,57 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 "reason=" + cropStep.Reason +
                 " control_attempts=" +
                 cropTeacherControlAttemptsStarted);
-            if (options.RequireNativeSaveBoundary)
+            if (options.StopAfterCropTeacherFirstDay &&
+                cropStep.Stage != CropTeacherRunStageKinds.Complete)
             {
+                activeCropTeacherRunPlan = null;
+                activeCropTeacherRunPlanRequest = null;
+                activeCropTeacherTransitionLedger = null;
                 await DelayBeforeNextAttemptAsync(
                     options,
                     attemptOrdinal);
                 continue;
             }
+        }
+        if (cropStep.Stage == CropTeacherRunStageKinds.ReplanRequired)
+        {
+            cropTeacherReplanRequired = true;
+            cropTeacherReplanReason = cropStep.Reason;
+            stopReason = "crop_teacher_replan_required reason=" +
+                cropStep.Reason + " commitment_id=" +
+                cropStep.CommitmentId;
+            AppendProgress(
+                options,
+                "crop_teacher_replan_required",
+                iteration,
+                lastStateHash,
+                string.Empty,
+                "reason=" + cropStep.Reason +
+                " commitment_id=" + cropStep.CommitmentId +
+                " total_day=" + cropStep.TotalDay);
             break;
         }
+        if (cropStep.Stage == CropTeacherRunStageKinds.Complete)
+        {
+            cropTeacherRunCompleted = true;
+            activeCropTeacherRunPlan = null;
+            activeCropTeacherRunPlanRequest = null;
+            activeCropTeacherTransitionLedger = null;
+            AppendProgress(
+                options,
+                "crop_teacher_run_complete",
+                iteration,
+                lastStateHash,
+                string.Empty,
+                "reason=" + cropStep.Reason +
+                " control_attempts=" +
+                cropTeacherControlAttemptsStarted);
+            await DelayBeforeNextAttemptAsync(
+                options,
+                attemptOrdinal);
+            continue;
+        }
+        cropTeacherStepForExecution = cropStep;
         var cropQueue = await BuildCropTeacherControlQueueAsync(
             http,
             options,
@@ -526,8 +576,20 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                                 teacherDispatch.NativeRunPlanPath),
                             JsonOptions) ?? throw new InvalidDataException(
                                 "crop_teacher_native_run_plan_invalid");
+                cropTeacherTransitionLedgerPath = Path.Combine(
+                    teacherDispatchDirectory,
+                    "crop-teacher-transition-ledger.json");
+                activeCropTeacherTransitionLedger =
+                    CropTeacherTransitionLedger.Open(
+                        cropTeacherTransitionLedgerPath,
+                        teacherDispatch.NativeRunPlanPath);
+                cropTeacherHarvestReceiptCount =
+                    activeCropTeacherTransitionLedger.HarvestReceipts.Count;
                 cropTeacherPreparedCommitmentIds.Clear();
                 cropTeacherControlAttemptsStarted = 0;
+                cropTeacherRunCompleted = false;
+                cropTeacherReplanRequired = false;
+                cropTeacherReplanReason = string.Empty;
                 activeObjectiveContinuation = null;
                 leasedDecisionModelPlanPath = string.Empty;
                 leasedDecisionRankingPath = string.Empty;
@@ -696,6 +758,30 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         var execution = options.UseRuntimeTestHarnessExecutor
             ? await ExecuteRuntimeTestHarnessAsync(http, executorHttp, options, iteration, snapshotPath, beforeSnapshot, queue, lastStateHash, lastQueueId, decisionModelPlanPath, decisionRankingPath, decisionCompiledQueuePath, decisionSnapshotPath, decisionSourceStateHash, selectedCandidateId, selectedQueueIndex, queuePath, activeObjectiveContinuation, suppressedObjectiveContinuations, useDailyPlanDecisionLease, executionSnapshotUrl, executionSnapshotProfile)
             : await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/action-queues/" + Uri.EscapeDataString(lastQueueId) + "/execute-training-sandbox", "{}");
+        if (activeCropTeacherTransitionLedger is not null &&
+            cropTeacherStepForExecution is not null)
+        {
+            var receiptsAppended =
+                activeCropTeacherTransitionLedger.RecordVerifiedHarvestResults(
+                    execution,
+                    cropTeacherStepForExecution,
+                    DateTimeOffset.UtcNow.ToString("O"));
+            if (receiptsAppended > 0)
+            {
+                cropTeacherHarvestReceiptCount =
+                    activeCropTeacherTransitionLedger.HarvestReceipts.Count;
+                AppendProgress(
+                    options,
+                    "crop_teacher_harvest_receipts_appended",
+                    iteration,
+                    lastStateHash,
+                    lastQueueId,
+                    "count=" + receiptsAppended +
+                    " total=" +
+                    activeCropTeacherTransitionLedger.HarvestReceipts.Count +
+                    " ledger=" + cropTeacherTransitionLedgerPath);
+            }
+        }
         var feedbackAvailable = execution["feedback_available"]?.GetValue<bool>() == true;
         if (!feedbackAvailable && !options.UseRuntimeTestHarnessExecutor)
         {
@@ -996,6 +1082,11 @@ var report = new LiveTrainingLoopReport
     PlanningHandoffNativeRunPlanPath =
         lastPlanningHandoffNativeRunPlanPath,
     CropTeacherFirstDayCompleted = cropTeacherFirstDayCompleted,
+    CropTeacherRunCompleted = cropTeacherRunCompleted,
+    CropTeacherReplanRequired = cropTeacherReplanRequired,
+    CropTeacherReplanReason = cropTeacherReplanReason,
+    CropTeacherTransitionLedgerPath = cropTeacherTransitionLedgerPath,
+    CropTeacherHarvestReceiptCount = cropTeacherHarvestReceiptCount,
     CropTeacherControlAttemptsStarted = cropTeacherControlAttemptsStarted,
     Iterations = attemptsStarted,
     MaxAttempts = options.MaxAttempts,
@@ -1066,6 +1157,11 @@ Console.WriteLine(JsonSerializer.Serialize(new
     objective_completed = objectiveCompleted,
     social_objective_completed = socialObjectiveCompleted,
     crop_teacher_first_day_completed = cropTeacherFirstDayCompleted,
+    crop_teacher_run_completed = cropTeacherRunCompleted,
+    crop_teacher_replan_required = cropTeacherReplanRequired,
+    crop_teacher_replan_reason = cropTeacherReplanReason,
+    crop_teacher_transition_ledger_path = cropTeacherTransitionLedgerPath,
+    crop_teacher_harvest_receipt_count = cropTeacherHarvestReceiptCount,
     crop_teacher_control_attempts_started = cropTeacherControlAttemptsStarted
 }, JsonOptions));
 

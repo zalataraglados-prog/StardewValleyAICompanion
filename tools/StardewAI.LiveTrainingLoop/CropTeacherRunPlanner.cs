@@ -4,7 +4,7 @@ using StardewAI.GoalConditionedBootstrap;
 
 namespace StardewAI.LiveTrainingLoop;
 
-public static class CropTeacherFirstDayStageKinds
+public static class CropTeacherRunStageKinds
 {
     public const string AcquireSeed = "acquire_seed";
     public const string RouteToFarm = "route_to_farm";
@@ -12,10 +12,11 @@ public static class CropTeacherFirstDayStageKinds
     public const string ExecuteCropBatch = "execute_crop_batch";
     public const string RouteHome = "route_home";
     public const string NativeSleep = "native_sleep";
+    public const string ReplanRequired = "replan_required";
     public const string Complete = "complete";
 }
 
-public sealed record CropTeacherFirstDayStep(
+public sealed record CropTeacherRunStep(
     string Stage,
     int TotalDay,
     string CommitmentId,
@@ -28,39 +29,67 @@ public sealed record CropTeacherFirstDayStep(
     MoneyRevenueCropNativeProductionActionBatch? ActionBatch,
     string Reason);
 
-public static class CropTeacherFirstDayPlanner
+public static class CropTeacherRunPlanner
 {
     private const string FarmLocationId = "Farm";
     private const string PlantOptionId = "executor.plant_seed";
     private const string WaterOptionId = "executor.water_crop";
     private const string HarvestOptionId = "executor.harvest_crop";
 
-    public static CropTeacherFirstDayStep Evaluate(
+    public static CropTeacherRunStep Evaluate(
         MoneyRevenueCropNativeProductionRunPlan plan,
         MoneyRevenueCropNativeProductionRunPlanRequest request,
         SnapshotEnvelope snapshot,
-        IReadOnlySet<string>? preparedCommitmentIds = null)
+        IReadOnlySet<string>? preparedCommitmentIds = null,
+        IReadOnlySet<string>? completedHarvestTileKeys = null)
     {
         ArgumentNullException.ThrowIfNull(plan);
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(snapshot);
         preparedCommitmentIds ??= new HashSet<string>(StringComparer.Ordinal);
+        completedHarvestTileKeys ??= new HashSet<string>(StringComparer.Ordinal);
 
         ValidatePlan(plan, request);
-        var firstDay = plan.Days.Single(day => day.TotalDay == plan.FirstTotalDay);
         var totalDay = ReadRequiredInt(snapshot, "time", "total_days");
         if (totalDay < plan.FirstTotalDay)
         {
             throw new InvalidDataException(
                 "crop_teacher_snapshot_precedes_first_run_day");
         }
-        if (totalDay > plan.FirstTotalDay)
+        var unsettledPastHarvest = plan.Days
+            .Where(day => day.TotalDay < totalDay)
+            .SelectMany(day => day.ActionBatches.SelectMany(batch =>
+                batch.OptionId == HarvestOptionId
+                    ? batch.Tiles.Select(tile => new
+                    {
+                        Day = day.TotalDay,
+                        Batch = batch,
+                        Tile = tile
+                    })
+                    : []))
+            .FirstOrDefault(value => !completedHarvestTileKeys.Contains(
+                CropTeacherTransitionLedger.HarvestTileKey(
+                    value.Batch.CommitmentId,
+                    value.Day,
+                    value.Tile.TileX,
+                    value.Tile.TileY)));
+        if (unsettledPastHarvest is not null)
         {
             return Step(
-                CropTeacherFirstDayStageKinds.Complete,
+                CropTeacherRunStageKinds.ReplanRequired,
                 totalDay,
-                reason: "first_native_day_boundary_crossed");
+                commitmentId: unsettledPastHarvest.Batch.CommitmentId,
+                reason: "crop_teacher_run_day_advanced_with_unsettled_harvest");
         }
+        if (totalDay > plan.LastTotalDay)
+        {
+            return Step(
+                CropTeacherRunStageKinds.Complete,
+                totalDay,
+                reason: "crop_teacher_native_run_terminal_day_crossed");
+        }
+
+        var runDay = plan.Days.Single(day => day.TotalDay == totalDay);
 
         var currentLocation = ReadRequiredString(
             snapshot,
@@ -68,14 +97,21 @@ public static class CropTeacherFirstDayPlanner
             "location_id");
         var inventory = ReadRequiredArray(snapshot, "player", "inventory");
         var crops = ReadCropRows(snapshot);
-        var pendingPlantBatches = firstDay.ActionBatches
+        var pendingPlantBatches = runDay.ActionBatches
             .Where(batch => batch.OptionId == PlantOptionId)
             .Select(batch => FilterPlantBatch(batch, crops))
             .Where(batch => batch.Tiles.Length > 0)
             .ToArray();
 
+        var futurePendingPlantBatches = plan.Days
+            .Where(day => day.TotalDay >= totalDay)
+            .SelectMany(day => day.ActionBatches)
+            .Where(batch => batch.OptionId == PlantOptionId)
+            .Select(batch => FilterPlantBatch(batch, crops))
+            .Where(batch => batch.Tiles.Length > 0)
+            .ToArray();
         var inventoryBySeed = ReadInventoryByQualifiedItemId(inventory);
-        foreach (var seedGroup in pendingPlantBatches
+        foreach (var seedGroup in futurePendingPlantBatches
                      .GroupBy(batch => batch.SeedQualifiedItemId)
                      .OrderBy(group => group.Min(batch => batch.BatchIndex)))
         {
@@ -99,12 +135,15 @@ public static class CropTeacherFirstDayPlanner
                     "crop_teacher_seed_shortfall_has_no_acquisition_intent");
             if (totalDay > acquisition.DeadlineTotalDay)
             {
-                throw new InvalidDataException(
-                    "crop_teacher_seed_acquisition_deadline_missed");
+                return Step(
+                    CropTeacherRunStageKinds.ReplanRequired,
+                    totalDay,
+                    commitmentId: acquisition.CommitmentId,
+                    reason: "crop_teacher_seed_acquisition_deadline_missed");
             }
 
-            return new CropTeacherFirstDayStep(
-                CropTeacherFirstDayStageKinds.AcquireSeed,
+            return new CropTeacherRunStep(
+                CropTeacherRunStageKinds.AcquireSeed,
                 totalDay,
                 acquisition.CommitmentId,
                 string.Empty,
@@ -114,35 +153,44 @@ public static class CropTeacherFirstDayPlanner
                 acquisition.MaxUnitPrice,
                 remainingQuantity - availableQuantity,
                 null,
-                "first_day_pending_plant_tiles_exceed_seed_inventory");
+                "crop_teacher_pending_plant_tiles_exceed_seed_inventory");
         }
 
-        var cropWorkRequiresFarm = pendingPlantBatches.Length > 0;
-        if (!cropWorkRequiresFarm)
+        var nextBatch = EvaluateNextBatch(
+            plan,
+            runDay,
+            crops,
+            totalDay,
+            completedHarvestTileKeys);
+        if (nextBatch?.Result.ReplanReason.Length > 0)
         {
-            cropWorkRequiresFarm = firstDay.ActionBatches
-                .Where(batch => batch.OptionId == WaterOptionId)
-                .Select(batch => FilterWaterBatch(batch, crops))
-                .Any(batch => batch.Tiles.Length > 0);
+            return Step(
+                CropTeacherRunStageKinds.ReplanRequired,
+                totalDay,
+                commitmentId: nextBatch.Source.CommitmentId,
+                reason: nextBatch.Result.ReplanReason);
         }
+
+        var cropWorkRequiresFarm = nextBatch is not null;
         if (cropWorkRequiresFarm &&
             !string.Equals(currentLocation, plan.LocationId, StringComparison.Ordinal))
         {
             return Step(
-                CropTeacherFirstDayStageKinds.RouteToFarm,
+                CropTeacherRunStageKinds.RouteToFarm,
                 totalDay,
                 targetLocationId: plan.LocationId,
-                reason: "first_day_crop_work_requires_farm_location");
+                reason: "crop_teacher_day_work_requires_farm_location");
         }
 
-        foreach (var commitmentId in firstDay.CaptureLayoutCommitmentIds)
+        foreach (var commitmentId in runDay.CaptureLayoutCommitmentIds)
         {
-            if (pendingPlantBatches.Any(batch =>
-                    batch.CommitmentId == commitmentId) &&
+            if (nextBatch is not null &&
+                nextBatch.Source.OptionId == PlantOptionId &&
+                nextBatch.Source.CommitmentId == commitmentId &&
                 !preparedCommitmentIds.Contains(commitmentId))
             {
                 return Step(
-                    CropTeacherFirstDayStageKinds.PrepareSite,
+                    CropTeacherRunStageKinds.PrepareSite,
                     totalDay,
                     commitmentId: commitmentId,
                     targetLocationId: plan.LocationId,
@@ -150,40 +198,29 @@ public static class CropTeacherFirstDayPlanner
             }
         }
 
-        foreach (var batch in firstDay.ActionBatches.OrderBy(value => value.BatchIndex))
+        if (nextBatch is not null)
         {
-            var pending = batch.OptionId switch
-            {
-                PlantOptionId => FilterPlantBatch(batch, crops),
-                WaterOptionId => FilterWaterBatch(batch, crops),
-                HarvestOptionId => throw new InvalidDataException(
-                    "crop_teacher_first_day_harvest_requires_transition_ledger"),
-                _ => throw new InvalidDataException(
-                    "crop_teacher_first_day_action_not_supported:" + batch.OptionId)
-            };
-            if (pending.Tiles.Length > 0)
-            {
-                return new CropTeacherFirstDayStep(
-                    CropTeacherFirstDayStageKinds.ExecuteCropBatch,
-                    totalDay,
-                    pending.CommitmentId,
-                    pending.LocationId,
-                    string.Empty,
-                    pending.SeedQualifiedItemId,
-                    string.Empty,
-                    0,
-                    pending.Tiles.Length,
-                    pending,
-                    "first_incomplete_authoritative_crop_batch");
-            }
+            var pending = nextBatch.Result.Batch;
+            return new CropTeacherRunStep(
+                CropTeacherRunStageKinds.ExecuteCropBatch,
+                totalDay,
+                pending.CommitmentId,
+                pending.LocationId,
+                string.Empty,
+                pending.SeedQualifiedItemId,
+                string.Empty,
+                0,
+                pending.Tiles.Length,
+                pending,
+                "first_incomplete_authoritative_crop_batch_for_current_day");
         }
 
-        if (!firstDay.NativeSleepRequired)
+        if (!runDay.NativeSleepRequired)
         {
             return Step(
-                CropTeacherFirstDayStageKinds.Complete,
+                CropTeacherRunStageKinds.Complete,
                 totalDay,
-                reason: "first_native_day_has_no_sleep_boundary");
+                reason: "crop_teacher_native_run_terminal_day_complete");
         }
 
         var homeContext = ReadRequiredObject(
@@ -202,19 +239,19 @@ public static class CropTeacherFirstDayPlanner
             !string.Equals(currentLocation, homeLocationId, StringComparison.Ordinal))
         {
             return Step(
-                CropTeacherFirstDayStageKinds.RouteHome,
+                CropTeacherRunStageKinds.RouteHome,
                 totalDay,
                 targetLocationId: homeLocationId,
                 homeLocationId: homeLocationId,
-                reason: "first_day_crop_work_complete_route_to_native_sleep");
+                reason: "crop_teacher_day_complete_route_to_native_sleep");
         }
 
         return Step(
-            CropTeacherFirstDayStageKinds.NativeSleep,
+            CropTeacherRunStageKinds.NativeSleep,
             totalDay,
             targetLocationId: homeLocationId,
             homeLocationId: homeLocationId,
-            reason: "first_day_crop_work_complete_at_home");
+            reason: "crop_teacher_day_complete_at_home");
     }
 
     private static void ValidatePlan(
@@ -233,7 +270,19 @@ public static class CropTeacherFirstDayPlanner
             plan.MaxQueueItemCount is < 1 or > 8 ||
             request.MaxQueueItemCount != plan.MaxQueueItemCount ||
             !string.Equals(plan.LocationId, FarmLocationId, StringComparison.Ordinal) ||
-            plan.Days.Count(day => day.TotalDay == plan.FirstTotalDay) != 1)
+            plan.LastTotalDay < plan.FirstTotalDay ||
+            plan.DayCount != plan.LastTotalDay - plan.FirstTotalDay + 1 ||
+            plan.Days.Length != plan.DayCount ||
+            !plan.Days.Select(day => day.TotalDay).SequenceEqual(
+                Enumerable.Range(plan.FirstTotalDay, plan.DayCount)) ||
+            plan.Days.Select(day => day.TotalDay).Distinct().Count() !=
+                plan.Days.Length ||
+            plan.ActionBatchCount != plan.Days.Sum(day =>
+                day.ActionBatches.Length) ||
+            plan.ActionCount != plan.Days.Sum(day =>
+                day.ActionBatches.Sum(batch => batch.Tiles.Length)) ||
+            plan.Days.Any(day => day.NativeSleepRequired !=
+                (day.TotalDay < plan.LastTotalDay)))
         {
             throw new InvalidDataException("crop_teacher_native_run_plan_invalid");
         }
@@ -289,17 +338,25 @@ public static class CropTeacherFirstDayPlanner
         return CopyBatch(batch, pending);
     }
 
-    private static MoneyRevenueCropNativeProductionActionBatch FilterWaterBatch(
+    private static FilterResult FilterWaterBatch(
         MoneyRevenueCropNativeProductionActionBatch batch,
-        IReadOnlyDictionary<(int X, int Y), JsonElement> crops)
+        IReadOnlyDictionary<(int X, int Y), JsonElement> crops,
+        string expectedSeedId)
     {
         var pending = new List<MoneyRevenueCropPlantingTile>();
         foreach (var tile in batch.Tiles)
         {
             if (!crops.TryGetValue((tile.TileX, tile.TileY), out var crop))
             {
-                throw new InvalidDataException(
+                return new FilterResult(
+                    CopyBatch(batch, []),
                     "crop_teacher_water_target_crop_missing");
+            }
+            if (!CropMatchesSeed(crop, expectedSeedId))
+            {
+                return new FilterResult(
+                    CopyBatch(batch, []),
+                    "crop_teacher_water_target_seed_identity_mismatch");
             }
             if (ReadRequiredBool(
                     crop,
@@ -309,8 +366,123 @@ public static class CropTeacherFirstDayPlanner
                 pending.Add(tile);
             }
         }
-        return CopyBatch(batch, pending);
+        return new FilterResult(CopyBatch(batch, pending), string.Empty);
     }
+
+    private static FilterResult FilterHarvestBatch(
+        MoneyRevenueCropNativeProductionActionBatch batch,
+        IReadOnlyDictionary<(int X, int Y), JsonElement> crops,
+        string expectedSeedId,
+        int totalDay,
+        IReadOnlySet<string> completedHarvestTileKeys)
+    {
+        var pending = new List<MoneyRevenueCropPlantingTile>();
+        foreach (var tile in batch.Tiles)
+        {
+            var tileKey = CropTeacherTransitionLedger.HarvestTileKey(
+                batch.CommitmentId,
+                totalDay,
+                tile.TileX,
+                tile.TileY);
+            if (completedHarvestTileKeys.Contains(tileKey))
+            {
+                continue;
+            }
+            if (!crops.TryGetValue((tile.TileX, tile.TileY), out var crop))
+            {
+                return new FilterResult(
+                    CopyBatch(batch, []),
+                    "crop_teacher_harvest_target_crop_missing_without_receipt");
+            }
+            if (!CropMatchesSeed(crop, expectedSeedId))
+            {
+                return new FilterResult(
+                    CopyBatch(batch, []),
+                    "crop_teacher_harvest_target_seed_identity_mismatch");
+            }
+            if (!ReadRequiredBool(
+                    crop,
+                    "ready_for_harvest",
+                    "crop_teacher_harvest_readiness_unavailable"))
+            {
+                return new FilterResult(
+                    CopyBatch(batch, []),
+                    "crop_teacher_harvest_target_not_ready_on_planned_day");
+            }
+            pending.Add(tile);
+        }
+        return new FilterResult(CopyBatch(batch, pending), string.Empty);
+    }
+
+    private static EvaluatedBatch? EvaluateNextBatch(
+        MoneyRevenueCropNativeProductionRunPlan plan,
+        MoneyRevenueCropNativeProductionRunDay runDay,
+        IReadOnlyDictionary<(int X, int Y), JsonElement> crops,
+        int totalDay,
+        IReadOnlySet<string> completedHarvestTileKeys)
+    {
+        foreach (var batch in runDay.ActionBatches.OrderBy(value =>
+                     value.BatchIndex))
+        {
+            var expectedSeedId = ExpectedSeedId(plan, batch.CommitmentId);
+            var result = batch.OptionId switch
+            {
+                PlantOptionId => new FilterResult(
+                    FilterPlantBatch(batch, crops), string.Empty),
+                WaterOptionId => FilterWaterBatch(
+                    batch,
+                    crops,
+                    expectedSeedId),
+                HarvestOptionId => FilterHarvestBatch(
+                    batch,
+                    crops,
+                    expectedSeedId,
+                    totalDay,
+                    completedHarvestTileKeys),
+                _ => throw new InvalidDataException(
+                    "crop_teacher_run_action_not_supported:" +
+                    batch.OptionId)
+            };
+            if (result.ReplanReason.Length > 0 ||
+                result.Batch.Tiles.Length > 0)
+            {
+                return new EvaluatedBatch(batch, result);
+            }
+        }
+        return null;
+    }
+
+    private static string ExpectedSeedId(
+        MoneyRevenueCropNativeProductionRunPlan plan,
+        string commitmentId)
+    {
+        var ids = plan.Days
+            .SelectMany(day => day.ActionBatches)
+            .Where(batch =>
+                batch.OptionId == PlantOptionId &&
+                batch.CommitmentId == commitmentId)
+            .Select(batch => NormalizeQualifiedObjectId(
+                batch.SeedQualifiedItemId))
+            .Where(value => value.Length > 0)
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        if (ids.Length != 1)
+        {
+            throw new InvalidDataException(
+                "crop_teacher_commitment_seed_identity_invalid");
+        }
+        return ids[0];
+    }
+
+    private static bool CropMatchesSeed(
+        JsonElement crop,
+        string expectedSeedId) => string.Equals(
+            ReadRequiredString(
+                crop,
+                "harvest_source_seed_id",
+                "crop_teacher_existing_crop_seed_identity_unavailable"),
+            expectedSeedId,
+            StringComparison.Ordinal);
 
     private static MoneyRevenueCropNativeProductionActionBatch CopyBatch(
         MoneyRevenueCropNativeProductionActionBatch batch,
@@ -520,7 +692,7 @@ public static class CropTeacherFirstDayPlanner
             ? qualifiedItemId[3..]
             : qualifiedItemId;
 
-    private static CropTeacherFirstDayStep Step(
+    private static CropTeacherRunStep Step(
         string stage,
         int totalDay,
         string commitmentId = "",
@@ -538,4 +710,12 @@ public static class CropTeacherFirstDayPlanner
             0,
             null,
             reason);
+
+    private sealed record FilterResult(
+        MoneyRevenueCropNativeProductionActionBatch Batch,
+        string ReplanReason);
+
+    private sealed record EvaluatedBatch(
+        MoneyRevenueCropNativeProductionActionBatch Source,
+        FilterResult Result);
 }

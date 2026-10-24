@@ -71,6 +71,21 @@ public sealed class LiveTrainingLoopReport
     [JsonPropertyName("crop_teacher_first_day_completed")]
     public bool CropTeacherFirstDayCompleted { get; set; }
 
+    [JsonPropertyName("crop_teacher_run_completed")]
+    public bool CropTeacherRunCompleted { get; set; }
+
+    [JsonPropertyName("crop_teacher_replan_required")]
+    public bool CropTeacherReplanRequired { get; set; }
+
+    [JsonPropertyName("crop_teacher_replan_reason")]
+    public string CropTeacherReplanReason { get; set; } = string.Empty;
+
+    [JsonPropertyName("crop_teacher_transition_ledger_path")]
+    public string CropTeacherTransitionLedgerPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("crop_teacher_harvest_receipt_count")]
+    public int CropTeacherHarvestReceiptCount { get; set; }
+
     [JsonPropertyName("crop_teacher_control_attempts_started")]
     public int CropTeacherControlAttemptsStarted { get; set; }
 

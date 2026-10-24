@@ -132,6 +132,7 @@ try {
         "--max-attempts", "3",
         "--required-verified-actions", "1",
         "--require-native-save-boundary",
+        "--stop-after-crop-teacher-first-day",
         "--save-boundary-max-attempts", $SaveBoundaryMaxAttempts,
         "--skip-training",
         "--use-daily-plan",
