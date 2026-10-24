@@ -57,6 +57,55 @@ public sealed partial class MasterAnglerMainlineTests
     }
 
     [Fact]
+    public void ConcurrentWindowsKeepDistinctCandidateIdentities()
+    {
+        var first = CreateFixture("Beach:0");
+        var second = CreateFixture("Beach:1");
+        try
+        {
+            var remote = BuildSnapshot(
+                targetCaught: false,
+                currentLocation: "Farm");
+            var availability = new CandidateOptionAvailabilityEvaluator()
+                .Evaluate(
+                    remote,
+                    new[]
+                    {
+                        new OptionAvailabilityCandidate
+                        {
+                            OptionId = "fishing.catch_fish",
+                            Parameters = first.Parameters
+                        },
+                        new OptionAvailabilityCandidate
+                        {
+                            OptionId = "fishing.catch_fish",
+                            Parameters = second.Parameters
+                        }
+                    });
+
+            var candidates = availability.Options
+                .SelectMany(value => value.EventCandidates)
+                .Where(value => value.Available)
+                .ToArray();
+            Assert.Equal(2, candidates.Length);
+            Assert.Equal(
+                candidates.Length,
+                candidates.Select(value => value.CandidateId)
+                    .Distinct(StringComparer.Ordinal)
+                    .Count());
+            Assert.Contains(candidates, value =>
+                value.CandidateId.Contains("Beach:0", StringComparison.Ordinal));
+            Assert.Contains(candidates, value =>
+                value.CandidateId.Contains("Beach:1", StringComparison.Ordinal));
+        }
+        finally
+        {
+            first.Dispose();
+            second.Dispose();
+        }
+    }
+
+    [Fact]
     public void AuthoritativeRemoteIntentRejectsFullRouteThatMissesWindow()
     {
         var fixture = CreateFixture("Beach:0");

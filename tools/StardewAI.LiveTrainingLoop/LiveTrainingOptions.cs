@@ -20,6 +20,13 @@ public sealed class LiveTrainingOptions
         ContentAddressedJsonArtifactStore.PlainMode;
     public bool CaptureGoldenWalnutFreshSaveEvidence { get; set; }
     public bool RequireGoldenWalnutSourceScheduleReady { get; set; }
+    public string StageOneCollectionRequirementInventoryPath { get; set; } =
+        string.Empty;
+    public string StageOneCollectionAcquisitionLoweringPath { get; set; } =
+        string.Empty;
+    public string MasterAnglerStageOneWindowIndexPath { get; set; } =
+        string.Empty;
+    public string RouteTimingCalibrationPath { get; set; } = string.Empty;
     public string ExecutorUrl { get; set; } = "http://127.0.0.1:8767";
     public int ExecutorTimeoutSeconds { get; set; } = 600;
     public string ManifestPath { get; set; } = ReadTextOrEmpty(@"E:\StardewAITraining\last-manifest-path.txt");
@@ -233,6 +240,28 @@ public sealed class LiveTrainingOptions
             else if (current == "--require-golden-walnut-source-schedule-ready")
             {
                 options.RequireGoldenWalnutSourceScheduleReady = true;
+            }
+            else if (current ==
+                "--stage-one-collection-requirement-inventory" &&
+                i + 1 < args.Length)
+            {
+                options.StageOneCollectionRequirementInventoryPath = args[++i];
+            }
+            else if (current ==
+                "--stage-one-collection-acquisition-lowering" &&
+                i + 1 < args.Length)
+            {
+                options.StageOneCollectionAcquisitionLoweringPath = args[++i];
+            }
+            else if (current == "--master-angler-stage-one-window-index" &&
+                i + 1 < args.Length)
+            {
+                options.MasterAnglerStageOneWindowIndexPath = args[++i];
+            }
+            else if (current == "--route-timing-calibration" &&
+                i + 1 < args.Length)
+            {
+                options.RouteTimingCalibrationPath = args[++i];
             }
             else if (current == "--executor-url" && i + 1 < args.Length)
             {
@@ -644,6 +673,39 @@ public sealed class LiveTrainingOptions
             throw new ArgumentException(
                 "--require-golden-walnut-source-schedule-ready requires " +
                 "--use-daily-plan and --require-native-save-boundary.");
+        }
+        if (RequireGoldenWalnutSourceScheduleReady)
+        {
+            ValidateAuthorityArtifact(
+                StageOneCollectionRequirementInventoryPath,
+                "--stage-one-collection-requirement-inventory");
+            ValidateAuthorityArtifact(
+                StageOneCollectionAcquisitionLoweringPath,
+                "--stage-one-collection-acquisition-lowering");
+            ValidateAuthorityArtifact(
+                MasterAnglerStageOneWindowIndexPath,
+                "--master-angler-stage-one-window-index");
+            ValidateAuthorityArtifact(
+                RouteTimingCalibrationPath,
+                "--route-timing-calibration");
+        }
+    }
+
+    private static void ValidateAuthorityArtifact(string path, string option)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            throw new ArgumentException(
+                "--require-golden-walnut-source-schedule-ready requires " +
+                option + ".");
+        }
+
+        var fullPath = Path.GetFullPath(path);
+        if (!File.Exists(fullPath))
+        {
+            throw new ArgumentException(
+                "Required Stage 1 Teacher authority artifact was not found: " +
+                fullPath);
         }
     }
 

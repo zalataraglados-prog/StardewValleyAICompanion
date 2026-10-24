@@ -24,6 +24,17 @@ param(
     [int] $MaxQueueNoProgressStreak = 8,
     [ValidateRange(1024, [int]::MaxValue)]
     [int] $MinFreeSpaceMb = 8192,
+    [string] $StageOneCollectionRequirementInventory = (Join-Path `
+        $ProjectRoot `
+        "experiments\local-data\output\authoritative-requirement-inventory-v1.json"),
+    [string] $StageOneCollectionAcquisitionLowering = (Join-Path `
+        $ProjectRoot `
+        "experiments\local-data\output\acquisition-route-option-lowering-v1.json"),
+    [string] $MasterAnglerStageOneWindowIndex = (Join-Path `
+        $ProjectRoot `
+        "experiments\local-data\output\master-angler-stage-one-window-index-v1.json"),
+    [string] $RouteTimingCalibration = `
+        "I:\StardewAITrainingLab\goal-conditioned-bootstrap-v1\artifacts\runtime-movement-timing-calibration\runtime-movement-timing-calibration-20260906-043908\summary.json",
     [int] $StartupTimeoutSeconds = 180
 )
 
@@ -92,6 +103,12 @@ $calibrationOutput = & (Join-Path $PSScriptRoot `
     -MinFreeSpaceMb $MinFreeSpaceMb `
     -CaptureGoldenWalnutFreshSaveEvidence `
     -RequireGoldenWalnutSourceScheduleReady:$RequireSourceScheduleReady `
+    -StageOneCollectionRequirementInventory `
+        $StageOneCollectionRequirementInventory `
+    -StageOneCollectionAcquisitionLowering `
+        $StageOneCollectionAcquisitionLowering `
+    -MasterAnglerStageOneWindowIndex $MasterAnglerStageOneWindowIndex `
+    -RouteTimingCalibration $RouteTimingCalibration `
     -StartupTimeoutSeconds $StartupTimeoutSeconds
 if ($LASTEXITCODE -ne 0) {
     throw "Product calibration stage failed with exit code $LASTEXITCODE."

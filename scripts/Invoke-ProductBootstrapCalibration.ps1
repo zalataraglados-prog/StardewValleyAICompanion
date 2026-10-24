@@ -26,6 +26,17 @@ param(
     [int] $MinFreeSpaceMb = 8192,
     [switch] $CaptureGoldenWalnutFreshSaveEvidence,
     [switch] $RequireGoldenWalnutSourceScheduleReady,
+    [string] $StageOneCollectionRequirementInventory = (Join-Path `
+        $ProjectRoot `
+        "experiments\local-data\output\authoritative-requirement-inventory-v1.json"),
+    [string] $StageOneCollectionAcquisitionLowering = (Join-Path `
+        $ProjectRoot `
+        "experiments\local-data\output\acquisition-route-option-lowering-v1.json"),
+    [string] $MasterAnglerStageOneWindowIndex = (Join-Path `
+        $ProjectRoot `
+        "experiments\local-data\output\master-angler-stage-one-window-index-v1.json"),
+    [string] $RouteTimingCalibration = `
+        "I:\StardewAITrainingLab\goal-conditioned-bootstrap-v1\artifacts\runtime-movement-timing-calibration\runtime-movement-timing-calibration-20260906-043908\summary.json",
     [int] $StartupTimeoutSeconds = 180
 )
 
@@ -37,6 +48,17 @@ if ($RequiredVerifiedActions -gt $MaxAttempts) {
 if ($RequireGoldenWalnutSourceScheduleReady -and
     -not $CaptureGoldenWalnutFreshSaveEvidence) {
     throw "RequireGoldenWalnutSourceScheduleReady requires CaptureGoldenWalnutFreshSaveEvidence."
+}
+if ($RequireGoldenWalnutSourceScheduleReady) {
+    foreach ($path in @(
+            $StageOneCollectionRequirementInventory,
+            $StageOneCollectionAcquisitionLowering,
+            $MasterAnglerStageOneWindowIndex,
+            $RouteTimingCalibration)) {
+        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+            throw "Required Stage 1 Teacher authority artifact was not found: $path"
+        }
+    }
 }
 
 function Write-Json([string] $Path, $Value) {
@@ -243,7 +265,17 @@ try {
         )
     }
     if ($RequireGoldenWalnutSourceScheduleReady) {
-        $arguments += "--require-golden-walnut-source-schedule-ready"
+        $arguments += @(
+            "--require-golden-walnut-source-schedule-ready",
+            "--stage-one-collection-requirement-inventory",
+            $StageOneCollectionRequirementInventory,
+            "--stage-one-collection-acquisition-lowering",
+            $StageOneCollectionAcquisitionLowering,
+            "--master-angler-stage-one-window-index",
+            $MasterAnglerStageOneWindowIndex,
+            "--route-timing-calibration",
+            $RouteTimingCalibration
+        )
     }
     $loopOutput = & dotnet $arguments
     $loopOutput | Set-Content -LiteralPath (Join-Path $artifactDirectory "loop.stdout.log") -Encoding utf8

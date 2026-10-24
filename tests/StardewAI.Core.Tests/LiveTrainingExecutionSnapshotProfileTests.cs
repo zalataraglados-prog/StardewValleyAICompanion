@@ -190,6 +190,8 @@ public sealed class LiveTrainingExecutionSnapshotProfileTests
     [Fact]
     public void GoldenWalnutLongRunHasDeterministicSchedulePath()
     {
+        var authorityPath = FindRepositoryFile(
+            "StardewValleyAICompanion.sln");
         var options = LiveTrainingOptions.Parse(new[]
         {
             "--run-id",
@@ -199,13 +201,77 @@ public sealed class LiveTrainingExecutionSnapshotProfileTests
             "--capture-golden-walnut-fresh-save-evidence",
             "--require-golden-walnut-source-schedule-ready",
             "--use-daily-plan",
-            "--require-native-save-boundary"
+            "--require-native-save-boundary",
+            "--stage-one-collection-requirement-inventory",
+            authorityPath,
+            "--stage-one-collection-acquisition-lowering",
+            authorityPath,
+            "--master-angler-stage-one-window-index",
+            authorityPath,
+            "--route-timing-calibration",
+            authorityPath
         });
 
         Assert.True(options.RequireGoldenWalnutSourceScheduleReady);
         Assert.EndsWith(
             "golden-walnut-fresh-save-source-schedule.json",
             options.GoldenWalnutFreshSaveSourceSchedulePath,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void GoldenWalnutLongRunRequiresCollectionTeacherAuthorityArtifacts()
+    {
+        var error = Assert.Throws<ArgumentException>(() =>
+            LiveTrainingOptions.Parse(new[]
+            {
+                "--run-id",
+                "fresh-save-run",
+                "--snapshot-artifact-mode",
+                ContentAddressedJsonArtifactStore.ContentAddressedGzipMode,
+                "--capture-golden-walnut-fresh-save-evidence",
+                "--require-golden-walnut-source-schedule-ready",
+                "--use-daily-plan",
+                "--require-native-save-boundary"
+            }));
+
+        Assert.Contains(
+            "--stage-one-collection-requirement-inventory",
+            error.Message,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void GoldenWalnutLongRunInjectsExistingCollectionTeacherBeforeFallback()
+    {
+        var program = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.cs"));
+        var teacher = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.StageOneCollectionTeacher.cs"));
+
+        Assert.Contains(
+            "TryBuildStageOneCollectionTeacherQueueAsync",
+            program,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "MasterAnglerTargetDateIntentBuilder.Build",
+            teacher,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "CurrentStageOneCollectionTeacherPreferenceBuilder.Build",
+            teacher,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "TeacherPreferenceQueueLoader.LoadAsync",
+            teacher,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "HasPriorityStoryEventInterrupt(snapshot)",
+            teacher,
             StringComparison.Ordinal);
     }
 

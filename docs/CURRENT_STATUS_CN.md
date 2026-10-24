@@ -42,6 +42,10 @@ v4 的 `55` 个耐久 episode 已成功重建为合法 manifest，但 Spring 2 �
 
 v8 `golden-walnut-source-schedule-v8-20261025-011556` 继续跨越原生日界并再次遇到乌鸦损失；Teacher 正确废弃缺失的 `(O)474`，改以 `(O)472` 重排，随后完成 `9` 个场地准备动作，但在 `Farm(71,20)` 连续重复 `executor.till_soil`。反编译核对确认：后台/无鼠标可见帧中，游戏原生 `Character.GetToolLocation()` 强制忽略 click target，工具命中格只由角色站位与朝向决定；旧工具链在进入相邻 tile 边缘即停，因而可能反复命中已锄地邻格。工具动作现在统一复用 `TryAdvanceExecutorPath`，并在出手前通过模拟移动输入把角色居中到当前站立格；没有直接改写 `Farmer.Position`，也没有保留第二套工具移动循环。两层校准脚本同时把 `MaxUnverifiedExecutionStreak=8` 传入 runtime，保证同一失败不会无限循环。v9 `golden-walnut-source-schedule-v9-20261024175054` 的有界诊断前缀已取得 `73` 个 verified Product actions 和 `7` 个原生睡眠/存档边界，完整经过购种、返场、连续相邻清障/锄地、`6/6` 播种浇水及跨日维护，未出现 unverified streak 或重复锄地错位；该随机种子未再次发生乌鸦损失，运行也在首次登岛前主动安全停止，因此只证明后台工具定位修复，不冒充 Golden Walnut source schedule。`training_label_eligible=false`、正式训练授权及所有训练指标保持不变。下一固定步骤仍是新的有界 source-schedule 长跑，推进首次登岛、69/130 来源增量及 First Parrot/Turtle/House 三项原生跃迁，不再扩张作物专用实现。
 
+后续 v10/v11 暴露的是跨阶段控制问题而非缺少作物动作：旧控制环会让剧情事件与作物队列竞争，并可能把中断后的状态错误送入作物结算。现在所有作物阶段都会先抢占为唯一 `priority_story_event`，剧情队列不写作物 harvest/day-boundary receipt，结束后仍按原 commitment 和 fresh snapshot 重算；`InvalidDataException` 也进入结构化失败边界。v13 `golden-walnut-source-schedule-v13-20261025-035800` 已真实完成前两轮作物 Teacher，第三轮在 Spring 20 的 Marnie 剧情处由 `execute_crop_batch` 抢占为剧情队列：首次原生执行 verified，残留事件第二次尝试安全 blocked 一次，随后同一批次恢复、完成 7 个机械项、回家、原生睡眠并写入第 4 条日界回执；该 ledger 仍为 `0` 条收获、`4` 条日界，没有剧情污染结算。运行在此验收点主动停止。
+
+长期循环同时接入现有 `CurrentStageOneCollectionTeacherPreferenceBuilder`，不新增动作、候选或执行器：每次没有活动作物 handoff 且没有优先剧情时，先以当前 full snapshot 生成 Master Angler 目标日期意图，把附加候选送入现有 baseline ranker，再由统一 Stage 1 collection Teacher 编译并通过原 `TeacherPreferenceQueueLoader` 执行；非 ready 状态继续回退现有日计划。四份权威输入现在是长跑必填且启动时失败关闭，滚动保留与报告也覆盖该链。真实 v13 快照离线烟测得到 `35` 个捕获意图、`2` 个天气供应意图和 `297` 个唯一排名候选，Teacher 为 `ready` 并选择现有 `fishing.catch_fish` 路线，队列 `pending=1`；并修复同一鱼类多个并发窗口复用 route action 时 candidate ID 冲突。该烟测固定 `formal_training_authorized=false`，尚未在新一轮长跑中执行该动态采集队列，也没有生成 source schedule，所以当前面板与正式训练禁令不变。下一固定步骤是用新代码启动全新隔离长跑，先取得动态采集 Teacher 的原生回执，再继续首次登岛、核桃来源增量和三项鹦鹉跃迁。
+
 当前五个 `CoverageGateReady` criterion 固定为：
 
 - `community_center_access_or_completion`

@@ -72,6 +72,8 @@ Master Angler 的 Rusty Key/下水道组合也已闭合到现有上游根：`Ent
 
 Golden Walnut 专用长期里程碑控制面现已实现，但尚未形成新原生日程。长期模式必须显式启用证据捕获、日计划和原生存档边界；每个 fresh 前后快照都核对锁定版本、可读存档、完整 `69/130` 目录身份、逐行数量与真实来源增量，并要求首次登岛、First Parrot、Western Turtle、Island House 当前终态齐备。作物 Teacher 第一日完成不会再触发短跑退出，最后一个预算内动作的 after snapshot 也会参与判定。`total_days >= 224`、attempt、磁盘余量或连续错误上限均会失败关闭。即使当前快照达到里程碑，正式成功仍须用同一 manifest 的 existing schedule builder 重放全部 episode，证明四个原生 `false -> true` 转变并写出 source schedule；当前态不能替代历史证据。下一准入顺序是运行一次受限长期新档、导出并绑定 schedule、重建 Master Angler 审计，再采集 Gourmand 第 2、3 单连续回执。`formal_product_training_authorized=false` 与全部 coverage 分子保持不变。
 
+长期控制面现补上两项失败关闭条件。第一，活动作物 Teacher 的任意阶段都必须先让位于原生剧情事件，且剧情队列不能提交作物 harvest/day-boundary settlement；v13 已在 Spring 20 Marnie 剧情真实验证抢占、恢复与下一日存档边界，第三轮 ledger 仍为 `0 harvest / 4 day-boundary`。第二，长期模式必须显式提供 requirement inventory、acquisition lowering、Master Angler window index 与 route timing calibration，并在普通日计划前调用既有统一 Stage 1 collection Teacher。真实快照离线烟测的 `35` 个捕获意图、`2` 个天气意图和 `297` 个唯一候选已生成一条 ready 的 `fishing.catch_fish` 队列；并发窗口候选身份冲突已由完整 intent identity 修复。以上只证明控制与编译入口，动态采集队列尚缺新长跑原生回执，首次登岛及 source schedule 仍缺，因此 `formal_product_training_authorized=false` 和所有 coverage 分子不变。
+
 Money 的第一条完整原生作物生产段 `money-crop-native-20261021-pricefix-v10` 已通过：checkpoint v12 为 `6/6 verified、0 pending`，终局含 `5` 次单件原生投箱和唯一睡眠结算，实际收入 `875g`，最终为春 20 日 06:00、`money=925`、`totalMoneyEarned=875`。源存档和隔离 Mod 哈希均未漂移。这证明 native runner、购种、场地准备、作物生命周期、留存、容量和运输箱终局可以在同一连续真实轨迹中闭合。
 
 `money_revenue_crop_native_production_segment_receipt.v1` 已完成并对 v10 深回放：Teacher 决策、commit receipt、obligation/run plan、checkpoint、terminal recurrence、最终透明快照和最终隔离存档树均从路径与哈希重新核验。回执确认 `50` 个 Teacher 候选、选中 `5` 格 `(O)474`、实际购种成本 `400g`、毛收入 `875g`、净现金收入 `475g`，并正确输出空阈值集合；它不创建 Teacher comparison、Money cell 或训练授权。

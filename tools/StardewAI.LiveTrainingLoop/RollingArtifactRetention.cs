@@ -5,7 +5,7 @@ namespace StardewAI.LiveTrainingLoop;
 public static class RollingArtifactRetention
 {
     private static readonly Regex ArtifactIterationPattern = new(
-        @"^(?:before-snapshot|model-plan|daily-plan-response|ranking-response|model-action|compiled-queue|plan-execution-episode|execution|after-snapshot|dispatch-readiness|replan-model-plan|replan-daily-plan-response|replan-compiled-queue|replan-ranking-response|continuation-compiled-plan|continuation-compile-response|continuation-compiled-queue|continuation-refresh-evidence|candidate-compiled-plan|candidate-compile-response|candidate-compiled-queue|candidate-refresh-evidence|interrupt-compiled-plan|interrupt-compile-response|interrupt-compiled-queue|interrupt-ranking)-(?<iteration>[0-9]+)(?:-(?:item|dispatch)-[0-9]+|-boundary-[0-9]+-item-[0-9]+)?\.json$",
+        @"^(?:before-snapshot|model-plan|daily-plan-response|ranking-response|model-action|compiled-queue|plan-execution-episode|execution|after-snapshot|dispatch-readiness|replan-model-plan|replan-daily-plan-response|replan-compiled-queue|replan-ranking-response|continuation-compiled-plan|continuation-compile-response|continuation-compiled-queue|continuation-refresh-evidence|candidate-compiled-plan|candidate-compile-response|candidate-compiled-queue|candidate-refresh-evidence|interrupt-compiled-plan|interrupt-compile-response|interrupt-compiled-queue|interrupt-ranking|stage-one-collection-snapshot|stage-one-collection-intents|stage-one-collection-ranking|stage-one-collection-preference|stage-one-collection-compiled-plan|stage-one-collection-compiled-queue)-(?<iteration>[0-9]+)(?:-(?:item|dispatch)-[0-9]+|-boundary-[0-9]+-item-[0-9]+)?\.json$",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
     public static int Apply(

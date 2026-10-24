@@ -152,7 +152,7 @@ namespace StardewAI.Core.OptionRegistry
                 var routed = CloneCandidate(
                         route,
                         candidateId: "master-angler:route:" +
-                            intent.TargetQualifiedItemId + ":" +
+                            MasterAnglerIntentCandidateIdentity(intent) + ":" +
                             currentLocation + ":" + route.CandidateId,
                         expectedEffect: route.ExpectedEffect +
                             ";master_angler_target_qualified_item_id=" +
@@ -193,7 +193,8 @@ namespace StardewAI.Core.OptionRegistry
                     CloneCandidate(
                         candidate,
                         candidateId: candidate.CandidateId +
-                            ":master-angler:" + intent.TargetQualifiedItemId,
+                            ":master-angler:" +
+                            MasterAnglerIntentCandidateIdentity(intent),
                         expectedEffect: candidate.ExpectedEffect +
                             ";master_angler_target_qualified_item_id=" +
                             intent.TargetQualifiedItemId +
@@ -371,6 +372,22 @@ namespace StardewAI.Core.OptionRegistry
                     parameter.Value)))
                 .ToArray();
         }
+
+        private static string MasterAnglerIntentCandidateIdentity(
+            MasterAnglerWindowIntentValidation intent) => string.Join(
+                ":",
+                intent.TargetQualifiedItemId,
+                intent.TargetLocation,
+                intent.SourceKind,
+                intent.SourceKey,
+                intent.WindowFirstTotalDay.ToString(
+                    CultureInfo.InvariantCulture),
+                intent.WindowLastTotalDay.ToString(
+                    CultureInfo.InvariantCulture),
+                intent.EffectiveStartTime.ToString(
+                    CultureInfo.InvariantCulture),
+                intent.LastCastTimeExclusive.ToString(
+                    CultureInfo.InvariantCulture));
 
     }
 }

@@ -103,6 +103,22 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             workflow,
             StringComparison.Ordinal);
         Assert.Contains(
+            "-StageOneCollectionRequirementInventory",
+            workflow,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "-StageOneCollectionAcquisitionLowering",
+            workflow,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "-MasterAnglerStageOneWindowIndex",
+            workflow,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "-RouteTimingCalibration",
+            workflow,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "$effectiveMaxAttempts",
             workflow,
             StringComparison.Ordinal);
@@ -164,6 +180,22 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains(
             "--require-golden-walnut-source-schedule-ready",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "--stage-one-collection-requirement-inventory",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "--stage-one-collection-acquisition-lowering",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "--master-angler-stage-one-window-index",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "--route-timing-calibration",
             calibration,
             StringComparison.Ordinal);
         Assert.Contains(

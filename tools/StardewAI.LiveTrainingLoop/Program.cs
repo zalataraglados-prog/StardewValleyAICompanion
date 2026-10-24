@@ -58,6 +58,8 @@ var cropTeacherReplanCount = 0;
 var cropTeacherTransitionLedgerPath = string.Empty;
 var cropTeacherHarvestReceiptCount = 0;
 var cropTeacherDayBoundaryReceiptCount = 0;
+var stageOneCollectionTeacherQueueCount = 0;
+var lastStageOneCollectionTeacherFallbackSignature = string.Empty;
 JsonObject? activeObjectiveContinuation = null;
 var suppressedObjectiveContinuations = new List<JsonObject>();
 var suppressionDayKey = string.Empty;
@@ -698,80 +700,140 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         }
         else
         {
-            var dailyPlan = await BuildQueueFromDailyPlanAsync(
-                http,
-                options,
-                lastStateHash,
-                suppressedObjectiveContinuations: suppressedObjectiveContinuations);
-            modelPlanPath = Path.Combine(options.SnapshotDir, "model-plan-" + iteration.ToString("D4") + ".json");
-            await File.WriteAllTextAsync(modelPlanPath, dailyPlan.Plan.ToJsonString(JsonOptions), Encoding.UTF8);
-            var dailyPlanPath = Path.Combine(options.SnapshotDir, "daily-plan-response-" + iteration.ToString("D4") + ".json");
-            await File.WriteAllTextAsync(dailyPlanPath, dailyPlan.Response.ToJsonString(JsonOptions), Encoding.UTF8);
-            rankingPath = Path.Combine(options.SnapshotDir, "ranking-response-" + iteration.ToString("D4") + ".json");
-            await File.WriteAllTextAsync(rankingPath, dailyPlan.Ranking.ToJsonString(JsonOptions), Encoding.UTF8);
-            dailyPlanRanking = dailyPlan.Ranking;
-            queue = dailyPlan.Queue;
-            decisionModelPlanPath = modelPlanPath;
-            decisionRankingPath = rankingPath;
-            if (PlanningHandoffCapture.TryReadCropProductionTeacherHandoff(
-                    dailyPlanRanking,
-                    out var planningHandoff))
-            {
-                var dispatch = await DispatchCropTeacherAsync(
+            var collectionTeacher =
+                await TryBuildStageOneCollectionTeacherQueueAsync(
                     http,
                     options,
                     iteration,
-                    rawSnapshotJson,
-                    planningHandoff,
-                    "initial");
-                lastPlanningHandoffCaptureManifestPath =
-                    dispatch.Capture.ManifestPath;
-                lastPlanningHandoffTeacherDispatchManifestPath =
-                    dispatch.TeacherDispatchManifestPath;
-                lastPlanningHandoffNativeRunPlanPath =
-                    dispatch.NativeRunPlanPath;
-                activeCropTeacherRunPlanRequest = dispatch.RunPlanRequest;
-                activeCropTeacherRunPlan = dispatch.RunPlan;
-                cropTeacherTransitionLedgerPath =
-                    dispatch.TransitionLedgerPath;
-                activeCropTeacherTransitionLedger =
-                    dispatch.TransitionLedger;
-                cropTeacherHarvestReceiptCount =
-                    activeCropTeacherTransitionLedger.HarvestReceipts.Count;
-                cropTeacherDayBoundaryReceiptCount =
-                    activeCropTeacherTransitionLedger.DayBoundaryReceipts.Count;
-                pendingCropTeacherDayBoundary = null;
-                cropTeacherPreparedCommitmentIds.Clear();
-                cropTeacherControlAttemptsStarted = 0;
-                cropTeacherRunCompleted = false;
-                cropTeacherReplanRequired = false;
-                cropTeacherReplanReason = string.Empty;
-                activeObjectiveContinuation = null;
-                leasedDecisionModelPlanPath = string.Empty;
-                leasedDecisionRankingPath = string.Empty;
-                leasedDecisionCompiledQueuePath = string.Empty;
-                leasedDecisionSnapshotPath = string.Empty;
-                leasedDecisionSourceStateHash = string.Empty;
-                leasedDecisionGoalId = string.Empty;
-                leasedSelectedCandidateId = string.Empty;
-                leasedSelectedQueueIndex = -1;
+                    snapshotJson,
+                    beforeSnapshot,
+                    lastStateHash);
+            if (collectionTeacher.Queue is not null)
+            {
+                queue = collectionTeacher.Queue;
+                dailyPlanRanking = collectionTeacher.Ranking;
+                modelPlanPath = collectionTeacher.PlanPath;
+                rankingPath = collectionTeacher.RankingPath;
+                decisionModelPlanPath = collectionTeacher.PlanPath;
+                decisionRankingPath = collectionTeacher.RankingPath;
+                decisionCompiledQueuePath = collectionTeacher.QueuePath;
+                decisionSnapshotPath = collectionTeacher.SnapshotPath;
+                decisionSourceStateHash = lastStateHash;
+                selectedCandidateId = collectionTeacher.SelectedCandidateId;
+                selectedQueueIndex = 0;
+                useDailyPlanDecisionLease = false;
+                stageOneCollectionTeacherQueueCount++;
+                lastStageOneCollectionTeacherFallbackSignature = string.Empty;
                 AppendProgress(
                     options,
-                    "planning_handoff_dispatched",
+                    "stage_one_collection_teacher_queue_compiled",
                     iteration,
                     lastStateHash,
-                    string.Empty,
-                    "kind=crop_production_teacher manifest=" +
-                    dispatch.Capture.ManifestPath +
-                    " map=" + dispatch.Capture.MapWidth + "x" +
-                    dispatch.Capture.MapHeight +
-                    " layout_snapshots=" +
-                    dispatch.Capture.LayoutSnapshotCount +
-                    " native_run_plan=" +
-                    dispatch.NativeRunPlanPath +
-                    " actions=" + dispatch.ActionCount);
-                await DelayBeforeNextAttemptAsync(options, attemptOrdinal);
-                continue;
+                    ReadString(queue, "queue_id"),
+                    "candidate_id=" + selectedCandidateId +
+                    " queue_count=" + stageOneCollectionTeacherQueueCount +
+                    " " + collectionTeacher.Detail);
+            }
+            else
+            {
+                if (collectionTeacher.Attempted)
+                {
+                    var fallbackSignature = collectionTeacher.Status + "|" +
+                        collectionTeacher.Detail;
+                    if (!string.Equals(
+                            fallbackSignature,
+                            lastStageOneCollectionTeacherFallbackSignature,
+                            StringComparison.Ordinal))
+                    {
+                        lastStageOneCollectionTeacherFallbackSignature =
+                            fallbackSignature;
+                        AppendProgress(
+                            options,
+                            "stage_one_collection_teacher_fallback",
+                            iteration,
+                            lastStateHash,
+                            string.Empty,
+                            "status=" + collectionTeacher.Status +
+                            " reason=" + collectionTeacher.Detail);
+                    }
+                }
+
+                var dailyPlan = await BuildQueueFromDailyPlanAsync(
+                    http,
+                    options,
+                    lastStateHash,
+                    suppressedObjectiveContinuations:
+                        suppressedObjectiveContinuations);
+                modelPlanPath = Path.Combine(options.SnapshotDir, "model-plan-" + iteration.ToString("D4") + ".json");
+                await File.WriteAllTextAsync(modelPlanPath, dailyPlan.Plan.ToJsonString(JsonOptions), Encoding.UTF8);
+                var dailyPlanPath = Path.Combine(options.SnapshotDir, "daily-plan-response-" + iteration.ToString("D4") + ".json");
+                await File.WriteAllTextAsync(dailyPlanPath, dailyPlan.Response.ToJsonString(JsonOptions), Encoding.UTF8);
+                rankingPath = Path.Combine(options.SnapshotDir, "ranking-response-" + iteration.ToString("D4") + ".json");
+                await File.WriteAllTextAsync(rankingPath, dailyPlan.Ranking.ToJsonString(JsonOptions), Encoding.UTF8);
+                dailyPlanRanking = dailyPlan.Ranking;
+                queue = dailyPlan.Queue;
+                decisionModelPlanPath = modelPlanPath;
+                decisionRankingPath = rankingPath;
+                if (PlanningHandoffCapture.TryReadCropProductionTeacherHandoff(
+                        dailyPlanRanking,
+                        out var planningHandoff))
+                {
+                    var dispatch = await DispatchCropTeacherAsync(
+                        http,
+                        options,
+                        iteration,
+                        rawSnapshotJson,
+                        planningHandoff,
+                        "initial");
+                    lastPlanningHandoffCaptureManifestPath =
+                        dispatch.Capture.ManifestPath;
+                    lastPlanningHandoffTeacherDispatchManifestPath =
+                        dispatch.TeacherDispatchManifestPath;
+                    lastPlanningHandoffNativeRunPlanPath =
+                        dispatch.NativeRunPlanPath;
+                    activeCropTeacherRunPlanRequest = dispatch.RunPlanRequest;
+                    activeCropTeacherRunPlan = dispatch.RunPlan;
+                    cropTeacherTransitionLedgerPath =
+                        dispatch.TransitionLedgerPath;
+                    activeCropTeacherTransitionLedger =
+                        dispatch.TransitionLedger;
+                    cropTeacherHarvestReceiptCount =
+                        activeCropTeacherTransitionLedger.HarvestReceipts.Count;
+                    cropTeacherDayBoundaryReceiptCount =
+                        activeCropTeacherTransitionLedger.DayBoundaryReceipts.Count;
+                    pendingCropTeacherDayBoundary = null;
+                    cropTeacherPreparedCommitmentIds.Clear();
+                    cropTeacherControlAttemptsStarted = 0;
+                    cropTeacherRunCompleted = false;
+                    cropTeacherReplanRequired = false;
+                    cropTeacherReplanReason = string.Empty;
+                    activeObjectiveContinuation = null;
+                    leasedDecisionModelPlanPath = string.Empty;
+                    leasedDecisionRankingPath = string.Empty;
+                    leasedDecisionCompiledQueuePath = string.Empty;
+                    leasedDecisionSnapshotPath = string.Empty;
+                    leasedDecisionSourceStateHash = string.Empty;
+                    leasedDecisionGoalId = string.Empty;
+                    leasedSelectedCandidateId = string.Empty;
+                    leasedSelectedQueueIndex = -1;
+                    AppendProgress(
+                        options,
+                        "planning_handoff_dispatched",
+                        iteration,
+                        lastStateHash,
+                        string.Empty,
+                        "kind=crop_production_teacher manifest=" +
+                        dispatch.Capture.ManifestPath +
+                        " map=" + dispatch.Capture.MapWidth + "x" +
+                        dispatch.Capture.MapHeight +
+                        " layout_snapshots=" +
+                        dispatch.Capture.LayoutSnapshotCount +
+                        " native_run_plan=" +
+                        dispatch.NativeRunPlanPath +
+                        " actions=" + dispatch.ActionCount);
+                    await DelayBeforeNextAttemptAsync(options, attemptOrdinal);
+                    continue;
+                }
             }
         }
     }
@@ -1406,6 +1468,8 @@ var report = new LiveTrainingLoopReport
     CropTeacherHarvestReceiptCount = cropTeacherHarvestReceiptCount,
     CropTeacherDayBoundaryReceiptCount =
         cropTeacherDayBoundaryReceiptCount,
+    StageOneCollectionTeacherQueueCount =
+        stageOneCollectionTeacherQueueCount,
     CropTeacherControlAttemptsStarted = cropTeacherControlAttemptsStarted,
     Iterations = attemptsStarted,
     MaxAttempts = options.MaxAttempts,
