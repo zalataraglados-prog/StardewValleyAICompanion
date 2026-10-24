@@ -50,6 +50,7 @@ public static partial class MasterAnglerTargetDateIntentBuilder
 
         var missing = ReadExactMissingSpecies(state, index.NativeDenominatorCount);
         var fishingLevel = ReadFishingLevel(state);
+        var hasFishingRod = HasFishingRod(state);
         var hasMagicBait = AnyRodContextFlag(state, "has_magic_bait");
         var hasNonTrainingRod = AnyRodContextFlag(state, "uses_training_rod", expected: false);
         var routeGraph = RequiredFieldValue(state, "locations", "route_graph");
@@ -85,6 +86,8 @@ public static partial class MasterAnglerTargetDateIntentBuilder
             }))
             .Where(candidate => candidate.Window.SourceKind is
                 "location_rule" or "mine_override" or "crab_pot")
+            .Where(candidate => candidate.Window.SourceKind == "crab_pot" ||
+                hasFishingRod)
             .Where(candidate => currentTotalDay >= candidate.Window.FirstTotalDay &&
                 currentTotalDay <= candidate.Window.LastTotalDay)
             .Where(candidate => candidate.Window.MinimumFishingLevel <= fishingLevel)

@@ -1201,6 +1201,14 @@ internal static partial class BootstrapSelfTest
                 },
                 fishing = new
                 {
+                    rod_inventory = Field(new[]
+                    {
+                        new
+                        {
+                            slot_index = 0,
+                            qualified_item_id = "(T)BambooPole"
+                        }
+                    }),
                     rod_contexts = Field(new[]
                     {
                         new
@@ -1259,6 +1267,47 @@ internal static partial class BootstrapSelfTest
         Require(
             noRouteSlack.CandidateCount == 0,
             "Master Angler teacher admitted a window without post-arrival catch reserve.");
+
+        constrainedWindows["species"]![0]!["windows"]![0]!
+            ["time_windows"]![0]!["end_time"] = 2600;
+        Write(windowsPath, constrainedWindows);
+        var noRodSnapshot = JsonNode.Parse(File.ReadAllText(snapshotPath))!;
+        noRodSnapshot["state"]!["fishing"]!["rod_inventory"]!["value"] =
+            new JsonArray();
+        Write(snapshotPath, noRodSnapshot);
+        var noRod = MasterAnglerTargetDateIntentBuilder.Build(
+            windowsPath,
+            snapshotPath,
+            calibrationPath);
+        Require(
+            noRod.CandidateCount == 0 &&
+            noRod.Status == "no_authoritative_static_rod_intent_available_now",
+            "Master Angler teacher emitted a rod-catch route without an owned fishing rod.");
+
+        var missingRodFieldSnapshot = JsonNode.Parse(File.ReadAllText(snapshotPath))!;
+        missingRodFieldSnapshot["state"]!["fishing"]!.AsObject()
+            .Remove("rod_inventory");
+        Write(snapshotPath, missingRodFieldSnapshot);
+        var missingRodField = MasterAnglerTargetDateIntentBuilder.Build(
+            windowsPath,
+            snapshotPath,
+            calibrationPath);
+        Require(
+            missingRodField.CandidateCount == 0 &&
+            missingRodField.Status == "no_authoritative_static_rod_intent_available_now",
+            "Master Angler teacher failed to close rod-catch routes when rod inventory was absent.");
+
+        missingRodFieldSnapshot["state"]!["fishing"]!["rod_inventory"] =
+            JsonSerializer.SerializeToNode(Field(new[] { new { slot_index = 0 } }));
+        Write(snapshotPath, missingRodFieldSnapshot);
+        var malformedRodField = MasterAnglerTargetDateIntentBuilder.Build(
+            windowsPath,
+            snapshotPath,
+            calibrationPath);
+        Require(
+            malformedRodField.CandidateCount == 0 &&
+            malformedRodField.Status == "no_authoritative_static_rod_intent_available_now",
+            "Master Angler teacher treated an incomplete rod inventory row as an owned rod.");
     }
 
     private static object Field(object value) => new

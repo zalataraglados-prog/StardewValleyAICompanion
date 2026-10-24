@@ -337,6 +337,14 @@ internal static partial class BootstrapSelfTest
                 },
                 fishing = new
                 {
+                    rod_inventory = Field(new[]
+                    {
+                        new
+                        {
+                            slot_index = 2,
+                            qualified_item_id = "(T)BambooPole"
+                        }
+                    }),
                     rod_contexts = Field(new[]
                     {
                         new

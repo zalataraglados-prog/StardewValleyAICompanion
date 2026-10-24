@@ -17,6 +17,7 @@ internal static partial class BootstrapSelfTest
 
     public static void RunCurrentStageOneCollection(string outputRoot)
     {
+        VerifyMasterAnglerFullRouteIntent(Path.GetFullPath(outputRoot));
         VerifyCurrentStageOneCollectionTeacherFrontier(
             Path.GetFullPath(outputRoot));
         VerifyCommunityCenterDonationReceiptEvidence();
