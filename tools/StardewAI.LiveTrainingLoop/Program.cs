@@ -6,6 +6,7 @@ using System.Text.Json.Serialization;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.Training;
+using StardewAI.Core.Infrastructure;
 using StardewAI.Core.Training;
 using StardewAI.LiveTrainingLoop;
 
@@ -724,6 +725,25 @@ if (!verifiedTargetMet)
     Environment.ExitCode = 2;
 }
 
+var goldenWalnutFreshSaveEpisodeManifestPath = string.Empty;
+var goldenWalnutFreshSaveEpisodeCount = 0;
+if (options.CaptureGoldenWalnutFreshSaveEvidence)
+{
+    goldenWalnutFreshSaveEpisodeCount = Directory.EnumerateFiles(
+        options.SnapshotDir,
+        GoldenWalnutFreshSaveEpisodeArchive.EpisodeSearchPattern,
+        SearchOption.TopDirectoryOnly).Count();
+    if (goldenWalnutFreshSaveEpisodeCount > 0)
+    {
+        GoldenWalnutFreshSaveEpisodeManifestBuilder.WriteFromDirectory(
+            options.GoldenWalnutFreshSaveEpisodeManifestPath,
+            options.SnapshotDir,
+            options.GoldenWalnutFreshSaveScheduleId,
+            options.RunId);
+        goldenWalnutFreshSaveEpisodeManifestPath =
+            options.GoldenWalnutFreshSaveEpisodeManifestPath;
+    }
+}
 trainingDataTransaction.Complete(verifiedTargetMet);
 if (trainingDataTransaction.CanonicalArtifactsUpdated &&
     lastTrainingReport is not null)
@@ -766,6 +786,11 @@ var report = new LiveTrainingLoopReport
     DatasetPath = options.DatasetPath,
     ProgressLogPath = options.ProgressLogPath,
     SnapshotDir = options.SnapshotDir,
+    GoldenWalnutFreshSaveEvidenceCaptureEnabled =
+        options.CaptureGoldenWalnutFreshSaveEvidence,
+    GoldenWalnutFreshSaveEpisodeManifestPath =
+        goldenWalnutFreshSaveEpisodeManifestPath,
+    GoldenWalnutFreshSaveEpisodeCount = goldenWalnutFreshSaveEpisodeCount,
     Iterations = attemptsStarted,
     MaxAttempts = options.MaxAttempts,
     AttemptsStarted = attemptsStarted,
@@ -823,6 +848,10 @@ Console.WriteLine(JsonSerializer.Serialize(new
     stop_reason = stopReason,
     dataset_path = options.DatasetPath,
     report_path = reportPath,
+    golden_walnut_fresh_save_episode_manifest_path =
+        goldenWalnutFreshSaveEpisodeManifestPath,
+    golden_walnut_fresh_save_episode_count =
+        goldenWalnutFreshSaveEpisodeCount,
     progress_log_path = options.ProgressLogPath,
     concurrency = 1,
     execution = options.TargetExecutionMode,

@@ -95,6 +95,39 @@ public sealed class LiveTrainingExecutionSnapshotProfileTests
     }
 
     [Fact]
+    public void GoldenWalnutEvidenceCaptureRequiresContentAddressedArtifacts()
+    {
+        Assert.Throws<ArgumentException>(() => LiveTrainingOptions.Parse(new[]
+        {
+            "--run-id",
+            "fresh-save-run",
+            "--capture-golden-walnut-fresh-save-evidence"
+        }));
+    }
+
+    [Fact]
+    public void GoldenWalnutEvidenceCaptureHasDeterministicManifestIdentity()
+    {
+        var options = LiveTrainingOptions.Parse(new[]
+        {
+            "--run-id",
+            "fresh-save-run",
+            "--snapshot-artifact-mode",
+            ContentAddressedJsonArtifactStore.ContentAddressedGzipMode,
+            "--capture-golden-walnut-fresh-save-evidence"
+        });
+
+        Assert.True(options.CaptureGoldenWalnutFreshSaveEvidence);
+        Assert.Equal(
+            "golden-walnut-fresh-save:fresh-save-run",
+            options.GoldenWalnutFreshSaveScheduleId);
+        Assert.EndsWith(
+            "golden-walnut-fresh-save-episode-manifest.json",
+            options.GoldenWalnutFreshSaveEpisodeManifestPath,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void AfterExecutionReadsTheConfiguredProfile()
     {
         var source = File.ReadAllText(FindRepositoryFile(

@@ -18,6 +18,7 @@ public sealed class LiveTrainingOptions
     public string SnapshotFileProfile { get; set; } = string.Empty;
     public string SnapshotArtifactMode { get; set; } =
         ContentAddressedJsonArtifactStore.PlainMode;
+    public bool CaptureGoldenWalnutFreshSaveEvidence { get; set; }
     public string ExecutorUrl { get; set; } = "http://127.0.0.1:8767";
     public int ExecutorTimeoutSeconds { get; set; } = 600;
     public string ManifestPath { get; set; } = ReadTextOrEmpty(@"E:\StardewAITraining\last-manifest-path.txt");
@@ -109,6 +110,11 @@ public sealed class LiveTrainingOptions
                 ? string.IsNullOrWhiteSpace(RunId) ? "live-training" : RunId
                 : ArtifactRunId);
     public string SnapshotDir => Path.Combine(RunDir, "live-snapshots");
+    public string GoldenWalnutFreshSaveEpisodeManifestPath => Path.Combine(
+        RunDir,
+        "golden-walnut-fresh-save-episode-manifest.json");
+    public string GoldenWalnutFreshSaveScheduleId =>
+        "golden-walnut-fresh-save:" + RunId;
     public string TrainingDataRoot => string.IsNullOrWhiteSpace(TrainingDataRootOverride)
         ? Root
         : TrainingDataRootOverride;
@@ -212,6 +218,10 @@ public sealed class LiveTrainingOptions
                         "content_addressed_gzip, not '" + value + "'.");
                 }
                 options.SnapshotArtifactMode = value;
+            }
+            else if (current == "--capture-golden-walnut-fresh-save-evidence")
+            {
+                options.CaptureGoldenWalnutFreshSaveEvidence = true;
             }
             else if (current == "--executor-url" && i + 1 < args.Length)
             {
@@ -550,8 +560,35 @@ public sealed class LiveTrainingOptions
         options.ValidateTeacherPreferenceMode();
         options.ValidatePrecompiledQueueMode();
         options.ValidateQueueExecutionReceiptMode();
+        options.ValidateGoldenWalnutFreshSaveEvidenceMode();
 
         return options;
+    }
+
+    public void ValidateGoldenWalnutFreshSaveEvidenceMode()
+    {
+        if (!CaptureGoldenWalnutFreshSaveEvidence)
+            return;
+        if (SnapshotArtifactMode !=
+            ContentAddressedJsonArtifactStore.ContentAddressedGzipMode)
+        {
+            throw new ArgumentException(
+                "--capture-golden-walnut-fresh-save-evidence requires " +
+                "--snapshot-artifact-mode content_addressed_gzip.");
+        }
+        if (string.IsNullOrWhiteSpace(RunId))
+        {
+            throw new ArgumentException(
+                "--capture-golden-walnut-fresh-save-evidence requires --run-id.");
+        }
+        if (Goal is not "grandpa.maximum_21" and
+            not "grandpa_max_score_year3" and
+            not "goal.grandpa_max_score_year3")
+        {
+            throw new ArgumentException(
+                "--capture-golden-walnut-fresh-save-evidence requires the " +
+                "maximum Grandpa score goal.");
+        }
     }
 
     public void ValidateTeacherPreferenceMode()

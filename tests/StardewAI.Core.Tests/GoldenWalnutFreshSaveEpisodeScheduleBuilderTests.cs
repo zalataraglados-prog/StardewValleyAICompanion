@@ -2,6 +2,7 @@ using System.Text.Json;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Infrastructure;
+using StardewAI.LiveTrainingLoop;
 
 namespace StardewAI.Core.Tests;
 
@@ -25,11 +26,18 @@ public sealed class GoldenWalnutFreshSaveEpisodeScheduleBuilderTests
             Snapshot("h3", 102, 1, true, true, true, false, source.SourceKey),
             Snapshot("h4", 103, 1, true, true, true, true, source.SourceKey)
         };
-        var episodePaths = fixture.WriteSequence(states);
-        var manifestPath = fixture.WriteManifest(episodePaths);
+        fixture.WriteSequence(states);
+        var manifestPath = Path.Combine(fixture.Root, "auto-manifest.json");
+        var manifest = GoldenWalnutFreshSaveEpisodeManifestBuilder.WriteFromDirectory(
+            manifestPath,
+            fixture.Root,
+            "fresh-save-schedule:test",
+            "fresh-save-run");
 
         var schedule = GoldenWalnutFreshSaveEpisodeScheduleBuilder.Build(manifestPath);
 
+        Assert.Equal(4, manifest.EpisodePaths.Length);
+        Assert.Equal("fresh-save-run", manifest.SourceRunId);
         Assert.Equal(100, schedule.FirstIslandArrivalTotalDay);
         Assert.Equal(101, schedule.PlannedFirstParrotUnlockTotalDay);
         Assert.Equal(102, schedule.PlannedWesternTurtleUnlockTotalDay);
@@ -60,6 +68,54 @@ public sealed class GoldenWalnutFreshSaveEpisodeScheduleBuilderTests
             GoldenWalnutFreshSaveEpisodeScheduleBuilder.Build(manifestPath));
 
         Assert.Contains("successful episodes", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task DurableContentAddressedEvidenceSurvivesRollingRetention()
+    {
+        using var fixture = new Fixture(useLiveSnapshotDirectory: true);
+        var source = EligibleSource();
+        var states = new[]
+        {
+            Snapshot("h0", 100, 0, false, false, false, false, source.SourceKey),
+            Snapshot("h1", 100, 1, true, false, false, false, source.SourceKey),
+            Snapshot("h2", 101, 1, true, true, false, false, source.SourceKey),
+            Snapshot("h3", 102, 1, true, true, true, false, source.SourceKey),
+            Snapshot("h4", 103, 1, true, true, true, true, source.SourceKey)
+        };
+        for (var index = 0; index < states.Length - 1; index++)
+        {
+            var episodePath = await fixture.WriteContentAddressedEpisodeAsync(
+                index + 1,
+                states[index],
+                states[index + 1]);
+            var capture = GoldenWalnutFreshSaveEpisodeArchive.Capture(
+                episodePath,
+                index + 1,
+                "fresh-save-run");
+            Assert.True(capture.Captured);
+        }
+
+        RollingArtifactRetention.Apply(
+            fixture.RunRoot,
+            fixture.Root,
+            retainedIterations: 1,
+            nextIteration: 6);
+        Assert.Empty(Directory.GetFiles(
+            fixture.Root,
+            "plan-execution-episode-*.json"));
+
+        var manifestPath = Path.Combine(fixture.RunRoot, "auto-manifest.json");
+        var manifest = GoldenWalnutFreshSaveEpisodeManifestBuilder.WriteFromDirectory(
+            manifestPath,
+            fixture.Root,
+            "fresh-save-schedule:rolling",
+            "fresh-save-run");
+        var schedule = GoldenWalnutFreshSaveEpisodeScheduleBuilder.Build(manifestPath);
+
+        Assert.Equal(4, manifest.EpisodePaths.Length);
+        Assert.Equal(4, schedule.SourceEpisodeCount);
+        Assert.Equal(103, schedule.PlannedIslandHouseUnlockTotalDay);
     }
 
     private static GoldenWalnutNativeSourceDefinition EligibleSource() =>
@@ -135,11 +191,22 @@ public sealed class GoldenWalnutFreshSaveEpisodeScheduleBuilderTests
 
     private sealed class Fixture : IDisposable
     {
-        private readonly string root = Path.Combine(
+        private readonly string runRoot;
+        private readonly string root;
+
+        public Fixture(bool useLiveSnapshotDirectory = false)
+        {
+            runRoot = Path.Combine(
             Path.GetTempPath(),
             "stardewai-walnut-schedule-" + Guid.NewGuid().ToString("N"));
+            root = useLiveSnapshotDirectory
+                ? Path.Combine(runRoot, "live-snapshots")
+                : runRoot;
+            Directory.CreateDirectory(root);
+        }
 
-        public Fixture() => Directory.CreateDirectory(root);
+        public string Root => root;
+        public string RunRoot => runRoot;
 
         public string[] WriteSequence(IReadOnlyList<SnapshotEnvelope> snapshots)
         {
@@ -161,7 +228,7 @@ public sealed class GoldenWalnutFreshSaveEpisodeScheduleBuilderTests
                 JsonSerializer.Serialize(before, JsonOptions));
             File.WriteAllText(Path.Combine(root, afterName),
                 JsonSerializer.Serialize(after, JsonOptions));
-            var episodeName = $"episode-{index}.json";
+            var episodeName = $"plan-execution-episode-{index:D4}.json";
             File.WriteAllText(Path.Combine(root, episodeName),
                 JsonSerializer.Serialize(new PlanExecutionEpisodeEnvelope
                 {
@@ -181,6 +248,47 @@ public sealed class GoldenWalnutFreshSaveEpisodeScheduleBuilderTests
             return episodeName;
         }
 
+        public async Task<string> WriteContentAddressedEpisodeAsync(
+            int iteration,
+            SnapshotEnvelope before,
+            SnapshotEnvelope after)
+        {
+            var beforePath = Path.Combine(
+                root,
+                $"before-snapshot-{iteration:D4}.json");
+            var afterPath = Path.Combine(
+                root,
+                $"after-snapshot-{iteration:D4}.json");
+            await ContentAddressedJsonArtifactStore.WriteAsync(
+                beforePath,
+                JsonSerializer.Serialize(before, JsonOptions),
+                ContentAddressedJsonArtifactStore.ContentAddressedGzipMode);
+            await ContentAddressedJsonArtifactStore.WriteAsync(
+                afterPath,
+                JsonSerializer.Serialize(after, JsonOptions),
+                ContentAddressedJsonArtifactStore.ContentAddressedGzipMode);
+            var episodePath = Path.Combine(
+                root,
+                $"plan-execution-episode-{iteration:D4}.json");
+            File.WriteAllText(episodePath, JsonSerializer.Serialize(
+                new PlanExecutionEpisodeEnvelope
+                {
+                    EpisodeId = "episode-" + iteration,
+                    RunId = "fresh-save-run",
+                    SourceStateHash = before.StateHash,
+                    AfterStateHash = after.StateHash,
+                    BeforeGameTick = (iteration - 1) * 10,
+                    AfterGameTick = (iteration - 1) * 10 + 1,
+                    AfterSnapshotFresh = true,
+                    BeforeSnapshotPath = beforePath,
+                    AfterSnapshotPath = afterPath,
+                    Status = "applied",
+                    Success = true,
+                    ChangedFacts = JsonSerializer.SerializeToElement(new { })
+                }, JsonOptions));
+            return episodePath;
+        }
+
         public string WriteManifest(string[] episodePaths)
         {
             var path = Path.Combine(root, "manifest.json");
@@ -191,6 +299,7 @@ public sealed class GoldenWalnutFreshSaveEpisodeScheduleBuilderTests
                     GoldenWalnutFreshSaveUnlockTimelineProofBuilder.GoalId,
                     GoldenWalnutFreshSaveUnlockTimelineProofBuilder.GameVersion,
                     false,
+                    "fresh-save-run",
                     episodePaths),
                 JsonOptions));
             return path;
@@ -198,8 +307,8 @@ public sealed class GoldenWalnutFreshSaveEpisodeScheduleBuilderTests
 
         public void Dispose()
         {
-            if (Directory.Exists(root))
-                Directory.Delete(root, recursive: true);
+            if (Directory.Exists(runRoot))
+                Directory.Delete(runRoot, recursive: true);
         }
     }
 }

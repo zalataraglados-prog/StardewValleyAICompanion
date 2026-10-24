@@ -5,19 +5,10 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
 
 namespace StardewAI.Core.Infrastructure;
-
-public sealed record GoldenWalnutFreshSaveEpisodeManifest(
-    [property: JsonPropertyName("schema_version")] string SchemaVersion,
-    [property: JsonPropertyName("schedule_id")] string ScheduleId,
-    [property: JsonPropertyName("goal_id")] string GoalId,
-    [property: JsonPropertyName("game_version")] string GameVersion,
-    [property: JsonPropertyName("training_label_eligible")] bool TrainingLabelEligible,
-    [property: JsonPropertyName("episode_paths")] string[] EpisodePaths);
 
 public static class GoldenWalnutFreshSaveEpisodeScheduleBuilder
 {
@@ -44,6 +35,7 @@ public static class GoldenWalnutFreshSaveEpisodeScheduleBuilder
             manifest.GameVersion == GoldenWalnutFreshSaveUnlockTimelineProofBuilder.GameVersion &&
             !manifest.TrainingLabelEligible &&
             !string.IsNullOrWhiteSpace(manifest.ScheduleId) &&
+            !string.IsNullOrWhiteSpace(manifest.SourceRunId) &&
             manifest.EpisodePaths is { Length: > 0 },
             "Golden Walnut fresh-save episode manifest metadata is invalid.");
 
@@ -56,7 +48,6 @@ public static class GoldenWalnutFreshSaveEpisodeScheduleBuilder
             episodePaths.Distinct(StringComparer.OrdinalIgnoreCase).Count() == episodePaths.Length,
             "Golden Walnut fresh-save episode manifest contains duplicate paths.");
 
-        string? runId = null;
         string? saveId = null;
         string? previousAfterStateHash = null;
         long previousAfterTick = -1;
@@ -84,8 +75,7 @@ public static class GoldenWalnutFreshSaveEpisodeScheduleBuilder
                 episode.AfterSnapshotFresh &&
                 !string.IsNullOrWhiteSpace(episode.RunId),
                 "Golden Walnut source schedule requires successful episodes with fresh after snapshots: " + episodePath);
-            runId ??= episode.RunId;
-            Require(runId == episode.RunId,
+            Require(manifest.SourceRunId == episode.RunId,
                 "Golden Walnut source schedule cannot combine different run IDs.");
             Require(
                 previousAfterStateHash is null ||
@@ -205,7 +195,7 @@ public static class GoldenWalnutFreshSaveEpisodeScheduleBuilder
             false,
             manifestSha256,
             HashText(string.Join("\n", evidenceHashes)),
-            runId!,
+            manifest.SourceRunId,
             saveId!,
             episodePaths.Length,
             arrivalDay,
@@ -314,7 +304,8 @@ public static class GoldenWalnutFreshSaveEpisodeScheduleBuilder
     private static T ReadWithHash<T>(string path, out string sha256)
     {
         Require(File.Exists(path), "Required artifact is missing: " + path);
-        var bytes = File.ReadAllBytes(path);
+        var bytes = Encoding.UTF8.GetBytes(
+            ContentAddressedJsonArtifactReader.ReadAllText(path));
         using var hash = SHA256.Create();
         sha256 = Hex(hash.ComputeHash(bytes));
         return JsonSerializer.Deserialize<T>(bytes, JsonOptions) ??

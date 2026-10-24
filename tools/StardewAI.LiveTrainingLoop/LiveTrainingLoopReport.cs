@@ -47,6 +47,15 @@ public sealed class LiveTrainingLoopReport
     [JsonPropertyName("snapshot_dir")]
     public string SnapshotDir { get; set; } = string.Empty;
 
+    [JsonPropertyName("golden_walnut_fresh_save_evidence_capture_enabled")]
+    public bool GoldenWalnutFreshSaveEvidenceCaptureEnabled { get; set; }
+
+    [JsonPropertyName("golden_walnut_fresh_save_episode_manifest_path")]
+    public string GoldenWalnutFreshSaveEpisodeManifestPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("golden_walnut_fresh_save_episode_count")]
+    public int GoldenWalnutFreshSaveEpisodeCount { get; set; }
+
     [JsonPropertyName("iterations")]
     public int Iterations { get; set; }
 

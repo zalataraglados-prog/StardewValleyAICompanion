@@ -168,6 +168,7 @@ var commandDefinitions = new CommandDefinition[]
     new("build-full-shipment-terminal-settlement-receipt", BuildFullShipmentTerminalSettlementReceipt),
     new("build-master-angler-opportunity-catalog", BuildMasterAnglerOpportunityCatalog),
     new("build-master-angler-stage-one-windows", BuildMasterAnglerStageOneWindows),
+    new("build-golden-walnut-fresh-save-episode-manifest", BuildGoldenWalnutFreshSaveEpisodeManifest),
     new("build-golden-walnut-fresh-save-source-schedule", BuildGoldenWalnutFreshSaveSourceSchedule),
     new("audit-master-angler-fresh-save-prerequisites", AuditMasterAnglerFreshSavePrerequisites),
     new("build-master-angler-target-date-intents", BuildMasterAnglerTargetDateIntents),
@@ -2784,6 +2785,15 @@ static void BuildGoldenWalnutFreshSaveSourceSchedule(Arguments options)
     var schedule = GoldenWalnutFreshSaveEpisodeScheduleBuilder.Build(
         options.Required("episode-manifest"));
     Write(options.Required("output"), schedule);
+}
+
+static void BuildGoldenWalnutFreshSaveEpisodeManifest(Arguments options)
+{
+    GoldenWalnutFreshSaveEpisodeManifestBuilder.WriteFromDirectory(
+        options.Required("output"),
+        options.Required("episode-directory"),
+        options.Required("schedule-id"),
+        options.Required("run-id"));
 }
 
 static void BuildMasterAnglerTargetDateIntents(Arguments options)

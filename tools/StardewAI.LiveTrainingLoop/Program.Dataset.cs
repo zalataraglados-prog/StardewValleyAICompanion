@@ -6,6 +6,7 @@ using System.Text.Json.Serialization;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.Training;
+using StardewAI.Core.Infrastructure;
 using StardewAI.LiveTrainingLoop;
 
 static partial class Program
@@ -159,6 +160,13 @@ static partial class Program
 
         var episodePath = Path.Combine(options.SnapshotDir, "plan-execution-episode-" + iteration.ToString("D4") + ".json");
         File.WriteAllText(episodePath, JsonSerializer.Serialize(episode, JsonOptions), Encoding.UTF8);
+        if (options.CaptureGoldenWalnutFreshSaveEvidence)
+        {
+            GoldenWalnutFreshSaveEpisodeArchive.Capture(
+                episodePath,
+                iteration,
+                options.RunId);
+        }
     }
 
     private static double CalculateExecutionReward(

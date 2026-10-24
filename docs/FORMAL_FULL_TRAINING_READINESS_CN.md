@@ -14,6 +14,8 @@ Money production cells:  0/18
 Formal product training: false
 ```
 
+Golden Walnut 新档日程的证据保存硬伤已修复，但准入结论不变。LiveTrainingLoop 只有在显式启用捕获、提供稳定 run ID、选择最大 Grandpa 分数目标并使用 `content_addressed_gzip` 时，才会把 success + fresh episode 的前后快照清单和 episode 保存为 rolling retention 不会删除的耐久别名。正常退出在 canonical 训练事务提交前生成 episode manifest；异常退出可通过 Bootstrap 从耐久目录重建。schedule verifier 对普通/内容寻址 JSON 使用同一逻辑内容哈希。当前只有滚动清理后的恢复回归，没有真实连续新档运行，因此该能力不能提升任何 coverage 分子，也不能解除 `formal_product_training_authorized=false`。
+
 `money-crop-native-20261021-v10-continuation-v15-full-chain` 已完成本轮 Money 有界退出条件，包含 `26` 条连续 transition、`8` 个作物批次、`8` 次单件投箱和 `6/6` checkpoint，源存档保持不变，最终状态哈希为 `bb70acbd0b477b7e14d7fe1b4450ee85292fa29e56de854924e4ee67f1216849`。它没有跨越并接入 Money criterion-local cell，因此 `0/18` 不变。
 
 Community Center、Pet Love、Skull Key 与 Full Shipment 已通过 current-authority 复核。Full Shipment 由 `154/154` 静态来源/编译完整性、`26/26` 原生执行签名分层和既有三分区 Teacher/native 证据共同关闭训练前置；完整 154 项 recurrence 仍是正常游玩与最终验收能力。新 reconciliation SHA-256 为 `71f0e4ed0e7928c1e63f39641f4b90153674f154a575ec331342a3d5241adf43`。当前准入指标为 `5/19 executable、6/19 split-complete、5/19 CoverageGateReady、4/11 root ready`；下一项是 Master Angler 顶层接线，而不是开始正式训练。

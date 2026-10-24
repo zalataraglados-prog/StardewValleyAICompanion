@@ -4,6 +4,14 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已完成 v10 之后的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已按 current authority 冻结；当前唯一施工项为 `complete_master_angler` 顶层 dependency、日历窗口与 coverage 接线。P0/P1 共享 correctness blocker 可临时中断，但不得静默改序或并行展开多个 root method。
 
+## 当前增量 · Golden Walnut 新档证据归档
+
+- LiveTrainingLoop 新增显式 `--capture-golden-walnut-fresh-save-evidence`。该模式必须同时提供稳定 `--run-id`、最大 Grandpa 分数目标和 `--snapshot-artifact-mode content_addressed_gzip`；默认训练与普通 smoke 不受影响。
+- 每个 success + fresh episode 只在写入既有 `plan_execution_episode.v1` 后做一次耐久归档：前后快照的内容寻址清单与重写引用的 episode 以原子顺序写到同一 `live-snapshots` 顶层，文件名不会被 rolling retention 正则删除，且继续复用原 `_snapshot-blobs`。没有逐帧扫描，也不会每轮重写不断增长的 JSON 数组。
+- 正常退出时，循环在正式训练事务提交**之前**一次扫描耐久 episode 并生成 `golden-walnut-fresh-save-episode-manifest.json`；报告记录捕获开关、manifest 路径与 episode 数。若进程异常退出，可用 `build-golden-walnut-fresh-save-episode-manifest --episode-directory <run>/live-snapshots --schedule-id <id> --run-id <id> --output <path>` 从耐久别名重建，不依赖已被滚动删除的临时文件。
+- schedule 读取现同时支持普通 JSON 与 `content_addressed_gzip`，证据根哈希绑定物化后的逻辑 JSON。滚动清理回归证明原 `plan-execution-episode-*` 全部删除后，4 个耐久 episode 仍可重建完整测试时间线；相关定向测试 `16/16`、Bootstrap 构建 `0 warning / 0 error`。
+- 这只消除了“三年运行因滚动保留丢失来源证据”的工程阻塞。真实连续新档 episode、首次登岛/三次鹦鹉跃迁、51 核桃来源变化及后续 Master Angler prerequisite audit 仍未生成，`formal_product_training_authorized=false` 不变。
+
 ## 当前切片 · 2026-10-21 Full Shipment 冻结并切换 Master Angler
 
 - `money-crop-native-20261021-v10-continuation-v15-full-chain` 已完成既定的第二条有界 Money 连续段：`26` 条 transition、`8` 个实际作物批次、`8` 次单件投箱、checkpoint `6/6 verified`、pending `0`。购种链精确取得 `8` 份 `(O)475`，源存档哈希保持 `9429c6d01d327111af8c81d0c36f2e318ccc4f1b0ea3094d84e19f25308b22e4`，最终状态哈希为 `bb70acbd0b477b7e14d7fe1b4450ee85292fa29e56de854924e4ee67f1216849`。该有界段没有关闭 Money threshold cell，Money 回到复杂度队列第 11 位。
