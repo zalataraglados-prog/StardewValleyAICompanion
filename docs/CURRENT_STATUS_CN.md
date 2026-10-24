@@ -22,6 +22,8 @@ Master Angler 当前子切片已把 Golden Walnut 新档来源日程接到可跨
 
 同一真实 Spring 1 快照的离线回放又关闭了两个会让长跑静默偏航的入口缺口。Grandpa 21 分目标的权威 ID、战略别名和 Golden Walnut 证据别名现由 Contracts 单点识别；运行脚本固定传权威 `goal.grandpa_max_score_year3`。状态解析为 `resolved` 时，LiveTrainingLoop 只把 `bound_candidate_ids` 送入日计划编译，完整排序仍保留供审计和结构化模型在绑定集合内比较；真实快照因此从 62 个同分候选按字符串误选 AnimalShop，改为 `raise_friendships` 的 28 个精确绑定 NPC 候选。另将 `initial-snapshot.json` 改为原始 HTTP JSON 保真落盘，禁止 `Invoke-RestMethod -> ConvertTo-Json` 改写值后沿用旧 state hash。定向回归 `164/164` 通过；没有再次启动游戏，正式准入指标不变。
 
+Golden Walnut 现有采集入口还移除了“`MaxAttempts=8` 但 `required_verified_actions=1`”造成的首条成功即退出。工作流默认要求 `4` 条 verified 主动作、最多 `8` 次主尝试；达到目标后必须进入现有 native save boundary，在最多 `16` 次边界尝试内完成原生跨日和存档文件变化，才允许摘要标记 passed。报告会同时核对目标数、实际 verified 数、耐久 episode 数以及 boundary required/verified，不能用单条动作或旧报告冒充连续链。这里只完成脚本与离线守卫，尚未因 E 盘空间余量过低而再次启动游戏；下一真实产物仍是同一新档的多 episode、可落盘边界运行。
+
 当前五个 `CoverageGateReady` criterion 固定为：
 
 - `community_center_access_or_completion`

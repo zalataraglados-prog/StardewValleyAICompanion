@@ -10,6 +10,10 @@ param(
     [int] $BackendPort = 8795,
     [int] $ProductPort = 8768,
     [int] $MaxAttempts = 8,
+    [ValidateRange(1, [int]::MaxValue)]
+    [int] $RequiredVerifiedActions = 1,
+    [ValidateRange(1, 128)]
+    [int] $SaveBoundaryMaxAttempts = 16,
     [ValidateSet("stop", "rolling")]
     [string] $ArtifactRetentionMode = "stop",
     [ValidateRange(1, 1000000)]
@@ -19,6 +23,10 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+
+if ($RequiredVerifiedActions -gt $MaxAttempts) {
+    throw "RequiredVerifiedActions must not exceed MaxAttempts."
+}
 
 function Write-Json([string] $Path, $Value) {
     $Value | ConvertTo-Json -Depth 96 | Set-Content -LiteralPath $Path -Encoding utf8
@@ -153,6 +161,7 @@ try {
         (Join-Path $artifactDirectory "initial-snapshot.json"),
         $initialJson,
         [Text.UTF8Encoding]::new($false))
+    $initial = $initialJson | ConvertFrom-Json
 
     $arguments = @(
         $loopDll,
@@ -166,7 +175,7 @@ try {
         "--save-isolation-path", $savesFullPath,
         "--goal", "goal.grandpa_max_score_year3",
         "--max-attempts", $MaxAttempts,
-        "--required-verified-actions", 1,
+        "--required-verified-actions", $RequiredVerifiedActions,
         "--skip-training",
         "--use-daily-plan",
         "--daily-plan-max-candidates", 4,
@@ -180,7 +189,10 @@ try {
     if ($CaptureGoldenWalnutFreshSaveEvidence) {
         $arguments += @(
             "--snapshot-artifact-mode", "content_addressed_gzip",
-            "--capture-golden-walnut-fresh-save-evidence"
+            "--capture-golden-walnut-fresh-save-evidence",
+            "--require-native-save-boundary",
+            "--save-slot", $SaveSlot,
+            "--save-boundary-max-attempts", $SaveBoundaryMaxAttempts
         )
     }
     $loopOutput = & dotnet $arguments
@@ -225,7 +237,11 @@ try {
         ConvertFrom-Json
     if ($CaptureGoldenWalnutFreshSaveEvidence -and
         (-not [bool]$loopReport.golden_walnut_fresh_save_evidence_capture_enabled -or
-         [int]$loopReport.golden_walnut_fresh_save_episode_count -lt 1 -or
+         [int]$loopReport.required_verified_actions -ne $RequiredVerifiedActions -or
+         [int]$loopReport.verified_actions -lt $RequiredVerifiedActions -or
+         [int]$loopReport.golden_walnut_fresh_save_episode_count -lt $RequiredVerifiedActions -or
+         -not [bool]$loopReport.native_save_boundary_required -or
+         -not [bool]$loopReport.native_save_boundary_verified -or
          [string]::IsNullOrWhiteSpace(
              [string]$loopReport.golden_walnut_fresh_save_episode_manifest_path) -or
          -not (Test-Path -LiteralPath (
@@ -260,6 +276,12 @@ try {
             [string]$loopReport.golden_walnut_fresh_save_episode_manifest_path
         golden_walnut_fresh_save_episode_count =
             [int]$loopReport.golden_walnut_fresh_save_episode_count
+        max_attempts = $MaxAttempts
+        verified_actions = [int]$loopReport.verified_actions
+        required_verified_actions = $RequiredVerifiedActions
+        save_boundary_max_attempts = $SaveBoundaryMaxAttempts
+        native_save_boundary_verified =
+            [bool]$loopReport.native_save_boundary_verified
         formal_training_started = $false
     }
     Write-Json (Join-Path $artifactDirectory "summary.json") $summary

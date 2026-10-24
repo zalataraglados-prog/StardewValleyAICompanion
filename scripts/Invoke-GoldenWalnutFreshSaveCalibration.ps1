@@ -8,12 +8,20 @@ param(
     [int] $ProductPort = 8768,
     [ValidateRange(1, 64)]
     [int] $MaxAttempts = 8,
+    [ValidateRange(1, 64)]
+    [int] $RequiredVerifiedActions = 4,
+    [ValidateRange(1, 128)]
+    [int] $SaveBoundaryMaxAttempts = 16,
     [ValidateRange(1, 1000000)]
     [int] $MaxPersistedIterations = 64,
     [int] $StartupTimeoutSeconds = 180
 )
 
 $ErrorActionPreference = "Stop"
+
+if ($RequiredVerifiedActions -gt $MaxAttempts) {
+    throw "RequiredVerifiedActions must not exceed MaxAttempts."
+}
 
 function Write-Utf8Json([string] $Path, $Value) {
     $parent = Split-Path -Parent $Path
@@ -54,6 +62,8 @@ $calibrationOutput = & (Join-Path $PSScriptRoot `
     -BackendPort $BackendPort `
     -ProductPort $ProductPort `
     -MaxAttempts $MaxAttempts `
+    -RequiredVerifiedActions $RequiredVerifiedActions `
+    -SaveBoundaryMaxAttempts $SaveBoundaryMaxAttempts `
     -ArtifactRetentionMode rolling `
     -MaxPersistedIterations $MaxPersistedIterations `
     -CaptureGoldenWalnutFreshSaveEvidence `
@@ -64,7 +74,9 @@ if ($LASTEXITCODE -ne 0) {
 $calibrationSummary = ($calibrationOutput | Out-String) | ConvertFrom-Json
 if ($calibrationSummary.status -ne "passed" -or
     -not [bool]$calibrationSummary.golden_walnut_fresh_save_evidence_capture_enabled -or
-    [int]$calibrationSummary.golden_walnut_fresh_save_episode_count -lt 1) {
+    [int]$calibrationSummary.verified_actions -lt $RequiredVerifiedActions -or
+    [int]$calibrationSummary.golden_walnut_fresh_save_episode_count -lt $RequiredVerifiedActions -or
+    -not [bool]$calibrationSummary.native_save_boundary_verified) {
     throw "Product calibration did not produce Golden Walnut fresh-save evidence."
 }
 
@@ -87,6 +99,12 @@ $summary = [ordered]@{
         [string]$calibrationSummary.golden_walnut_fresh_save_episode_manifest_path
     episode_count =
         [int]$calibrationSummary.golden_walnut_fresh_save_episode_count
+    max_attempts = $MaxAttempts
+    verified_actions = [int]$calibrationSummary.verified_actions
+    required_verified_actions = $RequiredVerifiedActions
+    save_boundary_max_attempts = $SaveBoundaryMaxAttempts
+    native_save_boundary_verified =
+        [bool]$calibrationSummary.native_save_boundary_verified
     artifact_retention_mode = "rolling"
     snapshot_artifact_mode = "content_addressed_gzip"
     execution_snapshot_profile = "full"

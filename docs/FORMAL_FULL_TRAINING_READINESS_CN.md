@@ -18,6 +18,8 @@ Golden Walnut 新档日程的证据保存硬伤已修复，但准入结论不变
 
 该首轮的排序产物还证明最大分数目标别名和编译边界存在断链：`grandpa.maximum_21` 被旧解析器当成无关目标，62 个候选同分后按 ID 误选商店。现在三种最大分数 ID 由 Contracts 单一契约识别，运行脚本传权威 ID；解析成功后，完整候选仍留在响应中供审计，但日计划只编译 `bound_candidate_ids`。同一真实 Spring 1 快照的离线回放已解析到 `raise_friendships` 并绑定 28 个 NPC 候选。`initial-snapshot.json` 同时改为保存桥返回的原始 JSON，避免 PowerShell 反序列化/重序列化造成 state hash 不自洽。聚焦回归 `164/164`；这只恢复 Teacher 目标到候选的正确入口，不等于模型训练、连续新档证据或正式准入。
 
+采集脚本此前虽然声明最多 8 次尝试，却把退出目标固定为 1 个 verified 动作；因此首轮得到 1 条 episode 是入口配置的必然结果。现默认目标改为 `4 verified / 8 attempts`，成功后还必须完成现有原生跨日存档边界，并同时验证 verified、episode 与 boundary 报告字段。该变更只修复下一次证据采集的退出条件；尚未产生新的真实运行，所以不改变任何 coverage 分子或 `formal_product_training_authorized=false`。
+
 `money-crop-native-20261021-v10-continuation-v15-full-chain` 已完成本轮 Money 有界退出条件，包含 `26` 条连续 transition、`8` 个作物批次、`8` 次单件投箱和 `6/6` checkpoint，源存档保持不变，最终状态哈希为 `bb70acbd0b477b7e14d7fe1b4450ee85292fa29e56de854924e4ee67f1216849`。它没有跨越并接入 Money criterion-local cell，因此 `0/18` 不变。
 
 Community Center、Pet Love、Skull Key 与 Full Shipment 已通过 current-authority 复核。Full Shipment 由 `154/154` 静态来源/编译完整性、`26/26` 原生执行签名分层和既有三分区 Teacher/native 证据共同关闭训练前置；完整 154 项 recurrence 仍是正常游玩与最终验收能力。新 reconciliation SHA-256 为 `71f0e4ed0e7928c1e63f39641f4b90153674f154a575ec331342a3d5241adf43`。当前准入指标为 `5/19 executable、6/19 split-complete、5/19 CoverageGateReady、4/11 root ready`；下一项是 Master Angler 顶层接线，而不是开始正式训练。

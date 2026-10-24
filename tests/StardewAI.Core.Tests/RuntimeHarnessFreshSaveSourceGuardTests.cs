@@ -81,6 +81,14 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             "-CaptureGoldenWalnutFreshSaveEvidence",
             workflow,
             StringComparison.Ordinal);
+        Assert.Contains(
+            "[int] $RequiredVerifiedActions = 4",
+            workflow,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "-RequiredVerifiedActions $RequiredVerifiedActions",
+            workflow,
+            StringComparison.Ordinal);
         Assert.DoesNotContain("Start-Process", workflow, StringComparison.Ordinal);
         Assert.DoesNotContain("Remove-Item", workflow, StringComparison.Ordinal);
 
@@ -98,6 +106,18 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             calibration,
             StringComparison.Ordinal);
         Assert.Contains(
+            "--require-native-save-boundary",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "--required-verified-actions\", $RequiredVerifiedActions",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "--save-boundary-max-attempts\", $SaveBoundaryMaxAttempts",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "Golden Walnut fresh-save evidence capture produced no durable episode manifest.",
             calibration,
             StringComparison.Ordinal);
@@ -111,6 +131,10 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains(
             "[IO.File]::WriteAllText(",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$initial = $initialJson | ConvertFrom-Json",
             calibration,
             StringComparison.Ordinal);
         Assert.DoesNotContain(
