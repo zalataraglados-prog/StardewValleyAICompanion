@@ -34,6 +34,22 @@ public sealed class FarmSitePreparationSourceGuardTests
         Assert.Contains("(long)maxX - minX + 1 > 32", modEntry, StringComparison.Ordinal);
         Assert.Contains("(long)maxY - minY + 1 > 32", modEntry, StringComparison.Ordinal);
         Assert.Contains("sitePreparationBounds.MinX", modEntry, StringComparison.Ordinal);
+        var farmProfileBranch = modEntry.IndexOf(
+            "if (profile == \"farm_layout\")",
+            StringComparison.Ordinal);
+        Assert.True(farmProfileBranch >= 0);
+        var farmProfileWorldProgress = modEntry.IndexOf(
+            "domains.Add(\"world_progress\");",
+            farmProfileBranch,
+            StringComparison.Ordinal);
+        var nextProfileBranch = modEntry.IndexOf(
+            "if (profile is \"training_mining\")",
+            farmProfileBranch,
+            StringComparison.Ordinal);
+        Assert.True(
+            farmProfileBranch >= 0 &&
+            farmProfileWorldProgress > farmProfileBranch &&
+            farmProfileWorldProgress < nextProfileBranch);
         Assert.Contains("CollectFarmSitePreparation", currentLocation, StringComparison.Ordinal);
         Assert.Contains("FarmSitePreparationProjector.ReadContext", currentLocation,
             StringComparison.Ordinal);

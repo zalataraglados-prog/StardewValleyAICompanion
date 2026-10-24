@@ -18,6 +18,8 @@ param(
     [string] $ArtifactRetentionMode = "stop",
     [ValidateRange(1, 1000000)]
     [int] $MaxPersistedIterations = 64,
+    [ValidateRange(1024, [int]::MaxValue)]
+    [int] $MinFreeSpaceMb = 8192,
     [switch] $CaptureGoldenWalnutFreshSaveEvidence,
     [int] $StartupTimeoutSeconds = 180
 )
@@ -96,9 +98,42 @@ New-Item -ItemType Directory -Path $artifactDirectory | Out-Null
 & (Join-Path $ProjectRoot "scripts\Deploy-RuntimeTestHarnessToRuntime.ps1") `
     -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot | Out-Null
 
-$backendDll = Join-Path $ProjectRoot "src\StardewAI.Backend\bin\Release\net8.0\StardewAI.Backend.dll"
-$productDll = Join-Path $ProjectRoot "tools\StardewAI.ProductExecutor\bin\Release\net8.0\StardewAI.ProductExecutor.dll"
-$loopDll = Join-Path $ProjectRoot "tools\StardewAI.LiveTrainingLoop\bin\Release\net8.0\StardewAI.LiveTrainingLoop.dll"
+$binaryRoot = Join-Path $artifactDirectory "binaries"
+$releaseEntrypoints = @(
+    [pscustomobject]@{
+        Project = Join-Path $ProjectRoot "src\StardewAI.Backend\StardewAI.Backend.csproj"
+        OutputDirectory = Join-Path $binaryRoot "backend"
+        ArtifactsDirectory = Join-Path $binaryRoot "backend-build"
+        DllName = "StardewAI.Backend.dll"
+    },
+    [pscustomobject]@{
+        Project = Join-Path $ProjectRoot "tools\StardewAI.ProductExecutor\StardewAI.ProductExecutor.csproj"
+        OutputDirectory = Join-Path $binaryRoot "product-executor"
+        ArtifactsDirectory = Join-Path $binaryRoot "product-executor-build"
+        DllName = "StardewAI.ProductExecutor.dll"
+    },
+    [pscustomobject]@{
+        Project = Join-Path $ProjectRoot "tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj"
+        OutputDirectory = Join-Path $binaryRoot "live-training-loop"
+        ArtifactsDirectory = Join-Path $binaryRoot "live-training-loop-build"
+        DllName = "StardewAI.LiveTrainingLoop.dll"
+    }
+)
+foreach ($entry in $releaseEntrypoints) {
+    $publishLog = Join-Path $artifactDirectory (
+        "publish-" + [IO.Path]::GetFileNameWithoutExtension($entry.Project) + ".log")
+    $publishOutput = & dotnet publish $entry.Project -c Release --nologo `
+        --artifacts-path $entry.ArtifactsDirectory --output $entry.OutputDirectory `
+        "-p:GamePath=$gameDirectory" 2>&1
+    $publishOutput | Set-Content -LiteralPath $publishLog -Encoding utf8
+    if ($LASTEXITCODE -ne 0) {
+        throw "Required isolated Release publish failed for $($entry.Project) with exit code $LASTEXITCODE. See $publishLog."
+    }
+}
+
+$backendDll = Join-Path $releaseEntrypoints[0].OutputDirectory $releaseEntrypoints[0].DllName
+$productDll = Join-Path $releaseEntrypoints[1].OutputDirectory $releaseEntrypoints[1].DllName
+$loopDll = Join-Path $releaseEntrypoints[2].OutputDirectory $releaseEntrypoints[2].DllName
 foreach ($path in @($backendDll, $productDll, $loopDll)) {
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
         throw "Required Release binary was not found: $path"
@@ -183,6 +218,7 @@ try {
         "--execution-snapshot-profile", "full",
         "--artifact-retention-mode", $ArtifactRetentionMode,
         "--max-persisted-iterations", $MaxPersistedIterations,
+        "--min-free-space-mb", $MinFreeSpaceMb,
         "--sleep-ms", 1000,
         "--after-snapshot-wait-ms", 500
     )

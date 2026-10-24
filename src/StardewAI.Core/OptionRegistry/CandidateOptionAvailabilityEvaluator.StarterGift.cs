@@ -52,6 +52,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 CandidateId = "starter-gift:" + ReadString(gift.Value, "location_id") + ":" + x + "," + y,
                 Kind = "claim_starter_gift",
                 Available = reasons.Count == 0,
+                AllowedNow = reasons.Count == 0,
+                AllowedToday = reasons.Count == 0,
                 LocationId = ReadString(gift.Value, "location_id"),
                 TileX = x,
                 TileY = y,

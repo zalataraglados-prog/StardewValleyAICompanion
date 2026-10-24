@@ -71,6 +71,87 @@ public sealed class GoldenWalnutFreshSaveEpisodeScheduleBuilderTests
     }
 
     [Fact]
+    public void AcceptsBoundedPassiveObservationGapWithoutIslandProgress()
+    {
+        using var fixture = new Fixture();
+        var source = EligibleSource();
+        var start = Snapshot(
+            "h0", 0, 0, false, false, false, false, source.SourceKey);
+        var arrived = Snapshot(
+            "h1", 100, 1, true, false, false, false, source.SourceKey);
+        var arrivedAfterTwoPassiveTicks = Snapshot(
+            "h1-passive", 100, 1, true, false, false, false, source.SourceKey);
+        var firstParrot = Snapshot(
+            "h2", 101, 1, true, true, false, false, source.SourceKey);
+        var turtle = Snapshot(
+            "h3", 102, 1, true, true, true, false, source.SourceKey);
+        var house = Snapshot(
+            "h4", 103, 1, true, true, true, true, source.SourceKey);
+        var paths = new[]
+        {
+            fixture.WriteEpisode(0, start, arrived, beforeTick: 0),
+            fixture.WriteEpisode(
+                1,
+                arrivedAfterTwoPassiveTicks,
+                firstParrot,
+                beforeTick: 3),
+            fixture.WriteEpisode(2, firstParrot, turtle, beforeTick: 4),
+            fixture.WriteEpisode(3, turtle, house, beforeTick: 5)
+        };
+        _ = fixture.WriteManifest(paths);
+        var manifestPath = Path.Combine(fixture.Root, "passive-gap-manifest.json");
+
+        var manifest = GoldenWalnutFreshSaveEpisodeManifestBuilder
+            .WriteFromDirectory(
+                manifestPath,
+                fixture.Root,
+                "fresh-save-schedule:passive-gap",
+                "fresh-save-run");
+        var schedule = GoldenWalnutFreshSaveEpisodeScheduleBuilder.Build(
+            manifestPath);
+
+        Assert.Equal(4, manifest.EpisodePaths.Length);
+        Assert.Equal(103, schedule.PlannedIslandHouseUnlockTotalDay);
+    }
+
+    [Fact]
+    public void RejectsUnreceiptedIslandProgressInsidePassiveGap()
+    {
+        using var fixture = new Fixture();
+        var source = EligibleSource();
+        var start = Snapshot(
+            "h0", 0, 0, false, false, false, false, source.SourceKey);
+        var unchanged = Snapshot(
+            "h1", 0, 0, false, false, false, false, source.SourceKey);
+        var progressedWithoutReceipt = Snapshot(
+            "h1-gap", 0, 1, false, false, false, false, source.SourceKey);
+        var after = Snapshot(
+            "h2", 0, 1, false, false, false, false, source.SourceKey);
+        var paths = new[]
+        {
+            fixture.WriteEpisode(0, start, unchanged, beforeTick: 0),
+            fixture.WriteEpisode(
+                1,
+                progressedWithoutReceipt,
+                after,
+                beforeTick: 3)
+        };
+        _ = fixture.WriteManifest(paths);
+
+        var error = Assert.Throws<InvalidDataException>(() =>
+            GoldenWalnutFreshSaveEpisodeManifestBuilder.WriteFromDirectory(
+                Path.Combine(fixture.Root, "invalid-gap-manifest.json"),
+                fixture.Root,
+                "fresh-save-schedule:invalid-gap",
+                "fresh-save-run"));
+
+        Assert.Contains(
+            "unreceipted island progress",
+            error.Message,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task DurableContentAddressedEvidenceSurvivesRollingRetention()
     {
         using var fixture = new Fixture(useLiveSnapshotDirectory: true);
@@ -185,6 +266,16 @@ public sealed class GoldenWalnutFreshSaveEpisodeScheduleBuilderTests
                 Value = "fresh-save-test",
                 Status = FieldStatus.Available
             },
+            PlayerId = new FieldEnvelope<string?>
+            {
+                Value = "fresh-save-farmer",
+                Status = FieldStatus.Available
+            },
+            InGameTime = new FieldEnvelope<int?>
+            {
+                Value = 600,
+                Status = FieldStatus.Available
+            },
             StateHash = hash,
             State = new Dictionary<string, JsonElement>
             {
@@ -279,7 +370,8 @@ public sealed class GoldenWalnutFreshSaveEpisodeScheduleBuilderTests
             int index,
             SnapshotEnvelope before,
             SnapshotEnvelope after,
-            bool success = true)
+            bool success = true,
+            long? beforeTick = null)
         {
             var beforeName = $"before-{index}.json";
             var afterName = $"after-{index}.json";
@@ -295,8 +387,8 @@ public sealed class GoldenWalnutFreshSaveEpisodeScheduleBuilderTests
                     RunId = "fresh-save-run",
                     SourceStateHash = before.StateHash,
                     AfterStateHash = after.StateHash,
-                    BeforeGameTick = index * 10,
-                    AfterGameTick = index * 10 + 1,
+                    BeforeGameTick = beforeTick ?? index * 10,
+                    AfterGameTick = (beforeTick ?? index * 10) + 1,
                     AfterSnapshotFresh = true,
                     BeforeSnapshotPath = beforeName,
                     AfterSnapshotPath = afterName,

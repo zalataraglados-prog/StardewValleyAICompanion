@@ -84,7 +84,7 @@ public static class GoldenWalnutFreshSaveEpisodeManifestBuilder
             initialBoundaryPath,
             runId);
 
-        string? previousAfterStateHash = null;
+        EpisodeRow? previousRow = null;
         long previousAfterTick = -1;
         var episodeIds = new HashSet<string>(StringComparer.Ordinal);
         foreach (var row in rows)
@@ -99,10 +99,14 @@ public static class GoldenWalnutFreshSaveEpisodeManifestBuilder
                 !string.IsNullOrWhiteSpace(episode.BeforeSnapshotPath) &&
                 !string.IsNullOrWhiteSpace(episode.AfterSnapshotPath),
                 "Golden Walnut run contains an invalid or duplicate episode: " + row.Path);
-            Require(
-                previousAfterStateHash is null ||
-                previousAfterStateHash == episode.SourceStateHash,
-                "Golden Walnut run contains a state-hash gap: " + row.Path);
+            if (previousRow is not null)
+            {
+                GoldenWalnutFreshSaveEpisodeContinuityVerifier.Validate(
+                    previousRow.Path,
+                    previousRow.Episode,
+                    row.Path,
+                    episode);
+            }
             Require(
                 episode.BeforeGameTick >= previousAfterTick &&
                 episode.AfterGameTick >= episode.BeforeGameTick,
@@ -110,7 +114,7 @@ public static class GoldenWalnutFreshSaveEpisodeManifestBuilder
             Require(File.Exists(ResolveEpisodeArtifact(row.Path, episode.BeforeSnapshotPath)) &&
                     File.Exists(ResolveEpisodeArtifact(row.Path, episode.AfterSnapshotPath)),
                 "Golden Walnut run episode snapshot is missing: " + row.Path);
-            previousAfterStateHash = episode.AfterStateHash;
+            previousRow = row;
             previousAfterTick = episode.AfterGameTick;
         }
         Require(

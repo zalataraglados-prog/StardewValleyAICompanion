@@ -82,12 +82,15 @@ public sealed class StarterGiftMainlineTests
         var candidate = Assert.Single(availability.Options.Single().EventCandidates);
 
         Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
+        Assert.True(candidate.AllowedNow);
+        Assert.True(candidate.AllowedToday);
         Assert.Equal("claim_starter_gift", candidate.Kind);
         Assert.Contains("fresh_snapshot_replan_required=true", candidate.ExpectedEffect);
 
         var ranked = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability);
         var plan = new DailyPlanCompiler().Compile(ranked, snapshot.StateHash);
         var step = Assert.Single(plan.Steps);
+
         Assert.Equal("claim_starter_gift", step.Kind);
         Assert.Contains("native_GameLocation.checkAction_only", step.SafetyConstraints);
         var queue = new ActionQueueCompiler().Compile(plan, snapshot);

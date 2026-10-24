@@ -14,6 +14,8 @@ param(
     [int] $SaveBoundaryMaxAttempts = 16,
     [ValidateRange(1, 1000000)]
     [int] $MaxPersistedIterations = 64,
+    [ValidateRange(1024, [int]::MaxValue)]
+    [int] $MinFreeSpaceMb = 8192,
     [int] $StartupTimeoutSeconds = 180
 )
 
@@ -66,6 +68,7 @@ $calibrationOutput = & (Join-Path $PSScriptRoot `
     -SaveBoundaryMaxAttempts $SaveBoundaryMaxAttempts `
     -ArtifactRetentionMode rolling `
     -MaxPersistedIterations $MaxPersistedIterations `
+    -MinFreeSpaceMb $MinFreeSpaceMb `
     -CaptureGoldenWalnutFreshSaveEvidence `
     -StartupTimeoutSeconds $StartupTimeoutSeconds
 if ($LASTEXITCODE -ne 0) {
@@ -106,6 +109,7 @@ $summary = [ordered]@{
     native_save_boundary_verified =
         [bool]$calibrationSummary.native_save_boundary_verified
     artifact_retention_mode = "rolling"
+    min_free_space_mb = $MinFreeSpaceMb
     snapshot_artifact_mode = "content_addressed_gzip"
     execution_snapshot_profile = "full"
     formal_training_started = $false

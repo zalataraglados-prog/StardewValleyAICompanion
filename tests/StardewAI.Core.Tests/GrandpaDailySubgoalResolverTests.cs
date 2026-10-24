@@ -113,6 +113,42 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
     }
 
     [Fact]
+    public void DailySubgoalResolverPrioritizesReadyStarterGiftOverSocialWork()
+    {
+        var snapshot = GrandpaSnapshot();
+        var starterGift = new PolicyEventCandidatePrediction
+        {
+            CandidateId = "starter-gift:FarmHouse:3,7",
+            OptionId = "rewards.claim_starter_gift",
+            Kind = "claim_starter_gift",
+            Available = true,
+            AllowedNow = true,
+            AllowedToday = true,
+            TimelineStatus = "ready_now"
+        };
+        var social = new PolicyEventCandidatePrediction
+        {
+            CandidateId = "social_talk:Abigail:FarmHouse",
+            OptionId = "social.talk_npc",
+            Kind = "social_talk_current",
+            Available = true,
+            AllowedNow = true,
+            AllowedToday = true,
+            TimelineStatus = "ready_now"
+        };
+
+        var result = new GrandpaDailySubgoalResolver().Resolve(
+            snapshot,
+            GrandpaEvaluationGoalDefinition.StrategicGoal,
+            new[] { starterGift, social });
+
+        Assert.Equal("resolved", result.Status);
+        Assert.Equal("earn_money", result.DirectionId);
+        Assert.Equal("goal.economy.earn_money", result.EffectiveGoalId);
+        Assert.Equal(new[] { starterGift.CandidateId }, result.BoundCandidateIds);
+    }
+
+    [Fact]
     public void DailySubgoalResolverDoesNotInventCandidateBinding()
     {
         var snapshot = GrandpaSnapshot();

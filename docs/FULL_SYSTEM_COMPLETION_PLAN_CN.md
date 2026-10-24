@@ -12,6 +12,12 @@ Spring 1 新档首轮排序暴露的不是社交评分错误，而是上游缺�
 
 领取后快照回放证明，原计划中“fresh replan 会自然进入作物链”的表述少了一层战略交接。已有 `farm.maintain_crops` 只能机械维护透明快照中的确定地块，不负责选择新地块。修正后的固定顺序为：保护普通可种种子不被通用售卖/出货消耗 -> Grandpa 在空农场/已有种子边界发出类型化 `crop_production_teacher` 交接 -> LiveTrainingLoop 按需采集完整但分块不超过 `32x32` 的 `farm_layout` -> 复用唯一 Money Revenue Crop Teacher 选择作物与紧凑布局 -> 将其承诺交回既有清障/耕地/播种/浇水和跨日链。该顺序的首日原生闭环已由 `runtime-crop-teacher-first-day-20261024-183952` 证明：真实 80×65 Farm 的 9 分块采集、84 动作跨日 run plan、49 次首日控制尝试、47 次已验证执行、6 格播种/浇水以及 durable save boundary 全部成立。随后同一控制器已泛化为按当前 `total_days` 选择唯一 run day 的全日期状态机，且收获沿原动作编译链执行并写入 SHA-256 绑定的逐地块 transition ledger；无 verified 回执不得把作物消失视为完成。每个非终端 run day 现在还受独立的日期/存档双重边界约束，睡前存档指纹与下一日 fresh 快照必须证明日期恰好加一且 SHA-256 改变，完成前不得派发下一日动作。真实次日只保留 5 株等明确战略漂移会自动重新采集 fresh full/Farm layout 并复用同一 Teacher dispatch helper；旧 plan/ledger 原样保留，后继 handoff 绑定 superseded plan 路径与 SHA-256，最多重派发 8 次。完整周期 `runtime-crop-teacher-full-cycle-ledger-fix-20261024-211500` 已达到此前退出条件：水量守恒先把无补水路线的新档花椰菜计划裁成 `3` 格/`36` 次浇水，随后全日期原生执行写入 `12` 条逐日存档边界和 `3` 条逐格收获回执，`run_completed=true` 且零重派发。该切片至此收口；全局正式训练仍受 19 criterion 和 11 root method 准入约束，下一 WIP 恢复 `complete_master_angler` 的连续新档 Golden Walnut 日程，不继续扩张作物专用控制器。
 
+## 当前增量 · Golden Walnut 长期里程碑控制面
+
+隐藏静音运行 `golden-walnut-starter-fix-v6-20261024-2140` 已证明同一新档可以按“领取礼物策略选择 -> 作物 Teacher 机械展开 -> 12 次原生跨日 -> 收获”生成 `82/82` 连续耐久 episode。`farm_layout` 保持有界地图读取，同时加入核桃来源证据域；相邻 episode 只允许最多 `4` tick 且岛屿/来源状态完全不变的被动观察间隙。运行目录内隔离发布 Backend、Product Executor 和 LiveTrainingLoop，避免共享 Release 锁导致旧二进制启动。该结果关闭采集、rolling retention、manifest 和中间场地准备的连续性基础设施，不等于 Golden Walnut 日程完成。
+
+正式 schedule 导出已对该真实 manifest 运行，并因缺少首次登岛原生跃迁失败关闭。所以下一步不得再次做固定动作数短跑，也不得把作物 Teacher 完成当作全局目标完成。固定实现顺序为：新增 Golden Walnut 专用长期里程碑状态 -> 每个有界 Teacher handoff 收口后重新读取 fresh Grandpa/日计划 -> 只有首次登岛、核桃来源增量、First Parrot、Western Turtle、Island House 三次跃迁全部出现才允许成功退出 -> 日数、attempt、磁盘或连续错误上限先到则保留 checkpoint 并失败关闭 -> 从同一 manifest 导出 schedule 并重建 Master Angler prerequisite audit。长期控制面只编排既有候选、Teacher 和执行器，不创建第二套姜岛动作系统。
+
 ## 当前记录 · 2026-10-21 11 核心复杂度顺序
 
 Money 有界连续段、Community Center、Pet Love、Skull Key 和 Full Shipment current-authority 复核均已验收。剩余固定顺序为：`complete_master_angler`（当前） -> `obtain_rusty_key` -> `raise_friendships` -> `complete_museum_collection` -> `raise_skill_levels` -> `marriage_and_house_upgrade` -> `earn_money`。排序按当前增量工程成本，而非玩法名称或 criterion 数量；完整依据、改序条件和 WIP 约束以 `CURRENT_STATUS_CN.md` 第 6 节为准。

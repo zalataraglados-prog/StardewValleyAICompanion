@@ -60,7 +60,9 @@ public static class GoldenWalnutFreshSaveEpisodeScheduleBuilder
             manifest.SourceRunId);
 
         string? saveId = null;
-        string? previousAfterStateHash = null;
+        PlanExecutionEpisodeEnvelope? previousEpisode = null;
+        string? previousEpisodePath = null;
+        SnapshotEnvelope? previousAfterSnapshot = null;
         long previousAfterTick = -1;
         int? firstIslandArrivalDay = null;
         int? firstParrotUnlockDay = null;
@@ -88,10 +90,6 @@ public static class GoldenWalnutFreshSaveEpisodeScheduleBuilder
                 "Golden Walnut source schedule requires successful episodes with fresh after snapshots: " + episodePath);
             Require(manifest.SourceRunId == episode.RunId,
                 "Golden Walnut source schedule cannot combine different run IDs.");
-            Require(
-                previousAfterStateHash is null ||
-                previousAfterStateHash == episode.SourceStateHash,
-                "Golden Walnut episode sequence has a state-hash gap: " + episodePath);
             Require(episode.BeforeGameTick >= previousAfterTick,
                 "Golden Walnut episode sequence is not ordered by game tick: " + episodePath);
             Require(episode.AfterGameTick >= episode.BeforeGameTick,
@@ -114,6 +112,16 @@ public static class GoldenWalnutFreshSaveEpisodeScheduleBuilder
                 before.StateHash == episode.SourceStateHash &&
                 after.StateHash == episode.AfterStateHash,
                 "Golden Walnut episode snapshot identity does not match its receipt: " + episodePath);
+            if (previousEpisode is not null)
+            {
+                GoldenWalnutFreshSaveEpisodeContinuityVerifier.Validate(
+                    previousEpisodePath!,
+                    previousEpisode,
+                    previousAfterSnapshot!,
+                    episodePath,
+                    episode,
+                    before);
+            }
             Require(
                 before.SaveId.Value is not null &&
                 before.SaveId.Value == after.SaveId.Value,
@@ -180,7 +188,9 @@ public static class GoldenWalnutFreshSaveEpisodeScheduleBuilder
                     afterDay);
             }
 
-            previousAfterStateHash = episode.AfterStateHash;
+            previousEpisode = episode;
+            previousEpisodePath = episodePath;
+            previousAfterSnapshot = after;
             previousAfterTick = episode.AfterGameTick;
         }
 

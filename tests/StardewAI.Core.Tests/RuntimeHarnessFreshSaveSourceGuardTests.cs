@@ -89,10 +89,42 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             "-RequiredVerifiedActions $RequiredVerifiedActions",
             workflow,
             StringComparison.Ordinal);
+        Assert.Contains(
+            "-MinFreeSpaceMb $MinFreeSpaceMb",
+            workflow,
+            StringComparison.Ordinal);
         Assert.DoesNotContain("Start-Process", workflow, StringComparison.Ordinal);
         Assert.DoesNotContain("Remove-Item", workflow, StringComparison.Ordinal);
 
         Assert.Contains("--skip-training", calibration, StringComparison.Ordinal);
+        Assert.Contains(
+            "src\\StardewAI.Backend\\StardewAI.Backend.csproj",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "tools\\StardewAI.ProductExecutor\\StardewAI.ProductExecutor.csproj",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "tools\\StardewAI.LiveTrainingLoop\\StardewAI.LiveTrainingLoop.csproj",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "dotnet publish $entry.Project -c Release --nologo",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "--artifacts-path $entry.ArtifactsDirectory",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$binaryRoot = Join-Path $artifactDirectory \"binaries\"",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$backendDll = Join-Path $releaseEntrypoints[0].OutputDirectory",
+            calibration,
+            StringComparison.Ordinal);
         Assert.Contains(
             "--execution-snapshot-profile\", \"full",
             calibration,
@@ -111,6 +143,10 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains(
             "--required-verified-actions\", $RequiredVerifiedActions",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "--min-free-space-mb\", $MinFreeSpaceMb",
             calibration,
             StringComparison.Ordinal);
         Assert.Contains(
