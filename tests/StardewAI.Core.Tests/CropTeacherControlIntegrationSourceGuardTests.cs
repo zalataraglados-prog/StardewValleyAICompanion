@@ -136,31 +136,61 @@ public sealed class CropTeacherControlIntegrationSourceGuardTests
     }
 
     [Fact]
-    public void SeedAcquisitionLetsNativeStoryEventsPreemptTheShopQueue()
+    public void EveryCropTeacherStageLetsNativeStoryEventsPreemptMechanicalQueues()
     {
         var source = Read(
             "tools",
             "StardewAI.LiveTrainingLoop",
             "Program.CropTeacherControl.cs");
 
+        var controlEntry = source.IndexOf(
+            "BuildCropTeacherControlQueueAsync(",
+            StringComparison.Ordinal);
         var eventCheck = source.IndexOf(
             "if (HasPriorityStoryEventInterrupt(beforeSnapshot))",
+            controlEntry,
             StringComparison.Ordinal);
-        var eventQueue = source.IndexOf(
-            "BuildPriorityStoryEventQueueAsync(",
+        var stageSwitch = source.IndexOf(
+            "return step.Stage switch",
             eventCheck,
             StringComparison.Ordinal);
-        var purchaseQueue = source.IndexOf(
-            "new[] { \"economy.buy_supplies\" }",
-            eventQueue,
+        var storyBuilder = source.IndexOf(
+            "BuildCropTeacherStoryEventQueueAsync(",
+            eventCheck,
+            StringComparison.Ordinal);
+        var seedBuilder = source.IndexOf(
+            "BuildCropTeacherSeedQueueAsync(",
+            stageSwitch,
+            StringComparison.Ordinal);
+        var routeBuilder = source.IndexOf(
+            "BuildCropTeacherRouteQueueAsync(",
+            seedBuilder,
             StringComparison.Ordinal);
 
-        Assert.True(eventCheck >= 0);
-        Assert.True(eventQueue > eventCheck);
-        Assert.True(purchaseQueue > eventQueue);
+        Assert.True(controlEntry >= 0);
+        Assert.True(eventCheck > controlEntry);
+        Assert.True(storyBuilder > eventCheck);
+        Assert.True(stageSwitch > storyBuilder);
+        Assert.True(seedBuilder > stageSwitch);
+        Assert.True(routeBuilder > seedBuilder);
         Assert.Contains(
-            "seed-story-event",
+            "BuildPriorityStoryEventQueueAsync(",
             source,
+            StringComparison.Ordinal);
+        Assert.Contains("\"story-event\"", source, StringComparison.Ordinal);
+
+        var seedBodyStart = source.IndexOf(
+            "BuildCropTeacherSeedQueueAsync(",
+            storyBuilder,
+            StringComparison.Ordinal);
+        var routeBodyStart = source.IndexOf(
+            "BuildCropTeacherRouteQueueAsync(",
+            seedBodyStart,
+            StringComparison.Ordinal);
+        var seedBody = source[seedBodyStart..routeBodyStart];
+        Assert.DoesNotContain(
+            "HasPriorityStoryEventInterrupt",
+            seedBody,
             StringComparison.Ordinal);
     }
 

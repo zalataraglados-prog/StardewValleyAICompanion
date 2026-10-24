@@ -1275,8 +1275,8 @@ if (options.CaptureGoldenWalnutFreshSaveEvidence)
         }
     }
     catch (Exception ex) when (
-        ex is IOException or InvalidOperationException or JsonException or
-            ArgumentException)
+        ex is IOException or InvalidDataException or InvalidOperationException or
+            JsonException or ArgumentException)
     {
         stopReason = "golden_walnut_fresh_save_manifest_invalid message=" +
             SanitizeProgressValue(ex.Message);
@@ -1296,8 +1296,8 @@ if (options.RequireGoldenWalnutSourceScheduleReady &&
         goldenWalnutSourceScheduleVerified = true;
     }
     catch (Exception ex) when (
-        ex is IOException or InvalidOperationException or JsonException or
-            ArgumentException)
+        ex is IOException or InvalidDataException or InvalidOperationException or
+            JsonException or ArgumentException)
     {
         stopReason = "golden_walnut_source_schedule_invalid message=" +
             SanitizeProgressValue(ex.Message);

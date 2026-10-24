@@ -31,6 +31,17 @@ static partial class Program
             JsonObject beforeSnapshot,
             string stateHash)
     {
+        if (HasPriorityStoryEventInterrupt(beforeSnapshot))
+        {
+            return await BuildCropTeacherStoryEventQueueAsync(
+                http,
+                options,
+                iteration,
+                beforeSnapshotPath,
+                beforeSnapshot,
+                stateHash);
+        }
+
         return step.Stage switch
         {
             CropTeacherRunStageKinds.AcquireSeed =>
@@ -83,6 +94,39 @@ static partial class Program
     }
 
     private static async Task<CropTeacherControlQueueBuildResult>
+        BuildCropTeacherStoryEventQueueAsync(
+            HttpClient http,
+            LiveTrainingOptions options,
+            int iteration,
+            string beforeSnapshotPath,
+            JsonObject beforeSnapshot,
+            string stateHash)
+    {
+        var interrupt = await BuildPriorityStoryEventQueueAsync(
+            http,
+            options,
+            stateHash);
+        var prefix = CropTeacherArtifactPrefix(
+            options,
+            iteration,
+            "story-event");
+        var planPath = prefix + "-daily-plan.json";
+        var responsePath = prefix + "-daily-plan-response.json";
+        var rankingPath = prefix + "-ranking.json";
+        await WriteJsonAsync(planPath, interrupt.Plan);
+        await WriteJsonAsync(responsePath, interrupt.Response);
+        await WriteJsonAsync(rankingPath, interrupt.Ranking);
+        return StandardResult(
+            interrupt.Queue,
+            planPath,
+            rankingPath,
+            beforeSnapshotPath,
+            beforeSnapshot,
+            stateHash,
+            options);
+    }
+
+    private static async Task<CropTeacherControlQueueBuildResult>
         BuildCropTeacherSeedQueueAsync(
             HttpClient http,
             LiveTrainingOptions options,
@@ -99,33 +143,6 @@ static partial class Program
         {
             throw new InvalidDataException(
                 "crop_teacher_seed_control_binding_invalid");
-        }
-
-        if (HasPriorityStoryEventInterrupt(beforeSnapshot))
-        {
-            var interrupt = await BuildPriorityStoryEventQueueAsync(
-                http,
-                options,
-                stateHash);
-            var interruptPrefix = CropTeacherArtifactPrefix(
-                options,
-                iteration,
-                "seed-story-event");
-            var interruptPlanPath = interruptPrefix + "-daily-plan.json";
-            var interruptResponsePath =
-                interruptPrefix + "-daily-plan-response.json";
-            var interruptRankingPath = interruptPrefix + "-ranking.json";
-            await WriteJsonAsync(interruptPlanPath, interrupt.Plan);
-            await WriteJsonAsync(interruptResponsePath, interrupt.Response);
-            await WriteJsonAsync(interruptRankingPath, interrupt.Ranking);
-            return StandardResult(
-                interrupt.Queue,
-                interruptPlanPath,
-                interruptRankingPath,
-                beforeSnapshotPath,
-                beforeSnapshot,
-                stateHash,
-                options);
         }
 
         var parameters = new[]

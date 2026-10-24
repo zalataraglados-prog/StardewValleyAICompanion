@@ -234,6 +234,10 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             "GoldenWalnutFreshSaveEpisodeManifestBuilder.WriteFromDirectory",
             liveTrainingLoop,
             StringComparison.Ordinal);
+        Assert.Contains(
+            "ex is IOException or InvalidDataException or InvalidOperationException or",
+            liveTrainingLoop,
+            StringComparison.Ordinal);
     }
 
     [Fact]
