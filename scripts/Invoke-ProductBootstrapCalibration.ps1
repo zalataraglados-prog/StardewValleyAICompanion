@@ -41,10 +41,11 @@ function Wait-World([string] $SnapshotUrl, [int] $Seconds) {
     $deadline = (Get-Date).AddSeconds($Seconds)
     while ((Get-Date) -lt $deadline) {
         try {
-            $snapshot = Invoke-RestMethod -Uri $SnapshotUrl -TimeoutSec 30
+            $response = Invoke-WebRequest -Uri $SnapshotUrl -TimeoutSec 30
+            $snapshot = $response.Content | ConvertFrom-Json
             if ($snapshot.state.player.location_id.status -in @("available", "derived") -and
                 $snapshot.state.identity.save_id.status -in @("available", "derived")) {
-                return $snapshot
+                return [string] $response.Content
             }
         } catch {}
         Start-Sleep -Seconds 2
@@ -147,8 +148,11 @@ try {
         -RedirectStandardOutput (Join-Path $artifactDirectory "game.stdout.log") `
         -RedirectStandardError (Join-Path $artifactDirectory "game.stderr.log") -PassThru
     Wait-Json "http://127.0.0.1:8767/health" $StartupTimeoutSeconds | Out-Null
-    $initial = Wait-World $snapshotUrl $StartupTimeoutSeconds
-    Write-Json (Join-Path $artifactDirectory "initial-snapshot.json") $initial
+    $initialJson = Wait-World $snapshotUrl $StartupTimeoutSeconds
+    [IO.File]::WriteAllText(
+        (Join-Path $artifactDirectory "initial-snapshot.json"),
+        $initialJson,
+        [Text.UTF8Encoding]::new($false))
 
     $arguments = @(
         $loopDll,
@@ -160,7 +164,7 @@ try {
         "--no-manifest",
         "--run-id", $RunId,
         "--save-isolation-path", $savesFullPath,
-        "--goal", "grandpa.maximum_21",
+        "--goal", "goal.grandpa_max_score_year3",
         "--max-attempts", $MaxAttempts,
         "--required-verified-actions", 1,
         "--skip-training",

@@ -5,6 +5,67 @@ namespace StardewAI.Core.Tests;
 
 public sealed class LiveTrainingLoopQueueReplanFilterTests
 {
+    [Fact]
+    public void ResolvedGoalCompilesOnlyExactBoundCandidates()
+    {
+        var candidates = new JsonArray
+        {
+            Candidate("unrelated", "economy.buy_supplies"),
+            Candidate("bound-b", "social.talk_npc"),
+            Candidate("bound-a", "social.talk_npc")
+        };
+        var resolution = new JsonObject
+        {
+            ["status"] = "resolved",
+            ["bound_candidate_ids"] = new JsonArray("bound-a", "bound-b")
+        };
+
+        var filtered = QueueReplanFilter
+            .FilterGoalResolutionBoundCandidates(candidates, resolution);
+
+        Assert.Equal(
+            new[] { "bound-b", "bound-a" },
+            filtered.Select(node =>
+                node!["candidate_id"]!.GetValue<string>()));
+        Assert.Equal(3, candidates.Count);
+    }
+
+    [Fact]
+    public void UnresolvedGoalPreservesEveryRankedCandidate()
+    {
+        var candidates = new JsonArray
+        {
+            Candidate("first", "economy.buy_supplies"),
+            Candidate("second", "social.talk_npc")
+        };
+        var resolution = new JsonObject
+        {
+            ["status"] = "no_actionable_direction",
+            ["bound_candidate_ids"] = new JsonArray()
+        };
+
+        var filtered = QueueReplanFilter
+            .FilterGoalResolutionBoundCandidates(candidates, resolution);
+
+        Assert.Equal(2, filtered.Count);
+        Assert.NotSame(candidates[0], filtered[0]);
+    }
+
+    [Fact]
+    public void ResolvedGoalWithoutBoundIdsFailsClosed()
+    {
+        var filtered = QueueReplanFilter
+            .FilterGoalResolutionBoundCandidates(
+                new JsonArray(Candidate("unrelated", "economy.buy_supplies")),
+                new JsonObject
+                {
+                    ["status"] = "resolved",
+                    ["bound_candidate_ids"] = new JsonArray()
+                });
+
+        Assert.Empty(filtered);
+    }
+
     [Theory]
     [InlineData(9, 6, 3)]
     [InlineData(4, 4, 0)]
@@ -131,6 +192,10 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
         Assert.Contains("completed_objective_continuations", runtimeExecutionSource, StringComparison.Ordinal);
         Assert.Contains("AddSuppressedContinuation", runtimeExecutionSource, StringComparison.Ordinal);
         Assert.Contains("FilterSuppressedContinuations", queueBuildingSource, StringComparison.Ordinal);
+        Assert.Contains(
+            "FilterGoalResolutionBoundCandidates",
+            queueBuildingSource,
+            StringComparison.Ordinal);
         Assert.Contains("ContinuationRequestParameters(effectiveContinuation)", queueBuildingSource, StringComparison.Ordinal);
         Assert.Contains("\"continuation.\" + property.Key", queueBuildingSource, StringComparison.Ordinal);
         Assert.Contains("IsTrainingVerifiedExecution(execution)", source, StringComparison.Ordinal);
@@ -1471,6 +1536,15 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
             }
         };
     }
+
+    private static JsonObject Candidate(
+        string candidateId,
+        string optionId) => new()
+    {
+        ["candidate_id"] = candidateId,
+        ["option_id"] = optionId,
+        ["parameters"] = new JsonArray()
+    };
 
     private static JsonObject QuestCandidate(string candidateId)
     {

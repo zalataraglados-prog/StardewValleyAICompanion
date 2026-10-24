@@ -55,7 +55,7 @@ namespace StardewAI.Core.Training
             PolicyEventCandidatePrediction[] broadRankedCandidates)
         {
             var requested = (requestedGoalId ?? string.Empty).Trim();
-            if (!IsGrandpaGoal(requested))
+            if (!GrandpaEvaluationGoalDefinition.IsMaximumScoreGoal(requested))
             {
                 return Detailed(Result(
                     "not_applicable",
@@ -209,18 +209,6 @@ namespace StardewAI.Core.Training
                 catalog.PermittedCandidateKinds.Contains(
                     candidate.Kind,
                     StringComparer.Ordinal));
-        }
-
-        private static bool IsGrandpaGoal(string goalId)
-        {
-            return string.Equals(
-                       goalId,
-                       GrandpaEvaluationGoalDefinition.GoalId,
-                       StringComparison.Ordinal) ||
-                   string.Equals(
-                       goalId,
-                       GrandpaEvaluationGoalDefinition.StrategicGoal,
-                       StringComparison.Ordinal);
         }
 
         private static PlanningGoalResolution Result(

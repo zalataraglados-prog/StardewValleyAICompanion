@@ -105,6 +105,18 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             "-not $CaptureGoldenWalnutFreshSaveEvidence",
             calibration,
             StringComparison.Ordinal);
+        Assert.Contains(
+            "Invoke-WebRequest -Uri $SnapshotUrl",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "[IO.File]::WriteAllText(",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "Write-Json (Join-Path $artifactDirectory \"initial-snapshot.json\")",
+            calibration,
+            StringComparison.Ordinal);
     }
 
     [Fact]

@@ -20,6 +20,8 @@
 
 Master Angler 当前子切片已把 Golden Walnut 新档来源日程接到可跨 rolling retention 的真实 episode 归档。显式捕获模式只接受稳定 run ID、最大 Grandpa 分数目标、`full` 执行快照与 `content_addressed_gzip`；首条 episode 还必须绑定 day 0、同一 save/run/state/tick、未推进的姜岛/鹦鹉状态及逐行完整且全部为零的 `69 keys / 130 walnuts` 初始目录。每个 success + fresh episode 原子保留前后快照清单和重写引用的 episode，正常退出在训练事务提交前生成 manifest，异常退出可从耐久别名重建。`golden-walnut-fresh-save-smoke-20261024-161207` 已以隐藏静音原生运行生成首条 verified episode、initial boundary 和 episode manifest；该运行同时暴露并修复顺序队列聚合回执的起点 tick/path 不一致。它只证明采集入口端到端成立，尚未形成首次登岛、51 来源和三次鹦鹉跃迁的连续新档日程，因此不改变 `5/19`、`6/19`、`5/19`、`4/11` 或正式训练禁令。下一真实产物是延长同一新档 episode 链并导出 Golden Walnut source schedule，然后重建解锁时间线与 Master Angler prerequisite audit。
 
+同一真实 Spring 1 快照的离线回放又关闭了两个会让长跑静默偏航的入口缺口。Grandpa 21 分目标的权威 ID、战略别名和 Golden Walnut 证据别名现由 Contracts 单点识别；运行脚本固定传权威 `goal.grandpa_max_score_year3`。状态解析为 `resolved` 时，LiveTrainingLoop 只把 `bound_candidate_ids` 送入日计划编译，完整排序仍保留供审计和结构化模型在绑定集合内比较；真实快照因此从 62 个同分候选按字符串误选 AnimalShop，改为 `raise_friendships` 的 28 个精确绑定 NPC 候选。另将 `initial-snapshot.json` 改为原始 HTTP JSON 保真落盘，禁止 `Invoke-RestMethod -> ConvertTo-Json` 改写值后沿用旧 state hash。定向回归 `164/164` 通过；没有再次启动游戏，正式准入指标不变。
+
 当前五个 `CoverageGateReady` criterion 固定为：
 
 - `community_center_access_or_completion`

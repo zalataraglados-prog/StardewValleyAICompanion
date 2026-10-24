@@ -1,4 +1,5 @@
 using StardewAI.LiveTrainingLoop;
+using StardewAI.Contracts.Goals;
 
 namespace StardewAI.Core.Tests;
 
@@ -125,6 +126,27 @@ public sealed class LiveTrainingExecutionSnapshotProfileTests
             "golden-walnut-fresh-save-episode-manifest.json",
             options.GoldenWalnutFreshSaveEpisodeManifestPath,
             StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(GrandpaEvaluationGoalDefinition.GoalId)]
+    [InlineData(GrandpaEvaluationGoalDefinition.StrategicGoal)]
+    [InlineData(GrandpaEvaluationGoalDefinition.MaximumScoreEvidenceGoal)]
+    public void GoldenWalnutEvidenceCaptureAcceptsEveryMaximumScoreGoalAlias(
+        string goalId)
+    {
+        var options = LiveTrainingOptions.Parse(new[]
+        {
+            "--run-id",
+            "fresh-save-run",
+            "--goal",
+            goalId,
+            "--snapshot-artifact-mode",
+            ContentAddressedJsonArtifactStore.ContentAddressedGzipMode,
+            "--capture-golden-walnut-fresh-save-evidence"
+        });
+
+        Assert.Equal(goalId, options.Goal);
     }
 
     [Fact]

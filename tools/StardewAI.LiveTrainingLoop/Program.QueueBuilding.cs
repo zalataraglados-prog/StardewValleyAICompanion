@@ -102,6 +102,11 @@ static partial class Program
             ? options.Goal
             : resolvedGoalId;
         var rankedCandidates = ranking["ranked_event_candidates"]?.AsArray() ?? new JsonArray();
+        var goalResolution = ranking["goal_resolution"]?.AsObject();
+        var goalBoundCandidates =
+            QueueReplanFilter.FilterGoalResolutionBoundCandidates(
+                rankedCandidates,
+                goalResolution);
         var exclusiveRecovery = rankedCandidates.Any(node =>
         {
             var candidate = node?.AsObject();
@@ -114,7 +119,7 @@ static partial class Program
                     StringComparison.Ordinal);
         });
         var unsuppressedCandidates = QueueReplanFilter.FilterSuppressedContinuations(
-            rankedCandidates,
+            goalBoundCandidates,
             suppressedObjectiveContinuations);
         var continuationCandidates = JsonNode.Parse(
             unsuppressedCandidates.ToJsonString())?.AsArray() ?? new JsonArray();
@@ -144,6 +149,19 @@ static partial class Program
                 : "typed_objective_identity_match;fail_closed_no_objective_switch"
         };
         ranking["objective_continuation_filter"] = objectiveContinuationFilter;
+        ranking["goal_resolution_binding_filter"] = new JsonObject
+        {
+            ["active"] = string.Equals(
+                ReadString(goalResolution, "status"),
+                "resolved",
+                StringComparison.Ordinal),
+            ["input_candidate_count"] = rankedCandidates.Count,
+            ["selected_candidate_count"] = goalBoundCandidates.Count,
+            ["policy"] =
+                "resolved_goal_compiles_only_exact_bound_candidate_ids;" +
+                "unresolved_or_not_applicable_goal_preserves_ranked_candidates;" +
+                "fail_closed_when_resolved_binding_is_empty"
+        };
         ranking["social_continuation_filter"] = JsonNode.Parse(
             objectiveContinuationFilter.ToJsonString(JsonOptions));
         ranking["released_objective_suppression"] = new JsonObject

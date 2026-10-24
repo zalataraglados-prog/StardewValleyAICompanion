@@ -587,9 +587,8 @@ public sealed class LiveTrainingOptions
             throw new ArgumentException(
                 "--capture-golden-walnut-fresh-save-evidence requires --run-id.");
         }
-        if (Goal is not "grandpa.maximum_21" and
-            not "grandpa_max_score_year3" and
-            not "goal.grandpa_max_score_year3")
+        if (!StardewAI.Contracts.Goals.GrandpaEvaluationGoalDefinition
+                .IsMaximumScoreGoal(Goal))
         {
             throw new ArgumentException(
                 "--capture-golden-walnut-fresh-save-evidence requires the " +

@@ -23,6 +23,25 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
         Assert.Empty(result.BoundCandidateIds);
     }
 
+    [Theory]
+    [InlineData(GrandpaEvaluationGoalDefinition.GoalId)]
+    [InlineData(GrandpaEvaluationGoalDefinition.StrategicGoal)]
+    [InlineData(GrandpaEvaluationGoalDefinition.MaximumScoreEvidenceGoal)]
+    public void DailySubgoalResolverAcceptsEveryMaximumScoreGoalAlias(
+        string goalId)
+    {
+        var result = new GrandpaDailySubgoalResolver().Resolve(
+            GrandpaSnapshot(),
+            goalId,
+            Array.Empty<PolicyEventCandidatePrediction>());
+
+        Assert.NotEqual("not_applicable", result.Status);
+        Assert.NotEqual(
+            "requested_goal_is_not_grandpa_max_score",
+            result.Reason);
+        Assert.Equal(goalId, result.RequestedGoalId);
+    }
+
     [Fact]
     public void DailySubgoalResolverUsesExactReadyMoneyCandidate()
     {

@@ -4,6 +4,42 @@ namespace StardewAI.LiveTrainingLoop;
 
 public static partial class QueueReplanFilter
 {
+    public static JsonArray FilterGoalResolutionBoundCandidates(
+        JsonArray rankedCandidates,
+        JsonObject? goalResolution)
+    {
+        if (!string.Equals(
+                ReadString(goalResolution, "status"),
+                "resolved",
+                StringComparison.Ordinal))
+        {
+            return JsonNode.Parse(rankedCandidates.ToJsonString())?
+                .AsArray() ?? new JsonArray();
+        }
+
+        var boundCandidateIds = goalResolution?["bound_candidate_ids"]?
+            .AsArray()
+            .Select(node => node?.GetValue<string>() ?? string.Empty)
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .ToHashSet(StringComparer.Ordinal) ?? new HashSet<string>(
+                StringComparer.Ordinal);
+        if (boundCandidateIds.Count == 0)
+        {
+            return new JsonArray();
+        }
+
+        var filtered = rankedCandidates
+            .Select(node => node?.AsObject())
+            .Where(candidate =>
+                candidate is not null &&
+                boundCandidateIds.Contains(
+                    ReadString(candidate, "candidate_id")))
+            .Select(candidate =>
+                JsonNode.Parse(candidate!.ToJsonString()))
+            .ToArray();
+        return new JsonArray(filtered);
+    }
+
     public static JsonArray FilterRankedCandidates(JsonArray rankedCandidates, JsonObject? continuation)
     {
         if (continuation is null)

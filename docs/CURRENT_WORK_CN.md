@@ -13,6 +13,8 @@
 - `Invoke-GoldenWalnutFreshSaveCalibration.ps1` 现只编排两个既有入口：先用 `Invoke-RuntimeFreshSaveSmoke.ps1` 生成并核验原生春 1 存档，再交给 `Invoke-ProductBootstrapCalibration.ps1` 复用现有 Backend、Product Executor、日计划和 LiveTrainingLoop。该路径固定 `skip-training`、`full`、`content_addressed_gzip`、rolling retention 与最大 Grandpa 分数目标；策略校准仍要求完整多候选 trajectory，核桃证据校准则以 verified episode 和耐久 manifest 为退出条件，两种准入不混用。
 - 真实隐藏静音运行 `golden-walnut-fresh-save-smoke-20261024-161207` 已生成 `1` 条 verified success+fresh episode、day-0 initial boundary 和 `golden-walnut-fresh-save-episode-manifest.json`。首次运行暴露顺序队列聚合回执把原始 `before_game_tick` 与最后机械步骤的 `effective_before_snapshot_path` 混在一起；聚合层现统一把 state hash、snapshot path 和 tick 重绑到整条 episode 起点，未放宽验证器。修正后报告为 `rows_appended=1`、`verified_actions=1`、manifest episode `1`，定向回归 `23/23`、LiveTrainingLoop Release `0 warning / 0 error`。
 - 这只证明真实新档采集入口和首条 episode 的端到端链路，不是连续新档日程，更不是正式训练。首次登岛、三次鹦鹉跃迁、51 核桃来源变化、Gourmand 第 2/3 单及后续 Master Angler prerequisite audit 仍未生成，`formal_product_training_authorized=false` 不变。下一固定切片是在磁盘容量充足的训练位置延长同一新档运行，而不是再增加启动器。
+- 首轮排序证据显示捕获脚本使用的 `grandpa.maximum_21` 只通过了捕获校验，却被日目标解析器判为 `not_applicable`，导致 62 个候选全为 `-0.034` 并按 candidate ID 先选 AnimalShop。现已由 `GrandpaEvaluationGoalDefinition` 统一识别权威 ID、战略别名和证据别名，脚本改传权威 ID；状态为 `resolved` 时，LiveTrainingLoop 在编译边界仅保留解析器的精确 `bound_candidate_ids`，不篡改全量排序、分数或结构化策略的绑定内顺序。对同一真实 Spring 1 快照离线回放得到 `raise_friendships / social / 28` 个绑定候选，首个计划动作变为社交路线 connector，不再是无目标商店访问。
+- `initial-snapshot.json` 过去经 PowerShell 对象往返重写后仍携带桥接旧哈希，不能被当前 Backend 重放。校准脚本现用 `Invoke-WebRequest` 保留原始 JSON，并以无 BOM UTF-8 直接落盘；`summary.json` 等普通对象文件仍使用结构化写入。该修复只保证后续运行可复现，不追改已有证据。目标别名、绑定过滤、脚本保真与既有 fresh-save 守卫的定向回归共 `164/164` 通过；未启动游戏。下一步仍是在有足够磁盘余量的位置延长真实新档 episode 链，而不是增加候选硬编码。
 
 ## 当前切片 · 2026-10-21 Full Shipment 冻结并切换 Master Angler
 
