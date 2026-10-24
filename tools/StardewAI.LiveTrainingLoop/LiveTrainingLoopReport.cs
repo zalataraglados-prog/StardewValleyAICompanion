@@ -56,6 +56,10 @@ public sealed class LiveTrainingLoopReport
     [JsonPropertyName("golden_walnut_fresh_save_episode_count")]
     public int GoldenWalnutFreshSaveEpisodeCount { get; set; }
 
+    [JsonPropertyName("planning_handoff_capture_manifest_path")]
+    public string PlanningHandoffCaptureManifestPath { get; set; } =
+        string.Empty;
+
     [JsonPropertyName("iterations")]
     public int Iterations { get; set; }
 

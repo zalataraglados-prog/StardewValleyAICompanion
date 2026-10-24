@@ -37,6 +37,7 @@ var lastQueueId = string.Empty;
 var lastStateHash = string.Empty;
 JsonObject? lastTrainingReport = null;
 JsonObject? lastPrediction = null;
+var lastPlanningHandoffCaptureManifestPath = string.Empty;
 JsonObject? activeObjectiveContinuation = null;
 var suppressedObjectiveContinuations = new List<JsonObject>();
 var suppressionDayKey = string.Empty;
@@ -365,6 +366,36 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             queue = dailyPlan.Queue;
             decisionModelPlanPath = modelPlanPath;
             decisionRankingPath = rankingPath;
+            if (PlanningHandoffCapture.TryReadCropProductionTeacherHandoff(
+                    dailyPlanRanking,
+                    out var planningHandoff))
+            {
+                var capture = await PlanningHandoffCapture.CaptureAsync(
+                    http,
+                    options.BridgeSnapshotUrl,
+                    Path.Combine(
+                        options.SnapshotDir,
+                        "planning-handoff-" + iteration.ToString("D4")),
+                    rawSnapshotJson,
+                    planningHandoff);
+                lastPlanningHandoffCaptureManifestPath =
+                    capture.ManifestPath;
+                stopReason =
+                    "planning_handoff_captured_teacher_dispatch_pending";
+                AppendProgress(
+                    options,
+                    "planning_handoff_captured",
+                    iteration,
+                    lastStateHash,
+                    string.Empty,
+                    "kind=crop_production_teacher manifest=" +
+                    capture.ManifestPath +
+                    " map=" + capture.MapWidth + "x" +
+                    capture.MapHeight +
+                    " layout_snapshots=" +
+                    capture.LayoutSnapshotCount);
+                break;
+            }
         }
     }
     else if (options.UseParameterizedAction)
@@ -791,6 +822,8 @@ var report = new LiveTrainingLoopReport
     GoldenWalnutFreshSaveEpisodeManifestPath =
         goldenWalnutFreshSaveEpisodeManifestPath,
     GoldenWalnutFreshSaveEpisodeCount = goldenWalnutFreshSaveEpisodeCount,
+    PlanningHandoffCaptureManifestPath =
+        lastPlanningHandoffCaptureManifestPath,
     Iterations = attemptsStarted,
     MaxAttempts = options.MaxAttempts,
     AttemptsStarted = attemptsStarted,
