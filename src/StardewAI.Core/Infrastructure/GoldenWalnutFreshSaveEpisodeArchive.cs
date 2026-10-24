@@ -73,8 +73,30 @@ public static class GoldenWalnutFreshSaveEpisodeArchive
         var archiveEpisodePath = Path.Combine(
             directory,
             "golden-walnut-fresh-save-episode-" + suffix + ".json");
+        var initialBoundaryPath =
+            GoldenWalnutFreshSaveInitialBoundaryValidator.PathFor(
+                directory,
+                runId);
 
+        GoldenWalnutFreshSaveInitialBoundary? initialBoundary = null;
+        if (!File.Exists(initialBoundaryPath))
+        {
+            initialBoundary =
+                GoldenWalnutFreshSaveInitialBoundaryValidator.Build(
+                    beforePath,
+                    runId,
+                    episode.SourceStateHash) with
+                {
+                    SnapshotPath = Path.GetFileName(archiveBeforePath)
+                };
+        }
         CopyImmutable(beforePath, archiveBeforePath);
+        if (initialBoundary is not null)
+        {
+            WriteImmutable(
+                initialBoundaryPath,
+                JsonSerializer.Serialize(initialBoundary, JsonOptions));
+        }
         CopyImmutable(afterPath, archiveAfterPath);
         episode.BeforeSnapshotPath = Path.GetFileName(archiveBeforePath);
         episode.AfterSnapshotPath = Path.GetFileName(archiveAfterPath);

@@ -18,7 +18,7 @@
 | Money production evidence cells | **0/18** | 6 个 Money criterion × 3 partitions；hermetic fixture 不计 production |
 | Formal product training | **false** | 未通过完整正式训练准入 |
 
-Master Angler 当前子切片已把 Golden Walnut 新档来源日程接到可跨 rolling retention 的真实 episode 归档。显式捕获模式只接受稳定 run ID、最大 Grandpa 分数目标与 `content_addressed_gzip`；每个 success + fresh episode 原子保留前后快照清单和重写引用的 episode，正常退出在训练事务提交前生成 manifest，异常退出可从耐久别名重建。schedule 读取已支持内容寻址快照，滚动删除临时 episode 后的回归仍可恢复完整测试时间线。该实现没有生成真实 fresh-save 数据，也没有改变 `5/19`、`6/19`、`5/19`、`4/11` 或正式训练禁令；下一真实产物仍是连续新档 episode manifest，然后重建 Golden Walnut source schedule、解锁时间线与 Master Angler prerequisite audit。
+Master Angler 当前子切片已把 Golden Walnut 新档来源日程接到可跨 rolling retention 的真实 episode 归档。显式捕获模式只接受稳定 run ID、最大 Grandpa 分数目标、`full` 执行快照与 `content_addressed_gzip`；首条 episode 还必须绑定 day 0、同一 save/run/state/tick、未推进的姜岛/鹦鹉状态及逐行完整且全部为零的 `69 keys / 130 walnuts` 初始目录。每个 success + fresh episode 原子保留前后快照清单和重写引用的 episode，正常退出在训练事务提交前生成 manifest，异常退出可从耐久别名重建。schedule 读取已支持内容寻址快照，滚动删除临时 episode 后的回归仍可恢复完整测试时间线。该实现没有生成真实 fresh-save 数据，也没有改变 `5/19`、`6/19`、`5/19`、`4/11` 或正式训练禁令；下一真实产物仍是连续新档 episode manifest，然后重建 Golden Walnut source schedule、解锁时间线与 Master Angler prerequisite audit。
 
 当前五个 `CoverageGateReady` criterion 固定为：
 

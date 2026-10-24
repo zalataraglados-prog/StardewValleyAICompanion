@@ -20,7 +20,7 @@ public sealed class GoldenWalnutFreshSaveEpisodeScheduleBuilderTests
         var source = EligibleSource();
         var states = new[]
         {
-            Snapshot("h0", 100, 0, false, false, false, false, source.SourceKey),
+            Snapshot("h0", 0, 0, false, false, false, false, source.SourceKey),
             Snapshot("h1", 100, 1, true, false, false, false, source.SourceKey),
             Snapshot("h2", 101, 1, true, true, false, false, source.SourceKey),
             Snapshot("h3", 102, 1, true, true, true, false, source.SourceKey),
@@ -59,7 +59,7 @@ public sealed class GoldenWalnutFreshSaveEpisodeScheduleBuilderTests
     {
         using var fixture = new Fixture();
         var source = EligibleSource();
-        var before = Snapshot("h0", 100, 0, false, false, false, false, source.SourceKey);
+        var before = Snapshot("h0", 0, 0, false, false, false, false, source.SourceKey);
         var after = Snapshot("h1", 100, 1, true, false, false, false, source.SourceKey);
         var episodePath = fixture.WriteEpisode(0, before, after, success: false);
         var manifestPath = fixture.WriteManifest(new[] { episodePath });
@@ -77,7 +77,7 @@ public sealed class GoldenWalnutFreshSaveEpisodeScheduleBuilderTests
         var source = EligibleSource();
         var states = new[]
         {
-            Snapshot("h0", 100, 0, false, false, false, false, source.SourceKey),
+            Snapshot("h0", 0, 0, false, false, false, false, source.SourceKey),
             Snapshot("h1", 100, 1, true, false, false, false, source.SourceKey),
             Snapshot("h2", 101, 1, true, true, false, false, source.SourceKey),
             Snapshot("h3", 102, 1, true, true, true, false, source.SourceKey),
@@ -118,6 +118,34 @@ public sealed class GoldenWalnutFreshSaveEpisodeScheduleBuilderTests
         Assert.Equal(103, schedule.PlannedIslandHouseUnlockTotalDay);
     }
 
+    [Fact]
+    public async Task ArchiveRejectsProgressedStartWithoutLeavingDurableAliases()
+    {
+        using var fixture = new Fixture(useLiveSnapshotDirectory: true);
+        var source = EligibleSource();
+        var episodePath = await fixture.WriteContentAddressedEpisodeAsync(
+            1,
+            Snapshot("h0", 1, 0, false, false, false, false, source.SourceKey),
+            Snapshot("h1", 1, 0, false, false, false, false, source.SourceKey));
+
+        var error = Assert.Throws<InvalidDataException>(() =>
+            GoldenWalnutFreshSaveEpisodeArchive.Capture(
+                episodePath,
+                1,
+                "fresh-save-run"));
+
+        Assert.Contains("day-zero", error.Message, StringComparison.Ordinal);
+        Assert.Empty(Directory.GetFiles(
+            fixture.Root,
+            GoldenWalnutFreshSaveEpisodeArchive.EpisodeSearchPattern));
+        Assert.Empty(Directory.GetFiles(
+            fixture.Root,
+            GoldenWalnutFreshSaveInitialBoundaryValidator.SearchPattern));
+        Assert.Empty(Directory.GetFiles(
+            fixture.Root,
+            "golden-walnut-fresh-save-before-*.json"));
+    }
+
     private static GoldenWalnutNativeSourceDefinition EligibleSource() =>
         GoldenWalnutNativeSourceCatalog.Sources.First(source =>
             GoldenWalnutUnlockScheduleProofBuilder.BoundAcquisitionOptionIds.Contains(
@@ -145,7 +173,8 @@ public sealed class GoldenWalnutFreshSaveEpisodeScheduleBuilderTests
                     ? collectedQuantity
                     : 0,
                 remaining_quantity = source.NativeQuantity -
-                    (source.SourceKey == changedSourceKey ? collectedQuantity : 0)
+                    (source.SourceKey == changedSourceKey ? collectedQuantity : 0),
+                acquisition_option_id = source.AcquisitionOptionId
             })
             .ToArray();
         return new SnapshotEnvelope
@@ -169,6 +198,7 @@ public sealed class GoldenWalnutFreshSaveEpisodeScheduleBuilderTests
                     {
                         value = new
                         {
+                            schema_version = "ginger_island_access.v1",
                             journey = new { island_reached = islandReached },
                             first_parrot = new { complete_or_pending = firstParrot },
                             western_turtle_parrot = new { complete_or_pending = westernTurtle },
@@ -181,7 +211,17 @@ public sealed class GoldenWalnutFreshSaveEpisodeScheduleBuilderTests
                 {
                     golden_walnut_sources = new
                     {
-                        value = new { sources },
+                        value = new
+                        {
+                            schema_version = GoldenWalnutNativeSourceCatalog.SchemaVersion,
+                            projection_status = GoldenWalnutNativeSourceCatalog.ProjectionStatus,
+                            native_source_key_count = GoldenWalnutNativeSourceCatalog.NativeSourceKeyCount,
+                            native_walnut_total = GoldenWalnutNativeSourceCatalog.NativeWalnutTotal,
+                            tracked_collected_quantity = sources.Sum(row => row.collected_quantity),
+                            tracked_remaining_quantity = sources.Sum(row => row.remaining_quantity),
+                            world_golden_walnuts_found = sources.Sum(row => row.collected_quantity),
+                            sources
+                        },
                         status = "available"
                     }
                 })
@@ -212,7 +252,26 @@ public sealed class GoldenWalnutFreshSaveEpisodeScheduleBuilderTests
         {
             var paths = new List<string>();
             for (var index = 0; index < snapshots.Count - 1; index++)
-                paths.Add(WriteEpisode(index, snapshots[index], snapshots[index + 1]));
+            {
+                var episodePath = WriteEpisode(
+                    index,
+                    snapshots[index],
+                    snapshots[index + 1]);
+                if (index == 0)
+                {
+                    var beforePath = Path.Combine(root, $"before-{index}.json");
+                    var boundary = GoldenWalnutFreshSaveInitialBoundaryValidator.Build(
+                        beforePath,
+                        "fresh-save-run",
+                        snapshots[index].StateHash);
+                    File.WriteAllText(
+                        GoldenWalnutFreshSaveInitialBoundaryValidator.PathFor(
+                            root,
+                            "fresh-save-run"),
+                        JsonSerializer.Serialize(boundary, JsonOptions));
+                }
+                paths.Add(episodePath);
+            }
             return paths.ToArray();
         }
 
@@ -291,6 +350,24 @@ public sealed class GoldenWalnutFreshSaveEpisodeScheduleBuilderTests
 
         public string WriteManifest(string[] episodePaths)
         {
+            var firstEpisodePath = Path.GetFullPath(Path.Combine(root, episodePaths[0]));
+            var firstEpisode = JsonSerializer.Deserialize<PlanExecutionEpisodeEnvelope>(
+                File.ReadAllText(firstEpisodePath),
+                JsonOptions)!;
+            var firstSnapshotPath = Path.GetFullPath(Path.Combine(
+                root,
+                firstEpisode.BeforeSnapshotPath));
+            var boundaryPath =
+                GoldenWalnutFreshSaveInitialBoundaryValidator.PathFor(
+                    root,
+                    "fresh-save-run");
+            var boundary = GoldenWalnutFreshSaveInitialBoundaryValidator.Build(
+                firstSnapshotPath,
+                "fresh-save-run",
+                firstEpisode.SourceStateHash);
+            File.WriteAllText(
+                boundaryPath,
+                JsonSerializer.Serialize(boundary, JsonOptions));
             var path = Path.Combine(root, "manifest.json");
             File.WriteAllText(path, JsonSerializer.Serialize(
                 new GoldenWalnutFreshSaveEpisodeManifest(
@@ -300,6 +377,7 @@ public sealed class GoldenWalnutFreshSaveEpisodeScheduleBuilderTests
                     GoldenWalnutFreshSaveUnlockTimelineProofBuilder.GameVersion,
                     false,
                     "fresh-save-run",
+                    boundaryPath,
                     episodePaths),
                 JsonOptions));
             return path;

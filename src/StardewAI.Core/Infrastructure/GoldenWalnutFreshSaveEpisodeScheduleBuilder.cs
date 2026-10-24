@@ -13,7 +13,7 @@ namespace StardewAI.Core.Infrastructure;
 public static class GoldenWalnutFreshSaveEpisodeScheduleBuilder
 {
     public const string ManifestSchemaVersion =
-        "golden_walnut_fresh_save_episode_manifest.v1";
+        "golden_walnut_fresh_save_episode_manifest.v2";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -36,6 +36,7 @@ public static class GoldenWalnutFreshSaveEpisodeScheduleBuilder
             !manifest.TrainingLabelEligible &&
             !string.IsNullOrWhiteSpace(manifest.ScheduleId) &&
             !string.IsNullOrWhiteSpace(manifest.SourceRunId) &&
+            !string.IsNullOrWhiteSpace(manifest.InitialBoundaryPath) &&
             manifest.EpisodePaths is { Length: > 0 },
             "Golden Walnut fresh-save episode manifest metadata is invalid.");
 
@@ -47,6 +48,16 @@ public static class GoldenWalnutFreshSaveEpisodeScheduleBuilder
         Require(
             episodePaths.Distinct(StringComparer.OrdinalIgnoreCase).Count() == episodePaths.Length,
             "Golden Walnut fresh-save episode manifest contains duplicate paths.");
+        var initialBoundaryPath = ResolvePath(
+            manifestDirectory,
+            manifest.InitialBoundaryPath);
+        var initialBoundary = ReadWithHash<GoldenWalnutFreshSaveInitialBoundary>(
+            initialBoundaryPath,
+            out var initialBoundarySha256);
+        GoldenWalnutFreshSaveInitialBoundaryValidator.Validate(
+            initialBoundary,
+            initialBoundaryPath,
+            manifest.SourceRunId);
 
         string? saveId = null;
         string? previousAfterStateHash = null;
@@ -60,7 +71,7 @@ public static class GoldenWalnutFreshSaveEpisodeScheduleBuilder
         var eligibleSources = GoldenWalnutNativeSourceCatalog.Sources
             .Where(IsEligibleDeterministicSource)
             .ToDictionary(source => source.SourceKey, StringComparer.Ordinal);
-        var evidenceHashes = new List<string>();
+        var evidenceHashes = new List<string> { initialBoundarySha256 };
         var firstEpisode = true;
 
         foreach (var episodePath in episodePaths)
@@ -141,12 +152,11 @@ public static class GoldenWalnutFreshSaveEpisodeScheduleBuilder
             var afterSources = ReadWalnutSources(after);
             if (firstEpisode)
             {
-                Require(!ReadNestedBool(beforeAccess, new[] { "journey", "island_reached" }) &&
-                        !ReadNestedBool(beforeAccess, new[] { "first_parrot", "complete_or_pending" }) &&
-                        !ReadNestedBool(beforeAccess, new[] { "western_turtle_parrot", "complete_or_pending" }) &&
-                        !ReadNestedBool(beforeAccess, new[] { "island_house_parrot", "complete_or_pending" }) &&
-                        eligibleSources.Keys.All(key => beforeSources.GetValueOrDefault(key) == 0),
-                    "Golden Walnut episode manifest does not begin before Island progress or deterministic source collection.");
+                Require(
+                    episode.SourceStateHash == initialBoundary.SourceStateHash &&
+                    episode.BeforeGameTick == initialBoundary.SourceGameTick &&
+                    before.SaveId.Value == initialBoundary.SaveId,
+                    "Golden Walnut episode manifest does not begin at its fresh-save initial boundary.");
                 firstEpisode = false;
             }
             foreach (var source in eligibleSources.Values)

@@ -16,6 +16,7 @@ public sealed record GoldenWalnutFreshSaveEpisodeManifest(
     [property: JsonPropertyName("game_version")] string GameVersion,
     [property: JsonPropertyName("training_label_eligible")] bool TrainingLabelEligible,
     [property: JsonPropertyName("source_run_id")] string SourceRunId,
+    [property: JsonPropertyName("initial_boundary_path")] string InitialBoundaryPath,
     [property: JsonPropertyName("episode_paths")] string[] EpisodePaths);
 
 public static class GoldenWalnutFreshSaveEpisodeManifestBuilder
@@ -66,6 +67,22 @@ public static class GoldenWalnutFreshSaveEpisodeManifestBuilder
             .ToArray();
         Require(rows.Length > 0,
             "No successful fresh episodes exist for run ID: " + runId);
+        var initialBoundaryPath =
+            GoldenWalnutFreshSaveInitialBoundaryValidator.PathFor(
+                fullDirectory,
+                runId);
+        Require(File.Exists(initialBoundaryPath),
+            "Golden Walnut initial boundary is missing: " + initialBoundaryPath);
+        var initialBoundary = JsonSerializer.Deserialize<
+            GoldenWalnutFreshSaveInitialBoundary>(
+                File.ReadAllText(initialBoundaryPath),
+                JsonOptions) ?? throw new InvalidDataException(
+                    "Golden Walnut initial boundary is unreadable: " +
+                    initialBoundaryPath);
+        GoldenWalnutFreshSaveInitialBoundaryValidator.Validate(
+            initialBoundary,
+            initialBoundaryPath,
+            runId);
 
         string? previousAfterStateHash = null;
         long previousAfterTick = -1;
@@ -96,6 +113,10 @@ public static class GoldenWalnutFreshSaveEpisodeManifestBuilder
             previousAfterStateHash = episode.AfterStateHash;
             previousAfterTick = episode.AfterGameTick;
         }
+        Require(
+            rows[0].Episode.SourceStateHash == initialBoundary.SourceStateHash &&
+            rows[0].Episode.BeforeGameTick == initialBoundary.SourceGameTick,
+            "Golden Walnut first episode does not begin at the initial boundary.");
 
         return new GoldenWalnutFreshSaveEpisodeManifest(
             GoldenWalnutFreshSaveEpisodeScheduleBuilder.ManifestSchemaVersion,
@@ -104,6 +125,7 @@ public static class GoldenWalnutFreshSaveEpisodeManifestBuilder
             GoldenWalnutFreshSaveUnlockTimelineProofBuilder.GameVersion,
             false,
             runId,
+            initialBoundaryPath,
             rows.Select(row => row.Path).ToArray());
     }
 

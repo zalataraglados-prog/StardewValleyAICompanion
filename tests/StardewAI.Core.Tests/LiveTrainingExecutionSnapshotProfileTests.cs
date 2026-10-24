@@ -128,6 +128,21 @@ public sealed class LiveTrainingExecutionSnapshotProfileTests
     }
 
     [Fact]
+    public void GoldenWalnutEvidenceCaptureRejectsPartialSnapshotProfile()
+    {
+        Assert.Throws<ArgumentException>(() => LiveTrainingOptions.Parse(new[]
+        {
+            "--run-id",
+            "fresh-save-run",
+            "--snapshot-artifact-mode",
+            ContentAddressedJsonArtifactStore.ContentAddressedGzipMode,
+            "--execution-snapshot-profile",
+            "social",
+            "--capture-golden-walnut-fresh-save-evidence"
+        }));
+    }
+
+    [Fact]
     public void AfterExecutionReadsTheConfiguredProfile()
     {
         var source = File.ReadAllText(FindRepositoryFile(

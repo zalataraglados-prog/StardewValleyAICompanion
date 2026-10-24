@@ -576,6 +576,12 @@ public sealed class LiveTrainingOptions
                 "--capture-golden-walnut-fresh-save-evidence requires " +
                 "--snapshot-artifact-mode content_addressed_gzip.");
         }
+        if (ExecutionSnapshotProfile != "full")
+        {
+            throw new ArgumentException(
+                "--capture-golden-walnut-fresh-save-evidence requires " +
+                "--execution-snapshot-profile full.");
+        }
         if (string.IsNullOrWhiteSpace(RunId))
         {
             throw new ArgumentException(
