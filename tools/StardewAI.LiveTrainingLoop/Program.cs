@@ -561,7 +561,6 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 attemptOrdinal);
             continue;
         }
-        cropTeacherStepForExecution = cropStep;
         var cropQueue = await BuildCropTeacherControlQueueAsync(
             http,
             options,
@@ -572,6 +571,9 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             snapshotPath,
             beforeSnapshot,
             lastStateHash);
+        cropTeacherStepForExecution = cropQueue.PriorityInterrupt
+            ? null
+            : cropStep;
         if (cropQueue.SitePreparationComplete)
         {
             if (!cropTeacherPreparedCommitmentIds.Add(
@@ -611,7 +613,12 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             iteration,
             lastStateHash,
             ReadString(queue, "queue_id"),
-            "stage=" + cropStep.Stage +
+            "stage=" + (cropQueue.PriorityInterrupt
+                ? "priority_story_event"
+                : cropStep.Stage) +
+            " interrupted_stage=" + (cropQueue.PriorityInterrupt
+                ? cropStep.Stage
+                : string.Empty) +
             " reason=" + cropStep.Reason +
             " commitment_id=" + cropStep.CommitmentId +
             " remaining=" + cropStep.RemainingQuantity);

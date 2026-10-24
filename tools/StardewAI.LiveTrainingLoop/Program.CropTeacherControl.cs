@@ -17,7 +17,8 @@ static partial class Program
         string StateHash,
         string SnapshotProfile,
         string SnapshotUrl,
-        bool SitePreparationComplete);
+        bool SitePreparationComplete,
+        bool PriorityInterrupt = false);
 
     private static async Task<CropTeacherControlQueueBuildResult>
         BuildCropTeacherControlQueueAsync(
@@ -123,7 +124,8 @@ static partial class Program
             beforeSnapshotPath,
             beforeSnapshot,
             stateHash,
-            options);
+            options,
+            priorityInterrupt: true);
     }
 
     private static async Task<CropTeacherControlQueueBuildResult>
@@ -586,7 +588,8 @@ static partial class Program
         string beforeSnapshotPath,
         JsonObject beforeSnapshot,
         string stateHash,
-        LiveTrainingOptions options) => new(
+        LiveTrainingOptions options,
+        bool priorityInterrupt = false) => new(
             queue,
             modelPlanPath,
             rankingPath,
@@ -595,7 +598,8 @@ static partial class Program
             stateHash,
             options.ExecutionSnapshotProfile,
             options.BridgeSnapshotUrl,
-            false);
+            false,
+            priorityInterrupt);
 
     private static void RequireCompiledQueue(
         JsonObject queue,

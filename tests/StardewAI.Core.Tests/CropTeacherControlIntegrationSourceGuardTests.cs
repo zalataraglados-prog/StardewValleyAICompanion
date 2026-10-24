@@ -178,6 +178,10 @@ public sealed class CropTeacherControlIntegrationSourceGuardTests
             source,
             StringComparison.Ordinal);
         Assert.Contains("\"story-event\"", source, StringComparison.Ordinal);
+        Assert.Contains(
+            "priorityInterrupt: true",
+            source,
+            StringComparison.Ordinal);
 
         var seedBodyStart = source.IndexOf(
             "BuildCropTeacherSeedQueueAsync(",
@@ -191,6 +195,23 @@ public sealed class CropTeacherControlIntegrationSourceGuardTests
         Assert.DoesNotContain(
             "HasPriorityStoryEventInterrupt",
             seedBody,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void StoryEventInterruptsCannotSettleCropOrSleepTransitions()
+    {
+        var program = Read("tools", "StardewAI.LiveTrainingLoop", "Program.cs");
+
+        Assert.Contains(
+            "cropTeacherStepForExecution = cropQueue.PriorityInterrupt\n" +
+            "            ? null\n" +
+            "            : cropStep;",
+            program.Replace("\r\n", "\n"),
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "? \"priority_story_event\"",
+            program,
             StringComparison.Ordinal);
     }
 
