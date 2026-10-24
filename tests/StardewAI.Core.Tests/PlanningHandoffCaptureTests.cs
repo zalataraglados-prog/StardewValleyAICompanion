@@ -139,12 +139,23 @@ public sealed class PlanningHandoffCaptureTests
                 {
                     ["site_preparation_context"] = Envelope(new JsonObject
                     {
+                        ["schema_version"] =
+                            "farm_site_preparation_context.v1",
+                        ["projection_status"] =
+                            "complete_bounded_current_farm_region",
+                        ["location_id"] = "Farm",
+                        ["is_farm"] = true,
                         ["map_width"] = mapWidth,
                         ["map_height"] = mapHeight,
-                        ["min_x"] = minX,
-                        ["min_y"] = minY,
-                        ["max_x"] = maxX,
-                        ["max_y"] = maxY,
+                        ["bounds"] = new JsonObject
+                        {
+                            ["min_x"] = minX,
+                            ["min_y"] = minY,
+                            ["max_x"] = maxX,
+                            ["max_y"] = maxY
+                        },
+                        ["tile_count"] =
+                            (maxX - minX + 1) * (maxY - minY + 1),
                         ["tiles"] = new JsonArray()
                     })
                 }

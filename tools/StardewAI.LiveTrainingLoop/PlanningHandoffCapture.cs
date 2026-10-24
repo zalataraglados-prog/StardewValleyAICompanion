@@ -328,12 +328,22 @@ public static class PlanningHandoffCapture
         int maxX,
         int maxY)
     {
-        if (ReadInt(context, "map_width", -1) != mapWidth ||
+        var bounds = context["bounds"] as JsonObject;
+        var expectedTileCount = checked(
+            (maxX - minX + 1) * (maxY - minY + 1));
+        if (ReadString(context, "schema_version") !=
+                "farm_site_preparation_context.v1" ||
+            ReadString(context, "projection_status") !=
+                "complete_bounded_current_farm_region" ||
+            ReadString(context, "location_id") != "Farm" ||
+            !ReadBool(context, "is_farm") ||
+            ReadInt(context, "map_width", -1) != mapWidth ||
             ReadInt(context, "map_height", -1) != mapHeight ||
-            ReadInt(context, "min_x", -1) != minX ||
-            ReadInt(context, "min_y", -1) != minY ||
-            ReadInt(context, "max_x", -1) != maxX ||
-            ReadInt(context, "max_y", -1) != maxY)
+            ReadInt(bounds, "min_x", -1) != minX ||
+            ReadInt(bounds, "min_y", -1) != minY ||
+            ReadInt(bounds, "max_x", -1) != maxX ||
+            ReadInt(bounds, "max_y", -1) != maxY ||
+            ReadInt(context, "tile_count", -1) != expectedTileCount)
         {
             throw new InvalidDataException(
                 "planning_handoff_farm_layout_context_mismatch");

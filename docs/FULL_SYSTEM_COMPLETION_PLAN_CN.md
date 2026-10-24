@@ -10,7 +10,7 @@ Spring 1 新档首轮排序暴露的不是社交评分错误，而是上游缺�
 
 `runtime-starter-gift-20261024-172156` 已按该顺序完成新桥领取前 full snapshot、原生领取、领取后 full snapshot 和守恒回执；`EVD-342` 将该动作提升为 five-gate / training-eligible。执行器还修正了新档淡入控制门等待和失败回执真实 after 状态。06:00 商店 `allowed_now` 已在共享路线层修正，未开门服务不会再以 ready-now 进入当前方向绑定。
 
-领取后快照回放证明，原计划中“fresh replan 会自然进入作物链”的表述少了一层战略交接。已有 `farm.maintain_crops` 只能机械维护透明快照中的确定地块，不负责选择新地块。修正后的固定顺序为：保护普通可种种子不被通用售卖/出货消耗 -> Grandpa 在空农场/已有种子边界发出类型化 `crop_production_teacher` 交接 -> LiveTrainingLoop 按需采集完整但分块不超过 `32x32` 的 `farm_layout` -> 复用唯一 Money Revenue Crop Teacher 选择作物与紧凑布局 -> 将其承诺交回既有清障/耕地/播种/浇水和跨日链。五步的软件接线现已全部完成：首日状态机按 fresh 透明状态过滤已完成地块与已浇水地块，精确补齐剩余种子，只编译一个路线 connector 或一个 bounded site-preparation 动作，并复用既有批次编译器与唯一原生睡眠。Teacher 机械阶段不调用结构化策略重选，任何身份、库存、日期、地点或作物矛盾均失败关闭；需要 durable save 时继续走既有存档哈希门。当前退出条件是取得一次真实新档首日的完整原生执行回执并确认跨日/落盘，随后才把同一状态机扩展到 run plan 全日期，不得以静态测试代替该证据。全局正式训练仍受 19 criterion 和 11 root method 准入约束。
+领取后快照回放证明，原计划中“fresh replan 会自然进入作物链”的表述少了一层战略交接。已有 `farm.maintain_crops` 只能机械维护透明快照中的确定地块，不负责选择新地块。修正后的固定顺序为：保护普通可种种子不被通用售卖/出货消耗 -> Grandpa 在空农场/已有种子边界发出类型化 `crop_production_teacher` 交接 -> LiveTrainingLoop 按需采集完整但分块不超过 `32x32` 的 `farm_layout` -> 复用唯一 Money Revenue Crop Teacher 选择作物与紧凑布局 -> 将其承诺交回既有清障/耕地/播种/浇水和跨日链。该顺序的首日原生闭环已由 `runtime-crop-teacher-first-day-20261024-183952` 证明：真实 80×65 Farm 的 9 分块采集、84 动作跨日 run plan、49 次首日控制尝试、47 次已验证执行、6 格播种/浇水以及 durable save boundary 全部成立。真实次日只保留 5 株也验证了下一阶段不能照抄静态计划：全日期状态机必须每日 fresh 重算活作物、库存、浇水需求与损失，按当天 run-plan 批次执行；收获必须增加基于前后库存/作物消失/经验等原生结果的 transition ledger，最终才结算 commitment。下一退出条件改为“run plan 全日期原生执行 + 每日存档边界 + 收获守恒 + commitment settlement”，不得把首日通过等同于完整作物周期。全局正式训练仍受 19 criterion 和 11 root method 准入约束。
 
 ## 当前记录 · 2026-10-21 11 核心复杂度顺序
 

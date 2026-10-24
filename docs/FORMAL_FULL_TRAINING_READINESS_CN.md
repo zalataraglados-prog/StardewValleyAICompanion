@@ -10,7 +10,7 @@
 
 `runtime-starter-gift-20261024-172156` 已从更新后的桥采集同一真实隔离新档的领取前/后 full snapshot 与原生回执：共享 BFS 到精确相邻格，405 tick 内由原生交互生成 `(O)472 x15`、任务 `6` 并移除空礼盒，状态哈希同步变化，只加载 TransparentBridge 与 RuntimeTestHarness。`EVD-342` 因此关闭 read/candidate/compiler/runtime/output 五门，本项进入 training allowlist。该局部动作准入不改变全局 `CoverageGateReady 5/19`、Money production `0/18` 或 `formal_product_training=false`。
 
-领取后 fresh 状态已完成真实快照离线回放：普通种子在 bridge 与 planner 两层均受显式 surplus authorization 保护，不能作为通用售卖/出货候选；Grandpa 不再越过最高优先级 `earn_money` 去执行社交，而是发布 `planning_goal_handoff.v1`，请求现有 `crop_production_teacher` 和按需 `farm_layout`。LiveTrainingLoop 已能完整采集并校验分块 Farm 布局，再复用唯一 Teacher、ledger、obligation 与 native run-plan builder 生成绑定哈希的调度清单。首日 continuation 也已接入：每轮 fresh 快照只选择购种、单 connector 路线、bounded site preparation、既有作物批次、回家或原生睡眠中的一个阶段；机械阶段绕过策略候选租约，但不绕过 action/plan compiler 与执行反馈。若要求原生存档边界，跨日后仍须验证隔离存档指纹。该链目前只有静态、单元和构建验证，尚未产生新的真实首日 episode；因此正式训练准入不增加，下一门仍是完整首日 fresh 回执与 durable save boundary。
+领取后 fresh 状态已完成真实快照离线回放：普通种子在 bridge 与 planner 两层均受显式 surplus authorization 保护，不能作为通用售卖/出货候选；Grandpa 不再越过最高优先级 `earn_money` 去执行社交，而是发布 `planning_goal_handoff.v1`，请求现有 `crop_production_teacher` 和按需 `farm_layout`。LiveTrainingLoop 已能完整采集并校验分块 Farm 布局，再复用唯一 Teacher、ledger、obligation 与 native run-plan builder 生成绑定哈希的调度清单。`runtime-crop-teacher-first-day-20261024-183952` 已让该 continuation 在真实隔离新档通过：9 个 bounded 布局分块、6 单位购种、场地准备、6 格播种、6 格浇水、回家、原生睡眠和 `1:spring:1 -> 1:spring:2` 的存档哈希变化均有 fresh 原生回执。该证据关闭“首日执行链”一门，但不增加全局正式训练准入：84 动作 run plan 仍只执行了首日，次日 fresh 快照从首日 6 株变为 5 株，证明多日控制必须对随机损失重规划；收获还需要 transition ledger 后才能纳入同一链。下一门是全日期 native run、收获守恒与最终 commitment settlement。
 
 ## 当前准入状态 · 2026-10-21
 
