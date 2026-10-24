@@ -78,6 +78,8 @@ v14 随后取得动态 collection Teacher 的四段原生 verified 路线回执�
 
 v15 已证明该修复在真实新档中阻止了徒手 Beach 路线，并暴露延迟商店等待反复生成全量 collection ranking 的控制面浪费。v16 随后把 Stage One Teacher 选择接入已有 `SelectedQueueDecisionLease`：首次全量决策后，只在 fresh snapshot 上确定性刷新锁定候选，`policy_model_invoked=false`，候选失效时失败关闭，原生剧情仍可抢占并在结束后恢复。短运行连续 4 轮保持同一 AnimalShop 采购 continuation，全量 ranking 只生成 1 次；后续轻量刷新约 `10 KB/轮`。这只提高长跑反馈效率，不是新证据通道或 criterion completion。仍须由后续长跑证明鱼竿前置与原生捕获闭环，并完成首次登岛、核桃 source schedule、Gourmand 后两单和 Year 3 组合证明；`formal_product_training_authorized=false` 不变。
 
+鱼竿生产者现已从静态依赖声明接入动态 Teacher：权威 `rod_inventory` 为空时，现有 FishShop 竹鱼竿购买候选作为独立硬前置优先选择；已有任意合法鱼竿时抑制该前置，读数缺失、不可用、畸形或歧义时失败关闭。它严格复用 `economy.buy_supplies` 的滚动路线、商店交互、单件购买和 fresh 原生回执，不增加第 73 个鱼种、第二个策略出口或第二套执行器。聚焦回归与静态审计已经通过，但尚未获得 v17 真实 FishShop 购买终态，所以这一步只关闭确定性派发断链，不增加 Master Angler Method、三分区 coverage 或正式训练分子。下一准入证据仍是隐藏静音有界运行中的竹鱼竿路线/菜单/购买闭环，随后才继续首次登岛、核桃 source schedule、Gourmand 后两单与 Year 3 组合证明。
+
 Money 的第一条完整原生作物生产段 `money-crop-native-20261021-pricefix-v10` 已通过：checkpoint v12 为 `6/6 verified、0 pending`，终局含 `5` 次单件原生投箱和唯一睡眠结算，实际收入 `875g`，最终为春 20 日 06:00、`money=925`、`totalMoneyEarned=875`。源存档和隔离 Mod 哈希均未漂移。这证明 native runner、购种、场地准备、作物生命周期、留存、容量和运输箱终局可以在同一连续真实轨迹中闭合。
 
 `money_revenue_crop_native_production_segment_receipt.v1` 已完成并对 v10 深回放：Teacher 决策、commit receipt、obligation/run plan、checkpoint、terminal recurrence、最终透明快照和最终隔离存档树均从路径与哈希重新核验。回执确认 `50` 个 Teacher 候选、选中 `5` 格 `(O)474`、实际购种成本 `400g`、毛收入 `875g`、净现金收入 `475g`，并正确输出空阈值集合；它不创建 Teacher comparison、Money cell 或训练授权。

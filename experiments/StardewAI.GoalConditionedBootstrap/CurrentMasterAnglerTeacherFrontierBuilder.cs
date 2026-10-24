@@ -168,12 +168,18 @@ public static partial class CurrentMasterAnglerTeacherFrontierBuilder
         var missing = requirements.Count(value => !value.Completed);
         var matched = requirements.Count(value =>
             value.CurrentStatus == "current_positive_candidate");
+        var supportingPrerequisite = BuildRodPrerequisite(
+            snapshot,
+            currentCandidates,
+            missing == 0);
+        var currentBindingCount =
+            bindings.Count + supportingPrerequisite.Bindings.Length;
 
         return new CurrentMasterAnglerTeacherFrontier
         {
             Status = missing == 0
                 ? "goal_already_satisfied"
-                : bindings.Count > 0
+                : currentBindingCount > 0
                     ? "ready"
                     : "no_current_matching_candidate",
             GoalId = inventory.GoalId,
@@ -196,10 +202,16 @@ public static partial class CurrentMasterAnglerTeacherFrontierBuilder
             CurrentIntentCount = provenance.ValidatedIntents.Length,
             MatchedMissingGroupCount = matched,
             CurrentCandidateBindingCount = bindings.Count,
-            TrainingLabelEligible = bindings.Count > 0,
+            SupportingPrerequisiteStatus = supportingPrerequisite.Status,
+            CurrentSupportingPrerequisiteBindingCount =
+                supportingPrerequisite.Bindings.Length,
+            TrainingLabelEligible = currentBindingCount > 0,
             EmitsNegativeLabelsForUnavailableRoutes = false,
             Requirements = requirements,
             CandidateBindings = bindings.ToArray(),
+            SupportingPrerequisiteBindings = supportingPrerequisite.Bindings,
+            SupportingPrerequisiteBlockingReasons =
+                supportingPrerequisite.BlockingReasons,
             RejectedIntentCandidates = rejections
                 .OrderBy(value => value.CandidateId, StringComparer.Ordinal)
                 .ThenBy(value => value.Reason, StringComparer.Ordinal)

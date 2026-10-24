@@ -18,7 +18,7 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
     private const string MineAccessSourceNode =
         "dependency.raise_skill_levels.acquire_mining_xp";
     private const string RodEquipmentProducerNode =
-        "dependency.complete_master_angler.rod_equipment_acquisition";
+        MasterAnglerRodEquipmentAcquisitionProtocol.RequirementId;
     private const string DesertBusProducerNode =
         "dependency.complete_master_angler.desert_bus_access";
     private const string CommunityCenterDirection = "complete_community_center";
@@ -915,7 +915,8 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                     RodEquipmentProducerNode,
                     out var producer) ||
                 producer.Kind != "recurrence_rule" ||
-                producer.OptionId != "economy.buy_supplies" ||
+                producer.OptionId !=
+                    MasterAnglerRodEquipmentAcquisitionProtocol.OptionId ||
                 producer.Rule.ValueKind != JsonValueKind.Object)
                 return false;
 
@@ -934,12 +935,15 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
             };
             return requiredFields.All(producer.RequiredFieldPaths.Contains) &&
                    RuleString(producer.Rule, "reused_option_id") ==
-                       "economy.buy_supplies" &&
+                       MasterAnglerRodEquipmentAcquisitionProtocol.OptionId &&
                    RuleString(producer.Rule, "required_qualified_item_id") ==
-                       "(T)BambooPole" &&
-                   RuleString(producer.Rule, "required_shop_id") == "FishShop" &&
-                   RuleInt(producer.Rule, "required_quantity") == 1 &&
-                   RuleInt(producer.Rule, "maximum_unit_price") == 500 &&
+                       MasterAnglerRodEquipmentAcquisitionProtocol.QualifiedItemId &&
+                   RuleString(producer.Rule, "required_shop_id") ==
+                       MasterAnglerRodEquipmentAcquisitionProtocol.ShopId &&
+                   RuleInt(producer.Rule, "required_quantity") ==
+                       MasterAnglerRodEquipmentAcquisitionProtocol.RequiredQuantity &&
+                   RuleInt(producer.Rule, "maximum_unit_price") ==
+                       MasterAnglerRodEquipmentAcquisitionProtocol.MaximumUnitPrice &&
                    RuleBool(producer.Rule, "fresh_snapshot_after_every_native_primitive") &&
                    RuleBool(producer.Rule, "fresh_native_receipt_required") &&
                    RuleInt(producer.Rule, "deadline_total_day_exclusive") == 224 &&

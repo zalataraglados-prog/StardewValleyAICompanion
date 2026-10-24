@@ -148,6 +148,14 @@ public static class CurrentStageOneCollectionTeacherFrontierBuilder
                 value.CurrentStatus,
                 1,
                 value.MatchedCandidateIds)));
+        result.AddRange(masterAngler.SupportingPrerequisiteBindings.Select(value =>
+            SelectionGroup(
+                "master_angler",
+                value.RequirementId,
+                "hard_prerequisite",
+                masterAngler.SupportingPrerequisiteStatus,
+                1,
+                new[] { value.CandidateId })));
         foreach (var set in collection.RequirementSets)
         {
             result.AddRange(set.Requirements
@@ -242,6 +250,28 @@ public static class CurrentStageOneCollectionTeacherFrontierBuilder
                     1,
                     0,
                     "continue_hash_locked_intent_until_fresh_native_catch_receipt"))));
+        bindings.AddRange(masterAngler.SupportingPrerequisiteBindings.Select(value =>
+            new UnifiedBinding(
+                value.CandidateId,
+                value.OptionId,
+                value.Kind,
+                new CurrentCollectionRequirementCredit(
+                    "master_angler",
+                    value.RequirementId,
+                    0,
+                    value.QualifiedItemId,
+                    value.BindingKind,
+                    value.RequiredQuantity,
+                    0,
+                    value.BindingKind switch
+                    {
+                        "authoritative_supporting_prerequisite_terminal_purchase" =>
+                            "verify_authoritative_rod_inventory_after_native_purchase",
+                        "authoritative_supporting_prerequisite_shop_endpoint_open" =>
+                            "continue_exact_purchase_after_fish_shop_menu_open",
+                        _ =>
+                            "continue_exact_purchase_after_fresh_route_snapshot"
+                    }))));
 
         return bindings
             .GroupBy(value => value.CandidateId, StringComparer.Ordinal)

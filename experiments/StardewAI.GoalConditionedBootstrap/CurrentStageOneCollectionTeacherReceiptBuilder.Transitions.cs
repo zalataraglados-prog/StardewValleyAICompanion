@@ -81,6 +81,17 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
                     ReadParameter(item, "expected_target_location"))),
                 before,
                 after),
+            "authoritative_supporting_prerequisite_rolling_route_step" =>
+                VerifyRouteStep(
+                    credit,
+                    queueItems.LastOrDefault(item => !string.IsNullOrWhiteSpace(
+                        ReadParameter(item, "expected_target_location"))),
+                    before,
+                    after),
+            "authoritative_supporting_prerequisite_shop_endpoint_open" =>
+                VerifyFishShopOpened(credit, before, after),
+            "authoritative_supporting_prerequisite_terminal_purchase" =>
+                VerifyRodAcquisition(credit, before, after),
             _ => Transition(
                 credit,
                 "unsupported_binding_kind",
@@ -315,6 +326,77 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
             $"{beforeLocation}:{beforeX},{beforeY}",
             $"{afterLocation}:{afterX},{afterY}",
             changed && arrived);
+    }
+
+    private static PolicyTeacherRequirementTransition VerifyFishShopOpened(
+        CurrentCollectionRequirementCredit credit,
+        SnapshotEnvelope before,
+        SnapshotEnvelope after)
+    {
+        var beforeShop = ReadOpenShopId(before);
+        var afterShop = ReadOpenShopId(after);
+        return Transition(
+            credit,
+            "exact_fish_shop_menu_opened",
+            beforeShop ?? "unavailable",
+            afterShop ?? "unavailable",
+            beforeShop != MasterAnglerRodEquipmentAcquisitionProtocol.ShopId &&
+            afterShop == MasterAnglerRodEquipmentAcquisitionProtocol.ShopId);
+    }
+
+    private static PolicyTeacherRequirementTransition VerifyRodAcquisition(
+        CurrentCollectionRequirementCredit credit,
+        SnapshotEnvelope before,
+        SnapshotEnvelope after)
+    {
+        var beforeCount = ReadRodCount(before, credit.QualifiedItemId);
+        var afterCount = ReadRodCount(after, credit.QualifiedItemId);
+        return Transition(
+            credit,
+            "authoritative_rod_inventory_zero_to_owned",
+            CountText(beforeCount),
+            CountText(afterCount),
+            beforeCount == 0 && afterCount >= credit.RequiredQuantity);
+    }
+
+    private static string? ReadOpenShopId(SnapshotEnvelope snapshot)
+    {
+        if (!TryStateValue(snapshot, "menus", "shop_stock", out var stock) ||
+            stock.ValueKind != System.Text.Json.JsonValueKind.Object ||
+            !stock.TryGetProperty("shop_id", out var shopId) ||
+            shopId.ValueKind != System.Text.Json.JsonValueKind.String ||
+            !stock.TryGetProperty("read_only", out var readOnly) ||
+            readOnly.ValueKind != System.Text.Json.JsonValueKind.False)
+        {
+            return null;
+        }
+        return shopId.GetString();
+    }
+
+    private static int? ReadRodCount(
+        SnapshotEnvelope snapshot,
+        string qualifiedItemId)
+    {
+        if (!TryStateValue(snapshot, "fishing", "rod_inventory", out var rods) ||
+            rods.ValueKind != System.Text.Json.JsonValueKind.Array)
+        {
+            return null;
+        }
+
+        var count = 0;
+        foreach (var row in rods.EnumerateArray())
+        {
+            if (row.ValueKind != System.Text.Json.JsonValueKind.Object ||
+                !row.TryGetProperty("qualified_item_id", out var itemId) ||
+                itemId.ValueKind != System.Text.Json.JsonValueKind.String ||
+                string.IsNullOrWhiteSpace(itemId.GetString()))
+            {
+                return null;
+            }
+            if (itemId.GetString() == qualifiedItemId)
+                count++;
+        }
+        return count;
     }
 
     private static PolicyTeacherRequirementTransition Transition(

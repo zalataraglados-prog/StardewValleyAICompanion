@@ -695,6 +695,7 @@ internal static partial class BootstrapSelfTest
             }
             Require(staleIntentRejected,
                 "A Master Angler intent from a different decision state was admitted.");
+            VerifyRodPrerequisite();
         }
     }
 }

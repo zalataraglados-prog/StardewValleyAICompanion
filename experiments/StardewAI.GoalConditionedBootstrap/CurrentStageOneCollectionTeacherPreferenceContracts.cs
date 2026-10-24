@@ -104,6 +104,9 @@ public sealed class CurrentCollectionTeacherCandidateEvaluation
     [JsonPropertyName("has_authoritative_current_day_deadline")]
     public bool HasAuthoritativeCurrentDayDeadline { get; set; }
 
+    [JsonPropertyName("unsatisfied_hard_prerequisite_credit_count")]
+    public int UnsatisfiedHardPrerequisiteCreditCount { get; set; }
+
     [JsonPropertyName("minimum_deadline_slack_days")]
     public int? MinimumDeadlineSlackDays { get; set; }
 

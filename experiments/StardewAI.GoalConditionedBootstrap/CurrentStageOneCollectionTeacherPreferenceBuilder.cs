@@ -99,7 +99,9 @@ public static partial class CurrentStageOneCollectionTeacherPreferenceBuilder
                 choice,
                 candidatesById[choice.CandidateId],
                 frontier))
-            .OrderByDescending(value => value.HasAuthoritativeCurrentDayDeadline)
+            .OrderByDescending(value =>
+                value.UnsatisfiedHardPrerequisiteCreditCount)
+            .ThenByDescending(value => value.HasAuthoritativeCurrentDayDeadline)
             .ThenBy(value => value.MinimumDeadlineSlackDays ?? int.MaxValue)
             .ThenBy(value =>
                 value.EarliestActionDeadlineTimeExclusive ?? int.MaxValue)
@@ -236,6 +238,8 @@ public static partial class CurrentStageOneCollectionTeacherPreferenceBuilder
             CandidateId = choice.CandidateId,
             OptionId = choice.OptionId,
             Kind = choice.Kind,
+            UnsatisfiedHardPrerequisiteCreditCount = choice.RequirementCredits.Count(
+                value => IsHardPrerequisite(value.BindingKind)),
             HasAuthoritativeCurrentDayDeadline = masterBindings.Length > 0,
             MinimumDeadlineSlackDays = masterBindings.Length == 0
                 ? null
@@ -262,6 +266,9 @@ public static partial class CurrentStageOneCollectionTeacherPreferenceBuilder
             EnergyCost = candidate.EnergyCost,
             Reasons = new[]
             {
+                "unsatisfied_hard_prerequisite_credits=" +
+                    choice.RequirementCredits.Count(value =>
+                        IsHardPrerequisite(value.BindingKind)),
                 masterBindings.Length > 0
                     ? "authoritative_current_day_master_angler_window"
                     : "no_authoritative_current_day_deadline",
@@ -288,12 +295,23 @@ public static partial class CurrentStageOneCollectionTeacherPreferenceBuilder
             "native_museum_donation_completion" or
             "native_community_center_payment_completion" or
             "native_community_center_donation_completion" or
-            "authoritative_window_terminal_attempt";
+            "authoritative_window_terminal_attempt" or
+            "authoritative_supporting_prerequisite_terminal_purchase";
+
+    private static bool IsHardPrerequisite(string bindingKind) =>
+        bindingKind.StartsWith(
+            "authoritative_supporting_prerequisite_",
+            StringComparison.Ordinal);
 
     private static string? FirstDifferingCriterion(
         CurrentCollectionTeacherCandidateEvaluation preferred,
         CurrentCollectionTeacherCandidateEvaluation alternative)
     {
+        if (preferred.UnsatisfiedHardPrerequisiteCreditCount !=
+            alternative.UnsatisfiedHardPrerequisiteCreditCount)
+        {
+            return "unsatisfied_hard_prerequisite_credit_count";
+        }
         if (preferred.HasAuthoritativeCurrentDayDeadline !=
             alternative.HasAuthoritativeCurrentDayDeadline)
         {

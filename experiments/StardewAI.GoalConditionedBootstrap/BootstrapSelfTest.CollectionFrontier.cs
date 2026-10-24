@@ -23,6 +23,10 @@ internal static partial class BootstrapSelfTest
         VerifyCommunityCenterDonationReceiptEvidence();
     }
 
+    public static void RunCurrentStageOneRodPrerequisite(string outputRoot) =>
+        new StageOneCollectionFrontierFixture(Path.GetFullPath(outputRoot))
+            .RunRodPrerequisiteOnly();
+
     private static void VerifyCurrentCollectionTeacherFrontier(
         string outputRoot)
     {

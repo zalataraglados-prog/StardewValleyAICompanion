@@ -436,6 +436,13 @@ internal static partial class BootstrapSelfTest
                 axes.TargetDateCalendar);
         }
 
+        public void RunRodPrerequisiteOnly()
+        {
+            _ = BuildStaticInputs();
+            Write(calibrationPath, StageOneRouteTimingCalibration());
+            VerifyRodPrerequisite();
+        }
+
         private sealed record TargetDateAxes(
             AcquisitionRouteTargetDateCalendarReport TargetDateCalendar,
             AcquisitionRouteTargetDateOpportunityCostReport OpportunityCost,
