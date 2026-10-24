@@ -60,8 +60,20 @@ static partial class Program
         IReadOnlyList<string>? candidateOptionIdsOverride = null,
         IReadOnlyList<SmallModelActionParameter>? candidateParametersOverride = null,
         string? candidateKindOverride = null,
-        string? candidateIdOverride = null)
+        string? candidateIdOverride = null,
+        int? maxCandidatesOverride = null,
+        string? goalIdOverride = null)
     {
+        var requestedGoalId = string.IsNullOrWhiteSpace(goalIdOverride)
+            ? options.Goal
+            : goalIdOverride;
+        var maxCandidates = maxCandidatesOverride ?? options.DailyPlanMaxCandidates;
+        if (maxCandidates is < 1 or > 64)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(maxCandidatesOverride),
+                "daily plan max candidates must be between 1 and 64");
+        }
         var candidateOptionIds = candidateOptionIdsOverride ??
             options.DailyPlanCandidateOptionIds;
         var candidateParameters = candidateParametersOverride ??
@@ -81,7 +93,7 @@ static partial class Program
                 : Array.Empty<object>();
         var rankRequest = JsonSerializer.Serialize(new
         {
-            goal_id = options.Goal,
+            goal_id = requestedGoalId,
             execution_mode = options.TargetExecutionMode,
             policy_checkpoint_path = string.IsNullOrWhiteSpace(options.EffectivePolicyCheckpointPath)
                 ? null
@@ -99,7 +111,7 @@ static partial class Program
         var resolvedGoalId = ranking["goal_resolution"]?[
             "effective_goal_id"]?.GetValue<string>();
         var effectiveGoalId = string.IsNullOrWhiteSpace(resolvedGoalId)
-            ? options.Goal
+            ? requestedGoalId
             : resolvedGoalId;
         var rankedCandidates = ranking["ranked_event_candidates"]?.AsArray() ?? new JsonArray();
         var goalResolution = ranking["goal_resolution"]?.AsObject();
@@ -210,7 +222,7 @@ static partial class Program
             state_hash = stateHash,
             goal_id = effectiveGoalId,
             execution_mode = options.TargetExecutionMode,
-            max_candidates = options.DailyPlanMaxCandidates,
+            max_candidates = maxCandidates,
             compile_action_queue = true,
             ranked_event_candidates = JsonNode.Parse(selectedCandidates.ToJsonString(JsonOptions))
         }, JsonOptions);

@@ -30,8 +30,12 @@ static partial class Program
         int initialSelectedQueueIndex,
         string initialMechanicalCompiledQueuePath,
         JsonObject? objectiveContinuation,
-        List<JsonObject> suppressedObjectiveContinuations)
+        List<JsonObject> suppressedObjectiveContinuations,
+        bool useDailyPlanDecisionLease = true,
+        string? executionSnapshotUrlOverride = null,
+        string? executionSnapshotProfileOverride = null)
     {
+        var useDailyPlan = options.UseDailyPlan && useDailyPlanDecisionLease;
         var queueItems = ExecutableQueueItems(queue);
         if (!string.IsNullOrWhiteSpace(options.ExecutorOptionId))
         {
@@ -43,7 +47,7 @@ static partial class Program
         }
 
         SelectedQueueDecisionLease? selectedQueueDecision = null;
-        if (options.UseDailyPlan)
+        if (useDailyPlan)
         {
             selectedQueueDecision = SelectedQueueDecisionLease.Load(
                 decisionCompiledQueuePath,
@@ -128,7 +132,7 @@ static partial class Program
             initialItem["runtime_queue_id"] = queueId;
             initialItem["mechanical_compiled_queue_path"] = initialMechanicalCompiledQueuePath;
             var initialIndex = QueueReplanFilter.ReadAcceptedCandidateIndex(initialItem);
-            if (initialIndex >= 0 && !options.UseDailyPlan)
+            if (initialIndex >= 0 && !useDailyPlan)
             {
                 QueueReplanFilter.StampSelectedQueueIndex(initialItem, initialIndex);
             }
@@ -141,7 +145,7 @@ static partial class Program
                 ? EffectiveDecisionArtifactTracker.ReadQueueItemCandidateId(queueItems[0])
                 : initialSelectedCandidateId
             : selectedQueueDecision.CandidateAt(selectedQueueIndex).CandidateId;
-        if (options.UseDailyPlan &&
+        if (useDailyPlan &&
             (string.IsNullOrWhiteSpace(selectedCandidateId) || selectedQueueIndex < 0))
         {
             throw new InvalidOperationException(
@@ -155,7 +159,7 @@ static partial class Program
         {
             var item = queueItems[itemIndex];
             var itemSelectedQueueIndex = QueueReplanFilter.ReadAcceptedCandidateIndex(item);
-            if (options.UseDailyPlan &&
+            if (useDailyPlan &&
                 activeObjectiveContinuation is not null &&
                 itemSelectedQueueIndex != selectedQueueIndex)
             {
@@ -170,7 +174,7 @@ static partial class Program
                 stepResults.Add(JsonNode.Parse(finalExecution.ToJsonString(JsonOptions)));
                 break;
             }
-            if (options.UseDailyPlan &&
+            if (useDailyPlan &&
                 activeObjectiveContinuation is null &&
                 itemSelectedQueueIndex != selectedQueueIndex)
             {
@@ -320,7 +324,9 @@ static partial class Program
                     latest = await ReadExecutionSnapshotAsync(
                         http,
                         options,
-                        forceRefresh: true);
+                        forceRefresh: true,
+                        snapshotUrlOverride: executionSnapshotUrlOverride,
+                        snapshotProfileOverride: executionSnapshotProfileOverride);
                     latestTime = ReadInGameTime(latest.Snapshot);
                     var recoverySuffix = "-dispatch-recovery-" +
                         (dispatchGateReplanCount + 1).ToString("D4");
@@ -407,7 +413,9 @@ static partial class Program
                 http,
                 options,
                 currentBeforeSnapshot,
-                execution);
+                execution,
+                executionSnapshotUrlOverride,
+                executionSnapshotProfileOverride);
             finalAfterJson = afterSnapshot.Json;
             finalAfterSnapshot = afterSnapshot.Snapshot;
             var itemSuffix = "-item-" + attemptedCount.ToString("D4");
@@ -419,7 +427,9 @@ static partial class Program
                 options.SnapshotArtifactMode);
             await PostJsonStringAsync(
                 http,
-                SnapshotIngestUrl(options),
+                SnapshotIngestUrl(
+                    options,
+                    executionSnapshotProfileOverride),
                 finalAfterJson);
 
             execution["queue_execution_mode"] = "sequential_queue_items";
@@ -522,7 +532,7 @@ static partial class Program
             var replanDecision = QueueReplanFilter.DecideAfterExecution(
                 executionStatus,
                 options.ContinueAfterBlockedQueueItems,
-                options.UseDailyPlan,
+                useDailyPlan,
                 !string.IsNullOrWhiteSpace(options.ExecutorOptionId),
                 afterSnapshot.Fresh,
                 attemptedCount < options.MaxQueueItemAttempts,

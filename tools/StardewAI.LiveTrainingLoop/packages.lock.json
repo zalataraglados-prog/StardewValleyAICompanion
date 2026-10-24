@@ -19,6 +19,13 @@
           "StardewAI.Contracts": "[1.0.0, )",
           "System.Text.Json": "[8.0.5, )"
         }
+      },
+      "stardewai.goalconditionedbootstrap": {
+        "type": "Project",
+        "dependencies": {
+          "StardewAI.Contracts": "[1.0.0, )",
+          "StardewAI.Core": "[1.0.0, )"
+        }
       }
     }
   }

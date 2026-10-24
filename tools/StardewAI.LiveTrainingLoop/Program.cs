@@ -5,6 +5,7 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
+using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Infrastructure;
 using StardewAI.Core.Training;
@@ -41,6 +42,13 @@ JsonObject? lastPrediction = null;
 var lastPlanningHandoffCaptureManifestPath = string.Empty;
 var lastPlanningHandoffTeacherDispatchManifestPath = string.Empty;
 var lastPlanningHandoffNativeRunPlanPath = string.Empty;
+MoneyRevenueCropNativeProductionRunPlan? activeCropTeacherRunPlan = null;
+MoneyRevenueCropNativeProductionRunPlanRequest?
+    activeCropTeacherRunPlanRequest = null;
+var cropTeacherPreparedCommitmentIds = new HashSet<string>(
+    StringComparer.Ordinal);
+var cropTeacherControlAttemptsStarted = 0;
+var cropTeacherFirstDayCompleted = false;
 JsonObject? activeObjectiveContinuation = null;
 var suppressedObjectiveContinuations = new List<JsonObject>();
 var suppressionDayKey = string.Empty;
@@ -92,15 +100,24 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
          verifiedActions >= options.RequiredVerifiedActions) &&
         (!options.StopAfterObjectiveComplete || objectiveCompleted) &&
         (!options.StopAfterSocialObjectiveComplete || socialObjectiveCompleted);
-    var phaseDecision = TrainingCompletionPolicy.Decide(
-        primaryAttemptsStarted,
-        options.MaxAttempts,
-        nativeSaveBoundaryAttemptsStarted,
-        options.SaveBoundaryMaxAttempts,
-        hasExplicitPrimaryTarget,
-        explicitPrimaryTargetMet,
-        options.RequireNativeSaveBoundary,
-        nativeSaveBoundaryVerified);
+    var effectivePrimaryAttempts = cropTeacherFirstDayCompleted
+        ? Math.Max(primaryAttemptsStarted, options.MaxAttempts)
+        : primaryAttemptsStarted;
+    var phaseDecision = activeCropTeacherRunPlan is null
+        ? TrainingCompletionPolicy.Decide(
+            effectivePrimaryAttempts,
+            options.MaxAttempts,
+            nativeSaveBoundaryAttemptsStarted,
+            options.SaveBoundaryMaxAttempts,
+            hasExplicitPrimaryTarget,
+            explicitPrimaryTargetMet,
+            options.RequireNativeSaveBoundary,
+            nativeSaveBoundaryVerified)
+        : cropTeacherControlAttemptsStarted >= 256
+            ? new LiveTrainingPhaseDecision(
+                LiveTrainingPhase.Incomplete,
+                "crop_teacher_first_day_attempt_limit_reached")
+            : new LiveTrainingPhaseDecision(LiveTrainingPhase.Primary);
     if (phaseDecision.Phase is LiveTrainingPhase.Complete or LiveTrainingPhase.Incomplete)
     {
         if (phaseDecision.Phase == LiveTrainingPhase.Incomplete &&
@@ -154,6 +171,10 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         else
         {
             primaryAttemptsStarted++;
+            if (activeCropTeacherRunPlan is not null)
+            {
+                cropTeacherControlAttemptsStarted++;
+            }
         }
         var rawSnapshotJson = iteration == 1 && !string.IsNullOrWhiteSpace(options.SnapshotFile)
             ? await ContentAddressedJsonArtifactStore.ReadAllTextAsync(
@@ -260,6 +281,9 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
     var selectedCandidateId = string.Empty;
     var selectedQueueIndex = -1;
     var resumedSelectedQueueDecision = false;
+    var useDailyPlanDecisionLease = options.UseDailyPlan;
+    var executionSnapshotProfile = options.ExecutionSnapshotProfile;
+    var executionSnapshotUrl = options.BridgeSnapshotUrl;
     JsonObject? dailyPlanRanking = null;
     JsonObject queue;
     if (options.UsePrecompiledQueue)
@@ -278,6 +302,96 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             options.TeacherPreferencePath,
             lastStateHash,
             options.TargetExecutionMode);
+    }
+    else if (options.UseDailyPlan && activeCropTeacherRunPlan is not null)
+    {
+        var typedSnapshot = JsonSerializer.Deserialize<SnapshotEnvelope>(
+            snapshotJson,
+            JsonOptions) ?? throw new InvalidDataException(
+                "crop_teacher_full_snapshot_invalid");
+        var cropStep = CropTeacherFirstDayPlanner.Evaluate(
+            activeCropTeacherRunPlan,
+            activeCropTeacherRunPlanRequest ??
+                throw new InvalidOperationException(
+                    "crop_teacher_run_plan_request_missing"),
+            typedSnapshot,
+            cropTeacherPreparedCommitmentIds);
+        if (cropStep.Stage == CropTeacherFirstDayStageKinds.Complete)
+        {
+            cropTeacherFirstDayCompleted = true;
+            activeCropTeacherRunPlan = null;
+            activeCropTeacherRunPlanRequest = null;
+            AppendProgress(
+                options,
+                "crop_teacher_first_day_complete",
+                iteration,
+                lastStateHash,
+                string.Empty,
+                "reason=" + cropStep.Reason +
+                " control_attempts=" +
+                cropTeacherControlAttemptsStarted);
+            if (options.RequireNativeSaveBoundary)
+            {
+                await DelayBeforeNextAttemptAsync(
+                    options,
+                    attemptOrdinal);
+                continue;
+            }
+            break;
+        }
+        var cropQueue = await BuildCropTeacherControlQueueAsync(
+            http,
+            options,
+            iteration,
+            cropStep,
+            activeCropTeacherRunPlan,
+            activeCropTeacherRunPlanRequest,
+            snapshotPath,
+            beforeSnapshot,
+            lastStateHash);
+        if (cropQueue.SitePreparationComplete)
+        {
+            if (!cropTeacherPreparedCommitmentIds.Add(
+                    cropStep.CommitmentId))
+            {
+                throw new InvalidOperationException(
+                    "crop_teacher_site_preparation_completion_replayed");
+            }
+            AppendProgress(
+                options,
+                "crop_teacher_site_preparation_complete",
+                iteration,
+                cropQueue.StateHash,
+                string.Empty,
+                "commitment_id=" + cropStep.CommitmentId);
+            await DelayBeforeNextAttemptAsync(options, attemptOrdinal);
+            continue;
+        }
+        queue = cropQueue.Queue ?? throw new InvalidOperationException(
+            "crop_teacher_control_queue_missing");
+        modelPlanPath = cropQueue.ModelPlanPath;
+        rankingPath = cropQueue.RankingPath;
+        decisionModelPlanPath = modelPlanPath;
+        decisionRankingPath = rankingPath;
+        snapshotPath = cropQueue.BeforeSnapshotPath;
+        beforeSnapshot = cropQueue.BeforeSnapshot;
+        decisionSnapshotPath = snapshotPath;
+        lastStateHash = cropQueue.StateHash;
+        decisionSourceStateHash = lastStateHash;
+        executionSnapshotProfile = cropQueue.SnapshotProfile;
+        executionSnapshotUrl = cropQueue.SnapshotUrl;
+        useDailyPlanDecisionLease = false;
+        activeObjectiveContinuation = null;
+        AppendProgress(
+            options,
+            "crop_teacher_control_queue_compiled",
+            iteration,
+            lastStateHash,
+            ReadString(queue, "queue_id"),
+            "stage=" + cropStep.Stage +
+            " reason=" + cropStep.Reason +
+            " commitment_id=" + cropStep.CommitmentId +
+            " remaining=" + cropStep.RemainingQuantity);
     }
     else if (options.UseDailyPlan)
     {
@@ -398,8 +512,31 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                     "teacher-dispatch-manifest.json");
                 lastPlanningHandoffNativeRunPlanPath =
                     teacherDispatch.NativeRunPlanPath;
-                stopReason =
-                    "planning_handoff_dispatched_native_run_plan_ready";
+                activeCropTeacherRunPlanRequest =
+                    JsonSerializer.Deserialize<
+                        MoneyRevenueCropNativeProductionRunPlanRequest>(
+                            await File.ReadAllTextAsync(
+                                teacherDispatch.NativeRunPlanRequestPath),
+                            JsonOptions) ?? throw new InvalidDataException(
+                                "crop_teacher_run_plan_request_invalid");
+                activeCropTeacherRunPlan =
+                    JsonSerializer.Deserialize<
+                        MoneyRevenueCropNativeProductionRunPlan>(
+                            await File.ReadAllTextAsync(
+                                teacherDispatch.NativeRunPlanPath),
+                            JsonOptions) ?? throw new InvalidDataException(
+                                "crop_teacher_native_run_plan_invalid");
+                cropTeacherPreparedCommitmentIds.Clear();
+                cropTeacherControlAttemptsStarted = 0;
+                activeObjectiveContinuation = null;
+                leasedDecisionModelPlanPath = string.Empty;
+                leasedDecisionRankingPath = string.Empty;
+                leasedDecisionCompiledQueuePath = string.Empty;
+                leasedDecisionSnapshotPath = string.Empty;
+                leasedDecisionSourceStateHash = string.Empty;
+                leasedDecisionGoalId = string.Empty;
+                leasedSelectedCandidateId = string.Empty;
+                leasedSelectedQueueIndex = -1;
                 AppendProgress(
                     options,
                     "planning_handoff_dispatched",
@@ -415,7 +552,8 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                     " native_run_plan=" +
                     teacherDispatch.NativeRunPlanPath +
                     " actions=" + teacherDispatch.ActionCount);
-                break;
+                await DelayBeforeNextAttemptAsync(options, attemptOrdinal);
+                continue;
             }
         }
     }
@@ -443,7 +581,12 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
     {
         decisionCompiledQueuePath = queuePath;
     }
-    if (options.UseDailyPlan && !resumedSelectedQueueDecision)
+    else if (!useDailyPlanDecisionLease &&
+        activeCropTeacherRunPlan is not null)
+    {
+        decisionCompiledQueuePath = queuePath;
+    }
+    if (useDailyPlanDecisionLease && !resumedSelectedQueueDecision)
     {
         var firstSelectedItem = ExecutableQueueItems(queue).FirstOrDefault();
         selectedCandidateId = EffectiveDecisionArtifactTracker.ReadQueueItemCandidateId(firstSelectedItem);
@@ -470,7 +613,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         if (!string.Equals(queueStatus, "pending", StringComparison.Ordinal))
         {
             var executableSubsetCount = ExecutableQueueItems(queue).Length;
-            if (options.UseDailyPlan &&
+            if (useDailyPlanDecisionLease &&
                 resumedSelectedQueueDecision &&
                 executableSubsetCount == 0)
             {
@@ -551,7 +694,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         }
 
         var execution = options.UseRuntimeTestHarnessExecutor
-            ? await ExecuteRuntimeTestHarnessAsync(http, executorHttp, options, iteration, snapshotPath, beforeSnapshot, queue, lastStateHash, lastQueueId, decisionModelPlanPath, decisionRankingPath, decisionCompiledQueuePath, decisionSnapshotPath, decisionSourceStateHash, selectedCandidateId, selectedQueueIndex, queuePath, activeObjectiveContinuation, suppressedObjectiveContinuations)
+            ? await ExecuteRuntimeTestHarnessAsync(http, executorHttp, options, iteration, snapshotPath, beforeSnapshot, queue, lastStateHash, lastQueueId, decisionModelPlanPath, decisionRankingPath, decisionCompiledQueuePath, decisionSnapshotPath, decisionSourceStateHash, selectedCandidateId, selectedQueueIndex, queuePath, activeObjectiveContinuation, suppressedObjectiveContinuations, useDailyPlanDecisionLease, executionSnapshotUrl, executionSnapshotProfile)
             : await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/action-queues/" + Uri.EscapeDataString(lastQueueId) + "/execute-training-sandbox", "{}");
         var feedbackAvailable = execution["feedback_available"]?.GetValue<bool>() == true;
         if (!feedbackAvailable && !options.UseRuntimeTestHarnessExecutor)
@@ -623,7 +766,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 "selected_queue_redecision_required"]?.GetValue<bool>() == true;
             var selectedQueueResumeIndex = execution[
                 "selected_queue_resume_index"]?.GetValue<int>() ?? -1;
-            if (options.UseDailyPlan &&
+            if (useDailyPlanDecisionLease &&
                 !selectedQueueDecisionComplete &&
                 !selectedQueueRedecisionRequired &&
                 selectedQueueResumeIndex >= 0)
@@ -766,11 +909,14 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
     }
 }
 
-var verifiedTargetMet = string.IsNullOrWhiteSpace(stopReason) &&
-    (options.RequiredVerifiedActions <= 0 || verifiedActions >= options.RequiredVerifiedActions) &&
+var ordinaryTargetMet =
+    (options.RequiredVerifiedActions <= 0 ||
+        verifiedActions >= options.RequiredVerifiedActions) &&
     (!options.StopAfterObjectiveComplete || objectiveCompleted) &&
     (!options.StopAfterSocialObjectiveComplete || socialObjectiveCompleted) &&
     (!options.RequireNativeSaveBoundary || nativeSaveBoundaryVerified);
+var verifiedTargetMet = string.IsNullOrWhiteSpace(stopReason) &&
+    ordinaryTargetMet;
 var loopStatus = verifiedTargetMet ? "ok" : "incomplete";
 if (!verifiedTargetMet)
 {
@@ -849,6 +995,8 @@ var report = new LiveTrainingLoopReport
         lastPlanningHandoffTeacherDispatchManifestPath,
     PlanningHandoffNativeRunPlanPath =
         lastPlanningHandoffNativeRunPlanPath,
+    CropTeacherFirstDayCompleted = cropTeacherFirstDayCompleted,
+    CropTeacherControlAttemptsStarted = cropTeacherControlAttemptsStarted,
     Iterations = attemptsStarted,
     MaxAttempts = options.MaxAttempts,
     AttemptsStarted = attemptsStarted,
@@ -916,7 +1064,9 @@ Console.WriteLine(JsonSerializer.Serialize(new
     feedback = options.FeedbackMode,
     executor_feedback_required = options.RequireExecutorFeedback,
     objective_completed = objectiveCompleted,
-    social_objective_completed = socialObjectiveCompleted
+    social_objective_completed = socialObjectiveCompleted,
+    crop_teacher_first_day_completed = cropTeacherFirstDayCompleted,
+    crop_teacher_control_attempts_started = cropTeacherControlAttemptsStarted
 }, JsonOptions));
 
 static partial class Program

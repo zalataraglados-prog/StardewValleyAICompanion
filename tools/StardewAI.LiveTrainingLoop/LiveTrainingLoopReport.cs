@@ -68,6 +68,12 @@ public sealed class LiveTrainingLoopReport
     public string PlanningHandoffNativeRunPlanPath { get; set; } =
         string.Empty;
 
+    [JsonPropertyName("crop_teacher_first_day_completed")]
+    public bool CropTeacherFirstDayCompleted { get; set; }
+
+    [JsonPropertyName("crop_teacher_control_attempts_started")]
+    public int CropTeacherControlAttemptsStarted { get; set; }
+
     [JsonPropertyName("iterations")]
     public int Iterations { get; set; }
 
