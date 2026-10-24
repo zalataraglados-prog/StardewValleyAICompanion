@@ -113,6 +113,42 @@ internal static partial class BootstrapSelfTest
                     "authoritative_supporting_prerequisite_rolling_route_step",
                 "The exact Bamboo Pole route step did not produce a fresh verified prerequisite transition.");
 
+            var endpoint = RodPurchaseCandidate(
+                "rod-prerequisite-shop-endpoint",
+                2);
+            endpoint.Kind = "interact_endpoint";
+            Require(
+                MasterAnglerRodEquipmentAcquisitionProtocol.TryMatchCandidate(
+                    endpoint,
+                    out var endpointBindingKind) &&
+                endpointBindingKind ==
+                    "authoritative_supporting_prerequisite_shop_endpoint_open",
+                "The exact FishShop endpoint was not classified as the rod-prerequisite interaction stage.");
+
+            var terminal = RodPurchaseCandidate(
+                "rod-prerequisite-terminal-purchase",
+                2);
+            terminal.Kind = "buy_shop_item";
+            terminal.UnitPrice = 450;
+            Require(
+                MasterAnglerRodEquipmentAcquisitionProtocol.TryMatchCandidate(
+                    terminal,
+                    out var terminalBindingKind) &&
+                terminalBindingKind ==
+                    "authoritative_supporting_prerequisite_terminal_purchase",
+                "A valid sub-cap Bamboo Pole purchase was not classified as the terminal prerequisite stage.");
+
+            var overpriced = RodPurchaseCandidate(
+                "rod-prerequisite-overpriced",
+                2);
+            overpriced.Kind = "buy_shop_item";
+            overpriced.UnitPrice = 501;
+            Require(
+                !MasterAnglerRodEquipmentAcquisitionProtocol.TryMatchCandidate(
+                    overpriced,
+                    out _),
+                "An over-cap Bamboo Pole purchase was admitted as the rod prerequisite.");
+
             var ownedRod = BuildRodPrerequisiteFrontier(
                 "stage-one-rod-prerequisite-owned",
                 new object[]
