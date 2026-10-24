@@ -35,6 +35,7 @@
     <ProjectReference Include="..\..\src\StardewAI.Core\StardewAI.Core.csproj" />
     <ProjectReference Include="..\..\src\StardewAI.TransparentBridge\StardewAI.TransparentBridge.csproj" />
     <ProjectReference Include="..\..\src\StardewAI.RuntimePrimitives\StardewAI.RuntimePrimitives.csproj" />
+    <ProjectReference Include="..\..\experiments\StardewAI.GoalConditionedBootstrap\StardewAI.GoalConditionedBootstrap.csproj" />
     <ProjectReference Include="..\..\tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj" />
     <ProjectReference Include="..\..\tools\StardewAI.FriendshipTeacherRollout\StardewAI.FriendshipTeacherRollout.csproj" />
   </ItemGroup>
