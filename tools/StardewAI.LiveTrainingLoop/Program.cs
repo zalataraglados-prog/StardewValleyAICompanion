@@ -721,7 +721,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 decisionSourceStateHash = lastStateHash;
                 selectedCandidateId = collectionTeacher.SelectedCandidateId;
                 selectedQueueIndex = 0;
-                useDailyPlanDecisionLease = false;
+                useDailyPlanDecisionLease = true;
                 stageOneCollectionTeacherQueueCount++;
                 lastStageOneCollectionTeacherFallbackSignature = string.Empty;
                 AppendProgress(

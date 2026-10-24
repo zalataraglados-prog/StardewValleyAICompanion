@@ -106,6 +106,33 @@ public sealed class SelectedQueueDecisionLeaseTests
         Assert.Empty(rebound);
     }
 
+    [Fact]
+    public void DeferredPurchaseWaitRetainsTeacherSelectionAcrossFreshSnapshots()
+    {
+        const string candidateId =
+            "purchase:AnimalShop:(O)178:(O)178:route:FarmHouse:3,12";
+        var lease = SelectedQueueDecisionLease.Create(
+            Queue(Item(candidateId, 0, PurchaseContinuation())),
+            Ranking(Candidate(candidateId, "economy.buy_supplies")));
+
+        var selected = Assert.Single(lease.Candidates);
+
+        Assert.Equal(candidateId, selected.CandidateId);
+        Assert.Equal("economy.buy_supplies", selected.OptionId);
+        Assert.Equal(
+            "economy_purchase",
+            selected.ObjectiveContinuation!["kind"]!.GetValue<string>());
+        Assert.Equal(
+            "AnimalShop",
+            selected.ObjectiveContinuation["shop_id"]!.GetValue<string>());
+        Assert.Equal(
+            "(O)178",
+            selected.ObjectiveContinuation["qualified_item_id"]!.GetValue<string>());
+        Assert.True(QueueReplanFilter.ShouldResumeContinuationOnNextIteration(
+            selected.ObjectiveContinuation,
+            refreshedItemCount: 0));
+    }
+
     private static JsonObject Queue(params JsonObject[] items) => new()
     {
         ["items"] = new JsonArray(items)
@@ -176,6 +203,18 @@ public sealed class SelectedQueueDecisionLeaseTests
         Parameter("continuation.bin_tile_y", "14"),
         Parameter("continuation.stand_tile_x", standX),
         Parameter("continuation.stand_tile_y", standY));
+
+    private static JsonArray PurchaseContinuation() => new(
+        Parameter("continuation.option_id", "economy.buy_supplies"),
+        Parameter("continuation.shop_id", "AnimalShop"),
+        Parameter("continuation.target_location", "AnimalShop"),
+        Parameter("continuation.item_id", "178"),
+        Parameter("continuation.qualified_item_id", "(O)178"),
+        Parameter("continuation.stock_id", "(O)178"),
+        Parameter("continuation.output_stack_per_purchase", "1"),
+        Parameter("continuation.output_quality", "0"),
+        Parameter("continuation.max_unit_price", "50"),
+        Parameter("continuation.quantity", "1"));
 
     private static JsonObject Parameter(string name, string value) => new()
     {

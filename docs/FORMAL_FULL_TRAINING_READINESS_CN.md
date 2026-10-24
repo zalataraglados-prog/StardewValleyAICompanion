@@ -74,7 +74,9 @@ Golden Walnut 专用长期里程碑控制面现已实现，但尚未形成新原
 
 长期控制面现补上两项失败关闭条件。第一，活动作物 Teacher 的任意阶段都必须先让位于原生剧情事件，且剧情队列不能提交作物 harvest/day-boundary settlement；v13 已在 Spring 20 Marnie 剧情真实验证抢占、恢复与下一日存档边界，第三轮 ledger 仍为 `0 harvest / 4 day-boundary`。第二，长期模式必须显式提供 requirement inventory、acquisition lowering、Master Angler window index 与 route timing calibration，并在普通日计划前调用既有统一 Stage 1 collection Teacher。真实快照离线烟测的 `35` 个捕获意图、`2` 个天气意图和 `297` 个唯一候选已生成一条 ready 的 `fishing.catch_fish` 队列；并发窗口候选身份冲突已由完整 intent identity 修复。以上只证明控制与编译入口，动态采集队列尚缺新长跑原生回执，首次登岛及 source schedule 仍缺，因此 `formal_product_training_authorized=false` 和所有 coverage 分子不变。
 
-v14 随后取得动态 collection Teacher 的四段原生 verified 路线回执，但不构成 Master Angler 终态：真实快照的 `fishing.rod_inventory` 为空，旧 builder 却发布了 Beach 捕获意图。当前门槛已经修正为 location/mine 捕获必须持有实时可读鱼竿；缺字段和空数组均失败关闭，crab pot 与天气支援不受该门影响。v14 原快照重放确认捕获候选 `0`、天气候选 `1`，统一 Teacher 可继续选择其他合法 exact collection 候选。仍须由新长跑证明鱼竿前置与原生捕获闭环，并完成首次登岛、核桃 source schedule、Gourmand 后两单和 Year 3 组合证明；`formal_product_training_authorized=false` 不变。
+v14 随后取得动态 collection Teacher 的四段原生 verified 路线回执，但不构成 Master Angler 终态：真实快照的 `fishing.rod_inventory` 为空，旧 builder 却发布了 Beach 捕获意图。当前门槛已经修正为 location/mine 捕获必须持有实时可读鱼竿；缺字段和空数组均失败关闭，crab pot 与天气支援不受该门影响。v14 原快照重放确认捕获候选 `0`、天气候选 `1`，统一 Teacher 可继续选择其他合法 exact collection 候选。
+
+v15 已证明该修复在真实新档中阻止了徒手 Beach 路线，并暴露延迟商店等待反复生成全量 collection ranking 的控制面浪费。v16 随后把 Stage One Teacher 选择接入已有 `SelectedQueueDecisionLease`：首次全量决策后，只在 fresh snapshot 上确定性刷新锁定候选，`policy_model_invoked=false`，候选失效时失败关闭，原生剧情仍可抢占并在结束后恢复。短运行连续 4 轮保持同一 AnimalShop 采购 continuation，全量 ranking 只生成 1 次；后续轻量刷新约 `10 KB/轮`。这只提高长跑反馈效率，不是新证据通道或 criterion completion。仍须由后续长跑证明鱼竿前置与原生捕获闭环，并完成首次登岛、核桃 source schedule、Gourmand 后两单和 Year 3 组合证明；`formal_product_training_authorized=false` 不变。
 
 Money 的第一条完整原生作物生产段 `money-crop-native-20261021-pricefix-v10` 已通过：checkpoint v12 为 `6/6 verified、0 pending`，终局含 `5` 次单件原生投箱和唯一睡眠结算，实际收入 `875g`，最终为春 20 日 06:00、`money=925`、`totalMoneyEarned=875`。源存档和隔离 Mod 哈希均未漂移。这证明 native runner、购种、场地准备、作物生命周期、留存、容量和运输箱终局可以在同一连续真实轨迹中闭合。
 

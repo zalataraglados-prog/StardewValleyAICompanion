@@ -276,6 +276,50 @@ public sealed class LiveTrainingExecutionSnapshotProfileTests
     }
 
     [Fact]
+    public void CollectionTeacherKeepsItsSelectedCandidateLeaseAcrossRollingWaits()
+    {
+        var program = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.cs"));
+        var execution = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.RuntimeExecution.cs"));
+        var teacherBranchStart = program.IndexOf(
+            "if (collectionTeacher.Queue is not null)",
+            StringComparison.Ordinal);
+        var teacherBranchEnd = program.IndexOf(
+            "stageOneCollectionTeacherQueueCount++;",
+            teacherBranchStart,
+            StringComparison.Ordinal);
+
+        Assert.True(teacherBranchStart >= 0);
+        Assert.True(teacherBranchEnd > teacherBranchStart);
+        var teacherBranch = program[teacherBranchStart..teacherBranchEnd];
+        Assert.Contains(
+            "useDailyPlanDecisionLease = true;",
+            teacherBranch,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "useDailyPlanDecisionLease = false;",
+            teacherBranch,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "BuildQueueFromSelectedCandidateAsync(",
+            program,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "policy_model_invoked_for_step\"] = false",
+            execution,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "HasPriorityStoryEventInterrupt(currentBeforeSnapshot)",
+            execution,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void GoldenWalnutLongRunUsesMilestoneThenExistingEpisodeScheduleProof()
     {
         var program = File.ReadAllText(FindRepositoryFile(

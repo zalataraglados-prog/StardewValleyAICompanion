@@ -46,7 +46,9 @@ v8 `golden-walnut-source-schedule-v8-20261025-011556` 继续跨越原生日界�
 
 长期循环同时接入现有 `CurrentStageOneCollectionTeacherPreferenceBuilder`，不新增动作、候选或执行器：每次没有活动作物 handoff 且没有优先剧情时，先以当前 full snapshot 生成 Master Angler 目标日期意图，把附加候选送入现有 baseline ranker，再由统一 Stage 1 collection Teacher 编译并通过原 `TeacherPreferenceQueueLoader` 执行；非 ready 状态继续回退现有日计划。四份权威输入现在是长跑必填且启动时失败关闭，滚动保留与报告也覆盖该链。真实 v13 快照离线烟测得到 `35` 个捕获意图、`2` 个天气供应意图和 `297` 个唯一排名候选，Teacher 为 `ready` 并选择现有 `fishing.catch_fish` 路线，队列 `pending=1`；并修复同一鱼类多个并发窗口复用 route action 时 candidate ID 冲突。该烟测固定 `formal_training_authorized=false`，尚未在新一轮长跑中执行该动态采集队列，也没有生成 source schedule，所以当前面板与正式训练禁令不变。下一固定步骤是用新代码启动全新隔离长跑，先取得动态采集 Teacher 的原生回执，再继续首次登岛、核桃来源增量和三项鹦鹉跃迁。
 
-v14 已真实执行动态采集 Teacher 的四段 supporting route 并到达 Beach，随后确认角色没有鱼竿。旧 builder 因未读取 `fishing.rod_inventory` 而错误发布持竿捕获意图；修复后 location/mine 捕获必须有实时非空鱼竿清单，字段缺失或空清单只关闭持竿意图，crab pot 与天气候选保持独立。v14 原快照离线重放为 `0` 个捕获意图、`1` 个天气候选，统一 Teacher 改选现有合法集合候选，不再去海滩徒手捕鱼；完整 Stage One 自测通过。该结果仍没有原生捕获终态、首次登岛或 source schedule，正式训练禁令不变；下一固定步骤是全新 v15 长跑验证无往返并继续前置获取与核桃日程。
+v14 已真实执行动态采集 Teacher 的四段 supporting route 并到达 Beach，随后确认角色没有鱼竿。旧 builder 因未读取 `fishing.rod_inventory` 而错误发布持竿捕获意图；修复后 location/mine 捕获必须有实时非空鱼竿清单，字段缺失或空清单只关闭持竿意图，crab pot 与天气候选保持独立。v14 原快照离线重放为 `0` 个捕获意图、`1` 个天气候选，统一 Teacher 改选现有合法集合候选，不再去海滩徒手捕鱼；完整 Stage One 自测通过。
+
+全新 v15 `golden-walnut-source-schedule-v15-20261025-052000` 随后验证无鱼竿状态不会再去 Beach：统一 Teacher 选择合法的 AnimalShop 收集采购候选，开店前以 600 tick 安全片段等待；08:00 的原生 starter gift 又能正确抢占，随后进入既有作物 Teacher。该运行同时暴露控制层重复开销：每个等待片段都会重建约 `3.8 MB` 的全量 collection ranking。v16 `golden-walnut-source-schedule-v16-20261025-054000` 已把 Stage One Teacher 接入唯一 `SelectedQueueDecisionLease`：首次决策后只在 fresh snapshot 上刷新同一类型化候选，不再重新调用策略模型或改选候选，剧情抢占仍保留。连续 4 个完成轮次均为 `decision_complete=false / resume_index=0`，全量 ranking 仅 `1` 份，后续 refresh 为约 `10 KB/轮` 且 `policy_model_invoked=false`；前三个续租轮次避免约 `11.5 MB` 重复 ranking 产物。该优化不增加动作、候选、执行器或正式证据分子；仍没有原生捕获终态、首次登岛或 source schedule，正式训练禁令不变。下一固定步骤是在该租约控制面上继续有界新档长跑，闭合鱼竿前置并推进首次登岛与核桃日程。
 
 当前五个 `CoverageGateReady` criterion 固定为：
 
