@@ -100,6 +100,34 @@ static partial class Program
             throw new InvalidDataException(
                 "crop_teacher_seed_control_binding_invalid");
         }
+
+        if (HasPriorityStoryEventInterrupt(beforeSnapshot))
+        {
+            var interrupt = await BuildPriorityStoryEventQueueAsync(
+                http,
+                options,
+                stateHash);
+            var interruptPrefix = CropTeacherArtifactPrefix(
+                options,
+                iteration,
+                "seed-story-event");
+            var interruptPlanPath = interruptPrefix + "-daily-plan.json";
+            var interruptResponsePath =
+                interruptPrefix + "-daily-plan-response.json";
+            var interruptRankingPath = interruptPrefix + "-ranking.json";
+            await WriteJsonAsync(interruptPlanPath, interrupt.Plan);
+            await WriteJsonAsync(interruptResponsePath, interrupt.Response);
+            await WriteJsonAsync(interruptRankingPath, interrupt.Ranking);
+            return StandardResult(
+                interrupt.Queue,
+                interruptPlanPath,
+                interruptRankingPath,
+                beforeSnapshotPath,
+                beforeSnapshot,
+                stateHash,
+                options);
+        }
+
         var parameters = new[]
         {
             Parameter("continuation.option_id", "economy.buy_supplies"),

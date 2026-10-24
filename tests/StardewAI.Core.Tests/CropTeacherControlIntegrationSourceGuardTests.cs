@@ -135,6 +135,35 @@ public sealed class CropTeacherControlIntegrationSourceGuardTests
             StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void SeedAcquisitionLetsNativeStoryEventsPreemptTheShopQueue()
+    {
+        var source = Read(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.CropTeacherControl.cs");
+
+        var eventCheck = source.IndexOf(
+            "if (HasPriorityStoryEventInterrupt(beforeSnapshot))",
+            StringComparison.Ordinal);
+        var eventQueue = source.IndexOf(
+            "BuildPriorityStoryEventQueueAsync(",
+            eventCheck,
+            StringComparison.Ordinal);
+        var purchaseQueue = source.IndexOf(
+            "new[] { \"economy.buy_supplies\" }",
+            eventQueue,
+            StringComparison.Ordinal);
+
+        Assert.True(eventCheck >= 0);
+        Assert.True(eventQueue > eventCheck);
+        Assert.True(purchaseQueue > eventQueue);
+        Assert.Contains(
+            "seed-story-event",
+            source,
+            StringComparison.Ordinal);
+    }
+
     private static string Read(params string[] segments)
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

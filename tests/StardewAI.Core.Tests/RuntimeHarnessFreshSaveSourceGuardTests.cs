@@ -183,7 +183,15 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             calibration,
             StringComparison.Ordinal);
         Assert.Contains(
+            "--max-queue-no-progress-streak\", $MaxQueueNoProgressStreak",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "-MaxUnverifiedExecutionStreak $MaxUnverifiedExecutionStreak",
+            workflow,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "-MaxQueueNoProgressStreak $MaxQueueNoProgressStreak",
             workflow,
             StringComparison.Ordinal);
         Assert.Contains(

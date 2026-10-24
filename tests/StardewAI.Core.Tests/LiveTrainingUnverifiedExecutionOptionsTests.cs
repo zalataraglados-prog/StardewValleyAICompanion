@@ -10,6 +10,7 @@ public sealed class LiveTrainingUnverifiedExecutionOptionsTests
         var options = LiveTrainingOptions.Parse([]);
 
         Assert.Equal(0, options.MaxUnverifiedExecutionStreak);
+        Assert.Equal(0, options.MaxQueueNoProgressStreak);
     }
 
     [Theory]
@@ -27,5 +28,22 @@ public sealed class LiveTrainingUnverifiedExecutionOptionsTests
         ]);
 
         Assert.Equal(expected, options.MaxUnverifiedExecutionStreak);
+    }
+
+    [Theory]
+    [InlineData("0", 1)]
+    [InlineData("8", 8)]
+    [InlineData("100", 64)]
+    public void RepeatedQueueNoProgressStopIsClamped(
+        string requested,
+        int expected)
+    {
+        var options = LiveTrainingOptions.Parse(
+        [
+            "--max-queue-no-progress-streak",
+            requested
+        ]);
+
+        Assert.Equal(expected, options.MaxQueueNoProgressStreak);
     }
 }

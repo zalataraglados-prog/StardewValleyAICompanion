@@ -37,6 +37,7 @@ public sealed class LiveTrainingOptions
     public int SleepMs { get; set; } = 1000;
     public int NoProgressBackoffMs { get; set; }
     public int NoProgressMaxBackoffMs { get; set; }
+    public int MaxQueueNoProgressStreak { get; set; }
     public int MaxUnverifiedExecutionStreak { get; set; }
     public int MaxCropsPerExecution { get; set; } = 16;
     public string ExecutorOptionId { get; set; } = string.Empty;
@@ -359,6 +360,17 @@ public sealed class LiveTrainingOptions
             {
                 options.MaxUnverifiedExecutionStreak = Math.Clamp(
                     maxUnverifiedExecutionStreak,
+                    1,
+                    64);
+            }
+            else if (current == "--max-queue-no-progress-streak" &&
+                i + 1 < args.Length &&
+                int.TryParse(
+                    args[++i],
+                    out var maxQueueNoProgressStreak))
+            {
+                options.MaxQueueNoProgressStreak = Math.Clamp(
+                    maxQueueNoProgressStreak,
                     1,
                     64);
             }

@@ -888,6 +888,24 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                     lastQueueId,
                     "queue_not_pending executor_feedback_required" +
                     NoProgressDetail(noProgressDecision));
+                if (options.MaxQueueNoProgressStreak > 0 &&
+                    noProgressDecision.NoProgress &&
+                    noProgressDecision.Streak >=
+                        options.MaxQueueNoProgressStreak)
+                {
+                    stopReason =
+                        "max_queue_no_progress_streak_reached count=" +
+                        noProgressDecision.Streak +
+                        " queue_status=" + queueStatus;
+                    AppendProgress(
+                        options,
+                        "stopped",
+                        iteration,
+                        lastStateHash,
+                        lastQueueId,
+                        stopReason);
+                    break;
+                }
                 await DelayBeforeNextAttemptAsync(
                     options,
                     attemptOrdinal,

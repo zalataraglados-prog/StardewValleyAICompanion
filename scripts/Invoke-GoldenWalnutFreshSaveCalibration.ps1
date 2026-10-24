@@ -20,6 +20,8 @@ param(
     [int] $MaxPersistedIterations = 64,
     [ValidateRange(1, 64)]
     [int] $MaxUnverifiedExecutionStreak = 8,
+    [ValidateRange(1, 64)]
+    [int] $MaxQueueNoProgressStreak = 8,
     [ValidateRange(1024, [int]::MaxValue)]
     [int] $MinFreeSpaceMb = 8192,
     [int] $StartupTimeoutSeconds = 180
@@ -86,6 +88,7 @@ $calibrationOutput = & (Join-Path $PSScriptRoot `
     -ArtifactRetentionMode rolling `
     -MaxPersistedIterations $MaxPersistedIterations `
     -MaxUnverifiedExecutionStreak $MaxUnverifiedExecutionStreak `
+    -MaxQueueNoProgressStreak $MaxQueueNoProgressStreak `
     -MinFreeSpaceMb $MinFreeSpaceMb `
     -CaptureGoldenWalnutFreshSaveEvidence `
     -RequireGoldenWalnutSourceScheduleReady:$RequireSourceScheduleReady `
