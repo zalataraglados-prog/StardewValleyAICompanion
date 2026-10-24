@@ -8,8 +8,8 @@
 
 - 真实 Spring 1 旧快照只有商店、社交和小游戏候选，缺少领取农舍开局礼盒这一必经前置，导致 Grandpa 最大分数目标只能在低价值候选中选择。现已新增唯一高层项 `rewards.claim_starter_gift`，并贯通透明读取、候选生成、日计划、fresh 编译重绑和 Product Executor 共用的原生运行状态机。
 - 透明桥只在当前玩家拥有的 `FarmHouse` 中发布唯一 `giftbox + starterGift` Chest，绑定精确 tile/runtime/item 身份、实时 contents、背包容量、相邻站位和农场类型对应任务（普通农场 `6`、Meadowlands `132`）。运行时只调用原生 `GameLocation.checkAction`，由 `Chest.dumpContents` 完成任务、背包/举起物品和空礼盒移除；禁止直接改 Chest、背包或任务。
-- 该项已进入 `earn_money` 的 fresh-save 支撑转移，聚焦 Core 回归 `58/58`、运行时源约束 `1/1`、catalog reconciliation `585/585` 且 blocking `0`。注册项总数为 `241`；本项当前仍是 `RegisteredOnly`，没有训练证据 ID，也不在训练 allowlist。
-- 现存真实 Spring 1 快照生成于该字段加入之前，不能反向伪造 `current_location.starter_gift_claim`。下一步必须用更新后的桥在隔离新档采一组领取前/后 full snapshot 和原生回执；只有读取、候选、编译、运行、输出五门都由同一 fresh 状态闭合后，才允许提升证据等级。随后重新回放新档首日排序，确认礼盒领取后进入作物生产而不是回退到社交；之后再修正 06:00 商店候选的上游营业时间门。
+- 该项已进入 `earn_money` 的 fresh-save 支撑转移。隐藏静音原生运行 `runtime-starter-gift-20261024-172156` 在真实隔离新档中通过：领取前后 full snapshot 哈希分别为 `e31c45f8cb50c9a9576cab27a5769faf6f193bfffdc80e3a2465c29d8369204f` 与 `eed1329a1bee2d239da5e35961ede172e865f3e0b7b99987dc087e1df608bb71`，405 tick 后 `(O)472 x15`、任务 `6` 和空礼盒移除均由原生回执验证。`EVD-342` 已将本项提升为 five-gate / training-eligible；目录预期为 `241 registered / 162 five-gate / 67 training allowlist`，以本轮生成报告为最终事实源。
+- 首次原生运行同时暴露新档淡入时控制门未开放和失败回执写死后状态两处硬伤。执行器现在在 paused/global-fade/freeze/warp 门关闭时只等待且不累计 stuck，故事事件会显式失败关闭；无论成功或失败，回执均从当前 Chest 与任务读取真实 after 状态。下一步重放领取后的 Grandpa 首日候选，确认 15 粒防风草种子进入既有清障、耕地、播种和浇水链，而不是回退到社交或闭门商店。
 - 06:00 商店门已在共享 `ShopObjectiveStageCandidates` 路线层修正：跨图候选现在同时合并第一段 connector 与最终商店服务的 `AllowedNow/AllowedToday`、最晚开门、最早关门和等待成本。商店尚未开门时保留“今日稍后可用”，但不得进入 ready-now 或 Grandpa 当前方向绑定；排序器将其延后，不再先走到闭门商店。该修复同时覆盖购买、售卖、动物购买和蟹笼补给，没有新增分支实现。精确受影响回归 `88/88` 通过；一次宽筛另暴露 4 个与本改动无关的既有 fixture 失败（清障 2、特别订单候选身份 1、浇水耗时旧期望 1），未混入本切片。
 
 ## 当前增量 · Golden Walnut 新档证据归档
@@ -941,9 +941,9 @@
 <!-- BEGIN GENERATED CURRENT CHECKPOINT -->
 ## Machine-generated current checkpoint
 
-- Source commit: `475e550805a71ce0adf3b21d3cdf1dba63aea08d` (generation input; must be an ancestor of current HEAD)
-- Latest evidence: `EVD-338`; generated at: `2026-10-24T09:03:22.5035961+00:00`
-- Catalog: `241 registered / 243 semantic / 240 compiler-bound / 161 five-gate / 66 training-allowlist`
+- Source commit: `e9975645978869a304244ad2e09df72f482fe670` (generation input; must be an ancestor of current HEAD)
+- Latest evidence: `EVD-338`; generated at: `2026-10-24T09:27:26.8699142+00:00`
+- Catalog: `241 registered / 243 semantic / 240 compiler-bound / 162 five-gate / 67 training-allowlist`
 - Execution: `153 product-executor / 2 catalogued-blocked`
 - Native evidence: `322 surfaces / 448 branches / 150 map tokens`; fingerprint: `a2ba3ac0193fa78aece39a1eb4c18cb3c9b3248ea7390194dcfe61605af02d0e`
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `6a7d553cf2d49971acbf1a25d243e45ab8909107f2f245a3b1cc5c280ba0819e`

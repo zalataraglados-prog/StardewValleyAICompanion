@@ -875,6 +875,9 @@ namespace StardewAI.Contracts.Capabilities
                     ["rewards.claim_pot_of_gold"] = VerifiedEvidence(
                         "vanilla_spring_17_Forest_exact_PotOfGold_native_checkAction_full_inventory_year_scaled_GoldCoin_and_LeprechuanHat_debris_conservation_and_shared_pickup_handoff",
                         "EVD-268"),
+                    ["rewards.claim_starter_gift"] = VerifiedEvidence(
+                        "vanilla_owned_FarmHouse_exact_starter_gift_Chest_fresh_snapshot_shared_BFS_native_GameLocation_checkAction_exact_contents_quest_and_empty_giftbox_removal_receipt",
+                        "EVD-342"),
                     ["mining.choose_dwarf_statue_power"] = VerifiedEvidence(
                         "vanilla_mining_mastery_exact_daily_two_offer_rng_all_five_power_projections_native_object_menu_click_and_selected_day_buff_receipt",
                         "EVD-269"),

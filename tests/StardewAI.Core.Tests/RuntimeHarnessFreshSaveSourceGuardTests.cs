@@ -144,6 +144,30 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
     }
 
     [Fact]
+    public void StarterGiftSmokeReusesNativeFreshSaveAndNeverCreatesAFixture()
+    {
+        var root = FindRepositoryRoot();
+        var source = File.ReadAllText(Path.Combine(
+            root,
+            "scripts",
+            "Invoke-RuntimeStarterGiftSmoke.ps1"));
+
+        Assert.Contains("Invoke-RuntimeFreshSaveSmoke.ps1", source, StringComparison.Ordinal);
+        Assert.Contains("-KeepGameRunning", source, StringComparison.Ordinal);
+        Assert.Contains("current_location.starter_gift_claim", source, StringComparison.Ordinal);
+        Assert.Contains("rewards.claim_starter_gift", source, StringComparison.Ordinal);
+        Assert.Contains("before-snapshot.json", source, StringComparison.Ordinal);
+        Assert.Contains("after-snapshot.json", source, StringComparison.Ordinal);
+        Assert.Contains("primitive_verification_status", source, StringComparison.Ordinal);
+        Assert.Contains("Wait-StarterGiftProjection", source, StringComparison.Ordinal);
+        Assert.Contains("Stop-Process -Id $game.Id", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("Start-Process", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("debug.setup", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("SaveGame.Load", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("Remove-Item", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void SequentialQueueAggregateRebindsTheWholeEpisodeStartBoundary()
     {
         var root = FindRepositoryRoot();

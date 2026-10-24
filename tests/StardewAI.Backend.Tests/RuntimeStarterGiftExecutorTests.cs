@@ -15,6 +15,8 @@ public sealed class RuntimeStarterGiftExecutorTests
         Assert.Contains("active.Location.checkAction(", source);
         Assert.Contains("StarterGiftContentsMatch", source);
         Assert.Contains("StarterGiftOutputDeltaMatches", source);
+        Assert.Contains("StarterGiftMovementControlGateOpen", source);
+        Assert.Contains("giftPresentAfter.ToString().ToLowerInvariant()", source);
         Assert.Contains("Game1.player.hasQuest", source);
         Assert.Contains("StarterGiftReceiptMatches", source);
         Assert.DoesNotContain("dumpContents(", source);

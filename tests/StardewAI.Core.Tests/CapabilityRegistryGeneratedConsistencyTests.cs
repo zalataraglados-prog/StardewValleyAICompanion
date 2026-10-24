@@ -189,7 +189,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
                 "minigame.play_slots",
                 "mining.activate_calico_statue", "mining.choose_dwarf_statue_power", "mining.claim_reward_chests", "mining.obtain_skull_key", "mining.reach_depth", "mining.use_elevator",
                 "processing.crack_geode",
-                "rewards.claim_adventure_guild_reward", "rewards.claim_pot_of_gold", "rewards.claim_prize_ticket", "rewards.claim_statue_blessing",
+                "rewards.claim_adventure_guild_reward", "rewards.claim_pot_of_gold", "rewards.claim_prize_ticket", "rewards.claim_starter_gift", "rewards.claim_statue_blessing",
                 "skills.choose_profession", "skills.claim_mastery", "skills.read_books", "social.gift_npc", "social.talk_npc", "social.watch_movie", "story.advance_event", "story.advance_event_minigame", "tailoring.sew_item", "volcano.reach_caldera"
             },
             OptionCapabilityRegistrySource.TrainingAllowlist);
@@ -265,6 +265,7 @@ public sealed class CapabilityRegistryGeneratedConsistencyTests
                 "processing.crack_geode" => "vanilla_all_eight_locked_base_geodes_exact_Blacksmith_Clint_tool_claim_money_capacity_counter_seed_and_output_projection_with_complete_shared_rng_crop_family_and_first_golden_coconut_mutex_contingency",
                 "rewards.claim_adventure_guild_reward" => "vanilla_complete_unclaimed_Data_MonsterSlayerQuests_batch_exact_kill_goal_reward_dialogue_mail_flag_and_cloned_inventory_capacity_projection_native_Gil_interaction",
                 "rewards.claim_pot_of_gold" => "vanilla_spring_17_Forest_exact_PotOfGold_native_checkAction_full_inventory_year_scaled_GoldCoin_and_LeprechuanHat_debris_conservation_and_shared_pickup_handoff",
+                "rewards.claim_starter_gift" => "vanilla_owned_FarmHouse_exact_starter_gift_Chest_fresh_snapshot_shared_BFS_native_GameLocation_checkAction_exact_contents_quest_and_empty_giftbox_removal_receipt",
                 "rewards.claim_prize_ticket" => "vanilla_complete_two_branch_Prize_Ticket_chain_exact_pending_special_order_ticket_and_deterministic_current_four_reward_preview_rolling_route_native_collection_and_single_redemption",
                 "rewards.claim_statue_blessing" => "vanilla_farming_mastery_exact_daily_rng_rain_festival_denominator_all_seven_effect_projections_native_object_action_and_day_buff_receipt",
                 "skills.choose_profession" => "all_30_vanilla_professions_five_skills_level_5_and_both_level_10_branches_exact_live_menu_projection_shared_level_up_completion_persistent_profession_pending_level_menu_and_immediate_health_stamina_receipts",

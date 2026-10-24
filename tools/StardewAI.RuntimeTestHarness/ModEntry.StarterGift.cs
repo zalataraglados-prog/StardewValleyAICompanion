@@ -191,6 +191,22 @@ public sealed partial class ModEntry
             return;
         }
 
+        if (Game1.eventUp && Game1.CurrentEvent is { } currentEvent)
+        {
+            CompleteStarterGiftClaim(
+                active,
+                false,
+                "starter_gift_interrupted_by_story_event:" + currentEvent.id);
+            return;
+        }
+        if (!StarterGiftMovementControlGateOpen())
+        {
+            StopAllMovement("starter_gift_native_control_gate_settling");
+            active.StuckTicks = 0;
+            active.LastPosition = Game1.player.Position;
+            return;
+        }
+
         var playerTile = Game1.player.TilePoint;
         if (playerTile != active.LastObservedTile)
         {
@@ -309,6 +325,13 @@ public sealed partial class ModEntry
         TryApplySmapiRightButtonOverride(false, out _);
         activeStarterGiftClaim = null;
         var request = active.Pending.Request;
+        var giftPresentAfter = active.Location.objects.TryGetValue(
+            active.Target.ToVector2(),
+            out var targetValue) &&
+            targetValue is Chest targetChest &&
+            targetChest.giftbox.Value &&
+            targetChest.giftboxIsStarterGift.Value;
+        var questPresentAfter = Game1.player.hasQuest(request.QuestId);
         var verificationReasons = verified
             ? new[] { "shared_bfs_reached_exact_adjacent_stand", "native_GameLocation_checkAction_invoked_exact_starter_gift", "native_dumpContents_added_exact_inventory_outputs_and_layout_quest", "empty_starter_gift_removed" }
             : reasons.Length == 0 ? new[] { "starter_gift_post_state_mismatch" } : reasons;
@@ -321,6 +344,9 @@ public sealed partial class ModEntry
             OptionId = request.OptionId,
             Status = verified ? "applied" : "blocked",
             FeedbackAvailable = true,
+            TargetLocation = active.Location.NameOrUniqueName,
+            TargetTileX = active.Target.X,
+            TargetTileY = active.Target.Y,
             ActualTicks = active.ElapsedTicks,
             StartedAt = active.StartedAt,
             CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
@@ -333,11 +359,18 @@ public sealed partial class ModEntry
             BlockReasons = verified ? Array.Empty<string>() : verificationReasons,
             ChangedFacts = new[]
             {
-                new SimulatedFactChange { Path = "current_location.starter_gift_claim.exact_starter_gift_present", Before = "true", After = "false" },
-                new SimulatedFactChange { Path = "player.quests[" + request.QuestId + "]", Before = active.QuestPresentBefore.ToString().ToLowerInvariant(), After = Game1.player.hasQuest(request.QuestId).ToString().ToLowerInvariant() }
+                new SimulatedFactChange { Path = "current_location.starter_gift_claim.exact_starter_gift_present", Before = "true", After = giftPresentAfter.ToString().ToLowerInvariant() },
+                new SimulatedFactChange { Path = "player.quests[" + request.QuestId + "]", Before = active.QuestPresentBefore.ToString().ToLowerInvariant(), After = questPresentAfter.ToString().ToLowerInvariant() }
             }
         });
     }
+
+    private static bool StarterGiftMovementControlGateOpen() =>
+        !Game1.paused &&
+        !Game1.globalFade &&
+        !Game1.freezeControls &&
+        !Game1.isWarping &&
+        Game1.player.freezePause <= 0;
 
     private static string StarterGiftRequestedEffect(TrainingExecutionRequest request) =>
         "current_location.starter_gift_claim.exact_starter_gift_present=false;quest_id=" + request.QuestId + ";expected_outputs=" + request.ExpectedOutputItemsJson;

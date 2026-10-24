@@ -12,7 +12,7 @@ namespace StardewAI.Core.Tests;
 public sealed class StarterGiftMainlineTests
 {
     [Fact]
-    public void StarterGiftIsExecutableButRemainsOutsideTrainingUntilRuntimeEvidenceExists()
+    public void StarterGiftIsFiveGateVerifiedAndTrainingEligible()
     {
         var declaration = OptionCapabilityRegistrySource.GetRequired("rewards.claim_starter_gift");
 
@@ -20,8 +20,13 @@ public sealed class StarterGiftMainlineTests
         Assert.True(declaration.HarnessDispatchSupported);
         Assert.True(declaration.ProductExecutorSupported);
         Assert.True(declaration.AutonomousCandidateEnabled);
-        Assert.False(TrainingEligibilityPolicy.IsEligible(declaration));
-        Assert.Contains(TrainingAdmissionExclusionReason.RuntimeEvidenceMissing, declaration.TrainingExclusionReasons);
+        Assert.True(TrainingEligibilityPolicy.IsEligible(declaration));
+        Assert.Equal(new[] { "EVD-342" }, declaration.ReadEvidenceIds);
+        Assert.Equal(new[] { "EVD-342" }, declaration.CandidateEvidenceIds);
+        Assert.Equal(new[] { "EVD-342" }, declaration.CompilerEvidenceIds);
+        Assert.Equal(new[] { "EVD-342" }, declaration.RuntimeEvidenceIds);
+        Assert.Equal(new[] { "EVD-342" }, declaration.OutputEvidenceIds);
+        Assert.Empty(declaration.TrainingExclusionReasons);
         Assert.Equal(
             ImplementationEngineIds.InventoryTransfer,
             OptionImplementationCatalog.GetRequired(declaration.OptionId).PrimaryEngineId);
