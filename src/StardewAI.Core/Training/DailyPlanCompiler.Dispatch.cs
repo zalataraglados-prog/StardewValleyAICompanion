@@ -125,6 +125,7 @@ namespace StardewAI.Core.Training
                 ["player.customize"] = new[] { "route_connector_tile", "customize_player" },
                 ["processing.crack_geode"] = new[] { "route_connector_tile", "crack_geode" },
                 ["rewards.claim_pot_of_gold"] = new[] { "claim_pot_of_gold" },
+                ["rewards.claim_starter_gift"] = new[] { "claim_starter_gift" },
                 ["mining.choose_dwarf_statue_power"] = new[] { "choose_dwarf_statue_power" },
                 ["rewards.claim_statue_blessing"] = new[] { "claim_statue_blessing" },
                 ["world.rotate_house_plant"] = new[] { "rotate_house_plant" },
@@ -524,6 +525,14 @@ namespace StardewAI.Core.Training
                     StringComparer.Ordinal))
             {
                 return ClaimPotOfGoldSteps(candidate);
+            }
+
+            if (candidate.Kind == "claim_starter_gift" &&
+                OptionCandidateCompilerKinds["rewards.claim_starter_gift"].Contains(
+                    candidate.Kind,
+                    StringComparer.Ordinal))
+            {
+                return ClaimStarterGiftSteps(candidate);
             }
 
             if (candidate.Kind == "choose_dwarf_statue_power" &&

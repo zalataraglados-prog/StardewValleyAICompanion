@@ -4,6 +4,13 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已完成 v10 之后的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已按 current authority 冻结；当前唯一施工项为 `complete_master_angler` 顶层 dependency、日历窗口与 coverage 接线。P0/P1 共享 correctness blocker 可临时中断，但不得静默改序或并行展开多个 root method。
 
+## 当前增量 · 新档开局礼盒透明执行链
+
+- 真实 Spring 1 旧快照只有商店、社交和小游戏候选，缺少领取农舍开局礼盒这一必经前置，导致 Grandpa 最大分数目标只能在低价值候选中选择。现已新增唯一高层项 `rewards.claim_starter_gift`，并贯通透明读取、候选生成、日计划、fresh 编译重绑和 Product Executor 共用的原生运行状态机。
+- 透明桥只在当前玩家拥有的 `FarmHouse` 中发布唯一 `giftbox + starterGift` Chest，绑定精确 tile/runtime/item 身份、实时 contents、背包容量、相邻站位和农场类型对应任务（普通农场 `6`、Meadowlands `132`）。运行时只调用原生 `GameLocation.checkAction`，由 `Chest.dumpContents` 完成任务、背包/举起物品和空礼盒移除；禁止直接改 Chest、背包或任务。
+- 该项已进入 `earn_money` 的 fresh-save 支撑转移，聚焦 Core 回归 `58/58`、运行时源约束 `1/1`、catalog reconciliation `585/585` 且 blocking `0`。注册项总数为 `241`；本项当前仍是 `RegisteredOnly`，没有训练证据 ID，也不在训练 allowlist。
+- 现存真实 Spring 1 快照生成于该字段加入之前，不能反向伪造 `current_location.starter_gift_claim`。下一步必须用更新后的桥在隔离新档采一组领取前/后 full snapshot 和原生回执；只有读取、候选、编译、运行、输出五门都由同一 fresh 状态闭合后，才允许提升证据等级。随后重新回放新档首日排序，确认礼盒领取后进入作物生产而不是回退到社交；之后再修正 06:00 商店候选的上游营业时间门。
+
 ## 当前增量 · Golden Walnut 新档证据归档
 
 - LiveTrainingLoop 新增显式 `--capture-golden-walnut-fresh-save-evidence`。该模式必须同时提供稳定 `--run-id`、最大 Grandpa 分数目标和 `--snapshot-artifact-mode content_addressed_gzip`；默认训练与普通 smoke 不受影响。
@@ -933,12 +940,12 @@
 <!-- BEGIN GENERATED CURRENT CHECKPOINT -->
 ## Machine-generated current checkpoint
 
-- Source commit: `e2dc437b4e8895fa8f4bdfd51d6ef3eb458740e1` (generation input; must be an ancestor of current HEAD)
-- Latest evidence: `EVD-338`; generated at: `2026-10-23T03:06:00.4277252+00:00`
-- Catalog: `240 registered / 242 semantic / 239 compiler-bound / 161 five-gate / 66 training-allowlist`
-- Execution: `152 product-executor / 2 catalogued-blocked`
+- Source commit: `475e550805a71ce0adf3b21d3cdf1dba63aea08d` (generation input; must be an ancestor of current HEAD)
+- Latest evidence: `EVD-338`; generated at: `2026-10-24T09:03:22.5035961+00:00`
+- Catalog: `241 registered / 243 semantic / 240 compiler-bound / 161 five-gate / 66 training-allowlist`
+- Execution: `153 product-executor / 2 catalogued-blocked`
 - Native evidence: `322 surfaces / 448 branches / 150 map tokens`; fingerprint: `a2ba3ac0193fa78aece39a1eb4c18cb3c9b3248ea7390194dcfe61605af02d0e`
-- Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `897269ec75b9db73846ee1afad3696faf66b4b1c717ab6787879e503f392106b`
+- Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `6a7d553cf2d49971acbf1a25d243e45ab8909107f2f245a3b1cc5c280ba0819e`
 <!-- END GENERATED CURRENT CHECKPOINT -->
 
 ## 历史记录 · 2026-10-04 Full Shipment 普通作物运行时样本闭合

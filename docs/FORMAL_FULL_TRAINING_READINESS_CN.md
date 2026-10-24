@@ -4,6 +4,12 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已闭合从 v10 最终隔离存档开始的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已通过 current-authority 复核并冻结；当前唯一施工项是 `complete_master_angler` 顶层依赖、日历窗口与 coverage 接线。Money Exit Gate 标准不降低，但 Money 已回到复杂度队列第 11 位。
 
+## 当前增量 · 新档礼盒链不改变训练准入
+
+`rewards.claim_starter_gift` 已完成透明投影、候选、日计划、fresh 编译和原生 `GameLocation.checkAction` 执行路径，并作为 `earn_money` 的 fresh-save 支撑转移。实现锁定 owned FarmHouse、唯一 starter gift Chest、精确 contents、背包容量、相邻站位和农场类型任务；运行时不得直接写 Chest、库存或任务。静态 reconciliation 为 `585/585`、blocking `0`，聚焦回归通过。
+
+这仍不构成五门证据闭环。已有 Spring 1 原生快照早于 `current_location.starter_gift_claim` 字段，不能用于证明新读取或输出；当前项保持 `RegisteredOnly`、无 evidence ID、无训练 allowlist 准入。正式训练状态继续为 false。下一准入动作是从更新后的透明桥采集同一隔离新档的领取前/后 full snapshot 与原生回执，再按 fresh 状态重放 Grandpa 首日候选队列；禁止用合成 fixture 或补写旧快照提升证据等级。
+
 ## 当前准入状态 · 2026-10-21
 
 正式训练准入没有变化：

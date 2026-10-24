@@ -764,6 +764,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "shared BFS reaches one exact transparent adjacent stand", "one native GameLocation.checkAction removes the Pot of Gold", "the exact year-scaled GoldCoin and LeprechuanHat rewards remain conserved across inventory and ordinary debris pickup" },
                 new[] { "block_not_spring_17_forest", "block_exact_pot_missing_or_drifted", "block_no_adjacent_stand", "block_player_or_menu_busy", "block_native_reward_debris_receipt_mismatch", "block_direct_object_inventory_or_debris_mutation" }));
 
+            Register(Option("rewards.claim_starter_gift", "rewards", "Claim the exact owned-farmhouse starter gift through its native chest interaction",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "current_location.objects", "menus.active_menu" },
+                new[] { "shared BFS reaches one exact transparent adjacent stand", "one native GameLocation.checkAction invokes the starter gift Chest.dumpContents branch", "the exact contents and farm-layout quest are received before the empty giftbox disappears" },
+                new[] { "block_not_owned_farmhouse", "block_exact_starter_gift_missing_empty_or_ambiguous", "block_inventory_cannot_accept_all_outputs", "block_expected_starter_quest_already_present", "block_no_adjacent_stand", "block_player_or_menu_busy", "block_native_inventory_quest_or_chest_receipt_mismatch", "block_direct_chest_inventory_or_quest_mutation" }));
+
             Register(Option("mining.choose_dwarf_statue_power", "mining", "Choose one exact daily power offered by a Dwarf King Statue",
                 OptionBehaviorCategories.LongTermStrategic,
                 CompilerResponsibilities.FullActionExpansion,

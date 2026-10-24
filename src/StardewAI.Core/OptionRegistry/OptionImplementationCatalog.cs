@@ -157,6 +157,7 @@ public static class OptionImplementationCatalog
         "rewards.claim_prize_ticket",
         "skills.claim_mastery",
         "rewards.claim_pot_of_gold",
+        "rewards.claim_starter_gift",
         "executor.ship_inventory_item_to_bin",
         "executor.transfer_material",
         "executor.manage_grange_display",

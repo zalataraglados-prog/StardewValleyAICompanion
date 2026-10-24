@@ -89,6 +89,7 @@ namespace StardewAI.Core.OptionRegistry
                 ["player.customize"] = PlayerCustomizationCandidates,
                 ["processing.crack_geode"] = GeodeProcessingCandidates,
                 ["rewards.claim_pot_of_gold"] = (snapshot, _) => PotOfGoldCandidates(snapshot),
+                ["rewards.claim_starter_gift"] = (snapshot, _) => StarterGiftCandidates(snapshot),
                 ["mining.choose_dwarf_statue_power"] = (snapshot, _) => DwarfKingStatuePowerCandidates(snapshot),
                 ["rewards.claim_statue_blessing"] = (snapshot, _) => StatueBlessingCandidates(snapshot),
                 ["world.rotate_house_plant"] = (snapshot, _) => HousePlantRotationCandidates(snapshot),

@@ -245,6 +245,7 @@ namespace StardewAI.Core.Execution
                 "customize_player" => "executor.customize_player",
                 "crack_geode" => "executor.crack_geode",
                 "claim_pot_of_gold" => "rewards.claim_pot_of_gold",
+                "claim_starter_gift" => "rewards.claim_starter_gift",
                 "choose_dwarf_statue_power" => "mining.choose_dwarf_statue_power",
                 "claim_statue_blessing" => "rewards.claim_statue_blessing",
                 "rotate_house_plant" => "world.rotate_house_plant",

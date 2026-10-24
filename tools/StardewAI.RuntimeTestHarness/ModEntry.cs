@@ -138,6 +138,7 @@ public sealed partial class ModEntry : Mod
     private ActiveGingerIslandInteraction? activeGingerIslandInteraction;
     private ActiveMineRewardChest? activeMineRewardChest;
     private ActivePotOfGoldClaim? activePotOfGoldClaim;
+    private ActiveStarterGiftClaim? activeStarterGiftClaim;
     private ActiveDwarfKingStatueChoice? activeDwarfKingStatueChoice;
     private ActiveStatueBlessingClaim? activeStatueBlessingClaim;
     private readonly NativeObjectInteractionDomainState nativeObjectInteractions = new();
@@ -642,6 +643,7 @@ public sealed partial class ModEntry : Mod
         TickGingerIslandInteraction();
         TickMineRewardChest();
         TickPotOfGoldClaim();
+        TickStarterGiftClaim();
         TickDwarfKingStatuePowerChoice();
         TickStatueBlessingClaim();
         TickNativeObjectInteractionDomain();
@@ -2163,6 +2165,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "rewards.claim_starter_gift")
+            {
+                StartStarterGiftClaim(pending);
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_dwarf_king_statue")
             {
                 pending.Completion.SetResult(ExecuteSetupDwarfKingStatueFixture(pending.Request));
@@ -2510,6 +2518,7 @@ public sealed partial class ModEntry : Mod
             activeGarbageCanRummage = null;
             activeMineRewardChest = null;
             activePotOfGoldClaim = null;
+            activeStarterGiftClaim = null;
             activeDwarfKingStatueChoice = null;
             activeCalicoStatueFixture = null;
             activeCalicoStatue = null;
@@ -2853,6 +2862,7 @@ public sealed partial class ModEntry : Mod
             activeGingerIslandInteraction is not null ||
             activeMineRewardChest is not null ||
             activePotOfGoldClaim is not null ||
+            activeStarterGiftClaim is not null ||
             activeDwarfKingStatueChoice is not null ||
             activeStatueBlessingClaim is not null ||
             nativeObjectInteractions.IsActive ||
