@@ -149,6 +149,7 @@ public sealed class ExecutorInputLifecycleSourceGuardTests
             "ModEntry.State.cs");
 
         Assert.Contains("TryAdvanceExecutorPath(", action, StringComparison.Ordinal);
+        Assert.Contains("allowRemovableObstacles: false", action, StringComparison.Ordinal);
         Assert.Contains("ExecutorPathCursor PathCursor", state, StringComparison.Ordinal);
         Assert.DoesNotContain("action.PathIndex", action, StringComparison.Ordinal);
         Assert.DoesNotContain("action.StuckTicks", action, StringComparison.Ordinal);

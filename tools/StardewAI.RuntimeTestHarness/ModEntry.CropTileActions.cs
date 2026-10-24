@@ -88,7 +88,9 @@ public sealed partial class ModEntry
             location,
             target,
             maxMovementTiles,
-            out blockReason);
+            out blockReason,
+            avoidSoftObstacles: true,
+            allowRemovableObstacles: false);
     }
 
     private void TickAdjacentTileAction()
