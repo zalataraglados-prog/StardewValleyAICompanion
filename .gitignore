@@ -5,6 +5,7 @@ obj/
 __pycache__/
 .pytest_cache/
 artifacts/
+/local-data/
 TestResults/
 .worker-tasks/
 /scratch/
