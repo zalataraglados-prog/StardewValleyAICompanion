@@ -1,5 +1,6 @@
 using System.Text.Json;
 using StardewAI.Contracts.State;
+using StardewAI.Core.Infrastructure;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -48,7 +49,9 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
                     snapshot,
                     "current_location",
                     "site_preparation_context");
-            Require(ReadString(context, "projection_status") ==
+            Require(ReadString(context, "schema_version") ==
+                        "farm_site_preparation_context.v2" &&
+                    ReadString(context, "projection_status") ==
                         "complete_bounded_current_farm_region" &&
                     ReadString(context, "location_id") == "Farm",
                 "Money Revenue crop-production Teacher layout projection is incomplete.");
@@ -72,7 +75,23 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
                 new LayoutTile(
                     ReadInt(value, "tile_x"),
                     ReadInt(value, "tile_y"),
-                    ReadString(value, "status"))).ToArray();
+                    ReadString(value, "status"),
+                    ReadRequiredBool(value, "map_passable"),
+                    ReadRequiredBool(
+                        value,
+                        "native_blocked_without_characters"),
+                    ReadRequiredBool(
+                        value,
+                        "watering_can_refill_source"),
+                    ReadRequiredBool(
+                        value,
+                        "watering_refill_approach_standable"))).ToArray();
+            Require(tiles.All(value =>
+                    value.WateringRefillApproachStandable ==
+                    (value.MapPassable &&
+                     !value.NativeBlockedWithoutCharacters)),
+                "Money Revenue crop-production Teacher layout refill " +
+                "approach facts are internally inconsistent.");
             var expectedCount = checked((maxX - minX + 1) *
                 (maxY - minY + 1));
             Require(tiles.Length == expectedCount &&
@@ -97,6 +116,79 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
                 tiles));
         }
         return result.ToArray();
+    }
+
+    private static bool HasVerifiedWateringRefillRoute(
+        IReadOnlyCollection<LayoutTile> tiles,
+        IReadOnlyCollection<LayoutTile> viableTiles,
+        int mapWidth,
+        int mapHeight,
+        int anchorX,
+        int anchorY)
+    {
+        var start = viableTiles
+            .Where(value => value.WateringRefillApproachStandable)
+            .OrderBy(value => Manhattan(
+                value.TileX,
+                value.TileY,
+                anchorX,
+                anchorY))
+            .ThenBy(value => value.TileY)
+            .ThenBy(value => value.TileX)
+            .FirstOrDefault();
+        if (start is null)
+            return false;
+
+        var blocked = tiles
+            .Where(value => !value.WateringRefillApproachStandable)
+            .Select(value => RouteGridPathfinder.Key(
+                value.TileX,
+                value.TileY))
+            .ToHashSet(StringComparer.Ordinal);
+        var noExtraBlockedTiles = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var source in tiles.Where(value =>
+                     value.WateringCanRefillSource))
+        {
+            foreach (var stand in RouteGridPathfinder.Neighbors(
+                         source.TileX,
+                         source.TileY))
+            {
+                if (!RouteGridPathfinder.InBounds(
+                        stand.X,
+                        stand.Y,
+                        mapWidth,
+                        mapHeight) ||
+                    blocked.Contains(RouteGridPathfinder.Key(
+                        stand.X,
+                        stand.Y)))
+                {
+                    continue;
+                }
+
+                if (RouteGridPathfinder.ShortestPathLength(
+                        start.TileX,
+                        start.TileY,
+                        stand.X,
+                        stand.Y,
+                        mapWidth,
+                        mapHeight,
+                        blocked,
+                        noExtraBlockedTiles).HasValue)
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static bool ReadRequiredBool(JsonElement value, string name)
+    {
+        var result = ReadOptionalBool(value, name);
+        Require(result.HasValue,
+            "Money Revenue crop-production Teacher layout tile is missing " +
+            name + ".");
+        return result.GetValueOrDefault();
     }
 
     private static MoneyRevenueCropPlantingTile[] SelectCompactTiles(
@@ -175,5 +267,12 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
         MoneyRevenueCropTeacherLayoutSnapshotBinding Binding,
         LayoutTile[] Tiles);
 
-    private sealed record LayoutTile(int TileX, int TileY, string Status);
+    private sealed record LayoutTile(
+        int TileX,
+        int TileY,
+        string Status,
+        bool MapPassable,
+        bool NativeBlockedWithoutCharacters,
+        bool WateringCanRefillSource,
+        bool WateringRefillApproachStandable);
 }

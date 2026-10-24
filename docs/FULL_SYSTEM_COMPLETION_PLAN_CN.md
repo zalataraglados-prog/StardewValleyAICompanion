@@ -20,6 +20,8 @@ Spring 1 新档首轮排序暴露的不是社交评分错误，而是上游缺�
 
 下一固定执行顺序为：确认训练位置满足空间门 -> 运行一次受限长期新档并生成 `golden-walnut-fresh-save-source-schedule.json` -> 将该 schedule 交给现有 timeline proof 和 Master Angler prerequisite audit -> audit 通过后采集同一连续存档中的 Gourmand 第 2、3 单回执。任何一步失败都从耐久 manifest/报告诊断，不通过增大动作数、手填日期或忽略缺失跃迁绕过。
 
+首次执行该顺序的 `golden-walnut-source-schedule-v1-20261024-222622` 推进到 Spring 17 后，因 Teacher 将当前 `3/40` 水量错误外推为整季供给而停止；当时库存仍有 `(O)472 x14`。修正版把原生补水源与相邻站立事实纳入 `farm_site_preparation_context.v2`，由共享 `RouteGridPathfinder` 提供唯一离线连通证明，实时执行仍使用既有 Runtime Harness BFS。旧 run 已有五次失败造成的 episode 间隙，只保留诊断价值；计划顺序因此不是“从断点续跑”，而是“提交修复并通过回归 -> 新隔离存档重跑 -> 取得无间隙 manifest/source schedule -> 重建 audit”。manifest 无效现在必须结构化退出，不能以异常丢失最终报告，也不能放宽连续性门。
+
 ## 当前记录 · 2026-10-21 11 核心复杂度顺序
 
 Money 有界连续段、Community Center、Pet Love、Skull Key 和 Full Shipment current-authority 复核均已验收。剩余固定顺序为：`complete_master_angler`（当前） -> `obtain_rusty_key` -> `raise_friendships` -> `complete_museum_collection` -> `raise_skill_levels` -> `marriage_and_house_upgrade` -> `earn_money`。排序按当前增量工程成本，而非玩法名称或 criterion 数量；完整依据、改序条件和 WIP 约束以 `CURRENT_STATUS_CN.md` 第 6 节为准。

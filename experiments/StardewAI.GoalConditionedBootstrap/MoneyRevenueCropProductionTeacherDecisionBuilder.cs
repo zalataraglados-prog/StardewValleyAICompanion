@@ -8,7 +8,7 @@ namespace StardewAI.GoalConditionedBootstrap;
 public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
 {
     public const string SelectionPolicy =
-        "authoritative_transparent_crop_net_revenue_after_water_budget_then_earliest_terminal_v2";
+        "authoritative_transparent_crop_net_revenue_after_verified_refill_budget_then_earliest_terminal_v3";
 
     public static MoneyRevenueCropProductionDecisionRequest Build(
         string requestPath)
@@ -60,11 +60,20 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
             .ToArray();
         Require(viableTiles.Length > 0,
             "Money Revenue crop-production Teacher found no supported Farm tiles.");
+        var anchor = ReadFarmAnchor(snapshot, viableTiles);
+        var wateringRefillRouteVerified = HasVerifiedWateringRefillRoute(
+            layoutTiles,
+            viableTiles,
+            mapWidth,
+            mapHeight,
+            anchor.TileX,
+            anchor.TileY);
 
         var evaluations = EvaluateCandidates(
             snapshot,
             request.MaximumTileCount,
-            viableTiles.Length);
+            viableTiles.Length,
+            wateringRefillRouteVerified);
         var selected = evaluations
             .Where(value => value.Admitted)
             .OrderByDescending(value => value.MinimumNetRevenue)
@@ -90,7 +99,6 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
             Selected = value.SeedId == selected.SeedId &&
                 value.ShopId == selected.ShopId
         }).ToArray();
-        var anchor = ReadFarmAnchor(snapshot, viableTiles);
         var tiles = SelectCompactTiles(
             viableTiles,
             selected.TileCount,

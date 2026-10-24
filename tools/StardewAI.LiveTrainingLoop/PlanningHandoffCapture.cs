@@ -332,7 +332,7 @@ public static class PlanningHandoffCapture
         var expectedTileCount = checked(
             (maxX - minX + 1) * (maxY - minY + 1));
         if (ReadString(context, "schema_version") !=
-                "farm_site_preparation_context.v1" ||
+                "farm_site_preparation_context.v2" ||
             ReadString(context, "projection_status") !=
                 "complete_bounded_current_farm_region" ||
             ReadString(context, "location_id") != "Farm" ||

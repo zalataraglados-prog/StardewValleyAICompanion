@@ -13,7 +13,8 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
         EvaluateCandidates(
             SnapshotEnvelope snapshot,
             int maximumTileCount,
-            int viableTileCount)
+            int viableTileCount,
+            bool wateringRefillRouteVerified)
     {
         var supply = ReadMaterialSupply(snapshot);
         var availableByItem = supply.Quantities.ToDictionary(
@@ -119,8 +120,10 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
                 var wateringTileLimit = !needsWatering || wateringDays == 0 ||
                     wateringSupply.Bottomless
                         ? int.MaxValue
-                        : wateringSupply.AvailableActionsWithoutRefill /
-                            wateringDays;
+                        : wateringRefillRouteVerified
+                            ? wateringSupply.Capacity
+                            : wateringSupply.AvailableActionsWithoutRefill /
+                                wateringDays;
                 var tileCount = Math.Min(
                     supplyLimitedTileCount,
                     wateringTileLimit);
@@ -149,7 +152,7 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
                     lastHarvest,
                     checked(wateringDays * Math.Max(0, tileCount)),
                     wateringSupply.AvailableActionsWithoutRefill,
-                    false,
+                    wateringRefillRouteVerified,
                     tileCount < supplyLimitedTileCount,
                     reasons.Count == 0,
                     reasons.Distinct(StringComparer.Ordinal).ToArray(),
@@ -176,6 +179,7 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
             "Money Revenue crop-production Teacher watering-can state is invalid.");
         return new WateringSupply(
             bottomless ? int.MaxValue : waterLeft,
+            bottomless ? int.MaxValue : capacity,
             bottomless);
     }
 
@@ -255,5 +259,6 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
 
     private sealed record WateringSupply(
         int AvailableActionsWithoutRefill,
+        int Capacity,
         bool Bottomless);
 }

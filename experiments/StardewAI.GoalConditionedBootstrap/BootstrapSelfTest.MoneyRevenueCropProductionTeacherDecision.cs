@@ -75,15 +75,15 @@ internal static partial class BootstrapSelfTest
                     value.Selected &&
                     value.ShopId == "SeedShop" &&
                     value.SeedUnitPrice == 80 &&
-                    value.RequiredWateringActionCount == 36 &&
+                    value.RequiredWateringActionCount == 60 &&
                     value.AvailableWateringActionsWithoutRefill == 40 &&
-                    !value.WateringRefillRouteVerified &&
-                    value.WateringCapacityLimited) &&
+                    value.WateringRefillRouteVerified &&
+                    !value.WateringCapacityLimited) &&
                 decision.Commitments.Length == 1 &&
                 decision.Commitments[0].SeedId == "474" &&
-                decision.Commitments[0].TileCount == 3 &&
-                decision.Commitments[0].Tiles.Length == 3 &&
-                decision.Commitments[0].Tiles.Distinct().Count() == 3 &&
+                decision.Commitments[0].TileCount == 5 &&
+                decision.Commitments[0].Tiles.Length == 5 &&
+                decision.Commitments[0].Tiles.Distinct().Count() == 5 &&
                 receipt.SchemaVersion ==
                     "money_revenue_crop_production_decision_receipt.v2" &&
                 receipt.AllCommitmentsAccepted &&
@@ -91,6 +91,78 @@ internal static partial class BootstrapSelfTest
                     CurrentTeacherFrontierSupport.HashFile(
                         teacherRequestPath),
             "Money crop Teacher did not select and bind the conservative cauliflower plan.");
+
+        var lowWaterSourcePath = Path.Combine(
+            root,
+            "low-water-source-snapshot.json");
+        var lowWaterLayoutPath = Path.Combine(
+            root,
+            "low-water-farm-layout-snapshot.json");
+        Write(lowWaterSourcePath,
+            MoneyCropTeacherSourceSnapshot(3, "472", 14));
+        Write(lowWaterLayoutPath,
+            MoneyCropTeacherLayoutSnapshot(3, true, "472", 14));
+        var lowWaterRequestPath = Path.Combine(
+            root,
+            "low-water-teacher-request.json");
+        Write(lowWaterRequestPath,
+            new MoneyRevenueCropProductionTeacherRequest
+            {
+                SnapshotPath = lowWaterSourcePath,
+                FarmLayoutSnapshotPaths = new[] { lowWaterLayoutPath },
+                DecisionId = "teacher.money.crop.spring7.low-water-refill",
+                DecisionRecordedAt = "2026-10-18T00:00:00Z",
+                MaximumTileCount = 8,
+                MaxQueueItemCount = 8
+            });
+        var lowWaterDecision =
+            MoneyRevenueCropProductionTeacherDecisionBuilder.Build(
+                lowWaterRequestPath);
+        Require(lowWaterDecision.TeacherCandidateEvaluations.Any(value =>
+                    value.SeedId == "472" &&
+                    value.ExistingSeedQuantity == 14 &&
+                    value.Admitted &&
+                    value.AvailableWateringActionsWithoutRefill == 3 &&
+                    value.WateringRefillRouteVerified &&
+                    value.TileCount == 8),
+            "A reachable native refill source did not admit a low-water crop plan.");
+
+        var noRefillLayoutPath = Path.Combine(
+            root,
+            "low-water-no-refill-layout-snapshot.json");
+        Write(noRefillLayoutPath,
+            MoneyCropTeacherLayoutSnapshot(
+                3,
+                includeRefillSource: false,
+                existingSeedId: "472",
+                existingSeedQuantity: 14));
+        var noRefillRequestPath = Path.Combine(
+            root,
+            "low-water-no-refill-request.json");
+        Write(noRefillRequestPath,
+            new MoneyRevenueCropProductionTeacherRequest
+            {
+                SnapshotPath = lowWaterSourcePath,
+                FarmLayoutSnapshotPaths = new[] { noRefillLayoutPath },
+                DecisionId = "teacher.money.crop.spring7.low-water-no-refill",
+                DecisionRecordedAt = "2026-10-18T00:00:00Z",
+                MaximumTileCount = 8,
+                MaxQueueItemCount = 8
+            });
+        var rejected = false;
+        try
+        {
+            _ = MoneyRevenueCropProductionTeacherDecisionBuilder.Build(
+                noRefillRequestPath);
+        }
+        catch (InvalidDataException ex)
+        {
+            rejected = ex.Message.Contains(
+                "watering_can_supply_without_verified_refill_insufficient",
+                StringComparison.Ordinal);
+        }
+        Require(rejected,
+            "A low-water crop plan without native refill evidence was admitted.");
 
         var tampered = JsonSerializer.Deserialize<
             MoneyRevenueCropProductionDecisionRequest>(
@@ -100,7 +172,7 @@ internal static partial class BootstrapSelfTest
             new MoneyRevenueCropPlantingTile(99, 99);
         var tamperedPath = Path.Combine(root, "tampered-decision.json");
         Write(tamperedPath, tampered);
-        var rejected = false;
+        rejected = false;
         try
         {
             _ = MoneyRevenueCropProductionDecisionReceiptBuilder.Build(
@@ -162,7 +234,7 @@ internal static partial class BootstrapSelfTest
         {
             site_preparation_context = MoneyCropRuntimeField(new
             {
-                schema_version = "farm_site_preparation_context.v1",
+                schema_version = "farm_site_preparation_context.v2",
                 projection_status =
                     "complete_bounded_current_farm_region",
                 location_id = "Farm",
@@ -180,7 +252,11 @@ internal static partial class BootstrapSelfTest
                 {
                     tile_x = index % 3,
                     tile_y = index / 3,
-                    status = "ready_to_till"
+                    status = "ready_to_till",
+                    map_passable = true,
+                    native_blocked_without_characters = false,
+                    watering_can_refill_source = false,
+                    watering_refill_approach_standable = true
                 }).ToArray()
             })
         }, JsonDefaults.Options);
@@ -211,7 +287,10 @@ internal static partial class BootstrapSelfTest
             "A crop-production Teacher layout with incomplete Farm coverage was admitted.");
     }
 
-    private static SnapshotEnvelope MoneyCropTeacherSourceSnapshot()
+    private static SnapshotEnvelope MoneyCropTeacherSourceSnapshot(
+        int wateringCanWaterLeft = 40,
+        string existingSeedId = "476",
+        int existingSeedQuantity = 1)
     {
         var snapshot = MoneyCropProductionSnapshot();
         var state = snapshot.State.ToDictionary(
@@ -239,7 +318,7 @@ internal static partial class BootstrapSelfTest
                 slot_index = 1,
                 runtime_type = "StardewValley.Tools.WateringCan",
                 upgrade_level = 0,
-                water_left = 40,
+                water_left = wateringCanWaterLeft,
                 capacity = 40,
                 is_bottomless = false,
                 farmer_has_watering_can_enchantment = false,
@@ -252,8 +331,8 @@ internal static partial class BootstrapSelfTest
                 new
                 {
                     slot_index = 0,
-                    qualified_item_id = "(O)476",
-                    stack = 1
+                    qualified_item_id = "(O)" + existingSeedId,
+                    stack = existingSeedQuantity
                 }
             }),
             seed_inventory = MoneyCropRuntimeField(new[]
@@ -261,8 +340,8 @@ internal static partial class BootstrapSelfTest
                 new
                 {
                     slot_index = 0,
-                    qualified_item_id = "(O)476",
-                    stack = 1
+                    qualified_item_id = "(O)" + existingSeedId,
+                    stack = existingSeedQuantity
                 }
             })
         }, JsonDefaults.Options);
@@ -309,8 +388,8 @@ internal static partial class BootstrapSelfTest
                             new
                             {
                                 slot_index = 0,
-                                qualified_item_id = "(O)476",
-                                stack = 1
+                                qualified_item_id = "(O)" + existingSeedId,
+                                stack = existingSeedQuantity
                             }
                         }
                     }
@@ -474,9 +553,16 @@ internal static partial class BootstrapSelfTest
         return snapshot;
     }
 
-    private static SnapshotEnvelope MoneyCropTeacherLayoutSnapshot()
+    private static SnapshotEnvelope MoneyCropTeacherLayoutSnapshot(
+        int wateringCanWaterLeft = 40,
+        bool includeRefillSource = true,
+        string existingSeedId = "476",
+        int existingSeedQuantity = 1)
     {
-        var source = MoneyCropTeacherSourceSnapshot();
+        var source = MoneyCropTeacherSourceSnapshot(
+            wateringCanWaterLeft,
+            existingSeedId,
+            existingSeedQuantity);
         var state = new Dictionary<string, JsonElement>(StringComparer.Ordinal)
         {
             ["identity"] = source.State["identity"],
@@ -487,7 +573,7 @@ internal static partial class BootstrapSelfTest
                 site_preparation_context = MoneyCropRuntimeField(new
                 {
                     schema_version =
-                        "farm_site_preparation_context.v1",
+                        "farm_site_preparation_context.v2",
                     projection_status =
                         "complete_bounded_current_farm_region",
                     location_id = "Farm",
@@ -505,9 +591,18 @@ internal static partial class BootstrapSelfTest
                     {
                         tile_x = index % 4,
                         tile_y = index / 4,
-                        status = index == 0
-                            ? "already_prepared"
-                            : "ready_to_till"
+                        status = includeRefillSource && index == 11
+                            ? "blocked_not_diggable"
+                            : index == 0
+                                ? "already_prepared"
+                                : "ready_to_till",
+                        map_passable = !includeRefillSource || index != 11,
+                        native_blocked_without_characters =
+                            includeRefillSource && index == 11,
+                        watering_can_refill_source =
+                            includeRefillSource && index == 11,
+                        watering_refill_approach_standable =
+                            !includeRefillSource || index != 11
                     }).ToArray()
                 })
             }, JsonDefaults.Options)

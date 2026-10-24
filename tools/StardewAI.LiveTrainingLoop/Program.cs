@@ -1239,19 +1239,29 @@ var goldenWalnutSourceSchedulePath = string.Empty;
 var goldenWalnutSourceScheduleVerified = false;
 if (options.CaptureGoldenWalnutFreshSaveEvidence)
 {
-    goldenWalnutFreshSaveEpisodeCount = Directory.EnumerateFiles(
-        options.SnapshotDir,
-        GoldenWalnutFreshSaveEpisodeArchive.EpisodeSearchPattern,
-        SearchOption.TopDirectoryOnly).Count();
-    if (goldenWalnutFreshSaveEpisodeCount > 0)
+    try
     {
-        GoldenWalnutFreshSaveEpisodeManifestBuilder.WriteFromDirectory(
-            options.GoldenWalnutFreshSaveEpisodeManifestPath,
+        goldenWalnutFreshSaveEpisodeCount = Directory.EnumerateFiles(
             options.SnapshotDir,
-            options.GoldenWalnutFreshSaveScheduleId,
-            options.RunId);
-        goldenWalnutFreshSaveEpisodeManifestPath =
-            options.GoldenWalnutFreshSaveEpisodeManifestPath;
+            GoldenWalnutFreshSaveEpisodeArchive.EpisodeSearchPattern,
+            SearchOption.TopDirectoryOnly).Count();
+        if (goldenWalnutFreshSaveEpisodeCount > 0)
+        {
+            GoldenWalnutFreshSaveEpisodeManifestBuilder.WriteFromDirectory(
+                options.GoldenWalnutFreshSaveEpisodeManifestPath,
+                options.SnapshotDir,
+                options.GoldenWalnutFreshSaveScheduleId,
+                options.RunId);
+            goldenWalnutFreshSaveEpisodeManifestPath =
+                options.GoldenWalnutFreshSaveEpisodeManifestPath;
+        }
+    }
+    catch (Exception ex) when (
+        ex is IOException or InvalidOperationException or JsonException or
+            ArgumentException)
+    {
+        stopReason = "golden_walnut_fresh_save_manifest_invalid message=" +
+            SanitizeProgressValue(ex.Message);
     }
 }
 if (options.RequireGoldenWalnutSourceScheduleReady &&

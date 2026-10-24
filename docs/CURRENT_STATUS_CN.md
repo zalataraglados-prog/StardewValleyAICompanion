@@ -30,6 +30,8 @@ Golden Walnut 采集入口已移除“`MaxAttempts=8` 但 `required_verified_act
 
 Golden Walnut 日程专用长期模式现已接入同一个 LiveTrainingLoop，不增加启动器、动作、候选或第二套姜岛系统。`--require-golden-walnut-source-schedule-ready` 会把完整 `69/130` 来源目录、至少一个透明来源增量、首次登岛和 First Parrot/Turtle/House 终态纳入显式 primary target；作物 Teacher 第一日完成不再强制耗尽长期预算，最后一个动作的 fresh after snapshot 直接参与里程碑判定。`total_days >= 224`、attempt、`MinFreeSpaceMb` 或连续错误上限先到均失败关闭。达到当前态里程碑后仍必须从同一耐久 manifest 运行既有 episode schedule builder，逐项证明首次登岛和三次鹦鹉的原生 `false -> true` 历史并写出 source schedule；构建失败整轮仍为 incomplete。专项回归 `34/34` 通过，未启动长期游戏运行，所以上表指标与训练禁令不变。下一固定项是在空间门满足后执行一次受限长期新档并导出 schedule，随后重建 Master Angler audit 并继续 Gourmand 第 2、3 单原生回执。
 
+首次受限长跑 `golden-walnut-source-schedule-v1-20261024-222622` 已在 E 盘运行游戏/存档、I 盘保存证据的隔离布局中推进到 Spring 17（`total_days=16`）。它完成了两轮作物 Teacher，但第三次派发在背包仍有 `(O)472 x14` 时因水壶只剩 `3/40` 被错误拒绝；这是 Teacher 的跨周期水量预算缺口，不是种子、执行器或动作缺失。透明农场布局现升级为 `farm_site_preparation_context.v2`，逐格绑定游戏原生补水判定与可站立事实，并由 Teacher 复用共享 `RouteGridPathfinder`；存在已验证补水路线时按单日容量计划，缺证时继续保守拒绝。原运行随后因五次无动作失败形成真实 episode 间隙，严格 manifest 校验正确拒绝；收尾路径也已改为结构化 incomplete，而非未捕获异常。该 run 仅作诊断，禁止拼接或恢复；必须从新隔离存档重跑。当前仍无 source schedule，所有准入分子和 `formal_product_training=false` 保持不变。
+
 当前五个 `CoverageGateReady` criterion 固定为：
 
 - `community_center_access_or_completion`

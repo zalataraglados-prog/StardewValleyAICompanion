@@ -68,6 +68,11 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             root,
             "scripts",
             "Invoke-ProductBootstrapCalibration.ps1"));
+        var liveTrainingLoop = File.ReadAllText(Path.Combine(
+            root,
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.cs"));
 
         Assert.Contains(
             "Invoke-RuntimeFreshSaveSmoke.ps1",
@@ -204,6 +209,14 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
         Assert.DoesNotContain(
             "Write-Json (Join-Path $artifactDirectory \"initial-snapshot.json\")",
             calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "golden_walnut_fresh_save_manifest_invalid message=",
+            liveTrainingLoop,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "GoldenWalnutFreshSaveEpisodeManifestBuilder.WriteFromDirectory",
+            liveTrainingLoop,
             StringComparison.Ordinal);
     }
 

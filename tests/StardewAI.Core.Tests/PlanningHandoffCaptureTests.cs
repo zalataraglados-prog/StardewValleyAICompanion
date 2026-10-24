@@ -140,7 +140,7 @@ public sealed class PlanningHandoffCaptureTests
                     ["site_preparation_context"] = Envelope(new JsonObject
                     {
                         ["schema_version"] =
-                            "farm_site_preparation_context.v1",
+                            "farm_site_preparation_context.v2",
                         ["projection_status"] =
                             "complete_bounded_current_farm_region",
                         ["location_id"] = "Farm",
