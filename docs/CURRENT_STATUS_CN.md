@@ -38,6 +38,8 @@ Golden Walnut 日程专用长期模式现已接入同一个 LiveTrainingLoop，�
 
 v4 的 `55` 个耐久 episode 已成功重建为合法 manifest，但 Spring 2 的停止点晚于最近一次原生存档边界，因此该尾部禁止跨进程续接。全新 v5 `golden-walnut-source-schedule-v5-20261025-001624` 已真实完成礼盒、Teacher 派发、购种、返场与场地准备，随后暴露普通相邻动作仍用“允许可清除障碍”的路径规划参数，而执行跟随器不会且不应隐式清障，导致首批播种稳定失败为 `adjacent_action_route_drifted`。停止后正式 builder 已接纳 success-only 的 `46` 条连续 episode，阻塞尾部未进入 manifest。相邻动作以及浇水、锄地、姜和宠物水碗现只在真实可走格上建路，helper 默认也改为 fail-safe false；只有具备主动破障循环的矿井/火山战斗显式允许可清障格。清障继续唯一归属 site preparation / `executor.clear_obstacle`；定向源码守卫通过，尚待全新隔离运行验证首日播种、浇水和存档边界。Golden Walnut source schedule 与正式训练授权仍为 false。
 
+全新 v6 `golden-walnut-source-schedule-v6-20261025-004151` 验证了严格路径策略，但随机 Farm 布局中场地准备计划同时含“当前可执行前沿”和“须由前沿清障后才可达的后续格”时，控制环错误地因 `BlockedCount != 0` 拒绝整份计划。该失败发生在礼盒、6 次购种和返场之后，没有恢复隐式穿障。控制环现只从权威 site-preparation plan 选择 `direct_till_ready` / `clear_then_fresh_snapshot_rebind` 前沿，每完成一步都重新取透明快照；只有仍有未完成格且不存在任何可执行前沿时才以原 block reason 失败关闭。全新 v7 `golden-walnut-source-schedule-v7-20261025-005622` 已真实越过该边界：连续完成全部场地准备、`6/6` 原生播种、`6/6` 原生浇水、回家、Spring 1→2 原生睡眠和 durable save boundary。次日出现无稻草人阶段的原生乌鸦损失，六个播种/浇水回执经逐格核对均有效，既有 Teacher 正确以 `crop_teacher_water_target_crop_missing` 重派发，而非把随机损失误认成执行成功。异常停止后的正式 builder 已接纳 `57` 条 success-only 连续 episode；该运行仍未到姜岛，`training_label_eligible=false`、Golden Walnut source schedule 与正式训练授权均保持 false。下一固定步骤是从全新隔离存档继续长期运行，允许已验证的随机损失重规划收敛，并推进首次登岛、核桃来源增量及 First Parrot/Turtle/House 原生跃迁。
+
 当前五个 `CoverageGateReady` criterion 固定为：
 
 - `community_center_access_or_completion`

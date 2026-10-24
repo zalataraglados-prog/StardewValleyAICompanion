@@ -306,20 +306,20 @@ static partial class Program
         await WriteTypedJsonAsync(requestPath, request);
         var plan = MoneyRevenueCropSitePreparationPlanBuilder.Build(requestPath);
         await WriteTypedJsonAsync(planPath, plan);
-        if (!plan.SitePreparationPlanReady ||
-            plan.BlockedCount != 0 ||
-            plan.PreparationTotalDay != step.TotalDay ||
+        if (plan.PreparationTotalDay != step.TotalDay ||
             plan.CommitmentId != step.CommitmentId ||
+            plan.PreparationStateHash != stateHash ||
+            plan.TileCount != preparationTiles.Length ||
+            plan.PlantingTileCount != layout.Tiles.Length ||
+            plan.WateringRefillPreparationTileCount !=
+                refillPreparationTiles.Length ||
             plan.FormalProductTrainingAuthorized)
         {
-            var reasons = string.Join(
-                ",",
-                plan.Steps.SelectMany(value => value.BlockReasons).Distinct());
             throw new InvalidDataException(
-                "crop_teacher_site_preparation_blocked:" + reasons);
+                "crop_teacher_site_preparation_plan_invalid");
         }
-        var pending = plan.Steps.FirstOrDefault(value =>
-            value.PlanStatus != "already_prepared");
+        var pending = CropTeacherSitePreparationFrontier
+            .SelectNextExecutableStep(plan);
         if (pending is null)
         {
             return new CropTeacherControlQueueBuildResult(

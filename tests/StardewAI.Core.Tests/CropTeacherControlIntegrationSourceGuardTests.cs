@@ -113,6 +113,15 @@ public sealed class CropTeacherControlIntegrationSourceGuardTests
             source,
             StringComparison.Ordinal);
         Assert.Contains(
+            "CropTeacherSitePreparationFrontier\n" +
+            "            .SelectNextExecutableStep(plan)",
+            source.Replace("\r\n", "\n"),
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "plan.BlockedCount != 0",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "executor.harvest_crop",
             source,
             StringComparison.Ordinal);
