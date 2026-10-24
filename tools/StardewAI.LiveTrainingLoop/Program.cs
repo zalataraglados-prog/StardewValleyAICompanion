@@ -8,6 +8,7 @@ using StardewAI.Contracts.Options;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Infrastructure;
 using StardewAI.Core.Training;
+using StardewAI.GoalConditionedBootstrap;
 using StardewAI.LiveTrainingLoop;
 
 var options = LiveTrainingOptions.Parse(args);
@@ -38,6 +39,8 @@ var lastStateHash = string.Empty;
 JsonObject? lastTrainingReport = null;
 JsonObject? lastPrediction = null;
 var lastPlanningHandoffCaptureManifestPath = string.Empty;
+var lastPlanningHandoffTeacherDispatchManifestPath = string.Empty;
+var lastPlanningHandoffNativeRunPlanPath = string.Empty;
 JsonObject? activeObjectiveContinuation = null;
 var suppressedObjectiveContinuations = new List<JsonObject>();
 var suppressionDayKey = string.Empty;
@@ -380,11 +383,26 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                     planningHandoff);
                 lastPlanningHandoffCaptureManifestPath =
                     capture.ManifestPath;
+                var teacherDispatchDirectory = Path.Combine(
+                    Path.GetDirectoryName(capture.ManifestPath)!,
+                    "teacher-dispatch");
+                var teacherDispatch =
+                    MoneyRevenueCropTeacherDispatchBuilder.Build(
+                        capture.ManifestPath,
+                        teacherDispatchDirectory,
+                        options.RunId + ".crop-teacher." +
+                            iteration.ToString("D4"),
+                        DateTimeOffset.UtcNow.ToString("O"));
+                lastPlanningHandoffTeacherDispatchManifestPath = Path.Combine(
+                    teacherDispatchDirectory,
+                    "teacher-dispatch-manifest.json");
+                lastPlanningHandoffNativeRunPlanPath =
+                    teacherDispatch.NativeRunPlanPath;
                 stopReason =
-                    "planning_handoff_captured_teacher_dispatch_pending";
+                    "planning_handoff_dispatched_native_run_plan_ready";
                 AppendProgress(
                     options,
-                    "planning_handoff_captured",
+                    "planning_handoff_dispatched",
                     iteration,
                     lastStateHash,
                     string.Empty,
@@ -393,7 +411,10 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                     " map=" + capture.MapWidth + "x" +
                     capture.MapHeight +
                     " layout_snapshots=" +
-                    capture.LayoutSnapshotCount);
+                    capture.LayoutSnapshotCount +
+                    " native_run_plan=" +
+                    teacherDispatch.NativeRunPlanPath +
+                    " actions=" + teacherDispatch.ActionCount);
                 break;
             }
         }
@@ -824,6 +845,10 @@ var report = new LiveTrainingLoopReport
     GoldenWalnutFreshSaveEpisodeCount = goldenWalnutFreshSaveEpisodeCount,
     PlanningHandoffCaptureManifestPath =
         lastPlanningHandoffCaptureManifestPath,
+    PlanningHandoffTeacherDispatchManifestPath =
+        lastPlanningHandoffTeacherDispatchManifestPath,
+    PlanningHandoffNativeRunPlanPath =
+        lastPlanningHandoffNativeRunPlanPath,
     Iterations = attemptsStarted,
     MaxAttempts = options.MaxAttempts,
     AttemptsStarted = attemptsStarted,

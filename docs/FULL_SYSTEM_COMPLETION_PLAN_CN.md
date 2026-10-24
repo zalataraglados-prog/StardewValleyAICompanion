@@ -10,7 +10,7 @@ Spring 1 新档首轮排序暴露的不是社交评分错误，而是上游缺�
 
 `runtime-starter-gift-20261024-172156` 已按该顺序完成新桥领取前 full snapshot、原生领取、领取后 full snapshot 和守恒回执；`EVD-342` 将该动作提升为 five-gate / training-eligible。执行器还修正了新档淡入控制门等待和失败回执真实 after 状态。06:00 商店 `allowed_now` 已在共享路线层修正，未开门服务不会再以 ready-now 进入当前方向绑定。
 
-领取后快照回放证明，原计划中“fresh replan 会自然进入作物链”的表述少了一层战略交接。已有 `farm.maintain_crops` 只能机械维护透明快照中的确定地块，不负责选择新地块。修正后的固定顺序为：保护普通可种种子不被通用售卖/出货消耗 -> Grandpa 在空农场/已有种子边界发出类型化 `crop_production_teacher` 交接 -> LiveTrainingLoop 按需采集完整但分块不超过 `32x32` 的 `farm_layout` -> 复用唯一 Money Revenue Crop Teacher 选择作物与紧凑布局 -> 将其承诺交回既有清障/耕地/播种/浇水和跨日链。当前前三步已完成：真实快照回放通过，普通候选编译在交接状态失败关闭，LiveTrainingLoop 会用探针取得地图尺寸、校验同一状态边界、完整分块并持久化 `planning_handoff_capture_manifest.v1`。下一步仅为 Teacher/ledger/run-plan 自动调度，未完成前不得进入该首日链的训练。全局正式训练仍受 19 criterion 和 11 root method 准入约束。
+领取后快照回放证明，原计划中“fresh replan 会自然进入作物链”的表述少了一层战略交接。已有 `farm.maintain_crops` 只能机械维护透明快照中的确定地块，不负责选择新地块。修正后的固定顺序为：保护普通可种种子不被通用售卖/出货消耗 -> Grandpa 在空农场/已有种子边界发出类型化 `crop_production_teacher` 交接 -> LiveTrainingLoop 按需采集完整但分块不超过 `32x32` 的 `farm_layout` -> 复用唯一 Money Revenue Crop Teacher 选择作物与紧凑布局 -> 将其承诺交回既有清障/耕地/播种/浇水和跨日链。当前前四步已完成：真实快照回放通过，普通候选编译在交接状态失败关闭，LiveTrainingLoop 会用探针取得地图尺寸、校验同一状态边界、完整分块并持久化 `planning_handoff_capture_manifest.v1`；同进程协调器只编排现有 Teacher、ledger、obligation 与 native run-plan builder，并对输入文件哈希、内部状态哈希和完整分块再次校验。下一步仅把 run plan 的当前日批次接回 fresh 编译/执行入口，未完成前不得进入该首日链的训练。全局正式训练仍受 19 criterion 和 11 root method 准入约束。
 
 ## 当前记录 · 2026-10-21 11 核心复杂度顺序
 

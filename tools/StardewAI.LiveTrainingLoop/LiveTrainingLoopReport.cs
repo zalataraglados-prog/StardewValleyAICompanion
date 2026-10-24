@@ -60,6 +60,14 @@ public sealed class LiveTrainingLoopReport
     public string PlanningHandoffCaptureManifestPath { get; set; } =
         string.Empty;
 
+    [JsonPropertyName("planning_handoff_teacher_dispatch_manifest_path")]
+    public string PlanningHandoffTeacherDispatchManifestPath { get; set; } =
+        string.Empty;
+
+    [JsonPropertyName("planning_handoff_native_run_plan_path")]
+    public string PlanningHandoffNativeRunPlanPath { get; set; } =
+        string.Empty;
+
     [JsonPropertyName("iterations")]
     public int Iterations { get; set; }
 

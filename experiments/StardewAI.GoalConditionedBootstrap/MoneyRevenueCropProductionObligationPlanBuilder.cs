@@ -443,6 +443,7 @@ public static class MoneyRevenueCropProductionObligationPlanBuilder
 
     private static int? ReadNullableInt(JsonElement row, string property) =>
         row.TryGetProperty(property, out var value) &&
+        value.ValueKind == JsonValueKind.Number &&
         value.TryGetInt32(out var number)
             ? number
             : null;
