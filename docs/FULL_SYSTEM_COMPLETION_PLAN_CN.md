@@ -8,7 +8,7 @@
 
 Spring 1 新档首轮排序暴露的不是社交评分错误，而是上游缺少开局礼盒候选。唯一实现现为 `rewards.claim_starter_gift`：小模型只决定是否领取，C# 编译器从 fresh snapshot 绑定礼盒、输出、站位和任务，运行时通过原生农舍 Chest 交互执行。它属于 `earn_money` 的支撑转移，领取后必须 fresh replan 到作物生产；不得并存第二套礼盒、库存或任务写入逻辑。
 
-当前代码、合成链和 catalog 已闭合，但原生证据尚未闭合，因为旧 Spring 1 快照没有新增透明字段。实施顺序固定为：新桥采领取前 full snapshot -> 原生领取 -> 领取后 full snapshot/守恒回执 -> Grandpa 首日队列重放 -> 修正 06:00 商店 `allowed_now` 上游时间门。完成原生证据前保持 `RegisteredOnly` 和正式训练禁入，不以旧快照补字段。
+当前代码、合成链和 catalog 已闭合，但原生证据尚未闭合，因为旧 Spring 1 快照没有新增透明字段。06:00 商店 `allowed_now` 已在共享路线层修正，未开门服务不会再以 ready-now 进入当前方向绑定。实施顺序现固定为：新桥采领取前 full snapshot -> 原生领取 -> 领取后 full snapshot/守恒回执 -> Grandpa 首日队列重放 -> 验证礼盒后进入作物生产。完成原生证据前保持 `RegisteredOnly` 和正式训练禁入，不以旧快照补字段。
 
 ## 当前记录 · 2026-10-21 11 核心复杂度顺序
 

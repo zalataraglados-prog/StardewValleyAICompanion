@@ -10,6 +10,7 @@
 - 透明桥只在当前玩家拥有的 `FarmHouse` 中发布唯一 `giftbox + starterGift` Chest，绑定精确 tile/runtime/item 身份、实时 contents、背包容量、相邻站位和农场类型对应任务（普通农场 `6`、Meadowlands `132`）。运行时只调用原生 `GameLocation.checkAction`，由 `Chest.dumpContents` 完成任务、背包/举起物品和空礼盒移除；禁止直接改 Chest、背包或任务。
 - 该项已进入 `earn_money` 的 fresh-save 支撑转移，聚焦 Core 回归 `58/58`、运行时源约束 `1/1`、catalog reconciliation `585/585` 且 blocking `0`。注册项总数为 `241`；本项当前仍是 `RegisteredOnly`，没有训练证据 ID，也不在训练 allowlist。
 - 现存真实 Spring 1 快照生成于该字段加入之前，不能反向伪造 `current_location.starter_gift_claim`。下一步必须用更新后的桥在隔离新档采一组领取前/后 full snapshot 和原生回执；只有读取、候选、编译、运行、输出五门都由同一 fresh 状态闭合后，才允许提升证据等级。随后重新回放新档首日排序，确认礼盒领取后进入作物生产而不是回退到社交；之后再修正 06:00 商店候选的上游营业时间门。
+- 06:00 商店门已在共享 `ShopObjectiveStageCandidates` 路线层修正：跨图候选现在同时合并第一段 connector 与最终商店服务的 `AllowedNow/AllowedToday`、最晚开门、最早关门和等待成本。商店尚未开门时保留“今日稍后可用”，但不得进入 ready-now 或 Grandpa 当前方向绑定；排序器将其延后，不再先走到闭门商店。该修复同时覆盖购买、售卖、动物购买和蟹笼补给，没有新增分支实现。精确受影响回归 `88/88` 通过；一次宽筛另暴露 4 个与本改动无关的既有 fixture 失败（清障 2、特别订单候选身份 1、浇水耗时旧期望 1），未混入本切片。
 
 ## 当前增量 · Golden Walnut 新档证据归档
 

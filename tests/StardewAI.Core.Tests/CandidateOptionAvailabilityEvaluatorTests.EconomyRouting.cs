@@ -200,19 +200,33 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
               }
             """, routeGraphExtra: """
               ,{"kind":"locked_door_warp","from_location":"Town","from_x":1,"from_y":1,"target_location":"Blacksmith","target_x":3,"target_y":4,"resolved":true,"gate":{"allowed_now":false,"allowed_on_capture_date":true,"time_allowed":false,"friendship_allowed":true,"festival_closed":false,"seed_shop_wednesday_closed":false,"effective_open_time":1000,"close_time":1700,"unresolved_reason":null}}
-            """), new[] { "economy.buy_supplies" })
+            """, currentTime: 600), new[] { "economy.buy_supplies" })
             .Options[0];
 
         var candidate = Assert.Single(option.EventCandidates);
         Assert.True(candidate.Available);
+        Assert.False(candidate.AllowedNow);
         Assert.True(candidate.AllowedToday);
         Assert.Equal(1000, candidate.NextOpenTime);
         Assert.Equal(1000, candidate.EffectiveOpenTime);
         Assert.Equal(1700, candidate.ClosesAt);
+        Assert.Equal(14400, candidate.WaitCost);
         Assert.Contains("shop_entrance_not_open_yet", candidate.GateReasons);
         Assert.DoesNotContain(
             "no_value_available_purchase_candidates",
             option.BlockingReasons);
+
+        var scheduled = Assert.Single(new EventCandidateRanker().Rank(
+            new(),
+            new OptionAvailabilityEnvelope
+            {
+                StateHash = "state.0600",
+                CurrentTime = 600,
+                Options = new[] { option }
+            }));
+        Assert.Equal("deferred", scheduled.TimelineStatus);
+        Assert.Equal(1000, scheduled.ScheduledStartTime);
+        Assert.Contains("candidate_deferred_until_open", scheduled.TimelineReasons);
     }
 
     [Fact]

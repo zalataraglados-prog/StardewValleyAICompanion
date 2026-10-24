@@ -561,12 +561,13 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         string entryOverride,
         bool endpointAllowed = true,
         string endpointExtra = "",
-        string routeGraphExtra = "")
+        string routeGraphExtra = "",
+        int currentTime = 900)
     {
         return Snapshot("""
         {
           "time": {
-            "time": {"value":900,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "time": {"value":CURRENT_TIME,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "season": {"value":"spring","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "player": {
@@ -604,7 +605,10 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
                 "ENDPOINT_ALLOWED",
                 endpointAllowed ? "true" : "false")
             .Replace("ENDPOINT_EXTRA", endpointExtra)
-            .Replace("ROUTE_GRAPH_EXTRA", routeGraphExtra));
+            .Replace("ROUTE_GRAPH_EXTRA", routeGraphExtra)
+            .Replace(
+                "CURRENT_TIME",
+                currentTime.ToString(System.Globalization.CultureInfo.InvariantCulture)));
     }
 
     private static SnapshotEnvelope SellSnapshot(string inventoryItemOverride, string? sellContextOverride = null)
