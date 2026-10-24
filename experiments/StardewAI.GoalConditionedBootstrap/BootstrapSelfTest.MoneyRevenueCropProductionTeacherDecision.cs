@@ -74,12 +74,16 @@ internal static partial class BootstrapSelfTest
                     value.SeedId == "474" &&
                     value.Selected &&
                     value.ShopId == "SeedShop" &&
-                    value.SeedUnitPrice == 80) &&
+                    value.SeedUnitPrice == 80 &&
+                    value.RequiredWateringActionCount == 36 &&
+                    value.AvailableWateringActionsWithoutRefill == 40 &&
+                    !value.WateringRefillRouteVerified &&
+                    value.WateringCapacityLimited) &&
                 decision.Commitments.Length == 1 &&
                 decision.Commitments[0].SeedId == "474" &&
-                decision.Commitments[0].TileCount == 5 &&
-                decision.Commitments[0].Tiles.Length == 5 &&
-                decision.Commitments[0].Tiles.Distinct().Count() == 5 &&
+                decision.Commitments[0].TileCount == 3 &&
+                decision.Commitments[0].Tiles.Length == 3 &&
+                decision.Commitments[0].Tiles.Distinct().Count() == 3 &&
                 receipt.SchemaVersion ==
                     "money_revenue_crop_production_decision_receipt.v2" &&
                 receipt.AllCommitmentsAccepted &&
@@ -229,6 +233,20 @@ internal static partial class BootstrapSelfTest
             tile_y = MoneyCropRuntimeField(0),
             energy = MoneyCropRuntimeField(270),
             money = MoneyCropRuntimeField(450),
+            watering_can_state = MoneyCropRuntimeField(new
+            {
+                projection_status = "exact_vanilla_power_zero",
+                slot_index = 1,
+                runtime_type = "StardewValley.Tools.WateringCan",
+                upgrade_level = 0,
+                water_left = 40,
+                capacity = 40,
+                is_bottomless = false,
+                farmer_has_watering_can_enchantment = false,
+                is_efficient = false,
+                farming_level = 0,
+                energy_cost_per_power_zero_action = 2d
+            }),
             inventory = MoneyCropRuntimeField(new[]
             {
                 new

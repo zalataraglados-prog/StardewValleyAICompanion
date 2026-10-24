@@ -13,6 +13,7 @@ param(
     [int] $RunTimeoutSeconds = 1800,
     [ValidateRange(1, 128)]
     [int] $SaveBoundaryMaxAttempts = 32,
+    [switch] $FullCycle,
     [switch] $SkipBuild
 )
 
@@ -35,7 +36,13 @@ $backendStdout = Join-Path $runDirectory "backend.stdout.log"
 $backendStderr = Join-Path $runDirectory "backend.stderr.log"
 $loopStdout = Join-Path $runDirectory "loop.stdout.log"
 $loopStderr = Join-Path $runDirectory "loop.stderr.log"
-$summaryPath = Join-Path $runDirectory "crop-teacher-first-day-summary.json"
+$summaryFileName = if ($FullCycle) {
+    "crop-teacher-full-cycle-summary.json"
+}
+else {
+    "crop-teacher-first-day-summary.json"
+}
+$summaryPath = Join-Path $runDirectory $summaryFileName
 
 Assert-RuntimePortsUnused -Ports @($BackendPort, 8765, 8767) `
     -OperationName "Crop teacher first-day smoke"
@@ -132,7 +139,6 @@ try {
         "--max-attempts", "3",
         "--required-verified-actions", "1",
         "--require-native-save-boundary",
-        "--stop-after-crop-teacher-first-day",
         "--save-boundary-max-attempts", $SaveBoundaryMaxAttempts,
         "--skip-training",
         "--use-daily-plan",
@@ -146,8 +152,12 @@ try {
         "--executor-timeout-seconds", "600",
         "--sleep-ms", "500",
         "--after-snapshot-wait-ms", "1500",
-        "--after-snapshot-poll-ms", "100"
+        "--after-snapshot-poll-ms", "100",
+        "--max-unverified-execution-streak", "3"
     )
+    if (-not $FullCycle) {
+        $loopArguments += "--stop-after-crop-teacher-first-day"
+    }
     $loopProcess = Start-RuntimeEvidenceProcess `
         -FilePath "dotnet" -ArgumentList $loopArguments `
         -WorkingDirectory $ProjectRoot `
@@ -175,9 +185,18 @@ try {
     }
     $loopReport = Get-Content -LiteralPath $loopReportPath -Raw |
         ConvertFrom-Json
+    $cycleCompletionInvalid = if ($FullCycle) {
+        -not [bool]$loopReport.crop_teacher_run_completed -or
+        [bool]$loopReport.crop_teacher_replan_required -or
+        [int]$loopReport.crop_teacher_harvest_receipt_count -lt 1 -or
+        [int]$loopReport.crop_teacher_day_boundary_receipt_count -lt 1
+    }
+    else {
+        -not [bool]$loopReport.crop_teacher_first_day_completed
+    }
     if (-not [string]::IsNullOrWhiteSpace(
             [string]$loopReport.stop_reason) -or
-        -not [bool]$loopReport.crop_teacher_first_day_completed -or
+        $cycleCompletionInvalid -or
         [int]$loopReport.crop_teacher_control_attempts_started -lt 1 -or
         [int]$loopReport.verified_actions -lt 1 -or
         -not [bool]$loopReport.native_save_boundary_required -or
@@ -188,7 +207,7 @@ try {
             [string]$loopReport.planning_handoff_teacher_dispatch_manifest_path) -or
         [string]::IsNullOrWhiteSpace(
             [string]$loopReport.planning_handoff_native_run_plan_path)) {
-        throw "Crop teacher first-day report did not close every required gate."
+        throw "Crop teacher report did not close every required gate."
     }
 
     $after = Get-FreshRuntimeSnapshot `
@@ -196,12 +215,18 @@ try {
     $afterTotalDay = [int](Read-StateValue `
         $after.Value "time" "total_days")
     $afterCrops = @(Read-StateValue $after.Value "farm" "crops")
-    if ($afterTotalDay -le $initialTotalDay -or $afterCrops.Count -lt 1) {
-        throw "Crop teacher after-state did not retain crops across day save."
+    if ($afterTotalDay -le $initialTotalDay -or
+        (-not $FullCycle -and $afterCrops.Count -lt 1)) {
+        throw "Crop teacher after-state did not satisfy its cycle scope."
     }
 
     $summary = [ordered]@{
-        schema_version = "stardewai.runtime_crop_teacher_first_day_smoke.v1"
+        schema_version = $(if ($FullCycle) {
+            "stardewai.runtime_crop_teacher_full_cycle_smoke.v1"
+        }
+        else {
+            "stardewai.runtime_crop_teacher_first_day_smoke.v1"
+        })
         status = "passed"
         run_id = $RunId
         save_slot = $saveSlot
@@ -213,6 +238,14 @@ try {
         after_crop_count = $afterCrops.Count
         crop_teacher_control_attempts_started =
             [int]$loopReport.crop_teacher_control_attempts_started
+        crop_teacher_run_completed =
+            [bool]$loopReport.crop_teacher_run_completed
+        crop_teacher_replan_count =
+            [int]$loopReport.crop_teacher_replan_count
+        crop_teacher_harvest_receipt_count =
+            [int]$loopReport.crop_teacher_harvest_receipt_count
+        crop_teacher_day_boundary_receipt_count =
+            [int]$loopReport.crop_teacher_day_boundary_receipt_count
         native_save_boundary_verified =
             [bool]$loopReport.native_save_boundary_verified
         planning_handoff_capture_manifest_path =

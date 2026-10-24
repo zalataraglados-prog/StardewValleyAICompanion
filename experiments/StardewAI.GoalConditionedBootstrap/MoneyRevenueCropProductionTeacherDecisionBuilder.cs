@@ -8,7 +8,7 @@ namespace StardewAI.GoalConditionedBootstrap;
 public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
 {
     public const string SelectionPolicy =
-        "authoritative_transparent_crop_net_revenue_then_earliest_terminal_v1";
+        "authoritative_transparent_crop_net_revenue_after_water_budget_then_earliest_terminal_v2";
 
     public static MoneyRevenueCropProductionDecisionRequest Build(
         string requestPath)

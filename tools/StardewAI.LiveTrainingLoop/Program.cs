@@ -895,6 +895,25 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                         queue,
                         execution);
                 AppendProgress(options, "blocked", iteration, lastStateHash, lastQueueId, options.ExecutorUnverifiedSource + " status=" + ReadString(execution, "status") + " primitive=" + ReadString(execution, "primitive_verification_status") + NoProgressDetail(unverifiedDecision));
+                if (options.MaxUnverifiedExecutionStreak > 0 &&
+                    unverifiedDecision.Streak >=
+                        options.MaxUnverifiedExecutionStreak)
+                {
+                    stopReason =
+                        "max_unverified_execution_streak_reached count=" +
+                        unverifiedDecision.Streak +
+                        " option=" + ReadString(execution, "option_id") +
+                        " failure=" +
+                        ReadString(execution, "failure_category");
+                    AppendProgress(
+                        options,
+                        "stopped",
+                        iteration,
+                        lastStateHash,
+                        lastQueueId,
+                        stopReason);
+                    break;
+                }
                 await DelayBeforeNextAttemptAsync(
                     options,
                     attemptOrdinal,

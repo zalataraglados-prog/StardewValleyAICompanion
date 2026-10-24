@@ -66,6 +66,41 @@ public sealed class RuntimeCropTeacherFirstDaySmokeSourceGuardTests
     }
 
     [Fact]
+    public void FullCycleModeRequiresRunHarvestAndEveryDayBoundary()
+    {
+        Assert.Contains("[switch] $FullCycle", Source, StringComparison.Ordinal);
+        Assert.Contains(
+            "crop_teacher_run_completed",
+            Source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "crop_teacher_harvest_receipt_count",
+            Source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "crop_teacher_day_boundary_receipt_count",
+            Source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "stardewai.runtime_crop_teacher_full_cycle_smoke.v1",
+            Source,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SmokeStopsRepeatedUnverifiedExecutionWithoutLongSpin()
+    {
+        Assert.Contains(
+            "--max-unverified-execution-streak",
+            Source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"3\"",
+            Source,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void SmokeOwnsHiddenProcessesAndNeverDeletesEvidence()
     {
         Assert.Contains(

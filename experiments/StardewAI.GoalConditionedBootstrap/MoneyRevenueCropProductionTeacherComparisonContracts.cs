@@ -5,7 +5,7 @@ namespace StardewAI.GoalConditionedBootstrap;
 public static class MoneyRevenueCropProductionTeacherComparisonVersions
 {
     public const string Receipt =
-        "money_revenue_crop_production_teacher_comparison_receipt.v1";
+        "money_revenue_crop_production_teacher_comparison_receipt.v2";
 }
 
 public sealed record MoneyRevenueCropProductionTeacherComparisonCandidate(
@@ -26,6 +26,12 @@ public sealed record MoneyRevenueCropProductionTeacherComparisonCandidate(
         int LastHarvestTotalDay,
     [property: JsonPropertyName("required_watering_action_count")]
         int RequiredWateringActionCount,
+    [property: JsonPropertyName("available_watering_actions_without_refill")]
+        int AvailableWateringActionsWithoutRefill,
+    [property: JsonPropertyName("watering_refill_route_verified")]
+        bool WateringRefillRouteVerified,
+    [property: JsonPropertyName("watering_capacity_limited")]
+        bool WateringCapacityLimited,
     [property: JsonPropertyName("admitted")] bool Admitted,
     [property: JsonPropertyName("block_reasons")] string[] BlockReasons,
     [property: JsonPropertyName("selected")] bool Selected,

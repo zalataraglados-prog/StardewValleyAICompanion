@@ -168,10 +168,10 @@ public sealed class CropTeacherTransitionLedger
                 continue;
             }
 
-            var tileX = ReadRequiredInt(result, "target_tile_x");
-            var tileY = ReadRequiredInt(result, "target_tile_y");
+            var tileX = ReadBoundRequiredInt(result, "target_tile_x");
+            var tileY = ReadBoundRequiredInt(result, "target_tile_y");
             if (!expectedTiles.Contains((tileX, tileY)) ||
-                ReadString(result, "target_location") != batch.LocationId ||
+                ReadBoundString(result, "target_location") != batch.LocationId ||
                 ReadActionCommitmentId(result) != batch.CommitmentId)
             {
                 throw new InvalidDataException(
@@ -308,18 +308,53 @@ public sealed class CropTeacherTransitionLedger
     }
 
     private static string ReadActionCommitmentId(JsonObject result)
+        => ReadBoundString(result, "action_commitment_id");
+
+    private static string ReadBoundString(
+        JsonObject result,
+        string property)
     {
-        var parameters = result["effective_queue_item"]?
-            ["normalized_command"]?["parameters"] as JsonArray;
-        return parameters?.OfType<JsonObject>()
+        var direct = ReadString(result, property);
+        if (!string.IsNullOrWhiteSpace(direct))
+        {
+            return direct;
+        }
+
+        return ReadCommandParameters(result)
             .FirstOrDefault(parameter =>
-                ReadString(parameter, "name") == "action_commitment_id")?
+                ReadString(parameter, "name") == property)?
             ["value"]?.GetValue<string>() ?? string.Empty;
     }
 
-    private static int ReadRequiredInt(JsonObject value, string property) =>
-        value[property]?.GetValue<int>() ?? throw new InvalidDataException(
+    private static int ReadBoundRequiredInt(
+        JsonObject result,
+        string property)
+    {
+        if (result[property] is JsonValue direct &&
+            direct.TryGetValue<int>(out var directValue))
+        {
+            return directValue;
+        }
+
+        var parameterValue = ReadBoundString(result, property);
+        if (int.TryParse(
+                parameterValue,
+                System.Globalization.NumberStyles.Integer,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out var parsed))
+        {
+            return parsed;
+        }
+
+        throw new InvalidDataException(
             "crop_teacher_harvest_execution_" + property + "_missing");
+    }
+
+    private static IEnumerable<JsonObject> ReadCommandParameters(
+        JsonObject result) =>
+        (result["effective_queue_item"]?
+            ["normalized_command"]?["parameters"] as JsonArray)?
+        .OfType<JsonObject>() ?? [];
 
     private static string ReadString(JsonObject value, string property) =>
         value[property]?.GetValue<string>() ?? string.Empty;

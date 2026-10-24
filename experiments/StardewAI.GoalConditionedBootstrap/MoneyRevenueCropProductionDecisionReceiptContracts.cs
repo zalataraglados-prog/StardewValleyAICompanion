@@ -126,6 +126,12 @@ public sealed record MoneyRevenueCropTeacherCandidateEvaluation(
     int LastHarvestTotalDay,
     [property: JsonPropertyName("required_watering_action_count")]
     int RequiredWateringActionCount,
+    [property: JsonPropertyName("available_watering_actions_without_refill")]
+    int AvailableWateringActionsWithoutRefill,
+    [property: JsonPropertyName("watering_refill_route_verified")]
+    bool WateringRefillRouteVerified,
+    [property: JsonPropertyName("watering_capacity_limited")]
+    bool WateringCapacityLimited,
     [property: JsonPropertyName("admitted")] bool Admitted,
     [property: JsonPropertyName("block_reasons")] string[] BlockReasons,
     [property: JsonPropertyName("selected")] bool Selected);

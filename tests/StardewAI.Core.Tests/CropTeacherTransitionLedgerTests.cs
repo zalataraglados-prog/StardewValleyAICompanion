@@ -146,8 +146,77 @@ public sealed class CropTeacherTransitionLedgerTests
         }
     }
 
-    private static CropTeacherRunStep HarvestStep()
+    [Fact]
+    public void PersistsRealShapedMultiStepHarvestReceiptsFromQueueBindings()
     {
+        var root = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-crop-ledger-real-receipts-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        var planPath = Path.Combine(root, "run-plan.json");
+        var ledgerPath = Path.Combine(root, "transition-ledger.json");
+        try
+        {
+            File.WriteAllText(planPath, "{\"plan\":1}");
+            var ledger = CropTeacherTransitionLedger.Open(ledgerPath, planPath);
+            var step = HarvestStep(
+                new MoneyRevenueCropPlantingTile(71, 16),
+                new MoneyRevenueCropPlantingTile(70, 17),
+                new MoneyRevenueCropPlantingTile(71, 17));
+            var execution = new JsonObject
+            {
+                ["feedback_available"] = true,
+                ["step_results"] = new JsonArray(
+                    QueueBoundHarvestResult(0, 71, 16),
+                    QueueBoundHarvestResult(1, 70, 17),
+                    QueueBoundHarvestResult(2, 71, 17))
+            };
+
+            Assert.Equal(
+                3,
+                ledger.RecordVerifiedHarvestResults(
+                    execution,
+                    step,
+                    "2026-10-24T01:00:00.0000000+00:00"));
+            Assert.Equal(3, ledger.HarvestReceipts.Count);
+
+            var resumed = CropTeacherTransitionLedger.Open(ledgerPath, planPath);
+            Assert.Equal(3, resumed.HarvestReceipts.Count);
+            Assert.Equal(
+                0,
+                resumed.RecordVerifiedHarvestResults(
+                    execution,
+                    step,
+                    "2026-10-24T01:01:00.0000000+00:00"));
+            Assert.Equal(3, resumed.HarvestReceipts.Count);
+        }
+        finally
+        {
+            if (File.Exists(ledgerPath))
+            {
+                File.Delete(ledgerPath);
+            }
+            if (File.Exists(planPath))
+            {
+                File.Delete(planPath);
+            }
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root);
+            }
+        }
+    }
+
+    private static CropTeacherRunStep HarvestStep(
+        params MoneyRevenueCropPlantingTile[] requestedTiles)
+    {
+        var tiles = requestedTiles.Length > 0
+            ? requestedTiles
+            :
+            [
+                new MoneyRevenueCropPlantingTile(10, 12),
+                new MoneyRevenueCropPlantingTile(11, 12)
+            ];
         var batch = new MoneyRevenueCropNativeProductionActionBatch(
             1,
             "crop:parsnip:first",
@@ -155,10 +224,7 @@ public sealed class CropTeacherTransitionLedgerTests
             "always",
             "Farm",
             string.Empty,
-            [
-                new MoneyRevenueCropPlantingTile(10, 12),
-                new MoneyRevenueCropPlantingTile(11, 12)
-            ]);
+            tiles);
         return new CropTeacherRunStep(
             CropTeacherRunStageKinds.ExecuteCropBatch,
             4,
@@ -202,5 +268,40 @@ public sealed class CropTeacherTransitionLedgerTests
                     })
             }
         }
+    };
+
+    private static JsonObject QueueBoundHarvestResult(
+        int index,
+        int tileX,
+        int tileY) => new()
+    {
+        ["queue_item_index"] = index,
+        ["queue_item_id"] = $"queue_item:{index}",
+        ["option_id"] = "executor.harvest_crop",
+        ["status"] = "applied",
+        ["primitive_verification_status"] = "verified",
+        ["feedback_available"] = true,
+        ["before_state_hash"] = $"before:{index}",
+        ["after_state_hash"] = $"after:{index}",
+        ["queue_id"] = "queue:real-shaped",
+        ["target_location"] = string.Empty,
+        ["observed_effect"] = "has_crop=false;ready_for_harvest=false",
+        ["effective_queue_item"] = new JsonObject
+        {
+            ["normalized_command"] = new JsonObject
+            {
+                ["parameters"] = new JsonArray(
+                    Parameter("target_tile_x", tileX.ToString()),
+                    Parameter("target_tile_y", tileY.ToString()),
+                    Parameter("target_location", "Farm"),
+                    Parameter("action_commitment_id", "crop:parsnip:first"))
+            }
+        }
+    };
+
+    private static JsonObject Parameter(string name, string value) => new()
+    {
+        ["name"] = name,
+        ["value"] = value
     };
 }

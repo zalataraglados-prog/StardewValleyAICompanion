@@ -25,6 +25,7 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
         var currentSeason = ReadStateString(snapshot, "time", "season");
         var currentDay = ReadStateInt(snapshot, "time", "day");
         var seasonEnd = checked(currentTotalDay + 28 - currentDay);
+        var wateringSupply = ReadWateringSupply(snapshot);
         var stock = ReadSeedStock(snapshot);
         var catalog = ReadStateValue(snapshot, "farm", "crop_catalog");
         Require(catalog.ValueKind == JsonValueKind.Array,
@@ -85,12 +86,9 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
                 var purchasable = shop is null || shop.UnitPrice <= 0
                     ? 0
                     : currentMoney / shop.UnitPrice;
-                var tileCount = Math.Min(
+                var supplyLimitedTileCount = Math.Min(
                     Math.Min(maximumTileCount, viableTileCount),
                     checked(existing + purchasable));
-                if (tileCount <= 0)
-                    reasons.Add("no_affordable_seed_quantity");
-
                 var firstHarvest = checked(currentTotalDay +
                     Math.Max(0, growDays));
                 var waveCount = reasons.Contains(
@@ -107,12 +105,6 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
                         ? checked(firstHarvest +
                             (waveCount - 1) * regrowDays.Value)
                         : firstHarvest;
-                var gross = checked((long)Math.Max(0, tileCount) *
-                    Math.Max(0, waveCount) * Math.Max(0, minStack) *
-                    Math.Max(0, unitPrice));
-                var shortfall = Math.Max(0, tileCount - existing);
-                var acquisitionCost = checked((long)shortfall *
-                    (shop?.UnitPrice ?? 0));
                 var wateringDays = waveCount <= 0
                     ? 0
                     : CropProductionObligationProjector.Project(
@@ -124,6 +116,25 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
                         minStack,
                         needsWatering,
                         unitPrice).RequiredWateringTotalDays.Length;
+                var wateringTileLimit = !needsWatering || wateringDays == 0 ||
+                    wateringSupply.Bottomless
+                        ? int.MaxValue
+                        : wateringSupply.AvailableActionsWithoutRefill /
+                            wateringDays;
+                var tileCount = Math.Min(
+                    supplyLimitedTileCount,
+                    wateringTileLimit);
+                if (supplyLimitedTileCount <= 0)
+                    reasons.Add("no_affordable_seed_quantity");
+                else if (tileCount <= 0)
+                    reasons.Add(
+                        "watering_can_supply_without_verified_refill_insufficient");
+                var gross = checked((long)Math.Max(0, tileCount) *
+                    Math.Max(0, waveCount) * Math.Max(0, minStack) *
+                    Math.Max(0, unitPrice));
+                var shortfall = Math.Max(0, tileCount - existing);
+                var acquisitionCost = checked((long)shortfall *
+                    (shop?.UnitPrice ?? 0));
                 return new MoneyRevenueCropTeacherCandidateEvaluation(
                     seedId,
                     qualifiedSeedId,
@@ -137,12 +148,35 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
                     checked(gross - acquisitionCost),
                     lastHarvest,
                     checked(wateringDays * Math.Max(0, tileCount)),
+                    wateringSupply.AvailableActionsWithoutRefill,
+                    false,
+                    tileCount < supplyLimitedTileCount,
                     reasons.Count == 0,
                     reasons.Distinct(StringComparer.Ordinal).ToArray(),
                     false);
             })
             .OrderBy(value => value.SeedId, StringComparer.Ordinal)
             .ToArray();
+    }
+
+    private static WateringSupply ReadWateringSupply(
+        SnapshotEnvelope snapshot)
+    {
+        var value = ReadStateValue(snapshot, "player", "watering_can_state");
+        Require(
+            ReadString(value, "projection_status") ==
+                "exact_vanilla_power_zero",
+            "Money Revenue crop-production Teacher requires the exact " +
+            "vanilla watering-can state.");
+        var waterLeft = ReadOptionalInt(value, "water_left") ?? -1;
+        var capacity = ReadOptionalInt(value, "capacity") ?? -1;
+        var bottomless = ReadOptionalBool(value, "is_bottomless") ?? false;
+        Require(
+            waterLeft >= 0 && capacity >= 0 && waterLeft <= capacity,
+            "Money Revenue crop-production Teacher watering-can state is invalid.");
+        return new WateringSupply(
+            bottomless ? int.MaxValue : waterLeft,
+            bottomless);
     }
 
     private static MaterialSupplyProjectionResult ReadMaterialSupply(
@@ -218,4 +252,8 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
         string ShopId,
         string QualifiedItemId,
         int UnitPrice);
+
+    private sealed record WateringSupply(
+        int AvailableActionsWithoutRefill,
+        bool Bottomless);
 }
