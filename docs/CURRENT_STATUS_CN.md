@@ -18,7 +18,17 @@
 | Money production evidence cells | **0/18** | 6 个 Money criterion × 3 partitions；hermetic fixture 不计 production |
 | Formal product training | **false** | 未通过完整正式训练准入 |
 
-### 当前唯一施工边界：Golden Walnut v24 路径修复收口
+### 当前唯一施工边界：Golden Walnut v25 背包容量恢复收口
+
+全新隔离运行 `golden-walnut-source-schedule-v25-20261026-012924` 已继续取得真实游戏进展。作物状态发生漂移后，唯一 Crop Teacher 正确放弃失效的花椰菜计划并重新规划防风草，最终完成 `8` 条逐格原生收获回执并在第 `105` 次迭代正常结算退出；统一 collection Teacher 随后处理邮件、完成任务 `13` 的 Farm -> BusStop -> Town -> Beach 路线，并取得 `(O)131` 的真实钓获回执。目标 `(O)708` 的后续尝试原生钓到 `(O)152` 海草后，系统正确要求继续尝试，而不是把非目标物冒充成功。
+
+v25 随后暴露两项串联硬伤。第一，随机非目标钓获的 fresh-time 重绑遗漏了 Master Angler 路线时间校准的三个权威字段；`QueueReplanFilter` 现复用既有字段常量完整保留 timing path、SHA-256 与 full-route validation 标记。第二，海草进入最后一个槽位后背包达到 `12/12`，基础钓鱼候选正确阻塞为 `fishing_inventory_full_requires_storage_transfer`，但 Stage One Teacher 没有容量恢复控制动作，因而在 Beach 与 Town 间反复选择无关计划。
+
+当前修复没有增加第二套执行器或人工候选池。只有在 fresh 透明快照同时证明“Master Angler 因无精确运行时来源而续程、背包确实已满、最近一次钓获 qualified ID 明确”时，Stage One 才从既有 `economy.ship_items` 候选中选择**恰好一件最近钓获物**，复用现有路线、出货箱和 fresh 重绑链；不允许任意出售其他资源。该控制动作的 learner rank/score 被清零，`formal_training_authorized=false`，因此只恢复执行容量，不制造策略训练标签。相关矩阵在仓库内隔离构建路径下为 `97/97`；对 v25 第 `113` 次真实快照与候选工件的生产代码重放精确选中 `ship:Farm:71,14:11:152:route:Beach:38,-1`，编译为 pending `executor.traverse_connector`，continuation 仍绑定 `(O)152 x1`。
+
+v25 已安全停止并固定为 incomplete；上述重放证明修复覆盖真实失败输入，但不是新的原生投递回执。下一唯一原生退出条件是从该隔离存档续接或建立 v26：完成 Beach -> Town -> BusStop -> Farm、只投递 `(O)152 x1`、fresh 快照出现空槽，并由 collection Teacher 恢复目标钓鱼且不再往返振荡。随后才继续首次登岛、Golden Walnut 来源增量及 First Parrot/Turtle/House 跃迁。`CoverageGateReady 5/19`、Money production `0/18` 与 `formal_product_training=false` 均不变。
+
+### 已收口背景：Golden Walnut v22-v24
 
 `golden-walnut-source-schedule-v22` 已真实完成节日等待后的返场，并生成第一条农场内场地接近队列；该队列随后暴露透明 `locations.route_blockers` 没有进入长距离移动修复的问题。第一轮修复让全地图对象阻塞进入同一 `move_to_tile + BFS route repair`，原 v22 队列已可重编译为 pending，但这仍只是失败现场重放，不是新的原生执行回执。
 

@@ -92,6 +92,118 @@ public sealed partial class MasterAnglerMainlineTests
     }
 
     [Fact]
+    public void StochasticNonTargetCatchRetainsCompleteIntentAcrossFreshTimeRebind()
+    {
+        var fixture = CreateFixture("Beach:0", currentTime: 900);
+        try
+        {
+            var initialAvailability = new CandidateOptionAvailabilityEvaluator()
+                .Evaluate(
+                    fixture.Before,
+                    new[]
+                    {
+                        new OptionAvailabilityCandidate
+                        {
+                            OptionId = "fishing.catch_fish",
+                            Parameters = fixture.Parameters
+                        }
+                    });
+            var initialCandidate = Assert.Single(
+                Assert.Single(initialAvailability.Options).EventCandidates);
+            var initialRanking = new EventCandidateRanker().Rank(
+                new BaselineTrainingReport(),
+                initialAvailability,
+                "goal.fishing.complete_master_angler");
+            var initialPlan = new DailyPlanCompiler().Compile(
+                initialRanking,
+                fixture.Before.StateHash);
+            var initialQueue = new ActionQueueCompiler().Compile(
+                initialPlan,
+                fixture.Before);
+            var queueItem = JsonSerializer.SerializeToNode(
+                Assert.Single(initialQueue.Items),
+                JsonOptions)!.AsObject();
+            var continuation = Assert.IsType<JsonObject>(
+                QueueReplanFilter.ReadObjectiveContinuation(queueItem));
+
+            Assert.Equal(
+                fixture.TimingCalibrationPath,
+                continuation[
+                    MasterAnglerRouteTimingValidator.CalibrationPathParameter]!
+                    .GetValue<string>());
+            Assert.False(string.IsNullOrWhiteSpace(
+                continuation[
+                    MasterAnglerRouteTimingValidator.CalibrationSha256Parameter]!
+                    .GetValue<string>()));
+            Assert.Equal(
+                "true",
+                continuation[
+                    MasterAnglerRouteTimingValidator.ValidationRequiredParameter]!
+                    .GetValue<string>());
+
+            var reboundParameters = continuation
+                .Where(property =>
+                    !string.Equals(
+                        property.Key,
+                        "kind",
+                        StringComparison.Ordinal) &&
+                    property.Value is JsonValue)
+                .Select(property => Parameter(
+                    "continuation." + property.Key,
+                    property.Value!.GetValue<string>()))
+                .ToArray();
+            var freshSnapshot = BuildSnapshot(
+                targetCaught: false,
+                currentTime: 1000);
+            var reboundAvailability = new CandidateOptionAvailabilityEvaluator()
+                .Evaluate(
+                    freshSnapshot,
+                    new[]
+                    {
+                        new OptionAvailabilityCandidate
+                        {
+                            OptionId = "fishing.catch_fish",
+                            Parameters = reboundParameters
+                        }
+                    });
+            var reboundCandidate = Assert.Single(
+                Assert.Single(reboundAvailability.Options).EventCandidates);
+            Assert.True(
+                reboundCandidate.Available,
+                string.Join(";", reboundCandidate.BlockReasons));
+            Assert.NotEqual(
+                initialCandidate.CandidateId,
+                reboundCandidate.CandidateId);
+
+            var materialized = JsonSerializer.SerializeToNode(
+                new EventCandidateRanker().Rank(
+                    new BaselineTrainingReport(),
+                    reboundAvailability,
+                    "goal.fishing.complete_master_angler"),
+                JsonOptions)!.AsArray();
+            var selected = new SelectedQueueCandidateLock(
+                0,
+                initialCandidate.CandidateId,
+                "fishing.catch_fish",
+                JsonSerializer.SerializeToNode(
+                    initialCandidate,
+                    JsonOptions)!.AsObject(),
+                continuation);
+            var rebound = SelectedQueueCandidateMatcher
+                .FilterMaterializedCandidates(materialized, selected);
+
+            var matched = Assert.Single(rebound);
+            Assert.Equal(
+                reboundCandidate.CandidateId,
+                matched!["candidate_id"]!.GetValue<string>());
+        }
+        finally
+        {
+            fixture.Dispose();
+        }
+    }
+
+    [Fact]
     public void AuthoritativeIntentRejectsCatchProjectedByDifferentLocationRule()
     {
         var fixture = CreateFixture("Beach:1");

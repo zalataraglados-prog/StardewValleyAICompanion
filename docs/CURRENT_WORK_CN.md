@@ -4,7 +4,16 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已完成 v10 之后的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已按 current authority 冻结；当前唯一施工项为 `complete_master_angler` 顶层 dependency、日历窗口与 coverage 接线。P0/P1 共享 correctness blocker 可临时中断，但不得静默改序或并行展开多个 root method。
 
-## 当前增量 · Golden Walnut v24 清障成本修复收口
+## 当前增量 · Golden Walnut v25 背包容量恢复
+
+- v25 `golden-walnut-source-schedule-v25-20261026-012924` 已取得新的真实原生进展：作物漂移后由唯一 Crop Teacher 重规划为防风草，形成 `8` 条逐格收获回执并正常结算；随后完成邮件、任务 `13` 三段路线和 `(O)131` 钓获。目标 `(O)708` 的后续尝试钓到 `(O)152` 海草，系统正确保持目标未完成。
+- 第一处断链是随机非目标钓获 fresh-time 重绑遗漏 Master Angler route-timing 的 path、SHA-256 和 full-route validation 三个字段。`QueueReplanFilter` 已改为复用 `MasterAnglerRouteTimingValidator` 的字段常量，并增加完整意图保留回归。
+- 修复字段后，v25 的真实失败工件继续暴露容量根因：背包 `12/12`，海草占槽位 `11`；钓鱼候选正确阻塞，但 broad ranking 虽存在多个合法 `economy.ship_items` 候选，却没有“为当前钓鱼续程释放一格”的控制选择，导致 Beach/Town 振荡。
+- 新增 `StageOneInventoryCapacityRecovery` 只在 fresh 快照精确证明上述三条件时触发，并只选择与最近一次 `caught_qualified_item_id` 完全相同、数量恰为 `1` 的既有出货候选。它复用 `DailyPlanCompiler`、`ActionQueueCompiler`、共享路线和原生出货执行器；候选的 learner rank/score/model score 被中和，不能成为策略监督标签。缺字段、背包未满、无精确同物候选均失败关闭。
+- 相关回归矩阵 `97/97` 通过。对 v25 第 `113` 次真实 snapshot/ranking 工件的当前生产代码重放选中 `(O)152 x1`，编译为 `pending / executor.traverse_connector`，continuation 仍精确绑定该物品。v25 固定为 incomplete，不把离线重放写成原生成功。
+- 下一唯一动作是原生 v26 验证：Beach -> Town -> BusStop -> Farm，投递且仅投递 `(O)152 x1`，fresh 背包出现空槽，随后恢复 Master Angler 钓鱼且不再振荡；通过后继续首次登岛与 Golden Walnut source schedule。全局准入数字和 `formal_product_training=false` 不变。
+
+## 已收口增量 · Golden Walnut v24 清障成本修复
 
 - v22 已把节日等待后的角色送回 Farm 并生成场地接近队列，但长距离 route repair 没有读取全地图 blocker 身份；第一轮修复接通现有 `locations.route_blockers` 后，v22 原失败输入可以重编译为 pending。该结果只证明旧输入已可编译。
 - 全新 v23 `golden-walnut-source-schedule-v23-20261025-233534` 已真实取得 `137` 个 verified native action、`12` 条原生日界和 `6` 条逐格收获回执。首轮作物 run 的接近、整地、播种、浇水、收获与结算全部完成；随后完成竹鱼竿邮件/任务路线、两次钓鱼、节日等待和 Beach -> Town -> BusStop -> Farm 返场。

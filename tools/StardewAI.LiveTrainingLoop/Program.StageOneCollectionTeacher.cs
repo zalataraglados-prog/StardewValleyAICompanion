@@ -2,7 +2,10 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using StardewAI.Contracts.Options;
+using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
+using StardewAI.Core.Execution;
+using StardewAI.Core.Training;
 using StardewAI.GoalConditionedBootstrap;
 using StardewAI.LiveTrainingLoop;
 
@@ -87,6 +90,83 @@ static partial class Program
             options.BackendUrl + "/api/v1/planner/baseline/rank-options",
             JsonSerializer.Serialize(rankRequest, JsonOptions));
         await WriteJsonAsync(rankingPath, ranking);
+
+        var typedRanking = JsonSerializer.Deserialize<
+            AvailabilityAwarePolicyPredictionEnvelope>(
+            ranking.ToJsonString(JsonOptions),
+            JsonOptions) ?? throw new InvalidDataException(
+                "Stage-one collection ranking response is empty.");
+        var capacityRecovery = StageOneInventoryCapacityRecovery.TrySelect(
+            typedRanking,
+            snapshot);
+        if (capacityRecovery is not null)
+        {
+            var typedSnapshot = JsonSerializer.Deserialize<SnapshotEnvelope>(
+                snapshotJson,
+                JsonOptions) ?? throw new InvalidDataException(
+                    "Stage-one collection snapshot is empty.");
+            var recoveryPlan = new DailyPlanCompiler().Compile(
+                new[] { capacityRecovery.Candidate },
+                stateHash,
+                goalId: options.Goal,
+                maxCandidates: 1);
+            var recoveryQueue = new ActionQueueCompiler().Compile(
+                recoveryPlan,
+                typedSnapshot);
+            if (recoveryPlan.Steps.Length == 0 ||
+                recoveryQueue.Status != "pending" ||
+                recoveryQueue.Items.Length == 0 ||
+                recoveryQueue.Items.Any(item => item.Status != "pending"))
+            {
+                return new StageOneCollectionTeacherQueueBuildResult(
+                    true,
+                    null,
+                    ranking,
+                    plainSnapshotPath,
+                    string.Empty,
+                    rankingPath,
+                    string.Empty,
+                    string.Empty,
+                    "blocked_inventory_capacity_recovery_not_dispatchable",
+                    capacityRecovery.Candidate.CandidateId);
+            }
+
+            await WriteTypedJsonAsync(
+                preferencePath,
+                new
+                {
+                    schema_version =
+                        "stage_one_inventory_capacity_recovery.v1",
+                    status = "ready",
+                    formal_training_authorized = false,
+                    source_state_hash = stateHash,
+                    trigger_reason = capacityRecovery.TriggerReason,
+                    caught_qualified_item_id =
+                        capacityRecovery.CaughtQualifiedItemId,
+                    selected_candidate_id =
+                        capacityRecovery.Candidate.CandidateId
+                });
+            await WriteTypedJsonAsync(planPath, recoveryPlan);
+            await WriteTypedJsonAsync(queuePath, recoveryQueue);
+            var queueNode = JsonNode.Parse(JsonSerializer.Serialize(
+                recoveryQueue,
+                JsonOptions))?.AsObject() ?? throw new InvalidDataException(
+                    "Stage-one inventory-capacity recovery queue is empty.");
+            return new StageOneCollectionTeacherQueueBuildResult(
+                true,
+                queueNode,
+                ranking,
+                plainSnapshotPath,
+                planPath,
+                rankingPath,
+                queuePath,
+                capacityRecovery.Candidate.CandidateId,
+                "ready_inventory_capacity_recovery",
+                "control_recovery=inventory_capacity" +
+                " caught_qualified_item_id=" +
+                capacityRecovery.CaughtQualifiedItemId +
+                " formal_training_authorized=false");
+        }
 
         var preference =
             CurrentStageOneCollectionTeacherPreferenceBuilder.Build(

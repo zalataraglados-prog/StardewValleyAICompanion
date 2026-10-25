@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using StardewAI.Core.Infrastructure;
 
 namespace StardewAI.LiveTrainingLoop;
 
@@ -46,7 +47,10 @@ public static partial class QueueReplanFilter
         "master_angler_window_index_path",
         "master_angler_window_index_sha256",
         "master_angler_validation_status",
-        "master_angler_runtime_terminal_validation_required"
+        "master_angler_runtime_terminal_validation_required",
+        MasterAnglerRouteTimingValidator.CalibrationPathParameter,
+        MasterAnglerRouteTimingValidator.CalibrationSha256Parameter,
+        MasterAnglerRouteTimingValidator.ValidationRequiredParameter
     };
 
     public static JsonObject[] FilterUnattempted(JsonObject[] queueItems, ISet<string> attemptedSemanticKeys)

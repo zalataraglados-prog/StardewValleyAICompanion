@@ -4,7 +4,15 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已闭合从 v10 最终隔离存档开始的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已通过 current-authority 复核并冻结；当前唯一施工项是 `complete_master_angler` 顶层依赖、日历窗口与 coverage 接线。Money Exit Gate 标准不降低，但 Money 已回到复杂度队列第 11 位。
 
-## 当前增量 · v23 原生进展与正式准入边界
+## 当前增量 · v25 容量恢复与正式准入边界
+
+`golden-walnut-source-schedule-v25-20261026-012924` 已在真实隔离存档中越过 v24 的清障边界：作物漂移后唯一 Crop Teacher 重新规划防风草，形成 `8` 条逐格原生收获回执并正常结算；统一 collection Teacher 随后完成邮件、任务 `13` 的三段 Beach 路线和 `(O)131` 原生钓获。目标 `(O)708` 的下一次尝试钓到 `(O)152` 海草后保持目标未完成，证明随机非目标结果没有被误结算。
+
+该运行随后固定为 incomplete。第一项硬伤是 fresh-time continuation 遗漏 Master Angler route-timing 的 path、SHA-256 和 full-route validation 三个字段，现已由统一字段常量保留。第二项是海草填满 `12/12` 背包后，钓鱼候选虽然正确阻塞，Stage One Teacher 却没有容量恢复控制动作，最终发生 Beach/Town 振荡。当前修复仅在 fresh 快照精确证明背包已满、Master Angler 正在续程且最近钓获 ID 明确时，选择既有 `economy.ship_items` 中完全匹配该钓获物且数量为 `1` 的候选；它复用现有路线/出货执行器并中和全部 learner 字段，不产生训练标签。
+
+相关矩阵 `97/97` 通过；v25 第 `113` 次真实工件已由当前生产代码离线重放为 pending `executor.traverse_connector`，continuation 精确绑定 `(O)152 x1`。这仍不是新原生投递回执。下一准入证据必须证明 Beach -> Farm 原生返场、只投递该海草、fresh 背包恢复容量并继续目标钓鱼；之后才回到首次登岛、Golden Walnut 来源增量、三项鹦鹉跃迁与 source schedule。`CoverageGateReady 5/19`、Money production `0/18`、`formal_product_training=false` 全部保持不变。
+
+## 已收口增量 · v23-v24 原生进展与正式准入边界
 
 全新隔离运行 `golden-walnut-source-schedule-v23-20261025-233534` 已在同一原生存档中取得 `137` 个 verified native action、`12` 条原生日界和 `6` 条逐格收获回执。它真实完成第一轮作物生产，随后完成邮件、任务 `13` 三段路线、两次 Beach 钓鱼、节日等待和三段返场。该结果证明长跑已越过此前的节日门禁与第一轮场地接近边界，但没有首次登岛、Golden Walnut 来源增量或三项鹦鹉跃迁，因而不能导出 source schedule。
 
