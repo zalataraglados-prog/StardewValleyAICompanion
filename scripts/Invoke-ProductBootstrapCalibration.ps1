@@ -26,6 +26,7 @@ param(
     [int] $MinFreeSpaceMb = 8192,
     [switch] $CaptureGoldenWalnutFreshSaveEvidence,
     [switch] $RequireGoldenWalnutSourceScheduleReady,
+    [string] $ResumeCropTeacherTransitionLedger = "",
     [string] $StageOneCollectionRequirementInventory = (Join-Path `
         $ProjectRoot `
         "experiments\local-data\output\authoritative-requirement-inventory-v1.json"),
@@ -48,6 +49,20 @@ if ($RequiredVerifiedActions -gt $MaxAttempts) {
 if ($RequireGoldenWalnutSourceScheduleReady -and
     -not $CaptureGoldenWalnutFreshSaveEvidence) {
     throw "RequireGoldenWalnutSourceScheduleReady requires CaptureGoldenWalnutFreshSaveEvidence."
+}
+$resumeCropTeacher = -not [string]::IsNullOrWhiteSpace(
+    $ResumeCropTeacherTransitionLedger)
+if ($resumeCropTeacher) {
+    if ($CaptureGoldenWalnutFreshSaveEvidence -or
+        $RequireGoldenWalnutSourceScheduleReady) {
+        throw "Crop Teacher resume cannot be combined with fresh-save capture."
+    }
+    if (-not (Test-Path -LiteralPath `
+            $ResumeCropTeacherTransitionLedger -PathType Leaf)) {
+        throw "Crop Teacher transition ledger was not found: $ResumeCropTeacherTransitionLedger"
+    }
+    $ResumeCropTeacherTransitionLedger =
+        [IO.Path]::GetFullPath($ResumeCropTeacherTransitionLedger)
 }
 if ($RequireGoldenWalnutSourceScheduleReady) {
     foreach ($path in @(
@@ -277,6 +292,12 @@ try {
             $RouteTimingCalibration
         )
     }
+    if ($resumeCropTeacher) {
+        $arguments += @(
+            "--resume-crop-teacher-transition-ledger",
+            $ResumeCropTeacherTransitionLedger
+        )
+    }
     $loopOutput = & dotnet $arguments
     $loopOutput | Set-Content -LiteralPath (Join-Path $artifactDirectory "loop.stdout.log") -Encoding utf8
     if ($LASTEXITCODE -ne 0) {
@@ -286,7 +307,8 @@ try {
     $trajectoryPath = Join-Path $trainingRoot "datasets\policy-decision-trajectories.jsonl"
     $trajectoryExists = Test-Path -LiteralPath $trajectoryPath -PathType Leaf
     if (-not $trajectoryExists -and
-        -not $CaptureGoldenWalnutFreshSaveEvidence) {
+        -not $CaptureGoldenWalnutFreshSaveEvidence -and
+        -not $resumeCropTeacher) {
         throw "Bootstrap calibration produced no policy trajectory file."
     }
     $trajectories = if ($trajectoryExists) {
@@ -306,7 +328,8 @@ try {
         @($_.candidates | Where-Object { $_.available -and $_.admitted_for_policy }).Count -ge 2
     })
     if ($accepted.Count -lt 1 -and
-        -not $CaptureGoldenWalnutFreshSaveEvidence) {
+        -not $CaptureGoldenWalnutFreshSaveEvidence -and
+        -not $resumeCropTeacher) {
         throw "Bootstrap calibration produced no Product trajectory with at least two admitted candidates."
     }
 
@@ -341,6 +364,18 @@ try {
              -PathType Leaf))) {
         throw "Golden Walnut long-run milestone did not produce a verified source schedule."
     }
+    if ($resumeCropTeacher -and
+        (-not [bool]$loopReport.crop_teacher_run_completed -or
+         [string]::IsNullOrWhiteSpace(
+             [string]$loopReport.crop_teacher_transition_ledger_path) -or
+         -not (Test-Path -LiteralPath (
+             [string]$loopReport.crop_teacher_transition_ledger_path) `
+             -PathType Leaf) -or
+         [IO.Path]::GetFullPath(
+             [string]$loopReport.crop_teacher_transition_ledger_path) -eq
+            $ResumeCropTeacherTransitionLedger)) {
+        throw "Crop Teacher resume did not complete its bound native run."
+    }
 
     $summary = [ordered]@{
         schema_version = "stardewai.product_bootstrap_calibration.v1"
@@ -362,6 +397,14 @@ try {
         } else { 0 }
         product_executor_count = [int]$productHealth.product_executor_count
         live_training_loop_report_path = $loopReportPath
+        crop_teacher_resume_enabled = $resumeCropTeacher
+        crop_teacher_resume_source_ledger_path = if ($resumeCropTeacher) {
+            $ResumeCropTeacherTransitionLedger
+        } else { "" }
+        crop_teacher_transition_ledger_path =
+            [string]$loopReport.crop_teacher_transition_ledger_path
+        crop_teacher_run_completed =
+            [bool]$loopReport.crop_teacher_run_completed
         golden_walnut_fresh_save_evidence_capture_enabled =
             [bool]$loopReport.golden_walnut_fresh_save_evidence_capture_enabled
         golden_walnut_fresh_save_episode_manifest_path =

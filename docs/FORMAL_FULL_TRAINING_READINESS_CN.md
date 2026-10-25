@@ -4,15 +4,15 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已闭合从 v10 最终隔离存档开始的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已通过 current-authority 复核并冻结；当前唯一施工项是 `complete_master_angler` 顶层依赖、日历窗口与 coverage 接线。Money Exit Gate 标准不降低，但 Money 已回到复杂度队列第 11 位。
 
-## 当前增量 · v26 收获容量恢复与正式准入边界
+## 已收口增量 · v26 收获容量恢复与正式准入边界
 
-`golden-walnut-source-schedule-v26-20261026-023455` 已从真实 day-zero 隔离存档推进到 Spring 16。该运行完成首轮作物生产、邮件、任务 `13`、竹鱼竿剧情和钓鱼，并在节日门禁结束后从 Beach 原生返场；随后开始第二轮防风草生产。第 `173` 次迭代的真实状态为 Farm、背包 `12/12` 和 8 格成熟作物，作物 Teacher 的 8 项收获批次因无空槽而正确失败关闭。跨日后 `caught_qualified_item_id` 已清空，因此 v25 仅匹配最近钓获物的恢复无法覆盖该控制阶段。
+`golden-walnut-source-schedule-v26-20261026-023455` 已从真实 day-zero 隔离存档推进到 Spring 17（`total_days=16`）。该运行完成首轮作物生产、邮件、任务 `13`、竹鱼竿剧情和钓鱼，并在节日门禁结束后从 Beach 原生返场；随后开始第二轮防风草生产。第 `173` 次迭代的真实状态为 Farm、背包 `12/12` 和 8 格成熟作物，作物 Teacher 的 8 项收获批次因无空槽而正确失败关闭。跨日后 `caught_qualified_item_id` 已清空，因此 v25 仅匹配最近钓获物的恢复无法覆盖该控制阶段。
 
 当前修复不改变正式策略分母，也不新增执行器。出货候选已有的 `available_stack` 现贯穿排名与 clone 契约；Crop Teacher 在满包收获前中断原批次，复用同一 Backend availability、确定性候选物化、日计划、动作队列、路线和原生出货箱链，不调用策略模型。容量恢复只允许 available、单件动作、实际单格栈且通过既有自动出售保护的候选；优先 Full Shipment 首次贡献，否则限制为不高于 `50g` 的低风险单件。恢复候选的 learner 字段归零，完成后必须 fresh 重编译原收获，不能产生训练标签或结算旧批次。该通用容量恢复不再依赖 Golden Walnut 门禁，也不在作物路径重建 Master Angler 意图。
 
-对 v26 第 `173` 次真实失败快照，当前生产代码重建出 5 个合法出货候选，选择 `(O)92 x1 / 2g / Full Shipment`；`DailyPlanCompiler -> ActionQueueCompiler` 生成 2 项全 pending 队列，先移动到出货箱站位再原生投递。6 个花椰菜、5 个木材与受保护种子均未被选中。定向测试 `42/42`、相关控制链 `137/137`、Release solution `0 warning / 0 error`。
+对 v26 第 `173` 次真实失败快照，当前生产代码重建出 5 个合法出货候选，选择 `(O)92 x1 / 2g / Full Shipment`；`DailyPlanCompiler -> ActionQueueCompiler` 生成 2 项全 pending 队列，先移动到出货箱站位再原生投递。6 个花椰菜、5 个木材与受保护种子均未被选中。显式续跑会重建原请求对应的整份计划并做结构等价校验，同时把源账本作为只读输入、在当前 run 创建派生账本；没有后续日界回执的进程内收获不会被当成磁盘存档进度继承。续跑/账本聚焦测试 `16/16`，此前定向测试 `42/42`、相关控制链 `137/137`、Release solution `0 warning / 0 error`。
 
-上述结果仍只是“真实失败输入上的生产代码重放”，不是原生投递或收获成功。下一准入证据必须在受控续接或 v27 中证明：只投递一个安全单件、fresh 背包出现空槽、同一 8 格收获重试并完成结算。之后才继续首次登岛、Golden Walnut 来源增量、三项鹦鹉跃迁和 source schedule。`CoverageGateReady 5/19`、Money production `0/18`、`formal_product_training=false` 全部保持不变。
+隐藏静音原生续跑 `crop-teacher-v26-resume-fork-20261026-040111` 已补齐该证据。Spring 17 的真实状态依次为 `8 crops / 0 empty / sap x1`、原生投箱后的 `8 crops / 1 empty / sap x0`、同一批次 8 格全部 verified 后的 `0 crops / 0 empty / parsnip x8`；派生账本写入 8 条收获回执并判定 crop run complete，源账本仍保持 0 条收获与 4 条已落盘日界。本切片因此原生收口，但没有跨越新的睡眠存档边界，也没有形成 Golden Walnut source schedule。下一准入缺口仍是首次登岛、Golden Walnut 来源增量、三项鹦鹉跃迁和 source schedule；`CoverageGateReady 5/19`、Money production `0/18`、`formal_product_training=false` 全部保持不变。
 
 ## 已收口增量 · v23-v24 原生进展与正式准入边界
 

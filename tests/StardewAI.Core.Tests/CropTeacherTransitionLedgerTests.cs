@@ -7,6 +7,83 @@ namespace StardewAI.Core.Tests;
 public sealed class CropTeacherTransitionLedgerTests
 {
     [Fact]
+    public void ResumeForkKeepsTheSourceImmutableAndDropsVolatileHarvests()
+    {
+        var root = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-crop-ledger-fork-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        var planPath = Path.Combine(root, "run-plan.json");
+        var sourcePath = Path.Combine(root, "source-ledger.json");
+        var volatileForkPath = Path.Combine(root, "volatile-fork.json");
+        var durableForkPath = Path.Combine(root, "durable-fork.json");
+        try
+        {
+            File.WriteAllText(planPath, "{\"plan\":1}");
+            var source = CropTeacherTransitionLedger.Open(sourcePath, planPath);
+            source.RecordVerifiedHarvestResults(
+                new JsonObject
+                {
+                    ["step_results"] = new JsonArray(
+                        HarvestResult(10, 12, verified: true))
+                },
+                HarvestStep(),
+                "2026-10-24T00:00:00.0000000+00:00");
+
+            var volatileFork = CropTeacherTransitionLedger.ForkForResume(
+                source,
+                volatileForkPath,
+                out var discarded);
+
+            Assert.Equal(1, discarded);
+            Assert.Empty(volatileFork.HarvestReceipts);
+            Assert.Single(source.HarvestReceipts);
+
+            source.RecordVerifiedDayBoundary(new CropTeacherDayBoundaryReceipt(
+                CropTeacherTransitionLedger.DayBoundaryKey(4),
+                4,
+                5,
+                "1:spring:5",
+                "1:spring:6",
+                "queue:sleep",
+                "item:sleep",
+                "state:before:sleep",
+                "state:after:sleep",
+                "save:before:sleep",
+                "save:after:sleep",
+                "2026-10-24T00:01:00.0000000+00:00"));
+            var durableFork = CropTeacherTransitionLedger.ForkForResume(
+                source,
+                durableForkPath,
+                out discarded);
+
+            Assert.Equal(0, discarded);
+            Assert.Single(durableFork.HarvestReceipts);
+            Assert.Single(durableFork.DayBoundaryReceipts);
+        }
+        finally
+        {
+            foreach (var path in new[]
+                     {
+                         sourcePath,
+                         volatileForkPath,
+                         durableForkPath,
+                         planPath
+                     })
+            {
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                }
+            }
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root);
+            }
+        }
+    }
+
+    [Fact]
     public void PersistsOnlyVerifiedNativeHarvestTilesAndResumesWithoutReplay()
     {
         var root = Path.Combine(
@@ -67,9 +144,7 @@ public sealed class CropTeacherTransitionLedgerTests
             Assert.False(ledger.RecordVerifiedDayBoundary(boundary));
             Assert.Single(ledger.DayBoundaryReceipts);
 
-            var resumed = CropTeacherTransitionLedger.Open(
-                ledgerPath,
-                planPath);
+            var resumed = CropTeacherTransitionLedger.OpenExisting(ledgerPath);
             Assert.Single(resumed.HarvestReceipts);
             Assert.Single(resumed.DayBoundaryReceipts);
             Assert.Equal(

@@ -58,6 +58,45 @@ var cropTeacherReplanCount = 0;
 var cropTeacherTransitionLedgerPath = string.Empty;
 var cropTeacherHarvestReceiptCount = 0;
 var cropTeacherDayBoundaryReceiptCount = 0;
+if (!string.IsNullOrWhiteSpace(
+        options.ResumeCropTeacherTransitionLedgerPath))
+{
+    var resumed = CropTeacherResumeLoader.Load(
+        options.ResumeCropTeacherTransitionLedgerPath,
+        Path.Combine(
+            options.SnapshotDir,
+            "crop-teacher-resume",
+            "crop-teacher-transition-ledger.json"));
+    activeCropTeacherRunPlanRequest = resumed.RunPlanRequest;
+    activeCropTeacherRunPlan = resumed.RunPlan;
+    activeCropTeacherTransitionLedger = resumed.TransitionLedger;
+    cropTeacherTransitionLedgerPath = resumed.TransitionLedgerPath;
+    lastPlanningHandoffNativeRunPlanPath = resumed.NativeRunPlanPath;
+    cropTeacherHarvestReceiptCount =
+        resumed.TransitionLedger.HarvestReceipts.Count;
+    cropTeacherDayBoundaryReceiptCount =
+        resumed.TransitionLedger.DayBoundaryReceipts.Count;
+    cropTeacherFirstDayCompleted =
+        resumed.TransitionLedger.CompletedDayBoundaryKeys.Contains(
+            CropTeacherTransitionLedger.DayBoundaryKey(
+                resumed.RunPlan.FirstTotalDay));
+    AppendProgress(
+        options,
+        "crop_teacher_run_resumed",
+        0,
+        resumed.RunPlan.SourceStateHash,
+        string.Empty,
+        "source_ledger=" + resumed.SourceTransitionLedgerPath +
+        " active_ledger=" + resumed.TransitionLedgerPath +
+        " discarded_volatile_harvest_receipts=" +
+        resumed.DiscardedVolatileHarvestReceiptCount +
+        " run_plan=" + resumed.NativeRunPlanPath +
+        " run_plan_sha256=" +
+        resumed.TransitionLedger.RunPlanSha256 +
+        " harvest_receipts=" + cropTeacherHarvestReceiptCount +
+        " day_boundary_receipts=" +
+        cropTeacherDayBoundaryReceiptCount);
+}
 var stageOneCollectionTeacherQueueCount = 0;
 var lastStageOneCollectionTeacherFallbackSignature = string.Empty;
 JsonObject? activeObjectiveContinuation = null;

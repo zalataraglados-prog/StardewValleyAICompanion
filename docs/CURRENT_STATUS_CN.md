@@ -18,17 +18,17 @@
 | Money production evidence cells | **0/18** | 6 个 Money criterion × 3 partitions；hermetic fixture 不计 production |
 | Formal product training | **false** | 未通过完整正式训练准入 |
 
-### 当前唯一施工边界：Golden Walnut v26 收获容量恢复
+### 已原生收口：Golden Walnut v26 收获容量恢复
 
-全新隐藏静音隔离运行 `golden-walnut-source-schedule-v26-20261026-023455` 已从 day-zero 新档真实推进到 Spring 16。它完成 `14` 份花椰菜种子购买、返场、场地准备、播种、逐日浇水、第一轮收获、邮件、任务 `13`、竹鱼竿剧情和原生钓鱼；第 `99` 次迭代钓到 `(O)129` 后背包达到 `12/12`。系统随后按权威节日门禁等待 Spring 13，通过 Beach -> Town -> BusStop -> Farm 返场，并开始第二轮防风草整地、播种和浇水。旧节日振荡、路线清障和第一轮作物闭环均未回退。
+全新隐藏静音隔离运行 `golden-walnut-source-schedule-v26-20261026-023455` 已从 day-zero 新档真实推进到 Spring 17（`total_days=16`）。它完成 `14` 份花椰菜种子购买、返场、场地准备、播种、逐日浇水、第一轮收获、邮件、任务 `13`、竹鱼竿剧情和原生钓鱼；第 `99` 次迭代钓到 `(O)129` 后背包达到 `12/12`。系统随后按权威节日门禁等待 Spring 13，通过 Beach -> Town -> BusStop -> Farm 返场，并开始第二轮防风草整地、播种和浇水。旧节日振荡、路线清障和第一轮作物闭环均未回退。
 
 v26 在第 `173` 次迭代进入第二轮 `8` 格收获时连续失败关闭。真实快照 `574bc936...de9` 明确显示 Farm、背包 `12/12`、8 格成熟作物和 8 项 `executor.harvest_crop`；编译器因普通手持收获需要空槽而正确拒绝。v25 的“精确出售最近钓获物”恢复不足以覆盖该状态，因为跨日后 `caught_qualified_item_id` 已按生命周期清空，而且 Crop Teacher 在收获阶段持有控制权。这不是 Agent 文本错误，而是候选信息传递和控制交接的真实缺口。
 
 修复仍只使用一套候选、排序、日计划、动作编译和原生出货执行器。`economy.ship_items` 原本已有 `available_stack`，但 `PolicyEventCandidatePrediction` 与排名克隆链漏传该字段；现已端到端保留。满包收获前，Crop Teacher 暂停原批次并调用同一容量恢复选择器：只接受上游已判合法、`quantity=1` 且实际栈恰为 `1` 的候选；优先尚未计入 Full Shipment 的物品，否则只允许单位价值不高于 `50g` 的低风险单件。可种种子和其他 `protected_from_auto_sell` 物品仍由既有候选层排除。恢复候选的 learner 信号全部中和，不能成为策略监督标签；容量恢复也不再依赖 Golden Walnut 开关或重建 Master Angler 意图。
 
-当前代码对 v26 第 `173` 次真实快照完整重建出 `5` 个合法出货候选，并确定性选择槽位 `9` 的 `(O)92 x1`：该物品价值 `2g`、推进 Full Shipment 且出售后确实释放一格。正式 `DailyPlanCompiler -> ActionQueueCompiler` 产出 `2` 步 pending 队列，首步为 `move_to_tile`，随后才原生投箱；没有出售 `(O)190 x6`、`(O)388 x5` 或受保护种子。定向回归 `42/42`、相关控制链矩阵 `137/137`、全解决方案 Release 构建 `0 warning / 0 error`。
+当前代码对 v26 第 `173` 次真实快照完整重建出 `5` 个合法出货候选，并确定性选择槽位 `9` 的 `(O)92 x1`：该物品价值 `2g`、推进 Full Shipment 且出售后确实释放一格。正式 `DailyPlanCompiler -> ActionQueueCompiler` 产出 `2` 步 pending 队列，首步为 `move_to_tile`，随后才原生投箱；没有出售 `(O)190 x6`、`(O)388 x5` 或受保护种子。显式续跑入口还会从原请求重建整份原生计划并做 JSON 结构等价校验；续跑写入当前 run 的派生账本，源账本保持只读，只继承已有后续日界证明已经落盘的收获回执。这样进程内成功但尚未睡眠存档的动作不会在重启后冒充可恢复进度。定向续跑/账本回归 `16/16`，此前定向回归 `42/42`、相关控制链矩阵 `137/137`，全解决方案 Release 构建 `0 warning / 0 error`。
 
-v26 已固定为 controlled incomplete；离线重放不是原生投递/收获回执。下一唯一原生退出条件是从该存档受控续接或建立 v27：先原生投递且仅投递上述安全单件，fresh 快照确认出现空槽，再重试同一 `8` 格收获批次并正常结算；随后 collection Teacher 才继续钓鱼、首次登岛、Golden Walnut 来源增量及 First Parrot/Turtle/House 跃迁。`CoverageGateReady 5/19`、Money production `0/18` 与 `formal_product_training=false` 均不变。
+隐藏静音运行 `crop-teacher-v26-resume-fork-20261026-040111` 已关闭该原生退出条件。它从 v26 的 Spring 17 磁盘存档和只读源账本恢复：先从 FarmHouse 原生返场，再编译并执行 `(O)92 x1` 的移动/投箱队列；fresh 状态由 `8 crops / 0 empty / 1 sap` 变为 `8 crops / 1 empty / 0 sap`。随后同一 commitment 的 8 项 `executor.harvest_crop` 全部 `applied + primitive verified`，状态变为 `0 crops / 0 empty / (O)24 x8`，派生账本写入 `8` 条收获回执并判定 crop run complete。源账本仍为 `0` 条收获、`4` 条已落盘日界，派生账本为 `8 + 4`；本次不是离线重放，也没有把未保存动作倒灌到恢复起点。下一施工边界恢复为 collection Teacher：继续钓鱼、首次登岛、Golden Walnut 来源增量及 First Parrot/Turtle/House 跃迁。该短验收没有完成新日界存档或 source schedule，`CoverageGateReady 5/19`、Money production `0/18` 与 `formal_product_training=false` 均不变。
 
 ### 已收口背景：Golden Walnut v22-v24
 

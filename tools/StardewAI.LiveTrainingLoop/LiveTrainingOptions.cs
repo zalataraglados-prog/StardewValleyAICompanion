@@ -60,6 +60,8 @@ public sealed class LiveTrainingOptions
     public bool UseProductExecutor { get; set; }
     public bool UsePlanOutput { get; set; }
     public bool UseDailyPlan { get; set; }
+    public string ResumeCropTeacherTransitionLedgerPath { get; set; } =
+        string.Empty;
     public bool UseParameterizedAction { get; set; }
     public bool EmitQueueExecutionReceipt { get; set; }
     public string TeacherPreferencePath { get; set; } = string.Empty;
@@ -466,6 +468,11 @@ public sealed class LiveTrainingOptions
             {
                 options.UseDailyPlan = true;
             }
+            else if (current == "--resume-crop-teacher-transition-ledger" &&
+                i + 1 < args.Length)
+            {
+                options.ResumeCropTeacherTransitionLedgerPath = args[++i];
+            }
             else if (current == "--use-parameterized-action")
             {
                 options.UseParameterizedAction = true;
@@ -627,8 +634,45 @@ public sealed class LiveTrainingOptions
         options.ValidatePrecompiledQueueMode();
         options.ValidateQueueExecutionReceiptMode();
         options.ValidateGoldenWalnutFreshSaveEvidenceMode();
+        options.ValidateCropTeacherResumeMode();
 
         return options;
+    }
+
+    public void ValidateCropTeacherResumeMode()
+    {
+        if (string.IsNullOrWhiteSpace(
+                ResumeCropTeacherTransitionLedgerPath))
+        {
+            return;
+        }
+
+        if (!UseDailyPlan ||
+            !UseProductExecutor ||
+            !RequireExecutorFeedback ||
+            !SkipTraining)
+        {
+            throw new ArgumentException(
+                "--resume-crop-teacher-transition-ledger requires " +
+                "--use-daily-plan, --use-product-executor, executor feedback " +
+                "and --skip-training.");
+        }
+        if (CaptureGoldenWalnutFreshSaveEvidence ||
+            RequireGoldenWalnutSourceScheduleReady)
+        {
+            throw new ArgumentException(
+                "--resume-crop-teacher-transition-ledger cannot be combined " +
+                "with fresh-save evidence capture or source-schedule setup.");
+        }
+
+        var fullPath = Path.GetFullPath(
+            ResumeCropTeacherTransitionLedgerPath);
+        if (!File.Exists(fullPath))
+        {
+            throw new ArgumentException(
+                "Crop Teacher transition ledger was not found: " + fullPath);
+        }
+        ResumeCropTeacherTransitionLedgerPath = fullPath;
     }
 
     public void ValidateGoldenWalnutFreshSaveEvidenceMode()

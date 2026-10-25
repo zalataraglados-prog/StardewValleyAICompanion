@@ -77,6 +77,78 @@ public sealed class CropTeacherTransitionLedger
         DayBoundaryReceipts.Select(receipt => receipt.DayBoundaryKey)
             .ToHashSet(StringComparer.Ordinal);
 
+    public static CropTeacherTransitionLedger OpenExisting(
+        string ledgerPath)
+    {
+        var fullLedgerPath = Path.GetFullPath(Required(ledgerPath, "ledger"));
+        if (!File.Exists(fullLedgerPath))
+        {
+            throw new FileNotFoundException(
+                "crop_teacher_transition_ledger_missing",
+                fullLedgerPath);
+        }
+
+        var binding = JsonSerializer.Deserialize<CropTeacherTransitionLedger>(
+                File.ReadAllText(fullLedgerPath, Encoding.UTF8),
+                JsonOptions) ?? throw new InvalidDataException(
+                    "crop_teacher_transition_ledger_invalid");
+        if (string.IsNullOrWhiteSpace(binding.RunPlanPath) ||
+            !Path.IsPathFullyQualified(binding.RunPlanPath))
+        {
+            throw new InvalidDataException(
+                "crop_teacher_transition_ledger_binding_invalid");
+        }
+
+        return Open(fullLedgerPath, binding.RunPlanPath);
+    }
+
+    public static CropTeacherTransitionLedger ForkForResume(
+        CropTeacherTransitionLedger source,
+        string ledgerPath,
+        out int discardedVolatileHarvestReceiptCount)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        if (string.IsNullOrWhiteSpace(source.LedgerPath))
+        {
+            throw new InvalidOperationException(
+                "crop_teacher_resume_source_ledger_not_open");
+        }
+
+        var fullLedgerPath = Path.GetFullPath(Required(ledgerPath, "ledger"));
+        if (string.Equals(
+                fullLedgerPath,
+                source.LedgerPath,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidDataException(
+                "crop_teacher_resume_ledger_must_not_overwrite_source");
+        }
+        if (File.Exists(fullLedgerPath))
+        {
+            throw new IOException(
+                "crop_teacher_resume_ledger_already_exists: " +
+                fullLedgerPath);
+        }
+
+        var completedDayBoundaries = source.CompletedDayBoundaryKeys;
+        var durableHarvestReceipts = source.HarvestReceipts
+            .Where(receipt => completedDayBoundaries.Contains(
+                DayBoundaryKey(receipt.TotalDay)))
+            .ToList();
+        discardedVolatileHarvestReceiptCount =
+            source.HarvestReceipts.Count - durableHarvestReceipts.Count;
+        var fork = new CropTeacherTransitionLedger
+        {
+            RunPlanPath = source.RunPlanPath,
+            RunPlanSha256 = source.RunPlanSha256,
+            HarvestReceipts = durableHarvestReceipts,
+            DayBoundaryReceipts = source.DayBoundaryReceipts.ToList(),
+            LedgerPath = fullLedgerPath
+        };
+        fork.Persist();
+        return Open(fullLedgerPath, source.RunPlanPath);
+    }
+
     public static CropTeacherTransitionLedger Open(
         string ledgerPath,
         string runPlanPath)
