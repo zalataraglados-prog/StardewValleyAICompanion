@@ -30,6 +30,12 @@ v26 在第 `173` 次迭代进入第二轮 `8` 格收获时连续失败关闭。�
 
 隐藏静音运行 `crop-teacher-v26-resume-fork-20261026-040111` 已关闭该原生退出条件。它从 v26 的 Spring 17 磁盘存档和只读源账本恢复：先从 FarmHouse 原生返场，再编译并执行 `(O)92 x1` 的移动/投箱队列；fresh 状态由 `8 crops / 0 empty / 1 sap` 变为 `8 crops / 1 empty / 0 sap`。随后同一 commitment 的 8 项 `executor.harvest_crop` 全部 `applied + primitive verified`，状态变为 `0 crops / 0 empty / (O)24 x8`，派生账本写入 `8` 条收获回执并判定 crop run complete。源账本仍为 `0` 条收获、`4` 条已落盘日界，派生账本为 `8 + 4`；本次不是离线重放，也没有把未保存动作倒灌到恢复起点。下一施工边界恢复为 collection Teacher：继续钓鱼、首次登岛、Golden Walnut 来源增量及 First Parrot/Turtle/House 跃迁。该短验收没有完成新日界存档或 source schedule，`CoverageGateReady 5/19`、Money production `0/18` 与 `formal_product_training=false` 均不变。
 
+### 当前原生进展：作物结束后切入 Stage One collection
+
+显式续跑现在可选择 `continue-after-crop-teacher-run`。该模式必须同时提供只读源账本和四份 Stage One authority 工件；作物 run 完成后不再触发旧的“首日完成即耗尽全部主尝试”快捷终止，而是进入现有 collection Teacher。`golden-walnut-collection-v27c-20261026-041446` 首次证明该切换真实发生：作物阶段完成后编译并执行了 Master Angler 路线，verified action 从 `3` 增至 `6`。它同时暴露真实控制缺陷：首个候选在 fresh 快照失效后，多个权威向量完全相同的候选按防伪标签规则返回 `blocked_authoritatively_tied_top_candidates`，旧循环却继续调用通用日计划并重新派发 Crop Teacher。
+
+当前修复明确分离监督与控制。权威同分继续禁止生成 Teacher pairwise preference；运行控制器只为推进环境，按稳定顺序选择一个同样合格的候选，归零 learner 信号，并把独立控制工件标为 `teacher_preference_label_eligible=false / formal_training_authorized=false`。其他 collection authority 阻塞会结构化停止本轮，不再回退作物 handoff。隐藏静音原生回归 `golden-walnut-collection-v27d-20261026-043000` 已在同一只读源账本派生运行中再次完成容量恢复和 8 格收获，随后编译普通 collection Teacher 队列；候选失效后成功编译 `stage_one_collection_control_queue`，连续形成 3 条新的原生 verified action，未再出现 Crop Teacher 派发。该短测因 `MaxAttempts=12` 中两次 fresh 候选失效也占尝试次数，最终为 `9/10`、结构化 incomplete；这不是执行失败，也不计为完整 source schedule。聚焦回归 `42/42`、全解决方案 Release 构建 `0 warning / 0 error`。下一真实缺口仍是沿该 collection 控制链推进首次登岛、Golden Walnut 来源增量和 First Parrot/Turtle/House 跃迁；正式训练状态不变。
+
 ### 已收口背景：Golden Walnut v22-v24
 
 `golden-walnut-source-schedule-v22` 已真实完成节日等待后的返场，并生成第一条农场内场地接近队列；该队列随后暴露透明 `locations.route_blockers` 没有进入长距离移动修复的问题。第一轮修复让全地图对象阻塞进入同一 `move_to_tile + BFS route repair`，原 v22 队列已可重编译为 pending，但这仍只是失败现场重放，不是新的原生执行回执。

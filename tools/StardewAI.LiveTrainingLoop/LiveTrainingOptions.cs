@@ -93,6 +93,10 @@ public sealed class LiveTrainingOptions
     public bool StopAfterObjectiveComplete { get; set; }
     public bool StopAfterSocialObjectiveComplete { get; set; }
     public bool StopAfterCropTeacherFirstDay { get; set; }
+    public bool ContinueAfterCropTeacherRun { get; set; }
+    public bool UseStageOneCollectionTeacher =>
+        RequireGoldenWalnutSourceScheduleReady ||
+        ContinueAfterCropTeacherRun;
     public string TargetExecutionMode { get; set; } = ExecutionTargetProfiles.TrainingSingleplayer;
     public ActionActorRef TargetActor => ExecutionTargetProfiles.CreateActor(TargetExecutionMode);
     public string FeedbackMode => RequireExecutorFeedback
@@ -597,6 +601,10 @@ public sealed class LiveTrainingOptions
             {
                 options.StopAfterCropTeacherFirstDay = true;
             }
+            else if (current == "--continue-after-crop-teacher-run")
+            {
+                options.ContinueAfterCropTeacherRun = true;
+            }
         }
 
         if (string.IsNullOrWhiteSpace(options.RunId))
@@ -641,6 +649,14 @@ public sealed class LiveTrainingOptions
 
     public void ValidateCropTeacherResumeMode()
     {
+        if (ContinueAfterCropTeacherRun &&
+            string.IsNullOrWhiteSpace(
+                ResumeCropTeacherTransitionLedgerPath))
+        {
+            throw new ArgumentException(
+                "--continue-after-crop-teacher-run requires " +
+                "--resume-crop-teacher-transition-ledger.");
+        }
         if (string.IsNullOrWhiteSpace(
                 ResumeCropTeacherTransitionLedgerPath))
         {
@@ -663,6 +679,21 @@ public sealed class LiveTrainingOptions
             throw new ArgumentException(
                 "--resume-crop-teacher-transition-ledger cannot be combined " +
                 "with fresh-save evidence capture or source-schedule setup.");
+        }
+        if (ContinueAfterCropTeacherRun)
+        {
+            ValidateAuthorityArtifact(
+                StageOneCollectionRequirementInventoryPath,
+                "--stage-one-collection-requirement-inventory");
+            ValidateAuthorityArtifact(
+                StageOneCollectionAcquisitionLoweringPath,
+                "--stage-one-collection-acquisition-lowering");
+            ValidateAuthorityArtifact(
+                MasterAnglerStageOneWindowIndexPath,
+                "--master-angler-stage-one-window-index");
+            ValidateAuthorityArtifact(
+                RouteTimingCalibrationPath,
+                "--route-timing-calibration");
         }
 
         var fullPath = Path.GetFullPath(

@@ -14,6 +14,14 @@
 - v26 真实失败快照离线重建出 5 个合法出货候选，确定性选择 `(O)92 x1 / 2g / Full Shipment`；正式编译为 `pending / 2 items / first=move_to_tile / all pending`。未选择 6 个花椰菜、5 个木材或受保护种子。显式续跑会重建并结构比对原计划，源账本保持只读，当前 run 使用派生账本；只有已有后续日界回执的收获才作为已落盘进度继承。定向续跑/账本测试 `16/16`，此前定向测试 `42/42`、相关矩阵 `137/137`、Release solution `0 warning / 0 error`。
 - 隐藏静音原生续跑 `crop-teacher-v26-resume-fork-20261026-040111` 已通过：`8 crops / 0 empty / sap x1` -> 原生投递 `(O)92 x1` -> `8 crops / 1 empty / sap x0` -> 同一 commitment 的 8 格收获全部 verified -> `0 crops / 0 empty / parsnip x8`。派生账本为 `8 harvest + 4 day boundary`，源账本保持 `0 + 4`，crop run complete。下一固定动作恢复为 collection Teacher、首次登岛和 Golden Walnut source schedule；该短验收没有新日界存档，不能冒充 source schedule，全局准入数字与 `formal_product_training=false` 不变。
 
+## 当前增量 · Crop Teacher 到 collection Teacher 的原生交接
+
+- 新的显式 continuation 模式只允许从已验证的 Crop Teacher 只读源账本进入，并同时校验 collection requirement inventory、acquisition lowering、Master Angler window index 与 route timing calibration。旧的首日完成快捷退出仅在未请求 continuation 时保留。
+- v27c 已真实完成 Crop Teacher 并进入 Master Angler 路线，但首个路线候选失效后的权威同分状态错误落入通用 daily-plan fallback，后者重新派发了 Crop Teacher。该运行已立即停止，未把后续错误路线冒充 collection 证据。
+- 现将“可用于 Teacher 标签的唯一权威偏好”与“控制器可从同样正确的选项中任选其一推进环境”分离。同分时 Teacher preference 仍保持 blocked/null；控制队列使用稳定顺序、归零 learner 信号并单独落盘 `stage_one_collection_control_selection.v1`，固定声明 `teacher_preference_label_eligible=false` 和 `formal_training_authorized=false`。除同分外的 authority blocker 会终止有界运行，不再落入作物 handoff。
+- v27d 隐藏静音回归已再次完成作物恢复与 8 格收获，随后执行 Master Angler Teacher 路线；fresh 失效后成功生成一条 control-only Backwoods 路线，并连续取得 3 条 verified native action。全过程未再次派发 Crop Teacher，也没有产生伪 Teacher 标签。短测为 `9/10`，唯一未达到 10 的原因是 `12` 次尝试预算包含两次候选失效/replan；因此结果保留为受限 incomplete，而非伪装成功。
+- 验证为聚焦 `42/42`、Release solution `0 warning / 0 error`。下一固定动作是在同一 collection 控制边界上继续有界新档运行，直到首次登岛、至少一个 Golden Walnut 来源增量和 First Parrot/Turtle/House 三项原生跃迁闭合，再导出 source schedule；正式训练仍为 false。
+
 ## 已收口增量 · Golden Walnut v24 清障成本修复
 
 - v22 已把节日等待后的角色送回 Farm 并生成场地接近队列，但长距离 route repair 没有读取全地图 blocker 身份；第一轮修复接通现有 `locations.route_blockers` 后，v22 原失败输入可以重编译为 pending。该结果只证明旧输入已可编译。

@@ -36,7 +36,7 @@ static partial class Program
             bool requireFishingAttemptBlockedForCapacityRecovery = true)
     {
         if ((!capacityRecoveryOnly &&
-             !options.RequireGoldenWalnutSourceScheduleReady) ||
+             !options.UseStageOneCollectionTeacher) ||
             HasPriorityStoryEventInterrupt(snapshot))
         {
             return NotAttemptedStageOneCollectionTeacher();
@@ -235,6 +235,130 @@ static partial class Program
                 plainSnapshotPath,
                 intentsPath);
         await WriteTypedJsonAsync(preferencePath, preference);
+        if (string.Equals(
+                preference.Status,
+                "blocked_authoritatively_tied_top_candidates",
+                StringComparison.Ordinal) &&
+            preference.OrderedCandidateEvaluations.Length > 0)
+        {
+            var selectedCandidateId =
+                preference.OrderedCandidateEvaluations[0].CandidateId;
+            var selectedSource = typedRanking.RankedEventCandidates
+                .SingleOrDefault(value => string.Equals(
+                    value.CandidateId,
+                    selectedCandidateId,
+                    StringComparison.Ordinal));
+            if (selectedSource is null)
+            {
+                return new StageOneCollectionTeacherQueueBuildResult(
+                    true,
+                    null,
+                    ranking,
+                    plainSnapshotPath,
+                    string.Empty,
+                    rankingPath,
+                    string.Empty,
+                    string.Empty,
+                    "blocked_authoritative_tie_control_candidate_missing",
+                    selectedCandidateId);
+            }
+
+            var controlCandidate = JsonSerializer.Deserialize<
+                PolicyEventCandidatePrediction>(
+                JsonSerializer.Serialize(selectedSource, JsonOptions),
+                JsonOptions) ?? throw new InvalidDataException(
+                    "Authoritative-tie control candidate could not be cloned.");
+            controlCandidate.Rank = 1;
+            controlCandidate.Score = 0;
+            controlCandidate.ModelScore = null;
+            controlCandidate.ExpectedReward = 0;
+            controlCandidate.PolicyModelSource =
+                "deterministic_control.current_stage_one_collection_tie.v1";
+            var controlPlan = new DailyPlanCompiler().Compile(
+                new[] { controlCandidate },
+                stateHash,
+                goalId: options.Goal,
+                maxCandidates: 1);
+            var controlQueue = new ActionQueueCompiler().Compile(
+                controlPlan,
+                JsonSerializer.Deserialize<SnapshotEnvelope>(
+                    snapshotJson,
+                    JsonOptions) ?? throw new InvalidDataException(
+                    "Stage-one collection snapshot is empty."));
+            var controlReasons = controlPlan.CandidateAudit
+                .Where(value => value.Decision != "accepted")
+                .SelectMany(value => value.Reasons)
+                .Concat(controlQueue.CompilerDiagnostics)
+                .Concat(controlQueue.Items.SelectMany(value =>
+                    value.BlockingReasons.Concat(value.MissingStateFactors)))
+                .Where(value => !string.IsNullOrWhiteSpace(value))
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+            if (controlPlan.Steps.Length == 0 ||
+                controlQueue.Status != "pending" ||
+                controlQueue.Items.Length == 0 ||
+                controlQueue.Items.Any(value => value.Status != "pending") ||
+                controlReasons.Length > 0)
+            {
+                return new StageOneCollectionTeacherQueueBuildResult(
+                    true,
+                    null,
+                    ranking,
+                    plainSnapshotPath,
+                    string.Empty,
+                    rankingPath,
+                    string.Empty,
+                    string.Empty,
+                    "blocked_authoritative_tie_control_not_dispatchable",
+                    string.Join(",", controlReasons.DefaultIfEmpty(
+                        "authoritative_tie_control_did_not_compile_to_a_pending_queue")));
+            }
+
+            var controlSelectionPath = string.Format(prefix, "control-selection");
+            await WriteTypedJsonAsync(
+                controlSelectionPath,
+                new
+                {
+                    schema_version =
+                        "stage_one_collection_control_selection.v1",
+                    status = "ready_authoritative_tie_control",
+                    source_state_hash = stateHash,
+                    selected_candidate_id = selectedCandidateId,
+                    authoritatively_tied_candidate_ids = preference
+                        .BlockingReasons
+                        .Where(value => value.StartsWith(
+                            "authoritatively_tied_with_top_candidate:",
+                            StringComparison.Ordinal))
+                        .Select(value => value[
+                            "authoritatively_tied_with_top_candidate:"
+                                .Length..])
+                        .ToArray(),
+                    selection_reason =
+                        "stable_controller_tiebreak_only",
+                    teacher_preference_label_eligible = false,
+                    formal_training_authorized = false
+                });
+            await WriteTypedJsonAsync(planPath, controlPlan);
+            await WriteTypedJsonAsync(queuePath, controlQueue);
+            var queueNode = JsonNode.Parse(JsonSerializer.Serialize(
+                controlQueue,
+                JsonOptions))?.AsObject() ?? throw new InvalidDataException(
+                "Authoritative-tie control queue is empty.");
+            return new StageOneCollectionTeacherQueueBuildResult(
+                true,
+                queueNode,
+                ranking,
+                plainSnapshotPath,
+                planPath,
+                rankingPath,
+                queuePath,
+                selectedCandidateId,
+                "ready_authoritative_tie_control",
+                "teacher_preference_label_eligible=false" +
+                " formal_training_authorized=false" +
+                " control_selection=" + controlSelectionPath);
+        }
+
         if (!string.Equals(preference.Status, "ready", StringComparison.Ordinal) ||
             !preference.TeacherPreferenceLabelEligible ||
             preference.CompiledPlan is null ||

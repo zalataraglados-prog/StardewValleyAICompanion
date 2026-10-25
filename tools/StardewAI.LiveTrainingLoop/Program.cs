@@ -98,6 +98,7 @@ if (!string.IsNullOrWhiteSpace(
         cropTeacherDayBoundaryReceiptCount);
 }
 var stageOneCollectionTeacherQueueCount = 0;
+var stageOneCollectionControlQueueCount = 0;
 var lastStageOneCollectionTeacherFallbackSignature = string.Empty;
 JsonObject? activeObjectiveContinuation = null;
 var suppressedObjectiveContinuations = new List<JsonObject>();
@@ -165,7 +166,8 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         (!options.RequireGoldenWalnutSourceScheduleReady ||
          goldenWalnutSourceMilestone.Ready);
     var effectivePrimaryAttempts = cropTeacherFirstDayCompleted &&
-        !options.RequireGoldenWalnutSourceScheduleReady
+        !options.RequireGoldenWalnutSourceScheduleReady &&
+        !options.ContinueAfterCropTeacherRun
         ? Math.Max(primaryAttemptsStarted, options.MaxAttempts)
         : primaryAttemptsStarted;
     var phaseDecision = activeCropTeacherRunPlan is null
@@ -764,16 +766,28 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 selectedCandidateId = collectionTeacher.SelectedCandidateId;
                 selectedQueueIndex = 0;
                 useDailyPlanDecisionLease = true;
-                stageOneCollectionTeacherQueueCount++;
+                var isControlOnlyQueue = string.Equals(
+                    collectionTeacher.Status,
+                    "ready_authoritative_tie_control",
+                    StringComparison.Ordinal);
+                if (isControlOnlyQueue)
+                    stageOneCollectionControlQueueCount++;
+                else
+                    stageOneCollectionTeacherQueueCount++;
                 lastStageOneCollectionTeacherFallbackSignature = string.Empty;
                 AppendProgress(
                     options,
-                    "stage_one_collection_teacher_queue_compiled",
+                    isControlOnlyQueue
+                        ? "stage_one_collection_control_queue_compiled"
+                        : "stage_one_collection_teacher_queue_compiled",
                     iteration,
                     lastStateHash,
                     ReadString(queue, "queue_id"),
                     "candidate_id=" + selectedCandidateId +
-                    " queue_count=" + stageOneCollectionTeacherQueueCount +
+                    " teacher_queue_count=" +
+                    stageOneCollectionTeacherQueueCount +
+                    " control_queue_count=" +
+                    stageOneCollectionControlQueueCount +
                     " " + collectionTeacher.Detail);
             }
             else
@@ -798,6 +812,19 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                             "status=" + collectionTeacher.Status +
                             " reason=" + collectionTeacher.Detail);
                     }
+
+                    stopReason =
+                        "stage_one_collection_teacher_blocked status=" +
+                        collectionTeacher.Status +
+                        " reason=" + collectionTeacher.Detail;
+                    AppendProgress(
+                        options,
+                        "stopped",
+                        iteration,
+                        lastStateHash,
+                        string.Empty,
+                        stopReason);
+                    break;
                 }
 
                 var dailyPlan = await BuildQueueFromDailyPlanAsync(
@@ -1512,6 +1539,8 @@ var report = new LiveTrainingLoopReport
         cropTeacherDayBoundaryReceiptCount,
     StageOneCollectionTeacherQueueCount =
         stageOneCollectionTeacherQueueCount,
+    StageOneCollectionControlQueueCount =
+        stageOneCollectionControlQueueCount,
     CropTeacherControlAttemptsStarted = cropTeacherControlAttemptsStarted,
     Iterations = attemptsStarted,
     MaxAttempts = options.MaxAttempts,

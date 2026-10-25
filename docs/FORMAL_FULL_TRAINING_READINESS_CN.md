@@ -14,6 +14,12 @@
 
 隐藏静音原生续跑 `crop-teacher-v26-resume-fork-20261026-040111` 已补齐该证据。Spring 17 的真实状态依次为 `8 crops / 0 empty / sap x1`、原生投箱后的 `8 crops / 1 empty / sap x0`、同一批次 8 格全部 verified 后的 `0 crops / 0 empty / parsnip x8`；派生账本写入 8 条收获回执并判定 crop run complete，源账本仍保持 0 条收获与 4 条已落盘日界。本切片因此原生收口，但没有跨越新的睡眠存档边界，也没有形成 Golden Walnut source schedule。下一准入缺口仍是首次登岛、Golden Walnut 来源增量、三项鹦鹉跃迁和 source schedule；`CoverageGateReady 5/19`、Money production `0/18`、`formal_product_training=false` 全部保持不变。
 
+## 当前增量 · collection continuation 控制边界
+
+作物 run 的显式恢复现可在完成后继续进入 Stage One collection，但 continuation 必须绑定只读源账本和四份 authority 工件。原生 v27c 证明 Master Angler 路线已实际接管；它也发现同分 Teacher 防伪门会让旧循环误落入通用日计划并重派 Crop Teacher。当前实现不放宽 Teacher：权威同分时仍不产生 selected preference 或 pairwise label，只允许控制器用稳定顺序选择一个同样合格的候选推进原生环境，learner 信号归零，独立控制工件明确 `teacher_preference_label_eligible=false / formal_training_authorized=false`。其他 authority blocker 直接结构化停止，不允许回退作物系统。
+
+v27d 原生回归已经跨过该边界：Crop Teacher 再次完成，普通 Master Angler Teacher 队列执行后在 fresh 候选失效处生成 control-only collection 队列，并连续取得 3 条新的 verified action；日志中没有新的 Crop Teacher handoff。运行因 `12` 次有界尝试包含两次正常候选失效，最终停在 `9/10`，故仍登记为 incomplete，不写正式训练数据。聚焦回归 `42/42`、全解决方案 Release `0 warning / 0 error`。这只解除“阶段切换会回退”的控制缺陷；首次登岛、核桃增量、三项鹦鹉跃迁和 source schedule 仍未完成，所有正式准入分子保持不变。
+
 ## 已收口增量 · v23-v24 原生进展与正式准入边界
 
 全新隔离运行 `golden-walnut-source-schedule-v23-20261025-233534` 已在同一原生存档中取得 `137` 个 verified native action、`12` 条原生日界和 `6` 条逐格收获回执。它真实完成第一轮作物生产，随后完成邮件、任务 `13` 三段路线、两次 Beach 钓鱼、节日等待和三段返场。该结果证明长跑已越过此前的节日门禁与第一轮场地接近边界，但没有首次登岛、Golden Walnut 来源增量或三项鹦鹉跃迁，因而不能导出 source schedule。

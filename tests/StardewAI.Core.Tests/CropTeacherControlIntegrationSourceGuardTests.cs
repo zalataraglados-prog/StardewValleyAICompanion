@@ -348,6 +348,54 @@ public sealed class CropTeacherControlIntegrationSourceGuardTests
     }
 
     [Fact]
+    public void CollectionContinuationSeparatesControlTiesFromTeacherLabels()
+    {
+        var collectionSource = Read(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.StageOneCollectionTeacher.cs");
+        Assert.Contains(
+            "blocked_authoritatively_tied_top_candidates",
+            collectionSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "stable_controller_tiebreak_only",
+            collectionSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "teacher_preference_label_eligible = false",
+            collectionSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "formal_training_authorized = false",
+            collectionSource,
+            StringComparison.Ordinal);
+
+        var loopSource = Read(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.cs");
+        Assert.Contains(
+            "stage_one_collection_control_queue_compiled",
+            loopSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "stage_one_collection_teacher_blocked status=",
+            loopSource,
+            StringComparison.Ordinal);
+        Assert.True(
+            loopSource.IndexOf(
+                "stage_one_collection_teacher_blocked status=",
+                StringComparison.Ordinal) <
+            loopSource.IndexOf(
+                "BuildQueueFromDailyPlanAsync(",
+                loopSource.IndexOf(
+                    "stage_one_collection_teacher_blocked status=",
+                    StringComparison.Ordinal),
+                StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void RecoveryClassifierRequiresExactSafeSpeakerlessProof()
     {
         var snapshot = JsonNode.Parse("""

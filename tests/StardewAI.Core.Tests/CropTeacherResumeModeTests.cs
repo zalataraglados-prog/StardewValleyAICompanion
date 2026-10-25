@@ -8,6 +8,9 @@ public sealed class CropTeacherResumeModeTests
     public void ParsesOnlyAnExplicitNativeProductResumeMode()
     {
         var ledgerPath = Path.GetTempFileName();
+        var authorityPaths = Enumerable.Range(0, 4)
+            .Select(_ => Path.GetTempFileName())
+            .ToArray();
         try
         {
             var options = LiveTrainingOptions.Parse(
@@ -15,18 +18,51 @@ public sealed class CropTeacherResumeModeTests
                 "--use-daily-plan",
                 "--use-product-executor",
                 "--skip-training",
+                "--continue-after-crop-teacher-run",
                 "--resume-crop-teacher-transition-ledger",
-                ledgerPath
+                ledgerPath,
+                "--stage-one-collection-requirement-inventory",
+                authorityPaths[0],
+                "--stage-one-collection-acquisition-lowering",
+                authorityPaths[1],
+                "--master-angler-stage-one-window-index",
+                authorityPaths[2],
+                "--route-timing-calibration",
+                authorityPaths[3]
             ]);
 
             Assert.Equal(
                 Path.GetFullPath(ledgerPath),
                 options.ResumeCropTeacherTransitionLedgerPath);
+            Assert.True(options.ContinueAfterCropTeacherRun);
+            Assert.True(options.UseStageOneCollectionTeacher);
         }
         finally
         {
             File.Delete(ledgerPath);
+            foreach (var path in authorityPaths)
+            {
+                File.Delete(path);
+            }
         }
+    }
+
+    [Fact]
+    public void RejectsContinuationWithoutAnExplicitResumeLedger()
+    {
+        var error = Assert.Throws<ArgumentException>(() =>
+            LiveTrainingOptions.Parse(
+            [
+                "--use-daily-plan",
+                "--use-product-executor",
+                "--skip-training",
+                "--continue-after-crop-teacher-run"
+            ]));
+
+        Assert.Contains(
+            "--resume-crop-teacher-transition-ledger",
+            error.Message,
+            StringComparison.Ordinal);
     }
 
     [Fact]

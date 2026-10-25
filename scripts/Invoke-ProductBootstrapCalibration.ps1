@@ -27,6 +27,7 @@ param(
     [switch] $CaptureGoldenWalnutFreshSaveEvidence,
     [switch] $RequireGoldenWalnutSourceScheduleReady,
     [string] $ResumeCropTeacherTransitionLedger = "",
+    [switch] $ContinueAfterCropTeacherRun,
     [string] $StageOneCollectionRequirementInventory = (Join-Path `
         $ProjectRoot `
         "experiments\local-data\output\authoritative-requirement-inventory-v1.json"),
@@ -64,7 +65,11 @@ if ($resumeCropTeacher) {
     $ResumeCropTeacherTransitionLedger =
         [IO.Path]::GetFullPath($ResumeCropTeacherTransitionLedger)
 }
-if ($RequireGoldenWalnutSourceScheduleReady) {
+if ($ContinueAfterCropTeacherRun -and -not $resumeCropTeacher) {
+    throw "ContinueAfterCropTeacherRun requires ResumeCropTeacherTransitionLedger."
+}
+if ($RequireGoldenWalnutSourceScheduleReady -or
+    $ContinueAfterCropTeacherRun) {
     foreach ($path in @(
             $StageOneCollectionRequirementInventory,
             $StageOneCollectionAcquisitionLowering,
@@ -280,8 +285,11 @@ try {
         )
     }
     if ($RequireGoldenWalnutSourceScheduleReady) {
+        $arguments += "--require-golden-walnut-source-schedule-ready"
+    }
+    if ($RequireGoldenWalnutSourceScheduleReady -or
+        $ContinueAfterCropTeacherRun) {
         $arguments += @(
-            "--require-golden-walnut-source-schedule-ready",
             "--stage-one-collection-requirement-inventory",
             $StageOneCollectionRequirementInventory,
             "--stage-one-collection-acquisition-lowering",
@@ -297,6 +305,9 @@ try {
             "--resume-crop-teacher-transition-ledger",
             $ResumeCropTeacherTransitionLedger
         )
+    }
+    if ($ContinueAfterCropTeacherRun) {
+        $arguments += "--continue-after-crop-teacher-run"
     }
     $loopOutput = & dotnet $arguments
     $loopOutput | Set-Content -LiteralPath (Join-Path $artifactDirectory "loop.stdout.log") -Encoding utf8

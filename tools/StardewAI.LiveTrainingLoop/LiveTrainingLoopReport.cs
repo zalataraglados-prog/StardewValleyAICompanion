@@ -117,6 +117,9 @@ public sealed class LiveTrainingLoopReport
     [JsonPropertyName("stage_one_collection_teacher_queue_count")]
     public int StageOneCollectionTeacherQueueCount { get; set; }
 
+    [JsonPropertyName("stage_one_collection_control_queue_count")]
+    public int StageOneCollectionControlQueueCount { get; set; }
+
     [JsonPropertyName("crop_teacher_control_attempts_started")]
     public int CropTeacherControlAttemptsStarted { get; set; }
 
