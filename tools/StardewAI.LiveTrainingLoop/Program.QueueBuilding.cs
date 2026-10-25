@@ -62,7 +62,8 @@ static partial class Program
         string? candidateKindOverride = null,
         string? candidateIdOverride = null,
         int? maxCandidatesOverride = null,
-        string? goalIdOverride = null)
+        string? goalIdOverride = null,
+        bool priorityStoryEventInterrupt = false)
     {
         var requestedGoalId = string.IsNullOrWhiteSpace(goalIdOverride)
             ? options.Goal
@@ -115,8 +116,10 @@ static partial class Program
             : resolvedGoalId;
         var rankedCandidates = ranking["ranked_event_candidates"]?.AsArray() ?? new JsonArray();
         var goalResolution = ranking["goal_resolution"]?.AsObject();
-        var goalBoundCandidates =
-            QueueReplanFilter.FilterGoalResolutionBoundCandidates(
+        var goalBoundCandidates = priorityStoryEventInterrupt
+            ? QueueReplanFilter.FilterPriorityStoryEventInterruptCandidates(
+                rankedCandidates)
+            : QueueReplanFilter.FilterGoalResolutionBoundCandidates(
                 rankedCandidates,
                 goalResolution);
         var exclusiveRecovery = rankedCandidates.Any(node =>
@@ -163,24 +166,26 @@ static partial class Program
         ranking["objective_continuation_filter"] = objectiveContinuationFilter;
         ranking["goal_resolution_binding_filter"] = new JsonObject
         {
-            ["active"] =
-                string.Equals(
-                    ReadString(goalResolution, "status"),
-                    "resolved",
-                    StringComparison.Ordinal) ||
-                string.Equals(
-                    ReadString(goalResolution, "status"),
-                    "planning_handoff_required",
-                    StringComparison.Ordinal),
+            ["active"] = !priorityStoryEventInterrupt &&
+                (string.Equals(
+                        ReadString(goalResolution, "status"),
+                        "resolved",
+                        StringComparison.Ordinal) ||
+                    string.Equals(
+                        ReadString(goalResolution, "status"),
+                        "planning_handoff_required",
+                        StringComparison.Ordinal)),
             ["resolution_status"] =
                 ReadString(goalResolution, "status"),
             ["input_candidate_count"] = rankedCandidates.Count,
             ["selected_candidate_count"] = goalBoundCandidates.Count,
-            ["policy"] =
-                "resolved_goal_compiles_only_exact_bound_candidate_ids;" +
-                "planning_handoff_compiles_no_broad_candidates;" +
-                "unresolved_or_not_applicable_goal_preserves_ranked_candidates;" +
-                "fail_closed_when_resolved_binding_is_empty"
+            ["policy"] = priorityStoryEventInterrupt
+                ? "active_native_story_event_interrupt_preempts_strategic_goal_binding;" +
+                    "exact_story_advance_event_only"
+                : "resolved_goal_compiles_only_exact_bound_candidate_ids;" +
+                    "planning_handoff_compiles_no_broad_candidates;" +
+                    "unresolved_or_not_applicable_goal_preserves_ranked_candidates;" +
+                    "fail_closed_when_resolved_binding_is_empty"
         };
         ranking["social_continuation_filter"] = JsonNode.Parse(
             objectiveContinuationFilter.ToJsonString(JsonOptions));
@@ -247,7 +252,8 @@ static partial class Program
             Array.Empty<JsonObject>(),
             new[] { "story.advance_event" },
             candidateKindOverride: string.Empty,
-            candidateIdOverride: string.Empty);
+            candidateIdOverride: string.Empty,
+            priorityStoryEventInterrupt: true);
 
     private static Task<(JsonObject Response, JsonObject Plan, JsonObject Queue, JsonObject Ranking)> BuildNativeSaveBoundaryQueueAsync(
         HttpClient http,

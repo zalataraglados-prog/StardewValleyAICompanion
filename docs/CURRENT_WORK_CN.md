@@ -9,7 +9,8 @@
 - `golden-walnut-source-schedule-v17-20261025-203000` 在第 47 次迭代真实失败于 `till_soil_no_adjacent_route_stand_tile`。两个 planting tile 本身可耕，但周围可移除障碍让执行器没有合法相邻站位；旧 planner 只清目标格，因而正确失败关闭却无法推进。
 - 场地准备现复用同一候选与执行器，在阻塞原因**仅为**无相邻路线站位时，确定性选择相邻 `executor.clear_obstacle` 或 `executor.break_farm_resource_clump`，状态标记为 `clear_access_then_fresh_snapshot_rebind`。执行后仍须 fresh 重绑；缺工具、体力不足、超时或其他阻塞不能借此放行。专用 snapshot bounds 在仍不超过 `32x32` 时只扩一格，以覆盖外围站位和障碍。
 - v17 原第 47 次真实请求已用当前源码重建为 ready：`blocked_count=0`、`clear_then_rebind_count=2`、`access_clear_then_rebind_count=2`，精确选择 `(70,19)` 石头和 `(71,21)` 杂草。该证据证明编译修复覆盖原失败输入，但不是一次新的原生执行。
-- 全新修正版长跑 `golden-walnut-source-schedule-v17b-20261025-181200` 正在运行。其随机布局走直接耕地分支，已真实完成六格整地、播种、浇水、原生睡眠并连续验证 3 个日界，越过旧失败点进入第 60 次迭代。当前下一退出条件不变：继续同一运行直到首次登岛、至少一个 Golden Walnut 来源增量和 First Parrot/Turtle/House 三项原生跃迁齐备，再由既有 builder 导出 source schedule；若出现新 blocker，保存精确输入并只修该 blocker。
+- 全新修正版长跑 `golden-walnut-source-schedule-v17b-20261025-181200` 的随机布局走直接耕地分支，最终真实完成六格整地、播种、逐日浇水、六格收获和作物 run 结算，形成 `94` 个 verified episode、`12` 个日界与 `6` 条收获回执。随后统一 Stage 1 Teacher 完成 `spring_2_1` 邮件及任务 `13` 的三段 Beach 路线，确认作物 Teacher 能正常退场。
+- v17b 的第 100 次迭代在事件 `739330` 处失败：候选本身为 `story.advance_event / ready_now`，却被 planning-handoff 空绑定过滤为 `empty_action_list`。队列构建现对原生剧情 interrupt 使用独立的精确过滤，只接纳 `story.advance_event`，不应用战略 goal binding；普通 handoff 仍失败关闭。全解决方案构建 `0 warning / 0 error`、聚焦回归 `64/64`。v17b 保留为 incomplete，不得续接其未保存尾部。当前下一退出条件不变：从新隔离存档重跑，直到首次登岛、至少一个 Golden Walnut 来源增量和 First Parrot/Turtle/House 三项原生跃迁齐备，再由既有 builder 导出 source schedule。
 
 ## 当前增量 · 新档开局礼盒透明执行链
 

@@ -4,6 +4,23 @@ namespace StardewAI.LiveTrainingLoop;
 
 public static partial class QueueReplanFilter
 {
+    public static JsonArray FilterPriorityStoryEventInterruptCandidates(
+        JsonArray rankedCandidates)
+    {
+        var filtered = rankedCandidates
+            .Select(node => node?.AsObject())
+            .Where(candidate =>
+                candidate is not null &&
+                string.Equals(
+                    ReadString(candidate, "option_id"),
+                    "story.advance_event",
+                    StringComparison.Ordinal))
+            .Select(candidate =>
+                JsonNode.Parse(candidate!.ToJsonString()))
+            .ToArray();
+        return new JsonArray(filtered);
+    }
+
     public static JsonArray FilterGoalResolutionBoundCandidates(
         JsonArray rankedCandidates,
         JsonObject? goalResolution)

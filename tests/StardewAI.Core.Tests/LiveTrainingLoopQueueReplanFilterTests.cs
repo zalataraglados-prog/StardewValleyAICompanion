@@ -90,6 +90,29 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
         Assert.Single(candidates);
     }
 
+    [Fact]
+    public void PriorityStoryEventInterruptIgnoresStrategicBindingButAdmitsOnlyStoryAdvance()
+    {
+        var candidates = new JsonArray
+        {
+            Candidate(
+                "story-event:739330:advance_story_event_automatic:continue",
+                "story.advance_event"),
+            Candidate("unrelated", "economy.buy_supplies")
+        };
+
+        var filtered = QueueReplanFilter
+            .FilterPriorityStoryEventInterruptCandidates(candidates);
+
+        var selected = Assert.Single(filtered)!.AsObject();
+        Assert.Equal(
+            "story-event:739330:advance_story_event_automatic:continue",
+            selected["candidate_id"]!.GetValue<string>());
+        Assert.Equal("story.advance_event", selected["option_id"]!.GetValue<string>());
+        Assert.Equal(2, candidates.Count);
+        Assert.NotSame(candidates[0], selected);
+    }
+
     [Theory]
     [InlineData(9, 6, 3)]
     [InlineData(4, 4, 0)]
@@ -114,6 +137,10 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
 
         Assert.Contains("BuildQueueFromSelectedCandidateAsync(", runtimeSource, StringComparison.Ordinal);
         Assert.Contains("BuildPriorityStoryEventQueueAsync(", runtimeSource, StringComparison.Ordinal);
+        Assert.Contains(
+            "priorityStoryEventInterrupt: true",
+            queueBuildingSource,
+            StringComparison.Ordinal);
         Assert.Contains("runtime_priority_interrupt", runtimeSource, StringComparison.Ordinal);
         Assert.Contains(
             "priority_interrupt_released_interrupted_semantic_key",
@@ -151,7 +178,14 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
             "tools", "StardewAI.LiveTrainingLoop", "Program.cs"));
         Assert.Contains("hasDecisionLease", mainSource, StringComparison.Ordinal);
         Assert.Contains("resumedSelectedQueueDecision", mainSource, StringComparison.Ordinal);
-        Assert.Contains("suppressedObjectiveContinuations: suppressedObjectiveContinuations", mainSource, StringComparison.Ordinal);
+        Assert.Contains(
+            "suppressedObjectiveContinuations:",
+            mainSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "suppressedObjectiveContinuations);",
+            mainSource,
+            StringComparison.Ordinal);
     }
 
     [Fact]

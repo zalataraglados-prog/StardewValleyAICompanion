@@ -8,7 +8,9 @@
 
 `golden-walnut-source-schedule-v17-20261025-203000` 在第 47 次迭代暴露真实场地准备缺口：待耕地块被可移除障碍包围，目标格本身无需清理，但没有相邻可达站位。修复只在该单一类型化阻塞下复用现有清障/大型资源块候选，先清一格访问通道，再强制 fresh snapshot 重绑；其他工具、体力和时间阻塞仍失败关闭。旧失败请求的确定性重建现得到两条合法访问清障选择，聚焦测试、Debug 构建和 Teacher self-test 均已通过。
 
-修正版新档 `golden-walnut-source-schedule-v17b-20261025-181200` 已在真实游戏中越过旧阻塞位置，完成直接耕地布局的整地、播种、浇水和连续 3 次原生日期/存档边界。该随机布局没有实际触发访问清障，因此当前证据边界是“旧真实快照重建通过 + 新真实运行无回退”，不能写成访问清障已有原生回执。首次登岛、核桃来源增量、三项鹦鹉跃迁和 source schedule 仍未完成，`CoverageGateReady 5/19`、Money production `0/18` 与 `formal_product_training=false` 均不变。
+修正版新档 `golden-walnut-source-schedule-v17b-20261025-181200` 已在真实游戏中越过旧阻塞位置，并以 `94` 个 verified episode、`12` 条原生日界和 `6` 条收获回执完整结算直接耕地布局的首轮作物 run；统一 collection Teacher 随后处理邮件并走完任务 `13` 的三段 Beach 路线。该随机布局没有实际触发访问清障，因此该分支的证据边界仍是“旧真实快照重建通过 + 新真实运行无回退”，不能写成访问清障已有原生回执。
+
+该 run 最终因剧情中断被战略 planning-handoff 空绑定过滤而失败：事件 `739330` 的候选真实存在且 ready，但编译得到空队列。现已改为原生剧情 interrupt 只精确接纳 `story.advance_event` 并绕过战略目标绑定；普通 handoff、事件身份和执行校验不变。构建与 `64/64` 聚焦测试通过，但 v17b 的失败尾部使整轮保持 incomplete，不能进入训练或 schedule。必须由下一全新隔离长跑取得原生剧情回执后继续首次登岛、核桃来源增量、三项鹦鹉跃迁和 source schedule；`CoverageGateReady 5/19`、Money production `0/18` 与 `formal_product_training=false` 均不变。
 
 ## 当前增量 · 竹鱼竿新档原生来源已闭合
 
