@@ -11,7 +11,8 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
         "projected_harvest_quality",
         "item_quality",
         "geode_expected_output_quality",
-        "prize_ticket_reward_quality"
+        "prize_ticket_reward_quality",
+        "continuation.output_quality"
     };
 
     private static CurrentCollectionCandidateBinding[] BuildMuseumBindings(
@@ -43,7 +44,15 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
             var routes = CurrentTeacherFrontierSupport.AdmittedEndpointRoutes(
                 alternative,
                 candidate.OptionId);
+            var acquisitionRouteStep =
+                CurrentTeacherFrontierSupport.IsExactAcquisitionRouteStep(
+                candidate,
+                alternative.ItemId,
+                alternative.QualifiedItemId,
+                routes,
+                out var acquisitionRouteEvidence);
             if (!routeStep &&
+                !acquisitionRouteStep &&
                 !directCompletion &&
                 (routes.Length == 0 || candidate.Quantity <= 0))
             {
@@ -60,7 +69,7 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
                 candidate.OptionId,
                 candidate.Kind,
                 candidate.Rank,
-                routeStep
+                routeStep || acquisitionRouteStep
                     ? "authoritative_collection_rolling_route_step"
                     : directCompletion
                         ? "native_museum_donation_completion"
@@ -70,17 +79,19 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
                 candidate.Quantity,
                 null,
                 progress.RemainingSlotCount,
-                routeStep
+                routeStep || acquisitionRouteStep
                     ? "preserve_exact_item_and_slot_through_rolling_route_until_native_museum_donation"
                     : directCompletion
                         ? "native_donation_consumes_exact_projected_inventory"
                         : "reserve_exact_item_until_native_museum_donation",
-                match.IdentityEvidence + (routeStep
-                    ? "+" + routeEvidence
+                match.IdentityEvidence + (routeStep || acquisitionRouteStep
+                    ? "+" + (routeStep
+                        ? routeEvidence
+                        : acquisitionRouteEvidence)
                     : directCompletion
                         ? "+" + directEvidence
                         : "+candidate.quantity"),
-                routeStep
+                routeStep || acquisitionRouteStep
                     ? Array.Empty<CurrentRequirementRouteEvidence>()
                     : routes));
         }
@@ -219,6 +230,13 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
                         candidate.OptionId);
                     if (routes.Length == 0)
                         continue;
+                    var acquisitionRouteStep =
+                        CurrentTeacherFrontierSupport.IsExactAcquisitionRouteStep(
+                        candidate,
+                        target.ItemId,
+                        target.QualifiedItemId,
+                        routes,
+                        out var acquisitionRouteEvidence);
                     int? candidateQuality = null;
                     var qualityEvidence = string.Empty;
                     if (alternative.MinimumQuality > 0)
@@ -243,18 +261,27 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
                         candidate.OptionId,
                         candidate.Kind,
                         candidate.Rank,
-                        "authoritative_acquisition_endpoint",
+                        acquisitionRouteStep
+                            ? "authoritative_collection_rolling_route_step"
+                            : "authoritative_acquisition_endpoint",
                         alternative.Amount,
                         alternative.MinimumQuality,
                         candidate.Quantity,
                         candidateQuality,
                         progress.RemainingSlotCount,
-                        "reserve_required_quantity_at_minimum_quality_until_native_bundle_donation",
-                        match.IdentityEvidence + "+candidate.quantity" +
+                        acquisitionRouteStep
+                            ? "preserve_exact_item_quantity_quality_and_slot_through_rolling_route_until_native_bundle_donation"
+                            : "reserve_required_quantity_at_minimum_quality_until_native_bundle_donation",
+                        match.IdentityEvidence + "+" +
+                            (acquisitionRouteStep
+                                ? acquisitionRouteEvidence
+                                : "candidate.quantity") +
                             (qualityEvidence.Length == 0
                                 ? string.Empty
                                 : "+" + qualityEvidence),
-                        routes));
+                        acquisitionRouteStep
+                            ? Array.Empty<CurrentRequirementRouteEvidence>()
+                            : routes));
                 }
             }
         }

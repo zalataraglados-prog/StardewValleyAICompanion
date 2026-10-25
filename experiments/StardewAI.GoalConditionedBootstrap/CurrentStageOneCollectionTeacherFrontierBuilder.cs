@@ -221,7 +221,10 @@ public static class CurrentStageOneCollectionTeacherFrontierBuilder
                     0,
                     value.BindingKind == "native_full_shipment_completion"
                         ? "native_completion_consumes_selected_stack"
-                        : "reserve_exact_item_until_native_full_shipment"))));
+                        : value.BindingKind ==
+                            "authoritative_collection_rolling_route_step"
+                            ? "preserve_exact_item_through_rolling_route_until_native_full_shipment"
+                            : "reserve_exact_item_until_native_full_shipment"))));
         bindings.AddRange(collection.CandidateBindings.Select(value =>
             new UnifiedBinding(
                 value.CandidateId,
@@ -233,7 +236,9 @@ public static class CurrentStageOneCollectionTeacherFrontierBuilder
                     value.AlternativeIndex,
                     value.QualifiedItemId,
                     value.BindingKind,
-                    value.RequiredQuantity,
+                    value.BindingKind == "authoritative_acquisition_endpoint"
+                        ? Math.Min(value.RequiredQuantity, value.CandidateQuantity)
+                        : value.RequiredQuantity,
                     value.MinimumQuality,
                     value.ReservationStatus))));
         bindings.AddRange(masterAngler.CandidateBindings.Select(value =>
@@ -305,9 +310,9 @@ public static class CurrentStageOneCollectionTeacherFrontierBuilder
                     group.Key,
                     identities[0].OptionId,
                     identities[0].Kind,
-                    "execute_once_and_credit_all_exact_bindings",
-                    group.Select(value => value.Credit)
-                        .Distinct()
+                    "execute_once_and_credit_at_most_one_exact_binding_per_selection_group",
+                    CanonicalizeSingleExecutionCredits(
+                            group.Select(value => value.Credit))
                         .OrderBy(value => value.RequirementSetId,
                             StringComparer.Ordinal)
                         .ThenBy(value => value.RequirementId,
@@ -318,6 +323,35 @@ public static class CurrentStageOneCollectionTeacherFrontierBuilder
             .OrderBy(value => value.CandidateId, StringComparer.Ordinal)
             .ToArray();
     }
+
+    internal static CurrentCollectionRequirementCredit[]
+        CanonicalizeSingleExecutionCredits(
+            IEnumerable<CurrentCollectionRequirementCredit> credits) => credits
+        .Distinct()
+        .GroupBy(
+            value => (value.RequirementSetId, value.RequirementId))
+        .Select(group => group
+            .OrderBy(value => BindingPriority(value.BindingKind))
+            .ThenBy(value => value.AlternativeIndex)
+            .ThenBy(value => value.QualifiedItemId, StringComparer.Ordinal)
+            .ThenBy(value => value.RequiredQuantity)
+            .First())
+        .ToArray();
+
+    private static int BindingPriority(string bindingKind) => bindingKind switch
+    {
+        "native_full_shipment_completion" or
+        "native_museum_donation_completion" or
+        "native_community_center_payment_completion" or
+        "native_community_center_donation_completion" or
+        "authoritative_window_terminal_attempt" or
+        "authoritative_supporting_prerequisite_starter_event_grant" or
+        "authoritative_supporting_prerequisite_terminal_purchase" => 0,
+        "authoritative_acquisition_endpoint" => 1,
+        _ when bindingKind.Contains("rolling_route_step", StringComparison.Ordinal) =>
+            2,
+        _ => 3
+    };
 
     private static bool SameHash(string left, string right) => string.Equals(
         left,

@@ -20,6 +20,8 @@
 
 v27d 原生回归已经跨过该边界：Crop Teacher 再次完成，普通 Master Angler Teacher 队列执行后在 fresh 候选失效处生成 control-only collection 队列，并连续取得 3 条新的 verified action；日志中没有新的 Crop Teacher handoff。运行因 `12` 次有界尝试包含两次正常候选失效，最终停在 `9/10`，故仍登记为 incomplete，不写正式训练数据。聚焦回归 `42/42`、全解决方案 Release `0 warning / 0 error`。这只解除“阶段切换会回退”的控制缺陷；首次登岛、核桃增量、三项鹦鹉跃迁和 source schedule 仍未完成，所有正式准入分子保持不变。
 
+v28 原生运行继续取得 `18` 条 verified native action，并多次完成 Teacher/control-only 路线切换与 fresh 重绑，没有回退作物系统。第 `25` 次迭代由严格校验阻止了 Construction Bundle 重复 `99` 木材槽对同一木匠店连接动作的双重信用；同时确认 Full Shipment 曾把该连接段误分类为物品获取。当前单次执行契约已经统一：每个 selection group 最多一个稳定信用，跨独立 group 信用保留；acquisition route connector 只验证路线变化；实际 acquisition endpoint 按本次增量验收。原 v28 第 `25` 次工件重放不再异常，重复槽位只保留 alternative `0`，两条目标信用均为 rolling route；四个权威同分候选仍正确禁止 Teacher 标签和队列。current collection 全链自测通过，全解决方案 Release 为 `0 warning / 0 error`。该修复不能替代新的原生运行，v28 保持 incomplete；首次登岛、Golden Walnut 来源增量、三项鹦鹉跃迁与 source schedule 仍是正式准入缺口。
+
 ## 已收口增量 · v23-v24 原生进展与正式准入边界
 
 全新隔离运行 `golden-walnut-source-schedule-v23-20261025-233534` 已在同一原生存档中取得 `137` 个 verified native action、`12` 条原生日界和 `6` 条逐格收获回执。它真实完成第一轮作物生产，随后完成邮件、任务 `13` 三段路线、两次 Beach 钓鱼、节日等待和三段返场。该结果证明长跑已越过此前的节日门禁与第一轮场地接近边界，但没有首次登岛、Golden Walnut 来源增量或三项鹦鹉跃迁，因而不能导出 source schedule。

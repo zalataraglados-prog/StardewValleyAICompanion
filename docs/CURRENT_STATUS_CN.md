@@ -36,6 +36,8 @@ v26 在第 `173` 次迭代进入第二轮 `8` 格收获时连续失败关闭。�
 
 当前修复明确分离监督与控制。权威同分继续禁止生成 Teacher pairwise preference；运行控制器只为推进环境，按稳定顺序选择一个同样合格的候选，归零 learner 信号，并把独立控制工件标为 `teacher_preference_label_eligible=false / formal_training_authorized=false`。其他 collection authority 阻塞会结构化停止本轮，不再回退作物 handoff。隐藏静音原生回归 `golden-walnut-collection-v27d-20261026-043000` 已在同一只读源账本派生运行中再次完成容量恢复和 8 格收获，随后编译普通 collection Teacher 队列；候选失效后成功编译 `stage_one_collection_control_queue`，连续形成 3 条新的原生 verified action，未再出现 Crop Teacher 派发。该短测因 `MaxAttempts=12` 中两次 fresh 候选失效也占尝试次数，最终为 `9/10`、结构化 incomplete；这不是执行失败，也不计为完整 source schedule。聚焦回归 `42/42`、全解决方案 Release 构建 `0 warning / 0 error`。下一真实缺口仍是沿该 collection 控制链推进首次登岛、Golden Walnut 来源增量和 First Parrot/Turtle/House 跃迁；正式训练状态不变。
 
+v28 `golden-walnut-collection-v28-20261026-043500` 把该控制链继续推进到 `18` 条 verified native action：普通 Teacher 和 control-only 队列多次交替，fresh 候选失效与重新绑定均正常，且没有回退 Crop Teacher。第 `25` 次迭代随后由严格校验发现新的实质性契约缺陷：Construction Bundle 两个独立 `99` 木材槽把同一条“去木匠店途中”的连接候选重复记账，且 Full Shipment 分支还把该连接动作误写成物品获取。当前契约改为一次执行在同一 selection group 最多取得一个稳定信用、跨独立 group 的信用仍保留；所有精确 acquisition 连接段统一只验路线变化，真正 acquisition endpoint 只按本次可验证新增量验收。v28 第 `25` 次完整工件已由新代码离线重放：异常消失，木材候选在 Crafts Room 只保留 alternative `0`，Full Shipment 与 Community Center 两条均为 `authoritative_collection_rolling_route_step`，Teacher 对四个权威同分候选继续返回 `blocked_authoritatively_tied_top_candidates`，未生成伪标签或执行队列。current collection 全链自测和全解决方案 Release 构建均通过，后者为 `0 warning / 0 error`。v28 仍是 incomplete 原生运行；首次登岛与 Golden Walnut source schedule 尚未取得，正式训练状态不变。
+
 ### 已收口背景：Golden Walnut v22-v24
 
 `golden-walnut-source-schedule-v22` 已真实完成节日等待后的返场，并生成第一条农场内场地接近队列；该队列随后暴露透明 `locations.route_blockers` 没有进入长距离移动修复的问题。第一轮修复让全地图对象阻塞进入同一 `move_to_tile + BFS route repair`，原 v22 队列已可重编译为 pending，但这仍只是失败现场重放，不是新的原生执行回执。

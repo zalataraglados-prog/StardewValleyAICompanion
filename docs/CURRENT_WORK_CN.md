@@ -20,7 +20,9 @@
 - v27c 已真实完成 Crop Teacher 并进入 Master Angler 路线，但首个路线候选失效后的权威同分状态错误落入通用 daily-plan fallback，后者重新派发了 Crop Teacher。该运行已立即停止，未把后续错误路线冒充 collection 证据。
 - 现将“可用于 Teacher 标签的唯一权威偏好”与“控制器可从同样正确的选项中任选其一推进环境”分离。同分时 Teacher preference 仍保持 blocked/null；控制队列使用稳定顺序、归零 learner 信号并单独落盘 `stage_one_collection_control_selection.v1`，固定声明 `teacher_preference_label_eligible=false` 和 `formal_training_authorized=false`。除同分外的 authority blocker 会终止有界运行，不再落入作物 handoff。
 - v27d 隐藏静音回归已再次完成作物恢复与 8 格收获，随后执行 Master Angler Teacher 路线；fresh 失效后成功生成一条 control-only Backwoods 路线，并连续取得 3 条 verified native action。全过程未再次派发 Crop Teacher，也没有产生伪 Teacher 标签。短测为 `9/10`，唯一未达到 10 的原因是 `12` 次尝试预算包含两次候选失效/replan；因此结果保留为受限 incomplete，而非伪装成功。
-- 验证为聚焦 `42/42`、Release solution `0 warning / 0 error`。下一固定动作是在同一 collection 控制边界上继续有界新档运行，直到首次登岛、至少一个 Golden Walnut 来源增量和 First Parrot/Turtle/House 三项原生跃迁闭合，再导出 source schedule；正式训练仍为 false。
+- v28 将同一链推进到 `18` 条 verified native action，普通 Teacher、control-only 路线、fresh 失效和重绑均真实运行且没有 Crop Teacher 回退。新的停止点是严格 selection contract 拒绝 Construction Bundle 的两个 `99` 木材槽同时认领同一条木匠店连接候选；这不是 Agent 汇报错误，而是会制造伪 Teacher 信用的真实数据建模缺陷。
+- 修复统一为一次执行在同一 selection group 最多取得一个信用，跨独立目标的精确信用仍保留；route connector 只形成 `authoritative_collection_rolling_route_step`，不再冒充 acquisition endpoint；实际 acquisition endpoint 的收据只要求本次候选数量，而不是整个长期需求数量。v28 第 `25` 次真实工件已离线重放通过：木材候选只绑定 Crafts Room alternative `0`，其 Full Shipment 与 Community Center 信用均为路线进度，Teacher 继续因四个权威同分候选而阻塞且不输出标签/队列。current collection 全链自测通过，全解决方案 Release 为 `0 warning / 0 error`。
+- 下一固定动作是在同一 collection 控制边界上用新代码继续有界原生运行，先证明上述 v28 停止点被真实越过，再推进首次登岛、至少一个 Golden Walnut 来源增量和 First Parrot/Turtle/House 三项原生跃迁并导出 source schedule；正式训练仍为 false。
 
 ## 已收口增量 · Golden Walnut v24 清障成本修复
 

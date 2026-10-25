@@ -114,6 +114,42 @@ internal static class CurrentTeacherFrontierSupport
         .ThenBy(value => value.SourceId, StringComparer.Ordinal)
         .ToArray();
 
+    public static bool IsExactAcquisitionRouteStep(
+        PolicyEventCandidatePrediction candidate,
+        string itemId,
+        string qualifiedItemId,
+        IReadOnlyCollection<CurrentRequirementRouteEvidence> routes,
+        out string evidence)
+    {
+        evidence = string.Empty;
+        if (!string.Equals(
+                candidate.Kind,
+                "route_connector_tile",
+                StringComparison.Ordinal) ||
+            candidate.Quantity <= 0 ||
+            routes.Count == 0 ||
+            !ParameterEquals(
+                candidate,
+                "continuation.option_id",
+                candidate.OptionId) ||
+            !ParameterEquals(candidate, "continuation.item_id", itemId) ||
+            !ParameterEquals(
+                candidate,
+                "continuation.qualified_item_id",
+                qualifiedItemId) ||
+            !ParameterEquals(
+                candidate,
+                "compiler_context.fresh_snapshot_replan_required",
+                "true"))
+        {
+            return false;
+        }
+
+        evidence =
+            "exact_acquisition_route_continuation+fresh_snapshot_replan_required";
+        return true;
+    }
+
     public static bool TryReadUniqueParameter(
         PolicyEventCandidatePrediction candidate,
         string name,
@@ -176,6 +212,13 @@ internal static class CurrentTeacherFrontierSupport
         operation.AddArtifactId(hash);
         return hash;
     }
+
+    private static bool ParameterEquals(
+        PolicyEventCandidatePrediction candidate,
+        string name,
+        string expected) =>
+        TryReadUniqueParameter(candidate, name, out var value) &&
+        string.Equals(value, expected, StringComparison.Ordinal);
 
     private static T ReadJson<T>(string path, string label)
     {
