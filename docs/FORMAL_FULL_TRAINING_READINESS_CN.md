@@ -4,6 +4,14 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已闭合从 v10 最终隔离存档开始的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已通过 current-authority 复核并冻结；当前唯一施工项是 `complete_master_angler` 顶层依赖、日历窗口与 coverage 接线。Money Exit Gate 标准不降低，但 Money 已回到复杂度队列第 11 位。
 
+## 当前增量 · 竹鱼竿新档原生来源已闭合
+
+Master Angler 的首根鱼竿现在按原版 Spring 2 来源执行：`spring_2_1` 邮件产生任务 `13`，实时任务路线到 Beach 后触发事件 `739330`，原生事件再发放竹鱼竿。该链复用既有 `mail.process_letter -> quest.advance -> story.advance_event` 与共享机械执行器；FishShop 竹鱼竿购买仅为恢复兜底。任务路线权威字段已贯穿编译队列，但 `quest.advance` 仍保持非全局训练准入，因此只能形成逐段 verified evidence，不能直接形成策略训练行。
+
+`rod-native-chain-v19j-20261025-193000` 已从隔离新档真实跑通全部 `9` 个 episode。前五个邮件阶段和最后一个剧情阶段共接纳 `6` 条 Teacher 轨迹；三个任务路线阶段均验证 exact transition 并作为 evidence-only 保留；数据集校验为 `6 accepted / 0 rejected`。最终透明库存读取到 `(T)BambooPole` 后退出。剧情期间的空闲冻结缺口也已关闭：执行器可接管的原生事件在规划和请求排队阶段保持精确命令边界，取得执行租约后才恢复；严格事件身份及命令校验没有降低。
+
+本项只关闭鱼竿前置的真实运行闭环，不改变 `CoverageGateReady 5/19`、Money production `0/18` 或 `formal_product_training=false`。下一项仍是首次登岛和 Golden Walnut 来源日程，而不是提前启动正式训练。
+
 ## 当前增量 · 新档礼盒动作已局部准入
 
 `rewards.claim_starter_gift` 已完成透明投影、候选、日计划、fresh 编译和原生 `GameLocation.checkAction` 执行路径，并作为 `earn_money` 的 fresh-save 支撑转移。实现锁定 owned FarmHouse、唯一 starter gift Chest、精确 contents、背包容量、相邻站位和农场类型任务；运行时不得直接写 Chest、库存或任务。

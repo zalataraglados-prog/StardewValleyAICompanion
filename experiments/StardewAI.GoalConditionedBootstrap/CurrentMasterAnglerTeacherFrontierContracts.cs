@@ -100,7 +100,7 @@ public sealed class CurrentMasterAnglerTeacherFrontier
 
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "A positive Master Angler candidate either targets one exact missing species in the authoritative 72-species denominator or advances the separately typed, authority-bound Bamboo Pole prerequisite while the transparent rod inventory is authoritatively empty. Species candidates retain their hash-locked current-date window and route/outcome requirements. The prerequisite reuses the exact FishShop economy.buy_supplies chain and never changes the 72-species denominator. Missing or unavailable evidence is deferred and never becomes a negative label.";
+        "A positive Master Angler candidate either targets one exact missing species in the authoritative 72-species denominator or advances the separately typed, authority-bound first-rod prerequisite while the transparent rod inventory is authoritatively empty. Species candidates retain their hash-locked current-date window and route/outcome requirements. The prerequisite prioritizes the native spring_2_1 mail, quest 13 Beach route and event 739330 Bamboo Pole grant, then permits the exact FishShop economy.buy_supplies chain only as a post-delivery recovery fallback. Every stage reuses an existing compiled option, consumes one fresh snapshot at a time and never changes the 72-species denominator. Missing or unavailable evidence is deferred and never becomes a negative label.";
 }
 
 public sealed record CurrentMasterAnglerSupportingPrerequisiteBinding(

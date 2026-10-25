@@ -296,6 +296,7 @@ public static partial class CurrentStageOneCollectionTeacherPreferenceBuilder
             "native_community_center_payment_completion" or
             "native_community_center_donation_completion" or
             "authoritative_window_terminal_attempt" or
+            "authoritative_supporting_prerequisite_starter_event_grant" or
             "authoritative_supporting_prerequisite_terminal_purchase";
 
     private static bool IsHardPrerequisite(string bindingKind) =>

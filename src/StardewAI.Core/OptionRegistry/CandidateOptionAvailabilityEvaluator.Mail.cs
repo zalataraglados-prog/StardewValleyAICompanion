@@ -214,6 +214,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                         Parameter("target_runtime_type", "LetterViewerMenu"),
                         Parameter("target_runtime_identity", title),
                         Parameter("mail_menu_identity_sha256", identity),
+                        Parameter("quest_id", ReadString(letter, "quest_id")),
                         Parameter("continuation.option_id", "mail.process_letter"),
                         Parameter("continuation.mail_menu_identity_sha256", identity)
                     }

@@ -51,6 +51,36 @@ public static partial class MasterAnglerTargetDateIntentBuilder
         var missing = ReadExactMissingSpecies(state, index.NativeDenominatorCount);
         var fishingLevel = ReadFishingLevel(state);
         var hasFishingRod = HasFishingRod(state);
+        var readyCrabPotOutputs = ReadReadyCrabPotOutputs(state);
+        var indexHash = ContentInventoryVerifier.HashFile(fullIndexPath);
+        var timingHash = ContentInventoryVerifier.HashFile(fullTimingPath);
+        if (!hasFishingRod && readyCrabPotOutputs.Count == 0)
+        {
+            return new MasterAnglerTargetDateIntentSet
+            {
+                Status = "no_authoritative_static_rod_intent_available_now",
+                SourceSnapshotPath = fullSnapshotPath,
+                SourceStateHash = sourceStateHash,
+                WindowIndexPath = fullIndexPath,
+                WindowIndexSha256 = indexHash,
+                RouteTimingCalibrationPath = fullTimingPath,
+                RouteTimingCalibrationSha256 = timingHash,
+                CurrentTotalDay = currentTotalDay,
+                CurrentTime = currentTime,
+                CurrentLocationId = currentLocation,
+                MissingSpeciesCount = missing.Count,
+                CandidateCount = 0,
+                WeatherSupplyCandidateCount = 0,
+                TrainingLabelEligible = false,
+                Candidates = Array.Empty<MasterAnglerTargetDateIntent>(),
+                WeatherSupplyCandidates =
+                    Array.Empty<MasterAnglerWeatherSupplyIntent>(),
+                WeatherSupplyBlockingReasons =
+                    new[] { "fishing_rod_prerequisite_unsatisfied" },
+                BlockingReasons =
+                    new[] { "fishing_rod_prerequisite_unsatisfied" }
+            };
+        }
         var hasMagicBait = AnyRodContextFlag(state, "has_magic_bait");
         var hasNonTrainingRod = AnyRodContextFlag(state, "uses_training_rod", expected: false);
         var routeGraph = RequiredFieldValue(state, "locations", "route_graph");
@@ -63,7 +93,6 @@ public static partial class MasterAnglerTargetDateIntentBuilder
             "player",
             "movement_timing_context");
         var timingJson = File.ReadAllText(fullTimingPath);
-        var timingHash = ContentInventoryVerifier.HashFile(fullTimingPath);
         var timingLoad = new FutureRouteTimingCalibrationLoader().Load(
             timingJson,
             movementTimingContext,
@@ -74,7 +103,6 @@ public static partial class MasterAnglerTargetDateIntentBuilder
             timingLoad.Calibration is not null,
             "Master Angler route timing calibration does not match the current snapshot: " +
             string.Join(",", timingLoad.BlockingReasons));
-        var readyCrabPotOutputs = ReadReadyCrabPotOutputs(state);
         var runtimeEligibleLocationRules = ReadRuntimeEligibleLocationRules(state);
 
         var eligibleWindows = index.Species
@@ -150,7 +178,6 @@ public static partial class MasterAnglerTargetDateIntentBuilder
                 value => value.Production,
                 StringComparer.OrdinalIgnoreCase);
 
-        var indexHash = ContentInventoryVerifier.HashFile(fullIndexPath);
         var weatherSupplyBuilt = MasterAnglerWindowIntentValidator
             .TryBuildRainTotemSupplyIntent(
                 snapshotEnvelope,

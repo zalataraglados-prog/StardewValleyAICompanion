@@ -2599,14 +2599,19 @@ public sealed partial class ModEntry : Mod
         {
             executorInputTick++;
             EnsureHeadlessInputPump();
+            var hasActiveExecutorOperation = HasActiveExecutorOperation();
+            var shouldHoldStoryEventForDispatch =
+                !hasActiveExecutorOperation &&
+                HasExecutorOwnedStoryEventDispatchBoundary();
             var shouldPauseForExecutorIdle =
                 config.FreezeClockWhileExecutorIdle &&
                 Context.IsWorldReady &&
-                pendingExecutions.IsEmpty &&
-                !HasActiveExecutorOperation() &&
                 executorMovementLease.Direction is null &&
-                Game1.player.CanMove &&
-                Game1.player.movementDirections.Count == 0;
+                (shouldHoldStoryEventForDispatch ||
+                    pendingExecutions.IsEmpty &&
+                    !hasActiveExecutorOperation &&
+                    Game1.player.CanMove &&
+                    Game1.player.movementDirections.Count == 0);
             if (config.FreezeClockWhileExecutorIdle && Game1.options is not null)
             {
                 Game1.options.pauseWhenOutOfFocus = false;

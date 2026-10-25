@@ -288,6 +288,36 @@ public sealed class ExecutorInputLifecycleSourceGuardTests
             StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void ExecutorIdleFreezeHoldsExactNativeStoryBoundaryUntilDispatchOwnsIt()
+    {
+        var host = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.cs");
+        var storyEvent = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.StoryEvent.cs");
+
+        Assert.Contains(
+            "HasExecutorOwnedStoryEventDispatchBoundary()",
+            host,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "shouldHoldStoryEventForDispatch ||",
+            host,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "!hasActiveExecutorOperation",
+            host,
+            StringComparison.Ordinal);
+        Assert.Contains("!nativeEvent.isFestival", storyEvent, StringComparison.Ordinal);
+        Assert.Contains("!nativeEvent.skipped", storyEvent, StringComparison.Ordinal);
+        Assert.Contains("!nativeEvent.playerControlSequence", storyEvent, StringComparison.Ordinal);
+        Assert.Contains("Game1.currentMinigame is null", storyEvent, StringComparison.Ordinal);
+    }
+
     private static string ReadRepositoryFile(params string[] segments)
     {
         var directory = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);

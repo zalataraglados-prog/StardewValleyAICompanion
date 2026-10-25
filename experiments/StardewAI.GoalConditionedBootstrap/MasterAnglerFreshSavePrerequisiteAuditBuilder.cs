@@ -504,7 +504,7 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
             RodEquipmentFamily when graph.HasBoundMasterAnglerRodEquipmentAcquisition() =>
                 ("implemented_and_bound",
                     new[] { RodEquipmentProducerNode },
-                    "The recurrence reuses the exact FishShop Bamboo Pole purchase chain; later rods, bait and tackle remain optional efficiency improvements."),
+                    "The recurrence prefers the native spring_2_1 mail, basic quest 13 route and event 739330 Bamboo Pole grant; the exact FishShop purchase chain remains a recovery fallback, while later rods, bait and tackle remain optional efficiency improvements."),
             RodEquipmentFamily =>
                 ("current_state_gate_present_future_producer_missing",
                     new[] { "dependency.complete_master_angler.target_date_opportunity_producer" },
@@ -916,7 +916,7 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                     out var producer) ||
                 producer.Kind != "recurrence_rule" ||
                 producer.OptionId !=
-                    MasterAnglerRodEquipmentAcquisitionProtocol.OptionId ||
+                    MasterAnglerRodEquipmentAcquisitionProtocol.StarterMailOptionId ||
                 producer.Rule.ValueKind != JsonValueKind.Object)
                 return false;
 
@@ -925,17 +925,66 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                 "world_progress.fish_collection_progress",
                 "time.total_days",
                 "time.time",
+                "fishing.rod_inventory",
                 "player.inventory",
                 "player.money",
                 "player.location_id",
+                "player.tile_x",
+                "player.tile_y",
+                "player.story_event",
+                "quests.mailbox_processing",
+                "quests.active_quests",
+                "quests.mail_received",
                 "locations.shops",
                 "locations.route_graph",
                 "locations.route_connectors",
-                "menus.active_menu"
+                "locations.collision_grid",
+                "menus.active_menu",
+                "menus.menu_specific_state"
             };
-            return requiredFields.All(producer.RequiredFieldPaths.Contains) &&
-                   RuleString(producer.Rule, "reused_option_id") ==
-                       MasterAnglerRodEquipmentAcquisitionProtocol.OptionId &&
+            return producer.CandidateKinds.SetEquals(new[]
+                   {
+                       "route_connector_tile",
+                       "mailbox_approach",
+                       "open_mailbox_letter",
+                       "mail_input_wait",
+                       "process_open_letter",
+                       "advance_story_event_automatic",
+                       "advance_story_event_choice",
+                       "interact_endpoint",
+                       "buy_shop_item"
+                   }) &&
+                   requiredFields.All(producer.RequiredFieldPaths.Contains) &&
+                   RuleStringSetEquals(
+                       producer.Rule,
+                       "reused_option_ids",
+                       new[]
+                       {
+                           MasterAnglerRodEquipmentAcquisitionProtocol.StarterMailOptionId,
+                           MasterAnglerRodEquipmentAcquisitionProtocol.StarterQuestOptionId,
+                           MasterAnglerRodEquipmentAcquisitionProtocol.StarterEventOptionId,
+                           MasterAnglerRodEquipmentAcquisitionProtocol.OptionId
+                       }) &&
+                   RuleString(producer.Rule, "starter_mail_id") ==
+                       MasterAnglerRodEquipmentAcquisitionProtocol.StarterMailId &&
+                   RuleString(producer.Rule, "starter_quest_id") ==
+                       MasterAnglerRodEquipmentAcquisitionProtocol.StarterQuestId &&
+                   RuleString(producer.Rule, "starter_quest_runtime_type") ==
+                       "Quest" &&
+                   RuleString(producer.Rule, "starter_quest_next_action") ==
+                       "trigger_location_event" &&
+                   RuleString(producer.Rule, "starter_quest_target_location") ==
+                       "Beach" &&
+                   RuleString(producer.Rule, "starter_event_id") ==
+                       MasterAnglerRodEquipmentAcquisitionProtocol.StarterEventId &&
+                   RuleString(producer.Rule, "starter_event_source_asset") ==
+                       "Data/Events/Beach" &&
+                   RuleString(producer.Rule, "starter_event_source_key") ==
+                       "739330/t 600 1710/*n spring_2_1" &&
+                   RuleInt(producer.Rule, "starter_event_start_time_inclusive") ==
+                       600 &&
+                   RuleInt(producer.Rule, "starter_event_end_time_inclusive") ==
+                       1710 &&
                    RuleString(producer.Rule, "required_qualified_item_id") ==
                        MasterAnglerRodEquipmentAcquisitionProtocol.QualifiedItemId &&
                    RuleString(producer.Rule, "required_shop_id") ==
@@ -958,7 +1007,7 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                    masterAngler.Edges.Contains(new DependencyEdgeInventory(
                        RodEquipmentProducerNode,
                        MasterAnglerRecurrenceNode,
-                       "replans_after_native_purchase"));
+                       "replans_after_native_rod_prerequisite_primitive"));
         }
 
         public bool HasBoundMasterAnglerTrapSupply()

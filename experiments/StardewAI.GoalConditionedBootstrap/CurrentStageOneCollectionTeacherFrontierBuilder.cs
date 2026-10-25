@@ -265,12 +265,26 @@ public static class CurrentStageOneCollectionTeacherFrontierBuilder
                     0,
                     value.BindingKind switch
                     {
+                        "authoritative_supporting_prerequisite_starter_event_grant" =>
+                            "verify_authoritative_rod_inventory_after_native_event_grant",
+                        "authoritative_supporting_prerequisite_starter_mail_process" =>
+                            "continue_native_quest_13_after_starter_mail_processed",
+                        "authoritative_supporting_prerequisite_starter_mail_wait" =>
+                            "continue_starter_mail_after_native_input_settles",
+                        "authoritative_supporting_prerequisite_starter_mail_open" =>
+                            "continue_exact_starter_mail_after_native_letter_open",
+                        "authoritative_supporting_prerequisite_starter_mail_approach" =>
+                            "continue_exact_starter_mail_at_owned_mailbox",
+                        "authoritative_supporting_prerequisite_starter_quest_route_step" =>
+                            "continue_native_quest_13_after_fresh_beach_route_snapshot",
+                        "authoritative_supporting_prerequisite_starter_mail_route_step" =>
+                            "continue_exact_starter_mail_after_fresh_route_snapshot",
                         "authoritative_supporting_prerequisite_terminal_purchase" =>
                             "verify_authoritative_rod_inventory_after_native_purchase",
                         "authoritative_supporting_prerequisite_shop_endpoint_open" =>
                             "continue_exact_purchase_after_fish_shop_menu_open",
                         _ =>
-                            "continue_exact_purchase_after_fresh_route_snapshot"
+                            "continue_exact_rod_acquisition_after_fresh_route_snapshot"
                     }))));
 
         return bindings

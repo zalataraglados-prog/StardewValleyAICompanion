@@ -33,6 +33,7 @@ namespace StardewAI.Contracts.Capabilities
             new ReadOnlyCollection<QuestActionCoverageDeclaration>(new[]
             {
                 Row("ordinary_quest", "Quest", "basic_no_action", NativeObservationOnly, Array.Empty<string>(), "Quest has no objective-specific native action."),
+                Row("ordinary_quest", "Quest", "trigger_location_event", Bound, new[] { "route_connector_tile" }, "Vanilla basic quest 13 is bound through the locked Data/Events/Beach event 739330 location trigger rather than a GoSomewhereQuest field."),
                 Row("ordinary_quest", "Quest", "weeding_no_subclass", NativeUnreachable, Array.Empty<string>(), "Vanilla 1.6.15 retains the type_weeding=11 compatibility constant, but Data/Quests has no such row, Quest.getQuestFromId has no factory branch, and native quest sources never assign questType 11."),
                 Row("ordinary_quest", "CraftingQuest", "craft_item", Bound, new[] { "craft_quest_item" }),
                 Row("ordinary_quest", "ItemDeliveryQuest", "deliver_to_npc", Bound, new[] { "quest_npc_interaction", "route_connector_tile" }),

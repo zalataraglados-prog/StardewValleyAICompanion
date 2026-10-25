@@ -8,6 +8,17 @@ namespace StardewAI.RuntimeTestHarness;
 
 public sealed partial class ModEntry
 {
+    private static bool HasExecutorOwnedStoryEventDispatchBoundary()
+    {
+        var nativeEvent = Game1.CurrentEvent;
+        return nativeEvent is not null &&
+            Game1.eventUp &&
+            !nativeEvent.isFestival &&
+            !nativeEvent.skipped &&
+            !nativeEvent.playerControlSequence &&
+            Game1.currentMinigame is null;
+    }
+
     private void StartStoryEvent(PendingExecution pending)
     {
         var reasons = ValidateExecutionRequest(pending.Request);

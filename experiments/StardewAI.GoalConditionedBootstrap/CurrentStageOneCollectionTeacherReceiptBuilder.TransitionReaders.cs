@@ -111,12 +111,20 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
                 : null;
     }
 
-    private static string ReadParameter(ActionQueueItem item, string name) =>
-        (item.NormalizedCommand.Parameters ?? Array.Empty<SmallModelActionParameter>())
-            .SingleOrDefault(value => string.Equals(
+    private static string ReadParameter(ActionQueueItem item, string name)
+    {
+        var values = (item.NormalizedCommand.Parameters ??
+                Array.Empty<SmallModelActionParameter>())
+            .Where(value => string.Equals(
                 value.Name,
                 name,
-                StringComparison.Ordinal))?.Value ?? string.Empty;
+                StringComparison.Ordinal))
+            .Select(value => value.Value)
+            .Distinct(StringComparer.Ordinal)
+            .Take(2)
+            .ToArray();
+        return values.Length == 1 ? values[0] : string.Empty;
+    }
 
     private static int? ReadIntParameter(ActionQueueItem item, string name) =>
         int.TryParse(ReadParameter(item, name), out var value) ? value : null;

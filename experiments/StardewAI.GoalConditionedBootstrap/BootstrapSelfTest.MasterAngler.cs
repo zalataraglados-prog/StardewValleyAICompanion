@@ -1284,6 +1284,20 @@ internal static partial class BootstrapSelfTest
             noRod.Status == "no_authoritative_static_rod_intent_available_now",
             "Master Angler teacher emitted a rod-catch route without an owned fishing rod.");
 
+        noRodSnapshot["state"]!["player"]!["movement_timing_context"]!
+            ["value"]!["route_timing_ready_now"] = false;
+        Write(snapshotPath, noRodSnapshot);
+        var noRodWhileExecutorIdle = MasterAnglerTargetDateIntentBuilder.Build(
+            windowsPath,
+            snapshotPath,
+            calibrationPath);
+        Require(
+            noRodWhileExecutorIdle.CandidateCount == 0 &&
+            noRodWhileExecutorIdle.WeatherSupplyCandidateCount == 0 &&
+            noRodWhileExecutorIdle.BlockingReasons.SequenceEqual(
+                new[] { "fishing_rod_prerequisite_unsatisfied" }),
+            "Master Angler no-rod planning incorrectly required a live movement gate.");
+
         var missingRodFieldSnapshot = JsonNode.Parse(File.ReadAllText(snapshotPath))!;
         missingRodFieldSnapshot["state"]!["fishing"]!.AsObject()
             .Remove("rod_inventory");

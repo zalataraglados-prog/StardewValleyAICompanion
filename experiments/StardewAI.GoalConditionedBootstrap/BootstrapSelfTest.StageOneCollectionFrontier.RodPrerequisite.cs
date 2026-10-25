@@ -153,6 +153,122 @@ internal static partial class BootstrapSelfTest
                     out _),
                 "An over-cap Bamboo Pole purchase was admitted as the rod prerequisite.");
 
+            var starterMail = StarterRodCandidate(
+                "rod-prerequisite-starter-mail",
+                MasterAnglerRodEquipmentAcquisitionProtocol.StarterMailOptionId,
+                "mailbox_approach",
+                3,
+                Parameter("continuation.mail_id",
+                    MasterAnglerRodEquipmentAcquisitionProtocol.StarterMailId),
+                Parameter("target_runtime_identity",
+                    MasterAnglerRodEquipmentAcquisitionProtocol.StarterMailId));
+            var nativePreferred = BuildRodPrerequisiteFrontier(
+                "stage-one-rod-prerequisite-native-mail-preferred",
+                Array.Empty<object>(),
+                new[] { purchase, starterMail });
+            Require(
+                nativePreferred.Frontier.MasterAngler
+                    .SupportingPrerequisiteBindings.Single().CandidateId ==
+                        starterMail.CandidateId &&
+                nativePreferred.Frontier.MasterAngler
+                    .SupportingPrerequisiteBindings[0].BindingKind ==
+                        "authoritative_supporting_prerequisite_starter_mail_approach" &&
+                nativePreferred.Frontier.MasterAngler
+                    .SupportingPrerequisiteBindings[0].ShopId.Length == 0,
+                "The native free starter-rod mail did not outrank the FishShop purchase fallback.");
+
+            var springOnePurchase = BuildRodPrerequisiteFrontier(
+                "stage-one-rod-prerequisite-spring-one-purchase-blocked",
+                Array.Empty<object>(),
+                new[] { purchase },
+                totalDays: 0);
+            Require(
+                springOnePurchase.Frontier.MasterAngler
+                    .SupportingPrerequisiteStatus ==
+                        "deferred_no_current_exact_rod_acquisition_candidate" &&
+                springOnePurchase.Frontier.MasterAngler
+                    .SupportingPrerequisiteBindings.Length == 0,
+                "The recovery purchase fallback spent starting money before the native spring-2 rod chain could arrive.");
+
+            var starterMailWait = StarterRodCandidate(
+                "rod-prerequisite-starter-mail-wait",
+                MasterAnglerRodEquipmentAcquisitionProtocol.StarterMailOptionId,
+                "mail_input_wait",
+                1,
+                Parameter("target_runtime_type", "LetterViewerMenu"),
+                Parameter("target_runtime_identity",
+                    MasterAnglerRodEquipmentAcquisitionProtocol.StarterMailId),
+                Parameter("continuation.option_id",
+                    MasterAnglerRodEquipmentAcquisitionProtocol.StarterMailOptionId));
+            var starterMailProcess = StarterRodCandidate(
+                "rod-prerequisite-starter-mail-process",
+                MasterAnglerRodEquipmentAcquisitionProtocol.StarterMailOptionId,
+                "process_open_letter",
+                1,
+                Parameter("target_runtime_type", "LetterViewerMenu"),
+                Parameter("target_runtime_identity",
+                    MasterAnglerRodEquipmentAcquisitionProtocol.StarterMailId),
+                Parameter("continuation.option_id",
+                    MasterAnglerRodEquipmentAcquisitionProtocol.StarterMailOptionId));
+            var starterQuest = StarterRodCandidate(
+                "rod-prerequisite-starter-quest",
+                MasterAnglerRodEquipmentAcquisitionProtocol.StarterQuestOptionId,
+                "route_connector_tile",
+                1,
+                Parameter("quest_id",
+                    MasterAnglerRodEquipmentAcquisitionProtocol.StarterQuestId),
+                Parameter("quest_runtime_type", "Quest"),
+                Parameter("quest_next_action", "trigger_location_event"),
+                Parameter("quest_target_location", "Beach"),
+                Parameter("quest_event_id",
+                    MasterAnglerRodEquipmentAcquisitionProtocol.StarterEventId),
+                Parameter("quest_event_required_mail_id",
+                    MasterAnglerRodEquipmentAcquisitionProtocol.StarterMailId),
+                Parameter("quest_event_source_asset", "Data/Events/Beach"),
+                Parameter("quest_event_source_key",
+                    "739330/t 600 1710/*n spring_2_1"));
+            var starterEvent = StarterRodCandidate(
+                "rod-prerequisite-starter-event",
+                MasterAnglerRodEquipmentAcquisitionProtocol.StarterEventOptionId,
+                "advance_story_event_automatic",
+                1,
+                Parameter("story_event_id",
+                    MasterAnglerRodEquipmentAcquisitionProtocol.StarterEventId),
+                Parameter("continuation.story_event_id",
+                    MasterAnglerRodEquipmentAcquisitionProtocol.StarterEventId));
+            Require(
+                MasterAnglerRodEquipmentAcquisitionProtocol.TryMatchCandidate(
+                    starterMailWait,
+                    out var waitBinding) &&
+                waitBinding ==
+                    "authoritative_supporting_prerequisite_starter_mail_wait" &&
+                MasterAnglerRodEquipmentAcquisitionProtocol.TryMatchCandidate(
+                    starterMailProcess,
+                    out var processBinding) &&
+                processBinding ==
+                    "authoritative_supporting_prerequisite_starter_mail_process" &&
+                MasterAnglerRodEquipmentAcquisitionProtocol.TryMatchCandidate(
+                    starterQuest,
+                    out var questBinding) &&
+                questBinding ==
+                    "authoritative_supporting_prerequisite_starter_quest_route_step" &&
+                MasterAnglerRodEquipmentAcquisitionProtocol.TryMatchCandidate(
+                    starterEvent,
+                    out var eventBinding) &&
+                eventBinding ==
+                    "authoritative_supporting_prerequisite_starter_event_grant",
+                "One or more exact native first-rod stages were not admitted by identity.");
+
+            starterQuest.Parameters = starterQuest.Parameters
+                .Where(value => value.Name != "quest_target_location")
+                .Append(Parameter("quest_target_location", "Mountain"))
+                .ToArray();
+            Require(
+                !MasterAnglerRodEquipmentAcquisitionProtocol.TryMatchCandidate(
+                    starterQuest,
+                    out _),
+                "A quest 13 route with the wrong target location was admitted as the native rod chain.");
+
             var endpointFrontier = BuildRodPrerequisiteFrontier(
                 "stage-one-rod-prerequisite-endpoint",
                 Array.Empty<object>(),
@@ -365,7 +481,7 @@ internal static partial class BootstrapSelfTest
                 new[] { unrelated, wrongShop });
             Require(
                 wrongIdentity.Frontier.MasterAngler.SupportingPrerequisiteStatus ==
-                    "deferred_no_current_exact_rod_purchase_candidate" &&
+                    "deferred_no_current_exact_rod_acquisition_candidate" &&
                 wrongIdentity.Frontier.MasterAngler
                     .SupportingPrerequisiteBindings.Length == 0,
                 "A purchase with the wrong shop identity was admitted as the rod prerequisite.");
@@ -379,7 +495,7 @@ internal static partial class BootstrapSelfTest
                 new[] { unrelated, purchase, duplicate });
             Require(
                 ambiguous.Frontier.MasterAngler.SupportingPrerequisiteStatus ==
-                    "blocked_ambiguous_current_rod_purchase_candidates" &&
+                    "blocked_ambiguous_current_rod_acquisition_candidates" &&
                 ambiguous.Frontier.MasterAngler
                     .SupportingPrerequisiteBindings.Length == 0,
                 "Ambiguous exact Bamboo Pole purchase candidates did not fail closed.");
@@ -392,12 +508,14 @@ internal static partial class BootstrapSelfTest
                 string sourceStateHash,
                 object[] rodInventory,
                 PolicyEventCandidatePrediction[] candidates,
-                Action<JsonObject>? mutateSnapshot = null)
+                Action<JsonObject>? mutateSnapshot = null,
+                int totalDays = 5)
         {
             WriteStageOneCollectionSnapshot(
                 snapshotPath,
                 sourceStateHash,
                 fish,
+                totalDays: totalDays,
                 rodInventory: rodInventory);
             if (mutateSnapshot is not null)
             {
@@ -441,6 +559,27 @@ internal static partial class BootstrapSelfTest
                     intentsPath,
                     denominator),
                 denominator);
+        }
+
+        private static PolicyEventCandidatePrediction StarterRodCandidate(
+            string candidateId,
+            string optionId,
+            string kind,
+            int rank,
+            params SmallModelActionParameter[] parameters)
+        {
+            var candidate = CollectionCandidate(
+                candidateId,
+                optionId,
+                kind,
+                string.Empty,
+                string.Empty,
+                rank,
+                0,
+                parameters);
+            candidate.LocationId = "Farm";
+            candidate.EstimatedTicks = 60;
+            return candidate;
         }
 
         private static PolicyEventCandidatePrediction RodPurchaseCandidate(

@@ -90,6 +90,127 @@ internal static partial class BootstrapSelfTest
             "A valid same-tick native sub-step receipt was rejected: " +
             string.Join(",", reasons));
 
+        var nativeMailItem = CloneQueueItem(first);
+        nativeMailItem.OptionId = "executor.close_menu";
+        nativeMailItem.NormalizedCommand.OptionId = "executor.close_menu";
+        nativeMailItem.NormalizedCommand.Parameters = new[]
+        {
+            new SmallModelActionParameter
+            {
+                Name = "plan_step_kind",
+                Value = "close_menu"
+            },
+            new SmallModelActionParameter
+            {
+                Name = "target_runtime_type",
+                Value = "LetterViewerMenu"
+            },
+            new SmallModelActionParameter
+            {
+                Name = "target_runtime_identity",
+                Value = "fixture_mail"
+            },
+            new SmallModelActionParameter
+            {
+                Name = "mail_menu_identity_sha256",
+                Value = "fixture-menu-identity"
+            },
+            new SmallModelActionParameter
+            {
+                Name = "continuation.option_id",
+                Value = "mail.process_letter"
+            },
+            new SmallModelActionParameter
+            {
+                Name = "continuation.mail_menu_identity_sha256",
+                Value = "fixture-menu-identity"
+            },
+            new SmallModelActionParameter
+            {
+                Name = "safety_constraint",
+                Value = "native_LetterViewerMenu_receiveLeftClick_only"
+            },
+            new SmallModelActionParameter
+            {
+                Name = "safety_constraint",
+                Value = "reuse_executor.close_menu"
+            }
+        };
+        nativeMailItem.NormalizedCommand.Steps = new[]
+        {
+            new CompiledActionStep
+            {
+                StepId = "step.fixture-mail",
+                StepType = "close_menu",
+                Target = "active_menu:LetterViewerMenu",
+                ExpectedEffect = "menus.active_menu.is_open=false",
+                EstimatedTicks = 10
+            }
+        };
+        queue.Items[0] = nativeMailItem;
+        receipt.StepResults[0] = SequentialReceiptStep(
+            queue,
+            nativeMailItem,
+            0,
+            receiptBefore.StateHash,
+            intermediateStateHash,
+            receiptBefore.GameTick,
+            false,
+            changedFacts);
+        receipt.StepResults[0].AfterGameTick = receiptBefore.GameTick;
+        receipt.StepResults[0].PrimitiveKind = "process_mail_letter";
+        reasons = QueueExecutionReceiptValidator.Validate(
+            queue,
+            receiptBefore,
+            receipt,
+            after,
+            receipt.RunId,
+            PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor,
+            selectedCandidateId,
+            receiptBefore.StateHash,
+            requireTeacherPreferenceStateRebound: false);
+        Require(reasons.Length == 0,
+            "An exact native mail lifecycle receipt was rejected: " +
+            string.Join(",", reasons));
+
+        nativeMailItem.NormalizedCommand.Parameters = nativeMailItem
+            .NormalizedCommand.Parameters
+            .Where(parameter => !string.Equals(
+                parameter.Name,
+                "continuation.option_id",
+                StringComparison.Ordinal))
+            .ToArray();
+        receipt.StepResults[0].EffectiveQueueItem =
+            JsonSerializer.SerializeToElement(
+                nativeMailItem,
+                JsonDefaults.Options);
+        reasons = QueueExecutionReceiptValidator.Validate(
+            queue,
+            receiptBefore,
+            receipt,
+            after,
+            receipt.RunId,
+            PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor,
+            selectedCandidateId,
+            receiptBefore.StateHash,
+            requireTeacherPreferenceStateRebound: false);
+        Require(reasons.Contains(
+                "queue_execution_receipt_step_identity_mismatch:0",
+                StringComparer.Ordinal),
+            "A generic close-menu queue was admitted as native mail processing.");
+
+        queue.Items[0] = first;
+        receipt.StepResults[0] = SequentialReceiptStep(
+            queue,
+            first,
+            0,
+            receiptBefore.StateHash,
+            intermediateStateHash,
+            receiptBefore.GameTick,
+            false,
+            changedFacts);
+        receipt.StepResults[0].AfterGameTick = receiptBefore.GameTick;
+
         receipt.StepResults[0].AfterGameTick = receiptBefore.GameTick - 1;
         receipt.StepResults[1].BeforeGameTick = receiptBefore.GameTick - 1;
         reasons = QueueExecutionReceiptValidator.Validate(

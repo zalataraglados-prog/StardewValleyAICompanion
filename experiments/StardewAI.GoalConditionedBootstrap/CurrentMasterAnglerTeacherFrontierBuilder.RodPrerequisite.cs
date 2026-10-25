@@ -39,35 +39,45 @@ public static partial class CurrentMasterAnglerTeacherFrontierBuilder
         var matches = currentCandidates
             .Select(candidate =>
             {
-                var matched = MasterAnglerRodEquipmentAcquisitionProtocol
-                    .TryMatchCandidate(candidate, out var bindingKind);
-                return (Candidate: candidate, Matched: matched, BindingKind: bindingKind);
+                var match = MasterAnglerRodEquipmentAcquisitionProtocol
+                    .MatchCandidate(candidate);
+                return (Candidate: candidate, Match: match);
             })
-            .Where(value => value.Matched)
+            .Where(value => value.Match is not null)
+            .Where(value =>
+                !value.Match!.IsPurchaseFallback ||
+                MasterAnglerRodEquipmentAcquisitionProtocol
+                    .PurchaseFallbackAllowed(snapshot))
             .ToArray();
         if (matches.Length == 0)
         {
             return new SupportingPrerequisiteResult(
-                "deferred_no_current_exact_rod_purchase_candidate",
+                "deferred_no_current_exact_rod_acquisition_candidate",
                 Array.Empty<CurrentMasterAnglerSupportingPrerequisiteBinding>(),
                 new[]
                 {
-                    "no_current_candidate_matches_the_audited_fish_shop_bamboo_pole_purchase",
+                    "no_current_candidate_matches_the_native_free_rod_chain_or_audited_purchase_fallback",
                     "future_or_currently_unavailable_routes_are_not_negative_labels"
                 });
         }
-        if (matches.Length != 1)
+
+        var bestPriority = matches.Min(value => value.Match!.Priority);
+        var preferredMatches = matches
+            .Where(value => value.Match!.Priority == bestPriority)
+            .ToArray();
+        if (preferredMatches.Length != 1)
         {
             return new SupportingPrerequisiteResult(
-                "blocked_ambiguous_current_rod_purchase_candidates",
+                "blocked_ambiguous_current_rod_acquisition_candidates",
                 Array.Empty<CurrentMasterAnglerSupportingPrerequisiteBinding>(),
                 new[]
                 {
-                    "multiple_current_candidates_match_the_same_audited_rod_prerequisite"
+                    "multiple_current_candidates_match_the_same_highest_priority_rod_prerequisite_stage"
                 });
         }
 
-        var match = matches[0];
+        var match = preferredMatches[0];
+        var stage = match.Match!;
         return new SupportingPrerequisiteResult(
             "current_positive_candidate",
             new[]
@@ -78,12 +88,12 @@ public static partial class CurrentMasterAnglerTeacherFrontierBuilder
                     match.Candidate.OptionId,
                     match.Candidate.Kind,
                     match.Candidate.Rank,
-                    match.BindingKind,
+                    stage.BindingKind,
                     MasterAnglerRodEquipmentAcquisitionProtocol.QualifiedItemId,
-                    MasterAnglerRodEquipmentAcquisitionProtocol.ShopId,
+                    stage.ShopId,
                     MasterAnglerRodEquipmentAcquisitionProtocol.RequiredQuantity,
-                    MasterAnglerRodEquipmentAcquisitionProtocol.MaximumUnitPrice,
-                    "authoritative_empty_rod_inventory+exact_audited_purchase_identity")
+                    stage.MaximumUnitPrice,
+                    stage.IdentityEvidence)
             },
             Array.Empty<string>());
     }
