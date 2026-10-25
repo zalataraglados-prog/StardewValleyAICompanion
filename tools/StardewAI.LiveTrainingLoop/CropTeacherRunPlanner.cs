@@ -45,6 +45,19 @@ public static class CropTeacherRunPlanner
         "crop_teacher_harvest_target_not_ready_on_planned_day" or
         "crop_teacher_run_day_advanced_with_unsettled_harvest";
 
+    public static string GetResumeSnapshotBlockReason(
+        MoneyRevenueCropNativeProductionRunPlan plan,
+        SnapshotEnvelope snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+        ArgumentNullException.ThrowIfNull(snapshot);
+
+        return ReadRequiredInt(snapshot, "time", "total_days") <
+            plan.FirstTotalDay
+            ? "crop_teacher_snapshot_precedes_first_run_day"
+            : string.Empty;
+    }
+
     public static CropTeacherRunStep Evaluate(
         MoneyRevenueCropNativeProductionRunPlan plan,
         MoneyRevenueCropNativeProductionRunPlanRequest request,
@@ -61,12 +74,12 @@ public static class CropTeacherRunPlanner
         completedDayBoundaryKeys ??= new HashSet<string>(StringComparer.Ordinal);
 
         ValidatePlan(plan, request);
-        var totalDay = ReadRequiredInt(snapshot, "time", "total_days");
-        if (totalDay < plan.FirstTotalDay)
+        var resumeBlockReason = GetResumeSnapshotBlockReason(plan, snapshot);
+        if (!string.IsNullOrWhiteSpace(resumeBlockReason))
         {
-            throw new InvalidDataException(
-                "crop_teacher_snapshot_precedes_first_run_day");
+            throw new InvalidDataException(resumeBlockReason);
         }
+        var totalDay = ReadRequiredInt(snapshot, "time", "total_days");
         var unsettledDayBoundary = plan.Days.FirstOrDefault(day =>
             day.TotalDay < totalDay &&
             day.NativeSleepRequired &&

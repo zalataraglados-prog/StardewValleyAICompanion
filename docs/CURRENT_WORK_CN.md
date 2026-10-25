@@ -22,7 +22,9 @@
 - v27d 隐藏静音回归已再次完成作物恢复与 8 格收获，随后执行 Master Angler Teacher 路线；fresh 失效后成功生成一条 control-only Backwoods 路线，并连续取得 3 条 verified native action。全过程未再次派发 Crop Teacher，也没有产生伪 Teacher 标签。短测为 `9/10`，唯一未达到 10 的原因是 `12` 次尝试预算包含两次候选失效/replan；因此结果保留为受限 incomplete，而非伪装成功。
 - v28 将同一链推进到 `18` 条 verified native action，普通 Teacher、control-only 路线、fresh 失效和重绑均真实运行且没有 Crop Teacher 回退。新的停止点是严格 selection contract 拒绝 Construction Bundle 的两个 `99` 木材槽同时认领同一条木匠店连接候选；这不是 Agent 汇报错误，而是会制造伪 Teacher 信用的真实数据建模缺陷。
 - 修复统一为一次执行在同一 selection group 最多取得一个信用，跨独立目标的精确信用仍保留；route connector 只形成 `authoritative_collection_rolling_route_step`，不再冒充 acquisition endpoint；实际 acquisition endpoint 的收据只要求本次候选数量，而不是整个长期需求数量。v28 第 `25` 次真实工件已离线重放通过：木材候选只绑定 Crafts Room alternative `0`，其 Full Shipment 与 Community Center 信用均为路线进度，Teacher 继续因四个权威同分候选而阻塞且不输出标签/队列。current collection 全链自测通过，全解决方案 Release 为 `0 warning / 0 error`。
-- 下一固定动作是在同一 collection 控制边界上用新代码继续有界原生运行，先证明上述 v28 停止点被真实越过，再推进首次登岛、至少一个 Golden Walnut 来源增量和 First Parrot/Turtle/House 三项原生跃迁并导出 source schedule；正式训练仍为 false。
+- v29b 把 Spring 7 基线存档误配给 Spring 13--17 账本，严格校验在执行前拒绝；该失败没有动作或训练数据。恢复循环现于首张真实快照执行一次性兼容性门，不再把同一错配重复记作五次运行错误，Planner 原有失败关闭不变。
+- 正确使用 v26 Spring 17 隔离存档后，v29c `golden-walnut-collection-v29c-20261026-053000` 已通过：`31` 次迭代取得 `24/24` verified action、`24` 行执行数据、`2` 次 Teacher 队列和 `5` 次 control-only 队列；第 `25` 次和第 `26` 次均成功，旧 malformed group 没有复现，日志零 error。Crop Teacher 派生账本保持 `8 harvest + 4 day boundary`，源账本只读。
+- 下一固定动作已前移为继续同一 collection 控制链，取得首次登岛、至少一个 Golden Walnut 来源增量和 First Parrot/Turtle/House 三项原生跃迁并导出 source schedule；v29c 不是 source schedule，也未启动正式训练。
 
 ## 已收口增量 · Golden Walnut v24 清障成本修复
 

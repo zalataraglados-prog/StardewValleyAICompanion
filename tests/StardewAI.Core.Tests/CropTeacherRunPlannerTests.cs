@@ -26,6 +26,24 @@ public sealed class CropTeacherRunPlannerTests
     }
 
     [Fact]
+    public void RejectsAResumeSnapshotBeforeThePlansFirstDay()
+    {
+        var (plan, request) = BuildPlan();
+        var snapshot = Snapshot("FarmHouse", 0, [], totalDay: 0);
+
+        Assert.Equal(
+            "crop_teacher_snapshot_precedes_first_run_day",
+            CropTeacherRunPlanner.GetResumeSnapshotBlockReason(
+                plan,
+                snapshot));
+        var error = Assert.Throws<InvalidDataException>(() =>
+            Evaluate(plan, request, snapshot));
+        Assert.Equal(
+            "crop_teacher_snapshot_precedes_first_run_day",
+            error.Message);
+    }
+
+    [Fact]
     public void AdvancesThroughTheAuthoritativeFirstDayWithoutReplayingCompletedWork()
     {
         var (plan, request) = BuildPlan();

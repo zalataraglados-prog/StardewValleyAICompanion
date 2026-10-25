@@ -22,6 +22,10 @@ v27d 原生回归已经跨过该边界：Crop Teacher 再次完成，普通 Mast
 
 v28 原生运行继续取得 `18` 条 verified native action，并多次完成 Teacher/control-only 路线切换与 fresh 重绑，没有回退作物系统。第 `25` 次迭代由严格校验阻止了 Construction Bundle 重复 `99` 木材槽对同一木匠店连接动作的双重信用；同时确认 Full Shipment 曾把该连接段误分类为物品获取。当前单次执行契约已经统一：每个 selection group 最多一个稳定信用，跨独立 group 信用保留；acquisition route connector 只验证路线变化；实际 acquisition endpoint 按本次增量验收。原 v28 第 `25` 次工件重放不再异常，重复槽位只保留 alternative `0`，两条目标信用均为 rolling route；四个权威同分候选仍正确禁止 Teacher 标签和队列。current collection 全链自测通过，全解决方案 Release 为 `0 warning / 0 error`。该修复不能替代新的原生运行，v28 保持 incomplete；首次登岛、Golden Walnut 来源增量、三项鹦鹉跃迁与 source schedule 仍是正式准入缺口。
 
+v29c 已补上新的原生验收。正确绑定 v26 Spring 17 隔离存档与只读源账本后，`golden-walnut-collection-v29c-20261026-053000` 再次完成 Crop Teacher 容量恢复和 8 格收获，并在 `31` 次迭代中取得 `24/24` 条 verified action。第 `25` 次迭代已实际生成并执行 control-only collection 队列，第 `26` 次继续追加 verified action，旧重复木材槽异常未复现；最终共有 `2` 次 Teacher 队列、`5` 次 control-only 队列且日志零 error。此前 v29b 仅因 Spring 7 存档误配 Spring 13--17 账本而在执行前失败；新增首快照兼容门会将这种配置错误一次性结构化停止，不能污染动作或训练数据。
+
+上述结果只把 collection continuation 的当前契约推进到原生通过，不构成正式训练准入。v29c 没有启用 fresh-save Golden Walnut 证据捕获，也没有首次登岛、来源增量、First Parrot/Turtle/House 跃迁或 source schedule；因此 `CoverageGateReady 5/19`、Money production `0/18` 与 `formal_product_training=false` 均不变。下一准入步骤仍是沿同一控制链取得并验证这些姜岛事件，而不是开始训练。
+
 ## 已收口增量 · v23-v24 原生进展与正式准入边界
 
 全新隔离运行 `golden-walnut-source-schedule-v23-20261025-233534` 已在同一原生存档中取得 `137` 个 verified native action、`12` 条原生日界和 `6` 条逐格收获回执。它真实完成第一轮作物生产，随后完成邮件、任务 `13` 三段路线、两次 Beach 钓鱼、节日等待和三段返场。该结果证明长跑已越过此前的节日门禁与第一轮场地接近边界，但没有首次登岛、Golden Walnut 来源增量或三项鹦鹉跃迁，因而不能导出 source schedule。

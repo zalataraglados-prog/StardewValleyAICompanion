@@ -38,6 +38,10 @@ v26 在第 `173` 次迭代进入第二轮 `8` 格收获时连续失败关闭。�
 
 v28 `golden-walnut-collection-v28-20261026-043500` 把该控制链继续推进到 `18` 条 verified native action：普通 Teacher 和 control-only 队列多次交替，fresh 候选失效与重新绑定均正常，且没有回退 Crop Teacher。第 `25` 次迭代随后由严格校验发现新的实质性契约缺陷：Construction Bundle 两个独立 `99` 木材槽把同一条“去木匠店途中”的连接候选重复记账，且 Full Shipment 分支还把该连接动作误写成物品获取。当前契约改为一次执行在同一 selection group 最多取得一个稳定信用、跨独立 group 的信用仍保留；所有精确 acquisition 连接段统一只验路线变化，真正 acquisition endpoint 只按本次可验证新增量验收。v28 第 `25` 次完整工件已由新代码离线重放：异常消失，木材候选在 Crafts Room 只保留 alternative `0`，Full Shipment 与 Community Center 两条均为 `authoritative_collection_rolling_route_step`，Teacher 对四个权威同分候选继续返回 `blocked_authoritatively_tied_top_candidates`，未生成伪标签或执行队列。current collection 全链自测和全解决方案 Release 构建均通过，后者为 `0 warning / 0 error`。v28 仍是 incomplete 原生运行；首次登岛与 Golden Walnut source schedule 尚未取得，正式训练状态不变。
 
+v29b 首次续跑错误使用了 E 盘 runtime 的 Spring 7 基线存档，却绑定 Spring 13--17 的 v26 账本；Planner 连续拒绝为 `crop_teacher_snapshot_precedes_first_run_day`，没有执行动作或写入训练数据。LiveTrainingLoop 现会在恢复运行的第一张真实快照上做一次性兼容性检查，同类存档/账本错配立即以结构化 `crop_teacher_resume_snapshot_incompatible` 停止，不再重复消耗五次错误预算；原 Planner 的严格校验仍保留。
+
+正确配对 Spring 17 隔离存档后的隐藏静音运行 `golden-walnut-collection-v29c-20261026-053000` 已由包装器判定 `passed`。它再次原生完成返场、满包单件投箱、8 格收获与派生账本 `8 harvest + 4 day boundary`，随后在 `31` 次迭代内取得 `24/24` 条 verified action；其中普通 collection Teacher 队列 `2` 次、同分 control-only 队列 `5` 次，候选失效后均 fresh 重绑。第 `25` 次迭代已真实编译并执行，不再出现 malformed selection group；第 `31` 次完成有界退出，进度日志零 `stage=error`。该运行只关闭 v28 契约修复的原生验收，不包含首次登岛、核桃来源增量、鹦鹉跃迁或 source schedule，`formal_product_training=false` 与状态面板分子全部不变。
+
 ### 已收口背景：Golden Walnut v22-v24
 
 `golden-walnut-source-schedule-v22` 已真实完成节日等待后的返场，并生成第一条农场内场地接近队列；该队列随后暴露透明 `locations.route_blockers` 没有进入长距离移动修复的问题。第一轮修复让全地图对象阻塞进入同一 `move_to_tile + BFS route repair`，原 v22 队列已可重编译为 pending，但这仍只是失败现场重放，不是新的原生执行回执。

@@ -248,6 +248,30 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 options.SnapshotFile)
             : await http.GetStringAsync(options.BridgeSnapshotUrl);
         var beforeSnapshot = JsonNode.Parse(rawSnapshotJson)?.AsObject() ?? new JsonObject();
+        if (attemptOrdinal == 1 && activeCropTeacherRunPlan is not null)
+        {
+            var resumeSnapshot = JsonSerializer.Deserialize<SnapshotEnvelope>(
+                rawSnapshotJson,
+                JsonOptions) ?? throw new InvalidDataException(
+                    "crop_teacher_resume_snapshot_invalid");
+            var resumeBlockReason =
+                CropTeacherRunPlanner.GetResumeSnapshotBlockReason(
+                    activeCropTeacherRunPlan,
+                    resumeSnapshot);
+            if (!string.IsNullOrWhiteSpace(resumeBlockReason))
+            {
+                stopReason = "crop_teacher_resume_snapshot_incompatible reason=" +
+                    resumeBlockReason;
+                AppendProgress(
+                    options,
+                    "stopped",
+                    iteration,
+                    resumeSnapshot.StateHash,
+                    string.Empty,
+                    stopReason);
+                break;
+            }
+        }
         var currentDayKey = QueueReplanFilter.SnapshotDayKey(beforeSnapshot);
         if (activeCropTeacherRunPlan is not null &&
             pendingCropTeacherDayBoundary is not null)
