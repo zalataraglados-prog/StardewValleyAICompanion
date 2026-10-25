@@ -4,6 +4,14 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已闭合从 v10 最终隔离存档开始的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已通过 current-authority 复核并冻结；当前唯一施工项是 `complete_master_angler` 顶层依赖、日历窗口与 coverage 接线。Money Exit Gate 标准不降低，但 Money 已回到复杂度队列第 11 位。
 
+## 当前增量 · v23 原生进展与正式准入边界
+
+全新隔离运行 `golden-walnut-source-schedule-v23-20261025-233534` 已在同一原生存档中取得 `137` 个 verified native action、`12` 条原生日界和 `6` 条逐格收获回执。它真实完成第一轮作物生产，随后完成邮件、任务 `13` 三段路线、两次 Beach 钓鱼、节日等待和三段返场。该结果证明长跑已越过此前的节日门禁与第一轮场地接近边界，但没有首次登岛、Golden Walnut 来源增量或三项鹦鹉跃迁，因而不能导出 source schedule。
+
+v23 的第二轮场地接近在第 145--149 次迭代失败关闭。根因是 route repair 在相同清障数量下只偏爱近处障碍，选择了透明状态明确需要 starting axe `15` 次挥砍、`30` 点体力的成熟枫树，同时编译项仍写死 `max_tool_swings=8`。当前修复复用唯一移动/BFS/清障链，在既有清障数量上限内按每个障碍的透明分钟与体力执行有界最小成本搜索，并把精确挥砍上限传给原执行器；缺少精确树成本的远端树不被猜测为可清。原 v23 输入已严格重编译为 `pending / 7 items / 0 blocked`，选择 `(73,24)` 杂草替代 `(73,23)` 成熟树。新增回归 `177/177`，隔离 Release solution 构建 `0 warning / 0 error`。
+
+该重放不是新的原生执行回执。下一正式证据必须由全新 v24 连续证明低成本清障路线、抵达接近点和后续场地准备；之后才继续首次登岛、来源增量、First Parrot/Turtle/House 跃迁与 source schedule。v23 同时观察到部分 `recovery.stabilize_day` 和任务路线策略 trajectory 因 `InvalidOperationException` 被拒；坏行未进入数据集，原生执行证据不受影响，但该训练样本缺口须在路线验收后修复。当前 `CoverageGateReady 5/19`、Money production `0/18`、`formal_product_training=false` 全部保持不变。
+
 ## 当前增量 · 长跑访问清障已修，正式准入不变
 
 `golden-walnut-source-schedule-v17-20261025-203000` 在第 47 次迭代暴露真实场地准备缺口：待耕地块被可移除障碍包围，目标格本身无需清理，但没有相邻可达站位。修复只在该单一类型化阻塞下复用现有清障/大型资源块候选，先清一格访问通道，再强制 fresh snapshot 重绑；其他工具、体力和时间阻塞仍失败关闭。旧失败请求的确定性重建现得到两条合法访问清障选择，聚焦测试、Debug 构建和 Teacher self-test 均已通过。

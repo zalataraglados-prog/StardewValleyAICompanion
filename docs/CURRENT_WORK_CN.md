@@ -4,6 +4,15 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已完成 v10 之后的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已按 current authority 冻结；当前唯一施工项为 `complete_master_angler` 顶层 dependency、日历窗口与 coverage 接线。P0/P1 共享 correctness blocker 可临时中断，但不得静默改序或并行展开多个 root method。
 
+## 当前增量 · Golden Walnut v23 清障成本修复
+
+- v22 已把节日等待后的角色送回 Farm 并生成场地接近队列，但长距离 route repair 没有读取全地图 blocker 身份；第一轮修复接通现有 `locations.route_blockers` 后，v22 原失败输入可以重编译为 pending。该结果只证明旧输入已可编译。
+- 全新 v23 `golden-walnut-source-schedule-v23-20261025-233534` 已真实取得 `137` 个 verified native action、`12` 条原生日界和 `6` 条逐格收获回执。首轮作物 run 的接近、整地、播种、浇水、收获与结算全部完成；随后完成竹鱼竿邮件/任务路线、两次钓鱼、节日等待和 Beach -> Town -> BusStop -> Farm 返场。
+- 第二轮作物接近在第 145--149 次迭代暴露成本盲区：同为三次清障时，旧贪心选择近处的 `(73,23)` 成熟枫树而不是 `(73,24)` 杂草。透明字段给出该树需要 starting axe `15` 次挥砍、`30` 点体力；旧 route repair 同时写死 `max_tool_swings=8`，故编译阻塞并按连续错误预算停止。
+- 当前修复仍只使用一套 `move_to_tile + BFS + executor.clear_obstacle`。选择器在 `max_route_repair_clears` 内按每格透明清障分钟和体力执行有界最小成本搜索，编译项携带每个障碍的精确挥砍上限、分钟与能量；全地图树若没有精确成本则失败关闭。v23 原输入已由 Backend 严格重放为 `pending / 7 items / 0 blocked`，第三个清障从成熟树变为杂草，最终接近点不变。
+- 验证：新增回归后 `ActionQueueCompilerTests 177/177`；Core 全量 `2959 passed / 21` 个既有基线失败；隔离 Release solution 构建 `0 warning / 0 error`。v23 仍为 incomplete，不能冒充修复后的原生清障证据，正式训练状态和 coverage 分子均不变。
+- 唯一下一动作：全新 v24 只验收“低成本杂草路线 -> 原生清障 -> 抵达接近点 -> 既有场地准备继续”，通过后继续首次登岛和 Golden Walnut source schedule。v23 中 `recovery.stabilize_day` 与任务路线 trajectory 的 `InvalidOperationException` 属于未入库的非阻塞样本缺口，排在本原生路线验收之后。
+
 ## 当前增量 · Golden Walnut 长跑相邻访问清障
 
 - `golden-walnut-source-schedule-v17-20261025-203000` 在第 47 次迭代真实失败于 `till_soil_no_adjacent_route_stand_tile`。两个 planting tile 本身可耕，但周围可移除障碍让执行器没有合法相邻站位；旧 planner 只清目标格，因而正确失败关闭却无法推进。

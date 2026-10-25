@@ -50,7 +50,7 @@ namespace StardewAI.Core.Execution
 
             // The original move step already owns travel time. This budget is only
             // for the extra native tool work introduced by route repair.
-            var repairMinutes = repairs.Length * DefaultMoveRouteRepairMinutesPerClear;
+            var repairMinutes = repairs.Sum(repair => repair.ClearMinutes);
             var allowedRepairMinutes = ReadMoveRepairMinuteBudget(moveStep);
             if (allowedRepairMinutes.HasValue && repairMinutes > allowedRepairMinutes.Value)
             {
@@ -92,7 +92,7 @@ namespace StardewAI.Core.Execution
                     TargetLocation = moveStep.TargetLocation,
                     TargetTileX = repair.ObstacleX,
                     TargetTileY = repair.ObstacleY,
-                    EstimatedMinutes = 1,
+                    EstimatedMinutes = repair.ClearMinutes,
                     Preconditions = new[] { "compiler_inserted_move_route_repair=true", "route_repair_index=" + index, "target_obstacle_clearable=true", "target_tile_adjacent=true" },
                     ExpectedEffects = new[] { "move_route_repair_for=" + (moveStep.StepId ?? "move_to_tile") + ";current_location.obstacle[" + repair.ObstacleX + "," + repair.ObstacleY + "]=clear" },
                     SafetyConstraints = new[]
@@ -105,7 +105,7 @@ namespace StardewAI.Core.Execution
                     FailurePolicy = new[] { "refresh_snapshot_and_replan" },
                     Parameters = new[]
                     {
-                        Parameter("max_tool_swings", "8"),
+                        Parameter("max_tool_swings", repair.MaxToolSwings.ToString()),
                         Parameter("route_repair_clear_kind", repair.ClearKind),
                         Parameter("route_repair_energy_cost", repair.EnergyCost.ToString())
                     }
@@ -179,13 +179,16 @@ namespace StardewAI.Core.Execution
                 .GroupBy(obstacle => TileKey(obstacle.X, obstacle.Y))
                 .Select(group => group.OrderBy(obstacle => obstacle.EnergyCost).First())
                 .ToArray();
-            var clearableObstacleKeys = clearableObstacles
-                .Select(obstacle => TileKey(obstacle.X, obstacle.Y))
-                .ToHashSet(StringComparer.Ordinal);
+            var clearableObstacleCosts = clearableObstacles
+                .ToDictionary(
+                    obstacle => TileKey(obstacle.X, obstacle.Y),
+                    obstacle => obstacle.RouteCost,
+                    StringComparer.Ordinal);
             while (repairs.Count < maxClears)
             {
-                var requiredClearsBefore =
-                    MinimumClearableObstaclesToTarget(
+                var remainingClearBudget = maxClears - repairs.Count;
+                var requiredCostBefore =
+                    MinimumRouteRepairCostToTarget(
                         currentX,
                         currentY,
                         targetX,
@@ -194,7 +197,8 @@ namespace StardewAI.Core.Execution
                         height,
                         blocked,
                         unsupported,
-                        clearableObstacleKeys);
+                        clearableObstacleCosts,
+                        remainingClearBudget);
                 var repair = clearableObstacles
                     .Where(obstacle => blocked.Contains(TileKey(obstacle.X, obstacle.Y)))
                     .Select(obstacle => RepairCandidateForObstacle(currentX, currentY, targetX, targetY, width, height, blocked, unsupported, obstacle))
@@ -212,8 +216,8 @@ namespace StardewAI.Core.Execution
                         return new
                         {
                             Repair = candidate,
-                            RequiredClearsAfter =
-                                MinimumClearableObstaclesToTarget(
+                            RemainingCost =
+                                MinimumRouteRepairCostToTarget(
                                     candidate.StandX,
                                     candidate.StandY,
                                     targetX,
@@ -222,14 +226,16 @@ namespace StardewAI.Core.Execution
                                     height,
                                     simulatedBlocked,
                                     unsupported,
-                                    clearableObstacleKeys)
+                                    clearableObstacleCosts,
+                                    remainingClearBudget - 1)
                         };
                     })
                     .Where(candidate =>
-                        candidate.RequiredClearsAfter <
-                            requiredClearsBefore)
+                        candidate.RemainingCost != int.MaxValue &&
+                        candidate.Repair!.RouteCost + candidate.RemainingCost <=
+                            requiredCostBefore)
                     .OrderBy(candidate =>
-                        candidate.RequiredClearsAfter)
+                        candidate.Repair!.RouteCost + candidate.RemainingCost)
                     .ThenBy(candidate =>
                         Math.Abs(
                             currentX -
@@ -237,8 +243,7 @@ namespace StardewAI.Core.Execution
                         Math.Abs(
                             currentY -
                             candidate.Repair.StandY))
-                    .ThenBy(candidate =>
-                        candidate.Repair!.EnergyCost)
+                    .ThenBy(candidate => candidate.Repair!.EnergyCost)
                     .Select(candidate => candidate.Repair)
                     .FirstOrDefault();
                 if (repair is null)
@@ -261,7 +266,7 @@ namespace StardewAI.Core.Execution
                 : Array.Empty<MoveRepairObstacle>();
         }
 
-        private static int MinimumClearableObstaclesToTarget(
+        private static int MinimumRouteRepairCostToTarget(
             int startX,
             int startY,
             int targetX,
@@ -270,33 +275,37 @@ namespace StardewAI.Core.Execution
             int height,
             HashSet<string> blocked,
             HashSet<string> unsupported,
-            HashSet<string> clearable)
+            IReadOnlyDictionary<string, int> clearableCosts,
+            int maxClears)
         {
             if (!TileInBounds(startX, startY, width, height) ||
                 !TileInBounds(targetX, targetY, width, height) ||
                 unsupported.Contains(TileKey(startX, startY)) ||
-                unsupported.Contains(TileKey(targetX, targetY)))
+                unsupported.Contains(TileKey(targetX, targetY)) ||
+                maxClears < 0)
             {
                 return int.MaxValue;
             }
 
-            var distances = new Dictionary<string, int>(
-                StringComparer.Ordinal)
+            var distances = new Dictionary<(int X, int Y, int Clears), int>
             {
-                [TileKey(startX, startY)] = 0
+                [(startX, startY, 0)] = 0
             };
-            var pending = new LinkedList<(int X, int Y)>();
-            pending.AddFirst((startX, startY));
+            var pending = new SortedSet<(int Cost, int Clears, int Y, int X)>();
+            pending.Add((0, 0, startY, startX));
             while (pending.Count > 0)
             {
-                var current = pending.First!.Value;
-                pending.RemoveFirst();
-                var currentKey = TileKey(current.X, current.Y);
-                var currentDistance = distances[currentKey];
-                if (current.X == targetX &&
-                    current.Y == targetY)
+                var current = pending.Min;
+                pending.Remove(current);
+                var state = (current.X, current.Y, current.Clears);
+                if (!distances.TryGetValue(state, out var currentCost) ||
+                    currentCost != current.Cost)
                 {
-                    return currentDistance;
+                    continue;
+                }
+                if (current.X == targetX && current.Y == targetY)
+                {
+                    return currentCost;
                 }
 
                 foreach (var next in Neighbors(
@@ -319,31 +328,28 @@ namespace StardewAI.Core.Execution
                     }
 
                     var blockedStep = blocked.Contains(nextKey);
-                    if (blockedStep && !clearable.Contains(nextKey))
+                    var clearCost = 0;
+                    if (blockedStep && !clearableCosts.TryGetValue(nextKey, out clearCost))
                     {
                         continue;
                     }
 
-                    var nextDistance =
-                        currentDistance +
-                        (blockedStep ? 1 : 0);
-                    if (distances.TryGetValue(
-                            nextKey,
-                            out var existingDistance) &&
-                        existingDistance <= nextDistance)
+                    var nextClears = current.Clears + (blockedStep ? 1 : 0);
+                    if (nextClears > maxClears)
                     {
                         continue;
                     }
 
-                    distances[nextKey] = nextDistance;
-                    if (blockedStep)
+                    var nextCost = currentCost + (blockedStep ? clearCost : 0);
+                    var nextState = (next.X, next.Y, nextClears);
+                    if (distances.TryGetValue(nextState, out var existingCost) &&
+                        existingCost <= nextCost)
                     {
-                        pending.AddLast(next);
+                        continue;
                     }
-                    else
-                    {
-                        pending.AddFirst(next);
-                    }
+
+                    distances[nextState] = nextCost;
+                    pending.Add((nextCost, nextClears, next.Y, next.X));
                 }
             }
 
@@ -388,6 +394,9 @@ namespace StardewAI.Core.Execution
                     candidate.Stand.Y,
                     obstacle.ClearKind,
                     obstacle.EnergyCost,
+                    obstacle.MaxToolSwings,
+                    obstacle.ClearMinutes,
+                    obstacle.RouteCost,
                     candidate.PathTiles!.Value))
                 .FirstOrDefault();
         }
@@ -430,20 +439,45 @@ namespace StardewAI.Core.Execution
             foreach (var feature in ReadClearanceRows(
                          snapshot,
                          "current_location",
-                         "terrain_features")
-                     .Concat(ReadRouteBlockerRows(
-                         snapshot,
-                         "terrain_features")))
+                         "terrain_features"))
             {
                 var clearKind = ClearableTerrainFeatureKind(
                     ReadString(feature, "type"));
                 if (!string.IsNullOrWhiteSpace(clearKind))
                 {
+                    var expectedSwings = clearKind is "tree" or "fruit_tree"
+                        ? NullableReadInt(feature, "expected_axe_hits_to_clear") ??
+                          NullableReadInt(feature, "tree_chop_expected_tool_swings") ?? 8
+                        : 8;
+                    var energyCost = clearKind == "tree"
+                        ? (int)Math.Ceiling(ReadDouble(
+                            feature,
+                            "tree_chop_energy_cost",
+                            ClearObstacleEnergyCost(clearKind)))
+                        : ClearObstacleEnergyCost(clearKind);
                     yield return new ClearableObstacle(
                         ReadInt(feature, "tile_x"),
                         ReadInt(feature, "tile_y"),
                         clearKind,
-                        ClearObstacleEnergyCost(clearKind));
+                        energyCost,
+                        expectedSwings);
+                }
+            }
+
+            foreach (var feature in ReadRouteBlockerRows(
+                         snapshot,
+                         "terrain_features"))
+            {
+                var clearKind = ClearableTerrainFeatureKind(
+                    ReadString(feature, "type"));
+                if (string.Equals(clearKind, "grass", StringComparison.Ordinal))
+                {
+                    yield return new ClearableObstacle(
+                        ReadInt(feature, "tile_x"),
+                        ReadInt(feature, "tile_y"),
+                        clearKind,
+                        ClearObstacleEnergyCost(clearKind),
+                        8);
                 }
             }
         }
@@ -540,18 +574,31 @@ namespace StardewAI.Core.Execution
 
         private sealed class ClearableObstacle
         {
-            public ClearableObstacle(int x, int y, string clearKind, int energyCost)
+            public ClearableObstacle(
+                int x,
+                int y,
+                string clearKind,
+                int energyCost,
+                int maxToolSwings = 8)
             {
                 X = x;
                 Y = y;
                 ClearKind = clearKind;
                 EnergyCost = energyCost;
+                MaxToolSwings = Math.Max(1, maxToolSwings);
+                ClearMinutes = Math.Max(
+                    DefaultMoveRouteRepairMinutesPerClear,
+                    (int)Math.Ceiling(MaxToolSwings / 4d));
+                RouteCost = checked(ClearMinutes * 100 + EnergyCost);
             }
 
             public int X { get; }
             public int Y { get; }
             public string ClearKind { get; }
             public int EnergyCost { get; }
+            public int MaxToolSwings { get; }
+            public int ClearMinutes { get; }
+            public int RouteCost { get; }
         }
 
         private sealed class MoveRepairObstacle
@@ -563,6 +610,9 @@ namespace StardewAI.Core.Execution
                 int standY,
                 string clearKind,
                 int energyCost,
+                int maxToolSwings,
+                int clearMinutes,
+                int routeCost,
                 int pathTiles)
             {
                 ObstacleX = obstacleX;
@@ -571,6 +621,9 @@ namespace StardewAI.Core.Execution
                 StandY = standY;
                 ClearKind = clearKind;
                 EnergyCost = energyCost;
+                MaxToolSwings = maxToolSwings;
+                ClearMinutes = clearMinutes;
+                RouteCost = routeCost;
                 PathTiles = pathTiles;
             }
 
@@ -580,6 +633,9 @@ namespace StardewAI.Core.Execution
             public int StandY { get; }
             public string ClearKind { get; }
             public int EnergyCost { get; }
+            public int MaxToolSwings { get; }
+            public int ClearMinutes { get; }
+            public int RouteCost { get; }
             public int PathTiles { get; }
             public int MovementMinutes => Math.Max(1, (int)Math.Ceiling((PathTiles + 1) / 5d));
         }

@@ -156,6 +156,70 @@ public sealed partial class ActionQueueCompilerTests
     }
 
     [Fact]
+    public void CompilePlanMoveToTilePrefersLowerClearCostOverShorterTreeRoute()
+    {
+        var snapshot = Snapshot("""
+        {
+          "player": {
+            "location_id": {"value":"Farm","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_x": {"value":0,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":1,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "inventory": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "current_location": {
+            "objects": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "terrain_features": {"value":[
+              {"tile_x":1,"tile_y":1,"type":"StardewValley.TerrainFeatures.Tree","expected_axe_hits_to_clear":15,"tree_chop_energy_cost":30},
+              {"tile_x":2,"tile_y":0,"type":"Grass"}
+            ],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "map": {"value":{"id":"Farm","width":5,"height":2},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "menus": {
+            "active_menu": {"value":{"is_open":false,"type":"none"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "collision_grid": {"value":{"location_id":"Farm","width":5,"height":2,"notable_tiles":[
+              {"tile_x":1,"tile_y":1,"collision_blocked":true},
+              {"tile_x":2,"tile_y":0,"collision_blocked":true}
+            ]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_action_branch_coverage": {"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """);
+        var plan = Plan(snapshot.StateHash,
+            new SmallModelPlanStep
+            {
+                StepId = "plan.step.move.prefer.grass",
+                Kind = "move_to_tile",
+                TargetLocation = "Farm",
+                TargetTileX = 4,
+                TargetTileY = 1,
+                EstimatedMinutes = 12,
+                Parameters = new[]
+                {
+                    new SmallModelActionParameter { Name = "max_route_repair_clears", Value = "2" },
+                    new SmallModelActionParameter { Name = "max_route_repair_minutes", Value = "12" }
+                }
+            });
+
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+
+        Assert.Equal("pending", queue.Status);
+        Assert.Equal(3, queue.Items.Length);
+        var clear = queue.Items[1];
+        Assert.Equal("executor.clear_obstacle", clear.OptionId);
+        Assert.Contains(clear.NormalizedCommand.Parameters, parameter =>
+            parameter.Name == "target_tile_x" && parameter.Value == "2");
+        Assert.Contains(clear.NormalizedCommand.Parameters, parameter =>
+            parameter.Name == "target_tile_y" && parameter.Value == "0");
+        Assert.DoesNotContain(queue.Items, item => item.NormalizedCommand.Parameters.Any(parameter =>
+            parameter.Name == "target_tile_x" && parameter.Value == "1") &&
+            item.NormalizedCommand.Parameters.Any(parameter =>
+                parameter.Name == "target_tile_y" && parameter.Value == "1"));
+    }
+
+    [Fact]
     public void CompilePlanMoveRepairCarriesLongBfsDistanceIntoMovementLimitAndBudget()
     {
         var blockedTiles = string.Join(",", Enumerable.Range(0, 20)

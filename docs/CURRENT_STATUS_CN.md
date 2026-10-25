@@ -18,6 +18,16 @@
 | Money production evidence cells | **0/18** | 6 个 Money criterion × 3 partitions；hermetic fixture 不计 production |
 | Formal product training | **false** | 未通过完整正式训练准入 |
 
+### 当前唯一施工边界：Golden Walnut v23 路径修复
+
+`golden-walnut-source-schedule-v22` 已真实完成节日等待后的返场，并生成第一条农场内场地接近队列；该队列随后暴露透明 `locations.route_blockers` 没有进入长距离移动修复的问题。第一轮修复让全地图对象阻塞进入同一 `move_to_tile + BFS route repair`，原 v22 队列已可重编译为 pending，但这仍只是失败现场重放，不是新的原生执行回执。
+
+全新隔离运行 `golden-walnut-source-schedule-v23-20261025-233534` 随后取得 `137` 个 verified native action、`12` 条原生日界和 `6` 条逐格收获回执。第一轮作物 run 的接近、场地准备、播种、浇水和收获均真实完成；统一 collection Teacher 又完成邮件、任务 `13` 的 Farm -> BusStop -> Town -> Beach 路线、两次钓鱼、节日等待以及 Beach -> Town -> BusStop -> Farm 返场。第二轮作物 run 在第 145--149 次迭代停止于 `crop_teacher_site_approach_compile_invalid`：旧修复只最小化清障数量，因而在同为三次清障的路线中选择了 `(73,23)` 的成熟枫树；透明状态明确给出 starting axe 需要 `15` 次挥砍和 `30` 点体力，而旧编译器又把清障上限写死为 `8` 次，故正确失败关闭。
+
+当前代码仍复用唯一移动、BFS 和清障执行链，但 route repair 已改为在既有清障数量上限内按透明清障分钟和体力做有界最小成本搜索，并把每个障碍的精确 `max_tool_swings`、预计分钟和能量成本传给原清障动作。当前地点的树只在读到精确挥砍投影时参与；全地图缺少精确树成本时失败关闭，不以猜测放行。v23 原始 state hash 已被 Backend 严格接纳并重编译为 `pending / 7 items / 0 blocked`，第三个障碍由成熟树改为 `(73,24)` 杂草，最终目标仍为 `(72,23)`。新增回归后 `ActionQueueCompilerTests 177/177`；Core 全量为 `2959 passed / 21` 个既有基线失败；隔离 Release solution 构建为 `0 warning / 0 error`。
+
+上述结果证明本轮硬伤已被精确复现并修到可编译，不证明修复后的原生清草和后续场地准备已经发生。v23 固定为 incomplete；`CoverageGateReady 5/19`、Money production `0/18` 与 `formal_product_training=false` 均不变。下一固定动作是使用新隔离存档运行 v24，取得“低成本杂草路线 -> 原生清障 -> 抵达接近点 -> 场地准备继续”的连续回执，再沿原 Golden Walnut 主线推进首次登岛、来源增量和 First Parrot/Turtle/House 三项跃迁。运行中观察到 `recovery.stabilize_day` 与任务路线的策略 trajectory 因 `InvalidOperationException` 被拒，但原生执行和证据回执成功；坏行没有进入数据集。该非阻塞训练样本缺口在上述路线原生验收后处理，不得与当前 WIP 并行扩张。
+
 Golden Walnut 长跑最新实证为 `v17/v17b/v18/v19`。`golden-walnut-source-schedule-v17-20261025-203000` 在第 47 次迭代真实失败于 `till_soil_no_adjacent_route_stand_tile`：两个待耕地块本身可耕，但被可移除障碍围住，旧场地准备只会清目标格，不能为相邻站位开路。当前唯一场地准备链已补上有界的相邻访问清障：仅当阻塞原因精确为“无相邻可达站位”时，从现有 `executor.clear_obstacle` / `executor.break_farm_resource_clump` 候选中确定性选择耗时、体力和距离最优的一项，执行后必须 fresh snapshot 重绑；工具、体力、时间等其他阻塞仍失败关闭。场地准备专用投影只在原 `<=32x32` 边界内向外扩一格，不恢复全地图高频扫描。原 v17 第 47 次请求重建后为 `blocked_count=0 / clear_then_rebind_count=2 / access_clear_then_rebind_count=2`，分别选择清除 `(70,19)` 石头与 `(71,21)` 杂草，证明旧失败快照已可编译；这属于同一真实快照的确定性重建，不冒充新的原生执行回执。
 
 全新隐藏静音隔离运行 `golden-walnut-source-schedule-v17b-20261025-181200` 使用修正版独立发布物越过旧失败点。其随机地块无需访问清障，真实完成买种、返场、六格整地、播种、逐日浇水、六格收获和作物 run 结算；共取得 `94` 个 verified episode、`12` 条日期/存档边界和 `6` 条逐格收获回执，重派发为零。结算后统一 Stage 1 collection Teacher 又正确处理 `spring_2_1` 邮件并完成任务 `13` 的 `Farm -> BusStop -> Town -> Beach` 三段原生路线，证明控制权已经退出作物 Teacher，而不是再次卡在农作循环。
