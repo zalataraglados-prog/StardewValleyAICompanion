@@ -12,7 +12,7 @@ v23 的第二轮场地接近在第 145--149 次迭代失败关闭。根因是 ro
 
 v23 重放本身不是新的原生执行回执；全新 v24 `golden-walnut-source-schedule-v24-20261026-003430` 已补上该证据。运行从 day-zero 新档推进到第二轮作物 handoff，在有界停止前取得 `145` 个 verified action、`12` 条日界与 `6` 条逐格收获。第 144 次队列以两格杂草 `(50,27)`、`(71,27)` 替代高成本树，`move/clear/move/clear/move` 五项均为 `applied + primitive verified + fresh`；第 145--150 次场地准备又连续完成耕地、移动、耕地、移动、清障和耕地。旧 `crop_teacher_site_approach_compile_invalid` 未复现，故本清障成本修复已有新的连续原生回执。
 
-v24 在该有界验收点停止，没有首次登岛、Golden Walnut 来源增量或三项鹦鹉跃迁，不能导出 source schedule。当前下一准入缺口是策略样本完整性：成功的 `recovery.stabilize_day` 睡眠和任务 `13` 路线仍因 `InvalidOperationException` 被 trajectory builder 拒绝；错误样本未进入数据集，但这些成功动作也尚未形成可用 Teacher trajectory。该缺口须先由 v24 制品离线重放定位，再由最短原生睡眠/任务路线验证；随后才能恢复首次登岛、来源增量、First Parrot/Turtle/House 跃迁与 source schedule。当前 `CoverageGateReady 5/19`、Money production `0/18`、`formal_product_training=false` 全部保持不变。
+v24 在该有界验收点停止，没有首次登岛、Golden Walnut 来源增量或三项鹦鹉跃迁，不能导出 source schedule。对运行中的 `trajectory_rejected:InvalidOperationException` 复核后确认，成功的 `recovery.stabilize_day` 睡眠是校准专用控制动作，任务 `13` 的 `quest.advance` 路线是证据专用聚合动作；两者均由当前能力注册表明确排除于策略训练，不是遗漏的 Teacher 样本。LiveTrainingLoop 现于 trajectory builder 前执行统一准入判定，稳定记录 `policy_training_option_not_admitted`，保留原生执行证据且不写策略数据。真实 v24 第 `88`、`93`、`94`、`95` 次制品离线调用均为 `0 appended / 1 skipped` 并返回该原因码，聚焦回归 `11/11`。下一准入缺口因此回到首次登岛、Golden Walnut 来源增量、First Parrot/Turtle/House 跃迁与 source schedule。当前 `CoverageGateReady 5/19`、Money production `0/18`、`formal_product_training=false` 全部保持不变。
 
 ## 当前增量 · 长跑访问清障已修，正式准入不变
 

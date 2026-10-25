@@ -18,7 +18,7 @@
 | Money production evidence cells | **0/18** | 6 个 Money criterion × 3 partitions；hermetic fixture 不计 production |
 | Formal product training | **false** | 未通过完整正式训练准入 |
 
-### 当前唯一施工边界：Golden Walnut v23 路径修复
+### 当前唯一施工边界：Golden Walnut v24 路径修复收口
 
 `golden-walnut-source-schedule-v22` 已真实完成节日等待后的返场，并生成第一条农场内场地接近队列；该队列随后暴露透明 `locations.route_blockers` 没有进入长距离移动修复的问题。第一轮修复让全地图对象阻塞进入同一 `move_to_tile + BFS route repair`，原 v22 队列已可重编译为 pending，但这仍只是失败现场重放，不是新的原生执行回执。
 
@@ -28,7 +28,7 @@
 
 上述结果证明本轮硬伤已被精确复现并修到可编译；v23 固定为 incomplete。全新 v24 `golden-walnut-source-schedule-v24-20261026-003430` 随后从 day-zero 新档取得修复后的原生回执：在有界停止前累计 `145` 个 verified action、`12` 条日界和 `6` 条逐格收获。第二轮作物 handoff 的第 144 次队列依次执行 `move (49,27) -> clear weeds (50,27) -> move (70,27) -> clear weeds (71,27) -> move (71,25)`；编译为 `5 items / 0 blocked`，执行为 `5/5 applied`、`primitive_verification_status=verified`、fresh after 且 state hash 变化。第 145--150 次又依次完成耕地、移动、耕地、移动、清障和耕地，全部 `1/1 applied + verified`。旧的成熟树选择、`max_tool_swings=8` 树阻塞和 `crop_teacher_site_approach_compile_invalid` 均未复现，因此“低成本清障路线 -> 抵达接近点 -> 场地准备继续”的 v24 原生退出条件已关闭。
 
-v24 在该有界证据点人工停止，不冒充首次登岛或完整 source schedule；`CoverageGateReady 5/19`、Money production `0/18` 与 `formal_product_training=false` 均不变。当前唯一下一 WIP 是修复运行中反复出现的策略样本缺口：`recovery.stabilize_day` 睡眠与任务 `13` 路线的原生执行均成功，但 trajectory 构建抛出 `InvalidOperationException`，坏行被正确拒绝。修复后须用既有 v24 制品做离线重放，并用短原生运行各取得一条睡眠和任务路线的可接纳 trajectory；之后恢复首次登岛、来源增量和 First Parrot/Turtle/House 主线。
+v24 在该有界证据点人工停止，不冒充首次登岛或完整 source schedule；`CoverageGateReady 5/19`、Money production `0/18` 与 `formal_product_training=false` 均不变。随后对 `trajectory_rejected:InvalidOperationException` 的复核确认它不是两个遗漏样本：`recovery.stabilize_day` 是校准专用控制动作，`quest.advance` 仍是证据专用聚合动作，两者均按注册表明确排除于策略训练。LiveTrainingLoop 现在在 trajectory builder 前复用同一准入过滤器，并以稳定的 `policy_training_option_not_admitted` 记录正常跳过；执行证据继续保留，策略数据集不被污染，也不再需要伪造一条睡眠或任务路线 Teacher trajectory。v24 的真实制品第 `88`、`93`、`94`、`95` 次离线调用均为 `0 appended / 1 skipped` 且原因精确为该稳定码，聚焦回归为 `11/11`。当前下一 WIP 恢复 Golden Walnut 首次登岛、来源增量和 First Parrot/Turtle/House 主线。
 
 Golden Walnut 长跑最新实证为 `v17/v17b/v18/v19`。`golden-walnut-source-schedule-v17-20261025-203000` 在第 47 次迭代真实失败于 `till_soil_no_adjacent_route_stand_tile`：两个待耕地块本身可耕，但被可移除障碍围住，旧场地准备只会清目标格，不能为相邻站位开路。当前唯一场地准备链已补上有界的相邻访问清障：仅当阻塞原因精确为“无相邻可达站位”时，从现有 `executor.clear_obstacle` / `executor.break_farm_resource_clump` 候选中确定性选择耗时、体力和距离最优的一项，执行后必须 fresh snapshot 重绑；工具、体力、时间等其他阻塞仍失败关闭。场地准备专用投影只在原 `<=32x32` 边界内向外扩一格，不恢复全地图高频扫描。原 v17 第 47 次请求重建后为 `blocked_count=0 / clear_then_rebind_count=2 / access_clear_then_rebind_count=2`，分别选择清除 `(70,19)` 石头与 `(71,21)` 杂草，证明旧失败快照已可编译；这属于同一真实快照的确定性重建，不冒充新的原生执行回执。
 

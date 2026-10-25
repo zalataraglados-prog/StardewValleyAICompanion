@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using StardewAI.Contracts.Training;
+using StardewAI.Core.Training;
 using StardewAI.LiveTrainingLoop;
 
 namespace StardewAI.Core.Tests;
@@ -85,6 +86,44 @@ public sealed class LiveTrainingPolicyTrajectoryIntegrationTests
         Assert.False(File.Exists(options.PolicyTrajectoryDatasetPath));
     }
 
+    [Theory]
+    [InlineData("recovery:native_save_boundary", "recovery.stabilize_day")]
+    [InlineData("quest:13:route:Farm:BusStop", "quest.advance")]
+    public void EvidenceOnlySelectionsAreClassifiedBeforeTrajectoryBuilding(
+        string candidateId,
+        string optionId)
+    {
+        var root = Path.Combine(Path.GetTempPath(), "stardewai-tests", Guid.NewGuid().ToString("N"));
+        var artifactDirectory = Path.Combine(root, "artifacts");
+        Directory.CreateDirectory(artifactDirectory);
+        var beforeSnapshotPath = Path.Combine(artifactDirectory, "before.json");
+        File.WriteAllText(beforeSnapshotPath, BeforeSnapshot().ToJsonString());
+        var rankingPath = Path.Combine(artifactDirectory, "ranking.json");
+        File.WriteAllText(
+            rankingPath,
+            JsonSerializer.Serialize(Decision(candidateId, optionId), JsonOptions));
+        var options = new LiveTrainingOptions
+        {
+            Root = root,
+            RunId = "run.evidence-only"
+        };
+
+        var result = InvokeAppender(
+            options,
+            Execution(beforeSnapshotPath, rankingPath, "execution.evidence-only.json", candidateId),
+            new TrainingDatasetAppendResult
+            {
+                DatasetPath = Path.Combine(root, "datasets", "features.jsonl"),
+                RowId = "row.evidence-only",
+                EpisodeId = "episode.evidence-only"
+            });
+
+        Assert.Equal(0, result.AppendedCount);
+        Assert.Equal(1, result.SkippedCount);
+        Assert.Equal(PolicyTrainingAdmissionFilter.OptionNotAdmittedReason, result.FirstSkipReason);
+        Assert.False(File.Exists(options.PolicyTrajectoryDatasetPath));
+    }
+
     private static PolicyTrajectoryAppendBatchResult InvokeAppender(
         LiveTrainingOptions options,
         JsonObject execution,
@@ -107,7 +146,8 @@ public sealed class LiveTrainingPolicyTrajectoryIntegrationTests
     private static JsonObject Execution(
         string beforeSnapshotPath,
         string rankingPath,
-        string executionPath) => new()
+        string executionPath,
+        string candidateId = "social:gift:Abigail") => new()
     {
         ["status"] = "applied",
         ["primitive_verification_status"] = "verified",
@@ -136,7 +176,7 @@ public sealed class LiveTrainingPolicyTrajectoryIntegrationTests
                     new JsonObject
                     {
                         ["name"] = "precondition",
-                        ["value"] = "candidate_id:social:gift:Abigail"
+                        ["value"] = "candidate_id:" + candidateId
                     }
                 }
             }
@@ -183,6 +223,26 @@ public sealed class LiveTrainingPolicyTrajectoryIntegrationTests
                 ExpectedReward = 0.1,
                 Available = true,
                 EstimatedTicks = 60
+            }
+        }
+    };
+
+    private static AvailabilityAwarePolicyPredictionEnvelope Decision(
+        string candidateId,
+        string optionId) => new()
+    {
+        RankedEventCandidates = new[]
+        {
+            new PolicyEventCandidatePrediction
+            {
+                CandidateId = candidateId,
+                OptionId = optionId,
+                Kind = "evidence_only",
+                Rank = 1,
+                Score = 1,
+                ExpectedReward = 0,
+                Available = true,
+                EstimatedTicks = 30
             }
         }
     };

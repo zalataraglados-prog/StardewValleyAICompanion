@@ -28,7 +28,8 @@ static partial class Program
             steps = new JsonArray(JsonNode.Parse(aggregateExecution.ToJsonString(JsonOptions)));
         }
 
-        var builder = new PolicyDecisionTrajectoryBuilder();
+        var admissionFilter = new PolicyTrainingAdmissionFilter();
+        var builder = new PolicyDecisionTrajectoryBuilder(admissionFilter);
         var writer = new JsonlPolicyTrajectoryWriter();
         var groupedDecisions = new Dictionary<string, List<JsonObject>>(StringComparer.Ordinal);
         foreach (var stepNode in steps)
@@ -98,6 +99,12 @@ static partial class Program
                 if (lastStep["selected_queue_candidate_completed"]?.GetValue<bool>() != true)
                 {
                     result.Skip("selected_queue_candidate_incomplete");
+                    continue;
+                }
+                if (selectedCandidate is not null &&
+                    admissionFilter.FilterOptionIds(new[] { selectedCandidate.OptionId }).Length != 1)
+                {
+                    result.Skip(PolicyTrainingAdmissionFilter.OptionNotAdmittedReason);
                     continue;
                 }
                 var beforeSnapshotPath = ReadString(

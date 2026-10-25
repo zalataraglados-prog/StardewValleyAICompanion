@@ -4,7 +4,7 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已完成 v10 之后的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已按 current authority 冻结；当前唯一施工项为 `complete_master_angler` 顶层 dependency、日历窗口与 coverage 接线。P0/P1 共享 correctness blocker 可临时中断，但不得静默改序或并行展开多个 root method。
 
-## 当前增量 · Golden Walnut v23 清障成本修复
+## 当前增量 · Golden Walnut v24 清障成本修复收口
 
 - v22 已把节日等待后的角色送回 Farm 并生成场地接近队列，但长距离 route repair 没有读取全地图 blocker 身份；第一轮修复接通现有 `locations.route_blockers` 后，v22 原失败输入可以重编译为 pending。该结果只证明旧输入已可编译。
 - 全新 v23 `golden-walnut-source-schedule-v23-20261025-233534` 已真实取得 `137` 个 verified native action、`12` 条原生日界和 `6` 条逐格收获回执。首轮作物 run 的接近、整地、播种、浇水、收获与结算全部完成；随后完成竹鱼竿邮件/任务路线、两次钓鱼、节日等待和 Beach -> Town -> BusStop -> Farm 返场。
@@ -12,7 +12,7 @@
 - 当前修复仍只使用一套 `move_to_tile + BFS + executor.clear_obstacle`。选择器在 `max_route_repair_clears` 内按每格透明清障分钟和体力执行有界最小成本搜索，编译项携带每个障碍的精确挥砍上限、分钟与能量；全地图树若没有精确成本则失败关闭。v23 原输入已由 Backend 严格重放为 `pending / 7 items / 0 blocked`，第三个清障从成熟树变为杂草，最终接近点不变。
 - 验证：新增回归后 `ActionQueueCompilerTests 177/177`；Core 全量 `2959 passed / 21` 个既有基线失败；隔离 Release solution 构建 `0 warning / 0 error`。v23 仍为 incomplete，不能冒充修复后的原生清障证据。
 - 全新 v24 `golden-walnut-source-schedule-v24-20261026-003430` 已关闭原生退出条件。它从 day-zero 新档运行到第二轮作物 handoff，在有界停止前累计 `145` 个 verified action、`12` 条日界和 `6` 条收获回执。第 144 次队列选择并原生完成两格杂草 `(50,27)`、`(71,27)`，而非成熟树；整条 `move/clear/move/clear/move` 队列为 `5/5 applied + primitive verified + fresh`。第 145--150 次继续完成 `till/move/till/move/clear/till`，每项均 `1/1 applied + verified`，旧编译错误未复现。
-- v24 在上述有界验收点人工停止，不是 source schedule 或正式训练。当前唯一下一动作改为修复 `recovery.stabilize_day` 与任务 `13` 路线的 `trajectory_rejected:InvalidOperationException`：原生动作和证据有效，但策略样本未入库。先用 v24 制品离线重放，再以最短原生睡眠/任务路线各验收一条 trajectory，随后恢复 Golden Walnut 首次登岛主线。
+- v24 在上述有界验收点人工停止，不是 source schedule 或正式训练。对其中的 `trajectory_rejected:InvalidOperationException` 逐项重放后确认：`recovery.stabilize_day` 属于校准专用控制动作，`quest.advance` 属于证据专用聚合动作，二者按能力注册表都不进入策略训练；因此不存在应补写的睡眠/任务 Teacher trajectory。LiveTrainingLoop 已在 builder 前复用统一准入过滤器，将两类成功执行记为 `policy_training_option_not_admitted`，继续保留执行证据且不污染策略数据集。真实 v24 第 `88`、`93`、`94`、`95` 次制品离线调用全部得到 `0 appended / 1 skipped` 和该精确原因码，聚焦回归 `11/11`。下一动作恢复 Golden Walnut 首次登岛主线。
 
 ## 当前增量 · Golden Walnut 长跑相邻访问清障
 
