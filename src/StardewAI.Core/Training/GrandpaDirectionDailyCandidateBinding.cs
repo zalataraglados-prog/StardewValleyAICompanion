@@ -962,6 +962,7 @@ namespace StardewAI.Core.Training
                 FullShipmentCurrentShippedCount = source.FullShipmentCurrentShippedCount,
                 FullShipmentAlreadyShipped = source.FullShipmentAlreadyShipped,
                 FullShipmentContributes = source.FullShipmentContributes,
+                AvailableStack = source.AvailableStack,
                 LocationId = source.LocationId,
                 TileX = source.TileX,
                 TileY = source.TileY,

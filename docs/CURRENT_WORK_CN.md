@@ -4,14 +4,15 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已完成 v10 之后的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已按 current authority 冻结；当前唯一施工项为 `complete_master_angler` 顶层 dependency、日历窗口与 coverage 接线。P0/P1 共享 correctness blocker 可临时中断，但不得静默改序或并行展开多个 root method。
 
-## 当前增量 · Golden Walnut v25 背包容量恢复
+## 当前增量 · Golden Walnut v26 收获容量恢复
 
-- v25 `golden-walnut-source-schedule-v25-20261026-012924` 已取得新的真实原生进展：作物漂移后由唯一 Crop Teacher 重规划为防风草，形成 `8` 条逐格收获回执并正常结算；随后完成邮件、任务 `13` 三段路线和 `(O)131` 钓获。目标 `(O)708` 的后续尝试钓到 `(O)152` 海草，系统正确保持目标未完成。
-- 第一处断链是随机非目标钓获 fresh-time 重绑遗漏 Master Angler route-timing 的 path、SHA-256 和 full-route validation 三个字段。`QueueReplanFilter` 已改为复用 `MasterAnglerRouteTimingValidator` 的字段常量，并增加完整意图保留回归。
-- 修复字段后，v25 的真实失败工件继续暴露容量根因：背包 `12/12`，海草占槽位 `11`；钓鱼候选正确阻塞，但 broad ranking 虽存在多个合法 `economy.ship_items` 候选，却没有“为当前钓鱼续程释放一格”的控制选择，导致 Beach/Town 振荡。
-- 新增 `StageOneInventoryCapacityRecovery` 只在 fresh 快照精确证明上述三条件时触发，并只选择与最近一次 `caught_qualified_item_id` 完全相同、数量恰为 `1` 的既有出货候选。它复用 `DailyPlanCompiler`、`ActionQueueCompiler`、共享路线和原生出货执行器；候选的 learner rank/score/model score 被中和，不能成为策略监督标签。缺字段、背包未满、无精确同物候选均失败关闭。
-- 相关回归矩阵 `97/97` 通过。对 v25 第 `113` 次真实 snapshot/ranking 工件的当前生产代码重放选中 `(O)152 x1`，编译为 `pending / executor.traverse_connector`，continuation 仍精确绑定该物品。v25 固定为 incomplete，不把离线重放写成原生成功。
-- 下一唯一动作是原生 v26 验证：Beach -> Town -> BusStop -> Farm，投递且仅投递 `(O)152 x1`，fresh 背包出现空槽，随后恢复 Master Angler 钓鱼且不再振荡；通过后继续首次登岛与 Golden Walnut source schedule。全局准入数字和 `formal_product_training=false` 不变。
+- v26 `golden-walnut-source-schedule-v26-20261026-023455` 已从全新隔离存档真实推进到 Spring 16：购买 `14` 份花椰菜种子，完成首轮整地/播种/浇水/收获，处理邮件与任务 `13`，取得竹鱼竿并钓到 `(O)129`，再按节日门禁等待后由 Beach 原生返场，开始第二轮防风草生产。第 `173` 次迭代前旧路线、节日和作物闭环均未回退。
+- 第 `173` 次真实快照为 Farm、背包 `12/12`、8 格成熟作物；作物批次正确生成 8 项 `executor.harvest_crop`，但普通手持收获无空槽，编译器连续五次失败关闭。跨日后最近钓获字段已经清空，证明 v25 的 exact-catch-only 恢复不足以覆盖 Crop Teacher 持权阶段。
+- `economy.ship_items` 候选早已携带 `available_stack`，实际遗漏发生在 `EventCandidate -> PolicyEventCandidatePrediction -> Grandpa clone` 中间契约。该字段现已贯通，并有排名回归防止再次丢失；没有新增候选池或第二套出货实现。
+- Crop Teacher 在编译收获批次前检测 fresh 满包状态，先把控制权交给统一容量恢复模式。恢复模式跳过 Master Angler 意图构建，不依赖 `RequireGoldenWalnutSourceScheduleReady`，也不调用策略模型；它只通过 Backend availability、确定性候选物化、`DailyPlanCompiler`、`ActionQueueCompiler`、共享路线和原生运输箱执行器。恢复队列不能结算被中断的收获步骤，完成后必须 fresh 重规划原批次。
+- 安全选择只允许上游已判 available、`quantity=1`、`available_stack=1` 的候选；优先 Full Shipment 首次贡献，否则仅接受 `<=50g` 的低价值单件。既有自动出售保护继续排除种子和其他预留资源。learner score/model source 被中和，`formal_training_authorized=false`。
+- v26 真实失败快照离线重建出 5 个合法出货候选，确定性选择 `(O)92 x1 / 2g / Full Shipment`；正式编译为 `pending / 2 items / first=move_to_tile / all pending`。未选择 6 个花椰菜、5 个木材或受保护种子。定向测试 `42/42`、相关矩阵 `137/137`、Release solution `0 warning / 0 error`。
+- v26 保持 controlled incomplete。下一唯一动作是受控续接或 v27 原生验证：单件投箱 -> fresh 空槽 -> 重试同一 8 格收获 -> 作物 run 正常结算。通过后再继续 collection Teacher、首次登岛和 Golden Walnut source schedule；全局准入数字与 `formal_product_training=false` 不变。
 
 ## 已收口增量 · Golden Walnut v24 清障成本修复
 

@@ -284,6 +284,70 @@ public sealed class CropTeacherControlIntegrationSourceGuardTests
     }
 
     [Fact]
+    public void FullInventoryHarvestReusesStageOneCapacityRecoveryAsInterrupt()
+    {
+        var source = Read(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.CropTeacherControl.cs");
+        var recoveryCheck = source.IndexOf(
+            "StageOneInventoryCapacityRecovery.HasFullInventory(",
+            StringComparison.Ordinal);
+        var stageSwitch = source.IndexOf(
+            "return step.Stage switch",
+            recoveryCheck,
+            StringComparison.Ordinal);
+
+        Assert.True(recoveryCheck >= 0);
+        Assert.True(stageSwitch > recoveryCheck);
+        Assert.Contains(
+            "TryBuildStageOneCollectionTeacherQueueAsync(",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "capacityRecoveryOnly: true",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "allowObjectiveSafeSingletonCapacityRecovery: true",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "requireFishingAttemptBlockedForCapacityRecovery: false",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "crop_teacher_harvest_inventory_capacity_recovery",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "-compile-response.json",
+            source,
+            StringComparison.Ordinal);
+
+        var collectionSource = Read(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.StageOneCollectionTeacher.cs");
+        Assert.Contains(
+            "if ((!capacityRecoveryOnly &&",
+            collectionSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "if (capacityRecoveryOnly)",
+            collectionSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "/api/v1/planner/options/availability",
+            collectionSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "new EventCandidateRanker().Rank(",
+            collectionSource,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void RecoveryClassifierRequiresExactSafeSpeakerlessProof()
     {
         var snapshot = JsonNode.Parse("""

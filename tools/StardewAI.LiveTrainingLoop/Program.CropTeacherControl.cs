@@ -55,6 +55,44 @@ static partial class Program
                 stateHash);
         }
 
+        if (step.Stage == CropTeacherRunStageKinds.ExecuteCropBatch &&
+            string.Equals(
+                step.ActionBatch?.OptionId,
+                "executor.harvest_crop",
+                StringComparison.Ordinal) &&
+            StageOneInventoryCapacityRecovery.HasFullInventory(
+                beforeSnapshot))
+        {
+            var recovery =
+                await TryBuildStageOneCollectionTeacherQueueAsync(
+                    http,
+                    options,
+                    iteration,
+                    beforeSnapshot.ToJsonString(JsonOptions),
+                    beforeSnapshot,
+                    stateHash,
+                    capacityRecoveryOnly: true,
+                    allowObjectiveSafeSingletonCapacityRecovery: true,
+                    requireFishingAttemptBlockedForCapacityRecovery: false);
+            if (recovery.Queue is null)
+            {
+                throw new InvalidDataException(
+                    "crop_teacher_harvest_inventory_capacity_recovery_" +
+                    recovery.Status + ":" + recovery.Detail);
+            }
+
+            return StandardResult(
+                recovery.Queue,
+                recovery.PlanPath,
+                recovery.RankingPath,
+                recovery.SnapshotPath,
+                beforeSnapshot,
+                stateHash,
+                options,
+                interruptKind:
+                    "crop_teacher_harvest_inventory_capacity_recovery");
+        }
+
         return step.Stage switch
         {
             CropTeacherRunStageKinds.AcquireSeed =>
@@ -524,6 +562,10 @@ static partial class Program
             options.BackendUrl +
                 "/api/v1/small-model/action-queue/compile",
             model.ToJsonString(JsonOptions));
+        await WriteJsonAsync(
+            CropTeacherArtifactPrefix(options, iteration, "batch") +
+                "-compile-response.json",
+            queue);
         RequireCompiledQueue(
             queue,
             new[] { pending.ActionOptionId },

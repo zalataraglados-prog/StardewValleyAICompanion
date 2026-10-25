@@ -373,6 +373,9 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("full_shipment_contributes")]
         public bool? FullShipmentContributes { get; set; }
 
+        [JsonPropertyName("available_stack")]
+        public int? AvailableStack { get; set; }
+
         [JsonPropertyName("location_id")]
         public string LocationId { get; set; } = string.Empty;
 

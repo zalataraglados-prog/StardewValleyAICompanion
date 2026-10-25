@@ -6,20 +6,34 @@ namespace StardewAI.LiveTrainingLoop;
 
 public sealed record StageOneInventoryCapacityRecoveryDecision(
     PolicyEventCandidatePrediction Candidate,
+    string ReleasedQualifiedItemId,
     string CaughtQualifiedItemId,
-    string TriggerReason);
+    string TriggerReason,
+    string SelectionReason);
 
 public static class StageOneInventoryCapacityRecovery
 {
     public const string TriggerReason =
         "stage_one_fishing_inventory_full_after_catch";
 
+    public const string CropHarvestTriggerReason =
+        "crop_teacher_harvest_inventory_full";
+
     private const string NoExactFishingAttemptReason =
         "master_angler_no_exact_runtime_source_attempt";
 
+    public static bool HasFullInventory(JsonObject snapshot) =>
+        InventoryIsFull(snapshot);
+
+    public static bool HasRecoveryContext(JsonObject snapshot) =>
+        HasFullInventory(snapshot) &&
+        !string.IsNullOrWhiteSpace(ReadCaughtQualifiedItemId(snapshot));
+
     public static StageOneInventoryCapacityRecoveryDecision? TrySelect(
         AvailabilityAwarePolicyPredictionEnvelope ranking,
-        JsonObject snapshot)
+        JsonObject snapshot,
+        bool allowObjectiveSafeSingleton = false,
+        bool requireFishingAttemptBlocked = true)
     {
         var fishingAttemptBlocked = ranking.Availability.Options
             .Where(option => string.Equals(
@@ -30,32 +44,52 @@ public static class StageOneInventoryCapacityRecovery
             .Any(candidate => candidate.BlockReasons.Contains(
                 NoExactFishingAttemptReason,
                 StringComparer.Ordinal));
-        if (!fishingAttemptBlocked || !InventoryIsFull(snapshot))
+        if ((requireFishingAttemptBlocked && !fishingAttemptBlocked) ||
+            !HasFullInventory(snapshot))
             return null;
 
         var caughtQualifiedItemId = ReadCaughtQualifiedItemId(snapshot);
-        if (string.IsNullOrWhiteSpace(caughtQualifiedItemId))
-            return null;
-
-        var matches = ranking.RankedEventCandidates
+        var releaseCandidates = ranking.RankedEventCandidates
             .Where(candidate =>
                 candidate.Available &&
                 string.Equals(
                     candidate.OptionId,
                     "economy.ship_items",
                     StringComparison.Ordinal) &&
-                string.Equals(
-                    candidate.QualifiedItemId,
-                    caughtQualifiedItemId,
-                    StringComparison.Ordinal) &&
-                candidate.Quantity == 1)
+                candidate.Quantity == 1 &&
+                candidate.AvailableStack == 1)
+            .ToArray();
+        var exactCatch = releaseCandidates
+            .Where(candidate => string.Equals(
+                candidate.QualifiedItemId,
+                caughtQualifiedItemId,
+                StringComparison.Ordinal))
             .OrderBy(candidate => candidate.EstimatedTicks)
             .ThenBy(candidate => candidate.CandidateId, StringComparer.Ordinal)
-            .ToArray();
-        if (matches.Length == 0)
+            .FirstOrDefault();
+        var selectedSource = exactCatch;
+        var selectionReason = "exact_latest_catch_singleton";
+        if (selectedSource is null && allowObjectiveSafeSingleton)
+        {
+            selectedSource = releaseCandidates
+                .Where(candidate =>
+                    candidate.FullShipmentContributes == true ||
+                    candidate.UnitPrice is >= 0 and <= 50)
+                .OrderByDescending(candidate =>
+                    candidate.FullShipmentContributes == true)
+                .ThenBy(candidate => candidate.TotalValue)
+                .ThenBy(candidate => candidate.EstimatedTicks)
+                .ThenBy(
+                    candidate => candidate.CandidateId,
+                    StringComparer.Ordinal)
+                .FirstOrDefault();
+            selectionReason = "objective_safe_singleton";
+        }
+
+        if (selectedSource is null)
             return null;
 
-        var selected = Clone(matches[0]);
+        var selected = Clone(selectedSource);
         selected.Rank = 1;
         selected.Score = 0;
         selected.ModelScore = null;
@@ -64,8 +98,12 @@ public static class StageOneInventoryCapacityRecovery
         selected.ExpectedReward = 0;
         return new StageOneInventoryCapacityRecoveryDecision(
             selected,
+            selected.QualifiedItemId,
             caughtQualifiedItemId,
-            TriggerReason);
+            allowObjectiveSafeSingleton
+                ? CropHarvestTriggerReason
+                : TriggerReason,
+            selectionReason);
     }
 
     private static bool InventoryIsFull(JsonObject snapshot)

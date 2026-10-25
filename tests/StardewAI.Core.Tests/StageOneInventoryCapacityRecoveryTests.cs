@@ -28,6 +28,10 @@ public sealed class StageOneInventoryCapacityRecoveryTests
 
         Assert.NotNull(decision);
         Assert.Equal("(O)152", decision!.CaughtQualifiedItemId);
+        Assert.Equal("(O)152", decision.ReleasedQualifiedItemId);
+        Assert.Equal(
+            "exact_latest_catch_singleton",
+            decision.SelectionReason);
         Assert.Equal(
             "ship:Farm:slot-11:seaweed",
             decision.Candidate.CandidateId);
@@ -63,6 +67,63 @@ public sealed class StageOneInventoryCapacityRecoveryTests
             Snapshot("(O)771")));
     }
 
+    [Fact]
+    public void CropHarvestRecoverySelectsOneObjectiveSafeSingleton()
+    {
+        var ranking = Ranking(
+            ShippingCandidate(
+                "ship:Farm:slot-6:cauliflower",
+                "(O)190",
+                slotIndex: 6,
+                estimatedTicks: 100,
+                availableStack: 6,
+                fullShipmentContributes: true),
+            ShippingCandidate(
+                "ship:Farm:slot-7:clay",
+                "(O)330",
+                slotIndex: 7,
+                estimatedTicks: 200,
+                availableStack: 1,
+                fullShipmentContributes: true),
+            ShippingCandidate(
+                "ship:Farm:slot-11:rare",
+                "(O)999",
+                slotIndex: 11,
+                estimatedTicks: 50,
+                availableStack: 1,
+                unitPrice: 500));
+
+        var decision = StageOneInventoryCapacityRecovery.TrySelect(
+            ranking,
+            Snapshot(string.Empty),
+            allowObjectiveSafeSingleton: true,
+            requireFishingAttemptBlocked: false);
+
+        Assert.NotNull(decision);
+        Assert.Equal(
+            "ship:Farm:slot-7:clay",
+            decision!.Candidate.CandidateId);
+        Assert.Equal("(O)330", decision.ReleasedQualifiedItemId);
+        Assert.Equal(string.Empty, decision.CaughtQualifiedItemId);
+        Assert.Equal(
+            "objective_safe_singleton",
+            decision.SelectionReason);
+        Assert.Equal(
+            StageOneInventoryCapacityRecovery.CropHarvestTriggerReason,
+            decision.TriggerReason);
+    }
+
+    [Fact]
+    public void RecoveryContextRequiresBothFullInventoryAndLatestCatch()
+    {
+        Assert.True(StageOneInventoryCapacityRecovery.HasRecoveryContext(
+            Snapshot("(O)152")));
+        Assert.False(StageOneInventoryCapacityRecovery.HasRecoveryContext(
+            Snapshot(string.Empty)));
+        Assert.False(StageOneInventoryCapacityRecovery.HasRecoveryContext(
+            Snapshot("(O)152", hasEmptySlot: true)));
+    }
+
     private static AvailabilityAwarePolicyPredictionEnvelope Ranking(
         params PolicyEventCandidatePrediction[] shippingCandidates) => new()
         {
@@ -95,7 +156,10 @@ public sealed class StageOneInventoryCapacityRecoveryTests
         string candidateId,
         string qualifiedItemId,
         int slotIndex,
-        int estimatedTicks) => new()
+        int estimatedTicks,
+        int availableStack = 1,
+        bool fullShipmentContributes = false,
+        int unitPrice = 20) => new()
         {
             CandidateId = candidateId,
             OptionId = "economy.ship_items",
@@ -104,8 +168,10 @@ public sealed class StageOneInventoryCapacityRecoveryTests
             QualifiedItemId = qualifiedItemId,
             SlotIndex = slotIndex,
             Quantity = 1,
-            UnitPrice = 20,
-            TotalValue = 20,
+            UnitPrice = unitPrice,
+            TotalValue = unitPrice,
+            AvailableStack = availableStack,
+            FullShipmentContributes = fullShipmentContributes,
             EstimatedTicks = estimatedTicks,
             Rank = 42,
             Score = 12.5,
@@ -114,7 +180,9 @@ public sealed class StageOneInventoryCapacityRecoveryTests
             ExpectedReward = 7.5
         };
 
-    private static JsonObject Snapshot(string caughtQualifiedItemId) =>
+    private static JsonObject Snapshot(
+        string caughtQualifiedItemId,
+        bool hasEmptySlot = false) =>
         new()
         {
             ["state"] = new JsonObject
@@ -126,8 +194,9 @@ public sealed class StageOneInventoryCapacityRecoveryTests
                         ["value"] = new JsonObject
                         {
                             ["max_items"] = 12,
-                            ["occupied_item_stacks"] = 12,
-                            ["has_empty_slot"] = false
+                            ["occupied_item_stacks"] =
+                                hasEmptySlot ? 11 : 12,
+                            ["has_empty_slot"] = hasEmptySlot
                         }
                     }
                 },

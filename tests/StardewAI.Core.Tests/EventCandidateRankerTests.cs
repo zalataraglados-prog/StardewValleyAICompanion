@@ -101,6 +101,44 @@ public sealed partial class EventCandidateRankerTests
     }
 
     [Fact]
+    public void RankPreservesShippingStackSizeForCapacityRecovery()
+    {
+        var availability = new OptionAvailabilityEnvelope
+        {
+            Options = new[]
+            {
+                new OptionAvailability
+                {
+                    OptionId = "economy.ship_items",
+                    EventCandidates = new[]
+                    {
+                        new EventCandidate
+                        {
+                            CandidateId = "ship:Farm:71,14:11:129",
+                            Kind = "ship_inventory_item_to_bin",
+                            Available = true,
+                            QualifiedItemId = "(O)129",
+                            Quantity = 1,
+                            AvailableStack = 1,
+                            FullShipmentContributes = true,
+                            UnitPrice = 30,
+                            TotalValue = 30,
+                            EstimatedTicks = 120
+                        }
+                    }
+                }
+            }
+        };
+
+        var candidate = Assert.Single(new EventCandidateRanker().Rank(
+            new BaselineTrainingReport(),
+            availability));
+
+        Assert.Equal(1, candidate.AvailableStack);
+        Assert.True(candidate.FullShipmentContributes);
+    }
+
+    [Fact]
     public void RankIncludesAvailableWateringEventCandidates()
     {
         var report = new BaselineTrainingReport

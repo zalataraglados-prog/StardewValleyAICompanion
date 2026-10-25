@@ -30,9 +30,13 @@ static partial class Program
             int iteration,
             string snapshotJson,
             JsonObject snapshot,
-            string stateHash)
+            string stateHash,
+            bool capacityRecoveryOnly = false,
+            bool allowObjectiveSafeSingletonCapacityRecovery = false,
+            bool requireFishingAttemptBlockedForCapacityRecovery = true)
     {
-        if (!options.RequireGoldenWalnutSourceScheduleReady ||
+        if ((!capacityRecoveryOnly &&
+             !options.RequireGoldenWalnutSourceScheduleReady) ||
             HasPriorityStoryEventInterrupt(snapshot))
         {
             return NotAttemptedStageOneCollectionTeacher();
@@ -52,53 +56,88 @@ static partial class Program
             plainSnapshotPath,
             snapshotJson,
             new UTF8Encoding(false));
-        var intents = MasterAnglerTargetDateIntentBuilder.Build(
-            options.MasterAnglerStageOneWindowIndexPath,
-            plainSnapshotPath,
-            options.RouteTimingCalibrationPath);
-        await WriteTypedJsonAsync(intentsPath, intents);
-
-        var additionalCandidates = intents.Candidates
-            .Select(value => new OptionAvailabilityCandidate
+        JsonObject ranking;
+        AvailabilityAwarePolicyPredictionEnvelope typedRanking;
+        if (capacityRecoveryOnly)
+        {
+            var availabilityResponse = await PostJsonStringAsync(
+                http,
+                options.BackendUrl + "/api/v1/planner/options/availability",
+                JsonSerializer.Serialize(
+                    new OptionAvailabilityRequest
+                    {
+                        StateHash = stateHash
+                    },
+                    JsonOptions));
+            var availability = JsonSerializer.Deserialize<
+                OptionAvailabilityEnvelope>(
+                availabilityResponse.ToJsonString(JsonOptions),
+                JsonOptions) ?? throw new InvalidDataException(
+                    "Inventory-capacity availability response is empty.");
+            typedRanking = new AvailabilityAwarePolicyPredictionEnvelope
             {
-                OptionId = value.OptionId,
-                Parameters = value.Parameters
-            })
-            .Concat(intents.WeatherSupplyCandidates.Select(value =>
-                new OptionAvailabilityCandidate
+                Availability = availability,
+                RankedEventCandidates = new EventCandidateRanker().Rank(
+                    new BaselineTrainingReport(),
+                    availability,
+                    options.Goal)
+            };
+            ranking = JsonNode.Parse(JsonSerializer.Serialize(
+                typedRanking,
+                JsonOptions))?.AsObject() ?? throw new InvalidDataException(
+                    "Inventory-capacity ranking response is empty.");
+        }
+        else
+        {
+            var intents = MasterAnglerTargetDateIntentBuilder.Build(
+                options.MasterAnglerStageOneWindowIndexPath,
+                plainSnapshotPath,
+                options.RouteTimingCalibrationPath);
+            await WriteTypedJsonAsync(intentsPath, intents);
+
+            var additionalCandidates = intents.Candidates
+                .Select(value => new OptionAvailabilityCandidate
                 {
                     OptionId = value.OptionId,
                     Parameters = value.Parameters
-                }))
-            .ToArray();
-        var rankRequest = new BaselinePredictionRequest
-        {
-            GoalId = options.Goal,
-            ExecutionMode = options.TargetExecutionMode,
-            PolicyCheckpointPath = string.IsNullOrWhiteSpace(
-                options.EffectivePolicyCheckpointPath)
-                ? null
-                : Path.GetFullPath(options.EffectivePolicyCheckpointPath),
-            RequireStructuredPolicy = options.RequireStructuredPolicy,
-            DatasetPath = Path.GetFullPath(options.DatasetPath),
-            StateHash = stateHash,
-            IncludeBlockedOptions = false,
-            AdditionalCandidates = additionalCandidates
-        };
-        var ranking = await PostJsonStringAsync(
-            http,
-            options.BackendUrl + "/api/v1/planner/baseline/rank-options",
-            JsonSerializer.Serialize(rankRequest, JsonOptions));
+                })
+                .Concat(intents.WeatherSupplyCandidates.Select(value =>
+                    new OptionAvailabilityCandidate
+                    {
+                        OptionId = value.OptionId,
+                        Parameters = value.Parameters
+                    }))
+                .ToArray();
+            var rankRequest = new BaselinePredictionRequest
+            {
+                GoalId = options.Goal,
+                ExecutionMode = options.TargetExecutionMode,
+                PolicyCheckpointPath = string.IsNullOrWhiteSpace(
+                    options.EffectivePolicyCheckpointPath)
+                    ? null
+                    : Path.GetFullPath(options.EffectivePolicyCheckpointPath),
+                RequireStructuredPolicy = options.RequireStructuredPolicy,
+                DatasetPath = Path.GetFullPath(options.DatasetPath),
+                StateHash = stateHash,
+                IncludeBlockedOptions = false,
+                AdditionalCandidates = additionalCandidates
+            };
+            ranking = await PostJsonStringAsync(
+                http,
+                options.BackendUrl + "/api/v1/planner/baseline/rank-options",
+                JsonSerializer.Serialize(rankRequest, JsonOptions));
+            typedRanking = JsonSerializer.Deserialize<
+                AvailabilityAwarePolicyPredictionEnvelope>(
+                ranking.ToJsonString(JsonOptions),
+                JsonOptions) ?? throw new InvalidDataException(
+                    "Stage-one collection ranking response is empty.");
+        }
         await WriteJsonAsync(rankingPath, ranking);
-
-        var typedRanking = JsonSerializer.Deserialize<
-            AvailabilityAwarePolicyPredictionEnvelope>(
-            ranking.ToJsonString(JsonOptions),
-            JsonOptions) ?? throw new InvalidDataException(
-                "Stage-one collection ranking response is empty.");
         var capacityRecovery = StageOneInventoryCapacityRecovery.TrySelect(
             typedRanking,
-            snapshot);
+            snapshot,
+            allowObjectiveSafeSingletonCapacityRecovery,
+            requireFishingAttemptBlockedForCapacityRecovery);
         if (capacityRecovery is not null)
         {
             var typedSnapshot = JsonSerializer.Deserialize<SnapshotEnvelope>(
@@ -143,6 +182,9 @@ static partial class Program
                     trigger_reason = capacityRecovery.TriggerReason,
                     caught_qualified_item_id =
                         capacityRecovery.CaughtQualifiedItemId,
+                    released_qualified_item_id =
+                        capacityRecovery.ReleasedQualifiedItemId,
+                    selection_reason = capacityRecovery.SelectionReason,
                     selected_candidate_id =
                         capacityRecovery.Candidate.CandidateId
                 });
@@ -163,9 +205,26 @@ static partial class Program
                 capacityRecovery.Candidate.CandidateId,
                 "ready_inventory_capacity_recovery",
                 "control_recovery=inventory_capacity" +
-                " caught_qualified_item_id=" +
-                capacityRecovery.CaughtQualifiedItemId +
+                " released_qualified_item_id=" +
+                capacityRecovery.ReleasedQualifiedItemId +
+                " selection_reason=" +
+                capacityRecovery.SelectionReason +
                 " formal_training_authorized=false");
+        }
+
+        if (capacityRecoveryOnly)
+        {
+            return new StageOneCollectionTeacherQueueBuildResult(
+                true,
+                null,
+                ranking,
+                plainSnapshotPath,
+                string.Empty,
+                rankingPath,
+                string.Empty,
+                string.Empty,
+                "not_applicable_inventory_capacity_recovery",
+                "no_dispatchable_inventory_release_candidate");
         }
 
         var preference =

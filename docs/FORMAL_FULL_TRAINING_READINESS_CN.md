@@ -4,13 +4,15 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已闭合从 v10 最终隔离存档开始的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已通过 current-authority 复核并冻结；当前唯一施工项是 `complete_master_angler` 顶层依赖、日历窗口与 coverage 接线。Money Exit Gate 标准不降低，但 Money 已回到复杂度队列第 11 位。
 
-## 当前增量 · v25 容量恢复与正式准入边界
+## 当前增量 · v26 收获容量恢复与正式准入边界
 
-`golden-walnut-source-schedule-v25-20261026-012924` 已在真实隔离存档中越过 v24 的清障边界：作物漂移后唯一 Crop Teacher 重新规划防风草，形成 `8` 条逐格原生收获回执并正常结算；统一 collection Teacher 随后完成邮件、任务 `13` 的三段 Beach 路线和 `(O)131` 原生钓获。目标 `(O)708` 的下一次尝试钓到 `(O)152` 海草后保持目标未完成，证明随机非目标结果没有被误结算。
+`golden-walnut-source-schedule-v26-20261026-023455` 已从真实 day-zero 隔离存档推进到 Spring 16。该运行完成首轮作物生产、邮件、任务 `13`、竹鱼竿剧情和钓鱼，并在节日门禁结束后从 Beach 原生返场；随后开始第二轮防风草生产。第 `173` 次迭代的真实状态为 Farm、背包 `12/12` 和 8 格成熟作物，作物 Teacher 的 8 项收获批次因无空槽而正确失败关闭。跨日后 `caught_qualified_item_id` 已清空，因此 v25 仅匹配最近钓获物的恢复无法覆盖该控制阶段。
 
-该运行随后固定为 incomplete。第一项硬伤是 fresh-time continuation 遗漏 Master Angler route-timing 的 path、SHA-256 和 full-route validation 三个字段，现已由统一字段常量保留。第二项是海草填满 `12/12` 背包后，钓鱼候选虽然正确阻塞，Stage One Teacher 却没有容量恢复控制动作，最终发生 Beach/Town 振荡。当前修复仅在 fresh 快照精确证明背包已满、Master Angler 正在续程且最近钓获 ID 明确时，选择既有 `economy.ship_items` 中完全匹配该钓获物且数量为 `1` 的候选；它复用现有路线/出货执行器并中和全部 learner 字段，不产生训练标签。
+当前修复不改变正式策略分母，也不新增执行器。出货候选已有的 `available_stack` 现贯穿排名与 clone 契约；Crop Teacher 在满包收获前中断原批次，复用同一 Backend availability、确定性候选物化、日计划、动作队列、路线和原生出货箱链，不调用策略模型。容量恢复只允许 available、单件动作、实际单格栈且通过既有自动出售保护的候选；优先 Full Shipment 首次贡献，否则限制为不高于 `50g` 的低风险单件。恢复候选的 learner 字段归零，完成后必须 fresh 重编译原收获，不能产生训练标签或结算旧批次。该通用容量恢复不再依赖 Golden Walnut 门禁，也不在作物路径重建 Master Angler 意图。
 
-相关矩阵 `97/97` 通过；v25 第 `113` 次真实工件已由当前生产代码离线重放为 pending `executor.traverse_connector`，continuation 精确绑定 `(O)152 x1`。这仍不是新原生投递回执。下一准入证据必须证明 Beach -> Farm 原生返场、只投递该海草、fresh 背包恢复容量并继续目标钓鱼；之后才回到首次登岛、Golden Walnut 来源增量、三项鹦鹉跃迁与 source schedule。`CoverageGateReady 5/19`、Money production `0/18`、`formal_product_training=false` 全部保持不变。
+对 v26 第 `173` 次真实失败快照，当前生产代码重建出 5 个合法出货候选，选择 `(O)92 x1 / 2g / Full Shipment`；`DailyPlanCompiler -> ActionQueueCompiler` 生成 2 项全 pending 队列，先移动到出货箱站位再原生投递。6 个花椰菜、5 个木材与受保护种子均未被选中。定向测试 `42/42`、相关控制链 `137/137`、Release solution `0 warning / 0 error`。
+
+上述结果仍只是“真实失败输入上的生产代码重放”，不是原生投递或收获成功。下一准入证据必须在受控续接或 v27 中证明：只投递一个安全单件、fresh 背包出现空槽、同一 8 格收获重试并完成结算。之后才继续首次登岛、Golden Walnut 来源增量、三项鹦鹉跃迁和 source schedule。`CoverageGateReady 5/19`、Money production `0/18`、`formal_product_training=false` 全部保持不变。
 
 ## 已收口增量 · v23-v24 原生进展与正式准入边界
 
