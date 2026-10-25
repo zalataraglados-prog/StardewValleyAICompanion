@@ -133,7 +133,12 @@ namespace StardewAI.Core.OptionRegistry
                 .Concat(normalizedParameters)
                 .ToArray();
             var estimatedTicks = ReadParameterInt(normalizedParameters, "estimated_ticks") ?? 0;
-            var gateTimeline = ReadRouteGateTimeline(snapshot, x, y);
+            var gateTimeline = ReadRouteGateTimeline(
+                snapshot,
+                x,
+                y,
+                kind,
+                targetLocation);
             var unwindowedAllowed = !gateTimeline.HasValue &&
                 blockReasons.Length == 0;
             var expectedEffect = "player.tile=" + x + "," + y +
@@ -180,7 +185,12 @@ namespace StardewAI.Core.OptionRegistry
             };
         }
 
-        private static RouteGateTimeline? ReadRouteGateTimeline(SnapshotEnvelope snapshot, int tileX, int tileY)
+        private static RouteGateTimeline? ReadRouteGateTimeline(
+            SnapshotEnvelope snapshot,
+            int tileX,
+            int tileY,
+            string connectorKind,
+            string targetLocation)
         {
             var gateContext = ReadStateFieldValue(snapshot, "locations", "route_gate_context");
             if (!gateContext.HasValue ||
@@ -191,24 +201,35 @@ namespace StardewAI.Core.OptionRegistry
                 return null;
             }
 
+            var expectedGateKind = connectorKind switch
+            {
+                "warp" => "ordinary_warp_active_festival",
+                "locked_door_warp" => "locked_door_warp",
+                "action_warp" or "touch_action_warp" => "warp_action",
+                "native_bus_transport" => "native_bus_transport",
+                _ => string.Empty
+            };
+            if (string.IsNullOrWhiteSpace(expectedGateKind))
+            {
+                return null;
+            }
+
             var gate = gates.EnumerateArray().FirstOrDefault(candidate =>
                 candidate.ValueKind == JsonValueKind.Object &&
                 ReadNullableInt(candidate, "tile_x") == tileX &&
-                ReadNullableInt(candidate, "tile_y") == tileY);
+                ReadNullableInt(candidate, "tile_y") == tileY &&
+                string.Equals(
+                    ReadString(candidate, "kind"),
+                    expectedGateKind,
+                    StringComparison.OrdinalIgnoreCase) &&
+                (string.IsNullOrWhiteSpace(
+                    ReadString(candidate, "target_location")) ||
+                 string.Equals(
+                    ReadString(candidate, "target_location"),
+                    targetLocation,
+                    StringComparison.OrdinalIgnoreCase)));
             var gateKind = ReadString(gate, "kind");
-            if (gate.ValueKind != JsonValueKind.Object ||
-                !string.Equals(
-                    gateKind,
-                    "locked_door_warp",
-                    StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(
-                    gateKind,
-                    "native_bus_transport",
-                    StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(
-                    gateKind,
-                    "warp_action",
-                    StringComparison.OrdinalIgnoreCase))
+            if (gate.ValueKind != JsonValueKind.Object)
             {
                 return null;
             }
@@ -236,6 +257,14 @@ namespace StardewAI.Core.OptionRegistry
                 if (ReadBool(gate, "festival_closed") == true)
                 {
                     reasons.Add("route_gate_festival_closed");
+                }
+                if (string.Equals(
+                        gateKind,
+                        "ordinary_warp_active_festival",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    reasons.Add(
+                        "route_gate_active_festival_ordinary_transit_closed");
                 }
                 if (ReadBool(gate, "seed_shop_wednesday_closed") == true)
                 {

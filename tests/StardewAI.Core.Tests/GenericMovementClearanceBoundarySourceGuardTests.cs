@@ -122,6 +122,67 @@ public sealed class GenericMovementClearanceBoundarySourceGuardTests
             StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void DialogueSnapshotPublishesReadOnlyCurrentText()
+    {
+        var menu = File.ReadAllText(FindRepositoryFile(
+            "src",
+            "StardewAI.TransparentBridge",
+            "Adapters",
+            "MenuReadAdapter.cs"));
+
+        Assert.Contains(
+            "current_text = menu.getCurrentString()",
+            menu,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "DialogueBox public fields and read-only getCurrentString()",
+            menu,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "dialogue_current_text_requires_method_call_not_read_in_this_slice",
+            menu,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ActiveFestivalTransitUsesOneSharedNativeProjection()
+    {
+        var projection = File.ReadAllText(FindRepositoryFile(
+            "src",
+            "StardewAI.TransparentBridge",
+            "Adapters",
+            "ActiveFestivalTransitReader.cs"));
+        var warpTotem = File.ReadAllText(FindRepositoryFile(
+            "src",
+            "StardewAI.TransparentBridge",
+            "Adapters",
+            "PlayerReadAdapter.WarpTotem.cs"));
+        var routeGates = File.ReadAllText(FindRepositoryFile(
+            "src",
+            "StardewAI.TransparentBridge",
+            "Adapters",
+            "ShopAccessReadAdapter.GatesBlockers.cs"));
+
+        Assert.Contains("Game1.weatherIcon == 1", projection, StringComparison.Ordinal);
+        Assert.Contains("Game1.whereIsTodaysFest", projection, StringComparison.Ordinal);
+        Assert.Contains("Game1.timeOfDay <= endTime", projection, StringComparison.Ordinal);
+        Assert.Contains("Game1.timeOfDay < startTime", projection, StringComparison.Ordinal);
+        Assert.Contains(
+            "ActiveFestivalTransitReader.Read(destinationLocation)",
+            warpTotem,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ActiveFestivalTransitReader.Read(",
+            routeGates,
+            StringComparison.Ordinal);
+        Assert.Contains("warp.TargetName", routeGates, StringComparison.Ordinal);
+        Assert.Contains(
+            "ordinary_warp_active_festival",
+            routeGates,
+            StringComparison.Ordinal);
+    }
+
     private static string FindRepositoryFile(params string[] segments)
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

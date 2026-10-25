@@ -291,8 +291,12 @@ public sealed partial class MenuReadAdapter : ReadAdapterBase
                 (Field(ReadShopMenuState(shopMenu, tick), "ShopMenu public fields", tick, AdapterId),
                     new[] { "menus.menu_specific_state.shop.current_tab" }),
             DialogueBox dialogueBox =>
-                (Field(ReadDialogueState(dialogueBox, tick), "DialogueBox public fields", tick, AdapterId),
-                    new[] { "menus.menu_specific_state.dialogue.current_text" }),
+                (Field(
+                        ReadDialogueState(dialogueBox, tick),
+                        "DialogueBox public fields and read-only getCurrentString()",
+                        tick,
+                        AdapterId),
+                    Array.Empty<string>()),
             LevelUpMenu levelUpMenu =>
                 (Field(ReadLevelUpMenuState(levelUpMenu), "LevelUpMenu public state and exact private currentSkill/currentLevel/professionsToChoose fields", tick, AdapterId),
                     Array.Empty<string>()),
@@ -866,11 +870,7 @@ public sealed partial class MenuReadAdapter : ReadAdapterBase
                 width = menu.transitionWidth,
                 height = menu.transitionHeight
             },
-            current_text = Unavailable(
-                "dialogue_current_text_requires_method_call_not_read_in_this_slice",
-                "DialogueBox.getCurrentString()",
-                tick,
-                AdapterId)
+            current_text = menu.getCurrentString()
         };
     }
 

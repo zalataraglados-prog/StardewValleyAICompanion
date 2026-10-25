@@ -206,14 +206,17 @@ namespace StardewAI.Core.Training
             allowed = true;
             openTime = null;
             closeTime = null;
-            if (edge.Kind is "warp" or "building_door" or "magic_warp")
+            if (edge.Kind is "building_door" or "magic_warp")
                 return true;
-            if (edge.Kind is not ("action_warp" or "touch_action_warp" or "locked_door_warp"))
+            if (edge.Kind is not ("warp" or "action_warp" or "touch_action_warp" or "locked_door_warp"))
                 return false;
 
-            var expectedGateKind = edge.Kind == "locked_door_warp"
-                ? "locked_door_warp"
-                : "warp_action";
+            var expectedGateKind = edge.Kind switch
+            {
+                "warp" => "ordinary_warp_active_festival",
+                "locked_door_warp" => "locked_door_warp",
+                _ => "warp_action"
+            };
             var matches = map.ActionGates.Where(gate =>
                 string.Equals(
                     SocialRouteDateEvidenceIndex.ReadString(gate, "kind"),
@@ -226,6 +229,8 @@ namespace StardewAI.Core.Training
                     edge.TargetLocation,
                     StringComparison.OrdinalIgnoreCase))
                 .ToArray();
+            if (edge.Kind == "warp" && matches.Length == 0)
+                return true;
             if (matches.Length != 1)
                 return false;
 
@@ -236,7 +241,7 @@ namespace StardewAI.Core.Training
             if (!dateAllowed.HasValue)
                 return false;
             allowed = dateAllowed.Value;
-            if (edge.Kind != "locked_door_warp" ||
+            if (edge.Kind is not ("warp" or "locked_door_warp") ||
                 SocialRouteDateEvidenceIndex.ReadBool(
                     gate,
                     "time_unrestricted_on_capture_date") == true)

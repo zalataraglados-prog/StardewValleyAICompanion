@@ -52,26 +52,76 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
 
         foreach (var warp in location.warps)
         {
-            if (!IsNativeBusTransportWarp(location, warp.TargetName))
-                continue;
-
-            var toDesert = string.Equals(
-                location.NameOrUniqueName,
-                "BusStop",
-                StringComparison.OrdinalIgnoreCase);
-            if (!toDesert)
-                continue;
-
-            var endpoint = toDesert
-                ? FindBusTicketMachineTile(location)
-                : FindDesertBusTouchTile(location);
-            if (endpoint.HasValue)
+            if (IsNativeBusTransportWarp(location, warp.TargetName))
             {
-                gates.Add(ReadNativeBusTransportGate(
-                    location,
-                    endpoint.Value.X,
-                    endpoint.Value.Y,
-                    toDesert));
+                var toDesert = string.Equals(
+                    location.NameOrUniqueName,
+                    "BusStop",
+                    StringComparison.OrdinalIgnoreCase);
+                if (toDesert)
+                {
+                    var endpoint = FindBusTicketMachineTile(location);
+                    if (endpoint.HasValue)
+                    {
+                        gates.Add(ReadNativeBusTransportGate(
+                            location,
+                            endpoint.Value.X,
+                            endpoint.Value.Y,
+                            toDesert));
+                    }
+                }
+                continue;
+            }
+
+            var festivalTransit = ActiveFestivalTransitReader.Read(
+                warp.TargetName);
+            if (festivalTransit.NativeGateTargetsDestination)
+            {
+                gates.Add(new
+                {
+                    kind = "ordinary_warp_active_festival",
+                    tile_x = warp.X,
+                    tile_y = warp.Y,
+                    source_property = "GameLocation.warps",
+                    target_location = warp.TargetName,
+                    target_x = (int?)warp.TargetX,
+                    target_y = (int?)warp.TargetY,
+                    festival_id = festivalTransit.FestivalId,
+                    festival_location_id = festivalTransit.LocationId,
+                    festival_start_time = festivalTransit.StartTime,
+                    festival_end_time = festivalTransit.EndTime,
+                    native_weather_icon = Game1.weatherIcon,
+                    native_where_is_todays_fest = Game1.whereIsTodaysFest,
+                    native_festival_gate_active =
+                        festivalTransit.NativeGateActive,
+                    native_prestart_warp_rejected =
+                        festivalTransit.NativePrestartWarpRejected,
+                    native_festival_entry_window =
+                        festivalTransit.NativeFestivalEntryWindow,
+                    ordinary_transit_mode =
+                        festivalTransit.OrdinaryTransitMode,
+                    ordinary_transit_allowed_now =
+                        festivalTransit.OrdinaryTransitAllowedNow,
+                    allowed_now = festivalTransit.ProjectionComplete
+                        ? festivalTransit.OrdinaryTransitAllowedNow
+                        : (bool?)null,
+                    allowed_on_capture_date = festivalTransit.ProjectionComplete
+                        ? festivalTransit.OrdinaryTransitAllowedOnCaptureDate
+                        : (bool?)null,
+                    time_unrestricted_on_capture_date =
+                        festivalTransit.ProjectionComplete &&
+                        festivalTransit.OrdinaryTransitAllowedNow,
+                    effective_open_time =
+                        festivalTransit.NextOrdinaryOpenTime,
+                    effective_close_time = 2600,
+                    open_time = festivalTransit.NextOrdinaryOpenTime,
+                    close_time = 2600,
+                    unresolved_reason = festivalTransit.ProjectionComplete
+                        ? (string?)null
+                        : festivalTransit.Status,
+                    source_contract =
+                        "Game1.warpFarmer active-festival branch"
+                });
             }
         }
 

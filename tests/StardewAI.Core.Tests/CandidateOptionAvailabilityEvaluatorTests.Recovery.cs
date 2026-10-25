@@ -422,7 +422,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     private static SnapshotEnvelope RouteConnectorSnapshot(
         bool routeTrainingBlocked,
         bool resolved = true,
-        string targetLocation = "Town")
+        string targetLocation = "Town",
+        bool activeFestivalTransitClosed = false)
     {
         return Snapshot("""
         {
@@ -438,6 +439,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
           "locations": {
             "collision_grid": {"value":{"location_id":"Farm","width":20,"height":20,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "route_connectors": {"value":{"location_id":"Farm","connector_count":1,"connectors":[{"kind":"warp","tile_x":12,"tile_y":10,"target_location":"TARGET_LOCATION","target_x":1,"target_y":2,"resolved":RESOLVED}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_gate_context": {"value":{"location_id":"Farm","action_gates":FESTIVAL_GATES},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "route_action_branch_coverage": {"value":{"rows":[{"tile_x":12,"tile_y":10,"branch":"Warp","route_training_blocked":ROUTE_BLOCKED}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           }
         }
@@ -446,6 +448,11 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             "ROUTE_BLOCKED",
             routeTrainingBlocked ? "true" : "false")
         .Replace("RESOLVED", resolved ? "true" : "false")
+        .Replace(
+            "FESTIVAL_GATES",
+            activeFestivalTransitClosed
+                ? "[{\"kind\":\"ordinary_warp_active_festival\",\"tile_x\":12,\"tile_y\":10,\"target_location\":\"Town\",\"allowed_now\":false,\"allowed_on_capture_date\":true,\"effective_open_time\":1410,\"close_time\":2600,\"unresolved_reason\":null}]"
+                : "[]")
         .Replace("TARGET_LOCATION", targetLocation));
     }
 

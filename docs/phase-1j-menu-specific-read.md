@@ -11,7 +11,7 @@ Top-level `menus.menu_specific_state` is now available for these menu types:
 | `InventoryMenu` | `inventory` | `playerInventory`, `drawSlots`, `showGrayedOutSlots`, `capacity`, `rows`, `horizontalGap`, `verticalGap`, `inventory.Count`, `actualInventory.Count`, occupied slot count, `dropItemInvisibleButton`, `moveItemSound` |
 | `ItemGrabMenu` with `source == source_chest` | `chest` | `source`, boolean flags, `message` presence only, `sourceItem` type only, `context` type only, receiving/player inventory summaries, side button presence, transferred sprite count |
 | `ShopMenu` | `shop` | `ShopId`, `ShopData` presence, `currency`, `readOnly`, `currentItemIndex`, `safetyTimer`, list/dictionary counts, held/hovered item presence, portrait presence, inventory summary, control presence |
-| `DialogueBox` | `dialogue` | dialogue/response counts, question and transition booleans, selected response index, timers, bounds, icon/image presence, friendship jewel rectangle |
+| `DialogueBox` | `dialogue` | dialogue/response counts, question and transition booleans, selected response index, timers, bounds, icon/image presence, friendship jewel rectangle, current rendered page text |
 
 Unsupported concrete menu types keep `menus.menu_specific_state` unavailable with reason `menu_specific_fields_not_verified_for_menu_type`.
 
@@ -23,9 +23,8 @@ Concrete fields that are not reliable enough in this slice remain unavailable in
 | --- | --- |
 | `menus.menu_specific_state.chest.source_item_details` | `chest_source_item_concrete_fields_not_verified_in_this_slice` |
 | `menus.menu_specific_state.shop.current_tab` | `shop_current_tab_is_protected_field_not_read_in_this_slice` |
-| `menus.menu_specific_state.dialogue.current_text` | `dialogue_current_text_requires_method_call_not_read_in_this_slice` |
 
-Item identities, prices, stock details, response text, dialogue current text, protected/private menu fields, and concrete chest item internals are not read in this slice unless listed above as a count, presence flag, type name, or public scalar field.
+Item identities, prices, stock details, protected/private menu fields, and concrete chest item internals are not read in this slice unless listed above as a count, presence flag, type name, or public scalar field. Dialogue response text and the current rendered page text are read because both are required to distinguish safe system messages from route and decision prompts.
 
 ## Read-Only Audit Allowlist
 
@@ -38,13 +37,14 @@ Allowed member paths:
 - `Game1.activeClickableMenu`.
 - `IClickableMenu` public base fields from Phase 1F.
 - Public fields on `InventoryMenu`, `ItemGrabMenu`, `ShopMenu`, and `DialogueBox` listed in this document.
+- `DialogueBox.getCurrentString()`, whose Stardew Valley 1.6.15 body only selects the current public dialogue string and applies `Trim`/newline replacement without mutating game or menu state.
 - Runtime type metadata from `GetType()` for menu/source/context identity only.
 
 Forbidden actions:
 - No click handling.
 - No close handling.
 - No menu selection.
-- No calls to `receiveLeftClick`, `receiveRightClick`, `performHoverAction`, `update`, `exitThisMenu`, `closeDialogue`, `getCurrentString`, `tryToPurchaseItem`, inventory add/remove helpers, or equivalent menu action methods.
+- No calls to `receiveLeftClick`, `receiveRightClick`, `performHoverAction`, `update`, `exitThisMenu`, `closeDialogue`, `tryToPurchaseItem`, inventory add/remove helpers, or equivalent menu action methods.
 - No writes to menu fields, inventory lists, game state, or UI selection state.
 
 ## Runtime Validation
@@ -54,6 +54,7 @@ Live SMAPI validation status: `not_executed`.
 Pending runtime checks:
 - Open inventory, player chest, shop, dialogue, and an unsupported menu.
 - Confirm supported menus publish available `menus.menu_specific_state.value.kind`.
+- Confirm the current dialogue page text matches the visible native text and changes only when the game advances the page.
 - Confirm unavailable nested fields remain unavailable and do not carry default values.
 - Confirm unsupported menus keep top-level `menus.menu_specific_state` unavailable.
 - Confirm opening/closing/hovering menus shows no bridge-triggered clicks, closes, selections, purchases, response choices, or state mutation.

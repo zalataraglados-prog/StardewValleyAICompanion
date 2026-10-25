@@ -730,6 +730,65 @@ public sealed partial class ActionQueueCompilerTests
             Assert.Single(queue.Items).BlockingReasons);
     }
 
+    [Fact]
+    public void CompileBlocksOrdinaryWarpDuringActiveFestivalTransitWindow()
+    {
+        var snapshot = Snapshot("""
+        {
+          "player": {
+            "location_id": {"value":"Beach","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_x": {"value":38,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":0,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "collision_grid": {"value":{"location_id":"Beach","width":80,"height":50,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_action_branch_coverage": {"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_connectors": {"value":{"location_id":"Beach","connectors":[{"kind":"warp","tile_x":38,"tile_y":-1,"target_location":"Town","target_x":54,"target_y":108,"resolved":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_gate_context": {"value":{"location_id":"Beach","action_gates":[{"kind":"ordinary_warp_active_festival","tile_x":38,"tile_y":-1,"target_location":"Town","allowed_now":false,"allowed_on_capture_date":true,"effective_open_time":1410,"effective_close_time":2600,"unresolved_reason":null}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """);
+        var plan = Plan(
+            snapshot.StateHash,
+            new SmallModelPlanStep
+            {
+                StepId = "plan.step.beach.to.town.festival.blocked",
+                Kind = "traverse_connector",
+                TargetTileX = 38,
+                TargetTileY = -1,
+                Parameters = new[]
+                {
+                    new SmallModelActionParameter
+                    {
+                        Name = "connector_kind",
+                        Value = "warp"
+                    },
+                    new SmallModelActionParameter
+                    {
+                        Name = "expected_target_location",
+                        Value = "Town"
+                    },
+                    new SmallModelActionParameter
+                    {
+                        Name = "expected_arrival_tile_x",
+                        Value = "54"
+                    },
+                    new SmallModelActionParameter
+                    {
+                        Name = "expected_arrival_tile_y",
+                        Value = "108"
+                    }
+                }
+            });
+
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+
+        Assert.Equal("blocked", queue.Status);
+        Assert.Contains(
+            "connector_active_festival_transit_closed",
+            Assert.Single(queue.Items).BlockingReasons);
+    }
+
     private static SnapshotEnvelope NativeBusConnectorSnapshot(bool allowedNow) => Snapshot($$"""
     {
       "player": {

@@ -748,7 +748,7 @@ namespace StardewAI.Core.Execution
 
         private static string? RecoveryConnectorGateBlock(SnapshotEnvelope snapshot, RouteGraphEdge edge)
         {
-            if (edge.Kind is "warp" or "building_door" or "magic_warp")
+            if (edge.Kind is "building_door" or "magic_warp")
             {
                 return null;
             }
@@ -759,14 +759,25 @@ namespace StardewAI.Core.Execution
                 !gateContext.Value.TryGetProperty("action_gates", out var gates) ||
                 gates.ValueKind != JsonValueKind.Array)
             {
-                return "recovery_current_connector_gate_context_unavailable";
+                return edge.Kind == "warp"
+                    ? null
+                    : "recovery_current_connector_gate_context_unavailable";
             }
 
             foreach (var gate in gates.EnumerateArray())
             {
                 if (gate.ValueKind != JsonValueKind.Object ||
                     ReadNullableInt(gate, "tile_x") != edge.FromX ||
-                    ReadNullableInt(gate, "tile_y") != edge.FromY)
+                    ReadNullableInt(gate, "tile_y") != edge.FromY ||
+                    edge.Kind == "warp" &&
+                    (!string.Equals(
+                        ReadString(gate, "kind"),
+                        "ordinary_warp_active_festival",
+                        StringComparison.OrdinalIgnoreCase) ||
+                     !string.Equals(
+                        ReadString(gate, "target_location"),
+                        edge.TargetLocation,
+                        StringComparison.OrdinalIgnoreCase)))
                 {
                     continue;
                 }
@@ -777,12 +788,18 @@ namespace StardewAI.Core.Execution
                     return "recovery_current_connector_gate_unresolved";
                 }
 
-                return allowed.ValueKind == JsonValueKind.True
-                    ? null
+                if (allowed.ValueKind == JsonValueKind.True)
+                {
+                    return null;
+                }
+                return edge.Kind == "warp"
+                    ? "recovery_current_connector_active_festival_transit_closed"
                     : "recovery_current_connector_gate_closed";
             }
 
-            return "recovery_current_connector_gate_unresolved";
+            return edge.Kind == "warp"
+                ? null
+                : "recovery_current_connector_gate_unresolved";
         }
 
         private static int? RecoveryConnectorPathTiles(SnapshotEnvelope snapshot, RouteGraphEdge edge, JsonElement connector)

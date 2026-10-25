@@ -860,6 +860,48 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     }
 
     [Fact]
+    public void VisitLocationDefersOrdinaryWarpUntilActiveFestivalEnds()
+    {
+        var snapshot = RouteConnectorSnapshot(
+            routeTrainingBlocked: false,
+            activeFestivalTransitClosed: true);
+
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "exploration.visit_location" });
+        var option = availability.Options[0];
+        var candidate = Assert.Single(option.EventCandidates);
+
+        Assert.False(candidate.Available);
+        Assert.Equal("windowed_route_connector", candidate.AvailabilityClass);
+        Assert.False(candidate.AllowedNow);
+        Assert.True(candidate.AllowedToday);
+        Assert.Equal(1410, candidate.NextOpenTime);
+        Assert.Equal(1410, candidate.EffectiveOpenTime);
+        Assert.Equal(2600, candidate.ClosesAt);
+        Assert.Contains(
+            "route_gate_active_festival_ordinary_transit_closed",
+            candidate.GateReasons);
+        Assert.Contains(
+            "connector_active_festival_transit_closed",
+            candidate.BlockReasons);
+
+        var ranked = Assert.Single(new EventCandidateRanker().Rank(
+            new(),
+            availability,
+            "daily.closed_loop"));
+        Assert.Equal("deferred", ranked.TimelineStatus);
+        Assert.Equal(1410, ranked.ScheduledStartTime);
+        var plan = new DailyPlanCompiler().Compile(
+            new[] { ranked },
+            snapshot.StateHash,
+            "daily.closed_loop");
+        Assert.Equal("wait_ticks", Assert.Single(plan.Steps).Kind);
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+        Assert.Equal("pending", queue.Status);
+        Assert.Equal("executor.wait_ticks", Assert.Single(queue.Items).OptionId);
+    }
+
+    [Fact]
     public void VisitLocationFailsClosedForUnresolvedOrSameLocationConnector()
     {
         foreach (var snapshot in new[]
