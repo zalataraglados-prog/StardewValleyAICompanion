@@ -18,7 +18,7 @@ static partial class Program
         string SnapshotProfile,
         string SnapshotUrl,
         bool SitePreparationComplete,
-        bool PriorityInterrupt = false);
+        string InterruptKind = "");
 
     private static async Task<CropTeacherControlQueueBuildResult>
         BuildCropTeacherControlQueueAsync(
@@ -35,6 +35,18 @@ static partial class Program
         if (HasPriorityStoryEventInterrupt(beforeSnapshot))
         {
             return await BuildCropTeacherStoryEventQueueAsync(
+                http,
+                options,
+                iteration,
+                beforeSnapshotPath,
+                beforeSnapshot,
+                stateHash);
+        }
+
+        if (CropTeacherControlInterruptClassifier
+            .HasSafeSpeakerlessDialogue(beforeSnapshot))
+        {
+            return await BuildCropTeacherDialogueRecoveryQueueAsync(
                 http,
                 options,
                 iteration,
@@ -125,7 +137,86 @@ static partial class Program
             beforeSnapshot,
             stateHash,
             options,
-            priorityInterrupt: true);
+            interruptKind: "priority_story_event");
+    }
+
+    private static async Task<CropTeacherControlQueueBuildResult>
+        BuildCropTeacherDialogueRecoveryQueueAsync(
+            HttpClient http,
+            LiveTrainingOptions options,
+            int iteration,
+            string beforeSnapshotPath,
+            JsonObject beforeSnapshot,
+            string stateHash)
+    {
+        var candidateId = $"crop-dialogue-recovery:{iteration}";
+        var plan = JsonSerializer.SerializeToNode(new
+        {
+            schema_version = "small_model_plan.v1",
+            plan_id = "plan:" + candidateId,
+            source_model = "authoritative_crop_native_recovery.v1",
+            state_hash = stateHash,
+            goal_id = "daily.closed_loop",
+            execution_mode = options.TargetExecutionMode,
+            actor = options.TargetActor,
+            plan_type = "mechanical_plan",
+            steps = new[]
+            {
+                new
+                {
+                    step_id = candidateId + ":close",
+                    kind = "close_menu",
+                    estimated_minutes = 1,
+                    preconditions = new[]
+                    {
+                        "candidate_id:" + candidateId,
+                        "menus.active_menu.is_open=true"
+                    },
+                    expected_effects = new[]
+                    {
+                        "menus.active_menu.is_open=false"
+                    },
+                    safety_constraints = new[]
+                    {
+                        "close_only_verified_supported_menu",
+                        "recovery_menu_close"
+                    },
+                    failure_policy = new[]
+                    {
+                        "refresh_snapshot_and_replan"
+                    },
+                    parameters = Array.Empty<object>()
+                }
+            },
+            candidate_audit = Array.Empty<object>()
+        }, JsonOptions)!.AsObject();
+        var prefix = CropTeacherArtifactPrefix(
+            options,
+            iteration,
+            "dialogue-recovery");
+        var planPath = prefix + "-model-plan.json";
+        var queuePath = prefix + "-compiled-queue.json";
+        await WriteJsonAsync(planPath, plan);
+        var queue = await PostJsonStringAsync(
+            http,
+            options.BackendUrl +
+                "/api/v1/small-model/plan/action-queue/compile",
+            plan.ToJsonString(JsonOptions));
+        await WriteJsonAsync(queuePath, queue);
+        RequireCompiledQueue(
+            queue,
+            new[] { "executor.close_menu" },
+            expectedItemCount: 1,
+            "crop_teacher_dialogue_recovery_compile_invalid");
+        return StandardResult(
+            queue,
+            planPath,
+            string.Empty,
+            beforeSnapshotPath,
+            beforeSnapshot,
+            stateHash,
+            options,
+            interruptKind: "safe_dialogue_recovery");
     }
 
     private static async Task<CropTeacherControlQueueBuildResult>
@@ -255,6 +346,10 @@ static partial class Program
             options.BackendUrl +
                 "/api/v1/small-model/plan/action-queue/compile",
             plan.ToJsonString(JsonOptions));
+        await WriteJsonAsync(
+            CropTeacherArtifactPrefix(options, iteration, "route") +
+                "-compiled-queue.json",
+            queue);
         RequireCompiledQueue(
             queue,
             new[] { "executor.traverse_connector" },
@@ -615,7 +710,7 @@ static partial class Program
         JsonObject beforeSnapshot,
         string stateHash,
         LiveTrainingOptions options,
-        bool priorityInterrupt = false) => new(
+        string interruptKind = "") => new(
             queue,
             modelPlanPath,
             rankingPath,
@@ -625,7 +720,7 @@ static partial class Program
             options.ExecutionSnapshotProfile,
             options.BridgeSnapshotUrl,
             false,
-            priorityInterrupt);
+            interruptKind);
 
     private static void RequireCompiledQueue(
         JsonObject queue,

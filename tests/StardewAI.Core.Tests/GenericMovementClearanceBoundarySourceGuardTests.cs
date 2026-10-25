@@ -76,6 +76,52 @@ public sealed class GenericMovementClearanceBoundarySourceGuardTests
             StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void IncidentalDialogueUsesBoundedStateChangePacing()
+    {
+        var movement = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.MovementSleep.cs"));
+        var state = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.State.cs"));
+
+        Assert.Contains(
+            "DialogueAdvanceStage.WaitAdvanceEffect",
+            movement,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "move.IncidentalDialogueAdvanceWaitTicks > 30",
+            movement,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "move.IncidentalDialoguePressAttempts >= 60",
+            movement,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "move.IncidentalDialogueTicks > 600",
+            movement,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "move.Pending.MovementIncidentalDialogues >= 8",
+            movement,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "move.MaxTicks += 600",
+            movement,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "IncidentalDialogueMenu",
+            state,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "move.IncidentalDialoguePressAttempts >= 16",
+            movement,
+            StringComparison.Ordinal);
+    }
+
     private static string FindRepositoryFile(params string[] segments)
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

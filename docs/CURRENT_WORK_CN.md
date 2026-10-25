@@ -11,6 +11,8 @@
 - v17 原第 47 次真实请求已用当前源码重建为 ready：`blocked_count=0`、`clear_then_rebind_count=2`、`access_clear_then_rebind_count=2`，精确选择 `(70,19)` 石头和 `(71,21)` 杂草。该证据证明编译修复覆盖原失败输入，但不是一次新的原生执行。
 - 全新修正版长跑 `golden-walnut-source-schedule-v17b-20261025-181200` 的随机布局走直接耕地分支，最终真实完成六格整地、播种、逐日浇水、六格收获和作物 run 结算，形成 `94` 个 verified episode、`12` 个日界与 `6` 条收获回执。随后统一 Stage 1 Teacher 完成 `spring_2_1` 邮件及任务 `13` 的三段 Beach 路线，确认作物 Teacher 能正常退场。
 - v17b 的第 100 次迭代在事件 `739330` 处失败：候选本身为 `story.advance_event / ready_now`，却被 planning-handoff 空绑定过滤为 `empty_action_list`。队列构建现对原生剧情 interrupt 使用独立的精确过滤，只接纳 `story.advance_event`，不应用战略 goal binding；普通 handoff 仍失败关闭。全解决方案构建 `0 warning / 0 error`、聚焦回归 `64/64`。v17b 保留为 incomplete，不得续接其未保存尾部。当前下一退出条件不变：从新隔离存档重跑，直到首次登岛、至少一个 Golden Walnut 来源增量和 First Parrot/Turtle/House 三项原生跃迁齐备，再由既有 builder 导出 source schedule。
+- v18 全新隔离长跑再次结算作物 run，并真实通过事件 `739330`：原生剧情回执为 `applied/verified`，透明库存出现竹鱼竿，随后执行两次 Beach 钓鱼候选。该 run 在新作物 handoff 的 Beach→Farm 首段暴露附带系统提示关闭缺口：连接器走到 `(38,0)` 后，无角色普通 `DialogueBox` 仍在逐字显示，旧移动器过快耗尽 `16` 次点击，下一轮 route 因活动菜单而失败关闭。
+- 修复复用同一 `executor.close_menu` 与现有连接器。移动器改为按 `dialogueFinished/showTyping/transitioning` 状态变化节流，最多 `60` 次输入、`600` tick；仅当透明字段同时证明非事件、非问题、零响应、非睡眠且无角色/空 speaker 时，Teacher 才先编译 `safe_dialogue_recovery`，并禁止该中断结算原作物步骤。v18 原始失败快照已重放为单项 pending close-menu 队列，聚焦 `17/17` 与全构建 `0 warning / 0 error` 通过。v18 仍为 incomplete；下一固定动作是全新 v19 实跑，取得关闭提示并继续跨图的原生回执后，再继续原 Golden Walnut 退出条件。
 
 ## 当前增量 · 新档开局礼盒透明执行链
 

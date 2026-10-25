@@ -571,24 +571,9 @@ public sealed partial class ModEntry : Mod
 
     private bool TickMovementIncidentalDialogue(ActiveTileMove move)
     {
-        if (move.IncidentalDialogueButtonHeld)
-        {
-            if (!TryApplySmapiLeftButtonOverride(
-                    pressed: false,
-                    out var releaseReason))
-            {
-                CompleteBlockedMove(
-                    move,
-                    "movement_incidental_dialogue_release_failed:" +
-                        releaseReason);
-                return true;
-            }
-            move.IncidentalDialogueButtonHeld = false;
-            return true;
-        }
-
         if (Game1.activeClickableMenu is null)
         {
+            ResetMovementIncidentalDialogue(move);
             ArmNativeSewerUnlockRetry(move);
             return false;
         }
@@ -607,35 +592,129 @@ public sealed partial class ModEntry : Mod
         move.CurrentDirection = null;
         move.StuckTicks = 0;
         move.LastPosition = Game1.player.Position;
-        if (dialogue.transitioning || dialogue.safetyTimer > 0)
+        move.Tick++;
+
+        if (!ReferenceEquals(move.IncidentalDialogueMenu, dialogue))
         {
-            return true;
+            ResetMovementIncidentalDialogue(move);
+            if (move.Pending.MovementIncidentalDialogues >= 8)
+            {
+                CompleteBlockedMove(
+                    move,
+                    "movement_incidental_dialogue_count_exceeded");
+                return true;
+            }
+            move.IncidentalDialogueMenu = dialogue;
+            move.Pending.MovementIncidentalDialogues++;
+            move.MaxTicks += 600;
         }
-        if (move.IncidentalDialoguePressAttempts >= 16)
+
+        move.IncidentalDialogueTicks++;
+        if (move.IncidentalDialogueTicks > 600)
         {
             CompleteBlockedMove(
                 move,
-                "movement_incidental_dialogue_dismiss_budget_exceeded");
-            return true;
-        }
-        if (!TryApplySmapiLeftButtonOverride(
-                pressed: true,
-                out var pressReason))
-        {
-            CompleteBlockedMove(
-                move,
-                "movement_incidental_dialogue_press_failed:" +
-                    pressReason);
+                "movement_incidental_dialogue_timeout");
             return true;
         }
 
-        if (move.IncidentalDialoguePressAttempts == 0)
+        switch (move.IncidentalDialogueStage)
         {
-            move.Pending.MovementIncidentalDialogues++;
+            case DialogueAdvanceStage.WaitTransition:
+                if (dialogue.transitioning || dialogue.safetyTimer > 0)
+                {
+                    return true;
+                }
+                move.IncidentalDialogueStage = DialogueAdvanceStage.Press;
+                return true;
+
+            case DialogueAdvanceStage.Press:
+                if (!TryApplySmapiLeftButtonOverride(
+                        pressed: true,
+                        out var pressReason))
+                {
+                    CompleteBlockedMove(
+                        move,
+                        "movement_incidental_dialogue_press_failed:" +
+                            pressReason);
+                    return true;
+                }
+                move.IncidentalDialoguePressAttempts++;
+                move.IncidentalDialogueFinishedBeforePress =
+                    dialogue.dialogueFinished;
+                move.IncidentalDialogueTypingBeforePress =
+                    dialogue.showTyping;
+                move.IncidentalDialogueTransitioningBeforePress =
+                    dialogue.transitioning;
+                move.IncidentalDialogueButtonHeld = true;
+                move.IncidentalDialogueStage =
+                    DialogueAdvanceStage.ReleaseAfterAdvance;
+                return true;
+
+            case DialogueAdvanceStage.ReleaseAfterAdvance:
+                if (!TryApplySmapiLeftButtonOverride(
+                        pressed: false,
+                        out var releaseReason))
+                {
+                    CompleteBlockedMove(
+                        move,
+                        "movement_incidental_dialogue_release_failed:" +
+                            releaseReason);
+                    return true;
+                }
+                move.IncidentalDialogueButtonHeld = false;
+                move.IncidentalDialogueAdvanceWaitTicks = 0;
+                move.IncidentalDialogueStage =
+                    DialogueAdvanceStage.WaitAdvanceEffect;
+                return true;
+
+            case DialogueAdvanceStage.WaitAdvanceEffect:
+                move.IncidentalDialogueAdvanceWaitTicks++;
+                var dialogueChanged =
+                    dialogue.dialogueFinished !=
+                        move.IncidentalDialogueFinishedBeforePress ||
+                    dialogue.showTyping !=
+                        move.IncidentalDialogueTypingBeforePress ||
+                    dialogue.transitioning !=
+                        move.IncidentalDialogueTransitioningBeforePress;
+                if (dialogueChanged ||
+                    move.IncidentalDialogueAdvanceWaitTicks > 30)
+                {
+                    move.IncidentalDialogueStage =
+                        DialogueAdvanceStage.CheckClose;
+                }
+                return true;
+
+            case DialogueAdvanceStage.CheckClose:
+                if (move.IncidentalDialoguePressAttempts >= 60)
+                {
+                    CompleteBlockedMove(
+                        move,
+                        "movement_incidental_dialogue_dismiss_budget_exceeded");
+                    return true;
+                }
+                move.IncidentalDialogueStage =
+                    dialogue.transitioning || dialogue.safetyTimer > 0
+                        ? DialogueAdvanceStage.WaitTransition
+                        : DialogueAdvanceStage.Press;
+                return true;
         }
-        move.IncidentalDialoguePressAttempts++;
-        move.IncidentalDialogueButtonHeld = true;
-        return true;
+
+        throw new InvalidOperationException(
+            "movement_incidental_dialogue_stage_invalid");
+    }
+
+    private void ResetMovementIncidentalDialogue(ActiveTileMove move)
+    {
+        ReleaseMovementIncidentalDialogueButton(move);
+        move.IncidentalDialogueMenu = null;
+        move.IncidentalDialogueStage = DialogueAdvanceStage.WaitTransition;
+        move.IncidentalDialogueTicks = 0;
+        move.IncidentalDialoguePressAttempts = 0;
+        move.IncidentalDialogueAdvanceWaitTicks = 0;
+        move.IncidentalDialogueFinishedBeforePress = false;
+        move.IncidentalDialogueTypingBeforePress = false;
+        move.IncidentalDialogueTransitioningBeforePress = false;
     }
 
     private static void ArmNativeSewerUnlockRetry(ActiveTileMove move)

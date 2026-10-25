@@ -1,3 +1,6 @@
+using System.Text.Json.Nodes;
+using StardewAI.LiveTrainingLoop;
+
 namespace StardewAI.Core.Tests;
 
 public sealed class CropTeacherControlIntegrationSourceGuardTests
@@ -179,7 +182,7 @@ public sealed class CropTeacherControlIntegrationSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains("\"story-event\"", source, StringComparison.Ordinal);
         Assert.Contains(
-            "priorityInterrupt: true",
+            "interruptKind: \"priority_story_event\"",
             source,
             StringComparison.Ordinal);
 
@@ -204,15 +207,94 @@ public sealed class CropTeacherControlIntegrationSourceGuardTests
         var program = Read("tools", "StardewAI.LiveTrainingLoop", "Program.cs");
 
         Assert.Contains(
-            "cropTeacherStepForExecution = cropQueue.PriorityInterrupt\n" +
+            "!string.IsNullOrWhiteSpace(cropQueue.InterruptKind)\n" +
             "            ? null\n" +
             "            : cropStep;",
             program.Replace("\r\n", "\n"),
             StringComparison.Ordinal);
         Assert.Contains(
-            "? \"priority_story_event\"",
+            "cropQueue.InterruptKind",
             program,
             StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SpeakerlessDialogueRecoveryPreemptsCropSettlement()
+    {
+        var source = Read(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.CropTeacherControl.cs");
+        var eventCheck = source.IndexOf(
+            "if (HasPriorityStoryEventInterrupt(beforeSnapshot))",
+            StringComparison.Ordinal);
+        var recoveryCheck = source.IndexOf(
+            ".HasSafeSpeakerlessDialogue(beforeSnapshot)",
+            eventCheck,
+            StringComparison.Ordinal);
+        var stageSwitch = source.IndexOf(
+            "return step.Stage switch",
+            recoveryCheck,
+            StringComparison.Ordinal);
+
+        Assert.True(eventCheck >= 0);
+        Assert.True(recoveryCheck > eventCheck);
+        Assert.True(stageSwitch > recoveryCheck);
+        Assert.Contains(
+            "new[] { \"executor.close_menu\" }",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "interruptKind: \"safe_dialogue_recovery\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "-compiled-queue.json",
+            source,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void RecoveryClassifierRequiresExactSafeSpeakerlessProof()
+    {
+        var snapshot = JsonNode.Parse("""
+        {
+          "state": {
+            "menus": {
+              "active_menu": {
+                "status": "available",
+                "value": {
+                  "is_open": true,
+                  "type": "DialogueBox",
+                  "last_question_key": null,
+                  "is_sleep_prompt": false,
+                  "event_up": false,
+                  "dialogue_is_question": false,
+                  "dialogue_response_count": 0,
+                  "dialogue_transitioning": false,
+                  "dialogue_character_present": false,
+                  "dialogue_speaker_name": null
+                }
+              }
+            }
+          }
+        }
+        """)!.AsObject();
+
+        Assert.True(CropTeacherControlInterruptClassifier
+            .HasSafeSpeakerlessDialogue(snapshot));
+
+        snapshot["state"]!["menus"]!["active_menu"]!["value"]![
+            "dialogue_is_question"] = true;
+        Assert.False(CropTeacherControlInterruptClassifier
+            .HasSafeSpeakerlessDialogue(snapshot));
+
+        snapshot["state"]!["menus"]!["active_menu"]!["value"]![
+            "dialogue_is_question"] = false;
+        ((JsonObject)snapshot["state"]!["menus"]!["active_menu"]![
+            "value"]!).Remove("dialogue_speaker_name");
+        Assert.False(CropTeacherControlInterruptClassifier
+            .HasSafeSpeakerlessDialogue(snapshot));
     }
 
     private static string Read(params string[] segments)

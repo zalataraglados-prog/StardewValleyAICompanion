@@ -10,7 +10,11 @@
 
 修正版新档 `golden-walnut-source-schedule-v17b-20261025-181200` 已在真实游戏中越过旧阻塞位置，并以 `94` 个 verified episode、`12` 条原生日界和 `6` 条收获回执完整结算直接耕地布局的首轮作物 run；统一 collection Teacher 随后处理邮件并走完任务 `13` 的三段 Beach 路线。该随机布局没有实际触发访问清障，因此该分支的证据边界仍是“旧真实快照重建通过 + 新真实运行无回退”，不能写成访问清障已有原生回执。
 
-该 run 最终因剧情中断被战略 planning-handoff 空绑定过滤而失败：事件 `739330` 的候选真实存在且 ready，但编译得到空队列。现已改为原生剧情 interrupt 只精确接纳 `story.advance_event` 并绕过战略目标绑定；普通 handoff、事件身份和执行校验不变。构建与 `64/64` 聚焦测试通过，但 v17b 的失败尾部使整轮保持 incomplete，不能进入训练或 schedule。必须由下一全新隔离长跑取得原生剧情回执后继续首次登岛、核桃来源增量、三项鹦鹉跃迁和 source schedule；`CoverageGateReady 5/19`、Money production `0/18` 与 `formal_product_training=false` 均不变。
+该 run 最终因剧情中断被战略 planning-handoff 空绑定过滤而失败：事件 `739330` 的候选真实存在且 ready，但编译得到空队列。现已改为原生剧情 interrupt 只精确接纳 `story.advance_event` 并绕过战略目标绑定；普通 handoff、事件身份和执行校验不变。v17b 的失败尾部使整轮保持 incomplete，不能进入训练或 schedule。
+
+后续全新 v18 长跑已真实证明该剧情修复：作物 run 再次形成 `12` 条日界、`6` 条收获回执和零重派发，事件 `739330` 经精确原生执行器得到 `applied/verified`，透明库存随后出现竹鱼竿，并完成两次 Beach 钓鱼动作。新的停止点是 Beach→Farm 连接器途中弹出的无角色普通提示框：旧移动器在文字逐字显示期间迅速耗尽输入预算，遗留活动菜单，下一轮严格 route compile 因而阻塞。
+
+当前修复保留单一动作体系。附带对话采用与现有原生对话执行相同的状态变化等待，`executor.close_menu` 现允许透明明确的非事件、非问题、零响应、无角色系统提示；作物 Teacher 只把该既有执行器作为不结算原步骤的恢复中断。v18 原始失败快照回放得到唯一 pending close-menu 项、零阻塞，聚焦测试 `17/17`、全构建 `0 warning / 0 error`。在 v19 取得真实菜单关闭和连接器继续回执前，这只是确定性重放，不提升任何准入分子。首次登岛、核桃来源增量、三项鹦鹉跃迁和 source schedule 仍未完成；`CoverageGateReady 5/19`、Money production `0/18` 与 `formal_product_training=false` 均不变。
 
 ## 当前增量 · 竹鱼竿新档原生来源已闭合
 

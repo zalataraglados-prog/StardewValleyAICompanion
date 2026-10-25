@@ -631,10 +631,6 @@ namespace StardewAI.Core.OptionRegistry
             {
                 reasons.Add("dialogue_close_character_present_field_missing_or_ambiguous");
             }
-            else if (!characterPresent.Value)
-            {
-                reasons.Add("dialogue_close_character_present_false");
-            }
 
             var speakerName = ReadString(activeMenu.Value, "dialogue_speaker_name");
             var speakerNamePresent = activeMenu.Value.TryGetProperty("dialogue_speaker_name", out _);
@@ -642,9 +638,15 @@ namespace StardewAI.Core.OptionRegistry
             {
                 reasons.Add("dialogue_close_speaker_name_field_missing");
             }
-            else if (string.IsNullOrWhiteSpace(speakerName))
+            else if (characterPresent == true &&
+                     string.IsNullOrWhiteSpace(speakerName))
             {
                 reasons.Add("dialogue_close_speaker_name_empty");
+            }
+            else if (characterPresent == false &&
+                     !string.IsNullOrWhiteSpace(speakerName))
+            {
+                reasons.Add("dialogue_close_character_speaker_mismatch");
             }
 
             return reasons.Distinct(StringComparer.Ordinal).ToArray();

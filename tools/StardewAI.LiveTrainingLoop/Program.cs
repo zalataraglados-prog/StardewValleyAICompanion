@@ -573,7 +573,8 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             snapshotPath,
             beforeSnapshot,
             lastStateHash);
-        cropTeacherStepForExecution = cropQueue.PriorityInterrupt
+        cropTeacherStepForExecution =
+            !string.IsNullOrWhiteSpace(cropQueue.InterruptKind)
             ? null
             : cropStep;
         if (cropQueue.SitePreparationComplete)
@@ -615,10 +616,12 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             iteration,
             lastStateHash,
             ReadString(queue, "queue_id"),
-            "stage=" + (cropQueue.PriorityInterrupt
-                ? "priority_story_event"
+            "stage=" + (!string.IsNullOrWhiteSpace(
+                    cropQueue.InterruptKind)
+                ? cropQueue.InterruptKind
                 : cropStep.Stage) +
-            " interrupted_stage=" + (cropQueue.PriorityInterrupt
+            " interrupted_stage=" + (!string.IsNullOrWhiteSpace(
+                    cropQueue.InterruptKind)
                 ? cropStep.Stage
                 : string.Empty) +
             " reason=" + cropStep.Reason +

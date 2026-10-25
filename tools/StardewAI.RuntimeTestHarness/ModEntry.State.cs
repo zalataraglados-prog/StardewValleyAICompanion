@@ -85,7 +85,15 @@ public sealed partial class ModEntry : Mod
         public int SoftObstacleTicks { get; set; }
         public bool IncidentalDialogueButtonHeld { get; set; }
         public int IncidentalDialoguePressAttempts { get; set; }
-        public int MaxTicks { get; }
+        public DialogueBox? IncidentalDialogueMenu { get; set; }
+        public DialogueAdvanceStage IncidentalDialogueStage { get; set; } =
+            DialogueAdvanceStage.WaitTransition;
+        public int IncidentalDialogueTicks { get; set; }
+        public int IncidentalDialogueAdvanceWaitTicks { get; set; }
+        public bool IncidentalDialogueFinishedBeforePress { get; set; }
+        public bool IncidentalDialogueTypingBeforePress { get; set; }
+        public bool IncidentalDialogueTransitioningBeforePress { get; set; }
+        public int MaxTicks { get; set; }
         public Vector2 LastPosition { get; set; }
         public string StartedAt { get; }
         public int StartMoney { get; }

@@ -1103,7 +1103,8 @@ public sealed partial class ModEntry : Mod
             !string.Equals(Game1.currentLocation?.lastQuestionKey, "Sleep", StringComparison.Ordinal) &&
             !string.Equals(Game1.currentLocation?.lastQuestionKey, "SleepTent", StringComparison.Ordinal) &&
             (!Game1.eventUp || allowEventDialogue) &&
-            ((dialogueBox.characterDialogue is not null &&
+            (dialogueBox.characterDialogue is null ||
+                (dialogueBox.characterDialogue is not null &&
                 !string.IsNullOrWhiteSpace(dialogueBox.characterDialogue.speaker?.Name)) ||
                 allowSpeakerlessSocialContinuation);
     }
