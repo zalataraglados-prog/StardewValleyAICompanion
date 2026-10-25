@@ -789,6 +789,65 @@ public sealed partial class ActionQueueCompilerTests
             Assert.Single(queue.Items).BlockingReasons);
     }
 
+    [Fact]
+    public void CompileDefersCrossLocationMoveUntilFestivalTransitReopens()
+    {
+        var snapshot = Snapshot("""
+        {
+          "time": {
+            "time": {"value":710,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "player": {
+            "location_id": {"value":"Beach","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_x": {"value":8,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":16,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "collision_grid": {"value":{"location_id":"Beach","width":80,"height":50,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_action_branch_coverage": {"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_connectors": {"value":{"location_id":"Beach","connectors":[{"kind":"warp","tile_x":38,"tile_y":-1,"target_location":"Town","target_x":54,"target_y":108,"resolved":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_graph": {"value":{"edges":[{"kind":"warp","from_location":"Beach","from_x":38,"from_y":-1,"target_location":"Town","target_x":54,"target_y":108,"resolved":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_gate_context": {"value":{"location_id":"Beach","action_gates":[{"kind":"ordinary_warp_active_festival","tile_x":38,"tile_y":-1,"target_location":"Town","allowed_now":false,"allowed_on_capture_date":true,"effective_open_time":1410,"effective_close_time":2600,"unresolved_reason":null}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """);
+        var plan = Plan(
+            snapshot.StateHash,
+            new SmallModelPlanStep
+            {
+                StepId = "plan.step.beach.to.town.festival.deferred",
+                Kind = "move_to_tile",
+                TargetLocation = "Town",
+                TargetTileX = 54,
+                TargetTileY = 108,
+                Preconditions = new[]
+                {
+                    "candidate_id:route:test:town",
+                    "world_ready"
+                }
+            });
+
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+
+        Assert.Equal("pending", queue.Status);
+        var item = Assert.Single(queue.Items);
+        Assert.Equal("executor.wait_ticks", item.OptionId);
+        Assert.Equal("pending", item.Status);
+        Assert.Contains(
+            item.NormalizedCommand.Parameters,
+            parameter => parameter.Name == "wait_ticks" && parameter.Value == "600");
+        Assert.Contains(
+            item.NormalizedCommand.Parameters,
+            parameter => parameter.Name == "route_wait_reason" &&
+                parameter.Value ==
+                    "recovery_current_connector_active_festival_transit_closed");
+        Assert.Contains(
+            item.NormalizedCommand.Parameters,
+            parameter => parameter.Name == "cross_location_move_target" &&
+                parameter.Value == "Town");
+        Assert.Equal("wait_ticks", Assert.Single(item.NormalizedCommand.Steps).StepType);
+    }
+
     private static SnapshotEnvelope NativeBusConnectorSnapshot(bool allowedNow) => Snapshot($$"""
     {
       "player": {

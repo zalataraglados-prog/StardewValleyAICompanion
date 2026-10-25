@@ -20,6 +20,8 @@ v19 已真实证明菜单恢复会关闭提示，也证明两次 Beach 钓鱼分
 
 修复继续保持一套路线与一套 Teacher：共享 `ActiveFestivalTransitReader` 按实时 `weatherIcon`、`whereIsTodaysFest` 和 `Data/Festivals/<season><day>` 投影普通 warp 的原生节日语义；当前候选/编译器门禁关闭时不派发，`social_route_date_evidence` 让现有 Future Route 搜索等待到节日结束后的最早普通通行时刻再计算路线。DialogueBox 当前页文本只读投影同时补齐，但不产生任何 UI 动作。代码构建与 `5/5` 精确回归通过；尚未取得 v20 新原生回执，所以不得据此增加准入分子。下一证据只允许来自全新隔离 v20：证明节日门禁在上游被排除或按时间窗延后，随后连接器正常完成。`CoverageGateReady 5/19`、Money production `0/18` 与 `formal_product_training=false` 继续不变。
 
+v20 已提供新的原生证据，但没有关闭退出条件。该全新耐久运行从 Spring 1 推进到 Spring 13，得到 `12` 条原生日界、`6` 条收获回执和 `95` 个 verified action；新增门禁真实阻止了 Beach→Town 节日普通 warp，旧的重复系统提示/撞门循环未再出现。运行随后因作物 Teacher 的跨地图直达适配尚不接受临时 route wait，连续失败为 `crop_teacher_route_compile_invalid`。当前修复令唯一跨地图编译器在 exact active-festival 门禁同日可恢复时生成最多 `600` tick 的等待并 fresh replan，Teacher 只接纳带精确门禁原因的该等待；显式关闭 connector 和未知/永久门禁继续失败关闭。聚焦回归 `203/203`、全构建 `0 warning / 0 error`，但尚无等待结束后成功通行的全新原生回执，所以 v20 仍为 incomplete，下一合格证据必须来自 Spring 1 全新 v21。`CoverageGateReady 5/19`、Money production `0/18` 与 `formal_product_training=false` 均不变。
+
 ## 当前增量 · 竹鱼竿新档原生来源已闭合
 
 Master Angler 的首根鱼竿现在按原版 Spring 2 来源执行：`spring_2_1` 邮件产生任务 `13`，实时任务路线到 Beach 后触发事件 `739330`，原生事件再发放竹鱼竿。该链复用既有 `mail.process_letter -> quest.advance -> story.advance_event` 与共享机械执行器；FishShop 竹鱼竿购买仅为恢复兜底。任务路线权威字段已贯穿编译队列，但 `quest.advance` 仍保持非全局训练准入，因此只能形成逐段 verified evidence，不能直接形成策略训练行。

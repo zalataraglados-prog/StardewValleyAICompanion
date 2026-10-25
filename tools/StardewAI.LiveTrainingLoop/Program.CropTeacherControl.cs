@@ -350,11 +350,7 @@ static partial class Program
             CropTeacherArtifactPrefix(options, iteration, "route") +
                 "-compiled-queue.json",
             queue);
-        RequireCompiledQueue(
-            queue,
-            new[] { "executor.traverse_connector" },
-            expectedItemCount: 1,
-            "crop_teacher_route_compile_invalid");
+        RequireCropTeacherRouteQueue(queue);
         return StandardResult(
             queue,
             planPath,
@@ -736,6 +732,49 @@ static partial class Program
                 .SequenceEqual(expectedOptionIds, StringComparer.Ordinal))
         {
             throw new InvalidDataException(error);
+        }
+    }
+
+    private static void RequireCropTeacherRouteQueue(JsonObject queue)
+    {
+        var items = ExecutableQueueItems(queue);
+        if (ReadString(queue, "schema_version") != "action_queue.v1" ||
+            ReadString(queue, "status") != "pending" ||
+            items.Length != 1)
+        {
+            throw new InvalidDataException("crop_teacher_route_compile_invalid");
+        }
+
+        var item = items[0];
+        var optionId = ReadString(item, "option_id");
+        if (string.Equals(
+                optionId,
+                "executor.traverse_connector",
+                StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var parameters = item["normalized_command"]?["parameters"] as JsonArray;
+        var festivalWait = string.Equals(
+                optionId,
+                "executor.wait_ticks",
+                StringComparison.Ordinal) &&
+            parameters?.Any(node =>
+            {
+                var parameter = node?.AsObject();
+                return string.Equals(
+                        ReadString(parameter, "name"),
+                        "route_wait_reason",
+                        StringComparison.Ordinal) &&
+                    string.Equals(
+                        ReadString(parameter, "value"),
+                        "recovery_current_connector_active_festival_transit_closed",
+                        StringComparison.Ordinal);
+            }) == true;
+        if (!festivalWait)
+        {
+            throw new InvalidDataException("crop_teacher_route_compile_invalid");
         }
     }
 

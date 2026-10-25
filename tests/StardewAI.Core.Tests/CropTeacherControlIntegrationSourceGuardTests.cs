@@ -202,6 +202,23 @@ public sealed class CropTeacherControlIntegrationSourceGuardTests
     }
 
     [Fact]
+    public void CropTeacherRouteAcceptsBoundedFestivalWaitAndReplans()
+    {
+        var source = Read(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.CropTeacherControl.cs");
+
+        Assert.Contains("RequireCropTeacherRouteQueue(queue);", source);
+        Assert.Contains("\"executor.traverse_connector\"", source);
+        Assert.Contains("\"executor.wait_ticks\"", source);
+        Assert.Contains("\"route_wait_reason\"", source);
+        Assert.Contains(
+            "\"recovery_current_connector_active_festival_transit_closed\"",
+            source);
+    }
+
+    [Fact]
     public void StoryEventInterruptsCannotSettleCropOrSleepTransitions()
     {
         var program = Read("tools", "StardewAI.LiveTrainingLoop", "Program.cs");
