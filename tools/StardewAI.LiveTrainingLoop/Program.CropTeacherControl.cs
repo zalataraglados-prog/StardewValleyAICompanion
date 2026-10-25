@@ -301,10 +301,12 @@ static partial class Program
             throw new InvalidDataException(
                 "crop_teacher_site_preparation_layout_overlap");
         }
-        var minX = preparationTiles.Min(tile => tile.TileX);
-        var minY = preparationTiles.Min(tile => tile.TileY);
-        var maxX = preparationTiles.Max(tile => tile.TileX);
-        var maxY = preparationTiles.Max(tile => tile.TileY);
+        var (minX, maxX) = ExpandSitePreparationBounds(
+            preparationTiles.Min(tile => tile.TileX),
+            preparationTiles.Max(tile => tile.TileX));
+        var (minY, maxY) = ExpandSitePreparationBounds(
+            preparationTiles.Min(tile => tile.TileY),
+            preparationTiles.Max(tile => tile.TileY));
         var snapshotUrl = PlanningHandoffCapture.BuildFarmLayoutSnapshotUrl(
             options.BridgeSnapshotUrl,
             minX,
@@ -382,7 +384,8 @@ static partial class Program
         }
         if (pending.PlanStatus is not (
                 "direct_till_ready" or
-                "clear_then_fresh_snapshot_rebind") ||
+                "clear_then_fresh_snapshot_rebind" or
+                "clear_access_then_fresh_snapshot_rebind") ||
             pending.ActionOptionId is not (
                 "executor.clear_obstacle" or
                 "executor.break_farm_resource_clump" or
@@ -429,6 +432,29 @@ static partial class Program
             "farm_layout",
             snapshotUrl,
             false);
+    }
+
+    private static (int Min, int Max) ExpandSitePreparationBounds(
+        int min,
+        int max)
+    {
+        const int snapshotChunkSize = 32;
+        if (max < min)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(max),
+                "site preparation bounds are inverted");
+        }
+
+        if (max - min + 1 < snapshotChunkSize && min > 0)
+        {
+            min--;
+        }
+        if (max - min + 1 < snapshotChunkSize)
+        {
+            max++;
+        }
+        return (min, max);
     }
 
     private static async Task<CropTeacherControlQueueBuildResult>

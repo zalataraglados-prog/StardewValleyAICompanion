@@ -166,7 +166,12 @@ public static partial class MoneyRevenueCropSitePreparationPlanBuilder
             DirectTillCount = steps.Count(step =>
                 step.PlanStatus == "direct_till_ready"),
             ClearThenRebindCount = steps.Count(step =>
-                step.PlanStatus == "clear_then_fresh_snapshot_rebind"),
+                step.PlanStatus is
+                    "clear_then_fresh_snapshot_rebind" or
+                    "clear_access_then_fresh_snapshot_rebind"),
+            AccessClearThenRebindCount = steps.Count(step =>
+                step.PlanStatus ==
+                    "clear_access_then_fresh_snapshot_rebind"),
             BlockedCount = blockedCount,
             Steps = steps,
             SitePreparationPlanReady = blockedCount == 0,

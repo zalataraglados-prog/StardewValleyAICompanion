@@ -4,6 +4,12 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已闭合从 v10 最终隔离存档开始的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已通过 current-authority 复核并冻结；当前唯一施工项是 `complete_master_angler` 顶层依赖、日历窗口与 coverage 接线。Money Exit Gate 标准不降低，但 Money 已回到复杂度队列第 11 位。
 
+## 当前增量 · 长跑访问清障已修，正式准入不变
+
+`golden-walnut-source-schedule-v17-20261025-203000` 在第 47 次迭代暴露真实场地准备缺口：待耕地块被可移除障碍包围，目标格本身无需清理，但没有相邻可达站位。修复只在该单一类型化阻塞下复用现有清障/大型资源块候选，先清一格访问通道，再强制 fresh snapshot 重绑；其他工具、体力和时间阻塞仍失败关闭。旧失败请求的确定性重建现得到两条合法访问清障选择，聚焦测试、Debug 构建和 Teacher self-test 均已通过。
+
+修正版新档 `golden-walnut-source-schedule-v17b-20261025-181200` 已在真实游戏中越过旧阻塞位置，完成直接耕地布局的整地、播种、浇水和连续 3 次原生日期/存档边界。该随机布局没有实际触发访问清障，因此当前证据边界是“旧真实快照重建通过 + 新真实运行无回退”，不能写成访问清障已有原生回执。首次登岛、核桃来源增量、三项鹦鹉跃迁和 source schedule 仍未完成，`CoverageGateReady 5/19`、Money production `0/18` 与 `formal_product_training=false` 均不变。
+
 ## 当前增量 · 竹鱼竿新档原生来源已闭合
 
 Master Angler 的首根鱼竿现在按原版 Spring 2 来源执行：`spring_2_1` 邮件产生任务 `13`，实时任务路线到 Beach 后触发事件 `739330`，原生事件再发放竹鱼竿。该链复用既有 `mail.process_letter -> quest.advance -> story.advance_event` 与共享机械执行器；FishShop 竹鱼竿购买仅为恢复兜底。任务路线权威字段已贯穿编译队列，但 `quest.advance` 仍保持非全局训练准入，因此只能形成逐段 verified evidence，不能直接形成策略训练行。

@@ -12,7 +12,8 @@ public static class CropTeacherSitePreparationFrontier
         var next = plan.Steps.FirstOrDefault(step =>
             step.PlanStatus is
                 "direct_till_ready" or
-                "clear_then_fresh_snapshot_rebind");
+                "clear_then_fresh_snapshot_rebind" or
+                "clear_access_then_fresh_snapshot_rebind");
         if (next is not null)
         {
             return next;

@@ -32,6 +32,24 @@ public sealed class CropTeacherSitePreparationFrontierTests
     }
 
     [Fact]
+    public void SelectsReachableAccessClearanceForAnIsolatedTillTile()
+    {
+        var access = Step(
+            "clear_access_then_fresh_snapshot_rebind",
+            "executor.clear_obstacle");
+        var plan = Plan(
+            access,
+            Step(
+                "blocked",
+                string.Empty,
+                "till_soil_no_adjacent_route_stand_tile"));
+
+        Assert.Same(
+            access,
+            CropTeacherSitePreparationFrontier.SelectNextExecutableStep(plan));
+    }
+
+    [Fact]
     public void FailsClosedWhenUnfinishedTilesHaveNoExecutableFrontier()
     {
         var plan = Plan(

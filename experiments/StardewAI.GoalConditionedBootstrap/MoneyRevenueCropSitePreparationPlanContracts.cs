@@ -96,6 +96,9 @@ public sealed class MoneyRevenueCropSitePreparationPlan
     [JsonPropertyName("clear_then_rebind_count")]
     public int ClearThenRebindCount { get; set; }
 
+    [JsonPropertyName("access_clear_then_rebind_count")]
+    public int AccessClearThenRebindCount { get; set; }
+
     [JsonPropertyName("blocked_count")]
     public int BlockedCount { get; set; }
 
@@ -117,7 +120,9 @@ public sealed class MoneyRevenueCropSitePreparationPlan
         "The plan reads only the nominated bounded Farm region. Already prepared " +
         "tiles are no-ops; directly tillable tiles bind executor.till_soil; one " +
         "supported blocker binds the existing clear executor and requires a fresh " +
-        "snapshot before tilling. A Teacher-bound watering-refill corridor is " +
+        "snapshot before tilling. A route-isolated tillable tile may bind one " +
+        "currently reachable adjacent clearance before the same fresh rebind. " +
+        "A Teacher-bound watering-refill corridor is " +
         "prepared by the same clear/till chain but never becomes a crop action. " +
         "Unsupported or multiply occupied tiles remain " +
         "blocked. This is a plan, not production proof, and never authorizes training.";

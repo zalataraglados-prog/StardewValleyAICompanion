@@ -4,6 +4,13 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已完成 v10 之后的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已按 current authority 冻结；当前唯一施工项为 `complete_master_angler` 顶层 dependency、日历窗口与 coverage 接线。P0/P1 共享 correctness blocker 可临时中断，但不得静默改序或并行展开多个 root method。
 
+## 当前增量 · Golden Walnut 长跑相邻访问清障
+
+- `golden-walnut-source-schedule-v17-20261025-203000` 在第 47 次迭代真实失败于 `till_soil_no_adjacent_route_stand_tile`。两个 planting tile 本身可耕，但周围可移除障碍让执行器没有合法相邻站位；旧 planner 只清目标格，因而正确失败关闭却无法推进。
+- 场地准备现复用同一候选与执行器，在阻塞原因**仅为**无相邻路线站位时，确定性选择相邻 `executor.clear_obstacle` 或 `executor.break_farm_resource_clump`，状态标记为 `clear_access_then_fresh_snapshot_rebind`。执行后仍须 fresh 重绑；缺工具、体力不足、超时或其他阻塞不能借此放行。专用 snapshot bounds 在仍不超过 `32x32` 时只扩一格，以覆盖外围站位和障碍。
+- v17 原第 47 次真实请求已用当前源码重建为 ready：`blocked_count=0`、`clear_then_rebind_count=2`、`access_clear_then_rebind_count=2`，精确选择 `(70,19)` 石头和 `(71,21)` 杂草。该证据证明编译修复覆盖原失败输入，但不是一次新的原生执行。
+- 全新修正版长跑 `golden-walnut-source-schedule-v17b-20261025-181200` 正在运行。其随机布局走直接耕地分支，已真实完成六格整地、播种、浇水、原生睡眠并连续验证 3 个日界，越过旧失败点进入第 60 次迭代。当前下一退出条件不变：继续同一运行直到首次登岛、至少一个 Golden Walnut 来源增量和 First Parrot/Turtle/House 三项原生跃迁齐备，再由既有 builder 导出 source schedule；若出现新 blocker，保存精确输入并只修该 blocker。
+
 ## 当前增量 · 新档开局礼盒透明执行链
 
 - 真实 Spring 1 旧快照只有商店、社交和小游戏候选，缺少领取农舍开局礼盒这一必经前置，导致 Grandpa 最大分数目标只能在低价值候选中选择。现已新增唯一高层项 `rewards.claim_starter_gift`，并贯通透明读取、候选生成、日计划、fresh 编译重绑和 Product Executor 共用的原生运行状态机。
