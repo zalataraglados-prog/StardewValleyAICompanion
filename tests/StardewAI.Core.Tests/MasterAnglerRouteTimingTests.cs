@@ -57,6 +57,40 @@ public sealed partial class MasterAnglerMainlineTests
     }
 
     [Fact]
+    public void AuthoritativeRemoteIntentDoesNotRouteWhileInventoryIsFull()
+    {
+        var fixture = CreateFixture("Beach:0");
+        try
+        {
+            var remote = BuildSnapshot(
+                targetCaught: false,
+                currentLocation: "Farm",
+                inventoryFull: true);
+            var blocked = Assert.Single(Assert.Single(
+                new CandidateOptionAvailabilityEvaluator().Evaluate(
+                    remote,
+                    new[]
+                    {
+                        new OptionAvailabilityCandidate
+                        {
+                            OptionId = "fishing.catch_fish",
+                            Parameters = fixture.Parameters
+                        }
+                    }).Options).EventCandidates);
+
+            Assert.False(blocked.Available);
+            Assert.Equal("catch_fish", blocked.Kind);
+            Assert.Contains(
+                "fishing_inventory_full_requires_storage_transfer",
+                blocked.BlockReasons);
+        }
+        finally
+        {
+            fixture.Dispose();
+        }
+    }
+
+    [Fact]
     public void ConcurrentWindowsKeepDistinctCandidateIdentities()
     {
         var first = CreateFixture("Beach:0");

@@ -30,6 +30,8 @@ day-zero v30 已进一步证明长期控制面存在一个不同于 authority bl
 
 v30b 从另一份全新隔离存档提供了修复后的原生证据：第 `16` 次让权后共享日计划完成一个 verified action 并生成一条合格策略轨迹，第 `17` 次派发已有 Crop Teacher `84` 项计划，第 `18` 次继续产生 verified action。该诊断在证明“collection 暂时耗尽 -> 共享日计划 -> Crop Teacher”单链接续后人工停止，未到达首次登岛或 source schedule，故不增加任何正式准入分子。定向策略测试 `6/6`、全解决方案 Release `0 warning / 0 error`；下一准入步骤仍是新 day-zero 完整长跑并取得首次登岛、核桃来源增量及三项鹦鹉跃迁。
 
+v31 从新的 day-zero 隔离存档继续到 Spring 17，累计 `179` 条 verified native action 且人工停止前零 `stage=error`；两轮 Crop Teacher、节日等待、满包收获恢复和一次真实钓鱼均已通过。它暴露 Master Angler 跨地图路线没有继承全局背包容量门，导致满包时 `(O)145` 的 Forest/Town 意图互相替代。当前代码在路线物化前失败关闭满包状态，并复用既有安全单件出货恢复；v31c 原生续跑验证 `(O)390` 原生移除、容量 `12/12 -> 11/12` 及下一轮重新进入 Master Angler 路线。v31c 使用第 17 天存档却误开 day-zero-only 全程证据归档，因此归档失败不能计为完整 source schedule；它只关闭本次容量振荡的原生退出条件。定向测试 `7/7`、全解决方案 Release `0 warning / 0 error`，正式准入分子与 `formal_product_training_authorized=false` 均不变。下一准入步骤仍是全新 day-zero 完整长跑并取得首次登岛、核桃来源增量及三项鹦鹉跃迁。
+
 ## 已收口增量 · v23-v24 原生进展与正式准入边界
 
 全新隔离运行 `golden-walnut-source-schedule-v23-20261025-233534` 已在同一原生存档中取得 `137` 个 verified native action、`12` 条原生日界和 `6` 条逐格收获回执。它真实完成第一轮作物生产，随后完成邮件、任务 `13` 三段路线、两次 Beach 钓鱼、节日等待和三段返场。该结果证明长跑已越过此前的节日门禁与第一轮场地接近边界，但没有首次登岛、Golden Walnut 来源增量或三项鹦鹉跃迁，因而不能导出 source schedule。

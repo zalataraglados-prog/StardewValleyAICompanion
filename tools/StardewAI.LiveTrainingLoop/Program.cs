@@ -775,7 +775,8 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                     iteration,
                     snapshotJson,
                     beforeSnapshot,
-                    lastStateHash);
+                    lastStateHash,
+                    allowObjectiveSafeSingletonCapacityRecovery: true);
             if (collectionTeacher.Queue is not null)
             {
                 queue = collectionTeacher.Queue;

@@ -128,6 +128,41 @@ namespace StardewAI.Core.OptionRegistry
             {
                 return darkTalismanPrerequisites;
             }
+            var inventoryCapacity = ReadStateFieldValue(
+                snapshot,
+                "player",
+                "inventory_capacity");
+            if (!inventoryCapacity.HasValue ||
+                inventoryCapacity.Value.ValueKind != JsonValueKind.Object)
+            {
+                return new[]
+                {
+                    BlockedMasterAnglerCandidate(
+                        "fishing_inventory_capacity_unavailable",
+                        intentParameters)
+                };
+            }
+            var hasEmptyInventorySlot = ReadBool(
+                inventoryCapacity.Value,
+                "has_empty_slot");
+            if (!hasEmptyInventorySlot.HasValue)
+            {
+                return new[]
+                {
+                    BlockedMasterAnglerCandidate(
+                        "fishing_inventory_capacity_unavailable",
+                        intentParameters)
+                };
+            }
+            if (!hasEmptyInventorySlot.Value)
+            {
+                return new[]
+                {
+                    BlockedMasterAnglerCandidate(
+                        "fishing_inventory_full_requires_storage_transfer",
+                        intentParameters)
+                };
+            }
             if (!string.Equals(
                     currentLocation,
                     intent.TargetLocation,

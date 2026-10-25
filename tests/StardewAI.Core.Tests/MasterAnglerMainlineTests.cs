@@ -614,7 +614,8 @@ public sealed partial class MasterAnglerMainlineTests
         bool runtimeRuleEligible = true,
         int currentTime = 900,
         bool remoteViaLongTownRoute = false,
-        bool includeFullRouteEvidence = true)
+        bool includeFullRouteEvidence = true,
+        bool inventoryFull = false)
     {
         var state = JsonNode.Parse(FishingMainlineTests.BaseState())!.AsObject();
         state["time"]!["total_days"] = Field(5);
@@ -622,6 +623,17 @@ public sealed partial class MasterAnglerMainlineTests
         state["player"]!["location_id"]!["value"] = currentLocation;
         state["player"]!["tile_x"]!["value"] = 1;
         state["player"]!["tile_y"]!["value"] = 5;
+        if (inventoryFull)
+        {
+            state["player"]!["inventory_capacity"]!["value"] =
+                new JsonObject
+                {
+                    ["max_items"] = 12,
+                    ["occupied_item_stacks"] = 12,
+                    ["empty_slots"] = 0,
+                    ["has_empty_slot"] = false
+                };
+        }
         state["player"]!["movement_timing_context"] = Field(new JsonObject
         {
             ["projection_status"] =

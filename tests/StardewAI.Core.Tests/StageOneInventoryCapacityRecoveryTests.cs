@@ -114,6 +114,36 @@ public sealed class StageOneInventoryCapacityRecoveryTests
     }
 
     [Fact]
+    public void FishingRecoverySelectsObjectiveSafeSingletonWithoutLatestCatch()
+    {
+        var ranking = RankingWithFishingBlock(
+            "fishing_inventory_full_requires_storage_transfer",
+            ShippingCandidate(
+                "ship:Farm:slot-7:clay",
+                "(O)330",
+                slotIndex: 7,
+                estimatedTicks: 200,
+                availableStack: 1,
+                fullShipmentContributes: true));
+
+        var decision = StageOneInventoryCapacityRecovery.TrySelect(
+            ranking,
+            Snapshot(string.Empty),
+            allowObjectiveSafeSingleton: true);
+
+        Assert.NotNull(decision);
+        Assert.Equal(
+            "ship:Farm:slot-7:clay",
+            decision!.Candidate.CandidateId);
+        Assert.Equal(
+            "objective_safe_singleton",
+            decision.SelectionReason);
+        Assert.Equal(
+            StageOneInventoryCapacityRecovery.PreAttemptTriggerReason,
+            decision.TriggerReason);
+    }
+
+    [Fact]
     public void RecoveryContextRequiresBothFullInventoryAndLatestCatch()
     {
         Assert.True(StageOneInventoryCapacityRecovery.HasRecoveryContext(
@@ -125,7 +155,16 @@ public sealed class StageOneInventoryCapacityRecoveryTests
     }
 
     private static AvailabilityAwarePolicyPredictionEnvelope Ranking(
-        params PolicyEventCandidatePrediction[] shippingCandidates) => new()
+        params PolicyEventCandidatePrediction[] shippingCandidates) =>
+        RankingWithFishingBlock(
+            "master_angler_no_exact_runtime_source_attempt",
+            shippingCandidates);
+
+    private static AvailabilityAwarePolicyPredictionEnvelope
+        RankingWithFishingBlock(
+            string fishingBlockReason,
+            params PolicyEventCandidatePrediction[] shippingCandidates) =>
+        new()
         {
             Availability = new OptionAvailabilityEnvelope
             {
@@ -142,7 +181,7 @@ public sealed class StageOneInventoryCapacityRecoveryTests
                             Available = false,
                             BlockReasons = new[]
                             {
-                                "master_angler_no_exact_runtime_source_attempt"
+                                fishingBlockReason
                             }
                         }
                     }

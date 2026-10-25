@@ -16,11 +16,17 @@ public static class StageOneInventoryCapacityRecovery
     public const string TriggerReason =
         "stage_one_fishing_inventory_full_after_catch";
 
+    public const string PreAttemptTriggerReason =
+        "stage_one_fishing_inventory_full_before_attempt";
+
     public const string CropHarvestTriggerReason =
         "crop_teacher_harvest_inventory_full";
 
     private const string NoExactFishingAttemptReason =
         "master_angler_no_exact_runtime_source_attempt";
+
+    private const string FishingInventoryFullReason =
+        "fishing_inventory_full_requires_storage_transfer";
 
     public static bool HasFullInventory(JsonObject snapshot) =>
         InventoryIsFull(snapshot);
@@ -41,9 +47,15 @@ public static class StageOneInventoryCapacityRecovery
                 "fishing.catch_fish",
                 StringComparison.Ordinal))
             .SelectMany(option => option.EventCandidates)
-            .Any(candidate => candidate.BlockReasons.Contains(
-                NoExactFishingAttemptReason,
-                StringComparer.Ordinal));
+            .Any(candidate => candidate.BlockReasons.Any(reason =>
+                string.Equals(
+                    reason,
+                    NoExactFishingAttemptReason,
+                    StringComparison.Ordinal) ||
+                string.Equals(
+                    reason,
+                    FishingInventoryFullReason,
+                    StringComparison.Ordinal)));
         if ((requireFishingAttemptBlocked && !fishingAttemptBlocked) ||
             !HasFullInventory(snapshot))
             return null;
@@ -100,9 +112,11 @@ public static class StageOneInventoryCapacityRecovery
             selected,
             selected.QualifiedItemId,
             caughtQualifiedItemId,
-            allowObjectiveSafeSingleton
-                ? CropHarvestTriggerReason
-                : TriggerReason,
+            requireFishingAttemptBlocked
+                ? string.IsNullOrWhiteSpace(caughtQualifiedItemId)
+                    ? PreAttemptTriggerReason
+                    : TriggerReason
+                : CropHarvestTriggerReason,
             selectionReason);
     }
 
