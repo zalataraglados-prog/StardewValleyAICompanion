@@ -120,6 +120,18 @@ public sealed class CropTeacherControlIntegrationSourceGuardTests
             "            .SelectNextExecutableStep(plan)",
             source.Replace("\r\n", "\n"),
             StringComparison.Ordinal);
+        Assert.Contains(
+            "CropTeacherSiteApproachPlanner.SelectApproach(",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"max_route_repair_clears\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"executor.move_to_tile\"",
+            source,
+            StringComparison.Ordinal);
         Assert.DoesNotContain(
             "plan.BlockedCount != 0",
             source,

@@ -18,6 +18,9 @@
 - `DialogueBox.getCurrentString()` 已按反编译的只读方法体加入 `menu_specific_state.dialogue.current_text`，用于区分重复系统提示；该读取不点击、不推进、不关闭菜单。透明桥构建通过，精确回归 `5/5`。下一固定动作是全新 v20 有界运行，取得“上游避开/延后节日普通 warp”及随后正常跨图的原生回执；通过后继续首次登岛与 Golden Walnut source schedule，不在此处扩张动作集合。
 - v20 `golden-walnut-source-schedule-v20-20261025-204818` 已从全新 Spring 1 隔离存档真实走到 Spring 13：作物 Teacher 完成 `12` 条原生日界、`6` 格收获和零重派发结算，随后完成邮件、任务 `13` 的三段路线并执行一条 Beach 钓鱼回执。旧提示循环没有复现；新增普通 warp 节日门禁在作物 Teacher 回退返场时正确阻止 Beach→Town。新的精确失败是跨地图 `move_to_tile` 在“路径存在但当前节日暂时关闭”时没有生成等待，而是保留普通移动；Teacher 路由适配只接受 connector，于第 102–106 次迭代连续报 `crop_teacher_route_compile_invalid` 并停止。v20 固定为 incomplete，不得续接为 Golden Walnut 耐久证据。
 - 跨地图编译器现只对可证明同日恢复的 `ordinary_warp_active_festival` 生成有界 `executor.wait_ticks`：每轮最多 `600` tick，保留原目标、开放时间、首段 connector 身份和 fresh-replan 要求；显式 connector 请求在关闭时仍 blocked，永久/未知门禁不变。作物 Teacher 路由校验只接受原 `executor.traverse_connector` 或带精确 festival route-wait reason 的这一等待项。聚焦回归 `203/203`、全解决方案构建 `0 warning / 0 error`。下一固定动作是从 Spring 1 新建完整 v21 耐久运行，验收等待后正常跨图，再继续首次登岛和 Golden Walnut source schedule。
+- v21 `golden-walnut-source-schedule-v21-20261025-213726` 已真实完成该验收：`140` 个 verified action、`12` 条日界、`6` 条收获回执；第 100–142 次在 Beach 按 exact 14:10 门禁有界等待，第 143–145 次自动切换为 Beach -> Town -> BusStop -> Farm 三段原生 connector。旧编译错误和提示循环均未复现。
+- 抵达 Farm 后出现的是独立的场地接近缺口，不是节日路线回退。角色在南入口 `(40,64)`，新布局在 `(69..73,16..25)`；旧场地准备在尚未接近布局时直接计算局部动作可达性，连续 5 次以 `till_soil_no_adjacent_route_stand_tile` / `clear_obstacle_no_adjacent_route_stand_tile` 失败关闭。v21 因该真实间隙固定为 incomplete。
+- 唯一 Teacher 链现增加“接近后准备”的前置编译阶段：从同一 bounded Farm 投影选择原生可站立的相邻格，优先避开所有种植与补水准备目标，再交给既有 `move_to_tile + BFS route repair`，最多 4 个既有清障并 fresh replan；没有作物专用寻路器。v21 第 146 次失败快照确定性重建选中 `(69,26)`，原 state hash 由后端严格接纳并编译为 pending `executor.move_to_tile Farm(69,26)`。下一固定动作是全新 v22：取得原生接近、继续场地准备和无间隙 manifest 后，才继续首次登岛与 Golden Walnut source schedule。
 
 ## 当前增量 · 新档开局礼盒透明执行链
 

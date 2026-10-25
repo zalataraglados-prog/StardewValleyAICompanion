@@ -430,6 +430,22 @@ static partial class Program
                 "crop_teacher_site_preparation_ingest_drifted");
         }
 
+        var approach = SelectCropTeacherSiteApproach(
+            snapshot,
+            preparationTiles);
+        if (approach is not null)
+        {
+            return await BuildCropTeacherSiteApproachQueueAsync(
+                http,
+                options,
+                iteration,
+                snapshotPath,
+                snapshot,
+                stateHash,
+                snapshotUrl,
+                approach);
+        }
+
         var request = new MoneyRevenueCropSitePreparationPlanRequest
         {
             CropProductionPlanPath = runPlan.CropProductionPlanPath,
@@ -516,6 +532,133 @@ static partial class Program
         return new CropTeacherControlQueueBuildResult(
             queue,
             modelPath,
+            string.Empty,
+            snapshotPath,
+            snapshot,
+            stateHash,
+            "farm_layout",
+            snapshotUrl,
+            false);
+    }
+
+    private static CropTeacherSiteApproachTile? SelectCropTeacherSiteApproach(
+        JsonObject snapshot,
+        IReadOnlyCollection<MoneyRevenueCropPlantingTile> preparationTiles)
+    {
+        var playerX = ReadSnapshotEnvelopeInt(snapshot, "player", "tile_x");
+        var playerY = ReadSnapshotEnvelopeInt(snapshot, "player", "tile_y");
+        var rows = snapshot["state"]?["current_location"]?
+            ["site_preparation_context"]?["value"]?["tiles"] as JsonArray ??
+            throw new InvalidDataException(
+                "crop_teacher_site_approach_context_missing");
+        var contextTiles = rows
+            .Select(node => node?.AsObject())
+            .Where(row => row is not null)
+            .Select(row => new CropTeacherSiteApproachTile(
+                ReadJsonInt(row!, "tile_x"),
+                ReadJsonInt(row!, "tile_y"),
+                ReadJsonBool(row!, "map_passable"),
+                ReadJsonBool(row!, "native_blocked_without_characters"),
+                ReadJsonBool(row!, "watering_refill_approach_standable")))
+            .ToArray();
+        return CropTeacherSiteApproachPlanner.SelectApproach(
+            playerX,
+            playerY,
+            preparationTiles.Select(tile => (tile.TileX, tile.TileY)).ToArray(),
+            contextTiles);
+    }
+
+    private static async Task<CropTeacherControlQueueBuildResult>
+        BuildCropTeacherSiteApproachQueueAsync(
+            HttpClient http,
+            LiveTrainingOptions options,
+            int iteration,
+            string snapshotPath,
+            JsonObject snapshot,
+            string stateHash,
+            string snapshotUrl,
+            CropTeacherSiteApproachTile approach)
+    {
+        var candidateId =
+            $"crop-site-approach:{iteration}:{approach.TileX},{approach.TileY}";
+        var plan = JsonSerializer.SerializeToNode(new
+        {
+            schema_version = "small_model_plan.v1",
+            plan_id = "plan:" + candidateId,
+            source_model = "authoritative_crop_site_approach.v1",
+            state_hash = stateHash,
+            goal_id = "daily.closed_loop",
+            execution_mode = options.TargetExecutionMode,
+            actor = options.TargetActor,
+            plan_type = "mechanical_plan",
+            steps = new[]
+            {
+                new
+                {
+                    step_id = candidateId + ":move",
+                    kind = "move_to_tile",
+                    target_location = "Farm",
+                    target_tile_x = approach.TileX,
+                    target_tile_y = approach.TileY,
+                    estimated_minutes = 12,
+                    preconditions = new[]
+                    {
+                        "candidate_id:" + candidateId,
+                        "world_ready"
+                    },
+                    expected_effects = new[]
+                    {
+                        $"player.tile={approach.TileX},{approach.TileY}",
+                        "fresh_snapshot_replan_required=true"
+                    },
+                    safety_constraints = new[]
+                    {
+                        "transparent_current_map_route_only",
+                        "bounded_route_repair_clears=4",
+                        "site_preparation_starts_only_after_approach"
+                    },
+                    failure_policy = new[]
+                    {
+                        "refresh_snapshot_and_replan"
+                    },
+                    parameters = new[]
+                    {
+                        new
+                        {
+                            name = "max_route_repair_clears",
+                            value = "4"
+                        },
+                        new
+                        {
+                            name = "max_route_repair_minutes",
+                            value = "12"
+                        },
+                        new
+                        {
+                            name = "fresh_snapshot_replan_required",
+                            value = "true"
+                        }
+                    }
+                }
+            },
+            candidate_audit = Array.Empty<object>()
+        }, JsonOptions)!.AsObject();
+        var prefix = CropTeacherArtifactPrefix(
+            options,
+            iteration,
+            "site-approach");
+        var planPath = prefix + "-model-plan.json";
+        await WriteJsonAsync(planPath, plan);
+        var queue = await PostJsonStringAsync(
+            http,
+            options.BackendUrl +
+                "/api/v1/small-model/plan/action-queue/compile",
+            plan.ToJsonString(JsonOptions));
+        await WriteJsonAsync(prefix + "-compiled-queue.json", queue);
+        RequireCropTeacherSiteApproachQueue(queue);
+        return new CropTeacherControlQueueBuildResult(
+            queue,
+            planPath,
             string.Empty,
             snapshotPath,
             snapshot,
@@ -777,6 +920,47 @@ static partial class Program
             throw new InvalidDataException("crop_teacher_route_compile_invalid");
         }
     }
+
+    private static void RequireCropTeacherSiteApproachQueue(JsonObject queue)
+    {
+        var items = ExecutableQueueItems(queue);
+        var optionIds = items
+            .Select(item => ReadString(item, "option_id"))
+            .ToArray();
+        if (ReadString(queue, "schema_version") != "action_queue.v1" ||
+            ReadString(queue, "status") != "pending" ||
+            items.Length == 0 ||
+            items.Length > 9 ||
+            optionIds[^1] != "executor.move_to_tile" ||
+            optionIds.Any(optionId => optionId is not (
+                "executor.move_to_tile" or
+                "executor.clear_obstacle")))
+        {
+            throw new InvalidDataException(
+                "crop_teacher_site_approach_compile_invalid");
+        }
+    }
+
+    private static int ReadSnapshotEnvelopeInt(
+        JsonObject snapshot,
+        string section,
+        string field) =>
+        snapshot["state"]?[section]?[field]?["value"] is JsonValue value &&
+        value.TryGetValue<int>(out var result)
+            ? result
+            : throw new InvalidDataException(
+                $"crop_teacher_snapshot_field_unavailable:{section}.{field}");
+
+    private static int ReadJsonInt(JsonObject value, string property) =>
+        value[property] is JsonValue json &&
+        json.TryGetValue<int>(out var result)
+            ? result
+            : int.MinValue;
+
+    private static bool ReadJsonBool(JsonObject value, string property) =>
+        value[property] is JsonValue json &&
+        json.TryGetValue<bool>(out var result) &&
+        result;
 
     private static SmallModelActionParameter Parameter(
         string name,
