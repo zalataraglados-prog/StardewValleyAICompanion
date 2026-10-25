@@ -332,6 +332,12 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             && string.Equals(Game1.shortDayNameFromDayOfSeason(Game1.dayOfMonth), "Wed", StringComparison.OrdinalIgnoreCase)
             && !Utility.HasAnyPlayerSeenEvent("191393")
             && !hasTownKey;
+        var fishShopGoneFishingClosed =
+            NativeShopGateRules.IsFishShopGoneFishingClosed(
+                location,
+                x,
+                y,
+                locationName);
         var friendPoints = ReadFriendshipPoints(npcName);
         var friendshipAllowed = minFriendship <= 0 || location.IsWinterHere() || (friendPoints.HasValue && friendPoints.Value >= minFriendship);
         var timeAllowed = hasTownKey || (effectiveOpenTime.HasValue && closeTime.HasValue && Game1.timeOfDay >= effectiveOpenTime.Value && Game1.timeOfDay < closeTime.Value);
@@ -341,10 +347,15 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             && location.GetType().Name != "Forest"
             && !string.Equals(locationName, "AdventureGuild", StringComparison.OrdinalIgnoreCase);
         var parsed = targetX.HasValue && targetY.HasValue && !string.IsNullOrWhiteSpace(locationName) && openTime.HasValue && closeTime.HasValue;
-        var allowed = parsed && !festivalClosed && !seedShopWednesdayClosed && ((timeAllowed && friendshipAllowed) || greenRainOverride);
+        var allowed = parsed &&
+            !festivalClosed &&
+            !seedShopWednesdayClosed &&
+            !fishShopGoneFishingClosed &&
+            ((timeAllowed && friendshipAllowed) || greenRainOverride);
         var allowedOnCaptureDate = parsed &&
             !festivalClosed &&
             !seedShopWednesdayClosed &&
+            !fishShopGoneFishingClosed &&
             (friendshipAllowed || greenRainOverride);
         var timeUnrestrictedOnCaptureDate = hasTownKey || greenRainOverride;
 
@@ -368,6 +379,7 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             has_town_key = hasTownKey,
             festival_closed = festivalClosed,
             seed_shop_wednesday_closed = seedShopWednesdayClosed,
+            fish_shop_gone_fishing_closed = fishShopGoneFishingClosed,
             time_allowed = timeAllowed,
             friendship_allowed = friendshipAllowed,
             green_rain_override = greenRainOverride,

@@ -62,6 +62,55 @@ public sealed class ShopAccessRouteGraphSourceGuardTests
             StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void FishShopDayOneClosureMatchesTheNativeBeachOverride()
+    {
+        var rule = File.ReadAllText(FindRepositoryFile(
+            "src",
+            "StardewAI.TransparentBridge",
+            "Adapters",
+            "NativeShopGateRules.cs"));
+        Assert.Contains("Game1.Date.TotalDays < 1", rule,
+            StringComparison.Ordinal);
+        Assert.Contains("fromLocation is Beach", rule,
+            StringComparison.Ordinal);
+        Assert.Contains("FishShopGoneFishingDoorTileIndex = 496", rule,
+            StringComparison.Ordinal);
+        Assert.Contains("\"Buildings\"", rule, StringComparison.Ordinal);
+        Assert.Contains("\"untitled tile sheet\"", rule,
+            StringComparison.Ordinal);
+
+        var gateRead = File.ReadAllText(FindRepositoryFile(
+            "src",
+            "StardewAI.TransparentBridge",
+            "Adapters",
+            "ShopAccessReadAdapter.GatesBlockers.cs"));
+        var currentLocationRead = File.ReadAllText(FindRepositoryFile(
+            "src",
+            "StardewAI.TransparentBridge",
+            "Adapters",
+            "CurrentLocationReadAdapter.cs"));
+        var purchaseGate = File.ReadAllText(FindRepositoryFile(
+            "src",
+            "StardewAI.Core",
+            "OptionRegistry",
+            "CandidateOptionAvailabilityEvaluator.PurchaseRouting.Gates.cs"));
+        var routeGate = File.ReadAllText(FindRepositoryFile(
+            "src",
+            "StardewAI.Core",
+            "OptionRegistry",
+            "CandidateOptionAvailabilityEvaluator.Routing.cs"));
+
+        Assert.Contains("fish_shop_gone_fishing_closed", gateRead,
+            StringComparison.Ordinal);
+        Assert.Contains("fish_shop_gone_fishing_closed", currentLocationRead,
+            StringComparison.Ordinal);
+        Assert.Contains("fish_shop_gone_fishing_closed", purchaseGate,
+            StringComparison.Ordinal);
+        Assert.Contains("route_gate_fish_shop_gone_fishing_closed", routeGate,
+            StringComparison.Ordinal);
+    }
+
     private static string FindRepositoryFile(params string[] segments)
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

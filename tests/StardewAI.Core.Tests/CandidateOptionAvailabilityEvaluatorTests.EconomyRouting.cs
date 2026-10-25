@@ -230,6 +230,43 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     }
 
     [Fact]
+    public void BuySuppliesExcludesFishShopGoneFishingDoorForTheWholeCaptureDate()
+    {
+        var option = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(BuyPreviewSnapshot("""
+              {
+                "item_id":"BambooPole",
+                "qualified_item_id":"(T)BambooPole",
+                "display_name":"Bamboo Pole",
+                "price":500,
+                "stock":1,
+                "infinite_stock":false,
+                "currency_balance":500,
+                "executor_purchase_preview_enabled":true,
+                "executor_block_reasons":[]
+              }
+            """, routeGraphExtra: """
+              ,{"kind":"locked_door_warp","from_location":"Beach","from_x":30,"from_y":33,"target_location":"FishShop","target_x":5,"target_y":9,"resolved":true,"gate":{"allowed_now":false,"allowed_on_capture_date":false,"time_allowed":true,"friendship_allowed":true,"festival_closed":false,"seed_shop_wednesday_closed":false,"fish_shop_gone_fishing_closed":true,"effective_open_time":900,"close_time":1700,"unresolved_reason":null}}
+            """, shopId: "FishShop"), new[] { "economy.buy_supplies" })
+            .Options[0];
+
+        var gate = Assert.Single(option.EventCandidates);
+        Assert.False(gate.Available);
+        Assert.False(gate.AllowedNow);
+        Assert.False(gate.AllowedToday);
+        Assert.Null(gate.NextOpenTime);
+        Assert.Contains("fish_shop_gone_fishing_closed", gate.BlockReasons);
+        Assert.Empty(new EventCandidateRanker().Rank(
+            new(),
+            new OptionAvailabilityEnvelope
+            {
+                StateHash = "state.fish-shop-day-one",
+                CurrentTime = 900,
+                Options = new[] { option }
+            }));
+    }
+
+    [Fact]
     public void BuySuppliesRetainsRouteWhenEndpointAndEntranceOpenLaterToday()
     {
         var option = new CandidateOptionAvailabilityEvaluator()

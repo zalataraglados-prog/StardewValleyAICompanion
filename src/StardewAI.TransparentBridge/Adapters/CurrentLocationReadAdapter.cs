@@ -569,6 +569,8 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
         }
         var storesClosedForFestival = entranceGate?.FestivalClosed ?? (location.InValleyContext() && GameLocation.AreStoresClosedForFestival());
         var seedShopWednesdayClosed = entranceGate?.SeedShopWednesdayClosed == true;
+        var fishShopGoneFishingClosed =
+            entranceGate?.FishShopGoneFishingClosed == true;
         var friendshipAllowed = entranceGate?.FriendshipAllowed;
         var greenRainOverride = entranceGate?.GreenRainOverride == true;
         var blockReasons = new List<string>();
@@ -580,6 +582,11 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
         if (seedShopWednesdayClosed)
         {
             blockReasons.Add("seed_shop_wednesday_closed_before_community_center_event");
+        }
+
+        if (fishShopGoneFishingClosed)
+        {
+            blockReasons.Add("fish_shop_gone_fishing_closed");
         }
 
         if (timeGateKnown && timeAllowed == false)
@@ -619,6 +626,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             entrance_friendship_points = entranceGate?.FriendshipPoints,
             entrance_friendship_allowed = friendshipAllowed,
             seed_shop_wednesday_closed = seedShopWednesdayClosed,
+            fish_shop_gone_fishing_closed = fishShopGoneFishingClosed,
             entrance_green_rain_override = greenRainOverride,
             time_allowed = entranceGate?.TimeAllowed ?? timeAllowed,
             allowed_now = blockReasons.Count == 0 || greenRainOverride,
@@ -697,6 +705,12 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             && string.Equals(Game1.shortDayNameFromDayOfSeason(Game1.dayOfMonth), "Wed", StringComparison.OrdinalIgnoreCase)
             && !Utility.HasAnyPlayerSeenEvent("191393")
             && !hasTownKey;
+        var fishShopGoneFishingClosed =
+            NativeShopGateRules.IsFishShopGoneFishingClosed(
+                fromLocation,
+                x,
+                y,
+                targetLocation);
         var timeAllowed = hasTownKey || (effectiveOpenTime.HasValue && closeTime.HasValue && Game1.timeOfDay >= effectiveOpenTime.Value && Game1.timeOfDay < closeTime.Value);
         var greenRainOverride = fromLocation.IsGreenRainingHere()
             && Game1.year == 1
@@ -704,7 +718,10 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             && fromLocation.GetType().Name != "Forest"
             && !string.Equals(targetLocation, "AdventureGuild", StringComparison.OrdinalIgnoreCase);
         var storesClosedForFestival = fromLocation.InValleyContext() && GameLocation.AreStoresClosedForFestival();
-        var allowedNow = !storesClosedForFestival && !seedShopWednesdayClosed && ((timeAllowed && friendshipAllowed) || greenRainOverride);
+        var allowedNow = !storesClosedForFestival &&
+            !seedShopWednesdayClosed &&
+            !fishShopGoneFishingClosed &&
+            ((timeAllowed && friendshipAllowed) || greenRainOverride);
 
         return new EntranceGate(
             fromLocation.NameOrUniqueName,
@@ -720,6 +737,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             hasTownKey,
             storesClosedForFestival,
             seedShopWednesdayClosed,
+            fishShopGoneFishingClosed,
             timeAllowed,
             friendshipAllowed,
             greenRainOverride,
@@ -1087,6 +1105,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
         bool HasTownKey,
         bool FestivalClosed,
         bool SeedShopWednesdayClosed,
+        bool FishShopGoneFishingClosed,
         bool TimeAllowed,
         bool FriendshipAllowed,
         bool GreenRainOverride,

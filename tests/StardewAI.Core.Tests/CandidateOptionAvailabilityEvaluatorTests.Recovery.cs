@@ -562,7 +562,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         bool endpointAllowed = true,
         string endpointExtra = "",
         string routeGraphExtra = "",
-        int currentTime = 900)
+        int currentTime = 900,
+        string shopId = "Blacksmith")
     {
         return Snapshot("""
         {
@@ -582,13 +583,13 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             "crop_catalog": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "locations": {
-            "shops": {"value":{"stores_closed_for_festival":false,"shops":[{"shop_id":"Blacksmith","stock_preview":{"kind":"shop_stock_preview","shop_id":"Blacksmith","entries":[ENTRY]}}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "shops": {"value":{"stores_closed_for_festival":false,"shops":[{"shop_id":"SHOP_ID","stock_preview":{"kind":"shop_stock_preview","shop_id":"SHOP_ID","entries":[ENTRY]}}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "collision_grid": {"value":{"location_id":"FarmHouse","width":20,"height":20,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
-            "route_connectors": {"value":{"location_id":"FarmHouse","connectors":[{"kind":"warp","tile_x":2,"tile_y":3,"target_location":"Blacksmith","target_x":3,"target_y":4,"resolved":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_connectors": {"value":{"location_id":"FarmHouse","connectors":[{"kind":"warp","tile_x":2,"tile_y":3,"target_location":"SHOP_ID","target_x":3,"target_y":4,"resolved":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "route_action_branch_coverage": {"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "route_graph": {"value":{"edges":[
-              {"kind":"warp","from_location":"FarmHouse","from_x":2,"from_y":3,"target_location":"Blacksmith","target_x":3,"target_y":4,"resolved":true},
-              {"kind":"shop_endpoint","from_location":"Blacksmith","from_x":3,"from_y":5,"shop_id":"Blacksmith","action_type":"Blacksmith","allowed_now":ENDPOINT_ALLOWED ENDPOINT_EXTRA,"resolved":false} ROUTE_GRAPH_EXTRA
+              {"kind":"warp","from_location":"FarmHouse","from_x":2,"from_y":3,"target_location":"SHOP_ID","target_x":3,"target_y":4,"resolved":true},
+              {"kind":"shop_endpoint","from_location":"SHOP_ID","from_x":3,"from_y":5,"shop_id":"SHOP_ID","action_type":"Blacksmith","allowed_now":ENDPOINT_ALLOWED ENDPOINT_EXTRA,"resolved":false} ROUTE_GRAPH_EXTRA
             ]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "current_location": {
@@ -606,6 +607,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
                 endpointAllowed ? "true" : "false")
             .Replace("ENDPOINT_EXTRA", endpointExtra)
             .Replace("ROUTE_GRAPH_EXTRA", routeGraphExtra)
+            .Replace("SHOP_ID", shopId)
             .Replace(
                 "CURRENT_TIME",
                 currentTime.ToString(System.Globalization.CultureInfo.InvariantCulture)));

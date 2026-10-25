@@ -220,6 +220,7 @@ namespace StardewAI.Core.OptionRegistry
             var greenRainOverride = ReadBool(gate, "green_rain_override") == true;
             var hardGateOpen = ReadBool(gate, "festival_closed") != true &&
                 ReadBool(gate, "seed_shop_wednesday_closed") != true &&
+                ReadBool(gate, "fish_shop_gone_fishing_closed") != true &&
                 (ReadBool(gate, "friendship_allowed") != false || greenRainOverride) &&
                 string.IsNullOrWhiteSpace(ReadString(gate, "unresolved_reason"));
             var canOpenLaterToday = allowedNow == false &&
@@ -239,6 +240,10 @@ namespace StardewAI.Core.OptionRegistry
                 if (ReadBool(gate, "seed_shop_wednesday_closed") == true)
                 {
                     reasons.Add("route_gate_seed_shop_wednesday_closed");
+                }
+                if (ReadBool(gate, "fish_shop_gone_fishing_closed") == true)
+                {
+                    reasons.Add("route_gate_fish_shop_gone_fishing_closed");
                 }
                 if (ReadBool(gate, "friendship_allowed") == false && !greenRainOverride)
                 {

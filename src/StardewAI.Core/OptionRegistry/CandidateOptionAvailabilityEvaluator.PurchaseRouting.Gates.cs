@@ -104,6 +104,7 @@ namespace StardewAI.Core.OptionRegistry
                     allowedEntrance.ValueKind == JsonValueKind.Object;
                 var dateAllowed = ReadBool(selected, "festival_closed") != true &&
                     ReadBool(selected, "seed_shop_wednesday_closed") != true &&
+                    ReadBool(selected, "fish_shop_gone_fishing_closed") != true &&
                     ReadBool(selected, "friendship_allowed") != false &&
                     ReadBool(selected, "allowed_on_capture_date") != false &&
                     string.IsNullOrWhiteSpace(
@@ -173,6 +174,10 @@ namespace StardewAI.Core.OptionRegistry
             if (ReadBool(gate, "seed_shop_wednesday_closed") == true)
             {
                 yield return "seed_shop_wednesday_closed_before_community_center_event";
+            }
+            if (ReadBool(gate, "fish_shop_gone_fishing_closed") == true)
+            {
+                yield return "fish_shop_gone_fishing_closed";
             }
             if (ReadBool(gate, "time_allowed") == false)
             {
