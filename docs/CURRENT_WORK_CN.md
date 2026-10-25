@@ -24,7 +24,9 @@
 - 修复统一为一次执行在同一 selection group 最多取得一个信用，跨独立目标的精确信用仍保留；route connector 只形成 `authoritative_collection_rolling_route_step`，不再冒充 acquisition endpoint；实际 acquisition endpoint 的收据只要求本次候选数量，而不是整个长期需求数量。v28 第 `25` 次真实工件已离线重放通过：木材候选只绑定 Crafts Room alternative `0`，其 Full Shipment 与 Community Center 信用均为路线进度，Teacher 继续因四个权威同分候选而阻塞且不输出标签/队列。current collection 全链自测通过，全解决方案 Release 为 `0 warning / 0 error`。
 - v29b 把 Spring 7 基线存档误配给 Spring 13--17 账本，严格校验在执行前拒绝；该失败没有动作或训练数据。恢复循环现于首张真实快照执行一次性兼容性门，不再把同一错配重复记作五次运行错误，Planner 原有失败关闭不变。
 - 正确使用 v26 Spring 17 隔离存档后，v29c `golden-walnut-collection-v29c-20261026-053000` 已通过：`31` 次迭代取得 `24/24` verified action、`24` 行执行数据、`2` 次 Teacher 队列和 `5` 次 control-only 队列；第 `25` 次和第 `26` 次均成功，旧 malformed group 没有复现，日志零 error。Crop Teacher 派生账本保持 `8 harvest + 4 day boundary`，源账本只读。
-- 下一固定动作已前移为继续同一 collection 控制链，取得首次登岛、至少一个 Golden Walnut 来源增量和 First Parrot/Turtle/House 三项原生跃迁并导出 source schedule；v29c 不是 source schedule，也未启动正式训练。
+- day-zero v30 在 `14` 条 verified collection route action 后得到精确的 `blocked_no_current_collection_candidate / unified_current_collection_candidate_membership_is_empty`，旧循环因无条件终止没有进入共享日计划。新增 `StageOneCollectionFallbackPolicy` 只允许 `RequireGoldenWalnutSourceScheduleReady=true` 与该精确状态/原因组合让权；普通 collection continuation 和任何其他 authority blocker 保持失败关闭。
+- 隐藏静音新档 v30b 已原生验收让权：第 `16` 次记录 `stage_one_collection_teacher_yielded`，随后共享日计划完成第 `15` 个 verified action 并产生 `1` 条策略轨迹；第 `17` 次派发既有 Crop Teacher 的 `84` 项原生计划，第 `18` 次继续 verified。诊断达到该退出条件后人工停止，三端及端口已回收；它不是 source schedule。定向测试 `6/6`，隔离 Release solution `0 warning / 0 error`。
+- 下一固定动作是从新的 day-zero 隔离存档继续完整长跑，取得首次登岛、至少一个 Golden Walnut 来源增量和 First Parrot/Turtle/House 三项原生跃迁并导出 source schedule；v30b 未启动正式训练。
 
 ## 已收口增量 · Golden Walnut v24 清障成本修复
 

@@ -26,6 +26,10 @@ v29c 已补上新的原生验收。正确绑定 v26 Spring 17 隔离存档与只
 
 上述结果只把 collection continuation 的当前契约推进到原生通过，不构成正式训练准入。v29c 没有启用 fresh-save Golden Walnut 证据捕获，也没有首次登岛、来源增量、First Parrot/Turtle/House 跃迁或 source schedule；因此 `CoverageGateReady 5/19`、Money production `0/18` 与 `formal_product_training=false` 均不变。下一准入步骤仍是沿同一控制链取得并验证这些姜岛事件，而不是开始训练。
 
+day-zero v30 已进一步证明长期控制面存在一个不同于 authority blocker 的暂时域耗尽状态：`14` 条 verified collection action 后，当前 collection membership 为空，但作物、经济和剧情日计划仍有合法工作。当前 `StageOneCollectionFallbackPolicy` 只对 Golden Walnut source-schedule 长跑中的精确 `blocked_no_current_collection_candidate / unified_current_collection_candidate_membership_is_empty` 让权给共享日计划；纯 collection continuation 与其他权威性错误仍终止，不能借此生成伪 Teacher 标签。
+
+v30b 从另一份全新隔离存档提供了修复后的原生证据：第 `16` 次让权后共享日计划完成一个 verified action 并生成一条合格策略轨迹，第 `17` 次派发已有 Crop Teacher `84` 项计划，第 `18` 次继续产生 verified action。该诊断在证明“collection 暂时耗尽 -> 共享日计划 -> Crop Teacher”单链接续后人工停止，未到达首次登岛或 source schedule，故不增加任何正式准入分子。定向策略测试 `6/6`、全解决方案 Release `0 warning / 0 error`；下一准入步骤仍是新 day-zero 完整长跑并取得首次登岛、核桃来源增量及三项鹦鹉跃迁。
+
 ## 已收口增量 · v23-v24 原生进展与正式准入边界
 
 全新隔离运行 `golden-walnut-source-schedule-v23-20261025-233534` 已在同一原生存档中取得 `137` 个 verified native action、`12` 条原生日界和 `6` 条逐格收获回执。它真实完成第一轮作物生产，随后完成邮件、任务 `13` 三段路线、两次 Beach 钓鱼、节日等待和三段返场。该结果证明长跑已越过此前的节日门禁与第一轮场地接近边界，但没有首次登岛、Golden Walnut 来源增量或三项鹦鹉跃迁，因而不能导出 source schedule。

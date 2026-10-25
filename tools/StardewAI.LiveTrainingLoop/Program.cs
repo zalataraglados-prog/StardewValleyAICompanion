@@ -816,6 +816,12 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             }
             else
             {
+                var yieldCollectionControlToDailyPlan =
+                    collectionTeacher.Attempted &&
+                    StageOneCollectionFallbackPolicy.ShouldYieldToDailyPlan(
+                        options.RequireGoldenWalnutSourceScheduleReady,
+                        collectionTeacher.Status,
+                        collectionTeacher.Detail);
                 if (collectionTeacher.Attempted)
                 {
                     var fallbackSignature = collectionTeacher.Status + "|" +
@@ -837,18 +843,31 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                             " reason=" + collectionTeacher.Detail);
                     }
 
-                    stopReason =
-                        "stage_one_collection_teacher_blocked status=" +
-                        collectionTeacher.Status +
-                        " reason=" + collectionTeacher.Detail;
+                    if (!yieldCollectionControlToDailyPlan)
+                    {
+                        stopReason =
+                            "stage_one_collection_teacher_blocked status=" +
+                            collectionTeacher.Status +
+                            " reason=" + collectionTeacher.Detail;
+                        AppendProgress(
+                            options,
+                            "stopped",
+                            iteration,
+                            lastStateHash,
+                            string.Empty,
+                            stopReason);
+                        break;
+                    }
+
                     AppendProgress(
                         options,
-                        "stopped",
+                        "stage_one_collection_teacher_yielded",
                         iteration,
                         lastStateHash,
                         string.Empty,
-                        stopReason);
-                    break;
+                        "status=" + collectionTeacher.Status +
+                        " reason=" + collectionTeacher.Detail +
+                        " next=shared_daily_plan");
                 }
 
                 var dailyPlan = await BuildQueueFromDailyPlanAsync(

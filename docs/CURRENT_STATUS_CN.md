@@ -42,6 +42,10 @@ v29b 首次续跑错误使用了 E 盘 runtime 的 Spring 7 基线存档，却�
 
 正确配对 Spring 17 隔离存档后的隐藏静音运行 `golden-walnut-collection-v29c-20261026-053000` 已由包装器判定 `passed`。它再次原生完成返场、满包单件投箱、8 格收获与派生账本 `8 harvest + 4 day boundary`，随后在 `31` 次迭代内取得 `24/24` 条 verified action；其中普通 collection Teacher 队列 `2` 次、同分 control-only 队列 `5` 次，候选失效后均 fresh 重绑。第 `25` 次迭代已真实编译并执行，不再出现 malformed selection group；第 `31` 次完成有界退出，进度日志零 `stage=error`。该运行只关闭 v28 契约修复的原生验收，不包含首次登岛、核桃来源增量、鹦鹉跃迁或 source schedule，`formal_product_training=false` 与状态面板分子全部不变。
 
+全新 day-zero 长跑 v30 `golden-walnut-source-schedule-v30-20261026-054500` 随后取得 `14` 条 verified native action，并在原 collection 候选失效后准确得到 `blocked_no_current_collection_candidate / unified_current_collection_candidate_membership_is_empty`。旧循环把“当前 collection 域暂时没有候选”与权威性错误一并当成终止条件，因此尚未让作物、经济和剧情日计划继续推进。当前修复只在请求 Golden Walnut source schedule 且状态/原因精确匹配上述组合时，把控制权交还唯一共享日计划；普通 collection continuation 以及同分歧义、工件错误等其他 authority blocker 仍失败关闭。
+
+隐藏静音新档诊断 v30b `golden-walnut-source-schedule-v30b-20261026-053143` 已原生跨过该边界：前 `14` 项仍是同一 collection 队列的 verified continuation；第 `16` 次记录 `stage_one_collection_teacher_yielded` 后，共享日计划立即完成第 `15` 个 verified action 并写入 `1` 条合格策略轨迹；第 `17` 次派发既有 Crop Teacher，生成 `84` 项原生计划，第 `18` 次继续取得 verified action。诊断在证明 handoff 后人工停止并完整回收游戏、Backend、Product Executor 与 LiveTrainingLoop，不能冒充 source schedule。定向策略回归 `6/6`，隔离全解决方案 Release 构建 `0 warning / 0 error`。下一固定动作是从新的隔离 day-zero 存档执行完整长跑，继续首次登岛、Golden Walnut 来源增量及 First Parrot/Turtle/House 三项跃迁；正式训练状态不变。
+
 ### 已收口背景：Golden Walnut v22-v24
 
 `golden-walnut-source-schedule-v22` 已真实完成节日等待后的返场，并生成第一条农场内场地接近队列；该队列随后暴露透明 `locations.route_blockers` 没有进入长距离移动修复的问题。第一轮修复让全地图对象阻塞进入同一 `move_to_tile + BFS route repair`，原 v22 队列已可重编译为 pending，但这仍只是失败现场重放，不是新的原生执行回执。
