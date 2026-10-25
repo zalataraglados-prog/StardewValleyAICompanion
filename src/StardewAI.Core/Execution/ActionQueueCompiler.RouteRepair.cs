@@ -394,31 +394,92 @@ namespace StardewAI.Core.Execution
 
         private static IEnumerable<ClearableObstacle> ClearableObstacleTiles(SnapshotEnvelope snapshot)
         {
-            var objects = ReadStateFieldValue(snapshot, "current_location", "objects");
-            if (objects.HasValue && objects.Value.ValueKind == JsonValueKind.Array)
+            foreach (var item in ReadClearanceRows(
+                         snapshot,
+                         "current_location",
+                         "objects"))
             {
-                foreach (var item in objects.Value.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.Object))
+                var clearKind = ClearableObjectKind(
+                    ReadString(item, "qualified_item_id"),
+                    ReadString(item, "name"));
+                if (!string.IsNullOrWhiteSpace(clearKind))
                 {
-                    var clearKind = ClearableObjectKind(ReadString(item, "qualified_item_id"), ReadString(item, "name"));
-                    if (!string.IsNullOrWhiteSpace(clearKind))
-                    {
-                        yield return new ClearableObstacle(ReadInt(item, "tile_x"), ReadInt(item, "tile_y"), clearKind, ClearObstacleEnergyCost(clearKind));
-                    }
+                    yield return new ClearableObstacle(
+                        ReadInt(item, "tile_x"),
+                        ReadInt(item, "tile_y"),
+                        clearKind,
+                        ClearObstacleEnergyCost(clearKind));
                 }
             }
 
-            var terrainFeatures = ReadStateFieldValue(snapshot, "current_location", "terrain_features");
-            if (terrainFeatures.HasValue && terrainFeatures.Value.ValueKind == JsonValueKind.Array)
+            foreach (var item in ReadRouteBlockerRows(snapshot, "objects"))
             {
-                foreach (var feature in terrainFeatures.Value.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.Object))
+                var clearKind = ClearableObjectKind(
+                    ReadString(item, "qualified_item_id"),
+                    ReadString(item, "name"));
+                if (!string.IsNullOrWhiteSpace(clearKind))
                 {
-                    var clearKind = ClearableTerrainFeatureKind(ReadString(feature, "type"));
-                    if (!string.IsNullOrWhiteSpace(clearKind))
-                    {
-                        yield return new ClearableObstacle(ReadInt(feature, "tile_x"), ReadInt(feature, "tile_y"), clearKind, ClearObstacleEnergyCost(clearKind));
-                    }
+                    yield return new ClearableObstacle(
+                        ReadInt(item, "tile_x"),
+                        ReadInt(item, "tile_y"),
+                        clearKind,
+                        ClearObstacleEnergyCost(clearKind));
                 }
             }
+
+            foreach (var feature in ReadClearanceRows(
+                         snapshot,
+                         "current_location",
+                         "terrain_features")
+                     .Concat(ReadRouteBlockerRows(
+                         snapshot,
+                         "terrain_features")))
+            {
+                var clearKind = ClearableTerrainFeatureKind(
+                    ReadString(feature, "type"));
+                if (!string.IsNullOrWhiteSpace(clearKind))
+                {
+                    yield return new ClearableObstacle(
+                        ReadInt(feature, "tile_x"),
+                        ReadInt(feature, "tile_y"),
+                        clearKind,
+                        ClearObstacleEnergyCost(clearKind));
+                }
+            }
+        }
+
+        private static IEnumerable<JsonElement> ReadClearanceRows(
+            SnapshotEnvelope snapshot,
+            string section,
+            string field)
+        {
+            var value = ReadStateFieldValue(snapshot, section, field);
+            return value.HasValue && value.Value.ValueKind == JsonValueKind.Array
+                ? value.Value.EnumerateArray()
+                    .Where(item => item.ValueKind == JsonValueKind.Object)
+                    .ToArray()
+                : Array.Empty<JsonElement>();
+        }
+
+        private static IEnumerable<JsonElement> ReadRouteBlockerRows(
+            SnapshotEnvelope snapshot,
+            string field)
+        {
+            var blockers = ReadStateFieldValue(
+                snapshot,
+                "locations",
+                "route_blockers");
+            if (!blockers.HasValue ||
+                blockers.Value.ValueKind != JsonValueKind.Object ||
+                !blockers.Value.TryGetProperty(field, out var rows) ||
+                rows.ValueKind != JsonValueKind.Array)
+            {
+                return Array.Empty<JsonElement>();
+            }
+
+            return rows.EnumerateArray()
+                .Where(item => item.ValueKind == JsonValueKind.Object)
+                .ToArray();
         }
 
         private static string ClearableObjectKind(string qualifiedId, string name)
@@ -433,7 +494,8 @@ namespace StardewAI.Core.Execution
                 return "twig";
             }
 
-            if (qualifiedId.StartsWith("(O)Weeds", StringComparison.OrdinalIgnoreCase) ||
+            if (qualifiedId is "(O)674" or "(O)675" or "(O)784" ||
+                qualifiedId.StartsWith("(O)Weeds", StringComparison.OrdinalIgnoreCase) ||
                 name.IndexOf("weed", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 return "weeds";

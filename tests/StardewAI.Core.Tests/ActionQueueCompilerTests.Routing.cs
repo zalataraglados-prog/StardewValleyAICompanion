@@ -349,6 +349,65 @@ public sealed partial class ActionQueueCompilerTests
     }
 
     [Fact]
+    public void CompilePlanMoveToTileUsesFullRouteBlockersOutsideScopedCurrentLocationRows()
+    {
+        var snapshot = Snapshot("""
+        {
+          "player": {
+            "location_id": {"value":"Farm","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_x": {"value":0,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":0,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "inventory": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "current_location": {
+            "objects": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "terrain_features": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "map": {"value":{"id":"Farm","width":4,"height":1},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "menus": {
+            "active_menu": {"value":{"is_open":false,"type":"none"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "collision_grid": {"value":{"location_id":"Farm","width":4,"height":1,"notable_tiles":[{"tile_x":1,"tile_y":0,"collision_blocked":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_blockers": {"value":{"location_id":"Farm","objects":[{"kind":"object","item_id":"674","qualified_item_id":"(O)674","type":"StardewValley.Object","tile_x":1,"tile_y":0,"passable":false}],"terrain_features":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_action_branch_coverage": {"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """);
+        var plan = Plan(snapshot.StateHash,
+            new SmallModelPlanStep
+            {
+                StepId = "plan.step.move.full.route.blocker",
+                Kind = "move_to_tile",
+                TargetLocation = "Farm",
+                TargetTileX = 3,
+                TargetTileY = 0,
+                EstimatedMinutes = 4,
+                Parameters = new[]
+                {
+                    new SmallModelActionParameter
+                    {
+                        Name = "max_route_repair_clears",
+                        Value = "1"
+                    }
+                }
+            });
+
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+
+        Assert.Equal(3, queue.Items.Length);
+        Assert.Equal("executor.move_to_tile", queue.Items[0].OptionId);
+        Assert.Equal("executor.clear_obstacle", queue.Items[1].OptionId);
+        Assert.Equal("executor.move_to_tile", queue.Items[2].OptionId);
+        Assert.Contains(queue.Items[1].NormalizedCommand.Parameters, parameter =>
+            parameter.Name == "target_tile_x" && parameter.Value == "1");
+        Assert.Contains(queue.Items[1].NormalizedCommand.Parameters, parameter =>
+            parameter.Name == "route_repair_clear_kind" &&
+            parameter.Value == "weeds");
+    }
+
+    [Fact]
     public void CompilePlanMoveToTileSkipsCloserSideObstacleThatDoesNotReduceRequiredClears()
     {
         var snapshot = Snapshot("""
