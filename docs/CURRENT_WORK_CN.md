@@ -10,8 +10,9 @@
 - 全新 v23 `golden-walnut-source-schedule-v23-20261025-233534` 已真实取得 `137` 个 verified native action、`12` 条原生日界和 `6` 条逐格收获回执。首轮作物 run 的接近、整地、播种、浇水、收获与结算全部完成；随后完成竹鱼竿邮件/任务路线、两次钓鱼、节日等待和 Beach -> Town -> BusStop -> Farm 返场。
 - 第二轮作物接近在第 145--149 次迭代暴露成本盲区：同为三次清障时，旧贪心选择近处的 `(73,23)` 成熟枫树而不是 `(73,24)` 杂草。透明字段给出该树需要 starting axe `15` 次挥砍、`30` 点体力；旧 route repair 同时写死 `max_tool_swings=8`，故编译阻塞并按连续错误预算停止。
 - 当前修复仍只使用一套 `move_to_tile + BFS + executor.clear_obstacle`。选择器在 `max_route_repair_clears` 内按每格透明清障分钟和体力执行有界最小成本搜索，编译项携带每个障碍的精确挥砍上限、分钟与能量；全地图树若没有精确成本则失败关闭。v23 原输入已由 Backend 严格重放为 `pending / 7 items / 0 blocked`，第三个清障从成熟树变为杂草，最终接近点不变。
-- 验证：新增回归后 `ActionQueueCompilerTests 177/177`；Core 全量 `2959 passed / 21` 个既有基线失败；隔离 Release solution 构建 `0 warning / 0 error`。v23 仍为 incomplete，不能冒充修复后的原生清障证据，正式训练状态和 coverage 分子均不变。
-- 唯一下一动作：全新 v24 只验收“低成本杂草路线 -> 原生清障 -> 抵达接近点 -> 既有场地准备继续”，通过后继续首次登岛和 Golden Walnut source schedule。v23 中 `recovery.stabilize_day` 与任务路线 trajectory 的 `InvalidOperationException` 属于未入库的非阻塞样本缺口，排在本原生路线验收之后。
+- 验证：新增回归后 `ActionQueueCompilerTests 177/177`；Core 全量 `2959 passed / 21` 个既有基线失败；隔离 Release solution 构建 `0 warning / 0 error`。v23 仍为 incomplete，不能冒充修复后的原生清障证据。
+- 全新 v24 `golden-walnut-source-schedule-v24-20261026-003430` 已关闭原生退出条件。它从 day-zero 新档运行到第二轮作物 handoff，在有界停止前累计 `145` 个 verified action、`12` 条日界和 `6` 条收获回执。第 144 次队列选择并原生完成两格杂草 `(50,27)`、`(71,27)`，而非成熟树；整条 `move/clear/move/clear/move` 队列为 `5/5 applied + primitive verified + fresh`。第 145--150 次继续完成 `till/move/till/move/clear/till`，每项均 `1/1 applied + verified`，旧编译错误未复现。
+- v24 在上述有界验收点人工停止，不是 source schedule 或正式训练。当前唯一下一动作改为修复 `recovery.stabilize_day` 与任务 `13` 路线的 `trajectory_rejected:InvalidOperationException`：原生动作和证据有效，但策略样本未入库。先用 v24 制品离线重放，再以最短原生睡眠/任务路线各验收一条 trajectory，随后恢复 Golden Walnut 首次登岛主线。
 
 ## 当前增量 · Golden Walnut 长跑相邻访问清障
 

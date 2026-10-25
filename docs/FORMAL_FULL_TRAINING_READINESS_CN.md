@@ -10,7 +10,9 @@
 
 v23 的第二轮场地接近在第 145--149 次迭代失败关闭。根因是 route repair 在相同清障数量下只偏爱近处障碍，选择了透明状态明确需要 starting axe `15` 次挥砍、`30` 点体力的成熟枫树，同时编译项仍写死 `max_tool_swings=8`。当前修复复用唯一移动/BFS/清障链，在既有清障数量上限内按每个障碍的透明分钟与体力执行有界最小成本搜索，并把精确挥砍上限传给原执行器；缺少精确树成本的远端树不被猜测为可清。原 v23 输入已严格重编译为 `pending / 7 items / 0 blocked`，选择 `(73,24)` 杂草替代 `(73,23)` 成熟树。新增回归 `177/177`，隔离 Release solution 构建 `0 warning / 0 error`。
 
-该重放不是新的原生执行回执。下一正式证据必须由全新 v24 连续证明低成本清障路线、抵达接近点和后续场地准备；之后才继续首次登岛、来源增量、First Parrot/Turtle/House 跃迁与 source schedule。v23 同时观察到部分 `recovery.stabilize_day` 和任务路线策略 trajectory 因 `InvalidOperationException` 被拒；坏行未进入数据集，原生执行证据不受影响，但该训练样本缺口须在路线验收后修复。当前 `CoverageGateReady 5/19`、Money production `0/18`、`formal_product_training=false` 全部保持不变。
+v23 重放本身不是新的原生执行回执；全新 v24 `golden-walnut-source-schedule-v24-20261026-003430` 已补上该证据。运行从 day-zero 新档推进到第二轮作物 handoff，在有界停止前取得 `145` 个 verified action、`12` 条日界与 `6` 条逐格收获。第 144 次队列以两格杂草 `(50,27)`、`(71,27)` 替代高成本树，`move/clear/move/clear/move` 五项均为 `applied + primitive verified + fresh`；第 145--150 次场地准备又连续完成耕地、移动、耕地、移动、清障和耕地。旧 `crop_teacher_site_approach_compile_invalid` 未复现，故本清障成本修复已有新的连续原生回执。
+
+v24 在该有界验收点停止，没有首次登岛、Golden Walnut 来源增量或三项鹦鹉跃迁，不能导出 source schedule。当前下一准入缺口是策略样本完整性：成功的 `recovery.stabilize_day` 睡眠和任务 `13` 路线仍因 `InvalidOperationException` 被 trajectory builder 拒绝；错误样本未进入数据集，但这些成功动作也尚未形成可用 Teacher trajectory。该缺口须先由 v24 制品离线重放定位，再由最短原生睡眠/任务路线验证；随后才能恢复首次登岛、来源增量、First Parrot/Turtle/House 跃迁与 source schedule。当前 `CoverageGateReady 5/19`、Money production `0/18`、`formal_product_training=false` 全部保持不变。
 
 ## 当前增量 · 长跑访问清障已修，正式准入不变
 
