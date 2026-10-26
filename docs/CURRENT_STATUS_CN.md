@@ -529,3 +529,10 @@ Skull Key 与 Pet Love 的旧生产工件均已按当前字典、日历、输入
 - v43 同时暴露真实控制缺陷：18:20 的高层采集目标在每次跨图后被新候选抢占，形成 `(O)129` Beach 与 `(O)Goby` Forest 之间的 `Farm -> BusStop -> Farm -> BusStop` 折返。根因是 exact candidate lease 失效时错误清空高层 objective continuation，Stage One collection 与通用 DailyPlan 又没有在 fresh replan 时按该 continuation 过滤；旧守卫还只比较同一目标，因而漏过跨目标反向边。
 - 当前修复保留高层 objective continuation，只失效旧候选租约；Stage One collection 与 DailyPlan 都复用唯一 `QueueReplanFilter`，只有当前状态确实不存在匹配候选时才结构化释放并抑制到次日。物理路线守卫改为在同一游戏日/时刻检测任意目标之间的 `A -> B -> A`，触发动作仍不得写入训练数据。聚焦回归 `138/138` 通过。
 - 以上关闭非 Fountain 太阳鱼捕获、恢复运行证据体积和跨图目标续行的已知代码缺口，但 v43 没有最终 summary/source schedule，不能提升 19 criterion、Money production cell 或正式训练分子；`formal_product_training_authorized=false` 保持。下一固定步骤是使用修复后二进制，从隔离的耐久起点做受限回放，证明 `(O)129` 在 BusStop 后继续 Town/Beach 且不切换 Goby；通过后再恢复首次登岛、核桃来源增量与 First Parrot/Turtle/House 三项跃迁。
+
+## 13. 2026-10-27 v44/v45 续行回放与保存边界
+
+- v44/v45 都证明同一 `quest:13` 目标可在 fresh snapshot 间保持，从 Farm 依次重绑定 BusStop、Town、Beach 的当前连接器；没有再出现跨目标抢占。v44 在关闭阶段发现 FarmHouse 门触发格与站位格混用，导致 Farm→Forest→Farm，通用反向路线守卫按预期中止。
+- 路由修复没有增加平行实现：候选层复用透明 route graph、现有 BFS、共享 `RouteConnectorStandTileResolver` 和现有 `clear_obstacle_tile`；DailyPlan 仍编译到唯一 `executor.clear_obstacle`。真实 v44 Farm 快照已离线证明最短回家路线的可清除障碍会被选中，目标仍绑定 FarmHouse。
+- `route-continuation-v45-20261027-073552` 完成 8/8 verified Product action，并在 5 次有界保存尝试内走完 Beach→Town→BusStop→Farm→FarmHouse→sleep。原生日期 `spring:14 -> spring:15`、存档哈希同步变化，`native_save_boundary_verified=true`；所有游戏、Backend、Product 和训练循环进程已退出。
+- 当前代码闭合的是高层目标跨图连续性、门前站位和原生保存边界，不是 Golden Walnut source schedule，也没有单独完成 `(O)129` 复现。正式训练状态、19 criterion 与其他 coverage 分子保持不变。下一步是独立 Golden Walnut fresh-save 长跑；`(O)129` 连续性作为必查观测点，之后继续首次登岛、核桃来源与三项鹦鹉跃迁。

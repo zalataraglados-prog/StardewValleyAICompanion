@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.Json;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
+using StardewAI.Core.Infrastructure;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.OptionRegistry
@@ -77,63 +78,60 @@ namespace StardewAI.Core.OptionRegistry
             var result = new List<EventCandidate>();
             foreach (var route in blockedRouteTargets)
             {
-                var target = ResolveRouteRepairTargetTile(
-                    route.TileX!.Value,
-                    route.TileY!.Value,
-                    width,
-                    height,
-                    ReadParameter(route.Parameters, "connector_kind"));
-                if (target is null)
-                    continue;
-
-                var targetIndex = TileIndex(target.X, target.Y, width);
-                var before = fromStart[targetIndex];
-                if (before <= 0 || before == int.MaxValue ||
-                    unsupported[targetIndex])
+                foreach (var target in ResolveRouteRepairTargetTiles(
+                             route,
+                             width,
+                             height))
                 {
-                    continue;
-                }
+                    var targetIndex = TileIndex(target.X, target.Y, width);
+                    var before = fromStart[targetIndex];
+                    if (before <= 0 || before == int.MaxValue ||
+                        unsupported[targetIndex])
+                    {
+                        continue;
+                    }
 
-                if (!toTargetByIndex.TryGetValue(
-                        targetIndex,
-                        out var toTarget))
-                {
-                    toTarget = RouteClearDistances(
-                        targetIndex,
-                        width,
-                        height,
-                        blocked,
-                        unsupported,
-                        clearable,
-                        reverse: true);
-                    toTargetByIndex.Add(targetIndex, toTarget);
-                }
-
-                foreach (var clear in clearCandidates)
-                {
-                    if (!TileInBounds(
-                            clear.TileX!.Value,
-                            clear.TileY!.Value,
+                    if (!toTargetByIndex.TryGetValue(
+                            targetIndex,
+                            out var toTarget))
+                    {
+                        toTarget = RouteClearDistances(
+                            targetIndex,
                             width,
-                            height))
-                    {
-                        continue;
-                    }
-                    var clearIndex = TileIndex(
-                        clear.TileX.Value,
-                        clear.TileY.Value,
-                        width);
-                    if (clearIndex == startIndex ||
-                        !blocked[clearIndex] ||
-                        !clearable[clearIndex] ||
-                        fromStart[clearIndex] == int.MaxValue ||
-                        toTarget[clearIndex] == int.MaxValue ||
-                        fromStart[clearIndex] + toTarget[clearIndex] != before)
-                    {
-                        continue;
+                            height,
+                            blocked,
+                            unsupported,
+                            clearable,
+                            reverse: true);
+                        toTargetByIndex.Add(targetIndex, toTarget);
                     }
 
-                    result.Add(RouteRepairCandidate(route, clear));
+                    foreach (var clear in clearCandidates)
+                    {
+                        if (!TileInBounds(
+                                clear.TileX!.Value,
+                                clear.TileY!.Value,
+                                width,
+                                height))
+                        {
+                            continue;
+                        }
+                        var clearIndex = TileIndex(
+                            clear.TileX.Value,
+                            clear.TileY.Value,
+                            width);
+                        if (clearIndex == startIndex ||
+                            !blocked[clearIndex] ||
+                            !clearable[clearIndex] ||
+                            fromStart[clearIndex] == int.MaxValue ||
+                            toTarget[clearIndex] == int.MaxValue ||
+                            fromStart[clearIndex] + toTarget[clearIndex] != before)
+                        {
+                            continue;
+                        }
+
+                        result.Add(RouteRepairCandidate(route, clear));
+                    }
                 }
             }
 
@@ -288,31 +286,36 @@ namespace StardewAI.Core.OptionRegistry
                 pending.AddLast(next);
         }
 
-        private static CandidateTile? ResolveRouteRepairTargetTile(
-            int targetX,
-            int targetY,
+        private static CandidateTile[] ResolveRouteRepairTargetTiles(
+            EventCandidate route,
             int width,
-            int height,
-            string connectorKind)
+            int height)
         {
-            if (TileInBounds(targetX, targetY, width, height))
-                return new CandidateTile(targetX, targetY);
-            if (!string.Equals(
-                    connectorKind,
-                    "warp",
-                    StringComparison.OrdinalIgnoreCase))
+            var kind = ReadParameter(route.Parameters, "connector_kind");
+            if (kind is not ("building_door" or "action_warp" or
+                "locked_door_warp" or "native_bus_transport") &&
+                TileInBounds(
+                    route.TileX!.Value,
+                    route.TileY!.Value,
+                    width,
+                    height))
             {
-                return null;
+                return new[]
+                {
+                    new CandidateTile(route.TileX.Value, route.TileY.Value)
+                };
             }
-            if (targetX < 0 && targetY >= 0 && targetY < height)
-                return new CandidateTile(0, targetY);
-            if (targetX >= width && targetY >= 0 && targetY < height)
-                return new CandidateTile(width - 1, targetY);
-            if (targetY < 0 && targetX >= 0 && targetX < width)
-                return new CandidateTile(targetX, 0);
-            if (targetY >= height && targetX >= 0 && targetX < width)
-                return new CandidateTile(targetX, height - 1);
-            return null;
+
+            return RouteConnectorStandTileResolver.ResolveCandidates(
+                    kind,
+                    route.TileX!.Value,
+                    route.TileY!.Value,
+                    width,
+                    height,
+                    ReadParameterInt(route.Parameters, "stand_tile_x"),
+                    ReadParameterInt(route.Parameters, "stand_tile_y"))
+                .Select(tile => new CandidateTile(tile.X, tile.Y))
+                .ToArray();
         }
 
         private static bool[] ReadBlockedCollisionTiles(

@@ -1356,3 +1356,9 @@ v41 因 resume 快照未压缩而在最终保存前触发空间门，只能作�
 v43 证明只让 exact candidate lease 随 fresh snapshot 失效仍不充分：如果同时清空高层 objective continuation，Stage One collection 会在每次地图转移后重新比较所有采集目标，导致 Beach `(O)129` 与 Forest `(O)Goby` 在 18:20 交替选择。该轮已有 `162` 条 verified action，但因真实跨目标折返而人工停止，不得形成 source schedule 或训练数据。
 
 唯一控制链现固定为“高层目标保持 -> 当前地图候选重绑定 -> 机械队列执行”：Stage One collection 与通用 DailyPlan 都通过既有 `QueueReplanFilter` 约束到活动 continuation；只在透明候选分母证明目标当前不可继续时，才释放并抑制到次日。通用路线守卫按地点和游戏时钟检测 `A -> B -> A`，不再要求三段属于同一目标。下一开发步骤不是扩动作，而是用修复后二进制受限重放 `(O)129` 路线；通过后继续既定首次登岛、核桃来源和三次鹦鹉跃迁，不改变 Golden Walnut 总计划。
+
+## 历史记录 · 2026-10-27 v45 完成通用受限回放
+
+v44/v45 已把受限回放拆成两个可验证结论。第一，同一 `quest:13` 高层目标跨 Farm→BusStop→Town→Beach 保持，fresh snapshot 只更新机械连接器。第二，v44 暴露的 FarmHouse 门触发格/站位格混用已通过共享 `RouteConnectorStandTileResolver` 和现有清障链修正；v45 按 Beach→Town→BusStop→Farm→FarmHouse→sleep 完成原生保存，日期与存档哈希同时变化。
+
+因此下一施工单位不再修改 continuation 架构，也不新增恢复或清障执行器。固定顺序为：启动独立 Golden Walnut day-zero/fresh-save 长跑；把 `(O)129` 跨图连续性保留为必查点但不要求复制旧失败轨迹；继续首次登岛和逐来源核桃增量；依次验证 First Parrot、Turtle、House；生成并重放 source schedule；最后才把该证据送入既有 coverage/训练准入审计。任一步失败都停在对应 fresh 快照修复，不得用 v45 的 quest 路线替代 Golden Walnut 或 `(O)129` 证据。

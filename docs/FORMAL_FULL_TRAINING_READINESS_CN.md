@@ -1317,3 +1317,9 @@ v42 从 v40 耐久 ledger 继续，取得 `24/24` verified Product action。Town
 v43 的 day-zero 新档在人工停止前累计 `162` 条 verified Product action，已真实完成作物重规划、收获、鱼竿事件链和多个目标鱼捕获/出货；这些前缀证明现有机械执行链继续工作，但不构成 Golden Walnut source schedule。18:20 的 `(O)129` Beach 与 `(O)Goby` Forest 候选在 fresh connector 后交替抢占，形成零游戏分钟的跨目标反向地图转移。
 
 控制层现把 exact candidate lease 与高层 objective continuation 分开管理：前者可随 fresh 状态失效，后者只有在当前权威排名确实没有匹配候选时才释放。Stage One collection 与 DailyPlan 使用同一个 typed continuation filter；通用物理路线守卫同时覆盖跨目标 `A -> B -> A`。相关回归 `138/138` 通过。v43 被人工停止且没有最终 summary，因此不得写入正式 corpus、不得提升 coverage 或训练准入；下一准入证据是 post-fix 受限回放证明 Beach 目标跨 BusStop/Town 连续执行，再恢复完整 Golden Walnut source schedule。
+
+## 历史记录 · 2026-10-27 v45 受限回放通过
+
+v44/v45 的受限回放已在真实 Product Executor 上证明，高层 `quest:13` continuation 能跨 Farm、BusStop、Town、Beach 保持，fresh snapshot 只重绑定当前连接器。v44 额外暴露并失败关闭了 FarmHouse 门触发格/站位格混用；修复后，连接器站位解析与路线障碍处理复用唯一透明路由和清障执行链。
+
+v45 完成 `8/8` verified action，并从 Beach 逐段返回 FarmHouse，原生睡眠使日期 `1:spring:14 -> 1:spring:15` 且存档 SHA-256 变化；`native_save_boundary_verified=true`。该证据解除当前“续行修复能否安全收尾”的阻塞，但没有形成 Golden Walnut source schedule、没有单独复现 `(O)129`、没有新增 Teacher comparison/native outcome 三分区，因此 `formal_product_training_authorized=false` 与所有正式 coverage 分子不变。下一准入证据仍为独立 Golden Walnut day-zero/fresh-save 长跑及可重放 source schedule。

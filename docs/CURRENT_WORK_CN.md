@@ -2677,3 +2677,11 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - 18:20 出现 `(O)129` Beach 与 `(O)Goby` Forest 两个目标交替抢占：每次 connector 成功后 exact candidate ID 随地点变化，旧代码把候选身份丢失误当成目标完成，清空 continuation，随后 fresh ranking 又选择另一个目标。旧振荡守卫只检测同一 objective key，无法识别跨目标 `Farm -> BusStop -> Farm`。
 - 修复只改控制面，不新增动作、候选或执行器：候选租约失效时保留高层 continuation；Stage One collection 和通用 DailyPlan 都通过现有 `QueueReplanFilter` 绑定同一目标；仅当当前排名中没有任何匹配候选时才写 `continuation_released` 并抑制至次日。路线守卫按真实地点边检测同一时刻的 `A -> B -> A`，objective key 仅用于诊断。
 - `RouteOscillationGuardTests` 与 queue-replan/Stage One/Master Angler/Golden Walnut 相关回归共 `138/138` 通过。v43 是诊断运行，没有最终 summary/source schedule，禁止进入正式 corpus。下一固定步骤：提交修复，使用更新后的产品二进制从隔离耐久起点受限回放，要求 `(O)129` 从 BusStop 继续 Town/Beach、不得切换 Goby；通过后继续 Golden Walnut source schedule。
+
+## 2026-10-27 v44/v45 路线续行与原生保存边界收口
+
+- v44 使用修复后的高层 continuation 连续执行同一 `quest:13` 路线，从 Farm 经 BusStop、Town 到 Beach，没有在 fresh connector 后被其他目标抢占；随后在原生保存边界暴露新的真实缺陷：FarmHouse `building_door` 的触发格 `(64,14)` 是结构碰撞格，旧路线修复把它误当可站立终点，失败后选择 Farm→Forest→Farm 的反向绕路。通用振荡守卫在第 14 次迭代正确停止，未把失败尾部写成成功证据。
+- 恢复候选现复用唯一透明路由、连接器站位解析和通用清障候选。`building_door`、`action_warp`、`locked_door_warp`、`native_bus_transport` 使用透明 `stand_tile_x/y`；step-on warp 继续以触发格为目标。若最短连接器前段只被可清除障碍阻塞，上游直接返回 `clear_obstacle_tile`，DailyPlan 进入既有 `executor.clear_obstacle`；直接高层恢复入口只等待 fresh replan，不建立第二套清障执行器。即时反向边继续失败关闭。
+- v44 的真实 Farm 快照离线重算后得到可用的 `recovery:native_save_boundary / clear_obstacle_tile`，目标保持 FarmHouse，不再选择 Forest。相应连接器修复和恢复回归 `3/3` 通过。
+- v45 从隔离耐久存档重新运行：8/8 Product action 完成；同一 `quest:13` 高层目标依次执行 Farm→BusStop→Town→Beach；关闭阶段按 Beach→Town→BusStop→Farm→FarmHouse 滚动重规划，随后原生睡眠。日期从 `1:spring:14` 变为 `1:spring:15`，存档 SHA-256 从 `a9dbf56f...` 变为 `74400983...`，summary 为 `status=passed`、`native_save_boundary_verified=true`、`formal_training_started=false`。
+- v45 证明通用跨图 continuation 与原生保存边界闭合，但没有单独重现 `(O)129`；不得把 quest 路线证据改写成该鱼的完成证据。下一固定施工单位仍是独立 Golden Walnut day-zero/fresh-save source schedule，并把 `(O)129` 跨 BusStop/Town 连续性作为长跑观测点，随后证明首次登岛、核桃来源增量及 First Parrot/Turtle/House 三项跃迁。

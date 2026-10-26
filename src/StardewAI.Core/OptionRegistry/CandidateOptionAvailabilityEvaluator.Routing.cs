@@ -68,6 +68,13 @@ namespace StardewAI.Core.OptionRegistry
                 Parameter("connector_kind", kind),
                 Parameter("expected_target_location", targetLocation)
             };
+            var standX = ReadNullableInt(connector, "stand_tile_x");
+            var standY = ReadNullableInt(connector, "stand_tile_y");
+            if (standX.HasValue && standY.HasValue)
+            {
+                actionParameters.Add(Parameter("stand_tile_x", standX.Value.ToString()));
+                actionParameters.Add(Parameter("stand_tile_y", standY.Value.ToString()));
+            }
             var targetX = ReadNullableInt(connector, "target_x");
             var targetY = ReadNullableInt(connector, "target_y");
             if (targetX.HasValue && targetY.HasValue)

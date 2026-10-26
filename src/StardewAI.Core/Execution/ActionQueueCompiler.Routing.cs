@@ -777,6 +777,16 @@ namespace StardewAI.Core.Execution
                     observedBlocks.Add("recovery_route_graph_no_path_home");
                     continue;
                 }
+                if (remainingPath.Length > 0 &&
+                    string.Equals(
+                        remainingPath[0].TargetLocation,
+                        currentLocation,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    observedBlocks.Add(
+                        "recovery_route_graph_immediate_reverse_cycle");
+                    continue;
+                }
 
                 var connector = FindMatchingCurrentRouteConnector(snapshot, edge);
                 if (!connector.HasValue)
@@ -828,6 +838,14 @@ namespace StardewAI.Core.Execution
         private static RecoveryRoutePlanResult BlockedRecoveryRoute(string reason)
         {
             return new RecoveryRoutePlanResult { BlockReasons = new[] { reason } };
+        }
+
+        private static bool RecoveryRouteClearancePending(
+            RecoveryRoutePlanResult routePlan)
+        {
+            return routePlan.BlockReasons.Contains(
+                "recovery_current_connector_start_segment_unreachable",
+                StringComparer.Ordinal);
         }
 
         private static bool IsRecoveryConnectorKind(string kind)

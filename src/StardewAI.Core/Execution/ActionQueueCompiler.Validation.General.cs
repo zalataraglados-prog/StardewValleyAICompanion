@@ -64,7 +64,11 @@ namespace StardewAI.Core.Execution
 
             if (SleepTarget(snapshot) is null)
             {
-                reasons.AddRange(BuildRecoveryRoutePlan(snapshot).BlockReasons);
+                var routePlan = BuildRecoveryRoutePlan(snapshot);
+                if (!RecoveryRouteClearancePending(routePlan))
+                {
+                    reasons.AddRange(routePlan.BlockReasons);
+                }
             }
 
             return reasons.Distinct(StringComparer.Ordinal).ToArray();

@@ -440,6 +440,20 @@ namespace StardewAI.Core.Execution
             var routePlan = BuildRecoveryRoutePlan(snapshot);
             if (routePlan.Step is null)
             {
+                if (RecoveryRouteClearancePending(routePlan))
+                {
+                    parameters.Add(Parameter(
+                        "execution_option_id",
+                        "executor.wait_ticks"));
+                    parameters.Add(Parameter("wait_ticks", "30"));
+                    parameters.Add(Parameter(
+                        "recovery_step_kind",
+                        "route_clearance_pending"));
+                    parameters.Add(Parameter(
+                        "compiler_context.recovery_route_clearance_required",
+                        "true"));
+                    return parameters.ToArray();
+                }
                 parameters.Add(Parameter("recovery_step_kind", "blocked"));
                 parameters.AddRange(routePlan.BlockReasons.Select(reason => Parameter("recovery_block_reason", reason)));
                 return parameters.ToArray();
