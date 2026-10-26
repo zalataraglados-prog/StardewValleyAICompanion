@@ -93,6 +93,40 @@ static partial class Program
                     "crop_teacher_harvest_inventory_capacity_recovery");
         }
 
+        CropTeacherWateringRefillRecoveryDecision? refillRecovery = null;
+        if (step.Stage == CropTeacherRunStageKinds.ExecuteCropBatch &&
+            step.ActionBatch?.OptionId == "executor.water_crop")
+        {
+            refillRecovery =
+                CropTeacherWateringRefillRecoveryPlanner.Build(
+                step,
+                runPlanRequest,
+                ReadSnapshotEnvelopeNestedInt(
+                    beforeSnapshot,
+                    "player",
+                    "watering_can_state",
+                    "water_left"),
+                ReadSnapshotEnvelopeInt(
+                    beforeSnapshot,
+                    "player",
+                    "tile_x"),
+                ReadSnapshotEnvelopeInt(
+                    beforeSnapshot,
+                    "player",
+                    "tile_y"));
+        }
+        if (refillRecovery?.ApproachTile is not null)
+        {
+            return await BuildCropTeacherWateringRefillApproachQueueAsync(
+                http,
+                options,
+                iteration,
+                beforeSnapshotPath,
+                beforeSnapshot,
+                stateHash,
+                refillRecovery.ApproachTile);
+        }
+
         return step.Stage switch
         {
             CropTeacherRunStageKinds.AcquireSeed =>
@@ -130,7 +164,8 @@ static partial class Program
                     step,
                     beforeSnapshotPath,
                     beforeSnapshot,
-                    stateHash),
+                    stateHash,
+                    refillRecovery?.ExecutableTileCount),
             CropTeacherRunStageKinds.NativeSleep =>
                 await BuildCropTeacherSleepQueueAsync(
                     http,
@@ -151,7 +186,8 @@ static partial class Program
             int iteration,
             string beforeSnapshotPath,
             JsonObject beforeSnapshot,
-            string stateHash)
+            string stateHash,
+            int? executableTileCount = null)
     {
         var interrupt = await BuildPriorityStoryEventQueueAsync(
             http,
@@ -621,13 +657,76 @@ static partial class Program
             string snapshotUrl,
             CropTeacherSiteApproachTile approach)
     {
+        return await BuildCropTeacherBoundedApproachQueueAsync(
+            http,
+            options,
+            iteration,
+            snapshotPath,
+            snapshot,
+            stateHash,
+            snapshotUrl,
+            approach.TileX,
+            approach.TileY,
+            "site-approach",
+            "crop-site-approach",
+            "authoritative_crop_site_approach.v1",
+            "site_preparation_starts_only_after_approach",
+            "farm_layout");
+    }
+
+    private static async Task<CropTeacherControlQueueBuildResult>
+        BuildCropTeacherWateringRefillApproachQueueAsync(
+            HttpClient http,
+            LiveTrainingOptions options,
+            int iteration,
+            string snapshotPath,
+            JsonObject snapshot,
+            string stateHash,
+            MoneyRevenueCropPlantingTile approach)
+    {
+        return await BuildCropTeacherBoundedApproachQueueAsync(
+            http,
+            options,
+            iteration,
+            snapshotPath,
+            snapshot,
+            stateHash,
+            options.BridgeSnapshotUrl,
+            approach.TileX,
+            approach.TileY,
+            "watering-refill-approach",
+            "crop-watering-refill-approach",
+            "authoritative_crop_watering_refill_approach.v1",
+            "water_crop_retries_only_after_native_refill_approach",
+            options.ExecutionSnapshotProfile,
+            "crop_teacher_watering_refill_approach");
+    }
+
+    private static async Task<CropTeacherControlQueueBuildResult>
+        BuildCropTeacherBoundedApproachQueueAsync(
+            HttpClient http,
+            LiveTrainingOptions options,
+            int iteration,
+            string snapshotPath,
+            JsonObject snapshot,
+            string stateHash,
+            string snapshotUrl,
+            int tileX,
+            int tileY,
+            string artifactKind,
+            string candidateKind,
+            string sourceModel,
+            string purposeConstraint,
+            string snapshotProfile,
+            string interruptKind = "")
+    {
         var candidateId =
-            $"crop-site-approach:{iteration}:{approach.TileX},{approach.TileY}";
+            $"{candidateKind}:{iteration}:{tileX},{tileY}";
         var plan = JsonSerializer.SerializeToNode(new
         {
             schema_version = "small_model_plan.v1",
             plan_id = "plan:" + candidateId,
-            source_model = "authoritative_crop_site_approach.v1",
+            source_model = sourceModel,
             state_hash = stateHash,
             goal_id = "daily.closed_loop",
             execution_mode = options.TargetExecutionMode,
@@ -640,8 +739,8 @@ static partial class Program
                     step_id = candidateId + ":move",
                     kind = "move_to_tile",
                     target_location = "Farm",
-                    target_tile_x = approach.TileX,
-                    target_tile_y = approach.TileY,
+                    target_tile_x = tileX,
+                    target_tile_y = tileY,
                     estimated_minutes = 12,
                     preconditions = new[]
                     {
@@ -650,14 +749,14 @@ static partial class Program
                     },
                     expected_effects = new[]
                     {
-                        $"player.tile={approach.TileX},{approach.TileY}",
+                        $"player.tile={tileX},{tileY}",
                         "fresh_snapshot_replan_required=true"
                     },
                     safety_constraints = new[]
                     {
                         "transparent_current_map_route_only",
                         "bounded_route_repair_clears=4",
-                        "site_preparation_starts_only_after_approach"
+                        purposeConstraint
                     },
                     failure_policy = new[]
                     {
@@ -688,7 +787,7 @@ static partial class Program
         var prefix = CropTeacherArtifactPrefix(
             options,
             iteration,
-            "site-approach");
+            artifactKind);
         var planPath = prefix + "-model-plan.json";
         await WriteJsonAsync(planPath, plan);
         var queue = await PostJsonStringAsync(
@@ -697,7 +796,11 @@ static partial class Program
                 "/api/v1/small-model/plan/action-queue/compile",
             plan.ToJsonString(JsonOptions));
         await WriteJsonAsync(prefix + "-compiled-queue.json", queue);
-        RequireCropTeacherSiteApproachQueue(queue);
+        RequireCropTeacherBoundedApproachQueue(
+            queue,
+            artifactKind == "watering-refill-approach"
+                ? "crop_teacher_watering_refill_approach_compile_invalid"
+                : "crop_teacher_site_approach_compile_invalid");
         return new CropTeacherControlQueueBuildResult(
             queue,
             planPath,
@@ -705,9 +808,10 @@ static partial class Program
             snapshotPath,
             snapshot,
             stateHash,
-            "farm_layout",
+            snapshotProfile,
             snapshotUrl,
-            false);
+            false,
+            interruptKind);
     }
 
     private static (int Min, int Max) ExpandSitePreparationBounds(
@@ -741,11 +845,16 @@ static partial class Program
             CropTeacherRunStep step,
             string beforeSnapshotPath,
             JsonObject beforeSnapshot,
-            string stateHash)
+            string stateHash,
+            int? executableTileCount = null)
     {
         var batch = step.ActionBatch ?? throw new InvalidDataException(
             "crop_teacher_action_batch_missing");
+        var tiles = executableTileCount.HasValue
+            ? batch.Tiles.Take(executableTileCount.Value).ToArray()
+            : batch.Tiles;
         if (batch.Tiles.Length is < 1 or > 8 ||
+            tiles.Length is < 1 or > 8 ||
             batch.OptionId is not (
                 "executor.plant_seed" or
                 "executor.water_crop" or
@@ -756,7 +865,7 @@ static partial class Program
         }
         var candidateId =
             $"crop:{step.TotalDay}:{batch.CommitmentId}:{batch.BatchIndex}";
-        var actions = batch.Tiles.Select(tile =>
+        var actions = tiles.Select(tile =>
         {
             var parameters = new List<SmallModelActionParameter>
             {
@@ -801,8 +910,8 @@ static partial class Program
             model.ToJsonString(JsonOptions));
         RequireCompiledQueue(
             queue,
-            Enumerable.Repeat(batch.OptionId, batch.Tiles.Length).ToArray(),
-            batch.Tiles.Length,
+            Enumerable.Repeat(batch.OptionId, tiles.Length).ToArray(),
+            tiles.Length,
             "crop_teacher_action_batch_compile_invalid");
         return StandardResult(
             queue,
@@ -963,7 +1072,9 @@ static partial class Program
         }
     }
 
-    private static void RequireCropTeacherSiteApproachQueue(JsonObject queue)
+    private static void RequireCropTeacherBoundedApproachQueue(
+        JsonObject queue,
+        string error)
     {
         var items = ExecutableQueueItems(queue);
         var optionIds = items
@@ -978,8 +1089,7 @@ static partial class Program
                 "executor.move_to_tile" or
                 "executor.clear_obstacle")))
         {
-            throw new InvalidDataException(
-                "crop_teacher_site_approach_compile_invalid");
+            throw new InvalidDataException(error);
         }
     }
 
@@ -992,6 +1102,19 @@ static partial class Program
             ? result
             : throw new InvalidDataException(
                 $"crop_teacher_snapshot_field_unavailable:{section}.{field}");
+
+    private static int ReadSnapshotEnvelopeNestedInt(
+        JsonObject snapshot,
+        string section,
+        string field,
+        string nestedField) =>
+        snapshot["state"]?[section]?[field]?["value"]?[nestedField] is
+            JsonValue value &&
+        value.TryGetValue<int>(out var result)
+            ? result
+            : throw new InvalidDataException(
+                "crop_teacher_snapshot_field_unavailable:" +
+                $"{section}.{field}.{nestedField}");
 
     private static int ReadJsonInt(JsonObject value, string property) =>
         value[property] is JsonValue json &&

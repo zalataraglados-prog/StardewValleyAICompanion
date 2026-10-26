@@ -290,7 +290,9 @@ public sealed class CropTeacherRunPlannerTests
                 new MoneyRevenueCropNativeProductionLayoutIntent(
                     CommitmentId,
                     "Farm",
-                    tiles)
+                    tiles,
+                    null,
+                    new MoneyRevenueCropPlantingTile(9, 14))
             ],
             SeedAcquisitionIntents =
             [

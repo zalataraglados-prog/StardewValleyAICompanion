@@ -248,7 +248,10 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
         return new WateringRefillRouteProof(
             true,
             path.Count - 1,
-            preparationTiles);
+            preparationTiles,
+            new MoneyRevenueCropPlantingTile(
+                reached.Value.X,
+                reached.Value.Y));
     }
 
     private static bool ReadRequiredBool(JsonElement value, string name)
@@ -361,11 +364,13 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
     private sealed record WateringRefillRouteProof(
         bool Verified,
         int PathLength,
-        MoneyRevenueCropPlantingTile[] PreparationTiles)
+        MoneyRevenueCropPlantingTile[] PreparationTiles,
+        MoneyRevenueCropPlantingTile? ApproachTile)
     {
         public static WateringRefillRouteProof Unverified { get; } = new(
             false,
             0,
-            Array.Empty<MoneyRevenueCropPlantingTile>());
+            Array.Empty<MoneyRevenueCropPlantingTile>(),
+            null);
     }
 }

@@ -8,7 +8,7 @@ namespace StardewAI.GoalConditionedBootstrap;
 public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
 {
     public const string SelectionPolicy =
-        "authoritative_transparent_crop_net_revenue_after_exact_bounded_refill_corridor_then_earliest_terminal_v4";
+        "authoritative_transparent_crop_net_revenue_after_exact_bounded_refill_corridor_and_persisted_approach_then_earliest_terminal_v5";
 
     public static MoneyRevenueCropProductionDecisionRequest Build(
         string requestPath)
@@ -69,10 +69,21 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
             anchor.TileX,
             anchor.TileY);
 
+        var refillReservedTiles = wateringRefillRoute.PreparationTiles
+            .Append(wateringRefillRoute.ApproachTile)
+            .Where(value => value is not null)
+            .Cast<MoneyRevenueCropPlantingTile>()
+            .ToHashSet();
+        var cropViableTiles = viableTiles
+            .Where(value => !refillReservedTiles.Contains(
+                new MoneyRevenueCropPlantingTile(
+                    value.TileX,
+                    value.TileY)))
+            .ToArray();
         var evaluations = EvaluateCandidates(
             snapshot,
             request.MaximumTileCount,
-            viableTiles.Length,
+            cropViableTiles.Length,
             wateringRefillRoute.Verified);
         var selected = evaluations
             .Where(value => value.Admitted)
@@ -100,7 +111,7 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
                 value.ShopId == selected.ShopId
         }).ToArray();
         var tiles = SelectCompactTiles(
-            viableTiles,
+            cropViableTiles,
             selected.TileCount,
             anchor.TileX,
             anchor.TileY);
@@ -153,7 +164,9 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
                     LocationId = "Farm",
                     Tiles = tiles,
                     WateringRefillPreparationTiles =
-                        wateringRefillRoute.PreparationTiles
+                        wateringRefillRoute.PreparationTiles,
+                    WateringRefillApproachTile =
+                        wateringRefillRoute.ApproachTile
                 }
             },
             MaxQueueItemCount = request.MaxQueueItemCount,

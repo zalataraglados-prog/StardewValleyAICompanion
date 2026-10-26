@@ -50,6 +50,14 @@ v29b 首次续跑错误使用了 E 盘 runtime 的 Spring 7 基线存档，却�
 
 当前修复把背包容量提升为 Master Angler 路线前的全局终端前置条件；满包时所有同鱼种跨地图路线均失败关闭，并由既有 Stage One 容量恢复接管。正常 collection 恢复在“最近捕获状态已清空”时可复用同一安全单件规则，不新增出货候选、路线或执行器；日志分别区分 `before_attempt`、`after_catch` 与 Crop Teacher 三种触发。v31 第 `194` 次原始排名/快照离线重放确定性选中合法单件出货链。隐藏静音 v31c 原生续跑又从哈希一致的 Spring 17 存档副本验证：初始 `12/12` 时第一个队列即为 capacity recovery，原生执行后 `(O)390` 从槽位 `9` 消失，Farm fresh 快照为 `11/12`，下一轮立即恢复 Master Angler 路线，没有再次生成 Forest/Town 往返。该续跑错误启用了仅允许 day-zero 的 Golden Walnut 全程归档门，动作执行后在证据归档阶段被拒并主动停止，因此只作为本缺陷的原生退出证据，不是 source schedule 或正式训练数据。定向回归 `7/7`、隔离全解决方案 Release `0 warning / 0 error`。
 
+### 最新原生收口：v32-v33 作物补水恢复
+
+全新 day-zero v32 `golden-walnut-source-schedule-v32-20261026-231505` 取得 `75` 条 verified native action 和 `7` 条原生日界后，在 Spring 8 的作物维护阶段停止。真实状态为仍有待浇地块、当前水量为 `0`；旧 Teacher 只把补水通道中的准备格写入 run plan，却丢失了已证明可原生补水的终端接近格，导致 `executor.water_crop` 返回 `no_reachable_water_source`。这不是 Agent 汇报层错误，而是 Teacher 证明到执行合同之间真实丢字段。
+
+当前实现把精确 `watering_refill_approach_tile` 从 Teacher route proof 贯穿 decision、receipt 和 native run plan，并把该格从种植布局中保留。运行控制只增加一个有界中断：当当前水量小于待浇数量时，先按现有水量编译可完成前缀；水量归零后复用唯一 `move_to_tile + BFS + route-repair clear` 到 Teacher 保存的接近格；fresh snapshot 后继续复用唯一 `executor.water_crop` 完成原生补水和余量浇水。没有第二套移动、清障或浇水执行器。显式 crop-resume 包装器同时修正为无论 fresh capture 还是 resume 都传递原生 save-boundary 门。
+
+v33 首轮新档产生 53 条 verified action 和首个日界后，为避免在“6 格待浇、仅剩 4 水”状态下错误整批派发而主动停止；随后控制器改为按实时水量切分批次。哈希一致的隐藏静音续跑 `crop-teacher-refill-v33b-20261027-0023` 已完整通过：第 23 轮只编译并验证 `4` 个 `executor.water_crop`，第 24 轮原生移动到保存的 Farm `(72,27)`，第 25 轮再编译并验证剩余 `2` 个浇水动作。全程最终为 `45` 条 verified action、`12` 条日界、`6` 条收获回执、`0` 条 `stage=error`，Spring 13 判定 `crop_teacher_run_completed=true`；游戏、Backend、Product Executor 与 LiveTrainingLoop 均正常退出。该证据关闭补水字段和部分批次执行硬伤，但不是 Golden Walnut source schedule，策略轨迹数仍为 `0`，正式训练状态不变。
+
 下一固定动作仍是从新的隔离 day-zero 存档执行完整长跑，继续首次登岛、Golden Walnut 来源增量及 First Parrot/Turtle/House 三项跃迁；正式训练状态不变。
 
 ### 已收口背景：Golden Walnut v22-v24

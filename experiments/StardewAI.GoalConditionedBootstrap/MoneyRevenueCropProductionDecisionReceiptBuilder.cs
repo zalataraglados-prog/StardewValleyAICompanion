@@ -55,7 +55,10 @@ public static class MoneyRevenueCropProductionDecisionReceiptBuilder
         }
 
         var normalized = ValidateAndNormalizeCommitments(
-            request.Commitments);
+            request.Commitments,
+            requireWateringRefillApproach:
+                request.SchemaVersion ==
+                "money_revenue_crop_production_decision_request.v2");
         var requestedCommitmentIds = normalized.Select(value =>
                 value.CommitmentId)
             .ToHashSet(StringComparer.Ordinal);
@@ -145,7 +148,8 @@ public static class MoneyRevenueCropProductionDecisionReceiptBuilder
                     value.CommitmentId,
                     value.LocationId,
                     value.Tiles,
-                    value.WateringRefillPreparationTiles)).ToArray(),
+                    value.WateringRefillPreparationTiles,
+                    value.WateringRefillApproachTile)).ToArray(),
             MaxQueueItemCount = request.MaxQueueItemCount,
             AllCommitmentsAccepted = allAccepted,
             FormalProductTrainingAuthorized = false,
@@ -195,7 +199,8 @@ public static class MoneyRevenueCropProductionDecisionReceiptBuilder
 
     private static MoneyRevenueCropProductionDecisionCommitment[]
         ValidateAndNormalizeCommitments(
-            MoneyRevenueCropProductionDecisionCommitment[] commitments)
+            MoneyRevenueCropProductionDecisionCommitment[] commitments,
+            bool requireWateringRefillApproach)
     {
         Require(commitments.All(value => value is not null) &&
                 commitments.Select(value => value.CommitmentId)
@@ -212,6 +217,7 @@ public static class MoneyRevenueCropProductionDecisionReceiptBuilder
             var refillPreparationTiles =
                 item.WateringRefillPreparationTiles ??
                 Array.Empty<MoneyRevenueCropPlantingTile>();
+            var refillApproachTile = item.WateringRefillApproachTile;
             var completePreparationLayout = tiles
                 .Concat(refillPreparationTiles)
                 .ToArray();
@@ -234,6 +240,12 @@ public static class MoneyRevenueCropProductionDecisionReceiptBuilder
                         tile.TileX >= 0 && tile.TileY >= 0) &&
                     refillPreparationTiles.Distinct().Count() ==
                         refillPreparationTiles.Length &&
+                    (!requireWateringRefillApproach ||
+                        refillApproachTile is not null) &&
+                    (refillApproachTile is null ||
+                        refillApproachTile.TileX >= 0 &&
+                        refillApproachTile.TileY >= 0 &&
+                        !tiles.Contains(refillApproachTile)) &&
                     completePreparationLayout.Distinct().Count() ==
                         completePreparationLayout.Length &&
                     FitsFarmLayoutProjection(completePreparationLayout),

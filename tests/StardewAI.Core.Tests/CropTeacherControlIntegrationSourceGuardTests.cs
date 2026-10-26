@@ -125,6 +125,14 @@ public sealed class CropTeacherControlIntegrationSourceGuardTests
             source,
             StringComparison.Ordinal);
         Assert.Contains(
+            "CropTeacherWateringRefillRecoveryPlanner.Build(",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "crop_teacher_watering_refill_approach",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "\"max_route_repair_clears\"",
             source,
             StringComparison.Ordinal);

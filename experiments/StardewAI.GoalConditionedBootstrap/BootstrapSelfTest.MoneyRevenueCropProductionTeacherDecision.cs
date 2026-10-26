@@ -165,9 +165,11 @@ internal static partial class BootstrapSelfTest
                     {
                         new MoneyRevenueCropPlantingTile(2, 2)
                     }) &&
+                clearanceCommitment.WateringRefillApproachTile ==
+                    new MoneyRevenueCropPlantingTile(1, 0) &&
                 !clearanceCommitment.Tiles.Contains(
                     clearanceCommitment.WateringRefillPreparationTiles[0]),
-            "A bounded one-clearance native refill corridor was not bound separately from crop tiles.");
+            "A bounded one-clearance native refill corridor and its terminal approach were not bound separately from crop tiles.");
 
         var noRefillLayoutPath = Path.Combine(
             root,

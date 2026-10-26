@@ -278,7 +278,11 @@ try {
     if ($CaptureGoldenWalnutFreshSaveEvidence) {
         $arguments += @(
             "--snapshot-artifact-mode", "content_addressed_gzip",
-            "--capture-golden-walnut-fresh-save-evidence",
+            "--capture-golden-walnut-fresh-save-evidence"
+        )
+    }
+    if ($CaptureGoldenWalnutFreshSaveEvidence -or $resumeCropTeacher) {
+        $arguments += @(
             "--require-native-save-boundary",
             "--save-slot", $SaveSlot,
             "--save-boundary-max-attempts", $SaveBoundaryMaxAttempts

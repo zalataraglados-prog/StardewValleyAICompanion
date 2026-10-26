@@ -24,6 +24,12 @@ Spring 1 新档首轮排序暴露的不是社交评分错误，而是上游缺�
 
 上述“连通证明”已补齐当前障碍状态：先按可清障格数、再按步数求最优路线，最多接受 4 个 `requires_single_clearance_then_till` 格，并把它们作为独立准备义务贯穿运行合同。它们只复用现有清障/翻地链，不进入 planting tiles 或后续作物批次。清障执行器本身复用共享寻路走到目标相邻格，抵达后重新验证工具、障碍和随机/精确产出前态，再运行原生工具生命周期；共享移动仍禁止同步清除障碍，浇水仍禁止穿障。v3 完成通道准备后暴露的相邻动作旧路径循环已统一到共享 `ExecutorPathCursor/TryAdvanceExecutorPath`。v4 `golden-walnut-source-schedule-v4-20261025-0003` 已原生验证 `(70,23)` 树木清除、fresh rebind、锄地、`6/6` 播种、`6/6` 首日浇水、睡眠/存档边界及次日 `6/6` 浇水。下一计划步骤固定为提交该闭环后启动新的隔离长期运行，继续首次登岛与 Golden Walnut 来源日程；v4 的主动停止不能冒充 source schedule 完成。
 
+### 2026-10-27 补水执行合同修正
+
+长期运行 v32 证明“Teacher 已找到可建设补水通道”仍不足以支持跨进程执行：终端接近格没有进入持久合同，水量归零时执行器无法重新定位。完全体路线现要求 Teacher 同时输出通道准备格和唯一终端 `watering_refill_approach_tile`，receipt/run plan 必须逐层保留并验证；该格不得再被选作作物地块。运行控制按实时余水切分机械批次，先消费现有水量，再复用唯一移动/BFS/清障链抵达接近格，最后由唯一浇水执行器触发原生补水并继续。任何一步缺字段、漂移、不可达或无法原生补水都失败关闭。
+
+`crop-teacher-refill-v33b-20261027-0023` 已用真实原生运行关闭该退出条件：`4` 个浇水动作、到 Farm `(72,27)` 的单一移动队列、剩余 `2` 个浇水动作均 verified，完整周期最终产生 `12` 条日界和 `6` 条收获回执并完成。该证据只使 Golden Walnut 长跑恢复到可继续状态；下一步仍是从新 day-zero 隔离存档生成完整 source schedule，然后进入 timeline proof、Master Angler prerequisite audit 和 Gourmand 回执，不改变正式训练门。
+
 ## 当前记录 · 2026-10-21 11 核心复杂度顺序
 
 Money 有界连续段、Community Center、Pet Love、Skull Key 和 Full Shipment current-authority 复核均已验收。剩余固定顺序为：`complete_master_angler`（当前） -> `obtain_rusty_key` -> `raise_friendships` -> `complete_museum_collection` -> `raise_skill_levels` -> `marriage_and_house_upgrade` -> `earn_money`。排序按当前增量工程成本，而非玩法名称或 criterion 数量；完整依据、改序条件和 WIP 约束以 `CURRENT_STATUS_CN.md` 第 6 节为准。

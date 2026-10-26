@@ -21,7 +21,8 @@ internal static partial class BootstrapSelfTest
                 new[]
                 {
                     new MoneyRevenueCropPlantingTile(5, 7)
-                }),
+                },
+                new MoneyRevenueCropPlantingTile(4, 7)),
             new MoneyRevenueCropNativeProductionLayoutIntent(
                 plan.Commitments[1].CommitmentId,
                 "Farm",
@@ -30,7 +31,9 @@ internal static partial class BootstrapSelfTest
                     new MoneyRevenueCropPlantingTile(7, 6),
                     new MoneyRevenueCropPlantingTile(8, 6),
                     new MoneyRevenueCropPlantingTile(9, 6)
-                })
+                },
+                null,
+                new MoneyRevenueCropPlantingTile(10, 7))
         };
         Write(requestPath,
             new MoneyRevenueCropNativeProductionRunPlanRequest

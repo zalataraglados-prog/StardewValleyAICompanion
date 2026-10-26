@@ -68,6 +68,9 @@ public static class MoneyRevenueCropNativeProductionRunPlanBuilder
                 ? matches[0].WateringRefillPreparationTiles ??
                     Array.Empty<MoneyRevenueCropPlantingTile>()
                 : Array.Empty<MoneyRevenueCropPlantingTile>();
+            var refillApproachTile = matches.Length == 1
+                ? matches[0].WateringRefillApproachTile
+                : null;
             var completePreparationLayout = matches.Length == 1 &&
                     matches[0].Tiles is not null
                 ? matches[0].Tiles.Concat(refillPreparationTiles).ToArray()
@@ -90,6 +93,10 @@ public static class MoneyRevenueCropNativeProductionRunPlanBuilder
                         tile.TileX >= 0 && tile.TileY >= 0) &&
                     refillPreparationTiles.Distinct().Count() ==
                         refillPreparationTiles.Length &&
+                    refillApproachTile is not null &&
+                    refillApproachTile.TileX >= 0 &&
+                    refillApproachTile.TileY >= 0 &&
+                    !matches[0].Tiles.Contains(refillApproachTile) &&
                     completePreparationLayout.Distinct().Count() ==
                         completePreparationLayout.Length &&
                     FitsFarmLayoutProjection(completePreparationLayout),

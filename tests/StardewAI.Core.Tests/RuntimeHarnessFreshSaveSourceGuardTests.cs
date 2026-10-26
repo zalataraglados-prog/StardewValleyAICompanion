@@ -203,6 +203,10 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             calibration,
             StringComparison.Ordinal);
         Assert.Contains(
+            "if ($CaptureGoldenWalnutFreshSaveEvidence -or $resumeCropTeacher)",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "--required-verified-actions\", $RequiredVerifiedActions",
             calibration,
             StringComparison.Ordinal);

@@ -28,6 +28,9 @@
 - 隐藏静音新档 v30b 已原生验收让权：第 `16` 次记录 `stage_one_collection_teacher_yielded`，随后共享日计划完成第 `15` 个 verified action 并产生 `1` 条策略轨迹；第 `17` 次派发既有 Crop Teacher 的 `84` 项原生计划，第 `18` 次继续 verified。诊断达到该退出条件后人工停止，三端及端口已回收；它不是 source schedule。定向测试 `6/6`，隔离 Release solution `0 warning / 0 error`。
 - v31 已从新的 day-zero 隔离存档取得 `179` 条 verified action，真实完成两轮 Crop Teacher、节日等待、满包收获恢复和一次 `(O)131` 捕获；人工停止前零 `stage=error`。停止点为 Spring 17 09:10、背包 `12/12` 时 `(O)145` 在 Forest/Town 间往返：透明鱼规则完整，本地抛竿因满包正确阻塞，但跨地图路线遗漏了同一终端容量门。
 - Master Angler 跨地图路线现先检查透明背包容量，满包时由既有 Stage One 安全单件出货恢复接管。v31 原第 `194` 次排名/快照离线重放选中合法出货；v31c 原生续跑从只读源存档的哈希一致副本验证 `12/12 -> (O)390 原生移除 -> 11/12 -> Master Angler 重新规划`，不再换图振荡。v31c 因误开 day-zero-only 证据归档门而在已执行动作的归档阶段停止，不能冒充完整 source schedule。定向测试 `7/7`，隔离 Release solution `0 warning / 0 error`。
+- v32 `golden-walnut-source-schedule-v32-20261026-231505` 从新档取得 `75` 条 verified action 和 `7` 条日界后，真实暴露补水合同断链：Teacher 已证明并准备通道，但 run plan 没有保存可触发原生补水的终端接近格，水量归零后 `executor.water_crop` 只能失败为 `no_reachable_water_source`。
+- 修复将 `watering_refill_approach_tile` 贯穿 Teacher decision/receipt/run plan，并从种植格中保留；控制层按实时 `water_left` 只编译当前水量可覆盖的浇水前缀，归零后把保存格交给既有 `move_to_tile + BFS + route repair`，抵达后仍由既有 `executor.water_crop` 原生补水并完成剩余地块。没有新增平行移动、清障或浇水系统；resume 包装器也恢复了原生 save-boundary 参数。
+- v33 首轮新档到 `53` 条 verified action 后主动停在 `6` 格待浇、`4` 水边界，以便加入部分批次约束。续跑 `crop-teacher-refill-v33b-20261027-0023` 已依次验证 `4 次浇水 -> move_to_tile Farm(72,27) -> 2 次浇水`，最终跨到 Spring 13，得到 `45` 条 verified action、`12` 条日界、`6` 条收获回执、`0` 条错误并令 `crop_teacher_run_completed=true`。本轮没有策略标签，不能冒充正式训练或 Golden Walnut source schedule。
 - 下一固定动作是从新的 day-zero 隔离存档继续完整长跑，取得首次登岛、至少一个 Golden Walnut 来源增量和 First Parrot/Turtle/House 三项原生跃迁并导出 source schedule；v31/v31c 均未启动正式训练。
 
 ## 已收口增量 · Golden Walnut v24 清障成本修复
