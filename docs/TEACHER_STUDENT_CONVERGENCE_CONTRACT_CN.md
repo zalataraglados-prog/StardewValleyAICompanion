@@ -66,6 +66,16 @@ Student 自主 rollout 到自己的分布。Teacher 对 learner-visited state �
 
 在 Teacher bootstrap 和 DAgger 稳定后，真实跨日、跨季、跨年结果成为长期价值的主要依据。Teacher 退为离线 oracle、重标器和 benchmark；它不成为常驻在线主脑。少量高风险 fallback 只是未来可能单独准入的能力，当前不得启用。RL/价值微调是后续增强，不是当前 Teacher 图完成的替代品。
 
+### Stage D：长期联机对照适配（游玩完全体 -> 人类化）
+
+Stage D 只在 Stage 1 单人基线已经冻结、19/19 正式准入与首轮正式训练/holdout 完成、并且原型能够稳定独立完成既定全游戏/第三年 21/21 验收后启动。此时系统已经是“游玩完全体”，但允许行为仍偏机械；Stage D 专门负责把它推进为长期协作下的人类化 Companion。
+
+原型将与玩家进行长时间真实联机。每个可用样本同时保留 AI 决策/执行、玩家同期操作、玩家打断/接管/纠正、双方角色与资源分工、时间/位置/候选上下文、原生 outcome 和后续恢复。训练侧优先构造**同状态或可证明可比状态**下的人类-vs-AI 成对偏好、序列 imitation 和 decision fine-tuning 数据，而不是把玩家所有动作直接当作最优标签。
+
+Stage D 重点学习软行为：协作时机、角色分工、资源礼让、路线与等待节奏、减少无意义往返、何时主动帮忙或保持不干扰、以及玩家长期稳定偏好。硬合法性、权限、不可逆操作、资源守恒、时间窗和执行正确性继续由既有确定性边界负责，不能通过“更像人”绕过。
+
+Stage D 必须与 Stage 1 数据隔离：人类适配样本带独立 provenance；关闭 Companion 适配层时必须能回退到同一冻结单人策略；任何拟人微调若造成单人 21/21、硬约束或原生执行回归下降，都必须拒绝 promotion。
+
 ## 可验收的工程收敛
 
 每次训练代际都必须在冻结的独立存档、种子、农场类型和 Community Center 配置上评测。至少同时满足：
@@ -120,9 +130,9 @@ Offline TeacherOracle -> supervision/relabel/counterfactual/coverage/benchmark
 
 ## 人类适配边界
 
-Stage 1 只训练可关闭、可复现的单人 21 分最强基线。`player_intent`、`player_preferences`、`cooperation_state`、资源归属、角色分工和拟人化节奏属于基线冻结后的 Companion 适配层。
+Stage 1 只训练可关闭、可复现的单人 21 分最强基线；Stage D 才允许学习联机中的人类偏好与协作风格。`player_intent`、`player_preferences`、`cooperation_state`、资源归属、角色分工、拟人化节奏以及 human/AI 行为来源都属于基线冻结后的 Companion 适配层。
 
-后续适配样本必须携带这些上下文，但不得回写或重标 Stage 1 基线。关闭适配层时，系统必须回到同一冻结策略和同一评测结果。
+“玩家这样做了”本身不是 Teacher truth。只有在状态、可见信息、权限和候选集合可对齐时，人类/AI 差异才能形成 preference、imitation 或 decision-finetune 标签；否则只保留为 observation/diagnostic。后续适配样本不得回写或重标 Stage 1 基线。关闭适配层时，系统必须回到同一冻结策略和同一评测结果。
 
 ## 本块退出条件
 
