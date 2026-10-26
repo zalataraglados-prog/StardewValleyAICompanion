@@ -1135,7 +1135,19 @@ internal static partial class BootstrapSelfTest
                 time = new
                 {
                     total_days = Field(5),
-                    time = Field(800)
+                    time = Field(800),
+                    weather = Field("rain"),
+                    is_green_rain = Field(false),
+                    location_context_weather = Field(new[]
+                    {
+                        new
+                        {
+                            location_context_id = "Default",
+                            is_raining = true,
+                            is_lightning = false,
+                            is_green_rain = false
+                        }
+                    })
                 },
                 player = new
                 {
@@ -1254,6 +1266,21 @@ internal static partial class BootstrapSelfTest
                     MasterAnglerRouteTimingValidator.CalibrationSha256Parameter &&
                 parameter.Value == result.RouteTimingCalibrationSha256),
             "Master Angler teacher intent did not retain its complete route timing proof.");
+
+        var rainySnapshot = JsonNode.Parse(File.ReadAllText(snapshotPath))!;
+        var sunnySnapshot = rainySnapshot.DeepClone();
+        sunnySnapshot["state"]!["time"]!["weather"]!["value"] = "sun";
+        sunnySnapshot["state"]!["time"]!["location_context_weather"]!
+            ["value"]![0]!["is_raining"] = false;
+        Write(snapshotPath, sunnySnapshot);
+        var weatherBlocked = MasterAnglerTargetDateIntentBuilder.Build(
+            windowsPath,
+            snapshotPath,
+            calibrationPath);
+        Require(
+            weatherBlocked.CandidateCount == 0,
+            "Master Angler teacher routed toward a target whose authoritative weather window was closed.");
+        Write(snapshotPath, rainySnapshot);
 
         var constrainedWindows = JsonNode.Parse(
             File.ReadAllText(windowsPath))!;

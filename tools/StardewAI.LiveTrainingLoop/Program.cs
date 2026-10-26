@@ -155,6 +155,7 @@ var noProgressBackoff = new NoProgressBackoffPolicy(
 var unverifiedExecutionBackoff = new NoProgressBackoffPolicy(
     options.NoProgressBackoffMs,
     options.NoProgressMaxBackoffMs);
+var routeOscillationGuard = new RouteOscillationGuard();
 
 for (var attemptOrdinal = 1; ; attemptOrdinal++)
 {
@@ -1201,6 +1202,34 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             }
             var executionNoProgress =
                 noProgressBackoff.ObserveExecution(queue, trainingRepresentative);
+            var routeOscillation = RouteOscillationDecision.None;
+            if (RouteOscillationGuard.IsObservedRouteExecution(execution))
+            {
+                var afterSnapshotPath = ReadString(
+                    execution,
+                    "after_snapshot_path");
+                if (!string.IsNullOrWhiteSpace(afterSnapshotPath) &&
+                    File.Exists(afterSnapshotPath))
+                {
+                    var afterSnapshotText =
+                        await ContentAddressedJsonArtifactStore
+                            .ReadAllTextAsync(afterSnapshotPath);
+                    var afterSnapshot = JsonNode.Parse(afterSnapshotText)
+                        ?.AsObject() ?? new JsonObject();
+                    routeOscillation = routeOscillationGuard.Observe(
+                        execution,
+                        beforeSnapshot,
+                        afterSnapshot);
+                }
+                else
+                {
+                    routeOscillationGuard.Reset();
+                }
+            }
+            else
+            {
+                routeOscillationGuard.Reset();
+            }
             var realAppend = AppendRealExecutionRow(
                 options,
                 beforeSnapshot,
@@ -1208,7 +1237,8 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 trainingRepresentative,
                 lastStateHash,
                 lastQueueId,
-                appendToDataset: !executionNoProgress.NoProgress);
+                appendToDataset: !executionNoProgress.NoProgress &&
+                    !routeOscillation.Detected);
             objectiveCompleted |= execution[
                 "objective_continuation_completed"]?.GetValue<bool>() == true;
             socialObjectiveCompleted |= execution[
@@ -1255,6 +1285,26 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 leasedSelectedQueueIndex = -1;
             }
             WritePlanExecutionEpisode(options, iteration, snapshotPath, modelPlanPath, queuePath, queue, execution, realAppend, lastStateHash, lastQueueId);
+            if (routeOscillation.Detected)
+            {
+                stopReason =
+                    "semantic_route_oscillation_detected objective=" +
+                    routeOscillation.ObjectiveKey +
+                    " reverse_transition_streak=" +
+                    routeOscillation.ReverseTransitionStreak +
+                    " transition=" + routeOscillation.FromLocation +
+                    "->" + routeOscillation.ToLocation +
+                    " total_day=" + routeOscillation.TotalDay +
+                    " time=" + routeOscillation.Time;
+                AppendProgress(
+                    options,
+                    "stopped",
+                    iteration,
+                    lastStateHash,
+                    lastQueueId,
+                    stopReason);
+                break;
+            }
             if (options.RequireGoldenWalnutSourceScheduleReady &&
                 execution["after_snapshot_fresh"]?.GetValue<bool>() == true)
             {

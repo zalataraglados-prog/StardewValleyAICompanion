@@ -136,6 +136,24 @@ public static partial class MasterAnglerTargetDateIntentBuilder
             .Where(candidate => WindowMatchesActiveFarm(
                 candidate.Window.LocationId,
                 farmTypeKey))
+            .Where(candidate =>
+            {
+                var targetLocation = string.Equals(
+                        candidate.Window.SourceKind,
+                        "crab_pot",
+                        StringComparison.Ordinal)
+                    ? currentLocation
+                    : RuntimeTargetLocation(
+                        candidate.Window.LocationId,
+                        farmTypeKey);
+                return MasterAnglerWindowIntentValidator
+                    .TryValidateCurrentWeatherForLocation(
+                        snapshotEnvelope,
+                        targetLocation,
+                        candidate.Window.WeatherModes,
+                        out _,
+                        out _);
+            })
             .ToArray();
         var targetLocations = eligibleWindows
             .Select(candidate => string.Equals(

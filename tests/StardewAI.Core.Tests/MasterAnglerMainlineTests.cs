@@ -374,7 +374,8 @@ public sealed partial class MasterAnglerMainlineTests
         bool dynamicCondition = false,
         bool runtimeRuleEligible = true,
         int currentTime = 900,
-        string targetLocation = "Beach")
+        string targetLocation = "Beach",
+        string[]? weatherModes = null)
     {
         var root = Path.Combine(
             Path.GetTempPath(),
@@ -410,9 +411,12 @@ public sealed partial class MasterAnglerMainlineTests
                                     "!PLAYER_SPECIAL_ORDER_RULE_ACTIVE Current LEGENDARY_FAMILY")
                                 : new JsonArray(),
                             ["weather_modes"] = new JsonArray(
-                                "sun",
-                                "rain",
-                                "storm"),
+                                (weatherModes ?? new[]
+                                {
+                                    "sun",
+                                    "rain",
+                                    "storm"
+                                }).Select(value => (JsonNode?)value).ToArray()),
                             ["time_windows"] = new JsonArray
                             {
                                 new JsonObject
@@ -615,11 +619,28 @@ public sealed partial class MasterAnglerMainlineTests
         int currentTime = 900,
         bool remoteViaLongTownRoute = false,
         bool includeFullRouteEvidence = true,
-        bool inventoryFull = false)
+        bool inventoryFull = false,
+        string currentWeather = "sun")
     {
         var state = JsonNode.Parse(FishingMainlineTests.BaseState())!.AsObject();
         state["time"]!["total_days"] = Field(5);
         state["time"]!["time"] = Field(currentTime);
+        state["time"]!["weather"] = Field(
+            JsonValue.Create(currentWeather == "storm"
+                ? "lightning"
+                : currentWeather)!);
+        state["time"]!["is_green_rain"] = Field(
+            JsonValue.Create(currentWeather == "green_rain")!);
+        state["time"]!["location_context_weather"] = Field(new JsonArray
+        {
+            new JsonObject
+            {
+                ["location_context_id"] = "Default",
+                ["is_raining"] = currentWeather is "rain" or "storm" or "green_rain",
+                ["is_lightning"] = currentWeather == "storm",
+                ["is_green_rain"] = currentWeather == "green_rain"
+            }
+        });
         state["player"]!["location_id"]!["value"] = currentLocation;
         state["player"]!["tile_x"]!["value"] = 1;
         state["player"]!["tile_y"]!["value"] = 5;
@@ -880,6 +901,7 @@ public sealed partial class MasterAnglerMainlineTests
         int height) => new()
         {
             ["location_id"] = locationId,
+            ["location_context_id"] = "Default",
             ["map_width"] = width,
             ["map_height"] = height,
             ["projection_status"] =

@@ -60,6 +60,31 @@ v33 首轮新档产生 53 条 verified action 和首个日界后，为避免在�
 
 下一固定动作仍是从新的隔离 day-zero 存档执行完整长跑，继续首次登岛、Golden Walnut 来源增量及 First Parrot/Turtle/House 三项跃迁；正式训练状态不变。
 
+### 最新长跑断点：v34 天气许可与路线振荡闭环
+
+全新 day-zero 隐藏静音运行 `golden-walnut-source-schedule-v34-20261027-0041` 已在第 `191` 轮写出
+`crop_teacher_run_complete`，随后继续运行到 `221` 条原生 verified action、`15` 个原生日边界，进度日志
+`stage=error` 为 `0`。这证明作物 Teacher、睡眠/存档边界和切换到 Stage One collection 的长前缀继续成立；
+它不等于 Golden Walnut source schedule 完成，也不改变 `CoverageGateReady 5/19` 或
+`formal_product_training=false`。
+
+v34 在 Spring 16 `18:10`、晴天停止推进。锁定版 `(O)143` Catfish 只允许雨/风暴，但旧
+`MasterAnglerTargetDateIntentBuilder` 只验证日期、时刻和路线，没有把窗口 `weather_modes` 与透明快照中的
+地点上下文天气相交；因此 Town 与 Forest 的终端捕获均正确失败，两个上游跨图路线却交替保持可选，形成
+Town -> Forest -> Town 的零游戏分钟振荡。该缺陷属于真实规划/控制链，不是 Agent 汇报或界面问题。
+
+当前修复在两个权威边界共用同一天气规则：目标日期意图生成前先按
+`locations.social_route_date_evidence[].location_context_id` 与
+`time.location_context_weather[]` 排除不可能窗口；运行时 `MasterAnglerWindowIntentValidator` 在结构与时序校验后
+再次失败关闭。对 v34 第 `250` 轮真实快照重算得到 `15` 个合法钓鱼意图、Catfish `0`，说明只去除了晴天
+不可能目标，没有清空其余工作。LiveTrainingLoop 同时新增语义路线振荡守卫：同一目标在游戏时钟不前进时出现
+`A -> B -> A` 的重复反向转移会结构化停止，触发动作不写训练数据；它是通用最后防线，不替代上游许可。
+
+验证已通过 Master Angler + 振荡守卫聚焦回归 `37/37`、完整 Stage One collection self-test，以及 v34 真实快照
+重算；全量 Core 为 `2991 passed / 21` 个既有基线失败，隔离全解决方案 Release 构建为
+`0 warning / 0 error`。v34 振荡前的原生前缀仍保留为诊断证据，振荡尾部不得用于训练。下一固定步骤是从新的
+隔离 day-zero 存档运行 post-fix 长跑；不得把旧 v34 中断尾部直接提升为新的原生成功证据。
+
 ### 已收口背景：Golden Walnut v22-v24
 
 `golden-walnut-source-schedule-v22` 已真实完成节日等待后的返场，并生成第一条农场内场地接近队列；该队列随后暴露透明 `locations.route_blockers` 没有进入长距离移动修复的问题。第一轮修复让全地图对象阻塞进入同一 `move_to_tile + BFS route repair`，原 v22 队列已可重编译为 pending，但这仍只是失败现场重放，不是新的原生执行回执。

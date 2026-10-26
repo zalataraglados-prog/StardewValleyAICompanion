@@ -1271,3 +1271,11 @@ round08 首次用 round07 的 canonical 产物准备下一轮时，被 `formal_c
 round09 随后证明下一轮 prepare 与提交均成立：3 个高层候选轨迹全部 fresh/success；原生睡眠控制步不调用策略模型；Summer 3 → Summer 4 且存档树 SHA-256 改变；事务为 `committed_after_native_save_boundary`。最终为 accepted 203 / rejected 0、145 / 5 / 53、4547 pairs，checkpoint / manifest SHA-256 为 `4247b9feed96fbb40fbe263dd6f260c006d8f2db96c28b4a21bc0b5ffc717eeb` / `b35080e21a10ae61109df1577a4e6534fa2e60150917e3d75671d8d8734c45d5`，未解决 Product pending 为 0。
 
 该结果把“单轮可提交”提升为“提交结果可直接供下一轮使用”，允许进入连续有界批次；仍不等于跨季/跨年/Grandpa 21 全量长训通过。下一批必须继续维持并发 1、静音后台、失败不提升、原生保存、canonical 内部绑定验证和本机逐文件归档。
+
+## 历史记录 · 2026-10-27 v34 天气许可与路线振荡训练污染防线
+
+day-zero v34 长跑在完成作物 Teacher 后推进到 `221` 条 verified action、`15` 个原生日边界且零执行错误，随后暴露晴天 Catfish 的 Town/Forest supporting route 振荡。根因是 Master Angler 上游目标日期意图未将窗口 `weather_modes` 与透明地点上下文天气相交；这是真实规划许可缺陷，不是 Agent 状态显示问题。
+
+当前代码在意图生产者和运行时 validator 两层使用同一地点上下文天气规则。v34 真实快照重算保留 `15` 个合法钓鱼意图并把 Catfish 降为 `0`。LiveTrainingLoop 另设语义路线振荡守卫，同目标、零游戏分钟的 `A -> B -> A` 会结构化停止，触发动作不写训练数据。聚焦回归 `37/37` 和完整 Stage One collection self-test 通过。
+
+该修复只保证坏路线被上游排除、未来同类振荡不会污染数据；它不把 v34 记为完整 source schedule，不提升 `CoverageGateReady`，也不解除 `formal_product_training=false`。下一准入证据必须来自新的隔离 post-fix 原生长跑。

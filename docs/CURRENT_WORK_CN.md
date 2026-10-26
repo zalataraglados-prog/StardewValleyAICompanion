@@ -2633,3 +2633,11 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - v3 隔离运行原生通过 Farm 到 BusStop、BusStop 到 Town，并到达 Blacksmith 稳定站位；旧 stage 4 因队列内位置未投影而拒绝。修复后对该完全相同失败产物离线重编译得到 `ready_for_supporting_transition_dispatch / dispatch_ready=true`。v4 从 fresh 隔离存档再次通过前两段，随后按用户要求主动中止；它不是失败证据，也尚不能登记为完整购买成功。
 - 收尾验证：GoalConditionedBootstrap Release `0 warning / 0 error`，聚焦测试 `45/45`，完整 Core game-free `284/284`，`self-test-acquisition-route-dispatch` 通过，`git diff --check` 通过。游戏、Backend、ProductHost 和 `8765/8767/8768/8798` 监听均已退出；F 盘 v3/v4 运行证据保留，`local-data/` 未纳入版本控制。
 - `formal_product_training_authorized=false` 保持不变。下一固定步骤只做一件事：从 fresh 隔离存档完整重跑 `shop_purchase_sample`，验证 Blacksmith 柜台交互、ShopMenu fresh 重规划、精确购买 `(O)380 x1`、菜单关闭及原生回执。通过前不得把本切片记为完整运行时 strata，也不得开始正式训练。
+
+## 2026-10-27 v34 天气许可与语义路线振荡修复
+
+- `golden-walnut-source-schedule-v34-20261027-0041` 从 day-zero 运行到 `crop_teacher_run_complete`，累计 `221` 条原生 verified action、`15` 个原生日边界且 `stage=error=0`；随后在 Spring 16 `18:10` 晴天因 `(O)143` Catfish 的 Town/Forest 路线交替停止推进。
+- 根因不是 Agent 文本层：上游 Master Angler 目标日期意图没有把鱼种窗口的 `weather_modes` 与透明地点上下文天气相交。终端捕获正确拒绝晴天鲶鱼，但 supporting route 仍被反复发布。
+- `MasterAnglerTargetDateIntentBuilder` 与 `MasterAnglerWindowIntentValidator` 现在共用同一地点上下文天气语义，意图生成前排除不可能窗口，运行时再次失败关闭。对 v34 真实快照重算仍有 `15` 个合法钓鱼意图，Catfish 为 `0`。
+- LiveTrainingLoop 新增通用语义路线振荡守卫：同一 objective/target 在游戏时钟不前进时出现 `A -> B -> A` 反向转移即结构化停止，触发动作不进入训练数据。它只做最后防线，不把下游熔断代替上游候选许可。
+- 聚焦回归 `37/37` 与完整 Stage One collection self-test 已通过；全量 Core 为 `2991 passed / 21` 个既有基线失败，隔离全解决方案 Release 构建为 `0 warning / 0 error`。v34 振荡前缀可保留为运行诊断，尾部不得形成训练监督；正式训练与全局 coverage 分子不变。下一固定步骤是提交，再从新的隔离 day-zero 存档执行 post-fix 长跑。

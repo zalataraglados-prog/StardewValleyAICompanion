@@ -1314,3 +1314,9 @@ EVD-322 已闭合普通 `story.advance_event`，EVD-323 已闭合独立的 `stor
 LiveTrainingLoop 三进程与 Backend ready probe 全部通过后才发出动作；首个真实完整日结束后核对新增轨迹、
 跨日回报、正式数据 manifest、checkpoint 和 manifest 哈希。完成该验收后才把状态改为“正式全量训练已开始”，
 随后更新 119 训练实例并恢复剩余非训练动作开发。
+
+## 历史记录 · 2026-10-27 Master Angler 天气门与长跑振荡防线
+
+Master Angler 的目标日期窗口必须同时满足日期、时刻、地点路线、终端可钓条件和地点上下文天气。v34 证明只在终端校验天气不够：晴天 Catfish 可在 Town/Forest 之间持续产生 supporting route，即使两端捕获都必然失败。当前唯一意图 builder 已在候选生成前使用透明地点上下文天气排除该窗口，运行时 validator 仍保留第二道失败关闭，不建立第二套钓鱼规划器。
+
+所有长期原生循环还必须启用通用语义路线振荡守卫。同一目标在游戏时钟不前进时出现重复反向地图转移，控制器应停止并拒绝写入该触发动作，而不是依赖 state hash 变化继续消耗预算。这个守卫只负责防污染，真正修复仍归属上游候选许可。v34 前缀的 `221` 条 verified action 与 `15` 个日边界可用于诊断，但整轮尚未形成 Golden Walnut source schedule；下一步是新的隔离 post-fix 长跑。
