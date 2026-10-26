@@ -191,6 +191,14 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             calibration,
             StringComparison.Ordinal);
         Assert.Contains(
+            "if ($CaptureGoldenWalnutFreshSaveEvidence -or $resumeCropTeacher)",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "snapshot_artifact_mode =",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "--capture-golden-walnut-fresh-save-evidence",
             calibration,
             StringComparison.Ordinal);

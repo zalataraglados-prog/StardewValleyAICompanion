@@ -288,11 +288,13 @@ try {
         "--sleep-ms", 1000,
         "--after-snapshot-wait-ms", 500
     )
-    if ($CaptureGoldenWalnutFreshSaveEvidence) {
+    if ($CaptureGoldenWalnutFreshSaveEvidence -or $resumeCropTeacher) {
         $arguments += @(
-            "--snapshot-artifact-mode", "content_addressed_gzip",
-            "--capture-golden-walnut-fresh-save-evidence"
+            "--snapshot-artifact-mode", "content_addressed_gzip"
         )
+    }
+    if ($CaptureGoldenWalnutFreshSaveEvidence) {
+        $arguments += "--capture-golden-walnut-fresh-save-evidence"
     }
     if ($CaptureGoldenWalnutFreshSaveEvidence -or $resumeCropTeacher) {
         $arguments += @(
@@ -457,6 +459,8 @@ try {
         save_boundary_max_attempts = $SaveBoundaryMaxAttempts
         native_save_boundary_verified =
             [bool]$loopReport.native_save_boundary_verified
+        snapshot_artifact_mode =
+            [string]$loopReport.snapshot_artifact_mode
         binary_root = $binaryRoot
         prebuilt_binaries_reused = $reusePrebuiltBinaries
         formal_training_started = $false

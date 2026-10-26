@@ -1344,3 +1344,9 @@ fresh 捕获 -> 继续 Golden Walnut source schedule。禁止因磁盘不足降�
 可恢复长跑的作物终态现在采用两段式耐久合同：逐格收获先写 verified receipt，但在随后真实睡眠、日期恰好推进和存档哈希变化之前仍视为 volatile；Teacher 完成后保留待持久化边界，LiveTrainingLoop 进入整体关闭阶段时重新采集当前日基线，而不是复用整轮开始时的旧基线。只有最终 `executor.sleep` 才能绑定 queue/item/state/save 身份，并在同一轮退出前写入最后一天的 day-boundary receipt。新 ledger 在创建时立即落盘，任何买种、路线或整地阶段中断都可恢复。
 
 v39/v40 已给出完整原生证明：8 格收获后 ledger 为 `8 harvest / 5 day-boundary receipts`；下一进程恢复时 volatile 丢弃为 `0`，直接跳过已完成 Crop Teacher，并进入 Stage One collection。后续执行顺序固定为：从 v40 耐久起点验证非 Fountain 太阳鱼 -> 继续首次登岛与 Golden Walnut 来源/鹦鹉日程 -> 构建并重放 source schedule。作物系统不得再次接管，除非 fresh 状态出现新的、尚未完成的权威生产承诺。该修正不解除正式训练覆盖门。
+
+## 历史记录 · 2026-10-27 v42 完成太阳鱼节点后的固定顺序
+
+v41 因 resume 快照未压缩而在最终保存前触发空间门，只能作为诊断；长跑 resume 现与 fresh-save 捕获一样使用内容寻址 gzip，summary 必须回报实际模式。v42 已从 v40 ledger 取得 `24/24` verified action，并以非 Fountain Town 浮标格原生捕获 `(O)145`，最后从 Spring 24 原生睡到 Spring 25；存档哈希变化且持久化 `fishCaught` 包含 `(O)145`。
+
+因此计划中的“作物终态 -> 非 Fountain 太阳鱼”前缀已闭合。下一步不再重复 crop-resume，而是启动独立 Golden Walnut day-zero/fresh-save source schedule：依次证明首次登岛、核桃来源增量、First Parrot/Turtle/House 跃迁，生成 source schedule 后再重放。只有该独立日程及既有正式覆盖门同时满足时，才允许继续正式训练准备；v42 本身仍为 `formal_training_started=false`。

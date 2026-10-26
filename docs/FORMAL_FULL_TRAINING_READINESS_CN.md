@@ -1305,3 +1305,9 @@ post-fix 终态或 Golden Walnut source schedule。
 低空间门在不删除证据、不降低 `8192 MiB` 阈值的前提下通过透明压缩解除。恢复链随后证明，泛化 native-save recovery 必须先于战略 goal binding；Crop Teacher ledger 必须在首次动作前可恢复；最关键的是，正式关闭阶段不得复用整次运行开始时的存档基线，因为 Teacher 内部跨日会让旧基线提前满足。当前实现进入关闭阶段时重新锁定当天日期和存档哈希，只接受真实 `executor.sleep` 回执，并在退出同一轮立即把最后一天边界写回对应 ledger。
 
 v39 真实完成 8 格收获、Spring 22 -> 23 原生睡眠和保存哈希变化，ledger 达到 `8 harvest / 5 day-boundary receipts`。v40 从该 ledger 恢复时 `discarded_volatile_harvest_receipts=0`，直接报告 terminal day crossed，没有重新规划作物；随后进入 collection 控制链并以新基线再次完成原生跨日。该证据关闭的是运行事务的可恢复性和终态真实性，不是 Teacher comparison/native outcome 三分区 corpus，因此所有 coverage 分子和 `formal_product_training_authorized=false` 均不变。下一准入证据仍是非 Fountain `(O)145` 捕获及后续 Golden Walnut source schedule。
+
+## 历史记录 · 2026-10-27 v41/v42 非 Fountain 捕获与压缩证据门
+
+v41 证明恢复模式的普通全量 JSON 快照会在长跑中放大空间占用；该轮在最终保存前由 `8192 MiB` 门失败关闭，不能进入准入证据。校准包装器现对 fresh-save 捕获和 Crop Teacher resume 都启用内容寻址 gzip，并在 summary 回报实际模式；两者的运行身份、入口开关和证据含义仍严格分开。
+
+v42 从 v40 耐久 ledger 继续，取得 `24/24` verified Product action。Town `(67,46)` 站位、`(71,46)` 浮标格的 fresh 原生执行捕获 `(O)145`，最大抛竿和 bobber-bar 成功均有回执；最终 Spring 24 -> 25 原生睡眠、日期变化、保存哈希变化和存档 `fishCaught=(O)145` 同时成立。该轮关闭此前指定的非 Fountain 太阳鱼与最终耐久边界，但不是 Golden Walnut fresh-save source schedule，也不是三分区 corpus；正式训练仍保持关闭。下一准入证据固定为独立 day-zero Golden Walnut source schedule。

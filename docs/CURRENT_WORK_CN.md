@@ -2662,3 +2662,11 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - v39 原生取得 `8` 条收获 receipt，并在 Spring 22 -> 23 的真实睡眠后写入第 `5` 条日界；v40 续接时丢弃数为 `0`，直接越过已完成 Crop Teacher，进入 Stage One collection，完成一次 objective-safe 单件出货并再次独立跨日保存。两轮最终均由 Product Executor/fresh 快照闭合，v40 无 error。
 - 当前固定起点是 v40 的 Spring 24 耐久存档和已完成 crop ledger。下一施工单位只做 collection 主线：验证 `(O)145` 使用非 Fountain 浮标格并形成 fresh 原生捕获，然后继续 Golden Walnut source schedule。不得再次派发已完成作物 Teacher；若发生即视为回退。
 - 该闭环仍是正式训练前置运行证据，`formal_product_training_authorized=false`，不得把控制动作或 recovery 当作 Teacher preference 标签。
+
+## 2026-10-27 v41/v42 压缩续跑与非 Fountain 太阳鱼收口
+
+- v41 暴露恢复长跑仍使用普通全量 JSON 快照，虽取得 6 条 verified action，但在最终睡眠前触发 `minimum_free_space_not_met`；没有最终原生存档边界，因此只保留为诊断，不算完成。
+- 产品校准包装器现对 `CaptureGoldenWalnutFreshSaveEvidence` 或 Crop Teacher resume 统一传递 `--snapshot-artifact-mode content_addressed_gzip`，并把实际模式写入 summary。fresh-save 捕获开关仍只在 Golden Walnut 模式下传递，未合并两种证据语义。源守卫与内容寻址回归共 `34/34` 通过。
+- v42 从 v40 只读 ledger 恢复，确认 `discarded_volatile_harvest_receipts=0` 后直接进入 Stage One collection。运行取得 `24/24` verified action；Town 非 Fountain 浮标格原生捕获 `(O)145`，随后按 exact latest catch singleton 走既有容量恢复出货，没有专用太阳鱼执行器。
+- v42 最终从 Spring 24 原生睡到 Spring 25，存档哈希发生变化，持久化 `fishCaught` 含 `(O)145`；summary 为 `status=passed`、`crop_teacher_run_completed=true`、`native_save_boundary_verified=true`、`snapshot_artifact_mode=content_addressed_gzip`、`formal_training_started=false`。
+- 下一固定施工单位改为独立 Golden Walnut day-zero/fresh-save source schedule。目标是首次登岛、核桃来源增量、First Parrot/Turtle/House 三项跃迁和可重放 source schedule；不得续用 crop-resume 身份冒充 fresh-save 证据，也不得提前开启正式训练。

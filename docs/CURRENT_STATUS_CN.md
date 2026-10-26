@@ -517,10 +517,12 @@ Skull Key 与 Pet Love 的旧生产工件均已按当前字典、日历、输入
 7. 曾经 `CoverageGateReady` 的 criterion 在新报告中回退时，合并门默认失败；只有显式 invalidation artifact 记录失效原因、受影响分区和恢复计划后才允许接受。
 8. 局部动作注册、runner、Full Shipment strata、hermetic fixture 或性能测试通过，均不得直接改变正式 coverage 分子。
 
-## 12. 2026-10-27 v39/v40 作物终态耐久闭环
+## 12. 2026-10-27 v39-v42 作物终态与太阳鱼耐久闭环
 
 - E 盘证据目录经透明 NTFS 压缩恢复到高于 `8192 MiB` 门限；未删除运行证据，也未降低门限。产品校准脚本现可显式复用已经验证的隔离二进制，避免每次续跑重复发布三套程序；缺少任一入口 DLL 仍失败关闭。
 - 恢复运行暴露并修正三个真实控制缺陷：原生保存 recovery 曾被战略 goal binding 误删；新 Teacher ledger 曾在首次 receipt 前没有落盘；关闭阶段曾错误复用整轮起始日期/存档基线，导致内部跨日后无需再次睡眠就被误判为已持久化。现在 exclusive recovery 先于战略绑定，新 ledger 创建即落盘，关闭阶段进入时重新采集精确基线，并只在真实 `executor.sleep` 后于同一轮结算终态日界。
 - `crop-terminal-settlement-v39-20261027-063000` 从 Spring 22 成熟作物状态执行 8 格原生收获，取得 `8` 条 verified harvest receipt；关闭阶段以 `1:spring:22` 为新基线，真实睡到 `1:spring:23`，保存哈希变化，并把 `day=21->day=22` 写入同一 ledger。该 ledger 最终为 `8` 条收获、`5` 条日界。
 - `crop-terminal-settlement-v40-20261027-064000` 续接该 ledger 时 `discarded_volatile_harvest_receipts=0`，第一轮直接得到 `crop_teacher_native_run_terminal_day_crossed`，没有重派 Crop Teacher；随后进入 Stage One collection，执行一次安全单件防风草出货容量恢复，并以 Spring 23 为独立关闭基线真实睡到 Spring 24。运行 `status=passed`、`native_save_boundary_verified=true`，无终态回执错误。
-- 以上只关闭长跑恢复与作物终态持久化缺口，不增加 19 criterion、Money production cell 或正式训练分子；`formal_product_training_authorized=false` 保持。下一固定步骤从 v40 耐久存档/ledger 继续 Stage One collection，先取得非 Fountain `(O)145` fresh 原生捕获，再继续首次登岛、Golden Walnut 来源增量与三项鹦鹉跃迁。
+- v41 续跑取得中间动作后因恢复模式仍写普通全量 JSON 快照而触发 `8192 MiB` 空间门；它没有完成最终睡眠，不能计为耐久成功。产品校准现对 Golden Walnut fresh-save 与 Crop Teacher resume 两种长跑都显式启用 `content_addressed_gzip`，但两种证据语义仍保持分离。
+- `crop-terminal-settlement-v42-20261027-074500` 从 v40 ledger 续接，首轮再次确认 Crop Teacher terminal crossed，随后取得 `24/24` verified Product action。第 10 轮在 Town `(67,46) -> (71,46)` 的非 Fountain 抛竿点原生捕获 `(O)145`：最大蓄力被观测、bobber-bar 成功、fresh 状态变化和精确入包均成立。最终关闭阶段以 `1:spring:24` 为新基线，经 4 次有界尝试真实睡到 `1:spring:25`，保存哈希由 `d9ca3b92...` 变为 `6502c6f3...`；持久化存档 `fishCaught` 明确包含 `(O)145`。运行 `status=passed`、`native_save_boundary_verified=true`、`snapshot_artifact_mode=content_addressed_gzip`。
+- 以上关闭非 Fountain 太阳鱼捕获、恢复运行证据体积和最终存档耐久性，不增加 19 criterion、Money production cell 或正式训练分子；`formal_product_training_authorized=false` 保持。下一固定步骤是独立的 Golden Walnut day-zero/fresh-save source schedule：继续首次登岛、核桃来源增量与 First Parrot/Turtle/House 三项跃迁，并构建可重放日程；不得把 crop-resume 运行冒充 fresh-save source schedule。
