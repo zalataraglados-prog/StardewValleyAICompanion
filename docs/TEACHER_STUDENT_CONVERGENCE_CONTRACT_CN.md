@@ -68,7 +68,7 @@ Student 自主 rollout 到自己的分布。Teacher 对 learner-visited state �
 
 ### Stage D：长期联机对照适配（游玩完全体 -> 人类化）
 
-Stage D 只在 Stage 1 单人基线已经冻结、19/19 正式准入与首轮正式训练/holdout 完成、并且原型能够稳定独立完成既定全游戏/第三年 21/21 验收后启动。此时系统已经是“游玩完全体”，但允许行为仍偏机械；Stage D 专门负责把它推进为长期协作下的人类化 Companion。
+Stage D 不在 Stage 1 的 21/21 后直接启动。必须先以已准入的 Stage 1 checkpoint 进入 Stage 2，逐批开放并验收 Perfection 新依赖，直到原生 Perfection tracker 达到 100%，冻结可独立复现的单人完美策略基线；随后才启动 Stage D。此时系统已经是“游玩完全体”，但允许行为仍偏机械；Stage D 专门负责把它推进为长期协作下的人类化 Companion。
 
 原型将与玩家进行长时间真实联机。每个可用样本同时保留 AI 决策/执行、玩家同期操作、玩家打断/接管/纠正、双方角色与资源分工、时间/位置/候选上下文、原生 outcome 和后续恢复。训练侧优先构造**同状态或可证明可比状态**下的人类-vs-AI 成对偏好、序列 imitation 和 decision fine-tuning 数据，而不是把玩家所有动作直接当作最优标签。
 
@@ -130,7 +130,7 @@ Offline TeacherOracle -> supervision/relabel/counterfactual/coverage/benchmark
 
 ## 人类适配边界
 
-Stage 1 只训练可关闭、可复现的单人 21 分最强基线；Stage D 才允许学习联机中的人类偏好与协作风格。`player_intent`、`player_preferences`、`cooperation_state`、资源归属、角色分工、拟人化节奏以及 human/AI 行为来源都属于基线冻结后的 Companion 适配层。
+Stage 1 先形成可关闭、可复现的单人 21 分基线，Stage 2 再扩展并冻结 Perfection 100% 的完美策略基线；Stage D 才允许学习联机中的人类偏好与协作风格。`player_intent`、`player_preferences`、`cooperation_state`、资源归属、角色分工、拟人化节奏以及 human/AI 行为来源都属于基线冻结后的 Companion 适配层。
 
 “玩家这样做了”本身不是 Teacher truth。只有在状态、可见信息、权限和候选集合可对齐时，人类/AI 差异才能形成 preference、imitation 或 decision-finetune 标签；否则只保留为 observation/diagnostic。后续适配样本不得回写或重标 Stage 1 基线。关闭适配层时，系统必须回到同一冻结策略和同一评测结果。
 
