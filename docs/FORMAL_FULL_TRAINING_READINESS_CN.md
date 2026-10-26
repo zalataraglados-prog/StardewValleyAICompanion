@@ -1279,3 +1279,11 @@ day-zero v34 长跑在完成作物 Teacher 后推进到 `221` 条 verified actio
 当前代码在意图生产者和运行时 validator 两层使用同一地点上下文天气规则。v34 真实快照重算保留 `15` 个合法钓鱼意图并把 Catfish 降为 `0`。LiveTrainingLoop 另设语义路线振荡守卫，同目标、零游戏分钟的 `A -> B -> A` 会结构化停止，触发动作不写训练数据。聚焦回归 `37/37` 和完整 Stage One collection self-test 通过。
 
 该修复只保证坏路线被上游排除、未来同类振荡不会污染数据；它不把 v34 记为完整 source schedule，不提升 `CoverageGateReady`，也不解除 `formal_product_training=false`。下一准入证据必须来自新的隔离 post-fix 原生长跑。
+
+## 历史记录 · 2026-10-27 v35 钓鱼 precedence/fallthrough 真实性门
+
+v35 的新档原生长跑证明天气门和语义振荡守卫已经跨过旧断点，但又发现 Town Fountain 抛竿点的候选真实性缺口。透明快照明确证明 Fountain 资源规则 precedence 更早、终止概率为 `1`，太阳鱼输出在该抛竿点不可达；旧候选层把所有静态匹配规则平铺后仍把太阳鱼当作可能结果，导致真实执行反复得到 Wood/Stone/Decorative Trash Can。
+
+当前唯一钓鱼候选构建器已恢复原生规则顺序语义：只在更早规则具备完整概率解析、无阻塞且确定终止时，硬遮蔽后续规则；同 precedence 随机顺序和未解析概率不会被错误裁剪。钓鱼 `23/23`、Master Angler `44/44`、完整 Stage One collection self-test 和全 Core 基线对比均通过。
+
+v35 人工停止于诊断点，虽有 `196` 条 verified action、`16` 个日边界和零执行错误，仍没有最终 summary 或 Golden Walnut source schedule，不能作为正式 corpus、coverage 或训练准入证据。下一准入证据固定为 v36 新档：太阳鱼必须在非 Fountain 抛竿点产生 fresh 原生捕获，然后继续满足首次登岛、核桃来源增量和三次鹦鹉跃迁。

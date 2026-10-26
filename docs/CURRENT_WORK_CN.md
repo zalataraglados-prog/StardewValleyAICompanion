@@ -2641,3 +2641,10 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - `MasterAnglerTargetDateIntentBuilder` 与 `MasterAnglerWindowIntentValidator` 现在共用同一地点上下文天气语义，意图生成前排除不可能窗口，运行时再次失败关闭。对 v34 真实快照重算仍有 `15` 个合法钓鱼意图，Catfish 为 `0`。
 - LiveTrainingLoop 新增通用语义路线振荡守卫：同一 objective/target 在游戏时钟不前进时出现 `A -> B -> A` 反向转移即结构化停止，触发动作不进入训练数据。它只做最后防线，不把下游熔断代替上游候选许可。
 - 聚焦回归 `37/37` 与完整 Stage One collection self-test 已通过；全量 Core 为 `2991 passed / 21` 个既有基线失败，隔离全解决方案 Release 构建为 `0 warning / 0 error`。v34 振荡前缀可保留为运行诊断，尾部不得形成训练监督；正式训练与全局 coverage 分子不变。下一固定步骤是提交，再从新的隔离 day-zero 存档执行 post-fix 长跑。
+
+## 2026-10-27 v35 喷泉终止规则与钓鱼候选修复
+
+- v35 新档长跑真实跨过 v34：累计 `196` 条 verified action、`16` 个原生日边界、`0` 条执行错误和 `0` 次语义路线振荡；晴天 Catfish 未再出现，并取得 Beach `(O)708` 与 Town `(O)145` 的合法原生捕获。作物 Teacher、任务/鱼竿、容量恢复和第二轮 8 格收获前缀均继续成立。
+- 新断点来自 Town Fountain。真实透明快照显示浮标格 `(25,26)` 同时静态匹配太阳鱼，但 precedence `-10` 的 Fountain 资源规则以概率 `1` 在 precedence `0` 的太阳鱼规则之前终止；运行连续得到 Wood/Stone/Decorative Trash Can。旧候选构建器丢失了规则顺序与 fallthrough，把永远不可达的太阳鱼输出错误加入该抛竿点。
+- 修复只改唯一 `FishingEventCandidateBuilder`：当更低 precedence 的适用规则被透明概率字段证明必然终止时，后续规则不再贡献该抛竿点，base fallback 也不再重复加入；同 precedence 规则和概率未完全解析的规则保持保守可达。没有新增第二套钓鱼执行器、特殊 Town 坐标表或运行时黑名单。
+- 钓鱼聚焦回归 `23/23`、Master Angler `44/44`、完整 Stage One collection self-test 通过；全 Core 为 `2993 passed / 21` 个既有基线失败，失败集合未增加。v35 为人工诊断中止，没有 summary/source schedule，不能提升正式训练分子。下一固定步骤是全新 v36 原生长跑，先证明太阳鱼选择非 Fountain 抛竿点并 fresh 捕获，再继续首次登岛与 Golden Walnut source schedule。

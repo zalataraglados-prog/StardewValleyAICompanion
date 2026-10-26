@@ -85,6 +85,25 @@ Town -> Forest -> Town 的零游戏分钟振荡。该缺陷属于真实规划/�
 `0 warning / 0 error`。v34 振荡前的原生前缀仍保留为诊断证据，振荡尾部不得用于训练。下一固定步骤是从新的
 隔离 day-zero 存档运行 post-fix 长跑；不得把旧 v34 中断尾部直接提升为新的原生成功证据。
 
+### 最新长跑断点：v35 钓鱼规则优先级闭环
+
+post-fix day-zero 运行 `golden-walnut-source-schedule-v35-20261027-030500` 已真实跨过 v34 断点：晴天不再选择
+Catfish，也没有再次出现 Town/Forest 语义路线振荡。人工停止前累计 `196` 条原生 verified action、`16` 个原生日边界、
+`stage=error=0`；它完成作物 Teacher、早期任务与鱼竿链、容量恢复、8 格收获，并在合法地点先后捕获 Beach `(O)708`
+与 Town `(O)145`。因此 v34 的天气许可和振荡修复已经获得新的原生正向证据，不只是离线测试通过。
+
+v35 随后暴露另一项实质缺陷：Town 站位 `(21,26)` 对应的浮标格 `(25,26)` 属于 Fountain。锁定版透明快照明确给出
+优先级 `-10` 的 Fountain 规则以概率 `1` 终止为 Wood/Stone，太阳鱼规则优先级为 `0`；旧候选构建器却把同一抛竿点
+所有静态匹配输出平铺为“均可能”，因此持续把必然失败的喷泉抛竿标成太阳鱼路线。实际回执连续得到 `(O)388` 和
+`(F)2427`，证明这不是随机运气或执行器卡顿。
+
+唯一 `FishingEventCandidateBuilder` 现按原生 precedence/fallthrough 语义排除被更早、确定终止规则硬遮蔽的输出和站位；
+同优先级的随机顺序仍保留，概率未解析的规则也不会被误判为确定遮蔽。新增真实语义回归和同优先级负例后，钓鱼
+`23/23`、Master Angler `44/44`、完整 Stage One collection self-test 均通过；全 Core 为
+`2993 passed / 21` 个既有基线失败。v35 由人工诊断中止，没有最终 summary 或 source schedule，不能计作完整轮次或提升
+coverage。下一固定步骤是从新隔离 day-zero 存档执行 v36，证明 `(O)145` 只绑定非 Fountain 抛竿点并获得 fresh 原生
+回执，随后继续首次登岛和 Golden Walnut source schedule。
+
 ### 已收口背景：Golden Walnut v22-v24
 
 `golden-walnut-source-schedule-v22` 已真实完成节日等待后的返场，并生成第一条农场内场地接近队列；该队列随后暴露透明 `locations.route_blockers` 没有进入长距离移动修复的问题。第一轮修复让全地图对象阻塞进入同一 `move_to_tile + BFS route repair`，原 v22 队列已可重编译为 pending，但这仍只是失败现场重放，不是新的原生执行回执。

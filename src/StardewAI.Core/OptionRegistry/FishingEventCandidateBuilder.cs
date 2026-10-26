@@ -728,7 +728,8 @@ namespace StardewAI.Core.OptionRegistry
             JsonElement playerRectangle,
             int fishingLevel,
             CollisionGrid grid,
-            IReadOnlyDictionary<string, int> routeDistances)
+            IReadOnlyDictionary<string, int> routeDistances,
+            Func<CastSelection, bool>? selectionFilter = null)
         {
             var addedDistance = fishingLevel >= 15 ? 4 : fishingLevel >= 8 ? 3 : fishingLevel >= 4 ? 2 : fishingLevel >= 1 ? 1 : 0;
             var selections = new List<CastSelection>();
@@ -755,7 +756,18 @@ namespace StardewAI.Core.OptionRegistry
                             continue;
                         }
 
-                        selections.Add(new CastSelection(standX, standY, direction, distance, maxDistance, routeDistance, bobber));
+                        var selection = new CastSelection(
+                            standX,
+                            standY,
+                            direction,
+                            distance,
+                            maxDistance,
+                            routeDistance,
+                            bobber);
+                        if (selectionFilter is null || selectionFilter(selection))
+                        {
+                            selections.Add(selection);
+                        }
                     }
                 }
             }
