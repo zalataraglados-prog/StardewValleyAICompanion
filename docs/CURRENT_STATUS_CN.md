@@ -104,6 +104,23 @@ v35 随后暴露另一项实质缺陷：Town 站位 `(21,26)` 对应的浮标格
 coverage。下一固定步骤是从新隔离 day-zero 存档执行 v36，证明 `(O)145` 只绑定非 Fountain 抛竿点并获得 fresh 原生
 回执，随后继续首次登岛和 Golden Walnut source schedule。
 
+### v36 真实运行与空间门
+
+`golden-walnut-source-schedule-v36-20261027-043500` 已从新的隔离 day-zero 存档运行并持久化 `107` 条
+verified Product action、至少 `12` 条原生日边界，`stage=error=0`。它完成首轮作物 Teacher、任务/鱼竿及一次
+Beach `(O)131` 钓鱼尝试，随后进入第二轮作物 Teacher。Spring 13 从 Beach 返回 Farm 时，编译结果明确是
+`executor.wait_ticks`，原因是 Egg Festival 期间 Beach -> Town 普通 warp 在 `14:10` 前关闭；快照由 `08:40`
+推进到 `12:30`，地点保持 Beach `(8,16)` 是预期等待语义，不是移动被虚假验收。该轮在通行恢复前被控制器
+人工中止，不能作为太阳鱼修复或 source schedule 的终态证据。
+
+随后用 v35 的 Spring 17 原生存档与耐久 crop Teacher ledger 启动恢复轮
+`master-angler-fishing-precedence-v36-resume-20261027-044500`。恢复器正确丢弃未进入存档的 volatile harvest
+receipts、保留 `4` 条已落盘日界，并完成回农场与满背包恢复两个 verified 动作；但 E 盘可用空间降至
+`8,576,143,360 bytes`，低于 `8,589,934,592 bytes` 的 `8192 MiB` 门限，循环以
+`minimum_free_space_not_met` 失败关闭。两轮均未生成 `(O)145` 非 Fountain fresh 捕获或 Golden Walnut source
+schedule，coverage 与 `formal_product_training=false` 不变。下一固定步骤是在不降低空间门的前提下释放或迁移
+至少一个已审核的非必要制品，再从耐久存档/ledger 续接；禁止重跑 day-zero 或把等待回执标成路线位移。
+
 ### 已收口背景：Golden Walnut v22-v24
 
 `golden-walnut-source-schedule-v22` 已真实完成节日等待后的返场，并生成第一条农场内场地接近队列；该队列随后暴露透明 `locations.route_blockers` 没有进入长距离移动修复的问题。第一轮修复让全地图对象阻塞进入同一 `move_to_tile + BFS route repair`，原 v22 队列已可重编译为 pending，但这仍只是失败现场重放，不是新的原生执行回执。

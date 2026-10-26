@@ -1287,3 +1287,15 @@ v35 的新档原生长跑证明天气门和语义振荡守卫已经跨过旧断�
 当前唯一钓鱼候选构建器已恢复原生规则顺序语义：只在更早规则具备完整概率解析、无阻塞且确定终止时，硬遮蔽后续规则；同 precedence 随机顺序和未解析概率不会被错误裁剪。钓鱼 `23/23`、Master Angler `44/44`、完整 Stage One collection self-test 和全 Core 基线对比均通过。
 
 v35 人工停止于诊断点，虽有 `196` 条 verified action、`16` 个日边界和零执行错误，仍没有最终 summary 或 Golden Walnut source schedule，不能作为正式 corpus、coverage 或训练准入证据。下一准入证据固定为 v36 新档：太阳鱼必须在非 Fountain 抛竿点产生 fresh 原生捕获，然后继续满足首次登岛、核桃来源增量和三次鹦鹉跃迁。
+
+## 历史记录 · 2026-10-27 v36 运行边界与磁盘失败关闭
+
+v36 新档持久化了 `107` 条 verified Product action 和至少 `12` 条原生日界，且没有执行错误。Spring 13
+Egg Festival 期间的 Beach -> Farm 计划按透明连接器时窗正确编译为 `executor.wait_ticks`，快照时间从 `08:40`
+推进到 `12:30`；位置不变不能被解释为路线回执。该轮在 `14:10` 通行恢复前被人工中止，所以不提供太阳鱼
+post-fix 终态或 Golden Walnut source schedule。
+
+基于 v35 耐久存档/ledger 的恢复轮证明了 volatile receipt 清除、日界保留和库存容量恢复，但在 E 盘可用空间
+低于 `8192 MiB` 时以 `minimum_free_space_not_met` 结构化停止。它没有绕过门禁，也没有写入正式训练 corpus。
+因此准入状态不变：先恢复足够磁盘余量，再续接同一耐久起点并取得非 Fountain `(O)145` fresh 原生结果；
+之后才可继续首次登岛、核桃来源增量和三次鹦鹉跃迁。

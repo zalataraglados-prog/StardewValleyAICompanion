@@ -2648,3 +2648,10 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - 新断点来自 Town Fountain。真实透明快照显示浮标格 `(25,26)` 同时静态匹配太阳鱼，但 precedence `-10` 的 Fountain 资源规则以概率 `1` 在 precedence `0` 的太阳鱼规则之前终止；运行连续得到 Wood/Stone/Decorative Trash Can。旧候选构建器丢失了规则顺序与 fallthrough，把永远不可达的太阳鱼输出错误加入该抛竿点。
 - 修复只改唯一 `FishingEventCandidateBuilder`：当更低 precedence 的适用规则被透明概率字段证明必然终止时，后续规则不再贡献该抛竿点，base fallback 也不再重复加入；同 precedence 规则和概率未完全解析的规则保持保守可达。没有新增第二套钓鱼执行器、特殊 Town 坐标表或运行时黑名单。
 - 钓鱼聚焦回归 `23/23`、Master Angler `44/44`、完整 Stage One collection self-test 通过；全 Core 为 `2993 passed / 21` 个既有基线失败，失败集合未增加。v35 为人工诊断中止，没有 summary/source schedule，不能提升正式训练分子。下一固定步骤是全新 v36 原生长跑，先证明太阳鱼选择非 Fountain 抛竿点并 fresh 捕获，再继续首次登岛与 Golden Walnut source schedule。
+
+## 2026-10-27 v36 节日等待核对与低空间恢复门
+
+- v36 从 day-zero 新档取得 `107` 条持久化 verified action、至少 `12` 条原生日界且零执行错误。Spring 13 的 Beach -> Farm 控制项不是无效移动：Egg Festival 使 Beach -> Town 普通 warp 在 `14:10` 前关闭，因此唯一编译队列是每轮有界 `executor.wait_ticks=600`，游戏时间由 `08:40` 正常推进到 `12:30`，地点保持 Beach `(8,16)` 符合合同。
+- 控制器在误判该等待为停滞后人工中止了 v36；因此这条运行只保留为诊断前缀，不声明 `(O)145` 非 Fountain 捕获或 source schedule。后续诊断必须先读取 effective queue 的 `option_id` 与 `route_wait_reason`，不能仅凭位置未变判定移动失败。
+- 使用 v35 Spring 17 存档和既有 transition ledger 的恢复入口已经真实启动。它正确保留 `4` 条耐久日界、丢弃 `8` 条未被存档状态支持的 volatile harvest receipt，并执行回农场与 `crop_teacher_harvest_inventory_capacity_recovery` 两个 verified 动作，证明恢复机制本身可用。
+- 恢复轮在第 3 次尝试前因 E 盘 `8,576,143,360 < 8,589,934,592 bytes` 触发 `minimum_free_space_not_met`，没有越门继续写数据。下一固定步骤是先按审核清单释放或迁移足够 E 盘空间，再复用该原生存档和 ledger 续接到 collection Teacher；不得降低 `8192 MiB` 门、重复 day-zero 或将未完成轮次提升为 coverage/训练证据。
