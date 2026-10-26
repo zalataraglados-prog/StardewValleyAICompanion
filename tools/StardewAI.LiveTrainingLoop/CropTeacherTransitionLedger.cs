@@ -164,6 +164,7 @@ public sealed class CropTeacherTransitionLedger
 
         var runPlanSha256 = HashFile(fullRunPlanPath);
         CropTeacherTransitionLedger ledger;
+        var created = false;
         if (File.Exists(fullLedgerPath))
         {
             ledger = JsonSerializer.Deserialize<CropTeacherTransitionLedger>(
@@ -195,6 +196,7 @@ public sealed class CropTeacherTransitionLedger
         }
         else
         {
+            created = true;
             ledger = new CropTeacherTransitionLedger
             {
                 RunPlanPath = fullRunPlanPath,
@@ -203,6 +205,10 @@ public sealed class CropTeacherTransitionLedger
         }
 
         ledger.LedgerPath = fullLedgerPath;
+        if (created)
+        {
+            ledger.Persist();
+        }
         return ledger;
     }
 

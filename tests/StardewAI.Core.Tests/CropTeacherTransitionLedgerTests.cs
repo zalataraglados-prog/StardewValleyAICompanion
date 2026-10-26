@@ -7,6 +7,48 @@ namespace StardewAI.Core.Tests;
 public sealed class CropTeacherTransitionLedgerTests
 {
     [Fact]
+    public void OpeningANewLedgerPersistsAResumeAnchorImmediately()
+    {
+        var root = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-crop-ledger-anchor-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        var planPath = Path.Combine(root, "run-plan.json");
+        var ledgerPath = Path.Combine(root, "transition-ledger.json");
+        try
+        {
+            File.WriteAllText(planPath, "{\"plan\":1}");
+
+            var ledger = CropTeacherTransitionLedger.Open(
+                ledgerPath,
+                planPath);
+
+            Assert.True(File.Exists(ledgerPath));
+            Assert.Equal(
+                Path.GetFullPath(ledgerPath),
+                ledger.LedgerPath);
+            var reopened = CropTeacherTransitionLedger.OpenExisting(ledgerPath);
+            Assert.Empty(reopened.HarvestReceipts);
+            Assert.Empty(reopened.DayBoundaryReceipts);
+        }
+        finally
+        {
+            if (File.Exists(ledgerPath))
+            {
+                File.Delete(ledgerPath);
+            }
+            if (File.Exists(planPath))
+            {
+                File.Delete(planPath);
+            }
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root);
+            }
+        }
+    }
+
+    [Fact]
     public void ResumeForkKeepsTheSourceImmutableAndDropsVolatileHarvests()
     {
         var root = Path.Combine(

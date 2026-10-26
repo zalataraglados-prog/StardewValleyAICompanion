@@ -2655,3 +2655,10 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - 控制器在误判该等待为停滞后人工中止了 v36；因此这条运行只保留为诊断前缀，不声明 `(O)145` 非 Fountain 捕获或 source schedule。后续诊断必须先读取 effective queue 的 `option_id` 与 `route_wait_reason`，不能仅凭位置未变判定移动失败。
 - 使用 v35 Spring 17 存档和既有 transition ledger 的恢复入口已经真实启动。它正确保留 `4` 条耐久日界、丢弃 `8` 条未被存档状态支持的 volatile harvest receipt，并执行回农场与 `crop_teacher_harvest_inventory_capacity_recovery` 两个 verified 动作，证明恢复机制本身可用。
 - 恢复轮在第 3 次尝试前因 E 盘 `8,576,143,360 < 8,589,934,592 bytes` 触发 `minimum_free_space_not_met`，没有越门继续写数据。下一固定步骤是先按审核清单释放或迁移足够 E 盘空间，再复用该原生存档和 ledger 续接到 collection Teacher；不得降低 `8192 MiB` 门、重复 day-zero 或将未完成轮次提升为 coverage/训练证据。
+
+## 2026-10-27 v39/v40 终态保存与续跑收口
+
+- 作物 Teacher 的 terminal harvest 不再依赖进程内临时 receipt。新 ledger 创建即持久化；Teacher 完成后保留待保存终态，关闭阶段重新采集当日/存档基线，只有真正的 `executor.sleep` 结果才能创建边界 receipt，并在同一执行轮完成日期、保存哈希和 ledger 结算。
+- v39 原生取得 `8` 条收获 receipt，并在 Spring 22 -> 23 的真实睡眠后写入第 `5` 条日界；v40 续接时丢弃数为 `0`，直接越过已完成 Crop Teacher，进入 Stage One collection，完成一次 objective-safe 单件出货并再次独立跨日保存。两轮最终均由 Product Executor/fresh 快照闭合，v40 无 error。
+- 当前固定起点是 v40 的 Spring 24 耐久存档和已完成 crop ledger。下一施工单位只做 collection 主线：验证 `(O)145` 使用非 Fountain 浮标格并形成 fresh 原生捕获，然后继续 Golden Walnut source schedule。不得再次派发已完成作物 Teacher；若发生即视为回退。
+- 该闭环仍是正式训练前置运行证据，`formal_product_training_authorized=false`，不得把控制动作或 recovery 当作 Teacher preference 标签。

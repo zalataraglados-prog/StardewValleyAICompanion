@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using StardewAI.GoalConditionedBootstrap;
 using StardewAI.LiveTrainingLoop;
 
 static partial class Program
@@ -38,9 +39,47 @@ static partial class Program
             throw new InvalidOperationException(
                 "crop_teacher_run_requires_native_save_boundary");
         }
+        return await CaptureCropTeacherDayBoundaryStartCoreAsync(
+            options,
+            step.TotalDay,
+            beforeSnapshot,
+            beforeStateHash);
+    }
+
+    private static async Task<CropTeacherDayBoundaryStart?>
+        CaptureCropTeacherTerminalBoundaryStartAsync(
+            LiveTrainingOptions options,
+            CropTeacherRunStep step,
+            MoneyRevenueCropNativeProductionRunPlan plan,
+            JsonObject beforeSnapshot,
+            string beforeStateHash)
+    {
+        if (step.Stage != CropTeacherRunStageKinds.Complete ||
+            step.TotalDay != plan.LastTotalDay)
+        {
+            return null;
+        }
+        if (!options.RequireNativeSaveBoundary)
+        {
+            return null;
+        }
+        return await CaptureCropTeacherDayBoundaryStartCoreAsync(
+            options,
+            step.TotalDay,
+            beforeSnapshot,
+            beforeStateHash);
+    }
+
+    private static async Task<CropTeacherDayBoundaryStart>
+        CaptureCropTeacherDayBoundaryStartCoreAsync(
+            LiveTrainingOptions options,
+            int expectedTotalDay,
+            JsonObject beforeSnapshot,
+            string beforeStateHash)
+    {
         var totalDay = ReadCropTeacherTotalDay(beforeSnapshot);
         var dayKey = QueueReplanFilter.SnapshotDayKey(beforeSnapshot);
-        if (totalDay != step.TotalDay ||
+        if (totalDay != expectedTotalDay ||
             string.IsNullOrWhiteSpace(dayKey) ||
             string.IsNullOrWhiteSpace(beforeStateHash))
         {

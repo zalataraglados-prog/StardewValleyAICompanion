@@ -47,6 +47,9 @@ MoneyRevenueCropNativeProductionRunPlanRequest?
     activeCropTeacherRunPlanRequest = null;
 CropTeacherTransitionLedger? activeCropTeacherTransitionLedger = null;
 PendingCropTeacherDayBoundary? pendingCropTeacherDayBoundary = null;
+CropTeacherTransitionLedger? pendingCropTeacherDayBoundaryLedger = null;
+CropTeacherDayBoundaryStart? completedCropTeacherBoundaryStart = null;
+CropTeacherTransitionLedger? completedCropTeacherBoundaryLedger = null;
 var cropTeacherPreparedCommitmentIds = new HashSet<string>(
     StringComparer.Ordinal);
 var cropTeacherControlAttemptsStarted = 0;
@@ -138,12 +141,8 @@ var goldenWalnutSourceMilestone =
         false,
         new[] { "not_evaluated" });
 var goldenWalnutSourceMilestoneSignature = string.Empty;
-var initialSaveFingerprint = options.RequireNativeSaveBoundary
-    ? await NativeSaveBoundaryVerifier.CaptureWithRetryAsync(
-        options.SaveIsolationPath,
-        options.SaveSlot)
-    : null;
-var currentSaveFingerprint = initialSaveFingerprint;
+SaveDirectoryFingerprint? initialSaveFingerprint = null;
+SaveDirectoryFingerprint? currentSaveFingerprint = null;
 var hasExplicitPrimaryTarget =
     options.RequiredVerifiedActions > 0 ||
     options.StopAfterObjectiveComplete ||
@@ -201,6 +200,10 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
     if (closingNativeSaveBoundary && !nativeSaveBoundaryPhaseStarted)
     {
         nativeSaveBoundaryPhaseStarted = true;
+        nativeSaveBoundaryInitialDayKey = string.Empty;
+        nativeSaveBoundaryCurrentDayKey = string.Empty;
+        initialSaveFingerprint = null;
+        currentSaveFingerprint = null;
         activeObjectiveContinuation = null;
         leasedDecisionModelPlanPath = string.Empty;
         leasedDecisionRankingPath = string.Empty;
@@ -274,8 +277,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             }
         }
         var currentDayKey = QueueReplanFilter.SnapshotDayKey(beforeSnapshot);
-        if (activeCropTeacherRunPlan is not null &&
-            pendingCropTeacherDayBoundary is not null)
+        if (pendingCropTeacherDayBoundary is not null)
         {
             var boundaryCheck = await CheckCropTeacherDayBoundaryAsync(
                 options,
@@ -293,7 +295,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 await DelayBeforeNextAttemptAsync(options, attemptOrdinal);
                 continue;
             }
-            var ledger = activeCropTeacherTransitionLedger ??
+            var ledger = pendingCropTeacherDayBoundaryLedger ??
                 throw new InvalidOperationException(
                     "crop_teacher_transition_ledger_missing");
             ledger.RecordVerifiedDayBoundary(
@@ -311,6 +313,12 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 pendingCropTeacherDayBoundary.FromTotalDay +
                 " receipt_count=" + cropTeacherDayBoundaryReceiptCount);
             pendingCropTeacherDayBoundary = null;
+            pendingCropTeacherDayBoundaryLedger = null;
+            if (ReferenceEquals(ledger, completedCropTeacherBoundaryLedger))
+            {
+                completedCropTeacherBoundaryStart = null;
+                completedCropTeacherBoundaryLedger = null;
+            }
         }
         if (options.RequireGoldenWalnutSourceScheduleReady &&
             !closingNativeSaveBoundary)
@@ -358,11 +366,12 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 activeCropTeacherRunPlanRequest = null;
                 activeCropTeacherTransitionLedger = null;
                 pendingCropTeacherDayBoundary = null;
+                pendingCropTeacherDayBoundaryLedger = null;
                 await DelayBeforeNextAttemptAsync(options, attemptOrdinal);
                 continue;
             }
         }
-        if (options.RequireNativeSaveBoundary)
+        if (options.RequireNativeSaveBoundary && closingNativeSaveBoundary)
         {
             if (string.IsNullOrWhiteSpace(nativeSaveBoundaryInitialDayKey))
             {
@@ -372,6 +381,18 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                         "native_save_boundary_initial_day_key_unavailable");
                 }
                 nativeSaveBoundaryInitialDayKey = currentDayKey;
+                initialSaveFingerprint =
+                    await NativeSaveBoundaryVerifier.CaptureWithRetryAsync(
+                        options.SaveIsolationPath,
+                        options.SaveSlot);
+                currentSaveFingerprint = initialSaveFingerprint;
+                AppendProgress(
+                    options,
+                    "native_save_boundary_baseline_captured",
+                    iteration,
+                    lastStateHash,
+                    lastQueueId,
+                    "initial_day=" + nativeSaveBoundaryInitialDayKey);
             }
             nativeSaveBoundaryCurrentDayKey = currentDayKey;
         }
@@ -567,6 +588,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 cropTeacherDayBoundaryReceiptCount =
                     dispatch.TransitionLedger.DayBoundaryReceipts.Count;
                 pendingCropTeacherDayBoundary = null;
+                pendingCropTeacherDayBoundaryLedger = null;
                 cropTeacherPreparedCommitmentIds.Clear();
                 activeObjectiveContinuation = null;
                 leasedDecisionModelPlanPath = string.Empty;
@@ -611,6 +633,17 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         }
         if (cropStep.Stage == CropTeacherRunStageKinds.Complete)
         {
+            completedCropTeacherBoundaryStart =
+                await CaptureCropTeacherTerminalBoundaryStartAsync(
+                    options,
+                    cropStep,
+                    activeCropTeacherRunPlan,
+                    beforeSnapshot,
+                    lastStateHash);
+            completedCropTeacherBoundaryLedger =
+                completedCropTeacherBoundaryStart is null
+                    ? null
+                    : activeCropTeacherTransitionLedger;
             cropTeacherRunCompleted = true;
             activeCropTeacherRunPlan = null;
             activeCropTeacherRunPlanRequest = null;
@@ -1111,6 +1144,17 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 cropTeacherStepForExecution,
                 beforeSnapshot,
                 lastStateHash);
+        var cropTeacherDayBoundaryLedger =
+            cropTeacherDayBoundaryStart is null
+                ? null
+                : activeCropTeacherTransitionLedger;
+        if (cropTeacherDayBoundaryStart is null &&
+            closingNativeSaveBoundary &&
+            completedCropTeacherBoundaryStart is not null)
+        {
+            cropTeacherDayBoundaryStart = completedCropTeacherBoundaryStart;
+            cropTeacherDayBoundaryLedger = completedCropTeacherBoundaryLedger;
+        }
         var execution = options.UseRuntimeTestHarnessExecutor
             ? await ExecuteRuntimeTestHarnessAsync(http, executorHttp, options, iteration, snapshotPath, beforeSnapshot, queue, lastStateHash, lastQueueId, decisionModelPlanPath, decisionRankingPath, decisionCompiledQueuePath, decisionSnapshotPath, decisionSourceStateHash, selectedCandidateId, selectedQueueIndex, queuePath, activeObjectiveContinuation, suppressedObjectiveContinuations, useDailyPlanDecisionLease, executionSnapshotUrl, executionSnapshotProfile)
             : await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/action-queues/" + Uri.EscapeDataString(lastQueueId) + "/execute-training-sandbox", "{}");
@@ -1193,12 +1237,20 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 QueueReplanFilter.IsTrainingVerifiedExecution(execution)
                     ? execution
                     : completedCandidateRepresentative!;
-            if (cropTeacherDayBoundaryStart is not null)
+            if (cropTeacherDayBoundaryStart is not null &&
+                string.Equals(
+                    ReadString(trainingRepresentative, "option_id"),
+                    "executor.sleep",
+                    StringComparison.Ordinal))
             {
                 pendingCropTeacherDayBoundary =
                     CreatePendingCropTeacherDayBoundary(
                         cropTeacherDayBoundaryStart,
                         trainingRepresentative);
+                pendingCropTeacherDayBoundaryLedger =
+                    cropTeacherDayBoundaryLedger ??
+                    throw new InvalidOperationException(
+                        "crop_teacher_transition_ledger_missing");
             }
             var executionNoProgress =
                 noProgressBackoff.ObserveExecution(queue, trainingRepresentative);
@@ -1359,6 +1411,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                         activeCropTeacherRunPlanRequest = null;
                         activeCropTeacherTransitionLedger = null;
                         pendingCropTeacherDayBoundary = null;
+                        pendingCropTeacherDayBoundaryLedger = null;
                     }
                 }
             }
@@ -1421,6 +1474,45 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                         " save_changed=" + saveBoundaryObservation.SaveChanged +
                         " initial_day=" + nativeSaveBoundaryInitialDayKey +
                         " current_day=" + nativeSaveBoundaryCurrentDayKey);
+                    if (nativeSaveBoundaryVerified &&
+                        pendingCropTeacherDayBoundary is not null)
+                    {
+                        var terminalBoundaryCheck =
+                            await CheckCropTeacherDayBoundaryAsync(
+                                options,
+                                pendingCropTeacherDayBoundary,
+                                afterSnapshot);
+                        if (!terminalBoundaryCheck.Verified)
+                        {
+                            throw new InvalidDataException(
+                                "crop_teacher_terminal_save_boundary_not_settled " +
+                                terminalBoundaryCheck.Detail);
+                        }
+                        var terminalLedger =
+                            pendingCropTeacherDayBoundaryLedger ??
+                            throw new InvalidOperationException(
+                                "crop_teacher_transition_ledger_missing");
+                        terminalLedger.RecordVerifiedDayBoundary(
+                            terminalBoundaryCheck.Receipt ??
+                            throw new InvalidOperationException(
+                                "crop_teacher_day_boundary_receipt_missing"));
+                        cropTeacherDayBoundaryReceiptCount =
+                            terminalLedger.DayBoundaryReceipts.Count;
+                        AppendProgress(
+                            options,
+                            "crop_teacher_terminal_save_boundary_settled",
+                            iteration,
+                            ReadString(afterSnapshot, "state_hash"),
+                            pendingCropTeacherDayBoundary.QueueId,
+                            "from_total_day=" +
+                            pendingCropTeacherDayBoundary.FromTotalDay +
+                            " receipt_count=" +
+                            cropTeacherDayBoundaryReceiptCount);
+                        pendingCropTeacherDayBoundary = null;
+                        pendingCropTeacherDayBoundaryLedger = null;
+                        completedCropTeacherBoundaryStart = null;
+                        completedCropTeacherBoundaryLedger = null;
+                    }
                 }
             }
             else

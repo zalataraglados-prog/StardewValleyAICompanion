@@ -159,7 +159,23 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             calibration,
             StringComparison.Ordinal);
         Assert.Contains(
-            "$binaryRoot = Join-Path $artifactDirectory \"binaries\"",
+            "Join-Path $artifactDirectory \"binaries\"",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "[string] $PrebuiltBinaryRoot = \"\"",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Prebuilt binary root was not found",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "if (-not $reusePrebuiltBinaries)",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "prebuilt_binaries_reused = $reusePrebuiltBinaries",
             calibration,
             StringComparison.Ordinal);
         Assert.Contains(

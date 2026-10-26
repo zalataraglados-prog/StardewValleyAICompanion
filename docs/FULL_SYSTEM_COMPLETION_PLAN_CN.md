@@ -1338,3 +1338,9 @@ v36 的 `107` 条 verified 前缀和恢复轮的 2 条 verified 动作均未达�
 审核并释放或迁移非必要制品 -> 保持空间门不变 -> 从耐久存档/ledger 续接 -> 验证非 Fountain `(O)145` 候选和
 fresh 捕获 -> 继续 Golden Walnut source schedule。禁止因磁盘不足降低门限、重新制造 day-zero 重复工作或把未完成
 前缀提升为训练数据。
+
+## 历史记录 · 2026-10-27 作物终态与关闭阶段基线修正
+
+可恢复长跑的作物终态现在采用两段式耐久合同：逐格收获先写 verified receipt，但在随后真实睡眠、日期恰好推进和存档哈希变化之前仍视为 volatile；Teacher 完成后保留待持久化边界，LiveTrainingLoop 进入整体关闭阶段时重新采集当前日基线，而不是复用整轮开始时的旧基线。只有最终 `executor.sleep` 才能绑定 queue/item/state/save 身份，并在同一轮退出前写入最后一天的 day-boundary receipt。新 ledger 在创建时立即落盘，任何买种、路线或整地阶段中断都可恢复。
+
+v39/v40 已给出完整原生证明：8 格收获后 ledger 为 `8 harvest / 5 day-boundary receipts`；下一进程恢复时 volatile 丢弃为 `0`，直接跳过已完成 Crop Teacher，并进入 Stage One collection。后续执行顺序固定为：从 v40 耐久起点验证非 Fountain 太阳鱼 -> 继续首次登岛与 Golden Walnut 来源/鹦鹉日程 -> 构建并重放 source schedule。作物系统不得再次接管，除非 fresh 状态出现新的、尚未完成的权威生产承诺。该修正不解除正式训练覆盖门。

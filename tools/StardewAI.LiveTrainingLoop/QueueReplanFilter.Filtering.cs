@@ -23,8 +23,15 @@ public static partial class QueueReplanFilter
 
     public static JsonArray FilterGoalResolutionBoundCandidates(
         JsonArray rankedCandidates,
-        JsonObject? goalResolution)
+        JsonObject? goalResolution,
+        bool exclusiveRecovery = false)
     {
+        if (exclusiveRecovery)
+        {
+            return JsonNode.Parse(rankedCandidates.ToJsonString())?
+                .AsArray() ?? new JsonArray();
+        }
+
         var status = ReadString(goalResolution, "status");
         if (string.Equals(
                 status,

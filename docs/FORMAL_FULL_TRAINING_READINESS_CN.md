@@ -1299,3 +1299,9 @@ post-fix 终态或 Golden Walnut source schedule。
 低于 `8192 MiB` 时以 `minimum_free_space_not_met` 结构化停止。它没有绕过门禁，也没有写入正式训练 corpus。
 因此准入状态不变：先恢复足够磁盘余量，再续接同一耐久起点并取得非 Fountain `(O)145` fresh 原生结果；
 之后才可继续首次登岛、核桃来源增量和三次鹦鹉跃迁。
+
+## 历史记录 · 2026-10-27 v39/v40 终态持久化真实性门
+
+低空间门在不删除证据、不降低 `8192 MiB` 阈值的前提下通过透明压缩解除。恢复链随后证明，泛化 native-save recovery 必须先于战略 goal binding；Crop Teacher ledger 必须在首次动作前可恢复；最关键的是，正式关闭阶段不得复用整次运行开始时的存档基线，因为 Teacher 内部跨日会让旧基线提前满足。当前实现进入关闭阶段时重新锁定当天日期和存档哈希，只接受真实 `executor.sleep` 回执，并在退出同一轮立即把最后一天边界写回对应 ledger。
+
+v39 真实完成 8 格收获、Spring 22 -> 23 原生睡眠和保存哈希变化，ledger 达到 `8 harvest / 5 day-boundary receipts`。v40 从该 ledger 恢复时 `discarded_volatile_harvest_receipts=0`，直接报告 terminal day crossed，没有重新规划作物；随后进入 collection 控制链并以新基线再次完成原生跨日。该证据关闭的是运行事务的可恢复性和终态真实性，不是 Teacher comparison/native outcome 三分区 corpus，因此所有 coverage 分子和 `formal_product_training_authorized=false` 均不变。下一准入证据仍是非 Fountain `(O)145` 捕获及后续 Golden Walnut source schedule。

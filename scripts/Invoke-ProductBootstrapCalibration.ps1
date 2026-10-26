@@ -6,6 +6,7 @@ param(
     [Parameter(Mandatory = $true)]
     [string] $SaveSlot,
     [string] $OutputRoot = "E:\StardewAITraining\bootstrap-runs",
+    [string] $PrebuiltBinaryRoot = "",
     [string] $RunId = ("product-bootstrap-" + (Get-Date -Format "yyyyMMdd-HHmmss")),
     [int] $BackendPort = 8795,
     [int] $ProductPort = 8768,
@@ -149,7 +150,17 @@ New-Item -ItemType Directory -Path $artifactDirectory | Out-Null
 & (Join-Path $ProjectRoot "scripts\Deploy-RuntimeTestHarnessToRuntime.ps1") `
     -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot | Out-Null
 
-$binaryRoot = Join-Path $artifactDirectory "binaries"
+$reusePrebuiltBinaries = -not [string]::IsNullOrWhiteSpace(
+    $PrebuiltBinaryRoot)
+$binaryRoot = if ($reusePrebuiltBinaries) {
+    $resolvedPrebuiltBinaryRoot = [IO.Path]::GetFullPath($PrebuiltBinaryRoot)
+    if (-not (Test-Path -LiteralPath $resolvedPrebuiltBinaryRoot -PathType Container)) {
+        throw "Prebuilt binary root was not found: $resolvedPrebuiltBinaryRoot"
+    }
+    $resolvedPrebuiltBinaryRoot
+} else {
+    Join-Path $artifactDirectory "binaries"
+}
 $releaseEntrypoints = @(
     [pscustomobject]@{
         Project = Join-Path $ProjectRoot "src\StardewAI.Backend\StardewAI.Backend.csproj"
@@ -170,15 +181,17 @@ $releaseEntrypoints = @(
         DllName = "StardewAI.LiveTrainingLoop.dll"
     }
 )
-foreach ($entry in $releaseEntrypoints) {
-    $publishLog = Join-Path $artifactDirectory (
-        "publish-" + [IO.Path]::GetFileNameWithoutExtension($entry.Project) + ".log")
-    $publishOutput = & dotnet publish $entry.Project -c Release --nologo `
-        --artifacts-path $entry.ArtifactsDirectory --output $entry.OutputDirectory `
-        "-p:GamePath=$gameDirectory" 2>&1
-    $publishOutput | Set-Content -LiteralPath $publishLog -Encoding utf8
-    if ($LASTEXITCODE -ne 0) {
-        throw "Required isolated Release publish failed for $($entry.Project) with exit code $LASTEXITCODE. See $publishLog."
+if (-not $reusePrebuiltBinaries) {
+    foreach ($entry in $releaseEntrypoints) {
+        $publishLog = Join-Path $artifactDirectory (
+            "publish-" + [IO.Path]::GetFileNameWithoutExtension($entry.Project) + ".log")
+        $publishOutput = & dotnet publish $entry.Project -c Release --nologo `
+            --artifacts-path $entry.ArtifactsDirectory --output $entry.OutputDirectory `
+            "-p:GamePath=$gameDirectory" 2>&1
+        $publishOutput | Set-Content -LiteralPath $publishLog -Encoding utf8
+        if ($LASTEXITCODE -ne 0) {
+            throw "Required isolated Release publish failed for $($entry.Project) with exit code $LASTEXITCODE. See $publishLog."
+        }
     }
 }
 
@@ -444,6 +457,8 @@ try {
         save_boundary_max_attempts = $SaveBoundaryMaxAttempts
         native_save_boundary_verified =
             [bool]$loopReport.native_save_boundary_verified
+        binary_root = $binaryRoot
+        prebuilt_binaries_reused = $reusePrebuiltBinaries
         formal_training_started = $false
     }
     Write-Json (Join-Path $artifactDirectory "summary.json") $summary

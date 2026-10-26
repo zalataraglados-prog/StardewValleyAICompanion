@@ -252,6 +252,37 @@ public sealed class CropTeacherRunPlannerTests
             step.Reason);
     }
 
+    [Fact]
+    public void CompletesAfterTerminalHarvestAndItsSaveBoundaryAreDurable()
+    {
+        var (plan, request) = BuildPlan();
+        var receipts = new[]
+        {
+            CropTeacherTransitionLedger.HarvestTileKey(
+                CommitmentId,
+                4,
+                10,
+                12),
+            CropTeacherTransitionLedger.HarvestTileKey(
+                CommitmentId,
+                4,
+                11,
+                12)
+        }.ToHashSet(StringComparer.Ordinal);
+
+        var step = Evaluate(
+            plan,
+            request,
+            Snapshot("FarmHouse", 0, [], totalDay: 5),
+            harvestReceipts: receipts,
+            completedDayBoundaries: DayBoundariesThrough(5));
+
+        Assert.Equal(CropTeacherRunStageKinds.Complete, step.Stage);
+        Assert.Equal(
+            "crop_teacher_native_run_terminal_day_crossed",
+            step.Reason);
+    }
+
     private static CropTeacherRunStep Evaluate(
         MoneyRevenueCropNativeProductionRunPlan plan,
         MoneyRevenueCropNativeProductionRunPlanRequest request,

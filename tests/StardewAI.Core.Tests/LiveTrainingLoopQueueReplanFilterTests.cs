@@ -91,6 +91,35 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
     }
 
     [Fact]
+    public void ExclusiveRecoveryBypassesPlanningHandoffBinding()
+    {
+        var candidates = new JsonArray
+        {
+            Candidate("recovery:native_save_boundary", "recovery.stabilize_day")
+        };
+
+        var filtered = QueueReplanFilter
+            .FilterGoalResolutionBoundCandidates(
+                candidates,
+                new JsonObject
+                {
+                    ["status"] = "planning_handoff_required",
+                    ["planning_handoff"] = new JsonObject
+                    {
+                        ["handoff_kind"] = "crop_production_teacher"
+                    }
+                },
+                exclusiveRecovery: true);
+
+        var selected = Assert.Single(filtered)!.AsObject();
+        Assert.Equal(
+            "recovery:native_save_boundary",
+            selected["candidate_id"]!.GetValue<string>());
+        Assert.Single(candidates);
+        Assert.NotSame(candidates[0], selected);
+    }
+
+    [Fact]
     public void PriorityStoryEventInterruptIgnoresStrategicBindingButAdmitsOnlyStoryAdvance()
     {
         var candidates = new JsonArray
@@ -252,6 +281,14 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
         Assert.Contains("FilterSuppressedContinuations", queueBuildingSource, StringComparison.Ordinal);
         Assert.Contains(
             "FilterGoalResolutionBoundCandidates",
+            queueBuildingSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "exclusiveRecovery);",
+            queueBuildingSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "exclusive_recovery_preempts_strategic_goal_binding",
             queueBuildingSource,
             StringComparison.Ordinal);
         Assert.Contains("ContinuationRequestParameters(effectiveContinuation)", queueBuildingSource, StringComparison.Ordinal);

@@ -116,12 +116,6 @@ static partial class Program
             : resolvedGoalId;
         var rankedCandidates = ranking["ranked_event_candidates"]?.AsArray() ?? new JsonArray();
         var goalResolution = ranking["goal_resolution"]?.AsObject();
-        var goalBoundCandidates = priorityStoryEventInterrupt
-            ? QueueReplanFilter.FilterPriorityStoryEventInterruptCandidates(
-                rankedCandidates)
-            : QueueReplanFilter.FilterGoalResolutionBoundCandidates(
-                rankedCandidates,
-                goalResolution);
         var exclusiveRecovery = rankedCandidates.Any(node =>
         {
             var candidate = node?.AsObject();
@@ -133,6 +127,14 @@ static partial class Program
                     "recovery_",
                     StringComparison.Ordinal);
         });
+        var goalBoundCandidates = priorityStoryEventInterrupt &&
+            !exclusiveRecovery
+                ? QueueReplanFilter.FilterPriorityStoryEventInterruptCandidates(
+                    rankedCandidates)
+                : QueueReplanFilter.FilterGoalResolutionBoundCandidates(
+                    rankedCandidates,
+                    goalResolution,
+                    exclusiveRecovery);
         var unsuppressedCandidates = QueueReplanFilter.FilterSuppressedContinuations(
             goalBoundCandidates,
             suppressedObjectiveContinuations);
@@ -166,7 +168,8 @@ static partial class Program
         ranking["objective_continuation_filter"] = objectiveContinuationFilter;
         ranking["goal_resolution_binding_filter"] = new JsonObject
         {
-            ["active"] = !priorityStoryEventInterrupt &&
+            ["active"] = !exclusiveRecovery &&
+                !priorityStoryEventInterrupt &&
                 (string.Equals(
                         ReadString(goalResolution, "status"),
                         "resolved",
@@ -182,6 +185,8 @@ static partial class Program
             ["policy"] = priorityStoryEventInterrupt
                 ? "active_native_story_event_interrupt_preempts_strategic_goal_binding;" +
                     "exact_story_advance_event_only"
+                : exclusiveRecovery
+                    ? "exclusive_recovery_preempts_strategic_goal_binding"
                 : "resolved_goal_compiles_only_exact_bound_candidate_ids;" +
                     "planning_handoff_compiles_no_broad_candidates;" +
                     "unresolved_or_not_applicable_goal_preserves_ranked_candidates;" +

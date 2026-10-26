@@ -47,6 +47,34 @@ public sealed class CropTeacherControlIntegrationSourceGuardTests
             program,
             StringComparison.Ordinal);
         Assert.Contains(
+            "CaptureCropTeacherTerminalBoundaryStartAsync",
+            program,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "completedCropTeacherBoundaryLedger",
+            program,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "pendingCropTeacherDayBoundaryLedger",
+            program,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "crop_teacher_terminal_save_boundary_settled",
+            program,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "native_save_boundary_baseline_captured",
+            program,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "options.RequireNativeSaveBoundary && closingNativeSaveBoundary",
+            program,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ReadString(trainingRepresentative, \"option_id\")",
+            program,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "DispatchCropTeacherAsync(",
             program,
             StringComparison.Ordinal);
