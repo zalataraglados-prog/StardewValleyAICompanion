@@ -63,7 +63,8 @@ static partial class Program
         string? candidateIdOverride = null,
         int? maxCandidatesOverride = null,
         string? goalIdOverride = null,
-        bool priorityStoryEventInterrupt = false)
+        bool priorityStoryEventInterrupt = false,
+        JsonObject? activeObjectiveContinuation = null)
     {
         var requestedGoalId = string.IsNullOrWhiteSpace(goalIdOverride)
             ? options.Goal
@@ -138,8 +139,16 @@ static partial class Program
         var unsuppressedCandidates = QueueReplanFilter.FilterSuppressedContinuations(
             goalBoundCandidates,
             suppressedObjectiveContinuations);
-        var continuationCandidates = JsonNode.Parse(
-            unsuppressedCandidates.ToJsonString())?.AsArray() ?? new JsonArray();
+        var continuationFilterActive =
+            activeObjectiveContinuation is not null &&
+            !exclusiveRecovery &&
+            !priorityStoryEventInterrupt;
+        var continuationCandidates = continuationFilterActive
+            ? QueueReplanFilter.FilterRankedCandidates(
+                unsuppressedCandidates,
+                activeObjectiveContinuation)
+            : JsonNode.Parse(unsuppressedCandidates.ToJsonString())?
+                .AsArray() ?? new JsonArray();
         var effectiveCandidateKind = exclusiveRecovery
             ? string.Empty
             : candidateKindOverride ?? options.DailyPlanCandidateKind;
@@ -156,9 +165,12 @@ static partial class Program
                 effectiveCandidateId);
         var objectiveContinuationFilter = new JsonObject
         {
-            ["active"] = false,
+            ["active"] = continuationFilterActive,
             ["exclusive_recovery_override"] = exclusiveRecovery,
-            ["objective"] = null,
+            ["objective"] = continuationFilterActive
+                ? JsonNode.Parse(
+                    activeObjectiveContinuation!.ToJsonString())
+                : null,
             ["input_candidate_count"] = rankedCandidates.Count,
             ["selected_candidate_count"] = continuationCandidates.Count,
             ["policy"] = exclusiveRecovery

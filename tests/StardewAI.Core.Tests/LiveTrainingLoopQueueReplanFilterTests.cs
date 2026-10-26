@@ -212,7 +212,7 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
             mainSource,
             StringComparison.Ordinal);
         Assert.Contains(
-            "suppressedObjectiveContinuations);",
+            "activeObjectiveContinuation:",
             mainSource,
             StringComparison.Ordinal);
     }
@@ -299,6 +299,42 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
         Assert.Contains("horizonObservations == 0", source, StringComparison.Ordinal);
         Assert.Contains("connector_native_arrival_tile_adjusted", connectorRuntimeSource, StringComparison.Ordinal);
         Assert.DoesNotContain("reasons.Add(\"connector_unexpected_arrival_tile\")", connectorRuntimeSource, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void StageOneCollectionPreservesContinuationAcrossConnectorReplans()
+    {
+        var source = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.LiveTrainingLoop", "Program.cs"));
+        var teacherSource = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.StageOneCollectionTeacher.cs"));
+        var queueBuildingSource = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.QueueBuilding.cs"));
+
+        Assert.Contains(
+            "activeObjectiveContinuation:",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "QueueReplanFilter.FilterRankedCandidates",
+            teacherSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ShouldReleaseUnavailableContinuation",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "continuationFilterActive",
+            queueBuildingSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "typed_objective_identity_match;fail_closed_no_objective_switch",
+            teacherSource,
+            StringComparison.Ordinal);
     }
 
     [Fact]

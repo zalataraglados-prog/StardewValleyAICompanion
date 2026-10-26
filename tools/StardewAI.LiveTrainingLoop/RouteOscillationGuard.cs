@@ -33,10 +33,6 @@ public sealed class RouteOscillationGuard
 
         var reversesPrevious = previous is not null &&
             string.Equals(
-                current.ObjectiveKey,
-                previous.ObjectiveKey,
-                StringComparison.Ordinal) &&
-            string.Equals(
                 current.FromLocation,
                 previous.ToLocation,
                 StringComparison.OrdinalIgnoreCase) &&
@@ -93,21 +89,12 @@ public sealed class RouteOscillationGuard
         out RouteTransition transition)
     {
         transition = null!;
-        if (!IsObservedRouteExecution(execution) ||
-            execution["objective_continuation"] is not JsonObject continuation)
+        if (!IsObservedRouteExecution(execution))
         {
             return false;
         }
 
-        var targetId = ReadString(
-            continuation,
-            "master_angler_target_qualified_item_id");
-        var continuationKind = ReadString(continuation, "kind");
-        var optionId = ReadString(continuation, "option_id");
-        if (string.IsNullOrWhiteSpace(targetId) ||
-            string.IsNullOrWhiteSpace(continuationKind) ||
-            string.IsNullOrWhiteSpace(optionId) ||
-            !TryReadSnapshotPosition(
+        if (!TryReadSnapshotPosition(
                 beforeSnapshot,
                 out var fromLocation,
                 out var beforeTotalDay,
@@ -126,7 +113,7 @@ public sealed class RouteOscillationGuard
         }
 
         transition = new RouteTransition(
-            continuationKind + "|" + optionId + "|" + targetId,
+            ReadObjectiveKey(execution),
             fromLocation,
             toLocation,
             beforeTotalDay,
@@ -134,6 +121,24 @@ public sealed class RouteOscillationGuard
             afterTotalDay,
             afterTime);
         return true;
+    }
+
+    private static string ReadObjectiveKey(JsonObject execution)
+    {
+        if (execution["objective_continuation"] is not JsonObject continuation)
+        {
+            return ReadString(execution, "option_id");
+        }
+
+        var kind = ReadString(continuation, "kind");
+        var optionId = ReadString(continuation, "option_id");
+        var targetId = ReadString(
+            continuation,
+            "master_angler_target_qualified_item_id");
+        return string.Join(
+            "|",
+            new[] { kind, optionId, targetId }
+                .Where(value => !string.IsNullOrWhiteSpace(value)));
     }
 
     private static bool TryReadSnapshotPosition(

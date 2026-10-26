@@ -33,7 +33,8 @@ static partial class Program
             string stateHash,
             bool capacityRecoveryOnly = false,
             bool allowObjectiveSafeSingletonCapacityRecovery = false,
-            bool requireFishingAttemptBlockedForCapacityRecovery = true)
+            bool requireFishingAttemptBlockedForCapacityRecovery = true,
+            JsonObject? activeObjectiveContinuation = null)
     {
         if ((!capacityRecoveryOnly &&
              !options.UseStageOneCollectionTeacher) ||
@@ -131,6 +132,31 @@ static partial class Program
                 ranking.ToJsonString(JsonOptions),
                 JsonOptions) ?? throw new InvalidDataException(
                     "Stage-one collection ranking response is empty.");
+        }
+        if (!capacityRecoveryOnly && activeObjectiveContinuation is not null)
+        {
+            var rankedCandidates = ranking["ranked_event_candidates"]?
+                .AsArray() ?? new JsonArray();
+            var filteredCandidates = QueueReplanFilter.FilterRankedCandidates(
+                rankedCandidates,
+                activeObjectiveContinuation);
+            ranking["ranked_event_candidates"] = filteredCandidates;
+            ranking["objective_continuation_filter"] = new JsonObject
+            {
+                ["active"] = true,
+                ["exclusive_recovery_override"] = false,
+                ["objective"] = JsonNode.Parse(
+                    activeObjectiveContinuation.ToJsonString()),
+                ["input_candidate_count"] = rankedCandidates.Count,
+                ["selected_candidate_count"] = filteredCandidates.Count,
+                ["policy"] =
+                    "typed_objective_identity_match;fail_closed_no_objective_switch"
+            };
+            typedRanking = JsonSerializer.Deserialize<
+                AvailabilityAwarePolicyPredictionEnvelope>(
+                ranking.ToJsonString(JsonOptions),
+                JsonOptions) ?? throw new InvalidDataException(
+                    "Filtered stage-one collection ranking response is empty.");
         }
         await WriteJsonAsync(rankingPath, ranking);
         var capacityRecovery = StageOneInventoryCapacityRecovery.TrySelect(

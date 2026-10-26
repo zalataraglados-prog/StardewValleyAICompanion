@@ -2670,3 +2670,10 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - v42 从 v40 只读 ledger 恢复，确认 `discarded_volatile_harvest_receipts=0` 后直接进入 Stage One collection。运行取得 `24/24` verified action；Town 非 Fountain 浮标格原生捕获 `(O)145`，随后按 exact latest catch singleton 走既有容量恢复出货，没有专用太阳鱼执行器。
 - v42 最终从 Spring 24 原生睡到 Spring 25，存档哈希发生变化，持久化 `fishCaught` 含 `(O)145`；summary 为 `status=passed`、`crop_teacher_run_completed=true`、`native_save_boundary_verified=true`、`snapshot_artifact_mode=content_addressed_gzip`、`formal_training_started=false`。
 - 下一固定施工单位改为独立 Golden Walnut day-zero/fresh-save source schedule。目标是首次登岛、核桃来源增量、First Parrot/Turtle/House 三项跃迁和可重放 source schedule；不得续用 crop-resume 身份冒充 fresh-save 证据，也不得提前开启正式训练。
+
+## 2026-10-27 v43 跨目标路线续行修复
+
+- v43 从真正 day-zero 新档启动，已完成防风草重规划、`8` 条 harvest receipt、邮件/任务/竹鱼竿原生事件链以及 `(O)131`、`(O)145`、`(O)136` 的 fresh 捕获和出货；随机鱼与杂物未被冒充为目标结果。人工停止点为 iteration `195`、verified action `162`。
+- 18:20 出现 `(O)129` Beach 与 `(O)Goby` Forest 两个目标交替抢占：每次 connector 成功后 exact candidate ID 随地点变化，旧代码把候选身份丢失误当成目标完成，清空 continuation，随后 fresh ranking 又选择另一个目标。旧振荡守卫只检测同一 objective key，无法识别跨目标 `Farm -> BusStop -> Farm`。
+- 修复只改控制面，不新增动作、候选或执行器：候选租约失效时保留高层 continuation；Stage One collection 和通用 DailyPlan 都通过现有 `QueueReplanFilter` 绑定同一目标；仅当当前排名中没有任何匹配候选时才写 `continuation_released` 并抑制至次日。路线守卫按真实地点边检测同一时刻的 `A -> B -> A`，objective key 仅用于诊断。
+- `RouteOscillationGuardTests` 与 queue-replan/Stage One/Master Angler/Golden Walnut 相关回归共 `138/138` 通过。v43 是诊断运行，没有最终 summary/source schedule，禁止进入正式 corpus。下一固定步骤：提交修复，使用更新后的产品二进制从隔离耐久起点受限回放，要求 `(O)129` 从 BusStop 继续 Town/Beach、不得切换 Goby；通过后继续 Golden Walnut source schedule。

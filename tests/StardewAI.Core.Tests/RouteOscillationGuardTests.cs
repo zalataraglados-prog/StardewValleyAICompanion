@@ -31,7 +31,7 @@ public sealed class RouteOscillationGuardTests
     }
 
     [Fact]
-    public void ClockProgressOrDifferentObjectiveBreaksAlternation()
+    public void ClockProgressBreaksAlternation()
     {
         var guard = new RouteOscillationGuard();
         guard.Observe(
@@ -42,15 +42,59 @@ public sealed class RouteOscillationGuardTests
             RouteExecution("(O)143"),
             Snapshot("Town", 15, 1820),
             Snapshot("Forest", 15, 1820));
-        var changedObjective = guard.Observe(
-            RouteExecution("(O)145"),
-            Snapshot("Forest", 15, 1820),
-            Snapshot("Town", 15, 1820));
 
         Assert.False(progressed.Detected);
         Assert.Equal(0, progressed.ReverseTransitionStreak);
-        Assert.False(changedObjective.Detected);
-        Assert.Equal(0, changedObjective.ReverseTransitionStreak);
+    }
+
+    [Fact]
+    public void AlternatingVerifiedRoutesAcrossObjectivesStillStop()
+    {
+        var guard = new RouteOscillationGuard();
+
+        Assert.False(guard.Observe(
+            RouteExecution("(O)129"),
+            Snapshot("Farm", 13, 1820),
+            Snapshot("BusStop", 13, 1820)).Detected);
+        var firstReverse = guard.Observe(
+            RouteExecution("(O)Goby"),
+            Snapshot("BusStop", 13, 1820),
+            Snapshot("Farm", 13, 1820));
+        var detected = guard.Observe(
+            RouteExecution("(O)129"),
+            Snapshot("Farm", 13, 1820),
+            Snapshot("BusStop", 13, 1820));
+
+        Assert.False(firstReverse.Detected);
+        Assert.Equal(1, firstReverse.ReverseTransitionStreak);
+        Assert.True(detected.Detected);
+        Assert.Equal(2, detected.ReverseTransitionStreak);
+        Assert.Contains("(O)129", detected.ObjectiveKey, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void RouteWithoutObjectiveContinuationIsStillGuarded()
+    {
+        var guard = new RouteOscillationGuard();
+        var execution = RouteExecution("(O)143");
+        execution.Remove("objective_continuation");
+        execution["option_id"] = "executor.traverse_connector";
+
+        guard.Observe(
+            execution,
+            Snapshot("Farm", 15, 1810),
+            Snapshot("BusStop", 15, 1810));
+        guard.Observe(
+            execution,
+            Snapshot("BusStop", 15, 1810),
+            Snapshot("Farm", 15, 1810));
+        var detected = guard.Observe(
+            execution,
+            Snapshot("Farm", 15, 1810),
+            Snapshot("BusStop", 15, 1810));
+
+        Assert.True(detected.Detected);
+        Assert.Equal("executor.traverse_connector", detected.ObjectiveKey);
     }
 
     [Fact]

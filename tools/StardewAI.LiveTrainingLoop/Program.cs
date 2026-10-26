@@ -810,7 +810,9 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                     snapshotJson,
                     beforeSnapshot,
                     lastStateHash,
-                    allowObjectiveSafeSingletonCapacityRecovery: true);
+                    allowObjectiveSafeSingletonCapacityRecovery: true,
+                    activeObjectiveContinuation:
+                        activeObjectiveContinuation);
             if (collectionTeacher.Queue is not null)
             {
                 queue = collectionTeacher.Queue;
@@ -859,6 +861,38 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                         collectionTeacher.Detail);
                 if (collectionTeacher.Attempted)
                 {
+                    if (QueueReplanFilter.ShouldReleaseUnavailableContinuation(
+                            activeObjectiveContinuation,
+                            collectionTeacher.Ranking))
+                    {
+                        var releasedContinuation =
+                            activeObjectiveContinuation!;
+                        var releasedOptionId = ReadString(
+                            releasedContinuation,
+                            "option_id");
+                        QueueReplanFilter.AddSuppressedContinuation(
+                            suppressedObjectiveContinuations,
+                            releasedContinuation);
+                        activeObjectiveContinuation = null;
+                        noProgressBackoff.Reset();
+                        AppendProgress(
+                            options,
+                            "continuation_released",
+                            iteration,
+                            lastStateHash,
+                            string.Empty,
+                            "reason=no_available_stage_one_collection_" +
+                            "continuation_candidate option_id=" +
+                            releasedOptionId +
+                            " suppressed_until_day_change=true" +
+                            " suppressed_count=" +
+                            suppressedObjectiveContinuations.Count);
+                        await DelayBeforeNextAttemptAsync(
+                            options,
+                            attemptOrdinal);
+                        continue;
+                    }
+
                     var fallbackSignature = collectionTeacher.Status + "|" +
                         collectionTeacher.Detail;
                     if (!string.Equals(
@@ -910,7 +944,9 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                     options,
                     lastStateHash,
                     suppressedObjectiveContinuations:
-                        suppressedObjectiveContinuations);
+                        suppressedObjectiveContinuations,
+                    activeObjectiveContinuation:
+                        activeObjectiveContinuation);
                 modelPlanPath = Path.Combine(options.SnapshotDir, "model-plan-" + iteration.ToString("D4") + ".json");
                 await File.WriteAllTextAsync(modelPlanPath, dailyPlan.Plan.ToJsonString(JsonOptions), Encoding.UTF8);
                 var dailyPlanPath = Path.Combine(options.SnapshotDir, "daily-plan-response-" + iteration.ToString("D4") + ".json");
@@ -1045,7 +1081,6 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 executableSubsetCount == 0)
             {
                 var invalidatedCandidateId = leasedSelectedCandidateId;
-                activeObjectiveContinuation = null;
                 leasedDecisionModelPlanPath = string.Empty;
                 leasedDecisionRankingPath = string.Empty;
                 leasedDecisionCompiledQueuePath = string.Empty;

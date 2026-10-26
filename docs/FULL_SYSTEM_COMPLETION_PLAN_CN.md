@@ -1350,3 +1350,9 @@ v39/v40 已给出完整原生证明：8 格收获后 ledger 为 `8 harvest / 5 d
 v41 因 resume 快照未压缩而在最终保存前触发空间门，只能作为诊断；长跑 resume 现与 fresh-save 捕获一样使用内容寻址 gzip，summary 必须回报实际模式。v42 已从 v40 ledger 取得 `24/24` verified action，并以非 Fountain Town 浮标格原生捕获 `(O)145`，最后从 Spring 24 原生睡到 Spring 25；存档哈希变化且持久化 `fishCaught` 包含 `(O)145`。
 
 因此计划中的“作物终态 -> 非 Fountain 太阳鱼”前缀已闭合。下一步不再重复 crop-resume，而是启动独立 Golden Walnut day-zero/fresh-save source schedule：依次证明首次登岛、核桃来源增量、First Parrot/Turtle/House 跃迁，生成 source schedule 后再重放。只有该独立日程及既有正式覆盖门同时满足时，才允许继续正式训练准备；v42 本身仍为 `formal_training_started=false`。
+
+## 历史记录 · 2026-10-27 v43 高层目标跨图连续性
+
+v43 证明只让 exact candidate lease 随 fresh snapshot 失效仍不充分：如果同时清空高层 objective continuation，Stage One collection 会在每次地图转移后重新比较所有采集目标，导致 Beach `(O)129` 与 Forest `(O)Goby` 在 18:20 交替选择。该轮已有 `162` 条 verified action，但因真实跨目标折返而人工停止，不得形成 source schedule 或训练数据。
+
+唯一控制链现固定为“高层目标保持 -> 当前地图候选重绑定 -> 机械队列执行”：Stage One collection 与通用 DailyPlan 都通过既有 `QueueReplanFilter` 约束到活动 continuation；只在透明候选分母证明目标当前不可继续时，才释放并抑制到次日。通用路线守卫按地点和游戏时钟检测 `A -> B -> A`，不再要求三段属于同一目标。下一开发步骤不是扩动作，而是用修复后二进制受限重放 `(O)129` 路线；通过后继续既定首次登岛、核桃来源和三次鹦鹉跃迁，不改变 Golden Walnut 总计划。

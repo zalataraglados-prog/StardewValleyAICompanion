@@ -1311,3 +1311,9 @@ v39 真实完成 8 格收获、Spring 22 -> 23 原生睡眠和保存哈希变化
 v41 证明恢复模式的普通全量 JSON 快照会在长跑中放大空间占用；该轮在最终保存前由 `8192 MiB` 门失败关闭，不能进入准入证据。校准包装器现对 fresh-save 捕获和 Crop Teacher resume 都启用内容寻址 gzip，并在 summary 回报实际模式；两者的运行身份、入口开关和证据含义仍严格分开。
 
 v42 从 v40 耐久 ledger 继续，取得 `24/24` verified Product action。Town `(67,46)` 站位、`(71,46)` 浮标格的 fresh 原生执行捕获 `(O)145`，最大抛竿和 bobber-bar 成功均有回执；最终 Spring 24 -> 25 原生睡眠、日期变化、保存哈希变化和存档 `fishCaught=(O)145` 同时成立。该轮关闭此前指定的非 Fountain 太阳鱼与最终耐久边界，但不是 Golden Walnut fresh-save source schedule，也不是三分区 corpus；正式训练仍保持关闭。下一准入证据固定为独立 day-zero Golden Walnut source schedule。
+
+## 历史记录 · 2026-10-27 v43 跨目标路线折返诊断
+
+v43 的 day-zero 新档在人工停止前累计 `162` 条 verified Product action，已真实完成作物重规划、收获、鱼竿事件链和多个目标鱼捕获/出货；这些前缀证明现有机械执行链继续工作，但不构成 Golden Walnut source schedule。18:20 的 `(O)129` Beach 与 `(O)Goby` Forest 候选在 fresh connector 后交替抢占，形成零游戏分钟的跨目标反向地图转移。
+
+控制层现把 exact candidate lease 与高层 objective continuation 分开管理：前者可随 fresh 状态失效，后者只有在当前权威排名确实没有匹配候选时才释放。Stage One collection 与 DailyPlan 使用同一个 typed continuation filter；通用物理路线守卫同时覆盖跨目标 `A -> B -> A`。相关回归 `138/138` 通过。v43 被人工停止且没有最终 summary，因此不得写入正式 corpus、不得提升 coverage 或训练准入；下一准入证据是 post-fix 受限回放证明 Beach 目标跨 BusStop/Town 连续执行，再恢复完整 Golden Walnut source schedule。
