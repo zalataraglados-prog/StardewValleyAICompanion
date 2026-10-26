@@ -134,6 +134,18 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             "evidence_output_root = $resolvedOutputRoot",
             workflow,
             StringComparison.Ordinal);
+        Assert.Contains(
+            "[string] $PrebuiltBinaryRoot = \"\"",
+            workflow,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "-PrebuiltBinaryRoot $PrebuiltBinaryRoot",
+            workflow,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "prebuilt_binaries_reused =",
+            workflow,
+            StringComparison.Ordinal);
         Assert.DoesNotContain("Start-Process", workflow, StringComparison.Ordinal);
         Assert.DoesNotContain("Remove-Item", workflow, StringComparison.Ordinal);
 

@@ -3,6 +3,7 @@ param(
     [string] $RuntimeRoot = "E:\StardewValleyAICompanion-runtime",
     [string] $OutputRoot = "E:\StardewAITraining\golden-walnut-fresh-save-calibration",
     [string] $FreshSaveOutputRoot = "",
+    [string] $PrebuiltBinaryRoot = "",
     [string] $RunId = (
         "golden-walnut-fresh-save-" + (Get-Date -Format "yyyyMMdd-HHmmss")),
     [int] $BackendPort = 8795,
@@ -90,6 +91,7 @@ $calibrationOutput = & (Join-Path $PSScriptRoot `
     -SavesPath ([string]$freshSummary.isolated_save_root) `
     -SaveSlot ([string]$freshSummary.native_save_slot) `
     -OutputRoot $calibrationOutputRoot `
+    -PrebuiltBinaryRoot $PrebuiltBinaryRoot `
     -RunId $RunId `
     -BackendPort $BackendPort `
     -ProductPort $ProductPort `
@@ -146,6 +148,9 @@ $summary = [ordered]@{
     product_calibration_summary_path = $calibrationSummaryPath
     live_training_loop_report_path =
         [string]$calibrationSummary.live_training_loop_report_path
+    binary_root = [string]$calibrationSummary.binary_root
+    prebuilt_binaries_reused =
+        [bool]$calibrationSummary.prebuilt_binaries_reused
     episode_manifest_path =
         [string]$calibrationSummary.golden_walnut_fresh_save_episode_manifest_path
     episode_count =
