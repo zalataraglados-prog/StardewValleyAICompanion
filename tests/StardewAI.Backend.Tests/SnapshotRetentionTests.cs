@@ -1,5 +1,6 @@
 using StardewAI.Contracts.State;
 using StardewAI.LiveTrainingLoop;
+using System.Text.Json;
 using Xunit;
 
 namespace StardewAI.Backend.Tests;
@@ -30,9 +31,10 @@ public sealed class SnapshotRetentionTests
         var source = LiveTrainingLoopSources.All;
 
         Assert.Contains("NextArtifactIteration(options.SnapshotDir)", source, StringComparison.Ordinal);
+        Assert.Contains("CountPersistedIterations(options.SnapshotDir)", source, StringComparison.Ordinal);
         Assert.Contains("nextArtifactIteration + attemptOrdinal - 1", source, StringComparison.Ordinal);
         Assert.Contains("MaxPersistedIterations { get; set; } = 64", source, StringComparison.Ordinal);
-        Assert.Contains("ArtifactRetentionMode { get; set; } = \"stop\"", source, StringComparison.Ordinal);
+        Assert.Contains("ArtifactRetentionMode { get; set; } = \"rolling\"", source, StringComparison.Ordinal);
         Assert.Contains("ApplyRollingArtifactRetention(options, iteration)", source, StringComparison.Ordinal);
         Assert.Contains("RollingArtifactRetention.Apply(", source, StringComparison.Ordinal);
         Assert.Contains("MinFreeSpaceMb { get; set; } = 8192", source, StringComparison.Ordinal);
@@ -95,6 +97,9 @@ public sealed class SnapshotRetentionTests
         {
             "before-snapshot-0001.json",
             "after-snapshot-0001-item-001.json",
+            "before-snapshot-0001-dispatch-recovery-0001.json",
+            "native-save-boundary-plan-0001.json",
+            "crop-teacher-day1-0001-daily-plan.json",
             "before-snapshot-0002.json",
             "compiled-queue-0002.json",
             "before-snapshot-0003.json",
@@ -119,9 +124,24 @@ public sealed class SnapshotRetentionTests
             Assert.False(File.Exists(Path.Combine(snapshots, files[1])));
             Assert.False(File.Exists(Path.Combine(snapshots, files[2])));
             Assert.False(File.Exists(Path.Combine(snapshots, files[3])));
-            Assert.True(File.Exists(Path.Combine(snapshots, files[4])));
-            Assert.True(File.Exists(Path.Combine(snapshots, files[5])));
-            Assert.True(File.Exists(Path.Combine(snapshots, files[6])));
+            Assert.False(File.Exists(Path.Combine(snapshots, files[4])));
+            Assert.False(File.Exists(Path.Combine(snapshots, files[5])));
+            Assert.False(File.Exists(Path.Combine(snapshots, files[6])));
+            Assert.True(File.Exists(Path.Combine(snapshots, files[7])));
+            Assert.True(File.Exists(Path.Combine(snapshots, files[8])));
+            Assert.True(File.Exists(Path.Combine(snapshots, files[9])));
+            var retentionStatePath = Path.Combine(
+                snapshots,
+                RollingArtifactRetention.StateFileName);
+            Assert.True(File.Exists(retentionStatePath));
+            using var state = JsonDocument.Parse(File.ReadAllText(
+                retentionStatePath));
+            Assert.Equal(
+                7,
+                state.RootElement.GetProperty("deleted_logical_artifact_count")
+                    .GetInt32());
+            Assert.True(state.RootElement.GetProperty("blob_prune_completed")
+                .GetBoolean());
         }
         finally
         {
@@ -132,6 +152,73 @@ public sealed class SnapshotRetentionTests
             Directory.Delete(snapshots);
             Directory.Delete(run);
             Directory.Delete(root);
+        }
+    }
+
+    [Fact]
+    public async Task RollingRetentionPreservesEveryLiveReferenceAndPrunesOrphans()
+    {
+        var root = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-retention-content-" + Guid.NewGuid().ToString("N"));
+        var run = Path.Combine(root, "run");
+        var snapshots = Path.Combine(run, "live-snapshots");
+        Directory.CreateDirectory(snapshots);
+        var firstPath = Path.Combine(snapshots, "before-snapshot-0001.json");
+        var secondPath = Path.Combine(snapshots, "before-snapshot-0002.json");
+        const string first =
+            "{\"schema_version\":\"snapshot.v1\",\"state_hash\":\"a\",\"state\":{\"locations\":{\"value\":[1,2,3]},\"player\":{\"tile_x\":1},\"time\":{\"value\":600}}}";
+        const string second =
+            "{\"schema_version\":\"snapshot.v1\",\"state_hash\":\"b\",\"state\":{\"locations\":{\"value\":[1,2,3]},\"player\":{\"tile_x\":2},\"time\":{\"value\":600}}}";
+        try
+        {
+            await ContentAddressedJsonArtifactStore.WriteAsync(
+                firstPath,
+                first,
+                ContentAddressedJsonArtifactStore.ContentAddressedGzipMode);
+            await ContentAddressedJsonArtifactStore.WriteAsync(
+                secondPath,
+                second,
+                ContentAddressedJsonArtifactStore.ContentAddressedGzipMode);
+            var blobRoot = Path.Combine(snapshots, "_snapshot-blobs");
+            Assert.Equal(
+                7,
+                Directory.GetFiles(
+                    blobRoot,
+                    "*.json.gz",
+                    SearchOption.AllDirectories).Length);
+
+            var retained = RollingArtifactRetention.Apply(
+                run,
+                snapshots,
+                retainedIterations: 1,
+                nextIteration: 2);
+
+            Assert.Equal(1, retained);
+            Assert.False(File.Exists(firstPath));
+            Assert.True(File.Exists(secondPath));
+            Assert.Equal(
+                second,
+                ContentAddressedJsonArtifactStore.ReadAllText(secondPath));
+            Assert.Equal(
+                5,
+                Directory.GetFiles(
+                    blobRoot,
+                    "*.json.gz",
+                    SearchOption.AllDirectories).Length);
+            using var state = JsonDocument.Parse(File.ReadAllText(Path.Combine(
+                snapshots,
+                RollingArtifactRetention.StateFileName)));
+            Assert.True(state.RootElement.GetProperty("blob_prune_completed")
+                .GetBoolean());
+            Assert.Equal(
+                2,
+                state.RootElement.GetProperty("deleted_blob_count").GetInt32());
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
         }
     }
 

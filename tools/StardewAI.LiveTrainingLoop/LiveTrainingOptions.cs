@@ -17,7 +17,7 @@ public sealed class LiveTrainingOptions
     public string SnapshotFile { get; set; } = string.Empty;
     public string SnapshotFileProfile { get; set; } = string.Empty;
     public string SnapshotArtifactMode { get; set; } =
-        ContentAddressedJsonArtifactStore.PlainMode;
+        ContentAddressedJsonArtifactStore.ContentAddressedGzipMode;
     public bool CaptureGoldenWalnutFreshSaveEvidence { get; set; }
     public bool RequireGoldenWalnutSourceScheduleReady { get; set; }
     public string StageOneCollectionRequirementInventoryPath { get; set; } =
@@ -76,7 +76,7 @@ public sealed class LiveTrainingOptions
     public int MaxQueueItemAttempts { get; set; } = 24;
     public int DailyPlanMaxCandidates { get; set; } = 4;
     public int MaxPersistedIterations { get; set; } = 64;
-    public string ArtifactRetentionMode { get; set; } = "stop";
+    public string ArtifactRetentionMode { get; set; } = "rolling";
     public int MinFreeSpaceMb { get; set; } = 8192;
     public int MaxConsecutiveErrors { get; set; } = 5;
     public string[] DailyPlanCandidateOptionIds { get; set; } = Array.Empty<string>();

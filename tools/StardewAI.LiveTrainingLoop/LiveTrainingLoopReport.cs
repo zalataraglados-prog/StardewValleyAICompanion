@@ -36,7 +36,13 @@ public sealed class LiveTrainingLoopReport
 
     [JsonPropertyName("snapshot_artifact_mode")]
     public string SnapshotArtifactMode { get; set; } =
-        ContentAddressedJsonArtifactStore.PlainMode;
+        ContentAddressedJsonArtifactStore.ContentAddressedGzipMode;
+
+    [JsonPropertyName("artifact_retention_mode")]
+    public string ArtifactRetentionMode { get; set; } = "rolling";
+
+    [JsonPropertyName("max_persisted_iterations")]
+    public int MaxPersistedIterations { get; set; } = 64;
 
     [JsonPropertyName("dataset_path")]
     public string DatasetPath { get; set; } = string.Empty;

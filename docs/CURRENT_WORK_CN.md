@@ -4,6 +4,13 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已完成 v10 之后的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已按 current authority 冻结；当前唯一施工项为 `complete_master_angler` 顶层 dependency、日历窗口与 coverage 接线。P0/P1 共享 correctness blocker 可临时中断，但不得静默改序或并行展开多个 root method。
 
+## 2026-10-27 落盘流程有界化
+
+- 运行快照默认从普通全量 JSON/停止式保留改为内容寻址 gzip/64 轮 rolling；显式 `plain` 或 `stop` 仍可用于兼容诊断，但不再是普通入口默认值。
+- 逻辑证据不合并：before、每个执行项 after、队列终态 after 和执行回执仍可逐项审计。物理层按 SHA-256 共享不变字段和重复终态，所以“逻辑不缺、引用不漏、内容不重复”。
+- rolling 已覆盖实际写出的 dispatch recovery、native save boundary 与 Crop Teacher 文件族。删除过期逻辑文件后重新扫描所有剩余内容寻址清单；只有受管 `_snapshot-blobs/<2hex>/<sha256>.json.gz` 且无任何引用的文件可被回收。任何无效 JSON、畸形清单或缺失引用都会停止块回收并保留现场。
+- `artifact-retention-state.json` 以原子替换记录每轮保留与物理回收统计；LiveTrainingLoop 最终报告记录实际 artifact mode、retention mode 与窗口。聚焦回归为 Core `29/29`、Backend `5/5`，工具独立构建零警告零错误；没有启动游戏或生成新的长跑目录。
+
 ## 已收口增量 · Golden Walnut v26 收获容量恢复
 
 - v26 `golden-walnut-source-schedule-v26-20261026-023455` 已从全新隔离存档真实推进到 Spring 17（`total_days=16`）：购买 `14` 份花椰菜种子，完成首轮整地/播种/浇水/收获，处理邮件与任务 `13`，取得竹鱼竿并钓到 `(O)129`，再按节日门禁等待后由 Beach 原生返场，开始第二轮防风草生产。第 `173` 次迭代前旧路线、节日和作物闭环均未回退。

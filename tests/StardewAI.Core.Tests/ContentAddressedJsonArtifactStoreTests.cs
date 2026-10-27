@@ -4,8 +4,10 @@ using StardewAI.LiveTrainingLoop;
 
 namespace StardewAI.Core.Tests;
 
-public sealed class ContentAddressedJsonArtifactStoreTests
+public sealed class ContentAddressedJsonArtifactStoreTests : IDisposable
 {
+    private readonly List<string> roots = new();
+
     [Fact]
     public async Task RoundTripPreservesSnapshotAndDeduplicatesUnchangedSections()
     {
@@ -99,8 +101,70 @@ public sealed class ContentAddressedJsonArtifactStoreTests
             ContentAddressedJsonArtifactStore.ReadAllText(path));
     }
 
-    private static string NewRoot() => Path.Combine(
-        Path.GetTempPath(),
-        "stardewai-content-addressed-json-tests",
-        Guid.NewGuid().ToString("N"));
+    [Fact]
+    public async Task BlobPruneFailsClosedWhenAnyLogicalJsonIsInvalid()
+    {
+        var root = NewRoot();
+        var snapshots = Path.Combine(root, "live-snapshots");
+        var firstPath = Path.Combine(snapshots, "before-snapshot-0001.json");
+        var secondPath = Path.Combine(snapshots, "before-snapshot-0002.json");
+        Directory.CreateDirectory(snapshots);
+        const string first =
+            "{\"schema_version\":\"snapshot.v1\",\"state_hash\":\"a\",\"state\":{\"locations\":{\"value\":[1]},\"player\":{\"tile_x\":1}}}";
+        const string second =
+            "{\"schema_version\":\"snapshot.v1\",\"state_hash\":\"b\",\"state\":{\"locations\":{\"value\":[1]},\"player\":{\"tile_x\":2}}}";
+        await ContentAddressedJsonArtifactStore.WriteAsync(
+            firstPath,
+            first,
+            ContentAddressedJsonArtifactStore.ContentAddressedGzipMode);
+        await ContentAddressedJsonArtifactStore.WriteAsync(
+            secondPath,
+            second,
+            ContentAddressedJsonArtifactStore.ContentAddressedGzipMode);
+        File.Delete(firstPath);
+        File.WriteAllText(Path.Combine(snapshots, "partial.json"), "{");
+        var blobRoot = Path.Combine(snapshots, "_snapshot-blobs");
+        var before = Directory.GetFiles(
+            blobRoot,
+            "*.json.gz",
+            SearchOption.AllDirectories).Length;
+
+        var result = ContentAddressedJsonArtifactRetention
+            .PruneUnreferencedBlobs(snapshots);
+
+        Assert.False(result.Completed);
+        Assert.Equal(0, result.DeletedBlobCount);
+        Assert.StartsWith(
+            "logical_json_invalid:",
+            result.SkipReason,
+            StringComparison.Ordinal);
+        Assert.Equal(
+            before,
+            Directory.GetFiles(
+                blobRoot,
+                "*.json.gz",
+                SearchOption.AllDirectories).Length);
+        Assert.Equal(
+            second,
+            ContentAddressedJsonArtifactStore.ReadAllText(secondPath));
+    }
+
+    public void Dispose()
+    {
+        foreach (var root in roots)
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
+    private string NewRoot()
+    {
+        var root = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-content-addressed-json-tests",
+            Guid.NewGuid().ToString("N"));
+        roots.Add(root);
+        return root;
+    }
 }
