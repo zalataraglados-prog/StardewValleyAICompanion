@@ -2699,3 +2699,10 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - 邮件、任务 `13`、Beach 路线、节日门禁和 shared daily plan 之间的控制交接都真实发生；节日关闭没有卡死，`14:10` 后自动改编译连接器。但每个 `600` tick 等待片段都触发 full snapshot、候选生成与排名，属于已证实的性能缺口。
 - 修复只扩展既有 `executor.wait_ticks` 合同：`wait_ticks` 继续限制为 `1..600`；只有编译器给出精确 `route_wait_until_time` 时，Runtime Harness 才允许最多 `3` 个连续原生片段，开放即提前返回，段末仍由 Product Executor/fresh full snapshot 闭合。普通等待保持单片，clock/full 哈希不交叉复用，时钟无进展失败关闭。
 - 有界等待 primitive 的隐藏原生 Harness smoke 已通过：`06:00 -> 06:20`、`actual_ticks=875`、`applied + verified`，证明同一原生请求能越过原 `600` tick 单片并在目标时刻提前停止；它未绕过执行器写游戏状态。全量 Core 为 `3004 passed / 21` 个既有基线失败，没有新增失败。下一步是提交本切片并继续 Golden Walnut source schedule，在真实 Product Executor/节日门再次观察路线级集成。v48 及本优化均不等于首次登岛或正式训练准入。
+
+## 2026-10-27 v49-v52 crop-resume collection 闭环
+
+- v49 以 v48 的 Spring 17 存档和只读 transition ledger 恢复，按耐久边界丢弃 `8` 条尚未跨日落盘的收获回执，重新完成两次容量恢复与 `8/8` 防风草收获；原生睡眠后得到 Spring 18 存档和 `8 harvest + 5 day boundaries` 派生账本。该轮 `5` 条 verified action、`2` 条已接纳多候选轨迹，包装器通过。
+- v50 从耐久账本直接越过 Crop Teacher，执行 `(O)330` 安全单件出货和 Master Angler 路线，取得 `4` 条 verified action 并保存到 Spring 19。v51 随后实际捕获 `(O)147`，但因有界尝试同时计入 fresh 失效/continuation 释放而停在 `6/8`，未写原生保存边界；该轮只作诊断。
+- v52 以 `6/12` 的可达门重跑未落盘的 Spring 19 状态，原生捕获目标 `(O)131`，产生 `1` 条 `fishing.catch_fish` 已接纳轨迹；满包恢复通过唯一跨图 continuation 将该鱼精确投箱，库存 `1 -> 0`、出货箱 `0 -> 1`。原生睡眠把存档推进至 Spring 20，summary 为 passed，所有服务和端口正常回收。
+- 下一固定施工单位仍是独立 Golden Walnut day-zero/fresh-save source schedule：首次登岛 -> 来源增量 -> First Parrot -> Turtle -> House -> schedule 生成与重放。v49-v52 不得用于提升 fresh-save coverage 或开启正式训练。当前 E 盘只保留约 `8.1 GiB` 可用空间，继续长跑前必须恢复高于 `8192 MiB` 门槛的实际写入余量；不得关闭或降低该门。

@@ -1335,3 +1335,11 @@ v46 证明只读取“当前店主不在柜台”会让日计划先锁定当天�
 v48 在同一个新档中原生完成 `6` 格花椰菜和 `8` 格防风草的完整生产循环，包含缺水补水、跨日耐久保存和满包出货恢复；人工停止前累计 `185` 条 verified Product action，并已重新进入 Stage One collection。该运行证明长前缀与两次 Crop Teacher terminal settlement 可连续成立，但没有首次登岛、核桃增量或三项鹦鹉跃迁，不能形成 Golden Walnut source schedule，也不能增加正式 Teacher/native 三分区分子。
 
 节日门等待的正确性已由 `14:10` 后自动续行证明，但重复 full snapshot/replan 会放大长跑成本。新合同只把精确节日开放时刻下的连续等待组织为最多三片的受控产品执行段，每片仍不超过 `600` tick，段末保留 fresh full snapshot、Product receipt 和重新决策；普通等待、快照哈希身份与正式证据要求均未放宽。隐藏 primitive smoke 已以 `06:00 -> 06:20 / actual_ticks=875 / applied+verified` 验证多片提前终止；它不是节日路线或 source schedule 证据，`formal_product_training_authorized=false` 保持。
+
+## 历史记录 · 2026-10-27 v49-v52 耐久 collection 证据边界
+
+v49-v50 已证明 v48 的第二轮作物终态能够经只读 ledger 恢复、重新结算未落盘收获、跨日保存，并在下一进程直接越过已完成 Crop Teacher。v49 形成 `8 harvest + 5 day boundaries`，v50 继续执行容量恢复和 Master Angler 路线，两个包装器都通过原生保存边界。
+
+v51 原生捕获 `(O)147`，但因 `12` 次尝试只取得 `6/8` verified action 而结构化 incomplete，且没有保存边界，因此不计耐久进度。v52 从原 Spring 19 存档重跑后原生捕获目标 `(O)131`，形成一条已接纳 `fishing.catch_fish` 轨迹，并以精确最近捕获物恢复把该鱼投箱；`6/6` verified action 后睡到 Spring 20，`status=passed` 且 `native_save_boundary_verified=true`。
+
+上述证据仍来自 crop-resume，而非完整 day-zero/fresh-save 归档；它不能证明首次登岛、任何 Golden Walnut 来源增量或 First Parrot/Turtle/House，也不能生成/重放完整 source schedule。因此正式 Teacher comparison/native outcome 分子均不增加，`formal_product_training_authorized=false` 不变。下一准入证据仍是独立 day-zero source-schedule 长跑；磁盘安全余量不足时必须先停，不得降低 `8192 MiB` 门。

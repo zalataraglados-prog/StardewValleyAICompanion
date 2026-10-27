@@ -551,3 +551,11 @@ Skull Key 与 Pet Love 的旧生产工件均已按当前字典、日历、输入
 - 人工安全停止前累计 `185` 条 verified Product action、两次 `crop_teacher_run_complete`、多条原生日界和真实策略轨迹；停止点已回到 Stage One collection 的 Master Angler 路线。v48 没有达到首次登岛、核桃来源增量或 First Parrot/Turtle/House，因此不是 source schedule，也不改变 `formal_product_training_authorized=false` 和任何正式 coverage 分子。
 - v48 证明 Beach 节日门禁会正确等待到 `14:10` 后自动恢复跨图，但旧实现每 `600` tick 都重复全量快照和完整重规划。当前执行合同仍保持单片 `wait_ticks <= 600`，只对带精确 `route_wait_until_time` 的节日等待在一次产品执行内最多连续 `3` 片，达到开放时刻立即停止；未达到时在受控段末 fresh 全量重规划，时钟不前进则失败关闭。不同 snapshot profile 的状态哈希不得混用。
 - 隐藏原生 smoke `bounded-festival-wait-smoke-20261027` 已从 `06:00` 等到 `06:20`：请求单片仍为 `600`，同一 Harness 执行请求实际执行 `875` tick 后因目标时刻到达提前结束，回执为 `applied + verified / wait_until_time_reached`，fresh full 状态哈希发生变化；游戏和监听均已回收。该 smoke 验证受控多片 primitive，不冒充 Product Executor 端到端或 Spring 13 Beach→Town 路线重放。下一固定步骤是继续 Golden Walnut 新档长跑并在真实产品/节日门再次观察集成，然后推进竹鱼竿/采集、首次登岛、核桃来源增量与三项鹦鹉跃迁。
+
+## 16. 2026-10-27 v49-v52 耐久续跑与原生钓鱼落盘
+
+- v49 从 v48 的 Spring 17 磁盘存档和只读账本恢复。恢复器正确丢弃未被后续日界证明的 `8` 条易失收获回执，重新执行返场、两次安全单件出货和 `8/8` 防风草收获；`5/4` verified action 达标，派生账本形成 `8 harvest + 5 day boundaries`，原生睡眠把存档推进至 Spring 18。summary 为 `status=passed`，并产生 `2` 条有效多候选轨迹。
+- v50 从上述耐久状态直接判定 Crop Teacher 完成，没有重派作物。它先以 objective-safe singleton 出货 `(O)330` 释放背包槽，再进入 Master Angler `(O)708` 的 Beach 路线；`4/4` verified action 和 Spring 18 -> 19 原生保存边界均通过。该轮没有策略轨迹，控制恢复仍明确 `formal_training_authorized=false`。
+- v51 把路线推进到原生钓鱼并捕获 `(O)147`，随后开始 exact-latest-catch 出货；但 `12` 次有界尝试中 fresh 失效和 continuation 释放也计入预算，最终仅 `6/8`，LiveTrainingLoop 以 `incomplete` 退出且没有睡眠落盘。该轮只保留为运行诊断，不能作为耐久进度或正式训练数据。
+- v52 从未被 v51 改写的 Spring 19 存档重跑同一链。它取得 `6/6` verified action，原生捕获目标 `(O)131`，写入 `1` 条已接纳的 `fishing.catch_fish` 多候选轨迹；满包后沿 Beach -> Town -> BusStop -> Farm 路线，把该 `(O)131` 从库存 `1 -> 0`、出货箱 `0 -> 1`，全部 primitive 均 `applied + verified`。随后原生睡眠使存档推进到 Spring 20，summary 为 `status=passed / native_save_boundary_verified=true / formal_training_started=false`。
+- 这些续跑证明 v48 终态可安全持久化并继续 Stage One collection，但它们使用 crop-resume 身份，不能冒充 Golden Walnut day-zero/fresh-save source schedule。首次登岛、核桃来源增量、First Parrot/Turtle/House 和 source schedule 生成/重放仍未完成，所有正式 coverage 分子与 `formal_product_training_authorized=false` 保持不变。下一固定步骤仍是独立 day-zero 长跑；E 盘低于额外长跑所需安全余量前，不得降低 `8192 MiB` 门槛。

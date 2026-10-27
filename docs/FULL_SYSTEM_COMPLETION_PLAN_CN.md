@@ -1376,3 +1376,9 @@ v48 已把 day-zero 前缀推进为两轮完整作物生产：首轮 `6` 格花�
 长跑新增一项明确性能约束：已知节日开放时刻不得每 `600` tick 重建全部候选和 full planning artifacts。实现顺序固定为：编译器保留精确 `route_wait_until_time` -> 运行时以最多三片、每片 `<=600` tick 的原生等待推进 -> 命中开放时刻或受控段上限后采一次 fresh full snapshot -> 重新验证门禁并继续原路线。不得用 partial profile 哈希替代 full 状态身份，也不得取消开放边界重规划。
 
 有界等待 primitive 已通过隐藏原生 smoke：从 `06:00` 到 `06:20` 实际执行 `875` tick 后按目标时刻结束，状态哈希和回执均闭合。后续继续现有顺序，并在长跑真实节日门顺带复核路线级集成：鱼竿/Stage One collection -> 首次登岛 -> 逐来源核桃增量 -> First Parrot -> Turtle -> House -> source schedule 生成和重放。不得因两轮作物成功或等待降载提前开启正式训练。
+
+## 历史记录 · 2026-10-27 v49-v52 续跑闭环与下一个硬门
+
+v49-v52 将 v48 的人工停止点转换为可重启、可保存的耐久链：先按账本规则重做未跨日落盘的 `8/8` 收获并保存到 Spring 18，再越过已完成作物阶段进入 Stage One collection。最终 v52 原生捕获 `(O)131`，执行精确最近捕获物出货恢复，并把存档推进到 Spring 20；`fishing.catch_fish` 产生一条已接纳多候选轨迹。v51 的 `6/8` incomplete 仅用于校准有界运行规模，没有冒充成功证据。
+
+该链只证明 crop-resume 后的控制与执行连续性。系统完成顺序不变：独立 day-zero/fresh-save 长跑 -> 首次登岛 -> 核桃来源增量 -> First Parrot -> Turtle -> House -> source schedule 生成 -> 独立重放 -> 正式准入复核。续跑存档和 ledger 不得替代 fresh-save 身份；低空间时必须让 `8192 MiB` 安全门失败关闭。当前下一施工动作是为新的 day-zero 长跑恢复足够 E 盘写入余量，随后直接运行现有链，不新增第二套候选、规划或执行系统。
