@@ -18,6 +18,13 @@
 | Money production evidence cells | **0/18** | 6 个 Money criterion × 3 partitions；hermetic fixture 不计 production |
 | Formal product training | **false** | 未通过完整正式训练准入 |
 
+### 2026-10-27 落盘边界修正
+
+- 历史 runtime 目录膨胀的直接原因已经定位：LiveTrainingLoop 默认仍写普通全量 JSON，且 `stop` 保留模式不会主动淘汰；单项队列还会同时保留 before、逐项 after 和终态 after。内容寻址模式虽能共享相同块，但旧 rolling 只删逻辑清单，不回收 `_snapshot-blobs` 中失去引用的块，恢复快照、native save boundary 与 Crop Teacher 文件名也未被原正则完整覆盖。
+- 当前默认改为 `content_addressed_gzip + rolling + 64 iterations`。before、逐项 after 与终态 after 仍各自保留唯一逻辑证据，内容相同部分只写一份 SHA-256 gzip 块；滚动边界删除过期逻辑族后，按所有剩余内容寻址清单重建引用集合，只删除无引用且符合受管哈希路径格式的块。遇到损坏、半写或缺块清单时回收失败关闭，不删除任何块。
+- 每次 rolling 会原子覆盖 `artifact-retention-state.json`，记录保留窗口、删除的逻辑文件数、仍被引用的块数、回收块数/字节数及跳过原因。实际模式和窗口同时写入 LiveTrainingLoop report；产品校准入口也默认 rolling。普通 JSON、未知文件、非受管路径和 reparse point 不进入物理回收。
+- 聚焦验证：LiveTrainingLoop 独立构建 `0 warning / 0 error`，Core 内容寻址/选项回归 `29/29`，Backend retention 回归 `5/5`。这些改动只修正存储和审计边界，不提升上表任何训练准入分子。
+
 ### 已原生收口：Golden Walnut v26 收获容量恢复
 
 全新隐藏静音隔离运行 `golden-walnut-source-schedule-v26-20261026-023455` 已从 day-zero 新档真实推进到 Spring 17（`total_days=16`）。它完成 `14` 份花椰菜种子购买、返场、场地准备、播种、逐日浇水、第一轮收获、邮件、任务 `13`、竹鱼竿剧情和原生钓鱼；第 `99` 次迭代钓到 `(O)129` 后背包达到 `12/12`。系统随后按权威节日门禁等待 Spring 13，通过 Beach -> Town -> BusStop -> Farm 返场，并开始第二轮防风草整地、播种和浇水。旧节日振荡、路线清障和第一轮作物闭环均未回退。

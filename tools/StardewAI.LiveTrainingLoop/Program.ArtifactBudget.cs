@@ -2,18 +2,35 @@ using StardewAI.LiveTrainingLoop;
 
 partial class Program
 {
+    private const string BeforeSnapshotPrefix = "before-snapshot-";
+
     private static int NextArtifactIteration(string snapshotDirectory)
     {
-        const string prefix = "before-snapshot-";
         return Directory.EnumerateFiles(
                 snapshotDirectory,
-                prefix + "*.json",
+                BeforeSnapshotPrefix + "*.json",
                 SearchOption.TopDirectoryOnly)
-            .Select(Path.GetFileNameWithoutExtension)
-            .Where(name => name is not null && name.StartsWith(prefix, StringComparison.Ordinal))
-            .Select(name => int.TryParse(name![prefix.Length..], out var iteration) ? iteration : 0)
+            .Select(TryReadPrimaryBeforeSnapshotIteration)
+            .Where(iteration => iteration.HasValue)
+            .Select(iteration => iteration!.Value)
             .DefaultIfEmpty(0)
             .Max() + 1;
+    }
+
+    private static int CountPersistedIterations(string snapshotDirectory) =>
+        Directory.EnumerateFiles(
+                snapshotDirectory,
+                BeforeSnapshotPrefix + "*.json",
+                SearchOption.TopDirectoryOnly)
+            .Count(path => TryReadPrimaryBeforeSnapshotIteration(path).HasValue);
+
+    private static int? TryReadPrimaryBeforeSnapshotIteration(string path)
+    {
+        var name = Path.GetFileNameWithoutExtension(path);
+        return name.StartsWith(BeforeSnapshotPrefix, StringComparison.Ordinal) &&
+            int.TryParse(name[BeforeSnapshotPrefix.Length..], out var iteration)
+                ? iteration
+                : null;
     }
 
     private static string GetArtifactBudgetBlock(
@@ -47,12 +64,7 @@ partial class Program
         int nextIteration)
     {
         if (options.ArtifactRetentionMode != "rolling")
-        {
-            return Directory.EnumerateFiles(
-                options.SnapshotDir,
-                "before-snapshot-*.json",
-                SearchOption.TopDirectoryOnly).Count();
-        }
+            return CountPersistedIterations(options.SnapshotDir);
 
         return RollingArtifactRetention.Apply(
             options.RunDir,

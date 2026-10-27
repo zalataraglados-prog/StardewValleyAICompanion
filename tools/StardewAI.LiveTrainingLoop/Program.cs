@@ -116,10 +116,7 @@ var leasedDecisionSourceStateHash = string.Empty;
 var leasedDecisionGoalId = string.Empty;
 var leasedSelectedCandidateId = string.Empty;
 var leasedSelectedQueueIndex = -1;
-var persistedIterationCount = Directory.EnumerateFiles(
-    options.SnapshotDir,
-    "before-snapshot-*.json",
-    SearchOption.TopDirectoryOnly).Count();
+var persistedIterationCount = CountPersistedIterations(options.SnapshotDir);
 var nextArtifactIteration = NextArtifactIteration(options.SnapshotDir);
 var consecutiveErrors = 0;
 var lastErrorIteration = 0;
@@ -1726,6 +1723,8 @@ var report = new LiveTrainingLoopReport
     SnapshotFile = options.SnapshotFile,
     SnapshotFileProfile = options.SnapshotFileProfile,
     SnapshotArtifactMode = options.SnapshotArtifactMode,
+    ArtifactRetentionMode = options.ArtifactRetentionMode,
+    MaxPersistedIterations = options.MaxPersistedIterations,
     DatasetPath = options.DatasetPath,
     ProgressLogPath = options.ProgressLogPath,
     SnapshotDir = options.SnapshotDir,

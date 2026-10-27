@@ -16,7 +16,7 @@ param(
     [ValidateRange(1, 128)]
     [int] $SaveBoundaryMaxAttempts = 16,
     [ValidateSet("stop", "rolling")]
-    [string] $ArtifactRetentionMode = "stop",
+    [string] $ArtifactRetentionMode = "rolling",
     [ValidateRange(1, 1000000)]
     [int] $MaxPersistedIterations = 64,
     [ValidateRange(1, 64)]

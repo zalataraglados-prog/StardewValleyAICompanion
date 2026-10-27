@@ -861,6 +861,26 @@ blockers without weakening the product's normal confirmation policy.
   experiment regression. `formal_training_started=false` and `storyEventAdvanceCount=0` remain
   explicit; storage admission is not model-training admission or Grandpa-event evidence.
 
+### 2026-10-27: bounded default persistence and reference-safe blob collection
+
+- LiveTrainingLoop now defaults to `content_addressed_gzip` and `rolling` with a 64-iteration
+  logical window. The bootstrap calibration wrapper uses the same retention default. Explicit
+  compatibility overrides remain available, but formal and ordinary long-running entrypoints no
+  longer depend on callers remembering the storage-safe flags.
+- Logical evidence remains complete: the before snapshot, every attempted item after snapshot,
+  terminal aggregate after snapshot and execution receipts retain separate names and identities.
+  Equal payload sections share immutable SHA-256 gzip blobs, so aggregate closure does not duplicate
+  full-state bytes.
+- Rolling retention now covers dispatch-recovery snapshots, native-save-boundary artifacts and
+  Crop Teacher iteration families. After logical eviction it computes the complete live reference
+  set across every remaining content-addressed manifest and removes only unreferenced files matching
+  the owned `_snapshot-blobs/<shard>/<sha256>.json.gz` layout. Invalid JSON, malformed manifests,
+  missing referenced blobs, reparse points and foreign files fail closed or remain untouched.
+- Every pass atomically replaces `artifact-retention-state.json` with logical and physical deletion
+  counts, retained-reference count, byte reclamation and any skip reason. The final loop report also
+  records the effective artifact mode, retention mode and iteration bound. This is a storage and
+  audit correction; it does not authorize formal training or increase coverage.
+
 ### Deterministic teacher versus the student model
 
 A complete authoritative teacher can produce a 100% save without a learned model once the full

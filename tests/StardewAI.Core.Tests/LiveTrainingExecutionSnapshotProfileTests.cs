@@ -62,12 +62,12 @@ public sealed class LiveTrainingExecutionSnapshotProfileTests
     }
 
     [Fact]
-    public void SnapshotArtifactsRemainPlainByDefault()
+    public void SnapshotArtifactsUseContentAddressedGzipByDefault()
     {
         var options = LiveTrainingOptions.Parse(Array.Empty<string>());
 
         Assert.Equal(
-            ContentAddressedJsonArtifactStore.PlainMode,
+            ContentAddressedJsonArtifactStore.ContentAddressedGzipMode,
             options.SnapshotArtifactMode);
     }
 
@@ -102,6 +102,8 @@ public sealed class LiveTrainingExecutionSnapshotProfileTests
         {
             "--run-id",
             "fresh-save-run",
+            "--snapshot-artifact-mode",
+            ContentAddressedJsonArtifactStore.PlainMode,
             "--capture-golden-walnut-fresh-save-evidence"
         }));
     }
