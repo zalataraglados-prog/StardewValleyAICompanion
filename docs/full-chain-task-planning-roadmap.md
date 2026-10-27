@@ -1,5 +1,7 @@
 # StardewAI Full-Chain Task Planning Roadmap
 
+> **Stage 编号说明：** 本文件的 Stage 1-7 是工程链编号，不是完整产品阶段顺序。产品阶段顺序以 [COMPANION_PRODUCT_ROADMAP_CN.md](COMPANION_PRODUCT_ROADMAP_CN.md) 为唯一权威。
+
 ## Target Chain
 
 The implementation chain is:
@@ -452,7 +454,7 @@ commit/dispatch/settlement proof; it cannot be asserted by an ordinary caller pr
 
 ### Stage 6: Perfect-Policy Training And Freeze
 
-Goal: train and benchmark the strongest policy against transparent state and a mechanically perfect executor, without teaching the strategy layer to avoid goals because of low-level executor failures.
+Goal: train and benchmark the strongest single-player policy against transparent state and a mechanically perfect executor, without teaching the strategy layer to avoid goals because of low-level executor failures. Grandpa 21/21 is an intermediate Stage 1 gate; this stage does not freeze the perfect-policy baseline until Stage 2 reaches native Perfection 100%.
 
 Training order:
 
@@ -461,8 +463,9 @@ Training order:
   ranker as V1.
 - Optionally compare a constrained 0.6B-class model after V1 is reproducible.
 - Do not make 1.7B+ neural training a prerequisite on the 8-GB target laptop.
-- Run a new-save long rollout through the Year-3 Grandpa 21-point target before
-  freezing the perfect baseline.
+- Run a new-save long rollout through the Year-3 Grandpa 21-point target as the Stage 1 gate.
+- Warm-start Stage 2 from the admitted Stage 1 checkpoint; admit each new Perfection dependency through the same evidence gates and continue until the native Perfection tracker reaches `100%`.
+- Freeze the perfect baseline only after Perfection 100% is independently reproducible.
 - Enter outcome/RL fine-tuning only after Teacher bootstrap and DAgger evaluation are
   stable; RL is not a substitute for missing goal routes or independent labels.
 
@@ -471,16 +474,16 @@ Acceptance:
 - The best policy checkpoint, feature schema, option vocabulary, compiler version, executor version, and evaluation corpus are frozen as a reproducible baseline.
 - Executor calibration failures remain separated from policy reward.
 - The frozen baseline remains selectable as the non-adapted reference policy.
-- The checkpoint meets pre-frozen held-out Teacher-disagreement, learner-state recovery,
-  native 21/21 success, zero-hard-violation, and runtime-performance gates.
+- The checkpoint meets pre-frozen held-out Teacher-disagreement, learner-state recovery, native 21/21 success, zero-hard-violation, and runtime-performance gates.
+- The frozen perfect-policy baseline independently reaches native Perfection `100%`, while the Stage 1 21/21 benchmark remains regression-clean.
 
 ### Stage 7: Post-Training Human Adaptation
 
-Goal: after the perfect-policy baseline is frozen, add a separate, reversible companion adaptation layer for human play preferences. This is a required product stage; its detailed behavior is intentionally still to be designed with the user.
+Goal: after the single-player native Perfection 100% perfect-policy baseline is frozen, use a stable prototype co-op bridge for long real play with the user and add a separate, reversible companion adaptation layer. This stage learns human collaboration and decision style before the full Multiplayer Companion product is completed.
 
 Design backlog (TBD, not implementation commitments yet):
 
-- cooperation, role division, initiative, pacing, and interruption preferences;
+- aligned AI-vs-human decisions, player takeover/corrections, cooperation, role division, initiative, pacing, and interruption preferences;
 - player-specific resource ownership, goal reservation, and non-interference rules;
 - human-like timing or bounded intentional suboptimality without corrupting the perfect baseline;
 - communication/personality/voice behavior and consent controls;
@@ -502,6 +505,8 @@ Exit conditions:
 - Adaptation profiles are versioned, reversible, and covered by separate evaluation data.
 - Human play tests show that the selected profile is useful and non-disruptive while executor and transparency invariants remain intact.
 - All still-TBD adaptation decisions are resolved and recorded before this stage can be declared complete.
+
+After Stage 7, the remaining product order is maintained only in `COMPANION_PRODUCT_ROADMAP_CN.md`: full Multiplayer Companion / independent AI body -> novice-to-veteran human profiles -> long memory/persona -> voice behavior -> external LLM `Player Language / IntentMediator` -> delegated/autonomous coexistence -> release engineering and stable 1.0.
 
 ## Non-Goals For This Chain
 
