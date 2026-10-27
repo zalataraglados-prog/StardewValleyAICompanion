@@ -4,29 +4,17 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已完成 v10 之后的一条 Money 连续生产段；Community Center、Pet Love、Skull Key 与 Full Shipment 已按 current authority 冻结。当前唯一施工项为 `complete_master_angler` 顶层 dependency、日历窗口与 coverage 接线，之后继续按 CURRENT_STATUS_CN.md 第 6 节顺序推进。Money Exit Gate 保留为 Money 自身退出标准。
 
-## 正式后训练阶段 · Companion 长期联机对照适配（游玩完全体 -> 人类化）
+## 后期产品路线（Canonical 引用）
 
-完全体路线不再把“首个可独立完成游戏/第三年 21/21 的模型”和“长期表现接近人类玩家”视为同一个交付点。两者之间固定增加一个长期 Companion 原型阶段：**Stage D / 长期联机对照适配**。
+产品后期阶段的先后顺序不再在本文件重复维护，统一以 [COMPANION_PRODUCT_ROADMAP_CN.md](COMPANION_PRODUCT_ROADMAP_CN.md) 为准。
 
-进入条件是：Stage 1 的 21/21 基线已经完成并冻结，随后 Stage 2 从该 checkpoint warm-start，完整闭合新增 Perfection 依赖并由原生 Perfection tracker 验收为 100%；只有这个**单人 100% 完美存档基线**稳定可复现且硬约束违规保持为 0 后，才进入 Stage D。达到这里才表示“游玩完全体”成立，但允许其决策节奏、协作习惯和操作风格仍明显偏工程化。
+固定边界只有三条：
+- Stage 1 的 21/21 是训练里程碑，不是游玩完全体；
+- 必须先完成并冻结**单机原生 Perfection 100%** perfect-policy baseline；
+- 随后才进入 Stage D 长期玩家联机对照适配；Stage D 之后再补全 Multiplayer、human profiles、memory/persona、voice、外挂式 LLM interaction 与 stable 1.0。
 
-Stage D 中，原型将与玩家进行长时间真实联机。系统同时记录同一合作上下文下的 AI 决策/执行、玩家自己的操作、玩家对 AI 的打断/接管/纠正、角色分工、资源归属、等待与节奏、路线选择以及最终原生 outcome，并尽可能把可比较片段对齐成成对或序列级对照样本。训练目标不是机械复制玩家按键，而是学习：在硬约束和长期目标都满足的前提下，人类玩家如何分配任务、选择时机、减少无意义往返、配合队友、处理模糊优先级以及形成自然节奏。
+本文件继续只维护当前施工、原生证据和历史收敛记录，不再作为后期产品阶段排序的第二来源。
 
-人类操作不是新的无条件 Teacher。只有在状态、可见信息、权限和候选集合可对齐时，差异才能进入 preference / ranking / imitation / decision-finetune 数据；无法对齐的片段只作为联机行为观察或诊断。Stage D 数据必须显式携带 player_intent、player_preferences、cooperation_state、资源所有权、角色分工和人类/AI 行为来源，不能回写 Stage 1 的 Teacher 标签，也不能放宽 Planner/Compiler/Executor 的确定性安全边界。
-
-该阶段的核心闭环为：
-
-```text
-冻结的游玩完全体基线
--> 长期真实联机
--> 对齐 AI / 玩家操作与决策
--> 标注打断、接管、纠正与协作结果
--> 拟人偏好 / imitation / decision fine-tuning
--> 独立联机回归
--> 人类化 Companion 冻结
-```
-
-Stage D 退出时必须同时保持单人 Perfection 100% 与既有能力回归不退化，并证明多人长期协作中的硬约束违规为 0、恢复可靠、玩家接管需求持续下降、决策/节奏与玩家偏好的分歧进入冻结平台区间。具体数值门槛等首批真实联机对照数据产生后再冻结，不提前编造。稳定 100% 完美存档仍属于其后的第二产品阶段，不反向阻塞 Stage D。
 ## 当前增量 · 新档第一步必须先领取礼盒
 
 Spring 1 新档首轮排序暴露的不是社交评分错误，而是上游缺少开局礼盒候选。唯一实现现为 `rewards.claim_starter_gift`：小模型只决定是否领取，C# 编译器从 fresh snapshot 绑定礼盒、输出、站位和任务，运行时通过原生农舍 Chest 交互执行。它属于 `earn_money` 的支撑转移，领取后必须 fresh replan 到作物生产；不得并存第二套礼盒、库存或任务写入逻辑。

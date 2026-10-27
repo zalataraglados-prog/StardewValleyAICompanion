@@ -1,5 +1,7 @@
 # StardewAI Teacher / Student 收敛与监督合同
 
+> **作用域：** 本文件定义训练 / Teacher / Student 技术合同，不定义完整产品后期顺序；产品阶段先后以 [COMPANION_PRODUCT_ROADMAP_CN.md](COMPANION_PRODUCT_ROADMAP_CN.md) 为唯一权威。
+
 状态：2026-09-23 当前有效架构合同。本文覆盖早期“把已执行候选直接当正样本”的训练解释，但不改写历史运行事实。
 
 ## 2026-09-23 StrategicPolicy 单入口覆盖
