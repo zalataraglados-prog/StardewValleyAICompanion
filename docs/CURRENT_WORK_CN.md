@@ -2706,3 +2706,10 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - v50 从耐久账本直接越过 Crop Teacher，执行 `(O)330` 安全单件出货和 Master Angler 路线，取得 `4` 条 verified action 并保存到 Spring 19。v51 随后实际捕获 `(O)147`，但因有界尝试同时计入 fresh 失效/continuation 释放而停在 `6/8`，未写原生保存边界；该轮只作诊断。
 - v52 以 `6/12` 的可达门重跑未落盘的 Spring 19 状态，原生捕获目标 `(O)131`，产生 `1` 条 `fishing.catch_fish` 已接纳轨迹；满包恢复通过唯一跨图 continuation 将该鱼精确投箱，库存 `1 -> 0`、出货箱 `0 -> 1`。原生睡眠把存档推进至 Spring 20，summary 为 passed，所有服务和端口正常回收。
 - 下一固定施工单位仍是独立 Golden Walnut day-zero/fresh-save source schedule：首次登岛 -> 来源增量 -> First Parrot -> Turtle -> House -> schedule 生成与重放。v49-v52 不得用于提升 fresh-save coverage 或开启正式训练。当前 E 盘只保留约 `8.1 GiB` 可用空间，继续长跑前必须恢复高于 `8192 MiB` 门槛的实际写入余量；不得关闭或降低该门。
+
+## 2026-10-27 v53 fresh-save 诊断收口
+
+- v53 新档真实取得 `193` 条 verified Product action、两轮完整 Crop Teacher 和 total day 16 的耐久前缀，但在 `19:20` 的第三次作物 handoff 中，普通 `route_to_farm` 与共享 exclusive recovery 门冲突，连续八次被 dispatch 拒绝后停止。该运行是高价值诊断，不是完成的 Golden Walnut source schedule。
+- Crop Teacher 现于 `19:00` 后复用既有 `recovery.stabilize_day`，不再重建普通作物路线；执行步骤覆写保留原 ledger 的 `NativeSleep` 日界结算语义。故事事件和安全对话恢复仍先于该门，其他普通 interrupt 仍不得结算作物或睡眠转移。
+- fresh-save continuity 从整块富投影文本相等改为稳定进度投影相等，并把控制器交接窗口锁为 v53 实测的 `24` tick。当前位置、支付能力和当前地图校验状态可变化；任一实际核桃、来源收集、修船、到岛、鹦鹉工程或访问解锁变化若没有 episode 仍被拒绝。v53 的 `193/193` episode 已离线重建 manifest 成功。
+- 验证：聚焦 `22/22 + 11/11`；全量 Core `3008 passed / 21` 个既有基线失败。下一步只运行新的独立 day-zero 长跑，先观察晚间 recovery 原生保存，再继续首次登岛与核桃 schedule；本轮没有写正式训练数据，`formal_product_training_authorized=false`。

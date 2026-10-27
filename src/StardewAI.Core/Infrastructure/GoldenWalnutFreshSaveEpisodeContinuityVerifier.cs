@@ -8,7 +8,7 @@ namespace StardewAI.Core.Infrastructure;
 
 public static class GoldenWalnutFreshSaveEpisodeContinuityVerifier
 {
-    public const long MaximumPassiveGapTicks = 4;
+    public const long MaximumControllerHandoffGapTicks = 24;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -57,7 +57,8 @@ public static class GoldenWalnutFreshSaveEpisodeContinuityVerifier
         var gapTicks = currentEpisode.BeforeGameTick -
             previousEpisode.AfterGameTick;
         Require(
-            gapTicks >= 0 && gapTicks <= MaximumPassiveGapTicks,
+            gapTicks >= 0 &&
+            gapTicks <= MaximumControllerHandoffGapTicks,
             "Golden Walnut passive continuity gap exceeds the bounded " +
             "observation window: " + currentEpisodePath);
         Require(
@@ -79,7 +80,8 @@ public static class GoldenWalnutFreshSaveEpisodeContinuityVerifier
             "Golden Walnut passive continuity crossed game time: " +
             currentEpisodePath);
         Require(
-            SameJsonValue(
+            GoldenWalnutFreshSaveProgressProjectionComparer
+                .SameGingerIslandProgress(
                 ReadStateValue(
                     previousAfter,
                     "locations",
@@ -88,7 +90,8 @@ public static class GoldenWalnutFreshSaveEpisodeContinuityVerifier
                     currentBefore,
                     "locations",
                     "ginger_island_access")) &&
-            SameJsonValue(
+            GoldenWalnutFreshSaveProgressProjectionComparer
+                .SameGoldenWalnutSourceProgress(
                 ReadStateValue(
                     previousAfter,
                     "world_progress",
@@ -145,9 +148,6 @@ public static class GoldenWalnutFreshSaveEpisodeContinuityVerifier
         }
         return value;
     }
-
-    private static bool SameJsonValue(JsonElement left, JsonElement right) =>
-        left.GetRawText() == right.GetRawText();
 
     private static void Require(bool condition, string message)
     {

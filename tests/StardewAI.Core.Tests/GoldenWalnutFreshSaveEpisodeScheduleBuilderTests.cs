@@ -127,6 +127,119 @@ public sealed class GoldenWalnutFreshSaveEpisodeScheduleBuilderTests
     }
 
     [Fact]
+    public void AcceptsObservedControllerHandoffGapBoundary()
+    {
+        using var fixture = new Fixture();
+        var source = EligibleSource();
+        var start = Snapshot(
+            "h0", 0, 0, false, false, false, false, source.SourceKey);
+        var arrived = Snapshot(
+            "h1", 100, 1, true, false, false, false, source.SourceKey);
+        var arrivedAfterHandoff = Snapshot(
+            "h1-handoff", 100, 1, true, false, false, false, source.SourceKey);
+        var firstParrot = Snapshot(
+            "h2", 101, 1, true, true, false, false, source.SourceKey);
+        var turtle = Snapshot(
+            "h3", 102, 1, true, true, true, false, source.SourceKey);
+        var house = Snapshot(
+            "h4", 103, 1, true, true, true, true, source.SourceKey);
+        var paths = new[]
+        {
+            fixture.WriteEpisode(0, start, arrived, beforeTick: 0),
+            fixture.WriteEpisode(
+                1,
+                arrivedAfterHandoff,
+                firstParrot,
+                beforeTick: 25),
+            fixture.WriteEpisode(2, firstParrot, turtle, beforeTick: 27),
+            fixture.WriteEpisode(3, turtle, house, beforeTick: 29)
+        };
+        _ = fixture.WriteManifest(paths);
+
+        var manifest = GoldenWalnutFreshSaveEpisodeManifestBuilder
+            .WriteFromDirectory(
+                Path.Combine(fixture.Root, "handoff-gap-manifest.json"),
+                fixture.Root,
+                "fresh-save-schedule:handoff-gap",
+                "fresh-save-run");
+
+        Assert.Equal(4, manifest.EpisodePaths.Length);
+    }
+
+    [Fact]
+    public void RejectsControllerHandoffGapBeyondObservedBoundary()
+    {
+        using var fixture = new Fixture();
+        var source = EligibleSource();
+        var start = Snapshot(
+            "h0", 0, 0, false, false, false, false, source.SourceKey);
+        var unchanged = Snapshot(
+            "h1", 0, 0, false, false, false, false, source.SourceKey);
+        var unchangedAfterHandoff = Snapshot(
+            "h1-handoff", 0, 0, false, false, false, false, source.SourceKey);
+        var after = Snapshot(
+            "h2", 0, 0, false, false, false, false, source.SourceKey);
+        var paths = new[]
+        {
+            fixture.WriteEpisode(0, start, unchanged, beforeTick: 0),
+            fixture.WriteEpisode(
+                1,
+                unchangedAfterHandoff,
+                after,
+                beforeTick: 26)
+        };
+        _ = fixture.WriteManifest(paths);
+
+        var error = Assert.Throws<InvalidDataException>(() =>
+            GoldenWalnutFreshSaveEpisodeManifestBuilder.WriteFromDirectory(
+                Path.Combine(fixture.Root, "oversized-gap-manifest.json"),
+                fixture.Root,
+                "fresh-save-schedule:oversized-gap",
+                "fresh-save-run"));
+
+        Assert.Contains(
+            "exceeds the bounded observation window",
+            error.Message,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AcceptsContextOnlyProjectionChangesInsidePassiveGap()
+    {
+        using var fixture = new Fixture();
+        var source = EligibleSource();
+        var start = Snapshot(
+            "h0", 0, 0, false, false, false, false, source.SourceKey);
+        var atHouse = Snapshot(
+            "h1", 0, 0, false, false, false, false, source.SourceKey,
+            currentLocationId: "FarmHouse",
+            moneyAvailable: 20);
+        var atFarm = Snapshot(
+            "h1-context", 0, 0, false, false, false, false, source.SourceKey,
+            currentLocationId: "Farm",
+            moneyAvailable: 20);
+        var after = Snapshot(
+            "h2", 0, 0, false, false, false, false, source.SourceKey,
+            currentLocationId: "Farm",
+            moneyAvailable: 20);
+        var paths = new[]
+        {
+            fixture.WriteEpisode(0, start, atHouse, beforeTick: 0),
+            fixture.WriteEpisode(1, atFarm, after, beforeTick: 3)
+        };
+        _ = fixture.WriteManifest(paths);
+
+        var manifest = GoldenWalnutFreshSaveEpisodeManifestBuilder
+            .WriteFromDirectory(
+                Path.Combine(fixture.Root, "context-gap-manifest.json"),
+                fixture.Root,
+                "fresh-save-schedule:context-gap",
+                "fresh-save-run");
+
+        Assert.Equal(2, manifest.EpisodePaths.Length);
+    }
+
+    [Fact]
     public void RejectsUnreceiptedIslandProgressInsidePassiveGap()
     {
         using var fixture = new Fixture();
@@ -255,7 +368,9 @@ public sealed class GoldenWalnutFreshSaveEpisodeScheduleBuilderTests
         bool firstParrot,
         bool westernTurtle,
         bool islandHouse,
-        string changedSourceKey)
+        string changedSourceKey,
+        string currentLocationId = "Farm",
+        int moneyAvailable = 500)
     {
         var sources = GoldenWalnutNativeSourceCatalog.Sources
             .Select(source => new
@@ -267,7 +382,10 @@ public sealed class GoldenWalnutFreshSaveEpisodeScheduleBuilderTests
                     : 0,
                 remaining_quantity = source.NativeQuantity -
                     (source.SourceKey == changedSourceKey ? collectedQuantity : 0),
-                acquisition_option_id = source.AcquisitionOptionId
+                acquisition_option_id = source.AcquisitionOptionId,
+                runtime_source_validation_status = currentLocationId == "Farm"
+                    ? "current_map_projection"
+                    : "location_not_loaded"
             })
             .ToArray();
         return new SnapshotEnvelope
@@ -302,6 +420,8 @@ public sealed class GoldenWalnutFreshSaveEpisodeScheduleBuilderTests
                         value = new
                         {
                             schema_version = "ginger_island_access.v1",
+                            current_location_id = currentLocationId,
+                            ticket = new { money_available = moneyAvailable },
                             journey = new { island_reached = islandReached },
                             first_parrot = new { complete_or_pending = firstParrot },
                             western_turtle_parrot = new { complete_or_pending = westernTurtle },

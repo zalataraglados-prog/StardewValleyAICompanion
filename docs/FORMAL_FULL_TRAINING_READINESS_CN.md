@@ -1343,3 +1343,11 @@ v49-v50 已证明 v48 的第二轮作物终态能够经只读 ledger 恢复、�
 v51 原生捕获 `(O)147`，但因 `12` 次尝试只取得 `6/8` verified action 而结构化 incomplete，且没有保存边界，因此不计耐久进度。v52 从原 Spring 19 存档重跑后原生捕获目标 `(O)131`，形成一条已接纳 `fishing.catch_fish` 轨迹，并以精确最近捕获物恢复把该鱼投箱；`6/6` verified action 后睡到 Spring 20，`status=passed` 且 `native_save_boundary_verified=true`。
 
 上述证据仍来自 crop-resume，而非完整 day-zero/fresh-save 归档；它不能证明首次登岛、任何 Golden Walnut 来源增量或 First Parrot/Turtle/House，也不能生成/重放完整 source schedule。因此正式 Teacher comparison/native outcome 分子均不增加，`formal_product_training_authorized=false` 不变。下一准入证据仍是独立 day-zero source-schedule 长跑；磁盘安全余量不足时必须先停，不得降低 `8192 MiB` 门。
+
+## 历史记录 · 2026-10-27 v53 fresh-save 证据连续性修正
+
+v53 在独立新档中累计 `193` 条 verified Product action，并完成两轮作物生产，但尚未首次登岛。它在 `19:20` 被 exclusive recovery 门正确拒绝普通作物路线，证明缺口位于控制器晚间重规划，而非恢复执行器；当前修复只把 Crop Teacher 接回唯一 `recovery.stabilize_day`，并保留原 ledger 的原生睡眠日界结算。
+
+fresh-save manifest 现按稳定岛屿进度维度验证 episode 间连续性，忽略当前位置、票价支付能力和地图加载校验等上下文噪声，同时将无回执交接窗口限制为实测 `24` tick。`25` tick 或任何未记账核桃/解锁变化仍失败关闭。v53 全部 `193` 个 episode 已成功重建 manifest，但因首次登岛、来源增量、First Parrot、Turtle、House 均缺失，source schedule 仍不可生成，正式准入分子不变。
+
+下一准入运行必须从新的 day-zero 身份开始：先验证晚间 recovery 与保存，再完成首次登岛和三项鹦鹉跃迁，生成 source schedule 后在独立运行重放。此前 `formal_product_training_authorized=false`。

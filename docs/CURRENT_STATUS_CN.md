@@ -559,3 +559,11 @@ Skull Key 与 Pet Love 的旧生产工件均已按当前字典、日历、输入
 - v51 把路线推进到原生钓鱼并捕获 `(O)147`，随后开始 exact-latest-catch 出货；但 `12` 次有界尝试中 fresh 失效和 continuation 释放也计入预算，最终仅 `6/8`，LiveTrainingLoop 以 `incomplete` 退出且没有睡眠落盘。该轮只保留为运行诊断，不能作为耐久进度或正式训练数据。
 - v52 从未被 v51 改写的 Spring 19 存档重跑同一链。它取得 `6/6` verified action，原生捕获目标 `(O)131`，写入 `1` 条已接纳的 `fishing.catch_fish` 多候选轨迹；满包后沿 Beach -> Town -> BusStop -> Farm 路线，把该 `(O)131` 从库存 `1 -> 0`、出货箱 `0 -> 1`，全部 primitive 均 `applied + verified`。随后原生睡眠使存档推进到 Spring 20，summary 为 `status=passed / native_save_boundary_verified=true / formal_training_started=false`。
 - 这些续跑证明 v48 终态可安全持久化并继续 Stage One collection，但它们使用 crop-resume 身份，不能冒充 Golden Walnut day-zero/fresh-save source schedule。首次登岛、核桃来源增量、First Parrot/Turtle/House 和 source schedule 生成/重放仍未完成，所有正式 coverage 分子与 `formal_product_training_authorized=false` 保持不变。下一固定步骤仍是独立 day-zero 长跑；E 盘低于额外长跑所需安全余量前，不得降低 `8192 MiB` 门槛。
+
+## 17. 2026-10-27 v53 fresh-save 长跑诊断与恢复门修正
+
+- v53 使用独立新档 `ProofFarm_452743174`，完成两轮完整 Crop Teacher（`6/6` 与 `8/8` 收获），随后进入 Stage One collection。停止前累计 `193` 条 verified Product action、`193` 行运行数据和两次 `crop_teacher_run_complete`，推进到 total day 16；Backend、Product 与游戏 stderr 均为零。
+- 该轮在 `19:20` 暴露真实控制冲突：新 Crop Teacher handoff 仍重复生成普通 `route_to_farm`，而共享运行时已正确进入 `19:00` 后 exclusive recovery 窗口，故普通连接器连续八次在 dispatch 边界被拒。修复复用唯一 `recovery.stabilize_day` 编译链，并把晚间恢复执行覆写为 `NativeSleep` 结算步骤，使真实睡眠仍能写入原作物 ledger 的日界回执；没有新增第二套路由或睡眠执行器。
+- v53 的 `193` 个耐久 episode 还揭示 continuity 校验把富投影中的当前位置、购票支付能力和当前地图验证状态误当成岛屿进度。校验现只比较核桃数量、逐来源收集量、邀请/修船、到岛次数、鹦鹉工程、访问解锁及相关邮件等稳定进度维度；控制器交接间隙仅按实测上限 `24` tick 接受，`25` tick、未记账核桃或解锁变化继续失败关闭。修复后对 v53 全部 `193/193` episode 重建 manifest 成功。
+- 聚焦验证为 continuity/planner `22/22`、Crop Teacher 控制守卫 `11/11`；全量 Core 为 `3008/3029`，仍有 `21` 个与本切片文件无交集的既有基线失败，未宣称全绿。v53 没有首次登岛、核桃来源增量或 First Parrot/Turtle/House，最终仍为 incomplete，不生成正式 source schedule，不改变 `formal_product_training_authorized=false`。
+- 下一固定步骤：用本修复重新发布隔离二进制，启动新的 day-zero/fresh-save 长跑，先验证 `19:00` 后 Crop Teacher 只进入既有 recovery 并完成原生保存，再继续首次登岛 -> 来源增量 -> First Parrot -> Turtle -> House -> schedule 生成与独立重放。

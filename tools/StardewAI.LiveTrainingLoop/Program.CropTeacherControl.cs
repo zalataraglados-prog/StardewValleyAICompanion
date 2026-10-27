@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using StardewAI.Contracts.Execution;
+using StardewAI.Core.Execution;
 using StardewAI.Core.Infrastructure;
 using StardewAI.GoalConditionedBootstrap;
 using StardewAI.LiveTrainingLoop;
@@ -18,7 +19,8 @@ static partial class Program
         string SnapshotProfile,
         string SnapshotUrl,
         bool SitePreparationComplete,
-        string InterruptKind = "");
+        string InterruptKind = "",
+        CropTeacherRunStep? ExecutionStepOverride = null);
 
     private static async Task<CropTeacherControlQueueBuildResult>
         BuildCropTeacherControlQueueAsync(
@@ -53,6 +55,28 @@ static partial class Program
                 beforeSnapshotPath,
                 beforeSnapshot,
                 stateHash);
+        }
+
+        if (step.Stage != CropTeacherRunStageKinds.NativeSleep &&
+            GameClockBudgetPolicy.RecoveryWindowStarted(
+                ReadInGameTime(beforeSnapshot)))
+        {
+            var recovery = await BuildCropTeacherSleepQueueAsync(
+                http,
+                options,
+                iteration,
+                beforeSnapshotPath,
+                beforeSnapshot,
+                stateHash);
+            return recovery with
+            {
+                InterruptKind = "crop_teacher_late_day_recovery",
+                ExecutionStepOverride = step with
+                {
+                    Stage = CropTeacherRunStageKinds.NativeSleep,
+                    Reason = "crop_teacher_late_day_recovery"
+                }
+            };
         }
 
         if (step.Stage == CropTeacherRunStageKinds.ExecuteCropBatch &&

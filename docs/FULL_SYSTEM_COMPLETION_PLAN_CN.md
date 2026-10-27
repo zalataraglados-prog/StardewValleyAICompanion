@@ -1382,3 +1382,11 @@ v48 已把 day-zero 前缀推进为两轮完整作物生产：首轮 `6` 格花�
 v49-v52 将 v48 的人工停止点转换为可重启、可保存的耐久链：先按账本规则重做未跨日落盘的 `8/8` 收获并保存到 Spring 18，再越过已完成作物阶段进入 Stage One collection。最终 v52 原生捕获 `(O)131`，执行精确最近捕获物出货恢复，并把存档推进到 Spring 20；`fishing.catch_fish` 产生一条已接纳多候选轨迹。v51 的 `6/8` incomplete 仅用于校准有界运行规模，没有冒充成功证据。
 
 该链只证明 crop-resume 后的控制与执行连续性。系统完成顺序不变：独立 day-zero/fresh-save 长跑 -> 首次登岛 -> 核桃来源增量 -> First Parrot -> Turtle -> House -> source schedule 生成 -> 独立重放 -> 正式准入复核。续跑存档和 ledger 不得替代 fresh-save 身份；低空间时必须让 `8192 MiB` 安全门失败关闭。当前下一施工动作是为新的 day-zero 长跑恢复足够 E 盘写入余量，随后直接运行现有链，不新增第二套候选、规划或执行系统。
+
+## 历史记录 · 2026-10-27 v53 控制器与证据门修正
+
+v53 将真正 day-zero 前缀推进到 `193` 条 verified action、两轮完整作物生产和 total day 16。它没有进入岛屿里程碑，而是在 `19:20` 暴露 Crop Teacher 继续编译普通路线、共享运行时只允许 recovery 的冲突。计划不增加新阶段：晚间作物控制直接复用 `recovery.stabilize_day` 和唯一睡眠执行器，原 ledger 继续由真实 `executor.sleep` 结算。
+
+episode continuity 只比较稳定进度，不再要求包含当前位置、支付能力和地图验证状态的整个富投影逐字相等；控制器交接仍以 `24` tick 为硬上限，并继续拒绝未记账的核桃、来源、修船、到岛、鹦鹉或访问变化。修复已对 v53 `193/193` episode 重建 manifest，并通过聚焦回归。
+
+下一施工动作固定为重新发布后启动新的独立 day-zero 长跑：晚间 recovery/save 验证 -> 首次登岛 -> 核桃来源增量 -> First Parrot -> Turtle -> House -> source schedule 生成 -> 独立重放 -> 正式准入复核。v53 诊断前缀不能直接进入正式 corpus。

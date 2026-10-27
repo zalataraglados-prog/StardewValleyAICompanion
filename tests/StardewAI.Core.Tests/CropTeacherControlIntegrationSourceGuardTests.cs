@@ -272,13 +272,59 @@ public sealed class CropTeacherControlIntegrationSourceGuardTests
         var program = Read("tools", "StardewAI.LiveTrainingLoop", "Program.cs");
 
         Assert.Contains(
-            "!string.IsNullOrWhiteSpace(cropQueue.InterruptKind)\n" +
-            "            ? null\n" +
-            "            : cropStep;",
+            "cropQueue.ExecutionStepOverride ??\n" +
+            "            (!string.IsNullOrWhiteSpace(cropQueue.InterruptKind)\n" +
+            "                ? null\n" +
+            "                : cropStep);",
             program.Replace("\r\n", "\n"),
             StringComparison.Ordinal);
         Assert.Contains(
             "cropQueue.InterruptKind",
+            program,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void LateDayCropWorkReusesRecoveryAndPreservesDayBoundarySettlement()
+    {
+        var source = Read(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.CropTeacherControl.cs");
+        var program = Read("tools", "StardewAI.LiveTrainingLoop", "Program.cs");
+        var dialogueCheck = source.IndexOf(
+            ".HasSafeSpeakerlessDialogue(beforeSnapshot)",
+            StringComparison.Ordinal);
+        var recoveryCheck = source.IndexOf(
+            "GameClockBudgetPolicy.RecoveryWindowStarted(",
+            dialogueCheck,
+            StringComparison.Ordinal);
+        var stageSwitch = source.IndexOf(
+            "return step.Stage switch",
+            recoveryCheck,
+            StringComparison.Ordinal);
+
+        Assert.True(dialogueCheck >= 0);
+        Assert.True(recoveryCheck > dialogueCheck);
+        Assert.True(stageSwitch > recoveryCheck);
+        Assert.Contains(
+            "BuildCropTeacherSleepQueueAsync(",
+            source[recoveryCheck..stageSwitch],
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "InterruptKind = \"crop_teacher_late_day_recovery\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Stage = CropTeacherRunStageKinds.NativeSleep",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "cropQueue.ExecutionStepOverride ??",
+            program,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "CaptureCropTeacherDayBoundaryStartAsync(",
             program,
             StringComparison.Ordinal);
     }

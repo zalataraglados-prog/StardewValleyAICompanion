@@ -673,9 +673,10 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             beforeSnapshot,
             lastStateHash);
         cropTeacherStepForExecution =
-            !string.IsNullOrWhiteSpace(cropQueue.InterruptKind)
-            ? null
-            : cropStep;
+            cropQueue.ExecutionStepOverride ??
+            (!string.IsNullOrWhiteSpace(cropQueue.InterruptKind)
+                ? null
+                : cropStep);
         if (cropQueue.SitePreparationComplete)
         {
             if (!cropTeacherPreparedCommitmentIds.Add(
