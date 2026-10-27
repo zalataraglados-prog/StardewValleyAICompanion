@@ -1,5 +1,8 @@
 # StardewAI 未来陪玩架构约束
 
+> **产品阶段顺序：** 以 [COMPANION_PRODUCT_ROADMAP_CN.md](COMPANION_PRODUCT_ROADMAP_CN.md) 为唯一权威。
+> 本文件只维护 body / memory / persona / voice / LLM interaction / multiplayer 等不可返工架构边界，不再独立定义它们的施工先后。
+
 来源：用户桌面 `stardewai_未来规划，修正部分.txt` 与后续已经固定的产品动机。本文件记录会影响当前接口、训练和未来 Product/Companion 层的不可返工约束；未确定的体验参数仍保留为后续规格，不在当前阶段猜值。
 
 ## 产品终点
