@@ -224,15 +224,21 @@ http://127.0.0.1:8765/api/v1/audit
 
 动作机械底座和正式 Product 训练闭环已经进入晚期，但“完整 AI 伙伴”仍包含后续的大块工作：
 
+产品阶段顺序以 [docs/COMPANION_PRODUCT_ROADMAP_CN.md](docs/COMPANION_PRODUCT_ROADMAP_CN.md) 为唯一权威。当前概要为：
+
 ```text
 有界正式训练
-→ 多日 / 跨季 / 跨年长期策略
-→ Grandpa 21 与独立长线评测
-→ 独立 AI body / farmhand
-→ long memory / persona / Companion Runtime
-→ Player Language / IntentMediator
-→ multiplayer / interruption / recovery
-→ 安装、配置、升级、发布工程
+→ Stage 1：新档 Grandpa 21/21
+→ Stage 2：单机原生 Perfection 100%
+→ 冻结 perfect-policy baseline
+→ Stage D：与玩家长期真实联机，对照训练与决策拟人化
+→ 完整 Multiplayer Companion / 独立 AI body
+→ 新手—普通—老手人类 Profile
+→ long memory / persona
+→ 语气 / 声线 / voice behavior
+→ Player Language / IntentMediator / 外挂式 LLM interaction
+→ 玩家委托与 AI 自主生活共存
+→ 安装、配置、升级、诊断 + 长时间 E4
 → stable 1.0
 ```
 
