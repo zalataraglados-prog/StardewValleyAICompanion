@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using StardewAI.Contracts.State;
 
 namespace StardewAI.Core.Training
 {
@@ -19,11 +20,49 @@ namespace StardewAI.Core.Training
     public sealed class NpcCurrentLoadedSchedulePresenceResolver
     {
         public NpcCurrentLoadedSchedulePresenceResolution Resolve(
+            SnapshotEnvelope snapshot,
+            string npcName)
+        {
+            if (!NpcCurrentScheduleSnapshotAuditor.TryReadFieldValue(
+                    snapshot,
+                    "time",
+                    "total_days",
+                    out var totalDaysNode) ||
+                !totalDaysNode.TryGetInt32(out var totalDays) ||
+                !NpcCurrentScheduleSnapshotAuditor.TryReadFieldValue(
+                    snapshot,
+                    "time",
+                    "time",
+                    out var gameTimeNode) ||
+                !gameTimeNode.TryGetInt32(out var gameTime) ||
+                !NpcCurrentScheduleSnapshotAuditor.TryReadFieldValue(
+                    snapshot,
+                    "npcs",
+                    "schedule_catalog",
+                    out var catalog) ||
+                !NpcCurrentScheduleSnapshotAuditor.TryReadFieldValue(
+                    snapshot,
+                    "npcs",
+                    "schedules",
+                    out var schedules))
+            {
+                return Blocked(
+                    "current_loaded_schedule_snapshot_inputs_incomplete");
+            }
+
+            return Resolve(
+                npcName,
+                totalDays,
+                gameTime,
+                catalog,
+                schedules);
+        }
+
+        public NpcCurrentLoadedSchedulePresenceResolution Resolve(
             JsonElement snapshot,
             string npcName)
         {
-            if (string.IsNullOrWhiteSpace(npcName) ||
-                !NpcCurrentScheduleSnapshotAuditor.TryReadFieldValue(
+            if (!NpcCurrentScheduleSnapshotAuditor.TryReadFieldValue(
                     snapshot,
                     "time",
                     "total_days",
@@ -51,7 +90,35 @@ namespace StardewAI.Core.Training
                     snapshot,
                     "npcs",
                     "schedules",
-                    out var schedules) ||
+                    out var schedules))
+            {
+                return Blocked(
+                    "current_loaded_schedule_snapshot_inputs_incomplete");
+            }
+
+            return Resolve(
+                npcName,
+                totalDays,
+                gameTime,
+                catalog,
+                schedules);
+        }
+
+        private static NpcCurrentLoadedSchedulePresenceResolution Resolve(
+            string npcName,
+            int totalDays,
+            int gameTime,
+            JsonElement catalog,
+            JsonElement schedules)
+        {
+            if (string.IsNullOrWhiteSpace(npcName) ||
+                !IsCurrentDayTime(gameTime) ||
+                !catalog.TryGetProperty(
+                    "current_selection_context",
+                    out var context) ||
+                context.ValueKind != JsonValueKind.Object ||
+                ReadInt(context, "capture_total_days") != totalDays ||
+                ReadInt(context, "game_time") != gameTime ||
                 schedules.ValueKind != JsonValueKind.Array)
             {
                 return Blocked(

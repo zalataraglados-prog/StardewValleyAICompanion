@@ -1323,3 +1323,9 @@ v43 的 day-zero 新档在人工停止前累计 `162` 条 verified Product actio
 v44/v45 的受限回放已在真实 Product Executor 上证明，高层 `quest:13` continuation 能跨 Farm、BusStop、Town、Beach 保持，fresh snapshot 只重绑定当前连接器。v44 额外暴露并失败关闭了 FarmHouse 门触发格/站位格混用；修复后，连接器站位解析与路线障碍处理复用唯一透明路由和清障执行链。
 
 v45 完成 `8/8` verified action，并从 Beach 逐段返回 FarmHouse，原生睡眠使日期 `1:spring:14 -> 1:spring:15` 且存档 SHA-256 变化；`native_save_boundary_verified=true`。该证据解除当前“续行修复能否安全收尾”的阻塞，但没有形成 Golden Walnut source schedule、没有单独复现 `(O)129`、没有新增 Teacher comparison/native outcome 三分区，因此 `formal_product_training_authorized=false` 与所有正式 coverage 分子不变。下一准入证据仍为独立 Golden Walnut day-zero/fresh-save 长跑及可重放 source schedule。
+
+## 历史记录 · 2026-10-27 v46/v47 店主服务窗口前置排除
+
+v46 证明只读取“当前店主不在柜台”会让日计划先锁定当天不可能完成的购买，再浪费多个等待块。现有透明桥其实已提供完整原生日程、入口时窗和柜台矩形；候选层现直接计算这些证据的全天交集，并在无交集时于模型排名前排除。v47 的真实 Spring 1 排名确认 AnimalShop 候选全部以 `shop_owner_has_no_service_window_today` 阻塞，策略立即改做 starter gift。
+
+这项修复减少错误候选和无效反馈，不构成新的 criterion、Teacher comparison 或 native outcome 三分区。v47 为人工停止的诊断运行，`formal_product_training_authorized=false` 不变；正式准入仍等待完整 Golden Walnut source schedule 生成与重放。

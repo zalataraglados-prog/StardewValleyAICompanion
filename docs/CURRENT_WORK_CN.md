@@ -2685,3 +2685,10 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - v44 的真实 Farm 快照离线重算后得到可用的 `recovery:native_save_boundary / clear_obstacle_tile`，目标保持 FarmHouse，不再选择 Forest。相应连接器修复和恢复回归 `3/3` 通过。
 - v45 从隔离耐久存档重新运行：8/8 Product action 完成；同一 `quest:13` 高层目标依次执行 Farm→BusStop→Town→Beach；关闭阶段按 Beach→Town→BusStop→Farm→FarmHouse 滚动重规划，随后原生睡眠。日期从 `1:spring:14` 变为 `1:spring:15`，存档 SHA-256 从 `a9dbf56f...` 变为 `74400983...`，summary 为 `status=passed`、`native_save_boundary_verified=true`、`formal_training_started=false`。
 - v45 证明通用跨图 continuation 与原生保存边界闭合，但没有单独重现 `(O)129`；不得把 quest 路线证据改写成该鱼的完成证据。下一固定施工单位仍是独立 Golden Walnut day-zero/fresh-save source schedule，并把 `(O)129` 跨 BusStop/Town 连续性作为长跑观测点，随后证明首次登岛、核桃来源增量及 First Parrot/Turtle/House 三项跃迁。
+
+## 2026-10-27 v46/v47 商店候选前置日程门
+
+- v46 在 Spring 1 周一错误锁定 AnimalShop 购买目标并做了 14 个机械等待块；`08:20` 的 fresh snapshot 才正确指出玛妮不在柜台。复核完整透明日程后确认，玛妮当天没有任何位置落入柜台服务区且与入口开放时间重叠，因此错误发生在 `06:00` 候选生成，而不是店主状态读取或购买执行器。
+- 修复复用 `NpcCurrentScheduleSnapshotProjectionResolver`、`NpcCurrentLoadedSchedulePresenceResolver` 与 `NpcFuturePresenceWindowResolver`。购买候选只接受店主稳定位置窗口、服务区矩形、店铺时间和入口时间的真实交集；无交集当天排除，有未来交集精确延迟，证据不完整则失败关闭。`SnapshotEnvelope` 原生入口避免序列化整份全量快照，单快照同店主解析结果被缓存。
+- `v47` 首轮真实 ranking 中 AnimalShop 候选全部以 `shop_owner_has_no_service_window_today` 排除，随后直接编译 `claim_starter_gift`，没有重现 v46 的购买等待。运行在该诊断点停止，未宣称 Golden Walnut source schedule 完成。
+- 下一步：从独立新档继续 source-schedule 长跑；若出现新断点，只修该 fresh 快照证明的候选、编译或执行缺口，保持首次登岛 -> 核桃来源增量 -> First Parrot/Turtle/House -> source schedule 生成/重放的顺序。

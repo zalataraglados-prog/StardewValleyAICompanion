@@ -339,6 +339,131 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     }
 
     [Fact]
+    public void BuySuppliesExcludesDialogueShopWhenNativeScheduleHasNoServiceWindowToday()
+    {
+        var option = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(BuyPreviewSnapshot("""
+              {
+                "item_id":"178",
+                "qualified_item_id":"(O)178",
+                "display_name":"Hay",
+                "price":50,
+                "stock":2147483647,
+                "infinite_stock":true,
+                "currency_balance":500,
+                "executor_purchase_preview_enabled":true,
+                "executor_block_reasons":[]
+              }
+            """, endpointAllowed: false, endpointExtra:
+                ",\"direct_time_allowed\":true,\"parsed\":{\"kind\":\"dialogue_shop\",\"shop_id\":\"AnimalShop\",\"owner_npc\":\"Marnie\",\"owner_service_area\":{\"x\":10,\"y\":13,\"width\":5,\"height\":3}},\"owner_service_status\":{\"owner_required\":true,\"owner_npc\":\"Marnie\",\"owner_found\":false,\"in_service_area\":false,\"block_reason\":\"owner_npc_not_in_current_location\"}",
+                routeGraphExtra: AnimalShopEntranceGate(),
+                currentTime: 700,
+                shopId: "AnimalShop",
+                npcScheduleState: LoadedOwnerScheduleState(700, """
+                  {
+                    "time":810,
+                    "target_location_name":"SeedShop",
+                    "target_tile_x":11,
+                    "target_tile_y":20,
+                    "facing_direction":2,
+                    "end_behavior":null,
+                    "end_message":null,
+                    "route_count":0,
+                    "adjacent_route_pixel_distance":0
+                  },
+                  {
+                    "time":1200,
+                    "target_location_name":"AnimalShop",
+                    "target_tile_x":24,
+                    "target_tile_y":15,
+                    "facing_direction":3,
+                    "end_behavior":null,
+                    "end_message":null,
+                    "route_count":0,
+                    "adjacent_route_pixel_distance":0
+                  }
+                """)), new[] { "economy.buy_supplies" })
+            .Options[0];
+
+        var gate = Assert.Single(option.EventCandidates);
+        Assert.False(gate.Available);
+        Assert.False(gate.AllowedToday);
+        Assert.Contains(
+            "shop_owner_has_no_service_window_today",
+            gate.BlockReasons);
+        Assert.Empty(new EventCandidateRanker().Rank(
+            new(),
+            new OptionAvailabilityEnvelope
+            {
+                StateHash = "state.marnie-monday",
+                CurrentTime = 700,
+                Options = new[] { option }
+            }));
+    }
+
+    [Fact]
+    public void BuySuppliesDefersDialogueShopToExactFutureOwnerServiceWindow()
+    {
+        var option = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(BuyPreviewSnapshot("""
+              {
+                "item_id":"178",
+                "qualified_item_id":"(O)178",
+                "display_name":"Hay",
+                "price":50,
+                "stock":2147483647,
+                "infinite_stock":true,
+                "currency_balance":500,
+                "executor_purchase_preview_enabled":true,
+                "executor_block_reasons":[]
+              }
+            """, endpointAllowed: false, endpointExtra:
+                ",\"direct_time_allowed\":true,\"parsed\":{\"kind\":\"dialogue_shop\",\"shop_id\":\"AnimalShop\",\"owner_npc\":\"Marnie\",\"owner_service_area\":{\"x\":10,\"y\":13,\"width\":5,\"height\":3}},\"owner_service_status\":{\"owner_required\":true,\"owner_npc\":\"Marnie\",\"owner_found\":false,\"in_service_area\":false,\"block_reason\":\"owner_npc_not_in_current_location\"}",
+                routeGraphExtra: AnimalShopEntranceGate(),
+                currentTime: 700,
+                shopId: "AnimalShop",
+                npcScheduleState: LoadedOwnerScheduleState(700, """
+                  {
+                    "time":900,
+                    "target_location_name":"AnimalShop",
+                    "target_tile_x":12,
+                    "target_tile_y":14,
+                    "facing_direction":2,
+                    "end_behavior":null,
+                    "end_message":null,
+                    "route_count":0,
+                    "adjacent_route_pixel_distance":0
+                  },
+                  {
+                    "time":1600,
+                    "target_location_name":"Forest",
+                    "target_tile_x":1,
+                    "target_tile_y":1,
+                    "facing_direction":3,
+                    "end_behavior":null,
+                    "end_message":null,
+                    "route_count":0,
+                    "adjacent_route_pixel_distance":0
+                  }
+                """)), new[] { "economy.buy_supplies" })
+            .Options[0];
+
+        var candidate = Assert.Single(option.EventCandidates);
+        Assert.True(candidate.Available);
+        Assert.False(candidate.AllowedNow);
+        Assert.True(candidate.AllowedToday);
+        Assert.Equal(900, candidate.NextOpenTime);
+        Assert.Equal(900, candidate.EffectiveOpenTime);
+        Assert.Equal(1600, candidate.ClosesAt);
+        Assert.Contains(
+            "shop_owner_service_window_not_open_yet",
+            candidate.GateReasons);
+        Assert.DoesNotContain(
+            "shop_owner_has_no_service_window_today",
+            candidate.BlockReasons);
+    }
+
+    [Fact]
     public void BuySuppliesDoesNotChooseRouteWhoseTailReentersCurrentLocation()
     {
         var snapshot = BuyPreviewOscillationSnapshot();
@@ -1372,5 +1497,39 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.Contains("interact_unsupported_action_branch_at_target", candidate.BlockReasons);
         Assert.Contains("interact_expected_action_type_mismatch", candidate.BlockReasons);
     }
+
+    private static string AnimalShopEntranceGate() => """
+      ,{"kind":"locked_door_warp","from_location":"Farm","from_x":32,"from_y":15,"target_location":"AnimalShop","target_x":13,"target_y":24,"resolved":true,"gate":{"allowed_now":false,"allowed_on_capture_date":true,"time_allowed":false,"friendship_allowed":true,"festival_closed":false,"seed_shop_wednesday_closed":false,"fish_shop_gone_fishing_closed":false,"effective_open_time":900,"close_time":1600,"unresolved_reason":null}}
+    """;
+
+    private static string LoadedOwnerScheduleState(
+        int currentTime,
+        string entries) => $$"""
+        ,"npcs": {
+          "schedule_catalog": {
+            "value": {
+              "current_selection_context": {
+                "capture_total_days": 1,
+                "game_time": {{currentTime}},
+                "real_milliseconds_per_game_ten_minutes": 7000
+              }
+            },
+            "status":"available"
+          },
+          "schedules": {
+            "value": [
+              {
+                "name":"Marnie",
+                "schedule_key":"Mon",
+                "follow_schedule":true,
+                "ignore_schedule_today":false,
+                "schedule_loaded":true,
+                "entries":[{{entries}}]
+              }
+            ],
+            "status":"available"
+          }
+        }
+        """;
 
 }

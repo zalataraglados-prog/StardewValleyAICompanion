@@ -713,14 +713,16 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         string endpointExtra = "",
         string routeGraphExtra = "",
         int currentTime = 900,
-        string shopId = "Blacksmith")
+        string shopId = "Blacksmith",
+        string npcScheduleState = "")
     {
         return Snapshot("""
         {
           "time": {
             "time": {"value":CURRENT_TIME,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "total_days": {"value":1,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "season": {"value":"spring","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
-          },
+          } NPC_SCHEDULE_STATE,
           "player": {
             "location_id": {"value":"FarmHouse","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "tile_x": {"value":1,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
@@ -758,6 +760,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             .Replace("ENDPOINT_EXTRA", endpointExtra)
             .Replace("ROUTE_GRAPH_EXTRA", routeGraphExtra)
             .Replace("SHOP_ID", shopId)
+            .Replace("NPC_SCHEDULE_STATE", npcScheduleState)
             .Replace(
                 "CURRENT_TIME",
                 currentTime.ToString(System.Globalization.CultureInfo.InvariantCulture)));

@@ -1362,3 +1362,9 @@ v43 证明只让 exact candidate lease 随 fresh snapshot 失效仍不充分：�
 v44/v45 已把受限回放拆成两个可验证结论。第一，同一 `quest:13` 高层目标跨 Farm→BusStop→Town→Beach 保持，fresh snapshot 只更新机械连接器。第二，v44 暴露的 FarmHouse 门触发格/站位格混用已通过共享 `RouteConnectorStandTileResolver` 和现有清障链修正；v45 按 Beach→Town→BusStop→Farm→FarmHouse→sleep 完成原生保存，日期与存档哈希同时变化。
 
 因此下一施工单位不再修改 continuation 架构，也不新增恢复或清障执行器。固定顺序为：启动独立 Golden Walnut day-zero/fresh-save 长跑；把 `(O)129` 跨图连续性保留为必查点但不要求复制旧失败轨迹；继续首次登岛和逐来源核桃增量；依次验证 First Parrot、Turtle、House；生成并重放 source schedule；最后才把该证据送入既有 coverage/训练准入审计。任一步失败都停在对应 fresh 快照修复，不得用 v45 的 quest 路线替代 Golden Walnut 或 `(O)129` 证据。
+
+## 历史记录 · 2026-10-27 v46/v47 购买候选全天可达性
+
+Golden Walnut 新档 v46 暴露的首个断点不是新动作缺失，而是计划候选在 `06:00` 没有利用已经透明的店主全天日程。周一玛妮的稳定位置与 AnimalShop 柜台服务区在入口开放时段没有交集，购买目标本应在上游消失。当前唯一购买链已经把店主日程、服务区、店铺与入口窗口统一求交；有未来服务窗口才延迟，无窗口当天排除，证据不精确则失败关闭。日程解析复用既有实现并按快照缓存。
+
+v47 已在真实新档首轮证明 AnimalShop 候选被排名前排除，shared daily plan 转向 starter gift。下一施工单位仍是同一 Golden Walnut source-schedule 长跑，不新增“商店专项阶段”：继续暴露并修复首次登岛前的真实断点，直到核桃来源增量、First Parrot/Turtle/House、日程生成和重放全部闭合。

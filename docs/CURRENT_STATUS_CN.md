@@ -536,3 +536,10 @@ Skull Key 与 Pet Love 的旧生产工件均已按当前字典、日历、输入
 - 路由修复没有增加平行实现：候选层复用透明 route graph、现有 BFS、共享 `RouteConnectorStandTileResolver` 和现有 `clear_obstacle_tile`；DailyPlan 仍编译到唯一 `executor.clear_obstacle`。真实 v44 Farm 快照已离线证明最短回家路线的可清除障碍会被选中，目标仍绑定 FarmHouse。
 - `route-continuation-v45-20261027-073552` 完成 8/8 verified Product action，并在 5 次有界保存尝试内走完 Beach→Town→BusStop→Farm→FarmHouse→sleep。原生日期 `spring:14 -> spring:15`、存档哈希同步变化，`native_save_boundary_verified=true`；所有游戏、Backend、Product 和训练循环进程已退出。
 - 当前代码闭合的是高层目标跨图连续性、门前站位和原生保存边界，不是 Golden Walnut source schedule，也没有单独完成 `(O)129` 复现。正式训练状态、19 criterion 与其他 coverage 分子保持不变。下一步是独立 Golden Walnut fresh-save 长跑；`(O)129` 连续性作为必查观测点，之后继续首次登岛、核桃来源与三项鹦鹉跃迁。
+
+## 14. 2026-10-27 v46/v47 店主全天服务窗口
+
+- v46 新档在 Spring 1 选择 AnimalShop 购买后连续等待到 `08:20`，才因玛妮不在柜台释放 continuation。真实透明日程已在 `06:00` 给出周一完整路径：`08:10` 去 SeedShop、`12:00` 回 AnimalShop `(24,15)`，全天没有与柜台服务区和 `09:00-16:00` 入口同时重叠的稳定窗口；因此这是候选层漏用既有日程证据，不是执行器卡死。
+- 购买服务门现复用唯一的 day-start 原生日程投影与当前已加载日程解析器，把店主稳定位置、柜台矩形、商店时间和入口时间求交。当天无交集时以 `shop_owner_has_no_service_window_today` 在排名前排除；未来有交集时只延迟到精确交集窗口。解析结果按快照和店主缓存，没有新增 NPC 日程解析器或逐商品重复扫描。
+- v47 隐藏新档首轮中，所有 AnimalShop 购买候选均带上述上游阻塞，Stage One 没有锁定购买 continuation，shared daily plan 立即选择 `claim_starter_gift`。该轮在确认回归后人工停止，只是运行诊断，不是 source schedule、正式 corpus 或 coverage 增量。
+- 聚焦购买/日程回归 `22/22` 通过。下一固定步骤仍是使用该修复继续 Golden Walnut fresh-save source-schedule 长跑，而不是再次扩大商店执行器。

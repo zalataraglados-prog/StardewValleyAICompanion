@@ -9,7 +9,7 @@ namespace StardewAI.Core.OptionRegistry
 {
     public sealed partial class CandidateOptionAvailabilityEvaluator
     {
-        private static PurchaseServiceGateResult PurchaseServiceGate(
+        private PurchaseServiceGateResult PurchaseServiceGate(
             SnapshotEnvelope snapshot,
             JsonElement endpoint,
             JsonElement[] graphEdges,
@@ -23,6 +23,11 @@ namespace StardewAI.Core.OptionRegistry
             var nextOpenTime = (int?)null;
             var allowedNow = true;
             var allowedToday = true;
+            var ownerRequired = endpoint.TryGetProperty(
+                    "owner_service_status",
+                    out var endpointOwnerStatus) &&
+                endpointOwnerStatus.ValueKind == JsonValueKind.Object &&
+                ReadBool(endpointOwnerStatus, "owner_required") == true;
             var festivalClosed = ReadBool(endpoint, "festival_closed") == true;
             if (festivalClosed)
             {
@@ -48,18 +53,8 @@ namespace StardewAI.Core.OptionRegistry
                 }
             }
 
-            if (endpoint.TryGetProperty("owner_service_status", out var ownerStatus) &&
-                ownerStatus.ValueKind == JsonValueKind.Object &&
-                ReadBool(ownerStatus, "owner_required") == true &&
-                ReadBool(ownerStatus, "in_service_area") != true)
-            {
-                var ownerBlockReason = ReadString(ownerStatus, "block_reason");
-                blockReasons.Add(string.IsNullOrWhiteSpace(ownerBlockReason)
-                    ? "shop_owner_not_at_service_counter"
-                    : ownerBlockReason);
-            }
-
-            if (ReadBool(endpoint, "allowed_now") == false &&
+            if (!ownerRequired &&
+                ReadBool(endpoint, "allowed_now") == false &&
                 blockReasons.Count == 0)
             {
                 allowedNow = false;
@@ -128,6 +123,27 @@ namespace StardewAI.Core.OptionRegistry
                     blockReasons.AddRange(
                         LockedDoorPurchaseGateReasons(selected));
                 }
+            }
+
+            if (allowedToday)
+            {
+                var ownerGate = PurchaseOwnerServiceGate(
+                    snapshot,
+                    endpoint,
+                    targetLocation,
+                    currentTime,
+                    openTime,
+                    closeTime,
+                    allowedNow);
+                allowedNow &= ownerGate.AllowedNow;
+                allowedToday &= ownerGate.AllowedToday;
+                nextOpenTime = LaterTime(
+                    nextOpenTime,
+                    ownerGate.NextOpenTime);
+                openTime = LaterTime(openTime, ownerGate.OpenTime);
+                closeTime = EarlierTime(closeTime, ownerGate.CloseTime);
+                gateReasons.AddRange(ownerGate.GateReasons);
+                blockReasons.AddRange(ownerGate.BlockReasons);
             }
 
             var shops = ReadStateFieldValue(snapshot, "locations", "shops");
@@ -213,5 +229,6 @@ namespace StardewAI.Core.OptionRegistry
             int? CloseTime,
             string[] GateReasons,
             string[] BlockReasons);
+
     }
 }
