@@ -92,6 +92,12 @@ public sealed class MovementTimingEvidenceSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains("player.hasBuff(\"19\")", adapter, StringComparison.Ordinal);
         Assert.Contains("Game1.CurrentEvent", adapter, StringComparison.Ordinal);
+        Assert.Contains("!eventControlsMovement", adapter, StringComparison.Ordinal);
+        Assert.Contains("Game1.globalFade", adapter, StringComparison.Ordinal);
+        Assert.Contains("Game1.freezeControls", adapter, StringComparison.Ordinal);
+        Assert.Contains("Game1.isWarping", adapter, StringComparison.Ordinal);
+        Assert.Contains("player.freezePause", adapter, StringComparison.Ordinal);
+        Assert.Contains("native_control_gate_open", adapter, StringComparison.Ordinal);
         Assert.Contains("Game1.realMilliSecondsPerGameMinute", adapter, StringComparison.Ordinal);
         Assert.Contains("runtime_calibration_compatible", adapter, StringComparison.Ordinal);
         Assert.Contains("route_timing_ready_now", adapter, StringComparison.Ordinal);

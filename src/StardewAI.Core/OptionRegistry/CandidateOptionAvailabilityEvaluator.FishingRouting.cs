@@ -6,6 +6,7 @@ using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
 using StardewAI.Core.Execution;
 using StardewAI.Core.Infrastructure;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
@@ -37,8 +38,31 @@ namespace StardewAI.Core.OptionRegistry
 
         private EventCandidate[] FishingCandidates(
             SnapshotEnvelope snapshot,
-            SmallModelActionParameter[] boundParameters)
+            SmallModelActionParameter[] boundParameters) =>
+            FishingCandidates(snapshot, boundParameters, null);
+
+        private EventCandidate[] FishingCandidates(
+            SnapshotEnvelope snapshot,
+            SmallModelActionParameter[] boundParameters,
+            StrategyCommitmentLedger? commitmentLedger)
         {
+            if (MasterAnglerWindowIntentValidator.HasRainTotemReserveIntent(
+                    boundParameters))
+            {
+                return RainTotemReserveCandidates(
+                    snapshot,
+                    boundParameters,
+                    commitmentLedger);
+            }
+            if (MasterAnglerWindowIntentValidator.HasRainTotemSupplyIntent(
+                    boundParameters))
+            {
+                return RainTotemCraftingCandidates(
+                    snapshot,
+                    boundParameters,
+                    commitmentLedger);
+            }
+
             if (!HasMasterAnglerIntentParameters(boundParameters))
             {
                 return FishingEventCandidateBuilder.Build(snapshot);
@@ -71,13 +95,74 @@ namespace StardewAI.Core.OptionRegistry
                 };
             }
 
+            var continuation = MasterAnglerContinuationParameters(
+                "fishing.catch_fish",
+                intentParameters);
+            if (TryBuildGingerIslandPrerequisiteCandidates(
+                    snapshot,
+                    intentParameters,
+                    continuation,
+                    out var gingerIslandPrerequisites))
+            {
+                return gingerIslandPrerequisites;
+            }
             var currentLocation = ReadStateFieldString(
                 snapshot,
                 "player",
                 "location_id");
-            var continuation = MasterAnglerContinuationParameters(
-                "fishing.catch_fish",
-                intentParameters);
+            if (TryBuildSecretWoodsPrerequisiteCandidates(
+                    snapshot,
+                    intent,
+                    intentParameters,
+                    continuation,
+                    out var secretWoodsPrerequisites))
+            {
+                return secretWoodsPrerequisites;
+            }
+            if (TryBuildDarkTalismanPrerequisiteCandidates(
+                    snapshot,
+                    intent,
+                    intentParameters,
+                    continuation,
+                    out var darkTalismanPrerequisites))
+            {
+                return darkTalismanPrerequisites;
+            }
+            var inventoryCapacity = ReadStateFieldValue(
+                snapshot,
+                "player",
+                "inventory_capacity");
+            if (!inventoryCapacity.HasValue ||
+                inventoryCapacity.Value.ValueKind != JsonValueKind.Object)
+            {
+                return new[]
+                {
+                    BlockedMasterAnglerCandidate(
+                        "fishing_inventory_capacity_unavailable",
+                        intentParameters)
+                };
+            }
+            var hasEmptyInventorySlot = ReadBool(
+                inventoryCapacity.Value,
+                "has_empty_slot");
+            if (!hasEmptyInventorySlot.HasValue)
+            {
+                return new[]
+                {
+                    BlockedMasterAnglerCandidate(
+                        "fishing_inventory_capacity_unavailable",
+                        intentParameters)
+                };
+            }
+            if (!hasEmptyInventorySlot.Value)
+            {
+                return new[]
+                {
+                    BlockedMasterAnglerCandidate(
+                        "fishing_inventory_full_requires_storage_transfer",
+                        intentParameters)
+                };
+            }
             if (!string.Equals(
                     currentLocation,
                     intent.TargetLocation,
@@ -102,7 +187,7 @@ namespace StardewAI.Core.OptionRegistry
                 var routed = CloneCandidate(
                         route,
                         candidateId: "master-angler:route:" +
-                            intent.TargetQualifiedItemId + ":" +
+                            MasterAnglerIntentCandidateIdentity(intent) + ":" +
                             currentLocation + ":" + route.CandidateId,
                         expectedEffect: route.ExpectedEffect +
                             ";master_angler_target_qualified_item_id=" +
@@ -143,7 +228,8 @@ namespace StardewAI.Core.OptionRegistry
                     CloneCandidate(
                         candidate,
                         candidateId: candidate.CandidateId +
-                            ":master-angler:" + intent.TargetQualifiedItemId,
+                            ":master-angler:" +
+                            MasterAnglerIntentCandidateIdentity(intent),
                         expectedEffect: candidate.ExpectedEffect +
                             ";master_angler_target_qualified_item_id=" +
                             intent.TargetQualifiedItemId +
@@ -321,6 +407,22 @@ namespace StardewAI.Core.OptionRegistry
                     parameter.Value)))
                 .ToArray();
         }
+
+        private static string MasterAnglerIntentCandidateIdentity(
+            MasterAnglerWindowIntentValidation intent) => string.Join(
+                ":",
+                intent.TargetQualifiedItemId,
+                intent.TargetLocation,
+                intent.SourceKind,
+                intent.SourceKey,
+                intent.WindowFirstTotalDay.ToString(
+                    CultureInfo.InvariantCulture),
+                intent.WindowLastTotalDay.ToString(
+                    CultureInfo.InvariantCulture),
+                intent.EffectiveStartTime.ToString(
+                    CultureInfo.InvariantCulture),
+                intent.LastCastTimeExclusive.ToString(
+                    CultureInfo.InvariantCulture));
 
     }
 }

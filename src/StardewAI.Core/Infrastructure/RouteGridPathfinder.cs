@@ -6,7 +6,7 @@ using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.Infrastructure
 {
-    internal static class RouteGridPathfinder
+    public static class RouteGridPathfinder
     {
         internal static HashSet<string> ReadBlockedTiles(
             JsonElement collisionGrid)
@@ -123,7 +123,7 @@ namespace StardewAI.Core.Infrastructure
             return distances;
         }
 
-        internal static int? ShortestPathLength(
+        public static int? ShortestPathLength(
             int startX,
             int startY,
             int targetX,
@@ -174,16 +174,16 @@ namespace StardewAI.Core.Infrastructure
             return null;
         }
 
-        internal static bool InBounds(
+        public static bool InBounds(
             int x,
             int y,
             int width,
             int height) =>
             x >= 0 && y >= 0 && x < width && y < height;
 
-        internal static string Key(int x, int y) => x + "," + y;
+        public static string Key(int x, int y) => x + "," + y;
 
-        internal static IEnumerable<(int X, int Y)> Neighbors(int x, int y)
+        public static IEnumerable<(int X, int Y)> Neighbors(int x, int y)
         {
             yield return (x + 1, y);
             yield return (x - 1, y);

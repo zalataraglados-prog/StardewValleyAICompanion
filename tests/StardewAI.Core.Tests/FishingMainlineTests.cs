@@ -136,6 +136,135 @@ public sealed class FishingMainlineTests
     }
 
     [Fact]
+    public void GuaranteedEarlierRuleMovesLaterFishToAnUnshadowedCast()
+    {
+        var state = JsonNode.Parse(BaseState())!.AsObject();
+        var fishing = state["fishing"]!.AsObject();
+        fishing["fishable_tiles"]!["value"]!.AsArray().Add(
+            JsonNode.Parse(
+                """
+                {"tile_x":8,"tile_y":8,"water_depth":3,"fish_area_id":"river"}
+                """));
+        var rules = fishing["rod_contexts"]!["value"]![0]!["spawn_rules"]!["rules"]!
+            .AsArray();
+        var fishRule = rules[0]!.AsObject();
+        fishRule["precedence"] = 0;
+        fishRule["spawn_chance_probability_resolved"] = true;
+        fishRule["eligible_fishable_tile_indices"] =
+            JsonNode.Parse("[0,1]");
+        fishRule["outputs"]![0]!["data_fish_chance_roll_pending"] = true;
+        fishRule["outputs"]![0]!["data_fish_chance_probability_resolved"] = true;
+        rules.Insert(0, JsonNode.Parse(
+            """
+            {
+              "rule_key":"Data/Locations:Beach#0:(O)388|(O)390",
+              "source":"Data/Locations:Beach",
+              "source_index":0,
+              "id":"fountain_resources",
+              "precedence":-10,
+              "condition_met":true,
+              "player_position":null,
+              "effective_spawn_chance_preview":1.0,
+              "spawn_chance_probability_resolved":true,
+              "eligible_before_random_rolls":true,
+              "blocking_reasons":[],
+              "eligible_fishable_tile_indices":[0],
+              "outputs":[{
+                "output_index":0,
+                "resolution_complete":true,
+                "resolution_status":"direct_item",
+                "item_id":"388",
+                "qualified_item_id":"(O)388",
+                "output_eligible_before_random_rolls":true,
+                "output_blocking_reasons":[],
+                "data_fish_chance_roll_pending":false,
+                "data_fish_chance_probability_resolved":true,
+                "data_fish_chance_by_water_depth":[]
+              }]
+            }
+            """));
+
+        var option = Assert.Single(new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(
+                Snapshot(state.ToJsonString()),
+                new[] { "fishing.catch_fish" })
+            .Options);
+
+        Assert.Equal(2, option.EventCandidates.Length);
+        var shadowedCast = Assert.Single(option.EventCandidates.Where(
+            candidate => ParameterValue(
+                candidate.Parameters,
+                "bobber_tile_x") == "5"));
+        Assert.Equal(
+            new[] { "(O)388" },
+            Outcomes(shadowedCast).Select(OutcomeItemId));
+
+        var targetCast = Assert.Single(option.EventCandidates.Where(candidate =>
+            Outcomes(candidate).Any(outcome => OutcomeItemId(outcome) == "(O)145")));
+        AssertParameter(targetCast.Parameters, "bobber_tile_x", "8");
+        AssertParameter(targetCast.Parameters, "bobber_tile_y", "8");
+        Assert.DoesNotContain(
+            Outcomes(targetCast),
+            outcome => OutcomeItemId(outcome) == "(O)388");
+    }
+
+    [Fact]
+    public void GuaranteedSamePrecedenceRuleDoesNotShadowRandomizedPeer()
+    {
+        var state = JsonNode.Parse(BaseState())!.AsObject();
+        var rules = state["fishing"]!["rod_contexts"]!["value"]![0]!["spawn_rules"]!["rules"]!
+            .AsArray();
+        var fishRule = rules[0]!.AsObject();
+        fishRule["precedence"] = 0;
+        fishRule["spawn_chance_probability_resolved"] = true;
+        fishRule["outputs"]![0]!["data_fish_chance_roll_pending"] = true;
+        fishRule["outputs"]![0]!["data_fish_chance_probability_resolved"] = true;
+        rules.Insert(0, JsonNode.Parse(
+            """
+            {
+              "rule_key":"Data/Locations:Beach#0:(O)388",
+              "source":"Data/Locations:Beach",
+              "source_index":0,
+              "id":"same_precedence_resource",
+              "precedence":0,
+              "condition_met":true,
+              "player_position":null,
+              "effective_spawn_chance_preview":1.0,
+              "spawn_chance_probability_resolved":true,
+              "eligible_before_random_rolls":true,
+              "blocking_reasons":[],
+              "eligible_fishable_tile_indices":[0],
+              "outputs":[{
+                "output_index":0,
+                "resolution_complete":true,
+                "resolution_status":"direct_item",
+                "item_id":"388",
+                "qualified_item_id":"(O)388",
+                "output_eligible_before_random_rolls":true,
+                "output_blocking_reasons":[],
+                "data_fish_chance_roll_pending":false,
+                "data_fish_chance_probability_resolved":true,
+                "data_fish_chance_by_water_depth":[]
+              }]
+            }
+            """));
+
+        var option = Assert.Single(new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(
+                Snapshot(state.ToJsonString()),
+                new[] { "fishing.catch_fish" })
+            .Options);
+
+        var cast = Assert.Single(option.EventCandidates);
+        Assert.Contains(
+            Outcomes(cast),
+            outcome => OutcomeItemId(outcome) == "(O)145");
+        Assert.Contains(
+            Outcomes(cast),
+            outcome => OutcomeItemId(outcome) == "(O)388");
+    }
+
+    [Fact]
     public void VerifiedRetryBudgetExpandsToRepeatedNativeCatchSteps()
     {
         var snapshot = Snapshot(BaseState());

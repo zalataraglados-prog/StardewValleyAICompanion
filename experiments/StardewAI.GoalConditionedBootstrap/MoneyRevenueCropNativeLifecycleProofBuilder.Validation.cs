@@ -15,11 +15,14 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         },
         StringComparer.Ordinal);
 
-    private static void ValidateTransitionChain(
+    private static MoneyRevenueCropNativeLifecycleCheckpointResumeProof[]
+        ValidateTransitionChain(
         LoadedTransition[] transitions,
         SnapshotEnvelope source,
         LifecycleCommitmentContext[] contexts,
-        MoneyRevenueCropDailyCapacityProof capacity)
+        MoneyRevenueCropDailyCapacityProof capacity,
+        MoneyRevenueCropNativeLifecycleCheckpointResumeRequest[]
+            checkpointResumes)
     {
         var sourceCalendar = ReadCalendar(source);
         var firstDay = contexts.Min(value =>
@@ -30,6 +33,17 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
                 transitions.Select(value => value.ReceiptPath)
                     .Distinct(PathComparer).Count() == transitions.Length,
             "Money Revenue crop lifecycle queue or receipt paths are duplicated.");
+        Require(checkpointResumes
+                    .Select(value => value.TransitionIndex)
+                    .Distinct().Count() == checkpointResumes.Length &&
+                checkpointResumes.All(value =>
+                    value.TransitionIndex > 0 &&
+                    value.TransitionIndex < transitions.Length),
+            "Money Revenue crop lifecycle checkpoint-resume declarations are invalid or duplicated.");
+        var resumesByIndex = checkpointResumes.ToDictionary(
+            value => value.TransitionIndex);
+        var resumeProofs = new List<
+            MoneyRevenueCropNativeLifecycleCheckpointResumeProof>();
 
         for (var index = 0; index < transitions.Length; index++)
         {
@@ -42,13 +56,29 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
                 transition.After,
                 source,
                 sourceCalendar);
-            Require(index == 0 ||
-                    transitions[index - 1].After.StateHash ==
+            if (index > 0)
+            {
+                var previous = transitions[index - 1];
+                var exactChain = previous.After.StateHash ==
                         transition.Before.StateHash &&
-                    transitions[index - 1].After.GameTick ==
-                        transition.Before.GameTick,
-                "Money Revenue crop lifecycle state-hash chain is discontinuous at transition " +
-                index + ".");
+                    previous.After.GameTick == transition.Before.GameTick;
+                if (resumesByIndex.ContainsKey(index))
+                {
+                    Require(!exactChain,
+                        "Money Revenue crop lifecycle checkpoint resume did not cross a runtime boundary at transition " +
+                        index + ".");
+                    resumeProofs.Add(ValidateCheckpointResume(
+                        index,
+                        previous,
+                        transition));
+                }
+                else
+                {
+                    Require(exactChain,
+                        "Money Revenue crop lifecycle state-hash chain is discontinuous at transition " +
+                        index + ".");
+                }
+            }
             var receiptReasons = QueueExecutionReceiptValidator.Validate(
                 transition.Queue,
                 transition.Before,
@@ -153,6 +183,44 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         }
         Require(cursor == transitions.Length,
             "Money Revenue crop lifecycle contains transitions outside the exact day denominator.");
+        Require(resumeProofs.Count == checkpointResumes.Length,
+            "Money Revenue crop lifecycle checkpoint resume was not consumed.");
+        return resumeProofs.ToArray();
+    }
+
+    private static MoneyRevenueCropNativeLifecycleCheckpointResumeProof
+        ValidateCheckpointResume(
+            int transitionIndex,
+            LoadedTransition previous,
+            LoadedTransition resumed)
+    {
+        var previousCalendar = ReadCalendar(previous.After);
+        var resumedCalendar = ReadCalendar(resumed.Before);
+        var previousHome = ReadHomeLocation(previous.After);
+        var resumedHome = ReadHomeLocation(resumed.Before);
+        Require(previous.Request.TransitionKind == DayRolloverKind &&
+                resumed.Request.TransitionKind == CropIngressRouteKind &&
+                resumed.Request.TotalDay == previous.Request.TotalDay + 1 &&
+                previousCalendar.TotalDay == resumed.Request.TotalDay &&
+                resumedCalendar.TotalDay == resumed.Request.TotalDay &&
+                previousHome == resumedHome &&
+                ReadPlayerLocation(previous.After) == previousHome &&
+                ReadPlayerLocation(resumed.Before) == resumedHome,
+            "Money Revenue crop lifecycle checkpoint resume is not a same-day home boundary after native rollover.");
+        Require(RuntimeSnapshotBoundaryNormalization.SameRuntimeIdentityBoundary(
+                    previous.After,
+                    resumed.Before,
+                    out var normalizedStateSha256),
+            "Money Revenue crop lifecycle checkpoint resume changed normalized save state.");
+        return new MoneyRevenueCropNativeLifecycleCheckpointResumeProof(
+            transitionIndex,
+            resumedCalendar.TotalDay,
+            previous.After.StateHash,
+            resumed.Before.StateHash,
+            normalizedStateSha256,
+            previous.Request.RunId,
+            resumed.Request.RunId,
+            true);
     }
 
     private static void ValidateSupportingRoutes(

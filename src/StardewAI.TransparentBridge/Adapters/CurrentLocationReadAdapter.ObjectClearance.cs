@@ -15,6 +15,8 @@ public sealed partial class CurrentLocationReadAdapter
     {
         var clearKind = item.IsTwig()
             ? "twig"
+            : location is IslandLocation && item.QualifiedItemId == "(O)25"
+                ? "mussel_stone"
             : item.QualifiedItemId is "(O)590" or "(O)SeedSpot"
                 ? "artifact_spot"
                 : string.Empty;
@@ -27,12 +29,18 @@ public sealed partial class CurrentLocationReadAdapter
             return ObjectClearanceProjection.Blocked(clearKind, "blocked_custom_clearable_object_runtime_type");
         }
 
-        var requiredToolKind = clearKind == "twig" ? "axe" : "hoe";
+        var requiredToolKind = clearKind switch
+        {
+            "twig" => "axe",
+            "mussel_stone" => "pickaxe",
+            _ => "hoe"
+        };
         var selected = player.Items
             .Select((candidate, index) => new { Tool = candidate as Tool, SlotIndex = index })
             .OrderByDescending(row => row.SlotIndex == player.CurrentToolIndex)
             .FirstOrDefault(row =>
                 (requiredToolKind == "axe" && row.Tool is Axe) ||
+                (requiredToolKind == "pickaxe" && row.Tool is Pickaxe) ||
                 (requiredToolKind == "hoe" && row.Tool is Hoe));
         if (selected?.Tool is null)
         {
@@ -46,6 +54,25 @@ public sealed partial class CurrentLocationReadAdapter
         if (clearKind == "artifact_spot")
         {
             return ProjectArtifactSpotClearance(location, tile, player, (Hoe)selected.Tool, selected.SlotIndex, requiredToolKind);
+        }
+        if (clearKind == "mussel_stone")
+        {
+            var damagePerUse = Math.Max(1, selected.Tool.UpgradeLevel + 1);
+            return new ObjectClearanceProjection
+            {
+                ClearKind = clearKind,
+                Status = "ready",
+                RequiredToolKind = requiredToolKind,
+                ToolSlotIndex = selected.SlotIndex,
+                ExpectedToolHits = Math.Max(1, (int)Math.Ceiling((double)item.MinutesUntilReady / damagePerUse)),
+                SkillId = "mining",
+                SkillIndex = Farmer.miningSkill,
+                Experience = 5,
+                ExperienceCondition = "native_pickaxe_breaks_island_mussel_stone",
+                ExperienceStatus = "exact",
+                OutputStatus = "native_stochastic_receipt",
+                OutputItems = Array.Empty<ClearanceOutputItemProjection>()
+            };
         }
 
         var outputComplete = clearKind == "twig";

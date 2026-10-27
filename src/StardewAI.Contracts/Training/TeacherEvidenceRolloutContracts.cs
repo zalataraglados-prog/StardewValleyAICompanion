@@ -6,7 +6,7 @@ namespace StardewAI.Contracts.Training;
 
 public static class TeacherEvidenceRolloutLimits
 {
-    public const int MaxQueueItems = 8;
+    public const int MaxQueueItems = 12;
     public const int MaxEpisodes = 16;
 }
 
@@ -118,6 +118,9 @@ public sealed class QueueExecutionStepReceipt
     [JsonPropertyName("after_snapshot_fresh")]
     public bool AfterSnapshotFresh { get; set; }
 
+    [JsonPropertyName("after_snapshot_path")]
+    public string AfterSnapshotPath { get; set; } = string.Empty;
+
     [JsonPropertyName("status")]
     public string Status { get; set; } = string.Empty;
 
@@ -136,6 +139,15 @@ public sealed class QueueExecutionStepReceipt
 
     [JsonPropertyName("block_reasons")]
     public string[] BlockReasons { get; set; } = Array.Empty<string>();
+
+    [JsonPropertyName("queue_replan_applied")]
+    public bool QueueReplanApplied { get; set; }
+
+    [JsonPropertyName("queue_replan_kind")]
+    public string QueueReplanKind { get; set; } = string.Empty;
+
+    [JsonPropertyName("priority_interrupt_released_interrupted_semantic_key")]
+    public bool PriorityInterruptReleasedInterruptedSemanticKey { get; set; }
 
     [JsonPropertyName("effective_queue_item")]
     public JsonElement? EffectiveQueueItem { get; set; }

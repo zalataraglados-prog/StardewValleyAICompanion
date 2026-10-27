@@ -26,17 +26,19 @@ namespace StardewAI.Core.OptionRegistry
             var normalTiles = tiles
                 .Where(tile => !reservedTileIndices.Contains(tile.Index))
                 .ToArray();
+            var orderedRules = rules.EnumerateArray().ToArray();
             foreach (var cast in RepresentativeNormalCasts(
-                rules,
+                orderedRules,
                 normalTiles,
                 fishingLevel,
                 grid,
                 routeDistances))
             {
-                foreach (var rule in rules.EnumerateArray())
+                foreach (var rule in orderedRules)
                 {
                     AddRuleOutcomesForCast(
                         rodContext,
+                        orderedRules,
                         rule,
                         cast,
                         locationId,
@@ -46,20 +48,23 @@ namespace StardewAI.Core.OptionRegistry
                         candidates);
                 }
 
-                AddBaseFallbackCandidate(
-                    rodContext,
-                    spawnRules,
-                    cast,
-                    locationId,
-                    rodSlot,
-                    rodQualifiedId,
-                    energyCost,
-                    candidates);
+                if (!CastHasGuaranteedTerminalRule(orderedRules, cast))
+                {
+                    AddBaseFallbackCandidate(
+                        rodContext,
+                        spawnRules,
+                        cast,
+                        locationId,
+                        rodSlot,
+                        rodQualifiedId,
+                        energyCost,
+                        candidates);
+                }
             }
         }
 
         private static CastSelection[] RepresentativeNormalCasts(
-            JsonElement rules,
+            JsonElement[] rules,
             FishableTile[] normalTiles,
             int fishingLevel,
             CollisionGrid grid,
@@ -74,7 +79,7 @@ namespace StardewAI.Core.OptionRegistry
                 grid,
                 routeDistances));
 
-            foreach (var rule in rules.EnumerateArray())
+            foreach (var rule in rules)
             {
                 if (!RuleCanProduceEligibleOutput(rule))
                     continue;
@@ -93,7 +98,8 @@ namespace StardewAI.Core.OptionRegistry
                     playerRectangle,
                     fishingLevel,
                     grid,
-                    routeDistances));
+                    routeDistances,
+                    cast => !RuleIsHardShadowed(rules, rule, cast)));
             }
 
             return casts.Values
@@ -137,6 +143,7 @@ namespace StardewAI.Core.OptionRegistry
 
         private static void AddRuleOutcomesForCast(
             JsonElement rodContext,
+            JsonElement[] rules,
             JsonElement rule,
             CastSelection cast,
             string locationId,
@@ -158,7 +165,8 @@ namespace StardewAI.Core.OptionRegistry
                 !RectangleContains(
                     playerRectangle,
                     cast.StandX,
-                    cast.StandY))
+                    cast.StandY) ||
+                RuleIsHardShadowed(rules, rule, cast))
             {
                 return;
             }
@@ -210,6 +218,74 @@ namespace StardewAI.Core.OptionRegistry
                     Strings(output, "context_tags"),
                     String(output, "context_tags_projection_status")));
             }
+        }
+
+        private static bool RuleIsHardShadowed(
+            IEnumerable<JsonElement> rules,
+            JsonElement targetRule,
+            CastSelection cast)
+        {
+            var targetPrecedence = IntNullable(targetRule, "precedence");
+            if (!targetPrecedence.HasValue)
+                return false;
+
+            return rules.Any(rule =>
+            {
+                var precedence = IntNullable(rule, "precedence");
+                return precedence.HasValue &&
+                    precedence.Value < targetPrecedence.Value &&
+                    RuleAppliesToCast(rule, cast) &&
+                    RuleIsGuaranteedTerminal(rule);
+            });
+        }
+
+        private static bool CastHasGuaranteedTerminalRule(
+            IEnumerable<JsonElement> rules,
+            CastSelection cast) => rules.Any(rule =>
+                RuleAppliesToCast(rule, cast) &&
+                RuleIsGuaranteedTerminal(rule));
+
+        private static bool RuleAppliesToCast(
+            JsonElement rule,
+            CastSelection cast)
+        {
+            if (!RuleCanProduceEligibleOutput(rule) ||
+                !Ints(rule, "eligible_fishable_tile_indices")
+                    .Contains(cast.Bobber.Index))
+            {
+                return false;
+            }
+
+            var playerRectangle = rule.TryGetProperty(
+                "player_position",
+                out var rectangle)
+                    ? rectangle
+                    : default;
+            return RectangleContains(
+                playerRectangle,
+                cast.StandX,
+                cast.StandY);
+        }
+
+        private static bool RuleIsGuaranteedTerminal(JsonElement rule)
+        {
+            if (Bool(rule, "spawn_chance_probability_resolved") != true ||
+                Double(rule, "effective_spawn_chance_preview") is not { } chance ||
+                chance < 1d ||
+                !rule.TryGetProperty("outputs", out var outputs) ||
+                outputs.ValueKind != JsonValueKind.Array)
+            {
+                return false;
+            }
+
+            var projectedOutputs = outputs.EnumerateArray().ToArray();
+            return projectedOutputs.Length > 0 &&
+                projectedOutputs.All(output =>
+                    Bool(output, "resolution_complete") == true &&
+                    Bool(output, "output_eligible_before_random_rolls") == true &&
+                    Strings(output, "output_blocking_reasons").Length == 0 &&
+                    Bool(output, "data_fish_chance_probability_resolved") == true &&
+                    Bool(output, "data_fish_chance_roll_pending") == false);
         }
 
         private static bool OutputIsEligible(JsonElement output)

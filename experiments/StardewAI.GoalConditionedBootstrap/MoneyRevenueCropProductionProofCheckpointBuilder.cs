@@ -302,7 +302,7 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
         var rebuilt = MoneyRevenueCropSharedShippingSettlementProofBuilder
             .Build(proof.RequestPath);
         Require(proof.SchemaVersion ==
-                    "money_revenue_crop_shared_shipping_settlement_proof.v1" &&
+                    "money_revenue_crop_shared_shipping_settlement_proof.v2" &&
                 BootstrapArtifactGuard.EqualJson(proof, rebuilt) &&
                 string.Equals(
                     Path.GetFullPath(proof.CropProductionPlanPath),
@@ -360,7 +360,7 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
         var rebuilt = MoneyRevenueCropTerminalSettlementProofBuilder.Build(
             proof.RequestPath);
         Require(proof.SchemaVersion ==
-                    "money_revenue_crop_terminal_settlement_proof.v2" &&
+                    "money_revenue_crop_terminal_settlement_proof.v3" &&
                 BootstrapArtifactGuard.EqualJson(proof, rebuilt) &&
                 string.Equals(
                     Path.GetFullPath(proof.CropProductionPlanPath),
@@ -423,7 +423,7 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
         var rebuilt = MoneyRevenueCropNativeLifecycleProofBuilder.Build(
             proof.RequestPath);
         Require(proof.SchemaVersion ==
-                    "money_revenue_crop_native_lifecycle_proof.v3" &&
+                    "money_revenue_crop_native_lifecycle_proof.v4" &&
                 BootstrapArtifactGuard.EqualJson(proof, rebuilt) &&
                 string.Equals(
                     Path.GetFullPath(proof.CropProductionPlanPath),

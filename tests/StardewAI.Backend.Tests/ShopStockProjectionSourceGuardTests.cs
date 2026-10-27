@@ -26,4 +26,51 @@ public sealed class ShopStockProjectionSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains("stochastic_item_rule_ids = stochasticRuleIds", source, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void AuditedBambooPoleExceptionIsSharedAcrossReadAndExecutionLayers()
+    {
+        var policy = File.ReadAllText(FindRepositoryFile(
+            "src",
+            "StardewAI.Contracts",
+            "Execution",
+            "AuditedShopPurchasePolicy.cs"));
+        var menu = File.ReadAllText(FindRepositoryFile(
+            "src",
+            "StardewAI.TransparentBridge",
+            "Adapters",
+            "MenuReadAdapter.cs"));
+        var runtime = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.Shop.cs"));
+
+        Assert.Contains("(T)BambooPole", policy, StringComparison.Ordinal);
+        Assert.DoesNotContain("(T)IridiumRod", policy, StringComparison.Ordinal);
+        Assert.Contains(
+            "AuditedShopPurchasePolicy.IsSideEffectFreeNonObjectPurchase",
+            ShopAccessReadAdapterSources.All,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "AuditedShopPurchasePolicy.IsSideEffectFreeNonObjectPurchase",
+            menu,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "AuditedShopPurchasePolicy.IsSideEffectFreeNonObjectPurchase",
+            runtime,
+            StringComparison.Ordinal);
+    }
+
+    private static string FindRepositoryFile(params string[] parts)
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null &&
+            !File.Exists(Path.Combine(directory.FullName, "StardewValleyAICompanion.sln")))
+        {
+            directory = directory.Parent;
+        }
+
+        Assert.NotNull(directory);
+        return Path.Combine(new[] { directory!.FullName }.Concat(parts).ToArray());
+    }
 }

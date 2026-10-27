@@ -11,6 +11,8 @@ internal static partial class MoneyRevenueCropTerminalSettlementModeVerifier
     {
         Require(request.ShippingDepositTransitions.Length == 0,
             "Money Revenue crop ShopMenu settlement contains shipping deposits.");
+        Require(request.SettlementRouteTransitions.Length == 0,
+            "Money Revenue crop ShopMenu settlement contains a shipping home route.");
         var salePath = RequiredFile(
             request.ShopSaleEpisodePath,
             "Money Revenue crop ShopMenu sale episode");
@@ -101,6 +103,7 @@ internal static partial class MoneyRevenueCropTerminalSettlementModeVerifier
             sale.ExecutionEpisodeSha256,
             sale.ShopId,
             Array.Empty<MoneyRevenueCropShippingDepositEvidence>(),
+            Array.Empty<MoneyRevenueTerminalQueueTransitionEvidence>(),
             sale.SlotIndex,
             sale.Quantity,
             sale.UnitPrice,

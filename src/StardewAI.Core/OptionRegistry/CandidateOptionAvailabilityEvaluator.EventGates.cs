@@ -7,6 +7,7 @@ using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
 using StardewAI.Core.Execution;
+using StardewAI.Core.Infrastructure;
 using StardewAI.Core.Verifier;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
@@ -58,7 +59,11 @@ namespace StardewAI.Core.OptionRegistry
                     candidate.OptionId,
                     "fishing.catch_fish",
                     StringComparison.Ordinal) &&
-                HasMasterAnglerIntentParameters(candidate.Parameters);
+                (HasMasterAnglerIntentParameters(candidate.Parameters) ||
+                 MasterAnglerWindowIntentValidator.HasRainTotemSupplyIntent(
+                     candidate.Parameters) ||
+                 MasterAnglerWindowIntentValidator.HasRainTotemReserveIntent(
+                     candidate.Parameters));
         }
 
         private static string[] EventCandidateGateBlockingReasons(string optionId, EventCandidate[] eventCandidates, bool hasBoundParameters)
@@ -479,7 +484,11 @@ namespace StardewAI.Core.OptionRegistry
             SmallModelActionParameter[] parameters,
             StrategyCommitmentLedger? commitmentLedger)
         {
-            if (missingStateFactors.Length > 0)
+            if (missingStateFactors.Length > 0 &&
+                !string.Equals(
+                    optionId,
+                    "mining.reach_depth",
+                    StringComparison.Ordinal))
             {
                 return Array.Empty<EventCandidate>();
             }
@@ -530,6 +539,14 @@ namespace StardewAI.Core.OptionRegistry
             if (string.Equals(optionId, "quest.advance", StringComparison.Ordinal))
             {
                 return QuestCandidates(snapshot, commitmentLedger);
+            }
+
+            if (string.Equals(optionId, "fishing.catch_fish", StringComparison.Ordinal))
+            {
+                return FishingCandidates(
+                    snapshot,
+                    parameters,
+                    commitmentLedger);
             }
 
             return eventCandidateProviders.TryGetValue(optionId, out var provider)

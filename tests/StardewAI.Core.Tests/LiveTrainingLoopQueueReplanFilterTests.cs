@@ -5,6 +5,143 @@ namespace StardewAI.Core.Tests;
 
 public sealed class LiveTrainingLoopQueueReplanFilterTests
 {
+    [Fact]
+    public void ResolvedGoalCompilesOnlyExactBoundCandidates()
+    {
+        var candidates = new JsonArray
+        {
+            Candidate("unrelated", "economy.buy_supplies"),
+            Candidate("bound-b", "social.talk_npc"),
+            Candidate("bound-a", "social.talk_npc")
+        };
+        var resolution = new JsonObject
+        {
+            ["status"] = "resolved",
+            ["bound_candidate_ids"] = new JsonArray("bound-a", "bound-b")
+        };
+
+        var filtered = QueueReplanFilter
+            .FilterGoalResolutionBoundCandidates(candidates, resolution);
+
+        Assert.Equal(
+            new[] { "bound-b", "bound-a" },
+            filtered.Select(node =>
+                node!["candidate_id"]!.GetValue<string>()));
+        Assert.Equal(3, candidates.Count);
+    }
+
+    [Fact]
+    public void UnresolvedGoalPreservesEveryRankedCandidate()
+    {
+        var candidates = new JsonArray
+        {
+            Candidate("first", "economy.buy_supplies"),
+            Candidate("second", "social.talk_npc")
+        };
+        var resolution = new JsonObject
+        {
+            ["status"] = "no_actionable_direction",
+            ["bound_candidate_ids"] = new JsonArray()
+        };
+
+        var filtered = QueueReplanFilter
+            .FilterGoalResolutionBoundCandidates(candidates, resolution);
+
+        Assert.Equal(2, filtered.Count);
+        Assert.NotSame(candidates[0], filtered[0]);
+    }
+
+    [Fact]
+    public void ResolvedGoalWithoutBoundIdsFailsClosed()
+    {
+        var filtered = QueueReplanFilter
+            .FilterGoalResolutionBoundCandidates(
+                new JsonArray(Candidate("unrelated", "economy.buy_supplies")),
+                new JsonObject
+                {
+                    ["status"] = "resolved",
+                    ["bound_candidate_ids"] = new JsonArray()
+                });
+
+        Assert.Empty(filtered);
+    }
+
+    [Fact]
+    public void PlanningHandoffFailsClosedInsteadOfCompilingBroadCandidates()
+    {
+        var candidates = new JsonArray
+        {
+            Candidate("unrelated", "social.talk_npc")
+        };
+
+        var filtered = QueueReplanFilter
+            .FilterGoalResolutionBoundCandidates(
+                candidates,
+                new JsonObject
+                {
+                    ["status"] = "planning_handoff_required",
+                    ["planning_handoff"] = new JsonObject
+                    {
+                        ["handoff_kind"] = "crop_production_teacher"
+                    }
+                });
+
+        Assert.Empty(filtered);
+        Assert.Single(candidates);
+    }
+
+    [Fact]
+    public void ExclusiveRecoveryBypassesPlanningHandoffBinding()
+    {
+        var candidates = new JsonArray
+        {
+            Candidate("recovery:native_save_boundary", "recovery.stabilize_day")
+        };
+
+        var filtered = QueueReplanFilter
+            .FilterGoalResolutionBoundCandidates(
+                candidates,
+                new JsonObject
+                {
+                    ["status"] = "planning_handoff_required",
+                    ["planning_handoff"] = new JsonObject
+                    {
+                        ["handoff_kind"] = "crop_production_teacher"
+                    }
+                },
+                exclusiveRecovery: true);
+
+        var selected = Assert.Single(filtered)!.AsObject();
+        Assert.Equal(
+            "recovery:native_save_boundary",
+            selected["candidate_id"]!.GetValue<string>());
+        Assert.Single(candidates);
+        Assert.NotSame(candidates[0], selected);
+    }
+
+    [Fact]
+    public void PriorityStoryEventInterruptIgnoresStrategicBindingButAdmitsOnlyStoryAdvance()
+    {
+        var candidates = new JsonArray
+        {
+            Candidate(
+                "story-event:739330:advance_story_event_automatic:continue",
+                "story.advance_event"),
+            Candidate("unrelated", "economy.buy_supplies")
+        };
+
+        var filtered = QueueReplanFilter
+            .FilterPriorityStoryEventInterruptCandidates(candidates);
+
+        var selected = Assert.Single(filtered)!.AsObject();
+        Assert.Equal(
+            "story-event:739330:advance_story_event_automatic:continue",
+            selected["candidate_id"]!.GetValue<string>());
+        Assert.Equal("story.advance_event", selected["option_id"]!.GetValue<string>());
+        Assert.Equal(2, candidates.Count);
+        Assert.NotSame(candidates[0], selected);
+    }
+
     [Theory]
     [InlineData(9, 6, 3)]
     [InlineData(4, 4, 0)]
@@ -28,6 +165,21 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
             "tools", "StardewAI.LiveTrainingLoop", "Program.QueueBuilding.cs"));
 
         Assert.Contains("BuildQueueFromSelectedCandidateAsync(", runtimeSource, StringComparison.Ordinal);
+        Assert.Contains("BuildPriorityStoryEventQueueAsync(", runtimeSource, StringComparison.Ordinal);
+        Assert.Contains(
+            "priorityStoryEventInterrupt: true",
+            queueBuildingSource,
+            StringComparison.Ordinal);
+        Assert.Contains("runtime_priority_interrupt", runtimeSource, StringComparison.Ordinal);
+        Assert.Contains(
+            "priority_interrupt_released_interrupted_semantic_key",
+            runtimeSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "attemptedSemanticKeys.Remove(itemSemanticKey)",
+            runtimeSource,
+            StringComparison.Ordinal);
+        Assert.Contains("selected_queue_lock_preserved", runtimeSource, StringComparison.Ordinal);
         Assert.Contains("SelectedQueueDecisionLease.Load(", runtimeSource, StringComparison.Ordinal);
         Assert.Contains("StampSelectedQueueIdentity(", runtimeSource, StringComparison.Ordinal);
         Assert.Contains(
@@ -43,6 +195,9 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
         Assert.Contains("/api/v1/planner/options/availability", queueBuildingSource, StringComparison.Ordinal);
         Assert.Contains("policy_model_invoked\"] = false", queueBuildingSource, StringComparison.Ordinal);
         Assert.Contains("no_policy_rerank", queueBuildingSource, StringComparison.Ordinal);
+        Assert.Contains("new[] { \"story.advance_event\" }", queueBuildingSource, StringComparison.Ordinal);
+        Assert.Contains("candidateKindOverride: string.Empty", queueBuildingSource, StringComparison.Ordinal);
+        Assert.Contains("candidateIdOverride: string.Empty", queueBuildingSource, StringComparison.Ordinal);
         Assert.DoesNotContain(
             "selected queue continuation must use deterministic continuation compilation",
             queueBuildingSource,
@@ -52,7 +207,14 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
             "tools", "StardewAI.LiveTrainingLoop", "Program.cs"));
         Assert.Contains("hasDecisionLease", mainSource, StringComparison.Ordinal);
         Assert.Contains("resumedSelectedQueueDecision", mainSource, StringComparison.Ordinal);
-        Assert.Contains("suppressedObjectiveContinuations: suppressedObjectiveContinuations", mainSource, StringComparison.Ordinal);
+        Assert.Contains(
+            "suppressedObjectiveContinuations:",
+            mainSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "activeObjectiveContinuation:",
+            mainSource,
+            StringComparison.Ordinal);
     }
 
     [Fact]
@@ -117,6 +279,18 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
         Assert.Contains("completed_objective_continuations", runtimeExecutionSource, StringComparison.Ordinal);
         Assert.Contains("AddSuppressedContinuation", runtimeExecutionSource, StringComparison.Ordinal);
         Assert.Contains("FilterSuppressedContinuations", queueBuildingSource, StringComparison.Ordinal);
+        Assert.Contains(
+            "FilterGoalResolutionBoundCandidates",
+            queueBuildingSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "exclusiveRecovery);",
+            queueBuildingSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "exclusive_recovery_preempts_strategic_goal_binding",
+            queueBuildingSource,
+            StringComparison.Ordinal);
         Assert.Contains("ContinuationRequestParameters(effectiveContinuation)", queueBuildingSource, StringComparison.Ordinal);
         Assert.Contains("\"continuation.\" + property.Key", queueBuildingSource, StringComparison.Ordinal);
         Assert.Contains("IsTrainingVerifiedExecution(execution)", source, StringComparison.Ordinal);
@@ -125,6 +299,42 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
         Assert.Contains("horizonObservations == 0", source, StringComparison.Ordinal);
         Assert.Contains("connector_native_arrival_tile_adjusted", connectorRuntimeSource, StringComparison.Ordinal);
         Assert.DoesNotContain("reasons.Add(\"connector_unexpected_arrival_tile\")", connectorRuntimeSource, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void StageOneCollectionPreservesContinuationAcrossConnectorReplans()
+    {
+        var source = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.LiveTrainingLoop", "Program.cs"));
+        var teacherSource = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.StageOneCollectionTeacher.cs"));
+        var queueBuildingSource = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.QueueBuilding.cs"));
+
+        Assert.Contains(
+            "activeObjectiveContinuation:",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "QueueReplanFilter.FilterRankedCandidates",
+            teacherSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ShouldReleaseUnavailableContinuation",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "continuationFilterActive",
+            queueBuildingSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "typed_objective_identity_match;fail_closed_no_objective_switch",
+            teacherSource,
+            StringComparison.Ordinal);
     }
 
     [Fact]
@@ -291,10 +501,19 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
             expected,
             QueueReplanFilter.CompletesSelectedQueueCandidate(
                 status,
-                objectiveContinuationCompleted: false,
                 activeObjectiveContinuation: null,
                 selectedCandidateId: "candidate.first",
                 nextCandidateId: "candidate.second"));
+    }
+
+    [Fact]
+    public void SelectedCandidateCompletionWaitsForSameCandidateCleanup()
+    {
+        Assert.False(QueueReplanFilter.CompletesSelectedQueueCandidate(
+            "applied",
+            activeObjectiveContinuation: null,
+            selectedCandidateId: "candidate.first",
+            nextCandidateId: "candidate.first"));
     }
 
     [Fact]
@@ -749,6 +968,70 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
 
         var remaining = Assert.IsType<JsonObject>(Assert.Single(selected));
         Assert.Equal("purchase:Sandy:(O)494", remaining["candidate_id"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public void MasterAnglerSuppressionIgnoresRollingEffectiveStartTime()
+    {
+        var first = new JsonObject
+        {
+            ["kind"] = "master_angler",
+            ["option_id"] = "fishing.catch_fish",
+            ["master_angler_target_qualified_item_id"] = "(O)SeaJelly",
+            ["master_angler_target_location"] = "Beach",
+            ["master_angler_source_kind"] = "location_rule",
+            ["master_angler_source_key"] = "Beach:22",
+            ["master_angler_effective_start_time"] = "730"
+        };
+        var later = JsonNode.Parse(first.ToJsonString())!.AsObject();
+        later["master_angler_effective_start_time"] = "1250";
+        var suppressed = new List<JsonObject>();
+
+        Assert.True(QueueReplanFilter.AddSuppressedContinuation(
+            suppressed,
+            first));
+        Assert.False(QueueReplanFilter.AddSuppressedContinuation(
+            suppressed,
+            later));
+
+        var candidates = new JsonArray
+        {
+            MasterAnglerCandidate("(O)SeaJelly", "Beach", "Beach:22", "1250"),
+            MasterAnglerCandidate("(O)RiverJelly", "Town", "Town:4", "1250")
+        };
+        var remaining = Assert.IsType<JsonObject>(Assert.Single(
+            QueueReplanFilter.FilterSuppressedContinuations(
+                candidates,
+                suppressed)));
+        Assert.Equal(
+            "(O)RiverJelly",
+            remaining["parameters"]![0]!["value"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void StageOneTeacherFiltersReleasedObjectivesAfterCapacityRecovery()
+    {
+        var source = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.StageOneCollectionTeacher.cs"));
+        var main = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.cs"));
+
+        Assert.Contains(
+            "QueueReplanFilter.FilterSuppressedContinuations(",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "same_typed_objective_suppressed_until_game_day_changes",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "suppressedObjectiveContinuations:",
+            main,
+            StringComparison.Ordinal);
     }
 
     [Fact]
@@ -1287,6 +1570,32 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
         };
     }
 
+    private static JsonObject MasterAnglerCandidate(
+        string qualifiedItemId,
+        string locationId,
+        string sourceKey,
+        string effectiveStartTime)
+    {
+        return new JsonObject
+        {
+            ["candidate_id"] = "master-angler:" + qualifiedItemId + ":" + locationId,
+            ["option_id"] = "fishing.catch_fish",
+            ["kind"] = "catch_fish",
+            ["parameters"] = new JsonArray
+            {
+                Parameter(
+                    "master_angler_target_qualified_item_id",
+                    qualifiedItemId),
+                Parameter("master_angler_target_location", locationId),
+                Parameter("master_angler_source_kind", "location_rule"),
+                Parameter("master_angler_source_key", sourceKey),
+                Parameter(
+                    "master_angler_effective_start_time",
+                    effectiveStartTime)
+            }
+        };
+    }
+
     private static JsonObject PurchaseCandidate(
         string shopId,
         string qualifiedItemId,
@@ -1448,6 +1757,15 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
             }
         };
     }
+
+    private static JsonObject Candidate(
+        string candidateId,
+        string optionId) => new()
+    {
+        ["candidate_id"] = candidateId,
+        ["option_id"] = optionId,
+        ["parameters"] = new JsonArray()
+    };
 
     private static JsonObject QuestCandidate(string candidateId)
     {

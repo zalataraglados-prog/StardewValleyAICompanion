@@ -52,10 +52,20 @@ public sealed partial class ModEntry : Mod
             Path = path;
             ConnectorActionTile = connectorActionTile;
             ConnectorExitDirection = connectorExitDirection;
+            NeedsPathStartCentering = path.Count > 0;
             LastPosition = Game1.player.Position;
             LocationId = Game1.currentLocation.NameOrUniqueName;
             MaxTicks = Math.Max(120, path.Count * 90);
+            if (string.Equals(
+                    pending.Request.ConnectorKind,
+                    "native_bus_transport",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                MaxTicks = Math.Max(MaxTicks, 2400);
+            }
             StartedAt = DateTimeOffset.UtcNow.ToString("O");
+            StartMoney = Game1.player.Money;
+            SewerOpenedAtStart = Game1.player.mailReceived.Contains("OpenedSewer");
         }
 
         public PendingExecution Pending { get; }
@@ -70,13 +80,26 @@ public sealed partial class ModEntry : Mod
         public int Tick { get; set; }
         public int PathIndex { get; set; }
         public int? CurrentDirection { get; set; }
+        public bool NeedsPathStartCentering { get; set; }
         public int StuckTicks { get; set; }
         public int SoftObstacleTicks { get; set; }
         public bool IncidentalDialogueButtonHeld { get; set; }
         public int IncidentalDialoguePressAttempts { get; set; }
-        public int MaxTicks { get; }
+        public DialogueBox? IncidentalDialogueMenu { get; set; }
+        public DialogueAdvanceStage IncidentalDialogueStage { get; set; } =
+            DialogueAdvanceStage.WaitTransition;
+        public int IncidentalDialogueTicks { get; set; }
+        public int IncidentalDialogueAdvanceWaitTicks { get; set; }
+        public bool IncidentalDialogueFinishedBeforePress { get; set; }
+        public bool IncidentalDialogueTypingBeforePress { get; set; }
+        public bool IncidentalDialogueTransitioningBeforePress { get; set; }
+        public int MaxTicks { get; set; }
         public Vector2 LastPosition { get; set; }
         public string StartedAt { get; }
+        public int StartMoney { get; }
+        public bool NativeBusResponseSelected { get; set; }
+        public bool SewerOpenedAtStart { get; }
+        public bool SewerUnlockObserved { get; set; }
     }
 
     private sealed class ActiveNativeTool
@@ -105,6 +128,7 @@ public sealed partial class ModEntry : Mod
             DebrisBefore = debrisBefore;
             ChunksBefore = chunksBefore;
             LastPosition = Game1.player.Position;
+            ActionPathCursor = new ExecutorPathCursor();
             MaxMovementTicks = Math.Max(120, path.Count * 90);
             MaxTicks = MaxMovementTicks + 240;
             MaxMovementTiles = Math.Clamp(
@@ -166,6 +190,8 @@ public sealed partial class ModEntry : Mod
         public HashSet<Debris>? DebrisBefore { get; }
         public HashSet<Chunk>? ChunksBefore { get; }
         public int ElapsedTicks { get; set; }
+        public ExecutorPathCursor ActionPathCursor { get; }
+        public bool NeedsActionCentering { get; set; } = true;
         public int PathIndex { get; set; }
         public int StuckTicks { get; set; }
         public int MaxMovementTicks { get; private set; }
@@ -188,6 +214,8 @@ public sealed partial class ModEntry : Mod
             PathIndex = 0;
             StuckTicks = 0;
             LastPosition = Game1.player.Position;
+            ResetExecutorPathCursor(ActionPathCursor);
+            NeedsActionCentering = true;
             RefillingWateringCan = false;
             CropTargetAfterRefill = null;
             Lifecycle = new NativeToolActionLifecycle();
@@ -213,7 +241,7 @@ public sealed partial class ModEntry : Mod
             Target = target;
             Path = path;
             RequiredStand = requiredStand;
-            LastPosition = Game1.player.Position;
+            PathCursor = new ExecutorPathCursor();
             MaxTicks = Math.Max(180, path.Count * 90 + 180);
         }
 
@@ -223,11 +251,9 @@ public sealed partial class ModEntry : Mod
         public Point Target { get; }
         public Point? RequiredStand { get; }
         public List<Point> Path { get; }
-        public int PathIndex { get; set; }
+        public ExecutorPathCursor PathCursor { get; }
         public int ElapsedTicks { get; set; }
-        public int StuckTicks { get; set; }
         public int MaxTicks { get; }
-        public Vector2 LastPosition { get; set; }
     }
 
     private sealed class ActiveCatchFish

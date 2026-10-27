@@ -371,15 +371,82 @@ namespace StardewAI.Core.Execution
                 return new[] { "interact_target_not_adjacent" };
             }
 
+            if (string.Equals(interactionKind, "animal_door", StringComparison.Ordinal))
+            {
+                return ValidateAnimalDoorInteraction(
+                    action,
+                    snapshot,
+                    targetX.Value,
+                    targetY.Value,
+                    expectedActionType);
+            }
+
             if (string.Equals(interactionKind, "overlay_object", StringComparison.Ordinal))
             {
-                if (!string.Equals(expectedActionType, "SkullKeyChest", StringComparison.Ordinal))
+                if (string.Equals(expectedActionType, "SkullKeyChest", StringComparison.Ordinal))
                 {
-                    return new[] { "interact_overlay_object_type_unsupported" };
+                    return SkullKeyRewardChestMatches(snapshot, targetX.Value, targetY.Value)
+                        ? Array.Empty<string>()
+                        : new[] { "skull_key_reward_chest_not_observed_at_target" };
                 }
-                return SkullKeyRewardChestMatches(snapshot, targetX.Value, targetY.Value)
-                    ? Array.Empty<string>()
-                    : new[] { "skull_key_reward_chest_not_observed_at_target" };
+                if (string.Equals(expectedActionType, "DarkTalismanChest", StringComparison.Ordinal))
+                {
+                    if (!string.Equals(
+                            ReadParameter(action, "required_executor_profile"),
+                            "dark_talisman_story_executor",
+                            StringComparison.Ordinal))
+                    {
+                        return new[] { "dark_talisman_executor_profile_required" };
+                    }
+                    return DarkTalismanChestMatches(snapshot, targetX.Value, targetY.Value)
+                        ? Array.Empty<string>()
+                        : new[] { "dark_talisman_chest_not_observed_at_target" };
+                }
+                return new[] { "interact_overlay_object_type_unsupported" };
+            }
+
+            if (string.Equals(interactionKind, "npc_check_action", StringComparison.Ordinal))
+            {
+                return string.Equals(
+                           ReadParameter(action, "required_executor_profile"),
+                           "dark_talisman_story_executor",
+                           StringComparison.Ordinal) &&
+                    string.Equals(expectedActionType, "DarkTalismanKrobus", StringComparison.Ordinal) &&
+                    DarkTalismanKrobusMatches(snapshot, targetX.Value, targetY.Value)
+                        ? Array.Empty<string>()
+                        : new[] { "dark_talisman_krobus_not_observed_at_target" };
+            }
+
+            if (string.Equals(interactionKind, "location_check_action", StringComparison.Ordinal))
+            {
+                return string.Equals(
+                           ReadParameter(action, "required_executor_profile"),
+                           "dark_talisman_story_executor",
+                           StringComparison.Ordinal) &&
+                    string.Equals(expectedActionType, "DarkTalismanStatue", StringComparison.Ordinal) &&
+                    DarkTalismanStatueMatches(snapshot, targetX.Value, targetY.Value)
+                        ? Array.Empty<string>()
+                        : new[] { "dark_talisman_statue_not_observed_at_target" };
+            }
+
+            if (string.Equals(interactionKind, "boat_tunnel_check_action", StringComparison.Ordinal))
+            {
+                return ValidateGingerIslandBoatInteraction(
+                    action,
+                    snapshot,
+                    targetX.Value,
+                    targetY.Value,
+                    expectedActionType);
+            }
+
+            if (string.Equals(interactionKind, "parrot_upgrade_perch", StringComparison.Ordinal))
+            {
+                return ValidateGingerIslandPerchInteraction(
+                    action,
+                    snapshot,
+                    targetX.Value,
+                    targetY.Value,
+                    expectedActionType);
             }
 
             if (!string.Equals(interactionKind, "map_action", StringComparison.Ordinal))
@@ -422,6 +489,52 @@ namespace StardewAI.Core.Execution
             return Array.Empty<string>();
         }
 
+        private static string[] ValidateAnimalDoorInteraction(
+            SmallModelAction action,
+            SnapshotEnvelope snapshot,
+            int targetX,
+            int targetY,
+            string expectedActionType)
+        {
+            if (!string.Equals(expectedActionType, "AnimalDoor", StringComparison.Ordinal) ||
+                !string.Equals(ReadParameter(action, "expected_animal_door_open_before"), "false", StringComparison.Ordinal) ||
+                !string.Equals(ReadParameter(action, "expected_animal_door_open_after"), "true", StringComparison.Ordinal) ||
+                !string.Equals(
+                    ReadParameter(action, "native_contract"),
+                    "Building.doAction->didPlayerJustRightClick->Building.ToggleAnimalDoor->animalDoorOpen",
+                    StringComparison.Ordinal))
+            {
+                return new[] { "animal_door_interaction_contract_invalid" };
+            }
+            var type = ReadParameter(action, "building_type");
+            var buildingX = ReadIntParameter(action, "building_tile_x");
+            var buildingY = ReadIntParameter(action, "building_tile_y");
+            var safeSlot = ReadIntParameter(action, "safe_slot_index");
+            var buildings = ReadStateFieldValue(snapshot, "farm", "buildings");
+            if (string.IsNullOrWhiteSpace(type) || !buildingX.HasValue ||
+                !buildingY.HasValue || !safeSlot.HasValue ||
+                !buildings.HasValue || buildings.Value.ValueKind != JsonValueKind.Array)
+            {
+                return new[] { "animal_door_transparent_identity_incomplete" };
+            }
+            var matches = buildings.Value.EnumerateArray().Where(row =>
+                row.ValueKind == JsonValueKind.Object &&
+                string.Equals(ReadString(row, "type"), type, StringComparison.Ordinal) &&
+                ReadInt(row, "tile_x") == buildingX.Value &&
+                ReadInt(row, "tile_y") == buildingY.Value &&
+                row.TryGetProperty("animal_door", out var door) &&
+                door.ValueKind == JsonValueKind.Object &&
+                ReadBool(door, "present") == true &&
+                ReadBool(door, "is_open") == false &&
+                ReadInt(door, "target_tile_x", int.MinValue) == targetX &&
+                ReadInt(door, "target_tile_y", int.MinValue) == targetY &&
+                string.Equals(ReadString(door, "interaction_status"), "ready_native_right_click_toggle", StringComparison.Ordinal) &&
+                string.Equals(ReadString(door, "native_contract"), ReadParameter(action, "native_contract"), StringComparison.Ordinal)).ToArray();
+            return matches.Length == 1
+                ? Array.Empty<string>()
+                : new[] { "animal_door_projection_drifted" };
+        }
+
         private static bool GoldenScytheAltarMatches(SnapshotEnvelope snapshot, int targetX, int targetY)
         {
             var tiles = ReadStateFieldValue(snapshot, "mining", "tiles");
@@ -456,6 +569,83 @@ namespace StardewAI.Core.Execution
                 ReadInt(chest, "special_item_which") == 4 &&
                 string.Equals(ReadString(chest, "interaction_kind"), "overlay_object", StringComparison.Ordinal) &&
                 string.Equals(ReadString(chest, "expected_action_type"), "SkullKeyChest", StringComparison.Ordinal));
+        }
+
+        private static bool DarkTalismanChestMatches(SnapshotEnvelope snapshot, int targetX, int targetY)
+        {
+            var access = DarkTalismanAccessProjection(snapshot);
+            return access.HasValue &&
+                string.Equals(ReadStateFieldString(snapshot, "player", "location_id"), "BugLand", StringComparison.Ordinal) &&
+                string.Equals(ReadString(access.Value, "status"), "ready_to_claim_dark_talisman", StringComparison.Ordinal) &&
+                ReadBool(access.Value, "krobus_unseal_mail_received") == true &&
+                ReadBool(access.Value, "player_has_dark_talisman") == false &&
+                access.Value.TryGetProperty("bug_lair", out var bugLair) &&
+                bugLair.ValueKind == JsonValueKind.Object &&
+                ReadInt(bugLair, "chest_tile_x", int.MinValue) == targetX &&
+                ReadInt(bugLair, "chest_tile_y", int.MinValue) == targetY &&
+                ReadBool(bugLair, "overlay_object_present") == true &&
+                ReadBool(bugLair, "contains_exact_dark_talisman") == true &&
+                ReadInt(bugLair, "chest_item_count", -1) == 1 &&
+                ReadInt(bugLair, "expected_special_item_which", -1) == 6 &&
+                string.Equals(
+                    ReadString(bugLair, "chest_runtime_type"),
+                    "StardewValley.Objects.Chest",
+                    StringComparison.Ordinal) &&
+                bugLair.TryGetProperty("special_item_ids", out var specialItemIds) &&
+                specialItemIds.ValueKind == JsonValueKind.Array &&
+                specialItemIds.GetArrayLength() == 1 &&
+                specialItemIds[0].ValueKind == JsonValueKind.Number &&
+                specialItemIds[0].GetInt32() == 6;
+        }
+
+        private static bool DarkTalismanKrobusMatches(SnapshotEnvelope snapshot, int targetX, int targetY)
+        {
+            var access = DarkTalismanAccessProjection(snapshot);
+            return access.HasValue &&
+                string.Equals(ReadStateFieldString(snapshot, "player", "location_id"), "Sewer", StringComparison.Ordinal) &&
+                string.Equals(ReadString(access.Value, "status"), "ready_to_talk_to_krobus", StringComparison.Ordinal) &&
+                ReadBool(access.Value, "dark_talisman_quest_active") == true &&
+                ReadBool(access.Value, "krobus_unseal_mail_received") == false &&
+                access.Value.TryGetProperty("krobus", out var krobus) &&
+                krobus.ValueKind == JsonValueKind.Object &&
+                ReadBool(krobus, "present") == true &&
+                ReadBool(krobus, "in_sewer") == true &&
+                string.Equals(ReadString(krobus, "runtime_type"), "StardewValley.NPC", StringComparison.Ordinal) &&
+                ReadInt(krobus, "tile_x", int.MinValue) == targetX &&
+                ReadInt(krobus, "tile_y", int.MinValue) == targetY;
+        }
+
+        private static bool DarkTalismanStatueMatches(SnapshotEnvelope snapshot, int targetX, int targetY)
+        {
+            var access = DarkTalismanAccessProjection(snapshot);
+            return access.HasValue &&
+                string.Equals(ReadStateFieldString(snapshot, "player", "location_id"), "Railroad", StringComparison.Ordinal) &&
+                string.Equals(ReadString(access.Value, "status"), "ready_to_remove_railroad_statue", StringComparison.Ordinal) &&
+                ReadBool(access.Value, "player_has_dark_talisman") == true &&
+                access.Value.TryGetProperty("railroad_statue", out var statue) &&
+                statue.ValueKind == JsonValueKind.Object &&
+                ReadInt(statue, "tile_x", int.MinValue) == targetX &&
+                ReadInt(statue, "tile_y", int.MinValue) == targetY &&
+                ReadInt(statue, "buildings_tile_index", -1) == 287 &&
+                ReadInt(statue, "expected_buildings_tile_index", -1) == 287 &&
+                string.Equals(ReadString(statue, "expected_tilesheet"), "untitled tile sheet", StringComparison.Ordinal) &&
+                ReadBool(statue, "identity_exact") == true &&
+                ReadBool(statue, "gone") == false;
+        }
+
+        private static JsonElement? DarkTalismanAccessProjection(SnapshotEnvelope snapshot)
+        {
+            var access = ReadStateFieldValue(snapshot, "locations", "dark_talisman_access");
+            if (!access.HasValue || access.Value.ValueKind != JsonValueKind.Object ||
+                !string.Equals(ReadString(access.Value, "schema_version"), "dark_talisman_access.v1", StringComparison.Ordinal) ||
+                !string.Equals(
+                    ReadString(access.Value, "projection_status"),
+                    "complete_locked_base_1.6.15_native_contract",
+                    StringComparison.Ordinal))
+            {
+                return null;
+            }
+            return access.Value;
         }
 
         private static bool InteractTargetWithinOneTile(

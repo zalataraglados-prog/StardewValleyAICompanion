@@ -53,12 +53,29 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     }
 
     [Fact]
-    public void CloseMenuBlocksWhenCharacterPresentFalse()
+    public void CloseMenuAllowsTransparentSpeakerlessNonQuestionMessage()
     {
-        var snapshot = DialogueMenuRecoverySnapshot(characterPresent: false);
+        var snapshot = DialogueMenuRecoverySnapshot(
+            characterPresent: false,
+            speakerName: "");
         var candidate = GetCloseMenuCandidate(snapshot);
+
+        Assert.True(candidate.Available);
+        Assert.Empty(candidate.BlockReasons);
+    }
+
+    [Fact]
+    public void CloseMenuBlocksInconsistentSpeakerlessMessageIdentity()
+    {
+        var snapshot = DialogueMenuRecoverySnapshot(
+            characterPresent: false,
+            speakerName: "Lewis");
+        var candidate = GetCloseMenuCandidate(snapshot);
+
         Assert.False(candidate.Available);
-        Assert.Contains("dialogue_close_character_present_false", candidate.BlockReasons);
+        Assert.Contains(
+            "dialogue_close_character_speaker_mismatch",
+            candidate.BlockReasons);
     }
 
     [Fact]

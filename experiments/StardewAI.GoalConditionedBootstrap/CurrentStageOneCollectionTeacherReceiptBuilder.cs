@@ -176,6 +176,22 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
             return result;
         }
 
+        var selectedOptionAdmitted = new PolicyTrainingAdmissionFilter()
+            .FilterOptionIds(new[] { selectedCandidate.OptionId })
+            .Length == 1;
+        if (!selectedOptionAdmitted)
+        {
+            result.Status =
+                "verified_evidence_only_policy_option_not_admitted";
+            result.VerifiedRequirementTransitions = transitions;
+            result.BlockingReasons = new[]
+            {
+                PolicyTrainingAdmissionFilter.OptionNotAdmittedReason + ":" +
+                selectedCandidate.OptionId
+            };
+            return result;
+        }
+
         var decision = BuildTeacherDecision(preference, ranking);
         var stateFeatures = new PolicyStateFeatureProjector().Project(
             new WorldModelProjector().Project(

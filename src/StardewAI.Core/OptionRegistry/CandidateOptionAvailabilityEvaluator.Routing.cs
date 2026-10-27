@@ -68,6 +68,13 @@ namespace StardewAI.Core.OptionRegistry
                 Parameter("connector_kind", kind),
                 Parameter("expected_target_location", targetLocation)
             };
+            var standX = ReadNullableInt(connector, "stand_tile_x");
+            var standY = ReadNullableInt(connector, "stand_tile_y");
+            if (standX.HasValue && standY.HasValue)
+            {
+                actionParameters.Add(Parameter("stand_tile_x", standX.Value.ToString()));
+                actionParameters.Add(Parameter("stand_tile_y", standY.Value.ToString()));
+            }
             var targetX = ReadNullableInt(connector, "target_x");
             var targetY = ReadNullableInt(connector, "target_y");
             if (targetX.HasValue && targetY.HasValue)
@@ -133,7 +140,12 @@ namespace StardewAI.Core.OptionRegistry
                 .Concat(normalizedParameters)
                 .ToArray();
             var estimatedTicks = ReadParameterInt(normalizedParameters, "estimated_ticks") ?? 0;
-            var gateTimeline = ReadRouteGateTimeline(snapshot, x, y);
+            var gateTimeline = ReadRouteGateTimeline(
+                snapshot,
+                x,
+                y,
+                kind,
+                targetLocation);
             var unwindowedAllowed = !gateTimeline.HasValue &&
                 blockReasons.Length == 0;
             var expectedEffect = "player.tile=" + x + "," + y +
@@ -180,7 +192,12 @@ namespace StardewAI.Core.OptionRegistry
             };
         }
 
-        private static RouteGateTimeline? ReadRouteGateTimeline(SnapshotEnvelope snapshot, int tileX, int tileY)
+        private static RouteGateTimeline? ReadRouteGateTimeline(
+            SnapshotEnvelope snapshot,
+            int tileX,
+            int tileY,
+            string connectorKind,
+            string targetLocation)
         {
             var gateContext = ReadStateFieldValue(snapshot, "locations", "route_gate_context");
             if (!gateContext.HasValue ||
@@ -191,12 +208,35 @@ namespace StardewAI.Core.OptionRegistry
                 return null;
             }
 
+            var expectedGateKind = connectorKind switch
+            {
+                "warp" => "ordinary_warp_active_festival",
+                "locked_door_warp" => "locked_door_warp",
+                "action_warp" or "touch_action_warp" => "warp_action",
+                "native_bus_transport" => "native_bus_transport",
+                _ => string.Empty
+            };
+            if (string.IsNullOrWhiteSpace(expectedGateKind))
+            {
+                return null;
+            }
+
             var gate = gates.EnumerateArray().FirstOrDefault(candidate =>
                 candidate.ValueKind == JsonValueKind.Object &&
                 ReadNullableInt(candidate, "tile_x") == tileX &&
-                ReadNullableInt(candidate, "tile_y") == tileY);
-            if (gate.ValueKind != JsonValueKind.Object ||
-                !string.Equals(ReadString(gate, "kind"), "locked_door_warp", StringComparison.OrdinalIgnoreCase))
+                ReadNullableInt(candidate, "tile_y") == tileY &&
+                string.Equals(
+                    ReadString(candidate, "kind"),
+                    expectedGateKind,
+                    StringComparison.OrdinalIgnoreCase) &&
+                (string.IsNullOrWhiteSpace(
+                    ReadString(candidate, "target_location")) ||
+                 string.Equals(
+                    ReadString(candidate, "target_location"),
+                    targetLocation,
+                    StringComparison.OrdinalIgnoreCase)));
+            var gateKind = ReadString(gate, "kind");
+            if (gate.ValueKind != JsonValueKind.Object)
             {
                 return null;
             }
@@ -208,6 +248,7 @@ namespace StardewAI.Core.OptionRegistry
             var greenRainOverride = ReadBool(gate, "green_rain_override") == true;
             var hardGateOpen = ReadBool(gate, "festival_closed") != true &&
                 ReadBool(gate, "seed_shop_wednesday_closed") != true &&
+                ReadBool(gate, "fish_shop_gone_fishing_closed") != true &&
                 (ReadBool(gate, "friendship_allowed") != false || greenRainOverride) &&
                 string.IsNullOrWhiteSpace(ReadString(gate, "unresolved_reason"));
             var canOpenLaterToday = allowedNow == false &&
@@ -224,9 +265,21 @@ namespace StardewAI.Core.OptionRegistry
                 {
                     reasons.Add("route_gate_festival_closed");
                 }
+                if (string.Equals(
+                        gateKind,
+                        "ordinary_warp_active_festival",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    reasons.Add(
+                        "route_gate_active_festival_ordinary_transit_closed");
+                }
                 if (ReadBool(gate, "seed_shop_wednesday_closed") == true)
                 {
                     reasons.Add("route_gate_seed_shop_wednesday_closed");
+                }
+                if (ReadBool(gate, "fish_shop_gone_fishing_closed") == true)
+                {
+                    reasons.Add("route_gate_fish_shop_gone_fishing_closed");
                 }
                 if (ReadBool(gate, "friendship_allowed") == false && !greenRainOverride)
                 {

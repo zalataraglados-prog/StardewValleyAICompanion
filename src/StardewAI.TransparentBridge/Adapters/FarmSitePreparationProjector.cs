@@ -61,7 +61,7 @@ internal static class FarmSitePreparationProjector
 
         return new
         {
-            schema_version = "farm_site_preparation_context.v1",
+            schema_version = "farm_site_preparation_context.v2",
             projection_status = location is Farm
                 ? "complete_bounded_current_farm_region"
                 : "blocked_current_location_not_farm",
@@ -88,7 +88,7 @@ internal static class FarmSitePreparationProjector
                 : "ready",
             tiles = rows.ToArray(),
             native_contract =
-                "Hoe.DoFunction -> existing terrain/object tool action first; otherwise Back:Diggable + isTilePassable + makeHoeDirt. Projection is bounded and read-only; clearance and tilling remain separate fresh-snapshot actions."
+                "Hoe.DoFunction -> existing terrain/object tool action first; otherwise Back:Diggable + isTilePassable + makeHoeDirt. Watering-can refill sources use GameLocation.CanRefillWateringCanOnTile; route execution remains the shared runtime BFS. Projection is bounded and read-only; clearance and tilling remain separate fresh-snapshot actions."
         };
     }
 
@@ -127,6 +127,8 @@ internal static class FarmSitePreparationProjector
         var nativeBlocked = onMap && location.IsTileBlockedBy(
             tile,
             ~(CollisionMask.Characters | CollisionMask.Farmers));
+        var wateringCanRefillSource = onMap &&
+            location.CanRefillWateringCanOnTile(x, y);
 
         var blockerKinds = new List<string>();
         var clearableBlockerKinds = new List<string>();
@@ -186,6 +188,9 @@ internal static class FarmSitePreparationProjector
             diggable_back_property = diggable,
             map_passable = mapPassable,
             native_blocked_without_characters = nativeBlocked,
+            watering_can_refill_source = wateringCanRefillSource,
+            watering_refill_approach_standable =
+                onMap && mapPassable && !nativeBlocked,
             has_hoe_dirt = hoeDirt is not null,
             hoe_dirt_has_crop = hoeDirt?.crop is not null,
             hoe_tool_slot_index = hoeSlotIndex,

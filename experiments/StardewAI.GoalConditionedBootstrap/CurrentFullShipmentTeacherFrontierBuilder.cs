@@ -160,7 +160,7 @@ public static partial class CurrentFullShipmentTeacherFrontierBuilder
             CandidateBindings = bindings,
             Limitations = new[]
             {
-                "This slice emits Full Shipment completion and authoritative acquisition-endpoint labels only.",
+                "This slice emits Full Shipment completion, authoritative acquisition-endpoint, and exact rolling-route labels only.",
                 "Supporting options require exact dependency-source binding before they may supervise the Teacher.",
                 "The remaining collection requirement sets retain their existing typed completion adapters and are not inferred by this report."
             }
@@ -212,6 +212,13 @@ public static partial class CurrentFullShipmentTeacherFrontierBuilder
                     var routes = routeMatches
                         .Select(value => value.Route)
                         .ToArray();
+                    var acquisitionRouteStep =
+                        CurrentTeacherFrontierSupport.IsExactAcquisitionRouteStep(
+                            candidate,
+                            alternative.ItemId,
+                            alternative.QualifiedItemId,
+                            routes,
+                            out var acquisitionRouteEvidence);
                     var sourceEvidence = routeMatches.Length == 1
                         ? "+" + routeMatches[0].IdentityEvidence
                         : string.Empty;
@@ -226,11 +233,18 @@ public static partial class CurrentFullShipmentTeacherFrontierBuilder
                         candidate.Rank,
                         directCompletion
                             ? "native_full_shipment_completion"
-                            : "authoritative_acquisition_endpoint",
+                            : acquisitionRouteStep
+                                ? "authoritative_collection_rolling_route_step"
+                                : "authoritative_acquisition_endpoint",
                         directCompletion
                             ? match.IdentityEvidence + "+native_full_shipment_contribution_flags"
-                            : match.IdentityEvidence + sourceEvidence,
-                        routes));
+                            : match.IdentityEvidence + sourceEvidence +
+                                (acquisitionRouteStep
+                                    ? "+" + acquisitionRouteEvidence
+                                    : string.Empty),
+                        acquisitionRouteStep
+                            ? Array.Empty<CurrentRequirementRouteEvidence>()
+                            : routes));
                 }
             }
         }

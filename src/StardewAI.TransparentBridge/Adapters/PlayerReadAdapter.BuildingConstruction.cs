@@ -31,8 +31,13 @@ public sealed partial class PlayerReadAdapter
         foreach (var pair in Game1.buildingData.OrderBy(pair => pair.Key, StringComparer.Ordinal))
         {
             var data = pair.Value;
-            if (data.BuildingToUpgrade is not null || data.Builder is not ("Robin" or "Wizard"))
+            if (data.Builder is not ("Robin" or "Wizard"))
             {
+                continue;
+            }
+            if (!string.IsNullOrWhiteSpace(data.BuildingToUpgrade))
+            {
+                AddBuildingUpgradeRows(player, pair.Key, data, locations, services[data.Builder], rows);
                 continue;
             }
 
@@ -97,7 +102,9 @@ public sealed partial class PlayerReadAdapter
 
                 rows.Add(new
                 {
+                    project_kind = "construction",
                     building_type = pair.Key,
+                    upgrade_from_building_type = string.Empty,
                     display_name = data.Name,
                     description = data.Description,
                     builder = data.Builder,
@@ -140,6 +147,7 @@ public sealed partial class PlayerReadAdapter
         {
             projection_status = "complete_live_native_building_catalog",
             buildable_location_count = locations.Length,
+            upgrade_definitions = ReadBuildingUpgradeDefinitions(),
             rows = rows.ToArray()
         };
     }

@@ -232,6 +232,112 @@ internal static partial class BootstrapSelfTest
                 !proof.FormalProductTrainingAuthorized,
             "Money crop lifecycle proof lost its exact native denominator.");
 
+        var resumeIndex = Enumerable.Range(1, transitions.Count - 1)
+            .First(index =>
+                transitions[index - 1].TransitionKind ==
+                    "native_day_rollover" &&
+                transitions[index].TransitionKind ==
+                    "supporting_route_to_crop");
+        var priorTransition = transitions[resumeIndex - 1];
+        var resumedTransitions = transitions.ToArray();
+        var resumedPriorAfterPath = Path.Combine(
+            root,
+            "resume-prior-after.json");
+        var resumedPriorReceiptPath = Path.Combine(
+            root,
+            "resume-prior-receipt.json");
+        var resumedPriorAfter = LifecycleChangeRuntimeIdentity(
+            CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
+                priorTransition.AfterSnapshotPath,
+                "Money crop resume prior after snapshot"),
+            "prior-runtime-run",
+            "prior-runtime-saves");
+        var resumedPriorReceipt = CurrentTeacherFrontierSupport.Read<
+            QueueExecutionReceiptEnvelope>(
+                priorTransition.ExecutionReceiptPath,
+                "Money crop resume prior execution receipt");
+        resumedPriorReceipt.AfterStateHash = resumedPriorAfter.StateHash;
+        resumedPriorReceipt.StepResults[^1].AfterStateHash =
+            resumedPriorAfter.StateHash;
+        Write(resumedPriorAfterPath, resumedPriorAfter);
+        Write(resumedPriorReceiptPath, resumedPriorReceipt);
+        resumedTransitions[resumeIndex - 1] = priorTransition with
+        {
+            ExecutionReceiptPath = resumedPriorReceiptPath,
+            AfterSnapshotPath = resumedPriorAfterPath
+        };
+        var resumedRequestPath = Path.Combine(
+            root,
+            "lifecycle-resumed-request.json");
+        Write(resumedRequestPath,
+            new MoneyRevenueCropNativeLifecycleProofRequest
+            {
+                CropProductionPlanPath = planPath,
+                CommitmentId = commitment.CommitmentId,
+                PlantingLayoutProofPath = layoutProofPath,
+                DailyCapacityProofPath = capacityProofPath,
+                Transitions = resumedTransitions,
+                CheckpointResumes = new[]
+                {
+                    new MoneyRevenueCropNativeLifecycleCheckpointResumeRequest(
+                        resumeIndex)
+                }
+            });
+        var resumedProof =
+            MoneyRevenueCropNativeLifecycleProofBuilder.Build(
+                resumedRequestPath);
+        Require(resumedProof.CheckpointResumeCount == 1 &&
+                resumedProof.CheckpointResumes.Length == 1 &&
+                resumedProof.CheckpointResumes[0].TransitionIndex ==
+                    resumeIndex &&
+                resumedProof.CheckpointResumes[0].Verified,
+            "Money crop lifecycle checkpoint resume was not preserved in proof evidence.");
+
+        var driftedResumeBeforePath = Path.Combine(
+            root,
+            "lifecycle-resume-inventory-drift-before.json");
+        var driftedResumeBefore = CloneSnapshot(
+            CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
+                transitions[resumeIndex].BeforeSnapshotPath,
+                "Money crop resumed before snapshot"));
+        var driftedPlayer = JsonNode.Parse(
+            driftedResumeBefore.State["player"].GetRawText())!.AsObject();
+        driftedPlayer["seed_inventory"]!["value"]![0]!["stack"] = 39;
+        driftedResumeBefore.State["player"] =
+            JsonSerializer.SerializeToElement(
+                driftedPlayer,
+                JsonDefaults.Options);
+        driftedResumeBefore.StateHash = SnapshotHash.ComputeStateHash(
+            driftedResumeBefore.State);
+        Write(driftedResumeBeforePath, driftedResumeBefore);
+        var driftedResumeTransitions = resumedTransitions.ToArray();
+        driftedResumeTransitions[resumeIndex] =
+            driftedResumeTransitions[resumeIndex] with
+            {
+                BeforeSnapshotPath = driftedResumeBeforePath
+            };
+        var driftedResumeRequestPath = Path.Combine(
+            root,
+            "lifecycle-resume-inventory-drift-request.json");
+        Write(driftedResumeRequestPath,
+            new MoneyRevenueCropNativeLifecycleProofRequest
+            {
+                CropProductionPlanPath = planPath,
+                CommitmentId = commitment.CommitmentId,
+                PlantingLayoutProofPath = layoutProofPath,
+                DailyCapacityProofPath = capacityProofPath,
+                Transitions = driftedResumeTransitions,
+                CheckpointResumes = new[]
+                {
+                    new MoneyRevenueCropNativeLifecycleCheckpointResumeRequest(
+                        resumeIndex)
+                }
+            });
+        RequireRejects(
+            () => MoneyRevenueCropNativeLifecycleProofBuilder.Build(
+                driftedResumeRequestPath),
+            "A Money crop lifecycle resume with inventory drift was admitted.");
+
         var proofPath = Path.Combine(root, "lifecycle-proof.json");
         var fragmentIndexPath = Path.Combine(root, "fragment-index.json");
         var checkpointRequestPath = Path.Combine(
@@ -1063,6 +1169,23 @@ internal static partial class BootstrapSelfTest
         Require(locationId is "Farm" or "FarmHouse",
             "Money crop lifecycle fixture route target is invalid.");
         return LifecycleSetPlayerLocation(before, locationId, 1);
+    }
+
+    private static SnapshotEnvelope LifecycleChangeRuntimeIdentity(
+        SnapshotEnvelope source,
+        string trainingRunId,
+        string saveIsolationPath)
+    {
+        var changed = CloneSnapshot(source);
+        var environment = JsonNode.Parse(
+            changed.State["environment"].GetRawText())!.AsObject();
+        environment["training_run_id"]!["value"] = trainingRunId;
+        environment["save_isolation_path"]!["value"] = saveIsolationPath;
+        changed.State["environment"] = JsonSerializer.SerializeToElement(
+            environment,
+            JsonDefaults.Options);
+        changed.StateHash = SnapshotHash.ComputeStateHash(changed.State);
+        return changed;
     }
 
     private static SnapshotEnvelope LifecycleSetPlayerLocation(

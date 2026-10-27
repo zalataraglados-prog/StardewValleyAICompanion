@@ -62,6 +62,37 @@ public sealed class FarmResourceClumpRuntimeCalibrationSourceGuardTests
     }
 
     [Fact]
+    public void NativeExecutorVerifiesConservativeHardwoodMinimums()
+    {
+        var bridge = ReadRepositoryFile(
+            "src",
+            "StardewAI.TransparentBridge",
+            "Adapters",
+            "FarmReadAdapter.SkillExperience.cs");
+        var runtime = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.MiningResources.cs");
+
+        Assert.Contains(
+            "ResourceClump.stumpIndex => 2",
+            bridge,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ResourceClump.hollowLogIndex => 8",
+            bridge,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "FarmResourceClumpMinimumProjectionMatches",
+            runtime,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "farm_resource_clump_output_projection_drifted",
+            runtime,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void AllResourceClumpReadersIncludeNativeAdditionalToolPower()
     {
         var projection = ReadRepositoryFile(

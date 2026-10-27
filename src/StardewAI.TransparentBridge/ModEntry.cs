@@ -950,6 +950,7 @@ public sealed partial class ModEntry : Mod
         if (profile == "farm_layout")
         {
             domains.Add("farm");
+            domains.Add("world_progress");
         }
 
         if (profile is "training_mining")

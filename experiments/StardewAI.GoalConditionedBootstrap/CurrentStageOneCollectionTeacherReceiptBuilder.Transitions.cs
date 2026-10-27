@@ -1,3 +1,4 @@
+using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
@@ -81,6 +82,55 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
                     ReadParameter(item, "expected_target_location"))),
                 before,
                 after),
+            "authoritative_supporting_prerequisite_rolling_route_step" =>
+                VerifyRouteStep(
+                    credit,
+                    queueItems.LastOrDefault(item => !string.IsNullOrWhiteSpace(
+                        ReadParameter(item, "expected_target_location"))),
+                    before,
+                    after),
+            "authoritative_supporting_prerequisite_starter_mail_route_step" =>
+                VerifyStarterMailRoute(
+                    credit,
+                    queueItems.LastOrDefault(),
+                    before,
+                    after),
+            "authoritative_supporting_prerequisite_starter_mail_approach" =>
+                VerifyStarterMailApproach(
+                    credit,
+                    queueItems.LastOrDefault(),
+                    before,
+                    after),
+            "authoritative_supporting_prerequisite_starter_mail_open" =>
+                VerifyStarterMailOpen(
+                    credit,
+                    queueItems.LastOrDefault(),
+                    before,
+                    after),
+            "authoritative_supporting_prerequisite_starter_mail_wait" =>
+                VerifyStarterMailWait(
+                    credit,
+                    queueItems.LastOrDefault(),
+                    before,
+                    after),
+            "authoritative_supporting_prerequisite_starter_mail_process" =>
+                VerifyStarterMailProcess(
+                    credit,
+                    queueItems.LastOrDefault(),
+                    before,
+                    after),
+            "authoritative_supporting_prerequisite_starter_quest_route_step" =>
+                VerifyStarterQuestRoute(
+                    credit,
+                    queueItems.LastOrDefault(),
+                    before,
+                    after),
+            "authoritative_supporting_prerequisite_starter_event_grant" =>
+                VerifyRodAcquisition(credit, before, after),
+            "authoritative_supporting_prerequisite_shop_endpoint_open" =>
+                VerifyFishShopOpened(credit, before, after),
+            "authoritative_supporting_prerequisite_terminal_purchase" =>
+                VerifyRodAcquisition(credit, before, after),
             _ => Transition(
                 credit,
                 "unsupported_binding_kind",
@@ -316,6 +366,287 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
             $"{afterLocation}:{afterX},{afterY}",
             changed && arrived);
     }
+
+    private static PolicyTeacherRequirementTransition VerifyFishShopOpened(
+        CurrentCollectionRequirementCredit credit,
+        SnapshotEnvelope before,
+        SnapshotEnvelope after)
+    {
+        var beforeShop = ReadOpenShopId(before);
+        var afterShop = ReadOpenShopId(after);
+        return Transition(
+            credit,
+            "exact_fish_shop_menu_opened",
+            beforeShop ?? "unavailable",
+            afterShop ?? "unavailable",
+            beforeShop != MasterAnglerRodEquipmentAcquisitionProtocol.ShopId &&
+            afterShop == MasterAnglerRodEquipmentAcquisitionProtocol.ShopId);
+    }
+
+    private static PolicyTeacherRequirementTransition VerifyStarterMailRoute(
+        CurrentCollectionRequirementCredit credit,
+        ActionQueueItem? queueItem,
+        SnapshotEnvelope before,
+        SnapshotEnvelope after)
+    {
+        var transition = VerifyRouteStep(credit, queueItem, before, after);
+        var exactMail = queueItem is not null &&
+            ReadParameter(queueItem, "continuation.mail_id") ==
+                MasterAnglerRodEquipmentAcquisitionProtocol.StarterMailId;
+        return Transition(
+            credit,
+            "native_starter_mail_route_endpoint_reached",
+            transition.BeforeValue,
+            transition.AfterValue,
+            transition.Verified && exactMail);
+    }
+
+    private static PolicyTeacherRequirementTransition VerifyStarterMailApproach(
+        CurrentCollectionRequirementCredit credit,
+        ActionQueueItem? queueItem,
+        SnapshotEnvelope before,
+        SnapshotEnvelope after)
+    {
+        var expectedX = queueItem is null
+            ? null
+            : ReadIntParameter(queueItem, "target_tile_x");
+        var expectedY = queueItem is null
+            ? null
+            : ReadIntParameter(queueItem, "target_tile_y");
+        var beforeLocation = RequiredStateString(before, "player", "location_id");
+        var afterLocation = RequiredStateString(after, "player", "location_id");
+        var beforeX = RequiredStateInt(before, "player", "tile_x");
+        var beforeY = RequiredStateInt(before, "player", "tile_y");
+        var afterX = RequiredStateInt(after, "player", "tile_x");
+        var afterY = RequiredStateInt(after, "player", "tile_y");
+        var exactMail = queueItem is not null &&
+            ReadParameter(queueItem, "continuation.mail_id") ==
+                MasterAnglerRodEquipmentAcquisitionProtocol.StarterMailId;
+        var changed = beforeX != afterX || beforeY != afterY ||
+            !string.Equals(beforeLocation, afterLocation, StringComparison.Ordinal);
+        return Transition(
+            credit,
+            "native_starter_mailbox_stand_tile_reached",
+            $"{beforeLocation}:{beforeX},{beforeY}",
+            $"{afterLocation}:{afterX},{afterY}",
+            exactMail && changed &&
+            string.Equals(beforeLocation, afterLocation, StringComparison.Ordinal) &&
+            expectedX.HasValue && afterX == expectedX.Value &&
+            expectedY.HasValue && afterY == expectedY.Value);
+    }
+
+    private static PolicyTeacherRequirementTransition VerifyStarterMailOpen(
+        CurrentCollectionRequirementCredit credit,
+        ActionQueueItem? queueItem,
+        SnapshotEnvelope before,
+        SnapshotEnvelope after)
+    {
+        var candidateMail = queueItem is null
+            ? string.Empty
+            : ReadParameter(queueItem, "continuation.mail_id");
+        var beforePending = ReadPendingMailId(before);
+        var afterLetter = ReadLetterState(after);
+        var afterQuest = HasActiveQuest(after,
+            MasterAnglerRodEquipmentAcquisitionProtocol.StarterQuestId);
+        return Transition(
+            credit,
+            "native_starter_mail_opened_and_quest_constructed",
+            beforePending ?? "unavailable",
+            $"letter_quest={afterLetter.QuestId};active_quest={afterQuest}",
+            candidateMail == MasterAnglerRodEquipmentAcquisitionProtocol.StarterMailId &&
+            beforePending == MasterAnglerRodEquipmentAcquisitionProtocol.StarterMailId &&
+            (afterLetter.IsStarterLetter || afterQuest));
+    }
+
+    private static PolicyTeacherRequirementTransition VerifyStarterMailWait(
+        CurrentCollectionRequirementCredit credit,
+        ActionQueueItem? queueItem,
+        SnapshotEnvelope before,
+        SnapshotEnvelope after)
+    {
+        var beforeLetter = ReadLetterState(before);
+        var afterLetter = ReadLetterState(after);
+        var exactCandidate = queueItem is not null &&
+            ReadParameter(queueItem, "target_runtime_identity") ==
+                MasterAnglerRodEquipmentAcquisitionProtocol.StarterMailId;
+        return Transition(
+            credit,
+            "native_starter_letter_input_settled",
+            $"starter={beforeLetter.IsStarterLetter};input={beforeLetter.CanReceiveInput};close={beforeLetter.ReadyToClose}",
+            $"starter={afterLetter.IsStarterLetter};input={afterLetter.CanReceiveInput};close={afterLetter.ReadyToClose}",
+            exactCandidate && beforeLetter.IsStarterLetter &&
+            (!beforeLetter.CanReceiveInput || !beforeLetter.ReadyToClose) &&
+            afterLetter.IsStarterLetter && afterLetter.CanReceiveInput &&
+            afterLetter.ReadyToClose);
+    }
+
+    private static PolicyTeacherRequirementTransition VerifyStarterMailProcess(
+        CurrentCollectionRequirementCredit credit,
+        ActionQueueItem? queueItem,
+        SnapshotEnvelope before,
+        SnapshotEnvelope after)
+    {
+        var beforeLetter = ReadLetterState(before);
+        var afterLetter = ReadLetterState(after);
+        var afterQuest = HasActiveQuest(after,
+            MasterAnglerRodEquipmentAcquisitionProtocol.StarterQuestId);
+        var afterEvent = IsStarterEventActive(after);
+        var afterRod = ReadRodCount(after, credit.QualifiedItemId);
+        var exactCandidate = queueItem is not null &&
+            ReadParameter(queueItem, "target_runtime_identity") ==
+                MasterAnglerRodEquipmentAcquisitionProtocol.StarterMailId;
+        return Transition(
+            credit,
+            "native_starter_mail_processed_to_quest_13",
+            $"starter_letter={beforeLetter.IsStarterLetter}",
+            $"starter_letter={afterLetter.IsStarterLetter};active_quest={afterQuest};active_event={afterEvent};rod={CountText(afterRod)}",
+            exactCandidate && beforeLetter.IsStarterLetter &&
+            !afterLetter.IsStarterLetter &&
+            (afterQuest || afterEvent || afterRod >= credit.RequiredQuantity));
+    }
+
+    private static PolicyTeacherRequirementTransition VerifyStarterQuestRoute(
+        CurrentCollectionRequirementCredit credit,
+        ActionQueueItem? queueItem,
+        SnapshotEnvelope before,
+        SnapshotEnvelope after)
+    {
+        var route = VerifyRouteStep(credit, queueItem, before, after);
+        var exactQuest = queueItem is not null &&
+            ReadParameter(queueItem, "quest_id") ==
+                MasterAnglerRodEquipmentAcquisitionProtocol.StarterQuestId &&
+            ReadParameter(queueItem, "quest_target_location") == "Beach";
+        var nativeEventTookControl = IsStarterEventActive(after);
+        var afterRod = ReadRodCount(after, credit.QualifiedItemId);
+        return Transition(
+            credit,
+            "native_quest_13_route_progressed_toward_beach",
+            route.BeforeValue,
+            route.AfterValue +
+                $";starter_event={nativeEventTookControl};rod={CountText(afterRod)}",
+            exactQuest &&
+                (route.Verified || nativeEventTookControl ||
+                    afterRod >= credit.RequiredQuantity));
+    }
+
+    private static PolicyTeacherRequirementTransition VerifyRodAcquisition(
+        CurrentCollectionRequirementCredit credit,
+        SnapshotEnvelope before,
+        SnapshotEnvelope after)
+    {
+        var beforeCount = ReadRodCount(before, credit.QualifiedItemId);
+        var afterCount = ReadRodCount(after, credit.QualifiedItemId);
+        return Transition(
+            credit,
+            "authoritative_rod_inventory_zero_to_owned",
+            CountText(beforeCount),
+            CountText(afterCount),
+            beforeCount == 0 && afterCount >= credit.RequiredQuantity);
+    }
+
+    private static string? ReadOpenShopId(SnapshotEnvelope snapshot)
+    {
+        if (!TryStateValue(snapshot, "menus", "shop_stock", out var stock) ||
+            stock.ValueKind != System.Text.Json.JsonValueKind.Object ||
+            !stock.TryGetProperty("shop_id", out var shopId) ||
+            shopId.ValueKind != System.Text.Json.JsonValueKind.String ||
+            !stock.TryGetProperty("read_only", out var readOnly) ||
+            readOnly.ValueKind != System.Text.Json.JsonValueKind.False)
+        {
+            return null;
+        }
+        return shopId.GetString();
+    }
+
+    private static int? ReadRodCount(
+        SnapshotEnvelope snapshot,
+        string qualifiedItemId)
+    {
+        if (!TryStateValue(snapshot, "fishing", "rod_inventory", out var rods) ||
+            rods.ValueKind != System.Text.Json.JsonValueKind.Array)
+        {
+            return null;
+        }
+
+        var count = 0;
+        foreach (var row in rods.EnumerateArray())
+        {
+            if (row.ValueKind != System.Text.Json.JsonValueKind.Object ||
+                !row.TryGetProperty("qualified_item_id", out var itemId) ||
+                itemId.ValueKind != System.Text.Json.JsonValueKind.String ||
+                string.IsNullOrWhiteSpace(itemId.GetString()))
+            {
+                return null;
+            }
+            if (itemId.GetString() == qualifiedItemId)
+                count++;
+        }
+        return count;
+    }
+
+    private static string? ReadPendingMailId(SnapshotEnvelope snapshot)
+    {
+        if (!TryStateValue(snapshot, "quests", "mailbox_processing", out var mailbox) ||
+            mailbox.ValueKind != JsonValueKind.Object ||
+            !mailbox.TryGetProperty("pending_mail_id", out var mailId) ||
+            mailId.ValueKind != JsonValueKind.String)
+        {
+            return null;
+        }
+        return mailId.GetString();
+    }
+
+    private static (bool IsStarterLetter, string QuestId, bool CanReceiveInput,
+        bool ReadyToClose) ReadLetterState(SnapshotEnvelope snapshot)
+    {
+        if (!TryStateValue(snapshot, "menus", "menu_specific_state", out var menu) ||
+            menu.ValueKind != JsonValueKind.Object ||
+            !menu.TryGetProperty("kind", out var kind) ||
+            kind.ValueKind != JsonValueKind.String ||
+            kind.GetString() != "letter_viewer")
+        {
+            return (false, string.Empty, false, false);
+        }
+
+        var questId = menu.TryGetProperty("quest_id", out var quest) &&
+            quest.ValueKind == JsonValueKind.String
+                ? quest.GetString() ?? string.Empty
+                : string.Empty;
+        var mailTitle = menu.TryGetProperty("mail_title", out var title) &&
+            title.ValueKind == JsonValueKind.String
+                ? title.GetString() ?? string.Empty
+                : string.Empty;
+        var canReceiveInput = menu.TryGetProperty("can_receive_input", out var input) &&
+            input.ValueKind == JsonValueKind.True;
+        var readyToClose = menu.TryGetProperty("ready_to_close", out var ready) &&
+            ready.ValueKind == JsonValueKind.True;
+        return (
+            mailTitle == MasterAnglerRodEquipmentAcquisitionProtocol.StarterMailId,
+            questId,
+            canReceiveInput,
+            readyToClose);
+    }
+
+    private static bool HasActiveQuest(SnapshotEnvelope snapshot, string questId) =>
+        TryStateValue(snapshot, "quests", "active_quests", out var quests) &&
+        quests.ValueKind == JsonValueKind.Array &&
+        quests.EnumerateArray().Any(quest =>
+            quest.ValueKind == JsonValueKind.Object &&
+            quest.TryGetProperty("id", out var id) &&
+            id.ValueKind == JsonValueKind.String &&
+            id.GetString() == questId &&
+            (!quest.TryGetProperty("completed", out var completed) ||
+                completed.ValueKind != JsonValueKind.True));
+
+    private static bool IsStarterEventActive(SnapshotEnvelope snapshot) =>
+        TryStateValue(snapshot, "player", "story_event", out var story) &&
+        story.ValueKind == JsonValueKind.Object &&
+        story.TryGetProperty("active", out var active) &&
+        active.ValueKind == JsonValueKind.True &&
+        story.TryGetProperty("event_id", out var eventId) &&
+        eventId.ValueKind == JsonValueKind.String &&
+        eventId.GetString() ==
+            MasterAnglerRodEquipmentAcquisitionProtocol.StarterEventId;
 
     private static PolicyTeacherRequirementTransition Transition(
         CurrentCollectionRequirementCredit credit,

@@ -23,6 +23,25 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
         Assert.Empty(result.BoundCandidateIds);
     }
 
+    [Theory]
+    [InlineData(GrandpaEvaluationGoalDefinition.GoalId)]
+    [InlineData(GrandpaEvaluationGoalDefinition.StrategicGoal)]
+    [InlineData(GrandpaEvaluationGoalDefinition.MaximumScoreEvidenceGoal)]
+    public void DailySubgoalResolverAcceptsEveryMaximumScoreGoalAlias(
+        string goalId)
+    {
+        var result = new GrandpaDailySubgoalResolver().Resolve(
+            GrandpaSnapshot(),
+            goalId,
+            Array.Empty<PolicyEventCandidatePrediction>());
+
+        Assert.NotEqual("not_applicable", result.Status);
+        Assert.NotEqual(
+            "requested_goal_is_not_grandpa_max_score",
+            result.Reason);
+        Assert.Equal(goalId, result.RequestedGoalId);
+    }
+
     [Fact]
     public void DailySubgoalResolverUsesExactReadyMoneyCandidate()
     {
@@ -94,6 +113,42 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
     }
 
     [Fact]
+    public void DailySubgoalResolverPrioritizesReadyStarterGiftOverSocialWork()
+    {
+        var snapshot = GrandpaSnapshot();
+        var starterGift = new PolicyEventCandidatePrediction
+        {
+            CandidateId = "starter-gift:FarmHouse:3,7",
+            OptionId = "rewards.claim_starter_gift",
+            Kind = "claim_starter_gift",
+            Available = true,
+            AllowedNow = true,
+            AllowedToday = true,
+            TimelineStatus = "ready_now"
+        };
+        var social = new PolicyEventCandidatePrediction
+        {
+            CandidateId = "social_talk:Abigail:FarmHouse",
+            OptionId = "social.talk_npc",
+            Kind = "social_talk_current",
+            Available = true,
+            AllowedNow = true,
+            AllowedToday = true,
+            TimelineStatus = "ready_now"
+        };
+
+        var result = new GrandpaDailySubgoalResolver().Resolve(
+            snapshot,
+            GrandpaEvaluationGoalDefinition.StrategicGoal,
+            new[] { starterGift, social });
+
+        Assert.Equal("resolved", result.Status);
+        Assert.Equal("earn_money", result.DirectionId);
+        Assert.Equal("goal.economy.earn_money", result.EffectiveGoalId);
+        Assert.Equal(new[] { starterGift.CandidateId }, result.BoundCandidateIds);
+    }
+
+    [Fact]
     public void DailySubgoalResolverDoesNotInventCandidateBinding()
     {
         var snapshot = GrandpaSnapshot();
@@ -109,6 +164,91 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
         Assert.Empty(result.DirectionId);
         Assert.Empty(result.BoundCandidateIds);
         Assert.NotEmpty(result.ConsideredDirectionIds);
+    }
+
+    [Fact]
+    public void UnplantedSeedsRequireCropTeacherBeforeLowerPrioritySocialWork()
+    {
+        var snapshot = GrandpaSnapshot(withUnplantedSeedInventory: true);
+        var socialCandidate = new PolicyEventCandidatePrediction
+        {
+            CandidateId = "social_talk:Abigail:Farm",
+            OptionId = "social.talk_npc",
+            Kind = "social_talk_current",
+            Rank = 1,
+            Score = 0.35,
+            Available = true,
+            LocationId = "Farm",
+            AllowedNow = true,
+            AllowedToday = true,
+            TimelineStatus = "ready_now",
+            Parameters = new[]
+            {
+                Parameter("npc_name", "Abigail"),
+                Parameter("npc_location", "Farm"),
+                Parameter("friendship_row_exists_before", "false"),
+                Parameter("friendship_points_before", "0"),
+                Parameter("expected_friendship_delta", "20"),
+                Parameter("expected_friendship_points_after", "20")
+            }
+        };
+
+        var result = new GrandpaDailySubgoalResolver().Resolve(
+            snapshot,
+            GrandpaEvaluationGoalDefinition.StrategicGoal,
+            new[] { socialCandidate });
+
+        Assert.Equal("planning_handoff_required", result.Status);
+        Assert.Equal("earn_money", result.DirectionId);
+        Assert.Equal("goal.economy.earn_money", result.EffectiveGoalId);
+        Assert.Empty(result.BoundCandidateIds);
+        Assert.NotNull(result.PlanningHandoff);
+        Assert.Equal(
+            "crop_production_teacher",
+            result.PlanningHandoff!.HandoffKind);
+        Assert.Equal(
+            new[] { "farm_layout" },
+            result.PlanningHandoff.RequiredSnapshotProfiles);
+        Assert.True(result.PlanningHandoff.AutomaticDispatchRequired);
+    }
+
+    [Fact]
+    public void ExistingCropPreventsRepeatedInitialCropTeacherHandoff()
+    {
+        var snapshot = GrandpaSnapshot(
+            withUnplantedSeedInventory: true,
+            withExistingCrop: true);
+        var socialCandidate = new PolicyEventCandidatePrediction
+        {
+            CandidateId = "social_talk:Abigail:Farm",
+            OptionId = "social.talk_npc",
+            Kind = "social_talk_current",
+            Available = true,
+            AllowedNow = true,
+            AllowedToday = true,
+            TimelineStatus = "ready_now",
+            Parameters = new[]
+            {
+                Parameter("npc_name", "Abigail"),
+                Parameter("npc_location", "Farm"),
+                Parameter("friendship_row_exists_before", "false"),
+                Parameter("friendship_points_before", "0"),
+                Parameter("expected_friendship_delta", "20"),
+                Parameter("expected_friendship_points_after", "20")
+            }
+        };
+
+        var result = new GrandpaDailySubgoalResolver().Resolve(
+            snapshot,
+            GrandpaEvaluationGoalDefinition.StrategicGoal,
+            new[] { socialCandidate });
+
+        Assert.Equal("resolved", result.Status);
+        Assert.Equal("raise_friendships", result.DirectionId);
+        Assert.Null(result.PlanningHandoff);
+        Assert.Equal(
+            new[] { socialCandidate.CandidateId },
+            result.BoundCandidateIds);
     }
 
     [Fact]

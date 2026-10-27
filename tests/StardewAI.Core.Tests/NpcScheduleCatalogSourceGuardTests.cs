@@ -141,10 +141,29 @@ public sealed class NpcScheduleCatalogSourceGuardTests
         Assert.Contains("Game1.player?.IsMale", gates, StringComparison.Ordinal);
         Assert.Contains("Game1.player?.hasRustyKey", gates, StringComparison.Ordinal);
         Assert.Contains("mailReceived.Contains(\"OpenedSewer\")", gates, StringComparison.Ordinal);
-        Assert.Contains("enter_sewer_unlock_interaction_required", gates, StringComparison.Ordinal);
+        Assert.Contains("var executableNow = opened || hasRustyKey", gates, StringComparison.Ordinal);
         Assert.Contains("required_action_count", gates, StringComparison.Ordinal);
         Assert.DoesNotContain("Game1.warpFarmer", routeGraph, StringComparison.Ordinal);
         Assert.DoesNotContain("Game1.warpFarmer", gates, StringComparison.Ordinal);
+
+        var movement = File.ReadAllText(Path.Combine(
+            root,
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.MovementSleep.cs"));
+        var connector = File.ReadAllText(Path.Combine(
+            root,
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.MovementSleep.ResultsConnector.cs"));
+        Assert.Contains("ArmNativeSewerUnlockRetry(move)", movement,
+            StringComparison.Ordinal);
+        Assert.Contains("move.ConnectorActionAttempted = false", movement,
+            StringComparison.Ordinal);
+        Assert.Contains("connector_enter_sewer_unlock_then_warp_observed", movement,
+            StringComparison.Ordinal);
+        Assert.Contains("connector_enter_sewer_rusty_key_missing", connector,
+            StringComparison.Ordinal);
     }
 
     private static string RepositoryRoot()

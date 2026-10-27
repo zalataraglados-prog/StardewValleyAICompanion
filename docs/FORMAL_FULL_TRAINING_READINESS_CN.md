@@ -2,25 +2,163 @@
 
 > **当前状态入口：** [CURRENT_STATUS_CN.md](CURRENT_STATUS_CN.md)。本文件下方带日期的状态、计数和“下一步”均保留为历史证据；若与当前机器报告或 CURRENT_STATUS_CN.md 冲突，不得按历史数字规划新工作。
 >
-> **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。当前唯一 primary item 为 **Money / Revenue**；必须达到 CURRENT_STATUS_CN.md 定义的 Money Exit Gate 后，才选择下一项。P0/P1 共享 correctness blocker 可临时中断，但修复后返回 Money，不顺势展开新的 Goal Method。
+> **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已闭合从 v10 最终隔离存档开始的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已通过 current-authority 复核并冻结；当前唯一施工项是 `complete_master_angler` 顶层依赖、日历窗口与 coverage 接线。Money Exit Gate 标准不降低，但 Money 已回到复杂度队列第 11 位。
 
-## 当前准入状态 · 2026-10-18
+## 已收口增量 · v26 收获容量恢复与正式准入边界
+
+`golden-walnut-source-schedule-v26-20261026-023455` 已从真实 day-zero 隔离存档推进到 Spring 17（`total_days=16`）。该运行完成首轮作物生产、邮件、任务 `13`、竹鱼竿剧情和钓鱼，并在节日门禁结束后从 Beach 原生返场；随后开始第二轮防风草生产。第 `173` 次迭代的真实状态为 Farm、背包 `12/12` 和 8 格成熟作物，作物 Teacher 的 8 项收获批次因无空槽而正确失败关闭。跨日后 `caught_qualified_item_id` 已清空，因此 v25 仅匹配最近钓获物的恢复无法覆盖该控制阶段。
+
+当前修复不改变正式策略分母，也不新增执行器。出货候选已有的 `available_stack` 现贯穿排名与 clone 契约；Crop Teacher 在满包收获前中断原批次，复用同一 Backend availability、确定性候选物化、日计划、动作队列、路线和原生出货箱链，不调用策略模型。容量恢复只允许 available、单件动作、实际单格栈且通过既有自动出售保护的候选；优先 Full Shipment 首次贡献，否则限制为不高于 `50g` 的低风险单件。恢复候选的 learner 字段归零，完成后必须 fresh 重编译原收获，不能产生训练标签或结算旧批次。该通用容量恢复不再依赖 Golden Walnut 门禁，也不在作物路径重建 Master Angler 意图。
+
+对 v26 第 `173` 次真实失败快照，当前生产代码重建出 5 个合法出货候选，选择 `(O)92 x1 / 2g / Full Shipment`；`DailyPlanCompiler -> ActionQueueCompiler` 生成 2 项全 pending 队列，先移动到出货箱站位再原生投递。6 个花椰菜、5 个木材与受保护种子均未被选中。显式续跑会重建原请求对应的整份计划并做结构等价校验，同时把源账本作为只读输入、在当前 run 创建派生账本；没有后续日界回执的进程内收获不会被当成磁盘存档进度继承。续跑/账本聚焦测试 `16/16`，此前定向测试 `42/42`、相关控制链 `137/137`、Release solution `0 warning / 0 error`。
+
+隐藏静音原生续跑 `crop-teacher-v26-resume-fork-20261026-040111` 已补齐该证据。Spring 17 的真实状态依次为 `8 crops / 0 empty / sap x1`、原生投箱后的 `8 crops / 1 empty / sap x0`、同一批次 8 格全部 verified 后的 `0 crops / 0 empty / parsnip x8`；派生账本写入 8 条收获回执并判定 crop run complete，源账本仍保持 0 条收获与 4 条已落盘日界。本切片因此原生收口，但没有跨越新的睡眠存档边界，也没有形成 Golden Walnut source schedule。下一准入缺口仍是首次登岛、Golden Walnut 来源增量、三项鹦鹉跃迁和 source schedule；`CoverageGateReady 5/19`、Money production `0/18`、`formal_product_training=false` 全部保持不变。
+
+## 当前增量 · collection continuation 控制边界
+
+作物 run 的显式恢复现可在完成后继续进入 Stage One collection，但 continuation 必须绑定只读源账本和四份 authority 工件。原生 v27c 证明 Master Angler 路线已实际接管；它也发现同分 Teacher 防伪门会让旧循环误落入通用日计划并重派 Crop Teacher。当前实现不放宽 Teacher：权威同分时仍不产生 selected preference 或 pairwise label，只允许控制器用稳定顺序选择一个同样合格的候选推进原生环境，learner 信号归零，独立控制工件明确 `teacher_preference_label_eligible=false / formal_training_authorized=false`。其他 authority blocker 直接结构化停止，不允许回退作物系统。
+
+v27d 原生回归已经跨过该边界：Crop Teacher 再次完成，普通 Master Angler Teacher 队列执行后在 fresh 候选失效处生成 control-only collection 队列，并连续取得 3 条新的 verified action；日志中没有新的 Crop Teacher handoff。运行因 `12` 次有界尝试包含两次正常候选失效，最终停在 `9/10`，故仍登记为 incomplete，不写正式训练数据。聚焦回归 `42/42`、全解决方案 Release `0 warning / 0 error`。这只解除“阶段切换会回退”的控制缺陷；首次登岛、核桃增量、三项鹦鹉跃迁和 source schedule 仍未完成，所有正式准入分子保持不变。
+
+v28 原生运行继续取得 `18` 条 verified native action，并多次完成 Teacher/control-only 路线切换与 fresh 重绑，没有回退作物系统。第 `25` 次迭代由严格校验阻止了 Construction Bundle 重复 `99` 木材槽对同一木匠店连接动作的双重信用；同时确认 Full Shipment 曾把该连接段误分类为物品获取。当前单次执行契约已经统一：每个 selection group 最多一个稳定信用，跨独立 group 信用保留；acquisition route connector 只验证路线变化；实际 acquisition endpoint 按本次增量验收。原 v28 第 `25` 次工件重放不再异常，重复槽位只保留 alternative `0`，两条目标信用均为 rolling route；四个权威同分候选仍正确禁止 Teacher 标签和队列。current collection 全链自测通过，全解决方案 Release 为 `0 warning / 0 error`。该修复不能替代新的原生运行，v28 保持 incomplete；首次登岛、Golden Walnut 来源增量、三项鹦鹉跃迁与 source schedule 仍是正式准入缺口。
+
+v29c 已补上新的原生验收。正确绑定 v26 Spring 17 隔离存档与只读源账本后，`golden-walnut-collection-v29c-20261026-053000` 再次完成 Crop Teacher 容量恢复和 8 格收获，并在 `31` 次迭代中取得 `24/24` 条 verified action。第 `25` 次迭代已实际生成并执行 control-only collection 队列，第 `26` 次继续追加 verified action，旧重复木材槽异常未复现；最终共有 `2` 次 Teacher 队列、`5` 次 control-only 队列且日志零 error。此前 v29b 仅因 Spring 7 存档误配 Spring 13--17 账本而在执行前失败；新增首快照兼容门会将这种配置错误一次性结构化停止，不能污染动作或训练数据。
+
+上述结果只把 collection continuation 的当前契约推进到原生通过，不构成正式训练准入。v29c 没有启用 fresh-save Golden Walnut 证据捕获，也没有首次登岛、来源增量、First Parrot/Turtle/House 跃迁或 source schedule；因此 `CoverageGateReady 5/19`、Money production `0/18` 与 `formal_product_training=false` 均不变。下一准入步骤仍是沿同一控制链取得并验证这些姜岛事件，而不是开始训练。
+
+day-zero v30 已进一步证明长期控制面存在一个不同于 authority blocker 的暂时域耗尽状态：`14` 条 verified collection action 后，当前 collection membership 为空，但作物、经济和剧情日计划仍有合法工作。当前 `StageOneCollectionFallbackPolicy` 只对 Golden Walnut source-schedule 长跑中的精确 `blocked_no_current_collection_candidate / unified_current_collection_candidate_membership_is_empty` 让权给共享日计划；纯 collection continuation 与其他权威性错误仍终止，不能借此生成伪 Teacher 标签。
+
+v30b 从另一份全新隔离存档提供了修复后的原生证据：第 `16` 次让权后共享日计划完成一个 verified action 并生成一条合格策略轨迹，第 `17` 次派发已有 Crop Teacher `84` 项计划，第 `18` 次继续产生 verified action。该诊断在证明“collection 暂时耗尽 -> 共享日计划 -> Crop Teacher”单链接续后人工停止，未到达首次登岛或 source schedule，故不增加任何正式准入分子。定向策略测试 `6/6`、全解决方案 Release `0 warning / 0 error`；下一准入步骤仍是新 day-zero 完整长跑并取得首次登岛、核桃来源增量及三项鹦鹉跃迁。
+
+v31 从新的 day-zero 隔离存档继续到 Spring 17，累计 `179` 条 verified native action 且人工停止前零 `stage=error`；两轮 Crop Teacher、节日等待、满包收获恢复和一次真实钓鱼均已通过。它暴露 Master Angler 跨地图路线没有继承全局背包容量门，导致满包时 `(O)145` 的 Forest/Town 意图互相替代。当前代码在路线物化前失败关闭满包状态，并复用既有安全单件出货恢复；v31c 原生续跑验证 `(O)390` 原生移除、容量 `12/12 -> 11/12` 及下一轮重新进入 Master Angler 路线。v31c 使用第 17 天存档却误开 day-zero-only 全程证据归档，因此归档失败不能计为完整 source schedule；它只关闭本次容量振荡的原生退出条件。定向测试 `7/7`、全解决方案 Release `0 warning / 0 error`，正式准入分子与 `formal_product_training_authorized=false` 均不变。下一准入步骤仍是全新 day-zero 完整长跑并取得首次登岛、核桃来源增量及三项鹦鹉跃迁。
+
+v32 `golden-walnut-source-schedule-v32-20261026-231505` 又提供了 `75` 条 verified action 和 `7` 条原生日界，但在水壶归零时发现 Teacher 只持久化补水通道准备格、没有持久化终端补水接近格。当前合同已新增并严格验证 `watering_refill_approach_tile`；运行层按实时水量切分浇水批次，归零后复用现有移动、BFS、清障和 `executor.water_crop`，不新增策略候选或执行系统。续跑 `crop-teacher-refill-v33b-20261027-0023` 已真实完成 `4 次浇水 -> Farm(72,27) -> 2 次浇水`，并以 `45` 条 verified action、`12` 条日界、`6` 条收获、`0` 条错误在 Spring 13 完成整个 crop run。该修复恢复长期新档的作物基础设施，但本次 `trajectory_count=0`，没有首次登岛或 Golden Walnut 来源事件，所以 `CoverageGateReady 5/19`、Money production `0/18` 与 `formal_product_training=false` 仍不变。
+
+## 已收口增量 · v23-v24 原生进展与正式准入边界
+
+全新隔离运行 `golden-walnut-source-schedule-v23-20261025-233534` 已在同一原生存档中取得 `137` 个 verified native action、`12` 条原生日界和 `6` 条逐格收获回执。它真实完成第一轮作物生产，随后完成邮件、任务 `13` 三段路线、两次 Beach 钓鱼、节日等待和三段返场。该结果证明长跑已越过此前的节日门禁与第一轮场地接近边界，但没有首次登岛、Golden Walnut 来源增量或三项鹦鹉跃迁，因而不能导出 source schedule。
+
+v23 的第二轮场地接近在第 145--149 次迭代失败关闭。根因是 route repair 在相同清障数量下只偏爱近处障碍，选择了透明状态明确需要 starting axe `15` 次挥砍、`30` 点体力的成熟枫树，同时编译项仍写死 `max_tool_swings=8`。当前修复复用唯一移动/BFS/清障链，在既有清障数量上限内按每个障碍的透明分钟与体力执行有界最小成本搜索，并把精确挥砍上限传给原执行器；缺少精确树成本的远端树不被猜测为可清。原 v23 输入已严格重编译为 `pending / 7 items / 0 blocked`，选择 `(73,24)` 杂草替代 `(73,23)` 成熟树。新增回归 `177/177`，隔离 Release solution 构建 `0 warning / 0 error`。
+
+v23 重放本身不是新的原生执行回执；全新 v24 `golden-walnut-source-schedule-v24-20261026-003430` 已补上该证据。运行从 day-zero 新档推进到第二轮作物 handoff，在有界停止前取得 `145` 个 verified action、`12` 条日界与 `6` 条逐格收获。第 144 次队列以两格杂草 `(50,27)`、`(71,27)` 替代高成本树，`move/clear/move/clear/move` 五项均为 `applied + primitive verified + fresh`；第 145--150 次场地准备又连续完成耕地、移动、耕地、移动、清障和耕地。旧 `crop_teacher_site_approach_compile_invalid` 未复现，故本清障成本修复已有新的连续原生回执。
+
+v24 在该有界验收点停止，没有首次登岛、Golden Walnut 来源增量或三项鹦鹉跃迁，不能导出 source schedule。对运行中的 `trajectory_rejected:InvalidOperationException` 复核后确认，成功的 `recovery.stabilize_day` 睡眠是校准专用控制动作，任务 `13` 的 `quest.advance` 路线是证据专用聚合动作；两者均由当前能力注册表明确排除于策略训练，不是遗漏的 Teacher 样本。LiveTrainingLoop 现于 trajectory builder 前执行统一准入判定，稳定记录 `policy_training_option_not_admitted`，保留原生执行证据且不写策略数据。真实 v24 第 `88`、`93`、`94`、`95` 次制品离线调用均为 `0 appended / 1 skipped` 并返回该原因码，聚焦回归 `11/11`。下一准入缺口因此回到首次登岛、Golden Walnut 来源增量、First Parrot/Turtle/House 跃迁与 source schedule。当前 `CoverageGateReady 5/19`、Money production `0/18`、`formal_product_training=false` 全部保持不变。
+
+## 当前增量 · 长跑访问清障已修，正式准入不变
+
+`golden-walnut-source-schedule-v17-20261025-203000` 在第 47 次迭代暴露真实场地准备缺口：待耕地块被可移除障碍包围，目标格本身无需清理，但没有相邻可达站位。修复只在该单一类型化阻塞下复用现有清障/大型资源块候选，先清一格访问通道，再强制 fresh snapshot 重绑；其他工具、体力和时间阻塞仍失败关闭。旧失败请求的确定性重建现得到两条合法访问清障选择，聚焦测试、Debug 构建和 Teacher self-test 均已通过。
+
+修正版新档 `golden-walnut-source-schedule-v17b-20261025-181200` 已在真实游戏中越过旧阻塞位置，并以 `94` 个 verified episode、`12` 条原生日界和 `6` 条收获回执完整结算直接耕地布局的首轮作物 run；统一 collection Teacher 随后处理邮件并走完任务 `13` 的三段 Beach 路线。该随机布局没有实际触发访问清障，因此该分支的证据边界仍是“旧真实快照重建通过 + 新真实运行无回退”，不能写成访问清障已有原生回执。
+
+该 run 最终因剧情中断被战略 planning-handoff 空绑定过滤而失败：事件 `739330` 的候选真实存在且 ready，但编译得到空队列。现已改为原生剧情 interrupt 只精确接纳 `story.advance_event` 并绕过战略目标绑定；普通 handoff、事件身份和执行校验不变。v17b 的失败尾部使整轮保持 incomplete，不能进入训练或 schedule。
+
+后续全新 v18 长跑已真实证明该剧情修复：作物 run 再次形成 `12` 条日界、`6` 条收获回执和零重派发，事件 `739330` 经精确原生执行器得到 `applied/verified`，透明库存随后出现竹鱼竿，并完成两次 Beach 钓鱼动作。新的停止点是 Beach→Farm 连接器途中弹出的无角色普通提示框：旧移动器在文字逐字显示期间迅速耗尽输入预算，遗留活动菜单，下一轮严格 route compile 因而阻塞。
+
+当前修复保留单一动作体系。附带对话采用与现有原生对话执行相同的状态变化等待，`executor.close_menu` 现允许透明明确的非事件、非问题、零响应、无角色系统提示；作物 Teacher 只把该既有执行器作为不结算原步骤的恢复中断。v18 原始失败快照回放得到唯一 pending close-menu 项、零阻塞，聚焦测试 `17/17`、全构建 `0 warning / 0 error`。在 v19 取得真实菜单关闭和连接器继续回执前，这只是确定性重放，不提升任何准入分子。首次登岛、核桃来源增量、三项鹦鹉跃迁和 source schedule 仍未完成；`CoverageGateReady 5/19`、Money production `0/18` 与 `formal_product_training=false` 均不变。
+
+v19 已真实证明菜单恢复会关闭提示，也证明两次 Beach 钓鱼分别把 `(O)131` 放入背包；新的停止点不是钓鱼假成功。Spring 13 07:10 的 Beach→Town 普通 warp 被原版 `Game1.warpFarmer` active-festival 分支拒绝，恢复动作关闭提示后，下一次向北又按同一原版条件重现。透明桥此前没有把该动态门禁纳入普通 warp，因此 Teacher 与恢复路由都把结构上存在的边误判为当前可通行。
+
+修复继续保持一套路线与一套 Teacher：共享 `ActiveFestivalTransitReader` 按实时 `weatherIcon`、`whereIsTodaysFest` 和 `Data/Festivals/<season><day>` 投影普通 warp 的原生节日语义；当前候选/编译器门禁关闭时不派发，`social_route_date_evidence` 让现有 Future Route 搜索等待到节日结束后的最早普通通行时刻再计算路线。DialogueBox 当前页文本只读投影同时补齐，但不产生任何 UI 动作。代码构建与 `5/5` 精确回归通过；尚未取得 v20 新原生回执，所以不得据此增加准入分子。下一证据只允许来自全新隔离 v20：证明节日门禁在上游被排除或按时间窗延后，随后连接器正常完成。`CoverageGateReady 5/19`、Money production `0/18` 与 `formal_product_training=false` 继续不变。
+
+v20 已提供新的原生证据，但没有关闭退出条件。该全新耐久运行从 Spring 1 推进到 Spring 13，得到 `12` 条原生日界、`6` 条收获回执和 `95` 个 verified action；新增门禁真实阻止了 Beach→Town 节日普通 warp，旧的重复系统提示/撞门循环未再出现。运行随后因作物 Teacher 的跨地图直达适配尚不接受临时 route wait，连续失败为 `crop_teacher_route_compile_invalid`。当前修复令唯一跨地图编译器在 exact active-festival 门禁同日可恢复时生成最多 `600` tick 的等待并 fresh replan，Teacher 只接纳带精确门禁原因的该等待；显式关闭 connector 和未知/永久门禁继续失败关闭。聚焦回归 `203/203`、全构建 `0 warning / 0 error`，但尚无等待结束后成功通行的全新原生回执，所以 v20 仍为 incomplete，下一合格证据必须来自 Spring 1 全新 v21。`CoverageGateReady 5/19`、Money production `0/18` 与 `formal_product_training=false` 均不变。
+
+v21 已取得等待后通行的全新原生回执。该 Spring 1 新档累计 `140` 个 verified action、`12` 条原生日界和 `6` 条收获回执；Spring 13 先按 exact 14:10 gate 连续执行受限等待，再自动完成 Beach -> Town -> BusStop -> Farm 三段 connector，证明 v20 的断链已经关闭。随后角色从 Farm 南入口前往远端新布局时，场地准备器在未先接近布局的情况下把局部站位判为不可达，连续 5 次失败并按预算停止。当前代码在唯一 Teacher 链内先选择透明投影确认的原生可站立接近点，再复用现有 `move_to_tile`、BFS 与有界 route repair；v21 失败快照已重建为 pending `executor.move_to_tile Farm(69,26)`，但尚无该修复的新原生移动回执。因此 v21 仍不得进入 schedule 或训练，下一合格证据必须来自无间隙全新 v22；`CoverageGateReady 5/19`、Money production `0/18` 与 `formal_product_training=false` 均不变。
+
+## 当前增量 · 竹鱼竿新档原生来源已闭合
+
+Master Angler 的首根鱼竿现在按原版 Spring 2 来源执行：`spring_2_1` 邮件产生任务 `13`，实时任务路线到 Beach 后触发事件 `739330`，原生事件再发放竹鱼竿。该链复用既有 `mail.process_letter -> quest.advance -> story.advance_event` 与共享机械执行器；FishShop 竹鱼竿购买仅为恢复兜底。任务路线权威字段已贯穿编译队列，但 `quest.advance` 仍保持非全局训练准入，因此只能形成逐段 verified evidence，不能直接形成策略训练行。
+
+`rod-native-chain-v19j-20261025-193000` 已从隔离新档真实跑通全部 `9` 个 episode。前五个邮件阶段和最后一个剧情阶段共接纳 `6` 条 Teacher 轨迹；三个任务路线阶段均验证 exact transition 并作为 evidence-only 保留；数据集校验为 `6 accepted / 0 rejected`。最终透明库存读取到 `(T)BambooPole` 后退出。剧情期间的空闲冻结缺口也已关闭：执行器可接管的原生事件在规划和请求排队阶段保持精确命令边界，取得执行租约后才恢复；严格事件身份及命令校验没有降低。
+
+本项只关闭鱼竿前置的真实运行闭环，不改变 `CoverageGateReady 5/19`、Money production `0/18` 或 `formal_product_training=false`。下一项仍是首次登岛和 Golden Walnut 来源日程，而不是提前启动正式训练。
+
+## 当前增量 · 新档礼盒动作已局部准入
+
+`rewards.claim_starter_gift` 已完成透明投影、候选、日计划、fresh 编译和原生 `GameLocation.checkAction` 执行路径，并作为 `earn_money` 的 fresh-save 支撑转移。实现锁定 owned FarmHouse、唯一 starter gift Chest、精确 contents、背包容量、相邻站位和农场类型任务；运行时不得直接写 Chest、库存或任务。
+
+`runtime-starter-gift-20261024-172156` 已从更新后的桥采集同一真实隔离新档的领取前/后 full snapshot 与原生回执：共享 BFS 到精确相邻格，405 tick 内由原生交互生成 `(O)472 x15`、任务 `6` 并移除空礼盒，状态哈希同步变化，只加载 TransparentBridge 与 RuntimeTestHarness。`EVD-342` 因此关闭 read/candidate/compiler/runtime/output 五门，本项进入 training allowlist。该局部动作准入不改变全局 `CoverageGateReady 5/19`、Money production `0/18` 或 `formal_product_training=false`。
+
+领取后 fresh 状态已完成真实快照离线后端回放：普通种子在 bridge 与 planner 两层均受显式 surplus authorization 保护，不能作为通用售卖/出货候选；Grandpa 不再越过最高优先级 `earn_money` 去执行社交，而是发布 `planning_goal_handoff.v1`，请求现有 `crop_production_teacher` 和按需 `farm_layout`。LiveTrainingLoop 已能完整采集并校验分块 Farm 布局，再复用唯一 Teacher、ledger、obligation 与 native run-plan builder 生成绑定哈希的调度清单。`runtime-crop-teacher-first-day-20261024-183952` 已让该 continuation 在真实隔离新档通过：9 个 bounded 布局分块、6 单位购种、场地准备、6 格播种、6 格浇水、回家、原生睡眠和 `1:spring:1 -> 1:spring:2` 的存档哈希变化均有 fresh 原生回执。之后代码层已把首日 planner 收敛为唯一全日期状态机，并加入按 run-plan SHA-256、承诺、日期和地块绑定的持久化收获 transition ledger；只有原生 `applied/verified` 结果可结算，部分队列成功可恢复。非终端日还新增独立 save-boundary 硬门：睡前指纹、下一日 fresh 日期和变化后的存档哈希必须共同写入 ledger，缺少任一回执不得执行后续日期。明确的作物战略漂移会重新采集 fresh full/Farm layout，并通过同一个 Teacher dispatch helper 生成后继 plan；旧 plan 哈希写入 lineage，最多重派发 8 次，基础设施证据缺失不得重派发。`runtime-crop-teacher-full-cycle-ledger-fix-20261024-211500` 已关闭该局部缺口：Teacher v2 在水壶 `40` 次容量、无补水路线的真实边界只承诺 `3` 格花椰菜和 `36` 次浇水；原生循环跨 `12` 个唯一日期/存档边界运行到收获，写入 `3` 条逐地块 verified receipt，计划完成且未重派发。该结果证明作物生产交接、收获守恒和 commitment settlement 的运行入口成立，但不自动填充 Money 的正式 train/validation/test production cells，也不改变 `formal_product_training=false`。
+
+## 当前准入状态 · 2026-10-21
 
 正式训练准入没有变化：
 
 ```text
-CoverageGateReady:       2/19
+CoverageGateReady:       5/19
 Money production cells:  0/18
 Formal product training: false
 ```
 
-Money 已具备 native runner、terminal-proof collection/checkpoint、crop obligation、planting layout、site preparation、seed-reservation、seed-acquisition、aggregate daily-capacity、native crop lifecycle、per-wave output-retention 与 native ShopMenu settlement proof 的基础设施。#307、#308、#309、#310 与 #311 已收口，当前没有已知 P0/P1 review issue 阻止继续施工，但这些修复没有自行增加分子。
+Golden Walnut 新档日程的证据保存硬伤已修复，但准入结论不变。LiveTrainingLoop 只有在显式启用捕获、提供稳定 run ID、选择最大 Grandpa 分数目标并使用 `full + content_addressed_gzip` 时，才会归档 success + fresh episode；首条记录还必须证明 day 0、同一 save/run/state/tick、姜岛/鹦鹉均未推进，并逐行核对完整且零进度的 `69 keys / 130 walnuts` 初始目录。前后快照清单和 episode 使用 rolling retention 不会删除的耐久别名。真实隐藏静音运行 `golden-walnut-starter-fix-v6-20261024-2140` 已从 Spring 1 连续运行到 Spring 13，产出 `82` 条 verified episode、`12` 条原生日期/存档边界和 `3` 条逐格收获回执；manifest 接纳 `82/82`，作物 Teacher 零重派发完成。连续性只允许最多 `4` tick、同 save/player/day/time 且姜岛访问与完整核桃来源目录不变的被动观察间隙；有界 `farm_layout` 也显式携带该来源域，没有放宽证据门。正式 schedule 导出仍准确拒绝该链，因为其中没有首次登岛原生跃迁。因此当前只关闭多 episode 归档与连续性基础设施，不关闭 51 来源、三次鹦鹉跃迁或 Master Angler 审计，也不能提升 coverage 分子或解除 `formal_product_training_authorized=false`。
 
-**准入规则：**购种 shortfall、逐日容量、原生生命周期、逐波输出留存与原生商店结算都有精确 proof 类型，但仍需真实 fragment；容量 proof 必须在整份计划上聚合全部承诺，并拒绝缺日、超时、体力不足、不可达或需要未建模补水的日程；生命周期 proof 必须由连续既有动作队列、执行回执和逐格 `Crop.newDay` 转换组成；留存 proof 只接受精确物品进入透明玩家库存的净增，不能以地面 debris 或预计产量替代；组合 terminal 请求只有在资源中性路线后把保守数量通过原生售卖转换成精确收入时才能关闭。运输箱分支及结算日内容量仍须补齐。只有这些 fragment、真实 native outcome、完整 terminal proof、exact Teacher comparison 和 criterion-local join 全部成立时，相应 Money cell 才能入账。Full Shipment current-authority `26/26` 只证明其 runtime stratum，不改变全局 `2/19`。
+首次正式长期尝试 `golden-walnut-source-schedule-v1-20261024-222622` 进一步证明控制面能持续跨日，但也在 Spring 17 暴露真实阻塞：Teacher 看到 `(O)472 x14` 和水壶 `3/40`，却因没有读取运行时已有的原生补水能力而连续五次拒绝。修正把 `CanRefillWateringCanOnTile` 事实加入 `farm_site_preparation_context.v2`，并复用共享网格寻路做 Teacher 准入；只有确证补水连通才按 `capacity=40` 预算，否则仍按当前余水保守限制。连续错误形成的 episode 间隙仍由原验证器拒绝，绝不回填；manifest 收尾失败改为结构化 incomplete。故该 run 不得进入训练或 schedule，必须从新隔离存档重跑，正式训练状态仍为 `false`。
+
+补水准入现进一步失败关闭到“确切可建设通道”，不再把地图静态可达性误当作当前已可走。完整 Farm 证据上的最优通道只需清除 `(70,23)` 的一棵树；Teacher 将最多 4 个透明、单一可清障格显式绑定为准备义务，并在 decision/receipt/run-plan/site-preparation 全链重放。额外格不参与任何作物动作或训练标签；清障仍使用唯一原生执行器，只新增共享 BFS 到相邻格的前置阶段，抵达后重新采集严格前态。v3 暴露并关闭相邻地块动作的旧转向路径循环后，v4 `golden-walnut-source-schedule-v4-20261025-0003` 已连续取得两格清障/锄地、`(70,23)` 树木 Axe 清除、`6/6` 播种、`6/6` 首日浇水、原生睡眠/存档边界和次日 `6/6` 浇水回执。该证据只关闭补水通道的真实执行缺口；Golden Walnut source schedule 仍未生成，所以正式训练依旧为 `false`。
+
+该首轮的排序产物还证明最大分数目标别名和编译边界存在断链：`grandpa.maximum_21` 被旧解析器当成无关目标，62 个候选同分后按 ID 误选商店。现在三种最大分数 ID 由 Contracts 单一契约识别，运行脚本传权威 ID；解析成功后，完整候选仍留在响应中供审计，但日计划只编译 `bound_candidate_ids`。同一真实 Spring 1 快照的离线回放已解析到 `raise_friendships` 并绑定 28 个 NPC 候选。`initial-snapshot.json` 同时改为保存桥返回的原始 JSON，避免 PowerShell 反序列化/重序列化造成 state hash 不自洽。聚焦回归 `164/164`；这只恢复 Teacher 目标到候选的正确入口，不等于模型训练、连续新档证据或正式准入。
+
+采集脚本此前虽然声明最多 8 次尝试，却把退出目标固定为 1 个 verified 动作；因此首轮得到 1 条 episode 是入口配置的必然结果。现默认目标改为 `4 verified / 8 attempts`，成功后还必须完成现有原生跨日存档边界，并同时验证 verified、episode 与 boundary 报告字段。该变更只修复下一次证据采集的退出条件；尚未产生新的真实运行，所以不改变任何 coverage 分子或 `formal_product_training_authorized=false`。
+
+`money-crop-native-20261021-v10-continuation-v15-full-chain` 已完成本轮 Money 有界退出条件，包含 `26` 条连续 transition、`8` 个作物批次、`8` 次单件投箱和 `6/6` checkpoint，源存档保持不变，最终状态哈希为 `bb70acbd0b477b7e14d7fe1b4450ee85292fa29e56de854924e4ee67f1216849`。它没有跨越并接入 Money criterion-local cell，因此 `0/18` 不变。
+
+Community Center、Pet Love、Skull Key 与 Full Shipment 已通过 current-authority 复核。Full Shipment 由 `154/154` 静态来源/编译完整性、`26/26` 原生执行签名分层和既有三分区 Teacher/native 证据共同关闭训练前置；完整 154 项 recurrence 仍是正常游玩与最终验收能力。新 reconciliation SHA-256 为 `71f0e4ed0e7928c1e63f39641f4b90153674f154a575ec331342a3d5241adf43`。当前准入指标为 `5/19 executable、6/19 split-complete、5/19 CoverageGateReady、4/11 root ready`；下一项是 Master Angler 顶层接线，而不是开始正式训练。
+
+Master Angler 的当前日机会生成器和蟹笼高层生命周期均已由当前源码闭合：前者把 Stage 1 全窗口索引与当前动态查询、路线计时、可钓 tile、鱼竿装备和完整原生 spawn outcome 绑定到既有 `fishing.catch_fish`，后者只通过 `fishing.collect_crab_pots` 一个模型出口复用既有制作、放置、装饵、跨日和收取动作。EVD-339 进一步用原生个人 `CraftingPage` 回执补齐 `executor.craft_crab_pot` 的 runtime evidence，未把测试 fixture 材料误当作新档供应证明。新增 fresh-save prerequisite audit 证明 72/72 均有至少两个静态日历日，但也证明“当前可执行”不等于“新档可达”。钓鱼等级现通过显式 recurrence 复用 `raise_skill_levels` 的精确 XP 生产者，并要求原生阈值、同一截止预算和逐次 fresh 回执，未增加第二个模型出口。普通矿井地点生产者同样复用唯一 `mining.reach_depth`：从矿外只派发一条透明路线或原生大厅入口 primitive，fresh snapshot 后继续既有普通矿井下行链；floor `20/60/100` 覆盖当前全部普通矿井鱼种需求，且与 Skull Cavern、Volcano Dungeon、Quarry Mine 严格隔离。鱼竿生产者复用 `economy.buy_supplies` 的完整 FishShop 路线与单件购买链，锁定 `(T)BambooPole x1`、价格上限 `500g` 和 fresh 回执；竹鱼竿足以形成全部 72 项合法捕获，其他鱼竿、鱼饵与浮漂只影响效率。最新审计剩余 `8` 个未绑定族，SHA-256 为 `3c4016ecdadbc5964147d434578dd86c5ce8498adb39ed1cad48938430508e09`。训练前仍须绑定天气保留或 Rain Totem、蟹笼供应、沙漠巴士、姜岛、Mutant Bug Lair、秘密森林或森林农场、Rusty Key/下水道与女巫沼泽，再把它们与随机重试及 Year 3 截止证明组合。因此正式训练继续禁止，准入分子不增加。
+
+沙漠巴士已从上述 blocker 中移除，但这不改变正式训练结论。实现把 BusStop→Desert 与 Desert→BusStop 投影成共享 `native_bus_transport` connector，继续复用 `executor.traverse_connector` 和 `fishing.catch_fish`，并在编译前检查 `ccVault`、司机/自驾、动态票价、余额、坐骑和返回触发状态。原生对话、过场与地点/tile/钱款回执均在同一运行时路径定义；当前只取得锁定 `game-1.6.15` 源码核对、编译、定向单测和防篡改依赖审计，未取得新的真实游戏回执，故不增加 runtime 或训练分子。fresh-save prerequisite 审计 SHA-256 为 `40e3df4d946f9dbf09cf70c399f994b94e7c3038b619f76e7108e05fccd73890`，剩余 `7` 个未绑定族：天气保留或 Rain Totem、蟹笼供应、姜岛、Mutant Bug Lair、秘密森林或森林农场、Rusty Key/下水道、女巫沼泽。`formal_product_training_authorized=false` 保持不变。
+
+Master Angler 的 Rusty Key/下水道组合也已闭合到现有上游根：`EnterSewer` 在 `OpenedSewer` 已有时一次进入，只有 Rusty Key 时必须先完成一次原生开锁文本并观察 mail，再执行第二次原生交互。透明门、候选、共享 connector 和运行回执均按该锁定源码顺序失败关闭；依赖审计同时要求 `obtain_rusty_key` 的 terminal、recurrence、native event 与 Master Angler 三条组合边存在。该组合不提升 `obtain_rusty_key` root 的正式状态，其 60 件安全捐赠与三分区证据仍待固定队列第 6 项完成。fresh-save prerequisite 审计 SHA-256 为 `00042d57ed53321e9b7510aa6dc1d8c5502aa11d16496513ced7146bb4e3f04c`，剩余 `6` 个未绑定族：天气保留或 Rain Totem、蟹笼供应、姜岛、Mutant Bug Lair、秘密森林或森林农场、女巫沼泽。尚无本切片真实游戏回执，正式训练和所有准入分子继续不变。
+
+蟹笼供应不再是训练前未绑定族。实时隔离快照锁定 FishShop 的等级门和价格：钓鱼 `2` 级出售 `(O)685` 鱼饵 `5g`，钓鱼 `3` 级出售 `(O)710` 蟹笼 `1500g`。实现继续只暴露 `fishing.collect_crab_pots`：远程服务缺饵时先买一个鱼饵；精确随机容量不足时先尝试既有原生制作，制作不可用才购买一个蟹笼，随后保留 continuation 并 fresh replan。该接线复用共享路线、商店交互、购买、关菜单、制作、放置、装饵和收取实现，未创建第二套执行系统。定向回归与防篡改自测通过，但新增运行时材料仅是实时商店投影，不冒充实际购买回执。fresh-save prerequisite 审计 SHA-256 为 `8cd925d8ede0a0c5d3e5b51817095958ffdd7f5ff100d588400f8dda2f46204b`，剩余 `5` 个未绑定族：天气保留或 Rain Totem、姜岛、Mutant Bug Lair、秘密森林或森林农场、女巫沼泽。正式训练和全部准入分子仍保持关闭。
+
+天气控制先完成已有 Rain Totem 的原生消费叶。`dependency.complete_master_angler.consume_owned_rain_totem` 复用 EVD-288 的 `executor.use_rain_totem`，严格绑定 `(O)681 x1`、context 路由、默认节日排除、明日有效天气 Rain 和 fresh 回执；防篡改自测通过。该阶段审计 SHA-256 为 `7dd897e3cfb2a52a5016c4f342eef003b6e6848f5d12d7d44f46aae2f84468a9`。
+
+透明桥已进一步补上 `player.rain_totem_crafting` 的只读生产前态：实时发布配方是否已学、精确材料可用量、可制作数量、产物容量和 Workbench 材料来源，并与 Crab Pot 共用同一精确单产物扫描器。依赖图严格锁定 `rain_totem_crafting.v1`、Foraging `9`、`709 x1 + 432 x1 + 726 x5 -> (O)681 x1` 及只读边界；篡改 schema 会使天气状态退回。它不等于 `executor.craft_rain_totem`，也不证明材料来源或跨日调度已经闭合；天气族当前为 `runtime_consumer_and_crafting_read_bound_executor_supply_scheduler_missing`，最新审计 SHA-256 `09d9053c264208f11e95b1080da7b5d4db0958a790aa18d1f2640d76cd4d4748`，剩余 `5` 个未绑定族与正式训练门均不变。
+
+明日天气支援现由权威生产器和共享候选链闭合：它只接受哈希锁定的 72 项窗口索引、精确缺鱼集合、明日仅雨静态窗口、当前装备、location-context 与最终天气投影，并把意图在排名前作为默认候选的附加项注入。唯一高层出口仍是 `fishing.catch_fish`；制作与使用均为编译器拥有的机械 primitive，每步后强制 fresh replan。当前天气族状态为 `runtime_consumer_crafting_read_and_scheduler_bound_material_supply_and_native_crafting_receipt_missing`，审计 SHA-256 `ee97bff20a4991a8f4db70b6b7cf7e6ad9b1a3749ec89b9a048362c281eb9572`。尚缺 `(O)709`、`(O)432`、`(O)726` 的 fresh-save 生产者和一条真实原生 Rain Totem 制作回执，因此训练禁令不变。
+
+截至 2026-10-23，Pine Tar、Pig/Truffle Oil 与现有 Hardwood 来源的长期 reserve 已接入，Axe 升级也已具备源码锁定的透明投影、候选、编译和原生 Runtime Harness 路径。该升级路径尚无真实提交与两日后领取回执，两个 executor 的 runtime/output gate 仍为空；不得因为代码存在而计入训练准入。天气族接下来的固定顺序是材料消费 reservation、原生 Rain Totem 制作回执，然后才重建 Master Angler fresh-save 审计与 Year 3 截止证明。
+
+材料消费 reservation 与原生制作回执现已按上述顺序完成。日计划编译前会为目标日和 location-context 生成稳定 portfolio/source-decision 身份，把个人背包或 Workbench 的精确节点、槽位、物品和数量作为一个原子组合提交；竞争目标的预留仍会阻塞，只有本次 Rain Totem 的完全匹配预留可被制作使用。运行时只有在 `executor.craft_rain_totem` 原生回执为 applied/verified 且 after snapshot fresh 时才提交三项材料结算，结算失败会把该回执降为不可训练并保留重试标记。EVD-340 的 E 盘隐藏静音运行证明 `(O)681 0 -> 1`、`timesCrafted 0 -> 1` 和精确材料/回调验证；它不证明新档材料生产与截止日前可达。下一固定步骤因此是重建 Master Angler fresh-save prerequisite audit，再据实际残余 blocker 完成 Year 3 截止证明；`formal_product_training_authorized=false` 和全部准入分子保持不变。
+
+上述审计现已重建，并补上“配方要求觅食 9 级”这一旧版未枚举前置。Master Angler 天气续程在配方未学会时复用已有 `foraging.chop_wild_tree` 原生动作，只接受完整正向 XP 投影并在每棵树后 fresh 重算；依赖图分别校验该 progression、Hardwood/工具升级 reserve、三材料原子 reservation/settlement 与 EVD-340 制作回执，防止用单一布尔值冒充闭环。天气族因此可记为 `implemented_and_bound`，但整个目标仍有 `4` 个未绑定族：姜岛、Mutant Bug Lair、秘密森林或森林农场、女巫沼泽；Year 3 全局截止组合和 seed-robust 随机重试也仍未完成。正式产品训练继续禁止。
+
+秘密森林/森林农场替代分支随后通过严格依赖节点关闭：实时农场类型决定 `Farm_Forest -> Farm` 替代是否成立；非森林农场必须依次满足透明 Secret Woods 门、共享 Axe 升级生命周期、Forest `(1,6)` 的精确 vanilla 602 hollow log 清除和原生 Woods connector。该实现没有新增模型动作或平行执行器，且任何钢斧等级、原木身份、共享执行器或 recurrence 边漂移都会失败关闭。当前只有源码锁定、编译、定向执行链测试和图篡改负例，尚无 602 原木真实运行回执，故该用途仍为 calibration-only，不进入正式训练。最新审计剩余 `3` 个未绑定族：姜岛、Mutant Bug Lair、女巫沼泽；完成它们后仍须组合 Year 3 截止与 seed-robust 随机重试证明。`formal_product_training_authorized=false` 不变。
+
+共享 Dark Talisman 依赖节点现已关闭 Mutant Bug Lair 和 Witch Swamp 两族。它精确组合既有 Community Center/Joja 完成事实、Railroad `529952/C`、quest `28`、Krobus 原生交互、BugLand `(31,5)` 的唯一 `SpecialItem(6)`、Railroad tile `287` 与 WitchWarpCave `MagicWarp`；BugLand 与 WitchSwamp 按各自最短充分终态停止，不要求 BugLand 目标无意义地完成后缀。SpecialItem 宝箱与 Skull Key 共用唯一原生两阶段状态机，Krobus 与雕像只调用原生 `checkAction` 并验证 fresh 后置条件，代码不直接写进度。当前证据是锁定源码、透明投影、编译、`5/5 + 16/16` 定向测试与依赖防篡改自测，不是原生运行回执。fresh-save prerequisite 审计 SHA-256 为 `74460f8612d92ab09ead68aa2c5aeedd7eaa5aaed8dc1a6ced923f84b5578892`，静态未绑定族只剩 `ginger_island_access`；姜岛完成后仍必须建立 Year 3 截止组合和 seed-robust 随机重试证明，故正式训练继续禁止。
+
+姜岛当前已达到“原生访问终端和当前快照即时生产者可编译”，但尚未达到 fresh-save 依赖完成。锁定 1.6.15 的顺序要求为 Willy 邀请、Battery Pack `5`、Hardwood `200`、Iridium Bar `5`、船票 `1000g`、出航事件/BoatJourney，再依次支付第一只鹦鹉 `1`、Western Turtle `10`、Island House `20`、Resort `20`；因此到 Master Angler 所需 IslandSouthEast/IslandSouthEastCave 的累计核桃依赖为 **51**。当前代码复用既有机器、清障、出货结算、灌木、钓鱼、掉落拾取、确定性挖掘、金椰子和田野办公室调查动作，每步 fresh 重算且不直接写进度；定向测试 `7/7`、构建零警告零错误。该结果不允许把审计中的 `ginger_island_access` 标为 bound：现行透明来源候选仍受 current-location/loaded-state 限制，尚缺跨地图未加载的 51 核桃完整来源目录、可达路线、一次性 tracker 去重与随机来源的 seed-robust 重试预算。正式准入顺序固定为：先补全并防篡改验证这套 51 核桃权威投影，再重建 Master Angler fresh-save prerequisite audit，最后组合 Year 3 截止和随机重试证明；在此之前 `formal_product_training_authorized=false`。
+
+其后的来源目录切片已经把“51 是否存在”从文档假设变成机器分母：原生总分母为 `69 keys / 130 walnuts`，在排除 Resort 后置来源与未购买的可选 Field Office Bridge 后，当前已绑定既有执行器的来源容量精确为 `51`。透明桥逐源发布当前 tracker/limited-drop/world/mail 收据；固定埋藏点实时调用 `IsBuriedNutLocation`，日记点同时核对坐标、日记 ID 与 `Diggable`；随机来源只允许一次原生尝试后 fresh 重算。普通埋藏与日记埋藏均复用同一 `executor.till_soil`，队列编译时再次校验来源键、坐标、剩余量和实时状态，漂移即拒绝。跨地图候选只编译一段已解析 connector。相关回归 `42/42` 通过，但没有本切片真实游戏回执。训练门仍关闭：还必须机器证明 `1+10+20+20` 支出过程中每个阶段有足够可达来源，并为钓鱼、蚌结石、岛屿作物等随机来源建立 Year 3 截止内的 seed-robust 重试预算，然后重建 Master Angler fresh-save prerequisite audit。容量 `51` 不得直接记作 `ginger_island_access=bound`。
+
+四阶段容量和独立重试预算随后已进入同一权威审计。`golden_walnut_unlock_schedule_proof.v2` 证明当前已接线来源累计容量 `7/25/51/51`；随机路线在 Resort 前缺少的确定性 `15` 可由 House 后三个 Gourmand 请求各 `5` 个核桃精确替代。`island_gourmand_progress.v1` 与唯一动作链已覆盖请求序号、254/262/248 作物、成熟地块、洞穴 Action、原生事件、碎片拾取和 fresh 回执。EVD-341 现以隐藏 E 盘隔离运行证明引介与第一单原生交付：request index `0 -> 1`、`GoldenWalnutsFound 0 -> 5`、`IslandGourmand1` tracker、五碎片生成/拾取和锁释放全部 verified，且没有直接进度或奖励写入。因此原生交互回执不再是缺口，`executor.advance_gourmand_request` 已为 `RuntimeVerified`。`island_gourmand_supply_schedule.v1` 又以精确种子/作物 ID、SeedShop 季节与年份条件、原生 phase 数组、IslandWest 全年播种规则及现有购买/农作/跨日动作闭合三株供给：大蒜须在第 2 年春季预留，夏 1 起备齐甜瓜和小麦，三株并行生长 `12` 夜后保持未收获状态供三次原生事件依次观察。实际价格必须在购买时 fresh 读取，`130g` 只代表标准价格。Resort 相关候选已把 Turtle `211`、House `223` 两个边界绑定到回执，并在 Turtle 未完成且当前日超过 `211` 时上游失败关闭；路线证明也能接收实际日期并验证 `211/223` 成功、`212/223` 失败。该接口不会把“公式可算”冒充“日期已产生”，也不会用选路完成代替第二、三请求的连续原生回执。默认仍须由 fresh-save 日程给出实际日期，因此 `RouteSelectionComplete=false`、`TrainingAdmissionEligible=false`，正式训练禁令不变。回归 `26/26` 与 Bootstrap Release 构建通过；全量 hermetic 自检仍被既有 Money Revenue seed supporting-step fixture 的缺失 snapshot path 阻塞。
+
+正式日期证据现在必须经过 `golden_walnut_fresh_save_unlock_timeline_proof.v1`。该投影要求上游新档计划输出首次登岛日、每个确定性核桃来源的计划完成日，以及 First Parrot/Turtle/House 三次原生交互的计划执行日，并用原文件 SHA-256 绑定；它从来源日程计算 `1/11/31` 三个钱包就绪日，再验证实际计划交互日不早于就绪日。任何未知、重复、超原生数量、随机、未绑定、前置阶段尚未开放的来源，或钱包未就绪就安排支出的计划都会失败关闭。Master Angler 审计只有在传入 `--golden-walnut-source-schedule` 且投影完整时才关闭 Gourmand 日期组合；目前仓库没有这份真实新档产物，所以训练准入分子不变。下一准入顺序固定为：上游 Teacher/日计划导出真实来源与交互日程并重建审计，再在同一连续原生存档采集 Gourmand 第 2、3 单回执；两者都完成前不得开始正式全量训练。
+
+日程导出不读取“候选带了哪个 source key”来推断完成，因为路线步骤也会携带该参数。正式入口 `build-golden-walnut-fresh-save-source-schedule` 只接受显式、同 run/save、连续性可证明的成功 fresh episode 清单，并从每对前后透明快照中的来源数量增量与原生解锁状态跃迁生成 schedule；schedule 还必须携带 manifest SHA-256、全部 episode/快照的有序证据根及 run/save 身份，时间线证明拒绝无来源归属的旧格式。真实 `82` episode manifest 已证明归档器和连续性门可工作，但导出器因缺 `native first-island-arrival transition` 正确失败。
+
+Golden Walnut 专用长期里程碑控制面现已实现，但尚未形成新原生日程。长期模式必须显式启用证据捕获、日计划和原生存档边界；每个 fresh 前后快照都核对锁定版本、可读存档、完整 `69/130` 目录身份、逐行数量与真实来源增量，并要求首次登岛、First Parrot、Western Turtle、Island House 当前终态齐备。作物 Teacher 第一日完成不会再触发短跑退出，最后一个预算内动作的 after snapshot 也会参与判定。`total_days >= 224`、attempt、磁盘余量或连续错误上限均会失败关闭。即使当前快照达到里程碑，正式成功仍须用同一 manifest 的 existing schedule builder 重放全部 episode，证明四个原生 `false -> true` 转变并写出 source schedule；当前态不能替代历史证据。下一准入顺序是运行一次受限长期新档、导出并绑定 schedule、重建 Master Angler 审计，再采集 Gourmand 第 2、3 单连续回执。`formal_product_training_authorized=false` 与全部 coverage 分子保持不变。
+
+长期控制面现补上两项失败关闭条件。第一，活动作物 Teacher 的任意阶段都必须先让位于原生剧情事件，且剧情队列不能提交作物 harvest/day-boundary settlement；v13 已在 Spring 20 Marnie 剧情真实验证抢占、恢复与下一日存档边界，第三轮 ledger 仍为 `0 harvest / 4 day-boundary`。第二，长期模式必须显式提供 requirement inventory、acquisition lowering、Master Angler window index 与 route timing calibration，并在普通日计划前调用既有统一 Stage 1 collection Teacher。真实快照离线烟测的 `35` 个捕获意图、`2` 个天气意图和 `297` 个唯一候选已生成一条 ready 的 `fishing.catch_fish` 队列；并发窗口候选身份冲突已由完整 intent identity 修复。以上只证明控制与编译入口，动态采集队列尚缺新长跑原生回执，首次登岛及 source schedule 仍缺，因此 `formal_product_training_authorized=false` 和所有 coverage 分子不变。
+
+v14 随后取得动态 collection Teacher 的四段原生 verified 路线回执，但不构成 Master Angler 终态：真实快照的 `fishing.rod_inventory` 为空，旧 builder 却发布了 Beach 捕获意图。当前门槛已经修正为 location/mine 捕获必须持有实时可读鱼竿；缺字段和空数组均失败关闭，crab pot 与天气支援不受该门影响。v14 原快照重放确认捕获候选 `0`、天气候选 `1`，统一 Teacher 可继续选择其他合法 exact collection 候选。
+
+v15 已证明该修复在真实新档中阻止了徒手 Beach 路线，并暴露延迟商店等待反复生成全量 collection ranking 的控制面浪费。v16 随后把 Stage One Teacher 选择接入已有 `SelectedQueueDecisionLease`：首次全量决策后，只在 fresh snapshot 上确定性刷新锁定候选，`policy_model_invoked=false`，候选失效时失败关闭，原生剧情仍可抢占并在结束后恢复。短运行连续 4 轮保持同一 AnimalShop 采购 continuation，全量 ranking 只生成 1 次；后续轻量刷新约 `10 KB/轮`。这只提高长跑反馈效率，不是新证据通道或 criterion completion。仍须由后续长跑证明鱼竿前置与原生捕获闭环，并完成首次登岛、核桃 source schedule、Gourmand 后两单和 Year 3 组合证明；`formal_product_training_authorized=false` 不变。
+
+鱼竿生产者现已从静态依赖声明接入动态 Teacher：权威 `rod_inventory` 为空时，现有 FishShop 竹鱼竿购买候选作为独立硬前置优先选择；已有任意合法鱼竿时抑制该前置，读数缺失、不可用、畸形或歧义时失败关闭。它严格复用 `economy.buy_supplies` 的滚动路线、商店交互、单件购买和 fresh 原生回执，不增加第 73 个鱼种、第二个策略出口或第二套执行器。聚焦回归与静态审计已经通过，但尚未获得 v17 真实 FishShop 购买终态，所以这一步只关闭确定性派发断链，不增加 Master Angler Method、三分区 coverage 或正式训练分子。下一准入证据仍是隐藏静音有界运行中的竹鱼竿路线/菜单/购买闭环，随后才继续首次登岛、核桃 source schedule、Gourmand 后两单与 Year 3 组合证明。
+
+Money 的第一条完整原生作物生产段 `money-crop-native-20261021-pricefix-v10` 已通过：checkpoint v12 为 `6/6 verified、0 pending`，终局含 `5` 次单件原生投箱和唯一睡眠结算，实际收入 `875g`，最终为春 20 日 06:00、`money=925`、`totalMoneyEarned=875`。源存档和隔离 Mod 哈希均未漂移。这证明 native runner、购种、场地准备、作物生命周期、留存、容量和运输箱终局可以在同一连续真实轨迹中闭合。
+
+`money_revenue_crop_native_production_segment_receipt.v1` 已完成并对 v10 深回放：Teacher 决策、commit receipt、obligation/run plan、checkpoint、terminal recurrence、最终透明快照和最终隔离存档树均从路径与哈希重新核验。回执确认 `50` 个 Teacher 候选、选中 `5` 格 `(O)474`、实际购种成本 `400g`、毛收入 `875g`、净现金收入 `475g`，并正确输出空阈值集合；它不创建 Teacher comparison、Money cell 或训练授权。
+
+`money_revenue_crop_production_teacher_comparison_receipt.v1` 已关闭 segment-level comparison：完整保留 `50` 候选、`5` admitted、`45` blocked 及 `4` 条选中候选偏好对，并只把真实成本/收入绑定到唯一执行候选。它不把 counterfactual 推演冒充原生结果，也明确保持 `criterion_local_join_ready=false`。
+
+**准入规则没有降低：**v10 生产段尚未跨越最低 `50,000g` Money criterion，v15 也没有形成 criterion-local cell，因此不能增加 `0/18` 分子。Full Shipment 的提升来自机器可验的静态全分母、原生分层全覆盖、顶层依赖一致性和三分区双通道共同通过，不是删除游戏能力或缩小目标；当前按 canonical 复杂度队列进入 Master Angler。Money 最终返回时，仍只有累计原生轨迹真实跨越阈值，并且相应 train/validation/test 分区的 exact comparison 和 native outcome 均闭合，Money cell 才能入账。
 
 ## 已收口待后续证据 · 2026-10-18 Money 种子预留 proof
 
-crop-production checkpoint v7 已能重建 planting-layout、seed-reservation、seed-acquisition、daily-capacity、native-lifecycle、output-retention 与 native ShopMenu terminal-settlement fragment。output retention 仅作为支持片段，不能单独关闭 `output-retention-terminal:*`；组合 proof 还必须重建共享资源中性路线、精确售卖 episode 与 Revenue recurrence。正式购种/容量/生命周期/留存/结算 fragment 与运输箱分支仍 pending，所以 Money 保持 `0/18`，正式训练保持 false。下一固定切片是运输箱投递、隔夜结算和结算日内容量证明。
+crop-production checkpoint 已演进到 v12，并在 `v10` 中真实重建 planting-layout、seed-reservation、seed-acquisition、daily-capacity、native-lifecycle 与完整 terminal-settlement 六个请求。output retention 与 settlement capacity 仍是支持片段，不能单独关闭 terminal request；本次单波运输箱 proof 已重建资源中性路线、五次原生投箱与 Revenue recurrence。该层已无 pending request，但阈值、Teacher comparison、partition join 和正式训练门仍保持关闭。
 ## 已收口待后续证据 · 2026-10-18 Money 作物场地准备
 
 作物场地准备已通过有界 `farm_layout` 透明快照和既有清障/资源块/BFS/锄地候选形成执行计划；清障后必须 fresh snapshot 重绑。#311 已关闭 bounds overflow、BFS reachability、stamina gate 及相关作物分母 fail-closed 缺口。该层仍只是基础设施，不产生 production cell；Money 保持 `0/18` 且 `formal_product_training_authorized=false`。
@@ -1133,3 +1271,83 @@ round08 首次用 round07 的 canonical 产物准备下一轮时，被 `formal_c
 round09 随后证明下一轮 prepare 与提交均成立：3 个高层候选轨迹全部 fresh/success；原生睡眠控制步不调用策略模型；Summer 3 → Summer 4 且存档树 SHA-256 改变；事务为 `committed_after_native_save_boundary`。最终为 accepted 203 / rejected 0、145 / 5 / 53、4547 pairs，checkpoint / manifest SHA-256 为 `4247b9feed96fbb40fbe263dd6f260c006d8f2db96c28b4a21bc0b5ffc717eeb` / `b35080e21a10ae61109df1577a4e6534fa2e60150917e3d75671d8d8734c45d5`，未解决 Product pending 为 0。
 
 该结果把“单轮可提交”提升为“提交结果可直接供下一轮使用”，允许进入连续有界批次；仍不等于跨季/跨年/Grandpa 21 全量长训通过。下一批必须继续维持并发 1、静音后台、失败不提升、原生保存、canonical 内部绑定验证和本机逐文件归档。
+
+## 历史记录 · 2026-10-27 v34 天气许可与路线振荡训练污染防线
+
+day-zero v34 长跑在完成作物 Teacher 后推进到 `221` 条 verified action、`15` 个原生日边界且零执行错误，随后暴露晴天 Catfish 的 Town/Forest supporting route 振荡。根因是 Master Angler 上游目标日期意图未将窗口 `weather_modes` 与透明地点上下文天气相交；这是真实规划许可缺陷，不是 Agent 状态显示问题。
+
+当前代码在意图生产者和运行时 validator 两层使用同一地点上下文天气规则。v34 真实快照重算保留 `15` 个合法钓鱼意图并把 Catfish 降为 `0`。LiveTrainingLoop 另设语义路线振荡守卫，同目标、零游戏分钟的 `A -> B -> A` 会结构化停止，触发动作不写训练数据。聚焦回归 `37/37` 和完整 Stage One collection self-test 通过。
+
+该修复只保证坏路线被上游排除、未来同类振荡不会污染数据；它不把 v34 记为完整 source schedule，不提升 `CoverageGateReady`，也不解除 `formal_product_training=false`。下一准入证据必须来自新的隔离 post-fix 原生长跑。
+
+## 历史记录 · 2026-10-27 v35 钓鱼 precedence/fallthrough 真实性门
+
+v35 的新档原生长跑证明天气门和语义振荡守卫已经跨过旧断点，但又发现 Town Fountain 抛竿点的候选真实性缺口。透明快照明确证明 Fountain 资源规则 precedence 更早、终止概率为 `1`，太阳鱼输出在该抛竿点不可达；旧候选层把所有静态匹配规则平铺后仍把太阳鱼当作可能结果，导致真实执行反复得到 Wood/Stone/Decorative Trash Can。
+
+当前唯一钓鱼候选构建器已恢复原生规则顺序语义：只在更早规则具备完整概率解析、无阻塞且确定终止时，硬遮蔽后续规则；同 precedence 随机顺序和未解析概率不会被错误裁剪。钓鱼 `23/23`、Master Angler `44/44`、完整 Stage One collection self-test 和全 Core 基线对比均通过。
+
+v35 人工停止于诊断点，虽有 `196` 条 verified action、`16` 个日边界和零执行错误，仍没有最终 summary 或 Golden Walnut source schedule，不能作为正式 corpus、coverage 或训练准入证据。下一准入证据固定为 v36 新档：太阳鱼必须在非 Fountain 抛竿点产生 fresh 原生捕获，然后继续满足首次登岛、核桃来源增量和三次鹦鹉跃迁。
+
+## 历史记录 · 2026-10-27 v36 运行边界与磁盘失败关闭
+
+v36 新档持久化了 `107` 条 verified Product action 和至少 `12` 条原生日界，且没有执行错误。Spring 13
+Egg Festival 期间的 Beach -> Farm 计划按透明连接器时窗正确编译为 `executor.wait_ticks`，快照时间从 `08:40`
+推进到 `12:30`；位置不变不能被解释为路线回执。该轮在 `14:10` 通行恢复前被人工中止，所以不提供太阳鱼
+post-fix 终态或 Golden Walnut source schedule。
+
+基于 v35 耐久存档/ledger 的恢复轮证明了 volatile receipt 清除、日界保留和库存容量恢复，但在 E 盘可用空间
+低于 `8192 MiB` 时以 `minimum_free_space_not_met` 结构化停止。它没有绕过门禁，也没有写入正式训练 corpus。
+因此准入状态不变：先恢复足够磁盘余量，再续接同一耐久起点并取得非 Fountain `(O)145` fresh 原生结果；
+之后才可继续首次登岛、核桃来源增量和三次鹦鹉跃迁。
+
+## 历史记录 · 2026-10-27 v39/v40 终态持久化真实性门
+
+低空间门在不删除证据、不降低 `8192 MiB` 阈值的前提下通过透明压缩解除。恢复链随后证明，泛化 native-save recovery 必须先于战略 goal binding；Crop Teacher ledger 必须在首次动作前可恢复；最关键的是，正式关闭阶段不得复用整次运行开始时的存档基线，因为 Teacher 内部跨日会让旧基线提前满足。当前实现进入关闭阶段时重新锁定当天日期和存档哈希，只接受真实 `executor.sleep` 回执，并在退出同一轮立即把最后一天边界写回对应 ledger。
+
+v39 真实完成 8 格收获、Spring 22 -> 23 原生睡眠和保存哈希变化，ledger 达到 `8 harvest / 5 day-boundary receipts`。v40 从该 ledger 恢复时 `discarded_volatile_harvest_receipts=0`，直接报告 terminal day crossed，没有重新规划作物；随后进入 collection 控制链并以新基线再次完成原生跨日。该证据关闭的是运行事务的可恢复性和终态真实性，不是 Teacher comparison/native outcome 三分区 corpus，因此所有 coverage 分子和 `formal_product_training_authorized=false` 均不变。下一准入证据仍是非 Fountain `(O)145` 捕获及后续 Golden Walnut source schedule。
+
+## 历史记录 · 2026-10-27 v41/v42 非 Fountain 捕获与压缩证据门
+
+v41 证明恢复模式的普通全量 JSON 快照会在长跑中放大空间占用；该轮在最终保存前由 `8192 MiB` 门失败关闭，不能进入准入证据。校准包装器现对 fresh-save 捕获和 Crop Teacher resume 都启用内容寻址 gzip，并在 summary 回报实际模式；两者的运行身份、入口开关和证据含义仍严格分开。
+
+v42 从 v40 耐久 ledger 继续，取得 `24/24` verified Product action。Town `(67,46)` 站位、`(71,46)` 浮标格的 fresh 原生执行捕获 `(O)145`，最大抛竿和 bobber-bar 成功均有回执；最终 Spring 24 -> 25 原生睡眠、日期变化、保存哈希变化和存档 `fishCaught=(O)145` 同时成立。该轮关闭此前指定的非 Fountain 太阳鱼与最终耐久边界，但不是 Golden Walnut fresh-save source schedule，也不是三分区 corpus；正式训练仍保持关闭。下一准入证据固定为独立 day-zero Golden Walnut source schedule。
+
+## 历史记录 · 2026-10-27 v43 跨目标路线折返诊断
+
+v43 的 day-zero 新档在人工停止前累计 `162` 条 verified Product action，已真实完成作物重规划、收获、鱼竿事件链和多个目标鱼捕获/出货；这些前缀证明现有机械执行链继续工作，但不构成 Golden Walnut source schedule。18:20 的 `(O)129` Beach 与 `(O)Goby` Forest 候选在 fresh connector 后交替抢占，形成零游戏分钟的跨目标反向地图转移。
+
+控制层现把 exact candidate lease 与高层 objective continuation 分开管理：前者可随 fresh 状态失效，后者只有在当前权威排名确实没有匹配候选时才释放。Stage One collection 与 DailyPlan 使用同一个 typed continuation filter；通用物理路线守卫同时覆盖跨目标 `A -> B -> A`。相关回归 `138/138` 通过。v43 被人工停止且没有最终 summary，因此不得写入正式 corpus、不得提升 coverage 或训练准入；下一准入证据是 post-fix 受限回放证明 Beach 目标跨 BusStop/Town 连续执行，再恢复完整 Golden Walnut source schedule。
+
+## 历史记录 · 2026-10-27 v45 受限回放通过
+
+v44/v45 的受限回放已在真实 Product Executor 上证明，高层 `quest:13` continuation 能跨 Farm、BusStop、Town、Beach 保持，fresh snapshot 只重绑定当前连接器。v44 额外暴露并失败关闭了 FarmHouse 门触发格/站位格混用；修复后，连接器站位解析与路线障碍处理复用唯一透明路由和清障执行链。
+
+v45 完成 `8/8` verified action，并从 Beach 逐段返回 FarmHouse，原生睡眠使日期 `1:spring:14 -> 1:spring:15` 且存档 SHA-256 变化；`native_save_boundary_verified=true`。该证据解除当前“续行修复能否安全收尾”的阻塞，但没有形成 Golden Walnut source schedule、没有单独复现 `(O)129`、没有新增 Teacher comparison/native outcome 三分区，因此 `formal_product_training_authorized=false` 与所有正式 coverage 分子不变。下一准入证据仍为独立 Golden Walnut day-zero/fresh-save 长跑及可重放 source schedule。
+
+## 历史记录 · 2026-10-27 v46/v47 店主服务窗口前置排除
+
+v46 证明只读取“当前店主不在柜台”会让日计划先锁定当天不可能完成的购买，再浪费多个等待块。现有透明桥其实已提供完整原生日程、入口时窗和柜台矩形；候选层现直接计算这些证据的全天交集，并在无交集时于模型排名前排除。v47 的真实 Spring 1 排名确认 AnimalShop 候选全部以 `shop_owner_has_no_service_window_today` 阻塞，策略立即改做 starter gift。
+
+这项修复减少错误候选和无效反馈，不构成新的 criterion、Teacher comparison 或 native outcome 三分区。v47 为人工停止的诊断运行，`formal_product_training_authorized=false` 不变；正式准入仍等待完整 Golden Walnut source schedule 生成与重放。
+
+## 历史记录 · 2026-10-27 v48 双作物闭环与等待证据边界
+
+v48 在同一个新档中原生完成 `6` 格花椰菜和 `8` 格防风草的完整生产循环，包含缺水补水、跨日耐久保存和满包出货恢复；人工停止前累计 `185` 条 verified Product action，并已重新进入 Stage One collection。该运行证明长前缀与两次 Crop Teacher terminal settlement 可连续成立，但没有首次登岛、核桃增量或三项鹦鹉跃迁，不能形成 Golden Walnut source schedule，也不能增加正式 Teacher/native 三分区分子。
+
+节日门等待的正确性已由 `14:10` 后自动续行证明，但重复 full snapshot/replan 会放大长跑成本。新合同只把精确节日开放时刻下的连续等待组织为最多三片的受控产品执行段，每片仍不超过 `600` tick，段末保留 fresh full snapshot、Product receipt 和重新决策；普通等待、快照哈希身份与正式证据要求均未放宽。隐藏 primitive smoke 已以 `06:00 -> 06:20 / actual_ticks=875 / applied+verified` 验证多片提前终止；它不是节日路线或 source schedule 证据，`formal_product_training_authorized=false` 保持。
+
+## 历史记录 · 2026-10-27 v49-v52 耐久 collection 证据边界
+
+v49-v50 已证明 v48 的第二轮作物终态能够经只读 ledger 恢复、重新结算未落盘收获、跨日保存，并在下一进程直接越过已完成 Crop Teacher。v49 形成 `8 harvest + 5 day boundaries`，v50 继续执行容量恢复和 Master Angler 路线，两个包装器都通过原生保存边界。
+
+v51 原生捕获 `(O)147`，但因 `12` 次尝试只取得 `6/8` verified action 而结构化 incomplete，且没有保存边界，因此不计耐久进度。v52 从原 Spring 19 存档重跑后原生捕获目标 `(O)131`，形成一条已接纳 `fishing.catch_fish` 轨迹，并以精确最近捕获物恢复把该鱼投箱；`6/6` verified action 后睡到 Spring 20，`status=passed` 且 `native_save_boundary_verified=true`。
+
+上述证据仍来自 crop-resume，而非完整 day-zero/fresh-save 归档；它不能证明首次登岛、任何 Golden Walnut 来源增量或 First Parrot/Turtle/House，也不能生成/重放完整 source schedule。因此正式 Teacher comparison/native outcome 分子均不增加，`formal_product_training_authorized=false` 不变。下一准入证据仍是独立 day-zero source-schedule 长跑；磁盘安全余量不足时必须先停，不得降低 `8192 MiB` 门。
+
+## 历史记录 · 2026-10-27 v53 fresh-save 证据连续性修正
+
+v53 在独立新档中累计 `193` 条 verified Product action，并完成两轮作物生产，但尚未首次登岛。它在 `19:20` 被 exclusive recovery 门正确拒绝普通作物路线，证明缺口位于控制器晚间重规划，而非恢复执行器；当前修复只把 Crop Teacher 接回唯一 `recovery.stabilize_day`，并保留原 ledger 的原生睡眠日界结算。
+
+fresh-save manifest 现按稳定岛屿进度维度验证 episode 间连续性，忽略当前位置、票价支付能力和地图加载校验等上下文噪声，同时将无回执交接窗口限制为实测 `24` tick。`25` tick 或任何未记账核桃/解锁变化仍失败关闭。v53 全部 `193` 个 episode 已成功重建 manifest，但因首次登岛、来源增量、First Parrot、Turtle、House 均缺失，source schedule 仍不可生成，正式准入分子不变。
+
+下一准入运行必须从新的 day-zero 身份开始：先验证晚间 recovery 与保存，再完成首次登岛和三项鹦鹉跃迁，生成 source schedule 后在独立运行重放。此前 `formal_product_training_authorized=false`。

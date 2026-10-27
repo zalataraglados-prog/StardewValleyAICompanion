@@ -177,6 +177,7 @@ namespace StardewAI.Core.Execution
             blocking.AddRange(ValidateJukeboxSelectionPlan(action, snapshot));
             blocking.AddRange(ValidatePlayerCustomizationPlan(action, snapshot));
             blocking.AddRange(ValidateGeodeProcessingPlan(action, snapshot));
+            blocking.AddRange(ValidateToolUpgradePlan(action, snapshot));
             blocking.AddRange(ValidateQuestCancellationPlan(action, snapshot));
             blocking.AddRange(ValidateAdventureGuildRewardPlan(action, snapshot));
             blocking.AddRange(ValidatePrizeTicketRewardPlan(action, snapshot));
@@ -186,6 +187,7 @@ namespace StardewAI.Core.Execution
             blocking.AddRange(ValidateAdvanceStoryEventPlan(action, snapshot));
             blocking.AddRange(ValidateAdvanceStoryEventMinigamePlan(action, snapshot));
             blocking.AddRange(ValidatePotOfGoldPlan(action, snapshot));
+            blocking.AddRange(ValidateStarterGiftPlan(action, snapshot));
             blocking.AddRange(ValidateDwarfKingStatuePlan(action, snapshot));
             blocking.AddRange(ValidateStatueBlessingPlan(action, snapshot));
             blocking.AddRange(ValidateHousePlantPlan(action, snapshot));
@@ -205,6 +207,7 @@ namespace StardewAI.Core.Execution
             blocking.AddRange(ValidateMuseumDonationPlan(action, snapshot));
             blocking.AddRange(ValidateFieldOfficeDonationPlan(action, snapshot));
             blocking.AddRange(ValidateFieldOfficeSurveyPlan(action, snapshot));
+            blocking.AddRange(ValidateGourmandRequestPlan(action, snapshot));
             blocking.AddRange(ValidateCalicoJackPlan(action, snapshot));
             blocking.AddRange(ValidateSlotsPlan(action, snapshot));
             blocking.AddRange(ValidateCraneGamePlan(action, snapshot));
@@ -235,6 +238,8 @@ namespace StardewAI.Core.Execution
                 commitmentLedger));
             blocking.AddRange(ValidateCraftStorageItemPlan(action, snapshot, commitmentLedger));
             blocking.AddRange(ValidateCraftQuestItemPlan(action, snapshot, commitmentLedger));
+            blocking.AddRange(ValidateCraftCrabPotPlan(action, snapshot, commitmentLedger));
+            blocking.AddRange(ValidateCraftRainTotemPlan(action, snapshot, commitmentLedger));
             blocking.AddRange(ValidateConstructBuildingPlan(action, snapshot, commitmentLedger));
             blocking.AddRange(ValidateChangeBuildingSkinPlan(action, snapshot));
             blocking.AddRange(ValidatePaintBuildingRegionPlan(action, snapshot));

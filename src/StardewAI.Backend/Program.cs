@@ -761,6 +761,14 @@ app.MapPost("/api/v1/planner/baseline/rank-options", (BaselinePredictionRequest 
     }
 
     var commitmentLedger = commitmentRepository.Get(snapshot);
+    if (request.Candidates.Length > 0 &&
+        request.AdditionalCandidates.Length > 0)
+    {
+        return Results.BadRequest(new
+        {
+            detail = "candidates and additional_candidates are mutually exclusive"
+        });
+    }
     var autonomousCandidateOptionIds = useStructuredPolicy &&
         request.CandidateOptionIds.Length == 0
             ? policyTrainingAdmissionFilter.FilterOptionIds(
@@ -777,13 +785,34 @@ app.MapPost("/api/v1/planner/baseline/rank-options", (BaselinePredictionRequest 
             commitmentLedger: commitmentLedger)
         : request.Candidates.Length > 0
             ? availabilityEvaluator.Evaluate(snapshot, request.Candidates, commitmentLedger: commitmentLedger)
+            : request.AdditionalCandidates.Length > 0
+                ? availabilityEvaluator.Evaluate(
+                    snapshot,
+                    (autonomousCandidateOptionIds.Length > 0
+                        ? autonomousCandidateOptionIds
+                        : availabilityEvaluator.DefaultAutonomousRuntimeOptionIds())
+                    .Where(optionId => !request.AdditionalCandidates.Any(
+                        candidate => string.Equals(
+                            candidate.OptionId,
+                            optionId,
+                            StringComparison.Ordinal)))
+                    .Select(optionId => new OptionAvailabilityCandidate
+                    {
+                        OptionId = optionId
+                    })
+                    .Concat(request.AdditionalCandidates)
+                    .ToArray(),
+                    commitmentLedger: commitmentLedger)
             : availabilityEvaluator.EvaluateForAutonomousRuntimePlanning(
                 snapshot,
                 autonomousCandidateOptionIds,
                 commitmentLedger);
     var rankedCandidates = request.IncludeBlockedOptions
         ? availability.Options.Select(option => option.OptionId).ToArray()
-        : availability.Options.Where(option => option.Available).Select(option => option.OptionId).ToArray();
+        : availability.Options.Where(option => option.Available)
+            .Select(option => option.OptionId)
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
 
     var broadRankedEventCandidates = eventCandidateRanker.Rank(
         report,
@@ -911,6 +940,23 @@ app.MapPost("/api/v1/planner/daily-plan/compile", (DailyPlanCompileRequest reque
         });
     }
     commitmentLedger = supportBinding?.Ledger ??
+        commitmentLedger;
+    var rainTotemMaterialBinding =
+        RainTotemMaterialReservationPlanBinder.Bind(
+            plan,
+            snapshot,
+            commitmentRepository);
+    if (rainTotemMaterialBinding is not null &&
+        (!rainTotemMaterialBinding.Accepted ||
+         rainTotemMaterialBinding.Ledger is null))
+    {
+        return Results.UnprocessableEntity(new
+        {
+            detail = "rain totem material reservation binding rejected",
+            errors = rainTotemMaterialBinding.Errors
+        });
+    }
+    commitmentLedger = rainTotemMaterialBinding?.Ledger ??
         commitmentLedger;
     var actionQueue = actionQueueCompiler.Compile(
         plan,

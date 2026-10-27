@@ -30,6 +30,24 @@ public sealed class ExecutorInputLifecycleTests
     }
 
     [Fact]
+    public void HeadlessMovementRepressesDirectionAfterUnobservedLeaseCycle()
+    {
+        var tracker = new MovementInputEdgeTracker();
+
+        var initial = tracker.Observe(direction: 2, transitionTick: 1);
+        var held = tracker.Observe(direction: 2, transitionTick: 1);
+        var reacquired = tracker.Observe(direction: 2, transitionTick: 3);
+        var released = tracker.Observe(direction: null, transitionTick: 4);
+
+        Assert.Equal(2, initial.PressedDirection);
+        Assert.Null(held.PressedDirection);
+        Assert.Equal(2, reacquired.PressedDirection);
+        Assert.Equal(2, reacquired.HeldDirection);
+        Assert.Equal(2, released.ReleasedDirection);
+        Assert.Null(released.HeldDirection);
+    }
+
+    [Fact]
     public void NativeToolCycleRequiresPressReleaseAndNativeSettlement()
     {
         var lifecycle = new NativeToolActionLifecycle();

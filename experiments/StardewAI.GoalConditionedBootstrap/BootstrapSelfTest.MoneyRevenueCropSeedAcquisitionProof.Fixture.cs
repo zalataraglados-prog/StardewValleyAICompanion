@@ -43,14 +43,30 @@ internal static partial class BootstrapSelfTest
                 ? SeedAcquisitionWait(before)
                 : SeedAcquisitionRoute(before);
         var selectedCandidateId = "candidate." + prefix;
+        var stepSnapshots = SeedAcquisitionStepSnapshots(
+            before,
+            after,
+            queue.Items.Length);
+        var stepSnapshotPaths = stepSnapshots
+            .Select((_, index) => index == stepSnapshots.Length - 1
+                ? afterPath
+                : Path.Combine(
+                    root,
+                    prefix + "-step-" + index.ToString("D3") +
+                    "-after.json"))
+            .ToArray();
         var receipt = SeedAcquisitionReceipt(
             queue,
             before,
             after,
+            stepSnapshots,
+            stepSnapshotPaths,
             "run.seed-acquisition.fixture",
             selectedCandidateId);
         Write(beforePath, before);
         Write(queuePath, queue);
+        for (var index = 0; index < stepSnapshots.Length - 1; index++)
+            Write(stepSnapshotPaths[index], stepSnapshots[index]);
         Write(receiptPath, receipt);
         Write(afterPath, after);
         transitions.Add(new MoneyRevenueCropNativeLifecycleTransitionRequest(
@@ -196,6 +212,8 @@ internal static partial class BootstrapSelfTest
         ActionQueueEnvelope queue,
         SnapshotEnvelope before,
         SnapshotEnvelope after,
+        SnapshotEnvelope[] stepSnapshots,
+        string[] stepSnapshotPaths,
         string runId,
         string selectedCandidateId)
     {
@@ -203,10 +221,11 @@ internal static partial class BootstrapSelfTest
         {
             var sourceHash = index == 0
                 ? before.StateHash
-                : queue.QueueId + ".intermediate." + index;
-            var afterHash = index == queue.Items.Length - 1
-                ? after.StateHash
-                : queue.QueueId + ".intermediate." + (index + 1);
+                : stepSnapshots[index - 1].StateHash;
+            var sourceTick = index == 0
+                ? before.GameTick
+                : stepSnapshots[index - 1].GameTick;
+            var stepAfter = stepSnapshots[index];
             return new QueueExecutionStepReceipt
             {
                 QueueItemIndex = index,
@@ -219,11 +238,12 @@ internal static partial class BootstrapSelfTest
                 CompiledCommandStateHash = before.StateHash,
                 SelectedQueueCandidateCompleted =
                     index == queue.Items.Length - 1,
-                AfterStateHash = afterHash,
-                StateHashChanged = true,
-                BeforeGameTick = before.GameTick + index,
-                AfterGameTick = before.GameTick + index + 1,
+                AfterStateHash = stepAfter.StateHash,
+                StateHashChanged = sourceHash != stepAfter.StateHash,
+                BeforeGameTick = sourceTick,
+                AfterGameTick = stepAfter.GameTick,
                 AfterSnapshotFresh = true,
+                AfterSnapshotPath = stepSnapshotPaths[index],
                 Status = "applied",
                 PrimitiveKind = item.OptionId["executor.".Length..],
                 PrimitiveVerificationStatus = "verified",
@@ -259,6 +279,35 @@ internal static partial class BootstrapSelfTest
             SelectedCandidateCompleted = true,
             StepResults = results
         };
+    }
+
+    private static SnapshotEnvelope[] SeedAcquisitionStepSnapshots(
+        SnapshotEnvelope before,
+        SnapshotEnvelope after,
+        int stepCount)
+    {
+        if (stepCount == 1)
+            return new[] { after };
+        if (stepCount != 2)
+            throw new InvalidOperationException(
+                "Seed-acquisition fixture supports one supporting step or " +
+                "a purchase plus close-menu step.");
+
+        var purchaseAfter = CloneSnapshot(after);
+        purchaseAfter.GameTick = before.GameTick + 1;
+        purchaseAfter.State["menus"] = JsonSerializer.SerializeToElement(
+            new
+            {
+                active_menu = Available(new
+                {
+                    is_open = true,
+                    type = "ShopMenu"
+                })
+            },
+            JsonDefaults.Options);
+        purchaseAfter.StateHash = SnapshotHash.ComputeStateHash(
+            purchaseAfter.State);
+        return new[] { purchaseAfter, after };
     }
 
     private static SnapshotEnvelope SeedAcquisitionRoute(

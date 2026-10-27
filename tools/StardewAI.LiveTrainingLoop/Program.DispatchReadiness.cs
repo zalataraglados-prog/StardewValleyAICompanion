@@ -25,6 +25,14 @@ static partial class Program
                 StringComparison.Ordinal) &&
             !string.Equals(
                 optionId,
+                "executor.craft_crab_pot",
+                StringComparison.Ordinal) &&
+            !string.Equals(
+                optionId,
+                "executor.craft_rain_totem",
+                StringComparison.Ordinal) &&
+            !string.Equals(
+                optionId,
                 "executor.place_machine",
                 StringComparison.Ordinal) &&
             !string.Equals(

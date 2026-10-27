@@ -200,19 +200,70 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
               }
             """, routeGraphExtra: """
               ,{"kind":"locked_door_warp","from_location":"Town","from_x":1,"from_y":1,"target_location":"Blacksmith","target_x":3,"target_y":4,"resolved":true,"gate":{"allowed_now":false,"allowed_on_capture_date":true,"time_allowed":false,"friendship_allowed":true,"festival_closed":false,"seed_shop_wednesday_closed":false,"effective_open_time":1000,"close_time":1700,"unresolved_reason":null}}
-            """), new[] { "economy.buy_supplies" })
+            """, currentTime: 600), new[] { "economy.buy_supplies" })
             .Options[0];
 
         var candidate = Assert.Single(option.EventCandidates);
         Assert.True(candidate.Available);
+        Assert.False(candidate.AllowedNow);
         Assert.True(candidate.AllowedToday);
         Assert.Equal(1000, candidate.NextOpenTime);
         Assert.Equal(1000, candidate.EffectiveOpenTime);
         Assert.Equal(1700, candidate.ClosesAt);
+        Assert.Equal(14400, candidate.WaitCost);
         Assert.Contains("shop_entrance_not_open_yet", candidate.GateReasons);
         Assert.DoesNotContain(
             "no_value_available_purchase_candidates",
             option.BlockingReasons);
+
+        var scheduled = Assert.Single(new EventCandidateRanker().Rank(
+            new(),
+            new OptionAvailabilityEnvelope
+            {
+                StateHash = "state.0600",
+                CurrentTime = 600,
+                Options = new[] { option }
+            }));
+        Assert.Equal("deferred", scheduled.TimelineStatus);
+        Assert.Equal(1000, scheduled.ScheduledStartTime);
+        Assert.Contains("candidate_deferred_until_open", scheduled.TimelineReasons);
+    }
+
+    [Fact]
+    public void BuySuppliesExcludesFishShopGoneFishingDoorForTheWholeCaptureDate()
+    {
+        var option = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(BuyPreviewSnapshot("""
+              {
+                "item_id":"BambooPole",
+                "qualified_item_id":"(T)BambooPole",
+                "display_name":"Bamboo Pole",
+                "price":500,
+                "stock":1,
+                "infinite_stock":false,
+                "currency_balance":500,
+                "executor_purchase_preview_enabled":true,
+                "executor_block_reasons":[]
+              }
+            """, routeGraphExtra: """
+              ,{"kind":"locked_door_warp","from_location":"Beach","from_x":30,"from_y":33,"target_location":"FishShop","target_x":5,"target_y":9,"resolved":true,"gate":{"allowed_now":false,"allowed_on_capture_date":false,"time_allowed":true,"friendship_allowed":true,"festival_closed":false,"seed_shop_wednesday_closed":false,"fish_shop_gone_fishing_closed":true,"effective_open_time":900,"close_time":1700,"unresolved_reason":null}}
+            """, shopId: "FishShop"), new[] { "economy.buy_supplies" })
+            .Options[0];
+
+        var gate = Assert.Single(option.EventCandidates);
+        Assert.False(gate.Available);
+        Assert.False(gate.AllowedNow);
+        Assert.False(gate.AllowedToday);
+        Assert.Null(gate.NextOpenTime);
+        Assert.Contains("fish_shop_gone_fishing_closed", gate.BlockReasons);
+        Assert.Empty(new EventCandidateRanker().Rank(
+            new(),
+            new OptionAvailabilityEnvelope
+            {
+                StateHash = "state.fish-shop-day-one",
+                CurrentTime = 900,
+                Options = new[] { option }
+            }));
     }
 
     [Fact]
@@ -285,6 +336,131 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
                 CurrentTime = 1850,
                 Options = new[] { option }
             }));
+    }
+
+    [Fact]
+    public void BuySuppliesExcludesDialogueShopWhenNativeScheduleHasNoServiceWindowToday()
+    {
+        var option = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(BuyPreviewSnapshot("""
+              {
+                "item_id":"178",
+                "qualified_item_id":"(O)178",
+                "display_name":"Hay",
+                "price":50,
+                "stock":2147483647,
+                "infinite_stock":true,
+                "currency_balance":500,
+                "executor_purchase_preview_enabled":true,
+                "executor_block_reasons":[]
+              }
+            """, endpointAllowed: false, endpointExtra:
+                ",\"direct_time_allowed\":true,\"parsed\":{\"kind\":\"dialogue_shop\",\"shop_id\":\"AnimalShop\",\"owner_npc\":\"Marnie\",\"owner_service_area\":{\"x\":10,\"y\":13,\"width\":5,\"height\":3}},\"owner_service_status\":{\"owner_required\":true,\"owner_npc\":\"Marnie\",\"owner_found\":false,\"in_service_area\":false,\"block_reason\":\"owner_npc_not_in_current_location\"}",
+                routeGraphExtra: AnimalShopEntranceGate(),
+                currentTime: 700,
+                shopId: "AnimalShop",
+                npcScheduleState: LoadedOwnerScheduleState(700, """
+                  {
+                    "time":810,
+                    "target_location_name":"SeedShop",
+                    "target_tile_x":11,
+                    "target_tile_y":20,
+                    "facing_direction":2,
+                    "end_behavior":null,
+                    "end_message":null,
+                    "route_count":0,
+                    "adjacent_route_pixel_distance":0
+                  },
+                  {
+                    "time":1200,
+                    "target_location_name":"AnimalShop",
+                    "target_tile_x":24,
+                    "target_tile_y":15,
+                    "facing_direction":3,
+                    "end_behavior":null,
+                    "end_message":null,
+                    "route_count":0,
+                    "adjacent_route_pixel_distance":0
+                  }
+                """)), new[] { "economy.buy_supplies" })
+            .Options[0];
+
+        var gate = Assert.Single(option.EventCandidates);
+        Assert.False(gate.Available);
+        Assert.False(gate.AllowedToday);
+        Assert.Contains(
+            "shop_owner_has_no_service_window_today",
+            gate.BlockReasons);
+        Assert.Empty(new EventCandidateRanker().Rank(
+            new(),
+            new OptionAvailabilityEnvelope
+            {
+                StateHash = "state.marnie-monday",
+                CurrentTime = 700,
+                Options = new[] { option }
+            }));
+    }
+
+    [Fact]
+    public void BuySuppliesDefersDialogueShopToExactFutureOwnerServiceWindow()
+    {
+        var option = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(BuyPreviewSnapshot("""
+              {
+                "item_id":"178",
+                "qualified_item_id":"(O)178",
+                "display_name":"Hay",
+                "price":50,
+                "stock":2147483647,
+                "infinite_stock":true,
+                "currency_balance":500,
+                "executor_purchase_preview_enabled":true,
+                "executor_block_reasons":[]
+              }
+            """, endpointAllowed: false, endpointExtra:
+                ",\"direct_time_allowed\":true,\"parsed\":{\"kind\":\"dialogue_shop\",\"shop_id\":\"AnimalShop\",\"owner_npc\":\"Marnie\",\"owner_service_area\":{\"x\":10,\"y\":13,\"width\":5,\"height\":3}},\"owner_service_status\":{\"owner_required\":true,\"owner_npc\":\"Marnie\",\"owner_found\":false,\"in_service_area\":false,\"block_reason\":\"owner_npc_not_in_current_location\"}",
+                routeGraphExtra: AnimalShopEntranceGate(),
+                currentTime: 700,
+                shopId: "AnimalShop",
+                npcScheduleState: LoadedOwnerScheduleState(700, """
+                  {
+                    "time":900,
+                    "target_location_name":"AnimalShop",
+                    "target_tile_x":12,
+                    "target_tile_y":14,
+                    "facing_direction":2,
+                    "end_behavior":null,
+                    "end_message":null,
+                    "route_count":0,
+                    "adjacent_route_pixel_distance":0
+                  },
+                  {
+                    "time":1600,
+                    "target_location_name":"Forest",
+                    "target_tile_x":1,
+                    "target_tile_y":1,
+                    "facing_direction":3,
+                    "end_behavior":null,
+                    "end_message":null,
+                    "route_count":0,
+                    "adjacent_route_pixel_distance":0
+                  }
+                """)), new[] { "economy.buy_supplies" })
+            .Options[0];
+
+        var candidate = Assert.Single(option.EventCandidates);
+        Assert.True(candidate.Available);
+        Assert.False(candidate.AllowedNow);
+        Assert.True(candidate.AllowedToday);
+        Assert.Equal(900, candidate.NextOpenTime);
+        Assert.Equal(900, candidate.EffectiveOpenTime);
+        Assert.Equal(1600, candidate.ClosesAt);
+        Assert.Contains(
+            "shop_owner_service_window_not_open_yet",
+            candidate.GateReasons);
+        Assert.DoesNotContain(
+            "shop_owner_has_no_service_window_today",
+            candidate.BlockReasons);
     }
 
     [Fact]
@@ -675,6 +851,42 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     }
 
     [Fact]
+    public void SellItemsRejectsLegacyUnprotectedPlantableSeedProjection()
+    {
+        var option = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(SellSnapshot(
+                inventoryItemOverride: """
+                  {
+                    "slot_index":0,
+                    "item_id":"472",
+                    "qualified_item_id":"(O)472",
+                    "stack":15,
+                    "category":-74,
+                    "can_be_shipped":true,
+                    "sell_to_store_price":10,
+                    "sale_price":10,
+                    "protected_from_auto_sell":false,
+                    "auto_sell_protection_reasons":[],
+                    "is_empty":false
+                  }
+                """,
+                seedInventoryOverride: """
+                  [{"slot_index":0,"item_id":"472","qualified_item_id":"(O)472","stack":15,"seed_id":"472","crop_catalog_match":true}]
+                """), new[] { "economy.sell_items" })
+            .Options[0];
+
+        Assert.False(option.Available);
+        Assert.Contains(
+            "plantable_seed_requires_explicit_surplus_authorization",
+            option.BlockingReasons);
+        var candidate = Assert.Single(option.EconomicCandidates);
+        Assert.False(candidate.Available);
+        Assert.Contains(
+            "plantable_seed_requires_explicit_surplus_authorization",
+            candidate.BlockReasons);
+    }
+
+    [Fact]
     public void BoundRouteCandidateReusesCompilerTargetBranchGate()
     {
         var snapshot = Snapshot("""
@@ -770,6 +982,48 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.Contains(item.NormalizedCommand.Parameters, parameter =>
             parameter.Name == "route.snapshot_policy" &&
             parameter.Value == "one_connector_then_fresh_snapshot");
+    }
+
+    [Fact]
+    public void VisitLocationDefersOrdinaryWarpUntilActiveFestivalEnds()
+    {
+        var snapshot = RouteConnectorSnapshot(
+            routeTrainingBlocked: false,
+            activeFestivalTransitClosed: true);
+
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "exploration.visit_location" });
+        var option = availability.Options[0];
+        var candidate = Assert.Single(option.EventCandidates);
+
+        Assert.False(candidate.Available);
+        Assert.Equal("windowed_route_connector", candidate.AvailabilityClass);
+        Assert.False(candidate.AllowedNow);
+        Assert.True(candidate.AllowedToday);
+        Assert.Equal(1410, candidate.NextOpenTime);
+        Assert.Equal(1410, candidate.EffectiveOpenTime);
+        Assert.Equal(2600, candidate.ClosesAt);
+        Assert.Contains(
+            "route_gate_active_festival_ordinary_transit_closed",
+            candidate.GateReasons);
+        Assert.Contains(
+            "connector_active_festival_transit_closed",
+            candidate.BlockReasons);
+
+        var ranked = Assert.Single(new EventCandidateRanker().Rank(
+            new(),
+            availability,
+            "daily.closed_loop"));
+        Assert.Equal("deferred", ranked.TimelineStatus);
+        Assert.Equal(1410, ranked.ScheduledStartTime);
+        var plan = new DailyPlanCompiler().Compile(
+            new[] { ranked },
+            snapshot.StateHash,
+            "daily.closed_loop");
+        Assert.Equal("wait_ticks", Assert.Single(plan.Steps).Kind);
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+        Assert.Equal("pending", queue.Status);
+        Assert.Equal("executor.wait_ticks", Assert.Single(queue.Items).OptionId);
     }
 
     [Fact]
@@ -1243,5 +1497,39 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.Contains("interact_unsupported_action_branch_at_target", candidate.BlockReasons);
         Assert.Contains("interact_expected_action_type_mismatch", candidate.BlockReasons);
     }
+
+    private static string AnimalShopEntranceGate() => """
+      ,{"kind":"locked_door_warp","from_location":"Farm","from_x":32,"from_y":15,"target_location":"AnimalShop","target_x":13,"target_y":24,"resolved":true,"gate":{"allowed_now":false,"allowed_on_capture_date":true,"time_allowed":false,"friendship_allowed":true,"festival_closed":false,"seed_shop_wednesday_closed":false,"fish_shop_gone_fishing_closed":false,"effective_open_time":900,"close_time":1600,"unresolved_reason":null}}
+    """;
+
+    private static string LoadedOwnerScheduleState(
+        int currentTime,
+        string entries) => $$"""
+        ,"npcs": {
+          "schedule_catalog": {
+            "value": {
+              "current_selection_context": {
+                "capture_total_days": 1,
+                "game_time": {{currentTime}},
+                "real_milliseconds_per_game_ten_minutes": 7000
+              }
+            },
+            "status":"available"
+          },
+          "schedules": {
+            "value": [
+              {
+                "name":"Marnie",
+                "schedule_key":"Mon",
+                "follow_schedule":true,
+                "ignore_schedule_today":false,
+                "schedule_loaded":true,
+                "entries":[{{entries}}]
+              }
+            ],
+            "status":"available"
+          }
+        }
+        """;
 
 }

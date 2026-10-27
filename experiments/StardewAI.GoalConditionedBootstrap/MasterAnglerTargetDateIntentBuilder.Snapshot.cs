@@ -91,6 +91,17 @@ public static partial class MasterAnglerTargetDateIntentBuilder
         return result;
     }
 
+    private static bool HasFishingRod(JsonElement state)
+    {
+        return TryReadFieldValue(state, "fishing", "rod_inventory", out var rods) &&
+            rods.ValueKind == JsonValueKind.Array &&
+            rods.EnumerateArray().Any(row =>
+                row.ValueKind == JsonValueKind.Object &&
+                row.TryGetProperty("qualified_item_id", out var qualifiedItemId) &&
+                qualifiedItemId.ValueKind == JsonValueKind.String &&
+                !string.IsNullOrWhiteSpace(qualifiedItemId.GetString()));
+    }
+
     private static string RuntimeLocationRuleKey(
         string sourceKey,
         string qualifiedItemId) =>

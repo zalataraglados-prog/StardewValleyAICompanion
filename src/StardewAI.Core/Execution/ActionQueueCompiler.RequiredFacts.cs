@@ -46,6 +46,40 @@ namespace StardewAI.Core.Execution
             }
 
             if (string.Equals(action.OptionId, "executor.interact", StringComparison.Ordinal) &&
+                string.Equals(executorProfile, "dark_talisman_story_executor", StringComparison.Ordinal))
+            {
+                return option.RequiredStateFactors
+                    .Where(factor => factor is not (
+                        "player.facing_direction" or
+                        "current_location.route_context" or
+                        "locations.route_action_branch_coverage"))
+                    .Concat(new[]
+                    {
+                        "locations.dark_talisman_access",
+                        "locations.collision_grid"
+                    })
+                    .Distinct(StringComparer.Ordinal)
+                    .ToArray();
+            }
+
+            if (string.Equals(action.OptionId, "executor.interact", StringComparison.Ordinal) &&
+                string.Equals(executorProfile, "ginger_island_access_executor", StringComparison.Ordinal))
+            {
+                return option.RequiredStateFactors
+                    .Where(factor => factor is not (
+                        "player.facing_direction" or
+                        "current_location.route_context" or
+                        "locations.route_action_branch_coverage"))
+                    .Concat(new[]
+                    {
+                        "locations.ginger_island_access",
+                        "locations.collision_grid"
+                    })
+                    .Distinct(StringComparer.Ordinal)
+                    .ToArray();
+            }
+
+            if (string.Equals(action.OptionId, "executor.interact", StringComparison.Ordinal) &&
                 string.Equals(
                     ReadParameter(action, "interaction_kind"),
                     "community_center_note",
@@ -61,6 +95,18 @@ namespace StardewAI.Core.Execution
                         "world_progress.community_center",
                         "locations.collision_grid"
                     })
+                    .Distinct(StringComparer.Ordinal)
+                    .ToArray();
+            }
+
+            if (string.Equals(action.OptionId, "executor.interact", StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(action, "interaction_kind"), "animal_door", StringComparison.Ordinal))
+            {
+                return option.RequiredStateFactors
+                    .Where(factor => factor is not (
+                        "current_location.route_context" or
+                        "locations.route_action_branch_coverage"))
+                    .Concat(new[] { "farm.buildings", "player.safe_item_context", "locations.collision_grid" })
                     .Distinct(StringComparer.Ordinal)
                     .ToArray();
             }

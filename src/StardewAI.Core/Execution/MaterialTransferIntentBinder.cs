@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
+using StardewAI.Core.Infrastructure;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.Execution;
@@ -25,30 +26,8 @@ internal static class MaterialTransferIntentBinder
 
     public static bool TryReadGraph(
         SnapshotEnvelope snapshot,
-        out MaterialInventoryGraph? graph)
-    {
-        graph = null;
-        if (!ReadableStatus(ReadStateFieldStatus(snapshot, "farm", "material_inventory_graph")))
-        {
-            return false;
-        }
-
-        var value = ReadStateFieldValue(snapshot, "farm", "material_inventory_graph");
-        if (!value.HasValue || value.Value.ValueKind != JsonValueKind.Object)
-        {
-            return false;
-        }
-
-        try
-        {
-            graph = JsonSerializer.Deserialize<MaterialInventoryGraph>(value.Value.GetRawText());
-            return graph is not null;
-        }
-        catch (JsonException)
-        {
-            return false;
-        }
-    }
+        out MaterialInventoryGraph? graph) =>
+        MaterialInventoryGraphReader.TryRead(snapshot, out graph);
 
     public static bool TryBuildIntent(
         IEnumerable<SmallModelActionParameter> parameters,

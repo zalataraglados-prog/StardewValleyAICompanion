@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.Strategy;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Training;
 using StardewAI.Core.Infrastructure;
@@ -68,6 +69,8 @@ var commandDefinitions = new CommandDefinition[]
     new("build-money-revenue-crop-native-production-run-plan", BuildMoneyRevenueCropNativeProductionRunPlan),
     new("build-money-revenue-crop-site-preparation-plan", BuildMoneyRevenueCropSitePreparationPlan),
     new("build-money-revenue-crop-seed-acquisition-proof", BuildMoneyRevenueCropSeedAcquisitionProof),
+    new("build-money-revenue-crop-seed-reservation-commit-request", BuildMoneyRevenueCropSeedReservationCommitRequest),
+    new("replay-money-revenue-crop-seed-reservation-commit", ReplayMoneyRevenueCropSeedReservationCommit),
     new("build-money-revenue-crop-seed-reservation-proof", BuildMoneyRevenueCropSeedReservationProof),
     new("build-money-revenue-crop-planting-layout-proof", BuildMoneyRevenueCropPlantingLayoutProof),
     new("build-money-revenue-crop-daily-capacity-proof", BuildMoneyRevenueCropDailyCapacityProof),
@@ -77,6 +80,8 @@ var commandDefinitions = new CommandDefinition[]
     new("build-money-revenue-crop-terminal-settlement-proof", BuildMoneyRevenueCropTerminalSettlementProof),
     new("build-money-revenue-crop-shared-shipping-settlement-proof", BuildMoneyRevenueCropSharedShippingSettlementProof),
     new("build-money-revenue-crop-production-proof-checkpoint", BuildMoneyRevenueCropProductionProofCheckpoint),
+    new("build-money-revenue-crop-native-production-segment", BuildMoneyRevenueCropNativeProductionSegment),
+    new("build-money-revenue-crop-production-teacher-comparison", BuildMoneyRevenueCropProductionTeacherComparison),
     new("build-money-revenue-terminal-proof-collection-checkpoint", BuildMoneyRevenueTerminalProofCollectionCheckpoint),
     new("build-money-revenue-terminal-proof-index", BuildMoneyRevenueTerminalProofIndex),
     new("build-strategy-ledger-boundary-capture", BuildStrategyLedgerBoundaryCapture),
@@ -163,6 +168,9 @@ var commandDefinitions = new CommandDefinition[]
     new("build-full-shipment-terminal-settlement-receipt", BuildFullShipmentTerminalSettlementReceipt),
     new("build-master-angler-opportunity-catalog", BuildMasterAnglerOpportunityCatalog),
     new("build-master-angler-stage-one-windows", BuildMasterAnglerStageOneWindows),
+    new("build-golden-walnut-fresh-save-episode-manifest", BuildGoldenWalnutFreshSaveEpisodeManifest),
+    new("build-golden-walnut-fresh-save-source-schedule", BuildGoldenWalnutFreshSaveSourceSchedule),
+    new("audit-master-angler-fresh-save-prerequisites", AuditMasterAnglerFreshSavePrerequisites),
     new("build-master-angler-target-date-intents", BuildMasterAnglerTargetDateIntents),
     new("build-validation-trace-baseline", BuildValidationTraceBaseline),
     new("rehash-content", RehashContent),
@@ -175,10 +183,18 @@ var commandDefinitions = new CommandDefinition[]
     new("self-test-current-collection", SelfTestCurrentCollection),
     new("self-test-current-community-center-denominator", SelfTestCurrentCommunityCenterDenominator),
     new("self-test-current-stage-one-collection", SelfTestCurrentStageOneCollection),
+    new("self-test-current-stage-one-rod-prerequisite", options =>
+        BootstrapSelfTest.RunCurrentStageOneRodPrerequisite(
+            options.Required("output-root"))),
     new("self-test-full-shipment-settlement", _ => BootstrapSelfTest.RunFullShipmentSettlement()),
     new("self-test-acquisition-route-dispatch", _ => BootstrapSelfTest.RunAcquisitionRouteDispatch()),
     new("self-test-full-shipment-static-compilability", SelfTestFullShipmentStaticCompilability),
     new("self-test-full-shipment-runtime-sample-evidence", _ => BootstrapSelfTest.RunFullShipmentRuntimeSampleEvidence()),
+    new("self-test-master-angler-fresh-save-prerequisites", options =>
+        BootstrapSelfTest.RunMasterAnglerFreshSavePrerequisiteAudit(
+            options.Required("catalog"),
+            options.Required("windows"),
+            options.Required("dependency-expansions"))),
     new("self-test-machine-input-load-terminal-coverage", SelfTestMachineInputLoadTerminalCoverage),
     new("self-test-machine-material-transfer-terminal-coverage", SelfTestMachineMaterialTransferTerminalCoverage),
     new("self-test-machine-input-purchase-terminal-coverage", SelfTestMachineInputPurchaseTerminalCoverage),
@@ -190,6 +206,8 @@ var commandDefinitions = new CommandDefinition[]
         BootstrapSelfTest.RunGoalMethodFrontierReuse(
             GoalMethodFrontierInputs(options))),
     new("self-test-bootstrap-hermetic", _ => BootstrapSelfTest.RunHermeticCriticalPaths()),
+    new("self-test-money-revenue-crop-teacher-dispatch", _ =>
+        BootstrapSelfTest.VerifyMoneyRevenueCropTeacherDispatch()),
     new("self-test-goal-method-incomparable-live-shadow", SelfTestGoalMethodIncomparableLiveShadow),
     new("self-test-goal-method-teacher-coverage", SelfTestGoalMethodTeacherCoverage),
 };
@@ -229,6 +247,14 @@ try
 }
 catch (Exception ex)
 {
+    if (string.Equals(
+            Environment.GetEnvironmentVariable("STARDEWAI_BOOTSTRAP_DEBUG_EXCEPTIONS"),
+            "1",
+            StringComparison.Ordinal))
+    {
+        throw;
+    }
+
     Console.Error.WriteLine(JsonSerializer.Serialize(new
     {
         status = "error",
@@ -815,6 +841,31 @@ static void BuildMoneyRevenueCropSeedReservationProof(Arguments options)
     Write(options.Required("output"), proof);
 }
 
+static void BuildMoneyRevenueCropSeedReservationCommitRequest(
+    Arguments options)
+{
+    var request = MoneyRevenueCropSeedReservationCommitBuilder.Build(
+        options.Required("crop-production-plan"),
+        options.Required("commitment-id"),
+        options.Required("reservation-snapshot"));
+    Write(options.Required("output"), request);
+}
+
+static void ReplayMoneyRevenueCropSeedReservationCommit(Arguments options)
+{
+    var request = CurrentTeacherFrontierSupport.Read<
+        ReservationPortfolioCommitRequest>(
+            options.Required("request"),
+            "Money Revenue crop seed-reservation commit request");
+    var result = MoneyRevenueCropSeedReservationCommitBuilder.Replay(
+        options.Required("crop-production-plan"),
+        options.Required("commitment-id"),
+        options.Required("reservation-snapshot"),
+        request,
+        options.Required("updated-at"));
+    Write(options.Required("output"), result);
+}
+
 static void BuildMoneyRevenueCropSeedAcquisitionProof(Arguments options)
 {
     var proof = MoneyRevenueCropSeedAcquisitionProofBuilder.Build(
@@ -877,6 +928,25 @@ static void BuildMoneyRevenueCropProductionProofCheckpoint(Arguments options)
     var checkpoint = MoneyRevenueCropProductionProofCheckpointBuilder.Build(
         options.Required("request"));
     Write(options.Required("output"), checkpoint);
+}
+
+static void BuildMoneyRevenueCropNativeProductionSegment(Arguments options)
+{
+    var receipt = MoneyRevenueCropNativeProductionSegmentBuilder.Build(
+        options.Required("summary"));
+    Write(options.Required("output"), receipt);
+    if (!receipt.NativeProductionSegmentVerified)
+        Environment.ExitCode = 2;
+}
+
+static void BuildMoneyRevenueCropProductionTeacherComparison(
+    Arguments options)
+{
+    var receipt = MoneyRevenueCropProductionTeacherComparisonBuilder.Build(
+        options.Required("segment-receipt"));
+    Write(options.Required("output"), receipt);
+    if (!receipt.OutcomeBackedTeacherComparisonVerified)
+        Environment.ExitCode = 2;
 }
 
 static void BuildMoneyRevenueTerminalProofCollectionCheckpoint(Arguments options)
@@ -2698,6 +2768,39 @@ static void BuildMasterAnglerStageOneWindows(Arguments options)
         Environment.ExitCode = 2;
 }
 
+static void AuditMasterAnglerFreshSavePrerequisites(Arguments options)
+{
+    var report = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(
+        options.Required("catalog"),
+        options.Required("windows"),
+        options.Required("dependency-expansions"),
+        options.Optional("golden-walnut-source-schedule"));
+    Write(options.Required("output"), report);
+    if (!report.StaticOpportunityInventoryComplete ||
+        !report.PrerequisiteFamilyInventoryComplete ||
+        report.NativeDenominatorCount != 72 ||
+        report.UnknownLocationIds.Length > 0)
+    {
+        Environment.ExitCode = 2;
+    }
+}
+
+static void BuildGoldenWalnutFreshSaveSourceSchedule(Arguments options)
+{
+    var schedule = GoldenWalnutFreshSaveEpisodeScheduleBuilder.Build(
+        options.Required("episode-manifest"));
+    Write(options.Required("output"), schedule);
+}
+
+static void BuildGoldenWalnutFreshSaveEpisodeManifest(Arguments options)
+{
+    GoldenWalnutFreshSaveEpisodeManifestBuilder.WriteFromDirectory(
+        options.Required("output"),
+        options.Required("episode-directory"),
+        options.Required("schedule-id"),
+        options.Required("run-id"));
+}
+
 static void BuildMasterAnglerTargetDateIntents(Arguments options)
 {
     var report = MasterAnglerTargetDateIntentBuilder.Build(
@@ -2705,7 +2808,8 @@ static void BuildMasterAnglerTargetDateIntents(Arguments options)
         options.Required("snapshot"),
         options.Required("timing-calibration"));
     Write(options.Required("output"), report);
-    if (report.CandidateCount == 0)
+    if (report.CandidateCount == 0 &&
+        report.WeatherSupplyCandidateCount == 0)
         Environment.ExitCode = 2;
 }
 

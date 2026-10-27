@@ -92,6 +92,118 @@ public sealed partial class MasterAnglerMainlineTests
     }
 
     [Fact]
+    public void StochasticNonTargetCatchRetainsCompleteIntentAcrossFreshTimeRebind()
+    {
+        var fixture = CreateFixture("Beach:0", currentTime: 900);
+        try
+        {
+            var initialAvailability = new CandidateOptionAvailabilityEvaluator()
+                .Evaluate(
+                    fixture.Before,
+                    new[]
+                    {
+                        new OptionAvailabilityCandidate
+                        {
+                            OptionId = "fishing.catch_fish",
+                            Parameters = fixture.Parameters
+                        }
+                    });
+            var initialCandidate = Assert.Single(
+                Assert.Single(initialAvailability.Options).EventCandidates);
+            var initialRanking = new EventCandidateRanker().Rank(
+                new BaselineTrainingReport(),
+                initialAvailability,
+                "goal.fishing.complete_master_angler");
+            var initialPlan = new DailyPlanCompiler().Compile(
+                initialRanking,
+                fixture.Before.StateHash);
+            var initialQueue = new ActionQueueCompiler().Compile(
+                initialPlan,
+                fixture.Before);
+            var queueItem = JsonSerializer.SerializeToNode(
+                Assert.Single(initialQueue.Items),
+                JsonOptions)!.AsObject();
+            var continuation = Assert.IsType<JsonObject>(
+                QueueReplanFilter.ReadObjectiveContinuation(queueItem));
+
+            Assert.Equal(
+                fixture.TimingCalibrationPath,
+                continuation[
+                    MasterAnglerRouteTimingValidator.CalibrationPathParameter]!
+                    .GetValue<string>());
+            Assert.False(string.IsNullOrWhiteSpace(
+                continuation[
+                    MasterAnglerRouteTimingValidator.CalibrationSha256Parameter]!
+                    .GetValue<string>()));
+            Assert.Equal(
+                "true",
+                continuation[
+                    MasterAnglerRouteTimingValidator.ValidationRequiredParameter]!
+                    .GetValue<string>());
+
+            var reboundParameters = continuation
+                .Where(property =>
+                    !string.Equals(
+                        property.Key,
+                        "kind",
+                        StringComparison.Ordinal) &&
+                    property.Value is JsonValue)
+                .Select(property => Parameter(
+                    "continuation." + property.Key,
+                    property.Value!.GetValue<string>()))
+                .ToArray();
+            var freshSnapshot = BuildSnapshot(
+                targetCaught: false,
+                currentTime: 1000);
+            var reboundAvailability = new CandidateOptionAvailabilityEvaluator()
+                .Evaluate(
+                    freshSnapshot,
+                    new[]
+                    {
+                        new OptionAvailabilityCandidate
+                        {
+                            OptionId = "fishing.catch_fish",
+                            Parameters = reboundParameters
+                        }
+                    });
+            var reboundCandidate = Assert.Single(
+                Assert.Single(reboundAvailability.Options).EventCandidates);
+            Assert.True(
+                reboundCandidate.Available,
+                string.Join(";", reboundCandidate.BlockReasons));
+            Assert.NotEqual(
+                initialCandidate.CandidateId,
+                reboundCandidate.CandidateId);
+
+            var materialized = JsonSerializer.SerializeToNode(
+                new EventCandidateRanker().Rank(
+                    new BaselineTrainingReport(),
+                    reboundAvailability,
+                    "goal.fishing.complete_master_angler"),
+                JsonOptions)!.AsArray();
+            var selected = new SelectedQueueCandidateLock(
+                0,
+                initialCandidate.CandidateId,
+                "fishing.catch_fish",
+                JsonSerializer.SerializeToNode(
+                    initialCandidate,
+                    JsonOptions)!.AsObject(),
+                continuation);
+            var rebound = SelectedQueueCandidateMatcher
+                .FilterMaterializedCandidates(materialized, selected);
+
+            var matched = Assert.Single(rebound);
+            Assert.Equal(
+                reboundCandidate.CandidateId,
+                matched!["candidate_id"]!.GetValue<string>());
+        }
+        finally
+        {
+            fixture.Dispose();
+        }
+    }
+
+    [Fact]
     public void AuthoritativeIntentRejectsCatchProjectedByDifferentLocationRule()
     {
         var fixture = CreateFixture("Beach:1");
@@ -261,7 +373,9 @@ public sealed partial class MasterAnglerMainlineTests
         string sourceKey,
         bool dynamicCondition = false,
         bool runtimeRuleEligible = true,
-        int currentTime = 900)
+        int currentTime = 900,
+        string targetLocation = "Beach",
+        string[]? weatherModes = null)
     {
         var root = Path.Combine(
             Path.GetTempPath(),
@@ -286,7 +400,7 @@ public sealed partial class MasterAnglerMainlineTests
                         {
                             ["source_kind"] = "location_rule",
                             ["source_key"] = sourceKey,
-                            ["location_id"] = "Beach",
+                            ["location_id"] = targetLocation,
                             ["first_total_day"] = 0,
                             ["last_total_day"] = 27,
                             ["minimum_fishing_level"] = 0,
@@ -296,6 +410,13 @@ public sealed partial class MasterAnglerMainlineTests
                                 ? new JsonArray(
                                     "!PLAYER_SPECIAL_ORDER_RULE_ACTIVE Current LEGENDARY_FAMILY")
                                 : new JsonArray(),
+                            ["weather_modes"] = new JsonArray(
+                                (weatherModes ?? new[]
+                                {
+                                    "sun",
+                                    "rain",
+                                    "storm"
+                                }).Select(value => (JsonNode?)value).ToArray()),
                             ["time_windows"] = new JsonArray
                             {
                                 new JsonObject
@@ -344,7 +465,7 @@ public sealed partial class MasterAnglerMainlineTests
             new[]
             {
                 Parameter("master_angler_target_qualified_item_id", "(O)145"),
-                Parameter("master_angler_target_location", "Beach"),
+                Parameter("master_angler_target_location", targetLocation),
                 Parameter("master_angler_source_kind", "location_rule"),
                 Parameter("master_angler_source_key", sourceKey),
                 Parameter("master_angler_window_first_total_day", "0"),
@@ -400,6 +521,10 @@ public sealed partial class MasterAnglerMainlineTests
                             ["require_magic_bait"] = false,
                             ["training_rod_allowed"] = null,
                             ["dynamic_conditions"] = new JsonArray(),
+                            ["weather_modes"] = new JsonArray(
+                                "sun",
+                                "rain",
+                                "storm"),
                             ["time_windows"] = new JsonArray
                             {
                                 new JsonObject
@@ -493,14 +618,43 @@ public sealed partial class MasterAnglerMainlineTests
         bool runtimeRuleEligible = true,
         int currentTime = 900,
         bool remoteViaLongTownRoute = false,
-        bool includeFullRouteEvidence = true)
+        bool includeFullRouteEvidence = true,
+        bool inventoryFull = false,
+        string currentWeather = "sun")
     {
         var state = JsonNode.Parse(FishingMainlineTests.BaseState())!.AsObject();
         state["time"]!["total_days"] = Field(5);
         state["time"]!["time"] = Field(currentTime);
+        state["time"]!["weather"] = Field(
+            JsonValue.Create(currentWeather == "storm"
+                ? "lightning"
+                : currentWeather)!);
+        state["time"]!["is_green_rain"] = Field(
+            JsonValue.Create(currentWeather == "green_rain")!);
+        state["time"]!["location_context_weather"] = Field(new JsonArray
+        {
+            new JsonObject
+            {
+                ["location_context_id"] = "Default",
+                ["is_raining"] = currentWeather is "rain" or "storm" or "green_rain",
+                ["is_lightning"] = currentWeather == "storm",
+                ["is_green_rain"] = currentWeather == "green_rain"
+            }
+        });
         state["player"]!["location_id"]!["value"] = currentLocation;
         state["player"]!["tile_x"]!["value"] = 1;
         state["player"]!["tile_y"]!["value"] = 5;
+        if (inventoryFull)
+        {
+            state["player"]!["inventory_capacity"]!["value"] =
+                new JsonObject
+                {
+                    ["max_items"] = 12,
+                    ["occupied_item_stacks"] = 12,
+                    ["empty_slots"] = 0,
+                    ["has_empty_slot"] = false
+                };
+        }
         state["player"]!["movement_timing_context"] = Field(new JsonObject
         {
             ["projection_status"] =
@@ -747,6 +901,7 @@ public sealed partial class MasterAnglerMainlineTests
         int height) => new()
         {
             ["location_id"] = locationId,
+            ["location_context_id"] = "Default",
             ["map_width"] = width,
             ["map_height"] = height,
             ["projection_status"] =

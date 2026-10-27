@@ -3,7 +3,7 @@ namespace StardewAI.Core.Tests;
 public sealed class ShopAccessRouteGraphSourceGuardTests
 {
     [Fact]
-    public void NativeBusTransitionsAreNotAdvertisedAsGenericWarpRoutes()
+    public void NativeBusTransitionsUseTheDedicatedAuditedTransportConnector()
     {
         var source = File.ReadAllText(FindRepositoryFile(
             "src",
@@ -17,15 +17,97 @@ public sealed class ShopAccessRouteGraphSourceGuardTests
             StringComparison.Ordinal);
         Assert.DoesNotContain("location is Desert", source,
             StringComparison.Ordinal);
-        Assert.Contains("native_bus_transport_executor_required", source,
+        Assert.Contains("TryReadNativeBusTransport(location, warp, out var busTransport)",
+            source, StringComparison.Ordinal);
+        Assert.Contains("edges.Add(busTransport)", source,
             StringComparison.Ordinal);
-        Assert.Contains("native_transport_transition = nativeBusTransport",
-            source, StringComparison.Ordinal);
-        Assert.Contains("transport_executor_supported = !nativeBusTransport",
-            source, StringComparison.Ordinal);
-        Assert.Contains("resolved = targetLoaded && !nativeBusTransport",
-            source, StringComparison.Ordinal);
-        Assert.Contains("native_transport_transitions_excluded", source,
+        var bridge = File.ReadAllText(FindRepositoryFile(
+            "src",
+            "StardewAI.TransparentBridge",
+            "Adapters",
+            "ShopAccessReadAdapter.BusTransport.cs"));
+        Assert.Contains("native_bus_transport", bridge, StringComparison.Ordinal);
+        Assert.Contains("BusTicketTileIndex = 1057", bridge, StringComparison.Ordinal);
+        Assert.Contains("mailReceived.Contains(", bridge, StringComparison.Ordinal);
+        Assert.Contains("\"ccVault\"", bridge, StringComparison.Ordinal);
+        Assert.Contains("canDriveYourselfToday", bridge, StringComparison.Ordinal);
+        Assert.Contains("pam.TilePoint == new Point(21, 10)", bridge, StringComparison.Ordinal);
+        Assert.Contains("Money >= ticketPrice", bridge, StringComparison.Ordinal);
+        Assert.Contains("isRidingHorse()", bridge, StringComparison.Ordinal);
+        Assert.Contains("native_bus_transport", File.ReadAllText(FindRepositoryFile(
+            "src",
+            "StardewAI.Core",
+            "Execution",
+            "ActionQueueCompiler.Routing.cs")), StringComparison.Ordinal);
+        var runtime = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.NativeBusTransport.cs"));
+        Assert.Contains("native_bus_transport", runtime, StringComparison.Ordinal);
+        Assert.Contains("checkAction(", runtime, StringComparison.Ordinal);
+        Assert.Contains("performTouchAction(parts, Game1.player.Position)", runtime,
+            StringComparison.Ordinal);
+        Assert.Contains("Game1.currentLocation.lastQuestionKey", runtime,
+            StringComparison.Ordinal);
+        Assert.Contains("response.responseKey", runtime, StringComparison.Ordinal);
+        Assert.Contains("\"Yes\"", runtime, StringComparison.Ordinal);
+
+        var receipt = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.MovementSleep.cs"));
+        Assert.Contains("native_bus_yes_response_not_observed", receipt,
+            StringComparison.Ordinal);
+        Assert.Contains("native_bus_money_receipt_mismatch", receipt,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void FishShopDayOneClosureMatchesTheNativeBeachOverride()
+    {
+        var rule = File.ReadAllText(FindRepositoryFile(
+            "src",
+            "StardewAI.TransparentBridge",
+            "Adapters",
+            "NativeShopGateRules.cs"));
+        Assert.Contains("Game1.Date.TotalDays < 1", rule,
+            StringComparison.Ordinal);
+        Assert.Contains("fromLocation is Beach", rule,
+            StringComparison.Ordinal);
+        Assert.Contains("FishShopGoneFishingDoorTileIndex = 496", rule,
+            StringComparison.Ordinal);
+        Assert.Contains("\"Buildings\"", rule, StringComparison.Ordinal);
+        Assert.Contains("\"untitled tile sheet\"", rule,
+            StringComparison.Ordinal);
+
+        var gateRead = File.ReadAllText(FindRepositoryFile(
+            "src",
+            "StardewAI.TransparentBridge",
+            "Adapters",
+            "ShopAccessReadAdapter.GatesBlockers.cs"));
+        var currentLocationRead = File.ReadAllText(FindRepositoryFile(
+            "src",
+            "StardewAI.TransparentBridge",
+            "Adapters",
+            "CurrentLocationReadAdapter.cs"));
+        var purchaseGate = File.ReadAllText(FindRepositoryFile(
+            "src",
+            "StardewAI.Core",
+            "OptionRegistry",
+            "CandidateOptionAvailabilityEvaluator.PurchaseRouting.Gates.cs"));
+        var routeGate = File.ReadAllText(FindRepositoryFile(
+            "src",
+            "StardewAI.Core",
+            "OptionRegistry",
+            "CandidateOptionAvailabilityEvaluator.Routing.cs"));
+
+        Assert.Contains("fish_shop_gone_fishing_closed", gateRead,
+            StringComparison.Ordinal);
+        Assert.Contains("fish_shop_gone_fishing_closed", currentLocationRead,
+            StringComparison.Ordinal);
+        Assert.Contains("fish_shop_gone_fishing_closed", purchaseGate,
+            StringComparison.Ordinal);
+        Assert.Contains("route_gate_fish_shop_gone_fishing_closed", routeGate,
             StringComparison.Ordinal);
     }
 

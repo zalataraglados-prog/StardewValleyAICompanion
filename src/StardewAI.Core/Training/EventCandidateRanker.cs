@@ -354,7 +354,8 @@ namespace StardewAI.Core.Training
                         FullShipmentEligible = candidate.FullShipmentEligible,
                         FullShipmentCurrentShippedCount = candidate.FullShipmentCurrentShippedCount,
                         FullShipmentAlreadyShipped = candidate.FullShipmentAlreadyShipped,
-                        FullShipmentContributes = candidate.FullShipmentContributes
+                        FullShipmentContributes = candidate.FullShipmentContributes,
+                        AvailableStack = candidate.AvailableStack
                     });
                 }
 

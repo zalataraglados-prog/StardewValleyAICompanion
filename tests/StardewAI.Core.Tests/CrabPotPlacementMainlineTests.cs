@@ -41,8 +41,12 @@ public sealed class CrabPotPlacementMainlineTests
         var snapshot = Snapshot(stack: 2, legalTile: true, ownerId: 1234);
         var availability = new CandidateOptionAvailabilityEvaluator()
             .Evaluate(snapshot, new[] { "fishing.collect_crab_pots" });
-        var candidate = Assert.Single(
-            Assert.Single(availability.Options).EventCandidates);
+        var option = Assert.Single(availability.Options);
+        Assert.True(
+            option.EventCandidates.Length > 0,
+            string.Join(";", option.BlockingReasons.Concat(
+                option.AvailabilityNotes)));
+        var candidate = Assert.Single(option.EventCandidates);
 
         Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
         Assert.Equal("place_crab_pot", candidate.Kind);
@@ -60,6 +64,84 @@ public sealed class CrabPotPlacementMainlineTests
             new ActionQueueCompiler().Compile(plan, snapshot).Items);
         Assert.Equal("executor.place_crab_pot", item.OptionId);
         Assert.Empty(item.BlockingReasons);
+    }
+
+    [Fact]
+    public void MasterAnglerLifecycleCraftsBeforeReusingPlacementPrimitive()
+    {
+        var snapshot = CraftingSnapshot();
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "fishing.collect_crab_pots" });
+        var candidate = Assert.Single(
+            Assert.Single(availability.Options).EventCandidates);
+
+        Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
+        Assert.Equal("craft_crab_pot", candidate.Kind);
+        Assert.Equal("(O)710", candidate.QualifiedItemId);
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "master_angler_target_qualified_item_ids_json" &&
+            parameter.Value == "[\"(O)372\"]");
+
+        var plan = new DailyPlanCompiler().Compile(
+            new EventCandidateRanker().Rank(
+                new BaselineTrainingReport(),
+                availability,
+                "goal.fishing.complete_master_angler"),
+            snapshot.StateHash);
+        Assert.Equal("craft_crab_pot", Assert.Single(plan.Steps).Kind);
+        var item = Assert.Single(
+            new ActionQueueCompiler().Compile(plan, snapshot).Items);
+        Assert.Equal("executor.craft_crab_pot", item.OptionId);
+        Assert.Empty(item.BlockingReasons);
+        Assert.Equal(
+            "craft_crab_pot",
+            Assert.Single(item.NormalizedCommand.Steps).StepType);
+        var capability = OptionCapabilityRegistrySource.GetRequired(
+            "executor.craft_crab_pot");
+        Assert.Equal(
+            OptionRuntimeStatus.RuntimeVerified,
+            capability.RuntimeEvidenceStatus);
+        Assert.Equal(new[] { "EVD-339" }, capability.RuntimeEvidenceIds);
+    }
+
+    [Fact]
+    public void ProducingNetworkReusesRecoveryForNativeOvernightSettlement()
+    {
+        var snapshot = SettlementSnapshot();
+        var recovery = Assert.Single(new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(
+                snapshot,
+                new[] { "recovery.stabilize_day" },
+                includeExecutorCalibrationOptions: true)
+            .Options);
+        Assert.True(
+            recovery.EventCandidates.Any(candidate => candidate.Available),
+            string.Join(";", recovery.BlockingReasons
+                .Concat(recovery.EventCandidates.SelectMany(candidate =>
+                    candidate.BlockReasons))));
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "fishing.collect_crab_pots" });
+        var option = Assert.Single(availability.Options);
+        Assert.True(
+            option.EventCandidates.Length > 0,
+            string.Join(";", option.BlockingReasons.Concat(
+                option.AvailabilityNotes)));
+        var candidate = Assert.Single(option.EventCandidates);
+
+        Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
+        Assert.Equal("recovery_resume_sleep_prompt", candidate.Kind);
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "continuation.crab_pot_stage" &&
+            parameter.Value == "await_native_crab_pot_day_update");
+        var plan = new DailyPlanCompiler().Compile(
+            new EventCandidateRanker().Rank(
+                new BaselineTrainingReport(),
+                availability,
+                "goal.fishing.complete_master_angler"),
+            snapshot.StateHash);
+        Assert.NotEmpty(plan.Steps);
+        Assert.Contains(plan.Steps, step => step.Kind is
+            "move_to_tile" or "sleep");
     }
 
     [Fact]
@@ -117,20 +199,34 @@ public sealed class CrabPotPlacementMainlineTests
     [Fact]
     public void NearDeadlineExistingPotDoesNotSuppressAdditionalCapacity()
     {
-        var snapshot = RemoteSnapshot(hasExistingPot: true, totalDays: 222);
-        var candidates = Assert.Single(new CandidateOptionAvailabilityEvaluator()
-                .Evaluate(snapshot, new[] { "fishing.collect_crab_pots" })
-                .Options)
-            .EventCandidates
-            .Where(candidate => candidate.Available)
-            .ToArray();
+        var serviceSnapshot = RemoteSnapshot(
+            hasExistingPot: true,
+            totalDays: 222);
+        var service = Assert.Single(Assert.Single(
+                new CandidateOptionAvailabilityEvaluator()
+                    .Evaluate(
+                        serviceSnapshot,
+                        new[] { "fishing.collect_crab_pots" })
+                    .Options)
+            .EventCandidates);
+        Assert.Contains(service.Parameters, parameter =>
+            parameter.Name == "crab_pot_route_purpose" &&
+            parameter.Value == "service_existing_crab_pot");
 
-        Assert.Contains(candidates, candidate => candidate.Parameters.Any(parameter =>
+        var capacitySnapshot = RemoteSnapshot(
+            hasExistingPot: true,
+            totalDays: 222,
+            existingPotServiceStatus: "producing_or_waiting");
+        var capacity = Assert.Single(Assert.Single(
+                new CandidateOptionAvailabilityEvaluator()
+                    .Evaluate(
+                        capacitySnapshot,
+                        new[] { "fishing.collect_crab_pots" })
+                    .Options)
+            .EventCandidates);
+        Assert.Contains(capacity.Parameters, parameter =>
             parameter.Name == "crab_pot_route_purpose" &&
-            parameter.Value == "service_existing_crab_pot"));
-        Assert.Contains(candidates, candidate => candidate.Parameters.Any(parameter =>
-            parameter.Name == "crab_pot_route_purpose" &&
-            parameter.Value == "place_for_missing_species"));
+            parameter.Value == "place_for_missing_species");
     }
 
     [Theory]
@@ -314,7 +410,8 @@ public sealed class CrabPotPlacementMainlineTests
 
     private static SnapshotEnvelope RemoteSnapshot(
         bool hasExistingPot,
-        int totalDays = 0)
+        int totalDays = 0,
+        string existingPotServiceStatus = "bait_required")
     {
         var local = Snapshot(stack: 2, legalTile: true, ownerId: 1234);
         var root = JsonNode.Parse(JsonSerializer.Serialize(local.State))!
@@ -377,7 +474,7 @@ public sealed class CrabPotPlacementMainlineTests
                 ["tile_x"] = 12,
                 ["tile_y"] = 10,
                 ["exact_base_crab_pot"] = true,
-                ["service_status"] = "bait_required",
+                ["service_status"] = existingPotServiceStatus,
                 ["current_output_collection_eligible"] = false,
                 ["current_output_qualified_item_id"] = string.Empty,
                 ["production_signature"] = ProductionSignature,
@@ -412,6 +509,154 @@ public sealed class CrabPotPlacementMainlineTests
             GameTick = 2,
             RealTimestamp = "2026-09-07T00:00:00Z",
             Completeness = "complete",
+            State = state
+        };
+    }
+
+    private static SnapshotEnvelope CraftingSnapshot()
+    {
+        var source = Snapshot(stack: 2, legalTile: true, ownerId: 1234);
+        var root = JsonNode.Parse(JsonSerializer.Serialize(source.State))!
+            .AsObject();
+        root["player"]!["inventory"]!["value"] = new JsonArray();
+        var placement = root["player"]!["crab_pot_placement"]!["value"]!
+            .AsObject();
+        placement["inventory_crab_pot_count"] = 0;
+        placement["rows"] = new JsonArray();
+        placement["potential_static_legal_tile_count"] = 1;
+        placement["potential_placement_locations"] = JsonNode.Parse(
+            $$"""[{"location_id":"Beach","placement_probe_status":"native_legal_water_tiles_available","static_legal_tile_ranges":[{"y":10,"start_x":12,"end_x":12,"production_signature":"{{ProductionSignature}}","native_order_catch_rows":[{"qualified_item_id":"(O)372","base_chance":0.25}],"conservative_serviced_probability_status":"complete_native_supported_bait_lower_bound","conservative_serviced_outcome_rows":[{"qualified_item_id":"(O)372","single_cycle_probability":0.25}]}]}]""");
+        root["player"]!["crab_pot_crafting"] = Field(new JsonObject
+        {
+            ["projection_status"] =
+                "complete_learned_crab_pot_recipe_projection",
+            ["rows"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["recipe_name"] = "Crab Pot",
+                    ["times_crafted"] = 0,
+                    ["output_item_id"] = "710",
+                    ["output_qualified_item_id"] = "(O)710",
+                    ["output_count_per_craft"] = 1,
+                    ["ingredient_rows"] = new JsonArray(),
+                    ["workbench_crafting_sources"] = new JsonArray(),
+                    ["output_inventory_acceptance_after_material_consumption"] = true,
+                    ["craft_candidate_status"] =
+                        "ready_for_native_personal_crafting_menu"
+                }
+            }
+        });
+        var state = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(
+            root.ToJsonString())!;
+        return new SnapshotEnvelope
+        {
+            SchemaVersion = source.SchemaVersion,
+            StateHash = SnapshotHash.ComputeStateHash(state),
+            GameTick = source.GameTick,
+            RealTimestamp = source.RealTimestamp,
+            Completeness = source.Completeness,
+            State = state
+        };
+    }
+
+    private static SnapshotEnvelope SettlementSnapshot()
+    {
+        var source = CraftingSnapshot();
+        var root = JsonNode.Parse(JsonSerializer.Serialize(source.State))!
+            .AsObject();
+        root["time"]!["time"] = Field(JsonValue.Create(2400)!);
+        root["player"]!["location_id"]!["value"] = "FarmHouse";
+        root["player"]!["tile_x"]!["value"] = 3;
+        root["player"]!["tile_y"]!["value"] = 9;
+        root["player"]!["current_item_qualified_id"] =
+            Field(JsonValue.Create(string.Empty)!);
+        root["player"]!["active_object_qualified_id"] =
+            Field(JsonValue.Create(string.Empty)!);
+        root["player"]!["energy"] = Field(JsonValue.Create(270)!);
+        root["menus"]!["active_menu"]!["value"] = new JsonObject
+        {
+            ["is_open"] = true,
+            ["type"] = "DialogueBox",
+            ["last_question_key"] = "Sleep",
+            ["is_sleep_prompt"] = true,
+            ["event_up"] = false
+        };
+        root["menus"]!["sleep_prompt_context"] = Field(new JsonObject
+        {
+            ["prompt_open"] = true,
+            ["active_menu_open"] = true,
+            ["active_menu_type"] = "DialogueBox",
+            ["last_question_key"] = "Sleep",
+            ["can_confirm_sleep"] = true,
+            ["confirm_executor_enabled"] = true,
+            ["confirm_action_key"] = "Sleep_Yes"
+        });
+        root["player"]!["crab_pot_crafting"]!["value"]!["rows"] =
+            new JsonArray();
+        root["current_location"]!["home_context"] = Field(new JsonObject
+        {
+            ["home_available"] = true,
+            ["home_location_id"] = "FarmHouse",
+            ["current_location_id"] = "FarmHouse",
+            ["current_location_is_home"] = true,
+            ["entry_tile_x"] = 3,
+            ["entry_tile_y"] = 9,
+            ["bed_tile_x"] = 3,
+            ["bed_tile_y"] = 8,
+            ["bed_tile_has_bed"] = true,
+            ["sleep_executor_enabled"] = true
+        });
+        root["current_location"]!["map"] = Field(new JsonObject
+        {
+            ["location_id"] = "FarmHouse",
+            ["width"] = 100,
+            ["height"] = 100
+        });
+        root["locations"]!["collision_grid"]!["value"]!["location_id"] =
+            "FarmHouse";
+        root["locations"]!["route_action_branch_coverage"] = Field(
+            new JsonObject { ["rows"] = new JsonArray() });
+        root["player"]!["crab_pot_network"] = Field(new JsonObject
+        {
+            ["projection_status"] =
+                "complete_crab_pots_across_loaded_persistent_locations",
+            ["placed_pot_count"] = 1,
+            ["rows"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["location_id"] = "Beach",
+                    ["tile_x"] = 12,
+                    ["tile_y"] = 10,
+                    ["exact_base_crab_pot"] = true,
+                    ["production_domain_complete"] = true,
+                    ["service_status"] = "producing_or_waiting",
+                    ["production_signature"] = ProductionSignature,
+                    ["possible_qualified_item_ids"] =
+                        new JsonArray("(O)372"),
+                    ["conservative_serviced_probability_status"] =
+                        "complete_native_supported_bait_lower_bound",
+                    ["conservative_serviced_outcome_rows"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["qualified_item_id"] = "(O)372",
+                            ["single_cycle_probability"] = 0.25
+                        }
+                    }
+                }
+            }
+        });
+        var state = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(
+            root.ToJsonString())!;
+        return new SnapshotEnvelope
+        {
+            SchemaVersion = source.SchemaVersion,
+            StateHash = SnapshotHash.ComputeStateHash(state),
+            GameTick = source.GameTick,
+            RealTimestamp = source.RealTimestamp,
+            Completeness = source.Completeness,
             State = state
         };
     }

@@ -15,9 +15,10 @@ public static class MoneyRevenueCropTerminalSettlementProofBuilder
                 fullRequestPath,
                 "Money Revenue crop terminal-settlement proof request");
         Require(request.SchemaVersion ==
-                    "money_revenue_crop_terminal_settlement_proof_request.v2" &&
+                    "money_revenue_crop_terminal_settlement_proof_request.v3" &&
                 request.RouteTransitions is not null &&
                 request.ShippingDepositTransitions is not null &&
+                request.SettlementRouteTransitions is not null &&
                 !request.FormalProductTrainingAuthorized,
             "Money Revenue crop terminal-settlement proof request is invalid.");
         var routeTransitions = request.RouteTransitions ??
@@ -115,6 +116,8 @@ public static class MoneyRevenueCropTerminalSettlementProofBuilder
             ShopSaleEpisodeSha256 = settlement.ShopSaleEpisodeSha256,
             ShopId = settlement.ShopId,
             ShippingDeposits = settlement.ShippingDeposits,
+            SettlementRouteTransitions =
+                settlement.SettlementRouteTransitions,
             SlotIndex = settlement.SlotIndex,
             SettledQuantity = settlement.SettledQuantity,
             UnitPrice = settlement.UnitPrice,

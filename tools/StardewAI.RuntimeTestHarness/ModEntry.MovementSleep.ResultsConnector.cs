@@ -89,20 +89,24 @@ public sealed partial class ModEntry : Mod
     {
         return string.Equals(kind, "action_warp", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(kind, "locked_door_warp", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(kind, "building_door", StringComparison.OrdinalIgnoreCase);
+            string.Equals(kind, "building_door", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(kind, "native_bus_transport", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsStepOntoConnectorKind(string kind)
     {
         return string.Equals(kind, "warp", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(kind, "touch_action_warp", StringComparison.OrdinalIgnoreCase);
+            string.Equals(kind, "touch_action_warp", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(kind, "magic_warp", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsConnectorActionTypeWhitelisted(string actionType)
     {
         return string.Equals(actionType, "Warp", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(actionType, "WarpCommunityCenter", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(actionType, "WarpBoatTunnel", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(actionType, "EnterSewer", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(actionType, "Mine", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(actionType, "LockedDoorWarp", StringComparison.OrdinalIgnoreCase);
     }
 
@@ -110,7 +114,9 @@ public sealed partial class ModEntry : Mod
     {
         return string.Equals(actionType, "Warp", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(actionType, "WarpCommunityCenter", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(actionType, "EnterSewer", StringComparison.OrdinalIgnoreCase);
+            string.Equals(actionType, "WarpBoatTunnel", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(actionType, "EnterSewer", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(actionType, "Mine", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string? ValidateConnectorTarget(TrainingExecutionRequest request, Point connectorTile)
@@ -128,7 +134,68 @@ public sealed partial class ModEntry : Mod
         string? targetLocation = null;
         int? targetX = null;
         int? targetY = null;
-        if (string.Equals(request.ConnectorKind, "warp", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(
+                request.ConnectorKind,
+                "native_bus_transport",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            var currentLocation = Game1.currentLocation.NameOrUniqueName;
+            if (string.Equals(currentLocation, "BusStop", StringComparison.OrdinalIgnoreCase))
+            {
+                if (Game1.currentLocation is not BusStop busStop ||
+                    busStop.getTileIndexAt(
+                        connectorTile.X,
+                        connectorTile.Y,
+                        "Buildings",
+                        "outdoors") != 1057)
+                {
+                    return "native_bus_ticket_machine_source_mismatch";
+                }
+                if (!Game1.MasterPlayer.mailReceived.Contains("ccVault"))
+                    return "native_bus_cc_vault_missing";
+                var pam = Game1.getCharacterFromName("Pam");
+                if (!Game1.netWorldState.Value.canDriveYourselfToday.Value &&
+                    (pam is null ||
+                     !busStop.characters.Contains(pam) ||
+                     pam.TilePoint != new Point(21, 10)))
+                {
+                    return "native_bus_driver_unavailable";
+                }
+                if (Game1.player.Money < busStop.TicketPrice)
+                    return "native_bus_ticket_money_insufficient";
+                if (Game1.player.isRidingHorse() && Game1.player.mount is not null)
+                    return "native_bus_player_mounted";
+
+                targetLocation = "Desert";
+                targetX = 16;
+                targetY = 24;
+            }
+            else if (string.Equals(currentLocation, "Desert", StringComparison.OrdinalIgnoreCase))
+            {
+                var rawAction = Game1.currentLocation.doesTileHaveProperty(
+                    connectorTile.X,
+                    connectorTile.Y,
+                    "TouchAction",
+                    "Back");
+                var parts = rawAction?.Split(
+                    ' ',
+                    StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+                if (parts.Length == 0 ||
+                    !string.Equals(parts[0], "DesertBus", StringComparison.OrdinalIgnoreCase))
+                {
+                    return "native_bus_return_touch_source_mismatch";
+                }
+
+                targetLocation = "BusStop";
+                targetX = 22;
+                targetY = 10;
+            }
+            else
+            {
+                return "native_bus_source_location_mismatch";
+            }
+        }
+        else if (string.Equals(request.ConnectorKind, "warp", StringComparison.OrdinalIgnoreCase))
         {
             var warp = Game1.currentLocation.warps.FirstOrDefault(candidate => candidate.X == connectorTile.X && candidate.Y == connectorTile.Y);
             if (warp is null)
@@ -142,7 +209,8 @@ public sealed partial class ModEntry : Mod
         }
         else
         {
-            var sourceProperty = string.Equals(request.ConnectorKind, "touch_action_warp", StringComparison.OrdinalIgnoreCase)
+            var sourceProperty = string.Equals(request.ConnectorKind, "touch_action_warp", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(request.ConnectorKind, "magic_warp", StringComparison.OrdinalIgnoreCase)
                 ? "TouchAction"
                 : "Action";
             var layer = string.Equals(sourceProperty, "TouchAction", StringComparison.Ordinal) ? "Back" : "Buildings";
@@ -156,6 +224,8 @@ public sealed partial class ModEntry : Mod
             var touchAction = string.Equals(sourceProperty, "TouchAction", StringComparison.Ordinal);
             var actionTypeMatches = string.Equals(request.ConnectorKind, "locked_door_warp", StringComparison.OrdinalIgnoreCase)
                 ? string.Equals(parts[0], "LockedDoorWarp", StringComparison.OrdinalIgnoreCase)
+                : string.Equals(request.ConnectorKind, "magic_warp", StringComparison.OrdinalIgnoreCase)
+                    ? string.Equals(parts[0], "MagicWarp", StringComparison.OrdinalIgnoreCase)
                 : touchAction
                     ? string.Equals(parts[0], "Warp", StringComparison.OrdinalIgnoreCase)
                     : IsActionWarpConnectorActionType(parts[0]);
@@ -170,11 +240,40 @@ public sealed partial class ModEntry : Mod
                 targetX = 32;
                 targetY = 23;
             }
+            else if (string.Equals(parts[0], "WarpBoatTunnel", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!string.Equals(Game1.currentLocation.NameOrUniqueName, "FishShop", StringComparison.OrdinalIgnoreCase))
+                    return "connector_boat_tunnel_source_location_mismatch";
+                if (!Game1.player.mailReceived.Contains("willyBackRoomInvitation"))
+                    return "connector_boat_tunnel_invitation_missing";
+                targetLocation = "BoatTunnel";
+                targetX = 6;
+                targetY = 12;
+            }
             else if (string.Equals(parts[0], "EnterSewer", StringComparison.OrdinalIgnoreCase))
             {
+                if (!Game1.player.mailReceived.Contains("OpenedSewer") &&
+                    !Game1.player.hasRustyKey)
+                {
+                    return "connector_enter_sewer_rusty_key_missing";
+                }
                 targetLocation = "Sewer";
                 targetX = 16;
                 targetY = 11;
+            }
+            else if (string.Equals(parts[0], "Mine", StringComparison.OrdinalIgnoreCase))
+            {
+                var mineLevel = ParseIntPart(parts, 1) ?? 1;
+                if (!string.Equals(
+                        Game1.currentLocation.NameOrUniqueName,
+                        "Mine",
+                        StringComparison.OrdinalIgnoreCase) ||
+                    mineLevel != 1)
+                {
+                    return "connector_ordinary_mine_entry_source_mismatch";
+                }
+
+                targetLocation = "UndergroundMine1";
             }
             else
             {
@@ -182,9 +281,16 @@ public sealed partial class ModEntry : Mod
                 {
                     return "connector_action_source_missing_or_unparseable";
                 }
-                targetLocation = touchAction ? parts[1] : parts[3];
-                targetX = ParseIntPart(parts, touchAction ? 2 : 1);
-                targetY = ParseIntPart(parts, touchAction ? 3 : 2);
+                var touchTargetFormat = touchAction;
+                targetLocation = touchTargetFormat ? parts[1] : parts[3];
+                targetX = ParseIntPart(parts, touchTargetFormat ? 2 : 1);
+                targetY = ParseIntPart(parts, touchTargetFormat ? 3 : 2);
+                if (string.Equals(parts[0], "MagicWarp", StringComparison.OrdinalIgnoreCase) &&
+                    parts.Length > 4 &&
+                    !Game1.player.mailReceived.Contains(parts[4]))
+                {
+                    return "connector_magic_warp_required_mail_missing";
+                }
             }
         }
 

@@ -594,6 +594,10 @@ public sealed partial class ModEntry
             ? "craft_storage_item"
             : request.OptionId == "executor.craft_quest_item"
                 ? "craft_quest_item"
+            : request.OptionId == "executor.craft_crab_pot"
+                ? "craft_crab_pot"
+            : request.OptionId == "executor.craft_rain_totem"
+                ? "craft_rain_totem"
             : "craft_machine_item";
 
     private static CraftingQuestTerminalState ReadCraftingQuestTerminalState(

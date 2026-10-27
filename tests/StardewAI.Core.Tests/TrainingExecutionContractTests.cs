@@ -7,6 +7,27 @@ namespace StardewAI.Core.Tests;
 public sealed class TrainingExecutionContractTests
 {
     [Fact]
+    public void BoundedRouteWaitFieldsRoundTripWithoutExpandingWaitTicks()
+    {
+        var request = new TrainingExecutionRequest
+        {
+            OptionId = "executor.wait_ticks",
+            WaitTicks = 600,
+            WaitUntilTime = 1410,
+            WaitMaxSlices = 3
+        };
+
+        var json = JsonSerializer.Serialize(request, JsonOptions);
+        var roundTrip = JsonSerializer.Deserialize<TrainingExecutionRequest>(
+            json,
+            JsonOptions)!;
+
+        Assert.Equal(600, roundTrip.WaitTicks);
+        Assert.Equal(1410, roundTrip.WaitUntilTime);
+        Assert.Equal(3, roundTrip.WaitMaxSlices);
+    }
+
+    [Fact]
     public void TrainingExecutionResultSerializesPrimitiveVerificationFields()
     {
         var result = new TrainingExecutionResult

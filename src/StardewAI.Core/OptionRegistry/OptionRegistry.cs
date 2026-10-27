@@ -199,6 +199,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "the unique next survey and locked vanilla numeric answer selected", "route continuation retains survey identity", "native survey dialogues and plant/nut/debris/finale settlement handed to the mechanical executor" },
                 new[] { "block_locked_or_completed_field_office", "block_failed_survey_today", "block_missing_professor_or_survey_endpoint", "block_unverified_route", "block_projection_drift", "block_direct_plant_failed_lock_nut_debris_mail_or_finale_mutation" }));
 
+            Register(Option("island.complete_gourmand_request", "island", "Advance the exact active Island Gourmand crop request",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.ParameterExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "world_progress.island_gourmand", "world_progress.golden_walnuts", "locations.collision_grid", "locations.route_connectors", "menus.active_menu" },
+                new[] { "the exact active Melon, Wheat, or Garlic request and ready IslandWest crop are rebound", "rolling route reaches IslandFarmCave", "one native Gourmand introduction or successful request event is handed to the mechanical executor" },
+                new[] { "block_island_house_or_host_authority_missing", "block_required_crop_not_ready", "block_gourmand_mutex_menu_or_event_busy", "block_unverified_route", "block_projection_drift", "block_direct_request_tracker_walnut_or_debris_mutation" }));
+
             Register(Option("festival.manage_grange_display", "festival", "Prepare the best available Stardew Valley Fair grange display and retrieve it after judging",
                 OptionBehaviorCategories.ParameterizedMechanical,
                 CompilerResponsibilities.ParameterExpansion,
@@ -756,6 +764,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "shared BFS reaches one exact transparent adjacent stand", "one native GameLocation.checkAction removes the Pot of Gold", "the exact year-scaled GoldCoin and LeprechuanHat rewards remain conserved across inventory and ordinary debris pickup" },
                 new[] { "block_not_spring_17_forest", "block_exact_pot_missing_or_drifted", "block_no_adjacent_stand", "block_player_or_menu_busy", "block_native_reward_debris_receipt_mismatch", "block_direct_object_inventory_or_debris_mutation" }));
 
+            Register(Option("rewards.claim_starter_gift", "rewards", "Claim the exact owned-farmhouse starter gift through its native chest interaction",
+                OptionBehaviorCategories.ParameterizedMechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.Mixed,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "current_location.objects", "menus.active_menu" },
+                new[] { "shared BFS reaches one exact transparent adjacent stand", "one native GameLocation.checkAction invokes the starter gift Chest.dumpContents branch", "the exact contents and farm-layout quest are received before the empty giftbox disappears" },
+                new[] { "block_not_owned_farmhouse", "block_exact_starter_gift_missing_empty_or_ambiguous", "block_inventory_cannot_accept_all_outputs", "block_expected_starter_quest_already_present", "block_no_adjacent_stand", "block_player_or_menu_busy", "block_native_inventory_quest_or_chest_receipt_mismatch", "block_direct_chest_inventory_or_quest_mutation" }));
+
             Register(Option("mining.choose_dwarf_statue_power", "mining", "Choose one exact daily power offered by a Dwarf King Statue",
                 OptionBehaviorCategories.LongTermStrategic,
                 CompilerResponsibilities.FullActionExpansion,
@@ -948,6 +964,22 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.money", "player.inventory", "menus.active_menu" },
                 new[] { "safe shop item purchased" },
                 new[] { "block_unmodeled_purchase_side_effects", "block_unknown_ui_clicks", "block_budget_mismatch" }));
+
+            Register(Option("executor.submit_tool_upgrade", "economy", "Submit one exact tool upgrade through Clint's native service",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.tool_upgrade", "player.money", "player.inventory", "player.location_id", "player.tile_x", "player.tile_y", "locations.collision_grid", "menus.active_menu" },
+                new[] { "shared BFS reaches the exact Blacksmith counter", "native ClintUpgrade row consumes the exact source tool, price and trade bars", "exact upgraded pending tool and two-day timer are verified" },
+                new[] { "block_tool_source_target_cost_or_endpoint_drift", "block_pending_tool_or_blacksmith_service_conflict", "block_native_shop_or_receipt_mismatch", "block_direct_money_inventory_pending_tool_or_timer_mutation" }));
+
+            Register(Option("executor.claim_tool_upgrade", "economy", "Claim one completed tool upgrade through Clint's native counter",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.tool_upgrade", "player.inventory", "player.inventory_capacity", "player.location_id", "player.tile_x", "player.tile_y", "locations.collision_grid", "menus.active_menu" },
+                new[] { "shared BFS reaches the exact Blacksmith counter", "native completed-tool intercept clears the pending slot", "exact upgraded tool returns to inventory" },
+                new[] { "block_pending_tool_timer_capacity_or_endpoint_drift", "block_native_claim_or_receipt_mismatch", "block_direct_inventory_pending_tool_or_timer_mutation" }));
 
             Register(Option("executor.sell_shop_item", "economy", "Sell one exact inventory stack through the active shop",
                 OptionBehaviorCategories.Mechanical,
@@ -1355,12 +1387,12 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "BFS reaches one exact perimeter stand tile", "native multi-frame axe lifecycle removes the exact resource clump", "natural drops remain game debris" },
                 new[] { "block_unknown_clump", "block_missing_required_axe_upgrade", "block_unverified_perimeter", "block_menu_unsafe_tool_use", "block_direct_resource_clump_mutation" }));
 
-            Register(Option("executor.break_current_location_resource_clump", "foraging", "Remove one verified loaded Green Rain ResourceClump",
+            Register(Option("executor.break_current_location_resource_clump", "foraging", "Remove one verified supported loaded ResourceClump",
                 OptionBehaviorCategories.Mechanical,
                 CompilerResponsibilities.FullActionExpansion,
                 TrainingRoles.ExecutorCalibration,
                 new[] { "current_location.resource_clumps", "current_location.debris", "player.location_id", "player.tile_x", "player.tile_y", "player.energy", "player.inventory", "locations.collision_grid", "menus.active_menu" },
-                new[] { "BFS reaches one exact perimeter stand tile", "native multi-frame axe lifecycle removes the exact clump", "seeded core debris and Foraging XP are verified while optional secret-note output is recorded" },
+                new[] { "BFS reaches one exact perimeter stand tile", "native multi-frame axe lifecycle removes the exact clump", "purpose-specific vanilla identity, output and Foraging XP are verified while optional secret-note output is recorded" },
                 new[] { "block_target_identity_drift", "block_missing_axe", "block_unreachable_perimeter", "block_output_projection_drift", "block_menu_unsafe_tool_use" }));
 
             Register(Option("executor.plant_seed", "farm", "Plant one verified seed on one verified tile",
@@ -1546,6 +1578,14 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.tile_x", "player.tile_y", "world_progress.island_field_office", "current_location.debris", "locations.collision_grid", "menus.active_menu" },
                 new[] { "BFS reaches the Field Office survey wall", "native Survey Yes and exact Correct responses answer the unique next question", "native plant restore, collected-nut, walnut debris and finale trigger match the locked projection" },
                 new[] { "block_field_office_not_current", "block_failed_survey_today", "block_question_or_answer_projection_drift", "block_unverified_route", "block_direct_plant_failed_lock_nut_debris_mail_or_finale_mutation" }));
+
+            Register(Option("executor.advance_gourmand_request", "island", "Advance one verified Gourmand request through its native dialogue and event flow",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.tile_x", "player.tile_y", "world_progress.island_gourmand", "world_progress.golden_walnuts", "locations.collision_grid", "menus.active_menu" },
+                new[] { "BFS reaches the exact Gourmand action tile", "native introductory dialogue or Gourmand Yes response runs without direct state mutation", "request index, collected-nut marker and five walnut debris are verified after the native event" },
+                new[] { "block_gourmand_not_current_or_non_host", "block_mutex_menu_event_or_player_busy", "block_ready_crop_or_request_identity_drift", "block_unverified_route", "block_direct_request_tracker_walnut_or_debris_mutation" }));
 
             Register(Option("executor.manage_grange_display", "festival", "Apply one verified Fair grange display mutation through the native shared StorageContainer",
                 OptionBehaviorCategories.Mechanical,
@@ -1746,6 +1786,22 @@ namespace StardewAI.Core.OptionRegistry
                 new[] { "player.location_id", "player.inventory", "player.quest_crafting", "quests.active_quests", "menus.active_menu" },
                 new[] { "native CraftingPage consumes the rebound ingredient multiset", "exact quest output enters player inventory", "the exact CraftingQuest completes through Quest.OnRecipeCrafted" },
                 new[] { "block_non_CraftingQuest_or_completed_quest", "block_unknown_or_unlearned_target_recipe", "block_recipe_inventory_or_workbench_topology_drift", "block_material_reservation_or_output_capacity", "block_direct_inventory_recipe_stat_or_quest_mutation" }));
+
+            Register(Option("executor.craft_crab_pot", "fishing", "Craft one verified learned Crab Pot for a transparent Master Angler trap-species capacity deficit",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "player.location_id", "player.inventory", "player.crab_pot_crafting", "player.crab_pot_placement", "player.crab_pot_network", "world_progress.fish_collection_progress", "menus.active_menu" },
+                new[] { "native CraftingPage consumes the rebound ingredient multiset", "one exact Crab Pot enters player inventory", "the existing placement, bait, settlement, and collection lifecycle becomes eligible" },
+                new[] { "block_no_missing_trap_species_capacity_deficit", "block_unknown_or_unlearned_crab_pot_recipe", "block_no_native_legal_productive_water_tile", "block_recipe_inventory_or_workbench_topology_drift", "block_material_reservation_or_output_capacity", "block_direct_inventory_recipe_or_progress_mutation" }));
+
+            Register(Option("executor.craft_rain_totem", "fishing", "Craft one verified learned Rain Totem for an authoritative next-day Master Angler rain-window supply deficit",
+                OptionBehaviorCategories.Mechanical,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[] { "time.total_days", "player.location_id", "player.inventory", "player.skills_detail", "player.rain_totem", "player.rain_totem_crafting", "world_progress.fish_collection_progress", "fishing.rod_contexts", "locations.social_route_date_evidence", "menus.active_menu" },
+                new[] { "native CraftingPage consumes the rebound ingredient multiset", "one exact Rain Totem enters player inventory", "the weather-supply scheduler replans before any use" },
+                new[] { "block_without_authoritative_tomorrow_rain_window", "block_target_not_in_exact_missing_fish_set", "block_existing_owned_rain_totem_supply", "block_unknown_or_unlearned_rain_totem_recipe", "block_recipe_inventory_or_workbench_topology_drift", "block_material_reservation_or_output_capacity", "block_direct_inventory_recipe_weather_or_progress_mutation" }));
 
             Register(Option("executor.place_machine", "farm", "Place one verified inventory machine at one exact native-legal tile",
                 OptionBehaviorCategories.Mechanical,

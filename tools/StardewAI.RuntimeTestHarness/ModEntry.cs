@@ -59,6 +59,7 @@ public sealed partial class ModEntry : Mod
     private ActiveJukeboxSelection? activeJukeboxSelection;
     private ActivePlayerCustomization? activePlayerCustomization;
     private ActiveGeodeProcessing? activeGeodeProcessing;
+    private ActiveToolUpgrade? activeToolUpgrade;
     private ActiveCraneGame? activeCraneGame;
     private ActiveDartsGame? activeDartsGame;
     private ActivePrairieKing? activePrairieKing;
@@ -76,6 +77,7 @@ public sealed partial class ModEntry : Mod
     private ActiveVolcanoSetup? activeVolcanoSetup;
     private ActiveNativeTool? activeNativeTool;
     private ActiveAdjacentTileAction? activeAdjacentTileAction;
+    private ActiveClearObstacleApproach? activeClearObstacleApproach;
     private ActiveClearObstacle? activeClearObstacle;
     private ActiveMineStone? activeMineStone;
     private ActiveResourceClump? activeResourceClump;
@@ -101,6 +103,7 @@ public sealed partial class ModEntry : Mod
     private ActiveMuseumDonation? activeMuseumDonation;
     private ActiveFieldOfficeDonation? activeFieldOfficeDonation;
     private ActiveFieldOfficeSurvey? activeFieldOfficeSurvey;
+    private ActiveGourmandRequest? activeGourmandRequest;
     private ActiveQuestDropBoxDonation? activeQuestDropBoxDonation;
     private ActiveCommunityCenterDonation? activeCommunityCenterDonation;
     private ActiveCommunityCenterVaultPayment? activeCommunityCenterVaultPayment;
@@ -131,9 +134,12 @@ public sealed partial class ModEntry : Mod
     private ActiveMenuClose? activeMenuClose;
     private ActiveMailProcessing? activeMailProcessing;
     private ActiveShippingSummaryClose? activeShippingSummaryClose;
-    private ActiveSkullKeyChestInteraction? activeSkullKeyChestInteraction;
+    private ActiveSpecialItemChestInteraction? activeSpecialItemChestInteraction;
+    private ActiveDarkTalismanStatueInteraction? activeDarkTalismanStatueInteraction;
+    private ActiveGingerIslandInteraction? activeGingerIslandInteraction;
     private ActiveMineRewardChest? activeMineRewardChest;
     private ActivePotOfGoldClaim? activePotOfGoldClaim;
+    private ActiveStarterGiftClaim? activeStarterGiftClaim;
     private ActiveDwarfKingStatueChoice? activeDwarfKingStatueChoice;
     private ActiveStatueBlessingClaim? activeStatueBlessingClaim;
     private readonly NativeObjectInteractionDomainState nativeObjectInteractions = new();
@@ -586,6 +592,7 @@ public sealed partial class ModEntry : Mod
         TickJukeboxSelection();
         TickPlayerCustomization();
         TickGeodeProcessing();
+        TickToolUpgrade();
         TickCraneGame();
         TickDartsGame();
         TickPrairieKing();
@@ -596,6 +603,7 @@ public sealed partial class ModEntry : Mod
         TickDeferredCombatRestore();
         TickNativeTool();
         TickAdjacentTileAction();
+        TickClearObstacleApproach();
         TickClearObstacle();
         TickMineStone();
         TickResourceClump();
@@ -632,9 +640,12 @@ public sealed partial class ModEntry : Mod
         TickMailProcessing();
         TickMineElevatorSelection();
         TickShippingSummaryClose();
-        TickSkullKeyChestInteraction();
+        TickSpecialItemChestInteraction();
+        TickDarkTalismanStatueInteraction();
+        TickGingerIslandInteraction();
         TickMineRewardChest();
         TickPotOfGoldClaim();
+        TickStarterGiftClaim();
         TickDwarfKingStatuePowerChoice();
         TickStatueBlessingClaim();
         TickNativeObjectInteractionDomain();
@@ -655,6 +666,7 @@ public sealed partial class ModEntry : Mod
         TickMuseumDonation();
         TickFieldOfficeDonation();
         TickFieldOfficeSurvey();
+        TickGourmandRequest();
         TickQuestDropBoxDonation();
         TickCommunityCenterDonation();
         TickCommunityCenterVaultPayment();
@@ -1430,6 +1442,20 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_crab_pot_crafting_target")
+            {
+                pending.Completion.SetResult(
+                    ExecuteSetupCrabPotCraftingTarget(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "debug.setup_rain_totem_crafting_target")
+            {
+                pending.Completion.SetResult(
+                    ExecuteSetupRainTotemCraftingTarget(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_machine_lifecycle_target")
             {
                 pending.Completion.SetResult(
@@ -1496,6 +1522,25 @@ public sealed partial class ModEntry : Mod
                     string.Equals(pending.Request.ExpectedActionType, "SkullKeyChest", StringComparison.Ordinal))
                 {
                     StartSkullKeyChestInteraction(pending);
+                }
+                else if (string.Equals(pending.Request.InteractionKind, "overlay_object", StringComparison.Ordinal) &&
+                    string.Equals(pending.Request.ExpectedActionType, "DarkTalismanChest", StringComparison.Ordinal))
+                {
+                    StartDarkTalismanChestInteraction(pending);
+                }
+                else if (string.Equals(pending.Request.InteractionKind, "npc_check_action", StringComparison.Ordinal) &&
+                    string.Equals(pending.Request.ExpectedActionType, "DarkTalismanKrobus", StringComparison.Ordinal))
+                {
+                    pending.Completion.SetResult(ExecuteDarkTalismanKrobusInteraction(pending.Request));
+                }
+                else if (string.Equals(pending.Request.InteractionKind, "location_check_action", StringComparison.Ordinal) &&
+                    string.Equals(pending.Request.ExpectedActionType, "DarkTalismanStatue", StringComparison.Ordinal))
+                {
+                    StartDarkTalismanStatueInteraction(pending);
+                }
+                else if (pending.Request.InteractionKind is "boat_tunnel_check_action" or "parrot_upgrade_perch")
+                {
+                    StartGingerIslandInteraction(pending);
                 }
                 else
                 {
@@ -1764,6 +1809,18 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "executor.submit_tool_upgrade")
+            {
+                StartToolUpgrade(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.claim_tool_upgrade")
+            {
+                StartToolUpgrade(pending);
+                return;
+            }
+
             if (pending.Request.OptionId == "executor.play_crane_game")
             {
                 StartCraneGame(pending);
@@ -2012,6 +2069,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_island_gourmand")
+            {
+                pending.Completion.SetResult(ExecuteSetupIslandGourmandFixture(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.field_office_survey_day_update")
             {
                 pending.Completion.SetResult(ExecuteFieldOfficeSurveyDayUpdate(pending.Request));
@@ -2070,7 +2133,9 @@ public sealed partial class ModEntry : Mod
 
             if (pending.Request.OptionId == "executor.craft_machine_item" ||
                 pending.Request.OptionId == "executor.craft_storage_item" ||
-                pending.Request.OptionId == "executor.craft_quest_item")
+                pending.Request.OptionId == "executor.craft_quest_item" ||
+                pending.Request.OptionId == "executor.craft_crab_pot" ||
+                pending.Request.OptionId == "executor.craft_rain_totem")
             {
                 if (string.Equals(
                         pending.Request.CraftingSource,
@@ -2099,6 +2164,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "rewards.claim_pot_of_gold")
             {
                 StartPotOfGoldClaim(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "rewards.claim_starter_gift")
+            {
+                StartStarterGiftClaim(pending);
                 return;
             }
 
@@ -2165,6 +2236,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "executor.answer_field_office_survey")
             {
                 StartFieldOfficeSurvey(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.advance_gourmand_request")
+            {
+                StartGourmandRequest(pending);
                 return;
             }
 
@@ -2443,6 +2520,7 @@ public sealed partial class ModEntry : Mod
             activeGarbageCanRummage = null;
             activeMineRewardChest = null;
             activePotOfGoldClaim = null;
+            activeStarterGiftClaim = null;
             activeDwarfKingStatueChoice = null;
             activeCalicoStatueFixture = null;
             activeCalicoStatue = null;
@@ -2451,6 +2529,7 @@ public sealed partial class ModEntry : Mod
             activeJukeboxSelection = null;
             activePlayerCustomization = null;
             activeGeodeProcessing = null;
+            activeToolUpgrade = null;
             activeStatueBlessingClaim = null;
             ResetNativeObjectInteractionDomain();
             activeAnimalProductHarvest = null;
@@ -2459,6 +2538,7 @@ public sealed partial class ModEntry : Mod
             activeMuseumDonation = null;
             activeFieldOfficeDonation = null;
             activeFieldOfficeSurvey = null;
+            activeGourmandRequest = null;
             activeQuestDropBoxDonation = null;
             activeCommunityCenterDonation = null;
             activeCommunityCenterVaultPayment = null;
@@ -2518,14 +2598,20 @@ public sealed partial class ModEntry : Mod
         try
         {
             executorInputTick++;
+            EnsureHeadlessInputPump();
+            var hasActiveExecutorOperation = HasActiveExecutorOperation();
+            var shouldHoldStoryEventForDispatch =
+                !hasActiveExecutorOperation &&
+                HasExecutorOwnedStoryEventDispatchBoundary();
             var shouldPauseForExecutorIdle =
                 config.FreezeClockWhileExecutorIdle &&
                 Context.IsWorldReady &&
-                pendingExecutions.IsEmpty &&
-                !HasActiveExecutorOperation() &&
                 executorMovementLease.Direction is null &&
-                Game1.player.CanMove &&
-                Game1.player.movementDirections.Count == 0;
+                (shouldHoldStoryEventForDispatch ||
+                    pendingExecutions.IsEmpty &&
+                    !hasActiveExecutorOperation &&
+                    Game1.player.CanMove &&
+                    Game1.player.movementDirections.Count == 0);
             if (config.FreezeClockWhileExecutorIdle && Game1.options is not null)
             {
                 Game1.options.pauseWhenOutOfFocus = false;
@@ -2714,6 +2800,7 @@ public sealed partial class ModEntry : Mod
             activeJukeboxSelection is not null ||
             activePlayerCustomization is not null ||
             activeGeodeProcessing is not null ||
+            activeToolUpgrade is not null ||
             activeCraneGame is not null ||
             activeDartsGame is not null ||
             activePrairieKing is not null ||
@@ -2723,6 +2810,7 @@ public sealed partial class ModEntry : Mod
             activeVolcanoSetup is not null ||
             activeNativeTool is not null ||
             activeAdjacentTileAction is not null ||
+            activeClearObstacleApproach is not null ||
             activeClearObstacle is not null ||
             activeMineStone is not null ||
             activeResourceClump is not null ||
@@ -2748,6 +2836,7 @@ public sealed partial class ModEntry : Mod
             activeMuseumDonation is not null ||
             activeFieldOfficeDonation is not null ||
             activeFieldOfficeSurvey is not null ||
+            activeGourmandRequest is not null ||
             activeQuestDropBoxDonation is not null ||
             activeCommunityCenterDonation is not null ||
             activeCommunityCenterVaultPayment is not null ||
@@ -2776,9 +2865,12 @@ public sealed partial class ModEntry : Mod
             activeMailProcessing is not null ||
             activeMineElevatorSelection is not null ||
             activeShippingSummaryClose is not null ||
-            activeSkullKeyChestInteraction is not null ||
+            activeSpecialItemChestInteraction is not null ||
+            activeDarkTalismanStatueInteraction is not null ||
+            activeGingerIslandInteraction is not null ||
             activeMineRewardChest is not null ||
             activePotOfGoldClaim is not null ||
+            activeStarterGiftClaim is not null ||
             activeDwarfKingStatueChoice is not null ||
             activeStatueBlessingClaim is not null ||
             nativeObjectInteractions.IsActive ||

@@ -95,7 +95,13 @@ public sealed partial class ModEntry
             return;
         }
 
-        var path = BuildAdjacentToolPath(location, target, request.MaxMovementTiles ?? 512, out var moveReason);
+        var path = BuildAdjacentToolPath(
+            location,
+            target,
+            request.MaxMovementTiles ?? 512,
+            out var moveReason,
+            avoidSoftObstacles: true,
+            allowRemovableObstacles: false);
         if (path is null)
         {
             pending.Completion.SetResult(NativeToolBlocked(request, "harvest_ginger", target, hoe, null, staminaBefore, started, estimatedTicks, moveReason, requested, GingerHarvestObservedEffect(location, target)));

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using StardewAI.Contracts.State;
+using StardewAI.Core.Infrastructure;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -48,7 +49,9 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
                     snapshot,
                     "current_location",
                     "site_preparation_context");
-            Require(ReadString(context, "projection_status") ==
+            Require(ReadString(context, "schema_version") ==
+                        "farm_site_preparation_context.v2" &&
+                    ReadString(context, "projection_status") ==
                         "complete_bounded_current_farm_region" &&
                     ReadString(context, "location_id") == "Farm",
                 "Money Revenue crop-production Teacher layout projection is incomplete.");
@@ -72,7 +75,23 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
                 new LayoutTile(
                     ReadInt(value, "tile_x"),
                     ReadInt(value, "tile_y"),
-                    ReadString(value, "status"))).ToArray();
+                    ReadString(value, "status"),
+                    ReadRequiredBool(value, "map_passable"),
+                    ReadRequiredBool(
+                        value,
+                        "native_blocked_without_characters"),
+                    ReadRequiredBool(
+                        value,
+                        "watering_can_refill_source"),
+                    ReadRequiredBool(
+                        value,
+                        "watering_refill_approach_standable"))).ToArray();
+            Require(tiles.All(value =>
+                    value.WateringRefillApproachStandable ==
+                    (value.MapPassable &&
+                     !value.NativeBlockedWithoutCharacters)),
+                "Money Revenue crop-production Teacher layout refill " +
+                "approach facts are internally inconsistent.");
             var expectedCount = checked((maxX - minX + 1) *
                 (maxY - minY + 1));
             Require(tiles.Length == expectedCount &&
@@ -97,6 +116,151 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
                 tiles));
         }
         return result.ToArray();
+    }
+
+    public const int MaxWateringRefillPreparationTileCount = 4;
+
+    private static WateringRefillRouteProof BuildWateringRefillRouteProof(
+        IReadOnlyCollection<LayoutTile> tiles,
+        IReadOnlyCollection<LayoutTile> viableTiles,
+        int mapWidth,
+        int mapHeight,
+        int anchorX,
+        int anchorY)
+    {
+        var start = viableTiles
+            .Where(value => value.WateringRefillApproachStandable)
+            .OrderBy(value => Manhattan(
+                value.TileX,
+                value.TileY,
+                anchorX,
+                anchorY))
+            .ThenBy(value => value.TileY)
+            .ThenBy(value => value.TileX)
+            .FirstOrDefault();
+        if (start is null)
+            return WateringRefillRouteProof.Unverified;
+
+        var byCoordinate = tiles.ToDictionary(
+            value => (value.TileX, value.TileY));
+        var goals = tiles
+            .Where(value => value.WateringCanRefillSource)
+            .SelectMany(value => RouteGridPathfinder.Neighbors(
+                value.TileX,
+                value.TileY))
+            .Where(value =>
+                RouteGridPathfinder.InBounds(
+                    value.X,
+                    value.Y,
+                    mapWidth,
+                    mapHeight) &&
+                byCoordinate.TryGetValue((value.X, value.Y), out var tile) &&
+                (tile.WateringRefillApproachStandable ||
+                    tile.Status == "requires_single_clearance_then_till"))
+            .Select(value => (value.X, value.Y))
+            .ToHashSet();
+        if (goals.Count == 0)
+            return WateringRefillRouteProof.Unverified;
+
+        var startCoordinate = (start.TileX, start.TileY);
+        var costs = new Dictionary<(int X, int Y), RouteCost>
+        {
+            [startCoordinate] = new RouteCost(0, 0)
+        };
+        var previous = new Dictionary<(int X, int Y), (int X, int Y)>();
+        var frontier = new PriorityQueue<
+            (int X, int Y),
+            (int ClearanceCount, int PathLength, int Y, int X)>();
+        frontier.Enqueue(
+            startCoordinate,
+            (0, 0, start.TileY, start.TileX));
+        (int X, int Y)? reached = null;
+        while (frontier.TryDequeue(out var current, out var priority))
+        {
+            if (!costs.TryGetValue(current, out var currentCost) ||
+                currentCost.ClearanceCount != priority.ClearanceCount ||
+                currentCost.PathLength != priority.PathLength)
+            {
+                continue;
+            }
+            if (goals.Contains(current))
+            {
+                reached = current;
+                break;
+            }
+
+            foreach (var next in RouteGridPathfinder.Neighbors(
+                         current.X,
+                         current.Y))
+            {
+                if (!RouteGridPathfinder.InBounds(
+                        next.X,
+                        next.Y,
+                        mapWidth,
+                        mapHeight) ||
+                    !byCoordinate.TryGetValue((next.X, next.Y), out var tile))
+                {
+                    continue;
+                }
+                var requiresClearance = tile.Status ==
+                    "requires_single_clearance_then_till";
+                if (!tile.WateringRefillApproachStandable &&
+                    !requiresClearance)
+                {
+                    continue;
+                }
+                var nextCost = new RouteCost(
+                    currentCost.ClearanceCount + (requiresClearance ? 1 : 0),
+                    currentCost.PathLength + 1);
+                if (nextCost.ClearanceCount >
+                    MaxWateringRefillPreparationTileCount ||
+                    costs.TryGetValue((next.X, next.Y), out var oldCost) &&
+                    oldCost.CompareTo(nextCost) <= 0)
+                {
+                    continue;
+                }
+                costs[(next.X, next.Y)] = nextCost;
+                previous[(next.X, next.Y)] = current;
+                frontier.Enqueue(
+                    (next.X, next.Y),
+                    (nextCost.ClearanceCount,
+                        nextCost.PathLength,
+                        next.Y,
+                        next.X));
+            }
+        }
+        if (!reached.HasValue)
+            return WateringRefillRouteProof.Unverified;
+
+        var path = new List<(int X, int Y)> { reached.Value };
+        while (path[^1] != startCoordinate)
+            path.Add(previous[path[^1]]);
+        path.Reverse();
+        var preparationTiles = path
+            .Select(value => byCoordinate[value])
+            .Where(value => value.Status ==
+                "requires_single_clearance_then_till")
+            .Select(value => new MoneyRevenueCropPlantingTile(
+                value.TileX,
+                value.TileY))
+            .Distinct()
+            .ToArray();
+        return new WateringRefillRouteProof(
+            true,
+            path.Count - 1,
+            preparationTiles,
+            new MoneyRevenueCropPlantingTile(
+                reached.Value.X,
+                reached.Value.Y));
+    }
+
+    private static bool ReadRequiredBool(JsonElement value, string name)
+    {
+        var result = ReadOptionalBool(value, name);
+        Require(result.HasValue,
+            "Money Revenue crop-production Teacher layout tile is missing " +
+            name + ".");
+        return result.GetValueOrDefault();
     }
 
     private static MoneyRevenueCropPlantingTile[] SelectCompactTiles(
@@ -175,5 +339,38 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
         MoneyRevenueCropTeacherLayoutSnapshotBinding Binding,
         LayoutTile[] Tiles);
 
-    private sealed record LayoutTile(int TileX, int TileY, string Status);
+    private sealed record LayoutTile(
+        int TileX,
+        int TileY,
+        string Status,
+        bool MapPassable,
+        bool NativeBlockedWithoutCharacters,
+        bool WateringCanRefillSource,
+        bool WateringRefillApproachStandable);
+
+    private readonly record struct RouteCost(
+        int ClearanceCount,
+        int PathLength) : IComparable<RouteCost>
+    {
+        public int CompareTo(RouteCost other)
+        {
+            var clearance = ClearanceCount.CompareTo(other.ClearanceCount);
+            return clearance != 0
+                ? clearance
+                : PathLength.CompareTo(other.PathLength);
+        }
+    }
+
+    private sealed record WateringRefillRouteProof(
+        bool Verified,
+        int PathLength,
+        MoneyRevenueCropPlantingTile[] PreparationTiles,
+        MoneyRevenueCropPlantingTile? ApproachTile)
+    {
+        public static WateringRefillRouteProof Unverified { get; } = new(
+            false,
+            0,
+            Array.Empty<MoneyRevenueCropPlantingTile>(),
+            null);
+    }
 }

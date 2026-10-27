@@ -137,6 +137,8 @@ namespace StardewAI.Core.Infrastructure
             if (row.ValueKind != JsonValueKind.Object ||
                 !row.TryGetProperty("time_windows", out var timeWindows) ||
                 timeWindows.ValueKind != JsonValueKind.Array ||
+                !row.TryGetProperty("weather_modes", out var weatherModes) ||
+                weatherModes.ValueKind != JsonValueKind.Array ||
                 !row.TryGetProperty("dynamic_conditions", out var dynamic) ||
                 dynamic.ValueKind != JsonValueKind.Array)
             {
@@ -148,7 +150,14 @@ namespace StardewAI.Core.Infrastructure
                     ReadInt(value, "end_time")))
                 .Where(value => value.Start >= 0 && value.End > value.Start)
                 .ToArray();
-            return times.Length == 0
+            var weather = weatherModes.EnumerateArray()
+                .Where(value => value.ValueKind == JsonValueKind.String)
+                .Select(value => value.GetString() ?? string.Empty)
+                .Where(value => !string.IsNullOrWhiteSpace(value))
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(value => value, StringComparer.Ordinal)
+                .ToArray();
+            return times.Length == 0 || weather.Length == 0
                 ? null
                 : new ArtifactWindow(
                     ReadString(row, "source_kind"),
@@ -160,6 +169,7 @@ namespace StardewAI.Core.Infrastructure
                     ReadBool(row, "require_magic_bait") == true,
                     ReadNullableBool(row, "training_rod_allowed"),
                     dynamic.GetArrayLength(),
+                    weather,
                     times);
         }
 
@@ -184,6 +194,7 @@ namespace StardewAI.Core.Infrastructure
             bool RequireMagicBait,
             bool? TrainingRodAllowed,
             int DynamicConditionCount,
+            string[] WeatherModes,
             ArtifactTimeWindow[] TimeWindows);
 
         private sealed record ArtifactTimeWindow(int Start, int End);

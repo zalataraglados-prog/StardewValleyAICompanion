@@ -16,7 +16,8 @@ internal sealed class MachineCraftingMaterialReservationGuard
         SnapshotEnvelope snapshot,
         JsonElement ingredientRows,
         bool usesWorkbench,
-        StrategyCommitmentLedger? ledger)
+        StrategyCommitmentLedger? ledger,
+        MaterialReservationConsumptionAuthorization? authorization = null)
     {
         var activeReservations = (ledger?.MaterialReservations ?? Array.Empty<MaterialReservation>())
             .Where(row => string.Equals(
@@ -34,22 +35,31 @@ internal sealed class MachineCraftingMaterialReservationGuard
             return Blocked(ledger, "material_inventory_graph_unavailable");
         }
 
-        var plannedConsumption = ReadPlannedConsumption(
+        var plannedConsumption = ExactCraftingMaterialConsumptionReader.Read(
             ingredientRows,
             usesWorkbench,
             graph!.PlayerId);
-        if (plannedConsumption.Count == 0)
+        if (plannedConsumption.Length == 0)
         {
             return Blocked(ledger, "machine_recipe_material_consumption_plan_unavailable");
         }
 
-        var supply = projection.Project(graph, activeReservations);
+        var authorizedReservations = authorization is null
+            ? Array.Empty<MaterialReservation>()
+            : activeReservations.Where(authorization.Matches).ToArray();
+        var authorizedIds = authorizedReservations
+            .Select(row => row.ReservationId)
+            .ToHashSet(StringComparer.Ordinal);
+        var competingReservations = activeReservations
+            .Where(row => !authorizedIds.Contains(row.ReservationId))
+            .ToArray();
+        var supply = projection.Project(graph, competingReservations);
         if (!string.Equals(supply.Status, "available", StringComparison.Ordinal))
         {
             return Blocked(ledger, supply.BlockingReasons);
         }
 
-        var relevantReservationIds = activeReservations
+        var relevantReservationIds = authorizedReservations
             .Where(reservation => plannedConsumption.Any(consumption =>
                 string.Equals(consumption.NodeId, reservation.NodeId, StringComparison.Ordinal) &&
                 consumption.SlotIndex == reservation.SlotIndex &&
@@ -81,60 +91,6 @@ internal sealed class MachineCraftingMaterialReservationGuard
         return reasons.Count == 0
             ? Ready(ledger, "ready", relevantReservationIds)
             : Blocked(ledger, reasons, relevantReservationIds);
-    }
-
-    private static List<PlannedConsumption> ReadPlannedConsumption(
-        JsonElement ingredientRows,
-        bool usesWorkbench,
-        long playerId)
-    {
-        var rows = new List<PlannedConsumption>();
-        if (ingredientRows.ValueKind != JsonValueKind.Array)
-        {
-            return rows;
-        }
-        var planProperty = usesWorkbench
-            ? "native_consumption_plan"
-            : "reverse_slot_consumption_plan";
-        foreach (var ingredient in ingredientRows.EnumerateArray())
-        {
-            if (ingredient.ValueKind != JsonValueKind.Object ||
-                !ingredient.TryGetProperty(planProperty, out var plan) ||
-                plan.ValueKind != JsonValueKind.Array)
-            {
-                continue;
-            }
-            foreach (var entry in plan.EnumerateArray())
-            {
-                var nodeId = usesWorkbench
-                    ? ReadString(entry, "source_node_id")
-                    : "player:" + playerId;
-                var slotIndex = NullableReadInt(entry, "slot_index");
-                var qualifiedItemId = ReadString(entry, "qualified_item_id");
-                var amount = ReadInt(entry, "amount");
-                if (!string.IsNullOrWhiteSpace(nodeId) &&
-                    slotIndex.HasValue &&
-                    !string.IsNullOrWhiteSpace(qualifiedItemId) &&
-                    amount > 0)
-                {
-                    rows.Add(new PlannedConsumption(
-                        nodeId,
-                        slotIndex.Value,
-                        qualifiedItemId,
-                        amount));
-                }
-            }
-        }
-        return rows
-            .GroupBy(
-                row => row.NodeId + "\n" + row.SlotIndex + "\n" + row.QualifiedItemId,
-                StringComparer.Ordinal)
-            .Select(group => new PlannedConsumption(
-                group.First().NodeId,
-                group.First().SlotIndex,
-                group.First().QualifiedItemId,
-                group.Sum(row => row.Quantity)))
-            .ToList();
     }
 
     private static bool TryReadGraph(
@@ -196,11 +152,6 @@ internal sealed class MachineCraftingMaterialReservationGuard
             BlockingReasons = reasons.Distinct(StringComparer.Ordinal).ToArray()
         };
 
-    private sealed record PlannedConsumption(
-        string NodeId,
-        int SlotIndex,
-        string QualifiedItemId,
-        int Quantity);
 }
 
 internal sealed class MachineCraftingMaterialReservationGuardResult

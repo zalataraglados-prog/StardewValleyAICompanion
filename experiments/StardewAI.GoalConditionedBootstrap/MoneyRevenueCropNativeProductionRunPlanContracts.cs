@@ -32,7 +32,11 @@ public sealed record MoneyRevenueCropNativeProductionLayoutIntent(
     [property: JsonPropertyName("commitment_id")] string CommitmentId,
     [property: JsonPropertyName("location_id")] string LocationId,
     [property: JsonPropertyName("tiles")]
-    MoneyRevenueCropPlantingTile[] Tiles);
+    MoneyRevenueCropPlantingTile[] Tiles,
+    [property: JsonPropertyName("watering_refill_preparation_tiles")]
+    MoneyRevenueCropPlantingTile[]? WateringRefillPreparationTiles = null,
+    [property: JsonPropertyName("watering_refill_approach_tile")]
+    MoneyRevenueCropPlantingTile? WateringRefillApproachTile = null);
 
 public sealed record MoneyRevenueCropNativeSeedAcquisitionIntent(
     [property: JsonPropertyName("commitment_id")] string CommitmentId,
@@ -155,7 +159,9 @@ public sealed class MoneyRevenueCropNativeProductionRunPlan
         "queue limit; one native sleep closes every non-terminal day. Runtime " +
         "must keep every commitment inside one bounded farm-layout projection, " +
         "rebuild the existing site-preparation plan after every preparation " +
-        "action, and only then capture planting-layout and daily-capacity " +
+        "action, retain the Teacher-verified watering-refill approach so later " +
+        "route repair can emit explicit move and clearance actions, and only " +
+        "then capture planting-layout and daily-capacity " +
         "snapshots at the marked boundaries. It compiles each batch through " +
         "the existing action compiler and retains every queue receipt. This is " +
         "orchestration, not evidence, a " +

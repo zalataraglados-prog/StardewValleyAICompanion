@@ -57,6 +57,17 @@ namespace StardewAI.Core.Execution
             var routePlan = BuildRecoveryRoutePlan(snapshot);
             if (routePlan.Step is null)
             {
+                if (RecoveryRouteClearancePending(routePlan))
+                {
+                    return new[]
+                    {
+                        Step(
+                            "refresh_plan_after_stabilization",
+                            "planner",
+                            "recovery_route_clearance_required=true;fresh_snapshot_replan_required=true",
+                            30)
+                    };
+                }
                 return Array.Empty<CompiledActionStep>();
             }
 

@@ -122,7 +122,8 @@ namespace StardewAI.Core.OptionRegistry
             {
                 Parameter("target_tile_x", x.ToString()),
                 Parameter("target_tile_y", y.ToString()),
-                Parameter("max_tool_swings", maxToolSwings.ToString())
+                Parameter("max_tool_swings", maxToolSwings.ToString()),
+                Parameter("clear_source_id", sourceId)
             };
             if (source.HasValue)
             {
@@ -305,6 +306,12 @@ namespace StardewAI.Core.OptionRegistry
             {
                 return string.Empty;
             }
+            if (string.Equals(outputStatus, "native_stochastic_receipt", StringComparison.Ordinal))
+            {
+                return (toolSlotIndex.HasValue ? ";tool_slot_index=" + toolSlotIndex.Value : string.Empty) +
+                    (!string.IsNullOrWhiteSpace(requiredToolKind) ? ";required_tool_kind=" + requiredToolKind : string.Empty) +
+                    ";clear_output_projection_status=native_stochastic_receipt";
+            }
             var outputQualifiedItemId = ReadString(source.Value, "clear_output_qualified_item_id");
             var outputItemsJson = ReadString(source.Value, "clear_output_items_json");
             var outputMinimum = NullableReadInt(source.Value, "clear_output_quantity_min");
@@ -380,7 +387,7 @@ namespace StardewAI.Core.OptionRegistry
 
         private static string ClearableObjectKind(string qualifiedId, string name)
         {
-            if (qualifiedId is "(O)343" or "(O)450")
+            if (qualifiedId is "(O)25" or "(O)343" or "(O)450")
             {
                 return "stone";
             }

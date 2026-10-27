@@ -1,12 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Goals;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Goals;
+using StardewAI.Core.Infrastructure;
 using StardewAI.Core.WorldModel;
+using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.Training
 {
@@ -55,7 +58,7 @@ namespace StardewAI.Core.Training
             PolicyEventCandidatePrediction[] broadRankedCandidates)
         {
             var requested = (requestedGoalId ?? string.Empty).Trim();
-            if (!IsGrandpaGoal(requested))
+            if (!GrandpaEvaluationGoalDefinition.IsMaximumScoreGoal(requested))
             {
                 return Detailed(Result(
                     "not_applicable",
@@ -96,9 +99,24 @@ namespace StardewAI.Core.Training
                         entry.DirectionId,
                         direction.DirectionId,
                         StringComparison.Ordinal));
-                if (catalog is null ||
-                    !HasCandidateSurface(catalog, candidates))
+                if (catalog is null)
                 {
+                    continue;
+                }
+
+                if (!HasCandidateSurface(catalog, candidates))
+                {
+                    if (RequiresCropProductionTeacherHandoff(
+                            snapshot,
+                            direction.DirectionId))
+                    {
+                        return CropProductionTeacherHandoff(
+                            snapshot,
+                            requested,
+                            catalog,
+                            considered);
+                    }
+
                     continue;
                 }
 
@@ -116,6 +134,17 @@ namespace StardewAI.Core.Training
                         StringComparison.Ordinal) ||
                     bound.BoundCandidates.Length == 0)
                 {
+                    if (RequiresCropProductionTeacherHandoff(
+                            snapshot,
+                            direction.DirectionId))
+                    {
+                        return CropProductionTeacherHandoff(
+                            snapshot,
+                            requested,
+                            catalog,
+                            considered);
+                    }
+
                     continue;
                 }
 
@@ -211,16 +240,74 @@ namespace StardewAI.Core.Training
                     StringComparer.Ordinal));
         }
 
-        private static bool IsGrandpaGoal(string goalId)
+        private static bool RequiresCropProductionTeacherHandoff(
+            SnapshotEnvelope snapshot,
+            string directionId)
         {
-            return string.Equals(
-                       goalId,
-                       GrandpaEvaluationGoalDefinition.GoalId,
-                       StringComparison.Ordinal) ||
-                   string.Equals(
-                       goalId,
-                       GrandpaEvaluationGoalDefinition.StrategicGoal,
-                       StringComparison.Ordinal);
+            if (!string.Equals(
+                    directionId,
+                    "earn_money",
+                    StringComparison.Ordinal) ||
+                !ReadableStatus(ReadStateFieldStatus(
+                    snapshot,
+                    "player",
+                    "seed_inventory")) ||
+                !ReadableStatus(ReadStateFieldStatus(
+                    snapshot,
+                    "farm",
+                    "crops")))
+            {
+                return false;
+            }
+
+            var seeds = ReadStateFieldValue(
+                snapshot,
+                "player",
+                "seed_inventory");
+            var crops = ReadStateFieldValue(snapshot, "farm", "crops");
+            if (!seeds.HasValue ||
+                seeds.Value.ValueKind != JsonValueKind.Array ||
+                !crops.HasValue ||
+                crops.Value.ValueKind != JsonValueKind.Array ||
+                crops.Value.GetArrayLength() != 0)
+            {
+                return false;
+            }
+
+            return seeds.Value.EnumerateArray().Any(seed =>
+                seed.ValueKind == JsonValueKind.Object &&
+                ReadInt(seed, "stack") > 0 &&
+                ReadBool(seed, "crop_catalog_match") &&
+                !string.IsNullOrWhiteSpace(
+                    ReadString(seed, "qualified_item_id")));
+        }
+
+        private static GrandpaDailySubgoalResolution CropProductionTeacherHandoff(
+            SnapshotEnvelope snapshot,
+            string requestedGoalId,
+            GrandpaDirectionCatalogEntry catalog,
+            IReadOnlyCollection<string> consideredDirectionIds)
+        {
+            return Detailed(new PlanningGoalResolution
+            {
+                Status = "planning_handoff_required",
+                RequestedGoalId = requestedGoalId,
+                EffectiveGoalId = catalog.EffectiveGoalId,
+                DirectionId = catalog.DirectionId,
+                DemandFamily = catalog.DemandFamily,
+                Reason = "crop_production_teacher_handoff_required",
+                SourceStateHash = snapshot.StateHash,
+                BindingRuleId = catalog.BindingRuleId,
+                ConsideredDirectionIds = consideredDirectionIds.ToArray(),
+                PlanningHandoff = new PlanningGoalHandoff
+                {
+                    HandoffKind = "crop_production_teacher",
+                    RequiredSnapshotProfiles = new[] { "farm_layout" },
+                    RequestedCapability =
+                        "establish_initial_crop_production",
+                    AutomaticDispatchRequired = true
+                }
+            });
         }
 
         private static PlanningGoalResolution Result(

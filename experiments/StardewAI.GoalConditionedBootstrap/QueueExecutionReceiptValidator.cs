@@ -142,7 +142,7 @@ internal static partial class QueueExecutionReceiptValidator
                 string.Equals(step.SourceStateHash, step.AfterStateHash,
                     StringComparison.Ordinal) ||
                 step.BeforeGameTick != expectedTick ||
-                step.AfterGameTick <= step.BeforeGameTick)
+                step.AfterGameTick < step.BeforeGameTick)
                 reasons.Add("queue_execution_receipt_step_transition_mismatch:" + index);
             if (!string.Equals(step.Status, "applied", StringComparison.Ordinal) ||
                 !step.AfterSnapshotFresh ||
@@ -184,10 +184,19 @@ internal static partial class QueueExecutionReceiptValidator
     {
         if (steps.Length == 1)
         {
+            if (string.Equals(
+                    primitiveKind,
+                    steps[0].StepType,
+                    StringComparison.Ordinal))
+            {
+                return true;
+            }
+
             return string.Equals(
-                primitiveKind,
-                steps[0].StepType,
-                StringComparison.Ordinal);
+                    primitiveKind,
+                    "process_mail_letter",
+                    StringComparison.Ordinal) &&
+                IsExactNativeMailProcessingItem(item, steps[0]);
         }
 
         var expectedMacroPrimitive = item.OptionId switch
@@ -205,6 +214,103 @@ internal static partial class QueueExecutionReceiptValidator
                 expectedMacroPrimitive,
                 StringComparison.Ordinal);
     }
+
+    private static bool IsExactNativeMailProcessingItem(
+        ActionQueueItem item,
+        CompiledActionStep step)
+    {
+        if (!string.Equals(
+                item.OptionId,
+                "executor.close_menu",
+                StringComparison.Ordinal) ||
+            !string.Equals(
+                step.StepType,
+                "close_menu",
+                StringComparison.Ordinal) ||
+            !string.Equals(
+                step.Target,
+                "active_menu:LetterViewerMenu",
+                StringComparison.Ordinal) ||
+            !TryReadUniqueParameter(
+                item,
+                "target_runtime_identity",
+                out var runtimeIdentity) ||
+            string.IsNullOrWhiteSpace(runtimeIdentity) ||
+            !TryReadUniqueParameter(
+                item,
+                "mail_menu_identity_sha256",
+                out var menuIdentity) ||
+            string.IsNullOrWhiteSpace(menuIdentity) ||
+            !TryReadUniqueParameter(
+                item,
+                "continuation.mail_menu_identity_sha256",
+                out var continuationMenuIdentity) ||
+            !string.Equals(
+                menuIdentity,
+                continuationMenuIdentity,
+                StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        return HasExactParameter(
+                item,
+                "plan_step_kind",
+                "close_menu") &&
+            HasExactParameter(
+                item,
+                "target_runtime_type",
+                "LetterViewerMenu") &&
+            HasExactParameter(
+                item,
+                "continuation.option_id",
+                "mail.process_letter") &&
+            HasExactParameter(
+                item,
+                "safety_constraint",
+                "native_LetterViewerMenu_receiveLeftClick_only") &&
+            HasExactParameter(
+                item,
+                "safety_constraint",
+                "reuse_executor.close_menu");
+    }
+
+    private static bool TryReadUniqueParameter(
+        ActionQueueItem item,
+        string name,
+        out string value)
+    {
+        value = string.Empty;
+        var values = (item.NormalizedCommand?.Parameters ??
+                Array.Empty<SmallModelActionParameter>())
+            .Where(parameter => string.Equals(
+                parameter.Name,
+                name,
+                StringComparison.Ordinal))
+            .Select(parameter => parameter.Value)
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        if (values.Length != 1)
+            return false;
+
+        value = values[0];
+        return true;
+    }
+
+    private static bool HasExactParameter(
+        ActionQueueItem item,
+        string name,
+        string value) =>
+        (item.NormalizedCommand?.Parameters ??
+            Array.Empty<SmallModelActionParameter>()).Any(parameter =>
+                string.Equals(
+                    parameter.Name,
+                    name,
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    parameter.Value,
+                    value,
+                    StringComparison.Ordinal));
 
     private static bool HasExactStepTypes(
         CompiledActionStep[] steps,

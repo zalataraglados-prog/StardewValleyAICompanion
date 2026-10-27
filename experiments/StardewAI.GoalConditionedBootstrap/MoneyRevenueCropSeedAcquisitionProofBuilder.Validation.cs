@@ -171,7 +171,7 @@ public static partial class MoneyRevenueCropSeedAcquisitionProofBuilder
             {
                 VerifySupportingStage(
                     transition,
-                    optionIds,
+                    effectiveItems,
                     beforeQuantity,
                     afterQuantity,
                     beforeMoney,

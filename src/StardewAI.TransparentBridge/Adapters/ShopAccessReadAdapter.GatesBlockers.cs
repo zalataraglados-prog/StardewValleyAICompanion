@@ -50,6 +50,81 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
         var height = map.Layers.Cast<xTile.Layers.Layer>().Max(layer => layer.LayerHeight);
         var gates = new List<object>();
 
+        foreach (var warp in location.warps)
+        {
+            if (IsNativeBusTransportWarp(location, warp.TargetName))
+            {
+                var toDesert = string.Equals(
+                    location.NameOrUniqueName,
+                    "BusStop",
+                    StringComparison.OrdinalIgnoreCase);
+                if (toDesert)
+                {
+                    var endpoint = FindBusTicketMachineTile(location);
+                    if (endpoint.HasValue)
+                    {
+                        gates.Add(ReadNativeBusTransportGate(
+                            location,
+                            endpoint.Value.X,
+                            endpoint.Value.Y,
+                            toDesert));
+                    }
+                }
+                continue;
+            }
+
+            var festivalTransit = ActiveFestivalTransitReader.Read(
+                warp.TargetName);
+            if (festivalTransit.NativeGateTargetsDestination)
+            {
+                gates.Add(new
+                {
+                    kind = "ordinary_warp_active_festival",
+                    tile_x = warp.X,
+                    tile_y = warp.Y,
+                    source_property = "GameLocation.warps",
+                    target_location = warp.TargetName,
+                    target_x = (int?)warp.TargetX,
+                    target_y = (int?)warp.TargetY,
+                    festival_id = festivalTransit.FestivalId,
+                    festival_location_id = festivalTransit.LocationId,
+                    festival_start_time = festivalTransit.StartTime,
+                    festival_end_time = festivalTransit.EndTime,
+                    native_weather_icon = Game1.weatherIcon,
+                    native_where_is_todays_fest = Game1.whereIsTodaysFest,
+                    native_festival_gate_active =
+                        festivalTransit.NativeGateActive,
+                    native_prestart_warp_rejected =
+                        festivalTransit.NativePrestartWarpRejected,
+                    native_festival_entry_window =
+                        festivalTransit.NativeFestivalEntryWindow,
+                    ordinary_transit_mode =
+                        festivalTransit.OrdinaryTransitMode,
+                    ordinary_transit_allowed_now =
+                        festivalTransit.OrdinaryTransitAllowedNow,
+                    allowed_now = festivalTransit.ProjectionComplete
+                        ? festivalTransit.OrdinaryTransitAllowedNow
+                        : (bool?)null,
+                    allowed_on_capture_date = festivalTransit.ProjectionComplete
+                        ? festivalTransit.OrdinaryTransitAllowedOnCaptureDate
+                        : (bool?)null,
+                    time_unrestricted_on_capture_date =
+                        festivalTransit.ProjectionComplete &&
+                        festivalTransit.OrdinaryTransitAllowedNow,
+                    effective_open_time =
+                        festivalTransit.NextOrdinaryOpenTime,
+                    effective_close_time = 2600,
+                    open_time = festivalTransit.NextOrdinaryOpenTime,
+                    close_time = 2600,
+                    unresolved_reason = festivalTransit.ProjectionComplete
+                        ? (string?)null
+                        : festivalTransit.Status,
+                    source_contract =
+                        "Game1.warpFarmer active-festival branch"
+                });
+            }
+        }
+
         for (var y = 0; y < height; y++)
         {
             for (var x = 0; x < width; x++)
@@ -119,6 +194,15 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             return ReadLockedDoorWarpGate(location, x, y, action, sourceProperty, parts);
         }
 
+        if (string.Equals(parts[0], "DesertBus", StringComparison.OrdinalIgnoreCase))
+        {
+            return ReadNativeBusTransportGate(
+                location,
+                x,
+                y,
+                toDesert: false);
+        }
+
         if (IsCommunityCenterWarpAction(parts[0]))
         {
             var communityCenterDoorUnlocked = IsCommunityCenterDoorUnlocked();
@@ -140,6 +224,29 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
                 unresolved_reason = communityCenterDoorUnlocked
                     ? (string?)null
                     : "community_center_door_unlock_mail_missing"
+            };
+        }
+
+        if (string.Equals(parts[0], "WarpBoatTunnel", StringComparison.OrdinalIgnoreCase))
+        {
+            var invitationReceived = Game1.player?.mailReceived.Contains("willyBackRoomInvitation") == true;
+            return new
+            {
+                kind = "warp_action",
+                tile_x = x,
+                tile_y = y,
+                source_property = sourceProperty,
+                action,
+                target_location = "BoatTunnel",
+                target_x = 6,
+                target_y = 12,
+                mail_required = "willyBackRoomInvitation",
+                mail_requirement_met = invitationReceived,
+                allowed_on_capture_date = invitationReceived,
+                allowed_now = invitationReceived,
+                unresolved_reason = invitationReceived
+                    ? (string?)null
+                    : "boat_tunnel_invitation_missing"
             };
         }
 
@@ -199,6 +306,7 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
         {
             var opened = Game1.player?.mailReceived.Contains("OpenedSewer") == true;
             var hasRustyKey = Game1.player?.hasRustyKey == true;
+            var executableNow = opened || hasRustyKey;
             return new
             {
                 kind = "warp_action",
@@ -213,13 +321,29 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
                 mail_requirement_met = opened,
                 rusty_key_available = hasRustyKey,
                 required_action_count = opened ? 1 : hasRustyKey ? 2 : (int?)null,
-                allowed_on_capture_date = opened,
-                allowed_now = opened,
-                unresolved_reason = opened
+                allowed_on_capture_date = executableNow,
+                allowed_now = executableNow,
+                unresolved_reason = executableNow
                     ? (string?)null
-                    : hasRustyKey
-                        ? "enter_sewer_unlock_interaction_required"
-                        : "enter_sewer_rusty_key_missing"
+                    : "enter_sewer_rusty_key_missing"
+            };
+        }
+
+        if (IsOrdinaryMineEntryAction(location, parts))
+        {
+            return new
+            {
+                kind = "warp_action",
+                tile_x = x,
+                tile_y = y,
+                source_property = sourceProperty,
+                action,
+                target_location = "UndergroundMine1",
+                target_x = (int?)null,
+                target_y = (int?)null,
+                allowed_on_capture_date = true,
+                allowed_now = true,
+                unresolved_reason = (string?)null
             };
         }
 
@@ -258,6 +382,12 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             && string.Equals(Game1.shortDayNameFromDayOfSeason(Game1.dayOfMonth), "Wed", StringComparison.OrdinalIgnoreCase)
             && !Utility.HasAnyPlayerSeenEvent("191393")
             && !hasTownKey;
+        var fishShopGoneFishingClosed =
+            NativeShopGateRules.IsFishShopGoneFishingClosed(
+                location,
+                x,
+                y,
+                locationName);
         var friendPoints = ReadFriendshipPoints(npcName);
         var friendshipAllowed = minFriendship <= 0 || location.IsWinterHere() || (friendPoints.HasValue && friendPoints.Value >= minFriendship);
         var timeAllowed = hasTownKey || (effectiveOpenTime.HasValue && closeTime.HasValue && Game1.timeOfDay >= effectiveOpenTime.Value && Game1.timeOfDay < closeTime.Value);
@@ -267,10 +397,15 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             && location.GetType().Name != "Forest"
             && !string.Equals(locationName, "AdventureGuild", StringComparison.OrdinalIgnoreCase);
         var parsed = targetX.HasValue && targetY.HasValue && !string.IsNullOrWhiteSpace(locationName) && openTime.HasValue && closeTime.HasValue;
-        var allowed = parsed && !festivalClosed && !seedShopWednesdayClosed && ((timeAllowed && friendshipAllowed) || greenRainOverride);
+        var allowed = parsed &&
+            !festivalClosed &&
+            !seedShopWednesdayClosed &&
+            !fishShopGoneFishingClosed &&
+            ((timeAllowed && friendshipAllowed) || greenRainOverride);
         var allowedOnCaptureDate = parsed &&
             !festivalClosed &&
             !seedShopWednesdayClosed &&
+            !fishShopGoneFishingClosed &&
             (friendshipAllowed || greenRainOverride);
         var timeUnrestrictedOnCaptureDate = hasTownKey || greenRainOverride;
 
@@ -294,6 +429,7 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             has_town_key = hasTownKey,
             festival_closed = festivalClosed,
             seed_shop_wednesday_closed = seedShopWednesdayClosed,
+            fish_shop_gone_fishing_closed = fishShopGoneFishingClosed,
             time_allowed = timeAllowed,
             friendship_allowed = friendshipAllowed,
             green_rain_override = greenRainOverride,

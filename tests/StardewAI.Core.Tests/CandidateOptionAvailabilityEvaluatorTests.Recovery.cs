@@ -4,6 +4,7 @@ using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
 using StardewAI.Core.Execution;
 using StardewAI.Core.OptionRegistry;
+using StardewAI.Core.Training;
 
 namespace StardewAI.Core.Tests;
 
@@ -337,6 +338,148 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     }
 
     [Fact]
+    public void RecoveryNativeBoundaryClearsShortestHomeRouteInsteadOfTakingImmediateReverseDetour()
+    {
+        var snapshot = Snapshot("""
+        {
+          "time": {
+            "time": {"value":800,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "player": {
+            "location_id": {"value":"Farm","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_x": {"value":10,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":10,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "inventory": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "current_location": {
+            "home_context": {"value":{"home_available":true,"home_location_id":"FarmHouse","current_location_id":"Farm","current_location_is_home":false,"bed_tile_x":3,"bed_tile_y":8,"bed_tile_has_bed":true},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "objects": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "terrain_features": {"value":[{"tile_x":11,"tile_y":11,"type":"Grass"}],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "map": {"value":{"id":"Farm"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "menus": {
+            "active_menu": {"value":{"is_open":false,"type":"none"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "sleep_prompt_context": {"value":{"prompt_open":false},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "collision_grid": {"value":{"location_id":"Farm","width":20,"height":20,"notable_tiles":[
+              {"tile_x":11,"tile_y":0,"collision_blocked":true},{"tile_x":11,"tile_y":1,"collision_blocked":true},
+              {"tile_x":11,"tile_y":2,"collision_blocked":true},{"tile_x":11,"tile_y":3,"collision_blocked":true},
+              {"tile_x":11,"tile_y":4,"collision_blocked":true},{"tile_x":11,"tile_y":5,"collision_blocked":true},
+              {"tile_x":11,"tile_y":6,"collision_blocked":true},{"tile_x":11,"tile_y":7,"collision_blocked":true},
+              {"tile_x":11,"tile_y":8,"collision_blocked":true},{"tile_x":11,"tile_y":9,"collision_blocked":true},
+              {"tile_x":11,"tile_y":10,"collision_blocked":true},{"tile_x":11,"tile_y":11,"collision_blocked":true},
+              {"tile_x":11,"tile_y":12,"collision_blocked":true},{"tile_x":11,"tile_y":13,"collision_blocked":true},
+              {"tile_x":11,"tile_y":14,"collision_blocked":true},{"tile_x":11,"tile_y":15,"collision_blocked":true},
+              {"tile_x":11,"tile_y":16,"collision_blocked":true},{"tile_x":11,"tile_y":17,"collision_blocked":true},
+              {"tile_x":11,"tile_y":18,"collision_blocked":true},{"tile_x":11,"tile_y":19,"collision_blocked":true},
+              {"tile_x":12,"tile_y":10,"collision_blocked":true}
+            ]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_connectors": {"value":{"location_id":"Farm","connectors":[
+              {"kind":"building_door","tile_x":12,"tile_y":10,"target_location":"FarmHouse","target_x":3,"target_y":9,"stand_tile_x":12,"stand_tile_y":11,"resolved":true},
+              {"kind":"warp","tile_x":10,"tile_y":12,"target_location":"Forest","target_x":1,"target_y":1,"resolved":true}
+            ]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_gate_context": {"value":{"location_id":"Farm","action_gates":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_action_branch_coverage": {"value":{"rows":[{"tile_x":10,"tile_y":12,"branch":"Warp","route_training_blocked":false}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_graph": {"value":{"edges":[
+              {"kind":"building_door","from_location":"Farm","from_x":12,"from_y":10,"target_location":"FarmHouse","target_x":3,"target_y":9,"resolved":true},
+              {"kind":"warp","from_location":"Farm","from_x":10,"from_y":12,"target_location":"Forest","target_x":1,"target_y":1,"resolved":true},
+              {"kind":"warp","from_location":"Forest","from_x":1,"from_y":0,"target_location":"Farm","target_x":10,"target_y":11,"resolved":true}
+            ]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """);
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(
+            snapshot,
+            new[]
+            {
+                Candidate(
+                    "recovery.stabilize_day",
+                    Parameter("control_plane.native_save_boundary", "true"))
+            },
+            includeExecutorCalibrationOptions: true);
+
+        var option = Assert.Single(availability.Options);
+        Assert.True(option.Available, string.Join(";", option.BlockingReasons));
+        Assert.Equal("ready", option.CompileStatus);
+        var candidate = Assert.Single(option.EventCandidates);
+        Assert.Equal("recovery:native_save_boundary", candidate.CandidateId);
+        Assert.True(
+            candidate.Kind == "clear_obstacle_tile",
+            JsonSerializer.Serialize(candidate, JsonOptions));
+        Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
+        Assert.Equal(11, candidate.TileX);
+        Assert.Equal(11, candidate.TileY);
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "route_repair.expected_target_location" &&
+            parameter.Value == "FarmHouse");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "control_plane.native_save_boundary" &&
+            parameter.Value == "true");
+        Assert.DoesNotContain(candidate.Parameters, parameter =>
+            parameter.Name == "expected_target_location" &&
+            parameter.Value == "Forest");
+
+        var ranked = Assert.Single(new EventCandidateRanker().Rank(
+            new(),
+            availability,
+            "daily.closed_loop"));
+        var plan = new DailyPlanCompiler().Compile(
+            new[] { ranked },
+            snapshot.StateHash,
+            "daily.closed_loop");
+        Assert.Contains(plan.Steps, step => step.Kind == "clear_obstacle");
+        Assert.DoesNotContain(plan.Steps, step => step.Kind == "traverse_connector");
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+        Assert.Contains(queue.Items, item =>
+            item.OptionId == "executor.clear_obstacle" &&
+            item.Status == "pending");
+        Assert.DoesNotContain(queue.Items, item =>
+            item.OptionId == "executor.traverse_connector");
+
+        var directQueue = new ActionQueueCompiler().Compile(
+            new SmallModelActionEnvelope
+            {
+                ModelOutputId = "recovery.route-clearance.test",
+                SourceModel = "test",
+                StateHash = snapshot.StateHash,
+                GoalId = "daily.closed_loop",
+                ExecutionMode = "training_singleplayer",
+                Actor = new ActionActorRef
+                {
+                    ActorId = "training_farmer.test",
+                    ActorType = "training_farmer",
+                    ControlSurface = "training_sandbox"
+                },
+                Actions = new[]
+                {
+                    new SmallModelAction
+                    {
+                        ActionId = "recovery.route-clearance.action",
+                        OptionId = "recovery.stabilize_day",
+                        Parameters = new[]
+                        {
+                            Parameter(
+                                "control_plane.native_save_boundary",
+                                "true")
+                        }
+                    }
+                }
+            },
+            snapshot);
+        var directItem = Assert.Single(directQueue.Items);
+        Assert.Equal("pending", directItem.Status);
+        Assert.Contains(directItem.NormalizedCommand.Parameters, parameter =>
+            parameter.Name == "execution_option_id" &&
+            parameter.Value == "executor.wait_ticks");
+        Assert.Contains(directItem.NormalizedCommand.Steps, step =>
+            step.StepType == "refresh_plan_after_stabilization");
+        Assert.DoesNotContain(directItem.NormalizedCommand.Steps, step =>
+            step.StepType == "traverse_connector");
+    }
+
+    [Fact]
     public void RecoveryHighLevelEnabledAfterCandidateChainComplete()
     {
         var option = new CandidateOptionAvailabilityEvaluator()
@@ -422,7 +565,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     private static SnapshotEnvelope RouteConnectorSnapshot(
         bool routeTrainingBlocked,
         bool resolved = true,
-        string targetLocation = "Town")
+        string targetLocation = "Town",
+        bool activeFestivalTransitClosed = false)
     {
         return Snapshot("""
         {
@@ -438,6 +582,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
           "locations": {
             "collision_grid": {"value":{"location_id":"Farm","width":20,"height":20,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "route_connectors": {"value":{"location_id":"Farm","connector_count":1,"connectors":[{"kind":"warp","tile_x":12,"tile_y":10,"target_location":"TARGET_LOCATION","target_x":1,"target_y":2,"resolved":RESOLVED}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_gate_context": {"value":{"location_id":"Farm","action_gates":FESTIVAL_GATES},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "route_action_branch_coverage": {"value":{"rows":[{"tile_x":12,"tile_y":10,"branch":"Warp","route_training_blocked":ROUTE_BLOCKED}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           }
         }
@@ -446,6 +591,11 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             "ROUTE_BLOCKED",
             routeTrainingBlocked ? "true" : "false")
         .Replace("RESOLVED", resolved ? "true" : "false")
+        .Replace(
+            "FESTIVAL_GATES",
+            activeFestivalTransitClosed
+                ? "[{\"kind\":\"ordinary_warp_active_festival\",\"tile_x\":12,\"tile_y\":10,\"target_location\":\"Town\",\"allowed_now\":false,\"allowed_on_capture_date\":true,\"effective_open_time\":1410,\"close_time\":2600,\"unresolved_reason\":null}]"
+                : "[]")
         .Replace("TARGET_LOCATION", targetLocation));
     }
 
@@ -561,14 +711,18 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         string entryOverride,
         bool endpointAllowed = true,
         string endpointExtra = "",
-        string routeGraphExtra = "")
+        string routeGraphExtra = "",
+        int currentTime = 900,
+        string shopId = "Blacksmith",
+        string npcScheduleState = "")
     {
         return Snapshot("""
         {
           "time": {
-            "time": {"value":900,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "time": {"value":CURRENT_TIME,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "total_days": {"value":1,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "season": {"value":"spring","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
-          },
+          } NPC_SCHEDULE_STATE,
           "player": {
             "location_id": {"value":"FarmHouse","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "tile_x": {"value":1,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
@@ -581,13 +735,13 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             "crop_catalog": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "locations": {
-            "shops": {"value":{"stores_closed_for_festival":false,"shops":[{"shop_id":"Blacksmith","stock_preview":{"kind":"shop_stock_preview","shop_id":"Blacksmith","entries":[ENTRY]}}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "shops": {"value":{"stores_closed_for_festival":false,"shops":[{"shop_id":"SHOP_ID","stock_preview":{"kind":"shop_stock_preview","shop_id":"SHOP_ID","entries":[ENTRY]}}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "collision_grid": {"value":{"location_id":"FarmHouse","width":20,"height":20,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
-            "route_connectors": {"value":{"location_id":"FarmHouse","connectors":[{"kind":"warp","tile_x":2,"tile_y":3,"target_location":"Blacksmith","target_x":3,"target_y":4,"resolved":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_connectors": {"value":{"location_id":"FarmHouse","connectors":[{"kind":"warp","tile_x":2,"tile_y":3,"target_location":"SHOP_ID","target_x":3,"target_y":4,"resolved":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "route_action_branch_coverage": {"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "route_graph": {"value":{"edges":[
-              {"kind":"warp","from_location":"FarmHouse","from_x":2,"from_y":3,"target_location":"Blacksmith","target_x":3,"target_y":4,"resolved":true},
-              {"kind":"shop_endpoint","from_location":"Blacksmith","from_x":3,"from_y":5,"shop_id":"Blacksmith","action_type":"Blacksmith","allowed_now":ENDPOINT_ALLOWED ENDPOINT_EXTRA,"resolved":false} ROUTE_GRAPH_EXTRA
+              {"kind":"warp","from_location":"FarmHouse","from_x":2,"from_y":3,"target_location":"SHOP_ID","target_x":3,"target_y":4,"resolved":true},
+              {"kind":"shop_endpoint","from_location":"SHOP_ID","from_x":3,"from_y":5,"shop_id":"SHOP_ID","action_type":"Blacksmith","allowed_now":ENDPOINT_ALLOWED ENDPOINT_EXTRA,"resolved":false} ROUTE_GRAPH_EXTRA
             ]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "current_location": {
@@ -604,10 +758,18 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
                 "ENDPOINT_ALLOWED",
                 endpointAllowed ? "true" : "false")
             .Replace("ENDPOINT_EXTRA", endpointExtra)
-            .Replace("ROUTE_GRAPH_EXTRA", routeGraphExtra));
+            .Replace("ROUTE_GRAPH_EXTRA", routeGraphExtra)
+            .Replace("SHOP_ID", shopId)
+            .Replace("NPC_SCHEDULE_STATE", npcScheduleState)
+            .Replace(
+                "CURRENT_TIME",
+                currentTime.ToString(System.Globalization.CultureInfo.InvariantCulture)));
     }
 
-    private static SnapshotEnvelope SellSnapshot(string inventoryItemOverride, string? sellContextOverride = null)
+    private static SnapshotEnvelope SellSnapshot(
+        string inventoryItemOverride,
+        string? sellContextOverride = null,
+        string seedInventoryOverride = "[]")
     {
         return Snapshot("""
         {
@@ -616,7 +778,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
           },
           "player": {
             "location_id": {"value":"SeedShop","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
-            "inventory": {"value":[ITEM],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            "inventory": {"value":[ITEM],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "seed_inventory": {"value":SEED_INVENTORY,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "locations": {
             "shops": {"value":{"stores_closed_for_festival":false,"shops":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
@@ -632,6 +795,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         }
         """
             .Replace("ITEM", inventoryItemOverride)
+            .Replace("SEED_INVENTORY", seedInventoryOverride)
             .Replace(
                 "SELL_CONTEXT",
                 sellContextOverride ??

@@ -156,6 +156,70 @@ public sealed partial class ActionQueueCompilerTests
     }
 
     [Fact]
+    public void CompilePlanMoveToTilePrefersLowerClearCostOverShorterTreeRoute()
+    {
+        var snapshot = Snapshot("""
+        {
+          "player": {
+            "location_id": {"value":"Farm","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_x": {"value":0,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":1,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "inventory": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "current_location": {
+            "objects": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "terrain_features": {"value":[
+              {"tile_x":1,"tile_y":1,"type":"StardewValley.TerrainFeatures.Tree","expected_axe_hits_to_clear":15,"tree_chop_energy_cost":30},
+              {"tile_x":2,"tile_y":0,"type":"Grass"}
+            ],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "map": {"value":{"id":"Farm","width":5,"height":2},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "menus": {
+            "active_menu": {"value":{"is_open":false,"type":"none"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "collision_grid": {"value":{"location_id":"Farm","width":5,"height":2,"notable_tiles":[
+              {"tile_x":1,"tile_y":1,"collision_blocked":true},
+              {"tile_x":2,"tile_y":0,"collision_blocked":true}
+            ]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_action_branch_coverage": {"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """);
+        var plan = Plan(snapshot.StateHash,
+            new SmallModelPlanStep
+            {
+                StepId = "plan.step.move.prefer.grass",
+                Kind = "move_to_tile",
+                TargetLocation = "Farm",
+                TargetTileX = 4,
+                TargetTileY = 1,
+                EstimatedMinutes = 12,
+                Parameters = new[]
+                {
+                    new SmallModelActionParameter { Name = "max_route_repair_clears", Value = "2" },
+                    new SmallModelActionParameter { Name = "max_route_repair_minutes", Value = "12" }
+                }
+            });
+
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+
+        Assert.Equal("pending", queue.Status);
+        Assert.Equal(3, queue.Items.Length);
+        var clear = queue.Items[1];
+        Assert.Equal("executor.clear_obstacle", clear.OptionId);
+        Assert.Contains(clear.NormalizedCommand.Parameters, parameter =>
+            parameter.Name == "target_tile_x" && parameter.Value == "2");
+        Assert.Contains(clear.NormalizedCommand.Parameters, parameter =>
+            parameter.Name == "target_tile_y" && parameter.Value == "0");
+        Assert.DoesNotContain(queue.Items, item => item.NormalizedCommand.Parameters.Any(parameter =>
+            parameter.Name == "target_tile_x" && parameter.Value == "1") &&
+            item.NormalizedCommand.Parameters.Any(parameter =>
+                parameter.Name == "target_tile_y" && parameter.Value == "1"));
+    }
+
+    [Fact]
     public void CompilePlanMoveRepairCarriesLongBfsDistanceIntoMovementLimitAndBudget()
     {
         var blockedTiles = string.Join(",", Enumerable.Range(0, 20)
@@ -346,6 +410,65 @@ public sealed partial class ActionQueueCompilerTests
         Assert.Equal("executor.move_to_tile", queue.Items[4].OptionId);
         Assert.Contains(queue.Items[4].NormalizedCommand.Parameters, parameter =>
             parameter.Name == "target_tile_x" && parameter.Value == "4");
+    }
+
+    [Fact]
+    public void CompilePlanMoveToTileUsesFullRouteBlockersOutsideScopedCurrentLocationRows()
+    {
+        var snapshot = Snapshot("""
+        {
+          "player": {
+            "location_id": {"value":"Farm","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_x": {"value":0,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":0,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "inventory": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "current_location": {
+            "objects": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "terrain_features": {"value":[],"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "map": {"value":{"id":"Farm","width":4,"height":1},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "menus": {
+            "active_menu": {"value":{"is_open":false,"type":"none"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "collision_grid": {"value":{"location_id":"Farm","width":4,"height":1,"notable_tiles":[{"tile_x":1,"tile_y":0,"collision_blocked":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_blockers": {"value":{"location_id":"Farm","objects":[{"kind":"object","item_id":"674","qualified_item_id":"(O)674","type":"StardewValley.Object","tile_x":1,"tile_y":0,"passable":false}],"terrain_features":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_action_branch_coverage": {"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """);
+        var plan = Plan(snapshot.StateHash,
+            new SmallModelPlanStep
+            {
+                StepId = "plan.step.move.full.route.blocker",
+                Kind = "move_to_tile",
+                TargetLocation = "Farm",
+                TargetTileX = 3,
+                TargetTileY = 0,
+                EstimatedMinutes = 4,
+                Parameters = new[]
+                {
+                    new SmallModelActionParameter
+                    {
+                        Name = "max_route_repair_clears",
+                        Value = "1"
+                    }
+                }
+            });
+
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+
+        Assert.Equal(3, queue.Items.Length);
+        Assert.Equal("executor.move_to_tile", queue.Items[0].OptionId);
+        Assert.Equal("executor.clear_obstacle", queue.Items[1].OptionId);
+        Assert.Equal("executor.move_to_tile", queue.Items[2].OptionId);
+        Assert.Contains(queue.Items[1].NormalizedCommand.Parameters, parameter =>
+            parameter.Name == "target_tile_x" && parameter.Value == "1");
+        Assert.Contains(queue.Items[1].NormalizedCommand.Parameters, parameter =>
+            parameter.Name == "route_repair_clear_kind" &&
+            parameter.Value == "weeds");
     }
 
     [Fact]
@@ -615,6 +738,335 @@ public sealed partial class ActionQueueCompilerTests
         Assert.Equal("current_location(27,31)", step.Target);
         Assert.Equal("location=Farm;player.tile=64,15", step.ExpectedEffect);
     }
+
+    [Fact]
+    public void CompileAcceptsAuditedNativeBusTransportConnector()
+    {
+        var snapshot = NativeBusConnectorSnapshot(allowedNow: true);
+        var plan = Plan(
+            snapshot.StateHash,
+            new SmallModelPlanStep
+            {
+                StepId = "plan.step.bus_stop.to.desert",
+                Kind = "traverse_connector",
+                TargetTileX = 12,
+                TargetTileY = 10,
+                EstimatedMinutes = 20,
+                Parameters = new[]
+                {
+                    new SmallModelActionParameter { Name = "connector_kind", Value = "native_bus_transport" },
+                    new SmallModelActionParameter { Name = "expected_target_location", Value = "Desert" },
+                    new SmallModelActionParameter { Name = "expected_arrival_tile_x", Value = "16" },
+                    new SmallModelActionParameter { Name = "expected_arrival_tile_y", Value = "24" }
+                }
+            });
+
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+
+        Assert.True(
+            queue.Status == "pending",
+            string.Join("|", queue.Items.SelectMany(item => item.BlockingReasons)));
+        var item = Assert.Single(queue.Items);
+        Assert.Equal("executor.traverse_connector", item.OptionId);
+        Assert.Contains(item.NormalizedCommand.Parameters, parameter =>
+            parameter.Name == "connector_kind" &&
+            parameter.Value == "native_bus_transport");
+        var step = Assert.Single(item.NormalizedCommand.Steps);
+        Assert.Equal("traverse_connector", step.StepType);
+        Assert.Equal("current_location(12,10)", step.Target);
+        Assert.Equal("location=Desert;player.tile=16,24", step.ExpectedEffect);
+    }
+
+    [Fact]
+    public void CompileAcceptsAuditedMagicWarpTouchConnector()
+    {
+        var snapshot = Snapshot("""
+        {
+          "player": {
+            "location_id": {"value":"WitchWarpCave","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_x": {"value":4,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":8,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "collision_grid": {"value":{"location_id":"WitchWarpCave","width":9,"height":12,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_action_branch_coverage": {"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_connectors": {"value":{"location_id":"WitchWarpCave","connectors":[{"kind":"magic_warp","tile_x":4,"tile_y":5,"target_location":"WitchSwamp","target_x":20,"target_y":42,"action":"MagicWarp WitchSwamp 20 42","source_property":"Back.TouchAction","open":true,"resolved":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """);
+        var plan = Plan(
+            snapshot.StateHash,
+            new SmallModelPlanStep
+            {
+                StepId = "plan.step.witch-cave.to-swamp",
+                Kind = "traverse_connector",
+                TargetTileX = 4,
+                TargetTileY = 5,
+                EstimatedMinutes = 10,
+                Parameters = new[]
+                {
+                    new SmallModelActionParameter { Name = "connector_kind", Value = "magic_warp" },
+                    new SmallModelActionParameter { Name = "expected_target_location", Value = "WitchSwamp" },
+                    new SmallModelActionParameter { Name = "expected_arrival_tile_x", Value = "20" },
+                    new SmallModelActionParameter { Name = "expected_arrival_tile_y", Value = "42" }
+                }
+            });
+
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+
+        Assert.Equal("pending", queue.Status);
+        var item = Assert.Single(queue.Items);
+        Assert.Equal("executor.traverse_connector", item.OptionId);
+        Assert.Contains(item.NormalizedCommand.Parameters, parameter =>
+            parameter.Name == "connector_kind" && parameter.Value == "magic_warp");
+        Assert.Equal(
+            "location=WitchSwamp;player.tile=20,42",
+            Assert.Single(item.NormalizedCommand.Steps).ExpectedEffect);
+    }
+
+    [Fact]
+    public void CompileBlocksNativeBusTransportWhenLiveGateIsClosed()
+    {
+        var snapshot = NativeBusConnectorSnapshot(allowedNow: false);
+        var plan = Plan(
+            snapshot.StateHash,
+            new SmallModelPlanStep
+            {
+                StepId = "plan.step.bus_stop.to.desert.blocked",
+                Kind = "traverse_connector",
+                TargetTileX = 12,
+                TargetTileY = 10,
+                Parameters = new[]
+                {
+                    new SmallModelActionParameter { Name = "connector_kind", Value = "native_bus_transport" },
+                    new SmallModelActionParameter { Name = "expected_target_location", Value = "Desert" },
+                    new SmallModelActionParameter { Name = "expected_arrival_tile_x", Value = "16" },
+                    new SmallModelActionParameter { Name = "expected_arrival_tile_y", Value = "24" }
+                }
+            });
+
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+
+        Assert.Equal("blocked", queue.Status);
+        Assert.Contains(
+            "connector_gate_closed",
+            Assert.Single(queue.Items).BlockingReasons);
+    }
+
+    [Fact]
+    public void CompileBlocksOrdinaryWarpDuringActiveFestivalTransitWindow()
+    {
+        var snapshot = Snapshot("""
+        {
+          "player": {
+            "location_id": {"value":"Beach","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_x": {"value":38,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":0,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "collision_grid": {"value":{"location_id":"Beach","width":80,"height":50,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_action_branch_coverage": {"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_connectors": {"value":{"location_id":"Beach","connectors":[{"kind":"warp","tile_x":38,"tile_y":-1,"target_location":"Town","target_x":54,"target_y":108,"resolved":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_gate_context": {"value":{"location_id":"Beach","action_gates":[{"kind":"ordinary_warp_active_festival","tile_x":38,"tile_y":-1,"target_location":"Town","allowed_now":false,"allowed_on_capture_date":true,"effective_open_time":1410,"effective_close_time":2600,"unresolved_reason":null}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """);
+        var plan = Plan(
+            snapshot.StateHash,
+            new SmallModelPlanStep
+            {
+                StepId = "plan.step.beach.to.town.festival.blocked",
+                Kind = "traverse_connector",
+                TargetTileX = 38,
+                TargetTileY = -1,
+                Parameters = new[]
+                {
+                    new SmallModelActionParameter
+                    {
+                        Name = "connector_kind",
+                        Value = "warp"
+                    },
+                    new SmallModelActionParameter
+                    {
+                        Name = "expected_target_location",
+                        Value = "Town"
+                    },
+                    new SmallModelActionParameter
+                    {
+                        Name = "expected_arrival_tile_x",
+                        Value = "54"
+                    },
+                    new SmallModelActionParameter
+                    {
+                        Name = "expected_arrival_tile_y",
+                        Value = "108"
+                    }
+                }
+            });
+
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+
+        Assert.Equal("blocked", queue.Status);
+        Assert.Contains(
+            "connector_active_festival_transit_closed",
+            Assert.Single(queue.Items).BlockingReasons);
+    }
+
+    [Fact]
+    public void CompileDefersCrossLocationMoveUntilFestivalTransitReopens()
+    {
+        var snapshot = Snapshot("""
+        {
+          "time": {
+            "time": {"value":710,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "player": {
+            "location_id": {"value":"Beach","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_x": {"value":8,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":16,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "collision_grid": {"value":{"location_id":"Beach","width":80,"height":50,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_action_branch_coverage": {"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_connectors": {"value":{"location_id":"Beach","connectors":[{"kind":"warp","tile_x":38,"tile_y":-1,"target_location":"Town","target_x":54,"target_y":108,"resolved":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_graph": {"value":{"edges":[{"kind":"warp","from_location":"Beach","from_x":38,"from_y":-1,"target_location":"Town","target_x":54,"target_y":108,"resolved":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_gate_context": {"value":{"location_id":"Beach","action_gates":[{"kind":"ordinary_warp_active_festival","tile_x":38,"tile_y":-1,"target_location":"Town","allowed_now":false,"allowed_on_capture_date":true,"effective_open_time":1410,"effective_close_time":2600,"unresolved_reason":null}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """);
+        var plan = Plan(
+            snapshot.StateHash,
+            new SmallModelPlanStep
+            {
+                StepId = "plan.step.beach.to.town.festival.deferred",
+                Kind = "move_to_tile",
+                TargetLocation = "Town",
+                TargetTileX = 54,
+                TargetTileY = 108,
+                Preconditions = new[]
+                {
+                    "candidate_id:route:test:town",
+                    "world_ready"
+                }
+            });
+
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+
+        Assert.Equal("pending", queue.Status);
+        var item = Assert.Single(queue.Items);
+        Assert.Equal("executor.wait_ticks", item.OptionId);
+        Assert.Equal("pending", item.Status);
+        Assert.Contains(
+            item.NormalizedCommand.Parameters,
+            parameter => parameter.Name == "wait_ticks" && parameter.Value == "600");
+        Assert.Contains(
+            item.NormalizedCommand.Parameters,
+            parameter => parameter.Name == "route_wait_reason" &&
+                parameter.Value ==
+                    "recovery_current_connector_active_festival_transit_closed");
+        Assert.Contains(
+            item.NormalizedCommand.Parameters,
+            parameter => parameter.Name == "route_wait_until_time" &&
+                parameter.Value == "1410");
+        Assert.Contains(
+            item.NormalizedCommand.Parameters,
+            parameter => parameter.Name == "route_wait_max_slices" &&
+                parameter.Value == "3");
+        Assert.Contains(
+            item.NormalizedCommand.Parameters,
+            parameter => parameter.Name == "cross_location_move_target" &&
+                parameter.Value == "Town");
+        Assert.Equal("wait_ticks", Assert.Single(item.NormalizedCommand.Steps).StepType);
+    }
+
+    private static SnapshotEnvelope NativeBusConnectorSnapshot(bool allowedNow) => Snapshot($$"""
+    {
+      "player": {
+        "location_id": {"value":"BusStop","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+        "tile_x": {"value":10,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+        "tile_y": {"value":10,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+      },
+      "locations": {
+        "collision_grid": {"value":{"location_id":"BusStop","width":40,"height":30,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+        "route_action_branch_coverage": {"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+        "route_connectors": {"value":{"location_id":"BusStop","connectors":[{"kind":"native_bus_transport","tile_x":12,"tile_y":10,"target_location":"Desert","target_x":16,"target_y":24,"source_property":"BusStop.checkAction Buildings/outdoors tile index 1057","resolved":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+        "route_gate_context": {"value":{"location_id":"BusStop","action_gates":[{"kind":"native_bus_transport","tile_x":12,"tile_y":10,"allowed_now":{{allowedNow.ToString().ToLowerInvariant()}}}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+      }
+    }
+    """);
+
+    [Fact]
+    public void CompileAcceptsAuditedTwoInteractionSewerConnector()
+    {
+        var snapshot = SewerConnectorSnapshot(allowedNow: true);
+        var plan = Plan(
+            snapshot.StateHash,
+            new SmallModelPlanStep
+            {
+                StepId = "plan.step.town.to.sewer",
+                Kind = "traverse_connector",
+                TargetTileX = 34,
+                TargetTileY = 95,
+                EstimatedMinutes = 10,
+                Parameters = new[]
+                {
+                    new SmallModelActionParameter { Name = "connector_kind", Value = "action_warp" },
+                    new SmallModelActionParameter { Name = "expected_target_location", Value = "Sewer" },
+                    new SmallModelActionParameter { Name = "expected_arrival_tile_x", Value = "16" },
+                    new SmallModelActionParameter { Name = "expected_arrival_tile_y", Value = "11" }
+                }
+            });
+
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+
+        Assert.Equal("pending", queue.Status);
+        var item = Assert.Single(queue.Items);
+        Assert.Equal("executor.traverse_connector", item.OptionId);
+        Assert.Equal("location=Sewer;player.tile=16,11", Assert.Single(item.NormalizedCommand.Steps).ExpectedEffect);
+    }
+
+    [Fact]
+    public void CompileBlocksSewerConnectorWhenRustyKeyGateIsClosed()
+    {
+        var snapshot = SewerConnectorSnapshot(allowedNow: false);
+        var plan = Plan(
+            snapshot.StateHash,
+            new SmallModelPlanStep
+            {
+                StepId = "plan.step.town.to.sewer.blocked",
+                Kind = "traverse_connector",
+                TargetTileX = 34,
+                TargetTileY = 95,
+                Parameters = new[]
+                {
+                    new SmallModelActionParameter { Name = "connector_kind", Value = "action_warp" },
+                    new SmallModelActionParameter { Name = "expected_target_location", Value = "Sewer" },
+                    new SmallModelActionParameter { Name = "expected_arrival_tile_x", Value = "16" },
+                    new SmallModelActionParameter { Name = "expected_arrival_tile_y", Value = "11" }
+                }
+            });
+
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+
+        Assert.Equal("blocked", queue.Status);
+        Assert.Contains("connector_gate_closed", Assert.Single(queue.Items).BlockingReasons);
+    }
+
+    private static SnapshotEnvelope SewerConnectorSnapshot(bool allowedNow) => Snapshot($$"""
+    {
+      "player": {
+        "location_id": {"value":"Town","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+        "tile_x": {"value":33,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+        "tile_y": {"value":95,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+      },
+      "locations": {
+        "collision_grid": {"value":{"location_id":"Town","width":120,"height":120,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+        "route_action_branch_coverage": {"value":{"location_id":"Town","unsupported_for_route_training_count":0,"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+        "route_connectors": {"value":{"location_id":"Town","connectors":[{"kind":"action_warp","tile_x":34,"tile_y":95,"target_location":"Sewer","target_x":16,"target_y":11,"action":"EnterSewer","source_property":"Buildings.Action","resolved":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+        "route_gate_context": {"value":{"location_id":"Town","action_gates":[{"kind":"warp_action","tile_x":34,"tile_y":95,"action":"EnterSewer","rusty_key_available":{{allowedNow.ToString().ToLowerInvariant()}},"required_action_count":{{(allowedNow ? 2 : 0)}},"allowed_now":{{allowedNow.ToString().ToLowerInvariant()}},"unresolved_reason":{{(allowedNow ? "null" : "\"enter_sewer_rusty_key_missing\"")}}}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+      }
+    }
+    """);
 
     [Fact]
     public void CompileReplacesCrossLocationMoveWithFirstTransparentConnectorAndReplanBoundary()

@@ -65,6 +65,12 @@ public sealed class CurrentMasterAnglerTeacherFrontier
     [JsonPropertyName("current_candidate_binding_count")]
     public int CurrentCandidateBindingCount { get; set; }
 
+    [JsonPropertyName("supporting_prerequisite_status")]
+    public string SupportingPrerequisiteStatus { get; set; } = string.Empty;
+
+    [JsonPropertyName("current_supporting_prerequisite_binding_count")]
+    public int CurrentSupportingPrerequisiteBindingCount { get; set; }
+
     [JsonPropertyName("training_label_eligible")]
     public bool TrainingLabelEligible { get; set; }
 
@@ -79,14 +85,36 @@ public sealed class CurrentMasterAnglerTeacherFrontier
     public CurrentMasterAnglerCandidateBinding[] CandidateBindings { get; set; } =
         Array.Empty<CurrentMasterAnglerCandidateBinding>();
 
+    [JsonPropertyName("supporting_prerequisite_bindings")]
+    public CurrentMasterAnglerSupportingPrerequisiteBinding[]
+        SupportingPrerequisiteBindings { get; set; } =
+            Array.Empty<CurrentMasterAnglerSupportingPrerequisiteBinding>();
+
+    [JsonPropertyName("supporting_prerequisite_blocking_reasons")]
+    public string[] SupportingPrerequisiteBlockingReasons { get; set; } =
+        Array.Empty<string>();
+
     [JsonPropertyName("rejected_intent_candidates")]
     public CurrentMasterAnglerCandidateRejection[] RejectedIntentCandidates { get; set; } =
         Array.Empty<CurrentMasterAnglerCandidateRejection>();
 
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "A positive Master Angler candidate must target one exact missing species in the authoritative 72-species denominator, carry a hash-locked current-date window intent, pass the shared rolling route/time validator, and expose either a complete rod-fishing outcome domain, an exact collection-eligible ready crab-pot output, or the next deterministic route step. Missing or unavailable opportunities are deferred and never become negative labels.";
+        "A positive Master Angler candidate either targets one exact missing species in the authoritative 72-species denominator or advances the separately typed, authority-bound first-rod prerequisite while the transparent rod inventory is authoritatively empty. Species candidates retain their hash-locked current-date window and route/outcome requirements. The prerequisite prioritizes the native spring_2_1 mail, quest 13 Beach route and event 739330 Bamboo Pole grant, then permits the exact FishShop economy.buy_supplies chain only as a post-delivery recovery fallback. Every stage reuses an existing compiled option, consumes one fresh snapshot at a time and never changes the 72-species denominator. Missing or unavailable evidence is deferred and never becomes a negative label.";
 }
+
+public sealed record CurrentMasterAnglerSupportingPrerequisiteBinding(
+    [property: JsonPropertyName("requirement_id")] string RequirementId,
+    [property: JsonPropertyName("candidate_id")] string CandidateId,
+    [property: JsonPropertyName("option_id")] string OptionId,
+    [property: JsonPropertyName("kind")] string Kind,
+    [property: JsonPropertyName("rank")] int Rank,
+    [property: JsonPropertyName("binding_kind")] string BindingKind,
+    [property: JsonPropertyName("qualified_item_id")] string QualifiedItemId,
+    [property: JsonPropertyName("shop_id")] string ShopId,
+    [property: JsonPropertyName("required_quantity")] int RequiredQuantity,
+    [property: JsonPropertyName("maximum_unit_price")] int MaximumUnitPrice,
+    [property: JsonPropertyName("identity_evidence")] string IdentityEvidence);
 
 public sealed record CurrentMasterAnglerRequirement(
     [property: JsonPropertyName("requirement_id")] string RequirementId,

@@ -7,7 +7,7 @@ public sealed class MoneyRevenueCropSitePreparationPlanRequest
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "money_revenue_crop_site_preparation_plan_request.v1";
+        "money_revenue_crop_site_preparation_plan_request.v2";
 
     [JsonPropertyName("crop_production_plan_path")]
     public string CropProductionPlanPath { get; set; } = string.Empty;
@@ -24,6 +24,10 @@ public sealed class MoneyRevenueCropSitePreparationPlanRequest
     [JsonPropertyName("tiles")]
     public MoneyRevenueCropPlantingTile[] Tiles { get; set; } =
         Array.Empty<MoneyRevenueCropPlantingTile>();
+
+    [JsonPropertyName("watering_refill_preparation_tiles")]
+    public MoneyRevenueCropPlantingTile[] WateringRefillPreparationTiles
+        { get; set; } = Array.Empty<MoneyRevenueCropPlantingTile>();
 
     [JsonPropertyName("formal_product_training_authorized")]
     public bool FormalProductTrainingAuthorized { get; set; }
@@ -77,6 +81,12 @@ public sealed class MoneyRevenueCropSitePreparationPlan
     [JsonPropertyName("tile_count")]
     public int TileCount { get; set; }
 
+    [JsonPropertyName("planting_tile_count")]
+    public int PlantingTileCount { get; set; }
+
+    [JsonPropertyName("watering_refill_preparation_tile_count")]
+    public int WateringRefillPreparationTileCount { get; set; }
+
     [JsonPropertyName("already_prepared_count")]
     public int AlreadyPreparedCount { get; set; }
 
@@ -85,6 +95,9 @@ public sealed class MoneyRevenueCropSitePreparationPlan
 
     [JsonPropertyName("clear_then_rebind_count")]
     public int ClearThenRebindCount { get; set; }
+
+    [JsonPropertyName("access_clear_then_rebind_count")]
+    public int AccessClearThenRebindCount { get; set; }
 
     [JsonPropertyName("blocked_count")]
     public int BlockedCount { get; set; }
@@ -107,7 +120,11 @@ public sealed class MoneyRevenueCropSitePreparationPlan
         "The plan reads only the nominated bounded Farm region. Already prepared " +
         "tiles are no-ops; directly tillable tiles bind executor.till_soil; one " +
         "supported blocker binds the existing clear executor and requires a fresh " +
-        "snapshot before tilling. Unsupported or multiply occupied tiles remain " +
+        "snapshot before tilling. A route-isolated tillable tile may bind one " +
+        "currently reachable adjacent clearance before the same fresh rebind. " +
+        "A Teacher-bound watering-refill corridor is " +
+        "prepared by the same clear/till chain but never becomes a crop action. " +
+        "Unsupported or multiply occupied tiles remain " +
         "blocked. This is a plan, not production proof, and never authorizes training.";
 }
 

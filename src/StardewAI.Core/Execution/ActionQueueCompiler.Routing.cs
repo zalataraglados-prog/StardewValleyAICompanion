@@ -20,6 +20,55 @@ namespace StardewAI.Core.Execution
 {
     public sealed partial class ActionQueueCompiler
     {
+        private static SmallModelPlanStep[] RemoveSatisfiedMovePrefix(
+            SmallModelPlanStep[] steps,
+            SnapshotEnvelope snapshot)
+        {
+            if (steps.Length < 2 || ActiveMenuOpen(snapshot))
+            {
+                return steps;
+            }
+
+            var currentLocation = ReadStateFieldString(
+                snapshot,
+                "player",
+                "location_id");
+            var currentX = ReadStateFieldIntOptional(
+                snapshot,
+                "player",
+                "tile_x");
+            var currentY = ReadStateFieldIntOptional(
+                snapshot,
+                "player",
+                "tile_y");
+            if (string.IsNullOrWhiteSpace(currentLocation) ||
+                !currentX.HasValue ||
+                !currentY.HasValue)
+            {
+                return steps;
+            }
+
+            var first = steps[0];
+            if (!string.Equals(
+                    first.Kind,
+                    "move_to_tile",
+                    StringComparison.Ordinal) ||
+                !first.TargetTileX.HasValue ||
+                !first.TargetTileY.HasValue ||
+                (!string.IsNullOrWhiteSpace(first.TargetLocation) &&
+                 !string.Equals(
+                     first.TargetLocation,
+                     currentLocation,
+                     StringComparison.OrdinalIgnoreCase)) ||
+                first.TargetTileX.Value != currentX.Value ||
+                first.TargetTileY.Value != currentY.Value)
+            {
+                return steps;
+            }
+
+            return steps.Skip(1).ToArray();
+        }
+
         private static SmallModelPlanStep[] ExpandCrossLocationMovePrefix(
             SmallModelPlanStep[] steps,
             SnapshotEnvelope snapshot)
@@ -71,7 +120,12 @@ namespace StardewAI.Core.Execution
                 targetLocation);
             if (route.Step is null)
             {
-                return null;
+                return BuildCrossLocationGateWaitStep(
+                    snapshot,
+                    currentLocation,
+                    targetLocation,
+                    sourceStep,
+                    route.BlockReasons);
             }
 
             var edge = route.Step.Edge;
@@ -118,6 +172,158 @@ namespace StardewAI.Core.Execution
                 },
                 FailurePolicy = new[] { "refresh_snapshot_and_replan" },
                 Parameters = parameters.ToArray()
+            };
+        }
+
+        private static SmallModelPlanStep? BuildCrossLocationGateWaitStep(
+            SnapshotEnvelope snapshot,
+            string currentLocation,
+            string targetLocation,
+            SmallModelPlanStep sourceStep,
+            IReadOnlyCollection<string> blockReasons)
+        {
+            const string festivalBlock =
+                "recovery_current_connector_active_festival_transit_closed";
+            if (!blockReasons.Contains(festivalBlock, StringComparer.Ordinal))
+            {
+                return null;
+            }
+
+            var currentTime = ReadStateFieldIntOptional(snapshot, "time", "time");
+            var graph = ReadStateFieldValue(snapshot, "locations", "route_graph");
+            if (!currentTime.HasValue ||
+                !graph.HasValue ||
+                graph.Value.ValueKind != JsonValueKind.Object)
+            {
+                return null;
+            }
+
+            var graphEdges = ReadResolvedRouteGraphEdges(graph.Value)
+                .Where(edge => IsRecoveryConnectorKind(edge.Kind))
+                .ToArray();
+            var candidates = new List<(RouteGraphEdge Edge, int Remaining, int OpensAt)>();
+            foreach (var edge in graphEdges.Where(edge =>
+                         edge.Kind == "warp" &&
+                         string.Equals(
+                             edge.FromLocation,
+                             currentLocation,
+                             StringComparison.OrdinalIgnoreCase) &&
+                         edge.FromX.HasValue &&
+                         edge.FromY.HasValue))
+            {
+                var remainingPath = string.Equals(
+                        edge.TargetLocation,
+                        targetLocation,
+                        StringComparison.OrdinalIgnoreCase)
+                    ? Array.Empty<RouteGraphEdge>()
+                    : FindResolvedRouteGraphPath(
+                        graphEdges,
+                        edge.TargetLocation,
+                        targetLocation);
+                if (!string.Equals(
+                        edge.TargetLocation,
+                        targetLocation,
+                        StringComparison.OrdinalIgnoreCase) &&
+                    remainingPath.Length == 0)
+                {
+                    continue;
+                }
+
+                if (!FindMatchingCurrentRouteConnector(snapshot, edge).HasValue)
+                {
+                    continue;
+                }
+
+                var gate = FindMatchingCurrentRouteGate(snapshot, edge);
+                var opensAt = gate.HasValue
+                    ? ReadNullableInt(gate.Value, "effective_open_time") ??
+                      ReadNullableInt(gate.Value, "open_time")
+                    : null;
+                var closesAt = gate.HasValue
+                    ? ReadNullableInt(gate.Value, "effective_close_time") ??
+                      ReadNullableInt(gate.Value, "close_time")
+                    : null;
+                if (!gate.HasValue ||
+                    !string.Equals(
+                        ReadString(gate.Value, "kind"),
+                        "ordinary_warp_active_festival",
+                        StringComparison.OrdinalIgnoreCase) ||
+                    ReadBool(gate.Value, "allowed_now") ||
+                    !ReadBool(gate.Value, "allowed_on_capture_date") ||
+                    !opensAt.HasValue ||
+                    !closesAt.HasValue ||
+                    currentTime.Value >= opensAt.Value ||
+                    opensAt.Value >= closesAt.Value)
+                {
+                    continue;
+                }
+
+                candidates.Add((edge, remainingPath.Length + 1, opensAt.Value));
+            }
+
+            if (candidates.Count == 0)
+            {
+                return null;
+            }
+
+            var selected = candidates
+                .OrderBy(candidate => candidate.Remaining)
+                .ThenBy(candidate => candidate.OpensAt)
+                .ThenBy(candidate => candidate.Edge.FromY)
+                .ThenBy(candidate => candidate.Edge.FromX)
+                .First();
+
+            var remainingMinutes = GameClockBudgetPolicy.ClockMinutesBetween(
+                currentTime.Value,
+                selected.OpensAt);
+            if (remainingMinutes <= 0)
+            {
+                return null;
+            }
+
+            var waitTicks = Math.Clamp(remainingMinutes * 60, 1, 600);
+            return new SmallModelPlanStep
+            {
+                StepId = (string.IsNullOrWhiteSpace(sourceStep.StepId)
+                    ? "cross_location_move"
+                    : sourceStep.StepId) + ".festival_wait",
+                Kind = "wait_ticks",
+                WaitTicks = waitTicks,
+                EstimatedMinutes = GameClockBudgetPolicy.TicksToGameMinutes(waitTicks),
+                Preconditions = sourceStep.Preconditions
+                    .Where(value => value.StartsWith(
+                        "candidate_id:",
+                        StringComparison.Ordinal))
+                    .Append("ordinary_warp_active_festival.allowed_now=false")
+                    .Distinct(StringComparer.Ordinal)
+                    .ToArray(),
+                ExpectedEffects = new[]
+                {
+                    "game_clock_progressed_toward=" +
+                        selected.OpensAt.ToString(CultureInfo.InvariantCulture),
+                    "fresh_snapshot_replan_required=true"
+                },
+                SafetyConstraints = new[]
+                {
+                    "bounded_native_wait",
+                    "no_closed_festival_warp_attempt",
+                    "cross_location_target_preserved"
+                },
+                FailurePolicy = new[] { "refresh_snapshot_and_replan" },
+                Parameters = new[]
+                {
+                    Parameter("route_wait_reason", festivalBlock),
+                    Parameter(
+                        "route_wait_until_time",
+                        selected.OpensAt.ToString(CultureInfo.InvariantCulture)),
+                    Parameter("route_wait_max_slices", "3"),
+                    Parameter("cross_location_move_target", targetLocation),
+                    Parameter("deferred_connector_kind", selected.Edge.Kind),
+                    Parameter(
+                        "deferred_connector_target_location",
+                        selected.Edge.TargetLocation),
+                    Parameter("fresh_snapshot_replan_required", "true")
+                }
             };
         }
 
@@ -572,6 +778,16 @@ namespace StardewAI.Core.Execution
                     observedBlocks.Add("recovery_route_graph_no_path_home");
                     continue;
                 }
+                if (remainingPath.Length > 0 &&
+                    string.Equals(
+                        remainingPath[0].TargetLocation,
+                        currentLocation,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    observedBlocks.Add(
+                        "recovery_route_graph_immediate_reverse_cycle");
+                    continue;
+                }
 
                 var connector = FindMatchingCurrentRouteConnector(snapshot, edge);
                 if (!connector.HasValue)
@@ -625,9 +841,17 @@ namespace StardewAI.Core.Execution
             return new RecoveryRoutePlanResult { BlockReasons = new[] { reason } };
         }
 
+        private static bool RecoveryRouteClearancePending(
+            RecoveryRoutePlanResult routePlan)
+        {
+            return routePlan.BlockReasons.Contains(
+                "recovery_current_connector_start_segment_unreachable",
+                StringComparer.Ordinal);
+        }
+
         private static bool IsRecoveryConnectorKind(string kind)
         {
-            return kind is "warp" or "touch_action_warp" or "action_warp" or "locked_door_warp" or "building_door";
+            return kind is "warp" or "touch_action_warp" or "magic_warp" or "action_warp" or "locked_door_warp" or "building_door" or "native_bus_transport";
         }
 
         private static JsonElement? FindMatchingCurrentRouteConnector(SnapshotEnvelope snapshot, RouteGraphEdge edge)
@@ -667,8 +891,18 @@ namespace StardewAI.Core.Execution
                     continue;
                 }
 
-                if (edge.Kind == "touch_action_warp" &&
+                if (edge.Kind is "touch_action_warp" or "magic_warp" &&
                     !string.Equals(sourceProperty, "Back.TouchAction", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                if (edge.Kind == "native_bus_transport" &&
+                    !string.Equals(sourceProperty, "Back.TouchAction", StringComparison.OrdinalIgnoreCase) &&
+                    !string.Equals(
+                        sourceProperty,
+                        "BusStop.checkAction Buildings/outdoors tile index 1057",
+                        StringComparison.Ordinal))
                 {
                     continue;
                 }
@@ -689,41 +923,86 @@ namespace StardewAI.Core.Execution
 
         private static string? RecoveryConnectorGateBlock(SnapshotEnvelope snapshot, RouteGraphEdge edge)
         {
-            if (edge.Kind is "warp" or "building_door")
+            if (edge.Kind is "building_door" or "magic_warp")
             {
                 return null;
             }
 
-            var gateContext = ReadStateFieldValue(snapshot, "locations", "route_gate_context");
+            var gateContext = ReadStateFieldValue(
+                snapshot,
+                "locations",
+                "route_gate_context");
             if (!gateContext.HasValue ||
                 gateContext.Value.ValueKind != JsonValueKind.Object ||
                 !gateContext.Value.TryGetProperty("action_gates", out var gates) ||
                 gates.ValueKind != JsonValueKind.Array)
             {
-                return "recovery_current_connector_gate_context_unavailable";
+                return edge.Kind == "warp"
+                    ? null
+                    : "recovery_current_connector_gate_context_unavailable";
+            }
+
+            var gate = FindMatchingCurrentRouteGate(snapshot, edge);
+            if (!gate.HasValue)
+            {
+                return edge.Kind == "warp"
+                    ? null
+                    : "recovery_current_connector_gate_unresolved";
+            }
+
+            if (!gate.Value.TryGetProperty("allowed_now", out var allowed) ||
+                allowed.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
+            {
+                return "recovery_current_connector_gate_unresolved";
+            }
+
+            if (allowed.ValueKind == JsonValueKind.True)
+            {
+                return null;
+            }
+            return edge.Kind == "warp"
+                ? "recovery_current_connector_active_festival_transit_closed"
+                : "recovery_current_connector_gate_closed";
+        }
+
+        private static JsonElement? FindMatchingCurrentRouteGate(
+            SnapshotEnvelope snapshot,
+            RouteGraphEdge edge)
+        {
+            var gateContext = ReadStateFieldValue(
+                snapshot,
+                "locations",
+                "route_gate_context");
+            if (!gateContext.HasValue ||
+                gateContext.Value.ValueKind != JsonValueKind.Object ||
+                !gateContext.Value.TryGetProperty("action_gates", out var gates) ||
+                gates.ValueKind != JsonValueKind.Array)
+            {
+                return null;
             }
 
             foreach (var gate in gates.EnumerateArray())
             {
                 if (gate.ValueKind != JsonValueKind.Object ||
                     ReadNullableInt(gate, "tile_x") != edge.FromX ||
-                    ReadNullableInt(gate, "tile_y") != edge.FromY)
+                    ReadNullableInt(gate, "tile_y") != edge.FromY ||
+                    edge.Kind == "warp" &&
+                    (!string.Equals(
+                        ReadString(gate, "kind"),
+                        "ordinary_warp_active_festival",
+                        StringComparison.OrdinalIgnoreCase) ||
+                     !string.Equals(
+                        ReadString(gate, "target_location"),
+                        edge.TargetLocation,
+                        StringComparison.OrdinalIgnoreCase)))
                 {
                     continue;
                 }
 
-                if (!gate.TryGetProperty("allowed_now", out var allowed) ||
-                    allowed.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
-                {
-                    return "recovery_current_connector_gate_unresolved";
-                }
-
-                return allowed.ValueKind == JsonValueKind.True
-                    ? null
-                    : "recovery_current_connector_gate_closed";
+                return gate;
             }
 
-            return "recovery_current_connector_gate_unresolved";
+            return null;
         }
 
         private static int? RecoveryConnectorPathTiles(SnapshotEnvelope snapshot, RouteGraphEdge edge, JsonElement connector)

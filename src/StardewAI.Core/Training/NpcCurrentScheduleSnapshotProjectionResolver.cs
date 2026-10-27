@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Text.Json;
+using StardewAI.Contracts.State;
 
 namespace StardewAI.Core.Training
 {
@@ -24,11 +25,9 @@ namespace StardewAI.Core.Training
     public sealed class NpcCurrentScheduleSnapshotProjectionResolver
     {
         public NpcCurrentScheduleSnapshotProjectionResult Resolve(
-            JsonElement snapshot,
+            SnapshotEnvelope snapshot,
             string npcName)
         {
-            if (string.IsNullOrWhiteSpace(npcName))
-                return Blocked(npcName, "current_schedule_projection_npc_missing");
             if (!NpcCurrentScheduleSnapshotAuditor.TryReadFieldValue(
                     snapshot,
                     "npcs",
@@ -38,8 +37,47 @@ namespace StardewAI.Core.Training
                     snapshot,
                     "npcs",
                     "schedules",
-                    out var schedules) ||
-                schedules.ValueKind != JsonValueKind.Array ||
+                    out var schedules))
+            {
+                return Blocked(
+                    npcName,
+                    "current_schedule_snapshot_fields_missing");
+            }
+
+            return Resolve(catalog, schedules, npcName);
+        }
+
+        public NpcCurrentScheduleSnapshotProjectionResult Resolve(
+            JsonElement snapshot,
+            string npcName)
+        {
+            if (!NpcCurrentScheduleSnapshotAuditor.TryReadFieldValue(
+                    snapshot,
+                    "npcs",
+                    "schedule_catalog",
+                    out var catalog) ||
+                !NpcCurrentScheduleSnapshotAuditor.TryReadFieldValue(
+                    snapshot,
+                    "npcs",
+                    "schedules",
+                    out var schedules))
+            {
+                return Blocked(
+                    npcName,
+                    "current_schedule_snapshot_fields_missing");
+            }
+
+            return Resolve(catalog, schedules, npcName);
+        }
+
+        private static NpcCurrentScheduleSnapshotProjectionResult Resolve(
+            JsonElement catalog,
+            JsonElement schedules,
+            string npcName)
+        {
+            if (string.IsNullOrWhiteSpace(npcName))
+                return Blocked(npcName, "current_schedule_projection_npc_missing");
+            if (schedules.ValueKind != JsonValueKind.Array ||
                 !catalog.TryGetProperty(
                     "current_selection_context",
                     out var context) ||

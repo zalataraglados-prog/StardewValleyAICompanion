@@ -109,4 +109,36 @@ public sealed partial class DailyPlanCompiler
             }
         };
     }
+
+    private static IEnumerable<SmallModelPlanStep> CraftCrabPotSteps(
+        PolicyEventCandidatePrediction candidate)
+    {
+        return new[]
+        {
+            new SmallModelPlanStep
+            {
+                StepId = StepId(candidate, "craft_crab_pot", 0),
+                Kind = "craft_crab_pot",
+                TargetLocation = candidate.LocationId,
+                EstimatedMinutes = 1,
+                Preconditions = new[]
+                {
+                    "candidate_id:" + candidate.CandidateId,
+                    "master_angler_crab_pot_capacity_deficit_rebound=true",
+                    "learned_crab_pot_recipe_and_material_plan_rebound=true",
+                    "menus.active_menu.is_open=false"
+                },
+                ExpectedEffects = new[] { candidate.ExpectedEffect },
+                SafetyConstraints = new[]
+                {
+                    "native_CraftingPage_click_only",
+                    "workbench_source_requires_native_MultipleMutexRequest",
+                    "no_direct_inventory_or_progress_mutation",
+                    "runtime_verify_exact_material_and_output_delta"
+                },
+                FailurePolicy = new[] { "refresh_snapshot_and_replan" },
+                Parameters = candidate.Parameters
+            }
+        };
+    }
 }

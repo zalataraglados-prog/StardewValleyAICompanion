@@ -6,6 +6,1002 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 internal static partial class BootstrapSelfTest
 {
+    public static void RunMasterAnglerFreshSavePrerequisiteAudit(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath)
+    {
+        var report = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath);
+        Require(
+            report.Status == "partial_fresh_save_prerequisite_inventory" &&
+            !report.TrainingLabelEligible &&
+            report.NativeDenominatorCount == 72 &&
+            report.RodLocationSpeciesCount == 60 &&
+            report.MineOverrideOnlySpeciesCount == 2 &&
+            report.TrapSpeciesCount == 10 &&
+            report.SpeciesWithTwoOrMoreStaticOpportunityDays == 72 &&
+            report.RainOrStormRequiredSpeciesCount == 4 &&
+            report.MaximumRequiredFishingLevel == 10 &&
+            report.StaticOpportunityInventoryComplete &&
+            report.PrerequisiteFamilyInventoryComplete &&
+            report.GoldenWalnutUnlockSchedule is
+            {
+                PhaseCapacityComplete: true,
+                IndependentRetryBudgetComplete: true,
+                DeadlineCapacityRequirementsComplete: false,
+                YearThreeDeadlineCompositionComplete: false,
+                TrainingAdmissionEligible: false
+            } &&
+            report.UnknownLocationIds.Length == 0,
+            "Master Angler fresh-save prerequisite audit summary drifted.");
+        var goldenWalnutSchedule = report.GoldenWalnutUnlockSchedule ??
+            throw new InvalidOperationException(
+                "Master Angler Golden Walnut schedule is missing after summary validation.");
+        var goldenWalnutFundingRoutes = report.GoldenWalnutResortFundingRoutes ??
+            throw new InvalidOperationException(
+                "Master Angler Golden Walnut funding routes are missing after summary validation.");
+        Require(
+            goldenWalnutSchedule.DeadlineTotalDayExclusive == 224 &&
+            goldenWalnutSchedule.DeadlineCapacityRequirements.Length == 3 &&
+            goldenWalnutSchedule.DeadlineCapacityRequirements.Single(value =>
+                value.SourceKey == "IslandFishing") is
+            {
+                RequiredAttemptCount: 69,
+                AttemptActionBudgetBound: true,
+                SourceAvailabilityCapacityBound: true,
+                EarliestAccessDayBound: false,
+                DeadlineCompositionComplete: false
+            } &&
+            goldenWalnutSchedule.DeadlineCapacityRequirements.Single(value =>
+                value.SourceKey == "MusselStone") is
+            {
+                RequiredAttemptCount: 105,
+                ConservativeActionMinutes: null,
+                SourceAvailabilityCapacityBound: false
+            } &&
+            goldenWalnutSchedule.DeadlineCapacityRequirements.Single(value =>
+                value.SourceKey == "IslandFarming") is
+            {
+                RequiredAttemptCount: 214,
+                AttemptActionBudgetBound: true,
+                SourceAvailabilityCapacityBound: false
+            },
+            "Master Angler Golden Walnut deadline-capacity requirements drifted.");
+        Require(
+            goldenWalnutFundingRoutes.PreferredRouteId ==
+                GoldenWalnutResortFundingRouteProofBuilder.PreferredRouteId &&
+            !goldenWalnutFundingRoutes.RouteSelectionComplete &&
+            !goldenWalnutFundingRoutes.TrainingAdmissionEligible &&
+            goldenWalnutFundingRoutes.Alternatives.Single(route =>
+                route.RouteId == GoldenWalnutResortFundingRouteProofBuilder.PreferredRouteId) is
+            {
+                NativeWalnutQuantity: 15,
+                Deterministic: true,
+                ActionBindingsComplete: true,
+                SupplyScheduleComplete: true,
+                DeadlineCompositionComplete: false
+            },
+            "Master Angler Golden Walnut funding-route preference drifted.");
+
+        var byId = report.Species.ToDictionary(
+            value => value.QualifiedItemId,
+            StringComparer.Ordinal);
+        Require(
+            byId["(O)162"].RoutePrerequisiteExpression ==
+                "mine_depth_or_ginger_island_caldera" &&
+            byId["(O)734"].RoutePrerequisiteExpression ==
+                "secret_woods_access_or_forest_farm_layout" &&
+            byId["(O)796"].RoutePrerequisiteExpression ==
+                "mutant_bug_lair_story_access" &&
+            byId["(O)715"].TrapRequiredIndependentPotDaysAt95Percent == 59 &&
+            byId["(O)715"].TrapTheoreticalMinimumParallelPotCapacityFromDayOne == 1,
+            "Master Angler fresh-save location or stochastic prerequisite classification drifted.");
+        Require(
+            report.PrerequisiteFamilies.Single(value =>
+                    value.FamilyId == "crab_pot_lifecycle")
+                .ProducerStatus == "implemented_and_bound" &&
+            report.PrerequisiteFamilies.Single(value =>
+                    value.FamilyId == "fishing_skill_progression")
+                .ProducerStatus == "implemented_and_bound" &&
+            !report.MissingOrUnboundProducerFamilies.Contains(
+                "fishing_skill_progression",
+                StringComparer.Ordinal) &&
+            !report.MissingOrUnboundProducerFamilies.Contains(
+                "mine_access_and_depth",
+                StringComparer.Ordinal) &&
+            !report.MissingOrUnboundProducerFamilies.Contains(
+                "mine_depth_or_ginger_island_caldera",
+                StringComparer.Ordinal) &&
+            !report.MissingOrUnboundProducerFamilies.Contains(
+                "one_of_advanced_location_access",
+                StringComparer.Ordinal) &&
+            report.PrerequisiteFamilies.Single(value =>
+                    value.FamilyId == "mine_access_and_depth")
+                .ProducerStatus == "implemented_and_bound" &&
+            report.PrerequisiteFamilies.Single(value =>
+                    value.FamilyId == "mine_depth_or_ginger_island_caldera")
+                .ProducerStatus == "implemented_and_bound" &&
+            report.PrerequisiteFamilies.Single(value =>
+                    value.FamilyId == "one_of_advanced_location_access")
+                .ProducerStatus == "implemented_and_bound" &&
+            report.PrerequisiteFamilies.Single(value =>
+                    value.FamilyId == "rod_and_fishing_equipment_acquisition")
+                .ProducerStatus == "implemented_and_bound" &&
+            !report.MissingOrUnboundProducerFamilies.Contains(
+                "rod_and_fishing_equipment_acquisition",
+                StringComparer.Ordinal) &&
+            report.PrerequisiteFamilies.Single(value =>
+                    value.FamilyId == "desert_bus_access")
+                .ProducerStatus == "implemented_and_bound" &&
+            !report.MissingOrUnboundProducerFamilies.Contains(
+                "desert_bus_access",
+                StringComparer.Ordinal) &&
+            report.PrerequisiteFamilies.Single(value =>
+                    value.FamilyId == "sewer_rusty_key_access")
+                .ProducerStatus == "implemented_and_bound" &&
+            !report.MissingOrUnboundProducerFamilies.Contains(
+                "sewer_rusty_key_access",
+                StringComparer.Ordinal) &&
+            report.PrerequisiteFamilies.Single(value =>
+                    value.FamilyId ==
+                        "secret_woods_access_or_forest_farm_layout")
+                .ProducerStatus == "implemented_and_bound" &&
+            !report.MissingOrUnboundProducerFamilies.Contains(
+                "secret_woods_access_or_forest_farm_layout",
+                StringComparer.Ordinal) &&
+            report.PrerequisiteFamilies.Single(value =>
+                    value.FamilyId == "mutant_bug_lair_story_access")
+                .ProducerStatus == "implemented_and_bound" &&
+            report.PrerequisiteFamilies.Single(value =>
+                    value.FamilyId == "witch_swamp_story_access")
+                .ProducerStatus == "implemented_and_bound" &&
+            !report.MissingOrUnboundProducerFamilies.Contains(
+                "mutant_bug_lair_story_access",
+                StringComparer.Ordinal) &&
+            !report.MissingOrUnboundProducerFamilies.Contains(
+                "witch_swamp_story_access",
+                StringComparer.Ordinal) &&
+            report.PrerequisiteFamilies.Single(value =>
+                    value.FamilyId ==
+                        "crab_pot_recipe_material_and_bait_supply")
+                .ProducerStatus == "implemented_and_bound" &&
+            !report.MissingOrUnboundProducerFamilies.Contains(
+                "crab_pot_recipe_material_and_bait_supply",
+                StringComparer.Ordinal) &&
+            report.PrerequisiteFamilies.Single(value =>
+                    value.FamilyId == "weather_reserve_or_control")
+                .ProducerStatus == "implemented_and_bound" &&
+            !report.MissingOrUnboundProducerFamilies.Contains(
+                "weather_reserve_or_control",
+                StringComparer.Ordinal) &&
+            report.MissingOrUnboundProducerFamilies.Contains(
+                "ginger_island_access",
+                StringComparer.Ordinal) &&
+            report.PrerequisiteFamilies.Single(value =>
+                    value.FamilyId == "ginger_island_access")
+                .ProducerStatus ==
+                "phase_capacity_retry_budget_and_deterministic_supply_bound_deadline_composition_missing",
+            "Master Angler fresh-save producer coverage was overstated.");
+
+        VerifyMasterAnglerFishingSkillBindingFailsClosed(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath);
+        VerifyMasterAnglerMineAccessBindingFailsClosed(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath);
+        VerifyMasterAnglerRodEquipmentBindingFailsClosed(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath);
+        VerifyMasterAnglerDesertBusBindingFailsClosed(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath);
+        VerifyMasterAnglerSewerAccessBindingFailsClosed(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath);
+        VerifyMasterAnglerSecretWoodsAccessBindingFailsClosed(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath);
+        VerifyMasterAnglerDarkTalismanAccessBindingFailsClosed(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath);
+        VerifyMasterAnglerTrapSupplyBindingFailsClosed(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath);
+        VerifyMasterAnglerOwnedRainTotemBindingFailsClosed(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath);
+        VerifyMasterAnglerRainTotemCraftingReadFailsClosed(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath);
+        VerifyMasterAnglerRainTotemImmediateMaterialSupplyFailsClosed(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath);
+        VerifyMasterAnglerRainTotemPineTarCapacityReserveFailsClosed(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath);
+        VerifyMasterAnglerRainTotemTruffleOilCapacityReserveFailsClosed(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath);
+        VerifyMasterAnglerRainTotemForagingSkillProgressionFailsClosed(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath);
+        VerifyMasterAnglerRainTotemHardwoodReserveFailsClosed(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath);
+        VerifyMasterAnglerRainTotemCraftingExecutionFailsClosed(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath);
+        VerifyMasterAnglerWeatherSupplySchedulerFailsClosed(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath);
+    }
+
+    private static void VerifyMasterAnglerDarkTalismanAccessBindingFailsClosed(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath)
+    {
+        var root = JsonNode.Parse(File.ReadAllText(dependencyExpansionPath))?.AsObject() ??
+                   throw new InvalidDataException("Master Angler dependency fixture is null.");
+        var direction = root["directions"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["direction_id"]!.GetValue<string>() ==
+                             "complete_master_angler");
+        var producer = direction["nodes"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["id"]!.GetValue<string>() ==
+                             "dependency.complete_master_angler.dark_talisman_story_access");
+        producer["rule"]!["dark_talisman_special_item_which"] = 5;
+
+        var tamperedPath = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-master-angler-dark-talisman-binding-" +
+            Guid.NewGuid().ToString("N") + ".json");
+        try
+        {
+            File.WriteAllText(tamperedPath, root.ToJsonString(JsonDefaults.Options));
+            var tampered = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(
+                catalogPath,
+                windowIndexPath,
+                tamperedPath);
+            Require(
+                tampered.PrerequisiteFamilies.Single(value =>
+                        value.FamilyId == "mutant_bug_lair_story_access")
+                    .ProducerStatus != "implemented_and_bound" &&
+                tampered.PrerequisiteFamilies.Single(value =>
+                        value.FamilyId == "witch_swamp_story_access")
+                    .ProducerStatus != "implemented_and_bound" &&
+                tampered.MissingOrUnboundProducerFamilies.Contains(
+                    "mutant_bug_lair_story_access",
+                    StringComparer.Ordinal) &&
+                tampered.MissingOrUnboundProducerFamilies.Contains(
+                    "witch_swamp_story_access",
+                    StringComparer.Ordinal),
+                "Master Angler Dark Talisman producer accepted a drifted SpecialItem identity.");
+        }
+        finally
+        {
+            File.Delete(tamperedPath);
+        }
+    }
+
+    private static void VerifyMasterAnglerSecretWoodsAccessBindingFailsClosed(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath)
+    {
+        var root = JsonNode.Parse(File.ReadAllText(dependencyExpansionPath))?.AsObject() ??
+                   throw new InvalidDataException("Master Angler dependency fixture is null.");
+        var direction = root["directions"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["direction_id"]!.GetValue<string>() ==
+                             "complete_master_angler");
+        var producer = direction["nodes"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["id"]!.GetValue<string>() ==
+                             "dependency.complete_master_angler.secret_woods_or_forest_farm_access");
+        producer["rule"]!["minimum_axe_upgrade_level"] = 1;
+
+        var tamperedPath = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-master-angler-secret-woods-binding-" +
+            Guid.NewGuid().ToString("N") + ".json");
+        try
+        {
+            File.WriteAllText(tamperedPath, root.ToJsonString(JsonDefaults.Options));
+            var tampered = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(
+                catalogPath,
+                windowIndexPath,
+                tamperedPath);
+            Require(
+                tampered.PrerequisiteFamilies.Single(value =>
+                        value.FamilyId ==
+                            "secret_woods_access_or_forest_farm_layout")
+                    .ProducerStatus == "alternative_selection_missing" &&
+                tampered.MissingOrUnboundProducerFamilies.Contains(
+                    "secret_woods_access_or_forest_farm_layout",
+                    StringComparer.Ordinal),
+                "Master Angler Secret Woods producer accepted a drifted Axe gate.");
+        }
+        finally
+        {
+            if (File.Exists(tamperedPath))
+                File.Delete(tamperedPath);
+        }
+    }
+
+    private static void VerifyMasterAnglerRainTotemForagingSkillProgressionFailsClosed(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath)
+    {
+        VerifyMasterAnglerWeatherNodeTamperFailsClosed(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath,
+            "dependency.complete_master_angler.rain_totem_foraging_skill_progression",
+            "required_unmodified_foraging_level",
+            JsonValue.Create(8),
+            "foraging-skill");
+    }
+
+    private static void VerifyMasterAnglerRainTotemHardwoodReserveFailsClosed(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath)
+    {
+        VerifyMasterAnglerWeatherNodeTamperFailsClosed(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath,
+            "dependency.complete_master_angler.rain_totem_hardwood_reserve",
+            "hardwood_tool_upgrade_lifecycle_bound",
+            JsonValue.Create(false),
+            "hardwood-reserve");
+    }
+
+    private static void VerifyMasterAnglerRainTotemCraftingExecutionFailsClosed(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath)
+    {
+        VerifyMasterAnglerWeatherNodeTamperFailsClosed(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath,
+            "dependency.complete_master_angler.rain_totem_crafting_execution",
+            "runtime_evidence_id",
+            JsonValue.Create("EVD-000"),
+            "crafting-execution");
+    }
+
+    private static void VerifyMasterAnglerWeatherNodeTamperFailsClosed(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath,
+        string nodeId,
+        string ruleName,
+        JsonNode? tamperedValue,
+        string artifactName)
+    {
+        var root = JsonNode.Parse(File.ReadAllText(dependencyExpansionPath))?.AsObject() ??
+                   throw new InvalidDataException("Master Angler dependency fixture is null.");
+        var direction = root["directions"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["direction_id"]!.GetValue<string>() ==
+                             "complete_master_angler");
+        var node = direction["nodes"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["id"]!.GetValue<string>() == nodeId);
+        node["rule"]![ruleName] = tamperedValue;
+
+        var tamperedPath = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-master-angler-" + artifactName + "-" +
+            Guid.NewGuid().ToString("N") + ".json");
+        try
+        {
+            File.WriteAllText(
+                tamperedPath,
+                root.ToJsonString(JsonDefaults.Options));
+            var tampered = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(
+                catalogPath,
+                windowIndexPath,
+                tamperedPath);
+            Require(
+                tampered.PrerequisiteFamilies.Single(value =>
+                        value.FamilyId == "weather_reserve_or_control")
+                    .ProducerStatus != "implemented_and_bound" &&
+                tampered.MissingOrUnboundProducerFamilies.Contains(
+                    "weather_reserve_or_control",
+                    StringComparer.Ordinal),
+                "Master Angler weather supply accepted a drifted " +
+                artifactName + " contract.");
+        }
+        finally
+        {
+            if (File.Exists(tamperedPath))
+                File.Delete(tamperedPath);
+        }
+    }
+
+    private static void VerifyMasterAnglerRainTotemTruffleOilCapacityReserveFailsClosed(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath)
+    {
+        var root = JsonNode.Parse(File.ReadAllText(dependencyExpansionPath))?.AsObject() ??
+                   throw new InvalidDataException("Master Angler dependency fixture is null.");
+        var direction = root["directions"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["direction_id"]!.GetValue<string>() ==
+                             "complete_master_angler");
+        var reserve = direction["nodes"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["id"]!.GetValue<string>() ==
+                             "dependency.complete_master_angler.rain_totem_truffle_oil_capacity_reserve");
+        reserve["rule"]!["animal_type_id"] = "Chicken";
+
+        var tamperedPath = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-master-angler-truffle-oil-reserve-" +
+            Guid.NewGuid().ToString("N") + ".json");
+        try
+        {
+            File.WriteAllText(
+                tamperedPath,
+                root.ToJsonString(JsonDefaults.Options));
+            var tampered = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(
+                catalogPath,
+                windowIndexPath,
+                tamperedPath);
+            Require(
+                tampered.PrerequisiteFamilies.Single(value =>
+                        value.FamilyId == "weather_reserve_or_control")
+                    .ProducerStatus ==
+                        "runtime_consumer_crafting_read_scheduler_immediate_supply_and_pine_tar_capacity_bound_pig_truffle_hardwood_reservation_and_native_crafting_receipt_missing",
+                "Master Angler weather reserve accepted a drifted Pig producer identity.");
+        }
+        finally
+        {
+            if (File.Exists(tamperedPath))
+                File.Delete(tamperedPath);
+        }
+    }
+
+    private static void VerifyMasterAnglerRainTotemPineTarCapacityReserveFailsClosed(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath)
+    {
+        var root = JsonNode.Parse(File.ReadAllText(dependencyExpansionPath))?.AsObject() ??
+                   throw new InvalidDataException("Master Angler dependency fixture is null.");
+        var direction = root["directions"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["direction_id"]!.GetValue<string>() ==
+                             "complete_master_angler");
+        var reserve = direction["nodes"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["id"]!.GetValue<string>() ==
+                             "dependency.complete_master_angler.rain_totem_pine_tar_capacity_reserve");
+        reserve["rule"]!["source_id"] = "wild_tree:1:0";
+
+        var tamperedPath = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-master-angler-pine-tar-reserve-" +
+            Guid.NewGuid().ToString("N") + ".json");
+        try
+        {
+            File.WriteAllText(
+                tamperedPath,
+                root.ToJsonString(JsonDefaults.Options));
+            var tampered = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(
+                catalogPath,
+                windowIndexPath,
+                tamperedPath);
+            Require(
+                tampered.PrerequisiteFamilies.Single(value =>
+                        value.FamilyId == "weather_reserve_or_control")
+                    .ProducerStatus ==
+                        "runtime_consumer_crafting_read_scheduler_and_immediate_material_supply_bound_long_horizon_reserve_and_native_crafting_receipt_missing",
+                "Master Angler weather reserve accepted a drifted Pine Tapper source.");
+        }
+        finally
+        {
+            if (File.Exists(tamperedPath))
+                File.Delete(tamperedPath);
+        }
+    }
+
+    private static void VerifyMasterAnglerWeatherSupplySchedulerFailsClosed(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath)
+    {
+        var root = JsonNode.Parse(File.ReadAllText(dependencyExpansionPath))?.AsObject() ??
+                   throw new InvalidDataException("Master Angler dependency fixture is null.");
+        var direction = root["directions"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["direction_id"]!.GetValue<string>() ==
+                             "complete_master_angler");
+        var scheduler = direction["nodes"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["id"]!.GetValue<string>() ==
+                             "dependency.complete_master_angler.weather_supply_scheduler");
+        scheduler["rule"]!["target_horizon_days"] = 2;
+
+        var tamperedPath = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-master-angler-weather-scheduler-" +
+            Guid.NewGuid().ToString("N") + ".json");
+        try
+        {
+            File.WriteAllText(
+                tamperedPath,
+                root.ToJsonString(JsonDefaults.Options));
+            var tampered = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(
+                catalogPath,
+                windowIndexPath,
+                tamperedPath);
+            Require(
+                tampered.PrerequisiteFamilies.Single(value =>
+                        value.FamilyId == "weather_reserve_or_control")
+                    .ProducerStatus ==
+                        "runtime_consumer_crafting_read_and_immediate_material_supply_bound_scheduler_long_horizon_reserve_and_native_crafting_receipt_missing",
+                "Master Angler weather supply accepted a drifted tomorrow scheduler.");
+        }
+        finally
+        {
+            if (File.Exists(tamperedPath))
+                File.Delete(tamperedPath);
+        }
+    }
+
+    private static void VerifyMasterAnglerRainTotemImmediateMaterialSupplyFailsClosed(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath)
+    {
+        var root = JsonNode.Parse(File.ReadAllText(dependencyExpansionPath))?.AsObject() ??
+                   throw new InvalidDataException("Master Angler dependency fixture is null.");
+        var direction = root["directions"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["direction_id"]!.GetValue<string>() ==
+                             "complete_master_angler");
+        var supply = direction["nodes"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["id"]!.GetValue<string>() ==
+                             "dependency.complete_master_angler.rain_totem_immediate_material_supply");
+        supply["rule"]!["long_horizon_reserve_bound"] = true;
+
+        var tamperedPath = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-master-angler-rain-totem-immediate-material-" +
+            Guid.NewGuid().ToString("N") + ".json");
+        try
+        {
+            File.WriteAllText(
+                tamperedPath,
+                root.ToJsonString(JsonDefaults.Options));
+            var tampered = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(
+                catalogPath,
+                windowIndexPath,
+                tamperedPath);
+            Require(
+                tampered.PrerequisiteFamilies.Single(value =>
+                        value.FamilyId == "weather_reserve_or_control")
+                    .ProducerStatus ==
+                        "runtime_consumer_and_crafting_read_bound_executor_supply_scheduler_missing",
+                "Master Angler weather supply accepted a false long-horizon reserve claim.");
+        }
+        finally
+        {
+            if (File.Exists(tamperedPath))
+                File.Delete(tamperedPath);
+        }
+    }
+
+    private static void VerifyMasterAnglerRainTotemCraftingReadFailsClosed(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath)
+    {
+        var root = JsonNode.Parse(File.ReadAllText(dependencyExpansionPath))?.AsObject() ??
+                   throw new InvalidDataException("Master Angler dependency fixture is null.");
+        var direction = root["directions"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["direction_id"]!.GetValue<string>() ==
+                             "complete_master_angler");
+        var readNode = direction["nodes"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["id"]!.GetValue<string>() ==
+                             "dependency.complete_master_angler.rain_totem_crafting_read_authority");
+        readNode["rule"]!["schema_version"] = "rain_totem_crafting.v0";
+
+        var tamperedPath = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-master-angler-rain-totem-crafting-read-" +
+            Guid.NewGuid().ToString("N") + ".json");
+        try
+        {
+            File.WriteAllText(
+                tamperedPath,
+                root.ToJsonString(JsonDefaults.Options));
+            var tampered = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(
+                catalogPath,
+                windowIndexPath,
+                tamperedPath);
+            Require(
+                tampered.PrerequisiteFamilies.Single(value =>
+                        value.FamilyId == "weather_reserve_or_control")
+                    .ProducerStatus ==
+                        "runtime_consumer_bound_crafting_read_supply_and_scheduler_missing" &&
+                tampered.MissingOrUnboundProducerFamilies.Contains(
+                    "weather_reserve_or_control",
+                    StringComparer.Ordinal),
+                "Master Angler weather supply accepted a drifted Rain Totem crafting schema.");
+        }
+        finally
+        {
+            if (File.Exists(tamperedPath))
+                File.Delete(tamperedPath);
+        }
+    }
+
+    private static void VerifyMasterAnglerOwnedRainTotemBindingFailsClosed(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath)
+    {
+        var root = JsonNode.Parse(File.ReadAllText(dependencyExpansionPath))?.AsObject() ??
+                   throw new InvalidDataException("Master Angler dependency fixture is null.");
+        var direction = root["directions"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["direction_id"]!.GetValue<string>() ==
+                             "complete_master_angler");
+        var consumer = direction["nodes"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["id"]!.GetValue<string>() ==
+                             "dependency.complete_master_angler.consume_owned_rain_totem");
+        consumer["rule"]!["effective_tomorrow_weather"] = "Sun";
+
+        var tamperedPath = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-master-angler-owned-rain-totem-binding-" +
+            Guid.NewGuid().ToString("N") + ".json");
+        try
+        {
+            File.WriteAllText(
+                tamperedPath,
+                root.ToJsonString(JsonDefaults.Options));
+            var tampered = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(
+                catalogPath,
+                windowIndexPath,
+                tamperedPath);
+            Require(
+                tampered.PrerequisiteFamilies.Single(value =>
+                        value.FamilyId == "weather_reserve_or_control")
+                    .ProducerStatus ==
+                        "current_state_gate_present_future_producer_missing" &&
+                tampered.MissingOrUnboundProducerFamilies.Contains(
+                    "weather_reserve_or_control",
+                    StringComparer.Ordinal),
+                "Master Angler weather consumer accepted a drifted effective tomorrow weather.");
+        }
+        finally
+        {
+            if (File.Exists(tamperedPath))
+                File.Delete(tamperedPath);
+        }
+    }
+
+    private static void VerifyMasterAnglerTrapSupplyBindingFailsClosed(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath)
+    {
+        var root = JsonNode.Parse(File.ReadAllText(dependencyExpansionPath))?.AsObject() ??
+                   throw new InvalidDataException("Master Angler dependency fixture is null.");
+        var direction = root["directions"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["direction_id"]!.GetValue<string>() ==
+                             "complete_master_angler");
+        var producer = direction["nodes"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["id"]!.GetValue<string>() ==
+                             "dependency.complete_master_angler.trap_supply_acquisition");
+        producer["rule"]!["crab_pot_maximum_unit_price"] = 1499;
+
+        var tamperedPath = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-master-angler-trap-supply-binding-" +
+            Guid.NewGuid().ToString("N") + ".json");
+        try
+        {
+            File.WriteAllText(
+                tamperedPath,
+                root.ToJsonString(JsonDefaults.Options));
+            var tampered = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(
+                catalogPath,
+                windowIndexPath,
+                tamperedPath);
+            Require(
+                tampered.PrerequisiteFamilies.Single(value =>
+                        value.FamilyId ==
+                            "crab_pot_recipe_material_and_bait_supply")
+                    .ProducerStatus != "implemented_and_bound" &&
+                tampered.MissingOrUnboundProducerFamilies.Contains(
+                    "crab_pot_recipe_material_and_bait_supply",
+                    StringComparer.Ordinal),
+                "Master Angler trap supply accepted a drifted Crab Pot price bound.");
+        }
+        finally
+        {
+            if (File.Exists(tamperedPath))
+                File.Delete(tamperedPath);
+        }
+    }
+
+    private static void VerifyMasterAnglerSewerAccessBindingFailsClosed(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath)
+    {
+        var root = JsonNode.Parse(File.ReadAllText(dependencyExpansionPath))?.AsObject() ??
+                   throw new InvalidDataException("Master Angler dependency fixture is null.");
+        var direction = root["directions"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["direction_id"]!.GetValue<string>() ==
+                             "complete_master_angler");
+        var edges = direction["edges"]!.AsArray();
+        var requiredEdge = edges.Single(value =>
+        {
+            var edge = value!.AsObject();
+            return edge["from"]!.GetValue<string>() ==
+                       "dependency.complete_master_angler.sewer_rusty_key_access" &&
+                   edge["to"]!.GetValue<string>() ==
+                       "dependency.complete_master_angler.target_date_opportunity_producer";
+        });
+        edges.Remove(requiredEdge);
+
+        var tamperedPath = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-master-angler-sewer-binding-" + Guid.NewGuid().ToString("N") + ".json");
+        try
+        {
+            File.WriteAllText(tamperedPath, root.ToJsonString(JsonDefaults.Options));
+            var tampered = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(
+                catalogPath,
+                windowIndexPath,
+                tamperedPath);
+            Require(
+                tampered.PrerequisiteFamilies.Single(value =>
+                        value.FamilyId == "sewer_rusty_key_access")
+                    .ProducerStatus != "implemented_and_bound" &&
+                tampered.MissingOrUnboundProducerFamilies.Contains(
+                    "sewer_rusty_key_access",
+                    StringComparer.Ordinal),
+                "Master Angler sewer producer accepted a missing target-date edge.");
+        }
+        finally
+        {
+            if (File.Exists(tamperedPath))
+                File.Delete(tamperedPath);
+        }
+    }
+
+    private static void VerifyMasterAnglerDesertBusBindingFailsClosed(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath)
+    {
+        var root = JsonNode.Parse(File.ReadAllText(dependencyExpansionPath))?.AsObject() ??
+                   throw new InvalidDataException("Master Angler dependency fixture is null.");
+        var direction = root["directions"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["direction_id"]!.GetValue<string>() ==
+                             "complete_master_angler");
+        var producer = direction["nodes"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["id"]!.GetValue<string>() ==
+                             "dependency.complete_master_angler.desert_bus_access");
+        producer["rule"]!["connector_kind"] = "warp";
+
+        var tamperedPath = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-master-angler-bus-binding-" + Guid.NewGuid().ToString("N") + ".json");
+        try
+        {
+            File.WriteAllText(tamperedPath, root.ToJsonString(JsonDefaults.Options));
+            var tampered = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(
+                catalogPath,
+                windowIndexPath,
+                tamperedPath);
+            Require(
+                tampered.PrerequisiteFamilies.Single(value =>
+                        value.FamilyId == "desert_bus_access")
+                    .ProducerStatus != "implemented_and_bound" &&
+                tampered.MissingOrUnboundProducerFamilies.Contains(
+                    "desert_bus_access",
+                    StringComparer.Ordinal),
+                "Master Angler desert-bus producer accepted a drifted connector kind.");
+        }
+        finally
+        {
+            if (File.Exists(tamperedPath))
+                File.Delete(tamperedPath);
+        }
+    }
+
+    private static void VerifyMasterAnglerRodEquipmentBindingFailsClosed(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath)
+    {
+        var root = JsonNode.Parse(File.ReadAllText(dependencyExpansionPath))?.AsObject() ??
+                   throw new InvalidDataException("Master Angler dependency fixture is null.");
+        var direction = root["directions"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["direction_id"]!.GetValue<string>() ==
+                             "complete_master_angler");
+        var producer = direction["nodes"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["id"]!.GetValue<string>() ==
+                             "dependency.complete_master_angler.rod_equipment_acquisition");
+        producer["rule"]!["required_qualified_item_id"] = "(T)IridiumRod";
+
+        var tamperedPath = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-master-angler-rod-binding-" + Guid.NewGuid().ToString("N") + ".json");
+        try
+        {
+            File.WriteAllText(tamperedPath, root.ToJsonString(JsonDefaults.Options));
+            var tampered = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(
+                catalogPath,
+                windowIndexPath,
+                tamperedPath);
+            Require(
+                tampered.PrerequisiteFamilies.Single(value =>
+                        value.FamilyId == "rod_and_fishing_equipment_acquisition")
+                    .ProducerStatus != "implemented_and_bound" &&
+                tampered.MissingOrUnboundProducerFamilies.Contains(
+                    "rod_and_fishing_equipment_acquisition",
+                    StringComparer.Ordinal),
+                "Master Angler rod-equipment producer accepted a drifted required rod.");
+        }
+        finally
+        {
+            if (File.Exists(tamperedPath))
+                File.Delete(tamperedPath);
+        }
+    }
+
+    private static void VerifyMasterAnglerMineAccessBindingFailsClosed(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath)
+    {
+        var root = JsonNode.Parse(File.ReadAllText(dependencyExpansionPath))?.AsObject() ??
+                   throw new InvalidDataException("Master Angler dependency fixture is null.");
+        var direction = root["directions"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["direction_id"]!.GetValue<string>() ==
+                             "complete_master_angler");
+        var edges = direction["edges"]!.AsArray();
+        var requiredEdge = edges
+            .Single(value =>
+            {
+                var edge = value!.AsObject();
+                return edge["from"]!.GetValue<string>() ==
+                           "dependency.complete_master_angler.ordinary_mine_fishing_access" &&
+                       edge["to"]!.GetValue<string>() ==
+                           "dependency.complete_master_angler.target_date_opportunity_producer";
+            });
+        edges.Remove(requiredEdge);
+
+        var tamperedPath = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-master-angler-mine-binding-" + Guid.NewGuid().ToString("N") + ".json");
+        try
+        {
+            File.WriteAllText(tamperedPath, root.ToJsonString(JsonDefaults.Options));
+            var tampered = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(
+                catalogPath,
+                windowIndexPath,
+                tamperedPath);
+            var affected = new[]
+            {
+                "mine_access_and_depth",
+                "mine_depth_or_ginger_island_caldera",
+                "one_of_advanced_location_access"
+            };
+            Require(
+                affected.All(family =>
+                    tampered.PrerequisiteFamilies.Single(value =>
+                            value.FamilyId == family)
+                        .ProducerStatus != "implemented_and_bound") &&
+                affected.All(family =>
+                    tampered.MissingOrUnboundProducerFamilies.Contains(
+                        family,
+                        StringComparer.Ordinal)),
+                "Master Angler mine-access producer accepted a missing recurrence edge.");
+        }
+        finally
+        {
+            if (File.Exists(tamperedPath))
+                File.Delete(tamperedPath);
+        }
+    }
+
+    private static void VerifyMasterAnglerFishingSkillBindingFailsClosed(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath)
+    {
+        var root = JsonNode.Parse(File.ReadAllText(dependencyExpansionPath))?.AsObject() ??
+                   throw new InvalidDataException("Master Angler dependency fixture is null.");
+        var direction = root["directions"]!.AsArray()
+            .Select(value => value!.AsObject())
+            .Single(value => value["direction_id"]!.GetValue<string>() ==
+                             "complete_master_angler");
+        var edges = direction["edges"]!.AsArray();
+        var requiredEdge = edges
+            .Single(value =>
+            {
+                var edge = value!.AsObject();
+                return edge["from"]!.GetValue<string>() ==
+                           "dependency.complete_master_angler.fishing_skill_progression" &&
+                       edge["to"]!.GetValue<string>() ==
+                           "dependency.complete_master_angler.acquisition_recurrence";
+            });
+        edges.Remove(requiredEdge);
+
+        var tamperedPath = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-master-angler-skill-binding-" + Guid.NewGuid().ToString("N") + ".json");
+        try
+        {
+            File.WriteAllText(tamperedPath, root.ToJsonString(JsonDefaults.Options));
+            var tampered = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(
+                catalogPath,
+                windowIndexPath,
+                tamperedPath);
+            Require(
+                tampered.PrerequisiteFamilies.Single(value =>
+                        value.FamilyId == "fishing_skill_progression")
+                    .ProducerStatus == "reusable_but_unbound" &&
+                tampered.MissingOrUnboundProducerFamilies.Contains(
+                    "fishing_skill_progression",
+                    StringComparer.Ordinal),
+                "Master Angler fishing-skill producer accepted a missing recurrence edge.");
+        }
+        finally
+        {
+            if (File.Exists(tamperedPath))
+                File.Delete(tamperedPath);
+        }
+    }
+
     private static void VerifyMasterAnglerChanceModifierParsing()
     {
         using var document = JsonDocument.Parse("""
@@ -61,6 +1057,7 @@ internal static partial class BootstrapSelfTest
                             require_magic_bait = false,
                             training_rod_allowed = true,
                             dynamic_conditions = Array.Empty<string>(),
+                            weather_modes = new[] { "rain", "storm" },
                             time_windows = new[]
                             {
                                 new { start_time = 600, end_time = 2600 }
@@ -131,10 +1128,26 @@ internal static partial class BootstrapSelfTest
             state_hash = "master-angler-full-route-self-test",
             state = new
             {
+                farm = new
+                {
+                    farm_type_key = Field("Standard")
+                },
                 time = new
                 {
                     total_days = Field(5),
-                    time = Field(800)
+                    time = Field(800),
+                    weather = Field("rain"),
+                    is_green_rain = Field(false),
+                    location_context_weather = Field(new[]
+                    {
+                        new
+                        {
+                            location_context_id = "Default",
+                            is_raining = true,
+                            is_lightning = false,
+                            is_green_rain = false
+                        }
+                    })
                 },
                 player = new
                 {
@@ -146,6 +1159,25 @@ internal static partial class BootstrapSelfTest
                         skills = new[]
                         {
                             new { skill_id = "fishing", effective_level = 0 }
+                        }
+                    }),
+                    rain_totem = Field(new
+                    {
+                        projection_status =
+                            "complete_current_native_rain_totem_context",
+                        context_routing = new
+                        {
+                            affected_location_context_id = "Default",
+                            allow_rain_totem = true
+                        },
+                        weather_transition = new
+                        {
+                            tomorrow_is_default_festival = false,
+                            affected_weather_before = "Sun",
+                            affected_weather_after = "Rain",
+                            tomorrow_total_days = 6,
+                            effective_tomorrow_weather = "Rain",
+                            rain_will_take_effect_tomorrow = true
                         }
                     }),
                     movement_timing_context = Field(new
@@ -181,6 +1213,14 @@ internal static partial class BootstrapSelfTest
                 },
                 fishing = new
                 {
+                    rod_inventory = Field(new[]
+                    {
+                        new
+                        {
+                            slot_index = 0,
+                            qualified_item_id = "(T)BambooPole"
+                        }
+                    }),
                     rod_contexts = Field(new[]
                     {
                         new
@@ -216,6 +1256,9 @@ internal static partial class BootstrapSelfTest
             result.Status ==
                 "validated_current_date_full_route_intents_runtime_terminal_pending" &&
             !result.TrainingLabelEligible &&
+            result.WeatherSupplyCandidateCount == 1 &&
+            result.WeatherSupplyCandidates.Single().TargetQualifiedItemIds
+                .SequenceEqual(new[] { "(O)145" }, StringComparer.Ordinal) &&
             candidate.RouteEdgeCount == 2 &&
             candidate.RouteGuaranteedArrivalTime == 807 &&
             candidate.Parameters.Any(parameter =>
@@ -223,6 +1266,21 @@ internal static partial class BootstrapSelfTest
                     MasterAnglerRouteTimingValidator.CalibrationSha256Parameter &&
                 parameter.Value == result.RouteTimingCalibrationSha256),
             "Master Angler teacher intent did not retain its complete route timing proof.");
+
+        var rainySnapshot = JsonNode.Parse(File.ReadAllText(snapshotPath))!;
+        var sunnySnapshot = rainySnapshot.DeepClone();
+        sunnySnapshot["state"]!["time"]!["weather"]!["value"] = "sun";
+        sunnySnapshot["state"]!["time"]!["location_context_weather"]!
+            ["value"]![0]!["is_raining"] = false;
+        Write(snapshotPath, sunnySnapshot);
+        var weatherBlocked = MasterAnglerTargetDateIntentBuilder.Build(
+            windowsPath,
+            snapshotPath,
+            calibrationPath);
+        Require(
+            weatherBlocked.CandidateCount == 0,
+            "Master Angler teacher routed toward a target whose authoritative weather window was closed.");
+        Write(snapshotPath, rainySnapshot);
 
         var constrainedWindows = JsonNode.Parse(
             File.ReadAllText(windowsPath))!;
@@ -236,6 +1294,61 @@ internal static partial class BootstrapSelfTest
         Require(
             noRouteSlack.CandidateCount == 0,
             "Master Angler teacher admitted a window without post-arrival catch reserve.");
+
+        constrainedWindows["species"]![0]!["windows"]![0]!
+            ["time_windows"]![0]!["end_time"] = 2600;
+        Write(windowsPath, constrainedWindows);
+        var noRodSnapshot = JsonNode.Parse(File.ReadAllText(snapshotPath))!;
+        noRodSnapshot["state"]!["fishing"]!["rod_inventory"]!["value"] =
+            new JsonArray();
+        Write(snapshotPath, noRodSnapshot);
+        var noRod = MasterAnglerTargetDateIntentBuilder.Build(
+            windowsPath,
+            snapshotPath,
+            calibrationPath);
+        Require(
+            noRod.CandidateCount == 0 &&
+            noRod.Status == "no_authoritative_static_rod_intent_available_now",
+            "Master Angler teacher emitted a rod-catch route without an owned fishing rod.");
+
+        noRodSnapshot["state"]!["player"]!["movement_timing_context"]!
+            ["value"]!["route_timing_ready_now"] = false;
+        Write(snapshotPath, noRodSnapshot);
+        var noRodWhileExecutorIdle = MasterAnglerTargetDateIntentBuilder.Build(
+            windowsPath,
+            snapshotPath,
+            calibrationPath);
+        Require(
+            noRodWhileExecutorIdle.CandidateCount == 0 &&
+            noRodWhileExecutorIdle.WeatherSupplyCandidateCount == 0 &&
+            noRodWhileExecutorIdle.BlockingReasons.SequenceEqual(
+                new[] { "fishing_rod_prerequisite_unsatisfied" }),
+            "Master Angler no-rod planning incorrectly required a live movement gate.");
+
+        var missingRodFieldSnapshot = JsonNode.Parse(File.ReadAllText(snapshotPath))!;
+        missingRodFieldSnapshot["state"]!["fishing"]!.AsObject()
+            .Remove("rod_inventory");
+        Write(snapshotPath, missingRodFieldSnapshot);
+        var missingRodField = MasterAnglerTargetDateIntentBuilder.Build(
+            windowsPath,
+            snapshotPath,
+            calibrationPath);
+        Require(
+            missingRodField.CandidateCount == 0 &&
+            missingRodField.Status == "no_authoritative_static_rod_intent_available_now",
+            "Master Angler teacher failed to close rod-catch routes when rod inventory was absent.");
+
+        missingRodFieldSnapshot["state"]!["fishing"]!["rod_inventory"] =
+            JsonSerializer.SerializeToNode(Field(new[] { new { slot_index = 0 } }));
+        Write(snapshotPath, missingRodFieldSnapshot);
+        var malformedRodField = MasterAnglerTargetDateIntentBuilder.Build(
+            windowsPath,
+            snapshotPath,
+            calibrationPath);
+        Require(
+            malformedRodField.CandidateCount == 0 &&
+            malformedRodField.Status == "no_authoritative_static_rod_intent_available_now",
+            "Master Angler teacher treated an incomplete rod inventory row as an owned rod.");
     }
 
     private static object Field(object value) => new

@@ -611,10 +611,10 @@ public sealed partial class MiningFloorStepPlannerTests
         Assert.True(start >= 0 && end > start);
         var claimSource = runtimeSource[start..end];
 
-        Assert.Contains("SkullKeyChestStage.OpenChest", claimSource, StringComparison.Ordinal);
-        Assert.Contains("SkullKeyChestStage.ClaimItem", claimSource, StringComparison.Ordinal);
-        Assert.True(claimSource.Split("mine.checkAction(", StringSplitOptions.None).Length >= 3);
-        Assert.Contains("Game1.player.hasSkullKey", claimSource, StringComparison.Ordinal);
+        Assert.Contains("SpecialItemChestStage.OpenChest", claimSource, StringComparison.Ordinal);
+        Assert.Contains("SpecialItemChestStage.ClaimItem", claimSource, StringComparison.Ordinal);
+        Assert.True(claimSource.Split("active.Location.checkAction(", StringSplitOptions.None).Length >= 3);
+        Assert.Contains("\"SkullKeyChest\" => Game1.player.hasSkullKey", claimSource, StringComparison.Ordinal);
         Assert.DoesNotMatch(@"Game1\.player\.hasSkullKey\s*=", claimSource);
 
         var adapterSource = MiningReadAdapterSources.All;

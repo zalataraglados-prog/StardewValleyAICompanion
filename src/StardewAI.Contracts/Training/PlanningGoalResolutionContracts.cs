@@ -40,5 +40,27 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("considered_direction_ids")]
         public string[] ConsideredDirectionIds { get; set; } =
             Array.Empty<string>();
+
+        [JsonPropertyName("planning_handoff")]
+        public PlanningGoalHandoff? PlanningHandoff { get; set; }
+    }
+
+    public sealed class PlanningGoalHandoff
+    {
+        [JsonPropertyName("schema_version")]
+        public string SchemaVersion { get; set; } = "planning_goal_handoff.v1";
+
+        [JsonPropertyName("handoff_kind")]
+        public string HandoffKind { get; set; } = string.Empty;
+
+        [JsonPropertyName("required_snapshot_profiles")]
+        public string[] RequiredSnapshotProfiles { get; set; } =
+            Array.Empty<string>();
+
+        [JsonPropertyName("requested_capability")]
+        public string RequestedCapability { get; set; } = string.Empty;
+
+        [JsonPropertyName("automatic_dispatch_required")]
+        public bool AutomaticDispatchRequired { get; set; }
     }
 }

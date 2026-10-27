@@ -14,38 +14,44 @@ public sealed partial class PlayerReadAdapter : ReadAdapterBase
     {
         var player = Context.IsWorldReady ? Game1.player : null;
         var inventory = player?.Items
-            .Select((item, index) => new
+            .Select((item, index) =>
             {
-                slot_index = index,
-                item_id = item?.ItemId,
-                qualified_item_id = item?.QualifiedItemId,
-                display_name = item?.DisplayName,
-                stack = item?.Stack,
-                quality = item?.Quality,
-                category = item?.Category,
-                maximum_stack_size = item?.maximumStackSize(),
-                can_be_shipped = item?.canBeShipped(),
-                can_be_trashed = item?.canBeTrashed(),
-                sell_to_store_price = item?.sellToStorePrice(-1L),
-                sale_price = item?.salePrice(),
-                runtime_type = item?.GetType().FullName,
-                special_state = item is null
-                    ? null
-                    : FarmReadAdapter.ReadItemSpecialState(item),
-                special_item = item?.specialItem,
-                context_tags = item?.GetContextTags().OrderBy(tag => tag, StringComparer.Ordinal).ToArray(),
-                donate_color_context = ReadDonateColorContext(item),
-                base_tag_not_giftable = item is null ? (bool?)null : StardewValley.ItemContextTagManager.HasBaseTag(item.QualifiedItemId, "not_giftable"),
-                is_object = item is StardewValley.Object,
-                object_type = item is StardewValley.Object obj ? obj.Type : null,
-                object_quest_item = item is StardewValley.Object objQuest ? (bool?)objQuest.questItem.Value : null,
-                object_big_craftable = item is StardewValley.Object objBig ? (bool?)objBig.bigCraftable.Value : null,
-                can_be_given_as_gift = item?.canBeGivenAsGift(),
-                is_furniture = item is StardewValley.Objects.Furniture,
-                is_wallpaper = item is StardewValley.Objects.Wallpaper,
-                protected_from_auto_sell = SellProtectionReasons(item).Length > 0,
-                auto_sell_protection_reasons = SellProtectionReasons(item),
-                is_empty = item is null
+                var protectionReasons = SellProtectionReasons(
+                    item,
+                    player.currentLocation);
+                return new
+                {
+                    slot_index = index,
+                    item_id = item?.ItemId,
+                    qualified_item_id = item?.QualifiedItemId,
+                    display_name = item?.DisplayName,
+                    stack = item?.Stack,
+                    quality = item?.Quality,
+                    category = item?.Category,
+                    maximum_stack_size = item?.maximumStackSize(),
+                    can_be_shipped = item?.canBeShipped(),
+                    can_be_trashed = item?.canBeTrashed(),
+                    sell_to_store_price = item?.sellToStorePrice(-1L),
+                    sale_price = item?.salePrice(),
+                    runtime_type = item?.GetType().FullName,
+                    special_state = item is null
+                        ? null
+                        : FarmReadAdapter.ReadItemSpecialState(item),
+                    special_item = item?.specialItem,
+                    context_tags = item?.GetContextTags().OrderBy(tag => tag, StringComparer.Ordinal).ToArray(),
+                    donate_color_context = ReadDonateColorContext(item),
+                    base_tag_not_giftable = item is null ? (bool?)null : StardewValley.ItemContextTagManager.HasBaseTag(item.QualifiedItemId, "not_giftable"),
+                    is_object = item is StardewValley.Object,
+                    object_type = item is StardewValley.Object obj ? obj.Type : null,
+                    object_quest_item = item is StardewValley.Object objQuest ? (bool?)objQuest.questItem.Value : null,
+                    object_big_craftable = item is StardewValley.Object objBig ? (bool?)objBig.bigCraftable.Value : null,
+                    can_be_given_as_gift = item?.canBeGivenAsGift(),
+                    is_furniture = item is StardewValley.Objects.Furniture,
+                    is_wallpaper = item is StardewValley.Objects.Wallpaper,
+                    protected_from_auto_sell = protectionReasons.Length > 0,
+                    auto_sell_protection_reasons = protectionReasons,
+                    is_empty = item is null
+                };
             })
             .ToArray();
         var seedInventory = player?.Items
@@ -80,6 +86,7 @@ public sealed partial class PlayerReadAdapter : ReadAdapterBase
             ["horse_flute"] = Field(ReadHorseFluteContext(player), "Game1.player.Items exact base (O)911; Object.performUseAction horse-flute branch; Utility.GetHorseWarpRestrictionsForFarmer; Utility.findHorseForPlayer; current online mounts and exact adjacent no-op", tick),
             ["monster_musk"] = Field(ReadMonsterMuskContext(player), "Game1.player.Items exact base (O)879; DataLoader.Buffs id 24; BuffManager.AppliedBuffs; Object.performUseAction/MonsterMusk callback; MineShaft and VolcanoDungeon buff-24 spawn consumers", tick),
             ["rain_totem"] = Field(ReadRainTotemContext(player), "Game1.player.Items exact base (O)681; current LocationContextData AllowRainTotem/RainTotemAffectsContext; Utility.isFestivalDay tomorrow guard; default or current-context WeatherForTomorrow; Object.performUseAction/rainTotem native branch", tick),
+            ["rain_totem_crafting"] = Field(ReadRainTotemCraftingContext(player), "Game1.player.craftingRecipes; CraftingRecipe.craftingRecipes/recipeList/ItemMatchesForCrafting; ItemRegistry (O)681; shared native personal and Workbench CraftingPage projection", tick),
             ["return_scepter"] = Field(ReadReturnScepterContext(player), "Game1.player.Items exact base (T)ReturnScepter Wand; Farmer.homeLocation; Utility.getHomeOfFarmer; FarmHouse.getFrontDoorSpot; Wand.DoFunction delayed native Farm warp", tick),
             ["treasure_totem"] = Field(ReadTreasureTotemContext(player), "Game1.player.Items exact base (O)TreasureTotem; Object.performUseAction/treasureTotem; Game1.netWorldState.TreasureTotemsUsed; current loaded location exact rounded-distance ring placement, occupancy, front-layer, bush and diggable/winter-grass gates", tick),
             ["warp_totem"] = Field(ReadWarpTotemContext(player), "Game1.player.Items exact base (O)261/(O)688/(O)689/(O)690/(O)886; Data/Objects; Object.performUseAction/totemWarp/totemWarpForReal; Farm WarpTotemEntry; active and passive festival destination routing", tick),
@@ -128,7 +135,9 @@ public sealed partial class PlayerReadAdapter : ReadAdapterBase
             ["jukebox_selection"] = Field(ReadJukeboxSelection(player), "Saloon Buildings Action=Jukebox; Utility.GetJukeboxTracks exact ordered unlock catalog; Data/JukeboxTracks; Farmer.songsHeard; ChooseFromListMenu native input; Game1 default/requested/current music receipt and green-rain guard", tick),
             ["customization"] = Field(ReadPlayerCustomization(player), "WizardHouseBasement Buildings Action=WizardShrine and WizardShrine_Yes 500g native CharacterCustomization(Source.Wizard); Farmer appearance and exact ColorPicker HSV sliders; DesertFestival Back TouchAction=DesertMakeover, stylist/daily/inventory gates, Data/MakeoverOutfits and deterministic day-save RNG", tick),
             ["geode_processing"] = Field(ReadGeodeProcessing(player), "locked base 1.6.15 Utility.IsGeode/getTreasureFromGeode and GeodeMenu; Blacksmith Buildings Action=Blacksmith; Clint presence and tool-upgrade interception; exact inventory, money, stats, Golden Coconut mutex state and pure local-RNG output replay", tick),
+            ["tool_upgrade"] = Field(ReadToolUpgrade(player), "Game1.toolData ConventionalUpgradeFrom; ShopBuilder.GetToolUpgradeData exact price/trade/source; Blacksmith Buildings Action=Blacksmith; Tool.actionWhenPurchased ClintUpgrade and GameLocation native completed-tool claim", tick, "vanilla_1_6_15_native_tool_upgrade_lifecycle"),
             ["machine_crafting"] = Field(ReadMachineCraftingContext(player), "Game1.player.craftingRecipes, CraftingRecipe.craftingRecipes/recipeList/ItemMatchesForCrafting, ItemRegistry, Object.GetMachineData", tick),
+            ["crab_pot_crafting"] = Field(ReadCrabPotCraftingContext(player), "Game1.player.craftingRecipes; CraftingRecipe.craftingRecipes/recipeList/ItemMatchesForCrafting; ItemRegistry (O)710; native personal and Workbench CraftingPage sources", tick),
             ["storage_crafting"] = Field(ReadStorageCraftingContext(player), "Game1.player.craftingRecipes, CraftingRecipe.craftingRecipes/recipeList/ItemMatchesForCrafting, ItemRegistry, native Chest placement classification", tick),
             ["quest_crafting"] = Field(ReadQuestCraftingContext(player), "Game1.player.questLog CraftingQuest.ItemId, Game1.player.craftingRecipes, CraftingRecipe.craftingRecipes/recipeList/ItemMatchesForCrafting, ItemRegistry", tick),
             ["cooking"] = Field(ReadCookingContext(player), "Game1.player.cookingRecipes/recipesCooked; CraftingRecipe.cookingRecipes/recipeList/ItemMatchesForCrafting; GameLocation.ActivateKitchen/GetFridge; fridge and mini-fridge mutexes; Cookout Kit Torch.checkForAction; native CraftingPage seasoning, quest, recipe-count and achievement callbacks", tick),
@@ -248,7 +257,7 @@ public sealed partial class PlayerReadAdapter : ReadAdapterBase
 
         var resolvedSeedId = Crop.ResolveSeedId(item.ItemId, location);
         var cropCatalogMatch = Game1.cropData.ContainsKey(resolvedSeedId);
-        if (item.Category != StardewValley.Object.SeedsCategory && !cropCatalogMatch)
+        if (!IsPlantableSeed(item, location))
         {
             return null;
         }
@@ -342,7 +351,9 @@ public sealed partial class PlayerReadAdapter : ReadAdapterBase
         };
     }
 
-    private static string[] SellProtectionReasons(Item? item)
+    private static string[] SellProtectionReasons(
+        Item? item,
+        GameLocation? location)
     {
         if (item is null)
         {
@@ -350,6 +361,11 @@ public sealed partial class PlayerReadAdapter : ReadAdapterBase
         }
 
         var reasons = new List<string>();
+        if (IsPlantableSeed(item, location))
+        {
+            reasons.Add("plantable_seed_requires_explicit_surplus_authorization");
+        }
+
         if (item.specialItem)
         {
             reasons.Add("special_item");
@@ -394,6 +410,13 @@ public sealed partial class PlayerReadAdapter : ReadAdapterBase
         }
 
         return reasons.Distinct(StringComparer.Ordinal).ToArray();
+    }
+
+    private static bool IsPlantableSeed(Item item, GameLocation? location)
+    {
+        var resolvedSeedId = Crop.ResolveSeedId(item.ItemId, location);
+        return item.Category == StardewValley.Object.SeedsCategory ||
+            Game1.cropData.ContainsKey(resolvedSeedId);
     }
 
     private static int? ReadFarmhouseUpgradeLevel(Farmer? player)

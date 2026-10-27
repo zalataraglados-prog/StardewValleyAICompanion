@@ -431,7 +431,13 @@ public sealed partial class ModEntry
             pending.Completion.SetResult(BlockedWithPrimitive(request, "fill_pet_bowl", "pet_bowl.watered=true", PetBowlObservedEffect(location, target), precheck));
             return;
         }
-        var path = BuildAdjacentToolPath(location, target, request.MaxMovementTiles ?? 512, out var moveReason);
+        var path = BuildAdjacentToolPath(
+            location,
+            target,
+            request.MaxMovementTiles ?? 512,
+            out var moveReason,
+            avoidSoftObstacles: true,
+            allowRemovableObstacles: false);
         if (path is null)
         {
             pending.Completion.SetResult(BlockedWithPrimitive(request, "fill_pet_bowl", "pet_bowl.watered=true", PetBowlObservedEffect(location, target), moveReason));

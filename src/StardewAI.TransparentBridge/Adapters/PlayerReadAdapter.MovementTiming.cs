@@ -24,6 +24,13 @@ public sealed partial class PlayerReadAdapter
                 minimumVanillaTerrainTemporarySpeedBuff);
         var immobilized = player.hasBuff("19");
         var eventControlsMovement = Game1.CurrentEvent is not null || Game1.eventUp;
+        var nativeControlGateOpen =
+            !Game1.globalFade &&
+            !Game1.freezeControls &&
+            !Game1.isWarping &&
+            !Game1.paused &&
+            !eventControlsMovement &&
+            player.freezePause <= 0;
         var formulaApplicable =
             !immobilized &&
             !eventControlsMovement &&
@@ -50,6 +57,12 @@ public sealed partial class PlayerReadAdapter
             immobilizing_buff_19_active = immobilized,
             current_event_active = Game1.CurrentEvent is not null,
             event_up = Game1.eventUp,
+            game_paused = Game1.paused,
+            global_fade = Game1.globalFade,
+            freeze_controls = Game1.freezeControls,
+            is_warping = Game1.isWarping,
+            player_freeze_pause = player.freezePause,
+            native_control_gate_open = nativeControlGateOpen,
             player_can_move_now = player.CanMove,
             player_using_tool_now = player.UsingTool,
             tile_size_pixels = Game1.tileSize,
@@ -63,6 +76,7 @@ public sealed partial class PlayerReadAdapter
                 theoreticalUpperBound.Value <= 1d,
             route_timing_ready_now =
                 formulaApplicable &&
+                nativeControlGateOpen &&
                 player.CanMove &&
                 !player.UsingTool,
             scope = "ordinary_on_foot_cardinal_input_without_collision_dialogue_or_clearance_delay",

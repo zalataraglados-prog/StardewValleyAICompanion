@@ -75,6 +75,8 @@ static partial class Program
         var expectedBombMonsterHits = ReadQueueParameterInt(item, "expected_bomb_monster_hits");
         var direction = options.Direction ?? ReadQueueParameterInt(item, "direction");
         var waitTicks = options.WaitTicks ?? ReadQueueParameterInt(item, "wait_ticks");
+        var waitUntilTime = ReadQueueParameterInt(item, "route_wait_until_time");
+        var waitMaxSlices = ReadQueueParameterInt(item, "route_wait_max_slices");
         var sleepResumeMode = ReadQueueParameterString(
             item,
             "sleep_resume_mode");
@@ -240,6 +242,8 @@ static partial class Program
         var expectedDaysUntilHouseUpgradeBefore = ReadQueueParameterInt(item, "expected_days_until_house_upgrade_before");
         var expectedDaysUntilHouseUpgradeAfter = ReadQueueParameterInt(item, "expected_days_until_house_upgrade_after");
         var constructionBuildingType = ReadQueueParameterString(item, "construction_building_type");
+        var constructionProjectKind = ReadQueueParameterString(item, "construction_project_kind");
+        var constructionUpgradeFromBuildingType = ReadQueueParameterString(item, "construction_upgrade_from_building_type");
         var constructionBuildDays = ReadQueueParameterInt(item, "construction_build_days");
         var constructionMaterialsJson = ReadQueueParameterString(item, "construction_materials_json");
         var placementLocationId = ReadQueueParameterString(item, "placement_location_id");
@@ -248,6 +252,8 @@ static partial class Program
         var constructionReason = ReadQueueParameterString(item, "construction_reason");
         var constructionBuilder = ReadQueueParameterString(item, "construction_builder");
         var builderActionRaw = ReadQueueParameterString(item, "builder_action_raw");
+        var expectedAnimalDoorOpenBefore = ReadNullableBoolQueueParameter(item, "expected_animal_door_open_before");
+        var expectedAnimalDoorOpenAfter = ReadNullableBoolQueueParameter(item, "expected_animal_door_open_after");
         var appearanceReason = ReadQueueParameterString(item, "appearance_reason");
         var buildingIdentity = ReadQueueParameterString(item, "building_identity");
         var buildingLocationId = ReadQueueParameterString(item, "building_location_id");
@@ -670,6 +676,8 @@ static partial class Program
         {
             executionRequest.WaitTicks = waitTicks.Value;
         }
+        executionRequest.WaitUntilTime = waitUntilTime;
+        executionRequest.WaitMaxSlices = waitMaxSlices;
         executionRequest.SleepResumeMode = sleepResumeMode;
         if (maxCrops.HasValue)
         {
@@ -846,6 +854,8 @@ static partial class Program
         executionRequest.ExpectedDaysUntilHouseUpgradeBefore = expectedDaysUntilHouseUpgradeBefore;
         executionRequest.ExpectedDaysUntilHouseUpgradeAfter = expectedDaysUntilHouseUpgradeAfter;
         executionRequest.ConstructionBuildingType = constructionBuildingType;
+        executionRequest.ConstructionProjectKind = constructionProjectKind;
+        executionRequest.ConstructionUpgradeFromBuildingType = constructionUpgradeFromBuildingType;
         executionRequest.ConstructionBuildDays = constructionBuildDays;
         executionRequest.ConstructionMaterialsJson = constructionMaterialsJson;
         executionRequest.PlacementLocationId = placementLocationId;
@@ -854,6 +864,8 @@ static partial class Program
         executionRequest.ConstructionReason = constructionReason;
         executionRequest.ConstructionBuilder = constructionBuilder;
         executionRequest.BuilderActionRaw = builderActionRaw;
+        executionRequest.ExpectedAnimalDoorOpenBefore = expectedAnimalDoorOpenBefore;
+        executionRequest.ExpectedAnimalDoorOpenAfter = expectedAnimalDoorOpenAfter;
         executionRequest.AppearanceReason = appearanceReason;
         executionRequest.BuildingIdentity = buildingIdentity;
         executionRequest.BuildingLocationId = buildingLocationId;
@@ -1459,6 +1471,9 @@ static partial class Program
         ApplyFieldOfficeRequestFields(
             executionRequest,
             item);
+        ApplyIslandGourmandRequestFields(
+            executionRequest,
+            item);
         ApplyCalicoJackRequestFields(
             executionRequest,
             item);
@@ -1484,6 +1499,9 @@ static partial class Program
             executionRequest,
             item);
         ApplyGeodeProcessingRequestFields(
+            executionRequest,
+            item);
+        ApplyToolUpgradeRequestFields(
             executionRequest,
             item);
         ApplyQuestCancellationRequestFields(

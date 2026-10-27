@@ -18,6 +18,15 @@ public sealed class LiveTrainingOptions
     public string SnapshotFileProfile { get; set; } = string.Empty;
     public string SnapshotArtifactMode { get; set; } =
         ContentAddressedJsonArtifactStore.PlainMode;
+    public bool CaptureGoldenWalnutFreshSaveEvidence { get; set; }
+    public bool RequireGoldenWalnutSourceScheduleReady { get; set; }
+    public string StageOneCollectionRequirementInventoryPath { get; set; } =
+        string.Empty;
+    public string StageOneCollectionAcquisitionLoweringPath { get; set; } =
+        string.Empty;
+    public string MasterAnglerStageOneWindowIndexPath { get; set; } =
+        string.Empty;
+    public string RouteTimingCalibrationPath { get; set; } = string.Empty;
     public string ExecutorUrl { get; set; } = "http://127.0.0.1:8767";
     public int ExecutorTimeoutSeconds { get; set; } = 600;
     public string ManifestPath { get; set; } = ReadTextOrEmpty(@"E:\StardewAITraining\last-manifest-path.txt");
@@ -35,6 +44,8 @@ public sealed class LiveTrainingOptions
     public int SleepMs { get; set; } = 1000;
     public int NoProgressBackoffMs { get; set; }
     public int NoProgressMaxBackoffMs { get; set; }
+    public int MaxQueueNoProgressStreak { get; set; }
+    public int MaxUnverifiedExecutionStreak { get; set; }
     public int MaxCropsPerExecution { get; set; } = 16;
     public string ExecutorOptionId { get; set; } = string.Empty;
     public int? TargetTileX { get; set; }
@@ -49,6 +60,8 @@ public sealed class LiveTrainingOptions
     public bool UseProductExecutor { get; set; }
     public bool UsePlanOutput { get; set; }
     public bool UseDailyPlan { get; set; }
+    public string ResumeCropTeacherTransitionLedgerPath { get; set; } =
+        string.Empty;
     public bool UseParameterizedAction { get; set; }
     public bool EmitQueueExecutionReceipt { get; set; }
     public string TeacherPreferencePath { get; set; } = string.Empty;
@@ -79,6 +92,11 @@ public sealed class LiveTrainingOptions
     public string DailyPlanCandidateId { get; set; } = string.Empty;
     public bool StopAfterObjectiveComplete { get; set; }
     public bool StopAfterSocialObjectiveComplete { get; set; }
+    public bool StopAfterCropTeacherFirstDay { get; set; }
+    public bool ContinueAfterCropTeacherRun { get; set; }
+    public bool UseStageOneCollectionTeacher =>
+        RequireGoldenWalnutSourceScheduleReady ||
+        ContinueAfterCropTeacherRun;
     public string TargetExecutionMode { get; set; } = ExecutionTargetProfiles.TrainingSingleplayer;
     public ActionActorRef TargetActor => ExecutionTargetProfiles.CreateActor(TargetExecutionMode);
     public string FeedbackMode => RequireExecutorFeedback
@@ -109,6 +127,14 @@ public sealed class LiveTrainingOptions
                 ? string.IsNullOrWhiteSpace(RunId) ? "live-training" : RunId
                 : ArtifactRunId);
     public string SnapshotDir => Path.Combine(RunDir, "live-snapshots");
+    public string GoldenWalnutFreshSaveEpisodeManifestPath => Path.Combine(
+        RunDir,
+        "golden-walnut-fresh-save-episode-manifest.json");
+    public string GoldenWalnutFreshSaveSourceSchedulePath => Path.Combine(
+        RunDir,
+        "golden-walnut-fresh-save-source-schedule.json");
+    public string GoldenWalnutFreshSaveScheduleId =>
+        "golden-walnut-fresh-save:" + RunId;
     public string TrainingDataRoot => string.IsNullOrWhiteSpace(TrainingDataRootOverride)
         ? Root
         : TrainingDataRootOverride;
@@ -212,6 +238,36 @@ public sealed class LiveTrainingOptions
                         "content_addressed_gzip, not '" + value + "'.");
                 }
                 options.SnapshotArtifactMode = value;
+            }
+            else if (current == "--capture-golden-walnut-fresh-save-evidence")
+            {
+                options.CaptureGoldenWalnutFreshSaveEvidence = true;
+            }
+            else if (current == "--require-golden-walnut-source-schedule-ready")
+            {
+                options.RequireGoldenWalnutSourceScheduleReady = true;
+            }
+            else if (current ==
+                "--stage-one-collection-requirement-inventory" &&
+                i + 1 < args.Length)
+            {
+                options.StageOneCollectionRequirementInventoryPath = args[++i];
+            }
+            else if (current ==
+                "--stage-one-collection-acquisition-lowering" &&
+                i + 1 < args.Length)
+            {
+                options.StageOneCollectionAcquisitionLoweringPath = args[++i];
+            }
+            else if (current == "--master-angler-stage-one-window-index" &&
+                i + 1 < args.Length)
+            {
+                options.MasterAnglerStageOneWindowIndexPath = args[++i];
+            }
+            else if (current == "--route-timing-calibration" &&
+                i + 1 < args.Length)
+            {
+                options.RouteTimingCalibrationPath = args[++i];
             }
             else if (current == "--executor-url" && i + 1 < args.Length)
             {
@@ -331,6 +387,28 @@ public sealed class LiveTrainingOptions
                     0,
                     noProgressMaxBackoffMs);
             }
+            else if (current == "--max-unverified-execution-streak" &&
+                i + 1 < args.Length &&
+                int.TryParse(
+                    args[++i],
+                    out var maxUnverifiedExecutionStreak))
+            {
+                options.MaxUnverifiedExecutionStreak = Math.Clamp(
+                    maxUnverifiedExecutionStreak,
+                    1,
+                    64);
+            }
+            else if (current == "--max-queue-no-progress-streak" &&
+                i + 1 < args.Length &&
+                int.TryParse(
+                    args[++i],
+                    out var maxQueueNoProgressStreak))
+            {
+                options.MaxQueueNoProgressStreak = Math.Clamp(
+                    maxQueueNoProgressStreak,
+                    1,
+                    64);
+            }
             else if (current == "--max-crops" && i + 1 < args.Length && int.TryParse(args[++i], out var maxCrops))
             {
                 options.MaxCropsPerExecution = Math.Max(1, maxCrops);
@@ -393,6 +471,11 @@ public sealed class LiveTrainingOptions
             else if (current == "--use-daily-plan")
             {
                 options.UseDailyPlan = true;
+            }
+            else if (current == "--resume-crop-teacher-transition-ledger" &&
+                i + 1 < args.Length)
+            {
+                options.ResumeCropTeacherTransitionLedgerPath = args[++i];
             }
             else if (current == "--use-parameterized-action")
             {
@@ -514,6 +597,14 @@ public sealed class LiveTrainingOptions
             {
                 options.StopAfterObjectiveComplete = true;
             }
+            else if (current == "--stop-after-crop-teacher-first-day")
+            {
+                options.StopAfterCropTeacherFirstDay = true;
+            }
+            else if (current == "--continue-after-crop-teacher-run")
+            {
+                options.ContinueAfterCropTeacherRun = true;
+            }
         }
 
         if (string.IsNullOrWhiteSpace(options.RunId))
@@ -550,8 +641,147 @@ public sealed class LiveTrainingOptions
         options.ValidateTeacherPreferenceMode();
         options.ValidatePrecompiledQueueMode();
         options.ValidateQueueExecutionReceiptMode();
+        options.ValidateGoldenWalnutFreshSaveEvidenceMode();
+        options.ValidateCropTeacherResumeMode();
 
         return options;
+    }
+
+    public void ValidateCropTeacherResumeMode()
+    {
+        if (ContinueAfterCropTeacherRun &&
+            string.IsNullOrWhiteSpace(
+                ResumeCropTeacherTransitionLedgerPath))
+        {
+            throw new ArgumentException(
+                "--continue-after-crop-teacher-run requires " +
+                "--resume-crop-teacher-transition-ledger.");
+        }
+        if (string.IsNullOrWhiteSpace(
+                ResumeCropTeacherTransitionLedgerPath))
+        {
+            return;
+        }
+
+        if (!UseDailyPlan ||
+            !UseProductExecutor ||
+            !RequireExecutorFeedback ||
+            !SkipTraining)
+        {
+            throw new ArgumentException(
+                "--resume-crop-teacher-transition-ledger requires " +
+                "--use-daily-plan, --use-product-executor, executor feedback " +
+                "and --skip-training.");
+        }
+        if (CaptureGoldenWalnutFreshSaveEvidence ||
+            RequireGoldenWalnutSourceScheduleReady)
+        {
+            throw new ArgumentException(
+                "--resume-crop-teacher-transition-ledger cannot be combined " +
+                "with fresh-save evidence capture or source-schedule setup.");
+        }
+        if (ContinueAfterCropTeacherRun)
+        {
+            ValidateAuthorityArtifact(
+                StageOneCollectionRequirementInventoryPath,
+                "--stage-one-collection-requirement-inventory");
+            ValidateAuthorityArtifact(
+                StageOneCollectionAcquisitionLoweringPath,
+                "--stage-one-collection-acquisition-lowering");
+            ValidateAuthorityArtifact(
+                MasterAnglerStageOneWindowIndexPath,
+                "--master-angler-stage-one-window-index");
+            ValidateAuthorityArtifact(
+                RouteTimingCalibrationPath,
+                "--route-timing-calibration");
+        }
+
+        var fullPath = Path.GetFullPath(
+            ResumeCropTeacherTransitionLedgerPath);
+        if (!File.Exists(fullPath))
+        {
+            throw new ArgumentException(
+                "Crop Teacher transition ledger was not found: " + fullPath);
+        }
+        ResumeCropTeacherTransitionLedgerPath = fullPath;
+    }
+
+    public void ValidateGoldenWalnutFreshSaveEvidenceMode()
+    {
+        if (RequireGoldenWalnutSourceScheduleReady &&
+            !CaptureGoldenWalnutFreshSaveEvidence)
+        {
+            throw new ArgumentException(
+                "--require-golden-walnut-source-schedule-ready requires " +
+                "--capture-golden-walnut-fresh-save-evidence.");
+        }
+        if (!CaptureGoldenWalnutFreshSaveEvidence)
+            return;
+        if (SnapshotArtifactMode !=
+            ContentAddressedJsonArtifactStore.ContentAddressedGzipMode)
+        {
+            throw new ArgumentException(
+                "--capture-golden-walnut-fresh-save-evidence requires " +
+                "--snapshot-artifact-mode content_addressed_gzip.");
+        }
+        if (ExecutionSnapshotProfile != "full")
+        {
+            throw new ArgumentException(
+                "--capture-golden-walnut-fresh-save-evidence requires " +
+                "--execution-snapshot-profile full.");
+        }
+        if (string.IsNullOrWhiteSpace(RunId))
+        {
+            throw new ArgumentException(
+                "--capture-golden-walnut-fresh-save-evidence requires --run-id.");
+        }
+        if (!StardewAI.Contracts.Goals.GrandpaEvaluationGoalDefinition
+                .IsMaximumScoreGoal(Goal))
+        {
+            throw new ArgumentException(
+                "--capture-golden-walnut-fresh-save-evidence requires the " +
+                "maximum Grandpa score goal.");
+        }
+        if (RequireGoldenWalnutSourceScheduleReady &&
+            (!UseDailyPlan || !RequireNativeSaveBoundary))
+        {
+            throw new ArgumentException(
+                "--require-golden-walnut-source-schedule-ready requires " +
+                "--use-daily-plan and --require-native-save-boundary.");
+        }
+        if (RequireGoldenWalnutSourceScheduleReady)
+        {
+            ValidateAuthorityArtifact(
+                StageOneCollectionRequirementInventoryPath,
+                "--stage-one-collection-requirement-inventory");
+            ValidateAuthorityArtifact(
+                StageOneCollectionAcquisitionLoweringPath,
+                "--stage-one-collection-acquisition-lowering");
+            ValidateAuthorityArtifact(
+                MasterAnglerStageOneWindowIndexPath,
+                "--master-angler-stage-one-window-index");
+            ValidateAuthorityArtifact(
+                RouteTimingCalibrationPath,
+                "--route-timing-calibration");
+        }
+    }
+
+    private static void ValidateAuthorityArtifact(string path, string option)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            throw new ArgumentException(
+                "--require-golden-walnut-source-schedule-ready requires " +
+                option + ".");
+        }
+
+        var fullPath = Path.GetFullPath(path);
+        if (!File.Exists(fullPath))
+        {
+            throw new ArgumentException(
+                "Required Stage 1 Teacher authority artifact was not found: " +
+                fullPath);
+        }
     }
 
     public void ValidateTeacherPreferenceMode()

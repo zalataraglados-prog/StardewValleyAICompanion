@@ -8,7 +8,7 @@ namespace StardewAI.GoalConditionedBootstrap;
 public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
 {
     public const string SelectionPolicy =
-        "authoritative_transparent_crop_net_revenue_then_earliest_terminal_v1";
+        "authoritative_transparent_crop_net_revenue_after_exact_bounded_refill_corridor_and_persisted_approach_then_earliest_terminal_v5";
 
     public static MoneyRevenueCropProductionDecisionRequest Build(
         string requestPath)
@@ -60,31 +60,70 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
             .ToArray();
         Require(viableTiles.Length > 0,
             "Money Revenue crop-production Teacher found no supported Farm tiles.");
+        var anchor = ReadFarmAnchor(snapshot, viableTiles);
+        var wateringRefillRoute = BuildWateringRefillRouteProof(
+            layoutTiles,
+            viableTiles,
+            mapWidth,
+            mapHeight,
+            anchor.TileX,
+            anchor.TileY);
 
+        var refillReservedTiles = wateringRefillRoute.PreparationTiles
+            .Append(wateringRefillRoute.ApproachTile)
+            .Where(value => value is not null)
+            .Cast<MoneyRevenueCropPlantingTile>()
+            .ToHashSet();
+        var cropViableTiles = viableTiles
+            .Where(value => !refillReservedTiles.Contains(
+                new MoneyRevenueCropPlantingTile(
+                    value.TileX,
+                    value.TileY)))
+            .ToArray();
         var evaluations = EvaluateCandidates(
             snapshot,
             request.MaximumTileCount,
-            viableTiles.Length);
+            cropViableTiles.Length,
+            wateringRefillRoute.Verified);
         var selected = evaluations
             .Where(value => value.Admitted)
             .OrderByDescending(value => value.MinimumNetRevenue)
             .ThenBy(value => value.LastHarvestTotalDay)
             .ThenBy(value => value.RequiredWateringActionCount)
             .ThenBy(value => value.SeedId, StringComparer.Ordinal)
-            .FirstOrDefault()
-            ?? throw new InvalidDataException(
-                "Money Revenue crop-production Teacher found no admitted crop candidate.");
+            .FirstOrDefault();
+        if (selected is null)
+        {
+            var rejectionSummary = evaluations
+                .SelectMany(value => value.BlockReasons)
+                .GroupBy(value => value, StringComparer.Ordinal)
+                .OrderByDescending(group => group.Count())
+                .ThenBy(group => group.Key, StringComparer.Ordinal)
+                .Select(group => $"{group.Key}={group.Count()}");
+            throw new InvalidDataException(
+                "Money Revenue crop-production Teacher found no admitted " +
+                $"crop candidate among {evaluations.Length} evaluations. " +
+                "Rejections: " + string.Join(",", rejectionSummary));
+        }
         var selectedEvaluations = evaluations.Select(value => value with
         {
             Selected = value.SeedId == selected.SeedId &&
                 value.ShopId == selected.ShopId
         }).ToArray();
-        var anchor = ReadFarmAnchor(snapshot, viableTiles);
         var tiles = SelectCompactTiles(
-            viableTiles,
+            cropViableTiles,
             selected.TileCount,
             anchor.TileX,
             anchor.TileY);
+        var boundedPreparationTiles = tiles
+            .Concat(wateringRefillRoute.PreparationTiles)
+            .Distinct()
+            .ToArray();
+        Require(boundedPreparationTiles.Length ==
+                    tiles.Length +
+                    wateringRefillRoute.PreparationTiles.Length &&
+                FitsFarmLayoutProjection(boundedPreparationTiles),
+            "Money Revenue crop-production Teacher refill corridor does not fit one bounded Farm preparation projection.");
         var year = ReadStateInt(snapshot, "time", "year");
         var season = ReadStateString(snapshot, "time", "season");
         var day = ReadStateInt(snapshot, "time", "day");
@@ -123,7 +162,11 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
                     PlantingDayOfMonth = day,
                     LocationContext = "outdoor_seasonal",
                     LocationId = "Farm",
-                    Tiles = tiles
+                    Tiles = tiles,
+                    WateringRefillPreparationTiles =
+                        wateringRefillRoute.PreparationTiles,
+                    WateringRefillApproachTile =
+                        wateringRefillRoute.ApproachTile
                 }
             },
             MaxQueueItemCount = request.MaxQueueItemCount,
@@ -175,6 +218,17 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
                 snapshot.StateHash == SnapshotHash.ComputeStateHash(
                     snapshot.State),
             "Money Revenue crop-production Teacher snapshot identity is invalid.");
+    }
+
+    private static bool FitsFarmLayoutProjection(
+        MoneyRevenueCropPlantingTile[] tiles)
+    {
+        if (tiles.Length == 0)
+            return false;
+        return (long)tiles.Max(value => value.TileX) -
+                tiles.Min(value => value.TileX) + 1 <= 32 &&
+            (long)tiles.Max(value => value.TileY) -
+                tiles.Min(value => value.TileY) + 1 <= 32;
     }
 
     private static string RequiredFile(string path, string label)

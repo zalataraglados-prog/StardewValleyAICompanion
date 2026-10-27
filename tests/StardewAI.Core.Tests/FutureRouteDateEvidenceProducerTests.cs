@@ -272,6 +272,66 @@ public sealed partial class FutureRouteDateEvidenceProducerTests
     }
 
     [Fact]
+    public void OrdinaryWarpWaitsForActiveFestivalTransitToEnd()
+    {
+        var graph = JsonSerializer.SerializeToElement(new
+        {
+            edges = new[]
+            {
+                Edge("warp", "Beach", 3, 2, "Town", 0, 2)
+            }
+        });
+        var evidence = JsonSerializer.SerializeToElement(new
+        {
+            schema_version = "social_route_date_evidence.v2",
+            capture_total_days = 12,
+            all_location_static_walkability_complete = true,
+            projection_status =
+                "current_date_static_route_and_gate_evidence_complete_movement_timing_pending",
+            location_count = 2,
+            locations = new object[]
+            {
+                Location("Beach", new object[]
+                {
+                    new
+                    {
+                        kind = "ordinary_warp_active_festival",
+                        tile_x = 3,
+                        tile_y = 2,
+                        target_location = "Town",
+                        allowed_on_capture_date = true,
+                        time_unrestricted_on_capture_date = false,
+                        effective_open_time = 1410,
+                        effective_close_time = 2600
+                    }
+                }),
+                Location("Town", Array.Empty<object>())
+            }
+        });
+        var request = new FutureLocationRouteDateEvidenceRequest
+        {
+            TotalDays = 12,
+            StartLocation = "Beach",
+            StartTileX = 0,
+            StartTileY = 2,
+            EarliestDepartureTime = 710,
+            TargetLocation = "Town"
+        };
+
+        var production = new FutureRouteDateEvidenceProducer()
+            .ProduceLocationArrival(graph, evidence, request, Timing());
+
+        Assert.Equal(
+            FutureRouteDateEvidenceProductionStatus.Produced,
+            production.Status);
+        Assert.True(production.GuaranteedArrivalByTime >= 1410);
+        var segment = Assert.Single(production.SegmentEvidence);
+        Assert.Equal((1410, 2600),
+            (segment.OpenTime, segment.CloseTimeExclusive));
+        Assert.Equal("warp", Assert.Single(production.Path).Kind);
+    }
+
+    [Fact]
     public void VersionTwoEvidenceGroupsMultipleActionRecordsOnOneBlockedTile()
     {
         var source = UnsupportedActionEvidence(

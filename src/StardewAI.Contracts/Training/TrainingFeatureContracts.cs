@@ -247,6 +247,9 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("candidates")]
         public OptionAvailabilityCandidate[] Candidates { get; set; } = Array.Empty<OptionAvailabilityCandidate>();
 
+        [JsonPropertyName("additional_candidates")]
+        public OptionAvailabilityCandidate[] AdditionalCandidates { get; set; } = Array.Empty<OptionAvailabilityCandidate>();
+
         [JsonPropertyName("training_report")]
         public BaselineTrainingReport? TrainingReport { get; set; }
 
@@ -369,6 +372,9 @@ namespace StardewAI.Contracts.Training
 
         [JsonPropertyName("full_shipment_contributes")]
         public bool? FullShipmentContributes { get; set; }
+
+        [JsonPropertyName("available_stack")]
+        public int? AvailableStack { get; set; }
 
         [JsonPropertyName("location_id")]
         public string LocationId { get; set; } = string.Empty;

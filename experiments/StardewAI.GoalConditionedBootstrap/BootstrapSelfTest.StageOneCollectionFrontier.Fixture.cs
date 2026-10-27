@@ -78,8 +78,17 @@ internal static partial class BootstrapSelfTest
         int playerTileY = 5,
         int totalDays = 5,
         int timeOfDay = 800,
-        bool shopDoorAllowed = true)
+        bool shopDoorAllowed = true,
+        object[]? rodInventory = null)
     {
+        rodInventory ??= new object[]
+        {
+            new
+            {
+                slot_index = 2,
+                qualified_item_id = "(T)BambooPole"
+            }
+        };
         var fishRows = fish.Select((value, index) => new
         {
             item_id = value.ItemId,
@@ -337,6 +346,7 @@ internal static partial class BootstrapSelfTest
                 },
                 fishing = new
                 {
+                    rod_inventory = Field(rodInventory),
                     rod_contexts = Field(new[]
                     {
                         new

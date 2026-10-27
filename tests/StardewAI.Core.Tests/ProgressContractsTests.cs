@@ -123,6 +123,90 @@ public sealed partial class ProgressContractsTests
     }
 
     [Fact]
+    public void GoldenWalnutSourceCatalogSerializesRoutingAndSpendGuards()
+    {
+        var catalog = new GoldenWalnutSourceCatalogRef
+        {
+            SchemaVersion = GoldenWalnutNativeSourceCatalog.SchemaVersion,
+            ProjectionStatus = GoldenWalnutNativeSourceCatalog.ProjectionStatus,
+            NativeSourceKeyCount = 69,
+            NativeWalnutTotal = 130,
+            PreResortSpendSafeRemainingQuantity = 51,
+            Sources = new[]
+            {
+                new GoldenWalnutSourceProgressRef
+                {
+                    SourceKey = "Bush_IslandSouth_31_5",
+                    LocationId = "IslandSouth",
+                    TileX = 31,
+                    TileY = 5,
+                    NativeQuantity = 1,
+                    RemainingQuantity = 1,
+                    AcquisitionOptionId = "foraging.harvest_bushes",
+                    ActionBindingStatus = "existing_action_family_bound",
+                    PreResortEligible = true,
+                    SpendSafeBeforeResort = true
+                }
+            }
+        };
+
+        var json = JsonSerializer.Serialize(catalog, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+
+        Assert.Contains("\"native_source_key_count\":69", json);
+        Assert.Contains("\"native_walnut_total\":130", json);
+        Assert.Contains("\"pre_resort_spend_safe_remaining_quantity\":51", json);
+        Assert.Contains("\"source_key\":\"Bush_IslandSouth_31_5\"", json);
+        Assert.Contains("\"action_binding_status\":\"existing_action_family_bound\"", json);
+    }
+
+    [Fact]
+    public void IslandGourmandProgressSerializesExactRequestAndCropReadiness()
+    {
+        var progress = new IslandGourmandProgressRef
+        {
+            ProjectionStatus = "exact_native_active_request_projected",
+            RequiredMailSatisfied = true,
+            RequestsFulfilled = 1,
+            TotalRequests = 3,
+            ActiveRequestIndex = 1,
+            RequiredCropItemId = "262",
+            RequiredCropQualifiedItemId = "(O)262",
+            RequestState = "ready_matching_crop_present",
+            MatchingCropCount = 1,
+            ReadyMatchingCropCount = 1,
+            MatchingCrops = new[]
+            {
+                new IslandGourmandCropRef
+                {
+                    TileX = 80,
+                    TileY = 40,
+                    HarvestItemId = "262",
+                    CurrentPhase = 4,
+                    FinalPhaseIndex = 4,
+                    ReadyForRequest = true
+                }
+            },
+            ActionTiles = new[]
+            {
+                new IslandGourmandActionTileRef
+                {
+                    TileX = 4,
+                    TileY = 4,
+                    Action = "Gourmand"
+                }
+            }
+        };
+
+        var json = JsonSerializer.Serialize(progress, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+
+        Assert.Contains("\"schema_version\":\"island_gourmand_progress.v1\"", json);
+        Assert.Contains("\"required_crop_qualified_item_id\":\"(O)262\"", json);
+        Assert.Contains("\"ready_matching_crop_count\":1", json);
+        Assert.Contains("\"ready_for_request\":true", json);
+        Assert.Contains("\"action\":\"Gourmand\"", json);
+    }
+
+    [Fact]
     public void QuestCandidateRefSerializesWithSnakeCaseJsonNames()
     {
         var candidate = new QuestCandidateRef

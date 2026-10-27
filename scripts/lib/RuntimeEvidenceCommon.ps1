@@ -487,7 +487,7 @@ function Invoke-RuntimeDailyPlanStep {
         "--save-isolation-path", $Context.IsolatedSavesPath,
         "--iterations", "1",
         "--required-verified-actions", "1",
-        "--max-queue-item-attempts", "8",
+        "--max-queue-item-attempts", "12",
         "--sleep-ms", "0",
         "--use-daily-plan",
         "--daily-plan-max-candidates", "1",
@@ -630,16 +630,37 @@ function Read-RuntimeLoopArtifacts {
     }
     $execution = Get-Content -LiteralPath $executionPath -Raw |
         ConvertFrom-Json
+    $stepResults = @($execution.step_results)
+    $terminalBlockReasons = if ($stepResults.Count -gt 0) {
+        @($stepResults[$stepResults.Count - 1].block_reasons)
+    }
+    else {
+        @($execution.block_reasons)
+    }
+    $lastStep = if ($stepResults.Count -gt 0) {
+        $stepResults[$stepResults.Count - 1]
+    }
+    else {
+        $execution
+    }
+    $boundedContinuationPending =
+        [string]$execution.queue_replan_stop_reason -eq
+            "max_queue_item_attempts_reached" -and
+        -not [string]::IsNullOrWhiteSpace(
+            [string]$execution.objective_continuation.kind) -and
+        [string]$lastStep.status -eq "applied" -and
+        [string]$lastStep.primitive_verification_status -eq "verified"
     $verifiedContinuationPending =
         $AllowVerifiedContinuation -and
         [string]$execution.status -eq "blocked" -and
         [string]$execution.primitive_verification_status -eq "verified" -and
         [bool]$execution.after_snapshot_fresh -and
-        [bool]$execution.selected_queue_continuation_retry_next_iteration -and
-        [string]$execution.queue_replan_stop_reason -eq
-            "selected_queue_continuation_retry_next_iteration" -and
+        (([bool]$execution.selected_queue_continuation_retry_next_iteration -and
+            [string]$execution.queue_replan_stop_reason -eq
+                "selected_queue_continuation_retry_next_iteration") -or
+            $boundedContinuationPending) -and
         [int]$execution.executed_item_count -gt 0 -and
-        @($execution.block_reasons).Count -eq 0
+        $terminalBlockReasons.Count -eq 0
     $verifiedObjectiveCompleted =
         $AllowVerifiedContinuation -and
         [string]$execution.status -eq "blocked" -and
@@ -649,7 +670,7 @@ function Read-RuntimeLoopArtifacts {
         [bool]$execution.selected_queue_decision_complete -and
         @($execution.completed_objective_continuations).Count -eq 1 -and
         [int]$execution.executed_item_count -gt 0 -and
-        @($execution.block_reasons).Count -eq 0
+        $terminalBlockReasons.Count -eq 0
     if (([string]$execution.status -ne "applied" -and
             -not $verifiedContinuationPending -and
             -not $verifiedObjectiveCompleted) -or

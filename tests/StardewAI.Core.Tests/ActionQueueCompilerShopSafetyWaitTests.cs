@@ -9,6 +9,71 @@ namespace StardewAI.Core.Tests;
 public sealed class ActionQueueCompilerShopSafetyWaitTests
 {
     [Fact]
+    public void SatisfiedShopApproachDoesNotEmitRedundantMovement()
+    {
+        const string json = """
+        {
+          "time":{
+            "time":{"value":900,"status":"available"}
+          },
+          "player":{
+            "location_id":{"value":"SeedShop","status":"available"},
+            "tile_x":{"value":5,"status":"available"},
+            "tile_y":{"value":19,"status":"available"}
+          },
+          "menus":{
+            "active_menu":{"value":{"is_open":false,"type":"none"},"status":"available"}
+          }
+        }
+        """;
+        using var document = JsonDocument.Parse(json);
+        var state = document.RootElement.EnumerateObject()
+            .ToDictionary(
+                property => property.Name,
+                property => property.Value.Clone(),
+                StringComparer.Ordinal);
+        var snapshot = new SnapshotEnvelope
+        {
+            SchemaVersion = "snapshot.v1",
+            StateHash = SnapshotHash.ComputeStateHash(state),
+            GameTick = 1,
+            Completeness = "complete",
+            State = state
+        };
+        var plan = Plan(
+            snapshot.StateHash,
+            new SmallModelPlanStep
+            {
+                StepId = "shop.approach",
+                Kind = "move_to_tile",
+                TargetLocation = "SeedShop",
+                TargetTileX = 5,
+                TargetTileY = 19
+            },
+            new SmallModelPlanStep
+            {
+                StepId = "shop.continue",
+                Kind = "wait_ticks",
+                WaitTicks = 1
+            });
+
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+
+        Assert.True(
+            queue.Status == "pending",
+            string.Join("|", queue.CompilerDiagnostics.Concat(
+                queue.Items.SelectMany(item => item.BlockingReasons))));
+        var item = Assert.Single(queue.Items);
+        Assert.Equal("executor.wait_ticks", item.OptionId);
+        Assert.Contains(item.NormalizedCommand.Parameters, parameter =>
+            parameter.Name == "compiler_context.plan_step_index" &&
+            parameter.Value == "0");
+        Assert.Contains(item.NormalizedCommand.Parameters, parameter =>
+            parameter.Name == "compiler_context.plan_step_count" &&
+            parameter.Value == "1");
+    }
+
+    [Fact]
     public void ExactBoundedWaitAllowsSameDeferredPurchase()
     {
         var snapshot = ShopSafetyTimerSnapshot();

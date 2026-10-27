@@ -325,6 +325,9 @@ internal static partial class BootstrapSelfTest
             var shared = result.SelectionContract.CandidateChoices.Single(value =>
                 value.CandidateId == "shared-parsnip-harvest");
             Require(shared.RequirementCredits.Length == 2 &&
+                    shared.RequirementCredits.Single(value =>
+                        value.RequirementSetId == "community_center_standard")
+                        .RequiredQuantity == 1 &&
                     shared.RequirementCredits.Select(value => value.RequirementSetId)
                         .ToHashSet(StringComparer.Ordinal)
                         .SetEquals(new[]
@@ -333,6 +336,45 @@ internal static partial class BootstrapSelfTest
                             "community_center_standard"
                         }),
                 "One current candidate was not deduplicated across exact requirement credits.");
+            var canonicalDuplicateCredits =
+                CurrentStageOneCollectionTeacherFrontierBuilder
+                    .CanonicalizeSingleExecutionCredits(new[]
+                    {
+                        new CurrentCollectionRequirementCredit(
+                            "community_center_standard",
+                            "community_center:bundle:Crafts Room/17",
+                            1,
+                            "(O)388",
+                            "authoritative_collection_rolling_route_step",
+                            99,
+                            0,
+                            "fixture"),
+                        new CurrentCollectionRequirementCredit(
+                            "community_center_standard",
+                            "community_center:bundle:Crafts Room/17",
+                            0,
+                            "(O)388",
+                            "authoritative_collection_rolling_route_step",
+                            99,
+                            0,
+                            "fixture"),
+                        new CurrentCollectionRequirementCredit(
+                            "full_shipment",
+                            "full_shipment:item:388",
+                            0,
+                            "(O)388",
+                            "authoritative_acquisition_endpoint",
+                            1,
+                            0,
+                            "fixture")
+                    });
+            Require(canonicalDuplicateCredits.Length == 2 &&
+                    canonicalDuplicateCredits.Single(value =>
+                        value.RequirementSetId == "community_center_standard")
+                        .AlternativeIndex == 0 &&
+                    canonicalDuplicateCredits.Any(value =>
+                        value.RequirementSetId == "full_shipment"),
+                "One execution was allowed to claim duplicate alternatives in one selection group.");
             Require(result.SelectionContract.SelectionGroups.Length == 4 &&
                     result.SelectionContract.CandidateChoices.Length == 2 &&
                     result.SelectionContract.SelectionGroups.All(value =>
@@ -695,6 +737,7 @@ internal static partial class BootstrapSelfTest
             }
             Require(staleIntentRejected,
                 "A Master Angler intent from a different decision state was admitted.");
+            VerifyRodPrerequisite();
         }
     }
 }

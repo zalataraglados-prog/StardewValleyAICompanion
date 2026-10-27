@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using StardewAI.Contracts.State;
 
 namespace StardewAI.Core.Training
 {
@@ -334,6 +335,21 @@ namespace StardewAI.Core.Training
                 snapshot.TryGetProperty("state", out var state) &&
                 state.ValueKind == JsonValueKind.Object &&
                 state.TryGetProperty(domain, out var domainNode) &&
+                domainNode.ValueKind == JsonValueKind.Object &&
+                domainNode.TryGetProperty(field, out var fieldNode) &&
+                fieldNode.ValueKind == JsonValueKind.Object &&
+                ReadString(fieldNode, "status") is "available" or "derived" &&
+                fieldNode.TryGetProperty("value", out value);
+        }
+
+        internal static bool TryReadFieldValue(
+            SnapshotEnvelope snapshot,
+            string domain,
+            string field,
+            out JsonElement value)
+        {
+            value = default;
+            return snapshot.State.TryGetValue(domain, out var domainNode) &&
                 domainNode.ValueKind == JsonValueKind.Object &&
                 domainNode.TryGetProperty(field, out var fieldNode) &&
                 fieldNode.ValueKind == JsonValueKind.Object &&

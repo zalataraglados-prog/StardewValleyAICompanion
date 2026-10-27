@@ -330,6 +330,12 @@ public static partial class QueueReplanFilter
             return CandidateParameterMatchesContinuation(candidate, continuation, "survey_kind") &&
                 CandidateParameterMatchesContinuation(candidate, continuation, "survey_answer");
         }
+        if (string.Equals(ReadString(continuation, "kind"), "island_gourmand", StringComparison.Ordinal))
+        {
+            return CandidateParameterMatchesContinuation(candidate, continuation, "request_index_before") &&
+                CandidateParameterMatchesContinuation(candidate, continuation, "required_crop_item_id") &&
+                CandidateParameterMatchesContinuation(candidate, continuation, "gourmand_interaction_stage");
+        }
         if (string.Equals(ReadString(continuation, "kind"), "calico_jack", StringComparison.Ordinal))
         {
             return CandidateParameterMatchesContinuation(candidate, continuation, "calico_target_club_coins") &&
@@ -538,6 +544,10 @@ public static partial class QueueReplanFilter
                         ? "executor.craft_machine_item"
                     : string.Equals(kind, "craft_storage_item", StringComparison.Ordinal)
                         ? "executor.craft_storage_item"
+                    : string.Equals(kind, "craft_crab_pot", StringComparison.Ordinal)
+                        ? "executor.craft_crab_pot"
+                    : string.Equals(kind, "craft_rain_totem", StringComparison.Ordinal)
+                        ? "executor.craft_rain_totem"
                     : string.Empty;
             candidateLocation = ReadString(candidate, "location_id");
             candidateX = candidate["tile_x"]?.ToString() ?? string.Empty;
@@ -721,19 +731,17 @@ public static partial class QueueReplanFilter
 
     public static bool CompletesSelectedQueueCandidate(
         string executionStatus,
-        bool objectiveContinuationCompleted,
         JsonObject? activeObjectiveContinuation,
         string selectedCandidateId,
         string nextCandidateId)
     {
         return IsContinuableExecutionStatus(executionStatus) &&
-            (objectiveContinuationCompleted ||
-             activeObjectiveContinuation is null &&
-             (string.IsNullOrWhiteSpace(nextCandidateId) ||
-              !string.Equals(
-                  nextCandidateId,
-                  selectedCandidateId,
-                  StringComparison.Ordinal)));
+            activeObjectiveContinuation is null &&
+            (string.IsNullOrWhiteSpace(nextCandidateId) ||
+             !string.Equals(
+                 nextCandidateId,
+                 selectedCandidateId,
+                 StringComparison.Ordinal));
     }
 }
 

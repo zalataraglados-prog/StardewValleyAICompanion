@@ -14,12 +14,27 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
 {
     private EventCandidate[] CrabPotLifecycleCandidates(SnapshotEnvelope snapshot)
     {
-        return CrabPotReadyCollectCandidates(snapshot)
-            .Concat(CrabPotBaitCandidates(snapshot))
-            .Concat(CrabPotRemoteServiceCandidates(snapshot))
-            .Concat(CrabPotPlacementCandidates(snapshot))
-            .Concat(CrabPotRemotePlacementRouteCandidates(snapshot))
-            .ToArray();
+        var blocked = new List<EventCandidate>();
+        foreach (var stage in new[]
+        {
+            CrabPotReadyCollectCandidates(snapshot),
+            CrabPotBaitCandidates(snapshot),
+            CrabPotBaitSupplyCandidates(snapshot),
+            CrabPotRemoteServiceCandidates(snapshot),
+            CrabPotPlacementCandidates(snapshot),
+            CrabPotRemotePlacementRouteCandidates(snapshot),
+            CrabPotCraftingCandidates(snapshot),
+            CrabPotInfrastructureSupplyCandidates(snapshot),
+            CrabPotSettlementCandidates(snapshot)
+        })
+        {
+            var available = stage.Where(candidate => candidate.Available)
+                .ToArray();
+            if (available.Length > 0)
+                return available;
+            blocked.AddRange(stage);
+        }
+        return blocked.ToArray();
     }
 
     private EventCandidate[] CrabPotReadyCollectCandidates(SnapshotEnvelope snapshot)

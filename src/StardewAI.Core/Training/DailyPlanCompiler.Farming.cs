@@ -34,6 +34,38 @@ namespace StardewAI.Core.Training
             };
         }
 
+        private static IEnumerable<SmallModelPlanStep> TillSoilTileSteps(PolicyEventCandidatePrediction candidate)
+        {
+            if (!candidate.TileX.HasValue || !candidate.TileY.HasValue)
+                return Array.Empty<SmallModelPlanStep>();
+
+            return new[]
+            {
+                new SmallModelPlanStep
+                {
+                    StepId = StepId(candidate, "till_soil", 0),
+                    Kind = "till_soil",
+                    TargetLocation = candidate.LocationId,
+                    TargetTileX = candidate.TileX,
+                    TargetTileY = candidate.TileY,
+                    EstimatedMinutes = TicksToMinutes(candidate.EstimatedTicks),
+                    Preconditions = new[]
+                    {
+                        "candidate_id:" + candidate.CandidateId,
+                        "native_diggable_target=true"
+                    },
+                    ExpectedEffects = new[] { candidate.ExpectedEffect },
+                    SafetyConstraints = new[]
+                    {
+                        "target_tile_from_fresh_transparent_state",
+                        "native_hoe_lifecycle_only"
+                    },
+                    FailurePolicy = new[] { "refresh_snapshot_and_replan" },
+                    Parameters = candidate.Parameters
+                }
+            };
+        }
+
         private static IEnumerable<SmallModelPlanStep> ApplyFertilizerTileSteps(PolicyEventCandidatePrediction candidate)
         {
             if (!candidate.TileX.HasValue || !candidate.TileY.HasValue ||

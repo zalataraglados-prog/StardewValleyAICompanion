@@ -273,6 +273,16 @@ namespace StardewAI.Core.OptionRegistry
                 .Concat(route.BlockReasons)
                 .Distinct(StringComparer.Ordinal)
                 .ToArray();
+            var allowedNow = route.AllowedNow == true && gate.AllowedNow;
+            var allowedToday = route.AllowedToday == true && gate.AllowedToday;
+            var nextOpenTime = LaterTime(route.NextOpenTime, gate.NextOpenTime);
+            var effectiveOpenTime = LaterTime(route.EffectiveOpenTime, gate.OpenTime);
+            var closeTime = EarlierTime(route.ClosesAt, gate.CloseTime);
+            var serviceWaitCost = WaitCostTicks(
+                ReadStateFieldInt(snapshot, "time", "time"),
+                nextOpenTime ?? effectiveOpenTime,
+                allowedNow,
+                allowedToday);
             return new EventCandidate
             {
                 CandidateId = ShopObjectiveCandidateId(
@@ -303,12 +313,14 @@ namespace StardewAI.Core.OptionRegistry
                 EstimatedTicks = route.EstimatedTicks,
                 EnergyCost = route.EnergyCost,
                 AvailabilityClass = objectivePrefix + "_cross_map_route_step",
-                AllowedNow = route.AllowedNow,
-                AllowedToday = route.AllowedToday,
-                NextOpenTime = LaterTime(route.NextOpenTime, gate.NextOpenTime),
-                EffectiveOpenTime = gate.OpenTime,
-                ClosesAt = gate.CloseTime,
-                WaitCost = route.WaitCost,
+                AllowedNow = allowedNow,
+                AllowedToday = allowedToday,
+                NextOpenTime = nextOpenTime,
+                EffectiveOpenTime = effectiveOpenTime,
+                ClosesAt = closeTime,
+                WaitCost = allowedNow
+                    ? route.WaitCost
+                    : Math.Max(route.WaitCost ?? 0, serviceWaitCost ?? 0),
                 GateReasons = route.GateReasons
                     .Concat(gate.GateReasons)
                     .Distinct(StringComparer.Ordinal)

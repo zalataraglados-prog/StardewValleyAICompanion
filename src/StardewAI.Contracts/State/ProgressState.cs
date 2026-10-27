@@ -1924,6 +1924,234 @@ namespace StardewAI.Contracts.State
         public bool QiRoomUnlocked { get; set; }
     }
 
+    public sealed class GoldenWalnutSourceCatalogRef
+    {
+        [JsonPropertyName("schema_version")]
+        public string SchemaVersion { get; set; } = string.Empty;
+
+        [JsonPropertyName("projection_status")]
+        public string ProjectionStatus { get; set; } = string.Empty;
+
+        [JsonPropertyName("native_source_key_count")]
+        public int NativeSourceKeyCount { get; set; }
+
+        [JsonPropertyName("native_walnut_total")]
+        public int NativeWalnutTotal { get; set; }
+
+        [JsonPropertyName("tracked_collected_quantity")]
+        public int TrackedCollectedQuantity { get; set; }
+
+        [JsonPropertyName("tracked_remaining_quantity")]
+        public int TrackedRemainingQuantity { get; set; }
+
+        [JsonPropertyName("pre_resort_remaining_gross_quantity")]
+        public int PreResortRemainingGrossQuantity { get; set; }
+
+        [JsonPropertyName("pre_resort_spend_safe_remaining_quantity")]
+        public int PreResortSpendSafeRemainingQuantity { get; set; }
+
+        [JsonPropertyName("world_golden_walnuts_found")]
+        public int WorldGoldenWalnutsFound { get; set; }
+
+        [JsonPropertyName("tracker_to_world_found_delta")]
+        public int TrackerToWorldFoundDelta { get; set; }
+
+        [JsonPropertyName("sources")]
+        public GoldenWalnutSourceProgressRef[] Sources { get; set; } = System.Array.Empty<GoldenWalnutSourceProgressRef>();
+    }
+
+    public sealed class GoldenWalnutSourceProgressRef
+    {
+        [JsonPropertyName("source_key")]
+        public string SourceKey { get; set; } = string.Empty;
+
+        [JsonPropertyName("tracking_kind")]
+        public string TrackingKind { get; set; } = string.Empty;
+
+        [JsonPropertyName("location_id")]
+        public string LocationId { get; set; } = string.Empty;
+
+        [JsonPropertyName("tile_x")]
+        public int? TileX { get; set; }
+
+        [JsonPropertyName("tile_y")]
+        public int? TileY { get; set; }
+
+        [JsonPropertyName("native_quantity")]
+        public int NativeQuantity { get; set; }
+
+        [JsonPropertyName("collected_quantity")]
+        public int CollectedQuantity { get; set; }
+
+        [JsonPropertyName("remaining_quantity")]
+        public int RemainingQuantity { get; set; }
+
+        [JsonPropertyName("acquisition_option_id")]
+        public string AcquisitionOptionId { get; set; } = string.Empty;
+
+        [JsonPropertyName("action_binding_status")]
+        public string ActionBindingStatus { get; set; } = string.Empty;
+
+        [JsonPropertyName("access_phase")]
+        public string AccessPhase { get; set; } = string.Empty;
+
+        [JsonPropertyName("required_mail_key")]
+        public string RequiredMailKey { get; set; } = string.Empty;
+
+        [JsonPropertyName("required_mail_satisfied")]
+        public bool RequiredMailSatisfied { get; set; }
+
+        [JsonPropertyName("resort_only")]
+        public bool ResortOnly { get; set; }
+
+        [JsonPropertyName("pre_resort_eligible")]
+        public bool PreResortEligible { get; set; }
+
+        [JsonPropertyName("optional_unlock_walnut_cost")]
+        public int OptionalUnlockWalnutCost { get; set; }
+
+        [JsonPropertyName("remaining_optional_unlock_walnut_cost")]
+        public int RemainingOptionalUnlockWalnutCost { get; set; }
+
+        [JsonPropertyName("spend_safe_before_resort")]
+        public bool SpendSafeBeforeResort { get; set; }
+
+        [JsonPropertyName("probability_status")]
+        public string ProbabilityStatus { get; set; } = string.Empty;
+
+        [JsonPropertyName("runtime_source_validation_status")]
+        public string RuntimeSourceValidationStatus { get; set; } = string.Empty;
+
+        [JsonPropertyName("required_secret_note_id")]
+        public int? RequiredSecretNoteId { get; set; }
+
+        [JsonPropertyName("required_secret_note_satisfied")]
+        public bool RequiredSecretNoteSatisfied { get; set; }
+    }
+
+    public sealed class IslandGourmandProgressRef
+    {
+        [JsonPropertyName("schema_version")]
+        public string SchemaVersion { get; set; } = "island_gourmand_progress.v1";
+
+        [JsonPropertyName("projection_status")]
+        public string ProjectionStatus { get; set; } = string.Empty;
+
+        [JsonPropertyName("location_id")]
+        public string LocationId { get; set; } = "IslandFarmCave";
+
+        [JsonPropertyName("is_current_location")]
+        public bool IsCurrentLocation { get; set; }
+
+        [JsonPropertyName("host_authority")]
+        public bool HostAuthority { get; set; }
+
+        [JsonPropertyName("menu_clear")]
+        public bool MenuClear { get; set; }
+
+        [JsonPropertyName("mutex_projection_available")]
+        public bool MutexProjectionAvailable { get; set; }
+
+        [JsonPropertyName("mutex_locked")]
+        public bool MutexLocked { get; set; }
+
+        [JsonPropertyName("mutex_held_by_local_player")]
+        public bool MutexHeldByLocalPlayer { get; set; }
+
+        [JsonPropertyName("triggered_gourmand")]
+        public bool TriggeredGourmand { get; set; }
+
+        [JsonPropertyName("required_mail_key")]
+        public string RequiredMailKey { get; set; } = "Island_UpgradeHouse";
+
+        [JsonPropertyName("required_mail_satisfied")]
+        public bool RequiredMailSatisfied { get; set; }
+
+        [JsonPropertyName("talked_to_gourmand_received_or_pending")]
+        public bool TalkedToGourmandReceivedOrPending { get; set; }
+
+        [JsonPropertyName("requests_fulfilled")]
+        public int RequestsFulfilled { get; set; }
+
+        [JsonPropertyName("total_requests")]
+        public int TotalRequests { get; set; }
+
+        [JsonPropertyName("complete")]
+        public bool Complete { get; set; }
+
+        [JsonPropertyName("active_request_index")]
+        public int? ActiveRequestIndex { get; set; }
+
+        [JsonPropertyName("required_crop_item_id")]
+        public string RequiredCropItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("required_crop_qualified_item_id")]
+        public string RequiredCropQualifiedItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("required_crop_display_name")]
+        public string RequiredCropDisplayName { get; set; } = string.Empty;
+
+        [JsonPropertyName("request_state")]
+        public string RequestState { get; set; } = string.Empty;
+
+        [JsonPropertyName("matching_crop_count")]
+        public int MatchingCropCount { get; set; }
+
+        [JsonPropertyName("ready_matching_crop_count")]
+        public int ReadyMatchingCropCount { get; set; }
+
+        [JsonPropertyName("walnut_debris_count")]
+        public int WalnutDebrisCount { get; set; }
+
+        [JsonPropertyName("matching_crops")]
+        public IslandGourmandCropRef[] MatchingCrops { get; set; } = System.Array.Empty<IslandGourmandCropRef>();
+
+        [JsonPropertyName("action_tiles")]
+        public IslandGourmandActionTileRef[] ActionTiles { get; set; } = System.Array.Empty<IslandGourmandActionTileRef>();
+
+        [JsonPropertyName("native_contract")]
+        public string NativeContract { get; set; } = string.Empty;
+    }
+
+    public sealed class IslandGourmandCropRef
+    {
+        [JsonPropertyName("tile_x")]
+        public int TileX { get; set; }
+
+        [JsonPropertyName("tile_y")]
+        public int TileY { get; set; }
+
+        [JsonPropertyName("harvest_item_id")]
+        public string HarvestItemId { get; set; } = string.Empty;
+
+        [JsonPropertyName("current_phase")]
+        public int CurrentPhase { get; set; }
+
+        [JsonPropertyName("final_phase_index")]
+        public int FinalPhaseIndex { get; set; }
+
+        [JsonPropertyName("fully_grown")]
+        public bool FullyGrown { get; set; }
+
+        [JsonPropertyName("day_of_current_phase")]
+        public int DayOfCurrentPhase { get; set; }
+
+        [JsonPropertyName("ready_for_request")]
+        public bool ReadyForRequest { get; set; }
+    }
+
+    public sealed class IslandGourmandActionTileRef
+    {
+        [JsonPropertyName("tile_x")]
+        public int TileX { get; set; }
+
+        [JsonPropertyName("tile_y")]
+        public int TileY { get; set; }
+
+        [JsonPropertyName("action")]
+        public string Action { get; set; } = string.Empty;
+    }
+
     public sealed class FullShipmentProgressRef
     {
         [JsonPropertyName("eligible_item_count")]

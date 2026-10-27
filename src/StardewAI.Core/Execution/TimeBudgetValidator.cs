@@ -217,7 +217,7 @@ namespace StardewAI.Core.Execution
                     return EstimateCompiledSteps(item, "native_home_renovation_menu_steps.v1");
                 case "foraging.clear_green_rain_bushes":
                 case "executor.break_current_location_resource_clump":
-                    return EstimateCompiledSteps(item, "native_green_rain_resource_clump_steps.v1");
+                    return EstimateCompiledSteps(item, "native_current_location_resource_clump_steps.v1");
                 case "mining.claim_reward_chests":
                 case "executor.claim_mine_reward_chest":
                     return EstimateCompiledSteps(item, "native_mineshaft_reward_chest_steps.v1");
@@ -437,7 +437,7 @@ namespace StardewAI.Core.Execution
 
             if (item.OptionId is "foraging.clear_green_rain_bushes" or "executor.break_current_location_resource_clump")
             {
-                return assumptionRegistry.GetRequired("green_rain_resource_clump");
+                return assumptionRegistry.GetRequired("current_location_resource_clump");
             }
 
             if (item.OptionId is "mining.claim_reward_chests" or "executor.claim_mine_reward_chest")

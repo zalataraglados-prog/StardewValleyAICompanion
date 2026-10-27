@@ -8,6 +8,7 @@ using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
 using StardewAI.Core.Execution;
 using StardewAI.Core.Infrastructure;
+using StardewAI.Core.Training;
 using StardewAI.Core.Verifier;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
@@ -27,6 +28,9 @@ namespace StardewAI.Core.OptionRegistry
         private readonly IReadOnlyDictionary<string, Func<SnapshotEnvelope, SmallModelActionParameter[], EventCandidate[]>> eventCandidateProviders;
         private readonly SnapshotStateCache<EventCandidate[]>
             routeConnectorCandidatesBySnapshot = new();
+        private readonly SnapshotStateCache<
+            Dictionary<string, NpcFuturePresenceWindowResolution>>
+            ownerServicePresenceBySnapshot = new();
         private static readonly SnapshotStateCache<CurrentRouteDistanceIndex>
             currentRouteDistanceBySnapshot = new();
 

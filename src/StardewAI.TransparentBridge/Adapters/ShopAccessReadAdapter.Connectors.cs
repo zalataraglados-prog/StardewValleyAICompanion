@@ -16,19 +16,28 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
         var location = Game1.currentLocation;
         var connectors = new List<object>();
 
-        connectors.AddRange(location.warps.Select(warp => new
+        foreach (var warp in location.warps)
         {
-            kind = "warp",
-            tile_x = warp.X,
-            tile_y = warp.Y,
-            target_location = warp.TargetName,
-            target_x = (int?)warp.TargetX,
-            target_y = (int?)warp.TargetY,
-            action = (string?)null,
-            open = (bool?)null,
-            resolved = true,
-            unresolved_reason = (string?)null
-        }));
+            if (TryReadNativeBusTransport(location, warp, out var busTransport))
+            {
+                connectors.Add(busTransport);
+                continue;
+            }
+
+            connectors.Add(new
+            {
+                kind = "warp",
+                tile_x = warp.X,
+                tile_y = warp.Y,
+                target_location = warp.TargetName,
+                target_x = (int?)warp.TargetX,
+                target_y = (int?)warp.TargetY,
+                action = (string?)null,
+                open = (bool?)null,
+                resolved = true,
+                unresolved_reason = (string?)null
+            });
+        }
 
         connectors.AddRange(location.doors.Pairs.Select(pair => new
         {
@@ -109,6 +118,27 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
                     unresolved_reason = (string?)null
                 });
             }
+            else if (string.Equals(parts[0], "WarpBoatTunnel", StringComparison.OrdinalIgnoreCase))
+            {
+                var invitationReceived = Game1.player.mailReceived.Contains("willyBackRoomInvitation");
+                connectors.Add(new
+                {
+                    kind = "action_warp",
+                    tile_x = actionRow.tile_x,
+                    tile_y = actionRow.tile_y,
+                    target_location = "BoatTunnel",
+                    target_x = (int?)6,
+                    target_y = (int?)12,
+                    action = actionRow.raw_action,
+                    source_property = actionRow.source_property,
+                    required_mail = "willyBackRoomInvitation",
+                    open = (bool?)invitationReceived,
+                    resolved = invitationReceived,
+                    unresolved_reason = invitationReceived
+                        ? (string?)null
+                        : "boat_tunnel_invitation_missing"
+                });
+            }
             else if (string.Equals(parts[0], "Warp", StringComparison.OrdinalIgnoreCase) && parts.Length >= 4)
             {
                 var touchAction = string.Equals(actionRow.source_property, "Back.TouchAction", StringComparison.OrdinalIgnoreCase);
@@ -129,6 +159,35 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
                     open = (bool?)null,
                     resolved,
                     unresolved_reason = resolved ? (string?)null : "warp_action_parse_failed"
+                });
+            }
+            else if (string.Equals(parts[0], "MagicWarp", StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(actionRow.source_property, "Back.TouchAction", StringComparison.OrdinalIgnoreCase))
+            {
+                var targetLocation = Part(parts, 1);
+                var targetX = ParseIntPart(parts, 2);
+                var targetY = ParseIntPart(parts, 3);
+                var requiredMail = Part(parts, 4);
+                var gateOpen = string.IsNullOrWhiteSpace(requiredMail) ||
+                    Game1.player.mailReceived.Contains(requiredMail);
+                var resolved = !string.IsNullOrWhiteSpace(targetLocation) &&
+                    targetX.HasValue && targetY.HasValue && gateOpen;
+                connectors.Add(new
+                {
+                    kind = "magic_warp",
+                    tile_x = actionRow.tile_x,
+                    tile_y = actionRow.tile_y,
+                    target_location = targetLocation,
+                    target_x = targetX,
+                    target_y = targetY,
+                    action = actionRow.raw_action,
+                    source_property = actionRow.source_property,
+                    required_mail = requiredMail,
+                    open = (bool?)gateOpen,
+                    resolved,
+                    unresolved_reason = !gateOpen
+                        ? "magic_warp_required_mail_missing"
+                        : resolved ? (string?)null : "magic_warp_parse_failed"
                 });
             }
             else if (string.Equals(parts[0], "LockedDoorWarp", StringComparison.OrdinalIgnoreCase))
@@ -152,6 +211,26 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
                     unresolved_reason = resolved ? (string?)null : "locked_door_warp_parse_failed"
                 });
             }
+            else if (IsOrdinaryMineEntryAction(location, parts))
+            {
+                var mineLevel = ParseIntPart(parts, 1) ?? 1;
+                connectors.Add(new
+                {
+                    kind = "action_warp",
+                    tile_x = actionRow.tile_x,
+                    tile_y = actionRow.tile_y,
+                    target_location = "UndergroundMine" + mineLevel,
+                    target_x = (int?)null,
+                    target_y = (int?)null,
+                    action = actionRow.raw_action,
+                    source_property = actionRow.source_property,
+                    open = (bool?)null,
+                    resolved = mineLevel == 1,
+                    unresolved_reason = mineLevel == 1
+                        ? (string?)null
+                        : "ordinary_mine_lobby_entry_must_target_floor_one"
+                });
+            }
             else if (IsShopEndpointAction(parts[0]))
             {
                 connectors.Add(new
@@ -173,6 +252,14 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
 
         return connectors.ToArray();
     }
+
+    private static bool IsOrdinaryMineEntryAction(
+        GameLocation location,
+        string[] parts) =>
+        parts.Length > 0 &&
+        string.Equals(location.NameOrUniqueName, "Mine", StringComparison.OrdinalIgnoreCase) &&
+        string.Equals(parts[0], "Mine", StringComparison.OrdinalIgnoreCase) &&
+        (ParseIntPart(parts, 1) ?? 1) == 1;
 
     private static object[] ReadBuildingDoorConnectors(GameLocation location)
     {

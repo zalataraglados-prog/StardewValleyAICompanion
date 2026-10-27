@@ -61,9 +61,11 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             {
                 var targetLoaded = !string.IsNullOrWhiteSpace(warp.TargetName) &&
                     locationNames.Contains(warp.TargetName);
-                var nativeBusTransport = IsNativeBusTransportWarp(
-                    location,
-                    warp.TargetName);
+                if (TryReadNativeBusTransport(location, warp, out var busTransport))
+                {
+                    edges.Add(busTransport);
+                    continue;
+                }
                 edges.Add(new
                 {
                     kind = "warp",
@@ -75,14 +77,12 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
                     target_y = (int?)warp.TargetY,
                     source_property = "GameLocation.warps",
                     raw_action = (string?)null,
-                    native_transport_transition = nativeBusTransport,
-                    transport_executor_supported = !nativeBusTransport,
-                    resolved = targetLoaded && !nativeBusTransport,
+                    native_transport_transition = false,
+                    transport_executor_supported = true,
+                    resolved = targetLoaded,
                     unresolved_reason = !targetLoaded
                         ? "target_location_not_loaded"
-                        : nativeBusTransport
-                            ? "native_bus_transport_executor_required"
-                            : (string?)null
+                        : (string?)null
                 });
             }
 
@@ -133,7 +133,7 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             unresolved_edge_count = edges.Count(edge => ReadBoolProperty(edge, "resolved") != true),
             unsupported_action_branch_count = unsupportedActionBranches,
             route_executor_enabled = true,
-            route_executor_scope = "resolved_walkable_warp_touch_action_warp_action_warp_locked_door_warp_building_door_only;native_transport_transitions_excluded",
+            route_executor_scope = "resolved_walkable_warp_touch_action_warp_action_warp_locked_door_warp_building_door_and_native_bus_transport",
             route_replan_policy = "fresh_snapshot_after_each_location_transition",
             graph_scope = "loaded_locations_only",
             edges = edges
@@ -247,6 +247,30 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             };
         }
 
+        if (string.Equals(parts[0], "WarpBoatTunnel", StringComparison.OrdinalIgnoreCase))
+        {
+            var invitationReceived = Game1.player.mailReceived.Contains("willyBackRoomInvitation");
+            var targetLoaded = locationNames.Contains("BoatTunnel");
+            return new
+            {
+                kind = "action_warp",
+                from_location = location.NameOrUniqueName,
+                from_x = action.tile_x,
+                from_y = action.tile_y,
+                target_location = "BoatTunnel",
+                target_x = (int?)6,
+                target_y = (int?)12,
+                source_property = action.source_property,
+                raw_action = action.raw_action,
+                required_mail = "willyBackRoomInvitation",
+                gate_open = invitationReceived,
+                resolved = invitationReceived && targetLoaded,
+                unresolved_reason = !invitationReceived
+                    ? "boat_tunnel_invitation_missing"
+                    : targetLoaded ? (string?)null : "boat_tunnel_target_not_loaded"
+            };
+        }
+
         if (IsDirectWarpActionBranch(parts[0]))
         {
             var touchAction =
@@ -272,6 +296,37 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
                 raw_action = action.raw_action,
                 resolved,
                 unresolved_reason = resolved ? (string?)null : "action_warp_target_not_resolved"
+            };
+        }
+
+        if (string.Equals(parts[0], "MagicWarp", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(action.source_property, "Back.TouchAction", StringComparison.OrdinalIgnoreCase))
+        {
+            var targetLocation = Part(parts, 1);
+            var targetX = ParseIntPart(parts, 2);
+            var targetY = ParseIntPart(parts, 3);
+            var requiredMail = Part(parts, 4);
+            var gateOpen = string.IsNullOrWhiteSpace(requiredMail) ||
+                Game1.player.mailReceived.Contains(requiredMail);
+            var resolved = gateOpen && !string.IsNullOrWhiteSpace(targetLocation) &&
+                targetX.HasValue && targetY.HasValue && locationNames.Contains(targetLocation);
+            return new
+            {
+                kind = "magic_warp",
+                from_location = location.NameOrUniqueName,
+                from_x = action.tile_x,
+                from_y = action.tile_y,
+                target_location = targetLocation,
+                target_x = targetX,
+                target_y = targetY,
+                source_property = action.source_property,
+                raw_action = action.raw_action,
+                required_mail = requiredMail,
+                gate_open = gateOpen,
+                resolved,
+                unresolved_reason = !gateOpen
+                    ? "magic_warp_required_mail_missing"
+                    : resolved ? (string?)null : "magic_warp_target_not_resolved"
             };
         }
 
@@ -327,6 +382,25 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
                 gate,
                 resolved,
                 unresolved_reason = resolved ? (string?)null : "locked_door_warp_target_not_resolved"
+            };
+        }
+
+        if (IsOrdinaryMineEntryAction(location, parts))
+        {
+            return new
+            {
+                kind = "action_warp",
+                from_location = location.NameOrUniqueName,
+                from_x = action.tile_x,
+                from_y = action.tile_y,
+                target_location = "UndergroundMine1",
+                target_x = (int?)null,
+                target_y = (int?)null,
+                source_property = action.source_property,
+                raw_action = action.raw_action,
+                native_dynamic_location = true,
+                resolved = true,
+                unresolved_reason = (string?)null
             };
         }
 
@@ -488,8 +562,11 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             "Warp" => "covered_for_read",
             "WarpMensLocker" => "covered_for_read",
             "WarpWomensLocker" => "covered_for_read",
+            "MagicWarp" => "covered_for_read",
             "WarpCommunityCenter" => "covered_for_read",
+            "WarpBoatTunnel" => "covered_for_read",
             "EnterSewer" => "covered_for_read",
+            "Mine" => "covered_for_read",
             "LockedDoorWarp" => "covered_for_read",
             "ConditionalDoor" => "covered_for_read",
             "Door" => "covered_for_read",
@@ -503,6 +580,7 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             "AdventureGuild" => "covered_for_read",
             "adventureGuild" => "covered_for_read",
             "AdventureShop" => "covered_for_read",
+            "DesertBus" => "covered_for_read",
             "asdlfkjg" => "covered_for_read",
             null or "" => "unsupported_for_route_training",
             _ => "unsupported_for_route_training"
@@ -516,10 +594,18 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             "Warp" => "read-side target/mail gate preview exists where Stardew action format exposes it",
             "WarpMensLocker" or "WarpWomensLocker" =>
                 "read-side target and native player-gender gate preview exists",
+            "MagicWarp" =>
+                "read-side target and optional mail gate preview exists; execution walks onto the native Back.TouchAction tile and waits for the delayed warp",
             "WarpCommunityCenter" =>
                 "read-side native CommunityCenter 32,23 target and MasterPlayer ccDoorUnlock-or-JojaMember gate preview exists",
+            "WarpBoatTunnel" =>
+                "FishShop native back-room action is projected as BoatTunnel 6,12 and is gated by willyBackRoomInvitation",
             "EnterSewer" =>
                 "read-side OpenedSewer/RustyKey state and native Sewer 16,11 target preview exists",
+            "Mine" =>
+                "ordinary Mine lobby floor-one entry is projected as native dynamic UndergroundMine1 ingress",
+            "DesertBus" =>
+                "native return-bus touch action is projected through the shared native_bus_transport connector",
             "LockedDoorWarp" => "read-side time/festival/key/friendship gate preview exists",
             "ConditionalDoor" => "read-side GameStateQuery gate preview exists",
             "Door" => "door branch is recognized but NPC-specific hardcoded details may still block execution",

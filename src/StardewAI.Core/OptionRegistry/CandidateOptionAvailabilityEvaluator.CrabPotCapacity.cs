@@ -14,6 +14,80 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
 {
     private const int StageOneGrandpaDeadlineTotalDayExclusive = 224;
 
+    private static bool TrySelectCrabPotInfrastructureNeed(
+        SnapshotEnvelope snapshot,
+        out CrabPotInfrastructureNeed need)
+    {
+        need = default!;
+        if (!MasterAnglerWindowIntentValidator.TryReadExactMissingSpecies(
+                snapshot,
+                out var missing) ||
+            missing.Count == 0 ||
+            !TryReadCompleteCrabPotNetwork(snapshot, out var networkRows))
+        {
+            return false;
+        }
+
+        var placement = ReadStateFieldValue(
+            snapshot,
+            "player",
+            "crab_pot_placement");
+        if (!placement.HasValue ||
+            placement.Value.ValueKind != JsonValueKind.Object ||
+            ReadInt(placement.Value, "inventory_crab_pot_count") > 0 ||
+            !placement.Value.TryGetProperty(
+                "potential_placement_locations",
+                out var locations) ||
+            locations.ValueKind != JsonValueKind.Array)
+        {
+            return false;
+        }
+
+        var selected = locations.EnumerateArray()
+            .Where(location => location.ValueKind == JsonValueKind.Object &&
+                string.Equals(
+                    ReadString(location, "placement_probe_status"),
+                    "native_legal_water_tiles_available",
+                    StringComparison.Ordinal) &&
+                location.TryGetProperty(
+                    "static_legal_tile_ranges",
+                    out var ranges) &&
+                ranges.ValueKind == JsonValueKind.Array)
+            .SelectMany(location => location
+                .GetProperty("static_legal_tile_ranges")
+                .EnumerateArray()
+                .Select(range => new
+                {
+                    LocationId = ReadString(location, "location_id"),
+                    Range = range,
+                    Possible = CrabPotRangePossibleSpecies(range)
+                }))
+            .Select(entry => new CrabPotInfrastructureNeed(
+                entry.LocationId,
+                entry.Range,
+                entry.Possible,
+                entry.Possible
+                    .Where(missing.Contains)
+                    .Where(value => CrabPotAdditionalCapacityCanAdvance(
+                        snapshot,
+                        networkRows,
+                        entry.Range,
+                        value))
+                    .OrderBy(value => value, StringComparer.Ordinal)
+                    .ToArray(),
+                networkRows))
+            .Where(entry => entry.TargetSpecies.Length > 0)
+            .OrderBy(entry => entry.LocationId, StringComparer.Ordinal)
+            .ThenBy(entry => ReadInt(entry.ProductionSource, "y"))
+            .ThenBy(entry => ReadInt(entry.ProductionSource, "start_x"))
+            .FirstOrDefault();
+        if (selected is null)
+            return false;
+
+        need = selected;
+        return true;
+    }
+
     private static HashSet<string> CrabPotNetworkCapacitySatisfiedSpecies(
         SnapshotEnvelope snapshot,
         JsonElement[] rows,
@@ -194,4 +268,11 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         double ExistingSuccessProbability,
         double AdditionalPotSingleCycleProbability,
         double SuccessProbabilityAfterOneAdditionalPot);
+
+    private sealed record CrabPotInfrastructureNeed(
+        string LocationId,
+        JsonElement ProductionSource,
+        string[] PossibleSpecies,
+        string[] TargetSpecies,
+        JsonElement[] NetworkRows);
 }

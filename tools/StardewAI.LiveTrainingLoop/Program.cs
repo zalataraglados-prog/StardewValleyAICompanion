@@ -5,8 +5,11 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
+using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
+using StardewAI.Core.Infrastructure;
 using StardewAI.Core.Training;
+using StardewAI.GoalConditionedBootstrap;
 using StardewAI.LiveTrainingLoop;
 
 var options = LiveTrainingOptions.Parse(args);
@@ -36,6 +39,70 @@ var lastQueueId = string.Empty;
 var lastStateHash = string.Empty;
 JsonObject? lastTrainingReport = null;
 JsonObject? lastPrediction = null;
+var lastPlanningHandoffCaptureManifestPath = string.Empty;
+var lastPlanningHandoffTeacherDispatchManifestPath = string.Empty;
+var lastPlanningHandoffNativeRunPlanPath = string.Empty;
+MoneyRevenueCropNativeProductionRunPlan? activeCropTeacherRunPlan = null;
+MoneyRevenueCropNativeProductionRunPlanRequest?
+    activeCropTeacherRunPlanRequest = null;
+CropTeacherTransitionLedger? activeCropTeacherTransitionLedger = null;
+PendingCropTeacherDayBoundary? pendingCropTeacherDayBoundary = null;
+CropTeacherTransitionLedger? pendingCropTeacherDayBoundaryLedger = null;
+CropTeacherDayBoundaryStart? completedCropTeacherBoundaryStart = null;
+CropTeacherTransitionLedger? completedCropTeacherBoundaryLedger = null;
+var cropTeacherPreparedCommitmentIds = new HashSet<string>(
+    StringComparer.Ordinal);
+var cropTeacherControlAttemptsStarted = 0;
+var cropTeacherFirstDayCompleted = false;
+var cropTeacherRunCompleted = false;
+var cropTeacherReplanRequired = false;
+var cropTeacherReplanReason = string.Empty;
+var cropTeacherReplanCount = 0;
+var cropTeacherTransitionLedgerPath = string.Empty;
+var cropTeacherHarvestReceiptCount = 0;
+var cropTeacherDayBoundaryReceiptCount = 0;
+if (!string.IsNullOrWhiteSpace(
+        options.ResumeCropTeacherTransitionLedgerPath))
+{
+    var resumed = CropTeacherResumeLoader.Load(
+        options.ResumeCropTeacherTransitionLedgerPath,
+        Path.Combine(
+            options.SnapshotDir,
+            "crop-teacher-resume",
+            "crop-teacher-transition-ledger.json"));
+    activeCropTeacherRunPlanRequest = resumed.RunPlanRequest;
+    activeCropTeacherRunPlan = resumed.RunPlan;
+    activeCropTeacherTransitionLedger = resumed.TransitionLedger;
+    cropTeacherTransitionLedgerPath = resumed.TransitionLedgerPath;
+    lastPlanningHandoffNativeRunPlanPath = resumed.NativeRunPlanPath;
+    cropTeacherHarvestReceiptCount =
+        resumed.TransitionLedger.HarvestReceipts.Count;
+    cropTeacherDayBoundaryReceiptCount =
+        resumed.TransitionLedger.DayBoundaryReceipts.Count;
+    cropTeacherFirstDayCompleted =
+        resumed.TransitionLedger.CompletedDayBoundaryKeys.Contains(
+            CropTeacherTransitionLedger.DayBoundaryKey(
+                resumed.RunPlan.FirstTotalDay));
+    AppendProgress(
+        options,
+        "crop_teacher_run_resumed",
+        0,
+        resumed.RunPlan.SourceStateHash,
+        string.Empty,
+        "source_ledger=" + resumed.SourceTransitionLedgerPath +
+        " active_ledger=" + resumed.TransitionLedgerPath +
+        " discarded_volatile_harvest_receipts=" +
+        resumed.DiscardedVolatileHarvestReceiptCount +
+        " run_plan=" + resumed.NativeRunPlanPath +
+        " run_plan_sha256=" +
+        resumed.TransitionLedger.RunPlanSha256 +
+        " harvest_receipts=" + cropTeacherHarvestReceiptCount +
+        " day_boundary_receipts=" +
+        cropTeacherDayBoundaryReceiptCount);
+}
+var stageOneCollectionTeacherQueueCount = 0;
+var stageOneCollectionControlQueueCount = 0;
+var lastStageOneCollectionTeacherFallbackSignature = string.Empty;
 JsonObject? activeObjectiveContinuation = null;
 var suppressedObjectiveContinuations = new List<JsonObject>();
 var suppressionDayKey = string.Empty;
@@ -63,22 +130,31 @@ var nativeSaveBoundaryPhaseStarted = false;
 var nativeSaveBoundaryVerified = false;
 var nativeSaveBoundaryInitialDayKey = string.Empty;
 var nativeSaveBoundaryCurrentDayKey = string.Empty;
-var initialSaveFingerprint = options.RequireNativeSaveBoundary
-    ? await NativeSaveBoundaryVerifier.CaptureWithRetryAsync(
-        options.SaveIsolationPath,
-        options.SaveSlot)
-    : null;
-var currentSaveFingerprint = initialSaveFingerprint;
+var goldenWalnutSourceMilestone =
+    new GoldenWalnutFreshSaveMilestoneAssessment(
+        false,
+        -1,
+        0,
+        false,
+        false,
+        false,
+        false,
+        new[] { "not_evaluated" });
+var goldenWalnutSourceMilestoneSignature = string.Empty;
+SaveDirectoryFingerprint? initialSaveFingerprint = null;
+SaveDirectoryFingerprint? currentSaveFingerprint = null;
 var hasExplicitPrimaryTarget =
     options.RequiredVerifiedActions > 0 ||
     options.StopAfterObjectiveComplete ||
-    options.StopAfterSocialObjectiveComplete;
+    options.StopAfterSocialObjectiveComplete ||
+    options.RequireGoldenWalnutSourceScheduleReady;
 var noProgressBackoff = new NoProgressBackoffPolicy(
     options.NoProgressBackoffMs,
     options.NoProgressMaxBackoffMs);
 var unverifiedExecutionBackoff = new NoProgressBackoffPolicy(
     options.NoProgressBackoffMs,
     options.NoProgressMaxBackoffMs);
+var routeOscillationGuard = new RouteOscillationGuard();
 
 for (var attemptOrdinal = 1; ; attemptOrdinal++)
 {
@@ -86,16 +162,29 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         (options.RequiredVerifiedActions <= 0 ||
          verifiedActions >= options.RequiredVerifiedActions) &&
         (!options.StopAfterObjectiveComplete || objectiveCompleted) &&
-        (!options.StopAfterSocialObjectiveComplete || socialObjectiveCompleted);
-    var phaseDecision = TrainingCompletionPolicy.Decide(
-        primaryAttemptsStarted,
-        options.MaxAttempts,
-        nativeSaveBoundaryAttemptsStarted,
-        options.SaveBoundaryMaxAttempts,
-        hasExplicitPrimaryTarget,
-        explicitPrimaryTargetMet,
-        options.RequireNativeSaveBoundary,
-        nativeSaveBoundaryVerified);
+        (!options.StopAfterSocialObjectiveComplete || socialObjectiveCompleted) &&
+        (!options.RequireGoldenWalnutSourceScheduleReady ||
+         goldenWalnutSourceMilestone.Ready);
+    var effectivePrimaryAttempts = cropTeacherFirstDayCompleted &&
+        !options.RequireGoldenWalnutSourceScheduleReady &&
+        !options.ContinueAfterCropTeacherRun
+        ? Math.Max(primaryAttemptsStarted, options.MaxAttempts)
+        : primaryAttemptsStarted;
+    var phaseDecision = activeCropTeacherRunPlan is null
+        ? TrainingCompletionPolicy.Decide(
+            effectivePrimaryAttempts,
+            options.MaxAttempts,
+            nativeSaveBoundaryAttemptsStarted,
+            options.SaveBoundaryMaxAttempts,
+            hasExplicitPrimaryTarget,
+            explicitPrimaryTargetMet,
+            options.RequireNativeSaveBoundary,
+            nativeSaveBoundaryVerified)
+        : cropTeacherControlAttemptsStarted >= 256
+            ? new LiveTrainingPhaseDecision(
+                LiveTrainingPhase.Incomplete,
+                "crop_teacher_run_attempt_limit_reached")
+            : new LiveTrainingPhaseDecision(LiveTrainingPhase.Primary);
     if (phaseDecision.Phase is LiveTrainingPhase.Complete or LiveTrainingPhase.Incomplete)
     {
         if (phaseDecision.Phase == LiveTrainingPhase.Incomplete &&
@@ -111,6 +200,10 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
     if (closingNativeSaveBoundary && !nativeSaveBoundaryPhaseStarted)
     {
         nativeSaveBoundaryPhaseStarted = true;
+        nativeSaveBoundaryInitialDayKey = string.Empty;
+        nativeSaveBoundaryCurrentDayKey = string.Empty;
+        initialSaveFingerprint = null;
+        currentSaveFingerprint = null;
         activeObjectiveContinuation = null;
         leasedDecisionModelPlanPath = string.Empty;
         leasedDecisionRankingPath = string.Empty;
@@ -149,14 +242,136 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         else
         {
             primaryAttemptsStarted++;
+            if (activeCropTeacherRunPlan is not null)
+            {
+                cropTeacherControlAttemptsStarted++;
+            }
         }
         var rawSnapshotJson = iteration == 1 && !string.IsNullOrWhiteSpace(options.SnapshotFile)
             ? await ContentAddressedJsonArtifactStore.ReadAllTextAsync(
                 options.SnapshotFile)
             : await http.GetStringAsync(options.BridgeSnapshotUrl);
         var beforeSnapshot = JsonNode.Parse(rawSnapshotJson)?.AsObject() ?? new JsonObject();
+        if (attemptOrdinal == 1 && activeCropTeacherRunPlan is not null)
+        {
+            var resumeSnapshot = JsonSerializer.Deserialize<SnapshotEnvelope>(
+                rawSnapshotJson,
+                JsonOptions) ?? throw new InvalidDataException(
+                    "crop_teacher_resume_snapshot_invalid");
+            var resumeBlockReason =
+                CropTeacherRunPlanner.GetResumeSnapshotBlockReason(
+                    activeCropTeacherRunPlan,
+                    resumeSnapshot);
+            if (!string.IsNullOrWhiteSpace(resumeBlockReason))
+            {
+                stopReason = "crop_teacher_resume_snapshot_incompatible reason=" +
+                    resumeBlockReason;
+                AppendProgress(
+                    options,
+                    "stopped",
+                    iteration,
+                    resumeSnapshot.StateHash,
+                    string.Empty,
+                    stopReason);
+                break;
+            }
+        }
         var currentDayKey = QueueReplanFilter.SnapshotDayKey(beforeSnapshot);
-        if (options.RequireNativeSaveBoundary)
+        if (pendingCropTeacherDayBoundary is not null)
+        {
+            var boundaryCheck = await CheckCropTeacherDayBoundaryAsync(
+                options,
+                pendingCropTeacherDayBoundary,
+                beforeSnapshot);
+            if (!boundaryCheck.Verified)
+            {
+                AppendProgress(
+                    options,
+                    "crop_teacher_day_boundary_waiting",
+                    iteration,
+                    lastStateHash,
+                    pendingCropTeacherDayBoundary.QueueId,
+                    boundaryCheck.Detail);
+                await DelayBeforeNextAttemptAsync(options, attemptOrdinal);
+                continue;
+            }
+            var ledger = pendingCropTeacherDayBoundaryLedger ??
+                throw new InvalidOperationException(
+                    "crop_teacher_transition_ledger_missing");
+            ledger.RecordVerifiedDayBoundary(
+                boundaryCheck.Receipt ?? throw new InvalidOperationException(
+                    "crop_teacher_day_boundary_receipt_missing"));
+            cropTeacherDayBoundaryReceiptCount =
+                ledger.DayBoundaryReceipts.Count;
+            AppendProgress(
+                options,
+                "crop_teacher_day_boundary_verified",
+                iteration,
+                lastStateHash,
+                pendingCropTeacherDayBoundary.QueueId,
+                "from_total_day=" +
+                pendingCropTeacherDayBoundary.FromTotalDay +
+                " receipt_count=" + cropTeacherDayBoundaryReceiptCount);
+            pendingCropTeacherDayBoundary = null;
+            pendingCropTeacherDayBoundaryLedger = null;
+            if (ReferenceEquals(ledger, completedCropTeacherBoundaryLedger))
+            {
+                completedCropTeacherBoundaryStart = null;
+                completedCropTeacherBoundaryLedger = null;
+            }
+        }
+        if (options.RequireGoldenWalnutSourceScheduleReady &&
+            !closingNativeSaveBoundary)
+        {
+            goldenWalnutSourceMilestone =
+                EvaluateGoldenWalnutSourceMilestone(rawSnapshotJson);
+            var milestoneSignature =
+                GoldenWalnutSourceMilestoneSignature(
+                    goldenWalnutSourceMilestone);
+            if (!string.Equals(
+                    milestoneSignature,
+                    goldenWalnutSourceMilestoneSignature,
+                    StringComparison.Ordinal))
+            {
+                goldenWalnutSourceMilestoneSignature = milestoneSignature;
+                AppendGoldenWalnutSourceMilestoneProgress(
+                    options,
+                    goldenWalnutSourceMilestone,
+                    iteration,
+                    lastStateHash,
+                    lastQueueId);
+            }
+            if (goldenWalnutSourceMilestone.CurrentTotalDay >=
+                GoldenWalnutUnlockScheduleProofBuilder
+                    .DeadlineTotalDayExclusive)
+            {
+                stopReason =
+                    "golden_walnut_deadline_total_day_reached current=" +
+                    goldenWalnutSourceMilestone.CurrentTotalDay +
+                    " deadline_exclusive=" +
+                    GoldenWalnutUnlockScheduleProofBuilder
+                        .DeadlineTotalDayExclusive;
+                AppendProgress(
+                    options,
+                    "stopped",
+                    iteration,
+                    lastStateHash,
+                    lastQueueId,
+                    stopReason);
+                break;
+            }
+            if (goldenWalnutSourceMilestone.Ready)
+            {
+                activeCropTeacherRunPlan = null;
+                activeCropTeacherRunPlanRequest = null;
+                activeCropTeacherTransitionLedger = null;
+                pendingCropTeacherDayBoundary = null;
+                pendingCropTeacherDayBoundaryLedger = null;
+                await DelayBeforeNextAttemptAsync(options, attemptOrdinal);
+                continue;
+            }
+        }
+        if (options.RequireNativeSaveBoundary && closingNativeSaveBoundary)
         {
             if (string.IsNullOrWhiteSpace(nativeSaveBoundaryInitialDayKey))
             {
@@ -166,6 +381,18 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                         "native_save_boundary_initial_day_key_unavailable");
                 }
                 nativeSaveBoundaryInitialDayKey = currentDayKey;
+                initialSaveFingerprint =
+                    await NativeSaveBoundaryVerifier.CaptureWithRetryAsync(
+                        options.SaveIsolationPath,
+                        options.SaveSlot);
+                currentSaveFingerprint = initialSaveFingerprint;
+                AppendProgress(
+                    options,
+                    "native_save_boundary_baseline_captured",
+                    iteration,
+                    lastStateHash,
+                    lastQueueId,
+                    "initial_day=" + nativeSaveBoundaryInitialDayKey);
             }
             nativeSaveBoundaryCurrentDayKey = currentDayKey;
         }
@@ -255,6 +482,10 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
     var selectedCandidateId = string.Empty;
     var selectedQueueIndex = -1;
     var resumedSelectedQueueDecision = false;
+    var useDailyPlanDecisionLease = options.UseDailyPlan;
+    var executionSnapshotProfile = options.ExecutionSnapshotProfile;
+    var executionSnapshotUrl = options.BridgeSnapshotUrl;
+    CropTeacherRunStep? cropTeacherStepForExecution = null;
     JsonObject? dailyPlanRanking = null;
     JsonObject queue;
     if (options.UsePrecompiledQueue)
@@ -273,6 +504,229 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             options.TeacherPreferencePath,
             lastStateHash,
             options.TargetExecutionMode);
+    }
+    else if (options.UseDailyPlan && activeCropTeacherRunPlan is not null)
+    {
+        var typedSnapshot = JsonSerializer.Deserialize<SnapshotEnvelope>(
+            snapshotJson,
+            JsonOptions) ?? throw new InvalidDataException(
+                "crop_teacher_full_snapshot_invalid");
+        var cropStep = CropTeacherRunPlanner.Evaluate(
+            activeCropTeacherRunPlan,
+            activeCropTeacherRunPlanRequest ??
+                throw new InvalidOperationException(
+                    "crop_teacher_run_plan_request_missing"),
+            typedSnapshot,
+            cropTeacherPreparedCommitmentIds,
+            activeCropTeacherTransitionLedger?.CompletedHarvestTileKeys,
+            activeCropTeacherTransitionLedger?.CompletedDayBoundaryKeys);
+        if (!cropTeacherFirstDayCompleted &&
+            (cropStep.TotalDay > activeCropTeacherRunPlan.FirstTotalDay ||
+             cropStep.Stage == CropTeacherRunStageKinds.Complete))
+        {
+            cropTeacherFirstDayCompleted = true;
+            AppendProgress(
+                options,
+                "crop_teacher_first_day_complete",
+                iteration,
+                lastStateHash,
+                string.Empty,
+                "reason=" + cropStep.Reason +
+                " control_attempts=" +
+                cropTeacherControlAttemptsStarted);
+            if (options.StopAfterCropTeacherFirstDay &&
+                cropStep.Stage != CropTeacherRunStageKinds.Complete)
+            {
+                activeCropTeacherRunPlan = null;
+                activeCropTeacherRunPlanRequest = null;
+                activeCropTeacherTransitionLedger = null;
+                await DelayBeforeNextAttemptAsync(
+                    options,
+                    attemptOrdinal);
+                continue;
+            }
+        }
+        if (cropStep.Stage == CropTeacherRunStageKinds.ReplanRequired)
+        {
+            if (CropTeacherRunPlanner.IsTeacherRedispatchReason(
+                    cropStep.Reason) &&
+                cropTeacherReplanCount < 8)
+            {
+                var supersededLedger =
+                    activeCropTeacherTransitionLedger ??
+                    throw new InvalidOperationException(
+                        "crop_teacher_transition_ledger_missing");
+                var supersededRunPlanPath =
+                    supersededLedger.RunPlanPath;
+                var replanHandoff = BuildCropTeacherReplanHandoff(
+                    cropStep.Reason,
+                    supersededRunPlanPath,
+                    supersededLedger.RunPlanSha256);
+                var dispatch = await DispatchCropTeacherAsync(
+                    http,
+                    options,
+                    iteration,
+                    rawSnapshotJson,
+                    replanHandoff,
+                    "replan");
+                cropTeacherReplanCount++;
+                cropTeacherReplanReason = cropStep.Reason;
+                lastPlanningHandoffCaptureManifestPath =
+                    dispatch.Capture.ManifestPath;
+                lastPlanningHandoffTeacherDispatchManifestPath =
+                    dispatch.TeacherDispatchManifestPath;
+                lastPlanningHandoffNativeRunPlanPath =
+                    dispatch.NativeRunPlanPath;
+                activeCropTeacherRunPlanRequest = dispatch.RunPlanRequest;
+                activeCropTeacherRunPlan = dispatch.RunPlan;
+                cropTeacherTransitionLedgerPath =
+                    dispatch.TransitionLedgerPath;
+                activeCropTeacherTransitionLedger =
+                    dispatch.TransitionLedger;
+                cropTeacherHarvestReceiptCount =
+                    dispatch.TransitionLedger.HarvestReceipts.Count;
+                cropTeacherDayBoundaryReceiptCount =
+                    dispatch.TransitionLedger.DayBoundaryReceipts.Count;
+                pendingCropTeacherDayBoundary = null;
+                pendingCropTeacherDayBoundaryLedger = null;
+                cropTeacherPreparedCommitmentIds.Clear();
+                activeObjectiveContinuation = null;
+                leasedDecisionModelPlanPath = string.Empty;
+                leasedDecisionRankingPath = string.Empty;
+                leasedDecisionCompiledQueuePath = string.Empty;
+                leasedDecisionSnapshotPath = string.Empty;
+                leasedDecisionSourceStateHash = string.Empty;
+                leasedDecisionGoalId = string.Empty;
+                leasedSelectedCandidateId = string.Empty;
+                leasedSelectedQueueIndex = -1;
+                AppendProgress(
+                    options,
+                    "crop_teacher_replanned",
+                    iteration,
+                    lastStateHash,
+                    string.Empty,
+                    "reason=" + cropStep.Reason +
+                    " replan_count=" + cropTeacherReplanCount +
+                    " superseded_run_plan=" + supersededRunPlanPath +
+                    " native_run_plan=" + dispatch.NativeRunPlanPath +
+                    " actions=" + dispatch.ActionCount);
+                await DelayBeforeNextAttemptAsync(
+                    options,
+                    attemptOrdinal);
+                continue;
+            }
+            cropTeacherReplanRequired = true;
+            cropTeacherReplanReason = cropStep.Reason;
+            stopReason = "crop_teacher_replan_required reason=" +
+                cropStep.Reason + " commitment_id=" +
+                cropStep.CommitmentId;
+            AppendProgress(
+                options,
+                "crop_teacher_replan_required",
+                iteration,
+                lastStateHash,
+                string.Empty,
+                "reason=" + cropStep.Reason +
+                " commitment_id=" + cropStep.CommitmentId +
+                " total_day=" + cropStep.TotalDay);
+            break;
+        }
+        if (cropStep.Stage == CropTeacherRunStageKinds.Complete)
+        {
+            completedCropTeacherBoundaryStart =
+                await CaptureCropTeacherTerminalBoundaryStartAsync(
+                    options,
+                    cropStep,
+                    activeCropTeacherRunPlan,
+                    beforeSnapshot,
+                    lastStateHash);
+            completedCropTeacherBoundaryLedger =
+                completedCropTeacherBoundaryStart is null
+                    ? null
+                    : activeCropTeacherTransitionLedger;
+            cropTeacherRunCompleted = true;
+            activeCropTeacherRunPlan = null;
+            activeCropTeacherRunPlanRequest = null;
+            activeCropTeacherTransitionLedger = null;
+            AppendProgress(
+                options,
+                "crop_teacher_run_complete",
+                iteration,
+                lastStateHash,
+                string.Empty,
+                "reason=" + cropStep.Reason +
+                " control_attempts=" +
+                cropTeacherControlAttemptsStarted);
+            await DelayBeforeNextAttemptAsync(
+                options,
+                attemptOrdinal);
+            continue;
+        }
+        var cropQueue = await BuildCropTeacherControlQueueAsync(
+            http,
+            options,
+            iteration,
+            cropStep,
+            activeCropTeacherRunPlan,
+            activeCropTeacherRunPlanRequest,
+            snapshotPath,
+            beforeSnapshot,
+            lastStateHash);
+        cropTeacherStepForExecution =
+            cropQueue.ExecutionStepOverride ??
+            (!string.IsNullOrWhiteSpace(cropQueue.InterruptKind)
+                ? null
+                : cropStep);
+        if (cropQueue.SitePreparationComplete)
+        {
+            if (!cropTeacherPreparedCommitmentIds.Add(
+                    cropStep.CommitmentId))
+            {
+                throw new InvalidOperationException(
+                    "crop_teacher_site_preparation_completion_replayed");
+            }
+            AppendProgress(
+                options,
+                "crop_teacher_site_preparation_complete",
+                iteration,
+                cropQueue.StateHash,
+                string.Empty,
+                "commitment_id=" + cropStep.CommitmentId);
+            await DelayBeforeNextAttemptAsync(options, attemptOrdinal);
+            continue;
+        }
+        queue = cropQueue.Queue ?? throw new InvalidOperationException(
+            "crop_teacher_control_queue_missing");
+        modelPlanPath = cropQueue.ModelPlanPath;
+        rankingPath = cropQueue.RankingPath;
+        decisionModelPlanPath = modelPlanPath;
+        decisionRankingPath = rankingPath;
+        snapshotPath = cropQueue.BeforeSnapshotPath;
+        beforeSnapshot = cropQueue.BeforeSnapshot;
+        decisionSnapshotPath = snapshotPath;
+        lastStateHash = cropQueue.StateHash;
+        decisionSourceStateHash = lastStateHash;
+        executionSnapshotProfile = cropQueue.SnapshotProfile;
+        executionSnapshotUrl = cropQueue.SnapshotUrl;
+        useDailyPlanDecisionLease = false;
+        activeObjectiveContinuation = null;
+        AppendProgress(
+            options,
+            "crop_teacher_control_queue_compiled",
+            iteration,
+            lastStateHash,
+            ReadString(queue, "queue_id"),
+            "stage=" + (!string.IsNullOrWhiteSpace(
+                    cropQueue.InterruptKind)
+                ? cropQueue.InterruptKind
+                : cropStep.Stage) +
+            " interrupted_stage=" + (!string.IsNullOrWhiteSpace(
+                    cropQueue.InterruptKind)
+                ? cropStep.Stage
+                : string.Empty) +
+            " reason=" + cropStep.Reason +
+            " commitment_id=" + cropStep.CommitmentId +
+            " remaining=" + cropStep.RemainingQuantity);
     }
     else if (options.UseDailyPlan)
     {
@@ -349,21 +803,224 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         }
         else
         {
-            var dailyPlan = await BuildQueueFromDailyPlanAsync(
-                http,
-                options,
-                lastStateHash,
-                suppressedObjectiveContinuations: suppressedObjectiveContinuations);
-            modelPlanPath = Path.Combine(options.SnapshotDir, "model-plan-" + iteration.ToString("D4") + ".json");
-            await File.WriteAllTextAsync(modelPlanPath, dailyPlan.Plan.ToJsonString(JsonOptions), Encoding.UTF8);
-            var dailyPlanPath = Path.Combine(options.SnapshotDir, "daily-plan-response-" + iteration.ToString("D4") + ".json");
-            await File.WriteAllTextAsync(dailyPlanPath, dailyPlan.Response.ToJsonString(JsonOptions), Encoding.UTF8);
-            rankingPath = Path.Combine(options.SnapshotDir, "ranking-response-" + iteration.ToString("D4") + ".json");
-            await File.WriteAllTextAsync(rankingPath, dailyPlan.Ranking.ToJsonString(JsonOptions), Encoding.UTF8);
-            dailyPlanRanking = dailyPlan.Ranking;
-            queue = dailyPlan.Queue;
-            decisionModelPlanPath = modelPlanPath;
-            decisionRankingPath = rankingPath;
+            var collectionTeacher =
+                await TryBuildStageOneCollectionTeacherQueueAsync(
+                    http,
+                    options,
+                    iteration,
+                    snapshotJson,
+                    beforeSnapshot,
+                    lastStateHash,
+                    allowObjectiveSafeSingletonCapacityRecovery: true,
+                    activeObjectiveContinuation:
+                        activeObjectiveContinuation,
+                    suppressedObjectiveContinuations:
+                        suppressedObjectiveContinuations);
+            if (collectionTeacher.Queue is not null)
+            {
+                queue = collectionTeacher.Queue;
+                dailyPlanRanking = collectionTeacher.Ranking;
+                modelPlanPath = collectionTeacher.PlanPath;
+                rankingPath = collectionTeacher.RankingPath;
+                decisionModelPlanPath = collectionTeacher.PlanPath;
+                decisionRankingPath = collectionTeacher.RankingPath;
+                decisionCompiledQueuePath = collectionTeacher.QueuePath;
+                decisionSnapshotPath = collectionTeacher.SnapshotPath;
+                decisionSourceStateHash = lastStateHash;
+                selectedCandidateId = collectionTeacher.SelectedCandidateId;
+                selectedQueueIndex = 0;
+                useDailyPlanDecisionLease = true;
+                var isControlOnlyQueue = string.Equals(
+                    collectionTeacher.Status,
+                    "ready_authoritative_tie_control",
+                    StringComparison.Ordinal);
+                if (isControlOnlyQueue)
+                    stageOneCollectionControlQueueCount++;
+                else
+                    stageOneCollectionTeacherQueueCount++;
+                lastStageOneCollectionTeacherFallbackSignature = string.Empty;
+                AppendProgress(
+                    options,
+                    isControlOnlyQueue
+                        ? "stage_one_collection_control_queue_compiled"
+                        : "stage_one_collection_teacher_queue_compiled",
+                    iteration,
+                    lastStateHash,
+                    ReadString(queue, "queue_id"),
+                    "candidate_id=" + selectedCandidateId +
+                    " teacher_queue_count=" +
+                    stageOneCollectionTeacherQueueCount +
+                    " control_queue_count=" +
+                    stageOneCollectionControlQueueCount +
+                    " " + collectionTeacher.Detail);
+            }
+            else
+            {
+                var yieldCollectionControlToDailyPlan =
+                    collectionTeacher.Attempted &&
+                    StageOneCollectionFallbackPolicy.ShouldYieldToDailyPlan(
+                        options.RequireGoldenWalnutSourceScheduleReady,
+                        collectionTeacher.Status,
+                        collectionTeacher.Detail);
+                if (collectionTeacher.Attempted)
+                {
+                    if (QueueReplanFilter.ShouldReleaseUnavailableContinuation(
+                            activeObjectiveContinuation,
+                            collectionTeacher.Ranking))
+                    {
+                        var releasedContinuation =
+                            activeObjectiveContinuation!;
+                        var releasedOptionId = ReadString(
+                            releasedContinuation,
+                            "option_id");
+                        QueueReplanFilter.AddSuppressedContinuation(
+                            suppressedObjectiveContinuations,
+                            releasedContinuation);
+                        activeObjectiveContinuation = null;
+                        noProgressBackoff.Reset();
+                        AppendProgress(
+                            options,
+                            "continuation_released",
+                            iteration,
+                            lastStateHash,
+                            string.Empty,
+                            "reason=no_available_stage_one_collection_" +
+                            "continuation_candidate option_id=" +
+                            releasedOptionId +
+                            " suppressed_until_day_change=true" +
+                            " suppressed_count=" +
+                            suppressedObjectiveContinuations.Count);
+                        await DelayBeforeNextAttemptAsync(
+                            options,
+                            attemptOrdinal);
+                        continue;
+                    }
+
+                    var fallbackSignature = collectionTeacher.Status + "|" +
+                        collectionTeacher.Detail;
+                    if (!string.Equals(
+                            fallbackSignature,
+                            lastStageOneCollectionTeacherFallbackSignature,
+                            StringComparison.Ordinal))
+                    {
+                        lastStageOneCollectionTeacherFallbackSignature =
+                            fallbackSignature;
+                        AppendProgress(
+                            options,
+                            "stage_one_collection_teacher_fallback",
+                            iteration,
+                            lastStateHash,
+                            string.Empty,
+                            "status=" + collectionTeacher.Status +
+                            " reason=" + collectionTeacher.Detail);
+                    }
+
+                    if (!yieldCollectionControlToDailyPlan)
+                    {
+                        stopReason =
+                            "stage_one_collection_teacher_blocked status=" +
+                            collectionTeacher.Status +
+                            " reason=" + collectionTeacher.Detail;
+                        AppendProgress(
+                            options,
+                            "stopped",
+                            iteration,
+                            lastStateHash,
+                            string.Empty,
+                            stopReason);
+                        break;
+                    }
+
+                    AppendProgress(
+                        options,
+                        "stage_one_collection_teacher_yielded",
+                        iteration,
+                        lastStateHash,
+                        string.Empty,
+                        "status=" + collectionTeacher.Status +
+                        " reason=" + collectionTeacher.Detail +
+                        " next=shared_daily_plan");
+                }
+
+                var dailyPlan = await BuildQueueFromDailyPlanAsync(
+                    http,
+                    options,
+                    lastStateHash,
+                    suppressedObjectiveContinuations:
+                        suppressedObjectiveContinuations,
+                    activeObjectiveContinuation:
+                        activeObjectiveContinuation);
+                modelPlanPath = Path.Combine(options.SnapshotDir, "model-plan-" + iteration.ToString("D4") + ".json");
+                await File.WriteAllTextAsync(modelPlanPath, dailyPlan.Plan.ToJsonString(JsonOptions), Encoding.UTF8);
+                var dailyPlanPath = Path.Combine(options.SnapshotDir, "daily-plan-response-" + iteration.ToString("D4") + ".json");
+                await File.WriteAllTextAsync(dailyPlanPath, dailyPlan.Response.ToJsonString(JsonOptions), Encoding.UTF8);
+                rankingPath = Path.Combine(options.SnapshotDir, "ranking-response-" + iteration.ToString("D4") + ".json");
+                await File.WriteAllTextAsync(rankingPath, dailyPlan.Ranking.ToJsonString(JsonOptions), Encoding.UTF8);
+                dailyPlanRanking = dailyPlan.Ranking;
+                queue = dailyPlan.Queue;
+                decisionModelPlanPath = modelPlanPath;
+                decisionRankingPath = rankingPath;
+                if (PlanningHandoffCapture.TryReadCropProductionTeacherHandoff(
+                        dailyPlanRanking,
+                        out var planningHandoff))
+                {
+                    var dispatch = await DispatchCropTeacherAsync(
+                        http,
+                        options,
+                        iteration,
+                        rawSnapshotJson,
+                        planningHandoff,
+                        "initial");
+                    lastPlanningHandoffCaptureManifestPath =
+                        dispatch.Capture.ManifestPath;
+                    lastPlanningHandoffTeacherDispatchManifestPath =
+                        dispatch.TeacherDispatchManifestPath;
+                    lastPlanningHandoffNativeRunPlanPath =
+                        dispatch.NativeRunPlanPath;
+                    activeCropTeacherRunPlanRequest = dispatch.RunPlanRequest;
+                    activeCropTeacherRunPlan = dispatch.RunPlan;
+                    cropTeacherTransitionLedgerPath =
+                        dispatch.TransitionLedgerPath;
+                    activeCropTeacherTransitionLedger =
+                        dispatch.TransitionLedger;
+                    cropTeacherHarvestReceiptCount =
+                        activeCropTeacherTransitionLedger.HarvestReceipts.Count;
+                    cropTeacherDayBoundaryReceiptCount =
+                        activeCropTeacherTransitionLedger.DayBoundaryReceipts.Count;
+                    pendingCropTeacherDayBoundary = null;
+                    cropTeacherPreparedCommitmentIds.Clear();
+                    cropTeacherControlAttemptsStarted = 0;
+                    cropTeacherRunCompleted = false;
+                    cropTeacherReplanRequired = false;
+                    cropTeacherReplanReason = string.Empty;
+                    activeObjectiveContinuation = null;
+                    leasedDecisionModelPlanPath = string.Empty;
+                    leasedDecisionRankingPath = string.Empty;
+                    leasedDecisionCompiledQueuePath = string.Empty;
+                    leasedDecisionSnapshotPath = string.Empty;
+                    leasedDecisionSourceStateHash = string.Empty;
+                    leasedDecisionGoalId = string.Empty;
+                    leasedSelectedCandidateId = string.Empty;
+                    leasedSelectedQueueIndex = -1;
+                    AppendProgress(
+                        options,
+                        "planning_handoff_dispatched",
+                        iteration,
+                        lastStateHash,
+                        string.Empty,
+                        "kind=crop_production_teacher manifest=" +
+                        dispatch.Capture.ManifestPath +
+                        " map=" + dispatch.Capture.MapWidth + "x" +
+                        dispatch.Capture.MapHeight +
+                        " layout_snapshots=" +
+                        dispatch.Capture.LayoutSnapshotCount +
+                        " native_run_plan=" +
+                        dispatch.NativeRunPlanPath +
+                        " actions=" + dispatch.ActionCount);
+                    await DelayBeforeNextAttemptAsync(options, attemptOrdinal);
+                    continue;
+                }
+            }
         }
     }
     else if (options.UseParameterizedAction)
@@ -390,7 +1047,12 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
     {
         decisionCompiledQueuePath = queuePath;
     }
-    if (options.UseDailyPlan && !resumedSelectedQueueDecision)
+    else if (!useDailyPlanDecisionLease &&
+        activeCropTeacherRunPlan is not null)
+    {
+        decisionCompiledQueuePath = queuePath;
+    }
+    if (useDailyPlanDecisionLease && !resumedSelectedQueueDecision)
     {
         var firstSelectedItem = ExecutableQueueItems(queue).FirstOrDefault();
         selectedCandidateId = EffectiveDecisionArtifactTracker.ReadQueueItemCandidateId(firstSelectedItem);
@@ -417,12 +1079,11 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         if (!string.Equals(queueStatus, "pending", StringComparison.Ordinal))
         {
             var executableSubsetCount = ExecutableQueueItems(queue).Length;
-            if (options.UseDailyPlan &&
+            if (useDailyPlanDecisionLease &&
                 resumedSelectedQueueDecision &&
                 executableSubsetCount == 0)
             {
                 var invalidatedCandidateId = leasedSelectedCandidateId;
-                activeObjectiveContinuation = null;
                 leasedDecisionModelPlanPath = string.Empty;
                 leasedDecisionRankingPath = string.Empty;
                 leasedDecisionCompiledQueuePath = string.Empty;
@@ -481,6 +1142,24 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                     lastQueueId,
                     "queue_not_pending executor_feedback_required" +
                     NoProgressDetail(noProgressDecision));
+                if (options.MaxQueueNoProgressStreak > 0 &&
+                    noProgressDecision.NoProgress &&
+                    noProgressDecision.Streak >=
+                        options.MaxQueueNoProgressStreak)
+                {
+                    stopReason =
+                        "max_queue_no_progress_streak_reached count=" +
+                        noProgressDecision.Streak +
+                        " queue_status=" + queueStatus;
+                    AppendProgress(
+                        options,
+                        "stopped",
+                        iteration,
+                        lastStateHash,
+                        lastQueueId,
+                        stopReason);
+                    break;
+                }
                 await DelayBeforeNextAttemptAsync(
                     options,
                     attemptOrdinal,
@@ -497,9 +1176,49 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 "executing_pending_subset count=" + executableSubsetCount + " queue_status=" + queueStatus);
         }
 
+        var cropTeacherDayBoundaryStart =
+            await CaptureCropTeacherDayBoundaryStartAsync(
+                options,
+                cropTeacherStepForExecution,
+                beforeSnapshot,
+                lastStateHash);
+        var cropTeacherDayBoundaryLedger =
+            cropTeacherDayBoundaryStart is null
+                ? null
+                : activeCropTeacherTransitionLedger;
+        if (cropTeacherDayBoundaryStart is null &&
+            completedCropTeacherBoundaryStart is not null)
+        {
+            cropTeacherDayBoundaryStart = completedCropTeacherBoundaryStart;
+            cropTeacherDayBoundaryLedger = completedCropTeacherBoundaryLedger;
+        }
         var execution = options.UseRuntimeTestHarnessExecutor
-            ? await ExecuteRuntimeTestHarnessAsync(http, executorHttp, options, iteration, snapshotPath, beforeSnapshot, queue, lastStateHash, lastQueueId, decisionModelPlanPath, decisionRankingPath, decisionCompiledQueuePath, decisionSnapshotPath, decisionSourceStateHash, selectedCandidateId, selectedQueueIndex, queuePath, activeObjectiveContinuation, suppressedObjectiveContinuations)
+            ? await ExecuteRuntimeTestHarnessAsync(http, executorHttp, options, iteration, snapshotPath, beforeSnapshot, queue, lastStateHash, lastQueueId, decisionModelPlanPath, decisionRankingPath, decisionCompiledQueuePath, decisionSnapshotPath, decisionSourceStateHash, selectedCandidateId, selectedQueueIndex, queuePath, activeObjectiveContinuation, suppressedObjectiveContinuations, useDailyPlanDecisionLease, executionSnapshotUrl, executionSnapshotProfile)
             : await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/action-queues/" + Uri.EscapeDataString(lastQueueId) + "/execute-training-sandbox", "{}");
+        if (activeCropTeacherTransitionLedger is not null &&
+            cropTeacherStepForExecution is not null)
+        {
+            var receiptsAppended =
+                activeCropTeacherTransitionLedger.RecordVerifiedHarvestResults(
+                    execution,
+                    cropTeacherStepForExecution,
+                    DateTimeOffset.UtcNow.ToString("O"));
+            if (receiptsAppended > 0)
+            {
+                cropTeacherHarvestReceiptCount =
+                    activeCropTeacherTransitionLedger.HarvestReceipts.Count;
+                AppendProgress(
+                    options,
+                    "crop_teacher_harvest_receipts_appended",
+                    iteration,
+                    lastStateHash,
+                    lastQueueId,
+                    "count=" + receiptsAppended +
+                    " total=" +
+                    activeCropTeacherTransitionLedger.HarvestReceipts.Count +
+                    " ledger=" + cropTeacherTransitionLedgerPath);
+            }
+        }
         var feedbackAvailable = execution["feedback_available"]?.GetValue<bool>() == true;
         if (!feedbackAvailable && !options.UseRuntimeTestHarnessExecutor)
         {
@@ -523,6 +1242,25 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                         queue,
                         execution);
                 AppendProgress(options, "blocked", iteration, lastStateHash, lastQueueId, options.ExecutorUnverifiedSource + " status=" + ReadString(execution, "status") + " primitive=" + ReadString(execution, "primitive_verification_status") + NoProgressDetail(unverifiedDecision));
+                if (options.MaxUnverifiedExecutionStreak > 0 &&
+                    unverifiedDecision.Streak >=
+                        options.MaxUnverifiedExecutionStreak)
+                {
+                    stopReason =
+                        "max_unverified_execution_streak_reached count=" +
+                        unverifiedDecision.Streak +
+                        " option=" + ReadString(execution, "option_id") +
+                        " failure=" +
+                        ReadString(execution, "failure_category");
+                    AppendProgress(
+                        options,
+                        "stopped",
+                        iteration,
+                        lastStateHash,
+                        lastQueueId,
+                        stopReason);
+                    break;
+                }
                 await DelayBeforeNextAttemptAsync(
                     options,
                     attemptOrdinal,
@@ -536,8 +1274,51 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 QueueReplanFilter.IsTrainingVerifiedExecution(execution)
                     ? execution
                     : completedCandidateRepresentative!;
+            if (cropTeacherDayBoundaryStart is not null &&
+                string.Equals(
+                    ReadString(trainingRepresentative, "option_id"),
+                    "executor.sleep",
+                    StringComparison.Ordinal))
+            {
+                pendingCropTeacherDayBoundary =
+                    CreatePendingCropTeacherDayBoundary(
+                        cropTeacherDayBoundaryStart,
+                        trainingRepresentative);
+                pendingCropTeacherDayBoundaryLedger =
+                    cropTeacherDayBoundaryLedger ??
+                    throw new InvalidOperationException(
+                        "crop_teacher_transition_ledger_missing");
+            }
             var executionNoProgress =
                 noProgressBackoff.ObserveExecution(queue, trainingRepresentative);
+            var routeOscillation = RouteOscillationDecision.None;
+            if (RouteOscillationGuard.IsObservedRouteExecution(execution))
+            {
+                var afterSnapshotPath = ReadString(
+                    execution,
+                    "after_snapshot_path");
+                if (!string.IsNullOrWhiteSpace(afterSnapshotPath) &&
+                    File.Exists(afterSnapshotPath))
+                {
+                    var afterSnapshotText =
+                        await ContentAddressedJsonArtifactStore
+                            .ReadAllTextAsync(afterSnapshotPath);
+                    var afterSnapshot = JsonNode.Parse(afterSnapshotText)
+                        ?.AsObject() ?? new JsonObject();
+                    routeOscillation = routeOscillationGuard.Observe(
+                        execution,
+                        beforeSnapshot,
+                        afterSnapshot);
+                }
+                else
+                {
+                    routeOscillationGuard.Reset();
+                }
+            }
+            else
+            {
+                routeOscillationGuard.Reset();
+            }
             var realAppend = AppendRealExecutionRow(
                 options,
                 beforeSnapshot,
@@ -545,7 +1326,8 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 trainingRepresentative,
                 lastStateHash,
                 lastQueueId,
-                appendToDataset: !executionNoProgress.NoProgress);
+                appendToDataset: !executionNoProgress.NoProgress &&
+                    !routeOscillation.Detected);
             objectiveCompleted |= execution[
                 "objective_continuation_completed"]?.GetValue<bool>() == true;
             socialObjectiveCompleted |= execution[
@@ -570,7 +1352,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 "selected_queue_redecision_required"]?.GetValue<bool>() == true;
             var selectedQueueResumeIndex = execution[
                 "selected_queue_resume_index"]?.GetValue<int>() ?? -1;
-            if (options.UseDailyPlan &&
+            if (useDailyPlanDecisionLease &&
                 !selectedQueueDecisionComplete &&
                 !selectedQueueRedecisionRequired &&
                 selectedQueueResumeIndex >= 0)
@@ -592,6 +1374,84 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 leasedSelectedQueueIndex = -1;
             }
             WritePlanExecutionEpisode(options, iteration, snapshotPath, modelPlanPath, queuePath, queue, execution, realAppend, lastStateHash, lastQueueId);
+            if (routeOscillation.Detected)
+            {
+                stopReason =
+                    "semantic_route_oscillation_detected objective=" +
+                    routeOscillation.ObjectiveKey +
+                    " reverse_transition_streak=" +
+                    routeOscillation.ReverseTransitionStreak +
+                    " transition=" + routeOscillation.FromLocation +
+                    "->" + routeOscillation.ToLocation +
+                    " total_day=" + routeOscillation.TotalDay +
+                    " time=" + routeOscillation.Time;
+                AppendProgress(
+                    options,
+                    "stopped",
+                    iteration,
+                    lastStateHash,
+                    lastQueueId,
+                    stopReason);
+                break;
+            }
+            if (options.RequireGoldenWalnutSourceScheduleReady &&
+                execution["after_snapshot_fresh"]?.GetValue<bool>() == true)
+            {
+                var milestoneAfterPath = ReadString(
+                    execution,
+                    "after_snapshot_path");
+                if (!string.IsNullOrWhiteSpace(milestoneAfterPath) &&
+                    File.Exists(milestoneAfterPath))
+                {
+                    goldenWalnutSourceMilestone =
+                        await EvaluateGoldenWalnutSourceMilestoneArtifactAsync(
+                            milestoneAfterPath);
+                    var milestoneSignature =
+                        GoldenWalnutSourceMilestoneSignature(
+                            goldenWalnutSourceMilestone);
+                    if (!string.Equals(
+                            milestoneSignature,
+                            goldenWalnutSourceMilestoneSignature,
+                            StringComparison.Ordinal))
+                    {
+                        goldenWalnutSourceMilestoneSignature =
+                            milestoneSignature;
+                        AppendGoldenWalnutSourceMilestoneProgress(
+                            options,
+                            goldenWalnutSourceMilestone,
+                            iteration,
+                            ReadString(execution, "after_state_hash"),
+                            lastQueueId);
+                    }
+                    if (goldenWalnutSourceMilestone.CurrentTotalDay >=
+                        GoldenWalnutUnlockScheduleProofBuilder
+                            .DeadlineTotalDayExclusive)
+                    {
+                        stopReason =
+                            "golden_walnut_deadline_total_day_reached current=" +
+                            goldenWalnutSourceMilestone.CurrentTotalDay +
+                            " deadline_exclusive=" +
+                            GoldenWalnutUnlockScheduleProofBuilder
+                                .DeadlineTotalDayExclusive;
+                        AppendProgress(
+                            options,
+                            "stopped",
+                            iteration,
+                            ReadString(execution, "after_state_hash"),
+                            lastQueueId,
+                            stopReason);
+                        break;
+                    }
+                    if (goldenWalnutSourceMilestone.Ready)
+                    {
+                        activeCropTeacherRunPlan = null;
+                        activeCropTeacherRunPlanRequest = null;
+                        activeCropTeacherTransitionLedger = null;
+                        pendingCropTeacherDayBoundary = null;
+                        pendingCropTeacherDayBoundaryLedger = null;
+                    }
+                }
+            }
             var horizonObservations = AppendClosedHorizonObservations(options, beforeSnapshot, execution);
             var policyAppend = executionNoProgress.NoProgress ||
                 closingNativeSaveBoundary
@@ -651,6 +1511,45 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                         " save_changed=" + saveBoundaryObservation.SaveChanged +
                         " initial_day=" + nativeSaveBoundaryInitialDayKey +
                         " current_day=" + nativeSaveBoundaryCurrentDayKey);
+                    if (nativeSaveBoundaryVerified &&
+                        pendingCropTeacherDayBoundary is not null)
+                    {
+                        var terminalBoundaryCheck =
+                            await CheckCropTeacherDayBoundaryAsync(
+                                options,
+                                pendingCropTeacherDayBoundary,
+                                afterSnapshot);
+                        if (!terminalBoundaryCheck.Verified)
+                        {
+                            throw new InvalidDataException(
+                                "crop_teacher_terminal_save_boundary_not_settled " +
+                                terminalBoundaryCheck.Detail);
+                        }
+                        var terminalLedger =
+                            pendingCropTeacherDayBoundaryLedger ??
+                            throw new InvalidOperationException(
+                                "crop_teacher_transition_ledger_missing");
+                        terminalLedger.RecordVerifiedDayBoundary(
+                            terminalBoundaryCheck.Receipt ??
+                            throw new InvalidOperationException(
+                                "crop_teacher_day_boundary_receipt_missing"));
+                        cropTeacherDayBoundaryReceiptCount =
+                            terminalLedger.DayBoundaryReceipts.Count;
+                        AppendProgress(
+                            options,
+                            "crop_teacher_terminal_save_boundary_settled",
+                            iteration,
+                            ReadString(afterSnapshot, "state_hash"),
+                            pendingCropTeacherDayBoundary.QueueId,
+                            "from_total_day=" +
+                            pendingCropTeacherDayBoundary.FromTotalDay +
+                            " receipt_count=" +
+                            cropTeacherDayBoundaryReceiptCount);
+                        pendingCropTeacherDayBoundary = null;
+                        pendingCropTeacherDayBoundaryLedger = null;
+                        completedCropTeacherBoundaryStart = null;
+                        completedCropTeacherBoundaryLedger = null;
+                    }
                 }
             }
             else
@@ -713,17 +1612,81 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
     }
 }
 
-var verifiedTargetMet = string.IsNullOrWhiteSpace(stopReason) &&
-    (options.RequiredVerifiedActions <= 0 || verifiedActions >= options.RequiredVerifiedActions) &&
+var goldenWalnutFreshSaveEpisodeManifestPath = string.Empty;
+var goldenWalnutFreshSaveEpisodeCount = 0;
+var goldenWalnutSourceSchedulePath = string.Empty;
+var goldenWalnutSourceScheduleVerified = false;
+if (options.CaptureGoldenWalnutFreshSaveEvidence)
+{
+    try
+    {
+        goldenWalnutFreshSaveEpisodeCount = Directory.EnumerateFiles(
+            options.SnapshotDir,
+            GoldenWalnutFreshSaveEpisodeArchive.EpisodeSearchPattern,
+            SearchOption.TopDirectoryOnly).Count();
+        if (goldenWalnutFreshSaveEpisodeCount > 0)
+        {
+            GoldenWalnutFreshSaveEpisodeManifestBuilder.WriteFromDirectory(
+                options.GoldenWalnutFreshSaveEpisodeManifestPath,
+                options.SnapshotDir,
+                options.GoldenWalnutFreshSaveScheduleId,
+                options.RunId);
+            goldenWalnutFreshSaveEpisodeManifestPath =
+                options.GoldenWalnutFreshSaveEpisodeManifestPath;
+        }
+    }
+    catch (Exception ex) when (
+        ex is IOException or InvalidDataException or InvalidOperationException or
+            JsonException or ArgumentException)
+    {
+        stopReason = "golden_walnut_fresh_save_manifest_invalid message=" +
+            SanitizeProgressValue(ex.Message);
+    }
+}
+if (options.RequireGoldenWalnutSourceScheduleReady &&
+    goldenWalnutSourceMilestone.Ready &&
+    !string.IsNullOrWhiteSpace(goldenWalnutFreshSaveEpisodeManifestPath))
+{
+    try
+    {
+        GoldenWalnutFreshSaveEpisodeScheduleBuilder.Write(
+            options.GoldenWalnutFreshSaveSourceSchedulePath,
+            goldenWalnutFreshSaveEpisodeManifestPath);
+        goldenWalnutSourceSchedulePath =
+            options.GoldenWalnutFreshSaveSourceSchedulePath;
+        goldenWalnutSourceScheduleVerified = true;
+    }
+    catch (Exception ex) when (
+        ex is IOException or InvalidDataException or InvalidOperationException or
+            JsonException or ArgumentException)
+    {
+        stopReason = "golden_walnut_source_schedule_invalid message=" +
+            SanitizeProgressValue(ex.Message);
+    }
+}
+else if (options.RequireGoldenWalnutSourceScheduleReady &&
+    goldenWalnutSourceMilestone.Ready)
+{
+    stopReason = "golden_walnut_source_schedule_invalid message=" +
+        "fresh_save_episode_manifest_missing";
+}
+
+var ordinaryTargetMet =
+    (options.RequiredVerifiedActions <= 0 ||
+        verifiedActions >= options.RequiredVerifiedActions) &&
     (!options.StopAfterObjectiveComplete || objectiveCompleted) &&
     (!options.StopAfterSocialObjectiveComplete || socialObjectiveCompleted) &&
+    (!options.RequireGoldenWalnutSourceScheduleReady ||
+        (goldenWalnutSourceMilestone.Ready &&
+         goldenWalnutSourceScheduleVerified)) &&
     (!options.RequireNativeSaveBoundary || nativeSaveBoundaryVerified);
+var verifiedTargetMet = string.IsNullOrWhiteSpace(stopReason) &&
+    ordinaryTargetMet;
 var loopStatus = verifiedTargetMet ? "ok" : "incomplete";
 if (!verifiedTargetMet)
 {
     Environment.ExitCode = 2;
 }
-
 trainingDataTransaction.Complete(verifiedTargetMet);
 if (trainingDataTransaction.CanonicalArtifactsUpdated &&
     lastTrainingReport is not null)
@@ -766,6 +1729,42 @@ var report = new LiveTrainingLoopReport
     DatasetPath = options.DatasetPath,
     ProgressLogPath = options.ProgressLogPath,
     SnapshotDir = options.SnapshotDir,
+    GoldenWalnutFreshSaveEvidenceCaptureEnabled =
+        options.CaptureGoldenWalnutFreshSaveEvidence,
+    GoldenWalnutFreshSaveEpisodeManifestPath =
+        goldenWalnutFreshSaveEpisodeManifestPath,
+    GoldenWalnutFreshSaveEpisodeCount = goldenWalnutFreshSaveEpisodeCount,
+    GoldenWalnutSourceScheduleRequired =
+        options.RequireGoldenWalnutSourceScheduleReady,
+    GoldenWalnutSourceMilestoneReady = goldenWalnutSourceMilestone.Ready,
+    GoldenWalnutSourceCurrentTotalDay =
+        goldenWalnutSourceMilestone.CurrentTotalDay,
+    GoldenWalnutDeadlineTotalDayExclusive =
+        GoldenWalnutUnlockScheduleProofBuilder.DeadlineTotalDayExclusive,
+    GoldenWalnutSourceMilestoneBlockingReasons =
+        goldenWalnutSourceMilestone.BlockingReasons,
+    GoldenWalnutSourceScheduleVerified = goldenWalnutSourceScheduleVerified,
+    GoldenWalnutSourceSchedulePath = goldenWalnutSourceSchedulePath,
+    PlanningHandoffCaptureManifestPath =
+        lastPlanningHandoffCaptureManifestPath,
+    PlanningHandoffTeacherDispatchManifestPath =
+        lastPlanningHandoffTeacherDispatchManifestPath,
+    PlanningHandoffNativeRunPlanPath =
+        lastPlanningHandoffNativeRunPlanPath,
+    CropTeacherFirstDayCompleted = cropTeacherFirstDayCompleted,
+    CropTeacherRunCompleted = cropTeacherRunCompleted,
+    CropTeacherReplanRequired = cropTeacherReplanRequired,
+    CropTeacherReplanReason = cropTeacherReplanReason,
+    CropTeacherReplanCount = cropTeacherReplanCount,
+    CropTeacherTransitionLedgerPath = cropTeacherTransitionLedgerPath,
+    CropTeacherHarvestReceiptCount = cropTeacherHarvestReceiptCount,
+    CropTeacherDayBoundaryReceiptCount =
+        cropTeacherDayBoundaryReceiptCount,
+    StageOneCollectionTeacherQueueCount =
+        stageOneCollectionTeacherQueueCount,
+    StageOneCollectionControlQueueCount =
+        stageOneCollectionControlQueueCount,
+    CropTeacherControlAttemptsStarted = cropTeacherControlAttemptsStarted,
     Iterations = attemptsStarted,
     MaxAttempts = options.MaxAttempts,
     AttemptsStarted = attemptsStarted,
@@ -823,13 +1822,40 @@ Console.WriteLine(JsonSerializer.Serialize(new
     stop_reason = stopReason,
     dataset_path = options.DatasetPath,
     report_path = reportPath,
+    golden_walnut_fresh_save_episode_manifest_path =
+        goldenWalnutFreshSaveEpisodeManifestPath,
+    golden_walnut_fresh_save_episode_count =
+        goldenWalnutFreshSaveEpisodeCount,
+    golden_walnut_source_schedule_required =
+        options.RequireGoldenWalnutSourceScheduleReady,
+    golden_walnut_source_milestone_ready =
+        goldenWalnutSourceMilestone.Ready,
+    golden_walnut_source_current_total_day =
+        goldenWalnutSourceMilestone.CurrentTotalDay,
+    golden_walnut_deadline_total_day_exclusive =
+        GoldenWalnutUnlockScheduleProofBuilder.DeadlineTotalDayExclusive,
+    golden_walnut_source_milestone_blocking_reasons =
+        goldenWalnutSourceMilestone.BlockingReasons,
+    golden_walnut_source_schedule_verified =
+        goldenWalnutSourceScheduleVerified,
+    golden_walnut_source_schedule_path = goldenWalnutSourceSchedulePath,
     progress_log_path = options.ProgressLogPath,
     concurrency = 1,
     execution = options.TargetExecutionMode,
     feedback = options.FeedbackMode,
     executor_feedback_required = options.RequireExecutorFeedback,
     objective_completed = objectiveCompleted,
-    social_objective_completed = socialObjectiveCompleted
+    social_objective_completed = socialObjectiveCompleted,
+    crop_teacher_first_day_completed = cropTeacherFirstDayCompleted,
+    crop_teacher_run_completed = cropTeacherRunCompleted,
+    crop_teacher_replan_required = cropTeacherReplanRequired,
+    crop_teacher_replan_reason = cropTeacherReplanReason,
+    crop_teacher_replan_count = cropTeacherReplanCount,
+    crop_teacher_transition_ledger_path = cropTeacherTransitionLedgerPath,
+    crop_teacher_harvest_receipt_count = cropTeacherHarvestReceiptCount,
+    crop_teacher_day_boundary_receipt_count =
+        cropTeacherDayBoundaryReceiptCount,
+    crop_teacher_control_attempts_started = cropTeacherControlAttemptsStarted
 }, JsonOptions));
 
 static partial class Program

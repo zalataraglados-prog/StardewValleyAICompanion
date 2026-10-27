@@ -53,8 +53,8 @@ namespace StardewAI.Core.Training
                 "goal.economy.earn_money",
                 "economy",
                 "grandpa.direct.earn_money",
-                new[] { "economy.sell_items", "economy.ship_items", "farm.establish_supported_machine_capacity" },
-                new[] { "sell_shop_item", "ship_inventory_item_to_bin", "craft_machine_item", "place_machine_item", "load_machine_input_tile" },
+                new[] { "economy.sell_items", "economy.ship_items", "farm.establish_supported_machine_capacity", "rewards.claim_starter_gift" },
+                new[] { "sell_shop_item", "ship_inventory_item_to_bin", "craft_machine_item", "place_machine_item", "load_machine_input_tile", "claim_starter_gift" },
                 "Cannot bind sell/ship candidates because required transparent sell/ship fields are unavailable."),
             CreateDirect(
                 "complete_museum_collection",

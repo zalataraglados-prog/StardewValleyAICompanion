@@ -4,9 +4,9 @@
   "native_action_denominator_status": "native_action_denominator_frozen",
   "native_action_surface_fingerprint_sha256": "a2ba3ac0193fa78aece39a1eb4c18cb3c9b3248ea7390194dcfe61605af02d0e",
   "planning_semantic_catalog_fingerprint_schema": "stardewai.planning_semantic_catalog_fingerprint.v1",
-  "planning_semantic_catalog_fingerprint_sha256": "2c28cb9c1f87fe6187a905e34d8df1d4a032473f5932f4cd391fcc9bf71ed8ba",
-  "action_count": 236,
-  "registered_option_spec_count": 234,
+  "planning_semantic_catalog_fingerprint_sha256": "6a7d553cf2d49971acbf1a25d243e45ab8909107f2f245a3b1cc5c280ba0819e",
+  "action_count": 243,
+  "registered_option_spec_count": 241,
   "catalogued_blocked_count": 2,
   "uncatalogued_native_action_count": 0,
   "pending_catalog_without_surface_count": 0,
@@ -177,6 +177,15 @@
       "domain": "mining",
       "semantic_kind": "PrimitiveOptionSpec",
       "primary_engine_id": "engine.dungeon_traversal",
+      "catalog_status": "registered_option_spec",
+      "block_reason": "",
+      "native_runtime_types": []
+    },
+    {
+      "action_id": "executor.advance_gourmand_request",
+      "domain": "island",
+      "semantic_kind": "PrimitiveOptionSpec",
+      "primary_engine_id": "engine.interaction_menu",
       "catalog_status": "registered_option_spec",
       "block_reason": "",
       "native_runtime_types": []
@@ -407,6 +416,15 @@
       "native_runtime_types": []
     },
     {
+      "action_id": "executor.claim_tool_upgrade",
+      "domain": "economy",
+      "semantic_kind": "PrimitiveOptionSpec",
+      "primary_engine_id": "engine.interaction_menu",
+      "catalog_status": "registered_option_spec",
+      "block_reason": "",
+      "native_runtime_types": []
+    },
+    {
       "action_id": "executor.clear_obstacle",
       "domain": "tool",
       "semantic_kind": "PrimitiveOptionSpec",
@@ -542,6 +560,15 @@
       "native_runtime_types": []
     },
     {
+      "action_id": "executor.craft_crab_pot",
+      "domain": "fishing",
+      "semantic_kind": "PrimitiveOptionSpec",
+      "primary_engine_id": "engine.farm_machine",
+      "catalog_status": "registered_option_spec",
+      "block_reason": "",
+      "native_runtime_types": []
+    },
+    {
       "action_id": "executor.craft_machine_item",
       "domain": "farm",
       "semantic_kind": "PrimitiveOptionSpec",
@@ -553,6 +580,15 @@
     {
       "action_id": "executor.craft_quest_item",
       "domain": "quest",
+      "semantic_kind": "PrimitiveOptionSpec",
+      "primary_engine_id": "engine.farm_machine",
+      "catalog_status": "registered_option_spec",
+      "block_reason": "",
+      "native_runtime_types": []
+    },
+    {
+      "action_id": "executor.craft_rain_totem",
+      "domain": "fishing",
       "semantic_kind": "PrimitiveOptionSpec",
       "primary_engine_id": "engine.farm_machine",
       "catalog_status": "registered_option_spec",
@@ -1226,6 +1262,15 @@
       "native_runtime_types": []
     },
     {
+      "action_id": "executor.submit_tool_upgrade",
+      "domain": "economy",
+      "semantic_kind": "PrimitiveOptionSpec",
+      "primary_engine_id": "engine.interaction_menu",
+      "catalog_status": "registered_option_spec",
+      "block_reason": "",
+      "native_runtime_types": []
+    },
+    {
       "action_id": "executor.tailor_item",
       "domain": "tailoring",
       "semantic_kind": "PrimitiveOptionSpec",
@@ -1667,6 +1712,15 @@
       "native_runtime_types": []
     },
     {
+      "action_id": "island.complete_gourmand_request",
+      "domain": "island",
+      "semantic_kind": "CompositeOptionSpec",
+      "primary_engine_id": "engine.strategy_orchestration",
+      "catalog_status": "registered_option_spec",
+      "block_reason": "",
+      "native_runtime_types": []
+    },
+    {
       "action_id": "island.field_office_donate",
       "domain": "island",
       "semantic_kind": "CompositeOptionSpec",
@@ -1987,6 +2041,15 @@
       "action_id": "rewards.claim_prize_ticket",
       "domain": "rewards",
       "semantic_kind": "CompositeOptionSpec",
+      "primary_engine_id": "engine.inventory_transfer",
+      "catalog_status": "registered_option_spec",
+      "block_reason": "",
+      "native_runtime_types": []
+    },
+    {
+      "action_id": "rewards.claim_starter_gift",
+      "domain": "rewards",
+      "semantic_kind": "PrimitiveOptionSpec",
       "primary_engine_id": "engine.inventory_transfer",
       "catalog_status": "registered_option_spec",
       "block_reason": "",

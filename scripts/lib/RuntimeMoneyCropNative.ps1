@@ -1,3 +1,115 @@
+function Copy-RuntimeSnapshotArtifact {
+    param(
+        [Parameter(Mandatory)] [string] $SourcePath,
+        [Parameter(Mandatory)] [string] $DestinationPath
+    )
+    Write-Utf8Text -Path $DestinationPath -Value (
+        Get-Content -LiteralPath $SourcePath -Raw)
+    return [IO.Path]::GetFullPath($DestinationPath)
+}
+
+function New-RuntimeTerminalQueueTransition {
+    param(
+        [Parameter(Mandatory)] [string] $TransitionId,
+        [Parameter(Mandatory)] $Artifacts,
+        [Parameter(Mandatory)] [string] $RunId
+    )
+    $selectedCandidateId = [string]$Artifacts.Execution.selected_candidate_id
+    if ([string]::IsNullOrWhiteSpace($selectedCandidateId)) {
+        throw "Runtime terminal transition has no selected candidate identity."
+    }
+    return [ordered]@{
+        transition_id = $TransitionId
+        queue_path = $Artifacts.QueuePath
+        before_snapshot_path = $Artifacts.BeforePath
+        execution_receipt_path = $Artifacts.ExecutionPath
+        after_snapshot_path = $Artifacts.AfterPath
+        run_id = $RunId
+        executor_version = "runtime_test_harness_executor.v1"
+        selected_candidate_id = $selectedCandidateId
+    }
+}
+
+function Invoke-RuntimeBoundSingleAction {
+    param(
+        [Parameter(Mandatory)] $Context,
+        [Parameter(Mandatory)] [string] $BackendUrl,
+        [Parameter(Mandatory)] [string] $SnapshotProfile,
+        [Parameter(Mandatory)] [string] $SourceSnapshotPath,
+        [Parameter(Mandatory)] [string] $OptionId,
+        [Parameter(Mandatory)] [string] $CandidateId,
+        [Parameter(Mandatory)] [object[]] $Parameters,
+        [Parameter(Mandatory)] [string] $Name
+    )
+    if ([string]::IsNullOrWhiteSpace($OptionId) -or
+        [string]::IsNullOrWhiteSpace($CandidateId)) {
+        throw "Bound runtime action identity is incomplete."
+    }
+    $source = Import-RuntimeSnapshotFile -Path $SourceSnapshotPath `
+        -BackendUrl $BackendUrl -SnapshotProfile $SnapshotProfile
+    $effectiveParameters = [Collections.Generic.List[object]]::new()
+    foreach ($parameter in @($Parameters)) {
+        if ([string]::IsNullOrWhiteSpace([string]$parameter.name)) {
+            throw "Bound runtime action contains an unnamed parameter."
+        }
+        $effectiveParameters.Add([ordered]@{
+            name = [string]$parameter.name
+            value = [string]$parameter.value
+        })
+    }
+    if (@($effectiveParameters | Where-Object {
+            [string]$_.name -eq "precondition"
+        }).Count -eq 0) {
+        $effectiveParameters.Add([ordered]@{
+            name = "precondition"
+            value = "candidate_id:$CandidateId"
+        })
+    }
+    $modelOutput = [ordered]@{
+        schema_version = "small_model_action.v1"
+        model_output_id = "model-output:$CandidateId"
+        source_model = "authoritative_crop_terminal_continuation.v1"
+        state_hash = [string]$source.Value.state_hash
+        goal_id = "daily.closed_loop"
+        execution_mode = "training_singleplayer"
+        actor = [ordered]@{
+            actor_id = "training_farmer.main"
+            actor_type = "training_farmer"
+            control_surface = "training_sandbox"
+        }
+        actions = @([ordered]@{
+            action_id = "$CandidateId:action"
+            option_id = $OptionId
+            rationale = "authoritative_crop_terminal_continuation"
+            parameters = @($effectiveParameters)
+        })
+    }
+    $compileRoot = Join-Path $Context.ArtifactDirectory "$Name-compile"
+    $modelOutputPath = Join-Path $compileRoot "model-output.json"
+    $queuePath = Join-Path $compileRoot "compiled-queue.json"
+    Write-JsonFile -Path $modelOutputPath -Value $modelOutput
+    $compiled = Invoke-JsonPost `
+        -Url "$BackendUrl/api/v1/small-model/action-queue/compile" `
+        -Body $modelOutput
+    Write-Utf8Text -Path $queuePath -Value $compiled.Raw
+    $items = @($compiled.Value.items)
+    if ([string]$compiled.Value.schema_version -ne "action_queue.v1" -or
+        [string]$compiled.Value.status -ne "pending" -or
+        $items.Count -ne 1 -or
+        [string]$items[0].option_id -ne $OptionId -or
+        [string]$items[0].status -ne "pending") {
+        $diagnostics = @($compiled.Value.compiler_diagnostics) -join " | "
+        throw "Bound runtime action $Name did not compile exactly: $diagnostics"
+    }
+    $artifacts = Invoke-RuntimePrecompiledQueue -Context $Context `
+        -Name $Name -QueuePath $queuePath -BeforePath $source.Path `
+        -ExecutionTarget "runtime_harness"
+    if ([string]$artifacts.Execution.selected_candidate_id -ne $CandidateId) {
+        throw "Bound runtime action $Name execution candidate identity drifted."
+    }
+    return $artifacts
+}
+
 function Get-RuntimeCropRows {
     param([Parameter(Mandatory)] $Snapshot)
     return @(Read-StateValue $Snapshot "farm" "crops")

@@ -243,8 +243,35 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
+        if (TickNativeBusTransport(move))
+        {
+            return;
+        }
+
         if (TickMovementIncidentalDialogue(move))
         {
+            return;
+        }
+
+        if (TickMovementControlGate(move))
+        {
+            return;
+        }
+
+        if (move.NeedsPathStartCentering)
+        {
+            var pathStartTile = Game1.player.TilePoint;
+            if (!IsFarmerCenteredOnTile(pathStartTile))
+            {
+                SettleFarmerOnTile(move, pathStartTile, "path_start");
+                return;
+            }
+
+            StopAllMovement();
+            move.CurrentDirection = null;
+            move.NeedsPathStartCentering = false;
+            move.StuckTicks = 0;
+            move.LastPosition = Game1.player.Position;
             return;
         }
 
@@ -352,7 +379,7 @@ public sealed partial class ModEntry : Mod
 
             if (!IsFarmerCenteredOnTile(move.TargetTile))
             {
-                SettleFarmerOnTargetTile(move);
+                SettleFarmerOnTile(move, move.TargetTile, "target_tile");
                 return;
             }
 
@@ -495,26 +522,59 @@ public sealed partial class ModEntry : Mod
         }
     }
 
-    private bool TickMovementIncidentalDialogue(ActiveTileMove move)
+    private bool TickMovementControlGate(ActiveTileMove move)
     {
-        if (move.IncidentalDialogueButtonHeld)
+        if (Game1.eventUp && Game1.CurrentEvent is { } currentEvent)
         {
-            if (!TryApplySmapiLeftButtonOverride(
-                    pressed: false,
-                    out var releaseReason))
-            {
-                CompleteBlockedMove(
-                    move,
-                    "movement_incidental_dialogue_release_failed:" +
-                        releaseReason);
-                return true;
-            }
-            move.IncidentalDialogueButtonHeld = false;
+            StopAllMovement("movement_story_event_interrupt");
+            move.CurrentDirection = null;
+            CompleteBlockedMove(
+                move,
+                "movement_interrupted_by_story_event:" + currentEvent.id);
             return true;
         }
 
+        var gateOpen =
+            !Game1.paused &&
+            !Game1.globalFade &&
+            !Game1.freezeControls &&
+            !Game1.isWarping &&
+            Game1.player.freezePause <= 0;
+        if (gateOpen)
+        {
+            return false;
+        }
+
+        if (move.CurrentDirection.HasValue ||
+            executorMovementLease.Direction.HasValue)
+        {
+            StopAllMovement("movement_native_control_gate_settling");
+            move.CurrentDirection = null;
+        }
+        move.StuckTicks = 0;
+        move.LastPosition = Game1.player.Position;
+        move.Tick++;
+        if (!config.DisableMovementTimeouts && move.Tick > move.MaxTicks)
+        {
+            CompleteBlockedMove(
+                move,
+                "movement_native_control_gate_timeout:" +
+                "paused=" + Game1.paused.ToString().ToLowerInvariant() +
+                ";global_fade=" + Game1.globalFade.ToString().ToLowerInvariant() +
+                ";freeze_controls=" + Game1.freezeControls.ToString().ToLowerInvariant() +
+                ";is_warping=" + Game1.isWarping.ToString().ToLowerInvariant() +
+                ";event_up=" + Game1.eventUp.ToString().ToLowerInvariant() +
+                ";freeze_pause=" + Game1.player.freezePause);
+        }
+        return true;
+    }
+
+    private bool TickMovementIncidentalDialogue(ActiveTileMove move)
+    {
         if (Game1.activeClickableMenu is null)
         {
+            ResetMovementIncidentalDialogue(move);
+            ArmNativeSewerUnlockRetry(move);
             return false;
         }
         if (Game1.activeClickableMenu is not DialogueBox dialogue ||
@@ -532,35 +592,159 @@ public sealed partial class ModEntry : Mod
         move.CurrentDirection = null;
         move.StuckTicks = 0;
         move.LastPosition = Game1.player.Position;
-        if (dialogue.transitioning || dialogue.safetyTimer > 0)
+        move.Tick++;
+
+        if (!ReferenceEquals(move.IncidentalDialogueMenu, dialogue))
         {
-            return true;
+            ResetMovementIncidentalDialogue(move);
+            if (move.Pending.MovementIncidentalDialogues >= 8)
+            {
+                CompleteBlockedMove(
+                    move,
+                    "movement_incidental_dialogue_count_exceeded");
+                return true;
+            }
+            move.IncidentalDialogueMenu = dialogue;
+            move.Pending.MovementIncidentalDialogues++;
+            move.MaxTicks += 600;
         }
-        if (move.IncidentalDialoguePressAttempts >= 16)
+
+        move.IncidentalDialogueTicks++;
+        if (move.IncidentalDialogueTicks > 600)
         {
             CompleteBlockedMove(
                 move,
-                "movement_incidental_dialogue_dismiss_budget_exceeded");
-            return true;
-        }
-        if (!TryApplySmapiLeftButtonOverride(
-                pressed: true,
-                out var pressReason))
-        {
-            CompleteBlockedMove(
-                move,
-                "movement_incidental_dialogue_press_failed:" +
-                    pressReason);
+                "movement_incidental_dialogue_timeout");
             return true;
         }
 
-        if (move.IncidentalDialoguePressAttempts == 0)
+        switch (move.IncidentalDialogueStage)
         {
-            move.Pending.MovementIncidentalDialogues++;
+            case DialogueAdvanceStage.WaitTransition:
+                if (dialogue.transitioning || dialogue.safetyTimer > 0)
+                {
+                    return true;
+                }
+                move.IncidentalDialogueStage = DialogueAdvanceStage.Press;
+                return true;
+
+            case DialogueAdvanceStage.Press:
+                if (!TryApplySmapiLeftButtonOverride(
+                        pressed: true,
+                        out var pressReason))
+                {
+                    CompleteBlockedMove(
+                        move,
+                        "movement_incidental_dialogue_press_failed:" +
+                            pressReason);
+                    return true;
+                }
+                move.IncidentalDialoguePressAttempts++;
+                move.IncidentalDialogueFinishedBeforePress =
+                    dialogue.dialogueFinished;
+                move.IncidentalDialogueTypingBeforePress =
+                    dialogue.showTyping;
+                move.IncidentalDialogueTransitioningBeforePress =
+                    dialogue.transitioning;
+                move.IncidentalDialogueButtonHeld = true;
+                move.IncidentalDialogueStage =
+                    DialogueAdvanceStage.ReleaseAfterAdvance;
+                return true;
+
+            case DialogueAdvanceStage.ReleaseAfterAdvance:
+                if (!TryApplySmapiLeftButtonOverride(
+                        pressed: false,
+                        out var releaseReason))
+                {
+                    CompleteBlockedMove(
+                        move,
+                        "movement_incidental_dialogue_release_failed:" +
+                            releaseReason);
+                    return true;
+                }
+                move.IncidentalDialogueButtonHeld = false;
+                move.IncidentalDialogueAdvanceWaitTicks = 0;
+                move.IncidentalDialogueStage =
+                    DialogueAdvanceStage.WaitAdvanceEffect;
+                return true;
+
+            case DialogueAdvanceStage.WaitAdvanceEffect:
+                move.IncidentalDialogueAdvanceWaitTicks++;
+                var dialogueChanged =
+                    dialogue.dialogueFinished !=
+                        move.IncidentalDialogueFinishedBeforePress ||
+                    dialogue.showTyping !=
+                        move.IncidentalDialogueTypingBeforePress ||
+                    dialogue.transitioning !=
+                        move.IncidentalDialogueTransitioningBeforePress;
+                if (dialogueChanged ||
+                    move.IncidentalDialogueAdvanceWaitTicks > 30)
+                {
+                    move.IncidentalDialogueStage =
+                        DialogueAdvanceStage.CheckClose;
+                }
+                return true;
+
+            case DialogueAdvanceStage.CheckClose:
+                if (move.IncidentalDialoguePressAttempts >= 60)
+                {
+                    CompleteBlockedMove(
+                        move,
+                        "movement_incidental_dialogue_dismiss_budget_exceeded");
+                    return true;
+                }
+                move.IncidentalDialogueStage =
+                    dialogue.transitioning || dialogue.safetyTimer > 0
+                        ? DialogueAdvanceStage.WaitTransition
+                        : DialogueAdvanceStage.Press;
+                return true;
         }
-        move.IncidentalDialoguePressAttempts++;
-        move.IncidentalDialogueButtonHeld = true;
-        return true;
+
+        throw new InvalidOperationException(
+            "movement_incidental_dialogue_stage_invalid");
+    }
+
+    private void ResetMovementIncidentalDialogue(ActiveTileMove move)
+    {
+        ReleaseMovementIncidentalDialogueButton(move);
+        move.IncidentalDialogueMenu = null;
+        move.IncidentalDialogueStage = DialogueAdvanceStage.WaitTransition;
+        move.IncidentalDialogueTicks = 0;
+        move.IncidentalDialoguePressAttempts = 0;
+        move.IncidentalDialogueAdvanceWaitTicks = 0;
+        move.IncidentalDialogueFinishedBeforePress = false;
+        move.IncidentalDialogueTypingBeforePress = false;
+        move.IncidentalDialogueTransitioningBeforePress = false;
+    }
+
+    private static void ArmNativeSewerUnlockRetry(ActiveTileMove move)
+    {
+        if (move.SewerOpenedAtStart ||
+            move.SewerUnlockObserved ||
+            !move.ConnectorActionAttempted ||
+            !string.Equals(
+                move.Pending.Request.ConnectorKind,
+                "action_warp",
+                StringComparison.OrdinalIgnoreCase) ||
+            Game1.player?.mailReceived.Contains("OpenedSewer") != true)
+        {
+            return;
+        }
+
+        var actionTile = move.ConnectorActionTile ?? move.TargetTile;
+        var action = Game1.currentLocation?.doesTileHaveProperty(
+            actionTile.X,
+            actionTile.Y,
+            "Action",
+            "Buildings");
+        var actionType = action?.Split(
+            ' ',
+            StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+        if (!string.Equals(actionType, "EnterSewer", StringComparison.OrdinalIgnoreCase))
+            return;
+
+        move.SewerUnlockObserved = true;
+        move.ConnectorActionAttempted = false;
     }
 
     private void ReleaseMovementIncidentalDialogueButton(
@@ -604,15 +788,18 @@ public sealed partial class ModEntry : Mod
         };
     }
 
-    private void SettleFarmerOnTargetTile(ActiveTileMove move)
+    private void SettleFarmerOnTile(
+        ActiveTileMove move,
+        Point tile,
+        string phase)
     {
         var currentPosition = Game1.player.Position;
         var movedSinceLastTick =
             Vector2.DistanceSquared(move.LastPosition, currentPosition) >= 0.01f;
         var center = Game1.player.StandingPixel;
         var targetCenter = new Point(
-            move.TargetTile.X * Game1.tileSize + Game1.tileSize / 2,
-            move.TargetTile.Y * Game1.tileSize + Game1.tileSize / 2);
+            tile.X * Game1.tileSize + Game1.tileSize / 2,
+            tile.Y * Game1.tileSize + Game1.tileSize / 2);
         var direction = DirectionToPixel(
             center,
             targetCenter,
@@ -627,14 +814,14 @@ public sealed partial class ModEntry : Mod
         {
             CompleteBlockedMove(
                 move,
-                "movement_target_tile_centering_stuck_or_collision_blocked");
+                "movement_" + phase + "_centering_stuck_or_collision_blocked");
             return;
         }
 
         move.Tick++;
         if (!config.DisableMovementTimeouts && move.Tick > move.MaxTicks)
         {
-            CompleteBlockedMove(move, "movement_target_tile_centering_timeout");
+            CompleteBlockedMove(move, "movement_" + phase + "_centering_timeout");
         }
     }
 
@@ -653,6 +840,15 @@ public sealed partial class ModEntry : Mod
 
         move.ConnectorActionAttempted = true;
         var actionTile = move.ConnectorActionTile ?? move.TargetTile;
+
+        if (string.Equals(
+                kind,
+                "native_bus_transport",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            TriggerNativeBusTransport(move, actionTile);
+            return true;
+        }
 
         if (string.Equals(kind, "building_door", StringComparison.OrdinalIgnoreCase))
         {
@@ -741,6 +937,50 @@ public sealed partial class ModEntry : Mod
             observedLocation,
             request.ExpectedTargetLocation,
             StringComparison.Ordinal);
+        if (move.SewerUnlockObserved)
+        {
+            if (!Game1.player.mailReceived.Contains("OpenedSewer"))
+            {
+                verified = false;
+                reasons.Add("connector_enter_sewer_unlock_receipt_missing");
+            }
+            else
+            {
+                reasons.Add("connector_enter_sewer_unlock_then_warp_observed");
+            }
+        }
+        if (string.Equals(
+                request.ConnectorKind,
+                "native_bus_transport",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            if (!move.NativeBusResponseSelected)
+            {
+                verified = false;
+                reasons.Add("native_bus_yes_response_not_observed");
+            }
+
+            var expectedMoney = string.Equals(
+                    move.LocationId,
+                    "BusStop",
+                    StringComparison.OrdinalIgnoreCase)
+                ? move.StartMoney - 500
+                : move.StartMoney;
+            if (Game1.player.Money != expectedMoney)
+            {
+                verified = false;
+                reasons.Add("native_bus_money_receipt_mismatch");
+            }
+            else
+            {
+                reasons.Add(string.Equals(
+                        move.LocationId,
+                        "BusStop",
+                        StringComparison.OrdinalIgnoreCase)
+                    ? "native_bus_ticket_price_500_observed"
+                    : "native_bus_return_preserved_money");
+            }
+        }
         if (verified && reasons.Count == 0)
         {
             reasons.Add("connector_location_changed_as_expected");
@@ -762,9 +1002,23 @@ public sealed partial class ModEntry : Mod
             PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
             PrimitiveVerificationReasons = reasons.ToArray(),
             RequestedEffect = ConnectorRequestedEffect(request),
-            ObservedEffect = ConnectorObservedEffect() + MovementCostSuffix(move.Pending),
+            ObservedEffect = ConnectorObservedEffect() +
+                ";player.money=" + Game1.player.Money +
+                MovementCostSuffix(move.Pending),
             BlockReasons = verified ? Array.Empty<string>() : reasons.ToArray(),
-            ChangedFacts = ConnectorChangedFacts(move.Pending, move.LocationId, move.StartTile, observedLocation, observedTile)
+            ChangedFacts = ConnectorChangedFacts(
+                    move.Pending,
+                    move.LocationId,
+                    move.StartTile,
+                    observedLocation,
+                    observedTile)
+                .Append(new SimulatedFactChange
+                {
+                    Path = "player.money",
+                    Before = move.StartMoney.ToString(CultureInfo.InvariantCulture),
+                    After = Game1.player.Money.ToString(CultureInfo.InvariantCulture)
+                })
+                .ToArray()
         });
     }
 

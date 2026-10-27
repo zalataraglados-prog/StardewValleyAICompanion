@@ -21,17 +21,96 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
             "scripts",
             "lib",
             "RuntimeMoneyCropSeedAcquisition.ps1"));
+    private static readonly string SeedAcquisitionProofStages =
+        File.ReadAllText(
+            FindRepositoryFile(
+                "experiments",
+                "StardewAI.GoalConditionedBootstrap",
+                "MoneyRevenueCropSeedAcquisitionProofBuilder.Stages.cs"));
     private static readonly string ProductionInput = File.ReadAllText(
         FindRepositoryFile(
             "scripts",
             "lib",
             "RuntimeMoneyCropProductionInput.ps1"));
+    private static readonly string EvidenceFinalization = File.ReadAllText(
+        FindRepositoryFile(
+            "scripts",
+            "lib",
+            "RuntimeMoneyCropEvidenceFinalization.ps1"));
+    private static readonly string PersistentBoundaryNormalization =
+        File.ReadAllText(
+            FindRepositoryFile(
+                "experiments",
+                "StardewAI.GoalConditionedBootstrap",
+                "FullShipmentRecoverySettlementBoundary.Normalization.cs"));
+    private static readonly string TerminalSettlementRuntime =
+        File.ReadAllText(
+            FindRepositoryFile(
+                "scripts",
+                "lib",
+                "RuntimeMoneyCropTerminalSettlement.ps1"));
+    private static readonly string EvidenceFinalizer = File.ReadAllText(
+        FindRepositoryFile(
+            "scripts",
+            "Finalize-RuntimeMoneyCropNativeProductionEvidence.ps1"));
+    private static readonly string QueueReceiptValidator = File.ReadAllText(
+        FindRepositoryFile(
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "QueueExecutionReceiptValidator.cs"));
+    private static readonly string ContinuationReceiptValidator =
+        File.ReadAllText(
+            FindRepositoryFile(
+                "experiments",
+                "StardewAI.GoalConditionedBootstrap",
+                "QueueExecutionReceiptValidator.Continuation.cs"));
+    private static readonly string SeedReservationCommitBuilder =
+        File.ReadAllText(
+            FindRepositoryFile(
+                "experiments",
+                "StardewAI.GoalConditionedBootstrap",
+                "MoneyRevenueCropSeedReservationCommitBuilder.cs"));
     private static readonly string CropProjection = File.ReadAllText(
         FindRepositoryFile(
             "src",
             "StardewAI.TransparentBridge",
             "Adapters",
             "FarmReadAdapter.CropsWorld.cs"));
+    private static readonly string FarmProjection = File.ReadAllText(
+        FindRepositoryFile(
+            "src",
+            "StardewAI.TransparentBridge",
+            "Adapters",
+            "FarmReadAdapter.cs"));
+
+    [Fact]
+    public void CropCatalogUsesNativeSellToStoreRevenueSemantics()
+    {
+        Assert.Contains(
+            "harvest_unit_base_price = harvestItem.BasePrice",
+            CropProjection,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "harvest_unit_sale_price = harvestItem.SellToStorePrice",
+            CropProjection,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "item.sellToStorePrice(-1L)",
+            CropProjection,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "harvest_unit_sale_price = harvestItem.SalePrice",
+            CropProjection,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Item.sellToStorePrice(-1)",
+            FarmProjection,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "vanilla_1_6_crop_data",
+            FarmProjection,
+            StringComparison.Ordinal);
+    }
 
     [Fact]
     public void RunnerUsesImmutableSaveAndExactMinimalModSet()
@@ -169,6 +248,26 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
             "selected_queue_continuation_retry_next_iteration",
             CommonRuntime,
             StringComparison.Ordinal);
+        Assert.Contains("$terminalBlockReasons", CommonRuntime,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "@($stepResults[$stepResults.Count - 1].block_reasons)",
+            CommonRuntime,
+            StringComparison.Ordinal);
+        Assert.Contains("$boundedContinuationPending", CommonRuntime,
+            StringComparison.Ordinal);
+        Assert.Contains("\"--max-queue-item-attempts\", \"12\"",
+            CommonRuntime, StringComparison.Ordinal);
+        Assert.Contains("max_queue_item_attempts_reached", CommonRuntime,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "[string]$execution.objective_continuation.kind",
+            CommonRuntime,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "[string]$lastStep.primitive_verification_status -eq \"verified\"",
+            CommonRuntime,
+            StringComparison.Ordinal);
         Assert.Contains("economy.buy_supplies", SeedAcquisitionRuntime,
             StringComparison.Ordinal);
         Assert.Contains("continuation.quantity", SeedAcquisitionRuntime,
@@ -190,6 +289,74 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
         Assert.DoesNotContain("addItemToInventory", SeedAcquisitionRuntime,
             StringComparison.Ordinal);
         Assert.DoesNotContain("Game1.player.Money", SeedAcquisitionRuntime,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "continuation.option_id\") == \"economy.buy_supplies\"",
+            SeedAcquisitionProofStages,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "IsStoryInterruptContinuation",
+            SeedAcquisitionProofStages,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "optionId == \"executor.advance_story_event\"",
+            SeedAcquisitionProofStages,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "VerifyTransitionStepBoundaries",
+            SeedAcquisitionProofStages,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "allowPurchaseMutation: true",
+            SeedAcquisitionProofStages,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "TryProjectExpectedResourceMutationInvariant",
+            SeedAcquisitionProofStages,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "IsVerifiedNativeStoryInterrupt",
+            SeedAcquisitionProofStages,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "runtime_priority_interrupt",
+            SeedAcquisitionProofStages,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "receiptDirectory + Path.DirectorySeparatorChar",
+            SeedAcquisitionProofStages,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "NormalizeMachineProjectionCache(value)",
+            PersistentBoundaryNormalization,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "machine.Remove(\"machine_probe_cache_tick\")",
+            PersistentBoundaryNormalization,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "calendar.Remove(\"time_of_day\")",
+            PersistentBoundaryNormalization,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "NormalizeIslandFieldOfficeRuntimeState(value)",
+            PersistentBoundaryNormalization,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"menu_clear\"",
+            PersistentBoundaryNormalization,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "NormalizeRemoteRewardRuntimeState(value)",
+            PersistentBoundaryNormalization,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "NormalizeRemoteQuestRuntimeState(value)",
+            PersistentBoundaryNormalization,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "NormalizeSpecialOrderBoardRuntimeState(value)",
+            PersistentBoundaryNormalization,
             StringComparison.Ordinal);
     }
 
@@ -269,6 +436,8 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
     [Fact]
     public void RunnerRetainsExactProofChainWithoutTrainingAuthorization()
     {
+        var proofChain = Runner + EvidenceFinalization;
+
         Assert.Contains("supporting_route_to_crop", Runner,
             StringComparison.Ordinal);
         Assert.Contains("supporting_route_to_sleep", Runner,
@@ -286,12 +455,109 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
         Assert.Contains("build-money-revenue-crop-native-lifecycle-proof",
             Runner, StringComparison.Ordinal);
         Assert.Contains("build-money-revenue-crop-output-retention-proof",
-            Runner, StringComparison.Ordinal);
+            proofChain, StringComparison.Ordinal);
         Assert.Contains(
             "build-money-revenue-crop-production-proof-checkpoint",
-            Runner, StringComparison.Ordinal);
+            proofChain, StringComparison.Ordinal);
+        Assert.Contains("New-MoneyCropOutputRetentionProofs", Runner,
+            StringComparison.Ordinal);
+        Assert.Contains("New-RuntimeCropSettlementCapacityProof", Runner,
+            StringComparison.Ordinal);
+        Assert.Contains("Invoke-RuntimeCropTerminalSettlement", Runner,
+            StringComparison.Ordinal);
+        Assert.Contains("executor.ship_inventory_item_to_bin",
+            TerminalSettlementRuntime, StringComparison.Ordinal);
+        Assert.Contains("name = \"target_location\"; value = \"Farm\"",
+            TerminalSettlementRuntime, StringComparison.Ordinal);
+        Assert.Contains("continuation.target_location",
+            TerminalSettlementRuntime, StringComparison.Ordinal);
+        Assert.Contains("terminal-settlement-home-ingress",
+            TerminalSettlementRuntime, StringComparison.Ordinal);
+        Assert.Contains("native_shipping_settlement",
+            TerminalSettlementRuntime, StringComparison.Ordinal);
+        Assert.Contains("before_snapshot_path = $currentPath",
+            TerminalSettlementRuntime, StringComparison.Ordinal);
+        Assert.DoesNotContain("before_snapshot_path = $sleep.BeforePath",
+            TerminalSettlementRuntime, StringComparison.Ordinal);
+        Assert.Contains(
+            "build-money-revenue-crop-terminal-settlement-proof",
+            TerminalSettlementRuntime, StringComparison.Ordinal);
+        Assert.Contains("Complete-MoneyCropProductionProofCheckpoint", Runner,
+            StringComparison.Ordinal);
+        Assert.Contains("-TerminalSettlementProofPaths", Runner,
+            StringComparison.Ordinal);
+        Assert.Contains("-SettlementCapacityProofPaths", Runner,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("api/v1/training/execute",
+            TerminalSettlementRuntime, StringComparison.Ordinal);
         Assert.DoesNotContain("formal_product_training_authorized = $true",
-            Runner, StringComparison.Ordinal);
+            proofChain + TerminalSettlementRuntime, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ExistingRunFinalizerReusesProofCodeWithoutLaunchingTheGame()
+    {
+        Assert.Contains("Read-MoneyCropNativeProductionInputManifest",
+            EvidenceFinalizer, StringComparison.Ordinal);
+        Assert.Contains("Assert-RuntimeFileIdentity -Path $runPlanPath",
+            EvidenceFinalizer, StringComparison.Ordinal);
+        Assert.Contains("Assert-MoneyCropNativeRunPlan",
+            EvidenceFinalizer, StringComparison.Ordinal);
+        Assert.Contains("New-MoneyCropOutputRetentionProofs",
+            EvidenceFinalizer, StringComparison.Ordinal);
+        Assert.Contains("Complete-MoneyCropProductionProofCheckpoint",
+            EvidenceFinalizer, StringComparison.Ordinal);
+        Assert.Contains("money_crop_native_evidence_finalization_summary.v1",
+            EvidenceFinalizer, StringComparison.Ordinal);
+        Assert.DoesNotContain("StardewModdingAPI", EvidenceFinalizer,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("Start-Process", EvidenceFinalizer,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("Invoke-RuntimeCropActionBatch",
+            EvidenceFinalizer, StringComparison.Ordinal);
+        Assert.DoesNotContain("formal_product_training_authorized = $true",
+            EvidenceFinalizer, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SharedFinalizerKeepsSettlementFragmentsExplicitlyEmptyByDefault()
+    {
+        Assert.Contains(
+            "money_revenue_crop_production_proof_fragment_index.v13",
+            EvidenceFinalization, StringComparison.Ordinal);
+        Assert.Contains(
+            "money_revenue_crop_production_proof_checkpoint_request.v12",
+            EvidenceFinalization, StringComparison.Ordinal);
+        Assert.Contains("[object[]] $TerminalSettlementProofPaths = @()",
+            EvidenceFinalization, StringComparison.Ordinal);
+        Assert.Contains("[object[]] $SettlementCapacityProofPaths = @()",
+            EvidenceFinalization, StringComparison.Ordinal);
+        Assert.Contains(
+            "[object[]] $SharedShippingSettlementProofPaths = @()",
+            EvidenceFinalization, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SeedReservationUsesTypedCoreCommitReplayForRunnerAndRecovery()
+    {
+        Assert.Contains("New-MoneyCropSeedReservationProof", Runner,
+            StringComparison.Ordinal);
+        Assert.Contains("New-MoneyCropSeedReservationProof",
+            EvidenceFinalizer, StringComparison.Ordinal);
+        Assert.Contains(
+            "build-money-revenue-crop-seed-reservation-commit-request",
+            EvidenceFinalization, StringComparison.Ordinal);
+        Assert.Contains(
+            "replay-money-revenue-crop-seed-reservation-commit",
+            EvidenceFinalization, StringComparison.Ordinal);
+        Assert.Contains("ReservationPortfolioLedgerService().Commit",
+            SeedReservationCommitBuilder, StringComparison.Ordinal);
+        Assert.Contains("MaterialSupplyProjection().Project",
+            SeedReservationCommitBuilder, StringComparison.Ordinal);
+        Assert.Contains("crop_seed_supply:", SeedReservationCommitBuilder,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("material_reservations =",
+            EvidenceFinalization, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -315,6 +581,47 @@ public sealed class MoneyCropNativeProductionRunnerSourceGuardTests
         Assert.Contains("Content.ReadAsStringAsync()", CommonRuntime,
             StringComparison.Ordinal);
         Assert.Contains("GetResponseStream", CommonRuntime,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void NativeReceiptAllowsSameTickStateChangingSubStepsOnly()
+    {
+        Assert.Contains(
+            "receipt.AfterGameTick <= receipt.BeforeGameTick",
+            QueueReceiptValidator,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "step.AfterGameTick < step.BeforeGameTick",
+            QueueReceiptValidator,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "receipt.AfterGameTick <= receipt.BeforeGameTick",
+            ContinuationReceiptValidator,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "step.AfterGameTick < step.BeforeGameTick",
+            ContinuationReceiptValidator,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "IsRecoverablePriorityStoryInterruptStep",
+            ContinuationReceiptValidator,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "movement_interrupted_by_story_event:",
+            ContinuationReceiptValidator,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "priority_story_event_interrupt",
+            ContinuationReceiptValidator,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "continuation.HasActiveObjectiveContinuation",
+            ContinuationReceiptValidator,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "var completionMarkerMatches = verifiedCompleted",
+            ContinuationReceiptValidator,
             StringComparison.Ordinal);
     }
 

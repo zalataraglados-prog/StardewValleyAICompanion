@@ -18,13 +18,14 @@ namespace StardewAI.Core.Training
                 ["crafting.cook_recipe"] = new[] { "route_connector_tile", "cook_recipe" },
                 ["crafting.forge_item"] = new[] { "route_connector_tile", "forge_item" },
                 ["tailoring.sew_item"] = new[] { "route_connector_tile", "tailor_item" },
-                ["buildings.construct"] = new[] { "route_connector_tile", "construct_building" },
+                ["buildings.construct"] = new[] { "route_connector_tile", "construct_building", "upgrade_building" },
                 ["buildings.change_skin"] = new[] { "route_connector_tile", "change_building_skin" },
                 ["buildings.paint"] = new[] { "route_connector_tile", "paint_building_region" },
                 ["farm.care_for_pets"] = new[] { "pet_daily_interaction", "fill_pet_bowl" },
                 ["museum.donate_items"] = new[] { "route_connector_tile", "donate_museum_item" },
                 ["island.field_office_donate"] = new[] { "route_connector_tile", "donate_field_office_piece" },
                 ["island.field_office_survey"] = new[] { "route_connector_tile", "answer_field_office_survey" },
+                ["island.complete_gourmand_request"] = new[] { "route_connector_tile", "advance_gourmand_request" },
                 ["minigame.play_calico_jack"] = new[] { "route_connector_tile", "play_calico_jack" },
                 ["minigame.play_slots"] = new[] { "route_connector_tile", "play_slots" },
                 ["minigame.play_crane_game"] = new[] { "route_connector_tile", "play_crane_game" },
@@ -77,8 +78,28 @@ namespace StardewAI.Core.Training
                 ["social.talk_npc"] = new[] { "route_connector_tile", "recovery_close_menu", "social_continuation_retry_wait", "social_talk_current" },
                 ["social.gift_npc"] = new[] { "route_connector_tile", "recovery_close_menu", "social_continuation_retry_wait", "social_gift_current" },
                 ["social.advance_partnership"] = new[] { "route_connector_tile", "recovery_close_menu", "social_continuation_retry_wait", "partnership_bouquet_current", "partnership_propose_marriage_current", "partnership_propose_roommate_current" },
-                ["fishing.catch_fish"] = new[] { "route_connector_tile", "catch_fish" },
-                ["fishing.collect_crab_pots"] = new[] { "route_connector_tile", "clear_obstacle_tile", "collect_crab_pot", "load_crab_pot_bait", "place_crab_pot" },
+                ["fishing.catch_fish"] = new[]
+                {
+                    "route_connector_tile", "catch_fish", "craft_rain_totem",
+                    "use_rain_totem", "clear_obstacle_tile",
+                    "clear_farm_resource_clump", "ship_inventory_item_to_bin",
+                    "clear_current_location_resource_clump",
+                    "collect_machine_output_tile", "load_machine_input_tile",
+                    "collect_spawned_object", "harvest_bush", "harvest_crop_tile", "till_soil_tile", "crack_geode",
+                    "answer_field_office_survey", "craft_machine_item",
+                    "place_machine_item", "construct_building",
+                    "upgrade_building", "animal_purchase_select_service",
+                    "animal_purchase_navigate_location_page",
+                    "animal_purchase_select_location", "purchase_animal",
+                    "toggle_animal_door", "submit_tool_upgrade",
+                    "claim_tool_upgrade", "interact_endpoint",
+                    "advance_story_event_automatic", "advance_story_event_choice",
+                    "advance_story_event_minigame_passive", "advance_story_event_minigame_choice",
+                    "mailbox_approach", "open_mailbox_letter", "mail_input_wait", "process_open_letter",
+                    "recovery_close_menu", "recovery_resume_sleep_prompt",
+                    "recovery_sleep_immediately", "recovery_return_home", "recovery_sleep_before_collapse"
+                },
+                ["fishing.collect_crab_pots"] = new[] { "route_connector_tile", "clear_obstacle_tile", "interact_endpoint", "buy_shop_item", "collect_crab_pot", "load_crab_pot_bait", "place_crab_pot", "craft_crab_pot", "recovery_close_menu", "recovery_resume_sleep_prompt", "recovery_sleep_immediately", "recovery_return_home", "recovery_sleep_before_collapse" },
                 ["fishing.service_fish_ponds"] = new[] { "collect_fish_pond_output", "complete_fish_pond_request" },
                 ["fishing.manage_fish_pond"] = new[] { "manage_fish_pond" },
                 ["housing.advance_farmhouse"] = new[] { "purchase_farmhouse_upgrade", "purchase_farmhouse_expansion" },
@@ -104,6 +125,7 @@ namespace StardewAI.Core.Training
                 ["player.customize"] = new[] { "route_connector_tile", "customize_player" },
                 ["processing.crack_geode"] = new[] { "route_connector_tile", "crack_geode" },
                 ["rewards.claim_pot_of_gold"] = new[] { "claim_pot_of_gold" },
+                ["rewards.claim_starter_gift"] = new[] { "claim_starter_gift" },
                 ["mining.choose_dwarf_statue_power"] = new[] { "choose_dwarf_statue_power" },
                 ["rewards.claim_statue_blessing"] = new[] { "claim_statue_blessing" },
                 ["world.rotate_house_plant"] = new[] { "rotate_house_plant" },
@@ -162,6 +184,11 @@ namespace StardewAI.Core.Training
             if (candidate.Kind == "purchase_animal")
             {
                 return PurchaseAnimalSteps(candidate);
+            }
+
+            if (candidate.Kind == "toggle_animal_door")
+            {
+                return OpenAnimalDoorSteps(candidate);
             }
 
             if (candidate.Kind == "manage_animal")
@@ -285,6 +312,11 @@ namespace StardewAI.Core.Training
             if (candidate.Kind == "harvest_crop_tile")
             {
                 return HarvestCropTileSteps(candidate);
+            }
+
+            if (candidate.Kind == "till_soil_tile")
+            {
+                return TillSoilTileSteps(candidate);
             }
 
             if (candidate.Kind == "harvest_giant_crop_tile")
@@ -495,6 +527,14 @@ namespace StardewAI.Core.Training
                 return ClaimPotOfGoldSteps(candidate);
             }
 
+            if (candidate.Kind == "claim_starter_gift" &&
+                OptionCandidateCompilerKinds["rewards.claim_starter_gift"].Contains(
+                    candidate.Kind,
+                    StringComparer.Ordinal))
+            {
+                return ClaimStarterGiftSteps(candidate);
+            }
+
             if (candidate.Kind == "choose_dwarf_statue_power" &&
                 OptionCandidateCompilerKinds["mining.choose_dwarf_statue_power"].Contains(
                     candidate.Kind,
@@ -634,6 +674,11 @@ namespace StardewAI.Core.Training
                 return FieldOfficeSurveySteps(candidate);
             }
 
+            if (candidate.Kind == "advance_gourmand_request")
+            {
+                return GourmandRequestSteps(candidate);
+            }
+
             if (candidate.Kind == "play_calico_jack")
             {
                 return CalicoJackSteps(candidate);
@@ -751,12 +796,37 @@ namespace StardewAI.Core.Training
                 return CraftQuestItemSteps(candidate);
             }
 
+            if (candidate.Kind == "craft_crab_pot")
+            {
+                return CraftCrabPotSteps(candidate);
+            }
+
+            if (candidate.Kind == "craft_rain_totem")
+            {
+                return CraftRainTotemSteps(candidate);
+            }
+
+            if (candidate.Kind == "submit_tool_upgrade")
+            {
+                return ToolUpgradeSteps(candidate);
+            }
+
+            if (candidate.Kind == "claim_tool_upgrade")
+            {
+                return ToolUpgradeSteps(candidate);
+            }
+
+            if (candidate.Kind == "use_rain_totem")
+            {
+                return UseRainTotemSteps(candidate);
+            }
+
             if (candidate.Kind == "construct_quest_building")
             {
                 return ConstructQuestBuildingSteps(candidate);
             }
 
-            if (candidate.Kind == "construct_building")
+            if (candidate.Kind is "construct_building" or "upgrade_building")
             {
                 return ConstructBuildingSteps(candidate);
             }
@@ -810,6 +880,11 @@ namespace StardewAI.Core.Training
                     StringComparer.Ordinal))
             {
                 return ClearGreenRainResourceClumpSteps(candidate);
+            }
+
+            if (candidate.Kind == "clear_current_location_resource_clump")
+            {
+                return ClearCurrentLocationResourceClumpSteps(candidate);
             }
 
             if (candidate.Kind == "plant_seed_tile")

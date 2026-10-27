@@ -46,7 +46,7 @@ public sealed class CurrentStageOneCollectionTeacherFrontier
 
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "The four Stage 1 collection sets share one exact current-candidate membership contract. One candidate executes once and receives every exact requirement credit it advances. Bundle alternatives remain mutually exclusive within their remaining slots. Learner rank, score, model score and expected reward are excluded from this contract; a separate deterministic Teacher preference step is still required before preference labels may be emitted.";
+        "The four Stage 1 collection sets share one exact current-candidate membership contract. One candidate executes once and receives at most one exact credit in each selection group while retaining independent cross-group credits. Bundle alternatives remain mutually exclusive within their remaining slots. Learner rank, score, model score and expected reward are excluded from this contract; a separate deterministic Teacher preference step is still required before preference labels may be emitted.";
 }
 
 public sealed class CurrentCollectionCandidateSelectionContract
@@ -64,7 +64,7 @@ public sealed class CurrentCollectionCandidateSelectionContract
 
     [JsonPropertyName("shared_candidate_execution_semantics")]
     public string SharedCandidateExecutionSemantics { get; set; } =
-        "execute_once_and_credit_all_exact_bindings";
+        "execute_once_and_credit_at_most_one_exact_binding_per_selection_group";
 
     [JsonPropertyName("unavailable_candidate_semantics")]
     public string UnavailableCandidateSemantics { get; set; } =

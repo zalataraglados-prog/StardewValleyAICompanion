@@ -20,7 +20,7 @@ param(
     [string] $Goal = "grandpa_max_score_year3",
     [string] $KnowledgeDictionaryVersion =
         "game-1.6.15-20260723T093543Z-linux-v24",
-    [ValidateRange(1, 16)]
+    [ValidateRange(1, 64)]
     [int] $MaxEpisodes = 4,
     [int] $BackendPort = 8795,
     [int] $ProductPort = 8768,
@@ -84,9 +84,12 @@ function Wait-World([string] $SnapshotUrl, [int] $Seconds) {
     throw "Timed out waiting for the isolated Teacher save."
 }
 
-function Invoke-Bootstrap([string[]] $Arguments) {
+function Invoke-Bootstrap(
+    [string[]] $Arguments,
+    [int[]] $AllowedExitCodes = @(0)
+) {
     & dotnet $script:bootstrapDll @Arguments | Out-Null
-    if ($LASTEXITCODE -ne 0) {
+    if ($LASTEXITCODE -notin $AllowedExitCodes) {
         throw "Goal-conditioned bootstrap failed: $($Arguments[0])"
     }
 }
@@ -117,6 +120,30 @@ function New-TeacherPreferenceArtifacts(
         throw "Backend ingest returned no state hash."
     }
 
+    $intentsPath = Join-Path $ArtifactDirectory `
+        ("master-angler-target-date-intents" + $Suffix + ".json")
+    Invoke-Bootstrap `
+        -Arguments @(
+            "build-master-angler-target-date-intents",
+            "--windows", $MasterAnglerWindowsPath,
+            "--snapshot", $beforeSnapshotPath,
+            "--timing-calibration", $RouteTimingCalibrationPath,
+            "--output", $intentsPath
+        ) `
+        -AllowedExitCodes @(0, 2)
+    $intents = Get-Content -LiteralPath $intentsPath -Raw |
+        ConvertFrom-Json
+    $additionalCandidates = @(
+        @($intents.candidates) + @($intents.weather_supply_candidates) |
+            Where-Object { $null -ne $_ } |
+            ForEach-Object {
+                [ordered]@{
+                    option_id = [string]$_.option_id
+                    parameters = @($_.parameters)
+                }
+            }
+    )
+
     $rankRequest = [ordered]@{
         goal_id = $GoalId
         execution_mode = "training_singleplayer"
@@ -127,6 +154,7 @@ function New-TeacherPreferenceArtifacts(
         state_hash = $stateHash
         candidate_option_ids = @()
         candidates = @()
+        additional_candidates = $additionalCandidates
         include_blocked_options = $false
     } | ConvertTo-Json -Depth 16
     $rankResponse = Invoke-WebRequest -UseBasicParsing -Method Post `
@@ -136,15 +164,6 @@ function New-TeacherPreferenceArtifacts(
         ("ranking" + $Suffix + ".json")
     Write-Utf8Json $rankingPath $rankResponse.Content
 
-    $intentsPath = Join-Path $ArtifactDirectory `
-        ("master-angler-target-date-intents" + $Suffix + ".json")
-    Invoke-Bootstrap @(
-        "build-master-angler-target-date-intents",
-        "--windows", $MasterAnglerWindowsPath,
-        "--snapshot", $beforeSnapshotPath,
-        "--timing-calibration", $RouteTimingCalibrationPath,
-        "--output", $intentsPath
-    )
     $preferencePath = Join-Path $ArtifactDirectory `
         ("teacher-preference" + $Suffix + ".json")
     Invoke-Bootstrap @(
@@ -209,8 +228,10 @@ if ($null -ne (Get-Process -Name "StardewModdingAPI" `
 $artifactDirectory = Join-Path ([IO.Path]::GetFullPath($OutputRoot)) $RunId
 $journalRoot = Join-Path $artifactDirectory "product-journal"
 New-Item -ItemType Directory -Path $artifactDirectory | Out-Null
+$loopBuildDirectory = Join-Path $artifactDirectory "live-training-loop-build"
 $isolatedSavesPath = Join-Path $artifactDirectory "isolated-saves"
 $isolatedModsPath = Join-Path $artifactDirectory "smapi-mods"
+New-Item -ItemType Directory -Path $loopBuildDirectory | Out-Null
 New-Item -ItemType Directory -Path $isolatedSavesPath | Out-Null
 New-Item -ItemType Directory -Path $isolatedModsPath | Out-Null
 Copy-Item -LiteralPath (Join-Path $savesFullPath $SaveSlot) `
@@ -237,7 +258,7 @@ if ($LASTEXITCODE -ne 0) { throw "Backend Release build failed." }
 if ($LASTEXITCODE -ne 0) { throw "ProductExecutor Release build failed." }
 & dotnet build (Join-Path $ProjectRoot `
     "tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj") `
-    -c Release --nologo --no-restore | Out-Null
+    -c Release --nologo --no-restore --output $loopBuildDirectory | Out-Null
 if ($LASTEXITCODE -ne 0) { throw "LiveTrainingLoop Release build failed." }
 & dotnet build (Join-Path $ProjectRoot `
     "experiments\StardewAI.GoalConditionedBootstrap\StardewAI.GoalConditionedBootstrap.csproj") `
@@ -252,8 +273,7 @@ $backendDll = Join-Path $ProjectRoot `
     "src\StardewAI.Backend\bin\Release\net8.0\StardewAI.Backend.dll"
 $productDll = Join-Path $ProjectRoot `
     "tools\StardewAI.ProductExecutor\bin\Release\net8.0\StardewAI.ProductExecutor.dll"
-$loopDll = Join-Path $ProjectRoot `
-    "tools\StardewAI.LiveTrainingLoop\bin\Release\net8.0\StardewAI.LiveTrainingLoop.dll"
+$loopDll = Join-Path $loopBuildDirectory "StardewAI.LiveTrainingLoop.dll"
 $script:bootstrapDll = Join-Path $ProjectRoot `
     "experiments\StardewAI.GoalConditionedBootstrap\bin\Release\net8.0\StardewAI.GoalConditionedBootstrap.dll"
 $policyDatasetDll = Join-Path $ProjectRoot `
@@ -330,6 +350,7 @@ try {
         "teacher-policy-decision-trajectories.jsonl"
     $episodeSummaries = @()
     $admittedEpisodeCount = 0
+    $verifiedEvidenceOnlyEpisodeCount = 0
     $firstSourceStateHash = ""
     $stopReason = "max_episodes_reached"
     for ($episodeOrdinal = 1;
@@ -433,6 +454,8 @@ try {
             ConvertFrom-Json
         $teacherRowAdmitted = $admission.status -eq "ready" -and
             [bool]$admission.teacher_training_row_eligible
+        $verifiedEvidenceOnly = $admission.status -eq
+            "verified_evidence_only_policy_option_not_admitted"
         if ($teacherRowAdmitted) {
             Invoke-Bootstrap @($admissionArguments + @(
                 "--dataset-output", $episodeDatasetPath
@@ -444,6 +467,8 @@ try {
             Add-Utf8JsonLine $teacherDatasetPath `
                 (Get-Content -LiteralPath $episodeDatasetPath -Raw)
             $admittedEpisodeCount++
+        } elseif ($verifiedEvidenceOnly) {
+            $verifiedEvidenceOnlyEpisodeCount++
         } elseif ($admission.status -ne
                 "blocked_exact_requirement_transition_missing") {
             throw "Teacher receipt admission failed for $episodeName with " +
@@ -468,6 +493,18 @@ try {
                 @($admission.verified_requirement_transitions).Count
             receipt_status = [string]$admission.status
             teacher_row_admitted = $teacherRowAdmitted
+        }
+        $afterSnapshot = Get-Content -LiteralPath $afterSnapshotPath -Raw |
+            ConvertFrom-Json
+        $rodInventory = $afterSnapshot.state.fishing.rod_inventory
+        $bambooPoleOwned = $rodInventory.status -in @("available", "derived") -and
+            @($rodInventory.value | Where-Object {
+                [string]$_.qualified_item_id -eq "(T)BambooPole" -or
+                [string]$_.item_id -eq "BambooPole"
+            }).Count -gt 0
+        if ($bambooPoleOwned) {
+            $stopReason = "native_bamboo_pole_observed_in_transparent_inventory"
+            break
         }
     }
 
@@ -502,7 +539,7 @@ try {
     }
     $summary = [ordered]@{
         schema_version = `
-            "stardewai.current_stage_one_collection_teacher_product_rollout.v2"
+            "stardewai.current_stage_one_collection_teacher_product_rollout.v3"
         status = "passed"
         run_id = $RunId
         source_save_path = $saveFile
@@ -511,6 +548,8 @@ try {
         requested_max_episodes = $MaxEpisodes
         executed_episode_count = $episodeSummaries.Count
         admitted_episode_count = $admittedEpisodeCount
+        verified_evidence_only_episode_count = `
+            $verifiedEvidenceOnlyEpisodeCount
         stop_reason = $stopReason
         episodes = $episodeSummaries
         teacher_dataset_path = $teacherDatasetPath

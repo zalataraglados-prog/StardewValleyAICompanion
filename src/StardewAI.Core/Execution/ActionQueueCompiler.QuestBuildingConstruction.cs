@@ -18,15 +18,20 @@ public sealed partial class ActionQueueCompiler
         var location = ReadParameter(action, "placement_location_id");
         var x = ReadIntParameter(action, "building_tile_x");
         var y = ReadIntParameter(action, "building_tile_y");
+        var projectKind = ReadParameter(action, "construction_project_kind") == "upgrade" ? "upgrade" : "construction";
+        var stepKind = projectKind == "upgrade" ? "upgrade_building" : "construct_building";
         return string.IsNullOrWhiteSpace(type) || string.IsNullOrWhiteSpace(location) || !x.HasValue || !y.HasValue
             ? Array.Empty<CompiledActionStep>()
             : new[]
             {
                 Step(
-                    "construct_building",
+                    stepKind,
                     "building:" + type + ":" + location + ":" + x + "," + y,
-                    "locations[" + location + "].buildings[" + type + "].days_of_construction_left=" +
-                    ReadParameter(action, "construction_build_days") +
+                    (projectKind == "upgrade"
+                        ? "locations[" + location + "].buildings[" + x + "," + y + "].upgrade_name=" + type +
+                          ";days_until_upgrade=" + Math.Max(ReadIntParameter(action, "construction_build_days") ?? 0, 1)
+                        : "locations[" + location + "].buildings[" + type + "].days_of_construction_left=" +
+                          ReadParameter(action, "construction_build_days")) +
                     ";fresh_snapshot_replan_required=true",
                     600)
             };
@@ -121,6 +126,11 @@ public sealed partial class ActionQueueCompiler
         var type = ReadParameter(action, "construction_building_type");
         var location = ReadParameter(action, "placement_location_id");
         var reason = ReadParameter(action, "construction_reason");
+        var projectKind = ReadParameter(action, "construction_project_kind");
+        if (string.IsNullOrWhiteSpace(projectKind))
+        {
+            projectKind = "construction";
+        }
         var row = GeneralBuildingConstructionRow(snapshot, type, location);
         if (string.IsNullOrWhiteSpace(type) || string.IsNullOrWhiteSpace(location) || string.IsNullOrWhiteSpace(reason))
         {
@@ -134,7 +144,15 @@ public sealed partial class ActionQueueCompiler
         var materials = row.Value.TryGetProperty("build_materials", out var materialRows)
             ? materialRows.GetRawText()
             : "[]";
-        if (ReadString(row.Value, "action_status") != "ready_for_native_construction" ||
+        var expectedStatus = projectKind == "upgrade" ? "ready_for_native_upgrade" : "ready_for_native_construction";
+        var rowProjectKind = ReadString(row.Value, "project_kind");
+        if (string.IsNullOrWhiteSpace(rowProjectKind))
+        {
+            rowProjectKind = "construction";
+        }
+        if (ReadString(row.Value, "action_status") != expectedStatus ||
+            projectKind != rowProjectKind ||
+            ReadParameter(action, "construction_upgrade_from_building_type") != ReadString(row.Value, "upgrade_from_building_type") ||
             ReadParameter(action, "project_id") != type ||
             ReadParameter(action, "construction_builder") != ReadString(row.Value, "builder") ||
             ReadIntParameter(action, "construction_build_days") != ReadInt(row.Value, "build_days") ||

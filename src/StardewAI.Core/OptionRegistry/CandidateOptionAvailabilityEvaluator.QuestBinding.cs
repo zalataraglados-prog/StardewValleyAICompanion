@@ -81,6 +81,11 @@ namespace StardewAI.Core.OptionRegistry
                         commitmentLedger);
                 case "go_to_location":
                     return new[] { BindQuestLocationRoute(snapshot, candidate, candidate.RequiredTargetLocation) };
+                case "trigger_location_event":
+                    return new[]
+                    {
+                        BindBasicQuestLocationEventRoute(snapshot, candidate)
+                    };
                 case "deliver_to_npc":
                     return new[] { BindQuestNpcCandidate(snapshot, candidate, candidate.RequiredTargetNpc, "offer_item", candidate.RequiredItemId, null, candidate.RequiredTargetCount) };
                 case "return_to_npc":
@@ -532,10 +537,86 @@ namespace StardewAI.Core.OptionRegistry
                 : new[] { BlockedQuestCandidate(snapshot, quest, "special_order_matching_gift_not_available") };
         }
 
+        private EventCandidate BindBasicQuestLocationEventRoute(
+            SnapshotEnvelope snapshot,
+            QuestCandidateRef quest)
+        {
+            if (!VanillaBasicQuestEventRouteCatalog.TryGet(
+                    quest.QuestId,
+                    quest.RuntimeType,
+                    out var route) ||
+                !string.Equals(
+                    quest.RequiredTargetLocation,
+                    route.TargetLocation,
+                    StringComparison.Ordinal))
+            {
+                return BlockedQuestCandidate(
+                    snapshot,
+                    quest,
+                    "basic_quest_event_route_authority_missing");
+            }
+
+            var currentTime = ReadStateFieldInt(snapshot, "time", "time");
+            if (currentTime < route.StartTimeInclusive ||
+                currentTime > route.EndTimeInclusive)
+            {
+                return BlockedQuestCandidate(
+                    snapshot,
+                    quest,
+                    "basic_quest_event_time_window_closed:" + currentTime);
+            }
+
+            var mailReceived = ReadStateFieldValue(
+                snapshot,
+                "quests",
+                "mail_received");
+            if (!mailReceived.HasValue ||
+                mailReceived.Value.ValueKind != JsonValueKind.Array ||
+                !mailReceived.Value.EnumerateArray().Any(value =>
+                    value.ValueKind == JsonValueKind.String &&
+                    string.Equals(
+                        value.GetString(),
+                        route.RequiredMailId,
+                        StringComparison.Ordinal)))
+            {
+                return BlockedQuestCandidate(
+                    snapshot,
+                    quest,
+                    "basic_quest_event_required_mail_missing:" +
+                    route.RequiredMailId);
+            }
+
+            return BindQuestLocationRoute(
+                snapshot,
+                quest,
+                route.TargetLocation,
+                new[]
+                {
+                    Parameter("quest_event_id", route.EventId),
+                    Parameter(
+                        "quest_event_required_mail_id",
+                        route.RequiredMailId),
+                    Parameter(
+                        "quest_event_start_time_inclusive",
+                        route.StartTimeInclusive.ToString(
+                            CultureInfo.InvariantCulture)),
+                    Parameter(
+                        "quest_event_end_time_inclusive",
+                        route.EndTimeInclusive.ToString(
+                            CultureInfo.InvariantCulture)),
+                    Parameter("quest_event_source_asset", route.SourceAsset),
+                    Parameter("quest_event_source_key", route.SourceKey),
+                    Parameter(
+                        "quest_event_script_sha256",
+                        route.ScriptSha256)
+                });
+        }
+
         private EventCandidate BindQuestLocationRoute(
             SnapshotEnvelope snapshot,
             QuestCandidateRef quest,
-            string targetLocation)
+            string targetLocation,
+            IEnumerable<SmallModelActionParameter>? authorityParameters = null)
         {
             var currentLocation = ReadStateFieldString(snapshot, "player", "location_id");
             if (string.IsNullOrWhiteSpace(targetLocation))
@@ -556,14 +637,20 @@ namespace StardewAI.Core.OptionRegistry
                 return BlockedQuestCandidate(snapshot, quest, "quest_target_location_route_unavailable:" + targetLocation);
             }
 
+            var parameters = new List<SmallModelActionParameter>
+            {
+                Parameter("quest_target_location", targetLocation),
+                Parameter(
+                    "quest_route_remaining_connector_count",
+                    plan.Path.Length.ToString(CultureInfo.InvariantCulture))
+            };
+            if (authorityParameters is not null)
+                parameters.AddRange(authorityParameters);
+
             return AttachQuest(
                 plan.FirstActionCandidate,
                 quest,
-                new[]
-                {
-                    Parameter("quest_target_location", targetLocation),
-                    Parameter("quest_route_remaining_connector_count", plan.Path.Length.ToString(CultureInfo.InvariantCulture))
-                });
+                parameters);
         }
 
         private EventCandidate BindQuestNpcCandidate(

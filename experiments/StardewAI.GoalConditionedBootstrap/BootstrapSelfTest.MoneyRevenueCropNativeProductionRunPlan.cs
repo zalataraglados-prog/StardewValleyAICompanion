@@ -17,7 +17,12 @@ internal static partial class BootstrapSelfTest
                 {
                     new MoneyRevenueCropPlantingTile(5, 6),
                     new MoneyRevenueCropPlantingTile(6, 6)
-                }),
+                },
+                new[]
+                {
+                    new MoneyRevenueCropPlantingTile(5, 7)
+                },
+                new MoneyRevenueCropPlantingTile(4, 7)),
             new MoneyRevenueCropNativeProductionLayoutIntent(
                 plan.Commitments[1].CommitmentId,
                 "Farm",
@@ -26,7 +31,9 @@ internal static partial class BootstrapSelfTest
                     new MoneyRevenueCropPlantingTile(7, 6),
                     new MoneyRevenueCropPlantingTile(8, 6),
                     new MoneyRevenueCropPlantingTile(9, 6)
-                })
+                },
+                null,
+                new MoneyRevenueCropPlantingTile(10, 7))
         };
         Write(requestPath,
             new MoneyRevenueCropNativeProductionRunPlanRequest
@@ -73,6 +80,10 @@ internal static partial class BootstrapSelfTest
                 runPlan.LastTotalDay == expectedLastDay &&
                 runPlan.DayCount == expectedLastDay - expectedFirstDay + 1 &&
                 runPlan.ActionCount == expectedActionCount &&
+                runPlan.Days.SelectMany(value => value.ActionBatches)
+                    .SelectMany(value => value.Tiles)
+                    .All(value => value !=
+                        new MoneyRevenueCropPlantingTile(5, 7)) &&
                 runPlan.SeedAcquisitionCount ==
                     expectedSeedAcquisitions.Length &&
                 runPlan.SeedAcquisitions.Select(value =>

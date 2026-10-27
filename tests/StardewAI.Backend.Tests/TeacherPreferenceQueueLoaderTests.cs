@@ -104,7 +104,9 @@ public sealed class TeacherPreferenceQueueLoaderTests
     public void RejectsQueueBeyondTeacherEvidenceBound()
     {
         var queue = Queue();
-        for (var index = 2; index <= 9; index++)
+        for (var index = 2;
+             index <= TeacherEvidenceRolloutLimits.MaxQueueItems + 1;
+             index++)
         {
             var item = JsonNode.Parse(queue["items"]![0]!.ToJsonString())!
                 .AsObject();

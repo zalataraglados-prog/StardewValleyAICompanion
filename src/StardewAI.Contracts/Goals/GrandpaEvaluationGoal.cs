@@ -8,8 +8,18 @@ namespace StardewAI.Contracts.Goals
         public const string SchemaVersion = "grandpa_evaluation_goal.v2";
         public const string GoalId = "goal.grandpa_max_score_year3";
         public const string StrategicGoal = "grandpa_max_score_year3";
+        public const string MaximumScoreEvidenceGoal = "grandpa.maximum_21";
         public const int FourCandleScore = 12;
         public const int MaximumRuleScore = 21;
+
+        public static bool IsMaximumScoreGoal(string? goalId)
+        {
+            var candidate = (goalId ?? string.Empty).Trim();
+            return string.Equals(candidate, GoalId, StringComparison.Ordinal) ||
+                   string.Equals(candidate, StrategicGoal, StringComparison.Ordinal) ||
+                   string.Equals(candidate, MaximumScoreEvidenceGoal, StringComparison.Ordinal);
+        }
+
     }
 
     public sealed class GrandpaEvaluationGoalReport

@@ -44,10 +44,29 @@ public static partial class MoneyRevenueCropSitePreparationPlanBuilder
 
         if (observedStatus == "ready_to_till")
         {
+            var tillCandidate = SingleTileCandidate(
+                tillCandidates,
+                tile.TileX,
+                tile.TileY);
+            var accessClearance = SelectAccessClearanceCandidate(
+                tile,
+                tillCandidate,
+                clearCandidates,
+                clumpCandidates);
+            if (accessClearance.HasValue)
+            {
+                return BoundStep(
+                    tile,
+                    observedStatus,
+                    accessClearance.Value.Candidate,
+                    accessClearance.Value.OptionId,
+                    "clear_access_then_fresh_snapshot_rebind",
+                    "fresh_snapshot_rebind_executor.till_soil");
+            }
             return BoundStep(
                 tile,
                 observedStatus,
-                SingleTileCandidate(tillCandidates, tile.TileX, tile.TileY),
+                tillCandidate,
                 "executor.till_soil",
                 "direct_till_ready",
                 "fresh_snapshot_then_planting_layout_proof");
@@ -175,6 +194,60 @@ public static partial class MoneyRevenueCropSitePreparationPlanBuilder
                 candidate.TileX == x && candidate.TileY == y)
             .ToArray();
         return matches.Length == 1 ? matches[0] : null;
+    }
+
+    private static (string OptionId, EventCandidate Candidate)?
+        SelectAccessClearanceCandidate(
+            MoneyRevenueCropPlantingTile tile,
+            EventCandidate? tillCandidate,
+            EventCandidate[] clearCandidates,
+            EventCandidate[] clumpCandidates)
+    {
+        if (tillCandidate is null || tillCandidate.Available ||
+            tillCandidate.BlockReasons.Length == 0 ||
+            tillCandidate.BlockReasons.Any(reason => reason !=
+                "till_soil_no_adjacent_route_stand_tile"))
+        {
+            return null;
+        }
+
+        var adjacent = new HashSet<(int X, int Y)>
+        {
+            (tile.TileX + 1, tile.TileY),
+            (tile.TileX - 1, tile.TileY),
+            (tile.TileX, tile.TileY + 1),
+            (tile.TileX, tile.TileY - 1)
+        };
+        return clearCandidates
+            .Where(candidate =>
+                candidate.Available &&
+                candidate.TileX.HasValue &&
+                candidate.TileY.HasValue &&
+                adjacent.Contains((
+                    candidate.TileX.Value,
+                    candidate.TileY.Value)))
+            .Select(candidate => (
+                OptionId: "executor.clear_obstacle",
+                Candidate: candidate))
+            .Concat(clumpCandidates
+                .Where(candidate =>
+                    candidate.Available &&
+                    adjacent.Any(value => CandidateClumpContains(
+                        candidate,
+                        value.X,
+                        value.Y)))
+                .Select(candidate => (
+                    OptionId: "executor.break_farm_resource_clump",
+                    Candidate: candidate)))
+            .GroupBy(value => value.Candidate.CandidateId, StringComparer.Ordinal)
+            .Select(group => group.First())
+            .OrderBy(value => value.Candidate.EstimatedTicks)
+            .ThenBy(value => value.Candidate.EnergyCost)
+            .ThenBy(value => value.Candidate.TileY)
+            .ThenBy(value => value.Candidate.TileX)
+            .ThenBy(value => value.Candidate.CandidateId, StringComparer.Ordinal)
+            .Select(value => ((string OptionId, EventCandidate Candidate)?)value)
+            .FirstOrDefault();
     }
 
     private static bool CandidateClumpContains(

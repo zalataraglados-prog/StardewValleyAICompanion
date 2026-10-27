@@ -16,11 +16,13 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
                 fullRequestPath,
                 "Money Revenue crop native-lifecycle proof request");
         Require(request.SchemaVersion ==
-                    "money_revenue_crop_native_lifecycle_proof_request.v3" &&
+                    "money_revenue_crop_native_lifecycle_proof_request.v4" &&
                 !string.IsNullOrWhiteSpace(request.CommitmentId) &&
                 request.Transitions is { Length: > 0 } &&
+                request.CheckpointResumes is not null &&
                 !request.FormalProductTrainingAuthorized,
             "Money Revenue crop native-lifecycle proof request is invalid.");
+        var checkpointResumes = request.CheckpointResumes!;
 
         var planPath = RequiredFile(
             request.CropProductionPlanPath,
@@ -99,11 +101,12 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         Require(SamePath(primaryContext.LayoutPath, layoutPath),
             "Money Revenue crop lifecycle primary layout drifted from aggregate capacity support.");
         var transitions = request.Transitions.Select(LoadTransition).ToArray();
-        ValidateTransitionChain(
+        var checkpointResumeProofs = ValidateTransitionChain(
             transitions,
             sourceSnapshot,
             contexts,
-            capacity);
+            capacity,
+            checkpointResumes);
 
         var transitionProofs = transitions.Select(value =>
             new MoneyRevenueCropNativeLifecycleTransitionProof(
@@ -170,6 +173,8 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
                 transitions,
                 HarvestOption),
             Transitions = transitionProofs,
+            CheckpointResumeCount = checkpointResumeProofs.Length,
+            CheckpointResumes = checkpointResumeProofs,
             NativeCropLifecycleVerified = true,
             FormalProductTrainingAuthorized = false
         };

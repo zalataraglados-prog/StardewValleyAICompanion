@@ -86,6 +86,41 @@ public sealed partial class NativeShippingSourceGuardTests
     }
 
     [Fact]
+    public void MagicWarpUsesTransparentTouchConnectorAndNativeWalkOnTrigger()
+    {
+        var bridgeSource = ShopAccessReadAdapterSources.All;
+        Assert.Contains("kind = \"magic_warp\"", bridgeSource, StringComparison.Ordinal);
+        Assert.Contains("MagicWarp", bridgeSource, StringComparison.Ordinal);
+        Assert.Contains("Back.TouchAction", bridgeSource, StringComparison.Ordinal);
+
+        var runtimeSource = RuntimeHarnessSource;
+        var connectorKinds = Slice(
+            runtimeSource,
+            "private static bool IsActionConnectorKind",
+            "private static bool IsConnectorActionTypeWhitelisted");
+        Assert.Contains("magic_warp", connectorKinds, StringComparison.Ordinal);
+        Assert.Contains("IsStepOntoConnectorKind", connectorKinds, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.warpFarmer", connectorKinds, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void WillyBackRoomUsesSharedNativeActionConnector()
+    {
+        var bridgeSource = ShopAccessReadAdapterSources.All;
+        Assert.Contains("WarpBoatTunnel", bridgeSource, StringComparison.Ordinal);
+        Assert.Contains("willyBackRoomInvitation", bridgeSource, StringComparison.Ordinal);
+        Assert.Contains("target_location = \"BoatTunnel\"", bridgeSource, StringComparison.Ordinal);
+        Assert.Contains("target_x = (int?)6", bridgeSource, StringComparison.Ordinal);
+        Assert.Contains("target_y = (int?)12", bridgeSource, StringComparison.Ordinal);
+
+        var runtimeSource = RuntimeHarnessSource;
+        Assert.Contains("connector_boat_tunnel_source_location_mismatch", runtimeSource, StringComparison.Ordinal);
+        Assert.Contains("connector_boat_tunnel_invitation_missing", runtimeSource, StringComparison.Ordinal);
+        Assert.Contains("IsActionWarpConnectorActionType", runtimeSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.warpFarmer(\"BoatTunnel\"", runtimeSource, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void SmokeScriptResolvesFarmhouseBuildingDoorConnector()
     {
         var script = ShippingSmokeSource;

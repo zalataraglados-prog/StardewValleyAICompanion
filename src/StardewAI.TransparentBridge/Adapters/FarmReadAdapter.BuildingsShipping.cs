@@ -76,6 +76,13 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
         var constructionLeft = building.daysOfConstructionLeft.Value;
         var locked = building.daysOfConstructionLeft.Value > 0;
         var underConstruction = building.isUnderConstruction();
+        var buildingData = building.GetData();
+        var animalDoorPresent = buildingData is not null &&
+            buildingData.AnimalDoor.X >= 0 && buildingData.AnimalDoor.Y >= 0 &&
+            buildingData.AnimalDoor.Width > 0 && buildingData.AnimalDoor.Height > 0;
+        var animalDoorRect = animalDoorPresent
+            ? building.getRectForAnimalDoor(buildingData)
+            : Rectangle.Empty;
 
         object doorData;
         if (humanDoor.X >= 0 && humanDoor.Y >= 0)
@@ -117,6 +124,8 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             tiles_wide = building.tilesWide.Value,
             tiles_high = building.tilesHigh.Value,
             days_of_construction_left = constructionLeft,
+            upgrade_name = building.upgradeName.Value ?? string.Empty,
+            days_until_upgrade = building.daysUntilUpgrade.Value,
             is_under_construction = underConstruction,
             is_locked_by_construction = locked,
             indoor_location_id = indoorLocationId,
@@ -125,6 +134,24 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                 ? (hasIndoors ? "resolved_building_door_connector" : "missing_indoor_location")
                 : (hasIndoors ? "unresolved_human_door" : "unresolved_both_door_and_indoor"),
             door = doorData,
+            animal_door = new
+            {
+                present = animalDoorPresent,
+                is_open = animalDoorPresent && building.animalDoorOpen.Value,
+                open_amount = animalDoorPresent ? building.animalDoorOpenAmount.Value : 0f,
+                relative_x = animalDoorPresent ? buildingData!.AnimalDoor.X : (int?)null,
+                relative_y = animalDoorPresent ? buildingData!.AnimalDoor.Y : (int?)null,
+                target_tile_x = animalDoorPresent ? animalDoorRect.X / Game1.tileSize : (int?)null,
+                target_tile_y = animalDoorPresent ? animalDoorRect.Y / Game1.tileSize : (int?)null,
+                tile_width = animalDoorPresent ? animalDoorRect.Width / Game1.tileSize : 0,
+                tile_height = animalDoorPresent ? animalDoorRect.Height / Game1.tileSize : 0,
+                interaction_status = !animalDoorPresent
+                    ? "not_applicable_no_animal_door"
+                    : underConstruction
+                        ? "blocked_building_under_construction"
+                        : "ready_native_right_click_toggle",
+                native_contract = "Building.doAction->didPlayerJustRightClick->Building.ToggleAnimalDoor->animalDoorOpen"
+            },
             fish_pond = ReadFishPondProjection(building, Game1.getFarm(), Game1.player)
         };
     }

@@ -236,44 +236,20 @@ public sealed partial class PlayerReadAdapter
 
     private static WarpTotemActiveFestival ReadWarpTotemActiveFestival(string destinationLocation)
     {
-        if (!Utility.isFestivalDay())
-            return WarpTotemActiveFestival.None;
-        try
-        {
-            var festivalId = Game1.season.ToString().ToLowerInvariant() + Game1.dayOfMonth;
-            var data = Game1.temporaryContent.Load<Dictionary<string, string>>("Data\\Festivals\\" + festivalId);
-            if (!data.TryGetValue("conditions", out var rawConditions))
-                return WarpTotemActiveFestival.Unavailable("festival_conditions_missing");
-            var conditionParts = rawConditions.Split('/');
-            if (conditionParts.Length < 2)
-                return WarpTotemActiveFestival.Unavailable("festival_conditions_invalid");
-            var times = ArgUtility.SplitBySpace(conditionParts[1]);
-            if (times.Length < 2 || !int.TryParse(times[0], out var start) || !int.TryParse(times[1], out var end))
-                return WarpTotemActiveFestival.Unavailable("festival_time_window_invalid");
-            var locationId = conditionParts[0];
-            var entryX = -1;
-            var entryY = -1;
-            var entryFacing = -1;
-            if (data.TryGetValue("set-up", out var setup))
-            {
-                foreach (var command in setup.Split('/').Select(value => ArgUtility.SplitBySpace(value)))
-                {
-                    if (command.Length >= 4 && string.Equals(command[0], "farmer", StringComparison.Ordinal) &&
-                        int.TryParse(command[1], out entryX) && int.TryParse(command[2], out entryY) &&
-                        int.TryParse(command[3], out entryFacing))
-                        break;
-                }
-            }
-            var targets = string.Equals(locationId, destinationLocation, StringComparison.Ordinal);
-            if (targets && (entryX < 0 || entryY < 0 || entryFacing < 0))
-                return WarpTotemActiveFestival.Unavailable("festival_farmer_entry_missing");
-            return new WarpTotemActiveFestival(true, "complete", festivalId, locationId, start, end,
-                entryX, entryY, entryFacing, targets);
-        }
-        catch
-        {
-            return WarpTotemActiveFestival.Unavailable("festival_data_load_failed");
-        }
+        var projection = ActiveFestivalTransitReader.Read(destinationLocation);
+        return projection.ProjectionComplete
+            ? new WarpTotemActiveFestival(
+                true,
+                projection.Status,
+                projection.FestivalId,
+                projection.LocationId,
+                projection.StartTime,
+                projection.EndTime,
+                projection.EntryTileX,
+                projection.EntryTileY,
+                projection.EntryFacing,
+                projection.FestivalTargetsDestination)
+            : WarpTotemActiveFestival.Unavailable(projection.Status);
     }
 
     private sealed record WarpTotemVariant(string DestinationLocation, int TileX, int TileY, string GlowColor);

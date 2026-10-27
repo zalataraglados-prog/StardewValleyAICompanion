@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using StardewAI.Contracts.State;
 using StardewAI.Core.Infrastructure;
 
@@ -39,48 +38,10 @@ public static partial class MoneyRevenueCropSeedAcquisitionProofBuilder
             return false;
         if (planned.StateHash == observed.StateHash)
             return true;
-        var plannedState = TryRuntimeSourceBoundaryState(planned);
-        var observedState = TryRuntimeSourceBoundaryState(observed);
-        return plannedState is not null &&
-            observedState is not null &&
-            JsonNode.DeepEquals(plannedState, observedState);
-    }
-
-    private static JsonObject? TryRuntimeSourceBoundaryState(
-        SnapshotEnvelope snapshot)
-    {
-        var state = new JsonObject();
-        foreach (var pair in snapshot.State)
-            state[pair.Key] = JsonNode.Parse(pair.Value.GetRawText());
-
-        var environmentNode = state["environment"];
-        if (environmentNode is not JsonObject)
-            return null;
-        var environment = (JsonObject)environmentNode!;
-        foreach (var fieldName in new[]
-                 {
-                     "training_run_id",
-                     "save_isolation_path"
-                 })
-        {
-            var fieldNode = environment[fieldName];
-            if (fieldNode is not JsonObject ||
-                !((JsonObject)fieldNode).ContainsKey("value"))
-            {
-                return null;
-            }
-            var field = (JsonObject)fieldNode!;
-            field["value"] = "__runtime_identity_excluded__";
-        }
-
-        if (state["player"] is JsonObject player &&
-            player["movie_theater"] is JsonObject movieTheater &&
-            movieTheater["value"] is JsonObject movieTheaterValue)
-        {
-            movieTheaterValue.Remove("projection_fingerprint");
-        }
-        RuntimeSnapshotBoundaryNormalization.RemoveNonSemanticMetadata(state);
-        return state;
+        return RuntimeSnapshotBoundaryNormalization.SameRuntimeIdentityBoundary(
+            planned,
+            observed,
+            out _);
     }
 
     private static int ReadSeedQuantity(

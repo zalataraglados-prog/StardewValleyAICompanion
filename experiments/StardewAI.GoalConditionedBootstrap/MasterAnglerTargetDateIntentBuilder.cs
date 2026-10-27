@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.State;
 using StardewAI.Core.Execution;
 using StardewAI.Core.Infrastructure;
 using StardewAI.Core.Training;
@@ -27,8 +28,13 @@ public static partial class MasterAnglerTargetDateIntentBuilder
                 index.Species.Length == 72 && index.UnresolvedSpeciesIds.Length == 0,
             "Master Angler Stage 1 window index is not complete.");
 
-        using var snapshot = JsonDocument.Parse(
-            CurrentTeacherFrontierSupport.ReadArtifactText(fullSnapshotPath));
+        var snapshotText = CurrentTeacherFrontierSupport.ReadArtifactText(
+            fullSnapshotPath);
+        using var snapshot = JsonDocument.Parse(snapshotText);
+        var snapshotEnvelope = JsonSerializer.Deserialize<SnapshotEnvelope>(
+            snapshotText,
+            new JsonSerializerOptions(JsonSerializerDefaults.Web))
+            ?? throw new InvalidDataException("Master Angler snapshot is null.");
         var root = snapshot.RootElement;
         var state = RequiredObject(root, "state");
         var currentTotalDay = RequiredFieldInt(state, "time", "total_days");
@@ -36,6 +42,7 @@ public static partial class MasterAnglerTargetDateIntentBuilder
         var currentLocation = RequiredFieldString(state, "player", "location_id");
         var currentTileX = RequiredFieldInt(state, "player", "tile_x");
         var currentTileY = RequiredFieldInt(state, "player", "tile_y");
+        var farmTypeKey = RequiredFieldString(state, "farm", "farm_type_key");
         var sourceStateHash = RequiredString(root, "state_hash");
         var gameVersion = RequiredString(root, "game_version");
         Require(currentTotalDay >= 0 && currentTotalDay < index.DeadlineTotalDayExclusive,
@@ -43,6 +50,37 @@ public static partial class MasterAnglerTargetDateIntentBuilder
 
         var missing = ReadExactMissingSpecies(state, index.NativeDenominatorCount);
         var fishingLevel = ReadFishingLevel(state);
+        var hasFishingRod = HasFishingRod(state);
+        var readyCrabPotOutputs = ReadReadyCrabPotOutputs(state);
+        var indexHash = ContentInventoryVerifier.HashFile(fullIndexPath);
+        var timingHash = ContentInventoryVerifier.HashFile(fullTimingPath);
+        if (!hasFishingRod && readyCrabPotOutputs.Count == 0)
+        {
+            return new MasterAnglerTargetDateIntentSet
+            {
+                Status = "no_authoritative_static_rod_intent_available_now",
+                SourceSnapshotPath = fullSnapshotPath,
+                SourceStateHash = sourceStateHash,
+                WindowIndexPath = fullIndexPath,
+                WindowIndexSha256 = indexHash,
+                RouteTimingCalibrationPath = fullTimingPath,
+                RouteTimingCalibrationSha256 = timingHash,
+                CurrentTotalDay = currentTotalDay,
+                CurrentTime = currentTime,
+                CurrentLocationId = currentLocation,
+                MissingSpeciesCount = missing.Count,
+                CandidateCount = 0,
+                WeatherSupplyCandidateCount = 0,
+                TrainingLabelEligible = false,
+                Candidates = Array.Empty<MasterAnglerTargetDateIntent>(),
+                WeatherSupplyCandidates =
+                    Array.Empty<MasterAnglerWeatherSupplyIntent>(),
+                WeatherSupplyBlockingReasons =
+                    new[] { "fishing_rod_prerequisite_unsatisfied" },
+                BlockingReasons =
+                    new[] { "fishing_rod_prerequisite_unsatisfied" }
+            };
+        }
         var hasMagicBait = AnyRodContextFlag(state, "has_magic_bait");
         var hasNonTrainingRod = AnyRodContextFlag(state, "uses_training_rod", expected: false);
         var routeGraph = RequiredFieldValue(state, "locations", "route_graph");
@@ -55,7 +93,6 @@ public static partial class MasterAnglerTargetDateIntentBuilder
             "player",
             "movement_timing_context");
         var timingJson = File.ReadAllText(fullTimingPath);
-        var timingHash = ContentInventoryVerifier.HashFile(fullTimingPath);
         var timingLoad = new FutureRouteTimingCalibrationLoader().Load(
             timingJson,
             movementTimingContext,
@@ -66,7 +103,6 @@ public static partial class MasterAnglerTargetDateIntentBuilder
             timingLoad.Calibration is not null,
             "Master Angler route timing calibration does not match the current snapshot: " +
             string.Join(",", timingLoad.BlockingReasons));
-        var readyCrabPotOutputs = ReadReadyCrabPotOutputs(state);
         var runtimeEligibleLocationRules = ReadRuntimeEligibleLocationRules(state);
 
         var eligibleWindows = index.Species
@@ -78,6 +114,8 @@ public static partial class MasterAnglerTargetDateIntentBuilder
             }))
             .Where(candidate => candidate.Window.SourceKind is
                 "location_rule" or "mine_override" or "crab_pot")
+            .Where(candidate => candidate.Window.SourceKind == "crab_pot" ||
+                hasFishingRod)
             .Where(candidate => currentTotalDay >= candidate.Window.FirstTotalDay &&
                 currentTotalDay <= candidate.Window.LastTotalDay)
             .Where(candidate => candidate.Window.MinimumFishingLevel <= fishingLevel)
@@ -95,6 +133,27 @@ public static partial class MasterAnglerTargetDateIntentBuilder
                 readyCrabPotOutputs.Contains(candidate.Species.QualifiedItemId))
             .Where(candidate => candidate.Window.SourceKind == "crab_pot" ||
                 !string.IsNullOrWhiteSpace(candidate.Window.LocationId))
+            .Where(candidate => WindowMatchesActiveFarm(
+                candidate.Window.LocationId,
+                farmTypeKey))
+            .Where(candidate =>
+            {
+                var targetLocation = string.Equals(
+                        candidate.Window.SourceKind,
+                        "crab_pot",
+                        StringComparison.Ordinal)
+                    ? currentLocation
+                    : RuntimeTargetLocation(
+                        candidate.Window.LocationId,
+                        farmTypeKey);
+                return MasterAnglerWindowIntentValidator
+                    .TryValidateCurrentWeatherForLocation(
+                        snapshotEnvelope,
+                        targetLocation,
+                        candidate.Window.WeatherModes,
+                        out _,
+                        out _);
+            })
             .ToArray();
         var targetLocations = eligibleWindows
             .Select(candidate => string.Equals(
@@ -102,7 +161,9 @@ public static partial class MasterAnglerTargetDateIntentBuilder
                     "crab_pot",
                     StringComparison.Ordinal)
                 ? currentLocation
-                : candidate.Window.LocationId)
+                : RuntimeTargetLocation(
+                    candidate.Window.LocationId,
+                    farmTypeKey))
             .Where(location => !string.IsNullOrWhiteSpace(location))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(location => location, StringComparer.OrdinalIgnoreCase)
@@ -135,7 +196,69 @@ public static partial class MasterAnglerTargetDateIntentBuilder
                 value => value.Production,
                 StringComparer.OrdinalIgnoreCase);
 
-        var indexHash = ContentInventoryVerifier.HashFile(fullIndexPath);
+        var weatherSupplyBuilt = MasterAnglerWindowIntentValidator
+            .TryBuildRainTotemSupplyIntent(
+                snapshotEnvelope,
+                fullIndexPath,
+                indexHash,
+                out var weatherSupplyParameters,
+                out var weatherSupplyValidation,
+                out var weatherSupplyRejectionReason);
+        var weatherReserveBuilt = MasterAnglerWindowIntentValidator
+            .TryBuildRainTotemReserveIntent(
+                snapshotEnvelope,
+                fullIndexPath,
+                indexHash,
+                out var weatherReserveParameters,
+                out var weatherReserveValidation,
+                out var weatherReserveRejectionReason);
+        var weatherSupplyCandidates = (weatherSupplyBuilt
+            ? new[]
+            {
+                new MasterAnglerWeatherSupplyIntent
+                {
+                    IntentId = "master-angler-weather-supply:" +
+                        weatherSupplyValidation.TargetTotalDay.ToString(
+                            CultureInfo.InvariantCulture) + ":" +
+                        weatherSupplyValidation.AffectedLocationContextId,
+                    IntentKind = "tomorrow_rain_totem_supply",
+                    OptionId = "fishing.catch_fish",
+                    TargetTotalDay = weatherSupplyValidation.TargetTotalDay,
+                    TargetQualifiedItemIds =
+                        weatherSupplyValidation.TargetQualifiedItemIds,
+                    AffectedLocationContextId =
+                        weatherSupplyValidation.AffectedLocationContextId,
+                    Parameters = weatherSupplyParameters
+                }
+            }
+            : Array.Empty<MasterAnglerWeatherSupplyIntent>())
+            .Concat(weatherReserveBuilt
+                ? new[]
+                {
+                    new MasterAnglerWeatherSupplyIntent
+                    {
+                        IntentId = "master-angler-weather-reserve:" +
+                            weatherReserveValidation.ReserveKind + ":" +
+                            weatherReserveValidation.TargetTotalDay.ToString(
+                                CultureInfo.InvariantCulture) + ":" +
+                            weatherReserveValidation.AffectedLocationContextId,
+                        IntentKind = "future_rain_totem_" +
+                            weatherReserveValidation.ReserveKind +
+                            "_reserve",
+                        OptionId = "fishing.catch_fish",
+                        TargetTotalDay =
+                            weatherReserveValidation.TargetTotalDay,
+                        TargetQualifiedItemIds =
+                            weatherReserveValidation.TargetQualifiedItemIds,
+                        AffectedLocationContextId =
+                            weatherReserveValidation.AffectedLocationContextId,
+                        Parameters = weatherReserveParameters
+                    }
+                }
+                : Array.Empty<MasterAnglerWeatherSupplyIntent>())
+            .OrderBy(candidate => candidate.TargetTotalDay)
+            .ThenBy(candidate => candidate.IntentKind, StringComparer.Ordinal)
+            .ToArray();
         var candidates = eligibleWindows
             .Select(candidate => BuildCandidate(
                 candidate.Species,
@@ -146,6 +269,7 @@ public static partial class MasterAnglerTargetDateIntentBuilder
                 currentTotalDay,
                 currentTime,
                 currentLocation,
+                farmTypeKey,
                 routeByLocation,
                 fullTimingPath,
                 timingHash))
@@ -180,8 +304,20 @@ public static partial class MasterAnglerTargetDateIntentBuilder
             CurrentLocationId = currentLocation,
             MissingSpeciesCount = missing.Count,
             CandidateCount = candidates.Length,
+            WeatherSupplyCandidateCount = weatherSupplyCandidates.Length,
             TrainingLabelEligible = false,
             Candidates = candidates,
+            WeatherSupplyCandidates = weatherSupplyCandidates,
+            WeatherSupplyBlockingReasons = weatherSupplyCandidates.Length > 0
+                ? Array.Empty<string>()
+                : new[]
+                {
+                    weatherSupplyRejectionReason,
+                    weatherReserveRejectionReason
+                }
+                .Where(reason => !string.IsNullOrWhiteSpace(reason))
+                .Distinct(StringComparer.Ordinal)
+                .ToArray(),
             BlockingReasons = candidates.Length > 0
                 ? new[] { "fresh_native_target_catch_receipt_required_before_training_admission" }
                 : new[] { "no_missing_species_has_a_current_full_route_time_feasible_runtime_source" }
@@ -197,6 +333,7 @@ public static partial class MasterAnglerTargetDateIntentBuilder
         int currentTotalDay,
         int currentTime,
         string currentLocation,
+        string farmTypeKey,
         IReadOnlyDictionary<string, FutureLocationRouteDateEvidenceProduction>
             routeByLocation,
         string timingCalibrationPath,
@@ -217,7 +354,9 @@ public static partial class MasterAnglerTargetDateIntentBuilder
             return null;
 
         var isCrabPot = string.Equals(window.SourceKind, "crab_pot", StringComparison.Ordinal);
-        var targetLocation = isCrabPot ? currentLocation : window.LocationId;
+        var targetLocation = isCrabPot
+            ? currentLocation
+            : RuntimeTargetLocation(window.LocationId, farmTypeKey);
         if (!routeByLocation.TryGetValue(
                 targetLocation,
                 out var route) ||
@@ -289,5 +428,22 @@ public static partial class MasterAnglerTargetDateIntentBuilder
             Parameters = parameters
         };
     }
+
+    private static bool WindowMatchesActiveFarm(
+        string locationId,
+        string farmTypeKey) =>
+        !locationId.StartsWith("Farm_", StringComparison.Ordinal) ||
+        string.Equals(
+            locationId,
+            "Farm_" + farmTypeKey,
+            StringComparison.Ordinal);
+
+    private static string RuntimeTargetLocation(
+        string locationId,
+        string farmTypeKey) =>
+        WindowMatchesActiveFarm(locationId, farmTypeKey) &&
+        locationId.StartsWith("Farm_", StringComparison.Ordinal)
+            ? "Farm"
+            : locationId;
 
 }

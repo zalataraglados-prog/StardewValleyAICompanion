@@ -41,6 +41,20 @@ public sealed partial class ModEntry
             CanReleaseTool = player.canReleaseTool,
             PauseForSingleAnimation =
                 player.FarmerSprite.PauseForSingleAnimation,
+            GamePaused = Game1.paused,
+            GlobalFade = Game1.globalFade,
+            FreezeControls = Game1.freezeControls,
+            IsWarping = Game1.isWarping,
+            EventUp = Game1.eventUp,
+            FreezePause = player.freezePause,
+            MovementDirections = string.Join(",", player.movementDirections),
+            MovementTransitionTick = executorMovementLease.LastTransitionTick,
+            HeadlessPressedDirection =
+                (headlessInputPump as HeadlessMovementInputSimulator)?.LastPressedDirection,
+            HeadlessReleasedDirection =
+                (headlessInputPump as HeadlessMovementInputSimulator)?.LastReleasedDirection,
+            HeadlessHeldDirection =
+                (headlessInputPump as HeadlessMovementInputSimulator)?.LastHeldDirection,
             MovementTransitionReason =
                 executorMovementLease.LastTransitionReason
         });
@@ -112,6 +126,10 @@ public sealed partial class ModEntry
             return activeNativeTool.Pending.Request.OptionId;
         }
 
+        if (activeClearObstacleApproach is not null)
+        {
+            return activeClearObstacleApproach.Pending.Request.OptionId;
+        }
         if (activeClearObstacle is not null)
         {
             return activeClearObstacle.Pending.Request.OptionId;

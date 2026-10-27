@@ -28,6 +28,34 @@ public sealed class ExecutorInputLifecycleSourceGuardTests
             "movedSinceLastTick &&",
             movementLoop,
             StringComparison.Ordinal);
+        Assert.Contains(
+            "TickMovementControlGate(move)",
+            movementLoop,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "movement_native_control_gate_settling",
+            movementLoop,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "movement_interrupted_by_story_event:",
+            movementLoop,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "if (move.NeedsPathStartCentering)",
+            movementLoop,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "SettleFarmerOnTile(move, pathStartTile, \"path_start\")",
+            movementLoop,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "SettleFarmerOnTile(move, move.TargetTile, \"target_tile\")",
+            movementLoop,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "SettleFarmerOnTargetTile",
+            movementLoop,
+            StringComparison.Ordinal);
     }
 
     [Fact]
@@ -39,6 +67,9 @@ public sealed class ExecutorInputLifecycleSourceGuardTests
             "ModEntry.MovementSleep.ObstacleClearance.cs");
 
         Assert.Contains("private void StartClearObstacle(", source, StringComparison.Ordinal);
+        Assert.Contains("BuildAdjacentToolPath(", source, StringComparison.Ordinal);
+        Assert.Contains("TryAdvanceExecutorPath(", source, StringComparison.Ordinal);
+        Assert.Contains("private void TickClearObstacleApproach(", source, StringComparison.Ordinal);
         Assert.Contains("private void TickClearObstacleCore(", source, StringComparison.Ordinal);
         Assert.Contains("active.Lifecycle.Advance(ObserveNativeToolAction())", source, StringComparison.Ordinal);
         Assert.Contains("Game1.player.BeginUsingTool();", source, StringComparison.Ordinal);
@@ -106,6 +137,94 @@ public sealed class ExecutorInputLifecycleSourceGuardTests
     }
 
     [Fact]
+    public void AdjacentTileActionsUseSharedTurnAwarePathFollower()
+    {
+        var action = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.CropTileActions.cs");
+        var state = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.State.cs");
+
+        Assert.Contains("TryAdvanceExecutorPath(", action, StringComparison.Ordinal);
+        Assert.Contains("allowRemovableObstacles: false", action, StringComparison.Ordinal);
+        Assert.Contains("ExecutorPathCursor PathCursor", state, StringComparison.Ordinal);
+        Assert.DoesNotContain("action.PathIndex", action, StringComparison.Ordinal);
+        Assert.DoesNotContain("action.StuckTicks", action, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void NativeFarmingToolsUseSharedPathingAndCenterBeforeToolInput()
+    {
+        var farming = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.Farming.cs");
+        var state = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.State.cs");
+        var follower = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.MovementSleep.PathFollower.cs");
+
+        Assert.Contains("TryAdvanceExecutorPath(", farming, StringComparison.Ordinal);
+        Assert.Contains("tool.ActionPathCursor", farming, StringComparison.Ordinal);
+        Assert.Contains("TryCenterExecutorOnCurrentTile(", farming, StringComparison.Ordinal);
+        Assert.Contains("tool.NeedsActionCentering = false", farming, StringComparison.Ordinal);
+        Assert.Contains("ExecutorPathCursor ActionPathCursor", state, StringComparison.Ordinal);
+        Assert.Contains("IsFarmerCenteredOnTile(tile)", follower, StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "DirectionTo(Game1.player.TilePoint, next)",
+            farming,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "movement_stuck_or_collision_blocked",
+            farming,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "Game1.player.Position =",
+            farming,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AdjacentPathObstaclePolicyFailsSafeUnlessExplicitlyEnabled()
+    {
+        var farming = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.Farming.cs");
+        var ginger = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.Ginger.cs");
+        var pets = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.Pets.cs");
+        var miningCombat = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.Mining.Combat.cs");
+        var normalizedFarming = farming.Replace("\r\n", "\n");
+        var normalizedGinger = ginger.Replace("\r\n", "\n");
+        var normalizedPets = pets.Replace("\r\n", "\n");
+
+        Assert.Contains(
+            "bool allowRemovableObstacles = false",
+            farming,
+            StringComparison.Ordinal);
+        Assert.Contains("avoidSoftObstacles: true,\n            allowRemovableObstacles: false", normalizedFarming, StringComparison.Ordinal);
+        Assert.Contains("avoidSoftObstacles: true,\n            allowRemovableObstacles: false", normalizedGinger, StringComparison.Ordinal);
+        Assert.Contains("avoidSoftObstacles: true,\n            allowRemovableObstacles: false", normalizedPets, StringComparison.Ordinal);
+        Assert.Contains("allowRemovableObstacles: true", miningCombat, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void DiagnosticsAreBoundedAndDumpOnlyOnTrigger()
     {
         var host = ReadRepositoryFile(
@@ -121,6 +240,82 @@ public sealed class ExecutorInputLifecycleSourceGuardTests
         Assert.Contains("executorDiagnosticFrames.Snapshot()", diagnostics, StringComparison.Ordinal);
         Assert.Contains("lastExecutorDiagnosticDumpTick", diagnostics, StringComparison.Ordinal);
         Assert.DoesNotContain("AppendAllText", diagnostics, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void NativeStoryEventInterruptsAndThenResumesTheSelectedQueue()
+    {
+        var runtime = ReadRepositoryFile(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.RuntimeExecution.cs");
+        var queueBuilding = ReadRepositoryFile(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.QueueBuilding.cs");
+
+        Assert.Contains(
+            "HasPriorityStoryEventInterrupt(currentBeforeSnapshot)",
+            runtime,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "BuildPriorityStoryEventQueueAsync(",
+            runtime,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "runtime_priority_interrupt",
+            runtime,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "priority_story_event_interrupt",
+            runtime,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "selected_queue_lock_preserved",
+            runtime,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "new[] { \"story.advance_event\" }",
+            queueBuilding,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "candidateKindOverride: string.Empty",
+            queueBuilding,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "candidateIdOverride: string.Empty",
+            queueBuilding,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ExecutorIdleFreezeHoldsExactNativeStoryBoundaryUntilDispatchOwnsIt()
+    {
+        var host = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.cs");
+        var storyEvent = ReadRepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.StoryEvent.cs");
+
+        Assert.Contains(
+            "HasExecutorOwnedStoryEventDispatchBoundary()",
+            host,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "shouldHoldStoryEventForDispatch ||",
+            host,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "!hasActiveExecutorOperation",
+            host,
+            StringComparison.Ordinal);
+        Assert.Contains("!nativeEvent.isFestival", storyEvent, StringComparison.Ordinal);
+        Assert.Contains("!nativeEvent.skipped", storyEvent, StringComparison.Ordinal);
+        Assert.Contains("!nativeEvent.playerControlSequence", storyEvent, StringComparison.Ordinal);
+        Assert.Contains("Game1.currentMinigame is null", storyEvent, StringComparison.Ordinal);
     }
 
     private static string ReadRepositoryFile(params string[] segments)

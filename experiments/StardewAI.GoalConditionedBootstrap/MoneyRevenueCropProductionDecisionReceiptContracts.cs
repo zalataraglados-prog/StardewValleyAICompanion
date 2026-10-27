@@ -126,6 +126,12 @@ public sealed record MoneyRevenueCropTeacherCandidateEvaluation(
     int LastHarvestTotalDay,
     [property: JsonPropertyName("required_watering_action_count")]
     int RequiredWateringActionCount,
+    [property: JsonPropertyName("available_watering_actions_without_refill")]
+    int AvailableWateringActionsWithoutRefill,
+    [property: JsonPropertyName("watering_refill_route_verified")]
+    bool WateringRefillRouteVerified,
+    [property: JsonPropertyName("watering_capacity_limited")]
+    bool WateringCapacityLimited,
     [property: JsonPropertyName("admitted")] bool Admitted,
     [property: JsonPropertyName("block_reasons")] string[] BlockReasons,
     [property: JsonPropertyName("selected")] bool Selected);
@@ -159,6 +165,14 @@ public sealed class MoneyRevenueCropProductionDecisionCommitment
     [JsonPropertyName("tiles")]
     public MoneyRevenueCropPlantingTile[] Tiles { get; set; } =
         Array.Empty<MoneyRevenueCropPlantingTile>();
+
+    [JsonPropertyName("watering_refill_preparation_tiles")]
+    public MoneyRevenueCropPlantingTile[] WateringRefillPreparationTiles
+        { get; set; } = Array.Empty<MoneyRevenueCropPlantingTile>();
+
+    [JsonPropertyName("watering_refill_approach_tile")]
+    public MoneyRevenueCropPlantingTile? WateringRefillApproachTile
+        { get; set; }
 }
 
 public sealed record MoneyRevenueCropProductionDecisionMutationReceipt(
@@ -251,7 +265,8 @@ public sealed class MoneyRevenueCropProductionDecisionReceipt
     [JsonPropertyName("decision_policy")]
     public string DecisionPolicy { get; set; } =
         "The authoritative Teacher supplies explicit crop commitments and " +
-        "non-overlapping Farm layout intents. This receipt deterministically " +
+        "non-overlapping Farm layout intents, including the exact verified " +
+        "watering-refill approach tile. This receipt deterministically " +
         "replays those commitments through the one existing crop commitment " +
         "ledger service and preserves each typed mutation outcome. It does not " +
         "invent crops or layouts, execute mechanics, prove native outcomes or " +

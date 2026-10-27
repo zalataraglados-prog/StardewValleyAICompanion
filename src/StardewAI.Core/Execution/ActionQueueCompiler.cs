@@ -115,7 +115,12 @@ namespace StardewAI.Core.Execution
                 "player",
                 "tile_y");
             var routedSteps = ExpandCrossLocationMovePrefix(planOutput.Steps, snapshot);
-            var expandedSteps = ExpandMoveRouteRepairs(routedSteps, snapshot);
+            var actionableSteps = RemoveSatisfiedMovePrefix(
+                routedSteps,
+                snapshot);
+            var expandedSteps = ExpandMoveRouteRepairs(
+                actionableSteps,
+                snapshot);
             for (var index = 0; index < expandedSteps.Length; index++)
             {
                 var step = expandedSteps[index];

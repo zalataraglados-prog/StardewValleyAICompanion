@@ -57,6 +57,159 @@ public sealed partial class MasterAnglerMainlineTests
     }
 
     [Fact]
+    public void AuthoritativeRemoteIntentRejectsRouteWhenTargetWeatherDoesNotMatch()
+    {
+        var fixture = CreateFixture(
+            "Beach:0",
+            weatherModes: new[] { "rain", "storm" });
+        try
+        {
+            var remote = BuildSnapshot(
+                targetCaught: false,
+                currentLocation: "Farm",
+                currentWeather: "sun");
+            var blocked = Assert.Single(Assert.Single(
+                new CandidateOptionAvailabilityEvaluator().Evaluate(
+                    remote,
+                    new[]
+                    {
+                        new OptionAvailabilityCandidate
+                        {
+                            OptionId = "fishing.catch_fish",
+                            Parameters = fixture.Parameters
+                        }
+                    }).Options).EventCandidates);
+
+            Assert.False(blocked.Available);
+            Assert.Equal("catch_fish", blocked.Kind);
+            Assert.Contains(
+                "master_angler_target_weather_window_mismatch",
+                blocked.BlockReasons);
+        }
+        finally
+        {
+            fixture.Dispose();
+        }
+    }
+
+    [Fact]
+    public void AuthoritativeRemoteIntentRoutesWhenTargetWeatherMatches()
+    {
+        var fixture = CreateFixture(
+            "Beach:0",
+            weatherModes: new[] { "rain", "storm" });
+        try
+        {
+            var remote = BuildSnapshot(
+                targetCaught: false,
+                currentLocation: "Farm",
+                currentWeather: "rain");
+            var route = Assert.Single(Assert.Single(
+                new CandidateOptionAvailabilityEvaluator().Evaluate(
+                    remote,
+                    new[]
+                    {
+                        new OptionAvailabilityCandidate
+                        {
+                            OptionId = "fishing.catch_fish",
+                            Parameters = fixture.Parameters
+                        }
+                    }).Options).EventCandidates);
+
+            Assert.True(route.Available, string.Join(";", route.BlockReasons));
+            Assert.Equal("route_connector_tile", route.Kind);
+            Assert.Equal("master_angler_rolling_route", route.AvailabilityClass);
+        }
+        finally
+        {
+            fixture.Dispose();
+        }
+    }
+
+    [Fact]
+    public void AuthoritativeRemoteIntentDoesNotRouteWhileInventoryIsFull()
+    {
+        var fixture = CreateFixture("Beach:0");
+        try
+        {
+            var remote = BuildSnapshot(
+                targetCaught: false,
+                currentLocation: "Farm",
+                inventoryFull: true);
+            var blocked = Assert.Single(Assert.Single(
+                new CandidateOptionAvailabilityEvaluator().Evaluate(
+                    remote,
+                    new[]
+                    {
+                        new OptionAvailabilityCandidate
+                        {
+                            OptionId = "fishing.catch_fish",
+                            Parameters = fixture.Parameters
+                        }
+                    }).Options).EventCandidates);
+
+            Assert.False(blocked.Available);
+            Assert.Equal("catch_fish", blocked.Kind);
+            Assert.Contains(
+                "fishing_inventory_full_requires_storage_transfer",
+                blocked.BlockReasons);
+        }
+        finally
+        {
+            fixture.Dispose();
+        }
+    }
+
+    [Fact]
+    public void ConcurrentWindowsKeepDistinctCandidateIdentities()
+    {
+        var first = CreateFixture("Beach:0");
+        var second = CreateFixture("Beach:1");
+        try
+        {
+            var remote = BuildSnapshot(
+                targetCaught: false,
+                currentLocation: "Farm");
+            var availability = new CandidateOptionAvailabilityEvaluator()
+                .Evaluate(
+                    remote,
+                    new[]
+                    {
+                        new OptionAvailabilityCandidate
+                        {
+                            OptionId = "fishing.catch_fish",
+                            Parameters = first.Parameters
+                        },
+                        new OptionAvailabilityCandidate
+                        {
+                            OptionId = "fishing.catch_fish",
+                            Parameters = second.Parameters
+                        }
+                    });
+
+            var candidates = availability.Options
+                .SelectMany(value => value.EventCandidates)
+                .Where(value => value.Available)
+                .ToArray();
+            Assert.Equal(2, candidates.Length);
+            Assert.Equal(
+                candidates.Length,
+                candidates.Select(value => value.CandidateId)
+                    .Distinct(StringComparer.Ordinal)
+                    .Count());
+            Assert.Contains(candidates, value =>
+                value.CandidateId.Contains("Beach:0", StringComparison.Ordinal));
+            Assert.Contains(candidates, value =>
+                value.CandidateId.Contains("Beach:1", StringComparison.Ordinal));
+        }
+        finally
+        {
+            first.Dispose();
+            second.Dispose();
+        }
+    }
+
+    [Fact]
     public void AuthoritativeRemoteIntentRejectsFullRouteThatMissesWindow()
     {
         var fixture = CreateFixture("Beach:0");

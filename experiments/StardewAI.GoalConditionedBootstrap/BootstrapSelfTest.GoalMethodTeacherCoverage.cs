@@ -55,16 +55,16 @@ internal static partial class BootstrapSelfTest
             report.CriterionPointSum == 21 &&
             report.CriterionDenominatorCount == 19 &&
             report.CatalogMappedCriterionCount == 19 &&
-            report.ExecutableCriterionCount == 4 &&
+            report.ExecutableCriterionCount == 5 &&
             report.TeacherComparisonCoveredCriterionCount == 4 &&
             report.NativeOutcomeCoveredCriterionCount == 4 &&
             report.SplitCompleteTeacherCriterionCount == 4 &&
-            report.CoverageGateReadyCriterionCount == 2 &&
+            report.CoverageGateReadyCriterionCount == 3 &&
             report.Criteria.Length == 19 &&
             !report.CoverageGateSatisfied &&
             !report.FormalProductTrainingAuthorized &&
             report.BlockingReasons.SequenceEqual(
-                new[] { "goal_method_teacher_coverage_incomplete:2/19" },
+                new[] { "goal_method_teacher_coverage_incomplete:3/19" },
                 StringComparer.Ordinal),
             "Current 19/19 goal-method Teacher coverage gate drifted.");
         var readyCriteria = report.Criteria
@@ -76,6 +76,7 @@ internal static partial class BootstrapSelfTest
             readyCriteria.SequenceEqual(
                 new[]
                 {
+                    "achievement_full_shipment",
                     "community_center_access_or_completion",
                     "community_center_accessible_bonus"
                 },
@@ -95,9 +96,23 @@ internal static partial class BootstrapSelfTest
                     criterion.SplitCoverageComplete &&
                     criterion.BlockingReasons.Length == 0),
             "Community Center coverage did not become the exact admitted 2/19 slice.");
+        var fullShipment = report.Criteria.Single(criterion =>
+            criterion.DirectionId == "complete_full_shipment");
+        Require(
+            fullShipment.MethodStatus == "executable_frontier" &&
+            fullShipment.TeacherSourceKinds.SequenceEqual(
+                new[]
+                {
+                    GoalMethodTeacherCoverageSourceKinds
+                        .AcquisitionRoutePortfolioCorpus
+                },
+                StringComparer.Ordinal) &&
+            fullShipment.SplitCoverageComplete &&
+            fullShipment.CoverageGateReady &&
+            fullShipment.BlockingReasons.Length == 0,
+            "Full Shipment current-authority method did not consume its split-complete evidence.");
         var strictOrderEvidenceDirections = new[]
         {
-            "complete_full_shipment",
             "complete_master_angler"
         };
         var requiredPartitions = new[] { "train", "validation", "test" };
@@ -122,7 +137,7 @@ internal static partial class BootstrapSelfTest
                             "goal_method_not_executable:pending_dependency_expansion"
                         },
                         StringComparer.Ordinal)),
-            "Full Shipment or Master Angler strict next-route evidence drifted.");
+            "Master Angler strict next-route evidence drifted.");
         var directNonCollection = report.Criteria.Single(criterion =>
             criterion.DirectionId == "obtain_skull_key");
         Require(
@@ -160,21 +175,21 @@ internal static partial class BootstrapSelfTest
             reconciliation.Status == "reconciled_open_work" &&
             reconciliation.CriterionDenominatorCount == 19 &&
             reconciliation.RootMethodCount == 11 &&
-            reconciliation.ExecutableCriterionCount == 4 &&
-            reconciliation.CoverageGateReadyCriterionCount == 2 &&
+            reconciliation.ExecutableCriterionCount == 5 &&
+            reconciliation.CoverageGateReadyCriterionCount == 3 &&
             !reconciliation.FormalProductTrainingAuthorized &&
             criterionDispositions[
-                GoalMethodCoverageDispositions.CoverageReady] == 2 &&
+                GoalMethodCoverageDispositions.CoverageReady] == 3 &&
             criterionDispositions[
                 GoalMethodCoverageDispositions
-                    .DependencyGraphIncomplete] == 15 &&
+                    .DependencyGraphIncomplete] == 14 &&
             criterionDispositions[
                 GoalMethodCoverageDispositions.EvidenceNotConnected] == 2 &&
             methodDispositions[
-                GoalMethodCoverageDispositions.CoverageReady] == 1 &&
+                GoalMethodCoverageDispositions.CoverageReady] == 2 &&
             methodDispositions[
                 GoalMethodCoverageDispositions
-                    .DependencyGraphIncomplete] == 8 &&
+                    .DependencyGraphIncomplete] == 7 &&
             methodDispositions[
                 GoalMethodCoverageDispositions.EvidenceNotConnected] == 2 &&
             petReconciliation.PrimaryDisposition ==
@@ -292,9 +307,9 @@ internal static partial class BootstrapSelfTest
         var petLove = petFixtureReport.Criteria.Single(criterion =>
             criterion.DirectionId == "earn_pet_love");
         Require(
-            petFixtureReport.CoverageGateReadyCriterionCount == 3 &&
+            petFixtureReport.CoverageGateReadyCriterionCount == 4 &&
             petFixtureReport.BlockingReasons.SequenceEqual(
-                new[] { "goal_method_teacher_coverage_incomplete:3/19" },
+                new[] { "goal_method_teacher_coverage_incomplete:4/19" },
                 StringComparer.Ordinal) &&
             petLove.MethodStatus == "executable_frontier" &&
             petLove.CoverageGateReady &&
@@ -330,9 +345,9 @@ internal static partial class BootstrapSelfTest
         var skullKey = skullKeyFixtureReport.Criteria.Single(criterion =>
             criterion.DirectionId == "obtain_skull_key");
         Require(
-            skullKeyFixtureReport.CoverageGateReadyCriterionCount == 3 &&
+            skullKeyFixtureReport.CoverageGateReadyCriterionCount == 4 &&
             skullKeyFixtureReport.BlockingReasons.SequenceEqual(
-                new[] { "goal_method_teacher_coverage_incomplete:3/19" },
+                new[] { "goal_method_teacher_coverage_incomplete:4/19" },
                 StringComparer.Ordinal) &&
             skullKey.MethodStatus == "executable_frontier" &&
             skullKey.CoverageGateReady &&

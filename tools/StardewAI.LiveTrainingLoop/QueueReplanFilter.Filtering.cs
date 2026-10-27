@@ -4,6 +4,72 @@ namespace StardewAI.LiveTrainingLoop;
 
 public static partial class QueueReplanFilter
 {
+    public static JsonArray FilterPriorityStoryEventInterruptCandidates(
+        JsonArray rankedCandidates)
+    {
+        var filtered = rankedCandidates
+            .Select(node => node?.AsObject())
+            .Where(candidate =>
+                candidate is not null &&
+                string.Equals(
+                    ReadString(candidate, "option_id"),
+                    "story.advance_event",
+                    StringComparison.Ordinal))
+            .Select(candidate =>
+                JsonNode.Parse(candidate!.ToJsonString()))
+            .ToArray();
+        return new JsonArray(filtered);
+    }
+
+    public static JsonArray FilterGoalResolutionBoundCandidates(
+        JsonArray rankedCandidates,
+        JsonObject? goalResolution,
+        bool exclusiveRecovery = false)
+    {
+        if (exclusiveRecovery)
+        {
+            return JsonNode.Parse(rankedCandidates.ToJsonString())?
+                .AsArray() ?? new JsonArray();
+        }
+
+        var status = ReadString(goalResolution, "status");
+        if (string.Equals(
+                status,
+                "planning_handoff_required",
+                StringComparison.Ordinal))
+        {
+            return new JsonArray();
+        }
+
+        if (!string.Equals(status, "resolved", StringComparison.Ordinal))
+        {
+            return JsonNode.Parse(rankedCandidates.ToJsonString())?
+                .AsArray() ?? new JsonArray();
+        }
+
+        var boundCandidateIds = goalResolution?["bound_candidate_ids"]?
+            .AsArray()
+            .Select(node => node?.GetValue<string>() ?? string.Empty)
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .ToHashSet(StringComparer.Ordinal) ?? new HashSet<string>(
+                StringComparer.Ordinal);
+        if (boundCandidateIds.Count == 0)
+        {
+            return new JsonArray();
+        }
+
+        var filtered = rankedCandidates
+            .Select(node => node?.AsObject())
+            .Where(candidate =>
+                candidate is not null &&
+                boundCandidateIds.Contains(
+                    ReadString(candidate, "candidate_id")))
+            .Select(candidate =>
+                JsonNode.Parse(candidate!.ToJsonString()))
+            .ToArray();
+        return new JsonArray(filtered);
+    }
+
     public static JsonArray FilterRankedCandidates(JsonArray rankedCandidates, JsonObject? continuation)
     {
         if (continuation is null)
@@ -67,10 +133,18 @@ public static partial class QueueReplanFilter
             return string.Empty;
         }
 
+        var masterAngler = string.Equals(
+            ReadString(continuation, "kind"),
+            "master_angler",
+            StringComparison.Ordinal);
         return string.Join(
             "\n",
             continuation
                 .Where(property => property.Value is JsonValue)
+                .Where(property => !masterAngler || !string.Equals(
+                    property.Key,
+                    "master_angler_effective_start_time",
+                    StringComparison.Ordinal))
                 .OrderBy(property => property.Key, StringComparer.Ordinal)
                 .Select(property =>
                     property.Key + "=" + property.Value!.ToJsonString()));
@@ -297,6 +371,13 @@ public static partial class QueueReplanFilter
             return string.Equals(optionId, "executor.answer_field_office_survey", StringComparison.Ordinal) &&
                 string.Equals(ReadParameter(queueItem, "survey_kind"), ReadString(continuation, "survey_kind"), StringComparison.Ordinal) &&
                 string.Equals(ReadParameter(queueItem, "survey_answer"), ReadString(continuation, "survey_answer"), StringComparison.Ordinal);
+        }
+        if (string.Equals(continuationKind, "island_gourmand", StringComparison.Ordinal))
+        {
+            return string.Equals(optionId, "executor.advance_gourmand_request", StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "request_index_before"), ReadString(continuation, "request_index_before"), StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "required_crop_item_id"), ReadString(continuation, "required_crop_item_id"), StringComparison.Ordinal) &&
+                string.Equals(ReadParameter(queueItem, "gourmand_interaction_stage"), ReadString(continuation, "gourmand_interaction_stage"), StringComparison.Ordinal);
         }
         if (string.Equals(continuationKind, "calico_jack", StringComparison.Ordinal))
         {

@@ -84,11 +84,13 @@ static partial class Program
         LiveTrainingOptions options,
         bool forceRefresh,
         string? expectedStateHash = null,
-        long? expectedGameTick = null)
+        long? expectedGameTick = null,
+        string? snapshotUrlOverride = null,
+        string? snapshotProfileOverride = null)
     {
         var json = await http.GetStringAsync(SnapshotUrlForProfile(
-            options.BridgeSnapshotUrl,
-            options.ExecutionSnapshotProfile,
+            snapshotUrlOverride ?? options.BridgeSnapshotUrl,
+            snapshotProfileOverride ?? options.ExecutionSnapshotProfile,
             forceRefresh,
             expectedStateHash,
             expectedGameTick));
@@ -99,7 +101,9 @@ static partial class Program
         HttpClient http,
         LiveTrainingOptions options,
         JsonObject beforeSnapshot,
-        JsonObject execution)
+        JsonObject execution,
+        string? snapshotUrlOverride = null,
+        string? snapshotProfileOverride = null)
     {
         var beforeHash = ReadString(beforeSnapshot, "state_hash");
         var beforeTick = ReadLong(beforeSnapshot, "game_tick");
@@ -110,7 +114,9 @@ static partial class Program
             options,
             forceRefresh: false,
             expectedStateHash: productAfterHash,
-            expectedGameTick: productAfterTick);
+            expectedGameTick: productAfterTick,
+            snapshotUrlOverride: snapshotUrlOverride,
+            snapshotProfileOverride: snapshotProfileOverride);
         var latest = initial.Snapshot;
         var latestJson = initial.Json;
         var deadline = DateTimeOffset.UtcNow.AddMilliseconds(options.AfterSnapshotWaitMs);
@@ -144,7 +150,9 @@ static partial class Program
         var sameTickRefresh = await ReadExecutionSnapshotAsync(
             http,
             options,
-            forceRefresh: true);
+            forceRefresh: true,
+            snapshotUrlOverride: snapshotUrlOverride,
+            snapshotProfileOverride: snapshotProfileOverride);
         latest = sameTickRefresh.Snapshot;
         latestJson = sameTickRefresh.Json;
         latestHash = ReadString(latest, "state_hash");
@@ -166,7 +174,9 @@ static partial class Program
                 var refreshed = await ReadExecutionSnapshotAsync(
                     http,
                     options,
-                    forceRefresh: true);
+                    forceRefresh: true,
+                    snapshotUrlOverride: snapshotUrlOverride,
+                    snapshotProfileOverride: snapshotProfileOverride);
                 latest = refreshed.Snapshot;
                 latestJson = refreshed.Json;
                 latestHash = ReadString(latest, "state_hash");

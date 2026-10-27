@@ -153,6 +153,15 @@ namespace StardewAI.Core.Infrastructure
             {
                 return false;
             }
+            if (!TryValidateCurrentWeatherForLocation(
+                    snapshot,
+                    targetLocation,
+                    matchingWindow.WeatherModes,
+                    out _,
+                    out rejectionReason))
+            {
+                return false;
+            }
 
             validation = new MasterAnglerWindowIntentValidation
             {

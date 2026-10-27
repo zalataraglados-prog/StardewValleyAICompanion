@@ -101,7 +101,7 @@ namespace StardewAI.Core.OptionRegistry
                 var bedTileHasBed = homeContext.HasValue && ReadBool(homeContext.Value, "bed_tile_has_bed") == true;
                 var bedStandTile = currentLocationIsHome ? FindBestStandTile(snapshot, bedX, bedY) : null;
                 var sleepImmediatelyBlocks = new List<string>();
-                ActionQueueItem? recoveryProbe = null;
+                EventCandidate? recoveryRouteAction = null;
                 if (!homeContext.HasValue || string.IsNullOrWhiteSpace(homeLocation))
                 {
                     sleepImmediatelyBlocks.Add("recovery_home_route_target_unavailable");
@@ -141,15 +141,19 @@ namespace StardewAI.Core.OptionRegistry
                 }
                 else
                 {
-                    recoveryProbe = CompilerProbeItem(
+                    recoveryRouteAction = RecoveryRouteActionCandidate(
                         snapshot,
-                        RecoveryRouteProbeCandidate(nativeSaveBoundaryRequired));
-                    sleepImmediatelyBlocks.AddRange(CompilerProbeBlockingReasons(recoveryProbe));
+                        homeLocation);
+                    sleepImmediatelyBlocks.AddRange(
+                        recoveryRouteAction?.BlockReasons ??
+                        RecoveryRouteBlockReasons(
+                            snapshot,
+                            nativeSaveBoundaryRequired));
                 }
 
                 var recoveryParameters = currentLocationIsHome
                     ? new[] { Parameter("execution_option_id", "executor.sleep") }
-                    : recoveryProbe?.NormalizedCommand.Parameters ?? Array.Empty<SmallModelActionParameter>();
+                    : recoveryRouteAction?.Parameters ?? Array.Empty<SmallModelActionParameter>();
                 if (nativeSaveBoundaryRequired &&
                     !string.Equals(
                         ReadParameter(
@@ -169,6 +173,21 @@ namespace StardewAI.Core.OptionRegistry
                 var routeTargetLocation = ReadParameter(recoveryParameters, "expected_target_location");
                 var routeKind = ReadParameter(recoveryParameters, "connector_kind");
                 var routeEstimatedTicks = ReadParameterInt(recoveryParameters, "estimated_ticks") ?? 0;
+                if (!currentLocationIsHome && recoveryRouteAction is not null &&
+                    string.Equals(
+                        recoveryRouteAction.Kind,
+                        "clear_obstacle_tile",
+                        StringComparison.Ordinal))
+                {
+                    candidates.Add(RecoveryRouteRepairCandidate(
+                        recoveryRouteAction,
+                        nativeSaveBoundaryRequired
+                            ? "recovery:native_save_boundary"
+                            : "recovery:sleep_immediately",
+                        homeLocation,
+                        nativeSaveBoundaryRequired));
+                    return candidates.ToArray();
+                }
                 candidates.Add(new EventCandidate
                 {
                     CandidateId = nativeSaveBoundaryRequired
@@ -206,7 +225,7 @@ namespace StardewAI.Core.OptionRegistry
                 var bedTileHasBed = homeContext.HasValue && ReadBool(homeContext.Value, "bed_tile_has_bed") == true;
                 var bedStandTile = currentLocationIsHome ? FindBestStandTile(snapshot, bedX, bedY) : null;
                 var returnHomeBlocks = new List<string>();
-                ActionQueueItem? recoveryProbe = null;
+                EventCandidate? recoveryRouteAction = null;
                 if (!homeContext.HasValue || string.IsNullOrWhiteSpace(homeLocation))
                 {
                     returnHomeBlocks.Add("recovery_home_route_target_unavailable");
@@ -246,42 +265,56 @@ namespace StardewAI.Core.OptionRegistry
                 }
                 else
                 {
-                    recoveryProbe = CompilerProbeItem(
+                    recoveryRouteAction = RecoveryRouteActionCandidate(
                         snapshot,
-                        RecoveryRouteProbeCandidate(nativeSaveBoundaryRequired: false));
-                    returnHomeBlocks.AddRange(CompilerProbeBlockingReasons(recoveryProbe));
+                        homeLocation);
+                    returnHomeBlocks.AddRange(
+                        recoveryRouteAction?.BlockReasons ??
+                        RecoveryRouteBlockReasons(
+                            snapshot,
+                            nativeSaveBoundaryRequired: false));
                 }
 
                 var recoveryParameters = currentLocationIsHome
                     ? new[] { Parameter("execution_option_id", "executor.sleep") }
-                    : recoveryProbe?.NormalizedCommand.Parameters ?? Array.Empty<SmallModelActionParameter>();
+                    : recoveryRouteAction?.Parameters ?? Array.Empty<SmallModelActionParameter>();
                 var routeTileX = ReadParameterInt(recoveryParameters, "target_tile_x");
                 var routeTileY = ReadParameterInt(recoveryParameters, "target_tile_y");
                 var routeTargetLocation = ReadParameter(recoveryParameters, "expected_target_location");
                 var routeKind = ReadParameter(recoveryParameters, "connector_kind");
                 var routeEstimatedTicks = ReadParameterInt(recoveryParameters, "estimated_ticks") ?? 0;
-                candidates.Add(new EventCandidate
-                {
-                    CandidateId = "recovery:return_home",
-                    Kind = "recovery_return_home",
-                    Available = returnHomeBlocks.Count == 0,
-                    LocationId = currentLocationIsHome
-                        ? homeLocation
-                        : ReadStateFieldString(snapshot, "player", "location_id"),
-                    TileX = currentLocationIsHome ? bedStandTile?.X : routeTileX,
-                    TileY = currentLocationIsHome ? bedStandTile?.Y : routeTileY,
-                    ExpectedEffect = currentLocationIsHome
-                        ? bedStandTile is null
-                            ? "bed_tile=" + bedX + "," + bedY + ";sleep_not_executed"
-                            : "move_to_bed_adjacent=" + bedStandTile.X + "," + bedStandTile.Y + ";step_onto_sleep_touch_tile=" + bedX + "," + bedY + ";touch_action=Sleep;sleep_prompt_expected;Sleep_Yes_not_executed"
-                        : "rolling_horizon_route_to_home=" + homeLocation +
-                            ";connector_kind=" + routeKind +
-                            ";expected_target_location=" + routeTargetLocation +
-                            ";one_connector_then_fresh_snapshot;terminal_sleep_pending",
-                    EstimatedTicks = currentLocationIsHome ? 240 : routeEstimatedTicks,
-                    BlockReasons = returnHomeBlocks.Distinct(StringComparer.Ordinal).ToArray(),
-                    Parameters = recoveryParameters
-                });
+                candidates.Add(!currentLocationIsHome && recoveryRouteAction is not null &&
+                    string.Equals(
+                        recoveryRouteAction.Kind,
+                        "clear_obstacle_tile",
+                        StringComparison.Ordinal)
+                    ? RecoveryRouteRepairCandidate(
+                        recoveryRouteAction,
+                        "recovery:return_home",
+                        homeLocation,
+                        nativeSaveBoundaryRequired: false)
+                    : new EventCandidate
+                    {
+                        CandidateId = "recovery:return_home",
+                        Kind = "recovery_return_home",
+                        Available = returnHomeBlocks.Count == 0,
+                        LocationId = currentLocationIsHome
+                            ? homeLocation
+                            : ReadStateFieldString(snapshot, "player", "location_id"),
+                        TileX = currentLocationIsHome ? bedStandTile?.X : routeTileX,
+                        TileY = currentLocationIsHome ? bedStandTile?.Y : routeTileY,
+                        ExpectedEffect = currentLocationIsHome
+                            ? bedStandTile is null
+                                ? "bed_tile=" + bedX + "," + bedY + ";sleep_not_executed"
+                                : "move_to_bed_adjacent=" + bedStandTile.X + "," + bedStandTile.Y + ";step_onto_sleep_touch_tile=" + bedX + "," + bedY + ";touch_action=Sleep;sleep_prompt_expected;Sleep_Yes_not_executed"
+                            : "rolling_horizon_route_to_home=" + homeLocation +
+                                ";connector_kind=" + routeKind +
+                                ";expected_target_location=" + routeTargetLocation +
+                                ";one_connector_then_fresh_snapshot;terminal_sleep_pending",
+                        EstimatedTicks = currentLocationIsHome ? 240 : routeEstimatedTicks,
+                        BlockReasons = returnHomeBlocks.Distinct(StringComparer.Ordinal).ToArray(),
+                        Parameters = recoveryParameters
+                    });
                 candidates.Add(new EventCandidate
                 {
                     CandidateId = "recovery:sleep_before_collapse",
@@ -321,6 +354,36 @@ namespace StardewAI.Core.OptionRegistry
             };
         }
 
+        private EventCandidate? RecoveryRouteActionCandidate(
+            SnapshotEnvelope snapshot,
+            string homeLocation)
+        {
+            var currentLocation = ReadStateFieldString(
+                snapshot,
+                "player",
+                "location_id");
+            return FindResolvedRoutePlan(
+                    snapshot,
+                    currentLocation,
+                    homeLocation,
+                    RouteConnectorCandidates(snapshot, int.MaxValue))
+                ?.FirstActionCandidate;
+        }
+
+        private string[] RecoveryRouteBlockReasons(
+            SnapshotEnvelope snapshot,
+            bool nativeSaveBoundaryRequired)
+        {
+            var reasons = CompilerProbeBlockingReasons(
+                CompilerProbeItem(
+                    snapshot,
+                    RecoveryRouteProbeCandidate(
+                        nativeSaveBoundaryRequired)));
+            return reasons.Length > 0
+                ? reasons
+                : new[] { "recovery_route_graph_no_path_home" };
+        }
+
         private static OptionAvailabilityCandidate RecoveryRouteProbeCandidate(
             bool nativeSaveBoundaryRequired)
         {
@@ -338,6 +401,60 @@ namespace StardewAI.Core.OptionRegistry
             return new OptionAvailabilityCandidate
             {
                 OptionId = "recovery.stabilize_day",
+                Parameters = parameters.ToArray()
+            };
+        }
+
+        private static EventCandidate RecoveryRouteRepairCandidate(
+            EventCandidate repair,
+            string candidateId,
+            string homeLocation,
+            bool nativeSaveBoundaryRequired)
+        {
+            var parameters = repair.Parameters
+                .Where(parameter =>
+                    !string.Equals(
+                        parameter.Name,
+                        "control_plane.native_save_boundary",
+                        StringComparison.Ordinal))
+                .Concat(new[]
+                {
+                    Parameter("recovery.target_location_id", homeLocation),
+                    Parameter(
+                        "recovery.snapshot_policy",
+                        "clear_one_obstacle_then_fresh_snapshot")
+                })
+                .ToList();
+            if (nativeSaveBoundaryRequired)
+            {
+                parameters.Add(Parameter(
+                    "control_plane.native_save_boundary",
+                    "true"));
+            }
+
+            return new EventCandidate
+            {
+                CandidateId = candidateId,
+                Kind = repair.Kind,
+                Available = repair.Available,
+                LocationId = repair.LocationId,
+                TileX = repair.TileX,
+                TileY = repair.TileY,
+                ExpectedEffect = repair.ExpectedEffect +
+                    ";rolling_horizon_route_to_home=" + homeLocation +
+                    ";terminal_sleep_pending=true",
+                EstimatedTicks = repair.EstimatedTicks,
+                EnergyCost = repair.EnergyCost,
+                AvailabilityClass =
+                    "recovery_route_repair_clearable_obstacle",
+                AllowedNow = repair.AllowedNow,
+                AllowedToday = repair.AllowedToday,
+                NextOpenTime = repair.NextOpenTime,
+                EffectiveOpenTime = repair.EffectiveOpenTime,
+                ClosesAt = repair.ClosesAt,
+                WaitCost = repair.WaitCost,
+                GateReasons = repair.GateReasons,
+                BlockReasons = repair.BlockReasons,
                 Parameters = parameters.ToArray()
             };
         }

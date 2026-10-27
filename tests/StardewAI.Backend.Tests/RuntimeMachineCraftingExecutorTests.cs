@@ -70,6 +70,59 @@ public sealed class RuntimeMachineCraftingExecutorTests
         Assert.True(
             RuntimeTestHarnessDispatchCatalog.IsSupported(
                 "executor.craft_machine_item"));
+        Assert.Contains(
+            "pending.Request.OptionId == \"executor.craft_crab_pot\"",
+            dispatch);
+        Assert.True(
+            RuntimeTestHarnessDispatchCatalog.IsSupported(
+                "executor.craft_crab_pot"));
+        Assert.Contains(
+            "? \"craft_crab_pot\"",
+            executor);
+        Assert.Contains(
+            "pending.Request.OptionId == \"executor.craft_rain_totem\"",
+            dispatch);
+        Assert.True(
+            RuntimeTestHarnessDispatchCatalog.IsSupported(
+                "executor.craft_rain_totem"));
+        Assert.Contains(
+            "? \"craft_rain_totem\"",
+            executor);
+    }
+
+    [Fact]
+    public void RainTotemSmokeUsesSharedExactCraftingFixtureAndNativeExecutor()
+    {
+        var script = RuntimeHarnessSources.RepositoryFile(
+            "scripts",
+            "Invoke-RuntimeRainTotemCraftingSmoke.ps1");
+        var fixture = RuntimeHarnessSources.File(
+            "ModEntry.CraftingFixtures.cs");
+        var dispatch = RuntimeHarnessSources.File("ModEntry.cs");
+
+        Assert.Contains(
+            "Invoke-RuntimeStorageCraftingSmoke.ps1",
+            script);
+        Assert.Contains(
+            "debug.setup_rain_totem_crafting_target",
+            script);
+        Assert.Contains("executor.craft_rain_totem", script);
+        Assert.Contains("ExpectedPrimitiveKind = \"craft_rain_totem\"", script);
+        Assert.Contains(
+            "ExecuteSetupExactCraftingTarget(",
+            fixture);
+        Assert.Contains(
+            "learned_rain_totem_recipe_preserved",
+            fixture);
+        Assert.Contains(
+            "native_rain_totem_output=true",
+            fixture);
+        Assert.Contains(
+            "ExecuteSetupRainTotemCraftingTarget(pending.Request)",
+            dispatch);
+        Assert.Contains(
+            "\"debug.setup_rain_totem_crafting_target\"",
+            RuntimeHarnessSources.File("ModEntry.SupportedOptions.cs"));
     }
 
     [Fact]

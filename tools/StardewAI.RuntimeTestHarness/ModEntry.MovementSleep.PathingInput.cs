@@ -243,4 +243,17 @@ public sealed partial class ModEntry : Mod
 
         StartMoving(direction);
         move.CurrentDirection = direction;
-    }}
+    }
+
+    private void StartMovingIfNeeded(ExecutorPathCursor cursor, int direction)
+    {
+        Game1.player.forceCanMove();
+        if (cursor.CurrentDirection == direction)
+        {
+            return;
+        }
+
+        StartMoving(direction);
+        cursor.CurrentDirection = direction;
+    }
+}

@@ -47,6 +47,82 @@ public sealed class LiveTrainingLoopReport
     [JsonPropertyName("snapshot_dir")]
     public string SnapshotDir { get; set; } = string.Empty;
 
+    [JsonPropertyName("golden_walnut_fresh_save_evidence_capture_enabled")]
+    public bool GoldenWalnutFreshSaveEvidenceCaptureEnabled { get; set; }
+
+    [JsonPropertyName("golden_walnut_fresh_save_episode_manifest_path")]
+    public string GoldenWalnutFreshSaveEpisodeManifestPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("golden_walnut_fresh_save_episode_count")]
+    public int GoldenWalnutFreshSaveEpisodeCount { get; set; }
+
+    [JsonPropertyName("golden_walnut_source_schedule_required")]
+    public bool GoldenWalnutSourceScheduleRequired { get; set; }
+
+    [JsonPropertyName("golden_walnut_source_milestone_ready")]
+    public bool GoldenWalnutSourceMilestoneReady { get; set; }
+
+    [JsonPropertyName("golden_walnut_source_current_total_day")]
+    public int GoldenWalnutSourceCurrentTotalDay { get; set; } = -1;
+
+    [JsonPropertyName("golden_walnut_deadline_total_day_exclusive")]
+    public int GoldenWalnutDeadlineTotalDayExclusive { get; set; }
+
+    [JsonPropertyName("golden_walnut_source_milestone_blocking_reasons")]
+    public string[] GoldenWalnutSourceMilestoneBlockingReasons { get; set; } =
+        Array.Empty<string>();
+
+    [JsonPropertyName("golden_walnut_source_schedule_verified")]
+    public bool GoldenWalnutSourceScheduleVerified { get; set; }
+
+    [JsonPropertyName("golden_walnut_source_schedule_path")]
+    public string GoldenWalnutSourceSchedulePath { get; set; } = string.Empty;
+
+    [JsonPropertyName("planning_handoff_capture_manifest_path")]
+    public string PlanningHandoffCaptureManifestPath { get; set; } =
+        string.Empty;
+
+    [JsonPropertyName("planning_handoff_teacher_dispatch_manifest_path")]
+    public string PlanningHandoffTeacherDispatchManifestPath { get; set; } =
+        string.Empty;
+
+    [JsonPropertyName("planning_handoff_native_run_plan_path")]
+    public string PlanningHandoffNativeRunPlanPath { get; set; } =
+        string.Empty;
+
+    [JsonPropertyName("crop_teacher_first_day_completed")]
+    public bool CropTeacherFirstDayCompleted { get; set; }
+
+    [JsonPropertyName("crop_teacher_run_completed")]
+    public bool CropTeacherRunCompleted { get; set; }
+
+    [JsonPropertyName("crop_teacher_replan_required")]
+    public bool CropTeacherReplanRequired { get; set; }
+
+    [JsonPropertyName("crop_teacher_replan_reason")]
+    public string CropTeacherReplanReason { get; set; } = string.Empty;
+
+    [JsonPropertyName("crop_teacher_replan_count")]
+    public int CropTeacherReplanCount { get; set; }
+
+    [JsonPropertyName("crop_teacher_transition_ledger_path")]
+    public string CropTeacherTransitionLedgerPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("crop_teacher_harvest_receipt_count")]
+    public int CropTeacherHarvestReceiptCount { get; set; }
+
+    [JsonPropertyName("crop_teacher_day_boundary_receipt_count")]
+    public int CropTeacherDayBoundaryReceiptCount { get; set; }
+
+    [JsonPropertyName("stage_one_collection_teacher_queue_count")]
+    public int StageOneCollectionTeacherQueueCount { get; set; }
+
+    [JsonPropertyName("stage_one_collection_control_queue_count")]
+    public int StageOneCollectionControlQueueCount { get; set; }
+
+    [JsonPropertyName("crop_teacher_control_attempts_started")]
+    public int CropTeacherControlAttemptsStarted { get; set; }
+
     [JsonPropertyName("iterations")]
     public int Iterations { get; set; }
 

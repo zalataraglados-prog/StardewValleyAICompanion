@@ -607,14 +607,30 @@ public sealed partial class ActionQueueCompilerTests
     }
 
     [Fact]
-    public void CompileCloseMenuBlocksDialogueWithCharacterPresentFalse()
+    public void CompileCloseMenuAllowsTransparentSpeakerlessNonQuestionMessage()
     {
-        var snapshot = SafeOrdinaryDialogueSnapshot(inject: @"""dialogue_character_present"": false");
+        var snapshot = SafeOrdinaryDialogueSnapshot(
+            inject: "\"dialogue_character_present\": false," +
+                "\"dialogue_speaker_name\": \"\"");
+
+        var queue = new ActionQueueCompiler().Compile(Request(snapshot.StateHash, "executor.close_menu"), snapshot);
+
+        Assert.Equal("pending", queue.Status);
+        Assert.Empty(queue.Items[0].BlockingReasons);
+    }
+
+    [Fact]
+    public void CompileCloseMenuBlocksInconsistentSpeakerlessMessageIdentity()
+    {
+        var snapshot = SafeOrdinaryDialogueSnapshot(
+            inject: @"""dialogue_character_present"": false");
 
         var queue = new ActionQueueCompiler().Compile(Request(snapshot.StateHash, "executor.close_menu"), snapshot);
 
         Assert.Equal("blocked", queue.Status);
-        Assert.Contains("dialogue_close_character_present_false", queue.Items[0].BlockingReasons);
+        Assert.Contains(
+            "dialogue_close_character_speaker_mismatch",
+            queue.Items[0].BlockingReasons);
     }
 
     [Fact]

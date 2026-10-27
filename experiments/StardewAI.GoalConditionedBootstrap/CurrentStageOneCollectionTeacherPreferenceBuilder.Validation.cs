@@ -30,7 +30,7 @@ public static partial class CurrentStageOneCollectionTeacherPreferenceBuilder
                 "stage_one_collection_exact_current_candidate_union.v1" ||
             frontier.SelectionContract.MaximumSelectedCandidateCountPerDecision != 1 ||
             frontier.SelectionContract.SharedCandidateExecutionSemantics !=
-                "execute_once_and_credit_all_exact_bindings" ||
+                "execute_once_and_credit_at_most_one_exact_binding_per_selection_group" ||
             frontier.SelectionContract.UnavailableCandidateSemantics !=
                 "defer_without_negative_label" ||
             frontier.TeacherPreferenceLabelEligible ||
@@ -113,7 +113,7 @@ public static partial class CurrentStageOneCollectionTeacherPreferenceBuilder
                 string.IsNullOrWhiteSpace(value.OptionId) ||
                 string.IsNullOrWhiteSpace(value.Kind) ||
                 value.ExecutionSemantics !=
-                    "execute_once_and_credit_all_exact_bindings" ||
+                    "execute_once_and_credit_at_most_one_exact_binding_per_selection_group" ||
                 value.RequirementCredits.Length == 0) ||
             choices.GroupBy(value => value.CandidateId, StringComparer.Ordinal)
                 .Any(value => value.Count() != 1) ||

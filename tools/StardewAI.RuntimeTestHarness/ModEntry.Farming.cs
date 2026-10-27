@@ -83,7 +83,13 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
-        var path = BuildAdjacentToolPath(location, target, request.MaxMovementTiles ?? 512, out var moveReason);
+        var path = BuildAdjacentToolPath(
+            location,
+            target,
+            request.MaxMovementTiles ?? 512,
+            out var moveReason,
+            avoidSoftObstacles: true,
+            allowRemovableObstacles: false);
         if (path is null)
         {
             pending.Completion.SetResult(NativeToolBlocked(request, "water_crop", target, can, waterBefore, staminaBefore, started, estimatedTicks, moveReason, requested, WaterCropObservedEffect(location, target)));
@@ -168,7 +174,7 @@ public sealed partial class ModEntry : Mod
         var estimatedTicks = EstimateRuntimeToolTicks(target);
         var requested = TillSoilRequestedEffect(location, target);
 
-        if (location is not Farm && location is not MineShaft)
+        if (location is not Farm && location is not MineShaft && location is not IslandLocation)
         {
             pending.Completion.SetResult(NativeToolBlocked(request, "till_soil", target, hoe, null, staminaBefore, started, estimatedTicks, "unsupported_location", requested, TillSoilObservedEffect(location, target)));
             return;
@@ -181,7 +187,13 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
-        var path = BuildAdjacentToolPath(location, target, request.MaxMovementTiles ?? 512, out var moveReason);
+        var path = BuildAdjacentToolPath(
+            location,
+            target,
+            request.MaxMovementTiles ?? 512,
+            out var moveReason,
+            avoidSoftObstacles: true,
+            allowRemovableObstacles: false);
         if (path is null)
         {
             pending.Completion.SetResult(NativeToolBlocked(request, "till_soil", target, hoe, null, staminaBefore, started, estimatedTicks, moveReason, requested, TillSoilObservedEffect(location, target)));
@@ -267,7 +279,7 @@ public sealed partial class ModEntry : Mod
         return reasons.Distinct(StringComparer.Ordinal).ToArray();
     }
 
-    private static List<Point>? BuildAdjacentToolPath(GameLocation location, Point target, int maxTiles, out string blockReason, bool avoidSoftObstacles = false, bool allowRemovableObstacles = true)
+    private static List<Point>? BuildAdjacentToolPath(GameLocation location, Point target, int maxTiles, out string blockReason, bool avoidSoftObstacles = false, bool allowRemovableObstacles = false)
     {
         blockReason = string.Empty;
         if (AreAdjacent(Game1.player.TilePoint, target))
@@ -355,51 +367,38 @@ public sealed partial class ModEntry : Mod
         if (tool.Lifecycle.Phase == NativeToolActionPhase.Ready &&
             !AreAdjacent(Game1.player.TilePoint, tool.Target))
         {
-            if (tool.PathIndex >= tool.Path.Count)
+            if (!TryAdvanceExecutorPath(
+                    Game1.currentLocation,
+                    tool.Path,
+                    tool.ActionPathCursor,
+                    out var movementReason,
+                    waitForSoftObstacle: false))
             {
-                CompleteNativeToolBlocked(tool, "unreachable_target");
+                CompleteNativeToolBlocked(tool, movementReason);
+            }
+
+            return;
+        }
+
+        if (tool.Lifecycle.Phase == NativeToolActionPhase.Ready &&
+            tool.NeedsActionCentering)
+        {
+            // Character.GetToolLocation ignores lastClick in background operation.
+            // Centering makes the requested adjacent tile deterministic from facing.
+            if (!TryCenterExecutorOnCurrentTile(
+                    tool.ActionPathCursor,
+                    out var centered,
+                    out var centeringReason))
+            {
+                CompleteNativeToolBlocked(tool, centeringReason);
+                return;
+            }
+            if (!centered)
+            {
                 return;
             }
 
-            var next = tool.Path[tool.PathIndex];
-            if (Game1.player.TilePoint == next)
-            {
-                tool.PathIndex++;
-                tool.StuckTicks = 0;
-                tool.LastPosition = Game1.player.Position;
-                return;
-            }
-
-            if (!IsTileWalkable(Game1.currentLocation, next) || IsTileOccupiedByCharacter(Game1.currentLocation, next))
-            {
-                CompleteNativeToolBlocked(tool, "unreachable_target");
-                return;
-            }
-
-            var direction = DirectionTo(Game1.player.TilePoint, next);
-            var movedSinceLastTick = Vector2.DistanceSquared(tool.LastPosition, Game1.player.Position) >= 0.01f;
-            tool.LastPosition = Game1.player.Position;
-            StartMoving(direction);
-            MovePlayerForTick();
-            if (Game1.player.TilePoint == next)
-            {
-                tool.PathIndex++;
-            }
-
-            if (!movedSinceLastTick)
-            {
-                tool.StuckTicks++;
-                if (tool.StuckTicks > 45)
-                {
-                    CompleteNativeToolBlocked(tool, "movement_stuck_or_collision_blocked");
-                }
-            }
-            else
-            {
-                tool.StuckTicks = 0;
-                tool.LastPosition = Game1.player.Position;
-            }
-
+            tool.NeedsActionCentering = false;
             return;
         }
 
@@ -1104,7 +1103,8 @@ public sealed partial class ModEntry : Mod
             !string.Equals(Game1.currentLocation?.lastQuestionKey, "Sleep", StringComparison.Ordinal) &&
             !string.Equals(Game1.currentLocation?.lastQuestionKey, "SleepTent", StringComparison.Ordinal) &&
             (!Game1.eventUp || allowEventDialogue) &&
-            ((dialogueBox.characterDialogue is not null &&
+            (dialogueBox.characterDialogue is null ||
+                (dialogueBox.characterDialogue is not null &&
                 !string.IsNullOrWhiteSpace(dialogueBox.characterDialogue.speaker?.Name)) ||
                 allowSpeakerlessSocialContinuation);
     }

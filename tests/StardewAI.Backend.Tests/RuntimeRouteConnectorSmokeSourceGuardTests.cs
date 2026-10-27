@@ -31,4 +31,39 @@ public sealed class RuntimeRouteConnectorSmokeSourceGuardTests
         Assert.Contains("Stop-Process", Script, StringComparison.Ordinal);
         Assert.DoesNotContain("Game1.player.", Script, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void OrdinaryMineIngressUsesTheSharedNativeConnectorWithoutDirectWarp()
+    {
+        var connector = RuntimeHarnessSources.RepositoryFile(
+            "tools",
+            "StardewAI.RuntimeTestHarness",
+            "ModEntry.MovementSleep.ResultsConnector.cs");
+        var transparentRoute = RuntimeHarnessSources.RepositoryFile(
+            "src",
+            "StardewAI.TransparentBridge",
+            "Adapters",
+            "ShopAccessReadAdapter.RouteGraph.cs");
+        var transparentConnectors = RuntimeHarnessSources.RepositoryFile(
+            "src",
+            "StardewAI.TransparentBridge",
+            "Adapters",
+            "ShopAccessReadAdapter.Connectors.cs");
+        var transparentGates = RuntimeHarnessSources.RepositoryFile(
+            "src",
+            "StardewAI.TransparentBridge",
+            "Adapters",
+            "ShopAccessReadAdapter.GatesBlockers.cs");
+
+        Assert.Contains("connector_ordinary_mine_entry_source_mismatch", connector, StringComparison.Ordinal);
+        Assert.Contains("UndergroundMine1", connector, StringComparison.Ordinal);
+        Assert.Contains("IsOrdinaryMineEntryAction", transparentRoute, StringComparison.Ordinal);
+        Assert.Contains("IsOrdinaryMineEntryAction", transparentConnectors, StringComparison.Ordinal);
+        Assert.Contains("IsOrdinaryMineEntryAction", transparentGates, StringComparison.Ordinal);
+        Assert.Contains("native_dynamic_location = true", transparentRoute, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.enterMine", connector, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.enterMine", transparentRoute, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.enterMine", transparentConnectors, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.enterMine", transparentGates, StringComparison.Ordinal);
+    }
 }

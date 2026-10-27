@@ -55,7 +55,10 @@ public static class MoneyRevenueCropProductionDecisionReceiptBuilder
         }
 
         var normalized = ValidateAndNormalizeCommitments(
-            request.Commitments);
+            request.Commitments,
+            requireWateringRefillApproach:
+                request.SchemaVersion ==
+                "money_revenue_crop_production_decision_request.v2");
         var requestedCommitmentIds = normalized.Select(value =>
                 value.CommitmentId)
             .ToHashSet(StringComparer.Ordinal);
@@ -144,7 +147,9 @@ public static class MoneyRevenueCropProductionDecisionReceiptBuilder
                 new MoneyRevenueCropNativeProductionLayoutIntent(
                     value.CommitmentId,
                     value.LocationId,
-                    value.Tiles)).ToArray(),
+                    value.Tiles,
+                    value.WateringRefillPreparationTiles,
+                    value.WateringRefillApproachTile)).ToArray(),
             MaxQueueItemCount = request.MaxQueueItemCount,
             AllCommitmentsAccepted = allAccepted,
             FormalProductTrainingAuthorized = false,
@@ -194,7 +199,8 @@ public static class MoneyRevenueCropProductionDecisionReceiptBuilder
 
     private static MoneyRevenueCropProductionDecisionCommitment[]
         ValidateAndNormalizeCommitments(
-            MoneyRevenueCropProductionDecisionCommitment[] commitments)
+            MoneyRevenueCropProductionDecisionCommitment[] commitments,
+            bool requireWateringRefillApproach)
     {
         Require(commitments.All(value => value is not null) &&
                 commitments.Select(value => value.CommitmentId)
@@ -202,11 +208,19 @@ public static class MoneyRevenueCropProductionDecisionReceiptBuilder
                     commitments.Length,
             "Money Revenue crop-production decision commitment IDs are duplicated.");
         var occupied = new HashSet<MoneyRevenueCropPlantingTile>();
+        var preparationOnly = new HashSet<MoneyRevenueCropPlantingTile>();
         foreach (var item in commitments)
         {
             var tiles = item.Tiles ?? throw new InvalidDataException(
                 "Money Revenue crop-production decision layout is missing: " +
                 item.CommitmentId);
+            var refillPreparationTiles =
+                item.WateringRefillPreparationTiles ??
+                Array.Empty<MoneyRevenueCropPlantingTile>();
+            var refillApproachTile = item.WateringRefillApproachTile;
+            var completePreparationLayout = tiles
+                .Concat(refillPreparationTiles)
+                .ToArray();
             Require(!string.IsNullOrWhiteSpace(item.CommitmentId) &&
                     !string.IsNullOrWhiteSpace(item.SeedId) &&
                     item.TileCount > 0 &&
@@ -219,13 +233,37 @@ public static class MoneyRevenueCropProductionDecisionReceiptBuilder
                     tiles.All(tile =>
                         tile.TileX >= 0 && tile.TileY >= 0) &&
                     tiles.Distinct().Count() == tiles.Length &&
-                    FitsFarmLayoutProjection(tiles),
+                    refillPreparationTiles.Length <=
+                        MoneyRevenueCropProductionTeacherDecisionBuilder
+                            .MaxWateringRefillPreparationTileCount &&
+                    refillPreparationTiles.All(tile =>
+                        tile.TileX >= 0 && tile.TileY >= 0) &&
+                    refillPreparationTiles.Distinct().Count() ==
+                        refillPreparationTiles.Length &&
+                    (!requireWateringRefillApproach ||
+                        refillApproachTile is not null) &&
+                    (refillApproachTile is null ||
+                        refillApproachTile.TileX >= 0 &&
+                        refillApproachTile.TileY >= 0 &&
+                        !tiles.Contains(refillApproachTile)) &&
+                    completePreparationLayout.Distinct().Count() ==
+                        completePreparationLayout.Length &&
+                    FitsFarmLayoutProjection(completePreparationLayout),
                 "Money Revenue crop-production decision commitment is invalid: " +
                 item.CommitmentId);
-            Require(tiles.All(occupied.Add),
+            Require(tiles.All(tile =>
+                    !preparationOnly.Contains(tile) && occupied.Add(tile)),
                 "Money Revenue crop-production decision layouts overlap.");
+            Require(refillPreparationTiles.All(tile =>
+                    !occupied.Contains(tile)),
+                "Money Revenue crop-production refill preparation overlaps a crop layout.");
+            preparationOnly.UnionWith(refillPreparationTiles);
             item.Tiles = tiles.OrderBy(tile => tile.TileY)
                 .ThenBy(tile => tile.TileX).ToArray();
+            item.WateringRefillPreparationTiles = refillPreparationTiles
+                .OrderBy(tile => tile.TileY)
+                .ThenBy(tile => tile.TileX)
+                .ToArray();
         }
         return commitments;
     }

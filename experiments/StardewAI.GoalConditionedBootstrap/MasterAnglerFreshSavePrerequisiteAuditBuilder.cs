@@ -1,0 +1,2079 @@
+using System.Text.Json;
+using StardewAI.Core.Infrastructure;
+
+namespace StardewAI.GoalConditionedBootstrap;
+
+public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
+{
+    private const string MasterAnglerDirection = "complete_master_angler";
+    private const string DependencyExpansionGoal = "grandpa.maximum_21";
+    private const string FishingSkillProducerNode =
+        "dependency.complete_master_angler.fishing_skill_progression";
+    private const string FishingSkillSourceDirection = "raise_skill_levels";
+    private const string FishingSkillSourceNode =
+        "dependency.raise_skill_levels.acquire_fishing_xp";
+    private const string MineAccessProducerNode =
+        "dependency.complete_master_angler.ordinary_mine_fishing_access";
+    private const string MineAccessSourceDirection = "raise_skill_levels";
+    private const string MineAccessSourceNode =
+        "dependency.raise_skill_levels.acquire_mining_xp";
+    private const string RodEquipmentProducerNode =
+        MasterAnglerRodEquipmentAcquisitionProtocol.RequirementId;
+    private const string DesertBusProducerNode =
+        "dependency.complete_master_angler.desert_bus_access";
+    private const string CommunityCenterDirection = "complete_community_center";
+    private const string CommunityCenterCompletionNode =
+        "dependency.complete_community_center.native_completion";
+    private const string SewerAccessProducerNode =
+        "dependency.complete_master_angler.sewer_rusty_key_access";
+    private const string SecretWoodsAccessProducerNode =
+        "dependency.complete_master_angler.secret_woods_or_forest_farm_access";
+    private const string DarkTalismanAccessProducerNode =
+        "dependency.complete_master_angler.dark_talisman_story_access";
+    private const string TrapSupplyProducerNode =
+        "dependency.complete_master_angler.trap_supply_acquisition";
+    private const string TrapInfrastructureGateNode =
+        "dependency.complete_master_angler.trap_infrastructure_gate";
+    private const string OwnedRainTotemConsumerNode =
+        "dependency.complete_master_angler.consume_owned_rain_totem";
+    private const string RainTotemCraftingReadNode =
+        "dependency.complete_master_angler.rain_totem_crafting_read_authority";
+    private const string WeatherSupplySchedulerNode =
+        "dependency.complete_master_angler.weather_supply_scheduler";
+    private const string RainTotemImmediateMaterialSupplyNode =
+        "dependency.complete_master_angler.rain_totem_immediate_material_supply";
+    private const string RainTotemPineTarCapacityReserveNode =
+        "dependency.complete_master_angler.rain_totem_pine_tar_capacity_reserve";
+    private const string RainTotemTruffleOilCapacityReserveNode =
+        "dependency.complete_master_angler.rain_totem_truffle_oil_capacity_reserve";
+    private const string RainTotemForagingSkillProgressionNode =
+        "dependency.complete_master_angler.rain_totem_foraging_skill_progression";
+    private const string RainTotemForagingSkillSourceNode =
+        "dependency.raise_skill_levels.acquire_foraging_xp_from_wild_tree";
+    private const string RainTotemHardwoodReserveNode =
+        "dependency.complete_master_angler.rain_totem_hardwood_reserve";
+    private const string RainTotemCraftingExecutionNode =
+        "dependency.complete_master_angler.rain_totem_crafting_execution";
+    private const string RustyKeyDirection = "obtain_rusty_key";
+    private const string RustyKeyCompletionNode =
+        "dependency.obtain_rusty_key.has_rusty_key";
+    private const string RustyKeyRecurrenceNode =
+        "dependency.obtain_rusty_key.threshold_recurrence";
+    private const string RustyKeyEventNode =
+        "dependency.obtain_rusty_key.native_key_event";
+    private const string TargetDateOpportunityNode =
+        "dependency.complete_master_angler.target_date_opportunity_producer";
+    private const string MasterAnglerRecurrenceNode =
+        "dependency.complete_master_angler.acquisition_recurrence";
+    private const string FreshSaveInventoryNode =
+        "dependency.complete_master_angler.fresh_save_prerequisite_inventory";
+    private const string RodEquipmentFamily = "rod_and_fishing_equipment_acquisition";
+    private const string FishingSkillFamily = "fishing_skill_progression";
+    private const string WeatherFamily = "weather_reserve_or_control";
+    private const string TrapLifecycleFamily = "crab_pot_lifecycle";
+    private const string TrapSupplyFamily = "crab_pot_recipe_material_and_bait_supply";
+
+    private static readonly HashSet<string> RainModes = new(StringComparer.Ordinal)
+    {
+        "rain", "storm", "green_rain"
+    };
+
+    private static readonly Dictionary<string, string> LocationPrerequisites =
+        new(StringComparer.Ordinal)
+        {
+            ["Backwoods"] = "ordinary_world_access",
+            ["Beach"] = "ordinary_world_access",
+            ["BugLand"] = "mutant_bug_lair_story_access",
+            ["Caldera"] = "ginger_island_access",
+            ["Desert"] = "desert_bus_access",
+            ["Farm_Beach"] = "beach_farm_layout",
+            ["Farm_Forest"] = "forest_farm_layout",
+            ["fishingGame"] = "festival_instance_access",
+            ["Forest"] = "ordinary_world_access",
+            ["IslandNorth"] = "ginger_island_access",
+            ["IslandSouth"] = "ginger_island_access",
+            ["IslandSouthEast"] = "ginger_island_access",
+            ["IslandSouthEastCave"] = "ginger_island_access",
+            ["IslandWest"] = "ginger_island_access",
+            ["Mountain"] = "ordinary_world_access",
+            ["Sewer"] = "sewer_rusty_key_access",
+            ["Submarine"] = "festival_instance_access",
+            ["Temp"] = "festival_instance_access",
+            ["Town"] = "ordinary_world_access",
+            ["UndergroundMine"] = "mine_access_and_depth",
+            ["WitchSwamp"] = "witch_swamp_story_access",
+            ["Woods"] = "secret_woods_access"
+        };
+
+    public static MasterAnglerFreshSavePrerequisiteAuditReport Build(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath) =>
+        Build(catalogPath, windowIndexPath, dependencyExpansionPath, null);
+
+    public static MasterAnglerFreshSavePrerequisiteAuditReport Build(
+        string catalogPath,
+        string windowIndexPath,
+        string dependencyExpansionPath,
+        string? goldenWalnutFreshSaveSourceSchedulePath)
+    {
+        var catalogFullPath = Path.GetFullPath(catalogPath);
+        var windowFullPath = Path.GetFullPath(windowIndexPath);
+        var dependencyFullPath = Path.GetFullPath(dependencyExpansionPath);
+        var catalog = Read<MasterAnglerOpportunityCatalogReport>(
+            catalogFullPath,
+            "Master Angler opportunity catalog");
+        var windows = Read<MasterAnglerStageOneWindowIndex>(
+            windowFullPath,
+            "Master Angler window index");
+        var graph = ReadDependencyGraph(dependencyFullPath);
+
+        ValidateAuthority(catalogFullPath, catalog, windows);
+        var catalogById = catalog.Species.ToDictionary(
+            value => value.QualifiedItemId,
+            StringComparer.Ordinal);
+        var unknownLocations = windows.Species
+            .SelectMany(value => RelevantWindows(value))
+            .Select(value => value.LocationId)
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Where(value => !LocationPrerequisites.ContainsKey(value))
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(value => value, StringComparer.Ordinal)
+            .ToArray();
+        Require(unknownLocations.Length == 0,
+            "Unknown Master Angler location prerequisite mappings: " +
+            string.Join(",", unknownLocations));
+
+        var species = windows.Species
+            .OrderBy(value => value.QualifiedItemId, StringComparer.Ordinal)
+            .Select(value => BuildSpecies(value, catalogById[value.QualifiedItemId]))
+            .ToArray();
+        Require(species.All(value => value.StaticOpportunityDayCount >= 2),
+            "At least one Master Angler species has fewer than two static opportunity days.");
+
+        var goldenWalnutSchedule = GoldenWalnutUnlockScheduleProofBuilder.Build();
+        var sourceScheduleFullPath = string.IsNullOrWhiteSpace(
+            goldenWalnutFreshSaveSourceSchedulePath)
+            ? string.Empty
+            : Path.GetFullPath(goldenWalnutFreshSaveSourceSchedulePath);
+        var sourceScheduleSha256 = string.IsNullOrEmpty(sourceScheduleFullPath)
+            ? string.Empty
+            : CurrentTeacherFrontierSupport.HashFile(sourceScheduleFullPath);
+        var unlockTimeline = string.IsNullOrEmpty(sourceScheduleFullPath)
+            ? null
+            : GoldenWalnutFreshSaveUnlockTimelineProofBuilder.Build(
+                Read<GoldenWalnutFreshSaveSourceSchedule>(
+                    sourceScheduleFullPath,
+                    "Golden Walnut fresh-save source schedule"),
+                sourceScheduleSha256);
+        var goldenWalnutFundingRoutes = unlockTimeline is
+            { SourceScheduleComplete: true, NativePhaseOrderingComplete: true }
+            ? GoldenWalnutResortFundingRouteProofBuilder.Build(unlockTimeline)
+            : GoldenWalnutResortFundingRouteProofBuilder.Build();
+        var families = BuildFamilies(
+            species,
+            graph,
+            goldenWalnutSchedule,
+            goldenWalnutFundingRoutes);
+        var missing = families
+            .Where(value => value.ProducerStatus != "implemented_and_bound")
+            .Select(value => value.FamilyId)
+            .ToArray();
+        return new MasterAnglerFreshSavePrerequisiteAuditReport
+        {
+            Status = "partial_fresh_save_prerequisite_inventory",
+            GoalId = catalog.GoalId,
+            GameVersion = catalog.GameVersion,
+            TrainingLabelEligible = false,
+            CatalogPath = catalogFullPath,
+            CatalogSha256 = CurrentTeacherFrontierSupport.HashFile(catalogFullPath),
+            WindowIndexPath = windowFullPath,
+            WindowIndexSha256 = CurrentTeacherFrontierSupport.HashFile(windowFullPath),
+            DependencyExpansionPath = dependencyFullPath,
+            DependencyExpansionSha256 = CurrentTeacherFrontierSupport.HashFile(dependencyFullPath),
+            DeadlineTotalDayExclusive = windows.DeadlineTotalDayExclusive,
+            NativeDenominatorCount = species.Length,
+            RodLocationSpeciesCount = catalog.RodLocationSpeciesCount,
+            MineOverrideOnlySpeciesCount = catalog.MineOverrideOnlySpeciesCount,
+            TrapSpeciesCount = catalog.TrapSpeciesCount,
+            SpeciesWithTwoOrMoreStaticOpportunityDays =
+                species.Count(value => value.StaticOpportunityDayCount >= 2),
+            RainOrStormRequiredSpeciesCount =
+                species.Count(value => value.WeatherRequirement == "rain_or_storm_required"),
+            DynamicConditionSpeciesCount =
+                species.Count(value => value.DynamicConditions.Length > 0),
+            MaximumRequiredFishingLevel =
+                species.Max(value => value.MaximumSourceRequiredFishingLevel),
+            StaticOpportunityInventoryComplete = true,
+            PrerequisiteFamilyInventoryComplete = true,
+            GoldenWalnutUnlockSchedule = goldenWalnutSchedule,
+            GoldenWalnutResortFundingRoutes = goldenWalnutFundingRoutes,
+            GoldenWalnutFreshSaveSourceSchedulePath = sourceScheduleFullPath,
+            GoldenWalnutFreshSaveSourceScheduleSha256 = sourceScheduleSha256,
+            GoldenWalnutFreshSaveUnlockTimeline = unlockTimeline,
+            Species = species,
+            PrerequisiteFamilies = families,
+            MissingOrUnboundProducerFamilies = missing,
+            UnknownLocationIds = unknownLocations
+        };
+    }
+
+    private static MasterAnglerFreshSaveSpeciesPrerequisite BuildSpecies(
+        MasterAnglerStageOneSpeciesWindow windows,
+        MasterAnglerSpeciesOpportunity catalog)
+    {
+        Require(windows.Windows.Length > 0,
+            "Master Angler species has no static source windows: " + windows.QualifiedItemId);
+        var relevantWindows = RelevantWindows(windows).ToArray();
+        Require(relevantWindows.Length > 0,
+            "Master Angler species has no relevant source windows: " + windows.QualifiedItemId);
+        foreach (var window in relevantWindows)
+        {
+            Require(window.FirstTotalDay >= 0 &&
+                    window.LastTotalDay >= window.FirstTotalDay &&
+                    window.LastTotalDay < 224,
+                "Master Angler static source window falls outside the Stage 1 deadline: " +
+                windows.QualifiedItemId);
+        }
+
+        var staticDays = relevantWindows
+            .SelectMany(value => Enumerable.Range(
+                value.FirstTotalDay,
+                value.LastTotalDay - value.FirstTotalDay + 1))
+            .Distinct()
+            .OrderBy(value => value)
+            .ToArray();
+        var sources = relevantWindows
+            .GroupBy(value => new
+            {
+                value.SourceKind,
+                value.SourceKey,
+                value.LocationId,
+                value.MineArea,
+                value.WaterType
+            })
+            .Select(group => new MasterAnglerFreshSaveSourceAlternative
+            {
+                SourceKind = group.Key.SourceKind,
+                SourceKey = group.Key.SourceKey,
+                LocationId = group.Key.LocationId,
+                MineArea = group.Key.MineArea,
+                WaterType = group.Key.WaterType,
+                PrerequisiteFamily = SourcePrerequisite(group.First())
+            })
+            .OrderBy(value => value.PrerequisiteFamily, StringComparer.Ordinal)
+            .ThenBy(value => value.SourceKey, StringComparer.Ordinal)
+            .ToArray();
+        var prerequisiteAlternatives = sources
+            .Select(value => value.PrerequisiteFamily)
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(value => value, StringComparer.Ordinal)
+            .ToArray();
+        var weatherModes = relevantWindows
+            .SelectMany(value => value.WeatherModes)
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(value => value, StringComparer.Ordinal)
+            .ToArray();
+        var dynamicConditions = relevantWindows
+            .SelectMany(value => value.DynamicConditions)
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(value => value, StringComparer.Ordinal)
+            .ToArray();
+        var trapWindows = windows.Windows
+            .Where(value => value.SourceKind == "crab_pot")
+            .ToArray();
+        var availableTrapCycles = trapWindows.Length == 0
+            ? (int?)null
+            : trapWindows
+                .SelectMany(value => Enumerable.Range(
+                    value.FirstTotalDay,
+                    value.LastTotalDay - value.FirstTotalDay + 1))
+                .Distinct()
+                .Count();
+        var requiredPotDays = catalog.TrapDailyOutputChance.HasValue
+            ? StochasticRetryPolicy.RequiredIndependentAttemptCount(
+                1,
+                catalog.TrapDailyOutputChance.Value)
+            : null;
+        return new MasterAnglerFreshSaveSpeciesPrerequisite
+        {
+            QualifiedItemId = windows.QualifiedItemId,
+            DisplayName = windows.DisplayName,
+            AcquisitionClass = windows.AcquisitionClass,
+            RoutePrerequisiteExpression = RouteExpression(prerequisiteAlternatives),
+            RoutePrerequisiteAlternatives = prerequisiteAlternatives,
+            SourceAlternatives = sources,
+            MinimumRequiredFishingLevel = relevantWindows.Min(value => value.MinimumFishingLevel),
+            MaximumSourceRequiredFishingLevel = relevantWindows.Max(value => value.MinimumFishingLevel),
+            WeatherRequirement = WeatherRequirement(relevantWindows),
+            WeatherModes = weatherModes,
+            DynamicConditions = dynamicConditions,
+            StaticOpportunityDayCount = staticDays.Length,
+            FirstStaticOpportunityTotalDay = staticDays[0],
+            FinalStaticReserveTotalDay = staticDays[^1],
+            TrapDailyOutputChance = catalog.TrapDailyOutputChance,
+            TrapRequiredIndependentPotDaysAt95Percent = requiredPotDays,
+            TrapStaticMaximumServicedCycleCountFromDayOne = availableTrapCycles,
+            TrapTheoreticalMinimumParallelPotCapacityFromDayOne =
+                requiredPotDays.HasValue && availableTrapCycles > 0
+                    ? (int)Math.Ceiling(
+                        requiredPotDays.Value / (double)availableTrapCycles.Value)
+                    : null,
+            RodRetryBudgetOwner = windows.AcquisitionClass == "trap_crab_pot"
+                ? string.Empty
+                : "live_target_date_stochastic_retry_budget"
+        };
+    }
+
+    private static AuthoritativeCalendarSourceWindow[] RelevantWindows(
+        MasterAnglerStageOneSpeciesWindow species) =>
+        species.AcquisitionClass == "trap_crab_pot"
+            ? species.Windows.Where(value => value.SourceKind == "crab_pot").ToArray()
+            : species.Windows;
+
+    private static string SourcePrerequisite(AuthoritativeCalendarSourceWindow window)
+    {
+        if (window.SourceKind == "crab_pot")
+            return TrapLifecycleFamily;
+        if (window.SourceKind == "mine_override")
+            return "mine_access_and_depth";
+        Require(window.SourceKind == "location_rule",
+            "Unknown Master Angler source kind: " + window.SourceKind);
+        Require(LocationPrerequisites.TryGetValue(window.LocationId, out var family),
+            "Unknown Master Angler location prerequisite: " + window.LocationId);
+        return family!;
+    }
+
+    private static string RouteExpression(string[] alternatives)
+    {
+        if (alternatives.Contains("ordinary_world_access", StringComparer.Ordinal))
+            return "ordinary_world_access";
+        if (alternatives.SequenceEqual(new[] { "ginger_island_access", "mine_access_and_depth" }))
+            return "mine_depth_or_ginger_island_caldera";
+        if (alternatives.SequenceEqual(new[] { "forest_farm_layout", "secret_woods_access" }))
+            return "secret_woods_access_or_forest_farm_layout";
+        if (alternatives.Length > 2)
+            return "one_of_advanced_location_access";
+        return alternatives.Length == 1
+            ? alternatives[0]
+            : string.Join("_or_", alternatives);
+    }
+
+    private static string WeatherRequirement(
+        IReadOnlyCollection<AuthoritativeCalendarSourceWindow> windows)
+    {
+        var modes = windows.Select(value => value.WeatherModes).ToArray();
+        if (modes.All(value => value.Length > 0 && value.All(RainModes.Contains)))
+            return "rain_or_storm_required";
+        if (modes.All(value => value.Length > 0 &&
+                               value.All(mode => mode == "sun")))
+            return "sun_required";
+        return "weather_flexible_across_sources";
+    }
+
+    private static MasterAnglerFreshSavePrerequisiteFamily[] BuildFamilies(
+        MasterAnglerFreshSaveSpeciesPrerequisite[] species,
+        DependencyGraphInventory graph,
+        GoldenWalnutUnlockScheduleProof goldenWalnutSchedule,
+        GoldenWalnutResortFundingRouteProof goldenWalnutFundingRoutes)
+    {
+        var required = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+        void Add(string family, IEnumerable<string> ids)
+        {
+            if (!required.TryGetValue(family, out var values))
+            {
+                values = new HashSet<string>(StringComparer.Ordinal);
+                required.Add(family, values);
+            }
+            values.UnionWith(ids);
+        }
+
+        var rodSpecies = species.Where(value => value.AcquisitionClass != "trap_crab_pot").ToArray();
+        var trapSpecies = species.Where(value => value.AcquisitionClass == "trap_crab_pot").ToArray();
+        Add(RodEquipmentFamily, rodSpecies.Select(value => value.QualifiedItemId));
+        Add(FishingSkillFamily, rodSpecies
+            .Where(value => value.MaximumSourceRequiredFishingLevel > 0)
+            .Select(value => value.QualifiedItemId));
+        Add(WeatherFamily, rodSpecies
+            .Where(value => value.WeatherRequirement == "rain_or_storm_required")
+            .Select(value => value.QualifiedItemId));
+        Add(TrapLifecycleFamily, trapSpecies.Select(value => value.QualifiedItemId));
+        Add(TrapSupplyFamily, trapSpecies.Select(value => value.QualifiedItemId));
+        foreach (var row in species)
+        {
+            if (row.RoutePrerequisiteExpression is "ordinary_world_access" or TrapLifecycleFamily)
+                continue;
+            Add(row.RoutePrerequisiteExpression, new[] { row.QualifiedItemId });
+        }
+
+        return required
+            .Where(pair => pair.Value.Count > 0)
+            .OrderBy(pair => pair.Key, StringComparer.Ordinal)
+            .Select(pair => Family(
+                pair.Key,
+                pair.Value,
+                graph,
+                goldenWalnutSchedule,
+                goldenWalnutFundingRoutes))
+            .ToArray();
+    }
+
+    private static MasterAnglerFreshSavePrerequisiteFamily Family(
+        string family,
+        IEnumerable<string> species,
+        DependencyGraphInventory graph,
+        GoldenWalnutUnlockScheduleProof goldenWalnutSchedule,
+        GoldenWalnutResortFundingRouteProof goldenWalnutFundingRoutes)
+    {
+        var (status, evidence, work) = family switch
+        {
+            TrapLifecycleFamily when graph.HasNode(
+                "dependency.complete_master_angler.trap_lifecycle_intent") =>
+                ("implemented_and_bound",
+                    new[] { "dependency.complete_master_angler.trap_lifecycle_intent" },
+                    "No lifecycle implementation is missing; fresh-save supply remains separate."),
+            FishingSkillFamily when graph.HasBoundMasterAnglerFishingSkillProgression() =>
+                ("implemented_and_bound",
+                    new[] { FishingSkillProducerNode, FishingSkillSourceNode },
+                    "The Master Angler recurrence reuses the existing exact fishing-XP producer, deadline accounting and fresh native receipt."),
+            FishingSkillFamily when graph.HasOption(FishingSkillSourceDirection, "fishing.catch_fish") =>
+                ("reusable_but_unbound",
+                    new[] { FishingSkillSourceNode },
+                    "Bind fishing-level progression and its time cost into the Master Angler deadline recurrence."),
+            "mine_access_and_depth" when graph.HasBoundMasterAnglerMineAccessProgression() =>
+                ("implemented_and_bound",
+                    new[] { MineAccessProducerNode, MineAccessSourceNode },
+                    "The selected ordinary-mine producer enters floor one natively, reaches the exact sufficient fishing floor and replans from fresh receipts."),
+            "mine_access_and_depth" when graph.HasOption("raise_skill_levels", "mining.reach_depth") =>
+                ("reusable_but_unbound",
+                    new[] { "raise_skill_levels:mining.reach_depth" },
+                    "Bind the existing mine-depth producer to each required fishing floor and deadline."),
+            "mine_depth_or_ginger_island_caldera" when graph.HasBoundMasterAnglerMineAccessProgression() =>
+                ("implemented_and_bound",
+                    new[] { MineAccessProducerNode, MineAccessSourceNode },
+                    "The selected ordinary-mine area-80 branch is sufficient; Ginger Island and Caldera remain valid but unnecessary alternatives."),
+            "mine_depth_or_ginger_island_caldera" when graph.HasOption("raise_skill_levels", "mining.reach_depth") =>
+                ("reusable_branch_but_disjunction_unbound",
+                    new[] { "raise_skill_levels:mining.reach_depth" },
+                    "Prove and schedule either mine area 80 or the complete Ginger Island/Caldera access chain."),
+            "one_of_advanced_location_access" when graph.HasBoundMasterAnglerMineAccessProgression() =>
+                ("implemented_and_bound",
+                    new[] { MineAccessProducerNode, MineAccessSourceNode },
+                    "The selected ordinary-mine branch is sufficient; sewer, Mutant Bug Lair and Witch's Swamp remain valid but unnecessary alternatives."),
+            "one_of_advanced_location_access" when
+                graph.HasOption("raise_skill_levels", "mining.reach_depth") =>
+                ("reusable_branch_but_disjunction_unbound",
+                    graph.HasDirection("obtain_rusty_key")
+                        ? new[] { "raise_skill_levels:mining.reach_depth", "obtain_rusty_key" }
+                        : new[] { "raise_skill_levels:mining.reach_depth" },
+                    "Select and bind one exact sufficient route; the current baseline can reuse mine depth while sewer, Mutant Bug Lair and Witch's Swamp remain alternatives."),
+            "sewer_rusty_key_access" when graph.HasBoundMasterAnglerSewerAccess() =>
+                ("implemented_and_bound",
+                    new[] { SewerAccessProducerNode, RustyKeyCompletionNode },
+                    "The Master Angler recurrence composes the separately governed Rusty Key root with the exact one-or-two-interaction native sewer ingress and a fresh route receipt."),
+            "sewer_rusty_key_access" when graph.HasDirection(RustyKeyDirection) =>
+                ("reusable_but_unbound",
+                    new[] { RustyKeyDirection },
+                    "Bind the Rusty Key recurrence and sewer ingress to Master Angler before Mutant Carp reserve."),
+            "desert_bus_access" when graph.HasBoundMasterAnglerDesertBusAccess() =>
+                ("implemented_and_bound",
+                    new[] { DesertBusProducerNode, CommunityCenterCompletionNode },
+                    "The recurrence composes the existing Community Center completion proof with the locked native bus ticket and return transports, then replans from a fresh receipt."),
+            "desert_bus_access" when graph.HasDirection(CommunityCenterDirection) =>
+                ("upstream_root_present_composed_producer_missing",
+                    new[] { CommunityCenterDirection },
+                    "Bind the exact bus-repair branch or equivalent Joja unlock plus bus travel; full CC completion alone is not an access proof."),
+            "secret_woods_access_or_forest_farm_layout" when
+                graph.HasBoundMasterAnglerSecretWoodsAccess() =>
+                ("implemented_and_bound",
+                    new[] { SecretWoodsAccessProducerNode },
+                    "Forest Farm is selected from the live farm type; every other layout reuses the exact Axe upgrade lifecycle, clears the vanilla 602 hollow log at Forest 1,6 and replans before the native Woods warp."),
+            "secret_woods_access_or_forest_farm_layout" =>
+                ("alternative_selection_missing",
+                    Array.Empty<string>(),
+                    "Select the actual farm layout; otherwise schedule axe progression and Secret Woods access."),
+            TrapSupplyFamily when graph.HasBoundMasterAnglerTrapSupply() =>
+                ("implemented_and_bound",
+                    new[] { TrapSupplyProducerNode, FishingSkillProducerNode },
+                    "The lifecycle reuses exact one-unit FishShop purchases for Crab Pot capacity and bait deficits after the native fishing-level stock unlock, then replans from a fresh receipt."),
+            TrapSupplyFamily =>
+                ("runtime_consumer_present_supply_producer_missing",
+                    new[] { "dependency.complete_master_angler.craft_trap_infrastructure" },
+                    "Bind an exact fresh-save Crab Pot and bait supply producer, including unlock, money, route and native purchase receipts."),
+            RodEquipmentFamily when graph.HasBoundMasterAnglerRodEquipmentAcquisition() =>
+                ("implemented_and_bound",
+                    new[] { RodEquipmentProducerNode },
+                    "The recurrence prefers the native spring_2_1 mail, basic quest 13 route and event 739330 Bamboo Pole grant; the exact FishShop purchase chain remains a recovery fallback, while later rods, bait and tackle remain optional efficiency improvements."),
+            RodEquipmentFamily =>
+                ("current_state_gate_present_future_producer_missing",
+                    new[] { "dependency.complete_master_angler.target_date_opportunity_producer" },
+                    "Bind one sufficient rod acquisition before target windows; optional equipment upgrades must not become hard prerequisites."),
+            WeatherFamily when graph.HasBoundMasterAnglerOwnedRainTotemUse() &&
+                               graph.HasBoundMasterAnglerRainTotemCraftingRead() &&
+                               graph.HasBoundMasterAnglerRainTotemImmediateMaterialSupply() &&
+                               graph.HasBoundMasterAnglerRainTotemPineTarCapacityReserve() &&
+                               graph.HasBoundMasterAnglerRainTotemTruffleOilCapacityReserve() &&
+                               graph.HasBoundMasterAnglerRainTotemForagingSkillProgression() &&
+                               graph.HasBoundMasterAnglerRainTotemHardwoodReserve() &&
+                               graph.HasBoundMasterAnglerRainTotemCraftingExecution() &&
+                               graph.HasBoundMasterAnglerWeatherSupplyScheduler() =>
+                ("implemented_and_bound",
+                    new[] { OwnedRainTotemConsumerNode, RainTotemCraftingReadNode, RainTotemImmediateMaterialSupplyNode, RainTotemPineTarCapacityReserveNode, RainTotemTruffleOilCapacityReserveNode, RainTotemForagingSkillProgressionNode, RainTotemHardwoodReserveNode, RainTotemCraftingExecutionNode, WeatherSupplySchedulerNode },
+                    "The recurrence binds exact Foraging 9 progression, all three material reserves, atomic material reservation and settlement, one native Rain Totem crafting receipt, owned-item use and the next-day rain window. Year 3 deadline composition remains a separate admission proof."),
+            WeatherFamily when graph.HasBoundMasterAnglerOwnedRainTotemUse() &&
+                               graph.HasBoundMasterAnglerRainTotemCraftingRead() &&
+                               graph.HasBoundMasterAnglerRainTotemImmediateMaterialSupply() &&
+                               graph.HasBoundMasterAnglerRainTotemPineTarCapacityReserve() &&
+                               graph.HasBoundMasterAnglerRainTotemTruffleOilCapacityReserve() &&
+                               graph.HasBoundMasterAnglerRainTotemHardwoodReserve() &&
+                               graph.HasBoundMasterAnglerRainTotemCraftingExecution() &&
+                               graph.HasBoundMasterAnglerWeatherSupplyScheduler() =>
+                ("runtime_consumer_full_material_and_native_crafting_bound_foraging_progression_missing",
+                    new[] { OwnedRainTotemConsumerNode, RainTotemCraftingReadNode, RainTotemImmediateMaterialSupplyNode, RainTotemPineTarCapacityReserveNode, RainTotemTruffleOilCapacityReserveNode, RainTotemHardwoodReserveNode, RainTotemCraftingExecutionNode, WeatherSupplySchedulerNode },
+                    "Bind the existing exact wild-tree Foraging XP producer to the Rain Totem recurrence until the native recipe unlocks at unmodified Foraging level 9."),
+            WeatherFamily when graph.HasBoundMasterAnglerOwnedRainTotemUse() &&
+                               graph.HasBoundMasterAnglerRainTotemCraftingRead() &&
+                               graph.HasBoundMasterAnglerRainTotemImmediateMaterialSupply() &&
+                               graph.HasBoundMasterAnglerRainTotemPineTarCapacityReserve() &&
+                               graph.HasBoundMasterAnglerRainTotemTruffleOilCapacityReserve() &&
+                               graph.HasBoundMasterAnglerWeatherSupplyScheduler() =>
+                ("runtime_consumer_crafting_read_scheduler_immediate_supply_pine_tar_and_pig_truffle_capacity_bound_hardwood_reservation_and_native_crafting_receipt_missing",
+                    new[] { OwnedRainTotemConsumerNode, RainTotemCraftingReadNode, RainTotemImmediateMaterialSupplyNode, RainTotemPineTarCapacityReserveNode, RainTotemTruffleOilCapacityReserveNode, WeatherSupplySchedulerNode },
+                    "The future rain-window scheduler now binds exact Pine Tar and Pig/Truffle Oil capacity through shared native machine, building, animal-purchase and interaction chains. Bind Hardwood reserve, protect committed materials from unrelated consumption, and capture a native Rain Totem crafting receipt before marking weather complete."),
+            WeatherFamily when graph.HasBoundMasterAnglerOwnedRainTotemUse() &&
+                               graph.HasBoundMasterAnglerRainTotemCraftingRead() &&
+                               graph.HasBoundMasterAnglerRainTotemImmediateMaterialSupply() &&
+                               graph.HasBoundMasterAnglerRainTotemPineTarCapacityReserve() &&
+                               graph.HasBoundMasterAnglerWeatherSupplyScheduler() =>
+                ("runtime_consumer_crafting_read_scheduler_immediate_supply_and_pine_tar_capacity_bound_pig_truffle_hardwood_reservation_and_native_crafting_receipt_missing",
+                    new[] { OwnedRainTotemConsumerNode, RainTotemCraftingReadNode, RainTotemImmediateMaterialSupplyNode, RainTotemPineTarCapacityReserveNode, WeatherSupplySchedulerNode },
+                    "The future rain-window scheduler now computes exact base-Pine Tapper capacity and reuses the generic machine craft/place ledger one machine per fresh replan. Bind Pig/Truffle Oil and Hardwood reserves, protect committed materials from unrelated consumption, and capture a native Rain Totem crafting receipt before marking weather complete."),
+            WeatherFamily when graph.HasBoundMasterAnglerOwnedRainTotemUse() &&
+                               graph.HasBoundMasterAnglerRainTotemCraftingRead() &&
+                               graph.HasBoundMasterAnglerRainTotemImmediateMaterialSupply() &&
+                               graph.HasBoundMasterAnglerWeatherSupplyScheduler() =>
+                ("runtime_consumer_crafting_read_scheduler_and_immediate_material_supply_bound_long_horizon_reserve_and_native_crafting_receipt_missing",
+                    new[] { OwnedRainTotemConsumerNode, RainTotemCraftingReadNode, RainTotemImmediateMaterialSupplyNode, WeatherSupplySchedulerNode },
+                    "The exact tomorrow rain-window scheduler reuses current native material primitives, but the verified future Pine Tar capacity reserve is missing. Bind it before Pig/Truffle Oil, Hardwood, material reservation and native crafting receipt work."),
+            WeatherFamily when graph.HasBoundMasterAnglerOwnedRainTotemUse() &&
+                               graph.HasBoundMasterAnglerRainTotemCraftingRead() &&
+                               graph.HasBoundMasterAnglerRainTotemImmediateMaterialSupply() =>
+                ("runtime_consumer_crafting_read_and_immediate_material_supply_bound_scheduler_long_horizon_reserve_and_native_crafting_receipt_missing",
+                    new[] { OwnedRainTotemConsumerNode, RainTotemCraftingReadNode, RainTotemImmediateMaterialSupplyNode },
+                    "Immediate exact material deficits are bound to existing native primitives. Restore the tomorrow scheduler, then bind long-horizon reserves and the native crafting receipt."),
+            WeatherFamily when graph.HasBoundMasterAnglerOwnedRainTotemUse() &&
+                               graph.HasBoundMasterAnglerRainTotemCraftingRead() =>
+                ("runtime_consumer_and_crafting_read_bound_executor_supply_scheduler_missing",
+                    new[] { OwnedRainTotemConsumerNode, RainTotemCraftingReadNode },
+                    "The exact owned Rain Totem native consumer and live recipe/material read authority are bound. Add native crafting, material production and a high-level tomorrow-fishing preparation intent before marking weather complete."),
+            WeatherFamily when graph.HasBoundMasterAnglerOwnedRainTotemUse() =>
+                ("runtime_consumer_bound_crafting_read_supply_and_scheduler_missing",
+                    new[] { OwnedRainTotemConsumerNode },
+                    "The exact owned Rain Totem native consumer is bound. Bind the live crafting projection, then add native crafting, material production and tomorrow-fishing scheduling."),
+            WeatherFamily =>
+                ("current_state_gate_present_future_producer_missing",
+                    new[] { "dependency.complete_master_angler.target_date_opportunity_producer" },
+                    "Reserve natural rainy opportunities or bind the existing native Rain Totem primitive with exact acquisition and next-day effect."),
+            "ginger_island_access" when
+                goldenWalnutFundingRoutes.RouteSelectionComplete &&
+                goldenWalnutFundingRoutes.Alternatives.Single(route =>
+                    route.RouteId == GoldenWalnutResortFundingRouteProofBuilder.PreferredRouteId)
+                    is
+                    {
+                        ActionBindingsComplete: true,
+                        SupplyScheduleComplete: true,
+                        DeadlineCompositionComplete: true,
+                        TrainingAdmissionEligible: false
+                    } =>
+                ("fresh_save_unlock_timeline_bound_runtime_continuation_receipts_missing",
+                    graph.HasDirection("complete_community_center")
+                        ? new[]
+                        {
+                            "complete_community_center",
+                            GoldenWalnutUnlockScheduleProofBuilder.SchemaVersion,
+                            GoldenWalnutFreshSaveUnlockTimelineProofBuilder.SchemaVersion,
+                            GoldenWalnutResortFundingRouteProofBuilder.SchemaVersion
+                        }
+                        : new[]
+                        {
+                            GoldenWalnutUnlockScheduleProofBuilder.SchemaVersion,
+                            GoldenWalnutFreshSaveUnlockTimelineProofBuilder.SchemaVersion,
+                            GoldenWalnutResortFundingRouteProofBuilder.SchemaVersion
+                        },
+                    "The hash-bound fresh-save source schedule derives the First Parrot, Western Turtle and Island House dates and closes the Gourmand day-224 composition. Capture requests two and three on one continuous native save before marking Ginger Island complete."),
+            "ginger_island_access" when
+                goldenWalnutSchedule.PhaseCapacityComplete &&
+                goldenWalnutSchedule.IndependentRetryBudgetComplete &&
+                goldenWalnutFundingRoutes.Alternatives.Single(route =>
+                    route.RouteId == GoldenWalnutResortFundingRouteProofBuilder.PreferredRouteId)
+                    is
+                    {
+                        ActionBindingsComplete: true,
+                        SupplyScheduleComplete: true,
+                        DeadlineCompositionComplete: false
+                    } &&
+                !goldenWalnutSchedule.YearThreeDeadlineCompositionComplete =>
+                ("phase_capacity_retry_budget_and_deterministic_supply_bound_deadline_composition_missing",
+                    graph.HasDirection("complete_community_center")
+                        ? new[]
+                        {
+                            "complete_community_center",
+                            GoldenWalnutUnlockScheduleProofBuilder.SchemaVersion,
+                            GoldenWalnutResortFundingRouteProofBuilder.SchemaVersion
+                        }
+                        : new[]
+                        {
+                            GoldenWalnutUnlockScheduleProofBuilder.SchemaVersion,
+                            GoldenWalnutResortFundingRouteProofBuilder.SchemaVersion
+                        },
+                    "The exact 1+10+20+20 unlock sequence has sufficient phased capacity and finite independent retry budgets. The preferred deterministic 15-walnut Gourmand route now binds its native action and exact Melon/Wheat/Garlic purchase, planting, watering and standing-crop schedule; compose the Western Turtle and Island House unlock dates with the day-224 deadline before marking the route complete."),
+            "ginger_island_access" =>
+                ("composed_producer_missing",
+                    graph.HasDirection("complete_community_center")
+                        ? new[] { "complete_community_center" }
+                        : Array.Empty<string>(),
+                    "Schedule Community Center or Joja completion, Willy's boat repair, ticket travel, phased Golden Walnut capacity and island sub-area ingress."),
+            "witch_swamp_story_access" when graph.HasBoundMasterAnglerDarkTalismanStoryAccess() =>
+                ("implemented_and_bound",
+                    new[] { DarkTalismanAccessProducerNode, CommunityCenterCompletionNode },
+                    "The target-specific recurrence completes Railroad event 529952, quest 28, Krobus unseal, SpecialItem 6, the native Railroad statue animation and WitchWarpCave MagicWarp before replanning the Witch's Swamp catch."),
+            "witch_swamp_story_access" =>
+                ("producer_missing",
+                    Array.Empty<string>(),
+                    "Schedule Dark Talisman and Goblin Problem progression through Witch's Swamp access."),
+            "mutant_bug_lair_story_access" when graph.HasBoundMasterAnglerDarkTalismanStoryAccess() =>
+                ("implemented_and_bound",
+                    new[] { DarkTalismanAccessProducerNode, CommunityCenterCompletionNode },
+                    "The target-specific recurrence stops after the native Krobus quest-28 interaction adds krobusUnseal, which is the exact Mutant Bug Lair ingress receipt."),
+            "mutant_bug_lair_story_access" =>
+                ("producer_missing",
+                    Array.Empty<string>(),
+                    "Schedule sewer access and Dark Talisman progression through Mutant Bug Lair ingress."),
+            _ =>
+                ("producer_missing",
+                    Array.Empty<string>(),
+                    "Add one exact fresh-save producer and bind it to the Master Angler deadline recurrence.")
+        };
+        return new MasterAnglerFreshSavePrerequisiteFamily
+        {
+            FamilyId = family,
+            ProducerStatus = status,
+            RequiredBySpeciesIds = species.OrderBy(value => value, StringComparer.Ordinal).ToArray(),
+            ExistingEvidence = evidence,
+            RemainingWork = work
+        };
+    }
+
+    private static void ValidateAuthority(
+        string catalogPath,
+        MasterAnglerOpportunityCatalogReport catalog,
+        MasterAnglerStageOneWindowIndex windows)
+    {
+        Require(catalog.SchemaVersion == "master_angler_opportunity_catalog.v1" &&
+                catalog.Status == "complete" &&
+                catalog.SourceInventoryComplete &&
+                catalog.StaticCalendarConstraintComplete &&
+                catalog.LocationRuleSpawnChanceInputInventoryComplete,
+            "Master Angler opportunity catalog is incomplete.");
+        Require(catalog.NativeDenominatorCount == 72 &&
+                catalog.Species.Length == 72 &&
+                catalog.RodLocationSpeciesCount == 60 &&
+                catalog.MineOverrideOnlySpeciesCount == 2 &&
+                catalog.TrapSpeciesCount == 10,
+            "Master Angler source partition drifted from 60/2/10 over 72 species.");
+        Require(windows.SchemaVersion == "master_angler_stage_one_window_index.v1" &&
+                windows.Status == "complete_static_windows_dynamic_execution_pending" &&
+                windows.StaticWindowCoverageComplete &&
+                !windows.TrainingLabelEligible &&
+                windows.DeadlineTotalDayExclusive == 224 &&
+                windows.NativeDenominatorCount == 72 &&
+                windows.Species.Length == 72 &&
+                windows.UnresolvedSpeciesIds.Length == 0,
+            "Master Angler Stage 1 window index is incomplete or changed deadline semantics.");
+        Require(windows.GoalId == catalog.GoalId && windows.GameVersion == catalog.GameVersion,
+            "Master Angler catalog and window authority disagree.");
+        Require(string.Equals(
+                windows.CatalogSha256,
+                CurrentTeacherFrontierSupport.HashFile(catalogPath),
+                StringComparison.OrdinalIgnoreCase),
+            "Master Angler window index does not hash-bind the supplied catalog.");
+        var catalogIds = catalog.Species.Select(value => value.QualifiedItemId)
+            .OrderBy(value => value, StringComparer.Ordinal);
+        var windowIds = windows.Species.Select(value => value.QualifiedItemId)
+            .OrderBy(value => value, StringComparer.Ordinal);
+        Require(catalogIds.SequenceEqual(windowIds, StringComparer.Ordinal),
+            "Master Angler catalog and window species denominators disagree.");
+    }
+
+    private static DependencyGraphInventory ReadDependencyGraph(string path)
+    {
+        using var document = JsonDocument.Parse(
+            CurrentTeacherFrontierSupport.ReadArtifactText(path));
+        var root = document.RootElement;
+        Require(root.GetProperty("schema_version").GetString() ==
+                "goal_method_dependency_expansions.v1" &&
+                root.GetProperty("goal_id").GetString() == DependencyExpansionGoal,
+            "Unsupported or mismatched goal-method dependency expansion.");
+        var directions = root.GetProperty("directions").EnumerateArray()
+            .ToDictionary(
+                value => value.GetProperty("direction_id").GetString()!,
+                value => new DependencyDirectionInventory(
+                    value.GetProperty("nodes").EnumerateArray()
+                        .Select(node => new DependencyNodeInventory(
+                            node.GetProperty("id").GetString()!,
+                            node.GetProperty("kind").GetString()!,
+                            node.TryGetProperty("option_id", out var option) &&
+                            option.ValueKind == JsonValueKind.String
+                                ? option.GetString() ?? string.Empty
+                                : string.Empty,
+                            node.TryGetProperty("candidate_kinds", out var candidateKinds) &&
+                            candidateKinds.ValueKind == JsonValueKind.Array
+                                ? candidateKinds.EnumerateArray()
+                                    .Select(candidateKind => candidateKind.GetString() ?? string.Empty)
+                                    .ToHashSet(StringComparer.Ordinal)
+                                : new HashSet<string>(StringComparer.Ordinal),
+                            node.TryGetProperty("required_field_paths", out var fields) &&
+                            fields.ValueKind == JsonValueKind.Array
+                                ? fields.EnumerateArray()
+                                    .Select(field => field.GetString() ?? string.Empty)
+                                    .ToHashSet(StringComparer.Ordinal)
+                                : new HashSet<string>(StringComparer.Ordinal),
+                            node.TryGetProperty("rule", out var rule)
+                                ? rule.Clone()
+                                : default))
+                        .ToDictionary(node => node.Id, StringComparer.Ordinal),
+                    value.GetProperty("edges").EnumerateArray()
+                        .Select(edge => new DependencyEdgeInventory(
+                            edge.GetProperty("from").GetString()!,
+                            edge.GetProperty("to").GetString()!,
+                            edge.GetProperty("kind").GetString()!))
+                        .ToHashSet()),
+                StringComparer.Ordinal);
+        return new DependencyGraphInventory(directions);
+    }
+
+    private static T Read<T>(string path, string label) =>
+        JsonSerializer.Deserialize<T>(
+            CurrentTeacherFrontierSupport.ReadArtifactText(path),
+            JsonDefaults.Options) ??
+        throw new InvalidDataException(label + " is null.");
+
+    private static void Require(bool condition, string message)
+    {
+        if (!condition)
+            throw new InvalidDataException(message);
+    }
+
+    private sealed record DependencyNodeInventory(
+        string Id,
+        string Kind,
+        string OptionId,
+        HashSet<string> CandidateKinds,
+        HashSet<string> RequiredFieldPaths,
+        JsonElement Rule);
+
+    private sealed record DependencyEdgeInventory(
+        string From,
+        string To,
+        string Kind);
+
+    private sealed record DependencyDirectionInventory(
+        Dictionary<string, DependencyNodeInventory> Nodes,
+        HashSet<DependencyEdgeInventory> Edges);
+
+    private sealed record DependencyGraphInventory(
+        Dictionary<string, DependencyDirectionInventory> Directions)
+    {
+        public bool HasDirection(string direction) => Directions.ContainsKey(direction);
+
+        public bool HasNode(string node) => Directions.Values.Any(value => value.Nodes.ContainsKey(node));
+
+        public bool HasOption(string direction, string option) =>
+            Directions.TryGetValue(direction, out var value) &&
+            value.Nodes.Values.Any(node => node.OptionId == option);
+
+        public bool HasBoundMasterAnglerFishingSkillProgression()
+        {
+            if (!Directions.TryGetValue(MasterAnglerDirection, out var masterAngler) ||
+                !Directions.TryGetValue(FishingSkillSourceDirection, out var skills) ||
+                !masterAngler.Nodes.TryGetValue(FishingSkillProducerNode, out var producer) ||
+                !skills.Nodes.TryGetValue(FishingSkillSourceNode, out var source) ||
+                producer.Kind != "recurrence_rule" ||
+                source.Kind != "policy_option_transition" ||
+                source.OptionId != "fishing.catch_fish" ||
+                producer.Rule.ValueKind != JsonValueKind.Object)
+                return false;
+
+            var requiredFields = new[]
+            {
+                "world_progress.fish_collection_progress",
+                "player.skills_detail",
+                "time.total_days",
+                "time.time",
+                "fishing.location_context",
+                "fishing.fishable_tiles",
+                "fishing.rod_contexts"
+            };
+            return requiredFields.All(producer.RequiredFieldPaths.Contains) &&
+                   RuleString(producer.Rule, "reuses_direction_id") == FishingSkillSourceDirection &&
+                   RuleString(producer.Rule, "reuses_node_id") == FishingSkillSourceNode &&
+                   RuleString(producer.Rule, "reused_option_id") == "fishing.catch_fish" &&
+                   RuleBool(producer.Rule, "fresh_native_receipt_required") &&
+                   RuleBool(producer.Rule, "recompute_after_every_native_receipt") &&
+                   RuleInt(producer.Rule, "deadline_total_day_exclusive") == 224 &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       FreshSaveInventoryNode,
+                       FishingSkillProducerNode,
+                       "selects_required_fishing_level")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       FishingSkillProducerNode,
+                       MasterAnglerRecurrenceNode,
+                       "supplies_required_fishing_level"));
+        }
+
+        public bool HasBoundMasterAnglerMineAccessProgression()
+        {
+            if (!Directions.TryGetValue(MasterAnglerDirection, out var masterAngler) ||
+                !Directions.TryGetValue(MineAccessSourceDirection, out var skills) ||
+                !masterAngler.Nodes.TryGetValue(MineAccessProducerNode, out var producer) ||
+                !skills.Nodes.TryGetValue(MineAccessSourceNode, out var source) ||
+                producer.Kind != "recurrence_rule" ||
+                source.Kind != "policy_option_transition" ||
+                source.OptionId != "mining.reach_depth" ||
+                producer.Rule.ValueKind != JsonValueKind.Object)
+                return false;
+
+            var requiredFields = new[]
+            {
+                "world_progress.fish_collection_progress",
+                "time.total_days",
+                "time.time",
+                "player.location_id",
+                "player.tile_x",
+                "player.tile_y",
+                "player.deepest_mine_level",
+                "locations.route_graph",
+                "locations.route_connectors",
+                "locations.route_action_branch_coverage",
+                "locations.collision_grid",
+                "mining.current_mine",
+                "mining.tiles",
+                "mining.objects",
+                "mining.resource_clumps",
+                "mining.monsters",
+                "mining.floor_objectives",
+                "mining.reward_chests",
+                "mining.player_resources"
+            };
+            var expectedFloors = new Dictionary<string, int>(StringComparer.Ordinal)
+            {
+                ["(O)156"] = 20,
+                ["(O)157"] = 20,
+                ["(O)158"] = 20,
+                ["(O)161"] = 60,
+                ["(O)162"] = 100,
+                ["(O)CaveJelly"] = 100
+            };
+            var expectedAreas = new Dictionary<string, int>(StringComparer.Ordinal)
+            {
+                ["20"] = 10,
+                ["60"] = 40,
+                ["100"] = 80
+            };
+            return requiredFields.All(producer.RequiredFieldPaths.Contains) &&
+                   RuleString(producer.Rule, "reuses_direction_id") == MineAccessSourceDirection &&
+                   RuleString(producer.Rule, "reuses_node_id") == MineAccessSourceNode &&
+                   RuleString(producer.Rule, "reused_option_id") == "mining.reach_depth" &&
+                   RuleBool(producer.Rule, "ordinary_mine_only") &&
+                   RuleBool(producer.Rule, "native_lobby_ingress_required") &&
+                   RuleString(producer.Rule, "native_lobby_ingress_action") == "Mine 1" &&
+                   RuleString(producer.Rule, "native_lobby_ingress_target") == "UndergroundMine1" &&
+                   RuleObjectIntsEqual(producer.Rule, "target_floor_by_species", expectedFloors) &&
+                   RuleObjectIntsEqual(producer.Rule, "target_area_by_floor", expectedAreas) &&
+                   RuleBool(producer.Rule, "fresh_snapshot_after_every_native_primitive") &&
+                   RuleBool(producer.Rule, "fresh_native_receipt_required") &&
+                   RuleInt(producer.Rule, "deadline_total_day_exclusive") == 224 &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       FreshSaveInventoryNode,
+                       MineAccessProducerNode,
+                       "selects_required_mine_fishing_floor")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       MineAccessProducerNode,
+                       TargetDateOpportunityNode,
+                       "supplies_ordinary_mine_location_access")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       MineAccessProducerNode,
+                       MasterAnglerRecurrenceNode,
+                       "replans_after_native_mine_primitive"));
+        }
+
+        public bool HasBoundMasterAnglerRodEquipmentAcquisition()
+        {
+            if (!Directions.TryGetValue(MasterAnglerDirection, out var masterAngler) ||
+                !masterAngler.Nodes.TryGetValue(
+                    RodEquipmentProducerNode,
+                    out var producer) ||
+                producer.Kind != "recurrence_rule" ||
+                producer.OptionId !=
+                    MasterAnglerRodEquipmentAcquisitionProtocol.StarterMailOptionId ||
+                producer.Rule.ValueKind != JsonValueKind.Object)
+                return false;
+
+            var requiredFields = new[]
+            {
+                "world_progress.fish_collection_progress",
+                "time.total_days",
+                "time.time",
+                "fishing.rod_inventory",
+                "player.inventory",
+                "player.money",
+                "player.location_id",
+                "player.tile_x",
+                "player.tile_y",
+                "player.story_event",
+                "quests.mailbox_processing",
+                "quests.active_quests",
+                "quests.mail_received",
+                "locations.shops",
+                "locations.route_graph",
+                "locations.route_connectors",
+                "locations.collision_grid",
+                "menus.active_menu",
+                "menus.menu_specific_state"
+            };
+            return producer.CandidateKinds.SetEquals(new[]
+                   {
+                       "route_connector_tile",
+                       "mailbox_approach",
+                       "open_mailbox_letter",
+                       "mail_input_wait",
+                       "process_open_letter",
+                       "advance_story_event_automatic",
+                       "advance_story_event_choice",
+                       "interact_endpoint",
+                       "buy_shop_item"
+                   }) &&
+                   requiredFields.All(producer.RequiredFieldPaths.Contains) &&
+                   RuleStringSetEquals(
+                       producer.Rule,
+                       "reused_option_ids",
+                       new[]
+                       {
+                           MasterAnglerRodEquipmentAcquisitionProtocol.StarterMailOptionId,
+                           MasterAnglerRodEquipmentAcquisitionProtocol.StarterQuestOptionId,
+                           MasterAnglerRodEquipmentAcquisitionProtocol.StarterEventOptionId,
+                           MasterAnglerRodEquipmentAcquisitionProtocol.OptionId
+                       }) &&
+                   RuleString(producer.Rule, "starter_mail_id") ==
+                       MasterAnglerRodEquipmentAcquisitionProtocol.StarterMailId &&
+                   RuleString(producer.Rule, "starter_quest_id") ==
+                       MasterAnglerRodEquipmentAcquisitionProtocol.StarterQuestId &&
+                   RuleString(producer.Rule, "starter_quest_runtime_type") ==
+                       "Quest" &&
+                   RuleString(producer.Rule, "starter_quest_next_action") ==
+                       "trigger_location_event" &&
+                   RuleString(producer.Rule, "starter_quest_target_location") ==
+                       "Beach" &&
+                   RuleString(producer.Rule, "starter_event_id") ==
+                       MasterAnglerRodEquipmentAcquisitionProtocol.StarterEventId &&
+                   RuleString(producer.Rule, "starter_event_source_asset") ==
+                       "Data/Events/Beach" &&
+                   RuleString(producer.Rule, "starter_event_source_key") ==
+                       "739330/t 600 1710/*n spring_2_1" &&
+                   RuleInt(producer.Rule, "starter_event_start_time_inclusive") ==
+                       600 &&
+                   RuleInt(producer.Rule, "starter_event_end_time_inclusive") ==
+                       1710 &&
+                   RuleString(producer.Rule, "required_qualified_item_id") ==
+                       MasterAnglerRodEquipmentAcquisitionProtocol.QualifiedItemId &&
+                   RuleString(producer.Rule, "required_shop_id") ==
+                       MasterAnglerRodEquipmentAcquisitionProtocol.ShopId &&
+                   RuleInt(producer.Rule, "required_quantity") ==
+                       MasterAnglerRodEquipmentAcquisitionProtocol.RequiredQuantity &&
+                   RuleInt(producer.Rule, "maximum_unit_price") ==
+                       MasterAnglerRodEquipmentAcquisitionProtocol.MaximumUnitPrice &&
+                   RuleBool(producer.Rule, "fresh_snapshot_after_every_native_primitive") &&
+                   RuleBool(producer.Rule, "fresh_native_receipt_required") &&
+                   RuleInt(producer.Rule, "deadline_total_day_exclusive") == 224 &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       FreshSaveInventoryNode,
+                       RodEquipmentProducerNode,
+                       "selects_required_rod_equipment")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       RodEquipmentProducerNode,
+                       TargetDateOpportunityNode,
+                       "supplies_required_rod_equipment")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       RodEquipmentProducerNode,
+                       MasterAnglerRecurrenceNode,
+                       "replans_after_native_rod_prerequisite_primitive"));
+        }
+
+        public bool HasBoundMasterAnglerTrapSupply()
+        {
+            if (!Directions.TryGetValue(MasterAnglerDirection, out var masterAngler) ||
+                !masterAngler.Nodes.TryGetValue(
+                    TrapSupplyProducerNode,
+                    out var producer) ||
+                !masterAngler.Nodes.TryGetValue(
+                    FishingSkillProducerNode,
+                    out var skillProducer) ||
+                producer.Kind != "recurrence_rule" ||
+                producer.OptionId != "fishing.collect_crab_pots" ||
+                skillProducer.Kind != "recurrence_rule" ||
+                producer.Rule.ValueKind != JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            var requiredFields = new[]
+            {
+                "world_progress.fish_collection_progress",
+                "player.skills_detail",
+                "player.inventory",
+                "player.money",
+                "player.location_id",
+                "player.crab_pot_crafting",
+                "player.crab_pot_placement",
+                "player.crab_pot_network",
+                "current_location.objects",
+                "locations.shops",
+                "locations.route_graph",
+                "locations.route_connectors",
+                "menus.active_menu",
+                "time.total_days",
+                "time.time"
+            };
+            return producer.CandidateKinds.SetEquals(new[]
+                   {
+                       "route_connector_tile",
+                       "interact_endpoint",
+                       "buy_shop_item"
+                   }) &&
+                   requiredFields.All(producer.RequiredFieldPaths.Contains) &&
+                   RuleString(producer.Rule, "reused_option_id") ==
+                       "economy.buy_supplies" &&
+                   RuleString(producer.Rule, "required_shop_id") ==
+                       "FishShop" &&
+                   RuleString(producer.Rule, "crab_pot_qualified_item_id") ==
+                       "(O)710" &&
+                   RuleInt(producer.Rule, "crab_pot_minimum_fishing_level") == 3 &&
+                   RuleInt(producer.Rule, "crab_pot_maximum_unit_price") == 1500 &&
+                   RuleString(producer.Rule, "bait_qualified_item_id") ==
+                       "(O)685" &&
+                   RuleInt(producer.Rule, "bait_minimum_fishing_level") == 2 &&
+                   RuleInt(producer.Rule, "bait_maximum_unit_price") == 5 &&
+                   RuleInt(producer.Rule, "required_quantity_per_purchase") == 1 &&
+                   RuleBool(producer.Rule, "fresh_snapshot_after_every_native_primitive") &&
+                   RuleBool(producer.Rule, "fresh_native_receipt_required") &&
+                   RuleInt(producer.Rule, "deadline_total_day_exclusive") == 224 &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       FreshSaveInventoryNode,
+                       TrapSupplyProducerNode,
+                       "selects_trap_supply_requirement")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       FishingSkillProducerNode,
+                       TrapSupplyProducerNode,
+                       "unlocks_fish_shop_trap_stock")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       TrapSupplyProducerNode,
+                       TrapInfrastructureGateNode,
+                       "supplies_exact_pot_and_bait")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       TrapSupplyProducerNode,
+                       MasterAnglerRecurrenceNode,
+                       "replans_after_native_purchase"));
+        }
+
+        public bool HasBoundMasterAnglerOwnedRainTotemUse()
+        {
+            if (!Directions.TryGetValue(MasterAnglerDirection, out var masterAngler) ||
+                !masterAngler.Nodes.TryGetValue(
+                    OwnedRainTotemConsumerNode,
+                    out var consumer) ||
+                consumer.Kind != "deterministic_transition" ||
+                consumer.OptionId != "executor.use_rain_totem" ||
+                consumer.Rule.ValueKind != JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            var requiredFields = new[]
+            {
+                "world_progress.fish_collection_progress",
+                "player.inventory",
+                "player.rain_totem",
+                "time.total_days",
+                "time.time",
+                "menus.active_menu"
+            };
+            return consumer.CandidateKinds.SetEquals(new[] { "use_rain_totem" }) &&
+                   requiredFields.All(consumer.RequiredFieldPaths.Contains) &&
+                   RuleString(consumer.Rule, "execution_owner") ==
+                       "compiler_owned_primitive_not_policy_label" &&
+                   RuleString(consumer.Rule, "required_qualified_item_id") ==
+                       "(O)681" &&
+                   RuleInt(consumer.Rule, "required_inventory_stack") == 1 &&
+                   RuleString(consumer.Rule, "affected_weather_after") == "Rain" &&
+                   RuleString(consumer.Rule, "effective_tomorrow_weather") == "Rain" &&
+                   RuleBool(consumer.Rule, "rain_will_take_effect_tomorrow") &&
+                   consumer.Rule.TryGetProperty(
+                       "tomorrow_is_default_festival",
+                       out var festival) &&
+                   festival.ValueKind == JsonValueKind.False &&
+                   RuleString(consumer.Rule, "native_contract") ==
+                       "Object.performUseAction((O)681)->Object.rainTotem->AllowRainTotem->RainTotemAffectsContext_or_location_context->Default_festival_guard_or_context_WeatherForTomorrow=Rain->Default_Game1.getWeatherModificationsForDate" &&
+                   RuleBool(consumer.Rule, "fresh_native_receipt_required") &&
+                   RuleInt(consumer.Rule, "deadline_total_day_exclusive") == 224 &&
+                   RuleString(consumer.Rule, "planner_binding_status") ==
+                       "owned_item_consumer_bound_supply_and_tomorrow_intent_pending" &&
+                   RuleString(consumer.Rule, "pending_recipe_name") ==
+                       "Rain Totem" &&
+                   RuleInt(consumer.Rule, "pending_recipe_required_foraging_level") == 9 &&
+                   RuleString(consumer.Rule, "pending_recipe_output_qualified_item_id") ==
+                       "(O)681" &&
+                   RuleInt(consumer.Rule, "pending_recipe_output_count") == 1 &&
+                   RuleObjectIntsEqual(
+                       consumer.Rule,
+                       "pending_recipe_ingredient_amounts",
+                       new Dictionary<string, int>(StringComparer.Ordinal)
+                       {
+                           ["(O)709"] = 1,
+                           ["(O)432"] = 1,
+                           ["(O)726"] = 5
+                       }) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       FreshSaveInventoryNode,
+                       OwnedRainTotemConsumerNode,
+                       "selects_owned_weather_control")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       OwnedRainTotemConsumerNode,
+                       TargetDateOpportunityNode,
+                       "creates_next_day_weather_precondition")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       OwnedRainTotemConsumerNode,
+                       MasterAnglerRecurrenceNode,
+                       "replans_after_native_weather_transition"));
+        }
+
+        public bool HasBoundMasterAnglerRainTotemCraftingRead()
+        {
+            if (!Directions.TryGetValue(MasterAnglerDirection, out var masterAngler) ||
+                !masterAngler.Nodes.TryGetValue(
+                    RainTotemCraftingReadNode,
+                    out var producer) ||
+                producer.Kind != "state_fact" ||
+                producer.Rule.ValueKind != JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            return producer.RequiredFieldPaths.SetEquals(new[]
+                   {
+                       "player.rain_totem_crafting"
+                   }) &&
+                   RuleString(producer.Rule, "binding_scope") ==
+                       "transparent_read_authority_only" &&
+                   RuleString(producer.Rule, "schema_version") ==
+                       "rain_totem_crafting.v1" &&
+                   RuleString(producer.Rule, "required_recipe_name") ==
+                       "Rain Totem" &&
+                   RuleInt(producer.Rule, "required_foraging_level") == 9 &&
+                   RuleString(producer.Rule, "output_qualified_item_id") ==
+                       "(O)681" &&
+                   RuleInt(producer.Rule, "output_count") == 1 &&
+                   RuleObjectIntsEqual(
+                       producer.Rule,
+                       "ingredient_amounts",
+                       new Dictionary<string, int>(StringComparer.Ordinal)
+                       {
+                           ["(O)709"] = 1,
+                           ["(O)432"] = 1,
+                           ["(O)726"] = 5
+                       }) &&
+                   RuleString(producer.Rule, "shared_projection_implementation") ==
+                       "ReadExactSingleOutputCraftingProjection" &&
+                   RuleFalse(producer.Rule, "native_execution_receipt_present") &&
+                   RuleFalse(producer.Rule, "material_producers_bound") &&
+                   RuleBool(producer.Rule, "immediate_material_supply_bound") &&
+                   RuleBool(producer.Rule, "tomorrow_fishing_scheduler_bound") &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       FreshSaveInventoryNode,
+                       RainTotemCraftingReadNode,
+                       "selects_weather_supply_read_authority")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       RainTotemCraftingReadNode,
+                       WeatherSupplySchedulerNode,
+                       "supplies_exact_crafting_state"));
+        }
+
+        public bool HasBoundMasterAnglerRainTotemForagingSkillProgression()
+        {
+            if (!Directions.TryGetValue(MasterAnglerDirection, out var masterAngler) ||
+                !Directions.TryGetValue(FishingSkillSourceDirection, out var skills) ||
+                !masterAngler.Nodes.TryGetValue(
+                    RainTotemForagingSkillProgressionNode,
+                    out var producer) ||
+                !skills.Nodes.TryGetValue(
+                    RainTotemForagingSkillSourceNode,
+                    out var source) ||
+                producer.Kind != "recurrence_rule" ||
+                producer.OptionId != "fishing.catch_fish" ||
+                source.Kind != "policy_option_transition" ||
+                source.OptionId != "foraging.chop_wild_tree" ||
+                producer.Rule.ValueKind != JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            var requiredFields = new[]
+            {
+                "world_progress.fish_collection_progress",
+                "player.skills_detail",
+                "player.energy",
+                "current_location.terrain_features",
+                "locations.collision_grid",
+                "time.total_days",
+                "time.time"
+            };
+            return producer.CandidateKinds.SetEquals(new[]
+                   {
+                       "clear_obstacle_tile"
+                   }) &&
+                   requiredFields.All(producer.RequiredFieldPaths.Contains) &&
+                   source.CandidateKinds.SetEquals(new[]
+                   {
+                       "clear_obstacle_tile"
+                   }) &&
+                   RuleString(producer.Rule, "reuses_direction_id") ==
+                       FishingSkillSourceDirection &&
+                   RuleString(producer.Rule, "reuses_node_id") ==
+                       RainTotemForagingSkillSourceNode &&
+                   RuleString(producer.Rule, "reused_option_id") ==
+                       "foraging.chop_wild_tree" &&
+                   RuleInt(producer.Rule, "required_unmodified_foraging_level") == 9 &&
+                   RuleBool(producer.Rule, "fresh_native_receipt_required") &&
+                   RuleBool(producer.Rule, "recompute_after_every_native_receipt") &&
+                   RuleInt(producer.Rule, "deadline_total_day_exclusive") == 224 &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       FreshSaveInventoryNode,
+                       RainTotemForagingSkillProgressionNode,
+                       "selects_rain_totem_foraging_level")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       RainTotemForagingSkillProgressionNode,
+                       RainTotemCraftingReadNode,
+                       "unlocks_native_rain_totem_recipe")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       RainTotemForagingSkillProgressionNode,
+                       MasterAnglerRecurrenceNode,
+                       "replans_after_native_foraging_xp_receipt"));
+        }
+
+        public bool HasBoundMasterAnglerRainTotemImmediateMaterialSupply()
+        {
+            if (!Directions.TryGetValue(MasterAnglerDirection, out var masterAngler) ||
+                !masterAngler.Nodes.TryGetValue(
+                    RainTotemImmediateMaterialSupplyNode,
+                    out var supply) ||
+                supply.Kind != "recurrence_rule" ||
+                supply.OptionId != "fishing.catch_fish" ||
+                supply.Rule.ValueKind != JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            var requiredFields = new[]
+            {
+                "player.rain_totem_crafting",
+                "player.inventory",
+                "farm.machines",
+                "current_location.objects",
+                "locations.collision_grid"
+            };
+            return supply.CandidateKinds.SetEquals(new[]
+                   {
+                       "clear_obstacle_tile",
+                       "collect_machine_output_tile",
+                       "load_machine_input_tile",
+                       "collect_spawned_object"
+                   }) &&
+                   requiredFields.All(supply.RequiredFieldPaths.Contains) &&
+                   RuleString(supply.Rule, "execution_owner") ==
+                       "deterministic_compiler_owned_material_step_not_policy_label" &&
+                   RuleObjectIntsEqual(
+                       supply.Rule,
+                       "ingredient_amounts",
+                       new Dictionary<string, int>(StringComparer.Ordinal)
+                       {
+                           ["(O)709"] = 1,
+                           ["(O)432"] = 1,
+                           ["(O)726"] = 5
+                       }) &&
+                   RuleStringSetEquals(
+                       supply.Rule,
+                       "immediate_stages",
+                       new[]
+                       {
+                           "collect_ready_native_machine_output",
+                           "chop_exact_guaranteed_hardwood_tree",
+                           "load_native_oil_maker_with_truffle",
+                           "collect_native_pig_truffle_input"
+                       }) &&
+                   RuleBool(supply.Rule, "exact_recipe_rows_required") &&
+                   RuleBool(supply.Rule, "fresh_snapshot_after_each_primitive") &&
+                   RuleFalse(supply.Rule, "long_horizon_reserve_bound") &&
+                   RuleFalse(supply.Rule, "native_rain_totem_crafting_receipt_present") &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       RainTotemCraftingReadNode,
+                       RainTotemImmediateMaterialSupplyNode,
+                       "supplies_exact_material_deficits")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       WeatherSupplySchedulerNode,
+                       RainTotemImmediateMaterialSupplyNode,
+                       "expands_current_material_deficit")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       RainTotemImmediateMaterialSupplyNode,
+                       WeatherSupplySchedulerNode,
+                       "replans_after_native_material_primitive"));
+        }
+
+        public bool HasBoundMasterAnglerWeatherSupplyScheduler()
+        {
+            if (!Directions.TryGetValue(MasterAnglerDirection, out var masterAngler) ||
+                !masterAngler.Nodes.TryGetValue(
+                    WeatherSupplySchedulerNode,
+                    out var scheduler) ||
+                scheduler.Kind != "recurrence_rule" ||
+                scheduler.OptionId != "fishing.catch_fish" ||
+                scheduler.Rule.ValueKind != JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            var requiredFields = new[]
+            {
+                "world_progress.fish_collection_progress",
+                "world_progress.game_state_query_calendar_state",
+                "player.skills_detail",
+                "player.inventory",
+                "player.machine_placement",
+                "player.rain_totem",
+                "player.rain_totem_crafting",
+                "player.building_construction_catalog",
+                "player.safe_item_context",
+                "farm.buildings",
+                "farm.animals",
+                "farm.animal_purchase_catalog",
+                "farm.objects",
+                "farm.machines",
+                "current_location.objects",
+                "fishing.rod_contexts",
+                "locations.collision_grid",
+                "locations.social_route_date_evidence",
+                "time.total_days",
+                "menus.active_menu"
+            };
+            return scheduler.CandidateKinds.SetEquals(new[]
+                   {
+                       "craft_rain_totem",
+                       "use_rain_totem",
+                       "catch_fish",
+                       "clear_obstacle_tile",
+                       "collect_machine_output_tile",
+                       "load_machine_input_tile",
+                       "collect_spawned_object",
+                       "craft_machine_item",
+                       "place_machine_item",
+                       "construct_building",
+                       "upgrade_building",
+                       "animal_purchase_select_service",
+                       "animal_purchase_navigate_location_page",
+                       "animal_purchase_select_location",
+                       "purchase_animal",
+                       "toggle_animal_door"
+                   }) &&
+                   requiredFields.All(scheduler.RequiredFieldPaths.Contains) &&
+                   RuleString(scheduler.Rule, "execution_owner") ==
+                       "deterministic_teacher_scheduler_not_policy_label" &&
+                   RuleString(scheduler.Rule, "intent_builder") ==
+                       "MasterAnglerWindowIntentValidator.TryBuildRainTotemSupplyIntent" &&
+                   RuleString(scheduler.Rule, "reserve_intent_builder") ==
+                       "MasterAnglerWindowIntentValidator.TryBuildRainTotemReserveIntent" &&
+                   RuleString(scheduler.Rule, "ranking_binding") ==
+                       "BaselinePredictionRequest.additional_candidates" &&
+                   RuleInt(scheduler.Rule, "target_horizon_days") == 1 &&
+                   RuleString(scheduler.Rule, "required_weather") == "Rain" &&
+                   RuleString(scheduler.Rule, "window_scope") ==
+                       "exact_static_location_rule_without_dynamic_conditions" &&
+                   RuleString(scheduler.Rule, "supply_sequence") ==
+                       "satisfy_exact_immediate_material_deficit_then_fresh_replan_craft_when_ready_then_fresh_replan_use_when_owned_then_fresh_replan_next_day_catch" &&
+                   RuleBool(scheduler.Rule, "window_index_sha256_required") &&
+                   RuleBool(scheduler.Rule, "fresh_snapshot_after_each_primitive") &&
+                   RuleFalse(scheduler.Rule, "training_label_eligible") &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       "dependency.complete_master_angler.stage_one_deadline_window_index",
+                       WeatherSupplySchedulerNode,
+                       "feeds_authoritative_tomorrow_weather_windows")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       FreshSaveInventoryNode,
+                       WeatherSupplySchedulerNode,
+                       "selects_weather_supply_targets")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       WeatherSupplySchedulerNode,
+                       RainTotemImmediateMaterialSupplyNode,
+                       "expands_current_material_deficit")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       WeatherSupplySchedulerNode,
+                       OwnedRainTotemConsumerNode,
+                       "schedules_owned_or_freshly_crafted_use"));
+        }
+
+        public bool HasBoundMasterAnglerRainTotemPineTarCapacityReserve()
+        {
+            if (!Directions.TryGetValue(MasterAnglerDirection, out var masterAngler) ||
+                !masterAngler.Nodes.TryGetValue(
+                    RainTotemPineTarCapacityReserveNode,
+                    out var reserve) ||
+                reserve.Kind != "recurrence_rule" ||
+                reserve.OptionId != "fishing.catch_fish" ||
+                reserve.Rule.ValueKind != JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            var requiredFields = new[]
+            {
+                "world_progress.fish_collection_progress",
+                "world_progress.game_state_query_calendar_state",
+                "player.inventory",
+                "player.machine_placement",
+                "player.rain_totem",
+                "farm.machines",
+                "locations.collision_grid",
+                "locations.social_route_date_evidence",
+                "time.total_days",
+                "time.time"
+            };
+            return reserve.CandidateKinds.SetEquals(new[]
+                   {
+                       "craft_machine_item",
+                       "place_machine_item"
+                   }) &&
+                   requiredFields.All(reserve.RequiredFieldPaths.Contains) &&
+                   RuleString(reserve.Rule, "execution_owner") ==
+                       "deterministic_teacher_reserve_compiler_not_policy_label" &&
+                   RuleString(reserve.Rule, "intent_builder") ==
+                       "MasterAnglerWindowIntentValidator.TryBuildRainTotemReserveIntent" &&
+                   RuleString(reserve.Rule, "material_qualified_item_id") ==
+                       "(O)726" &&
+                   RuleInt(reserve.Rule, "required_material_quantity") == 5 &&
+                   RuleString(reserve.Rule, "machine_qualified_item_id") ==
+                       "(BC)105" &&
+                   RuleString(reserve.Rule, "source_id") == "wild_tree:3:0" &&
+                   RuleInt(reserve.Rule, "exact_base_cycle_days") == 5 &&
+                   RuleString(reserve.Rule, "capacity_formula") ==
+                       "ceil(max(0,5-inventory_pine_tar-exact_existing_due_output)/floor(days_before_use/5))" &&
+                   RuleString(reserve.Rule, "placement_authority") ==
+                       "native Object.canBePlacedHere plus locked Object.placementAction mature_tappable_tree_branch" &&
+                   RuleBool(reserve.Rule, "one_machine_per_fresh_replan") &&
+                   RuleBool(reserve.Rule, "pine_tar_capacity_reserve_bound") &&
+                   RuleFalse(reserve.Rule, "pig_truffle_oil_reserve_bound") &&
+                   RuleFalse(reserve.Rule, "hardwood_reserve_bound") &&
+                   RuleFalse(reserve.Rule, "material_consumption_reservation_bound") &&
+                   RuleFalse(reserve.Rule, "native_rain_totem_crafting_receipt_present") &&
+                   RuleFalse(reserve.Rule, "long_horizon_reserve_bound") &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       RainTotemCraftingReadNode,
+                       RainTotemPineTarCapacityReserveNode,
+                       "supplies_exact_pine_tar_requirement")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       WeatherSupplySchedulerNode,
+                       RainTotemPineTarCapacityReserveNode,
+                       "expands_future_rain_window_reserve")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       RainTotemPineTarCapacityReserveNode,
+                       WeatherSupplySchedulerNode,
+                       "replans_after_exact_pine_tapper_capacity_step"));
+        }
+
+        public bool HasBoundMasterAnglerRainTotemTruffleOilCapacityReserve()
+        {
+            if (!Directions.TryGetValue(MasterAnglerDirection, out var masterAngler) ||
+                !masterAngler.Nodes.TryGetValue(
+                    RainTotemTruffleOilCapacityReserveNode,
+                    out var reserve) ||
+                reserve.Kind != "recurrence_rule" ||
+                reserve.OptionId != "fishing.catch_fish" ||
+                reserve.Rule.ValueKind != JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            var requiredFields = new[]
+            {
+                "world_progress.fish_collection_progress",
+                "world_progress.game_state_query_calendar_state",
+                "player.inventory",
+                "player.building_construction_catalog",
+                "player.machine_placement",
+                "player.safe_item_context",
+                "player.rain_totem",
+                "farm.buildings",
+                "farm.animals",
+                "farm.animal_purchase_catalog",
+                "farm.objects",
+                "farm.machines",
+                "current_location.objects",
+                "locations.collision_grid",
+                "locations.social_route_date_evidence",
+                "time.total_days",
+                "time.time"
+            };
+            return reserve.CandidateKinds.SetEquals(new[]
+                   {
+                       "construct_building",
+                       "upgrade_building",
+                       "animal_purchase_select_service",
+                       "animal_purchase_navigate_location_page",
+                       "animal_purchase_select_location",
+                       "purchase_animal",
+                       "toggle_animal_door",
+                       "craft_machine_item",
+                       "place_machine_item",
+                       "collect_machine_output_tile",
+                       "load_machine_input_tile",
+                       "collect_spawned_object",
+                       "route_connector_tile"
+                   }) &&
+                   requiredFields.All(reserve.RequiredFieldPaths.Contains) &&
+                   RuleString(reserve.Rule, "execution_owner") ==
+                       "deterministic_teacher_reserve_compiler_not_policy_label" &&
+                   RuleString(reserve.Rule, "intent_builder") ==
+                       "MasterAnglerWindowIntentValidator.TryBuildRainTotemReserveIntent" &&
+                   RuleString(reserve.Rule, "material_qualified_item_id") == "(O)432" &&
+                   RuleInt(reserve.Rule, "required_material_quantity") == 1 &&
+                   RuleString(reserve.Rule, "input_qualified_item_id") == "(O)430" &&
+                   RuleString(reserve.Rule, "machine_qualified_item_id") == "(BC)19" &&
+                   RuleString(reserve.Rule, "animal_type_id") == "Pig" &&
+                   RuleInt(reserve.Rule, "native_days_to_mature") == 10 &&
+                   RuleStringSetEquals(
+                       reserve.Rule,
+                       "required_building_sequence",
+                       new[] { "Barn", "Big Barn", "Deluxe Barn" }) &&
+                   RuleStringSetEquals(
+                       reserve.Rule,
+                       "reserve_stages",
+                       new[]
+                       {
+                           "collect_ready_truffle_oil",
+                           "collect_spawned_truffle",
+                           "load_truffle_into_oil_maker",
+                           "construct_barn",
+                           "upgrade_big_barn",
+                           "upgrade_deluxe_barn",
+                           "purchase_pig",
+                           "wait_for_barn_upgrade",
+                           "wait_for_pig_maturity",
+                           "open_pig_home_animal_door",
+                           "establish_oil_maker",
+                           "await_native_pig_truffle"
+                       }) &&
+                   RuleString(reserve.Rule, "production_opportunity_scope") ==
+                       "non_winter_days_before_exact_rain_totem_use_day" &&
+                   RuleString(reserve.Rule, "animal_door_authority") ==
+                       "native Building.doAction right_click edge to ToggleAnimalDoor" &&
+                   RuleString(reserve.Rule, "building_authority") ==
+                       "live building construction and upgrade catalog plus native CarpenterMenu receipt" &&
+                   RuleBool(reserve.Rule, "existing_due_output_suppresses_duplicate_reserve") &&
+                   RuleBool(reserve.Rule, "fresh_snapshot_after_each_primitive") &&
+                   RuleBool(reserve.Rule, "pig_truffle_oil_reserve_bound") &&
+                   RuleFalse(reserve.Rule, "hardwood_reserve_bound") &&
+                   RuleFalse(reserve.Rule, "material_consumption_reservation_bound") &&
+                   RuleFalse(reserve.Rule, "native_rain_totem_crafting_receipt_present") &&
+                   RuleFalse(reserve.Rule, "long_horizon_reserve_bound") &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       RainTotemCraftingReadNode,
+                       RainTotemTruffleOilCapacityReserveNode,
+                       "supplies_exact_truffle_oil_requirement")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       WeatherSupplySchedulerNode,
+                       RainTotemTruffleOilCapacityReserveNode,
+                       "expands_future_rain_window_reserve")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       RainTotemTruffleOilCapacityReserveNode,
+                       WeatherSupplySchedulerNode,
+                       "replans_after_exact_pig_truffle_oil_stage"));
+        }
+
+        public bool HasBoundMasterAnglerRainTotemHardwoodReserve()
+        {
+            if (!Directions.TryGetValue(MasterAnglerDirection, out var masterAngler) ||
+                !masterAngler.Nodes.TryGetValue(
+                    RainTotemHardwoodReserveNode,
+                    out var reserve) ||
+                reserve.Kind != "recurrence_rule" ||
+                reserve.OptionId != "fishing.catch_fish" ||
+                reserve.Rule.ValueKind != JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            var requiredFields = new[]
+            {
+                "world_progress.fish_collection_progress",
+                "world_progress.game_state_query_calendar_state",
+                "player.inventory",
+                "player.location_id",
+                "player.tool_upgrade",
+                "farm.resource_clumps",
+                "current_location.terrain_features",
+                "locations.collision_grid",
+                "locations.route_connectors",
+                "locations.route_graph",
+                "time.total_days",
+                "time.time"
+            };
+            return reserve.CandidateKinds.SetEquals(new[]
+                   {
+                       "clear_farm_resource_clump",
+                       "clear_obstacle_tile",
+                       "route_connector_tile",
+                       "submit_tool_upgrade",
+                       "claim_tool_upgrade",
+                       "rain_totem_hardwood_reserve_wait"
+                   }) &&
+                   requiredFields.All(reserve.RequiredFieldPaths.Contains) &&
+                   RuleString(reserve.Rule, "execution_owner") ==
+                       "deterministic_teacher_reserve_compiler_not_policy_label" &&
+                   RuleString(reserve.Rule, "intent_builder") ==
+                       "MasterAnglerWindowIntentValidator.TryBuildRainTotemReserveIntent" &&
+                   RuleString(reserve.Rule, "material_qualified_item_id") == "(O)709" &&
+                   RuleInt(reserve.Rule, "required_material_quantity") == 1 &&
+                   RuleObjectIntsEqual(
+                       reserve.Rule,
+                       "farm_resource_clump_minimums",
+                       new Dictionary<string, int>(StringComparer.Ordinal)
+                       {
+                           ["600"] = 2,
+                           ["602"] = 8
+                       }) &&
+                   RuleBool(reserve.Rule, "fresh_snapshot_after_each_primitive") &&
+                   RuleBool(reserve.Rule, "immediate_material_supply_farm_resource_clump_bound") &&
+                   RuleBool(reserve.Rule, "ready_hardwood_source_reserve_bound") &&
+                   RuleBool(reserve.Rule, "hardwood_tool_upgrade_lifecycle_bound") &&
+                   RuleBool(reserve.Rule, "hardwood_reserve_bound") &&
+                   RuleFalse(reserve.Rule, "material_consumption_reservation_bound") &&
+                   RuleFalse(reserve.Rule, "native_rain_totem_crafting_receipt_present") &&
+                   RuleFalse(reserve.Rule, "long_horizon_reserve_bound") &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       RainTotemCraftingReadNode,
+                       RainTotemHardwoodReserveNode,
+                       "supplies_exact_hardwood_requirement")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       WeatherSupplySchedulerNode,
+                       RainTotemHardwoodReserveNode,
+                       "expands_future_rain_window_reserve")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       RainTotemHardwoodReserveNode,
+                       WeatherSupplySchedulerNode,
+                       "replans_after_exact_hardwood_source_step"));
+        }
+
+        public bool HasBoundMasterAnglerRainTotemCraftingExecution()
+        {
+            if (!Directions.TryGetValue(MasterAnglerDirection, out var masterAngler) ||
+                !masterAngler.Nodes.TryGetValue(
+                    RainTotemCraftingExecutionNode,
+                    out var execution) ||
+                execution.Kind != "deterministic_transition" ||
+                execution.OptionId != "executor.craft_rain_totem" ||
+                execution.Rule.ValueKind != JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            var requiredFields = new[]
+            {
+                "player.inventory",
+                "player.rain_totem_crafting",
+                "farm.material_inventory_graph",
+                "time.total_days"
+            };
+            return execution.CandidateKinds.SetEquals(new[]
+                   {
+                       "craft_rain_totem"
+                   }) &&
+                   requiredFields.All(execution.RequiredFieldPaths.Contains) &&
+                   RuleString(execution.Rule, "execution_owner") ==
+                       "compiler_owned_primitive_not_policy_label" &&
+                   RuleString(execution.Rule, "required_qualified_item_id") == "(O)681" &&
+                   RuleString(execution.Rule, "material_reservation_goal_id") ==
+                       "goal.fishing.complete_master_angler" &&
+                   RuleBool(execution.Rule, "exact_source_slot_reservation_bound") &&
+                   RuleBool(execution.Rule, "atomic_three_claim_commit_bound") &&
+                   RuleBool(execution.Rule, "fresh_verified_receipt_required") &&
+                   RuleBool(execution.Rule, "post_receipt_reservation_settlement_bound") &&
+                   RuleString(execution.Rule, "runtime_evidence_id") == "EVD-340" &&
+                   RuleFalse(execution.Rule, "training_label_eligible") &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       RainTotemCraftingReadNode,
+                       RainTotemCraftingExecutionNode,
+                       "supplies_exact_native_recipe")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       RainTotemPineTarCapacityReserveNode,
+                       RainTotemCraftingExecutionNode,
+                       "supplies_reserved_pine_tar")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       RainTotemTruffleOilCapacityReserveNode,
+                       RainTotemCraftingExecutionNode,
+                       "supplies_reserved_truffle_oil")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       RainTotemHardwoodReserveNode,
+                       RainTotemCraftingExecutionNode,
+                       "supplies_reserved_hardwood")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       RainTotemCraftingExecutionNode,
+                       WeatherSupplySchedulerNode,
+                       "replans_after_native_crafting_and_reservation_settlement"));
+        }
+
+        public bool HasBoundMasterAnglerDesertBusAccess()
+        {
+            if (!Directions.TryGetValue(MasterAnglerDirection, out var masterAngler) ||
+                !Directions.TryGetValue(CommunityCenterDirection, out var communityCenter) ||
+                !masterAngler.Nodes.TryGetValue(DesertBusProducerNode, out var producer) ||
+                !communityCenter.Nodes.TryGetValue(
+                    CommunityCenterCompletionNode,
+                    out var completion) ||
+                producer.Kind != "recurrence_rule" ||
+                completion.Kind != "terminal_fact" ||
+                producer.Rule.ValueKind != JsonValueKind.Object)
+                return false;
+
+            var requiredFields = new[]
+            {
+                "world_progress.fish_collection_progress",
+                "quests.mail_received",
+                "time.total_days",
+                "time.time",
+                "player.money",
+                "player.location_id",
+                "player.tile_x",
+                "player.tile_y",
+                "locations.route_graph",
+                "locations.route_connectors",
+                "locations.route_gate_context",
+                "locations.collision_grid",
+                "menus.active_menu"
+            };
+            return producer.CandidateKinds.SetEquals(new[] { "route_connector_tile" }) &&
+                   requiredFields.All(producer.RequiredFieldPaths.Contains) &&
+                   RuleString(producer.Rule, "reuses_direction_id") ==
+                       CommunityCenterDirection &&
+                   RuleString(producer.Rule, "reuses_node_id") ==
+                       CommunityCenterCompletionNode &&
+                   RuleString(producer.Rule, "reused_option_id") ==
+                       "fishing.catch_fish" &&
+                   RuleString(producer.Rule, "connector_kind") ==
+                       "native_bus_transport" &&
+                   RuleString(producer.Rule, "forward_source_location") == "BusStop" &&
+                   RuleString(producer.Rule, "forward_target_location") == "Desert" &&
+                   RuleString(producer.Rule, "return_source_location") == "Desert" &&
+                   RuleString(producer.Rule, "return_target_location") == "BusStop" &&
+                   RuleString(producer.Rule, "required_mail_key") == "ccVault" &&
+                   RuleInt(producer.Rule, "maximum_ticket_price") == 500 &&
+                   RuleBool(producer.Rule, "fresh_snapshot_after_every_native_primitive") &&
+                   RuleBool(producer.Rule, "fresh_native_receipt_required") &&
+                   RuleInt(producer.Rule, "deadline_total_day_exclusive") == 224 &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       FreshSaveInventoryNode,
+                       DesertBusProducerNode,
+                       "selects_desert_access_requirement")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       DesertBusProducerNode,
+                       TargetDateOpportunityNode,
+                       "supplies_desert_location_access")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       DesertBusProducerNode,
+                       MasterAnglerRecurrenceNode,
+                       "replans_after_native_bus_transport"));
+        }
+
+        public bool HasBoundMasterAnglerSecretWoodsAccess()
+        {
+            if (!Directions.TryGetValue(MasterAnglerDirection, out var masterAngler) ||
+                !masterAngler.Nodes.TryGetValue(
+                    SecretWoodsAccessProducerNode,
+                    out var producer) ||
+                producer.Kind != "recurrence_rule" ||
+                producer.OptionId != "fishing.catch_fish" ||
+                producer.Rule.ValueKind != JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            var requiredFields = new[]
+            {
+                "world_progress.fish_collection_progress",
+                "farm.farm_type_key",
+                "locations.secret_woods_access",
+                "locations.route_graph",
+                "locations.route_connectors",
+                "locations.collision_grid",
+                "current_location.resource_clumps",
+                "player.tool_upgrade",
+                "player.inventory",
+                "player.money",
+                "player.location_id",
+                "player.tile_x",
+                "player.tile_y",
+                "time.total_days",
+                "time.time",
+                "menus.active_menu"
+            };
+            return producer.CandidateKinds.SetEquals(new[]
+                   {
+                       "route_connector_tile",
+                       "submit_tool_upgrade",
+                       "claim_tool_upgrade",
+                       "clear_current_location_resource_clump",
+                       "secret_woods_access_wait"
+                   }) &&
+                   requiredFields.All(producer.RequiredFieldPaths.Contains) &&
+                   RuleString(producer.Rule, "reused_option_id") ==
+                       "fishing.catch_fish" &&
+                   RuleString(producer.Rule, "active_forest_farm_data_location") ==
+                       "Farm_Forest" &&
+                   RuleString(producer.Rule, "active_forest_farm_runtime_location") ==
+                       "Farm" &&
+                   RuleString(producer.Rule, "required_species_qualified_item_id") ==
+                       "(O)734" &&
+                   RuleString(producer.Rule, "connector_source_location") ==
+                       "Forest" &&
+                   RuleString(producer.Rule, "connector_target_location") ==
+                       "Woods" &&
+                   RuleInt(producer.Rule, "entry_log_parent_sheet_index") == 602 &&
+                   RuleInt(producer.Rule, "entry_log_tile_x") == 1 &&
+                   RuleInt(producer.Rule, "entry_log_tile_y") == 6 &&
+                   RuleInt(producer.Rule, "entry_log_width") == 2 &&
+                   RuleInt(producer.Rule, "entry_log_height") == 2 &&
+                   RuleInt(producer.Rule, "minimum_axe_upgrade_level") == 2 &&
+                   RuleBool(producer.Rule, "tool_upgrade_lifecycle_bound") &&
+                   RuleString(producer.Rule, "current_location_resource_clump_executor") ==
+                       "executor.break_current_location_resource_clump" &&
+                   RuleBool(producer.Rule, "fresh_snapshot_after_each_primitive") &&
+                   RuleFalse(producer.Rule, "training_label_eligible") &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       FreshSaveInventoryNode,
+                       SecretWoodsAccessProducerNode,
+                       "selects_woodskip_access_branch")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       SecretWoodsAccessProducerNode,
+                       TargetDateOpportunityNode,
+                       "supplies_woodskip_location_access")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       SecretWoodsAccessProducerNode,
+                       MasterAnglerRecurrenceNode,
+                       "replans_after_native_secret_woods_primitive"));
+        }
+
+        public bool HasBoundMasterAnglerDarkTalismanStoryAccess()
+        {
+            if (!Directions.TryGetValue(MasterAnglerDirection, out var masterAngler) ||
+                !Directions.TryGetValue(CommunityCenterDirection, out var communityCenter) ||
+                !masterAngler.Nodes.TryGetValue(DarkTalismanAccessProducerNode, out var producer) ||
+                !communityCenter.Nodes.ContainsKey(CommunityCenterCompletionNode) ||
+                producer.Kind != "recurrence_rule" ||
+                producer.OptionId != "fishing.catch_fish" ||
+                producer.Rule.ValueKind != JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            var requiredFields = new[]
+            {
+                "world_progress.fish_collection_progress",
+                "world_progress.community_center",
+                "locations.dark_talisman_access",
+                "locations.route_graph",
+                "locations.route_connectors",
+                "locations.collision_grid",
+                "player.location_id",
+                "player.tile_x",
+                "player.tile_y",
+                "time.total_days",
+                "time.time",
+                "menus.active_menu",
+                "quests.active_quests",
+                "quests.mail_received"
+            };
+            return producer.CandidateKinds.SetEquals(new[]
+                   {
+                       "route_connector_tile",
+                       "advance_story_event_automatic",
+                       "advance_story_event_choice",
+                       "interact_endpoint",
+                       "recovery_close_menu",
+                       "dark_talisman_access_wait"
+                   }) &&
+                   requiredFields.All(producer.RequiredFieldPaths.Contains) &&
+                   RuleString(producer.Rule, "reuses_direction_id") == CommunityCenterDirection &&
+                   RuleString(producer.Rule, "reuses_node_id") == CommunityCenterCompletionNode &&
+                   RuleString(producer.Rule, "reused_option_id") == "fishing.catch_fish" &&
+                   RuleString(producer.Rule, "shared_prefix_event_id") == "529952" &&
+                   RuleString(producer.Rule, "shared_prefix_event_precondition") == "C" &&
+                   RuleString(producer.Rule, "dark_talisman_quest_id") == "28" &&
+                   RuleString(producer.Rule, "krobus_unseal_mail_key") == "krobusUnseal" &&
+                   RuleString(producer.Rule, "mutant_bug_lair_target_location") == "BugLand" &&
+                   RuleString(producer.Rule, "mutant_bug_lair_terminal_fact") ==
+                       "quests.mail_received.krobusUnseal=true" &&
+                   RuleInt(producer.Rule, "dark_talisman_special_item_which") == 6 &&
+                   RuleString(producer.Rule, "dark_talisman_chest_tile") == "31,5" &&
+                   RuleString(producer.Rule, "witch_statue_tile") == "54,35" &&
+                   RuleInt(producer.Rule, "witch_statue_buildings_tile_index") == 287 &&
+                   RuleString(producer.Rule, "witch_statue_mail_key") == "witchStatueGone" &&
+                   RuleString(producer.Rule, "witch_swamp_target_location") == "WitchSwamp" &&
+                   RuleString(producer.Rule, "witch_swamp_magic_warp") ==
+                       "MagicWarp WitchSwamp 20 42" &&
+                   RuleBool(producer.Rule, "fresh_snapshot_after_each_primitive") &&
+                   RuleBool(producer.Rule, "fresh_native_receipt_required") &&
+                   RuleInt(producer.Rule, "deadline_total_day_exclusive") == 224 &&
+                   RuleFalse(producer.Rule, "training_label_eligible") &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       FreshSaveInventoryNode,
+                       DarkTalismanAccessProducerNode,
+                       "selects_dark_talisman_story_access")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       DarkTalismanAccessProducerNode,
+                       TargetDateOpportunityNode,
+                       "supplies_mutant_bug_lair_and_witch_swamp_access")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       DarkTalismanAccessProducerNode,
+                       MasterAnglerRecurrenceNode,
+                       "replans_after_native_dark_talisman_primitive"));
+        }
+
+        public bool HasBoundMasterAnglerSewerAccess()
+        {
+            if (!Directions.TryGetValue(MasterAnglerDirection, out var masterAngler) ||
+                !Directions.TryGetValue(RustyKeyDirection, out var rustyKey) ||
+                !masterAngler.Nodes.TryGetValue(SewerAccessProducerNode, out var producer) ||
+                !rustyKey.Nodes.TryGetValue(RustyKeyCompletionNode, out var completion) ||
+                !rustyKey.Nodes.TryGetValue(RustyKeyRecurrenceNode, out var recurrence) ||
+                !rustyKey.Nodes.TryGetValue(RustyKeyEventNode, out var keyEvent) ||
+                producer.Kind != "recurrence_rule" ||
+                completion.Kind != "terminal_fact" ||
+                recurrence.Kind != "recurrence_rule" ||
+                keyEvent.Kind != "policy_option_transition" ||
+                keyEvent.OptionId != "story.advance_event" ||
+                producer.Rule.ValueKind != JsonValueKind.Object)
+                return false;
+
+            var requiredFields = new[]
+            {
+                "world_progress.fish_collection_progress",
+                "player.has_rusty_key",
+                "quests.mail_received",
+                "time.total_days",
+                "time.time",
+                "player.location_id",
+                "player.tile_x",
+                "player.tile_y",
+                "locations.route_graph",
+                "locations.route_connectors",
+                "locations.route_gate_context",
+                "locations.collision_grid",
+                "menus.active_menu"
+            };
+            return producer.CandidateKinds.SetEquals(new[] { "route_connector_tile" }) &&
+                   requiredFields.All(producer.RequiredFieldPaths.Contains) &&
+                   RuleString(producer.Rule, "reuses_direction_id") == RustyKeyDirection &&
+                   RuleString(producer.Rule, "reuses_node_id") == RustyKeyCompletionNode &&
+                   RuleString(producer.Rule, "reused_option_id") == "fishing.catch_fish" &&
+                   RuleString(producer.Rule, "connector_kind") == "action_warp" &&
+                   RuleStringSetEquals(
+                       producer.Rule,
+                       "source_locations",
+                       new[] { "Forest", "Town" }) &&
+                   RuleString(producer.Rule, "native_action") == "EnterSewer" &&
+                   RuleString(producer.Rule, "target_location") == "Sewer" &&
+                   RuleInt(producer.Rule, "target_x") == 16 &&
+                   RuleInt(producer.Rule, "target_y") == 11 &&
+                   RuleString(producer.Rule, "unlock_mail_key") == "OpenedSewer" &&
+                   RuleInt(producer.Rule, "locked_action_count") == 2 &&
+                   RuleInt(producer.Rule, "opened_action_count") == 1 &&
+                   RuleBool(producer.Rule, "fresh_snapshot_after_every_native_primitive") &&
+                   RuleBool(producer.Rule, "fresh_native_receipt_required") &&
+                   RuleInt(producer.Rule, "deadline_total_day_exclusive") == 224 &&
+                   rustyKey.Edges.Contains(new DependencyEdgeInventory(
+                       RustyKeyRecurrenceNode,
+                       RustyKeyEventNode,
+                       "enables_after_threshold")) &&
+                   rustyKey.Edges.Contains(new DependencyEdgeInventory(
+                       RustyKeyEventNode,
+                       RustyKeyCompletionNode,
+                       "settles")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       FreshSaveInventoryNode,
+                       SewerAccessProducerNode,
+                       "selects_sewer_access_requirement")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       SewerAccessProducerNode,
+                       TargetDateOpportunityNode,
+                       "supplies_sewer_location_access")) &&
+                   masterAngler.Edges.Contains(new DependencyEdgeInventory(
+                       SewerAccessProducerNode,
+                       MasterAnglerRecurrenceNode,
+                       "replans_after_native_sewer_primitive"));
+        }
+
+        private static string RuleString(JsonElement rule, string name) =>
+            rule.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
+                ? value.GetString() ?? string.Empty
+                : string.Empty;
+
+        private static bool RuleBool(JsonElement rule, string name) =>
+            rule.TryGetProperty(name, out var value) &&
+            value.ValueKind is JsonValueKind.True;
+
+        private static bool RuleFalse(JsonElement rule, string name) =>
+            rule.TryGetProperty(name, out var value) &&
+            value.ValueKind is JsonValueKind.False;
+
+        private static int RuleInt(JsonElement rule, string name) =>
+            rule.TryGetProperty(name, out var value) && value.TryGetInt32(out var result)
+                ? result
+                : int.MinValue;
+
+        private static bool RuleObjectIntsEqual(
+            JsonElement rule,
+            string name,
+            IReadOnlyDictionary<string, int> expected)
+        {
+            if (!rule.TryGetProperty(name, out var value) ||
+                value.ValueKind != JsonValueKind.Object)
+                return false;
+            var actual = value.EnumerateObject().ToArray();
+            return actual.Length == expected.Count &&
+                   actual.All(property =>
+                       expected.TryGetValue(property.Name, out var expectedValue) &&
+                       property.Value.TryGetInt32(out var actualValue) &&
+                       actualValue == expectedValue);
+        }
+
+        private static bool RuleStringSetEquals(
+            JsonElement rule,
+            string name,
+            IEnumerable<string> expected)
+        {
+            if (!rule.TryGetProperty(name, out var value) ||
+                value.ValueKind != JsonValueKind.Array)
+                return false;
+            return value.EnumerateArray()
+                .Select(item => item.GetString() ?? string.Empty)
+                .ToHashSet(StringComparer.Ordinal)
+                .SetEquals(expected);
+        }
+    }
+}

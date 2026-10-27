@@ -3,6 +3,7 @@ param(
         (Resolve-Path (Join-Path $PSScriptRoot "..")).Path,
     [string] $RuntimeRoot =
         "E:\StardewValleyAICompanion-runtime",
+    [string] $SavesPath = "",
     [string] $SaveSlot = "",
     [string] $RunId = (
         "runtime-storage-crafting-smoke-" +
@@ -11,7 +12,14 @@ param(
     [string] $OutputDirectory =
         "artifacts\runtime-storage-crafting-smoke",
     [int] $StartupTimeoutSeconds = 120,
-    [string] $RecipeName = "Chest"
+    [string] $RecipeName = "Chest",
+    [string] $SnapshotProfile = "training_machine",
+    [string] $SnapshotFieldName = "storage_crafting",
+    [string] $SetupOptionId =
+        "debug.setup_storage_crafting_target",
+    [string] $CraftOptionId = "executor.craft_storage_item",
+    [string] $ExpectedPrimitiveKind = "craft_storage_item",
+    [string] $QueueId = "runtime-storage-crafting-smoke"
 )
 
 $ErrorActionPreference = "Stop"
@@ -54,9 +62,11 @@ function Wait-Health {
 
 function Find-StorageRecipe {
     param($Snapshot, [string] $Name)
-    foreach ($row in @(
-        $Snapshot.state.player.storage_crafting.value.rows
-    )) {
+    $field = $Snapshot.state.player.PSObject.Properties[
+        $SnapshotFieldName
+    ]
+    if ($null -eq $field) { return $null }
+    foreach ($row in @($field.Value.value.rows)) {
         if ([string]$row.recipe_name -eq $Name) {
             return $row
         }
@@ -76,7 +86,9 @@ function Wait-StorageRecipe {
     while ((Get-Date) -lt $deadline) {
         try {
             $snapshot = Invoke-JsonGet -Url $Url
-            $field = $snapshot.state.player.storage_crafting
+            $field = $snapshot.state.player.PSObject.Properties[
+                $SnapshotFieldName
+            ].Value
             $row = Find-StorageRecipe -Snapshot $snapshot -Name $Name
             $ready = $null -ne $row -and
                 [string]$row.craft_candidate_status -eq
@@ -115,23 +127,27 @@ function Inventory-Count {
 
 $runtimeGameDir = Join-Path $RuntimeRoot "Stardew Valley"
 $smapiExe = Join-Path $runtimeGameDir "StardewModdingAPI.exe"
-$savesPath = Join-Path $RuntimeRoot "saves"
+if ([string]::IsNullOrWhiteSpace($SavesPath)) {
+    $SavesPath = Join-Path $RuntimeRoot "saves"
+}
 $snapshotUrl =
-    "http://127.0.0.1:8765/api/v1/snapshot?profile=training_machine"
+    "http://127.0.0.1:8765/api/v1/snapshot?profile=" +
+    [uri]::EscapeDataString($SnapshotProfile) +
+    "&fresh=true"
 $executeUrl =
     "http://127.0.0.1:8767/api/v1/training/execute"
 if (-not (Test-Path -LiteralPath $smapiExe -PathType Leaf)) {
     throw "SMAPI executable not found: $smapiExe"
 }
-if (-not (Test-Path -LiteralPath $savesPath -PathType Container)) {
-    throw "Isolated saves path not found: $savesPath"
+if (-not (Test-Path -LiteralPath $SavesPath -PathType Container)) {
+    throw "Isolated saves path not found: $SavesPath"
 }
 if ([string]::IsNullOrWhiteSpace($SaveSlot)) {
-    $slot = Get-ChildItem -LiteralPath $savesPath -Directory |
+    $slot = Get-ChildItem -LiteralPath $SavesPath -Directory |
         Sort-Object LastWriteTime -Descending |
         Select-Object -First 1
     if ($null -eq $slot) {
-        throw "No isolated save slots found under $savesPath"
+        throw "No isolated save slots found under $SavesPath"
     }
     $SaveSlot = $slot.Name
 }
@@ -163,10 +179,10 @@ $previousEnv = @{
 
 $process = $null
 try {
-    $env:STARDEWAI_TEST_SAVES = $savesPath
+    $env:STARDEWAI_TEST_SAVES = $SavesPath
     $env:STARDEWAI_TEST_SLOT = $SaveSlot
     $env:STARDEWAI_TEST_AUTO_LOAD = "true"
-    $env:STARDEWAI_SAVE_ISOLATION_PATH = $savesPath
+    $env:STARDEWAI_SAVE_ISOLATION_PATH = $SavesPath
     $env:STARDEWAI_TRAINING_RUN_ID = $RunId
     $env:STARDEWAI_TRAINING_MODE = "1"
     $env:SDL_AUDIODRIVER = "dummy"
@@ -183,27 +199,30 @@ try {
         -Url $snapshotUrl `
         -Name $RecipeName `
         -TimeoutSeconds $StartupTimeoutSeconds
+    Write-JsonFile `
+        (Join-Path $runDirectory "initial-snapshot.json") `
+        $initial
 
     $setup = [ordered]@{
         schema_version = "training_execution_request.v1"
         run_id = $RunId
-        queue_id = "runtime-storage-crafting-smoke"
-        queue_item_id = "runtime-storage-crafting-smoke.setup"
+        queue_id = $QueueId
+        queue_item_id = "$QueueId.setup"
         before_state_hash = $initial.state_hash
-        option_id = "debug.setup_storage_crafting_target"
+        option_id = $SetupOptionId
         execution_mode = "training_singleplayer"
         actor = "training_farmer.main"
-        save_isolation_path = $savesPath
+        save_isolation_path = $SavesPath
         request_nonce = [guid]::NewGuid().ToString("N")
         created_at = [DateTimeOffset]::UtcNow.ToString("O")
         recipe_name = $RecipeName
     }
     $setupResult = Invoke-JsonPost `
         -Url $executeUrl -Body $setup
+    Write-JsonFile `
+        (Join-Path $runDirectory "setup-result.json") `
+        $setupResult
     if ($setupResult.status -ne "applied") {
-        Write-JsonFile `
-            (Join-Path $runDirectory "setup-result.json") `
-            $setupResult
         throw "Storage crafting fixture failed."
     }
 
@@ -213,6 +232,9 @@ try {
         -Name $RecipeName `
         -TimeoutSeconds 30 `
         -RequireReady
+    Write-JsonFile `
+        (Join-Path $runDirectory "before-snapshot.json") `
+        $before
     $row = Find-StorageRecipe `
         -Snapshot $before -Name $RecipeName
     $qualifiedId = [string]$row.output_qualified_item_id
@@ -221,13 +243,13 @@ try {
     $craft = [ordered]@{
         schema_version = "training_execution_request.v1"
         run_id = $RunId
-        queue_id = "runtime-storage-crafting-smoke"
-        queue_item_id = "runtime-storage-crafting-smoke.craft"
+        queue_id = $QueueId
+        queue_item_id = "$QueueId.craft"
         before_state_hash = $before.state_hash
-        option_id = "executor.craft_storage_item"
+        option_id = $CraftOptionId
         execution_mode = "training_singleplayer"
         actor = "training_farmer.main"
-        save_isolation_path = $savesPath
+        save_isolation_path = $SavesPath
         request_nonce = [guid]::NewGuid().ToString("N")
         created_at = [DateTimeOffset]::UtcNow.ToString("O")
         recipe_name = [string]$row.recipe_name
@@ -242,11 +264,17 @@ try {
     }
     $craftResult = Invoke-JsonPost `
         -Url $executeUrl -Body $craft
+    Write-JsonFile `
+        (Join-Path $runDirectory "craft-result.json") `
+        $craftResult
     Start-Sleep -Milliseconds 750
     $after = Wait-StorageRecipe `
         -Url $snapshotUrl `
         -Name $RecipeName `
         -TimeoutSeconds 30
+    Write-JsonFile `
+        (Join-Path $runDirectory "after-snapshot.json") `
+        $after
     $afterRow = Find-StorageRecipe `
         -Snapshot $after -Name $RecipeName
     $countAfter = Inventory-Count `
@@ -254,7 +282,7 @@ try {
     $passed =
         $craftResult.status -eq "applied" -and
         $craftResult.primitive_kind -eq
-            "craft_storage_item" -and
+            $ExpectedPrimitiveKind -and
         $craftResult.primitive_verification_status -eq
             "verified" -and
         $countAfter -eq (
@@ -270,6 +298,10 @@ try {
         run_id = $RunId
         save_slot = $SaveSlot
         recipe_name = $RecipeName
+        snapshot_profile = $SnapshotProfile
+        snapshot_field_name = $SnapshotFieldName
+        setup_option_id = $SetupOptionId
+        craft_option_id = $CraftOptionId
         qualified_item_id = $qualifiedId
         inventory_count_before = $countBefore
         inventory_count_after = $countAfter
@@ -292,21 +324,6 @@ try {
         smapi_process_id = $process.Id
     }
 
-    Write-JsonFile `
-        (Join-Path $runDirectory "initial-snapshot.json") `
-        $initial
-    Write-JsonFile `
-        (Join-Path $runDirectory "setup-result.json") `
-        $setupResult
-    Write-JsonFile `
-        (Join-Path $runDirectory "before-snapshot.json") `
-        $before
-    Write-JsonFile `
-        (Join-Path $runDirectory "craft-result.json") `
-        $craftResult
-    Write-JsonFile `
-        (Join-Path $runDirectory "after-snapshot.json") `
-        $after
     Write-JsonFile `
         (Join-Path $runDirectory "summary.json") `
         $summary

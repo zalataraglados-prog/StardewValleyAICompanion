@@ -262,7 +262,7 @@ public static class PetLoveTeacherCorpusBuilder
             snapshot.GameVersion != "1.6.15" ||
             string.IsNullOrWhiteSpace(snapshot.BridgeVersion) ||
             string.IsNullOrWhiteSpace(snapshot.StateHash) ||
-            snapshot.StateHash != SnapshotHash.ComputeStateHash(snapshot.State))
+            !SnapshotHash.MatchesStateHash(snapshot.State, snapshot.StateHash))
         {
             throw new InvalidDataException("Pet-love " + label + " snapshot is invalid.");
         }

@@ -248,11 +248,20 @@ namespace StardewAI.Core.OptionRegistry
             int? targetTileX = null;
             int? targetTileY = null;
             bool complete = quest.Completed;
+            var hasEventRoute = VanillaBasicQuestEventRouteCatalog.TryGet(
+                quest.Id ?? string.Empty,
+                quest.RuntimeType ?? string.Empty,
+                out var eventRoute);
 
             if (complete)
             {
                 nextActionCategory = "completed";
                 diagnostics.Add("quest_already_completed");
+            }
+            else if (hasEventRoute)
+            {
+                nextActionCategory = "trigger_location_event";
+                targetLocation = eventRoute.TargetLocation;
             }
             else if (!quest.Accepted)
             {
@@ -304,8 +313,10 @@ namespace StardewAI.Core.OptionRegistry
                 diagnostics.Add("quest_missing_runtime_type");
             }
 
-            var provenance = "direct_net_fields:Quest." + quest.RuntimeType;
-            if (quest.QuestType == 9)
+            var provenance = hasEventRoute
+                ? eventRoute.Provenance
+                : "direct_net_fields:Quest." + quest.RuntimeType;
+            if (!hasEventRoute && quest.QuestType == 9)
             {
                 provenance = "direct_net_fields:type9_subclass_runtime_disambiguation_required_" + (string.IsNullOrWhiteSpace(quest.RuntimeType) ? "unresolved" : quest.RuntimeType);
             }

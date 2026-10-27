@@ -131,8 +131,15 @@ namespace StardewAI.Core.Execution
                     {
                         reasons.Add("object_clear_experience_projection_drifted");
                     }
-                    if (!string.Equals(ReadParameter(action, "clear_output_projection_status"), "exact", StringComparison.Ordinal) ||
-                        !string.Equals(ReadString(targetObject, "clear_output_projection_status"), "exact", StringComparison.Ordinal) ||
+                    var actionOutputStatus = ReadParameter(action, "clear_output_projection_status") ?? string.Empty;
+                    var targetOutputStatus = ReadString(targetObject, "clear_output_projection_status");
+                    var nativeStochasticReceipt =
+                        string.Equals(actionOutputStatus, "native_stochastic_receipt", StringComparison.Ordinal) &&
+                        string.Equals(targetOutputStatus, "native_stochastic_receipt", StringComparison.Ordinal) &&
+                        string.Equals(ReadString(targetObject, "qualified_item_id"), "(O)25", StringComparison.Ordinal);
+                    if (!nativeStochasticReceipt &&
+                        (!string.Equals(actionOutputStatus, "exact", StringComparison.Ordinal) ||
+                        !string.Equals(targetOutputStatus, "exact", StringComparison.Ordinal) ||
                         !string.Equals(ReadParameter(action, "clear_output_items_json"), ReadString(targetObject, "clear_output_items_json"), StringComparison.Ordinal) ||
                         !string.Equals(ReadParameter(action, "clear_output_qualified_item_id") ?? string.Empty, ReadString(targetObject, "clear_output_qualified_item_id"), StringComparison.OrdinalIgnoreCase) ||
                         ReadIntParameter(action, "clear_output_quantity_min") != NullableReadInt(targetObject, "clear_output_quantity_min") ||
@@ -145,7 +152,7 @@ namespace StardewAI.Core.Execution
                         ReadIntParameter(action, "artifact_spots_dug_expected_after") != NullableReadInt(targetObject, "artifact_spots_dug_expected_after") ||
                         !string.Equals(ReadParameter(action, "clear_terrain_feature_expected_after") ?? string.Empty, ReadString(targetObject, "clear_terrain_feature_expected_after"), StringComparison.Ordinal) ||
                         ReadIntParameter(action, "defense_book_mail_before") != NullableReadInt(targetObject, "defense_book_mail_before") ||
-                        ReadIntParameter(action, "defense_book_mail_expected_after") != NullableReadInt(targetObject, "defense_book_mail_expected_after"))
+                        ReadIntParameter(action, "defense_book_mail_expected_after") != NullableReadInt(targetObject, "defense_book_mail_expected_after")))
                     {
                         reasons.Add("object_clear_output_projection_drifted");
                     }
@@ -384,8 +391,70 @@ namespace StardewAI.Core.Execution
             {
                 reasons.Add("farm_resource_clump_tool_slot_drifted");
             }
+            var expectedOutputs = ReadString(
+                clump,
+                "clear_expected_output_items_json");
+            if (!string.Equals(
+                    ReadString(clump, "clear_output_projection_status"),
+                    "exact_vanilla_conservative_minimum",
+                    StringComparison.Ordinal) ||
+                string.IsNullOrWhiteSpace(expectedOutputs) ||
+                string.IsNullOrWhiteSpace(
+                    ReadString(clump, "clear_output_native_contract")) ||
+                !FruitTreeJsonEquivalent(
+                    ReadParameter(action, "expected_output_items_json") ??
+                        string.Empty,
+                    expectedOutputs) ||
+                !string.Equals(
+                    ReadParameter(action, "clear_output_projection_status"),
+                    ReadString(clump, "clear_output_projection_status"),
+                    StringComparison.Ordinal) ||
+                !string.Equals(
+                    ReadParameter(action, "clear_output_native_contract"),
+                    ReadString(clump, "clear_output_native_contract"),
+                    StringComparison.Ordinal))
+            {
+                reasons.Add("farm_resource_clump_output_projection_drifted");
+            }
 
             return reasons.Distinct(StringComparer.Ordinal).ToArray();
+        }
+
+        private static SmallModelActionParameter[] BuildFarmResourceClumpParameters(
+            SmallModelAction action,
+            SnapshotEnvelope snapshot)
+        {
+            var boundNames = new HashSet<string>(StringComparer.Ordinal)
+            {
+                "expected_output_items_json",
+                "clear_output_projection_status",
+                "clear_output_native_contract"
+            };
+            var parameters = action.Parameters
+                .Where(parameter => !boundNames.Contains(parameter.Name))
+                .ToList();
+            var anchorX = ReadIntParameter(action, "resource_clump_tile_x");
+            var anchorY = ReadIntParameter(action, "resource_clump_tile_y");
+            var clumps = ReadStateFieldValue(snapshot, "farm", "resource_clumps");
+            var clump = anchorX.HasValue && anchorY.HasValue &&
+                clumps.HasValue && clumps.Value.ValueKind == JsonValueKind.Array
+                    ? clumps.Value.EnumerateArray().FirstOrDefault(row =>
+                        ReadInt(row, "tile_x") == anchorX.Value &&
+                        ReadInt(row, "tile_y") == anchorY.Value)
+                    : default;
+            if (clump.ValueKind == JsonValueKind.Object)
+            {
+                parameters.Add(Parameter(
+                    "expected_output_items_json",
+                    ReadString(clump, "clear_expected_output_items_json")));
+                parameters.Add(Parameter(
+                    "clear_output_projection_status",
+                    ReadString(clump, "clear_output_projection_status")));
+                parameters.Add(Parameter(
+                    "clear_output_native_contract",
+                    ReadString(clump, "clear_output_native_contract")));
+            }
+            return parameters.ToArray();
         }
 
         private static bool TileInsideRectangle(int x, int y, int anchorX, int anchorY, int width, int height)
@@ -431,7 +500,55 @@ namespace StardewAI.Core.Execution
                 reasons.Add("till_soil_insufficient_stamina");
             }
 
+            var buriedNutSourceKey = ReadParameter(action, "buried_nut_source_key");
+            if (!string.IsNullOrWhiteSpace(buriedNutSourceKey) &&
+                (!targetX.HasValue || !targetY.HasValue ||
+                 !BuriedNutSourceContextAllows(
+                     snapshot,
+                     buriedNutSourceKey,
+                     targetX.Value,
+                     targetY.Value)))
+            {
+                reasons.Add("till_soil_buried_nut_source_projection_drifted");
+            }
+
             return reasons.Distinct(StringComparer.Ordinal).ToArray();
+        }
+
+        private static bool BuriedNutSourceContextAllows(
+            SnapshotEnvelope snapshot,
+            string sourceKey,
+            int targetX,
+            int targetY)
+        {
+            var catalog = ReadStateFieldValue(
+                snapshot,
+                "world_progress",
+                "golden_walnut_sources");
+            if (!catalog.HasValue || catalog.Value.ValueKind != JsonValueKind.Object ||
+                !catalog.Value.TryGetProperty("sources", out var sources) ||
+                sources.ValueKind != JsonValueKind.Array)
+            {
+                return false;
+            }
+
+            var currentLocation = ReadStateFieldString(snapshot, "player", "location_id");
+            return sources.EnumerateArray().Any(source =>
+                source.ValueKind == JsonValueKind.Object &&
+                string.Equals(ReadString(source, "source_key"), sourceKey, StringComparison.Ordinal) &&
+                string.Equals(ReadString(source, "acquisition_option_id"), "executor.till_soil", StringComparison.Ordinal) &&
+                string.Equals(ReadString(source, "action_binding_status"), "existing_action_family_bound", StringComparison.Ordinal) &&
+                string.Equals(ReadString(source, "location_id"), currentLocation, StringComparison.OrdinalIgnoreCase) &&
+                ReadNullableInt(source, "tile_x") == targetX &&
+                ReadNullableInt(source, "tile_y") == targetY &&
+                ReadInt(source, "remaining_quantity") > 0 &&
+                ReadBool(source, "required_mail_satisfied") == true &&
+                ReadBool(source, "spend_safe_before_resort") == true &&
+                (!source.TryGetProperty("required_secret_note_satisfied", out var noteSatisfied) ||
+                 noteSatisfied.ValueKind == JsonValueKind.True) &&
+                ReadString(source, "runtime_source_validation_status") is
+                    ("exact_current_world_buried_nut_point_present" or
+                     "exact_current_world_journal_buried_tile_present_and_note_seen"));
         }
 
         private static string[] ValidatePlantSeedPlan(SmallModelAction action, SnapshotEnvelope snapshot)

@@ -34,6 +34,22 @@ public sealed class FarmSitePreparationSourceGuardTests
         Assert.Contains("(long)maxX - minX + 1 > 32", modEntry, StringComparison.Ordinal);
         Assert.Contains("(long)maxY - minY + 1 > 32", modEntry, StringComparison.Ordinal);
         Assert.Contains("sitePreparationBounds.MinX", modEntry, StringComparison.Ordinal);
+        var farmProfileBranch = modEntry.IndexOf(
+            "if (profile == \"farm_layout\")",
+            StringComparison.Ordinal);
+        Assert.True(farmProfileBranch >= 0);
+        var farmProfileWorldProgress = modEntry.IndexOf(
+            "domains.Add(\"world_progress\");",
+            farmProfileBranch,
+            StringComparison.Ordinal);
+        var nextProfileBranch = modEntry.IndexOf(
+            "if (profile is \"training_mining\")",
+            farmProfileBranch,
+            StringComparison.Ordinal);
+        Assert.True(
+            farmProfileBranch >= 0 &&
+            farmProfileWorldProgress > farmProfileBranch &&
+            farmProfileWorldProgress < nextProfileBranch);
         Assert.Contains("CollectFarmSitePreparation", currentLocation, StringComparison.Ordinal);
         Assert.Contains("FarmSitePreparationProjector.ReadContext", currentLocation,
             StringComparison.Ordinal);
@@ -43,6 +59,22 @@ public sealed class FarmSitePreparationSourceGuardTests
         Assert.Contains("map_width = mapWidth", projector,
             StringComparison.Ordinal);
         Assert.Contains("map_height = mapHeight", projector,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "schema_version = \"farm_site_preparation_context.v2\"",
+            projector,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "location.CanRefillWateringCanOnTile(x, y)",
+            projector,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "watering_can_refill_source = wateringCanRefillSource",
+            projector,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "watering_refill_approach_standable",
+            projector,
             StringComparison.Ordinal);
         Assert.Contains("if (x == bounds.MaxX)", projector, StringComparison.Ordinal);
         Assert.Contains("if (y == bounds.MaxY)", projector, StringComparison.Ordinal);

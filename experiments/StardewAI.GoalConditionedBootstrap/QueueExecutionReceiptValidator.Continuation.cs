@@ -39,6 +39,17 @@ internal static partial class QueueExecutionReceiptValidator
         var queueItems = queue.Items ?? Array.Empty<ActionQueueItem>();
         var receiptSteps = receipt.StepResults ??
             Array.Empty<QueueExecutionStepReceipt>();
+        var recoverableInterruptSteps = receiptSteps
+            .Select(IsRecoverablePriorityStoryInterruptStep)
+            .ToArray();
+        var recoverableInterruptBlockReasons = receiptSteps
+            .Where((_, index) => recoverableInterruptSteps[index])
+            .SelectMany(step => step.BlockReasons ?? Array.Empty<string>())
+            .ToHashSet(StringComparer.Ordinal);
+        var receiptBlockReasons = (receipt.BlockReasons ?? Array.Empty<string>())
+            .ToHashSet(StringComparer.Ordinal);
+        var receiptBlocksAreRecoveredInterrupts =
+            receiptBlockReasons.SetEquals(recoverableInterruptBlockReasons);
         if (!string.Equals(queue.SchemaVersion, "action_queue.v1",
                 StringComparison.Ordinal) ||
             !string.Equals(queue.Status, "pending", StringComparison.Ordinal) ||
@@ -111,7 +122,7 @@ internal static partial class QueueExecutionReceiptValidator
         {
             reasons.Add("continuation_receipt_terminal_boundary_mismatch");
         }
-        if ((receipt.BlockReasons?.Length ?? 0) > 0 ||
+        if (!receiptBlocksAreRecoveredInterrupts ||
             receipt.PlannedItemCount != queueItems.Length ||
             receipt.ExecutedItemCount != receiptSteps.Length ||
             receiptSteps.Length == 0 ||
@@ -127,9 +138,13 @@ internal static partial class QueueExecutionReceiptValidator
         var verifiedPending = continuation is not null &&
             continuation.PrimitiveVerificationStatus == "verified" &&
             receipt.AfterSnapshotFresh &&
-            continuation.RetryNextIteration &&
-            continuation.QueueReplanStopReason ==
-                "selected_queue_continuation_retry_next_iteration" &&
+            (continuation.RetryNextIteration &&
+                continuation.QueueReplanStopReason ==
+                    "selected_queue_continuation_retry_next_iteration" ||
+             !continuation.RetryNextIteration &&
+                continuation.HasActiveObjectiveContinuation &&
+                continuation.QueueReplanStopReason ==
+                    "max_queue_item_attempts_reached") &&
             !continuation.ObjectiveCompleted &&
             !continuation.DecisionComplete &&
             continuation.CompletedObjectiveCount == 0 &&
@@ -142,9 +157,12 @@ internal static partial class QueueExecutionReceiptValidator
             continuation.DecisionComplete &&
             continuation.CompletedObjectiveCount == 1 &&
             continuation.ResumeIndex == -1;
+        var completionMarkerMatches = verifiedCompleted
+            ? receipt.SelectedCandidateCompleted
+            : !receipt.SelectedCandidateCompleted;
         if (!string.Equals(receipt.Status, "blocked", StringComparison.Ordinal) ||
             receipt.Success ||
-            receipt.SelectedCandidateCompleted ||
+            !completionMarkerMatches ||
             verifiedPending == verifiedCompleted)
         {
             reasons.Add("continuation_receipt_terminal_status_invalid");
@@ -158,6 +176,7 @@ internal static partial class QueueExecutionReceiptValidator
         for (var index = 0; index < receiptSteps.Length; index++)
         {
             var step = receiptSteps[index];
+            var recoverableInterruptStep = recoverableInterruptSteps[index];
             var effectiveItem = index < effectiveItems.Length
                 ? effectiveItems[index]
                 : null;
@@ -223,11 +242,12 @@ internal static partial class QueueExecutionReceiptValidator
                 !step.StateHashChanged ||
                 string.Equals(step.SourceStateHash, step.AfterStateHash,
                     StringComparison.Ordinal) ||
-                step.AfterGameTick <= step.BeforeGameTick)
+                step.AfterGameTick < step.BeforeGameTick)
             {
                 reasons.Add("continuation_receipt_step_boundary_mismatch:" + index);
             }
-            if (!string.Equals(step.Status, "applied", StringComparison.Ordinal) ||
+            if (!recoverableInterruptStep &&
+                (!string.Equals(step.Status, "applied", StringComparison.Ordinal) ||
                 !step.AfterSnapshotFresh ||
                 !string.Equals(step.PrimitiveVerificationStatus, "verified",
                     StringComparison.Ordinal) ||
@@ -235,7 +255,7 @@ internal static partial class QueueExecutionReceiptValidator
                 (step.BlockReasons?.Length ?? 0) > 0 ||
                 !string.IsNullOrWhiteSpace(step.FailureAttribution) ||
                 step.ChangedFacts.ValueKind != JsonValueKind.Array ||
-                step.ChangedFacts.GetArrayLength() == 0)
+                step.ChangedFacts.GetArrayLength() == 0))
             {
                 reasons.Add("continuation_receipt_step_not_verified:" + index);
             }
@@ -333,10 +353,16 @@ internal static partial class QueueExecutionReceiptValidator
                 }
                 stopReason = stopReasonProperty.GetString() ?? string.Empty;
             }
+            var hasActiveObjectiveContinuation =
+                root.TryGetProperty("objective_continuation",
+                    out var activeContinuation) &&
+                activeContinuation.ValueKind == JsonValueKind.Object &&
+                TryString(activeContinuation, "kind", out _);
             return new ContinuationState(
                 status,
                 retry,
                 stopReason,
+                hasActiveObjectiveContinuation,
                 objectiveCompleted,
                 decisionComplete,
                 completed.GetArrayLength(),
@@ -389,8 +415,53 @@ internal static partial class QueueExecutionReceiptValidator
         string PrimitiveVerificationStatus,
         bool RetryNextIteration,
         string QueueReplanStopReason,
+        bool HasActiveObjectiveContinuation,
         bool ObjectiveCompleted,
         bool DecisionComplete,
         int CompletedObjectiveCount,
         int ResumeIndex);
+
+    private static bool IsRecoverablePriorityStoryInterruptStep(
+        QueueExecutionStepReceipt step)
+    {
+        if (!string.Equals(step.Status, "blocked", StringComparison.Ordinal) ||
+            !step.AfterSnapshotFresh ||
+            !step.StateHashChanged ||
+            !string.Equals(step.PrimitiveVerificationStatus, "blocked",
+                StringComparison.Ordinal) ||
+            !string.IsNullOrWhiteSpace(step.FailureAttribution) ||
+            !step.QueueReplanApplied ||
+            !string.Equals(step.QueueReplanKind,
+                "priority_story_event_interrupt", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var blockReasons = step.BlockReasons ?? Array.Empty<string>();
+        if (blockReasons.Length == 1 &&
+            blockReasons[0].StartsWith(
+                "movement_interrupted_by_story_event:",
+                StringComparison.Ordinal))
+        {
+            return step.PriorityInterruptReleasedInterruptedSemanticKey;
+        }
+
+        return IsStoryPriorityQueueItem(step.EffectiveQueueItem) &&
+            string.Equals(step.OptionId, "executor.advance_story_event",
+                StringComparison.Ordinal) &&
+            blockReasons.Length > 0 &&
+            blockReasons.All(reason => reason is
+                "story_event_command_index_mismatch" or
+                "story_event_command_raw_mismatch");
+    }
+
+    private static bool IsStoryPriorityQueueItem(JsonElement? effectiveItem)
+    {
+        return effectiveItem is { ValueKind: JsonValueKind.Object } item &&
+            item.TryGetProperty("runtime_priority_interrupt",
+                out var interrupt) &&
+            interrupt.ValueKind == JsonValueKind.String &&
+            string.Equals(interrupt.GetString(), "story_event",
+                StringComparison.Ordinal);
+    }
 }

@@ -17,10 +17,15 @@ internal static partial class BootstrapSelfTest
 
     public static void RunCurrentStageOneCollection(string outputRoot)
     {
+        VerifyMasterAnglerFullRouteIntent(Path.GetFullPath(outputRoot));
         VerifyCurrentStageOneCollectionTeacherFrontier(
             Path.GetFullPath(outputRoot));
         VerifyCommunityCenterDonationReceiptEvidence();
     }
+
+    public static void RunCurrentStageOneRodPrerequisite(string outputRoot) =>
+        new StageOneCollectionFrontierFixture(Path.GetFullPath(outputRoot))
+            .RunRodPrerequisiteOnly();
 
     private static void VerifyCurrentCollectionTeacherFrontier(
         string outputRoot)
@@ -271,11 +276,21 @@ internal static partial class BootstrapSelfTest
                 "harvest_crop_tile", "188", "(O)188", 10, 1,
                 Parameter("expected_output_quality", "1")),
             CollectionCandidate(
+                "bundle-acquisition-route", "farm.maintain_crops",
+                "route_connector_tile", "188", "(O)188", 11, 1,
+                Parameter("continuation.option_id", "farm.maintain_crops"),
+                Parameter("continuation.item_id", "188"),
+                Parameter("continuation.qualified_item_id", "(O)188"),
+                Parameter("continuation.output_quality", "2"),
+                Parameter(
+                    "compiler_context.fresh_snapshot_replan_required",
+                    "true")),
+            CollectionCandidate(
                 "vault-unproven", "community_center.donate_bundle_items",
-                "donate_community_center_item", "-1", "", 11, 2500),
+                "donate_community_center_item", "-1", "", 12, 2500),
             CollectionCandidate(
                 "egg-direct", "community_center.donate_bundle_items",
-                "donate_community_center_item", "176", "(O)176", 12, 1,
+                "donate_community_center_item", "176", "(O)176", 13, 1,
                 Parameter("bundle_data_key", "Pantry/6"),
                 Parameter("bundle_ingredient_index", "0"),
                 Parameter("required_stack", "1"),
@@ -289,10 +304,10 @@ internal static partial class BootstrapSelfTest
                 Parameter("expected_bundle_complete_after", "true")),
             CollectionCandidate(
                 "egg-acquire", "economy.buy_supplies", "shop_purchase",
-                "176", "(O)176", 13, 1),
+                "176", "(O)176", 14, 1),
             CollectionCandidate(
                 "wrong-category-item", "economy.buy_supplies", "shop_purchase",
-                "180", "(O)180", 14, 1)));
+                "180", "(O)180", 15, 1)));
 
         var result = CurrentCollectionTeacherFrontierBuilder.Build(
             inventoryPath,
@@ -327,7 +342,7 @@ internal static partial class BootstrapSelfTest
                 category.Alternatives.Single().AcceptedConcreteTargets.Single()
                     .QualifiedItemId == "(O)176",
             "A remixed category slot was not preserved as one slot with concrete accepted targets.");
-        Require(result.CandidateBindings.Length == 8 &&
+        Require(result.CandidateBindings.Length == 9 &&
                 result.CandidateBindings.Any(value =>
                     value.CandidateId == "museum-direct" &&
                     value.BindingKind == "native_museum_donation_completion") &&
@@ -350,6 +365,11 @@ internal static partial class BootstrapSelfTest
                     value.CandidateQuality == 2) &&
                 result.CandidateBindings.Any(value =>
                     value.CandidateId == "bundle-acquire-quality" &&
+                    value.CandidateQuality == 2) &&
+                result.CandidateBindings.Any(value =>
+                    value.CandidateId == "bundle-acquisition-route" &&
+                    value.BindingKind ==
+                        "authoritative_collection_rolling_route_step" &&
                     value.CandidateQuality == 2) &&
                 result.CandidateBindings.Any(value =>
                     value.CandidateId == "egg-direct" &&

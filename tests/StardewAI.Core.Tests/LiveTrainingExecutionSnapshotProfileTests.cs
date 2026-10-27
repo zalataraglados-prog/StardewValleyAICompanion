@@ -1,4 +1,5 @@
 using StardewAI.LiveTrainingLoop;
+using StardewAI.Contracts.Goals;
 
 namespace StardewAI.Core.Tests;
 
@@ -92,6 +93,257 @@ public sealed class LiveTrainingExecutionSnapshotProfileTests
             "--snapshot-artifact-mode",
             "lossy"
         }));
+    }
+
+    [Fact]
+    public void GoldenWalnutEvidenceCaptureRequiresContentAddressedArtifacts()
+    {
+        Assert.Throws<ArgumentException>(() => LiveTrainingOptions.Parse(new[]
+        {
+            "--run-id",
+            "fresh-save-run",
+            "--capture-golden-walnut-fresh-save-evidence"
+        }));
+    }
+
+    [Fact]
+    public void GoldenWalnutEvidenceCaptureHasDeterministicManifestIdentity()
+    {
+        var options = LiveTrainingOptions.Parse(new[]
+        {
+            "--run-id",
+            "fresh-save-run",
+            "--snapshot-artifact-mode",
+            ContentAddressedJsonArtifactStore.ContentAddressedGzipMode,
+            "--capture-golden-walnut-fresh-save-evidence"
+        });
+
+        Assert.True(options.CaptureGoldenWalnutFreshSaveEvidence);
+        Assert.Equal(
+            "golden-walnut-fresh-save:fresh-save-run",
+            options.GoldenWalnutFreshSaveScheduleId);
+        Assert.EndsWith(
+            "golden-walnut-fresh-save-episode-manifest.json",
+            options.GoldenWalnutFreshSaveEpisodeManifestPath,
+            StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(GrandpaEvaluationGoalDefinition.GoalId)]
+    [InlineData(GrandpaEvaluationGoalDefinition.StrategicGoal)]
+    [InlineData(GrandpaEvaluationGoalDefinition.MaximumScoreEvidenceGoal)]
+    public void GoldenWalnutEvidenceCaptureAcceptsEveryMaximumScoreGoalAlias(
+        string goalId)
+    {
+        var options = LiveTrainingOptions.Parse(new[]
+        {
+            "--run-id",
+            "fresh-save-run",
+            "--goal",
+            goalId,
+            "--snapshot-artifact-mode",
+            ContentAddressedJsonArtifactStore.ContentAddressedGzipMode,
+            "--capture-golden-walnut-fresh-save-evidence"
+        });
+
+        Assert.Equal(goalId, options.Goal);
+    }
+
+    [Fact]
+    public void GoldenWalnutEvidenceCaptureRejectsPartialSnapshotProfile()
+    {
+        Assert.Throws<ArgumentException>(() => LiveTrainingOptions.Parse(new[]
+        {
+            "--run-id",
+            "fresh-save-run",
+            "--snapshot-artifact-mode",
+            ContentAddressedJsonArtifactStore.ContentAddressedGzipMode,
+            "--execution-snapshot-profile",
+            "social",
+            "--capture-golden-walnut-fresh-save-evidence"
+        }));
+    }
+
+    [Fact]
+    public void GoldenWalnutLongRunRequiresEvidenceCapture()
+    {
+        Assert.Throws<ArgumentException>(() => LiveTrainingOptions.Parse(new[]
+        {
+            "--require-golden-walnut-source-schedule-ready"
+        }));
+    }
+
+    [Fact]
+    public void GoldenWalnutLongRunRequiresDailyPlanAndDurableBoundary()
+    {
+        Assert.Throws<ArgumentException>(() => LiveTrainingOptions.Parse(new[]
+        {
+            "--run-id",
+            "fresh-save-run",
+            "--snapshot-artifact-mode",
+            ContentAddressedJsonArtifactStore.ContentAddressedGzipMode,
+            "--capture-golden-walnut-fresh-save-evidence",
+            "--require-golden-walnut-source-schedule-ready"
+        }));
+    }
+
+    [Fact]
+    public void GoldenWalnutLongRunHasDeterministicSchedulePath()
+    {
+        var authorityPath = FindRepositoryFile(
+            "StardewValleyAICompanion.sln");
+        var options = LiveTrainingOptions.Parse(new[]
+        {
+            "--run-id",
+            "fresh-save-run",
+            "--snapshot-artifact-mode",
+            ContentAddressedJsonArtifactStore.ContentAddressedGzipMode,
+            "--capture-golden-walnut-fresh-save-evidence",
+            "--require-golden-walnut-source-schedule-ready",
+            "--use-daily-plan",
+            "--require-native-save-boundary",
+            "--stage-one-collection-requirement-inventory",
+            authorityPath,
+            "--stage-one-collection-acquisition-lowering",
+            authorityPath,
+            "--master-angler-stage-one-window-index",
+            authorityPath,
+            "--route-timing-calibration",
+            authorityPath
+        });
+
+        Assert.True(options.RequireGoldenWalnutSourceScheduleReady);
+        Assert.EndsWith(
+            "golden-walnut-fresh-save-source-schedule.json",
+            options.GoldenWalnutFreshSaveSourceSchedulePath,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void GoldenWalnutLongRunRequiresCollectionTeacherAuthorityArtifacts()
+    {
+        var error = Assert.Throws<ArgumentException>(() =>
+            LiveTrainingOptions.Parse(new[]
+            {
+                "--run-id",
+                "fresh-save-run",
+                "--snapshot-artifact-mode",
+                ContentAddressedJsonArtifactStore.ContentAddressedGzipMode,
+                "--capture-golden-walnut-fresh-save-evidence",
+                "--require-golden-walnut-source-schedule-ready",
+                "--use-daily-plan",
+                "--require-native-save-boundary"
+            }));
+
+        Assert.Contains(
+            "--stage-one-collection-requirement-inventory",
+            error.Message,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void GoldenWalnutLongRunInjectsExistingCollectionTeacherBeforeFallback()
+    {
+        var program = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.cs"));
+        var teacher = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.StageOneCollectionTeacher.cs"));
+
+        Assert.Contains(
+            "TryBuildStageOneCollectionTeacherQueueAsync",
+            program,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "MasterAnglerTargetDateIntentBuilder.Build",
+            teacher,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "CurrentStageOneCollectionTeacherPreferenceBuilder.Build",
+            teacher,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "TeacherPreferenceQueueLoader.LoadAsync",
+            teacher,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "HasPriorityStoryEventInterrupt(snapshot)",
+            teacher,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void CollectionTeacherKeepsItsSelectedCandidateLeaseAcrossRollingWaits()
+    {
+        var program = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.cs"));
+        var execution = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.RuntimeExecution.cs"));
+        var teacherBranchStart = program.IndexOf(
+            "if (collectionTeacher.Queue is not null)",
+            StringComparison.Ordinal);
+        var teacherBranchEnd = program.IndexOf(
+            "stageOneCollectionTeacherQueueCount++;",
+            teacherBranchStart,
+            StringComparison.Ordinal);
+
+        Assert.True(teacherBranchStart >= 0);
+        Assert.True(teacherBranchEnd > teacherBranchStart);
+        var teacherBranch = program[teacherBranchStart..teacherBranchEnd];
+        Assert.Contains(
+            "useDailyPlanDecisionLease = true;",
+            teacherBranch,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "useDailyPlanDecisionLease = false;",
+            teacherBranch,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "BuildQueueFromSelectedCandidateAsync(",
+            program,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "policy_model_invoked_for_step\"] = false",
+            execution,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "HasPriorityStoryEventInterrupt(currentBeforeSnapshot)",
+            execution,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void GoldenWalnutLongRunUsesMilestoneThenExistingEpisodeScheduleProof()
+    {
+        var program = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.cs"));
+        var milestone = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.GoldenWalnutMilestone.cs"));
+
+        Assert.Contains(
+            "GoldenWalnutFreshSaveMilestoneEvaluator.Evaluate",
+            milestone,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "GoldenWalnutFreshSaveEpisodeScheduleBuilder.Write",
+            program,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "cropTeacherFirstDayCompleted &&\n" +
+            "        !options.RequireGoldenWalnutSourceScheduleReady",
+            program.Replace("\r\n", "\n", StringComparison.Ordinal),
+            StringComparison.Ordinal);
     }
 
     [Fact]

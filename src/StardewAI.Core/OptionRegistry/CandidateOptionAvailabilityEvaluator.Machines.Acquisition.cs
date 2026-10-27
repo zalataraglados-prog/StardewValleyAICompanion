@@ -78,10 +78,14 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             return ContinueAcquisitionMachineCapacity(
                 snapshot,
                 commitmentLedger,
-                active[0]);
+                active[0],
+                request);
         }
 
-        var placements = MachinePlacementCandidates(snapshot, commitmentLedger)
+        var placements = AcquisitionMachinePlacementCandidates(
+                snapshot,
+                commitmentLedger,
+                request)
             .Where(candidate => string.Equals(
                 candidate.QualifiedItemId,
                 request.MachineQualifiedItemId,
@@ -113,7 +117,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
     private EventCandidate[] ContinueAcquisitionMachineCapacity(
         SnapshotEnvelope snapshot,
         StrategyCommitmentLedger? commitmentLedger,
-        MachineSupportIntent intent)
+        MachineSupportIntent intent,
+        AcquisitionMachineCapacityRequest request)
     {
         if (string.Equals(
                 intent.Stage,
@@ -136,7 +141,10 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             }
         }
 
-        return MachinePlacementCandidates(snapshot, commitmentLedger)
+        return AcquisitionMachinePlacementCandidates(
+                snapshot,
+                commitmentLedger,
+                request)
             .Where(candidate => string.Equals(
                 ReadParameter(
                     candidate.Parameters,

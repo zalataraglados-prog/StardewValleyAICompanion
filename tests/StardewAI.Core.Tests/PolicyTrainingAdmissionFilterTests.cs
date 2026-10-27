@@ -37,6 +37,17 @@ namespace StardewAI.Core.Tests
         }
 
         [Fact]
+        public void QuestAdvanceRemainsOutsideBroadTrainingAdmission()
+        {
+            var filter = new PolicyTrainingAdmissionFilter();
+
+            Assert.Empty(filter.FilterOptionIds(new[] { "quest.advance" }));
+            Assert.Contains(
+                "quest.advance",
+                StardewAI.Contracts.Capabilities.OptionCapabilityRegistrySource.RegisteredIds);
+        }
+
+        [Fact]
         public void CalibrationExclusionTakesPrecedenceOverOptionAdmission()
         {
             var row = Row("social.gift_npc");

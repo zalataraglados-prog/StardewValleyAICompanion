@@ -125,6 +125,14 @@ namespace StardewAI.Core.Training
                     continuationParameter.Name,
                     continuationParameter.Value));
             }
+            foreach (var questParameter in candidate.Parameters.Where(parameter =>
+                         parameter.Name.StartsWith("quest_", StringComparison.Ordinal) &&
+                         !string.IsNullOrWhiteSpace(parameter.Value)))
+            {
+                parameters.Add(Parameter(
+                    questParameter.Name,
+                    questParameter.Value));
+            }
             foreach (var name in new[]
             {
                 "expected_arrival_tile_x",

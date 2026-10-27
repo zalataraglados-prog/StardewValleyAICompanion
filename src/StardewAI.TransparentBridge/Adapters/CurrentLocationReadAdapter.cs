@@ -101,6 +101,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
                 "current_location.display_name",
                 "current_location.flags",
                 "current_location.objects",
+                "current_location.starter_gift_claim",
                 "current_location.furniture",
                 "current_location.debris",
                 "current_location.pot_of_gold_reward",
@@ -134,6 +135,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             ["display_name"] = Field(location is null ? null : ReadDisplayName(location), "Game1.currentLocation.GetDisplayName()/Name", tick),
             ["flags"] = Field(location is null ? null : ReadFlags(location), "Game1.currentLocation.IsOutdoors/IsFarm", tick),
             ["objects"] = Field(location is null ? null : ReadObjects(location), "Game1.currentLocation.objects", tick),
+            ["starter_gift_claim"] = Field(location is null ? null : ReadStarterGiftClaim(location), "FarmHouse live starter gift Chest fields plus Chest.checkForAction/dumpContents native ownership, quest and inventory settlement", tick, "vanilla_1_6_15_starter_gift_claim"),
             ["furniture"] = Field(location is null ? null : ReadFurniture(location), "Game1.currentLocation.furniture live placement, rotation, footprint, held object and storage state", tick),
             ["debris"] = Field(location is null ? null : ReadCurrentLocationDebris(location), "Game1.currentLocation.debris live item and chunk fields", tick),
             ["pot_of_gold_reward"] = Field(location is null ? null : ReadPotOfGoldReward(location), "Forest.DayUpdate Spring 17 PotOfGold placement and Object.checkForAction native debris reward branch", tick, "vanilla_1_6_15_pot_of_gold_reward"),
@@ -259,7 +261,9 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             harvest_experience_projection_status = clearance.ExperienceStatus,
             clear_output_projection_status = clearance.OutputStatus,
             clear_output_items = clearance.OutputItems,
-            clear_output_items_json = System.Text.Json.JsonSerializer.Serialize(clearance.OutputItems),
+            clear_output_items_json = clearance.OutputStatus == "native_stochastic_receipt"
+                ? string.Empty
+                : System.Text.Json.JsonSerializer.Serialize(clearance.OutputItems),
             clear_authoritative_route_sources = clearance.AuthoritativeRouteSources,
             clear_output_qualified_item_id = clearance.OutputQualifiedItemId,
             clear_output_quantity_min = clearance.OutputQuantity,
@@ -565,6 +569,8 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
         }
         var storesClosedForFestival = entranceGate?.FestivalClosed ?? (location.InValleyContext() && GameLocation.AreStoresClosedForFestival());
         var seedShopWednesdayClosed = entranceGate?.SeedShopWednesdayClosed == true;
+        var fishShopGoneFishingClosed =
+            entranceGate?.FishShopGoneFishingClosed == true;
         var friendshipAllowed = entranceGate?.FriendshipAllowed;
         var greenRainOverride = entranceGate?.GreenRainOverride == true;
         var blockReasons = new List<string>();
@@ -576,6 +582,11 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
         if (seedShopWednesdayClosed)
         {
             blockReasons.Add("seed_shop_wednesday_closed_before_community_center_event");
+        }
+
+        if (fishShopGoneFishingClosed)
+        {
+            blockReasons.Add("fish_shop_gone_fishing_closed");
         }
 
         if (timeGateKnown && timeAllowed == false)
@@ -615,6 +626,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             entrance_friendship_points = entranceGate?.FriendshipPoints,
             entrance_friendship_allowed = friendshipAllowed,
             seed_shop_wednesday_closed = seedShopWednesdayClosed,
+            fish_shop_gone_fishing_closed = fishShopGoneFishingClosed,
             entrance_green_rain_override = greenRainOverride,
             time_allowed = entranceGate?.TimeAllowed ?? timeAllowed,
             allowed_now = blockReasons.Count == 0 || greenRainOverride,
@@ -693,6 +705,12 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             && string.Equals(Game1.shortDayNameFromDayOfSeason(Game1.dayOfMonth), "Wed", StringComparison.OrdinalIgnoreCase)
             && !Utility.HasAnyPlayerSeenEvent("191393")
             && !hasTownKey;
+        var fishShopGoneFishingClosed =
+            NativeShopGateRules.IsFishShopGoneFishingClosed(
+                fromLocation,
+                x,
+                y,
+                targetLocation);
         var timeAllowed = hasTownKey || (effectiveOpenTime.HasValue && closeTime.HasValue && Game1.timeOfDay >= effectiveOpenTime.Value && Game1.timeOfDay < closeTime.Value);
         var greenRainOverride = fromLocation.IsGreenRainingHere()
             && Game1.year == 1
@@ -700,7 +718,10 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             && fromLocation.GetType().Name != "Forest"
             && !string.Equals(targetLocation, "AdventureGuild", StringComparison.OrdinalIgnoreCase);
         var storesClosedForFestival = fromLocation.InValleyContext() && GameLocation.AreStoresClosedForFestival();
-        var allowedNow = !storesClosedForFestival && !seedShopWednesdayClosed && ((timeAllowed && friendshipAllowed) || greenRainOverride);
+        var allowedNow = !storesClosedForFestival &&
+            !seedShopWednesdayClosed &&
+            !fishShopGoneFishingClosed &&
+            ((timeAllowed && friendshipAllowed) || greenRainOverride);
 
         return new EntranceGate(
             fromLocation.NameOrUniqueName,
@@ -716,6 +737,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             hasTownKey,
             storesClosedForFestival,
             seedShopWednesdayClosed,
+            fishShopGoneFishingClosed,
             timeAllowed,
             friendshipAllowed,
             greenRainOverride,
@@ -1083,6 +1105,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
         bool HasTownKey,
         bool FestivalClosed,
         bool SeedShopWednesdayClosed,
+        bool FishShopGoneFishingClosed,
         bool TimeAllowed,
         bool FriendshipAllowed,
         bool GreenRainOverride,
