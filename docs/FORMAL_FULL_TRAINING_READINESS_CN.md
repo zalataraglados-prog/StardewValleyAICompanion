@@ -1329,3 +1329,9 @@ v45 完成 `8/8` verified action，并从 Beach 逐段返回 FarmHouse，原生�
 v46 证明只读取“当前店主不在柜台”会让日计划先锁定当天不可能完成的购买，再浪费多个等待块。现有透明桥其实已提供完整原生日程、入口时窗和柜台矩形；候选层现直接计算这些证据的全天交集，并在无交集时于模型排名前排除。v47 的真实 Spring 1 排名确认 AnimalShop 候选全部以 `shop_owner_has_no_service_window_today` 阻塞，策略立即改做 starter gift。
 
 这项修复减少错误候选和无效反馈，不构成新的 criterion、Teacher comparison 或 native outcome 三分区。v47 为人工停止的诊断运行，`formal_product_training_authorized=false` 不变；正式准入仍等待完整 Golden Walnut source schedule 生成与重放。
+
+## 历史记录 · 2026-10-27 v48 双作物闭环与等待证据边界
+
+v48 在同一个新档中原生完成 `6` 格花椰菜和 `8` 格防风草的完整生产循环，包含缺水补水、跨日耐久保存和满包出货恢复；人工停止前累计 `185` 条 verified Product action，并已重新进入 Stage One collection。该运行证明长前缀与两次 Crop Teacher terminal settlement 可连续成立，但没有首次登岛、核桃增量或三项鹦鹉跃迁，不能形成 Golden Walnut source schedule，也不能增加正式 Teacher/native 三分区分子。
+
+节日门等待的正确性已由 `14:10` 后自动续行证明，但重复 full snapshot/replan 会放大长跑成本。新合同只把精确节日开放时刻下的连续等待组织为最多三片的受控产品执行段，每片仍不超过 `600` tick，段末保留 fresh full snapshot、Product receipt 和重新决策；普通等待、快照哈希身份与正式证据要求均未放宽。隐藏 primitive smoke 已以 `06:00 -> 06:20 / actual_ticks=875 / applied+verified` 验证多片提前终止；它不是节日路线或 source schedule 证据，`formal_product_training_authorized=false` 保持。

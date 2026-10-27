@@ -134,21 +134,6 @@ public sealed partial class ModEntry : Mod
         public Point StandTile { get; }
     }
 
-    private sealed class ActiveWait
-    {
-        public ActiveWait(PendingExecution pending, int targetTicks)
-        {
-            Pending = pending;
-            TargetTicks = targetTicks;
-            StartedAt = DateTimeOffset.UtcNow.ToString("O");
-        }
-
-        public PendingExecution Pending { get; }
-        public int TargetTicks { get; }
-        public int ElapsedTicks { get; set; }
-        public string StartedAt { get; }
-    }
-
     private enum ShipPhase
     {
         BinFace,

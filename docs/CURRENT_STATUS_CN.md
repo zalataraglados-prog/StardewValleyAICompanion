@@ -543,3 +543,11 @@ Skull Key 与 Pet Love 的旧生产工件均已按当前字典、日历、输入
 - 购买服务门现复用唯一的 day-start 原生日程投影与当前已加载日程解析器，把店主稳定位置、柜台矩形、商店时间和入口时间求交。当天无交集时以 `shop_owner_has_no_service_window_today` 在排名前排除；未来有交集时只延迟到精确交集窗口。解析结果按快照和店主缓存，没有新增 NPC 日程解析器或逐商品重复扫描。
 - v47 隐藏新档首轮中，所有 AnimalShop 购买候选均带上述上游阻塞，Stage One 没有锁定购买 continuation，shared daily plan 立即选择 `claim_starter_gift`。该轮在确认回归后人工停止，只是运行诊断，不是 source schedule、正式 corpus 或 coverage 增量。
 - 聚焦购买/日程回归 `22/22` 通过。下一固定步骤仍是使用该修复继续 Golden Walnut fresh-save source-schedule 长跑，而不是再次扩大商店执行器。
+
+## 15. 2026-10-27 v48 双作物闭环与节日等待降载
+
+- `golden-walnut-source-schedule-v48-20261027-081000` 从新存档 `ProofFarm_452736612` 启动，先领取开局礼盒，再按原生 SeedShop 窗口购买 `6` 份花椰菜种子 `(O)474`。同一 Crop Teacher 完成返场、清障/锄地、播种、逐日浇水、缺水时移动至水源补水、原生睡眠存档以及 `6/6` 成熟收获。
+- 首轮完成后 Stage One collection 原生处理 Spring 2 邮件并沿任务 `13` 路线到 Beach；shared daily plan 随后复用库存 `(O)472` 编译第二轮 `8` 格防风草。该轮再次完成场地准备、播种、浇水、补水、睡眠和 `8/8` 收获。背包满时两次复用唯一容量恢复链，各安全投递一个低风险单件后继续收获，没有丢弃作物承诺。
+- 人工安全停止前累计 `185` 条 verified Product action、两次 `crop_teacher_run_complete`、多条原生日界和真实策略轨迹；停止点已回到 Stage One collection 的 Master Angler 路线。v48 没有达到首次登岛、核桃来源增量或 First Parrot/Turtle/House，因此不是 source schedule，也不改变 `formal_product_training_authorized=false` 和任何正式 coverage 分子。
+- v48 证明 Beach 节日门禁会正确等待到 `14:10` 后自动恢复跨图，但旧实现每 `600` tick 都重复全量快照和完整重规划。当前执行合同仍保持单片 `wait_ticks <= 600`，只对带精确 `route_wait_until_time` 的节日等待在一次产品执行内最多连续 `3` 片，达到开放时刻立即停止；未达到时在受控段末 fresh 全量重规划，时钟不前进则失败关闭。不同 snapshot profile 的状态哈希不得混用。
+- 隐藏原生 smoke `bounded-festival-wait-smoke-20261027` 已从 `06:00` 等到 `06:20`：请求单片仍为 `600`，同一 Harness 执行请求实际执行 `875` tick 后因目标时刻到达提前结束，回执为 `applied + verified / wait_until_time_reached`，fresh full 状态哈希发生变化；游戏和监听均已回收。该 smoke 验证受控多片 primitive，不冒充 Product Executor 端到端或 Spring 13 Beach→Town 路线重放。下一固定步骤是继续 Golden Walnut 新档长跑并在真实产品/节日门再次观察集成，然后推进竹鱼竿/采集、首次登岛、核桃来源增量与三项鹦鹉跃迁。

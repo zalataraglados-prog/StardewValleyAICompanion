@@ -75,6 +75,8 @@ static partial class Program
         var expectedBombMonsterHits = ReadQueueParameterInt(item, "expected_bomb_monster_hits");
         var direction = options.Direction ?? ReadQueueParameterInt(item, "direction");
         var waitTicks = options.WaitTicks ?? ReadQueueParameterInt(item, "wait_ticks");
+        var waitUntilTime = ReadQueueParameterInt(item, "route_wait_until_time");
+        var waitMaxSlices = ReadQueueParameterInt(item, "route_wait_max_slices");
         var sleepResumeMode = ReadQueueParameterString(
             item,
             "sleep_resume_mode");
@@ -674,6 +676,8 @@ static partial class Program
         {
             executionRequest.WaitTicks = waitTicks.Value;
         }
+        executionRequest.WaitUntilTime = waitUntilTime;
+        executionRequest.WaitMaxSlices = waitMaxSlices;
         executionRequest.SleepResumeMode = sleepResumeMode;
         if (maxCrops.HasValue)
         {

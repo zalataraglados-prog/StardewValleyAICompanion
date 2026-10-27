@@ -316,6 +316,7 @@ namespace StardewAI.Core.Execution
                     Parameter(
                         "route_wait_until_time",
                         selected.OpensAt.ToString(CultureInfo.InvariantCulture)),
+                    Parameter("route_wait_max_slices", "3"),
                     Parameter("cross_location_move_target", targetLocation),
                     Parameter("deferred_connector_kind", selected.Edge.Kind),
                     Parameter(

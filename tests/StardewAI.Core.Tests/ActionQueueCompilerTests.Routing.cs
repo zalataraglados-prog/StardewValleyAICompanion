@@ -966,6 +966,14 @@ public sealed partial class ActionQueueCompilerTests
                     "recovery_current_connector_active_festival_transit_closed");
         Assert.Contains(
             item.NormalizedCommand.Parameters,
+            parameter => parameter.Name == "route_wait_until_time" &&
+                parameter.Value == "1410");
+        Assert.Contains(
+            item.NormalizedCommand.Parameters,
+            parameter => parameter.Name == "route_wait_max_slices" &&
+                parameter.Value == "3");
+        Assert.Contains(
+            item.NormalizedCommand.Parameters,
             parameter => parameter.Name == "cross_location_move_target" &&
                 parameter.Value == "Town");
         Assert.Equal("wait_ticks", Assert.Single(item.NormalizedCommand.Steps).StepType);

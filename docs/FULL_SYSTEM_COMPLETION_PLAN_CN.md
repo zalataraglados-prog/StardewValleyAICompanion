@@ -1368,3 +1368,11 @@ v44/v45 已把受限回放拆成两个可验证结论。第一，同一 `quest:1
 Golden Walnut 新档 v46 暴露的首个断点不是新动作缺失，而是计划候选在 `06:00` 没有利用已经透明的店主全天日程。周一玛妮的稳定位置与 AnimalShop 柜台服务区在入口开放时段没有交集，购买目标本应在上游消失。当前唯一购买链已经把店主日程、服务区、店铺与入口窗口统一求交；有未来服务窗口才延迟，无窗口当天排除，证据不精确则失败关闭。日程解析复用既有实现并按快照缓存。
 
 v47 已在真实新档首轮证明 AnimalShop 候选被排名前排除，shared daily plan 转向 starter gift。下一施工单位仍是同一 Golden Walnut source-schedule 长跑，不新增“商店专项阶段”：继续暴露并修复首次登岛前的真实断点，直到核桃来源增量、First Parrot/Turtle/House、日程生成和重放全部闭合。
+
+## 历史记录 · 2026-10-27 v48 长跑前缀与节日等待降载
+
+v48 已把 day-zero 前缀推进为两轮完整作物生产：首轮 `6` 格花椰菜、次轮 `8` 格防风草，均通过唯一 Crop Teacher、动作编译器和 Product Executor 完成；邮件、任务 `13`、Stage One handoff、补水、满包恢复与原生睡眠也都在同一运行出现。累计 `185` 条 verified action 后人工安全停止，尚未进入 Golden Walnut source schedule 的终态部分。
+
+长跑新增一项明确性能约束：已知节日开放时刻不得每 `600` tick 重建全部候选和 full planning artifacts。实现顺序固定为：编译器保留精确 `route_wait_until_time` -> 运行时以最多三片、每片 `<=600` tick 的原生等待推进 -> 命中开放时刻或受控段上限后采一次 fresh full snapshot -> 重新验证门禁并继续原路线。不得用 partial profile 哈希替代 full 状态身份，也不得取消开放边界重规划。
+
+有界等待 primitive 已通过隐藏原生 smoke：从 `06:00` 到 `06:20` 实际执行 `875` tick 后按目标时刻结束，状态哈希和回执均闭合。后续继续现有顺序，并在长跑真实节日门顺带复核路线级集成：鱼竿/Stage One collection -> 首次登岛 -> 逐来源核桃增量 -> First Parrot -> Turtle -> House -> source schedule 生成和重放。不得因两轮作物成功或等待降载提前开启正式训练。

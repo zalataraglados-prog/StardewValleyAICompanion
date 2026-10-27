@@ -25,6 +25,8 @@ namespace StardewAI.RuntimeTestHarness;
 
 public sealed partial class ModEntry : Mod
 {
+    private const int MaximumBoundedWaitSlices = 3;
+
     private void StartWait(PendingExecution pending)
     {
         var reasons = ValidateExecutionRequest(pending.Request);
@@ -41,13 +43,68 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
+        var waitUntilTime = pending.Request.WaitUntilTime;
+        var waitMaxSlices = pending.Request.WaitMaxSlices ?? 1;
+        if (waitUntilTime.HasValue)
+        {
+            if (waitUntilTime.Value < 600 ||
+                waitUntilTime.Value > 2600 ||
+                waitUntilTime.Value % 10 != 0)
+            {
+                pending.Completion.SetResult(BlockedWithPrimitive(
+                    pending.Request,
+                    "wait_ticks",
+                    "executor.wait_ticks=" + waitTicks + ";wait_until_time=" + waitUntilTime.Value,
+                    "time.time=" + Game1.timeOfDay,
+                    "wait_until_time_600_2600_step_10_required"));
+                return;
+            }
+
+            if (Game1.timeOfDay >= waitUntilTime.Value)
+            {
+                pending.Completion.SetResult(BlockedWithPrimitive(
+                    pending.Request,
+                    "wait_ticks",
+                    "executor.wait_ticks=" + waitTicks + ";wait_until_time=" + waitUntilTime.Value,
+                    "time.time=" + Game1.timeOfDay,
+                    "wait_until_time_already_reached"));
+                return;
+            }
+
+            if (waitMaxSlices < 1 || waitMaxSlices > MaximumBoundedWaitSlices)
+            {
+                pending.Completion.SetResult(BlockedWithPrimitive(
+                    pending.Request,
+                    "wait_ticks",
+                    "executor.wait_ticks=" + waitTicks + ";wait_max_slices=" + waitMaxSlices,
+                    "executor.wait_ticks=0",
+                    "wait_max_slices_1_3_required"));
+                return;
+            }
+        }
+        else if (waitMaxSlices != 1)
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(
+                pending.Request,
+                "wait_ticks",
+                "executor.wait_ticks=" + waitTicks + ";wait_max_slices=" + waitMaxSlices,
+                "executor.wait_ticks=0",
+                "wait_max_slices_requires_wait_until_time"));
+            return;
+        }
+
         if (activeWait is not null)
         {
             pending.Completion.SetResult(BlockedWithPrimitive(pending.Request, "wait_ticks", "executor.wait_ticks=" + waitTicks, "executor.wait_ticks=0", "wait_executor_busy"));
             return;
         }
 
-        activeWait = new ActiveWait(pending, waitTicks);
+        activeWait = new ActiveWait(
+            pending,
+            waitTicks,
+            waitUntilTime,
+            waitMaxSlices,
+            Game1.timeOfDay);
     }
 
     private void TickWait()
@@ -58,7 +115,11 @@ public sealed partial class ModEntry : Mod
         }
 
         activeWait.ElapsedTicks++;
-        if (activeWait.ElapsedTicks < activeWait.TargetTicks)
+        var targetTimeReached = activeWait.WaitUntilTime.HasValue &&
+            Game1.timeOfDay >= activeWait.WaitUntilTime.Value;
+        var boundedWindowElapsed = activeWait.ElapsedTicks >=
+            activeWait.TargetTicks * activeWait.MaxSlices;
+        if (!targetTimeReached && !boundedWindowElapsed)
         {
             return;
         }
@@ -66,6 +127,25 @@ public sealed partial class ModEntry : Mod
         var wait = activeWait;
         activeWait = null;
         var request = wait.Pending.Request;
+        var requestedEffect = "executor.wait_ticks=" + wait.TargetTicks +
+            ";max_slices=" + wait.MaxSlices +
+            (wait.WaitUntilTime.HasValue
+                ? ";wait_until_time=" + wait.WaitUntilTime.Value
+                : string.Empty);
+        var observedEffect = "executor.wait_ticks=" + wait.ElapsedTicks +
+            ";time.time=" + Game1.timeOfDay;
+        if (wait.WaitUntilTime.HasValue &&
+            Game1.timeOfDay <= wait.StartTime)
+        {
+            wait.Pending.Completion.SetResult(BlockedWithPrimitive(
+                request,
+                "wait_ticks",
+                requestedEffect,
+                observedEffect,
+                "wait_until_time_clock_not_advanced"));
+            return;
+        }
+
         wait.Pending.Completion.SetResult(new TrainingExecutionResult
         {
             RunId = request.RunId,
@@ -79,9 +159,15 @@ public sealed partial class ModEntry : Mod
             CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
             PrimitiveKind = "wait_ticks",
             PrimitiveVerificationStatus = "verified",
-            PrimitiveVerificationReasons = new[] { "elapsed_ticks_reached_target" },
-            RequestedEffect = "executor.wait_ticks=" + wait.TargetTicks,
-            ObservedEffect = "executor.wait_ticks=" + wait.ElapsedTicks,
+            PrimitiveVerificationReasons = new[]
+            {
+                targetTimeReached
+                    ? "wait_until_time_reached"
+                    : "bounded_wait_window_elapsed"
+            },
+            RequestedEffect = requestedEffect,
+            ObservedEffect = observedEffect,
+            ActualTicks = wait.ElapsedTicks,
             ChangedFacts = new[]
             {
                 new SimulatedFactChange
@@ -89,6 +175,12 @@ public sealed partial class ModEntry : Mod
                     Path = "executor.wait_ticks",
                     Before = "0",
                     After = wait.ElapsedTicks.ToString()
+                },
+                new SimulatedFactChange
+                {
+                    Path = "time.time",
+                    Before = wait.StartTime.ToString(),
+                    After = Game1.timeOfDay.ToString()
                 }
             }
         });

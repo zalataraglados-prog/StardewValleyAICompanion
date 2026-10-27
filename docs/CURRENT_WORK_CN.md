@@ -2692,3 +2692,10 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - 修复复用 `NpcCurrentScheduleSnapshotProjectionResolver`、`NpcCurrentLoadedSchedulePresenceResolver` 与 `NpcFuturePresenceWindowResolver`。购买候选只接受店主稳定位置窗口、服务区矩形、店铺时间和入口时间的真实交集；无交集当天排除，有未来交集精确延迟，证据不完整则失败关闭。`SnapshotEnvelope` 原生入口避免序列化整份全量快照，单快照同店主解析结果被缓存。
 - `v47` 首轮真实 ranking 中 AnimalShop 候选全部以 `shop_owner_has_no_service_window_today` 排除，随后直接编译 `claim_starter_gift`，没有重现 v46 的购买等待。运行在该诊断点停止，未宣称 Golden Walnut source schedule 完成。
 - 下一步：从独立新档继续 source-schedule 长跑；若出现新断点，只修该 fresh 快照证明的候选、编译或执行缺口，保持首次登岛 -> 核桃来源增量 -> First Parrot/Turtle/House -> source schedule 生成/重放的顺序。
+
+## 2026-10-27 v48 双作物原生循环与节日等待优化
+
+- v48 新档真实完成两轮 Crop Teacher：`6` 格花椰菜和 `8` 格防风草都走过购买/库存取种、场地准备、播种、逐日浇水、补水、跨日保存与全量收获。第二轮满包时复用既有安全单件出货恢复两次，最终 `8/8` 收获回执齐全。人工停止前共有 `185` 条 verified action，Stage One 已重新接管。
+- 邮件、任务 `13`、Beach 路线、节日门禁和 shared daily plan 之间的控制交接都真实发生；节日关闭没有卡死，`14:10` 后自动改编译连接器。但每个 `600` tick 等待片段都触发 full snapshot、候选生成与排名，属于已证实的性能缺口。
+- 修复只扩展既有 `executor.wait_ticks` 合同：`wait_ticks` 继续限制为 `1..600`；只有编译器给出精确 `route_wait_until_time` 时，Runtime Harness 才允许最多 `3` 个连续原生片段，开放即提前返回，段末仍由 Product Executor/fresh full snapshot 闭合。普通等待保持单片，clock/full 哈希不交叉复用，时钟无进展失败关闭。
+- 有界等待 primitive 的隐藏原生 Harness smoke 已通过：`06:00 -> 06:20`、`actual_ticks=875`、`applied + verified`，证明同一原生请求能越过原 `600` tick 单片并在目标时刻提前停止；它未绕过执行器写游戏状态。全量 Core 为 `3004 passed / 21` 个既有基线失败，没有新增失败。下一步是提交本切片并继续 Golden Walnut source schedule，在真实 Product Executor/节日门再次观察路线级集成。v48 及本优化均不等于首次登岛或正式训练准入。
