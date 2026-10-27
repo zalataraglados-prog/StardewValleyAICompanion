@@ -159,7 +159,7 @@ internal static partial class BootstrapSelfTest
                     value.SeedId == "472" &&
                     value.Admitted &&
                     value.WateringRefillRouteVerified &&
-                    value.TileCount == 8) &&
+                    value.TileCount == 7) &&
                 clearanceCommitment.WateringRefillPreparationTiles
                     .SequenceEqual(new[]
                     {
