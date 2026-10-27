@@ -34,7 +34,8 @@ static partial class Program
             bool capacityRecoveryOnly = false,
             bool allowObjectiveSafeSingletonCapacityRecovery = false,
             bool requireFishingAttemptBlockedForCapacityRecovery = true,
-            JsonObject? activeObjectiveContinuation = null)
+            JsonObject? activeObjectiveContinuation = null,
+            IReadOnlyCollection<JsonObject>? suppressedObjectiveContinuations = null)
     {
         if ((!capacityRecoveryOnly &&
              !options.UseStageOneCollectionTeacher) ||
@@ -251,6 +252,34 @@ static partial class Program
                 string.Empty,
                 "not_applicable_inventory_capacity_recovery",
                 "no_dispatchable_inventory_release_candidate");
+        }
+
+        if (suppressedObjectiveContinuations is { Count: > 0 })
+        {
+            var rankedCandidates = ranking["ranked_event_candidates"]?
+                .AsArray() ?? new JsonArray();
+            var unsuppressedCandidates =
+                QueueReplanFilter.FilterSuppressedContinuations(
+                    rankedCandidates,
+                    suppressedObjectiveContinuations);
+            ranking["ranked_event_candidates"] = unsuppressedCandidates;
+            ranking["suppressed_objective_filter"] = new JsonObject
+            {
+                ["active"] = true,
+                ["input_candidate_count"] = rankedCandidates.Count,
+                ["suppressed_objective_count"] =
+                    suppressedObjectiveContinuations.Count,
+                ["selected_candidate_count"] =
+                    unsuppressedCandidates.Count,
+                ["policy"] =
+                    "same_typed_objective_suppressed_until_game_day_changes"
+            };
+            typedRanking = JsonSerializer.Deserialize<
+                AvailabilityAwarePolicyPredictionEnvelope>(
+                ranking.ToJsonString(JsonOptions),
+                JsonOptions) ?? throw new InvalidDataException(
+                "Suppression-filtered stage-one collection ranking is empty.");
+            await WriteJsonAsync(rankingPath, ranking);
         }
 
         var preference =

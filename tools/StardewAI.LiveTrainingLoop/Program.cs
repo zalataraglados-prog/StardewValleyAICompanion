@@ -813,7 +813,9 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                     lastStateHash,
                     allowObjectiveSafeSingletonCapacityRecovery: true,
                     activeObjectiveContinuation:
-                        activeObjectiveContinuation);
+                        activeObjectiveContinuation,
+                    suppressedObjectiveContinuations:
+                        suppressedObjectiveContinuations);
             if (collectionTeacher.Queue is not null)
             {
                 queue = collectionTeacher.Queue;
@@ -1185,7 +1187,6 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 ? null
                 : activeCropTeacherTransitionLedger;
         if (cropTeacherDayBoundaryStart is null &&
-            closingNativeSaveBoundary &&
             completedCropTeacherBoundaryStart is not null)
         {
             cropTeacherDayBoundaryStart = completedCropTeacherBoundaryStart;

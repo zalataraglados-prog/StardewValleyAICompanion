@@ -133,10 +133,18 @@ public static partial class QueueReplanFilter
             return string.Empty;
         }
 
+        var masterAngler = string.Equals(
+            ReadString(continuation, "kind"),
+            "master_angler",
+            StringComparison.Ordinal);
         return string.Join(
             "\n",
             continuation
                 .Where(property => property.Value is JsonValue)
+                .Where(property => !masterAngler || !string.Equals(
+                    property.Key,
+                    "master_angler_effective_start_time",
+                    StringComparison.Ordinal))
                 .OrderBy(property => property.Key, StringComparer.Ordinal)
                 .Select(property =>
                     property.Key + "=" + property.Value!.ToJsonString()));

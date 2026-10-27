@@ -84,9 +84,6 @@ public static class StageOneInventoryCapacityRecovery
         if (selectedSource is null && allowObjectiveSafeSingleton)
         {
             selectedSource = releaseCandidates
-                .Where(candidate =>
-                    candidate.FullShipmentContributes == true ||
-                    candidate.UnitPrice is >= 0 and <= 50)
                 .OrderByDescending(candidate =>
                     candidate.FullShipmentContributes == true)
                 .ThenBy(candidate => candidate.TotalValue)
@@ -95,7 +92,7 @@ public static class StageOneInventoryCapacityRecovery
                     candidate => candidate.CandidateId,
                     StringComparer.Ordinal)
                 .FirstOrDefault();
-            selectionReason = "objective_safe_singleton";
+            selectionReason = "available_unprotected_singleton";
         }
 
         if (selectedSource is null)

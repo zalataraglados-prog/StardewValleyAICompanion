@@ -971,6 +971,70 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
     }
 
     [Fact]
+    public void MasterAnglerSuppressionIgnoresRollingEffectiveStartTime()
+    {
+        var first = new JsonObject
+        {
+            ["kind"] = "master_angler",
+            ["option_id"] = "fishing.catch_fish",
+            ["master_angler_target_qualified_item_id"] = "(O)SeaJelly",
+            ["master_angler_target_location"] = "Beach",
+            ["master_angler_source_kind"] = "location_rule",
+            ["master_angler_source_key"] = "Beach:22",
+            ["master_angler_effective_start_time"] = "730"
+        };
+        var later = JsonNode.Parse(first.ToJsonString())!.AsObject();
+        later["master_angler_effective_start_time"] = "1250";
+        var suppressed = new List<JsonObject>();
+
+        Assert.True(QueueReplanFilter.AddSuppressedContinuation(
+            suppressed,
+            first));
+        Assert.False(QueueReplanFilter.AddSuppressedContinuation(
+            suppressed,
+            later));
+
+        var candidates = new JsonArray
+        {
+            MasterAnglerCandidate("(O)SeaJelly", "Beach", "Beach:22", "1250"),
+            MasterAnglerCandidate("(O)RiverJelly", "Town", "Town:4", "1250")
+        };
+        var remaining = Assert.IsType<JsonObject>(Assert.Single(
+            QueueReplanFilter.FilterSuppressedContinuations(
+                candidates,
+                suppressed)));
+        Assert.Equal(
+            "(O)RiverJelly",
+            remaining["parameters"]![0]!["value"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void StageOneTeacherFiltersReleasedObjectivesAfterCapacityRecovery()
+    {
+        var source = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.StageOneCollectionTeacher.cs"));
+        var main = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.cs"));
+
+        Assert.Contains(
+            "QueueReplanFilter.FilterSuppressedContinuations(",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "same_typed_objective_suppressed_until_game_day_changes",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "suppressedObjectiveContinuations:",
+            main,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void PrairieKingRouteKeepsObjectiveLeaseUntilExactTerminalActionApplies()
     {
         var route = QueueItem(
@@ -1502,6 +1566,32 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
             ["parameters"] = new JsonArray
             {
                 Parameter("continuation.mail_id", mailId)
+            }
+        };
+    }
+
+    private static JsonObject MasterAnglerCandidate(
+        string qualifiedItemId,
+        string locationId,
+        string sourceKey,
+        string effectiveStartTime)
+    {
+        return new JsonObject
+        {
+            ["candidate_id"] = "master-angler:" + qualifiedItemId + ":" + locationId,
+            ["option_id"] = "fishing.catch_fish",
+            ["kind"] = "catch_fish",
+            ["parameters"] = new JsonArray
+            {
+                Parameter(
+                    "master_angler_target_qualified_item_id",
+                    qualifiedItemId),
+                Parameter("master_angler_target_location", locationId),
+                Parameter("master_angler_source_kind", "location_rule"),
+                Parameter("master_angler_source_key", sourceKey),
+                Parameter(
+                    "master_angler_effective_start_time",
+                    effectiveStartTime)
             }
         };
     }

@@ -68,7 +68,7 @@ public sealed class StageOneInventoryCapacityRecoveryTests
     }
 
     [Fact]
-    public void CropHarvestRecoverySelectsOneObjectiveSafeSingleton()
+    public void CropHarvestRecoverySelectsOneAvailableUnprotectedSingleton()
     {
         var ranking = Ranking(
             ShippingCandidate(
@@ -106,7 +106,7 @@ public sealed class StageOneInventoryCapacityRecoveryTests
         Assert.Equal("(O)330", decision.ReleasedQualifiedItemId);
         Assert.Equal(string.Empty, decision.CaughtQualifiedItemId);
         Assert.Equal(
-            "objective_safe_singleton",
+            "available_unprotected_singleton",
             decision.SelectionReason);
         Assert.Equal(
             StageOneInventoryCapacityRecovery.CropHarvestTriggerReason,
@@ -114,7 +114,7 @@ public sealed class StageOneInventoryCapacityRecoveryTests
     }
 
     [Fact]
-    public void FishingRecoverySelectsObjectiveSafeSingletonWithoutLatestCatch()
+    public void FishingRecoverySelectsAvailableSingletonWithoutLatestCatch()
     {
         var ranking = RankingWithFishingBlock(
             "fishing_inventory_full_requires_storage_transfer",
@@ -136,11 +136,46 @@ public sealed class StageOneInventoryCapacityRecoveryTests
             "ship:Farm:slot-7:clay",
             decision!.Candidate.CandidateId);
         Assert.Equal(
-            "objective_safe_singleton",
+            "available_unprotected_singleton",
             decision.SelectionReason);
         Assert.Equal(
             StageOneInventoryCapacityRecovery.PreAttemptTriggerReason,
             decision.TriggerReason);
+    }
+
+    [Fact]
+    public void CropHarvestRecoveryDoesNotUseAnArbitraryPriceCeiling()
+    {
+        var ranking = Ranking(
+            ShippingCandidate(
+                "ship:Farm:slot-6:herring",
+                "(O)147",
+                slotIndex: 6,
+                estimatedTicks: 510,
+                availableStack: 1,
+                unitPrice: 60),
+            ShippingCandidate(
+                "ship:Farm:slot-11:rare",
+                "(O)999",
+                slotIndex: 11,
+                estimatedTicks: 50,
+                availableStack: 1,
+                unitPrice: 500));
+
+        var decision = StageOneInventoryCapacityRecovery.TrySelect(
+            ranking,
+            Snapshot(string.Empty),
+            allowObjectiveSafeSingleton: true,
+            requireFishingAttemptBlocked: false);
+
+        Assert.NotNull(decision);
+        Assert.Equal(
+            "ship:Farm:slot-6:herring",
+            decision!.Candidate.CandidateId);
+        Assert.Equal("(O)147", decision.ReleasedQualifiedItemId);
+        Assert.Equal(
+            "available_unprotected_singleton",
+            decision.SelectionReason);
     }
 
     [Fact]
@@ -252,4 +287,5 @@ public sealed class StageOneInventoryCapacityRecoveryTests
                 }
             }
         };
+
 }

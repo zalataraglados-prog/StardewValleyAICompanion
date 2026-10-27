@@ -330,6 +330,29 @@ public sealed class CropTeacherControlIntegrationSourceGuardTests
     }
 
     [Fact]
+    public void CompletedCropRunSettlesOnTheNextVerifiedSharedSleep()
+    {
+        var program = Read("tools", "StardewAI.LiveTrainingLoop", "Program.cs")
+            .Replace("\r\n", "\n");
+
+        Assert.Contains(
+            "if (cropTeacherDayBoundaryStart is null &&\n" +
+            "            completedCropTeacherBoundaryStart is not null)",
+            program,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "cropTeacherDayBoundaryStart is null &&\n" +
+            "            closingNativeSaveBoundary &&",
+            program,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ReadString(trainingRepresentative, \"option_id\"),\n" +
+            "                    \"executor.sleep\"",
+            program,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void SpeakerlessDialogueRecoveryPreemptsCropSettlement()
     {
         var source = Read(
