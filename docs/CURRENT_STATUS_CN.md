@@ -503,7 +503,7 @@ Skull Key 与 Pet Love 的旧生产工件均已按当前字典、日历、输入
 
 从当前状态到 `19/19` 正式训练准入，合理估计为 `25-40` 个主动工作日；生产采证中的等待和原生重试可与部分开发重叠。
 首轮全量训练、holdout 评估和首个第三年爷爷 `21` 分模型另需约 `3-7` 天，因此持续投入的墙钟总量约 `6-10` 个日历周；
-间歇开发按 `10-14` 周准备。RTX 5070 8GB 主要用于 LoRA/小批量正式训练，不会明显缩短游戏原生采证与 Method 闭合。
+间歇开发按 `10-14` 周准备。RTX 5070 8GB 主要用于开训前小型 neural scorer 扫参与后续正式训练加速；产品推理不得依赖 GPU。它不会明显缩短游戏原生采证与 Method 闭合。
 
 首个 21 分模型不是 Stage D 的入口。其后先进入 **Stage 2：Perfection 100%**，从已准入的 Stage 1 checkpoint warm-start，逐批开放并验收 Perfection 新依赖，直到单人原生 Perfection tracker 达到 100% 并冻结完美策略基线；**到这里才算游玩能力完全体**。随后进入 **Stage D：长期联机对照适配**，使用可长期共玩的原型联机桥与玩家进行真实协作，对齐 AI / 玩家操作、决策、打断/接管、角色分工和节奏，用于 preference / imitation / decision fine-tuning。Stage D 之后才补全正式 Multiplayer Companion，再依次进入新手—老手人类 Profile、long memory/persona、语气/声线层、外挂式 LLM Player Language / IntentMediator、玩家委托与自主生活共存以及 stable 1.0 发布工程。完整产品顺序统一见 `COMPANION_PRODUCT_ROADMAP_CN.md`。
 
@@ -513,6 +513,28 @@ Skull Key 与 Pet Love 的旧生产工件均已按当前字典、日历、输入
 
 上述时间不是承诺日期。以下事件会触发重新估算：游戏或 SMAPI 版本变化、权威字典/日历指纹变化、历史 corpus 无法重放、
 新增 P0/P1 跨域 correctness 缺陷，或真实性能 baseline 证明当前反馈回路仍不可接受。
+
+### 开训前新增固定门：Student 模型定型实验
+
+达到 `CoverageGateReady 19/19`、`Root methods ready 11/11` 与全局 reconciliation 后，**不能立即 launch 正式训练**。
+在 formal training manifest 之前固定增加一次 Codex 模型选择实验：
+
+1. 冻结正式 train / validation / test corpus、Goal Feature Vector、feature schema 与 candidate vocabulary；
+2. 保留当前 `return_weighted_pairwise_linear_ranker.v1` 为 baseline / fallback；
+3. 比较多档小型 `goal-conditioned pairwise neural scorer`，Student 输入明确为
+   `goal_features + state_features + candidate_features`，输出仍只有候选 scalar score；
+4. 用 RTX 5070 8 GB 做训练与扫参，但产品推理不得依赖 CUDA/独显；
+5. 低配部署门按 Stardew Valley 最低 2 GHz CPU / 256 MB video-memory 级硬件测试，
+   整机内存预算按用户决定放宽至 **8 GiB total**，包含游戏、SMAPI、StardewAI runtime 与 Student；
+6. Codex 必须用机器报告给出唯一最佳参数：网络结构、参数量、loss、optimizer、learning rate、
+   weight decay、batch、epoch/early-stop、精度/量化、checkpoint 大小，以及 held-out 质量、
+   CPU p50/p95/p99、加载时间和峰值内存；
+7. test split 不参与选参；最终配置必须独立复跑；
+8. 若所有神经候选不能在部署门内稳定优于线性 baseline，则正式训练继续使用线性 baseline，
+   不提高产品最低配置。
+
+该门只选择 Student 模型与超参数，不增加任何 `CoverageGateReady` 分子，也不允许模型接管
+candidate generation、hard constraints、Planner、Compiler 或 Product Executor。
 
 ## 11. 防回退与文档治理规则
 
