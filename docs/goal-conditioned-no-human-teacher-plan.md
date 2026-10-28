@@ -467,6 +467,44 @@ Teacher preference, native outcome and Student behavior must be stored as three 
 provenance classes. The dataset builder must reject rows which infer preference from the
 Student's selected flag.
 
+### Slice 6.5: Pre-training goal-conditioned scorer selection
+
+After full Stage 1 Goal Method / Teacher / native evidence coverage and global reconciliation,
+but before creating the formal training manifest, freeze the candidate train/validation/test corpus
+and run a reproducible Codex model-selection experiment.
+
+The runtime model contract is fixed even though the hyperparameters are not:
+
+- input = structured goal features + Student-visible state features + admitted candidate features;
+- output = one scalar score per admitted candidate;
+- hard constraints, Pareto admission, reservations, planning, compilation, execution and native
+  verification remain deterministic authorities;
+- the existing return-weighted pairwise linear ranker remains the baseline and fallback;
+- the target learned model family is a small goal-conditioned pairwise neural scorer, not a
+  generative action model or language model.
+
+Codex must compare the linear baseline with multiple compact neural scorer configurations and
+answer the best deployable architecture and hyperparameters from the frozen validation evidence,
+without tuning on the test split. The report must bind code revision, corpus manifest/hash, random
+seeds, commands and raw results, and include pairwise Teacher agreement/disagreement, shadow/native
+rollout regressions, parameter count, checkpoint size, load time, CPU inference p50/p95/p99,
+peak working set and quantization/precision tradeoffs.
+
+Training may use the RTX 5070 Laptop GPU, but production inference must not require CUDA or a
+discrete GPU. The deployment target is Stardew Valley minimum-class hardware (about a 2 GHz CPU
+and 256 MB video-memory-class graphics) with the system-memory ceiling deliberately relaxed to
+8 GiB total for the game + SMAPI + StardewAI runtime + Student. Neural inference stays at strategic
+replanning boundaries, never per-frame.
+
+If no neural configuration reproducibly improves the held-out Teacher/shadow criteria while
+remaining inside that deployment envelope, retain the linear baseline for formal training rather
+than increasing the product hardware requirement.
+
+Exit: one reproducible experiment report selects exactly one formal Student configuration (or
+explicitly selects the linear fallback), freezes its model/runtime contract and hyperparameters,
+and passes an independent rerun. Only then may the formal training manifest and training-ready
+preflight be created.
+
 ### Slice 7: Curriculum training
 
 Train goal-to-method first, then method bundles, day plans, multi-day values, and recovery.
