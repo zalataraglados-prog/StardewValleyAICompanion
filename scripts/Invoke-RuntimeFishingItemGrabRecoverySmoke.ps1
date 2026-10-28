@@ -69,11 +69,14 @@ function Wait-WorldSnapshot {
     $lastError = "not_requested"
     while ((Get-Date) -lt $deadline) {
         try {
-            $snapshot = Invoke-JsonGet -Url $Url -TimeoutSeconds 5
+            $snapshot = Invoke-JsonGet -Url $Url -TimeoutSeconds 30
             $location = Read-FieldValue $snapshot "player" "location_id"
             if (-not [string]::IsNullOrWhiteSpace([string]$location)) {
                 return $snapshot
             }
+            $locationStatus = $snapshot.state.player.location_id.status
+            $lastError =
+                "location_empty;status=$locationStatus;tick=$($snapshot.game_tick)"
         }
         catch {
             $lastError = $_.Exception.Message
@@ -93,7 +96,7 @@ function Wait-FishingItemGrabSnapshot {
     $lastState = "not_requested"
     while ((Get-Date) -lt $deadline) {
         try {
-            $snapshot = Invoke-JsonGet -Url $Url -TimeoutSeconds 5
+            $snapshot = Invoke-JsonGet -Url $Url -TimeoutSeconds 30
             $menu = Read-FieldValue $snapshot "menus" "menu_specific_state"
             $pending = @($menu.pending_items)
             $target = @($pending | Where-Object {
@@ -112,9 +115,34 @@ function Wait-FishingItemGrabSnapshot {
         catch {
             $lastState = $_.Exception.Message
         }
-        Start-Sleep -Milliseconds 250
+        Start-Sleep -Milliseconds 500
     }
     throw "Fishing ItemGrabMenu fixture was not transparent. Last state: $lastState"
+}
+
+function Wait-FishingItemGrabClosedSnapshot {
+    param([string] $Url, [int] $TimeoutSeconds)
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    $lastState = "not_requested"
+    while ((Get-Date) -lt $deadline) {
+        try {
+            $snapshot = Invoke-JsonGet -Url $Url -TimeoutSeconds 30
+            $activeMenu = Read-FieldValue $snapshot "menus" "active_menu"
+            $specificMenu = Read-FieldValue $snapshot `
+                "menus" "menu_specific_state"
+            $lastState =
+                "open=$($activeMenu.is_open);kind=$($specificMenu.kind)"
+            if ($activeMenu.is_open -ne $true -and
+                $specificMenu.kind -ne "fishing_item_grab") {
+                return $snapshot
+            }
+        }
+        catch {
+            $lastState = $_.Exception.Message
+        }
+        Start-Sleep -Milliseconds 250
+    }
+    throw "Fishing ItemGrabMenu did not close. Last state: $lastState"
 }
 
 function Get-InventoryItemCount {
@@ -162,7 +190,7 @@ function Invoke-RecoveryIteration {
         [string] $ExecutorUrl,
         [string] $SavesPath
     )
-    dotnet run --no-restore --project `
+    dotnet run --no-build --no-restore --project `
         (Join-Path $ProjectRoot `
             "tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj") -- `
         --root $LoopRoot `
@@ -174,6 +202,7 @@ function Invoke-RecoveryIteration {
         --save-isolation-path $SavesPath `
         --iterations 1 `
         --train-every 1 `
+        --skip-training `
         --sleep-ms 0 `
         --use-daily-plan `
         --daily-plan-max-candidates 1 `
@@ -214,6 +243,8 @@ function Assert-RecoveryCase {
     param(
         [string] $CaseId,
         $Artifacts,
+        $BeforeSnapshot,
+        $AfterSnapshot,
         [string] $QualifiedItemId,
         [bool] $ExpectedDiscard
     )
@@ -230,9 +261,9 @@ function Assert-RecoveryCase {
         throw "$CaseId did not execute as applied/verified."
     }
 
-    $beforeMenu = Read-FieldValue $Artifacts.Before `
+    $beforeMenu = Read-FieldValue $BeforeSnapshot `
         "menus" "menu_specific_state"
-    $afterMenu = Read-FieldValue $Artifacts.After "menus" "active_menu"
+    $afterMenu = Read-FieldValue $AfterSnapshot "menus" "active_menu"
     if ($beforeMenu.kind -ne "fishing_item_grab" -or
         [int]$beforeMenu.pending_item_count -ne 1) {
         throw "$CaseId before snapshot did not preserve the exact reward menu."
@@ -241,8 +272,8 @@ function Assert-RecoveryCase {
         throw "$CaseId left the essential reward menu open."
     }
 
-    $beforeCount = Get-InventoryItemCount $Artifacts.Before $QualifiedItemId
-    $afterCount = Get-InventoryItemCount $Artifacts.After $QualifiedItemId
+    $beforeCount = Get-InventoryItemCount $BeforeSnapshot $QualifiedItemId
+    $afterCount = Get-InventoryItemCount $AfterSnapshot $QualifiedItemId
     if ($afterCount -ne $beforeCount + 1) {
         throw "$CaseId reward inventory delta was $beforeCount -> $afterCount."
     }
@@ -268,8 +299,10 @@ function Assert-RecoveryCase {
         reward_count_after = $afterCount
         expected_discard = $ExpectedDiscard
         discard_fact_count = $discardFacts.Count
-        before_state_hash = $Artifacts.Before.state_hash
-        after_state_hash = $Artifacts.After.state_hash
+        before_state_hash = $BeforeSnapshot.state_hash
+        after_state_hash = $AfterSnapshot.state_hash
+        persisted_before_artifact = $Artifacts.Paths.Before
+        persisted_after_artifact = $Artifacts.Paths.After
     }
 }
 
@@ -277,7 +310,8 @@ $gameDirectory = Join-Path $RuntimeRoot "Stardew Valley"
 $smapiExecutable = Join-Path $gameDirectory "StardewModdingAPI.exe"
 $savesPath = Join-Path $RuntimeRoot "saves"
 $backendUrl = "http://127.0.0.1:$BackendPort"
-$snapshotUrl = "http://127.0.0.1:8765/api/v1/snapshot?profile=full"
+$snapshotUrl =
+    "http://127.0.0.1:8765/api/v1/snapshot?profile=fishing_reward_recovery&fresh=1"
 $executorUrl = "http://127.0.0.1:8767"
 
 if (-not (Test-Path -LiteralPath $smapiExecutable -PathType Leaf)) {
@@ -315,9 +349,9 @@ New-Item -ItemType Directory -Path $trainingOutputDirectory -Force |
     Out-Null
 
 & (Join-Path $ProjectRoot "scripts\Deploy-TransparentBridgeToRuntime.ps1") `
-    -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot | Out-Null
+    -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot -NoBuild | Out-Null
 & (Join-Path $ProjectRoot "scripts\Deploy-RuntimeTestHarnessToRuntime.ps1") `
-    -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot | Out-Null
+    -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot -NoBuild | Out-Null
 
 $environmentNames = @(
     "STARDEWAI_TEST_SAVES",
@@ -354,6 +388,7 @@ try {
 
     $backendProcess = Start-Process -FilePath "dotnet" -ArgumentList @(
         "run",
+        "--no-build",
         "--no-restore",
         "--project",
         (Join-Path $ProjectRoot "src\StardewAI.Backend\StardewAI.Backend.csproj"),
@@ -426,18 +461,50 @@ try {
             -BackendUrl $backendUrl -SnapshotUrl $snapshotUrl `
             -ExecutorUrl $executorUrl -SavesPath $savesPath
         $artifacts = Read-LoopArtifacts -LoopRoot $loopRoot
+        $afterSnapshot = Wait-FishingItemGrabClosedSnapshot `
+            -Url $snapshotUrl -TimeoutSeconds 30
         $caseSummary = Assert-RecoveryCase -CaseId $case.Id `
-            -Artifacts $artifacts -QualifiedItemId $case.QualifiedItemId `
+            -Artifacts $artifacts -BeforeSnapshot $fixtureSnapshot `
+            -AfterSnapshot $afterSnapshot `
+            -QualifiedItemId $case.QualifiedItemId `
             -ExpectedDiscard $case.FillInventory
         Write-JsonFile (Join-Path $caseDirectory "summary.json") $caseSummary
         $caseSummaries += [pscustomobject]$caseSummary
     }
+
+    $performance = Invoke-JsonGet `
+        -Url "http://127.0.0.1:8765/api/v1/performance" `
+        -TimeoutSeconds 10
+    $recoveryPerformance = @($performance.snapshot_profiles | Where-Object {
+        [string]$_.profile -eq "fishing_reward_recovery"
+    })
+    if ($recoveryPerformance.Count -ne 1) {
+        throw "Recovery snapshot performance metric was not recorded exactly once."
+    }
+    if ([double]$performance.update_loop.observed_updates_per_second -lt 30) {
+        throw "Recovery smoke update rate fell below 30 UPS."
+    }
+    if ([double]$recoveryPerformance[0].last_build_ms -gt 500) {
+        throw "Recovery snapshot last build exceeded 500 ms."
+    }
+    Write-JsonFile (Join-Path $runDirectory "performance.json") $performance
 
     $summary = [ordered]@{
         status = "passed"
         run_id = $RunId
         save_slot = $SaveSlot
         cases = $caseSummaries
+        performance = [ordered]@{
+            observed_updates_per_second =
+                [double]$performance.update_loop.observed_updates_per_second
+            slow_gap_count = [long]$performance.update_loop.slow_gap_count
+            recovery_snapshot_build_count =
+                [long]$recoveryPerformance[0].build_count
+            recovery_snapshot_last_build_ms =
+                [double]$recoveryPerformance[0].last_build_ms
+            recovery_snapshot_max_build_ms =
+                [double]$recoveryPerformance[0].max_build_ms
+        }
         evidence_admission = "not_automatic"
     }
     Write-JsonFile (Join-Path $runDirectory "summary.json") $summary

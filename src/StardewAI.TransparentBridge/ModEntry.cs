@@ -51,6 +51,7 @@ public sealed partial class ModEntry : Mod
         helper.Events.GameLoop.GameLaunched += OnGameLaunched;
         helper.Events.GameLoop.SaveLoaded += (_, _) =>
         {
+            InvalidateSnapshotCaches();
             PublishEvent("SaveLoaded", new[] { "identity.save_id", "identity.player_id" });
         };
         helper.Events.GameLoop.DayStarted += (_, _) => PublishEvent("DayStarted", new[] { "time.season", "time.day", "time.weather" });
@@ -81,7 +82,11 @@ public sealed partial class ModEntry : Mod
             }
         };
         helper.Events.Display.MenuChanged += (_, e) => PublishEvent("MenuChanged", new[] { "player.active_menu" }, MenuSummary(e.OldMenu), MenuSummary(e.NewMenu));
-        helper.Events.GameLoop.ReturnedToTitle += (_, _) => AddAudit("ReturnedToTitle");
+        helper.Events.GameLoop.ReturnedToTitle += (_, _) =>
+        {
+            InvalidateSnapshotCaches();
+            AddAudit("ReturnedToTitle");
+        };
         helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
 
         StartReadOnlyServer();
@@ -740,12 +745,22 @@ public sealed partial class ModEntry : Mod
         }
     }
 
+    private void InvalidateSnapshotCaches()
+    {
+        lock (snapshotLock)
+        {
+            latestSnapshot = null;
+            profileSnapshots.Clear();
+            currentStateHash = "unavailable";
+        }
+    }
+
     private static string SnapshotProfile(HttpListenerRequest request)
     {
         var value = ParseQuery(request.Url?.Query ?? string.Empty).TryGetValue("profile", out var profile)
             ? profile
             : "light";
-        return value is "daily" or "clock" or "identity" or "clearance" or "route" or "shop" or "social" or "social_future" or "machine" or "training_machine" or "training_mining" or "fishing" or "fishing_forecast" or "farm_layout" or "mining" or "volcano" or "full" ? value : "light";
+        return value is "daily" or "clock" or "identity" or "clearance" or "recovery" or "fishing_reward_recovery" or "route" or "shop" or "social" or "social_future" or "machine" or "training_machine" or "training_mining" or "fishing" or "fishing_forecast" or "farm_layout" or "mining" or "volcano" or "full" ? value : "light";
     }
 
     private static string? SnapshotFishingLocationId(
@@ -913,7 +928,7 @@ public sealed partial class ModEntry : Mod
             "unavailable_fields"
         };
 
-        if (profile is "daily" or "route" or "shop" or "social" or "social_future" or "machine" or "farm_layout")
+        if (profile is "daily" or "recovery" or "route" or "shop" or "social" or "social_future" or "machine" or "farm_layout")
         {
             domains.Add("current_location");
             domains.Add("locations");

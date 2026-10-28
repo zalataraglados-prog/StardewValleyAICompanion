@@ -56,6 +56,45 @@ public sealed class FishingItemGrabRewardRecoveryTests
     }
 
     [Fact]
+    public void ExactRewardMenuDoesNotRequireUnrelatedRecoveryRouteDomains()
+    {
+        var snapshot = Snapshot(canAcceptReward: true);
+        snapshot.State.Remove("current_location");
+        snapshot.State.Remove("locations");
+        snapshot.StateHash = SnapshotHash.ComputeStateHash(snapshot.State);
+
+        var option = Assert.Single(Availability(snapshot).Options);
+        var candidate = Assert.Single(option.EventCandidates, row =>
+            row.Kind == "recovery_claim_fishing_item_grab_reward");
+
+        Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
+        Assert.Contains(
+            "current_location.home_context",
+            option.MissingStateFactors);
+        Assert.Contains("locations.collision_grid", option.MissingStateFactors);
+    }
+
+    [Fact]
+    public void MissingRouteDomainsRemainBlockingWithoutExactRewardMenu()
+    {
+        var snapshot = Snapshot(canAcceptReward: true);
+        snapshot.State.Remove("current_location");
+        snapshot.State.Remove("locations");
+        var menus = snapshot.State["menus"];
+        var menuFields = JsonSerializer.Deserialize<
+            Dictionary<string, JsonElement>>(menus.GetRawText())!;
+        menuFields.Remove("menu_specific_state");
+        snapshot.State["menus"] = JsonSerializer.SerializeToElement(menuFields);
+        snapshot.StateHash = SnapshotHash.ComputeStateHash(snapshot.State);
+
+        var option = Assert.Single(Availability(snapshot).Options);
+
+        Assert.Empty(option.EventCandidates);
+        Assert.False(option.ReadEligible);
+        Assert.Contains("missing_required_state", option.BlockingReasons);
+    }
+
+    [Fact]
     public void FullInventorySelectsLowestTotalValueSafeObjectStack()
     {
         var snapshot = Snapshot(canAcceptReward: false);
@@ -154,6 +193,14 @@ public sealed class FishingItemGrabRewardRecoveryTests
             "executor.claim_fishing_item_grab_reward";
         Assert.True(RuntimeTestHarnessDispatchCatalog.IsSupported(optionId));
         Assert.Contains(optionId, ActionQueueCompiler.StepCompilerOptionIds);
+        var capability = OptionCapabilityRegistrySource.GetRequired(optionId);
+        Assert.Equal(
+            OptionRuntimeStatus.RuntimeVerified,
+            capability.RuntimeEvidenceStatus);
+        Assert.Equal(
+            OptionTrainingEligibility.EvaluationOnly,
+            capability.TrainingEligibility);
+        Assert.Equal(new[] { "EVD-343" }, capability.RuntimeEvidenceIds);
         Assert.DoesNotContain(
             optionId,
             OptionCapabilityRegistrySource.TrainingAllowlist);

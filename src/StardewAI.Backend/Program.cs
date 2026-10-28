@@ -1299,6 +1299,30 @@ public static class SnapshotValidator
         "modded_state"
     };
 
+    private static readonly string[] RecoveryRequiredDomains =
+    {
+        "environment",
+        "identity",
+        "time",
+        "player",
+        "options",
+        "menus",
+        "transport",
+        "current_location",
+        "locations"
+    };
+
+    private static readonly string[] FishingRewardRecoveryRequiredDomains =
+    {
+        "environment",
+        "identity",
+        "time",
+        "player",
+        "options",
+        "menus",
+        "transport"
+    };
+
     private static readonly string[] FarmLayoutRequiredDomains =
     {
         "environment",
@@ -1473,6 +1497,22 @@ public static class SnapshotValidator
         if (string.Equals(profile, "daily", StringComparison.OrdinalIgnoreCase))
         {
             return DailyRequiredDomains;
+        }
+
+        if (string.Equals(
+                profile,
+                "recovery",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return RecoveryRequiredDomains;
+        }
+
+        if (string.Equals(
+                profile,
+                "fishing_reward_recovery",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return FishingRewardRecoveryRequiredDomains;
         }
 
         if (string.Equals(

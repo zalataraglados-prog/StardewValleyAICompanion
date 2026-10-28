@@ -513,6 +513,9 @@ namespace StardewAI.Contracts.Capabilities
                     ["executor.catch_fish"] = VerifiedEvidence(
                         "vanilla_exact_fishable_cast_native_max_power_legal_input_bobber_control_stochastic_distribution_receipt_and_idle_cleanup",
                         "EVD-228"),
+                    ["executor.claim_fishing_item_grab_reward"] = VerifiedEvidence(
+                        "vanilla_exact_essential_FishingRod_ItemGrabMenu_single_reward_native_click_direct_capacity_or_objective_safe_single_discard_then_fresh_replan_receipt",
+                        "EVD-343"),
                     ["housing.advance_farmhouse"] = VerifiedEvidence(
                         "vanilla_host_exact_level_0_to_1_level_1_to_2_and_level_2_to_3_transparent_carpenter_candidate_daily_plan_native_dialogue_purchase_and_immediate_money_material_countdown_receipt",
                         "EVD-229"),
@@ -899,11 +902,11 @@ namespace StardewAI.Contracts.Capabilities
                         "EVD-231"),
                     ["recovery.stabilize_day"] = BoundedEvidence(
                         "all_current_recovery_candidates_including_rolling_cross_map_return_and_terminal_native_sleep",
-                        readEvidenceIds: new[] { "EVD-045", "EVD-046" },
-                        candidateEvidenceIds: new[] { "EVD-044", "EVD-050" },
-                        compilerEvidenceIds: new[] { "EVD-050", "EVD-195" },
-                        runtimeEvidenceIds: new[] { "EVD-195" },
-                        outputEvidenceIds: new[] { "EVD-195" }),
+                        readEvidenceIds: new[] { "EVD-045", "EVD-046", "EVD-343" },
+                        candidateEvidenceIds: new[] { "EVD-044", "EVD-050", "EVD-343" },
+                        compilerEvidenceIds: new[] { "EVD-050", "EVD-195", "EVD-343" },
+                        runtimeEvidenceIds: new[] { "EVD-195", "EVD-343" },
+                        outputEvidenceIds: new[] { "EVD-195", "EVD-343" }),
                     ["social.gift_npc"] = BoundedEvidence(
                         "vanilla_current_loaded_npc_gift_same_map_or_rolling_resolved_route_with_single_item_consumed_to_null",
                         readEvidenceIds: new[] { "EVD-076" },

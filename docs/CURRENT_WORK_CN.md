@@ -1030,9 +1030,9 @@
 <!-- BEGIN GENERATED CURRENT CHECKPOINT -->
 ## Machine-generated current checkpoint
 
-- Source commit: `ed6f1b2414fa56cf132d7a1f0262867058db7cbd` (generation input; must be an ancestor of current HEAD)
-- Latest evidence: `EVD-338`; generated at: `2026-10-28T22:21:40.4202936+00:00`
-- Catalog: `242 registered / 244 semantic / 241 compiler-bound / 162 five-gate / 67 training-allowlist`
+- Source commit: `4141faf511bd07879b83ec36cd1448b57e42ddc7` (generation input; must be an ancestor of current HEAD)
+- Latest evidence: `EVD-338`; generated at: `2026-10-28T22:48:57.6909601+00:00`
+- Catalog: `242 registered / 244 semantic / 241 compiler-bound / 163 five-gate / 67 training-allowlist`
 - Execution: `154 product-executor / 2 catalogued-blocked`
 - Native evidence: `322 surfaces / 448 branches / 150 map tokens`; fingerprint: `a2ba3ac0193fa78aece39a1eb4c18cb3c9b3248ea7390194dcfe61605af02d0e`
 - Planning catalog: `planning_semantic_catalog_complete`; `stardewai.planning_semantic_catalog_fingerprint.v1`; fingerprint: `ef0335aa0fca8744c3f61bee7e2f32075857c3c60eef32da1057bb21e699da5a`
@@ -2720,3 +2720,10 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - Crop Teacher 现于 `19:00` 后复用既有 `recovery.stabilize_day`，不再重建普通作物路线；执行步骤覆写保留原 ledger 的 `NativeSleep` 日界结算语义。故事事件和安全对话恢复仍先于该门，其他普通 interrupt 仍不得结算作物或睡眠转移。
 - fresh-save continuity 从整块富投影文本相等改为稳定进度投影相等，并把控制器交接窗口锁为 v53 实测的 `24` tick。当前位置、支付能力和当前地图校验状态可变化；任一实际核桃、来源收集、修船、到岛、鹦鹉工程或访问解锁变化若没有 episode 仍被拒绝。v53 的 `193/193` episode 已离线重建 manifest 成功。
 - 验证：聚焦 `22/22 + 11/11`；全量 Core `3008 passed / 21` 个既有基线失败。下一步只运行新的独立 day-zero 长跑，先观察晚间 recovery 原生保存，再继续首次登岛与核桃 schedule；本轮没有写正式训练数据，`formal_product_training_authorized=false`。
+
+## 2026-10-29 EVD-343 钓鱼奖励菜单恢复闭环
+
+- 长跑中满包钓鱼后的 essential FishingRod `ItemGrabMenu` 不再落入普通关菜单或停滞。透明投影、强制恢复候选、DailyPlan、编译、类型化请求、原生槽位点击和 fresh 回执已贯通；无空位时只允许一项透明、可丢弃、未保护且总店售价值最低的 Object 栈，缺少安全项即失败关闭。
+- E 盘隐藏静音原生矩阵 `runtime-fishing-item-grab-recovery-20261029-064618` 为 `2/2 PASS`：直接领取与授权单项丢弃后领取均 `applied/verified`，奖励库存精确 `0 -> 1`，菜单关闭。诊断 fixture 与生产执行器继续分离。
+- 为避免恢复动作触发全地图扫描，新增 `fishing_reward_recovery` 目的配置。复合选项只在精确菜单身份下允许缺少与该分支无关的三个路线字段；其他恢复动作仍按原 `recovery` 配置失败关闭。最终性能为 39.381 UPS、末次构建 40.673 ms、启动期最大 559.851 ms。
+- EVD-343 登记为底层 executor 校准证据，TrainingAllowlist 不变，`formal_product_training_authorized=false`。下一施工单位回到 Golden Walnut fresh-save source schedule，而不是继续扩展此恢复动作。

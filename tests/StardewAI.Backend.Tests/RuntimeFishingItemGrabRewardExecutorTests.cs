@@ -157,6 +157,11 @@ public sealed class RuntimeFishingItemGrabRewardExecutorTests
         Assert.Contains(
             "--daily-plan-candidate-options \"recovery.stabilize_day\"",
             smoke);
+        Assert.Contains("/api/v1/performance", smoke);
+        Assert.Contains("profile=fishing_reward_recovery&fresh=1", smoke);
+        Assert.Contains("observed_updates_per_second", smoke);
+        Assert.Contains("recovery_snapshot_last_build_ms", smoke);
+        Assert.Contains("--skip-training", smoke);
         Assert.Contains("Id = \"capacity_available\"", smoke);
         Assert.Contains(
             "Id = \"inventory_full_authorized_discard\"",
@@ -178,6 +183,10 @@ public sealed class RuntimeFishingItemGrabRewardExecutorTests
             "StardewAI.TransparentBridge",
             "Adapters",
             "MenuReadAdapter.cs");
+        var bridgeEntry = RuntimeHarnessSources.RepositoryFile(
+            "src",
+            "StardewAI.TransparentBridge",
+            "ModEntry.cs");
         var transport = LiveTrainingLoopSources.All;
 
         Assert.Contains("kind = \"fishing_item_grab\"", bridge);
@@ -185,6 +194,11 @@ public sealed class RuntimeFishingItemGrabRewardExecutorTests
         Assert.Contains(
             "player_can_accept_whole_stack",
             bridge);
+        Assert.Contains(
+            "or \"recovery\" or \"fishing_reward_recovery\" or \"route\"",
+            bridgeEntry);
+        Assert.Contains("profileSnapshots.Clear()", bridgeEntry);
+        Assert.Contains("InvalidateSnapshotCaches();", bridgeEntry);
         Assert.Contains(
             "ReadQueueParameterInt(item, \"fishing_reward_menu_slot_index\")",
             transport);

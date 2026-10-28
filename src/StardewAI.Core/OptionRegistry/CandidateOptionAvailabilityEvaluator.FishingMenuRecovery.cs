@@ -12,6 +12,43 @@ namespace StardewAI.Core.OptionRegistry
 {
     public sealed partial class CandidateOptionAvailabilityEvaluator
     {
+        private static readonly HashSet<string>
+            FishingRewardRecoveryIrrelevantRouteFactors =
+                new(StringComparer.Ordinal)
+                {
+                    "current_location.home_context",
+                    "locations.collision_grid",
+                    "locations.route_action_branch_coverage"
+                };
+
+        private static bool CanEvaluateFishingRewardRecoveryWithPartialState(
+            SnapshotEnvelope snapshot,
+            string optionId,
+            IEnumerable<string> missingStateFactors)
+        {
+            if (!string.Equals(
+                    optionId,
+                    "recovery.stabilize_day",
+                    StringComparison.Ordinal) ||
+                missingStateFactors.Any(factor =>
+                    !FishingRewardRecoveryIrrelevantRouteFactors.Contains(
+                        factor)))
+            {
+                return false;
+            }
+
+            var menu = ReadStateFieldValue(
+                snapshot,
+                "menus",
+                "menu_specific_state");
+            return menu.HasValue &&
+                menu.Value.ValueKind == JsonValueKind.Object &&
+                string.Equals(
+                    ReadString(menu.Value, "kind"),
+                    "fishing_item_grab",
+                    StringComparison.Ordinal);
+        }
+
         private static EventCandidate[] FishingItemGrabRewardRecoveryCandidates(
             SnapshotEnvelope snapshot)
         {
