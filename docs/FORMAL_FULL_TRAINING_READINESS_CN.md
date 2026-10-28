@@ -1095,12 +1095,15 @@ ML.NET 的 LightGBM/FastTree 排序器目前不支持直接导出 ONNX；若必�
 3. 闭合持续移动、输入仲裁、原生动作生命周期和异常诊断组成的共享执行底座；
 4. 按权威字典的真实缺口逐个闭合目标族，每个稳定纵向切片及时合并；
 5. 用本地可见短测验证动画/按键，用后台或服务器长测验证逻辑/恢复，最后做全系统回归；
-6. 重建并审计正式策略轨迹；
-7. 接入 C# 结构化排序模型并完成检查点往返；
-8. 做离线回放和独立存档验证；
-9. 从新存档进行长期完整 rollout，目标为第三年爷爷评分 21 分；
-10. 冻结“最强完美 AI”基线；
-11. 再开发声音、节奏、失误容忍和玩家适应性，不得提前污染完美基线。
+6. 重建并审计正式策略轨迹，完成全局 reconciliation / promotion review；
+7. 冻结供模型选择实验使用的 train / validation / test corpus、Goal Feature Vector、feature schema 和候选 vocabulary；
+8. 运行 **Codex 开训前模型定型实验**：保留线性 ranker 为基线，比较多组 goal-conditioned pairwise neural scorer，并在低配 CPU / 8 GiB 整机内存部署约束下给出唯一推荐架构与超参数；
+9. 固化实验选出的模型合同、超参数、运行时后端、量化/精度方案和评测阈值，完成 checkpoint 往返；
+10. 生成唯一正式 training manifest 并完成 training-ready preflight；
+11. 启动正式 Stage 1 训练；只有真实跑完至少一个游戏日并产生新的正式轨迹、native receipts、dataset manifest 与 checkpoint hash 后，才允许标记 formal training started；
+12. 做离线回放、独立存档验证与 DAgger / native-outcome 迭代；
+13. 从新存档进行长期完整 rollout，目标为第三年爷爷评分 21 分；
+14. 冻结 Stage 1 checkpoint；随后按 Canonical 产品路线进入 Stage 2 Perfection 100%，不得把 21/21 提前称为“游玩完全体”。
 
 当前第 1、3、6、7 步的数据治理与结构化模型基础设施已经闭合，第 2、4、5 步仍按证据范围持续推进；现有十三项 allowlist 不能代表全量目标覆盖。直接下一步是继续按权威字典扩大第 4 步准入项。只有真实长期 rollout 产生轨迹和闭合跨度观测后，才运行第 6 步工具形成可供检查点引用的正式数据清单；不得用合成测试数据冒充正式训练集。
 
@@ -1108,50 +1111,109 @@ ML.NET 的 LightGBM/FastTree 排序器目前不支持直接导出 ONNX；若必�
 
 2026-08-09 EVD-228 已将 `fishing.catch_fish` 收敛为透明候选经 DailyPlan 到 `executor.catch_fish` 的唯一链路，并以普通海滩 3/3、鱼塘无 BobberBar 1/1、矿井 100 层 12/12（含两次岩浆鳗鱼）后台隔离运行闭合读、候选、编译、运行和输出五门。高层动作进入策略训练 allowlist；机械原语仅作执行器校准。运行时只发送原生等价输入，不改写鱼、绿条、进度、结果或背包；低技能/低装备下的真实失败继续作为阻塞反馈，上游必须结合实时技能、鱼竿、浮标和鱼难度评估。当前生成看板为 103 registered / 170 semantic / 99 compiler-bound / 67 runtime dispatch / 32 five-gate / 26 allowlist，KnowledgeCompiler 为 585/585、blocking 0。正式全量训练仍等待其余高层目标闭合和生产长 rollout，不得把本次有界钓鱼验证外推为所有传奇鱼、宝箱优化或模组覆盖。
 
-## 5. 新训练笔记本与模型路线
+## 5. 开训前 Student 模型定型与低配部署门
 
 目标训练节点为用户报告的新笔记本：
 
 - CPU：AMD Ryzen 9 9955HX，16 核 32 线程；
 - 内存：32 GB；
 - GPU：GeForce RTX 5070 Laptop GPU，8 GB GDDR7；
-- 状态：配置来自用户报告，尚未在目标机器上完成驱动、功耗、散热和存储验收。
+- 角色：**只承担训练、扫参与高吞吐评估；不能成为产品运行时的硬件依赖。**
 
-### 5.1 资源判断
+### 5.1 正式 Student 的固定职责边界
 
-- CPU 适合结构化数据预处理、回放、树模型训练、压缩和多环境评估；
-- 32 GB 内存足够当前结构化路线，但必须使用流式数据、限制并行环境和避免同时常驻完整快照；
-- 8 GB 显存是本地神经模型训练的硬边界，不能按桌面版 RTX 5070 或更大显存估算；
-- 机器型号的 GPU TGP、散热和内存扩展上限需以整机厂商规格和实测为准。
+Stage 1 的正式 Student 继续采用**打分器（scorer / ranker）范式**，但不再把当前
+`return_weighted_pairwise_linear_ranker.v1` 视为最终模型。模型合同固定为：
 
-存储建议：
+```text
+authoritative candidate frontier
++ hard constraints / Pareto admission
++ goal features
++ state features
++ candidate features
+        ↓
+goal-conditioned pairwise neural scorer
+        ↓
+scalar score / ranking only
+        ↓
+DecisionVerifier
+        ↓
+Planner / Compiler / Product Executor
+```
 
-- 结构化训练最低预留 150 GB 快速 SSD 空间；
-- 保留长期原始快照和多轮 rollout 时建议 300 GB 以上；
-- 冷数据归档与训练热数据分离，按哈希去重和压缩；
-- 不再把 500 GB 写成所有训练路线的统一最低门槛。
+硬边界：
 
-### 5.2 模型分级
+- Candidate generation、hard constraints、reservation、route legality、Planner、Compiler、Product Executor 与 fresh verifier 仍为确定性权威；
+- Student 只能给已经 admitted 的候选产生 scalar score / ranking，不能生成自由文本动作、路线、坐标或原生输入；
+- `goal` 必须是一等结构化输入，而不是只依赖 `option_id × state` 的人工交叉项；
+- Goal Feature Vector 至少表达目标类别、剩余 requirements / progress、deadline、资源目标/压力、必要 world transition 和玩家施加的硬约束；具体字段须与 Student 推理时可见信息一致；
+- Teacher preference、native outcome、student observation 三类信号继续分离；
+- 当前线性 ranker 保留为 **V1 baseline / fallback**，用于回归、消融和低配降级；正式目标模型为 **V2 goal-conditioned pairwise neural scorer**；
+- 生成式 0.6B / 1.7B 等模型不再属于当前 Stage 1 策略模型路线。若未来需要自然语言交互，归入 Canonical 的 Player Language / IntentMediator 层，不得提前污染当前策略训练。
 
-1. **V0 确定性基线**：现有规则和执行链，作为回归参照；
-2. **V1 正式结构化排序器**：全量训练的首个必需模型，优先在 C#/ML.NET 内完成；
-3. **V2 可选 0.6B 级受约束模型**：只输出候选 ID 和参数，用 4-bit QLoRA、短上下文、batch 1、梯度累积和检查点技术做比较实验；
-4. **1.7B 级模型**：8 GB 显存上的边界实验，必须先通过显存烟测，不作为默认正式路线；
-5. **3B 及以上训练**：不作为该笔记本的本地目标，应使用更大显存设备或远端资源。
+### 5.2 Codex 开训前模型定型实验（强制门）
 
-可选神经模型不得直接读取未经裁剪的全量快照文本，也不得拥有动作执行权。其输出仍经过 C# schema、候选 allowlist、编译器和执行器。
+达到 `CoverageGateReady 19/19`、`Root methods ready 11/11` 并完成全局 reconciliation 后，
+**正式 training manifest 生成之前必须由 Codex 完成一次可复现实验并给出“最佳参数”结论。**
+不得直接沿用手写的 256/256/128、learning rate 或 batch size 作为最终配置。
 
-### 5.3 实机验收门
+实验输入必须使用冻结的正式 train / validation / test corpus；不得用 test split 选择超参数。
+至少比较：
 
-开始正式训练前在目标笔记本完成：
+1. 当前 `return_weighted_pairwise_linear_ranker.v1`；
+2. 至少三档小型 goal-conditioned MLP scorer（不同 hidden width / depth）；
+3. 至少两种合理的 pairwise ranking loss / margin 设定或等价消融；
+4. learning rate、weight decay、batch size、early stopping / epoch budget；
+5. FP32 与至少一种适合 CPU 部署的压缩或量化方案（若量化收益不成立，可以明确选择不量化）。
+
+Codex 必须输出机器可审计的实验报告，至少包含：
+
+- 最终推荐的输入 schema / goal representation；
+- hidden layers、width、activation、embedding / projection 维度（若使用）；
+- parameter count、checkpoint size；
+- loss、optimizer、learning rate、weight decay、batch size、epoch / early-stop 规则；
+- initialization / seed 策略与 Stage 2 warm-start 方式；
+- train / validation / test pairwise accuracy 或 disagreement；
+- 与线性 baseline 的增益及失败/退化案例；
+- 典型与最坏候选数下的 CPU inference p50 / p95 / p99；
+- model load time、峰值 working set、总系统内存、是否发生 paging / OOM；
+- FP32 / 量化候选之间的精度-性能权衡；
+- 最终唯一推荐参数及淘汰其他配置的理由；
+- 完整命令、代码版本、数据 manifest SHA-256、随机种子和原始结果路径。
+
+如果神经 scorer 在 held-out Teacher 一致性、长期 shadow rollout 或部署成本上没有相对线性 baseline 的可复现优势，
+Codex 必须明确报告“不升级”，允许正式训练暂时继续使用线性 baseline；不得为了使用 GPU 而强行 promotion。
+
+### 5.3 最低配置级运行约束
+
+训练可以使用 RTX 5070 Laptop GPU，但**产品推理不能要求 CUDA、独立 GPU 或 8 GB 显存**。
+
+部署基线按 2026-10-28 Steam 公布的《Stardew Valley》最低硬件级别约束：
+
+- CPU：约 2 GHz 级；
+- 图形：256 MB video memory / Shader Model 3.0+ 级；Student 推理不得要求 GPU compute；
+- 游戏官方最低系统内存为 2 GB，但本项目按用户决定将**整机可用内存预算放宽到 8 GiB**；
+- 该 8 GiB 是整机预算，不是“模型可独占 8 GiB”。实机实验必须同时运行游戏、SMAPI、StardewAI runtime 与 Student 推理；
+- 不允许把训练机的 AVX2/AVX-512、CUDA、Tensor Core 或大显存作为唯一推理路径；若采用硬件特化加速，必须存在满足上述基线的 CPU fallback；
+- Student 只在战略重规划边界评分，不得改成逐帧神经推理。
+
+Codex 的最终参数只能从**同时通过模型质量门与最低配置部署门**的候选中选择。
+若所有神经候选都无法满足 8 GiB 整机预算或造成不可接受的游戏卡顿，则正式路线回退线性 baseline，
+而不是提高产品最低硬件要求。
+
+### 5.4 实机验收门
+
+正式开训前在训练机完成：
 
 - `nvidia-smi` 正确识别 RTX 5070 Laptop GPU 和 8 GB 显存；
 - 驱动与选定 CUDA/训练工具链版本锁定；
 - 接通电源并启用稳定性能模式；
-- 记录持续负载下的显存峰值、内存峰值、温度、功耗和吞吐；
+- 记录训练持续负载下的显存峰值、内存峰值、温度、功耗和吞吐；
 - 验证至少 150 GB 可用快速存储及数据落盘速度；
-- C# 结构化模型完成训练、保存、加载和推理烟测；
-- 若启用 QLoRA，先完成 0.6B 级最小批次显存烟测，失败即回退，不挤占正式 V1 路线。
+- 线性 baseline 与全部候选 neural scorer 均完成训练、保存、加载和确定性推理烟测；
+- 在最低配置级 CPU / 8 GiB 系统内存约束环境完成部署 benchmark；
+- Codex 实验报告已选出唯一正式配置并绑定数据 manifest、代码 SHA 与 checkpoint schema；
+- 该配置经独立复跑得到同方向结论后，才允许进入 formal training manifest / preflight。
 
 ## 6. 权威参考
 
