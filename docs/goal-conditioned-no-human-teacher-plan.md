@@ -467,42 +467,27 @@ Teacher preference, native outcome and Student behavior must be stored as three 
 provenance classes. The dataset builder must reject rows which infer preference from the
 Student's selected flag.
 
-### Slice 6.5: Pre-training goal-conditioned scorer selection
+### Slice 6.5: Pre-training provider and model selection
 
 After full Stage 1 Goal Method / Teacher / native evidence coverage and global reconciliation,
-but before creating the formal training manifest, freeze the candidate train/validation/test corpus
-and run a reproducible Codex model-selection experiment.
+but before creating the formal training manifest, freeze the formal data inputs and run a
+reproducible Codex provider/model-selection experiment.
 
-The runtime model contract is fixed even though the hyperparameters are not:
+The only design constraints are those in
+`docs/STUDENT_TEACHER_PROVIDER_INTERFACE_REQUIREMENTS_CN.md`:
 
-- input = structured goal features + Student-visible state features + admitted candidate features;
-- output = one scalar score per admitted candidate;
-- hard constraints, Pareto admission, reservations, planning, compilation, execution and native
-  verification remain deterministic authorities;
-- the existing return-weighted pairwise linear ranker remains the baseline and fallback;
-- the target learned model family is a small goal-conditioned pairwise neural scorer, not a
-  generative action model or language model.
+- Student and Teacher implementations must be independently replaceable;
+- replacing either provider must not require replacing deterministic candidate, constraint,
+  planning, compilation, execution, or native-verification authorities;
+- Codex chooses the Student implementation, model family, representation, training method,
+  hyperparameters, runtime integration, and experiment design from evidence rather than from
+  architecture choices prescribed by this roadmap;
+- training may use the RTX 5070 node, while the selected production Student must pass the
+  Stardew Valley minimum-class deployment target with an 8 GiB total-system-memory ceiling.
 
-Codex must compare the linear baseline with multiple compact neural scorer configurations and
-answer the best deployable architecture and hyperparameters from the frozen validation evidence,
-without tuning on the test split. The report must bind code revision, corpus manifest/hash, random
-seeds, commands and raw results, and include pairwise Teacher agreement/disagreement, shadow/native
-rollout regressions, parameter count, checkpoint size, load time, CPU inference p50/p95/p99,
-peak working set and quantization/precision tradeoffs.
-
-Training may use the RTX 5070 Laptop GPU, but production inference must not require CUDA or a
-discrete GPU. The deployment target is Stardew Valley minimum-class hardware (about a 2 GHz CPU
-and 256 MB video-memory-class graphics) with the system-memory ceiling deliberately relaxed to
-8 GiB total for the game + SMAPI + StardewAI runtime + Student. Neural inference stays at strategic
-replanning boundaries, never per-frame.
-
-If no neural configuration reproducibly improves the held-out Teacher/shadow criteria while
-remaining inside that deployment envelope, retain the linear baseline for formal training rather
-than increasing the product hardware requirement.
-
-Exit: one reproducible experiment report selects exactly one formal Student configuration (or
-explicitly selects the linear fallback), freezes its model/runtime contract and hyperparameters,
-and passes an independent rerun. Only then may the formal training manifest and training-ready
+Exit: Codex produces one reproducible recommendation (or explicitly retains the existing baseline),
+the selected implementation satisfies the provider contract and deployment gate, and an independent
+rerun supports the same decision. Only then may the formal training manifest and training-ready
 preflight be created.
 
 ### Slice 7: Curriculum training
@@ -549,9 +534,9 @@ versioned transparent input available at inference time.
 ## Hardware boundary
 
 Slices 1 through 6 are data integrity, graph search, game execution, and dataset generation;
-they do not require the RTX 5070 laptop. The 5070 8 GB node becomes useful in Slice 7 for
-sequence models, mixed precision, larger batches, and checkpoint comparisons. GPU compute is
-not a substitute for the missing goal-method graph or teacher correctness.
+they do not require the RTX 5070 laptop. The 5070 8 GB node becomes useful for the Slice 6.5 model-selection experiment and later formal
+training if the selected implementation benefits from it. GPU compute is not a substitute for
+the missing goal-method graph, Teacher correctness, provider compatibility, or deployment proof.
 
 The current `119` host may carry the remaining Slice 3 through Slice 6 game-runtime work only as
 single-concurrency, bounded jobs. Source edits, builds, regression tests, release assembly and

@@ -1096,9 +1096,9 @@ ML.NET 的 LightGBM/FastTree 排序器目前不支持直接导出 ONNX；若必�
 4. 按权威字典的真实缺口逐个闭合目标族，每个稳定纵向切片及时合并；
 5. 用本地可见短测验证动画/按键，用后台或服务器长测验证逻辑/恢复，最后做全系统回归；
 6. 重建并审计正式策略轨迹，完成全局 reconciliation / promotion review；
-7. 冻结供模型选择实验使用的 train / validation / test corpus、Goal Feature Vector、feature schema 和候选 vocabulary；
-8. 运行 **Codex 开训前模型定型实验**：保留线性 ranker 为基线，比较多组 goal-conditioned pairwise neural scorer，并在低配 CPU / 8 GiB 整机内存部署约束下给出唯一推荐架构与超参数；
-9. 固化实验选出的模型合同、超参数、运行时后端、量化/精度方案和评测阈值，完成 checkpoint 往返；
+7. 冻结供开训前实验使用的 train / validation / test corpus，以及当时的正式输入、候选与版本身份；
+8. 按 `STUDENT_TEACHER_PROVIDER_INTERFACE_REQUIREMENTS_CN.md` 运行 **Codex 开训前 provider / 模型定型实验**，由 Codex 自行设计方案并在低配 / 8 GiB 整机约束下给出唯一推荐实现与参数；
+9. 固化实验选出的 provider / 模型合同、参数、运行时依赖和评测门，完成 checkpoint / provider 往返；
 10. 生成唯一正式 training manifest 并完成 training-ready preflight；
 11. 启动正式 Stage 1 训练；只有真实跑完至少一个游戏日并产生新的正式轨迹、native receipts、dataset manifest 与 checkpoint hash 后，才允许标记 formal training started；
 12. 做离线回放、独立存档验证与 DAgger / native-outcome 迭代；
@@ -1111,119 +1111,26 @@ ML.NET 的 LightGBM/FastTree 排序器目前不支持直接导出 ONNX；若必�
 
 2026-08-09 EVD-228 已将 `fishing.catch_fish` 收敛为透明候选经 DailyPlan 到 `executor.catch_fish` 的唯一链路，并以普通海滩 3/3、鱼塘无 BobberBar 1/1、矿井 100 层 12/12（含两次岩浆鳗鱼）后台隔离运行闭合读、候选、编译、运行和输出五门。高层动作进入策略训练 allowlist；机械原语仅作执行器校准。运行时只发送原生等价输入，不改写鱼、绿条、进度、结果或背包；低技能/低装备下的真实失败继续作为阻塞反馈，上游必须结合实时技能、鱼竿、浮标和鱼难度评估。当前生成看板为 103 registered / 170 semantic / 99 compiler-bound / 67 runtime dispatch / 32 five-gate / 26 allowlist，KnowledgeCompiler 为 585/585、blocking 0。正式全量训练仍等待其余高层目标闭合和生产长 rollout，不得把本次有界钓鱼验证外推为所有传奇鱼、宝箱优化或模组覆盖。
 
-## 5. 开训前 Student 模型定型与低配部署门
+## 5. 开训前 Provider / Student 定型与低配部署门
 
-目标训练节点为用户报告的新笔记本：
+本节不设计 Student / Teacher 的实现。接口唯一规范见：
 
-- CPU：AMD Ryzen 9 9955HX，16 核 32 线程；
-- 内存：32 GB；
-- GPU：GeForce RTX 5070 Laptop GPU，8 GB GDDR7；
-- 角色：**只承担训练、扫参与高吞吐评估；不能成为产品运行时的硬件依赖。**
+- `docs/STUDENT_TEACHER_PROVIDER_INTERFACE_REQUIREMENTS_CN.md`
 
-### 5.1 正式 Student 的固定职责边界
+固定要求只有三类：
 
-Stage 1 的正式 Student 继续采用**打分器（scorer / ranker）范式**，但不再把当前
-`return_weighted_pairwise_linear_ranker.v1` 视为最终模型。模型合同固定为：
+1. **可替换性**：Student 与 Teacher 必须能独立替换、独立启停，第三方不需要采用当前仓库内置 Student / Teacher 才能运行；确定性候选、约束、Planner、Compiler、Product Executor 与 native verifier 不因 provider 替换而重写。
+2. **实验定型**：达到正式 coverage / reconciliation 门后、formal training manifest 之前，由 Codex 基于冻结数据自行设计实验，决定正式 Student 的实现和最佳参数。审计文档不得预设模型家族、网络结构、特征布局、训练框架、loss、optimizer、量化或其他实现细节。
+3. **部署边界**：训练可使用 RTX 5070 Laptop GPU；正式产品推理不能把 CUDA / 独立 GPU 作为必要条件，并须在《Stardew Valley》最低配置级硬件环境、**8 GiB 整机内存预算**下与游戏、SMAPI、StardewAI runtime 同时通过实机验收。
 
-```text
-authoritative candidate frontier
-+ hard constraints / Pareto admission
-+ goal features
-+ state features
-+ candidate features
-        ↓
-goal-conditioned pairwise neural scorer
-        ↓
-scalar score / ranking only
-        ↓
-DecisionVerifier
-        ↓
-Planner / Compiler / Product Executor
-```
-
-硬边界：
-
-- Candidate generation、hard constraints、reservation、route legality、Planner、Compiler、Product Executor 与 fresh verifier 仍为确定性权威；
-- Student 只能给已经 admitted 的候选产生 scalar score / ranking，不能生成自由文本动作、路线、坐标或原生输入；
-- `goal` 必须是一等结构化输入，而不是只依赖 `option_id × state` 的人工交叉项；
-- Goal Feature Vector 至少表达目标类别、剩余 requirements / progress、deadline、资源目标/压力、必要 world transition 和玩家施加的硬约束；具体字段须与 Student 推理时可见信息一致；
-- Teacher preference、native outcome、student observation 三类信号继续分离；
-- 当前线性 ranker 保留为 **V1 baseline / fallback**，用于回归、消融和低配降级；正式目标模型为 **V2 goal-conditioned pairwise neural scorer**；
-- 生成式 0.6B / 1.7B 等模型不再属于当前 Stage 1 策略模型路线。若未来需要自然语言交互，归入 Canonical 的 Player Language / IntentMediator 层，不得提前污染当前策略训练。
-
-### 5.2 Codex 开训前模型定型实验（强制门）
-
-达到 `CoverageGateReady 19/19`、`Root methods ready 11/11` 并完成全局 reconciliation 后，
-**正式 training manifest 生成之前必须由 Codex 完成一次可复现实验并给出“最佳参数”结论。**
-不得直接沿用手写的 256/256/128、learning rate 或 batch size 作为最终配置。
-
-实验输入必须使用冻结的正式 train / validation / test corpus；不得用 test split 选择超参数。
-至少比较：
-
-1. 当前 `return_weighted_pairwise_linear_ranker.v1`；
-2. 至少三档小型 goal-conditioned MLP scorer（不同 hidden width / depth）；
-3. 至少两种合理的 pairwise ranking loss / margin 设定或等价消融；
-4. learning rate、weight decay、batch size、early stopping / epoch budget；
-5. FP32 与至少一种适合 CPU 部署的压缩或量化方案（若量化收益不成立，可以明确选择不量化）。
-
-Codex 必须输出机器可审计的实验报告，至少包含：
-
-- 最终推荐的输入 schema / goal representation；
-- hidden layers、width、activation、embedding / projection 维度（若使用）；
-- parameter count、checkpoint size；
-- loss、optimizer、learning rate、weight decay、batch size、epoch / early-stop 规则；
-- initialization / seed 策略与 Stage 2 warm-start 方式；
-- train / validation / test pairwise accuracy 或 disagreement；
-- 与线性 baseline 的增益及失败/退化案例；
-- 典型与最坏候选数下的 CPU inference p50 / p95 / p99；
-- model load time、峰值 working set、总系统内存、是否发生 paging / OOM；
-- FP32 / 量化候选之间的精度-性能权衡；
-- 最终唯一推荐参数及淘汰其他配置的理由；
-- 完整命令、代码版本、数据 manifest SHA-256、随机种子和原始结果路径。
-
-如果神经 scorer 在 held-out Teacher 一致性、长期 shadow rollout 或部署成本上没有相对线性 baseline 的可复现优势，
-Codex 必须明确报告“不升级”，允许正式训练暂时继续使用线性 baseline；不得为了使用 GPU 而强行 promotion。
-
-### 5.3 最低配置级运行约束
-
-训练可以使用 RTX 5070 Laptop GPU，但**产品推理不能要求 CUDA、独立 GPU 或 8 GB 显存**。
-
-部署基线按 2026-10-28 Steam 公布的《Stardew Valley》最低硬件级别约束：
-
-- CPU：约 2 GHz 级；
-- 图形：256 MB video memory / Shader Model 3.0+ 级；Student 推理不得要求 GPU compute；
-- 游戏官方最低系统内存为 2 GB，但本项目按用户决定将**整机可用内存预算放宽到 8 GiB**；
-- 该 8 GiB 是整机预算，不是“模型可独占 8 GiB”。实机实验必须同时运行游戏、SMAPI、StardewAI runtime 与 Student 推理；
-- 不允许把训练机的 AVX2/AVX-512、CUDA、Tensor Core 或大显存作为唯一推理路径；若采用硬件特化加速，必须存在满足上述基线的 CPU fallback；
-- Student 只在战略重规划边界评分，不得改成逐帧神经推理。
-
-Codex 的最终参数只能从**同时通过模型质量门与最低配置部署门**的候选中选择。
-若所有神经候选都无法满足 8 GiB 整机预算或造成不可接受的游戏卡顿，则正式路线回退线性 baseline，
-而不是提高产品最低硬件要求。
-
-### 5.4 实机验收门
-
-正式开训前在训练机完成：
-
-- `nvidia-smi` 正确识别 RTX 5070 Laptop GPU 和 8 GB 显存；
-- 驱动与选定 CUDA/训练工具链版本锁定；
-- 接通电源并启用稳定性能模式；
-- 记录训练持续负载下的显存峰值、内存峰值、温度、功耗和吞吐；
-- 验证至少 150 GB 可用快速存储及数据落盘速度；
-- 线性 baseline 与全部候选 neural scorer 均完成训练、保存、加载和确定性推理烟测；
-- 在最低配置级 CPU / 8 GiB 系统内存约束环境完成部署 benchmark；
-- Codex 实验报告已选出唯一正式配置并绑定数据 manifest、代码 SHA 与 checkpoint schema；
-- 该配置经独立复跑得到同方向结论后，才允许进入 formal training manifest / preflight。
+Codex 的模型定型报告必须可复现，并给出唯一推荐结论或明确保留当前基线；具体实验矩阵、指标组合和实现设计由 Codex 决定。所选实现还必须通过 provider 可替换性合同，之后才允许生成 formal training manifest 并进入 training-ready preflight。
 
 ## 6. 权威参考
 
 - [AMD Ryzen 9 9955HX 官方规格](https://www.amd.com/en/products/processors/laptop/ryzen/9000-series/amd-ryzen-9-9955hx.html)
 - [NVIDIA GeForce RTX 50 系列笔记本 GPU 官方规格](https://www.nvidia.com/en-gb/geforce/laptops/50-series/)
 - [NVIDIA RTX 50 系列发布规格](https://www.nvidia.com/en-us/geforce/news/rtx-50-series-graphics-cards-gpu-laptop-announcements/)
-- [Microsoft ML.NET 算法选择说明](https://learn.microsoft.com/zh-cn/dotnet/machine-learning/how-to-choose-an-ml-net-algorithm)
-- [Hugging Face bitsandbytes 安装与平台支持](https://huggingface.co/docs/bitsandbytes/installation)
-- [Hugging Face Transformers 4-bit/QLoRA 说明](https://huggingface.co/docs/transformers/main/quantization/bitsandbytes)
-- [Qwen3 官方仓库](https://github.com/QwenLM/Qwen3)
+- [Steam: Stardew Valley 系统需求](https://store.steampowered.com/app/413150/Stardew_Valley/)
 
 ## 7. 2026-08-02 实现状态与下一门
 
