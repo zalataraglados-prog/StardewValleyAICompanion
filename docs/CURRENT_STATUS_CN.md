@@ -514,27 +514,18 @@ Skull Key 与 Pet Love 的旧生产工件均已按当前字典、日历、输入
 上述时间不是承诺日期。以下事件会触发重新估算：游戏或 SMAPI 版本变化、权威字典/日历指纹变化、历史 corpus 无法重放、
 新增 P0/P1 跨域 correctness 缺陷，或真实性能 baseline 证明当前反馈回路仍不可接受。
 
-### 开训前新增固定门：Student 模型定型实验
+### 开训前新增固定门：Provider / Student 定型实验
 
 达到 `CoverageGateReady 19/19`、`Root methods ready 11/11` 与全局 reconciliation 后，**不能立即 launch 正式训练**。
-在 formal training manifest 之前固定增加一次 Codex 模型选择实验：
 
-1. 冻结正式 train / validation / test corpus、Goal Feature Vector、feature schema 与 candidate vocabulary；
-2. 保留当前 `return_weighted_pairwise_linear_ranker.v1` 为 baseline / fallback；
-3. 比较多档小型 `goal-conditioned pairwise neural scorer`，Student 输入明确为
-   `goal_features + state_features + candidate_features`，输出仍只有候选 scalar score；
-4. 用 RTX 5070 8 GB 做训练与扫参，但产品推理不得依赖 CUDA/独显；
-5. 低配部署门按 Stardew Valley 最低 2 GHz CPU / 256 MB video-memory 级硬件测试，
-   整机内存预算按用户决定放宽至 **8 GiB total**，包含游戏、SMAPI、StardewAI runtime 与 Student；
-6. Codex 必须用机器报告给出唯一最佳参数：网络结构、参数量、loss、optimizer、learning rate、
-   weight decay、batch、epoch/early-stop、精度/量化、checkpoint 大小，以及 held-out 质量、
-   CPU p50/p95/p99、加载时间和峰值内存；
-7. test split 不参与选参；最终配置必须独立复跑；
-8. 若所有神经候选不能在部署门内稳定优于线性 baseline，则正式训练继续使用线性 baseline，
-   不提高产品最低配置。
+formal training manifest 之前必须完成两件事：
 
-该门只选择 Student 模型与超参数，不增加任何 `CoverageGateReady` 分子，也不允许模型接管
-candidate generation、hard constraints、Planner、Compiler 或 Product Executor。
+1. 按 `STUDENT_TEACHER_PROVIDER_INTERFACE_REQUIREMENTS_CN.md` 落地可独立替换的 Student / Teacher provider 合同，使第三方无需采用当前内置 Student / Teacher 也能接入，而不改写确定性 Planner / Compiler / Executor / native verifier；
+2. 由 Codex 使用冻结正式数据自行设计模型定型实验，给出唯一推荐 Student 实现与参数（或明确保留当前基线），并证明其满足低配运行约束：训练可用 RTX 5070 8 GB，产品推理不得依赖独显 / CUDA，游戏 + SMAPI + StardewAI + Student 的整机内存预算为 **8 GiB**。
+
+当前审计不规定模型家族、结构、输入编码、loss、optimizer、超参数搜索或量化方案；这些全部由 Codex 实验决定。
+
+该门不增加任何 `CoverageGateReady` 分子，也不改变 Teacher truth、候选合法性或执行语义。
 
 ## 11. 防回退与文档治理规则
 
