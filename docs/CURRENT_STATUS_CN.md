@@ -503,7 +503,7 @@ Skull Key 与 Pet Love 的旧生产工件均已按当前字典、日历、输入
 
 从当前状态到 `19/19` 正式训练准入，合理估计为 `25-40` 个主动工作日；生产采证中的等待和原生重试可与部分开发重叠。
 首轮全量训练、holdout 评估和首个第三年爷爷 `21` 分模型另需约 `3-7` 天，因此持续投入的墙钟总量约 `6-10` 个日历周；
-间歇开发按 `10-14` 周准备。RTX 5070 8GB 主要用于 LoRA/小批量正式训练，不会明显缩短游戏原生采证与 Method 闭合。
+间歇开发按 `10-14` 周准备。RTX 5070 8GB 主要用于开训前小型 neural scorer 扫参与后续正式训练加速；产品推理不得依赖 GPU。它不会明显缩短游戏原生采证与 Method 闭合。
 
 首个 21 分模型不是 Stage D 的入口。其后先进入 **Stage 2：Perfection 100%**，从已准入的 Stage 1 checkpoint warm-start，逐批开放并验收 Perfection 新依赖，直到单人原生 Perfection tracker 达到 100% 并冻结完美策略基线；**到这里才算游玩能力完全体**。随后进入 **Stage D：长期联机对照适配**，使用可长期共玩的原型联机桥与玩家进行真实协作，对齐 AI / 玩家操作、决策、打断/接管、角色分工和节奏，用于 preference / imitation / decision fine-tuning。Stage D 之后才补全正式 Multiplayer Companion，再依次进入新手—老手人类 Profile、long memory/persona、语气/声线层、外挂式 LLM Player Language / IntentMediator、玩家委托与自主生活共存以及 stable 1.0 发布工程。完整产品顺序统一见 `COMPANION_PRODUCT_ROADMAP_CN.md`。
 
