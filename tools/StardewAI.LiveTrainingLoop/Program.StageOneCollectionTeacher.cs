@@ -32,7 +32,7 @@ static partial class Program
             JsonObject snapshot,
             string stateHash,
             bool capacityRecoveryOnly = false,
-            bool allowObjectiveSafeSingletonCapacityRecovery = false,
+            bool allowObjectiveSafeCapacityRecovery = false,
             bool requireFishingAttemptBlockedForCapacityRecovery = true,
             JsonObject? activeObjectiveContinuation = null,
             IReadOnlyCollection<JsonObject>? suppressedObjectiveContinuations = null)
@@ -163,7 +163,7 @@ static partial class Program
         var capacityRecovery = StageOneInventoryCapacityRecovery.TrySelect(
             typedRanking,
             snapshot,
-            allowObjectiveSafeSingletonCapacityRecovery,
+            allowObjectiveSafeCapacityRecovery,
             requireFishingAttemptBlockedForCapacityRecovery);
         if (capacityRecovery is not null)
         {
@@ -211,6 +211,8 @@ static partial class Program
                         capacityRecovery.CaughtQualifiedItemId,
                     released_qualified_item_id =
                         capacityRecovery.ReleasedQualifiedItemId,
+                    target_stack_quantity_before =
+                        capacityRecovery.TargetStackQuantityBefore,
                     selection_reason = capacityRecovery.SelectionReason,
                     selected_candidate_id =
                         capacityRecovery.Candidate.CandidateId
@@ -234,6 +236,8 @@ static partial class Program
                 "control_recovery=inventory_capacity" +
                 " released_qualified_item_id=" +
                 capacityRecovery.ReleasedQualifiedItemId +
+                " target_stack_quantity_before=" +
+                capacityRecovery.TargetStackQuantityBefore +
                 " selection_reason=" +
                 capacityRecovery.SelectionReason +
                 " formal_training_authorized=false");

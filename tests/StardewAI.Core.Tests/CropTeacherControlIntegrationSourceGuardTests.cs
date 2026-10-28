@@ -414,7 +414,7 @@ public sealed class CropTeacherControlIntegrationSourceGuardTests
             source,
             StringComparison.Ordinal);
         Assert.Contains(
-            "allowObjectiveSafeSingletonCapacityRecovery: true",
+            "allowObjectiveSafeCapacityRecovery: true",
             source,
             StringComparison.Ordinal);
         Assert.Contains(

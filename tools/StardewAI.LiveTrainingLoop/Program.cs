@@ -808,7 +808,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                     snapshotJson,
                     beforeSnapshot,
                     lastStateHash,
-                    allowObjectiveSafeSingletonCapacityRecovery: true,
+                    allowObjectiveSafeCapacityRecovery: true,
                     activeObjectiveContinuation:
                         activeObjectiveContinuation,
                     suppressedObjectiveContinuations:
