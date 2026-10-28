@@ -7,6 +7,7 @@ namespace StardewAI.LiveTrainingLoop;
 public sealed record StageOneInventoryCapacityRecoveryDecision(
     PolicyEventCandidatePrediction Candidate,
     string ReleasedQualifiedItemId,
+    int TargetStackQuantityBefore,
     string CaughtQualifiedItemId,
     string TriggerReason,
     string SelectionReason);
@@ -38,7 +39,7 @@ public static class StageOneInventoryCapacityRecovery
     public static StageOneInventoryCapacityRecoveryDecision? TrySelect(
         AvailabilityAwarePolicyPredictionEnvelope ranking,
         JsonObject snapshot,
-        bool allowObjectiveSafeSingleton = false,
+        bool allowObjectiveSafeRelease = false,
         bool requireFishingAttemptBlocked = true)
     {
         var fishingAttemptBlocked = ranking.Availability.Options
@@ -69,36 +70,45 @@ public static class StageOneInventoryCapacityRecovery
                     "economy.ship_items",
                     StringComparison.Ordinal) &&
                 candidate.Quantity == 1 &&
-                candidate.AvailableStack == 1)
+                candidate.AvailableStack is > 0 &&
+                CapacityReleaseValue(candidate) <= int.MaxValue)
             .ToArray();
         var exactCatch = releaseCandidates
             .Where(candidate => string.Equals(
                 candidate.QualifiedItemId,
                 caughtQualifiedItemId,
                 StringComparison.Ordinal))
-            .OrderBy(candidate => candidate.EstimatedTicks)
+            .OrderBy(CapacityReleaseValue)
+            .ThenBy(candidate => candidate.EstimatedTicks)
             .ThenBy(candidate => candidate.CandidateId, StringComparer.Ordinal)
             .FirstOrDefault();
         var selectedSource = exactCatch;
-        var selectionReason = "exact_latest_catch_singleton";
-        if (selectedSource is null && allowObjectiveSafeSingleton)
+        var selectionReason = exactCatch?.AvailableStack == 1
+            ? "exact_latest_catch_singleton"
+            : "exact_latest_catch_stack_drain";
+        if (selectedSource is null && allowObjectiveSafeRelease)
         {
             selectedSource = releaseCandidates
                 .OrderByDescending(candidate =>
                     candidate.FullShipmentContributes == true)
-                .ThenBy(candidate => candidate.TotalValue)
+                .ThenBy(CapacityReleaseValue)
                 .ThenBy(candidate => candidate.EstimatedTicks)
                 .ThenBy(
                     candidate => candidate.CandidateId,
                     StringComparer.Ordinal)
                 .FirstOrDefault();
-            selectionReason = "available_unprotected_singleton";
+            selectionReason = selectedSource?.AvailableStack == 1
+                ? "available_unprotected_singleton"
+                : "available_unprotected_stack_drain";
         }
 
         if (selectedSource is null)
             return null;
 
         var selected = Clone(selectedSource);
+        var targetStackQuantityBefore = Math.Max(
+            1,
+            selected.AvailableStack ?? selected.Quantity);
         selected.Rank = 1;
         selected.Score = 0;
         selected.ModelScore = null;
@@ -108,6 +118,7 @@ public static class StageOneInventoryCapacityRecovery
         return new StageOneInventoryCapacityRecoveryDecision(
             selected,
             selected.QualifiedItemId,
+            targetStackQuantityBefore,
             caughtQualifiedItemId,
             requireFishingAttemptBlocked
                 ? string.IsNullOrWhiteSpace(caughtQualifiedItemId)
@@ -116,6 +127,11 @@ public static class StageOneInventoryCapacityRecovery
                 : CropHarvestTriggerReason,
             selectionReason);
     }
+
+    private static long CapacityReleaseValue(
+        PolicyEventCandidatePrediction candidate) =>
+        (long)Math.Max(0, candidate.UnitPrice) *
+        Math.Max(1, candidate.AvailableStack ?? candidate.Quantity);
 
     private static bool InventoryIsFull(JsonObject snapshot)
     {

@@ -96,7 +96,7 @@ static partial class Program
                     beforeSnapshot,
                     stateHash,
                     capacityRecoveryOnly: true,
-                    allowObjectiveSafeSingletonCapacityRecovery: true,
+                    allowObjectiveSafeCapacityRecovery: true,
                     requireFishingAttemptBlockedForCapacityRecovery: false);
             if (recovery.Queue is null)
             {

@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.Training;
 using StardewAI.LiveTrainingLoop;
@@ -29,6 +30,7 @@ public sealed class StageOneInventoryCapacityRecoveryTests
         Assert.NotNull(decision);
         Assert.Equal("(O)152", decision!.CaughtQualifiedItemId);
         Assert.Equal("(O)152", decision.ReleasedQualifiedItemId);
+        Assert.Equal(1, decision.TargetStackQuantityBefore);
         Assert.Equal(
             "exact_latest_catch_singleton",
             decision.SelectionReason);
@@ -42,6 +44,61 @@ public sealed class StageOneInventoryCapacityRecoveryTests
             "stage_one_inventory_capacity_recovery",
             decision.Candidate.PolicyModelSource);
         Assert.Equal(0, decision.Candidate.ExpectedReward);
+    }
+
+    [Fact]
+    public void ExactLatestCatchStackRecoveryKeepsTheNativeActionSingleUnit()
+    {
+        var ranking = Ranking(ShippingCandidate(
+            "ship:Farm:slot-11:seaweed",
+            "(O)152",
+            slotIndex: 11,
+            estimatedTicks: 400,
+            availableStack: 3));
+
+        var decision = StageOneInventoryCapacityRecovery.TrySelect(
+            ranking,
+            Snapshot("(O)152"));
+
+        Assert.NotNull(decision);
+        Assert.Equal(3, decision!.TargetStackQuantityBefore);
+        Assert.Equal(1, decision.Candidate.Quantity);
+        Assert.Equal(20, decision.Candidate.TotalValue);
+        Assert.Equal(
+            "exact_latest_catch_stack_drain",
+            decision.SelectionReason);
+        Assert.Equal(
+            "1",
+            decision.Candidate.Parameters.Single(parameter =>
+                parameter.Name == "quantity").Value);
+        Assert.Equal(
+            "1",
+            decision.Candidate.Parameters.Single(parameter =>
+                parameter.Name == "continuation.quantity").Value);
+        Assert.Contains("quantity=1", decision.Candidate.ExpectedEffect);
+        Assert.Contains(
+            "total_shipping_value=20",
+            decision.Candidate.ExpectedEffect);
+    }
+
+    [Fact]
+    public void StackRecoveryCanUseTheExistingCrossMapSingleUnitRoute()
+    {
+        var ranking = Ranking(ShippingCandidate(
+            "ship:Farm:slot-11:seaweed:route",
+            "(O)152",
+            slotIndex: 11,
+            estimatedTicks: 400,
+            availableStack: 3,
+            kind: "route_connector_tile"));
+
+        var decision = StageOneInventoryCapacityRecovery.TrySelect(
+            ranking,
+            Snapshot("(O)152"));
+
+        Assert.NotNull(decision);
+        Assert.Equal(1, decision!.Candidate.Quantity);
+        Assert.Equal(3, decision.TargetStackQuantityBefore);
     }
 
     [Fact]
@@ -96,7 +153,7 @@ public sealed class StageOneInventoryCapacityRecoveryTests
         var decision = StageOneInventoryCapacityRecovery.TrySelect(
             ranking,
             Snapshot(string.Empty),
-            allowObjectiveSafeSingleton: true,
+            allowObjectiveSafeRelease: true,
             requireFishingAttemptBlocked: false);
 
         Assert.NotNull(decision);
@@ -111,6 +168,91 @@ public sealed class StageOneInventoryCapacityRecoveryTests
         Assert.Equal(
             StageOneInventoryCapacityRecovery.CropHarvestTriggerReason,
             decision.TriggerReason);
+    }
+
+    [Fact]
+    public void CropHarvestRecoveryTargetsCheapestObjectiveSafeStack()
+    {
+        var ranking = Ranking(
+            ShippingCandidate(
+                "ship:Farm:slot-6:cauliflower",
+                "(O)190",
+                slotIndex: 6,
+                estimatedTicks: 100,
+                availableStack: 5,
+                fullShipmentContributes: true,
+                unitPrice: 175),
+            ShippingCandidate(
+                "ship:Farm:slot-7:wood",
+                "(O)388",
+                slotIndex: 7,
+                estimatedTicks: 100,
+                availableStack: 10,
+                fullShipmentContributes: true,
+                unitPrice: 2),
+            ShippingCandidate(
+                "ship:Farm:slot-9:fiber",
+                "(O)771",
+                slotIndex: 9,
+                estimatedTicks: 100,
+                availableStack: 4,
+                fullShipmentContributes: true,
+                unitPrice: 1));
+
+        var decision = StageOneInventoryCapacityRecovery.TrySelect(
+            ranking,
+            Snapshot(string.Empty),
+            allowObjectiveSafeRelease: true,
+            requireFishingAttemptBlocked: false);
+
+        Assert.NotNull(decision);
+        Assert.Equal(
+            "ship:Farm:slot-9:fiber",
+            decision!.Candidate.CandidateId);
+        Assert.Equal(4, decision.TargetStackQuantityBefore);
+        Assert.Equal(1, decision.Candidate.Quantity);
+        Assert.Equal(1, decision.Candidate.TotalValue);
+        Assert.Equal(
+            "available_unprotected_stack_drain",
+            decision.SelectionReason);
+    }
+
+    [Fact]
+    public void StackDrainRemainsLockedToTheCheapestSlotUntilItIsEmpty()
+    {
+        foreach (var fiberStack in new[] { 4, 3, 2, 1 })
+        {
+            var ranking = Ranking(
+                ShippingCandidate(
+                    "ship:Farm:slot-7:wood",
+                    "(O)388",
+                    slotIndex: 7,
+                    estimatedTicks: 100,
+                    availableStack: 9,
+                    fullShipmentContributes: true,
+                    unitPrice: 2),
+                ShippingCandidate(
+                    "ship:Farm:slot-9:fiber",
+                    "(O)771",
+                    slotIndex: 9,
+                    estimatedTicks: 100,
+                    availableStack: fiberStack,
+                    fullShipmentContributes: true,
+                    unitPrice: 1));
+
+            var decision = StageOneInventoryCapacityRecovery.TrySelect(
+                ranking,
+                Snapshot(string.Empty),
+                allowObjectiveSafeRelease: true,
+                requireFishingAttemptBlocked: false);
+
+            Assert.NotNull(decision);
+            Assert.Equal(
+                "ship:Farm:slot-9:fiber",
+                decision!.Candidate.CandidateId);
+            Assert.Equal(1, decision.Candidate.Quantity);
+            Assert.Equal(fiberStack, decision.TargetStackQuantityBefore);
+        }
     }
 
     [Fact]
@@ -129,7 +271,7 @@ public sealed class StageOneInventoryCapacityRecoveryTests
         var decision = StageOneInventoryCapacityRecovery.TrySelect(
             ranking,
             Snapshot(string.Empty),
-            allowObjectiveSafeSingleton: true);
+            allowObjectiveSafeRelease: true);
 
         Assert.NotNull(decision);
         Assert.Equal(
@@ -137,6 +279,36 @@ public sealed class StageOneInventoryCapacityRecoveryTests
             decision!.Candidate.CandidateId);
         Assert.Equal(
             "available_unprotected_singleton",
+            decision.SelectionReason);
+        Assert.Equal(
+            StageOneInventoryCapacityRecovery.PreAttemptTriggerReason,
+            decision.TriggerReason);
+    }
+
+    [Fact]
+    public void FishingRecoveryTargetsDirectStackWithoutLatestCatch()
+    {
+        var ranking = RankingWithFishingBlock(
+            "fishing_inventory_full_requires_storage_transfer",
+            ShippingCandidate(
+                "ship:Farm:slot-9:fiber",
+                "(O)771",
+                slotIndex: 9,
+                estimatedTicks: 100,
+                availableStack: 4,
+                fullShipmentContributes: true,
+                unitPrice: 1));
+
+        var decision = StageOneInventoryCapacityRecovery.TrySelect(
+            ranking,
+            Snapshot(string.Empty),
+            allowObjectiveSafeRelease: true);
+
+        Assert.NotNull(decision);
+        Assert.Equal(4, decision!.TargetStackQuantityBefore);
+        Assert.Equal(1, decision.Candidate.Quantity);
+        Assert.Equal(
+            "available_unprotected_stack_drain",
             decision.SelectionReason);
         Assert.Equal(
             StageOneInventoryCapacityRecovery.PreAttemptTriggerReason,
@@ -165,7 +337,7 @@ public sealed class StageOneInventoryCapacityRecoveryTests
         var decision = StageOneInventoryCapacityRecovery.TrySelect(
             ranking,
             Snapshot(string.Empty),
-            allowObjectiveSafeSingleton: true,
+            allowObjectiveSafeRelease: true,
             requireFishingAttemptBlocked: false);
 
         Assert.NotNull(decision);
@@ -233,11 +405,12 @@ public sealed class StageOneInventoryCapacityRecoveryTests
         int estimatedTicks,
         int availableStack = 1,
         bool fullShipmentContributes = false,
-        int unitPrice = 20) => new()
+        int unitPrice = 20,
+        string kind = "ship_inventory_item_to_bin") => new()
         {
             CandidateId = candidateId,
             OptionId = "economy.ship_items",
-            Kind = "route_connector_tile",
+            Kind = kind,
             Available = true,
             QualifiedItemId = qualifiedItemId,
             SlotIndex = slotIndex,
@@ -251,7 +424,23 @@ public sealed class StageOneInventoryCapacityRecoveryTests
             Score = 12.5,
             ModelScore = 3.25,
             PolicyModelSource = "learner",
-            ExpectedReward = 7.5
+            ExpectedReward = 7.5,
+            ExpectedEffect =
+                $"quantity=1;available_stack={availableStack};" +
+                $"total_shipping_value={unitPrice}",
+            Parameters = new[]
+            {
+                new SmallModelActionParameter
+                {
+                    Name = "quantity",
+                    Value = "1"
+                },
+                new SmallModelActionParameter
+                {
+                    Name = "continuation.quantity",
+                    Value = "1"
+                }
+            }
         };
 
     private static JsonObject Snapshot(

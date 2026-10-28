@@ -44,9 +44,10 @@ function Wait-WorldSnapshot {
     param([Parameter(Mandatory = $true)][string]$Url, [Parameter(Mandatory = $true)][int]$TimeoutSeconds)
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
     $lastStatus = "not_requested"
+    $requestUrl = if ($Url.Contains("?")) { "$Url&fresh=true" } else { "$Url?fresh=true" }
     while ((Get-Date) -lt $deadline) {
         try {
-            $snapshot = Invoke-RestMethod -Method Get -Uri $Url -Headers @{"Accept" = "application/json" } -TimeoutSec 5
+            $snapshot = Invoke-RestMethod -Method Get -Uri $requestUrl -Headers @{"Accept" = "application/json" } -TimeoutSec 5
             $saveReadable = $snapshot.save_id.status -in @("available", "derived")
             $timeReadable = $snapshot.in_game_time.status -in @("available", "derived")
             $farmReadable = $false
@@ -73,7 +74,6 @@ $savesPath = Join-Path $RuntimeRoot "saves"
 
 if (-not (Test-Path -LiteralPath $smapiExe -PathType Leaf)) { throw "SMAPI executable not found: $smapiExe" }
 if (-not (Test-Path -LiteralPath $savesPath -PathType Container)) { throw "Isolated saves path not found: $savesPath" }
-
 # Pre-launch collision guard
 $testPorts = @(8765, 8767)
 foreach ($port in $testPorts) {
