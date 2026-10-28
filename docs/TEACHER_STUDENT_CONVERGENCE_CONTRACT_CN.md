@@ -92,26 +92,20 @@ Stage D 必须与 Stage 1 数据隔离：人类适配样本带独立 provenance�
 
 具体统计阈值必须在第一批完整 Teacher 数据产生后冻结，不能现在编造数值。门槛一旦冻结，同一轮不得根据测试结果追改。
 
-## 开训前 Student 模型定型实验门
+## 开训前 Provider / Student 定型门
 
-Teacher / Student 的职责边界保持不变：Teacher 负责独立监督和重标，Student 只在完整、合法、已准入的候选前沿中做软偏好排序。
-正式 Student 的接口仍是 scorer / ranker，但模型实现从“线性模型即最终形态”改为“线性 baseline + 小型 goal-conditioned neural scorer”。
+Student / Teacher 的可替换接口、权限边界、Codex 实验职责和低配部署要求统一由
+`STUDENT_TEACHER_PROVIDER_INTERFACE_REQUIREMENTS_CN.md` 规定。
 
-固定合同：
+本合同只保留监督语义：
 
-- Student 输入必须显式包含 `goal_features + state_features + candidate_features`；
-- Student 输出只允许 scalar score / rank，不得生成动作、路线或原生输入；
-- hard constraints、Pareto admission、reservation、Planner、Compiler、Executor 与 native verifier 均不交给神经模型；
-- `return_weighted_pairwise_linear_ranker.v1` 保留为 baseline / fallback；
-- 最终 neural scorer 的层数、宽度、embedding/projection、loss、optimizer、learning rate、batch、量化方式等**禁止现在手写定案**；
-- 在 19/19 Teacher/native coverage 与全局 reconciliation 完成后、formal training manifest 生成前，必须由 Codex 使用冻结 corpus 完成模型选择实验并给出唯一推荐参数；
-- 训练可使用 RTX 5070 8 GB；正式产品推理必须 CPU-only 可用、不得依赖 CUDA/独显；
-- 部署 benchmark 以《Stardew Valley》最低 2 GHz CPU / 256 MB video-memory 级硬件为参考，整机内存预算按用户决定放宽到 8 GiB；
-- 8 GiB 是游戏 + SMAPI + StardewAI runtime + Student 的整机预算，不能让模型单独占满；
-- Codex 必须同时报告 held-out Teacher 一致性、shadow/native rollout 退化、CPU p50/p95/p99、峰值内存、checkpoint 大小、加载时间及量化权衡；
-- 若任何 neural scorer 都不能在低配部署门下稳定优于线性 baseline，则保持线性 baseline，不得为了“用了神经网络”而 promotion。
+- Teacher truth、native outcome、Student observation 继续分离；
+- Student 不拥有候选合法性、Planner、Compiler、Executor 或 native verifier 权限；
+- Teacher 可以被独立替换或禁用，不能成为运行时必须绑定的内置实现；
+- 达到正式 coverage / reconciliation 门后、formal training manifest 之前，Codex 必须自行实验并决定正式 Student 的实现与参数；
+- 本文不预设模型结构、输入编码方式、训练算法或超参数。
 
-该实验只负责选择 Student 的函数逼近器和超参数，不得改写 Teacher truth、coverage 分母、候选合法性或执行语义。
+provider / 模型实验不得改写 Teacher truth、coverage 分母、候选合法性或执行语义。
 
 ## 当前训练禁入项
 
