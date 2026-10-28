@@ -269,6 +269,8 @@ namespace StardewAI.Core.Execution
             blocking.AddRange(ValidateObjectTrapRecoveryPlan(action, snapshot));
             blocking.AddRange(ValidateWaitTicksPlan(action));
             blocking.AddRange(ValidateCatchFishPlan(action, snapshot));
+            blocking.AddRange(
+                ValidateFishingItemGrabRewardPlan(action, snapshot));
             blocking.AddRange(ValidateMiningReachDepthPlan(action, snapshot));
             blocking.AddRange(ValidateMiningSkullKeyPlan(action, snapshot));
             blocking.AddRange(ValidateMiningGoldenScythePlan(action, snapshot));

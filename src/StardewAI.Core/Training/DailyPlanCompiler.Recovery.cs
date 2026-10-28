@@ -87,6 +87,42 @@ namespace StardewAI.Core.Training
             };
         }
 
+        private static IEnumerable<SmallModelPlanStep>
+            RecoveryFishingItemGrabRewardSteps(
+                PolicyEventCandidatePrediction candidate)
+        {
+            return new[]
+            {
+                new SmallModelPlanStep
+                {
+                    StepId = StepId(
+                        candidate,
+                        "claim_fishing_item_grab_reward",
+                        0),
+                    Kind = "claim_fishing_item_grab_reward",
+                    EstimatedMinutes = 1,
+                    Preconditions = new[]
+                    {
+                        "candidate_id:" + candidate.CandidateId,
+                        "menus.active_menu.type=ItemGrabMenu",
+                        "menus.menu_specific_state.kind=fishing_item_grab"
+                    },
+                    ExpectedEffects = new[] { candidate.ExpectedEffect },
+                    SafetyConstraints = new[]
+                    {
+                        "native_ItemGrabMenu_receiveLeftClick_only",
+                        "discard_only_explicit_objective_safe_bound_slot",
+                        "one_reward_stack_then_fresh_snapshot"
+                    },
+                    FailurePolicy = new[]
+                    {
+                        "stop_refresh_snapshot_and_replan"
+                    },
+                    Parameters = candidate.Parameters
+                }
+            };
+        }
+
         private static IEnumerable<SmallModelPlanStep> RecoveryRouteSteps(PolicyEventCandidatePrediction candidate)
         {
             var connectorKind = CandidateParameter(candidate, "connector_kind");

@@ -852,6 +852,13 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.setup_fishing_item_grab_reward")
+            {
+                pending.Completion.SetResult(
+                    ExecuteSetupFishingItemGrabReward(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_fish_pond")
             {
                 pending.Completion.SetResult(ExecuteSetupFishPond(pending.Request));
@@ -2425,6 +2432,13 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "executor.catch_fish")
             {
                 StartCatchFish(pending);
+                return;
+            }
+
+            if (pending.Request.OptionId == "executor.claim_fishing_item_grab_reward")
+            {
+                pending.Completion.SetResult(
+                    ExecuteClaimFishingItemGrabReward(pending.Request));
                 return;
             }
 

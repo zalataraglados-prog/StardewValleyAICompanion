@@ -41,7 +41,7 @@ namespace StardewAI.Core.Training
                 .Any(candidate => candidate.Available && candidate.Kind == "process_open_letter");
             var mandatoryMenuRecovery = !professionChoiceActive && !mailProcessingActive && availability.Options
                 .SelectMany(option => option.EventCandidates)
-                .Any(candidate => candidate.Available && candidate.Kind == "recovery_close_menu");
+                .Any(candidate => candidate.Available && IsMandatoryMenuRecovery(candidate.Kind));
             var mandatoryDayRecovery = !professionChoiceActive &&
                 !mailProcessingActive &&
                 !mandatoryMenuRecovery &&
@@ -55,7 +55,7 @@ namespace StardewAI.Core.Training
                     .Where(CanEnterTimeline)
                     .Where(candidate => !professionChoiceActive || candidate.Kind == "choose_profession")
                     .Where(candidate => !mailProcessingActive || candidate.Kind == "process_open_letter")
-                    .Where(candidate => !mandatoryMenuRecovery || candidate.Kind == "recovery_close_menu")
+                    .Where(candidate => !mandatoryMenuRecovery || IsMandatoryMenuRecovery(candidate.Kind))
                     .Where(candidate => !mandatoryDayRecovery || IsMandatoryDayRecovery(candidate.Kind))
                     .ToArray();
                 foreach (var ec in legalEventCandidates)
@@ -200,6 +200,10 @@ namespace StardewAI.Core.Training
                     if (candidate.Kind == "recovery_close_menu")
                     {
                         urgencySignal = 0.25;
+                    }
+                    if (candidate.Kind == "recovery_claim_fishing_item_grab_reward")
+                    {
+                        urgencySignal = 0.3;
                     }
                     if (candidate.Kind == "choose_profession")
                     {
@@ -413,6 +417,10 @@ namespace StardewAI.Core.Training
                 .ThenBy(candidate => candidate.CandidateId, StringComparer.Ordinal),
                 currentTime);
         }
+
+        private static bool IsMandatoryMenuRecovery(string kind) =>
+            kind is "recovery_close_menu" or
+                "recovery_claim_fishing_item_grab_reward";
 
         private static bool CanEnterTimeline(EventCandidate candidate)
         {

@@ -241,6 +241,11 @@ namespace StardewAI.Core.Training
                 return RecoveryCloseMenuSteps(candidate);
             }
 
+            if (candidate.Kind == "recovery_claim_fishing_item_grab_reward")
+            {
+                return RecoveryFishingItemGrabRewardSteps(candidate);
+            }
+
             if (candidate.Kind == "recovery_escape_object_trap")
             {
                 return ObjectTrapRecoverySteps(candidate);
@@ -826,7 +831,8 @@ namespace StardewAI.Core.Training
                 return ConstructQuestBuildingSteps(candidate);
             }
 
-            if (candidate.Kind is "construct_building" or "upgrade_building")
+            if (candidate.Kind == "construct_building" ||
+                candidate.Kind == "upgrade_building")
             {
                 return ConstructBuildingSteps(candidate);
             }
