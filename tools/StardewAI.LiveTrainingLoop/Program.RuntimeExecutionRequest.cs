@@ -624,6 +624,19 @@ static partial class Program
         var fishingOutcomeDistributionJson = ReadQueueParameterString(item, "outcome_distribution_json");
         var fishingPossibleQualifiedItemIdsJson = ReadQueueParameterString(item, "possible_qualified_item_ids_json");
         var fishingOutcomeProbabilityStatus = ReadQueueParameterString(item, "outcome_probability_status");
+        var fishingRewardMenuSource = ReadQueueParameterInt(item, "fishing_reward_menu_source");
+        var fishingRewardMenuContextType = ReadQueueParameterString(item, "fishing_reward_menu_context_type");
+        var fishingRewardMenuSlotIndex = ReadQueueParameterInt(item, "fishing_reward_menu_slot_index");
+        var fishingRewardQualifiedItemId = ReadQueueParameterString(item, "fishing_reward_qualified_item_id");
+        var fishingRewardStackBefore = ReadQueueParameterInt(item, "fishing_reward_stack_before");
+        var fishingRewardQuality = ReadQueueParameterInt(item, "fishing_reward_quality");
+        var fishingRewardPendingCountBefore = ReadQueueParameterInt(item, "fishing_reward_pending_count_before");
+        var fishingRewardRequiresDiscard = ReadNullableBoolQueueParameter(item, "fishing_reward_requires_discard");
+        var fishingRewardDiscardSlotIndex = ReadQueueParameterInt(item, "fishing_reward_discard_slot_index");
+        var fishingRewardDiscardQualifiedItemId = ReadQueueParameterString(item, "fishing_reward_discard_qualified_item_id");
+        var fishingRewardDiscardStackBefore = ReadQueueParameterInt(item, "fishing_reward_discard_stack_before");
+        var fishingRewardDiscardQuality = ReadQueueParameterInt(item, "fishing_reward_discard_quality");
+        var fishingRewardDiscardAuthorization = ReadQueueParameterString(item, "fishing_reward_discard_authorization");
         if (targetTileX.HasValue && targetTileY.HasValue)
         {
             executionRequest.TargetTileX = targetTileX.Value;
@@ -1287,6 +1300,30 @@ static partial class Program
         {
             executionRequest.OutcomeProbabilityStatus = fishingOutcomeProbabilityStatus;
         }
+        executionRequest.FishingRewardMenuSource = fishingRewardMenuSource;
+        executionRequest.FishingRewardMenuContextType =
+            fishingRewardMenuContextType;
+        executionRequest.FishingRewardMenuSlotIndex =
+            fishingRewardMenuSlotIndex;
+        executionRequest.FishingRewardQualifiedItemId =
+            fishingRewardQualifiedItemId;
+        executionRequest.FishingRewardStackBefore =
+            fishingRewardStackBefore;
+        executionRequest.FishingRewardQuality = fishingRewardQuality;
+        executionRequest.FishingRewardPendingCountBefore =
+            fishingRewardPendingCountBefore;
+        executionRequest.FishingRewardRequiresDiscard =
+            fishingRewardRequiresDiscard;
+        executionRequest.FishingRewardDiscardSlotIndex =
+            fishingRewardDiscardSlotIndex;
+        executionRequest.FishingRewardDiscardQualifiedItemId =
+            fishingRewardDiscardQualifiedItemId;
+        executionRequest.FishingRewardDiscardStackBefore =
+            fishingRewardDiscardStackBefore;
+        executionRequest.FishingRewardDiscardQuality =
+            fishingRewardDiscardQuality;
+        executionRequest.FishingRewardDiscardAuthorization =
+            fishingRewardDiscardAuthorization;
 
         executionRequest.MinigameId = ReadQueueParameterString(item, "minigame_id");
         executionRequest.MinigameMode = ReadQueueParameterInt(item, "minigame_mode");

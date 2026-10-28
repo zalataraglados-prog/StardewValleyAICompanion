@@ -278,6 +278,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
           },
           "menus": {
             "active_menu": {"value":{"is_open":false,"type":"none"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "menu_specific_state": {"value":{"kind":"none"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "sleep_prompt_context": {"value":{"prompt_open":false},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "locations": {
@@ -360,6 +361,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
           },
           "menus": {
             "active_menu": {"value":{"is_open":false,"type":"none"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "menu_specific_state": {"value":{"kind":"none"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "sleep_prompt_context": {"value":{"prompt_open":false},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "locations": {
@@ -520,6 +522,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
           },
           "menus": {
             "active_menu": {"value":{"is_open":MENU_OPEN,"type":"MENU_TYPE","last_question_key":LAST_QUESTION_KEY,"is_sleep_prompt":SLEEP_PROMPT_OPEN,"event_up":false},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "menu_specific_state": {"value":{"kind":"none"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "sleep_prompt_context": {"value":{"prompt_open":SLEEP_PROMPT_OPEN,"active_menu_open":MENU_OPEN,"active_menu_type":"MENU_TYPE","last_question_key":LAST_QUESTION_KEY,"can_confirm_sleep":CAN_CONFIRM_SLEEP,"confirm_executor_enabled":CAN_CONFIRM_SLEEP,"confirm_action_key":"Sleep_Yes"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "locations": {

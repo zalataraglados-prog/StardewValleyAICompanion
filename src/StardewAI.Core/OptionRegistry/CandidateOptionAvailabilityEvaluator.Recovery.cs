@@ -18,6 +18,7 @@ namespace StardewAI.Core.OptionRegistry
             SmallModelActionParameter[] requestParameters)
         {
             var candidates = new List<EventCandidate>();
+            candidates.AddRange(FishingItemGrabRewardRecoveryCandidates(snapshot));
             var time = ReadStateFieldInt(snapshot, "time", "time");
             var nativeSaveBoundaryRequired = string.Equals(
                 ReadParameter(

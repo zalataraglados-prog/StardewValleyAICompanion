@@ -125,6 +125,7 @@ public static class OptionImplementationCatalog
 
     private static readonly HashSet<string> FishingOptions = Set(
         "executor.catch_fish",
+        "executor.claim_fishing_item_grab_reward",
         "executor.collect_crab_pot",
         "executor.collect_fish_pond_output",
         "executor.complete_fish_pond_request");

@@ -22,6 +22,8 @@ namespace StardewAI.Core.Execution
         private static string[] ValidateActiveMenuBracket(SmallModelAction action, SnapshotEnvelope snapshot, OptionSpec? option)
         {
             if (action.OptionId == "executor.close_menu" ||
+                action.OptionId ==
+                    "executor.claim_fishing_item_grab_reward" ||
                 action.OptionId == "executor.buy_shop_item" ||
                 action.OptionId == "executor.sell_shop_item" ||
                 action.OptionId == "executor.choose_dialogue_response" ||

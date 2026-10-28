@@ -858,7 +858,7 @@ namespace StardewAI.Core.OptionRegistry
                 TrainingRoles.ExecutorCalibration,
                 new[]
                 {
-                    "time.time", "player.energy", "menus.active_menu", "menus.sleep_prompt_context",
+                    "time.time", "player.energy", "menus.active_menu", "menus.menu_specific_state", "menus.sleep_prompt_context",
                     "player.location_id", "player.tile_x", "player.tile_y", "current_location.home_context",
                     "locations.collision_grid", "locations.route_action_branch_coverage"
                 },
@@ -1282,6 +1282,18 @@ namespace StardewAI.Core.OptionRegistry
                 },
                 new[] { "legal fishing input lifecycle executed", "catch outcome observed" },
                 new[] { "block_wrong_location_or_stand_tile", "block_invalid_rod_or_bobber_tile", "block_unobserved_catch_result" }));
+
+            Register(Option("executor.claim_fishing_item_grab_reward", "fishing", "Claim one exact pending native fishing reward and recover menu progress",
+                OptionBehaviorCategories.Recovery,
+                CompilerResponsibilities.FullActionExpansion,
+                TrainingRoles.ExecutorCalibration,
+                new[]
+                {
+                    "player.inventory", "player.location_id",
+                    "menus.active_menu", "menus.menu_specific_state"
+                },
+                new[] { "one exact pending fishing reward transferred through native ItemGrabMenu", "menu closed when all pending rewards are taken" },
+                new[] { "block_non_fishing_item_grab_menu", "block_reward_or_inventory_binding_drift", "block_unapproved_inventory_discard", "block_direct_inventory_mutation" }));
 
             Register(Option("executor.play_junimo_kart", "minigame", "Run one AI-only timed-equivalent Junimo Kart endless session to an exact quest score",
                 OptionBehaviorCategories.Mechanical,

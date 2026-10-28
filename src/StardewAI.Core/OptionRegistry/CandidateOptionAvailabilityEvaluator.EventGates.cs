@@ -488,7 +488,11 @@ namespace StardewAI.Core.OptionRegistry
                 !string.Equals(
                     optionId,
                     "mining.reach_depth",
-                    StringComparison.Ordinal))
+                    StringComparison.Ordinal) &&
+                !CanEvaluateFishingRewardRecoveryWithPartialState(
+                    snapshot,
+                    optionId,
+                    missingStateFactors))
             {
                 return Array.Empty<EventCandidate>();
             }

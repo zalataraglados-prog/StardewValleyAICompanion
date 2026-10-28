@@ -241,6 +241,10 @@ namespace StardewAI.Core.Execution
                     return EstimateWait(item);
                 case "executor.close_menu":
                     return Fixed(1, "native_close_menu_rule.v1");
+                case "executor.claim_fishing_item_grab_reward":
+                    return Fixed(
+                        1,
+                        "native_fishing_item_grab_reward_rule.v1");
                 case "executor.traverse_connector":
                     return EstimateConnector(item);
                 case "executor.sleep":
@@ -269,6 +273,9 @@ namespace StardewAI.Core.Execution
             {
                 "executor.wait_ticks" => EstimateWait(item),
                 "executor.close_menu" => Fixed(1, "recovery_close_menu_rule.v2"),
+                "executor.claim_fishing_item_grab_reward" => Fixed(
+                    1,
+                    "recovery_fishing_item_grab_reward_rule.v1"),
                 "executor.traverse_connector" => EstimateConnector(item),
                 "executor.sleep" => EstimateCompiledSteps(item, "recovery_sleep_macro_steps.v2"),
                 _ => EstimateCompiledSteps(item, "recovery_compiled_steps.v2")

@@ -158,6 +158,8 @@ namespace StardewAI.Core.Execution
                 ["executor.use_treasure_totem"] = (action, _) => CompileUseTreasureTotemStep(action),
                 ["executor.use_warp_totem"] = (action, _) => CompileUseWarpTotemStep(action),
                 ["executor.catch_fish"] = (action, _) => CompileCatchFishStep(action),
+                ["executor.claim_fishing_item_grab_reward"] =
+                    (action, _) => CompileFishingItemGrabRewardStep(action),
                 ["executor.play_junimo_kart"] = (action, _) => CompilePlayJunimoKartStep(action),
                 ["executor.cool_volcano_lava"] = (action, _) => CompileCoolVolcanoLavaStep(action),
                 ["executor.break_volcano_stone"] = (action, _) => CompileVolcanoNativePrimitiveStep(action),

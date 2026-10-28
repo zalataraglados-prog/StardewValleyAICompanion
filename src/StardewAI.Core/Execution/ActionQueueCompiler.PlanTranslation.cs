@@ -209,6 +209,8 @@ namespace StardewAI.Core.Execution
                 "escape_object_trap" => "recovery.escape_object_trap",
                 "wait_ticks" => "executor.wait_ticks",
                 "close_menu" => "executor.close_menu",
+                "claim_fishing_item_grab_reward" =>
+                    "executor.claim_fishing_item_grab_reward",
                 "buy_shop_item" => "executor.buy_shop_item",
                 "submit_tool_upgrade" => "executor.submit_tool_upgrade",
                 "claim_tool_upgrade" => "executor.claim_tool_upgrade",

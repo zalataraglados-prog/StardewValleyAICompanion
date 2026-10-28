@@ -3,6 +3,7 @@ using StardewAI.Contracts.Execution;
 using StardewValley;
 using StardewValley.Buildings;
 using StardewValley.Menus;
+using StardewValley.Tools;
 
 namespace StardewAI.TransparentBridge.Adapters;
 
@@ -280,6 +281,13 @@ public sealed partial class MenuReadAdapter : ReadAdapterBase
         {
             ShippingMenu shippingMenu =>
                 (Field(ReadShippingMenuState(shippingMenu), "ShippingMenu public fields", tick, AdapterId),
+                    Array.Empty<string>()),
+            ItemGrabMenu itemGrabMenu when IsFishingItemGrabMenu(itemGrabMenu) =>
+                (Field(
+                        ReadFishingItemGrabMenuState(itemGrabMenu),
+                        "ItemGrabMenu public fishing-reward fields and read-only inventory fit projection",
+                        tick,
+                        AdapterId),
                     Array.Empty<string>()),
             ItemGrabMenu itemGrabMenu when itemGrabMenu.source == ItemGrabMenu.source_chest =>
                 (Field(ReadChestMenuState(itemGrabMenu, tick), "ItemGrabMenu public fields for chest source", tick, AdapterId),
@@ -588,6 +596,88 @@ public sealed partial class MenuReadAdapter : ReadAdapterBase
             },
             transient_sprite_count = menu._transferredItemSprites?.Count
         };
+    }
+
+    private static bool IsFishingItemGrabMenu(ItemGrabMenu menu) =>
+        menu.source == ItemGrabMenu.source_fishingChest ||
+        menu.context is FishingRod;
+
+    private static object ReadFishingItemGrabMenuState(ItemGrabMenu menu)
+    {
+        var pendingItems = menu.ItemsToGrabMenu?.actualInventory?
+            .Select((item, slotIndex) => item is null
+                ? null
+                : new
+                {
+                    slot_index = slotIndex,
+                    item_id = item.ItemId,
+                    qualified_item_id = item.QualifiedItemId,
+                    display_name = item.DisplayName,
+                    stack = item.Stack,
+                    quality = item.Quality,
+                    maximum_stack_size = item.maximumStackSize(),
+                    runtime_type = TypeName(item),
+                    can_be_trashed = item.canBeTrashed(),
+                    player_can_accept_whole_stack =
+                        CanPlayerAcceptWholeItemWithoutSideEffects(item)
+                })
+            .Where(item => item is not null)
+            .Cast<object>()
+            .ToArray() ?? Array.Empty<object>();
+
+        return new
+        {
+            kind = "fishing_item_grab",
+            source = menu.source,
+            source_name = menu.source == ItemGrabMenu.source_fishingChest
+                ? "fishing_chest"
+                : "fishing_reward_or_overflow",
+            context_type = TypeName(menu.context),
+            essential = menu.essential,
+            super_essential = menu.superEssential,
+            reverse_grab = menu.reverseGrab,
+            show_receiving_menu = menu.showReceivingMenu,
+            can_exit_on_key = menu.canExitOnKey,
+            ready_to_close = menu.readyToClose(),
+            all_items_taken = menu.areAllItemsTaken(),
+            held_item_present = menu.heldItem is not null,
+            held_item_qualified_item_id = menu.heldItem?.QualifiedItemId,
+            held_item_stack = menu.heldItem?.Stack,
+            pending_item_count = pendingItems.Length,
+            pending_items = pendingItems,
+            player_inventory = menu.inventory is null
+                ? null
+                : ReadInventorySummary(menu.inventory),
+            native_contract =
+                "FishingRod essential ItemGrabMenu->receiveLeftClick exact reward slot->Farmer.addItemToInventoryBool->areAllItemsTaken->exitThisMenu"
+        };
+    }
+
+    private static bool CanPlayerAcceptWholeItemWithoutSideEffects(Item item)
+    {
+        if (item.IsRecipe || item.QualifiedItemId is
+            "(O)73" or "(O)930" or "(O)102" or "(O)326" or
+            "(O)434" or "(O)858" or "(O)GoldCoin")
+        {
+            return true;
+        }
+
+        var maxItems = Math.Min(
+            Game1.player.maxItems.Value,
+            Game1.player.Items.Count);
+        for (var slotIndex = 0; slotIndex < maxItems; slotIndex++)
+        {
+            var inventoryItem = Game1.player.Items[slotIndex];
+            if (inventoryItem is null ||
+                inventoryItem.canStackWith(item) &&
+                inventoryItem.Stack + item.Stack <=
+                inventoryItem.maximumStackSize())
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static object ReadShopMenuState(ShopMenu menu, long tick)

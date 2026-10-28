@@ -588,3 +588,11 @@ formal training manifest 之前必须完成两件事：
 - v53 的 `193` 个耐久 episode 还揭示 continuity 校验把富投影中的当前位置、购票支付能力和当前地图验证状态误当成岛屿进度。校验现只比较核桃数量、逐来源收集量、邀请/修船、到岛次数、鹦鹉工程、访问解锁及相关邮件等稳定进度维度；控制器交接间隙仅按实测上限 `24` tick 接受，`25` tick、未记账核桃或解锁变化继续失败关闭。修复后对 v53 全部 `193/193` episode 重建 manifest 成功。
 - 聚焦验证为 continuity/planner `22/22`、Crop Teacher 控制守卫 `11/11`；全量 Core 为 `3008/3029`，仍有 `21` 个与本切片文件无交集的既有基线失败，未宣称全绿。v53 没有首次登岛、核桃来源增量或 First Parrot/Turtle/House，最终仍为 incomplete，不生成正式 source schedule，不改变 `formal_product_training_authorized=false`。
 - 下一固定步骤：用本修复重新发布隔离二进制，启动新的 day-zero/fresh-save 长跑，先验证 `19:00` 后 Crop Teacher 只进入既有 recovery 并完成原生保存，再继续首次登岛 -> 来源增量 -> First Parrot -> Turtle -> House -> schedule 生成与独立重放。
+
+## 18. 2026-10-29 钓鱼奖励菜单强制恢复闭环
+
+- #335 长跑最近一次满包钓鱼断点现已闭合为唯一恢复链：透明桥读取 essential FishingRod `ItemGrabMenu` 的精确奖励单位与容量；`recovery.stabilize_day` 生成强制候选；DailyPlan/编译器绑定同一菜单、槽位、物品、数量和可选丢弃授权；Runtime Harness 只发送原生点击并要求 fresh 重规划。没有增加第二套钓鱼、移动或库存系统。
+- 隐藏静音 E 盘矩阵 `runtime-fishing-item-grab-recovery-20261029-064618` 为 `2/2 PASS`：有容量时 `(O)145 0 -> 1` 且零丢弃；满包时 `(O)162 0 -> 1` 且只有一条精确授权丢弃事实；两条均为 `applied + primitive verified`。
+- 运行同时发现并修正复合恢复选项的字段范围过宽。新的 `fishing_reward_recovery` 快照不再扫描无关 `current_location/locations`；只有精确奖励菜单分支可忽略这三个路线字段，普通晚间返家、睡眠和其他恢复仍失败关闭。末次快照构建由通用配置的 `379.346 ms` 降为 `40.673 ms`，慢间隔计数 `15 -> 8`；启动期峰值仍记录而不隐瞒。
+- EVD-343 只把 `executor.claim_fishing_item_grab_reward` 提升为 `RuntimeVerified / EvaluationOnly`。它不进入策略训练 allowlist，不改变上方任何 19 criterion、root method 或正式训练分子；#345 的 Provider/Student 准入门和 `formal_product_training_authorized=false` 均保持。
+- 下一固定步骤恢复既定 Golden Walnut day-zero/fresh-save source schedule 长跑；先使用本修复验证满包钓鱼不会再卡在奖励菜单，再继续首次登岛、核桃来源增量、First Parrot/Turtle/House 与 schedule 生成/独立重放。
