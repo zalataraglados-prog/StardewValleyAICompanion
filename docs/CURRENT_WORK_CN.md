@@ -2757,3 +2757,10 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - v69 的未保存尾部不能跨进程升级为 fresh-save corpus，因此 v70 直接采用新的 day-zero 身份；这是对上一节“先有界回放”表述的修正。v70 运行到 Spring 17 / iteration `189`，取得 `173` 条 verified Product action、两轮完整作物收获、节日 transit 和 Stage One 钓鱼前缀，但仍没有首次登岛。
 - 真实排名工件证明容量恢复把 Full Shipment contribution 错排在腾格效率之前：`20` 木材压过两个 singleton，形成 20 次原生单件出货。PR #360 只调整同一 `StageOneInventoryCapacityRecovery` 的候选顺序，优先最少 native deposit 次数；候选、编译器、产品执行器和回执均继续复用现有单一路径。
 - v70 在缺陷归因后停止，未保存尾部不续接。下一施工单元为全新 v71：用合并后代码复核 singleton 恢复，然后继续首次登岛和 Golden Walnut source schedule。运行仍为 `--skip-training` 的校准采证，不是模型训练。
+
+## 2026-10-30 v71 校准结果与下一施工单元
+
+- v71 仍为 `--skip-training` 校准。iteration `149` 已在真实满包场景选择可用 singleton `(O)92 x1`，通过既有单件出货 primitive 释放槽位；iteration `150` 完成 `8/8` 收获。容量恢复的最短动作排序已从单元证明提升为原生运行证明。
+- iteration `162` 的原生钓鱼在满包时打开 essential `ItemGrabMenu`。iteration `165` 的统一排名中已有可执行的 mandatory `recovery_claim_fishing_item_grab_reward`，但旧 Stage One membership 只接纳四类 collection 目标，因而先错误让出控制；后续 Crop Teacher 路线被仍开启的菜单正确拒绝。该断点是控制编排顺序缺口，不是缺候选、缺字段或缺执行器。
+- 当前修复让已存在的 mandatory menu recovery 在 continuation、collection membership 与策略选择之前执行，并继续复用唯一 DailyPlanCompiler、ActionQueueCompiler 和 Product Executor。它只形成 control queue，不生成 Teacher preference 标签，也不解除正式训练门。验证为聚焦 `11/11`、GameFreeGovernance `521/521`、Release build 零警告零错误。
+- v71 尾部不可跨未保存边界续接。下一施工单元为全新 v72 day-zero 校准：先原生证明钓鱼奖励恢复被 Stage One 接管、菜单未关闭前不派发 Crop Teacher，再继续首次登岛、核桃来源增量、First Parrot/Turtle/House、source schedule 生成与独立重放；#345 完成前不启动模型参数训练。

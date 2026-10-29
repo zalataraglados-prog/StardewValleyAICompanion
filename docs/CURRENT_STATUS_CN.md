@@ -650,3 +650,10 @@ formal training manifest 之前必须完成两件事：
 - iteration `149` 的满包恢复暴露确定性 Teacher 排序错误：现场同时存在两个可立即腾格的单件鱼和一个 `20` 件木材栈，但旧规则先奖励 Full Shipment contribution，导致木材被逐件投箱直到清空。PR #360 已把排序改为先最小化释放一个背包格所需的原生单件动作数，再比较 Full Shipment、价值、时间和稳定 ID；既有 `economy.ship_items` 单件原生执行器与回执协议不变，没有新增第二套出货系统。
 - 修复验证为容量恢复专项 `12/12`、GameFreeGovernance `510/510`、LiveTrainingLoop Release `0 warning / 0 error`，并已合并到 `main`。v70 使用旧预构建二进制，在确认缺陷后停止；停止点晚于最近一次原生保存，尾部只作诊断，不能续接正式 corpus。
 - 下一固定入口是以合并后代码启动全新 day-zero v71，先确认容量恢复直接选择最短 singleton，再继续首次登岛 -> 来源增量 -> First Parrot -> Turtle -> House -> source schedule 生成/独立重放。#345 Provider/Student 门完成前仍必须使用 `--skip-training`，`formal_product_training_authorized=false`。
+
+## 26. 2026-10-30 v71 singleton 实证与强制菜单恢复编排
+
+- v71 `golden-walnut-source-schedule-v71-20261030-slot-efficiency` 继续显式使用 `--skip-training`，累计 `151` 条 verified Product action；没有更新 Student 参数、生成 checkpoint 或执行 GPU 训练。iteration `149` 的真实排名在多个可出货栈之间选择 `(O)92 x1`，记录 `selection_reason=available_unprotected_singleton`，原生执行把库存与槽位从 `1 -> 0`、出货箱从 `0 -> 1`；iteration `150` 随即完成 `8/8` 收获。PR #360 的最短腾格排序因此已获得原生证明。
+- iteration `162` 的原生钓鱼队列完成跨图和站位后，在满包奖励结算处正确打开 essential `ItemGrabMenu`。iteration `165` 的统一排名已经给出可用的 `recovery.stabilize_day / recovery_claim_fishing_item_grab_reward`，并精确授权丢弃 `(O)388 x6`；但 Stage One collection 旧逻辑先按四类 collection membership 过滤，错误返回 `blocked_no_current_collection_candidate` 并让出控制。shared daily plan 随后派发 Crop Teacher，路线编译器因菜单仍开启而正确失败关闭，连续五次错误后受控退出。
+- 修复没有新增钓鱼、库存、路线或执行器。Stage One 在 continuation/membership/策略选择之前只识别已存在且可用的强制菜单恢复候选，继续通过唯一 DailyPlanCompiler、ActionQueueCompiler 和 Product Executor 执行；该队列只记为 control，明确 `teacher_preference_label_eligible=false`、`formal_training_authorized=false`。聚焦恢复回归 `11/11`、完整 GameFreeGovernance `521/521`、LiveTrainingLoop Release `0 warning / 0 error`。
+- v71 的失败尾部没有跨原生保存边界，不能跨进程拼接或升级为正式 corpus。下一固定入口是全新 day-zero v72：先证明钓鱼奖励恢复被记录为 `stage_one_collection_control_queue_compiled`，且 `ItemGrabMenu` 未关闭前不会再次派发 Crop Teacher；随后继续首次登岛 -> 来源增量 -> First Parrot -> Turtle -> House -> source schedule 生成/独立重放。#345 Provider/Student 门完成前继续 `--skip-training`，正式训练仍未开始。

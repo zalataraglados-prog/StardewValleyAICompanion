@@ -66,6 +66,7 @@
     <Compile Include="FishingTerminalProbabilityEvaluatorTests.cs" />
     <Compile Include="FishingTerminalProbabilitySnapshotProjectorTests.cs" />
     <Compile Include="FishingAttemptBudgetPolicyTests.cs" />
+    <Compile Include="FishingItemGrabRewardRecoveryTests.cs" />
     <Compile Include="CropHarvestBudgetPolicyTests.cs" />
     <Compile Include="CropHarvestSourceIdentitySourceGuardTests.cs" />
     <Compile Include="FarmSitePreparationCandidateTests.cs" />
@@ -92,6 +93,7 @@
     <Compile Include="ExecutorInputLifecycleSourceGuardTests.cs" />
     <Compile Include="MovementTimingEvidenceSourceGuardTests.cs" />
     <Compile Include="NativeControlSettleRecoveryTests.cs" />
+    <Compile Include="StageOneMandatoryMenuRecoveryTests.cs" />
     <Compile Include="GrandpaDirectionCatalogGovernanceTests.cs" />
     <Compile Include="WildTreeTapperOutputSourceGuardTests.cs" />
     <Compile Include="WildTreeChopAcquisitionMainlineTests.cs" />
