@@ -2735,3 +2735,11 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - 第二个断点发生在睡醒后的短暂原生控制交接：校准与 native gate 已开放、菜单/事件/工具/warp 均关闭，但 `CanMove=false` 且 route timing 暂不可用。PR #348 只在这一精确状态编译一次 `30` tick 等待并 fresh 重规划；该等待进入 no-progress 退避，不计有效训练动作。
 - v61 已存在不可补写的 episode 缺口，只保留为诊断，不得重建为正式 corpus。下一固定入口是全新 v62 day-zero 隔离长跑；退出条件依次为：复现并通过剧情中断连续性、通过 native-control settle、保持零未验证执行，随后继续首次登岛 -> 核桃来源增量 -> First Parrot -> Turtle -> House -> source schedule 生成与独立重放。#345 仍生效，运行必须使用 `--skip-training`，`formal_product_training_authorized=false`。
 - v62 启动前的夜间降载修正已闭合：产品校准脚本现在显式设置并恢复 `STARDEWAI_SUPPRESS_LOCAL_RENDER=1`，RuntimeTestHarness 的既有 Draw/SaveGameMenu 补丁同时覆盖 headless training，而不影响普通可见游戏。短原生 smoke `headless-training-render-suppression-20261029` 为 passed，日志确认本地 Draw 被抑制、stderr 为零、原生新档提交成功且全部进程/端口回收；该 smoke 不构成 source schedule 或训练证据。
+
+## 2026-10-29 v63-v65 节日长等待闭环
+
+- v63 从独立 day-zero 新档运行 `208` 次迭代并取得 `155` 条 verified action，推进到 Spring 13 / total day 12。Stage One collection 在 Egg Festival 普通 Town transit 于 `14:10` 前关闭时正确让权，但共享日计划把所有 `AllowedToday=true / NextOpenTime=1410` 候选过滤为空；连续八轮得到 `empty_action_list` 后结构化停止。
+- 根因是 `EventCandidateTimelineScheduler` 的默认等待预算固定为 `21600` ticks（6 游戏小时），而 `06:40 -> 14:10` 需要 `27000` ticks。PR #352 把**默认**预算改为当前时刻到 `19:00` autonomous recovery 窗口的剩余时间；显式调用者给出的硬上限仍原样生效。ready-now 候选仍排在 deferred 之前，DailyPlan 仍只编译单个 `600` tick 滚动等待并 fresh 重规划，因此不会整天盲等或抢占可立即执行的工作。节日路径聚焦回归 `8/8`、GameFreeGovernance Core `503/503` 通过。
+- v64 尝试从 v63 的白天存档直接续跑时，被 day-zero initial-boundary validator 正确拒绝。跨进程重载只能回到最近一次原生保存边界，不能把 Spring 13 内存态拼接成连续 fresh-save corpus；该尝试没有接纳 episode，相关进程和端口已完整回收。
+- v65 随后从新的 day-zero 隔离存档启动，并复用已验证的预构建二进制降低启动开销。截至 iteration `117`，耐久链已推进到 Spring 13 `15:00`、三类 stderr 均为零；iteration `112-113` 为单步 `executor.wait_ticks`，`14:10` 开放后 iteration `114-116` 自动切换为 `executor.traverse_connector`，iteration `117` 继续移动/显式清障。该结果真实关闭 v63 的长等待阻塞，而不是只证明单元测试。
+- v65 仍在后台继续运行。下一退出条件不变：保持同一 day-zero 连续链，继续首次登岛 -> 来源增量 -> First Parrot -> Turtle -> House -> source schedule 生成与独立重放；#345 的 Provider/Student 门完成前继续使用 `--skip-training`，`formal_product_training_authorized=false`。

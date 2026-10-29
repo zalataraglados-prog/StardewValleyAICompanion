@@ -1384,3 +1384,9 @@ episode continuity 只比较稳定进度，不再要求包含当前位置、支�
 v61 已把 day-zero 前缀推进到 Spring 23 / total day 22、`295` 条 verified Product action，并自然通过钓鱼奖励恢复；它仍没有首次登岛。运行暴露的两个缺口都属于既有控制/证据链，不新增动作系统：PR #348 用精确 `30` tick wait 处理睡醒后 native gate 已开但 `CanMove` 尚未恢复的瞬态；PR #349 将已验证队列进展与整个候选完成分开，避免成功剧情中断因候选未完成而丢失 episode。重复 settle wait 不计进展，不完整候选不进入政策监督，Golden Walnut continuity 的 `24` tick 硬门不变。
 
 后续不得续接 v61 或补写缺失 episode。唯一顺序为：全新 v62 day-zero -> 剧情中断连续性复核 -> native-control settle 复核 -> 首次登岛 -> 逐来源核桃增量 -> First Parrot -> Turtle -> House -> source schedule 生成 -> 独立重放 -> 正式准入复核。#345 要求的 Provider/Student 门完成前一律 `--skip-training`；这些 runtime 修复不改变任何正式 coverage 分子。
+
+## 历史记录 · 2026-10-29 v63-v65 节日门后的固定续行顺序
+
+v63 在 Spring 13 `06:40` 证明唯一剩余阻塞不是动作缺失，而是统一 timeline scheduler 的默认 6 小时等待预算短于 `06:40 -> 14:10` 节日关闭窗口。PR #352 将默认预算改为当前时刻到 `19:00` 的剩余时间，同时保留 ready-now 优先、显式硬上限和单个 `600` tick rolling wait。v65 的真实 day-zero 链已在 iteration `112-113` 等待，并于开放后在 `114-116` 自动恢复连接器，iteration `117` 继续移动/清障；Spring 13 `15:00` 快照和零 stderr 证明该门已跨越。
+
+v64 的直接续跑被 day-zero validator 拒绝，因此计划继续禁止把未保存白天内存态跨进程拼接。当前唯一施工顺序是让同一 v65 连续链继续：首次登岛 -> 来源增量 -> First Parrot -> Turtle -> House -> source schedule 生成 -> 独立重放 -> #345 Provider/Student 定型 -> 正式准入复核。v65 在上述终态前停止或产生 continuity 缺口时，只能保留为诊断并从新 day-zero 重跑；不得关闭验证器或手工回填。

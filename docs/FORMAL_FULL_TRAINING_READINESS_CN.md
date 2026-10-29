@@ -1328,3 +1328,9 @@ v61 将独立新档推进到 Spring 23 / total day 22，累计 `295` 条 verifie
 PR #349 仅修正证据分类：所有已执行步骤均训练可验证且 after snapshot 新鲜时，聚合回执保留 `status=applied / queue_progress_verified=true`；只有唯一末步完成标记存在时才写 `selected_candidate_completed=true / success=true`。因此中断动作可进入 executor calibration episode，但不完整候选仍被政策轨迹 admission 拒绝。连续性 verifier 的 `24` tick 上限保持不变。
 
 PR #348 同时为睡醒后的精确 transient native-control 状态增加单次 `30` tick recovery wait；该等待必须 fresh 重规划并进入 no-progress 退避，不计正式训练进展。下一准入运行固定为全新 v62 day-zero，并继续使用 `--skip-training`：先证明剧情中断 episode 无缺口与 control settle 可恢复，再继续首次登岛、来源增量、First Parrot/Turtle/House、source schedule 生成和独立重放。完成前 #345 和 `formal_product_training_authorized=false` 均保持。
+
+## 历史记录 · 2026-10-29 v63-v65 节日等待证据边界
+
+v63 在 Spring 13 `06:40` 因统一 timeline scheduler 的固定 6 小时默认等待预算无法覆盖 `14:10` 节日 transit 开放点而停止。PR #352 将默认预算绑定到当前时刻至 `19:00` autonomous recovery 窗口；显式硬上限仍保持，ready-now 候选优先，执行仍只发出单个 `600` tick rolling wait 后 fresh 重规划。聚焦回归 `8/8`、GameFreeGovernance Core `503/503` 通过。
+
+v64 直接重载 v63 白天存档时被 day-zero initial-boundary validator 拒绝，证明未跨原生保存边界的内存态不得拼接到正式 fresh-save corpus。v65 从新的 day-zero 身份重跑并在 iteration `112-113` 等待，`14:10` 后于 `114-116` 恢复连接器，iteration `117` 继续移动/清障；最新已到 Spring 13 `15:00`，stderr 为零。该结果仅关闭节日调度阻塞，尚未证明首次登岛、来源增量、三项鹦鹉工程或 source schedule，故所有正式准入分子与 `formal_product_training_authorized=false` 保持；#345 的 Provider/Student 门仍必须在正式训练前独立完成。
