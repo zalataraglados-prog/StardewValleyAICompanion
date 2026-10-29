@@ -25,6 +25,16 @@ public sealed partial class ModEntry
                    StringComparison.Ordinal);
     }
 
+    private static bool ShouldSuppressLocalRendering()
+    {
+        return string.Equals(
+                   Environment.GetEnvironmentVariable(
+                       "STARDEWAI_SUPPRESS_LOCAL_RENDER"),
+                   "1",
+                   StringComparison.Ordinal) &&
+               (IsVanillaAiHostMode() || IsHeadlessTrainingRuntime());
+    }
+
     private void OnHeadlessTrainingSaveLoaded(
         object? sender,
         StardewModdingAPI.Events.SaveLoadedEventArgs e)
