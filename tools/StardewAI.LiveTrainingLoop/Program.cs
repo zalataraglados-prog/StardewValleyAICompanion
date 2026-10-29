@@ -1238,6 +1238,16 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 completedCandidateRepresentative is not null;
             if (!primitiveVerified)
             {
+                WriteGoldenWalnutUnverifiedContinuityEpisodes(
+                    options,
+                    iteration,
+                    snapshotPath,
+                    modelPlanPath,
+                    queuePath,
+                    queue,
+                    execution,
+                    lastStateHash,
+                    lastQueueId);
                 var unverifiedDecision =
                     unverifiedExecutionBackoff.ObserveUnverifiedExecution(
                         queue,

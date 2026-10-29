@@ -401,6 +401,49 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void GoldenWalnutUnverifiedBranchWritesContinuityEpisodesBeforeReturning()
+    {
+        var root = FindRepositoryRoot();
+        var programSource = File.ReadAllText(Path.Combine(
+            root,
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.cs"));
+        var datasetSource = File.ReadAllText(Path.Combine(
+            root,
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.Dataset.cs"));
+
+        var branchStart = programSource.IndexOf(
+            "if (!primitiveVerified)",
+            StringComparison.Ordinal);
+        var branchEnd = programSource.IndexOf(
+            "continue;",
+            branchStart,
+            StringComparison.Ordinal);
+        Assert.True(branchStart >= 0 && branchEnd > branchStart);
+        Assert.Contains(
+            "WriteGoldenWalnutUnverifiedContinuityEpisodes(",
+            programSource[branchStart..branchEnd],
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "EpisodeId = \"episode.continuity.\" + Guid.NewGuid().ToString(\"N\")",
+            datasetSource,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "AppendJsonl(",
+            datasetSource[
+                datasetSource.IndexOf(
+                    "private static void WriteGoldenWalnutUnverifiedContinuityEpisodes(",
+                    StringComparison.Ordinal)..
+                datasetSource.IndexOf(
+                    "private static JsonObject? FindQueueItemForExecution(",
+                    StringComparison.Ordinal)],
+            StringComparison.Ordinal);
+    }
+
     private static string FindRepositoryRoot()
     {
         var directory = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
