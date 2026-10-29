@@ -1416,3 +1416,9 @@ v68 已在同一 day-zero 新档中完成两轮作物、节日等待、满包恢
 唯一修复位于现有主循环早退边界。Golden Walnut 捕获模式在未验证 aggregate 返回前生成不写数据集的 `episode.continuity.*` 元数据，并调用同一个逐项 episode/耐久 archive 流程；普通运行、成功执行训练行、候选、编译器和 Runtime Harness 均不改变。失败见证仍不能贡献来源增量、解锁日或策略监督，manifest/schedule builder 继续检查姜岛与核桃稳定投影及原 `24`/`360` tick 边界。
 
 下一施工顺序固定为：提交修复 -> 全新 v69 day-zero -> 在部分成功或失败聚合处验证连续 alias -> manifest v3 严格重建 -> occupied-start 出口真实命中或自然越过 -> 首次登岛 -> 来源增量 -> First Parrot -> Turtle -> House -> source schedule 生成 -> 独立重放 -> #345 Provider/Student 门 -> 正式准入复核。禁止续接 v68、手工补写 `00000154` 或把 continuity-only episode 加入政策训练数据。
+
+## 历史记录 · 2026-10-30 v69 manifest v3 原生闭环
+
+v69 在新 day-zero 存档的 iteration `316` 原生复现了八项收获一项成功、七项 blocked 的部分聚合。新调用顺序为全部八个子项生成了 continuity-only 耐久 alias，且没有增加校准数据行；容量恢复后又在同一轮完成余下收获。停止后从 `494` 个耐久 episode 严格重建 manifest v3 通过，source-schedule builder 只因缺少首次登岛原生跃迁而失败。
+
+该运行在最后 `8/8` 收获后、下一次原生睡眠之前手工停止，所以不得声称末尾已持久化到存档。下一顺序调整为：从最近保存边界有界恢复 -> 丢弃并重结算 volatile 回执 -> 原生保存 -> 首次登岛 -> 来源增量 -> First Parrot -> Turtle -> House -> source schedule 生成/独立重放 -> #345 Provider/Student 定型 -> 正式准入复核。manifest v3 连续性不再是开放缺口，正式训练仍未开始。

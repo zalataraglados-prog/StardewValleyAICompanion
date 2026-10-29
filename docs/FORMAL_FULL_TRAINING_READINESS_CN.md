@@ -1336,3 +1336,9 @@ v63 在 Spring 13 `06:40` 因统一 timeline scheduler 的固定 6 小时默认�
 v64 直接重载 v63 白天存档时被 day-zero initial-boundary validator 拒绝，证明未跨原生保存边界的内存态不得拼接到正式 fresh-save corpus。v65 从新的 day-zero 身份重跑，越过 Spring 13 节日门并最终到达 Spring 22 / total day 21，留下 `265` 条耐久 episode。末次 manifest 构建暴露 episode `279 -> 281` 的 `335` tick 剧情暂停交接；两侧同日同分钟、同地图同格，金钱、能量、生命、工具、背包及岛屿/核桃进度均完全相同。验证器只为成功且 primitive verified 的 `executor.advance_story_event` 增加最大 `360` tick 的稳定状态交接，普通窗口仍为 `24` tick，任何玩家或进度变化仍失败关闭。聚焦测试 `5/5`、Core governance `508/508` 通过。
 
 修复后正式 builder 已对 v65 重建 `265/265` episode 的合法 manifest；source-schedule 构建只因缺少原生首次登岛 transition 而失败。该结果不增加任何正式准入分子，也不允许跨进程续接 v65 的未保存内存态。下一准入运行必须从新 day-zero v66 开始，完成首次登岛、来源增量、First Parrot/Turtle/House、schedule 生成和独立重放；`formal_product_training_authorized=false` 与 #345 Provider/Student 门保持。
+
+## 历史记录 · 2026-10-30 v69 严格 manifest v3 准入结论
+
+v69 对上一轮的 early-return 连续性修复给出了真实游戏证据：iteration `316` 的八项收获中只有一项 verified，七项因背包容量 blocked，但八个子项都产生耐久 continuity alias，并且零行进入政策训练数据。离线正式 builder 严格接纳 `494` 个 episode 并生成 `golden_walnut_fresh_save_episode_manifest.v3`；同一 manifest 只在首次登岛原生 transition 处失败 source-schedule 构建。
+
+这一结果只关闭 manifest v3 的连续性基础设施缺口，不增加 criterion、Teacher comparison/native outcome 或政策训练分子。v69 全程使用 `--skip-training`，且最后一轮收获后未再跨原生保存边界。下一准入步骤是对最近耐久保存做有界回放和原生保存，随后继续首次登岛与核桃来源日程。#345 完成前 `formal_product_training_authorized=false` 保持。

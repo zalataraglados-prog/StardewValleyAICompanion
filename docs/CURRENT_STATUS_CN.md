@@ -635,3 +635,10 @@ formal training manifest 之前必须完成两件事：
 - v68 证明成功多步骤聚合会生成逐项 episode 与耐久 archive，但也暴露调用顺序遗漏。iteration `154` 已原生收获一格并写入收获 ledger，余项因容量不足令聚合结果为 blocked；控制器随后恢复并在 iteration `161` 完成剩余 `7` 格。耐久目录存在 `155`、`161` 等逐项 alias，却不存在任何 `00000154` alias，因为主循环在 aggregate `primitiveVerified=false` 时先 `continue`，没有调用已经支持失败见证的逐项写入器。该缺口仍会造成 `153 -> 155` 未观测间隙，因此 v68 被主动安全中断，不能生成或冒充合法 manifest/source schedule。
 - 修复不改变训练数据或执行器：仅在 Golden Walnut 捕获模式的未验证早退分支生成 `episode.continuity.*` 元数据，`RowId` 为空、`BytesWritten=0`，不调用 `AppendJsonl`；随后复用唯一 `WritePlanExecutionEpisode`。fresh 成功子步骤继续归档为成功原生 episode，fresh 失败子步骤继续只作 continuity witness，stale 项仍不进入耐久 archive。聚焦源码守卫 `8/8`、完整 GameFreeGovernance `510/510`、LiveTrainingLoop Release `0 warning / 0 error`。
 - 下一固定步骤是提交该修复并从全新 day-zero 身份启动 v69。v69 必须证明失败或部分成功聚合也留下连续耐久 alias，并最终由 manifest v3 通过严格 `24`/剧情 `360` tick 校验；随后继续真实 occupied-start 出口、首次登岛、来源增量、First Parrot、Turtle、House、source schedule 生成与独立重放。v68 诊断前缀不得续接或进入正式 corpus，全部运行继续 `--skip-training`，#345 仍阻止正式训练。
+
+## 24. 2026-10-30 v69 失败聚合连续性闭环
+
+- v69 `golden-walnut-source-schedule-v69-20261029-unverified-continuity` 从全新 `ProofFarm_452964027` day-zero 存档运行到 Spring 22 / iteration `327`，留下 `263` 个 verified Product action。三轮 Crop Teacher 分别完成 `6/6`、`8/8`、`8/8` 收获；任务、钓鱼、路线、背包恢复、剧情中断和原生跨日都在同一运行出现，三个 stderr 始终为空。
+- iteration `316` 精确复现部分成功聚合：八个收获子项中首项成功，其余七项因背包容量阻塞。耐久目录生成了全部 `8` 个 `episode.continuity.*` alias，其中 `1` 个 verified、`7` 个 blocked；全部 `row_id` 为空，校准 JSONL 行数不增加，因此连续性见证没有冒充政策训练数据。后续容量恢复完成了余下七格，iteration `327` 达到 `crop_teacher_run_complete`。
+- 异常退出后的正式离线 builder 已从 `live-snapshots` 重建 `golden_walnut_fresh_save_episode_manifest.v3`：严格接纳 `494` 个 episode，包含 iteration `316` 的八个 alias。source-schedule builder 随后只以 `Fresh-save episodes do not contain the native first-island-arrival transition.` 失败，证明 v68 的未观测间隙已关闭，真实下一缺口回到首次登岛。
+- 本轮在第三轮作物完成后人工停止，没有再跨一个睡眠/保存边界，因此不声称最后八格收获已写入原生存档。下一固定步骤是从最近原生保存边界做有界回放，丢弃必要的 volatile 回执并重结算后先原生保存，再继续首次登岛 -> 来源增量 -> First Parrot -> Turtle -> House -> source schedule 生成/独立重放。本轮全程 `--skip-training`，#345 仍阻止正式训练。
