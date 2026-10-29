@@ -642,3 +642,11 @@ formal training manifest 之前必须完成两件事：
 - iteration `316` 精确复现部分成功聚合：八个收获子项中首项成功，其余七项因背包容量阻塞。耐久目录生成了全部 `8` 个 `episode.continuity.*` alias，其中 `1` 个 verified、`7` 个 blocked；全部 `row_id` 为空，校准 JSONL 行数不增加，因此连续性见证没有冒充政策训练数据。后续容量恢复完成了余下七格，iteration `327` 达到 `crop_teacher_run_complete`。
 - 异常退出后的正式离线 builder 已从 `live-snapshots` 重建 `golden_walnut_fresh_save_episode_manifest.v3`：严格接纳 `494` 个 episode，包含 iteration `316` 的八个 alias。source-schedule builder 随后只以 `Fresh-save episodes do not contain the native first-island-arrival transition.` 失败，证明 v68 的未观测间隙已关闭，真实下一缺口回到首次登岛。
 - 本轮在第三轮作物完成后人工停止，没有再跨一个睡眠/保存边界，因此不声称最后八格收获已写入原生存档。下一固定步骤是从最近原生保存边界做有界回放，丢弃必要的 volatile 回执并重结算后先原生保存，再继续首次登岛 -> 来源增量 -> First Parrot -> Turtle -> House -> source schedule 生成/独立重放。本轮全程 `--skip-training`，#345 仍阻止正式训练。
+
+## 25. 2026-10-30 v70 校准长跑与容量恢复排序修正
+
+- fresh-save source schedule 不能跨进程拼接，v69 最近保存边界也不包含末轮收获，因此没有把有界恢复伪装成连续新档证据。v70 `golden-walnut-source-schedule-v70-20261030-full-run` 改从新的 day-zero 存档运行，全程显式 `--skip-training`；它是 Teacher/执行器校准，不更新模型参数、不生成 checkpoint，也不使用 GPU 训练。
+- v70 到 Spring 17 / iteration `189` 时累计 `173` 条 verified Product action，完成 `6/6` 花椰菜和 `8/8` 防风草两轮原生收获，越过 Egg Festival 等待并进入普通钓鱼/Stage One collection；三个 stderr 为空。它仍未首次登岛，不能生成 Golden Walnut source schedule。
+- iteration `149` 的满包恢复暴露确定性 Teacher 排序错误：现场同时存在两个可立即腾格的单件鱼和一个 `20` 件木材栈，但旧规则先奖励 Full Shipment contribution，导致木材被逐件投箱直到清空。PR #360 已把排序改为先最小化释放一个背包格所需的原生单件动作数，再比较 Full Shipment、价值、时间和稳定 ID；既有 `economy.ship_items` 单件原生执行器与回执协议不变，没有新增第二套出货系统。
+- 修复验证为容量恢复专项 `12/12`、GameFreeGovernance `510/510`、LiveTrainingLoop Release `0 warning / 0 error`，并已合并到 `main`。v70 使用旧预构建二进制，在确认缺陷后停止；停止点晚于最近一次原生保存，尾部只作诊断，不能续接正式 corpus。
+- 下一固定入口是以合并后代码启动全新 day-zero v71，先确认容量恢复直接选择最短 singleton，再继续首次登岛 -> 来源增量 -> First Parrot -> Turtle -> House -> source schedule 生成/独立重放。#345 Provider/Student 门完成前仍必须使用 `--skip-training`，`formal_product_training_authorized=false`。

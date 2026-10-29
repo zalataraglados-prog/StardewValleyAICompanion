@@ -2751,3 +2751,9 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - v69 从新 day-zero 存档运行到 Spring 22，累计 `327` 次迭代、`263` 个 verified Product action。iteration `316` 的八项收获中一项成功、七项因容量 blocked，已真实产生八个 continuity-only 耐久 alias，不写政策数据；旧 early-return 证据空洞因此关闭。
 - 离线 builder 已从停止后的耐久目录生成 `golden_walnut_fresh_save_episode_manifest.v3`，严格接纳 `494` 个 episode，包含上述八个别名。同一 manifest 构建 source schedule 时只因缺少原生首次登岛 transition 而失败，不再是连续性或快照错误。
 - 停止点在第三轮 `8/8` 收获完成后，但未再跨原生睡眠/保存边界。下一唯一施工单元是从最近耐久保存恢复的有界回放：重结算必要的 volatile 收获，先完成原生保存，再继续首次登岛与核桃 source schedule。仍使用 `--skip-training`，不改变任何正式训练准入分子。
+
+## 2026-10-30 v70 校准结果与下一施工单元
+
+- v69 的未保存尾部不能跨进程升级为 fresh-save corpus，因此 v70 直接采用新的 day-zero 身份；这是对上一节“先有界回放”表述的修正。v70 运行到 Spring 17 / iteration `189`，取得 `173` 条 verified Product action、两轮完整作物收获、节日 transit 和 Stage One 钓鱼前缀，但仍没有首次登岛。
+- 真实排名工件证明容量恢复把 Full Shipment contribution 错排在腾格效率之前：`20` 木材压过两个 singleton，形成 20 次原生单件出货。PR #360 只调整同一 `StageOneInventoryCapacityRecovery` 的候选顺序，优先最少 native deposit 次数；候选、编译器、产品执行器和回执均继续复用现有单一路径。
+- v70 在缺陷归因后停止，未保存尾部不续接。下一施工单元为全新 v71：用合并后代码复核 singleton 恢复，然后继续首次登岛和 Golden Walnut source schedule。运行仍为 `--skip-training` 的校准采证，不是模型训练。

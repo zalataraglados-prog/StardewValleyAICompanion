@@ -1342,3 +1342,9 @@ v64 直接重载 v63 白天存档时被 day-zero initial-boundary validator 拒�
 v69 对上一轮的 early-return 连续性修复给出了真实游戏证据：iteration `316` 的八项收获中只有一项 verified，七项因背包容量 blocked，但八个子项都产生耐久 continuity alias，并且零行进入政策训练数据。离线正式 builder 严格接纳 `494` 个 episode 并生成 `golden_walnut_fresh_save_episode_manifest.v3`；同一 manifest 只在首次登岛原生 transition 处失败 source-schedule 构建。
 
 这一结果只关闭 manifest v3 的连续性基础设施缺口，不增加 criterion、Teacher comparison/native outcome 或政策训练分子。v69 全程使用 `--skip-training`，且最后一轮收获后未再跨原生保存边界。下一准入步骤是对最近耐久保存做有界回放和原生保存，随后继续首次登岛与核桃来源日程。#345 完成前 `formal_product_training_authorized=false` 保持。
+
+## 历史记录 · 2026-10-30 v70 仍属校准而非正式训练
+
+v70 因 fresh-save 证据禁止跨进程拼接而从新 day-zero 身份启动，命令继续携带 `--skip-training`。运行没有更新 Student 参数、没有产生模型 checkpoint，也没有使用 GPU 训练；`173` 条 verified action 只用于 Teacher/执行器校准和连续证据诊断。
+
+该轮暴露容量恢复会为了 Full Shipment contribution 逐件排空 `20` 木材、忽略现成 singleton。PR #360 已在同一确定性恢复器中改为优先最少腾格动作，并通过专项 `12/12`、治理 `510/510` 和零警告构建。此修复不增加任何正式准入分子；v70 未首次登岛且尾部未跨原生保存，不能作为 source schedule 或正式 corpus。下一准入运行必须是合并修复后的全新 v71，#345 完成前仍为 `formal_product_training_authorized=false`。

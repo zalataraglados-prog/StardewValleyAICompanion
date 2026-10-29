@@ -1422,3 +1422,9 @@ v68 已在同一 day-zero 新档中完成两轮作物、节日等待、满包恢
 v69 在新 day-zero 存档的 iteration `316` 原生复现了八项收获一项成功、七项 blocked 的部分聚合。新调用顺序为全部八个子项生成了 continuity-only 耐久 alias，且没有增加校准数据行；容量恢复后又在同一轮完成余下收获。停止后从 `494` 个耐久 episode 严格重建 manifest v3 通过，source-schedule builder 只因缺少首次登岛原生跃迁而失败。
 
 该运行在最后 `8/8` 收获后、下一次原生睡眠之前手工停止，所以不得声称末尾已持久化到存档。下一顺序调整为：从最近保存边界有界恢复 -> 丢弃并重结算 volatile 回执 -> 原生保存 -> 首次登岛 -> 来源增量 -> First Parrot -> Turtle -> House -> source schedule 生成/独立重放 -> #345 Provider/Student 定型 -> 正式准入复核。manifest v3 连续性不再是开放缺口，正式训练仍未开始。
+
+## 历史记录 · 2026-10-30 v70 后的固定续行顺序
+
+v69 最近保存边界不含末轮收获，且 fresh-save source schedule 不允许跨进程拼接，因此 v70 采用全新 day-zero 身份，取代“有界恢复后继续同一 corpus”的旧计划。v70 在 Spring 17 / iteration `189` 已有 `173` 条 verified Product action和两轮作物收获，但没有首次登岛；它始终使用 `--skip-training`，属于产品校准而非模型训练。
+
+v70 真实暴露容量恢复排序把 Full Shipment contribution 置于即时腾格之前，造成 `20` 木材逐件出货。PR #360 已在唯一 `StageOneInventoryCapacityRecovery` 中优先最少原生单件动作，保留现有候选、编译器、执行器和回执。当前固定顺序为：全新 v71 day-zero -> singleton 容量恢复原生复核 -> 首次登岛 -> 来源增量 -> First Parrot -> Turtle -> House -> source schedule 生成 -> 独立重放 -> #345 Provider/Student 定型 -> 正式准入复核。不得续接 v70 未保存尾部，也不得把校准行声明为训练结果。
