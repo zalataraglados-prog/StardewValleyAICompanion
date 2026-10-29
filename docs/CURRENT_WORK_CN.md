@@ -2745,3 +2745,9 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - v65 最终运行 `356` 次 primary attempt，留下 `265` 条耐久 episode，并推进到 Spring 22 / total day 21；作物 Teacher 的首日、整轮、一次重规划、`8` 条收获回执和 `4` 条日界回执均完成。运行在 episode `279` 的 verified `executor.advance_story_event` 与 episode `281` 的 `executor.water_crop` 之间暴露 `335` tick 控制器暂停交接。两侧保持同日 `06:00`、Farm `(64,15)`、`403g`、`270` energy、`100` health、Watering Can 和逐项相同背包，岛屿/核桃进度也完全相同；这不是未记账游戏进展。
 - 连续性验证器现只为上述已验证剧情动作增加最大 `360` tick 的窄交接：前一动作必须是成功且 primitive verified 的 `executor.advance_story_event`，下一条必须是成功 executor episode，并且存档/玩家、日与分钟、地点/格、金钱、能量、生命、工具、背包、姜岛与核桃进度全部相同。普通交接仍严格限制为 `24` tick，任何玩家移动、背包变化、岛屿进度或超限都失败关闭。聚焦边界测试 `5/5`、GameFreeGovernance Core `508/508` 通过。
 - 使用修复后二进制对 v65 耐久目录重建，`265/265` episode 已形成合法 `golden_walnut_fresh_save_episode_manifest.v2`。随后 source-schedule builder 精确失败为 `Fresh-save episodes do not contain the native first-island-arrival transition.`，证明证据基础设施阻塞已关闭，真实缺口回到首次登岛。v65 已停止且不能跨进程拼接未保存内存态；下一运行必须是新的 day-zero v66，顺序仍为首次登岛 -> 来源增量 -> First Parrot -> Turtle -> House -> source schedule 生成与独立重放。#345 完成前继续 `--skip-training`，`formal_product_training_authorized=false`。
+
+## 2026-10-30 v69 部分成功聚合的严格证据闭环
+
+- v69 从新 day-zero 存档运行到 Spring 22，累计 `327` 次迭代、`263` 个 verified Product action。iteration `316` 的八项收获中一项成功、七项因容量 blocked，已真实产生八个 continuity-only 耐久 alias，不写政策数据；旧 early-return 证据空洞因此关闭。
+- 离线 builder 已从停止后的耐久目录生成 `golden_walnut_fresh_save_episode_manifest.v3`，严格接纳 `494` 个 episode，包含上述八个别名。同一 manifest 构建 source schedule 时只因缺少原生首次登岛 transition 而失败，不再是连续性或快照错误。
+- 停止点在第三轮 `8/8` 收获完成后，但未再跨原生睡眠/保存边界。下一唯一施工单元是从最近耐久保存恢复的有界回放：重结算必要的 volatile 收获，先完成原生保存，再继续首次登岛与核桃 source schedule。仍使用 `--skip-training`，不改变任何正式训练准入分子。
