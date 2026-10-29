@@ -2764,3 +2764,10 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - iteration `162` 的原生钓鱼在满包时打开 essential `ItemGrabMenu`。iteration `165` 的统一排名中已有可执行的 mandatory `recovery_claim_fishing_item_grab_reward`，但旧 Stage One membership 只接纳四类 collection 目标，因而先错误让出控制；后续 Crop Teacher 路线被仍开启的菜单正确拒绝。该断点是控制编排顺序缺口，不是缺候选、缺字段或缺执行器。
 - 当前修复让已存在的 mandatory menu recovery 在 continuation、collection membership 与策略选择之前执行，并继续复用唯一 DailyPlanCompiler、ActionQueueCompiler 和 Product Executor。它只形成 control queue，不生成 Teacher preference 标签，也不解除正式训练门。验证为聚焦 `11/11`、GameFreeGovernance `521/521`、Release build 零警告零错误。
 - v71 尾部不可跨未保存边界续接。下一施工单元为全新 v72 day-zero 校准：先原生证明钓鱼奖励恢复被 Stage One 接管、菜单未关闭前不派发 Crop Teacher，再继续首次登岛、核桃来源增量、First Parrot/Turtle/House、source schedule 生成与独立重放；#345 完成前不启动模型参数训练。
+
+## 2026-10-30 v72-v73 淡入控制交接修复与当前施工单元
+
+- v72 在 `--skip-training` 下取得 `176` 条 verified Product action 并推进到 Spring 9，最终由五次相同的 `future_route_movement_timing_context_outside_calibration_scope` 受控停止。真实快照证明这是日界后的精确淡入交接：校准兼容、路线 timing 未就绪、native gate 未开、`player_can_move_now=true`、`global_fade=true`，其余菜单/事件/工具/暂停/冻结/warp 条件全部关闭。
+- 唯一 `NativeControlSettleRecovery` 现并列接受两个精确且互斥的状态：原 post-sleep control gap，以及 v72 的 day-start fade control gap。两者都只产生一次 `30` tick 控制等待并 fresh 重规划；混合状态、缺字段或其他控制状态继续返回 null。聚焦测试 `10/10`、完整治理 `525/525`、Release build 零警告零错误。
+- v73 从 v72 的 Spring 9 保存边界隔离启动，完成 `2/2` verified action 和 Spring 9 -> 10 的原生保存，证明修改没有破坏容量恢复、Teacher 路线或保存边界。由于进程启动时淡入已经结束，v73 没有实时命中新分支，不能作为该分支的原生正向证据。
+- 当前 WIP 只做一个同进程日界回放，退出条件是日志同时证明 `ready_native_control_settle`、`executor.wait_ticks=30` 和 fresh 重规划，且不得写政策训练标签。满足后不再扩展 recovery，直接继续首次登岛、核桃增量、First Parrot、Turtle、House、source schedule 生成/重放与 Master Angler prerequisite audit。所有运行继续 `--skip-training`，#345 与 `formal_product_training_authorized=false` 保持。
