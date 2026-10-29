@@ -6,6 +6,7 @@ using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
 using StardewAI.Core.Execution;
+using StardewAI.Core.Training;
 using StardewAI.Core.Verifier;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
@@ -19,6 +20,14 @@ namespace StardewAI.Core.OptionRegistry
         {
             var candidates = new List<EventCandidate>();
             candidates.AddRange(FishingItemGrabRewardRecoveryCandidates(snapshot));
+            var nativeControlSettle =
+                NativeControlSettleRecovery.TryCreate(snapshot);
+            if (nativeControlSettle is not null)
+            {
+                candidates.Add(nativeControlSettle);
+                return candidates.ToArray();
+            }
+
             var time = ReadStateFieldInt(snapshot, "time", "time");
             var nativeSaveBoundaryRequired = string.Equals(
                 ReadParameter(

@@ -58,6 +58,24 @@ static partial class Program
             plainSnapshotPath,
             snapshotJson,
             new UTF8Encoding(false));
+        if (!capacityRecoveryOnly)
+        {
+            var nativeControlSettle =
+                await TryBuildNativeControlSettleQueueAsync(
+                    options,
+                    snapshotJson,
+                    stateHash,
+                    plainSnapshotPath,
+                    preferencePath,
+                    planPath,
+                    rankingPath,
+                    queuePath);
+            if (nativeControlSettle is not null)
+            {
+                return nativeControlSettle;
+            }
+        }
+
         JsonObject ranking;
         AvailabilityAwarePolicyPredictionEnvelope typedRanking;
         if (capacityRecoveryOnly)
