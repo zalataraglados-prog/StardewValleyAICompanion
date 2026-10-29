@@ -13,6 +13,9 @@ public sealed class HeadlessHostInputPumpSourceGuardTests
             "tools",
             "StardewAI.RuntimeTestHarness",
             "ModEntry.cs"));
+        var calibration = File.ReadAllText(FindRepositoryFile(
+            "scripts",
+            "Invoke-ProductBootstrapCalibration.ps1"));
 
         Assert.Contains("HeadlessMovementInputSimulator", source, StringComparison.Ordinal);
         Assert.Contains("STARDEWAI_SUPPRESS_LOCAL_RENDER", source, StringComparison.Ordinal);
@@ -20,6 +23,8 @@ public sealed class HeadlessHostInputPumpSourceGuardTests
         Assert.Contains("IsHeadlessTrainingRuntime()", source, StringComparison.Ordinal);
         Assert.Contains("OnHeadlessTrainingSaveLoaded", source, StringComparison.Ordinal);
         Assert.Contains("IsHeadlessTrainingRuntime()", entry, StringComparison.Ordinal);
+        Assert.Contains("ShouldSuppressLocalRendering()", entry, StringComparison.Ordinal);
+        Assert.Contains("IsVanillaAiHostMode() || IsHeadlessTrainingRuntime()", source, StringComparison.Ordinal);
         Assert.Contains("OnHeadlessTrainingSaveLoaded", entry, StringComparison.Ordinal);
         Assert.Contains("GameInputSimulatorField.SetValue(null, headlessInputPump)", source, StringComparison.Ordinal);
         Assert.Contains("EnsureHeadlessInputPump();", entry, StringComparison.Ordinal);
@@ -29,6 +34,14 @@ public sealed class HeadlessHostInputPumpSourceGuardTests
         Assert.Contains("moveLeftReleased = edges.ReleasedDirection == 3", source, StringComparison.Ordinal);
         Assert.DoesNotContain("actionButtonPressed =", source, StringComparison.Ordinal);
         Assert.DoesNotContain("Game1.player.Position =", source, StringComparison.Ordinal);
+        Assert.Contains(
+            "$env:STARDEWAI_SUPPRESS_LOCAL_RENDER = \"1\"",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$env:SDL_AUDIODRIVER = \"dummy\"",
+            calibration,
+            StringComparison.Ordinal);
     }
 
     private static string FindRepositoryFile(params string[] segments)

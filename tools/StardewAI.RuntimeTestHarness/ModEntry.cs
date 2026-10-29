@@ -226,11 +226,7 @@ public sealed partial class ModEntry : Mod
             postfix: new HarmonyMethod(
                 typeof(TreeToolTracePatch),
                 nameof(TreeToolTracePatch.Postfix)));
-        if (IsVanillaAiHostMode() &&
-            string.Equals(
-                Environment.GetEnvironmentVariable("STARDEWAI_SUPPRESS_LOCAL_RENDER"),
-                "1",
-                StringComparison.Ordinal))
+        if (ShouldSuppressLocalRendering())
         {
             var observerRenderIntervalMilliseconds = 0;
             var observerRenderIntervalText = Environment.GetEnvironmentVariable(
