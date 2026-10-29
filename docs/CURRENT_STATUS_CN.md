@@ -612,3 +612,11 @@ formal training manifest 之前必须完成两件事：
 - v64 对 v63 白天存档的直接续跑被 day-zero validator 拒绝，确认 fresh-save 证据不能跨未保存内存态拼接。v65 因此从新 day-zero 身份重跑；截至 iteration `117` 已到 Spring 13 `15:00`，iteration `112-113` 为等待，`114-116` 已恢复连接器，`117` 继续移动/清障，stderr 为零。该实证关闭本次运行阻塞，但尚未首次登岛或生成 source schedule。
 - v65 最终完成 `356` 次 primary attempt、`265` 条耐久 episode，并到达 Spring 22 / total day 21。episode `279` 的 verified `executor.advance_story_event` 与 episode `281` 的 `executor.water_crop` 之间存在 `335` tick 控制器暂停，但两侧同为 Spring 20 `06:00`、Farm `(64,15)`，金钱、能量、生命、当前工具、背包及岛屿/核桃进度逐项相同。验证器现只允许这种已验证剧情动作后的最大 `360` tick 静止交接；普通交接仍为 `24` tick，移动、资源或进度变化仍拒绝。聚焦边界测试 `5/5`、Core governance `508/508` 通过。
 - v65 的 `265/265` episode 已由正式 builder 重建为合法 manifest；source-schedule 随后只因缺少原生首次登岛 transition 而失败，未再出现连续性或快照错误。运行已停止，不能跨进程续接内存态；下一入口是全新 day-zero v66，继续首次登岛、核桃来源增量、三项鹦鹉跃迁、schedule 生成与独立重放。19 criterion、Teacher comparison/native outcome 分子和 `formal_product_training_authorized=false` 均不变，#345 仍阻止正式训练。
+
+## 21. 2026-10-29 v66 软障碍重叠断点与 v67 无回退前缀
+
+- v66 从独立 day-zero 新档推进到 total day 22，共启动 `408` 次尝试并留下 `289` 条 verified episode；三轮 Crop Teacher 分别形成 `6`、`8`、`8` 条收获回执，节日等待、剧情、钓鱼、容量恢复和滚动压缩均未回退。该轮仍未首次登岛，不能形成 Golden Walnut source schedule。
+- v66 的终止原因不是候选或字段缺失。Farm -> Forest 连接器在宠物占据 `(54,10)` 时先发生 native push-through；玩家从 `(55,11)` 部分进入该格后，下一请求把当前占用格当作必须重新居中的 path start，连续得到一次 `movement_stuck_or_collision_blocked` 和七次 `movement_path_start_centering_stuck_or_collision_blocked`，最终命中八次未验证执行上限。
+- 修复仍属于唯一通用移动状态机：普通偏心起步继续严格居中；只有当前格被 NPC/宠物占用且玩家偏离中心时，才以现有 BFS 重新规划 `avoidSoftObstacles=true`，取消本次不可实现的占用格居中，并通过原生方向输入沿新路径离开。实现不移动 NPC、不写玩家坐标、不瞬移，也不把可移除障碍清除重新塞回行走器。聚焦守卫 `16/16`、GameFreeGovernance `508/508`、Runtime Harness Release 构建零警告零错误。
+- post-fix v67 仍在后台隐藏静音运行。截至 iteration `410` 已取得 `348` 条 verified action，并继续通过 `411-412` 的 fresh 候选失效/continuation 释放；v66 在 `399-408` 的连续移动失败区间已不再出现，三个 stderr 为零。v67 此处走的是 Farm -> BusStop 等真实 Stage One 路线，并未复刻 v66 的同一宠物位置，因此该前缀只证明无回退与旧退出条件关闭，不冒充精确同轨复现或完整 source schedule。
+- v67 继续运行到首次登岛/source schedule 或下一个可归因的真实断点。所有动作仍使用 `--skip-training`；19 criterion、Teacher comparison/native outcome、root method 与 `formal_product_training_authorized=false` 均不改变。#345 Provider/Student 门完成前不得启动正式训练。
