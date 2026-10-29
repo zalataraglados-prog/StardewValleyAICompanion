@@ -838,34 +838,21 @@ static partial class Program
             options.EmitQueueExecutionReceipt)
         {
             var receiptSteps = stepResults.OfType<JsonObject>().ToArray();
-            var completionMarkerExact = receiptSteps.Length > 0 &&
-                receiptSteps[^1]["selected_queue_candidate_completed"]?
-                    .GetValue<bool>() == true &&
-                receiptSteps.Take(receiptSteps.Length - 1).All(step =>
-                    step["selected_queue_candidate_completed"]?
-                        .GetValue<bool>() != true);
-            var allStepsApplied =
-                receiptSteps.Length == originalPlannedItemCount &&
-                receiptSteps.All(step => string.Equals(
-                    ReadString(step, "status"),
-                    "applied",
-                    StringComparison.Ordinal));
-            var allSnapshotsFresh = receiptSteps.Length > 0 &&
-                receiptSteps.All(step =>
-                    step["after_snapshot_fresh"]?.GetValue<bool>() == true);
+            var receiptClassification =
+                QueueExecutionReceiptClassifier.Classify(receiptSteps);
             aggregate["schema_version"] = "queue_execution_receipt.v1";
             aggregate["run_id"] = options.RunId;
             aggregate["queue_id"] = originalQueueId;
             aggregate["source_state_hash"] = stateHash;
-            aggregate["after_snapshot_fresh"] = allSnapshotsFresh;
+            aggregate["after_snapshot_fresh"] =
+                receiptClassification.AllSnapshotsFresh;
             aggregate["selected_candidate_id"] = selectedCandidateId;
-            aggregate["selected_candidate_completed"] = completionMarkerExact;
-            aggregate["status"] = allStepsApplied && completionMarkerExact
-                ? "applied"
-                : "blocked";
-            aggregate["success"] = allStepsApplied &&
-                allSnapshotsFresh &&
-                completionMarkerExact;
+            aggregate["selected_candidate_completed"] =
+                receiptClassification.SelectedCandidateCompleted;
+            aggregate["queue_progress_verified"] =
+                receiptClassification.ExecutionProgressVerified;
+            aggregate["status"] = receiptClassification.Status;
+            aggregate["success"] = receiptClassification.Success;
             aggregate["block_reasons"] = new JsonArray(receiptSteps
                 .SelectMany(step => ReadArrayStrings(step, "block_reasons"))
                 .Distinct(StringComparer.Ordinal)
