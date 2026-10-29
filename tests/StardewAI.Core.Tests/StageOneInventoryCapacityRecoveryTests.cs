@@ -218,6 +218,43 @@ public sealed class StageOneInventoryCapacityRecoveryTests
     }
 
     [Fact]
+    public void CropHarvestRecoveryFreesASlotBeforeDrainingAFullShipmentStack()
+    {
+        var ranking = Ranking(
+            ShippingCandidate(
+                "ship:Farm:slot-8:wood",
+                "(O)388",
+                slotIndex: 8,
+                estimatedTicks: 100,
+                availableStack: 20,
+                fullShipmentContributes: true,
+                unitPrice: 2),
+            ShippingCandidate(
+                "ship:Farm:slot-10:fish",
+                "(O)129",
+                slotIndex: 10,
+                estimatedTicks: 100,
+                availableStack: 1,
+                fullShipmentContributes: false,
+                unitPrice: 37));
+
+        var decision = StageOneInventoryCapacityRecovery.TrySelect(
+            ranking,
+            Snapshot(string.Empty),
+            allowObjectiveSafeRelease: true,
+            requireFishingAttemptBlocked: false);
+
+        Assert.NotNull(decision);
+        Assert.Equal(
+            "ship:Farm:slot-10:fish",
+            decision!.Candidate.CandidateId);
+        Assert.Equal(1, decision.TargetStackQuantityBefore);
+        Assert.Equal(
+            "available_unprotected_singleton",
+            decision.SelectionReason);
+    }
+
+    [Fact]
     public void StackDrainRemainsLockedToTheCheapestSlotUntilItIsEmpty()
     {
         foreach (var fiberStack in new[] { 4, 3, 2, 1 })
