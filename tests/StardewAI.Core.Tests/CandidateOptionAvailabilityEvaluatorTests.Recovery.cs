@@ -569,12 +569,13 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         bool routeTrainingBlocked,
         bool resolved = true,
         string targetLocation = "Town",
-        bool activeFestivalTransitClosed = false)
+        bool activeFestivalTransitClosed = false,
+        int currentTime = 900)
     {
         return Snapshot("""
         {
           "time": {
-            "time": {"value":900,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+            "time": {"value":CURRENT_TIME,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "player": {
             "location_id": {"value":"Farm","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
@@ -590,6 +591,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
           }
         }
         """
+        .Replace("CURRENT_TIME", currentTime.ToString())
         .Replace(
             "ROUTE_BLOCKED",
             routeTrainingBlocked ? "true" : "false")
