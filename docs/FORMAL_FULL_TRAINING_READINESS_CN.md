@@ -1320,3 +1320,11 @@ v53 在独立新档中累计 `193` 条 verified Product action，并完成两轮
 fresh-save manifest 现按稳定岛屿进度维度验证 episode 间连续性，忽略当前位置、票价支付能力和地图加载校验等上下文噪声，同时将无回执交接窗口限制为实测 `24` tick。`25` tick 或任何未记账核桃/解锁变化仍失败关闭。v53 全部 `193` 个 episode 已成功重建 manifest，但因首次登岛、来源增量、First Parrot、Turtle、House 均缺失，source schedule 仍不可生成，正式准入分子不变。
 
 下一准入运行必须从新的 day-zero 身份开始：先验证晚间 recovery 与保存，再完成首次登岛和三项鹦鹉跃迁，生成 source schedule 后在独立运行重放。此前 `formal_product_training_authorized=false`。
+
+## 历史记录 · 2026-10-29 v61 不完整候选回执与控制交接
+
+v61 将独立新档推进到 Spring 23 / total day 22，累计 `295` 条 verified Product action，但没有首次登岛或 source schedule。它不能进入正式 corpus：episode 297 的 `executor.advance_story_event` 虽有 `applied + verified` 产品回执，旧聚合器仍因原作物候选未完成而标记 blocked，造成 296 -> 298 的不可补写连续性缺口。
+
+PR #349 仅修正证据分类：所有已执行步骤均训练可验证且 after snapshot 新鲜时，聚合回执保留 `status=applied / queue_progress_verified=true`；只有唯一末步完成标记存在时才写 `selected_candidate_completed=true / success=true`。因此中断动作可进入 executor calibration episode，但不完整候选仍被政策轨迹 admission 拒绝。连续性 verifier 的 `24` tick 上限保持不变。
+
+PR #348 同时为睡醒后的精确 transient native-control 状态增加单次 `30` tick recovery wait；该等待必须 fresh 重规划并进入 no-progress 退避，不计正式训练进展。下一准入运行固定为全新 v62 day-zero，并继续使用 `--skip-training`：先证明剧情中断 episode 无缺口与 control settle 可恢复，再继续首次登岛、来源增量、First Parrot/Turtle/House、source schedule 生成和独立重放。完成前 #345 和 `formal_product_training_authorized=false` 均保持。
