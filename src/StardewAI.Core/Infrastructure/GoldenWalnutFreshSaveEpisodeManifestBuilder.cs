@@ -59,13 +59,12 @@ public static class GoldenWalnutFreshSaveEpisodeManifestBuilder
                 ReadEpisode(path)))
             .Where(row =>
                 row.Episode.RunId == runId &&
-                row.Episode.Success &&
                 row.Episode.AfterSnapshotFresh)
             .OrderBy(row => row.Episode.BeforeGameTick)
             .ThenBy(row => row.Episode.AfterGameTick)
             .ThenBy(row => row.Path, StringComparer.Ordinal)
             .ToArray();
-        Require(rows.Length > 0,
+        Require(rows.Any(row => row.Episode.Success),
             "No successful fresh episodes exist for run ID: " + runId);
         var initialBoundaryPath =
             GoldenWalnutFreshSaveInitialBoundaryValidator.PathFor(

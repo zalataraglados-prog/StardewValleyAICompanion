@@ -1400,3 +1400,11 @@ v66 已将同一 day-zero 链推进到 total day 22、`408` 次尝试和 `289` �
 唯一移动状态机现增加窄恢复：仅在偏心 path start 同时被角色占用时，以现有 BFS 避开软障碍重规划，并用原生方向输入直接离开占用格；普通起步居中、终点居中、硬障碍边界和显式 `clear_obstacle` 编译链保持不变。v67 post-fix 新档已越过旧 `399-408` 区间，并在 iteration `410` 累计 `348` 条 verified action、零 stderr；但该随机前缀没有精确复刻 v66 的 Forest 宠物站位，所以只作为真实无回退证据。
 
 施工顺序不因该修复改变：让 v67 继续到下一个真实退出条件 -> 若首次登岛仍未出现，按 fresh 断点只修当前候选/编译/执行缺口 -> 来源增量 -> First Parrot -> Turtle -> House -> source schedule 生成 -> 独立重放 -> #345 Provider/Student 定型 -> 正式准入复核。v66/v67 前缀均不得提升 coverage 或提前开启训练。
+
+## 历史记录 · 2026-10-29 v67 逐项证据与 occupied-start 出口
+
+v67 最终达到 iteration `521`、total day `27` 和 `391` 条 verified native action。旧的“占用 path start 取消居中”虽已触发，但仍按通往远端目标的普通最短路选择第一步；真实 Farm 断点中宠物位于 `(49,12)`，玩家在 `(50,12)`，向 `(50,13)` 的原生输入不能解除碰撞。修复必须继续留在唯一移动状态机：从当前格四邻中选择未占用、可行且仍能连到目标的出口，以增大与所有重叠角色的最小距离为首要排序，再沿既有原生输入/BFS 继续。禁止传送、坐标写入、移动 NPC/宠物或把清障塞进行走器。
+
+同一运行还证明“每轮只归档聚合 episode”会遗漏真实子动作。iteration `142` 的多项执行已有七个逐项 fresh 结果，但末项失败使聚合 `Success=false`，旧 archive 因而在 `141 -> 143` 留下 `279` tick 空洞。计划固定采用 manifest v3：保留聚合 episode，同时为 Golden Walnut 证据逐项写出精确边界；fresh 失败项只作为 continuity witness，必须在姜岛/核桃稳定投影上 before==after，不能贡献任何成功转移。普通 `24` tick 和剧情 `360` tick 上限保持不变。
+
+下一运行必须是全新 v68 day-zero，继续 `--skip-training`。它的前置验收为 Runtime Harness 构建、完整治理测试、真实 occupied-start 脱困和多步骤 archive/v3 manifest；长期退出条件仍是首次登岛、来源增量、First Parrot、Turtle、House、source schedule 生成与独立重放。未达到这些条件前，不得提升 coverage、声明正式训练开始或绕过 #345 Provider/Student 门。

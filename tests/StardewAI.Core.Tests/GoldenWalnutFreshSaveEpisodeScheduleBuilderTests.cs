@@ -67,7 +67,7 @@ public sealed class GoldenWalnutFreshSaveEpisodeScheduleBuilderTests
     }
 
     [Fact]
-    public void RejectsSourceDeltaWithoutFreshSuccessfulReceipt()
+    public void RejectsFailedContinuityWitnessThatContainsSourceProgress()
     {
         using var fixture = new Fixture();
         var source = EligibleSource();
@@ -79,7 +79,52 @@ public sealed class GoldenWalnutFreshSaveEpisodeScheduleBuilderTests
         var error = Assert.Throws<InvalidDataException>(() =>
             GoldenWalnutFreshSaveEpisodeScheduleBuilder.Build(manifestPath));
 
-        Assert.Contains("successful episodes", error.Message, StringComparison.Ordinal);
+        Assert.Contains(
+            "Failed Golden Walnut continuity witness contains island or source progress",
+            error.Message,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void RetainsFailedContinuityWitnessWithoutCreditingProgress()
+    {
+        using var fixture = new Fixture();
+        var source = EligibleSource();
+        var start = Snapshot(
+            "h0", 0, 0, false, false, false, false, source.SourceKey);
+        var arrived = Snapshot(
+            "h1", 100, 1, true, false, false, false, source.SourceKey);
+        var failedAfter = Snapshot(
+            "h1-failed", 100, 1, true, false, false, false, source.SourceKey,
+            currentLocationId: "Farm");
+        var firstParrot = Snapshot(
+            "h2", 101, 1, true, true, false, false, source.SourceKey);
+        var turtle = Snapshot(
+            "h3", 102, 1, true, true, true, false, source.SourceKey);
+        var house = Snapshot(
+            "h4", 103, 1, true, true, true, true, source.SourceKey);
+        var paths = new[]
+        {
+            fixture.WriteEpisode(0, start, arrived, beforeTick: 0),
+            fixture.WriteEpisode(1, arrived, failedAfter, success: false, beforeTick: 1),
+            fixture.WriteEpisode(2, failedAfter, firstParrot, beforeTick: 2),
+            fixture.WriteEpisode(3, firstParrot, turtle, beforeTick: 3),
+            fixture.WriteEpisode(4, turtle, house, beforeTick: 4)
+        };
+        _ = fixture.WriteManifest(paths);
+        var manifestPath = Path.Combine(fixture.Root, "failed-witness-manifest.json");
+
+        var manifest = GoldenWalnutFreshSaveEpisodeManifestBuilder.WriteFromDirectory(
+            manifestPath,
+            fixture.Root,
+            "fresh-save-schedule:failed-witness",
+            "fresh-save-run");
+        var schedule = GoldenWalnutFreshSaveEpisodeScheduleBuilder.Build(manifestPath);
+
+        Assert.Equal(5, manifest.EpisodePaths.Length);
+        Assert.Equal(5, schedule.SourceEpisodeCount);
+        Assert.Equal(100, schedule.FirstIslandArrivalTotalDay);
+        Assert.Equal(103, schedule.PlannedIslandHouseUnlockTotalDay);
     }
 
     [Fact]
@@ -325,6 +370,30 @@ public sealed class GoldenWalnutFreshSaveEpisodeScheduleBuilderTests
     }
 
     [Fact]
+    public async Task ArchiveCapturesFreshFailedContinuityWitness()
+    {
+        using var fixture = new Fixture(useLiveSnapshotDirectory: true);
+        var source = EligibleSource();
+        var episodePath = await fixture.WriteContentAddressedEpisodeAsync(
+            1,
+            Snapshot("h0", 0, 0, false, false, false, false, source.SourceKey),
+            Snapshot("h1", 0, 0, false, false, false, false, source.SourceKey),
+            success: false);
+
+        var capture = GoldenWalnutFreshSaveEpisodeArchive.Capture(
+            episodePath,
+            1,
+            "fresh-save-run");
+        Assert.True(capture.Captured);
+        var archived = JsonSerializer.Deserialize<PlanExecutionEpisodeEnvelope>(
+            File.ReadAllText(capture.ArchiveEpisodePath),
+            JsonOptions)!;
+
+        Assert.False(archived.Success);
+        Assert.Equal("blocked", archived.Status);
+    }
+
+    [Fact]
     public async Task ArchiveRejectsProgressedStartWithoutLeavingDurableAliases()
     {
         using var fixture = new Fixture(useLiveSnapshotDirectory: true);
@@ -534,7 +603,8 @@ public sealed class GoldenWalnutFreshSaveEpisodeScheduleBuilderTests
         public async Task<string> WriteContentAddressedEpisodeAsync(
             int iteration,
             SnapshotEnvelope before,
-            SnapshotEnvelope after)
+            SnapshotEnvelope after,
+            bool success = true)
         {
             var beforePath = Path.Combine(
                 root,
@@ -565,8 +635,8 @@ public sealed class GoldenWalnutFreshSaveEpisodeScheduleBuilderTests
                     AfterSnapshotFresh = true,
                     BeforeSnapshotPath = beforePath,
                     AfterSnapshotPath = afterPath,
-                    Status = "applied",
-                    Success = true,
+                    Status = success ? "applied" : "blocked",
+                    Success = success,
                     ChangedFacts = JsonSerializer.SerializeToElement(new { })
                 }, JsonOptions));
             return episodePath;

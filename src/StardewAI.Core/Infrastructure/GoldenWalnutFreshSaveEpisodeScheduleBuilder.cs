@@ -13,7 +13,7 @@ namespace StardewAI.Core.Infrastructure;
 public static class GoldenWalnutFreshSaveEpisodeScheduleBuilder
 {
     public const string ManifestSchemaVersion =
-        "golden_walnut_fresh_save_episode_manifest.v2";
+        "golden_walnut_fresh_save_episode_manifest.v3";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -75,6 +75,7 @@ public static class GoldenWalnutFreshSaveEpisodeScheduleBuilder
             .ToDictionary(source => source.SourceKey, StringComparer.Ordinal);
         var evidenceHashes = new List<string> { initialBoundarySha256 };
         var firstEpisode = true;
+        var successfulEpisodeObserved = false;
 
         foreach (var episodePath in episodePaths)
         {
@@ -84,10 +85,10 @@ public static class GoldenWalnutFreshSaveEpisodeScheduleBuilder
             evidenceHashes.Add(episodeSha256);
             Require(
                 episode.SchemaVersion == "plan_execution_episode.v1" &&
-                episode.Success &&
                 episode.AfterSnapshotFresh &&
                 !string.IsNullOrWhiteSpace(episode.RunId),
-                "Golden Walnut source schedule requires successful episodes with fresh after snapshots: " + episodePath);
+                "Golden Walnut source schedule requires fresh episode receipts: " + episodePath);
+            successfulEpisodeObserved |= episode.Success;
             Require(manifest.SourceRunId == episode.RunId,
                 "Golden Walnut source schedule cannot combine different run IDs.");
             Require(episode.BeforeGameTick >= previousAfterTick,
@@ -139,25 +140,12 @@ public static class GoldenWalnutFreshSaveEpisodeScheduleBuilder
                 before, "locations", "ginger_island_access");
             var afterAccess = ReadStateFieldValue(
                 after, "locations", "ginger_island_access");
-            CaptureTransitionDay(
-                beforeAccess, afterAccess, afterDay,
-                new[] { "journey", "island_reached" },
-                ref firstIslandArrivalDay);
-            CaptureTransitionDay(
-                beforeAccess, afterAccess, afterDay,
-                new[] { "first_parrot", "complete_or_pending" },
-                ref firstParrotUnlockDay);
-            CaptureTransitionDay(
-                beforeAccess, afterAccess, afterDay,
-                new[] { "western_turtle_parrot", "complete_or_pending" },
-                ref westernTurtleUnlockDay);
-            CaptureTransitionDay(
-                beforeAccess, afterAccess, afterDay,
-                new[] { "island_house_parrot", "complete_or_pending" },
-                ref islandHouseUnlockDay);
-
-            var beforeSources = ReadWalnutSources(before);
-            var afterSources = ReadWalnutSources(after);
+            var beforeSourceProjection = ReadStateFieldValue(
+                before, "world_progress", "golden_walnut_sources");
+            var afterSourceProjection = ReadStateFieldValue(
+                after, "world_progress", "golden_walnut_sources");
+            var beforeSources = ReadWalnutSources(beforeSourceProjection);
+            var afterSources = ReadWalnutSources(afterSourceProjection);
             if (firstEpisode)
             {
                 Require(
@@ -167,25 +155,57 @@ public static class GoldenWalnutFreshSaveEpisodeScheduleBuilder
                     "Golden Walnut episode manifest does not begin at its fresh-save initial boundary.");
                 firstEpisode = false;
             }
-            foreach (var source in eligibleSources.Values)
-            {
-                if (!beforeSources.TryGetValue(source.SourceKey, out var beforeQuantity) ||
-                    !afterSources.TryGetValue(source.SourceKey, out var afterQuantity))
-                {
-                    throw new InvalidDataException(
-                        "Golden Walnut transparent source row is missing: " + source.SourceKey);
-                }
-                Require(afterQuantity >= beforeQuantity && afterQuantity <= source.NativeQuantity,
-                    "Golden Walnut source quantity regressed or exceeded its native denominator: " + source.SourceKey);
-                if (afterQuantity == beforeQuantity)
-                    continue;
 
-                // The schema has one row per source. Recording the latest observed total is
-                // conservative when a limited-drop source advances on multiple days.
-                sourceCompletions[source.SourceKey] = new GoldenWalnutFreshSaveSourceCompletion(
-                    source.SourceKey,
-                    afterQuantity,
-                    afterDay);
+            if (!episode.Success)
+            {
+                Require(
+                    GoldenWalnutFreshSaveProgressProjectionComparer
+                        .SameGingerIslandProgress(beforeAccess, afterAccess) &&
+                    GoldenWalnutFreshSaveProgressProjectionComparer
+                        .SameGoldenWalnutSourceProgress(
+                            beforeSourceProjection,
+                            afterSourceProjection),
+                    "Failed Golden Walnut continuity witness contains island or source progress: " + episodePath);
+            }
+            else
+            {
+                CaptureTransitionDay(
+                    beforeAccess, afterAccess, afterDay,
+                    new[] { "journey", "island_reached" },
+                    ref firstIslandArrivalDay);
+                CaptureTransitionDay(
+                    beforeAccess, afterAccess, afterDay,
+                    new[] { "first_parrot", "complete_or_pending" },
+                    ref firstParrotUnlockDay);
+                CaptureTransitionDay(
+                    beforeAccess, afterAccess, afterDay,
+                    new[] { "western_turtle_parrot", "complete_or_pending" },
+                    ref westernTurtleUnlockDay);
+                CaptureTransitionDay(
+                    beforeAccess, afterAccess, afterDay,
+                    new[] { "island_house_parrot", "complete_or_pending" },
+                    ref islandHouseUnlockDay);
+
+                foreach (var source in eligibleSources.Values)
+                {
+                    if (!beforeSources.TryGetValue(source.SourceKey, out var beforeQuantity) ||
+                        !afterSources.TryGetValue(source.SourceKey, out var afterQuantity))
+                    {
+                        throw new InvalidDataException(
+                            "Golden Walnut transparent source row is missing: " + source.SourceKey);
+                    }
+                    Require(afterQuantity >= beforeQuantity && afterQuantity <= source.NativeQuantity,
+                        "Golden Walnut source quantity regressed or exceeded its native denominator: " + source.SourceKey);
+                    if (afterQuantity == beforeQuantity)
+                        continue;
+
+                    // The schema has one row per source. Recording the latest observed total is
+                    // conservative when a limited-drop source advances on multiple days.
+                    sourceCompletions[source.SourceKey] = new GoldenWalnutFreshSaveSourceCompletion(
+                        source.SourceKey,
+                        afterQuantity,
+                        afterDay);
+                }
             }
 
             previousEpisode = episode;
@@ -194,6 +214,8 @@ public static class GoldenWalnutFreshSaveEpisodeScheduleBuilder
             previousAfterTick = episode.AfterGameTick;
         }
 
+        Require(successfulEpisodeObserved,
+            "Fresh-save evidence contains no successful native episode.");
         Require(firstIslandArrivalDay.HasValue,
             "Fresh-save episodes do not contain the native first-island-arrival transition.");
         Require(firstParrotUnlockDay.HasValue,
@@ -266,11 +288,10 @@ public static class GoldenWalnutFreshSaveEpisodeScheduleBuilder
         !source.ResortOnly &&
         source.ProbabilityStatus.StartsWith("exact_native_", StringComparison.Ordinal);
 
-    private static Dictionary<string, int> ReadWalnutSources(SnapshotEnvelope snapshot)
+    private static Dictionary<string, int> ReadWalnutSources(JsonElement projection)
     {
         var catalog = JsonSerializer.Deserialize<GoldenWalnutSourceCatalogRef>(
-            ReadStateFieldValue(snapshot, "world_progress", "golden_walnut_sources")
-                .GetRawText(),
+            projection.GetRawText(),
             JsonOptions) ?? throw new InvalidDataException(
                 "Golden Walnut transparent source catalog is unreadable.");
         return catalog.Sources.ToDictionary(

@@ -79,11 +79,23 @@ public sealed class GenericMovementClearanceBoundarySourceGuardTests
             movement,
             StringComparison.Ordinal);
         Assert.Contains(
-            "if (!IsTileOccupiedByCharacter(Game1.currentLocation, pathStartTile))",
+            "if (!IsTileOccupiedByCharacter(location, pathStartTile))",
             softObstacles,
             StringComparison.Ordinal);
         Assert.Contains(
-            "if (!ReplanTileMove(move, avoidSoftObstacles: true))",
+            "TryBuildOccupiedStartEgressPath(",
+            softObstacles,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "OccupiedStartClearanceSquared(",
+            softObstacles,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "candidatePath.AddRange(tail)",
+            softObstacles,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "allowRemovableObstacles: false",
             softObstacles,
             StringComparison.Ordinal);
         Assert.Contains(
@@ -96,6 +108,10 @@ public sealed class GenericMovementClearanceBoundarySourceGuardTests
             StringComparison.Ordinal);
         Assert.DoesNotContain(
             ".setTileLocation(",
+            softObstacles,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "character.Position =",
             softObstacles,
             StringComparison.Ordinal);
     }
