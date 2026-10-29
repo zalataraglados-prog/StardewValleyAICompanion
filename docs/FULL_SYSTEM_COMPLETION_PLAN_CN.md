@@ -1392,3 +1392,11 @@ v63 在 Spring 13 `06:40` 证明唯一剩余阻塞不是动作缺失，而是统
 v64 的直接续跑被 day-zero validator 拒绝，因此计划继续禁止把未保存白天内存态跨进程拼接。v65 最终推进到 Spring 22 / total day 21 并留下 `265` 条耐久 episode；episode `279` 的 verified 剧情推进与 episode `281` 的浇水之间出现 `335` tick 暂停，但日与分钟、地点与格子、金钱、能量、生命、工具、背包和全部岛屿/核桃稳定进度均未变化。验证器只为成功且 primitive verified 的 `executor.advance_story_event` 增加最大 `360` tick 的稳定状态交接，普通交接仍保持 `24` tick 硬门。移动、资源变化、岛屿进度或超限仍失败关闭。
 
 修复后 v65 的 `265/265` episode 已由正式 builder 重建为合法 manifest，source-schedule 只在缺少原生首次登岛 transition 处失败。v65 已停止，不能跨进程续接；当前唯一施工顺序改为新的 day-zero v66：首次登岛 -> 来源增量 -> First Parrot -> Turtle -> House -> source schedule 生成 -> 独立重放 -> #345 Provider/Student 定型 -> 正式准入复核。不得关闭验证器、手工回填或把合法但未完成的 v65 manifest 当成 source schedule。
+
+## 历史记录 · 2026-10-29 v66-v67 软障碍重叠恢复
+
+v66 已将同一 day-zero 链推进到 total day 22、`408` 次尝试和 `289` 条 verified episode，但在 Farm -> Forest 路线中被宠物软障碍终止。native push-through 使玩家与宠物部分重叠于 `(54,10)`；下一次通用移动对该占用格执行 path-start centering，连续八次无法移动并按既有未验证上限失败关闭。该断点不允许用瞬移、移动 NPC、同步清障或第二套行走器修复。
+
+唯一移动状态机现增加窄恢复：仅在偏心 path start 同时被角色占用时，以现有 BFS 避开软障碍重规划，并用原生方向输入直接离开占用格；普通起步居中、终点居中、硬障碍边界和显式 `clear_obstacle` 编译链保持不变。v67 post-fix 新档已越过旧 `399-408` 区间，并在 iteration `410` 累计 `348` 条 verified action、零 stderr；但该随机前缀没有精确复刻 v66 的 Forest 宠物站位，所以只作为真实无回退证据。
+
+施工顺序不因该修复改变：让 v67 继续到下一个真实退出条件 -> 若首次登岛仍未出现，按 fresh 断点只修当前候选/编译/执行缺口 -> 来源增量 -> First Parrot -> Turtle -> House -> source schedule 生成 -> 独立重放 -> #345 Provider/Student 定型 -> 正式准入复核。v66/v67 前缀均不得提升 coverage 或提前开启训练。

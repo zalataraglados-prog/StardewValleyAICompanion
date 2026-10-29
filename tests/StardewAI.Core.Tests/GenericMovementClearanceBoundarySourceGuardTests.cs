@@ -74,6 +74,30 @@ public sealed class GenericMovementClearanceBoundarySourceGuardTests
             "movement_soft_obstacle_timeout",
             softObstacles,
             StringComparison.Ordinal);
+        Assert.Contains(
+            "TryReleaseOccupiedPathStart(move, pathStartTile)",
+            movement,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "if (!IsTileOccupiedByCharacter(Game1.currentLocation, pathStartTile))",
+            softObstacles,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "if (!ReplanTileMove(move, avoidSoftObstacles: true))",
+            softObstacles,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "move.NeedsPathStartCentering = false",
+            softObstacles,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "Game1.player.Position =",
+            softObstacles,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            ".setTileLocation(",
+            softObstacles,
+            StringComparison.Ordinal);
     }
 
     [Fact]
