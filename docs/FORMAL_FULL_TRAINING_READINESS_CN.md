@@ -4,13 +4,13 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已闭合从 v10 最终隔离存档开始的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已通过 current-authority 复核并冻结；当前唯一施工项是 `complete_master_angler` 顶层依赖、日历窗口与 coverage 接线。Money Exit Gate 标准不降低，但 Money 已回到复杂度队列第 11 位。
 
-## 当前准入结论 · v72-v73 仍是校准，不是正式训练
+## 当前准入结论 · v72-v82 仍是校准，不是正式训练
 
-v72 与 v73 均显式携带 `--skip-training`。v72 的 `176` 条 verified action 和 v73 的 `2` 条 verified action 只用于 Teacher/执行器校准、原生保存边界与控制交接验证；两轮都没有 Student 参数更新、checkpoint、GPU 训练或正式政策轨迹。v72 暴露的 day-start fade transient 只由唯一 `NativeControlSettleRecovery` 编译一次 `30` tick 控制等待，该等待继续排除在 strategic preference 标签之外。
+v72-v82 相关运行均显式携带 `--skip-training`。v72 的 `176` 条 verified action、v73 的 `2` 条 verified action，以及 v77/v79/v80/v82 的诊断动作只用于 Teacher/执行器校准、原生保存边界与控制交接验证；没有 Student 参数更新、checkpoint、GPU 训练或正式政策轨迹。v72 暴露的 day-start fade transient 只由唯一 `NativeControlSettleRecovery` 编译一次 `30` tick 控制等待，该等待继续排除在 strategic preference 标签之外。
 
-代码验证为恢复专项 `10/10`、GameFreeGovernance `525/525`、LiveTrainingLoop Release 零警告零错误。v73 证明 Spring 9 -> 10 的无回退原生保存，但启动加载已消耗淡入，不能替代同进程分支命中证据。因此任何正式 coverage 分子、Teacher comparison/native outcome 分区及 `formal_product_training_authorized=false` 均不改变。
+恢复现在是所有 DailyPlan producer 前的唯一全局抢占；代码验证为专项 `19/19`、GameFreeGovernance `526/526`、LiveTrainingLoop Release 零警告零错误。v73 证明无回退原生保存；v77 证明 Crop Teacher 睡眠会等过淡入；v79/v80 和 `8 x 600` tick 预热后的 v82 均未在 fresh-process 共享睡眠中复现 v72 transient。v82 包装器因缺少真实 settle wait/fresh replan 双证据而严格失败，未把未命中写成成功。因此任何正式 coverage 分子、Teacher comparison/native outcome 分区及 `formal_product_training_authorized=false` 均不改变。
 
-下一准入证据固定为：同进程跨日真实命中 day-start fade recovery，并在 fresh snapshot 上继续；随后完成首次登岛、核桃来源增量、First Parrot/Turtle/House、source schedule 生成与独立重放，再重建 Master Angler prerequisite audit。#345 Provider/Student 准入门完成前不得开启模型参数训练。外部模型的只读诊断或补丁审阅仅是 controller 辅助，不能授权训练、实现或合并。
+实时正向命中保留为后续自然长跑的补充证据，不再作为人工探针 WIP。当前下一准入证据固定为：完成首次登岛、核桃来源增量、First Parrot/Turtle/House、source schedule 生成与独立重放，再重建 Master Angler prerequisite audit；若途中自然出现 v72 精确状态，则必须先记录 `ready_native_control_settle -> executor.wait_ticks=30 -> fresh replan`。#345 Provider/Student 准入门完成前不得开启模型参数训练。外部模型的只读诊断或补丁审阅仅是 controller 辅助，不能授权训练、实现或合并。
 
 ## 已收口增量 · v26 收获容量恢复与正式准入边界
 

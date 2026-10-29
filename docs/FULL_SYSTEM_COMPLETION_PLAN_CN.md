@@ -15,11 +15,11 @@
 
 本文件继续只维护当前施工、原生证据和历史收敛记录，不再作为后期产品阶段排序的第二来源。
 
-## 当前增量 · v72-v73 日界淡入控制交接
+## 当前增量 · v72-v82 日界淡入控制交接
 
-v72 在既定 Golden Walnut day-zero 长跑中取得 `176` 条 verified Product action 并推进到 Spring 9，随后在日界淡入的精确 transient 状态失败关闭。修复没有增加第二套行动系统：唯一 `NativeControlSettleRecovery` 在原 post-sleep control gap 之外，只接受 `native_control_gate_open=false + player_can_move_now=true + global_fade=true` 的完整 day-start fade 三元组；两种状态都编译同一个 `30` tick `executor.wait_ticks` 并 fresh 重规划。混合状态、菜单/事件/工具/暂停/冻结/warp 或其他漂移仍拒绝。
+v72 在既定 Golden Walnut day-zero 长跑中取得 `176` 条 verified Product action 并推进到 Spring 9，随后在日界淡入的精确 transient 状态失败关闭。修复没有增加第二套行动系统：唯一 `NativeControlSettleRecovery` 在原 post-sleep control gap 之外，只接受 `native_control_gate_open=false + player_can_move_now=true + global_fade=true` 的完整 day-start fade 三元组；两种状态都编译同一个 `30` tick `executor.wait_ticks` 并 fresh 重规划。恢复调用点位于全部 DailyPlan producer 前且仅有一次，混合状态、菜单/事件/工具/暂停/冻结/warp 或其他漂移仍拒绝。
 
-专项 `10/10`、GameFreeGovernance `525/525` 和 Release build 已通过。v73 从 v72 的 Spring 9 保存边界完成两项原生动作并保存到 Spring 10，证明无回退；但启动加载已经消耗淡入，所以没有把它记作新分支的实时命中。当前计划只补一个同进程跨日的分支命中证据，随后立即回到首次登岛 -> 核桃来源增量 -> First Parrot -> Turtle -> House -> source schedule 生成/重放 -> Master Angler prerequisite audit。v72/v73 均为 `--skip-training`，#345 与正式训练禁令不变。
+专项 `19/19`、GameFreeGovernance `526/526` 和 Release build 已通过。v73 证明无回退保存；v76-v80 区分了过期 fixture、Crop Teacher 睡眠等待与 fresh-process 共享睡眠；v82 从 v72 Spring 8 精确副本完成 `8 x 600` tick 预热、共享睡眠和次日重规划，但仍未复现 transient，包装器因缺少真实 settle wait/fresh replan 双标志严格失败。人工探针到此终止，实时正向命中只在自然长跑中补录；当前直接回到首次登岛 -> 核桃来源增量 -> First Parrot -> Turtle -> House -> source schedule 生成/重放 -> Master Angler prerequisite audit。所有相关运行均为 `--skip-training`，#345 与正式训练禁令不变。
 
 ## 当前增量 · 新档第一步必须先领取礼盒
 

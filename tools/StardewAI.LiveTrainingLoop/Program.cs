@@ -484,8 +484,51 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
     var executionSnapshotUrl = options.BridgeSnapshotUrl;
     CropTeacherRunStep? cropTeacherStepForExecution = null;
     JsonObject? dailyPlanRanking = null;
+    StageOneCollectionTeacherQueueBuildResult? nativeControlSettle = null;
+    if (options.UseDailyPlan)
+    {
+        var settlePrefix = Path.Combine(
+            options.SnapshotDir,
+            $"native-control-settle-{{0}}-{iteration:D4}.json");
+        nativeControlSettle = await TryBuildNativeControlSettleQueueAsync(
+            options,
+            snapshotJson,
+            lastStateHash,
+            snapshotPath,
+            string.Format(settlePrefix, "preference"),
+            string.Format(settlePrefix, "compiled-plan"),
+            string.Format(settlePrefix, "ranking"),
+            string.Format(settlePrefix, "compiled-queue"));
+    }
     JsonObject queue;
-    if (options.UsePrecompiledQueue)
+    if (nativeControlSettle?.Queue is not null)
+    {
+        queue = nativeControlSettle.Queue;
+        dailyPlanRanking = nativeControlSettle.Ranking;
+        modelPlanPath = nativeControlSettle.PlanPath;
+        rankingPath = nativeControlSettle.RankingPath;
+        decisionModelPlanPath = nativeControlSettle.PlanPath;
+        decisionRankingPath = nativeControlSettle.RankingPath;
+        decisionCompiledQueuePath = nativeControlSettle.QueuePath;
+        decisionSnapshotPath = nativeControlSettle.SnapshotPath;
+        selectedCandidateId = nativeControlSettle.SelectedCandidateId;
+        selectedQueueIndex = 0;
+        useDailyPlanDecisionLease = true;
+        stageOneCollectionControlQueueCount++;
+        AppendProgress(
+            options,
+            "stage_one_collection_control_queue_compiled",
+            iteration,
+            lastStateHash,
+            ReadString(queue, "queue_id"),
+            "candidate_id=" + selectedCandidateId +
+            " teacher_queue_count=" +
+            stageOneCollectionTeacherQueueCount +
+            " control_queue_count=" +
+            stageOneCollectionControlQueueCount +
+            " " + nativeControlSettle.Detail);
+    }
+    else if (options.UsePrecompiledQueue)
     {
         queue = await TeacherPreferenceQueueLoader.LoadQueueAsync(
             options.PrecompiledQueuePath,
