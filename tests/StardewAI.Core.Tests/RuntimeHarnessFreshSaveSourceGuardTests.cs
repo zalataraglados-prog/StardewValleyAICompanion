@@ -283,7 +283,7 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             calibration,
             StringComparison.Ordinal);
         Assert.Contains(
-            "Invoke-WebRequest -Uri $SnapshotUrl",
+            "Invoke-WebRequest -UseBasicParsing",
             calibration,
             StringComparison.Ordinal);
         Assert.Contains(
