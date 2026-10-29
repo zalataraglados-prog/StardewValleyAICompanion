@@ -89,7 +89,10 @@ public static class StageOneInventoryCapacityRecovery
         if (selectedSource is null && allowObjectiveSafeRelease)
         {
             selectedSource = releaseCandidates
-                .OrderByDescending(candidate =>
+                .OrderBy(candidate => Math.Max(
+                    1,
+                    candidate.AvailableStack ?? candidate.Quantity))
+                .ThenByDescending(candidate =>
                     candidate.FullShipmentContributes == true)
                 .ThenBy(CapacityReleaseValue)
                 .ThenBy(candidate => candidate.EstimatedTicks)
