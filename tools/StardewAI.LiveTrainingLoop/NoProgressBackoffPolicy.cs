@@ -165,13 +165,17 @@ public sealed class NoProgressBackoffPolicy
         }
 
         var item = pendingItems[0];
+        var sourceActionId = ReadString(item, "source_action_id");
         return string.Equals(
                 ReadString(item, "option_id"),
                 "executor.wait_ticks",
                 StringComparison.Ordinal) &&
-            ReadString(item, "source_action_id").StartsWith(
-                "recovery_refresh_plan_after_stabilization.",
-                StringComparison.Ordinal);
+            (sourceActionId.StartsWith(
+                 "recovery_refresh_plan_after_stabilization.",
+                 StringComparison.Ordinal) ||
+             sourceActionId.StartsWith(
+                 "recovery_wait_for_native_control_settle.",
+                 StringComparison.Ordinal));
     }
 
     private static bool IsVerifiedWaitOnlyExecution(
