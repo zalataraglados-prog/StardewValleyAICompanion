@@ -1378,3 +1378,9 @@ v53 将真正 day-zero 前缀推进到 `193` 条 verified action、两轮完整�
 episode continuity 只比较稳定进度，不再要求包含当前位置、支付能力和地图验证状态的整个富投影逐字相等；控制器交接仍以 `24` tick 为硬上限，并继续拒绝未记账的核桃、来源、修船、到岛、鹦鹉或访问变化。修复已对 v53 `193/193` episode 重建 manifest，并通过聚焦回归。
 
 下一施工动作固定为重新发布后启动新的独立 day-zero 长跑：晚间 recovery/save 验证 -> 首次登岛 -> 核桃来源增量 -> First Parrot -> Turtle -> House -> source schedule 生成 -> 独立重放 -> 正式准入复核。v53 诊断前缀不能直接进入正式 corpus。
+
+## 历史记录 · 2026-10-29 v61 后的唯一续行顺序
+
+v61 已把 day-zero 前缀推进到 Spring 23 / total day 22、`295` 条 verified Product action，并自然通过钓鱼奖励恢复；它仍没有首次登岛。运行暴露的两个缺口都属于既有控制/证据链，不新增动作系统：PR #348 用精确 `30` tick wait 处理睡醒后 native gate 已开但 `CanMove` 尚未恢复的瞬态；PR #349 将已验证队列进展与整个候选完成分开，避免成功剧情中断因候选未完成而丢失 episode。重复 settle wait 不计进展，不完整候选不进入政策监督，Golden Walnut continuity 的 `24` tick 硬门不变。
+
+后续不得续接 v61 或补写缺失 episode。唯一顺序为：全新 v62 day-zero -> 剧情中断连续性复核 -> native-control settle 复核 -> 首次登岛 -> 逐来源核桃增量 -> First Parrot -> Turtle -> House -> source schedule 生成 -> 独立重放 -> 正式准入复核。#345 要求的 Provider/Student 门完成前一律 `--skip-training`；这些 runtime 修复不改变任何正式 coverage 分子。

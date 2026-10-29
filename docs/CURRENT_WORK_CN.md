@@ -2727,3 +2727,10 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - E 盘隐藏静音原生矩阵 `runtime-fishing-item-grab-recovery-20261029-064618` 为 `2/2 PASS`：直接领取与授权单项丢弃后领取均 `applied/verified`，奖励库存精确 `0 -> 1`，菜单关闭。诊断 fixture 与生产执行器继续分离。
 - 为避免恢复动作触发全地图扫描，新增 `fishing_reward_recovery` 目的配置。复合选项只在精确菜单身份下允许缺少与该分支无关的三个路线字段；其他恢复动作仍按原 `recovery` 配置失败关闭。最终性能为 39.381 UPS、末次构建 40.673 ms、启动期最大 559.851 ms。
 - EVD-343 登记为底层 executor 校准证据，TrainingAllowlist 不变，`formal_product_training_authorized=false`。下一施工单位回到 Golden Walnut fresh-save source schedule，而不是继续扩展此恢复动作。
+
+## 2026-10-29 v61 长跑断点与 v62 固定入口
+
+- v61 从独立 day-zero 新档推进到 Spring 23 / total day 22，共 `395` 次迭代、`295` 条 verified Product action。它真实通过 EVD-343 钓鱼奖励恢复，但仍未首次登岛，未生成 Golden Walnut source schedule。
+- 第一个断点是 episode 297 的优先剧情中断：`executor.advance_story_event` 产品回执实际为 `applied + verified`，但旧聚合回执把“当前作物候选尚未完成”误写成“本次执行 blocked”，导致持久化 episode 从 296 跳到 298。PR #349 现将“已执行步骤全部验证且快照新鲜”和“整个候选完成”分开；前者保留 executor-calibration episode，后者仍为 false，策略轨迹过滤器继续拒绝不完整候选。`24` tick 连续性上限没有放宽。
+- 第二个断点发生在睡醒后的短暂原生控制交接：校准与 native gate 已开放、菜单/事件/工具/warp 均关闭，但 `CanMove=false` 且 route timing 暂不可用。PR #348 只在这一精确状态编译一次 `30` tick 等待并 fresh 重规划；该等待进入 no-progress 退避，不计有效训练动作。
+- v61 已存在不可补写的 episode 缺口，只保留为诊断，不得重建为正式 corpus。下一固定入口是全新 v62 day-zero 隔离长跑；退出条件依次为：复现并通过剧情中断连续性、通过 native-control settle、保持零未验证执行，随后继续首次登岛 -> 核桃来源增量 -> First Parrot -> Turtle -> House -> source schedule 生成与独立重放。#345 仍生效，运行必须使用 `--skip-training`，`formal_product_training_authorized=false`。

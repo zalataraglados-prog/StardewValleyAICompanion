@@ -596,3 +596,10 @@ formal training manifest 之前必须完成两件事：
 - 运行同时发现并修正复合恢复选项的字段范围过宽。新的 `fishing_reward_recovery` 快照不再扫描无关 `current_location/locations`；只有精确奖励菜单分支可忽略这三个路线字段，普通晚间返家、睡眠和其他恢复仍失败关闭。末次快照构建由通用配置的 `379.346 ms` 降为 `40.673 ms`，慢间隔计数 `15 -> 8`；启动期峰值仍记录而不隐瞒。
 - EVD-343 只把 `executor.claim_fishing_item_grab_reward` 提升为 `RuntimeVerified / EvaluationOnly`。它不进入策略训练 allowlist，不改变上方任何 19 criterion、root method 或正式训练分子；#345 的 Provider/Student 准入门和 `formal_product_training_authorized=false` 均保持。
 - 下一固定步骤恢复既定 Golden Walnut day-zero/fresh-save source schedule 长跑；先使用本修复验证满包钓鱼不会再卡在奖励菜单，再继续首次登岛、核桃来源增量、First Parrot/Turtle/House 与 schedule 生成/独立重放。
+
+## 19. 2026-10-29 v61 回执分类与原生控制交接
+
+- v61 在独立新档中运行 `395` 次迭代并留下 `295` 条 verified Product action，推进到 Spring 23 / total day 22。EVD-343 已在该长跑自然通过，但首次登岛、核桃来源增量和三项鹦鹉跃迁仍为零，不能生成 source schedule。
+- episode 297 的剧情中断动作已经由 Product Executor 证明为 `applied + verified`；旧队列聚合器却要求整个原候选同时完成，因而把该执行降为 blocked 并造成 296 -> 298 的 continuity 缺口。PR #349 已把 verified queue progress 与 selected-candidate completion 分离：不完整候选仍 `success=false`、不进入政策正样本，但已验证原生步骤不再丢失执行 episode。
+- 睡醒后的另一短暂状态由 PR #348 收敛为 exact recovery：只有 calibration compatible、native gate open、菜单/事件/工具/warp 关闭、`CanMove=false` 且 route timing 未就绪时，才执行一次 `30` tick 等待并 fresh 重规划。重复等待按 no-progress 指数退避，不能抬高 verified-action 目标。
+- v61 仍是诊断运行，既有缺口不准通过扩大 `24` tick 窗口掩盖。下一证据必须来自全新 v62：先验证上述两个修复，再继续 Golden Walnut source schedule 主线。19 criterion、root method、Teacher comparison/native outcome 分子和 `formal_product_training_authorized=false` 均未改变；#345 的 Provider/Student 门继续阻止正式训练。
