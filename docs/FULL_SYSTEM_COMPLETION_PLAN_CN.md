@@ -1428,3 +1428,11 @@ v69 在新 day-zero 存档的 iteration `316` 原生复现了八项收获一项�
 v69 最近保存边界不含末轮收获，且 fresh-save source schedule 不允许跨进程拼接，因此 v70 采用全新 day-zero 身份，取代“有界恢复后继续同一 corpus”的旧计划。v70 在 Spring 17 / iteration `189` 已有 `173` 条 verified Product action和两轮作物收获，但没有首次登岛；它始终使用 `--skip-training`，属于产品校准而非模型训练。
 
 v70 真实暴露容量恢复排序把 Full Shipment contribution 置于即时腾格之前，造成 `20` 木材逐件出货。PR #360 已在唯一 `StageOneInventoryCapacityRecovery` 中优先最少原生单件动作，保留现有候选、编译器、执行器和回执。当前固定顺序为：全新 v71 day-zero -> singleton 容量恢复原生复核 -> 首次登岛 -> 来源增量 -> First Parrot -> Turtle -> House -> source schedule 生成 -> 独立重放 -> #345 Provider/Student 定型 -> 正式准入复核。不得续接 v70 未保存尾部，也不得把校准行声明为训练结果。
+
+## 历史记录 · 2026-10-30 v71 后的固定续行顺序
+
+v71 已在 iteration `149-150` 原生证明最短 singleton 容量恢复和随后 `8/8` 收获，PR #360 的运行验收关闭。运行仍是 `--skip-training` 校准，不产生模型更新。iteration `162` 随后在满包钓鱼奖励处打开 essential `ItemGrabMenu`；iteration `165` 的统一排名虽已有 mandatory `recovery.stabilize_day` 候选，旧 Stage One 却先做四类 collection membership 过滤并错误让出控制，后续 Crop Teacher 路线因菜单仍开启而正确失败关闭。
+
+唯一修复顺序固定为：Stage One 先识别现有可用 mandatory menu recovery -> 通过既有 DailyPlanCompiler/ActionQueueCompiler 编译 control queue -> Product Executor 原生领取奖励并 fresh 重规划 -> 菜单关闭后才恢复 continuation、collection membership 和策略排序。不得新增钓鱼、库存、路线或恢复执行器；control queue 不生成 Teacher preference 标签，也不进入正式训练语料。
+
+当前固定续行顺序改为：提交修复 -> 全新 v72 day-zero -> 证明 `stage_one_collection_control_queue_compiled` 与菜单关闭前零 Crop Teacher handoff -> 首次登岛 -> 来源增量 -> First Parrot -> Turtle -> House -> source schedule 生成 -> 独立重放 -> #345 Provider/Student 定型 -> 正式准入复核。v71 未保存尾部不得跨进程拼接，正式训练仍未开始。

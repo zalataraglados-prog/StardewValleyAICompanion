@@ -1348,3 +1348,11 @@ v69 对上一轮的 early-return 连续性修复给出了真实游戏证据：it
 v70 因 fresh-save 证据禁止跨进程拼接而从新 day-zero 身份启动，命令继续携带 `--skip-training`。运行没有更新 Student 参数、没有产生模型 checkpoint，也没有使用 GPU 训练；`173` 条 verified action 只用于 Teacher/执行器校准和连续证据诊断。
 
 该轮暴露容量恢复会为了 Full Shipment contribution 逐件排空 `20` 木材、忽略现成 singleton。PR #360 已在同一确定性恢复器中改为优先最少腾格动作，并通过专项 `12/12`、治理 `510/510` 和零警告构建。此修复不增加任何正式准入分子；v70 未首次登岛且尾部未跨原生保存，不能作为 source schedule 或正式 corpus。下一准入运行必须是合并修复后的全新 v71，#345 完成前仍为 `formal_product_training_authorized=false`。
+
+## 历史记录 · 2026-10-30 v71 仍属校准而非正式训练
+
+v71 继续携带 `--skip-training`，没有 Student 更新、checkpoint 或 GPU 训练。iteration `149-150` 已用真实原生回执证明 singleton 容量恢复和随后 `8/8` 收获；该证据只提升执行校准可信度，不增加 criterion、Teacher comparison/native outcome 或政策训练分子。
+
+同一运行在 iteration `162-170` 暴露控制层缺口：满包钓鱼已产生 essential `ItemGrabMenu`，统一排名也已有可用的强制奖励恢复候选，但 Stage One collection 先按 collection membership 过滤并错误让出控制，导致后续普通路线因菜单开启而失败关闭。修复只把现有 mandatory menu recovery 提到 continuation、membership 和策略选择之前，继续复用既有编译与执行链；该队列明确不生成 Teacher preference 标签、不进入正式训练数据。
+
+验证为聚焦 `11/11`、GameFreeGovernance `521/521`、LiveTrainingLoop Release 零警告零错误。v71 的未保存尾部不能拼接；下一准入运行必须是全新 v72，先原生证明该 control queue 闭合并避免菜单开启时派发 Crop Teacher，再继续 Golden Walnut source schedule。#345 Provider/Student 定型前 `formal_product_training_authorized=false` 保持。

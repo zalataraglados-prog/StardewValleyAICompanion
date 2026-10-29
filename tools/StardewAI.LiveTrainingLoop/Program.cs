@@ -834,6 +834,14 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                     string.Equals(
                         collectionTeacher.Status,
                         "ready_native_control_settle",
+                        StringComparison.Ordinal) ||
+                    string.Equals(
+                        collectionTeacher.Status,
+                        "ready_inventory_capacity_recovery",
+                        StringComparison.Ordinal) ||
+                    string.Equals(
+                        collectionTeacher.Status,
+                        "ready_mandatory_menu_recovery_control",
                         StringComparison.Ordinal);
                 if (isControlOnlyQueue)
                     stageOneCollectionControlQueueCount++;
