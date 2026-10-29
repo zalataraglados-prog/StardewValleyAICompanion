@@ -1027,6 +1027,43 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     }
 
     [Fact]
+    public void VisitLocationRollsMorningFestivalWaitUntilTheTransitGateOpens()
+    {
+        var snapshot = RouteConnectorSnapshot(
+            routeTrainingBlocked: false,
+            activeFestivalTransitClosed: true,
+            currentTime: 640);
+
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "exploration.visit_location" });
+        var ranked = Assert.Single(new EventCandidateRanker().Rank(
+            new(),
+            availability,
+            "daily.closed_loop"));
+
+        Assert.Equal("deferred", ranked.TimelineStatus);
+        Assert.Equal(1410, ranked.ScheduledStartTime);
+        Assert.Equal(27000, ranked.ScheduledWaitCost);
+        var plan = new DailyPlanCompiler().Compile(
+            new[] { ranked },
+            snapshot.StateHash,
+            "daily.closed_loop");
+        var wait = Assert.Single(plan.Steps);
+        Assert.Equal("wait_ticks", wait.Kind);
+        Assert.Equal(600, wait.WaitTicks);
+        Assert.Contains(
+            "rolling_horizon_wait_then_refresh_snapshot",
+            Assert.Single(plan.CandidateAudit).Reasons);
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+        Assert.Equal("pending", queue.Status);
+        Assert.Equal("executor.wait_ticks", Assert.Single(queue.Items).OptionId);
+        Assert.Empty(new EventCandidateTimelineScheduler().Schedule(
+            new[] { ranked },
+            640,
+            maxWaitTicks: 21600));
+    }
+
+    [Fact]
     public void VisitLocationFailsClosedForUnresolvedOrSameLocationConnector()
     {
         foreach (var snapshot in new[]

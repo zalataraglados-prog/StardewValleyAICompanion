@@ -2,20 +2,27 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using StardewAI.Contracts.Training;
+using StardewAI.Core.Execution;
 
 namespace StardewAI.Core.Training
 {
     public sealed class EventCandidateTimelineScheduler
     {
-        private const int DefaultMaxWaitTicks = 21600;
-
         public PolicyEventCandidatePrediction[] Schedule(
             IEnumerable<PolicyEventCandidatePrediction> candidates,
             int currentTime,
-            int maxWaitTicks = DefaultMaxWaitTicks)
+            int? maxWaitTicks = null)
         {
+            var effectiveMaxWaitTicks = maxWaitTicks ?? Math.Max(
+                0,
+                GameClockBudgetPolicy.ClockMinutesBetween(
+                    currentTime,
+                    GameClockBudgetPolicy.AutonomousRecoveryStartTime) * 60);
             return candidates
-                .Select(candidate => ScheduleCandidate(candidate, currentTime, maxWaitTicks))
+                .Select(candidate => ScheduleCandidate(
+                    candidate,
+                    currentTime,
+                    effectiveMaxWaitTicks))
                 .Where(candidate => candidate.TimelineStatus != "blocked")
                 .OrderBy(candidate => candidate.TimelineStatus == "ready_now" ? 0 : 1)
                 .ThenBy(candidate => candidate.ScheduledWaitCost ?? 0)
