@@ -18,12 +18,12 @@
 | Money production evidence cells | **0/18** | 6 个 Money criterion × 3 partitions；hermetic fixture 不计 production |
 | Formal product training | **false** | 未通过完整正式训练准入 |
 
-### 2026-10-30 v72-v73 原生控制淡入恢复边界
+### 2026-10-30 v72-v82 原生控制淡入恢复边界
 
 - v72 `golden-walnut-source-schedule-v72-20261030-mandatory-menu-recovery` 继续显式使用 `--skip-training`，共运行 `271` 次尝试、取得 `176` 条 verified Product action，完成 Crop Teacher 并推进到 Spring 9。mandatory Fishing `ItemGrabMenu` 恢复未回退；运行最终在同一日界淡入状态连续五次失败关闭：`runtime_calibration_compatible=true`、`route_timing_ready_now=false`、`native_control_gate_open=false`、`player_can_move_now=true`、`global_fade=true`，且菜单、事件、工具、暂停、冻结与 warp 均关闭。该轮没有 Student 更新、checkpoint 或 GPU 训练。
-- 修复只扩展唯一 `NativeControlSettleRecovery` 的精确状态集合：既有“native gate 已开、玩家暂不可动、无淡入”分支保持不变；新增分支只接受 v72 的完整三元组“native gate 未开、玩家可动标志已恢复、global fade 仍在”。两种分支都只编译一次 `30` tick `executor.wait_ticks`，fresh 重规划、零能量、no-progress 退避，不生成 Teacher preference 标签。任何混合或部分状态仍失败关闭。
-- 验证为恢复专项 `10/10`、完整 GameFreeGovernance `525/525`、LiveTrainingLoop Release `0 warning / 0 error`。v73 `golden-walnut-source-schedule-v73-20261030-day-start-fade-settle` 从 v72 的 Spring 9 原生保存边界隔离回放，取得 `2/2` verified action，并原生保存到 Spring 10；三个 stderr 均为零，进程和端口完整回收。v73 启动加载已消耗淡入，因此只证明无回退与保存边界，**没有**冒充新分支的实时命中证据。
-- 当前唯一施工单元是同进程跨原生日界，真实命中上述 day-start fade 分支并记录 `ready_native_control_settle` / `30` tick wait / fresh replan。命中后立即恢复既定顺序：首次登岛 -> 核桃来源增量 -> First Parrot -> Turtle -> House -> source schedule 生成与独立重放。#345 完成前继续 `--skip-training`，上表所有正式训练分子不变。
+- 修复只扩展唯一 `NativeControlSettleRecovery` 的精确状态集合：既有“native gate 已开、玩家暂不可动、无淡入”分支保持不变；新增分支只接受 v72 的完整三元组“native gate 未开、玩家可动标志已恢复、global fade 仍在”。两种分支都只编译一次 `30` tick `executor.wait_ticks`，fresh 重规划、零能量、no-progress 退避，不生成 Teacher preference 标签。该恢复现于所有 DailyPlan producer 之前全局且唯一抢占，Crop Teacher、collection Teacher 与普通日计划不能再先行覆盖；任何混合或部分状态仍失败关闭。
+- 后续证据明确分层：v73 证明 Spring 9 -> 10 无回退保存；v76 正确拒绝过期布局 fixture；v77 证明 Crop Teacher 睡眠确认会等到淡入结束；v79/v80 的 fresh-process 共享睡眠没有复现 transient。最终 v82 从 v72 精确 Spring 8 `_old` 哈希副本执行 `8 x 600` tick 屋内预热、共享 DailyPlan 睡眠和次日 fresh 重规划，8 次预热均 `applied + verified`，三份 stderr 为零，但睡眠返回时仍没有出现 v72 三元组。包装器因此按设计拒绝“实时正向命中”，没有伪造成功。
+- 当前代码验证为恢复/入口专项 `19/19`、完整 GameFreeGovernance `526/526`、LiveTrainingLoop Release `0 warning / 0 error`。v72 仍是该 transient 的真实负向现场证据；精确状态识别、唯一全局抢占、编译和等待行为已有单元/源守卫证据，实时正向分支只在以后自然长跑命中时补录，不再以人工扩展探针阻塞 WIP=1。下一施工单元恢复既定顺序：首次登岛 -> 核桃来源增量 -> First Parrot -> Turtle -> House -> source schedule 生成与独立重放。#345 完成前继续 `--skip-training`，上表所有正式训练分子不变。
 
 ### 2026-10-27 落盘边界修正
 

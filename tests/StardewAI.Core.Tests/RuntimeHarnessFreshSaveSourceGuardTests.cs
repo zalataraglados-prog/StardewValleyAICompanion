@@ -444,6 +444,61 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void NativeControlSettlePreemptsAllDailyPlanProducersOnce()
+    {
+        var root = FindRepositoryRoot();
+        var program = File.ReadAllText(Path.Combine(
+            root,
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.cs"));
+        var collectionTeacher = File.ReadAllText(Path.Combine(
+            root,
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.StageOneCollectionTeacher.cs"));
+
+        const string settleSelection =
+            "if (nativeControlSettle?.Queue is not null)";
+        const string cropTeacherSelection =
+            "else if (options.UseDailyPlan && activeCropTeacherRunPlan is not null)";
+
+        var settleIndex = program.IndexOf(
+            settleSelection,
+            StringComparison.Ordinal);
+        var cropTeacherIndex = program.IndexOf(
+            cropTeacherSelection,
+            StringComparison.Ordinal);
+        Assert.True(settleIndex >= 0);
+        Assert.True(cropTeacherIndex > settleIndex);
+        Assert.Equal(
+            1,
+            CountOccurrences(
+                program,
+                "TryBuildNativeControlSettleQueueAsync("));
+        Assert.DoesNotContain(
+            "TryBuildNativeControlSettleQueueAsync(",
+            collectionTeacher,
+            StringComparison.Ordinal);
+    }
+
+    private static int CountOccurrences(string value, string fragment)
+    {
+        var count = 0;
+        var offset = 0;
+        while ((offset = value.IndexOf(
+                   fragment,
+                   offset,
+                   StringComparison.Ordinal)) >= 0)
+        {
+            count++;
+            offset += fragment.Length;
+        }
+
+        return count;
+    }
+
     private static string FindRepositoryRoot()
     {
         var directory = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
