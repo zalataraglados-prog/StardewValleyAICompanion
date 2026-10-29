@@ -1408,3 +1408,11 @@ v67 最终达到 iteration `521`、total day `27` 和 `391` 条 verified native 
 同一运行还证明“每轮只归档聚合 episode”会遗漏真实子动作。iteration `142` 的多项执行已有七个逐项 fresh 结果，但末项失败使聚合 `Success=false`，旧 archive 因而在 `141 -> 143` 留下 `279` tick 空洞。计划固定采用 manifest v3：保留聚合 episode，同时为 Golden Walnut 证据逐项写出精确边界；fresh 失败项只作为 continuity witness，必须在姜岛/核桃稳定投影上 before==after，不能贡献任何成功转移。普通 `24` tick 和剧情 `360` tick 上限保持不变。
 
 下一运行必须是全新 v68 day-zero，继续 `--skip-training`。它的前置验收为 Runtime Harness 构建、完整治理测试、真实 occupied-start 脱困和多步骤 archive/v3 manifest；长期退出条件仍是首次登岛、来源增量、First Parrot、Turtle、House、source schedule 生成与独立重放。未达到这些条件前，不得提升 coverage、声明正式训练开始或绕过 #345 Provider/Student 门。
+
+## 历史记录 · 2026-10-29 v68 失败聚合的早退归档修正
+
+v68 已在同一 day-zero 新档中完成两轮作物、节日等待、满包恢复和钓鱼前缀，并留下 `160` 条 verified Product action。成功复合队列的逐项 archive 已真实出现；但 iteration `154` 的部分收获证明，仅修改 episode 写入器和 archive 类仍不够：主循环会在 aggregate 未整批 verified 时提前返回，导致已经 fresh verified 的子步骤根本没有机会进入逐项写入器。iteration `154` 的一格收获真实进入 ledger、iteration `161` 又完成剩余七格，但耐久 alias 在 `153 -> 155` 断开，所以 v68 必须作为诊断运行停止。
+
+唯一修复位于现有主循环早退边界。Golden Walnut 捕获模式在未验证 aggregate 返回前生成不写数据集的 `episode.continuity.*` 元数据，并调用同一个逐项 episode/耐久 archive 流程；普通运行、成功执行训练行、候选、编译器和 Runtime Harness 均不改变。失败见证仍不能贡献来源增量、解锁日或策略监督，manifest/schedule builder 继续检查姜岛与核桃稳定投影及原 `24`/`360` tick 边界。
+
+下一施工顺序固定为：提交修复 -> 全新 v69 day-zero -> 在部分成功或失败聚合处验证连续 alias -> manifest v3 严格重建 -> occupied-start 出口真实命中或自然越过 -> 首次登岛 -> 来源增量 -> First Parrot -> Turtle -> House -> source schedule 生成 -> 独立重放 -> #345 Provider/Student 门 -> 正式准入复核。禁止续接 v68、手工补写 `00000154` 或把 continuity-only episode 加入政策训练数据。

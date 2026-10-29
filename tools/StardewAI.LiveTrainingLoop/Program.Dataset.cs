@@ -11,6 +11,43 @@ using StardewAI.LiveTrainingLoop;
 
 static partial class Program
 {
+    private static void WriteGoldenWalnutUnverifiedContinuityEpisodes(
+        LiveTrainingOptions options,
+        int iteration,
+        string beforeSnapshotPath,
+        string modelPlanPath,
+        string queuePath,
+        JsonObject queue,
+        JsonObject execution,
+        string stateHash,
+        string queueId)
+    {
+        if (!options.CaptureGoldenWalnutFreshSaveEvidence)
+        {
+            return;
+        }
+
+        var continuityMetadata = new TrainingDatasetAppendResult
+        {
+            DatasetPath = Path.GetFullPath(options.DatasetPath),
+            RowId = string.Empty,
+            EpisodeId = "episode.continuity." + Guid.NewGuid().ToString("N"),
+            BytesWritten = 0,
+            RowCount = 0
+        };
+        WritePlanExecutionEpisode(
+            options,
+            iteration,
+            beforeSnapshotPath,
+            modelPlanPath,
+            queuePath,
+            queue,
+            execution,
+            continuityMetadata,
+            stateHash,
+            queueId);
+    }
+
     private static JsonObject? FindQueueItemForExecution(JsonObject queue, JsonObject execution)
     {
         var executedQueueItemId = ReadStringOrEmpty(execution, "queue_item_id");
