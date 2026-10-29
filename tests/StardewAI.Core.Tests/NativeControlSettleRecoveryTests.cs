@@ -57,6 +57,42 @@ public sealed class NativeControlSettleRecoveryTests
             value.Value == NativeControlSettleRecovery.WaitTicks.ToString());
     }
 
+    [Fact]
+    public void ExactDayStartFadeControlGapCreatesOneBoundedWait()
+    {
+        var snapshot = Snapshot(
+            nativeGateOpen: false,
+            playerCanMove: true,
+            globalFade: true,
+            freezePause: 0);
+
+        var source = Assert.IsType<EventCandidate>(
+            NativeControlSettleRecovery.TryCreate(snapshot));
+
+        Assert.Equal(NativeControlSettleRecovery.CandidateId, source.CandidateId);
+        Assert.Equal(NativeControlSettleRecovery.CandidateKind, source.Kind);
+        Assert.Equal(NativeControlSettleRecovery.WaitTicks, source.EstimatedTicks);
+        Assert.Contains(source.Parameters, value =>
+            value.Name == "execution_option_id" &&
+            value.Value == "executor.wait_ticks");
+    }
+
+    [Theory]
+    [InlineData(false, false, true)]
+    [InlineData(false, true, false)]
+    [InlineData(true, true, true)]
+    public void PartialDayStartFadeStateDoesNotCreateRecovery(
+        bool nativeGateOpen,
+        bool playerCanMove,
+        bool globalFade)
+    {
+        Assert.Null(NativeControlSettleRecovery.TryCreate(Snapshot(
+            nativeGateOpen: nativeGateOpen,
+            playerCanMove: playerCanMove,
+            globalFade: globalFade,
+            freezePause: 0)));
+    }
+
     [Theory]
     [InlineData(false, false, true, false, false)]
     [InlineData(true, true, true, false, false)]
@@ -83,7 +119,10 @@ public sealed class NativeControlSettleRecoveryTests
         bool ready = false,
         bool nativeGateOpen = true,
         bool usingTool = false,
-        bool menuOpen = false)
+        bool menuOpen = false,
+        bool playerCanMove = false,
+        bool globalFade = false,
+        int freezePause = -12)
     {
         var json = $$"""
         {
@@ -104,16 +143,16 @@ public sealed class NativeControlSettleRecoveryTests
                   "runtime_calibration_compatible": {{compatible.ToString().ToLowerInvariant()}},
                   "route_timing_ready_now": {{ready.ToString().ToLowerInvariant()}},
                   "native_control_gate_open": {{nativeGateOpen.ToString().ToLowerInvariant()}},
-                  "player_can_move_now": false,
+                  "player_can_move_now": {{playerCanMove.ToString().ToLowerInvariant()}},
                   "player_using_tool_now": {{usingTool.ToString().ToLowerInvariant()}},
                   "immobilizing_buff_19_active": false,
                   "current_event_active": false,
                   "event_up": false,
                   "game_paused": false,
-                  "global_fade": false,
+                  "global_fade": {{globalFade.ToString().ToLowerInvariant()}},
                   "freeze_controls": false,
                   "is_warping": false,
-                  "player_freeze_pause": -12
+                  "player_freeze_pause": {{freezePause}}
                 }
               }
             },

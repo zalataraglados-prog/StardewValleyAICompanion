@@ -51,14 +51,11 @@ namespace StardewAI.Core.Training
                 !HasString(context, "scope", MovementScope) ||
                 !HasBool(context, "runtime_calibration_compatible", true) ||
                 !HasBool(context, "route_timing_ready_now", false) ||
-                !HasBool(context, "native_control_gate_open", true) ||
-                !HasBool(context, "player_can_move_now", false) ||
                 !HasBool(context, "player_using_tool_now", false) ||
                 !HasBool(context, "immobilizing_buff_19_active", false) ||
                 !HasBool(context, "current_event_active", false) ||
                 !HasBool(context, "event_up", false) ||
                 !HasBool(context, "game_paused", false) ||
-                !HasBool(context, "global_fade", false) ||
                 !HasBool(context, "freeze_controls", false) ||
                 !HasBool(context, "is_warping", false) ||
                 !HasIntAtMost(context, "player_freeze_pause", 0) ||
@@ -66,6 +63,17 @@ namespace StardewAI.Core.Training
             {
                 return null;
             }
+
+            var postSleepControlGap =
+                HasBool(context, "native_control_gate_open", true) &&
+                HasBool(context, "player_can_move_now", false) &&
+                HasBool(context, "global_fade", false);
+            var dayStartFadeControlGap =
+                HasBool(context, "native_control_gate_open", false) &&
+                HasBool(context, "player_can_move_now", true) &&
+                HasBool(context, "global_fade", true);
+            if (!postSleepControlGap && !dayStartFadeControlGap)
+                return null;
 
             return new EventCandidate
             {

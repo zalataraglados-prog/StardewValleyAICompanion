@@ -18,6 +18,13 @@
 | Money production evidence cells | **0/18** | 6 个 Money criterion × 3 partitions；hermetic fixture 不计 production |
 | Formal product training | **false** | 未通过完整正式训练准入 |
 
+### 2026-10-30 v72-v73 原生控制淡入恢复边界
+
+- v72 `golden-walnut-source-schedule-v72-20261030-mandatory-menu-recovery` 继续显式使用 `--skip-training`，共运行 `271` 次尝试、取得 `176` 条 verified Product action，完成 Crop Teacher 并推进到 Spring 9。mandatory Fishing `ItemGrabMenu` 恢复未回退；运行最终在同一日界淡入状态连续五次失败关闭：`runtime_calibration_compatible=true`、`route_timing_ready_now=false`、`native_control_gate_open=false`、`player_can_move_now=true`、`global_fade=true`，且菜单、事件、工具、暂停、冻结与 warp 均关闭。该轮没有 Student 更新、checkpoint 或 GPU 训练。
+- 修复只扩展唯一 `NativeControlSettleRecovery` 的精确状态集合：既有“native gate 已开、玩家暂不可动、无淡入”分支保持不变；新增分支只接受 v72 的完整三元组“native gate 未开、玩家可动标志已恢复、global fade 仍在”。两种分支都只编译一次 `30` tick `executor.wait_ticks`，fresh 重规划、零能量、no-progress 退避，不生成 Teacher preference 标签。任何混合或部分状态仍失败关闭。
+- 验证为恢复专项 `10/10`、完整 GameFreeGovernance `525/525`、LiveTrainingLoop Release `0 warning / 0 error`。v73 `golden-walnut-source-schedule-v73-20261030-day-start-fade-settle` 从 v72 的 Spring 9 原生保存边界隔离回放，取得 `2/2` verified action，并原生保存到 Spring 10；三个 stderr 均为零，进程和端口完整回收。v73 启动加载已消耗淡入，因此只证明无回退与保存边界，**没有**冒充新分支的实时命中证据。
+- 当前唯一施工单元是同进程跨原生日界，真实命中上述 day-start fade 分支并记录 `ready_native_control_settle` / `30` tick wait / fresh replan。命中后立即恢复既定顺序：首次登岛 -> 核桃来源增量 -> First Parrot -> Turtle -> House -> source schedule 生成与独立重放。#345 完成前继续 `--skip-training`，上表所有正式训练分子不变。
+
 ### 2026-10-27 落盘边界修正
 
 - 历史 runtime 目录膨胀的直接原因已经定位：LiveTrainingLoop 默认仍写普通全量 JSON，且 `stop` 保留模式不会主动淘汰；单项队列还会同时保留 before、逐项 after 和终态 after。内容寻址模式虽能共享相同块，但旧 rolling 只删逻辑清单，不回收 `_snapshot-blobs` 中失去引用的块，恢复快照、native save boundary 与 Crop Teacher 文件名也未被原正则完整覆盖。
