@@ -1333,4 +1333,6 @@ PR #348 同时为睡醒后的精确 transient native-control 状态增加单次 
 
 v63 在 Spring 13 `06:40` 因统一 timeline scheduler 的固定 6 小时默认等待预算无法覆盖 `14:10` 节日 transit 开放点而停止。PR #352 将默认预算绑定到当前时刻至 `19:00` autonomous recovery 窗口；显式硬上限仍保持，ready-now 候选优先，执行仍只发出单个 `600` tick rolling wait 后 fresh 重规划。聚焦回归 `8/8`、GameFreeGovernance Core `503/503` 通过。
 
-v64 直接重载 v63 白天存档时被 day-zero initial-boundary validator 拒绝，证明未跨原生保存边界的内存态不得拼接到正式 fresh-save corpus。v65 从新的 day-zero 身份重跑并在 iteration `112-113` 等待，`14:10` 后于 `114-116` 恢复连接器，iteration `117` 继续移动/清障；最新已到 Spring 13 `15:00`，stderr 为零。该结果仅关闭节日调度阻塞，尚未证明首次登岛、来源增量、三项鹦鹉工程或 source schedule，故所有正式准入分子与 `formal_product_training_authorized=false` 保持；#345 的 Provider/Student 门仍必须在正式训练前独立完成。
+v64 直接重载 v63 白天存档时被 day-zero initial-boundary validator 拒绝，证明未跨原生保存边界的内存态不得拼接到正式 fresh-save corpus。v65 从新的 day-zero 身份重跑，越过 Spring 13 节日门并最终到达 Spring 22 / total day 21，留下 `265` 条耐久 episode。末次 manifest 构建暴露 episode `279 -> 281` 的 `335` tick 剧情暂停交接；两侧同日同分钟、同地图同格，金钱、能量、生命、工具、背包及岛屿/核桃进度均完全相同。验证器只为成功且 primitive verified 的 `executor.advance_story_event` 增加最大 `360` tick 的稳定状态交接，普通窗口仍为 `24` tick，任何玩家或进度变化仍失败关闭。聚焦测试 `5/5`、Core governance `508/508` 通过。
+
+修复后正式 builder 已对 v65 重建 `265/265` episode 的合法 manifest；source-schedule 构建只因缺少原生首次登岛 transition 而失败。该结果不增加任何正式准入分子，也不允许跨进程续接 v65 的未保存内存态。下一准入运行必须从新 day-zero v66 开始，完成首次登岛、来源增量、First Parrot/Turtle/House、schedule 生成和独立重放；`formal_product_training_authorized=false` 与 #345 Provider/Student 门保持。
