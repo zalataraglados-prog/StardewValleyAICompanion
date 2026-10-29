@@ -231,7 +231,8 @@ namespace StardewAI.Core.Training
                 return SellShopItemSteps(candidate);
             }
 
-            if (candidate.Kind == "recovery_refresh_plan")
+            if (candidate.Kind == "recovery_refresh_plan" ||
+                candidate.Kind == NativeControlSettleRecovery.CandidateKind)
             {
                 return RecoveryRefreshSteps(candidate);
             }

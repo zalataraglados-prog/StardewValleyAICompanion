@@ -828,9 +828,13 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 selectedQueueIndex = 0;
                 useDailyPlanDecisionLease = true;
                 var isControlOnlyQueue = string.Equals(
-                    collectionTeacher.Status,
-                    "ready_authoritative_tie_control",
-                    StringComparison.Ordinal);
+                        collectionTeacher.Status,
+                        "ready_authoritative_tie_control",
+                        StringComparison.Ordinal) ||
+                    string.Equals(
+                        collectionTeacher.Status,
+                        "ready_native_control_settle",
+                        StringComparison.Ordinal);
                 if (isControlOnlyQueue)
                     stageOneCollectionControlQueueCount++;
                 else

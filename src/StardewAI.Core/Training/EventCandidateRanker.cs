@@ -193,7 +193,8 @@ namespace StardewAI.Core.Training
                         urgencySignal = 0.03;
                     }
 
-                    if (candidate.Kind == "recovery_refresh_plan")
+                    if (candidate.Kind == "recovery_refresh_plan" ||
+                        candidate.Kind == NativeControlSettleRecovery.CandidateKind)
                     {
                         urgencySignal = 0.04;
                     }
@@ -433,7 +434,8 @@ namespace StardewAI.Core.Training
         {
             return kind is "recovery_return_home" or
                 "recovery_sleep_immediately" or
-                "recovery_resume_sleep_prompt";
+                "recovery_resume_sleep_prompt" or
+                NativeControlSettleRecovery.CandidateKind;
         }
 
         private static int ReadCurrentTime(OptionAvailabilityEnvelope availability)

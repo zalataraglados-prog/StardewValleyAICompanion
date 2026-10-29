@@ -90,6 +90,7 @@
     <Compile Include="ExecutorInputLifecycleTests.cs" />
     <Compile Include="ExecutorInputLifecycleSourceGuardTests.cs" />
     <Compile Include="MovementTimingEvidenceSourceGuardTests.cs" />
+    <Compile Include="NativeControlSettleRecoveryTests.cs" />
     <Compile Include="GrandpaDirectionCatalogGovernanceTests.cs" />
     <Compile Include="WildTreeTapperOutputSourceGuardTests.cs" />
     <Compile Include="WildTreeChopAcquisitionMainlineTests.cs" />
