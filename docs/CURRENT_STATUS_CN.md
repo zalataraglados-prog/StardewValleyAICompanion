@@ -604,3 +604,10 @@ formal training manifest 之前必须完成两件事：
 - 睡醒后的另一短暂状态由 PR #348 收敛为 exact recovery：只有 calibration compatible、native gate open、菜单/事件/工具/warp 关闭、`CanMove=false` 且 route timing 未就绪时，才执行一次 `30` tick 等待并 fresh 重规划。重复等待按 no-progress 指数退避，不能抬高 verified-action 目标。
 - v61 仍是诊断运行，既有缺口不准通过扩大 `24` tick 窗口掩盖。下一证据必须来自全新 v62：先验证上述两个修复，再继续 Golden Walnut source schedule 主线。19 criterion、root method、Teacher comparison/native outcome 分子和 `formal_product_training_authorized=false` 均未改变；#345 的 Provider/Student 门继续阻止正式训练。
 - 为满足后台静默和低温运行约束，产品校准现在把 `STARDEWAI_SUPPRESS_LOCAL_RENDER=1` 纳入受控环境生命周期，既有 Draw 抑制补丁也接纳 headless training。`headless-training-render-suppression-20261029` 短 smoke 已证明原生新档成功、日志命中 Draw suppression、stderr 为 0 且进程/端口完整回收；普通可见游戏不受影响，正式准入分子不变。
+
+## 20. 2026-10-29 v63-v65 Egg Festival 调度实证
+
+- v63 在 Spring 13 `06:40` 暴露默认 `21600`-tick 等待上限无法覆盖 `14:10` 节日 transit 开放点，导致 `AllowedToday` 候选在 shared daily plan 前被过滤为空。该轮共 `208` 次迭代、`155` 条 verified action，停止原因精确为连续八次 `empty_action_list`；此前作物、剧情、钓鱼与原生保存前缀均正常。
+- PR #352 只修正统一 timeline scheduler 的默认预算：以当前时刻到 `19:00` 的剩余游戏时间为界；显式硬上限、ready-now 优先、单个 `600` tick rolling wait、fresh snapshot 和晚间 recovery 均保持。聚焦节日路径 `8/8`、Core governance `503/503` 通过。
+- v64 对 v63 白天存档的直接续跑被 day-zero validator 拒绝，确认 fresh-save 证据不能跨未保存内存态拼接。v65 因此从新 day-zero 身份重跑；截至 iteration `117` 已到 Spring 13 `15:00`，iteration `112-113` 为等待，`114-116` 已恢复连接器，`117` 继续移动/清障，stderr 为零。该实证关闭本次运行阻塞，但尚未首次登岛或生成 source schedule。
+- v65 保持运行；19 criterion、Teacher comparison/native outcome 分子和 `formal_product_training_authorized=false` 均不变。下一状态变化只允许来自同一连续运行中的首次登岛、核桃来源增量、三项鹦鹉跃迁、source schedule 生成与独立重放，不能把本次节日恢复记成正式训练。
