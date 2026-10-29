@@ -103,7 +103,8 @@ function Wait-World([string] $SnapshotUrl, [int] $Seconds) {
     $deadline = (Get-Date).AddSeconds($Seconds)
     while ((Get-Date) -lt $deadline) {
         try {
-            $response = Invoke-WebRequest -Uri $SnapshotUrl -TimeoutSec 30
+            $response = Invoke-WebRequest -UseBasicParsing `
+                -Uri $SnapshotUrl -TimeoutSec 30
             $snapshot = $response.Content | ConvertFrom-Json
             if ($snapshot.state.player.location_id.status -in @("available", "derived") -and
                 $snapshot.state.identity.save_id.status -in @("available", "derived")) {
