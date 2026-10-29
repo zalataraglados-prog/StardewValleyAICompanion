@@ -9,6 +9,7 @@ namespace StardewAI.Core.Infrastructure;
 public static class GoldenWalnutFreshSaveEpisodeContinuityVerifier
 {
     public const long MaximumControllerHandoffGapTicks = 24;
+    public const long MaximumPausedStoryEventHandoffGapTicks = 360;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -56,11 +57,9 @@ public static class GoldenWalnutFreshSaveEpisodeContinuityVerifier
 
         var gapTicks = currentEpisode.BeforeGameTick -
             previousEpisode.AfterGameTick;
-        Require(
-            gapTicks >= 0 &&
-            gapTicks <= MaximumControllerHandoffGapTicks,
-            "Golden Walnut passive continuity gap exceeds the bounded " +
-            "observation window: " + currentEpisodePath);
+        Require(gapTicks >= 0,
+            "Golden Walnut passive continuity game tick moved backwards: " +
+            currentEpisodePath);
         Require(
             previousAfter.StateHash == previousEpisode.AfterStateHash &&
             currentBefore.StateHash == currentEpisode.SourceStateHash,
@@ -102,7 +101,70 @@ public static class GoldenWalnutFreshSaveEpisodeContinuityVerifier
                     "golden_walnut_sources")),
             "Golden Walnut passive continuity contains unreceipted island " +
             "progress: " + currentEpisodePath);
+        Require(
+            gapTicks <= MaximumControllerHandoffGapTicks ||
+            IsPausedStoryEventHandoff(
+                gapTicks,
+                previousEpisode,
+                previousAfter,
+                currentEpisode,
+                currentBefore),
+            "Golden Walnut passive continuity gap exceeds the bounded " +
+            "observation window: " + currentEpisodePath);
     }
+
+    private static bool IsPausedStoryEventHandoff(
+        long gapTicks,
+        PlanExecutionEpisodeEnvelope previousEpisode,
+        SnapshotEnvelope previousAfter,
+        PlanExecutionEpisodeEnvelope currentEpisode,
+        SnapshotEnvelope currentBefore)
+    {
+        if (gapTicks <= MaximumControllerHandoffGapTicks ||
+            gapTicks > MaximumPausedStoryEventHandoffGapTicks ||
+            !previousEpisode.Success ||
+            !string.Equals(
+                previousEpisode.PrimitiveVerificationStatus,
+                "verified",
+                StringComparison.Ordinal) ||
+            !string.Equals(
+                previousEpisode.OptionId,
+                "executor.advance_story_event",
+                StringComparison.Ordinal) ||
+            !currentEpisode.Success ||
+            string.IsNullOrWhiteSpace(currentEpisode.OptionId) ||
+            !currentEpisode.OptionId.StartsWith(
+                "executor.",
+                StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        return SameStateValue(
+                previousAfter, currentBefore, "player", "location_id") &&
+            SameStateValue(
+                previousAfter, currentBefore, "player", "tile_x") &&
+            SameStateValue(
+                previousAfter, currentBefore, "player", "tile_y") &&
+            SameStateValue(
+                previousAfter, currentBefore, "player", "money") &&
+            SameStateValue(
+                previousAfter, currentBefore, "player", "energy") &&
+            SameStateValue(
+                previousAfter, currentBefore, "player", "health") &&
+            SameStateValue(
+                previousAfter, currentBefore, "player", "current_tool") &&
+            SameStateValue(
+                previousAfter, currentBefore, "player", "inventory");
+    }
+
+    private static bool SameStateValue(
+        SnapshotEnvelope left,
+        SnapshotEnvelope right,
+        string domain,
+        string key) =>
+        ReadStateValue(left, domain, key).GetRawText() ==
+        ReadStateValue(right, domain, key).GetRawText();
 
     private static SnapshotEnvelope ReadSnapshot(
         string episodePath,

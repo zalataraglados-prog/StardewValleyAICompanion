@@ -1389,4 +1389,6 @@ v61 已把 day-zero 前缀推进到 Spring 23 / total day 22、`295` 条 verifie
 
 v63 在 Spring 13 `06:40` 证明唯一剩余阻塞不是动作缺失，而是统一 timeline scheduler 的默认 6 小时等待预算短于 `06:40 -> 14:10` 节日关闭窗口。PR #352 将默认预算改为当前时刻到 `19:00` 的剩余时间，同时保留 ready-now 优先、显式硬上限和单个 `600` tick rolling wait。v65 的真实 day-zero 链已在 iteration `112-113` 等待，并于开放后在 `114-116` 自动恢复连接器，iteration `117` 继续移动/清障；Spring 13 `15:00` 快照和零 stderr 证明该门已跨越。
 
-v64 的直接续跑被 day-zero validator 拒绝，因此计划继续禁止把未保存白天内存态跨进程拼接。当前唯一施工顺序是让同一 v65 连续链继续：首次登岛 -> 来源增量 -> First Parrot -> Turtle -> House -> source schedule 生成 -> 独立重放 -> #345 Provider/Student 定型 -> 正式准入复核。v65 在上述终态前停止或产生 continuity 缺口时，只能保留为诊断并从新 day-zero 重跑；不得关闭验证器或手工回填。
+v64 的直接续跑被 day-zero validator 拒绝，因此计划继续禁止把未保存白天内存态跨进程拼接。v65 最终推进到 Spring 22 / total day 21 并留下 `265` 条耐久 episode；episode `279` 的 verified 剧情推进与 episode `281` 的浇水之间出现 `335` tick 暂停，但日与分钟、地点与格子、金钱、能量、生命、工具、背包和全部岛屿/核桃稳定进度均未变化。验证器只为成功且 primitive verified 的 `executor.advance_story_event` 增加最大 `360` tick 的稳定状态交接，普通交接仍保持 `24` tick 硬门。移动、资源变化、岛屿进度或超限仍失败关闭。
+
+修复后 v65 的 `265/265` episode 已由正式 builder 重建为合法 manifest，source-schedule 只在缺少原生首次登岛 transition 处失败。v65 已停止，不能跨进程续接；当前唯一施工顺序改为新的 day-zero v66：首次登岛 -> 来源增量 -> First Parrot -> Turtle -> House -> source schedule 生成 -> 独立重放 -> #345 Provider/Student 定型 -> 正式准入复核。不得关闭验证器、手工回填或把合法但未完成的 v65 manifest 当成 source schedule。
