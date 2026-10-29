@@ -263,6 +263,11 @@ public sealed partial class ModEntry : Mod
             var pathStartTile = Game1.player.TilePoint;
             if (!IsFarmerCenteredOnTile(pathStartTile))
             {
+                if (TryReleaseOccupiedPathStart(move, pathStartTile))
+                {
+                    return;
+                }
+
                 SettleFarmerOnTile(move, pathStartTile, "path_start");
                 return;
             }

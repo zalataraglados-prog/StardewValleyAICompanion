@@ -5,6 +5,32 @@ namespace StardewAI.RuntimeTestHarness;
 
 public sealed partial class ModEntry
 {
+    private bool TryReleaseOccupiedPathStart(
+        ActiveTileMove move,
+        Point pathStartTile)
+    {
+        if (!IsTileOccupiedByCharacter(Game1.currentLocation, pathStartTile))
+        {
+            return false;
+        }
+
+        StopAllMovement("occupied_path_start_replan");
+        move.CurrentDirection = null;
+        if (!ReplanTileMove(move, avoidSoftObstacles: true))
+        {
+            return false;
+        }
+
+        // Native push-through can leave the farmer sharing a tile with a pet or
+        // NPC. Centering inside that occupied tile is impossible; the replanned
+        // path provides the collision-safe native-input escape instead.
+        move.NeedsPathStartCentering = false;
+        move.StuckTicks = 0;
+        move.SoftObstacleTicks = 0;
+        move.LastPosition = Game1.player.Position;
+        return true;
+    }
+
     private void TickTileMoveSoftObstacle(
         ActiveTileMove move,
         Point currentTile,
