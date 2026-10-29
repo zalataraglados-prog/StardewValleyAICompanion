@@ -49,7 +49,10 @@ public static class GoldenWalnutFreshSaveEpisodeArchive
                 !string.IsNullOrWhiteSpace(episode.SourceStateHash) &&
                 !string.IsNullOrWhiteSpace(episode.AfterStateHash),
             "Golden Walnut source episode identity is invalid: " + fullEpisodePath);
-        if (!episode.Success || !episode.AfterSnapshotFresh)
+        // A fresh failed receipt is still a required continuity witness. It may
+        // not claim progression, but omitting it would create an unobserved gap
+        // between adjacent successful native actions.
+        if (!episode.AfterSnapshotFresh)
             return new GoldenWalnutFreshSaveEpisodeArchiveResult(false, string.Empty);
 
         var directory = Path.GetDirectoryName(fullEpisodePath) ??

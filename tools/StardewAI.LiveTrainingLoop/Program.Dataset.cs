@@ -37,6 +37,77 @@ static partial class Program
         string stateHash,
         string queueId)
     {
+        var episode = BuildPlanExecutionEpisode(
+            options,
+            beforeSnapshotPath,
+            modelPlanPath,
+            queuePath,
+            queue,
+            execution,
+            appendResult,
+            stateHash,
+            queueId,
+            appendResult.EpisodeId);
+        var episodePath = Path.Combine(
+            options.SnapshotDir,
+            "plan-execution-episode-" + iteration.ToString("D4") + ".json");
+        WritePlanExecutionEpisodeFile(episodePath, episode);
+        if (!options.CaptureGoldenWalnutFreshSaveEvidence)
+        {
+            return;
+        }
+
+        var stepResults = execution["step_results"] as JsonArray;
+        if (stepResults is null || stepResults.Count <= 1)
+        {
+            GoldenWalnutFreshSaveEpisodeArchive.Capture(
+                episodePath,
+                iteration,
+                options.RunId);
+            return;
+        }
+
+        for (var index = 0; index < stepResults.Count; index++)
+        {
+            var stepExecution = stepResults[index]?.AsObject() ??
+                throw new InvalidDataException(
+                    "Sequential execution step result is missing at index " + index + ".");
+            var ordinal = index + 1;
+            var stepEpisode = BuildPlanExecutionEpisode(
+                options,
+                beforeSnapshotPath,
+                modelPlanPath,
+                queuePath,
+                queue,
+                stepExecution,
+                appendResult,
+                stateHash,
+                queueId,
+                appendResult.EpisodeId + ".item." + ordinal.ToString("D4"));
+            var stepEpisodePath = Path.Combine(
+                options.SnapshotDir,
+                "plan-execution-episode-" + iteration.ToString("D4") +
+                "-item-" + ordinal.ToString("D4") + ".json");
+            WritePlanExecutionEpisodeFile(stepEpisodePath, stepEpisode);
+            GoldenWalnutFreshSaveEpisodeArchive.Capture(
+                stepEpisodePath,
+                iteration,
+                options.RunId);
+        }
+    }
+
+    private static PlanExecutionEpisodeEnvelope BuildPlanExecutionEpisode(
+        LiveTrainingOptions options,
+        string beforeSnapshotPath,
+        string modelPlanPath,
+        string queuePath,
+        JsonObject queue,
+        JsonObject execution,
+        TrainingDatasetAppendResult appendResult,
+        string stateHash,
+        string queueId,
+        string episodeId)
+    {
         var item = execution["effective_queue_item"]?.AsObject() ?? FindQueueItemForExecution(queue, execution) ?? queue["items"]?.AsArray().FirstOrDefault()?.AsObject();
         var optionId = ReadStringOrEmpty(execution, "option_id");
         if (string.IsNullOrWhiteSpace(optionId))
@@ -60,7 +131,7 @@ static partial class Program
         var reward = CalculateExecutionReward(execution, optionId, applied);
         var episode = new PlanExecutionEpisodeEnvelope
         {
-            EpisodeId = appendResult.EpisodeId,
+            EpisodeId = episodeId,
             RunId = options.RunId,
             SourceStateHash = ReadString(execution, "effective_before_state_hash") is { Length: > 0 } effectiveStateHash ? effectiveStateHash : stateHash,
             AfterStateHash = ReadString(execution, "after_state_hash"),
@@ -158,16 +229,16 @@ static partial class Program
             MaterialTransferNativeLockReleased = execution["material_transfer_native_lock_released"]?.GetValue<bool>()
         };
 
-        var episodePath = Path.Combine(options.SnapshotDir, "plan-execution-episode-" + iteration.ToString("D4") + ".json");
-        File.WriteAllText(episodePath, JsonSerializer.Serialize(episode, JsonOptions), Encoding.UTF8);
-        if (options.CaptureGoldenWalnutFreshSaveEvidence)
-        {
-            GoldenWalnutFreshSaveEpisodeArchive.Capture(
-                episodePath,
-                iteration,
-                options.RunId);
-        }
+        return episode;
     }
+
+    private static void WritePlanExecutionEpisodeFile(
+        string path,
+        PlanExecutionEpisodeEnvelope episode) =>
+        File.WriteAllText(
+            path,
+            JsonSerializer.Serialize(episode, JsonOptions),
+            Encoding.UTF8);
 
     private static double CalculateExecutionReward(
         JsonObject execution,

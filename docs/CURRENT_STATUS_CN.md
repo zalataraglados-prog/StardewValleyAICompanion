@@ -620,3 +620,11 @@ formal training manifest 之前必须完成两件事：
 - 修复仍属于唯一通用移动状态机：普通偏心起步继续严格居中；只有当前格被 NPC/宠物占用且玩家偏离中心时，才以现有 BFS 重新规划 `avoidSoftObstacles=true`，取消本次不可实现的占用格居中，并通过原生方向输入沿新路径离开。实现不移动 NPC、不写玩家坐标、不瞬移，也不把可移除障碍清除重新塞回行走器。聚焦守卫 `16/16`、GameFreeGovernance `508/508`、Runtime Harness Release 构建零警告零错误。
 - post-fix v67 仍在后台隐藏静音运行。截至 iteration `410` 已取得 `348` 条 verified action，并继续通过 `411-412` 的 fresh 候选失效/continuation 释放；v66 在 `399-408` 的连续移动失败区间已不再出现，三个 stderr 为零。v67 此处走的是 Farm -> BusStop 等真实 Stage One 路线，并未复刻 v66 的同一宠物位置，因此该前缀只证明无回退与旧退出条件关闭，不冒充精确同轨复现或完整 source schedule。
 - v67 继续运行到首次登岛/source schedule 或下一个可归因的真实断点。所有动作仍使用 `--skip-training`；19 criterion、Teacher comparison/native outcome、root method 与 `formal_product_training_authorized=false` 均不改变。#345 Provider/Student 门完成前不得启动正式训练。
+
+## 22. 2026-10-29 v67 最终断点与逐项连续性证据
+
+- v67 最终运行到 iteration `521`、Spring 28 / total day `27`，取得 `391` 条 verified native action，完成三轮 Crop Teacher，并越过 v66 的旧失败区间。三个运行 stderr 均为零，滚动内容寻址保留持续工作；该轮仍没有首次登岛、核桃来源增量或三项鹦鹉跃迁。
+- 新移动断点为 `harvest-tree-moss:Farm:19,49`。玩家到达 Farm `(50,12)` 时与 `(49,12)` 的宠物边界重叠；v66 修复确实触发了 `occupied_path_start_replan`，原生输入租约也持续持有 `S`，但重规划仍选择 `(50,13)`，没有增大与宠物的分离距离，因此连续八次原生输入都无法离开。当前唯一移动状态机改为先枚举四个相邻可行出口，要求出口仍有一条避开软障碍且不穿可移除障碍的路径通向目标，按与重叠角色的最小距离最大化选择出口，再交回原生方向输入。实现不写玩家坐标、不移动宠物/NPC、不内联清障。
+- v67 的最终 manifest 还揭示独立的证据遗漏：iteration `142` 的复合作物批次已有 `7` 个逐项原生子步骤产生 fresh after snapshot，但末项 `observed_mismatch` 使聚合 episode 失败；旧 archive 因 `Success=false` 丢弃整轮，导致 episode `141 -> 143` 出现 `279` tick 空洞。该问题不得通过扩大 `24` tick 普通交接窗口掩盖。
+- Golden Walnut fresh-save manifest 升级为 v3。聚合 episode 仍保留给兼容与普通训练数据；启用 Golden Walnut 证据时，多步骤执行同时按精确子步骤的 before/after hash、tick、snapshot、execution path 和唯一 episode ID 逐项归档。fresh 失败子步骤作为 continuity witness 保留，但必须证明 Ginger Island 与逐来源核桃进度完全不变；它只连接连续性，不能生成解锁日、来源增量或监督成功标签。至少一条成功原生 episode 仍是 manifest 硬门，普通 `24` tick 与剧情专用 `360` tick 边界均未放宽。
+- 聚焦回归 `13/13`、完整 GameFreeGovernance `509/509`、RuntimeTestHarness Release `0 warning / 0 error`。这些是代码与证据语义验证，尚不冒充新原生长跑。下一固定步骤是从全新 day-zero 身份启动 v68：先要求真实命中或自然越过 occupied-start egress，并确认多步骤批次生成逐项 archive/合法 v3 manifest；随后继续首次登岛 -> 来源增量 -> First Parrot -> Turtle -> House -> source schedule 生成与独立重放。所有运行继续 `--skip-training`，#345 与 `formal_product_training_authorized=false` 不变。

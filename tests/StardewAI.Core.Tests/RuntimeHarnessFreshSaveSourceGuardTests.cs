@@ -365,6 +365,42 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void GoldenWalnutEvidenceArchivesExactSequentialStepBoundaries()
+    {
+        var root = FindRepositoryRoot();
+        var source = File.ReadAllText(Path.Combine(
+            root,
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.Dataset.cs"));
+
+        Assert.Contains(
+            "execution[\"step_results\"] as JsonArray",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "appendResult.EpisodeId + \".item.\" + ordinal.ToString(\"D4\")",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"-item-\" + ordinal.ToString(\"D4\") + \".json\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "BuildPlanExecutionEpisode(",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "GoldenWalnutFreshSaveEpisodeArchive.Capture(",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "stepEpisodePath,",
+            source,
+            StringComparison.Ordinal);
+    }
+
     private static string FindRepositoryRoot()
     {
         var directory = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
