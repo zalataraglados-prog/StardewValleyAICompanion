@@ -4,6 +4,12 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已完成 v10 之后的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已按 current authority 冻结；当前唯一施工项为 `complete_master_angler` 顶层 dependency、日历窗口与 coverage 接线。P0/P1 共享 correctness blocker 可临时中断，但不得静默改序或并行展开多个 root method。
 
+## 2026-10-30 v88 已冻结，v89 必须使用严格抵达与玩家身份
+
+- v88 在 iteration `250` 检查点停止；最后完整 append 为 iteration `247`、累计 `215` 条 verified action。它完成两轮 Crop Teacher 并继续 Stage One collection 控制链，但尚未首次登岛，因此不满足 source-schedule 退出条件，也不计正式训练。
+- 下一轮开始前已关闭两项证据正确性缺口：source schedule 的每个 before/after snapshot 必须绑定 day-zero 初始玩家；`journey.island_reached` 不再读取启航即递增的 `boatRidesToIsland`，只读取真实 Island 入场产生的 `Visited_Island` pending/received 状态或当前 Island 地图。不得把 `BoatJourney`、启航事件或统计计数单独当作抵达。
+- 当前集成验证为身份行为回归 `8/8`、CI guards `2/2`、GameFreeGovernance `532/532`，TransparentBridge/LiveTrainingLoop Release 零警告零错误。下一 WIP=1 是从全新 day-zero v89 重跑相同七步出口并冻结真实 manifest；成功后必须用现有 game-free Bootstrap builder 独立重建和字段比较 schedule，再进入 #345 Provider/Student 门。
+
 ## 2026-10-30 v87 原生回归已证明补水走廊修复
 
 - PR `#369` 已合入 `main`，本机默认 MSBuild `GamePath` 由被忽略的机器配置固定到 E 盘隔离 SMAPI 运行时。普通构建不再进入 ModBuildConfig 对失效 F 盘路径的自动发现；具体绝对路径不进入公开仓库。

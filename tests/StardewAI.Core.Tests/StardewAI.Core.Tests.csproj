@@ -72,7 +72,9 @@
     <Compile Include="FarmSitePreparationCandidateTests.cs" />
     <Compile Include="FarmSitePreparationSourceGuardTests.cs" />
     <Compile Include="GingerHarvestMainlineTests.cs" />
+    <Compile Include="GingerIslandArrivalEvidenceSourceGuardTests.cs" />
     <Compile Include="GoldenWalnutFreshSaveEpisodeContinuityVerifierTests.cs" />
+    <Compile Include="GoldenWalnutScheduleIdentitySourceGuardTests.cs" />
     <Compile Include="IslandGourmandSupplyScheduleProofTests.cs" />
     <Compile Include="WildTreeProductMainlineTests.cs" />
     <Compile Include="DailyPlanCompilerSources.cs" />

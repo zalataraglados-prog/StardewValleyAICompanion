@@ -54,10 +54,15 @@ public static class GoldenWalnutFreshSaveEpisodeScheduleBuilder
         var initialBoundary = ReadWithHash<GoldenWalnutFreshSaveInitialBoundary>(
             initialBoundaryPath,
             out var initialBoundarySha256);
-        GoldenWalnutFreshSaveInitialBoundaryValidator.Validate(
+        var initialSnapshot = GoldenWalnutFreshSaveInitialBoundaryValidator.Validate(
             initialBoundary,
             initialBoundaryPath,
             manifest.SourceRunId);
+        Require(
+            initialSnapshot.PlayerId.Status == FieldStatus.Available &&
+            !string.IsNullOrWhiteSpace(initialSnapshot.PlayerId.Value),
+            "Golden Walnut initial boundary must bind one readable player identity.");
+        var playerId = initialSnapshot.PlayerId.Value;
 
         string? saveId = null;
         PlanExecutionEpisodeEnvelope? previousEpisode = null;
@@ -130,6 +135,12 @@ public static class GoldenWalnutFreshSaveEpisodeScheduleBuilder
             saveId ??= before.SaveId.Value;
             Require(saveId == before.SaveId.Value,
                 "Golden Walnut source schedule cannot combine different saves.");
+            Require(
+                before.PlayerId.Status == FieldStatus.Available &&
+                after.PlayerId.Status == FieldStatus.Available &&
+                before.PlayerId.Value == playerId &&
+                after.PlayerId.Value == playerId,
+                "Golden Walnut episode must bind the initial boundary player identity: " + episodePath);
 
             var beforeDay = ReadStateFieldInt(before, "time", "total_days");
             var afterDay = ReadStateFieldInt(after, "time", "total_days");
