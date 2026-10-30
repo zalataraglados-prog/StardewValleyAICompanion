@@ -82,6 +82,10 @@ public sealed partial class ModEntry : Mod
         public int PostSleepDialoguePhaseTicks { get; set; }
         public int PostSleepDialoguePressAttempts { get; set; }
         public bool PostSleepDialogueButtonHeld { get; set; }
+        public bool SawPostSleepLegacyDialogue { get; set; }
+        public bool PostSleepLegacyDialogueButtonHeld { get; set; }
+        public int PostSleepLegacyDialoguePressAttempts { get; set; }
+        public int PostSleepLegacyDialogueLastInputTick { get; set; }
         public bool SawPostSleepLevelUp { get; set; }
         public LevelUpMenu? PostSleepLevelUpMenu { get; set; }
         public bool PostSleepLevelUpInputDispatched { get; set; }

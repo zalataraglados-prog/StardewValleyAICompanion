@@ -2702,6 +2702,10 @@ public sealed partial class ModEntry : Mod
                 {
                     ApplyPostSleepDialogueInput(activeSleep);
                 }
+                else if (menu is null && Game1.dialogueUp)
+                {
+                    ApplyPostSleepLegacyDialogueInput(activeSleep);
+                }
             }
 
             if (activeJunimoKart is not null && !ApplyJunimoKartInput(activeJunimoKart, out var junimoKartInputReason))

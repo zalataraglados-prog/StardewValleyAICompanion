@@ -4,6 +4,16 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已闭合从 v10 最终隔离存档开始的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已通过 current-authority 复核并冻结；当前唯一施工项是 `complete_master_angler` 顶层依赖、日历窗口与 coverage 接线。Money Exit Gate 标准不降低，但 Money 已回到复杂度队列第 11 位。
 
+## 当前准入结论 · v84 仍是校准，旧式日界对话与假等待已修复
+
+v84 显式使用 `--skip-training`，跨过 v83 的菜单预检边界，完成 Crop Teacher，并在两轮作物阶段取得 `5 + 4` 条日界回执和第二轮 `8` 条收获回执。iteration `198` 之前共有 `147` 条有语义 verified Product action；之后没有 Student 参数更新、checkpoint、GPU 训练或正式政策数据，正式准入分子不变。
+
+iteration `198` 的原生睡眠已推进到 Spring 11 `06:00`，但活动菜单关闭后仍存在 `Game1.dialogueUp=true` 的旧式 `currentObjectDialogue` 队列。当前修复只扩展既有睡眠执行器，在精确、可证安全的 menu-less 对象对话状态下发送原生输入并等待队列关闭；透明控制门和 settle recovery 也同步纳入 `dialogue_up=false`。未知对话、问题、事件、角色对话或异常日界继续失败关闭。
+
+iteration `199..227` 的 `29` 次 settle wait 没有游戏语义变化，只因回执附带 `time.time 600->600` 而绕过旧 no-progress 判定。它们现被隔离为校准噪声；等待回执允许附带未变化事实，但达到既有最大 streak 后结构化停止，其他真实事实变化才算进展。旧运行显示的 `176` 不得作为有效 action 数，权威数字为 `147` 条有效执行加 `29` 条隔离等待。
+
+v84 不能跨中断和代码变更续接为同一 fresh-save 证据。下一准入运行必须是全新 day-zero v85，依次取得首次登岛、核桃来源增量、First Parrot/Turtle/House、source schedule 生成与独立重放。#345 Provider/Student 门完成前仍不得开启模型参数训练。
+
 ## 当前准入结论 · v83 仍是校准，菜单顺序缺口已修复
 
 v83 显式使用 `--skip-training`，在 `324` 次迭代中取得 `223` 条 verified Product action、`433` 个 fresh-save episode、`8` 条原生收获回执和 `5` 条日界回执。它完成 Crop Teacher、邮件/任务/钓鱼/容量恢复/出货及 Spring 17 -> 18 原生结算，但没有 Student 参数更新、checkpoint、GPU 训练或正式政策数据；正式准入分子不变。

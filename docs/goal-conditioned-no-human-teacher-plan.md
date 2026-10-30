@@ -6,6 +6,16 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已从 v10 最终隔离存档闭合下一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已按 current authority 冻结；当前唯一施工项是 `complete_master_angler` 顶层 dependency、日历窗口与 coverage 接线。Money 仍须最终满足原 Exit Gate，但已回到复杂度队列第 11 位。
 
+## Current runtime evidence · 2026-10-30 v84
+
+The fresh day-zero v84 calibration remained under `--skip-training`. It crossed the v83 menu-preflight boundary, completed Crop Teacher, produced nine native day-boundary receipts across two crop phases (`5 + 4`) and eight harvest receipts in the second phase, then continued through mail, quest 13, fishing, inventory recovery, shipping and collection routing. It had 147 semantically meaningful verified Product actions before iteration 198. No Student parameters, checkpoint, GPU training or formal policy corpus were updated.
+
+Iteration 198 advanced natively to Spring 11 at 06:00 but exposed a distinct legacy dialogue boundary: the active `DialogueBox` had closed while `Game1.dialogueUp` remained true and `Game1.currentObjectDialogue` still contained object dialogue. The single existing sleep executor now advances only this exact safe menu-less state with bounded native SMAPI input; the transparent native-control gate and settle recovery also require `dialogue_up=false`. Questions, events, character dialogue and unknown states remain fail-closed.
+
+Iterations 199 through 227 were 29 recovery waits with no game-semantic change. An unchanged `time.time 600->600` fact previously prevented the wait-only no-progress classifier from recognizing the loop, inflating the report from 147 to 176. Those 29 records are quarantined calibration noise. Unchanged auxiliary facts now remain wait-only, real state changes reset the streak, and the existing maximum streak terminates the run.
+
+The interrupted v84 identity cannot be resumed after the code change. The next run is a new day-zero v85 with the same WIP=1 exit: first island arrival, a Golden Walnut source delta, First Parrot/Turtle/House transitions, source-schedule generation and independent replay, followed by the #345 Provider/Student gate. Formal readiness counters remain unchanged.
+
 ## Current runtime evidence · 2026-10-30 v83
 
 The day-zero v83 calibration run remained under `--skip-training`. It completed Crop Teacher, produced 223 verified Product actions, 433 fresh-save episodes, eight harvest receipts and five native day-boundary receipts, then continued through mail, quest 13, fishing, inventory recovery, shipping and a Spring 17 to 18 settlement. This is execution/Teacher calibration evidence only; it does not update Student parameters or authorize formal training.

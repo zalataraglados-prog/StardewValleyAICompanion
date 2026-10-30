@@ -56,6 +56,7 @@ namespace StardewAI.Core.Training
                 !HasBool(context, "current_event_active", false) ||
                 !HasBool(context, "event_up", false) ||
                 !HasBool(context, "game_paused", false) ||
+                !HasBool(context, "dialogue_up", false) ||
                 !HasBool(context, "freeze_controls", false) ||
                 !HasBool(context, "is_warping", false) ||
                 !HasIntAtMost(context, "player_freeze_pause", 0) ||

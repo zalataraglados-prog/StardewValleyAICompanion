@@ -18,6 +18,14 @@
 | Money production evidence cells | **0/18** | 6 个 Money criterion × 3 partitions；hermetic fixture 不计 production |
 | Formal product training | **false** | 未通过完整正式训练准入 |
 
+### 2026-10-30 v84 睡眠后旧式对话边界与等待防伪
+
+- 全新 day-zero 隐藏静音运行 `golden-walnut-source-schedule-v84-20261030-101752-menu-preflight` 继续显式使用 `--skip-training`。它跨过 v83 的菜单预检断点，完成 Crop Teacher，两轮作物阶段分别形成 `5 + 4` 条日界回执，第二轮取得 `8` 条收获回执；随后同一 Stage One 链继续完成邮件、任务 `13`、钓鱼、容量恢复、出货和路线推进。iteration `198` 之前共有 `147` 条有语义、已验证的 Product action。这些仍只是 Teacher/执行器校准证据，没有 Student 参数更新、checkpoint、GPU 训练或正式策略数据。
+- iteration `198` 的终端睡眠已原生推进到 Spring 11 `06:00`，但活动菜单关闭后，原版仍保留 `Game1.dialogueUp=true` 与 `Game1.currentObjectDialogue` 旧式全局对象对话队列；此时 active menu 为 `none`、`Game1.player.CanMove=false`。透明控制门此前没有投影 `dialogueUp`，睡眠执行器也只处理活动 `DialogueBox`，因此把“日界已推进但旧式对话尚未确认”误报为 `post_sleep_world_not_stable`。
+- iteration `199..227` 的 `29` 次 `recovery:wait_for_native_control_settle` 仅令 `executor.wait_ticks 0->30`，`time.time` 始终为 `600->600`，没有任何游戏语义进展。旧 no-progress 判定要求回执中只能出现 wait 字段，因而被这个未变化时钟字段绕过，并把报表从 `147` 错增到 `176`。这 `29` 条记录现明确隔离为校准噪声，不得进入训练、coverage 或成果计数。
+- 当前修复仍复用唯一睡眠执行器：仅在“日界精确推进一日、菜单为空、无问题/事件/角色对话且旧式对象队列非空”时，通过原生 SMAPI 右键按下/释放脉冲推进该队列；未知对话状态继续失败关闭。透明 native-control gate 与 settle recovery 同时要求 `dialogue_up=false`。verified recovery wait 的其他未变化事实不再伪装进展，达到既有 `MaxQueueNoProgressStreak` 后会结构化停止。
+- v84 在代码变更和中断后不能沿同一 fresh-save 身份续接。下一运行必须从全新 day-zero v85 开始，并保持 WIP=1：首次登岛 -> Golden Walnut 来源增量 -> First Parrot -> Turtle -> House -> source schedule 生成与独立重放 -> #345 Provider/Student 门。上表所有正式准入分子及 `formal_product_training=false` 均不变。
+
 ### 2026-10-30 v83 长跑与 Stage One 菜单预检顺序修复
 
 - 全新 day-zero 隐藏静音运行 `golden-walnut-source-schedule-v83-20261030-074742-global-settle` 继续显式使用 `--skip-training`。它运行 `324` 次迭代，形成 `223` 条 verified Product action 和 `433` 个 fresh-save episode；Crop Teacher 在第 `140` 次迭代完成，第二轮作物取得 `8/8` 原生收获回执并累计 `5` 条日界回执。随后同一 Stage One 链继续完成邮件、任务 `13`、原生钓鱼、容量恢复、Fishing `ItemGrabMenu` 强制恢复、出货、晚间恢复及原生睡眠；Spring 17 -> 18 的结算把金钱从 `20` 提升到 `461`。这些是校准与连续证据，不是 Student 训练。
