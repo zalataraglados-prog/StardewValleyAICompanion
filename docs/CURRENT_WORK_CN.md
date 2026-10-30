@@ -4,6 +4,13 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已完成 v10 之后的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已按 current authority 冻结；当前唯一施工项为 `complete_master_angler` 顶层 dependency、日历窗口与 coverage 接线。P0/P1 共享 correctness blocker 可临时中断，但不得静默改序或并行展开多个 root method。
 
+## 2026-10-30 v83 长跑、失败边界与 v84 入口
+
+- `golden-walnut-source-schedule-v83-20261030-074742-global-settle` 从全新 day-zero 身份运行 `324` 次迭代，取得 `223` 条 verified Product action、`433` 个 fresh-save episode、`8` 条收获回执与 `5` 条日界回执。Crop Teacher 于 iteration `140` 完成；之后 Stage One 继续完成邮件、任务 `13`、钓鱼、背包恢复、Fishing `ItemGrabMenu` 恢复、出货、日终恢复和 Spring 17 -> 18 原生睡眠结算，金钱 `20 -> 461`。滚动保留窗口正常维持 `64` 次迭代并回收失去引用的内容寻址块。
+- 最终失败快照固定在 Spring 18 `16:30`、`ScienceHouse (8,20)`、Carpenter `DialogueBox`。路线 timing 未就绪但菜单本身已有安全 `recovery_close_menu` 候选；Stage One 却在选择该候选前调用 Master Angler 目标日期意图构建器，连续五次抛出 `future_route_movement_timing_context_outside_calibration_scope`。根因是控制编排顺序，不是路线校准范围不足。
+- PR #365 已将 mandatory menu 预检拆为独立 partial 控制链并放在严格意图构建之前。预检只在活动菜单时查询 recovery/profession/mail 三项，保留职业与信件处理对通用关菜单的抑制；恢复继续使用现有候选评估、排名、日计划、动作队列与 Product Executor，控制工件不生成 Teacher 标签。无合法恢复时仍走原严格构建器，不吞掉未知菜单错误。
+- 验证为专项 `7/7`、Core `529/529`、Backend `257/257`，E 盘隔离 SMAPI `GamePath` 下完整解决方案测试/构建通过。v83 显式 `--skip-training`，没有 Student 参数、checkpoint 或 GPU 训练。其失败尾部不能跨未保存边界续接；下一固定入口是全新 day-zero v84，继续首次登岛、Golden Walnut 来源增量、First Parrot/Turtle/House、source schedule 生成与独立重放。
+
 ## 2026-10-27 落盘流程有界化
 
 - 运行快照默认从普通全量 JSON/停止式保留改为内容寻址 gzip/64 轮 rolling；显式 `plain` 或 `stop` 仍可用于兼容诊断，但不再是普通入口默认值。

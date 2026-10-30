@@ -6,6 +6,14 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已从 v10 最终隔离存档闭合下一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已按 current authority 冻结；当前唯一施工项是 `complete_master_angler` 顶层 dependency、日历窗口与 coverage 接线。Money 仍须最终满足原 Exit Gate，但已回到复杂度队列第 11 位。
 
+## Current runtime evidence · 2026-10-30 v83
+
+The day-zero v83 calibration run remained under `--skip-training`. It completed Crop Teacher, produced 223 verified Product actions, 433 fresh-save episodes, eight harvest receipts and five native day-boundary receipts, then continued through mail, quest 13, fishing, inventory recovery, shipping and a Spring 17 to 18 settlement. This is execution/Teacher calibration evidence only; it does not update Student parameters or authorize formal training.
+
+The terminal failure was an orchestration-order defect, not missing route-timing authority. A safe Carpenter `DialogueBox` recovery candidate existed, but Stage One invoked `MasterAnglerTargetDateIntentBuilder` before mandatory menu selection. PR #365 now runs a narrow recovery/profession/mail preflight only when an active menu is transparently observed, dispatches the existing control-only recovery queue before strict intent construction, and preserves fail-closed timing calibration when no safe recovery exists. The fix passed 529 Core and 257 Backend tests.
+
+The v83 tail did not cross another durable native save boundary and cannot be resumed into the fresh-save evidence identity. The next run is a new day-zero v84. Its unchanged WIP=1 exit remains first island arrival, a Golden Walnut source delta, First Parrot/Turtle/House transitions, source-schedule generation and independent replay; #345 remains the formal Provider/Student gate.
+
 ## Current slice · 2026-10-21: freeze Full Shipment and connect Master Angler
 
 The bounded Money continuation `money-crop-native-20261021-v10-continuation-v15-full-chain` passed with 26 continuous transitions, eight executed crop batches, eight native single-item shipping deposits, and a complete six-fragment checkpoint. The immutable source save remained at SHA-256 `9429c6d01d327111af8c81d0c36f2e318ccc4f1b0ea3094d84e19f25308b22e4`; the final state hash is `bb70acbd0b477b7e14d7fe1b4450ee85292fa29e56de854924e4ee67f1216849`. This satisfies the bounded Money exit but closes no Money threshold cell.

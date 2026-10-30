@@ -18,6 +18,13 @@
 | Money production evidence cells | **0/18** | 6 个 Money criterion × 3 partitions；hermetic fixture 不计 production |
 | Formal product training | **false** | 未通过完整正式训练准入 |
 
+### 2026-10-30 v83 长跑与 Stage One 菜单预检顺序修复
+
+- 全新 day-zero 隐藏静音运行 `golden-walnut-source-schedule-v83-20261030-074742-global-settle` 继续显式使用 `--skip-training`。它运行 `324` 次迭代，形成 `223` 条 verified Product action 和 `433` 个 fresh-save episode；Crop Teacher 在第 `140` 次迭代完成，第二轮作物取得 `8/8` 原生收获回执并累计 `5` 条日界回执。随后同一 Stage One 链继续完成邮件、任务 `13`、原生钓鱼、容量恢复、Fishing `ItemGrabMenu` 强制恢复、出货、晚间恢复及原生睡眠；Spring 17 -> 18 的结算把金钱从 `20` 提升到 `461`。这些是校准与连续证据，不是 Student 训练。
+- v83 最终在 Spring 18 `16:30`、`ScienceHouse (8,20)` 的 Carpenter `DialogueBox` 连续五次失败关闭。透明状态为 movement calibration compatible、`route_timing_ready_now=false`、`player_can_move_now=false`、native control gate open、无 global fade。旧 Stage One 顺序先调用 `MasterAnglerTargetDateIntentBuilder`，之后才选择已存在的 mandatory menu recovery，因而把可恢复菜单误报为 `future_route_movement_timing_context_outside_calibration_scope`。这不是放宽路线时序校准的理由。
+- PR #365 已把 mandatory menu recovery 提到严格意图构建之前。仅当透明快照确认活动菜单时，控制器窄查 `recovery.stabilize_day`，同时保留 `skills.choose_profession` 与 `mail.process_letter` 的原生优先级；命中后继续复用唯一 `DailyPlanCompiler -> ActionQueueCompiler -> Product Executor`，并保持 `teacher_preference_label_eligible=false / formal_training_authorized=false`。无安全恢复候选时仍进入原 Master Angler 严格校准并失败关闭，没有增加第二套菜单执行器或通用按键兜底。
+- 当前验证为菜单预检专项 `7/7`、Core `529/529`、Backend `257/257`，隔离 E 盘 SMAPI 路径下完整解决方案测试/构建通过。v83 在失败尾部后没有新的原生保存边界，fresh-save 证据身份禁止跨进程拼接；下一运行必须从全新 day-zero v84 开始，继续首次登岛 -> 核桃来源增量 -> First Parrot -> Turtle -> House -> source schedule 生成与独立重放。上表分子、#345 和 `formal_product_training_authorized=false` 均不变。
+
 ### 2026-10-30 v72-v82 原生控制淡入恢复边界
 
 - v72 `golden-walnut-source-schedule-v72-20261030-mandatory-menu-recovery` 继续显式使用 `--skip-training`，共运行 `271` 次尝试、取得 `176` 条 verified Product action，完成 Crop Teacher 并推进到 Spring 9。mandatory Fishing `ItemGrabMenu` 恢复未回退；运行最终在同一日界淡入状态连续五次失败关闭：`runtime_calibration_compatible=true`、`route_timing_ready_now=false`、`native_control_gate_open=false`、`player_can_move_now=true`、`global_fade=true`，且菜单、事件、工具、暂停、冻结与 warp 均关闭。该轮没有 Student 更新、checkpoint 或 GPU 训练。
