@@ -262,6 +262,19 @@ public sealed partial class ModEntry : Mod
             {
                 if (Game1.dialogueUp)
                 {
+                    if (CanWaitForPostSleepTransientControl(sleep))
+                    {
+                        sleep.SawPostSleepTransientControlSettle = true;
+                        sleep.PostSleepWaitTicks++;
+                        if (sleep.PostSleepWaitTicks > 1800)
+                        {
+                            CompleteBlockedSleep(
+                                sleep,
+                                "post_sleep_transient_control_not_settled");
+                        }
+                        return;
+                    }
+
                     if (!CanAdvancePostSleepLegacyDialogue(sleep))
                     {
                         CompleteBlockedSleep(
@@ -316,6 +329,11 @@ public sealed partial class ModEntry : Mod
                 {
                     reasons.Add(
                         "post_sleep_legacy_object_dialogue_advanced_natively");
+                }
+                if (sleep.SawPostSleepTransientControlSettle)
+                {
+                    reasons.Add(
+                        "post_sleep_transient_control_settled_natively");
                 }
                 if (sleep.SawPostSleepLevelUp)
                 {
@@ -685,6 +703,20 @@ public sealed partial class ModEntry : Mod
             !Game1.eventUp &&
             Game1.currentSpeaker is null &&
             Game1.currentObjectDialogue.Count > 0;
+    }
+
+    private static bool CanWaitForPostSleepTransientControl(
+        ActiveSleep sleep)
+    {
+        return Game1.Date.TotalDays == sleep.StartTotalDays + 1 &&
+            Game1.activeClickableMenu is null &&
+            Game1.dialogueUp &&
+            !Game1.isQuestion &&
+            !Game1.eventUp &&
+            Game1.currentSpeaker is null &&
+            Game1.currentObjectDialogue.Count == 0 &&
+            Game1.player.CanMove &&
+            Game1.player.freezePause > 0;
     }
 
     private static bool CanAdvancePostSleepDialogue(ActiveSleep sleep, DialogueBox dialogue)

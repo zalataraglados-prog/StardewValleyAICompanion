@@ -63,6 +63,18 @@ public sealed class SleepCapabilityContractTests
         Assert.Contains("ApplyPostSleepLegacyDialogueInput", source, StringComparison.Ordinal);
         Assert.Contains("Game1.currentObjectDialogue.Count > 0", source, StringComparison.Ordinal);
         Assert.Contains("post_sleep_legacy_object_dialogue_advanced_natively", source, StringComparison.Ordinal);
+        Assert.Contains("CanWaitForPostSleepTransientControl", source, StringComparison.Ordinal);
+        var transientControl = Slice(
+            source,
+            "private static bool CanWaitForPostSleepTransientControl",
+            "private static bool CanAdvancePostSleepDialogue");
+        Assert.Contains("Game1.currentObjectDialogue.Count == 0", transientControl, StringComparison.Ordinal);
+        Assert.Contains("Game1.player.CanMove", transientControl, StringComparison.Ordinal);
+        Assert.Contains("Game1.player.freezePause > 0", transientControl, StringComparison.Ordinal);
+        Assert.Contains("post_sleep_transient_control_settled_natively", source, StringComparison.Ordinal);
+        Assert.Contains("post_sleep_transient_control_not_settled", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.dialogueUp = false", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.player.freezePause = 0", source, StringComparison.Ordinal);
         Assert.Contains("!Game1.dialogueUp", source, StringComparison.Ordinal);
         Assert.Contains("native_new_day_world_stable", source, StringComparison.Ordinal);
         Assert.Contains("post_sleep_world_not_stable", source, StringComparison.Ordinal);

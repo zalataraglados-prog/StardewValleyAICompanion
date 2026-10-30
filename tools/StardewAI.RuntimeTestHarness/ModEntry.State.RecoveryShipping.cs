@@ -83,6 +83,7 @@ public sealed partial class ModEntry : Mod
         public int PostSleepDialoguePressAttempts { get; set; }
         public bool PostSleepDialogueButtonHeld { get; set; }
         public bool SawPostSleepLegacyDialogue { get; set; }
+        public bool SawPostSleepTransientControlSettle { get; set; }
         public bool PostSleepLegacyDialogueButtonHeld { get; set; }
         public int PostSleepLegacyDialoguePressAttempts { get; set; }
         public int PostSleepLegacyDialogueLastInputTick { get; set; }
