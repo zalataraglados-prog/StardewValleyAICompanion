@@ -182,6 +182,14 @@ $releaseEntrypoints = @(
         DllName = "StardewAI.LiveTrainingLoop.dll"
     }
 )
+if ($RequireGoldenWalnutSourceScheduleReady) {
+    $releaseEntrypoints += [pscustomobject]@{
+        Project = Join-Path $ProjectRoot "experiments\StardewAI.GoalConditionedBootstrap\StardewAI.GoalConditionedBootstrap.csproj"
+        OutputDirectory = Join-Path $binaryRoot "goal-conditioned-bootstrap"
+        ArtifactsDirectory = Join-Path $binaryRoot "goal-conditioned-bootstrap-build"
+        DllName = "StardewAI.GoalConditionedBootstrap.dll"
+    }
+}
 if (-not $reusePrebuiltBinaries) {
     foreach ($entry in $releaseEntrypoints) {
         $publishLog = Join-Path $artifactDirectory (
@@ -199,7 +207,14 @@ if (-not $reusePrebuiltBinaries) {
 $backendDll = Join-Path $releaseEntrypoints[0].OutputDirectory $releaseEntrypoints[0].DllName
 $productDll = Join-Path $releaseEntrypoints[1].OutputDirectory $releaseEntrypoints[1].DllName
 $loopDll = Join-Path $releaseEntrypoints[2].OutputDirectory $releaseEntrypoints[2].DllName
-foreach ($path in @($backendDll, $productDll, $loopDll)) {
+$bootstrapDll = if ($RequireGoldenWalnutSourceScheduleReady) {
+    Join-Path $releaseEntrypoints[3].OutputDirectory $releaseEntrypoints[3].DllName
+} else { "" }
+$requiredDlls = @($backendDll, $productDll, $loopDll)
+if ($RequireGoldenWalnutSourceScheduleReady) {
+    $requiredDlls += $bootstrapDll
+}
+foreach ($path in $requiredDlls) {
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
         throw "Required Release binary was not found: $path"
     }
@@ -397,6 +412,76 @@ try {
              -PathType Leaf))) {
         throw "Golden Walnut long-run milestone did not produce a verified source schedule."
     }
+
+    $independentVerificationReceiptPath = ""
+    $independentVerificationLogPath = ""
+    $sourceScheduleIndependentlyVerified = $false
+    if ($RequireGoldenWalnutSourceScheduleReady) {
+        if ([string]$initial.save_id.status -ne "available" -or
+            [string]::IsNullOrWhiteSpace([string]$initial.save_id.value) -or
+            [string]$initial.player_id.status -ne "available" -or
+            [string]::IsNullOrWhiteSpace([string]$initial.player_id.value)) {
+            throw "Golden Walnut independent verification requires readable initial save and player identities."
+        }
+
+        $episodeDirectory = Join-Path $runDirectory "live-snapshots"
+        $episodeManifestPath = [IO.Path]::GetFullPath(
+            [string]$loopReport.golden_walnut_fresh_save_episode_manifest_path)
+        $sourceSchedulePath = [IO.Path]::GetFullPath(
+            [string]$loopReport.golden_walnut_source_schedule_path)
+        $scheduleId = "golden-walnut-fresh-save:$RunId"
+        $expectedSaveId = [string]$initial.save_id.value
+        $expectedPlayerId = [string]$initial.player_id.value
+        $independentVerificationReceiptPath = Join-Path $artifactDirectory `
+            "golden-walnut-source-schedule-independent-verification.json"
+        $independentVerificationLogPath = Join-Path $artifactDirectory `
+            "golden-walnut-source-schedule-independent-verification.log"
+        $verificationArguments = @(
+            $bootstrapDll,
+            "verify-golden-walnut-fresh-save-source-schedule",
+            "--episode-directory", $episodeDirectory,
+            "--episode-manifest", $episodeManifestPath,
+            "--source-schedule", $sourceSchedulePath,
+            "--schedule-id", $scheduleId,
+            "--run-id", $RunId,
+            "--save-id", $expectedSaveId,
+            "--player-id", $expectedPlayerId
+        )
+        $verificationOutput = & dotnet $verificationArguments 2>&1
+        $verificationExitCode = $LASTEXITCODE
+        $verificationJson = $verificationOutput | Out-String
+        [IO.File]::WriteAllText(
+            $independentVerificationLogPath,
+            $verificationJson,
+            [Text.UTF8Encoding]::new($false))
+        if ($verificationExitCode -ne 0) {
+            throw "Golden Walnut independent source-schedule verification failed with exit code $verificationExitCode. See $independentVerificationLogPath."
+        }
+
+        try {
+            $verificationReceipt = $verificationJson | ConvertFrom-Json
+        }
+        catch {
+            throw "Golden Walnut independent source-schedule verification produced malformed JSON. See $independentVerificationLogPath."
+        }
+        if ([string]$verificationReceipt.status -ne "pass" -or
+            [bool]$verificationReceipt.training_label_eligible -or
+            [string]$verificationReceipt.expected_player_id -ne $expectedPlayerId -or
+            [IO.Path]::GetFullPath([string]$verificationReceipt.episode_directory) -ne
+                [IO.Path]::GetFullPath($episodeDirectory) -or
+            [IO.Path]::GetFullPath([string]$verificationReceipt.episode_manifest_path) -ne
+                $episodeManifestPath -or
+            [IO.Path]::GetFullPath([string]$verificationReceipt.source_schedule_path) -ne
+                $sourceSchedulePath -or
+            [string]$verificationReceipt.schedule.schedule_id -ne $scheduleId -or
+            [string]$verificationReceipt.schedule.source_run_id -ne $RunId -or
+            [string]$verificationReceipt.schedule.source_save_id -ne $expectedSaveId -or
+            [bool]$verificationReceipt.schedule.training_label_eligible) {
+            throw "Golden Walnut independent source-schedule verification receipt is inconsistent. See $independentVerificationLogPath."
+        }
+        Write-Json $independentVerificationReceiptPath $verificationReceipt
+        $sourceScheduleIndependentlyVerified = $true
+    }
     if ($resumeCropTeacher -and
         (-not [bool]$loopReport.crop_teacher_run_completed -or
          [string]::IsNullOrWhiteSpace(
@@ -456,6 +541,12 @@ try {
             [bool]$loopReport.golden_walnut_source_schedule_verified
         golden_walnut_source_schedule_path =
             [string]$loopReport.golden_walnut_source_schedule_path
+        golden_walnut_source_schedule_independently_verified =
+            $sourceScheduleIndependentlyVerified
+        golden_walnut_source_schedule_independent_verification_receipt_path =
+            $independentVerificationReceiptPath
+        golden_walnut_source_schedule_independent_verification_log_path =
+            $independentVerificationLogPath
         max_attempts = $MaxAttempts
         verified_actions = [int]$loopReport.verified_actions
         required_verified_actions = $RequiredVerifiedActions
