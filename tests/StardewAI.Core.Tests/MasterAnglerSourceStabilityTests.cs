@@ -46,6 +46,13 @@ public sealed partial class MasterAnglerMainlineTests
             parameter.Value == "deferred_until_authoritative_source_window");
         Assert.Contains(route.Parameters, parameter =>
             parameter.Name == "master_angler_route_not_before_time" && parameter.Value == "1800");
+        var deferredAvailable = int.Parse(route.Parameters.Single(parameter =>
+            parameter.Name ==
+                "master_angler_deferred_departure_available_minutes").Value);
+        var deferredRequired = int.Parse(route.Parameters.Single(parameter =>
+            parameter.Name ==
+                "master_angler_deferred_departure_required_minutes").Value);
+        Assert.True(deferredAvailable >= deferredRequired);
 
         var ranked = Assert.Single(RankSourceStability(routeAvailability));
         Assert.Equal("deferred", ranked.TimelineStatus);
@@ -70,6 +77,99 @@ public sealed partial class MasterAnglerMainlineTests
         var wait = Assert.Single(queue.Items);
         Assert.Equal("executor.wait_ticks", wait.OptionId);
         Assert.Empty(wait.BlockingReasons);
+    }
+
+    [Fact]
+    public void SourceStabilityDefersFeasibleMultiConnectorRouteUntilOpening()
+    {
+        using var fixture = CreateSourceStabilityFixture("Beach", "Beach:0");
+        var remote = SourceStabilitySnapshot(
+            "Beach",
+            "Beach:0",
+            remote: true,
+            remoteViaLongTownRoute: true);
+
+        var route = Assert.Single(Assert.Single(
+            EvaluateSourceStability(remote, fixture.Parameters).Options)
+            .EventCandidates);
+
+        Assert.True(route.Available, string.Join(";", route.BlockReasons));
+        Assert.False(route.AllowedNow);
+        Assert.True(route.AllowedToday);
+        Assert.Equal(1800, route.NextOpenTime);
+        Assert.Contains(route.Parameters, parameter =>
+            parameter.Name == "master_angler_full_route_edge_count" &&
+            parameter.Value == "2");
+        var deferredAvailable = int.Parse(route.Parameters.Single(parameter =>
+            parameter.Name ==
+                "master_angler_deferred_departure_available_minutes").Value);
+        var deferredRequired = int.Parse(route.Parameters.Single(parameter =>
+            parameter.Name ==
+                "master_angler_deferred_departure_required_minutes").Value);
+        Assert.True(deferredAvailable >= deferredRequired);
+    }
+
+    [Fact]
+    public void SourceStabilityRejectsDeferredRouteThatCannotFinishAfterOpening()
+    {
+        using var fixture = CreateSourceStabilityFixture(
+            "Beach",
+            "Beach:0",
+            startTime: 2500);
+        var remote = SourceStabilitySnapshot(
+            "Beach",
+            "Beach:0",
+            remote: true,
+            remoteViaLongTownRoute: true);
+
+        var route = Assert.Single(Assert.Single(
+            EvaluateSourceStability(remote, fixture.Parameters).Options)
+            .EventCandidates);
+
+        Assert.False(route.Available);
+        Assert.False(route.AllowedNow);
+        Assert.False(route.AllowedToday);
+        Assert.Equal(
+            "master_angler_deferred_route_time_budget_blocked",
+            route.AvailabilityClass);
+        Assert.Contains(
+            "master_angler_deferred_departure_would_miss_source_window",
+            route.BlockReasons);
+        var deferredAvailable = int.Parse(route.Parameters.Single(parameter =>
+            parameter.Name ==
+                "master_angler_deferred_departure_available_minutes").Value);
+        var deferredRequired = int.Parse(route.Parameters.Single(parameter =>
+            parameter.Name ==
+                "master_angler_deferred_departure_required_minutes").Value);
+        Assert.True(deferredAvailable < deferredRequired);
+    }
+
+    [Fact]
+    public void SourceStabilityKeepsOneStableDeferralBeforeOpening()
+    {
+        using var fixture = CreateSourceStabilityFixture("Town", "Town:5");
+        var candidates = new[] { 1130, 1200, 1750 }
+            .Select(currentTime => Assert.Single(Assert.Single(
+                EvaluateSourceStability(
+                    SourceStabilitySnapshot(
+                        "Town",
+                        "Town:5",
+                        remote: true,
+                        currentTime: currentTime),
+                    fixture.Parameters).Options).EventCandidates))
+            .ToArray();
+
+        Assert.All(candidates, route =>
+        {
+            Assert.True(route.Available, string.Join(";", route.BlockReasons));
+            Assert.False(route.AllowedNow);
+            Assert.True(route.AllowedToday);
+            Assert.Equal(1800, route.NextOpenTime);
+            Assert.Equal(
+                "master_angler_route_deferred_until_source_window",
+                route.AvailabilityClass);
+        });
+        Assert.Single(candidates.Select(route => route.CandidateId).Distinct());
     }
 
     [Theory]
@@ -228,7 +328,10 @@ public sealed partial class MasterAnglerMainlineTests
         }
     }
 
-    private static Fixture CreateSourceStabilityFixture(string location, string sourceKey)
+    private static Fixture CreateSourceStabilityFixture(
+        string location,
+        string sourceKey,
+        int startTime = 1800)
     {
         var fixture = CreateFixture("Beach:0");
         var artifact = JsonNode.Parse(File.ReadAllText(fixture.WindowIndexPath))!.AsObject();
@@ -238,7 +341,7 @@ public sealed partial class MasterAnglerMainlineTests
         window["location_id"] = location;
         window["source_key"] = sourceKey;
         window["weather_modes"] = new JsonArray("sun");
-        window["time_windows"]![0]!["start_time"] = 1800;
+        window["time_windows"]![0]!["start_time"] = startTime;
         AddSourceStabilityAuthority(artifact);
         File.WriteAllText(fixture.WindowIndexPath, artifact.ToJsonString(JsonOptions));
         var hash = Convert.ToHexString(
@@ -249,7 +352,8 @@ public sealed partial class MasterAnglerMainlineTests
                 "master_angler_target_qualified_item_id" => "(O)132",
                 "master_angler_target_location" => location,
                 "master_angler_source_key" => sourceKey,
-                "master_angler_effective_start_time" => "1800",
+                "master_angler_effective_start_time" =>
+                    startTime.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 "master_angler_window_index_sha256" => hash,
                 _ => parameter.Value
             })).ToArray();
@@ -265,7 +369,8 @@ public sealed partial class MasterAnglerMainlineTests
         string sourceKey,
         bool remote = false,
         int currentTime = 1130,
-        string weather = "sun")
+        string weather = "sun",
+        bool remoteViaLongTownRoute = false)
     {
         // Reuse the established full-route/fishing fixture. The native time
         // predicate is false before 18:00; no cast eligibility is invented.
@@ -273,6 +378,7 @@ public sealed partial class MasterAnglerMainlineTests
             targetCaught: false,
             currentLocation: remote ? "Farm" : "Beach",
             currentTime: currentTime,
+            remoteViaLongTownRoute: remoteViaLongTownRoute,
             runtimeRuleEligible: currentTime >= 1800 && currentTime < 2600,
             currentWeather: weather);
         var json = JsonSerializer.Serialize(snapshot.State, JsonOptions)

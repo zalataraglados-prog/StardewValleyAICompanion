@@ -265,7 +265,8 @@ namespace StardewAI.Core.OptionRegistry
                     ApplyMasterAnglerSourceWindowTiming(
                         snapshot,
                         budgetedRoute,
-                        intent)
+                        intent,
+                        FishingEventCandidateBuilder.EstimatedCatchTicks)
                 };
             }
 
@@ -365,16 +366,10 @@ namespace StardewAI.Core.OptionRegistry
             var availableMinutes = GameClockBudgetPolicy.ClockMinutesBetween(
                 currentTime,
                 intent.LastCastTimeExclusive);
-            var candidateMinutes = GameClockBudgetPolicy.TicksToGameMinutes(
-                Math.Max(1, candidate.EstimatedTicks));
-            var terminalReserveMinutes = terminalReserveTicks > 0
-                ? GameClockBudgetPolicy.TicksToGameMinutes(
-                    terminalReserveTicks)
-                : 0;
-            var requiredMinutes = Math.Max(
-                    candidateMinutes,
-                    intent.RouteTiming.RemainingRouteGameMinutes) +
-                terminalReserveMinutes;
+            var requiredMinutes = MasterAnglerRequiredRouteMinutes(
+                candidate,
+                intent,
+                terminalReserveTicks);
             var parameters = candidate.Parameters.Concat(new[]
             {
                 Parameter(
@@ -434,7 +429,8 @@ namespace StardewAI.Core.OptionRegistry
         private static EventCandidate ApplyMasterAnglerSourceWindowTiming(
             SnapshotEnvelope snapshot,
             EventCandidate candidate,
-            MasterAnglerWindowIntentValidation intent)
+            MasterAnglerWindowIntentValidation intent,
+            int terminalReserveTicks)
         {
             if (!candidate.Available)
             {
@@ -452,6 +448,39 @@ namespace StardewAI.Core.OptionRegistry
                 GameClockBudgetPolicy.ClockMinutesBetween(
                     currentTime,
                     intent.EffectiveStartTime));
+            var deferredAvailableMinutes = GameClockBudgetPolicy.ClockMinutesBetween(
+                intent.EffectiveStartTime,
+                intent.LastCastTimeExclusive);
+            var requiredMinutes = MasterAnglerRequiredRouteMinutes(
+                candidate,
+                intent,
+                terminalReserveTicks);
+            var timingParameters = candidate.Parameters.Concat(new[]
+            {
+                Parameter(
+                    "master_angler_deferred_departure_available_minutes",
+                    Math.Max(0, deferredAvailableMinutes).ToString(
+                        CultureInfo.InvariantCulture)),
+                Parameter(
+                    "master_angler_deferred_departure_required_minutes",
+                    requiredMinutes.ToString(CultureInfo.InvariantCulture))
+            }).ToArray();
+            if (deferredAvailableMinutes < requiredMinutes)
+            {
+                return CloneCandidate(
+                    candidate,
+                    available: false,
+                    availabilityClass:
+                        "master_angler_deferred_route_time_budget_blocked",
+                    blockReasons: candidate.BlockReasons
+                        .Append(
+                            "master_angler_deferred_departure_would_miss_source_window")
+                        .Distinct(StringComparer.Ordinal)
+                        .ToArray(),
+                    parameters: timingParameters,
+                    allowedNow: false,
+                    allowedToday: false);
+            }
             candidate.AvailabilityClass =
                 "master_angler_route_deferred_until_source_window";
             candidate.AllowedNow = false;
@@ -460,7 +489,7 @@ namespace StardewAI.Core.OptionRegistry
             candidate.EffectiveOpenTime = intent.EffectiveStartTime;
             candidate.ClosesAt = intent.LastCastTimeExclusive;
             candidate.WaitCost = checked(waitMinutes * 60);
-            candidate.Parameters = candidate.Parameters.Concat(new[]
+            candidate.Parameters = timingParameters.Concat(new[]
             {
                 Parameter(
                     "master_angler_route_window_status",
@@ -471,6 +500,23 @@ namespace StardewAI.Core.OptionRegistry
                         CultureInfo.InvariantCulture))
             }).ToArray();
             return candidate;
+        }
+
+        private static int MasterAnglerRequiredRouteMinutes(
+            EventCandidate candidate,
+            MasterAnglerWindowIntentValidation intent,
+            int terminalReserveTicks)
+        {
+            var candidateMinutes = GameClockBudgetPolicy.TicksToGameMinutes(
+                Math.Max(1, candidate.EstimatedTicks));
+            var terminalReserveMinutes = terminalReserveTicks > 0
+                ? GameClockBudgetPolicy.TicksToGameMinutes(
+                    terminalReserveTicks)
+                : 0;
+            return Math.Max(
+                    candidateMinutes,
+                    intent.RouteTiming.RemainingRouteGameMinutes) +
+                terminalReserveMinutes;
         }
 
         private static bool TryNormalizeMasterAnglerIntent(

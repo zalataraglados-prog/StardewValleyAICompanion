@@ -9,6 +9,65 @@ namespace StardewAI.Core.Tests;
 
 public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
 {
+    [Fact]
+    public async Task ProductWrapperVerifiesFrozenArtifactsUsingRealSnapshotIdentityShape()
+    {
+        using var fixture = new Fixture(
+            scheduleId: "golden-walnut-fresh-save:run");
+
+        var result = await RunProductWrapperVerification(fixture);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.True(string.IsNullOrWhiteSpace(result.Error), result.Error);
+        using var report = JsonDocument.Parse(result.Output);
+        Assert.Equal("pass", report.RootElement.GetProperty("status").GetString());
+        Assert.Equal(
+            "player",
+            report.RootElement.GetProperty("expected_player_id").GetString());
+        Assert.True(File.Exists(Path.Combine(
+            fixture.VerificationOutputDirectory,
+            "golden-walnut-source-schedule-independent-verification.json")));
+    }
+
+    [Theory]
+    [InlineData("missing_identity")]
+    [InlineData("mismatched_identity")]
+    [InlineData("missing_manifest")]
+    [InlineData("stale_schedule")]
+    public async Task ProductWrapperFailsClosedForInvalidIndependentVerificationInputs(
+        string change)
+    {
+        using var fixture = new Fixture(
+            scheduleId: "golden-walnut-fresh-save:run");
+        if (change == "missing_identity")
+        {
+            fixture.Change(fixture.InitialSnapshotPath, root =>
+                root["state"]!["identity"]!.AsObject().Remove("player_id"));
+        }
+        else if (change == "mismatched_identity")
+        {
+            fixture.Change(fixture.InitialSnapshotPath, root =>
+                root["state"]!["identity"]!["player_id"]!["value"] = "other");
+        }
+        else if (change == "missing_manifest")
+        {
+            File.Move(fixture.ManifestPath, fixture.ManifestPath + ".absent");
+        }
+        else
+        {
+            fixture.Change(fixture.SchedulePath, root =>
+                root["source_episode_manifest_sha256"] = "stale");
+        }
+
+        var result = await RunProductWrapperVerification(fixture);
+
+        Assert.NotEqual(0, result.ExitCode);
+        Assert.False(string.IsNullOrWhiteSpace(result.Error));
+        Assert.False(File.Exists(Path.Combine(
+            fixture.VerificationOutputDirectory,
+            "golden-walnut-source-schedule-independent-verification.json")));
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -275,17 +334,97 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
         Assert.True(exception is InvalidDataException or JsonException);
     }
 
+    private static async Task<ProcessResult> RunProductWrapperVerification(
+        Fixture fixture)
+    {
+        var repositoryRoot = FindRepositoryRoot();
+        var configuration = new DirectoryInfo(AppContext.BaseDirectory).Parent!.Name;
+        var bootstrapDll = Path.Combine(
+            repositoryRoot,
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "bin",
+            configuration,
+            "net8.0",
+            "StardewAI.GoalConditionedBootstrap.dll");
+        var script = Path.Combine(
+            repositoryRoot,
+            "scripts",
+            "Invoke-ProductBootstrapCalibration.ps1");
+        var start = new ProcessStartInfo("pwsh")
+        {
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+        foreach (var argument in new[]
+        {
+            "-NoLogo", "-NoProfile", "-NonInteractive", "-File", script,
+            "-VerifyGoldenWalnutSourceScheduleArtifactsOnly",
+            "-VerificationInitialSnapshotPath", fixture.InitialSnapshotPath,
+            "-VerificationEpisodeDirectory", fixture.Root,
+            "-VerificationEpisodeManifestPath", fixture.ManifestPath,
+            "-VerificationSourceSchedulePath", fixture.SchedulePath,
+            "-VerificationBootstrapDllPath", bootstrapDll,
+            "-VerificationOutputDirectory", fixture.VerificationOutputDirectory,
+            "-RunId", "run"
+        })
+        {
+            start.ArgumentList.Add(argument);
+        }
+        start.Environment.Remove("STARDEWAI_VALIDATION_TRACE");
+        start.Environment.Remove("STARDEWAI_BOOTSTRAP_DEBUG_EXCEPTIONS");
+        using var process = Process.Start(start)!;
+        var output = process.StandardOutput.ReadToEndAsync();
+        var error = process.StandardError.ReadToEndAsync();
+        await process.WaitForExitAsync();
+        return new ProcessResult(process.ExitCode, await output, await error);
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null &&
+               !File.Exists(Path.Combine(
+                   directory.FullName,
+                   "StardewValleyAICompanion.sln")))
+        {
+            directory = directory.Parent;
+        }
+
+        return directory?.FullName ?? throw new InvalidOperationException(
+            "Cannot find repository root.");
+    }
+
+    private sealed record ProcessResult(int ExitCode, string Output, string Error);
+
     private sealed class Fixture : IDisposable
     {
         public string Root { get; } = Path.Combine(Path.GetTempPath(), "walnut-verifier-" + Guid.NewGuid().ToString("N"));
         public string ManifestPath => Path.Combine(Root, "manifest.json");
         public string SchedulePath => Path.Combine(Root, "schedule.json");
+        public string InitialSnapshotPath => Path.Combine(Root, "wrapper-initial-snapshot.json");
+        public string VerificationOutputDirectory => Path.Combine(Root, "wrapper-verification");
         public string BoundaryPath => GoldenWalnutFreshSaveInitialBoundaryValidator.PathFor(Root, "run");
         public string SnapshotPath(int index) => Path.Combine(Root, $"snapshot-{index}.json");
 
-        public Fixture(bool noSourceIncrement = false)
+        public Fixture(
+            bool noSourceIncrement = false,
+            string scheduleId = "schedule")
         {
             Directory.CreateDirectory(Root);
+            File.WriteAllText(InitialSnapshotPath, JsonSerializer.Serialize(new
+            {
+                state = new
+                {
+                    identity = new
+                    {
+                        save_id = new { value = "save", status = "available" },
+                        player_id = new { value = "player", status = "available" }
+                    }
+                }
+            }));
             var selectedKeys = GoldenWalnutNativeSourceCatalog.Sources.Where(source =>
                 GoldenWalnutUnlockScheduleProofBuilder.BoundAcquisitionOptionIds.Contains(source.AcquisitionOptionId) &&
                 source.OptionalUnlockWalnutCost == 0 && !source.ResortOnly &&
@@ -358,7 +497,11 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
                     }));
             }
             RebindBoundary();
-            GoldenWalnutFreshSaveEpisodeManifestBuilder.WriteFromDirectory(ManifestPath, Root, "schedule", "run");
+            GoldenWalnutFreshSaveEpisodeManifestBuilder.WriteFromDirectory(
+                ManifestPath,
+                Root,
+                scheduleId,
+                "run");
             GoldenWalnutFreshSaveEpisodeScheduleBuilder.Write(SchedulePath, ManifestPath);
         }
 

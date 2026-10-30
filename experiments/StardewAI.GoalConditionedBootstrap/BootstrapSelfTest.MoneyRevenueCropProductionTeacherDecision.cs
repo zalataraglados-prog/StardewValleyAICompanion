@@ -10,6 +10,37 @@ internal static partial class BootstrapSelfTest
 {
     private static void VerifyMoneyRevenueCropProductionTeacherDecision()
     {
+        Require(
+            MoneyRevenueCropProductionTeacherDecisionBuilder
+                .ResolveWateringRefillApproachStandable(
+                    "already_prepared",
+                    mapPassable: true,
+                    nativeBlockedWithoutCharacters: false,
+                    projectedStandable: false,
+                    walkingCollisionBlocked: null) &&
+            !MoneyRevenueCropProductionTeacherDecisionBuilder
+                .ResolveWateringRefillApproachStandable(
+                    "already_prepared",
+                    mapPassable: true,
+                    nativeBlockedWithoutCharacters: true,
+                    projectedStandable: false,
+                    walkingCollisionBlocked: null) &&
+            MoneyRevenueCropProductionTeacherDecisionBuilder
+                .ResolveWateringRefillApproachStandable(
+                    "already_prepared",
+                    mapPassable: true,
+                    nativeBlockedWithoutCharacters: true,
+                    projectedStandable: true,
+                    walkingCollisionBlocked: false) &&
+            !MoneyRevenueCropProductionTeacherDecisionBuilder
+                .ResolveWateringRefillApproachStandable(
+                    "already_prepared",
+                    mapPassable: true,
+                    nativeBlockedWithoutCharacters: false,
+                    projectedStandable: false,
+                    walkingCollisionBlocked: true),
+            "Prepared-soil refill standability did not prefer fresh walking collision and fail closed on legacy occupancy.");
+
         var root = TempArtifactRoot("money-crop-production-teacher-decision");
         var sourcePath = Path.Combine(root, "source-snapshot.json");
         var layoutPath = Path.Combine(root, "farm-layout-snapshot.json");

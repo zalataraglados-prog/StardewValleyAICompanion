@@ -113,13 +113,12 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
         var walkingCollisionBlocked = ReadOptionalBool(
             value,
             "native_walking_collision_blocked");
-        var legacyPreparedSoil =
-            !walkingCollisionBlocked.HasValue &&
-            status == "already_prepared" &&
-            mapPassable;
-        var effectiveStandable = walkingCollisionBlocked.HasValue
-            ? mapPassable && !walkingCollisionBlocked.Value
-            : projectedStandable || legacyPreparedSoil;
+        var effectiveStandable = ResolveWateringRefillApproachStandable(
+            status,
+            mapPassable,
+            nativeBlocked,
+            projectedStandable,
+            walkingCollisionBlocked);
         Require(
             !walkingCollisionBlocked.HasValue ||
             projectedStandable == effectiveStandable,
@@ -134,6 +133,21 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
             nativeBlocked,
             ReadRequiredBool(value, "watering_can_refill_source"),
             effectiveStandable);
+    }
+
+    internal static bool ResolveWateringRefillApproachStandable(
+        string status,
+        bool mapPassable,
+        bool nativeBlockedWithoutCharacters,
+        bool projectedStandable,
+        bool? walkingCollisionBlocked)
+    {
+        if (walkingCollisionBlocked.HasValue)
+            return mapPassable && !walkingCollisionBlocked.Value;
+
+        return mapPassable &&
+            !nativeBlockedWithoutCharacters &&
+            (projectedStandable || status == "already_prepared");
     }
 
     public const int MaxWateringRefillPreparationTileCount = 4;
