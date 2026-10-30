@@ -4,6 +4,14 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已闭合从 v10 最终隔离存档开始的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已通过 current-authority 复核并冻结；当前唯一施工项是 `complete_master_angler` 顶层依赖、日历窗口与 coverage 接线。Money Exit Gate 标准不降低，但 Money 已回到复杂度队列第 11 位。
 
+## 当前准入结论 · v88 仍是校准，抵达与玩家证据门已收紧
+
+v88 显式保持 `formal_product_training_authorized=false`，在 iteration `250` 检查点停止；最后完整 append 位于 `247`，累计 `215` 条 verified Product action。它完成两轮 Crop Teacher 并继续 collection/control 链，但没有首次登岛、核桃来源增量、三项鹦鹉解锁或 source schedule，因此任何正式准入分子都不增加。
+
+锁定 1.6.15 反编译证明 `boatRidesToIsland` 在船的 departure event 启动时递增，早于 `BoatJourney` 结束、`IslandSouth` warp 与 `Visited_Island` 写入。透明桥现只用实际 Island 入场证据判定 `island_reached`；schedule builder 同时把 day-zero 初始玩家身份贯穿所有 episode before/after。身份行为回归 `8/8`、两项治理 guard `2/2`、GameFreeGovernance `532/532`，相关 Release 构建零警告零错误。
+
+代码变化后 v88 不得续接。下一准入运行必须使用全新 day-zero v89，依次取得真实抵达、可归因的确定性核桃来源增量、First Parrot、Western Turtle、Island House，并导出绑定 run/save/player/evidence-root 的 manifest 与 schedule；随后由独立进程使用现有 game-free builder 重建并比较。两步完成前继续 `--skip-training`，不得授权 Student 参数训练。
+
 ## 当前准入结论 · v87 证明回归，但不增加正式训练分子
 
 PR `#369` 已通过 game-free 门禁并合入。机器本地 `GamePath` 现在在 ModBuildConfig 自动发现前固定到 E 盘隔离运行时，普通构建和 v87 启动均未再命中 F 盘残留路径。

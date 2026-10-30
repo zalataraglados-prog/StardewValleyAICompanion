@@ -18,6 +18,13 @@
 | Money production evidence cells | **0/18** | 6 个 Money criterion × 3 partitions；hermetic fixture 不计 production |
 | Formal product training | **false** | 未通过完整正式训练准入 |
 
+### 2026-10-30 v88 长跑检查点与姜岛证据身份修正
+
+- 隐藏静音、单并发、`--skip-training` 运行 `golden-walnut-source-schedule-v88-20261030-165446-source-schedule` 在 iteration `250` 检查点人工安全停止。最后一个完整 append 位于 iteration `247`，累计 `215` 条 verified Product action；两轮 Crop Teacher 均完成，Stage One collection、原生钓鱼、容量恢复、出货、候选 fresh 失效与 control-only 重绑持续推进。运行未到首次登岛，未生成 Golden Walnut source schedule，也没有 Student 参数、checkpoint、GPU 训练或正式策略数据。
+- 同级静态审计证明两个会污染未来 source schedule 的确定性缺口。第一，schedule builder 只绑定 save/run，没有强制所有 episode 的 before/after 玩家身份与 day-zero 初始玩家一致；现已要求初始玩家字段可读非空，并把每个 episode 的两端绑定到该身份。第二，透明桥曾把 `boatRidesToIsland > 0` 当成 `island_reached`，但锁定 1.6.15 反编译证明该计数在 `BoatTunnel.StartDeparture()` 启航时自增；现在抵达只接受实际进入 Island 时产生的 `Visited_Island`（含 pending mail）或当前确实位于 Island 地图，启航次数仅保留为遥测。
+- 玩家身份行为回归 `8/8`、两项 CI source guard `2/2`、GameFreeGovernance `532/532`、TransparentBridge 与 LiveTrainingLoop Release 均为 `0 warning / 0 error`。双方交叉审查还确认两份新增行为测试原先不在显式治理编译清单；现以不引入 LiveTrainingLoop 依赖的 source guard 补齐正式 gate。
+- v88 的未登岛前动作证据可保留为校准现场，但代码变更后不得沿其身份续接。下一运行必须使用全新 day-zero v89，并保持唯一出口：首次真实抵达 -> 至少一个可归因核桃来源增量 -> First Parrot -> Western Turtle -> Island House -> source schedule 生成 -> 冻结 manifest 的独立重放。正式准入计数和 `formal_product_training=false` 不变。
+
 ### 2026-10-30 v87 本机路径固定与补水走廊原生回归
 
 - PR `#369` 已通过 `game-free-quality` 并合入 `main`。仓库加载被忽略的 `Directory.Build.local.props`，本机文件和用户级 `GamePath` 均固定为 `E:\StardewValleyAICompanion-runtime\Stardew Valley`；不传 `-p:GamePath` 的 TransparentBridge、LiveTrainingLoop 与 GoalConditionedBootstrap Release 构建均为零警告零错误，并实际打印 E 盘 `GameModsDir`。失效的 F 盘自动发现不再参与本机构建。
