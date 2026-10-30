@@ -4,6 +4,14 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已闭合从 v10 最终隔离存档开始的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已通过 current-authority 复核并冻结；当前唯一施工项是 `complete_master_angler` 顶层依赖、日历窗口与 coverage 接线。Money Exit Gate 标准不降低，但 Money 已回到复杂度队列第 11 位。
 
+## 当前准入结论 · v83 仍是校准，菜单顺序缺口已修复
+
+v83 显式使用 `--skip-training`，在 `324` 次迭代中取得 `223` 条 verified Product action、`433` 个 fresh-save episode、`8` 条原生收获回执和 `5` 条日界回执。它完成 Crop Teacher、邮件/任务/钓鱼/容量恢复/出货及 Spring 17 -> 18 原生结算，但没有 Student 参数更新、checkpoint、GPU 训练或正式政策数据；正式准入分子不变。
+
+该轮在 Carpenter `DialogueBox` 上暴露 Stage One 编排顺序错误：安全 mandatory menu recovery 已存在，但旧代码先运行 Master Angler 严格时间意图构建器。PR #365 现在只在活动菜单时预检 recovery/profession/mail，命中恢复后复用现有 DailyPlan/ActionQueue/Product Executor 并排除 Teacher 标签；没有合法恢复时仍保持严格失败关闭。验证为专项 `7/7`、Core `529/529`、Backend `257/257` 和完整解决方案通过。
+
+v83 失败尾部没有新的原生保存边界，fresh-save 证据不得跨进程拼接。下一准入运行必须是全新 day-zero v84，完成首次登岛、核桃来源增量、First Parrot/Turtle/House、source schedule 生成与独立重放。#345 Provider/Student 门完成前仍不得开启模型参数训练。
+
 ## 当前准入结论 · v72-v82 仍是校准，不是正式训练
 
 v72-v82 相关运行均显式携带 `--skip-training`。v72 的 `176` 条 verified action、v73 的 `2` 条 verified action，以及 v77/v79/v80/v82 的诊断动作只用于 Teacher/执行器校准、原生保存边界与控制交接验证；没有 Student 参数更新、checkpoint、GPU 训练或正式政策轨迹。v72 暴露的 day-start fade transient 只由唯一 `NativeControlSettleRecovery` 编译一次 `30` tick 控制等待，该等待继续排除在 strategic preference 标签之外。
