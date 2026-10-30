@@ -4,6 +4,12 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已完成 v10 之后的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已按 current authority 冻结；当前唯一施工项为 `complete_master_angler` 顶层 dependency、日历窗口与 coverage 接线。P0/P1 共享 correctness blocker 可临时中断，但不得静默改序或并行展开多个 root method。
 
+## 2026-10-30 v87 原生回归已证明补水走廊修复
+
+- PR `#369` 已合入 `main`，本机默认 MSBuild `GamePath` 由被忽略的机器配置固定到 E 盘隔离 SMAPI 运行时。普通构建不再进入 ModBuildConfig 对失效 F 盘路径的自动发现；具体绝对路径不进入公开仓库。
+- v87 从全新 day-zero 运行到 iteration `104` 后在完整日界安全停止，取得 `100` 条 verified action，stderr 全为零。第二轮 Teacher 的实时承诺绑定 `(72,27)`，补水准备格为空；iteration `93` 完成场地准备，`100` 完成补水入口，`102..104` 完成回家、睡眠和新日。v86 树桩阻塞没有复现。
+- 本轮仍是 `--skip-training` 校准，不能增加正式训练分子。下一 WIP=1 入口仍是 Golden Walnut source schedule：新运行身份继续首次登岛、核桃来源增量、First Parrot/Turtle/House、source schedule 生成及独立重放；不得因为走廊回归通过而跳过 #345 Provider/Student gate。
+
 ## 2026-10-30 v86 已耕补水走廊不得被重复清障替换
 
 - `golden-walnut-source-schedule-v86-20261030-151929-exclusive-recovery` 从新 day-zero 身份在 iteration `97` 前取得 `94` 条 verified Product action、`9` 条日界回执并完成第一轮 Crop Teacher。第二次作物 handoff 在 iteration `81` 正确形成 `8` 格防风草承诺，但 iteration `98..102` 重复要求清理同一未升级斧头无法处理的 `2x2` 树桩，故安全停止。运行仍为 `--skip-training`。

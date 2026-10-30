@@ -4,6 +4,14 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已闭合从 v10 最终隔离存档开始的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已通过 current-authority 复核并冻结；当前唯一施工项是 `complete_master_angler` 顶层依赖、日历窗口与 coverage 接线。Money Exit Gate 标准不降低，但 Money 已回到复杂度队列第 11 位。
 
+## 当前准入结论 · v87 证明回归，但不增加正式训练分子
+
+PR `#369` 已通过 game-free 门禁并合入。机器本地 `GamePath` 现在在 ModBuildConfig 自动发现前固定到 E 盘隔离运行时，普通构建和 v87 启动均未再命中 F 盘残留路径。
+
+v87 显式保持 `formal_product_training_authorized=false`，从 day-zero 推进至 iteration `104`，形成 `100` 条 verified action 后在完整日界安全停止。第二轮 Crop Teacher 选择 `(72,27)` 且不要求补水清障，iteration `93` 完成场地准备，`100` 完成原生补水入口，随后正常回家、睡眠和进入新日；旧 v86 的树桩失败已被真实运行反证。三个 stderr 均为空。
+
+这只关闭环境发现与补水走廊回归缺口。Golden Walnut source schedule、独立重放和 #345 Provider/Student 准入仍未完成；没有 Student 参数、checkpoint、GPU 训练或正式政策数据，故 `formal_product_training=false` 与所有正式分子保持不变。
+
 ## 当前准入结论 · v86 仍是校准，补水步行语义已修复
 
 v86 显式使用 `--skip-training`，从 day-zero 在 iteration `97` 前形成 `94` 条有语义 verified Product action、`9` 条日界回执并完成第一轮 Crop Teacher；`98..102` 是同一断点的有界失败重试。它没有更新 Student 参数、checkpoint、GPU 训练或正式政策数据，任何正式训练分子均不增加。
