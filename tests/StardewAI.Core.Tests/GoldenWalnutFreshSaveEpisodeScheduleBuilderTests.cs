@@ -436,6 +436,18 @@ public sealed class GoldenWalnutFreshSaveEpisodeScheduleBuilderTests
         Assert.Equal(4, manifest.EpisodePaths.Length);
         Assert.Equal(4, schedule.SourceEpisodeCount);
         Assert.Equal(103, schedule.PlannedIslandHouseUnlockTotalDay);
+        var emittedSchedulePath = Path.Combine(fixture.RunRoot, "loop-schedule.json");
+        GoldenWalnutFreshSaveEpisodeScheduleBuilder.Write(emittedSchedulePath, manifestPath);
+        var independentlyVerified = GoldenWalnutFreshSaveSourceScheduleVerifier.Verify(
+            fixture.Root,
+            manifestPath,
+            emittedSchedulePath,
+            "fresh-save-schedule:rolling",
+            "fresh-save-run",
+            "fresh-save-test",
+            "fresh-save-farmer");
+        Assert.Equal(schedule.SourceEpisodeEvidenceRootSha256,
+            independentlyVerified.SourceEpisodeEvidenceRootSha256);
     }
 
     [Fact]
