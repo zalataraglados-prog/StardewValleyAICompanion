@@ -4,6 +4,13 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已完成 v10 之后的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已按 current authority 冻结；当前唯一施工项为 `complete_master_angler` 顶层 dependency、日历窗口与 coverage 接线。P0/P1 共享 correctness blocker 可临时中断，但不得静默改序或并行展开多个 root method。
 
+## 2026-10-30 v85 独占恢复不得被战略 handoff 抢占
+
+- `golden-walnut-source-schedule-v85-20261030-120056-legacy-dialogue` 从全新 day-zero 身份推进 `425` 次迭代，取得 `306` 条有语义 verified Product action，完成三轮 Crop Teacher，并推进到 Spring 22 / `total_days=21`。第三轮收获为 `8/8`；邮件、任务 `13`、钓鱼、容量恢复、出货与多次日界也均走现有原生执行链。该运行继续 `--skip-training`，没有参数训练或正式 checkpoint。
+- iteration `421` 的日计划已选定 Backwoods -> Farm 的 `recovery:return_home`，ranking 同时明确 `exclusive_recovery_override=true`。旧主循环却先读取遗留的 `crop_production_teacher` planning handoff 并立即 dispatch，导致 19:00 的作物 Teacher 在不存在当前季可成熟种子的现场连续失败。不得通过放宽种子、季节或经济约束修复。
+- 唯一修复点在 `PlanningHandoffCapture` 的调度资格：完整 handoff 遇到独占恢复时返回 defer，主循环记录原因后让原 queue 继续执行；恢复完成后按现有 fresh-replan 机制重新求解。没有第二套恢复、作物规划、编译或执行器。
+- v85 原始 `ranking-response-0421.json` 对新程序集的离线结果为 `DeferHandoff=true / DispatchHandoff=false`。专项 `15/15`、GameFreeGovernance `530/530`、Backend `257/257`、LiveTrainingLoop Release 零警告零错误。未过滤旧 Core 套件仍有 36 个与本改动无关的 current-main 基线失败，另有 3043 项通过；它们不被伪报为本切片全绿，也不改变当前 WIP=1。下一固定入口为全新 day-zero v86，并继续既定 Golden Walnut source-schedule 退出条件。
+
 ## 2026-10-30 v84 旧式日界对话修复与 v85 入口
 
 - `golden-walnut-source-schedule-v84-20261030-101752-menu-preflight` 从全新 day-zero 身份运行并继续携带 `--skip-training`。它证明 PR #365 的菜单预检能跨过 v83 边界：Crop Teacher 完成，两轮作物阶段取得 `5 + 4` 条日界回执和第二轮 `8` 条收获回执；Stage One 继续执行邮件、任务 `13`、钓鱼、容量恢复、出货和路线。iteration `198` 前共有 `147` 条有语义 verified Product action。

@@ -1012,7 +1012,21 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 queue = dailyPlan.Queue;
                 decisionModelPlanPath = modelPlanPath;
                 decisionRankingPath = rankingPath;
-                if (PlanningHandoffCapture.TryReadCropProductionTeacherHandoff(
+                if (PlanningHandoffCapture
+                    .ShouldDeferCropProductionTeacherHandoffForExclusiveRecovery(
+                        dailyPlanRanking))
+                {
+                    AppendProgress(
+                        options,
+                        "planning_handoff_deferred_for_exclusive_recovery",
+                        iteration,
+                        lastStateHash,
+                        string.Empty,
+                        "kind=crop_production_teacher " +
+                        "next=execute_exclusive_recovery_queue_then_fresh_replan");
+                }
+                else if (PlanningHandoffCapture
+                    .TryReadCropProductionTeacherHandoff(
                         dailyPlanRanking,
                         out var planningHandoff))
                 {
