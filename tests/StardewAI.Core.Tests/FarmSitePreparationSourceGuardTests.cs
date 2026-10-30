@@ -76,6 +76,14 @@ public sealed class FarmSitePreparationSourceGuardTests
             "watering_refill_approach_standable",
             projector,
             StringComparison.Ordinal);
+        Assert.Contains(
+            "native_walking_collision_blocked",
+            projector,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "CollisionMask.All);",
+            projector,
+            StringComparison.Ordinal);
         Assert.Contains("if (x == bounds.MaxX)", projector, StringComparison.Ordinal);
         Assert.Contains("if (y == bounds.MaxY)", projector, StringComparison.Ordinal);
         Assert.DoesNotContain(

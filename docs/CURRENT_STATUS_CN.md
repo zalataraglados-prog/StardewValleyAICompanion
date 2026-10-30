@@ -18,6 +18,13 @@
 | Money production evidence cells | **0/18** | 6 个 Money criterion × 3 partitions；hermetic fixture 不计 production |
 | Formal product training | **false** | 未通过完整正式训练准入 |
 
+### 2026-10-30 v86 补水走廊复用与步行碰撞修复
+
+- 全新 day-zero 隐藏静音运行 `golden-walnut-source-schedule-v86-20261030-151929-exclusive-recovery` 继续显式使用 `--skip-training`。它在 iteration `97` 前形成 `94` 条有语义 verified Product action、`9` 条日界回执，并在 iteration `58` 完成第一轮 Crop Teacher；随后 `98..102` 为同一失败的有界重试。v84/v85 的菜单、等待和独占恢复缺口均未回退。该轮没有 Student 参数、checkpoint、GPU 训练或正式政策数据。
+- iteration `81` 的第二轮 Crop Teacher 选择 `8` 格防风草并验证 `32` 次浇水所需补水路线。旧 Farm 布局把无作物 `HoeDirt` 同“不可步行占用”处理，使首轮已经清出的 `(70,27)` 补水走廊在重规划时消失，Teacher 转而绑定 `(74,27)`，并要求清理 `(73,25)` 的 `2x2` 树桩。执行层随后正确以 `blocked_required_axe_upgrade_missing` 等理由拒绝；不得放宽斧头等级、挥砍预算或工具槽校验。
+- 透明桥现分别保留“静态占用”与“原生步行碰撞”事实；补水站位使用 `IsTileBlockedBy(..., ignorePassables: CollisionMask.All)`，可通行耕地不再被当作墙。Teacher 对缺少新字段的旧证据只兼容 `already_prepared` 无作物耕地，其他阻挡继续保守。v86 原始 Teacher request 离线重放已把入口从 `(74,27)` 改回 `(70,27)`，仅需清理 `(70,19)/(70,20)/(70,24)` 三个普通对象，树桩完全退出计划。
+- 验证为 Crop Teacher hermetic 自测通过、GameFreeGovernance `530/530`、Backend `257/257`、TransparentBridge Release `0 warning / 0 error`。本机默认 MSBuild `GamePath` 已通过被 Git 忽略的 `Directory.Build.local.props` 与用户级环境指向含 SMAPI 的 E 盘隔离运行时；普通构建不再误发现失效的 F 盘安装。v86 不能跨代码变更续接，下一入口是全新 day-zero v87，继续首次登岛 -> 核桃来源增量 -> First Parrot -> Turtle -> House -> source schedule 生成与独立重放；正式准入分子和 `formal_product_training=false` 不变。
+
 ### 2026-10-30 v85 长跑与独占恢复优先级修复
 
 - 全新 day-zero 隐藏静音运行 `golden-walnut-source-schedule-v85-20261030-120056-legacy-dialogue` 继续显式使用 `--skip-training`。它推进到 iteration `425`、Year 1 Spring 22 `19:00`，形成 `306` 条有语义 verified Product action，并三次完成 Crop Teacher；第三轮取得 `8/8` 原生收获回执。Stage One 同时完成邮件、任务 `13`、钓鱼、路线、容量恢复和原生出货，累计推进到 `total_days=21`。v84 的旧式日界对话与假等待没有回退。该轮仍没有 Student 参数更新、checkpoint、GPU 训练或正式政策数据。

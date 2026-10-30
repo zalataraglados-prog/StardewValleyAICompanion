@@ -171,6 +171,47 @@ internal static partial class BootstrapSelfTest
                     clearanceCommitment.WateringRefillPreparationTiles[0]),
             "A bounded one-clearance native refill corridor and its terminal approach were not bound separately from crop tiles.");
 
+        var preparedCorridorLayoutPath = Path.Combine(
+            root,
+            "low-water-prepared-refill-layout-snapshot.json");
+        Write(preparedCorridorLayoutPath,
+            MoneyCropTeacherLayoutSnapshot(
+                3,
+                includeRefillSource: true,
+                existingSeedId: "472",
+                existingSeedQuantity: 14,
+                requireRefillClearance: true,
+                reusePreparedRefillCorridor: true));
+        var preparedCorridorRequestPath = Path.Combine(
+            root,
+            "low-water-prepared-refill-request.json");
+        Write(preparedCorridorRequestPath,
+            new MoneyRevenueCropProductionTeacherRequest
+            {
+                SnapshotPath = lowWaterSourcePath,
+                FarmLayoutSnapshotPaths =
+                    new[] { preparedCorridorLayoutPath },
+                DecisionId =
+                    "teacher.money.crop.spring7.low-water-prepared-refill",
+                DecisionRecordedAt = "2026-10-18T00:00:00Z",
+                MaximumTileCount = 8,
+                MaxQueueItemCount = 8
+            });
+        var preparedCorridorDecision =
+            MoneyRevenueCropProductionTeacherDecisionBuilder.Build(
+                preparedCorridorRequestPath);
+        var preparedCorridorCommitment =
+            preparedCorridorDecision.Commitments.Single();
+        Require(preparedCorridorDecision.TeacherCandidateEvaluations.Any(
+                    value => value.SeedId == "472" &&
+                        value.Admitted &&
+                        value.WateringRefillRouteVerified) &&
+                preparedCorridorCommitment
+                    .WateringRefillPreparationTiles.Length == 0 &&
+                preparedCorridorCommitment.WateringRefillApproachTile ==
+                    new MoneyRevenueCropPlantingTile(1, 0),
+            "A native-walkable prepared refill corridor was not reused without redundant clearance.");
+
         var noRefillLayoutPath = Path.Combine(
             root,
             "low-water-no-refill-layout-snapshot.json");
@@ -602,7 +643,8 @@ internal static partial class BootstrapSelfTest
         bool includeRefillSource = true,
         string existingSeedId = "476",
         int existingSeedQuantity = 1,
-        bool requireRefillClearance = false)
+        bool requireRefillClearance = false,
+        bool reusePreparedRefillCorridor = false)
     {
         var source = MoneyCropTeacherSourceSnapshot(
             wateringCanWaterLeft,
@@ -642,7 +684,9 @@ internal static partial class BootstrapSelfTest
                             : requireRefillClearance && index is 2 or 6
                                 ? "blocked_not_diggable"
                             : requireRefillClearance && index == 10
-                                ? "requires_single_clearance_then_till"
+                                ? reusePreparedRefillCorridor
+                                    ? "already_prepared"
+                                    : "requires_single_clearance_then_till"
                             : index == 0
                                 ? "already_prepared"
                                 : "ready_to_till",
@@ -653,6 +697,12 @@ internal static partial class BootstrapSelfTest
                             includeRefillSource &&
                             index == (requireRefillClearance ? 0 : 11) ||
                             requireRefillClearance && index is 2 or 6 or 10,
+                        native_walking_collision_blocked =
+                            includeRefillSource &&
+                            index == (requireRefillClearance ? 0 : 11) ||
+                            requireRefillClearance &&
+                            (index is 2 or 6 ||
+                             index == 10 && !reusePreparedRefillCorridor),
                         watering_can_refill_source =
                             includeRefillSource &&
                             index == (requireRefillClearance ? 0 : 11),
@@ -660,7 +710,8 @@ internal static partial class BootstrapSelfTest
                             (!includeRefillSource ||
                                 index != (requireRefillClearance ? 0 : 11)) &&
                             (!requireRefillClearance ||
-                                index is not (2 or 6 or 10))
+                                index is not (2 or 6) &&
+                                (index != 10 || reusePreparedRefillCorridor))
                     }).ToArray()
                 })
             }, JsonDefaults.Options)
