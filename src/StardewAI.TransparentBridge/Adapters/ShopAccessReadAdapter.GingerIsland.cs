@@ -68,8 +68,7 @@ public sealed partial class ShopAccessReadAdapter
             "StardewValley.Minigames.BoatJourney";
         var boatDepartureActive = Game1.eventUp &&
             string.Equals(Game1.CurrentEvent?.id, "-78765", StringComparison.Ordinal);
-        var islandReached = player.mailReceived.Contains("Visited_Island") ||
-            Game1.stats.Get("boatRidesToIsland") > 0 ||
+        var islandReached = player.hasOrWillReceiveMail("Visited_Island") ||
             currentLocation.StartsWith("Island", StringComparison.Ordinal);
 
         var status = GingerIslandAccessStatus(
