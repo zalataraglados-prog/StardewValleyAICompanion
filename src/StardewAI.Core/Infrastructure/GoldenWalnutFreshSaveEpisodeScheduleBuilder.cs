@@ -129,7 +129,9 @@ public static class GoldenWalnutFreshSaveEpisodeScheduleBuilder
                     before);
             }
             Require(
-                before.SaveId.Value is not null &&
+                before.SaveId.Status == FieldStatus.Available &&
+                after.SaveId.Status == FieldStatus.Available &&
+                !string.IsNullOrWhiteSpace(before.SaveId.Value) &&
                 before.SaveId.Value == after.SaveId.Value,
                 "Golden Walnut episode must bind one readable save identity: " + episodePath);
             saveId ??= before.SaveId.Value;
