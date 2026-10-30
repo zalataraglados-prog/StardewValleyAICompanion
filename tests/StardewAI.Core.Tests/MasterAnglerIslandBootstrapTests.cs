@@ -3,6 +3,7 @@ using System.Text.Json.Nodes;
 using StardewAI.Contracts.State;
 using StardewAI.Core.Infrastructure;
 using StardewAI.GoalConditionedBootstrap;
+using StardewAI.LiveTrainingLoop;
 
 namespace StardewAI.Core.Tests;
 
@@ -124,6 +125,75 @@ public sealed partial class MasterAnglerMainlineTests
         {
             File.Delete(snapshotPath);
         }
+    }
+
+    [Fact]
+    public void IslandBootstrapControlMarkerSurvivesFreshContinuationRebind()
+    {
+        using var fixture = CreateFixture(
+            "IslandSouthEastCave:5",
+            targetLocation: "IslandSouthEastCave");
+        var snapshot = IslandBootstrapSnapshot(fixture);
+        var continuationParameters = fixture.Parameters
+            .Select(parameter => Parameter(
+                "continuation." + parameter.Name,
+                parameter.Name switch
+                {
+                    "master_angler_target_total_day" => "0",
+                    "master_angler_runtime_terminal_validation_required" =>
+                        "false",
+                    MasterAnglerRouteTimingValidator.ValidationRequiredParameter =>
+                        "false",
+                    _ => parameter.Value
+                }))
+            .Append(Parameter(
+                "continuation.master_angler_ginger_island_prerequisite_control_only",
+                "true"))
+            .Prepend(Parameter("continuation.option_id", "fishing.catch_fish"))
+            .Select(parameter => (JsonNode)new JsonObject
+            {
+                ["name"] = parameter.Name,
+                ["value"] = parameter.Value
+            })
+            .ToArray();
+        var queueItem = new JsonObject
+        {
+            ["normalized_command"] = new JsonObject
+            {
+                ["parameters"] = new JsonArray(continuationParameters)
+            }
+        };
+
+        var continuation = Assert.IsType<JsonObject>(
+            QueueReplanFilter.ReadObjectiveContinuation(queueItem));
+        Assert.Equal(
+            "true",
+            continuation[
+                "master_angler_ginger_island_prerequisite_control_only"]!
+                .GetValue<string>());
+        var rebound = continuation
+            .Where(property =>
+                property.Key != "kind" && property.Value is JsonValue)
+            .Select(property => Parameter(
+                "continuation." + property.Key,
+                property.Value!.GetValue<string>()))
+            .ToArray();
+
+        Assert.True(
+            MasterAnglerWindowIntentValidator
+                .TryValidateGingerIslandPrerequisiteControl(
+                    snapshot,
+                    rebound,
+                    out _,
+                    out var reason),
+            reason);
+        var candidate = EvaluateGingerIslandCandidate(snapshot, rebound);
+        Assert.DoesNotContain(
+            "master_angler_window_intent_contract_invalid",
+            candidate.BlockReasons);
+        Assert.Contains(
+            "master_angler_ginger_island_access_requires_community_center_or_joja_completion",
+            candidate.BlockReasons);
     }
 
     private static SnapshotEnvelope IslandBootstrapSnapshot(Fixture fixture) =>

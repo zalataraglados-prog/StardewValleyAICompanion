@@ -885,6 +885,10 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                     string.Equals(
                         collectionTeacher.Status,
                         "ready_mandatory_menu_recovery_control",
+                        StringComparison.Ordinal) ||
+                    string.Equals(
+                        collectionTeacher.Status,
+                        "ready_ginger_island_prerequisite_control",
                         StringComparison.Ordinal);
                 if (isControlOnlyQueue)
                     stageOneCollectionControlQueueCount++;

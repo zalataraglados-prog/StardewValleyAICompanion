@@ -493,6 +493,10 @@ public sealed class CropTeacherControlIntegrationSourceGuardTests
             loopSource,
             StringComparison.Ordinal);
         Assert.Contains(
+            "ready_ginger_island_prerequisite_control",
+            loopSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "stage_one_collection_teacher_blocked status=",
             loopSource,
             StringComparison.Ordinal);
