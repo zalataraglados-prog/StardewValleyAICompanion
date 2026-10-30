@@ -46,12 +46,19 @@ public sealed class NativeControlSettleNoProgressTests
             ["status"] = "applied",
             ["primitive_kind"] = "wait_ticks",
             ["primitive_verification_status"] = "verified",
-            ["changed_facts"] = new JsonArray(new JsonObject
-            {
-                ["path"] = "executor.wait_ticks",
-                ["before"] = "0",
-                ["after"] = "30"
-            })
+            ["changed_facts"] = new JsonArray(
+                new JsonObject
+                {
+                    ["path"] = "executor.wait_ticks",
+                    ["before"] = "0",
+                    ["after"] = "30"
+                },
+                new JsonObject
+                {
+                    ["path"] = "time.time",
+                    ["before"] = "600",
+                    ["after"] = "600"
+                })
         };
     }
 }

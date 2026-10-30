@@ -114,6 +114,13 @@ public sealed class NativeControlSettleRecoveryTests
             menuOpen)));
     }
 
+    [Fact]
+    public void ActiveLegacyDialogueDoesNotCreateNativeControlRecovery()
+    {
+        Assert.Null(NativeControlSettleRecovery.TryCreate(Snapshot(
+            dialogueUp: true)));
+    }
+
     private static SnapshotEnvelope Snapshot(
         bool compatible = true,
         bool ready = false,
@@ -122,7 +129,8 @@ public sealed class NativeControlSettleRecoveryTests
         bool menuOpen = false,
         bool playerCanMove = false,
         bool globalFade = false,
-        int freezePause = -12)
+        int freezePause = -12,
+        bool dialogueUp = false)
     {
         var json = $$"""
         {
@@ -149,6 +157,7 @@ public sealed class NativeControlSettleRecoveryTests
                   "current_event_active": false,
                   "event_up": false,
                   "game_paused": false,
+                  "dialogue_up": {{dialogueUp.ToString().ToLowerInvariant()}},
                   "global_fade": {{globalFade.ToString().ToLowerInvariant()}},
                   "freeze_controls": false,
                   "is_warping": false,

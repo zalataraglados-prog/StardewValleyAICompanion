@@ -96,6 +96,8 @@ public sealed class MovementTimingEvidenceSourceGuardTests
         Assert.Contains("Game1.globalFade", adapter, StringComparison.Ordinal);
         Assert.Contains("Game1.freezeControls", adapter, StringComparison.Ordinal);
         Assert.Contains("Game1.isWarping", adapter, StringComparison.Ordinal);
+        Assert.Contains("!Game1.dialogueUp", adapter, StringComparison.Ordinal);
+        Assert.Contains("dialogue_up = Game1.dialogueUp", adapter, StringComparison.Ordinal);
         Assert.Contains("player.freezePause", adapter, StringComparison.Ordinal);
         Assert.Contains("native_control_gate_open", adapter, StringComparison.Ordinal);
         Assert.Contains("Game1.realMilliSecondsPerGameMinute", adapter, StringComparison.Ordinal);

@@ -260,6 +260,34 @@ public sealed partial class ModEntry : Mod
             }
             if (menu is null)
             {
+                if (Game1.dialogueUp)
+                {
+                    if (!CanAdvancePostSleepLegacyDialogue(sleep))
+                    {
+                        CompleteBlockedSleep(
+                            sleep,
+                            "post_sleep_legacy_dialogue_unsafe:isQuestion=" +
+                            Game1.isQuestion +
+                            ";eventUp=" + Game1.eventUp +
+                            ";speaker=" +
+                            (Game1.currentSpeaker?.Name ?? "none") +
+                            ";objectDialogueCount=" +
+                            Game1.currentObjectDialogue.Count);
+                        return;
+                    }
+
+                    sleep.SawPostSleepLegacyDialogue = true;
+                    sleep.PostSleepWaitTicks++;
+                    if (sleep.PostSleepWaitTicks > 1800 ||
+                        sleep.PostSleepLegacyDialoguePressAttempts > 32)
+                    {
+                        CompleteBlockedSleep(
+                            sleep,
+                            "post_sleep_legacy_dialogue_not_closed");
+                    }
+                    return;
+                }
+
                 if (!NativeNewDayWorldStable(sleep))
                 {
                     sleep.PostSleepWaitTicks++;
@@ -283,6 +311,11 @@ public sealed partial class ModEntry : Mod
                 if (sleep.SawPostSleepDialogue)
                 {
                     reasons.Add("post_sleep_dialogue_advanced_natively");
+                }
+                if (sleep.SawPostSleepLegacyDialogue)
+                {
+                    reasons.Add(
+                        "post_sleep_legacy_object_dialogue_advanced_natively");
                 }
                 if (sleep.SawPostSleepLevelUp)
                 {
@@ -602,6 +635,58 @@ public sealed partial class ModEntry : Mod
         sleep.PostSleepDialoguePhaseTicks = 0;
     }
 
+    private void ApplyPostSleepLegacyDialogueInput(ActiveSleep sleep)
+    {
+        if (sleep.PostSleepLegacyDialogueButtonHeld)
+        {
+            if (!TryApplySmapiRightButtonOverride(
+                    pressed: false,
+                    out var releaseReason))
+            {
+                CompleteBlockedSleep(
+                    sleep,
+                    "post_sleep_legacy_dialogue_release_failed:" +
+                    releaseReason);
+                return;
+            }
+
+            sleep.PostSleepLegacyDialogueButtonHeld = false;
+            sleep.PostSleepLegacyDialoguePressAttempts++;
+            sleep.PostSleepLegacyDialogueLastInputTick = sleep.ElapsedTicks;
+            return;
+        }
+
+        if (!CanAdvancePostSleepLegacyDialogue(sleep) ||
+            sleep.ElapsedTicks - sleep.PostSleepLegacyDialogueLastInputTick < 20)
+        {
+            return;
+        }
+
+        if (!TryApplySmapiRightButtonOverride(
+                pressed: true,
+                out var pressReason))
+        {
+            CompleteBlockedSleep(
+                sleep,
+                "post_sleep_legacy_dialogue_press_failed:" + pressReason);
+            return;
+        }
+
+        sleep.PostSleepLegacyDialogueButtonHeld = true;
+    }
+
+    private static bool CanAdvancePostSleepLegacyDialogue(
+        ActiveSleep sleep)
+    {
+        return Game1.Date.TotalDays == sleep.StartTotalDays + 1 &&
+            Game1.activeClickableMenu is null &&
+            Game1.dialogueUp &&
+            !Game1.isQuestion &&
+            !Game1.eventUp &&
+            Game1.currentSpeaker is null &&
+            Game1.currentObjectDialogue.Count > 0;
+    }
+
     private static bool CanAdvancePostSleepDialogue(ActiveSleep sleep, DialogueBox dialogue)
     {
         return Game1.Date.TotalDays == sleep.StartTotalDays + 1 &&
@@ -691,6 +776,7 @@ public sealed partial class ModEntry : Mod
     private void CompleteSleep(ActiveSleep sleep, string verificationStatus, string[] verificationReasons)
     {
         ReleaseSmapiLeftButtonOverride();
+        TryApplySmapiRightButtonOverride(pressed: false, out _);
         StopAllMovement();
         activeSleep = null;
         sleep.Pending.Completion.SetResult(CompletedSleep(sleep, verificationStatus, verificationReasons));
@@ -699,6 +785,7 @@ public sealed partial class ModEntry : Mod
     private void CompleteBlockedSleep(ActiveSleep sleep, string reason)
     {
         ReleaseSmapiLeftButtonOverride();
+        TryApplySmapiRightButtonOverride(pressed: false, out _);
         StopAllMovement();
         activeSleep = null;
         sleep.Pending.Completion.SetResult(BlockedWithPrimitive(
@@ -790,6 +877,7 @@ public sealed partial class ModEntry : Mod
             Game1.timeOfDay >= 600 && Game1.timeOfDay < 700 &&
             !Game1.eventUp &&
             Game1.activeClickableMenu is null &&
+            !Game1.dialogueUp &&
             Game1.player.canMove &&
             !Game1.player.UsingTool;
     }

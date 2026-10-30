@@ -59,6 +59,11 @@ public sealed class SleepCapabilityContractTests
         Assert.Contains("CanAdvancePostSleepDialogue", source, StringComparison.Ordinal);
         Assert.Contains("post_sleep_dialogue_advanced_natively", source, StringComparison.Ordinal);
         Assert.Contains("ApplyPostSleepDialogueInput", source, StringComparison.Ordinal);
+        Assert.Contains("CanAdvancePostSleepLegacyDialogue", source, StringComparison.Ordinal);
+        Assert.Contains("ApplyPostSleepLegacyDialogueInput", source, StringComparison.Ordinal);
+        Assert.Contains("Game1.currentObjectDialogue.Count > 0", source, StringComparison.Ordinal);
+        Assert.Contains("post_sleep_legacy_object_dialogue_advanced_natively", source, StringComparison.Ordinal);
+        Assert.Contains("!Game1.dialogueUp", source, StringComparison.Ordinal);
         Assert.Contains("native_new_day_world_stable", source, StringComparison.Ordinal);
         Assert.Contains("post_sleep_world_not_stable", source, StringComparison.Ordinal);
     }

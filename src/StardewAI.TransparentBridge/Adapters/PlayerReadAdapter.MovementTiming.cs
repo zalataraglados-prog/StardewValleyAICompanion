@@ -29,6 +29,7 @@ public sealed partial class PlayerReadAdapter
             !Game1.freezeControls &&
             !Game1.isWarping &&
             !Game1.paused &&
+            !Game1.dialogueUp &&
             !eventControlsMovement &&
             player.freezePause <= 0;
         var formulaApplicable =
@@ -58,6 +59,7 @@ public sealed partial class PlayerReadAdapter
             current_event_active = Game1.CurrentEvent is not null,
             event_up = Game1.eventUp,
             game_paused = Game1.paused,
+            dialogue_up = Game1.dialogueUp,
             global_fade = Game1.globalFade,
             freeze_controls = Game1.freezeControls,
             is_warping = Game1.isWarping,

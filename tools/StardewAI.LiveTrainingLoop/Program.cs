@@ -1194,10 +1194,9 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                     lastQueueId,
                     "queue_not_pending executor_feedback_required" +
                     NoProgressDetail(noProgressDecision));
-                if (options.MaxQueueNoProgressStreak > 0 &&
-                    noProgressDecision.NoProgress &&
-                    noProgressDecision.Streak >=
-                        options.MaxQueueNoProgressStreak)
+                if (NoProgressBackoffPolicy.ReachedLimit(
+                        noProgressDecision,
+                        options.MaxQueueNoProgressStreak))
                 {
                     stopReason =
                         "max_queue_no_progress_streak_reached count=" +
@@ -1625,6 +1624,24 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                     "recovery_refresh_wait_only dataset_rows=" +
                     rowsAppended +
                     NoProgressDetail(executionNoProgress));
+            }
+
+            if (NoProgressBackoffPolicy.ReachedLimit(
+                    executionNoProgress,
+                    options.MaxQueueNoProgressStreak))
+            {
+                stopReason =
+                    "max_queue_no_progress_streak_reached count=" +
+                    executionNoProgress.Streak +
+                    " phase=verified_recovery_wait";
+                AppendProgress(
+                    options,
+                    "stopped",
+                    iteration,
+                    lastStateHash,
+                    lastQueueId,
+                    stopReason);
+                break;
             }
 
             await DelayBeforeNextAttemptAsync(

@@ -114,6 +114,13 @@ public sealed class NoProgressBackoffPolicy
         lastSignature = string.Empty;
     }
 
+    public static bool ReachedLimit(
+        NoProgressBackoffDecision decision,
+        int maximumStreak) =>
+        maximumStreak > 0 &&
+        decision.NoProgress &&
+        decision.Streak >= maximumStreak;
+
     public static string SemanticSignature(JsonObject queue)
     {
         var status = ReadString(queue, "status");
@@ -200,13 +207,34 @@ public sealed class NoProgressBackoffPolicy
         }
 
         var changedFacts = execution["changed_facts"]?.AsArray();
-        return changedFacts is { Count: > 0 } &&
-            changedFacts
-                .Select(node => node?.AsObject())
-                .All(fact => string.Equals(
-                    ReadString(fact, "path"),
+        if (changedFacts is not { Count: > 0 })
+        {
+            return false;
+        }
+
+        var sawWaitTick = false;
+        foreach (var fact in changedFacts.Select(node => node?.AsObject()))
+        {
+            var path = ReadString(fact, "path");
+            if (string.Equals(
+                    path,
                     "executor.wait_ticks",
-                    StringComparison.Ordinal));
+                    StringComparison.Ordinal))
+            {
+                sawWaitTick = true;
+                continue;
+            }
+
+            if (!string.Equals(
+                    ReadString(fact, "before"),
+                    ReadString(fact, "after"),
+                    StringComparison.Ordinal))
+            {
+                return false;
+            }
+        }
+
+        return sawWaitTick;
     }
 
     private static string[] ReadStrings(JsonArray? values)

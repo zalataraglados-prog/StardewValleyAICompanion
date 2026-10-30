@@ -77,6 +77,26 @@ public sealed class LiveTrainingNoProgressBackoffTests
     }
 
     [Fact]
+    public void RecoveryWaitWithUnchangedClockStillCountsAsNoProgress()
+    {
+        var policy = new NoProgressBackoffPolicy(5000, 60000);
+        var execution = VerifiedWaitExecution();
+        execution["changed_facts"]!.AsArray().Add(new JsonObject
+        {
+            ["path"] = "time.time",
+            ["before"] = "600",
+            ["after"] = "600"
+        });
+
+        var decision = policy.ObserveExecution(
+            RecoveryRefreshWaitQueue(),
+            execution);
+
+        Assert.True(decision.NoProgress);
+        Assert.Equal(1, decision.Streak);
+    }
+
+    [Fact]
     public void OrdinaryWaitIsNotTreatedAsRecoveryNoProgress()
     {
         var policy = new NoProgressBackoffPolicy(5000, 60000);
@@ -101,7 +121,7 @@ public sealed class LiveTrainingNoProgressBackoffTests
         policy.ObserveExecution(queue, VerifiedWaitExecution());
 
         var execution = VerifiedWaitExecution();
-        execution["changed_facts"] = new JsonArray(
+        execution["changed_facts"]!.AsArray().Add(
             new JsonObject
             {
                 ["path"] = "time.time",
@@ -125,6 +145,20 @@ public sealed class LiveTrainingNoProgressBackoffTests
         Assert.True(decision.NoProgress);
         Assert.Equal(1, decision.Streak);
         Assert.Equal(0, decision.DelayMs);
+    }
+
+    [Fact]
+    public void PositiveLimitStopsOnlyAtTheConfiguredNoProgressStreak()
+    {
+        var below = new NoProgressBackoffDecision(true, 7, 60000, "wait");
+        var reached = new NoProgressBackoffDecision(true, 8, 60000, "wait");
+
+        Assert.False(NoProgressBackoffPolicy.ReachedLimit(below, 8));
+        Assert.True(NoProgressBackoffPolicy.ReachedLimit(reached, 8));
+        Assert.False(NoProgressBackoffPolicy.ReachedLimit(reached, 0));
+        Assert.False(NoProgressBackoffPolicy.ReachedLimit(
+            reached with { NoProgress = false },
+            8));
     }
 
     [Fact]

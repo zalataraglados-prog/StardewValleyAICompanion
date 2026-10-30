@@ -4,6 +4,14 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已完成 v10 之后的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已按 current authority 冻结；当前唯一施工项为 `complete_master_angler` 顶层 dependency、日历窗口与 coverage 接线。P0/P1 共享 correctness blocker 可临时中断，但不得静默改序或并行展开多个 root method。
 
+## 2026-10-30 v84 旧式日界对话修复与 v85 入口
+
+- `golden-walnut-source-schedule-v84-20261030-101752-menu-preflight` 从全新 day-zero 身份运行并继续携带 `--skip-training`。它证明 PR #365 的菜单预检能跨过 v83 边界：Crop Teacher 完成，两轮作物阶段取得 `5 + 4` 条日界回执和第二轮 `8` 条收获回执；Stage One 继续执行邮件、任务 `13`、钓鱼、容量恢复、出货和路线。iteration `198` 前共有 `147` 条有语义 verified Product action。
+- iteration `198` 的睡眠把日期原生推进至 Spring 11 `06:00`，随后活动 `DialogueBox` 已关闭，但 `Game1.currentObjectDialogue` 仍有旧式全局对象对话，状态为 `dialogueUp=true / active_menu=none / CanMove=false`。旧透明 movement context 漏读 `dialogueUp`，旧睡眠执行器也只处理活动菜单，于是返回 `post_sleep_world_not_stable`。锁定 1.6.15 反编译确认：`DialogueBox.closeDialogue()` 可在队列尚有内容时保持 `dialogueUp=true`；原生 `Game1.pressActionButton()` 负责逐条推进并最终恢复移动。
+- 修复没有增加第二套睡眠或对话系统。现有睡眠执行器仅在日界精确前进一日、菜单为空、无问题/事件/角色对话且 `currentObjectDialogue.Count > 0` 时发送有界原生右键脉冲；完成、阻塞或超时时都释放 override，未知状态保持失败关闭。`NativeNewDayWorldStable`、透明 native-control gate 和 `NativeControlSettleRecovery` 均显式要求 `dialogue_up=false`。
+- iteration `199..227` 的 `29` 次 recovery wait 只有 wait 计数变化，时钟事实保持 `600->600`。no-progress 现把附带的未变化事实视为等待的一部分，只有其他真实游戏事实变化才重置 streak；达到 `MaxQueueNoProgressStreak` 后停止。旧报表中的 `176` 必须拆为 `147` 条有效执行和 `29` 条隔离校准噪声，不得写入训练或 coverage。
+- v84 不能跨代码变更续接。下一固定入口是全新 day-zero v85，顺序仍为首次登岛、Golden Walnut 来源增量、First Parrot/Turtle/House、source schedule 生成与独立重放，再进入 #345 准入门。没有 Student 更新、checkpoint、GPU 训练或正式训练授权。
+
 ## 2026-10-30 v83 长跑、失败边界与 v84 入口
 
 - `golden-walnut-source-schedule-v83-20261030-074742-global-settle` 从全新 day-zero 身份运行 `324` 次迭代，取得 `223` 条 verified Product action、`433` 个 fresh-save episode、`8` 条收获回执与 `5` 条日界回执。Crop Teacher 于 iteration `140` 完成；之后 Stage One 继续完成邮件、任务 `13`、钓鱼、背包恢复、Fishing `ItemGrabMenu` 恢复、出货、日终恢复和 Spring 17 -> 18 原生睡眠结算，金钱 `20 -> 461`。滚动保留窗口正常维持 `64` 次迭代并回收失去引用的内容寻址块。
