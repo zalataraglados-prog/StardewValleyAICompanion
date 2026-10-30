@@ -126,9 +126,12 @@ if ($calibrationSummary.status -ne "passed" -or
 if ($RequireSourceScheduleReady -and
     (-not [bool]$calibrationSummary.golden_walnut_source_milestone_ready -or
      -not [bool]$calibrationSummary.golden_walnut_source_schedule_verified -or
+     -not [bool]$calibrationSummary.golden_walnut_source_schedule_independently_verified -or
      [string]::IsNullOrWhiteSpace(
-         [string]$calibrationSummary.golden_walnut_source_schedule_path))) {
-    throw "Product calibration did not produce a verified Golden Walnut source schedule."
+         [string]$calibrationSummary.golden_walnut_source_schedule_path) -or
+     [string]::IsNullOrWhiteSpace(
+         [string]$calibrationSummary.golden_walnut_source_schedule_independent_verification_receipt_path))) {
+    throw "Product calibration did not produce an independently verified Golden Walnut source schedule."
 }
 
 $freshSummaryPath = Join-Path (
@@ -172,6 +175,10 @@ $summary = [ordered]@{
         [bool]$calibrationSummary.golden_walnut_source_schedule_verified
     source_schedule_path =
         [string]$calibrationSummary.golden_walnut_source_schedule_path
+    source_schedule_independently_verified =
+        [bool]$calibrationSummary.golden_walnut_source_schedule_independently_verified
+    source_schedule_independent_verification_receipt_path =
+        [string]$calibrationSummary.golden_walnut_source_schedule_independent_verification_receipt_path
     artifact_retention_mode = "rolling"
     min_free_space_mb = $MinFreeSpaceMb
     snapshot_artifact_mode = "content_addressed_gzip"

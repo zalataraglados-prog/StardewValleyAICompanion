@@ -27,6 +27,16 @@ No loop report or `golden_walnut_source_schedule_verified` flag is consumed.
 Fresh failed non-progress continuity witnesses remain governed by the existing
 builders; they cannot contribute source or unlock progress.
 
+When `Invoke-ProductBootstrapCalibration.ps1` runs with
+`-RequireGoldenWalnutSourceScheduleReady`, it invokes this command after the loop
+has frozen its manifest and schedule but before writing a successful calibration
+summary. The wrapper supplies save/player anchors from the initial transparent
+snapshot, requires a parsed pass receipt, and writes
+`golden-walnut-source-schedule-independent-verification.json` beside the product
+calibration summary, outside `live-snapshots`. A nonzero verifier exit, malformed
+JSON, mismatched identity/path/contract field, or absent receipt fails the wrapper
+closed. Ordinary bounded calibration does not invoke or claim this verification.
+
 ### Completed v89 invocation (PowerShell, from the repository root)
 
 The product root/run identity come from the task package. Expected save/player

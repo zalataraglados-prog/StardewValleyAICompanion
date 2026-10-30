@@ -163,6 +163,18 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             calibration,
             StringComparison.Ordinal);
         Assert.Contains(
+            "experiments\\StardewAI.GoalConditionedBootstrap\\StardewAI.GoalConditionedBootstrap.csproj",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "if ($RequireGoldenWalnutSourceScheduleReady) {",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$requiredDlls += $bootstrapDll",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "dotnet publish $entry.Project -c Release --nologo",
             calibration,
             StringComparison.Ordinal);
@@ -277,6 +289,46 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
         Assert.Contains(
             "Golden Walnut long-run milestone did not produce a verified source schedule.",
             calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "verify-golden-walnut-fresh-save-source-schedule",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "golden-walnut-source-schedule-independent-verification.json",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$verificationExitCode -ne 0",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "independent source-schedule verification produced malformed JSON",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "golden_walnut_source_schedule_independently_verified =",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "golden_walnut_source_schedule_independent_verification_receipt_path =",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "initial.save_id.status -ne \"available\"",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "initial.player_id.status -ne \"available\"",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Product calibration did not produce an independently verified Golden Walnut source schedule.",
+            workflow,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "source_schedule_independently_verified =",
+            workflow,
             StringComparison.Ordinal);
         Assert.Contains(
             "-not $CaptureGoldenWalnutFreshSaveEvidence",
