@@ -108,7 +108,8 @@ public static class GoldenWalnutFreshSaveInitialBoundaryValidator
         Require(
             snapshot.SchemaVersion == "snapshot.v1" &&
             snapshot.GameVersion == GoldenWalnutFreshSaveUnlockTimelineProofBuilder.GameVersion &&
-            snapshot.SaveId.Value is { Length: > 0 } &&
+            snapshot.SaveId.Status == FieldStatus.Available &&
+            !string.IsNullOrWhiteSpace(snapshot.SaveId.Value) &&
             !string.IsNullOrWhiteSpace(snapshot.StateHash) &&
             ReadStateFieldInt(snapshot, "time", "total_days") == 0,
             "Golden Walnut evidence must begin at a readable vanilla fresh-save day-zero boundary.");
