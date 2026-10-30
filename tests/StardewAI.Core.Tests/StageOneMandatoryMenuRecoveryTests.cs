@@ -1,4 +1,9 @@
+using System.Text.Json;
+using StardewAI.Contracts.Options;
+using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
+using StardewAI.Core.Execution;
+using StardewAI.Core.OptionRegistry;
 using StardewAI.Core.Training;
 
 namespace StardewAI.Core.Tests;
@@ -85,35 +90,231 @@ public sealed class StageOneMandatoryMenuRecoveryTests
     }
 
     [Fact]
+    public void OpenDialoguePreflightBuildsDispatchableRecoveryBeforeRouteTiming()
+    {
+        var snapshot = DialogueSnapshot(
+            menuOpen: true,
+            routeTimingReadyNow: false);
+
+        Assert.True(StageOneMandatoryMenuRecovery.RequiresPreflight(snapshot));
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(
+            snapshot,
+            ["recovery.stabilize_day"],
+            includeExecutorCalibrationOptions: true);
+        var recoveryOption = Assert.Single(availability.Options);
+        var closeCandidate = Assert.Single(
+            recoveryOption.EventCandidates,
+            candidate => string.Equals(
+                candidate.Kind,
+                StageOneMandatoryMenuRecovery.CloseMenuKind,
+                StringComparison.Ordinal));
+        Assert.True(
+            closeCandidate.Available,
+            string.Join(",", closeCandidate.BlockReasons));
+        var ranking = StageOneMandatoryMenuRecovery.BuildRanking(
+            availability,
+            "grandpa_evaluation_max_score");
+        var selected = StageOneMandatoryMenuRecovery.TrySelect(ranking);
+
+        Assert.NotNull(selected);
+        Assert.Equal(StageOneMandatoryMenuRecovery.CloseMenuKind, selected.Kind);
+        var plan = new DailyPlanCompiler().Compile(
+            [selected],
+            snapshot.StateHash,
+            "grandpa_evaluation_max_score",
+            maxCandidates: 1);
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+        Assert.Equal("pending", queue.Status);
+        Assert.NotEmpty(queue.Items);
+        Assert.All(queue.Items, item => Assert.Equal("pending", item.Status));
+    }
+
+    [Fact]
+    public void ClosedMenuSkipsMandatoryRecoveryPreflight()
+    {
+        Assert.False(StageOneMandatoryMenuRecovery.RequiresPreflight(
+            DialogueSnapshot(
+                menuOpen: false,
+                routeTimingReadyNow: false)));
+    }
+
+    [Fact]
+    public void MailProcessingSuppressesGenericMenuRecoveryInPreflightRanking()
+    {
+        var availability = new OptionAvailabilityEnvelope
+        {
+            Options =
+            [
+                new OptionAvailability
+                {
+                    OptionId = "recovery.stabilize_day",
+                    EventCandidates =
+                    [
+                        new EventCandidate
+                        {
+                            CandidateId = "recovery:close_blocking_menu",
+                            Kind = StageOneMandatoryMenuRecovery.CloseMenuKind,
+                            Available = true
+                        }
+                    ]
+                },
+                new OptionAvailability
+                {
+                    OptionId = "mail.process_letter",
+                    EventCandidates =
+                    [
+                        new EventCandidate
+                        {
+                            CandidateId = "mail:process_open_letter",
+                            Kind = "process_open_letter",
+                            Available = true
+                        }
+                    ]
+                }
+            ]
+        };
+
+        var ranking = StageOneMandatoryMenuRecovery.BuildRanking(
+            availability,
+            "grandpa_evaluation_max_score");
+
+        Assert.Null(StageOneMandatoryMenuRecovery.TrySelect(ranking));
+        Assert.Contains(
+            ranking.RankedEventCandidates,
+            candidate => candidate.Kind == "process_open_letter");
+    }
+
+    [Fact]
     public void LiveLoopDispatchesMandatoryMenuRecoveryBeforeMembershipFiltering()
     {
         var source = Read(
             "tools",
             "StardewAI.LiveTrainingLoop",
             "Program.StageOneCollectionTeacher.cs");
-        var selection = source.IndexOf(
-            "StageOneMandatoryMenuRecovery.TrySelect(typedRanking)",
+        var recoverySource = Read(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.StageOneMandatoryMenuRecovery.cs");
+        var preflightInvocation = source.IndexOf(
+            "TryBuildStageOneMandatoryMenuRecoveryAsync(",
+            StringComparison.Ordinal);
+        var preflight = recoverySource.IndexOf(
+            "StageOneMandatoryMenuRecovery.RequiresPreflight(typedSnapshot)",
+            StringComparison.Ordinal);
+        var selection = recoverySource.IndexOf(
+            "StageOneMandatoryMenuRecovery.TrySelect(",
+            preflight,
+            StringComparison.Ordinal);
+        var intentBuilder = source.IndexOf(
+            "MasterAnglerTargetDateIntentBuilder.Build(",
             StringComparison.Ordinal);
         var continuationFilter = source.IndexOf(
             "activeObjectiveContinuation is not null",
-            selection,
+            intentBuilder,
             StringComparison.Ordinal);
         var membership = source.IndexOf(
             "CurrentStageOneCollectionTeacherPreferenceBuilder.Build(",
             continuationFilter,
             StringComparison.Ordinal);
 
-        Assert.True(selection >= 0);
-        Assert.True(continuationFilter > selection);
+        Assert.True(preflightInvocation >= 0);
+        Assert.True(preflight >= 0);
+        Assert.True(selection > preflight);
+        Assert.True(intentBuilder > preflightInvocation);
+        Assert.True(continuationFilter > intentBuilder);
         Assert.True(membership > continuationFilter);
         Assert.Contains(
+            "\"skills.choose_profession\"",
+            recoverySource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"mail.process_letter\"",
+            recoverySource,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "ready_mandatory_menu_recovery_control",
-            source,
+            recoverySource,
             StringComparison.Ordinal);
         Assert.Contains(
             "teacher_preference_label_eligible = false",
-            source,
+            recoverySource,
             StringComparison.Ordinal);
+    }
+
+    private static SnapshotEnvelope DialogueSnapshot(
+        bool menuOpen,
+        bool routeTimingReadyNow)
+    {
+        var json = $$"""
+        {
+          "schema_version":"snapshot.v1",
+          "state_hash":"mandatory-menu-preflight-state",
+          "state":{
+            "time":{
+              "time":{"value":1630,"status":"available"}
+            },
+            "player":{
+              "location_id":{"value":"ScienceHouse","status":"available"},
+              "tile_x":{"value":8,"status":"available"},
+              "tile_y":{"value":20,"status":"available"},
+              "current_item_qualified_id":{"value":"","status":"available"},
+              "active_object_qualified_id":{"value":"","status":"available"},
+              "energy":{"value":270,"status":"available"}
+            },
+            "current_location":{
+              "home_context":{"value":{
+                "home_available":true,
+                "home_location_id":"FarmHouse",
+                "current_location_id":"ScienceHouse",
+                "current_location_is_home":false,
+                "entry_tile_x":3,
+                "entry_tile_y":9,
+                "bed_tile_x":3,
+                "bed_tile_y":8,
+                "bed_tile_has_bed":true,
+                "sleep_executor_enabled":true
+              },"status":"available"},
+              "movement_timing_context":{"value":{
+                "compatible":true,
+                "route_timing_ready_now":{{routeTimingReadyNow.ToString().ToLowerInvariant()}},
+                "player_can_move_now":false,
+                "native_control_gate_open":true,
+                "global_fade":false
+              },"status":"available"}
+            },
+            "menus":{
+              "active_menu":{"value":{
+                "is_open":{{menuOpen.ToString().ToLowerInvariant()}},
+                "type":"DialogueBox",
+                "full_type":"StardewValley.Menus.DialogueBox",
+                "last_question_key":null,
+                "is_sleep_prompt":false,
+                "event_up":false,
+                "dialogue_is_question":false,
+                "dialogue_response_count":0,
+                "dialogue_transitioning":false,
+                "dialogue_safety_timer":0,
+                "dialogue_character_present":true,
+                "dialogue_speaker_name":"Robin"
+              },"status":"available"},
+              "menu_specific_state":{"value":{},"status":"available"},
+              "sleep_prompt_context":{"value":{
+                "prompt_open":false
+              },"status":"available"}
+            },
+            "locations":{
+              "collision_grid":{"value":{
+                "width":32,
+                "height":32,
+                "tiles":[]
+              },"status":"available"},
+              "route_action_branch_coverage":{"value":[],"status":"available"}
+            }
+          }
+        }
+        """;
+        return JsonSerializer.Deserialize<SnapshotEnvelope>(json) ??
+            throw new InvalidDataException("Test snapshot is empty.");
     }
 
     private static AvailabilityAwarePolicyPredictionEnvelope Ranking(
