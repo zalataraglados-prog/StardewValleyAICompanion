@@ -40,6 +40,45 @@ namespace StardewAI.Core.Infrastructure
             SnapshotEnvelope snapshot,
             IEnumerable<SmallModelActionParameter> parameters,
             out MasterAnglerWindowIntentValidation validation,
+            out string rejectionReason) => TryValidateCore(
+                snapshot,
+                parameters,
+                prerequisiteControlOnly: false,
+                out validation,
+                out rejectionReason);
+
+        public static bool TryValidateGingerIslandPrerequisiteControl(
+            SnapshotEnvelope snapshot,
+            IEnumerable<SmallModelActionParameter> parameters,
+            out MasterAnglerWindowIntentValidation validation,
+            out string rejectionReason)
+        {
+            var values = parameters.ToArray();
+            if (!TryRead(
+                    values,
+                    "master_angler_ginger_island_prerequisite_control_only",
+                    out var controlOnly) ||
+                controlOnly != "true")
+            {
+                validation = new MasterAnglerWindowIntentValidation();
+                rejectionReason =
+                    "master_angler_ginger_island_prerequisite_control_contract_invalid";
+                return false;
+            }
+
+            return TryValidateCore(
+                snapshot,
+                values,
+                prerequisiteControlOnly: true,
+                out validation,
+                out rejectionReason);
+        }
+
+        private static bool TryValidateCore(
+            SnapshotEnvelope snapshot,
+            IEnumerable<SmallModelActionParameter> parameters,
+            bool prerequisiteControlOnly,
+            out MasterAnglerWindowIntentValidation validation,
             out string rejectionReason)
         {
             validation = new MasterAnglerWindowIntentValidation();
@@ -63,9 +102,15 @@ namespace StardewAI.Core.Infrastructure
                 rejectionReason = "master_angler_window_intent_contract_incomplete_or_duplicated";
                 return false;
             }
-            if (status != ValidationStatus || terminalRequired != "true" ||
+            var expectedTerminalRequired = prerequisiteControlOnly
+                ? "false"
+                : "true";
+            if (status != ValidationStatus ||
+                terminalRequired != expectedTerminalRequired ||
                 sourceKind is not ("location_rule" or "mine_override" or "crab_pot") ||
-                !IsSha256(expectedHash))
+                !IsSha256(expectedHash) ||
+                prerequisiteControlOnly &&
+                (sourceKind == "crab_pot" || !IsGingerIslandTarget(targetLocation)))
             {
                 rejectionReason = "master_angler_window_intent_contract_invalid";
                 return false;
@@ -144,11 +189,13 @@ namespace StardewAI.Core.Infrastructure
                 rejectionReason = "master_angler_crab_pot_requires_loaded_target_location";
                 return false;
             }
-            if (!MasterAnglerRouteTimingValidator.TryResolve(
+            var routeTiming = new MasterAnglerRouteTimingValidation();
+            if (!prerequisiteControlOnly &&
+                !MasterAnglerRouteTimingValidator.TryResolve(
                     snapshot,
                     values,
                     targetLocation,
-                    out var routeTiming,
+                    out routeTiming,
                     out rejectionReason))
             {
                 return false;
@@ -181,6 +228,10 @@ namespace StardewAI.Core.Infrastructure
             };
             return true;
         }
+
+        private static bool IsGingerIslandTarget(string location) =>
+            location is "IslandSouth" or "IslandNorth" or "IslandWest" or
+                "IslandSouthEast" or "IslandSouthEastCave";
 
         private static bool MissingSpecies(
             SnapshotEnvelope snapshot,

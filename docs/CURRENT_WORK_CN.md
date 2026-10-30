@@ -4,6 +4,13 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已完成 v10 之后的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已按 current authority 冻结；当前唯一施工项为 `complete_master_angler` 顶层 dependency、日历窗口与 coverage 接线。P0/P1 共享 correctness blocker 可临时中断，但不得静默改序或并行展开多个 root method。
 
+## 2026-10-30 v90 姜岛先决条件循环已在代码层拆除
+
+- 对等 `gpt-6.1-sol high` 审查用 fresh-mainland 反例证明：锁定姜岛会阻止终端路线，终端路线缺失又阻止 Master Angler intent，现有姜岛修船/核桃/鹦鹉链因此无法被调用。
+- 普通捕鱼仍必须取得完整终端路线。新通道只在精确权威岛屿鱼窗口成立且透明 access 明确锁定时生成一条 control-only prerequisite intent；它不伪造路线证据，复用唯一候选评估、DailyPlan、ActionQueue 与 Product Executor。
+- 控制候选在 Teacher 偏好前按稳定顺序编译，learner 信号归零，明确 `teacher_preference_label_eligible=false`、`formal_training_authorized=false`，策略轨迹写入端再次按 marker 拒绝。解锁后必须 fresh 重建普通完整路线。
+- v90 是旧代码启动的 `--skip-training` 校准运行，只保留为修复前证据。合入后从全新 day-zero v91 重跑既定出口：首次抵达、来源增量、First Parrot、Western Turtle、Island House、schedule 生成和独立重放。
+
 ## 2026-10-30 v88 已冻结，v89 必须使用严格抵达与玩家身份
 
 - v88 在 iteration `250` 检查点停止；最后完整 append 为 iteration `247`、累计 `215` 条 verified action。它完成两轮 Crop Teacher 并继续 Stage One collection 控制链，但尚未首次登岛，因此不满足 source-schedule 退出条件，也不计正式训练。

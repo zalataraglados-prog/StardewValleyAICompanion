@@ -6,6 +6,20 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已从 v10 最终隔离存档闭合下一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已按 current authority 冻结；当前唯一施工项是 `complete_master_angler` 顶层 dependency、日历窗口与 coverage 接线。Money 仍须最终满足原 Exit Gate，但已回到复杂度队列第 11 位。
 
+## Current correction · Ginger Island prerequisite control
+
+Peer reproduction proved that the locked terminal island route prevented the
+intent that owns the island unlock prerequisites. The plan now separates one
+control-only prerequisite intent from terminal fishing intents. It preserves
+exact source-window, missing-species, date/time, weather, equipment and dynamic
+condition authority while making no terminal-route claim. The existing island
+candidate evaluator and the single DailyPlan/ActionQueue/Product Executor path
+remain authoritative. Deterministic control selection is explicitly excluded
+from Teacher preference labels and policy trajectories. Fresh full-route
+validation resumes immediately after access changes. This is liveness work only;
+formal training stays disabled pending the complete source-schedule exit and
+Provider/Student admission.
+
 ## Current runtime evidence · 2026-10-30 v87
 
 PR #369 passed the game-free quality gate and merged. The ignored machine-local MSBuild override now binds this host to the isolated E-drive SMAPI runtime before ModBuildConfig path discovery, so ordinary builds and the v87 launch no longer probe the stale F-drive installation.

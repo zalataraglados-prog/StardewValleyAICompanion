@@ -18,6 +18,12 @@
 | Money production evidence cells | **0/18** | 6 个 Money criterion × 3 partitions；hermetic fixture 不计 production |
 | Formal product training | **false** | 未通过完整正式训练准入 |
 
+### 2026-10-30 v90 姜岛 bootstrap 循环修正
+
+- 对等工程审查已用真实 Core 验证链证明 island terminal-route 与 prerequisite intent 之间存在循环依赖。修正新增的是独立 control intent，不是第二套规划器：普通捕鱼的全路线门保持不变，控制 intent 只跳过它无法合理拥有的终端可达性证明，并复用现有姜岛先决条件候选和唯一编译执行链。
+- 该控制选择不会形成 Teacher 标签或正式训练授权；策略轨迹追加端按显式 marker 二次拒绝。岛屿 access 变化后控制入口关闭，必须从 fresh snapshot 重新取得精确窗口和完整终端路线。
+- v90 仍为 `--skip-training` 的修复前长跑。当前正式训练状态继续为 **false**；修复合入后的下一原生证据必须来自全新 day-zero v91。
+
 ### 2026-10-30 v88 长跑检查点与姜岛证据身份修正
 
 - 隐藏静音、单并发、`--skip-training` 运行 `golden-walnut-source-schedule-v88-20261030-165446-source-schedule` 在 iteration `250` 检查点人工安全停止。最后一个完整 append 位于 iteration `247`，累计 `215` 条 verified Product action；两轮 Crop Teacher 均完成，Stage One collection、原生钓鱼、容量恢复、出货、候选 fresh 失效与 control-only 重绑持续推进。运行未到首次登岛，未生成 Golden Walnut source schedule，也没有 Student 参数、checkpoint、GPU 训练或正式策略数据。

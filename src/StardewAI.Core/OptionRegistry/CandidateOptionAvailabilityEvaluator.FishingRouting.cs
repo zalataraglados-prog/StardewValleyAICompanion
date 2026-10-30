@@ -68,6 +68,19 @@ namespace StardewAI.Core.OptionRegistry
                 return FishingEventCandidateBuilder.Build(snapshot);
             }
 
+            if (!TryReadGingerIslandPrerequisiteControl(
+                    boundParameters,
+                    out var prerequisiteControlOnly,
+                    out var controlContractReason))
+            {
+                return new[]
+                {
+                    BlockedMasterAnglerCandidate(
+                        controlContractReason,
+                        boundParameters)
+                };
+            }
+
             if (!TryNormalizeMasterAnglerIntent(
                     snapshot,
                     boundParameters,
@@ -78,6 +91,46 @@ namespace StardewAI.Core.OptionRegistry
                 {
                     BlockedMasterAnglerCandidate(
                         normalizationReason,
+                        intentParameters)
+                };
+            }
+            if (prerequisiteControlOnly)
+            {
+                intentParameters = intentParameters.Append(Parameter(
+                    "master_angler_ginger_island_prerequisite_control_only",
+                    "true")).ToArray();
+                if (!MasterAnglerWindowIntentValidator
+                    .TryValidateGingerIslandPrerequisiteControl(
+                        snapshot,
+                        intentParameters,
+                        out _,
+                        out var prerequisiteValidationReason))
+                {
+                    return new[]
+                    {
+                        BlockedMasterAnglerCandidate(
+                            prerequisiteValidationReason,
+                            intentParameters)
+                    };
+                }
+
+                var prerequisiteContinuation =
+                    MasterAnglerContinuationParameters(
+                        "fishing.catch_fish",
+                        intentParameters);
+                if (TryBuildGingerIslandPrerequisiteCandidates(
+                        snapshot,
+                        intentParameters,
+                        prerequisiteContinuation,
+                        out var prerequisiteCandidates))
+                {
+                    return prerequisiteCandidates;
+                }
+
+                return new[]
+                {
+                    BlockedMasterAnglerCandidate(
+                        "master_angler_ginger_island_prerequisite_control_target_already_accessible",
                         intentParameters)
                 };
             }
@@ -268,6 +321,38 @@ namespace StardewAI.Core.OptionRegistry
                     parameter.Name,
                     "continuation.master_angler_target_qualified_item_id",
                     StringComparison.Ordinal));
+        }
+
+        private static bool TryReadGingerIslandPrerequisiteControl(
+            IEnumerable<SmallModelActionParameter> parameters,
+            out bool controlOnly,
+            out string rejectionReason)
+        {
+            var values = parameters
+                .Where(parameter => parameter.Name is
+                    "master_angler_ginger_island_prerequisite_control_only" or
+                    "continuation.master_angler_ginger_island_prerequisite_control_only")
+                .Select(parameter => parameter.Value)
+                .Where(value => !string.IsNullOrWhiteSpace(value))
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+            if (values.Length == 0)
+            {
+                controlOnly = false;
+                rejectionReason = string.Empty;
+                return true;
+            }
+            if (values.Length == 1 && values[0] == "true")
+            {
+                controlOnly = true;
+                rejectionReason = string.Empty;
+                return true;
+            }
+
+            controlOnly = false;
+            rejectionReason =
+                "master_angler_ginger_island_prerequisite_control_contract_invalid";
+            return false;
         }
 
         private static EventCandidate ApplyMasterAnglerTimeBudget(

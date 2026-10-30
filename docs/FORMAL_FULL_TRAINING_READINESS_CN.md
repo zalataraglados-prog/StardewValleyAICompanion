@@ -4,6 +4,10 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已闭合从 v10 最终隔离存档开始的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已通过 current-authority 复核并冻结；当前唯一施工项是 `complete_master_angler` 顶层依赖、日历窗口与 coverage 接线。Money Exit Gate 标准不降低，但 Money 已回到复杂度队列第 11 位。
 
+## 2026-10-30 姜岛先决条件控制入口
+
+对等审查证明旧链要求先到达尚未解锁的岛屿终端地图，才会生成负责解锁该地图的 prerequisite。当前修正严格分离 terminal intent 与 control intent：前者继续要求完整路线，后者只在精确权威岛屿鱼窗口和透明锁定 access 成立时调用既有修船、船票、核桃和鹦鹉候选。控制候选经过唯一 DailyPlan/ActionQueue/Product Executor，但明确排除 Teacher 标签与策略轨迹。该修正只恢复新存档 liveness，不增加任何正式 coverage 分子，也不授权参数训练；v91 仍须完成全部 Golden Walnut source-schedule 出口和独立重放。
+
 ## 当前准入结论 · v88 仍是校准，抵达与玩家证据门已收紧
 
 v88 显式保持 `formal_product_training_authorized=false`，在 iteration `250` 检查点停止；最后完整 append 位于 `247`，累计 `215` 条 verified Product action。它完成两轮 Crop Teacher 并继续 collection/control 链，但没有首次登岛、核桃来源增量、三项鹦鹉解锁或 source schedule，因此任何正式准入分子都不增加。

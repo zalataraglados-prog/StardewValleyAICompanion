@@ -127,6 +127,12 @@ static partial class Program
                     OptionId = value.OptionId,
                     Parameters = value.Parameters
                 })
+                .Concat(intents.PrerequisiteControlCandidates.Select(value =>
+                    new OptionAvailabilityCandidate
+                    {
+                        OptionId = value.OptionId,
+                        Parameters = value.Parameters
+                    }))
                 .Concat(intents.WeatherSupplyCandidates.Select(value =>
                     new OptionAvailabilityCandidate
                     {
@@ -304,6 +310,23 @@ static partial class Program
                 JsonOptions) ?? throw new InvalidDataException(
                 "Suppression-filtered stage-one collection ranking is empty.");
             await WriteJsonAsync(rankingPath, ranking);
+        }
+
+        var gingerIslandPrerequisiteControl =
+            await TryBuildStageOneGingerIslandPrerequisiteControlAsync(
+                options,
+                stateHash,
+                typedSnapshot,
+                typedRanking,
+                ranking,
+                plainSnapshotPath,
+                preferencePath,
+                planPath,
+                rankingPath,
+                queuePath);
+        if (gingerIslandPrerequisiteControl is not null)
+        {
+            return gingerIslandPrerequisiteControl;
         }
 
         var preference =

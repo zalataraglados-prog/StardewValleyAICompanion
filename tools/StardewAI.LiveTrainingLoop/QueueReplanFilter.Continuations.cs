@@ -30,6 +30,15 @@ public static partial class QueueReplanFilter
                 }
                 result[name] = value;
             }
+            var gingerIslandPrerequisiteControl = ReadParameter(
+                queueItem,
+                "continuation.master_angler_ginger_island_prerequisite_control_only");
+            if (!string.IsNullOrWhiteSpace(gingerIslandPrerequisiteControl))
+            {
+                result[
+                    "master_angler_ginger_island_prerequisite_control_only"] =
+                    gingerIslandPrerequisiteControl;
+            }
             return result;
         }
         if (string.Equals(optionId, "mail.process_letter", StringComparison.Ordinal))
