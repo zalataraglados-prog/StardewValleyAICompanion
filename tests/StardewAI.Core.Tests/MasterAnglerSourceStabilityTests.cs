@@ -9,6 +9,7 @@ using StardewAI.Core.Execution;
 using StardewAI.Core.Infrastructure;
 using StardewAI.Core.OptionRegistry;
 using StardewAI.Core.Training;
+using StardewAI.GoalConditionedBootstrap;
 using StardewAI.LiveTrainingLoop;
 
 namespace StardewAI.Core.Tests;
@@ -16,11 +17,12 @@ namespace StardewAI.Core.Tests;
 public sealed partial class MasterAnglerMainlineTests
 {
     // v89 431/434: the same missing fish has equivalent Town:5 / Forest:9
-    // windows, but arrival at 11:30 is not invalidation of an 18:00 source.
+    // windows. Defer departure rather than travelling and losing the local
+    // continuation when the native cast predicate is still false at 11:30.
     [Theory]
     [InlineData("Town", "Town:5")]
     [InlineData("Forest", "Forest:9")]
-    public void SourceStabilityPreservesChosenSourceAfterArrivalBeforeOpening(
+    public void SourceStabilityDefersRemoteRouteAndTeacherBindingBeforeOpening(
         string location,
         string sourceKey)
     {
@@ -30,57 +32,108 @@ public sealed partial class MasterAnglerMainlineTests
         var route = Assert.Single(Assert.Single(routeAvailability.Options).EventCandidates);
         Assert.True(route.Available, string.Join(";", route.BlockReasons));
         Assert.Equal("route_connector_tile", route.Kind);
-        var routePlan = new DailyPlanCompiler().Compile(
-            new EventCandidateRanker().Rank(
-                new BaselineTrainingReport(), routeAvailability,
-                "goal.fishing.complete_master_angler"), remote.StateHash);
-        var routeQueue = new ActionQueueCompiler().Compile(routePlan, remote);
-        var routeItem = Assert.Single(routeQueue.Items);
-        Assert.Equal("executor.traverse_connector", routeItem.OptionId);
-        Assert.Empty(routeItem.BlockingReasons);
-        var continuation = Assert.IsType<JsonObject>(
-            QueueReplanFilter.ReadObjectiveContinuation(
-                JsonSerializer.SerializeToNode(routeItem, JsonOptions)!.AsObject()));
-
-        var arrived = fixture.Before;
-        var reboundParameters = continuation
-            .Where(property => property.Key != "kind")
-            .Select(property => Parameter(
-                "continuation." + property.Key, property.Value!.GetValue<string>()))
-            .ToArray();
+        Assert.False(route.AllowedNow);
+        Assert.True(route.AllowedToday);
+        Assert.Equal("master_angler_route_deferred_until_source_window", route.AvailabilityClass);
+        Assert.Equal(1800, route.NextOpenTime);
+        Assert.Equal(1800, route.EffectiveOpenTime);
+        Assert.Equal(2600, route.ClosesAt);
+        Assert.Equal(390 * 60, route.WaitCost);
         Assert.True(MasterAnglerWindowIntentValidator.TryValidate(
-            arrived, reboundParameters, out _, out var reason), reason);
-        var freshAvailability = EvaluateSourceStability(arrived, reboundParameters);
-        var freshRanking = JsonSerializer.SerializeToNode(
-            new EventCandidateRanker().Rank(
-                new BaselineTrainingReport(), freshAvailability,
-                "goal.fishing.complete_master_angler"), JsonOptions)!.AsArray();
-        var retained = QueueReplanFilter.FilterRankedCandidates(
-            freshRanking, continuation);
+            remote, fixture.Parameters, out _, out var reason), reason);
+        Assert.Contains(route.Parameters, parameter =>
+            parameter.Name == "master_angler_route_window_status" &&
+            parameter.Value == "deferred_until_authoritative_source_window");
+        Assert.Contains(route.Parameters, parameter =>
+            parameter.Name == "master_angler_route_not_before_time" && parameter.Value == "1800");
 
-        // A pre-window source must remain dispatchable through the existing
-        // bounded wait/replan path, not disappear and invite a reverse route.
-        Assert.NotEmpty(retained);
-        Assert.All(retained, node =>
-            Assert.True(node!["available"]!.GetValue<bool>()));
-        Assert.All(retained, node =>
-            Assert.NotEqual("route_connector_tile", node!["kind"]!.GetValue<string>()));
-        var reboundPlan = new DailyPlanCompiler().Compile(
-            JsonSerializer.Deserialize<PolicyEventCandidatePrediction[]>(
-                retained.ToJsonString(), JsonOptions)!, arrived.StateHash);
-        var reboundQueue = new ActionQueueCompiler().Compile(reboundPlan, arrived);
-        Assert.Equal("pending", reboundQueue.Status);
-        Assert.NotEmpty(reboundQueue.Items);
-        Assert.All(reboundQueue.Items, item =>
+        var ranked = Assert.Single(RankSourceStability(routeAvailability));
+        Assert.Equal("deferred", ranked.TimelineStatus);
+        Assert.Equal(1800, ranked.ScheduledStartTime);
+        Assert.Equal(390 * 60, ranked.ScheduledWaitCost);
+        var frontier = BuildSourceStabilityFrontier(fixture, remote, routeAvailability);
+        Assert.Equal("no_current_matching_candidate", frontier.Status);
+        Assert.Equal(1, frontier.CurrentIntentCount);
+        Assert.Empty(frontier.CandidateBindings);
+        Assert.Empty(frontier.SupportingPrerequisiteBindings);
+        Assert.False(frontier.TrainingLabelEligible);
+        Assert.False(frontier.EmitsNegativeLabelsForUnavailableRoutes);
+        var rejection = Assert.Single(frontier.RejectedIntentCandidates);
+        Assert.Equal(route.CandidateId, rejection.CandidateId);
+        Assert.Equal("master_angler_route_deferred_until_source_window", rejection.Reason);
+
+        // Even if the shared daily plan has no other work, it must wait, not
+        // dispatch the remote connector early. No new local wait path is assumed.
+        var plan = new DailyPlanCompiler().Compile(new[] { ranked }, remote.StateHash);
+        var queue = new ActionQueueCompiler().Compile(plan, remote);
+        Assert.Equal("pending", queue.Status);
+        var wait = Assert.Single(queue.Items);
+        Assert.Equal("executor.wait_ticks", wait.OptionId);
+        Assert.Empty(wait.BlockingReasons);
+    }
+
+    [Theory]
+    [InlineData("Town", "Town:5")]
+    [InlineData("Forest", "Forest:9")]
+    public void SourceStabilityReopensExactRouteAndTerminalAtWindowOpening(
+        string location,
+        string sourceKey)
+    {
+        using var fixture = CreateSourceStabilityFixture(location, sourceKey);
+        var remote = SourceStabilitySnapshot(location, sourceKey, remote: true, currentTime: 1800);
+        var availability = EvaluateSourceStability(remote, fixture.Parameters);
+        var ranked = Assert.Single(RankSourceStability(availability));
+        Assert.True(ranked.Available);
+        Assert.True(ranked.AllowedNow);
+        Assert.Equal("ready_now", ranked.TimelineStatus);
+        Assert.Equal(1800, ranked.ScheduledStartTime);
+        Assert.Equal(0, ranked.ScheduledWaitCost);
+        var frontier = BuildSourceStabilityFrontier(fixture, remote, availability);
+        var binding = Assert.Single(frontier.CandidateBindings);
+        Assert.True(frontier.TrainingLabelEligible);
+        Assert.Equal(location, binding.TargetLocation);
+        Assert.Equal(sourceKey, binding.SourceKey);
+        Assert.Equal("authoritative_window_rolling_route_step", binding.BindingKind);
+        Assert.Empty(frontier.RejectedIntentCandidates);
+
+        var plan = new DailyPlanCompiler().Compile(new[] { ranked }, remote.StateHash);
+        var queue = new ActionQueueCompiler().Compile(plan, remote);
+        var connector = Assert.Single(queue.Items);
+        Assert.Equal("executor.traverse_connector", connector.OptionId);
+        Assert.Empty(connector.BlockingReasons);
+        var continuation = Assert.IsType<JsonObject>(QueueReplanFilter.ReadObjectiveContinuation(
+            JsonSerializer.SerializeToNode(connector, JsonOptions)!.AsObject()));
+        Assert.Equal(location, continuation["master_angler_target_location"]!.GetValue<string>());
+        Assert.Equal(sourceKey, continuation["master_angler_source_key"]!.GetValue<string>());
+        var reboundParameters = continuation.Where(property => property.Key != "kind")
+            .Select(property => Parameter("continuation." + property.Key,
+                property.Value!.GetValue<string>())).ToArray();
+        var arrived = SourceStabilitySnapshot(location, sourceKey, currentTime: 1800);
+        var terminalAvailability = EvaluateSourceStability(arrived, reboundParameters);
+        var terminals = RankSourceStability(terminalAvailability);
+        Assert.NotEmpty(terminals);
+        Assert.All(terminals, terminal =>
         {
-            Assert.Equal("pending", item.Status);
-            Assert.Equal("executor.wait_ticks", item.OptionId);
-            Assert.Empty(item.BlockingReasons);
-            var refreshed = Assert.IsType<JsonObject>(
-                QueueReplanFilter.ReadObjectiveContinuation(
-                    JsonSerializer.SerializeToNode(item, JsonOptions)!.AsObject()));
-            Assert.Equal(location, refreshed["master_angler_target_location"]!.GetValue<string>());
-            Assert.Equal(sourceKey, refreshed["master_angler_source_key"]!.GetValue<string>());
+            Assert.Equal("catch_fish", terminal.Kind);
+            Assert.True(terminal.Available);
+            Assert.Equal("ready_now", terminal.TimelineStatus);
+        });
+        var retained = QueueReplanFilter.FilterRankedCandidates(
+            JsonSerializer.SerializeToNode(terminals, JsonOptions)!.AsArray(), continuation);
+        Assert.Equal(terminals.Length, retained.Count);
+        var terminalPlan = new DailyPlanCompiler().Compile(terminals, arrived.StateHash);
+        var terminalQueue = new ActionQueueCompiler().Compile(terminalPlan, arrived);
+        var catchItem = Assert.Single(terminalQueue.Items);
+        Assert.Equal("executor.catch_fish", catchItem.OptionId);
+        Assert.Equal("pending", catchItem.Status);
+        Assert.Empty(catchItem.BlockingReasons);
+        var terminalFrontier = BuildSourceStabilityFrontier(fixture, arrived, terminalAvailability);
+        Assert.NotEmpty(terminalFrontier.CandidateBindings);
+        Assert.All(terminalFrontier.CandidateBindings, terminal =>
+        {
+            Assert.Equal(location, terminal.TargetLocation);
+            Assert.Equal(sourceKey, terminal.SourceKey);
+            Assert.Equal("authoritative_window_terminal_attempt", terminal.BindingKind);
         });
     }
 
@@ -132,21 +185,26 @@ public sealed partial class MasterAnglerMainlineTests
     }
 
     [Theory]
-    [InlineData(1130, "sun", "Town:5", true, "")]
-    [InlineData(1800, "sun", "Town:5", true, "")]
-    [InlineData(2600, "sun", "Town:5", false, "master_angler_window_intent_snapshot_time_mismatch")]
-    [InlineData(1130, "rain", "Town:5", false, "master_angler_target_weather_window_mismatch")]
-    [InlineData(1130, "sun", "Town:6", false, "master_angler_window_intent_not_an_exact_artifact_window")]
+    [InlineData(1130, "sun", "Town:5", false, true, "")]
+    [InlineData(1800, "sun", "Town:5", false, true, "")]
+    [InlineData(2600, "sun", "Town:5", false, false, "master_angler_window_intent_snapshot_time_mismatch")]
+    [InlineData(1130, "rain", "Town:5", false, false, "master_angler_target_weather_window_mismatch")]
+    [InlineData(1130, "sun", "Town:6", false, false, "master_angler_window_intent_not_an_exact_artifact_window")]
+    [InlineData(1130, "sun", "Town:5", true, true, "")]
+    [InlineData(2600, "sun", "Town:5", true, false, "master_angler_window_intent_snapshot_time_mismatch")]
+    [InlineData(1130, "rain", "Town:5", true, false, "master_angler_target_weather_window_mismatch")]
+    [InlineData(1130, "sun", "Town:6", true, false, "master_angler_window_intent_not_an_exact_artifact_window")]
     public void SourceStabilityRequiresFreshExactWindowValidation(
         int currentTime,
         string weather,
         string sourceKey,
+        bool remote,
         bool expectedValid,
         string expectedReason)
     {
         using var fixture = CreateSourceStabilityFixture("Town", "Town:5");
         var snapshot = SourceStabilitySnapshot(
-            "Town", "Town:5", currentTime: currentTime, weather: weather);
+            "Town", "Town:5", remote: remote, currentTime: currentTime, weather: weather);
         var parameters = fixture.Parameters.Select(parameter => Parameter(
             parameter.Name,
             parameter.Name == "master_angler_source_key" ? sourceKey : parameter.Value))
@@ -181,6 +239,7 @@ public sealed partial class MasterAnglerMainlineTests
         window["source_key"] = sourceKey;
         window["weather_modes"] = new JsonArray("sun");
         window["time_windows"]![0]!["start_time"] = 1800;
+        AddSourceStabilityAuthority(artifact);
         File.WriteAllText(fixture.WindowIndexPath, artifact.ToJsonString(JsonOptions));
         var hash = Convert.ToHexString(
             SHA256.HashData(File.ReadAllBytes(fixture.WindowIndexPath))).ToLowerInvariant();
@@ -223,6 +282,10 @@ public sealed partial class MasterAnglerMainlineTests
             .Replace(location + "#0:", location + "#" + sourceKey.Split(':')[1] + ":",
                 StringComparison.Ordinal);
         snapshot.State = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json, JsonOptions)!;
+        snapshot.State["farm"] = JsonSerializer.SerializeToElement(new JsonObject
+        {
+            ["farm_type_key"] = Field(JsonValue.Create("Standard")!)
+        }, JsonOptions);
         snapshot.StateHash = SnapshotHash.ComputeStateHash(snapshot.State);
         return snapshot;
     }
@@ -238,4 +301,104 @@ public sealed partial class MasterAnglerMainlineTests
                 Parameters = parameters
             }
         });
+
+    private static PolicyEventCandidatePrediction[] RankSourceStability(
+        OptionAvailabilityEnvelope availability) => new EventCandidateRanker().Rank(
+            new BaselineTrainingReport(), availability, "goal.fishing.complete_master_angler");
+
+    private static void AddSourceStabilityAuthority(JsonObject index)
+    {
+        // Synthetic authority inputs, not a native catalog or production label.
+        // Keep these extra artifacts outside the existing two-file fixture root.
+        var root = Path.Combine(Path.GetTempPath(), "opencode", "master-angler-frontier-tests",
+            Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        var inventoryPath = Path.Combine(root, "inventory.json");
+        var catalogPath = Path.Combine(root, "catalog.json");
+        const string goal = "grandpa.maximum_21";
+        var species = index["species"]!.AsArray().Select(node =>
+            node!["qualified_item_id"]!.GetValue<string>()).ToArray();
+        var groups = species.Select(id => new GoalRequirementGroup
+        {
+            RequirementId = "master_angler:" + id,
+            SelectionRule = "all_required",
+            RequiredAlternativeCount = 1,
+            Alternatives = new[] { new GoalRequirementAlternative
+            {
+                ItemId = id[3..], QualifiedItemId = id, MatchKind = "item_id", Amount = 1
+            } }
+        }).ToArray();
+        WriteSourceStabilityArtifact(inventoryPath, new AuthoritativeRequirementInventoryReport
+        {
+            Status = "complete", GoalId = goal,
+            DenominatorComplete = true, AcquisitionRoutesComplete = true,
+            RequirementSets = new[] { new GoalRequirementSet
+            {
+                RequirementSetId = "master_angler", RequiredGroupCount = 72,
+                AcquisitionRoutesComplete = true, Groups = groups
+            } }
+        });
+        WriteSourceStabilityArtifact(Path.Combine(root, "lowering.json"),
+            new AcquisitionRouteOptionLoweringReport
+            {
+                Status = "complete", GoalId = goal,
+                RequirementInventorySha256 = SourceStabilityHash(inventoryPath),
+                DependencyAxisInventoryComplete = true,
+                RequiredDownstreamDependencyAxes = StageOneCollectionRouteDependencyAxes.Required.ToArray(),
+                RequirementSets = new[] { new AcquisitionRequirementSetLowering(
+                    "master_angler", 72, 72, 72, groups.Select(group =>
+                        new AcquisitionRequirementGroupLowering(group.RequirementId,
+                            1, 1, 1, true, true, Array.Empty<string>(),
+                            new[] { new AcquisitionRequirementAlternativeLowering(
+                                group.Alternatives[0].ItemId, group.Alternatives[0].QualifiedItemId,
+                                "fixture", "item_id", 1, 0, true, true,
+                                new[] { new AcquisitionRequirementRouteLowering(
+                                    "location_rule", "fixture", "fixture", "fixture",
+                                    "fixture", "fixture",
+                                    StageOneCollectionRouteDependencyAxes.Required.ToArray(),
+                                    new[] { "fishing.catch_fish" }, Array.Empty<string>(), true, true) })
+                            })).ToArray()) }
+            });
+        WriteSourceStabilityArtifact(catalogPath, new MasterAnglerOpportunityCatalogReport
+        {
+            Status = "complete", GoalId = goal, GameVersion = "1.6.15",
+            NativeDenominatorCount = 72, SourceInventoryComplete = true,
+            StaticCalendarConstraintComplete = true,
+            LocationRuleSpawnChanceInputInventoryComplete = true,
+            RequirementInventorySha256 = SourceStabilityHash(inventoryPath),
+            Species = species.Select(id => new MasterAnglerSpeciesOpportunity
+            { ItemId = id[3..], QualifiedItemId = id }).ToArray()
+        });
+        index["goal_id"] = goal;
+        index["catalog_path"] = catalogPath;
+        index["catalog_sha256"] = SourceStabilityHash(catalogPath);
+    }
+
+    private static CurrentMasterAnglerTeacherFrontier BuildSourceStabilityFrontier(
+        Fixture fixture, SnapshotEnvelope snapshot, OptionAvailabilityEnvelope availability)
+    {
+        var index = JsonNode.Parse(File.ReadAllText(fixture.WindowIndexPath))!;
+        var root = Path.GetDirectoryName(index["catalog_path"]!.GetValue<string>())!;
+        var snapshotPath = Path.Combine(root, "snapshot.json");
+        var rankingPath = Path.Combine(root, "ranking.json");
+        var intentsPath = Path.Combine(root, "intents.json");
+        WriteSourceStabilityArtifact(snapshotPath, snapshot);
+        WriteSourceStabilityArtifact(rankingPath, new AvailabilityAwarePolicyPredictionEnvelope
+        {
+            Availability = availability, RankedEventCandidates = RankSourceStability(availability)
+        });
+        var intents = MasterAnglerTargetDateIntentBuilder.Build(
+            fixture.WindowIndexPath, snapshotPath, fixture.TimingCalibrationPath);
+        Assert.Single(intents.Candidates);
+        WriteSourceStabilityArtifact(intentsPath, intents);
+        return CurrentMasterAnglerTeacherFrontierBuilder.Build(
+            Path.Combine(root, "inventory.json"), Path.Combine(root, "lowering.json"),
+            rankingPath, snapshotPath, intentsPath);
+    }
+
+    private static void WriteSourceStabilityArtifact<T>(string path, T value) =>
+        File.WriteAllText(path, JsonSerializer.Serialize(value, JsonOptions));
+
+    private static string SourceStabilityHash(string path) => Convert.ToHexString(
+        SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant();
 }
