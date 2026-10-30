@@ -85,6 +85,13 @@ public static partial class CurrentMasterAnglerTeacherFrontierBuilder
         var rejections = new List<CurrentMasterAnglerCandidateRejection>();
         foreach (var candidate in currentCandidates.Where(HasIntentParameters))
         {
+            if (IsDeferredSourceRoute(candidate))
+            {
+                rejections.Add(new CurrentMasterAnglerCandidateRejection(
+                    candidate.CandidateId,
+                    "master_angler_route_deferred_until_source_window"));
+                continue;
+            }
             if (!MasterAnglerCurrentCandidateMatcher.TryMatch(
                     snapshot,
                     candidate,
@@ -290,6 +297,18 @@ public static partial class CurrentMasterAnglerTeacherFrontierBuilder
         parameter => parameter.Name is
             "master_angler_target_qualified_item_id" or
             "continuation.master_angler_target_qualified_item_id");
+
+    private static bool IsDeferredSourceRoute(
+        PolicyEventCandidatePrediction candidate) =>
+        string.Equals(
+            candidate.Kind,
+            "route_connector_tile",
+            StringComparison.Ordinal) &&
+        (candidate.AllowedNow != true ||
+         !string.Equals(
+             candidate.TimelineStatus,
+             "ready_now",
+             StringComparison.Ordinal));
 
     private static string IntentKey(
         MasterAnglerWindowIntentValidation intent) => string.Join(

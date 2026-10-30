@@ -202,13 +202,17 @@ namespace StardewAI.Core.OptionRegistry
                         availabilityClass: "master_angler_rolling_route",
                         allowedNow: route.AllowedNow ?? route.Available,
                         allowedToday: route.AllowedToday ?? route.Available);
+                var budgetedRoute = ApplyMasterAnglerTimeBudget(
+                    snapshot,
+                    routed,
+                    intent,
+                    FishingEventCandidateBuilder.EstimatedCatchTicks);
                 return new[]
                 {
-                    ApplyMasterAnglerTimeBudget(
+                    ApplyMasterAnglerSourceWindowTiming(
                         snapshot,
-                        routed,
-                        intent,
-                        FishingEventCandidateBuilder.EstimatedCatchTicks)
+                        budgetedRoute,
+                        intent)
                 };
             }
 
@@ -340,6 +344,48 @@ namespace StardewAI.Core.OptionRegistry
                     allowedToday: false);
             }
             return CloneCandidate(candidate, parameters: parameters);
+        }
+
+        private static EventCandidate ApplyMasterAnglerSourceWindowTiming(
+            SnapshotEnvelope snapshot,
+            EventCandidate candidate,
+            MasterAnglerWindowIntentValidation intent)
+        {
+            if (!candidate.Available)
+            {
+                return candidate;
+            }
+
+            var currentTime = ReadStateFieldInt(snapshot, "time", "time");
+            if (currentTime >= intent.EffectiveStartTime)
+            {
+                return candidate;
+            }
+
+            var waitMinutes = Math.Max(
+                0,
+                GameClockBudgetPolicy.ClockMinutesBetween(
+                    currentTime,
+                    intent.EffectiveStartTime));
+            candidate.AvailabilityClass =
+                "master_angler_route_deferred_until_source_window";
+            candidate.AllowedNow = false;
+            candidate.AllowedToday = true;
+            candidate.NextOpenTime = intent.EffectiveStartTime;
+            candidate.EffectiveOpenTime = intent.EffectiveStartTime;
+            candidate.ClosesAt = intent.LastCastTimeExclusive;
+            candidate.WaitCost = checked(waitMinutes * 60);
+            candidate.Parameters = candidate.Parameters.Concat(new[]
+            {
+                Parameter(
+                    "master_angler_route_window_status",
+                    "deferred_until_authoritative_source_window"),
+                Parameter(
+                    "master_angler_route_not_before_time",
+                    intent.EffectiveStartTime.ToString(
+                        CultureInfo.InvariantCulture))
+            }).ToArray();
+            return candidate;
         }
 
         private static bool TryNormalizeMasterAnglerIntent(
