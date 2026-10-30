@@ -315,11 +315,11 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             calibration,
             StringComparison.Ordinal);
         Assert.Contains(
-            "initial.save_id.status -ne \"available\"",
+            "InitialSnapshot.state.identity.save_id",
             calibration,
             StringComparison.Ordinal);
         Assert.Contains(
-            "initial.player_id.status -ne \"available\"",
+            "InitialSnapshot.state.identity.player_id",
             calibration,
             StringComparison.Ordinal);
         Assert.Contains(
