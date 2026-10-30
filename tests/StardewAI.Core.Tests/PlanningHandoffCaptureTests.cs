@@ -110,6 +110,56 @@ public sealed class PlanningHandoffCaptureTests
                 out _));
     }
 
+    [Fact]
+    public void ExclusiveRecoveryPreemptsOtherwiseDispatchableCropTeacherHandoff()
+    {
+        var ranking = new JsonObject
+        {
+            ["objective_continuation_filter"] = new JsonObject
+            {
+                ["exclusive_recovery_override"] = true,
+                ["policy"] =
+                    "exclusive_recovery_preempts_objective_continuation"
+            },
+            ["goal_resolution_binding_filter"] = new JsonObject
+            {
+                ["active"] = false,
+                ["policy"] =
+                    "exclusive_recovery_preempts_strategic_goal_binding"
+            },
+            ["goal_resolution"] = new JsonObject
+            {
+                ["status"] = "planning_handoff_required",
+                ["planning_handoff"] = new JsonObject
+                {
+                    ["handoff_kind"] = "crop_production_teacher",
+                    ["required_snapshot_profiles"] =
+                        new JsonArray("farm_layout"),
+                    ["automatic_dispatch_required"] = true
+                }
+            }
+        };
+
+        Assert.True(PlanningHandoffCapture
+            .ShouldDeferCropProductionTeacherHandoffForExclusiveRecovery(
+                ranking));
+        Assert.False(
+            PlanningHandoffCapture.TryReadCropProductionTeacherHandoff(
+                ranking,
+                out _));
+
+        ranking["objective_continuation_filter"]![
+            "exclusive_recovery_override"] = false;
+
+        Assert.False(PlanningHandoffCapture
+            .ShouldDeferCropProductionTeacherHandoffForExclusiveRecovery(
+                ranking));
+        Assert.True(
+            PlanningHandoffCapture.TryReadCropProductionTeacherHandoff(
+                ranking,
+                out _));
+    }
+
     private static string Snapshot(
         string stateHash,
         int mapWidth,

@@ -6,6 +6,16 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已从 v10 最终隔离存档闭合下一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已按 current authority 冻结；当前唯一施工项是 `complete_master_angler` 顶层 dependency、日历窗口与 coverage 接线。Money 仍须最终满足原 Exit Gate，但已回到复杂度队列第 11 位。
 
+## Current runtime evidence · 2026-10-30 v85
+
+The fresh day-zero v85 calibration remained under `--skip-training`. It reached iteration 425, Spring 22 and total day 21, produced 306 semantically meaningful verified Product actions, and completed three Crop Teacher runs. The third run recorded eight of eight native harvest receipts. Mail, quest 13, fishing, capacity recovery, shipping, routing and native day boundaries continued through the existing product path. No Student parameters, checkpoint, GPU training or formal policy corpus were updated.
+
+At 19:00 in Backwoods, iteration 421 correctly ranked `recovery:return_home` as the exclusive recovery candidate and emitted `exclusive_recovery_override=true`. The same ranking still carried the previously resolved crop-production planning handoff. The old top-level loop dispatched that handoff before executing the compiled recovery queue, so the Teacher repeatedly found no current-season seed that could mature in time. Relaxing crop or affordability authority would be incorrect.
+
+The dispatch boundary now defers an otherwise valid crop-production handoff whenever the ranking declares the exact exclusive-recovery override. The existing recovery queue executes first and the next fresh snapshot replans; ordinary handoffs remain unchanged. Direct replay of v85 `ranking-response-0421.json` through the rebuilt assembly returns `DeferHandoff=true` and `DispatchHandoff=false`. Focused tests are 15/15, GameFreeGovernance is 530/530, Backend is 257/257, and LiveTrainingLoop builds with zero warnings and errors. The legacy unfiltered Core suite still has 36 pre-existing current-main failures beside 3043 passes, so it is not represented as fully green.
+
+v85 cannot be resumed across this code change. The next run is a fresh day-zero v86 with the unchanged WIP=1 exit: first island arrival, a Golden Walnut source delta, First Parrot/Turtle/House transitions, source-schedule generation and independent replay, then the #345 Provider/Student gate. Formal readiness counters remain unchanged.
+
 ## Current runtime evidence · 2026-10-30 v84
 
 The fresh day-zero v84 calibration remained under `--skip-training`. It crossed the v83 menu-preflight boundary, completed Crop Teacher, produced nine native day-boundary receipts across two crop phases (`5 + 4`) and eight harvest receipts in the second phase, then continued through mail, quest 13, fishing, inventory recovery, shipping and collection routing. It had 147 semantically meaningful verified Product actions before iteration 198. No Student parameters, checkpoint, GPU training or formal policy corpus were updated.

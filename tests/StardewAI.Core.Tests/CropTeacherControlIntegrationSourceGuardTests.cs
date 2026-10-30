@@ -79,6 +79,14 @@ public sealed class CropTeacherControlIntegrationSourceGuardTests
             program,
             StringComparison.Ordinal);
         Assert.Contains(
+            "ShouldDeferCropProductionTeacherHandoffForExclusiveRecovery(",
+            program,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "planning_handoff_deferred_for_exclusive_recovery",
+            program,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "BuildCropTeacherReplanHandoff(",
             dispatch,
             StringComparison.Ordinal);

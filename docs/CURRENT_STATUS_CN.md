@@ -18,6 +18,13 @@
 | Money production evidence cells | **0/18** | 6 个 Money criterion × 3 partitions；hermetic fixture 不计 production |
 | Formal product training | **false** | 未通过完整正式训练准入 |
 
+### 2026-10-30 v85 长跑与独占恢复优先级修复
+
+- 全新 day-zero 隐藏静音运行 `golden-walnut-source-schedule-v85-20261030-120056-legacy-dialogue` 继续显式使用 `--skip-training`。它推进到 iteration `425`、Year 1 Spring 22 `19:00`，形成 `306` 条有语义 verified Product action，并三次完成 Crop Teacher；第三轮取得 `8/8` 原生收获回执。Stage One 同时完成邮件、任务 `13`、钓鱼、路线、容量恢复和原生出货，累计推进到 `total_days=21`。v84 的旧式日界对话与假等待没有回退。该轮仍没有 Student 参数更新、checkpoint、GPU 训练或正式政策数据。
+- 最终状态在 Backwoods、金钱 `1776g`。共享日计划已经正确选择唯一 `recovery:return_home / recovery.stabilize_day`，并在 ranking 中写出 `exclusive_recovery_override=true` 与 `exclusive_recovery_preempts_strategic_goal_binding`；但同一份 ranking 仍保留此前的 `goal.economy.earn_money` 作物 planning handoff。主循环旧顺序在执行恢复队列前无条件派发 handoff，Crop Teacher 因当前时刻没有当季可成熟种子连续五次返回 `no_affordable_seed_quantity/no_current_seed_supply`。这不是钱不足、候选规则过严或需要新增作物执行器，而是战略 handoff 抢占晚间独占恢复的编排错误。
+- 当前调度入口只在已有 planning handoff 合同完整且没有独占恢复覆盖时允许派发 Crop Teacher。若 `exclusive_recovery_override=true`，它记录 `planning_handoff_deferred_for_exclusive_recovery`，执行既有恢复队列，随后依靠 fresh snapshot 重新规划；普通 handoff 行为保持不变。v85 的真实 `ranking-response-0421.json` 已由新程序集离线回放为 `DeferHandoff=true / DispatchHandoff=false`。
+- 验证为 handoff/控制专项 `15/15`、GameFreeGovernance `530/530`、Backend `257/257`、LiveTrainingLoop Release `0 warning / 0 error`。未过滤旧式 Core 套件为 `3043 passed / 36` 个当前 main 既有基线失败，主要是过期注册表计数、源码字符串和旧候选 fixture；本补丁不宣称这些历史测试已修复。v85 不能跨代码变更续接，下一原生入口必须是全新 day-zero v86，继续首次登岛 -> 核桃来源增量 -> First Parrot -> Turtle -> House -> source schedule 生成与独立重放。上表正式准入分子和 `formal_product_training=false` 不变。
+
 ### 2026-10-30 v84 睡眠后旧式对话边界与等待防伪
 
 - 全新 day-zero 隐藏静音运行 `golden-walnut-source-schedule-v84-20261030-101752-menu-preflight` 继续显式使用 `--skip-training`。它跨过 v83 的菜单预检断点，完成 Crop Teacher，两轮作物阶段分别形成 `5 + 4` 条日界回执，第二轮取得 `8` 条收获回执；随后同一 Stage One 链继续完成邮件、任务 `13`、钓鱼、容量恢复、出货和路线推进。iteration `198` 之前共有 `147` 条有语义、已验证的 Product action。这些仍只是 Teacher/执行器校准证据，没有 Student 参数更新、checkpoint、GPU 训练或正式策略数据。

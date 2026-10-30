@@ -22,6 +22,27 @@ public static class PlanningHandoffCapture
         out JsonObject handoff)
     {
         handoff = new JsonObject();
+        if (ShouldDeferCropProductionTeacherHandoffForExclusiveRecovery(
+                ranking))
+        {
+            return false;
+        }
+
+        return TryReadCropProductionTeacherHandoffContract(
+            ranking,
+            out handoff);
+    }
+
+    public static bool ShouldDeferCropProductionTeacherHandoffForExclusiveRecovery(
+        JsonObject? ranking) =>
+        IsExclusiveRecoveryOverride(ranking) &&
+        TryReadCropProductionTeacherHandoffContract(ranking, out _);
+
+    private static bool TryReadCropProductionTeacherHandoffContract(
+        JsonObject? ranking,
+        out JsonObject handoff)
+    {
+        handoff = new JsonObject();
         var resolution = ranking?["goal_resolution"] as JsonObject;
         var candidate = resolution?["planning_handoff"] as JsonObject;
         if (!string.Equals(
@@ -45,6 +66,11 @@ public static class PlanningHandoffCapture
         handoff = JsonNode.Parse(candidate.ToJsonString())!.AsObject();
         return true;
     }
+
+    private static bool IsExclusiveRecoveryOverride(JsonObject? ranking) =>
+        ReadBool(
+            ranking?["objective_continuation_filter"] as JsonObject,
+            "exclusive_recovery_override");
 
     public static async Task<PlanningHandoffCaptureResult> CaptureAsync(
         HttpClient http,

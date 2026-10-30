@@ -4,6 +4,14 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已闭合从 v10 最终隔离存档开始的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已通过 current-authority 复核并冻结；当前唯一施工项是 `complete_master_angler` 顶层依赖、日历窗口与 coverage 接线。Money Exit Gate 标准不降低，但 Money 已回到复杂度队列第 11 位。
 
+## 当前准入结论 · v85 仍是校准，独占恢复编排已修复
+
+v85 显式使用 `--skip-training`，从 day-zero 推进到 Spring 22 / `total_days=21`，在 `425` 次迭代中形成 `306` 条有语义 verified Product action，并完成三轮 Crop Teacher。它证明 v84 的旧式日界对话与 no-progress 防伪修复没有回退，但没有更新 Student 参数、checkpoint、GPU 训练或正式政策数据，任何正式训练分子均不增加。
+
+最终阻塞不是 Teacher 缺少候选能力。iteration `421` 的正式 ranking 已选择 `recovery:return_home`，并明确声明独占恢复抢占 strategic goal binding；旧主循环却在 queue 执行之前派发同一 ranking 中残留的作物 planning handoff。当前唯一 dispatch policy 会在该精确状态延后 handoff，执行已有恢复队列并 fresh 重规划。v85 真实 ranking 离线回放已证明 `defer=true / dispatch=false`，普通无恢复 handoff 仍可派发。
+
+验证为专项 `15/15`、GameFreeGovernance `530/530`、Backend `257/257`、LiveTrainingLoop Release 零警告零错误。未过滤旧 Core 套件仍包含 `36` 个 current-main 既有基线失败（另有 `3043` 项通过），不得把治理门通过扩大解释为所有历史 fixture 已清零。代码变更后不得续接 v85 身份；下一准入运行必须是全新 day-zero v86，继续取得首次登岛、核桃来源增量、First Parrot/Turtle/House、source schedule 生成与独立重放。#345 完成前仍禁止模型参数训练。
+
 ## 当前准入结论 · v84 仍是校准，旧式日界对话与假等待已修复
 
 v84 显式使用 `--skip-training`，跨过 v83 的菜单预检边界，完成 Crop Teacher，并在两轮作物阶段取得 `5 + 4` 条日界回执和第二轮 `8` 条收获回执。iteration `198` 之前共有 `147` 条有语义 verified Product action；之后没有 Student 参数更新、checkpoint、GPU 训练或正式政策数据，正式准入分子不变。
