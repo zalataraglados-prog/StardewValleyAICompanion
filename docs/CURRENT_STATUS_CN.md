@@ -18,6 +18,13 @@
 | Money production evidence cells | **0/18** | 6 个 Money criterion × 3 partitions；hermetic fixture 不计 production |
 | Formal product training | **false** | 未通过完整正式训练准入 |
 
+### 2026-10-30 v87 本机路径固定与补水走廊原生回归
+
+- PR `#369` 已通过 `game-free-quality` 并合入 `main`。仓库加载被忽略的 `Directory.Build.local.props`，本机文件和用户级 `GamePath` 均固定为 `E:\StardewValleyAICompanion-runtime\Stardew Valley`；不传 `-p:GamePath` 的 TransparentBridge、LiveTrainingLoop 与 GoalConditionedBootstrap Release 构建均为零警告零错误，并实际打印 E 盘 `GameModsDir`。失效的 F 盘自动发现不再参与本机构建。
+- 全新隐藏静音、单并发校准 `golden-walnut-source-schedule-v87-20261030-161632-prepared-refill` 显式保持 `formal_product_training_authorized=false`。运行在 iteration `104` 完整日界后人工安全停止；累计 `100` 条 verified Product action，三个 stderr 均为零，没有 Student 参数、checkpoint、GPU 训练或正式政策数据。
+- 第二轮 Crop Teacher 在 iteration `80` 重规划。真实新桥证据选择补水入口 `(72,27)`，`watering_refill_preparation_tiles=[]`，旧 v86 的 `(74,25)/(74,26)` 树桩没有进入承诺。场地准备在 iteration `93` 完成，iteration `100` 原生完成补水入口动作，`102` 回家、`103` 睡眠、`104` 新日；旧失败窗口已完整越过。
+- v87 是针对性回归而非 source-schedule 准入闭环。Golden Walnut / First Parrot / Turtle / House 与 source schedule 生成、独立重放仍未完成，下一轮必须使用新运行身份继续该唯一出口；正式准入计数和 `formal_product_training=false` 不变。
+
 ### 2026-10-30 v86 补水走廊复用与步行碰撞修复
 
 - 全新 day-zero 隐藏静音运行 `golden-walnut-source-schedule-v86-20261030-151929-exclusive-recovery` 继续显式使用 `--skip-training`。它在 iteration `97` 前形成 `94` 条有语义 verified Product action、`9` 条日界回执，并在 iteration `58` 完成第一轮 Crop Teacher；随后 `98..102` 为同一失败的有界重试。v84/v85 的菜单、等待和独占恢复缺口均未回退。该轮没有 Student 参数、checkpoint、GPU 训练或正式政策数据。

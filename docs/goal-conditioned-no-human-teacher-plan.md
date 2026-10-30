@@ -6,6 +6,14 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已从 v10 最终隔离存档闭合下一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已按 current authority 冻结；当前唯一施工项是 `complete_master_angler` 顶层 dependency、日历窗口与 coverage 接线。Money 仍须最终满足原 Exit Gate，但已回到复杂度队列第 11 位。
 
+## Current runtime evidence · 2026-10-30 v87
+
+PR #369 passed the game-free quality gate and merged. The ignored machine-local MSBuild override now binds this host to the isolated E-drive SMAPI runtime before ModBuildConfig path discovery, so ordinary builds and the v87 launch no longer probe the stale F-drive installation.
+
+The fresh hidden, silent, single-concurrency v87 calibration remained formally unauthorized for training. It reached iteration 104 and 100 verified Product actions before a controlled stop at a complete native day boundary. The second Crop Teacher replan selected refill approach `(72,27)` with no refill preparation tiles. Site preparation completed at iteration 93, native refill approach execution completed at iteration 100, and iterations 102 through 104 returned home, slept and entered the next day. The v86 stump blocker did not recur and all three stderr logs remained empty.
+
+This is regression evidence, not source-schedule or formal-training evidence. Golden Walnut source delta, First Parrot, Turtle, House, source-schedule generation and independent replay remain the next WIP=1 exit. No Student parameters, checkpoints, GPU training or formal policy rows were produced.
+
 ## Current runtime evidence · 2026-10-30 v86
 
 The fresh day-zero v86 calibration remained under `--skip-training`. By iteration 97 it had produced 94 semantically meaningful verified Product actions and nine native day boundaries and completed the first Crop Teacher run; iterations 98 through 102 were bounded retries of the same failure. It did not update Student parameters, checkpoints, GPU training or the formal policy corpus.
