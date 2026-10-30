@@ -124,6 +124,53 @@ public sealed class LiveTrainingPolicyTrajectoryIntegrationTests
         Assert.False(File.Exists(options.PolicyTrajectoryDatasetPath));
     }
 
+    [Fact]
+    public void GingerIslandPrerequisiteControlIsNeverWrittenAsPolicyTrainingData()
+    {
+        var root = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-tests",
+            Guid.NewGuid().ToString("N"));
+        var artifactDirectory = Path.Combine(root, "artifacts");
+        Directory.CreateDirectory(artifactDirectory);
+        var beforeSnapshotPath = Path.Combine(artifactDirectory, "before.json");
+        File.WriteAllText(beforeSnapshotPath, BeforeSnapshot().ToJsonString());
+        const string candidateId =
+            "master-angler-ginger-island:route-to-first-parrot:IslandHut";
+        var rankingPath = Path.Combine(artifactDirectory, "ranking.json");
+        File.WriteAllText(
+            rankingPath,
+            JsonSerializer.Serialize(
+                GingerIslandPrerequisiteControlDecision(candidateId),
+                JsonOptions));
+        var options = new LiveTrainingOptions
+        {
+            Root = root,
+            RunId = "run.ginger-island-control"
+        };
+
+        var result = InvokeAppender(
+            options,
+            Execution(
+                beforeSnapshotPath,
+                rankingPath,
+                "execution.ginger-island-control.json",
+                candidateId),
+            new TrainingDatasetAppendResult
+            {
+                DatasetPath = Path.Combine(root, "datasets", "features.jsonl"),
+                RowId = "row.ginger-island-control",
+                EpisodeId = "episode.ginger-island-control"
+            });
+
+        Assert.Equal(0, result.AppendedCount);
+        Assert.Equal(1, result.SkippedCount);
+        Assert.Equal(
+            "ginger_island_prerequisite_control_not_training_eligible",
+            result.FirstSkipReason);
+        Assert.False(File.Exists(options.PolicyTrajectoryDatasetPath));
+    }
+
     private static PolicyTrajectoryAppendBatchResult InvokeAppender(
         LiveTrainingOptions options,
         JsonObject execution,
@@ -246,6 +293,34 @@ public sealed class LiveTrainingPolicyTrajectoryIntegrationTests
             }
         }
     };
+
+    private static AvailabilityAwarePolicyPredictionEnvelope
+        GingerIslandPrerequisiteControlDecision(string candidateId) => new()
+        {
+            RankedEventCandidates = new[]
+            {
+                new PolicyEventCandidatePrediction
+                {
+                    CandidateId = candidateId,
+                    OptionId = "executor.route_to_location",
+                    Kind = "route_to_location",
+                    Rank = 1,
+                    Score = 0,
+                    ExpectedReward = 0,
+                    Available = true,
+                    EstimatedTicks = 30,
+                    Parameters = new[]
+                    {
+                        new StardewAI.Contracts.Execution.SmallModelActionParameter
+                        {
+                            Name =
+                                "continuation.master_angler_ginger_island_prerequisite_control_only",
+                            Value = "true"
+                        }
+                    }
+                }
+            }
+        };
 
     private static JsonObject Field<T>(T value) => new()
     {

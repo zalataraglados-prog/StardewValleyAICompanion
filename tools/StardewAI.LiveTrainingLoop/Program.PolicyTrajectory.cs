@@ -91,6 +91,14 @@ static partial class Program
                     JsonOptions) ?? throw new InvalidOperationException("ranking response is empty");
                 var selectedCandidate = decision.RankedEventCandidates?.SingleOrDefault(candidate =>
                     string.Equals(candidate.CandidateId, candidateId, StringComparison.Ordinal));
+                if (selectedCandidate is not null &&
+                    HasGingerIslandPrerequisiteControlMarker(
+                        selectedCandidate.Parameters))
+                {
+                    result.Skip(
+                        "ginger_island_prerequisite_control_not_training_eligible");
+                    continue;
+                }
                 if (selectedCandidate is not null && !selectedCandidate.Available)
                 {
                     result.Skip("effective_candidate_unavailable");

@@ -287,12 +287,36 @@ public static partial class MasterAnglerTargetDateIntentBuilder
             .ThenBy(candidate => candidate.TargetQualifiedItemId, StringComparer.Ordinal)
             .ThenBy(candidate => candidate.SourceKey, StringComparer.Ordinal)
             .ToArray();
+        var prerequisiteControlCandidates = eligibleWindows
+            .Select(candidate => BuildGingerIslandPrerequisiteControlCandidate(
+                candidate.Species,
+                candidate.Window,
+                index,
+                state,
+                fullIndexPath,
+                indexHash,
+                currentTotalDay,
+                currentTime,
+                farmTypeKey,
+                routeByLocation,
+                fullTimingPath,
+                timingHash))
+            .Where(candidate => candidate is not null)
+            .Cast<MasterAnglerTargetDateIntent>()
+            .OrderBy(candidate => candidate.DeadlineSlackDays)
+            .ThenBy(candidate => candidate.LastCastTimeExclusive)
+            .ThenBy(candidate => candidate.TargetQualifiedItemId, StringComparer.Ordinal)
+            .ThenBy(candidate => candidate.SourceKey, StringComparer.Ordinal)
+            .Take(1)
+            .ToArray();
 
         return new MasterAnglerTargetDateIntentSet
         {
             Status = candidates.Length > 0
                 ? "validated_current_date_full_route_intents_runtime_terminal_pending"
-                : "no_authoritative_static_rod_intent_available_now",
+                : prerequisiteControlCandidates.Length > 0
+                    ? "validated_current_date_ginger_island_prerequisite_control"
+                    : "no_authoritative_static_rod_intent_available_now",
             SourceSnapshotPath = fullSnapshotPath,
             SourceStateHash = sourceStateHash,
             WindowIndexPath = fullIndexPath,
@@ -304,9 +328,12 @@ public static partial class MasterAnglerTargetDateIntentBuilder
             CurrentLocationId = currentLocation,
             MissingSpeciesCount = missing.Count,
             CandidateCount = candidates.Length,
+            PrerequisiteControlCandidateCount =
+                prerequisiteControlCandidates.Length,
             WeatherSupplyCandidateCount = weatherSupplyCandidates.Length,
             TrainingLabelEligible = false,
             Candidates = candidates,
+            PrerequisiteControlCandidates = prerequisiteControlCandidates,
             WeatherSupplyCandidates = weatherSupplyCandidates,
             WeatherSupplyBlockingReasons = weatherSupplyCandidates.Length > 0
                 ? Array.Empty<string>()
@@ -320,7 +347,12 @@ public static partial class MasterAnglerTargetDateIntentBuilder
                 .ToArray(),
             BlockingReasons = candidates.Length > 0
                 ? new[] { "fresh_native_target_catch_receipt_required_before_training_admission" }
-                : new[] { "no_missing_species_has_a_current_full_route_time_feasible_runtime_source" }
+                : prerequisiteControlCandidates.Length > 0
+                    ? new[]
+                    {
+                        "terminal_route_unavailable_ginger_island_prerequisite_control_ready"
+                    }
+                    : new[] { "no_missing_species_has_a_current_full_route_time_feasible_runtime_source" }
         };
     }
 

@@ -18,9 +18,11 @@ public sealed class MasterAnglerTargetDateIntentSet
     [JsonPropertyName("current_location_id")] public string CurrentLocationId { get; set; } = string.Empty;
     [JsonPropertyName("missing_species_count")] public int MissingSpeciesCount { get; set; }
     [JsonPropertyName("candidate_count")] public int CandidateCount { get; set; }
+    [JsonPropertyName("prerequisite_control_candidate_count")] public int PrerequisiteControlCandidateCount { get; set; }
     [JsonPropertyName("weather_supply_candidate_count")] public int WeatherSupplyCandidateCount { get; set; }
     [JsonPropertyName("training_label_eligible")] public bool TrainingLabelEligible { get; set; }
     [JsonPropertyName("candidates")] public MasterAnglerTargetDateIntent[] Candidates { get; set; } = Array.Empty<MasterAnglerTargetDateIntent>();
+    [JsonPropertyName("prerequisite_control_candidates")] public MasterAnglerTargetDateIntent[] PrerequisiteControlCandidates { get; set; } = Array.Empty<MasterAnglerTargetDateIntent>();
     [JsonPropertyName("weather_supply_candidates")] public MasterAnglerWeatherSupplyIntent[] WeatherSupplyCandidates { get; set; } = Array.Empty<MasterAnglerWeatherSupplyIntent>();
     [JsonPropertyName("weather_supply_blocking_reasons")] public string[] WeatherSupplyBlockingReasons { get; set; } = Array.Empty<string>();
     [JsonPropertyName("blocking_reasons")] public string[] BlockingReasons { get; set; } = Array.Empty<string>();
