@@ -4,6 +4,13 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已完成 v10 之后的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已按 current authority 冻结；当前唯一施工项为 `complete_master_angler` 顶层 dependency、日历窗口与 coverage 接线。P0/P1 共享 correctness blocker 可临时中断，但不得静默改序或并行展开多个 root method。
 
+## 2026-10-30 v86 已耕补水走廊不得被重复清障替换
+
+- `golden-walnut-source-schedule-v86-20261030-151929-exclusive-recovery` 从新 day-zero 身份在 iteration `97` 前取得 `94` 条 verified Product action、`9` 条日界回执并完成第一轮 Crop Teacher。第二次作物 handoff 在 iteration `81` 正确形成 `8` 格防风草承诺，但 iteration `98..102` 重复要求清理同一未升级斧头无法处理的 `2x2` 树桩，故安全停止。运行仍为 `--skip-training`。
+- 根因位于透明布局语义而非执行器。旧 `watering_refill_approach_standable` 直接使用静态 occupancy，`HoeDirt` 即使无作物也被视为阻挡，导致首轮已清走廊不能复用。透明桥现新增 `native_walking_collision_blocked`，以原生 `IsTileBlockedBy` 的 passable 忽略掩码计算；Teacher 只对旧证据中的 `already_prepared` 做兼容，其余未知或不可执行阻挡不放行。
+- v86 原始 request 离线重放得到 `(70,27)` 补水入口和三个普通对象清理格，不再包含 `(74,25)/(74,26)` 的树桩格。Teacher hermetic、GameFreeGovernance `530/530`、Backend `257/257` 与 TransparentBridge Release 均通过。代码变化后必须从全新 v87 重跑；不得把 v86 尾部、离线重放或 fixture 当作 source schedule。
+- 构建环境同时完成一次性修正：仓库支持被忽略的 `Directory.Build.local.props`，本机文件与用户级 `GamePath` 均固定到 `E:\StardewValleyAICompanion-runtime\Stardew Valley`。公开仓库不提交本机绝对路径，普通构建也不再反复命中失效的 F 盘 Steam 目录。
+
 ## 2026-10-30 v85 独占恢复不得被战略 handoff 抢占
 
 - `golden-walnut-source-schedule-v85-20261030-120056-legacy-dialogue` 从全新 day-zero 身份推进 `425` 次迭代，取得 `306` 条有语义 verified Product action，完成三轮 Crop Teacher，并推进到 Spring 22 / `total_days=21`。第三轮收获为 `8/8`；邮件、任务 `13`、钓鱼、容量恢复、出货与多次日界也均走现有原生执行链。该运行继续 `--skip-training`，没有参数训练或正式 checkpoint。

@@ -6,6 +6,16 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已从 v10 最终隔离存档闭合下一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已按 current authority 冻结；当前唯一施工项是 `complete_master_angler` 顶层 dependency、日历窗口与 coverage 接线。Money 仍须最终满足原 Exit Gate，但已回到复杂度队列第 11 位。
 
+## Current runtime evidence · 2026-10-30 v86
+
+The fresh day-zero v86 calibration remained under `--skip-training`. By iteration 97 it had produced 94 semantically meaningful verified Product actions and nine native day boundaries and completed the first Crop Teacher run; iterations 98 through 102 were bounded retries of the same failure. It did not update Student parameters, checkpoints, GPU training or the formal policy corpus.
+
+The second crop decision correctly proved a refill route for 32 watering actions, but the old Farm projection treated crop-free `HoeDirt` as non-walkable occupancy. That removed the corridor cleared by the first crop run, so the Teacher selected a new approach through a 2x2 stump that the current axe could not clear. The executor correctly failed closed; axe level, swing budget and tool-slot checks were not relaxed.
+
+The bridge now separates static occupancy from native walking collision and computes refill standability with passable terrain ignored. The Teacher conservatively migrates legacy evidence only for explicit crop-free `already_prepared` soil. Replaying the original v86 Teacher request now selects approach `(70,27)` and three ordinary clearable objects instead of the stump. Hermetic Teacher self-test, GameFreeGovernance 530/530, Backend 257/257 and the zero-warning TransparentBridge Release build pass.
+
+v86 cannot resume across this code change. The next run is a fresh day-zero v87 with the same WIP=1 exit: first island arrival, a Golden Walnut source delta, First Parrot/Turtle/House transitions, source-schedule generation and independent replay, then the #345 Provider/Student gate. Formal readiness counters remain unchanged.
+
 ## Current runtime evidence · 2026-10-30 v85
 
 The fresh day-zero v85 calibration remained under `--skip-training`. It reached iteration 425, Spring 22 and total day 21, produced 306 semantically meaningful verified Product actions, and completed three Crop Teacher runs. The third run recorded eight of eight native harvest receipts. Mail, quest 13, fishing, capacity recovery, shipping, routing and native day boundaries continued through the existing product path. No Student parameters, checkpoint, GPU training or formal policy corpus were updated.

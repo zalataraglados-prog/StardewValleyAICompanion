@@ -88,7 +88,7 @@ internal static class FarmSitePreparationProjector
                 : "ready",
             tiles = rows.ToArray(),
             native_contract =
-                "Hoe.DoFunction -> existing terrain/object tool action first; otherwise Back:Diggable + isTilePassable + makeHoeDirt. Watering-can refill sources use GameLocation.CanRefillWateringCanOnTile; route execution remains the shared runtime BFS. Projection is bounded and read-only; clearance and tilling remain separate fresh-snapshot actions."
+                "Hoe.DoFunction -> existing terrain/object tool action first; otherwise Back:Diggable + isTilePassable + makeHoeDirt. Watering-can refill sources use GameLocation.CanRefillWateringCanOnTile; refill walking uses GameLocation.IsTileBlockedBy with passable terrain ignored; route execution remains the shared runtime BFS. Projection is bounded and read-only; clearance and tilling remain separate fresh-snapshot actions."
         };
     }
 
@@ -127,6 +127,11 @@ internal static class FarmSitePreparationProjector
         var nativeBlocked = onMap && location.IsTileBlockedBy(
             tile,
             ~(CollisionMask.Characters | CollisionMask.Farmers));
+        var nativeWalkingCollisionBlocked = onMap &&
+            location.IsTileBlockedBy(
+                tile,
+                ~(CollisionMask.Characters | CollisionMask.Farmers),
+                CollisionMask.All);
         var wateringCanRefillSource = onMap &&
             location.CanRefillWateringCanOnTile(x, y);
 
@@ -188,9 +193,11 @@ internal static class FarmSitePreparationProjector
             diggable_back_property = diggable,
             map_passable = mapPassable,
             native_blocked_without_characters = nativeBlocked,
+            native_walking_collision_blocked =
+                nativeWalkingCollisionBlocked,
             watering_can_refill_source = wateringCanRefillSource,
             watering_refill_approach_standable =
-                onMap && mapPassable && !nativeBlocked,
+                onMap && mapPassable && !nativeWalkingCollisionBlocked,
             has_hoe_dirt = hoeDirt is not null,
             hoe_dirt_has_crop = hoeDirt?.crop is not null,
             hoe_tool_slot_index = hoeSlotIndex,

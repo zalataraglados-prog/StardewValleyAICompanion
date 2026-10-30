@@ -71,27 +71,9 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
             var rows = RequiredProperty(context, "tiles");
             Require(rows.ValueKind == JsonValueKind.Array,
                 "Money Revenue crop-production Teacher layout tiles are missing.");
-            var tiles = rows.EnumerateArray().Select(value =>
-                new LayoutTile(
-                    ReadInt(value, "tile_x"),
-                    ReadInt(value, "tile_y"),
-                    ReadString(value, "status"),
-                    ReadRequiredBool(value, "map_passable"),
-                    ReadRequiredBool(
-                        value,
-                        "native_blocked_without_characters"),
-                    ReadRequiredBool(
-                        value,
-                        "watering_can_refill_source"),
-                    ReadRequiredBool(
-                        value,
-                        "watering_refill_approach_standable"))).ToArray();
-            Require(tiles.All(value =>
-                    value.WateringRefillApproachStandable ==
-                    (value.MapPassable &&
-                     !value.NativeBlockedWithoutCharacters)),
-                "Money Revenue crop-production Teacher layout refill " +
-                "approach facts are internally inconsistent.");
+            var tiles = rows.EnumerateArray()
+                .Select(ReadLayoutTile)
+                .ToArray();
             var expectedCount = checked((maxX - minX + 1) *
                 (maxY - minY + 1));
             Require(tiles.Length == expectedCount &&
@@ -116,6 +98,42 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
                 tiles));
         }
         return result.ToArray();
+    }
+
+    private static LayoutTile ReadLayoutTile(JsonElement value)
+    {
+        var status = ReadString(value, "status");
+        var mapPassable = ReadRequiredBool(value, "map_passable");
+        var nativeBlocked = ReadRequiredBool(
+            value,
+            "native_blocked_without_characters");
+        var projectedStandable = ReadRequiredBool(
+            value,
+            "watering_refill_approach_standable");
+        var walkingCollisionBlocked = ReadOptionalBool(
+            value,
+            "native_walking_collision_blocked");
+        var legacyPreparedSoil =
+            !walkingCollisionBlocked.HasValue &&
+            status == "already_prepared" &&
+            mapPassable;
+        var effectiveStandable = walkingCollisionBlocked.HasValue
+            ? mapPassable && !walkingCollisionBlocked.Value
+            : projectedStandable || legacyPreparedSoil;
+        Require(
+            !walkingCollisionBlocked.HasValue ||
+            projectedStandable == effectiveStandable,
+            "Money Revenue crop-production Teacher layout refill " +
+            "walking-collision facts are internally inconsistent.");
+
+        return new LayoutTile(
+            ReadInt(value, "tile_x"),
+            ReadInt(value, "tile_y"),
+            status,
+            mapPassable,
+            nativeBlocked,
+            ReadRequiredBool(value, "watering_can_refill_source"),
+            effectiveStandable);
     }
 
     public const int MaxWateringRefillPreparationTileCount = 4;

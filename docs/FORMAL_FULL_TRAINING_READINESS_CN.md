@@ -4,6 +4,14 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已闭合从 v10 最终隔离存档开始的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已通过 current-authority 复核并冻结；当前唯一施工项是 `complete_master_angler` 顶层依赖、日历窗口与 coverage 接线。Money Exit Gate 标准不降低，但 Money 已回到复杂度队列第 11 位。
 
+## 当前准入结论 · v86 仍是校准，补水步行语义已修复
+
+v86 显式使用 `--skip-training`，从 day-zero 在 iteration `97` 前形成 `94` 条有语义 verified Product action、`9` 条日界回执并完成第一轮 Crop Teacher；`98..102` 是同一断点的有界失败重试。它没有更新 Student 参数、checkpoint、GPU 训练或正式政策数据，任何正式训练分子均不增加。
+
+第二轮 Teacher 已正确证明 `32` 次浇水需要补水，却因旧透明布局把无作物耕地当作不可步行占用而丢失首轮补水走廊，转而选择需要当前不可用斧头升级的树桩路线。修复没有放宽执行器：透明桥单独投影原生步行碰撞，Teacher 复用可通行的已耕走廊；旧证据只对明确 `already_prepared` 的无作物耕地兼容。v86 原始 request 重放后绑定 `(70,27)` 和三个普通杂物格，不再绑定树桩。
+
+验证为 Crop Teacher hermetic 自测通过、GameFreeGovernance `530/530`、Backend `257/257`、TransparentBridge Release 零警告零错误。本机默认构建路径也已固定到 E 盘隔离 SMAPI 运行时。代码变更后不得续接 v86 身份；下一准入运行必须是全新 day-zero v87，继续首次登岛、核桃来源增量、First Parrot/Turtle/House、source schedule 生成与独立重放。#345 完成前仍禁止模型参数训练。
+
 ## 当前准入结论 · v85 仍是校准，独占恢复编排已修复
 
 v85 显式使用 `--skip-training`，从 day-zero 推进到 Spring 22 / `total_days=21`，在 `425` 次迭代中形成 `306` 条有语义 verified Product action，并完成三轮 Crop Teacher。它证明 v84 的旧式日界对话与 no-progress 防伪修复没有回退，但没有更新 Student 参数、checkpoint、GPU 训练或正式政策数据，任何正式训练分子均不增加。
