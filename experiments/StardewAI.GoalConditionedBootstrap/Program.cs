@@ -170,6 +170,7 @@ var commandDefinitions = new CommandDefinition[]
     new("build-master-angler-stage-one-windows", BuildMasterAnglerStageOneWindows),
     new("build-golden-walnut-fresh-save-episode-manifest", BuildGoldenWalnutFreshSaveEpisodeManifest),
     new("build-golden-walnut-fresh-save-source-schedule", BuildGoldenWalnutFreshSaveSourceSchedule),
+    new("verify-golden-walnut-fresh-save-source-schedule", VerifyGoldenWalnutFreshSaveSourceSchedule),
     new("audit-master-angler-fresh-save-prerequisites", AuditMasterAnglerFreshSavePrerequisites),
     new("build-master-angler-target-date-intents", BuildMasterAnglerTargetDateIntents),
     new("build-validation-trace-baseline", BuildValidationTraceBaseline),
@@ -2799,6 +2800,28 @@ static void BuildGoldenWalnutFreshSaveEpisodeManifest(Arguments options)
         options.Required("episode-directory"),
         options.Required("schedule-id"),
         options.Required("run-id"));
+}
+
+static void VerifyGoldenWalnutFreshSaveSourceSchedule(Arguments options)
+{
+    var schedule = GoldenWalnutFreshSaveSourceScheduleVerifier.Verify(
+        options.Required("episode-directory"),
+        options.Required("episode-manifest"),
+        options.Required("source-schedule"),
+        options.Required("schedule-id"),
+        options.Required("run-id"),
+        options.Required("save-id"),
+        options.Required("player-id"));
+    Console.WriteLine(JsonSerializer.Serialize(new
+    {
+        status = "pass",
+        episode_directory = Path.GetFullPath(options.Required("episode-directory")),
+        episode_manifest_path = Path.GetFullPath(options.Required("episode-manifest")),
+        source_schedule_path = Path.GetFullPath(options.Required("source-schedule")),
+        expected_player_id = options.Required("player-id"),
+        training_label_eligible = false,
+        schedule
+    }, JsonDefaults.Options));
 }
 
 static void BuildMasterAnglerTargetDateIntents(Arguments options)
