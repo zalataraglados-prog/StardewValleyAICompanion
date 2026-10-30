@@ -4,6 +4,12 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已闭合从 v10 最终隔离存档开始的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已通过 current-authority 复核并冻结；当前唯一施工项是 `complete_master_angler` 顶层依赖、日历窗口与 coverage 接线。Money Exit Gate 标准不降低，但 Money 已回到复杂度队列第 11 位。
 
+## 2026-10-31：v92 停止边界与 v93 准入入口
+
+v92 在 13 日 Crop Teacher 控制段完整收口后安全停止：iteration `99` 为 `crop_teacher_native_run_terminal_day_complete`，累计 `96` 条 verified Product action 与 `12` 条日界回执，随后进入 Stage One collection。该轮没有 Golden Walnut source schedule、Student 参数、checkpoint、GPU 训练或正式策略数据；其证据可以保留作校准现场，但不得跨代码变更续接。
+
+PR `#378` / merge commit `21d43710` 已修复独立验证身份路径、旧 prepared-soil 阻挡兼容和 Master Angler 延迟后完整路线预算三项当前主线错误。聚焦 `127/127`、GameFreeGovernance `609/609`、Backend `257/257`、完整 bootstrap hermetic 自测及远端质量门通过。修复不改变覆盖分子或训练授权；下一准入运行必须是全新 day-zero v93，保持 `--skip-training` 与 `formal_product_training=false`，直到 Golden Walnut source schedule 生成并以冻结 manifest 独立重放，且 #345 Provider/Student 门另行完成。
+
 ## 2026-10-30 姜岛先决条件控制入口
 
 对等审查证明旧链要求先到达尚未解锁的岛屿终端地图，才会生成负责解锁该地图的 prerequisite。当前修正严格分离 terminal intent 与 control intent：前者继续要求完整路线，后者只在精确权威岛屿鱼窗口和透明锁定 access 成立时调用既有修船、船票、核桃和鹦鹉候选。控制候选经过唯一 DailyPlan/ActionQueue/Product Executor，但明确排除 Teacher 标签与策略轨迹。该修正只恢复新存档 liveness，不增加任何正式 coverage 分子，也不授权参数训练；v91 仍须完成全部 Golden Walnut source-schedule 出口和独立重放。
