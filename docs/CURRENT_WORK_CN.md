@@ -4,6 +4,12 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已完成 v10 之后的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已按 current authority 冻结；当前唯一施工项为 `complete_master_angler` 顶层 dependency、日历窗口与 coverage 接线。P0/P1 共享 correctness blocker 可临时中断，但不得静默改序或并行展开多个 root method。
 
+## 2026-10-31：v92 保留证据，#377 已修复，下一入口锁定 v93
+
+- v92 的 13 日 Crop Teacher 控制段已在 iteration `99` 正常完成，形成 `96` 条 verified Product action 和 `12` 条日界回执；iteration `100` 已开始 Stage One collection。它仍是 `--skip-training` 校准，不含 Student 参数、checkpoint、GPU 训练或正式策略数据，也尚未生成 Golden Walnut source schedule。
+- #377 的三个当前主线错误已由 PR `#378` 在 merge commit `21d43710` 修复：独立 verifier 包装器改读 `state.identity` 并具备不可变产物的包装器级正负向测试；prepared-soil 旧兼容不再穿过静态阻挡；Master Angler 延迟出发重新核算全路线与终端预留。聚焦 `127/127`、GameFreeGovernance `609/609`、Backend `257/257`、bootstrap hermetic 与远端质量门均通过。
+- **唯一 WIP=1 不变**：不得续接 v92；从 `21d43710` 启动全新 day-zero v93，继续首次真实抵达、核桃来源增量、First Parrot、Turtle、House、source schedule 生成与冻结 manifest 独立重放。全程保持 `--skip-training`、`formal_product_training=false` 与当前 `5/19` CoverageGateReady。
+
 ## 2026-10-30 v90 姜岛先决条件循环已在代码层拆除
 
 - 对等 `gpt-6.1-sol high` 审查用 fresh-mainland 反例证明：锁定姜岛会阻止终端路线，终端路线缺失又阻止 Master Angler intent，现有姜岛修船/核桃/鹦鹉链因此无法被调用。

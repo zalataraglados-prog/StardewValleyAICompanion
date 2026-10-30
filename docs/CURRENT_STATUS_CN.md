@@ -18,6 +18,13 @@
 | Money production evidence cells | **0/18** | 6 个 Money criterion × 3 partitions；hermetic fixture 不计 production |
 | Formal product training | **false** | 未通过完整正式训练准入 |
 
+### 2026-10-31 v92 长跑保留与 #377 当前主线正确性收口
+
+- 全新 day-zero、隐藏静音、单并发、`--skip-training` 运行 `golden-walnut-source-schedule-v92-20261031-000510-source-schedule` 完成 13 日 Crop Teacher 控制段：iteration `99` 记录 `crop_teacher_native_run_terminal_day_complete`，累计 `96` 条 verified Product action 与 `12` 条日界回执；iteration `100` 已进入 Stage One collection。运行没有生成 Golden Walnut source schedule，也没有 Student 参数、checkpoint、GPU 训练或正式策略数据。
+- v92 不是运行时故障。审查 #377 在当前主线确认三项确定性缺口：包装器读取了错误的顶层身份路径、旧 prepared-soil 兼容可能掩盖静态阻挡、Master Angler 延迟到来源开放后未重新核算完整路线与终端预留。为避免旧代码继续产出不能通过最终独立验证的长跑，v92 在完整日界后安全停止，原始证据保留但不得跨代码变更续接。
+- PR `#378` 复用现有独立 verifier、Teacher 和 Master Angler 路由链完成修复，没有建立第二套调度器。行为回归覆盖真实 `state.identity` 包装器正向调用及缺失/过期/身份不匹配负向、阻挡/清晰旧耕地与 fresh walkability 权威、多 connector 延迟正向/过晚拒绝/窗口前稳定性。验证为聚焦 `127/127`、GameFreeGovernance `609/609`、Backend `257/257`、完整 bootstrap hermetic 自测通过，远端 `game-free-quality` 通过。
+- 当前覆盖分子与 `formal_product_training=false` 不变。下一原生入口必须从合并提交 `21d43710` 启动全新 day-zero v93，继续唯一出口：首次真实抵达 -> 至少一个可归因核桃来源增量 -> First Parrot -> Western Turtle -> Island House -> source schedule 生成 -> 冻结 manifest 的独立重放。
+
 ### 2026-10-30 v90 姜岛 bootstrap 循环修正
 
 - 对等工程审查已用真实 Core 验证链证明 island terminal-route 与 prerequisite intent 之间存在循环依赖。修正新增的是独立 control intent，不是第二套规划器：普通捕鱼的全路线门保持不变，控制 intent 只跳过它无法合理拥有的终端可达性证明，并复用现有姜岛先决条件候选和唯一编译执行链。
