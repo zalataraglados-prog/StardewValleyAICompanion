@@ -66,6 +66,75 @@ public sealed class GoldenWalnutFreshSaveEpisodeScheduleBuilderTests
             path => Path.GetFileName(path).Contains(".tmp.", StringComparison.Ordinal));
     }
 
+    [Theory]
+    [InlineData("other-farmer", FieldStatus.Available)]
+    [InlineData(null, FieldStatus.Unavailable)]
+    [InlineData("", FieldStatus.Available)]
+    [InlineData(" ", FieldStatus.Available)]
+    [InlineData("fresh-save-farmer", FieldStatus.Stale)]
+    public void RejectsPlayerIdentityChangeOrUnavailablePlayerWithinEpisode(
+        string? playerId,
+        string status)
+    {
+        using var fixture = new Fixture();
+        var source = EligibleSource();
+        var states = new[]
+        {
+            Snapshot("h0", 0, 0, false, false, false, false, source.SourceKey),
+            Snapshot("h1", 100, 1, true, false, false, false, source.SourceKey),
+            Snapshot("h2", 101, 1, true, true, false, false, source.SourceKey),
+            Snapshot("h3", 102, 1, true, true, true, false, source.SourceKey),
+            Snapshot("h4", 103, 1, true, true, true, true, source.SourceKey)
+        };
+        // The chain is hash-continuous; the identity changes inside the arrival
+        // episode, not in a passive handoff where continuity checks would run.
+        foreach (var snapshot in states.Skip(1))
+        {
+            snapshot.PlayerId.Value = playerId;
+            snapshot.PlayerId.Status = status;
+        }
+        var paths = fixture.WriteSequence(states);
+        var manifestPath = fixture.WriteManifest(paths);
+
+        var error = Assert.Throws<InvalidDataException>(() =>
+            GoldenWalnutFreshSaveEpisodeScheduleBuilder.Build(manifestPath));
+
+        Assert.Contains("player identity", error.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(null, FieldStatus.Unavailable)]
+    [InlineData("", FieldStatus.Available)]
+    [InlineData("fresh-save-farmer", FieldStatus.Stale)]
+    public void RejectsUnreadableInitialBoundaryPlayerIdentity(
+        string? playerId,
+        string status)
+    {
+        using var fixture = new Fixture();
+        var source = EligibleSource();
+        var states = new[]
+        {
+            Snapshot("h0", 0, 0, false, false, false, false, source.SourceKey),
+            Snapshot("h1", 100, 1, true, false, false, false, source.SourceKey),
+            Snapshot("h2", 101, 1, true, true, false, false, source.SourceKey),
+            Snapshot("h3", 102, 1, true, true, true, false, source.SourceKey),
+            Snapshot("h4", 103, 1, true, true, true, true, source.SourceKey)
+        };
+        foreach (var snapshot in states)
+        {
+            snapshot.PlayerId.Value = playerId;
+            snapshot.PlayerId.Status = status;
+        }
+        var paths = fixture.WriteSequence(states);
+        var manifestPath = fixture.WriteManifest(paths);
+
+        var error = Assert.Throws<InvalidDataException>(() =>
+            GoldenWalnutFreshSaveEpisodeScheduleBuilder.Build(manifestPath));
+
+        Assert.Contains("initial boundary", error.Message, StringComparison.Ordinal);
+        Assert.Contains("player identity", error.Message, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void RejectsFailedContinuityWitnessThatContainsSourceProgress()
     {
