@@ -1860,7 +1860,8 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
 
     private static string FindRepositoryFile(params string[] segments)
     {
-        var directory = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
+        // Source guards also run with --artifacts-path outside the checkout.
+        var directory = new DirectoryInfo(Path.GetDirectoryName(SourceFilePath())!);
         while (directory is not null &&
                !File.Exists(Path.Combine(directory.FullName, "StardewValleyAICompanion.sln")))
         {
@@ -1874,4 +1875,7 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
 
         return Path.Combine(new[] { directory.FullName }.Concat(segments).ToArray());
     }
+
+    private static string SourceFilePath(
+        [System.Runtime.CompilerServices.CallerFilePath] string path = "") => path;
 }
