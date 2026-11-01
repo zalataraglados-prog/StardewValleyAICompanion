@@ -29,6 +29,9 @@ public static class StageOneInventoryCapacityRecovery
     private const string FishingInventoryFullReason =
         "fishing_inventory_full_requires_storage_transfer";
 
+    private const string FestivalTransitClosedReason =
+        "connector_active_festival_transit_closed";
+
     public static bool HasFullInventory(JsonObject snapshot) =>
         InventoryIsFull(snapshot);
 
@@ -63,51 +66,42 @@ public static class StageOneInventoryCapacityRecovery
 
         var caughtQualifiedItemId = ReadCaughtQualifiedItemId(snapshot);
         var releaseCandidates = ranking.RankedEventCandidates
-            .Where(candidate =>
-                candidate.Available &&
-                string.Equals(
-                    candidate.OptionId,
-                    "economy.ship_items",
-                    StringComparison.Ordinal) &&
-                candidate.Quantity == 1 &&
-                candidate.AvailableStack is > 0 &&
-                CapacityReleaseValue(candidate) <= int.MaxValue)
+            .Where(IsCapacityReleaseCandidate)
             .ToArray();
-        var exactCatch = releaseCandidates
-            .Where(candidate => string.Equals(
-                candidate.QualifiedItemId,
-                caughtQualifiedItemId,
-                StringComparison.Ordinal))
-            .OrderBy(CapacityReleaseValue)
-            .ThenBy(candidate => candidate.EstimatedTicks)
-            .ThenBy(candidate => candidate.CandidateId, StringComparer.Ordinal)
-            .FirstOrDefault();
-        var selectedSource = exactCatch;
-        var selectionReason = exactCatch?.AvailableStack == 1
-            ? "exact_latest_catch_singleton"
-            : "exact_latest_catch_stack_drain";
+        var immediateCandidates = releaseCandidates
+            .Where(candidate => !IsDeferredTransitRecovery(candidate))
+            .ToArray();
+        var deferredCandidates = releaseCandidates
+            .Where(IsDeferredTransitRecovery)
+            .ToArray();
+        var selectedSource = SelectExactCatch(
+            immediateCandidates,
+            caughtQualifiedItemId);
+        var selectedExactCatch = selectedSource is not null;
         if (selectedSource is null && allowObjectiveSafeRelease)
         {
-            selectedSource = releaseCandidates
-                .OrderBy(candidate => Math.Max(
-                    1,
-                    candidate.AvailableStack ?? candidate.Quantity))
-                .ThenByDescending(candidate =>
-                    candidate.FullShipmentContributes == true)
-                .ThenBy(CapacityReleaseValue)
-                .ThenBy(candidate => candidate.EstimatedTicks)
-                .ThenBy(
-                    candidate => candidate.CandidateId,
-                    StringComparer.Ordinal)
-                .FirstOrDefault();
-            selectionReason = selectedSource?.AvailableStack == 1
-                ? "available_unprotected_singleton"
-                : "available_unprotected_stack_drain";
+            selectedSource = SelectObjectiveSafe(immediateCandidates);
+        }
+
+        if (selectedSource is null)
+        {
+            selectedSource = SelectExactCatch(
+                deferredCandidates,
+                caughtQualifiedItemId);
+            selectedExactCatch = selectedSource is not null;
+        }
+
+        if (selectedSource is null && allowObjectiveSafeRelease)
+        {
+            selectedSource = SelectObjectiveSafe(deferredCandidates);
         }
 
         if (selectedSource is null)
             return null;
 
+        var selectionReason = SelectionReason(
+            selectedSource,
+            selectedExactCatch);
         var selected = Clone(selectedSource);
         var targetStackQuantityBefore = Math.Max(
             1,
@@ -129,6 +123,84 @@ public static class StageOneInventoryCapacityRecovery
                     : TriggerReason
                 : CropHarvestTriggerReason,
             selectionReason);
+    }
+
+    private static PolicyEventCandidatePrediction? SelectExactCatch(
+        IEnumerable<PolicyEventCandidatePrediction> candidates,
+        string caughtQualifiedItemId) =>
+        candidates
+            .Where(candidate => string.Equals(
+                candidate.QualifiedItemId,
+                caughtQualifiedItemId,
+                StringComparison.Ordinal))
+            .OrderBy(CapacityReleaseValue)
+            .ThenBy(candidate => candidate.EstimatedTicks)
+            .ThenBy(candidate => candidate.CandidateId, StringComparer.Ordinal)
+            .FirstOrDefault();
+
+    private static PolicyEventCandidatePrediction? SelectObjectiveSafe(
+        IEnumerable<PolicyEventCandidatePrediction> candidates) =>
+        candidates
+            .OrderBy(candidate => Math.Max(
+                1,
+                candidate.AvailableStack ?? candidate.Quantity))
+            .ThenByDescending(candidate =>
+                candidate.FullShipmentContributes == true)
+            .ThenBy(CapacityReleaseValue)
+            .ThenBy(candidate => candidate.EstimatedTicks)
+            .ThenBy(
+                candidate => candidate.CandidateId,
+                StringComparer.Ordinal)
+            .FirstOrDefault();
+
+    private static bool IsCapacityReleaseCandidate(
+        PolicyEventCandidatePrediction candidate) =>
+        string.Equals(
+            candidate.OptionId,
+            "economy.ship_items",
+            StringComparison.Ordinal) &&
+        candidate.Quantity == 1 &&
+        candidate.AvailableStack is > 0 &&
+        CapacityReleaseValue(candidate) <= int.MaxValue &&
+        (candidate.Available || IsDeferredTransitRecovery(candidate));
+
+    private static bool IsDeferredTransitRecovery(
+        PolicyEventCandidatePrediction candidate) =>
+        !candidate.Available &&
+        string.Equals(
+            candidate.Kind,
+            "route_connector_tile",
+            StringComparison.Ordinal) &&
+        candidate.AllowedNow == false &&
+        candidate.AllowedToday == true &&
+        string.Equals(
+            candidate.TimelineStatus,
+            "deferred",
+            StringComparison.Ordinal) &&
+        candidate.ScheduledStartTime.HasValue &&
+        candidate.ScheduledWaitCost is > 0 &&
+        candidate.BlockReasons is { Length: > 0 } blockReasons &&
+        blockReasons.All(reason => string.Equals(
+            reason,
+            FestivalTransitClosedReason,
+            StringComparison.Ordinal));
+
+    private static string SelectionReason(
+        PolicyEventCandidatePrediction? candidate,
+        bool exactCatch)
+    {
+        if (candidate is null)
+            return string.Empty;
+
+        var timing = IsDeferredTransitRecovery(candidate)
+            ? "deferred_festival_transit_"
+            : string.Empty;
+        var source = exactCatch
+            ? "exact_latest_catch"
+            : "available_unprotected";
+        return timing + source + (candidate.AvailableStack == 1
+            ? "_singleton"
+            : "_stack_drain");
     }
 
     private static long CapacityReleaseValue(

@@ -104,6 +104,7 @@ var stageOneCollectionTeacherQueueCount = 0;
 var stageOneCollectionControlQueueCount = 0;
 var lastStageOneCollectionTeacherFallbackSignature = string.Empty;
 JsonObject? activeObjectiveContinuation = null;
+JsonObject? deferredObjectiveContinuationForCapacityRecovery = null;
 var suppressedObjectiveContinuations = new List<JsonObject>();
 var suppressionDayKey = string.Empty;
 var objectiveCompleted = false;
@@ -116,6 +117,7 @@ var leasedDecisionSourceStateHash = string.Empty;
 var leasedDecisionGoalId = string.Empty;
 var leasedSelectedCandidateId = string.Empty;
 var leasedSelectedQueueIndex = -1;
+var leasedDecisionIsInventoryCapacityRecovery = false;
 var persistedIterationCount = CountPersistedIterations(options.SnapshotDir);
 var nextArtifactIteration = NextArtifactIteration(options.SnapshotDir);
 var consecutiveErrors = 0;
@@ -212,6 +214,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         initialSaveFingerprint = null;
         currentSaveFingerprint = null;
         activeObjectiveContinuation = null;
+        deferredObjectiveContinuationForCapacityRecovery = null;
         leasedDecisionModelPlanPath = string.Empty;
         leasedDecisionRankingPath = string.Empty;
         leasedDecisionCompiledQueuePath = string.Empty;
@@ -220,6 +223,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         leasedDecisionGoalId = string.Empty;
         leasedSelectedCandidateId = string.Empty;
         leasedSelectedQueueIndex = -1;
+        leasedDecisionIsInventoryCapacityRecovery = false;
         AppendProgress(
             options,
             "native_save_boundary_start",
@@ -528,6 +532,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
     JsonObject? dailyPlanRanking = null;
     StageOneCollectionTeacherQueueBuildResult? nativeControlSettle = null;
     JsonObject? deferredObjectiveContinuationForDailyMaintenance = null;
+    var inventoryCapacityRecoveryControlActive = false;
     if (options.UseDailyPlan)
     {
         var settlePrefix = Path.Combine(
@@ -674,6 +679,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 pendingCropTeacherDayBoundaryLedger = null;
                 cropTeacherPreparedCommitmentIds.Clear();
                 activeObjectiveContinuation = null;
+                deferredObjectiveContinuationForCapacityRecovery = null;
                 leasedDecisionModelPlanPath = string.Empty;
                 leasedDecisionRankingPath = string.Empty;
                 leasedDecisionCompiledQueuePath = string.Empty;
@@ -682,6 +688,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 leasedDecisionGoalId = string.Empty;
                 leasedSelectedCandidateId = string.Empty;
                 leasedSelectedQueueIndex = -1;
+                leasedDecisionIsInventoryCapacityRecovery = false;
                 AppendProgress(
                     options,
                     "crop_teacher_replanned",
@@ -793,6 +800,10 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         executionSnapshotUrl = cropQueue.SnapshotUrl;
         useDailyPlanDecisionLease = false;
         activeObjectiveContinuation = null;
+        inventoryCapacityRecoveryControlActive = string.Equals(
+            cropQueue.InterruptKind,
+            "crop_teacher_harvest_inventory_capacity_recovery",
+            StringComparison.Ordinal);
         AppendProgress(
             options,
             "crop_teacher_control_queue_compiled",
@@ -823,6 +834,8 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             leasedSelectedQueueIndex >= 0;
         if (hasDecisionLease)
         {
+            inventoryCapacityRecoveryControlActive =
+                leasedDecisionIsInventoryCapacityRecovery;
             var decisionLease = SelectedQueueDecisionLease.Load(
                 leasedDecisionCompiledQueuePath,
                 leasedDecisionRankingPath);
@@ -925,6 +938,10 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 selectedCandidateId = collectionTeacher.SelectedCandidateId;
                 selectedQueueIndex = 0;
                 useDailyPlanDecisionLease = true;
+                var isInventoryCapacityRecovery = string.Equals(
+                    collectionTeacher.Status,
+                    "ready_inventory_capacity_recovery",
+                    StringComparison.Ordinal);
                 var isControlOnlyQueue = string.Equals(
                         collectionTeacher.Status,
                         "ready_authoritative_tie_control",
@@ -933,10 +950,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                         collectionTeacher.Status,
                         "ready_native_control_settle",
                         StringComparison.Ordinal) ||
-                    string.Equals(
-                        collectionTeacher.Status,
-                        "ready_inventory_capacity_recovery",
-                        StringComparison.Ordinal) ||
+                    isInventoryCapacityRecovery ||
                     string.Equals(
                         collectionTeacher.Status,
                         "ready_mandatory_menu_recovery_control",
@@ -945,6 +959,25 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                         collectionTeacher.Status,
                         "ready_ginger_island_prerequisite_control",
                         StringComparison.Ordinal);
+                if (isInventoryCapacityRecovery &&
+                    activeObjectiveContinuation is not null)
+                {
+                    if (deferredObjectiveContinuationForCapacityRecovery is not null)
+                    {
+                        throw new InvalidOperationException(
+                            "inventory_capacity_recovery_objective_already_deferred");
+                    }
+
+                    deferredObjectiveContinuationForCapacityRecovery =
+                        JsonNode.Parse(
+                            activeObjectiveContinuation.ToJsonString(JsonOptions))!
+                        .AsObject();
+                    activeObjectiveContinuation = null;
+                }
+                inventoryCapacityRecoveryControlActive =
+                    isInventoryCapacityRecovery;
+                leasedDecisionIsInventoryCapacityRecovery =
+                    isInventoryCapacityRecovery;
                 if (isControlOnlyQueue)
                     stageOneCollectionControlQueueCount++;
                 else
@@ -1147,6 +1180,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                     cropTeacherReplanRequired = false;
                     cropTeacherReplanReason = string.Empty;
                     activeObjectiveContinuation = null;
+                    deferredObjectiveContinuationForCapacityRecovery = null;
                     leasedDecisionModelPlanPath = string.Empty;
                     leasedDecisionRankingPath = string.Empty;
                     leasedDecisionCompiledQueuePath = string.Empty;
@@ -1155,6 +1189,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                     leasedDecisionGoalId = string.Empty;
                     leasedSelectedCandidateId = string.Empty;
                     leasedSelectedQueueIndex = -1;
+                    leasedDecisionIsInventoryCapacityRecovery = false;
                     AppendProgress(
                         options,
                         "planning_handoff_dispatched",
@@ -1223,6 +1258,8 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         }
         leasedSelectedCandidateId = selectedCandidateId;
         leasedSelectedQueueIndex = selectedQueueIndex;
+        leasedDecisionIsInventoryCapacityRecovery =
+            inventoryCapacityRecoveryControlActive;
     }
     lastQueueId = ReadString(queue, "queue_id");
     var queueStatus = ReadString(queue, "status");
@@ -1245,6 +1282,13 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 leasedDecisionGoalId = string.Empty;
                 leasedSelectedCandidateId = string.Empty;
                 leasedSelectedQueueIndex = -1;
+                leasedDecisionIsInventoryCapacityRecovery = false;
+                if (deferredObjectiveContinuationForCapacityRecovery is not null)
+                {
+                    activeObjectiveContinuation =
+                        deferredObjectiveContinuationForCapacityRecovery;
+                    deferredObjectiveContinuationForCapacityRecovery = null;
+                }
                 noProgressBackoff.Reset();
                 AppendProgress(
                     options,
@@ -1344,8 +1388,14 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             cropTeacherDayBoundaryStart = completedCropTeacherBoundaryStart;
             cropTeacherDayBoundaryLedger = completedCropTeacherBoundaryLedger;
         }
+        var capacityRecoveryControlActive =
+            inventoryCapacityRecoveryControlActive ||
+            deferredObjectiveContinuationForCapacityRecovery is not null;
+        var executionSuppressedContinuations = capacityRecoveryControlActive
+            ? new List<JsonObject>()
+            : suppressedObjectiveContinuations;
         var execution = options.UseRuntimeTestHarnessExecutor
-            ? await ExecuteRuntimeTestHarnessAsync(http, executorHttp, options, iteration, snapshotPath, beforeSnapshot, queue, lastStateHash, lastQueueId, decisionModelPlanPath, decisionRankingPath, decisionCompiledQueuePath, decisionSnapshotPath, decisionSourceStateHash, selectedCandidateId, selectedQueueIndex, queuePath, deferredObjectiveContinuationForDailyMaintenance is null ? activeObjectiveContinuation : null, suppressedObjectiveContinuations, useDailyPlanDecisionLease, executionSnapshotUrl, executionSnapshotProfile)
+            ? await ExecuteRuntimeTestHarnessAsync(http, executorHttp, options, iteration, snapshotPath, beforeSnapshot, queue, lastStateHash, lastQueueId, decisionModelPlanPath, decisionRankingPath, decisionCompiledQueuePath, decisionSnapshotPath, decisionSourceStateHash, selectedCandidateId, selectedQueueIndex, queuePath, deferredObjectiveContinuationForDailyMaintenance is null ? activeObjectiveContinuation : null, executionSuppressedContinuations, useDailyPlanDecisionLease, executionSnapshotUrl, executionSnapshotProfile)
             : await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/action-queues/" + Uri.EscapeDataString(lastQueueId) + "/execute-training-sandbox", "{}");
         if (activeCropTeacherTransitionLedger is not null &&
             cropTeacherStepForExecution is not null)
@@ -1490,19 +1540,22 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 lastQueueId,
                 appendToDataset: !executionNoProgress.NoProgress &&
                     !routeOscillation.Detected);
-            objectiveCompleted |= execution[
-                "objective_continuation_completed"]?.GetValue<bool>() == true;
-            socialObjectiveCompleted |= execution[
-                "social_objective_completed"]?.GetValue<bool>() == true;
-            if (execution["completed_objective_continuations"] is JsonArray completedContinuations)
+            if (!capacityRecoveryControlActive)
             {
-                foreach (var completedContinuation in completedContinuations
-                    .Select(node => node as JsonObject)
-                    .Where(node => node is not null))
+                objectiveCompleted |= execution[
+                    "objective_continuation_completed"]?.GetValue<bool>() == true;
+                socialObjectiveCompleted |= execution[
+                    "social_objective_completed"]?.GetValue<bool>() == true;
+                if (execution["completed_objective_continuations"] is JsonArray completedContinuations)
                 {
-                    QueueReplanFilter.AddSuppressedContinuation(
-                        suppressedObjectiveContinuations,
-                        completedContinuation);
+                    foreach (var completedContinuation in completedContinuations
+                        .Select(node => node as JsonObject)
+                        .Where(node => node is not null))
+                    {
+                        QueueReplanFilter.AddSuppressedContinuation(
+                            suppressedObjectiveContinuations,
+                            completedContinuation);
+                    }
                 }
             }
             activeObjectiveContinuation = execution["objective_continuation"] is JsonObject continuation
@@ -1526,10 +1579,12 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 "selected_queue_redecision_required"]?.GetValue<bool>() == true;
             var selectedQueueResumeIndex = execution[
                 "selected_queue_resume_index"]?.GetValue<int>() ?? -1;
-            if (useDailyPlanDecisionLease &&
+            var selectedQueueDecisionLeaseContinues =
+                useDailyPlanDecisionLease &&
                 !selectedQueueDecisionComplete &&
                 !selectedQueueRedecisionRequired &&
-                selectedQueueResumeIndex >= 0)
+                selectedQueueResumeIndex >= 0;
+            if (selectedQueueDecisionLeaseContinues)
             {
                 leasedSelectedCandidateId = ReadString(
                     execution,
@@ -1546,6 +1601,26 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 leasedDecisionGoalId = string.Empty;
                 leasedSelectedCandidateId = string.Empty;
                 leasedSelectedQueueIndex = -1;
+                leasedDecisionIsInventoryCapacityRecovery = false;
+            }
+            if (deferredObjectiveContinuationForCapacityRecovery is not null &&
+                !selectedQueueDecisionLeaseContinues)
+            {
+                activeObjectiveContinuation =
+                    deferredObjectiveContinuationForCapacityRecovery;
+                deferredObjectiveContinuationForCapacityRecovery = null;
+                AppendProgress(
+                    options,
+                    "inventory_capacity_recovery_objective_restored",
+                    iteration,
+                    lastStateHash,
+                    lastQueueId,
+                    "selected_queue_decision_complete=" +
+                    selectedQueueDecisionComplete.ToString().ToLowerInvariant() +
+                    " selected_queue_redecision_required=" +
+                    selectedQueueRedecisionRequired.ToString().ToLowerInvariant() +
+                    " selected_queue_resume_index=" +
+                    selectedQueueResumeIndex);
             }
             WritePlanExecutionEpisode(options, iteration, snapshotPath, modelPlanPath, queuePath, queue, execution, realAppend, lastStateHash, lastQueueId);
             if (routeOscillation.Detected)
