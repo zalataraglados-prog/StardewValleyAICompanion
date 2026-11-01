@@ -269,12 +269,15 @@ namespace StardewAI.Core.Training
                     MovementScope,
                     StringComparison.Ordinal) &&
                 ReadBool(movement, "runtime_calibration_compatible") == true &&
-                (ReadBool(movement, "route_timing_ready_now") == true ||
-                 zeroGameMinuteShopMenuCloseRecoveryAvailable) &&
                 contextUpperBound > 0d &&
                 movementUpperBound.HasValue &&
                 contextUpperBound <= movementUpperBound,
                 "future_route_movement_timing_context_outside_calibration_scope",
+                reasons);
+            Require(
+                ReadBool(movement, "route_timing_ready_now") == true ||
+                zeroGameMinuteShopMenuCloseRecoveryAvailable,
+                "future_route_movement_timing_context_not_ready",
                 reasons);
             Require(
                 ReadDouble(artifact, "native_milliseconds_per_game_minute") > 0d &&

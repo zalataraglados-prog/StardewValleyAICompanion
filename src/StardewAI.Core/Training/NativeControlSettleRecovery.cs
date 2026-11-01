@@ -56,24 +56,42 @@ namespace StardewAI.Core.Training
                 !HasBool(context, "current_event_active", false) ||
                 !HasBool(context, "event_up", false) ||
                 !HasBool(context, "game_paused", false) ||
-                !HasBool(context, "dialogue_up", false) ||
                 !HasBool(context, "freeze_controls", false) ||
                 !HasBool(context, "is_warping", false) ||
-                !HasIntAtMost(context, "player_freeze_pause", 0) ||
                 !HasBool(activeMenu.Value, "is_open", false))
             {
                 return null;
             }
 
-            var postSleepControlGap =
+            var dialogueClear = HasBool(context, "dialogue_up", false) &&
+                HasIntAtMost(context, "player_freeze_pause", 0);
+            var postSleepControlGap = dialogueClear &&
                 HasBool(context, "native_control_gate_open", true) &&
                 HasBool(context, "player_can_move_now", false) &&
                 HasBool(context, "global_fade", false);
-            var dayStartFadeControlGap =
+            var dayStartFadeControlGap = dialogueClear &&
                 HasBool(context, "native_control_gate_open", false) &&
                 HasBool(context, "player_can_move_now", true) &&
                 HasBool(context, "global_fade", true);
-            if (!postSleepControlGap && !dayStartFadeControlGap)
+            // The v93 day-start snapshot can retain dialogueUp with a native
+            // freeze timer even though CanMove has already been restored. This
+            // authorizes observation only, never dialogue acknowledgement or
+            // movement: the existing wait requires a fresh snapshot/replan.
+            var postSleepFreezeControlGap =
+                HasBool(context, "dialogue_up", true) &&
+                HasBool(context, "native_control_gate_open", false) &&
+                HasBool(context, "player_can_move_now", true) &&
+                HasBool(context, "global_fade", false) &&
+                context.TryGetProperty("player_freeze_pause", out var freezePause) &&
+                freezePause.ValueKind == JsonValueKind.Number &&
+                freezePause.TryGetInt32(out var pause) && pause > 0 &&
+                ReadableStatus(ReadStateFieldStatus(snapshot, "time", "time")) &&
+                ReadStateFieldIntOptional(snapshot, "time", "time") == 600 &&
+                ReadableStatus(ReadStateFieldStatus(snapshot, "player", "location_id")) &&
+                ReadStateFieldString(snapshot, "player", "location_id") == "FarmHouse" &&
+                HasString(activeMenu.Value, "type", "none") &&
+                HasString(activeMenu.Value, "last_question_key", "Sleep");
+            if (!postSleepControlGap && !dayStartFadeControlGap && !postSleepFreezeControlGap)
                 return null;
 
             return new EventCandidate
