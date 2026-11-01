@@ -11,6 +11,36 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+function Measure-RunRootLogicalSize {
+    param([Parameter(Mandatory = $true)][string] $Path)
+
+    $probeDestination = Join-Path `
+        ([IO.Path]::GetTempPath()) `
+        "stardewai-run-root-budget-null"
+    $output = & robocopy.exe `
+        $Path `
+        $probeDestination `
+        /L /S /BYTES /XJ /R:0 /W:0 /NFL /NDL /NJH /NP 2>&1
+    $exitCode = $LASTEXITCODE
+    if ($exitCode -ge 8) {
+        throw "Run-root measurement failed for $Path (robocopy=$exitCode)."
+    }
+
+    $text = @($output) -join [Environment]::NewLine
+    $numericSummaryRows = [regex]::Matches(
+        $text,
+        '(?m)^[ \t]*[^:\r\n]+:[ \t]+([0-9]+)' +
+        '(?:[ \t]+[0-9]+){5}[ \t]*\r?$')
+    if ($numericSummaryRows.Count -lt 3) {
+        throw "Run-root measurement summary was not parseable for $Path."
+    }
+
+    [pscustomobject]@{
+        FileCount = [int64]$numericSummaryRows[1].Groups[1].Value
+        LogicalBytes = [int64]$numericSummaryRows[2].Groups[1].Value
+    }
+}
+
 if ([string]::IsNullOrWhiteSpace($RunRootPrefix)) {
     throw "RunRootPrefix cannot be empty."
 }
@@ -56,20 +86,14 @@ foreach ($managedRoot in $managedRoots) {
         continue
     }
 
-    $measure = Get-ChildItem `
-        -LiteralPath $managedRoot.FullName `
-        -Force `
-        -Recurse `
-        -File `
-        -ErrorAction Stop |
-        Measure-Object Length -Sum
-    $logicalBytes = [int64]$measure.Sum
+    $measure = Measure-RunRootLogicalSize -Path $managedRoot.FullName
+    $logicalBytes = [int64]$measure.LogicalBytes
     $totalLogicalBytes += $logicalBytes
     $entries.Add([ordered]@{
             run_root = $managedRoot.FullName
             logical_bytes = $logicalBytes
             logical_mib = [math]::Round($logicalBytes / 1MB, 3)
-            file_count = [int64]$measure.Count
+            file_count = [int64]$measure.FileCount
             last_write_utc = $managedRoot.LastWriteTimeUtc.ToString("o")
         })
 }

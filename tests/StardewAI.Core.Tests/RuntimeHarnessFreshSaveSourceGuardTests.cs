@@ -160,6 +160,22 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             "cleanup_performed = $false",
             runRootBudget,
             StringComparison.Ordinal);
+        Assert.Contains(
+            "Measure-RunRootLogicalSize",
+            runRootBudget,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "robocopy.exe",
+            runRootBudget,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "/L /S /BYTES /XJ",
+            runRootBudget,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "Measure-Object Length -Sum",
+            runRootBudget,
+            StringComparison.Ordinal);
         Assert.DoesNotContain("Remove-Item", runRootBudget, StringComparison.Ordinal);
         Assert.True(
             workflow.IndexOf(
