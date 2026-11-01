@@ -4,11 +4,145 @@ using System.Text.Json.Nodes;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Infrastructure;
+using StardewAI.GoalConditionedBootstrap;
 
 namespace StardewAI.Core.Tests;
 
 public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
 {
+    [Fact]
+    public void MasterAnglerAuditRejectsScheduleWithoutIndependentReceipt()
+    {
+        using var fixture = new Fixture(phaseOrderedSources: true);
+        var inputs = WriteAuditInputs(fixture.Root);
+        Assert.Contains("verification receipt", Assert.Throws<InvalidDataException>(() =>
+            MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(
+                inputs.Catalog, inputs.Windows, inputs.Dependencies, fixture.SchedulePath)).Message);
+    }
+
+    [Fact]
+    public async Task MasterAnglerConsumesWrapperReceiptWithoutAuthorizingTraining()
+    {
+        using var fixture = new Fixture(scheduleId: "golden-walnut-fresh-save:run", phaseOrderedSources: true);
+        var wrapper = await RunProductWrapperVerification(fixture);
+        Assert.True(wrapper.ExitCode == 0, wrapper.Error);
+        var inputs = WriteAuditInputs(fixture.Root);
+        var receiptPath = Path.Combine(fixture.VerificationOutputDirectory,
+            "golden-walnut-source-schedule-independent-verification.json");
+        var report = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(inputs.Catalog, inputs.Windows,
+            inputs.Dependencies, fixture.SchedulePath, receiptPath, "run", "save", "player");
+        Assert.False(report.TrainingLabelEligible);
+        Assert.Equal(receiptPath, report.GoldenWalnutVerificationReceiptPath);
+        Assert.Equal(64, report.GoldenWalnutVerificationReceiptSha256.Length);
+        Assert.True(report.GoldenWalnutFreshSaveUnlockTimeline!.SourceScheduleComplete);
+        Assert.False(report.GoldenWalnutFreshSaveUnlockTimeline.TrainingAdmissionEligible);
+        Assert.False(report.GoldenWalnutResortFundingRoutes!.TrainingAdmissionEligible);
+        Assert.Equal(report.GoldenWalnutFreshSaveSourceScheduleSha256,
+            report.GoldenWalnutFreshSaveUnlockTimeline.SourceScheduleSha256);
+
+        var baseline = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(inputs.Catalog, inputs.Windows, inputs.Dependencies);
+        Assert.Null(baseline.GoldenWalnutFreshSaveUnlockTimeline);
+        Assert.False(baseline.TrainingLabelEligible);
+
+        // Exercise the authoritative CLI wiring as well as the direct audit API.
+        var outputPath = Path.Combine(fixture.Root, "audit-output.json");
+        var configuration = new DirectoryInfo(AppContext.BaseDirectory).Parent!.Name;
+        var start = new ProcessStartInfo("dotnet")
+        {
+            RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false, CreateNoWindow = true
+        };
+        foreach (var argument in new[]
+        {
+            Path.Combine(FindRepositoryRoot(), "experiments", "StardewAI.GoalConditionedBootstrap", "bin",
+                configuration, "net8.0", "StardewAI.GoalConditionedBootstrap.dll"),
+            "audit-master-angler-fresh-save-prerequisites", "--catalog", inputs.Catalog,
+            "--windows", inputs.Windows, "--dependency-expansions", inputs.Dependencies,
+            "--golden-walnut-source-schedule", fixture.SchedulePath,
+            "--golden-walnut-verification-receipt", receiptPath,
+            "--run-id", "run", "--save-id", "save", "--player-id", "player", "--output", outputPath
+        }) start.ArgumentList.Add(argument);
+        start.Environment.Remove("STARDEWAI_VALIDATION_TRACE");
+        using var process = Process.Start(start)!;
+        var output = process.StandardOutput.ReadToEndAsync();
+        var error = process.StandardError.ReadToEndAsync();
+        await process.WaitForExitAsync();
+        Assert.True(process.ExitCode == 0, await error + await output);
+        var emitted = JsonSerializer.Deserialize<MasterAnglerFreshSavePrerequisiteAuditReport>(File.ReadAllText(outputPath))!;
+        Assert.False(emitted.TrainingLabelEligible);
+        Assert.Equal(receiptPath, emitted.GoldenWalnutVerificationReceiptPath);
+    }
+
+    [Theory]
+    [InlineData("missing_receipt")]
+    [InlineData("missing_schedule")]
+    [InlineData("stale_schedule_bytes")]
+    [InlineData("changed_snapshot")]
+    [InlineData("wrong_run")]
+    [InlineData("wrong_save")]
+    [InlineData("wrong_player")]
+    [InlineData("missing_anchor")]
+    [InlineData("receipt_status")]
+    [InlineData("receipt_schedule")]
+    [InlineData("receipt_path")]
+    [InlineData("receipt_hash")]
+    public async Task MasterAnglerAuditFailsClosedForUnboundOrStalePostExitEvidence(string change)
+    {
+        using var fixture = new Fixture(scheduleId: "golden-walnut-fresh-save:run", phaseOrderedSources: true);
+        var wrapper = await RunProductWrapperVerification(fixture);
+        Assert.True(wrapper.ExitCode == 0, wrapper.Error);
+        var inputs = WriteAuditInputs(fixture.Root);
+        var receipt = Path.Combine(fixture.VerificationOutputDirectory,
+            "golden-walnut-source-schedule-independent-verification.json");
+        if (change == "missing_receipt") File.Move(receipt, receipt + ".absent");
+        if (change == "missing_schedule") File.Move(fixture.SchedulePath, fixture.SchedulePath + ".absent");
+        if (change == "stale_schedule_bytes") File.AppendAllText(fixture.SchedulePath, "\n");
+        if (change == "changed_snapshot") fixture.Change(fixture.SnapshotPath(2), root => root["diagnostic"] = "changed");
+        if (change == "receipt_status") fixture.Change(receipt, root => root["status"] = "error");
+        if (change == "receipt_schedule") fixture.Change(receipt, root => root["schedule"]!["source_save_id"] = "other");
+        if (change == "receipt_path") fixture.Change(receipt, root => root["source_schedule_path"] = fixture.ManifestPath);
+        if (change == "receipt_hash") fixture.Change(receipt, root => root.AsObject().Remove("source_schedule_sha256"));
+        var exception = Record.Exception(() => MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(
+            inputs.Catalog, inputs.Windows, inputs.Dependencies, fixture.SchedulePath, receipt,
+            change == "wrong_run" ? "other" : "run", change == "wrong_save" ? "other" : "save",
+            change == "missing_anchor" ? null : change == "wrong_player" ? "other" : "player"));
+        Assert.True(exception is IOException or InvalidDataException, exception?.ToString() ?? "Audit accepted invalid evidence.");
+    }
+
+    private static (string Catalog, string Windows, string Dependencies) WriteAuditInputs(string root)
+    {
+        // Hermetic authority scaffolding tests wiring, not native fish rules or coverage.
+        var catalog = Path.Combine(root, "audit-catalog.json");
+        var windows = Path.Combine(root, "audit-windows.json");
+        var dependencies = Path.Combine(root, "audit-dependencies.json");
+        File.WriteAllText(catalog, JsonSerializer.Serialize(new
+        {
+            schema_version = "master_angler_opportunity_catalog.v1", status = "complete",
+            goal_id = "grandpa.maximum_21", game_version = "1.6.15",
+            native_denominator_count = 72, rod_location_species_count = 60,
+            mine_override_only_species_count = 2, trap_species_count = 10,
+            source_inventory_complete = true, static_calendar_constraint_complete = true,
+            location_rule_spawn_chance_input_inventory_complete = true,
+            species = Enumerable.Range(0, 72).Select(index => new { qualified_item_id = "fixture-" + index })
+        }));
+        File.WriteAllText(windows, JsonSerializer.Serialize(new
+        {
+            schema_version = "master_angler_stage_one_window_index.v1",
+            status = "complete_static_windows_dynamic_execution_pending",
+            goal_id = "grandpa.maximum_21", game_version = "1.6.15",
+            catalog_sha256 = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(catalog))),
+            static_window_coverage_complete = true, training_label_eligible = false,
+            deadline_total_day_exclusive = 224, native_denominator_count = 72,
+            species = Enumerable.Range(0, 72).Select(index => new
+            {
+                qualified_item_id = "fixture-" + index,
+                windows = new[] { new { source_kind = "location_rule", location_id = "IslandWest", first_total_day = 0, last_total_day = 1 } }
+            })
+        }));
+        File.WriteAllText(dependencies,
+            "{\"schema_version\":\"goal_method_dependency_expansions.v1\",\"goal_id\":\"grandpa.maximum_21\",\"directions\":[]}");
+        return (catalog, windows, dependencies);
+    }
+
     [Fact]
     public async Task ProductWrapperVerifiesFrozenArtifactsUsingRealSnapshotIdentityShape()
     {
@@ -455,7 +589,8 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
 
         public Fixture(
             bool noSourceIncrement = false,
-            string scheduleId = "schedule")
+            string scheduleId = "schedule",
+            bool phaseOrderedSources = false)
         {
             Directory.CreateDirectory(Root);
             File.WriteAllText(InitialSnapshotPath, JsonSerializer.Serialize(new
@@ -473,15 +608,23 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
                 GoldenWalnutUnlockScheduleProofBuilder.BoundAcquisitionOptionIds.Contains(source.AcquisitionOptionId) &&
                 source.OptionalUnlockWalnutCost == 0 && !source.ResortOnly &&
                 source.ProbabilityStatus.StartsWith("exact_native_", StringComparison.Ordinal))
-                .Take(2).Select(source => source.SourceKey).ToHashSet();
+                .Take(phaseOrderedSources ? int.MaxValue : 2).Select(source => source.SourceKey).ToHashSet();
+            int Quantity(GoldenWalnutNativeSourceDefinition source, int index) =>
+                noSourceIncrement || !selectedKeys.Contains(source.SourceKey) ||
+                index < (phaseOrderedSources ? source.AccessPhase switch
+                {
+                    "boat_repaired" or "island_south_initial" => 1,
+                    "west_after_turtle" => 3,
+                    _ => 2
+                } : 1) ? 0 : phaseOrderedSources ? source.NativeQuantity : 1;
             for (var index = 0; index < 5; index++)
             {
                 var sources = GoldenWalnutNativeSourceCatalog.Sources.Select(source => new
                 {
                     source_key = source.SourceKey,
                     native_quantity = source.NativeQuantity,
-                    collected_quantity = !noSourceIncrement && index > 0 && selectedKeys.Contains(source.SourceKey) ? 1 : 0,
-                    remaining_quantity = source.NativeQuantity - (!noSourceIncrement && index > 0 && selectedKeys.Contains(source.SourceKey) ? 1 : 0),
+                    collected_quantity = Quantity(source, index),
+                    remaining_quantity = source.NativeQuantity - Quantity(source, index),
                     acquisition_option_id = source.AcquisitionOptionId
                 }).ToArray();
                 var snapshot = new SnapshotEnvelope

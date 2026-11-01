@@ -172,6 +172,8 @@ function Invoke-GoldenWalnutSourceScheduleIndependentVerification(
     if ([string]$verificationReceipt.status -ne "pass" -or
         [bool]$verificationReceipt.training_label_eligible -or
         [string]$verificationReceipt.expected_player_id -ne $expectedPlayerId -or
+        [string]$verificationReceipt.source_schedule_sha256 -ne
+            (Get-FileHash -LiteralPath $resolvedSourceSchedulePath -Algorithm SHA256).Hash -or
         [IO.Path]::GetFullPath([string]$verificationReceipt.episode_directory) -ne
             $resolvedEpisodeDirectory -or
         [IO.Path]::GetFullPath([string]$verificationReceipt.episode_manifest_path) -ne

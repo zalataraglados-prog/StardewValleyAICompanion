@@ -2775,7 +2775,11 @@ static void AuditMasterAnglerFreshSavePrerequisites(Arguments options)
         options.Required("catalog"),
         options.Required("windows"),
         options.Required("dependency-expansions"),
-        options.Optional("golden-walnut-source-schedule"));
+        options.Optional("golden-walnut-source-schedule"),
+        options.Optional("golden-walnut-verification-receipt"),
+        options.Optional("run-id"),
+        options.Optional("save-id"),
+        options.Optional("player-id"));
     Write(options.Required("output"), report);
     if (!report.StaticOpportunityInventoryComplete ||
         !report.PrerequisiteFamilyInventoryComplete ||
@@ -2818,6 +2822,7 @@ static void VerifyGoldenWalnutFreshSaveSourceSchedule(Arguments options)
         episode_directory = Path.GetFullPath(options.Required("episode-directory")),
         episode_manifest_path = Path.GetFullPath(options.Required("episode-manifest")),
         source_schedule_path = Path.GetFullPath(options.Required("source-schedule")),
+        source_schedule_sha256 = CurrentTeacherFrontierSupport.HashFile(options.Required("source-schedule")),
         expected_player_id = options.Required("player-id"),
         training_label_eligible = false,
         schedule

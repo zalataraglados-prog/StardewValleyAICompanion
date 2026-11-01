@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using StardewAI.Core.Infrastructure;
 
 namespace StardewAI.GoalConditionedBootstrap;
@@ -115,7 +116,11 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
         string catalogPath,
         string windowIndexPath,
         string dependencyExpansionPath,
-        string? goldenWalnutFreshSaveSourceSchedulePath)
+        string? goldenWalnutFreshSaveSourceSchedulePath,
+        string? goldenWalnutVerificationReceiptPath = null,
+        string? expectedRunId = null,
+        string? expectedSaveId = null,
+        string? expectedPlayerId = null)
     {
         var catalogFullPath = Path.GetFullPath(catalogPath);
         var windowFullPath = Path.GetFullPath(windowIndexPath);
@@ -159,12 +164,14 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
         var sourceScheduleSha256 = string.IsNullOrEmpty(sourceScheduleFullPath)
             ? string.Empty
             : CurrentTeacherFrontierSupport.HashFile(sourceScheduleFullPath);
+        Require(string.IsNullOrEmpty(sourceScheduleFullPath) ==
+                string.IsNullOrWhiteSpace(goldenWalnutVerificationReceiptPath),
+            "Golden Walnut schedule consumption requires its independent verification receipt.");
         var unlockTimeline = string.IsNullOrEmpty(sourceScheduleFullPath)
             ? null
             : GoldenWalnutFreshSaveUnlockTimelineProofBuilder.Build(
-                Read<GoldenWalnutFreshSaveSourceSchedule>(
-                    sourceScheduleFullPath,
-                    "Golden Walnut fresh-save source schedule"),
+                ReadVerifiedSourceSchedule(sourceScheduleFullPath, sourceScheduleSha256,
+                    goldenWalnutVerificationReceiptPath!, expectedRunId, expectedSaveId, expectedPlayerId),
                 sourceScheduleSha256);
         var goldenWalnutFundingRoutes = unlockTimeline is
             { SourceScheduleComplete: true, NativePhaseOrderingComplete: true }
@@ -210,12 +217,52 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
             GoldenWalnutResortFundingRoutes = goldenWalnutFundingRoutes,
             GoldenWalnutFreshSaveSourceSchedulePath = sourceScheduleFullPath,
             GoldenWalnutFreshSaveSourceScheduleSha256 = sourceScheduleSha256,
+            GoldenWalnutVerificationReceiptPath = unlockTimeline is null ? string.Empty :
+                Path.GetFullPath(goldenWalnutVerificationReceiptPath!),
+            GoldenWalnutVerificationReceiptSha256 = unlockTimeline is null ? string.Empty :
+                CurrentTeacherFrontierSupport.HashFile(goldenWalnutVerificationReceiptPath!),
             GoldenWalnutFreshSaveUnlockTimeline = unlockTimeline,
             Species = species,
             PrerequisiteFamilies = families,
             MissingOrUnboundProducerFamilies = missing,
             UnknownLocationIds = unknownLocations
         };
+    }
+
+    private static GoldenWalnutFreshSaveSourceSchedule ReadVerifiedSourceSchedule(
+        string schedulePath, string scheduleSha256, string receiptPath,
+        string? expectedRunId, string? expectedSaveId, string? expectedPlayerId)
+    {
+        Require(!string.IsNullOrWhiteSpace(expectedRunId) &&
+                !string.IsNullOrWhiteSpace(expectedSaveId) && !string.IsNullOrWhiteSpace(expectedPlayerId),
+            "Golden Walnut audit requires explicit expected run/save/player identities.");
+        using var document = JsonDocument.Parse(File.ReadAllText(receiptPath));
+        var receipt = document.RootElement;
+        string RequiredString(string name)
+        {
+            Require(receipt.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String &&
+                    !string.IsNullOrWhiteSpace(value.GetString()),
+                "Golden Walnut verification receipt is missing " + name + ".");
+            return value.GetString()!;
+        }
+        Require(RequiredString("status") == "pass" &&
+                receipt.TryGetProperty("training_label_eligible", out var eligible) &&
+                eligible.ValueKind == JsonValueKind.False &&
+                RequiredString("expected_player_id") == expectedPlayerId &&
+                RequiredString("source_schedule_sha256") == scheduleSha256 &&
+                Path.GetFullPath(RequiredString("source_schedule_path")) == schedulePath,
+            "Golden Walnut verification receipt does not bind this schedule and player.");
+
+        // A saved pass flag is not authority: replay the same frozen evidence via
+        // the sole verifier before the timeline or prerequisite audit consumes it.
+        var schedule = GoldenWalnutFreshSaveSourceScheduleVerifier.Verify(
+            RequiredString("episode_directory"), RequiredString("episode_manifest_path"), schedulePath,
+            "golden-walnut-fresh-save:" + expectedRunId, expectedRunId!, expectedSaveId!, expectedPlayerId!);
+        Require(receipt.TryGetProperty("schedule", out var claimed) &&
+                JsonNode.DeepEquals(JsonNode.Parse(claimed.GetRawText()),
+                    JsonSerializer.SerializeToNode(schedule, JsonDefaults.Options)),
+            "Golden Walnut verification receipt schedule content changed.");
+        return schedule;
     }
 
     private static MasterAnglerFreshSaveSpeciesPrerequisite BuildSpecies(
