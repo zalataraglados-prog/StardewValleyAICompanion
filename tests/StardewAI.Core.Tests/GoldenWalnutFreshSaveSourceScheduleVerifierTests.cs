@@ -19,12 +19,14 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
         var receipts = WriteContinuationAuditReceipts(fixture);
         var baseline = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(inputs.Catalog, inputs.Windows,
             inputs.Dependencies, fixture.SchedulePath, receipts.Source, "run", "save", "player");
+        Assert.Equal("partial_fresh_save_prerequisite_inventory", baseline.Status);
         Assert.Equal(new[] { "ginger_island_access" }, baseline.MissingOrUnboundProducerFamilies);
         Assert.Null(baseline.GoldenWalnutGourmandContinuationReceipt);
         Assert.Empty(baseline.GoldenWalnutGourmandContinuationReceiptPath);
         Assert.Empty(baseline.GoldenWalnutGourmandContinuationReceiptSha256);
 
         var report = BuildContinuationAudit(fixture, inputs, receipts);
+        Assert.Equal("fresh_save_prerequisite_inventory_complete", report.Status);
         Assert.Empty(report.MissingOrUnboundProducerFamilies);
         Assert.False(report.TrainingLabelEligible);
         Assert.Equal(receipts.Continuation, report.GoldenWalnutGourmandContinuationReceiptPath);
@@ -61,6 +63,7 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
         var baseline = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(inputs.Catalog, inputs.Windows,
             inputs.Dependencies, fixture.SchedulePath, receipts.Source, "run", "save", "player");
         var report = BuildContinuationAudit(fixture, inputs, receipts);
+        Assert.Equal("partial_fresh_save_prerequisite_inventory", report.Status);
         Assert.Equal(baseline.MissingOrUnboundProducerFamilies, report.MissingOrUnboundProducerFamilies);
         Assert.Equal(baseline.PrerequisiteFamilies.Single(row => row.FamilyId == "ginger_island_access").ProducerStatus,
             report.PrerequisiteFamilies.Single(row => row.FamilyId == "ginger_island_access").ProducerStatus);

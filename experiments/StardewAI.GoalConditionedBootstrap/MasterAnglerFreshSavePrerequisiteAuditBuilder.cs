@@ -196,7 +196,9 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
             .ToArray();
         return new MasterAnglerFreshSavePrerequisiteAuditReport
         {
-            Status = "partial_fresh_save_prerequisite_inventory",
+            Status = missing.Length == 0
+                ? "fresh_save_prerequisite_inventory_complete"
+                : "partial_fresh_save_prerequisite_inventory",
             GoalId = catalog.GoalId,
             GameVersion = catalog.GameVersion,
             TrainingLabelEligible = false,

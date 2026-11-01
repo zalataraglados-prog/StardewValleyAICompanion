@@ -285,6 +285,10 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             calibration,
             StringComparison.Ordinal);
         Assert.Contains(
+            "fresh_save_prerequisite_inventory_complete",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "golden-walnut-gourmand-continuation-receipt",
             bootstrapProgram,
             StringComparison.Ordinal);

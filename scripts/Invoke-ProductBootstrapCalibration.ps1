@@ -327,6 +327,11 @@ function Invoke-MasterAnglerVerifiedSourceScheduleAudit(
     } else {
         "fresh_save_unlock_timeline_bound_runtime_continuation_receipts_missing"
     }
+    $expectedAuditStatus = if ($hasGourmandReceipt) {
+        "fresh_save_prerequisite_inventory_complete"
+    } else {
+        "partial_fresh_save_prerequisite_inventory"
+    }
     $gourmandReceiptBindingInvalid = $false
     if ($hasGourmandReceipt) {
         $expectedGourmandReceiptSha256 = (
@@ -344,7 +349,8 @@ function Invoke-MasterAnglerVerifiedSourceScheduleAudit(
             @($audit.golden_walnut_gourmand_continuation_receipt.blocking_reasons).Count -ne 0 -or
             [bool]$audit.golden_walnut_gourmand_continuation_receipt.training_label_eligible
     }
-    if ([bool]$audit.training_label_eligible -or
+    if ([string]$audit.status -ne $expectedAuditStatus -or
+        [bool]$audit.training_label_eligible -or
         -not [bool]$audit.static_opportunity_inventory_complete -or
         -not [bool]$audit.prerequisite_family_inventory_complete -or
         [int]$audit.native_denominator_count -ne 72 -or
