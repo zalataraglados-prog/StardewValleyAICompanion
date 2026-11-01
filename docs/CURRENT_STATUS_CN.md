@@ -18,6 +18,13 @@
 | Money production evidence cells | **0/18** | 6 个 Money criterion × 3 partitions；hermetic fixture 不计 production |
 | Formal product training | **false** | 未通过完整正式训练准入 |
 
+### 2026-11-01 Gourmand 连续性证据与当前 v97 边界
+
+- 当前主线已经实现并消费 Golden Walnut Gourmand 的冻结原生连续性回执。回执必须在同一 run/save/player/game/manifest/evidence root 上证明三次请求依次把完成数从 `0` 推到 `1`、`2`、`3`，并重新验证每条原生执行回执、effects/facts、数量与哈希；任何身份、清单、证据根、字段或工件篡改均失败关闭。
+- Master Angler fresh-save prerequisite audit 现在有明确的两态合同：缺少该回执时，唯一缺口仍是 `ginger_island_access`；同时具备已验证 source schedule 和精确 Gourmand 回执时，该 family 才升为 `implemented_and_bound`，缺口数为 `0`。这不增加上表正式训练分子，回执和总审计继续明确 `training_label_eligible=false`。
+- 代码已在提交 `500df481`、`f79212f2` 合入并推送 `main`；聚焦链 `267/267`、命令行自测、PowerShell AST 与补丁检查通过。当前运行中的 v97 是改动前二进制，最新为 iteration `142`、`115` 条 verified action，仍在 Stage One collection；它可保留校准证据，但不能产生新 Gourmand 回执。
+- v97 完成后不得续接旧进程或旧身份。下一次全新 day-zero v98 必须同时要求 source schedule 与 Gourmand continuation，使用不可变 execution receipt archive，随后由独立 verifier 重建并交给 Master Angler audit。正式训练继续为 **false**，直至其余准入条件也全部满足。
+
 ### 2026-10-31 v92 长跑保留与 #377 当前主线正确性收口
 
 - 全新 day-zero、隐藏静音、单并发、`--skip-training` 运行 `golden-walnut-source-schedule-v92-20261031-000510-source-schedule` 完成 13 日 Crop Teacher 控制段：iteration `99` 记录 `crop_teacher_native_run_terminal_day_complete`，累计 `96` 条 verified Product action 与 `12` 条日界回执；iteration `100` 已进入 Stage One collection。运行没有生成 Golden Walnut source schedule，也没有 Student 参数、checkpoint、GPU 训练或正式策略数据。
