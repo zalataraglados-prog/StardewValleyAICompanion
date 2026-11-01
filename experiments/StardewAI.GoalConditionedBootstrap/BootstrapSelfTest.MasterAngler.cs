@@ -1283,6 +1283,25 @@ internal static partial class BootstrapSelfTest
             "Master Angler teacher routed toward a target whose authoritative weather window was closed.");
         Write(snapshotPath, rainySnapshot);
 
+        var movementBlockedSnapshot = rainySnapshot.DeepClone();
+        movementBlockedSnapshot["state"]!["player"]!["movement_timing_context"]!
+            ["value"]!["route_timing_ready_now"] = false;
+        Write(snapshotPath, movementBlockedSnapshot);
+        var movementBlocked = MasterAnglerTargetDateIntentBuilder.Build(
+            windowsPath,
+            snapshotPath,
+            calibrationPath);
+        Require(
+            movementBlocked.Status ==
+                "no_authoritative_static_rod_intent_available_now" &&
+            movementBlocked.CandidateCount == 0 &&
+            movementBlocked.PrerequisiteControlCandidateCount == 0 &&
+            movementBlocked.WeatherSupplyCandidateCount == 0 &&
+            movementBlocked.BlockingReasons.SequenceEqual(
+                new[] { "future_route_movement_timing_context_not_ready" }),
+            "Master Angler teacher treated a transient movement gate as a fatal calibration mismatch.");
+        Write(snapshotPath, rainySnapshot);
+
         var constrainedWindows = JsonNode.Parse(
             File.ReadAllText(windowsPath))!;
         constrainedWindows["species"]![0]!["windows"]![0]!

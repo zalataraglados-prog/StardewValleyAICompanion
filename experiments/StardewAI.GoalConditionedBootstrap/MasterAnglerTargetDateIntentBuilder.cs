@@ -10,6 +10,9 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public static partial class MasterAnglerTargetDateIntentBuilder
 {
+    private const string TransientMovementTimingNotReadyReason =
+        "future_route_movement_timing_context_not_ready";
+
     public static MasterAnglerTargetDateIntentSet Build(
         string windowIndexPath,
         string snapshotPath,
@@ -56,30 +59,18 @@ public static partial class MasterAnglerTargetDateIntentBuilder
         var timingHash = ContentInventoryVerifier.HashFile(fullTimingPath);
         if (!hasFishingRod && readyCrabPotOutputs.Count == 0)
         {
-            return new MasterAnglerTargetDateIntentSet
-            {
-                Status = "no_authoritative_static_rod_intent_available_now",
-                SourceSnapshotPath = fullSnapshotPath,
-                SourceStateHash = sourceStateHash,
-                WindowIndexPath = fullIndexPath,
-                WindowIndexSha256 = indexHash,
-                RouteTimingCalibrationPath = fullTimingPath,
-                RouteTimingCalibrationSha256 = timingHash,
-                CurrentTotalDay = currentTotalDay,
-                CurrentTime = currentTime,
-                CurrentLocationId = currentLocation,
-                MissingSpeciesCount = missing.Count,
-                CandidateCount = 0,
-                WeatherSupplyCandidateCount = 0,
-                TrainingLabelEligible = false,
-                Candidates = Array.Empty<MasterAnglerTargetDateIntent>(),
-                WeatherSupplyCandidates =
-                    Array.Empty<MasterAnglerWeatherSupplyIntent>(),
-                WeatherSupplyBlockingReasons =
-                    new[] { "fishing_rod_prerequisite_unsatisfied" },
-                BlockingReasons =
-                    new[] { "fishing_rod_prerequisite_unsatisfied" }
-            };
+            return BlockedCurrentIntentSet(
+                fullSnapshotPath,
+                sourceStateHash,
+                fullIndexPath,
+                indexHash,
+                fullTimingPath,
+                timingHash,
+                currentTotalDay,
+                currentTime,
+                currentLocation,
+                missing.Count,
+                new[] { "fishing_rod_prerequisite_unsatisfied" });
         }
         var hasMagicBait = AnyRodContextFlag(state, "has_magic_bait");
         var hasNonTrainingRod = AnyRodContextFlag(state, "uses_training_rod", expected: false);
@@ -98,6 +89,27 @@ public static partial class MasterAnglerTargetDateIntentBuilder
             movementTimingContext,
             gameVersion,
             currentTotalDay);
+        if (timingLoad.Status == FutureRouteTimingCalibrationLoadStatus.Blocked &&
+            timingLoad.Calibration is null &&
+            timingLoad.BlockingReasons.Length == 1 &&
+            string.Equals(
+                timingLoad.BlockingReasons[0],
+                TransientMovementTimingNotReadyReason,
+                StringComparison.Ordinal))
+        {
+            return BlockedCurrentIntentSet(
+                fullSnapshotPath,
+                sourceStateHash,
+                fullIndexPath,
+                indexHash,
+                fullTimingPath,
+                timingHash,
+                currentTotalDay,
+                currentTime,
+                currentLocation,
+                missing.Count,
+                timingLoad.BlockingReasons);
+        }
         Require(
             timingLoad.Status == FutureRouteTimingCalibrationLoadStatus.Loaded &&
             timingLoad.Calibration is not null,

@@ -18,6 +18,13 @@
 | Money production evidence cells | **0/18** | 6 个 Money criterion × 3 partitions；hermetic fixture 不计 production |
 | Formal product training | **false** | 未通过完整正式训练准入 |
 
+### 2026-11-01 v97 终止、暂态移动门修复与磁盘启动门
+
+- v97 在 Year 1 Spring 10 13:50、iteration `329` 以 `max_consecutive_errors_reached count=5` 安全停止，保留 `204` 条 verified action；它未首次登岛、未生成 source schedule，因此不是 Master Angler 前置完成证据。
+- 根因是有鱼竿的 Master Angler intent 构建在当前移动上下文暂不可用时，把 `future_route_movement_timing_context_not_ready` 错当成持久校准漂移。当前修复只降级这一项精确暂态原因，返回非训练、零候选结果并让共享日计划继续；其他校准不一致仍失败关闭。两项 Release 构建、聚焦 Stage One 自测及 v97 终止快照离线重放均通过。
+- rolling retention 的边界已明确：它限制单轮内部迭代，不限制历史 run root。v70-v97 至少累计 `9.53 GiB`；系统自动分页文件另占 `16.00 GiB`。`I:` 当前仅约 `9.8 GiB` 空闲，在完成显式、可审查的历史运行归档/回收前不得启动 v98。没有执行自动删除，也没有把 `local-data` 纳入版本控制。
+- 空间恢复后，唯一下一原生入口仍是全新 day-zero v98，同时要求 source schedule 与 Gourmand continuation；v97 不得续跑或热替换。
+
 ### 2026-11-01 Master Angler 前置完成证明与当前 v97 边界
 
 - 当前主线已经实现并消费 Golden Walnut Gourmand 的冻结原生连续性回执。回执必须在同一 run/save/player/game/manifest/evidence root 上证明三次请求依次把完成数从 `0` 推到 `1`、`2`、`3`，并重新验证每条原生执行回执、effects/facts、数量与哈希；任何身份、清单、证据根、字段或工件篡改均失败关闭。

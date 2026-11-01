@@ -258,6 +258,43 @@ public static partial class MasterAnglerTargetDateIntentBuilder
         return value.GetString() ?? string.Empty;
     }
 
+    private static MasterAnglerTargetDateIntentSet BlockedCurrentIntentSet(
+        string snapshotPath,
+        string sourceStateHash,
+        string windowIndexPath,
+        string windowIndexSha256,
+        string routeTimingCalibrationPath,
+        string routeTimingCalibrationSha256,
+        int currentTotalDay,
+        int currentTime,
+        string currentLocation,
+        int missingSpeciesCount,
+        string[] blockingReasons) => new()
+    {
+        Status = "no_authoritative_static_rod_intent_available_now",
+        SourceSnapshotPath = snapshotPath,
+        SourceStateHash = sourceStateHash,
+        WindowIndexPath = windowIndexPath,
+        WindowIndexSha256 = windowIndexSha256,
+        RouteTimingCalibrationPath = routeTimingCalibrationPath,
+        RouteTimingCalibrationSha256 = routeTimingCalibrationSha256,
+        CurrentTotalDay = currentTotalDay,
+        CurrentTime = currentTime,
+        CurrentLocationId = currentLocation,
+        MissingSpeciesCount = missingSpeciesCount,
+        CandidateCount = 0,
+        PrerequisiteControlCandidateCount = 0,
+        WeatherSupplyCandidateCount = 0,
+        TrainingLabelEligible = false,
+        Candidates = Array.Empty<MasterAnglerTargetDateIntent>(),
+        PrerequisiteControlCandidates =
+            Array.Empty<MasterAnglerTargetDateIntent>(),
+        WeatherSupplyCandidates =
+            Array.Empty<MasterAnglerWeatherSupplyIntent>(),
+        WeatherSupplyBlockingReasons = blockingReasons,
+        BlockingReasons = blockingReasons
+    };
+
     private static SmallModelActionParameter Parameter(string name, object value) => new()
     {
         Name = name,

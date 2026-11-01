@@ -4,6 +4,14 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已完成 v10 之后的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已按 current authority 冻结；当前唯一施工项为 `complete_master_angler` 顶层 dependency、日历窗口与 coverage 接线。P0/P1 共享 correctness blocker 可临时中断，但不得静默改序或并行展开多个 root method。
 
+## 2026-11-01：v97 暂态移动门误判已修复，v98 启动前需恢复磁盘余量
+
+- v97 `golden-walnut-source-schedule-v97-20261101-182500` 在 Year 1 Spring 10 13:50、iteration `329` 按连续错误门安全停止；保留 `204` 条 verified Product action 和完整滚动证据。它尚未首次登岛、未生成 source schedule，状态仍为 incomplete，且不得冒充新 Gourmand 回执或正式训练证据。
+- 唯一终止原因是 Master Angler Teacher 把透明桥的暂态 `future_route_movement_timing_context_not_ready` 当成校准文件漂移并连续抛错。当前代码只把**精确且唯一**的这一暂态原因转换为非训练、零候选的当前轮次暂缓结果，并交还共享日计划；游戏版本、哈希、时钟常量、移动范围等真实校准漂移继续失败关闭。
+- 修复后的 GoalConditionedBootstrap 与 LiveTrainingLoop Release 构建均为 `0 warning / 0 error`；聚焦 `self-test-current-stage-one-collection` 通过。对 v97 iteration `329` 原始现场快照的离线重放稳定得到零候选及原始暂态 blocker，不再抛异常。
+- 磁盘复核确认现有 rolling retention 只保留**单轮内部**最近 `64` 个迭代，不限制历史 run root 数量。v70-v97 顶层目录当前至少占 `9.53 GiB`，而 Windows 自动管理的 `I:\pagefile.sys` 另占 `16.00 GiB`；10 月 27 日保留的旧 `artifacts` 约 `34.16 GiB`，此后仅改写约 `0.14 GiB`，不是本次重新膨胀来源。未执行任何清理。
+- 下一入口仍是全新 day-zero v98，并同时启用 `RequireSourceScheduleReady` 与 `RequireGourmandContinuationReady`。但 `I:` 当前约 `9.8 GiB` 空闲，相对运行时 `8192 MiB` 硬停止门只有约 `1.8 GiB` 余量；在明确审查并批准历史 run 归档/回收清单前，不得冒险启动新的长期原生运行。
+
 ## 2026-11-01：Master Angler 前置完成证明已接入产品链，v97 继续旧代码校准
 
 - 主线提交 `f588383`（合入为 `6f164814`）建立冻结 episode 的 Gourmand 三段原生连续性回执：同一 run/save/player/game/manifest/evidence root 上只接受 `0 -> 1 -> 2 -> 3` 三次原生请求，并逐项核验 executor receipt、effects、facts、数量、哈希和无直接状态写入。执行回执现由 fresh-save archive 不可变复制，rolling retention 不再删掉其唯一证据。
