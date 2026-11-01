@@ -163,6 +163,36 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
             "golden-walnut-source-schedule-independent-verification.json")));
     }
 
+    [Fact]
+    public async Task ProductWrapperPassesIndependentReceiptDirectlyIntoMasterAnglerAudit()
+    {
+        using var fixture = new Fixture(
+            scheduleId: "golden-walnut-fresh-save:run",
+            phaseOrderedSources: true);
+        var inputs = WriteAuditInputs(fixture.Root);
+
+        var result = await RunProductWrapperVerification(fixture, inputs);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.True(string.IsNullOrWhiteSpace(result.Error), result.Error);
+        using var summary = JsonDocument.Parse(result.Output);
+        Assert.Equal("pass", summary.RootElement.GetProperty("status").GetString());
+        Assert.False(summary.RootElement.GetProperty("training_label_eligible").GetBoolean());
+        var auditPath = summary.RootElement.GetProperty("master_angler_audit_path").GetString();
+        Assert.False(string.IsNullOrWhiteSpace(auditPath));
+        var audit = JsonSerializer.Deserialize<MasterAnglerFreshSavePrerequisiteAuditReport>(
+            File.ReadAllText(auditPath!))!;
+        Assert.False(audit.TrainingLabelEligible);
+        Assert.Equal(fixture.SchedulePath, audit.GoldenWalnutFreshSaveSourceSchedulePath);
+        Assert.Equal(
+            Path.Combine(
+                fixture.VerificationOutputDirectory,
+                "golden-walnut-source-schedule-independent-verification.json"),
+            audit.GoldenWalnutVerificationReceiptPath);
+        Assert.True(audit.GoldenWalnutFreshSaveUnlockTimeline!.SourceScheduleComplete);
+        Assert.True(audit.GoldenWalnutFreshSaveUnlockTimeline.NativePhaseOrderingComplete);
+    }
+
     [Theory]
     [InlineData("missing_identity")]
     [InlineData("mismatched_identity")]
@@ -513,7 +543,8 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
     }
 
     private static async Task<ProcessResult> RunProductWrapperVerification(
-        Fixture fixture)
+        Fixture fixture,
+        (string Catalog, string Windows, string Dependencies)? auditInputs = null)
     {
         var repositoryRoot = FindRepositoryRoot();
         var configuration = new DirectoryInfo(AppContext.BaseDirectory).Parent!.Name;
@@ -550,6 +581,19 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
         })
         {
             start.ArgumentList.Add(argument);
+        }
+        if (auditInputs is { } inputs)
+        {
+            foreach (var argument in new[]
+            {
+                "-AuditMasterAnglerFreshSavePrerequisites",
+                "-MasterAnglerOpportunityCatalog", inputs.Catalog,
+                "-MasterAnglerStageOneWindowIndex", inputs.Windows,
+                "-MasterAnglerDependencyExpansions", inputs.Dependencies
+            })
+            {
+                start.ArgumentList.Add(argument);
+            }
         }
         start.Environment.Remove("STARDEWAI_VALIDATION_TRACE");
         start.Environment.Remove("STARDEWAI_BOOTSTRAP_DEBUG_EXCEPTIONS");

@@ -55,7 +55,19 @@ param(
     [Parameter(ParameterSetName = "VerifyOnly", Mandatory = $true)]
     [string] $VerificationBootstrapDllPath = "",
     [Parameter(ParameterSetName = "VerifyOnly", Mandatory = $true)]
-    [string] $VerificationOutputDirectory = ""
+    [string] $VerificationOutputDirectory = "",
+    [Parameter(ParameterSetName = "VerifyOnly")]
+    [switch] $AuditMasterAnglerFreshSavePrerequisites,
+    [Parameter(ParameterSetName = "VerifyOnly")]
+    [string] $MasterAnglerOpportunityCatalog = (Join-Path `
+        $ProjectRoot `
+        "experiments\local-data\output\master-angler-opportunity-catalog-v1.json"),
+    [Parameter(ParameterSetName = "VerifyOnly")]
+    [string] $MasterAnglerDependencyExpansions = (Join-Path `
+        $ProjectRoot `
+        "experiments\goal-method-dependency-expansions.v1.json"),
+    [Parameter(ParameterSetName = "VerifyOnly")]
+    [string] $MasterAnglerAuditOutputPath = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -194,6 +206,118 @@ function Invoke-GoldenWalnutSourceScheduleIndependentVerification(
     }
 }
 
+function Invoke-MasterAnglerVerifiedSourceScheduleAudit(
+    $VerificationResult,
+    [string] $SourceSchedulePath,
+    [string] $BootstrapDllPath,
+    [string] $OutputDirectory,
+    [string] $ExpectedRunId,
+    [string] $CatalogPath,
+    [string] $WindowIndexPath,
+    [string] $DependencyExpansionsPath,
+    [string] $AuditOutputPath) {
+    $resolvedSourceSchedulePath = [IO.Path]::GetFullPath($SourceSchedulePath)
+    $resolvedBootstrapDllPath = [IO.Path]::GetFullPath($BootstrapDllPath)
+    $resolvedOutputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
+    $resolvedCatalogPath = [IO.Path]::GetFullPath($CatalogPath)
+    $resolvedWindowIndexPath = [IO.Path]::GetFullPath($WindowIndexPath)
+    $resolvedDependencyExpansionsPath = [IO.Path]::GetFullPath(
+        $DependencyExpansionsPath)
+    $resolvedReceiptPath = [IO.Path]::GetFullPath(
+        [string]$VerificationResult.ReceiptPath)
+    $resolvedAuditOutputPath = if ([string]::IsNullOrWhiteSpace(
+            $AuditOutputPath)) {
+        Join-Path $resolvedOutputDirectory `
+            "master-angler-fresh-save-prerequisite-audit.json"
+    } else {
+        [IO.Path]::GetFullPath($AuditOutputPath)
+    }
+    foreach ($path in @(
+            $resolvedSourceSchedulePath,
+            $resolvedBootstrapDllPath,
+            $resolvedCatalogPath,
+            $resolvedWindowIndexPath,
+            $resolvedDependencyExpansionsPath,
+            $resolvedReceiptPath)) {
+        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+            throw "Master Angler verified source-schedule audit input was not found: $path"
+        }
+    }
+    $auditParent = Split-Path -Parent $resolvedAuditOutputPath
+    New-Item -ItemType Directory -Path $auditParent -Force | Out-Null
+    $expectedSaveId = [string]$VerificationResult.Receipt.schedule.source_save_id
+    $expectedPlayerId = [string]$VerificationResult.Receipt.expected_player_id
+    if ([string]::IsNullOrWhiteSpace($expectedSaveId) -or
+        [string]::IsNullOrWhiteSpace($expectedPlayerId)) {
+        throw "Master Angler verified source-schedule audit requires receipt-bound save and player identities."
+    }
+
+    $auditArguments = @(
+        $resolvedBootstrapDllPath,
+        "audit-master-angler-fresh-save-prerequisites",
+        "--catalog", $resolvedCatalogPath,
+        "--windows", $resolvedWindowIndexPath,
+        "--dependency-expansions", $resolvedDependencyExpansionsPath,
+        "--golden-walnut-source-schedule", $resolvedSourceSchedulePath,
+        "--golden-walnut-verification-receipt", $resolvedReceiptPath,
+        "--run-id", $ExpectedRunId,
+        "--save-id", $expectedSaveId,
+        "--player-id", $expectedPlayerId,
+        "--output", $resolvedAuditOutputPath
+    )
+    $auditLogPath = Join-Path $resolvedOutputDirectory `
+        "master-angler-fresh-save-prerequisite-audit.log"
+    $auditOutput = & dotnet $auditArguments 2>&1
+    $auditExitCode = $LASTEXITCODE
+    [IO.File]::WriteAllText(
+        $auditLogPath,
+        ($auditOutput | Out-String),
+        [Text.UTF8Encoding]::new($false))
+    if ($auditExitCode -ne 0) {
+        throw "Master Angler verified source-schedule audit failed with exit code $auditExitCode. See $auditLogPath."
+    }
+    if (-not (Test-Path -LiteralPath $resolvedAuditOutputPath -PathType Leaf)) {
+        throw "Master Angler verified source-schedule audit did not write its report."
+    }
+    try {
+        $audit = Get-Content -Raw -LiteralPath $resolvedAuditOutputPath |
+            ConvertFrom-Json
+    }
+    catch {
+        throw "Master Angler verified source-schedule audit produced malformed JSON: $resolvedAuditOutputPath"
+    }
+    $expectedScheduleSha256 = (
+        Get-FileHash -LiteralPath $resolvedSourceSchedulePath -Algorithm SHA256
+    ).Hash.ToLowerInvariant()
+    $expectedReceiptSha256 = (
+        Get-FileHash -LiteralPath $resolvedReceiptPath -Algorithm SHA256
+    ).Hash.ToLowerInvariant()
+    if ([bool]$audit.training_label_eligible -or
+        -not [bool]$audit.static_opportunity_inventory_complete -or
+        -not [bool]$audit.prerequisite_family_inventory_complete -or
+        [int]$audit.native_denominator_count -ne 72 -or
+        @($audit.unknown_location_ids).Count -ne 0 -or
+        [IO.Path]::GetFullPath(
+            [string]$audit.golden_walnut_fresh_save_source_schedule_path) -ne
+            $resolvedSourceSchedulePath -or
+        [string]$audit.golden_walnut_fresh_save_source_schedule_sha256 -ne
+            $expectedScheduleSha256 -or
+        [IO.Path]::GetFullPath(
+            [string]$audit.golden_walnut_verification_receipt_path) -ne
+            $resolvedReceiptPath -or
+        [string]$audit.golden_walnut_verification_receipt_sha256 -ne
+            $expectedReceiptSha256 -or
+        -not [bool]$audit.golden_walnut_fresh_save_unlock_timeline.source_schedule_complete -or
+        -not [bool]$audit.golden_walnut_fresh_save_unlock_timeline.native_phase_ordering_complete) {
+        throw "Master Angler audit did not consume the independently verified Golden Walnut schedule consistently. See $resolvedAuditOutputPath."
+    }
+    return [pscustomobject]@{
+        Audit = $audit
+        AuditPath = $resolvedAuditOutputPath
+        LogPath = $auditLogPath
+    }
+}
+
 if ($VerifyGoldenWalnutSourceScheduleArtifactsOnly) {
     if (-not (Test-Path -LiteralPath $VerificationInitialSnapshotPath -PathType Leaf)) {
         throw "Golden Walnut initial snapshot was not found: $VerificationInitialSnapshotPath"
@@ -213,7 +337,30 @@ if ($VerifyGoldenWalnutSourceScheduleArtifactsOnly) {
         -BootstrapDllPath $VerificationBootstrapDllPath `
         -OutputDirectory $VerificationOutputDirectory `
         -ExpectedRunId $RunId
-    $verificationResult.Receipt | ConvertTo-Json -Depth 96
+    if ($AuditMasterAnglerFreshSavePrerequisites) {
+        $auditResult = Invoke-MasterAnglerVerifiedSourceScheduleAudit `
+            -VerificationResult $verificationResult `
+            -SourceSchedulePath $VerificationSourceSchedulePath `
+            -BootstrapDllPath $VerificationBootstrapDllPath `
+            -OutputDirectory $VerificationOutputDirectory `
+            -ExpectedRunId $RunId `
+            -CatalogPath $MasterAnglerOpportunityCatalog `
+            -WindowIndexPath $MasterAnglerStageOneWindowIndex `
+            -DependencyExpansionsPath $MasterAnglerDependencyExpansions `
+            -AuditOutputPath $MasterAnglerAuditOutputPath
+        [pscustomobject]@{
+            status = "pass"
+            run_id = $RunId
+            verification_receipt_path = $verificationResult.ReceiptPath
+            verification_log_path = $verificationResult.LogPath
+            master_angler_audit_path = $auditResult.AuditPath
+            master_angler_audit_log_path = $auditResult.LogPath
+            training_label_eligible = $false
+        } | ConvertTo-Json -Depth 16
+    }
+    else {
+        $verificationResult.Receipt | ConvertTo-Json -Depth 96
+    }
     return
 }
 
