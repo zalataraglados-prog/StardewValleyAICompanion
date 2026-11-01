@@ -60,6 +60,8 @@ param(
     [Parameter(ParameterSetName = "VerifyOnly")]
     [switch] $AuditMasterAnglerFreshSavePrerequisites,
     [Parameter(ParameterSetName = "VerifyOnly")]
+    [string] $VerificationGourmandContinuationReceiptPath = "",
+    [Parameter(ParameterSetName = "VerifyOnly")]
     [string] $MasterAnglerOpportunityCatalog = (Join-Path `
         $ProjectRoot `
         "experiments\local-data\output\master-angler-opportunity-catalog-v1.json"),
@@ -221,7 +223,8 @@ function Invoke-MasterAnglerVerifiedSourceScheduleAudit(
     [string] $CatalogPath,
     [string] $WindowIndexPath,
     [string] $DependencyExpansionsPath,
-    [string] $AuditOutputPath) {
+    [string] $AuditOutputPath,
+    [string] $GourmandContinuationReceiptPath = "") {
     $resolvedSourceSchedulePath = [IO.Path]::GetFullPath($SourceSchedulePath)
     $resolvedBootstrapDllPath = [IO.Path]::GetFullPath($BootstrapDllPath)
     $resolvedOutputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
@@ -231,6 +234,12 @@ function Invoke-MasterAnglerVerifiedSourceScheduleAudit(
         $DependencyExpansionsPath)
     $resolvedReceiptPath = [IO.Path]::GetFullPath(
         [string]$VerificationResult.ReceiptPath)
+    $resolvedGourmandReceiptPath = if ([string]::IsNullOrWhiteSpace(
+            $GourmandContinuationReceiptPath)) {
+        ""
+    } else {
+        [IO.Path]::GetFullPath($GourmandContinuationReceiptPath)
+    }
     $resolvedAuditOutputPath = if ([string]::IsNullOrWhiteSpace(
             $AuditOutputPath)) {
         Join-Path $resolvedOutputDirectory `
@@ -244,7 +253,9 @@ function Invoke-MasterAnglerVerifiedSourceScheduleAudit(
             $resolvedCatalogPath,
             $resolvedWindowIndexPath,
             $resolvedDependencyExpansionsPath,
-            $resolvedReceiptPath)) {
+            $resolvedReceiptPath) + @($resolvedGourmandReceiptPath | Where-Object {
+                -not [string]::IsNullOrWhiteSpace($_)
+            })) {
         if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
             throw "Master Angler verified source-schedule audit input was not found: $path"
         }
@@ -271,6 +282,11 @@ function Invoke-MasterAnglerVerifiedSourceScheduleAudit(
         "--player-id", $expectedPlayerId,
         "--output", $resolvedAuditOutputPath
     )
+    if (-not [string]::IsNullOrWhiteSpace($resolvedGourmandReceiptPath)) {
+        $auditArguments += @(
+            "--golden-walnut-gourmand-continuation-receipt",
+            $resolvedGourmandReceiptPath)
+    }
     $auditLogPath = Join-Path $resolvedOutputDirectory `
         "master-angler-fresh-save-prerequisite-audit.log"
     $auditOutput = & dotnet $auditArguments 2>&1
@@ -303,15 +319,42 @@ function Invoke-MasterAnglerVerifiedSourceScheduleAudit(
     $gingerIslandFamilies = @(
         $audit.prerequisite_families |
             Where-Object family_id -eq "ginger_island_access")
+    $hasGourmandReceipt = -not [string]::IsNullOrWhiteSpace(
+        $resolvedGourmandReceiptPath)
+    $expectedMissingCount = if ($hasGourmandReceipt) { 0 } else { 1 }
+    $expectedGingerStatus = if ($hasGourmandReceipt) {
+        "implemented_and_bound"
+    } else {
+        "fresh_save_unlock_timeline_bound_runtime_continuation_receipts_missing"
+    }
+    $gourmandReceiptBindingInvalid = $false
+    if ($hasGourmandReceipt) {
+        $expectedGourmandReceiptSha256 = (
+            Get-FileHash -LiteralPath $resolvedGourmandReceiptPath `
+                -Algorithm SHA256
+        ).Hash.ToLowerInvariant()
+        $gourmandReceiptBindingInvalid =
+            [IO.Path]::GetFullPath(
+                [string]$audit.golden_walnut_gourmand_continuation_receipt_path) -ne
+                $resolvedGourmandReceiptPath -or
+            [string]$audit.golden_walnut_gourmand_continuation_receipt_sha256 -ne
+                $expectedGourmandReceiptSha256 -or
+            -not [bool]$audit.golden_walnut_gourmand_continuation_receipt.ready -or
+            [int]$audit.golden_walnut_gourmand_continuation_receipt.verified_transition_count -ne 3 -or
+            @($audit.golden_walnut_gourmand_continuation_receipt.blocking_reasons).Count -ne 0 -or
+            [bool]$audit.golden_walnut_gourmand_continuation_receipt.training_label_eligible
+    }
     if ([bool]$audit.training_label_eligible -or
         -not [bool]$audit.static_opportunity_inventory_complete -or
         -not [bool]$audit.prerequisite_family_inventory_complete -or
         [int]$audit.native_denominator_count -ne 72 -or
-        $missingProducerFamilies.Count -ne 1 -or
-        [string]$missingProducerFamilies[0] -ne "ginger_island_access" -or
+        $missingProducerFamilies.Count -ne $expectedMissingCount -or
+        (-not $hasGourmandReceipt -and
+         [string]$missingProducerFamilies[0] -ne "ginger_island_access") -or
         $gingerIslandFamilies.Count -ne 1 -or
         [string]$gingerIslandFamilies[0].producer_status -ne
-            "fresh_save_unlock_timeline_bound_runtime_continuation_receipts_missing" -or
+            $expectedGingerStatus -or
+        $gourmandReceiptBindingInvalid -or
         @($audit.unknown_location_ids).Count -ne 0 -or
         [IO.Path]::GetFullPath(
             [string]$audit.golden_walnut_fresh_save_source_schedule_path) -ne
@@ -368,7 +411,9 @@ if ($VerifyGoldenWalnutSourceScheduleArtifactsOnly) {
             -CatalogPath $MasterAnglerOpportunityCatalog `
             -WindowIndexPath $MasterAnglerStageOneWindowIndex `
             -DependencyExpansionsPath $MasterAnglerDependencyExpansions `
-            -AuditOutputPath $MasterAnglerAuditOutputPath
+            -AuditOutputPath $MasterAnglerAuditOutputPath `
+            -GourmandContinuationReceiptPath `
+                $VerificationGourmandContinuationReceiptPath
         [pscustomobject]@{
             status = "pass"
             run_id = $RunId
@@ -376,6 +421,14 @@ if ($VerifyGoldenWalnutSourceScheduleArtifactsOnly) {
             verification_log_path = $verificationResult.LogPath
             master_angler_audit_path = $auditResult.AuditPath
             master_angler_audit_log_path = $auditResult.LogPath
+            gourmand_continuation_receipt_path = if (
+                [string]::IsNullOrWhiteSpace(
+                    $VerificationGourmandContinuationReceiptPath)) {
+                ""
+            } else {
+                [IO.Path]::GetFullPath(
+                    $VerificationGourmandContinuationReceiptPath)
+            }
             training_label_eligible = $false
         } | ConvertTo-Json -Depth 16
     }

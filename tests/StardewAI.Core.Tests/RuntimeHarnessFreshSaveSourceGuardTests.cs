@@ -78,6 +78,11 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             "tools",
             "StardewAI.LiveTrainingLoop",
             "Program.cs"));
+        var bootstrapProgram = File.ReadAllText(Path.Combine(
+            root,
+            "experiments",
+            "StardewAI.GoalConditionedBootstrap",
+            "Program.cs"));
 
         Assert.Contains(
             "Invoke-RuntimeFreshSaveSmoke.ps1",
@@ -274,6 +279,14 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
         Assert.Contains(
             "golden_walnut_gourmand_continuity_receipt_path",
             calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "--golden-walnut-gourmand-continuation-receipt",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "golden-walnut-gourmand-continuation-receipt",
+            bootstrapProgram,
             StringComparison.Ordinal);
         Assert.Contains(
             "--stage-one-collection-requirement-inventory",

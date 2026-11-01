@@ -2779,7 +2779,8 @@ static void AuditMasterAnglerFreshSavePrerequisites(Arguments options)
         options.Optional("golden-walnut-verification-receipt"),
         options.Optional("run-id"),
         options.Optional("save-id"),
-        options.Optional("player-id"));
+        options.Optional("player-id"),
+        options.Optional("golden-walnut-gourmand-continuation-receipt"));
     Write(options.Required("output"), report);
     if (!report.StaticOpportunityInventoryComplete ||
         !report.PrerequisiteFamilyInventoryComplete ||
