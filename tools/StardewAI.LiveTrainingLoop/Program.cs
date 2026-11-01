@@ -527,6 +527,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
     CropTeacherRunStep? cropTeacherStepForExecution = null;
     JsonObject? dailyPlanRanking = null;
     StageOneCollectionTeacherQueueBuildResult? nativeControlSettle = null;
+    JsonObject? deferredObjectiveContinuationForDailyMaintenance = null;
     if (options.UseDailyPlan)
     {
         var settlePrefix = Path.Combine(
@@ -885,8 +886,20 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         }
         else
         {
-            var collectionTeacher =
-                await TryBuildStageOneCollectionTeacherQueueAsync(
+            var dailyMaintenancePreemption =
+                StageOneDailyMaintenancePreemptionPolicy.Evaluate(
+                    beforeSnapshot);
+            if (dailyMaintenancePreemption.ShouldPreempt &&
+                activeObjectiveContinuation is not null)
+            {
+                deferredObjectiveContinuationForDailyMaintenance =
+                    JsonNode.Parse(
+                        activeObjectiveContinuation.ToJsonString(JsonOptions))!
+                    .AsObject();
+            }
+            var collectionTeacher = dailyMaintenancePreemption.ShouldPreempt
+                ? NotAttemptedStageOneCollectionTeacher()
+                : await TryBuildStageOneCollectionTeacherQueueAsync(
                     http,
                     options,
                     iteration,
@@ -954,6 +967,22 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             }
             else
             {
+                if (dailyMaintenancePreemption.ShouldPreempt)
+                {
+                    AppendProgress(
+                        options,
+                        "stage_one_collection_yielded_to_daily_maintenance",
+                        iteration,
+                        lastStateHash,
+                        string.Empty,
+                        "reason=" + dailyMaintenancePreemption.Reason +
+                        " watering_candidate_count=" +
+                        dailyMaintenancePreemption.WateringCandidateCount +
+                        " active_objective_continuation_preserved=" +
+                        (activeObjectiveContinuation is not null)
+                            .ToString()
+                            .ToLowerInvariant());
+                }
                 var yieldCollectionControlToDailyPlan =
                     collectionTeacher.Attempted &&
                     StageOneCollectionFallbackPolicy.ShouldYieldToDailyPlan(
@@ -1046,8 +1075,20 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                     lastStateHash,
                     suppressedObjectiveContinuations:
                         suppressedObjectiveContinuations,
+                    candidateOptionIdsOverride:
+                        dailyMaintenancePreemption.ShouldPreempt
+                            ? StageOneDailyMaintenancePreemptionPolicy
+                                .CandidateOptionIds
+                            : null,
+                    candidateKindOverride:
+                        dailyMaintenancePreemption.ShouldPreempt
+                            ? StageOneDailyMaintenancePreemptionPolicy
+                                .CandidateKind
+                            : null,
                     activeObjectiveContinuation:
-                        activeObjectiveContinuation);
+                        dailyMaintenancePreemption.ShouldPreempt
+                            ? null
+                            : activeObjectiveContinuation);
                 modelPlanPath = Path.Combine(options.SnapshotDir, "model-plan-" + iteration.ToString("D4") + ".json");
                 await File.WriteAllTextAsync(modelPlanPath, dailyPlan.Plan.ToJsonString(JsonOptions), Encoding.UTF8);
                 var dailyPlanPath = Path.Combine(options.SnapshotDir, "daily-plan-response-" + iteration.ToString("D4") + ".json");
@@ -1304,7 +1345,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             cropTeacherDayBoundaryLedger = completedCropTeacherBoundaryLedger;
         }
         var execution = options.UseRuntimeTestHarnessExecutor
-            ? await ExecuteRuntimeTestHarnessAsync(http, executorHttp, options, iteration, snapshotPath, beforeSnapshot, queue, lastStateHash, lastQueueId, decisionModelPlanPath, decisionRankingPath, decisionCompiledQueuePath, decisionSnapshotPath, decisionSourceStateHash, selectedCandidateId, selectedQueueIndex, queuePath, activeObjectiveContinuation, suppressedObjectiveContinuations, useDailyPlanDecisionLease, executionSnapshotUrl, executionSnapshotProfile)
+            ? await ExecuteRuntimeTestHarnessAsync(http, executorHttp, options, iteration, snapshotPath, beforeSnapshot, queue, lastStateHash, lastQueueId, decisionModelPlanPath, decisionRankingPath, decisionCompiledQueuePath, decisionSnapshotPath, decisionSourceStateHash, selectedCandidateId, selectedQueueIndex, queuePath, deferredObjectiveContinuationForDailyMaintenance is null ? activeObjectiveContinuation : null, suppressedObjectiveContinuations, useDailyPlanDecisionLease, executionSnapshotUrl, executionSnapshotProfile)
             : await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/action-queues/" + Uri.EscapeDataString(lastQueueId) + "/execute-training-sandbox", "{}");
         if (activeCropTeacherTransitionLedger is not null &&
             cropTeacherStepForExecution is not null)
@@ -1467,6 +1508,18 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             activeObjectiveContinuation = execution["objective_continuation"] is JsonObject continuation
                 ? JsonNode.Parse(continuation.ToJsonString(JsonOptions))?.AsObject()
                 : null;
+            if (deferredObjectiveContinuationForDailyMaintenance is not null)
+            {
+                if (activeObjectiveContinuation is not null)
+                {
+                    throw new InvalidOperationException(
+                        "daily_maintenance_preemption_produced_unexpected_" +
+                        "objective_continuation");
+                }
+
+                activeObjectiveContinuation =
+                    deferredObjectiveContinuationForDailyMaintenance;
+            }
             var selectedQueueDecisionComplete = execution[
                 "selected_queue_decision_complete"]?.GetValue<bool>() == true;
             var selectedQueueRedecisionRequired = execution[
