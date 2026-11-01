@@ -91,6 +91,48 @@ public sealed partial class DailyPlanCompilerTests
     }
 
     [Fact]
+    public void CompilePreservesExactRouteOpeningForBoundedNativeWaitSlices()
+    {
+        var candidate = new PolicyEventCandidatePrediction
+        {
+            CandidateId = "community-center-donate-route:0:0:8:Beach",
+            Kind = "route_connector_tile",
+            Rank = 1,
+            TimelineStatus = "deferred",
+            ScheduledWaitCost = 25200,
+            NextOpenTime = 1410,
+            EffectiveOpenTime = 1410,
+            LocationId = "Beach",
+            TileX = 38,
+            TileY = -1,
+            Parameters = new[]
+            {
+                new SmallModelActionParameter
+                {
+                    Name = "continuation.option_id",
+                    Value = "community_center.donate_bundle_items"
+                }
+            }
+        };
+
+        var plan = new DailyPlanCompiler().Compile(
+            new[] { candidate },
+            "state.festival-route-wait");
+
+        var wait = Assert.Single(plan.Steps);
+        Assert.Equal(600, wait.WaitTicks);
+        Assert.Contains(wait.Parameters, parameter =>
+            parameter.Name == "route_wait_until_time" &&
+            parameter.Value == "1410");
+        Assert.Contains(wait.Parameters, parameter =>
+            parameter.Name == "route_wait_max_slices" &&
+            parameter.Value == "3");
+        Assert.Contains(wait.Parameters, parameter =>
+            parameter.Name == "continuation.option_id" &&
+            parameter.Value == "community_center.donate_bundle_items");
+    }
+
+    [Fact]
     public void CompileTurnsBuyCandidateIntoPurchasePlanStep()
     {
         var candidate = new PolicyEventCandidatePrediction

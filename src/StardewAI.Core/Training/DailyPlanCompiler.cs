@@ -713,10 +713,32 @@ namespace StardewAI.Core.Training
                     ExpectedEffects = new[] { "time_advances", "fresh_snapshot_replan_required=true" },
                     SafetyConstraints = new[] { "do_not_wait_with_danger_or_active_menu" },
                     FailurePolicy = new[] { "refresh_snapshot_and_replan" },
-                    Parameters = ContinuationParameters(candidate)
+                    Parameters = RollingWaitParameters(candidate)
                 };
                 remaining -= ticks;
             }
+        }
+
+        private static SmallModelActionParameter[] RollingWaitParameters(
+            PolicyEventCandidatePrediction candidate)
+        {
+            var parameters = ContinuationParameters(candidate).ToList();
+            var routeWaitUntilTime = candidate.NextOpenTime ??
+                candidate.EffectiveOpenTime;
+            if (string.Equals(
+                    candidate.Kind,
+                    "route_connector_tile",
+                    StringComparison.Ordinal) &&
+                routeWaitUntilTime is >= 600 and <= 2600 &&
+                routeWaitUntilTime.Value % 10 == 0)
+            {
+                parameters.Add(Parameter(
+                    "route_wait_until_time",
+                    routeWaitUntilTime.Value.ToString()));
+                parameters.Add(Parameter("route_wait_max_slices", "3"));
+            }
+
+            return parameters.ToArray();
         }
 
         private static SmallModelActionParameter[] ContinuationParameters(PolicyEventCandidatePrediction candidate)
