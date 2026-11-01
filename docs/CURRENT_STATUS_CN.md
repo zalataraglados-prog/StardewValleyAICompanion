@@ -34,6 +34,7 @@
 - v99r2 随后在原生 crop teacher 购种阶段连续命中 Backend 的 `unsupported snapshot profile: shop`。透明桥实测返回 `environment/identity/time/player/options/menus/transport/current_location/locations/npcs` 十域，根因是目的快照在 Bridge 与 Backend 之间注册漂移，不是透明字段或商店数据缺失。为避免无效循环，该轮于 iteration `6` 人工停止且全部子进程已回收。Backend 现登记严格 shop 域集合，并有完整接受、缺域拒绝回归；Backend `258/258`、全解决方案构建零警告零错误。v99r2 保留为失败前现场证据，下一轮须从新身份加载新二进制验证，不跨代码变更续接。
 - v100 `...010715` 已成功创建全新 `ProofFarm_453229662` 并进入 iteration `1`，但在尚未执行动作时主动停止。静态调用链已确定购种后的 crop teacher 路线会立即使用 `profile=route`，Backend 当时也未登记该 profile；等待它再次返回同类 422 只会制造无效运行。当前实现把 route/shop 绑定到同一个严格十域合同，两种 profile 都要求完整域集合且缺域失败关闭；专项 `9/9`、全解决方案构建零警告零错误。下一新运行须同时穿过购种与购后路线，v100 不计入 source schedule 或正式训练分子。
 - v101 `...011200` 已完成 route/shop 当前源码的实机正向验证：新档 `ProofFarm_453229946` 在开店窗口后原生购买全部 6 粒种子，随后于 iteration `24` 进入 `route_to_farm` 并成功写入 route 目的快照和 verified 回执；累计 `23` 条 verified Product action，错误与 unsupported profile 均为零。它继续向场地准备和完整作物循环运行，但 source schedule、Gourmand `3/3`、`72/14/3` proof 与正式 Student 训练仍未完成。
+- v101 随后完成首轮完整 crop teacher：场地准备、逐日维护、`12` 条保存边界与 `6/6` 收获均有原生回执，iteration `76` 正常交还 Stage One。共享调度处理邮件、quest 跨图与一次 Beach 捕鱼后启动第二轮 teacher；春 13 日节日等待按三片有界执行并在 `14:10` 退出，iteration `94-96` 连续通过 `Beach -> Town -> BusStop -> Farm` 三个原生连接器，实机覆盖了 v98 的 Beach 出口失败方向。iteration `97` 已开始第二轮场地准备，错误仍为零；这些结果提升执行闭环与连接器证据，不改变正式训练准入。
 - 这仍是教师/执行链校准，不是 Student 参数训练。只有修复后的同一新运行身份形成 source schedule、独立重放、三段 Gourmand 连续性、`72/14/3` completion proof 与闭合 dependency expansion 后，才能进入后续训练准入判断。
 
 ### 2026-11-01 v97 终止、暂态移动门修复与磁盘启动门
