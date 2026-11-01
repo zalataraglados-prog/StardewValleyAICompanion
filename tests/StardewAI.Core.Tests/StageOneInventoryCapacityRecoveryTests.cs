@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.Training;
+using StardewAI.Core.Training;
 using StardewAI.LiveTrainingLoop;
 
 namespace StardewAI.Core.Tests;
@@ -353,6 +354,127 @@ public sealed class StageOneInventoryCapacityRecoveryTests
     }
 
     [Fact]
+    public void FestivalTransitWaitPreservesObjectiveSafeCapacityRecovery()
+    {
+        var ranking = RankingWithFishingBlock(
+            "fishing_inventory_full_requires_storage_transfer",
+            ShippingCandidate(
+                "ship:Farm:slot-8:stone:route:Beach",
+                "(O)390",
+                slotIndex: 8,
+                estimatedTicks: 3720,
+                availableStack: 1,
+                unitPrice: 2,
+                kind: "route_connector_tile",
+                available: false,
+                allowedNow: false,
+                allowedToday: true,
+                timelineStatus: "deferred",
+                scheduledStartTime: 1410,
+                scheduledWaitCost: 25800,
+                blockReasons: new[]
+                {
+                    "connector_active_festival_transit_closed"
+                }));
+
+        var decision = StageOneInventoryCapacityRecovery.TrySelect(
+            ranking,
+            Snapshot(string.Empty),
+            allowObjectiveSafeRelease: true);
+
+        Assert.NotNull(decision);
+        Assert.Equal(
+            "deferred_festival_transit_available_unprotected_singleton",
+            decision!.SelectionReason);
+        var plan = new DailyPlanCompiler().Compile(
+            new[] { decision.Candidate },
+            "state.festival-capacity-recovery");
+        var wait = Assert.Single(plan.Steps);
+        Assert.Equal("wait_ticks", wait.Kind);
+        Assert.Equal(600, wait.WaitTicks);
+        Assert.Contains(wait.Parameters, parameter =>
+            parameter.Name == "continuation.option_id" &&
+            parameter.Value == "economy.ship_items");
+    }
+
+    [Fact]
+    public void ImmediateSafeReleaseBeatsDeferredExactCatch()
+    {
+        var ranking = RankingWithFishingBlock(
+            "fishing_inventory_full_requires_storage_transfer",
+            ShippingCandidate(
+                "ship:Farm:slot-8:fish:route:Beach",
+                "(O)152",
+                slotIndex: 8,
+                estimatedTicks: 3720,
+                availableStack: 1,
+                unitPrice: 75,
+                kind: "route_connector_tile",
+                available: false,
+                allowedNow: false,
+                allowedToday: true,
+                timelineStatus: "deferred",
+                scheduledStartTime: 1410,
+                scheduledWaitCost: 25800,
+                blockReasons: new[]
+                {
+                    "connector_active_festival_transit_closed"
+                }),
+            ShippingCandidate(
+                "ship:Farm:slot-9:stone",
+                "(O)390",
+                slotIndex: 9,
+                estimatedTicks: 200,
+                availableStack: 1,
+                unitPrice: 2));
+
+        var decision = StageOneInventoryCapacityRecovery.TrySelect(
+            ranking,
+            Snapshot("(O)152"),
+            allowObjectiveSafeRelease: true);
+
+        Assert.NotNull(decision);
+        Assert.Equal(
+            "ship:Farm:slot-9:stone",
+            decision!.Candidate.CandidateId);
+        Assert.Equal(
+            "available_unprotected_singleton",
+            decision.SelectionReason);
+    }
+
+    [Fact]
+    public void FestivalTransitRecoveryRejectsProtectedInventory()
+    {
+        var ranking = RankingWithFishingBlock(
+            "fishing_inventory_full_requires_storage_transfer",
+            ShippingCandidate(
+                "ship:Farm:slot-5:seed:route:Beach",
+                "(O)472",
+                slotIndex: 5,
+                estimatedTicks: 3720,
+                availableStack: 15,
+                unitPrice: 10,
+                kind: "route_connector_tile",
+                available: false,
+                allowedNow: false,
+                allowedToday: true,
+                timelineStatus: "deferred",
+                scheduledStartTime: 1410,
+                scheduledWaitCost: 25800,
+                blockReasons: new[]
+                {
+                    "inventory_item_protected_from_auto_sell",
+                    "plantable_seed_requires_explicit_surplus_authorization",
+                    "connector_active_festival_transit_closed"
+                }));
+
+        Assert.Null(StageOneInventoryCapacityRecovery.TrySelect(
+            ranking,
+            Snapshot(string.Empty),
+            allowObjectiveSafeRelease: true));
+    }
+
+    [Fact]
     public void CropHarvestRecoveryDoesNotUseAnArbitraryPriceCeiling()
     {
         var ranking = Ranking(
@@ -443,12 +565,25 @@ public sealed class StageOneInventoryCapacityRecoveryTests
         int availableStack = 1,
         bool fullShipmentContributes = false,
         int unitPrice = 20,
-        string kind = "ship_inventory_item_to_bin") => new()
+        string kind = "ship_inventory_item_to_bin",
+        bool available = true,
+        bool? allowedNow = true,
+        bool? allowedToday = true,
+        string timelineStatus = "ready_now",
+        int? scheduledStartTime = 600,
+        int? scheduledWaitCost = 0,
+        string[]? blockReasons = null) => new()
         {
             CandidateId = candidateId,
             OptionId = "economy.ship_items",
             Kind = kind,
-            Available = true,
+            Available = available,
+            AllowedNow = allowedNow,
+            AllowedToday = allowedToday,
+            TimelineStatus = timelineStatus,
+            ScheduledStartTime = scheduledStartTime,
+            ScheduledWaitCost = scheduledWaitCost,
+            BlockReasons = blockReasons ?? Array.Empty<string>(),
             QualifiedItemId = qualifiedItemId,
             SlotIndex = slotIndex,
             Quantity = 1,
@@ -476,6 +611,11 @@ public sealed class StageOneInventoryCapacityRecoveryTests
                 {
                     Name = "continuation.quantity",
                     Value = "1"
+                },
+                new SmallModelActionParameter
+                {
+                    Name = "continuation.option_id",
+                    Value = "economy.ship_items"
                 }
             }
         };

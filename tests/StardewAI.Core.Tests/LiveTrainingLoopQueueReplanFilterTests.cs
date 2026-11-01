@@ -352,6 +352,34 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
             "continuation_preserved",
             teacherSource,
             StringComparison.Ordinal);
+        Assert.Contains(
+            "deferredObjectiveContinuationForCapacityRecovery",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "capacityRecoveryControlActive",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "leasedDecisionIsInventoryCapacityRecovery",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "selectedQueueDecisionLeaseContinues",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "crop_teacher_harvest_inventory_capacity_recovery",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "? new List<JsonObject>()",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "inventory_capacity_recovery_objective_restored",
+            source,
+            StringComparison.Ordinal);
     }
 
     [Fact]
