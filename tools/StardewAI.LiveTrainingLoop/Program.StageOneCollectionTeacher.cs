@@ -164,7 +164,30 @@ static partial class Program
                 JsonOptions) ?? throw new InvalidDataException(
                     "Stage-one collection ranking response is empty.");
         }
-        if (!capacityRecoveryOnly && activeObjectiveContinuation is not null)
+        var capacityRecovery = StageOneInventoryCapacityRecovery.TrySelect(
+            typedRanking,
+            snapshot,
+            allowObjectiveSafeCapacityRecovery,
+            requireFishingAttemptBlockedForCapacityRecovery);
+        if (capacityRecovery is not null && activeObjectiveContinuation is not null)
+        {
+            var rankedCandidates = ranking["ranked_event_candidates"]?
+                .AsArray() ?? new JsonArray();
+            ranking["objective_continuation_filter"] = new JsonObject
+            {
+                ["active"] = true,
+                ["exclusive_recovery_override"] = true,
+                ["objective"] = JsonNode.Parse(
+                    activeObjectiveContinuation.ToJsonString()),
+                ["input_candidate_count"] = rankedCandidates.Count,
+                ["selected_candidate_count"] = 1,
+                ["recovery_candidate_count"] = 1,
+                ["policy"] =
+                    "objective_safe_inventory_capacity_recovery_preempts_filter;" +
+                    "continuation_preserved"
+            };
+        }
+        else if (!capacityRecoveryOnly && activeObjectiveContinuation is not null)
         {
             var rankedCandidates = ranking["ranked_event_candidates"]?
                 .AsArray() ?? new JsonArray();
@@ -190,11 +213,6 @@ static partial class Program
                     "Filtered stage-one collection ranking response is empty.");
         }
         await WriteJsonAsync(rankingPath, ranking);
-        var capacityRecovery = StageOneInventoryCapacityRecovery.TrySelect(
-            typedRanking,
-            snapshot,
-            allowObjectiveSafeCapacityRecovery,
-            requireFishingAttemptBlockedForCapacityRecovery);
         if (capacityRecovery is not null)
         {
             var recoveryPlan = new DailyPlanCompiler().Compile(

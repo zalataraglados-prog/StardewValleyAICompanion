@@ -36,6 +36,8 @@
 - v101 `...011200` 已完成 route/shop 当前源码的实机正向验证：新档 `ProofFarm_453229946` 在开店窗口后原生购买全部 6 粒种子，随后于 iteration `24` 进入 `route_to_farm` 并成功写入 route 目的快照和 verified 回执；累计 `23` 条 verified Product action，错误与 unsupported profile 均为零。它继续向场地准备和完整作物循环运行，但 source schedule、Gourmand `3/3`、`72/14/3` proof 与正式 Student 训练仍未完成。
 - v101 随后完成首轮完整 crop teacher：场地准备、逐日维护、`12` 条保存边界与 `6/6` 收获均有原生回执，iteration `76` 正常交还 Stage One。共享调度处理邮件、quest 跨图与一次 Beach 捕鱼后启动第二轮 teacher；春 13 日节日等待按三片有界执行并在 `14:10` 退出，iteration `94-96` 连续通过 `Beach -> Town -> BusStop -> Farm` 三个原生连接器，实机覆盖了 v98 的 Beach 出口失败方向。iteration `97` 已开始第二轮场地准备，错误仍为零；这些结果提升执行闭环与连接器证据，不改变正式训练准入。
 - 第二轮防风草成熟时真实触发背包容量压力：首批收获 `1/8`，容量恢复释放槽位后继续 `4/8` 与 `3/8`，最终 `8/8` 并在 iteration `126` 完成；这证明阻塞、恢复和原收获 continuation 能在同一 ledger 上收敛。后续 Stage One 已继续 Master Angler 路线和精确最新捕获单例的容量恢复，iteration `133` 前累计 `126` 条 verified action 且零错误。source schedule 与 Gourmand 尚未出现首次进展，正式训练状态不变。
+- v101 的 iteration `133-136` 进一步证明捕鱼路线 continuation 可从 Farm 经 BusStop 正确重绑到 Town；失效原因不是 candidate ID，而是 Town fresh 快照中的满包阻塞。旧 Stage One 构建器在调用现有容量恢复器前先按捕鱼 continuation 过滤排名，意外移除了全部安全出货候选，随后释放并整日抑制该捕鱼目标。当前源码已把唯一恢复选择前移到 continuation 过滤之前，并在排名证据中标记 `exclusive_recovery_override=true / continuation_preserved`；原候选、编译器、执行器和回执均未复制。
+- 聚焦回归 `75/75`、全解决方案 Release `0 warning / 0 error`。当前 v101 仍使用旧封存二进制，继续用于发现其他真实缺口，不可冒充修复后的原生证明；下一隔离运行须验证容量恢复和同一捕鱼目标在相邻迭代闭合。正式训练仍为 `false`，source schedule、独立重放、Gourmand `3/3` 与 `72/14/3` completion proof 均未完成。
 - 这仍是教师/执行链校准，不是 Student 参数训练。只有修复后的同一新运行身份形成 source schedule、独立重放、三段 Gourmand 连续性、`72/14/3` completion proof 与闭合 dependency expansion 后，才能进入后续训练准入判断。
 
 ### 2026-11-01 v97 终止、暂态移动门修复与磁盘启动门

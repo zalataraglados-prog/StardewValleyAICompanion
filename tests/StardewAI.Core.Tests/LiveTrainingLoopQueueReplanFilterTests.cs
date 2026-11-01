@@ -335,6 +335,23 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
             "typed_objective_identity_match;fail_closed_no_objective_switch",
             teacherSource,
             StringComparison.Ordinal);
+        var recoverySelection = teacherSource.IndexOf(
+            "StageOneInventoryCapacityRecovery.TrySelect",
+            StringComparison.Ordinal);
+        var continuationFilter = teacherSource.IndexOf(
+            "QueueReplanFilter.FilterRankedCandidates",
+            StringComparison.Ordinal);
+        Assert.True(recoverySelection >= 0);
+        Assert.True(continuationFilter >= 0);
+        Assert.True(recoverySelection < continuationFilter);
+        Assert.Contains(
+            "objective_safe_inventory_capacity_recovery_preempts_filter;",
+            teacherSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "continuation_preserved",
+            teacherSource,
+            StringComparison.Ordinal);
     }
 
     [Fact]
