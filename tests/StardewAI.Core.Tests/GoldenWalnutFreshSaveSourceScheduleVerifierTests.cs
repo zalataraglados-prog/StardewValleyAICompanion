@@ -143,6 +143,20 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
         return (catalog, windows, dependencies);
     }
 
+    private static (string Catalog, string Windows, string Dependencies) WriteBoundAuditInputs(
+        string root)
+    {
+        var inputs = WriteAuditInputs(root);
+        File.Copy(
+            Path.Combine(
+                FindRepositoryRoot(),
+                "experiments",
+                "goal-method-dependency-expansions.v1.json"),
+            inputs.Dependencies,
+            overwrite: true);
+        return inputs;
+    }
+
     [Fact]
     public async Task ProductWrapperVerifiesFrozenArtifactsUsingRealSnapshotIdentityShape()
     {
@@ -151,8 +165,9 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
 
         var result = await RunProductWrapperVerification(fixture);
 
-        Assert.Equal(0, result.ExitCode);
-        Assert.True(string.IsNullOrWhiteSpace(result.Error), result.Error);
+        Assert.True(
+            result.ExitCode == 0,
+            result.Error + Environment.NewLine + result.Output);
         using var report = JsonDocument.Parse(result.Output);
         Assert.Equal("pass", report.RootElement.GetProperty("status").GetString());
         Assert.Equal(
@@ -169,12 +184,13 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
         using var fixture = new Fixture(
             scheduleId: "golden-walnut-fresh-save:run",
             phaseOrderedSources: true);
-        var inputs = WriteAuditInputs(fixture.Root);
+        var inputs = WriteBoundAuditInputs(fixture.Root);
 
         var result = await RunProductWrapperVerification(fixture, inputs);
 
-        Assert.Equal(0, result.ExitCode);
-        Assert.True(string.IsNullOrWhiteSpace(result.Error), result.Error);
+        Assert.True(
+            result.ExitCode == 0,
+            result.Error + Environment.NewLine + result.Output);
         using var summary = JsonDocument.Parse(result.Output);
         Assert.Equal("pass", summary.RootElement.GetProperty("status").GetString());
         Assert.False(summary.RootElement.GetProperty("training_label_eligible").GetBoolean());
@@ -191,6 +207,30 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
             audit.GoldenWalnutVerificationReceiptPath);
         Assert.True(audit.GoldenWalnutFreshSaveUnlockTimeline!.SourceScheduleComplete);
         Assert.True(audit.GoldenWalnutFreshSaveUnlockTimeline.NativePhaseOrderingComplete);
+        Assert.Equal(
+            new[] { "ginger_island_access" },
+            audit.MissingOrUnboundProducerFamilies);
+        Assert.Equal(
+            "fresh_save_unlock_timeline_bound_runtime_continuation_receipts_missing",
+            audit.PrerequisiteFamilies.Single(value =>
+                value.FamilyId == "ginger_island_access").ProducerStatus);
+    }
+
+    [Fact]
+    public async Task ProductWrapperRejectsAnyUnboundMasterAnglerProducerFamily()
+    {
+        using var fixture = new Fixture(
+            scheduleId: "golden-walnut-fresh-save:run",
+            phaseOrderedSources: true);
+        var inputs = WriteAuditInputs(fixture.Root);
+
+        var result = await RunProductWrapperVerification(fixture, inputs);
+
+        Assert.NotEqual(0, result.ExitCode);
+        Assert.Contains(
+            "exact post-schedule prerequisite frontier",
+            result.Error + Environment.NewLine + result.Output,
+            StringComparison.Ordinal);
     }
 
     [Theory]

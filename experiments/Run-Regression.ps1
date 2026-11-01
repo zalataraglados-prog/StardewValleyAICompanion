@@ -192,6 +192,8 @@ if ($LASTEXITCODE -ne 0) {
 }
 $masterAnglerFreshSavePrerequisite = Get-Content `
     -LiteralPath $masterAnglerFreshSavePrerequisitePath -Raw | ConvertFrom-Json
+$masterAnglerMissingProducerFamilies = @(
+    $masterAnglerFreshSavePrerequisite.missing_or_unbound_producer_families)
 if ($masterAnglerFreshSavePrerequisite.status -ne `
         'partial_fresh_save_prerequisite_inventory' -or
     [bool]$masterAnglerFreshSavePrerequisite.training_label_eligible -or
@@ -202,7 +204,8 @@ if ($masterAnglerFreshSavePrerequisite.status -ne `
     -not [bool]$masterAnglerFreshSavePrerequisite.static_opportunity_inventory_complete -or
     -not [bool]$masterAnglerFreshSavePrerequisite.prerequisite_family_inventory_complete -or
     @($masterAnglerFreshSavePrerequisite.unknown_location_ids).Count -ne 0 -or
-    @($masterAnglerFreshSavePrerequisite.missing_or_unbound_producer_families).Count -eq 0) {
+    $masterAnglerMissingProducerFamilies.Count -ne 1 -or
+    [string]$masterAnglerMissingProducerFamilies[0] -ne 'ginger_island_access') {
     throw 'Master Angler fresh-save prerequisite inventory was overstated or drifted.'
 }
 dotnet run --project $bootstrap --no-build -- `

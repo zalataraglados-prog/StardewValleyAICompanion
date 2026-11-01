@@ -292,10 +292,20 @@ function Invoke-MasterAnglerVerifiedSourceScheduleAudit(
     $expectedReceiptSha256 = (
         Get-FileHash -LiteralPath $resolvedReceiptPath -Algorithm SHA256
     ).Hash.ToLowerInvariant()
+    $missingProducerFamilies = @(
+        $audit.missing_or_unbound_producer_families)
+    $gingerIslandFamilies = @(
+        $audit.prerequisite_families |
+            Where-Object family_id -eq "ginger_island_access")
     if ([bool]$audit.training_label_eligible -or
         -not [bool]$audit.static_opportunity_inventory_complete -or
         -not [bool]$audit.prerequisite_family_inventory_complete -or
         [int]$audit.native_denominator_count -ne 72 -or
+        $missingProducerFamilies.Count -ne 1 -or
+        [string]$missingProducerFamilies[0] -ne "ginger_island_access" -or
+        $gingerIslandFamilies.Count -ne 1 -or
+        [string]$gingerIslandFamilies[0].producer_status -ne
+            "fresh_save_unlock_timeline_bound_runtime_continuation_receipts_missing" -or
         @($audit.unknown_location_ids).Count -ne 0 -or
         [IO.Path]::GetFullPath(
             [string]$audit.golden_walnut_fresh_save_source_schedule_path) -ne
@@ -309,7 +319,12 @@ function Invoke-MasterAnglerVerifiedSourceScheduleAudit(
             $expectedReceiptSha256 -or
         -not [bool]$audit.golden_walnut_fresh_save_unlock_timeline.source_schedule_complete -or
         -not [bool]$audit.golden_walnut_fresh_save_unlock_timeline.native_phase_ordering_complete) {
-        throw "Master Angler audit did not consume the independently verified Golden Walnut schedule consistently. See $resolvedAuditOutputPath."
+        $missingText = if ($missingProducerFamilies.Count -eq 0) {
+            "none"
+        } else {
+            $missingProducerFamilies -join ","
+        }
+        throw "Master Angler audit did not reach the exact post-schedule prerequisite frontier (missing=$missingText). See $resolvedAuditOutputPath."
     }
     return [pscustomobject]@{
         Audit = $audit

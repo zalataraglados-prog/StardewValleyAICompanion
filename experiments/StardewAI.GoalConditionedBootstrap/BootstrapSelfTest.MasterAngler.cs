@@ -177,6 +177,7 @@ internal static partial class BootstrapSelfTest
             !report.MissingOrUnboundProducerFamilies.Contains(
                 "weather_reserve_or_control",
                 StringComparer.Ordinal) &&
+            report.MissingOrUnboundProducerFamilies.Length == 1 &&
             report.MissingOrUnboundProducerFamilies.Contains(
                 "ginger_island_access",
                 StringComparer.Ordinal) &&
