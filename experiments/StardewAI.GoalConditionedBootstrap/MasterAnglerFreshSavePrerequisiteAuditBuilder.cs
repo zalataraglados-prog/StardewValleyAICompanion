@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using StardewAI.Core.Infrastructure;
 
 namespace StardewAI.GoalConditionedBootstrap;
@@ -120,7 +119,8 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
         string? goldenWalnutVerificationReceiptPath = null,
         string? expectedRunId = null,
         string? expectedSaveId = null,
-        string? expectedPlayerId = null)
+        string? expectedPlayerId = null,
+        string? goldenWalnutGourmandContinuationReceiptPath = null)
     {
         var catalogFullPath = Path.GetFullPath(catalogPath);
         var windowFullPath = Path.GetFullPath(windowIndexPath);
@@ -167,12 +167,19 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
         Require(string.IsNullOrEmpty(sourceScheduleFullPath) ==
                 string.IsNullOrWhiteSpace(goldenWalnutVerificationReceiptPath),
             "Golden Walnut schedule consumption requires its independent verification receipt.");
-        var unlockTimeline = string.IsNullOrEmpty(sourceScheduleFullPath)
+        var verifiedSourceSchedule = string.IsNullOrEmpty(sourceScheduleFullPath)
             ? null
-            : GoldenWalnutFreshSaveUnlockTimelineProofBuilder.Build(
-                ReadVerifiedSourceSchedule(sourceScheduleFullPath, sourceScheduleSha256,
-                    goldenWalnutVerificationReceiptPath!, expectedRunId, expectedSaveId, expectedPlayerId),
-                sourceScheduleSha256);
+            : ReadVerifiedSourceSchedule(sourceScheduleFullPath, sourceScheduleSha256,
+                goldenWalnutVerificationReceiptPath!, expectedRunId, expectedSaveId, expectedPlayerId);
+        var unlockTimeline = verifiedSourceSchedule is null ? null :
+            GoldenWalnutFreshSaveUnlockTimelineProofBuilder.Build(verifiedSourceSchedule, sourceScheduleSha256);
+        var continuationPath = string.IsNullOrWhiteSpace(goldenWalnutGourmandContinuationReceiptPath)
+            ? string.Empty : Path.GetFullPath(goldenWalnutGourmandContinuationReceiptPath);
+        Require(continuationPath.Length == 0 || verifiedSourceSchedule is not null,
+            "Gourmand continuation requires an independently verified source schedule.");
+        var continuation = continuationPath.Length == 0 ? null : ReadVerifiedContinuation(
+            continuationPath, goldenWalnutVerificationReceiptPath!, verifiedSourceSchedule!,
+            expectedRunId!, expectedSaveId!, expectedPlayerId!, catalog.GameVersion);
         var goldenWalnutFundingRoutes = unlockTimeline is
             { SourceScheduleComplete: true, NativePhaseOrderingComplete: true }
             ? GoldenWalnutResortFundingRouteProofBuilder.Build(unlockTimeline)
@@ -181,7 +188,8 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
             species,
             graph,
             goldenWalnutSchedule,
-            goldenWalnutFundingRoutes);
+            goldenWalnutFundingRoutes,
+            continuation);
         var missing = families
             .Where(value => value.ProducerStatus != "implemented_and_bound")
             .Select(value => value.FamilyId)
@@ -222,6 +230,10 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
             GoldenWalnutVerificationReceiptSha256 = unlockTimeline is null ? string.Empty :
                 CurrentTeacherFrontierSupport.HashFile(goldenWalnutVerificationReceiptPath!),
             GoldenWalnutFreshSaveUnlockTimeline = unlockTimeline,
+            GoldenWalnutGourmandContinuationReceiptPath = continuationPath,
+            GoldenWalnutGourmandContinuationReceiptSha256 = continuationPath.Length == 0 ? string.Empty :
+                CurrentTeacherFrontierSupport.HashFile(continuationPath),
+            GoldenWalnutGourmandContinuationReceipt = continuation,
             Species = species,
             PrerequisiteFamilies = families,
             MissingOrUnboundProducerFamilies = missing,
@@ -238,6 +250,7 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
             "Golden Walnut audit requires explicit expected run/save/player identities.");
         using var document = JsonDocument.Parse(File.ReadAllText(receiptPath));
         var receipt = document.RootElement;
+        RequireUniqueProperties(receipt);
         string RequiredString(string name)
         {
             Require(receipt.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String &&
@@ -258,11 +271,75 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
         var schedule = GoldenWalnutFreshSaveSourceScheduleVerifier.Verify(
             RequiredString("episode_directory"), RequiredString("episode_manifest_path"), schedulePath,
             "golden-walnut-fresh-save:" + expectedRunId, expectedRunId!, expectedSaveId!, expectedPlayerId!);
-        Require(receipt.TryGetProperty("schedule", out var claimed) &&
-                JsonNode.DeepEquals(JsonNode.Parse(claimed.GetRawText()),
-                    JsonSerializer.SerializeToNode(schedule, JsonDefaults.Options)),
-            "Golden Walnut verification receipt schedule content changed.");
+        Require(receipt.TryGetProperty("schedule", out var claimed),
+            "Golden Walnut verification receipt schedule missing.");
+        RequireExactEvidence(JsonSerializer.SerializeToElement(schedule, JsonDefaults.Options), claimed);
         return schedule;
+    }
+
+    private static GoldenWalnutGourmandContinuationReceipt ReadVerifiedContinuation(
+        string path, string sourceReceiptPath, GoldenWalnutFreshSaveSourceSchedule schedule,
+        string runId, string saveId, string playerId, string gameVersion)
+    {
+        using var sourceDocument = JsonDocument.Parse(File.ReadAllText(sourceReceiptPath));
+        var source = sourceDocument.RootElement;
+        RequireUniqueProperties(source);
+        using var claimedDocument = JsonDocument.Parse(File.ReadAllText(path));
+        var claimed = claimedDocument.RootElement;
+        RequireUniqueProperties(claimed);
+        // The independent receipt selects the frozen artifacts, never the claimed continuation.
+        var manifestPath = source.GetProperty("episode_manifest_path").GetString()!;
+        var rebuilt = GoldenWalnutGourmandContinuationReceiptVerifier.Verify(
+            source.GetProperty("episode_directory").GetString()!, manifestPath,
+            schedule.SourceEpisodeManifestSha256, schedule.SourceEpisodeEvidenceRootSha256);
+        RequireExactEvidence(JsonSerializer.SerializeToElement(rebuilt, JsonDefaults.Options), claimed);
+        Require(rebuilt.SchemaVersion == GoldenWalnutGourmandContinuationReceiptVerifier.SchemaVersion &&
+                rebuilt.SourceRunId == runId && rebuilt.SourceRunId == schedule.SourceRunId &&
+                rebuilt.SaveId == saveId && rebuilt.SaveId == schedule.SourceSaveId &&
+                rebuilt.PlayerId == playerId && rebuilt.GameVersion == gameVersion &&
+                rebuilt.GameVersion == schedule.GameVersion &&
+                rebuilt.SourceEpisodeManifestPath == Path.GetFullPath(manifestPath) &&
+                rebuilt.SourceEpisodeManifestSha256 == schedule.SourceEpisodeManifestSha256 &&
+                rebuilt.SourceEpisodeEvidenceRootSha256 == schedule.SourceEpisodeEvidenceRootSha256,
+            "Gourmand continuation identity or frozen evidence disagrees with the verified source schedule.");
+        return rebuilt;
+    }
+
+    private static void RequireUniqueProperties(JsonElement value)
+    {
+        if (value.ValueKind == JsonValueKind.Object)
+        {
+            var properties = value.EnumerateObject().ToArray();
+            Require(properties.Select(property => property.Name).Distinct(StringComparer.Ordinal).Count() == properties.Length,
+                "Evidence contains duplicate properties.");
+            foreach (var property in properties) RequireUniqueProperties(property.Value);
+        }
+        else if (value.ValueKind == JsonValueKind.Array)
+            foreach (var item in value.EnumerateArray()) RequireUniqueProperties(item);
+    }
+
+    private static void RequireExactEvidence(JsonElement expected, JsonElement claimed)
+    {
+        Require(expected.ValueKind == claimed.ValueKind, "Evidence content changed.");
+        if (expected.ValueKind == JsonValueKind.Object)
+        {
+            Require(expected.EnumerateObject().Count() == claimed.EnumerateObject().Count(),
+                "Evidence properties changed.");
+            foreach (var property in expected.EnumerateObject())
+            {
+                Require(claimed.TryGetProperty(property.Name, out var value), "Evidence missing " + property.Name + ".");
+                RequireExactEvidence(property.Value, value);
+            }
+        }
+        else if (expected.ValueKind == JsonValueKind.Array)
+        {
+            Require(expected.GetArrayLength() == claimed.GetArrayLength(), "Evidence array changed.");
+            for (var index = 0; index < expected.GetArrayLength(); index++)
+                RequireExactEvidence(expected[index], claimed[index]);
+        }
+        else
+            Require(expected.ValueKind == JsonValueKind.String ? expected.GetString() == claimed.GetString() :
+                expected.GetRawText() == claimed.GetRawText(), "Evidence value changed.");
     }
 
     private static MasterAnglerFreshSaveSpeciesPrerequisite BuildSpecies(
@@ -423,7 +500,8 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
         MasterAnglerFreshSaveSpeciesPrerequisite[] species,
         DependencyGraphInventory graph,
         GoldenWalnutUnlockScheduleProof goldenWalnutSchedule,
-        GoldenWalnutResortFundingRouteProof goldenWalnutFundingRoutes)
+        GoldenWalnutResortFundingRouteProof goldenWalnutFundingRoutes,
+        GoldenWalnutGourmandContinuationReceipt? continuation)
     {
         var required = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
         void Add(string family, IEnumerable<string> ids)
@@ -462,7 +540,8 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                 pair.Value,
                 graph,
                 goldenWalnutSchedule,
-                goldenWalnutFundingRoutes))
+                goldenWalnutFundingRoutes,
+                continuation))
             .ToArray();
     }
 
@@ -471,7 +550,8 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
         IEnumerable<string> species,
         DependencyGraphInventory graph,
         GoldenWalnutUnlockScheduleProof goldenWalnutSchedule,
-        GoldenWalnutResortFundingRouteProof goldenWalnutFundingRoutes)
+        GoldenWalnutResortFundingRouteProof goldenWalnutFundingRoutes,
+        GoldenWalnutGourmandContinuationReceipt? continuation)
     {
         var (status, evidence, work) = family switch
         {
@@ -702,6 +782,24 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                     Array.Empty<string>(),
                     "Add one exact fresh-save producer and bind it to the Master Angler deadline recurrence.")
         };
+        if (family == "ginger_island_access" &&
+            status == "fresh_save_unlock_timeline_bound_runtime_continuation_receipts_missing" &&
+            continuation is { Ready: true, VerifiedTransitionCount: 3, TrainingLabelEligible: false } &&
+            continuation.BlockingReasons.Length == 0)
+        {
+            status = "implemented_and_bound";
+            evidence = evidence.Concat(new[]
+            {
+                GoldenWalnutGourmandContinuationReceiptVerifier.SchemaVersion,
+                "native_gourmand_request_transition:0->1",
+                "native_gourmand_request_transition:1->2",
+                "native_gourmand_request_transition:2->3"
+            }).ToArray();
+            work = "The independently replayed " + GoldenWalnutGourmandContinuationReceiptVerifier.SchemaVersion +
+                " binds all three native request transitions (0->1, 1->2, 2->3) on the same frozen run/save/player " +
+                "and manifest/evidence root to the deadline-complete deterministic Gourmand route. " +
+                "This prerequisite evidence does not authorize formal training admission.";
+        }
         return new MasterAnglerFreshSavePrerequisiteFamily
         {
             FamilyId = family,

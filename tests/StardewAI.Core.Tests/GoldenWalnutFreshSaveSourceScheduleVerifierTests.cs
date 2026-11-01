@@ -11,6 +11,205 @@ namespace StardewAI.Core.Tests;
 public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
 {
     [Fact]
+    public void MasterAnglerContinuationPromotesOnlyTheVerifiedGingerFamilyWithoutTrainingAdmission()
+    {
+        using var fixture = new Fixture(scheduleId: "golden-walnut-fresh-save:run",
+            phaseOrderedSources: true, gourmandContinuation: true);
+        var inputs = WriteBoundAuditInputs(fixture.Root);
+        var receipts = WriteContinuationAuditReceipts(fixture);
+        var baseline = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(inputs.Catalog, inputs.Windows,
+            inputs.Dependencies, fixture.SchedulePath, receipts.Source, "run", "save", "player");
+        Assert.Equal(new[] { "ginger_island_access" }, baseline.MissingOrUnboundProducerFamilies);
+        Assert.Null(baseline.GoldenWalnutGourmandContinuationReceipt);
+        Assert.Empty(baseline.GoldenWalnutGourmandContinuationReceiptPath);
+        Assert.Empty(baseline.GoldenWalnutGourmandContinuationReceiptSha256);
+
+        var report = BuildContinuationAudit(fixture, inputs, receipts);
+        Assert.Empty(report.MissingOrUnboundProducerFamilies);
+        Assert.False(report.TrainingLabelEligible);
+        Assert.Equal(receipts.Continuation, report.GoldenWalnutGourmandContinuationReceiptPath);
+        Assert.Equal(Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
+            File.ReadAllBytes(receipts.Continuation))).ToLowerInvariant(), report.GoldenWalnutGourmandContinuationReceiptSha256);
+        Assert.True(report.GoldenWalnutGourmandContinuationReceipt!.Ready);
+        Assert.Equal(3, report.GoldenWalnutGourmandContinuationReceipt.VerifiedTransitionCount);
+        Assert.False(report.GoldenWalnutGourmandContinuationReceipt.TrainingLabelEligible);
+        var family = report.PrerequisiteFamilies.Single(row => row.FamilyId == "ginger_island_access");
+        Assert.Equal("implemented_and_bound", family.ProducerStatus);
+        Assert.Contains(GoldenWalnutGourmandContinuationReceiptVerifier.SchemaVersion, family.ExistingEvidence);
+        foreach (var transition in new[] { "0->1", "1->2", "2->3" })
+        {
+            Assert.Contains("native_gourmand_request_transition:" + transition, family.ExistingEvidence);
+            Assert.Contains(transition, family.RemainingWork);
+        }
+        Assert.Contains("does not authorize formal training", family.RemainingWork);
+        var roundTrip = JsonSerializer.Deserialize<MasterAnglerFreshSavePrerequisiteAuditReport>(
+            JsonSerializer.Serialize(report))!;
+        Assert.Equal(JsonSerializer.Serialize(report.GoldenWalnutGourmandContinuationReceipt),
+            JsonSerializer.Serialize(roundTrip.GoldenWalnutGourmandContinuationReceipt));
+    }
+
+    [Theory]
+    [InlineData(false, 3)]
+    [InlineData(true, 2)]
+    public void MasterAnglerContinuationKeepsPendingStatusUnlessRouteAndNativeReceiptAreBothComplete(
+        bool phaseOrdered, int requests)
+    {
+        using var fixture = new Fixture(scheduleId: "golden-walnut-fresh-save:run",
+            phaseOrderedSources: phaseOrdered, gourmandContinuation: true, gourmandRequests: requests);
+        var inputs = WriteBoundAuditInputs(fixture.Root);
+        var receipts = WriteContinuationAuditReceipts(fixture);
+        var baseline = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(inputs.Catalog, inputs.Windows,
+            inputs.Dependencies, fixture.SchedulePath, receipts.Source, "run", "save", "player");
+        var report = BuildContinuationAudit(fixture, inputs, receipts);
+        Assert.Equal(baseline.MissingOrUnboundProducerFamilies, report.MissingOrUnboundProducerFamilies);
+        Assert.Equal(baseline.PrerequisiteFamilies.Single(row => row.FamilyId == "ginger_island_access").ProducerStatus,
+            report.PrerequisiteFamilies.Single(row => row.FamilyId == "ginger_island_access").ProducerStatus);
+        Assert.Contains("ginger_island_access", report.MissingOrUnboundProducerFamilies);
+        Assert.Equal(requests == 3, report.GoldenWalnutGourmandContinuationReceipt!.Ready);
+    }
+
+    [Theory]
+    [InlineData("source_episode_manifest_sha256", "other")]
+    [InlineData("source_episode_manifest_path", "other")]
+    [InlineData("source_episode_evidence_root_sha256", "other")]
+    [InlineData("native_receipt_evidence_root_sha256", "other")]
+    [InlineData("source_run_id", "other")]
+    [InlineData("save_id", "other")]
+    [InlineData("player_id", "other")]
+    [InlineData("game_version", "1.6.14")]
+    [InlineData("schema_version", "other")]
+    [InlineData("verified_transition_count", "2")]
+    [InlineData("ready", "false")]
+    [InlineData("verified", "false")]
+    [InlineData("blocking_reasons", "[\"blocked\"]")]
+    [InlineData("training_label_eligible", "true")]
+    public void MasterAnglerContinuationRejectsClaimedContentDrift(string field, string value)
+    {
+        using var fixture = new Fixture(scheduleId: "golden-walnut-fresh-save:run",
+            phaseOrderedSources: true, gourmandContinuation: true);
+        var inputs = WriteBoundAuditInputs(fixture.Root);
+        var receipts = WriteContinuationAuditReceipts(fixture);
+        fixture.Change(receipts.Continuation, root => root[field] =
+            field is "verified_transition_count" or "ready" or "verified" or "blocking_reasons" or "training_label_eligible"
+                ? JsonNode.Parse(value) : JsonValue.Create(value));
+        Assert.Throws<InvalidDataException>(() => BuildContinuationAudit(fixture, inputs, receipts));
+    }
+
+    [Theory]
+    [InlineData("schema_version")]
+    [InlineData("ready")]
+    [InlineData("verified_transition_count")]
+    [InlineData("blocking_reasons")]
+    [InlineData("source_episode_manifest_path")]
+    [InlineData("source_episode_manifest_sha256")]
+    [InlineData("source_episode_evidence_root_sha256")]
+    [InlineData("native_receipt_evidence_root_sha256")]
+    [InlineData("source_run_id")]
+    [InlineData("save_id")]
+    [InlineData("player_id")]
+    [InlineData("game_version")]
+    [InlineData("verified")]
+    [InlineData("training_label_eligible")]
+    public void MasterAnglerContinuationRejectsMissingDefaultedNullAndDuplicateReceiptFields(string field)
+    {
+        using var fixture = new Fixture(scheduleId: "golden-walnut-fresh-save:run",
+            phaseOrderedSources: true, gourmandContinuation: true);
+        var inputs = WriteBoundAuditInputs(fixture.Root);
+        var receipts = WriteContinuationAuditReceipts(fixture);
+        var original = File.ReadAllText(receipts.Continuation);
+        fixture.Change(receipts.Continuation, root => root.Remove(field));
+        Assert.Throws<InvalidDataException>(() => BuildContinuationAudit(fixture, inputs, receipts));
+        File.WriteAllText(receipts.Continuation, original);
+        fixture.Change(receipts.Continuation, root => root[field] = null);
+        Assert.Throws<InvalidDataException>(() => BuildContinuationAudit(fixture, inputs, receipts));
+        File.WriteAllText(receipts.Continuation, original.Insert(1,
+            JsonSerializer.Serialize(field) + ":" + JsonNode.Parse(original)![field]!.ToJsonString() + ","));
+        Assert.Throws<InvalidDataException>(() => BuildContinuationAudit(fixture, inputs, receipts));
+    }
+
+    [Theory]
+    [InlineData("absent_manifest")]
+    [InlineData("absent_snapshot")]
+    [InlineData("absent_execution")]
+    [InlineData("wrong_execution")]
+    [InlineData("wrong_manifest")]
+    [InlineData("wrong_directory")]
+    [InlineData("source_duplicate")]
+    [InlineData("source_schedule_missing_false")]
+    [InlineData("absent_source_receipt")]
+    [InlineData("absent_schedule")]
+    [InlineData("absent_continuation")]
+    [InlineData("no_source_schedule")]
+    [InlineData("wrong_expected_run")]
+    [InlineData("wrong_expected_save")]
+    [InlineData("wrong_expected_player")]
+    [InlineData("wrong_authority_game")]
+    public void MasterAnglerContinuationRejectsUnboundOrAlteredFrozenArtifacts(string change)
+    {
+        using var fixture = new Fixture(scheduleId: "golden-walnut-fresh-save:run",
+            phaseOrderedSources: true, gourmandContinuation: true);
+        var inputs = WriteBoundAuditInputs(fixture.Root);
+        var receipts = WriteContinuationAuditReceipts(fixture);
+        var absent = change switch
+        {
+            "absent_manifest" => fixture.ManifestPath,
+            "absent_snapshot" => fixture.SnapshotPath(6),
+            "absent_execution" => Path.Combine(fixture.Root, "execution-6.json"),
+            "absent_source_receipt" => receipts.Source,
+            "absent_schedule" => fixture.SchedulePath,
+            "absent_continuation" => receipts.Continuation,
+            _ => null
+        };
+        if (absent is not null) File.Move(absent, absent + ".absent");
+        if (change == "wrong_execution") fixture.Change(Path.Combine(fixture.Root, "execution-6.json"), root => root["status"] = "blocked");
+        if (change == "wrong_manifest") fixture.Change(receipts.Source, root => root["episode_manifest_path"] = fixture.SchedulePath);
+        if (change == "wrong_directory") fixture.Change(receipts.Source, root => root["episode_directory"] = fixture.VerificationOutputDirectory);
+        if (change == "source_schedule_missing_false") fixture.Change(receipts.Source,
+            root => root["schedule"]!.AsObject().Remove("training_label_eligible"));
+        if (change == "source_duplicate")
+        {
+            var text = File.ReadAllText(receipts.Source);
+            File.WriteAllText(receipts.Source, text.Insert(1, "\"status\":\"pass\","));
+        }
+        if (change == "wrong_authority_game")
+        {
+            foreach (var path in new[] { inputs.Catalog, inputs.Windows })
+                fixture.Change(path, root => root["game_version"] = "1.6.14");
+            fixture.Change(inputs.Windows, root => root["catalog_sha256"] = Convert.ToHexString(
+                System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(inputs.Catalog))));
+        }
+        var exception = Record.Exception(() => MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(
+            inputs.Catalog, inputs.Windows, inputs.Dependencies,
+            change == "no_source_schedule" ? null : fixture.SchedulePath,
+            change == "no_source_schedule" ? null : receipts.Source,
+            change == "wrong_expected_run" ? "other" : "run",
+            change == "wrong_expected_save" ? "other" : "save",
+            change == "wrong_expected_player" ? "other" : "player", receipts.Continuation));
+        Assert.True(exception is IOException or InvalidDataException, exception?.ToString() ?? "Accepted invalid evidence.");
+    }
+
+    private static MasterAnglerFreshSavePrerequisiteAuditReport BuildContinuationAudit(Fixture fixture,
+        (string Catalog, string Windows, string Dependencies) inputs, (string Source, string Continuation) receipts) =>
+        MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(inputs.Catalog, inputs.Windows, inputs.Dependencies,
+            fixture.SchedulePath, receipts.Source, "run", "save", "player", receipts.Continuation);
+
+    private static (string Source, string Continuation) WriteContinuationAuditReceipts(Fixture fixture)
+    {
+        var source = Path.Combine(fixture.Root, "independent-source-receipt.json");
+        var continuation = Path.Combine(fixture.Root, "continuation-receipt.json");
+        var schedule = fixture.Verify("golden-walnut-fresh-save:run");
+        File.WriteAllText(source, JsonSerializer.Serialize(new
+        {
+            status = "pass", training_label_eligible = false, expected_player_id = "player",
+            source_schedule_sha256 = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(fixture.SchedulePath))).ToLowerInvariant(),
+            source_schedule_path = fixture.SchedulePath, episode_directory = fixture.Root,
+            episode_manifest_path = fixture.ManifestPath, schedule
+        }));
+        GoldenWalnutGourmandContinuationReceiptVerifier.Write(continuation, fixture.Root, fixture.ManifestPath);
+        return (source, continuation);
+    }
+
+    [Fact]
     public void MasterAnglerAuditRejectsScheduleWithoutIndependentReceipt()
     {
         using var fixture = new Fixture(phaseOrderedSources: true);
@@ -674,7 +873,9 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
         public Fixture(
             bool noSourceIncrement = false,
             string scheduleId = "schedule",
-            bool phaseOrderedSources = false)
+            bool phaseOrderedSources = false,
+            bool gourmandContinuation = false,
+            int gourmandRequests = 3)
         {
             Directory.CreateDirectory(Root);
             File.WriteAllText(InitialSnapshotPath, JsonSerializer.Serialize(new
@@ -695,13 +896,13 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
                 .Take(phaseOrderedSources ? int.MaxValue : 2).Select(source => source.SourceKey).ToHashSet();
             int Quantity(GoldenWalnutNativeSourceDefinition source, int index) =>
                 noSourceIncrement || !selectedKeys.Contains(source.SourceKey) ||
-                index < (phaseOrderedSources ? source.AccessPhase switch
+                index < (phaseOrderedSources || gourmandContinuation ? source.AccessPhase switch
                 {
                     "boat_repaired" or "island_south_initial" => 1,
                     "west_after_turtle" => 3,
                     _ => 2
                 } : 1) ? 0 : phaseOrderedSources ? source.NativeQuantity : 1;
-            for (var index = 0; index < 5; index++)
+            for (var index = 0; index < (gourmandContinuation ? 5 + gourmandRequests : 5); index++)
             {
                 var sources = GoldenWalnutNativeSourceCatalog.Sources.Select(source => new
                 {
@@ -748,8 +949,15 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
                         })
                     }
                 };
+                if (gourmandContinuation)
+                    AddGourmandProgress(snapshot, index, source => Quantity(source, Math.Min(index, 4)));
                 File.WriteAllText(SnapshotPath(index), JsonSerializer.Serialize(snapshot));
                 if (index == 0) continue;
+                if (gourmandContinuation && index >= 5)
+                {
+                    WriteNativeGourmandEpisode(index, snapshot);
+                    continue;
+                }
                 File.WriteAllText(Path.Combine(Root, $"golden-walnut-fresh-save-episode-{index:D4}.json"),
                     JsonSerializer.Serialize(new PlanExecutionEpisodeEnvelope
                     {
@@ -774,6 +982,108 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
                 scheduleId,
                 "run");
             GoldenWalnutFreshSaveEpisodeScheduleBuilder.Write(SchedulePath, ManifestPath);
+        }
+
+        private const string GourmandNativeContract =
+            "IslandFarmCave.performAction_Gourmand_then_Gourmand_Yes_then_OnRequestGourmandCheck_then_native_event_then_GiveReward";
+
+        private static void AddGourmandProgress(SnapshotEnvelope snapshot, int index,
+            Func<GoldenWalnutNativeSourceDefinition, int> quantity)
+        {
+            var fulfilled = Math.Max(0, index - 4);
+            var sources = GoldenWalnutNativeSourceCatalog.Sources.Select(source =>
+            {
+                var collected = source.SourceKey.StartsWith("IslandGourmand", StringComparison.Ordinal)
+                    ? Enumerable.Range(1, fulfilled).Any(request => source.SourceKey == "IslandGourmand" + request) ? 5 : 0
+                    : quantity(source);
+                return new GoldenWalnutSourceProgressRef
+                {
+                    SourceKey = source.SourceKey, NativeQuantity = source.NativeQuantity,
+                    CollectedQuantity = collected, RemainingQuantity = source.NativeQuantity - collected,
+                    AcquisitionOptionId = source.AcquisitionOptionId, TrackingKind = source.TrackingKind,
+                    LocationId = source.LocationId, TileX = source.TileX, TileY = source.TileY,
+                    ProbabilityStatus = source.ProbabilityStatus, AccessPhase = source.AccessPhase,
+                    RequiredMailKey = source.RequiredMailKey, RequiredMailSatisfied = true,
+                    ResortOnly = source.ResortOnly, OptionalUnlockWalnutCost = source.OptionalUnlockWalnutCost,
+                    RequiredSecretNoteId = source.RequiredSecretNoteId
+                };
+            }).ToArray();
+            var crop = fulfilled == 3 ? string.Empty : new[] { "254", "262", "248" }[fulfilled];
+            snapshot.State["world_progress"] = JsonSerializer.SerializeToElement(new
+            {
+                island_gourmand = new { status = "available", value = new IslandGourmandProgressRef
+                {
+                    RequestsFulfilled = fulfilled, TotalRequests = 3, Complete = fulfilled == 3,
+                    ProjectionStatus = fulfilled == 3 ? "complete_native_three_requests" : "exact_native_active_request_projected",
+                    RequiredMailSatisfied = index >= 4, TalkedToGourmandReceivedOrPending = index >= 4,
+                    ActiveRequestIndex = fulfilled == 3 ? null : fulfilled,
+                    RequiredCropItemId = crop, RequiredCropQualifiedItemId = crop.Length == 0 ? string.Empty : "(O)" + crop,
+                    RequiredCropDisplayName = crop.Length == 0 ? string.Empty : "Crop",
+                    RequestState = fulfilled == 3 ? "complete" : "ready_matching_crop_present",
+                    ReadyMatchingCropCount = 1, LocationId = "IslandFarmCave", IsCurrentLocation = true,
+                    HostAuthority = true, MenuClear = true, MutexProjectionAvailable = true, NativeContract = GourmandNativeContract
+                } },
+                golden_walnut_sources = new { status = "available", value = new GoldenWalnutSourceCatalogRef
+                {
+                    SchemaVersion = GoldenWalnutNativeSourceCatalog.SchemaVersion,
+                    ProjectionStatus = GoldenWalnutNativeSourceCatalog.ProjectionStatus,
+                    NativeSourceKeyCount = GoldenWalnutNativeSourceCatalog.NativeSourceKeyCount,
+                    NativeWalnutTotal = GoldenWalnutNativeSourceCatalog.NativeWalnutTotal, Sources = sources,
+                    TrackedCollectedQuantity = sources.Sum(row => row.CollectedQuantity),
+                    TrackedRemainingQuantity = sources.Sum(row => row.RemainingQuantity),
+                    WorldGoldenWalnutsFound = sources.Sum(row => row.CollectedQuantity)
+                } }
+            });
+        }
+
+        private void WriteNativeGourmandEpisode(int index, SnapshotEnvelope snapshot)
+        {
+            var fulfilled = index - 4;
+            var foundAfter = snapshot.State["world_progress"].GetProperty("golden_walnut_sources")
+                .GetProperty("value").GetProperty("world_golden_walnuts_found").GetInt32();
+            var reasons = new[]
+            {
+                "native_Gourmand_Yes_response_completed", "native_crop_event_and_return_observed",
+                "native_five_walnut_debris_spawn_and_pickup_verified", "request_tracker_and_collected_nut_receipt_verified"
+            };
+            object Fact(string path, string before, string after) => new { path, before, after };
+            var changes = new[]
+            {
+                Fact("world_progress.island_gourmand.requests_fulfilled", (fulfilled - 1).ToString(), fulfilled.ToString()),
+                Fact("world_progress.island_gourmand.talked_to_gourmand_received_or_pending", "True", "True"),
+                Fact("world_progress.island_gourmand.walnut_debris_count", "0", "0"),
+                Fact("world_progress.golden_walnuts.found", (foundAfter - 5).ToString(), foundAfter.ToString()),
+                Fact($"player.team.collected_nut_tracker[IslandGourmand{fulfilled}]", "False", "True")
+            };
+            var requested = $"gourmand_stage=complete_request;request_index_after={fulfilled};collected_nut_key=IslandGourmand{fulfilled};walnut_debris_spawn_count=5;golden_walnuts_found_after={foundAfter}";
+            var observed = $"location=IslandFarmCave;menu=none;request_index={fulfilled};talked=true;walnut_debris=0;golden_walnuts_found={foundAfter}";
+            var executionPath = Path.Combine(Root, $"execution-{index}.json");
+            var episode = new PlanExecutionEpisodeEnvelope
+            {
+                EpisodeId = "episode-" + index, RunId = "run", QueueId = "queue-" + index,
+                SourceStateHash = "hash-" + (index - 1), AfterStateHash = "hash-" + index,
+                BeforeGameTick = index - 1, AfterGameTick = index, StateHashChanged = true,
+                BeforeSnapshotPath = SnapshotPath(index - 1), AfterSnapshotPath = SnapshotPath(index),
+                AfterSnapshotFresh = true, ExecutionResultPath = executionPath,
+                OptionId = "executor.advance_gourmand_request", Status = "applied", Success = true,
+                PrimitiveKind = "advance_gourmand_request", PrimitiveVerificationStatus = "verified",
+                PrimitiveVerificationReasons = reasons, RequestedEffect = requested, ObservedEffect = observed,
+                ChangedFacts = JsonSerializer.SerializeToElement(changes),
+                EffectiveQueueItem = JsonSerializer.SerializeToElement(new { queue_item_id = "item-" + index, option_id = "executor.advance_gourmand_request" })
+            };
+            File.WriteAllText(Path.Combine(Root, $"golden-walnut-fresh-save-episode-{index:D4}.json"), JsonSerializer.Serialize(episode));
+            File.WriteAllText(executionPath, JsonSerializer.Serialize(new
+            {
+                schema_version = "training_execution_result.v1", run_id = "run", queue_id = episode.QueueId,
+                queue_item_id = "item-" + index, option_id = episode.OptionId, status = "applied",
+                feedback_available = true, before_state_hash = episode.SourceStateHash, after_state_hash = episode.AfterStateHash,
+                before_game_tick = episode.BeforeGameTick, after_game_tick = episode.AfterGameTick,
+                after_snapshot_fresh = true, primitive_kind = episode.PrimitiveKind, primitive_verification_status = "verified",
+                primitive_verification_reasons = reasons, block_reasons = Array.Empty<string>(),
+                requested_effect = requested, observed_effect = observed, changed_facts = changes,
+                actual_ticks = 1, target_location = "IslandFarmCave",
+                started_at = "2026-11-01T00:00:00Z", completed_at = "2026-11-01T00:01:00Z"
+            }));
         }
 
         public void RebindBoundary() => File.WriteAllText(BoundaryPath, JsonSerializer.Serialize(

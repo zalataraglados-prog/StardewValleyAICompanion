@@ -48,6 +48,12 @@ public sealed class MasterAnglerFreshSavePrerequisiteAuditReport
     public string GoldenWalnutVerificationReceiptPath { get; set; } = string.Empty;
     [JsonPropertyName("golden_walnut_verification_receipt_sha256")]
     public string GoldenWalnutVerificationReceiptSha256 { get; set; } = string.Empty;
+    [JsonPropertyName("golden_walnut_gourmand_continuation_receipt_path")]
+    public string GoldenWalnutGourmandContinuationReceiptPath { get; set; } = string.Empty;
+    [JsonPropertyName("golden_walnut_gourmand_continuation_receipt_sha256")]
+    public string GoldenWalnutGourmandContinuationReceiptSha256 { get; set; } = string.Empty;
+    [JsonPropertyName("golden_walnut_gourmand_continuation_receipt")]
+    public GoldenWalnutGourmandContinuationReceipt? GoldenWalnutGourmandContinuationReceipt { get; set; }
     [JsonPropertyName("golden_walnut_fresh_save_unlock_timeline")]
     public GoldenWalnutFreshSaveUnlockTimelineProof? GoldenWalnutFreshSaveUnlockTimeline { get; set; }
     [JsonPropertyName("species")]
