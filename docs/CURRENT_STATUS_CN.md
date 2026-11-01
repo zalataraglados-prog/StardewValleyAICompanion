@@ -25,9 +25,10 @@
 - 提交 `1621024f` 与 `99b3e5b0` 在该审计上增加唯一的非训练完成证明与产品入口。证明必须由同一进程重新生成审计，精确绑定审计、dependency expansion 与 Gourmand receipt 的路径和 SHA-256，并严格要求 `72` 个不重复鱼种、`14` 个不重复且全部 `implemented_and_bound` 的前置族、`3` 次 Gourmand 转移、零未知地点和零 blocker；任何分母漂移或证据内容漂移都失败关闭。CLI 与产品 PowerShell 包装器均已执行真实隔离集成测试，相关回归 `334/334`、PowerShell AST 和补丁检查通过。
 - 当前真实 authority 文件的 game-free 基线重建也得到 `72` 个鱼种、`14` 个前置族、未知地点 `0`，并在不提供 source/Gourmand 连续性证据时精确保留唯一缺口 `ginger_island_access`；因此严格分母不是测试夹具推导值。
 - 提交 `97721637` 又把同一证明链接入实际长跑收尾：要求 source schedule 的 Runtime 在独立重放成功后自动生成绑定审计；同时要求 Gourmand continuation 时，再自动消费 LiveTrainingLoop 的不可变连续性回执并生成完成证明。两层 summary 都保留 audit/proof 路径，外层工作流缺少任一必需文件即失败，不再依赖人工二次拼接命令。
+- 当前主线继续增加证明驱动的 dependency closure。产品链只有在独立重放 `72/14/3` 完成证明成功后，才生成一份 run-local `goal_method_dependency_expansions.v1` 派生工件：独立重建证明、核对源 dependency 路径和 SHA-256、确认唯一 Master Angler direction 与关键闭环节点后，将该 direction 标为 `complete`、清空旧 blocker，并把证明路径和哈希写入前置清单节点。权威源 JSON 不被运行时改写；伪造证明、旧哈希、重复 direction 或缺节点均失败关闭。专项与包装链回归分别为 `79/79`、`135/135`，两份 PowerShell AST 与 `git diff --check` 通过。
 - 该完成证明仍固定 `training_label_eligible=false`，只证明 Master Angler 前置清单闭合，不证明逐鱼捕获结果、三分区 Teacher/native evidence 或正式训练准入。状态面板分子因此没有变化。
-- 当前运行中的 v97 是上述新代码之前启动的旧二进制。最新低频观察已越过 iteration `191`、`137` 条 verified action，仍在 Stage One collection 且没有 `stage=error`；它可保留校准证据，但不能热加载完成证明或产生新 Gourmand 回执。
-- v97 完成后不得续接旧进程或旧身份。下一次全新 day-zero v98 必须同时要求 source schedule 与 Gourmand continuation，使用不可变 execution receipt archive；达成退出条件后，现有产品链会自动独立重放、重建 audit 并落盘 `72/14/3` completion proof。正式训练继续为 **false**，直至其余准入条件也全部满足。
+- 当前运行中的 v97 是上述新代码之前启动的旧二进制。最新低频观察已越过 iteration `216`、`149` 条 verified action，仍在 Stage One collection 且没有 `stage=error`；它可保留校准证据，但不能热加载完成证明或产生新 Gourmand 回执。
+- v97 完成后不得续接旧进程或旧身份。下一次全新 day-zero v98 必须同时要求 source schedule 与 Gourmand continuation，使用不可变 execution receipt archive；达成退出条件后，现有产品链会自动独立重放、重建 audit、落盘 `72/14/3` completion proof，并生成供 Goal Method / coverage 下游消费的闭合 dependency expansion。正式训练继续为 **false**，直至其余准入条件也全部满足。
 
 ### 2026-10-31 v92 长跑保留与 #377 当前主线正确性收口
 

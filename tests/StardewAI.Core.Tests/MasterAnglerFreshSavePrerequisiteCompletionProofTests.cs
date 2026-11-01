@@ -223,6 +223,71 @@ public sealed class MasterAnglerFreshSavePrerequisiteCompletionProofTests
         Assert.Contains(blocker, result.BlockingReasons);
     }
 
+    [Fact]
+    public void ReadyProofClosesOnlyTheBoundMasterAnglerDependency()
+    {
+        var fixture = new Fixture();
+        var proofPath = fixture.WriteProof();
+        var result = MasterAnglerDependencyExpansionCompletionBuilder.Build(
+            proofPath, fixture.DependencyPath, "grandpa.maximum_21", "1.6.15");
+        var direction = result["directions"]!.AsArray()
+            .Single(value => value!["direction_id"]!.GetValue<string>() ==
+                             "complete_master_angler")!.AsObject();
+        Assert.Equal("complete", direction["status"]!.GetValue<string>());
+        Assert.Empty(direction["blockers"]!.AsArray());
+        var inventory = direction["nodes"]!.AsArray()
+            .Single(value => value!["id"]!.GetValue<string>() ==
+                "dependency.complete_master_angler.fresh_save_prerequisite_inventory")!;
+        Assert.Equal("fresh_save_prerequisite_inventory_complete",
+            inventory["rule"]!["status"]!.GetValue<string>());
+        Assert.Equal(Path.GetFullPath(proofPath),
+            inventory["rule"]!["completion_proof_path"]!.GetValue<string>());
+        Assert.Equal(Fixture.Hash(proofPath),
+            inventory["rule"]!["completion_proof_sha256"]!.GetValue<string>());
+        Assert.False(inventory["rule"]!["training_label_eligible"]!.GetValue<bool>());
+    }
+
+    [Theory]
+    [InlineData("proof")]
+    [InlineData("dependency")]
+    [InlineData("duplicate_direction")]
+    [InlineData("missing_node")]
+    public void DependencyClosureRejectsDriftedOrIncompleteEvidence(string change)
+    {
+        var fixture = new Fixture();
+        var proofPath = fixture.WriteProof();
+        switch (change)
+        {
+            case "proof":
+            {
+                var proof = JsonNode.Parse(File.ReadAllText(proofPath))!;
+                proof["audit_sha256"] = new string('0', 64);
+                File.WriteAllText(proofPath, proof.ToJsonString());
+                break;
+            }
+            case "dependency": File.AppendAllText(fixture.DependencyPath, " "); break;
+            case "duplicate_direction":
+            {
+                var root = JsonNode.Parse(File.ReadAllText(fixture.DependencyPath))!;
+                root["directions"]!.AsArray().Add(
+                    root["directions"]![0]!.DeepClone());
+                File.WriteAllText(fixture.DependencyPath, root.ToJsonString());
+                break;
+            }
+            case "missing_node":
+            {
+                var root = JsonNode.Parse(File.ReadAllText(fixture.DependencyPath))!;
+                root["directions"]![0]!["nodes"]!.AsArray().RemoveAt(0);
+                File.WriteAllText(fixture.DependencyPath, root.ToJsonString());
+                break;
+            }
+        }
+        Assert.Throws<InvalidDataException>(() =>
+            MasterAnglerDependencyExpansionCompletionBuilder.Build(
+                proofPath, fixture.DependencyPath,
+                "grandpa.maximum_21", "1.6.15"));
+    }
+
     private sealed class Fixture
     {
         public string AuditPath { get; }
@@ -238,8 +303,42 @@ public sealed class MasterAnglerFreshSavePrerequisiteCompletionProofTests
             AuditPath = Path.Combine(root, "audit.json");
             DependencyPath = Path.Combine(root, "dependencies.json");
             ReceiptPath = Path.Combine(root, "receipt.json");
-            File.WriteAllText(DependencyPath,
-                "{\"schema_version\":\"goal_method_dependency_expansions.v1\",\"goal_id\":\"grandpa.maximum_21\",\"directions\":[]}");
+            var requiredNodeIds = new[]
+            {
+                "dependency.complete_master_angler.fresh_save_prerequisite_inventory",
+                "dependency.complete_master_angler.target_date_opportunity_producer",
+                "dependency.complete_master_angler.trap_lifecycle_intent",
+                "dependency.complete_master_angler.current_legal_rod_attempt",
+                "dependency.complete_master_angler.current_ready_trap_collection",
+                "dependency.complete_master_angler.acquisition_recurrence",
+                "dependency.complete_master_angler.all_native_species_caught"
+            };
+            File.WriteAllText(DependencyPath, JsonSerializer.Serialize(new
+            {
+                schema_version = "goal_method_dependency_expansions.v1",
+                goal_id = "grandpa.maximum_21",
+                directions = new[]
+                {
+                    new
+                    {
+                        direction_id = "complete_master_angler",
+                        status = "in_progress",
+                        completion_node_id = requiredNodeIds[^1],
+                        source_ids = new[] { "fixture" },
+                        blockers = new[] { "runtime_completion_proof_missing" },
+                        nodes = requiredNodeIds.Select(id => new
+                        {
+                            id,
+                            kind = id.EndsWith("all_native_species_caught",
+                                StringComparison.Ordinal)
+                                ? "terminal_fact"
+                                : "state_fact",
+                            rule = new { status = "pending" }
+                        }),
+                        edges = Array.Empty<object>()
+                    }
+                }
+            }));
             var receipt = new GoldenWalnutGourmandContinuationReceipt(
                 GoldenWalnutGourmandContinuationReceiptVerifier.SchemaVersion, true, 3, Array.Empty<string>(),
                 Path.Combine(root, "manifest.json"), new string('a', 64), new string('b', 64), new string('c', 64),
@@ -278,6 +377,13 @@ public sealed class MasterAnglerFreshSavePrerequisiteCompletionProofTests
         public MasterAnglerFreshSavePrerequisiteCompletionProof Build() =>
             MasterAnglerFreshSavePrerequisiteCompletionProofBuilder.Build(
                 Audit, AuditPath, DependencyPath, "grandpa.maximum_21", "1.6.15");
+
+        public string WriteProof()
+        {
+            var path = Path.Combine(Path.GetDirectoryName(AuditPath)!, "proof.json");
+            File.WriteAllText(path, JsonSerializer.Serialize(Build()));
+            return path;
+        }
 
         public void ChangeAudit(Action<JsonObject> change)
         {

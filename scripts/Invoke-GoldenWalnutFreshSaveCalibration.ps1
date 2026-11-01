@@ -177,6 +177,14 @@ if ($RequireGourmandContinuationReady -and
         -PathType Leaf))) {
     throw "Product calibration did not produce the bound Master Angler completion proof."
 }
+if ($RequireGourmandContinuationReady -and
+    ([string]::IsNullOrWhiteSpace(
+        [string]$calibrationSummary.master_angler_completed_dependency_expansions_path) -or
+     -not (Test-Path -LiteralPath (
+        [string]$calibrationSummary.master_angler_completed_dependency_expansions_path) `
+        -PathType Leaf))) {
+    throw "Product calibration did not produce the proof-closed Master Angler dependency expansion."
+}
 
 $freshSummaryPath = Join-Path (
     Join-Path $freshSaveOutputRoot $RunId) "summary.json"
@@ -229,6 +237,10 @@ $summary = [ordered]@{
         [string]$calibrationSummary.master_angler_audit_log_path
     master_angler_completion_proof_path =
         [string]$calibrationSummary.master_angler_completion_proof_path
+    master_angler_completed_dependency_expansions_path =
+        [string]$calibrationSummary.master_angler_completed_dependency_expansions_path
+    master_angler_completed_dependency_expansions_log_path =
+        [string]$calibrationSummary.master_angler_completed_dependency_expansions_log_path
     gourmand_continuation_required = [bool]$RequireGourmandContinuationReady
     gourmand_continuation_ready =
         [bool]$calibrationSummary.golden_walnut_gourmand_continuation_ready

@@ -174,6 +174,8 @@ var commandDefinitions = new CommandDefinition[]
     new("audit-master-angler-fresh-save-prerequisites", AuditMasterAnglerFreshSavePrerequisites),
     new("build-master-angler-fresh-save-prerequisite-completion-proof",
         BuildMasterAnglerFreshSavePrerequisiteCompletionProof),
+    new("build-master-angler-complete-dependency-expansions",
+        BuildMasterAnglerCompleteDependencyExpansions),
     new("build-master-angler-target-date-intents", BuildMasterAnglerTargetDateIntents),
     new("build-validation-trace-baseline", BuildValidationTraceBaseline),
     new("rehash-content", RehashContent),
@@ -2812,6 +2814,17 @@ static void BuildMasterAnglerFreshSavePrerequisiteCompletionProof(
     Write(options.Required("output"), proof);
     if (!proof.Ready)
         Environment.ExitCode = 2;
+}
+
+static void BuildMasterAnglerCompleteDependencyExpansions(
+    Arguments options)
+{
+    var result = MasterAnglerDependencyExpansionCompletionBuilder.Build(
+        options.Required("completion-proof"),
+        options.Required("dependency-expansions"),
+        GoalMethodTeacherCoverageGoalIds.Authoritative,
+        GoldenWalnutFreshSaveUnlockTimelineProofBuilder.GameVersion);
+    Write(options.Required("output"), result);
 }
 
 static void BuildGoldenWalnutFreshSaveSourceSchedule(Arguments options)

@@ -409,6 +409,8 @@ function Invoke-MasterAnglerVerifiedSourceScheduleAudit(
         throw "Master Angler audit did not reach the exact post-schedule prerequisite frontier (missing=$missingText). See $resolvedAuditOutputPath."
     }
     $completionProof = $null
+    $completedDependencyExpansionsPath = ""
+    $completedDependencyExpansionsLogPath = ""
     if ($hasGourmandReceipt) {
         if (-not (Test-Path -LiteralPath $resolvedCompletionProofOutputPath `
                 -PathType Leaf)) {
@@ -444,6 +446,59 @@ function Invoke-MasterAnglerVerifiedSourceScheduleAudit(
                 $expectedDependencySha256) {
             throw "Master Angler completion proof did not bind the exact 72-species/14-family audit. See $resolvedCompletionProofOutputPath."
         }
+
+        $completedDependencyExpansionsPath = Join-Path `
+            $resolvedOutputDirectory `
+            "master-angler-complete-dependency-expansions.json"
+        $completedDependencyExpansionsLogPath = Join-Path `
+            $resolvedOutputDirectory `
+            "master-angler-complete-dependency-expansions.log"
+        $completionOutput = & dotnet @(
+            $resolvedBootstrapDllPath,
+            "build-master-angler-complete-dependency-expansions",
+            "--completion-proof", $resolvedCompletionProofOutputPath,
+            "--dependency-expansions", $resolvedDependencyExpansionsPath,
+            "--output", $completedDependencyExpansionsPath) 2>&1
+        $completionExitCode = $LASTEXITCODE
+        [IO.File]::WriteAllText(
+            $completedDependencyExpansionsLogPath,
+            ($completionOutput | Out-String),
+            [Text.UTF8Encoding]::new($false))
+        if ($completionExitCode -ne 0) {
+            throw "Master Angler dependency closure failed with exit code $completionExitCode. See $completedDependencyExpansionsLogPath."
+        }
+        try {
+            $completedDependencies = Get-Content -Raw -LiteralPath `
+                $completedDependencyExpansionsPath | ConvertFrom-Json
+        }
+        catch {
+            throw "Master Angler dependency closure produced malformed JSON: $completedDependencyExpansionsPath"
+        }
+        $completedDirections = @(
+            $completedDependencies.directions |
+                Where-Object direction_id -eq "complete_master_angler")
+        $completionInventoryNodes = @(
+            $completedDirections.nodes |
+                Where-Object id -eq `
+                    "dependency.complete_master_angler.fresh_save_prerequisite_inventory")
+        $expectedCompletionProofSha256 = (
+            Get-FileHash -LiteralPath $resolvedCompletionProofOutputPath `
+                -Algorithm SHA256
+        ).Hash.ToLowerInvariant()
+        if ($completedDirections.Count -ne 1 -or
+            [string]$completedDirections[0].status -ne "complete" -or
+            @($completedDirections[0].blockers).Count -ne 0 -or
+            $completionInventoryNodes.Count -ne 1 -or
+            [string]$completionInventoryNodes[0].rule.status -ne
+                "fresh_save_prerequisite_inventory_complete" -or
+            [IO.Path]::GetFullPath(
+                [string]$completionInventoryNodes[0].rule.completion_proof_path) -ne
+                $resolvedCompletionProofOutputPath -or
+            [string]$completionInventoryNodes[0].rule.completion_proof_sha256 -ne
+                $expectedCompletionProofSha256 -or
+            [bool]$completionInventoryNodes[0].rule.training_label_eligible) {
+            throw "Master Angler dependency closure did not preserve its exact proof binding. See $completedDependencyExpansionsPath."
+        }
     }
     return [pscustomobject]@{
         Audit = $audit
@@ -455,6 +510,10 @@ function Invoke-MasterAnglerVerifiedSourceScheduleAudit(
         } else {
             ""
         }
+        CompletedDependencyExpansionsPath =
+            $completedDependencyExpansionsPath
+        CompletedDependencyExpansionsLogPath =
+            $completedDependencyExpansionsLogPath
     }
 }
 
@@ -501,6 +560,10 @@ if ($VerifyGoldenWalnutSourceScheduleArtifactsOnly) {
             master_angler_audit_log_path = $auditResult.LogPath
             master_angler_completion_proof_path = `
                 $auditResult.CompletionProofPath
+            master_angler_completed_dependency_expansions_path = `
+                $auditResult.CompletedDependencyExpansionsPath
+            master_angler_completed_dependency_expansions_log_path = `
+                $auditResult.CompletedDependencyExpansionsLogPath
             gourmand_continuation_receipt_path = if (
                 [string]::IsNullOrWhiteSpace(
                     $VerificationGourmandContinuationReceiptPath)) {
@@ -990,6 +1053,14 @@ try {
         master_angler_completion_proof_path = if (
             $null -ne $masterAnglerAuditResult) {
             [string]$masterAnglerAuditResult.CompletionProofPath
+        } else { "" }
+        master_angler_completed_dependency_expansions_path = if (
+            $null -ne $masterAnglerAuditResult) {
+            [string]$masterAnglerAuditResult.CompletedDependencyExpansionsPath
+        } else { "" }
+        master_angler_completed_dependency_expansions_log_path = if (
+            $null -ne $masterAnglerAuditResult) {
+            [string]$masterAnglerAuditResult.CompletedDependencyExpansionsLogPath
         } else { "" }
         max_attempts = $MaxAttempts
         verified_actions = [int]$loopReport.verified_actions

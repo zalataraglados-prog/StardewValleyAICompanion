@@ -11,9 +11,10 @@
 - 提交 `1621024f` 与 `99b3e5b0` 在该审计上增加唯一完成证明及其 CLI/产品包装器接线。证明由同一进程重建审计后生成，哈希绑定审计、dependency expansion 与 Gourmand receipt，并严格要求 `72` 个不重复鱼种、`14` 个不重复且全部已绑定的前置族、`3` 次 Gourmand 原生转移、零未知地点和零 blocker。真实 CLI 与 PowerShell 包装器集成路径均已覆盖，相关回归 `334/334`、PowerShell AST 与 `git diff --check` 通过。
 - 当前真实 catalog/window/dependency 的 game-free 基线重建结果同样为 `72` 个鱼种、`14` 个前置族、未知地点 `0`，且唯一缺口为 `ginger_island_access`；完成证明的严格分母不是夹具常量替代真实输入。
 - 提交 `97721637` 将同一函数接入实际长跑收尾：source schedule 独立重放通过后自动生成 audit；同时要求 Gourmand continuation 时再自动生成 completion proof，并把两者路径写入产品与外层工作流 summary。缺少必需 authority、audit 或 proof 会直接失败关闭，不再要求人工执行第二条证明命令。
+- 当前主线又接入证明驱动的 dependency closure：完成证明会被独立重建并与源 dependency 路径/SHA-256 复核，随后才派生一份 run-local 闭合图，把唯一 `complete_master_angler` direction 标为 `complete`、清空旧 blocker，并把 proof 路径/SHA-256 写入前置清单节点。源 authority JSON 保持只读；错哈希、伪造 proof、重复 direction 或关键节点缺失均失败关闭。专项 `79/79`、真实 verify-only 包装链 `135/135`、两份 PowerShell AST 与补丁检查均通过。
 - 该晋升和完成证明都只是 prerequisite implementation/binding 证据；回执、总审计与完成证明继续强制 `training_label_eligible=false`，不得解释成逐鱼捕获证明、正式 Teacher/native 三分区证据或训练授权。
-- 当前隐藏静音 v97 `golden-walnut-source-schedule-v97-20261101-182500` 由上述改动前的二进制启动，只用于保留 source-schedule 校准证据；最新低频观察已越过 iteration `191`、`137` 条 verified action，仍在 Stage One collection 且无 `stage=error`。它无法热加载 Gourmand 连续性或完成证明，结束后也不得冒充新回执。
-- v97 结束后的唯一下一原生入口是全新 day-zero v98，同时启用 `RequireSourceScheduleReady` 与 `RequireGourmandContinuationReady`，使用新的不可变 execution receipt archive。只有 v98 生成 source schedule、独立重放成功、完成精确三段 Gourmand，并由同次产品收尾自动落盘 `72/14/3` completion proof，才形成缺口 `0` 的运行时证据；正式训练状态在新的准入门通过前仍为 **false**。
+- 当前隐藏静音 v97 `golden-walnut-source-schedule-v97-20261101-182500` 由上述改动前的二进制启动，只用于保留 source-schedule 校准证据；最新低频观察已越过 iteration `216`、`149` 条 verified action，仍在 Stage One collection 且无 `stage=error`。它无法热加载 Gourmand 连续性、完成证明或闭合图，结束后也不得冒充新回执。
+- v97 结束后的唯一下一原生入口是全新 day-zero v98，同时启用 `RequireSourceScheduleReady` 与 `RequireGourmandContinuationReady`，使用新的不可变 execution receipt archive。只有 v98 生成 source schedule、独立重放成功、完成精确三段 Gourmand，并由同次产品收尾自动落盘 `72/14/3` completion proof 与闭合 dependency expansion，才形成缺口 `0` 且可交给 Goal Method / coverage 下游消费的运行时证据；正式训练状态在新的准入门通过前仍为 **false**。
 
 ## 2026-10-31：v92 保留证据，#377 已修复，下一入口锁定 v93
 

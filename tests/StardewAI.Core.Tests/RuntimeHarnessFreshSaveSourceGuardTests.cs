@@ -297,6 +297,14 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             calibration,
             StringComparison.Ordinal);
         Assert.Contains(
+            "build-master-angler-complete-dependency-expansions",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "master_angler_completed_dependency_expansions_path",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "$masterAnglerAuditResult = Invoke-MasterAnglerVerifiedSourceScheduleAudit",
             calibration,
             StringComparison.Ordinal);
@@ -310,6 +318,10 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains(
             "master_angler_completion_proof_path =",
+            workflow,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "master_angler_completed_dependency_expansions_path =",
             workflow,
             StringComparison.Ordinal);
         Assert.Contains(
