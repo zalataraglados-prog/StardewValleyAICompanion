@@ -1353,6 +1353,20 @@ public static class SnapshotValidator
         "world_progress"
     };
 
+    private static readonly string[] ShopRequiredDomains =
+    {
+        "environment",
+        "identity",
+        "time",
+        "player",
+        "options",
+        "menus",
+        "transport",
+        "current_location",
+        "locations",
+        "npcs"
+    };
+
     public static async Task<(List<string> Errors, SnapshotEnvelope? Snapshot)> ValidateAsync(
         Stream rawPayload,
         CancellationToken cancellationToken = default,
@@ -1521,6 +1535,11 @@ public static class SnapshotValidator
                 StringComparison.OrdinalIgnoreCase))
         {
             return FarmLayoutRequiredDomains;
+        }
+
+        if (string.Equals(profile, "shop", StringComparison.OrdinalIgnoreCase))
+        {
+            return ShopRequiredDomains;
         }
 
         if (string.Equals(profile, "social", StringComparison.OrdinalIgnoreCase) ||

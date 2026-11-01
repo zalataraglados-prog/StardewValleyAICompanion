@@ -126,6 +126,27 @@ public sealed class MiningSnapshotValidationTests
         Assert.Contains("missing state domain: farm", rejected);
     }
 
+    [Fact]
+    public void SnapshotValidatorAcceptsShopProfileAndKeepsItsDomainSetFailClosed()
+    {
+        var accepted = SnapshotValidator.ValidateRaw(
+            PurposeLimitedSnapshotJson(ShopProfileDomains),
+            out var snapshot,
+            "shop");
+
+        Assert.Empty(accepted);
+        Assert.NotNull(snapshot);
+        Assert.Equal(
+            ShopProfileDomains.OrderBy(value => value),
+            snapshot!.State.Keys.OrderBy(value => value));
+
+        var rejected = SnapshotValidator.ValidateRaw(
+            PurposeLimitedSnapshotJson(ShopProfileDomains, "npcs"),
+            out _,
+            "shop");
+        Assert.Contains("missing state domain: npcs", rejected);
+    }
+
     private static string PurposeLimitedSnapshotJson(
         IReadOnlyCollection<string> domains,
         string? omittedDomain = null)
@@ -399,6 +420,20 @@ public sealed class MiningSnapshotValidationTests
         "locations",
         "mining",
         "world_progress"
+    };
+
+    private static readonly string[] ShopProfileDomains =
+    {
+        "environment",
+        "identity",
+        "time",
+        "player",
+        "options",
+        "menus",
+        "transport",
+        "current_location",
+        "locations",
+        "npcs"
     };
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
