@@ -18,6 +18,12 @@
 | Money production evidence cells | **0/18** | 6 个 Money criterion × 3 partitions；hermetic fixture 不计 production |
 | Formal product training | **false** | 未通过完整正式训练准入 |
 
+### 2026-11-01 全新 day-zero v98 已进入原生长循环
+
+- `golden-walnut-source-schedule-v98-20261101-225447` 已由 `main@274471f0` 以隐藏静音、单并发、`skip-training` 方式启动，并同时启用 source schedule 与 Gourmand continuation 准入门；它使用全新 `ProofFarm_453221812` 存档，不续跑或热替换 v97。
+- fresh-save、Backend、ProductExecutor、透明桥和 LiveTrainingLoop 均已通过启动。iteration `4` 已累计 `3` 条 verified Product action 且无 `stage=error`；crop teacher 原生计划包含 `84` 个动作，当前按真实种子库存约束进入 `acquire_seed`，运行继续由 `8192 MiB` 硬底线、rolling `64` 迭代与跨轮根预算共同保护。
+- 这仍是教师/执行链校准，不是 Student 参数训练。只有同一 v98 身份形成 source schedule、独立重放、三段 Gourmand 连续性、`72/14/3` completion proof 与闭合 dependency expansion 后，才能进入后续训练准入判断。
+
 ### 2026-11-01 v97 终止、暂态移动门修复与磁盘启动门
 
 - v97 在 Year 1 Spring 10 13:50、iteration `329` 以 `max_consecutive_errors_reached count=5` 安全停止，保留 `204` 条 verified action；它未首次登岛、未生成 source schedule，因此不是 Master Angler 前置完成证据。
@@ -25,7 +31,7 @@
 - rolling retention 的边界已明确：它限制单轮内部迭代，不限制历史 run root。v70-v97 在清理前合计约 `17.49 GiB`；系统自动分页文件另占 `16.00 GiB`。经显式审核回收后，`I:` 当前约 `26.4 GiB` 空闲，已重新满足 v98 启动余量门。没有执行自动删除，也没有把 `local-data` 纳入版本控制。
 - 外层 Golden Walnut 工作流现于创建 fresh save 之前执行独立启动余量门，默认要求 `8192 MiB` 运行中硬底线加 `2048 MiB` 新轮次余量；余量不足时立即失败并报告卷、可用量和两部分预算。它不会自动删除历史 run。PowerShell AST 与包装器回归 `9/9` 通过。
 - 同一启动边界现增加只读跨轮 run-root 预算：对同一父目录下 `golden-walnut-` 系列计算逐根逻辑体积，默认新轮次加入后最多 `24` 根、已有历史逻辑体积最多 `12288 MiB`。超过任一门槛即在创建 fresh save 前失败；报告明确不执行清理，因此既避免再次无界累积，也不绕过人工归档/回收审批。
-- 唯一下一原生入口是全新 day-zero v98，同时要求 source schedule 与 Gourmand continuation；v97 不得续跑或热替换。
+- v98 已按上述唯一入口启动并保持独立身份；v97 不得续跑或热替换。
 
 ### 2026-11-01 Master Angler 前置完成证明与当前 v97 边界
 

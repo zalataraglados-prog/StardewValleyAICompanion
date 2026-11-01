@@ -4,6 +4,12 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已完成 v10 之后的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已按 current authority 冻结；当前唯一施工项为 `complete_master_angler` 顶层 dependency、日历窗口与 coverage 接线。P0/P1 共享 correctness blocker 可临时中断，但不得静默改序或并行展开多个 root method。
 
+## 2026-11-01：v98 已按新预算边界从全新 day-zero 启动
+
+- 唯一原生入口 `golden-walnut-source-schedule-v98-20261101-225447` 已由 `main@274471f0` 启动：隐藏静音、单并发、`skip-training`，同时要求 source schedule 与 Gourmand continuation；存档槽为全新 `ProofFarm_453221812`，没有续用 v97 状态。
+- fresh-save 与三项产品服务已通过。iteration `4` 已记录 `3` 条 verified Product action 且无错误；iteration `2` 形成 `84` 动作的 crop teacher 原生计划，后续按真实库存约束进入 `acquire_seed`。当前 source milestone 与三段 Gourmand 仍处于开局等待态，属于预期未达成条件而非卡死。
+- 运行证据只写入 `I:\StardewAITraining\golden-walnut-source-schedule-v98`，不进入 Git。后续低频观察只读取进度日志和终止证据；未达到 source schedule、独立重放、Gourmand 连续性及自动 completion proof 前，不得把本轮称作正式训练完成。
+
 ## 2026-11-01：v97 暂态移动门误判已修复，v98 启动前需恢复磁盘余量
 
 - v97 `golden-walnut-source-schedule-v97-20261101-182500` 在 Year 1 Spring 10 13:50、iteration `329` 按连续错误门安全停止；保留 `204` 条 verified Product action 和完整滚动证据。它尚未首次登岛、未生成 source schedule，状态仍为 incomplete，且不得冒充新 Gourmand 回执或正式训练证据。
