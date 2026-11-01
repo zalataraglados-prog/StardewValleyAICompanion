@@ -77,6 +77,7 @@
     <Compile Include="GoldenWalnutScheduleIdentitySourceGuardTests.cs" />
     <Compile Include="GoldenWalnutSaveIdentityTests.cs" />
     <Compile Include="GoldenWalnutFreshSaveSourceScheduleVerifierTests.cs" />
+    <Compile Include="GoldenWalnutGourmandContinuationMilestoneEvaluatorTests.cs" />
     <Compile Include="IslandGourmandSupplyScheduleProofTests.cs" />
     <Compile Include="WildTreeProductMainlineTests.cs" />
     <Compile Include="DailyPlanCompilerSources.cs" />
