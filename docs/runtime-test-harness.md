@@ -7,10 +7,15 @@ explicit mods required by the scenario. A separate test client in the normal
 `Mods` directory may patch game mechanics even when its HTTP API is unused.
 For example, `JunimoTestClient.GodTool` changes tool power and clump health.
 
-New smoke scripts must set `SMAPI_MODS_PATH` to a run-specific directory,
-copy only their declared allowlist, and record that path and allowlist in the
-summary. Evidence from a process that loaded undeclared gameplay patches is
-rejected rather than calibrated into the executor.
+New smoke scripts must set `SMAPI_MODS_PATH` and pass SMAPI's explicit
+`--mods-path` argument to the same run-specific directory, copy only their
+declared allowlist, and record that path and allowlist in the summary. After
+the first fresh transparent snapshot, the launcher must compare the actual
+`installed_mods[].id` set against the allowlist and fail closed on any missing,
+extra, or duplicate ID. A configured path and declared allowlist are not
+evidence that SMAPI used the isolated directory. Evidence from a process that
+loaded undeclared gameplay patches is rejected rather than calibrated into
+the executor.
 
 `StardewAI.RuntimeTestHarness` is a test-only SMAPI mod for runtime acceptance. It is not part of `StardewAI.TransparentBridge`, does not appear in Bridge capabilities, and must not be used by the AI action compiler.
 

@@ -49,7 +49,12 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
         Assert.Contains("[string] $OutputRoot = \"\"", source, StringComparison.Ordinal);
         Assert.Contains("$resolvedOutputRoot", source, StringComparison.Ordinal);
         Assert.Contains("$env:SMAPI_MODS_PATH = $smokeModsPath", source, StringComparison.Ordinal);
+        Assert.Contains("\"--mods-path\"", source, StringComparison.Ordinal);
+        Assert.Contains("-ArgumentList $smapiArguments", source, StringComparison.Ordinal);
         Assert.Contains("loaded_mod_allowlist = $loadedModAllowlist", source, StringComparison.Ordinal);
+        Assert.Contains("observed_loaded_mod_ids = $observedLoadedModIds", source, StringComparison.Ordinal);
+        Assert.Contains("Compare-Object", source, StringComparison.Ordinal);
+        Assert.Contains("Fresh-save smoke loaded-mod isolation failed.", source, StringComparison.Ordinal);
         Assert.Contains("$harnessConfig.SlotName = \"\"", source, StringComparison.Ordinal);
         Assert.Contains("StardewAI.TransparentBridge", source, StringComparison.Ordinal);
         Assert.Contains("StardewAI.RuntimeTestHarness", source, StringComparison.Ordinal);

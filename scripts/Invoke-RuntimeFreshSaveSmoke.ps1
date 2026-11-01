@@ -212,7 +212,16 @@ try {
     $env:ALSOFT_DRIVERS = "null"
     $env:SMAPI_MODS_PATH = $smokeModsPath
 
+    if ($smokeModsPath.Contains('"')) {
+        throw "Fresh-save smoke mods path contains an unsupported quote: $smokeModsPath"
+    }
+    $smapiArguments = @(
+        "--mods-path",
+        ('"' + $smokeModsPath + '"')
+    )
+
     $game = Start-Process -FilePath $smapi `
+        -ArgumentList $smapiArguments `
         -WorkingDirectory $gameDirectory -WindowStyle Hidden `
         -RedirectStandardOutput (Join-Path $artifactDirectory `
             "game.stdout.log") `
@@ -222,6 +231,28 @@ try {
         -TimeoutSeconds $StartupTimeoutSeconds | Out-Null
     $snapshotResponse = Wait-FreshWorld `
         -TimeoutSeconds $StartupTimeoutSeconds
+    $observedLoadedModIds = @(
+        @($snapshotResponse.value.installed_mods) |
+            ForEach-Object { [string]$_.id } |
+            Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+    )
+    $duplicateLoadedModIds = @(
+        $observedLoadedModIds |
+            Group-Object |
+            Where-Object Count -gt 1 |
+            ForEach-Object Name
+    )
+    $observedLoadedModIds = @($observedLoadedModIds | Sort-Object -Unique)
+    $expectedLoadedModIds = @($loadedModAllowlist | Sort-Object -Unique)
+    $loadedModDelta = @(
+        Compare-Object `
+            -ReferenceObject $expectedLoadedModIds `
+            -DifferenceObject $observedLoadedModIds
+    )
+    if ($duplicateLoadedModIds.Count -gt 0 -or
+        $loadedModDelta.Count -gt 0) {
+        throw "Fresh-save smoke loaded-mod isolation failed. Expected=$($expectedLoadedModIds -join ',') observed=$($observedLoadedModIds -join ',') duplicates=$($duplicateLoadedModIds -join ',')."
+    }
     $saveSlot = Wait-NativeSaveSlot -TimeoutSeconds 60
     $snapshotPath = Join-Path $artifactDirectory "fresh-snapshot.json"
     [System.IO.File]::WriteAllText(
@@ -253,6 +284,7 @@ try {
         full_shipment_missing_item_count = 154
         achievement_34 = $false
         loaded_mod_allowlist = $loadedModAllowlist
+        observed_loaded_mod_ids = $observedLoadedModIds
         smapi_mods_path = $smokeModsPath
         snapshot_path = $snapshotPath
     }
