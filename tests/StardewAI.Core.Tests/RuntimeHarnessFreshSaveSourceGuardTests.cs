@@ -524,6 +524,16 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             StringComparison.Ordinal);
         Assert.True(settleIndex >= 0);
         Assert.True(cropTeacherIndex > settleIndex);
+        var collectionIndex = program.IndexOf(
+            "await TryBuildStageOneCollectionTeacherQueueAsync(",
+            StringComparison.Ordinal);
+        Assert.True(collectionIndex > cropTeacherIndex);
+        var settleBranch = program[settleIndex..program.IndexOf(
+            "else if (options.UsePrecompiledQueue)", settleIndex, StringComparison.Ordinal)];
+        Assert.Contains("queue = nativeControlSettle.Queue;", settleBranch, StringComparison.Ordinal);
+        Assert.Contains("useDailyPlanDecisionLease = true;", settleBranch, StringComparison.Ordinal);
+        Assert.DoesNotContain("MasterAnglerTargetDateIntentBuilder.Build(", program[..collectionIndex], StringComparison.Ordinal);
+        Assert.Contains("MasterAnglerTargetDateIntentBuilder.Build(", collectionTeacher, StringComparison.Ordinal);
         Assert.Equal(
             1,
             CountOccurrences(
