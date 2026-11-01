@@ -310,10 +310,25 @@ namespace StardewAI.Core.Execution
                 : null;
             if (pathTiles.HasValue)
             {
-                var estimatedTicks = Math.Max(60, (pathTiles.Value + 1) * 60);
-                AddParameterIfMissing(parameters, "max_movement_tiles", Math.Max(1, pathTiles.Value + 1).ToString());
-                AddParameterIfMissing(parameters, "estimated_ticks", estimatedTicks.ToString());
-                AddParameterIfMissing(parameters, "estimated_minutes", GameClockBudgetPolicy.TicksToGameMinutes(estimatedTicks).ToString());
+                var movementTileLimit =
+                    ConnectorRouteExecutionBudgetPolicy.MovementTileLimit(
+                        pathTiles.Value);
+                var estimatedTicks =
+                    ConnectorRouteExecutionBudgetPolicy.EstimatedTicks(
+                        pathTiles.Value);
+                SetCompilerDerivedParameter(
+                    parameters,
+                    "max_movement_tiles",
+                    movementTileLimit.ToString());
+                SetCompilerDerivedParameter(
+                    parameters,
+                    "estimated_ticks",
+                    estimatedTicks.ToString());
+                SetCompilerDerivedParameter(
+                    parameters,
+                    "estimated_minutes",
+                    GameClockBudgetPolicy.TicksToGameMinutes(estimatedTicks)
+                        .ToString());
             }
 
             AddParameterIfMissing(parameters, "compiler_context.route_connector_source", "locations.route_connectors");
@@ -328,6 +343,16 @@ namespace StardewAI.Core.Execution
             {
                 parameters.Add(Parameter(name, value));
             }
+        }
+
+        private static void SetCompilerDerivedParameter(
+            List<SmallModelActionParameter> parameters,
+            string name,
+            string value)
+        {
+            parameters.RemoveAll(parameter =>
+                string.Equals(parameter.Name, name, StringComparison.Ordinal));
+            parameters.Add(Parameter(name, value));
         }
 
         private static SmallModelActionParameter[] BuildMiningReachDepthParameters(SmallModelAction action, SnapshotEnvelope snapshot)

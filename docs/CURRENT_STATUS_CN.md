@@ -28,6 +28,7 @@
 - v98 已在 iteration `167` 到达 `14:10` 并退出节日等待。Community Center 路线因透明事实 `community_center_junimo_text_not_readable` 正确失效；iteration `169` 随后执行 Beach -> Town -> BusStop -> Farm -> 出货箱站位 -> `executor.ship_inventory_item_to_bin` 的五步原生队列，库存中的鱼 `(O)147` 确实被移除。旧二进制却因 fresh 路径把机械站位从 `70` 重绑为 `73` 而误报 objective continuation 未完成。`main@7d143882` 现只用物品、槽位、数量、预期单价和目标出货箱坐标判定出货目标身份，允许机械站位随 fresh 路径变化；相关组合回归 `118/118` 通过。
 - `main@397b4216` 与 `54f79dd6` 同时补齐有精确开放时刻的有界原生等待：单个请求最多授权三段 `600` tick，并在精确开放时刻提前结束；日计划和时间预算按全部授权片段计费。运行中的 v98 冻结于 `main@274471f0`，因此只证明旧实现的有限退出和出货实效，不能冒充这三项当前源码修复的实机回归。
 - v98 iteration `177/179` 的 full Farm 快照确认旧承诺残留的 5 格花椰菜均为 `needs_watering=true`，而同轮 Stage One 的 98 个收集候选没有作物维护项；这证明共享日计划被持续存在的收集候选饿死。`main@df03f722` 仅在透明 `current_location.crops` 存在当天浇水义务时让 Stage One 暂停一轮，并严格复用现有 `farm.maintain_crops -> water_crop_tile` 编译执行链。原战略 continuation 在维护期间挂起并随后恢复；Farm 单例不能替代当前地图权威，收获/播种/施肥也不被这条窄门强制抢占。聚焦回归 `109/109` 通过，运行中的冻结 v98 尚未加载该修复。
+- v98 iteration `195` 在 Beach 出货恢复的首个 `executor.traverse_connector` 上返回 `movement_no_collision_safe_path`。同一 full 快照证明 `(44,25) -> (38,0)` 的透明最短路为 `31` 格，蛤蜊等对象已进入原生碰撞网格；旧动作只给 `32` 格上限，无法吸收规划与执行之间的 NPC/临时占位漂移。当前源码已把连接器预算统一为透明最短路加至多 `16` 格动态绕行余量，时间预算同步保守计费，并在 fresh 编译时强制刷新 `max_movement_tiles/estimated_ticks/estimated_minutes`。海滩回归得到 `47` 格上限，相关连接器回归与全解决方案构建通过；冻结 v98 仍是修复前诊断，尚无新二进制实机证据。
 - 这仍是教师/执行链校准，不是 Student 参数训练。只有同一 v98 身份形成 source schedule、独立重放、三段 Gourmand 连续性、`72/14/3` completion proof 与闭合 dependency expansion 后，才能进入后续训练准入判断。
 
 ### 2026-11-01 v97 终止、暂态移动门修复与磁盘启动门

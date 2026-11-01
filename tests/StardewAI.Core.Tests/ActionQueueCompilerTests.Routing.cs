@@ -740,6 +740,65 @@ public sealed partial class ActionQueueCompilerTests
     }
 
     [Fact]
+    public void CompileRefreshesConnectorBudgetWithDynamicOccupancyDetourAllowance()
+    {
+        var snapshot = Snapshot("""
+        {
+          "player": {
+            "location_id": {"value":"Beach","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_x": {"value":44,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":25,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
+          "locations": {
+            "collision_grid": {"value":{"location_id":"Beach","width":104,"height":50,"notable_tiles":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_action_branch_coverage": {"value":{"rows":[]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "route_connectors": {"value":{"location_id":"Beach","connectors":[{"kind":"warp","tile_x":38,"tile_y":-1,"target_location":"Town","target_x":54,"target_y":108,"resolved":true}]},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          }
+        }
+        """);
+        var plan = Plan(
+            snapshot.StateHash,
+            new SmallModelPlanStep
+            {
+                StepId = "plan.step.beach.to.town",
+                Kind = "traverse_connector",
+                TargetTileX = 38,
+                TargetTileY = -1,
+                EstimatedMinutes = 1,
+                Parameters = new[]
+                {
+                    new SmallModelActionParameter { Name = "connector_kind", Value = "warp" },
+                    new SmallModelActionParameter { Name = "expected_target_location", Value = "Town" },
+                    new SmallModelActionParameter { Name = "expected_arrival_tile_x", Value = "54" },
+                    new SmallModelActionParameter { Name = "expected_arrival_tile_y", Value = "108" },
+                    new SmallModelActionParameter { Name = "max_movement_tiles", Value = "2" },
+                    new SmallModelActionParameter { Name = "estimated_ticks", Value = "120" },
+                    new SmallModelActionParameter { Name = "estimated_minutes", Value = "3" }
+                }
+            });
+
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+
+        Assert.Equal("pending", queue.Status);
+        var item = Assert.Single(queue.Items);
+        var expectedMovementLimit =
+            31 + ConnectorRouteExecutionBudgetPolicy
+                .DynamicOccupancyDetourAllowanceTiles;
+        var expectedTicks = expectedMovementLimit * 60;
+        Assert.Contains(item.NormalizedCommand.Parameters, parameter =>
+            parameter.Name == "max_movement_tiles" &&
+            parameter.Value == expectedMovementLimit.ToString());
+        Assert.Contains(item.NormalizedCommand.Parameters, parameter =>
+            parameter.Name == "estimated_ticks" &&
+            parameter.Value == expectedTicks.ToString());
+        Assert.Contains(item.NormalizedCommand.Parameters, parameter =>
+            parameter.Name == "estimated_minutes" &&
+            parameter.Value == GameClockBudgetPolicy
+                .TicksToGameMinutes(expectedTicks)
+                .ToString());
+    }
+
+    [Fact]
     public void CompileAcceptsAuditedNativeBusTransportConnector()
     {
         var snapshot = NativeBusConnectorSnapshot(allowedNow: true);
