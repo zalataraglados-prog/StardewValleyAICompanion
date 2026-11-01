@@ -1217,6 +1217,14 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
 
         depositParameters
             .Select(node => node!.AsObject())
+            .Single(parameter => parameter["name"]!.GetValue<string>() == "stand_tile_x")["value"] = "66";
+        Assert.True(QueueReplanFilter.CompletesObjectiveContinuation(
+            deposit,
+            continuation,
+            "applied"));
+
+        depositParameters
+            .Select(node => node!.AsObject())
             .Single(parameter => parameter["name"]!.GetValue<string>() == "expected_unit_price")["value"] = "34";
         Assert.False(QueueReplanFilter.CompletesObjectiveContinuation(
             deposit,

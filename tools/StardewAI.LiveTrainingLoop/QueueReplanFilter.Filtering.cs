@@ -575,14 +575,6 @@ public static partial class QueueReplanFilter
                 string.Equals(
                     ReadParameter(queueItem, "target_tile_y"),
                     ReadString(continuation, "bin_tile_y"),
-                    StringComparison.Ordinal) &&
-                string.Equals(
-                    ReadParameter(queueItem, "stand_tile_x"),
-                    ReadString(continuation, "stand_tile_x"),
-                    StringComparison.Ordinal) &&
-                string.Equals(
-                    ReadParameter(queueItem, "stand_tile_y"),
-                    ReadString(continuation, "stand_tile_y"),
                     StringComparison.Ordinal);
         }
         if (string.Equals(
