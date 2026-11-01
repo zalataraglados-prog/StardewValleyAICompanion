@@ -9,7 +9,8 @@
 - v97 `golden-walnut-source-schedule-v97-20261101-182500` 在 Year 1 Spring 10 13:50、iteration `329` 按连续错误门安全停止；保留 `204` 条 verified Product action 和完整滚动证据。它尚未首次登岛、未生成 source schedule，状态仍为 incomplete，且不得冒充新 Gourmand 回执或正式训练证据。
 - 唯一终止原因是 Master Angler Teacher 把透明桥的暂态 `future_route_movement_timing_context_not_ready` 当成校准文件漂移并连续抛错。当前代码只把**精确且唯一**的这一暂态原因转换为非训练、零候选的当前轮次暂缓结果，并交还共享日计划；游戏版本、哈希、时钟常量、移动范围等真实校准漂移继续失败关闭。
 - 修复后的 GoalConditionedBootstrap 与 LiveTrainingLoop Release 构建均为 `0 warning / 0 error`；聚焦 `self-test-current-stage-one-collection` 通过。对 v97 iteration `329` 原始现场快照的离线重放稳定得到零候选及原始暂态 blocker，不再抛异常。
-- 磁盘复核确认现有 rolling retention 只保留**单轮内部**最近 `64` 个迭代，不限制历史 run root 数量。v70-v97 顶层目录当前至少占 `9.53 GiB`，而 Windows 自动管理的 `I:\pagefile.sys` 另占 `16.00 GiB`；10 月 27 日保留的旧 `artifacts` 约 `34.16 GiB`，此后仅改写约 `0.14 GiB`，不是本次重新膨胀来源。未执行任何清理。
+- 磁盘复核确认现有 rolling retention 只保留**单轮内部**最近 `64` 个迭代，不限制历史 run root 数量。v70-v97 顶层目录当前合计约 `17.49 GiB`，而 Windows 自动管理的 `I:\pagefile.sys` 另占 `16.00 GiB`；10 月 27 日保留的旧 `artifacts` 约 `34.16 GiB`，此后仅改写约 `0.14 GiB`，不是本次重新膨胀来源。未执行任何清理。
+- 长跑外层包装器现增加启动余量门：默认在创建 fresh save 前要求可用空间至少为运行中硬停止底线 `8192 MiB` 加新轮次余量 `2048 MiB`，并把各输出卷启动时余量写入成功 summary。该门只拒绝危险启动，不自动删除或覆盖历史证据；PowerShell AST 与包装器 source-guard `9/9` 通过。
 - 下一入口仍是全新 day-zero v98，并同时启用 `RequireSourceScheduleReady` 与 `RequireGourmandContinuationReady`。但 `I:` 当前约 `9.8 GiB` 空闲，相对运行时 `8192 MiB` 硬停止门只有约 `1.8 GiB` 余量；在明确审查并批准历史 run 归档/回收清单前，不得冒险启动新的长期原生运行。
 
 ## 2026-11-01：Master Angler 前置完成证明已接入产品链，v97 继续旧代码校准

@@ -26,6 +26,8 @@ param(
     [int] $MaxQueueNoProgressStreak = 8,
     [ValidateRange(1024, [int]::MaxValue)]
     [int] $MinFreeSpaceMb = 8192,
+    [ValidateRange(0, [int]::MaxValue)]
+    [int] $StartupFreeSpaceHeadroomMb = 2048,
     [string] $StageOneCollectionRequirementInventory = (Join-Path `
         $ProjectRoot `
         "experiments\local-data\output\authoritative-requirement-inventory-v1.json"),
@@ -80,6 +82,40 @@ $freshSaveOutputRoot = if ([string]::IsNullOrWhiteSpace(
 }
 $calibrationOutputRoot = Join-Path $resolvedOutputRoot "product-calibration"
 $workflowDirectory = Join-Path (Join-Path $resolvedOutputRoot "workflows") $RunId
+$requiredStartupFreeSpaceMb =
+    [int64]$MinFreeSpaceMb + [int64]$StartupFreeSpaceHeadroomMb
+$startupVolumeFreeSpace = [ordered]@{}
+foreach ($entry in ([ordered]@{
+            evidence_output_root = $resolvedOutputRoot
+            fresh_save_output_root = $freshSaveOutputRoot
+        }).GetEnumerator()) {
+    $volumeRoot = [IO.Path]::GetPathRoot([string]$entry.Value)
+    if ([string]::IsNullOrWhiteSpace($volumeRoot)) {
+        throw "Unable to resolve startup output volume for $($entry.Key)."
+    }
+    if ($startupVolumeFreeSpace.Contains($volumeRoot)) {
+        continue
+    }
+
+    $drive = [IO.DriveInfo]::new($volumeRoot)
+    if (-not $drive.IsReady) {
+        throw "Startup output volume is not ready: $volumeRoot"
+    }
+    $availableMb = [int64][math]::Floor(
+        $drive.AvailableFreeSpace / 1MB)
+    if ($availableMb -lt $requiredStartupFreeSpaceMb) {
+        throw (
+            "Insufficient startup free space on $volumeRoot " +
+            "available_mb=$availableMb " +
+            "required_mb=$requiredStartupFreeSpaceMb " +
+            "runtime_floor_mb=$MinFreeSpaceMb " +
+            "new_run_headroom_mb=$StartupFreeSpaceHeadroomMb")
+    }
+    $startupVolumeFreeSpace[$volumeRoot] = [ordered]@{
+        volume_root = $volumeRoot
+        available_mb = $availableMb
+    }
+}
 
 $freshOutput = & (Join-Path $PSScriptRoot "Invoke-RuntimeFreshSaveSmoke.ps1") `
     -ProjectRoot $ProjectRoot `
@@ -260,6 +296,9 @@ $summary = [ordered]@{
         @($calibrationSummary.golden_walnut_gourmand_continuity_blocking_reasons)
     artifact_retention_mode = "rolling"
     min_free_space_mb = $MinFreeSpaceMb
+    startup_free_space_headroom_mb = $StartupFreeSpaceHeadroomMb
+    startup_required_free_space_mb = $requiredStartupFreeSpaceMb
+    startup_volume_free_space = @($startupVolumeFreeSpace.Values)
     snapshot_artifact_mode = "content_addressed_gzip"
     execution_snapshot_profile = "full"
     formal_training_started = $false

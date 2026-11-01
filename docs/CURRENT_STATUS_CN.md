@@ -22,7 +22,8 @@
 
 - v97 在 Year 1 Spring 10 13:50、iteration `329` 以 `max_consecutive_errors_reached count=5` 安全停止，保留 `204` 条 verified action；它未首次登岛、未生成 source schedule，因此不是 Master Angler 前置完成证据。
 - 根因是有鱼竿的 Master Angler intent 构建在当前移动上下文暂不可用时，把 `future_route_movement_timing_context_not_ready` 错当成持久校准漂移。当前修复只降级这一项精确暂态原因，返回非训练、零候选结果并让共享日计划继续；其他校准不一致仍失败关闭。两项 Release 构建、聚焦 Stage One 自测及 v97 终止快照离线重放均通过。
-- rolling retention 的边界已明确：它限制单轮内部迭代，不限制历史 run root。v70-v97 至少累计 `9.53 GiB`；系统自动分页文件另占 `16.00 GiB`。`I:` 当前仅约 `9.8 GiB` 空闲，在完成显式、可审查的历史运行归档/回收前不得启动 v98。没有执行自动删除，也没有把 `local-data` 纳入版本控制。
+- rolling retention 的边界已明确：它限制单轮内部迭代，不限制历史 run root。v70-v97 合计约 `17.49 GiB`；系统自动分页文件另占 `16.00 GiB`。`I:` 当前仅约 `9.8 GiB` 空闲，在完成显式、可审查的历史运行归档/回收前不得启动 v98。没有执行自动删除，也没有把 `local-data` 纳入版本控制。
+- 外层 Golden Walnut 工作流现于创建 fresh save 之前执行独立启动余量门，默认要求 `8192 MiB` 运行中硬底线加 `2048 MiB` 新轮次余量；余量不足时立即失败并报告卷、可用量和两部分预算。它不会自动删除历史 run。PowerShell AST 与包装器回归 `9/9` 通过。
 - 空间恢复后，唯一下一原生入口仍是全新 day-zero v98，同时要求 source schedule 与 Gourmand continuation；v97 不得续跑或热替换。
 
 ### 2026-11-01 Master Angler 前置完成证明与当前 v97 边界

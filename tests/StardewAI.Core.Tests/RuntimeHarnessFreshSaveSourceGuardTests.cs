@@ -109,6 +109,25 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             workflow,
             StringComparison.Ordinal);
         Assert.Contains(
+            "[int] $StartupFreeSpaceHeadroomMb = 2048",
+            workflow,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$requiredStartupFreeSpaceMb =",
+            workflow,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Insufficient startup free space on $volumeRoot",
+            workflow,
+            StringComparison.Ordinal);
+        Assert.True(
+            workflow.IndexOf(
+                "$requiredStartupFreeSpaceMb =",
+                StringComparison.Ordinal) < workflow.IndexOf(
+                "Invoke-RuntimeFreshSaveSmoke.ps1",
+                StringComparison.Ordinal),
+            "Golden Walnut workflow must reject insufficient headroom before creating a fresh save.");
+        Assert.Contains(
             "-RequireGoldenWalnutSourceScheduleReady:$RequireSourceScheduleReady",
             workflow,
             StringComparison.Ordinal);
@@ -162,6 +181,14 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains(
             "evidence_output_root = $resolvedOutputRoot",
+            workflow,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "startup_free_space_headroom_mb = $StartupFreeSpaceHeadroomMb",
+            workflow,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "startup_required_free_space_mb = $requiredStartupFreeSpaceMb",
             workflow,
             StringComparison.Ordinal);
         Assert.Contains(
