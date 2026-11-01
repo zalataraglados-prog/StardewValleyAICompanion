@@ -314,7 +314,8 @@ static partial class Program
             beforeSnapshot,
             stateHash,
             options,
-            interruptKind: "safe_dialogue_recovery");
+            interruptKind: "safe_dialogue_recovery",
+            snapshotProfile: "daily");
     }
 
     private static async Task<CropTeacherControlQueueBuildResult>
@@ -374,7 +375,8 @@ static partial class Program
             beforeSnapshotPath,
             beforeSnapshot,
             stateHash,
-            options);
+            options,
+            snapshotProfile: "shop");
     }
 
     private static async Task<CropTeacherControlQueueBuildResult>
@@ -456,7 +458,8 @@ static partial class Program
             beforeSnapshotPath,
             beforeSnapshot,
             stateHash,
-            options);
+            options,
+            snapshotProfile: "route");
     }
 
     private static async Task<CropTeacherControlQueueBuildResult>
@@ -715,14 +718,17 @@ static partial class Program
             snapshotPath,
             snapshot,
             stateHash,
-            options.BridgeSnapshotUrl,
+            SnapshotUrlForProfile(
+                options.BridgeSnapshotUrl,
+                "daily",
+                forceRefresh: true),
             approach.TileX,
             approach.TileY,
             "watering-refill-approach",
             "crop-watering-refill-approach",
             "authoritative_crop_watering_refill_approach.v1",
             "water_crop_retries_only_after_native_refill_approach",
-            options.ExecutionSnapshotProfile,
+            "daily",
             "crop_teacher_watering_refill_approach");
     }
 
@@ -944,7 +950,8 @@ static partial class Program
             beforeSnapshotPath,
             beforeSnapshot,
             stateHash,
-            options);
+            options,
+            snapshotProfile: "daily");
     }
 
     private static async Task<CropTeacherControlQueueBuildResult>
@@ -985,7 +992,8 @@ static partial class Program
             beforeSnapshotPath,
             beforeSnapshot,
             stateHash,
-            options);
+            options,
+            snapshotProfile: "daily");
     }
 
     private static JsonObject BuildCropTeacherActionModel(
@@ -1024,17 +1032,27 @@ static partial class Program
         JsonObject beforeSnapshot,
         string stateHash,
         LiveTrainingOptions options,
-        string interruptKind = "") => new(
+        string interruptKind = "",
+        string? snapshotProfile = null)
+    {
+        var effectiveProfile = string.IsNullOrWhiteSpace(snapshotProfile)
+            ? options.ExecutionSnapshotProfile
+            : snapshotProfile;
+        return new CropTeacherControlQueueBuildResult(
             queue,
             modelPlanPath,
             rankingPath,
             beforeSnapshotPath,
             beforeSnapshot,
             stateHash,
-            options.ExecutionSnapshotProfile,
-            options.BridgeSnapshotUrl,
+            effectiveProfile,
+            SnapshotUrlForProfile(
+                options.BridgeSnapshotUrl,
+                effectiveProfile,
+                forceRefresh: true),
             false,
             interruptKind);
+    }
 
     private static void RequireCompiledQueue(
         JsonObject queue,

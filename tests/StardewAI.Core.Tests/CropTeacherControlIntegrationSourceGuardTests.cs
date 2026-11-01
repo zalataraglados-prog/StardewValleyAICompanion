@@ -124,6 +124,40 @@ public sealed class CropTeacherControlIntegrationSourceGuardTests
     }
 
     [Fact]
+    public void TeacherMechanicalQueuesUsePurposeLimitedExecutionSnapshots()
+    {
+        var source = Read(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.CropTeacherControl.cs");
+
+        Assert.Contains(
+            "snapshotProfile: \"shop\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "snapshotProfile: \"route\"",
+            source,
+            StringComparison.Ordinal);
+        Assert.True(
+            source.Split(
+                "snapshotProfile: \"daily\"",
+                StringSplitOptions.None).Length >= 4,
+            "Dialogue recovery, crop batches and sleep must use daily snapshots.");
+        Assert.Contains(
+            "SnapshotUrlForProfile(\n" +
+            "                options.BridgeSnapshotUrl,\n" +
+            "                effectiveProfile,\n" +
+            "                forceRefresh: true)",
+            source.Replace("\r\n", "\n"),
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"farm_layout\"",
+            source,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void TeacherControlReusesExistingCompilerAndPlannerEntrypoints()
     {
         var source = Read(

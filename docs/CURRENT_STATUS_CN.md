@@ -22,6 +22,7 @@
 
 - `golden-walnut-source-schedule-v98-20261101-225447` 已由 `main@274471f0` 以隐藏静音、单并发、`skip-training` 方式启动，并同时启用 source schedule 与 Gourmand continuation 准入门；它使用全新 `ProofFarm_453221812` 存档，不续跑或热替换 v97。
 - fresh-save、Backend、ProductExecutor、透明桥和 LiveTrainingLoop 均已通过启动。iteration `4` 已累计 `3` 条 verified Product action 且无 `stage=error`；crop teacher 原生计划包含 `84` 个动作，当前按真实种子库存约束进入 `acquire_seed`，运行继续由 `8192 MiB` 硬底线、rolling `64` 迭代与跨轮根预算共同保护。
+- v98 进一步在 iteration `36` 完成 6 粒花椰菜种子的真实购买，资金从 `500` 降至 `20`，随后回农场并于 iteration `43` 进入 `prepare_site`，累计 `42` 条 verified action。现场同时证明每个购买/路线队列项都回退到 `full` 执行快照会把三项队列拉长到约 3 分钟；主线现复用既有 profile override，把购买、路线、作物批次、睡眠与安全对话恢复分别绑定到 `shop`、`route`、`daily`，场地准备继续使用 `farm_layout`。Golden Walnut 全局基线与最终证明仍为 `full`，没有删减透明字段。
 - 这仍是教师/执行链校准，不是 Student 参数训练。只有同一 v98 身份形成 source schedule、独立重放、三段 Gourmand 连续性、`72/14/3` completion proof 与闭合 dependency expansion 后，才能进入后续训练准入判断。
 
 ### 2026-11-01 v97 终止、暂态移动门修复与磁盘启动门
