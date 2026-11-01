@@ -35,6 +35,12 @@ param(
     [string] $MasterAnglerStageOneWindowIndex = (Join-Path `
         $ProjectRoot `
         "experiments\local-data\output\master-angler-stage-one-window-index-v1.json"),
+    [string] $MasterAnglerOpportunityCatalog = (Join-Path `
+        $ProjectRoot `
+        "experiments\local-data\output\master-angler-opportunity-catalog-v1.json"),
+    [string] $MasterAnglerDependencyExpansions = (Join-Path `
+        $ProjectRoot `
+        "experiments\goal-method-dependency-expansions.v1.json"),
     [string] $RouteTimingCalibration = `
         "I:\StardewAITrainingLab\goal-conditioned-bootstrap-v1\artifacts\runtime-movement-timing-calibration\runtime-movement-timing-calibration-20260906-043908\summary.json",
     [int] $StartupTimeoutSeconds = 180
@@ -116,6 +122,8 @@ $calibrationOutput = & (Join-Path $PSScriptRoot `
     -StageOneCollectionAcquisitionLowering `
         $StageOneCollectionAcquisitionLowering `
     -MasterAnglerStageOneWindowIndex $MasterAnglerStageOneWindowIndex `
+    -MasterAnglerOpportunityCatalog $MasterAnglerOpportunityCatalog `
+    -MasterAnglerDependencyExpansions $MasterAnglerDependencyExpansions `
     -RouteTimingCalibration $RouteTimingCalibration `
     -StartupTimeoutSeconds $StartupTimeoutSeconds
 if ($LASTEXITCODE -ne 0) {
@@ -153,6 +161,21 @@ if ($RequireGourmandContinuationReady -and
          [string]$calibrationSummary.golden_walnut_gourmand_continuity_receipt_path) `
          -PathType Leaf))) {
     throw "Product calibration did not complete all three native Gourmand requests."
+}
+if ($RequireSourceScheduleReady -and
+    ([string]::IsNullOrWhiteSpace(
+        [string]$calibrationSummary.master_angler_audit_path) -or
+     -not (Test-Path -LiteralPath (
+        [string]$calibrationSummary.master_angler_audit_path) -PathType Leaf))) {
+    throw "Product calibration did not produce the bound Master Angler prerequisite audit."
+}
+if ($RequireGourmandContinuationReady -and
+    ([string]::IsNullOrWhiteSpace(
+        [string]$calibrationSummary.master_angler_completion_proof_path) -or
+     -not (Test-Path -LiteralPath (
+        [string]$calibrationSummary.master_angler_completion_proof_path) `
+        -PathType Leaf))) {
+    throw "Product calibration did not produce the bound Master Angler completion proof."
 }
 
 $freshSummaryPath = Join-Path (
@@ -200,6 +223,12 @@ $summary = [ordered]@{
         [bool]$calibrationSummary.golden_walnut_source_schedule_independently_verified
     source_schedule_independent_verification_receipt_path =
         [string]$calibrationSummary.golden_walnut_source_schedule_independent_verification_receipt_path
+    master_angler_audit_path =
+        [string]$calibrationSummary.master_angler_audit_path
+    master_angler_audit_log_path =
+        [string]$calibrationSummary.master_angler_audit_log_path
+    master_angler_completion_proof_path =
+        [string]$calibrationSummary.master_angler_completion_proof_path
     gourmand_continuation_required = [bool]$RequireGourmandContinuationReady
     gourmand_continuation_ready =
         [bool]$calibrationSummary.golden_walnut_gourmand_continuation_ready

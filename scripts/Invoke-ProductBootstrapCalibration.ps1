@@ -61,17 +61,13 @@ param(
     [switch] $AuditMasterAnglerFreshSavePrerequisites,
     [Parameter(ParameterSetName = "VerifyOnly")]
     [string] $VerificationGourmandContinuationReceiptPath = "",
-    [Parameter(ParameterSetName = "VerifyOnly")]
     [string] $MasterAnglerOpportunityCatalog = (Join-Path `
         $ProjectRoot `
         "experiments\local-data\output\master-angler-opportunity-catalog-v1.json"),
-    [Parameter(ParameterSetName = "VerifyOnly")]
     [string] $MasterAnglerDependencyExpansions = (Join-Path `
         $ProjectRoot `
         "experiments\goal-method-dependency-expansions.v1.json"),
-    [Parameter(ParameterSetName = "VerifyOnly")]
     [string] $MasterAnglerAuditOutputPath = "",
-    [Parameter(ParameterSetName = "VerifyOnly")]
     [string] $MasterAnglerCompletionProofOutputPath = ""
 )
 
@@ -115,6 +111,15 @@ if ($RequireGoldenWalnutSourceScheduleReady -or
             $RouteTimingCalibration)) {
         if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
             throw "Required Stage 1 Teacher authority artifact was not found: $path"
+        }
+    }
+}
+if ($RequireGoldenWalnutSourceScheduleReady) {
+    foreach ($path in @(
+            $MasterAnglerOpportunityCatalog,
+            $MasterAnglerDependencyExpansions)) {
+        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+            throw "Required Master Angler completion-proof authority artifact was not found: $path"
         }
     }
 }
@@ -862,6 +867,7 @@ try {
     $independentVerificationReceiptPath = ""
     $independentVerificationLogPath = ""
     $sourceScheduleIndependentlyVerified = $false
+    $masterAnglerAuditResult = $null
     if ($RequireGoldenWalnutSourceScheduleReady) {
         $verificationResult = Invoke-GoldenWalnutSourceScheduleIndependentVerification `
             -InitialSnapshot $initial `
@@ -874,6 +880,23 @@ try {
         $independentVerificationReceiptPath = $verificationResult.ReceiptPath
         $independentVerificationLogPath = $verificationResult.LogPath
         $sourceScheduleIndependentlyVerified = $true
+        $gourmandReceiptPath = if ($RequireGourmandContinuationReady) {
+            [string]$loopReport.golden_walnut_gourmand_continuity_receipt_path
+        } else {
+            ""
+        }
+        $masterAnglerAuditResult = Invoke-MasterAnglerVerifiedSourceScheduleAudit `
+            -VerificationResult $verificationResult `
+            -SourceSchedulePath ([string]$loopReport.golden_walnut_source_schedule_path) `
+            -BootstrapDllPath $bootstrapDll `
+            -OutputDirectory $artifactDirectory `
+            -ExpectedRunId $RunId `
+            -CatalogPath $MasterAnglerOpportunityCatalog `
+            -WindowIndexPath $MasterAnglerStageOneWindowIndex `
+            -DependencyExpansionsPath $MasterAnglerDependencyExpansions `
+            -AuditOutputPath $MasterAnglerAuditOutputPath `
+            -GourmandContinuationReceiptPath $gourmandReceiptPath `
+            -CompletionProofOutputPath $MasterAnglerCompletionProofOutputPath
     }
     if ($resumeCropTeacher -and
         (-not [bool]$loopReport.crop_teacher_run_completed -or
@@ -958,6 +981,16 @@ try {
             $independentVerificationReceiptPath
         golden_walnut_source_schedule_independent_verification_log_path =
             $independentVerificationLogPath
+        master_angler_audit_path = if ($null -ne $masterAnglerAuditResult) {
+            [string]$masterAnglerAuditResult.AuditPath
+        } else { "" }
+        master_angler_audit_log_path = if ($null -ne $masterAnglerAuditResult) {
+            [string]$masterAnglerAuditResult.LogPath
+        } else { "" }
+        master_angler_completion_proof_path = if (
+            $null -ne $masterAnglerAuditResult) {
+            [string]$masterAnglerAuditResult.CompletionProofPath
+        } else { "" }
         max_attempts = $MaxAttempts
         verified_actions = [int]$loopReport.verified_actions
         required_verified_actions = $RequiredVerifiedActions

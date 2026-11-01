@@ -297,6 +297,22 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             calibration,
             StringComparison.Ordinal);
         Assert.Contains(
+            "$masterAnglerAuditResult = Invoke-MasterAnglerVerifiedSourceScheduleAudit",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "-GourmandContinuationReceiptPath $gourmandReceiptPath",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "[string]$masterAnglerAuditResult.CompletionProofPath",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "master_angler_completion_proof_path =",
+            workflow,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "MasterAnglerFreshSavePrerequisiteCompletionProofBuilder.Build",
             bootstrapProgram,
             StringComparison.Ordinal);
