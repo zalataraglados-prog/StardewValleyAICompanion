@@ -285,6 +285,50 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
             Assert.Throws<InvalidDataException>(() => fixture.Verify()).Message);
     }
 
+    [Theory]
+    [InlineData("before_snapshot_path", false)]
+    [InlineData("before_snapshot_path", true)]
+    [InlineData("after_snapshot_path", false)]
+    [InlineData("after_snapshot_path", true)]
+    [InlineData("snapshot_path", false)]
+    [InlineData("snapshot_path", true)]
+    public void RejectsSnapshotsOutsideFrozenArtifactDirectory(string field, bool relative)
+    {
+        using var fixture = new Fixture();
+        using var external = new Fixture();
+        var snapshotPath = external.SnapshotPath(field == "after_snapshot_path" ? 1 : 0);
+        var reference = relative ? Path.GetRelativePath(fixture.Root, snapshotPath) : snapshotPath;
+        var receiptPath = field == "snapshot_path" ? fixture.BoundaryPath :
+            Path.Combine(fixture.Root, "golden-walnut-fresh-save-episode-0001.json");
+        fixture.Change(receiptPath, root => root[field] = reference);
+        // Even a schedule regenerated against the external bytes must not make
+        // a supposedly frozen directory depend on another artifact tree.
+        GoldenWalnutFreshSaveEpisodeScheduleBuilder.Write(fixture.SchedulePath, fixture.ManifestPath);
+
+        Assert.Contains("outside frozen artifact directory",
+            Assert.Throws<InvalidDataException>(() => fixture.Verify()).Message);
+    }
+
+    [Fact]
+    public void AcceptsRelativeDurableSnapshotAliasesInsideFrozenDirectory()
+    {
+        using var fixture = new Fixture();
+        fixture.Change(fixture.BoundaryPath, root => root["snapshot_path"] = "snapshot-0.json");
+        for (var index = 1; index <= 4; index++)
+        {
+            var before = $"snapshot-{index - 1}.json";
+            var after = $"snapshot-{index}.json";
+            fixture.Change(Path.Combine(fixture.Root, $"golden-walnut-fresh-save-episode-{index:D4}.json"), root =>
+            {
+                root["before_snapshot_path"] = before;
+                root["after_snapshot_path"] = after;
+            });
+        }
+        GoldenWalnutFreshSaveEpisodeScheduleBuilder.Write(fixture.SchedulePath, fixture.ManifestPath);
+
+        Assert.Equal(4, fixture.Verify().SourceEpisodeCount);
+    }
+
     [Fact]
     public void RejectsChangedManifestByteBindingEvenWhenMembershipIsIdentical()
     {

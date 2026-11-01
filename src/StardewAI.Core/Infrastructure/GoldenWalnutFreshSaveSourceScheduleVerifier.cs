@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using StardewAI.Contracts.Training;
 
 namespace StardewAI.Core.Infrastructure;
 
@@ -30,6 +31,15 @@ public static class GoldenWalnutFreshSaveSourceScheduleVerifier
         var boundary = JsonSerializer.Deserialize<GoldenWalnutFreshSaveInitialBoundary>(
             File.ReadAllText(manifest.InitialBoundaryPath)) ??
             throw new InvalidDataException("Golden Walnut initial boundary is unreadable.");
+        RequireFrozenSnapshot(episodeDirectory, boundary.SnapshotPath);
+        foreach (var episodePath in manifest.EpisodePaths)
+        {
+            var episode = JsonSerializer.Deserialize<PlanExecutionEpisodeEnvelope>(
+                File.ReadAllText(episodePath)) ??
+                throw new InvalidDataException("Golden Walnut episode is unreadable.");
+            RequireFrozenSnapshot(episodeDirectory, episode.BeforeSnapshotPath);
+            RequireFrozenSnapshot(episodeDirectory, episode.AfterSnapshotPath);
+        }
         var initial = GoldenWalnutFreshSaveInitialBoundaryValidator.Validate(
             boundary, manifest.InitialBoundaryPath, runId);
         Require(initial.SaveId.Value == saveId, "identity.save_id");
@@ -41,6 +51,20 @@ public static class GoldenWalnutFreshSaveSourceScheduleVerifier
         Require(rebuilt.SourceCompletions.Length > 0, "source_completions (no source increment)");
         CompareArtifact(JsonSerializer.SerializeToElement(rebuilt), emittedSchedulePath, "schedule");
         return rebuilt;
+    }
+
+    // Durable archive snapshots are siblings of their receipts. Hashing an
+    // external snapshot does not freeze it into the supplied artifact directory.
+    private static void RequireFrozenSnapshot(string episodeDirectory, string snapshotPath)
+    {
+        Require(!string.IsNullOrWhiteSpace(snapshotPath), "snapshot path");
+        var directory = Path.GetFullPath(episodeDirectory).TrimEnd(Path.DirectorySeparatorChar);
+        var fullPath = Path.GetFullPath(Path.IsPathRooted(snapshotPath)
+            ? snapshotPath : Path.Combine(directory, snapshotPath));
+        Require(string.Equals(Path.GetDirectoryName(fullPath), directory, StringComparison.OrdinalIgnoreCase),
+            "snapshot outside frozen artifact directory");
+        Require((File.GetAttributes(fullPath) & FileAttributes.ReparsePoint) == 0,
+            "snapshot reparse point outside frozen artifact directory");
     }
 
     private static void CompareArtifact(JsonElement expected, string path, string field)
