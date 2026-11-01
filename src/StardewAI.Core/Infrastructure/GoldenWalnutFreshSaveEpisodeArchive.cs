@@ -64,6 +64,17 @@ public static class GoldenWalnutFreshSaveEpisodeArchive
             "Golden Walnut source episode snapshot is missing: " + fullEpisodePath);
         Require(SameDirectory(directory, beforePath) && SameDirectory(directory, afterPath),
             "Golden Walnut durable aliases require episode snapshots in one artifact directory.");
+        string? executionPath = null;
+        if (!string.IsNullOrWhiteSpace(episode.ExecutionResultPath))
+        {
+            executionPath = ResolveArtifact(directory, episode.ExecutionResultPath);
+            Require(File.Exists(executionPath),
+                "Golden Walnut source episode execution receipt is missing: " +
+                fullEpisodePath);
+            Require(SameDirectory(directory, executionPath),
+                "Golden Walnut durable aliases require the execution receipt " +
+                "in the episode artifact directory.");
+        }
 
         var suffix = iteration.ToString("D8") + "-" +
             Sha256(Encoding.UTF8.GetBytes(episode.EpisodeId))[..12];
@@ -76,6 +87,9 @@ public static class GoldenWalnutFreshSaveEpisodeArchive
         var archiveEpisodePath = Path.Combine(
             directory,
             "golden-walnut-fresh-save-episode-" + suffix + ".json");
+        var archiveExecutionPath = Path.Combine(
+            directory,
+            "golden-walnut-fresh-save-execution-" + suffix + ".json");
         var initialBoundaryPath =
             GoldenWalnutFreshSaveInitialBoundaryValidator.PathFor(
                 directory,
@@ -101,6 +115,11 @@ public static class GoldenWalnutFreshSaveEpisodeArchive
                 JsonSerializer.Serialize(initialBoundary, JsonOptions));
         }
         CopyImmutable(afterPath, archiveAfterPath);
+        if (executionPath is not null)
+        {
+            CopyImmutable(executionPath, archiveExecutionPath);
+            episode.ExecutionResultPath = Path.GetFileName(archiveExecutionPath);
+        }
         episode.BeforeSnapshotPath = Path.GetFileName(archiveBeforePath);
         episode.AfterSnapshotPath = Path.GetFileName(archiveAfterPath);
         WriteImmutable(

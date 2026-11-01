@@ -100,6 +100,20 @@ public sealed class LiveTrainingLoopReport
     public string[] GoldenWalnutGourmandBlockingReasons { get; set; } =
         Array.Empty<string>();
 
+    [JsonPropertyName("golden_walnut_gourmand_continuity_verified")]
+    public bool GoldenWalnutGourmandContinuityVerified { get; set; }
+
+    [JsonPropertyName("golden_walnut_gourmand_verified_transition_count")]
+    public int GoldenWalnutGourmandVerifiedTransitionCount { get; set; }
+
+    [JsonPropertyName("golden_walnut_gourmand_continuity_receipt_path")]
+    public string GoldenWalnutGourmandContinuityReceiptPath { get; set; } =
+        string.Empty;
+
+    [JsonPropertyName("golden_walnut_gourmand_continuity_blocking_reasons")]
+    public string[] GoldenWalnutGourmandContinuityBlockingReasons { get; set; } =
+        Array.Empty<string>();
+
     [JsonPropertyName("planning_handoff_capture_manifest_path")]
     public string PlanningHandoffCaptureManifestPath { get; set; } =
         string.Empty;

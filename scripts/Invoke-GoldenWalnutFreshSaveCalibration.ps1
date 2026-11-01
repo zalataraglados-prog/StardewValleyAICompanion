@@ -143,7 +143,15 @@ if ($RequireGourmandContinuationReady -and
     (-not [bool]$calibrationSummary.golden_walnut_gourmand_continuation_ready -or
      [int]$calibrationSummary.golden_walnut_gourmand_requests_fulfilled -ne 3 -or
      [int]$calibrationSummary.golden_walnut_gourmand_collected_quantity -ne 15 -or
-     @($calibrationSummary.golden_walnut_gourmand_blocking_reasons).Count -ne 0)) {
+     @($calibrationSummary.golden_walnut_gourmand_blocking_reasons).Count -ne 0 -or
+     -not [bool]$calibrationSummary.golden_walnut_gourmand_continuity_verified -or
+     [int]$calibrationSummary.golden_walnut_gourmand_verified_transition_count -ne 3 -or
+     @($calibrationSummary.golden_walnut_gourmand_continuity_blocking_reasons).Count -ne 0 -or
+     [string]::IsNullOrWhiteSpace(
+         [string]$calibrationSummary.golden_walnut_gourmand_continuity_receipt_path) -or
+     -not (Test-Path -LiteralPath (
+         [string]$calibrationSummary.golden_walnut_gourmand_continuity_receipt_path) `
+         -PathType Leaf))) {
     throw "Product calibration did not complete all three native Gourmand requests."
 }
 
@@ -201,6 +209,14 @@ $summary = [ordered]@{
         [int]$calibrationSummary.golden_walnut_gourmand_collected_quantity
     gourmand_blocking_reasons =
         @($calibrationSummary.golden_walnut_gourmand_blocking_reasons)
+    gourmand_continuity_verified =
+        [bool]$calibrationSummary.golden_walnut_gourmand_continuity_verified
+    gourmand_verified_transition_count =
+        [int]$calibrationSummary.golden_walnut_gourmand_verified_transition_count
+    gourmand_continuity_receipt_path =
+        [string]$calibrationSummary.golden_walnut_gourmand_continuity_receipt_path
+    gourmand_continuity_blocking_reasons =
+        @($calibrationSummary.golden_walnut_gourmand_continuity_blocking_reasons)
     artifact_retention_mode = "rolling"
     min_free_space_mb = $MinFreeSpaceMb
     snapshot_artifact_mode = "content_addressed_gzip"

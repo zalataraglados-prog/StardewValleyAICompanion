@@ -719,7 +719,15 @@ try {
          -not [bool]$loopReport.golden_walnut_gourmand_continuation_ready -or
          [int]$loopReport.golden_walnut_gourmand_requests_fulfilled -ne 3 -or
          [int]$loopReport.golden_walnut_gourmand_collected_quantity -ne 15 -or
-         @($loopReport.golden_walnut_gourmand_blocking_reasons).Count -ne 0)) {
+         @($loopReport.golden_walnut_gourmand_blocking_reasons).Count -ne 0 -or
+         -not [bool]$loopReport.golden_walnut_gourmand_continuity_verified -or
+         [int]$loopReport.golden_walnut_gourmand_verified_transition_count -ne 3 -or
+         @($loopReport.golden_walnut_gourmand_continuity_blocking_reasons).Count -ne 0 -or
+         [string]::IsNullOrWhiteSpace(
+             [string]$loopReport.golden_walnut_gourmand_continuity_receipt_path) -or
+         -not (Test-Path -LiteralPath (
+             [string]$loopReport.golden_walnut_gourmand_continuity_receipt_path) `
+             -PathType Leaf))) {
         throw "Golden Walnut long-run did not complete all three native Gourmand requests."
     }
 
@@ -808,6 +816,14 @@ try {
             [int]$loopReport.golden_walnut_gourmand_collected_quantity
         golden_walnut_gourmand_blocking_reasons =
             @($loopReport.golden_walnut_gourmand_blocking_reasons)
+        golden_walnut_gourmand_continuity_verified =
+            [bool]$loopReport.golden_walnut_gourmand_continuity_verified
+        golden_walnut_gourmand_verified_transition_count =
+            [int]$loopReport.golden_walnut_gourmand_verified_transition_count
+        golden_walnut_gourmand_continuity_receipt_path =
+            [string]$loopReport.golden_walnut_gourmand_continuity_receipt_path
+        golden_walnut_gourmand_continuity_blocking_reasons =
+            @($loopReport.golden_walnut_gourmand_continuity_blocking_reasons)
         golden_walnut_source_schedule_independently_verified =
             $sourceScheduleIndependentlyVerified
         golden_walnut_source_schedule_independent_verification_receipt_path =

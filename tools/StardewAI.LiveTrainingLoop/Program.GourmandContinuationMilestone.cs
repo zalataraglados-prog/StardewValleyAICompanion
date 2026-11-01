@@ -51,4 +51,47 @@ static partial class Program
             assessment.CollectedGourmandWalnutQuantity +
             " blockers=" + string.Join(",", assessment.BlockingReasons));
     }
+
+    private static GourmandContinuationReceiptOutcome
+        WriteGourmandContinuationReceipt(
+            LiveTrainingOptions options,
+            string episodeManifestPath)
+    {
+        try
+        {
+            var receipt =
+                GoldenWalnutGourmandContinuationReceiptVerifier.Write(
+                    options.GoldenWalnutGourmandContinuationReceiptPath,
+                    options.SnapshotDir,
+                    episodeManifestPath);
+            return new GourmandContinuationReceiptOutcome(
+                receipt.Ready,
+                receipt.VerifiedTransitionCount,
+                options.GoldenWalnutGourmandContinuationReceiptPath,
+                receipt.BlockingReasons,
+                receipt.Ready
+                    ? string.Empty
+                    : "golden_walnut_gourmand_continuity_incomplete blockers=" +
+                      string.Join(",", receipt.BlockingReasons));
+        }
+        catch (Exception ex) when (
+            ex is IOException or InvalidDataException or InvalidOperationException or
+                JsonException or ArgumentException)
+        {
+            return new GourmandContinuationReceiptOutcome(
+                false,
+                0,
+                string.Empty,
+                new[] { "receipt_generation_failed" },
+                "golden_walnut_gourmand_continuity_invalid message=" +
+                SanitizeProgressValue(ex.Message));
+        }
+    }
+
+    private sealed record GourmandContinuationReceiptOutcome(
+        bool Verified,
+        int VerifiedTransitionCount,
+        string ReceiptPath,
+        string[] BlockingReasons,
+        string StopReason);
 }

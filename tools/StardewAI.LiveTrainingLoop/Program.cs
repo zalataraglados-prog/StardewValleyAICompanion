@@ -1786,6 +1786,11 @@ var goldenWalnutFreshSaveEpisodeManifestPath = string.Empty;
 var goldenWalnutFreshSaveEpisodeCount = 0;
 var goldenWalnutSourceSchedulePath = string.Empty;
 var goldenWalnutSourceScheduleVerified = false;
+var goldenWalnutGourmandContinuityVerified = false;
+var goldenWalnutGourmandVerifiedTransitionCount = 0;
+var goldenWalnutGourmandContinuityReceiptPath = string.Empty;
+var goldenWalnutGourmandContinuityBlockingReasons =
+    new[] { "not_evaluated" };
 if (options.CaptureGoldenWalnutFreshSaveEvidence)
 {
     try
@@ -1812,6 +1817,22 @@ if (options.CaptureGoldenWalnutFreshSaveEvidence)
         stopReason = "golden_walnut_fresh_save_manifest_invalid message=" +
             SanitizeProgressValue(ex.Message);
     }
+}
+if (options.RequireGourmandContinuationReady &&
+    gourmandContinuationMilestone.Ready &&
+    !string.IsNullOrWhiteSpace(goldenWalnutFreshSaveEpisodeManifestPath))
+{
+    var continuity = WriteGourmandContinuationReceipt(
+        options,
+        goldenWalnutFreshSaveEpisodeManifestPath);
+    goldenWalnutGourmandContinuityVerified = continuity.Verified;
+    goldenWalnutGourmandVerifiedTransitionCount =
+        continuity.VerifiedTransitionCount;
+    goldenWalnutGourmandContinuityReceiptPath = continuity.ReceiptPath;
+    goldenWalnutGourmandContinuityBlockingReasons =
+        continuity.BlockingReasons;
+    if (!string.IsNullOrWhiteSpace(continuity.StopReason))
+        stopReason = continuity.StopReason;
 }
 if (options.RequireGoldenWalnutSourceScheduleReady &&
     goldenWalnutSourceMilestone.Ready &&
@@ -1850,7 +1871,8 @@ var ordinaryTargetMet =
         (goldenWalnutSourceMilestone.Ready &&
          goldenWalnutSourceScheduleVerified)) &&
     (!options.RequireGourmandContinuationReady ||
-        gourmandContinuationMilestone.Ready) &&
+        (gourmandContinuationMilestone.Ready &&
+         goldenWalnutGourmandContinuityVerified)) &&
     (!options.RequireNativeSaveBoundary || nativeSaveBoundaryVerified);
 var verifiedTargetMet = string.IsNullOrWhiteSpace(stopReason) &&
     ordinaryTargetMet;
@@ -1929,6 +1951,14 @@ var report = new LiveTrainingLoopReport
         gourmandContinuationMilestone.CollectedGourmandWalnutQuantity,
     GoldenWalnutGourmandBlockingReasons =
         gourmandContinuationMilestone.BlockingReasons,
+    GoldenWalnutGourmandContinuityVerified =
+        goldenWalnutGourmandContinuityVerified,
+    GoldenWalnutGourmandVerifiedTransitionCount =
+        goldenWalnutGourmandVerifiedTransitionCount,
+    GoldenWalnutGourmandContinuityReceiptPath =
+        goldenWalnutGourmandContinuityReceiptPath,
+    GoldenWalnutGourmandContinuityBlockingReasons =
+        goldenWalnutGourmandContinuityBlockingReasons,
     PlanningHandoffCaptureManifestPath =
         lastPlanningHandoffCaptureManifestPath,
     PlanningHandoffTeacherDispatchManifestPath =
@@ -2033,6 +2063,14 @@ Console.WriteLine(JsonSerializer.Serialize(new
         gourmandContinuationMilestone.CollectedGourmandWalnutQuantity,
     golden_walnut_gourmand_blocking_reasons =
         gourmandContinuationMilestone.BlockingReasons,
+    golden_walnut_gourmand_continuity_verified =
+        goldenWalnutGourmandContinuityVerified,
+    golden_walnut_gourmand_verified_transition_count =
+        goldenWalnutGourmandVerifiedTransitionCount,
+    golden_walnut_gourmand_continuity_receipt_path =
+        goldenWalnutGourmandContinuityReceiptPath,
+    golden_walnut_gourmand_continuity_blocking_reasons =
+        goldenWalnutGourmandContinuityBlockingReasons,
     progress_log_path = options.ProgressLogPath,
     concurrency = 1,
     execution = options.TargetExecutionMode,

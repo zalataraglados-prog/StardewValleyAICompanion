@@ -475,6 +475,47 @@ public sealed class GoldenWalnutFreshSaveEpisodeScheduleBuilderTests
     }
 
     [Fact]
+    public async Task ArchivePreservesExecutionReceiptBeyondRollingSourceLifetime()
+    {
+        using var fixture = new Fixture(useLiveSnapshotDirectory: true);
+        var source = EligibleSource();
+        var episodePath = await fixture.WriteContentAddressedEpisodeAsync(
+            1,
+            Snapshot("h0", 0, 0, false, false, false, false, source.SourceKey),
+            Snapshot("h1", 0, 0, false, false, false, false, source.SourceKey));
+        var executionPath = Path.Combine(fixture.Root, "execution-0001.json");
+        const string executionJson =
+            "{\"schema_version\":\"training_execution_result.v1\",\"status\":\"applied\"}";
+        File.WriteAllText(executionPath, executionJson);
+        var episode = JsonSerializer.Deserialize<PlanExecutionEpisodeEnvelope>(
+            File.ReadAllText(episodePath),
+            JsonOptions)!;
+        episode.ExecutionResultPath = executionPath;
+        File.WriteAllText(
+            episodePath,
+            JsonSerializer.Serialize(episode, JsonOptions));
+
+        var capture = GoldenWalnutFreshSaveEpisodeArchive.Capture(
+            episodePath,
+            1,
+            "fresh-save-run");
+        var archived = JsonSerializer.Deserialize<PlanExecutionEpisodeEnvelope>(
+            File.ReadAllText(capture.ArchiveEpisodePath),
+            JsonOptions)!;
+        var archivedExecutionPath = Path.Combine(
+            fixture.Root,
+            archived.ExecutionResultPath);
+
+        Assert.StartsWith(
+            "golden-walnut-fresh-save-execution-",
+            archived.ExecutionResultPath,
+            StringComparison.Ordinal);
+        Assert.Equal(executionJson, File.ReadAllText(archivedExecutionPath));
+        File.Delete(executionPath);
+        Assert.True(File.Exists(archivedExecutionPath));
+    }
+
+    [Fact]
     public async Task ArchiveRejectsProgressedStartWithoutLeavingDurableAliases()
     {
         using var fixture = new Fixture(useLiveSnapshotDirectory: true);

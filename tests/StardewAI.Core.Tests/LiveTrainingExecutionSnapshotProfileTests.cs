@@ -236,6 +236,10 @@ public sealed class LiveTrainingExecutionSnapshotProfileTests
             "golden-walnut-fresh-save-source-schedule.json",
             options.GoldenWalnutFreshSaveSourceSchedulePath,
             StringComparison.Ordinal);
+        Assert.EndsWith(
+            "golden-walnut-gourmand-continuation-receipt.json",
+            options.GoldenWalnutGourmandContinuationReceiptPath,
+            StringComparison.Ordinal);
     }
 
     [Fact]
@@ -365,6 +369,14 @@ public sealed class LiveTrainingExecutionSnapshotProfileTests
         Assert.Contains(
             "GoldenWalnutGourmandContinuationMilestoneEvaluator.Evaluate",
             gourmandMilestone,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "GoldenWalnutGourmandContinuationReceiptVerifier.Write",
+            gourmandMilestone,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "goldenWalnutGourmandContinuityVerified",
+            program,
             StringComparison.Ordinal);
         Assert.Contains(
             "if (!options.RequireGourmandContinuationReady)",

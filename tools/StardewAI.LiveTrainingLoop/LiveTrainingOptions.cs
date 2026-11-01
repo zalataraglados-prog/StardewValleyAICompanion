@@ -132,6 +132,9 @@ public sealed class LiveTrainingOptions
     public string GoldenWalnutFreshSaveEpisodeManifestPath => Path.Combine(
         RunDir,
         "golden-walnut-fresh-save-episode-manifest.json");
+    public string GoldenWalnutGourmandContinuationReceiptPath => Path.Combine(
+        RunDir,
+        "golden-walnut-gourmand-continuation-receipt.json");
     public string GoldenWalnutFreshSaveSourceSchedulePath => Path.Combine(
         RunDir,
         "golden-walnut-fresh-save-source-schedule.json");
