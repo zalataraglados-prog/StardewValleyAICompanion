@@ -947,14 +947,18 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.Equal(12, candidate.TileX);
         Assert.Equal(10, candidate.TileY);
         Assert.Equal("player.tile=12,10;route_source_location=Farm;route_connector=warp;expected_target_location=Town;route_connector_resolved=true;route_training_scope=exact_current_cross_location_connector;fresh_snapshot_replan_required=true;expected_arrival_tile=1,2", candidate.ExpectedEffect);
-        Assert.Equal(120, candidate.EstimatedTicks);
+        var expectedTicks =
+            ConnectorRouteExecutionBudgetPolicy.EstimatedTicks(1);
+        Assert.Equal(expectedTicks, candidate.EstimatedTicks);
         Assert.Empty(candidate.BlockReasons);
         Assert.Contains(candidate.Parameters, parameter => parameter.Name == "execution_option_id" && parameter.Value == "executor.traverse_connector");
         Assert.Contains(candidate.Parameters, parameter => parameter.Name == "connector_kind" && parameter.Value == "warp");
         Assert.Contains(candidate.Parameters, parameter => parameter.Name == "expected_target_location" && parameter.Value == "Town");
         Assert.Contains(candidate.Parameters, parameter => parameter.Name == "expected_arrival_tile_x" && parameter.Value == "1");
         Assert.Contains(candidate.Parameters, parameter => parameter.Name == "expected_arrival_tile_y" && parameter.Value == "2");
-        Assert.Contains(candidate.Parameters, parameter => parameter.Name == "estimated_ticks" && parameter.Value == "120");
+        Assert.Contains(candidate.Parameters, parameter =>
+            parameter.Name == "estimated_ticks" &&
+            parameter.Value == expectedTicks.ToString());
         Assert.Contains(candidate.Parameters, parameter =>
             parameter.Name == "route.source_location_id" &&
             parameter.Value == "Farm");
