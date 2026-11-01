@@ -143,8 +143,11 @@ public sealed class MoneyCropNativeProductionCompilerTests
             value.Name == "target_tile_x" && value.Value == "7");
         Assert.Contains(item.NormalizedCommand.Parameters, value =>
             value.Name == "target_tile_y" && value.Value == "1");
+        var expectedMovementLimit =
+            ConnectorRouteExecutionBudgetPolicy.MovementTileLimit(1);
         Assert.Contains(item.NormalizedCommand.Parameters, value =>
-            value.Name == "max_movement_tiles" && value.Value == "1");
+            value.Name == "max_movement_tiles" &&
+            value.Value == expectedMovementLimit.ToString());
         Assert.Contains(item.NormalizedCommand.Parameters, value =>
             value.Name == "expected_target_location" &&
             value.Value == "Farm");
