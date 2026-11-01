@@ -9,6 +9,7 @@
 - 唯一原生入口 `golden-walnut-source-schedule-v98-20261101-225447` 已由 `main@274471f0` 启动：隐藏静音、单并发、`skip-training`，同时要求 source schedule 与 Gourmand continuation；存档槽为全新 `ProofFarm_453221812`，没有续用 v97 状态。
 - fresh-save 与三项产品服务已通过。iteration `4` 已记录 `3` 条 verified Product action 且无错误；iteration `2` 形成 `84` 动作的 crop teacher 原生计划，后续按真实库存约束进入 `acquire_seed`。当前 source milestone 与三段 Gourmand 仍处于开局等待态，属于预期未达成条件而非卡死。
 - v98 已真实完成 6 粒花椰菜种子的逐次购买，资金 `500 -> 20`，并于 iteration `43`、verified action `42` 进入 `prepare_site`。iteration `36` 的三项购买队列因每项都采集 `full` 快照耗时约 3 分钟；当前源码已沿用现有 execution profile override，把 seed/route/crop batch/sleep/dialogue recovery 收窄到 `shop/route/daily`，场地准备仍用 `farm_layout`，而全局 Golden Walnut 基线和最终证明仍保持 `full`。相关 LiveTrainingLoop 回归 `38/38` 通过；运行中的 v98 使用冻结二进制，不热替换该修复。
+- v98 已进一步完成首个真实作物控制闭环。原 6 格花椰菜在一格环境损失后严格触发 `crop_teacher_water_target_crop_missing`，冻结旧 ledger 并重规划 8 格防风草；新承诺完成场地准备、补水与 4 条原生日界，在 iteration `115` 取得 `8/8` 原生收获回执，iteration `116` 以 `111` 条 verified Product action记录 `crop_teacher_run_complete`。iteration `117` 已自然切回 Stage One collection 并执行邮件 Teacher 队列，证明共享日计划没有被作物链锁死。旧地块剩余 5 格花椰菜尚未成熟且未浇水，继续观察共享候选是否接管，不在无失败证据时并行增加作物调度实现。
 - 运行证据只写入 `I:\StardewAITraining\golden-walnut-source-schedule-v98`，不进入 Git。后续低频观察只读取进度日志和终止证据；未达到 source schedule、独立重放、Gourmand 连续性及自动 completion proof 前，不得把本轮称作正式训练完成。
 
 ## 2026-11-01：v97 暂态移动门误判已修复，v98 启动前需恢复磁盘余量
