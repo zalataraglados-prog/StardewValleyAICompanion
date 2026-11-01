@@ -11,6 +11,7 @@ param(
     [ValidateRange(1, 64)]
     [int] $MaxAttempts = 8,
     [switch] $RequireSourceScheduleReady,
+    [switch] $RequireGourmandContinuationReady,
     [ValidateRange(65, 1000000)]
     [int] $LongRunMaxAttempts = 100000,
     [ValidateRange(1, 64)]
@@ -49,6 +50,10 @@ $effectiveMaxAttempts = if ($RequireSourceScheduleReady) {
 
 if ($RequiredVerifiedActions -gt $effectiveMaxAttempts) {
     throw "RequiredVerifiedActions must not exceed MaxAttempts."
+}
+if ($RequireGourmandContinuationReady -and
+    -not $RequireSourceScheduleReady) {
+    throw "RequireGourmandContinuationReady requires RequireSourceScheduleReady."
 }
 
 function Write-Utf8Json([string] $Path, $Value) {
@@ -105,6 +110,7 @@ $calibrationOutput = & (Join-Path $PSScriptRoot `
     -MinFreeSpaceMb $MinFreeSpaceMb `
     -CaptureGoldenWalnutFreshSaveEvidence `
     -RequireGoldenWalnutSourceScheduleReady:$RequireSourceScheduleReady `
+    -RequireGourmandContinuationReady:$RequireGourmandContinuationReady `
     -StageOneCollectionRequirementInventory `
         $StageOneCollectionRequirementInventory `
     -StageOneCollectionAcquisitionLowering `
@@ -132,6 +138,13 @@ if ($RequireSourceScheduleReady -and
      [string]::IsNullOrWhiteSpace(
          [string]$calibrationSummary.golden_walnut_source_schedule_independent_verification_receipt_path))) {
     throw "Product calibration did not produce an independently verified Golden Walnut source schedule."
+}
+if ($RequireGourmandContinuationReady -and
+    (-not [bool]$calibrationSummary.golden_walnut_gourmand_continuation_ready -or
+     [int]$calibrationSummary.golden_walnut_gourmand_requests_fulfilled -ne 3 -or
+     [int]$calibrationSummary.golden_walnut_gourmand_collected_quantity -ne 15 -or
+     @($calibrationSummary.golden_walnut_gourmand_blocking_reasons).Count -ne 0)) {
+    throw "Product calibration did not complete all three native Gourmand requests."
 }
 
 $freshSummaryPath = Join-Path (
@@ -179,6 +192,15 @@ $summary = [ordered]@{
         [bool]$calibrationSummary.golden_walnut_source_schedule_independently_verified
     source_schedule_independent_verification_receipt_path =
         [string]$calibrationSummary.golden_walnut_source_schedule_independent_verification_receipt_path
+    gourmand_continuation_required = [bool]$RequireGourmandContinuationReady
+    gourmand_continuation_ready =
+        [bool]$calibrationSummary.golden_walnut_gourmand_continuation_ready
+    gourmand_requests_fulfilled =
+        [int]$calibrationSummary.golden_walnut_gourmand_requests_fulfilled
+    gourmand_collected_quantity =
+        [int]$calibrationSummary.golden_walnut_gourmand_collected_quantity
+    gourmand_blocking_reasons =
+        @($calibrationSummary.golden_walnut_gourmand_blocking_reasons)
     artifact_retention_mode = "rolling"
     min_free_space_mb = $MinFreeSpaceMb
     snapshot_artifact_mode = "content_addressed_gzip"

@@ -20,6 +20,7 @@ public sealed class LiveTrainingOptions
         ContentAddressedJsonArtifactStore.ContentAddressedGzipMode;
     public bool CaptureGoldenWalnutFreshSaveEvidence { get; set; }
     public bool RequireGoldenWalnutSourceScheduleReady { get; set; }
+    public bool RequireGourmandContinuationReady { get; set; }
     public string StageOneCollectionRequirementInventoryPath { get; set; } =
         string.Empty;
     public string StageOneCollectionAcquisitionLoweringPath { get; set; } =
@@ -96,6 +97,7 @@ public sealed class LiveTrainingOptions
     public bool ContinueAfterCropTeacherRun { get; set; }
     public bool UseStageOneCollectionTeacher =>
         RequireGoldenWalnutSourceScheduleReady ||
+        RequireGourmandContinuationReady ||
         ContinueAfterCropTeacherRun;
     public string TargetExecutionMode { get; set; } = ExecutionTargetProfiles.TrainingSingleplayer;
     public ActionActorRef TargetActor => ExecutionTargetProfiles.CreateActor(TargetExecutionMode);
@@ -246,6 +248,10 @@ public sealed class LiveTrainingOptions
             else if (current == "--require-golden-walnut-source-schedule-ready")
             {
                 options.RequireGoldenWalnutSourceScheduleReady = true;
+            }
+            else if (current == "--require-gourmand-continuation-ready")
+            {
+                options.RequireGourmandContinuationReady = true;
             }
             else if (current ==
                 "--stage-one-collection-requirement-inventory" &&
@@ -674,7 +680,8 @@ public sealed class LiveTrainingOptions
                 "and --skip-training.");
         }
         if (CaptureGoldenWalnutFreshSaveEvidence ||
-            RequireGoldenWalnutSourceScheduleReady)
+            RequireGoldenWalnutSourceScheduleReady ||
+            RequireGourmandContinuationReady)
         {
             throw new ArgumentException(
                 "--resume-crop-teacher-transition-ledger cannot be combined " +
@@ -708,6 +715,13 @@ public sealed class LiveTrainingOptions
 
     public void ValidateGoldenWalnutFreshSaveEvidenceMode()
     {
+        if (RequireGourmandContinuationReady &&
+            !RequireGoldenWalnutSourceScheduleReady)
+        {
+            throw new ArgumentException(
+                "--require-gourmand-continuation-ready requires " +
+                "--require-golden-walnut-source-schedule-ready.");
+        }
         if (RequireGoldenWalnutSourceScheduleReady &&
             !CaptureGoldenWalnutFreshSaveEvidence)
         {

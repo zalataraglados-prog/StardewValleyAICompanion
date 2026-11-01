@@ -138,13 +138,21 @@ var goldenWalnutSourceMilestone =
         false,
         new[] { "not_evaluated" });
 var goldenWalnutSourceMilestoneSignature = string.Empty;
+var gourmandContinuationMilestone =
+    new GoldenWalnutGourmandContinuationMilestoneAssessment(
+        false,
+        -1,
+        0,
+        new[] { "not_evaluated" });
+var gourmandContinuationMilestoneSignature = string.Empty;
 SaveDirectoryFingerprint? initialSaveFingerprint = null;
 SaveDirectoryFingerprint? currentSaveFingerprint = null;
 var hasExplicitPrimaryTarget =
     options.RequiredVerifiedActions > 0 ||
     options.StopAfterObjectiveComplete ||
     options.StopAfterSocialObjectiveComplete ||
-    options.RequireGoldenWalnutSourceScheduleReady;
+    options.RequireGoldenWalnutSourceScheduleReady ||
+    options.RequireGourmandContinuationReady;
 var noProgressBackoff = new NoProgressBackoffPolicy(
     options.NoProgressBackoffMs,
     options.NoProgressMaxBackoffMs);
@@ -161,7 +169,9 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         (!options.StopAfterObjectiveComplete || objectiveCompleted) &&
         (!options.StopAfterSocialObjectiveComplete || socialObjectiveCompleted) &&
         (!options.RequireGoldenWalnutSourceScheduleReady ||
-         goldenWalnutSourceMilestone.Ready);
+         goldenWalnutSourceMilestone.Ready) &&
+        (!options.RequireGourmandContinuationReady ||
+         gourmandContinuationMilestone.Ready);
     var effectivePrimaryAttempts = cropTeacherFirstDayCompleted &&
         !options.RequireGoldenWalnutSourceScheduleReady &&
         !options.ContinueAfterCropTeacherRun
@@ -364,6 +374,38 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 activeCropTeacherTransitionLedger = null;
                 pendingCropTeacherDayBoundary = null;
                 pendingCropTeacherDayBoundaryLedger = null;
+                if (!options.RequireGourmandContinuationReady)
+                {
+                    await DelayBeforeNextAttemptAsync(
+                        options,
+                        attemptOrdinal);
+                    continue;
+                }
+            }
+        }
+        if (options.RequireGourmandContinuationReady &&
+            !closingNativeSaveBoundary)
+        {
+            gourmandContinuationMilestone =
+                EvaluateGourmandContinuationMilestone(rawSnapshotJson);
+            var gourmandSignature =
+                GourmandContinuationMilestoneSignature(
+                    gourmandContinuationMilestone);
+            if (!string.Equals(
+                    gourmandSignature,
+                    gourmandContinuationMilestoneSignature,
+                    StringComparison.Ordinal))
+            {
+                gourmandContinuationMilestoneSignature = gourmandSignature;
+                AppendGourmandContinuationMilestoneProgress(
+                    options,
+                    gourmandContinuationMilestone,
+                    iteration,
+                    lastStateHash,
+                    lastQueueId);
+            }
+            if (gourmandContinuationMilestone.Ready)
+            {
                 await DelayBeforeNextAttemptAsync(options, attemptOrdinal);
                 continue;
             }
@@ -1531,6 +1573,37 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                     }
                 }
             }
+            if (options.RequireGourmandContinuationReady &&
+                execution["after_snapshot_fresh"]?.GetValue<bool>() == true)
+            {
+                var gourmandAfterPath = ReadString(
+                    execution,
+                    "after_snapshot_path");
+                if (!string.IsNullOrWhiteSpace(gourmandAfterPath) &&
+                    File.Exists(gourmandAfterPath))
+                {
+                    gourmandContinuationMilestone =
+                        await EvaluateGourmandContinuationMilestoneArtifactAsync(
+                            gourmandAfterPath);
+                    var gourmandSignature =
+                        GourmandContinuationMilestoneSignature(
+                            gourmandContinuationMilestone);
+                    if (!string.Equals(
+                            gourmandSignature,
+                            gourmandContinuationMilestoneSignature,
+                            StringComparison.Ordinal))
+                    {
+                        gourmandContinuationMilestoneSignature =
+                            gourmandSignature;
+                        AppendGourmandContinuationMilestoneProgress(
+                            options,
+                            gourmandContinuationMilestone,
+                            iteration,
+                            ReadString(execution, "after_state_hash"),
+                            lastQueueId);
+                    }
+                }
+            }
             var horizonObservations = AppendClosedHorizonObservations(options, beforeSnapshot, execution);
             var policyAppend = executionNoProgress.NoProgress ||
                 closingNativeSaveBoundary
@@ -1776,6 +1849,8 @@ var ordinaryTargetMet =
     (!options.RequireGoldenWalnutSourceScheduleReady ||
         (goldenWalnutSourceMilestone.Ready &&
          goldenWalnutSourceScheduleVerified)) &&
+    (!options.RequireGourmandContinuationReady ||
+        gourmandContinuationMilestone.Ready) &&
     (!options.RequireNativeSaveBoundary || nativeSaveBoundaryVerified);
 var verifiedTargetMet = string.IsNullOrWhiteSpace(stopReason) &&
     ordinaryTargetMet;
@@ -1844,6 +1919,16 @@ var report = new LiveTrainingLoopReport
         goldenWalnutSourceMilestone.BlockingReasons,
     GoldenWalnutSourceScheduleVerified = goldenWalnutSourceScheduleVerified,
     GoldenWalnutSourceSchedulePath = goldenWalnutSourceSchedulePath,
+    GoldenWalnutGourmandContinuationRequired =
+        options.RequireGourmandContinuationReady,
+    GoldenWalnutGourmandContinuationReady =
+        gourmandContinuationMilestone.Ready,
+    GoldenWalnutGourmandRequestsFulfilled =
+        gourmandContinuationMilestone.RequestsFulfilled,
+    GoldenWalnutGourmandCollectedQuantity =
+        gourmandContinuationMilestone.CollectedGourmandWalnutQuantity,
+    GoldenWalnutGourmandBlockingReasons =
+        gourmandContinuationMilestone.BlockingReasons,
     PlanningHandoffCaptureManifestPath =
         lastPlanningHandoffCaptureManifestPath,
     PlanningHandoffTeacherDispatchManifestPath =
@@ -1938,6 +2023,16 @@ Console.WriteLine(JsonSerializer.Serialize(new
     golden_walnut_source_schedule_verified =
         goldenWalnutSourceScheduleVerified,
     golden_walnut_source_schedule_path = goldenWalnutSourceSchedulePath,
+    golden_walnut_gourmand_continuation_required =
+        options.RequireGourmandContinuationReady,
+    golden_walnut_gourmand_continuation_ready =
+        gourmandContinuationMilestone.Ready,
+    golden_walnut_gourmand_requests_fulfilled =
+        gourmandContinuationMilestone.RequestsFulfilled,
+    golden_walnut_gourmand_collected_quantity =
+        gourmandContinuationMilestone.CollectedGourmandWalnutQuantity,
+    golden_walnut_gourmand_blocking_reasons =
+        gourmandContinuationMilestone.BlockingReasons,
     progress_log_path = options.ProgressLogPath,
     concurrency = 1,
     execution = options.TargetExecutionMode,

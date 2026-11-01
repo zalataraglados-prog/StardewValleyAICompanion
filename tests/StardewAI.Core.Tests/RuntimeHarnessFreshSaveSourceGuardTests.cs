@@ -108,6 +108,14 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             workflow,
             StringComparison.Ordinal);
         Assert.Contains(
+            "-RequireGourmandContinuationReady:$RequireGourmandContinuationReady",
+            workflow,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "gourmand_blocking_reasons",
+            workflow,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "-StageOneCollectionRequirementInventory",
             workflow,
             StringComparison.Ordinal);
@@ -233,6 +241,14 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             StringComparison.Ordinal);
         Assert.Contains(
             "--require-golden-walnut-source-schedule-ready",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "--require-gourmand-continuation-ready",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "golden_walnut_gourmand_blocking_reasons",
             calibration,
             StringComparison.Ordinal);
         Assert.Contains(

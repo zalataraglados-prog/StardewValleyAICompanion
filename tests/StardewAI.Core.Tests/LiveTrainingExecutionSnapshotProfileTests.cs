@@ -176,6 +176,21 @@ public sealed class LiveTrainingExecutionSnapshotProfileTests
     }
 
     [Fact]
+    public void GourmandContinuationRequiresGoldenWalnutSourceScheduleTarget()
+    {
+        var error = Assert.Throws<ArgumentException>(() =>
+            LiveTrainingOptions.Parse(new[]
+            {
+                "--require-gourmand-continuation-ready"
+            }));
+
+        Assert.Contains(
+            "--require-golden-walnut-source-schedule-ready",
+            error.Message,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void GoldenWalnutLongRunRequiresDailyPlanAndDurableBoundary()
     {
         Assert.Throws<ArgumentException>(() => LiveTrainingOptions.Parse(new[]
@@ -202,6 +217,7 @@ public sealed class LiveTrainingExecutionSnapshotProfileTests
             ContentAddressedJsonArtifactStore.ContentAddressedGzipMode,
             "--capture-golden-walnut-fresh-save-evidence",
             "--require-golden-walnut-source-schedule-ready",
+            "--require-gourmand-continuation-ready",
             "--use-daily-plan",
             "--require-native-save-boundary",
             "--stage-one-collection-requirement-inventory",
@@ -215,6 +231,7 @@ public sealed class LiveTrainingExecutionSnapshotProfileTests
         });
 
         Assert.True(options.RequireGoldenWalnutSourceScheduleReady);
+        Assert.True(options.RequireGourmandContinuationReady);
         Assert.EndsWith(
             "golden-walnut-fresh-save-source-schedule.json",
             options.GoldenWalnutFreshSaveSourceSchedulePath,
@@ -332,6 +349,10 @@ public sealed class LiveTrainingExecutionSnapshotProfileTests
             "tools",
             "StardewAI.LiveTrainingLoop",
             "Program.GoldenWalnutMilestone.cs"));
+        var gourmandMilestone = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.GourmandContinuationMilestone.cs"));
 
         Assert.Contains(
             "GoldenWalnutFreshSaveMilestoneEvaluator.Evaluate",
@@ -340,6 +361,14 @@ public sealed class LiveTrainingExecutionSnapshotProfileTests
         Assert.Contains(
             "GoldenWalnutFreshSaveEpisodeScheduleBuilder.Write",
             program,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "GoldenWalnutGourmandContinuationMilestoneEvaluator.Evaluate",
+            gourmandMilestone,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "if (!options.RequireGourmandContinuationReady)",
+            program.Replace("\r\n", "\n", StringComparison.Ordinal),
             StringComparison.Ordinal);
         Assert.Contains(
             "cropTeacherFirstDayCompleted &&\n" +

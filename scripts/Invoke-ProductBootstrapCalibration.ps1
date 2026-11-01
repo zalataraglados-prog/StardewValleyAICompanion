@@ -28,6 +28,7 @@ param(
     [int] $MinFreeSpaceMb = 8192,
     [switch] $CaptureGoldenWalnutFreshSaveEvidence,
     [switch] $RequireGoldenWalnutSourceScheduleReady,
+    [switch] $RequireGourmandContinuationReady,
     [string] $ResumeCropTeacherTransitionLedger = "",
     [switch] $ContinueAfterCropTeacherRun,
     [string] $StageOneCollectionRequirementInventory = (Join-Path `
@@ -79,11 +80,16 @@ if ($RequireGoldenWalnutSourceScheduleReady -and
     -not $CaptureGoldenWalnutFreshSaveEvidence) {
     throw "RequireGoldenWalnutSourceScheduleReady requires CaptureGoldenWalnutFreshSaveEvidence."
 }
+if ($RequireGourmandContinuationReady -and
+    -not $RequireGoldenWalnutSourceScheduleReady) {
+    throw "RequireGourmandContinuationReady requires RequireGoldenWalnutSourceScheduleReady."
+}
 $resumeCropTeacher = -not [string]::IsNullOrWhiteSpace(
     $ResumeCropTeacherTransitionLedger)
 if ($resumeCropTeacher) {
     if ($CaptureGoldenWalnutFreshSaveEvidence -or
-        $RequireGoldenWalnutSourceScheduleReady) {
+        $RequireGoldenWalnutSourceScheduleReady -or
+        $RequireGourmandContinuationReady) {
         throw "Crop Teacher resume cannot be combined with fresh-save capture."
     }
     if (-not (Test-Path -LiteralPath `
@@ -617,6 +623,9 @@ try {
     if ($RequireGoldenWalnutSourceScheduleReady) {
         $arguments += "--require-golden-walnut-source-schedule-ready"
     }
+    if ($RequireGourmandContinuationReady) {
+        $arguments += "--require-gourmand-continuation-ready"
+    }
     if ($RequireGoldenWalnutSourceScheduleReady -or
         $ContinueAfterCropTeacherRun) {
         $arguments += @(
@@ -705,6 +714,14 @@ try {
              -PathType Leaf))) {
         throw "Golden Walnut long-run milestone did not produce a verified source schedule."
     }
+    if ($RequireGourmandContinuationReady -and
+        (-not [bool]$loopReport.golden_walnut_gourmand_continuation_required -or
+         -not [bool]$loopReport.golden_walnut_gourmand_continuation_ready -or
+         [int]$loopReport.golden_walnut_gourmand_requests_fulfilled -ne 3 -or
+         [int]$loopReport.golden_walnut_gourmand_collected_quantity -ne 15 -or
+         @($loopReport.golden_walnut_gourmand_blocking_reasons).Count -ne 0)) {
+        throw "Golden Walnut long-run did not complete all three native Gourmand requests."
+    }
 
     $independentVerificationReceiptPath = ""
     $independentVerificationLogPath = ""
@@ -781,6 +798,16 @@ try {
             [bool]$loopReport.golden_walnut_source_schedule_verified
         golden_walnut_source_schedule_path =
             [string]$loopReport.golden_walnut_source_schedule_path
+        golden_walnut_gourmand_continuation_required =
+            [bool]$loopReport.golden_walnut_gourmand_continuation_required
+        golden_walnut_gourmand_continuation_ready =
+            [bool]$loopReport.golden_walnut_gourmand_continuation_ready
+        golden_walnut_gourmand_requests_fulfilled =
+            [int]$loopReport.golden_walnut_gourmand_requests_fulfilled
+        golden_walnut_gourmand_collected_quantity =
+            [int]$loopReport.golden_walnut_gourmand_collected_quantity
+        golden_walnut_gourmand_blocking_reasons =
+            @($loopReport.golden_walnut_gourmand_blocking_reasons)
         golden_walnut_source_schedule_independently_verified =
             $sourceScheduleIndependentlyVerified
         golden_walnut_source_schedule_independent_verification_receipt_path =
