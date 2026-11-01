@@ -656,6 +656,7 @@ internal static partial class BootstrapSelfTest
         Quantity = quantity,
         Available = true,
         AllowedToday = true,
+        AllowedNow = true,
         TimelineStatus = "ready_now",
         Parameters = parameters
     };

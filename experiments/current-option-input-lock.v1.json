@@ -1,31 +1,31 @@
 {
   "schema_version": "goal_conditioned_current_option_input_lock.v1",
-  "base_commit": "f0073cca81d324029586c33c985aa5d4336070b3",
+  "base_commit": "eba53bfe6a4177ed4682fab424716520bf4e530b",
   "generated_at_utc": "2026-09-05T00:00:00Z",
   "repository_sources": [
     {
       "relative_path": "src/StardewAI.Contracts/Capabilities/OptionCapabilityRegistrySource.cs",
       "normalization": "utf8_lf",
-      "bytes": 124356,
-      "sha256": "42b19c6c4e9a7e92f3e3127cc84465eb45ecbf58774bacb82d38eb76c2b7efb2"
+      "bytes": 126720,
+      "sha256": "88d1e5a69473db9f36c4d6a3593a3af82948d77676e84d3cb66996616b65462a"
     },
     {
       "relative_path": "src/StardewAI.Core/OptionRegistry/OptionRegistry.cs",
       "normalization": "utf8_lf",
-      "bytes": 225473,
-      "sha256": "746761e4f0af87a110c6186182836507df278fad66e633a0391b87e2807d9390"
+      "bytes": 229526,
+      "sha256": "c9c17a46cdcf43797101fcc4fab9d880e1cec4c4048f161f18544da3f963a6aa"
     },
     {
       "relative_path": "src/StardewAI.Core/OptionRegistry/OptionGovernanceCatalog.cs",
       "normalization": "utf8_lf",
-      "bytes": 45158,
-      "sha256": "3e0435056952f29a07bb2ac50d7f218b8bbd5c5a64218378d833a10c5e5c1817"
+      "bytes": 45646,
+      "sha256": "5292f489702ed36b9c1afaeb806bd44c7df23f720f2dbfc5c5636b592f94b6b2"
     },
     {
       "relative_path": "knowledge-artifacts.lock.json",
       "normalization": "utf8_lf",
       "bytes": 2361,
-      "sha256": "4a6e15b0c6d6599d5f45639104c925ff43d213f94fab25c330e9ebdb91ecdea0"
+      "sha256": "6f7050b86ec58e634e3fd91f869d3ffb4eb45bb331c91b5b66814673f326a073"
     },
     {
       "relative_path": "catalogs/vanilla-1.6.15/native-action-denominator-freeze.json",
@@ -37,19 +37,19 @@
   "knowledge_sources": [
     {
       "relative_path": "snapshots/current-live-full-snapshot.json",
-      "bytes": 11696904,
-      "sha256": "c9ee9dafcd019ae55d8368e7fb47a7e730f4f8cc81aa5b5035823c43b0b5d158"
+      "bytes": 11758562,
+      "sha256": "98cde9769829ea4702988de6b638c2402a2ec55e630d65bd618350c74211f59d"
     }
   ],
   "output_contract": {
     "schema_version": "stardewai.option_governance_matrix.v3",
-    "option_count": 238,
+    "option_count": 242,
     "goal_template_count": 2,
-    "composite_option_count": 88,
-    "primitive_option_count": 148,
-    "training_eligible_count": 66,
-    "runtime_verified_count": 160,
-    "bytes": 873149,
-    "sha256": "ab88d2a5fdbcc59be631de345f9690da82d776d5b4c610ec1aadf5ef8c5b4199"
+    "composite_option_count": 89,
+    "primitive_option_count": 151,
+    "training_eligible_count": 67,
+    "runtime_verified_count": 163,
+    "bytes": 887732,
+    "sha256": "418a2272a18db888666a5d9842503f9198356aec0e456ec42a5ea2e4c1465c2b"
   }
 }

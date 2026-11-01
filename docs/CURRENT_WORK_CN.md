@@ -2837,3 +2837,11 @@ EVD-204 复核并登记 `skills.read_books`。能力目录此前只识别动作�
 - 唯一 `NativeControlSettleRecovery` 现并列接受两个精确且互斥的状态：原 post-sleep control gap，以及 v72 的 day-start fade control gap。两者都只产生一次 `30` tick 控制等待并 fresh 重规划；混合状态、缺字段或其他控制状态继续返回 null。调用点已从 Stage One collection builder 提升到所有 DailyPlan producer 之前的唯一全局抢占点，避免 active Crop Teacher 或普通日计划先行覆盖恢复。
 - v73 从 v72 的 Spring 9 保存边界隔离启动，完成 `2/2` verified action 和 Spring 9 -> 10 的原生保存。v76 正确拒绝过期 fixture；v77 的 Crop Teacher 睡眠在返回前已等待淡入结束；v79/v80 的 fresh-process 共享睡眠同样未复现。v82 从 v72 Spring 8 `_old` 精确哈希副本执行 `8 x 600` tick 预热后，再通过同一 DailyPlanCompiler、ActionQueueCompiler 与 Product Executor 执行共享睡眠及次日新规划；预热全部 verified 且不进入训练数据，但仍未出现 transient。包装器缺少 settle wait/fresh replan 双标志时严格失败，因此这些运行均没有冒充正向命中。
 - 当前验证为专项 `19/19`、完整 GameFreeGovernance `526/526`、Release build 零警告零错误。人工探针在 v82 收口，不再继续扩大；实时正向命中只在后续自然长跑碰到 v72 状态时补录。当前 WIP 直接恢复首次登岛、核桃增量、First Parrot、Turtle、House、source schedule 生成/重放与 Master Angler prerequisite audit。所有运行继续 `--skip-training`，#345 与 `formal_product_training_authorized=false` 保持。
+
+## 2026-11-01 当前 WIP：矩阵锁对齐与 v97 继续运行
+
+- 当前源码、`knowledge-artifacts.lock.json`、原生动作分母和锁定 1.6.15 full snapshot 已重新写入 `current-option-input-lock.v1.json`。唯一正式构建脚本重放成功：`585/585`、`blocking=0`、`242` options、`163` runtime verified、`67` training eligible，输出哈希为 `418a2272a18db888666a5d9842503f9198356aec0e456ec42a5ea2e4c1465c2b`。这次锁更新是对既有四项登记的追认，不是扩张训练动作集合。
+- 历史 ready corpus 无法在当前 daily time/energy 规则下确定性回放，已通过现有 Stage One fixture 原样重建 train/validation/test 三分区，而没有创建并行数据管线。更新后的 9 行 corpus 与当前 requirement inventory、acquisition lowering 和 option matrix 联合通过 Goal Method Teacher coverage 自测。
+- 首次完整重建在更晚的 Master Angler 断言停下。诊断证明错误蟹笼候选仍以 `master_angler_crab_pot_candidate_is_not_exact_collection_eligible_target` 被拒；真正漂移是 fixture helper 漏写 `AllowedNow=true`，使本应 ready-now 的 route 被误判 deferred。补齐该测试输入字段后，完整 `self-test-current-stage-one-collection` 通过，产品 matcher 与 strict crab-pot identity 无改动。
+- 当前代码改动仅为输入锁和测试夹具；本地生成的矩阵、降级表、corpus、自测输出均不可提交。提交前固定检查：重跑 option matrix lock、完整 Stage One、Goal Method coverage、`git diff --check`，并确认 `git status` 中没有 `local-data`。
+- v97 继续独占真实游戏实例，仍按启动时二进制运行，不热替换、不并发启动 v98。低频监控只看进度日志与终止状态；终止后先归档其真实证明/阻塞，再决定是否以最新提交启动下一轮。
