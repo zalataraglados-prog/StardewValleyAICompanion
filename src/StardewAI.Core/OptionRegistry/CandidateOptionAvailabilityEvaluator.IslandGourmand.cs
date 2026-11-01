@@ -42,6 +42,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         var requestIndex = ReadNullableInt(row, "active_request_index");
         var cropItemId = ReadString(row, "required_crop_item_id");
         if (!requestIndex.HasValue || requestIndex is < 0 or > 2 ||
+            ReadNullableInt(row, "requests_fulfilled") != requestIndex ||
+            ReadNullableInt(row, "total_requests") != 3 ||
             !GourmandCropMatchesRequest(requestIndex.Value, cropItemId) ||
             string.IsNullOrWhiteSpace(targetLocation))
             return Array.Empty<EventCandidate>();

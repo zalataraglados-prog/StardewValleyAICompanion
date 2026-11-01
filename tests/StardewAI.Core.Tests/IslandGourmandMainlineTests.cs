@@ -16,6 +16,8 @@ public sealed class IslandGourmandMainlineTests
     [Theory]
     [InlineData(false, "introduce_request", 0, 0)]
     [InlineData(true, "complete_request", 0, 1)]
+    [InlineData(true, "complete_request", 1, 2)]
+    [InlineData(true, "complete_request", 2, 3)]
     public void ReadyCropFlowsThroughOneTypedGourmandPrimitive(
         bool talked,
         string expectedStage,
@@ -31,7 +33,12 @@ public sealed class IslandGourmandMainlineTests
         Assert.Equal("advance_gourmand_request", candidate.Kind);
         AssertParameter(candidate.Parameters, "gourmand_interaction_stage", expectedStage);
         AssertParameter(candidate.Parameters, "request_index_after", requestAfter.ToString());
-        AssertParameter(candidate.Parameters, "required_crop_item_id", "254");
+        AssertParameter(candidate.Parameters, "required_crop_item_id", requestBefore switch
+        {
+            0 => "254", 1 => "262", _ => "248"
+        });
+        if (talked)
+            AssertParameter(candidate.Parameters, "expected_collected_nut_key", "IslandGourmand" + requestAfter);
         AssertParameter(candidate.Parameters, "walnut_debris_count_before", "0");
         AssertParameter(candidate.Parameters, "golden_walnuts_found_before", "0");
         AssertParameter(candidate.Parameters, "golden_walnuts_found_after", talked ? "5" : "0");
@@ -50,6 +57,44 @@ public sealed class IslandGourmandMainlineTests
         Assert.Equal("advance_gourmand_request", Assert.Single(item.NormalizedCommand.Steps).StepType);
     }
 
+    [Theory]
+    [InlineData(1, "requests_fulfilled", 0)]
+    [InlineData(2, "requests_fulfilled", 1)]
+    [InlineData(1, "requests_fulfilled", 2)]
+    [InlineData(1, "requests_fulfilled", null)]
+    [InlineData(0, "requests_fulfilled", null)]
+    [InlineData(1, "total_requests", 2)]
+    [InlineData(2, "total_requests", null)]
+    public void MissingOrReorderedNativeRequestCounterCannotProduceCandidate(int index, string field, int? value)
+    {
+        var snapshot = Snapshot(talked: true, requestIndex: index);
+        var original = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "island.complete_gourmand_request" }, true);
+        var plan = new DailyPlanCompiler().Compile(
+            new EventCandidateRanker().Rank(new BaselineTrainingReport(), original), snapshot.StateHash);
+        snapshot = WithProgressField(snapshot, field, value);
+        var availability = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "island.complete_gourmand_request" }, true);
+        Assert.Empty(Assert.Single(availability.Options).EventCandidates);
+        // Rebinding the outer hash cannot launder a stale candidate into a
+        // contradictory native request counter at the compiler boundary.
+        plan.StateHash = snapshot.StateHash;
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+        Assert.Equal("blocked", queue.Status);
+        Assert.Contains("gourmand_request_projection_drifted", Assert.Single(queue.Items).BlockingReasons);
+    }
+
+    private static SnapshotEnvelope WithProgressField(SnapshotEnvelope snapshot, string field, int? value)
+    {
+        var progress = JsonNode.Parse(snapshot.State["world_progress"].GetRawText())!.AsObject();
+        var row = progress["island_gourmand"]!["value"]!.AsObject();
+        if (value.HasValue) row[field] = value.Value;
+        else row.Remove(field);
+        snapshot.State["world_progress"] = JsonSerializer.SerializeToElement(progress);
+        snapshot.StateHash = SnapshotHash.ComputeStateHash(snapshot.State);
+        return snapshot;
+    }
+
     [Fact]
     public void MissingReadyCropIsExcludedUpstream()
     {
@@ -60,16 +105,19 @@ public sealed class IslandGourmandMainlineTests
         Assert.Empty(Assert.Single(availability.Options).EventCandidates);
     }
 
-    [Fact]
-    public void FreshCompilerRejectsRequestIdentityDrift()
+    [Theory]
+    [InlineData(0, 1)]
+    [InlineData(1, 2)]
+    [InlineData(2, 3)]
+    public void FreshCompilerRejectsRequestIdentityDrift(int before, int after)
     {
-        var original = Snapshot(talked: true, requestIndex: 0);
+        var original = Snapshot(talked: true, requestIndex: before);
         var availability = new CandidateOptionAvailabilityEvaluator()
             .Evaluate(original, new[] { "island.complete_gourmand_request" }, true);
         var plan = new DailyPlanCompiler().Compile(
             new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability),
             original.StateHash);
-        var drifted = Snapshot(talked: true, requestIndex: 1);
+        var drifted = Snapshot(talked: true, requestIndex: after);
         plan.StateHash = drifted.StateHash;
 
         var queue = new ActionQueueCompiler().Compile(plan, drifted);
@@ -137,6 +185,13 @@ public sealed class IslandGourmandMainlineTests
         Assert.DoesNotContain("MarkCollectedNut", production, StringComparison.Ordinal);
         Assert.DoesNotMatch(new Regex(@"gourmandRequestsFulfilled\.Value\s*=(?!=)"), production);
         Assert.DoesNotMatch(new Regex(@"GoldenWalnutsFound\s*=(?!=)"), production);
+        Assert.Contains("ValidateExecutionRequest(request)", runtime, StringComparison.Ordinal);
+        Assert.Contains("cave.gourmandRequestsFulfilled.Value == request.GourmandRequestIndexBefore", validation, StringComparison.Ordinal);
+        Assert.Contains("!Game1.player.team.collectedNutTracker.Contains(request.GourmandExpectedCollectedNutKey)", validation, StringComparison.Ordinal);
+        Assert.Contains("active.Cave.gourmandRequestsFulfilled.Value != request.GourmandRequestIndexAfter", validation, StringComparison.Ordinal);
+        Assert.Contains("active.ObservedWalnutDebris.Count != request.GourmandExpectedWalnutDebrisSpawnCount", validation, StringComparison.Ordinal);
+        Assert.Contains("RunId = request.RunId", runtime, StringComparison.Ordinal);
+        Assert.Contains("BeforeStateHash = request.BeforeStateHash", runtime, StringComparison.Ordinal);
     }
 
     [Fact]

@@ -106,6 +106,8 @@ public sealed partial class ActionQueueCompiler
             ReadInt(progress.Value, "walnut_debris_count") != walnutDebrisBefore.Value ||
             ReadBool(progress.Value, "complete") == true ||
             ReadNullableInt(progress.Value, "active_request_index") != before.Value ||
+            ReadNullableInt(progress.Value, "requests_fulfilled") != before.Value ||
+            ReadNullableInt(progress.Value, "total_requests") != 3 ||
             ReadString(progress.Value, "required_crop_item_id") != cropItemId ||
             ReadString(progress.Value, "required_crop_qualified_item_id") != qualifiedCrop ||
             ReadInt(progress.Value, "ready_matching_crop_count") != readyCount.Value ||
