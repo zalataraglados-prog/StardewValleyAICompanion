@@ -13,6 +13,17 @@ namespace StardewAI.Core.Training
 {
     public sealed class StardewTrainingSessionLauncher
     {
+        // These native admission consumers are not yet bound. A schedule-ready
+        // flag, diagnostic receipt, or a leaf formal=false artifact cannot clear
+        // either lock. Keep one shared list for actual launch and readiness review
+        // until authoritative replay of BOTH requirements is wired here.
+        public static IReadOnlyList<string> PendingNativeAdmissionBlockers { get; } =
+            Array.AsReadOnly(new[]
+            {
+                "golden_walnut_master_angler_native_admission_not_bound",
+                "gourmand_orders_2_3_native_admission_not_bound"
+            });
+
         public TrainingLaunchResult Prepare(TrainingLaunchRequest request)
         {
             var rootPath = FullPathOrDefault(request.RootPath, @"E:\StardewAITraining");
@@ -371,6 +382,7 @@ namespace StardewAI.Core.Training
 
         private static void ValidateFormalBoundary(TrainingRunManifest manifest, List<string> reasons)
         {
+            reasons.AddRange(PendingNativeAdmissionBlockers);
             if (!string.Equals(manifest.WindowStyle, "hidden", StringComparison.OrdinalIgnoreCase))
                 reasons.Add("formal_training_window_style_must_be_hidden");
             if (!IsLoopbackHttpUrl(manifest.ProductExecutorUrl))

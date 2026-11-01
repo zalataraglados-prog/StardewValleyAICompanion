@@ -1,3 +1,5 @@
+using StardewAI.Core.Training;
+
 namespace StardewAI.GoalConditionedBootstrap;
 
 public static class GoalMethodFormalTrainingAdmissionBuilder
@@ -79,8 +81,10 @@ public static class GoalMethodFormalTrainingAdmissionBuilder
     {
         ValidateReconciliation(reconciliation);
         var currentBlockers = CurrentTeacherBlockers(reconciliation);
-        var downstreamBlockers = DownstreamPromotionBlockers(
+        var optionBlockers = DownstreamPromotionBlockers(
             reconciliation);
+        var nativeBlockers = StardewTrainingSessionLauncher.PendingNativeAdmissionBlockers;
+        var downstreamBlockers = optionBlockers.Concat(nativeBlockers).ToArray();
         var teacherCoverageReady =
             reconciliation.CoverageGateReadyCriterionCount ==
                 reconciliation.CriterionDenominatorCount &&
@@ -150,14 +154,18 @@ public static class GoalMethodFormalTrainingAdmissionBuilder
                 GoalMethodFormalTrainingGateIds
                     .ReferencedOptionExecutionInventory,
                 GoalMethodFormalTrainingGateCategories.RuntimePromotion,
-                runtimePromotionReady,
-                downstreamBlockers),
+                optionBlockers.Length == 0,
+                optionBlockers),
             Gate(
                 GoalMethodFormalTrainingGateIds.LeafAuthorityIsolation,
                 GoalMethodFormalTrainingGateCategories.SafetyIsolation,
                 true,
                 IntentionalSafetyLocks)
-        };
+        }.Concat(nativeBlockers.Select(blocker => Gate(
+            blocker,
+            GoalMethodFormalTrainingGateCategories.RuntimePromotion,
+            false,
+            "Authoritative native admission replay is not bound; diagnostic and self-attested artifacts are ineligible."))).ToArray();
         var readyForReview = gates
             .Where(gate => gate.RequiredForPromotionReview)
             .All(gate => gate.Satisfied);

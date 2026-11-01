@@ -2,7 +2,7 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 internal static partial class BootstrapSelfTest
 {
-    private static void VerifyFormalTrainingAdmissionPolicy()
+    internal static GoalMethodFormalTrainingAdmissionReport VerifyFormalTrainingAdmissionPolicy(int incompleteCriterionIndex = 0)
     {
         var criteria = Enumerable.Range(0, 19)
             .Select(index => new GoalMethodCoverageCriterionReconciliation(
@@ -172,16 +172,17 @@ internal static partial class BootstrapSelfTest
             reconciliation,
             evidence);
         Require(ready.Status ==
-                    "ready_for_separate_formal_training_promotion_review" &&
+                    "blocked_open_formal_training_evidence" &&
                 ready.TeacherTrainingEvidenceReady &&
-                ready.RuntimeProductPromotionReady &&
-                ready.ReadyForSeparatePromotionReview &&
+                !ready.RuntimeProductPromotionReady &&
+                !ready.ReadyForSeparatePromotionReview &&
                 !ready.FormalProductTrainingAuthorized &&
                 ready.CurrentTeacherBlockingReasons.Length == 0 &&
-                ready.DownstreamPromotionBlockingReasons.Length == 0,
-            "Formal admission reconciliation self-authorized or blocked a complete review fixture.");
+                ready.DownstreamPromotionBlockingReasons.SequenceEqual(
+                    StardewAI.Core.Training.StardewTrainingSessionLauncher.PendingNativeAdmissionBlockers),
+            "Formal admission reconciliation bypassed the independent pending native requirements.");
 
-        reconciliation.Criteria[0] = reconciliation.Criteria[0] with
+        reconciliation.Criteria[incompleteCriterionIndex] = reconciliation.Criteria[incompleteCriterionIndex] with
         {
             PrimaryDisposition =
                 GoalMethodCoverageDispositions.DependencyGraphIncomplete,
@@ -213,5 +214,6 @@ internal static partial class BootstrapSelfTest
                     new[] { "dependency_graph_incomplete:1" },
                     StringComparer.Ordinal),
             "Formal admission reconciliation did not fail closed on an incomplete Teacher denominator.");
+        return ready;
     }
 }
