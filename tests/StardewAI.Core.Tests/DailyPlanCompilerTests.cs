@@ -1,5 +1,6 @@
 using StardewAI.Contracts.Training;
 using StardewAI.Contracts.Execution;
+using StardewAI.Core.Execution;
 using StardewAI.Core.Training;
 
 namespace StardewAI.Core.Tests;
@@ -121,6 +122,9 @@ public sealed partial class DailyPlanCompilerTests
 
         var wait = Assert.Single(plan.Steps);
         Assert.Equal(600, wait.WaitTicks);
+        Assert.Equal(
+            GameClockBudgetPolicy.TicksToGameMinutes(1800),
+            wait.EstimatedMinutes);
         Assert.Contains(wait.Parameters, parameter =>
             parameter.Name == "route_wait_until_time" &&
             parameter.Value == "1410");

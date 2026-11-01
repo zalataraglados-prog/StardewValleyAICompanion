@@ -699,12 +699,14 @@ namespace StardewAI.Core.Training
             while (remaining > 0)
             {
                 var ticks = Math.Min(MaxWaitTicksPerStep, remaining);
+                var routeWaitUntilTime = BoundedRouteWaitUntilTime(candidate);
+                var waitMaxSlices = routeWaitUntilTime.HasValue ? 3 : 1;
                 yield return new SmallModelPlanStep
                 {
                     StepId = StepId(candidate, "wait", index++),
                     Kind = "wait_ticks",
                     WaitTicks = ticks,
-                    EstimatedMinutes = TicksToMinutes(ticks),
+                    EstimatedMinutes = TicksToMinutes(ticks * waitMaxSlices),
                     Preconditions = new[]
                     {
                         "candidate_id:" + candidate.CandidateId,
@@ -713,32 +715,47 @@ namespace StardewAI.Core.Training
                     ExpectedEffects = new[] { "time_advances", "fresh_snapshot_replan_required=true" },
                     SafetyConstraints = new[] { "do_not_wait_with_danger_or_active_menu" },
                     FailurePolicy = new[] { "refresh_snapshot_and_replan" },
-                    Parameters = RollingWaitParameters(candidate)
+                    Parameters = RollingWaitParameters(
+                        candidate,
+                        routeWaitUntilTime,
+                        waitMaxSlices)
                 };
                 remaining -= ticks;
             }
         }
 
         private static SmallModelActionParameter[] RollingWaitParameters(
-            PolicyEventCandidatePrediction candidate)
+            PolicyEventCandidatePrediction candidate,
+            int? routeWaitUntilTime,
+            int waitMaxSlices)
         {
             var parameters = ContinuationParameters(candidate).ToList();
-            var routeWaitUntilTime = candidate.NextOpenTime ??
-                candidate.EffectiveOpenTime;
-            if (string.Equals(
-                    candidate.Kind,
-                    "route_connector_tile",
-                    StringComparison.Ordinal) &&
-                routeWaitUntilTime is >= 600 and <= 2600 &&
-                routeWaitUntilTime.Value % 10 == 0)
+            if (routeWaitUntilTime.HasValue)
             {
                 parameters.Add(Parameter(
                     "route_wait_until_time",
                     routeWaitUntilTime.Value.ToString()));
-                parameters.Add(Parameter("route_wait_max_slices", "3"));
+                parameters.Add(Parameter(
+                    "route_wait_max_slices",
+                    waitMaxSlices.ToString()));
             }
 
             return parameters.ToArray();
+        }
+
+        private static int? BoundedRouteWaitUntilTime(
+            PolicyEventCandidatePrediction candidate)
+        {
+            var routeWaitUntilTime = candidate.NextOpenTime ??
+                candidate.EffectiveOpenTime;
+            return string.Equals(
+                    candidate.Kind,
+                    "route_connector_tile",
+                    StringComparison.Ordinal) &&
+                routeWaitUntilTime is >= 600 and <= 2600 &&
+                routeWaitUntilTime.Value % 10 == 0
+                    ? routeWaitUntilTime
+                    : null;
         }
 
         private static SmallModelActionParameter[] ContinuationParameters(PolicyEventCandidatePrediction candidate)

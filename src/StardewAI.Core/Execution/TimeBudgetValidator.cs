@@ -285,8 +285,12 @@ namespace StardewAI.Core.Execution
         private static DurationEstimate EstimateWait(ActionQueueItem item)
         {
             var waitTicks = ParameterInt(item, "wait_ticks");
+            var waitMaxSlices = ParameterInt(item, "route_wait_max_slices") ?? 1;
             return waitTicks.HasValue && waitTicks.Value > 0
-                ? Fixed(TicksToMinutes(waitTicks.Value), "bounded_wait_ticks.v1")
+                ? Fixed(
+                    TicksToMinutes(
+                        waitTicks.Value * Math.Clamp(waitMaxSlices, 1, 3)),
+                    "bounded_wait_ticks.v2")
                 : EstimateCompiledSteps(item, "bounded_wait_compiled_steps.v1");
         }
 

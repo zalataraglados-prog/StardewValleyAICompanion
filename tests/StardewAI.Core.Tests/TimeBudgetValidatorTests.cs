@@ -263,6 +263,37 @@ public sealed class TimeBudgetValidatorTests
     }
 
     [Fact]
+    public void BoundedRouteWaitAccountsForEveryAuthorizedNativeSlice()
+    {
+        var snapshot = Snapshot(1800);
+        var model = new WorldModelProjector().Project(
+            snapshot,
+            "wait for festival transit",
+            "training");
+        var item = Item("executor.wait_ticks", "required");
+        item.NormalizedCommand.Parameters = item.NormalizedCommand.Parameters.Concat(new[]
+        {
+            new SmallModelActionParameter { Name = "wait_ticks", Value = "600" },
+            new SmallModelActionParameter { Name = "route_wait_until_time", Value = "1410" },
+            new SmallModelActionParameter { Name = "route_wait_max_slices", Value = "3" }
+        }).ToArray();
+        var queue = new ActionQueueEnvelope
+        {
+            QueueId = "queue.route-wait",
+            StateHash = snapshot.StateHash,
+            Status = "pending",
+            Items = new[] { item }
+        };
+
+        var report = new TimeBudgetValidator().Validate(model, queue);
+
+        Assert.Equal(
+            GameClockBudgetPolicy.TicksToGameMinutes(1800),
+            Assert.Single(report.Items).EstimatedMinutes);
+        Assert.Equal("bounded_wait_ticks.v2", report.Items[0].Estimator);
+    }
+
+    [Fact]
     public void RecoverySleepUsesCompiledMacroStepDuration()
     {
         var snapshot = Snapshot(2300);
