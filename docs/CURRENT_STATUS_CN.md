@@ -18,11 +18,13 @@
 | Money production evidence cells | **0/18** | 6 个 Money criterion × 3 partitions；hermetic fixture 不计 production |
 | Formal product training | **false** | 未通过完整正式训练准入 |
 
-### 2026-11-01 Gourmand 连续性证据与当前 v97 边界
+### 2026-11-01 Master Angler 前置完成证明与当前 v97 边界
 
 - 当前主线已经实现并消费 Golden Walnut Gourmand 的冻结原生连续性回执。回执必须在同一 run/save/player/game/manifest/evidence root 上证明三次请求依次把完成数从 `0` 推到 `1`、`2`、`3`，并重新验证每条原生执行回执、effects/facts、数量与哈希；任何身份、清单、证据根、字段或工件篡改均失败关闭。
 - Master Angler fresh-save prerequisite audit 现在有明确的两态合同：缺少该回执时，唯一缺口仍是 `ginger_island_access`；同时具备已验证 source schedule 和精确 Gourmand 回执时，该 family 才升为 `implemented_and_bound`，缺口数为 `0`。这不增加上表正式训练分子，回执和总审计继续明确 `training_label_eligible=false`。
-- 代码已在提交 `500df481`、`f79212f2` 合入并推送 `main`；聚焦链 `267/267`、命令行自测、PowerShell AST 与补丁检查通过。当前运行中的 v97 是改动前二进制，最新为 iteration `142`、`115` 条 verified action，仍在 Stage One collection；它可保留校准证据，但不能产生新 Gourmand 回执。
+- 提交 `1621024f` 与 `99b3e5b0` 在该审计上增加唯一的非训练完成证明与产品入口。证明必须由同一进程重新生成审计，精确绑定审计、dependency expansion 与 Gourmand receipt 的路径和 SHA-256，并严格要求 `72` 个不重复鱼种、`14` 个不重复且全部 `implemented_and_bound` 的前置族、`3` 次 Gourmand 转移、零未知地点和零 blocker；任何分母漂移或证据内容漂移都失败关闭。CLI 与产品 PowerShell 包装器均已执行真实隔离集成测试，相关回归 `334/334`、PowerShell AST 和补丁检查通过。
+- 该完成证明仍固定 `training_label_eligible=false`，只证明 Master Angler 前置清单闭合，不证明逐鱼捕获结果、三分区 Teacher/native evidence 或正式训练准入。状态面板分子因此没有变化。
+- 当前运行中的 v97 是上述新代码之前启动的旧二进制。最新低频观察已越过 iteration `191`、`137` 条 verified action，仍在 Stage One collection 且没有 `stage=error`；它可保留校准证据，但不能热加载完成证明或产生新 Gourmand 回执。
 - v97 完成后不得续接旧进程或旧身份。下一次全新 day-zero v98 必须同时要求 source schedule 与 Gourmand continuation，使用不可变 execution receipt archive，随后由独立 verifier 重建并交给 Master Angler audit。正式训练继续为 **false**，直至其余准入条件也全部满足。
 
 ### 2026-10-31 v92 长跑保留与 #377 当前主线正确性收口

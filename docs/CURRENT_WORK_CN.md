@@ -4,12 +4,13 @@
 >
 > **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已完成 v10 之后的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已按 current authority 冻结；当前唯一施工项为 `complete_master_angler` 顶层 dependency、日历窗口与 coverage 接线。P0/P1 共享 correctness blocker 可临时中断，但不得静默改序或并行展开多个 root method。
 
-## 2026-11-01：Gourmand 连续性已接入 Master Angler 审计，v97 继续旧代码校准
+## 2026-11-01：Master Angler 前置完成证明已接入产品链，v97 继续旧代码校准
 
 - 主线提交 `f588383`（合入为 `6f164814`）建立冻结 episode 的 Gourmand 三段原生连续性回执：同一 run/save/player/game/manifest/evidence root 上只接受 `0 -> 1 -> 2 -> 3` 三次原生请求，并逐项核验 executor receipt、effects、facts、数量、哈希和无直接状态写入。执行回执现由 fresh-save archive 不可变复制，rolling retention 不再删掉其唯一证据。
 - 提交 `500df481` 与 `f79212f2` 把该回执接入唯一 Master Angler fresh-save prerequisite audit 和产品校准入口。没有回执时仍精确保留 `ginger_island_access` 这一项缺口；只有 source schedule 已独立验证、回执重建完全一致、三段连续且零 blocker 时，Ginger Island family 才可升为 `implemented_and_bound`，缺口数才从 `1` 降为 `0`。
-- 该晋升只是 prerequisite implementation/binding 证据，回执与总审计均继续强制 `training_label_eligible=false`，不得把它解释成正式训练授权。相关合并验证为 `267/267`，CLI 自测、两个 PowerShell 入口 AST 与 `git diff --check` 均通过。
-- 当前隐藏静音 v97 `golden-walnut-source-schedule-v97-20261101-182500` 由改动前的二进制启动，只用于保留 source-schedule 校准证据；最新观察为 iteration `142`、`115` 条 verified action，仍在 Stage One collection，无运行错误。它无法热加载 Gourmand 连续性，完成后也不得冒充新回执。
+- 提交 `1621024f` 与 `99b3e5b0` 在该审计上增加唯一完成证明及其 CLI/产品包装器接线。证明由同一进程重建审计后生成，哈希绑定审计、dependency expansion 与 Gourmand receipt，并严格要求 `72` 个不重复鱼种、`14` 个不重复且全部已绑定的前置族、`3` 次 Gourmand 原生转移、零未知地点和零 blocker。真实 CLI 与 PowerShell 包装器集成路径均已覆盖，相关回归 `334/334`、PowerShell AST 与 `git diff --check` 通过。
+- 该晋升和完成证明都只是 prerequisite implementation/binding 证据；回执、总审计与完成证明继续强制 `training_label_eligible=false`，不得解释成逐鱼捕获证明、正式 Teacher/native 三分区证据或训练授权。
+- 当前隐藏静音 v97 `golden-walnut-source-schedule-v97-20261101-182500` 由上述改动前的二进制启动，只用于保留 source-schedule 校准证据；最新低频观察已越过 iteration `191`、`137` 条 verified action，仍在 Stage One collection 且无 `stage=error`。它无法热加载 Gourmand 连续性或完成证明，结束后也不得冒充新回执。
 - v97 结束后的唯一下一原生入口是全新 day-zero v98，同时启用 `RequireSourceScheduleReady` 与 `RequireGourmandContinuationReady`，使用新的不可变 execution receipt archive。只有 v98 生成 source schedule、独立重放成功并完成精确三段 Gourmand 后，才能用当前 audit 形成缺口 `0` 的运行时证据；正式训练状态在新的准入门通过前仍为 **false**。
 
 ## 2026-10-31：v92 保留证据，#377 已修复，下一入口锁定 v93
