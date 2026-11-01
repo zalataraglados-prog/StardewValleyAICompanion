@@ -17,7 +17,8 @@
 - v98 已在 iteration `202` 按连续 `8` 次未验证执行硬门停止，所有进程和端口均已回收。最终留下 `173` 条 verified Product action、`293` 个耐久 fresh-save episode；停止原因只指向上述 `executor.traverse_connector` 路径预算，source schedule 仍因首次登岛、来源增量和三项鹦鹉工程未观察而不完整，Gourmand 为 `0/3`。v98 不得续接或进入正式 corpus；下一运行必须使用最新主线和全新存档重新验证等待、出货完成身份、浇水抢占与连接器动态绕行。
 - v99 首次启动身份 `golden-walnut-source-schedule-v99-20261102-005523` 在任何游戏进程启动前因长链 Windows PowerShell 会话无法解析 `Get-FileHash` 而退出，没有有效新档或训练数据。公共部署守卫现改用纯 .NET SHA-256，同时保留复制后源/目标哈希相等的失败关闭；源守卫 `3/3`，Windows PowerShell 下 Bridge+Harness 与 pwsh 下顺序部署均通过。有效运行身份是 `golden-walnut-source-schedule-v99r2-20261102-005859`，新存档 `ProofFarm_453229167` 已通过 1.6.15 原生门并进入单并发动作循环，stderr 为空。它继续使用 `skip-training`、source schedule 与 Gourmand 双硬门，只验证当前源码并推进同一主线，不继承 v98 内存态或诊断尾部。
 - v99r2 在 crop teacher 的真实购种阶段连续复现 `profile=shop` 被 Backend 以 `unsupported snapshot profile` 拒绝。Bridge 已返回预期的十个目的域，缺口是 Backend 校验表没有登记同名目的配置，不是商店字段缺失。该轮在 iteration `6` 人工停止并完整回收进程，禁止继续产生重复错误。当前源码增加严格 `ShopRequiredDomains`：十域完整时接受，缺少 `npcs` 等任一必需域时仍失败关闭；专项 `8/8`、Backend `258/258`、全解决方案构建 `0 warning / 0 error`。下一原生入口必须使用新二进制和新 run 身份复验购种链，不得热替换或续接 v99r2 进程。
-- 运行证据只写入对应 `I:\StardewAITraining\golden-walnut-source-schedule-v98/v99` 根，不进入 Git。后续低频观察只读取进度日志和终止证据；未达到 source schedule、独立重放、Gourmand 连续性及自动 completion proof 前，不得把本轮称作正式训练完成。
+- v100 `golden-walnut-source-schedule-v100-20261102-010715` 已加载上述 shop 修复并通过 fresh-save 启动，但只到 iteration `1` 的正常 source/Gourmand 等待态便主动停止。启动间隙的源码一致性审计证明 crop teacher 购种后的下一控制步会使用 `profile=route`，而 Backend 同样尚未登记；Bridge 的 route 与 shop 都发布相同十域合同，因此继续等待实机重复同类 422 没有信息收益。当前 Backend 统一使用严格 `RouteAndShopRequiredDomains`，两种 profile 均验证完整接受与缺域拒绝；专项 `9/9`、全解决方案构建零警告零错误。v100 不作为完成证据，下一轮从新身份同时复验购种和购后路线。
+- 运行证据只写入对应 `I:\StardewAITraining\golden-walnut-source-schedule-v*` 根，不进入 Git。后续低频观察只读取进度日志和终止证据；未达到 source schedule、独立重放、Gourmand 连续性及自动 completion proof 前，不得把本轮称作正式训练完成。
 
 ## 2026-11-01：v97 暂态移动门误判已修复，v98 启动前需恢复磁盘余量
 

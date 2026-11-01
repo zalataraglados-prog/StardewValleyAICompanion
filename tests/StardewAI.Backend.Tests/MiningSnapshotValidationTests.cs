@@ -126,24 +126,27 @@ public sealed class MiningSnapshotValidationTests
         Assert.Contains("missing state domain: farm", rejected);
     }
 
-    [Fact]
-    public void SnapshotValidatorAcceptsShopProfileAndKeepsItsDomainSetFailClosed()
+    [Theory]
+    [InlineData("route")]
+    [InlineData("shop")]
+    public void SnapshotValidatorAcceptsRouteAndShopProfilesAndKeepsTheirDomainSetFailClosed(
+        string profile)
     {
         var accepted = SnapshotValidator.ValidateRaw(
-            PurposeLimitedSnapshotJson(ShopProfileDomains),
+            PurposeLimitedSnapshotJson(RouteAndShopProfileDomains),
             out var snapshot,
-            "shop");
+            profile);
 
         Assert.Empty(accepted);
         Assert.NotNull(snapshot);
         Assert.Equal(
-            ShopProfileDomains.OrderBy(value => value),
+            RouteAndShopProfileDomains.OrderBy(value => value),
             snapshot!.State.Keys.OrderBy(value => value));
 
         var rejected = SnapshotValidator.ValidateRaw(
-            PurposeLimitedSnapshotJson(ShopProfileDomains, "npcs"),
+            PurposeLimitedSnapshotJson(RouteAndShopProfileDomains, "npcs"),
             out _,
-            "shop");
+            profile);
         Assert.Contains("missing state domain: npcs", rejected);
     }
 
@@ -422,7 +425,7 @@ public sealed class MiningSnapshotValidationTests
         "world_progress"
     };
 
-    private static readonly string[] ShopProfileDomains =
+    private static readonly string[] RouteAndShopProfileDomains =
     {
         "environment",
         "identity",

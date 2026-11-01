@@ -1353,7 +1353,7 @@ public static class SnapshotValidator
         "world_progress"
     };
 
-    private static readonly string[] ShopRequiredDomains =
+    private static readonly string[] RouteAndShopRequiredDomains =
     {
         "environment",
         "identity",
@@ -1537,9 +1537,10 @@ public static class SnapshotValidator
             return FarmLayoutRequiredDomains;
         }
 
-        if (string.Equals(profile, "shop", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(profile, "route", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(profile, "shop", StringComparison.OrdinalIgnoreCase))
         {
-            return ShopRequiredDomains;
+            return RouteAndShopRequiredDomains;
         }
 
         if (string.Equals(profile, "social", StringComparison.OrdinalIgnoreCase) ||
