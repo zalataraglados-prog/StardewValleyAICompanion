@@ -51,6 +51,7 @@ namespace StardewAI.Core.Training
             var remainingMinutes = availableMinutes;
             var remainingEnergy = energyBudget;
             var selected = 0;
+            var rollingHorizonReplanBarrierAccepted = false;
             var maxAcceptedCandidates = Math.Max(1, maxCandidates);
             var reservedPlantTiles = new HashSet<string>(StringComparer.Ordinal);
             var reservedSeedCounts = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -74,6 +75,19 @@ namespace StardewAI.Core.Training
                 var candidateMinutes = waitSteps
                     .Concat(candidateSteps)
                     .Sum(step => step.EstimatedMinutes ?? TicksToMinutes(step.WaitTicks ?? candidate.EstimatedTicks));
+                if (rollingHorizonReplanBarrierAccepted)
+                {
+                    audit.Add(CandidateAudit(
+                        candidate,
+                        "skipped",
+                        new[] { "rolling_horizon_fresh_replan_barrier" },
+                        candidateMinutes,
+                        remainingMinutes,
+                        remainingMinutes,
+                        remainingEnergy,
+                        remainingEnergy));
+                    continue;
+                }
                 if (candidateSteps.Length == 0 && waitSteps.Length == 0)
                 {
                     var unsupportedReasons =
@@ -198,6 +212,10 @@ namespace StardewAI.Core.Training
                 if (!rollingDeferred)
                 {
                     ReserveCandidate(candidate, reservedPlantTiles, reservedSeedCounts, reservedMachineInputCounts, reservedMachineAdditionalConsumedCounts, reservedInventorySlots, reservedInventorySlotQuantities, reservedDebrisTargets, reservedDecisionGroups);
+                }
+                else
+                {
+                    rollingHorizonReplanBarrierAccepted = true;
                 }
                 selected++;
             }

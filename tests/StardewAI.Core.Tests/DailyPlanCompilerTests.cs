@@ -45,6 +45,52 @@ public sealed partial class DailyPlanCompilerTests
     }
 
     [Fact]
+    public void CompileTreatsFirstRollingWaitAsFreshReplanBarrier()
+    {
+        static PolicyEventCandidatePrediction Deferred(string id, int rank) =>
+            new()
+            {
+                CandidateId = id,
+                Kind = "interact_endpoint",
+                Rank = rank,
+                TimelineStatus = "deferred",
+                ScheduledWaitCost = 600,
+                LocationId = "Town",
+                TileX = 11,
+                TileY = 10,
+                ExpectedEffect = "move_to_adjacent=10,10;preview_interact=OpenShop",
+                EstimatedTicks = 90
+            };
+
+        var plan = new DailyPlanCompiler().Compile(
+            new[]
+            {
+                Deferred("deferred.first", 1),
+                Deferred("deferred.second", 2),
+                Deferred("deferred.third", 3)
+            },
+            "state.rolling-barrier",
+            maxCandidates: 4,
+            availableMinutes: 120);
+
+        var wait = Assert.Single(plan.Steps);
+        Assert.Equal("wait_ticks", wait.Kind);
+        Assert.Equal(600, wait.WaitTicks);
+        Assert.Contains(
+            "fresh_snapshot_replan_required=true",
+            wait.ExpectedEffects);
+        Assert.Equal(3, plan.CandidateAudit.Length);
+        Assert.Equal("accepted", plan.CandidateAudit[0].Decision);
+        Assert.All(plan.CandidateAudit.Skip(1), row =>
+        {
+            Assert.Equal("skipped", row.Decision);
+            Assert.Contains(
+                "rolling_horizon_fresh_replan_barrier",
+                row.Reasons);
+        });
+    }
+
+    [Fact]
     public void CompileTurnsBuyCandidateIntoPurchasePlanStep()
     {
         var candidate = new PolicyEventCandidatePrediction
