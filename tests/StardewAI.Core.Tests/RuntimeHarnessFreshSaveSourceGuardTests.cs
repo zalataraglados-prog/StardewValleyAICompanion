@@ -289,6 +289,18 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             calibration,
             StringComparison.Ordinal);
         Assert.Contains(
+            "build-master-angler-fresh-save-prerequisite-completion-proof",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "master_angler_completion_proof_path",
+            calibration,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "MasterAnglerFreshSavePrerequisiteCompletionProofBuilder.Build",
+            bootstrapProgram,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "golden-walnut-gourmand-continuation-receipt",
             bootstrapProgram,
             StringComparison.Ordinal);

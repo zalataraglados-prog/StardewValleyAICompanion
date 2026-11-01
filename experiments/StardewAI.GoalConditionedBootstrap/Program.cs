@@ -172,6 +172,8 @@ var commandDefinitions = new CommandDefinition[]
     new("build-golden-walnut-fresh-save-source-schedule", BuildGoldenWalnutFreshSaveSourceSchedule),
     new("verify-golden-walnut-fresh-save-source-schedule", VerifyGoldenWalnutFreshSaveSourceSchedule),
     new("audit-master-angler-fresh-save-prerequisites", AuditMasterAnglerFreshSavePrerequisites),
+    new("build-master-angler-fresh-save-prerequisite-completion-proof",
+        BuildMasterAnglerFreshSavePrerequisiteCompletionProof),
     new("build-master-angler-target-date-intents", BuildMasterAnglerTargetDateIntents),
     new("build-validation-trace-baseline", BuildValidationTraceBaseline),
     new("rehash-content", RehashContent),
@@ -2771,7 +2773,20 @@ static void BuildMasterAnglerStageOneWindows(Arguments options)
 
 static void AuditMasterAnglerFreshSavePrerequisites(Arguments options)
 {
-    var report = MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(
+    var report = BuildMasterAnglerFreshSavePrerequisiteAudit(options);
+    Write(options.Required("output"), report);
+    if (!report.StaticOpportunityInventoryComplete ||
+        !report.PrerequisiteFamilyInventoryComplete ||
+        report.NativeDenominatorCount != 72 ||
+        report.UnknownLocationIds.Length > 0)
+    {
+        Environment.ExitCode = 2;
+    }
+}
+
+static MasterAnglerFreshSavePrerequisiteAuditReport
+    BuildMasterAnglerFreshSavePrerequisiteAudit(Arguments options) =>
+    MasterAnglerFreshSavePrerequisiteAuditBuilder.Build(
         options.Required("catalog"),
         options.Required("windows"),
         options.Required("dependency-expansions"),
@@ -2781,14 +2796,22 @@ static void AuditMasterAnglerFreshSavePrerequisites(Arguments options)
         options.Optional("save-id"),
         options.Optional("player-id"),
         options.Optional("golden-walnut-gourmand-continuation-receipt"));
-    Write(options.Required("output"), report);
-    if (!report.StaticOpportunityInventoryComplete ||
-        !report.PrerequisiteFamilyInventoryComplete ||
-        report.NativeDenominatorCount != 72 ||
-        report.UnknownLocationIds.Length > 0)
-    {
+
+static void BuildMasterAnglerFreshSavePrerequisiteCompletionProof(
+    Arguments options)
+{
+    var audit = BuildMasterAnglerFreshSavePrerequisiteAudit(options);
+    var auditOutput = options.Required("audit-output");
+    Write(auditOutput, audit);
+    var proof = MasterAnglerFreshSavePrerequisiteCompletionProofBuilder.Build(
+        audit,
+        auditOutput,
+        options.Required("dependency-expansions"),
+        GoalMethodTeacherCoverageGoalIds.Authoritative,
+        GoldenWalnutFreshSaveUnlockTimelineProofBuilder.GameVersion);
+    Write(options.Required("output"), proof);
+    if (!proof.Ready)
         Environment.ExitCode = 2;
-    }
 }
 
 static void BuildGoldenWalnutFreshSaveSourceSchedule(Arguments options)

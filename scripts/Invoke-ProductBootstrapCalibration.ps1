@@ -70,7 +70,9 @@ param(
         $ProjectRoot `
         "experiments\goal-method-dependency-expansions.v1.json"),
     [Parameter(ParameterSetName = "VerifyOnly")]
-    [string] $MasterAnglerAuditOutputPath = ""
+    [string] $MasterAnglerAuditOutputPath = "",
+    [Parameter(ParameterSetName = "VerifyOnly")]
+    [string] $MasterAnglerCompletionProofOutputPath = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -224,7 +226,8 @@ function Invoke-MasterAnglerVerifiedSourceScheduleAudit(
     [string] $WindowIndexPath,
     [string] $DependencyExpansionsPath,
     [string] $AuditOutputPath,
-    [string] $GourmandContinuationReceiptPath = "") {
+    [string] $GourmandContinuationReceiptPath = "",
+    [string] $CompletionProofOutputPath = "") {
     $resolvedSourceSchedulePath = [IO.Path]::GetFullPath($SourceSchedulePath)
     $resolvedBootstrapDllPath = [IO.Path]::GetFullPath($BootstrapDllPath)
     $resolvedOutputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
@@ -247,6 +250,13 @@ function Invoke-MasterAnglerVerifiedSourceScheduleAudit(
     } else {
         [IO.Path]::GetFullPath($AuditOutputPath)
     }
+    $resolvedCompletionProofOutputPath = if ([string]::IsNullOrWhiteSpace(
+            $CompletionProofOutputPath)) {
+        Join-Path $resolvedOutputDirectory `
+            "master-angler-fresh-save-prerequisite-completion-proof.json"
+    } else {
+        [IO.Path]::GetFullPath($CompletionProofOutputPath)
+    }
     foreach ($path in @(
             $resolvedSourceSchedulePath,
             $resolvedBootstrapDllPath,
@@ -262,6 +272,12 @@ function Invoke-MasterAnglerVerifiedSourceScheduleAudit(
     }
     $auditParent = Split-Path -Parent $resolvedAuditOutputPath
     New-Item -ItemType Directory -Path $auditParent -Force | Out-Null
+    $hasGourmandReceipt = -not [string]::IsNullOrWhiteSpace(
+        $resolvedGourmandReceiptPath)
+    if ($hasGourmandReceipt) {
+        $proofParent = Split-Path -Parent $resolvedCompletionProofOutputPath
+        New-Item -ItemType Directory -Path $proofParent -Force | Out-Null
+    }
     $expectedSaveId = [string]$VerificationResult.Receipt.schedule.source_save_id
     $expectedPlayerId = [string]$VerificationResult.Receipt.expected_player_id
     if ([string]::IsNullOrWhiteSpace($expectedSaveId) -or
@@ -269,9 +285,14 @@ function Invoke-MasterAnglerVerifiedSourceScheduleAudit(
         throw "Master Angler verified source-schedule audit requires receipt-bound save and player identities."
     }
 
+    $auditCommand = if ($hasGourmandReceipt) {
+        "build-master-angler-fresh-save-prerequisite-completion-proof"
+    } else {
+        "audit-master-angler-fresh-save-prerequisites"
+    }
     $auditArguments = @(
         $resolvedBootstrapDllPath,
-        "audit-master-angler-fresh-save-prerequisites",
+        $auditCommand,
         "--catalog", $resolvedCatalogPath,
         "--windows", $resolvedWindowIndexPath,
         "--dependency-expansions", $resolvedDependencyExpansionsPath,
@@ -279,13 +300,16 @@ function Invoke-MasterAnglerVerifiedSourceScheduleAudit(
         "--golden-walnut-verification-receipt", $resolvedReceiptPath,
         "--run-id", $ExpectedRunId,
         "--save-id", $expectedSaveId,
-        "--player-id", $expectedPlayerId,
-        "--output", $resolvedAuditOutputPath
+        "--player-id", $expectedPlayerId
     )
-    if (-not [string]::IsNullOrWhiteSpace($resolvedGourmandReceiptPath)) {
+    if ($hasGourmandReceipt) {
         $auditArguments += @(
             "--golden-walnut-gourmand-continuation-receipt",
-            $resolvedGourmandReceiptPath)
+            $resolvedGourmandReceiptPath,
+            "--audit-output", $resolvedAuditOutputPath,
+            "--output", $resolvedCompletionProofOutputPath)
+    } else {
+        $auditArguments += @("--output", $resolvedAuditOutputPath)
     }
     $auditLogPath = Join-Path $resolvedOutputDirectory `
         "master-angler-fresh-save-prerequisite-audit.log"
@@ -319,8 +343,6 @@ function Invoke-MasterAnglerVerifiedSourceScheduleAudit(
     $gingerIslandFamilies = @(
         $audit.prerequisite_families |
             Where-Object family_id -eq "ginger_island_access")
-    $hasGourmandReceipt = -not [string]::IsNullOrWhiteSpace(
-        $resolvedGourmandReceiptPath)
     $expectedMissingCount = if ($hasGourmandReceipt) { 0 } else { 1 }
     $expectedGingerStatus = if ($hasGourmandReceipt) {
         "implemented_and_bound"
@@ -381,10 +403,53 @@ function Invoke-MasterAnglerVerifiedSourceScheduleAudit(
         }
         throw "Master Angler audit did not reach the exact post-schedule prerequisite frontier (missing=$missingText). See $resolvedAuditOutputPath."
     }
+    $completionProof = $null
+    if ($hasGourmandReceipt) {
+        if (-not (Test-Path -LiteralPath $resolvedCompletionProofOutputPath `
+                -PathType Leaf)) {
+            throw "Master Angler completion proof was not written."
+        }
+        try {
+            $completionProof = Get-Content -Raw -LiteralPath `
+                $resolvedCompletionProofOutputPath | ConvertFrom-Json
+        }
+        catch {
+            throw "Master Angler completion proof produced malformed JSON: $resolvedCompletionProofOutputPath"
+        }
+        $expectedAuditSha256 = (
+            Get-FileHash -LiteralPath $resolvedAuditOutputPath -Algorithm SHA256
+        ).Hash.ToLowerInvariant()
+        $expectedDependencySha256 = (
+            Get-FileHash -LiteralPath $resolvedDependencyExpansionsPath `
+                -Algorithm SHA256
+        ).Hash.ToLowerInvariant()
+        if (-not [bool]$completionProof.ready -or
+            [bool]$completionProof.training_label_eligible -or
+            [int]$completionProof.native_denominator_count -ne 72 -or
+            [int]$completionProof.prerequisite_family_count -ne 14 -or
+            [int]$completionProof.verified_gourmand_transition_count -ne 3 -or
+            @($completionProof.blocking_reasons).Count -ne 0 -or
+            [IO.Path]::GetFullPath([string]$completionProof.audit_path) -ne
+                $resolvedAuditOutputPath -or
+            [string]$completionProof.audit_sha256 -ne $expectedAuditSha256 -or
+            [IO.Path]::GetFullPath(
+                [string]$completionProof.dependency_expansion_path) -ne
+                $resolvedDependencyExpansionsPath -or
+            [string]$completionProof.dependency_expansion_sha256 -ne
+                $expectedDependencySha256) {
+            throw "Master Angler completion proof did not bind the exact 72-species/14-family audit. See $resolvedCompletionProofOutputPath."
+        }
+    }
     return [pscustomobject]@{
         Audit = $audit
         AuditPath = $resolvedAuditOutputPath
         LogPath = $auditLogPath
+        CompletionProof = $completionProof
+        CompletionProofPath = if ($hasGourmandReceipt) {
+            $resolvedCompletionProofOutputPath
+        } else {
+            ""
+        }
     }
 }
 
@@ -419,7 +484,9 @@ if ($VerifyGoldenWalnutSourceScheduleArtifactsOnly) {
             -DependencyExpansionsPath $MasterAnglerDependencyExpansions `
             -AuditOutputPath $MasterAnglerAuditOutputPath `
             -GourmandContinuationReceiptPath `
-                $VerificationGourmandContinuationReceiptPath
+                $VerificationGourmandContinuationReceiptPath `
+            -CompletionProofOutputPath `
+                $MasterAnglerCompletionProofOutputPath
         [pscustomobject]@{
             status = "pass"
             run_id = $RunId
@@ -427,6 +494,8 @@ if ($VerifyGoldenWalnutSourceScheduleArtifactsOnly) {
             verification_log_path = $verificationResult.LogPath
             master_angler_audit_path = $auditResult.AuditPath
             master_angler_audit_log_path = $auditResult.LogPath
+            master_angler_completion_proof_path = `
+                $auditResult.CompletionProofPath
             gourmand_continuation_receipt_path = if (
                 [string]::IsNullOrWhiteSpace(
                     $VerificationGourmandContinuationReceiptPath)) {

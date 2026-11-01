@@ -50,6 +50,65 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
             JsonSerializer.Serialize(roundTrip.GoldenWalnutGourmandContinuationReceipt));
     }
 
+    [Fact]
+    public async Task MasterAnglerCompletionProofCliRebuildsAndBindsTheCompleteAudit()
+    {
+        using var fixture = new Fixture(scheduleId: "golden-walnut-fresh-save:run",
+            phaseOrderedSources: true, gourmandContinuation: true);
+        var inputs = WriteBoundAuditInputs(fixture.Root);
+        var receipts = WriteContinuationAuditReceipts(fixture);
+        var auditPath = Path.Combine(fixture.Root, "complete-audit.json");
+        var proofPath = Path.Combine(fixture.Root, "completion-proof.json");
+        var configuration = new DirectoryInfo(AppContext.BaseDirectory).Parent!.Name;
+        var start = new ProcessStartInfo("dotnet")
+        {
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+        foreach (var argument in new[]
+        {
+            Path.Combine(FindRepositoryRoot(), "experiments", "StardewAI.GoalConditionedBootstrap", "bin",
+                configuration, "net8.0", "StardewAI.GoalConditionedBootstrap.dll"),
+            "build-master-angler-fresh-save-prerequisite-completion-proof",
+            "--catalog", inputs.Catalog,
+            "--windows", inputs.Windows,
+            "--dependency-expansions", inputs.Dependencies,
+            "--golden-walnut-source-schedule", fixture.SchedulePath,
+            "--golden-walnut-verification-receipt", receipts.Source,
+            "--golden-walnut-gourmand-continuation-receipt", receipts.Continuation,
+            "--run-id", "run",
+            "--save-id", "save",
+            "--player-id", "player",
+            "--audit-output", auditPath,
+            "--output", proofPath
+        }) start.ArgumentList.Add(argument);
+        start.Environment.Remove("STARDEWAI_VALIDATION_TRACE");
+        using var process = Process.Start(start)!;
+        var output = process.StandardOutput.ReadToEndAsync();
+        var error = process.StandardError.ReadToEndAsync();
+        await process.WaitForExitAsync();
+        var diagnostic = await error + await output;
+        if (File.Exists(proofPath))
+            diagnostic += Environment.NewLine + File.ReadAllText(proofPath);
+        Assert.True(process.ExitCode == 0, diagnostic);
+
+        var audit = JsonSerializer.Deserialize<MasterAnglerFreshSavePrerequisiteAuditReport>(
+            File.ReadAllText(auditPath))!;
+        var proof = JsonSerializer.Deserialize<MasterAnglerFreshSavePrerequisiteCompletionProof>(
+            File.ReadAllText(proofPath))!;
+        Assert.Equal("fresh_save_prerequisite_inventory_complete", audit.Status);
+        Assert.True(proof.Ready);
+        Assert.False(proof.TrainingLabelEligible);
+        Assert.Equal(72, proof.NativeDenominatorCount);
+        Assert.Equal(14, proof.PrerequisiteFamilyCount);
+        Assert.Equal(3, proof.VerifiedGourmandTransitionCount);
+        Assert.Equal(auditPath, proof.AuditPath);
+        Assert.Equal(Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
+            File.ReadAllBytes(auditPath))).ToLowerInvariant(), proof.AuditSha256);
+    }
+
     [Theory]
     [InlineData(false, 3)]
     [InlineData(true, 2)]
@@ -349,6 +408,112 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
         string root)
     {
         var inputs = WriteAuditInputs(root);
+        var speciesIds = Enumerable.Range(0, 72)
+            .Select(index => "fixture-" + index)
+            .ToArray();
+        string AcquisitionClass(int index) => index switch
+        {
+            >= 62 => "trap_crab_pot",
+            >= 60 => "mine_override_only",
+            _ => "rod_location_rule"
+        };
+        AuthoritativeCalendarSourceWindow Location(
+            string locationId,
+            int index,
+            string[]? weatherModes = null,
+            int minimumFishingLevel = 0) => new()
+        {
+            SourceKind = "location_rule",
+            SourceKey = $"location:{locationId}:{index}",
+            LocationId = locationId,
+            FirstTotalDay = 0,
+            LastTotalDay = 1,
+            WeatherModes = weatherModes ?? Array.Empty<string>(),
+            MinimumFishingLevel = minimumFishingLevel
+        };
+        AuthoritativeCalendarSourceWindow Mine(int index) => new()
+        {
+            SourceKind = "mine_override",
+            SourceKey = "mine:" + index,
+            LocationId = "UndergroundMine",
+            MineArea = 80,
+            FirstTotalDay = 0,
+            LastTotalDay = 1
+        };
+        AuthoritativeCalendarSourceWindow Trap(int index) => new()
+        {
+            SourceKind = "crab_pot",
+            SourceKey = "trap:" + index,
+            LocationId = "Beach",
+            WaterType = "ocean",
+            FirstTotalDay = 0,
+            LastTotalDay = 1,
+            RequiresTrapInfrastructure = true
+        };
+        AuthoritativeCalendarSourceWindow[] SourceWindows(int index) => index switch
+        {
+            0 => new[] { Location("IslandWest", index) },
+            1 => new[] { Location("Desert", index) },
+            2 => new[] { Location("Sewer", index) },
+            3 => new[] { Location("Woods", index), Location("Farm_Forest", index) },
+            4 => new[] { Location("WitchSwamp", index) },
+            5 => new[] { Location("BugLand", index) },
+            6 => new[] { Mine(index), Location("Sewer", index), Location("BugLand", index) },
+            7 => new[] { Location("Beach", index, new[] { "rain" }) },
+            8 => new[] { Location("Beach", index, minimumFishingLevel: 5) },
+            60 => new[] { Mine(index) },
+            61 => new[] { Mine(index), Location("Caldera", index) },
+            >= 62 => new[] { Trap(index) },
+            _ => new[] { Location("Beach", index) }
+        };
+        var catalog = new MasterAnglerOpportunityCatalogReport
+        {
+            Status = "complete",
+            GoalId = "grandpa.maximum_21",
+            GameVersion = "1.6.15",
+            NativeDenominatorCount = 72,
+            RodLocationSpeciesCount = 60,
+            MineOverrideOnlySpeciesCount = 2,
+            TrapSpeciesCount = 10,
+            SourceInventoryComplete = true,
+            StaticCalendarConstraintComplete = true,
+            LocationRuleSpawnChanceInputInventoryComplete = true,
+            Species = speciesIds.Select((id, index) => new MasterAnglerSpeciesOpportunity
+            {
+                ItemId = index.ToString(),
+                QualifiedItemId = id,
+                DisplayName = id,
+                AcquisitionClass = AcquisitionClass(index),
+                TrapDailyOutputChance = index >= 62 ? 0.1d : null
+            }).ToArray()
+        };
+        File.WriteAllText(inputs.Catalog, JsonSerializer.Serialize(catalog));
+        var windows = new MasterAnglerStageOneWindowIndex
+        {
+            Status = "complete_static_windows_dynamic_execution_pending",
+            GoalId = "grandpa.maximum_21",
+            GameVersion = "1.6.15",
+            CatalogPath = inputs.Catalog,
+            CatalogSha256 = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
+                File.ReadAllBytes(inputs.Catalog))),
+            DeadlineYear = 3,
+            DeadlineSeason = "spring",
+            DeadlineDayOfMonth = 1,
+            DeadlineTotalDayExclusive = 224,
+            NativeDenominatorCount = 72,
+            StaticWindowCoverageComplete = true,
+            TrainingLabelEligible = false,
+            Species = speciesIds.Select((id, index) => new MasterAnglerStageOneSpeciesWindow
+            {
+                QualifiedItemId = id,
+                DisplayName = id,
+                AcquisitionClass = AcquisitionClass(index),
+                EarliestStaticTotalDay = 0,
+                LatestStaticTotalDay = 1,
+                Windows = SourceWindows(index)
+            }).ToArray()
+        };
+        File.WriteAllText(inputs.Windows, JsonSerializer.Serialize(windows));
         File.Copy(
             Path.Combine(
                 FindRepositoryRoot(),
@@ -416,6 +581,41 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
             "fresh_save_unlock_timeline_bound_runtime_continuation_receipts_missing",
             audit.PrerequisiteFamilies.Single(value =>
                 value.FamilyId == "ginger_island_access").ProducerStatus);
+    }
+
+    [Fact]
+    public async Task ProductWrapperWritesBoundCompletionProofWithGourmandContinuation()
+    {
+        using var fixture = new Fixture(
+            scheduleId: "golden-walnut-fresh-save:run",
+            phaseOrderedSources: true,
+            gourmandContinuation: true);
+        var inputs = WriteBoundAuditInputs(fixture.Root);
+        var receipts = WriteContinuationAuditReceipts(fixture);
+
+        var result = await RunProductWrapperVerification(
+            fixture,
+            inputs,
+            receipts.Continuation);
+
+        Assert.True(
+            result.ExitCode == 0,
+            result.Error + Environment.NewLine + result.Output);
+        using var summary = JsonDocument.Parse(result.Output);
+        Assert.Equal("pass", summary.RootElement.GetProperty("status").GetString());
+        var auditPath = summary.RootElement.GetProperty("master_angler_audit_path").GetString();
+        var proofPath = summary.RootElement.GetProperty(
+            "master_angler_completion_proof_path").GetString();
+        Assert.False(string.IsNullOrWhiteSpace(auditPath));
+        Assert.False(string.IsNullOrWhiteSpace(proofPath));
+        var proof = JsonSerializer.Deserialize<MasterAnglerFreshSavePrerequisiteCompletionProof>(
+            File.ReadAllText(proofPath!))!;
+        Assert.True(proof.Ready);
+        Assert.False(proof.TrainingLabelEligible);
+        Assert.Equal(72, proof.NativeDenominatorCount);
+        Assert.Equal(14, proof.PrerequisiteFamilyCount);
+        Assert.Equal(3, proof.VerifiedGourmandTransitionCount);
+        Assert.Equal(Path.GetFullPath(auditPath!), proof.AuditPath);
     }
 
     [Fact]
@@ -786,7 +986,8 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
 
     private static async Task<ProcessResult> RunProductWrapperVerification(
         Fixture fixture,
-        (string Catalog, string Windows, string Dependencies)? auditInputs = null)
+        (string Catalog, string Windows, string Dependencies)? auditInputs = null,
+        string? gourmandContinuationReceiptPath = null)
     {
         var repositoryRoot = FindRepositoryRoot();
         var configuration = new DirectoryInfo(AppContext.BaseDirectory).Parent!.Name;
@@ -836,6 +1037,11 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
             {
                 start.ArgumentList.Add(argument);
             }
+        }
+        if (!string.IsNullOrWhiteSpace(gourmandContinuationReceiptPath))
+        {
+            start.ArgumentList.Add("-VerificationGourmandContinuationReceiptPath");
+            start.ArgumentList.Add(gourmandContinuationReceiptPath);
         }
         start.Environment.Remove("STARDEWAI_VALIDATION_TRACE");
         start.Environment.Remove("STARDEWAI_BOOTSTRAP_DEBUG_EXCEPTIONS");
