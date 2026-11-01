@@ -69,6 +69,10 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             root,
             "scripts",
             "Invoke-GoldenWalnutFreshSaveCalibration.ps1"));
+        var runRootBudget = File.ReadAllText(Path.Combine(
+            root,
+            "scripts",
+            "Get-TrainingRunRootBudget.ps1"));
         var calibration = File.ReadAllText(Path.Combine(
             root,
             "scripts",
@@ -120,13 +124,57 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             "Insufficient startup free space on $volumeRoot",
             workflow,
             StringComparison.Ordinal);
+        Assert.Contains(
+            "Get-TrainingRunRootBudget.ps1",
+            workflow,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "[int] $MaxRetainedRunRoots = 24",
+            workflow,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "[int] $MaxHistoricalRunLogicalMb = 12288",
+            workflow,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Historical run-root budget blocked startup",
+            workflow,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "historical_run_root_budget = $historicalRunBudget",
+            workflow,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "stardewai.training_run_root_budget.v1",
+            runRootBudget,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "projected_run_root_count_exceeds_limit",
+            runRootBudget,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "historical_run_logical_budget_exceeded",
+            runRootBudget,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "cleanup_performed = $false",
+            runRootBudget,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("Remove-Item", runRootBudget, StringComparison.Ordinal);
         Assert.True(
             workflow.IndexOf(
                 "$requiredStartupFreeSpaceMb =",
                 StringComparison.Ordinal) < workflow.IndexOf(
+                "Get-TrainingRunRootBudget.ps1",
+                StringComparison.Ordinal),
+            "Golden Walnut workflow must run the cheap free-space gate before scanning historical roots.");
+        Assert.True(
+            workflow.IndexOf(
+                "Get-TrainingRunRootBudget.ps1",
+                StringComparison.Ordinal) < workflow.IndexOf(
                 "Invoke-RuntimeFreshSaveSmoke.ps1",
                 StringComparison.Ordinal),
-            "Golden Walnut workflow must reject insufficient headroom before creating a fresh save.");
+            "Golden Walnut workflow must enforce historical run-root budgets before creating a fresh save.");
         Assert.Contains(
             "-RequireGoldenWalnutSourceScheduleReady:$RequireSourceScheduleReady",
             workflow,

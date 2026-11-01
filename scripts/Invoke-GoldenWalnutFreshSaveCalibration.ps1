@@ -28,6 +28,11 @@ param(
     [int] $MinFreeSpaceMb = 8192,
     [ValidateRange(0, [int]::MaxValue)]
     [int] $StartupFreeSpaceHeadroomMb = 2048,
+    [string] $HistoricalRunRootPrefix = "golden-walnut-",
+    [ValidateRange(1, [int]::MaxValue)]
+    [int] $MaxRetainedRunRoots = 24,
+    [ValidateRange(1, [int]::MaxValue)]
+    [int] $MaxHistoricalRunLogicalMb = 12288,
     [string] $StageOneCollectionRequirementInventory = (Join-Path `
         $ProjectRoot `
         "experiments\local-data\output\authoritative-requirement-inventory-v1.json"),
@@ -115,6 +120,26 @@ foreach ($entry in ([ordered]@{
         volume_root = $volumeRoot
         available_mb = $availableMb
     }
+}
+
+$historicalRunBudgetOutput = & (Join-Path `
+        $PSScriptRoot `
+        "Get-TrainingRunRootBudget.ps1") `
+    -RunRoot $resolvedOutputRoot `
+    -RunRootPrefix $HistoricalRunRootPrefix `
+    -MaxRetainedRunRoots $MaxRetainedRunRoots `
+    -MaxHistoricalRunLogicalMb $MaxHistoricalRunLogicalMb
+$historicalRunBudget = ($historicalRunBudgetOutput | Out-String) |
+    ConvertFrom-Json
+if ([string]$historicalRunBudget.status -ne "passed") {
+    throw (
+        "Historical run-root budget blocked startup " +
+        "existing_roots=$($historicalRunBudget.existing_run_root_count) " +
+        "projected_roots=$($historicalRunBudget.projected_run_root_count) " +
+        "max_roots=$MaxRetainedRunRoots " +
+        "historical_logical_mb=$($historicalRunBudget.historical_run_logical_mib) " +
+        "max_historical_logical_mb=$MaxHistoricalRunLogicalMb " +
+        "reasons=$(@($historicalRunBudget.blocking_reasons) -join ',')")
 }
 
 $freshOutput = & (Join-Path $PSScriptRoot "Invoke-RuntimeFreshSaveSmoke.ps1") `
@@ -299,6 +324,7 @@ $summary = [ordered]@{
     startup_free_space_headroom_mb = $StartupFreeSpaceHeadroomMb
     startup_required_free_space_mb = $requiredStartupFreeSpaceMb
     startup_volume_free_space = @($startupVolumeFreeSpace.Values)
+    historical_run_root_budget = $historicalRunBudget
     snapshot_artifact_mode = "content_addressed_gzip"
     execution_snapshot_profile = "full"
     formal_training_started = $false

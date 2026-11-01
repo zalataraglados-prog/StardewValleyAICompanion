@@ -11,7 +11,8 @@
 - 修复后的 GoalConditionedBootstrap 与 LiveTrainingLoop Release 构建均为 `0 warning / 0 error`；聚焦 `self-test-current-stage-one-collection` 通过。对 v97 iteration `329` 原始现场快照的离线重放稳定得到零候选及原始暂态 blocker，不再抛异常。
 - 磁盘复核确认现有 rolling retention 只保留**单轮内部**最近 `64` 个迭代，不限制历史 run root 数量。v70-v97 顶层目录当前合计约 `17.49 GiB`，而 Windows 自动管理的 `I:\pagefile.sys` 另占 `16.00 GiB`；10 月 27 日保留的旧 `artifacts` 约 `34.16 GiB`，此后仅改写约 `0.14 GiB`，不是本次重新膨胀来源。未执行任何清理。
 - 长跑外层包装器现增加启动余量门：默认在创建 fresh save 前要求可用空间至少为运行中硬停止底线 `8192 MiB` 加新轮次余量 `2048 MiB`，并把各输出卷启动时余量写入成功 summary。该门只拒绝危险启动，不自动删除或覆盖历史证据；PowerShell AST 与包装器 source-guard `9/9` 通过。
-- 下一入口仍是全新 day-zero v98，并同时启用 `RequireSourceScheduleReady` 与 `RequireGourmandContinuationReady`。但 `I:` 当前约 `9.8 GiB` 空闲，相对运行时 `8192 MiB` 硬停止门只有约 `1.8 GiB` 余量；在明确审查并批准历史 run 归档/回收清单前，不得冒险启动新的长期原生运行。
+- 同一外层包装器现另在 fresh save 之前调用只读跨轮预算器：默认只管理同一父目录下名称以 `golden-walnut-` 开头的 run root，要求新轮次加入后不超过 `24` 个，并要求已有历史根逻辑体积不超过 `12288 MiB`。任一上限或重解析点异常都会失败关闭并报告逐根清单；预算器明确 `cleanup_performed=false`，不会自动删除、归档或覆盖证据。该门补足单轮 `64` 迭代 rolling retention 无法限制历史 run root 数量的缺口。
+- 下一入口仍是全新 day-zero v98，并同时启用 `RequireSourceScheduleReady` 与 `RequireGourmandContinuationReady`。显式审核回收后，`I:` 当前约 `26.4 GiB`、`E:` 约 `11.0 GiB` 空闲，均已满足默认 `8192 MiB` 运行中硬底线与 `2048 MiB` 新轮次余量，可以恢复该入口；后续仍由启动门按实时可用量失败关闭。
 
 ## 2026-11-01：Master Angler 前置完成证明已接入产品链，v97 继续旧代码校准
 
