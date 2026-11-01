@@ -14,7 +14,15 @@ public sealed class DeployScriptSourceGuardTests
             "NoBuild refused because build output is stale",
             source,
             StringComparison.Ordinal);
-        Assert.Contains("Get-FileHash", source, StringComparison.Ordinal);
+        Assert.Contains(
+            "Get-StardewAIFileSha256",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "[Security.Cryptography.SHA256]::Create()",
+            source,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("Get-FileHash", source, StringComparison.Ordinal);
         Assert.Contains(
             "Deployed file hash mismatch",
             source,

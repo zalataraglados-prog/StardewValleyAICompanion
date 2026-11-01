@@ -57,9 +57,8 @@ function Copy-StardewAIVerifiedFile {
     )
 
     Copy-Item -LiteralPath $SourcePath -Destination $DestinationPath -Force
-    $sourceHash = (Get-FileHash -LiteralPath $SourcePath -Algorithm SHA256).Hash
-    $destinationHash = (
-        Get-FileHash -LiteralPath $DestinationPath -Algorithm SHA256).Hash
+    $sourceHash = Get-StardewAIFileSha256 -Path $SourcePath
+    $destinationHash = Get-StardewAIFileSha256 -Path $DestinationPath
     if ($sourceHash -ne $destinationHash) {
         throw (
             "Deployed file hash mismatch: source={0}; destination={1}" -f
@@ -67,4 +66,28 @@ function Copy-StardewAIVerifiedFile {
     }
 
     return $sourceHash
+}
+
+function Get-StardewAIFileSha256 {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $Path
+    )
+
+    $stream = [IO.File]::OpenRead($Path)
+    try {
+        $algorithm = [Security.Cryptography.SHA256]::Create()
+        try {
+            $digest = $algorithm.ComputeHash($stream)
+        }
+        finally {
+            $algorithm.Dispose()
+        }
+    }
+    finally {
+        $stream.Dispose()
+    }
+
+    return [BitConverter]::ToString($digest).Replace("-", "")
 }
