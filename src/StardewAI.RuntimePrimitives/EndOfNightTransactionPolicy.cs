@@ -6,6 +6,52 @@ namespace StardewAI.RuntimePrimitives
     {
         public const int MaximumOverallTicks = 36000;
 
+        public static bool MatchesActiveSleepRequest(
+            string status,
+            string transactionRunId,
+            string transactionQueueId,
+            string transactionQueueItemId,
+            string requestRunId,
+            string requestQueueId,
+            string requestQueueItemId)
+        {
+            return status != "complete" &&
+                status != "blocked" &&
+                MatchesSleepRequestIdentity(
+                    transactionRunId,
+                    transactionQueueId,
+                    transactionQueueItemId,
+                    requestRunId,
+                    requestQueueId,
+                    requestQueueItemId);
+        }
+
+        public static bool MatchesSleepRequestIdentity(
+            string transactionRunId,
+            string transactionQueueId,
+            string transactionQueueItemId,
+            string requestRunId,
+            string requestQueueId,
+            string requestQueueItemId)
+        {
+            return
+                !string.IsNullOrWhiteSpace(transactionRunId) &&
+                !string.IsNullOrWhiteSpace(transactionQueueId) &&
+                !string.IsNullOrWhiteSpace(transactionQueueItemId) &&
+                string.Equals(
+                    transactionRunId,
+                    requestRunId,
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    transactionQueueId,
+                    requestQueueId,
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    transactionQueueItemId,
+                    requestQueueItemId,
+                    StringComparison.Ordinal);
+        }
+
         public static int TransitionTickBudget(string transitionKey)
         {
             if (transitionKey.StartsWith("farm_event:", StringComparison.Ordinal) ||

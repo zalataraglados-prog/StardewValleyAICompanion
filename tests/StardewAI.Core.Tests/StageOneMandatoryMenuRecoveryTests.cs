@@ -36,6 +36,29 @@ public sealed class StageOneMandatoryMenuRecoveryTests
     }
 
     [Fact]
+    public void ExactSleepPromptRecoveryPassesMandatoryMenuPreflight()
+    {
+        var snapshot = ExactSleepPromptSnapshot();
+
+        Assert.True(StageOneMandatoryMenuRecovery.RequiresPreflight(snapshot));
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(
+            snapshot,
+            ["recovery.stabilize_day"],
+            includeExecutorCalibrationOptions: true);
+        var ranking = StageOneMandatoryMenuRecovery.BuildRanking(
+            availability,
+            "grandpa_evaluation_max_score");
+
+        var selected = StageOneMandatoryMenuRecovery.TrySelect(ranking);
+
+        Assert.NotNull(selected);
+        Assert.Equal("recovery:resume_sleep_prompt", selected.CandidateId);
+        Assert.Equal(
+            StageOneMandatoryMenuRecovery.ResumeSleepPromptKind,
+            selected.Kind);
+    }
+
+    [Fact]
     public void UnavailableOrNonMenuRecoveryDoesNotPreemptCollection()
     {
         var ranking = Ranking(
@@ -787,6 +810,71 @@ public sealed class StageOneMandatoryMenuRecoveryTests
               "route_action_branch_coverage":{"value":{
                 "rows":[]
               },"status":"available"}
+            }
+          }
+        }
+        """;
+        return JsonSerializer.Deserialize<SnapshotEnvelope>(json) ??
+            throw new InvalidDataException("Test snapshot is empty.");
+    }
+
+    private static SnapshotEnvelope ExactSleepPromptSnapshot()
+    {
+        const string json = """
+        {
+          "schema_version":"snapshot.v1",
+          "state_hash":"exact-sleep-prompt-preflight",
+          "state":{
+            "time":{
+              "time":{"value":600,"status":"available"}
+            },
+            "player":{
+              "location_id":{"value":"FarmHouse","status":"available"},
+              "tile_x":{"value":3,"status":"available"},
+              "tile_y":{"value":9,"status":"available"},
+              "current_item_qualified_id":{"value":"","status":"available"},
+              "active_object_qualified_id":{"value":"","status":"available"},
+              "energy":{"value":270,"status":"available"}
+            },
+            "current_location":{
+              "home_context":{"value":{
+                "home_available":true,
+                "home_location_id":"FarmHouse",
+                "current_location_id":"FarmHouse",
+                "current_location_is_home":true,
+                "bed_tile_x":3,
+                "bed_tile_y":8,
+                "bed_tile_has_bed":true,
+                "sleep_executor_enabled":true
+              },"status":"available"}
+            },
+            "menus":{
+              "active_menu":{"value":{
+                "is_open":true,
+                "type":"DialogueBox",
+                "last_question_key":"Sleep",
+                "is_sleep_prompt":true,
+                "event_up":false
+              },"status":"available"},
+              "menu_specific_state":{"value":{"kind":"none"},"status":"available"},
+              "sleep_prompt_context":{"value":{
+                "prompt_open":true,
+                "active_menu_open":true,
+                "active_menu_type":"DialogueBox",
+                "last_question_key":"Sleep",
+                "can_confirm_sleep":true,
+                "confirm_executor_enabled":true,
+                "confirm_action_key":"Sleep_Yes"
+              },"status":"available"}
+            },
+            "locations":{
+              "collision_grid":{"value":{
+                "location_id":"FarmHouse",
+                "width":12,
+                "height":12,
+                "notable_tiles":[]
+              },"status":"available"},
+              "route_action_branch_coverage":{"value":{"rows":[]},"status":"available"}
             }
           }
         }

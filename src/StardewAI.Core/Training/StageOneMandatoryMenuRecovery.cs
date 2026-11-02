@@ -17,6 +17,8 @@ public static class StageOneMandatoryMenuRecovery
         "recovery_profession_input_settle";
     public const string FishingItemGrabRewardKind =
         "recovery_claim_fishing_item_grab_reward";
+    public const string ResumeSleepPromptKind =
+        "recovery_resume_sleep_prompt";
 
     public static bool RequiresPreflight(SnapshotEnvelope snapshot)
     {
@@ -191,5 +193,9 @@ public static class StageOneMandatoryMenuRecovery
         string.Equals(
             kind,
             FishingItemGrabRewardKind,
+            StringComparison.Ordinal) ||
+        string.Equals(
+            kind,
+            ResumeSleepPromptKind,
             StringComparison.Ordinal);
 }

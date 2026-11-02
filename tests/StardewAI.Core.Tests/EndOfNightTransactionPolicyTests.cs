@@ -12,6 +12,55 @@ public sealed class EndOfNightTransactionPolicyTests
     }
 
     [Theory]
+    [InlineData("sleep_pending", "run", "queue", "item", true)]
+    [InlineData("native_outcomes_pending", "run", "queue", "item", true)]
+    [InlineData("complete", "run", "queue", "item", false)]
+    [InlineData("blocked", "run", "queue", "item", false)]
+    [InlineData("sleep_pending", "other", "queue", "item", false)]
+    [InlineData("sleep_pending", "run", "other", "item", false)]
+    [InlineData("sleep_pending", "run", "queue", "other", false)]
+    public void SleepCallbacksOnlyMatchTheCurrentNonTerminalRequest(
+        string status,
+        string requestRunId,
+        string requestQueueId,
+        string requestQueueItemId,
+        bool expected)
+    {
+        Assert.Equal(
+            expected,
+            EndOfNightTransactionPolicy.MatchesActiveSleepRequest(
+                status,
+                "run",
+                "queue",
+                "item",
+                requestRunId,
+                requestQueueId,
+                requestQueueItemId));
+    }
+
+    [Theory]
+    [InlineData("run", "queue", "item", true)]
+    [InlineData("other", "queue", "item", false)]
+    [InlineData("run", "other", "item", false)]
+    [InlineData("run", "queue", "other", false)]
+    public void TerminalReceiptAttachmentUsesIdentityWithoutReopeningState(
+        string requestRunId,
+        string requestQueueId,
+        string requestQueueItemId,
+        bool expected)
+    {
+        Assert.Equal(
+            expected,
+            EndOfNightTransactionPolicy.MatchesSleepRequestIdentity(
+                "run",
+                "queue",
+                "item",
+                requestRunId,
+                requestQueueId,
+                requestQueueItemId));
+    }
+
+    [Theory]
     [InlineData("farm_event:SoundInTheNightEvent", 7200)]
     [InlineData("story_event:Event", 7200)]
     [InlineData("minigame:TargetGame", 7200)]

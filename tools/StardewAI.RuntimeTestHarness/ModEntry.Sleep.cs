@@ -458,7 +458,7 @@ public sealed partial class ModEntry : Mod
 
         if (levelUpMenu.isProfessionChooser)
         {
-            YieldEndOfNightForPlannedProfession();
+            YieldEndOfNightForPlannedProfession(sleep);
             CompleteBlockedSleep(
                 sleep,
                 "post_sleep_profession_choice_requires_planned_selection");
@@ -559,7 +559,7 @@ public sealed partial class ModEntry : Mod
             // DialogueBox handles the native Y shortcut in receiveKeyPress; a polled
             // SMAPI button override installed this late never reaches that dispatch path.
             prompt.receiveKeyPress(Microsoft.Xna.Framework.Input.Keys.Y);
-            MarkEndOfNightSleepConfirmed();
+            MarkEndOfNightSleepConfirmed(sleep);
             sleep.Stage = SleepStage.WaitForPromptClose;
         }
 
@@ -842,7 +842,7 @@ public sealed partial class ModEntry : Mod
                 "post_sleep_profession_choice_requires_planned_selection",
                 StringComparison.Ordinal))
         {
-            MarkEndOfNightBlocked(reason);
+            MarkEndOfNightBlocked(sleep, reason);
         }
         var result = AttachEndOfNightTransaction(BlockedWithPrimitive(
             sleep.Pending.Request,

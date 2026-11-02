@@ -139,11 +139,12 @@ public sealed partial class ModEntry
         }
     }
 
-    private void MarkEndOfNightSleepConfirmed()
+    private void MarkEndOfNightSleepConfirmed(ActiveSleep sleep)
     {
         lock (endOfNightTransactionGate)
         {
-            if (endOfNightTransaction is not { } transaction)
+            var transaction = FindActiveEndOfNightTransactionLocked(sleep);
+            if (transaction is null)
             {
                 return;
             }
@@ -156,11 +157,12 @@ public sealed partial class ModEntry
         }
     }
 
-    private void YieldEndOfNightForPlannedProfession()
+    private void YieldEndOfNightForPlannedProfession(ActiveSleep sleep)
     {
         lock (endOfNightTransactionGate)
         {
-            if (endOfNightTransaction is not { } transaction)
+            var transaction = FindActiveEndOfNightTransactionLocked(sleep);
+            if (transaction is null)
             {
                 return;
             }
@@ -175,7 +177,9 @@ public sealed partial class ModEntry
     {
         lock (endOfNightTransactionGate)
         {
-            if (endOfNightTransaction is not { } transaction ||
+            if (endOfNightTransaction is not {
+                    Status: not "complete" and not "blocked"
+                } transaction ||
                 Game1.Date.TotalDays != transaction.ExpectedTotalDays)
             {
                 return;
@@ -191,11 +195,12 @@ public sealed partial class ModEntry
         }
     }
 
-    private void MarkEndOfNightBlocked(string reason)
+    private void MarkEndOfNightBlocked(ActiveSleep sleep, string reason)
     {
         lock (endOfNightTransactionGate)
         {
-            if (endOfNightTransaction is not { } transaction)
+            var transaction = FindActiveEndOfNightTransactionLocked(sleep);
+            if (transaction is null)
             {
                 return;
             }
@@ -210,6 +215,32 @@ public sealed partial class ModEntry
         lock (endOfNightTransactionGate)
         {
             if (endOfNightTransaction is not { } transaction)
+            {
+                return result;
+            }
+            var matchesSleepRequest =
+                EndOfNightTransactionPolicy.MatchesSleepRequestIdentity(
+                    transaction.RunId,
+                    transaction.QueueId,
+                    transaction.SleepQueueItemId,
+                    result.RunId,
+                    result.QueueId,
+                    result.QueueItemId);
+            var matchesSafeNextDayResult =
+                !string.IsNullOrWhiteSpace(transaction.SafeNextDayQueueId) &&
+                string.Equals(
+                    transaction.RunId,
+                    result.RunId,
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    transaction.SafeNextDayQueueId,
+                    result.QueueId,
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    transaction.SafeNextDayQueueItemId,
+                    result.QueueItemId,
+                    StringComparison.Ordinal);
+            if (!matchesSleepRequest && !matchesSafeNextDayResult)
             {
                 return result;
             }
@@ -228,6 +259,28 @@ public sealed partial class ModEntry
             }
             return result;
         }
+    }
+
+    private EndOfNightTransaction? FindActiveEndOfNightTransactionLocked(
+        ActiveSleep sleep)
+    {
+        var transaction = endOfNightTransaction;
+        if (transaction is null)
+        {
+            return null;
+        }
+
+        var request = sleep.Pending.Request;
+        return EndOfNightTransactionPolicy.MatchesActiveSleepRequest(
+                transaction.Status,
+                transaction.RunId,
+                transaction.QueueId,
+                transaction.SleepQueueItemId,
+                request.RunId,
+                request.QueueId,
+                request.QueueItemId)
+            ? transaction
+            : null;
     }
 
     private void ObserveCompletedExecutionForEndOfNight(

@@ -150,7 +150,9 @@ public sealed class EndOfNightTransactionContractTests
 
         Assert.Contains("BeginEndOfNightTransaction(activeSleep)", sleep,
             StringComparison.Ordinal);
-        Assert.Contains("YieldEndOfNightForPlannedProfession()", sleep,
+        Assert.Contains("YieldEndOfNightForPlannedProfession(sleep)", sleep,
+            StringComparison.Ordinal);
+        Assert.Contains("MarkEndOfNightSleepConfirmed(sleep)", sleep,
             StringComparison.Ordinal);
         Assert.Contains(
             "post_sleep_profession_choice_requires_planned_selection",
@@ -210,6 +212,10 @@ public sealed class EndOfNightTransactionContractTests
             tracker,
             StringComparison.Ordinal);
         Assert.Contains("EndOfNightTransactionPolicy", tracker,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "EndOfNightTransactionPolicy.MatchesActiveSleepRequest(",
+            tracker,
             StringComparison.Ordinal);
         Assert.Contains(
             "EndOfNightTransactionPolicy.MaximumOverallTicks +",

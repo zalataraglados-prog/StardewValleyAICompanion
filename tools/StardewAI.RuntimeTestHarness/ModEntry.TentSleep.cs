@@ -28,6 +28,16 @@ public sealed partial class ModEntry
             pending.Completion.SetResult(BlockedWithPrimitive(request, "sleep_in_tent", requested, SleepObservedEffect(), "sleep_executor_busy"));
             return;
         }
+        if (HasIncompleteEndOfNightTransaction(out var transactionReason))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(
+                request,
+                "sleep_in_tent",
+                requested,
+                SleepObservedEffect(),
+                transactionReason));
+            return;
+        }
         if (Game1.activeClickableMenu is not null)
         {
             pending.Completion.SetResult(BlockedWithPrimitive(request, "sleep_in_tent", requested, SleepObservedEffect(), "tent_sleep_menu_must_be_clear"));
@@ -85,6 +95,7 @@ public sealed partial class ModEntry
             SleepMode.Tent,
             location.NameOrUniqueName,
             anchor);
+        BeginEndOfNightTransaction(activeSleep);
         Monitor.Log($"Started terminal Tent sleep through {location.NameOrUniqueName}@{anchor.X},{anchor.Y} via canonical stand {stand.X},{stand.Y}.", LogLevel.Info);
     }
 
