@@ -125,15 +125,20 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     }
 
     [Fact]
-    public void LevelUpRecoveryCarriesExplicitPreferredProfessionChoice()
+    public void LevelUpRecoveryCannotChooseProfessionForTheSkillOption()
     {
         var snapshot = LevelUpMenuRecoverySnapshot(professionChooser: true, professionChoices: "[{\"profession_id\":0,\"title\":\"Rancher\"},{\"profession_id\":1,\"title\":\"Tiller\"}]");
 
         var candidate = GetCloseMenuCandidate(snapshot);
 
-        Assert.True(candidate.Available);
-        Assert.Contains(candidate.Parameters, row => row.Name == "profession_choice_id" && row.Value == "1");
-        Assert.Contains(candidate.Parameters, row => row.Name == "profession_choice_source" && row.Value == "baseline_grandpa_perfection_policy_v1");
+        Assert.False(candidate.Available);
+        Assert.Contains(
+            "level_up_menu_profession_requires_explicit_skill_choice",
+            candidate.BlockReasons);
+        Assert.DoesNotContain(
+            candidate.Parameters,
+            row => row.Name == "profession_choice_id" ||
+                row.Name == "profession_choice_source");
     }
 
     [Fact]
@@ -229,6 +234,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
               SPEAKER
               LAST_QK
             },"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "menu_specific_state": {"value":{},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "sleep_prompt_context": {"value":{"prompt_open":false,"can_confirm_sleep":false,"confirm_executor_enabled":false,"confirm_action_key":"Sleep_Yes"},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
           "locations": {

@@ -44,7 +44,10 @@ public sealed class NoProgressBackoffPolicy
         JsonObject execution)
     {
         if (!IsRecoveryRefreshWaitQueue(queue) ||
-            !IsVerifiedWaitOnlyExecution(execution))
+            !IsVerifiedWaitOnlyExecution(
+                execution,
+                allowClockAdvance:
+                    IsProfessionInputSettleWaitQueue(queue)))
         {
             Reset();
             return new NoProgressBackoffDecision(
@@ -157,6 +160,35 @@ public sealed class NoProgressBackoffPolicy
 
     private static bool IsRecoveryRefreshWaitQueue(JsonObject queue)
     {
+        var item = SinglePendingWaitItem(queue);
+        if (item is null)
+        {
+            return false;
+        }
+
+        var sourceActionId = ReadString(item, "source_action_id");
+        return sourceActionId.StartsWith(
+                 "recovery_refresh_plan_after_stabilization.",
+                 StringComparison.Ordinal) ||
+            sourceActionId.StartsWith(
+                 "recovery_wait_for_native_control_settle.",
+                 StringComparison.Ordinal) ||
+            sourceActionId.StartsWith(
+                 "recovery_wait_for_level_up_profession_input_",
+                 StringComparison.Ordinal);
+    }
+
+    private static bool IsProfessionInputSettleWaitQueue(JsonObject queue)
+    {
+        var item = SinglePendingWaitItem(queue);
+        return item is not null &&
+            ReadString(item, "source_action_id").StartsWith(
+                "recovery_wait_for_level_up_profession_input_",
+                StringComparison.Ordinal);
+    }
+
+    private static JsonObject? SinglePendingWaitItem(JsonObject queue)
+    {
         var pendingItems = queue["items"]?.AsArray()
             .Select(node => node?.AsObject())
             .Where(item =>
@@ -166,27 +198,21 @@ public sealed class NoProgressBackoffPolicy
                     "pending",
                     StringComparison.Ordinal))
             .ToArray() ?? Array.Empty<JsonObject?>();
-        if (pendingItems.Length != 1)
+        if (pendingItems.Length != 1 ||
+            !string.Equals(
+                ReadString(pendingItems[0], "option_id"),
+                "executor.wait_ticks",
+                StringComparison.Ordinal))
         {
-            return false;
+            return null;
         }
 
-        var item = pendingItems[0];
-        var sourceActionId = ReadString(item, "source_action_id");
-        return string.Equals(
-                ReadString(item, "option_id"),
-                "executor.wait_ticks",
-                StringComparison.Ordinal) &&
-            (sourceActionId.StartsWith(
-                 "recovery_refresh_plan_after_stabilization.",
-                 StringComparison.Ordinal) ||
-             sourceActionId.StartsWith(
-                 "recovery_wait_for_native_control_settle.",
-                 StringComparison.Ordinal));
+        return pendingItems[0];
     }
 
     private static bool IsVerifiedWaitOnlyExecution(
-        JsonObject execution)
+        JsonObject execution,
+        bool allowClockAdvance)
     {
         if (!string.Equals(
                 ReadString(execution, "status"),
@@ -222,6 +248,12 @@ public sealed class NoProgressBackoffPolicy
                     StringComparison.Ordinal))
             {
                 sawWaitTick = true;
+                continue;
+            }
+
+            if (allowClockAdvance &&
+                string.Equals(path, "time.time", StringComparison.Ordinal))
+            {
                 continue;
             }
 

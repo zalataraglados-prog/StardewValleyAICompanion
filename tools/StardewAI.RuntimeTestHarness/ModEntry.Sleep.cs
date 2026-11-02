@@ -32,6 +32,7 @@ public sealed partial class ModEntry : Mod
         {
             sleep.SawNativeSaveCommit = true;
         }
+        ObserveNativeSaveCommitForEndOfNight();
     }
 
     private void StartSleep(PendingExecution pending)
@@ -57,6 +58,17 @@ public sealed partial class ModEntry : Mod
         if (activeSleep is not null)
         {
             pending.Completion.SetResult(BlockedWithPrimitive(pending.Request, "sleep", "day_transition=new_day", SleepObservedEffect(), "sleep_executor_busy"));
+            return;
+        }
+
+        if (HasIncompleteEndOfNightTransaction(out var transactionReason))
+        {
+            pending.Completion.SetResult(BlockedWithPrimitive(
+                pending.Request,
+                "sleep",
+                "day_transition=new_day",
+                SleepObservedEffect(),
+                transactionReason));
             return;
         }
 
@@ -99,6 +111,7 @@ public sealed partial class ModEntry : Mod
         }
 
         activeSleep = new ActiveSleep(pending, startTile, target.BedTile, target.StandTile, path, Game1.year, Game1.dayOfMonth, Game1.timeOfDay, Game1.currentSeason);
+        BeginEndOfNightTransaction(activeSleep);
         if (resumesExistingPrompt)
         {
             activeSleep.Stage = SleepStage.ConfirmPromptPress;
@@ -125,9 +138,9 @@ public sealed partial class ModEntry : Mod
         {
             sleep.SawTemporaryBedFlag = true;
         }
-        if (sleep.ElapsedTicks > sleep.MaxTicks)
+        if (!TryObserveSleepTransitionBudget(sleep, out var budgetReason))
         {
-            CompleteBlockedSleep(sleep, "sleep_macro_timeout");
+            CompleteBlockedSleep(sleep, budgetReason);
             return;
         }
 
@@ -445,6 +458,7 @@ public sealed partial class ModEntry : Mod
 
         if (levelUpMenu.isProfessionChooser)
         {
+            YieldEndOfNightForPlannedProfession();
             CompleteBlockedSleep(
                 sleep,
                 "post_sleep_profession_choice_requires_planned_selection");
@@ -545,6 +559,7 @@ public sealed partial class ModEntry : Mod
             // DialogueBox handles the native Y shortcut in receiveKeyPress; a polled
             // SMAPI button override installed this late never reaches that dispatch path.
             prompt.receiveKeyPress(Microsoft.Xna.Framework.Input.Keys.Y);
+            MarkEndOfNightSleepConfirmed();
             sleep.Stage = SleepStage.WaitForPromptClose;
         }
 
@@ -811,7 +826,9 @@ public sealed partial class ModEntry : Mod
         TryApplySmapiRightButtonOverride(pressed: false, out _);
         StopAllMovement();
         activeSleep = null;
-        sleep.Pending.Completion.SetResult(CompletedSleep(sleep, verificationStatus, verificationReasons));
+        var result = AttachEndOfNightTransaction(
+            CompletedSleep(sleep, verificationStatus, verificationReasons));
+        sleep.Pending.Completion.SetResult(result);
     }
 
     private void CompleteBlockedSleep(ActiveSleep sleep, string reason)
@@ -820,12 +837,20 @@ public sealed partial class ModEntry : Mod
         TryApplySmapiRightButtonOverride(pressed: false, out _);
         StopAllMovement();
         activeSleep = null;
-        sleep.Pending.Completion.SetResult(BlockedWithPrimitive(
+        if (!string.Equals(
+                reason,
+                "post_sleep_profession_choice_requires_planned_selection",
+                StringComparison.Ordinal))
+        {
+            MarkEndOfNightBlocked(reason);
+        }
+        var result = AttachEndOfNightTransaction(BlockedWithPrimitive(
             sleep.Pending.Request,
             sleep.Mode == SleepMode.Tent ? "sleep_in_tent" : "sleep",
             SleepRequestedEffect(sleep),
             SleepObservedEffect(sleep),
             reason));
+        sleep.Pending.Completion.SetResult(result);
     }
 
     private static TrainingExecutionResult CompletedSleep(ActiveSleep sleep, string verificationStatus, string[] verificationReasons)

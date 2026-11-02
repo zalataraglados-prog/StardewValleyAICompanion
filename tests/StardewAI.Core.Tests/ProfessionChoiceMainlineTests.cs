@@ -70,9 +70,12 @@ public sealed class ProfessionChoiceMainlineTests
     {
         var root = FindRepositoryRoot();
         var semantic = File.ReadAllText(Path.Combine(root, "src", "StardewAI.Core", "Training", "DailyPlanCompiler.Professions.cs"));
+        var recovery = File.ReadAllText(Path.Combine(root, "src", "StardewAI.Core", "OptionRegistry", "CandidateOptionAvailabilityEvaluator.Recovery.cs"));
         var runtime = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.Farming.cs"));
 
         Assert.Contains("reuse_executor.close_menu_level_up_path", semantic, StringComparison.Ordinal);
+        Assert.DoesNotContain("baseline_grandpa_perfection_policy_v1", recovery, StringComparison.Ordinal);
+        Assert.DoesNotContain("LevelUpMenuRecoveryParameters", recovery, StringComparison.Ordinal);
         Assert.DoesNotContain("Game1.player.professions.Add", semantic, StringComparison.Ordinal);
         Assert.Equal(1, Count(runtime, "private TrainingExecutionResult ExecuteLevelUpMenu("));
     }

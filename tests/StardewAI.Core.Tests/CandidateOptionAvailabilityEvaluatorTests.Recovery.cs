@@ -2,6 +2,7 @@ using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
 using StardewAI.Core.OptionRegistry;
 using StardewAI.Core.Training;
@@ -54,6 +55,70 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             parameter =>
                 parameter.Name == "control_plane.native_save_boundary" &&
                 parameter.Value == "true");
+    }
+
+    [Fact]
+    public void NativeSaveBoundaryUsesExactReachableSleepTouchApproachTile()
+    {
+        var snapshot = RecoverySnapshot(
+            time: 600,
+            menuOpen: false,
+            currentLocationIsHome: true,
+            playerTileX: 0,
+            playerTileY: 8,
+            routeActionRows:
+                "{\"tile_x\":2,\"tile_y\":8," +
+                "\"branch\":\"Sleep\",\"route_training_blocked\":true}",
+            sleepTouchApproachOnly: true);
+        var option = new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(
+                snapshot,
+                new[]
+                {
+                    Candidate(
+                        "recovery.stabilize_day",
+                        Parameter(
+                            "control_plane.native_save_boundary",
+                            "true"))
+                },
+                includeExecutorCalibrationOptions: true)
+            .Options[0];
+
+        var candidate = Assert.Single(option.EventCandidates);
+        Assert.True(candidate.Available);
+        Assert.Equal("recovery:native_save_boundary", candidate.CandidateId);
+        Assert.Equal(2, candidate.TileX);
+        Assert.Equal(8, candidate.TileY);
+        Assert.Empty(candidate.BlockReasons);
+
+        var ranked = new PolicyEventCandidatePrediction
+        {
+            OptionId = option.OptionId,
+            CandidateId = candidate.CandidateId,
+            Kind = candidate.Kind,
+            Rank = 1,
+            TimelineStatus = "ready_now",
+            LocationId = candidate.LocationId,
+            TileX = candidate.TileX,
+            TileY = candidate.TileY,
+            EstimatedTicks = candidate.EstimatedTicks,
+            Parameters = candidate.Parameters
+        };
+        var plan = new DailyPlanCompiler().Compile(
+            new[] { ranked },
+            snapshot.StateHash,
+            "grandpa_max_score_year3");
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+
+        var item = Assert.Single(queue.Items);
+        Assert.Equal("pending", queue.Status);
+        Assert.Equal("pending", item.Status);
+        Assert.Equal("executor.sleep", item.NormalizedCommand.OptionId);
+        Assert.Contains(
+            item.NormalizedCommand.Steps,
+            step =>
+                step.StepType == "move_to_bed_adjacent" &&
+                step.Target.Contains("(2,8)", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -502,7 +567,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         bool sleepPromptOpen = false,
         int playerTileX = 3,
         int playerTileY = 9,
-        string routeActionRows = "")
+        string routeActionRows = "",
+        bool sleepTouchApproachOnly = false)
     {
         return Snapshot("""
         {
@@ -536,7 +602,12 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         .Replace("CURRENT_HOME", currentLocationIsHome ? "true" : "false")
         .Replace("PLAYER_TILE_X", playerTileX.ToString())
         .Replace("PLAYER_TILE_Y", playerTileY.ToString())
-        .Replace("BLOCKED_TILES", RecoveryBlockedTiles(bedBlocked, adjacentBedTilesBlocked))
+        .Replace(
+            "BLOCKED_TILES",
+            RecoveryBlockedTiles(
+                bedBlocked,
+                adjacentBedTilesBlocked,
+                sleepTouchApproachOnly))
         .Replace("ROUTE_ACTION_ROWS", routeActionRows)
         .Replace("ACTIVE_OBJECT", activeObjectQualifiedId)
         .Replace("SLEEP_PROMPT_OPEN", sleepPromptOpen ? "true" : "false")
@@ -546,7 +617,10 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         .Replace("MENU_OPEN", menuOpen ? "true" : "false"));
     }
 
-    private static string RecoveryBlockedTiles(bool bedBlocked, bool adjacentBedTilesBlocked)
+    private static string RecoveryBlockedTiles(
+        bool bedBlocked,
+        bool adjacentBedTilesBlocked,
+        bool sleepTouchApproachOnly)
     {
         var tiles = new List<string>();
         if (bedBlocked)
@@ -554,7 +628,19 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
             tiles.Add("{\"tile_x\":3,\"tile_y\":8,\"collision_blocked\":true}");
         }
 
-        if (adjacentBedTilesBlocked)
+        if (sleepTouchApproachOnly)
+        {
+            tiles.Add(
+                "{\"tile_x\":4,\"tile_y\":8,\"collision_blocked\":true}");
+            tiles.Add(
+                "{\"tile_x\":3,\"tile_y\":9,\"collision_blocked\":true}");
+            tiles.Add(
+                "{\"tile_x\":3,\"tile_y\":7,\"collision_blocked\":true}");
+            tiles.Add(
+                "{\"tile_x\":2,\"tile_y\":8," +
+                "\"collision_blocked\":false,\"touch_action\":\"Sleep\"}");
+        }
+        else if (adjacentBedTilesBlocked)
         {
             tiles.Add("{\"tile_x\":4,\"tile_y\":8,\"collision_blocked\":true}");
             tiles.Add("{\"tile_x\":2,\"tile_y\":8,\"collision_blocked\":true}");

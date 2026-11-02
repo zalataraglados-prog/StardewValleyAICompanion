@@ -15,7 +15,8 @@ static partial class Program
         LiveTrainingOptions options,
         JsonObject? item,
         string stateHash,
-        string queueId)
+        string queueId,
+        string sourcePlanningOptionId)
     {
         var compiledExecutionOptionId = ReadQueueParameterString(item, "execution_option_id");
         var optionId = string.IsNullOrWhiteSpace(options.ExecutorOptionId)
@@ -45,6 +46,7 @@ static partial class Program
             QueueItemId = queueItemId,
             BeforeStateHash = stateHash,
             OptionId = optionId,
+            SourcePlanningOptionId = sourcePlanningOptionId,
             ExecutionMode = options.TargetExecutionMode,
             Actor = options.TargetActor.ActorId,
             SaveIsolationPath = options.SaveIsolationPath,

@@ -32,6 +32,13 @@ public sealed class StageOneCollectionFallbackPolicyTests
     [InlineData(
         "blocked_no_current_collection_candidate",
         "unified_current_collection_candidate_membership_is_empty,other")]
+    [InlineData(
+        "blocked_mandatory_menu_recovery_unavailable",
+        "control_recovery=mandatory_menu block_reason=" +
+        "explicit_profession_choice_unavailable")]
+    [InlineData(
+        "blocked_mandatory_menu_recovery_not_dispatchable",
+        "skills.choose_profession")]
     public void OtherAuthorityFailuresStillStop(
         string status,
         string detail)

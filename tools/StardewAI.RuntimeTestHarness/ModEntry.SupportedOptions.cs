@@ -51,6 +51,7 @@ public sealed partial class ModEntry
             "debug.setup_crane_game",
             "debug.setup_movie_theater",
             "debug.setup_story_event",
+            "debug.prepare_native_story_handoff",
             "debug.setup_darts_game",
             "debug.setup_prairie_king",
             "debug.setup_furniture_placement_target",

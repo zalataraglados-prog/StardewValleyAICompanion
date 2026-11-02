@@ -22,35 +22,23 @@ public sealed partial class ModEntry
         }
 
         var choiceId = request.ProfessionChoiceId.Value;
-        var skill = choiceId / 6;
-        var branch = choiceId % 6;
-        var level = branch < 2 ? 5 : 10;
+        if (!TryPreparePendingProfessionLevel(
+                choiceId,
+                out var skill,
+                out var level))
+        {
+            return BlockedWithPrimitive(
+                request,
+                "debug_setup_level_up_profession",
+                "menus.active_menu.type=LevelUpMenu",
+                CloseMenuObservedEffect(),
+                "profession_choice_id_0_29_required");
+        }
         var player = Game1.player;
-        for (var id = skill * 6; id < skill * 6 + 6; id++)
-        {
-            if (player.professions.Contains(id))
-            {
-                LevelUpMenu.removeImmediateProfessionPerk(id);
-                player.professions.Remove(id);
-            }
-        }
-        int? prerequisiteProfession = null;
-        if (level == 10)
-        {
-            prerequisiteProfession = skill * 6 + (branch < 4 ? 0 : 1);
-            player.professions.Add(prerequisiteProfession.Value);
-        }
-
-        player.newLevels.RemoveWhere(point => point.X == skill && point.Y == level);
-        player.newLevels.Add(new Point(skill, level));
         player.health = player.maxHealth;
         player.stamina = player.MaxStamina;
         Game1.exitActiveMenu();
         var menu = new LevelUpMenu(skill, level);
-        if (prerequisiteProfession.HasValue)
-        {
-            menu.getImmediateProfessionPerk(prerequisiteProfession.Value);
-        }
         Game1.activeClickableMenu = menu;
         menu.update(new GameTime(TimeSpan.FromMilliseconds(500), TimeSpan.FromMilliseconds(500)));
         menu.update(new GameTime(TimeSpan.FromMilliseconds(516), TimeSpan.FromMilliseconds(16)));
@@ -93,5 +81,92 @@ public sealed partial class ModEntry
                 new SimulatedFactChange { Path = "player.new_levels", Before = string.Empty, After = skill + ":" + level }
             }
         };
+    }
+
+    private static bool TryPreparePendingProfessionLevel(
+        int choiceId,
+        out int skill,
+        out int level)
+    {
+        skill = -1;
+        level = -1;
+        if (choiceId is < 0 or > 29)
+        {
+            return false;
+        }
+
+        var preparedSkill = choiceId / 6;
+        var branch = choiceId % 6;
+        var preparedLevel = branch < 2 ? 5 : 10;
+        var player = Game1.player;
+        PreparePendingSkillLevel(player, preparedSkill, preparedLevel);
+
+        if (preparedLevel == 10)
+        {
+            var prerequisiteProfession =
+                preparedSkill * 6 + (branch < 4 ? 0 : 1);
+            player.professions.Add(prerequisiteProfession);
+            if (preparedSkill == Farmer.combatSkill)
+            {
+                LevelUpMenu.RevalidateHealth(player);
+            }
+        }
+
+        skill = preparedSkill;
+        level = preparedLevel;
+        return true;
+    }
+
+    private static void PreparePendingSkillLevel(
+        Farmer player,
+        int skill,
+        int level)
+    {
+        if (skill is < Farmer.farmingSkill or > Farmer.combatSkill ||
+            level is < 1 or > 10)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(skill),
+                "Fixture skill must be a vanilla profession skill at level 1..10.");
+        }
+
+        for (var id = skill * 6; id < skill * 6 + 6; id++)
+        {
+            if (!player.professions.Contains(id))
+            {
+                continue;
+            }
+
+            LevelUpMenu.removeImmediateProfessionPerk(id);
+            player.professions.Remove(id);
+        }
+
+        switch (skill)
+        {
+            case Farmer.farmingSkill:
+                player.farmingLevel.Value = level;
+                break;
+            case Farmer.fishingSkill:
+                player.fishingLevel.Value = level;
+                break;
+            case Farmer.foragingSkill:
+                player.foragingLevel.Value = level;
+                break;
+            case Farmer.miningSkill:
+                player.miningLevel.Value = level;
+                break;
+            case Farmer.combatSkill:
+                player.combatLevel.Value = level;
+                break;
+        }
+
+        player.experiencePoints[skill] =
+            Farmer.getBaseExperienceForLevel(level);
+        player.newLevels.RemoveWhere(point => point.X == skill);
+        player.newLevels.Add(new Point(skill, level));
+        if (skill == Farmer.combatSkill)
+        {
+            LevelUpMenu.RevalidateHealth(player);
+        }
     }
 }
