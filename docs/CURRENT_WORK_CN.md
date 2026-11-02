@@ -53,7 +53,9 @@
 - 当前脏工作树的 story handoff matrix `2/2` 与 negative matrix `2/2` 已通过；较早正向 `7/7` 的脚本身份已被上述编排修正改变，不能拼接。当前唯一施工顺序为：提交候选并得到 clean commit -> 同一 commit 隐藏正向 `7/7` -> story `2/2` -> negative `2/2` -> owner 可见矩阵与精确 PASS 问题。提交后隐藏矩阵前不得再改代码或文档；任一矩阵失败时只修单个失败场景并重新建立候选身份。
 - 运行证据只写入对应 `I:\StardewAITraining\golden-walnut-source-schedule-v*` 根，不进入 Git。后续低频观察只读取进度日志和终止证据；未达到 source schedule、独立重放、Gourmand 连续性及自动 completion proof 前，不得把本轮称作正式训练完成。
 
-- **最新施工终态（2026-11-02）**：#381 的 owner 目视验收已经收到用户明确 `PASS`，不得再把本节上方的候选形成记录当作待办，也不得重复启动可见验收。`purpose-profile-v108d-20261102-223700` 已继续证明 Master Angler 的三段连接器和原生捕鱼均以 `fishing` 执行反馈快照 `applied + verified`；计划与最终权威证据继续使用 `full`，混合/未知队列回退 `full`。Stage One 重复快照改用既有内容寻址存储，逻辑内容保持完整。代码门为专项 `30/30`、GameFreeGovernance `939/939`、Backend `259/259` 和 Release 零警告零错误。当前唯一 WIP 回到提交/合并该 I/O 优化，然后继续 Golden Walnut source schedule、首次登岛、核桃来源、三项鹦鹉跃迁、独立重放、Gourmand `3/3` 与 `72/14/3` completion proof；保持 `skip-training`，不得提交 `local-data`。
+- **最新施工终态（2026-11-02）**：#381 的 owner 目视验收已经收到用户明确 `PASS`，属于已消费终态，不得重复启动可见验收。目的快照优化已由 PR #386 合并到 `main@923a6d60`。全新 day-zero v109 的第一轮 Crop Teacher 完成 `12` 条日界与 `6/6` 收获、累计 `104` 条 verified action；第二轮在 iteration `114-118` 因 Teacher 错把可站立补水格计为清障，并把当前不可清除的 `2x2` 树桩纳入走廊而安全停止。Product Executor 的失败关闭正确，不能通过放宽工具或清障执行器绕过。
+- 当前唯一 WIP=1 是完成并合并 Crop Teacher v6 上游选择修复：补水格可直接站立时清障成本为零；资源块必须精确匹配且 `clear_obstacle_executor_status=ready` 才可进入准备列表。对 v109 原始请求的离线重放已从错误的 `(74,27)` 加树桩准备改为 `(70,27)` 且零准备；hermetic Bootstrap、Crop Teacher `58/58`、GameFreeGovernance `939/939`、Backend `259/259` 和两个 Release 构建均已通过。
+- 合并后不得续接 v109；必须从最新 `main` 创建全新 day-zero v110，并继续 `skip-training`。v110 先证明第二轮 Crop Teacher 不再选择阻塞树桩，再沿单一既有链完成首次登岛、可归因核桃来源、First Parrot、Western Turtle、Island House、source schedule 冻结、独立重放、Gourmand `3/3` 与 `72/14/3` completion proof。source schedule 与前置证明未完成前，`formal_product_training=false`；所有运行输出仅落本地证据根，不提交 `local-data`。
 
 ## 2026-11-01：v97 暂态移动门误判已修复，v98 启动前需恢复磁盘余量
 
