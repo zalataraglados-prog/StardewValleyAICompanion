@@ -1,5 +1,6 @@
 using StardewAI.LiveTrainingLoop;
 using StardewAI.Contracts.Goals;
+using System.Text.Json.Nodes;
 
 namespace StardewAI.Core.Tests;
 
@@ -23,6 +24,131 @@ public sealed class LiveTrainingExecutionSnapshotProfileTests
         });
 
         Assert.Equal("social", options.ExecutionSnapshotProfile);
+    }
+
+    [Fact]
+    public void MasterAnglerQueueUsesFishingExecutionProfile()
+    {
+        var queue = JsonNode.Parse("""
+            {
+              "items": [
+                {
+                  "status": "pending",
+                  "option_id": "executor.traverse_connector",
+                  "source_action_id": "master_angler_route_Beach"
+                },
+                {
+                  "status": "pending",
+                  "option_id": "executor.move_to_tile",
+                  "source_action_id": "fishing_attempt_master_angler_move"
+                },
+                {
+                  "status": "pending",
+                  "option_id": "executor.catch_fish",
+                  "source_action_id": "fishing_attempt_master_angler_catch"
+                }
+              ]
+            }
+            """)!.AsObject();
+
+        Assert.Equal(
+            "fishing",
+            ExecutionSnapshotProfileSelector.ResolveForQueue(queue, "full"));
+    }
+
+    [Fact]
+    public void MixedQueueKeepsFullExecutionProfile()
+    {
+        var queue = JsonNode.Parse("""
+            {
+              "items": [
+                {
+                  "status": "pending",
+                  "option_id": "executor.catch_fish",
+                  "source_action_id": "fishing_attempt_master_angler_catch"
+                },
+                {
+                  "status": "pending",
+                  "option_id": "executor.ship_inventory_item_to_bin",
+                  "source_action_id": "ship_after_catch"
+                }
+              ]
+            }
+            """)!.AsObject();
+
+        Assert.Equal(
+            "full",
+            ExecutionSnapshotProfileSelector.ResolveForQueue(queue, "full"));
+    }
+
+    [Fact]
+    public void GenericFishingQueueWithoutMasterAnglerLineageKeepsFullProfile()
+    {
+        var queue = JsonNode.Parse("""
+            {
+              "items": [
+                {
+                  "status": "pending",
+                  "option_id": "executor.catch_fish",
+                  "source_action_id": "daily_fishing_attempt"
+                }
+              ]
+            }
+            """)!.AsObject();
+
+        Assert.Equal(
+            "full",
+            ExecutionSnapshotProfileSelector.ResolveForQueue(queue, "full"));
+    }
+
+    [Fact]
+    public void ExplicitExecutionProfileIsNotRewrittenByQueueSelection()
+    {
+        var queue = JsonNode.Parse("""
+            {
+              "items": [
+                {
+                  "status": "pending",
+                  "option_id": "executor.catch_fish",
+                  "source_action_id": "fishing_attempt_master_angler_catch"
+                }
+              ]
+            }
+            """)!.AsObject();
+
+        Assert.Equal(
+            "social",
+            ExecutionSnapshotProfileSelector.ResolveForQueue(queue, "social"));
+    }
+
+    [Fact]
+    public void StageOneDecisionSnapshotsUseConfiguredArtifactStorage()
+    {
+        var teacher = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.StageOneCollectionTeacher.cs"));
+        var menuRecovery = File.ReadAllText(FindRepositoryFile(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.StageOneMandatoryMenuRecovery.cs"));
+
+        Assert.Contains(
+            "ContentAddressedJsonArtifactStore.WriteAsync(",
+            teacher,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "options.SnapshotArtifactMode",
+            teacher,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "ContentAddressedJsonArtifactStore.WriteAsync(",
+            menuRecovery,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "options.SnapshotArtifactMode",
+            menuRecovery,
+            StringComparison.Ordinal);
     }
 
     [Fact]

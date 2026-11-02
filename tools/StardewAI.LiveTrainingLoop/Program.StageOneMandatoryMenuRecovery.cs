@@ -39,10 +39,10 @@ static partial class Program
         var planPath = string.Format(prefix, "compiled-plan");
         var rankingPath = string.Format(prefix, "ranking");
         var queuePath = string.Format(prefix, "compiled-queue");
-        await File.WriteAllTextAsync(
+        await ContentAddressedJsonArtifactStore.WriteAsync(
             plainSnapshotPath,
             snapshotJson,
-            new System.Text.UTF8Encoding(false));
+            options.SnapshotArtifactMode);
         return await TryBuildStageOneMandatoryMenuRecoveryAsync(
             http,
             options,

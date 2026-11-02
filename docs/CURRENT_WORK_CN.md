@@ -53,6 +53,8 @@
 - 当前脏工作树的 story handoff matrix `2/2` 与 negative matrix `2/2` 已通过；较早正向 `7/7` 的脚本身份已被上述编排修正改变，不能拼接。当前唯一施工顺序为：提交候选并得到 clean commit -> 同一 commit 隐藏正向 `7/7` -> story `2/2` -> negative `2/2` -> owner 可见矩阵与精确 PASS 问题。提交后隐藏矩阵前不得再改代码或文档；任一矩阵失败时只修单个失败场景并重新建立候选身份。
 - 运行证据只写入对应 `I:\StardewAITraining\golden-walnut-source-schedule-v*` 根，不进入 Git。后续低频观察只读取进度日志和终止证据；未达到 source schedule、独立重放、Gourmand 连续性及自动 completion proof 前，不得把本轮称作正式训练完成。
 
+- **最新施工终态（2026-11-02）**：#381 的 owner 目视验收已经收到用户明确 `PASS`，不得再把本节上方的候选形成记录当作待办，也不得重复启动可见验收。`purpose-profile-v108d-20261102-223700` 已继续证明 Master Angler 的三段连接器和原生捕鱼均以 `fishing` 执行反馈快照 `applied + verified`；计划与最终权威证据继续使用 `full`，混合/未知队列回退 `full`。Stage One 重复快照改用既有内容寻址存储，逻辑内容保持完整。代码门为专项 `30/30`、GameFreeGovernance `939/939`、Backend `259/259` 和 Release 零警告零错误。当前唯一 WIP 回到提交/合并该 I/O 优化，然后继续 Golden Walnut source schedule、首次登岛、核桃来源、三项鹦鹉跃迁、独立重放、Gourmand `3/3` 与 `72/14/3` completion proof；保持 `skip-training`，不得提交 `local-data`。
+
 ## 2026-11-01：v97 暂态移动门误判已修复，v98 启动前需恢复磁盘余量
 
 - v97 `golden-walnut-source-schedule-v97-20261101-182500` 在 Year 1 Spring 10 13:50、iteration `329` 按连续错误门安全停止；保留 `204` 条 verified Product action 和完整滚动证据。它尚未首次登岛、未生成 source schedule，状态仍为 incomplete，且不得冒充新 Gourmand 回执或正式训练证据。

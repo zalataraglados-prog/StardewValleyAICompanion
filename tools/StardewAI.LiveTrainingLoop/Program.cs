@@ -1268,6 +1268,9 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
     {
         queue = await BuildQueueFromMockActionAsync(http, options, lastStateHash);
     }
+    executionSnapshotProfile = ExecutionSnapshotProfileSelector.ResolveForQueue(
+        queue,
+        executionSnapshotProfile);
     var queuePath = Path.Combine(options.SnapshotDir, "compiled-queue-" + iteration.ToString("D4") + ".json");
     await File.WriteAllTextAsync(queuePath, queue.ToJsonString(JsonOptions), Encoding.UTF8);
     if (options.UseTeacherPreferenceQueue || options.UsePrecompiledQueue)
