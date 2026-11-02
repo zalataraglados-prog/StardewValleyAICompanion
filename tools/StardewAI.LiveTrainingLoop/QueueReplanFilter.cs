@@ -53,6 +53,17 @@ public static partial class QueueReplanFilter
         MasterAnglerRouteTimingValidator.ValidationRequiredParameter
     };
 
+    private static readonly string[] MasterAnglerSourceVariantContinuationNames =
+    {
+        "master_angler_target_location",
+        "master_angler_source_kind",
+        "master_angler_source_key",
+        "master_angler_window_first_total_day",
+        "master_angler_window_last_total_day",
+        "master_angler_effective_start_time",
+        "master_angler_last_cast_time_exclusive"
+    };
+
     public static JsonObject[] FilterUnattempted(JsonObject[] queueItems, ISet<string> attemptedSemanticKeys)
     {
         return queueItems
@@ -95,14 +106,35 @@ public static partial class QueueReplanFilter
         JsonObject? continuation,
         JsonObject? ranking)
     {
-        if (continuation is null ||
-            ranking?["objective_continuation_filter"] is not JsonObject filter ||
-            filter["active"]?.GetValue<bool>() != true)
+        if (!HasActiveContinuationFilterWithNoCandidate(
+                continuation,
+                ranking))
         {
             return false;
         }
 
-        return filter["selected_candidate_count"]?.GetValue<int>() == 0;
+        return !IsMasterAnglerSourceBoundContinuation(continuation);
+    }
+
+    public static JsonObject? RelaxUnavailableMasterAnglerSourceVariant(
+        JsonObject? continuation,
+        JsonObject? ranking)
+    {
+        if (!HasActiveContinuationFilterWithNoCandidate(
+                continuation,
+                ranking) ||
+            !IsMasterAnglerSourceBoundContinuation(continuation))
+        {
+            return null;
+        }
+
+        var relaxed = JsonNode.Parse(
+            continuation!.ToJsonString())!.AsObject();
+        foreach (var name in MasterAnglerSourceVariantContinuationNames)
+        {
+            relaxed.Remove(name);
+        }
+        return relaxed;
     }
 
     public static bool ShouldResumeContinuationOnNextIteration(
@@ -110,6 +142,35 @@ public static partial class QueueReplanFilter
         int refreshedItemCount)
     {
         return continuation is not null && refreshedItemCount == 0;
+    }
+
+    private static bool HasActiveContinuationFilterWithNoCandidate(
+        JsonObject? continuation,
+        JsonObject? ranking)
+    {
+        return continuation is not null &&
+            ranking?["objective_continuation_filter"] is JsonObject filter &&
+            filter["active"]?.GetValue<bool>() == true &&
+            filter["selected_candidate_count"]?.GetValue<int>() == 0;
+    }
+
+    private static bool IsMasterAnglerSourceBoundContinuation(
+        JsonObject? continuation)
+    {
+        return string.Equals(
+                ReadString(continuation, "kind"),
+                "master_angler",
+                StringComparison.Ordinal) &&
+            MasterAnglerSourceVariantContinuationNames.Any(name =>
+                !string.IsNullOrWhiteSpace(ReadString(continuation, name)));
+    }
+
+    private static bool IsMasterAnglerSourceVariantContinuationName(
+        string name)
+    {
+        return MasterAnglerSourceVariantContinuationNames.Contains(
+            name,
+            StringComparer.Ordinal);
     }
 
     public static bool IsTrainingVerifiedExecution(JsonObject? execution)

@@ -1034,6 +1034,35 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                         collectionTeacher.Detail);
                 if (collectionTeacher.Attempted)
                 {
+                    var relaxedMasterAnglerContinuation =
+                        QueueReplanFilter
+                            .RelaxUnavailableMasterAnglerSourceVariant(
+                                activeObjectiveContinuation,
+                                collectionTeacher.Ranking);
+                    if (relaxedMasterAnglerContinuation is not null)
+                    {
+                        activeObjectiveContinuation =
+                            relaxedMasterAnglerContinuation;
+                        noProgressBackoff.Reset();
+                        AppendProgress(
+                            options,
+                            "continuation_source_variant_replan",
+                            iteration,
+                            lastStateHash,
+                            string.Empty,
+                            "reason=no_available_master_angler_source_variant" +
+                            " option_id=" + ReadString(
+                                relaxedMasterAnglerContinuation,
+                                "option_id") +
+                            " target_qualified_item_id=" + ReadString(
+                                relaxedMasterAnglerContinuation,
+                                "master_angler_target_qualified_item_id") +
+                            " suppressed_until_day_change=false");
+                        await DelayBeforeNextAttemptAsync(
+                            options,
+                            attemptOrdinal);
+                        continue;
+                    }
                     if (QueueReplanFilter.ShouldReleaseUnavailableContinuation(
                             activeObjectiveContinuation,
                             collectionTeacher.Ranking))
@@ -1314,6 +1343,36 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             }
             if (!options.ContinueAfterBlockedQueueItems || executableSubsetCount == 0)
             {
+                var relaxedMasterAnglerContinuation =
+                    QueueReplanFilter
+                        .RelaxUnavailableMasterAnglerSourceVariant(
+                            activeObjectiveContinuation,
+                            dailyPlanRanking);
+                if (executableSubsetCount == 0 &&
+                    relaxedMasterAnglerContinuation is not null)
+                {
+                    activeObjectiveContinuation =
+                        relaxedMasterAnglerContinuation;
+                    noProgressBackoff.Reset();
+                    AppendProgress(
+                        options,
+                        "continuation_source_variant_replan",
+                        iteration,
+                        lastStateHash,
+                        lastQueueId,
+                        "reason=no_available_master_angler_source_variant" +
+                        " option_id=" + ReadString(
+                            relaxedMasterAnglerContinuation,
+                            "option_id") +
+                        " target_qualified_item_id=" + ReadString(
+                            relaxedMasterAnglerContinuation,
+                            "master_angler_target_qualified_item_id") +
+                        " suppressed_until_day_change=false");
+                    await DelayBeforeNextAttemptAsync(
+                        options,
+                        attemptOrdinal);
+                    continue;
+                }
                 if (executableSubsetCount == 0 &&
                     QueueReplanFilter.ShouldReleaseUnavailableContinuation(
                         activeObjectiveContinuation,
