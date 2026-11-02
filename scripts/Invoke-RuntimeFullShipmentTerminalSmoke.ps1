@@ -850,6 +850,7 @@ $environmentNames = @(
     "STARDEWAI_TRAINING_MODE",
     "STARDEWAI_TRAINING_OUTPUT_DIR",
     "STARDEWAI_SUPPRESS_LOCAL_RENDER",
+    "CLIENT_FPS",
     "SDL_AUDIODRIVER",
     "ALSOFT_DRIVERS",
     "ASPNETCORE_URLS"
@@ -880,6 +881,7 @@ try {
     $env:STARDEWAI_TRAINING_MODE = "1"
     $env:STARDEWAI_TRAINING_OUTPUT_DIR = $trainingOutputDirectory
     $env:STARDEWAI_SUPPRESS_LOCAL_RENDER = if ($VisibleGame) { "0" } else { "1" }
+    $env:CLIENT_FPS = if ($VisibleGame) { "60" } else { "0" }
     $env:SDL_AUDIODRIVER = "dummy"
     $env:ALSOFT_DRIVERS = "null"
     $gameWindowStyle = if ($VisibleGame) { "Normal" } else { "Hidden" }

@@ -587,6 +587,19 @@ public sealed class EndOfNightTransactionContractTests
                 StringComparison.Ordinal));
         Assert.Contains("owner_visual_gate_passed = $false", compoundSmoke,
             StringComparison.Ordinal);
+        Assert.Contains("\"CLIENT_FPS\"", compoundSmoke,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "$env:CLIENT_FPS = if ($VisibleGame) { \"60\" } else { \"0\" }",
+            compoundSmoke,
+            StringComparison.Ordinal);
+        Assert.True(
+            compoundSmoke.IndexOf(
+                "$env:CLIENT_FPS = if ($VisibleGame)",
+                StringComparison.Ordinal) <
+            compoundSmoke.IndexOf(
+                "$game = Start-Process -FilePath $smapi",
+                StringComparison.Ordinal));
         Assert.Contains("Get-VerifiedEndOfNightEvidence", compoundSmoke,
             StringComparison.Ordinal);
         Assert.Contains("native_stage_one_settlement_date_prepared",
