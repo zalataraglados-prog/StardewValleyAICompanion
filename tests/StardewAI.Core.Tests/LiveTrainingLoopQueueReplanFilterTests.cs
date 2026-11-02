@@ -413,6 +413,134 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
     }
 
     [Fact]
+    public void MasterAnglerUnavailableSourceRelaxesOnceBeforeDaySuppression()
+    {
+        var continuation = new JsonObject
+        {
+            ["kind"] = "master_angler",
+            ["option_id"] = "fishing.catch_fish",
+            ["master_angler_target_qualified_item_id"] = "(O)136",
+            ["master_angler_target_location"] = "Backwoods",
+            ["master_angler_source_kind"] = "location_rule",
+            ["master_angler_source_key"] = "Backwoods:0",
+            ["master_angler_effective_start_time"] = "830"
+        };
+        var unavailable = new JsonObject
+        {
+            ["objective_continuation_filter"] = new JsonObject
+            {
+                ["active"] = true,
+                ["selected_candidate_count"] = 0
+            }
+        };
+
+        var relaxed = QueueReplanFilter
+            .RelaxUnavailableMasterAnglerSourceVariant(
+                continuation,
+                unavailable);
+
+        Assert.NotNull(relaxed);
+        Assert.Equal(
+            "(O)136",
+            relaxed!["master_angler_target_qualified_item_id"]!
+                .GetValue<string>());
+        Assert.Null(relaxed["master_angler_target_location"]);
+        Assert.Null(relaxed["master_angler_source_kind"]);
+        Assert.Null(relaxed["master_angler_source_key"]);
+        Assert.Null(relaxed["master_angler_effective_start_time"]);
+        Assert.False(QueueReplanFilter.ShouldReleaseUnavailableContinuation(
+            continuation,
+            unavailable));
+        Assert.Null(QueueReplanFilter
+            .RelaxUnavailableMasterAnglerSourceVariant(
+                relaxed,
+                unavailable));
+        Assert.True(QueueReplanFilter.ShouldReleaseUnavailableContinuation(
+            relaxed,
+            unavailable));
+
+        var selected = QueueReplanFilter.FilterRankedCandidates(
+            new JsonArray
+            {
+                MasterAnglerCandidate(
+                    "(O)136",
+                    "Mountain",
+                    "Mountain:2",
+                    "840"),
+                MasterAnglerCandidate(
+                    "(O)145",
+                    "Mountain",
+                    "Mountain:2",
+                    "840")
+            },
+            relaxed);
+        var equivalentSource = Assert.IsType<JsonObject>(
+            Assert.Single(selected));
+        Assert.Equal(
+            "master-angler:(O)136:Mountain",
+            equivalentSource["candidate_id"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void AppliedEquivalentMasterAnglerSourceRebindsFullIdentity()
+    {
+        var unavailable = new JsonObject
+        {
+            ["objective_continuation_filter"] = new JsonObject
+            {
+                ["active"] = true,
+                ["selected_candidate_count"] = 0
+            }
+        };
+        var original = FullMasterAnglerContinuation(
+            "Backwoods",
+            "Backwoods:0",
+            "830");
+        var relaxed = QueueReplanFilter
+            .RelaxUnavailableMasterAnglerSourceVariant(
+                original,
+                unavailable);
+        Assert.NotNull(relaxed);
+
+        var replacement = FullMasterAnglerContinuation(
+            "Mountain",
+            "Mountain:2",
+            "840");
+        var queueItem = QueueItem(
+            "queue.master-angler.route",
+            "executor.traverse_connector",
+            "0",
+            "0",
+            string.Empty);
+        var parameters = queueItem["normalized_command"]!["parameters"]!
+            .AsArray();
+        foreach (var property in replacement.Where(property =>
+                     !string.Equals(
+                         property.Key,
+                         "kind",
+                         StringComparison.Ordinal)))
+        {
+            parameters.Add(Parameter(
+                "continuation." + property.Key,
+                property.Value!.GetValue<string>()));
+        }
+
+        var rebound = QueueReplanFilter.RefreshAppliedObjectiveContinuation(
+            queueItem,
+            relaxed!);
+
+        Assert.Equal(
+            "Mountain",
+            rebound["master_angler_target_location"]!.GetValue<string>());
+        Assert.Equal(
+            "Mountain:2",
+            rebound["master_angler_source_key"]!.GetValue<string>());
+        Assert.Equal(
+            "840",
+            rebound["master_angler_effective_start_time"]!.GetValue<string>());
+    }
+
+    [Fact]
     public void EmptySameIterationRefreshPreservesActiveContinuationLease()
     {
         var continuation = new JsonObject
@@ -1646,6 +1774,39 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
                     "master_angler_effective_start_time",
                     effectiveStartTime)
             }
+        };
+    }
+
+    private static JsonObject FullMasterAnglerContinuation(
+        string locationId,
+        string sourceKey,
+        string effectiveStartTime)
+    {
+        return new JsonObject
+        {
+            ["kind"] = "master_angler",
+            ["option_id"] = "fishing.catch_fish",
+            ["master_angler_target_qualified_item_id"] = "(O)136",
+            ["master_angler_target_location"] = locationId,
+            ["master_angler_source_kind"] = "location_rule",
+            ["master_angler_source_key"] = sourceKey,
+            ["master_angler_window_first_total_day"] = "0",
+            ["master_angler_window_last_total_day"] = "27",
+            ["master_angler_target_total_day"] = "5",
+            ["master_angler_effective_start_time"] = effectiveStartTime,
+            ["master_angler_last_cast_time_exclusive"] = "1900",
+            ["master_angler_stage_one_deadline_total_day_exclusive"] = "224",
+            ["master_angler_window_index_path"] = "window-index.json",
+            ["master_angler_window_index_sha256"] = "window-index-sha",
+            ["master_angler_validation_status"] =
+                "authoritative_stage_one_window_match",
+            ["master_angler_runtime_terminal_validation_required"] = "true",
+            ["master_angler_route_timing_calibration_path"] =
+                "route-timing.json",
+            ["master_angler_route_timing_calibration_sha256"] =
+                "route-timing-sha",
+            ["master_angler_full_route_timing_validation_required"] =
+                "true"
         };
     }
 

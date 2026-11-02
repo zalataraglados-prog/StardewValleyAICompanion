@@ -715,10 +715,16 @@ public static partial class QueueReplanFilter
                     name,
                     "master_angler_effective_start_time",
                     StringComparison.Ordinal))
-                .All(name => string.Equals(
-                    ReadString(first, name),
-                    ReadString(second, name),
-                    StringComparison.OrdinalIgnoreCase));
+                .All(name =>
+                {
+                    var existing = ReadString(second, name);
+                    return (IsMasterAnglerSourceVariantContinuationName(name) &&
+                            string.IsNullOrWhiteSpace(existing)) ||
+                        string.Equals(
+                            ReadString(first, name),
+                            existing,
+                            StringComparison.OrdinalIgnoreCase);
+                });
     }
 
     private static bool HasExactCaughtMasterAnglerTarget(

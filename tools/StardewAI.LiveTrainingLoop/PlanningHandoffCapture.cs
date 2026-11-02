@@ -166,6 +166,13 @@ public static class PlanningHandoffCapture
             cancellationToken);
 
         var bindings = new JsonArray();
+        var layoutRequests = new List<(
+            int Sequence,
+            int MinX,
+            int MinY,
+            int MaxX,
+            int MaxY,
+            Task<string> Response)>();
         var sequence = 0;
         for (var minY = 0; minY < mapHeight; minY += LayoutChunkSize)
         {
@@ -176,56 +183,72 @@ public static class PlanningHandoffCapture
                     mapWidth - 1,
                     minX + LayoutChunkSize - 1);
                 sequence++;
-                var layoutJson = await http.GetStringAsync(
-                    BuildFarmLayoutSnapshotUrl(
-                        bridgeSnapshotUrl,
-                        minX,
-                        minY,
-                        maxX,
-                        maxY),
-                    cancellationToken);
-                var layout = JsonNode.Parse(layoutJson)?.AsObject() ??
-                    throw new InvalidDataException(
-                        "planning_handoff_farm_layout_snapshot_invalid");
-                ValidateSnapshotBoundary(
-                    layout,
-                    sourceSaveId,
-                    sourcePlayerId,
-                    sourceTotalDay,
-                    sourceTime);
-                var context = ReadSnapshotObject(
-                    layout,
-                    "farm",
-                    "site_preparation_context");
-                ValidateLayoutContext(
-                    context,
-                    mapWidth,
-                    mapHeight,
+                layoutRequests.Add((
+                    sequence,
                     minX,
                     minY,
                     maxX,
-                    maxY);
-
-                var fileName =
-                    $"layout-{sequence:D3}-x{minX}-y{minY}-x{maxX}-y{maxY}.json";
-                var path = Path.Combine(layoutDirectory, fileName);
-                await WriteTextAtomicallyAsync(
-                    path,
-                    layoutJson,
-                    cancellationToken);
-                bindings.Add(new JsonObject
-                {
-                    ["path"] = Path.GetFullPath(path),
-                    ["sha256"] = HashText(layoutJson),
-                    ["state_hash"] = ReadString(layout, "state_hash"),
-                    ["min_x"] = minX,
-                    ["min_y"] = minY,
-                    ["max_x"] = maxX,
-                    ["max_y"] = maxY,
-                    ["tile_count"] = checked(
-                        (maxX - minX + 1) * (maxY - minY + 1))
-                });
+                    maxY,
+                    http.GetStringAsync(
+                        BuildFarmLayoutSnapshotUrl(
+                            bridgeSnapshotUrl,
+                            minX,
+                            minY,
+                            maxX,
+                            maxY),
+                        cancellationToken)));
             }
+        }
+
+        var layoutJsons = await Task.WhenAll(
+            layoutRequests.Select(request => request.Response));
+        for (var index = 0; index < layoutRequests.Count; index++)
+        {
+            var request = layoutRequests[index];
+            var layoutJson = layoutJsons[index];
+            var layout = JsonNode.Parse(layoutJson)?.AsObject() ??
+                throw new InvalidDataException(
+                    "planning_handoff_farm_layout_snapshot_invalid");
+            ValidateSnapshotBoundary(
+                layout,
+                sourceSaveId,
+                sourcePlayerId,
+                sourceTotalDay,
+                sourceTime);
+            var context = ReadSnapshotObject(
+                layout,
+                "farm",
+                "site_preparation_context");
+            ValidateLayoutContext(
+                context,
+                mapWidth,
+                mapHeight,
+                request.MinX,
+                request.MinY,
+                request.MaxX,
+                request.MaxY);
+
+            var fileName =
+                $"layout-{request.Sequence:D3}-x{request.MinX}-y{request.MinY}" +
+                $"-x{request.MaxX}-y{request.MaxY}.json";
+            var path = Path.Combine(layoutDirectory, fileName);
+            await WriteTextAtomicallyAsync(
+                path,
+                layoutJson,
+                cancellationToken);
+            bindings.Add(new JsonObject
+            {
+                ["path"] = Path.GetFullPath(path),
+                ["sha256"] = HashText(layoutJson),
+                ["state_hash"] = ReadString(layout, "state_hash"),
+                ["min_x"] = request.MinX,
+                ["min_y"] = request.MinY,
+                ["max_x"] = request.MaxX,
+                ["max_y"] = request.MaxY,
+                ["tile_count"] = checked(
+                    (request.MaxX - request.MinX + 1) *
+                    (request.MaxY - request.MinY + 1))
+            });
         }
 
         var expectedCount = checked(
