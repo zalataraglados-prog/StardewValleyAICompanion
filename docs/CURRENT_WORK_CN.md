@@ -53,9 +53,9 @@
 - 当前脏工作树的 story handoff matrix `2/2` 与 negative matrix `2/2` 已通过；较早正向 `7/7` 的脚本身份已被上述编排修正改变，不能拼接。当前唯一施工顺序为：提交候选并得到 clean commit -> 同一 commit 隐藏正向 `7/7` -> story `2/2` -> negative `2/2` -> owner 可见矩阵与精确 PASS 问题。提交后隐藏矩阵前不得再改代码或文档；任一矩阵失败时只修单个失败场景并重新建立候选身份。
 - 运行证据只写入对应 `I:\StardewAITraining\golden-walnut-source-schedule-v*` 根，不进入 Git。后续低频观察只读取进度日志和终止证据；未达到 source schedule、独立重放、Gourmand 连续性及自动 completion proof 前，不得把本轮称作正式训练完成。
 
-- **最新施工终态（2026-11-02）**：#381 的 owner 目视验收已经收到用户明确 `PASS`，属于已消费终态，不得重复启动可见验收。目的快照优化已由 PR #386 合并到 `main@923a6d60`。全新 day-zero v109 的第一轮 Crop Teacher 完成 `12` 条日界与 `6/6` 收获、累计 `104` 条 verified action；第二轮在 iteration `114-118` 因 Teacher 错把可站立补水格计为清障，并把当前不可清除的 `2x2` 树桩纳入走廊而安全停止。Product Executor 的失败关闭正确，不能通过放宽工具或清障执行器绕过。
-- 当前唯一 WIP=1 是完成并合并 Crop Teacher v6 上游选择修复：补水格可直接站立时清障成本为零；资源块必须精确匹配且 `clear_obstacle_executor_status=ready` 才可进入准备列表。对 v109 原始请求的离线重放已从错误的 `(74,27)` 加树桩准备改为 `(70,27)` 且零准备；hermetic Bootstrap、Crop Teacher `58/58`、GameFreeGovernance `939/939`、Backend `259/259` 和两个 Release 构建均已通过。
-- 合并后不得续接 v109；必须从最新 `main` 创建全新 day-zero v110，并继续 `skip-training`。v110 先证明第二轮 Crop Teacher 不再选择阻塞树桩，再沿单一既有链完成首次登岛、可归因核桃来源、First Parrot、Western Turtle、Island House、source schedule 冻结、独立重放、Gourmand `3/3` 与 `72/14/3` completion proof。source schedule 与前置证明未完成前，`formal_product_training=false`；所有运行输出仅落本地证据根，不提交 `local-data`。
+- **最新施工终态（2026-11-03）**：#381 的 owner 目视 `PASS` 仍是已消费终态，不得重复启动。Crop Teacher v6 上游选择修复已通过 PR #387 合并到 `main@047f9dcc`；hermetic Bootstrap、Crop Teacher `58/58`、GameFreeGovernance `939/939`、Backend `259/259` 和两个 Release 构建均已通过。
+- 全新 day-zero v110r2 已完成三轮 Crop Teacher。第二轮的真实 v6 决策把补水站位绑定到 `(72,27)`，准备列表为空，不再包含 v109 的阻塞树桩；随后完成场地准备、`4` 条原生日界、`8/8` 收获并正常结束。第三轮经历一粒种子短缺、优先剧情中断、补水与容量恢复后，同样完成 `4` 条日界和 `8/8` 收获。该轮夜间停止前到达 iteration `209`、`162` 条 verified Product action，`stage=error=0`、三个 stderr 为零，全部进程和专用端口已回收。
+- 当前唯一 WIP=1 已回到 Golden Walnut/source-schedule 主线。v110r2 未首次登岛、未产生核桃来源增量、未完成 Gourmand 连续性，也不能跨停止后的内存边界续接；下一入口必须是最新 `main` 上新的 day-zero 身份，继续首次登岛、First Parrot、Western Turtle、Island House、source schedule 冻结/独立重放、Gourmand `3/3` 与 `72/14/3` completion proof。全过程继续 `skip-training`、`formal_product_training=false`，运行输出只落本地证据根，禁止提交 `local-data`。
 
 ## 2026-11-01：v97 暂态移动门误判已修复，v98 启动前需恢复磁盘余量
 
