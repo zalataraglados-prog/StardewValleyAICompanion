@@ -465,6 +465,8 @@ static partial class Program
                 "mechanical_compiled_queue_path");
             execution["policy_model_invoked_for_step"] = false;
             execution["queue_continue_after_blocked"] = options.ContinueAfterBlockedQueueItems;
+            execution["execution_snapshot_profile"] =
+                executionSnapshotProfileOverride ?? options.ExecutionSnapshotProfile;
             execution["after_snapshot_path"] = afterPath;
             execution["execution_path"] = executionPath;
             execution["after_state_hash"] = ReadString(afterSnapshot.Snapshot, "state_hash");

@@ -54,10 +54,10 @@ static partial class Program
         var planPath = string.Format(prefix, "compiled-plan");
         var queuePath = string.Format(prefix, "compiled-queue");
 
-        await File.WriteAllTextAsync(
+        await ContentAddressedJsonArtifactStore.WriteAsync(
             plainSnapshotPath,
             snapshotJson,
-            new UTF8Encoding(false));
+            options.SnapshotArtifactMode);
         var typedSnapshot = JsonSerializer.Deserialize<SnapshotEnvelope>(
             snapshotJson,
             JsonOptions) ?? throw new InvalidDataException(

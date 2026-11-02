@@ -422,6 +422,10 @@ Full Shipment dependency graph 的节点早已声明 `full_recurrence_required_f
 
 2026-10-23 原生 Axe 升级 lifecycle 已完成代码级接线，未冒充真实运行证据。透明桥实时投影下一等级 Axe、来源槽、Clint/Blacksmith 状态、原生价格与 5 根对应金属锭、两日等待和待领取工具；Hardwood reserve 据此滚动生成提交、等待、领取或显式失败阶段。编译链 fresh 锁定投影指纹、端点、站位、工具身份和成本；Runtime Harness 只调用原生 Blacksmith 对话、`ClintUpgrade` ShopMenu 与原生领取，不直接改写生产状态。E 盘隔离存档的隐藏静音 full snapshot 已通过 `177 required / 160 readable / 17 contextual / 0 blocking`，新增链路和目录测试 `12/12` 通过，完整 Core 为 `2791/2805`；剩余 14 个均为此前其他模块的已知失败。`executor.submit_tool_upgrade` 与 `executor.claim_tool_upgrade` 仍是 `RegisteredOnly`，runtime/output gate 为空，因此 `hardwood_tool_upgrade_lifecycle_bound` 当前只表示离线实现完成、原生回执待采，不改变任何训练分子。下一步固定为材料消费 reservation，再做原生 Rain Totem 制作回执。
 
+- **2026-11-02 最新终态纠偏：#381 owner 目视门已经由用户明确给出 `PASS`，属于已消费且不可重复触发的人工验收。** 上方仍描述“候选、待可见演示、待 PASS”的段落只保留为形成过程，不得再生成运行任务、阻塞主线或要求第二次人工确认；权威状态为 PR #384 已合并、issue 已关闭、隐藏矩阵 `7/7 + 2/2 + 2/2` 通过。任何后续代码改动只有在改变该可见行为合同时才需要新验收。
+- `purpose-profile-v108d-20261102-223700` 已在隔离的 v108b 耐久存档上完成目的快照原生验证。Crop Teacher 账本以 `8` 条收获和 `5` 条日界直接判定 terminal crossed，随后 Master Angler 队列的三个 `executor.traverse_connector` 与一个 `executor.catch_fish` 均为 `status=applied / primitive_verification_status=verified / execution_snapshot_profile=fishing`。全量权威规划快照仍为 `full`；只有整个待执行队列均属于已知 Master Angler 机械族时，执行后反馈才降为 `fishing`，混合或未知队列严格回退 `full`，显式非 full 配置保持不变。
+- 同轮 Stage One 决策快照与执行后快照已通过既有 `content_addressed_gzip` 存储器落盘，不改变逻辑 JSON：`stage-one-collection-snapshot-0002.json` 物理 `7,227` 字节、逻辑 `6,711,791` 字节；`after-snapshot-0005.json` 物理约 `6.8 KiB`、逻辑 `4,366,172` 字节。Release 构建零警告零错误，目的快照专项 `30/30`、GameFreeGovernance `939/939`、Backend `259/259` 通过；游戏和专用端口已回收。该切片只降低重复反馈 I/O，不改变透明字段、Teacher 真值、source schedule 分子或 `formal_product_training_authorized=false`。下一固定主线仍是 Golden Walnut/source-schedule 长循环、首次登岛与 Gourmand `3/3`/`72/14/3` 收口。
+
 ## 2. 已完成并冻结的施工单位
 
 ### Full Shipment runtime evidence
