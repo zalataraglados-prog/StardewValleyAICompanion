@@ -8,7 +8,7 @@ namespace StardewAI.GoalConditionedBootstrap;
 public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
 {
     public const string SelectionPolicy =
-        "authoritative_transparent_crop_net_revenue_after_exact_bounded_refill_corridor_and_persisted_approach_then_earliest_terminal_v5";
+        "authoritative_transparent_crop_net_revenue_after_executable_bounded_refill_corridor_and_persisted_approach_then_earliest_terminal_v6";
 
     public static MoneyRevenueCropProductionDecisionRequest Build(
         string requestPath)
@@ -55,8 +55,9 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
             "Money Revenue crop-production Teacher layout snapshots do not cover the complete Farm map.");
         var viableTiles = layoutTiles
             .Where(value => value.Status is
-                "already_prepared" or "ready_to_till" or
-                "requires_single_clearance_then_till")
+                    "already_prepared" or "ready_to_till" ||
+                value.Status == "requires_single_clearance_then_till" &&
+                value.ClearanceCurrentlyExecutable)
             .ToArray();
         Require(viableTiles.Length > 0,
             "Money Revenue crop-production Teacher found no supported Farm tiles.");

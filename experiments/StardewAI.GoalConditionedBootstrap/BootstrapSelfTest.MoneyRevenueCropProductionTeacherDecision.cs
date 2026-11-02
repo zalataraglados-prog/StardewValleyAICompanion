@@ -202,6 +202,46 @@ internal static partial class BootstrapSelfTest
                     clearanceCommitment.WateringRefillPreparationTiles[0]),
             "A bounded one-clearance native refill corridor and its terminal approach were not bound separately from crop tiles.");
 
+        var blockedClumpLayoutPath = Path.Combine(
+            root,
+            "low-water-blocked-clump-refill-layout-snapshot.json");
+        Write(blockedClumpLayoutPath,
+            MoneyCropTeacherLayoutSnapshot(
+                3,
+                includeRefillSource: true,
+                existingSeedId: "472",
+                existingSeedQuantity: 14,
+                requireRefillClearance: true,
+                blockRefillResourceClump: true));
+        var blockedClumpRequestPath = Path.Combine(
+            root,
+            "low-water-blocked-clump-refill-request.json");
+        Write(blockedClumpRequestPath,
+            new MoneyRevenueCropProductionTeacherRequest
+            {
+                SnapshotPath = lowWaterSourcePath,
+                FarmLayoutSnapshotPaths = new[] { blockedClumpLayoutPath },
+                DecisionId =
+                    "teacher.money.crop.spring7.low-water-blocked-clump-refill",
+                DecisionRecordedAt = "2026-10-18T00:00:00Z",
+                MaximumTileCount = 8,
+                MaxQueueItemCount = 8
+            });
+        var blockedClumpRejected = false;
+        try
+        {
+            _ = MoneyRevenueCropProductionTeacherDecisionBuilder.Build(
+                blockedClumpRequestPath);
+        }
+        catch (InvalidDataException ex)
+        {
+            blockedClumpRejected = ex.Message.Contains(
+                "watering_can_supply_without_verified_refill_insufficient",
+                StringComparison.Ordinal);
+        }
+        Require(blockedClumpRejected,
+            "A refill corridor requiring a currently unavailable resource-clump clearance was admitted.");
+
         var preparedCorridorLayoutPath = Path.Combine(
             root,
             "low-water-prepared-refill-layout-snapshot.json");
@@ -675,7 +715,8 @@ internal static partial class BootstrapSelfTest
         string existingSeedId = "476",
         int existingSeedQuantity = 1,
         bool requireRefillClearance = false,
-        bool reusePreparedRefillCorridor = false)
+        bool reusePreparedRefillCorridor = false,
+        bool blockRefillResourceClump = false)
     {
         var source = MoneyCropTeacherSourceSnapshot(
             wateringCanWaterLeft,
@@ -688,6 +729,22 @@ internal static partial class BootstrapSelfTest
             ["player"] = source.State["player"],
             ["farm"] = JsonSerializer.SerializeToElement(new
             {
+                resource_clumps = MoneyCropRuntimeField(
+                    blockRefillResourceClump
+                        ? new object[]
+                        {
+                            new
+                            {
+                                tile_x = 2,
+                                tile_y = 2,
+                                width = 1,
+                                height = 1,
+                                parent_sheet_index = 600,
+                                clear_obstacle_executor_status =
+                                    "blocked_required_axe_upgrade_missing"
+                            }
+                        }
+                        : Array.Empty<object>()),
                 site_preparation_context = MoneyCropRuntimeField(new
                 {
                     schema_version =
@@ -705,11 +762,9 @@ internal static partial class BootstrapSelfTest
                         max_y = 2
                     },
                     tile_count = 12,
-                    tiles = Enumerable.Range(0, 12).Select(index => new
+                    tiles = Enumerable.Range(0, 12).Select(index =>
                     {
-                        tile_x = index % 4,
-                        tile_y = index / 4,
-                        status = includeRefillSource &&
+                        var status = includeRefillSource &&
                                 index == (requireRefillClearance ? 0 : 11)
                             ? "blocked_not_diggable"
                             : requireRefillClearance && index is 2 or 6
@@ -720,29 +775,59 @@ internal static partial class BootstrapSelfTest
                                     : "requires_single_clearance_then_till"
                             : index == 0
                                 ? "already_prepared"
-                                : "ready_to_till",
-                        map_passable = !includeRefillSource ||
+                                : "ready_to_till";
+                        var resourceClumpTile =
+                            blockRefillResourceClump && index == 10;
+                        return new
+                        {
+                            tile_x = index % 4,
+                            tile_y = index / 4,
+                            status,
+                            map_passable = !includeRefillSource ||
                             index != (requireRefillClearance ? 0 : 11) &&
                             (!requireRefillClearance || index is not (2 or 6)),
-                        native_blocked_without_characters =
+                            native_blocked_without_characters =
                             includeRefillSource &&
                             index == (requireRefillClearance ? 0 : 11) ||
                             requireRefillClearance && index is 2 or 6 or 10,
-                        native_walking_collision_blocked =
+                            native_walking_collision_blocked =
                             includeRefillSource &&
                             index == (requireRefillClearance ? 0 : 11) ||
                             requireRefillClearance &&
                             (index is 2 or 6 ||
                              index == 10 && !reusePreparedRefillCorridor),
-                        watering_can_refill_source =
+                            watering_can_refill_source =
                             includeRefillSource &&
                             index == (requireRefillClearance ? 0 : 11),
-                        watering_refill_approach_standable =
+                            watering_refill_approach_standable =
                             (!includeRefillSource ||
                                 index != (requireRefillClearance ? 0 : 11)) &&
                             (!requireRefillClearance ||
                                 index is not (2 or 6) &&
-                                (index != 10 || reusePreparedRefillCorridor))
+                                (index != 10 || reusePreparedRefillCorridor)),
+                            clearable_blocker_kinds =
+                                status == "requires_single_clearance_then_till"
+                                    ? new[]
+                                    {
+                                        resourceClumpTile
+                                            ? "resource_clump"
+                                            : "object"
+                                    }
+                                    : Array.Empty<string>(),
+                            resource_clump_anchors = resourceClumpTile
+                                ? new[]
+                                {
+                                    new
+                                    {
+                                        tile_x = 2,
+                                        tile_y = 2,
+                                        width = 1,
+                                        height = 1,
+                                        parent_sheet_index = 600
+                                    }
+                                }
+                                : Array.Empty<object>()
+                        };
                     }).ToArray()
                 })
             }, JsonDefaults.Options)

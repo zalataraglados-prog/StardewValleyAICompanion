@@ -71,8 +71,14 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
             var rows = RequiredProperty(context, "tiles");
             Require(rows.ValueKind == JsonValueKind.Array,
                 "Money Revenue crop-production Teacher layout tiles are missing.");
+            var resourceClumps = ReadStateValue(
+                snapshot,
+                "farm",
+                "resource_clumps");
+            Require(resourceClumps.ValueKind == JsonValueKind.Array,
+                "Money Revenue crop-production Teacher layout resource clumps are missing.");
             var tiles = rows.EnumerateArray()
-                .Select(ReadLayoutTile)
+                .Select(value => ReadLayoutTile(value, resourceClumps))
                 .ToArray();
             var expectedCount = checked((maxX - minX + 1) *
                 (maxY - minY + 1));
@@ -100,7 +106,9 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
         return result.ToArray();
     }
 
-    private static LayoutTile ReadLayoutTile(JsonElement value)
+    private static LayoutTile ReadLayoutTile(
+        JsonElement value,
+        JsonElement resourceClumps)
     {
         var status = ReadString(value, "status");
         var mapPassable = ReadRequiredBool(value, "map_passable");
@@ -132,7 +140,52 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
             mapPassable,
             nativeBlocked,
             ReadRequiredBool(value, "watering_can_refill_source"),
-            effectiveStandable);
+            effectiveStandable,
+            CurrentClearanceExecutable(value, status, resourceClumps));
+    }
+
+    private static bool CurrentClearanceExecutable(
+        JsonElement tile,
+        string status,
+        JsonElement resourceClumps)
+    {
+        if (status != "requires_single_clearance_then_till")
+            return true;
+
+        var blockerKinds = RequiredProperty(tile, "clearable_blocker_kinds");
+        Require(blockerKinds.ValueKind == JsonValueKind.Array,
+            "Money Revenue crop-production Teacher layout clearance kinds are missing.");
+        var kinds = blockerKinds.EnumerateArray()
+            .Where(value => value.ValueKind == JsonValueKind.String)
+            .Select(value => value.GetString() ?? string.Empty)
+            .Where(value => value.Length > 0)
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        Require(kinds.Length == 1,
+            "Money Revenue crop-production Teacher layout clearance identity is not unique.");
+        if (kinds[0] != "resource_clump")
+            return true;
+
+        var anchors = RequiredProperty(tile, "resource_clump_anchors");
+        Require(anchors.ValueKind == JsonValueKind.Array,
+            "Money Revenue crop-production Teacher resource-clump anchors are missing.");
+        var anchorRows = anchors.EnumerateArray().ToArray();
+        Require(anchorRows.Length == 1,
+            "Money Revenue crop-production Teacher resource-clump anchor is not unique.");
+        var anchor = anchorRows[0];
+        var matches = resourceClumps.EnumerateArray()
+            .Where(row =>
+                ReadInt(row, "tile_x") == ReadInt(anchor, "tile_x") &&
+                ReadInt(row, "tile_y") == ReadInt(anchor, "tile_y") &&
+                ReadInt(row, "width") == ReadInt(anchor, "width") &&
+                ReadInt(row, "height") == ReadInt(anchor, "height") &&
+                ReadInt(row, "parent_sheet_index") ==
+                    ReadInt(anchor, "parent_sheet_index"))
+            .ToArray();
+        Require(matches.Length == 1,
+            "Money Revenue crop-production Teacher resource-clump projection is not unique.");
+        return ReadString(matches[0], "clear_obstacle_executor_status") ==
+            "ready";
     }
 
     internal static bool ResolveWateringRefillApproachStandable(
@@ -234,10 +287,12 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
                 {
                     continue;
                 }
-                var requiresClearance = tile.Status ==
-                    "requires_single_clearance_then_till";
+                var requiresClearance =
+                    !tile.WateringRefillApproachStandable &&
+                    tile.Status == "requires_single_clearance_then_till";
                 if (!tile.WateringRefillApproachStandable &&
-                    !requiresClearance)
+                    (!requiresClearance ||
+                        !tile.ClearanceCurrentlyExecutable))
                 {
                     continue;
                 }
@@ -270,8 +325,9 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
         path.Reverse();
         var preparationTiles = path
             .Select(value => byCoordinate[value])
-            .Where(value => value.Status ==
-                "requires_single_clearance_then_till")
+            .Where(value =>
+                !value.WateringRefillApproachStandable &&
+                value.Status == "requires_single_clearance_then_till")
             .Select(value => new MoneyRevenueCropPlantingTile(
                 value.TileX,
                 value.TileY))
@@ -378,7 +434,8 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
         bool MapPassable,
         bool NativeBlockedWithoutCharacters,
         bool WateringCanRefillSource,
-        bool WateringRefillApproachStandable);
+        bool WateringRefillApproachStandable,
+        bool ClearanceCurrentlyExecutable);
 
     private readonly record struct RouteCost(
         int ClearanceCount,
