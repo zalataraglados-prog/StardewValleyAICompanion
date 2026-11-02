@@ -77,6 +77,127 @@ public sealed class PlanningHandoffCaptureTests
     }
 
     [Fact]
+    public async Task CropTeacherHandoffQueuesEveryLayoutChunkBeforeAwaitingResponses()
+    {
+        const int mapWidth = 33;
+        const int mapHeight = 34;
+        const int expectedChunkCount = 4;
+        var chunkRequestCount = 0;
+        var allChunksQueued = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        using var http = new HttpClient(new AsyncDelegateHandler(async (
+            request,
+            cancellationToken) =>
+        {
+            var values = ParseQuery(request.RequestUri!);
+            var bounds = (
+                int.Parse(values["min_x"]),
+                int.Parse(values["min_y"]),
+                int.Parse(values["max_x"]),
+                int.Parse(values["max_y"]));
+            if (bounds == (0, 0, 0, 0))
+            {
+                return Snapshot(
+                    "probe",
+                    mapWidth,
+                    mapHeight,
+                    bounds.Item1,
+                    bounds.Item2,
+                    bounds.Item3,
+                    bounds.Item4);
+            }
+
+            var queued = Interlocked.Increment(ref chunkRequestCount);
+            if (queued == expectedChunkCount)
+            {
+                allChunksQueued.TrySetResult();
+            }
+            await allChunksQueued.Task.WaitAsync(
+                TimeSpan.FromSeconds(5),
+                cancellationToken);
+            return Snapshot(
+                "layout-" + queued,
+                mapWidth,
+                mapHeight,
+                bounds.Item1,
+                bounds.Item2,
+                bounds.Item3,
+                bounds.Item4);
+        }));
+        var output = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-planning-handoff-tests",
+            Guid.NewGuid().ToString("N"));
+        var handoff = new JsonObject
+        {
+            ["handoff_kind"] = "crop_production_teacher",
+            ["required_snapshot_profiles"] = new JsonArray("farm_layout"),
+            ["automatic_dispatch_required"] = true
+        };
+
+        var result = await PlanningHandoffCapture.CaptureAsync(
+            http,
+            "http://127.0.0.1:8765/api/v1/snapshot?profile=full&fresh=true",
+            output,
+            Snapshot("source", mapWidth, mapHeight, 0, 0, 0, 0),
+            handoff);
+
+        Assert.Equal(expectedChunkCount, chunkRequestCount);
+        Assert.Equal(expectedChunkCount, result.LayoutSnapshotCount);
+    }
+
+    [Fact]
+    public async Task CropTeacherHandoffStillRejectsAConcurrentChunkWithTimeDrift()
+    {
+        const int mapWidth = 33;
+        const int mapHeight = 1;
+        using var http = new HttpClient(new DelegateHandler(request =>
+        {
+            var values = ParseQuery(request.RequestUri!);
+            var bounds = (
+                int.Parse(values["min_x"]),
+                int.Parse(values["min_y"]),
+                int.Parse(values["max_x"]),
+                int.Parse(values["max_y"]));
+            var snapshot = JsonNode.Parse(Snapshot(
+                "layout-" + bounds.Item1,
+                mapWidth,
+                mapHeight,
+                bounds.Item1,
+                bounds.Item2,
+                bounds.Item3,
+                bounds.Item4))!.AsObject();
+            if (bounds.Item1 == 32)
+            {
+                snapshot["state"]!["time"]!["time"]!["value"] = 610;
+            }
+            return snapshot.ToJsonString();
+        }));
+        var output = Path.Combine(
+            Path.GetTempPath(),
+            "stardewai-planning-handoff-tests",
+            Guid.NewGuid().ToString("N"));
+        var handoff = new JsonObject
+        {
+            ["handoff_kind"] = "crop_production_teacher",
+            ["required_snapshot_profiles"] = new JsonArray("farm_layout"),
+            ["automatic_dispatch_required"] = true
+        };
+
+        var exception = await Assert.ThrowsAsync<InvalidDataException>(() =>
+            PlanningHandoffCapture.CaptureAsync(
+                http,
+                "http://127.0.0.1:8765/api/v1/snapshot?profile=full&fresh=true",
+                output,
+                Snapshot("source", mapWidth, mapHeight, 0, 0, 0, 0),
+                handoff));
+
+        Assert.Equal(
+            "planning_handoff_farm_layout_boundary_drifted",
+            exception.Message);
+    }
+
+    [Fact]
     public void HandoffDetectionRequiresAutomaticFarmLayoutContract()
     {
         var ranking = new JsonObject
@@ -245,6 +366,24 @@ public sealed class PlanningHandoffCaptureTests
                     Encoding.UTF8,
                     "application/json")
             });
+        }
+    }
+
+    private sealed class AsyncDelegateHandler(
+        Func<HttpRequestMessage, CancellationToken, Task<string>> responseFactory)
+        : HttpMessageHandler
+    {
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    await responseFactory(request, cancellationToken),
+                    Encoding.UTF8,
+                    "application/json")
+            };
         }
     }
 }
