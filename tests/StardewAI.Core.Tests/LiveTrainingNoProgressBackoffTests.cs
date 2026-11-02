@@ -77,6 +77,48 @@ public sealed class LiveTrainingNoProgressBackoffTests
     }
 
     [Fact]
+    public void ProfessionInputSettleWaitDoesNotCountAsVerifiedProgress()
+    {
+        var policy = new NoProgressBackoffPolicy(5000, 60000);
+        var queue = RecoveryRefreshWaitQueue();
+        queue["items"]![0]!["source_action_id"] =
+            "recovery_wait_for_level_up_profession_input_0_5_0_1." +
+            "profession_input_settle_wait.0";
+
+        Assert.False(policy.Observe(queue).NoProgress);
+
+        var decision = policy.ObserveExecution(
+            queue,
+            VerifiedWaitExecution());
+
+        Assert.True(decision.NoProgress);
+        Assert.Equal(1, decision.Streak);
+        Assert.Equal(5000, decision.DelayMs);
+    }
+
+    [Fact]
+    public void ProfessionInputSettleRemainsControlOnlyAcrossClockBoundary()
+    {
+        var policy = new NoProgressBackoffPolicy(5000, 60000);
+        var queue = RecoveryRefreshWaitQueue();
+        queue["items"]![0]!["source_action_id"] =
+            "recovery_wait_for_level_up_profession_input_0_5_0_1." +
+            "profession_input_settle_wait.0";
+        var execution = VerifiedWaitExecution();
+        execution["changed_facts"]!.AsArray().Add(new JsonObject
+        {
+            ["path"] = "time.time",
+            ["before"] = "600",
+            ["after"] = "610"
+        });
+
+        var decision = policy.ObserveExecution(queue, execution);
+
+        Assert.True(decision.NoProgress);
+        Assert.Equal(1, decision.Streak);
+    }
+
+    [Fact]
     public void RecoveryWaitWithUnchangedClockStillCountsAsNoProgress()
     {
         var policy = new NoProgressBackoffPolicy(5000, 60000);

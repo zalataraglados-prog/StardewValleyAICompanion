@@ -237,6 +237,14 @@ namespace StardewAI.Core.Execution
                     reasons.Add("profession_choice_id_required");
                 else if (!validChoices.Contains(requestedChoice.Value))
                     reasons.Add("profession_choice_id_not_offered");
+                if (!HasExactActionParameter(
+                        action,
+                        "safety_constraint",
+                        "compile_only_exact_transparent_profession_choice"))
+                {
+                    reasons.Add(
+                        "profession_choice_requires_skills_compiler");
+                }
             }
 
             return reasons.ToArray();

@@ -63,25 +63,6 @@ static partial class Program
             JsonOptions) ?? throw new InvalidDataException(
             "Stage-one collection snapshot is empty.");
 
-        if (!capacityRecoveryOnly)
-        {
-            var mandatoryMenuRecovery =
-                await TryBuildStageOneMandatoryMenuRecoveryAsync(
-                    http,
-                    options,
-                    typedSnapshot,
-                    stateHash,
-                    plainSnapshotPath,
-                    preferencePath,
-                    planPath,
-                    rankingPath,
-                    queuePath);
-            if (mandatoryMenuRecovery is not null)
-            {
-                return mandatoryMenuRecovery;
-            }
-        }
-
         JsonObject ranking;
         AvailabilityAwarePolicyPredictionEnvelope typedRanking;
         if (capacityRecoveryOnly)

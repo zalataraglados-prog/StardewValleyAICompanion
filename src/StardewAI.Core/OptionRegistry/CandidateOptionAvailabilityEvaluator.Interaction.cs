@@ -559,12 +559,19 @@ namespace StardewAI.Core.OptionRegistry
                 reasons.Add("level_up_menu_not_active");
             if (ReadBool(state.Value, "can_receive_input") != true)
                 reasons.Add("level_up_menu_input_not_ready");
-            if (ReadBool(state.Value, "is_profession_chooser") == true &&
-                (!state.Value.TryGetProperty("profession_choices", out var choices) ||
-                 choices.ValueKind != JsonValueKind.Array ||
-                 choices.GetArrayLength() != 2))
+            if (ReadBool(state.Value, "is_profession_chooser") == true)
             {
-                reasons.Add("level_up_menu_profession_choices_not_exactly_two");
+                reasons.Add(
+                    "level_up_menu_profession_requires_explicit_skill_choice");
+                if (!state.Value.TryGetProperty(
+                        "profession_choices",
+                        out var choices) ||
+                    choices.ValueKind != JsonValueKind.Array ||
+                    choices.GetArrayLength() != 2)
+                {
+                    reasons.Add(
+                        "level_up_menu_profession_choices_not_exactly_two");
+                }
             }
 
             return reasons.ToArray();

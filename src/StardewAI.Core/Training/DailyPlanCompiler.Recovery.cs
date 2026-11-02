@@ -38,6 +38,61 @@ namespace StardewAI.Core.Training
             };
         }
 
+        private static IEnumerable<SmallModelPlanStep>
+            ProfessionInputSettleSteps(
+                PolicyEventCandidatePrediction candidate)
+        {
+            var waitTicks = Math.Min(
+                30,
+                Math.Max(
+                    1,
+                    CandidateInt(candidate, "wait_ticks") ??
+                    candidate.EstimatedTicks));
+            return new[]
+            {
+                new SmallModelPlanStep
+                {
+                    StepId = StepId(
+                        candidate,
+                        "profession_input_settle_wait",
+                        0),
+                    Kind = "wait_ticks",
+                    WaitTicks = waitTicks,
+                    EstimatedMinutes = TicksToMinutes(waitTicks),
+                    Preconditions = new[]
+                    {
+                        "candidate_id:" + candidate.CandidateId,
+                        "level_up_menu_open=true",
+                        "level_up_menu_profession_chooser=true",
+                        "level_up_menu_information_up=true",
+                        "level_up_menu_can_receive_input=false"
+                    },
+                    ExpectedEffects = new[] { candidate.ExpectedEffect },
+                    SafetyConstraints = new[]
+                    {
+                        "bounded_native_level_up_menu_input_settle_wait",
+                        "explicit_profession_choice_continuation_preserved"
+                    },
+                    FailurePolicy = new[]
+                    {
+                        "refresh_snapshot_and_replan",
+                        "never_select_profession_from_stale_snapshot"
+                    },
+                    Parameters = candidate.Parameters
+                        .Where(parameter =>
+                            !string.Equals(
+                                parameter.Name,
+                                "execution_option_id",
+                                StringComparison.Ordinal) &&
+                            !string.Equals(
+                                parameter.Name,
+                                "wait_ticks",
+                                StringComparison.Ordinal))
+                        .ToArray()
+                }
+            };
+        }
+
         private static IEnumerable<SmallModelPlanStep> ObjectTrapRecoverySteps(
             PolicyEventCandidatePrediction candidate)
         {

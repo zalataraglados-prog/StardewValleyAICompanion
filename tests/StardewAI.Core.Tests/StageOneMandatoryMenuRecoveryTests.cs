@@ -36,6 +36,29 @@ public sealed class StageOneMandatoryMenuRecoveryTests
     }
 
     [Fact]
+    public void ExactSleepPromptRecoveryPassesMandatoryMenuPreflight()
+    {
+        var snapshot = ExactSleepPromptSnapshot();
+
+        Assert.True(StageOneMandatoryMenuRecovery.RequiresPreflight(snapshot));
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(
+            snapshot,
+            ["recovery.stabilize_day"],
+            includeExecutorCalibrationOptions: true);
+        var ranking = StageOneMandatoryMenuRecovery.BuildRanking(
+            availability,
+            "grandpa_evaluation_max_score");
+
+        var selected = StageOneMandatoryMenuRecovery.TrySelect(ranking);
+
+        Assert.NotNull(selected);
+        Assert.Equal("recovery:resume_sleep_prompt", selected.CandidateId);
+        Assert.Equal(
+            StageOneMandatoryMenuRecovery.ResumeSleepPromptKind,
+            selected.Kind);
+    }
+
+    [Fact]
     public void UnavailableOrNonMenuRecoveryDoesNotPreemptCollection()
     {
         var ranking = Ranking(
@@ -87,6 +110,380 @@ public sealed class StageOneMandatoryMenuRecoveryTests
 
         Assert.NotNull(selected);
         Assert.Equal("reward-a", selected.CandidateId);
+    }
+
+    [Fact]
+    public void ExplicitProfessionChoicePreemptsGenericMenuRecovery()
+    {
+        var ranking = Ranking(
+            Candidate(
+                "generic-close",
+                "recovery.stabilize_day",
+                StageOneMandatoryMenuRecovery.CloseMenuKind,
+                rank: 1,
+                score: 1,
+                available: true),
+            Candidate(
+                "profession-1",
+                "skills.choose_profession",
+                StageOneMandatoryMenuRecovery.ProfessionChoiceKind,
+                rank: 3,
+                score: 0.4,
+                available: true),
+            Candidate(
+                "profession-4",
+                "skills.choose_profession",
+                StageOneMandatoryMenuRecovery.ProfessionChoiceKind,
+                rank: 2,
+                score: 0.5,
+                available: true));
+
+        var selected = StageOneMandatoryMenuRecovery.TrySelect(ranking);
+
+        Assert.NotNull(selected);
+        Assert.Equal("profession-4", selected.CandidateId);
+        Assert.Equal("skills.choose_profession", selected.OptionId);
+    }
+
+    [Fact]
+    public void ExplicitProfessionCandidateIdentityOverridesBaselinePreference()
+    {
+        var ranking = Ranking(
+            Candidate(
+                "skills:profession:0:5:1",
+                "skills.choose_profession",
+                StageOneMandatoryMenuRecovery.ProfessionChoiceKind,
+                rank: 1,
+                score: 1,
+                available: true),
+            Candidate(
+                "skills:profession:0:5:0",
+                "skills.choose_profession",
+                StageOneMandatoryMenuRecovery.ProfessionChoiceKind,
+                rank: 2,
+                score: 0.5,
+                available: true));
+
+        var selected = StageOneMandatoryMenuRecovery.TrySelect(
+            ranking,
+            professionChoiceRequired: true,
+            preferredProfessionCandidateId: "skills:profession:0:5:0");
+
+        Assert.NotNull(selected);
+        Assert.Equal("skills:profession:0:5:0", selected.CandidateId);
+    }
+
+    [Fact]
+    public void ExplicitProfessionIdentityWaitsForInputButNeverSubstitutesChoice()
+    {
+        var ranking = Ranking(
+            Candidate(
+                "skills:profession:0:5:1",
+                "skills.choose_profession",
+                StageOneMandatoryMenuRecovery.ProfessionChoiceKind,
+                rank: 1,
+                score: 1,
+                available: true),
+            Candidate(
+                "profession-input-settle",
+                "recovery.stabilize_day",
+                StageOneMandatoryMenuRecovery.ProfessionInputSettleKind,
+                rank: 2,
+                score: 0.5,
+                available: true));
+
+        var selected = StageOneMandatoryMenuRecovery.TrySelect(
+            ranking,
+            professionChoiceRequired: true,
+            preferredProfessionCandidateId: "skills:profession:0:5:0");
+
+        Assert.NotNull(selected);
+        Assert.Equal("profession-input-settle", selected.CandidateId);
+
+        Assert.Null(StageOneMandatoryMenuRecovery.TrySelect(
+            Ranking(Candidate(
+                "skills:profession:0:5:1",
+                "skills.choose_profession",
+                StageOneMandatoryMenuRecovery.ProfessionChoiceKind,
+                rank: 1,
+                score: 1,
+                available: true)),
+            professionChoiceRequired: true,
+            preferredProfessionCandidateId: "skills:profession:0:5:0"));
+    }
+
+    [Fact]
+    public void RequiredUnavailableProfessionChoiceFailsClosedWithoutGenericFallback()
+    {
+        var availability = new OptionAvailabilityEnvelope
+        {
+            Options =
+            [
+                new OptionAvailability
+                {
+                    OptionId = "recovery.stabilize_day",
+                    EventCandidates =
+                    [
+                        new EventCandidate
+                        {
+                            CandidateId = "generic-close",
+                            Kind = StageOneMandatoryMenuRecovery.CloseMenuKind,
+                            Available = true
+                        }
+                    ]
+                },
+                new OptionAvailability
+                {
+                    OptionId = "skills.choose_profession",
+                    EventCandidates =
+                    [
+                        new EventCandidate
+                        {
+                            CandidateId = "profession-blocked",
+                            Kind = StageOneMandatoryMenuRecovery.ProfessionChoiceKind,
+                            Available = false,
+                            BlockReasons = ["profession_title_missing"]
+                        }
+                    ]
+                }
+            ]
+        };
+        var ranking = StageOneMandatoryMenuRecovery.BuildRanking(
+            availability,
+            "grandpa_evaluation_max_score");
+
+        Assert.DoesNotContain(
+            ranking.RankedEventCandidates,
+            candidate => candidate.Kind ==
+                StageOneMandatoryMenuRecovery.ProfessionChoiceKind);
+
+        Assert.Null(StageOneMandatoryMenuRecovery.TrySelect(
+            ranking,
+            professionChoiceRequired: true));
+    }
+
+    [Fact]
+    public void OrdinaryLevelMenuBlockedProfessionPlaceholderAllowsGenericRecovery()
+    {
+        var availability = new OptionAvailabilityEnvelope
+        {
+            Options =
+            [
+                new OptionAvailability
+                {
+                    OptionId = "recovery.stabilize_day",
+                    EventCandidates =
+                    [
+                        new EventCandidate
+                        {
+                            CandidateId = "generic-close",
+                            Kind = StageOneMandatoryMenuRecovery.CloseMenuKind,
+                            Available = true
+                        }
+                    ]
+                },
+                new OptionAvailability
+                {
+                    OptionId = "skills.choose_profession",
+                    EventCandidates =
+                    [
+                        new EventCandidate
+                        {
+                            CandidateId = "profession-not-active",
+                            Kind = StageOneMandatoryMenuRecovery.ProfessionChoiceKind,
+                            Available = false,
+                            BlockReasons =
+                                ["level_up_menu_not_profession_chooser"]
+                        }
+                    ]
+                }
+            ]
+        };
+        var ranking = StageOneMandatoryMenuRecovery.BuildRanking(
+            availability,
+            "grandpa_evaluation_max_score");
+
+        var selected = StageOneMandatoryMenuRecovery.TrySelect(
+            ranking,
+            professionChoiceRequired: false);
+
+        Assert.NotNull(selected);
+        Assert.Equal("generic-close", selected.CandidateId);
+        Assert.Equal("recovery.stabilize_day", selected.OptionId);
+    }
+
+    [Theory]
+    [InlineData(true, true)]
+    [InlineData(false, false)]
+    [InlineData(null, true)]
+    public void LevelUpMenuUsesFailClosedProfessionAuthority(
+        bool? isProfessionChooser,
+        bool expected)
+    {
+        var specific = isProfessionChooser.HasValue
+            ? "{\"is_profession_chooser\":" +
+                isProfessionChooser.Value.ToString().ToLowerInvariant() + "}"
+            : "{}";
+        var snapshot = JsonSerializer.Deserialize<SnapshotEnvelope>($$"""
+        {
+          "schema_version":"snapshot.v1",
+          "state_hash":"profession-menu-authority",
+          "state":{
+            "menus":{
+              "active_menu":{"value":{"is_open":true,"type":"LevelUpMenu"},"status":"available"},
+              "menu_specific_state":{"value":{{specific}},"status":"available"}
+            }
+          }
+        }
+        """) ?? throw new InvalidDataException("Test snapshot is empty.");
+
+        Assert.Equal(
+            expected,
+            StageOneMandatoryMenuRecovery.RequiresExplicitProfessionChoice(
+                snapshot));
+    }
+
+    [Fact]
+    public void MissingProfessionCandidateFailsClosedWhenMenuAuthorityRequiresIt()
+    {
+        var ranking = Ranking(
+            Candidate(
+                "generic-close",
+                "recovery.stabilize_day",
+                StageOneMandatoryMenuRecovery.CloseMenuKind,
+                rank: 1,
+                score: 1,
+                available: true));
+
+        Assert.Null(StageOneMandatoryMenuRecovery.TrySelect(
+            ranking,
+            professionChoiceRequired: true));
+    }
+
+    [Fact]
+    public void ProfessionInputTimerCompilesBoundedWaitBeforeExactChoice()
+    {
+        var snapshot = ProfessionSnapshot(
+            canReceiveInput: false,
+            timerBeforeStart: 234);
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(
+            snapshot,
+            ["recovery.stabilize_day", "skills.choose_profession"],
+            includeExecutorCalibrationOptions: true);
+        var recovery = Assert.Single(
+            availability.Options,
+            option => option.OptionId == "recovery.stabilize_day");
+        var settle = Assert.Single(
+            recovery.EventCandidates,
+            candidate => candidate.Kind ==
+                StageOneMandatoryMenuRecovery.ProfessionInputSettleKind);
+        Assert.True(settle.Available, string.Join(",", settle.BlockReasons));
+        Assert.Equal("16", Assert.Single(
+            settle.Parameters,
+            parameter => parameter.Name == "wait_ticks").Value);
+
+        var ranking = StageOneMandatoryMenuRecovery.BuildRanking(
+            availability,
+            "grandpa_evaluation_max_score");
+        var selected = StageOneMandatoryMenuRecovery.TrySelect(
+            ranking,
+            professionChoiceRequired: true);
+
+        Assert.NotNull(selected);
+        Assert.Equal(
+            StageOneMandatoryMenuRecovery.ProfessionInputSettleKind,
+            selected.Kind);
+        var plan = new DailyPlanCompiler().Compile(
+            [selected],
+            snapshot.StateHash,
+            "grandpa_evaluation_max_score",
+            maxCandidates: 1);
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+        Assert.Equal("pending", queue.Status);
+        var item = Assert.Single(queue.Items);
+        Assert.Equal("executor.wait_ticks", item.OptionId);
+        Assert.Equal("pending", item.Status);
+        Assert.Contains(
+            item.NormalizedCommand.Parameters,
+            parameter =>
+                parameter.Name == "profession_input_settle_choice_ids" &&
+                parameter.Value == "0,1");
+        Assert.Contains(
+            item.NormalizedCommand.Parameters,
+            parameter =>
+                parameter.Name == "safety_constraint" &&
+                parameter.Value ==
+                    "bounded_native_level_up_menu_input_settle_wait");
+    }
+
+    [Fact]
+    public void ProfessionInputSettleRequiresInformationPanelAlreadyOpen()
+    {
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(
+            ProfessionSnapshot(
+                canReceiveInput: false,
+                timerBeforeStart: 234,
+                informationUp: false),
+            ["recovery.stabilize_day", "skills.choose_profession"],
+            includeExecutorCalibrationOptions: true);
+        var recovery = Assert.Single(
+            availability.Options,
+            option => option.OptionId == "recovery.stabilize_day");
+
+        Assert.DoesNotContain(
+            recovery.EventCandidates,
+            candidate => candidate.Kind ==
+                StageOneMandatoryMenuRecovery.ProfessionInputSettleKind);
+    }
+
+    [Fact]
+    public void ProfessionInputSettleWaitPreemptsOrdinaryCollectionRanking()
+    {
+        var availability = new OptionAvailabilityEnvelope
+        {
+            Options =
+            [
+                new OptionAvailability
+                {
+                    OptionId = "recovery.stabilize_day",
+                    EventCandidates =
+                    [
+                        new EventCandidate
+                        {
+                            CandidateId = "profession-input-settle",
+                            Kind = StageOneMandatoryMenuRecovery
+                                .ProfessionInputSettleKind,
+                            Available = true
+                        }
+                    ]
+                },
+                new OptionAvailability
+                {
+                    OptionId = "fishing.catch_fish",
+                    EventCandidates =
+                    [
+                        new EventCandidate
+                        {
+                            CandidateId = "ordinary-collection",
+                            Kind = "catch_fish_current",
+                            Available = true
+                        }
+                    ]
+                }
+            ]
+        };
+
+        var ranking = StageOneMandatoryMenuRecovery.BuildRanking(
+            availability,
+            "grandpa_evaluation_max_score");
+
+        Assert.Contains(
+            ranking.RankedEventCandidates,
+            candidate => candidate.CandidateId ==
+                "profession-input-settle");
+        Assert.DoesNotContain(
+            ranking.RankedEventCandidates,
+            candidate => candidate.CandidateId == "ordinary-collection");
     }
 
     [Fact]
@@ -187,7 +584,11 @@ public sealed class StageOneMandatoryMenuRecoveryTests
     [Fact]
     public void LiveLoopDispatchesMandatoryMenuRecoveryBeforeMembershipFiltering()
     {
-        var source = Read(
+        var loopSource = Read(
+            "tools",
+            "StardewAI.LiveTrainingLoop",
+            "Program.cs");
+        var collectionSource = Read(
             "tools",
             "StardewAI.LiveTrainingLoop",
             "Program.StageOneCollectionTeacher.cs");
@@ -195,8 +596,16 @@ public sealed class StageOneMandatoryMenuRecoveryTests
             "tools",
             "StardewAI.LiveTrainingLoop",
             "Program.StageOneMandatoryMenuRecovery.cs");
-        var preflightInvocation = source.IndexOf(
-            "TryBuildStageOneMandatoryMenuRecoveryAsync(",
+        var preflightInvocation = loopSource.IndexOf(
+            "TryBuildStageOneMandatoryMenuRecoveryQueueAsync(",
+            StringComparison.Ordinal);
+        var maintenance = loopSource.IndexOf(
+            "StageOneDailyMaintenancePreemptionPolicy.Evaluate(",
+            preflightInvocation,
+            StringComparison.Ordinal);
+        var collectionInvocation = loopSource.IndexOf(
+            "TryBuildStageOneCollectionTeacherQueueAsync(",
+            maintenance,
             StringComparison.Ordinal);
         var preflight = recoverySource.IndexOf(
             "StageOneMandatoryMenuRecovery.RequiresPreflight(typedSnapshot)",
@@ -205,22 +614,36 @@ public sealed class StageOneMandatoryMenuRecoveryTests
             "StageOneMandatoryMenuRecovery.TrySelect(",
             preflight,
             StringComparison.Ordinal);
-        var intentBuilder = source.IndexOf(
+        var intentBuilder = collectionSource.IndexOf(
             "MasterAnglerTargetDateIntentBuilder.Build(",
             StringComparison.Ordinal);
-        var continuationFilter = source.IndexOf(
+        var continuationFilter = collectionSource.IndexOf(
             "activeObjectiveContinuation is not null",
             intentBuilder,
             StringComparison.Ordinal);
-        var membership = source.IndexOf(
+        var membership = collectionSource.IndexOf(
             "CurrentStageOneCollectionTeacherPreferenceBuilder.Build(",
             continuationFilter,
             StringComparison.Ordinal);
 
         Assert.True(preflightInvocation >= 0);
+        Assert.True(maintenance > preflightInvocation);
+        Assert.True(collectionInvocation > maintenance);
         Assert.True(preflight >= 0);
         Assert.True(selection > preflight);
-        Assert.True(intentBuilder > preflightInvocation);
+        Assert.Contains(
+            "StageOneMandatoryMenuRecovery.RequiresExplicitProfessionChoice(",
+            recoverySource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "blocked_mandatory_menu_recovery_unavailable",
+            recoverySource,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "TryBuildStageOneMandatoryMenuRecoveryAsync(",
+            collectionSource,
+            StringComparison.Ordinal);
+        Assert.True(intentBuilder >= 0);
         Assert.True(continuationFilter > intentBuilder);
         Assert.True(membership > continuationFilter);
         Assert.Contains(
@@ -309,6 +732,149 @@ public sealed class StageOneMandatoryMenuRecoveryTests
                 "tiles":[]
               },"status":"available"},
               "route_action_branch_coverage":{"value":[],"status":"available"}
+            }
+          }
+        }
+        """;
+        return JsonSerializer.Deserialize<SnapshotEnvelope>(json) ??
+            throw new InvalidDataException("Test snapshot is empty.");
+    }
+
+    private static SnapshotEnvelope ProfessionSnapshot(
+        bool canReceiveInput,
+        int timerBeforeStart,
+        bool informationUp = true)
+    {
+        var json = $$"""
+        {
+          "schema_version":"snapshot.v1",
+          "state_hash":"profession-menu-settle-state",
+          "state":{
+            "time":{
+              "time":{
+                "value":610,
+                "status":"available"
+              }
+            },
+            "player":{
+              "location_id":{"value":"FarmHouse","status":"available"},
+              "tile_x":{"value":9,"status":"available"},
+              "tile_y":{"value":9,"status":"available"},
+              "energy":{"value":270,"status":"available"}
+            },
+            "current_location":{
+              "home_context":{"value":{
+                "home_available":true,
+                "home_location_id":"FarmHouse",
+                "current_location_id":"FarmHouse",
+                "current_location_is_home":true,
+                "bed_tile_x":3,
+                "bed_tile_y":8,
+                "bed_tile_has_bed":true
+              },"status":"available"}
+            },
+            "menus":{
+              "active_menu":{"value":{
+                "is_open":true,
+                "type":"LevelUpMenu",
+                "full_type":"StardewValley.Menus.LevelUpMenu",
+                "is_sleep_prompt":false
+              },"status":"available"},
+              "menu_specific_state":{"value":{
+                "kind":"level_up",
+                "information_up":{{informationUp.ToString().ToLowerInvariant()}},
+                "is_active":true,
+                "is_profession_chooser":true,
+                "has_updated_professions":true,
+                "can_receive_input":{{canReceiveInput.ToString().ToLowerInvariant()}},
+                "current_skill":0,
+                "current_level":5,
+                "timer_before_start":{{timerBeforeStart}},
+                "reflection_fields_complete":true,
+                "profession_choices":[
+                  {"profession_id":0,"title":"Rancher","description_lines":["animal bonus"]},
+                  {"profession_id":1,"title":"Tiller","description_lines":["crop bonus"]}
+                ]
+              },"status":"available"},
+              "sleep_prompt_context":{"value":{
+                "prompt_open":false
+              },"status":"available"}
+            },
+            "locations":{
+              "collision_grid":{"value":{
+                "location_id":"FarmHouse",
+                "width":12,
+                "height":12,
+                "notable_tiles":[]
+              },"status":"available"},
+              "route_action_branch_coverage":{"value":{
+                "rows":[]
+              },"status":"available"}
+            }
+          }
+        }
+        """;
+        return JsonSerializer.Deserialize<SnapshotEnvelope>(json) ??
+            throw new InvalidDataException("Test snapshot is empty.");
+    }
+
+    private static SnapshotEnvelope ExactSleepPromptSnapshot()
+    {
+        const string json = """
+        {
+          "schema_version":"snapshot.v1",
+          "state_hash":"exact-sleep-prompt-preflight",
+          "state":{
+            "time":{
+              "time":{"value":600,"status":"available"}
+            },
+            "player":{
+              "location_id":{"value":"FarmHouse","status":"available"},
+              "tile_x":{"value":3,"status":"available"},
+              "tile_y":{"value":9,"status":"available"},
+              "current_item_qualified_id":{"value":"","status":"available"},
+              "active_object_qualified_id":{"value":"","status":"available"},
+              "energy":{"value":270,"status":"available"}
+            },
+            "current_location":{
+              "home_context":{"value":{
+                "home_available":true,
+                "home_location_id":"FarmHouse",
+                "current_location_id":"FarmHouse",
+                "current_location_is_home":true,
+                "bed_tile_x":3,
+                "bed_tile_y":8,
+                "bed_tile_has_bed":true,
+                "sleep_executor_enabled":true
+              },"status":"available"}
+            },
+            "menus":{
+              "active_menu":{"value":{
+                "is_open":true,
+                "type":"DialogueBox",
+                "last_question_key":"Sleep",
+                "is_sleep_prompt":true,
+                "event_up":false
+              },"status":"available"},
+              "menu_specific_state":{"value":{"kind":"none"},"status":"available"},
+              "sleep_prompt_context":{"value":{
+                "prompt_open":true,
+                "active_menu_open":true,
+                "active_menu_type":"DialogueBox",
+                "last_question_key":"Sleep",
+                "can_confirm_sleep":true,
+                "confirm_executor_enabled":true,
+                "confirm_action_key":"Sleep_Yes"
+              },"status":"available"}
+            },
+            "locations":{
+              "collision_grid":{"value":{
+                "location_id":"FarmHouse",
+                "width":12,
+                "height":12,
+                "notable_tiles":[]
+              },"status":"available"},
+              "route_action_branch_coverage":{"value":{"rows":[]},"status":"available"}
             }
           }
         }

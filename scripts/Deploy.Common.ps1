@@ -42,8 +42,8 @@ function Assert-StardewAIBuildOutputFresh {
     $output = Get-Item -LiteralPath $OutputPath
     if ($latestInput.LastWriteTimeUtc -gt $output.LastWriteTimeUtc) {
         throw (
-            "NoBuild refused because build output is stale: output={0}; " +
-            "latest_input={1}" -f $OutputPath, $latestInput.FullName)
+            ("NoBuild refused because build output is stale: output={0}; " +
+             "latest_input={1}") -f $OutputPath, $latestInput.FullName)
     }
 }
 

@@ -519,6 +519,16 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
+        if (context.Request.HttpMethod == "GET" &&
+            path == "/api/v1/training/end-of-night-transaction")
+        {
+            await WriteJsonAsync(
+                context,
+                200,
+                ReadEndOfNightTransactionSnapshot());
+            return;
+        }
+
         if (context.Request.HttpMethod != "POST" || path != "/api/v1/training/execute")
         {
             await WriteJsonAsync(context, 404, new { error = "not_found", path });
@@ -558,11 +568,16 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
-        await WriteJsonAsync(context, 200, pending.Completion.Task.Result);
+        var result = pending.Completion.Task.Result;
+        result.SourcePlanningOptionId = request.SourcePlanningOptionId;
+        ObserveCompletedExecutionForEndOfNight(result);
+        AttachEndOfNightTransaction(result);
+        await WriteJsonAsync(context, 200, result);
     }
 
     private void OnExecutorUpdateTicked(object? sender, UpdateTickedEventArgs e)
     {
+        ObserveEndOfNightTransaction(activeSleep);
         TickTileMove(e);
         TickSleep();
         TickWait();
@@ -1244,6 +1259,12 @@ public sealed partial class ModEntry : Mod
             if (pending.Request.OptionId == "debug.setup_story_event")
             {
                 pending.Completion.SetResult(ExecuteSetupStoryEventFixture(pending.Request));
+                return;
+            }
+
+            if (pending.Request.OptionId == "debug.prepare_native_story_handoff")
+            {
+                pending.Completion.SetResult(ExecutePrepareNativeStoryHandoff(pending.Request));
                 return;
             }
 
@@ -2613,9 +2634,12 @@ public sealed partial class ModEntry : Mod
             var shouldHoldStoryEventForDispatch =
                 !hasActiveExecutorOperation &&
                 HasExecutorOwnedStoryEventDispatchBoundary();
+            var hasIncompleteEndOfNightTransaction =
+                HasIncompleteEndOfNightTransaction(out _);
             var shouldPauseForExecutorIdle =
                 config.FreezeClockWhileExecutorIdle &&
                 Context.IsWorldReady &&
+                !hasIncompleteEndOfNightTransaction &&
                 executorMovementLease.Direction is null &&
                 (shouldHoldStoryEventForDispatch ||
                     pendingExecutions.IsEmpty &&

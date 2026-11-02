@@ -237,6 +237,12 @@ namespace StardewAI.Core.Training
                 return RecoveryRefreshSteps(candidate);
             }
 
+            if (candidate.Kind ==
+                StageOneMandatoryMenuRecovery.ProfessionInputSettleKind)
+            {
+                return ProfessionInputSettleSteps(candidate);
+            }
+
             if (candidate.Kind == "recovery_close_menu")
             {
                 return RecoveryCloseMenuSteps(candidate);

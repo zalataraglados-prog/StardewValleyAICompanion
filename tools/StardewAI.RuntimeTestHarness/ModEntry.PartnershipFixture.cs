@@ -189,6 +189,9 @@ public sealed partial class ModEntry
             return Blocked(request, reasons.ToArray());
         }
 
+        pendingEndOfNightNegativeProfile = string.Empty;
+        pendingEndOfNightNegativeProfileRunId = string.Empty;
+
         var home = Utility.getHomeOfFarmer(Game1.player);
         Game1.currentLocation = home;
         Game1.player.currentLocation = home;

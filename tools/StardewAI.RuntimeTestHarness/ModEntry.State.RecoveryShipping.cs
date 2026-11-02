@@ -6,6 +6,7 @@ using System.Net;
 using System.Reflection;
 using System.Text.Json;
 using StardewAI.Contracts.Training;
+using StardewAI.RuntimePrimitives;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
@@ -46,7 +47,9 @@ public sealed partial class ModEntry : Mod
                 : startLocationId;
             TentAnchor = tentAnchor;
             StartMenuOpen = Game1.activeClickableMenu is not null;
-            MaxTicks = Math.Max(2400, path.Count * 90 + 2400);
+            MaxOverallTicks = checked(
+                EndOfNightTransactionPolicy.MaximumOverallTicks +
+                path.Count * 90);
             BedStepLastPosition = Game1.player.Position;
         }
 
@@ -93,7 +96,9 @@ public sealed partial class ModEntry : Mod
         public int PostSleepLevelUpInputWaitTicks { get; set; }
         public int PostSleepLevelUpInputAttempts { get; set; }
         public int ElapsedTicks { get; set; }
-        public int MaxTicks { get; }
+        public int MaxOverallTicks { get; }
+        public string LastTransitionKey { get; set; } = string.Empty;
+        public int TransitionTicks { get; set; }
         public ShipSummaryClosePhase SummaryPhase { get; set; }
         public int SummaryPhaseStartTick { get; set; }
         public int SummaryCloseRetries { get; set; }

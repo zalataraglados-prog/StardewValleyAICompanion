@@ -37,6 +37,13 @@ namespace StardewAI.Core.OptionRegistry
                 StringComparison.OrdinalIgnoreCase);
             if (ActiveMenuOpenForCandidate(snapshot))
             {
+                var professionInputSettle =
+                    LevelUpProfessionInputSettleCandidate(snapshot);
+                if (professionInputSettle is not null)
+                {
+                    candidates.Add(professionInputSettle);
+                }
+
                 var closeMenuReasons = CloseMenuCandidateBlockReasons(snapshot);
                 var closeMenuParameters = new List<SmallModelActionParameter>
                 {
@@ -49,7 +56,6 @@ namespace StardewAI.Core.OptionRegistry
                         "interaction_kind",
                         "incubator_birth_message"));
                 }
-                closeMenuParameters.AddRange(LevelUpMenuRecoveryParameters(snapshot));
                 candidates.Add(new EventCandidate
                 {
                     CandidateId = "recovery:close_blocking_menu",
@@ -109,7 +115,10 @@ namespace StardewAI.Core.OptionRegistry
                 var bedX = homeContext.HasValue && HasNumber(homeContext.Value, "bed_tile_x") ? ReadInt(homeContext.Value, "bed_tile_x") : 0;
                 var bedY = homeContext.HasValue && HasNumber(homeContext.Value, "bed_tile_y") ? ReadInt(homeContext.Value, "bed_tile_y") : 0;
                 var bedTileHasBed = homeContext.HasValue && ReadBool(homeContext.Value, "bed_tile_has_bed") == true;
-                var bedStandTile = currentLocationIsHome ? FindBestStandTile(snapshot, bedX, bedY) : null;
+                var bedStandTile = currentLocationIsHome
+                    ? Infrastructure.NativeSleepTargetProjection
+                        .SelectApproachTile(snapshot, bedX, bedY)
+                    : null;
                 var sleepImmediatelyBlocks = new List<string>();
                 EventCandidate? recoveryRouteAction = null;
                 if (!homeContext.HasValue || string.IsNullOrWhiteSpace(homeLocation))
@@ -138,15 +147,10 @@ namespace StardewAI.Core.OptionRegistry
                     }
                     else
                     {
-                        sleepImmediatelyBlocks.AddRange(CompilerProbeBlockingReasons(snapshot, new OptionAvailabilityCandidate
-                        {
-                            OptionId = "exploration.visit_location",
-                            Parameters = new[]
-                            {
-                                Parameter("target_tile_x", bedStandTile.X.ToString()),
-                                Parameter("target_tile_y", bedStandTile.Y.ToString())
-                            }
-                        }));
+                        sleepImmediatelyBlocks.AddRange(
+                            SleepApproachCompilerBlockingReasons(
+                                snapshot,
+                                bedStandTile));
                     }
                 }
                 else
@@ -233,7 +237,10 @@ namespace StardewAI.Core.OptionRegistry
                 var bedX = homeContext.HasValue && HasNumber(homeContext.Value, "bed_tile_x") ? ReadInt(homeContext.Value, "bed_tile_x") : 0;
                 var bedY = homeContext.HasValue && HasNumber(homeContext.Value, "bed_tile_y") ? ReadInt(homeContext.Value, "bed_tile_y") : 0;
                 var bedTileHasBed = homeContext.HasValue && ReadBool(homeContext.Value, "bed_tile_has_bed") == true;
-                var bedStandTile = currentLocationIsHome ? FindBestStandTile(snapshot, bedX, bedY) : null;
+                var bedStandTile = currentLocationIsHome
+                    ? Infrastructure.NativeSleepTargetProjection
+                        .SelectApproachTile(snapshot, bedX, bedY)
+                    : null;
                 var returnHomeBlocks = new List<string>();
                 EventCandidate? recoveryRouteAction = null;
                 if (!homeContext.HasValue || string.IsNullOrWhiteSpace(homeLocation))
@@ -262,15 +269,10 @@ namespace StardewAI.Core.OptionRegistry
                     }
                     else
                     {
-                        returnHomeBlocks.AddRange(CompilerProbeBlockingReasons(snapshot, new OptionAvailabilityCandidate
-                        {
-                            OptionId = "exploration.visit_location",
-                            Parameters = new[]
-                            {
-                                Parameter("target_tile_x", bedStandTile.X.ToString()),
-                                Parameter("target_tile_y", bedStandTile.Y.ToString())
-                            }
-                        }));
+                        returnHomeBlocks.AddRange(
+                            SleepApproachCompilerBlockingReasons(
+                                snapshot,
+                                bedStandTile));
                     }
                 }
                 else
@@ -339,6 +341,120 @@ namespace StardewAI.Core.OptionRegistry
             }
 
             return candidates.ToArray();
+        }
+
+        private string[] SleepApproachCompilerBlockingReasons(
+            SnapshotEnvelope snapshot,
+            Infrastructure.NativeSleepApproachTile approach)
+        {
+            if (approach.IsNativeSleepTouchTile)
+            {
+                return Array.Empty<string>();
+            }
+
+            return CompilerProbeBlockingReasons(
+                snapshot,
+                new OptionAvailabilityCandidate
+                {
+                    OptionId = "exploration.visit_location",
+                    Parameters = new[]
+                    {
+                        Parameter("target_tile_x", approach.X.ToString()),
+                        Parameter("target_tile_y", approach.Y.ToString())
+                    }
+                });
+        }
+
+        private static EventCandidate? LevelUpProfessionInputSettleCandidate(
+            SnapshotEnvelope snapshot)
+        {
+            if (!string.Equals(
+                    ActiveMenuTypeForCandidate(snapshot),
+                    "LevelUpMenu",
+                    StringComparison.Ordinal))
+            {
+                return null;
+            }
+
+            var state = ReadStateFieldValue(
+                snapshot,
+                "menus",
+                "menu_specific_state");
+            if (!state.HasValue ||
+                state.Value.ValueKind != JsonValueKind.Object ||
+                !string.Equals(
+                    ReadString(state.Value, "kind"),
+                    "level_up",
+                    StringComparison.Ordinal) ||
+                ReadBool(state.Value, "reflection_fields_complete") != true ||
+                ReadBool(state.Value, "is_active") != true ||
+                ReadBool(state.Value, "is_profession_chooser") != true ||
+                ReadBool(state.Value, "information_up") != true ||
+                ReadBool(state.Value, "can_receive_input") != false ||
+                !HasNumber(state.Value, "timer_before_start") ||
+                !HasNumber(state.Value, "current_skill") ||
+                !HasNumber(state.Value, "current_level") ||
+                !state.Value.TryGetProperty(
+                    "profession_choices",
+                    out var choices) ||
+                choices.ValueKind != JsonValueKind.Array)
+            {
+                return null;
+            }
+
+            var timerBeforeStart = ReadInt(state.Value, "timer_before_start");
+            var choiceIds = choices.EnumerateArray()
+                .Where(row =>
+                    row.ValueKind == JsonValueKind.Object &&
+                    row.TryGetProperty("profession_id", out var id) &&
+                    id.TryGetInt32(out _))
+                .Select(row => row.GetProperty("profession_id").GetInt32())
+                .Distinct()
+                .OrderBy(id => id)
+                .ToArray();
+            if (timerBeforeStart is < 1 or > 250 || choiceIds.Length != 2)
+            {
+                return null;
+            }
+
+            var skill = ReadInt(state.Value, "current_skill");
+            var level = ReadInt(state.Value, "current_level");
+            var waitTicks = Math.Clamp(
+                (timerBeforeStart + 15) / 16 + 1,
+                1,
+                30);
+            var choiceIdentity = string.Join(",", choiceIds);
+            return new EventCandidate
+            {
+                CandidateId =
+                    $"recovery:wait_for_level_up_profession_input:{skill}:{level}:{choiceIdentity}",
+                Kind =
+                    StageOneMandatoryMenuRecovery.ProfessionInputSettleKind,
+                Available = true,
+                LocationId = ReadStateFieldString(
+                    snapshot,
+                    "player",
+                    "location_id"),
+                ExpectedEffect =
+                    "level_up_menu.can_receive_input=true;fresh_snapshot_replan_required=true",
+                EstimatedTicks = waitTicks,
+                EnergyCost = 0,
+                AvailabilityClass =
+                    "native_level_up_profession_input_settle_wait",
+                Parameters = new[]
+                {
+                    Parameter("execution_option_id", "executor.wait_ticks"),
+                    Parameter("wait_ticks", waitTicks.ToString()),
+                    Parameter("profession_input_settle_skill", skill.ToString()),
+                    Parameter("profession_input_settle_level", level.ToString()),
+                    Parameter(
+                        "profession_input_settle_choice_ids",
+                        choiceIdentity),
+                    Parameter(
+                        "profession_input_settle_timer_before_start_ms",
+                        timerBeforeStart.ToString())
+                }
+            };
         }
 
         private static EventCandidate RecoveryRefreshCandidate(SnapshotEnvelope snapshot)
@@ -467,46 +583,6 @@ namespace StardewAI.Core.OptionRegistry
                 BlockReasons = repair.BlockReasons,
                 Parameters = parameters.ToArray()
             };
-        }
-
-        private static SmallModelActionParameter[] LevelUpMenuRecoveryParameters(SnapshotEnvelope snapshot)
-        {
-            if (!string.Equals(ActiveMenuTypeForCandidate(snapshot), "LevelUpMenu", StringComparison.Ordinal))
-            {
-                return Array.Empty<SmallModelActionParameter>();
-            }
-
-            var state = ReadStateFieldValue(snapshot, "menus", "menu_specific_state");
-            if (!state.HasValue ||
-                state.Value.ValueKind != JsonValueKind.Object ||
-                !string.Equals(ReadString(state.Value, "kind"), "level_up", StringComparison.Ordinal) ||
-                ReadBool(state.Value, "is_profession_chooser") != true ||
-                !state.Value.TryGetProperty("profession_choices", out var choices) ||
-                choices.ValueKind != JsonValueKind.Array)
-            {
-                return Array.Empty<SmallModelActionParameter>();
-            }
-
-            var choiceIds = choices.EnumerateArray()
-                .Where(row => row.TryGetProperty("profession_id", out var id) && id.TryGetInt32(out _))
-                .Select(row => row.GetProperty("profession_id").GetInt32())
-                .Distinct()
-                .ToArray();
-            var preferred = PreferredGrandpaPerfectionProfession(choiceIds);
-            return preferred.HasValue
-                ? new[]
-                {
-                    Parameter("profession_choice_id", preferred.Value.ToString()),
-                    Parameter("profession_choice_source", "baseline_grandpa_perfection_policy_v1")
-                }
-                : Array.Empty<SmallModelActionParameter>();
-        }
-
-        private static int? PreferredGrandpaPerfectionProfession(IReadOnlyCollection<int> choices)
-        {
-            var preferredOrder = new[] { 1, 4, 6, 8, 13, 16, 18, 21, 24, 26 };
-            return preferredOrder.Cast<int?>()
-                .FirstOrDefault(choice => choice.HasValue && choices.Contains(choice.Value));
         }
 
     }

@@ -206,6 +206,12 @@ namespace StardewAI.Core.Training
                     {
                         urgencySignal = 0.3;
                     }
+                    if (candidate.Kind ==
+                        StageOneMandatoryMenuRecovery
+                            .ProfessionInputSettleKind)
+                    {
+                        urgencySignal = 0.29;
+                    }
                     if (candidate.Kind == "choose_profession")
                     {
                         var preferenceRank = ParseInt(candidate.ExpectedEffect, "baseline_preference_rank=") ?? 99;
@@ -420,8 +426,12 @@ namespace StardewAI.Core.Training
         }
 
         private static bool IsMandatoryMenuRecovery(string kind) =>
-            kind is "recovery_close_menu" or
-                "recovery_claim_fishing_item_grab_reward";
+            (kind is "recovery_close_menu" or
+                "recovery_claim_fishing_item_grab_reward") ||
+            string.Equals(
+                kind,
+                StageOneMandatoryMenuRecovery.ProfessionInputSettleKind,
+                StringComparison.Ordinal);
 
         private static bool CanEnterTimeline(EventCandidate candidate)
         {

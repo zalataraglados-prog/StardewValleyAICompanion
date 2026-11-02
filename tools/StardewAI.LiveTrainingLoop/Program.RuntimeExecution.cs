@@ -404,7 +404,22 @@ static partial class Program
 
             var itemSemanticKey = QueueReplanFilter.SemanticQueueItemKey(item);
             var effectiveStateHash = currentStateHash;
-            var executionRequest = BuildExecutionRequest(options, item, currentStateHash, itemQueueId);
+            var sourcePlanningOptionId = string.Equals(
+                    ReadString(item, "runtime_priority_interrupt"),
+                    "story_event",
+                    StringComparison.Ordinal)
+                ? "story.advance_event"
+                : selectedQueueDecision is null
+                    ? string.IsNullOrWhiteSpace(options.ExecutorOptionId)
+                        ? ReadString(item, "option_id")
+                        : options.ExecutorOptionId
+                    : selectedQueueDecision.CandidateAt(selectedQueueIndex).OptionId;
+            var executionRequest = BuildExecutionRequest(
+                options,
+                item,
+                currentStateHash,
+                itemQueueId,
+                sourcePlanningOptionId);
             var request = JsonSerializer.Serialize(executionRequest, JsonOptions);
             var execution = await PostJsonStringAsync(executorHttp, options.ExecutorUrl + options.ExecutorEndpointPath, request);
             attemptedCount++;

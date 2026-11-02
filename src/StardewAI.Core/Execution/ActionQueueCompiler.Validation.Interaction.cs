@@ -37,6 +37,7 @@ namespace StardewAI.Core.Execution
                 action.OptionId == "executor.advance_story_event_minigame" ||
                 IsBoundedLetterViewerSettleWait(action, snapshot) ||
                 IsBoundedShopMenuReadinessWait(action, snapshot) ||
+                 IsBoundedLevelUpMenuInputSettleWait(action, snapshot) ||
                 (action.OptionId == "executor.sleep" &&
                     string.Equals(
                         ReadParameter(action, "sleep_resume_mode"),
@@ -146,6 +147,124 @@ namespace StardewAI.Core.Execution
                     snapshot,
                     "continuation.",
                     out _);
+        }
+
+        private static bool IsBoundedLevelUpMenuInputSettleWait(
+            SmallModelAction action,
+            SnapshotEnvelope snapshot)
+        {
+            if (!string.Equals(
+                    action.OptionId,
+                    "executor.wait_ticks",
+                    StringComparison.Ordinal) ||
+                !int.TryParse(
+                    ReadParameter(action, "wait_ticks"),
+                    NumberStyles.Integer,
+                    CultureInfo.InvariantCulture,
+                    out var waitTicks) ||
+                waitTicks is < 1 or > 30 ||
+                !HasExactActionParameter(
+                    action,
+                    "precondition",
+                    "level_up_menu_open=true") ||
+                !HasExactActionParameter(
+                    action,
+                    "precondition",
+                    "level_up_menu_profession_chooser=true") ||
+                !HasExactActionParameter(
+                    action,
+                    "precondition",
+                    "level_up_menu_information_up=true") ||
+                !HasExactActionParameter(
+                    action,
+                    "precondition",
+                    "level_up_menu_can_receive_input=false") ||
+                !HasExactActionParameter(
+                    action,
+                    "safety_constraint",
+                    "bounded_native_level_up_menu_input_settle_wait") ||
+                !HasExactActionParameter(
+                    action,
+                    "safety_constraint",
+                    "explicit_profession_choice_continuation_preserved") ||
+                !string.Equals(
+                    ActiveMenuType(snapshot),
+                    "LevelUpMenu",
+                    StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            var state = ReadStateFieldValue(
+                snapshot,
+                "menus",
+                "menu_specific_state");
+            if (!state.HasValue ||
+                state.Value.ValueKind != JsonValueKind.Object ||
+                !string.Equals(
+                    ReadString(state.Value, "kind"),
+                    "level_up",
+                    StringComparison.Ordinal) ||
+                ReadBool(state.Value, "reflection_fields_complete") != true ||
+                ReadBool(state.Value, "is_active") != true ||
+                ReadBool(state.Value, "is_profession_chooser") != true ||
+                ReadBool(state.Value, "information_up") != true ||
+                ReadBool(state.Value, "can_receive_input") != false ||
+                !state.Value.TryGetProperty(
+                    "timer_before_start",
+                    out var timerBeforeStartElement) ||
+                !timerBeforeStartElement.TryGetInt32(out var timerBeforeStart) ||
+                !state.Value.TryGetProperty(
+                    "current_skill",
+                    out var currentSkillElement) ||
+                !currentSkillElement.TryGetInt32(out var currentSkill) ||
+                !state.Value.TryGetProperty(
+                    "current_level",
+                    out var currentLevelElement) ||
+                !currentLevelElement.TryGetInt32(out var currentLevel) ||
+                !state.Value.TryGetProperty(
+                    "profession_choices",
+                    out var choices) ||
+                choices.ValueKind != JsonValueKind.Array)
+            {
+                return false;
+            }
+
+            var choiceIds = choices.EnumerateArray()
+                .Where(row =>
+                    row.ValueKind == JsonValueKind.Object &&
+                    row.TryGetProperty("profession_id", out var id) &&
+                    id.TryGetInt32(out _))
+                .Select(row => row.GetProperty("profession_id").GetInt32())
+                .Distinct()
+                .OrderBy(id => id)
+                .ToArray();
+            return timerBeforeStart is >= 1 and <= 250 &&
+                choiceIds.Length == 2 &&
+                string.Equals(
+                    ReadParameter(
+                        action,
+                        "profession_input_settle_skill"),
+                    currentSkill.ToString(CultureInfo.InvariantCulture),
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    ReadParameter(
+                        action,
+                        "profession_input_settle_level"),
+                    currentLevel.ToString(CultureInfo.InvariantCulture),
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    ReadParameter(
+                        action,
+                        "profession_input_settle_choice_ids"),
+                    string.Join(",", choiceIds),
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    ReadParameter(
+                        action,
+                        "profession_input_settle_timer_before_start_ms"),
+                    timerBeforeStart.ToString(CultureInfo.InvariantCulture),
+                    StringComparison.Ordinal);
         }
 
         private static bool TryFindSafetyTimerDeferredPurchaseCandidate(
@@ -806,18 +925,11 @@ namespace StardewAI.Core.Execution
 
         private static SleepStandTile? FindBestSleepStandTile(SnapshotEnvelope snapshot, int bedX, int bedY)
         {
-            var playerX = ReadStateFieldIntOptional(snapshot, "player", "tile_x") ?? bedX;
-            var playerY = ReadStateFieldIntOptional(snapshot, "player", "tile_y") ?? bedY;
-            return new[]
-                {
-                    new SleepStandTile(bedX + 1, bedY),
-                    new SleepStandTile(bedX - 1, bedY),
-                    new SleepStandTile(bedX, bedY + 1),
-                    new SleepStandTile(bedX, bedY - 1)
-                }
-                .Where(tile => SleepStandTileReachable(snapshot, tile.X, tile.Y))
-                .OrderBy(tile => Math.Abs(playerX - tile.X) + Math.Abs(playerY - tile.Y))
-                .FirstOrDefault();
+            var approach = Infrastructure.NativeSleepTargetProjection
+                .SelectApproachTile(snapshot, bedX, bedY);
+            return approach is null
+                ? null
+                : new SleepStandTile(approach.X, approach.Y);
         }
 
         private static bool SleepStandTileReachable(SnapshotEnvelope snapshot, int targetX, int targetY)

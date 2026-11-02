@@ -899,10 +899,19 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         }
         else
         {
+            var mandatoryMenuRecovery =
+                await TryBuildStageOneMandatoryMenuRecoveryQueueAsync(
+                    http,
+                    options,
+                    iteration,
+                    snapshotJson,
+                    beforeSnapshot,
+                    lastStateHash);
             var dailyMaintenancePreemption =
                 StageOneDailyMaintenancePreemptionPolicy.Evaluate(
                     beforeSnapshot);
-            if (dailyMaintenancePreemption.ShouldPreempt &&
+            if (mandatoryMenuRecovery is null &&
+                dailyMaintenancePreemption.ShouldPreempt &&
                 activeObjectiveContinuation is not null)
             {
                 deferredObjectiveContinuationForDailyMaintenance =
@@ -910,9 +919,10 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                         activeObjectiveContinuation.ToJsonString(JsonOptions))!
                     .AsObject();
             }
-            var collectionTeacher = dailyMaintenancePreemption.ShouldPreempt
-                ? NotAttemptedStageOneCollectionTeacher()
-                : await TryBuildStageOneCollectionTeacherQueueAsync(
+            var collectionTeacher = mandatoryMenuRecovery ??
+                (dailyMaintenancePreemption.ShouldPreempt
+                    ? NotAttemptedStageOneCollectionTeacher()
+                    : await TryBuildStageOneCollectionTeacherQueueAsync(
                     http,
                     options,
                     iteration,
@@ -923,7 +933,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                     activeObjectiveContinuation:
                         activeObjectiveContinuation,
                     suppressedObjectiveContinuations:
-                        suppressedObjectiveContinuations);
+                        suppressedObjectiveContinuations));
             if (collectionTeacher.Queue is not null)
             {
                 queue = collectionTeacher.Queue;
