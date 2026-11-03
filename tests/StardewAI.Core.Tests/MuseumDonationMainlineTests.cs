@@ -125,6 +125,25 @@ public sealed partial class MuseumDonationMainlineTests
         Assert.DoesNotContain("achievements.Add", source, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void FixtureTargetUsesNativeRegistryAndDonationEligibilityBeforeMutation()
+    {
+        var source = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.RuntimeTestHarness", "ModEntry.MuseumFixture.cs"));
+
+        Assert.Contains("string.IsNullOrWhiteSpace(request.QualifiedItemId) ? \"(O)96\" : request.QualifiedItemId", source, StringComparison.Ordinal);
+        Assert.Contains("ItemRegistry.Create(targetQualifiedId, 2, allowNull: true)", source, StringComparison.Ordinal);
+        Assert.Contains("targetItem.QualifiedItemId != targetQualifiedId", source, StringComparison.Ordinal);
+        Assert.Contains("LibraryMuseum.IsItemSuitableForDonation(targetQualifiedId, checkDonatedItems: false)", source, StringComparison.Ordinal);
+        Assert.Contains("itemId != targetItem.ItemId", source, StringComparison.Ordinal);
+        Assert.Contains("Game1.player.Items[slot] = targetItem", source, StringComparison.Ordinal);
+        var targetCheck = source.IndexOf("museum_fixture_target_item_invalid", StringComparison.Ordinal);
+        var clear = source.IndexOf("museum.museumPieces.Clear()", StringComparison.Ordinal);
+        var emptyTiles = source.IndexOf("var donationTiles = MuseumDonationTiles(museum)", StringComparison.Ordinal);
+        Assert.True(targetCheck >= 0 && targetCheck < clear && clear < emptyTiles,
+            "Native tile eligibility excludes occupied displays, so enumerate after the explicit fixture clear, not before it.");
+    }
+
     internal static SnapshotEnvelope Snapshot(int donatedBefore, int total)
     {
         var donatedAfter = donatedBefore + 1;

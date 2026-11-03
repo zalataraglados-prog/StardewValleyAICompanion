@@ -76,6 +76,47 @@ directory would break blob resolution and duplicate storage.
 
 ## Verification And Remaining Work
 
+### Native Acquisition Boundary Preparation
+
+`Invoke-RuntimeRustyKeyThresholdSmoke.ps1 -SupplyMode current_geode` reuses the
+existing isolated-save copy, exact mod allowlist, hidden/muted startup and owned
+process cleanup, then invokes `Invoke-RuntimeRustyKeyRollingSupply.ps1`. Default
+`held_item` mode preserves the old fixed-item threshold smoke. Current-geode mode
+requires explicit requirement inventory, acquisition lowering, Master Angler
+window index, movement calibration and fishing forecast manifest paths before
+any startup. Builds bind the selected E runtime, not an implicit F installation.
+
+The setup helper first asks the existing geode fixture for a current native
+prediction. It chooses no hardcoded output: the output must be exact, persistent,
+present in the live museum denominator and bound to a native acquisition source.
+The existing museum fixture now accepts `qualified_item_id` (legacy default
+`(O)96`), validates native registry/eligibility before mutation, and excludes that
+exact item while setting 59 donations. Native donation-tile eligibility excludes
+occupied pieces, so the fixture still enumerates tiles after its explicit clear.
+
+The original geode fixture is then called again with the same input/counters,
+clearing the temporary donated-item inventory. Before measurement, the helper
+requires an unchanged save/actor/version, the same predicted output, 59 donations,
+an undonated target, and zero target quantity in inventory. Raw requests, replies
+and snapshots are retained; the starting snapshot is hash-bound. Unsupported or
+drifted predictions stop without rerolling a measured action. Geode input and
+counter parameters configure this explicit test boundary, not a learned policy.
+
+All fixture mutation ends before the original rolling controller starts. No
+script-generated crack-geode request or second acquisition executor is added.
+Even if acquisition, donation and key observation complete, the outer result is
+only `runtime_control_observation_pending_independent_native_trace_review` until
+the retained canonical custody/consumption and native receipts are reviewed.
+It does not prove acquisition of 60 items, pre-Year-3 completion or criterion
+partitions. Boundary setup itself explicitly proves no native acquisition.
+
+The preparation transport/guard tests cover 24 positive and rejection cases,
+including two different predicted targets, unremoved inventory, already-donated
+or mistyped state, missing source, prediction/counter/save/actor/version drift,
+setup rejection, replay, missing isolation and all five startup input omissions.
+Harness construction and the targeted source-order guard are separately checked;
+none of these substitute for a real native run after quiet restrictions lift.
+
 The real public CLI regression now includes 22 fresh-control and 20 support-rebind
 checks, covering current intent/ranking and ordinary control commit-receipt CLIs.
 The 18 pre-commit step checks remain. `Test-RuntimeRustyKeyRolling.ps1` reuses those

@@ -19,6 +19,29 @@ public sealed partial class ModEntry
             return BlockedWithPrimitive(request, "debug_setup_museum_donation", "museum.fixture=ready", "museum=missing", "museum_fixture_location_missing");
         }
 
+        var targetQualifiedId = string.IsNullOrWhiteSpace(request.QualifiedItemId) ? "(O)96" : request.QualifiedItemId;
+        var targetItem = ItemRegistry.Create(targetQualifiedId, 2, allowNull: true);
+        if (targetItem is null || targetItem.QualifiedItemId != targetQualifiedId ||
+            !LibraryMuseum.IsItemSuitableForDonation(targetQualifiedId, checkDonatedItems: false))
+        {
+            return BlockedWithPrimitive(request, "debug_setup_museum_donation", "museum.fixture=ready", "target_item=invalid", "museum_fixture_target_item_invalid");
+        }
+        var slot = request.InventorySlotIndex ?? 11;
+        if (slot < 0 || slot >= Game1.player.Items.Count)
+        {
+            return BlockedWithPrimitive(request, "debug_setup_museum_donation", "museum.fixture=ready", "inventory_slot=invalid", "museum_fixture_inventory_slot_invalid");
+        }
+        var donatedIds = Game1.objectData.Keys
+            .Where(itemId => itemId != targetItem.ItemId && LibraryMuseum.IsItemSuitableForDonation("(O)" + itemId, checkDonatedItems: false))
+            .OrderBy(itemId => int.TryParse(itemId, out var numeric) ? numeric : int.MaxValue)
+            .ThenBy(itemId => itemId, StringComparer.Ordinal)
+            .Take(request.ExpectedDonatedCountBefore.Value)
+            .ToArray();
+        if (donatedIds.Length != request.ExpectedDonatedCountBefore.Value)
+        {
+            return BlockedWithPrimitive(request, "debug_setup_museum_donation", "museum.fixture=ready", "fixture_catalog=insufficient", "museum_fixture_catalog_or_tiles_insufficient");
+        }
+
         if (Game1.activeClickableMenu is not null)
         {
             Game1.exitActiveMenu();
@@ -29,16 +52,9 @@ public sealed partial class ModEntry
             mutex.ReleaseLock();
         }
 
-        const string targetQualifiedId = "(O)96";
         museum.museumPieces.Clear();
         var donationTiles = MuseumDonationTiles(museum);
-        var donatedIds = Game1.objectData.Keys
-            .Where(itemId => itemId != "96" && LibraryMuseum.IsItemSuitableForDonation("(O)" + itemId))
-            .OrderBy(itemId => int.TryParse(itemId, out var numeric) ? numeric : int.MaxValue)
-            .ThenBy(itemId => itemId, StringComparer.Ordinal)
-            .Take(request.ExpectedDonatedCountBefore.Value)
-            .ToArray();
-        if (donationTiles.Length < request.ExpectedDonatedCountBefore.Value + 1 || donatedIds.Length != request.ExpectedDonatedCountBefore.Value)
+        if (donationTiles.Length < request.ExpectedDonatedCountBefore.Value + 1)
         {
             return BlockedWithPrimitive(request, "debug_setup_museum_donation", "museum.fixture=ready", "fixture_catalog=insufficient", "museum_fixture_catalog_or_tiles_insufficient");
         }
@@ -69,12 +85,7 @@ public sealed partial class ModEntry
             Game1.player.addQuest("24");
         }
 
-        var slot = request.InventorySlotIndex ?? 11;
-        if (slot < 0 || slot >= Game1.player.Items.Count)
-        {
-            return BlockedWithPrimitive(request, "debug_setup_museum_donation", "museum.fixture=ready", "inventory_slot=invalid", "museum_fixture_inventory_slot_invalid");
-        }
-        Game1.player.Items[slot] = ItemRegistry.Create(targetQualifiedId, 2);
+        Game1.player.Items[slot] = targetItem;
 
         var actionTile = MuseumGuntherActionTile(museum);
         var standTile = actionTile.HasValue ? MuseumFixtureStandTile(museum, actionTile.Value) : null;
@@ -119,7 +130,7 @@ public sealed partial class ModEntry
             PrimitiveKind = "debug_setup_museum_donation",
             PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
             PrimitiveVerificationReasons = verified
-                ? new[] { "isolated_museum_fixture_installed", "donated_count=" + request.ExpectedDonatedCountBefore.Value, "quest24_present=" + (quest is not null).ToString().ToLowerInvariant() }
+                ? new[] { "isolated_museum_fixture_installed", "target_qualified_item_id=" + targetQualifiedId, "donated_count=" + request.ExpectedDonatedCountBefore.Value, "quest24_present=" + (quest is not null).ToString().ToLowerInvariant() }
                 : new[] { "museum_fixture_projection_mismatch" },
             RequestedEffect = "museum.fixture=ready",
             ObservedEffect = "donated_count=" + museum.museumPieces.Count() + ";slot=" + slot + ";location=" + fixtureLocation.NameOrUniqueName,
