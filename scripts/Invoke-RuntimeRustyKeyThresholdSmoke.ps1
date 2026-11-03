@@ -6,12 +6,32 @@ param(
     [string] $RunId = ("rusty-key-threshold-" + (Get-Date -Format "yyyyMMdd-HHmmss")),
     [string] $OutputDirectory = "artifacts\runtime-rusty-key-threshold",
     [int] $BackendPort = 5132,
+    [ValidateSet('held_item', 'current_geode')] [string] $SupplyMode = 'held_item',
+    [string] $RequirementInventoryPath = '',
+    [string] $AcquisitionLoweringPath = '',
+    [string] $MasterAnglerWindowsPath = '',
+    [string] $RouteTimingPath = '',
+    [string] $FishingForecastManifestPath = '',
+    [string] $GeodeQualifiedItemId = '(O)275',
+    [ValidateRange(0, 2147483647)] [int] $GeodesCrackedBefore = 42,
     [switch] $NoBuild
 )
 
 $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "lib\RuntimeEvidenceCommon.ps1")
 . (Join-Path $PSScriptRoot "lib\RuntimeRustyKeyEvidence.ps1")
+. (Join-Path $PSScriptRoot "lib\RuntimeRustyKeyGeodeBoundary.ps1")
+$acquisitionInputs = @{}
+if ($SupplyMode -eq 'current_geode') {
+    foreach ($name in @('RequirementInventoryPath','AcquisitionLoweringPath','MasterAnglerWindowsPath',
+            'RouteTimingPath','FishingForecastManifestPath')) {
+        $path = [string](Get-Variable -Name $name -ValueOnly)
+        if ([string]::IsNullOrWhiteSpace($path)) { throw "Current geode supply requires explicit $name." }
+        $path = Resolve-RuntimeEvidenceInputPath -ProjectRoot $ProjectRoot -Path $path
+        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "Acquisition source is missing: $path" }
+        $acquisitionInputs[$name] = $path
+    }
+}
 $runRoot = Join-Path (Resolve-RuntimeEvidenceInputPath `
     -ProjectRoot $ProjectRoot -Path $OutputDirectory) $RunId
 if (Test-Path -LiteralPath $runRoot) { throw "Run already exists: $runRoot" }
@@ -33,12 +53,17 @@ if (Get-Process -Name StardewModdingAPI -ErrorAction SilentlyContinue) {
     throw "A game is running; refusing to attach or replace its Mods."
 }
 if (-not $NoBuild) {
-    foreach ($project in @(
+    $projects = @(
         "src\StardewAI.Backend\StardewAI.Backend.csproj",
         "tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj"
-    )) {
+    )
+    if ($SupplyMode -eq 'current_geode') {
+        $projects += 'experiments\StardewAI.GoalConditionedBootstrap\StardewAI.GoalConditionedBootstrap.csproj'
+    }
+    foreach ($project in $projects) {
         & dotnet build (Join-Path $ProjectRoot $project) -c Release `
-            --no-restore --nologo -m:1 /nodeReuse:false
+            --no-restore --nologo -m:1 /nodeReuse:false "-p:GamePath=$gameDirectory" `
+            -p:EnableModDeploy=false -p:EnableModZip=false -p:UseSharedCompilation=false
         if ($LASTEXITCODE -ne 0) { throw "Build failed: $project" }
     }
 }
@@ -116,6 +141,40 @@ try {
             throw "Opening-hour boundary fixture failed."
         }
         $initial = (Get-FreshRuntimeSnapshot -Url $snapshotUrl -TimeoutSeconds 60).Value
+    }
+    if ($SupplyMode -eq 'current_geode') {
+        $context = New-RuntimeQueueContext -LoopDll $loopDll -ArtifactDirectory $runRoot `
+            -BackendUrl $backendUrl -SnapshotUrl $snapshotUrl -SnapshotProfile full `
+            -ExecutorRoot $executorUrl -ProductUrl $executorUrl -RunId $RunId -IsolatedSavesPath $isolatedSaves
+        $boundary = Initialize-RuntimeRustyKeyGeodeBoundary -Context $context -Directory (Join-Path $runRoot 'geode-boundary') `
+            -GeodeQualifiedItemId $GeodeQualifiedItemId -GeodesCrackedBefore $GeodesCrackedBefore
+        # No further fixtures are allowed below this measured-runtime boundary.
+        $rollingOutput = Join-Path $runRoot 'rolling'
+        & (Join-Path $PSScriptRoot 'Invoke-RuntimeRustyKeyRollingSupply.ps1') @acquisitionInputs `
+            -ProjectRoot $ProjectRoot -OutputDirectory $rollingOutput -RunId $RunId `
+            -BackendUrl $backendUrl -SnapshotUrl $snapshotUrl -ExecutorUrl $executorUrl `
+            -IsolatedSavesPath $isolatedSaves -ExecutionTarget runtime_harness | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw "Rusty Key rolling acquisition stopped ($LASTEXITCODE); retain diagnostics." }
+        $rollingSummaryPath = Join-Path (Join-Path $rollingOutput $RunId) 'summary.json'
+        $rolling = Get-Content -LiteralPath $rollingSummaryPath -Raw | ConvertFrom-Json
+        if ($rolling.status -cne 'native_key_observed' -or $rolling.input_identity_verified -ne $true -or
+            @($rolling.steps | Where-Object { $_.kind -ceq 'terminal_acquisition' }).Count -eq 0 -or
+            @($rolling.steps | Where-Object { $_.kind -ceq 'held_donation' }).Count -eq 0) {
+            throw 'Rolling boundary did not include acquisition, donation and an actual key observation.'
+        }
+        if ((Get-DirectoryContentHash -Path $sourceSave) -cne $sourceHash) { throw 'Original isolated baseline save changed.' }
+        $summary = [ordered]@{
+            schema_version = 'stardewai.runtime_rusty_key_acquisition_smoke.v1'; status = 'native_key_observed'
+            run_id = $RunId; project_head = [string](& git -C $ProjectRoot rev-parse HEAD)
+            fixture_boundary = $boundary; rolling_summary_path = $rollingSummaryPath
+            source_save_preserved = $true; source_save_sha256 = $sourceHash
+            isolated_mods = $modIdentity; candidate_binary_sha256 = $binaryIdentity
+            evidence_scope = 'runtime_control_observation_pending_independent_native_trace_review'
+            proves_acquisition_of_60_items = $false; proves_full_criterion = $false; formal_training_started = $false
+        }
+        Write-JsonFile -Path (Join-Path $runRoot 'summary.json') -Value $summary
+        $summary | ConvertTo-Json -Depth 20
+        return
     }
     $edge = @($initial.state.locations.route_graph.value.edges | Where-Object {
         $_.from_location -eq "Town" -and $_.target_location -eq "ArchaeologyHouse" -and $_.resolved

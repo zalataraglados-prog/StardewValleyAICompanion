@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-04 原生验证入口准备：** 原 threshold smoke 已能选择 `current_geode`，在隔离副本中按实时预测准备 59 件边界并确保目标库存为零，再调用原 rolling 控制器；旧固定物品模式保留。24 项无游戏准备/预检通过，Harness 构建通过，但完整原生获取/保管/捐赠轨迹仍待静默解除后运行和独立复核。当前唯一 primary、计数和正式训练锁均不变。
+
 > **2026-11-04 日历模式修正：** Rusty Key 受控入口已由静态日历改为共享 `current_sources`：保留快照绑定的原生开晶球等来源、完整分母与原下游校验，仅明确阻塞未请求当前分母的 CC 路线。14 项日历和 13 项真实源流水线/编排检查通过；先前商店例通过不能证明 live-only 来源完整。本次无游戏、无新原生闭环或覆盖提升；唯一 primary 和下一步不变。见 [运行合同](rusty-key-runtime-rolling.md)。
 
 > **2026-11-04 受控 runtime 接线：** 新独立校准入口已消费同一控制生产器/提交前判定，并调用原 HTTP/queue/settlement/fresh-replan 链；未新增动作执行器、账本或 Teacher。当前排名由原源绑定工厂生成，控制 support 提交回执走独立验证。已通过实际源 CLI 与合成编排检查，原控制/重绑 CLI 回归扩为 22/20；没有游戏运行，不能把受控入口当成 MOD 默认 root 集成、原生闭环或正式训练。唯一 primary 仍为 Rusty Key；下一步是该入口同版本的原生边界轨迹和失败回执恢复，后续迁移/联合时间/criterion 分区/时限仍待闭合。见 [合同](rusty-key-runtime-rolling.md)。
