@@ -60,7 +60,7 @@ these same artifacts and services, not create a parallel donation macro.
 
 ## Verification And Remaining Work
 
-`self-test-rusty-key-rolling-supply` passed 24 synthetic cases, exercising the
+`self-test-rusty-key-rolling-supply` passed 25 synthetic cases, exercising the
 real candidate/timeline/compiler and shared resource-admission code. Cases cover
 partial deficits, only one currently usable item, preserved unavailable routes,
 protected inputs, held spare units, deterministic ties, source drift, unknown

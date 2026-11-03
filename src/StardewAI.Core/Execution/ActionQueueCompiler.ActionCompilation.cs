@@ -204,7 +204,7 @@ namespace StardewAI.Core.Execution
             blocking.AddRange(ValidateFishPondManagementPlan(action, snapshot));
             blocking.AddRange(ValidateCollectAnimalProductPlan(action, snapshot));
             blocking.AddRange(ValidatePetCarePlan(action, snapshot));
-            blocking.AddRange(ValidateMuseumDonationPlan(action, snapshot, commitmentLedger));
+            blocking.AddRange(ValidateMuseumDonationPlan(action, snapshot, commitmentLedger, goalId));
             blocking.AddRange(ValidateFieldOfficeDonationPlan(action, snapshot));
             blocking.AddRange(ValidateFieldOfficeSurveyPlan(action, snapshot));
             blocking.AddRange(ValidateGourmandRequestPlan(action, snapshot));
@@ -336,6 +336,9 @@ namespace StardewAI.Core.Execution
                             ? "strategy_plan"
                         : "option_request",
                     OptionId = action.OptionId,
+                    GoalId = action.OptionId == "executor.donate_museum_item" &&
+                        action.Parameters.Any(parameter => parameter.Name == "museum_output_custody_reservation_id")
+                            ? goalId : null,
                     BehaviorCategory = option?.BehaviorCategory ?? OptionBehaviorCategories.Unknown,
                     CompilerResponsibility = option?.CompilerResponsibility ?? CompilerResponsibilities.Unknown,
                     TrainingRole = option?.TrainingRole ?? TrainingRoles.Unknown,

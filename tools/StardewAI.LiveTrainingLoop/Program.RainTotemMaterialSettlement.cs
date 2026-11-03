@@ -52,7 +52,7 @@ static partial class Program
                     executionReceiptSha256);
             if (!build.Valid || build.Request is null)
             {
-                MarkRainTotemMaterialSettlementFailed(
+                MarkMaterialReservationSettlementFailed(
                     execution,
                     build.Errors.Length == 0
                         ? ["rain_totem_material_settlement_request_invalid"]
@@ -80,7 +80,7 @@ static partial class Program
                     expectedIds,
                     StringComparer.Ordinal))
             {
-                MarkRainTotemMaterialSettlementFailed(
+                MarkMaterialReservationSettlementFailed(
                     execution,
                     ["rain_totem_material_settlement_rejected"]);
                 execution["material_reservation_settlement_response"] =
@@ -100,29 +100,11 @@ static partial class Program
         }
         catch (Exception exception)
         {
-            MarkRainTotemMaterialSettlementFailed(
+            MarkMaterialReservationSettlementFailed(
                 execution,
                 ["rain_totem_material_settlement_exception:" +
                  exception.GetType().Name]);
         }
     }
 
-    private static void MarkRainTotemMaterialSettlementFailed(
-        JsonObject execution,
-        IEnumerable<string> reasons)
-    {
-        var combined = ReadArrayStrings(
-                execution,
-                "primitive_verification_reasons")
-            .Concat(reasons)
-            .Distinct(StringComparer.Ordinal)
-            .Select(value => (JsonNode?)JsonValue.Create(value))
-            .ToArray();
-        execution["primitive_verification_status"] =
-            "reservation_settlement_failed";
-        execution["primitive_verification_reasons"] =
-            new JsonArray(combined);
-        execution["material_reservation_settlement_status"] = "failed";
-        execution["reservation_settlement_retry_required"] = true;
-    }
 }

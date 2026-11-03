@@ -113,6 +113,16 @@ public sealed partial class BackendEndpointTests
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
     }
 
+    [Fact]
+    public async Task PostedDispatchRejectsAnUnnamedParameterBeforeEvaluation()
+    {
+        using var client = factory.CreateClient();
+        var item = LocalDispatchItem("unused", "executor.donate_museum_item");
+        item.NormalizedCommand.Parameters[0].Name = null!;
+        using var response = await client.PostAsJsonAsync(DispatchUrl("local", item.QueueItemId, "unused"), item);
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+    }
+
     private static string DispatchUrl(string queueId, string itemId, string stateHash) =>
         $"/api/v1/action-queues/{queueId}/items/{itemId}/dispatch-readiness?stateHash={stateHash}";
 
@@ -131,7 +141,10 @@ public sealed partial class BackendEndpointTests
                 Parameter("commitment_ledger_id", "test-ledger"),
                 Parameter("commitment_ledger_revision", "0"),
                 Parameter("museum_donation_save_id", "Farm"),
-                Parameter("museum_donation_player_id", "123")
+                Parameter("museum_donation_player_id", "123"),
+                Parameter("inventory_slot_index", "0"),
+                Parameter("qualified_item_id", "(O)96"),
+                Parameter("expected_stack_before", "2")
             }
         }
     };

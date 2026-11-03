@@ -12,6 +12,9 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
         StrategyCommitmentLedger settled)
     {
         var reasons = new List<string>();
+        var outputIds = (request.OutputCustodyClaims ?? Array.Empty<ReservationPortfolioOutputCustodyClaim>())
+            .Select(claim => MaterialOutputCustodyContract.ReservationId(MaterialOutputCustodyContract.PortfolioId(
+                request.PortfolioId, request.RouteSourceDecisionId, claim.ConsumerOptionId, claim.QualifiedItemId))).ToArray();
         if (!settlement.Accepted ||
             (settlement.Errors?.Length ?? 0) != 0 ||
             settlement.PortfolioId != request.PortfolioId ||
@@ -24,6 +27,7 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
             !SameSet(
                 settlement.CompletedReservationIds ?? Array.Empty<string>(),
                 request.ReservationIds) ||
+            !SameSet(settlement.OutputCustodyReservationIds ?? Array.Empty<string>(), outputIds) ||
             settlement.Ledger is null ||
             !EqualJson(settlement.Ledger, settled))
         {
@@ -42,7 +46,7 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
                 row.Reason == request.FreshTerminalReceiptSha256)
             .ToArray();
         if (markers.Length != 1 ||
-            currentHistory.Length != request.ReservationIds.Length + 1)
+            currentHistory.Length != request.ReservationIds.Length + 1 + outputIds.Length * 2)
         {
             reasons.Add("route_settlement_marker_invalid");
         }
@@ -75,6 +79,14 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
                     "route_settlement_completed_claim_invalid:" +
                     reservationId);
             }
+        }
+        foreach (var outputId in outputIds)
+        {
+            var output = settled.MaterialReservations.SingleOrDefault(row => row.ReservationId == outputId);
+            if (output is null || !MaterialOutputCustodyContract.IsAuthorized(output, settled,
+                    MaterialOutputCustodyContract.MuseumConsumer, request.GoalId) ||
+                output.OutputCustody!.FreshTerminalReceiptSha256 != request.FreshTerminalReceiptSha256)
+                reasons.Add("route_settlement_output_custody_invalid:" + outputId);
         }
         if (settled.MaterialReservations.Any(row =>
                 row.Status == StrategyCommitmentStatuses.Active &&

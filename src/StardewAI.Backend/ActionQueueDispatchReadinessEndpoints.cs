@@ -28,7 +28,7 @@ internal static class ActionQueueDispatchReadinessEndpoints
             if (string.IsNullOrWhiteSpace(queueId) ||
                 string.IsNullOrWhiteSpace(queueItemId) || item.QueueItemId != queueItemId ||
                 item.NormalizedCommand is null || item.NormalizedCommand.Parameters is null ||
-                item.NormalizedCommand.Parameters.Any(row => row is null))
+                item.NormalizedCommand.Parameters.Any(row => row is null || string.IsNullOrWhiteSpace(row.Name)))
                 return Results.UnprocessableEntity(new { detail = "dispatch queue item identity or command is invalid" });
             var queue = new ActionQueueEnvelope { QueueId = queueId };
             return Evaluate(queue, item, stateHash, store, repository, service);

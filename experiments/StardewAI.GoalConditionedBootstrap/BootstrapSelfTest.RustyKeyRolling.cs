@@ -153,6 +153,29 @@ internal static partial class BootstrapSelfTest
             publicBlocked.BlockingReasons.Contains("rusty_key_rolling_acquisition_source_chain_required"),
             "The public no-stock path cannot invent an acquisition proposal without retained source axes.");
         passed.Add("public_no_stock_without_axes_blocks");
+        var custodyService = new StardewAI.Core.Strategy.ReservationPortfolioLedgerService();
+        var custodyCommit = custodyService.Commit(held.Ledger, held.Snapshot, new()
+        {
+            StateHash = held.Snapshot.StateHash, ExpectedLedgerRevision = held.Ledger.Revision,
+            PortfolioId = "rolling-custody-fixture", SourceDecisionId = "rolling-custody-fixture", GoalId = held.Inventory.GoalId
+        }, "synthetic-commit");
+        var custody = custodyService.SettleCompletedRoute(custodyCommit.Ledger, held.Snapshot, new()
+        {
+            StateHash = held.Snapshot.StateHash, ExpectedLedgerRevision = custodyCommit.Ledger!.Revision,
+            PortfolioId = "rolling-custody-fixture", RouteSourceDecisionId = "synthetic-native-route", GoalId = held.Inventory.GoalId,
+            FreshTerminalReceiptSha256 = new string('a', 64), Reason = "synthetic native acquisition",
+            OutputCustodyClaims = new[] { new ReservationPortfolioOutputCustodyClaim
+            {
+                NodeId = "player:1", SlotIndex = 0, QualifiedItemId = "(O)fixture_59", Quantity = 1,
+                ConsumerOptionId = StardewAI.Core.Strategy.MaterialOutputCustodyContract.MuseumConsumer
+            } }
+        }, "synthetic-custody");
+        Require(custody.Accepted, "Shared output custody could not be created for rolling integration: " + string.Join(",", custody.Errors));
+        var heldCustody = RustyKeyRollingSupplyProposalBuilder.Build(held.Inventory, held.Snapshot, custody.Ledger!,
+            "fixture-inventory-sha", "fixture-snapshot-sha", "fixture-custody-sha", () => throw new InvalidOperationException("held custody must not acquire again"));
+        Require(heldCustody.RollingStepReady && heldCustody.CompiledQueue!.Items.Any(item => item.NormalizedCommand.Parameters
+            .Any(parameter => parameter.Name == "museum_output_custody_reservation_id")), "Rolling producer did not reuse its own dedicated output custody.");
+        passed.Add("rolling_producer_compiles_its_dedicated_custody");
         Write(Path.Combine(root, "rusty-key-rolling-self-test.json"), new
         {
             status = "passed", passed_count = passed.Count, cases = passed,

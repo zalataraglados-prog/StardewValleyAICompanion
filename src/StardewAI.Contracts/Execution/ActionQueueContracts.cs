@@ -356,6 +356,10 @@ namespace StardewAI.Contracts.Execution
 
     public sealed class NormalizedCommand
     {
+        [JsonPropertyName("goal_id")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? GoalId { get; set; }
+
         [JsonPropertyName("command_type")]
         public string CommandType { get; set; } = "option_request";
 

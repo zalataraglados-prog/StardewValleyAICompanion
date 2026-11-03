@@ -25,6 +25,8 @@ public sealed class MaterialReservationLedgerService
             request.StateHash,
             request.ExpectedLedgerRevision);
         ValidateRequest(request, errors);
+        if (current?.MaterialReservations.Any(row => row.ReservationId == request.ReservationId && row.OutputCustody is not null) == true)
+            errors.Add("material_output_custody_cannot_be_overwritten");
 
         var graph = TryReadGraph(snapshot, errors);
         MaterialInventoryNode? node = null;
@@ -160,6 +162,8 @@ public sealed class MaterialReservationLedgerService
             request.ExpectedLedgerRevision);
         var existing = current?.MaterialReservations.FirstOrDefault(row =>
             string.Equals(row.ReservationId, reservationId, StringComparison.Ordinal));
+        if (existing?.OutputCustody is not null)
+            errors.Add("material_output_custody_requires_verified_consumption");
         if (existing is null)
         {
             errors.Add("material_reservation_not_found");

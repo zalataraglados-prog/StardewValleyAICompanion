@@ -92,6 +92,10 @@ public sealed class ReservationPortfolioRouteSettlementRequest
 
     [JsonPropertyName("reason")]
     public string Reason { get; set; } = string.Empty;
+
+    [JsonPropertyName("output_custody_claims")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public ReservationPortfolioOutputCustodyClaim[]? OutputCustodyClaims { get; set; }
 }
 
 public sealed class ReservationPortfolioRouteSettlementResult
@@ -120,10 +124,18 @@ public sealed class ReservationPortfolioRouteSettlementResult
 
     [JsonPropertyName("ledger")]
     public StrategyCommitmentLedger? Ledger { get; set; }
+
+    [JsonPropertyName("output_custody_reservation_ids")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string[]? OutputCustodyReservationIds { get; set; }
 }
 
 public sealed class ReservationPortfolioSupportingTransitionSettlementRequest
 {
+    [JsonPropertyName("consumer_option_id")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? ConsumerOptionId { get; set; }
+
     [JsonPropertyName("state_hash")]
     public string StateHash { get; set; } = string.Empty;
 

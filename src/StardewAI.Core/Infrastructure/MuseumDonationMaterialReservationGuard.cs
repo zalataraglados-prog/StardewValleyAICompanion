@@ -6,6 +6,7 @@ using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
+using StardewAI.Core.Strategy;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.Infrastructure;
@@ -53,22 +54,27 @@ internal sealed class MuseumDonationMaterialReservationGuard
             playerSlots.Add(slot.SlotIndex, slot);
     }
 
-    internal MuseumDonationMaterialReservationResult Evaluate(int slotIndex, string qualifiedItemId, int expectedStack)
+    internal MuseumDonationMaterialReservationResult Evaluate(int slotIndex, string qualifiedItemId, int expectedStack,
+        string? goalId = null)
     {
         if (ledger is null)
             return new(true, Array.Empty<string>(), Array.Empty<SmallModelActionParameter>());
         var errors = new List<string>(reasons);
         if (slotIndex < 0 || string.IsNullOrWhiteSpace(qualifiedItemId) || expectedStack < 1)
             errors.Add("museum_donation_material_target_invalid");
+        var custody = active.Where(row => row.NodeId == playerNodeId && row.SlotIndex == slotIndex &&
+                row.QualifiedItemId == qualifiedItemId &&
+                MaterialOutputCustodyContract.IsAuthorized(row, ledger, MaterialOutputCustodyContract.MuseumConsumer, goalId))
+            .OrderBy(row => row.ReservationId, StringComparer.Ordinal).FirstOrDefault();
         if (active.Length > 0 && errors.Count == 0 &&
             (!playerSlots.TryGetValue(slotIndex, out var slot) || slot.QualifiedItemId != qualifiedItemId ||
-             slot.Stack != expectedStack || slot.AvailableQuantity < 1))
+             slot.Stack != expectedStack || (long)slot.AvailableQuantity + (custody?.Quantity ?? 0) < 1))
             errors.Add("museum_donation_item_reserved_or_material_projection_drifted");
         var ids = active.Where(row => row.NodeId == playerNodeId && row.SlotIndex == slotIndex &&
                 row.QualifiedItemId == qualifiedItemId)
             .Select(row => row.ReservationId).Distinct(StringComparer.Ordinal).OrderBy(id => id, StringComparer.Ordinal).ToArray();
         var status = errors.Count > 0 ? "blocked" : active.Length == 0 ? "ready_no_active_material_reservations" : "ready";
-        return new(errors.Count == 0, errors.Distinct(StringComparer.Ordinal).ToArray(), new[]
+        var parameters = new[]
         {
             Parameter("material_reservation_guard_status", status),
             Parameter("material_reservation_ledger_id", ledger.LedgerId),
@@ -78,13 +84,21 @@ internal sealed class MuseumDonationMaterialReservationGuard
             Parameter("material_reservation_ids_json", JsonSerializer.Serialize(ids)),
             Parameter("museum_donation_save_id", ledger.SaveId),
             Parameter("museum_donation_player_id", ledger.PlayerId)
-        });
+        };
+        if (custody is not null && errors.Count == 0)
+            parameters = parameters.Concat(new[]
+            {
+                Parameter("museum_output_custody_reservation_id", custody.ReservationId),
+                Parameter("museum_output_custody_reservation_revision", custody.Revision.ToString(CultureInfo.InvariantCulture))
+            }).ToArray();
+        return new(errors.Count == 0, errors.Distinct(StringComparer.Ordinal).ToArray(), parameters);
     }
 
     internal static bool IsBindingParameter(string name) => name is
         "material_reservation_guard_status" or "material_reservation_ledger_id" or "material_reservation_ledger_revision" or
         "commitment_ledger_id" or "commitment_ledger_revision" or "material_reservation_ids_json" or
-        "museum_donation_save_id" or "museum_donation_player_id";
+        "museum_donation_save_id" or "museum_donation_player_id" or
+        "museum_output_custody_reservation_id" or "museum_output_custody_reservation_revision";
 
     private static SmallModelActionParameter Parameter(string name, string value) => new() { Name = name, Value = value };
 }
