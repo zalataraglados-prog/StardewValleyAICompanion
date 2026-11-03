@@ -53,6 +53,15 @@ public static class AcquisitionRouteTargetDateCalendarBuilder
                 snapshotPath,
                 targetTotalDay);
 
+    public static AcquisitionRouteTargetDateCalendarReport BuildCurrentSources(
+        string inventoryPath, string loweringPath, string masterAnglerWindowIndexPath,
+        string calendarResolutionPath, string snapshotPath, int targetTotalDay) =>
+        AcquisitionRouteDependencyObservation.ObserveAxis(
+            "AcquisitionRouteTargetDateCalendarBuilder.BuildCurrentSources",
+            () => BuildCore(inventoryPath, loweringPath, masterAnglerWindowIndexPath, calendarResolutionPath,
+                snapshotPath, null, targetTotalDay, currentSourcesOnly: true),
+            inventoryPath, loweringPath, masterAnglerWindowIndexPath, calendarResolutionPath, snapshotPath, targetTotalDay);
+
     internal static AcquisitionRouteTargetDateCalendarReport Build(
         string inventoryPath,
         string loweringPath,
@@ -86,7 +95,10 @@ public static class AcquisitionRouteTargetDateCalendarBuilder
         string calendarResolutionPath,
         string snapshotPath,
         AcquisitionRouteTargetDateCalendarReport source) =>
-        source.UsesCurrentCommunityCenterDenominator
+        source.CurrentNativeSourceBinding is not null
+            ? BuildCurrentSources(inventoryPath, loweringPath, masterAnglerWindowIndexPath,
+                calendarResolutionPath, snapshotPath, source.TargetTotalDay)
+            : source.UsesCurrentCommunityCenterDenominator
             ? BuildCurrent(
                 inventoryPath,
                 loweringPath,
@@ -108,7 +120,8 @@ public static class AcquisitionRouteTargetDateCalendarBuilder
         string calendarResolutionPath,
         string? snapshotPath,
         CurrentCommunityCenterDenominatorReport? denominator,
-        int targetTotalDay)
+        int targetTotalDay,
+        bool currentSourcesOnly = false)
     {
         var inventoryFullPath = Path.GetFullPath(inventoryPath);
         var loweringFullPath = Path.GetFullPath(loweringPath);
@@ -131,7 +144,10 @@ public static class AcquisitionRouteTargetDateCalendarBuilder
         else
         {
             var snapshotFullPath = Path.GetFullPath(snapshotPath);
-            recomputed = denominator is null
+            recomputed = currentSourcesOnly
+                ? AcquisitionRouteCalendarResolutionBuilder.BuildCurrentSources(
+                    inventoryFullPath, loweringFullPath, windowFullPath, snapshotFullPath)
+                : denominator is null
                 ? AcquisitionRouteCalendarResolutionBuilder.BuildCurrent(
                     inventoryFullPath,
                     loweringFullPath,
@@ -156,7 +172,7 @@ public static class AcquisitionRouteTargetDateCalendarBuilder
         var ineligible = routes.Count(route =>
             route.CalendarAxisResolved && !route.StaticWindowMatchesTargetDate);
         var blocked = routes.Length - resolved;
-        return new AcquisitionRouteTargetDateCalendarReport
+        var report = new AcquisitionRouteTargetDateCalendarReport
         {
             Status = blocked == 0
                 ? "complete_target_date_calendar_axis_downstream_pending"
@@ -171,6 +187,7 @@ public static class AcquisitionRouteTargetDateCalendarBuilder
                 CurrentTeacherFrontierSupport.HashFile(calendarFullPath),
             UsesCurrentCommunityCenterDenominator =
                 source.UsesCurrentCommunityCenterDenominator,
+            CurrentNativeSourceBinding = source.CurrentNativeSourceBinding,
             CommunityCenterBundleMode = source.CommunityCenterBundleMode,
             CommunityCenterDenominatorSha256 =
                 source.CommunityCenterDenominatorSha256,
@@ -190,6 +207,9 @@ public static class AcquisitionRouteTargetDateCalendarBuilder
             TrainingLabelEligible = false,
             Routes = routes
         };
+        if (currentSourcesOnly)
+            report.AdmissionPolicy = "This target-date calendar independently rebuilds its snapshot-bound non-Community-Center native source calendar. Community Center routes remain explicitly blocked; no current Community Center denominator is certified. A date match resolves only the calendar axis. All downstream constraints, exact source bindings and fresh native receipt remain independently required; execution and training are not authorized.";
+        return report;
     }
 
     internal static AcquisitionRouteTargetDateCalendar Evaluate(

@@ -93,8 +93,10 @@ var commandDefinitions = new CommandDefinition[]
     new("build-acquisition-route-lowering", BuildAcquisitionRouteLowering),
     new("build-acquisition-route-calendar-resolution", BuildAcquisitionRouteCalendarResolution, BatchSafe: true),
     new("build-current-acquisition-route-calendar-resolution", BuildCurrentAcquisitionRouteCalendarResolution, BatchSafe: true),
+    new("build-current-native-acquisition-route-calendar-resolution", BuildCurrentNativeAcquisitionRouteCalendarResolution, BatchSafe: true),
     new("build-acquisition-route-target-date-calendar", BuildAcquisitionRouteTargetDateCalendar, BatchSafe: true),
     new("build-current-acquisition-route-target-date-calendar", BuildCurrentAcquisitionRouteTargetDateCalendar, BatchSafe: true),
+    new("build-current-native-acquisition-route-target-date-calendar", BuildCurrentNativeAcquisitionRouteTargetDateCalendar, BatchSafe: true),
     new("build-acquisition-route-target-date-unlock-state", BuildAcquisitionRouteTargetDateUnlockState, BatchSafe: true),
     new("build-acquisition-route-target-date-festival-state", BuildAcquisitionRouteTargetDateFestivalState, BatchSafe: true),
     new("build-acquisition-route-target-date-location-route", BuildAcquisitionRouteTargetDateLocationRoute, BatchSafe: true),
@@ -120,6 +122,8 @@ var commandDefinitions = new CommandDefinition[]
         BootstrapSelfTest.RunControlSupportRebind(options.Required("output-root"))),
     new("self-test-rusty-key-rolling-step", options =>
         BootstrapSelfTest.RunRustyKeyRollingStep(options.Required("output-root"))),
+    new("self-test-current-native-calendar", options =>
+        BootstrapSelfTest.RunCurrentNativeCalendar(options.Required("output-root"))),
     new("build-acquisition-route-portfolio-teacher-preference", BuildAcquisitionRoutePortfolioTeacherPreference),
     new("build-acquisition-route-portfolio-commit-receipt", BuildAcquisitionRoutePortfolioCommitReceipt),
     new("compile-acquisition-route-dispatch", CompileAcquisitionRouteDispatch),
@@ -1103,6 +1107,25 @@ static void BuildCurrentAcquisitionRouteCalendarResolution(Arguments options)
     Write(options.Required("output"), report);
     if (!report.RouteOccurrenceInventoryComplete)
         Environment.ExitCode = 2;
+}
+
+static void BuildCurrentNativeAcquisitionRouteCalendarResolution(Arguments options)
+{
+    var report = AcquisitionRouteCalendarResolutionBuilder.BuildCurrentSources(
+        options.Required("requirement-inventory"), options.Required("acquisition-lowering"),
+        options.Required("master-angler-windows"), options.Required("snapshot"));
+    Write(options.Required("output"), report);
+    if (!report.RouteOccurrenceInventoryComplete) Environment.ExitCode = 2;
+}
+
+static void BuildCurrentNativeAcquisitionRouteTargetDateCalendar(Arguments options)
+{
+    var report = AcquisitionRouteTargetDateCalendarBuilder.BuildCurrentSources(
+        options.Required("requirement-inventory"), options.Required("acquisition-lowering"),
+        options.Required("master-angler-windows"), options.Required("calendar-resolution"),
+        options.Required("snapshot"), options.Int("target-total-day", -1));
+    Write(options.Required("output"), report);
+    if (!report.RouteOccurrenceInventoryComplete) Environment.ExitCode = 2;
 }
 
 static void BuildAcquisitionRouteTargetDateCalendar(Arguments options)

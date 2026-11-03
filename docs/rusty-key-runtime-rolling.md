@@ -47,12 +47,20 @@ authorization; commit, binding and dispatch gates remain mandatory.
 ## Authority And Failure Boundaries
 
 Rusty Key does not require a completed current Community Center denominator. The
-shared pipeline therefore has explicit `CalendarMode=static` for this museum-only
-controller: the existing static authoritative calendar is followed by current
-unlock/location/facility/resource/currency/reservation/processing/time axes.
-The complete museum denominator remains present. No current-CC completion claim
-is fabricated; other callers retain the original `current` default. The two
-read-only static calendar CLI handlers are now batch-safe.
+shared pipeline uses explicit `CalendarMode=current_sources` for this museum-only
+controller. It reuses the original calendar compiler with the current snapshot,
+preserving live-only sources such as exact geode drops. This supersedes the
+initial static-mode choice in EVD-353: static mode loses current-only sources
+and a successful synthetic shop example did not establish geode support.
+
+The calendar and target-date calendar bind the full snapshot SHA-256, state hash,
+save, actor and game version, and downstream builders independently rebuild that
+mode. Removing or forging the binding cannot fall back to static authority.
+The full route and museum denominators remain present; current Community Center
+routes are explicitly blocked with no admitted windows because their denominator
+was not requested. This is not a CC completion or availability claim. Other callers
+retain the original strict `current` default. The new source/target CLI handlers
+are batch-safe and the original 14-axis pipeline remains shared.
 
 Each stage writes a dispatch intent and immutable proof inputs/outputs. The loop
 has a bounded step count and disk floor; an existing run cannot be replayed even
@@ -71,13 +79,20 @@ directory would break blob resolution and duplicate storage.
 The real public CLI regression now includes 22 fresh-control and 20 support-rebind
 checks, covering current intent/ranking and ordinary control commit-receipt CLIs.
 The 18 pre-commit step checks remain. `Test-RuntimeRustyKeyRolling.ps1` reuses those
-fixtures to run the actual 14-axis batch, source ranking and preparation for both
-support and terminal stages without HTTP/game access. Its separate test doubles
+fixtures to run the actual 14-axis batch, source ranking and preparation for
+support, shop terminal and current-geode terminal stages without HTTP/game access.
+Its separate test doubles
 exercise controller stage order, exact retained proof/ledger, failed/foreign/stale
 states, budgets, existing-run rejection and both executor adapters. These are
 code/synthetic tests, not native game receipts.
 
-The runtime test has 12 named checks. Existing rolling 34, threshold 30,
+The runtime test has 13 named checks. A further 14 calendar checks reproduce the
+static-mode geode loss and verify current-source preservation, full denominators,
+explicit CC exclusion, actual CLI output, downstream independent reconstruction,
+binding tampering, fresh/foreign/version drift and the unchanged strict CC gate.
+The synthetic geode fixture includes consistent currency and date-map evidence;
+missing evidence was rejected rather than weakening production validation.
+Existing rolling 34, threshold 30,
 dispatch, supervision and command-batch regressions pass, as do 55 focused
 shared runtime source guards. No game was started for these checks.
 

@@ -13,7 +13,7 @@ function Invoke-RuntimeAcquisitionPlanningPipeline {
         [Parameter(Mandatory)] [string] $RouteTimingPath,
         [Parameter(Mandatory)] [hashtable] $Paths,
         [switch] $ForceSequential,
-        [ValidateSet('current', 'static')] [string] $CalendarMode = 'current'
+        [ValidateSet('current', 'static', 'current_sources')] [string] $CalendarMode = 'current'
     )
 
     $requiredPathKeys = @(
@@ -32,9 +32,13 @@ function Invoke-RuntimeAcquisitionPlanningPipeline {
     $commands = New-Object System.Collections.Generic.List[object]
     $calendarCommand = if ($CalendarMode -eq 'current') {
         'build-current-acquisition-route-calendar-resolution'
+    } elseif ($CalendarMode -eq 'current_sources') {
+        'build-current-native-acquisition-route-calendar-resolution'
     } else { 'build-acquisition-route-calendar-resolution' }
     $targetCalendarCommand = if ($CalendarMode -eq 'current') {
         'build-current-acquisition-route-target-date-calendar'
+    } elseif ($CalendarMode -eq 'current_sources') {
+        'build-current-native-acquisition-route-target-date-calendar'
     } else { 'build-acquisition-route-target-date-calendar' }
     $commands.Add([ordered]@{ arguments = @(
         $calendarCommand,

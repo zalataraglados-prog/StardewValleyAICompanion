@@ -33,7 +33,7 @@ function New-RuntimeRustyKeyPlanning {
             -OutputDirectory $Directory -BatchName 'planning' -SnapshotPath $SnapshotPath `
             -StrategyLedgerPath $StrategyLedgerPath -TargetTotalDay ([int](Read-StateValue $snapshot 'time' 'total_days')) `
             -RequirementInventoryPath $RequirementInventoryPath -AcquisitionLoweringPath $AcquisitionLoweringPath `
-            -MasterAnglerWindowsPath $MasterAnglerWindowsPath -RouteTimingPath $RouteTimingPath -Paths $paths -CalendarMode static
+            -MasterAnglerWindowsPath $MasterAnglerWindowsPath -RouteTimingPath $RouteTimingPath -Paths $paths -CalendarMode current_sources
         $common = @($pipeline.PortfolioCommon)
         if ($null -ne $PriorSupport) {
             $next = @()
