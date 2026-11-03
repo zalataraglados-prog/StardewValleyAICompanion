@@ -81,6 +81,12 @@ neither its cause nor a repair is claimed. Both records remain local.
 
 ## Next Closure
 
+The separate [rolling producer](rusty-key-rolling-supply.md) now generates legal
+one-item next-step proposals and existing held-donation queues. These are not
+automatically full-threshold certificates; this adapter's exact-deficit rule is
+unchanged. The producer's CLI still needs the existing autonomous supply/commit
+orchestration and output custody integration.
+
 Continue the same Rusty Key primary: bind chosen supply to the existing rolling
 execution/reservation lifecycle and exact native donation candidate, retaining
 the output until it is donated. Verify the joint time/opening-hour and following

@@ -55,6 +55,9 @@ jobs:
       - name: Test Rusty Key threshold portfolio composition
         shell: pwsh
         run: dotnet run --project experiments/StardewAI.GoalConditionedBootstrap/StardewAI.GoalConditionedBootstrap.csproj --configuration Release --no-build -- self-test-rusty-key-acquisition-portfolio --output-root "$env:RUNNER_TEMP/rusty-key-threshold-portfolio"
+      - name: Test Rusty Key rolling supply producer
+        shell: pwsh
+        run: dotnet run --project experiments/StardewAI.GoalConditionedBootstrap/StardewAI.GoalConditionedBootstrap.csproj --configuration Release --no-build -- self-test-rusty-key-rolling-supply --output-root "$env:RUNNER_TEMP/rusty-key-rolling-supply"
       - name: Restore core governance tests
         run: dotnet restore tests/StardewAI.Core.Tests/StardewAI.Core.Tests.csproj --locked-mode -p:GameFreeGovernance=true
       - name: Test core governance

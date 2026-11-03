@@ -7,7 +7,7 @@ namespace StardewAI.GoalConditionedBootstrap;
 public static partial class RustyKeyAcquisitionPortfolioBuilder
 {
     private const string MuseumSetId = "museum_collection";
-    private const int StageOneDeadlineExclusive = 224;
+    internal const int StageOneDeadlineExclusive = 224;
 
     public static RustyKeyAcquisitionPortfolioAdmission Build(AcquisitionRoutePortfolioInputs inputs) =>
         InvocationDeterministicBuildSession.Observe(
@@ -37,11 +37,7 @@ public static partial class RustyKeyAcquisitionPortfolioBuilder
             TargetTotalDay = context.Opportunity.TargetTotalDay
         };
         var reasons = new List<string>();
-        if (snapshot.SchemaVersion != "snapshot.v1" || snapshot.GameVersion != context.Inventory.GameVersion ||
-            snapshot.SaveId.Status != FieldStatus.Available || string.IsNullOrWhiteSpace(snapshot.SaveId.Value) ||
-            snapshot.PlayerId.Status != FieldStatus.Available || string.IsNullOrWhiteSpace(snapshot.PlayerId.Value) ||
-            snapshot.StateHash != SnapshotHash.ComputeStateHash(snapshot.State))
-            reasons.Add("rusty_key_snapshot_identity_or_hash_invalid");
+        var source = ReadCurrentScope(context.Inventory, snapshot, reasons);
         if (proposal.GoalId != context.Inventory.GoalId ||
             (proposal.GoalId != GoalMethodTeacherCoverageGoalIds.Authoritative &&
              proposal.GoalId != GoalMethodTeacherCoverageGoalIds.AcquisitionCorpus) ||
@@ -52,26 +48,10 @@ public static partial class RustyKeyAcquisitionPortfolioBuilder
             !string.IsNullOrEmpty(proposal.PriorRolloutCheckpointSha256) ||
             !string.IsNullOrEmpty(proposal.PriorSupportingTransitionReplanSha256))
             reasons.Add("rusty_key_fresh_scope_cannot_claim_unverified_continuation");
-        if (!TryCurrentTotalDay(snapshot, out var sourceDay))
-            reasons.Add("rusty_key_current_total_day_unavailable");
-        result.SourceTotalDay = sourceDay;
-        var museum = context.Inventory.RequirementSets.Single(value => value.RequirementSetId == MuseumSetId);
-        ValidateMuseumRequirementShape(museum);
-        var museumAvailable = TryMuseumValue(snapshot, out var value);
-        var progress = museumAvailable
-            ? CurrentCollectionTeacherFrontierBuilder.ReadMuseumProgressValue(value, museum)
-            : CurrentCollectionProgress.Unavailable("museum_transparent_state_unavailable");
-        if (!progress.Available)
-            reasons.AddRange(progress.BlockingReasons);
-        if (!museumAvailable ||
-            !value.TryGetProperty("rusty_key_donation_threshold", out var threshold) ||
-            threshold.ValueKind != JsonValueKind.Number || !threshold.TryGetInt32(out var required) || required != 60 ||
-            ReadString(value, "rusty_key_reward_id") != "museum60" ||
-            ReadString(value, "rusty_key_reward_action") != "MarkEventSeen Host 295672")
-        {
-            reasons.Add("rusty_key_live_reward_authority_invalid");
+        if (source is null)
             return Block(result, reasons);
-        }
+        var (museum, progress, sourceDay, required) = source;
+        result.SourceTotalDay = sourceDay;
         result.DonationThreshold = required;
         result.DonatedCount = progress.AggregateCompletedCount;
         result.RemainingDonationCount = Math.Max(0, required - result.DonatedCount);
@@ -111,6 +91,46 @@ public static partial class RustyKeyAcquisitionPortfolioBuilder
         result.BlockingReasons = reasons.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
         return result;
     }
+
+    internal static RustyKeySourceScope? ReadCurrentScope(
+        AuthoritativeRequirementInventoryReport inventory, SnapshotEnvelope snapshot,
+        ICollection<string> reasons)
+    {
+        if (snapshot.SchemaVersion != "snapshot.v1" || snapshot.GameVersion != inventory.GameVersion ||
+            snapshot.SaveId.Status != FieldStatus.Available || string.IsNullOrWhiteSpace(snapshot.SaveId.Value) ||
+            snapshot.PlayerId.Status != FieldStatus.Available || string.IsNullOrWhiteSpace(snapshot.PlayerId.Value) ||
+            snapshot.StateHash != SnapshotHash.ComputeStateHash(snapshot.State))
+            reasons.Add("rusty_key_snapshot_identity_or_hash_invalid");
+        if (inventory.SchemaVersion != "authoritative_goal_requirement_inventory.v1" ||
+            !inventory.DenominatorComplete || !inventory.AcquisitionRoutesComplete ||
+            inventory.RequirementSets is null ||
+            (inventory.GoalId != GoalMethodTeacherCoverageGoalIds.Authoritative &&
+             inventory.GoalId != GoalMethodTeacherCoverageGoalIds.AcquisitionCorpus))
+        {
+            reasons.Add("rusty_key_requirement_inventory_invalid");
+            return null;
+        }
+        if (!TryCurrentTotalDay(snapshot, out var sourceDay))
+            reasons.Add("rusty_key_current_total_day_unavailable");
+        var museum = CurrentTeacherFrontierSupport.SingleSet(inventory.RequirementSets,
+            value => value.RequirementSetId, MuseumSetId, "Rusty Key requirement inventory");
+        ValidateMuseumRequirementShape(museum);
+        var available = TryMuseumValue(snapshot, out var value);
+        var progress = available
+            ? CurrentCollectionTeacherFrontierBuilder.ReadMuseumProgressValue(value, museum)
+            : CurrentCollectionProgress.Unavailable("museum_transparent_state_unavailable");
+        if (!progress.Available)
+            foreach (var reason in progress.BlockingReasons) reasons.Add(reason);
+        if (!available || !value.TryGetProperty("rusty_key_donation_threshold", out var threshold) ||
+            threshold.ValueKind != JsonValueKind.Number || !threshold.TryGetInt32(out var required) || required != 60 ||
+            ReadString(value, "rusty_key_reward_id") != "museum60" ||
+            ReadString(value, "rusty_key_reward_action") != "MarkEventSeen Host 295672")
+            reasons.Add("rusty_key_live_reward_authority_invalid");
+        return reasons.Count == 0 ? new(museum, progress, sourceDay, 60) : null;
+    }
+
+    internal sealed record RustyKeySourceScope(
+        GoalRequirementSet Museum, CurrentCollectionProgress Progress, int SourceTotalDay, int Threshold);
 
     private static bool TryMuseumValue(SnapshotEnvelope snapshot, out JsonElement value)
     {

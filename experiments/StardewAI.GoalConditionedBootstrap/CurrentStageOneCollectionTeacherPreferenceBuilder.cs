@@ -367,8 +367,9 @@ public static partial class CurrentStageOneCollectionTeacherPreferenceBuilder
             : null;
     }
 
-    private static PolicyEventCandidatePrediction NeutralizeLearnerSignals(
-        PolicyEventCandidatePrediction source)
+    internal static PolicyEventCandidatePrediction NeutralizeLearnerSignals(
+        PolicyEventCandidatePrediction source,
+        string policyModelSource = "deterministic_teacher.current_stage_one_collection.v1")
     {
         var clone = JsonSerializer.Deserialize<PolicyEventCandidatePrediction>(
             JsonSerializer.Serialize(source, JsonDefaults.Options),
@@ -378,12 +379,11 @@ public static partial class CurrentStageOneCollectionTeacherPreferenceBuilder
         clone.Score = 0;
         clone.ModelScore = null;
         clone.ExpectedReward = 0;
-        clone.PolicyModelSource =
-            "deterministic_teacher.current_stage_one_collection.v1";
+        clone.PolicyModelSource = policyModelSource;
         return clone;
     }
 
-    private static string[] CompilationReasons(
+    internal static string[] CompilationReasons(
         SmallModelPlanEnvelope plan,
         ActionQueueEnvelope queue) => plan.CandidateAudit
         .Where(value => value.Decision != "accepted")
