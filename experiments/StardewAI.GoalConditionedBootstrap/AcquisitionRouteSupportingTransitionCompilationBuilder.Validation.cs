@@ -19,7 +19,8 @@ public static partial class AcquisitionRouteSupportingTransitionCompilationBuild
         string rankingSha256,
         string supportRequestSha256,
         string supportCommitReceiptSha256,
-        IEnumerable<string>? inheritedReasons = null)
+        IEnumerable<string>? inheritedReasons = null,
+        bool controlSelection = false)
     {
         var reasons = (inheritedReasons ?? Array.Empty<string>())
             .Where(value => !string.IsNullOrWhiteSpace(value))
@@ -126,7 +127,7 @@ public static partial class AcquisitionRouteSupportingTransitionCompilationBuild
                     JsonSerializer.Serialize(
                         request.SupportCurrencyConsumptions,
                         JsonDefaults.Options))
-            });
+            }, controlSelection: controlSelection);
         compilation.SupportRequestSha256 = supportRequestSha256;
         compilation.SupportCommitReceiptSha256 = supportCommitReceiptSha256;
         compilation.SupportDeadlineTotalDay =

@@ -18,21 +18,7 @@ internal static class AcquisitionRouteSupportingTransitionQueueShapes
         return stages[0] switch
         {
             "route_connector" => items.Length == 1,
-            "shop_interaction" => optionIds.SequenceEqual(
-                    new[]
-                    {
-                        "executor.move_to_tile",
-                        "executor.interact"
-                    },
-                    StringComparer.Ordinal) ||
-                optionIds.SequenceEqual(
-                    new[]
-                    {
-                        "executor.move_to_tile",
-                        "executor.interact",
-                        "executor.choose_dialogue_response"
-                    },
-                    StringComparer.Ordinal),
+            "shop_interaction" => ShopInteraction(optionIds),
             "purchase" => optionIds.SequenceEqual(
                     new[]
                     {
@@ -50,6 +36,14 @@ internal static class AcquisitionRouteSupportingTransitionQueueShapes
                     StringComparer.Ordinal),
             _ => false
         };
+    }
+
+    private static bool ShopInteraction(string[] options)
+    {
+        // The shared compiler elides movement when the actor already occupies the stand tile.
+        var actions = options.Skip(options.FirstOrDefault() == "executor.move_to_tile" ? 1 : 0).ToArray();
+        return actions.SequenceEqual(new[] { "executor.interact" }, StringComparer.Ordinal) ||
+            actions.SequenceEqual(new[] { "executor.interact", "executor.choose_dialogue_response" }, StringComparer.Ordinal);
     }
 
     private static string UniqueParameter(

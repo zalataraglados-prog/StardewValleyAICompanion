@@ -83,6 +83,10 @@ public sealed class AcquisitionRouteExecutionBindingInputs
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? PortfolioControlSelectionPath { get; init; }
 
+    [JsonPropertyName("control_supporting_transition_proof_path")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? ControlSupportingTransitionProofPath { get; init; }
+
     [JsonPropertyName("portfolio_commit_receipt_path")]
     public string PortfolioCommitReceiptPath { get; init; } = string.Empty;
 

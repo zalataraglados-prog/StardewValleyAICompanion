@@ -25,6 +25,9 @@ public sealed class AcquisitionRouteSupportingTransitionRequestInputs
     public string RankingPath { get; init; } = string.Empty;
     public string RouteOccurrenceId { get; init; } = string.Empty;
     public int SupportDeadlineTotalDay { get; init; }
+    [JsonPropertyName("use_control_selection")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool UseControlSelection { get; init; }
 }
 
 public sealed class AcquisitionRouteSupportingTransitionRequest

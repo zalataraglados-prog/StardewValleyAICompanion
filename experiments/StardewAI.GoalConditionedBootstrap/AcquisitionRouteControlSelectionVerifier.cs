@@ -16,7 +16,10 @@ internal static class AcquisitionRouteControlSelectionVerifier
         if (!UsesControl(inputs) || !string.IsNullOrWhiteSpace(inputs.PortfolioTeacherPreferencePath) ||
             !string.IsNullOrWhiteSpace(inputs.PortfolioPreferenceRequestPath))
             throw new InvalidDataException("Control execution requires one control source and no Teacher source.");
-        var expected = RustyKeyRollingSupplyProposalBuilder.Build(AcquisitionRouteExecutionBindingBuilder.PortfolioInputs(inputs));
+        var portfolioInputs = AcquisitionRouteExecutionBindingBuilder.PortfolioInputs(inputs);
+        var expected = string.IsNullOrWhiteSpace(inputs.ControlSupportingTransitionProofPath)
+            ? RustyKeyRollingSupplyProposalBuilder.Build(portfolioInputs)
+            : RustyKeyRollingSupplyProposalBuilder.BuildAfterSupportingTransition(portfolioInputs, inputs.ControlSupportingTransitionProofPath);
         var proposal = CurrentTeacherFrontierSupport.Read<AcquisitionRoutePortfolioProposal>(inputs.PortfolioProposalPath, "Control-selected proposal");
         var admission = CurrentTeacherFrontierSupport.Read<AcquisitionRoutePortfolioAdmission>(inputs.PortfolioAdmissionPath, "Control-selected admission");
         return ValidateArtifact(inputs.PortfolioControlSelectionPath!, expected, proposal, admission,
@@ -40,6 +43,32 @@ internal static class AcquisitionRouteControlSelectionVerifier
             JsonSerializer.Serialize(expected.SelectedAcquisitionAdmission, JsonDefaults.Options) != JsonSerializer.Serialize(admission, JsonDefaults.Options))
             throw new InvalidDataException("Control execution requires the exact independently rebuilt rolling acquisition selection.");
         return expected;
+    }
+
+    internal static AcquisitionRoutePortfolioCommitReceipt RebuildCommitReceipt(
+        AcquisitionRouteExecutionBindingInputs inputs, RustyKeyRollingSupplyProposal control)
+    {
+        var portfolioInputs = AcquisitionRouteExecutionBindingBuilder.PortfolioInputs(inputs);
+        var commitResult = string.IsNullOrWhiteSpace(inputs.PortfolioCommitResultPath) ? null : inputs.PortfolioCommitResultPath;
+        return string.IsNullOrWhiteSpace(inputs.ControlSupportingTransitionProofPath)
+            ? AcquisitionRoutePortfolioCommitReceiptBuilder.Build(portfolioInputs, inputs.PortfolioAdmissionPath,
+                inputs.CommittedStrategyLedgerPath, commitResult)
+            : AcquisitionRoutePortfolioCommitReceiptBuilder.BuildAfterSupportingTransition(portfolioInputs,
+                control.SelectedAcquisitionProposal!.PriorSupportingTransitionReplanSha256, inputs.PortfolioAdmissionPath,
+                inputs.CommittedStrategyLedgerPath, commitResult);
+    }
+
+    internal static IEnumerable<DeterministicBuildIdentityPart> SupportingProofIdentity(AcquisitionRouteExecutionBindingInputs inputs)
+    {
+        if (string.IsNullOrWhiteSpace(inputs.ControlSupportingTransitionProofPath))
+            return Array.Empty<DeterministicBuildIdentityPart>();
+        if (!UsesControl(inputs))
+            throw new InvalidDataException("A retained control support proof requires a control selection source.");
+        var proof = CurrentTeacherFrontierSupport.Read<AcquisitionRoutePortfolioSupportingTransitionInitialProof>(
+            inputs.ControlSupportingTransitionProofPath, "Control support cache identity");
+        return InvocationDeterministicBuildSession.Describe(proof.RequestInputs)
+            .Concat(InvocationDeterministicBuildSession.Describe(proof.SettlementProof))
+            .Append(InvocationDeterministicBuildSession.File("ControlSupportReplanAdmissionPath", proof.ReplanAdmissionPath));
     }
 
     internal static bool HasVerifiedExecutionSelection(AcquisitionRouteExecutionBinding binding) =>

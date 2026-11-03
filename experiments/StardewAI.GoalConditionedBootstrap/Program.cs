@@ -114,6 +114,8 @@ var commandDefinitions = new CommandDefinition[]
         BootstrapSelfTest.RunRustyKeyRollingSupply(options.Required("output-root"))),
     new("self-test-control-execution", options =>
         BootstrapSelfTest.RunControlExecution(options.Required("output-root"))),
+    new("self-test-control-support-rebind", options =>
+        BootstrapSelfTest.RunControlSupportRebind(options.Required("output-root"))),
     new("build-acquisition-route-portfolio-teacher-preference", BuildAcquisitionRoutePortfolioTeacherPreference),
     new("build-acquisition-route-portfolio-commit-receipt", BuildAcquisitionRoutePortfolioCommitReceipt),
     new("compile-acquisition-route-dispatch", CompileAcquisitionRouteDispatch),
@@ -1381,8 +1383,10 @@ static void BuildRustyKeyAcquisitionPortfolio(Arguments options)
 
 static void BuildRustyKeyRollingSupply(Arguments options)
 {
-    var report = RustyKeyRollingSupplyProposalBuilder.Build(
-        RoutePortfolioInputs(options, requireProposal: false, requireAcquisitionSources: false));
+    var inputs = RoutePortfolioInputs(options, requireProposal: false, requireAcquisitionSources: false);
+    var report = options.Optional("control-supporting-transition-proof") is { } supportProof
+        ? RustyKeyRollingSupplyProposalBuilder.BuildAfterSupportingTransition(inputs, supportProof)
+        : RustyKeyRollingSupplyProposalBuilder.Build(inputs);
     Write(options.Required("output"), report);
     if (report.RollingStepReady)
     {
@@ -1984,7 +1988,8 @@ static AcquisitionRouteSupportingTransitionRequestInputs
         RouteOccurrenceId = options.Required("route-occurrence-id"),
         SupportDeadlineTotalDay = options.Int(
             "support-deadline-total-day",
-            -1)
+            -1),
+        UseControlSelection = bool.Parse(options.Optional("use-control-selection") ?? "false")
     };
 
 static void BuildAcquisitionRoutePortfolioSettlementRequest(Arguments options)
@@ -2580,6 +2585,7 @@ static AcquisitionRouteExecutionBindingInputs RouteExecutionBindingInputs(
         PortfolioTeacherPreferencePath = options.Optional("portfolio-control-selection") is null
             ? options.Required("portfolio-teacher-preference") : options.Optional("portfolio-teacher-preference") ?? string.Empty,
         PortfolioControlSelectionPath = options.Optional("portfolio-control-selection"),
+        ControlSupportingTransitionProofPath = options.Optional("control-supporting-transition-proof"),
         PortfolioCommitReceiptPath = options.Required(
             "portfolio-commit-receipt"),
         CommittedStrategyLedgerPath = options.Required(

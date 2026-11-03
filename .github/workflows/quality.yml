@@ -61,6 +61,9 @@ jobs:
       - name: Test control execution independently of Teacher supervision
         shell: pwsh
         run: dotnet run --project experiments/StardewAI.GoalConditionedBootstrap/StardewAI.GoalConditionedBootstrap.csproj --configuration Release --no-build -- self-test-control-execution --output-root "$env:RUNNER_TEMP/control-execution"
+      - name: Test control support settlement and fresh rebind
+        shell: pwsh
+        run: dotnet run --project experiments/StardewAI.GoalConditionedBootstrap/StardewAI.GoalConditionedBootstrap.csproj --configuration Release --no-build -- self-test-control-support-rebind --output-root "$env:RUNNER_TEMP/control-support-rebind"
       - name: Restore core governance tests
         run: dotnet restore tests/StardewAI.Core.Tests/StardewAI.Core.Tests.csproj --locked-mode -p:GameFreeGovernance=true
       - name: Test core governance
