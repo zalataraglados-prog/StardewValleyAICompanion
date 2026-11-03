@@ -17,8 +17,8 @@ Issue #129 的核心架构成立：产品运行时对外只暴露一个战略选
 1. 唯一 Pareto 前沿成员必须由确定性选择分支决定。这里的“唯一 strict-Pareto”严格沿用现有 `OpportunityCostDominates`：该成员支配所有其他 admitted 候选，不允许用标量加权、模型分数或任意 tie-break 冒充。
 2. 只有两个及以上 admitted、non-dominated 且互不可比较/等价的前沿成员，学习模型才可在该前沿内部排序。模型不得生成候选、扩大分母、恢复 blocked/dominated 候选或提供合法性证据。
 3. 两个分支输出同一种 `StrategicDecision`，显式记录 `selection_authority`、输入状态/ledger/denominator 身份、frontier、模型/checkpoint 身份与准入状态，再进入唯一 verifier、Planner/Compiler、Product Executor 和 fresh native receipt 链。
-4. `TeacherOracle` 只保留离线监督、DAgger 重标、反事实、覆盖证明和 benchmark 职责。运行时确定性分支称为 `DeterministicSelection`，不得包装成第二个在线 Teacher 主脑。
-5. 是否存在唯一确定性解必须在加载或调用 checkpoint 之前判定。模型缺失、损坏、版本不匹配或未获 runtime authority 时，唯一确定性解仍可工作并记录 `model_invoked=false`；可选 shadow audit 的失败也不得阻塞它。若只剩不可比较前沿且没有获准模型，则 fail closed。`rare bounded Teacher fallback` 暂不准入，必须另立证据和治理门。
+4. Teacher 在训练期负责独立监督、DAgger 重标、反事实、覆盖证明和 benchmark；**最终发布 Mod 同时保留可替换、可停用的 Teacher Provider，作为关键决策的按需复核者**。Student 是常规策略选择者；当决定涉及不可逆状态、关键期限、重大资源损失或其他被声明为必须严格正确的边界时，单靠 Student 的高平均准确率不足以放行。启用且具备当前场景能力的 Teacher 可在同一权威状态与候选集上进行有界核验、否决或提出可验证的替代选择；任何结果仍必须经统一 `StrategicPolicy` 与确定性执行门。Teacher 不是第二套常驻 Planner/Executor，也不按帧取代 Student；确定性唯一解仍由 `DeterministicSelection` 负责。
+5. 是否存在唯一确定性解必须在加载或调用 checkpoint 之前判定。模型缺失、损坏、版本不匹配或未获 runtime authority 时，经过确定性证明的唯一合法解仍可工作并记录 `model_invoked=false`。对于需要额外 Teacher 复核的关键决策，不得因为 Student 给出答案、Teacher 被禁用或 Teacher 超时就视为已验证；若缺少足够的确定性证明、获准 Teacher 核验或明确授权的人工处理路径，必须 fail closed。普通不可比较前沿缺少获准模型时同样 fail closed。**按需 Teacher 复核是最终产品要求，但具体运行时接口和高风险准入尚待实现与验证，不得把文档决定冒充当前源码已经开放。**
 
 战略重规划只在 day start、目标/偏好变化、资源或 reservation/ledger 漂移、已选方法完成、执行失败和玩家打断等边界触发，不能每帧重跑完整 Teacher proof。连接器、动作和队列 continuation 之后已有的 fresh-snapshot precondition/replan 仍然保留；这些机械刷新不自动构成新的策略选择、Student 样本或模型调用。
 
@@ -92,7 +92,7 @@ Student 自主 rollout 到自己的分布。Teacher 对 learner-visited state �
 
 ### Stage C：native outcome
 
-在 Teacher bootstrap 和 DAgger 稳定后，真实跨日、跨季、跨年结果成为长期价值的主要依据。Teacher 退为离线 oracle、重标器和 benchmark；它不成为常驻在线主脑。少量高风险 fallback 只是未来可能单独准入的能力，当前不得启用。RL/价值微调是后续增强，不是当前 Teacher 图完成的替代品。
+在 Teacher bootstrap 和 DAgger 稳定后，真实跨日、跨季、跨年结果成为长期价值的主要依据。Teacher 的主要工作转为离线 oracle、重标器和 benchmark，但最终发布 Mod 仍保留**针对关键决策的按需 Teacher 复核能力**；它不是常驻在线主脑，也不能替代确定性硬约束和原生结果校验。该运行时能力尚未完成实现/验收，当前不得假称已准入。RL/价值微调是后续增强，不是当前 Teacher 图完成的替代品。
 
 ### Stage D：长期联机对照适配（游玩完全体 -> 人类化）
 
@@ -127,7 +127,7 @@ Student / Teacher 的可替换接口、权限边界、Codex 实验职责和低�
 
 - Teacher truth、native outcome、Student observation 继续分离；
 - Student 不拥有候选合法性、Planner、Compiler、Executor 或 native verifier 权限；
-- Teacher 可以被独立替换或禁用，不能成为运行时必须绑定的内置实现；
+- 最终产品保留可独立替换、停用的 Teacher Provider；不要求持续在线调用 Teacher，但关键决策不得仅凭 Student 的统计准确率放行。禁用 Teacher 的路线仍受确定性硬门保护，缺少必要证明时失败关闭；
 - 达到正式 coverage / reconciliation 门后、formal training manifest 之前，Codex 必须自行实验并决定正式 Student 的实现与参数；
 - 本文不预设模型结构、输入编码方式、训练算法或超参数。
 
@@ -154,7 +154,9 @@ TransparentBridge -> authoritative candidates -> hard admission -> Pareto fronti
                                                                   |
                                                          StrategicPolicy
                                    unique frontier -> DeterministicSelection
-                              incomparable frontier -> LearnedPreferenceModel
+                              incomparable frontier -> Student/LearnedPreferenceModel
+                              critical decision -> bounded Teacher Provider check/veto
+                                                   (only when enabled and admitted)
                                                                   |
                                                         DecisionVerifier
                                                                   |
@@ -169,7 +171,7 @@ Offline TeacherOracle -> supervision/relabel/counterfactual/coverage/benchmark
 - `DeterministicSelection` 对唯一 strict-Pareto 解保持权威；Student/`LearnedPreferenceModel` 只解决合法不可比较前沿中的 soft preference。
 - Planner/Compiler 负责组合、时间/资源验证和机械展开。
 - Executor 负责移动、工具、战斗、菜单和原生交互。
-- TeacherOracle 负责训练期“什么更好”和独立覆盖证明，不复制执行器，也不成为常驻在线主脑。
+- TeacherOracle 负责训练期独立监督与覆盖证明；发布版的可选 Teacher Provider 只在要求高可靠性且通过专项准入的关键决策上作有界复核、否决或重选建议，不复制执行器，也不成为常驻在线主脑。所谓“需要 100% 正确”必须落实为可核验的安全条件：Teacher 的回答自身不能保证数学意义的绝对正确，无法证明时宁可阻断而非冒险放行。
 
 ## 人类适配边界
 
