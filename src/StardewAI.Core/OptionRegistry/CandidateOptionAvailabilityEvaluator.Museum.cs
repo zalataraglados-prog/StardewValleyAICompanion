@@ -190,6 +190,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                     BlockReasons = distinctReasons,
                     Parameters = (connector?.Parameters ?? Array.Empty<SmallModelActionParameter>())
                         .Concat(continuation)
+                        .Concat(MuseumDonationThresholdParameters(museum, candidate))
                         .ToArray()
                 };
             })
@@ -222,8 +223,6 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             Parameter("target_runtime_type", ReadString(candidate, "runtime_type")),
             Parameter("expected_stack_before", ReadInt(candidate, "stack_before").ToString()),
             Parameter("expected_stack_after", ReadInt(candidate, "stack_after").ToString()),
-            Parameter("expected_donated_count_before", ReadInt(candidate, "donated_count_before").ToString()),
-            Parameter("expected_donated_count_after", ReadInt(candidate, "donated_count_after").ToString()),
             Parameter("museum_total_donatable_items", ReadInt(museum, "total_donatable_items").ToString()),
             Parameter("expected_collection_complete_after", ReadBool(candidate, "completes_collection") == true ? "true" : "false"),
             Parameter("expected_complete_collection_achievement_after", ReadBool(candidate, "expected_complete_collection_achievement_after") == true ? "true" : "false"),
@@ -236,13 +235,21 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             Parameter("auto_applied_reward_ids_json", RawJson(candidate, "auto_applied_reward_ids")),
             Parameter("auto_applied_reward_actions_json", RawJson(candidate, "auto_applied_reward_actions")),
             Parameter("reward_projection_status", ReadString(candidate, "reward_projection_status")),
-            Parameter("rusty_key_donation_threshold", ReadInt(museum, "rusty_key_donation_threshold").ToString()),
             Parameter("reaches_rusty_key_threshold", ReadBool(candidate, "reaches_rusty_key_threshold") == true ? "true" : "false"),
             Parameter("rusty_key_reward_id", ReadString(museum, "rusty_key_reward_id")),
-            Parameter("rusty_key_reward_action", ReadString(museum, "rusty_key_reward_action")),
             Parameter("native_contract", "LibraryMuseum.OpenDonationMenu_then_MuseumMenu_fade_then_receiveLeftClick_inventory_and_display_then_okButton_native_exit")
-        };
+        }.Concat(MuseumDonationThresholdParameters(museum, candidate)).ToArray();
     }
+
+    private static SmallModelActionParameter[] MuseumDonationThresholdParameters(
+        JsonElement museum,
+        JsonElement candidate) => new[]
+    {
+        Parameter("expected_donated_count_before", ReadInt(candidate, "donated_count_before").ToString(CultureInfo.InvariantCulture)),
+        Parameter("expected_donated_count_after", ReadInt(candidate, "donated_count_after").ToString(CultureInfo.InvariantCulture)),
+        Parameter("rusty_key_donation_threshold", ReadInt(museum, "rusty_key_donation_threshold").ToString(CultureInfo.InvariantCulture)),
+        Parameter("rusty_key_reward_action", ReadString(museum, "rusty_key_reward_action"))
+    };
 
     private static string RawJson(JsonElement row, string propertyName)
     {

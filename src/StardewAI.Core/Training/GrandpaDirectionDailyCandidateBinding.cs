@@ -342,7 +342,7 @@ namespace StardewAI.Core.Training
                     continue;
                 }
 
-                if (!HasDirectionSpecificEvidence(request.DirectionId, candidate, out var evidenceReason))
+                if (!HasDirectionSpecificEvidence(request.DirectionId, candidate, snapshot, out var evidenceReason))
                 {
                     rejectionDetails.Add("candidate_direction_evidence_rejected:" + candidate.CandidateId + ":" + evidenceReason);
                     continue;
@@ -485,6 +485,7 @@ namespace StardewAI.Core.Training
         private static bool HasDirectionSpecificEvidence(
             string directionId,
             PolicyEventCandidatePrediction candidate,
+            SnapshotEnvelope snapshot,
             out string rejectionReason)
         {
             rejectionReason = string.Empty;
@@ -506,7 +507,7 @@ namespace StardewAI.Core.Training
             }
             if (string.Equals(directionId, "obtain_rusty_key", StringComparison.Ordinal))
             {
-                return HasRustyKeyDonationEvidence(candidate, out rejectionReason);
+                return HasRustyKeyEvidence(candidate, snapshot, out rejectionReason);
             }
             if (!string.Equals(directionId, "complete_full_shipment", StringComparison.Ordinal))
             {

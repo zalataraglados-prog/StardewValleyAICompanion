@@ -179,11 +179,4 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
             r.Contains("candidate_provenance_conflict:sell:wrong_dir:1:0:grandpa_direction_id"));
     }
 
-    private static SmallModelActionParameter Parameter(string name, string value)
-    {
-        return new SmallModelActionParameter
-        {
-            Name = name,
-            Value = value
-        };
-    }}
+}

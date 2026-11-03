@@ -125,7 +125,7 @@ public sealed class MuseumDonationMainlineTests
         Assert.DoesNotContain("achievements.Add", source, StringComparison.Ordinal);
     }
 
-    private static SnapshotEnvelope Snapshot(int donatedBefore, int total)
+    internal static SnapshotEnvelope Snapshot(int donatedBefore, int total)
     {
         var donatedAfter = donatedBefore + 1;
         var reachesThreshold = donatedBefore < 60 && donatedAfter >= 60;
@@ -212,7 +212,7 @@ public sealed class MuseumDonationMainlineTests
         };
     }
 
-    private static SnapshotEnvelope RemoteSnapshot(SnapshotEnvelope snapshot)
+    internal static SnapshotEnvelope RemoteSnapshot(SnapshotEnvelope snapshot)
     {
         var root = JsonSerializer.SerializeToNode(snapshot.State, JsonOptions)!.AsObject();
         root["player"]!["location_id"]!["value"] = "Town";

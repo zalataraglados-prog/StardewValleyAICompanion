@@ -1,14 +1,24 @@
 # StardewAI 当前工作
 
-> **当前 WIP 收口（2026-11-03，#390 / PR #391）：** 代码层验收责任解耦、静态/fixture 回归和已解锁姜岛原生边界均已完成。Master Angler 本地门只消费可重放的 `ginger_island_access` 共享能力证书，不再消费 global source schedule 或强制 Gourmand `3/3`；全局验证器仍保留。全解决方案 Release 构建 `0 warning / 0 error`，聚焦回归 `203/203`。运行 `master-angler-acceptance-scope-390-20261103-173533` 在源存档 SHA 不变的前提下生成 `ready=true` 证书，并在不提供任何全局 schedule/Gourmand 工件时得到 `72` 鱼种、`14` 前置族、零 blocker 的本地 audit/proof/closure。当前覆盖计数不变、正式训练仍为 false；该证明只关闭局部前置清单，不替代逐鱼捕获与三分区证据。下一步是合并 PR #391 后重建 reconciliation/证据复用报告并重新估算剩余 root 的局部成本，不启动 Day-0 长跑。
+## 2026-11-03 当前 Rusty Key 切片与接续
+
+- 当前 reconciliation 将本 root 保留为 `pending_dependency_expansion`：仍缺受保护物品安全的 60 件 acquisition/reservation/donation 组合，以及原生奖励到送钥匙事件的完整回执；Teacher source adapter 与三分区也尚未闭合。现有 EVD-224 捐赠、EVD-322 剧情和共享下水道执行器继续复用。
+- 已补齐同一方向的两处绑定：博物馆远程候选携带与店内捐赠共用的精确阈值参数，仍走共享 connector；自动剧情候选只有在可读博物馆奖励前置成立、原生 `Data/Events/Farm` 事件 `66` 与 fresh fingerprint 一致时，才可绑定 `obtain_rusty_key` 并交给已有剧情编译器。缺失/错误类型的必需布尔字段、错误剧情来源和过期/重复指纹均拒绝。
+- 锁定原始数据 `museum60` 的奖励动作是 `MarkEventSeen Host 295672`；Farm key `66/e 295672/t 600 700/H` 包含原生 `rustyKey`，反编译 `Event.DefaultCommands.RustyKey` 才写入实际钥匙状态。捐满 60 件不能直接声称拿到钥匙。
+- 验证：Core Release `0 warning / 0 error`；方向绑定、博物馆、剧情与 catalog 聚焦回归 `118/118`。新增反例曾发现缺失布尔值被默认 false 放行，现已修复。无游戏模式聚焦 `71/71`、完整无游戏测试 `1006/1006` 通过；共用参数 helper 已移入共享夹具 partial，新方向回归的 CI 编译清单可独立构建；本次未启动游戏，未增加任何 coverage 或训练分子。
+- 下一步：复用隔离 E 盘测试入口，验证 `59→60` 原生捐赠、奖励前置、正常跨日/农场入口和送钥匙实际回执，显式标记边界夹具起点；随后补共享安全 acquisition/reservation 的阈值组合及本 criterion 的独立 Teacher/native 分区。继续 WIP=1，局部验收按 R2，不要求先完成 95 件 Museum 或完整 Day-0 日程。
+
+> **当前接续决定（2026-11-03T18:30:00+08:00，用户确认）：** #390 / PR #391 已完成验收责任解耦；当前唯一 primary 为 `obtain_rusty_key`。先完成安全捐赠阈值、原生奖励与送钥匙事件的局部闭环，再补本 criterion 的 Teacher/native 分区。R2 的四层验收合同继续生效；R1 中 Master Angler 固定第 10、强制 Gourmand/source-schedule 及完整新档反向前置均已撤销。后续未开工 root 的顺位待当前项收口后按真实局部缺口决定。Pet Love、Skull Key 已消费的严格验收保持冻结，原始中间文件清理不触发重采；当前计数仍为 `5/19 executable、6/19 split-complete、5/19 CoverageGateReady、4/11 root ready`，`formal_product_training=false`。
+
+> **当前唯一 WIP（2026-11-03，#390 已收口）：** PR #391 已合并，#390 已关闭；Master Angler criterion-local、共享能力证书、Teacher 全局集成和完整新档四层责任已解耦，本次用户确认下一 primary 为 Rusty Key，其余顺位按 R2 待重估。当前覆盖保持 `5/19 executable、6/19 split-complete、5/19 CoverageGateReady、4/11 root ready`，正式训练仍为 false；Pet Love 与 Skull Key 的严格验证结论已冻结，后续原始中间文件清理不触发重采。按用户授权顺序，唯一 primary 是 `obtain_rusty_key`：先重建该 root 的当前 reconciliation/blocker/evidence reuse，再闭合安全的 60 件 acquisition/reservation/donation 组合、原生奖励/钥匙和下水道入口，不启动 Day-0 长跑。
 
 > **当前状态入口：** [CURRENT_STATUS_CN.md](CURRENT_STATUS_CN.md)。本文件下方带日期的状态、计数和“下一步”均保留为历史证据；若与当前机器报告或 CURRENT_STATUS_CN.md 冲突，不得按历史数字规划新工作。
 >
-> **施工顺序修订（2026-11-03T15:46:34+08:00，Asia/Kuala_Lumpur；pretraining-order-20261103-r1）：** Community Center、Pet Love、Skull Key、Full Shipment 保持已冻结；后续顺序改为 `obtain_rusty_key` → `raise_skill_levels` → `raise_friendships` → `marriage_and_house_upgrade` → `complete_museum_collection` → `complete_master_angler` → `earn_money`。当前唯一 primary root 改为 `obtain_rusty_key`；Master Angler 保留成果、暂停在未完成状态，不再占据第 5 项。本次为用户明确授权的依赖/成本重排，不是普通 bug 中断；仍为 WIP=1。完整依据、退出条件与历史队列见 [CURRENT_STATUS_CN.md 第 6 节](CURRENT_STATUS_CN.md#6-下一项如何选择)。
+> **历史 R1 施工顺序（2026-11-03T15:46:34+08:00，Asia/Kuala_Lumpur；pretraining-order-20261103-r1）：** Community Center、Pet Love、Skull Key、Full Shipment 保持已冻结；后续顺序改为 `obtain_rusty_key` → `raise_skill_levels` → `raise_friendships` → `marriage_and_house_upgrade` → `complete_museum_collection` → `complete_master_angler` → `earn_money`。当前唯一 primary root 改为 `obtain_rusty_key`；Master Angler 保留成果、暂停在未完成状态，不再占据第 5 项。本次为用户明确授权的依赖/成本重排，不是普通 bug 中断；仍为 WIP=1。完整依据、退出条件与历史队列见 [CURRENT_STATUS_CN.md 第 6 节](CURRENT_STATUS_CN.md#6-下一项如何选择)。
 
 <!-- pretraining-order-20261103-r1; edited_at=2026-11-03T15:46:34+08:00; research_base=049f40edfcef910b00451ad5f7b948916df67ba1; owner-authorized; docs-only -->
 
-## 2026-11-03 训练前开发顺序修订（当前有效）
+## 2026-11-03 训练前开发顺序修订（历史 R1，验收与顺位以顶部接续决定及 R2 为准）
 
 **时间：2026-11-03T15:46:34+08:00（Asia/Kuala_Lumpur）；研究基线：`049f40edfcef910b00451ad5f7b948916df67ba1`。**
 用户明确授权纠正依赖倒置和难度倒挂；本节替代旧“Master Angler 当前第 5 项”的调度指令，原运行/测试记录保留为历史。
