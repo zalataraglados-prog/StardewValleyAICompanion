@@ -49,6 +49,7 @@ stable 1.0
 **关键纠正：**
 - Grandpa 21/21 是 Stage 1 的强基线和训练里程碑，**不是“游玩完全体”交付点**。
 - **先完成可独立运行的单机 Perfection 100% 存档，再进入与玩家的长期联机拟人训练。**
+- **最终发布 Mod 保留可替换、可启停的 Teacher Provider。** Student 负责普通高层策略，Teacher 不作为常驻主脑，但在不可逆、重大损失或其他必须严格核验的关键决策上承担按需复核与否决；所有决定仍需经过确定性硬门和原生回执。Teacher 缺失或无法证明正确时不能仅凭 Student 平均准确率放行。该能力是产品架构要求，不代表当前已实现。
 - Stage D 能够“和玩家长期一起玩”只要求一个足够稳定的**原型联机桥**；它不等于后续完整 Multiplayer 产品已经做完。
 
 ---
@@ -300,6 +301,7 @@ stable 1.0 至少同时要求：
 ```text
 长期策略稳定
 + 单机 Perfection 100% 完美基线
++ 关键决策按需 Teacher 复核与失败关闭
 + 长期联机拟人适配
 + 独立 AI body / farmhand
 + 完整 multiplayer / interruption / recovery

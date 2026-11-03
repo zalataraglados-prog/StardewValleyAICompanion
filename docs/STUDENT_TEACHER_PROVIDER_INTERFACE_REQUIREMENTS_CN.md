@@ -25,9 +25,9 @@ StardewAI 的策略学习层必须允许第三方在不修改确定性游戏执�
 
 Student provider 只能在核心提供的合法候选范围内返回策略偏好结果；不能新增合法性、绕过约束或直接执行游戏动作。
 
-Teacher provider 只能提供监督、重标、比较或不可满足结论；不能以 Teacher 身份直接改写游戏状态或绕过正式 evidence gate。
+Teacher provider 负责训练期独立监督、重标、比较或不可满足结论；在最终产品中，还需支持**声明作用域内的关键决策复核、否决和安全替代建议**。它不得直接改写游戏状态、扩张合法候选集、绕过正式 evidence gate 或接管 Planner/Compiler/Executor。Student 的高平均正确率不能替代关键决定的可验证保证。
 
-Teacher 必须允许被显式禁用；非 Teacher 路线不得因缺少 Teacher provider 而被迫调用内置 Teacher。
+最终发布 Mod 应装配一个可启停、可替换的 Teacher Provider，不要求每个普通动作调用它。Teacher 必须允许被显式禁用；玩家选择 Joja 等不使用 Community Center Teacher 的路线时不得强制调用内置 Teacher。对于实际需要额外复核的高风险决定，禁用、缺失、超时或无法确认的 Teacher **不能被视为通过**：只有已有确定性证据足以核验时才能继续，否则失败关闭或进入明确授权的人工处理路径。Teacher 的意见本身不是 100% 正确的证明。
 
 ## 3. Provider 可替换性要求
 
@@ -69,7 +69,7 @@ Teacher 必须允许被显式禁用；非 Teacher 路线不得因缺少 Teacher 
 
 - 不把 CUDA、独立 GPU 或训练机硬件作为必要条件；
 - 能在《Stardew Valley》最低配置级 CPU / 图形环境上运行；
-- 在游戏、SMAPI、StardewAI runtime 与实际 Student 同时运行时，整机内存预算不超过 **8 GiB**；
+- 在游戏、SMAPI、StardewAI runtime、实际 Student 以及**启用时的按需 Teacher 复核组件**同时运行时，整机内存预算不超过 **8 GiB**；
 - 不因替换 Student / Teacher provider 而提高确定性核心的最低运行要求，除非未来产品规范显式变更。
 
 Codex 自行设计基准、采样方式和具体性能阈值，并在模型定型报告中证明推荐实现满足该约束。
@@ -81,7 +81,7 @@ Codex 自行设计基准、采样方式和具体性能阈值，并在模型定�
 1. provider 合同已经实现并版本化；
 2. 内置 Student 可通过该合同运行；
 3. 一个与内置实现不同的替代 / mock Student 能在不修改确定性核心的情况下接入并完成合同级测试；
-4. Teacher 可独立替换或禁用，且不会改变硬权威边界；
+4. Teacher 可独立替换或禁用，且不会改变硬权威边界；最终产品关键决策可以按需调用已准入 Teacher 复核，反例证明禁用、缺失、超时、错误结论和不一致证据均不能静默放行；
 5. provider 身份与输出能够被正式 provenance / manifest 绑定；
 6. Codex 已完成模型定型实验并提交可复现结论；
 7. 所选正式 Student 通过低配 / 8 GiB 整机部署约束。
