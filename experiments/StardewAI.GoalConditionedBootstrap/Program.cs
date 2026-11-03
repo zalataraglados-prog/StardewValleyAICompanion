@@ -3133,9 +3133,17 @@ static void SelfTestMachineInputLoadTerminalCoverage(Arguments options) =>
         options.Required("execution-inputs"));
 
 static void SelfTestMachineMaterialTransferTerminalCoverage(
-    Arguments options) =>
-    BootstrapSelfTest.RunMachineMaterialTransferTerminalCoverage(
-        options.Required("execution-inputs"));
+    Arguments options)
+{
+    if (!string.IsNullOrWhiteSpace(options.Optional("output-root")))
+    {
+        if (options.Optional("execution-inputs") is not null)
+            throw new ArgumentException("Choose explicit execution inputs or an isolated fixture output root, not both.");
+        BootstrapSelfTest.RunMachineMaterialTransferFixture(options.Required("output-root"));
+    }
+    else
+        BootstrapSelfTest.RunMachineMaterialTransferTerminalCoverage(options.Required("execution-inputs"));
+}
 
 static void SelfTestMachineInputPurchaseTerminalCoverage(
     Arguments options) =>

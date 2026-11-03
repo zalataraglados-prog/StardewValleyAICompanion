@@ -13,6 +13,12 @@ public sealed class RuntimeMaterialTransferExecutorTests
         Assert.Contains("MaterialTransferStage.ReleaseOpenInput", source, StringComparison.Ordinal);
         Assert.Contains("TryApplySmapiButtonOverride(SButton.X, pressed: false", source, StringComparison.Ordinal);
         Assert.Contains("menu.receiveRightClick(", source, StringComparison.Ordinal);
+        Assert.Contains("MaterialSourceReferenceIndex(source, active.SourceItem)", source, StringComparison.Ordinal);
+        Assert.Contains("InventorySlotScreenPosition(sourceMenu, sourceSlotIndex)", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("InventorySlotScreenPosition(sourceMenu, intent.SourceSlotIndex)", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("MaterialSourceStackAt(", all, StringComparison.Ordinal);
+        Assert.Contains("ReferenceEquals(items[index], original)", RuntimeHarnessSources.File("ModEntry.MaterialTransfer.SourceIdentity.cs"), StringComparison.Ordinal);
+        Assert.Contains("MaterialTransferSourceSlotAfter", source, StringComparison.Ordinal);
         Assert.Contains("active.Chest.GetMutex().IsLockHeld()", source, StringComparison.Ordinal);
         Assert.Contains("MaterialChestActorUseAuthorized(chest)", source, StringComparison.Ordinal);
         Assert.Contains("MaterialChestActorUseAuthorized(active.Chest)", source, StringComparison.Ordinal);

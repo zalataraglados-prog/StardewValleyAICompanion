@@ -4,7 +4,7 @@ using StardewAI.Core.Execution;
 
 namespace StardewAI.Core.Tests;
 
-public sealed class MaterialTransferProjectorTests
+public sealed partial class MaterialTransferProjectorTests
 {
     [Fact]
     public void ProjectsPlayerDepositUsingNativeStackThenEmptySlotOrder()

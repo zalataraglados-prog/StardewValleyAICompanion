@@ -373,6 +373,10 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("material_transfer_source_stack_after")]
         public int? MaterialTransferSourceStackAfter { get; set; }
 
+        [JsonPropertyName("material_transfer_source_slot_after")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public int? MaterialTransferSourceSlotAfter { get; set; }
+
         [JsonPropertyName("material_transfer_destination_quantity_before")]
         public int? MaterialTransferDestinationQuantityBefore { get; set; }
 

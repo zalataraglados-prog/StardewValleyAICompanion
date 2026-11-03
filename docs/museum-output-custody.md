@@ -62,7 +62,9 @@ No native game was started for this slice. It does not promote coverage, prove
 full acquired-output custody in gameplay or authorize training. Custody currently
 supports one exact museum item in player inventory. Relocation/rebind is rejected
 until its multi-step custody lifecycle is integrated; it is not silently treated
-as supported. Backend reply retrieval now has its separate
+as supported. The [native slot-lineage prerequisite](material-transfer-slot-lineage.md)
+now handles chest compaction in the existing projector/executor/receipt chain;
+it does not remove those custody guards or certify claim relocation. Backend reply retrieval now has its separate
 [recovery contract](portfolio-mutation-reply-recovery.md#live-material-settlement-hooks):
 the actual Museum/Rain Totem live hooks journal before POST and may retrieve one
 exact stored reply without replay. Unknown/pending results and missing proof

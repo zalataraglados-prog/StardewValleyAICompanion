@@ -2,6 +2,8 @@
 
 ## 2026-11-03 当前 Rusty Key 切片与接续
 
+- **2026-11-04 保管迁移前置：原生槽位 lineage 修正：** 直接核对锁定反编译确认箱子存取会压紧空槽、玩家移除只留空位；现有取物执行器固定旧槽索引会在稀疏箱第一下后失效，独立回执也误用压紧后的索引读取 before。现复用原转移投影导出两侧完整槽位 lineage，原生点击跟踪原物品引用，原回执独立验证包含其他物品的槽位/质量/runtime/数量，结果和 episode 记录实际剩余源槽；不另建执行器或每 tick 快照。局部投影/回执、完整 Backend `381/381`、原控制 support `20` 与原 canonical 机器转移→核销→终端链通过，均为无游戏证据。保管 relocation/rebind 保护门仍关闭，未提升覆盖或训练。静默解除后仍先同版本 current-geode 原生轨迹，再补稀疏箱原生回归及完整保管迁移，见 [合同](material-transfer-slot-lineage.md)。
+
 - **2026-11-04 live 核销调用点补齐：** 排查位置迁移时发现，前一轮恢复只覆盖 rolling 脚本，Museum 与 Rain Totem 的 C# live 核销仍直接 POST。两个现有钩子现共用同一发前留档/单次只读查询 helper，复用原 Backend 日志与查询，不新增执行器或账本；明确 4xx 不查询，未知/错绑定仍保留原失败。恢复结果还需精确绑定 portfolio/source/receipt/revision/state，并继续原 completed-ID/失败关闭路径。Backend `381/381` 通过，含真实仓储/HTTP、实际 live 方法、坏拒绝正文/有界正文读取及无窗口 PowerShell 读取 C# 日志的跨进程验证。未启动游戏、未训练或提升覆盖。原生同版本轨迹仍待静默解除，随后接位置迁移等既定缺口，见 [恢复合同](portfolio-mutation-reply-recovery.md#live-material-settlement-hooks)。
 
 - **2026-11-04 Backend 变更丢回复恢复：** 原文件账本在同一次原子发布中保留最后一次成功 portfolio commit/终端结算/准备结算的精简实际回执，不复制完整账本或快照。独立只读查询不调用会自动核销的 `Get`，不改缓存/账本/审计；精确请求、身份、修订及哈希匹配才还原回复。原 rolling 客户端发前留原始请求，失败最多查一次，仍交原 C# canonical receipt/verifier，未知或被后续版本取代即停，绝不重发变更/原生动作。本项不替代同版本原生获取→保管→捐赠→核销轨迹，primary/覆盖/正式训练锁不变；原生下一步仍待静默解除。验证与边界见 [合同](portfolio-mutation-reply-recovery.md)。

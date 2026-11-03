@@ -71,13 +71,14 @@ public static partial class AcquisitionRouteSupportingTransitionReceiptBuilder
         }
 
         MaterialTransferProjection? projection = null;
+        MaterialInventoryGraph? beforeGraph = null;
         if (intent is not null &&
             AcquisitionMachineInputMaterialStaging.TryReadGraph(
                 before,
-                out var graph))
+                out beforeGraph))
         {
             projection = new MaterialTransferProjector().Project(
-                graph!,
+                beforeGraph!,
                 intent);
             if (projection.Status != "projected")
                 reasons.AddRange(projection.BlockingReasons);
@@ -164,6 +165,20 @@ public static partial class AcquisitionRouteSupportingTransitionReceiptBuilder
                 "supporting_transition_material_transfer_quantity_unavailable");
         }
         var sourceRuntimeType = string.Empty;
+        var sourceBinding = projection?.NativeSlotTransitions?.SingleOrDefault(row =>
+            row.NodeId == sourceNodeId && row.BeforeSlotIndex == sourceSlot);
+        var destinationBinding = projection?.NativeSlotTransitions?.SingleOrDefault(row =>
+            row.NodeId == destinationNodeId && row.AfterSlotIndex == destination?.SlotIndex);
+        if (projection is not null && beforeGraph is not null &&
+            AcquisitionMachineInputMaterialStaging.TryReadGraph(after, out var afterGraph))
+            reasons.AddRange(MaterialTransferProjector.VerifyNativeSlots(beforeGraph, afterGraph!, projection));
+        else
+            reasons.Add("supporting_transition_material_transfer_post_slot_graph_unavailable");
+        var exactSourceAfter = 0;
+        var sourceAfterResolved = sourceBinding is not null &&
+            (!sourceBinding.AfterSlotIndex.HasValue || intent is not null && TryMaterialSlotIdentityQuantity(
+                after, intent.SourceNodeId, sourceBinding.AfterSlotIndex.Value, intent.QualifiedItemId,
+                intent.Quality, out exactSourceAfter, out _));
         if (intent is not null &&
             (!TryMaterialSlotIdentityQuantity(
                  before,
@@ -173,14 +188,7 @@ public static partial class AcquisitionRouteSupportingTransitionReceiptBuilder
                  intent.Quality,
                  out var exactSourceBefore,
                  out sourceRuntimeType) ||
-             !TryMaterialSlotIdentityQuantity(
-                 after,
-                 intent.SourceNodeId,
-                 intent.SourceSlotIndex,
-                 intent.QualifiedItemId,
-                 intent.Quality,
-                 out var exactSourceAfter,
-                 out _) ||
+             !sourceAfterResolved ||
              string.IsNullOrWhiteSpace(sourceRuntimeType) ||
              exactSourceBefore != intent.ExpectedSourceStack ||
              exactSourceAfter != projection?.SourceStackAfter))
@@ -188,15 +196,13 @@ public static partial class AcquisitionRouteSupportingTransitionReceiptBuilder
             reasons.Add(
                 "supporting_transition_material_transfer_source_drifted");
         }
+        var exactDestinationBefore = 0;
+        var destinationBeforeResolved = destinationBinding is not null &&
+            (!destinationBinding.BeforeSlotIndex.HasValue || intent is not null && TryMaterialSlotIdentityQuantity(
+                before, intent.DestinationNodeId, destinationBinding.BeforeSlotIndex.Value, intent.QualifiedItemId,
+                intent.Quality, out exactDestinationBefore, out _));
         if (intent is not null && destination is not null &&
-            (!TryMaterialSlotIdentityQuantity(
-                 before,
-                 intent.DestinationNodeId,
-                 destination.SlotIndex,
-                 intent.QualifiedItemId,
-                 intent.Quality,
-                 out var exactDestinationBefore,
-                 out _) ||
+            (!destinationBeforeResolved ||
              !TryMaterialSlotIdentityQuantity(
                  after,
                  intent.DestinationNodeId,

@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-04 槽位压紧前置缺陷已修：** 共享转移投影增加完整两侧 lineage，原生点击不再固定旧索引，独立回执不再把压紧后索引当 before 索引，并验证其他物品未漂移；输出/episode 保留实际剩余源槽。canonical 机器转移续接与 Backend `381/381` 等无游戏回归通过，未开游戏或晋升覆盖。保管授权/原子 relocation 仍未完成且保护门仍关闭；Rusty Key primary 及 07:00 后优先 current-geode 原生边界不变。详见 [合同](material-transfer-slot-lineage.md)。
+
 > **2026-11-04 live 发送遗漏已补：** 上一恢复切片只接 rolling 脚本，两个直接 C# 核销调用点现也已接相同日志格式与原 Backend 查询。捐赠/Rain Totem 共用一个 helper；发前留完整请求，失败最多只查一次，明确拒绝不被转换为成功，不重发动作。实际钩子/仓储/HTTP 与跨进程日志读取通过，Backend `381/381`；拒绝正文损坏仍保留状态，总超时继续覆盖正文读取。无游戏/训练/覆盖晋升。Rusty Key 唯一 primary 及原生下一步不变，位置迁移仍未实现。见 [合同](portfolio-mutation-reply-recovery.md#live-material-settlement-hooks)。
 
 > **2026-11-04 Backend 回执恢复：** 三种原 portfolio 变更已随唯一账本原子保留精简成功回执，并提供不核销、不写入的只读查询。rolling 发前留档，丢回复只查一次，精确结果继续原 canonical 验证；未知/错身份/版本推进均停止而不重发。此为无游戏传输边界，不是完整原生闭环或训练准入；唯一 primary 仍为 Rusty Key，同版本原生获取/保管/捐赠/核销仍待静默解除后验证，计数不变。见 [合同](portfolio-mutation-reply-recovery.md)。

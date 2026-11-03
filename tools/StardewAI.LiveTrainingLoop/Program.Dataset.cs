@@ -260,6 +260,7 @@ static partial class Program
             MaterialTransferClickCount = execution["material_transfer_click_count"]?.GetValue<int>(),
             MaterialTransferSourceStackBefore = execution["material_transfer_source_stack_before"]?.GetValue<int>(),
             MaterialTransferSourceStackAfter = execution["material_transfer_source_stack_after"]?.GetValue<int>(),
+            MaterialTransferSourceSlotAfter = execution["material_transfer_source_slot_after"]?.GetValue<int>(),
             MaterialTransferDestinationQuantityBefore = execution["material_transfer_destination_quantity_before"]?.GetValue<int>(),
             MaterialTransferDestinationQuantityAfter = execution["material_transfer_destination_quantity_after"]?.GetValue<int>(),
             MaterialTransferNativeMenuOpened = execution["material_transfer_native_menu_opened"]?.GetValue<bool>(),
