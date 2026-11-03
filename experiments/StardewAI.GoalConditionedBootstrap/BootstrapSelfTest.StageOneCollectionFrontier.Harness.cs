@@ -443,6 +443,17 @@ internal static partial class BootstrapSelfTest
             VerifyRodPrerequisite();
         }
 
+        public void RunCurrentFrontierOnly()
+        {
+            var calendar = BuildStaticInputs();
+            var targetCalendar = AcquisitionRouteTargetDateCalendarBuilder.Build(
+                inventoryPath, loweringPath, windowsPath, routeCalendarPath, 0);
+            Write(targetDateCalendarPath, targetCalendar);
+            Write(calibrationPath, StageOneRouteTimingCalibration());
+            WriteStageOneCollectionSnapshot(snapshotPath, stateHash, fish);
+            VerifyCurrentFrontier(calendar, targetCalendar);
+        }
+
         private sealed record TargetDateAxes(
             AcquisitionRouteTargetDateCalendarReport TargetDateCalendar,
             AcquisitionRouteTargetDateOpportunityCostReport OpportunityCost,

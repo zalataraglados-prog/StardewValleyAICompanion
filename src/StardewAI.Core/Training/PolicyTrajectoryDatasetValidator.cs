@@ -162,10 +162,7 @@ internal sealed class PolicyTrajectoryDatasetValidator
             teacher.ExecutionReceiptSha256,
             teacher.AfterSnapshotSha256
         };
-        return string.Equals(
-                teacher.SchemaVersion,
-                "policy_teacher_supervision.v1",
-                StringComparison.Ordinal) &&
+        return (teacher.SchemaVersion is "policy_teacher_supervision.v1" or "policy_teacher_supervision.v2") &&
             string.Equals(
                 teacher.ProvenanceClass,
                 "independent_deterministic_teacher_preference",

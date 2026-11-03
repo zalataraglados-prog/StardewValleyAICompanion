@@ -27,6 +27,10 @@ internal static partial class BootstrapSelfTest
         new StageOneCollectionFrontierFixture(Path.GetFullPath(outputRoot))
             .RunRodPrerequisiteOnly();
 
+    public static void RunCurrentStageOnePolicySupervision(string outputRoot) =>
+        new StageOneCollectionFrontierFixture(Path.GetFullPath(outputRoot))
+            .RunCurrentFrontierOnly();
+
     private static void VerifyCurrentCollectionTeacherFrontier(
         string outputRoot)
     {

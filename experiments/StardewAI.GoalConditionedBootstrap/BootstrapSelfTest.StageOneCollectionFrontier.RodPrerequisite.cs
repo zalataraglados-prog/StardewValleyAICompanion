@@ -107,8 +107,8 @@ internal static partial class BootstrapSelfTest
                 PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor,
                 noRod.Denominator);
             Require(
-                routeReceipt.Status == "ready" &&
-                routeReceipt.TeacherTrainingRowEligible &&
+                routeReceipt.Status == "verified_evidence_only_no_trainable_teacher_comparison" &&
+                !routeReceipt.TeacherTrainingRowEligible &&
                 routeReceipt.VerifiedRequirementTransitions.Length == 1 &&
                 routeReceipt.VerifiedRequirementTransitions[0].Verified &&
                 routeReceipt.VerifiedRequirementTransitions[0].BindingKind ==
@@ -327,8 +327,8 @@ internal static partial class BootstrapSelfTest
                     PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor,
                     endpointFrontier.Denominator);
             Require(
-                endpointReceipt.Status == "ready" &&
-                endpointReceipt.TeacherTrainingRowEligible &&
+                endpointReceipt.Status == "verified_evidence_only_no_trainable_teacher_comparison" &&
+                !endpointReceipt.TeacherTrainingRowEligible &&
                 endpointReceipt.VerifiedRequirementTransitions.Single()
                     .BindingKind ==
                         "authoritative_supporting_prerequisite_shop_endpoint_open" &&
@@ -408,8 +408,8 @@ internal static partial class BootstrapSelfTest
                 Path.Combine(root, "rod-terminal-receipt-admission.json"),
                 terminalReceipt);
             Require(
-                terminalReceipt.Status == "ready" &&
-                terminalReceipt.TeacherTrainingRowEligible &&
+                terminalReceipt.Status == "verified_evidence_only_no_trainable_teacher_comparison" &&
+                !terminalReceipt.TeacherTrainingRowEligible &&
                 terminalReceipt.VerifiedRequirementTransitions.Single()
                     .BindingKind ==
                         "authoritative_supporting_prerequisite_terminal_purchase" &&

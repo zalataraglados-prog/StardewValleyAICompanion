@@ -235,7 +235,7 @@ public sealed class PolicyTrajectoryAudit
     public string Writer { get; set; } = "StardewAI.Core.Training.PolicyDecisionTrajectoryBuilder";
 
     [JsonPropertyName("policy")]
-    public string Policy { get; set; } = "Every decision preserves the complete candidate set; only one evidence-admitted selected option may label a policy trajectory, while non-admitted candidates remain explicit negatives.";
+    public string Policy { get; set; } = "Selection is a student observation and execution is a native outcome. Only independently replayed explicit Teacher comparisons may supervise preference pairs; all other candidates remain unlabeled.";
 
     [JsonPropertyName("teacher_supervision")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -244,6 +244,27 @@ public sealed class PolicyTrajectoryAudit
 
 public sealed class PolicyTrajectoryTeacherSupervision
 {
+    [JsonPropertyName("teacher_id")]
+    public string TeacherId { get; set; } = string.Empty;
+
+    [JsonPropertyName("teacher_version")]
+    public string TeacherVersion { get; set; } = string.Empty;
+
+    [JsonPropertyName("source_state_hash")]
+    public string SourceStateHash { get; set; } = string.Empty;
+
+    [JsonPropertyName("candidate_denominator_sha256")]
+    public string CandidateDenominatorSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("dataset_partition")]
+    public string DatasetPartition { get; set; } = string.Empty;
+
+    [JsonPropertyName("sources")]
+    public PolicyTeacherEvidenceSources? Sources { get; set; }
+
+    [JsonPropertyName("pairwise_preferences")]
+    public PolicyTeacherPreferencePair[] PairwisePreferences { get; set; } = Array.Empty<PolicyTeacherPreferencePair>();
+
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } = "policy_teacher_supervision.v1";
 

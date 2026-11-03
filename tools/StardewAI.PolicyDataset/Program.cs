@@ -2,34 +2,45 @@ using System.Text.Json;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Training;
 
-var options = PolicyDatasetOptions.Parse(args);
-var result = new PolicyTrajectoryDatasetBuilder().Build(
-    options.InputPath,
-    options.OutputRoot,
-    options.HorizonObservationPath,
-    options.ExpectedKnowledgeDictionary);
+try { Run(args); }
+catch (Exception exception) when (exception is ArgumentException or IOException or InvalidDataException or InvalidOperationException or JsonException or UnauthorizedAccessException)
+{
+    Console.Error.WriteLine(JsonSerializer.Serialize(new { status = "rejected", reason = exception.Message }));
+    Environment.ExitCode = 2;
+}
 
-Console.WriteLine(JsonSerializer.Serialize(new
+static void Run(string[] args)
 {
-    status = "ok",
-    manifest_path = result.ManifestPath,
-    rejections_path = result.RejectionsPath,
-    input_lines = result.Manifest.Counts.InputLines,
-    accepted_rows = result.Manifest.Counts.AcceptedRows,
-    rejected_rows = result.Manifest.Counts.RejectedRows,
-    duplicate_rows = result.Manifest.Counts.DuplicateRows,
-    conflicting_duplicate_rows = result.Manifest.Counts.ConflictingDuplicateRows,
-    train_rows = result.Manifest.Partitions.Single(row => row.Partition == "train").Rows,
-    validation_rows = result.Manifest.Partitions.Single(row => row.Partition == "validation").Rows,
-    test_rows = result.Manifest.Partitions.Single(row => row.Partition == "test").Rows,
-    day_returns = result.Manifest.Returns.DayComplete,
-    season_returns = result.Manifest.Returns.SeasonComplete,
-    year_returns = result.Manifest.Returns.YearComplete,
-    grandpa_21_returns = result.Manifest.Returns.Grandpa21Complete
-}, new JsonSerializerOptions(JsonSerializerDefaults.Web)
-{
-    WriteIndented = true
-}));
+    var options = PolicyDatasetOptions.Parse(args);
+    var result = new PolicyTrajectoryDatasetBuilder(
+        new StardewAI.GoalConditionedBootstrap.CollectionTeacherSupervisionReplayVerifier()).Build(
+        options.InputPath,
+        options.OutputRoot,
+        options.HorizonObservationPath,
+        options.ExpectedKnowledgeDictionary);
+
+    Console.WriteLine(JsonSerializer.Serialize(new
+    {
+        status = "ok",
+        manifest_path = result.ManifestPath,
+        rejections_path = result.RejectionsPath,
+        input_lines = result.Manifest.Counts.InputLines,
+        accepted_rows = result.Manifest.Counts.AcceptedRows,
+        rejected_rows = result.Manifest.Counts.RejectedRows,
+        duplicate_rows = result.Manifest.Counts.DuplicateRows,
+        conflicting_duplicate_rows = result.Manifest.Counts.ConflictingDuplicateRows,
+        train_rows = result.Manifest.Partitions.Single(row => row.Partition == "train").Rows,
+        validation_rows = result.Manifest.Partitions.Single(row => row.Partition == "validation").Rows,
+        test_rows = result.Manifest.Partitions.Single(row => row.Partition == "test").Rows,
+        day_returns = result.Manifest.Returns.DayComplete,
+        season_returns = result.Manifest.Returns.SeasonComplete,
+        year_returns = result.Manifest.Returns.YearComplete,
+        grandpa_21_returns = result.Manifest.Returns.Grandpa21Complete
+    }, new JsonSerializerOptions(JsonSerializerDefaults.Web)
+    {
+        WriteIndented = true
+    }));
+}
 
 internal sealed class PolicyDatasetOptions
 {

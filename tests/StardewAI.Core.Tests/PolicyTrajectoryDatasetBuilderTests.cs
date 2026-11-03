@@ -3,6 +3,7 @@ using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Training;
+using StardewAI.Testing;
 
 namespace StardewAI.Core.Tests;
 
@@ -34,8 +35,8 @@ public sealed class PolicyTrajectoryDatasetBuilderTests
             Serialize(Observation("grandpa.final", PolicyHorizonKinds.Grandpa21, 21))
         });
 
-        var first = new PolicyTrajectoryDatasetBuilder().Build(input, Path.Combine(root, "build-one"), observations);
-        var second = new PolicyTrajectoryDatasetBuilder().Build(input, Path.Combine(root, "build-two"), observations);
+        var first = PolicySupervisionFixture.DatasetBuilder().Build(input, Path.Combine(root, "build-one"), observations);
+        var second = PolicySupervisionFixture.DatasetBuilder().Build(input, Path.Combine(root, "build-two"), observations);
 
         Assert.Equal(8, first.Manifest.Counts.InputLines);
         Assert.Equal(6, first.Manifest.Counts.AcceptedRows);
@@ -78,10 +79,11 @@ public sealed class PolicyTrajectoryDatasetBuilderTests
         var conflict = Clone(first);
         conflict.TrajectoryId = "conflict.two";
         conflict.Outcome.ActualTicks++;
+        PolicySupervisionFixture.Attach(conflict, "social:gift:Abigail", "economy:buy:seed");
         var independent = Row("independent", "other-hash", 1, "spring", 2, 610, 0.2);
         WriteLines(input, new[] { Serialize(first), Serialize(conflict), Serialize(independent) });
 
-        var result = new PolicyTrajectoryDatasetBuilder().Build(input, Path.Combine(root, "output"));
+        var result = PolicySupervisionFixture.DatasetBuilder().Build(input, Path.Combine(root, "output"));
 
         Assert.Equal(1, result.Manifest.Counts.AcceptedRows);
         Assert.Equal(2, result.Manifest.Counts.ConflictingDuplicateRows);
@@ -98,7 +100,7 @@ public sealed class PolicyTrajectoryDatasetBuilderTests
         WriteLines(observations, new[] { Serialize(Observation("bad", PolicyHorizonKinds.Grandpa21, 22)) });
 
         Assert.Throws<InvalidOperationException>(() =>
-            new PolicyTrajectoryDatasetBuilder().Build(input, Path.Combine(root, "output"), observations));
+            PolicySupervisionFixture.DatasetBuilder().Build(input, Path.Combine(root, "output"), observations));
     }
 
     [Fact]
@@ -109,7 +111,7 @@ public sealed class PolicyTrajectoryDatasetBuilderTests
         WriteLines(input, new[] { Serialize(Row("valid", "hash", 1, "spring", 1, 610, 0.1)) });
 
         var error = Assert.Throws<InvalidOperationException>(() =>
-            new PolicyTrajectoryDatasetBuilder().Build(
+            PolicySupervisionFixture.DatasetBuilder().Build(
                 input,
                 Path.Combine(root, "output"),
                 expectedKnowledgeDictionary: PolicyTrajectoryVersionPins.KnowledgeDictionary));
@@ -131,7 +133,7 @@ public sealed class PolicyTrajectoryDatasetBuilderTests
             Serialize(Row("valid", "valid-hash", 1, "spring", 2, 610, 0.2))
         });
 
-        var result = new PolicyTrajectoryDatasetBuilder().Build(input, Path.Combine(root, "output"));
+        var result = PolicySupervisionFixture.DatasetBuilder().Build(input, Path.Combine(root, "output"));
 
         Assert.Equal(1, result.Manifest.Counts.AcceptedRows);
         Assert.Contains(result.Manifest.Rejections, row => row.Reason == "envelope_section_missing");
@@ -151,7 +153,7 @@ public sealed class PolicyTrajectoryDatasetBuilderTests
         });
         WriteLines(observations, new[] { Serialize(Observation("terminal", PolicyHorizonKinds.Grandpa21, 21)) });
 
-        var result = new PolicyTrajectoryDatasetBuilder().Build(input, Path.Combine(root, "output"), observations);
+        var result = PolicySupervisionFixture.DatasetBuilder().Build(input, Path.Combine(root, "output"), observations);
         var rows = ReadRows(result.Manifest.Cleaned.Path);
 
         Assert.Equal(1, rows.Single(row => row.TrajectoryId == "before").Returns.Grandpa21);
@@ -179,7 +181,7 @@ public sealed class PolicyTrajectoryDatasetBuilderTests
         int time,
         double reward)
     {
-        return new PolicyDecisionTrajectoryBuilder().Build(
+        var row = new PolicyDecisionTrajectoryBuilder().Build(
             trajectoryId,
             "run.dataset",
             new PolicyTrajectoryContext
@@ -217,6 +219,7 @@ public sealed class PolicyTrajectoryDatasetBuilderTests
                 AfterSnapshotFresh = true,
                 ChangedFacts = JsonDocument.Parse("[]").RootElement.Clone()
             });
+        return PolicySupervisionFixture.Attach(row, "social:gift:Abigail", "economy:buy:seed");
     }
 
     private static PolicyEventCandidatePrediction Candidate(

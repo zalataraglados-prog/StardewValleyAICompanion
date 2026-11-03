@@ -13,15 +13,18 @@ public sealed class StructuredPolicyTrainer
 {
     private readonly StructuredPolicyCheckpointStore checkpointStore;
     private readonly PolicyTrajectoryDatasetValidator trajectoryValidator = new();
+    private readonly PolicyPairwiseSupervisionAdmission supervisionAdmission;
 
     public StructuredPolicyTrainer()
         : this(new StructuredPolicyCheckpointStore())
     {
     }
 
-    public StructuredPolicyTrainer(StructuredPolicyCheckpointStore checkpointStore)
+    public StructuredPolicyTrainer(StructuredPolicyCheckpointStore checkpointStore,
+        IPolicyTeacherSupervisionReplayVerifier? replayVerifier = null)
     {
         this.checkpointStore = checkpointStore;
+        supervisionAdmission = new PolicyPairwiseSupervisionAdmission(replayVerifier);
     }
 
     public StructuredPolicyTrainingResult Train(
@@ -41,9 +44,10 @@ public sealed class StructuredPolicyTrainer
         var trainDigest = Partition(manifest, PolicyDatasetPartitions.Train);
         var validationDigest = Partition(manifest, PolicyDatasetPartitions.Validation);
         var testDigest = Partition(manifest, PolicyDatasetPartitions.Test);
-        var trainRows = ReadPartition(trainDigest, PolicyDatasetPartitions.Train);
-        var validationRows = ReadPartition(validationDigest, PolicyDatasetPartitions.Validation);
-        var testRows = ReadPartition(testDigest, PolicyDatasetPartitions.Test);
+        var comparisons = new Dictionary<string, PolicyTeacherPreferencePair[]>(StringComparer.Ordinal);
+        var trainRows = ReadPartition(trainDigest, PolicyDatasetPartitions.Train, comparisons);
+        var validationRows = ReadPartition(validationDigest, PolicyDatasetPartitions.Validation, comparisons);
+        var testRows = ReadPartition(testDigest, PolicyDatasetPartitions.Test, comparisons);
         var allRows = trainRows.Concat(validationRows).Concat(testRows).ToArray();
         if (allRows.Length != manifest.Counts.AcceptedRows ||
             manifest.Cleaned.Rows != manifest.Counts.AcceptedRows ||
@@ -62,6 +66,8 @@ public sealed class StructuredPolicyTrainer
             if (!File.Exists(fullInitializationPath))
                 throw new FileNotFoundException("Structured policy initialization checkpoint does not exist.", fullInitializationPath);
             initialization = checkpointStore.Load(fullInitializationPath);
+            if (initialization.Training.SupervisionObjective != PolicyTrainingObjectives.IndependentTeacherPairwise)
+                throw new InvalidOperationException("Initialization checkpoint lacks independently admitted Teacher supervision.");
             initializationHash = StructuredPolicyCheckpointStore.HashFile(fullInitializationPath);
             ValidateInitializationVersion(initialization.Versions, version);
         }
@@ -78,7 +84,7 @@ public sealed class StructuredPolicyTrainer
         var inheritedFeatureCount = initialization is null
             ? 0
             : StructuredPolicyFeatureEncoder.InitializeWeights(model, initialization.Model);
-        var trainPairs = BuildPairs(trainRows, model);
+        var trainPairs = BuildPairs(trainRows, model, comparisons);
         if (trainPairs.Count == 0)
             throw new InvalidOperationException("Structured policy training partition contains no admitted comparison pairs.");
         Optimize(model.Weights, trainPairs, parameters);
@@ -99,7 +105,7 @@ public sealed class StructuredPolicyTrainer
             Versions = CopyVersion(version),
             Hyperparameters = CopyHyperparameters(parameters),
             Model = model,
-            Training = BuildSummary(model, trainRows, validationRows, testRows, trainPairs),
+            Training = BuildSummary(model, trainRows, validationRows, testRows, trainPairs, comparisons),
             Initialization = initialization is null
                 ? null
                 : new StructuredPolicyInitializationBinding
@@ -150,6 +156,7 @@ public sealed class StructuredPolicyTrainer
     private static PolicyDatasetVersionSet ValidateManifest(PolicyDatasetManifest manifest)
     {
         if (!string.Equals(manifest.SchemaVersion, "policy_dataset_manifest.v1", StringComparison.Ordinal) ||
+            manifest.TrainingObjective != PolicyTrainingObjectives.IndependentTeacherPairwise ||
             manifest.Cleaned is null || manifest.Counts is null ||
             manifest.Partitions is null || manifest.VersionSets is null)
             throw new InvalidOperationException("Policy dataset manifest is incomplete or unsupported.");
@@ -170,7 +177,8 @@ public sealed class StructuredPolicyTrainer
 
     private PolicyDecisionTrajectoryEnvelope[] ReadPartition(
         PolicyDatasetPartitionDigest digest,
-        string expectedPartition)
+        string expectedPartition,
+        IDictionary<string, PolicyTeacherPreferencePair[]> comparisons)
     {
         VerifyDigest(digest);
         var rows = new List<PolicyDecisionTrajectoryEnvelope>();
@@ -192,6 +200,12 @@ public sealed class StructuredPolicyTrainer
             var rejection = trajectoryValidator.Validate(row);
             if (rejection is not null)
                 throw new InvalidOperationException("Policy partition row failed validation: " + rejection + ".");
+            rejection = supervisionAdmission.Validate(row, out var admittedPairs);
+            if (rejection is not null)
+                throw new InvalidOperationException("Policy partition row failed supervision admission: " + rejection + ".");
+            if (comparisons.ContainsKey(row.TrajectoryId))
+                throw new InvalidOperationException("Policy dataset trajectory IDs are not globally unique.");
+            comparisons.Add(row.TrajectoryId, admittedPairs);
             if (!string.Equals(row.Context.DatasetPartition, expectedPartition, StringComparison.Ordinal) ||
                 !string.Equals(PolicyTrajectoryDatasetBuilder.PartitionFor(row.Context.SplitKey), expectedPartition, StringComparison.Ordinal))
                 throw new InvalidOperationException("Policy partition row crossed its deterministic split boundary.");
@@ -222,16 +236,18 @@ public sealed class StructuredPolicyTrainer
 
     private static List<TrainingPair> BuildPairs(
         IReadOnlyList<PolicyDecisionTrajectoryEnvelope> rows,
-        StructuredPolicyLinearModel model)
+        StructuredPolicyLinearModel model,
+        IReadOnlyDictionary<string, PolicyTeacherPreferencePair[]> comparisons)
     {
         var pairs = new List<TrainingPair>();
         foreach (var row in rows)
         {
-            var selected = row.Candidates.Single(candidate => candidate.Selected);
-            var positive = StructuredPolicyFeatureEncoder.Encode(row.StateFeatures, selected, model);
-            foreach (var negative in row.Candidates.Where(candidate =>
-                         !candidate.Selected && candidate.Available && candidate.AdmittedForPolicy))
+            var candidates = row.Candidates.ToDictionary(candidate => candidate.CandidateId, StringComparer.Ordinal);
+            foreach (var comparison in comparisons[row.TrajectoryId])
             {
+                var positive = StructuredPolicyFeatureEncoder.Encode(row.StateFeatures,
+                    candidates[comparison.PreferredCandidateId], model);
+                var negative = candidates[comparison.AlternativeCandidateId];
                 var encodedNegative = StructuredPolicyFeatureEncoder.Encode(row.StateFeatures, negative, model);
                 var difference = new double[positive.Length];
                 for (var index = 0; index < difference.Length; index++)
@@ -284,12 +300,14 @@ public sealed class StructuredPolicyTrainer
         PolicyDecisionTrajectoryEnvelope[] trainRows,
         PolicyDecisionTrajectoryEnvelope[] validationRows,
         PolicyDecisionTrajectoryEnvelope[] testRows,
-        IReadOnlyList<TrainingPair> trainPairs)
+        IReadOnlyList<TrainingPair> trainPairs,
+        IReadOnlyDictionary<string, PolicyTeacherPreferencePair[]> comparisons)
     {
-        var validationPairs = BuildPairs(validationRows, model);
-        var testPairs = BuildPairs(testRows, model);
+        var validationPairs = BuildPairs(validationRows, model, comparisons);
+        var testPairs = BuildPairs(testRows, model, comparisons);
         return new StructuredPolicyTrainingSummary
         {
+            SupervisionObjective = PolicyTrainingObjectives.IndependentTeacherPairwise,
             TrainRows = trainRows.Length,
             TrainPairs = trainPairs.Count,
             FeatureCount = model.FeatureNames.Length,

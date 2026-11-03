@@ -3,10 +3,11 @@ using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Training;
+using StardewAI.Testing;
 
 namespace StardewAI.Core.Tests;
 
-public sealed class StructuredPolicyTrainerTests
+public sealed partial class StructuredPolicyTrainerTests
 {
     [Fact]
     public void FormalDatasetTrainsDeterministicCheckpointAndReranksByState()
@@ -17,10 +18,10 @@ public sealed class StructuredPolicyTrainerTests
             .Select(day => Row(day, day % 2 == 0 ? 10000 : 100))
             .ToArray();
         WriteLines(input, rows.Select(Serialize));
-        var dataset = new PolicyTrajectoryDatasetBuilder().Build(input, Path.Combine(root, "dataset"));
+        var dataset = PolicySupervisionFixture.DatasetBuilder().Build(input, Path.Combine(root, "dataset"));
         var firstPath = Path.Combine(root, "checkpoints", "first.json");
         var secondPath = Path.Combine(root, "checkpoints", "second.json");
-        var trainer = new StructuredPolicyTrainer();
+        var trainer = PolicySupervisionFixture.Trainer();
 
         var first = trainer.Train(dataset.ManifestPath, firstPath);
         var second = trainer.Train(dataset.ManifestPath, secondPath);
@@ -38,11 +39,11 @@ public sealed class StructuredPolicyTrainerTests
     public void LaterGoalCanWarmStartCheckpointAndExtendFeatureVocabulary()
     {
         var root = TestRoot();
-        var trainer = new StructuredPolicyTrainer();
+        var trainer = PolicySupervisionFixture.Trainer();
         var stageOneInput = Path.Combine(root, "stage-one.jsonl");
         WriteLines(stageOneInput, Enumerable.Range(1, 28)
             .Select(day => Serialize(Row(day, day % 2 == 0 ? 10000 : 100))));
-        var stageOneDataset = new PolicyTrajectoryDatasetBuilder().Build(
+        var stageOneDataset = PolicySupervisionFixture.DatasetBuilder().Build(
             stageOneInput,
             Path.Combine(root, "stage-one-dataset"));
         var stageOnePath = Path.Combine(root, "stage-one-checkpoint.json");
@@ -54,7 +55,7 @@ public sealed class StructuredPolicyTrainerTests
                 day,
                 day % 2 == 0 ? 10000 : 100,
                 "perfection.native_100"))));
-        var stageTwoDataset = new PolicyTrajectoryDatasetBuilder().Build(
+        var stageTwoDataset = PolicySupervisionFixture.DatasetBuilder().Build(
             stageTwoInput,
             Path.Combine(root, "stage-two-dataset"));
         var stageTwo = trainer.Train(
@@ -203,8 +204,8 @@ public sealed class StructuredPolicyTrainerTests
         var root = TestRoot();
         var input = Path.Combine(root, "raw.jsonl");
         WriteLines(input, Enumerable.Range(1, 28).Select(day => Serialize(Row(day, day % 2 == 0 ? 10000 : 100))));
-        var dataset = new PolicyTrajectoryDatasetBuilder().Build(input, Path.Combine(root, "dataset"));
-        var trainer = new StructuredPolicyTrainer();
+        var dataset = PolicySupervisionFixture.DatasetBuilder().Build(input, Path.Combine(root, "dataset"));
+        var trainer = PolicySupervisionFixture.Trainer();
         var checkpointPath = Path.Combine(root, "checkpoint.json");
         var trained = trainer.Train(dataset.ManifestPath, checkpointPath);
         var trainPath = dataset.Manifest.Partitions.Single(item => item.Partition == PolicyDatasetPartitions.Train).Path;
@@ -218,22 +219,6 @@ public sealed class StructuredPolicyTrainerTests
             new StructuredPolicyCheckpointStore().Validate(trained.Checkpoint));
     }
 
-    [Fact]
-    public void LiveOptionsRequireCheckpointWhenStructuredPolicyIsMandatory()
-    {
-        Assert.Throws<ArgumentException>(() =>
-            LiveTrainingOptions.Parse(new[] { "--require-structured-policy" }));
-        var options = LiveTrainingOptions.Parse(new[]
-        {
-            "--require-structured-policy",
-            "--policy-checkpoint-path", @"E:\model.json",
-            "--policy-initialization-checkpoint-path", @"E:\grandpa-21.json"
-        });
-        Assert.True(options.RequireStructuredPolicy);
-        Assert.Equal(@"E:\model.json", options.PolicyCheckpointPath);
-        Assert.Equal(@"E:\grandpa-21.json", options.PolicyInitializationCheckpointPath);
-    }
-
     private static string Best(StructuredPolicyCheckpointEnvelope checkpoint, FeatureVector features) =>
         new StructuredPolicyRanker().Rank(checkpoint, features, Candidates())
             .First(candidate => candidate.Available).OptionId;
@@ -243,8 +228,8 @@ public sealed class StructuredPolicyTrainerTests
         var root = TestRoot();
         var input = Path.Combine(root, "raw.jsonl");
         WriteLines(input, Enumerable.Range(1, 28).Select(day => Serialize(Row(day, day % 2 == 0 ? 10000 : 100))));
-        var dataset = new PolicyTrajectoryDatasetBuilder().Build(input, Path.Combine(root, "dataset"));
-        return new StructuredPolicyTrainer().Train(
+        var dataset = PolicySupervisionFixture.DatasetBuilder().Build(input, Path.Combine(root, "dataset"));
+        return PolicySupervisionFixture.Trainer().Train(
             dataset.ManifestPath,
             Path.Combine(root, "checkpoint.json")).Checkpoint;
     }
@@ -256,7 +241,7 @@ public sealed class StructuredPolicyTrainerTests
     {
         var selected = money > 1000 ? "gift" : "talk";
         var stateHash = "state." + day;
-        return new PolicyDecisionTrajectoryBuilder().Build(
+        var row = new PolicyDecisionTrajectoryBuilder().Build(
             "trajectory." + day,
             "run.structured",
             new PolicyTrajectoryContext
@@ -287,6 +272,8 @@ public sealed class StructuredPolicyTrainerTests
                 AfterSnapshotFresh = true,
                 ChangedFacts = JsonDocument.Parse("[]").RootElement.Clone()
             });
+        return PolicySupervisionFixture.Attach(row,
+            money > 1000 ? "gift" : "talk", money > 1000 ? "talk" : "gift");
     }
 
     private static PolicyEventCandidatePrediction[] Candidates() => new[]

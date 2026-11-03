@@ -29,6 +29,16 @@ jobs:
         run: dotnet build src/StardewAI.Core/StardewAI.Core.csproj --configuration Release --no-restore
       - name: Build live training loop
         run: dotnet build tools/StardewAI.LiveTrainingLoop/StardewAI.LiveTrainingLoop.csproj --configuration Release --no-restore
+      - name: Build supervised policy CLI entry points
+        shell: pwsh
+        run: |
+          foreach ($name in @("StardewAI.PolicyDataset", "StardewAI.PolicyModel")) {
+            $project = "tools/$name/$name.csproj"
+            dotnet restore $project --locked-mode
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            dotnet build $project --configuration Release --no-restore
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
       - name: Restore knowledge compiler
         run: dotnet restore tools/StardewAI.KnowledgeCompiler/StardewAI.KnowledgeCompiler.csproj --locked-mode
       - name: Build knowledge compiler
@@ -39,6 +49,9 @@ jobs:
         run: dotnet build experiments/StardewAI.GoalConditionedBootstrap/StardewAI.GoalConditionedBootstrap.csproj --configuration Release --no-restore
       - name: Test hermetic bootstrap critical paths
         run: dotnet run --project experiments/StardewAI.GoalConditionedBootstrap/StardewAI.GoalConditionedBootstrap.csproj --configuration Release --no-build -- self-test-bootstrap-hermetic
+      - name: Test independent Teacher supervision replay
+        shell: pwsh
+        run: dotnet run --project experiments/StardewAI.GoalConditionedBootstrap/StardewAI.GoalConditionedBootstrap.csproj --configuration Release --no-build -- self-test-current-stage-one-policy-supervision --output-root "$env:RUNNER_TEMP/policy-supervision-replay"
       - name: Restore core governance tests
         run: dotnet restore tests/StardewAI.Core.Tests/StardewAI.Core.Tests.csproj --locked-mode -p:GameFreeGovernance=true
       - name: Test core governance

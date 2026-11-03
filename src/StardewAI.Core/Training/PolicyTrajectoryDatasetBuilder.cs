@@ -13,6 +13,12 @@ public sealed class PolicyTrajectoryDatasetBuilder
 {
     private readonly PolicyTrajectoryDatasetValidator validator = new();
     private readonly PolicyTrajectoryReturnBackfiller returnBackfiller = new();
+    private readonly PolicyPairwiseSupervisionAdmission supervisionAdmission;
+
+    public PolicyTrajectoryDatasetBuilder(IPolicyTeacherSupervisionReplayVerifier? replayVerifier = null)
+    {
+        supervisionAdmission = new PolicyPairwiseSupervisionAdmission(replayVerifier);
+    }
 
     public PolicyDatasetBuildResult Build(
         string inputPath,
@@ -25,7 +31,6 @@ public sealed class PolicyTrajectoryDatasetBuilder
             throw new FileNotFoundException("Policy trajectory input does not exist.", fullInputPath);
 
         var fullOutputRoot = Path.GetFullPath(outputRoot);
-        Directory.CreateDirectory(fullOutputRoot);
         var inputLines = File.ReadAllLines(fullInputPath);
         var rejections = new List<PolicyDatasetRejection>();
         var parsed = ParseTrajectories(inputLines, rejections);
@@ -39,7 +44,8 @@ public sealed class PolicyTrajectoryDatasetBuilder
             .Select(row => row.Trajectory)
             .ToArray();
         if (accepted.Length == 0)
-            throw new InvalidOperationException("Policy dataset contains no valid non-conflicting trajectories.");
+            throw new InvalidOperationException("Policy dataset contains no valid non-conflicting trajectories. Rejections: " +
+                string.Join(",", rejections.Select(value => value.Reason).Distinct(StringComparer.Ordinal).OrderBy(value => value, StringComparer.Ordinal)));
         if (accepted.Select(VersionKey).Distinct(StringComparer.Ordinal).Count() != 1)
             throw new InvalidOperationException("Policy dataset mixes multiple version sets; build each immutable version separately.");
         if (!string.IsNullOrWhiteSpace(expectedKnowledgeDictionary) &&
@@ -57,6 +63,7 @@ public sealed class PolicyTrajectoryDatasetBuilder
         foreach (var row in accepted)
             row.Context.DatasetPartition = PartitionFor(row.Context.SplitKey);
 
+        Directory.CreateDirectory(fullOutputRoot);
         var cleanedPath = Path.Combine(fullOutputRoot, "policy-trajectories.cleaned.jsonl");
         var trainPath = Path.Combine(fullOutputRoot, "policy-trajectories.train.jsonl");
         var validationPath = Path.Combine(fullOutputRoot, "policy-trajectories.validation.jsonl");
@@ -83,6 +90,7 @@ public sealed class PolicyTrajectoryDatasetBuilder
 
         var manifest = new PolicyDatasetManifest
         {
+            TrainingObjective = PolicyTrainingObjectives.IndependentTeacherPairwise,
             Input = Digest(fullInputPath, inputLines.Count(line => !string.IsNullOrWhiteSpace(line))),
             HorizonObservations = string.IsNullOrWhiteSpace(horizonObservationPath)
                 ? null
@@ -166,7 +174,7 @@ public sealed class PolicyTrajectoryDatasetBuilder
                     continue;
                 }
 
-                var reason = validator.Validate(row);
+                var reason = validator.Validate(row) ?? supervisionAdmission.Validate(row, out _);
                 if (reason is not null)
                 {
                     Reject(rejections, lineNumber, row.TrajectoryId, reason, string.Empty);
