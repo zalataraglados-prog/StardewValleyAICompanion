@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-04 原生供给已前进，完整闭环未通过：** #412 的 `8226ae8c` 已真实开晶球取得一件目标并进入账本保管，两个原生地图连接后在博物馆被残留对话/不可移动状态拦截；尚未捐赠或取钥匙。该残留从开晶球 after 就存在，正修复原生 DialogueBox→GeodeMenu 生命周期，复用既有点击逻辑且不绕过控制/保管门。下一步仍是同一 Rusty Key 的完整原生轨迹，覆盖/Teacher/正式训练不晋升，见[合同](geode-dialogue-lifecycle.md)。
+
 > **2026-11-04 原生闭环尚未通过，已定位暂停边界：** 第五年起点被时限门拒绝；第一年 ProofFarm 真实运行又发现原 harness 自持空闲暂停未被规划识别，尚未派发获取/捐赠。修正复用原 clock/校准链和可选只读 API，保留真实 native readiness，不为普通暂停或未知路线放行；启动前先核对基线日期。39项聚焦和32项边界检查通过，当前仍需 clean source 原生获取→保管→捐赠→核销轨迹；primary、覆盖和训练锁不变，见[合同](executor-owned-idle-pause.md)。
 
 > **2026-11-04 槽位压紧前置缺陷已修：** 共享转移投影增加完整两侧 lineage，原生点击不再固定旧索引，独立回执不再把压紧后索引当 before 索引，并验证其他物品未漂移；输出/episode 保留实际剩余源槽。canonical 机器转移续接与 Backend `381/381` 等无游戏回归通过，未开游戏或晋升覆盖。保管授权/原子 relocation 仍未完成且保护门仍关闭；Rusty Key primary 及 07:00 后优先 current-geode 原生边界不变。详见 [合同](material-transfer-slot-lineage.md)。

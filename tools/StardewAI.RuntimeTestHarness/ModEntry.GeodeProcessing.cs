@@ -124,14 +124,21 @@ public sealed partial class ModEntry
                 if (active.StageTicks > 180) CompleteGeodeProcessing(active, false, "geode_processing_blacksmith_question_timeout");
                 return;
             }
-            var process = dialogue.responses?.FirstOrDefault(response => response.responseKey == "Process");
-            if (process is null || !active.Location.answerDialogue(process))
-            { CompleteGeodeProcessing(active, false, "geode_processing_native_process_response_failed"); return; }
+            if (!TryClickNativeDialogueResponse(dialogue, "Process", out var responseReason))
+            {
+                if (responseReason == "dialogue_response_menu_not_ready" && active.StageTicks <= 180) return;
+                CompleteGeodeProcessing(active, false, "geode_processing_native_process_response_failed:" + responseReason);
+                return;
+            }
+            // The first native click may only finish the question's text reveal.
+            if (ReferenceEquals(Game1.activeClickableMenu, dialogue)) return;
+            if (Game1.activeClickableMenu is not GeodeMenu || Game1.dialogueUp)
+            { CompleteGeodeProcessing(active, false, "geode_processing_native_dialogue_lifecycle_not_closed"); return; }
             active.ProcessAnswered = true; active.StageTicks = 0; return;
         }
         if (Game1.activeClickableMenu is not GeodeMenu menu)
         {
-            if (active.CloseClicked && GeodeReceiptMatches(active)) CompleteGeodeProcessing(active, true);
+            if (active.CloseClicked && GeodeNativeControlRestored() && GeodeReceiptMatches(active)) CompleteGeodeProcessing(active, true);
             else if (active.StageTicks > 240) CompleteGeodeProcessing(active, false, "geode_processing_menu_open_or_close_timeout");
             return;
         }
@@ -181,6 +188,10 @@ public sealed partial class ModEntry
             var point = menu.okButton.bounds.Center; menu.receiveLeftClick(point.X, point.Y); active.CloseClicked = true; active.StageTicks = 0;
         }
     }
+
+    private static bool GeodeNativeControlRestored() =>
+        Game1.activeClickableMenu is null && !Game1.dialogueUp && !Game1.eventUp &&
+        Game1.player.CanMove && !Game1.player.UsingTool;
 
     private static bool GeodeReceiptMatches(ActiveGeodeProcessing active)
     {
@@ -246,7 +257,8 @@ public sealed partial class ModEntry
         StopAllMovement(); activeGeodeProcessing = null;
         var request = active.Pending.Request;
         var verification = verified ? new[] { "shared_bfs_reached_exact_Blacksmith_counter",
-            "native_Blacksmith_Process_and_GeodeMenu_click_sequence_completed", "one_geode_money_stats_mail_team_and_output_conservation_verified" }
+            "native_Blacksmith_Process_and_GeodeMenu_click_sequence_completed", "native_dialogue_and_control_lifecycle_closed",
+            "one_geode_money_stats_mail_team_and_output_conservation_verified" }
             : reasons.Length == 0 ? new[] { "geode_processing_post_state_mismatch" } : reasons;
         active.Pending.Completion.SetResult(new TrainingExecutionResult
         {
@@ -272,7 +284,9 @@ public sealed partial class ModEntry
 
     private static string GeodeObservedEffect() => "money=" + Game1.player.Money + ";geodes=" + Game1.stats.GeodesCracked +
         ";mystery=" + Game1.stats.Get("MysteryBoxesOpened") + ";golden_coconut=" + Game1.netWorldState.Value.GoldenCoconutCracked +
-        ";menu=" + (Game1.activeClickableMenu?.GetType().Name ?? "none");
+        ";menu=" + (Game1.activeClickableMenu?.GetType().Name ?? "none") +
+        ";dialogue_up=" + Game1.dialogueUp.ToString().ToLowerInvariant() +
+        ";can_move=" + Game1.player.CanMove.ToString().ToLowerInvariant();
 
     private static string GeodeReceiptDiagnostic(ActiveGeodeProcessing active)
     {

@@ -129,12 +129,30 @@ public sealed class GeodeProcessingMainlineTests
         var runtime = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.GeodeProcessing.cs"));
         var bridge = File.ReadAllText(Path.Combine(root, "src", "StardewAI.TransparentBridge", "Adapters", "PlayerReadAdapter.GeodeProcessing.cs"));
         Assert.Contains("active.Location.checkAction", runtime, StringComparison.Ordinal);
-        Assert.Contains("active.Location.answerDialogue", runtime, StringComparison.Ordinal);
+        Assert.Contains("TryClickNativeDialogueResponse(dialogue, \"Process\"", runtime, StringComparison.Ordinal);
+        Assert.DoesNotContain("active.Location.answerDialogue", runtime, StringComparison.Ordinal);
         Assert.Contains("menu.receiveLeftClick", runtime, StringComparison.Ordinal);
         Assert.DoesNotMatch(new Regex(@"Game1\.player\.Money\s*[+\-]?=(?!=)"), runtime);
         Assert.DoesNotMatch(new Regex(@"Game1\.stats\.(GeodesCracked|Set)\s*[+\-]?=(?!=)"), runtime);
         Assert.DoesNotContain("Game1.random", bridge, StringComparison.Ordinal);
         Assert.Contains("complete_current-season_family_is_published_without_consuming_it", bridge, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void GeodeSharesNativeDialogueClicksAndRequiresRestoredControlBeforeCompletion()
+    {
+        var root = FindRepositoryRoot();
+        var geode = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.GeodeProcessing.cs"));
+        var dialogue = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.DialogueChoice.cs"));
+        Assert.Contains("TryClickNativeDialogueResponse(menu, responseKey", dialogue, StringComparison.Ordinal);
+        Assert.Contains("menu.performHoverAction(point.X, point.Y)", dialogue, StringComparison.Ordinal);
+        Assert.Contains("menu.receiveLeftClick(point.X, point.Y)", dialogue, StringComparison.Ordinal);
+        Assert.Contains("GeodeNativeControlRestored() && GeodeReceiptMatches(active)", geode, StringComparison.Ordinal);
+        Assert.Contains("Game1.activeClickableMenu is null && !Game1.dialogueUp", geode, StringComparison.Ordinal);
+        Assert.Contains("Game1.player.CanMove && !Game1.player.UsingTool", geode, StringComparison.Ordinal);
+        Assert.Contains("geode_processing_native_dialogue_lifecycle_not_closed", geode, StringComparison.Ordinal);
+        Assert.DoesNotMatch(new Regex(@"Game1\.dialogueUp\s*=(?!=)"), geode);
+        Assert.DoesNotContain("forceCanMove", geode, StringComparison.Ordinal);
     }
 
     private static OptionAvailabilityEnvelope Evaluate(SnapshotEnvelope snapshot) =>

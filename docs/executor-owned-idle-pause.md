@@ -80,3 +80,10 @@ read a historical ProofFarm ledger (revision 233); a new isolated run must not
 silently reuse that test history. No old ledger, reservation or filesystem item
 is removed. The native rerun must independently confirm its own ledger and API
 evidence before any acquisition/consumption claim.
+
+The corrected `8226ae8c` candidate has since passed exact-head CI and a partial
+native acquisition/custody trace; API evidence and revision-0 isolation were
+observed in the real game. It stopped before donation on stale dialogue/control
+state left by the original geode response path. See the
+[native lifecycle follow-up](geode-dialogue-lifecycle.md); this is not a complete
+criterion or a reason to reopen the pause admission guards.
