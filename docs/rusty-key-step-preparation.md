@@ -77,6 +77,10 @@ also pass. No game was launched; raw diagnostics remain outside Git.
 
 ## Exact Next Step
 
+The controlled runtime adapter is now implemented; its code/test boundaries and
+entrypoint are described in [runtime rolling](rusty-key-runtime-rolling.md).
+The following native trace and remaining acceptance work are still required.
+
 Connect these public sources to the existing runtime HTTP ledger endpoints and
 precompiled queue runner. After every support/native action, retain the receipt,
 settle through the canonical service, ingest a decoded fresh snapshot and rebuild

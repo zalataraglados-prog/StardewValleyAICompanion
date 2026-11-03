@@ -36,13 +36,8 @@ internal static partial class BootstrapSelfTest
             Write(inputs.CommittedStrategyLedgerPath, commit.Ledger!);
             Write(inputs.PortfolioCommitReceiptPath, AcquisitionRoutePortfolioCommitReceiptBuilder.Build(
                 portfolioInputs, inputs.PortfolioAdmissionPath, inputs.CommittedStrategyLedgerPath, inputs.PortfolioCommitResultPath));
-            var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(before, new[] { "economy.buy_supplies" },
-                commitmentLedger: commit.Ledger);
-            var ranking = new AvailabilityAwarePolicyPredictionEnvelope
-            {
-                Availability = availability,
-                RankedEventCandidates = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability, control.GoalId)
-            };
+            var ranking = AcquisitionRouteDispatchCompilationBuilder.BuildCurrentControlRanking(
+                portfolioInputs, inputs.PortfolioControlSelectionPath!, currentLedgerPath: inputs.CommittedStrategyLedgerPath);
             Write(rankingPath, ranking);
             var compilation = AcquisitionRouteDispatchCompilationBuilder.Build(inputs, rankingPath);
             Write(Path.Combine(root, "control-compilation.json"), compilation);
@@ -63,6 +58,18 @@ internal static partial class BootstrapSelfTest
                 "Persisted control binding must independently rebuild.");
             var passed = new List<string> { "public_control_source_rebuild", "atomic_commit_without_teacher", "public_dispatch_without_teacher",
                 "control_source_not_teacher", "public_execution_binding_without_teacher", "persisted_binding_independent_rebuild" };
+            var currentRankingCli = Path.Combine(root, "control-current-ranking-cli.json");
+            RunControlCli(inputs, "build-rusty-key-current-ranking", currentRankingCli,
+                "--current-ranking-ledger", inputs.CommittedStrategyLedgerPath);
+            Require(EqualJson(ranking, CurrentTeacherFrontierSupport.Read<AvailabilityAwarePolicyPredictionEnvelope>(currentRankingCli, "Current ranking CLI")),
+                "Current source ranking CLI must use the same deterministic native intent builder.");
+            passed.Add("actual_current_ranking_cli");
+            var commitCli = Path.Combine(root, "control-commit-cli.json");
+            RunControlCli(inputs, "build-acquisition-route-portfolio-commit-receipt", commitCli);
+            Require(EqualJson(CurrentTeacherFrontierSupport.Read<AcquisitionRoutePortfolioCommitReceipt>(commitCli, "Control commit CLI"),
+                CurrentTeacherFrontierSupport.Read<AcquisitionRoutePortfolioCommitReceipt>(inputs.PortfolioCommitReceiptPath, "Control commit")),
+                "Control commit CLI must preserve the canonical receipt.");
+            passed.Add("actual_control_commit_receipt_cli");
             VerifyControlExecutionCli(inputs, Path.Combine(root, "control-cli-binding.json"), binding);
             passed.Add("actual_cli_without_teacher_flags");
             foreach (var field in new[] { "teacher_preference_label_eligible", "formal_training_authorized", "full_threshold_supply_verified" })

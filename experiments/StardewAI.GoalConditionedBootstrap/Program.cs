@@ -91,9 +91,9 @@ var commandDefinitions = new CommandDefinition[]
     new("build-money-revenue-alternative-comparison-proof", BuildMoneyRevenueAlternativeComparisonProof),
     new("build-requirement-inventory", BuildRequirementInventory),
     new("build-acquisition-route-lowering", BuildAcquisitionRouteLowering),
-    new("build-acquisition-route-calendar-resolution", BuildAcquisitionRouteCalendarResolution),
+    new("build-acquisition-route-calendar-resolution", BuildAcquisitionRouteCalendarResolution, BatchSafe: true),
     new("build-current-acquisition-route-calendar-resolution", BuildCurrentAcquisitionRouteCalendarResolution, BatchSafe: true),
-    new("build-acquisition-route-target-date-calendar", BuildAcquisitionRouteTargetDateCalendar),
+    new("build-acquisition-route-target-date-calendar", BuildAcquisitionRouteTargetDateCalendar, BatchSafe: true),
     new("build-current-acquisition-route-target-date-calendar", BuildCurrentAcquisitionRouteTargetDateCalendar, BatchSafe: true),
     new("build-acquisition-route-target-date-unlock-state", BuildAcquisitionRouteTargetDateUnlockState, BatchSafe: true),
     new("build-acquisition-route-target-date-festival-state", BuildAcquisitionRouteTargetDateFestivalState, BatchSafe: true),
@@ -111,6 +111,7 @@ var commandDefinitions = new CommandDefinition[]
     new("build-rusty-key-acquisition-portfolio", BuildRustyKeyAcquisitionPortfolio),
     new("build-rusty-key-rolling-supply", BuildRustyKeyRollingSupply),
     new("prepare-rusty-key-rolling-step", BuildRustyKeyRollingStepPreparation),
+    new("build-rusty-key-current-ranking", BuildRustyKeyCurrentRanking),
     new("self-test-rusty-key-rolling-supply", options =>
         BootstrapSelfTest.RunRustyKeyRollingSupply(options.Required("output-root"))),
     new("self-test-control-execution", options =>
@@ -1416,6 +1417,14 @@ static void BuildRustyKeyRollingStepPreparation(Arguments options)
     if (!result.StepReady && result.Kind != "native_key_handoff") Environment.ExitCode = 2;
 }
 
+static void BuildRustyKeyCurrentRanking(Arguments options)
+{
+    Write(options.Required("output"), AcquisitionRouteDispatchCompilationBuilder.BuildCurrentControlRanking(
+        RoutePortfolioInputs(options, requireProposal: false), options.Required("portfolio-control-selection"),
+        options.Optional("control-supporting-transition-proof") ?? string.Empty,
+        options.Optional("current-ranking-ledger") ?? string.Empty));
+}
+
 static void BuildAcquisitionRoutePortfolioTeacherPreference(Arguments options)
 {
     var report = AcquisitionRoutePortfolioTeacherPreferenceBuilder.Build(
@@ -1437,11 +1446,19 @@ static void BuildAcquisitionRoutePortfolioTeacherPreference(Arguments options)
 
 static void BuildAcquisitionRoutePortfolioCommitReceipt(Arguments options)
 {
-    var report = AcquisitionRoutePortfolioCommitReceiptBuilder.Build(
-        RoutePortfolioInputs(options),
-        options.Required("portfolio-admission"),
-        options.Required("committed-ledger"),
-        options.Optional("commit-result"));
+    AcquisitionRoutePortfolioCommitReceipt report;
+    if (options.Optional("portfolio-control-selection") is not null)
+    {
+        var inputs = RouteExecutionBindingInputs(options);
+        var control = AcquisitionRouteControlSelectionVerifier.Read(inputs);
+        report = AcquisitionRouteControlSelectionVerifier.RebuildCommitReceipt(inputs, control);
+    }
+    else
+    {
+        report = AcquisitionRoutePortfolioCommitReceiptBuilder.Build(
+            RoutePortfolioInputs(options), options.Required("portfolio-admission"),
+            options.Required("committed-ledger"), options.Optional("commit-result"));
+    }
     Write(options.Required("output"), report);
     if (!report.PortfolioCommitVerified)
         Environment.ExitCode = 2;

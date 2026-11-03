@@ -12,7 +12,8 @@ function Invoke-RuntimeAcquisitionPlanningPipeline {
         [Parameter(Mandatory)] [string] $MasterAnglerWindowsPath,
         [Parameter(Mandatory)] [string] $RouteTimingPath,
         [Parameter(Mandatory)] [hashtable] $Paths,
-        [switch] $ForceSequential
+        [switch] $ForceSequential,
+        [ValidateSet('current', 'static')] [string] $CalendarMode = 'current'
     )
 
     $requiredPathKeys = @(
@@ -29,8 +30,14 @@ function Invoke-RuntimeAcquisitionPlanningPipeline {
     }
 
     $commands = New-Object System.Collections.Generic.List[object]
+    $calendarCommand = if ($CalendarMode -eq 'current') {
+        'build-current-acquisition-route-calendar-resolution'
+    } else { 'build-acquisition-route-calendar-resolution' }
+    $targetCalendarCommand = if ($CalendarMode -eq 'current') {
+        'build-current-acquisition-route-target-date-calendar'
+    } else { 'build-acquisition-route-target-date-calendar' }
     $commands.Add([ordered]@{ arguments = @(
-        "build-current-acquisition-route-calendar-resolution",
+        $calendarCommand,
         "--requirement-inventory", $RequirementInventoryPath,
         "--acquisition-lowering", $AcquisitionLoweringPath,
         "--master-angler-windows", $MasterAnglerWindowsPath,
@@ -38,7 +45,7 @@ function Invoke-RuntimeAcquisitionPlanningPipeline {
         "--output", $Paths.calendar
     ) }) | Out-Null
     $commands.Add([ordered]@{ arguments = @(
-        "build-current-acquisition-route-target-date-calendar",
+        $targetCalendarCommand,
         "--requirement-inventory", $RequirementInventoryPath,
         "--acquisition-lowering", $AcquisitionLoweringPath,
         "--master-angler-windows", $MasterAnglerWindowsPath,

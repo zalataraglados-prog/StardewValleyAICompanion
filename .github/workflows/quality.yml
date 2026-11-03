@@ -67,6 +67,9 @@ jobs:
       - name: Test Rusty Key current execution preparation before commit
         shell: pwsh
         run: dotnet run --project experiments/StardewAI.GoalConditionedBootstrap/StardewAI.GoalConditionedBootstrap.csproj --configuration Release --no-build -- self-test-rusty-key-rolling-step --output-root "$env:RUNNER_TEMP/rusty-key-rolling-step"
+      - name: Test Rusty Key runtime source pipeline and bounded orchestration without game
+        shell: pwsh
+        run: ./scripts/Test-RuntimeRustyKeyRolling.ps1 -StepFixtureRoot "$env:RUNNER_TEMP/rusty-key-rolling-step" -OutputRoot "$env:RUNNER_TEMP/rusty-key-runtime"
       - name: Restore core governance tests
         run: dotnet restore tests/StardewAI.Core.Tests/StardewAI.Core.Tests.csproj --locked-mode -p:GameFreeGovernance=true
       - name: Test core governance

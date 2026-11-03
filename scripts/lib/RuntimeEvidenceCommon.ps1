@@ -261,7 +261,8 @@ function Invoke-JsonPost {
 function Invoke-RuntimeBootstrap {
     param(
         [Parameter(Mandatory)] [string] $BootstrapDll,
-        [Parameter(Mandatory)] [string[]] $Arguments
+        [Parameter(Mandatory)] [string[]] $Arguments,
+        [int[]] $AllowedExitCodes = @(0)
     )
     $effectiveArguments = @($Arguments)
     $traceDirectory = [Environment]::GetEnvironmentVariable(
@@ -296,7 +297,7 @@ function Invoke-RuntimeBootstrap {
     finally {
         $ErrorActionPreference = $previousErrorActionPreference
     }
-    if ($exitCode -ne 0) {
+    if ($exitCode -notin $AllowedExitCodes) {
         $detail = @($nativeOutput |
             ForEach-Object { [string]$_ } |
             Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
@@ -460,7 +461,9 @@ function Invoke-RuntimeDailyPlanStep {
         [Parameter(Mandatory)] [string] $CandidateId,
         [string[]] $CandidateParameters = @(),
         [string] $SourceSnapshotPath = "",
-        [switch] $AllowVerifiedContinuation
+        [switch] $AllowVerifiedContinuation,
+        [ValidateSet("product", "runtime_harness")]
+        [string] $ExecutionTarget = "runtime_harness"
     )
     $stepRoot = Join-Path $Context.ArtifactDirectory $Name
     $sourcePath = Join-Path $stepRoot "source-snapshot.json"
@@ -470,9 +473,10 @@ function Invoke-RuntimeDailyPlanStep {
         Write-Utf8Text -Path $sourcePath -Value $capture.Raw
     }
     else {
-        $raw = Get-Content -LiteralPath $SourceSnapshotPath -Raw
-        Write-Utf8Text -Path $sourcePath -Value $raw
+        # Keep content-addressed manifests beside their blobs instead of copying a relative reference.
+        $sourcePath = [IO.Path]::GetFullPath($SourceSnapshotPath)
     }
+    $executorUrl = if ($ExecutionTarget -eq "product") { $Context.ProductUrl } else { $Context.ExecutorRoot }
     $arguments = [Collections.Generic.List[string]]::new()
     foreach ($value in @(
         $Context.LoopDll,
@@ -480,7 +484,7 @@ function Invoke-RuntimeDailyPlanStep {
         "--backend-url", $Context.BackendUrl,
         "--bridge-snapshot-url", $Context.SnapshotUrl,
         "--execution-snapshot-profile", $Context.SnapshotProfile,
-        "--executor-url", $Context.ExecutorRoot,
+        "--executor-url", $executorUrl,
         "--snapshot-file", $sourcePath,
         "--no-manifest",
         "--skip-training",
@@ -504,6 +508,7 @@ function Invoke-RuntimeDailyPlanStep {
         $arguments.Add("--daily-plan-candidate-parameter")
         $arguments.Add($parameter)
     }
+    if ($ExecutionTarget -eq "product") { $arguments.Add("--use-product-executor") }
     $stdout = & dotnet $arguments
     $exitCode = $LASTEXITCODE
     $stdout | Set-Content -LiteralPath (Join-Path $stepRoot "loop.stdout.log") `
