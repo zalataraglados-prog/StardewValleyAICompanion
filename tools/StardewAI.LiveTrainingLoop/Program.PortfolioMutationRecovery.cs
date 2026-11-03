@@ -41,6 +41,7 @@ static partial class Program
             await RecordPortfolioFailureAsync(stem + "-rpc-failure.txt", failure.Message, failure);
             if (failure.Data["RuntimeHttpStatusCode"] is int status && status is >= 400 and < 500)
                 throw;
+            execution["material_reservation_settlement_lookup_path"] = observationPath;
             JsonObject? restored = null;
             try
             {
@@ -74,7 +75,7 @@ static partial class Program
                 execution["material_reservation_settlement_reply_recovered"] = true;
                 execution["material_reservation_settlement_lookup_path"] = observationPath;
             }
-            catch (Exception lookupFailure) when (lookupFailure is IOException or UnauthorizedAccessException or
+            catch (Exception lookupFailure) when (lookupFailure is IOException or InvalidDataException or UnauthorizedAccessException or
                 HttpRequestException or TaskCanceledException or JsonException or InvalidOperationException or FormatException)
             {
                 failure.Data["portfolio_lookup_failure"] = lookupFailure.Message;

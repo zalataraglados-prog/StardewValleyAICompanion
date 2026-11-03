@@ -60,6 +60,13 @@ public sealed partial class ReservationPortfolioLedgerTests
         {
             Assert.True(execution["reservation_settlement_retry_required"]!.GetValue<bool>());
             Assert.Equal("reservation_settlement_failed", execution["primitive_verification_status"]!.GetValue<string>());
+            if (!mode.StartsWith("http-rejected", StringComparison.Ordinal))
+            {
+                Assert.False(string.IsNullOrWhiteSpace(execution["material_reservation_settlement_lookup_failure"]!.GetValue<string>()));
+                Assert.True(File.Exists(execution["material_reservation_settlement_lookup_path"]!.GetValue<string>()));
+                Assert.Contains("museum_output_custody_settlement_exception:HttpRequestException",
+                    execution["primitive_verification_reasons"]!.AsArray().Select(value => value!.GetValue<string>()));
+            }
         }
         if (completed && lookups == 1)
         {
