@@ -4,7 +4,7 @@ namespace StardewAI.TransparentBridge.Adapters;
 
 public sealed partial class PlayerReadAdapter
 {
-    private static object? ReadMovementTimingContext(Farmer? player)
+    private object? ReadMovementTimingContext(Farmer? player)
     {
         if (player is null)
             return null;
@@ -45,6 +45,9 @@ public sealed partial class PlayerReadAdapter
         return new
         {
             projection_status = "exact_current_player_native_cardinal_movement_context",
+            player_id = player.UniqueMultiplayerID.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            game_unique_id = Game1.uniqueIDForThisGame.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            executor_owned_idle_pause = ReadExecutorOwnedIdlePause(),
             base_speed_now = player.Speed,
             added_speed_now = player.addedSpeed,
             buff_speed_now = buffSpeed,

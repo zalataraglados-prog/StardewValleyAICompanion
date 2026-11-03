@@ -89,6 +89,12 @@ internal static partial class BootstrapSelfTest
             Write(inputs.BeforeSnapshotPath, snapshot);
             Reject("full_current_cc_mode_stays_strict", () => AcquisitionRouteCalendarResolutionBuilder.BuildCurrent(
                 inventoryPath, loweringPath, windowsPath, inputs.BeforeSnapshotPath));
+            var retainedSnapshotSha = HashFile(inputs.BeforeSnapshotPath);
+            new StageOneCollectionFrontierFixture(Path.Combine(Path.GetDirectoryName(root)!, "pause"))
+                .VerifyCurrentNativeOwnedPauseLocation(passed);
+            Require(HashFile(inputs.BeforeSnapshotPath) == retainedSnapshotSha,
+                "Owned-pause negative cases changed the retained fixture used by runtime source checks.");
+            passed.Add("shared_fixture_snapshot_preserved");
             Write(Path.Combine(root, "current-native-calendar-self-test.json"), new
             {
                 status = "passed", passed_count = passed.Count, passed, native_game_run = false,

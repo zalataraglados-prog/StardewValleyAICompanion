@@ -1,3 +1,35 @@
+function Assert-RuntimeRustyKeyAcquisitionSourceDate {
+    param([Parameter(Mandatory)] [string] $SourceSaveDirectory)
+    $settings = [Xml.XmlReaderSettings]::new()
+    $settings.DtdProcessing = [Xml.DtdProcessing]::Prohibit
+    $settings.XmlResolver = $null
+    $source = Join-Path $SourceSaveDirectory ([IO.Path]::GetFileName($SourceSaveDirectory.TrimEnd('\','/')))
+    $reader = [Xml.XmlReader]::Create($source, $settings)
+    $date = @{}
+    try {
+        while ($reader.Read()) {
+            if ($reader.NodeType -eq [Xml.XmlNodeType]::Element -and $reader.Depth -eq 1 -and
+                $reader.LocalName -in @('year','currentSeason','dayOfMonth')) {
+                $name = $reader.LocalName
+                if ($date.ContainsKey($name)) { throw 'Source save calendar has duplicate fields.' }
+                $date[$name] = $reader.ReadString()
+            }
+        }
+    }
+    finally { $reader.Dispose() }
+    $year = 0
+    $day = 0
+    if (-not [int]::TryParse([string]$date.year, [ref]$year) -or $year -lt 1 -or
+        -not [int]::TryParse([string]$date.dayOfMonth, [ref]$day) -or $day -lt 1 -or $day -gt 28 -or
+        $date.currentSeason -cnotin @('spring','summer','fall','winter')) {
+        throw 'Source save calendar is missing or invalid.'
+    }
+    # The original C# admission rechecks this necessary bound after live loading.
+    if ($year -ge 3 -or ($year -eq 2 -and $date.currentSeason -ceq 'winter' -and $day -eq 28)) {
+        throw 'Source save leaves no pre-Year-3 acquisition/key handoff; choose an earlier isolated baseline.'
+    }
+}
+
 function Initialize-RuntimeRustyKeyGeodeBoundary {
     [CmdletBinding()]
     param(

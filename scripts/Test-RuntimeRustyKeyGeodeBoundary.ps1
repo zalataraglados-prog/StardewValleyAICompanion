@@ -145,6 +145,40 @@ foreach ($missing in @('RequirementInventoryPath','AcquisitionLoweringPath','Mas
     }
     $passed.Add($script:mode)
 }
+foreach ($case in @(
+        @{ Name='year1'; Xml='<year>1</year><currentSeason>spring</currentSeason><dayOfMonth>7</dayOfMonth>'; Ready=$true },
+        @{ Name='last-supply-day'; Xml='<year>2</year><currentSeason>winter</currentSeason><dayOfMonth>27</dayOfMonth>'; Ready=$true },
+        @{ Name='too-late'; Xml='<year>2</year><currentSeason>winter</currentSeason><dayOfMonth>28</dayOfMonth>'; Ready=$false },
+        @{ Name='year5'; Xml='<year>5</year><currentSeason>spring</currentSeason><dayOfMonth>25</dayOfMonth>'; Ready=$false },
+        @{ Name='missing-date'; Xml='<year>1</year>'; Ready=$false },
+        @{ Name='invalid-day'; Xml='<year>1</year><currentSeason>spring</currentSeason><dayOfMonth>29</dayOfMonth>'; Ready=$false },
+        @{ Name='duplicate-date'; Xml='<year>1</year><year>2</year><currentSeason>spring</currentSeason><dayOfMonth>7</dayOfMonth>'; Ready=$false },
+        @{ Name='external-entity'; Xml='<!DOCTYPE SaveGame [<!ENTITY x SYSTEM "file:///nonexistent">]><SaveGame><year>&x;</year></SaveGame>'; Ready=$false; Raw=$true }
+    )) {
+    $directory = Join-Path $OutputRoot ('calendar-' + $case.Name)
+    New-Item -ItemType Directory -Path $directory | Out-Null
+    $xml = if ($case.Raw) { $case.Xml } else { '<SaveGame><player><year>99</year></player>' + $case.Xml + '</SaveGame>' }
+    Write-Utf8Text -Path (Join-Path $directory ([IO.Path]::GetFileName($directory))) -Value $xml
+    $rejected = $false
+    try { Assert-RuntimeRustyKeyAcquisitionSourceDate -SourceSaveDirectory $directory }
+    catch { $rejected = $true }
+    if ($rejected -eq $case.Ready) { throw "Source calendar preflight failed: $($case.Name)" }
+    $passed.Add('source-calendar-' + $case.Name)
+}
+$fakeRuntime = Join-Path $OutputRoot 'preflight-runtime'
+$lateSlot = Join-Path $fakeRuntime 'saves/late'
+New-Item -ItemType Directory -Path $lateSlot -Force | Out-Null
+Write-Utf8Text -Path (Join-Path $lateSlot 'late') -Value '<SaveGame><year>5</year><currentSeason>spring</currentSeason><dayOfMonth>25</dayOfMonth></SaveGame>'
+$lateOutput = Join-Path $OutputRoot 'late-calendar-must-not-start'
+$arguments = @{ RuntimeRoot=$fakeRuntime; SaveSlot='late'; SupplyMode='current_geode'; NoBuild=$true; OutputDirectory=$lateOutput }
+foreach ($name in @('RequirementInventoryPath','AcquisitionLoweringPath','MasterAnglerWindowsPath',
+        'RouteTimingPath','FishingForecastManifestPath')) { $arguments[$name] = $PSCommandPath }
+$message = ''
+try { & (Join-Path $PSScriptRoot 'Invoke-RuntimeRustyKeyThresholdSmoke.ps1') @arguments | Out-Null }
+catch { $message = $_.Exception.Message }
+if ($message -cne 'Source save leaves no pre-Year-3 acquisition/key handoff; choose an earlier isolated baseline.' -or
+    (Test-Path -LiteralPath $lateOutput)) { throw "Late calendar reached runtime startup: $message" }
+$passed.Add('actual-entry-late-calendar-before-build-deploy-launch')
 Write-JsonFile -Path (Join-Path $OutputRoot 'self-test.json') -Value ([ordered]@{
     status = 'passed'; passed_count = $passed.Count; passed = $passed.ToArray(); native_game_run = $false
 })

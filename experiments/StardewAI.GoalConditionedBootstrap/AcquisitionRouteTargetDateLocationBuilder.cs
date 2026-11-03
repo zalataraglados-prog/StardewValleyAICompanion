@@ -192,12 +192,22 @@ public static partial class AcquisitionRouteTargetDateLocationBuilder
                 EarliestDepartureTime = state.CurrentTime,
                 TargetLocation = location
             }).ToArray();
+        if (state.Timing is null)
+        {
+            return locations.ToDictionary(location => location, _ =>
+                new FutureLocationRouteDateEvidenceProduction
+                {
+                    Status = FutureRouteDateEvidenceProductionStatus.Blocked,
+                    BlockingReasons = state.RouteEvidenceBlockingReasons.Length > 0
+                        ? state.RouteEvidenceBlockingReasons : new[] { "future_route_timing_calibration_unavailable" }
+                }, StringComparer.OrdinalIgnoreCase);
+        }
         var productions = new FutureRouteDateEvidenceProducer()
             .ProduceLocationArrivals(
                 state.RouteGraph,
                 state.SocialRouteDateEvidence,
                 requests,
-                state.Timing!);
+                state.Timing);
         return locations.Select((location, index) => new
         {
             Location = location,
