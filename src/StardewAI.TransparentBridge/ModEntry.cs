@@ -1198,7 +1198,7 @@ public sealed partial class ModEntry : Mod
         new IStateAdapter[]
         {
             new WorldReadAdapter(),
-            new PlayerReadAdapter(),
+            new PlayerReadAdapter(helper.ModRegistry),
             new OptionsReadAdapter(),
             new FarmReadAdapter(),
             new CurrentLocationReadAdapter(),

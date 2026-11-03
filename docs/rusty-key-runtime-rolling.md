@@ -155,6 +155,13 @@ Teacher/native partitions and the pre-Year-3 deadline. The run summary is only
 `runtime_control_observation_only_not_criterion_evidence`; formal training,
 preference eligibility and coverage promotion remain false.
 
+Native attempts on `308d701f` exposed two boundaries before dispatch: the Year-5
+CrabPotAudit start correctly fails the pre-Year-3 gate, and the Year-1 ProofFarm
+start needs explicit evidence of the harness-owned idle pause release. See
+[owned pause and source-date preflight](executor-owned-idle-pause.md). Use an
+explicit early baseline; neither a new date nor an owned pause waives unknown
+routes, a complete frontier, native verification or criterion acceptance.
+
 The updated shipped-Companion requirement for on-demand critical-decision Teacher
 verification remains binding; see `TEACHER_STUDENT_CONVERGENCE_CONTRACT_CN.md`.
 This calibration controller neither implements that future product gate nor

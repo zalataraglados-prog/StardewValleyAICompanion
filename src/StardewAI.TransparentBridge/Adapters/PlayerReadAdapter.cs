@@ -7,6 +7,10 @@ namespace StardewAI.TransparentBridge.Adapters;
 
 public sealed partial class PlayerReadAdapter : ReadAdapterBase
 {
+    private readonly IModRegistry? modRegistry;
+
+    public PlayerReadAdapter(IModRegistry? modRegistry = null) => this.modRegistry = modRegistry;
+
     public override string Domain => "player";
     public override int Priority => 20;
 
@@ -66,7 +70,7 @@ public sealed partial class PlayerReadAdapter : ReadAdapterBase
             ["tile_y"] = Field(Context.IsWorldReady ? (int?)player?.TilePoint.Y : null, "Game1.player.TilePoint.Y", tick),
             ["facing_direction"] = Field(Context.IsWorldReady ? (int?)player?.FacingDirection : null, "Game1.player.FacingDirection", tick),
             ["current_tool_index"] = Field(Context.IsWorldReady ? (int?)player?.CurrentToolIndex : null, "Game1.player.CurrentToolIndex", tick),
-            ["movement_timing_context"] = Field(ReadMovementTimingContext(player), "Farmer.getMovementSpeed cardinal non-event branch; Farmer.Speed/addedSpeed/temporarySpeedBuff/isRidingHorse/hasBuff(19); Game1.CurrentEvent/eventUp/tileSize/realMilliSecondsPerGameMinute", tick, "vanilla_1_6_15_movement_timing"),
+            ["movement_timing_context"] = Field(ReadMovementTimingContext(player), "Farmer.getMovementSpeed cardinal non-event branch; Farmer.Speed/addedSpeed/temporarySpeedBuff/isRidingHorse/hasBuff(19); Game1.CurrentEvent/eventUp/tileSize/realMilliSecondsPerGameMinute; optional RuntimeTestHarness read-only planning-pause API", tick, "vanilla_1_6_15_movement_timing"),
             ["money"] = Field(player?.Money, "Game1.player.Money", tick),
             ["club_coins"] = Field(Context.IsWorldReady ? (int?)player?.clubCoins : null, "Game1.player.clubCoins", tick),
             ["shop_currency_balances"] = Field(ReadShopCurrencyBalances(player), "ShopMenu.getPlayerCurrencyAmount(Game1.player, 0/1/2/4); Game1.player Money/festivalScore/clubCoins/QiGems", tick, "vanilla_1_6_15_shop_currency_domain"),

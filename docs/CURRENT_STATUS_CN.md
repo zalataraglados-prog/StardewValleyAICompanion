@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-04 原生闭环尚未通过，已定位暂停边界：** 第五年起点被时限门拒绝；第一年 ProofFarm 真实运行又发现原 harness 自持空闲暂停未被规划识别，尚未派发获取/捐赠。修正复用原 clock/校准链和可选只读 API，保留真实 native readiness，不为普通暂停或未知路线放行；启动前先核对基线日期。39项聚焦和32项边界检查通过，当前仍需 clean source 原生获取→保管→捐赠→核销轨迹；primary、覆盖和训练锁不变，见[合同](executor-owned-idle-pause.md)。
+
 > **2026-11-04 槽位压紧前置缺陷已修：** 共享转移投影增加完整两侧 lineage，原生点击不再固定旧索引，独立回执不再把压紧后索引当 before 索引，并验证其他物品未漂移；输出/episode 保留实际剩余源槽。canonical 机器转移续接与 Backend `381/381` 等无游戏回归通过，未开游戏或晋升覆盖。保管授权/原子 relocation 仍未完成且保护门仍关闭；Rusty Key primary 及 07:00 后优先 current-geode 原生边界不变。详见 [合同](material-transfer-slot-lineage.md)。
 
 > **2026-11-04 live 发送遗漏已补：** 上一恢复切片只接 rolling 脚本，两个直接 C# 核销调用点现也已接相同日志格式与原 Backend 查询。捐赠/Rain Totem 共用一个 helper；发前留完整请求，失败最多只查一次，明确拒绝不被转换为成功，不重发动作。实际钩子/仓储/HTTP 与跨进程日志读取通过，Backend `381/381`；拒绝正文损坏仍保留状态，总超时继续覆盖正文读取。无游戏/训练/覆盖晋升。Rusty Key 唯一 primary 及原生下一步不变，位置迁移仍未实现。见 [合同](portfolio-mutation-reply-recovery.md#live-material-settlement-hooks)。

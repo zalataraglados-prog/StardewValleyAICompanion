@@ -38,6 +38,9 @@ if (Test-Path -LiteralPath $runRoot) { throw "Run already exists: $runRoot" }
 $gameDirectory = Join-Path $RuntimeRoot "Stardew Valley"
 $sourceSave = Assert-RuntimeSourceSaveSlot `
     -Path (Join-Path (Join-Path $RuntimeRoot "saves") $SaveSlot)
+if ($SupplyMode -eq 'current_geode') {
+    Assert-RuntimeRustyKeyAcquisitionSourceDate -SourceSaveDirectory $sourceSave
+}
 $sourceHash = Get-DirectoryContentHash -Path $sourceSave
 $isolatedSaves = Join-Path $runRoot "isolated-saves"
 $isolatedMods = Join-Path $runRoot "smapi-mods"

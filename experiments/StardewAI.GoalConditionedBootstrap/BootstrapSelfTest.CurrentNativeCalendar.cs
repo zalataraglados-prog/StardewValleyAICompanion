@@ -89,6 +89,7 @@ internal static partial class BootstrapSelfTest
             Write(inputs.BeforeSnapshotPath, snapshot);
             Reject("full_current_cc_mode_stays_strict", () => AcquisitionRouteCalendarResolutionBuilder.BuildCurrent(
                 inventoryPath, loweringPath, windowsPath, inputs.BeforeSnapshotPath));
+            VerifyCurrentNativeOwnedPauseLocation(inputs, snapshot, passed);
             Write(Path.Combine(root, "current-native-calendar-self-test.json"), new
             {
                 status = "passed", passed_count = passed.Count, passed, native_game_run = false,

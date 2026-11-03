@@ -96,6 +96,7 @@
     <Compile Include="HeadlessHostInputPumpSourceGuardTests.cs" />
     <Compile Include="FutureRouteDateEvidenceProducerTests.cs" />
     <Compile Include="FutureRouteTimingCalibrationTests.cs" />
+    <Compile Include="ExecutorOwnedIdlePauseTimingTests.cs" />
     <Compile Include="StochasticRetryPolicyTests.cs" />
     <Compile Include="ValidationTraceSessionTests.cs" />
     <Compile Include="ValidationImpactAdvisoryTests.cs" />

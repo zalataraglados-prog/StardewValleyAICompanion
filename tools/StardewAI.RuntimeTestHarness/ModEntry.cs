@@ -32,6 +32,7 @@ public sealed partial class ModEntry : Mod
     private int ticksSeen;
     private bool loadAttempted;
     private bool executorIdlePauseApplied;
+    private long executorIdlePauseEpoch;
     private HttpListener? executorListener;
     private CancellationTokenSource? executorCancellation;
     private readonly ConcurrentQueue<PendingExecution> pendingExecutions = new();
@@ -2653,8 +2654,12 @@ public sealed partial class ModEntry : Mod
             if (shouldPauseForExecutorIdle)
             {
                 Game1.gameTimeInterval = 0;
-                Game1.paused = true;
-                executorIdlePauseApplied = true;
+                if (!Game1.paused)
+                {
+                    Game1.paused = true;
+                    executorIdlePauseApplied = true;
+                    executorIdlePauseEpoch++;
+                }
             }
             else if (executorIdlePauseApplied)
             {

@@ -69,7 +69,7 @@ namespace StardewAI.Core.Training
         public string[] BlockingReasons { get; set; } = Array.Empty<string>();
     }
 
-    public sealed class FutureRouteTimingCalibrationLoader
+    public sealed partial class FutureRouteTimingCalibrationLoader
     {
         private const string Schema =
             "stardewai.runtime_movement_timing_calibration.v1";
@@ -276,7 +276,8 @@ namespace StardewAI.Core.Training
                 reasons);
             Require(
                 ReadBool(movement, "route_timing_ready_now") == true ||
-                zeroGameMinuteShopMenuCloseRecoveryAvailable,
+                zeroGameMinuteShopMenuCloseRecoveryAvailable ||
+                HasExecutorOwnedIdlePauseRecovery(movement),
                 "future_route_movement_timing_context_not_ready",
                 reasons);
             Require(
