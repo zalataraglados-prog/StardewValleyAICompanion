@@ -24,6 +24,16 @@ Legacy no-ledger compiler calibration remains representable, but cannot pass
 managed dispatch. A plan carrying managed bindings without its ledger is rejected.
 Backend runtime compilation continues to load the real repository ledger.
 
+Local Teacher and imported queues are not necessarily registered in the Backend
+queue store. The live loop therefore POSTs the exact pending item to the existing
+dispatch-readiness route, which evaluates the Backend's current ingested snapshot
+and repository ledger with the same readiness service. GET remains available for
+stored queues; both handlers share the same evaluation path. POST does not store
+an imported queue, recompile it, reselect a candidate or authorize native execution.
+It also avoids checking a stored item that differs from the item about to run.
+Missing snapshot or mismatched item identity fails closed. This fixes PR #398's
+reviewed local-Teacher/imported-queue 404 without bypassing ledger admission.
+
 This guard protects reservations through the dispatch check. It does not create
 a durable lease for a newly acquired donation output or prove every subsequent
 consumer respects such a lease; full output custody remains a separate gap.
@@ -66,7 +76,11 @@ the evidence path is under their temporary root.
 
 ## Verification
 
-- Local museum/admission focused tests: `43/43`; Backend complete: `269/269`.
+- Local museum/admission focused tests: `43/43`; Backend complete: `279/279`.
+- The live dispatch method is exercised against the real Backend HTTP handlers
+  with unregistered museum/crafting items. Current-ledger drift still blocks;
+  posted state/actor/binding/revision changes cannot use a stored positive copy.
+  These are in-process HTTP regressions, not another native game trajectory.
 - The existing focused independent Teacher self-test verifies retained-ledger
   propagation, valid replay and rejection of changed/missing ledger artifacts.
 - Hidden/silent E-drive native run
