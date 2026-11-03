@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
+using StardewAI.Core.Infrastructure;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.Execution;
@@ -37,7 +39,8 @@ public sealed partial class ActionQueueCompiler
         };
     }
 
-    private static string[] ValidateMuseumDonationPlan(SmallModelAction action, SnapshotEnvelope snapshot)
+    private static string[] ValidateMuseumDonationPlan(SmallModelAction action, SnapshotEnvelope snapshot,
+        StrategyCommitmentLedger? commitmentLedger)
     {
         if (action.OptionId != "executor.donate_museum_item")
         {
@@ -87,6 +90,16 @@ public sealed partial class ActionQueueCompiler
         {
             return new[] { "museum_donation_typed_projection_required" };
         }
+
+        if (commitmentLedger is null && action.Parameters.Any(parameter =>
+                MuseumDonationMaterialReservationGuard.IsBindingParameter(parameter.Name)))
+            reasons.Add("museum_donation_strategy_ledger_unavailable");
+        var material = new MuseumDonationMaterialReservationGuard(snapshot, commitmentLedger)
+            .Evaluate(slot.Value, ReadParameter(action, "qualified_item_id") ?? string.Empty, stackBefore.Value);
+        reasons.AddRange(material.BlockingReasons);
+        action.Parameters = action.Parameters.Where(parameter =>
+                !MuseumDonationMaterialReservationGuard.IsBindingParameter(parameter.Name))
+            .Concat(material.Parameters).ToArray();
 
         if (Math.Abs(actionX.Value - standX.Value) + Math.Abs(actionY.Value - standY.Value) != 1)
         {

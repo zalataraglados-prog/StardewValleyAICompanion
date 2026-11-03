@@ -26,6 +26,10 @@ public sealed class ActionQueueDispatchReadinessService
         };
         if (!string.Equals(
                 item.OptionId,
+                "executor.donate_museum_item",
+                StringComparison.Ordinal) &&
+            !string.Equals(
+                item.OptionId,
                 "executor.craft_machine_item",
                 StringComparison.Ordinal) &&
             !string.Equals(
@@ -68,6 +72,14 @@ public sealed class ActionQueueDispatchReadinessService
         }
 
         var reasons = new List<string>();
+        if (item.OptionId == "executor.donate_museum_item")
+        {
+            if (currentStateHash != item.NormalizedCommand.StateHash)
+                reasons.Add("dispatch_museum_donation_state_hash_drifted");
+            if (Parameter(item, "museum_donation_save_id") != currentLedger.SaveId ||
+                Parameter(item, "museum_donation_player_id") != currentLedger.PlayerId)
+                reasons.Add("dispatch_museum_donation_actor_identity_drifted");
+        }
         if (!string.Equals(item.Status, "pending", StringComparison.Ordinal))
         {
             reasons.Add("dispatch_queue_item_not_pending");
