@@ -8,7 +8,7 @@ using StardewAI.Core.Strategy;
 
 namespace StardewAI.Backend.Tests;
 
-public sealed class RainTotemMaterialReservationPlanBinderTests
+public sealed partial class RainTotemMaterialReservationPlanBinderTests
 {
     [Fact]
     public void BindAtomicallyReservesExactRecipeSlotsAndRebindsPlanLedger()

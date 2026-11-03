@@ -60,12 +60,7 @@ static partial class Program
                 return;
             }
 
-            var response = await PostJsonStringAsync(
-                http,
-                options.BackendUrl +
-                "/api/v1/strategy/commitments/" +
-                "reservation-portfolios/settle-supporting-transition",
-                JsonSerializer.Serialize(build.Request, JsonOptions));
+            var response = await PostJournaledPortfolioSettlementAsync(http, options, execution, build.Request);
             var expectedIds = build.Request.MaterialConsumptions
                 .Select(row => row.MaterialReservationId)
                 .OrderBy(value => value, StringComparer.Ordinal)

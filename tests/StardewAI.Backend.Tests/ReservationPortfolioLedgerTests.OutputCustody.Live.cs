@@ -28,7 +28,10 @@ public sealed partial class ReservationPortfolioLedgerTests
             .GetMethod("SettleMuseumOutputCustodyAsync", BindingFlags.NonPublic | BindingFlags.Static)!;
         await (Task)method.Invoke(null, new object[]
         {
-            http, new LiveTrainingOptions { BackendUrl = "http://custody-fixture.invalid" },
+            http, new LiveTrainingOptions
+            {
+                BackendUrl = "http://custody-fixture.invalid", Root = NewPortfolioReplyRoot(), RunId = "isolated-custody-test"
+            },
             JsonSerializer.SerializeToNode(item)!.AsObject(), execution,
             JsonSerializer.SerializeToNode(fixture.Snapshot)!.AsObject(), JsonSerializer.SerializeToNode(after)!.AsObject()
         })!;

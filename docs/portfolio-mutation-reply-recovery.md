@@ -89,6 +89,46 @@ and a new observation output path. This is read-only retrieval, not automatic
 multi-step run resumption. Do not repeat the mutation helper on the same journal.
 No new cleanup policy removes an unresolved request.
 
+## Live Material Settlement Hooks
+
+The first slice above covered the rolling PowerShell caller, not every client of
+the same Backend endpoint. A subsequent caller audit found the Museum custody
+and Rain Totem live hooks still posted directly. Both now use one shared C#
+`PostJournaledPortfolioSettlementAsync` helper before continuing their existing
+completed-ID and failure checks. Their canonical request builders and native
+verification gates are unchanged; this is not another settlement service.
+
+Before POST, the helper create-new writes and flushes the full UTF-8 request and
+the same `stardewai.portfolio_rpc_journal.v1` index understood by the PowerShell
+reader. Names are derived from the exact request SHA-256 within the existing run
+snapshot directory; an existing request refuses sending. The request budget is
+8 MiB, the index read budget 16 KiB, and no snapshot is copied or hashed. These
+records do not match rolling snapshot cleanup names. Explicit UTF-8 decoding in
+the PowerShell reader avoids locale-dependent request decoding.
+
+The existing C# HTTP helper now retains error status and accepts an optional
+cancellation token. It reads response headers before buffering the body, so a
+damaged rejection body cannot erase its known 4xx status. A linked deadline still
+covers the entire send/body operation using the existing client timeout, or the
+earlier caller cancellation; switching to header-first does not unbound reads.
+Existing transport/cancellation exception categories are retained for callers.
+Explicit 4xx rejects stop without lookup. Unknown transport,
+malformed replies or 5xx allow one lookup with a 15-second token. Before querying,
+the original index/body, regular-file status, size and hash are checked. The
+observation must be read-only and match the actual portfolio, route source,
+supporting native receipt hash, committed revision and resulting ledger/state.
+It is retained separately; the original hooks still verify completed reservation
+IDs. Recovery is not permission to mark a native action verified or train it.
+
+Unknown, rejected, corrupt or mismatched lookup keeps the original failure and
+sets the existing settlement-failed/retry-required marker. That marker does not
+authorize native or mutation replay. Request/lookup paths remain in the execution
+diagnostic. The same PowerShell read-only helper can read these C# journals; it
+does not resume the run or bypass missing original snapshot/proof requirements.
+An unavailable pre-mutation ledger read, implicit mutations inside other planner
+endpoints, arbitrary service/process recovery and multi-step run restart are not
+claimed closed by this client-boundary change.
+
 ## Verification And Remaining Work
 
 Repository tests cover all three operations, restart, exact replies, empty cache,
@@ -103,6 +143,17 @@ The final local targeted portfolio suite passes 75 tests, the client transport
 suite passes 19 checks and the existing Rusty Key evidence suite passes 31 checks.
 The PR quality workflow runs the complete Backend and game-free governance suites
 on its exact submitted head; its result must be checked separately before merge.
+
+The live-hook extension passes the complete local Backend suite (381 tests).
+It exercises both actual hook methods against the real Backend/repository, lost
+or malformed accepted replies, explicit rejection, unavailable/cancelled/missing
+lookup, wrong bindings, claimed writes, journal/body drift and pre-send replay
+refusal. A failing HTTP 409 interrupted-body case demonstrated status loss before
+the fix; it now performs zero lookups. A deliberately stalled accepted body is
+bounded by a two-second client timeout and then recovers once, testing that the
+header-first read does not remove the old total deadline. One no-window PowerShell subprocess reads a real C# journal and preserves
+the exact raw reply using a query transport double. All are synthetic game-state
+transport tests, not native gameplay or a model-training trajectory.
 
 Pending native/host crashes, custody relocation, joint scheduling and the Rusty
 Key same-version acquisition/custody/donation/consumption trace still require

@@ -30,9 +30,7 @@ static partial class Program
                 MarkMaterialReservationSettlementFailed(execution, build.Errors);
                 return;
             }
-            var response = await PostJsonStringAsync(http, options.BackendUrl +
-                "/api/v1/strategy/commitments/reservation-portfolios/settle-supporting-transition",
-                JsonSerializer.Serialize(build.Request, JsonOptions));
+            var response = await PostJournaledPortfolioSettlementAsync(http, options, execution, build.Request);
             var ids = ReadArrayStrings(response, "completed_material_reservation_ids").Order(StringComparer.Ordinal).ToArray();
             if (response["accepted"]?.GetValue<bool>() != true ||
                 !ids.SequenceEqual(build.Request.MaterialConsumptions.Select(row => row.MaterialReservationId).Order(StringComparer.Ordinal)))
