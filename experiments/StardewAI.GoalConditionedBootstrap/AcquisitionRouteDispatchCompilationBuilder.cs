@@ -77,12 +77,22 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
                 artifactReasons);
         }
 
+        return CompileCurrentEndpoint(opportunity.GoalId, requirement, lowered, route, snapshot, ledger,
+            ranking, rankingHash, commit.PortfolioId, commit.CommittedLedgerRevision, usesControl);
+    }
+
+    internal static AcquisitionRouteDispatchCompilation CompileCurrentEndpoint(
+        string goalId, AcquisitionRouteTargetDateUnlock requirement, AcquisitionRequirementRouteLowering lowered,
+        AcquisitionRouteTargetDateOpportunityCost route, SnapshotEnvelope snapshot, StrategyCommitmentLedger ledger,
+        AvailabilityAwarePolicyPredictionEnvelope ranking, string rankingHash, string portfolioId,
+        int ledgerRevision, bool usesControl)
+    {
         var rankedCandidates = CurrentTeacherFrontierSupport.ReadCurrentCandidates(
             ranking);
         var candidates = RebuildVerifiedCurrentCandidates(
             snapshot,
             ledger,
-            opportunity.GoalId,
+            goalId,
             requirement,
             lowered.EndpointOptionIds,
             rankedCandidates,
@@ -91,7 +101,7 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         if (candidateVerificationReasons.Length > 0)
         {
             return Blocked(
-                opportunity.GoalId,
+                goalId,
                 requirement,
                 snapshot.StateHash,
                 rankingHash,
@@ -120,7 +130,7 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
                 string.IsNullOrWhiteSpace(target.TargetLocationId))
             {
                 return Blocked(
-                    opportunity.GoalId,
+                    goalId,
                     requirement,
                     snapshot.StateHash,
                     rankingHash,
@@ -140,7 +150,7 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             if (matches.Length != 1)
             {
                 return Blocked(
-                    opportunity.GoalId,
+                    goalId,
                     requirement,
                     snapshot.StateHash,
                     rankingHash,
@@ -154,7 +164,7 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         if (matches.Length == 0)
         {
             return Blocked(
-                opportunity.GoalId,
+                goalId,
                 requirement,
                 snapshot.StateHash,
                 rankingHash,
@@ -163,14 +173,14 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
 
         var selected = matches[0];
         return Compile(
-            opportunity.GoalId,
+            goalId,
             requirement,
             lowered,
             selected,
             snapshot,
             ledger,
-            commit.PortfolioId,
-            commit.CommittedLedgerRevision,
+            portfolioId,
+            ledgerRevision,
             rankingHash,
             selectedOpportunity: route,
             controlSelection: usesControl);
@@ -292,7 +302,7 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             .UpstreamRoute.UpstreamRoute.UpstreamRoute.UpstreamRoute
             .UpstreamRoute.UpstreamRoute;
 
-    private static AcquisitionRequirementRouteLowering LoweredRoute(
+    internal static AcquisitionRequirementRouteLowering LoweredRoute(
         AcquisitionRouteOptionLoweringReport lowering,
         AcquisitionRouteTargetDateUnlock requirement) =>
         lowering.RequirementSets.Single(value =>

@@ -44,7 +44,14 @@ public static partial class RustyKeyRollingSupplyProposalBuilder
                 reasons.Add("rusty_key_held_donation_progress_drifted");
             var neutral = CurrentStageOneCollectionTeacherPreferenceBuilder.NeutralizeLearnerSignals(candidate, result.SelectionPolicyId);
             var plan = planCompiler.Compile(new[] { neutral }, snapshot.StateHash, goalId: result.GoalId, maxCandidates: 1);
+            var identity = AcquisitionRoutePortfolioTeacherPreferenceBuilder.ArtifactSha256(new
+            {
+                result.GoalId, result.SelectionPolicyId, result.SnapshotSha256, result.RequirementInventorySha256,
+                result.StrategyLedgerSha256, candidate.CandidateId
+            });
+            plan.PlanId = "rusty_key_donation_plan." + identity;
             var queue = actionCompiler.Compile(plan, snapshot, ledger);
+            AcquisitionRouteDispatchCompilationBuilder.StabilizeQueueIdentity(queue, identity, "rusty_key_donation");
             reasons.AddRange(CurrentStageOneCollectionTeacherPreferenceBuilder.CompilationReasons(plan, queue));
             if (plan.Steps.Length == 0 || queue.Status != "pending" || queue.Items.Length == 0 ||
                 queue.Items.Any(item => item.Status != "pending"))

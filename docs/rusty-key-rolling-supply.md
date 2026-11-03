@@ -20,7 +20,14 @@ other 59 items does not prohibit one valid next step.
    compiler. Prefer a legal held-item donation/connector step, keeping material
    protection and exact snapshot/native donation parameters. No caller ranking
    or learner score selects the item.
-2. Only if no held-item donation step compiles, rebuild the existing target-date
+2. If no held-item donation step compiles, project the shared material graph and
+   active reservations first. Distinct owned undonated identities, including only
+   history-authenticated custody for this goal/consumer, remain pending donations.
+   Do not acquire them again merely because the museum is temporarily unavailable.
+   Authorized storage is pending transfer, not immediate donation. If these
+   identities cover the remaining deficit, stop supply explicitly without claiming
+   threshold completion. Unknown inventory fails closed; protected other-goal
+   units do not count. Otherwise rebuild the existing target-date
    acquisition context from its retained source axes. For each undonated museum
    item, propose one exact route occurrence through the existing generic
    portfolio admission and atomic reservation preflight. Reject stale source
@@ -58,6 +65,13 @@ Optional `--selected-plan-output` / `--selected-queue-output` export a held step
 `--selected-proposal-output` / `--selected-admission-output` export an acquisition
 step. Blocked results exit 2 and leave existing selected-output files untouched.
 The main report is diagnostic, not native execution authorization.
+
+Held plan/queue/item/primitive identities now rebuild deterministically from the
+retained source hashes and selected candidate, using the existing queue identity
+stabilizer. Pending-donation IDs are an optional field omitted when empty, keeping
+unaffected acquisition artifacts unchanged. See the
+[pre-commit step preparation](rusty-key-step-preparation.md) entrypoint for current
+execution-stage classification before committing any resources.
 
 This CLI is now a usable proposal producer. It is not yet the autonomous live
 loop's selected-root supply/commit orchestration; that integration must consume

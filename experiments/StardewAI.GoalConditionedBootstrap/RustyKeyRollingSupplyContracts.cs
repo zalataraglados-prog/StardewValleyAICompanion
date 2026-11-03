@@ -37,6 +37,9 @@ public sealed class RustyKeyRollingSupplyProposal
     public RustyKeyAcquisitionItem[] CompleteMuseumItemDenominator { get; set; } = Array.Empty<RustyKeyAcquisitionItem>();
     [JsonPropertyName("candidate_evaluations")]
     public RustyKeyRollingCandidateEvaluation[] CandidateEvaluations { get; set; } = Array.Empty<RustyKeyRollingCandidateEvaluation>();
+    [JsonPropertyName("pending_donation_requirement_ids")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string[]? PendingDonationRequirementIds { get; set; }
     [JsonPropertyName("selected_candidate_id")]
     public string SelectedCandidateId { get; set; } = string.Empty;
     [JsonPropertyName("compiled_plan")]
