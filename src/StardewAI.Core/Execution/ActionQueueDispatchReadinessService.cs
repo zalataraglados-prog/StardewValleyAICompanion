@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Strategy;
+using StardewAI.Core.Strategy;
 
 namespace StardewAI.Core.Execution;
 
@@ -74,11 +75,44 @@ public sealed class ActionQueueDispatchReadinessService
         var reasons = new List<string>();
         if (item.OptionId == "executor.donate_museum_item")
         {
+            if (item.NormalizedCommand.Parameters.Where(row =>
+                    row.Name.StartsWith("material_reservation_", StringComparison.Ordinal) ||
+                    row.Name.StartsWith("commitment_ledger_", StringComparison.Ordinal) ||
+                    row.Name.StartsWith("museum_output_custody_", StringComparison.Ordinal) ||
+                    row.Name is "museum_donation_save_id" or "museum_donation_player_id" or
+                        "inventory_slot_index" or "qualified_item_id" or "expected_stack_before")
+                .GroupBy(row => row.Name, StringComparer.Ordinal).Any(group => group.Count() != 1))
+                reasons.Add("dispatch_museum_parameters_not_unique");
             if (currentStateHash != item.NormalizedCommand.StateHash)
                 reasons.Add("dispatch_museum_donation_state_hash_drifted");
             if (Parameter(item, "museum_donation_save_id") != currentLedger.SaveId ||
                 Parameter(item, "museum_donation_player_id") != currentLedger.PlayerId)
                 reasons.Add("dispatch_museum_donation_actor_identity_drifted");
+            var custodyId = Parameter(item, "museum_output_custody_reservation_id");
+            var authorizedQuantity = 0;
+            if (!string.IsNullOrWhiteSpace(custodyId))
+            {
+                var custody = currentLedger.MaterialReservations.SingleOrDefault(row => row.ReservationId == custodyId);
+                if (custody is null || string.IsNullOrWhiteSpace(item.NormalizedCommand.GoalId) ||
+                    !MaterialOutputCustodyContract.IsAuthorized(custody, currentLedger,
+                        MaterialOutputCustodyContract.MuseumConsumer, item.NormalizedCommand.GoalId) ||
+                    IntParameter(item, "museum_output_custody_reservation_revision") != custody.Revision ||
+                    IntParameter(item, "inventory_slot_index") != custody.SlotIndex ||
+                    Parameter(item, "qualified_item_id") != custody.QualifiedItemId ||
+                    custody.NodeId != "player:" + currentLedger.PlayerId)
+                    reasons.Add("dispatch_museum_output_custody_binding_drifted");
+                else authorizedQuantity = custody.Quantity;
+            }
+            var slot = IntParameter(item, "inventory_slot_index");
+            var stack = IntParameter(item, "expected_stack_before");
+            var qualified = Parameter(item, "qualified_item_id");
+            var reserved = currentLedger.MaterialReservations.Where(row => row.Status == StrategyCommitmentStatuses.Active &&
+                row.NodeId == "player:" + currentLedger.PlayerId && row.SlotIndex == slot && row.QualifiedItemId == qualified)
+                .Sum(row => (long)row.Quantity);
+            if (!slot.HasValue || slot < 0 || !stack.HasValue || string.IsNullOrWhiteSpace(qualified) ||
+                (long)stack.GetValueOrDefault() - reserved + authorizedQuantity < 1 ||
+                string.IsNullOrWhiteSpace(custodyId) && !string.IsNullOrWhiteSpace(item.NormalizedCommand.GoalId))
+                reasons.Add("dispatch_museum_reserved_quantity_or_custody_binding_invalid");
         }
         if (!string.Equals(item.Status, "pending", StringComparison.Ordinal))
         {

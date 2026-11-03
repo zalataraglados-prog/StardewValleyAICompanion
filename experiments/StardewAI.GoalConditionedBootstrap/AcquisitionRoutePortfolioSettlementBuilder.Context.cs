@@ -125,6 +125,8 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
             RouteSourceDecisionId = context.RouteSourceDecisionId,
             FreshTerminalReceiptSha256 = context.FreshTerminalReceiptSha256,
             ReservationIds = context.ActiveReservationIds,
+            OutputCustodyClaims = BuildOutputCustodyClaims(context.Binding, context.FreshTerminalReceipt,
+                context.AfterSnapshot, context.BaseLedger, context.ActiveReservationIds),
             Reason = SettlementReason
         };
 

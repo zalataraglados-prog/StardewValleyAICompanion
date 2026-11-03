@@ -135,6 +135,7 @@ public sealed partial class ReservationPortfolioLedgerService
             request.StateHash,
             request.ExpectedLedgerRevision);
         ValidateSettlementRequest(current, request, errors);
+        ValidateOutputCustodyClaims(current, snapshot, request, errors);
         if (errors.Count > 0)
             return SettlementRejected(current, request, errors);
 
@@ -170,7 +171,15 @@ public sealed partial class ReservationPortfolioLedgerService
                 request.FreshTerminalReceiptSha256;
             return completed;
         }).ToArray();
-        StrategyCommitmentLedgerSupport.Advance(ledger, snapshot, updatedAt);
+        if (request.OutputCustodyClaims is { Length: > 0 })
+        {
+            var retained = RetainOutputCustody(ledger, snapshot, request, updatedAt);
+            if (!retained.Accepted || retained.Ledger is null)
+                return SettlementRejected(current, request, retained.Errors);
+            ledger = retained.Ledger;
+        }
+        else
+            StrategyCommitmentLedgerSupport.Advance(ledger, snapshot, updatedAt);
         foreach (var row in ledger.MaterialReservations.Where(row =>
                      reservationSet.Contains(row.ReservationId)))
         {
@@ -212,6 +221,10 @@ public sealed partial class ReservationPortfolioLedgerService
                 request.FreshTerminalReceiptSha256,
             CommittedLedgerRevision = ledger.Revision,
             CompletedReservationIds = reservationIds,
+            OutputCustodyReservationIds = request.OutputCustodyClaims is { Length: > 0 }
+                ? request.OutputCustodyClaims.Select(claim => MaterialOutputCustodyContract.ReservationId(
+                    MaterialOutputCustodyContract.PortfolioId(request.PortfolioId, request.RouteSourceDecisionId,
+                        claim.ConsumerOptionId, claim.QualifiedItemId))).ToArray() : null,
             Ledger = ledger
         };
     }
@@ -271,6 +284,9 @@ public sealed partial class ReservationPortfolioLedgerService
                     row.SourceDecisionId == request.RouteSourceDecisionId)
                 .Select(row => (row.ReservationId, row.GoalId)))
             .ToArray();
+        if (current.MaterialReservations.Any(row => row.Status == StrategyCommitmentStatuses.Active &&
+                row.SourceDecisionId == request.RouteSourceDecisionId && row.OutputCustody is not null))
+            errors.Add("material_output_custody_requires_verified_consumption");
         if (active.Any(row => row.GoalId != request.GoalId))
             errors.Add("reservation_portfolio_route_goal_mismatch");
         var expected = active.Select(row => row.ReservationId)

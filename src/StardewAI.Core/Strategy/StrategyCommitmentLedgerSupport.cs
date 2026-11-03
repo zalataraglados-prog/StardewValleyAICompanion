@@ -163,7 +163,15 @@ internal static class StrategyCommitmentLedgerSupport
         Purpose = row.Purpose,
         CancelReason = row.CancelReason,
         CompletionReason = row.CompletionReason,
-        CompletionEvidenceSha256 = row.CompletionEvidenceSha256
+        CompletionEvidenceSha256 = row.CompletionEvidenceSha256,
+        OutputCustody = row.OutputCustody is null ? null : new MaterialOutputCustody
+        {
+            AcquisitionPortfolioId = row.OutputCustody.AcquisitionPortfolioId,
+            AcquisitionRouteSourceDecisionId = row.OutputCustody.AcquisitionRouteSourceDecisionId,
+            ConsumerOptionId = row.OutputCustody.ConsumerOptionId,
+            FreshTerminalReceiptSha256 = row.OutputCustody.FreshTerminalReceiptSha256,
+            CreatedLedgerRevision = row.OutputCustody.CreatedLedgerRevision
+        }
     };
 
     internal static CurrencyReservation CloneCurrency(

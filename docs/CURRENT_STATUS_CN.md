@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-03 Museum output custody：** 原获取结算现在同修订号完成输入并保管一件 museum 产物；候选/编译/派发复查精确消费者、目标、账本和数量，live 捐赠完成后走原 supporting-transition 核销。Backend 303、Core 聚焦 87、rolling 25、阈值 30 和 Teacher 聚焦重放通过；仅代码/合成与实际 live 方法测试，未新增原生证据。自主 producer 编排、单条原生获取到核销轨迹、网络失败回执恢复和位置迁移仍未完成，不能把控制提案标为 Teacher 偏好。见 [合同](museum-output-custody.md)，主线与冻结计数不变。
+
 > **2026-11-03 Rusty Key rolling producer：** 已有真正生成下一步的 CLI，不再只有调用方手填完整组合的校验器：安全已有库存复用原捐赠编译链，否则单项获取复用原 portfolio/原子预留预检。完整物品分母保留，单项进展不冒充完整阈值证书或 Teacher 最优偏好。24 项合成用例、30 项阈值回归、聚焦 Teacher 重放及实际 CLI 导出/拒绝保护通过；尚未接成自主 live root 供给编排、未新增原生运行。唯一接续是接既有提交/执行和持续产物租约，再收本 criterion 时间与独立证据，不重排 root。见 [合同](rusty-key-rolling-supply.md)。
 
 > **PR #398 派发接线纠正：** 本地 Teacher/导入队列改为 POST 实际待执行项，经同一 Backend 当前快照/账本校验器检查，不依赖队列已注册、不重选动作。原 GET 保留且共用同一路径。Backend `279/279` 通过；这属于 HTTP/live 代码回归，不扩张 `2e24b81b` 原生证据范围。主线和冻结计数不变。

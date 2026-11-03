@@ -40,7 +40,7 @@ public sealed partial class ActionQueueCompiler
     }
 
     private static string[] ValidateMuseumDonationPlan(SmallModelAction action, SnapshotEnvelope snapshot,
-        StrategyCommitmentLedger? commitmentLedger)
+        StrategyCommitmentLedger? commitmentLedger, string goalId)
     {
         if (action.OptionId != "executor.donate_museum_item")
         {
@@ -95,7 +95,7 @@ public sealed partial class ActionQueueCompiler
                 MuseumDonationMaterialReservationGuard.IsBindingParameter(parameter.Name)))
             reasons.Add("museum_donation_strategy_ledger_unavailable");
         var material = new MuseumDonationMaterialReservationGuard(snapshot, commitmentLedger)
-            .Evaluate(slot.Value, ReadParameter(action, "qualified_item_id") ?? string.Empty, stackBefore.Value);
+            .Evaluate(slot.Value, ReadParameter(action, "qualified_item_id") ?? string.Empty, stackBefore.Value, goalId);
         reasons.AddRange(material.BlockingReasons);
         action.Parameters = action.Parameters.Where(parameter =>
                 !MuseumDonationMaterialReservationGuard.IsBindingParameter(parameter.Name))

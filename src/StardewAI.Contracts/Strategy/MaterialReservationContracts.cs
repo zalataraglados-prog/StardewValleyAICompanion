@@ -49,6 +49,24 @@ public sealed class MaterialReservation
 
     [JsonPropertyName("completion_evidence_sha256")]
     public string CompletionEvidenceSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("output_custody")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public MaterialOutputCustody? OutputCustody { get; set; }
+}
+
+public sealed class MaterialOutputCustody
+{
+    [JsonPropertyName("acquisition_portfolio_id")]
+    public string AcquisitionPortfolioId { get; set; } = string.Empty;
+    [JsonPropertyName("acquisition_route_source_decision_id")]
+    public string AcquisitionRouteSourceDecisionId { get; set; } = string.Empty;
+    [JsonPropertyName("consumer_option_id")]
+    public string ConsumerOptionId { get; set; } = string.Empty;
+    [JsonPropertyName("fresh_terminal_receipt_sha256")]
+    public string FreshTerminalReceiptSha256 { get; set; } = string.Empty;
+    [JsonPropertyName("created_ledger_revision")]
+    public int CreatedLedgerRevision { get; set; }
 }
 
 public sealed class MaterialReservationUpsertRequest
