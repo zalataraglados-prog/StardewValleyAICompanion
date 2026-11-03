@@ -1,5 +1,7 @@
 # StardewAI 当前工作
 
+> **当前 WIP 收口（2026-11-03，#390 / PR #391）：** 代码层验收责任解耦、静态/fixture 回归和已解锁姜岛原生边界均已完成。Master Angler 本地门只消费可重放的 `ginger_island_access` 共享能力证书，不再消费 global source schedule 或强制 Gourmand `3/3`；全局验证器仍保留。全解决方案 Release 构建 `0 warning / 0 error`，聚焦回归 `203/203`。运行 `master-angler-acceptance-scope-390-20261103-173533` 在源存档 SHA 不变的前提下生成 `ready=true` 证书，并在不提供任何全局 schedule/Gourmand 工件时得到 `72` 鱼种、`14` 前置族、零 blocker 的本地 audit/proof/closure。当前覆盖计数不变、正式训练仍为 false；该证明只关闭局部前置清单，不替代逐鱼捕获与三分区证据。下一步是合并 PR #391 后重建 reconciliation/证据复用报告并重新估算剩余 root 的局部成本，不启动 Day-0 长跑。
+
 > **当前状态入口：** [CURRENT_STATUS_CN.md](CURRENT_STATUS_CN.md)。本文件下方带日期的状态、计数和“下一步”均保留为历史证据；若与当前机器报告或 CURRENT_STATUS_CN.md 冲突，不得按历史数字规划新工作。
 >
 > **施工顺序修订（2026-11-03T15:46:34+08:00，Asia/Kuala_Lumpur；pretraining-order-20261103-r1）：** Community Center、Pet Love、Skull Key、Full Shipment 保持已冻结；后续顺序改为 `obtain_rusty_key` → `raise_skill_levels` → `raise_friendships` → `marriage_and_house_upgrade` → `complete_museum_collection` → `complete_master_angler` → `earn_money`。当前唯一 primary root 改为 `obtain_rusty_key`；Master Angler 保留成果、暂停在未完成状态，不再占据第 5 项。本次为用户明确授权的依赖/成本重排，不是普通 bug 中断；仍为 WIP=1。完整依据、退出条件与历史队列见 [CURRENT_STATUS_CN.md 第 6 节](CURRENT_STATUS_CN.md#6-下一项如何选择)。

@@ -69,7 +69,15 @@ Golden Walnut source-schedule 构建器、独立重放器、真实原生回执�
 
 这是撤销失实全序并给出明确下一步，不是放弃计划或授权开发对话自由换项。两个平级常驻对话及其子代理共同服务同一工作项；不改变模型/算法实验归属，也不增设第三个主目标。
 
-## 5. 实现整改的完成条件（尚待开发验证）
+## 5. 实现整改的完成条件与当前进度
+
+**2026-11-03 实现记录：** 已完成代码级责任解耦。`MasterAnglerFreshSavePrerequisiteAuditBuilder` 的局部 family 仅由 `master_angler_shared_capability_certificate.v1` 关闭；completion proof 与 dependency closure 不再要求 Gourmand 回执或 `VerifiedGourmandTransitionCount == 3`；产品 source-schedule 包装器继续验证全局证据，但不能生成或提升 Master Angler 局部完成证明。证书会重算透明快照 state hash，并精确绑定源文件 SHA、game/run/save/player、tick、范围和实际可达目标；缺证书、阻塞证书、篡改证书、身份/schema/分母漂移均失败关闭。
+
+代码验证结果为：全解决方案 Release `0 warning / 0 error`；PowerShell AST 通过；局部证明、全局证据不越权、CLI/包装器和源码守卫聚焦回归 `203/203`。
+
+原生边界也已在 `master-angler-acceptance-scope-390-20261103-173533` 完成。PR #389 留存的已解锁姜岛隔离存档生成 full snapshot，证书独立重算并核对 state hash，验证 `IslandSouth`、`IslandNorth`、`IslandWest`、`IslandSouthEast`、`IslandSouthEastCave` 全部可达；证书 SHA-256 为 `6031276d0340011039ce5e4fd3871f32d33e9a236f6a3e017d84d0cdb9cbc250`。不提供 global source schedule 或 Gourmand 回执时，audit v2 仍为 `fresh_save_prerequisite_inventory_complete`，completion proof v2 `ready=true`，run-local dependency expansion 的 Master Angler direction 为 `complete`。源存档主文件和 `SaveGameInfo` SHA-256 前后分别保持 `7F34A5731208788F37EF2D1F76B64B890466293878F876ABCA6FE4A05A052CB0`、`0F2716DE726B87A8EC9AAE6B89E1713C6207BD24EA119E8DC188DFDF2C0620FC`。
+
+这满足本节的责任解耦与局部前置清单退出门，但不把 prerequisite closure 扩写为逐鱼捕获结果、三分区 Teacher/native evidence、CoverageGateReady、完整 Day-0 或正式训练。覆盖基线仍为 `5/19`、`4/11`、`0/18`，正式训练继续为 false。PR #391 合并前 #390 保持开放；合并后先重建 reconciliation 与真实 blocker，再按局部成本选择下一 root。
 
 - 对照 #224/#390 检查 `MasterAnglerFreshSavePrerequisiteAuditBuilder`、`MasterAnglerFreshSavePrerequisiteCompletionProofBuilder`、`MasterAnglerDependencyExpansionCompletionBuilder` 与 `Invoke-ProductBootstrapCalibration.ps1` 等调用方；分清局部视图、共享证书和全局证明的消费者。
 - 正向：有效局部鱼类证据与必要共享证书成立、但没有全局 source schedule/没有选择 Gourmand 时，局部门不应仅因此失败。

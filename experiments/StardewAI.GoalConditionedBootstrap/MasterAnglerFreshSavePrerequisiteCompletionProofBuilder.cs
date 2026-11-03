@@ -38,7 +38,7 @@ public static class MasterAnglerFreshSavePrerequisiteCompletionProofBuilder
             ?? throw new InvalidDataException("Audit is null.");
         Require(JsonNode.DeepEquals(JsonSerializer.SerializeToNode(suppliedAudit), JsonNode.Parse(auditBytes)),
             "Supplied rebuilt audit does not match its file.");
-        Require(audit.SchemaVersion == "master_angler_fresh_save_prerequisite_audit.v1" &&
+        Require(audit.SchemaVersion == "master_angler_fresh_save_prerequisite_audit.v2" &&
                 audit.GoalId == expectedGoalId && audit.GameVersion == expectedGameVersion,
             "Audit schema, goal or game identity mismatch.");
         var dependencyBytes = File.ReadAllBytes(dependencyFullPath);
@@ -81,42 +81,51 @@ public static class MasterAnglerFreshSavePrerequisiteCompletionProofBuilder
               families.Any(row => row?.FamilyId == "ginger_island_access"),
             "prerequisite_family_inventory_inconsistent");
 
-        var receipt = audit.GoldenWalnutGourmandContinuationReceipt;
-        var receiptPath = string.Empty;
-        var receiptHash = string.Empty;
-        if (receipt is not null && !string.IsNullOrWhiteSpace(audit.GoldenWalnutGourmandContinuationReceiptPath))
+        Require(root.TryGetProperty(
+                "ginger_island_access_capability_certificate", out var certificateNode),
+            "Audit is missing ginger_island_access_capability_certificate.");
+        var certificateIds = Array.Empty<string>();
+        if (audit.GingerIslandAccessCapabilityCertificate is not null &&
+            !string.IsNullOrWhiteSpace(
+                audit.GingerIslandAccessCapabilityCertificatePath))
         {
-            receiptPath = Path.GetFullPath(audit.GoldenWalnutGourmandContinuationReceiptPath);
-            var receiptBytes = File.ReadAllBytes(receiptPath);
-            receiptHash = Hash(receiptBytes);
-            Require(string.Equals(receiptHash, audit.GoldenWalnutGourmandContinuationReceiptSha256,
-                    StringComparison.OrdinalIgnoreCase), "Gourmand receipt SHA256 mismatch.");
-            using var receiptDocument = JsonDocument.Parse(receiptBytes);
-            RequireUniqueProperties(receiptDocument.RootElement);
-            var receiptNode = JsonNode.Parse(receiptBytes);
-            Require(JsonNode.DeepEquals(JsonSerializer.SerializeToNode(receipt), receiptNode) &&
-                    JsonNode.DeepEquals(JsonNode.Parse(root.GetProperty(
-                        "golden_walnut_gourmand_continuation_receipt").GetRawText()), receiptNode),
-                "Gourmand receipt file does not exactly match the audit receipt.");
-            Check(receipt.SchemaVersion == GoldenWalnutGourmandContinuationReceiptVerifier.SchemaVersion &&
-                  receipt.GameVersion == expectedGameVersion &&
-                  !string.IsNullOrWhiteSpace(receipt.SourceRunId) && !string.IsNullOrWhiteSpace(receipt.SaveId) &&
-                  !string.IsNullOrWhiteSpace(receipt.PlayerId) &&
-                  !string.IsNullOrWhiteSpace(receipt.SourceEpisodeManifestPath) &&
-                  IsSha256(receipt.SourceEpisodeManifestSha256) &&
-                  IsSha256(receipt.SourceEpisodeEvidenceRootSha256) &&
-                  IsSha256(receipt.NativeReceiptEvidenceRootSha256), "gourmand_receipt_identity_mismatch");
-            Check(receipt.Ready && receipt.VerifiedTransitionCount == 3 &&
-                  receipt.BlockingReasons is { Length: 0 } && !receipt.TrainingLabelEligible,
-                "gourmand_continuation_incomplete");
+            var certificatePath = Path.GetFullPath(
+                audit.GingerIslandAccessCapabilityCertificatePath);
+            var certificateHash = Hash(File.ReadAllBytes(certificatePath));
+            Require(string.Equals(
+                    certificateHash,
+                    audit.GingerIslandAccessCapabilityCertificateSha256,
+                    StringComparison.OrdinalIgnoreCase),
+                "Shared-capability certificate SHA256 mismatch.");
+            var replayed = MasterAnglerSharedCapabilityCertificateBuilder.ReadAndReplay(
+                certificatePath);
+            Require(JsonNode.DeepEquals(
+                    JsonSerializer.SerializeToNode(replayed),
+                    JsonSerializer.SerializeToNode(
+                        audit.GingerIslandAccessCapabilityCertificate)) &&
+                    JsonNode.DeepEquals(
+                        JsonNode.Parse(certificateNode.GetRawText()),
+                        JsonSerializer.SerializeToNode(replayed)),
+                "Shared-capability certificate file does not exactly match the audit certificate.");
+            Check(replayed.Ready &&
+                  replayed.GameVersion == expectedGameVersion &&
+                  replayed.CapabilityId ==
+                    MasterAnglerSharedCapabilityCertificateBuilder
+                        .GingerIslandAccessCapabilityId &&
+                  replayed.ConsumerDirectionId ==
+                    MasterAnglerSharedCapabilityCertificateBuilder.ConsumerDirectionId &&
+                  replayed.BlockingReasons is { Length: 0 } &&
+                  !replayed.TrainingLabelEligible,
+                "ginger_island_access_capability_certificate_invalid");
+            certificateIds = new[] { replayed.CapabilityId };
         }
         else
-            blockers.Add("gourmand_continuation_receipt_missing");
+            blockers.Add("ginger_island_access_capability_certificate_missing");
 
         return new MasterAnglerFreshSavePrerequisiteCompletionProof(blockers.Count == 0,
             audit.GoalId, audit.GameVersion, auditFullPath, Hash(auditBytes), dependencyFullPath,
-            dependencyHash, audit.NativeDenominatorCount, families.Length, receiptPath, receiptHash,
-            receipt?.VerifiedTransitionCount ?? 0, blockers.ToArray());
+            dependencyHash, audit.NativeDenominatorCount, families.Length, certificateIds,
+            blockers.ToArray());
     }
 
     private static readonly string[] RequiredAuditFields =
@@ -126,13 +135,11 @@ public static class MasterAnglerFreshSavePrerequisiteCompletionProofBuilder
         "species_with_two_or_more_static_opportunity_days", "static_opportunity_inventory_complete",
         "prerequisite_family_inventory_complete", "species", "prerequisite_families",
         "missing_or_unbound_producer_families", "unknown_location_ids",
-        "golden_walnut_gourmand_continuation_receipt_path", "golden_walnut_gourmand_continuation_receipt_sha256",
-        "golden_walnut_gourmand_continuation_receipt"
+        "ginger_island_access_capability_certificate_path",
+        "ginger_island_access_capability_certificate_sha256"
     };
 
     private static string Hash(byte[] bytes) => Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
-
-    private static bool IsSha256(string value) => value is { Length: 64 } && value.All(Uri.IsHexDigit);
 
     private static void RequireUniqueProperties(JsonElement value)
     {

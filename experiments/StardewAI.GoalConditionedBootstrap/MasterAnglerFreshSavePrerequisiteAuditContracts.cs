@@ -7,7 +7,7 @@ public sealed class MasterAnglerFreshSavePrerequisiteAuditReport
 {
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
-        "master_angler_fresh_save_prerequisite_audit.v1";
+        "master_angler_fresh_save_prerequisite_audit.v2";
 
     [JsonPropertyName("status")] public string Status { get; set; } = string.Empty;
     [JsonPropertyName("goal_id")] public string GoalId { get; set; } = string.Empty;
@@ -56,6 +56,12 @@ public sealed class MasterAnglerFreshSavePrerequisiteAuditReport
     public GoldenWalnutGourmandContinuationReceipt? GoldenWalnutGourmandContinuationReceipt { get; set; }
     [JsonPropertyName("golden_walnut_fresh_save_unlock_timeline")]
     public GoldenWalnutFreshSaveUnlockTimelineProof? GoldenWalnutFreshSaveUnlockTimeline { get; set; }
+    [JsonPropertyName("ginger_island_access_capability_certificate_path")]
+    public string GingerIslandAccessCapabilityCertificatePath { get; set; } = string.Empty;
+    [JsonPropertyName("ginger_island_access_capability_certificate_sha256")]
+    public string GingerIslandAccessCapabilityCertificateSha256 { get; set; } = string.Empty;
+    [JsonPropertyName("ginger_island_access_capability_certificate")]
+    public MasterAnglerSharedCapabilityCertificate? GingerIslandAccessCapabilityCertificate { get; set; }
     [JsonPropertyName("species")]
     public MasterAnglerFreshSaveSpeciesPrerequisite[] Species { get; set; } =
         Array.Empty<MasterAnglerFreshSaveSpeciesPrerequisite>();
@@ -68,11 +74,11 @@ public sealed class MasterAnglerFreshSavePrerequisiteAuditReport
     public string[] UnknownLocationIds { get; set; } = Array.Empty<string>();
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
-        "This inventory distinguishes static calendar opportunities from fresh-save reachability. " +
-        "It never treats a date span as a dynamically legal catch, never predicts a stochastic rod " +
-        "or Crab Pot result, and never authorizes training. Every missing or merely reusable-but-unbound " +
-        "producer family must be connected to the Master Angler recurrence and proven before the initial " +
-        "Year 3 evaluation.";
+        "This criterion-local inventory distinguishes static calendar opportunities from current native " +
+        "reachability. It never treats a date span as a dynamically legal catch, predicts a stochastic " +
+        "rod or Crab Pot result, or authorizes training. Shared prerequisites require replayable scoped " +
+        "capability certificates. Global fresh-save source schedules and optional Golden Walnut source " +
+        "branches remain Teacher integration evidence and cannot close this local view.";
 }
 
 public sealed class MasterAnglerFreshSaveSpeciesPrerequisite

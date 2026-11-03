@@ -376,19 +376,19 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             calibration,
             StringComparison.Ordinal);
         Assert.Contains(
-            "fresh_save_prerequisite_inventory_complete",
+            "partial_fresh_save_prerequisite_inventory",
             calibration,
             StringComparison.Ordinal);
         Assert.Contains(
-            "build-master-angler-fresh-save-prerequisite-completion-proof",
+            "shared_capability_certificate_missing",
             calibration,
             StringComparison.Ordinal);
-        Assert.Contains(
-            "master_angler_completion_proof_path",
+        Assert.DoesNotContain(
+            "\"build-master-angler-fresh-save-prerequisite-completion-proof\"",
             calibration,
             StringComparison.Ordinal);
-        Assert.Contains(
-            "build-master-angler-complete-dependency-expansions",
+        Assert.DoesNotContain(
+            "\"build-master-angler-complete-dependency-expansions\"",
             calibration,
             StringComparison.Ordinal);
         Assert.Contains(
@@ -396,7 +396,7 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             calibration,
             StringComparison.Ordinal);
         Assert.Contains(
-            "$masterAnglerAuditResult = Invoke-MasterAnglerVerifiedSourceScheduleAudit",
+            "$masterAnglerAuditResult = Invoke-GoldenWalnutSourceScheduleLocalScopeDiagnostic",
             calibration,
             StringComparison.Ordinal);
         Assert.Contains(
@@ -404,7 +404,7 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             calibration,
             StringComparison.Ordinal);
         Assert.Contains(
-            "[string]$masterAnglerAuditResult.CompletionProofPath",
+            "CompletionProofPath = \"\"",
             calibration,
             StringComparison.Ordinal);
         Assert.Contains(

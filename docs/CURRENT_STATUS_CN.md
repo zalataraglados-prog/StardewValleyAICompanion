@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-03 #390 实现与边界状态（覆盖下方 R1 排序）：** criterion-local、共享能力证书、Teacher 全局集成和完整新档四层责任已经在代码中解耦。Master Angler 局部审计不再由 Golden Walnut source schedule 或 Gourmand `3/3` 提升；姜岛前置只接受可独立重放、绑定透明快照路径/SHA/state hash/save/player 的 `ginger_island_access` 共享能力证书。全局 source schedule/Gourmand 验证器保留在其所属集成层。全解决方案 Release 构建 `0 warning / 0 error`，局部证明、包装器与源码守卫回归 `203/203`。隔离已解锁存档随后生成真实 full snapshot（`state_hash=69118c126c5b253813660a3bbbe1e58a2124e2fe805f4361f6b157f34409864d`）和 `ready=true` 证书；在没有 global source schedule、没有 Gourmand 回执时，本地 audit 仍以 `72` 鱼种、`14` 前置族、零缺口完成，completion proof 与 run-local dependency closure 均通过。源存档两份 SHA 前后不变，游戏与端口已回收。该结果关闭的是 #390 的责任解耦和 Master Angler **局部前置清单**，不是逐鱼捕获、Teacher/native 三分区、CoverageGateReady 或完整新档；覆盖分子不晋升，`formal_product_training=false`。PR #391 合并前 Issue 保持开放；合并后先重建 reconciliation 与局部成本，再选择下一个 WIP，不按下方“固定第 10”旧全序施工。
+
 <!-- pretraining-order-20261103-r1; edited_at=2026-11-03T15:46:34+08:00; research_base=049f40edfcef910b00451ad5f7b948916df67ba1; owner-authorized; docs-only -->
 
 > **本轮有效计划：** 第 4–7 节已按 2026-11-03T15:46:34+08:00 用户授权重排。唯一 primary 为 `obtain_rusty_key`；Master Angler 暂停保留、列第 10，Money 最终门仍第 11。下方 v111 及更早运行的“下一步”保留作历史事实，不覆盖第 6 节。状态面板不因文档修订晋升。

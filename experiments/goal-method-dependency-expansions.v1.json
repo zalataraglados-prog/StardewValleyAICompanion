@@ -372,12 +372,13 @@
           ],
           "rule": {
             "builder": "MasterAnglerFreshSavePrerequisiteAuditBuilder",
-            "schema": "master_angler_fresh_save_prerequisite_audit.v1",
+            "schema": "master_angler_fresh_save_prerequisite_audit.v2",
+            "shared_capability_certificate_schema": "master_angler_shared_capability_certificate.v1",
             "native_species_count": 72,
             "static_opportunity_days_with_two_or_more": 72,
             "rain_or_storm_required_species_count": 4,
             "maximum_required_fishing_level": 10,
-            "classification_boundary": "static calendar days are not dynamically legal catch opportunities",
+            "classification_boundary": "static calendar days are not dynamically legal catch opportunities; global Golden Walnut source schedules and optional Gourmand branches cannot close this criterion-local inventory",
             "status": "partial_fresh_save_prerequisite_inventory",
             "training_label_eligible": false
           }
