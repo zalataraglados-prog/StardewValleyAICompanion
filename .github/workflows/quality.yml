@@ -48,6 +48,9 @@ jobs:
       - name: Verify generated current checkpoint
         shell: pwsh
         run: ./scripts/Update-CurrentWorkCheckpoint.ps1 -Check
+      - name: Test Rusty Key evidence boundaries without game
+        shell: pwsh
+        run: ./scripts/Test-RuntimeRustyKeyEvidence.ps1
       - name: Check whitespace
         shell: pwsh
         run: |

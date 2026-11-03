@@ -25,6 +25,7 @@ function Write-JsonFile {
 }
 
 . (Join-Path $PSScriptRoot "RuntimeRawJson.ps1")
+. (Join-Path $PSScriptRoot "RuntimeLogicalJson.ps1")
 
 function Write-RawJsonProperty {
     param(
@@ -509,6 +510,7 @@ function Invoke-RuntimeDailyPlanStep {
         -Encoding utf8
     $result = Read-RuntimeLoopArtifacts `
         -LoopRoot $stepRoot -RunId $Context.RunId `
+        -CoreAssemblyPath (Join-Path (Split-Path -Parent $Context.LoopDll) "StardewAI.Core.dll") `
         -AllowVerifiedContinuation:$AllowVerifiedContinuation
     if ($exitCode -ne 0 -and
         -not $result.VerifiedContinuationPending -and
@@ -570,7 +572,8 @@ function Invoke-RuntimePrecompiledQueue {
         throw "Precompiled queue $Name failed with exit $LASTEXITCODE."
     }
     return Read-RuntimeLoopArtifacts `
-        -LoopRoot $loopRoot -RunId $Context.RunId
+        -LoopRoot $loopRoot -RunId $Context.RunId `
+        -CoreAssemblyPath (Join-Path (Split-Path -Parent $Context.LoopDll) "StardewAI.Core.dll")
 }
 
 function Invoke-RuntimeTeacherPreferenceQueue {
@@ -609,13 +612,15 @@ function Invoke-RuntimeTeacherPreferenceQueue {
         throw "Teacher preference queue $Name failed with exit $LASTEXITCODE."
     }
     return Read-RuntimeLoopArtifacts `
-        -LoopRoot $loopRoot -RunId $Context.RunId
+        -LoopRoot $loopRoot -RunId $Context.RunId `
+        -CoreAssemblyPath (Join-Path (Split-Path -Parent $Context.LoopDll) "StardewAI.Core.dll")
 }
 
 function Read-RuntimeLoopArtifacts {
     param(
         [Parameter(Mandatory)] [string] $LoopRoot,
         [Parameter(Mandatory)] [string] $RunId,
+        [string] $CoreAssemblyPath = "",
         [switch] $AllowVerifiedContinuation
     )
     $root = Join-Path $LoopRoot "runs\$RunId\live-snapshots"
@@ -683,9 +688,9 @@ function Read-RuntimeLoopArtifacts {
         ExecutionPath = $executionPath
         AfterPath = $afterPath
         Queue = Get-Content -LiteralPath $queuePath -Raw | ConvertFrom-Json
-        Before = Get-Content -LiteralPath $beforePath -Raw | ConvertFrom-Json
+        Before = Read-RuntimeLogicalJsonArtifact -Path $beforePath -CoreAssemblyPath $CoreAssemblyPath
         Execution = $execution
-        After = Get-Content -LiteralPath $afterPath -Raw | ConvertFrom-Json
+        After = Read-RuntimeLogicalJsonArtifact -Path $afterPath -CoreAssemblyPath $CoreAssemblyPath
         VerifiedContinuationPending = $verifiedContinuationPending
         VerifiedObjectiveCompleted = $verifiedObjectiveCompleted
     }

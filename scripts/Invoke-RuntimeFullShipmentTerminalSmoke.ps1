@@ -40,6 +40,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+. (Join-Path $PSScriptRoot "lib\RuntimeLogicalJson.ps1")
 
 if ($OwnerComposite -and
     ($NoShipment -or
@@ -103,38 +104,8 @@ $script:logicalJsonArtifactReaderLoaded = $false
 
 function Read-LogicalJsonArtifact {
     param([string] $Path)
-
-    $fullPath = [IO.Path]::GetFullPath($Path)
-    if (-not (Test-Path -LiteralPath $fullPath -PathType Leaf)) {
-        throw "Logical JSON artifact not found: $fullPath"
-    }
-
-    if (-not $script:logicalJsonArtifactReaderLoaded) {
-        if ([string]::IsNullOrWhiteSpace([string]$loopDll)) {
-            throw "LiveTrainingLoop output is unavailable for logical JSON artifact reads."
-        }
-        $readerAssemblyPath = Join-Path (Split-Path -Parent $loopDll) `
-            "StardewAI.Core.dll"
-        if (-not (Test-Path -LiteralPath $readerAssemblyPath -PathType Leaf)) {
-            throw "Content-addressed JSON reader assembly not found: $readerAssemblyPath"
-        }
-        $readerType =
-            "StardewAI.Core.Infrastructure.ContentAddressedJsonArtifactReader" `
-                -as [type]
-        if ($null -eq $readerType) {
-            Add-Type -Path $readerAssemblyPath
-        }
-        $script:logicalJsonArtifactReaderLoaded = $true
-    }
-
-    try {
-        $raw = [StardewAI.Core.Infrastructure.ContentAddressedJsonArtifactReader]::ReadAllText(
-            $fullPath)
-        return ConvertFrom-Json -InputObject $raw
-    }
-    catch {
-        throw "Failed to read logical JSON artifact $fullPath`: $($_.Exception.Message)"
-    }
+    return Read-RuntimeLogicalJsonArtifact -Path $Path `
+        -CoreAssemblyPath (Join-Path (Split-Path -Parent $loopDll) "StardewAI.Core.dll")
 }
 
 function Get-VerifiedEndOfNightEvidence {
