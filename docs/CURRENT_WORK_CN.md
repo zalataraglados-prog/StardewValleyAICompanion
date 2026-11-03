@@ -2,6 +2,12 @@
 
 ## 2026-11-03 当前 Rusty Key 切片与接续
 
+- **19:11 原生边界链已通过，未晋升 criterion：** PR #392 已合并；`ba9bb50e` 在隐藏静音的 E 盘游戏上，从复制的 59 件边界档完成进入博物馆、捐第 60 件、正常回家保存跨日、Farm 原生事件 `66` 和实际钥匙回执，共 7 次选队列、9 条 verified native action。源档目录 SHA-256 前后相同，游戏和专用端口均已回收。证据是共享原生能力：源档为 Year 5，不证明第三年前获得钥匙、60 件安全收集组合或 Teacher/native 三分区；全局计数保持冻结。详见 [Rusty Key 原生阈值证据](rusty-key-native-threshold-evidence.md)。
+- **当前下一步：** 复用已有 museum requirement inventory、acquisition portfolio 与 reservation ledger，把目标限定为 `max(0, live_threshold - donated_count)` 个不重复、未捐且满足跨目标保护的物品；不要求先完成 95 件、不另建捐赠/剧情执行器。随后接入本 criterion 的 Teacher comparison、native outcome 三分区与第三年前 deadline。已有原生边界链只需独立重放和真实回归时重开，不重复整条游戏长跑。
+- **离线读取修复：** 新证据复核暴露公共 PowerShell `Read-RuntimeLoopArtifacts` 把内容寻址快照清单当成完整 JSON；现在与 Full Shipment 共用 `RuntimeLogicalJson.ps1`，交由既有 C# reader 校验并还原，不手工拼快照。当前捕获链已用增强校验离线复核通过。
+
+以下为本次原生验证前的实现记录；其中“下一步 59→60”已由上方结果完成：
+
 - 当前 reconciliation 将本 root 保留为 `pending_dependency_expansion`：仍缺受保护物品安全的 60 件 acquisition/reservation/donation 组合，以及原生奖励到送钥匙事件的完整回执；Teacher source adapter 与三分区也尚未闭合。现有 EVD-224 捐赠、EVD-322 剧情和共享下水道执行器继续复用。
 - 已补齐同一方向的两处绑定：博物馆远程候选携带与店内捐赠共用的精确阈值参数，仍走共享 connector；自动剧情候选只有在可读博物馆奖励前置成立、原生 `Data/Events/Farm` 事件 `66` 与 fresh fingerprint 一致时，才可绑定 `obtain_rusty_key` 并交给已有剧情编译器。缺失/错误类型的必需布尔字段、错误剧情来源和过期/重复指纹均拒绝。
 - 锁定原始数据 `museum60` 的奖励动作是 `MarkEventSeen Host 295672`；Farm key `66/e 295672/t 600 700/H` 包含原生 `rustyKey`，反编译 `Event.DefaultCommands.RustyKey` 才写入实际钥匙状态。捐满 60 件不能直接声称拿到钥匙。
