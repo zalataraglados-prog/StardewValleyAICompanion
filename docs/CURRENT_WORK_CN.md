@@ -1,6 +1,6 @@
 # StardewAI 当前工作
 
-> **当前唯一 WIP（2026-11-03，#390）：** 代码层验收责任解耦与静态/fixture 回归已经完成：Master Angler 本地门消费 `ginger_island_access` 共享能力证书，不再消费全局 source schedule 或强制 Gourmand `3/3`；全局验证器仍保留。全解决方案 Release 构建 `0 warning / 0 error`，聚焦回归 `203/203`。当前覆盖计数不变、正式训练仍为 false。下一步只在 PR #389 留存的已解锁姜岛隔离档上采集真实透明快照、生成并独立重放证书，再重建本地 audit/proof/dependency closure；不启动 Day-0 长跑，也不并行开 Rusty Key。
+> **当前 WIP 收口（2026-11-03，#390 / PR #391）：** 代码层验收责任解耦、静态/fixture 回归和已解锁姜岛原生边界均已完成。Master Angler 本地门只消费可重放的 `ginger_island_access` 共享能力证书，不再消费 global source schedule 或强制 Gourmand `3/3`；全局验证器仍保留。全解决方案 Release 构建 `0 warning / 0 error`，聚焦回归 `203/203`。运行 `master-angler-acceptance-scope-390-20261103-173533` 在源存档 SHA 不变的前提下生成 `ready=true` 证书，并在不提供任何全局 schedule/Gourmand 工件时得到 `72` 鱼种、`14` 前置族、零 blocker 的本地 audit/proof/closure。当前覆盖计数不变、正式训练仍为 false；该证明只关闭局部前置清单，不替代逐鱼捕获与三分区证据。下一步是合并 PR #391 后重建 reconciliation/证据复用报告并重新估算剩余 root 的局部成本，不启动 Day-0 长跑。
 
 > **当前状态入口：** [CURRENT_STATUS_CN.md](CURRENT_STATUS_CN.md)。本文件下方带日期的状态、计数和“下一步”均保留为历史证据；若与当前机器报告或 CURRENT_STATUS_CN.md 冲突，不得按历史数字规划新工作。
 >
