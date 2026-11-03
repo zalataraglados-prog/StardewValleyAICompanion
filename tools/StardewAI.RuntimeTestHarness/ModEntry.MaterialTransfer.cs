@@ -185,7 +185,9 @@ public sealed partial class ModEntry
             path,
             sourceIsPlayer,
             intent.ExpectedSourceStack,
-            destinationQuantityBefore);
+            destinationQuantityBefore,
+            sourceItem!,
+            MaterialQuantity(source, intent));
     }
 
     private void TickMaterialTransfer()
@@ -364,7 +366,8 @@ public sealed partial class ModEntry
         var source = active.SourceIsPlayer
             ? Game1.player.Items
             : active.Chest.GetItemsForPlayer(Game1.player.UniqueMultiplayerID);
-        var before = ItemAt(source, intent.SourceSlotIndex);
+        var sourceSlotIndex = MaterialSourceReferenceIndex(source, active.SourceItem);
+        var before = ItemAt(source, sourceSlotIndex);
         var expectedBefore = active.SourceStackBefore - active.ClickCount;
         if (!MatchesMaterialTransferItem(before, intent) ||
             before!.Stack != expectedBefore)
@@ -374,7 +377,7 @@ public sealed partial class ModEntry
         }
 
         var sourceMenu = active.SourceIsPlayer ? menu.inventory : menu.ItemsToGrabMenu;
-        var position = InventorySlotScreenPosition(sourceMenu, intent.SourceSlotIndex);
+        var position = InventorySlotScreenPosition(sourceMenu, sourceSlotIndex);
         if (!position.HasValue)
         {
             CompleteMaterialTransferBlocked(active, "material_transfer_slot_screen_position_unavailable");
@@ -389,10 +392,7 @@ public sealed partial class ModEntry
         var destinationAfter = active.SourceIsPlayer
             ? active.Chest.GetItemsForPlayer(Game1.player.UniqueMultiplayerID)
             : Game1.player.Items;
-        var sourceStackAfter = MaterialSourceStackAt(
-            sourceAfter,
-            intent.SourceSlotIndex,
-            intent);
+        var sourceStackAfter = MaterialSourceReferenceStack(sourceAfter, active.SourceItem, intent);
         var destinationQuantityAfter = MaterialQuantity(destinationAfter, intent);
         if (sourceStackAfter != active.SourceStackBefore - active.ClickCount ||
             destinationQuantityAfter != active.DestinationQuantityBefore + active.ClickCount ||
@@ -420,10 +420,7 @@ public sealed partial class ModEntry
         var destination = active.SourceIsPlayer
             ? active.Chest.GetItemsForPlayer(Game1.player.UniqueMultiplayerID)
             : Game1.player.Items;
-        var sourceAfter = MaterialSourceStackAt(
-            source,
-            intent.SourceSlotIndex,
-            intent);
+        var sourceAfter = MaterialSourceReferenceStack(source, active.SourceItem, intent);
         var destinationAfter = MaterialQuantity(destination, intent);
         activeMaterialTransfer = null;
         active.Pending.Completion.SetResult(MaterialTransferResult(
@@ -453,10 +450,7 @@ public sealed partial class ModEntry
         var destination = active.SourceIsPlayer
             ? active.Chest.GetItemsForPlayer(Game1.player.UniqueMultiplayerID)
             : Game1.player.Items;
-        var sourceAfter = MaterialSourceStackAt(
-            source,
-            intent.SourceSlotIndex,
-            intent);
+        var sourceAfter = MaterialSourceReferenceStack(source, active.SourceItem, intent);
         var destinationAfter = MaterialQuantity(destination, intent);
         activeMaterialTransfer = null;
         active.Pending.Completion.SetResult(MaterialTransferResult(
@@ -492,6 +486,9 @@ public sealed partial class ModEntry
         string[] reasons)
     {
         var request = active.Pending.Request;
+        var sourceItems = active.SourceIsPlayer ? Game1.player.Items :
+            active.Chest.GetItemsForPlayer(Game1.player.UniqueMultiplayerID);
+        var sourceSlotAfter = MaterialSourceReferenceIndex(sourceItems, active.SourceItem);
         var result = new TrainingExecutionResult
         {
             RunId = request.RunId,
@@ -518,6 +515,7 @@ public sealed partial class ModEntry
             MaterialTransferClickCount = active.ClickCount,
             MaterialTransferSourceStackBefore = active.SourceStackBefore,
             MaterialTransferSourceStackAfter = sourceAfter,
+            MaterialTransferSourceSlotAfter = sourceSlotAfter >= 0 ? sourceSlotAfter : null,
             MaterialTransferDestinationQuantityBefore = active.DestinationQuantityBefore,
             MaterialTransferDestinationQuantityAfter = destinationAfter,
             MaterialTransferNativeMenuOpened = active.NativeMenuOpened,
@@ -528,11 +526,10 @@ public sealed partial class ModEntry
                 {
                     Path = "farm.material_inventory_graph.inventory_nodes[" +
                         request.MaterialTransferIntent!.SourceNodeId +
-                        "].slots[" +
-                        request.MaterialTransferIntent.SourceSlotIndex +
-                        "].stack",
-                    Before = active.SourceStackBefore.ToString(),
-                    After = sourceAfter.ToString()
+                        "].quantity[" + request.MaterialTransferIntent.QualifiedItemId +
+                        ";quality=" + request.MaterialTransferIntent.Quality + "]",
+                    Before = active.SourceQuantityBefore.ToString(),
+                    After = MaterialQuantity(sourceItems, request.MaterialTransferIntent).ToString()
                 },
                 new SimulatedFactChange
                 {
@@ -582,15 +579,6 @@ public sealed partial class ModEntry
         items.Where(item => MatchesMaterialTransferItem(item, intent))
             .Sum(item => item!.Stack);
 
-    private static int MaterialSourceStackAt(
-        IList<Item?> items,
-        int index,
-        MaterialTransferIntent intent)
-    {
-        var item = ItemAt(items, index);
-        return MatchesMaterialTransferItem(item, intent) ? item!.Stack : 0;
-    }
-
     private static string MaterialTransferRequestedEffect(
         TrainingExecutionRequest request) =>
         request.MaterialTransferIntent is not { } intent
@@ -627,7 +615,9 @@ public sealed partial class ModEntry
             List<Point> path,
             bool sourceIsPlayer,
             int sourceStackBefore,
-            int destinationQuantityBefore)
+            int destinationQuantityBefore,
+            Item sourceItem,
+            int sourceQuantityBefore)
         {
             Pending = pending;
             Location = location;
@@ -638,6 +628,8 @@ public sealed partial class ModEntry
             SourceIsPlayer = sourceIsPlayer;
             SourceStackBefore = sourceStackBefore;
             DestinationQuantityBefore = destinationQuantityBefore;
+            SourceItem = sourceItem;
+            SourceQuantityBefore = sourceQuantityBefore;
             LastPosition = Game1.player.Position;
             MaxTicks = Math.Max(
                 600,
@@ -656,6 +648,8 @@ public sealed partial class ModEntry
         public bool SourceIsPlayer { get; }
         public int SourceStackBefore { get; }
         public int DestinationQuantityBefore { get; }
+        public Item SourceItem { get; }
+        public int SourceQuantityBefore { get; }
         public int MaxTicks { get; }
         public string StartedAt { get; }
         public MaterialTransferStage Stage { get; set; }

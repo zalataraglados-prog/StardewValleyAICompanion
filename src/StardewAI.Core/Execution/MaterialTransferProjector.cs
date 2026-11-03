@@ -6,7 +6,7 @@ using StardewAI.Contracts.State;
 
 namespace StardewAI.Core.Execution;
 
-public sealed class MaterialTransferProjector
+public sealed partial class MaterialTransferProjector
 {
     public MaterialTransferProjection Project(
         MaterialInventoryGraph graph,
@@ -29,6 +29,11 @@ public sealed class MaterialTransferProjector
         {
             return Blocked(reasons);
         }
+        foreach (var node in new[] { source, destination })
+            if (node.Slots is null || node.Slots.Any(slot => slot is null || slot.SlotIndex < 0 || slot.Stack <= 0) ||
+                node.Slots.Select(slot => slot.SlotIndex).Distinct().Count() != node.Slots.Length)
+                reasons.Add("material_transfer_slot_domain_invalid");
+        if (reasons.Count > 0) return Blocked(reasons);
 
         if (source.NodeId == destination.NodeId)
         {
@@ -133,7 +138,8 @@ public sealed class MaterialTransferProjector
             SourceStackAfter = sourceSlot.Stack - intent.Quantity,
             DestinationQuantityBefore = destinationBefore,
             DestinationQuantityAfter = destinationBefore + intent.Quantity,
-            DestinationSlotChanges = changes
+            DestinationSlotChanges = changes,
+            NativeSlotTransitions = ProjectNativeSlots(source, destination, intent, changes)
         };
     }
 

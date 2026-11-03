@@ -64,6 +64,9 @@ jobs:
       - name: Test control support settlement and fresh rebind
         shell: pwsh
         run: dotnet run --project experiments/StardewAI.GoalConditionedBootstrap/StardewAI.GoalConditionedBootstrap.csproj --configuration Release --no-build -- self-test-control-support-rebind --output-root "$env:RUNNER_TEMP/control-support-rebind"
+      - name: Test canonical machine transfer through original settlement and continuation
+        shell: pwsh
+        run: dotnet run --project experiments/StardewAI.GoalConditionedBootstrap/StardewAI.GoalConditionedBootstrap.csproj --configuration Release --no-build -- self-test-machine-material-transfer-terminal-coverage --output-root "$env:RUNNER_TEMP/machine-transfer-lineage"
       - name: Test Rusty Key current execution preparation before commit
         shell: pwsh
         run: dotnet run --project experiments/StardewAI.GoalConditionedBootstrap/StardewAI.GoalConditionedBootstrap.csproj --configuration Release --no-build -- self-test-rusty-key-rolling-step --output-root "$env:RUNNER_TEMP/rusty-key-rolling-step"

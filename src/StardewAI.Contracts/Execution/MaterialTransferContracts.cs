@@ -54,8 +54,24 @@ public sealed class MaterialTransferProjection
     public MaterialTransferSlotChange[] DestinationSlotChanges { get; set; } =
         Array.Empty<MaterialTransferSlotChange>();
 
+    [JsonPropertyName("native_slot_transitions")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public MaterialTransferNativeSlotTransition[]? NativeSlotTransitions { get; set; }
+
     [JsonPropertyName("blocking_reasons")]
     public string[] BlockingReasons { get; set; } = Array.Empty<string>();
+}
+
+public sealed class MaterialTransferNativeSlotTransition
+{
+    [JsonPropertyName("node_id")] public string NodeId { get; set; } = string.Empty;
+    [JsonPropertyName("before_slot_index"), JsonIgnore(Condition = JsonIgnoreCondition.Never)] public int? BeforeSlotIndex { get; set; }
+    [JsonPropertyName("after_slot_index"), JsonIgnore(Condition = JsonIgnoreCondition.Never)] public int? AfterSlotIndex { get; set; }
+    [JsonPropertyName("qualified_item_id")] public string QualifiedItemId { get; set; } = string.Empty;
+    [JsonPropertyName("quality")] public int Quality { get; set; }
+    [JsonPropertyName("runtime_type")] public string RuntimeType { get; set; } = string.Empty;
+    [JsonPropertyName("stack_before")] public int StackBefore { get; set; }
+    [JsonPropertyName("stack_after")] public int StackAfter { get; set; }
 }
 
 public sealed class MaterialTransferSlotChange

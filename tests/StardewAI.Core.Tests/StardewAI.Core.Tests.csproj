@@ -56,6 +56,9 @@
     <Compile Include="ActionQueueCompilerTests.SnapshotStateCache.cs" />
     <Compile Include="ActionQueueCompilerShopSafetyWaitTests.cs" />
     <Compile Include="MachinePlacementMainlineTests.cs" />
+    <Compile Include="MaterialTransferProjectorTests.cs" />
+    <Compile Include="MaterialTransferProjectorTests.NativeSlots.cs" />
+    <Compile Include="MaterialTransferProjectorTests.ReceiptLineage.cs" />
     <Compile Include="MoneyDependencyExpansionArchitectureTests.cs" />
     <Compile Include="MoneyThresholdNativeOutcomeRunnerSourceGuardTests.cs" />
     <Compile Include="MoneyCropNativeProductionRunnerSourceGuardTests.cs" />
