@@ -27,64 +27,8 @@ internal static partial class BootstrapSelfTest
             report.MaximumRequiredFishingLevel == 10 &&
             report.StaticOpportunityInventoryComplete &&
             report.PrerequisiteFamilyInventoryComplete &&
-            report.GoldenWalnutUnlockSchedule is
-            {
-                PhaseCapacityComplete: true,
-                IndependentRetryBudgetComplete: true,
-                DeadlineCapacityRequirementsComplete: false,
-                YearThreeDeadlineCompositionComplete: false,
-                TrainingAdmissionEligible: false
-            } &&
             report.UnknownLocationIds.Length == 0,
             "Master Angler fresh-save prerequisite audit summary drifted.");
-        var goldenWalnutSchedule = report.GoldenWalnutUnlockSchedule ??
-            throw new InvalidOperationException(
-                "Master Angler Golden Walnut schedule is missing after summary validation.");
-        var goldenWalnutFundingRoutes = report.GoldenWalnutResortFundingRoutes ??
-            throw new InvalidOperationException(
-                "Master Angler Golden Walnut funding routes are missing after summary validation.");
-        Require(
-            goldenWalnutSchedule.DeadlineTotalDayExclusive == 224 &&
-            goldenWalnutSchedule.DeadlineCapacityRequirements.Length == 3 &&
-            goldenWalnutSchedule.DeadlineCapacityRequirements.Single(value =>
-                value.SourceKey == "IslandFishing") is
-            {
-                RequiredAttemptCount: 69,
-                AttemptActionBudgetBound: true,
-                SourceAvailabilityCapacityBound: true,
-                EarliestAccessDayBound: false,
-                DeadlineCompositionComplete: false
-            } &&
-            goldenWalnutSchedule.DeadlineCapacityRequirements.Single(value =>
-                value.SourceKey == "MusselStone") is
-            {
-                RequiredAttemptCount: 105,
-                ConservativeActionMinutes: null,
-                SourceAvailabilityCapacityBound: false
-            } &&
-            goldenWalnutSchedule.DeadlineCapacityRequirements.Single(value =>
-                value.SourceKey == "IslandFarming") is
-            {
-                RequiredAttemptCount: 214,
-                AttemptActionBudgetBound: true,
-                SourceAvailabilityCapacityBound: false
-            },
-            "Master Angler Golden Walnut deadline-capacity requirements drifted.");
-        Require(
-            goldenWalnutFundingRoutes.PreferredRouteId ==
-                GoldenWalnutResortFundingRouteProofBuilder.PreferredRouteId &&
-            !goldenWalnutFundingRoutes.RouteSelectionComplete &&
-            !goldenWalnutFundingRoutes.TrainingAdmissionEligible &&
-            goldenWalnutFundingRoutes.Alternatives.Single(route =>
-                route.RouteId == GoldenWalnutResortFundingRouteProofBuilder.PreferredRouteId) is
-            {
-                NativeWalnutQuantity: 15,
-                Deterministic: true,
-                ActionBindingsComplete: true,
-                SupplyScheduleComplete: true,
-                DeadlineCompositionComplete: false
-            },
-            "Master Angler Golden Walnut funding-route preference drifted.");
 
         var byId = report.Species.ToDictionary(
             value => value.QualifiedItemId,
@@ -184,7 +128,7 @@ internal static partial class BootstrapSelfTest
             report.PrerequisiteFamilies.Single(value =>
                     value.FamilyId == "ginger_island_access")
                 .ProducerStatus ==
-                "phase_capacity_retry_budget_and_deterministic_supply_bound_deadline_composition_missing",
+                "shared_capability_certificate_missing",
             "Master Angler fresh-save producer coverage was overstated.");
 
         VerifyMasterAnglerFishingSkillBindingFailsClosed(

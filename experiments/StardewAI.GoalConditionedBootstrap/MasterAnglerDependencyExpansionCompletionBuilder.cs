@@ -29,7 +29,7 @@ public static class MasterAnglerDependencyExpansionCompletionBuilder
             MasterAnglerFreshSavePrerequisiteCompletionProof>() ??
             throw new InvalidDataException("Completion proof is null.");
         Require(proof.SchemaVersion ==
-                "master_angler_fresh_save_prerequisite_completion_proof.v1" &&
+                "master_angler_fresh_save_prerequisite_completion_proof.v2" &&
                 proof.Ready && proof.GoalId == expectedGoalId &&
                 proof.GameVersion == expectedGameVersion &&
                 !proof.TrainingLabelEligible &&
@@ -40,7 +40,10 @@ public static class MasterAnglerDependencyExpansionCompletionBuilder
                 proof.PrerequisiteFamilyCount ==
                     MasterAnglerFreshSavePrerequisiteCompletionProofBuilder
                         .ExpectedPrerequisiteFamilyCount &&
-                proof.VerifiedGourmandTransitionCount == 3,
+                proof.SharedCapabilityCertificateIds is [
+                    MasterAnglerSharedCapabilityCertificateBuilder
+                        .GingerIslandAccessCapabilityId
+                ],
             "Completion proof is not ready for dependency closure.");
         Require(Path.GetFullPath(proof.DependencyExpansionPath) ==
                     dependencyFullPath &&

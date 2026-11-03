@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using StardewAI.Contracts.State;
 using StardewAI.Core.Infrastructure;
 using StardewAI.GoalConditionedBootstrap;
 
@@ -21,9 +22,8 @@ public sealed class MasterAnglerFreshSavePrerequisiteCompletionProofTests
         Assert.Equal(Fixture.Hash(fixture.AuditPath), result.AuditSha256);
         Assert.Equal(fixture.DependencyPath, result.DependencyExpansionPath);
         Assert.Equal(Fixture.Hash(fixture.DependencyPath), result.DependencyExpansionSha256);
-        Assert.Equal(fixture.ReceiptPath, result.GourmandContinuationReceiptPath);
-        Assert.Equal(Fixture.Hash(fixture.ReceiptPath), result.GourmandContinuationReceiptSha256);
-        Assert.Equal(3, result.VerifiedGourmandTransitionCount);
+        Assert.Equal(new[] { "ginger_island_access" },
+            result.SharedCapabilityCertificateIds);
         Assert.Equal(72, result.NativeDenominatorCount);
         Assert.Equal(14, result.PrerequisiteFamilyCount);
         Assert.False(result.TrainingLabelEligible);
@@ -32,7 +32,7 @@ public sealed class MasterAnglerFreshSavePrerequisiteCompletionProofTests
                 fixture.AuditPath, fixture.DependencyPath, "grandpa.maximum_21", "1.6.15")));
         using var json = JsonDocument.Parse(JsonSerializer.Serialize(result));
         Assert.False(json.RootElement.GetProperty("training_label_eligible").GetBoolean());
-        Assert.Equal("master_angler_fresh_save_prerequisite_completion_proof.v1", result.SchemaVersion);
+        Assert.Equal("master_angler_fresh_save_prerequisite_completion_proof.v2", result.SchemaVersion);
     }
 
     [Theory]
@@ -46,7 +46,8 @@ public sealed class MasterAnglerFreshSavePrerequisiteCompletionProofTests
     [InlineData("native_denominator_count", "0", "static_species_inventory_inconsistent")]
     [InlineData("species_with_two_or_more_static_opportunity_days", "0", "static_species_inventory_inconsistent")]
     [InlineData("prerequisite_families", "[]", "prerequisite_family_inventory_inconsistent")]
-    [InlineData("golden_walnut_gourmand_continuation_receipt_path", "\"\"", "gourmand_continuation_receipt_missing")]
+    [InlineData("ginger_island_access_capability_certificate_path", "\"\"", "ginger_island_access_capability_certificate_missing")]
+    [InlineData("ginger_island_access_capability_certificate", "null", "ginger_island_access_capability_certificate_missing")]
     public void IncompleteInventoriesStayBlocked(string field, string value, string reason)
     {
         var fixture = new Fixture();
@@ -57,35 +58,31 @@ public sealed class MasterAnglerFreshSavePrerequisiteCompletionProofTests
         Assert.Contains(reason, result.BlockingReasons);
     }
 
-    [Theory]
-    [InlineData("ready", "false")]
-    [InlineData("verified_transition_count", "0")]
-    [InlineData("verified_transition_count", "2")]
-    [InlineData("verified_transition_count", "4")]
-    [InlineData("blocking_reasons", "[\"blocked\"]")]
-    [InlineData("blocking_reasons", "null")]
-    [InlineData("schema_version", "\"other\"")]
-    [InlineData("game_version", "\"1.6.14\"")]
-    [InlineData("save_id", "\"\"")]
-    [InlineData("source_run_id", "\"\"")]
-    [InlineData("player_id", "\"\"")]
-    [InlineData("source_episode_manifest_path", "\"\"")]
-    [InlineData("source_episode_manifest_sha256", "\"\"")]
-    [InlineData("source_episode_evidence_root_sha256", "\"bad\"")]
-    [InlineData("native_receipt_evidence_root_sha256", "\"bad\"")]
-    public void BoundButIncompleteReceiptNeverProducesReady(string field, string value)
+    [Fact]
+    public void BoundButIncompleteCapabilityCertificateNeverProducesReady()
     {
         var fixture = new Fixture();
-        fixture.ChangeReceipt(root =>
-        {
-            root[field] = JsonNode.Parse(value);
-            if (field == "ready")
-                root["verified"] = JsonNode.Parse(value);
-        });
+        fixture.ChangeSnapshot(root =>
+            root["state"]!["locations"]!["ginger_island_access"]!["value"]!
+                ["target_access"]!["island_south_east_cave_accessible"] = false);
         var result = fixture.Build();
         Assert.False(result.Ready);
         Assert.False(result.TrainingLabelEligible);
-        Assert.NotEmpty(result.BlockingReasons);
+        Assert.Contains("ginger_island_access_capability_certificate_invalid",
+            result.BlockingReasons);
+    }
+
+    [Fact]
+    public void CapabilityCertificateRejectsSnapshotStateHashMismatch()
+    {
+        var fixture = new Fixture();
+        var snapshot = JsonNode.Parse(File.ReadAllText(fixture.SnapshotPath))!.AsObject();
+        snapshot["state_hash"] = new string('0', 64);
+        File.WriteAllText(fixture.SnapshotPath, snapshot.ToJsonString());
+
+        Assert.Contains("does not match its state", Assert.Throws<InvalidDataException>(() =>
+            MasterAnglerSharedCapabilityCertificateBuilder.ReadAndReplay(
+                fixture.CertificatePath)).Message);
     }
 
     [Theory]
@@ -100,9 +97,8 @@ public sealed class MasterAnglerFreshSavePrerequisiteCompletionProofTests
     [InlineData("unknown_location_ids")]
     [InlineData("dependency_expansion_path")]
     [InlineData("dependency_expansion_sha256")]
-    [InlineData("golden_walnut_gourmand_continuation_receipt_path")]
-    [InlineData("golden_walnut_gourmand_continuation_receipt_sha256")]
-    [InlineData("golden_walnut_gourmand_continuation_receipt")]
+    [InlineData("ginger_island_access_capability_certificate_path")]
+    [InlineData("ginger_island_access_capability_certificate_sha256")]
     public void MissingNullOrDuplicateCriticalAuditFieldsAreRejected(string field)
     {
         var fixture = new Fixture();
@@ -123,10 +119,10 @@ public sealed class MasterAnglerFreshSavePrerequisiteCompletionProofTests
     [InlineData("verified", "false")]
     [InlineData("ready", null)]
     [InlineData("blocking_reasons", null)]
-    public void IgnoredOrDefaultedReceiptPropertiesCannotHideInvalidEvidence(string field, string? value)
+    public void IgnoredOrDefaultedCertificatePropertiesCannotHideInvalidEvidence(string field, string? value)
     {
         var fixture = new Fixture();
-        fixture.ChangeReceipt(root =>
+        fixture.ChangeCertificateFileOnly(root =>
         {
             if (value is null) root.Remove(field);
             else root[field] = JsonNode.Parse(value);
@@ -141,11 +137,11 @@ public sealed class MasterAnglerFreshSavePrerequisiteCompletionProofTests
     [InlineData("dependency_bytes")]
     [InlineData("dependency_goal")]
     [InlineData("dependency_path")]
-    [InlineData("receipt_bytes")]
-    [InlineData("embedded_receipt_training")]
-    [InlineData("receipt_duplicate")]
+    [InlineData("certificate_bytes")]
+    [InlineData("embedded_certificate_training")]
+    [InlineData("certificate_duplicate")]
     [InlineData("supplied_audit")]
-    public void WrongIdentityHashOrReceiptBindingIsRejected(string change)
+    public void WrongIdentityHashOrCertificateBindingIsRejected(string change)
     {
         var fixture = new Fixture();
         switch (change)
@@ -160,13 +156,14 @@ public sealed class MasterAnglerFreshSavePrerequisiteCompletionProofTests
                 fixture.ChangeAudit(root => root["dependency_expansion_sha256"] = Fixture.Hash(fixture.DependencyPath));
                 break;
             case "dependency_path": fixture.ChangeAudit(root => root["dependency_expansion_path"] = fixture.AuditPath); break;
-            case "receipt_bytes": File.AppendAllText(fixture.ReceiptPath, " "); break;
-            case "embedded_receipt_training": fixture.ChangeAudit(root =>
-                root["golden_walnut_gourmand_continuation_receipt"]!["training_label_eligible"] = true); break;
-            case "receipt_duplicate":
-                var text = File.ReadAllText(fixture.ReceiptPath);
-                File.WriteAllText(fixture.ReceiptPath, text.Insert(1, "\"ready\":true,"));
-                fixture.ChangeAudit(root => root["golden_walnut_gourmand_continuation_receipt_sha256"] = Fixture.Hash(fixture.ReceiptPath));
+            case "certificate_bytes": File.AppendAllText(fixture.CertificatePath, " "); break;
+            case "embedded_certificate_training": fixture.ChangeAudit(root =>
+                root["ginger_island_access_capability_certificate"]!["training_label_eligible"] = true); break;
+            case "certificate_duplicate":
+                var text = File.ReadAllText(fixture.CertificatePath);
+                File.WriteAllText(fixture.CertificatePath, text.Insert(1, "\"ready\":true,"));
+                fixture.ChangeAudit(root => root["ginger_island_access_capability_certificate_sha256"] =
+                    Fixture.Hash(fixture.CertificatePath));
                 break;
             case "supplied_audit":
                 fixture.Audit.Status = "partial_fresh_save_prerequisite_inventory";
@@ -292,7 +289,8 @@ public sealed class MasterAnglerFreshSavePrerequisiteCompletionProofTests
     {
         public string AuditPath { get; }
         public string DependencyPath { get; }
-        public string ReceiptPath { get; }
+        public string SnapshotPath { get; }
+        public string CertificatePath { get; }
         public MasterAnglerFreshSavePrerequisiteAuditReport Audit { get; private set; }
 
         public Fixture()
@@ -302,7 +300,8 @@ public sealed class MasterAnglerFreshSavePrerequisiteCompletionProofTests
             Directory.CreateDirectory(root);
             AuditPath = Path.Combine(root, "audit.json");
             DependencyPath = Path.Combine(root, "dependencies.json");
-            ReceiptPath = Path.Combine(root, "receipt.json");
+            SnapshotPath = Path.Combine(root, "snapshot.json");
+            CertificatePath = Path.Combine(root, "capability-certificate.json");
             var requiredNodeIds = new[]
             {
                 "dependency.complete_master_angler.fresh_save_prerequisite_inventory",
@@ -339,11 +338,52 @@ public sealed class MasterAnglerFreshSavePrerequisiteCompletionProofTests
                     }
                 }
             }));
-            var receipt = new GoldenWalnutGourmandContinuationReceipt(
-                GoldenWalnutGourmandContinuationReceiptVerifier.SchemaVersion, true, 3, Array.Empty<string>(),
-                Path.Combine(root, "manifest.json"), new string('a', 64), new string('b', 64), new string('c', 64),
-                "run", "save", "player", "1.6.15");
-            File.WriteAllText(ReceiptPath, JsonSerializer.Serialize(receipt));
+            var snapshot = new SnapshotEnvelope
+            {
+                GameVersion = "1.6.15",
+                SaveId = new FieldEnvelope<string?>
+                {
+                    Status = FieldStatus.Available,
+                    Value = "save"
+                },
+                PlayerId = new FieldEnvelope<string?>
+                {
+                    Status = FieldStatus.Available,
+                    Value = "player"
+                },
+                GameTick = 123,
+                State = new Dictionary<string, JsonElement>
+                {
+                    ["locations"] = JsonSerializer.SerializeToElement(new
+                    {
+                        ginger_island_access = new
+                        {
+                            status = "available",
+                            value = new
+                            {
+                                schema_version = "ginger_island_access.v1",
+                                projection_status =
+                                    "complete_locked_base_1.6.15_native_contract",
+                                target_access = new
+                                {
+                                    island_south_accessible = true,
+                                    island_north_accessible = true,
+                                    island_west_accessible = true,
+                                    island_south_east_accessible = true,
+                                    island_south_east_cave_accessible = true
+                                }
+                            }
+                        }
+                    })
+                }
+            };
+            snapshot.StateHash = SnapshotHash.ComputeStateHash(snapshot.State);
+            File.WriteAllText(SnapshotPath, JsonSerializer.Serialize(snapshot));
+            var certificate =
+                MasterAnglerSharedCapabilityCertificateBuilder.BuildGingerIslandAccess(
+                    SnapshotPath,
+                    "run");
+            File.WriteAllText(CertificatePath, JsonSerializer.Serialize(certificate));
             var species = Enumerable.Range(1, 72)
                 .Select(index => new MasterAnglerFreshSaveSpeciesPrerequisite
                 {
@@ -365,9 +405,9 @@ public sealed class MasterAnglerFreshSavePrerequisiteCompletionProofTests
                 DependencyExpansionPath = DependencyPath, DependencyExpansionSha256 = Hash(DependencyPath),
                 NativeDenominatorCount = 72, SpeciesWithTwoOrMoreStaticOpportunityDays = 72,
                 StaticOpportunityInventoryComplete = true, PrerequisiteFamilyInventoryComplete = true,
-                GoldenWalnutGourmandContinuationReceipt = receipt,
-                GoldenWalnutGourmandContinuationReceiptPath = ReceiptPath,
-                GoldenWalnutGourmandContinuationReceiptSha256 = Hash(ReceiptPath),
+                GingerIslandAccessCapabilityCertificate = certificate,
+                GingerIslandAccessCapabilityCertificatePath = CertificatePath,
+                GingerIslandAccessCapabilityCertificateSha256 = Hash(CertificatePath),
                 Species = species,
                 PrerequisiteFamilies = families
             };
@@ -394,16 +434,36 @@ public sealed class MasterAnglerFreshSavePrerequisiteCompletionProofTests
                 File.ReadAllText(AuditPath))!;
         }
 
-        public void ChangeReceipt(Action<JsonObject> change)
+        public void ChangeSnapshot(Action<JsonObject> change)
         {
-            var receipt = JsonNode.Parse(File.ReadAllText(ReceiptPath))!.AsObject();
-            change(receipt);
-            File.WriteAllText(ReceiptPath, receipt.ToJsonString());
+            var snapshot = JsonNode.Parse(File.ReadAllText(SnapshotPath))!.AsObject();
+            change(snapshot);
+            var state = snapshot["state"]!.Deserialize<Dictionary<string, JsonElement>>()!;
+            snapshot["state_hash"] = SnapshotHash.ComputeStateHash(state);
+            File.WriteAllText(SnapshotPath, snapshot.ToJsonString());
+            var certificate =
+                MasterAnglerSharedCapabilityCertificateBuilder.BuildGingerIslandAccess(
+                    SnapshotPath,
+                    "run");
+            File.WriteAllText(CertificatePath, JsonSerializer.Serialize(certificate));
             ChangeAudit(root =>
             {
-                root["golden_walnut_gourmand_continuation_receipt"] = receipt.DeepClone();
-                root["golden_walnut_gourmand_continuation_receipt_sha256"] = Hash(ReceiptPath);
+                root["ginger_island_access_capability_certificate"] =
+                    JsonSerializer.SerializeToNode(certificate);
+                root["ginger_island_access_capability_certificate_sha256"] =
+                    Hash(CertificatePath);
             });
+        }
+
+        public void ChangeCertificateFileOnly(Action<JsonObject> change)
+        {
+            var certificate = JsonNode.Parse(
+                File.ReadAllText(CertificatePath))!.AsObject();
+            change(certificate);
+            File.WriteAllText(CertificatePath, certificate.ToJsonString());
+            ChangeAudit(root =>
+                root["ginger_island_access_capability_certificate_sha256"] =
+                    Hash(CertificatePath));
         }
 
         public void ChangeAuditFileOnly(Action<JsonObject> change)

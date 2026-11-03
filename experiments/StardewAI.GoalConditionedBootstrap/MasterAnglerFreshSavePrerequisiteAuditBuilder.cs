@@ -111,6 +111,24 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
         string dependencyExpansionPath) =>
         Build(catalogPath, windowIndexPath, dependencyExpansionPath, null);
 
+    public static MasterAnglerFreshSavePrerequisiteAuditReport
+        BuildWithCapabilityCertificate(
+            string catalogPath,
+            string windowIndexPath,
+            string dependencyExpansionPath,
+            string gingerIslandAccessCapabilityCertificatePath) =>
+        Build(
+            catalogPath,
+            windowIndexPath,
+            dependencyExpansionPath,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            gingerIslandAccessCapabilityCertificatePath);
+
     public static MasterAnglerFreshSavePrerequisiteAuditReport Build(
         string catalogPath,
         string windowIndexPath,
@@ -120,7 +138,8 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
         string? expectedRunId = null,
         string? expectedSaveId = null,
         string? expectedPlayerId = null,
-        string? goldenWalnutGourmandContinuationReceiptPath = null)
+        string? goldenWalnutGourmandContinuationReceiptPath = null,
+        string? gingerIslandAccessCapabilityCertificatePath = null)
     {
         var catalogFullPath = Path.GetFullPath(catalogPath);
         var windowFullPath = Path.GetFullPath(windowIndexPath);
@@ -180,6 +199,17 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
         var continuation = continuationPath.Length == 0 ? null : ReadVerifiedContinuation(
             continuationPath, goldenWalnutVerificationReceiptPath!, verifiedSourceSchedule!,
             expectedRunId!, expectedSaveId!, expectedPlayerId!, catalog.GameVersion);
+        var capabilityCertificatePath = string.IsNullOrWhiteSpace(
+            gingerIslandAccessCapabilityCertificatePath)
+            ? string.Empty
+            : Path.GetFullPath(gingerIslandAccessCapabilityCertificatePath);
+        var capabilityCertificate = capabilityCertificatePath.Length == 0
+            ? null
+            : MasterAnglerSharedCapabilityCertificateBuilder.ReadAndReplay(
+                capabilityCertificatePath);
+        Require(capabilityCertificate is null ||
+                capabilityCertificate.GameVersion == catalog.GameVersion,
+            "Ginger Island access capability certificate game version mismatch.");
         var goldenWalnutFundingRoutes = unlockTimeline is
             { SourceScheduleComplete: true, NativePhaseOrderingComplete: true }
             ? GoldenWalnutResortFundingRouteProofBuilder.Build(unlockTimeline)
@@ -187,9 +217,7 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
         var families = BuildFamilies(
             species,
             graph,
-            goldenWalnutSchedule,
-            goldenWalnutFundingRoutes,
-            continuation);
+            capabilityCertificate);
         var missing = families
             .Where(value => value.ProducerStatus != "implemented_and_bound")
             .Select(value => value.FamilyId)
@@ -236,6 +264,11 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
             GoldenWalnutGourmandContinuationReceiptSha256 = continuationPath.Length == 0 ? string.Empty :
                 CurrentTeacherFrontierSupport.HashFile(continuationPath),
             GoldenWalnutGourmandContinuationReceipt = continuation,
+            GingerIslandAccessCapabilityCertificatePath = capabilityCertificatePath,
+            GingerIslandAccessCapabilityCertificateSha256 = capabilityCertificatePath.Length == 0
+                ? string.Empty
+                : CurrentTeacherFrontierSupport.HashFile(capabilityCertificatePath),
+            GingerIslandAccessCapabilityCertificate = capabilityCertificate,
             Species = species,
             PrerequisiteFamilies = families,
             MissingOrUnboundProducerFamilies = missing,
@@ -501,9 +534,7 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
     private static MasterAnglerFreshSavePrerequisiteFamily[] BuildFamilies(
         MasterAnglerFreshSaveSpeciesPrerequisite[] species,
         DependencyGraphInventory graph,
-        GoldenWalnutUnlockScheduleProof goldenWalnutSchedule,
-        GoldenWalnutResortFundingRouteProof goldenWalnutFundingRoutes,
-        GoldenWalnutGourmandContinuationReceipt? continuation)
+        MasterAnglerSharedCapabilityCertificate? gingerIslandAccessCertificate)
     {
         var required = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
         void Add(string family, IEnumerable<string> ids)
@@ -541,9 +572,7 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                 pair.Key,
                 pair.Value,
                 graph,
-                goldenWalnutSchedule,
-                goldenWalnutFundingRoutes,
-                continuation))
+                gingerIslandAccessCertificate))
             .ToArray();
     }
 
@@ -551,9 +580,7 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
         string family,
         IEnumerable<string> species,
         DependencyGraphInventory graph,
-        GoldenWalnutUnlockScheduleProof goldenWalnutSchedule,
-        GoldenWalnutResortFundingRouteProof goldenWalnutFundingRoutes,
-        GoldenWalnutGourmandContinuationReceipt? continuation)
+        MasterAnglerSharedCapabilityCertificate? gingerIslandAccessCertificate)
     {
         var (status, evidence, work) = family switch
         {
@@ -704,65 +731,25 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                 ("current_state_gate_present_future_producer_missing",
                     new[] { "dependency.complete_master_angler.target_date_opportunity_producer" },
                     "Reserve natural rainy opportunities or bind the existing native Rain Totem primitive with exact acquisition and next-day effect."),
-            "ginger_island_access" when
-                goldenWalnutFundingRoutes.RouteSelectionComplete &&
-                goldenWalnutFundingRoutes.Alternatives.Single(route =>
-                    route.RouteId == GoldenWalnutResortFundingRouteProofBuilder.PreferredRouteId)
-                    is
+            "ginger_island_access" when gingerIslandAccessCertificate is
+                {
+                    Ready: true,
+                    CapabilityId: MasterAnglerSharedCapabilityCertificateBuilder.GingerIslandAccessCapabilityId,
+                    ConsumerDirectionId: MasterAnglerSharedCapabilityCertificateBuilder.ConsumerDirectionId,
+                    TrainingLabelEligible: false
+                } =>
+                ("implemented_and_bound",
+                    new[]
                     {
-                        ActionBindingsComplete: true,
-                        SupplyScheduleComplete: true,
-                        DeadlineCompositionComplete: true,
-                        TrainingAdmissionEligible: false
-                    } =>
-                ("fresh_save_unlock_timeline_bound_runtime_continuation_receipts_missing",
-                    graph.HasDirection("complete_community_center")
-                        ? new[]
-                        {
-                            "complete_community_center",
-                            GoldenWalnutUnlockScheduleProofBuilder.SchemaVersion,
-                            GoldenWalnutFreshSaveUnlockTimelineProofBuilder.SchemaVersion,
-                            GoldenWalnutResortFundingRouteProofBuilder.SchemaVersion
-                        }
-                        : new[]
-                        {
-                            GoldenWalnutUnlockScheduleProofBuilder.SchemaVersion,
-                            GoldenWalnutFreshSaveUnlockTimelineProofBuilder.SchemaVersion,
-                            GoldenWalnutResortFundingRouteProofBuilder.SchemaVersion
-                        },
-                    "The hash-bound fresh-save source schedule derives the First Parrot, Western Turtle and Island House dates and closes the Gourmand day-224 composition. Capture requests two and three on one continuous native save before marking Ginger Island complete."),
-            "ginger_island_access" when
-                goldenWalnutSchedule.PhaseCapacityComplete &&
-                goldenWalnutSchedule.IndependentRetryBudgetComplete &&
-                goldenWalnutFundingRoutes.Alternatives.Single(route =>
-                    route.RouteId == GoldenWalnutResortFundingRouteProofBuilder.PreferredRouteId)
-                    is
-                    {
-                        ActionBindingsComplete: true,
-                        SupplyScheduleComplete: true,
-                        DeadlineCompositionComplete: false
-                    } &&
-                !goldenWalnutSchedule.YearThreeDeadlineCompositionComplete =>
-                ("phase_capacity_retry_budget_and_deterministic_supply_bound_deadline_composition_missing",
-                    graph.HasDirection("complete_community_center")
-                        ? new[]
-                        {
-                            "complete_community_center",
-                            GoldenWalnutUnlockScheduleProofBuilder.SchemaVersion,
-                            GoldenWalnutResortFundingRouteProofBuilder.SchemaVersion
-                        }
-                        : new[]
-                        {
-                            GoldenWalnutUnlockScheduleProofBuilder.SchemaVersion,
-                            GoldenWalnutResortFundingRouteProofBuilder.SchemaVersion
-                        },
-                    "The exact 1+10+20+20 unlock sequence has sufficient phased capacity and finite independent retry budgets. The preferred deterministic 15-walnut Gourmand route now binds its native action and exact Melon/Wheat/Garlic purchase, planting, watering and standing-crop schedule; compose the Western Turtle and Island House unlock dates with the day-224 deadline before marking the route complete."),
+                        MasterAnglerSharedCapabilityCertificate.Schema,
+                        gingerIslandAccessCertificate.SourceSnapshotSha256,
+                        gingerIslandAccessCertificate.SourceStateHash
+                    },
+                    "The criterion consumes one replayed, hash-bound current-state capability certificate for every native island fishing target. Golden Walnut source selection and fresh-save schedule composition remain global Teacher integration concerns."),
             "ginger_island_access" =>
-                ("composed_producer_missing",
-                    graph.HasDirection("complete_community_center")
-                        ? new[] { "complete_community_center" }
-                        : Array.Empty<string>(),
-                    "Schedule Community Center or Joja completion, Willy's boat repair, ticket travel, phased Golden Walnut capacity and island sub-area ingress."),
+                ("shared_capability_certificate_missing",
+                    Array.Empty<string>(),
+                    "Provide one replayable ginger_island_access capability certificate from a transparent snapshot with every required native island fishing target accessible. Do not substitute a dependency-graph node or a global source schedule."),
             "witch_swamp_story_access" when graph.HasBoundMasterAnglerDarkTalismanStoryAccess() =>
                 ("implemented_and_bound",
                     new[] { DarkTalismanAccessProducerNode, CommunityCenterCompletionNode },
@@ -784,24 +771,6 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
                     Array.Empty<string>(),
                     "Add one exact fresh-save producer and bind it to the Master Angler deadline recurrence.")
         };
-        if (family == "ginger_island_access" &&
-            status == "fresh_save_unlock_timeline_bound_runtime_continuation_receipts_missing" &&
-            continuation is { Ready: true, VerifiedTransitionCount: 3, TrainingLabelEligible: false } &&
-            continuation.BlockingReasons.Length == 0)
-        {
-            status = "implemented_and_bound";
-            evidence = evidence.Concat(new[]
-            {
-                GoldenWalnutGourmandContinuationReceiptVerifier.SchemaVersion,
-                "native_gourmand_request_transition:0->1",
-                "native_gourmand_request_transition:1->2",
-                "native_gourmand_request_transition:2->3"
-            }).ToArray();
-            work = "The independently replayed " + GoldenWalnutGourmandContinuationReceiptVerifier.SchemaVersion +
-                " binds all three native request transitions (0->1, 1->2, 2->3) on the same frozen run/save/player " +
-                "and manifest/evidence root to the deadline-complete deterministic Gourmand route. " +
-                "This prerequisite evidence does not authorize formal training admission.";
-        }
         return new MasterAnglerFreshSavePrerequisiteFamily
         {
             FamilyId = family,

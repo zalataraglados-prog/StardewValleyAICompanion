@@ -1,5 +1,7 @@
 # StardewAI 当前工作
 
+> **当前唯一 WIP（2026-11-03，#390）：** 代码层验收责任解耦与静态/fixture 回归已经完成：Master Angler 本地门消费 `ginger_island_access` 共享能力证书，不再消费全局 source schedule 或强制 Gourmand `3/3`；全局验证器仍保留。全解决方案 Release 构建 `0 warning / 0 error`，聚焦回归 `203/203`。当前覆盖计数不变、正式训练仍为 false。下一步只在 PR #389 留存的已解锁姜岛隔离档上采集真实透明快照、生成并独立重放证书，再重建本地 audit/proof/dependency closure；不启动 Day-0 长跑，也不并行开 Rusty Key。
+
 > **当前状态入口：** [CURRENT_STATUS_CN.md](CURRENT_STATUS_CN.md)。本文件下方带日期的状态、计数和“下一步”均保留为历史证据；若与当前机器报告或 CURRENT_STATUS_CN.md 冲突，不得按历史数字规划新工作。
 >
 > **施工顺序修订（2026-11-03T15:46:34+08:00，Asia/Kuala_Lumpur；pretraining-order-20261103-r1）：** Community Center、Pet Love、Skull Key、Full Shipment 保持已冻结；后续顺序改为 `obtain_rusty_key` → `raise_skill_levels` → `raise_friendships` → `marriage_and_house_upgrade` → `complete_museum_collection` → `complete_master_angler` → `earn_money`。当前唯一 primary root 改为 `obtain_rusty_key`；Master Angler 保留成果、暂停在未完成状态，不再占据第 5 项。本次为用户明确授权的依赖/成本重排，不是普通 bug 中断；仍为 WIP=1。完整依据、退出条件与历史队列见 [CURRENT_STATUS_CN.md 第 6 节](CURRENT_STATUS_CN.md#6-下一项如何选择)。

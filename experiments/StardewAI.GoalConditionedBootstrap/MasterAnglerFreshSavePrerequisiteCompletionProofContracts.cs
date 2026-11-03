@@ -12,13 +12,11 @@ public sealed record MasterAnglerFreshSavePrerequisiteCompletionProof(
     [property: JsonPropertyName("dependency_expansion_sha256")] string DependencyExpansionSha256,
     [property: JsonPropertyName("native_denominator_count")] int NativeDenominatorCount,
     [property: JsonPropertyName("prerequisite_family_count")] int PrerequisiteFamilyCount,
-    [property: JsonPropertyName("gourmand_continuation_receipt_path")] string GourmandContinuationReceiptPath,
-    [property: JsonPropertyName("gourmand_continuation_receipt_sha256")] string GourmandContinuationReceiptSha256,
-    [property: JsonPropertyName("verified_gourmand_transition_count")] int VerifiedGourmandTransitionCount,
+    [property: JsonPropertyName("shared_capability_certificate_ids")] string[] SharedCapabilityCertificateIds,
     [property: JsonPropertyName("blocking_reasons")] string[] BlockingReasons)
 {
     [JsonPropertyName("schema_version")]
-    public string SchemaVersion => "master_angler_fresh_save_prerequisite_completion_proof.v1";
+    public string SchemaVersion => "master_angler_fresh_save_prerequisite_completion_proof.v2";
 
     [JsonPropertyName("training_label_eligible")]
     public bool TrainingLabelEligible => false;

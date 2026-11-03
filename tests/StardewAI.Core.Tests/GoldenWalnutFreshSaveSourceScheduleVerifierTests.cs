@@ -11,7 +11,7 @@ namespace StardewAI.Core.Tests;
 public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
 {
     [Fact]
-    public void MasterAnglerContinuationPromotesOnlyTheVerifiedGingerFamilyWithoutTrainingAdmission()
+    public void GlobalGourmandEvidenceDoesNotPromoteTheMasterAnglerLocalGingerFamily()
     {
         using var fixture = new Fixture(scheduleId: "golden-walnut-fresh-save:run",
             phaseOrderedSources: true, gourmandContinuation: true);
@@ -26,8 +26,9 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
         Assert.Empty(baseline.GoldenWalnutGourmandContinuationReceiptSha256);
 
         var report = BuildContinuationAudit(fixture, inputs, receipts);
-        Assert.Equal("fresh_save_prerequisite_inventory_complete", report.Status);
-        Assert.Empty(report.MissingOrUnboundProducerFamilies);
+        Assert.Equal("partial_fresh_save_prerequisite_inventory", report.Status);
+        Assert.Equal(new[] { "ginger_island_access" },
+            report.MissingOrUnboundProducerFamilies);
         Assert.False(report.TrainingLabelEligible);
         Assert.Equal(receipts.Continuation, report.GoldenWalnutGourmandContinuationReceiptPath);
         Assert.Equal(Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
@@ -36,14 +37,9 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
         Assert.Equal(3, report.GoldenWalnutGourmandContinuationReceipt.VerifiedTransitionCount);
         Assert.False(report.GoldenWalnutGourmandContinuationReceipt.TrainingLabelEligible);
         var family = report.PrerequisiteFamilies.Single(row => row.FamilyId == "ginger_island_access");
-        Assert.Equal("implemented_and_bound", family.ProducerStatus);
-        Assert.Contains(GoldenWalnutGourmandContinuationReceiptVerifier.SchemaVersion, family.ExistingEvidence);
-        foreach (var transition in new[] { "0->1", "1->2", "2->3" })
-        {
-            Assert.Contains("native_gourmand_request_transition:" + transition, family.ExistingEvidence);
-            Assert.Contains(transition, family.RemainingWork);
-        }
-        Assert.Contains("does not authorize formal training", family.RemainingWork);
+        Assert.Equal("shared_capability_certificate_missing", family.ProducerStatus);
+        Assert.Empty(family.ExistingEvidence);
+        Assert.Contains("Do not substitute", family.RemainingWork);
         var roundTrip = JsonSerializer.Deserialize<MasterAnglerFreshSavePrerequisiteAuditReport>(
             JsonSerializer.Serialize(report))!;
         Assert.Equal(JsonSerializer.Serialize(report.GoldenWalnutGourmandContinuationReceipt),
@@ -51,7 +47,80 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
     }
 
     [Fact]
-    public async Task MasterAnglerCompletionProofCliRebuildsAndBindsTheCompleteAudit()
+    public void LocalAccessCertificatePromotesWithoutGlobalScheduleOrGourmand()
+    {
+        using var fixture = new Fixture();
+        var inputs = WriteBoundAuditInputs(fixture.Root);
+        var certificatePath = WriteGingerIslandAccessCertificate(fixture.Root);
+
+        var report = MasterAnglerFreshSavePrerequisiteAuditBuilder
+            .BuildWithCapabilityCertificate(
+            inputs.Catalog,
+            inputs.Windows,
+            inputs.Dependencies,
+            certificatePath);
+
+        Assert.Equal("fresh_save_prerequisite_inventory_complete", report.Status);
+        Assert.Empty(report.MissingOrUnboundProducerFamilies);
+        Assert.Empty(report.GoldenWalnutFreshSaveSourceSchedulePath);
+        Assert.Null(report.GoldenWalnutGourmandContinuationReceipt);
+        Assert.Equal(certificatePath,
+            report.GingerIslandAccessCapabilityCertificatePath);
+        Assert.True(report.GingerIslandAccessCapabilityCertificate!.Ready);
+        var family = report.PrerequisiteFamilies.Single(row =>
+            row.FamilyId == "ginger_island_access");
+        Assert.Equal("implemented_and_bound", family.ProducerStatus);
+        Assert.Contains(MasterAnglerSharedCapabilityCertificate.Schema,
+            family.ExistingEvidence);
+    }
+
+    [Fact]
+    public async Task CompletionProofCliAcceptsLocalCertificateWithoutGlobalScheduleOrGourmand()
+    {
+        using var fixture = new Fixture();
+        var inputs = WriteBoundAuditInputs(fixture.Root);
+        var certificatePath = WriteGingerIslandAccessCertificate(fixture.Root);
+        var auditPath = Path.Combine(fixture.Root, "local-audit.json");
+        var proofPath = Path.Combine(fixture.Root, "local-completion-proof.json");
+        var configuration = new DirectoryInfo(AppContext.BaseDirectory).Parent!.Name;
+        var start = new ProcessStartInfo("dotnet")
+        {
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+        foreach (var argument in new[]
+        {
+            Path.Combine(FindRepositoryRoot(), "experiments",
+                "StardewAI.GoalConditionedBootstrap", "bin", configuration,
+                "net8.0", "StardewAI.GoalConditionedBootstrap.dll"),
+            "build-master-angler-fresh-save-prerequisite-completion-proof",
+            "--catalog", inputs.Catalog,
+            "--windows", inputs.Windows,
+            "--dependency-expansions", inputs.Dependencies,
+            "--ginger-island-access-capability-certificate", certificatePath,
+            "--audit-output", auditPath,
+            "--output", proofPath
+        }) start.ArgumentList.Add(argument);
+        start.Environment.Remove("STARDEWAI_VALIDATION_TRACE");
+        using var process = Process.Start(start)!;
+        var output = process.StandardOutput.ReadToEndAsync();
+        var error = process.StandardError.ReadToEndAsync();
+        await process.WaitForExitAsync();
+        Assert.True(process.ExitCode == 0, await error + await output);
+
+        var proof = JsonSerializer.Deserialize<
+            MasterAnglerFreshSavePrerequisiteCompletionProof>(
+            File.ReadAllText(proofPath))!;
+        Assert.True(proof.Ready);
+        Assert.Equal(new[] { "ginger_island_access" },
+            proof.SharedCapabilityCertificateIds);
+        Assert.Empty(proof.BlockingReasons);
+    }
+
+    [Fact]
+    public async Task MasterAnglerCompletionProofCliRejectsGlobalScheduleWithoutLocalCertificate()
     {
         using var fixture = new Fixture(scheduleId: "golden-walnut-fresh-save:run",
             phaseOrderedSources: true, gourmandContinuation: true);
@@ -92,18 +161,20 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
         var diagnostic = await error + await output;
         if (File.Exists(proofPath))
             diagnostic += Environment.NewLine + File.ReadAllText(proofPath);
-        Assert.True(process.ExitCode == 0, diagnostic);
+        Assert.NotEqual(0, process.ExitCode);
 
         var audit = JsonSerializer.Deserialize<MasterAnglerFreshSavePrerequisiteAuditReport>(
             File.ReadAllText(auditPath))!;
         var proof = JsonSerializer.Deserialize<MasterAnglerFreshSavePrerequisiteCompletionProof>(
             File.ReadAllText(proofPath))!;
-        Assert.Equal("fresh_save_prerequisite_inventory_complete", audit.Status);
-        Assert.True(proof.Ready);
+        Assert.Equal("partial_fresh_save_prerequisite_inventory", audit.Status);
+        Assert.False(proof.Ready);
         Assert.False(proof.TrainingLabelEligible);
         Assert.Equal(72, proof.NativeDenominatorCount);
         Assert.Equal(14, proof.PrerequisiteFamilyCount);
-        Assert.Equal(3, proof.VerifiedGourmandTransitionCount);
+        Assert.Empty(proof.SharedCapabilityCertificateIds);
+        Assert.Contains("ginger_island_access_capability_certificate_missing",
+            proof.BlockingReasons);
         Assert.Equal(auditPath, proof.AuditPath);
         Assert.Equal(Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
             File.ReadAllBytes(auditPath))).ToLowerInvariant(), proof.AuditSha256);
@@ -270,6 +341,57 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
         GoldenWalnutGourmandContinuationReceiptVerifier.Write(continuation, fixture.Root, fixture.ManifestPath);
         return (source, continuation);
     }
+
+    private static string WriteGingerIslandAccessCertificate(string root)
+    {
+        var snapshotPath = Path.Combine(root, "ginger-island-access-snapshot.json");
+        var certificatePath = Path.Combine(root, "ginger-island-access-certificate.json");
+        var snapshot = new SnapshotEnvelope
+        {
+            GameVersion = "1.6.15",
+            SaveId = Available("save"),
+            PlayerId = Available("player"),
+            GameTick = 300,
+            State = new Dictionary<string, JsonElement>
+            {
+                ["locations"] = JsonSerializer.SerializeToElement(new
+                {
+                    ginger_island_access = new
+                    {
+                        status = "available",
+                        value = new
+                        {
+                            schema_version = "ginger_island_access.v1",
+                            projection_status =
+                                "complete_locked_base_1.6.15_native_contract",
+                            target_access = new
+                            {
+                                island_south_accessible = true,
+                                island_north_accessible = true,
+                                island_west_accessible = true,
+                                island_south_east_accessible = true,
+                                island_south_east_cave_accessible = true
+                            }
+                        }
+                    }
+                })
+            }
+        };
+        snapshot.StateHash = SnapshotHash.ComputeStateHash(snapshot.State);
+        File.WriteAllText(snapshotPath, JsonSerializer.Serialize(snapshot));
+        var certificate =
+            MasterAnglerSharedCapabilityCertificateBuilder.BuildGingerIslandAccess(
+                snapshotPath,
+                "local-boundary-run");
+        File.WriteAllText(certificatePath, JsonSerializer.Serialize(certificate));
+        return certificatePath;
+    }
+
+    private static FieldEnvelope<string?> Available(string value) => new()
+    {
+        Status = FieldStatus.Available,
+        Value = value
+    };
 
     [Fact]
     public void MasterAnglerAuditRejectsScheduleWithoutIndependentReceipt()
@@ -546,7 +668,7 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
     }
 
     [Fact]
-    public async Task ProductWrapperPassesIndependentReceiptDirectlyIntoMasterAnglerAudit()
+    public async Task ProductWrapperKeepsGlobalReceiptSeparateFromLocalCapabilityGate()
     {
         using var fixture = new Fixture(
             scheduleId: "golden-walnut-fresh-save:run",
@@ -578,13 +700,13 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
             new[] { "ginger_island_access" },
             audit.MissingOrUnboundProducerFamilies);
         Assert.Equal(
-            "fresh_save_unlock_timeline_bound_runtime_continuation_receipts_missing",
+            "shared_capability_certificate_missing",
             audit.PrerequisiteFamilies.Single(value =>
                 value.FamilyId == "ginger_island_access").ProducerStatus);
     }
 
     [Fact]
-    public async Task ProductWrapperWritesBoundCompletionProofWithGourmandContinuation()
+    public async Task ProductWrapperDoesNotEmitLocalCompletionProofFromGourmandContinuation()
     {
         using var fixture = new Fixture(
             scheduleId: "golden-walnut-fresh-save:run",
@@ -607,15 +729,15 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
         var proofPath = summary.RootElement.GetProperty(
             "master_angler_completion_proof_path").GetString();
         Assert.False(string.IsNullOrWhiteSpace(auditPath));
-        Assert.False(string.IsNullOrWhiteSpace(proofPath));
-        var proof = JsonSerializer.Deserialize<MasterAnglerFreshSavePrerequisiteCompletionProof>(
-            File.ReadAllText(proofPath!))!;
-        Assert.True(proof.Ready);
-        Assert.False(proof.TrainingLabelEligible);
-        Assert.Equal(72, proof.NativeDenominatorCount);
-        Assert.Equal(14, proof.PrerequisiteFamilyCount);
-        Assert.Equal(3, proof.VerifiedGourmandTransitionCount);
-        Assert.Equal(Path.GetFullPath(auditPath!), proof.AuditPath);
+        Assert.True(string.IsNullOrWhiteSpace(proofPath));
+        var audit = JsonSerializer.Deserialize<MasterAnglerFreshSavePrerequisiteAuditReport>(
+            File.ReadAllText(auditPath!))!;
+        Assert.Equal("partial_fresh_save_prerequisite_inventory", audit.Status);
+        Assert.Equal(new[] { "ginger_island_access" },
+            audit.MissingOrUnboundProducerFamilies);
+        Assert.True(audit.GoldenWalnutGourmandContinuationReceipt!.Ready);
+        Assert.Equal(3,
+            audit.GoldenWalnutGourmandContinuationReceipt.VerifiedTransitionCount);
     }
 
     [Fact]

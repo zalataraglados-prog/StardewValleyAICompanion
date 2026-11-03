@@ -69,7 +69,13 @@ Golden Walnut source-schedule 构建器、独立重放器、真实原生回执�
 
 这是撤销失实全序并给出明确下一步，不是放弃计划或授权开发对话自由换项。两个平级常驻对话及其子代理共同服务同一工作项；不改变模型/算法实验归属，也不增设第三个主目标。
 
-## 5. 实现整改的完成条件（尚待开发验证）
+## 5. 实现整改的完成条件与当前进度
+
+**2026-11-03 实现记录：** 已完成代码级责任解耦。`MasterAnglerFreshSavePrerequisiteAuditBuilder` 的局部 family 仅由 `master_angler_shared_capability_certificate.v1` 关闭；completion proof 与 dependency closure 不再要求 Gourmand 回执或 `VerifiedGourmandTransitionCount == 3`；产品 source-schedule 包装器继续验证全局证据，但不能生成或提升 Master Angler 局部完成证明。证书会重算透明快照 state hash，并精确绑定源文件 SHA、game/run/save/player、tick、范围和实际可达目标；缺证书、阻塞证书、篡改证书、身份/schema/分母漂移均失败关闭。
+
+验证结果为：全解决方案 Release `0 warning / 0 error`；PowerShell AST 通过；局部证明、全局证据不越权、CLI/包装器和源码守卫聚焦回归 `203/203`。这些均为静态/fixture 结果，不是原生游戏证据。覆盖基线仍为 `5/19`、`4/11`、`0/18`，正式训练继续为 false，#390 暂不关闭。
+
+剩余的单一退出门：使用 PR #389 留存的已解锁姜岛隔离存档产生真实透明快照，生成并独立重放共享能力证书，随后重建局部 audit/proof/dependency closure。该短边界验证通过后才重算 reconciliation 与下一 root 的局部成本；不得退回 Day-0 长跑来证明本次层级纠偏。
 
 - 对照 #224/#390 检查 `MasterAnglerFreshSavePrerequisiteAuditBuilder`、`MasterAnglerFreshSavePrerequisiteCompletionProofBuilder`、`MasterAnglerDependencyExpansionCompletionBuilder` 与 `Invoke-ProductBootstrapCalibration.ps1` 等调用方；分清局部视图、共享证书和全局证明的消费者。
 - 正向：有效局部鱼类证据与必要共享证书成立、但没有全局 source schedule/没有选择 Gourmand 时，局部门不应仅因此失败。

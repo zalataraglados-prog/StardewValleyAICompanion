@@ -171,6 +171,8 @@ var commandDefinitions = new CommandDefinition[]
     new("build-golden-walnut-fresh-save-episode-manifest", BuildGoldenWalnutFreshSaveEpisodeManifest),
     new("build-golden-walnut-fresh-save-source-schedule", BuildGoldenWalnutFreshSaveSourceSchedule),
     new("verify-golden-walnut-fresh-save-source-schedule", VerifyGoldenWalnutFreshSaveSourceSchedule),
+    new("build-master-angler-ginger-island-access-certificate",
+        BuildMasterAnglerGingerIslandAccessCertificate),
     new("audit-master-angler-fresh-save-prerequisites", AuditMasterAnglerFreshSavePrerequisites),
     new("build-master-angler-fresh-save-prerequisite-completion-proof",
         BuildMasterAnglerFreshSavePrerequisiteCompletionProof),
@@ -2797,7 +2799,19 @@ static MasterAnglerFreshSavePrerequisiteAuditReport
         options.Optional("run-id"),
         options.Optional("save-id"),
         options.Optional("player-id"),
-        options.Optional("golden-walnut-gourmand-continuation-receipt"));
+        options.Optional("golden-walnut-gourmand-continuation-receipt"),
+        options.Optional("ginger-island-access-capability-certificate"));
+
+static void BuildMasterAnglerGingerIslandAccessCertificate(Arguments options)
+{
+    var certificate =
+        MasterAnglerSharedCapabilityCertificateBuilder.BuildGingerIslandAccess(
+            options.Required("snapshot"),
+            options.Required("run-id"));
+    Write(options.Required("output"), certificate);
+    if (!certificate.Ready)
+        Environment.ExitCode = 2;
+}
 
 static void BuildMasterAnglerFreshSavePrerequisiteCompletionProof(
     Arguments options)

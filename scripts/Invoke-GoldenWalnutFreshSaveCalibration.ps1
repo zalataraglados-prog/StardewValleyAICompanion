@@ -223,30 +223,6 @@ if ($RequireGourmandContinuationReady -and
          -PathType Leaf))) {
     throw "Product calibration did not complete all three native Gourmand requests."
 }
-if ($RequireSourceScheduleReady -and
-    ([string]::IsNullOrWhiteSpace(
-        [string]$calibrationSummary.master_angler_audit_path) -or
-     -not (Test-Path -LiteralPath (
-        [string]$calibrationSummary.master_angler_audit_path) -PathType Leaf))) {
-    throw "Product calibration did not produce the bound Master Angler prerequisite audit."
-}
-if ($RequireGourmandContinuationReady -and
-    ([string]::IsNullOrWhiteSpace(
-        [string]$calibrationSummary.master_angler_completion_proof_path) -or
-     -not (Test-Path -LiteralPath (
-        [string]$calibrationSummary.master_angler_completion_proof_path) `
-        -PathType Leaf))) {
-    throw "Product calibration did not produce the bound Master Angler completion proof."
-}
-if ($RequireGourmandContinuationReady -and
-    ([string]::IsNullOrWhiteSpace(
-        [string]$calibrationSummary.master_angler_completed_dependency_expansions_path) -or
-     -not (Test-Path -LiteralPath (
-        [string]$calibrationSummary.master_angler_completed_dependency_expansions_path) `
-        -PathType Leaf))) {
-    throw "Product calibration did not produce the proof-closed Master Angler dependency expansion."
-}
-
 $freshSummaryPath = Join-Path (
     Join-Path $freshSaveOutputRoot $RunId) "summary.json"
 $calibrationSummaryPath = Join-Path (
