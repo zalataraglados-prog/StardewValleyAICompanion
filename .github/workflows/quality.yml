@@ -88,6 +88,9 @@ jobs:
       - name: Test Rusty Key native acquisition fixture boundary without game
         shell: pwsh
         run: ./scripts/Test-RuntimeRustyKeyGeodeBoundary.ps1 -OutputRoot "$env:RUNNER_TEMP/rusty-key-geode-boundary"
+      - name: Test portfolio mutation reply recovery without replay
+        shell: pwsh
+        run: ./scripts/Test-RuntimePortfolioMutationRecovery.ps1 -OutputRoot "$env:RUNNER_TEMP/portfolio-mutation-recovery"
       - name: Check whitespace
         shell: pwsh
         run: |

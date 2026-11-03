@@ -1,3 +1,5 @@
+. (Join-Path $PSScriptRoot 'RuntimePortfolioMutationRecovery.ps1')
+
 function Save-RuntimeRustyKeyLatestLedger {
     param($Context, [string] $StateHash, [string] $Path)
     $response = Invoke-WebRequest -UseBasicParsing -Uri (
@@ -9,16 +11,8 @@ function Save-RuntimeRustyKeyLatestLedger {
 
 function Invoke-RuntimeRustyKeyLedgerMutation {
     param($Context, [string] $Operation, $Request, [string] $Directory, [string] $Name)
-    $result = Invoke-JsonPost -Url (
-        "$($Context.BackendUrl)/api/v1/strategy/commitments/reservation-portfolios/$Operation") -Body $Request
-    $resultPath = Join-Path $Directory "$Name-result.json"
-    $ledgerPath = Join-Path $Directory "$Name-ledger.json"
-    Write-Utf8Text -Path $resultPath -Value $result.Raw
-    if ($result.Value.accepted -ne $true -or $null -eq $result.Value.ledger) {
-        throw "Rusty Key ledger mutation rejected: $Operation; result=$resultPath"
-    }
-    Write-RawJsonProperty -Path $ledgerPath -RawJson $result.Raw -PropertyName 'ledger'
-    return [pscustomobject]@{ ResultPath = $resultPath; LedgerPath = $ledgerPath }
+    return Invoke-RuntimePortfolioMutation -Context $Context -Operation $Operation `
+        -Request $Request -Directory $Directory -Name $Name
 }
 
 function Invoke-RuntimeRustyKeySupport {

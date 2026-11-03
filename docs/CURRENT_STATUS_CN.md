@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-04 Backend 回执恢复：** 三种原 portfolio 变更已随唯一账本原子保留精简成功回执，并提供不核销、不写入的只读查询。rolling 发前留档，丢回复只查一次，精确结果继续原 canonical 验证；未知/错身份/版本推进均停止而不重发。此为无游戏传输边界，不是完整原生闭环或训练准入；唯一 primary 仍为 Rusty Key，同版本原生获取/保管/捐赠/核销仍待静默解除后验证，计数不变。见 [合同](portfolio-mutation-reply-recovery.md)。
+
 > **2026-11-04 Product 回复恢复边界：** 发前完整请求/nonce 留档和原日志只读查询已接原 live 调用点；服务端已授权派发按有界时间独立落最终回执。丢回复只查询一次，不重发、不把 pending/错身份当成功，恢复回执仍走原 fresh/native 门。此为无游戏传输验证，不替代完整原生轨迹、Backend 变更恢复或 criterion 验收；唯一 primary、正式训练锁与覆盖计数不变。见 [合同](product-receipt-recovery.md)。
 
 > **2026-11-04 原生验证入口准备：** 原 threshold smoke 已能选择 `current_geode`，在隔离副本中按实时预测准备 59 件边界并确保目标库存为零，再调用原 rolling 控制器；旧固定物品模式保留。24 项无游戏准备/预检通过，Harness 构建通过，但完整原生获取/保管/捐赠轨迹仍待静默解除后运行和独立复核。当前唯一 primary、计数和正式训练锁均不变。

@@ -98,7 +98,8 @@ shared send call instead of requiring the old inline transport spelling.
 This closes a client identity/final-response retrieval boundary, not all failure
 recovery. A host/native crash with only pending evidence is still indeterminate.
 The Rusty Key same-version native acquisition/custody/donation/consumption run
-remains first after quiet restrictions lift. Lost Backend commit/settlement
-responses, custody relocation, joint windows/budgets, criterion comparison/native
+remains first after quiet restrictions lift. Backend commit/settlement reply loss
+now has its separate [original-ledger recovery boundary](portfolio-mutation-reply-recovery.md);
+it is not resolved by this Product lookup. Custody relocation, joint windows/budgets, criterion comparison/native
 partitions and the pre-Year-3 deadline remain separate required work. Frozen
 coverage counts and `formal_product_training=false` are unchanged.
