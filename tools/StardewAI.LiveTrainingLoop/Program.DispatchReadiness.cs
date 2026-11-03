@@ -1,4 +1,3 @@
-using System.Net.Http.Json;
 using System.Text.Json.Nodes;
 
 static partial class Program
@@ -12,6 +11,10 @@ static partial class Program
     {
         var optionId = ReadStringOrEmpty(item, "option_id");
         if (!string.Equals(
+                optionId,
+                "executor.donate_museum_item",
+                StringComparison.Ordinal) &&
+            !string.Equals(
                 optionId,
                 "executor.craft_machine_item",
                 StringComparison.Ordinal) &&
@@ -57,9 +60,7 @@ static partial class Program
             "/api/v1/action-queues/" + Uri.EscapeDataString(queueId) +
             "/items/" + Uri.EscapeDataString(queueItemId) +
             "/dispatch-readiness?stateHash=" + Uri.EscapeDataString(stateHash);
-        return await http.GetFromJsonAsync<JsonObject>(url) ??
-            throw new InvalidOperationException(
-                "dispatch readiness endpoint returned an empty response");
+        return await PostJsonStringAsync(http, url, item.ToJsonString(JsonOptions));
     }
 
     private static JsonObject DispatchRejectedExecution(

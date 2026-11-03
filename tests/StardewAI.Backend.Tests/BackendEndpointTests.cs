@@ -16,7 +16,7 @@ using Xunit;
 
 namespace StardewAI.Backend.Tests
 {
-    public sealed class BackendEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+    public sealed partial class BackendEndpointTests : IClassFixture<WebApplicationFactory<Program>>
     {
         private readonly WebApplicationFactory<Program> factory;
 

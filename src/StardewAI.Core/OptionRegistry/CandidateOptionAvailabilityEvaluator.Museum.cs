@@ -6,13 +6,15 @@ using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
+using StardewAI.Core.Infrastructure;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.OptionRegistry;
 
 public sealed partial class CandidateOptionAvailabilityEvaluator
 {
-    private EventCandidate[] MuseumDonationCandidates(SnapshotEnvelope snapshot)
+    private EventCandidate[] MuseumDonationCandidates(SnapshotEnvelope snapshot, StrategyCommitmentLedger? commitmentLedger)
     {
         var museum = ReadStateFieldValue(snapshot, "world_progress", "museum");
         if (!museum.HasValue || museum.Value.ValueKind != JsonValueKind.Object ||
@@ -23,6 +25,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         }
 
         var museumRow = museum.Value;
+        var reservationGuard = new MuseumDonationMaterialReservationGuard(snapshot, commitmentLedger);
         var locationId = ReadString(museumRow, "museum_location_id");
         var currentLocation = ReadStateFieldString(snapshot, "player", "location_id");
         if (ReadBool(museumRow, "museum_is_current_location") != true)
@@ -32,7 +35,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 museumRow,
                 candidates,
                 currentLocation,
-                locationId);
+                locationId,
+                reservationGuard);
         }
 
         var actionX = NullableReadInt(museumRow, "gunther_action_tile_x");
@@ -79,6 +83,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 {
                     reasons.Add("museum_donation_candidate_typed_projection_invalid");
                 }
+                var material = reservationGuard.Evaluate(slot, ReadString(candidate, "qualified_item_id"), ReadInt(candidate, "stack_before"));
+                reasons.AddRange(material.BlockingReasons);
                 var parameters = stand is null || !actionX.HasValue || !actionY.HasValue || !donationX.HasValue || !donationY.HasValue
                     ? Array.Empty<SmallModelActionParameter>()
                     : MuseumDonationParameters(museumRow, candidate, stand.X, stand.Y, actionX.Value, actionY.Value, donationX.Value, donationY.Value);
@@ -101,7 +107,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                     AvailabilityClass = "transparent_native_museum_donation",
                     AllowedNow = reasons.Count == 0,
                     BlockReasons = reasons.Distinct(StringComparer.Ordinal).ToArray(),
-                    Parameters = parameters
+                    Parameters = parameters.Concat(material.Parameters).ToArray()
                 };
             })
             .ToArray();
@@ -112,7 +118,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         JsonElement museum,
         JsonElement candidates,
         string currentLocation,
-        string targetLocation)
+        string targetLocation,
+        MuseumDonationMaterialReservationGuard reservationGuard)
     {
         var route = FindResolvedRoutePlan(
             snapshot,
@@ -147,6 +154,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 {
                     reasons.Add("museum_donation_candidate_typed_projection_invalid");
                 }
+                var material = reservationGuard.Evaluate(slot, ReadString(candidate, "qualified_item_id"), ReadInt(candidate, "stack_before"));
+                reasons.AddRange(material.BlockingReasons);
                 reasons.AddRange(connector?.BlockReasons ??
                     new[] { "museum_cross_map_route_unavailable" });
                 var continuation = new[]
@@ -191,6 +200,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                     Parameters = (connector?.Parameters ?? Array.Empty<SmallModelActionParameter>())
                         .Concat(continuation)
                         .Concat(MuseumDonationThresholdParameters(museum, candidate))
+                        .Concat(material.Parameters)
                         .ToArray()
                 };
             })

@@ -30,8 +30,8 @@ public sealed class LiveTrainingOptions
     public string RouteTimingCalibrationPath { get; set; } = string.Empty;
     public string ExecutorUrl { get; set; } = "http://127.0.0.1:8767";
     public int ExecutorTimeoutSeconds { get; set; } = 600;
-    public string ManifestPath { get; set; } = ReadTextOrEmpty(@"E:\StardewAITraining\last-manifest-path.txt");
-    public string RunId { get; set; } = ReadTextOrEmpty(@"E:\StardewAITraining\last-run-id.txt");
+    public string ManifestPath { get; set; } = string.Empty;
+    public string RunId { get; set; } = string.Empty;
     public string ArtifactRunId { get; set; } = string.Empty;
     public string SaveIsolationPath { get; set; } = @"E:\StardewValleyAICompanion-runtime\saves";
     public string SaveSlot { get; set; } = string.Empty;
@@ -195,6 +195,11 @@ public sealed class LiveTrainingOptions
     public static LiveTrainingOptions Parse(string[] args)
     {
         var options = new LiveTrainingOptions();
+        if (!args.Any(argument => argument is "--root" or "--run-id" or "--artifact-run-id" or "--manifest-path" or "--no-manifest"))
+        {
+            options.ManifestPath = ReadTextOrEmpty(@"E:\StardewAITraining\last-manifest-path.txt");
+            options.RunId = ReadTextOrEmpty(@"E:\StardewAITraining\last-run-id.txt");
+        }
         for (var i = 0; i < args.Length; i++)
         {
             var current = args[i];

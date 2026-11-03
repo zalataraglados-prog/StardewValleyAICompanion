@@ -328,13 +328,16 @@ static partial class Program
             return gingerIslandPrerequisiteControl;
         }
 
+        var (strategyLedgerPath, teacherLedger) = await ReadStageOneTeacherLedgerAsync(
+            http, options, stateHash, typedRanking);
         var preference =
             CurrentStageOneCollectionTeacherPreferenceBuilder.Build(
                 options.StageOneCollectionRequirementInventoryPath,
                 options.StageOneCollectionAcquisitionLoweringPath,
                 rankingPath,
                 plainSnapshotPath,
-                intentsPath);
+                intentsPath,
+                strategyLedgerPath);
         await WriteTypedJsonAsync(preferencePath, preference);
         if (string.Equals(
                 preference.Status,
@@ -385,7 +388,8 @@ static partial class Program
                 JsonSerializer.Deserialize<SnapshotEnvelope>(
                     snapshotJson,
                     JsonOptions) ?? throw new InvalidDataException(
-                    "Stage-one collection snapshot is empty."));
+                    "Stage-one collection snapshot is empty."),
+                teacherLedger);
             var controlReasons = controlPlan.CandidateAudit
                 .Where(value => value.Decision != "accepted")
                 .SelectMany(value => value.Reasons)

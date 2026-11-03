@@ -510,44 +510,7 @@ app.MapGet("/api/v1/action-queues/{queueId}", (string queueId, StateStore store)
         ? Results.Ok(queue)
         : Results.NotFound(new { detail = "queue not found" }));
 
-app.MapGet("/api/v1/action-queues/{queueId}/items/{queueItemId}/dispatch-readiness", (
-    string queueId,
-    string queueItemId,
-    string? stateHash,
-    StateStore store,
-    IStrategyCommitmentRepository repository,
-    ActionQueueDispatchReadinessService readinessService) =>
-{
-    if (!store.ActionQueues.TryGetValue(queueId, out var queue))
-    {
-        return Results.NotFound(new { detail = "queue not found" });
-    }
-    var item = queue.Items.SingleOrDefault(row =>
-        string.Equals(row.QueueItemId, queueItemId, StringComparison.Ordinal));
-    if (item is null)
-    {
-        return Results.NotFound(new { detail = "queue item not found" });
-    }
-    if (string.IsNullOrWhiteSpace(stateHash) ||
-        !store.Snapshots.TryGetValue(stateHash, out var snapshot))
-    {
-        return Results.UnprocessableEntity(new
-        {
-            detail = "state_hash does not match an ingested snapshot"
-        });
-    }
-
-    var result = readinessService.Evaluate(
-        queue,
-        item,
-        repository.Get(snapshot),
-        snapshot.StateHash);
-    store.AppendAudit(
-        result.Ready ? "ActionQueueDispatchReady" : "ActionQueueDispatchBlocked",
-        snapshot.GameTick,
-        snapshot.StateHash);
-    return Results.Ok(result);
-});
+app.MapActionQueueDispatchReadinessEndpoints();
 
 app.MapPost("/api/v1/action-queues/{queueId}/execute", (string queueId, StateStore store, IExecutorPort executor) =>
 {

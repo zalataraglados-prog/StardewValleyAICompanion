@@ -9,6 +9,8 @@ public static class PolicyTrainingObjectives
 
 public sealed class PolicyTeacherEvidenceSources
 {
+    [JsonPropertyName("strategy_ledger_path")]
+    public string StrategyLedgerPath { get; set; } = string.Empty;
     [JsonPropertyName("requirement_inventory_path")]
     public string RequirementInventoryPath { get; set; } = string.Empty;
     [JsonPropertyName("acquisition_lowering_path")]

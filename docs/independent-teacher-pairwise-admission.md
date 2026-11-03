@@ -54,6 +54,13 @@ Bootstrap still depends on Core, and Core has no reverse dependency on it.
 The original formal launcher remains locked pending all separate readiness gates.
 Valid offline supervision does not authorize a formal product training run.
 
+Managed museum contexts additionally retain the strategy ledger path/hash in the
+preference and trajectory sources. Teacher/tie-control compilation receives that
+ledger; replay rereads it and rejects changed or omitted evidence. Managed museum
+alternatives are rechecked through the existing candidate generator. This is
+resource-legality evidence, not a new preference objective or native outcome;
+see [museum material admission](museum-donation-material-admission.md).
+
 ## Verification
 
 The regression matrix covers absent supervision despite native success;

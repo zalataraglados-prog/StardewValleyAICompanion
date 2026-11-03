@@ -8,7 +8,7 @@ using StardewAI.Core.Training;
 
 namespace StardewAI.Core.Tests;
 
-public sealed class MuseumDonationMainlineTests
+public sealed partial class MuseumDonationMainlineTests
 {
     [Fact]
     public void ExactDonationFlowsFromTransparentCandidateToNativeExecutor()

@@ -497,6 +497,11 @@ namespace StardewAI.Core.OptionRegistry
                 return Array.Empty<EventCandidate>();
             }
 
+            if (string.Equals(optionId, "museum.donate_items", StringComparison.Ordinal))
+            {
+                return MuseumDonationCandidates(snapshot, commitmentLedger);
+            }
+
             if (string.Equals(optionId, "farm.process_machines", StringComparison.Ordinal))
             {
                 return MachineProcessingCandidates(snapshot, commitmentLedger);
