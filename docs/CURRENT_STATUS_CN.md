@@ -1,10 +1,12 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
-> **2026-11-03 #390 实现与边界状态（覆盖下方 R1 排序）：** criterion-local、共享能力证书、Teacher 全局集成和完整新档四层责任已经在代码中解耦。Master Angler 局部审计不再由 Golden Walnut source schedule 或 Gourmand `3/3` 提升；姜岛前置只接受可独立重放、绑定透明快照路径/SHA/state hash/save/player 的 `ginger_island_access` 共享能力证书。全局 source schedule/Gourmand 验证器保留在其所属集成层。全解决方案 Release 构建 `0 warning / 0 error`，局部证明、包装器与源码守卫回归 `203/203`。隔离已解锁存档随后生成真实 full snapshot（`state_hash=69118c126c5b253813660a3bbbe1e58a2124e2fe805f4361f6b157f34409864d`）和 `ready=true` 证书；在没有 global source schedule、没有 Gourmand 回执时，本地 audit 仍以 `72` 鱼种、`14` 前置族、零缺口完成，completion proof 与 run-local dependency closure 均通过。源存档两份 SHA 前后不变，游戏与端口已回收。该结果关闭的是 #390 的责任解耦和 Master Angler **局部前置清单**，不是逐鱼捕获、Teacher/native 三分区、CoverageGateReady 或完整新档；覆盖分子不晋升，`formal_product_training=false`。PR #391 合并前 Issue 保持开放；合并后先重建 reconciliation 与局部成本，再选择下一个 WIP，不按下方“固定第 10”旧全序施工。
+> **当前接续决定（2026-11-03T18:30:00+08:00，用户确认）：** #390 / PR #391 已完成验收责任解耦；当前唯一 primary 为 `obtain_rusty_key`。先完成安全捐赠阈值、原生奖励与送钥匙事件的局部闭环，再补本 criterion 的 Teacher/native 分区。R2 的四层验收合同继续生效；R1 中 Master Angler 固定第 10、强制 Gourmand/source-schedule 及完整新档反向前置均已撤销。后续未开工 root 的顺位待当前项收口后按真实局部缺口决定。Pet Love、Skull Key 已消费的严格验收保持冻结，原始中间文件清理不触发重采；当前计数仍为 `5/19 executable、6/19 split-complete、5/19 CoverageGateReady、4/11 root ready`，`formal_product_training=false`。
+
+> **2026-11-03 #390 实现与边界状态（验收责任修复已完成）：** criterion-local、共享能力证书、Teacher 全局集成和完整新档四层责任已经在代码中解耦。Master Angler 局部审计不再由 Golden Walnut source schedule 或 Gourmand `3/3` 提升；姜岛前置只接受可独立重放、绑定透明快照路径/SHA/state hash/save/player 的 `ginger_island_access` 共享能力证书。全局 source schedule/Gourmand 验证器保留在其所属集成层。全解决方案 Release 构建 `0 warning / 0 error`，局部证明、包装器与源码守卫回归 `203/203`。隔离已解锁存档随后生成真实 full snapshot（`state_hash=69118c126c5b253813660a3bbbe1e58a2124e2fe805f4361f6b157f34409864d`）和 `ready=true` 证书；在没有 global source schedule、没有 Gourmand 回执时，本地 audit 仍以 `72` 鱼种、`14` 前置族、零缺口完成，completion proof 与 run-local dependency closure 均通过。源存档两份 SHA 前后不变，游戏与端口已回收。该结果关闭的是 #390 的责任解耦和 Master Angler **局部前置清单**，不是逐鱼捕获、Teacher/native 三分区、CoverageGateReady 或完整新档；覆盖分子不晋升，`formal_product_training=false`。PR #391 已合并且 #390 已关闭；当前 primary 依本次用户确认选择 Rusty Key，R2 的验收责任与撤销错误全局门继续生效。
 
 <!-- pretraining-order-20261103-r1; edited_at=2026-11-03T15:46:34+08:00; research_base=049f40edfcef910b00451ad5f7b948916df67ba1; owner-authorized; docs-only -->
 
-> **本轮有效计划：** 第 4–7 节已按 2026-11-03T15:46:34+08:00 用户授权重排。唯一 primary 为 `obtain_rusty_key`；Master Angler 暂停保留、列第 10，Money 最终门仍第 11。下方 v111 及更早运行的“下一步”保留作历史事实，不覆盖第 6 节。状态面板不因文档修订晋升。
+> **历史 R1（相反条款由 R2 和顶部接续决定覆盖）：** 第 4–7 节已按 2026-11-03T15:46:34+08:00 用户授权重排。唯一 primary 为 `obtain_rusty_key`；Master Angler 暂停保留、列第 10，Money 最终门仍第 11。下方 v111 及更早运行的“下一步”保留作历史事实，不覆盖第 6 节。状态面板不因文档修订晋升。
 
 > 本文件是**当前人类可读状态入口**。机器可读 report / self-test / evidence index 仍是事实源；本文件负责把不同分母分开显示并规定开发顺序。
 >
@@ -607,7 +609,7 @@ Money 自身最终完成，至少要同时满足：
 - [原版 1.6.15 四类收集分母](../experiments/README.local.md)、[当前施工记录](CURRENT_WORK_CN.md)、[v111 记录 PR #389](https://github.com/zalataraglados-prog/StardewValleyAICompanion/pull/389)。
 - 本文件第 1 节为状态快照；这些源码/历史原生记录**不冒充本轮新生成的 reconciliation 或 E3 证据**。
 
-#### 6.2 新的 11 核心默认队列
+#### 6.2 历史 R1 默认队列（固定顺位已由 R2 撤销，当前 primary 见顶部）
 
 | 新序 | root method | 处理范围与退出要求 | 旧序 |
 | ---: | --- | --- | ---: |
@@ -683,7 +685,7 @@ Money 自身最终完成，至少要同时满足：
 | 仅 split-complete | Master Angler | 顶层 Goal Method 仍为 `pending_dependency_expansion` |
 | 两侧均未闭合 | 其余 13 项 | Method 与生产证据都要闭合 |
 
-Skull Key 与 Pet Love 的旧生产工件均已按当前字典、日历、输入契约和哈希严格重放并冻结。Full Shipment 的顶层接线也已完成；Master Angler 已有两通道三分区证据，后续只允许补顶层依赖展开，不得另写第二套动作、候选或执行器。
+Skull Key 与 Pet Love 的旧生产工件均已按当前字典、日历、输入契约和哈希严格重放并冻结。后续清理原始中间文件不撤销该已消费验收，也不要求重采。Full Shipment 的顶层接线也已完成；Master Angler 已有两通道三分区证据，后续只允许补顶层依赖展开，不得另写第二套动作、候选或执行器。
 
 **修订 2026-11-03T15:46:34+08:00：** 前四个 root 保持冻结；Master Angler 的 split-complete 证据保留，但不能再据此认定其顶层成本很小。当前 primary 为 Rusty Key，后续按第 6 节新表执行。开发顺位变化不会改变本节任何 criterion、分区或 readiness 状态。
 
