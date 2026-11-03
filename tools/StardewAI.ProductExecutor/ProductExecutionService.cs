@@ -6,7 +6,7 @@ using StardewAI.Contracts.Training;
 
 namespace StardewAI.ProductExecutor;
 
-public sealed class ProductExecutionService
+public sealed partial class ProductExecutionService
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -115,9 +115,12 @@ public sealed class ProductExecutionService
             }
 
             JsonObject nativeResult;
+            // After durable intent, a lost client must not cancel this one bounded dispatch or its final journal.
+            using var dispatchTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(options.NativeTimeoutSeconds));
+            var dispatchToken = dispatchTimeout.Token;
             try
             {
-                nativeResult = await PostNativeAsync(requestJson, cancellationToken);
+                nativeResult = await PostNativeAsync(requestJson, dispatchToken);
             }
             catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException or JsonException)
             {
@@ -136,7 +139,7 @@ public sealed class ProductExecutionService
                     0,
                     requestStateHashDrift,
                     true);
-                await receipts.WriteFinalAsync(request, requestHash, indeterminate, cancellationToken);
+                await receipts.WriteFinalAsync(request, requestHash, indeterminate, CancellationToken.None);
                 return indeterminate;
             }
 
@@ -144,7 +147,7 @@ public sealed class ProductExecutionService
             JsonObject afterSnapshot;
             try
             {
-                afterSnapshot = await ReadSnapshotAsync(cancellationToken);
+                afterSnapshot = await ReadSnapshotAsync(dispatchToken);
             }
             catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException or JsonException)
             {
@@ -172,7 +175,7 @@ public sealed class ProductExecutionService
                 afterTick,
                 requestStateHashDrift,
                 replanRequired);
-            await receipts.WriteFinalAsync(request, requestHash, nativeResult, cancellationToken);
+            await receipts.WriteFinalAsync(request, requestHash, nativeResult, CancellationToken.None);
             return nativeResult;
         }
         finally

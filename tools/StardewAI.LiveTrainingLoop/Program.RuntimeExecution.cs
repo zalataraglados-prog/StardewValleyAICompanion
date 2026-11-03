@@ -420,8 +420,8 @@ static partial class Program
                 currentStateHash,
                 itemQueueId,
                 sourcePlanningOptionId);
-            var request = JsonSerializer.Serialize(executionRequest, JsonOptions);
-            var execution = await PostJsonStringAsync(executorHttp, options.ExecutorUrl + options.ExecutorEndpointPath, request);
+            var (execution, _) = await PostJournaledExecutionRequestAsync(
+                executorHttp, options, iteration, attemptedCount + 1, executionRequest, currentBeforeSnapshotPath);
             attemptedCount++;
 
             var afterSnapshot = await ReadAfterExecutionSnapshotAsync(

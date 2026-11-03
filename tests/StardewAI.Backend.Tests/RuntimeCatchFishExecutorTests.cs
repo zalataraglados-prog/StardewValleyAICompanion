@@ -262,7 +262,9 @@ public sealed class RuntimeCatchFishExecutorTests
         Assert.Contains(
             "Timeout = TimeSpan.FromSeconds(Math.Max(180, options.ExecutorTimeoutSeconds))",
             source);
-        Assert.Contains("PostJsonStringAsync(executorHttp, options.ExecutorUrl", source);
+        Assert.Contains("await PostJournaledExecutionRequestAsync(", source);
+        Assert.Contains("await RuntimeExecutionRequestJournal.WriteAsync(", source);
+        Assert.Contains("await PostJsonStringAsync(http, endpoint, request)", source);
         var deploySource = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "scripts", "Deploy-RuntimeTestHarnessToRuntime.ps1"));
         Assert.Contains("dotnet build", deploySource);
         Assert.Contains("-c Debug", deploySource);

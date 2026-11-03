@@ -111,11 +111,16 @@ public sealed class ProductReceiptStore
     {
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         var temporary = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
-        await File.WriteAllTextAsync(
-            temporary,
-            value.ToJsonString(JsonOptions),
-            Encoding.UTF8,
-            cancellationToken);
+        await using (var file = new FileStream(temporary, new FileStreamOptions
+        {
+            Mode = FileMode.CreateNew, Access = FileAccess.Write, Share = FileShare.None,
+            Options = FileOptions.Asynchronous | FileOptions.WriteThrough
+        }))
+        {
+            await JsonSerializer.SerializeAsync(file, value, JsonOptions, cancellationToken);
+            await file.FlushAsync(cancellationToken);
+            file.Flush(flushToDisk: true);
+        }
         File.Move(temporary, path, overwrite: true);
     }
 

@@ -7,7 +7,7 @@ using StardewAI.ProductExecutor;
 
 namespace StardewAI.Backend.Tests;
 
-public sealed class ProductExecutorTests
+public sealed partial class ProductExecutorTests
 {
     [Fact]
     public void ProductCatalogOwnsEveryNativeHarnessDispatchWithoutChangingTrainingEvidence()
@@ -273,6 +273,7 @@ public sealed class ProductExecutorTests
         public int NativeDispatchCount { get; private set; }
         public int SnapshotReadCount { get; private set; }
         public List<Uri> SnapshotRequestUris { get; } = new();
+        public Action? OnNativeDispatch { get; init; }
 
         protected override Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage message,
@@ -293,6 +294,7 @@ public sealed class ProductExecutorTests
             else
             {
                 NativeDispatchCount++;
+                OnNativeDispatch?.Invoke();
                 response = new JsonObject
                 {
                     ["schema_version"] = "training_execution_result.v1",
