@@ -71,6 +71,9 @@ Master Angler 局部门不无条件要求 Golden Walnut fresh-save source schedu
 
 已解锁姜岛隔离副本只提供有声明前置的局部能力证据，不证明从零解锁；source-schedule 验证器及其原生身份/数量/时序校验保留并移至正确消费者，不通过删除验证或强置 Ready 修复层级问题。
 
+<!-- audit_invalidation: scope=r2_old_implementation_status; invalidated_at=2026-11-03T16:30:45+08:00; annotated_at=2026-11-03T18:52:51+08:00; superseded_by=PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md; historical_only=true -->
+> **实现状态更新（2026-11-03T17:49:49+08:00）：** 下方关于 Issue #390 未完成、代码尚未修改的语句是 R2 写作时的历史快照。PR #391 已合并、#390 已关闭，限定范围是局部前置与共享证书责任解耦；不宣称逐鱼、全局源日程、Teacher/native 三分区、完整新档、正式训练已经完成。
+
 这项合同修订优先于 `pretraining-order-20261103-r1` 的相反条款。立即下一工作项是既有 #390 的实现解耦与受影响回归，然后用正确局部范围重新估算队列；不得继续把 Master Angler 固定第 10 当作已证最优排期。详细覆盖位置、有效下一步与原因见 [R2 计划补充条款](PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md)。本次只改文档，不提升任何 coverage、不关闭 #390、不宣称代码已经整改。
 
 ## Student 的训练阶段

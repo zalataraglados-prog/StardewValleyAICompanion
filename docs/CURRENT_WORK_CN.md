@@ -14,9 +14,15 @@
 
 > **当前状态入口：** [CURRENT_STATUS_CN.md](CURRENT_STATUS_CN.md)。本文件下方带日期的状态、计数和“下一步”均保留为历史证据；若与当前机器报告或 CURRENT_STATUS_CN.md 冲突，不得按历史数字规划新工作。
 >
+<!-- audit_invalidation: scope=r1_top; invalidated_at=2026-11-03T16:30:45+08:00; annotated_at=2026-11-03T18:52:51+08:00; superseded_by=PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md; historical_only=true -->
+> **R1 失效时间戳（2026-11-03T16:30:45+08:00）：** 15:46:34 的旧开发全序、Master Angler 固定第 10、将完整 source schedule 与 Gourmand 3/3 作为局部必要条件的指令已被 R2 撤销，仅供历史追溯，不可据此指导 Teacher、生成标签或改变局部准入。当前 Rusty Key primary 另经用户 18:30 确认，继续有效；后续尚未开工 root 仍待重评。WIP=1、严格原生回执、Money 完整 Exit Gate 与 formal training 禁入均不变。
+
 > **历史 R1 施工顺序（2026-11-03T15:46:34+08:00，Asia/Kuala_Lumpur；pretraining-order-20261103-r1）：** Community Center、Pet Love、Skull Key、Full Shipment 保持已冻结；后续顺序改为 `obtain_rusty_key` → `raise_skill_levels` → `raise_friendships` → `marriage_and_house_upgrade` → `complete_museum_collection` → `complete_master_angler` → `earn_money`。当前唯一 primary root 改为 `obtain_rusty_key`；Master Angler 保留成果、暂停在未完成状态，不再占据第 5 项。本次为用户明确授权的依赖/成本重排，不是普通 bug 中断；仍为 WIP=1。完整依据、退出条件与历史队列见 [CURRENT_STATUS_CN.md 第 6 节](CURRENT_STATUS_CN.md#6-下一项如何选择)。
 
 <!-- pretraining-order-20261103-r1; edited_at=2026-11-03T15:46:34+08:00; research_base=049f40edfcef910b00451ad5f7b948916df67ba1; owner-authorized; docs-only -->
+
+<!-- audit_invalidation: scope=r1_section; invalidated_at=2026-11-03T16:30:45+08:00; annotated_at=2026-11-03T18:52:51+08:00; superseded_by=PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md; historical_only=true -->
+> **局部失效说明：** 本段固定全序以全局证明错误倒挂单个 Master Angler root 为成本依据，已失效。R2 将证据分为 L1 criterion-local、L2 共享证书、L3 全局集成、L4 新档评测；Gourmand 只是核桃 OR 方案。这里的历史任务条目不能代替顶部 18:30 当前 primary 决定。
 
 ## 2026-11-03 训练前开发顺序修订（历史 R1，验收与顺位以顶部接续决定及 R2 为准）
 
@@ -40,6 +46,9 @@
 2. 把工作范围限制为受保护物品安全的 60 件 acquisition/reservation/donation 组合、原生阈值奖励和现有下水道入口。先验证阈值前后的真实奖励/控制交接，再补本 root 缺失的生产证据与三分区；不把 95 件 Museum 当先决条件。
 3. 达到既定 Exit Gate 后冻结，再进入 Skills；当前只是计划接棒，不声称已经开始或完成这些步骤。
 4. 两个常驻对话平级且各自可调用子代理，但实现、交叉审查、采证都服务同一 primary；不得借本次重排同时开 Skills、Museum、Money。
+
+<!-- audit_invalidation: scope=r1_angler_retention; invalidated_at=2026-11-03T16:30:45+08:00; annotated_at=2026-11-03T18:52:51+08:00; superseded_by=PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md; historical_only=true -->
+> **历史第 10 顺位已失效：** 已解锁岛屿副本只证明已声明前置下的局部能力，不得将完整 day-zero/Gourmand 反向列为局部门。
 
 ### Master Angler 保留点
 
