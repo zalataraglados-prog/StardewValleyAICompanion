@@ -4,7 +4,7 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public static partial class CurrentCollectionTeacherFrontierBuilder
 {
-    internal static CurrentCollectionProgress ReadMuseumProgress(
+    private static CurrentCollectionProgress ReadMuseumProgress(
         JsonElement snapshot,
         GoalRequirementSet inventory)
     {
@@ -13,6 +13,12 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
             return CurrentCollectionProgress.Unavailable(
                 "museum_transparent_state_unavailable");
         }
+        return ReadMuseumProgressValue(value, inventory);
+    }
+
+    internal static CurrentCollectionProgress ReadMuseumProgressValue(
+        JsonElement value, GoalRequirementSet inventory)
+    {
         if (!value.TryGetProperty("donatable_items", out var rows))
         {
             return CurrentCollectionProgress.Unavailable(

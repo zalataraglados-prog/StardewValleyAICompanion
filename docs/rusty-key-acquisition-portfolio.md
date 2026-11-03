@@ -9,6 +9,9 @@ optimizer, reservation ledger, donation compiler or native executor.
 The authority remains the complete museum requirement inventory and its
 independently rebuilt acquisition axes. Museum per-item progress and exact-item
 shape checks are shared with `CurrentCollectionTeacherFrontierBuilder`.
+The adapter reads the retained museum value directly; it does not serialize or
+duplicate the full snapshot just to call those shared checks. The full state-hash
+integrity check remains required once for admission.
 The existing acquisition goal alias `goal.grandpa_21` and canonical
 `grandpa.maximum_21` remain supported without changing the source goal identity.
 

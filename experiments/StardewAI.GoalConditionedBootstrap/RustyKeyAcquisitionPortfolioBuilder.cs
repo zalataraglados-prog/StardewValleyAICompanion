@@ -57,11 +57,13 @@ public static partial class RustyKeyAcquisitionPortfolioBuilder
         result.SourceTotalDay = sourceDay;
         var museum = context.Inventory.RequirementSets.Single(value => value.RequirementSetId == MuseumSetId);
         ValidateMuseumRequirementShape(museum);
-        var progress = CurrentCollectionTeacherFrontierBuilder.ReadMuseumProgress(
-            JsonSerializer.SerializeToElement(snapshot, JsonDefaults.Options), museum);
+        var museumAvailable = TryMuseumValue(snapshot, out var value);
+        var progress = museumAvailable
+            ? CurrentCollectionTeacherFrontierBuilder.ReadMuseumProgressValue(value, museum)
+            : CurrentCollectionProgress.Unavailable("museum_transparent_state_unavailable");
         if (!progress.Available)
             reasons.AddRange(progress.BlockingReasons);
-        if (!TryMuseumValue(snapshot, out var value) ||
+        if (!museumAvailable ||
             !value.TryGetProperty("rusty_key_donation_threshold", out var threshold) ||
             threshold.ValueKind != JsonValueKind.Number || !threshold.TryGetInt32(out var required) || required != 60 ||
             ReadString(value, "rusty_key_reward_id") != "museum60" ||
@@ -113,8 +115,10 @@ public static partial class RustyKeyAcquisitionPortfolioBuilder
     private static bool TryMuseumValue(SnapshotEnvelope snapshot, out JsonElement value)
     {
         value = default;
-        return snapshot.State.TryGetValue("world_progress", out var world) &&
-            world.TryGetProperty("museum", out var field) && field.TryGetProperty("value", out value) &&
+        return snapshot.State.TryGetValue("world_progress", out var world) && world.ValueKind == JsonValueKind.Object &&
+            world.TryGetProperty("museum", out var field) && field.ValueKind == JsonValueKind.Object &&
+            ReadString(field, "status") is FieldStatus.Available or FieldStatus.Derived &&
+            field.TryGetProperty("value", out value) &&
             value.ValueKind == JsonValueKind.Object;
     }
 
