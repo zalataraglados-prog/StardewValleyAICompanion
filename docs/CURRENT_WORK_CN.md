@@ -2,6 +2,12 @@
 
 ## 2026-11-03 当前 Rusty Key 切片与接续
 
+- **#394 监督边界修复已实现：** dataset/trainer 共用 v2 typed admission，Backend、两个 CLI 与实时训练方法均接到现有 collection Teacher 独立重放器。保留完整候选分母，只消费重建验证过的显式 strict pair；`Selected`、原生成功、单候选、未比较或未准入候选不能生成正负对。无证据/篡改输入不能覆盖 checkpoint/manifest，旧 checkpoint 不自动升级。细节、入口和验收范围见 [监督准入合同](independent-teacher-pairwise-admission.md)。本地入口回归与聚焦重建验证已通过，合入以对应 PR 的 CI 为准；正式训练锁和覆盖计数不变。
+- **验证范围与接续：** 新聚焦入口 `self-test-current-stage-one-policy-supervision` 复用原静态输入和 current-frontier/rod 检查，约 4 秒通过，不再借整套机器/作物/portfolio 长矩阵验证本监督边界。较宽的 `collection-replay-v4` 在进入本项前遇到 portfolio-continuation 夹具文件访问错误，未计通过、未删除；该诊断随下一共享 acquisition/reservation 工作复核，不把环境/夹具错误宣称为本项成功。#394 完成后直接回到下条 Rusty Key 安全组合，不重排战略 root。
+- **提交前最终回归：** 无游戏 Core governance `1041/1041`、Backend `265/265`、监督边界聚焦 `35/35` 均通过；Backend 覆盖真实 HTTP 入口、两个 CLI 进程和 live loop 的实际训练方法，拒绝时核对既有工件不变。聚焦 Teacher 重建包含有效显式 pair、单候选仅保留证据和重算哈希后的篡改反例。尚待对应 PR 的远端 CI，不将夹具训练写作正式开训。
+
+以下两条为 #394 开工前的核实与退出合同，修复状态以上方及当前源码为准：
+
 - **本批次已收口；接续先处理共享正确性缺陷 #394：** PR #395 已合并到 `main@3d798867`，远端治理 `1006/1006`、Backend `259/259`、无游戏证据行为检查 `31` 项通过，增强捕获链离线复核 `34` 项通过。#393 的全部 R1 失效标注也已同步保留。新 issue [#394](https://github.com/zalataraglados-prog/StardewValleyAICompanion/issues/394) 已由当前源码确认：dataset validator 允许无 TeacherSupervision，trainer 将 Student `Selected` 对所有其余可用 admitted 候选直接生成偏好对，Backend 与 live loop/CLI 可达。修复尚未完成，不关闭 issue、不放开正式训练锁；本轮没有训练模型或更新 checkpoint。
 - **#394 的实现边界和退出要求：** 复用 collection Teacher 已有的 `pairwise_preferences` 及独立重建/原生回执验证，在 dataset/trainer 共用 typed admission 中只消费严格绑定来源、状态、完整候选分母、分区和版本的显式比较；不能仅补 provenance 字符串。Student 观察、native outcome 与 Teacher preference 保持分离；tie/incomparable 不因未被执行而变成负例。覆盖 dataset builder、trainer、Backend、live loop/CLI，验证无监督或篡改输入不能写 checkpoint/正式 manifest，合法独立比较能训练。修复通过后直接回到下条安全 acquisition/reservation 阈值组合；这是同一 primary 的共享正确性插入项，不重排战略 root。
 

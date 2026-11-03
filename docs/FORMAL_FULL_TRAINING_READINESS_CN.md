@@ -1,5 +1,7 @@
 # StardewAI 正式全量训练准入与实施路线
 
+> **#394 监督修复不等于训练解禁：** dataset/trainer、Backend、CLI 和 live loop 已统一要求可独立重放的显式 Teacher 比较；单纯 Student 选择/成功回执不能产生监督数据或覆盖正式工件。19/19、11/11、Provider/模型选择、原生和 manifest 总门继续独立生效，launcher 锁未修改。详见 [合同](independent-teacher-pairwise-admission.md)。
+
 > **当前接续决定（2026-11-03T18:30:00+08:00，用户确认）：** #390 / PR #391 已完成验收责任解耦；当前唯一 primary 为 `obtain_rusty_key`。先完成安全捐赠阈值、原生奖励与送钥匙事件的局部闭环，再补本 criterion 的 Teacher/native 分区。R2 的四层验收合同继续生效；R1 中 Master Angler 固定第 10、强制 Gourmand/source-schedule 及完整新档反向前置均已撤销。后续未开工 root 的顺位待当前项收口后按真实局部缺口决定。Pet Love、Skull Key 已消费的严格验收保持冻结，原始中间文件清理不触发重采；当前计数仍为 `5/19 executable、6/19 split-complete、5/19 CoverageGateReady、4/11 root ready`，`formal_product_training=false`。
 
 > **当前状态入口：** [CURRENT_STATUS_CN.md](CURRENT_STATUS_CN.md)。本文件下方带日期的状态、计数和“下一步”均保留为历史证据；若与当前机器报告或 CURRENT_STATUS_CN.md 冲突，不得按历史数字规划新工作。
