@@ -25,8 +25,9 @@ public sealed class ProductExecutionPolicy
         Require(!string.IsNullOrWhiteSpace(request.QueueItemId), "queue_item_id_required", reasons);
         Require(IsSha256(request.BeforeStateHash), "before_state_hash_invalid", reasons);
         Require(
-            !request.OptionId.StartsWith("debug.", StringComparison.Ordinal) &&
-            ProductExecutorCapabilityCatalog.IsSupported(request.OptionId),
+            request.OptionId is { Length: > 0 } optionId &&
+            !optionId.StartsWith("debug.", StringComparison.Ordinal) &&
+            ProductExecutorCapabilityCatalog.IsSupported(optionId),
             "option_not_product_authorized",
             reasons);
         Require(ExecutionTargetProfiles.IsSupported(request.ExecutionMode), "execution_mode_not_supported", reasons);
@@ -81,8 +82,8 @@ public sealed class ProductExecutionPolicy
         }
     }
 
-    private static bool IsSha256(string value) =>
-        value.Length == 64 && value.All(character => char.IsAsciiHexDigit(character));
+    private static bool IsSha256(string? value) =>
+        value is { Length: 64 } && value.All(character => char.IsAsciiHexDigit(character));
 
     private static void Require(bool condition, string reason, List<string> reasons)
     {

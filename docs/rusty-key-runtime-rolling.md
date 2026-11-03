@@ -76,6 +76,12 @@ directory would break blob resolution and duplicate storage.
 
 ## Verification And Remaining Work
 
+Product client identity/final-response recovery now reuses the existing journal
+through the original live dispatch call; see [Product Receipt Recovery](product-receipt-recovery.md).
+It does not replace the isolated native trace below or recover an ambiguous
+Backend mutation. Harness-only boundary runs retain requests but cannot use a
+Product receipt lookup as native proof.
+
 ### Native Acquisition Boundary Preparation
 
 `Invoke-RuntimeRustyKeyThresholdSmoke.ps1 -SupplyMode current_geode` reuses the

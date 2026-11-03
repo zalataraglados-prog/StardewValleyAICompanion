@@ -10,9 +10,9 @@ public static class Program
         BuildApplication(args).Run();
     }
 
-    public static WebApplication BuildApplication(string[] args)
+    public static WebApplication BuildApplication(string[] args, ProductExecutorOptions? configuredOptions = null)
     {
-        var options = ProductExecutorOptions.FromEnvironment();
+        var options = configuredOptions ?? ProductExecutorOptions.FromEnvironment();
         options.Validate();
         var builder = WebApplication.CreateBuilder(args);
         builder.WebHost.UseUrls(options.ListenUrl);
@@ -60,6 +60,9 @@ public static class Program
                 return Results.BadRequest(new { error = "request_json_object_required" });
             return Results.Json(await service.ExecuteAsync(request, cancellationToken));
         });
+        app.MapPost("/api/v1/product/receipts/lookup", async (
+            JsonObject request, ProductExecutionService service, CancellationToken cancellationToken) =>
+            Results.Json(await service.LookupReceiptAsync(request, cancellationToken)));
         return app;
     }
 }

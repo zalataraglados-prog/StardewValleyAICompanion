@@ -12,6 +12,13 @@ using StardewAI.Core.Training;
 using StardewAI.GoalConditionedBootstrap;
 using StardewAI.LiveTrainingLoop;
 
+if (args.Length > 0 && args[0] == "lookup-product-receipt")
+{
+    try { Environment.ExitCode = await ProductReceiptRecoveryCommand.RunAsync(args.Skip(1).ToArray()); }
+    catch (Exception exception) { Console.Error.WriteLine(exception.Message); Environment.ExitCode = 2; }
+    return;
+}
+
 var options = LiveTrainingOptions.Parse(args);
 options.ValidateFormalExecutionBoundary();
 Directory.CreateDirectory(options.Root);
