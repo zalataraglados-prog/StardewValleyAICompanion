@@ -1,0 +1,64 @@
+using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
+using StardewAI.Contracts.Training;
+using StardewAI.Core.Execution;
+using StardewAI.Core.OptionRegistry;
+using StardewAI.Core.Training;
+
+namespace StardewAI.GoalConditionedBootstrap;
+
+public static partial class RustyKeyRollingSupplyProposalBuilder
+{
+    private static bool TryHeldDonation(
+        RustyKeyRollingSupplyProposal result, RustyKeyAcquisitionPortfolioBuilder.RustyKeySourceScope source,
+        SnapshotEnvelope snapshot, StrategyCommitmentLedger ledger,
+        List<RustyKeyRollingCandidateEvaluation> evaluations)
+    {
+        var missing = source.Museum.Groups.Where(group => !source.Progress.Requirements[group.RequirementId].Completed)
+            .ToDictionary(group => group.Alternatives[0].QualifiedItemId, group => group.RequirementId, StringComparer.Ordinal);
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(snapshot,
+            new[] { "museum.donate_items" }, commitmentLedger: ledger);
+        var ranking = new AvailabilityAwarePolicyPredictionEnvelope
+        {
+            Availability = availability,
+            RankedEventCandidates = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability, result.GoalId)
+        };
+        var current = CurrentTeacherFrontierSupport.ReadCurrentCandidates(ranking)
+            .Where(candidate => missing.ContainsKey(candidate.QualifiedItemId))
+            .OrderBy(candidate => candidate.Kind == "donate_museum_item" ? 0 : 1)
+            .ThenBy(candidate => candidate.EstimatedTicks is >= 0 ? candidate.EstimatedTicks : int.MaxValue)
+            .ThenBy(candidate => candidate.CandidateId, StringComparer.Ordinal).ToArray();
+        var currentIds = current.Select(candidate => candidate.CandidateId).ToHashSet(StringComparer.Ordinal);
+        foreach (var candidate in availability.Options.SelectMany(option => option.EventCandidates)
+                     .Where(candidate => missing.ContainsKey(candidate.QualifiedItemId) && !currentIds.Contains(candidate.CandidateId)))
+            evaluations.Add(new(candidate.CandidateId, missing[candidate.QualifiedItemId], "held_donation", false,
+                candidate.BlockReasons.Length > 0 ? candidate.BlockReasons : new[] { "held_donation_not_currently_schedulable" }));
+
+        var planCompiler = new DailyPlanCompiler();
+        var actionCompiler = new ActionQueueCompiler();
+        foreach (var candidate in current)
+        {
+            var reasons = new List<string>();
+            if (!CurrentTeacherFrontierSupport.TryReadUniqueIntParameter(candidate, "expected_donated_count_before", out var before) ||
+                before != result.DonatedCount)
+                reasons.Add("rusty_key_held_donation_progress_drifted");
+            var neutral = CurrentStageOneCollectionTeacherPreferenceBuilder.NeutralizeLearnerSignals(candidate, result.SelectionPolicyId);
+            var plan = planCompiler.Compile(new[] { neutral }, snapshot.StateHash, goalId: result.GoalId, maxCandidates: 1);
+            var queue = actionCompiler.Compile(plan, snapshot, ledger);
+            reasons.AddRange(CurrentStageOneCollectionTeacherPreferenceBuilder.CompilationReasons(plan, queue));
+            if (plan.Steps.Length == 0 || queue.Status != "pending" || queue.Items.Length == 0 ||
+                queue.Items.Any(item => item.Status != "pending"))
+                reasons.Add("rusty_key_held_donation_not_dispatchable");
+            var ready = reasons.Count == 0;
+            evaluations.Add(new(candidate.CandidateId, missing[candidate.QualifiedItemId], "held_donation", ready,
+                reasons.Distinct(StringComparer.Ordinal).ToArray()));
+            if (!ready || result.RollingStepReady) continue;
+            result.SelectedCandidateId = candidate.CandidateId;
+            result.CompiledPlan = plan;
+            result.CompiledQueue = queue;
+            result.RollingStepReady = true;
+            result.Status = "ready_safe_held_donation_step_pending_dispatch";
+        }
+        return result.RollingStepReady;
+    }
+}

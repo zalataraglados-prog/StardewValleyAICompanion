@@ -109,6 +109,9 @@ var commandDefinitions = new CommandDefinition[]
     new("build-acquisition-route-target-date-opportunity-cost", BuildAcquisitionRouteTargetDateOpportunityCost, BatchSafe: true),
     new("build-acquisition-route-portfolio-admission", BuildAcquisitionRoutePortfolioAdmission),
     new("build-rusty-key-acquisition-portfolio", BuildRustyKeyAcquisitionPortfolio),
+    new("build-rusty-key-rolling-supply", BuildRustyKeyRollingSupply),
+    new("self-test-rusty-key-rolling-supply", options =>
+        BootstrapSelfTest.RunRustyKeyRollingSupply(options.Required("output-root"))),
     new("build-acquisition-route-portfolio-teacher-preference", BuildAcquisitionRoutePortfolioTeacherPreference),
     new("build-acquisition-route-portfolio-commit-receipt", BuildAcquisitionRoutePortfolioCommitReceipt),
     new("compile-acquisition-route-dispatch", CompileAcquisitionRouteDispatch),
@@ -1374,6 +1377,26 @@ static void BuildRustyKeyAcquisitionPortfolio(Arguments options)
         Environment.ExitCode = 2;
 }
 
+static void BuildRustyKeyRollingSupply(Arguments options)
+{
+    var report = RustyKeyRollingSupplyProposalBuilder.Build(
+        RoutePortfolioInputs(options, requireProposal: false, requireAcquisitionSources: false));
+    Write(options.Required("output"), report);
+    if (report.RollingStepReady)
+    {
+        if (report.CompiledQueue is not null && options.Optional("selected-queue-output") is { } queueOutput)
+            Write(queueOutput, report.CompiledQueue);
+        if (report.CompiledPlan is not null && options.Optional("selected-plan-output") is { } planOutput)
+            Write(planOutput, report.CompiledPlan);
+        if (report.SelectedAcquisitionProposal is not null && options.Optional("selected-proposal-output") is { } proposalOutput)
+            Write(proposalOutput, report.SelectedAcquisitionProposal);
+        if (report.SelectedAcquisitionAdmission is not null && options.Optional("selected-admission-output") is { } admissionOutput)
+            Write(admissionOutput, report.SelectedAcquisitionAdmission);
+    }
+    if (!report.RollingStepReady && !report.ThresholdSatisfied)
+        Environment.ExitCode = 2;
+}
+
 static void BuildAcquisitionRoutePortfolioTeacherPreference(Arguments options)
 {
     var report = AcquisitionRoutePortfolioTeacherPreferenceBuilder.Build(
@@ -1407,39 +1430,45 @@ static void BuildAcquisitionRoutePortfolioCommitReceipt(Arguments options)
 
 static AcquisitionRoutePortfolioInputs RoutePortfolioInputs(
     Arguments options,
-    bool requireProposal = true) => new()
+    bool requireProposal = true,
+    bool requireAcquisitionSources = true)
+{
+    string Source(string name) => requireAcquisitionSources
+        ? options.Required(name) : options.Optional(name) ?? string.Empty;
+    return new()
     {
         RequirementInventoryPath = options.Required("requirement-inventory"),
-        AcquisitionLoweringPath = options.Required("acquisition-lowering"),
-        MasterAnglerWindowsPath = options.Required("master-angler-windows"),
-        CalendarResolutionPath = options.Required("calendar-resolution"),
-        TargetDateCalendarPath = options.Required("target-date-calendar"),
-        TargetDateUnlockPath = options.Required("target-date-unlock"),
-        TargetDateFestivalPath = options.Required("target-date-festival"),
-        TargetDateLocationPath = options.Required("target-date-location"),
-        TargetDateFacilityPath = options.Required("target-date-facility"),
-        TargetDateResourcePath = options.Required("target-date-resource"),
-        TargetDateCurrencyPath = options.Required("target-date-currency"),
-        TargetDateReservationPath = options.Required("target-date-reservation"),
-        TargetDateProcessingPath = options.Required("target-date-processing"),
-        TargetDateFishingProbabilityPath = options.Required(
+        AcquisitionLoweringPath = Source("acquisition-lowering"),
+        MasterAnglerWindowsPath = Source("master-angler-windows"),
+        CalendarResolutionPath = Source("calendar-resolution"),
+        TargetDateCalendarPath = Source("target-date-calendar"),
+        TargetDateUnlockPath = Source("target-date-unlock"),
+        TargetDateFestivalPath = Source("target-date-festival"),
+        TargetDateLocationPath = Source("target-date-location"),
+        TargetDateFacilityPath = Source("target-date-facility"),
+        TargetDateResourcePath = Source("target-date-resource"),
+        TargetDateCurrencyPath = Source("target-date-currency"),
+        TargetDateReservationPath = Source("target-date-reservation"),
+        TargetDateProcessingPath = Source("target-date-processing"),
+        TargetDateFishingProbabilityPath = Source(
             "target-date-fishing-probability"),
-        TargetDateStochasticRetryPath = options.Required(
+        TargetDateStochasticRetryPath = Source(
             "target-date-stochastic-retry"),
-        TargetDateDailyTimeEnergyPath = options.Required(
+        TargetDateDailyTimeEnergyPath = Source(
             "target-date-daily-time-energy"),
-        TargetDateOpportunityCostPath = options.Required(
+        TargetDateOpportunityCostPath = Source(
             "target-date-opportunity-cost"),
-        FishingForecastManifestPath = options.Required(
+        FishingForecastManifestPath = Source(
             "fishing-forecast-manifest"),
         StrategyLedgerPath = options.Required("strategy-ledger"),
         SnapshotPath = options.Required("snapshot"),
-        RouteTimingCalibrationPath = options.Required(
+        RouteTimingCalibrationPath = Source(
             "route-timing-calibration"),
         ProposalPath = requireProposal
             ? options.Required("proposal")
             : options.Optional("proposal") ?? string.Empty
     };
+}
 
 static void BuildAcquisitionRouteExecutionBinding(Arguments options)
 {

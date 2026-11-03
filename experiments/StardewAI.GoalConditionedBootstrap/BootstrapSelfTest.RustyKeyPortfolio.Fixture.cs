@@ -8,7 +8,7 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 internal static partial class BootstrapSelfTest
 {
-    private sealed class RustyKeyPortfolioFixture
+    private sealed partial class RustyKeyPortfolioFixture
     {
         public SnapshotEnvelope Snapshot { get; }
         public AuthoritativeRequirementInventoryReport Inventory { get; }
