@@ -53,6 +53,12 @@ public sealed class RuntimeExecutionRequestJournalTests
         await File.WriteAllTextAsync(record.JournalPath, metadata.ToJsonString());
 
         await Assert.ThrowsAnyAsync<InvalidDataException>(() => RuntimeExecutionRequestJournal.ReadAsync(record.JournalPath));
+        if (change == "schema")
+        {
+            metadata.Remove("schema_version");
+            await File.WriteAllTextAsync(record.JournalPath, metadata.ToJsonString());
+            await Assert.ThrowsAnyAsync<InvalidDataException>(() => RuntimeExecutionRequestJournal.ReadAsync(record.JournalPath));
+        }
     }
 
     [Fact]

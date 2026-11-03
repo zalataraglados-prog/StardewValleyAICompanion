@@ -63,7 +63,7 @@ public static partial class RuntimeExecutionRequestJournal
             throw new InvalidDataException("Execution request journal identity is missing.");
         return new RuntimeExecutionRequestRecord
         {
-            JournalPath = path, BlobFileName = Path.GetFileName(path) + ".gz",
+            SchemaVersion = SchemaVersion, JournalPath = path, BlobFileName = Path.GetFileName(path) + ".gz",
             RawRequestSha256 = Hash(Utf8.GetBytes(requestJson)), ProductRequestSha256 = Hash(Utf8.GetBytes(node.ToJsonString())),
             RequestBytes = Utf8.GetByteCount(requestJson), RunId = request.RunId, QueueId = request.QueueId,
             QueueItemId = request.QueueItemId, RequestNonce = request.RequestNonce, OptionId = request.OptionId,
@@ -76,7 +76,7 @@ public static partial class RuntimeExecutionRequestJournal
 
 public sealed record RuntimeExecutionRequestRecord
 {
-    public string SchemaVersion { get; init; } = RuntimeExecutionRequestJournal.SchemaVersion;
+    public string SchemaVersion { get; init; } = string.Empty;
     [JsonIgnore] public string JournalPath { get; init; } = string.Empty;
     public string BlobFileName { get; init; } = string.Empty;
     public string RawRequestSha256 { get; init; } = string.Empty;
