@@ -171,14 +171,31 @@ static partial class Program
     private static async Task<JsonObject> PostJsonStringAsync(HttpClient http, string url, string json,
         CancellationToken cancellationToken = default)
     {
-        using var content = new StringContent(json, Encoding.UTF8, "application/json");
-        using var response = await http.PostAsync(url, content, cancellationToken);
-        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        if (http.Timeout != Timeout.InfiniteTimeSpan) deadline.CancelAfter(http.Timeout);
+        using var request = new HttpRequestMessage(HttpMethod.Post, url)
+        {
+            Content = new StringContent(json, Encoding.UTF8, "application/json")
+        };
+        using var response = await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, deadline.Token);
+        InvalidOperationException Rejected(string detail, Exception? cause = null)
+        {
+            var failure = new InvalidOperationException(url + " failed with " + (int)response.StatusCode + ": " + detail, cause);
+            failure.Data["RuntimeHttpStatusCode"] = (int)response.StatusCode;
+            return failure;
+        }
+        string body;
+        try { body = await response.Content.ReadAsStringAsync(deadline.Token); }
+        catch (Exception readFailure) when (readFailure is OperationCanceledException or IOException or HttpRequestException)
+        {
+            if (!response.IsSuccessStatusCode) throw Rejected("response body unavailable", readFailure);
+            if (readFailure is OperationCanceledException)
+                throw new TaskCanceledException("HTTP response body read cancelled", readFailure, deadline.Token);
+            throw new HttpRequestException("HTTP response body read failed", readFailure);
+        }
         if (!response.IsSuccessStatusCode)
         {
-            var failure = new InvalidOperationException(url + " failed with " + (int)response.StatusCode + ": " + body);
-            failure.Data["RuntimeHttpStatusCode"] = (int)response.StatusCode;
-            throw failure;
+            throw Rejected(body);
         }
 
         return JsonNode.Parse(body)?.AsObject() ?? new JsonObject();

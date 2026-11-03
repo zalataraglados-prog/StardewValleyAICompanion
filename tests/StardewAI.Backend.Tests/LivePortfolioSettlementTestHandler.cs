@@ -49,6 +49,7 @@ internal sealed class LivePortfolioSettlementTestHandler(HttpMessageHandler inne
         Assert.Equal(Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(raw))).ToLowerInvariant(),
             journal["request_sha256"]!.GetValue<string>());
         if (mode == "http-rejected") return Reply(HttpStatusCode.Conflict, "{\"errors\":[\"ledger_revision_conflict\"]}");
+        if (mode == "http-rejected-bad-body") return new(HttpStatusCode.Conflict) { Content = new BrokenBody() };
         var result = await base.SendAsync(request, token);
         Assert.Equal(HttpStatusCode.OK, result.StatusCode);
         if (mode == "normal") return result;
@@ -57,6 +58,7 @@ internal sealed class LivePortfolioSettlementTestHandler(HttpMessageHandler inne
         if (mode == "journal-drift") File.WriteAllText(journalPath, "{}");
         if (mode == "http-server-error") return Reply(HttpStatusCode.InternalServerError, "reply failed after publish");
         if (mode == "malformed-reply") return Reply(HttpStatusCode.OK, "{");
+        if (mode == "slow-body") return new(HttpStatusCode.OK) { Content = new SlowBody() };
         throw new HttpRequestException("test accepted mutation reply lost");
     }
 
@@ -64,4 +66,20 @@ internal sealed class LivePortfolioSettlementTestHandler(HttpMessageHandler inne
     {
         Content = new StringContent(body, Encoding.UTF8, "application/json")
     };
+
+    private sealed class BrokenBody : HttpContent
+    {
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context) =>
+            Task.FromException(new IOException("test rejection body interrupted"));
+        protected override bool TryComputeLength(out long length) { length = 0; return false; }
+    }
+
+    private sealed class SlowBody : HttpContent
+    {
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context) =>
+            Task.Delay(Timeout.InfiniteTimeSpan);
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context, CancellationToken token) =>
+            Task.Delay(Timeout.InfiniteTimeSpan, token);
+        protected override bool TryComputeLength(out long length) { length = 0; return false; }
+    }
 }

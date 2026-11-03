@@ -107,7 +107,12 @@ records do not match rolling snapshot cleanup names. Explicit UTF-8 decoding in
 the PowerShell reader avoids locale-dependent request decoding.
 
 The existing C# HTTP helper now retains error status and accepts an optional
-cancellation token. Explicit 4xx rejects stop without lookup. Unknown transport,
+cancellation token. It reads response headers before buffering the body, so a
+damaged rejection body cannot erase its known 4xx status. A linked deadline still
+covers the entire send/body operation using the existing client timeout, or the
+earlier caller cancellation; switching to header-first does not unbound reads.
+Existing transport/cancellation exception categories are retained for callers.
+Explicit 4xx rejects stop without lookup. Unknown transport,
 malformed replies or 5xx allow one lookup with a 15-second token. Before querying,
 the original index/body, regular-file status, size and hash are checked. The
 observation must be read-only and match the actual portfolio, route source,
@@ -139,11 +144,14 @@ suite passes 19 checks and the existing Rusty Key evidence suite passes 31 check
 The PR quality workflow runs the complete Backend and game-free governance suites
 on its exact submitted head; its result must be checked separately before merge.
 
-The live-hook extension passes the complete local Backend suite (379 tests).
+The live-hook extension passes the complete local Backend suite (381 tests).
 It exercises both actual hook methods against the real Backend/repository, lost
 or malformed accepted replies, explicit rejection, unavailable/cancelled/missing
 lookup, wrong bindings, claimed writes, journal/body drift and pre-send replay
-refusal. One no-window PowerShell subprocess reads a real C# journal and preserves
+refusal. A failing HTTP 409 interrupted-body case demonstrated status loss before
+the fix; it now performs zero lookups. A deliberately stalled accepted body is
+bounded by a two-second client timeout and then recovers once, testing that the
+header-first read does not remove the old total deadline. One no-window PowerShell subprocess reads a real C# journal and preserves
 the exact raw reply using a query transport double. All are synthetic game-state
 transport tests, not native gameplay or a model-training trajectory.
 

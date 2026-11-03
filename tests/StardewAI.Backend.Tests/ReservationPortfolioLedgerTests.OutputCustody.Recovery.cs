@@ -13,7 +13,9 @@ public sealed partial class ReservationPortfolioLedgerTests
     [InlineData("lost", true, 1)]
     [InlineData("http-server-error", true, 1)]
     [InlineData("malformed-reply", true, 1)]
+    [InlineData("slow-body", true, 1)]
     [InlineData("http-rejected", false, 0)]
+    [InlineData("http-rejected-bad-body", false, 0)]
     [InlineData("unavailable", false, 1)]
     [InlineData("cancelled", false, 1)]
     [InlineData("not-found", false, 1)]
@@ -34,15 +36,16 @@ public sealed partial class ReservationPortfolioLedgerTests
         var options = new LiveTrainingOptions { Root = NewPortfolioReplyRoot(), RunId = "isolated-live-custody", BackendUrl = "http://localhost" };
         using var transport = new LivePortfolioSettlementTestHandler(app.Server.CreateHandler(), mode, options.SnapshotDir);
         using var http = new HttpClient(transport);
+        if (mode == "slow-body") http.Timeout = TimeSpan.FromSeconds(2);
         var execution = JsonSerializer.SerializeToNode(CustodyReceipt(item, fixture.Snapshot, after))!.AsObject();
         var method = typeof(LiveTrainingOptions).Assembly.GetType("Program", true)!
             .GetMethod("SettleMuseumOutputCustodyAsync", BindingFlags.NonPublic | BindingFlags.Static)!;
 
-        await (Task)method.Invoke(null, new object[]
+        await ((Task)method.Invoke(null, new object[]
         {
             http, options, JsonSerializer.SerializeToNode(item)!.AsObject(), execution,
             JsonSerializer.SerializeToNode(fixture.Snapshot)!.AsObject(), JsonSerializer.SerializeToNode(after)!.AsObject()
-        })!;
+        })!).WaitAsync(TimeSpan.FromSeconds(15));
 
         Assert.Equal(1, transport.MutationCalls);
         Assert.Equal(lookups, transport.LookupCalls);
@@ -50,7 +53,7 @@ public sealed partial class ReservationPortfolioLedgerTests
         Assert.True(File.Exists(execution["material_reservation_settlement_request_journal_path"]!.GetValue<string>()));
         Assert.Equal(completed && lookups == 1, execution["material_reservation_settlement_reply_recovered"]?.GetValue<bool>() == true);
         var ledger = new FileStrategyCommitmentRepository(root).Get(after);
-        Assert.Equal(mode == "http-rejected" ? StrategyCommitmentStatuses.Active : StrategyCommitmentStatuses.Completed,
+        Assert.Equal(mode.StartsWith("http-rejected", StringComparison.Ordinal) ? StrategyCommitmentStatuses.Active : StrategyCommitmentStatuses.Completed,
             Assert.Single(ledger.MaterialReservations.Where(row => row.OutputCustody is not null)).Status);
         Assert.Equal(StrategyCommitmentStatuses.Active, Assert.Single(ledger.MaterialReservations.Where(row => row.ReservationId == "other-goal-spare")).Status);
         if (!completed)
