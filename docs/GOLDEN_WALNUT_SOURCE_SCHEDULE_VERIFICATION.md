@@ -10,6 +10,9 @@
 
 First validate relevant native local behavior on the isolated already-unlocked island copy retained by PR #389, then short handoffs with the actual prerequisites. This local evidence cannot claim a Day-0 origin. The later full fresh-save proof still requires its real initial zero-progress identity, complete lineage, exact run/save/player/SHA binding and independent replay. No validator predicate is weakened when validating such a proof; its consumer dependency must be decoupled instead.
 
+<!-- audit_invalidation: scope=r2_implementation_status; invalidated_at=2026-11-03T16:30:45+08:00; annotated_at=2026-11-03T18:52:51+08:00; superseded_by=PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md; historical_only=true -->
+> **Post-merge note:** The following implementation-pending wording was superseded by PR #391 at 2026-11-03T17:49:49+08:00; global source-schedule verification remains a separate integration proof.
+
 **Implementation status:** this amendment changes documentation only. `MasterAnglerFreshSavePrerequisiteAuditBuilder`, completion-proof/dependency-closure consumers and the long-run wrapper still require implementation review under #390. Do not mark that incident fixed, raise coverage or authorize training because this text is committed.
 
 This is an offline, read-only comparison boundary, not a training admission gate
@@ -48,6 +51,9 @@ snapshot, requires a parsed pass receipt, and writes
 calibration summary, outside `live-snapshots`. A nonzero verifier exit, malformed
 JSON, mismatched identity/path/contract field, or absent receipt fails the wrapper
 closed. Ordinary bounded calibration does not invoke or claim this verification.
+
+<!-- audit_invalidation: scope=r2_caller_status; invalidated_at=2026-11-03T16:30:45+08:00; annotated_at=2026-11-03T18:52:51+08:00; superseded_by=PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md; historical_only=true -->
+> **Status update:** Local/global verifier caller separation has since been implemented in PR #391; the older “not yet implemented” clause is historical.
 
 **R2 caller rule:** the flag above selects a global/full-chain proof; it must not
 be implicitly forced merely because the caller is closing a local Master Angler

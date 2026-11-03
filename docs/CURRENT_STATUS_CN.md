@@ -8,6 +8,9 @@
 
 <!-- pretraining-order-20261103-r1; edited_at=2026-11-03T15:46:34+08:00; research_base=049f40edfcef910b00451ad5f7b948916df67ba1; owner-authorized; docs-only -->
 
+<!-- audit_invalidation: scope=r1_top; invalidated_at=2026-11-03T16:30:45+08:00; annotated_at=2026-11-03T18:52:51+08:00; superseded_by=PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md; historical_only=true -->
+> **R1 失效时间戳（2026-11-03T16:30:45+08:00）：** 15:46:34 的旧开发全序、Master Angler 固定第 10、将完整 source schedule 与 Gourmand 3/3 作为局部必要条件的指令已被 R2 撤销，仅供历史追溯，不可据此指导 Teacher、生成标签或改变局部准入。当前 Rusty Key primary 另经用户 18:30 确认，继续有效；后续尚未开工 root 仍待重评。WIP=1、严格原生回执、Money 完整 Exit Gate 与 formal training 禁入均不变。
+
 > **历史 R1（相反条款由 R2 和顶部接续决定覆盖）：** 第 4–7 节已按 2026-11-03T15:46:34+08:00 用户授权重排。唯一 primary 为 `obtain_rusty_key`；Master Angler 暂停保留、列第 10，Money 最终门仍第 11。下方 v111 及更早运行的“下一步”保留作历史事实，不覆盖第 6 节。状态面板不因文档修订晋升。
 
 > 本文件是**当前人类可读状态入口**。机器可读 report / self-test / evidence index 仍是事实源；本文件负责把不同分母分开显示并规定开发顺序。
@@ -531,6 +534,9 @@ crop-production checkpoint v12 只认可可从精确请求重建的 fragment。�
 
 #309 已关闭：terminal-proof collection request/plan 升级为 v2，明确绑定期望 run/partition、骨架与 concrete denominator 的路径和哈希，并以 concrete catalog 校验 request 数量。离线复用 sale episode 的 before capture 改用 request/verifier 的 terminal snapshot；错误 catalog、run、partition、boundary 和部分 fragment 均失败关闭，且不会创建 Teacher label 或 production cell。
 
+<!-- audit_invalidation: scope=r1_old_position_10; invalidated_at=2026-11-03T16:30:45+08:00; annotated_at=2026-11-03T18:52:51+08:00; superseded_by=PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md; historical_only=true -->
+> **仅旧排序失效：** 本节历史代码块内的 Master Angler 第 10 名不再是有效指令。WIP=1 和 18:30 重新确认的 Rusty Key primary 不受影响。
+
 ## 4. 单项闭环施工原则（WIP = 1）
 
 从本文件生效后，Goal Method / formal-coverage 主线实行：
@@ -587,6 +593,9 @@ Money 自身最终完成，至少要同时满足：
 
 ## 6. 下一项如何选择
 
+<!-- audit_invalidation: scope=r1_section; invalidated_at=2026-11-03T16:30:45+08:00; annotated_at=2026-11-03T18:52:51+08:00; superseded_by=PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md; historical_only=true -->
+> **局部失效说明：** 本段固定全序以全局证明错误倒挂单个 Master Angler root 为成本依据，已失效。R2 将证据分为 L1 criterion-local、L2 共享证书、L3 全局集成、L4 新档评测；Gourmand 只是核桃 OR 方案。这里的历史任务条目不能代替顶部 18:30 当前 primary 决定。
+
 ### 2026-11-03 修订：先满足上游，再按剩余增量成本排队
 
 <!-- pretraining-order-20261103-r1; edited_at=2026-11-03T15:46:34+08:00; research_base=049f40edfcef910b00451ad5f7b948916df67ba1; owner-authorized; docs-only -->
@@ -594,6 +603,9 @@ Money 自身最终完成，至少要同时满足：
 **生效时间：2026-11-03T15:46:34+08:00（Asia/Kuala_Lumpur，UTC+08:00）。研究基线：`main@049f40edfcef910b00451ad5f7b948916df67ba1`。**
 本轮用户明确要求调研依赖倒置和难度倒挂后重排，直接修订对应文档；不发 Issue。
 这次修改的是**训练前开发/验收队列**，不是游戏中的日程顺序，不改评分分母、游戏规则、模型设计权或正式训练门。
+
+<!-- audit_invalidation: scope=r1_D6; invalidated_at=2026-11-03T16:30:45+08:00; annotated_at=2026-11-03T18:52:51+08:00; superseded_by=PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md; historical_only=true -->
+> **D6 失效：** 把完整 Golden Walnut/Gourmand 日程纳入 Master Angler 局部成本、据此固定第 10 的推论失效；72 鱼种及 14 前置族目录仍保留。
 
 #### 6.1 证据与原因：已证事实和工程估计分开
 
@@ -610,6 +622,9 @@ Money 自身最终完成，至少要同时满足：
 - [Master Angler 前置审计器](../experiments/StardewAI.GoalConditionedBootstrap/MasterAnglerFreshSavePrerequisiteAuditBuilder.cs) 与 [类型化依赖图](../experiments/goal-method-dependency-expansions.v1.json)。
 - [原版 1.6.15 四类收集分母](../experiments/README.local.md)、[当前施工记录](CURRENT_WORK_CN.md)、[v111 记录 PR #389](https://github.com/zalataraglados-prog/StardewValleyAICompanion/pull/389)。
 - 本文件第 1 节为状态快照；这些源码/历史原生记录**不冒充本轮新生成的 reconciliation 或 E3 证据**。
+
+<!-- audit_invalidation: scope=r1_table; invalidated_at=2026-11-03T16:30:45+08:00; annotated_at=2026-11-03T18:52:51+08:00; superseded_by=PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md; historical_only=true -->
+> **表格失效：** 以下整份固定排序及第 10 行的 72/14/3 局部必需门都不再有效。Rusty Key 的实际当前 WIP 以顶部独立确认和最新代码为准。
 
 #### 6.2 历史 R1 默认队列（固定顺位已由 R2 撤销，当前 primary 见顶部）
 
@@ -644,6 +659,9 @@ Money 自身最终完成，至少要同时满足：
 2. 用隔离副本做边界 E3：例如 59→60 捐赠/原生奖励，或 PR #389 已准备的已解锁姜岛基线。夹具/既有解锁状态必须显式标注，**不能证明从零获得了这些前置**。
 3. 同一候选版本验证实际组合与控制交接，再做消费者所需的短链/跨日集成；保留相应原生前后状态、身份和费用。
 4. root 的既定新档/三分区/长时序退出门在局部能力齐备后执行；完整 fresh-save 回归仍不可由 smoke、日志无错误或测试全绿替代。源码改变或未保存内存态中断，按原合同新建身份，不能拼接成功证明。
+<!-- audit_invalidation: scope=r1_step5; invalidated_at=2026-11-03T16:30:45+08:00; annotated_at=2026-11-03T18:52:51+08:00; superseded_by=PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md; historical_only=true -->
+> **第 6.4 节第 5 条失效：** 这是完整新档/所选核桃路线的全局证明范例，不是 Master Angler 局部统一 AND 门；未选择 Gourmand 时无需完成该分支。
+
 5. Master Angler 的最末整合仍须真实证明社区中心/可用路线状态 → 威利邀请 → 修船材料与原生结算 → 购票/实际到岛 → 核桃/鹦鹉/房屋/Gourmand；逐门记录实际 status，不能只记录“未登岛”。当前 code-bound 与 production-ready 两种状态继续分栏。
 
 #### 6.5 不变的总门与本次证据边界

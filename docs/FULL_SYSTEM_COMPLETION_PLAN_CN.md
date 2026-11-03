@@ -4,9 +4,15 @@
 
 > **当前状态入口：** [CURRENT_STATUS_CN.md](CURRENT_STATUS_CN.md)。本文件下方带日期的状态、计数和“下一步”均保留为历史证据；若与当前机器报告或 CURRENT_STATUS_CN.md 冲突，不得按历史数字规划新工作。
 >
+<!-- audit_invalidation: scope=r1_top; invalidated_at=2026-11-03T16:30:45+08:00; annotated_at=2026-11-03T18:52:51+08:00; superseded_by=PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md; historical_only=true -->
+> **R1 失效时间戳（2026-11-03T16:30:45+08:00）：** 15:46:34 的旧开发全序、Master Angler 固定第 10、将完整 source schedule 与 Gourmand 3/3 作为局部必要条件的指令已被 R2 撤销，仅供历史追溯，不可据此指导 Teacher、生成标签或改变局部准入。当前 Rusty Key primary 另经用户 18:30 确认，继续有效；后续尚未开工 root 仍待重评。WIP=1、严格原生回执、Money 完整 Exit Gate 与 formal training 禁入均不变。
+
 > **历史 R1 施工顺序（2026-11-03T15:46:34+08:00，Asia/Kuala_Lumpur；pretraining-order-20261103-r1）：** Community Center、Pet Love、Skull Key、Full Shipment 保持已冻结；后续顺序改为 `obtain_rusty_key` → `raise_skill_levels` → `raise_friendships` → `marriage_and_house_upgrade` → `complete_museum_collection` → `complete_master_angler` → `earn_money`。当前唯一 primary root 改为 `obtain_rusty_key`；Master Angler 保留成果、暂停在未完成状态，不再占据第 5 项。本次为用户明确授权的依赖/成本重排，不是普通 bug 中断；仍为 WIP=1。完整依据、退出条件与历史队列见 [CURRENT_STATUS_CN.md 第 6 节](CURRENT_STATUS_CN.md#6-下一项如何选择)。
 
 <!-- pretraining-order-20261103-r1; edited_at=2026-11-03T15:46:34+08:00; research_base=049f40edfcef910b00451ad5f7b948916df67ba1; owner-authorized; docs-only -->
+
+<!-- audit_invalidation: scope=r1_section; invalidated_at=2026-11-03T16:30:45+08:00; annotated_at=2026-11-03T18:52:51+08:00; superseded_by=PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md; historical_only=true -->
+> **局部失效说明：** 本段固定全序以全局证明错误倒挂单个 Master Angler root 为成本依据，已失效。R2 将证据分为 L1 criterion-local、L2 共享证书、L3 全局集成、L4 新档评测；Gourmand 只是核桃 OR 方案。这里的历史任务条目不能代替顶部 18:30 当前 primary 决定。
 
 ## 2026-11-03 训练前开发顺序修订（历史 R1，验收与顺位以顶部接续决定及 R2 为准）
 
@@ -67,6 +73,9 @@ Spring 1 新档首轮排序暴露的不是社交评分错误，而是上游缺�
 长期运行 v32 证明“Teacher 已找到可建设补水通道”仍不足以支持跨进程执行：终端接近格没有进入持久合同，水量归零时执行器无法重新定位。完全体路线现要求 Teacher 同时输出通道准备格和唯一终端 `watering_refill_approach_tile`，receipt/run plan 必须逐层保留并验证；该格不得再被选作作物地块。运行控制按实时余水切分机械批次，先消费现有水量，再复用唯一移动/BFS/清障链抵达接近格，最后由唯一浇水执行器触发原生补水并继续。任何一步缺字段、漂移、不可达或无法原生补水都失败关闭。
 
 `crop-teacher-refill-v33b-20261027-0023` 已用真实原生运行关闭该退出条件：`4` 个浇水动作、到 Farm `(72,27)` 的单一移动队列、剩余 `2` 个浇水动作均 verified，完整周期最终产生 `12` 条日界和 `6` 条收获回执并完成。该证据只使 Golden Walnut 长跑恢复到可继续状态；下一步仍是从新 day-zero 隔离存档生成完整 source schedule，然后进入 timeline proof、Master Angler prerequisite audit 和 Gourmand 回执，不改变正式训练门。
+
+<!-- audit_invalidation: scope=r1_repeated_order; invalidated_at=2026-11-03T16:30:45+08:00; annotated_at=2026-11-03T18:52:51+08:00; superseded_by=PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md; historical_only=true -->
+> **旧全序失效：** 此处为 15:46 R1 历史排期；Rusty Key 当前主线另于 18:30 获确认，其他未施工 root 仍需局部证据重估。
 
 ## 施工顺序修订 · 2026-11-03（原 2026-10-21 队列在下方保留）
 

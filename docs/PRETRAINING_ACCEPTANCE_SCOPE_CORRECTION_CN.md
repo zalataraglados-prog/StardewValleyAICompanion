@@ -2,6 +2,9 @@
 
 <!-- acceptance-scope-20261103-r2; authored_at=2026-11-03T16:30:45+08:00; baseline=0b23350d60a67993172db4a5d099b01fd9b54693; owner-authorized; docs-only -->
 
+<!-- audit_invalidation: scope=r2_as_of_status; invalidated_at=2026-11-03T16:30:45+08:00; annotated_at=2026-11-03T18:52:51+08:00; superseded_by=PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md; historical_only=true -->
+> **实现状态更新（2026-11-03T17:49:49+08:00）：** 下方关于 Issue #390 未完成、代码尚未修改的语句是 R2 写作时的历史快照。PR #391 已合并、#390 已关闭，限定范围是局部前置与共享证书责任解耦；不宣称逐鱼、全局源日程、Teacher/native 三分区、完整新档、正式训练已经完成。
+
 **修订时间：2026-11-03T16:30:45+08:00（Asia/Kuala_Lumpur）。核查基线：`main@0b23350d60a67993172db4a5d099b01fd9b54693`。**
 
 **依据：** [#224 criterion-local evidence / WIP=1](https://github.com/zalataraglados-prog/StardewValleyAICompanion/issues/224)、[#390 总验收证据误嵌入 Master Angler 局部门](https://github.com/zalataraglados-prog/StardewValleyAICompanion/issues/390)。[PR #389](https://github.com/zalataraglados-prog/StardewValleyAICompanion/pull/389) 只提供 v111 运行边界与局部测试编排事实，不能替代上述架构依据。
