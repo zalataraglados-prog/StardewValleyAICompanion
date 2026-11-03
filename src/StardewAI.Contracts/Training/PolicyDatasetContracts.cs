@@ -62,6 +62,9 @@ public sealed class PolicyHorizonObservationEnvelope
 
 public sealed class PolicyDatasetManifest
 {
+    [JsonPropertyName("training_objective")]
+    public string TrainingObjective { get; set; } = string.Empty;
+
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } = "policy_dataset_manifest.v1";
 

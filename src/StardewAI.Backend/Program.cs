@@ -18,6 +18,7 @@ using StardewAI.Core.OptionRegistry;
 using StardewAI.Core.PreviewCompiler;
 using StardewAI.Core.Training;
 using StardewAI.Core.WorldModel;
+using StardewAI.GoalConditionedBootstrap;
 
 const long MaxTransparentSnapshotRequestBodyBytes =
     128L * 1024 * 1024;
@@ -51,7 +52,10 @@ builder.Services.AddSingleton<JsonlTrainingDatasetWriter>();
 builder.Services.AddSingleton<PolicyTrainingAdmissionFilter>();
 builder.Services.AddSingleton<PolicyStateFeatureProjector>();
 builder.Services.AddSingleton<StructuredPolicyCheckpointStore>();
-builder.Services.AddSingleton<StructuredPolicyTrainer>();
+builder.Services.AddSingleton<IPolicyTeacherSupervisionReplayVerifier, CollectionTeacherSupervisionReplayVerifier>();
+builder.Services.AddSingleton(services => new StructuredPolicyTrainer(
+    services.GetRequiredService<StructuredPolicyCheckpointStore>(),
+    services.GetRequiredService<IPolicyTeacherSupervisionReplayVerifier>()));
 builder.Services.AddSingleton<StructuredPolicyRanker>();
 builder.Services.AddSingleton<BaselineFeatureRowTrainer>();
 builder.Services.AddSingleton<BaselinePolicyPredictor>();

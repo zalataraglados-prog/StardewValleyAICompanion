@@ -6,6 +6,10 @@
 
 状态：2026-09-23 架构合同，验收层级由 2026-11-03 R2 补充。本文覆盖早期“把已执行候选直接当正样本”的训练解释，但不改写历史运行事实。
 
+## 2026-11-03 共享监督准入修复（#394）
+
+`PolicyPairwiseSupervisionAdmission` 现为 dataset/trainer 的统一边界，生产 adapter 复用既有 collection Teacher 和 native receipt 重建器，不复制第二套 Teacher 规则。完整候选分母、来源、状态、分区、版本与显式 pair 必须绑定；只消费重放后仍成立的 strict comparison，禁止把 `Selected`、成功 outcome、未知或未比较候选转换成负偏好。单个可训练候选只保留观察，不因有原生回执就产生监督数据。Backend、CLI 与 live loop 共用该边界，旧 v1 记录或 checkpoint 不自动追认。实现/测试范围见 [监督准入合同](independent-teacher-pairwise-admission.md)。这不替代下文的 Teacher 全局、独立三分区、Provider/模型选择或正式训练门。
+
 ## 2026-09-23 StrategicPolicy 单入口覆盖
 
 Issue #129 的核心架构成立：产品运行时对外只暴露一个战略选择入口，但统一入口不等于把确定性规则、学习偏好、编译和执行揉成一个实现。`StrategicPolicy` 必须复用同一份权威候选分母、hard feasibility、reservation/ledger 与 Pareto 证据，并按以下顺序工作：

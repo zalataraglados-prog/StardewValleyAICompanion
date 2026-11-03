@@ -190,6 +190,8 @@ var commandDefinitions = new CommandDefinition[]
     new("self-test-current-collection", SelfTestCurrentCollection),
     new("self-test-current-community-center-denominator", SelfTestCurrentCommunityCenterDenominator),
     new("self-test-current-stage-one-collection", SelfTestCurrentStageOneCollection),
+    new("self-test-current-stage-one-policy-supervision", options =>
+        BootstrapSelfTest.RunCurrentStageOnePolicySupervision(options.Required("output-root"))),
     new("self-test-current-stage-one-rod-prerequisite", options =>
         BootstrapSelfTest.RunCurrentStageOneRodPrerequisite(
             options.Required("output-root"))),

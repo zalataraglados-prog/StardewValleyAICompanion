@@ -108,12 +108,13 @@ static partial class Program
             var horizonPath = File.Exists(options.PolicyHorizonObservationPath)
                 ? options.PolicyHorizonObservationPath
                 : null;
-            var dataset = new PolicyTrajectoryDatasetBuilder().Build(
+            var teacherReplay = new StardewAI.GoalConditionedBootstrap.CollectionTeacherSupervisionReplayVerifier();
+            var dataset = new PolicyTrajectoryDatasetBuilder(teacherReplay).Build(
                 options.PolicyTrajectoryDatasetPath,
                 outputRoot,
                 horizonPath,
                 options.KnowledgeDictionaryVersion);
-            var training = new StructuredPolicyTrainer().Train(
+            var training = new StructuredPolicyTrainer(new StructuredPolicyCheckpointStore(), teacherReplay).Train(
                 dataset.ManifestPath,
                 options.EffectivePolicyCheckpointPath,
                 initializationCheckpointPath: options.PolicyInitializationCheckpointPath);

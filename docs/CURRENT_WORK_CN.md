@@ -2,6 +2,15 @@
 
 ## 2026-11-03 当前 Rusty Key 切片与接续
 
+- **#394 监督边界修复已实现：** dataset/trainer 共用 v2 typed admission，Backend、两个 CLI 与实时训练方法均接到现有 collection Teacher 独立重放器。保留完整候选分母，只消费重建验证过的显式 strict pair；`Selected`、原生成功、单候选、未比较或未准入候选不能生成正负对。无证据/篡改输入不能覆盖 checkpoint/manifest，旧 checkpoint 不自动升级。细节、入口和验收范围见 [监督准入合同](independent-teacher-pairwise-admission.md)。本地入口回归与聚焦重建验证已通过，合入以对应 PR 的 CI 为准；正式训练锁和覆盖计数不变。
+- **验证范围与接续：** 新聚焦入口 `self-test-current-stage-one-policy-supervision` 复用原静态输入和 current-frontier/rod 检查，约 4 秒通过，不再借整套机器/作物/portfolio 长矩阵验证本监督边界。较宽的 `collection-replay-v4` 在进入本项前遇到 portfolio-continuation 夹具文件访问错误，未计通过、未删除；该诊断随下一共享 acquisition/reservation 工作复核，不把环境/夹具错误宣称为本项成功。#394 完成后直接回到下条 Rusty Key 安全组合，不重排战略 root。
+- **提交前最终回归：** 无游戏 Core governance `1041/1041`、Backend `265/265`、监督边界聚焦 `35/35` 均通过；Backend 覆盖真实 HTTP 入口、两个 CLI 进程和 live loop 的实际训练方法，拒绝时核对既有工件不变。聚焦 Teacher 重建包含有效显式 pair、单候选仅保留证据和重算哈希后的篡改反例。尚待对应 PR 的远端 CI，不将夹具训练写作正式开训。
+
+以下两条为 #394 开工前的核实与退出合同，修复状态以上方及当前源码为准：
+
+- **本批次已收口；接续先处理共享正确性缺陷 #394：** PR #395 已合并到 `main@3d798867`，远端治理 `1006/1006`、Backend `259/259`、无游戏证据行为检查 `31` 项通过，增强捕获链离线复核 `34` 项通过。#393 的全部 R1 失效标注也已同步保留。新 issue [#394](https://github.com/zalataraglados-prog/StardewValleyAICompanion/issues/394) 已由当前源码确认：dataset validator 允许无 TeacherSupervision，trainer 将 Student `Selected` 对所有其余可用 admitted 候选直接生成偏好对，Backend 与 live loop/CLI 可达。修复尚未完成，不关闭 issue、不放开正式训练锁；本轮没有训练模型或更新 checkpoint。
+- **#394 的实现边界和退出要求：** 复用 collection Teacher 已有的 `pairwise_preferences` 及独立重建/原生回执验证，在 dataset/trainer 共用 typed admission 中只消费严格绑定来源、状态、完整候选分母、分区和版本的显式比较；不能仅补 provenance 字符串。Student 观察、native outcome 与 Teacher preference 保持分离；tie/incomparable 不因未被执行而变成负例。覆盖 dataset builder、trainer、Backend、live loop/CLI，验证无监督或篡改输入不能写 checkpoint/正式 manifest，合法独立比较能训练。修复通过后直接回到下条安全 acquisition/reservation 阈值组合；这是同一 primary 的共享正确性插入项，不重排战略 root。
+
 - **19:11 原生边界链已通过，未晋升 criterion：** PR #392 已合并；`ba9bb50e` 在隐藏静音的 E 盘游戏上，从复制的 59 件边界档完成进入博物馆、捐第 60 件、正常回家保存跨日、Farm 原生事件 `66` 和实际钥匙回执，共 7 次选队列、9 条 verified native action。源档目录 SHA-256 前后相同，游戏和专用端口均已回收。证据是共享原生能力：源档为 Year 5，不证明第三年前获得钥匙、60 件安全收集组合或 Teacher/native 三分区；全局计数保持冻结。详见 [Rusty Key 原生阈值证据](rusty-key-native-threshold-evidence.md)。
 - **当前下一步：** 复用已有 museum requirement inventory、acquisition portfolio 与 reservation ledger，把目标限定为 `max(0, live_threshold - donated_count)` 个不重复、未捐且满足跨目标保护的物品；不要求先完成 95 件、不另建捐赠/剧情执行器。随后接入本 criterion 的 Teacher comparison、native outcome 三分区与第三年前 deadline。已有原生边界链只需独立重放和真实回归时重开，不重复整条游戏长跑。
 - **离线读取修复：** 新证据复核暴露公共 PowerShell `Read-RuntimeLoopArtifacts` 把内容寻址快照清单当成完整 JSON；现在与 Full Shipment 共用 `RuntimeLogicalJson.ps1`，交由既有 C# reader 校验并还原，不手工拼快照。当前捕获链已用增强校验离线复核通过。

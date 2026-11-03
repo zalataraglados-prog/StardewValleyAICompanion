@@ -216,8 +216,37 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
             decision,
             selectedCandidate.CandidateId,
             receipt);
+        var trainableCandidateIds = row.Candidates.Where(candidate => candidate.Available && candidate.AdmittedForPolicy)
+            .Select(candidate => candidate.CandidateId).ToHashSet(StringComparer.Ordinal);
         row.Audit.TeacherSupervision = new PolicyTrajectoryTeacherSupervision
         {
+            SchemaVersion = "policy_teacher_supervision.v2",
+            TeacherId = CollectionTeacherSupervisionReplayVerifier.ProviderId,
+            TeacherVersion = CollectionTeacherSupervisionReplayVerifier.ProviderVersion,
+            SourceStateHash = row.SourceStateHash,
+            CandidateDenominatorSha256 = PolicyPairwiseSupervisionAdmission.CandidateDenominatorSha256(row),
+            DatasetPartition = PolicyTrajectoryDatasetBuilder.PartitionFor(row.Context.SplitKey),
+            Sources = new PolicyTeacherEvidenceSources
+            {
+                RequirementInventoryPath = inventoryFullPath,
+                AcquisitionLoweringPath = loweringFullPath,
+                RankingPath = rankingFullPath,
+                BeforeSnapshotPath = beforeFullPath,
+                TargetDateIntentsPath = intentsFullPath,
+                PreferencePath = preferenceFullPath,
+                ExecutionReceiptPath = receiptFullPath,
+                AfterSnapshotPath = afterFullPath
+            },
+            PairwisePreferences = preference.PairwisePreferences
+                .Where(pair => trainableCandidateIds.Contains(pair.PreferredCandidateId) &&
+                    trainableCandidateIds.Contains(pair.AlternativeCandidateId))
+                .Select(pair => new PolicyTeacherPreferencePair
+                {
+                    PreferredCandidateId = pair.PreferredCandidateId,
+                    AlternativeCandidateId = pair.AlternativeCandidateId,
+                    FirstDifferingAuthoritativeCriterion = pair.FirstDifferingAuthoritativeCriterion,
+                    LabelSemantics = pair.LabelSemantics
+                }).ToArray(),
             ProvenanceClass = preference.PreferenceProvenanceClass,
             SelectionPolicyId = preference.SelectionPolicyId,
             PreferenceArtifactSha256 = result.PreferenceArtifactSha256,
@@ -241,8 +270,11 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
             UnavailableCandidateSemantics = preference.CandidateMembership
                 .SelectionContract.UnavailableCandidateSemantics
         };
-        result.Status = "ready";
-        result.TeacherTrainingRowEligible = true;
+        row.Context.DatasetPartition = row.Audit.TeacherSupervision.DatasetPartition;
+        result.TeacherTrainingRowEligible = row.Audit.TeacherSupervision.PairwisePreferences.Length > 0;
+        result.Status = result.TeacherTrainingRowEligible
+            ? "ready"
+            : "verified_evidence_only_no_trainable_teacher_comparison";
         result.VerifiedRequirementTransitions = transitions;
         result.TrainingRow = row;
         return result;
@@ -313,21 +345,21 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
             JsonSerializer.Serialize(source, JsonDefaults.Options),
             JsonDefaults.Options) ?? throw new InvalidDataException(
             "Teacher decision could not be cloned.");
-        var sourceById = (source.RankedEventCandidates ??
-                Array.Empty<PolicyEventCandidatePrediction>())
-            .ToDictionary(value => value.CandidateId, StringComparer.Ordinal);
-        clone.RankedEventCandidates = preference.OrderedCandidateEvaluations
-            .OrderBy(value => value.SelectionOrder)
-            .Select(value =>
+        var teacherOrder = preference.OrderedCandidateEvaluations.ToDictionary(
+            value => value.CandidateId, value => value.SelectionOrder, StringComparer.Ordinal);
+        clone.RankedEventCandidates = (source.RankedEventCandidates ?? Array.Empty<PolicyEventCandidatePrediction>())
+            .OrderBy(value => teacherOrder.TryGetValue(value.CandidateId, out var order) ? order : int.MaxValue)
+            .ThenBy(value => value.CandidateId, StringComparer.Ordinal)
+            .Select((value, index) =>
             {
                 var candidate = JsonSerializer.Deserialize<
                     PolicyEventCandidatePrediction>(
                     JsonSerializer.Serialize(
-                        sourceById[value.CandidateId],
+                        value,
                         JsonDefaults.Options),
                     JsonDefaults.Options) ?? throw new InvalidDataException(
                     "Teacher candidate could not be cloned.");
-                candidate.Rank = value.SelectionOrder;
+                candidate.Rank = index + 1;
                 candidate.Score = 0;
                 candidate.ModelScore = null;
                 candidate.ExpectedReward = 0;

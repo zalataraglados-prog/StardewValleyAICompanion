@@ -128,6 +128,9 @@ public sealed class StructuredPolicyLinearModel
 
 public sealed class StructuredPolicyTrainingSummary
 {
+    [JsonPropertyName("supervision_objective")]
+    public string SupervisionObjective { get; set; } = string.Empty;
+
     [JsonPropertyName("train_rows")]
     public int TrainRows { get; set; }
 

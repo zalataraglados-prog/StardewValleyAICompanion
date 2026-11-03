@@ -409,6 +409,7 @@ internal static partial class BootstrapSelfTest
             Write(preferencePath, preference);
 
             const string teacherRunId = "fixture-teacher-receipt-run";
+            Write(Path.Combine(root, "supervision-denominator-fixture.json"), communityCenterDenominator);
             const string afterStateHash =
                 "stage-one-collection-frontier-after-route-state";
             WriteStageOneCollectionSnapshot(
@@ -443,14 +444,15 @@ internal static partial class BootstrapSelfTest
                     PolicyTrajectoryVersionPins.KnowledgeDictionary,
                     PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor,
                     communityCenterDenominator);
-            Require(receiptAdmission.Status == "ready" &&
-                    receiptAdmission.TeacherTrainingRowEligible &&
+            Require(receiptAdmission.Status == "verified_evidence_only_no_trainable_teacher_comparison" &&
+                    !receiptAdmission.TeacherTrainingRowEligible &&
                     !receiptAdmission.FormalTrainingAuthorized &&
                     receiptAdmission.VerifiedRequirementTransitions.Length == 1 &&
                     receiptAdmission.VerifiedRequirementTransitions[0].Verified &&
-                    receiptAdmission.TrainingRow?.Candidates.Length == 2 &&
+                    receiptAdmission.TrainingRow?.Candidates.Length ==
+                        JsonSerializer.Deserialize<AvailabilityAwarePolicyPredictionEnvelope>(
+                            File.ReadAllText(rankingPath), JsonDefaults.Options)!.RankedEventCandidates.Length &&
                     receiptAdmission.TrainingRow.Candidates.All(candidate =>
-                        candidate.Available &&
                         candidate.Score == 0 &&
                         candidate.SourceCandidate.ModelScore is null) &&
                     receiptAdmission.TrainingRow.Audit.TeacherSupervision is { } teacherSupervision &&
@@ -459,12 +461,18 @@ internal static partial class BootstrapSelfTest
                     teacherSupervision.CommunityCenterDenominatorSha256 ==
                         communityCenterDenominator.DenominatorSha256 &&
                     teacherSupervision.RequirementTransitions.Length == 1,
-                "A fresh exact route receipt did not produce a standalone Teacher-supervised policy row.");
+                "One trainable candidate or an unadmitted counterfactual was incorrectly promoted to supervision.");
+            var teacherReplay = new CollectionTeacherSupervisionReplayVerifier(communityCenterDenominator);
+            Require(new PolicyPairwiseSupervisionAdmission(teacherReplay).Validate(
+                    receiptAdmission.TrainingRow!, out var observationPairs) == "teacher_strict_comparison_missing" &&
+                    observationPairs.Length == 0,
+                "A verified native observation manufactured a strict Teacher comparison.");
+            receiptAdmission = BuildSupervisedComparisonReceiptFixture(teacherRunId, afterStateHash, communityCenterDenominator);
             var teacherDatasetPath = Path.Combine(root, "teacher-receipt.jsonl");
             WriteJsonl(
                 teacherDatasetPath,
                 new[] { receiptAdmission.TrainingRow! });
-            var dataset = new PolicyTrajectoryDatasetBuilder().Build(
+            var dataset = new PolicyTrajectoryDatasetBuilder(teacherReplay).Build(
                 teacherDatasetPath,
                 Path.Combine(root, "teacher-receipt-dataset"),
                 expectedKnowledgeDictionary:
@@ -487,7 +495,7 @@ internal static partial class BootstrapSelfTest
             WriteJsonl(
                 tamperedDatasetPath,
                 new[] { tamperedTeacherRow, receiptAdmission.TrainingRow! });
-            var tamperedDataset = new PolicyTrajectoryDatasetBuilder().Build(
+            var tamperedDataset = new PolicyTrajectoryDatasetBuilder(teacherReplay).Build(
                 tamperedDatasetPath,
                 Path.Combine(root, "tampered-teacher-receipt-dataset"),
                 expectedKnowledgeDictionary:
@@ -498,6 +506,26 @@ internal static partial class BootstrapSelfTest
                         value.Reason == "teacher_supervision_invalid" &&
                         value.Count == 1),
                 "The canonical policy dataset accepted tampered Teacher provenance.");
+
+            var tamperedPairPreference = JsonSerializer.Deserialize<CurrentStageOneCollectionTeacherPreferenceLabel>(
+                JsonSerializer.Serialize(receiptAdmission.Preference, JsonDefaults.Options), JsonDefaults.Options)!;
+            var pairIndex = Array.FindIndex(tamperedPairPreference.PairwisePreferences,
+                pair => pair.AlternativeCandidateId == "master-angler-comparison-alternative");
+            var oldPair = tamperedPairPreference.PairwisePreferences[pairIndex];
+            tamperedPairPreference.PairwisePreferences[pairIndex] = oldPair with
+            {
+                PreferredCandidateId = oldPair.AlternativeCandidateId,
+                AlternativeCandidateId = oldPair.PreferredCandidateId
+            };
+            var tamperedPairPath = Path.Combine(root, "tampered-pairwise-preference.json");
+            Write(tamperedPairPath, tamperedPairPreference);
+            var coupledRow = JsonSerializer.Deserialize<PolicyDecisionTrajectoryEnvelope>(
+                JsonSerializer.Serialize(receiptAdmission.TrainingRow, JsonDefaults.Options), JsonDefaults.Options)!;
+            coupledRow.Audit.TeacherSupervision!.Sources!.PreferencePath = tamperedPairPath;
+            coupledRow.Audit.TeacherSupervision.PreferenceArtifactSha256 = HashFile(tamperedPairPath);
+            Require(new PolicyPairwiseSupervisionAdmission(teacherReplay).Validate(coupledRow, out var rejectedPairs) ==
+                    "teacher_supervision_replay_failed" && rejectedPairs.Length == 0,
+                "Rehashing tampered Teacher comparisons bypassed independent source replay.");
 
             var uppercaseHashPreference = JsonSerializer.Deserialize<
                 CurrentStageOneCollectionTeacherPreferenceLabel>(

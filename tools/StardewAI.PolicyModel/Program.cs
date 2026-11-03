@@ -3,21 +3,32 @@ using System.Text.Json;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Training;
 
-var options = PolicyModelOptions.Parse(args);
-var result = new StructuredPolicyTrainer().Train(
-    options.DatasetManifestPath,
-    options.CheckpointPath,
-    options.Hyperparameters,
-    options.InitializationCheckpointPath);
-Console.WriteLine(JsonSerializer.Serialize(new
+try { Run(args); }
+catch (Exception exception) when (exception is ArgumentException or IOException or InvalidDataException or InvalidOperationException or JsonException or UnauthorizedAccessException)
 {
-    status = "ok",
-    checkpoint_path = result.CheckpointPath,
-    checkpoint_sha256 = result.CheckpointSha256,
-    checkpoint_id = result.Checkpoint.CheckpointId,
-    model_kind = result.Checkpoint.ModelKind,
-    training = result.Checkpoint.Training
-}, new JsonSerializerOptions(JsonSerializerDefaults.Web) { WriteIndented = true }));
+    Console.Error.WriteLine(JsonSerializer.Serialize(new { status = "rejected", reason = exception.Message }));
+    Environment.ExitCode = 2;
+}
+
+static void Run(string[] args)
+{
+    var options = PolicyModelOptions.Parse(args);
+    var result = new StructuredPolicyTrainer(new StructuredPolicyCheckpointStore(),
+        new StardewAI.GoalConditionedBootstrap.CollectionTeacherSupervisionReplayVerifier()).Train(
+        options.DatasetManifestPath,
+        options.CheckpointPath,
+        options.Hyperparameters,
+        options.InitializationCheckpointPath);
+    Console.WriteLine(JsonSerializer.Serialize(new
+    {
+        status = "ok",
+        checkpoint_path = result.CheckpointPath,
+        checkpoint_sha256 = result.CheckpointSha256,
+        checkpoint_id = result.Checkpoint.CheckpointId,
+        model_kind = result.Checkpoint.ModelKind,
+        training = result.Checkpoint.Training
+    }, new JsonSerializerOptions(JsonSerializerDefaults.Web) { WriteIndented = true }));
+}
 
 internal sealed class PolicyModelOptions
 {

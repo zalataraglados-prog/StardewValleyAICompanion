@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\StardewAI.Contracts\StardewAI.Contracts.csproj" />
     <ProjectReference Include="..\StardewAI.Core\StardewAI.Core.csproj" />
+    <ProjectReference Include="..\..\experiments\StardewAI.GoalConditionedBootstrap\StardewAI.GoalConditionedBootstrap.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

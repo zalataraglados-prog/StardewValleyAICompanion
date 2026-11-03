@@ -1337,7 +1337,8 @@
         "type": "Project",
         "dependencies": {
           "StardewAI.Contracts": "[1.0.0, )",
-          "StardewAI.Core": "[1.0.0, )"
+          "StardewAI.Core": "[1.0.0, )",
+          "StardewAI.GoalConditionedBootstrap": "[1.0.0, )"
         }
       },
       "stardewai.contracts": {

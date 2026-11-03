@@ -94,6 +94,11 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
             .ToArray();
         if (!actualOrder.SequenceEqual(expectedOrder, StringComparer.Ordinal))
             reasons.Add("teacher_preference_candidate_order_drifted");
+        if (!string.Equals(JsonSerializer.Serialize(actual.PairwisePreferences, JsonDefaults.Options),
+                JsonSerializer.Serialize(expected.PairwisePreferences, JsonDefaults.Options), StringComparison.Ordinal) ||
+            !string.Equals(JsonSerializer.Serialize(actual.OrderedCandidateEvaluations, JsonDefaults.Options),
+                JsonSerializer.Serialize(expected.OrderedCandidateEvaluations, JsonDefaults.Options), StringComparison.Ordinal))
+            reasons.Add("teacher_preference_comparisons_drifted");
         if (actual.CompiledQueue is not null &&
             expected.CompiledQueue is not null &&
             !actual.CompiledQueue.Items
