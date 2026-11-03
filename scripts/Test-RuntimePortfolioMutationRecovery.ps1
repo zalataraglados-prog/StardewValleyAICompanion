@@ -2,6 +2,7 @@
 param([string] $OutputRoot = (Join-Path ([IO.Path]::GetTempPath()) ('portfolio-recovery-' + [guid]::NewGuid().ToString('N'))))
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'lib/RuntimeEvidenceCommon.ps1')
+$originalJsonPost = (Get-Command Invoke-JsonPost).ScriptBlock
 . (Join-Path $PSScriptRoot 'lib/RuntimeRustyKeyRollingExecution.ps1')
 $passed = [Collections.Generic.List[string]]::new()
 $context = [pscustomobject]@{ BackendUrl = 'http://unused.invalid' }
@@ -39,6 +40,11 @@ function Invoke-JsonPost {
     if ($script:mode -eq 'rejected') {
         return [pscustomobject]@{ Raw = '{"accepted":false,"ledger":null}'; Value = [pscustomobject]@{ accepted = $false; ledger = $null } }
     }
+    if ($script:mode -in @('http-rejected', 'http-server-error')) {
+        $failure = [InvalidOperationException]::new('simulated HTTP failure')
+        $failure.Data['RuntimeHttpStatusCode'] = if ($script:mode -eq 'http-rejected') { 409 } else { 500 }
+        throw $failure
+    }
     if ($script:mode -eq 'request-tamper') { [IO.File]::WriteAllText($requestPath, '{}') }
     throw 'simulated reply lost after mutation'
 }
@@ -69,7 +75,7 @@ foreach ($operation in @('commit', 'settle-completed-route', 'settle-supporting-
 }
 
 $script:operation = 'commit'
-foreach ($mode in @('normal', 'rejected', 'not_found', 'conflict', 'superseded', 'corrupt', 'unavailable', 'missing-schema', 'mutation-claim', 'request-tamper')) {
+foreach ($mode in @('normal', 'rejected', 'http-rejected', 'not_found', 'conflict', 'superseded', 'corrupt', 'unavailable', 'missing-schema', 'mutation-claim', 'request-tamper')) {
     $script:mode = $mode
     $script:directory = Join-Path $OutputRoot $mode
     New-Item -ItemType Directory -Path $directory -Force | Out-Null
@@ -84,7 +90,7 @@ foreach ($mode in @('normal', 'rejected', 'not_found', 'conflict', 'superseded',
         if ($failed -or $calls.Count -ne 1 -or $result.RecoveredReply) { throw 'Normal result changed.' }
     }
     else {
-        $expectedCalls = if ($mode -in @('rejected', 'request-tamper')) { 1 } else { 2 }
+        $expectedCalls = if ($mode -in @('rejected', 'http-rejected', 'request-tamper')) { 1 } else { 2 }
         if (-not $failed -or $calls.Count -ne $expectedCalls -or
             (Test-Path -LiteralPath (Join-Path $directory 'mutation-ledger.json'))) {
             throw "Unknown/rejected mutation did not stop without settlement: $mode"
@@ -92,6 +98,30 @@ foreach ($mode in @('normal', 'rejected', 'not_found', 'conflict', 'superseded',
     }
     $passed.Add($mode)
 }
+$script:mode = 'http-server-error'
+$script:directory = Join-Path $OutputRoot $mode
+New-Item -ItemType Directory -Path $directory -Force | Out-Null
+$script:calls = [Collections.Generic.List[string]]::new()
+$result = Invoke-RuntimeRustyKeyLedgerMutation -Context $context -Operation 'commit' `
+    -Request '{"state_hash":"source-state","expected_ledger_revision":0}' -Directory $directory -Name 'mutation'
+if ($calls.Count -ne 2 -or -not $result.RecoveredReply) { throw 'HTTP 500 cannot recover committed reply.' }
+$passed.Add('http-server-error-one-lookup-without-resend')
+
+# Exercise the original HTTP helper, not the mutation transport double.
+$script:httpResponse = [Net.Http.HttpResponseMessage]::new([Net.HttpStatusCode]::Conflict)
+$script:httpResponse.Content = [Net.Http.StringContent]::new('{"accepted":false,"errors":["ledger_revision_conflict"]}')
+function Invoke-WebRequest {
+    throw [Microsoft.PowerShell.Commands.HttpResponseException]::new('simulated HTTP conflict', $script:httpResponse)
+}
+$preserved = $false
+try { & $originalJsonPost -Url 'http://unused.invalid' -Body '{}' | Out-Null }
+catch {
+    $preserved = $_.Exception.Data['RuntimeHttpStatusCode'] -eq 409 -and
+        $_.Exception.Message.Contains('ledger_revision_conflict') -and $null -ne $_.Exception.InnerException
+}
+finally { $script:httpResponse.Dispose() }
+if (-not $preserved) { throw 'Original HTTP helper lost explicit status/body/cause.' }
+$passed.Add('original-http-helper-preserves-status-body-and-cause')
 $summary = [ordered]@{
     schema_version = 'stardewai.portfolio_recovery_tests.v1'; passed = $passed.Count; checks = @($passed)
     game_started = $false; evidence_kind = 'transport_double_not_native'; formal_product_training = $false

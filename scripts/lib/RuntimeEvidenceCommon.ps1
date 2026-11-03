@@ -250,7 +250,13 @@ function Invoke-JsonPost {
                 $detail = "response body unavailable: $($_.Exception.Message)"
             }
         }
-        throw "POST $Url failed: $($_.Exception.Message) $detail"
+        $failure = [InvalidOperationException]::new(
+            "POST $Url failed: $($_.Exception.Message) $detail", $_.Exception)
+        if ($null -ne $_.Exception.Response -and
+            $null -ne $_.Exception.Response.StatusCode) {
+            $failure.Data['RuntimeHttpStatusCode'] = [int]$_.Exception.Response.StatusCode
+        }
+        throw $failure
     }
     return [pscustomobject]@{
         Raw = $response.Content

@@ -66,6 +66,10 @@ function Invoke-RuntimePortfolioMutation {
     catch {
         $dispatchFailure = $_.Exception.Message
         Write-RuntimeMutationJournalFile -Path (Join-Path $Directory "$Name-rpc-failure.txt") -Value $dispatchFailure
+        $status = $_.Exception.Data['RuntimeHttpStatusCode']
+        if ($null -ne $status -and [int]$status -ge 400 -and [int]$status -lt 500) {
+            throw "Portfolio mutation explicitly rejected by HTTP $status; no lookup/replay. $dispatchFailure; journal=$journalPath"
+        }
         try {
             $result = Get-RuntimePortfolioMutationReply -Context $Context -JournalPath $journalPath `
                 -ObservationPath (Join-Path $Directory "$Name-rpc-lookup.json")

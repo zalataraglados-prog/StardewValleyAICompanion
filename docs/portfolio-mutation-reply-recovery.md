@@ -77,7 +77,10 @@ round-tripping through PowerShell. The caller then runs the same canonical C#
 commit/settlement receipt builders and independent replay checks as a normal
 reply. No verification, custody release or training label is awarded by lookup.
 All other statuses or failed lookup retain the journal and stop: no mutation
-resend and no native resend. Explicit application rejection also stays rejected.
+resend and no native resend. Explicit application rejection also stays rejected:
+the shared HTTP helper preserves status/body/cause; HTTP 4xx stops without lookup,
+whereas an unknown transport failure or HTTP 5xx may retrieve an already committed
+reply. A revision-conflict response cannot be converted into success by lookup.
 
 For an interrupted operator session, dot-source the existing evidence helpers
 and `scripts/lib/RuntimePortfolioMutationRecovery.ps1`, then call
@@ -97,7 +100,7 @@ three operations, durable-before-send, raw precision, one lookup, unknown result
 unavailable service, changed request, explicit rejection and replay refusal.
 These are game-free tests, not a new native trajectory or Teacher preference.
 The final local targeted portfolio suite passes 75 tests, the client transport
-suite passes 16 checks and the existing Rusty Key evidence suite passes 31 checks.
+suite passes 19 checks and the existing Rusty Key evidence suite passes 31 checks.
 The PR quality workflow runs the complete Backend and game-free governance suites
 on its exact submitted head; its result must be checked separately before merge.
 
