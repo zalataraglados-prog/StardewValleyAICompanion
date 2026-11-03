@@ -1,12 +1,16 @@
 # Independent Golden Walnut source-schedule verification
 
-<!-- pretraining-order-20261103-r1; edited_at=2026-11-03T15:46:34+08:00; research_base=049f40edfcef910b00451ad5f7b948916df67ba1; owner-authorized; docs-only -->
+<!-- acceptance-scope-20261103-r2; authored_at=2026-11-03T16:30:45+08:00; baseline=0b23350d60a67993172db4a5d099b01fd9b54693; sources=#224,#390; docs-only -->
 
-## Scheduling amendment · 2026-11-03T15:46:34+08:00
+## Acceptance-scope amendment · 2026-11-03T16:30:45+08:00
 
-The owner-authorized dependency/cost reorder is recorded in `CURRENT_STATUS_CN.md` section 6. Master Angler is parked at position 10; Rusty Key is the current primary. This amendment does **not** relax any verifier predicate below.
+[#224](https://github.com/zalataraglados-prog/StardewValleyAICompanion/issues/224) requires criterion-local evidence; [#390](https://github.com/zalataraglados-prog/StardewValleyAICompanion/issues/390) reports that this full fresh-save proof was incorrectly embedded in Master Angler local admission. This R2 amendment replaces the earlier `pretraining-order-20261103-r1` scheduling paragraph, including its fixed position-10 claim and unconditional retention of Gourmand/72/14/3 as a local gate. The complete precedence and work-order correction is in [PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md](PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md).
 
-When this root resumes: verify native behavior first on the isolated already-unlocked island baseline retained by PR #389, then verify the relevant short prerequisite/continuation chains, and only after those gates pass run the existing fresh-day-zero source-schedule proof and independent frozen-artifact replay. Fixture/boundary-save outcomes are local capability evidence only, never substitutes for initial zero-progress identity or full fresh-save lineage. Existing run/save/player/SHA binding, negative tests, Gourmand continuity and 72/14/3 admission remain intact. No new Issue, verifier implementation, code-generated progress promotion or model training is part of this documentation revision.
+**Preserve the verifier; correct who requires its result.** A full Golden Walnut fresh-save source schedule belongs to the applicable Teacher-wide integration proof or an explicitly requested full-chain test, after local capability aggregation. Master Angler local coverage instead verifies its native denominator, typed fish-area prerequisites through valid shared certificates, legal catch chains and criterion-local comparison/native-outcome partitions. The absence of this global schedule alone must not block an otherwise qualified local root. Gourmand is a selected walnut-funding OR branch, not an unconditional local or global requirement.
+
+First validate relevant native local behavior on the isolated already-unlocked island copy retained by PR #389, then short handoffs with the actual prerequisites. This local evidence cannot claim a Day-0 origin. The later full fresh-save proof still requires its real initial zero-progress identity, complete lineage, exact run/save/player/SHA binding and independent replay. No validator predicate is weakened when validating such a proof; its consumer dependency must be decoupled instead.
+
+**Implementation status:** this amendment changes documentation only. `MasterAnglerFreshSavePrerequisiteAuditBuilder`, completion-proof/dependency-closure consumers and the long-run wrapper still require implementation review under #390. Do not mark that incident fixed, raise coverage or authorize training because this text is committed.
 
 This is an offline, read-only comparison boundary, not a training admission gate
 or a runtime controller. Run it **after** the evidence directory, manifest and
@@ -45,11 +49,16 @@ calibration summary, outside `live-snapshots`. A nonzero verifier exit, malforme
 JSON, mismatched identity/path/contract field, or absent receipt fails the wrapper
 closed. Ordinary bounded calibration does not invoke or claim this verification.
 
-### Completed v89 invocation (PowerShell, from the repository root)
+**R2 caller rule:** the flag above selects a global/full-chain proof; it must not
+be implicitly forced merely because the caller is closing a local Master Angler
+criterion. Existing code is not claimed to have implemented that separation yet.
+
+### Historical v89 command example (not a claim of a completed native run)
 
 The product root/run identity come from the task package. Expected save/player
 identities below were read from its durable `initial-snapshot.json`; they are not
-inferred from the claimed schedule or the loop's success flags.
+inferred from the claimed schedule or the loop's success flags. This historical
+example is retained for command syntax, not as a current task or proof of PASS.
 
 ```powershell
 $runId = 'golden-walnut-source-schedule-v89-20261030-185156-source-schedule'

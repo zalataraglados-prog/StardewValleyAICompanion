@@ -2,7 +2,9 @@
 
 > **作用域：** 本文件定义训练 / Teacher / Student 技术合同，不定义完整产品后期顺序；产品阶段先后以 [COMPANION_PRODUCT_ROADMAP_CN.md](COMPANION_PRODUCT_ROADMAP_CN.md) 为唯一权威。
 
-状态：2026-09-23 当前有效架构合同。本文覆盖早期“把已执行候选直接当正样本”的训练解释，但不改写历史运行事实。
+> **2026-11-03T16:30:45+08:00 验收层级纠偏（R2）：** 按 #224、#390，局部 criterion 门不得依赖全局 fresh-save source schedule；Gourmand 不是 Master Angler 的无条件前置。[本次补充条款](PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md) 显式覆盖 `0b23350d` 的错误门归属及据此固定的第 10 顺位。旧状态数字与运行记录保留为历史；本次未修改实现或晋升机器状态。
+
+状态：2026-09-23 架构合同，验收层级由 2026-11-03 R2 补充。本文覆盖早期“把已执行候选直接当正样本”的训练解释，但不改写历史运行事实。
 
 ## 2026-09-23 StrategicPolicy 单入口覆盖
 
@@ -22,8 +24,8 @@ Issue #129 的核心架构成立：产品运行时对外只暴露一个战略选
 
 - Teacher 部分是有限、确定、可终止的：目标、日期、候选、资源和搜索边界都必须有限，同一版本化输入必须得到同一偏序结果或同一不可满足证明。
 - Student 部分采用可测量的经验收敛：独立验证集分歧、长期成功率、硬约束违规率和恢复能力达到冻结门槛后停止迭代。
-- 当前实现尚未达到该状态。19 个爷爷评分 criterion 只有 2 个具有完整可执行前沿；其余 17 个仍在依赖扩展中。
-- 当前 `StructuredPolicyTrainer.BuildPairs` 仍以 `candidate.Selected` 选出正样本。它只能代表历史行为克隆管线，不满足独立 Teacher 监督合同，正式全量训练必须继续关闭。
+- 2026-09-23 历史实现尚未达到该状态，当时 19 个爷爷评分 criterion 只有 2 个具有完整可执行前沿，其余 17 个仍在依赖扩展中；该历史计数不覆盖当前机器 reconciliation。
+- 当时 `StructuredPolicyTrainer.BuildPairs` 仍以 `candidate.Selected` 选出正样本。它只能代表历史行为克隆管线，不满足独立 Teacher 监督合同；是否已修复以当前源码与准入报告核验，不能凭本文历史状态授权正式全量训练。
 
 ## 三种不可混合的信号
 
@@ -43,9 +45,9 @@ Hard constraints 不属于上述任一软标签。候选合法性、授权、资
 
 ## Teacher 的收敛条件
 
-Teacher 只有同时满足以下条件才算闭合：
+Teacher 全局只有同时满足以下条件才算闭合；这些是全局组合要求，不能逐根复制为一个局部门先完成整场游戏的要求：
 
-- 19/19 criterion 至少有一条从新存档到既有 training-eligible option 的完整可执行路线；
+- 19/19 criterion 至少有一条从新存档到既有 training-eligible option 的完整可执行路线；各根先按 criterion-local 合同闭合，其实际共享前置经证书组合，再在全局验证完整路线。
 - 所有 OR 替代和 AND 前置均为类型化边，未解析分支只能形成显式 blocker；
 - 搜索具有固定 Year 3 边界、有限候选集、有限资源状态、确定性 tie-break 和循环支配剪枝；
 - 随机结果使用版本化分布、成功阈值、重试预算和 fallback，不读取 Student 不可见的未来随机结果；
@@ -53,6 +55,23 @@ Teacher 只有同时满足以下条件才算闭合：
 - 同一版本化快照、目标、知识锁和配置必须产生字节稳定的 Teacher 偏序或不可满足证明。
 
 这保证 Teacher 搜索终止和结果可复现，不等价于证明某条动作序列是游戏中唯一全局最优路线。
+
+### 2026-11-03 验收层级与 criterion-local 责任（R2）
+
+<!-- acceptance-scope-20261103-r2; authored_at=2026-11-03T16:30:45+08:00; sources=#224,#390; baseline=0b23350d60a67993172db4a5d099b01fd9b54693 -->
+
+依 [#224](https://github.com/zalataraglados-prog/StardewValleyAICompanion/issues/224) 与 [#390](https://github.com/zalataraglados-prog/StardewValleyAICompanion/issues/390)，严格区分：
+
+1. **局部验收：** 每个 criterion 独立验证其分母、合法方法、Teacher goal context、native terminal assertion 与 train/validation/test 证据 join。复用 progression 不等于广播所有 criterion 已完成。
+2. **共享前置：** 消费范围、身份和版本均明确的能力证书并在执行前 fresh 重绑定；不把只有代码节点的声明当证书，也不把整个上游 root 的全局游戏日程重复要求给每个消费者。
+3. **全局集成：** 聚合 `Method executable ∩ Teacher comparison ∩ native outcome`，再在该层验证 source schedule、跨根资源/日历、连续性及独立重放。严禁把全局 fresh-save 证明反向挂回单根闭合条件。
+4. **完整新档与模型评测：** 局部能力和全局聚合准备好后再做所需 Day-0 长期证明；正式训练/Provider/manifest 门不跳过，Student 新档 21/21 仍按训练与评测阶段实现。
+
+Master Angler 局部门不无条件要求 Golden Walnut fresh-save source schedule、Gourmand `3/3` 或复合 `72/14/3` 口令。它仍须具备本 criterion 的鱼类分母、鱼区相关类型化前置、合法捕获链及 comparison/native-outcome 三分区；缺失真正必要证书继续阻塞。Gourmand 只是核桃来源 OR 方案，只有实际选中并承诺该方案时才验证对应请求/作物/原生回执；不能把可选路线硬化为所有捕鱼验收的前置。
+
+已解锁姜岛隔离副本只提供有声明前置的局部能力证据，不证明从零解锁；source-schedule 验证器及其原生身份/数量/时序校验保留并移至正确消费者，不通过删除验证或强置 Ready 修复层级问题。
+
+这项合同修订优先于 `pretraining-order-20261103-r1` 的相反条款。立即下一工作项是既有 #390 的实现解耦与受影响回归，然后用正确局部范围重新估算队列；不得继续把 Master Angler 固定第 10 当作已证最优排期。详细覆盖位置、有效下一步与原因见 [R2 计划补充条款](PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md)。本次只改文档，不提升任何 coverage、不关闭 #390、不宣称代码已经整改。
 
 ## Student 的训练阶段
 
@@ -72,7 +91,7 @@ Student 自主 rollout 到自己的分布。Teacher 对 learner-visited state �
 
 Stage D 不在 Stage 1 的 21/21 后直接启动。必须先以已准入的 Stage 1 checkpoint 进入 Stage 2，逐批开放并验收 Perfection 新依赖，直到原生 Perfection tracker 达到 100%，冻结可独立复现的单人完美策略基线；随后才启动 Stage D。此时系统已经是“游玩完全体”，但允许行为仍偏机械；Stage D 专门负责把它推进为长期协作下的人类化 Companion。
 
-原型将与玩家进行长时间真实联机。每个可用样本同时保留 AI 决策/执行、玩家同期操作、玩家打断/接管/纠正、双方角色与资源分工、时间/位置/候选上下文、原生 outcome 和后续恢复。训练侧优先构造**同状态或可证明可比状态**下的人类-vs-AI 成对偏好、序列 imitation 和 decision fine-tuning 数据，而不是把玩家所有动作直接当作最优标签。
+原型将与玩家进行长时间真实联机。每个可用样本同时保留 AI 决策/执行、玩家同期操作、玩家打断/接管/纠正、双方角色与资源分工、时间/位置/候选上下文、原生 outcome 和后续恢复。训练侧优先构造**同状态或可证明可比状态**下的人类-vs-AI 成对偏好、序列 imitation 和 decision-fine-tuning 数据，而不是把玩家所有动作直接当作最优标签。
 
 Stage D 重点学习软行为：协作时机、角色分工、资源礼让、路线与等待节奏、减少无意义往返、何时主动帮忙或保持不干扰、以及玩家长期稳定偏好。硬合法性、权限、不可逆操作、资源守恒、时间窗和执行正确性继续由既有确定性边界负责，不能通过“更像人”绕过。
 
@@ -119,7 +138,7 @@ provider / 模型实验不得改写 Teacher truth、coverage 分母、候选合�
 - 真实 terminal、跨日回执、来源哈希或 missingness 不完整；
 - 训练样本依赖 Student 推理时不可见的信息。
 
-当前状态命中前三项，正式训练保持禁用。既有 r24-r35 运行仍可作为控制面、执行器、性能和恢复证据，但不得直接升级为新 Teacher 监督数据。
+2026-09-23 的历史状态命中前三项；当前具体 blocker 以新机器报告为准，本文不据历史数字宣称已修复或已开训。既有 r24-r35 运行仍可作为控制面、执行器、性能和恢复证据，但不得直接升级为新 Teacher 监督数据。
 
 ## 运行时职责
 
