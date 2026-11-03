@@ -5,7 +5,7 @@
 - 当前 reconciliation 将本 root 保留为 `pending_dependency_expansion`：仍缺受保护物品安全的 60 件 acquisition/reservation/donation 组合，以及原生奖励到送钥匙事件的完整回执；Teacher source adapter 与三分区也尚未闭合。现有 EVD-224 捐赠、EVD-322 剧情和共享下水道执行器继续复用。
 - 已补齐同一方向的两处绑定：博物馆远程候选携带与店内捐赠共用的精确阈值参数，仍走共享 connector；自动剧情候选只有在可读博物馆奖励前置成立、原生 `Data/Events/Farm` 事件 `66` 与 fresh fingerprint 一致时，才可绑定 `obtain_rusty_key` 并交给已有剧情编译器。缺失/错误类型的必需布尔字段、错误剧情来源和过期/重复指纹均拒绝。
 - 锁定原始数据 `museum60` 的奖励动作是 `MarkEventSeen Host 295672`；Farm key `66/e 295672/t 600 700/H` 包含原生 `rustyKey`，反编译 `Event.DefaultCommands.RustyKey` 才写入实际钥匙状态。捐满 60 件不能直接声称拿到钥匙。
-- 验证：Core Release `0 warning / 0 error`；方向绑定、博物馆、剧情与 catalog 聚焦回归 `118/118`。新增反例曾发现缺失布尔值被默认 false 放行，现已修复。新方向回归已纳入无游戏 CI 编译清单；本次未启动游戏，未增加任何 coverage 或训练分子。
+- 验证：Core Release `0 warning / 0 error`；方向绑定、博物馆、剧情与 catalog 聚焦回归 `118/118`。新增反例曾发现缺失布尔值被默认 false 放行，现已修复。无游戏模式聚焦 `71/71`、完整无游戏测试 `1006/1006` 通过；共用参数 helper 已移入共享夹具 partial，新方向回归的 CI 编译清单可独立构建；本次未启动游戏，未增加任何 coverage 或训练分子。
 - 下一步：复用隔离 E 盘测试入口，验证 `59→60` 原生捐赠、奖励前置、正常跨日/农场入口和送钥匙实际回执，显式标记边界夹具起点；随后补共享安全 acquisition/reservation 的阈值组合及本 criterion 的独立 Teacher/native 分区。继续 WIP=1，局部验收按 R2，不要求先完成 95 件 Museum 或完整 Day-0 日程。
 
 > **当前接续决定（2026-11-03T18:30:00+08:00，用户确认）：** #390 / PR #391 已完成验收责任解耦；当前唯一 primary 为 `obtain_rusty_key`。先完成安全捐赠阈值、原生奖励与送钥匙事件的局部闭环，再补本 criterion 的 Teacher/native 分区。R2 的四层验收合同继续生效；R1 中 Master Angler 固定第 10、强制 Gourmand/source-schedule 及完整新档反向前置均已撤销。后续未开工 root 的顺位待当前项收口后按真实局部缺口决定。Pet Love、Skull Key 已消费的严格验收保持冻结，原始中间文件清理不触发重采；当前计数仍为 `5/19 executable、6/19 split-complete、5/19 CoverageGateReady、4/11 root ready`，`formal_product_training=false`。

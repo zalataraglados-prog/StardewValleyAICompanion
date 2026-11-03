@@ -555,6 +555,12 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
         };
     }
 
+    private static SmallModelActionParameter Parameter(string name, string value) => new()
+    {
+        Name = name,
+        Value = value
+    };
+
     private static ActionActorRef Actor()
     {
         return new ActionActorRef
