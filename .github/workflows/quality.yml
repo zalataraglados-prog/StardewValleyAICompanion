@@ -52,6 +52,9 @@ jobs:
       - name: Test independent Teacher supervision replay
         shell: pwsh
         run: dotnet run --project experiments/StardewAI.GoalConditionedBootstrap/StardewAI.GoalConditionedBootstrap.csproj --configuration Release --no-build -- self-test-current-stage-one-policy-supervision --output-root "$env:RUNNER_TEMP/policy-supervision-replay"
+      - name: Test Rusty Key threshold portfolio composition
+        shell: pwsh
+        run: dotnet run --project experiments/StardewAI.GoalConditionedBootstrap/StardewAI.GoalConditionedBootstrap.csproj --configuration Release --no-build -- self-test-rusty-key-acquisition-portfolio --output-root "$env:RUNNER_TEMP/rusty-key-threshold-portfolio"
       - name: Restore core governance tests
         run: dotnet restore tests/StardewAI.Core.Tests/StardewAI.Core.Tests.csproj --locked-mode -p:GameFreeGovernance=true
       - name: Test core governance

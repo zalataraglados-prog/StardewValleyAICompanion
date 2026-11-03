@@ -4,7 +4,7 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public static partial class CurrentCollectionTeacherFrontierBuilder
 {
-    private static CurrentCollectionProgress ReadMuseumProgress(
+    internal static CurrentCollectionProgress ReadMuseumProgress(
         JsonElement snapshot,
         GoalRequirementSet inventory)
     {
@@ -238,6 +238,12 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
         AcquisitionRequirementSetLowering lowering)
     {
         ValidateSetShape(inventory, lowering);
+        ValidateMuseumRequirementShape(inventory);
+        ValidateAlternativeParity(inventory, lowering);
+    }
+
+    internal static void ValidateMuseumRequirementShape(GoalRequirementSet inventory)
+    {
         foreach (var group in inventory.Groups)
         {
             if (group.SelectionRule != "all_required" ||
@@ -257,7 +263,6 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
                     "Museum requirement identity, quantity, or quality drifted.");
             }
         }
-        ValidateAlternativeParity(inventory, lowering);
     }
 
     private static void ValidateCommunityCenterSets(

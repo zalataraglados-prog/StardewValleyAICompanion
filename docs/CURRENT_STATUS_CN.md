@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-03 Rusty Key 阈值供给组合：** #394 已由 PR #396 合入并关闭，继续 Rusty Key primary。新入口把完整 museum 分母和实时差额接到现有 portfolio/atomic reservation 预检：选择恰好补足阈值的不同未捐物品，拒绝超量、重复、错身份/日期以及释放其他 requirement 预留；保留资源冲突失败关闭。它不证明联合执行时序、捐赠产物保管、原生钥匙或 Teacher 比较，覆盖和正式训练锁不晋升。具体入口、验证范围与唯一接续见 [合同](rusty-key-acquisition-portfolio.md)。
+
 > **2026-11-03 #394 监督边界修正：** structured dataset/trainer 已统一到独立 Teacher 源重放和显式 pair 准入，Backend、CLI 与 live loop 共用同一路径；Student 选择和原生成功不再被扩张为对所有合法备选的正负标签。正式 launcher 的禁入锁未放宽，`5/19、6/19、5/19、4/11` 不晋升。对应合同和验证边界见 [说明](independent-teacher-pairwise-admission.md)；收口后继续同一 Rusty Key primary 的安全 acquisition/reservation 组合。
 
 > **2026-11-03 Rusty Key 原生能力进展：** PR #392 已合并；隔离 E 盘边界链真实完成 `59→60` 捐赠、`museum60/295672`、正常保存跨日、Farm 事件 `66` 与实际钥匙，共 9 条 verified native action，源档未改，进程已回收。该后期边界档只证明共享原生能力，不证明 60 件安全供给、第三年前时限或正式三分区，因此当前覆盖分子与 `formal_product_training=false` 不变。下一步仍在同一 Rusty Key primary 内补安全 acquisition/reservation 阈值组合；证据和边界见 [说明](rusty-key-native-threshold-evidence.md)。
