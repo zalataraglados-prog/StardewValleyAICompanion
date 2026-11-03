@@ -47,6 +47,9 @@ The previous `pretraining-order-20261103-r1` amendment retained the very depende
 
 The immediate corrective work is to separate criterion-local coverage, reusable prerequisite certificates and Teacher-wide integration, under the existing WIP=1 rule. Rusty Key remains a supported upstream priority candidate after this correction, but the remaining root order must be reassessed using local scope and actual reusable evidence. Do not claim this documentation change has modified the builders, script gates or machine reports; #390 remains unresolved in implementation.
 
+<!-- audit_invalidation: scope=r2_pending_status; invalidated_at=2026-11-03T16:30:45+08:00; annotated_at=2026-11-03T18:52:51+08:00; superseded_by=PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md; historical_only=true -->
+> **Post-merge note:** Earlier wording that #390 was not implemented applies only to the 16:30 R2 drafting snapshot. PR #391 merged at 2026-11-03T17:49:49+08:00; no full game or formal training promotion is implied.
+
 PR #389 records v111 stopping at Spring 27 / iteration 647 with 479 verified actions and zero stage errors. It also records an isolated already-unlocked island baseline. Use that copy for the relevant local fishing/access/receipt smoke and short handoffs; label its existing unlock state explicitly. It cannot prove fresh-save unlock provenance, and no v111 in-memory continuation may be spliced into a later process.
 
 Master Angler local admission retains the native fish denominator, typed fish-area prerequisites, legitimate catch chains and criterion-local comparison/native-outcome train/validation/test evidence. Shared prerequisite certificates must be valid and fresh-bound. Gourmand is one OR route for walnut funding: validate its promised transitions when selected, but accept a different legally sufficient funding route without forcing Gourmand 3/3.
