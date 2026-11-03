@@ -2652,7 +2652,8 @@ static void BuildCurrentStageOneCollectionTeacherPreference(Arguments options)
         options.Required("acquisition-lowering"),
         options.Required("ranking"),
         options.Required("snapshot"),
-        options.Required("master-angler-target-date-intents"));
+        options.Required("master-angler-target-date-intents"),
+        options.Optional("strategy-ledger"));
     Write(options.Required("output"), report);
 }
 
@@ -2670,7 +2671,8 @@ static void BuildCurrentStageOneCollectionTeacherReceipt(Arguments options)
         options.Required("trajectory-id"),
         options.Required("run-id"),
         options.Required("knowledge-dictionary-version"),
-        options.Required("executor-version"));
+        options.Required("executor-version"),
+        options.Optional("strategy-ledger"));
     Write(options.Required("output"), report);
     if (options.Optional("dataset-output") is { } datasetOutput)
     {

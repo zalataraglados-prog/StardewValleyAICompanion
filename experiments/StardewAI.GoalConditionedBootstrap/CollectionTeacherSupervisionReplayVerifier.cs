@@ -29,7 +29,7 @@ public sealed class CollectionTeacherSupervisionReplayVerifier : IPolicyTeacherS
             sources.RankingPath, sources.BeforeSnapshotPath, sources.TargetDateIntentsPath,
             sources.PreferencePath, sources.ExecutionReceiptPath, sources.AfterSnapshotPath,
             claimed.TrajectoryId, claimed.RunId, claimed.Versions.KnowledgeDictionary,
-            claimed.Versions.Executor, denominator);
+            claimed.Versions.Executor, denominator, sources.StrategyLedgerPath);
         if (replay.Status != "ready" || !replay.TeacherTrainingRowEligible || replay.TrainingRow is null)
             throw new InvalidDataException("Independent Teacher replay rejected its source evidence: " +
                 string.Join(",", replay.BlockingReasons));

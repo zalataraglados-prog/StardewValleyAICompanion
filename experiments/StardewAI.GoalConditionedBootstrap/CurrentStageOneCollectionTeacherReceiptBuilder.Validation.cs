@@ -41,6 +41,8 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
             expected.SelectedCandidate is null ||
             expected.CompiledQueue is null)
             reasons.Add("recomputed_teacher_preference_not_ready");
+        if (actual.StrategyLedgerSha256 != expected.StrategyLedgerSha256 || actual.StrategyLedgerPath != expected.StrategyLedgerPath)
+            reasons.Add("teacher_preference_strategy_ledger_hash_mismatch");
         if (!SameHash(actual.RequirementInventorySha256,
                 CurrentTeacherFrontierSupport.HashFile(inventoryPath)) ||
             !SameHash(actual.AcquisitionLoweringSha256,

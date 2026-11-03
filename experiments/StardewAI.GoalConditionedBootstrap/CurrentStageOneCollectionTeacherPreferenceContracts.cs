@@ -50,6 +50,12 @@ public sealed class CurrentStageOneCollectionTeacherPreferenceLabel
     [JsonPropertyName("snapshot_sha256")]
     public string SnapshotSha256 { get; set; } = string.Empty;
 
+    [JsonPropertyName("strategy_ledger_sha256")]
+    public string StrategyLedgerSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("strategy_ledger_path")]
+    public string StrategyLedgerPath { get; set; } = string.Empty;
+
     [JsonPropertyName("community_center_denominator_sha256")]
     public string CommunityCenterDenominatorSha256 { get; set; } = string.Empty;
 

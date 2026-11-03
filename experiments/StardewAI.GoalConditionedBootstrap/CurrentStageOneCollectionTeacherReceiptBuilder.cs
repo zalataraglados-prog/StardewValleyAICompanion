@@ -23,7 +23,8 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
         string trajectoryId,
         string runId,
         string knowledgeDictionaryVersion,
-        string executorVersion) => Build(
+        string executorVersion,
+        string? strategyLedgerPath = null) => Build(
             requirementInventoryPath,
             acquisitionLoweringPath,
             rankingPath,
@@ -38,7 +39,7 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
             executorVersion,
             CurrentCommunityCenterDenominatorBuilder.Build(
                 requirementInventoryPath,
-                beforeSnapshotPath));
+                beforeSnapshotPath), strategyLedgerPath);
 
     internal static CurrentStageOneCollectionTeacherReceiptAdmission Build(
         string requirementInventoryPath,
@@ -53,7 +54,8 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
         string runId,
         string knowledgeDictionaryVersion,
         string executorVersion,
-        CurrentCommunityCenterDenominatorReport communityCenterDenominator)
+        CurrentCommunityCenterDenominatorReport communityCenterDenominator,
+        string? strategyLedgerPath = null)
     {
         var inventoryFullPath = Path.GetFullPath(requirementInventoryPath);
         var loweringFullPath = Path.GetFullPath(acquisitionLoweringPath);
@@ -74,7 +76,8 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
                 rankingFullPath,
                 beforeFullPath,
                 intentsFullPath,
-                communityCenterDenominator);
+                communityCenterDenominator,
+                strategyLedgerPath);
         var result = new CurrentStageOneCollectionTeacherReceiptAdmission
         {
             Preference = preference,
@@ -228,6 +231,7 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
             DatasetPartition = PolicyTrajectoryDatasetBuilder.PartitionFor(row.Context.SplitKey),
             Sources = new PolicyTeacherEvidenceSources
             {
+                StrategyLedgerPath = string.IsNullOrWhiteSpace(strategyLedgerPath) ? string.Empty : Path.GetFullPath(strategyLedgerPath),
                 RequirementInventoryPath = inventoryFullPath,
                 AcquisitionLoweringPath = loweringFullPath,
                 RankingPath = rankingFullPath,

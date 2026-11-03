@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Reflection;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
@@ -7,11 +8,37 @@ using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
 using StardewAI.Core.OptionRegistry;
 using StardewAI.Core.Training;
+using StardewAI.GoalConditionedBootstrap;
 
 namespace StardewAI.Core.Tests;
 
 public sealed partial class MuseumDonationMainlineTests
 {
+    [Theory]
+    [InlineData("valid", true)]
+    [InlineData("missing", false)]
+    [InlineData("revision", false)]
+    [InlineData("reserved", false)]
+    [InlineData("duplicate", false)]
+    public void TeacherRechecksManagedDonationCounterfactualsAgainstTheRetainedLedger(string kind, bool expected)
+    {
+        var snapshot = ReservationSnapshot();
+        var sourceLedger = DonationLedger(snapshot);
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(snapshot,
+            new[] { "museum.donate_items" }, true, sourceLedger);
+        var candidates = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability);
+        if (kind == "duplicate") candidates[0].Parameters = candidates[0].Parameters.Append(
+            new SmallModelActionParameter { Name = "material_reservation_ledger_id", Value = "wrong-extra-ledger" }).ToArray();
+        var current = kind == "reserved" ? DonationLedger(snapshot, 2) : DonationLedger(snapshot);
+        if (kind == "revision") current.Revision++;
+        var method = typeof(CurrentStageOneCollectionTeacherPreferenceBuilder).GetMethod("ValidateManagedMuseumLedger",
+            BindingFlags.Static | BindingFlags.NonPublic)!;
+        var label = new CurrentStageOneCollectionTeacherPreferenceLabel();
+        var ready = (bool)method.Invoke(null, new object?[] { candidates, snapshot, kind == "missing" ? null : current, label })!;
+        Assert.Equal(expected, ready);
+        if (!ready) Assert.NotEmpty(label.BlockingReasons);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

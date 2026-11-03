@@ -14,7 +14,8 @@ public static partial class CurrentStageOneCollectionTeacherPreferenceBuilder
         string acquisitionLoweringPath,
         string rankingPath,
         string snapshotPath,
-        string masterAnglerTargetDateIntentsPath) => Build(
+        string masterAnglerTargetDateIntentsPath,
+        string? strategyLedgerPath = null) => Build(
             requirementInventoryPath,
             acquisitionLoweringPath,
             rankingPath,
@@ -22,7 +23,7 @@ public static partial class CurrentStageOneCollectionTeacherPreferenceBuilder
             masterAnglerTargetDateIntentsPath,
             CurrentCommunityCenterDenominatorBuilder.Build(
                 requirementInventoryPath,
-                snapshotPath));
+                snapshotPath), strategyLedgerPath);
 
     internal static CurrentStageOneCollectionTeacherPreferenceLabel Build(
         string requirementInventoryPath,
@@ -30,7 +31,8 @@ public static partial class CurrentStageOneCollectionTeacherPreferenceBuilder
         string rankingPath,
         string snapshotPath,
         string masterAnglerTargetDateIntentsPath,
-        CurrentCommunityCenterDenominatorReport communityCenterDenominator)
+        CurrentCommunityCenterDenominatorReport communityCenterDenominator,
+        string? strategyLedgerPath = null)
     {
         var inventoryFullPath = Path.GetFullPath(requirementInventoryPath);
         var loweringFullPath = Path.GetFullPath(acquisitionLoweringPath);
@@ -68,6 +70,11 @@ public static partial class CurrentStageOneCollectionTeacherPreferenceBuilder
             rankingFullPath,
             snapshotFullPath,
             intentsFullPath);
+        var commitmentLedger = string.IsNullOrWhiteSpace(strategyLedgerPath)
+            ? null : AcquisitionStrategyLedgerReader.Read(Path.GetFullPath(strategyLedgerPath), snapshot).Ledger;
+        label.StrategyLedgerSha256 = commitmentLedger is null
+            ? string.Empty : CurrentTeacherFrontierSupport.HashFile(Path.GetFullPath(strategyLedgerPath!));
+        label.StrategyLedgerPath = commitmentLedger is null ? string.Empty : Path.GetFullPath(strategyLedgerPath!);
         var blockedSets = BlockedRequirementSets(frontier);
         if (blockedSets.Length > 0)
         {
@@ -91,6 +98,8 @@ public static partial class CurrentStageOneCollectionTeacherPreferenceBuilder
 
         var currentCandidates = CurrentTeacherFrontierSupport.ReadCurrentCandidates(
             ranking);
+        if (!ValidateManagedMuseumLedger(currentCandidates, snapshot, commitmentLedger, label))
+            return label;
         var candidatesById = currentCandidates.ToDictionary(
             value => value.CandidateId,
             StringComparer.Ordinal);
@@ -170,7 +179,8 @@ public static partial class CurrentStageOneCollectionTeacherPreferenceBuilder
             maxCandidates: 1);
         var compiledQueue = new ActionQueueCompiler().Compile(
             compiledPlan,
-            snapshot);
+            snapshot,
+            commitmentLedger);
         label.CompiledPlan = compiledPlan;
         label.CompiledQueue = compiledQueue;
         var compilationReasons = CompilationReasons(compiledPlan, compiledQueue);
