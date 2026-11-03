@@ -639,13 +639,17 @@ public sealed class EndOfNightTransactionContractTests
             StringComparison.Ordinal);
         Assert.Contains("Read-LogicalJsonArtifact", compoundSmoke,
             StringComparison.Ordinal);
+        var logicalReader = File.ReadAllText(FindRepositoryFile(
+            "scripts", "lib", "RuntimeLogicalJson.ps1"));
+        Assert.Contains("Read-RuntimeLogicalJsonArtifact", compoundSmoke,
+            StringComparison.Ordinal);
         Assert.Contains(
             "ContentAddressedJsonArtifactReader]::ReadAllText",
-            compoundSmoke,
+            logicalReader,
             StringComparison.Ordinal);
-        Assert.Contains("$readerType =", compoundSmoke,
+        Assert.Contains("$readerType =", logicalReader,
             StringComparison.Ordinal);
-        Assert.Contains("-as [type]", compoundSmoke,
+        Assert.Contains("-as [type]", logicalReader,
             StringComparison.Ordinal);
         Assert.Contains(
             "\"--iterations\", $MaxLoopAttempts.ToString()",

@@ -52,6 +52,7 @@ function Assert-RustyKeyNativeSteps {
     foreach ($step in $Steps) {
         if ([string]$step.option_id -like "debug.*" -or
             [string]$step.status -ne "applied" -or
+            [string]$step.source -ne "runtime_test_harness_executor" -or
             [string]$step.primitive_verification_status -ne "verified" -or
             @($step.block_reasons).Count -ne 0) {
             throw "Rusty Key chain contains an unverified or debug step."
@@ -72,6 +73,23 @@ function Assert-RustyKeyNativeSteps {
     if ($donations.Count -ne 1 -or $sleeps.Count -ne 1 -or
         $stories.Count -ne 1) {
         throw "Rusty Key chain needs one donation, sleep and event 66 completion."
+    }
+    if ([string]$donations[0].source_planning_option_id -ne "museum.donate_items" -or
+        [string]$sleeps[0].source_planning_option_id -ne "recovery.stabilize_day" -or
+        [string]$stories[0].source_planning_option_id -ne "story.advance_event") {
+        throw "Rusty Key native receipts lost their planning lineage."
+    }
+    foreach ($fact in @(
+        @("world_progress.museum.donated_count", "59", "60"),
+        @("quests.mail_received.museum60", "false", "true"),
+        @("player.events_seen.295672", "false", "true")
+    )) {
+        if (@($donations[0].changed_facts | Where-Object {
+            $_.path -eq $fact[0] -and [string]$_.before -eq $fact[1] -and
+            [string]$_.after -eq $fact[2]
+        }).Count -ne 1) {
+            throw "Rusty Key donation receipt lacks exact native fact: $($fact[0])"
+        }
     }
     foreach ($reason in @(
         "native_event_input_only", "boundary=event_completed", "skipEvent_not_used"

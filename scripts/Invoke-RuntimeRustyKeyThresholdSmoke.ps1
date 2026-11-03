@@ -202,6 +202,9 @@ try {
     $night = Wait-Json -Url "$executorUrl/api/v1/training/end-of-night-transaction" -TimeoutSeconds 15
     Write-JsonFile -Path (Join-Path $runRoot "native-night.json") -Value $night
     if ($night.status -ne "complete" -or $night.saw_native_save_commit -ne $true -or
+        $night.saw_expected_new_day -ne $true -or $night.saw_safe_new_day_ready_state -ne $true -or
+        $night.debug_negative_fixture_injected -ne $false -or
+        $night.safe_next_day_planning_option_id -ne "exploration.visit_location" -or
         $night.completed_total_days -ne ($startingDay + 1) -or
         (Read-StateValue $capture.Value "time" "total_days") -ne ($startingDay + 1)) {
         throw "Rusty Key chain did not include exactly one normally committed night."
@@ -212,8 +215,9 @@ try {
         schema_version = "stardewai.runtime_rusty_key_threshold_smoke.v1"
         status = "passed"; run_id = $RunId; project_head = [string](& git -C $ProjectRoot rev-parse HEAD)
         fixture_boundary = "59_donations_town_inventory_slot_11_item_96"
-        evidence_scope = "criterion_local_native_threshold_reward_key_event"
-        proves_acquisition_of_60_items = $false; formal_training_started = $false
+        evidence_scope = "shared_native_threshold_reward_key_event_capability"
+        proves_acquisition_of_60_items = $false; proves_full_criterion = $false
+        formal_training_started = $false
         source_save_preserved = $true; source_save_sha256 = $sourceHash
         candidate_binary_sha256 = $binaryIdentity; isolated_mods = $modIdentity
         native_start_total_days = $startingDay; native_end_total_days = $startingDay + 1
