@@ -33,16 +33,27 @@ public sealed partial class ReservationPortfolioLedgerTests
         var snapshot = MuseumCustodySnapshot();
         var service = new ReservationPortfolioLedgerService();
         var ledger = service.Commit(null, snapshot, Request(snapshot, 20, 300), "initial").Ledger!;
+        if (failure == "overbook")
+        {
+            var occupied = new MaterialReservationLedgerService().Upsert(ledger, snapshot, new()
+            {
+                StateHash = snapshot.StateHash, ExpectedLedgerRevision = ledger.Revision,
+                ReservationId = "other-goal-owns-all-scrolls", SourceDecisionId = "other", GoalId = "other",
+                NodeId = "player:123", SlotIndex = 1, QualifiedItemId = "(O)96", Quantity = 2, Purpose = "other goal"
+            }, "other-claim");
+            Assert.True(occupied.Accepted, string.Join(";", occupied.Errors));
+            ledger = occupied.Ledger!;
+        }
         var original = JsonSerializer.Serialize(ledger);
-        var request = SettlementRequest(snapshot, 1);
+        var request = SettlementRequest(snapshot, ledger.Revision);
         var claim = MuseumOutputClaim();
-        if (failure == "overbook") claim.SlotIndex = 25;
         if (failure == "foreign-node") claim.NodeId = "player:999";
         if (failure == "wrong-item") claim.QualifiedItemId = "(O)388";
         if (failure == "unknown-consumer") claim.ConsumerOptionId = "executor.ship_inventory_item_to_bin";
         request.OutputCustodyClaims = failure == "duplicate" ? new[] { claim, claim } : new[] { claim };
         var result = service.SettleCompletedRoute(ledger, snapshot, request, "failed");
         Assert.False(result.Accepted);
+        if (failure == "overbook") Assert.Contains("material_reservation_insufficient_unreserved_quantity", result.Errors);
         Assert.Same(ledger, result.Ledger);
         Assert.Equal(original, JsonSerializer.Serialize(ledger));
     }
