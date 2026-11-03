@@ -1,5 +1,13 @@
 # Independent Golden Walnut source-schedule verification
 
+<!-- pretraining-order-20261103-r1; edited_at=2026-11-03T15:46:34+08:00; research_base=049f40edfcef910b00451ad5f7b948916df67ba1; owner-authorized; docs-only -->
+
+## Scheduling amendment · 2026-11-03T15:46:34+08:00
+
+The owner-authorized dependency/cost reorder is recorded in `CURRENT_STATUS_CN.md` section 6. Master Angler is parked at position 10; Rusty Key is the current primary. This amendment does **not** relax any verifier predicate below.
+
+When this root resumes: verify native behavior first on the isolated already-unlocked island baseline retained by PR #389, then verify the relevant short prerequisite/continuation chains, and only after those gates pass run the existing fresh-day-zero source-schedule proof and independent frozen-artifact replay. Fixture/boundary-save outcomes are local capability evidence only, never substitutes for initial zero-progress identity or full fresh-save lineage. Existing run/save/player/SHA binding, negative tests, Gourmand continuity and 72/14/3 admission remain intact. No new Issue, verifier implementation, code-generated progress promotion or model training is part of this documentation revision.
+
 This is an offline, read-only comparison boundary, not a training admission gate
 or a runtime controller. Run it **after** the evidence directory, manifest and
 loop-emitted schedule have been frozen. Do not run a rebuilding command over the

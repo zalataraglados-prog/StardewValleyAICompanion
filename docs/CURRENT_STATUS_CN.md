@@ -1,5 +1,9 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+<!-- pretraining-order-20261103-r1; edited_at=2026-11-03T15:46:34+08:00; research_base=049f40edfcef910b00451ad5f7b948916df67ba1; owner-authorized; docs-only -->
+
+> **本轮有效计划：** 第 4–7 节已按 2026-11-03T15:46:34+08:00 用户授权重排。唯一 primary 为 `obtain_rusty_key`；Master Angler 暂停保留、列第 10，Money 最终门仍第 11。下方 v111 及更早运行的“下一步”保留作历史事实，不覆盖第 6 节。状态面板不因文档修订晋升。
+
 > 本文件是**当前人类可读状态入口**。机器可读 report / self-test / evidence index 仍是事实源；本文件负责把不同分母分开显示并规定开发顺序。
 >
 > 下方其他带日期的 handoff、readiness、plan 章节均保留作历史证据。除非其数字在本文件中再次出现，否则**不得把历史数字当作当前状态**。
@@ -433,6 +437,8 @@ Full Shipment dependency graph 的节点早已声明 `full_recurrence_required_f
 - v111 `golden-walnut-source-schedule-v111-20261103-091730` 以 `main@9974d32e` 从新的 day-zero 存档运行到 Year 1 Spring 27，并在 iteration `647`、`479` 条 verified Product action、`stage=error=0` 时人工收口；游戏、服务和专用端口均已回收。该轮未首次登岛，未生成 source schedule、Gourmand `3/3` 或 `72/14/3` proof，因此只保留为中断校准证据，`formal_product_training=false` 不变。后段合法锁定 `(O)SeaJelly` 并做随机重试；1.6.15 原生 `Stats.checkForFishingAchievements` 与实时透明鱼类集合均证明 Jelly 属于 Master Angler 分母，本轮有限次未命中不能单独判为执行器错误。
 - v111 同时暴露了测试编排错误：下游姜岛能力尚未用已解锁边界存档快速验收，就先运行了昂贵的新档长链。隔离 `E:` 测试存档已复制为 `I:\StardewAITraining\golden-walnut-source-schedule-v102\validation-saves\ginger-island-unlocked-baseline-20261103\CrabPotAudit_442159967`，源存档未改写；主存档与 `SaveGameInfo` 的 SHA-256 分别为 `7F34A5731208788F37EF2D1F76B64B890466293878F876ABCA6FE4A05A052CB0`、`0F2716DE726B87A8EC9AAE6B89E1713C6207BD24EA119E8DC188DFDF2C0620FC`。暂停恢复后的固定次序为：先在该副本上复用现有产品链完成姜岛捕鱼地点、Gourmand、核桃来源与原生回执 smoke；只有边界层通过，才重新启动独立的新 day-zero 证明。禁止从 v111 内存状态续接、禁止另写平行执行器、禁止改写用户存档。
 
+> **2026-11-03T15:46:34+08:00 顺位注释：** 上述已解锁姜岛基线及 SHA-256 原样保留；边界 smoke 必须早于 Master Angler 的下一次完整 day-zero 证明，但现在随该 root 暂停到第 10 项。它不再要求阻塞 Rusty Key 开工，也不能把既有解锁基线计为新档解锁证据。
+
 ## 2. 已完成并冻结的施工单位
 
 ### Full Shipment runtime evidence
@@ -526,10 +532,11 @@ crop-production checkpoint v12 只认可可从精确请求重建的 fragment。�
 ```text
 同一时间只允许 1 个 primary root method / progression family 作为 coverage 施工单位。
 已完成恢复点：v15 已闭合 v10 之后的下一条 Money 连续生产段。
-当前恢复点：`complete_master_angler` 顶层 dependency、日历窗口与 coverage 接线。
+当前恢复点：`obtain_rusty_key` 的 60 件阈值、原生奖励及正式证据闭合。
+原 `complete_master_angler` 由 2026-11-03 用户授权修订显式暂停，保留成果，排至第 10 项。
 ```
 
-Money 的有界段已验收并停止继续深挖。Community Center、Pet Love、Skull Key 与 Full Shipment 已在 current authority 下复核冻结，因此当前从第 6 节下一项 `complete_master_angler` 开始。任何时刻仍只允许一个 primary item；不得以“复杂度排序”为由重新并行展开多个半成品。
+**修订 2026-11-03T15:46:34+08:00：** Money 有界段和前四个已冻结 root 保留。经用户授权，按第 6 节的上游优先新队列从 `obtain_rusty_key` 开始；Master Angler 显式暂停并重排，不占并行 WIP。任何时刻只允许一个 primary item，两个平级开发对话也不例外。原因是旧表低估了消费者复用未闭合上游与完整新档验收的成本，而不是本轮发现了新的游戏执行 bug。
 
 ### 允许的中断
 
@@ -539,7 +546,7 @@ Money 的有界段已验收并停止继续深挖。Community Center、Pet Love�
 - 当前项被一个共享基础设施硬 blocker 阻塞；
 - 已测量确认的性能热点使当前项无法在可接受反馈时间内继续。
 
-中断处理完成后必须**回到同一 primary item**，直到它达到本轮显式退出条件；不得借中断顺势跳过第 6 节队列。
+普通中断处理完成后必须**回到同一 primary item**；用户明确授权且已在第 6 节记录原因/时间戳的依赖重排是另一类操作，可以把未完成项安全暂停并切换 primary。本次适用后者；不得把该例外理解成自主并行或随意换项。
 
 ### 不算“并行开新项”的工作
 
@@ -569,7 +576,78 @@ Money 自身最终完成，至少要同时满足：
 
 上述标准仍定义 Money 自身的最终 Exit Gate，但自 2026-10-21 的复杂度排序指令生效后，不再作为开始其他较小 root method 的前置条件。Money 回到队列时仍必须完整满足本 Gate，不能因被排到后面而降低标准。
 
+<!-- pretraining-order-20261103-r1: money-scope; 2026-11-03T15:46:34+08:00 -->
+**2026-11-03 范围修订：** 排第 11 的是完整 Money root/18 个 production cell，不是禁止其他 root 使用已有购种、种植、出售、预留及有限现金生产支撑。消费者只为其真实价格/材料缺口绑定可验证的有界段；不先要求百万收入，也不把有界段直接冒充完整 Money coverage。
+
 ## 6. 下一项如何选择
+
+### 2026-11-03 修订：先满足上游，再按剩余增量成本排队
+
+<!-- pretraining-order-20261103-r1; edited_at=2026-11-03T15:46:34+08:00; research_base=049f40edfcef910b00451ad5f7b948916df67ba1; owner-authorized; docs-only -->
+
+**生效时间：2026-11-03T15:46:34+08:00（Asia/Kuala_Lumpur，UTC+08:00）。研究基线：`main@049f40edfcef910b00451ad5f7b948916df67ba1`。**
+本轮用户明确要求调研依赖倒置和难度倒挂后重排，直接修订对应文档；不发 Issue。
+这次修改的是**训练前开发/验收队列**，不是游戏中的日程顺序，不改评分分母、游戏规则、模型设计权或正式训练门。
+
+#### 6.1 证据与原因：已证事实和工程估计分开
+
+| 编号 | 核查结果与出处 | 对顺序的影响 | 证据性质 |
+| --- | --- | --- | --- |
+| D1 | `MasterAnglerFreshSavePrerequisiteAuditBuilder.Family` 的 `sewer_rusty_key_access` 明确复用 `obtain_rusty_key` 与 `dependency.obtain_rusty_key.has_rusty_key`；本文件 2026-10-21 下水道记录同时说明，组合边存在不等于 60 件捐赠/上游三分区已完成。 | Rusty Key 移到 Master Angler 前；不能把 `HasBound...` 的结构接线当成上游验收。 | 源码与既有记录，置信度高 |
+| D2 | 同一审计器复用 `raise_skill_levels` 的 Fishing XP、矿井推进与已选择的 Rain Totem/Foraging XP 支撑。原队列把这些可复用生产能力放在汇总型目标之后。 | Skills 前移，先统一 XP deficit、时间/体力和原生输出合同；保留已经实现的钓鱼/采矿/采集执行链。 | 复用关系确定；整个 root 的相对工期未测量 |
+| D3 | 原第 6 节已明确 Marriage/House 复用 Friendship；婚姻、房屋和结算属于组合能力，不能在社交基础未闭合时另造一套。 | Friendship 在 Marriage/House 前；住房资金/材料用现有有界经济支撑，不把 Money 六阈值都变成前置。 | 现有计划/合同；排序置信度高 |
+| D4 | Rusty Key 是博物馆 60 件阈值与奖励事件；全 Museum 权威分母为 95。二者共享 acquisition/reservation/donation，但不是同一完成门。 | 先闭合 60 件子集，再让全 Museum 复用；禁止反过来要求 95/95 才能拿钥匙。 | 锁定目录与原生阈值，置信度高 |
+| D5 | PR #389/v111 在 Spring 27、iteration 647、479 条 verified action、`stage=error=0` 时人工停止，未登岛；记录明确承认姜岛边界存档 smoke 尚未先做。 | 把“边界功能 → 短链组合 → 完整新档证明”分开；不得只因没有登岛就判执行器有 bug，也不再把每次排障都塞进 day-zero 长链。 | 仓库原生运行记录，未由本次审计复跑 |
+| D6 | Master Angler 虽然 split-complete，仍整合 72 个鱼种、14 类前置、姜岛来源日程与 Gourmand 连续性；`6/19 split-complete` 不能等价为顶层增量很小。 | 从第 5 移到第 10；中间先完成低耦合或可复用上游，不继续用既有局部证据低估整体验收成本。 | 依赖范围确定；相对难度为工程判断（中） |
+
+来源：
+- [Master Angler 前置审计器](../experiments/StardewAI.GoalConditionedBootstrap/MasterAnglerFreshSavePrerequisiteAuditBuilder.cs) 与 [类型化依赖图](../experiments/goal-method-dependency-expansions.v1.json)。
+- [原版 1.6.15 四类收集分母](../experiments/README.local.md)、[当前施工记录](CURRENT_WORK_CN.md)、[v111 记录 PR #389](https://github.com/zalataraglados-prog/StardewValleyAICompanion/pull/389)。
+- 本文件第 1 节为状态快照；这些源码/历史原生记录**不冒充本轮新生成的 reconciliation 或 E3 证据**。
+
+#### 6.2 新的 11 核心默认队列
+
+| 新序 | root method | 处理范围与退出要求 | 旧序 |
+| ---: | --- | --- | ---: |
+| 1 | `complete_community_center` | 保持 current-authority 冻结；新存档仍须实际推进原版社区中心状态，不把模块验收等同为存档已完成。 | 1 |
+| 2 | `earn_pet_love` | 保持冻结；只处理有证据的回归/authority 漂移。 | 2 |
+| 3 | `obtain_skull_key` | 保持冻结；复用既有矿井与钥匙原生证据。 | 3 |
+| 4 | `complete_full_shipment` | 保持 `154/154` 静态与 `26/26` 原生分层准入；不重新强制 154 项全新长跑。 | 4 |
+| 5 | `obtain_rusty_key` | **当前唯一 primary root。** 复核并闭合 60 件安全捐赠组合、原生奖励/钥匙与下水道入口；补齐本 root 既定正式证据后冻结。 | 6 |
+| 6 | `raise_skill_levels` | 复用现有五类 XP 生产者，补缺口/机会成本、累计等级与回执合同，再完成本 root 既定分区。优先验证被其他根复用的精确技能子链。 | 9 |
+| 7 | `raise_friendships` | 复用社交动作，闭合日历、礼物保留、衰减与多人阈值 recurrence；向后续伴侣子链提供共享能力。 | 7 |
+| 8 | `marriage_and_house_upgrade` | 在共享社交能力后组合伴侣、必要采购/房屋、提议与婚礼/入住结算；只绑定实际资金/材料缺口。 | 10 |
+| 9 | `complete_museum_collection` | 复用已闭合的 60 件与捐赠链，扩展到权威 95 件异构来源和终态；不得复制博物馆执行器。 | 8 |
+| 10 | `complete_master_angler` | **暂停、未完成、成果保留。** 上游和姜岛边界验收准备好后，复用原链完成来源日程、独立重放、Gourmand 与既定 `72/14/3` 退出门；不是削减鱼类分母。 | 5 |
+| 11 | `earn_money` | 保留原最终顺位和 Money Exit Gate：六阈值 × 三分区 `18/18`、连续经济证明及全局对账。其有界供给能力仍可先供其他 root 复用。 | 11 |
+
+**中间顺位说明：** Skills/Friendship/Marriage/Museum 的相对顺序是基于复用、剩余耦合面和当前证据的默认工程估计，不是已测得工时，也不是新增游戏硬依赖。开工前重建当前 reconciliation、blocker/evidence-reuse 报告；若实测剩余成本反转，在此处追加带时间戳的理由后才改尚未开工项，不静默换序。
+
+**禁止把开发先后伪装成完整 root 的硬依赖：** 拿 Rusty Key 不要求先完成 95 件 Museum；姜岛首次登岛不要求先收核桃；Master Angler 不要求先完成所有五种技能的全部评分阈值，也不要求先完成 Marriage/House 或全 Museum；Marriage/House 不要求先完成全部 NPC 的 Friendship 评分阈值；任何上游只暴露其消费者实际需要的、已验证的子合同。自然天气与 Rain Totem、普通矿井与其他地点等 OR 分支继续由锁定规则决定，不把可选强化一律改成必需。
+
+#### 6.3 当前项切换、WIP 和保留项
+
+- 原 primary `complete_master_angler` 由本次用户授权**显式暂停并重排**；不是声称已完成，也不是永久放弃。v111 已记录人工停止且进程/端口回收；本次没有替开发机停止或启动进程。
+- 立即下一项是 `obtain_rusty_key` 的现状对账和最小完整阈值链。不得同时展开 Skills 或另起 Money 正式覆盖；两个平级常驻对话及各自子代理可以拆分同一项的实现、审查和证据工作，不变成两个 primary root。
+- Master Angler 既有代码、split 证据、v110/v111 诊断及 PR #389 的隔离岛屿基线原样保留；回到第 10 项时从该边界 smoke 开始，不重新造 Planner/Compiler/Executor。
+- #381 owner `PASS` 仍已消费，不能因排队变化重做目视门。README、人格/模型族选择和产品 Stage 1 → Stage 2 → Stage D 顺序均不在本次修改范围。
+
+#### 6.4 验证按范围分层，终局证明不降级
+
+1. 锁定原版 1.6.15 和当前代码身份，复用可重放工件，定位精确未满足条件；零错误、随机有限次未命中、人工停止都不能自动写成 bug。
+2. 用隔离副本做边界 E3：例如 59→60 捐赠/原生奖励，或 PR #389 已准备的已解锁姜岛基线。夹具/既有解锁状态必须显式标注，**不能证明从零获得了这些前置**。
+3. 同一候选版本验证实际组合与控制交接，再做消费者所需的短链/跨日集成；保留相应原生前后状态、身份和费用。
+4. root 的既定新档/三分区/长时序退出门在局部能力齐备后执行；完整 fresh-save 回归仍不可由 smoke、日志无错误或测试全绿替代。源码改变或未保存内存态中断，按原合同新建身份，不能拼接成功证明。
+5. Master Angler 的最末整合仍须真实证明社区中心/可用路线状态 → 威利邀请 → 修船材料与原生结算 → 购票/实际到岛 → 核桃/鹦鹉/房屋/Gourmand；逐门记录实际 status，不能只记录“未登岛”。当前 code-bound 与 production-ready 两种状态继续分栏。
+
+#### 6.5 不变的总门与本次证据边界
+
+本次只修改计划，不生成新的机器报告、native receipt 或 coverage。状态仍为 executable `5/19`、split-complete `6/19`、CoverageGateReady `5/19`、coverage-ready roots `4/11`、Full Shipment `26/26`、Money production `0/18`、`formal_product_training=false`。保持 `--skip-training`；正式 `19/19 + 11/11 + global reconciliation` 和 Provider/模型定型门均不得跳过。未额外发 Issue，未新增另一套执行器。
+
+### 2026-10-21 原队列（历史保留，不再用于当前调度）
+
+<details>
+<summary>展开原排序及当时依据；已被上述带时间戳修订取代</summary>
 
 ### 2026-10-21 固定的 11 核心复杂度队列
 
@@ -590,6 +668,7 @@ Money 自身最终完成，至少要同时满足：
 | 11 | `earn_money` | 六阈值 × 三分区，且要求连续经济 recurrence | 回到现有生产段链，完成 `18/18` 与 Money Exit Gate |
 
 此表是新的默认开发顺序。每项开工前仍要重新生成 Goal Method reconciliation、blocker 分类和 evidence reuse 报告，但它们用于确认“重绑、补证或重采”的范围，不得静默改变顺序。只有出现可验证的硬依赖倒置或 P0/P1 correctness blocker 时，才允许先编辑本表及其余当前态文档，再调整尚未开始的项；已开工项仍遵守 WIP=1。
+</details>
 
 ## 7. executable / split-complete 差集与恢复队列
 
@@ -604,7 +683,7 @@ Money 自身最终完成，至少要同时满足：
 
 Skull Key 与 Pet Love 的旧生产工件均已按当前字典、日历、输入契约和哈希严格重放并冻结。Full Shipment 的顶层接线也已完成；Master Angler 已有两通道三分区证据，后续只允许补顶层依赖展开，不得另写第二套动作、候选或执行器。
 
-这些既有成果解释了新队列为何把 Community Center、Pet Love、Skull Key、Full Shipment 和 Master Angler 放在前部。Money 有界段已经验收，前四个 root method 已按 current source 冻结；现在严格进入 Master Angler 顶层接线，仍然一次只选择一个 root method。这样既避免丢弃历史成果，也不重新引入多个半成品并行推进。
+**修订 2026-11-03T15:46:34+08:00：** 前四个 root 保持冻结；Master Angler 的 split-complete 证据保留，但不能再据此认定其顶层成本很小。当前 primary 为 Rusty Key，后续按第 6 节新表执行。开发顺位变化不会改变本节任何 criterion、分区或 readiness 状态。
 
 ## 8. 最近的深度优化状态
 
@@ -637,6 +716,9 @@ Skull Key 与 Pet Love 的旧生产工件均已按当前字典、日历、输入
 仍必须保留独立的 save/player/partition/criterion 身份与可重放证据，不能为了提速合并监督标签。
 
 ## 10. 时间估计
+
+<!-- pretraining-order-20261103-r1: forecast-scope; 2026-11-03T15:46:34+08:00 -->
+**2026-11-03 注释：** 下列工期是旧排队假设下的历史估计，不是本次重排重新验证的 ETA。上游缺口、边界 smoke 和集成反馈时间尚未测量齐全，暂不据此宣称加速倍数或新的交付日期。
 
 假定不调用 worker、复用现有执行器和生产工件、游戏版本/权威字典不发生大漂移，并保持 `WIP=1`：
 

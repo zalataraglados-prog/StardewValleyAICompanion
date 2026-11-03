@@ -2,7 +2,37 @@
 
 > **当前状态入口：** [CURRENT_STATUS_CN.md](CURRENT_STATUS_CN.md)。本文件下方带日期的状态、计数和“下一步”均保留为历史证据；若与当前机器报告或 CURRENT_STATUS_CN.md 冲突，不得按历史数字规划新工作。
 >
-> **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已完成 v10 之后的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已按 current authority 冻结；当前唯一施工项为 `complete_master_angler` 顶层 dependency、日历窗口与 coverage 接线。P0/P1 共享 correctness blocker 可临时中断，但不得静默改序或并行展开多个 root method。
+> **施工顺序修订（2026-11-03T15:46:34+08:00，Asia/Kuala_Lumpur；pretraining-order-20261103-r1）：** Community Center、Pet Love、Skull Key、Full Shipment 保持已冻结；后续顺序改为 `obtain_rusty_key` → `raise_skill_levels` → `raise_friendships` → `marriage_and_house_upgrade` → `complete_museum_collection` → `complete_master_angler` → `earn_money`。当前唯一 primary root 改为 `obtain_rusty_key`；Master Angler 保留成果、暂停在未完成状态，不再占据第 5 项。本次为用户明确授权的依赖/成本重排，不是普通 bug 中断；仍为 WIP=1。完整依据、退出条件与历史队列见 [CURRENT_STATUS_CN.md 第 6 节](CURRENT_STATUS_CN.md#6-下一项如何选择)。
+
+<!-- pretraining-order-20261103-r1; edited_at=2026-11-03T15:46:34+08:00; research_base=049f40edfcef910b00451ad5f7b948916df67ba1; owner-authorized; docs-only -->
+
+## 2026-11-03 训练前开发顺序修订（当前有效）
+
+**时间：2026-11-03T15:46:34+08:00（Asia/Kuala_Lumpur）；研究基线：`049f40edfcef910b00451ad5f7b948916df67ba1`。**
+用户明确授权纠正依赖倒置和难度倒挂；本节替代旧“Master Angler 当前第 5 项”的调度指令，原运行/测试记录保留为历史。
+
+前四项 Community Center / Pet Love / Skull Key / Full Shipment 保持冻结。后续为：
+
+`obtain_rusty_key` → `raise_skill_levels` → `raise_friendships` → `marriage_and_house_upgrade` → `complete_museum_collection` → `complete_master_angler` → `earn_money`
+
+**唯一 primary：`obtain_rusty_key`。** Master Angler 保留已有实现和证据，显式暂停而非完成；Money 的最终 18/18 门仍在最后，其有界供给仍可供前面各项复用。
+理由与源码索引统一见 [CURRENT_STATUS_CN.md 第 6 节](CURRENT_STATUS_CN.md#6-下一项如何选择)：下水道复用未闭合 Rusty Key，捕鱼/天气复用技能生产者，婚姻复用社交；v111 又证明“先跑昂贵新档、后补姜岛边界 smoke”的验收次序需要修正。中间相对工期属工程估计，不冒充已测量成本或新增游戏硬依赖。
+
+验证顺序固定为：**锁定源码/旧证据复核 → 隔离边界原生 smoke → 同版本短链和组合验证 → 本 root 所需完整新档/分区验收**。边界档不能冒充从零解锁；改变二进制或丢失未保存内存 continuation 后不得拼接。已有完成项只对真实回归/authority 漂移重开。
+
+本次为文档重排，未运行游戏或生成新证据。`5/19 executable、6/19 split-complete、5/19 CoverageGateReady、4/11 root ready、26/26 Full Shipment、0/18 Money production、formal_product_training=false` 保持不变。继续 `--skip-training`，全局正式覆盖、Provider/模型定型与产品 Stage 1/2/D 顺序不变；#381 owner PASS 不重做。
+
+### 本轮接棒任务：Rusty Key，不另开岛屿长跑
+
+1. 先按当前 source 重建 Rusty Key 的 reconciliation/blocker/evidence-reuse；图节点或执行器已存在不代表 root 正式通过，不重复新建候选、捐赠或开锁执行器。
+2. 把工作范围限制为受保护物品安全的 60 件 acquisition/reservation/donation 组合、原生阈值奖励和现有下水道入口。先验证阈值前后的真实奖励/控制交接，再补本 root 缺失的生产证据与三分区；不把 95 件 Museum 当先决条件。
+3. 达到既定 Exit Gate 后冻结，再进入 Skills；当前只是计划接棒，不声称已经开始或完成这些步骤。
+4. 两个常驻对话平级且各自可调用子代理，但实现、交叉审查、采证都服务同一 primary；不得借本次重排同时开 Skills、Museum、Money。
+
+### Master Angler 保留点
+
+v111 已人工收口；PR #389 的隔离已解锁姜岛基线和两份 SHA-256 保留。它对应的 boundary smoke 作为第 10 项重新开工的首门，而不是删除或伪造成功。恢复时先验证岛屿捕鱼地点/Gourmand/核桃/原生回执，再在上游与局部能力齐备时做全新 day-zero 终局证明。不得续接 v111 内存态，不触碰用户游玩存档。
+
 
 ## 2026-11-01：v98 已按新预算边界从全新 day-zero 启动
 
@@ -58,6 +88,8 @@
 - 当前唯一 WIP=1 已回到 Golden Walnut/source-schedule 主线。v110r2 未首次登岛、未产生核桃来源增量、未完成 Gourmand 连续性，也不能跨停止后的内存边界续接；下一入口必须是最新 `main` 上新的 day-zero 身份，继续首次登岛、First Parrot、Western Turtle、Island House、source schedule 冻结/独立重放、Gourmand `3/3` 与 `72/14/3` completion proof。全过程继续 `skip-training`、`formal_product_training=false`，运行输出只落本地证据根，禁止提交 `local-data`。
 - v111（`golden-walnut-source-schedule-v111-20261103-091730`，`main@9974d32e`）已从全新 day-zero 存档运行到 Year 1 Spring 27；人工收口时为 iteration `647`、`479` 条 verified Product action、`stage=error=0`，所有进程和专用端口均已回收。该轮没有首次登岛、核桃来源日程、Gourmand 连续性或 completion proof，因而是**中断的校准证据**，不是完成轮次，也不得跨进程续接。期间 Master Angler 合法锁定 `(O)SeaJelly` 并进行随机重试；锁定 1.6.15 的 `Stats.checkForFishingAchievements` 明确以 `ObjectType == "Fish" && !ExcludeFromFishingCollection` 为分母，透明鱼类集合也包含三种 Jelly，因此不得把 Jelly 从权威分母中删除；本轮约数十次未命中不足以证明执行器缺陷。
 - 本轮确认的流程缺陷是验证顺序：姜岛下游尚未做边界存档 smoke，就先投入了 day-zero 长链。已从隔离的 `E:` 测试存档复制只读基线到 `I:\StardewAITraining\golden-walnut-source-schedule-v102\validation-saves\ginger-island-unlocked-baseline-20261103\CrabPotAudit_442159967`；其主存档 SHA-256 为 `7F34A5731208788F37EF2D1F76B64B890466293878F876ABCA6FE4A05A052CB0`，`SaveGameInfo` 为 `0F2716DE726B87A8EC9AAE6B89E1713C6207BD24EA119E8DC188DFDF2C0620FC`。恢复工作后的唯一下一步改为：先在该副本上复用现有产品执行器验证已解锁姜岛的捕鱼地点、Gourmand、核桃来源和原生回执；通过后再启动新的 day-zero 终局证明。不得启动第二套岛屿执行器，也不得改写用户游玩存档。
+
+> **顺位修订 2026-11-03T15:46:34+08:00：** 此条记录的岛屿基线和失败事实保留，但其“唯一下一步”随 Master Angler 暂停。当前下一 primary 已在本文件顶部改为 Rusty Key；岛屿边界 smoke 在第 10 项恢复时先做，之后才允许该项 fresh-save 终局长跑。
 
 ## 2026-11-01：v97 暂态移动门误判已修复，v98 启动前需恢复磁盘余量
 

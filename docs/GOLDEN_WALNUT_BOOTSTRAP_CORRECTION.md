@@ -37,6 +37,18 @@ required again before fishing.
 
 ## Runtime status
 
+<!-- pretraining-order-20261103-r1; edited_at=2026-11-03T15:46:34+08:00; research_base=049f40edfcef910b00451ad5f7b948916df67ba1; owner-authorized; docs-only -->
+
+### Current scheduling correction · 2026-11-03T15:46:34+08:00
+
+The owner authorized a dependency-first pretraining reorder. Rusty Key is now the sole primary root; Master Angler is **parked, incomplete, at position 10**, with its code and evidence retained. See `CURRENT_STATUS_CN.md` section 6. The prerequisite-control channel described above remains valid; graph wiring is not proof that an upstream root or a fresh save has completed its prerequisites.
+
+PR #389 records v111 stopping at Spring 27 / iteration 647 with 479 verified actions and zero stage errors. It also records an isolated, already-unlocked island baseline. When Master Angler resumes, first run the bounded native island/Gourmand/walnut handoff smoke on that copy, then compose short prerequisite chains, and only then attempt the required fresh-day-zero source schedule. The boundary copy cannot prove fresh-save unlock provenance, and no v111 in-memory continuation may be spliced into a later process.
+
+This changes scheduling only: source-schedule/native receipts, independent replay, Gourmand continuity, 72/14/3 completion, WIP=1 and `--skip-training` remain required. It is not a new execution engine, a new bug finding, or training authorization.
+
+### Historical v90/v91 status (not the current next task)
+
 The active v90 run predates this correction and remains calibration-only under
 `--skip-training`. It proves the existing crop, sleep/save, mail, quest and
 collection loops, but cannot be resumed as post-fix evidence. After merge it is

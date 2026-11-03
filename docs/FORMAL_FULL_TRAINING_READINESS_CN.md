@@ -2,7 +2,26 @@
 
 > **当前状态入口：** [CURRENT_STATUS_CN.md](CURRENT_STATUS_CN.md)。本文件下方带日期的状态、计数和“下一步”均保留为历史证据；若与当前机器报告或 CURRENT_STATUS_CN.md 冲突，不得按历史数字规划新工作。
 >
-> **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已闭合从 v10 最终隔离存档开始的一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已通过 current-authority 复核并冻结；当前唯一施工项是 `complete_master_angler` 顶层依赖、日历窗口与 coverage 接线。Money Exit Gate 标准不降低，但 Money 已回到复杂度队列第 11 位。
+> **施工顺序修订（2026-11-03T15:46:34+08:00，Asia/Kuala_Lumpur；pretraining-order-20261103-r1）：** Community Center、Pet Love、Skull Key、Full Shipment 保持已冻结；后续顺序改为 `obtain_rusty_key` → `raise_skill_levels` → `raise_friendships` → `marriage_and_house_upgrade` → `complete_museum_collection` → `complete_master_angler` → `earn_money`。当前唯一 primary root 改为 `obtain_rusty_key`；Master Angler 保留成果、暂停在未完成状态，不再占据第 5 项。本次为用户明确授权的依赖/成本重排，不是普通 bug 中断；仍为 WIP=1。完整依据、退出条件与历史队列见 [CURRENT_STATUS_CN.md 第 6 节](CURRENT_STATUS_CN.md#6-下一项如何选择)。
+
+<!-- pretraining-order-20261103-r1; edited_at=2026-11-03T15:46:34+08:00; research_base=049f40edfcef910b00451ad5f7b948916df67ba1; owner-authorized; docs-only -->
+
+## 2026-11-03 训练前开发顺序修订（当前有效）
+
+**时间：2026-11-03T15:46:34+08:00（Asia/Kuala_Lumpur）；研究基线：`049f40edfcef910b00451ad5f7b948916df67ba1`。**
+用户明确授权纠正依赖倒置和难度倒挂；本节替代旧“Master Angler 当前第 5 项”的调度指令，原运行/测试记录保留为历史。
+
+前四项 Community Center / Pet Love / Skull Key / Full Shipment 保持冻结。后续为：
+
+`obtain_rusty_key` → `raise_skill_levels` → `raise_friendships` → `marriage_and_house_upgrade` → `complete_museum_collection` → `complete_master_angler` → `earn_money`
+
+**唯一 primary：`obtain_rusty_key`。** Master Angler 保留已有实现和证据，显式暂停而非完成；Money 的最终 18/18 门仍在最后，其有界供给仍可供前面各项复用。
+理由与源码索引统一见 [CURRENT_STATUS_CN.md 第 6 节](CURRENT_STATUS_CN.md#6-下一项如何选择)：下水道复用未闭合 Rusty Key，捕鱼/天气复用技能生产者，婚姻复用社交；v111 又证明“先跑昂贵新档、后补姜岛边界 smoke”的验收次序需要修正。中间相对工期属工程估计，不冒充已测量成本或新增游戏硬依赖。
+
+验证顺序固定为：**锁定源码/旧证据复核 → 隔离边界原生 smoke → 同版本短链和组合验证 → 本 root 所需完整新档/分区验收**。边界档不能冒充从零解锁；改变二进制或丢失未保存内存 continuation 后不得拼接。已有完成项只对真实回归/authority 漂移重开。
+
+本次为文档重排，未运行游戏或生成新证据。`5/19 executable、6/19 split-complete、5/19 CoverageGateReady、4/11 root ready、26/26 Full Shipment、0/18 Money production、formal_product_training=false` 保持不变。继续 `--skip-training`，全局正式覆盖、Provider/模型定型与产品 Stage 1/2/D 顺序不变；#381 owner PASS 不重做。
+
 
 ## 2026-10-31：v92 停止边界与 v93 准入入口
 
@@ -176,7 +195,7 @@ Master Angler 的当前日机会生成器和蟹笼高层生命周期均已由当
 
 沙漠巴士已从上述 blocker 中移除，但这不改变正式训练结论。实现把 BusStop→Desert 与 Desert→BusStop 投影成共享 `native_bus_transport` connector，继续复用 `executor.traverse_connector` 和 `fishing.catch_fish`，并在编译前检查 `ccVault`、司机/自驾、动态票价、余额、坐骑和返回触发状态。原生对话、过场与地点/tile/钱款回执均在同一运行时路径定义；当前只取得锁定 `game-1.6.15` 源码核对、编译、定向单测和防篡改依赖审计，未取得新的真实游戏回执，故不增加 runtime 或训练分子。fresh-save prerequisite 审计 SHA-256 为 `40e3df4d946f9dbf09cf70c399f994b94e7c3038b619f76e7108e05fccd73890`，剩余 `7` 个未绑定族：天气保留或 Rain Totem、蟹笼供应、姜岛、Mutant Bug Lair、秘密森林或森林农场、Rusty Key/下水道、女巫沼泽。`formal_product_training_authorized=false` 保持不变。
 
-Master Angler 的 Rusty Key/下水道组合也已闭合到现有上游根：`EnterSewer` 在 `OpenedSewer` 已有时一次进入，只有 Rusty Key 时必须先完成一次原生开锁文本并观察 mail，再执行第二次原生交互。透明门、候选、共享 connector 和运行回执均按该锁定源码顺序失败关闭；依赖审计同时要求 `obtain_rusty_key` 的 terminal、recurrence、native event 与 Master Angler 三条组合边存在。该组合不提升 `obtain_rusty_key` root 的正式状态，其 60 件安全捐赠与三分区证据仍待固定队列第 6 项完成。fresh-save prerequisite 审计 SHA-256 为 `00042d57ed53321e9b7510aa6dc1d8c5502aa11d16496513ced7146bb4e3f04c`，剩余 `6` 个未绑定族：天气保留或 Rain Totem、蟹笼供应、姜岛、Mutant Bug Lair、秘密森林或森林农场、女巫沼泽。尚无本切片真实游戏回执，正式训练和所有准入分子继续不变。
+Master Angler 的 Rusty Key/下水道组合也已闭合到现有上游根：`EnterSewer` 在 `OpenedSewer` 已有时一次进入，只有 Rusty Key 时必须先完成一次原生开锁文本并观察 mail，再执行第二次原生交互。透明门、候选、共享 connector 和运行回执均按该锁定源码顺序失败关闭；依赖审计同时要求 `obtain_rusty_key` 的 terminal、recurrence、native event 与 Master Angler 三条组合边存在。该组合不提升 `obtain_rusty_key` root 的正式状态，其 60 件安全捐赠与三分区证据当时仍待原队列第 6 项完成。【顺位注释 2026-11-03T15:46:34+08:00：现移至第 5 项、在 Master Angler 前闭合；此处只记录旧审计事实，不能把跨 root 接线当成上游正式通过。】fresh-save prerequisite 审计 SHA-256 为 `00042d57ed53321e9b7510aa6dc1d8c5502aa11d16496513ced7146bb4e3f04c`，剩余 `6` 个未绑定族：天气保留或 Rain Totem、蟹笼供应、姜岛、Mutant Bug Lair、秘密森林或森林农场、女巫沼泽。尚无本切片真实游戏回执，正式训练和所有准入分子继续不变。
 
 蟹笼供应不再是训练前未绑定族。实时隔离快照锁定 FishShop 的等级门和价格：钓鱼 `2` 级出售 `(O)685` 鱼饵 `5g`，钓鱼 `3` 级出售 `(O)710` 蟹笼 `1500g`。实现继续只暴露 `fishing.collect_crab_pots`：远程服务缺饵时先买一个鱼饵；精确随机容量不足时先尝试既有原生制作，制作不可用才购买一个蟹笼，随后保留 continuation 并 fresh replan。该接线复用共享路线、商店交互、购买、关菜单、制作、放置、装饵和收取实现，未创建第二套执行系统。定向回归与防篡改自测通过，但新增运行时材料仅是实时商店投影，不冒充实际购买回执。fresh-save prerequisite 审计 SHA-256 为 `8cd925d8ede0a0c5d3e5b51817095958ffdd7f5ff100d588400f8dda2f46204b`，剩余 `5` 个未绑定族：天气保留或 Rain Totem、姜岛、Mutant Bug Lair、秘密森林或森林农场、女巫沼泽。正式训练和全部准入分子仍保持关闭。
 

@@ -4,7 +4,26 @@
 
 > **当前状态入口：** [CURRENT_STATUS_CN.md](CURRENT_STATUS_CN.md)。本文件下方带日期的状态、计数和“下一步”均保留为历史证据；若与当前机器报告或 CURRENT_STATUS_CN.md 冲突，不得按历史数字规划新工作。
 >
-> **施工顺序：** Goal Method / formal-coverage 主线实行 **WIP=1**。v15 已从 v10 最终隔离存档闭合下一条 Money 连续生产段，Community Center、Pet Love、Skull Key 与 Full Shipment 已按 current authority 冻结；当前唯一施工项是 `complete_master_angler` 顶层 dependency、日历窗口与 coverage 接线。Money 仍须最终满足原 Exit Gate，但已回到复杂度队列第 11 位。
+> **施工顺序修订（2026-11-03T15:46:34+08:00，Asia/Kuala_Lumpur；pretraining-order-20261103-r1）：** Community Center、Pet Love、Skull Key、Full Shipment 保持已冻结；后续顺序改为 `obtain_rusty_key` → `raise_skill_levels` → `raise_friendships` → `marriage_and_house_upgrade` → `complete_museum_collection` → `complete_master_angler` → `earn_money`。当前唯一 primary root 改为 `obtain_rusty_key`；Master Angler 保留成果、暂停在未完成状态，不再占据第 5 项。本次为用户明确授权的依赖/成本重排，不是普通 bug 中断；仍为 WIP=1。完整依据、退出条件与历史队列见 [CURRENT_STATUS_CN.md 第 6 节](CURRENT_STATUS_CN.md#6-下一项如何选择)。
+
+<!-- pretraining-order-20261103-r1; edited_at=2026-11-03T15:46:34+08:00; research_base=049f40edfcef910b00451ad5f7b948916df67ba1; owner-authorized; docs-only -->
+
+## 2026-11-03 训练前开发顺序修订（当前有效）
+
+**时间：2026-11-03T15:46:34+08:00（Asia/Kuala_Lumpur）；研究基线：`049f40edfcef910b00451ad5f7b948916df67ba1`。**
+用户明确授权纠正依赖倒置和难度倒挂；本节替代旧“Master Angler 当前第 5 项”的调度指令，原运行/测试记录保留为历史。
+
+前四项 Community Center / Pet Love / Skull Key / Full Shipment 保持冻结。后续为：
+
+`obtain_rusty_key` → `raise_skill_levels` → `raise_friendships` → `marriage_and_house_upgrade` → `complete_museum_collection` → `complete_master_angler` → `earn_money`
+
+**唯一 primary：`obtain_rusty_key`。** Master Angler 保留已有实现和证据，显式暂停而非完成；Money 的最终 18/18 门仍在最后，其有界供给仍可供前面各项复用。
+理由与源码索引统一见 [CURRENT_STATUS_CN.md 第 6 节](CURRENT_STATUS_CN.md#6-下一项如何选择)：下水道复用未闭合 Rusty Key，捕鱼/天气复用技能生产者，婚姻复用社交；v111 又证明“先跑昂贵新档、后补姜岛边界 smoke”的验收次序需要修正。中间相对工期属工程估计，不冒充已测量成本或新增游戏硬依赖。
+
+验证顺序固定为：**锁定源码/旧证据复核 → 隔离边界原生 smoke → 同版本短链和组合验证 → 本 root 所需完整新档/分区验收**。边界档不能冒充从零解锁；改变二进制或丢失未保存内存 continuation 后不得拼接。已有完成项只对真实回归/authority 漂移重开。
+
+本次为文档重排，未运行游戏或生成新证据。`5/19 executable、6/19 split-complete、5/19 CoverageGateReady、4/11 root ready、26/26 Full Shipment、0/18 Money production、formal_product_training=false` 保持不变。继续 `--skip-training`，全局正式覆盖、Provider/模型定型与产品 Stage 1/2/D 顺序不变；#381 owner PASS 不重做。
+
 
 ## Current correction · Ginger Island prerequisite control
 
