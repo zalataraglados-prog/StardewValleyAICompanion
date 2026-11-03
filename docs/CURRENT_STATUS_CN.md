@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-04 控制 support 接续：** 已将原准备动作结算/fresh replan 接到独立 rolling 控制选择及原 support-aware 提交/绑定，不生成 Teacher 偏好；18 项公共文件/实际 CLI/原服务合成检查通过，热缓存篡改反例也通过。共享商店形状门已允许编译器省去已满足的移动，乱序仍拒绝。原 20 项控制链与派发回归通过；没有游戏运行或覆盖提升。自主多步编排、失败恢复、位置迁移与原生闭环仍未完成，唯一 primary 不变。见 [合同](control-execution-admission.md#native-support-rebind)。
+
 > **2026-11-04 控制来源准入：** 已重用原获取/预留/编译/结算链接受独立重建的 rolling 控制选择，不再要求把安全执行标成 Teacher 偏好。控制来源、原生结果与监督标签分离，训练标记保持 false；20 项具名检查（含实际无 Teacher 参数 CLI）、完整旧 collection Teacher、hermetic critical paths、rolling 25 和阈值 30 回归通过。本轮没有游戏运行或覆盖晋升，自主 live root 与控制 continuation/失败恢复/位置迁移仍待接续。见 [准入合同](control-execution-admission.md)，唯一 primary 仍为 Rusty Key。
 
 > **2026-11-03 Museum output custody：** 原获取结算现在同修订号完成输入并保管一件 museum 产物；候选/编译/派发复查精确消费者、目标、账本和数量，live 捐赠完成后走原 supporting-transition 核销。Backend 303、Core 聚焦 87、rolling 25、阈值 30 和 Teacher 聚焦重放通过；仅代码/合成与实际 live 方法测试，未新增原生证据。自主 producer 编排、单条原生获取到核销轨迹、网络失败回执恢复和位置迁移仍未完成，不能把控制提案标为 Teacher 偏好。见 [合同](museum-output-custody.md)，主线与冻结计数不变。

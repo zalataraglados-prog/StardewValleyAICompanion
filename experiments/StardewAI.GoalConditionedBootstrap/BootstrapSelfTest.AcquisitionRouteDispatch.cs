@@ -936,6 +936,18 @@ internal static partial class BootstrapSelfTest
                 reordered),
             "The shared receipt queue-shape gate admitted a reordered shop " +
             "interaction macro.");
+        foreach (var alreadyAdjacent in new[]
+                 {
+                     new[] { Item("executor.interact") },
+                     new[] { Item("executor.interact"), Item("executor.choose_dialogue_response") }
+                 })
+            Require(AcquisitionRouteSupportingTransitionQueueShapes.Purchase(alreadyAdjacent),
+                "A shared-compiler shop interaction may omit its already-satisfied move.");
+        Require(!AcquisitionRouteSupportingTransitionQueueShapes.Purchase(new[]
+            { Item("executor.move_to_tile"), Item("executor.move_to_tile"), Item("executor.interact") }) &&
+            !AcquisitionRouteSupportingTransitionQueueShapes.Purchase(new[]
+            { Item("executor.choose_dialogue_response"), Item("executor.interact") }),
+            "Optional movement must not admit duplicate movement or dialogue before interaction.");
     }
 
     private static PolicyEventCandidatePrediction CloneCandidate(

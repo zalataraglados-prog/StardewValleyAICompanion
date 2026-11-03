@@ -9,7 +9,7 @@ internal static partial class BootstrapSelfTest
 {
     private sealed partial class StageOneCollectionFrontierFixture
     {
-        private AcquisitionRouteExecutionBindingInputs PrepareControlExecution()
+        private AcquisitionRouteExecutionBindingInputs PrepareControlExecution(bool shopOpen = true)
         {
             _ = BuildStaticInputs();
             // A synthetic shop isolates control admission from vanilla acquisition availability.
@@ -57,7 +57,7 @@ internal static partial class BootstrapSelfTest
                 inventoryPath, loweringPath, windowsPath, routeCalendarPath, 0));
             Write(targetDateRouteCalibrationPath, StageOneRouteTimingCalibration(0));
             WriteStageOneCollectionSnapshot(targetDateUnlockSnapshotPath, "control-fixture", fish,
-                playerLocation: "FixtureShop", totalDays: 0, timeOfDay: 900);
+                playerLocation: "FixtureShop", playerTileX: shopOpen ? 1 : 2, totalDays: 0, timeOfDay: 900);
             var before = JsonNode.Parse(File.ReadAllText(targetDateUnlockSnapshotPath))!;
             var state = before["state"]!;
             state["world_progress"]!["museum"] = JsonSerializer.SerializeToNode(Field(new
@@ -86,12 +86,31 @@ internal static partial class BootstrapSelfTest
             quote["currency_balance"] = 500;
             state["menus"] = JsonSerializer.SerializeToNode(new
             {
-                active_menu = Field(new { is_open = true, type = "ShopMenu" }),
+                active_menu = Field(new { is_open = shopOpen, type = shopOpen ? "ShopMenu" : "none" }),
                 sleep_prompt_context = NativeField(new { is_sleep_prompt = false }, "test"),
                 shop_stock = Field(preview)
             }, JsonDefaults.Options);
+            if (!shopOpen)
+            {
+                state["menus"]!.AsObject().Remove("shop_stock");
+                state["locations"]!["route_graph"]!["value"]!["edges"]!.AsArray()
+                    .Single(edge => edge!["kind"]!.GetValue<string>() == "shop_endpoint")!["resolved"] = true;
+                state["locations"]!["route_action_branch_coverage"] = JsonSerializer.SerializeToNode(NativeField(new
+                {
+                    rows = new[] { new { tile_x = 2, tile_y = 4, branch = "OpenShop", route_training_blocked = false } }
+                }, "test"));
+                state["current_location"]!["map"] = JsonSerializer.SerializeToNode(NativeField(new { id = "FixtureShop", width = 6, height = 20 }, "test"));
+                state["current_location"]!["terrain_features"] = JsonSerializer.SerializeToNode(NativeField(Array.Empty<object>(), "test"));
+                state["current_location"]!["route_context"] = JsonSerializer.SerializeToNode(NativeField(new { location_id = "FixtureShop" }, "test"));
+                state["player"]!["facing_direction"] = JsonSerializer.SerializeToNode(NativeField(0, "test"));
+                state["current_location"]!["shop_action_tiles"] = JsonSerializer.SerializeToNode(NativeField(new[]
+                {
+                    new { tile_x = 2, tile_y = 4, action = "OpenShop FixtureShop", parsed = new { kind = "open_shop", shop_id = "FixtureShop" } }
+                }, "test"));
+            }
             state["player"]!["seed_inventory"] = JsonSerializer.SerializeToNode(NativeField(Array.Empty<object>(), "test"));
             state["farm"]!["crop_catalog"] = JsonSerializer.SerializeToNode(NativeField(Array.Empty<object>(), "test"));
+            state["farm"]!["material_inventory_graph"]!["value"]!["inventory_nodes"]![0]!["owner_player_id"] = 1;
             foreach (var section in state.AsObject().Select(entry => entry.Value).OfType<JsonObject>())
                 foreach (var field in section.Select(entry => entry.Value).OfType<JsonObject>().Where(field => field.ContainsKey("adapter")))
                     if (field["adapter"]!.GetValue<string>() == "self-test") field["adapter"] = "test";

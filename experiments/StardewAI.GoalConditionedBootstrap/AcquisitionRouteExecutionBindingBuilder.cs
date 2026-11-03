@@ -12,7 +12,8 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
         InvocationDeterministicBuildSession.GetOrBuild(
             "AcquisitionRouteExecutionBindingBuilder.Build",
             "v1",
-            InvocationDeterministicBuildSession.Describe(inputs),
+            InvocationDeterministicBuildSession.Describe(inputs).Concat(
+                AcquisitionRouteControlSelectionVerifier.SupportingProofIdentity(inputs)),
             () => BuildCore(inputs, null));
 
     public static AcquisitionRouteExecutionBinding
@@ -22,8 +23,17 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
             string replanAdmissionPath,
             AcquisitionRouteExecutionBindingInputs inputs)
     {
-        Require(!AcquisitionRouteControlSelectionVerifier.UsesControl(inputs),
-            "Rolling control supporting-transition selection must be independently rebuilt before use.");
+        if (AcquisitionRouteControlSelectionVerifier.UsesControl(inputs))
+        {
+            Require(!string.IsNullOrWhiteSpace(inputs.ControlSupportingTransitionProofPath),
+                "Rolling control support rebind requires a retained independent proof.");
+            var retained = CurrentTeacherFrontierSupport.Read<AcquisitionRoutePortfolioSupportingTransitionInitialProof>(
+                inputs.ControlSupportingTransitionProofPath!, "Retained rolling control support proof");
+            Require(EqualJson(retained.RequestInputs, priorInputs) && EqualJson(retained.SettlementProof, proof) &&
+                Path.GetFullPath(retained.ReplanAdmissionPath) == Path.GetFullPath(replanAdmissionPath),
+                "Rolling control support arguments differ from the retained proof.");
+            return Build(inputs);
+        }
         var portfolio = PortfolioInputs(inputs);
         var expectedPreference =
             AcquisitionRouteSupportingTransitionPortfolioBuilder
@@ -146,7 +156,8 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
                 inputs.PortfolioCommitResultPath)
             ? null
             : inputs.PortfolioCommitResultPath;
-        var recomputedPortfolioReceipt = expectedCommitOverride ??
+        var recomputedPortfolioReceipt = usesControl
+            ? AcquisitionRouteControlSelectionVerifier.RebuildCommitReceipt(inputs, controlSelection!) : expectedCommitOverride ??
             (continuation is null
             ? AcquisitionRoutePortfolioCommitReceiptBuilder.Build(
                 PortfolioInputs(inputs),
@@ -268,7 +279,8 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
         }
         var priorSupportingTransitionReplanSha256 =
             VerifiedSupportingTransitionReplanSha256(
-                portfolioPreference?.PriorSupportingTransitionReplanSha256 ?? string.Empty,
+                usesControl ? controlSelection!.SelectedAcquisitionProposal!.PriorSupportingTransitionReplanSha256 :
+                    portfolioPreference!.PriorSupportingTransitionReplanSha256,
                 portfolioProposal.PriorSupportingTransitionReplanSha256,
                 portfolioAdmission.PriorSupportingTransitionReplanSha256,
                 portfolioReceipt.PriorSupportingTransitionReplanSha256);

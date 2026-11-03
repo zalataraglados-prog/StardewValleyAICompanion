@@ -160,7 +160,8 @@ public static partial class AcquisitionRouteSupportingTransitionCompilationBuild
             CurrentTeacherFrontierSupport.HashFile(rankingPath),
             CurrentTeacherFrontierSupport.HashFile(requestPath),
             CurrentTeacherFrontierSupport.HashFile(receiptPath),
-            candidateReasons.Concat(stagingReasons).Concat(capacityReasons));
+            candidateReasons.Concat(stagingReasons).Concat(capacityReasons),
+            controlSelection: inputs.UseControlSelection);
     }
 
     private static AcquisitionRouteTargetDateUnlock RequirementRoute(

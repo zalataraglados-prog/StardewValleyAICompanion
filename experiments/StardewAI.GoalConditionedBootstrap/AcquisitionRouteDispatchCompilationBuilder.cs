@@ -217,9 +217,7 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         }
         if (control is not null)
         {
-            var rebuiltCommit = AcquisitionRoutePortfolioCommitReceiptBuilder.Build(
-                AcquisitionRouteExecutionBindingBuilder.PortfolioInputs(inputs), inputs.PortfolioAdmissionPath,
-                inputs.CommittedStrategyLedgerPath, string.IsNullOrWhiteSpace(inputs.PortfolioCommitResultPath) ? null : inputs.PortfolioCommitResultPath);
+            var rebuiltCommit = AcquisitionRouteControlSelectionVerifier.RebuildCommitReceipt(inputs, control);
             if (JsonSerializer.Serialize(commit, JsonDefaults.Options) != JsonSerializer.Serialize(rebuiltCommit, JsonDefaults.Options) ||
                 commit.ProposalId != control.SelectedAcquisitionProposal!.ProposalId ||
                 commit.BaseLedgerRevision != control.StrategyLedgerRevision)
