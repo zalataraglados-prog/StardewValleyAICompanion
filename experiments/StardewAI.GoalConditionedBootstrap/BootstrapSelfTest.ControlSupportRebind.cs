@@ -103,9 +103,9 @@ internal static partial class BootstrapSelfTest
                 node["control_supporting_transition_proof_path"] = proofPath;
             });
             var freshRankingPath = Path.Combine(nextRoot, "ranking.json");
-            var freshAvailability = new CandidateOptionAvailabilityEvaluator().Evaluate(after, new[] { "economy.buy_supplies" }, commitmentLedger: commit.Ledger);
-            Write(freshRankingPath, CollectionRanking(after.StateHash,
-                new EventCandidateRanker().Rank(new BaselineTrainingReport(), freshAvailability, control.GoalId)));
+            var currentRanking = AcquisitionRouteDispatchCompilationBuilder.BuildCurrentControlRanking(
+                freshInputs, controlPath, proofPath, committedPath);
+            Write(freshRankingPath, currentRanking);
             var compiled = AcquisitionRouteDispatchCompilationBuilder.Build(inputs, freshRankingPath);
             Require(compiled.DispatchReady && compiled.TerminalReceiptEligible, "Rebound control terminal compilation failed: " + string.Join(",", compiled.BlockingReasons));
             Write(queuePath, compiled.ActionQueue!);
@@ -118,6 +118,16 @@ internal static partial class BootstrapSelfTest
             VerifyControlSupplyCli(inputs, Path.Combine(nextRoot, "cli-control.json"), rebound);
             var passed = new List<string> { "shared_native_preparation", "fresh_axis_rebuild", "independent_support_lineage",
                 "atomic_terminal_commit", "control_terminal_compiler", "control_terminal_binding", "actual_rebound_cli" };
+            var commitCli = Path.Combine(nextRoot, "cli-commit-receipt.json");
+            RunControlCli(inputs, "build-acquisition-route-portfolio-commit-receipt", commitCli);
+            Require(EqualJson(receipt, CurrentTeacherFrontierSupport.Read<AcquisitionRoutePortfolioCommitReceipt>(commitCli, "Support-aware control commit CLI")),
+                "Control commit CLI must independently rebuild the retained support lineage.");
+            passed.Add("actual_support_control_commit_cli");
+            var rankingCli = Path.Combine(nextRoot, "cli-current-ranking.json");
+            RunControlCli(inputs, "build-rusty-key-current-ranking", rankingCli, "--current-ranking-ledger", committedPath);
+            Require(EqualJson(currentRanking, CurrentTeacherFrontierSupport.Read<AvailabilityAwarePolicyPredictionEnvelope>(rankingCli, "Support-aware current ranking CLI")),
+                "Rebound current ranking CLI must match exact source/ledger intent rebuilding.");
+            passed.Add("actual_support_current_ranking_cli");
             Require(EqualJson(binding, AcquisitionRouteExecutionBindingBuilder.BuildAfterSupportingTransition(
                 support, proof.Proof, replanPath, inputs)), "The existing support-rebind entrypoint must reuse the same control binding.");
             passed.Add("shared_support_rebind_entrypoint");

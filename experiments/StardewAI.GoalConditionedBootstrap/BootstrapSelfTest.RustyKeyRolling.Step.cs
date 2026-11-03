@@ -65,6 +65,7 @@ internal static partial class BootstrapSelfTest
         public void VerifyRustyKeyRollingStep(bool shopOpen, List<string> passed)
         {
             var inputs = PrepareControlExecution(shopOpen);
+            Write(Path.Combine(root, "runtime-inputs.json"), inputs);
             var portfolio = AcquisitionRouteExecutionBindingBuilder.PortfolioInputs(inputs);
             var control = RustyKeyRollingSupplyProposalBuilder.Build(portfolio);
             Write(inputs.PortfolioControlSelectionPath!, control);

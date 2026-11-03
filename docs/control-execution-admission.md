@@ -82,6 +82,13 @@ A warm cache therefore cannot hide a modified replan or native receipt.
 
 ## Verification And Remaining Work
 
+The controlled runtime adapter now connects these public services without adding
+an executor or Teacher. Its new source/commit CLI checks bring the focused counts
+to 22 fresh-control and 20 support-rebind cases; the older counts below describe
+the earlier slices. See [runtime rolling](rusty-key-runtime-rolling.md) for exact
+code/test scope. It has no certified native controller trace yet and is not the
+MOD's default root integration.
+
 `self-test-control-execution --output-root <isolated-path>` exercises the public
 source-file builders, actual Teacher-off CLI, real compiler and ledger services,
 native-receipt validation, custody settlement and rejection cases. Its shop,
