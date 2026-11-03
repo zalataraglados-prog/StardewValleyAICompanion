@@ -412,28 +412,36 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
         {
             yield return "route_portfolio_teacher_selection_drifted";
         }
-        if (preference.GoalId != opportunity.GoalId ||
-            preference.SnapshotStateHash != opportunity.SnapshotStateHash ||
-            preference.SnapshotStateHash != beforeStateHash ||
-            proposal.GoalId != preference.GoalId ||
-            proposal.SnapshotStateHash != preference.SnapshotStateHash ||
-            admission.GoalId != preference.GoalId ||
-            admission.SnapshotStateHash != preference.SnapshotStateHash)
+        foreach (var reason in ValidatePortfolioSelectionCommon(preference.GoalId, preference.SnapshotStateHash,
+                     proposal, admission, receipt, opportunity, routeOccurrenceId, beforeStateHash, "route_portfolio_teacher_"))
+            yield return reason;
+    }
+
+    private static IEnumerable<string> ValidatePortfolioSelectionCommon(
+        string selectionGoalId, string selectionStateHash, AcquisitionRoutePortfolioProposal proposal,
+        AcquisitionRoutePortfolioAdmission admission, AcquisitionRoutePortfolioCommitReceipt receipt,
+        AcquisitionRouteTargetDateOpportunityCostReport opportunity, string routeOccurrenceId, string beforeStateHash,
+        string reasonPrefix)
+    {
+        if (selectionGoalId != opportunity.GoalId || selectionStateHash != opportunity.SnapshotStateHash ||
+            selectionStateHash != beforeStateHash || proposal.GoalId != selectionGoalId ||
+            proposal.SnapshotStateHash != selectionStateHash || admission.GoalId != selectionGoalId ||
+            admission.SnapshotStateHash != selectionStateHash)
         {
-            yield return "route_portfolio_teacher_identity_mismatch";
+            yield return reasonPrefix + "identity_mismatch";
         }
         if ((proposal.SelectedRouteOccurrenceIds ?? Array.Empty<string>())
                 .Count(value => value == routeOccurrenceId) != 1 ||
             (admission.SelectedRouteOccurrenceIds ?? Array.Empty<string>())
                 .Count(value => value == routeOccurrenceId) != 1)
         {
-            yield return "route_portfolio_teacher_route_not_selected";
+            yield return reasonPrefix + "route_not_selected";
         }
         if (receipt.ProposalId != proposal.ProposalId ||
             receipt.PortfolioId !=
                 "target-date-acquisition-portfolio:" + proposal.ProposalId)
         {
-            yield return "route_portfolio_teacher_commit_identity_mismatch";
+            yield return reasonPrefix + "commit_identity_mismatch";
         }
         if (proposal.PriorRolloutCheckpointSha256 !=
                 admission.PriorRolloutCheckpointSha256 ||
@@ -454,7 +462,7 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
                     Array.Empty<
                         AcquisitionRoutePortfolioCompletedAlternatives>()))
         {
-            yield return "route_portfolio_teacher_continuation_drifted";
+            yield return reasonPrefix + "continuation_drifted";
         }
     }
 

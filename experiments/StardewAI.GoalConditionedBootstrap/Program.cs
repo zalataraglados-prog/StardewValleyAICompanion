@@ -112,6 +112,8 @@ var commandDefinitions = new CommandDefinition[]
     new("build-rusty-key-rolling-supply", BuildRustyKeyRollingSupply),
     new("self-test-rusty-key-rolling-supply", options =>
         BootstrapSelfTest.RunRustyKeyRollingSupply(options.Required("output-root"))),
+    new("self-test-control-execution", options =>
+        BootstrapSelfTest.RunControlExecution(options.Required("output-root"))),
     new("build-acquisition-route-portfolio-teacher-preference", BuildAcquisitionRoutePortfolioTeacherPreference),
     new("build-acquisition-route-portfolio-commit-receipt", BuildAcquisitionRoutePortfolioCommitReceipt),
     new("compile-acquisition-route-dispatch", CompileAcquisitionRouteDispatch),
@@ -1491,27 +1493,28 @@ static void CompileAcquisitionRouteDispatch(Arguments options)
         throw new ArgumentException(
             "--queue-output and --output must be different paths.");
     }
+    var inputs = RouteExecutionBindingInputs(options, queueOutput);
     var compilation = AcquisitionRouteDispatchCompilationBuilder.Build(
-        RouteExecutionBindingInputs(options, queueOutput),
+        inputs,
         options.Required("ranking"));
     Write(reportOutput, compilation);
     if (compilation.DispatchReady && compilation.ActionQueue is not null)
         Write(queueOutput, compilation.ActionQueue);
     else
     {
-        Write(queueOutput, BlockedAcquisitionRouteQueue(compilation));
+        Write(queueOutput, BlockedAcquisitionRouteQueue(compilation, AcquisitionRouteControlSelectionVerifier.UsesControl(inputs)));
         Environment.ExitCode = 2;
     }
 }
 
 static ActionQueueEnvelope BlockedAcquisitionRouteQueue(
-    AcquisitionRouteDispatchCompilation compilation) => new()
+    AcquisitionRouteDispatchCompilation compilation, bool usesControl = false) => new()
     {
         QueueId = "blocked:acquisition-route:" +
             compilation.RouteOccurrenceId,
         SourceModelOutputId = compilation.SelectedCandidateId,
         SourceModel =
-            "deterministic_teacher.acquisition_route_dispatch.v1",
+            usesControl ? AcquisitionRouteControlSelectionVerifier.DispatchSource : "deterministic_teacher.acquisition_route_dispatch.v1",
         StateHash = compilation.SourceStateHash,
         GoalId = compilation.GoalId,
         ExecutionMode = "training_singleplayer",
@@ -2572,10 +2575,11 @@ static AcquisitionRouteExecutionBindingInputs RouteExecutionBindingInputs(
             "route-timing-calibration"),
         PortfolioProposalPath = options.Required("portfolio-proposal"),
         PortfolioAdmissionPath = options.Required("portfolio-admission"),
-        PortfolioPreferenceRequestPath = options.Required(
-            "portfolio-preference-request"),
-        PortfolioTeacherPreferencePath = options.Required(
-            "portfolio-teacher-preference"),
+        PortfolioPreferenceRequestPath = options.Optional("portfolio-control-selection") is null
+            ? options.Required("portfolio-preference-request") : options.Optional("portfolio-preference-request") ?? string.Empty,
+        PortfolioTeacherPreferencePath = options.Optional("portfolio-control-selection") is null
+            ? options.Required("portfolio-teacher-preference") : options.Optional("portfolio-teacher-preference") ?? string.Empty,
+        PortfolioControlSelectionPath = options.Optional("portfolio-control-selection"),
         PortfolioCommitReceiptPath = options.Required(
             "portfolio-commit-receipt"),
         CommittedStrategyLedgerPath = options.Required(

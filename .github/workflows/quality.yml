@@ -58,6 +58,9 @@ jobs:
       - name: Test Rusty Key rolling supply producer
         shell: pwsh
         run: dotnet run --project experiments/StardewAI.GoalConditionedBootstrap/StardewAI.GoalConditionedBootstrap.csproj --configuration Release --no-build -- self-test-rusty-key-rolling-supply --output-root "$env:RUNNER_TEMP/rusty-key-rolling-supply"
+      - name: Test control execution independently of Teacher supervision
+        shell: pwsh
+        run: dotnet run --project experiments/StardewAI.GoalConditionedBootstrap/StardewAI.GoalConditionedBootstrap.csproj --configuration Release --no-build -- self-test-control-execution --output-root "$env:RUNNER_TEMP/control-execution"
       - name: Restore core governance tests
         run: dotnet restore tests/StardewAI.Core.Tests/StardewAI.Core.Tests.csproj --locked-mode -p:GameFreeGovernance=true
       - name: Test core governance

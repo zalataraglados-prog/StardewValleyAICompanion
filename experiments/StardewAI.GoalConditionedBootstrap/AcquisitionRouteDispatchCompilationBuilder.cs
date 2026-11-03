@@ -1,3 +1,4 @@
+using System.Text.Json;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
 using StardewAI.Contracts.Training;
@@ -19,7 +20,9 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             AcquisitionRouteOptionLoweringReport>(
             inputs.AcquisitionLoweringPath,
             "Acquisition route lowering");
-        var preference = CurrentTeacherFrontierSupport.Read<
+        var usesControl = AcquisitionRouteControlSelectionVerifier.UsesControl(inputs);
+        var control = usesControl ? AcquisitionRouteControlSelectionVerifier.Read(inputs) : null;
+        var preference = usesControl ? null : CurrentTeacherFrontierSupport.Read<
             AcquisitionRoutePortfolioTeacherPreference>(
             inputs.PortfolioTeacherPreferencePath,
             "Acquisition portfolio Teacher preference");
@@ -62,7 +65,8 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             requirement,
             lowered,
             inputs,
-            rankingHash);
+            rankingHash,
+            control);
         if (artifactReasons.Length > 0)
         {
             return Blocked(
@@ -168,12 +172,13 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             commit.PortfolioId,
             commit.CommittedLedgerRevision,
             rankingHash,
-            selectedOpportunity: route);
+            selectedOpportunity: route,
+            controlSelection: usesControl);
     }
 
     private static string[] ValidateArtifacts(
         AcquisitionRouteTargetDateOpportunityCostReport opportunity,
-        AcquisitionRoutePortfolioTeacherPreference preference,
+        AcquisitionRoutePortfolioTeacherPreference? preference,
         AcquisitionRoutePortfolioCommitReceipt commit,
         SnapshotEnvelope snapshot,
         AvailabilityAwarePolicyPredictionEnvelope ranking,
@@ -181,7 +186,8 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         AcquisitionRouteTargetDateUnlock requirement,
         AcquisitionRequirementRouteLowering lowered,
         AcquisitionRouteExecutionBindingInputs inputs,
-        string rankingHash)
+        string rankingHash,
+        RustyKeyRollingSupplyProposal? control)
     {
         var reasons = new List<string>();
         if (string.IsNullOrWhiteSpace(rankingHash) ||
@@ -200,14 +206,24 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         {
             reasons.Add("ranking_snapshot_identity_mismatch");
         }
-        if (!preference.TeacherPreferenceLabelEligible ||
+        if (control is null && (preference is null || !preference.TeacherPreferenceLabelEligible ||
             preference.UsesLearnerRankOrScore ||
             preference.SelectedProposal is null ||
             !preference.SelectedProposal.SelectedRouteOccurrenceIds.Contains(
                 requirement.RouteOccurrenceId,
-                StringComparer.Ordinal))
+                StringComparer.Ordinal)))
         {
             reasons.Add("route_not_selected_by_independent_teacher_preference");
+        }
+        if (control is not null)
+        {
+            var rebuiltCommit = AcquisitionRoutePortfolioCommitReceiptBuilder.Build(
+                AcquisitionRouteExecutionBindingBuilder.PortfolioInputs(inputs), inputs.PortfolioAdmissionPath,
+                inputs.CommittedStrategyLedgerPath, string.IsNullOrWhiteSpace(inputs.PortfolioCommitResultPath) ? null : inputs.PortfolioCommitResultPath);
+            if (JsonSerializer.Serialize(commit, JsonDefaults.Options) != JsonSerializer.Serialize(rebuiltCommit, JsonDefaults.Options) ||
+                commit.ProposalId != control.SelectedAcquisitionProposal!.ProposalId ||
+                commit.BaseLedgerRevision != control.StrategyLedgerRevision)
+                reasons.Add("control_selection_commit_identity_mismatch");
         }
         if (!commit.PortfolioCommitVerified ||
             !commit.SelectedRouteOccurrenceIds.Contains(
@@ -225,7 +241,7 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         }
         if (!string.Equals(opportunity.SnapshotStateHash, snapshot.StateHash,
                 StringComparison.Ordinal) ||
-            !string.Equals(preference.SnapshotStateHash, snapshot.StateHash,
+            !string.Equals(control is null ? preference?.SnapshotStateHash : control.SnapshotStateHash, snapshot.StateHash,
                 StringComparison.Ordinal) ||
             !string.Equals(commit.SnapshotStateHash, snapshot.StateHash,
                 StringComparison.Ordinal))

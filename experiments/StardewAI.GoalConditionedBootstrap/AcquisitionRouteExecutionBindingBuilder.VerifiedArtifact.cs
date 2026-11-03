@@ -22,7 +22,7 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
             binding.SelectedFromCompleteParetoFrontier &&
             binding.QueueOptionsBoundToRoute &&
             binding.PortfolioReservationCommitVerified &&
-            binding.PortfolioTeacherPreferenceVerified &&
+            AcquisitionRouteControlSelectionVerifier.HasVerifiedExecutionSelection(binding) &&
             binding.DispatchBindingReady &&
             !binding.FormalTrainingAuthorized &&
             binding.BlockingReasons.Length == 0,
@@ -33,8 +33,9 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
                 inputs.TargetDateOpportunityCostPath) &&
             binding.PortfolioCommitReceiptSha256 == Hash(
                 inputs.PortfolioCommitReceiptPath) &&
-            binding.PortfolioTeacherPreferenceSha256 == Hash(
-                inputs.PortfolioTeacherPreferencePath) &&
+            (AcquisitionRouteControlSelectionVerifier.UsesControl(inputs)
+                ? binding.PortfolioControlSelection?.SourceSha256 == Hash(inputs.PortfolioControlSelectionPath!)
+                : binding.PortfolioControlSelection is null && binding.PortfolioTeacherPreferenceSha256 == Hash(inputs.PortfolioTeacherPreferencePath)) &&
             binding.CommittedStrategyLedgerSha256 == Hash(
                 inputs.CommittedStrategyLedgerPath) &&
             binding.AcquisitionLoweringSha256 == Hash(
@@ -43,6 +44,9 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
                 inputs.BeforeSnapshotPath) &&
             binding.ActionQueueSha256 == Hash(inputs.ActionQueuePath),
             "Persisted route execution binding source hashes drifted.");
+
+        if (AcquisitionRouteControlSelectionVerifier.UsesControl(inputs))
+            Require(EqualJson(binding, Build(inputs)), "Persisted control binding drifted from independently rebuilt selection and execution admission.");
 
         return binding;
     }

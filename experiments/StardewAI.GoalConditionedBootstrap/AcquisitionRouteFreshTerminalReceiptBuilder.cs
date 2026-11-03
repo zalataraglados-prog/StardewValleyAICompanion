@@ -160,7 +160,8 @@ public static partial class AcquisitionRouteFreshTerminalReceiptBuilder
         result.TerminalTransition = transition;
         result.QueueExecutionVerified = queueReasons.Length == 0;
         result.FreshTerminalReceiptVerified = reasons.Length == 0;
-        result.RouteTrainingEvidenceEligible = reasons.Length == 0;
+        result.RouteTrainingEvidenceEligible = reasons.Length == 0 && binding.PortfolioTeacherPreferenceVerified &&
+            binding.PortfolioControlSelection is null;
         result.FormalTrainingAuthorized = false;
         result.Status = reasons.Length == 0
             ? "verified_fresh_terminal_receipt"
