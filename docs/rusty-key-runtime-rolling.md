@@ -79,7 +79,10 @@ directory would break blob resolution and duplicate storage.
 Product client identity/final-response recovery now reuses the existing journal
 through the original live dispatch call; see [Product Receipt Recovery](product-receipt-recovery.md).
 It does not replace the isolated native trace below or recover an ambiguous
-Backend mutation. Harness-only boundary runs retain requests but cannot use a
+Backend mutation. The original ledger now has its separate
+[mutation reply lookup](portfolio-mutation-reply-recovery.md), reused by this
+controller without retrying mutations or bypassing canonical verifiers.
+Harness-only boundary runs retain requests but cannot use a
 Product receipt lookup as native proof.
 
 ### Native Acquisition Boundary Preparation

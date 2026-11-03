@@ -225,6 +225,8 @@ app.MapPost("/api/v1/strategy/commitments/currencies/{reservationId}/cancel", (s
     return Results.Ok(result);
 });
 
+app.MapPortfolioMutationReplyLookup();
+
 app.MapPost("/api/v1/strategy/commitments/reservation-portfolios/commit", (ReservationPortfolioCommitRequest request, StateStore store, IStrategyCommitmentRepository repository) =>
 {
     if (string.IsNullOrWhiteSpace(request.StateHash) || !store.Snapshots.TryGetValue(request.StateHash, out var snapshot))

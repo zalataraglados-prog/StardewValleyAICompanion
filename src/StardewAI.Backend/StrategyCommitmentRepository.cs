@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
@@ -54,7 +55,7 @@ public interface IStrategyCommitmentRepository
         MachineSupportIntentUpsertRequest request);
 }
 
-public sealed class FileStrategyCommitmentRepository : IStrategyCommitmentRepository
+public sealed partial class FileStrategyCommitmentRepository : IStrategyCommitmentRepository, IPortfolioMutationReplyReader
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -261,7 +262,7 @@ public sealed class FileStrategyCommitmentRepository : IStrategyCommitmentReposi
                 request,
                 DateTimeOffset.UtcNow.ToString("O"));
             if (result.Accepted && result.Ledger is not null)
-                Save(key, result.Ledger);
+                SavePortfolioReply(key, result.Ledger, "commit", request, result);
             return result;
         }
     }
@@ -281,7 +282,7 @@ public sealed class FileStrategyCommitmentRepository : IStrategyCommitmentReposi
                 request,
                 DateTimeOffset.UtcNow.ToString("O"));
             if (result.Accepted && result.Ledger is not null)
-                Save(key, result.Ledger);
+                SavePortfolioReply(key, result.Ledger, "settle-completed-route", request, result);
             return result;
         }
     }
@@ -301,7 +302,7 @@ public sealed class FileStrategyCommitmentRepository : IStrategyCommitmentReposi
                 request,
                 DateTimeOffset.UtcNow.ToString("O"));
             if (result.Accepted && result.Ledger is not null)
-                Save(key, result.Ledger);
+                SavePortfolioReply(key, result.Ledger, "settle-supporting-transition", request, result);
             return result;
         }
     }
@@ -338,8 +339,11 @@ public sealed class FileStrategyCommitmentRepository : IStrategyCommitmentReposi
         StrategyCommitmentLedger ledger;
         if (File.Exists(path))
         {
-            ledger = JsonSerializer.Deserialize<StrategyCommitmentLedger>(File.ReadAllText(path), JsonOptions)
+            var document = JsonNode.Parse(File.ReadAllText(path))
+                ?? throw new InvalidDataException("persisted strategy ledger is null");
+            ledger = document.Deserialize<StrategyCommitmentLedger>(JsonOptions)
                 ?? NewLedger(snapshot);
+            lastPortfolioReplies[key] = document[PortfolioReplyProperty]?.DeepClone();
             if (!string.Equals(ledger.SchemaVersion, "strategy_commitment_ledger.v1", StringComparison.Ordinal))
             {
                 throw new InvalidDataException("persisted strategy ledger schema is unsupported");
@@ -370,14 +374,25 @@ public sealed class FileStrategyCommitmentRepository : IStrategyCommitmentReposi
         return ledger;
     }
 
-    private void Save(string key, StrategyCommitmentLedger ledger)
+    private void Save(string key, StrategyCommitmentLedger ledger, JsonObject? portfolioReply = null,
+        JsonObject? document = null)
     {
         Directory.CreateDirectory(root);
         var path = LedgerPath(key);
         var temporaryPath = path + ".tmp." + Guid.NewGuid().ToString("N");
-        File.WriteAllText(temporaryPath, JsonSerializer.Serialize(ledger, JsonOptions), new UTF8Encoding(false));
+        document ??= JsonSerializer.SerializeToNode(ledger, JsonOptions)!.AsObject();
+        var reply = portfolioReply ?? lastPortfolioReplies.GetValueOrDefault(key);
+        if (reply is not null)
+            document[PortfolioReplyProperty] = reply.DeepClone();
+        using (var stream = new FileStream(temporaryPath, FileMode.CreateNew, FileAccess.Write,
+                   FileShare.None, 4096, FileOptions.WriteThrough))
+        {
+            JsonSerializer.Serialize(stream, document, JsonOptions);
+            stream.Flush(flushToDisk: true);
+        }
         File.Move(temporaryPath, path, true);
         cache[key] = ledger;
+        lastPortfolioReplies[key] = reply?.DeepClone();
     }
 
     private string LedgerPath(string key) => Path.Combine(root, key + ".json");
