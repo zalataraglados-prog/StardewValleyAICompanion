@@ -2,6 +2,11 @@
 
 ## 2026-11-03 当前 Rusty Key 切片与接续
 
+- **当前接续：** #394 已由 PR #396 合入 `main@085f95a1` 并关闭，远端 CI 和同 SHA 自动审查通过。现在继续同一 Rusty Key primary，不重开其他根。新 `build-rusty-key-acquisition-portfolio` 复用共享组合/预留预检，保留完整博物馆分母，要求所选不同未捐物品恰好覆盖实时缺口；不额外要求 95 件全收集。阈值组合聚焦正反例已通过，具体语义和后续缺口见 [阈值组合合同](rusty-key-acquisition-portfolio.md)。本项未增加原生运行或 coverage 分子。
+- **剩余边界没有隐藏：** 当前证明供给组合的阈值/资源准入，不是联合执行时序、产物保管至捐赠、最优 Teacher 选择或实际取钥匙。下一步沿既有 rolling execution/reservation 接到精确捐赠候选，补联合时间/开放窗口与次晨交接，再闭合本 criterion 的独立比较/原生三分区和第三年前时限。此前 `collection-replay-v4` 的访问错误在单次带诊断的完整 collection 重放中未复现（退出 0）；旧失败保留，不能声称已定位或修复其根因。
+
+下方 #394 提交前状态保留为历史；当前合入事实以上方为准。
+
 - **#394 监督边界修复已实现：** dataset/trainer 共用 v2 typed admission，Backend、两个 CLI 与实时训练方法均接到现有 collection Teacher 独立重放器。保留完整候选分母，只消费重建验证过的显式 strict pair；`Selected`、原生成功、单候选、未比较或未准入候选不能生成正负对。无证据/篡改输入不能覆盖 checkpoint/manifest，旧 checkpoint 不自动升级。细节、入口和验收范围见 [监督准入合同](independent-teacher-pairwise-admission.md)。本地入口回归与聚焦重建验证已通过，合入以对应 PR 的 CI 为准；正式训练锁和覆盖计数不变。
 - **验证范围与接续：** 新聚焦入口 `self-test-current-stage-one-policy-supervision` 复用原静态输入和 current-frontier/rod 检查，约 4 秒通过，不再借整套机器/作物/portfolio 长矩阵验证本监督边界。较宽的 `collection-replay-v4` 在进入本项前遇到 portfolio-continuation 夹具文件访问错误，未计通过、未删除；该诊断随下一共享 acquisition/reservation 工作复核，不把环境/夹具错误宣称为本项成功。#394 完成后直接回到下条 Rusty Key 安全组合，不重排战略 root。
 - **提交前最终回归：** 无游戏 Core governance `1041/1041`、Backend `265/265`、监督边界聚焦 `35/35` 均通过；Backend 覆盖真实 HTTP 入口、两个 CLI 进程和 live loop 的实际训练方法，拒绝时核对既有工件不变。聚焦 Teacher 重建包含有效显式 pair、单候选仅保留证据和重算哈希后的篡改反例。尚待对应 PR 的远端 CI，不将夹具训练写作正式开训。

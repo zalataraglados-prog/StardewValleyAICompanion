@@ -13,6 +13,12 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
             return CurrentCollectionProgress.Unavailable(
                 "museum_transparent_state_unavailable");
         }
+        return ReadMuseumProgressValue(value, inventory);
+    }
+
+    internal static CurrentCollectionProgress ReadMuseumProgressValue(
+        JsonElement value, GoalRequirementSet inventory)
+    {
         if (!value.TryGetProperty("donatable_items", out var rows))
         {
             return CurrentCollectionProgress.Unavailable(
@@ -238,6 +244,12 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
         AcquisitionRequirementSetLowering lowering)
     {
         ValidateSetShape(inventory, lowering);
+        ValidateMuseumRequirementShape(inventory);
+        ValidateAlternativeParity(inventory, lowering);
+    }
+
+    internal static void ValidateMuseumRequirementShape(GoalRequirementSet inventory)
+    {
         foreach (var group in inventory.Groups)
         {
             if (group.SelectionRule != "all_required" ||
@@ -257,7 +269,6 @@ public static partial class CurrentCollectionTeacherFrontierBuilder
                     "Museum requirement identity, quantity, or quality drifted.");
             }
         }
-        ValidateAlternativeParity(inventory, lowering);
     }
 
     private static void ValidateCommunityCenterSets(

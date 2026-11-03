@@ -108,6 +108,7 @@ var commandDefinitions = new CommandDefinition[]
     new("build-acquisition-route-target-date-daily-time-energy-budget", BuildAcquisitionRouteTargetDateDailyTimeEnergyBudget, BatchSafe: true),
     new("build-acquisition-route-target-date-opportunity-cost", BuildAcquisitionRouteTargetDateOpportunityCost, BatchSafe: true),
     new("build-acquisition-route-portfolio-admission", BuildAcquisitionRoutePortfolioAdmission),
+    new("build-rusty-key-acquisition-portfolio", BuildRustyKeyAcquisitionPortfolio),
     new("build-acquisition-route-portfolio-teacher-preference", BuildAcquisitionRoutePortfolioTeacherPreference),
     new("build-acquisition-route-portfolio-commit-receipt", BuildAcquisitionRoutePortfolioCommitReceipt),
     new("compile-acquisition-route-dispatch", CompileAcquisitionRouteDispatch),
@@ -192,6 +193,8 @@ var commandDefinitions = new CommandDefinition[]
     new("self-test-current-stage-one-collection", SelfTestCurrentStageOneCollection),
     new("self-test-current-stage-one-policy-supervision", options =>
         BootstrapSelfTest.RunCurrentStageOnePolicySupervision(options.Required("output-root"))),
+    new("self-test-rusty-key-acquisition-portfolio", options =>
+        BootstrapSelfTest.RunRustyKeyPortfolio(options.Required("output-root"))),
     new("self-test-current-stage-one-rod-prerequisite", options =>
         BootstrapSelfTest.RunCurrentStageOneRodPrerequisite(
             options.Required("output-root"))),
@@ -1358,6 +1361,16 @@ static void BuildAcquisitionRoutePortfolioAdmission(Arguments options)
         RoutePortfolioInputs(options));
     Write(options.Required("output"), report);
     if (!report.PortfolioAdmissionReady)
+        Environment.ExitCode = 2;
+}
+
+static void BuildRustyKeyAcquisitionPortfolio(Arguments options)
+{
+    var report = RustyKeyAcquisitionPortfolioBuilder.Build(RoutePortfolioInputs(options));
+    Write(options.Required("output"), report);
+    if (report.AcquisitionPortfolioReady && options.Optional("portfolio-admission-output") is { } admissionOutput)
+        Write(admissionOutput, report.AcquisitionPortfolio!);
+    if (!report.AcquisitionPortfolioReady && !report.ThresholdSatisfied)
         Environment.ExitCode = 2;
 }
 
