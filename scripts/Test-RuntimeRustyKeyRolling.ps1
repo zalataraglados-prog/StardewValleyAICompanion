@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)] [string] $StepFixtureRoot,
+    [string] $CurrentNativeFixtureRoot = '',
     [string] $OutputRoot = (Join-Path ([IO.Path]::GetTempPath()) ('rusty-key-runtime-test-' + [guid]::NewGuid().ToString('N')))
 )
 $ErrorActionPreference = 'Stop'
@@ -17,8 +18,11 @@ New-Item -ItemType Directory -Path $OutputRoot -Force | Out-Null
 function Assert-True([bool] $Condition, [string] $Message) { if (-not $Condition) { throw $Message } }
 
 # Exercise the actual shared 14-axis batch, source-bound ranking and preparation CLIs without a game or HTTP server.
-foreach ($stage in @('support','terminal')) {
-    $inputPath = Join-Path (Join-Path $StepFixtureRoot $stage) 'current-stage-one-collection-teacher-frontier-fixture/runtime-inputs.json'
+$stages = @('support','terminal')
+if (-not [string]::IsNullOrWhiteSpace($CurrentNativeFixtureRoot)) { $stages += 'geode' }
+foreach ($stage in $stages) {
+    $fixture = if ($stage -eq 'geode') { $CurrentNativeFixtureRoot } else { Join-Path $StepFixtureRoot $stage }
+    $inputPath = Join-Path $fixture 'current-stage-one-collection-teacher-frontier-fixture/runtime-inputs.json'
     $source = Get-Content -LiteralPath $inputPath -Raw | ConvertFrom-Json
     $context = New-RuntimeQueueContext -LoopDll $loop -ArtifactDirectory $OutputRoot `
         -BackendUrl 'http://unused.invalid' -SnapshotUrl 'http://unused.invalid' -SnapshotProfile full `
@@ -29,7 +33,8 @@ foreach ($stage in @('support','terminal')) {
         -AcquisitionLoweringPath $source.acquisition_lowering_path -MasterAnglerWindowsPath $source.master_angler_windows_path `
         -RouteTimingPath $source.route_timing_calibration_path -FishingForecastManifestPath $source.fishing_forecast_manifest_path
     $expected = if ($stage -eq 'support') { 'supporting_transition' } else { 'terminal_acquisition' }
-    Assert-True ($planning.Preparation.step_ready -and $planning.Preparation.kind -eq $expected) "Actual $stage planning did not compile."
+    Assert-True ($planning.Preparation.step_ready -and $planning.Preparation.kind -eq $expected) (
+        "Actual $stage planning did not compile: " + (@($planning.Preparation.blocking_reasons) -join ','))
     Assert-True (-not $planning.Preparation.execution_authorized) 'Preparation must not authorize native execution.'
     $passed.Add("actual_source_pipeline_$stage")
 }

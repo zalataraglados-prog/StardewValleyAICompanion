@@ -61,6 +61,14 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                 masterAnglerWindowIndexPath,
                 snapshotPath));
 
+    public static AcquisitionRouteCalendarResolutionReport BuildCurrentSources(
+        string inventoryPath, string loweringPath, string masterAnglerWindowIndexPath, string snapshotPath) =>
+        AcquisitionRouteDependencyObservation.ObserveAxis(
+            "AcquisitionRouteCalendarResolutionBuilder.BuildCurrentSources",
+            () => BuildCore(inventoryPath, loweringPath, masterAnglerWindowIndexPath, null, snapshotPath,
+                currentSourcesOnly: true),
+            BuildObservationIdentity(inventoryPath, loweringPath, masterAnglerWindowIndexPath, snapshotPath));
+
     internal static AcquisitionRouteCalendarResolutionReport Build(
         string inventoryPath,
         string loweringPath,
@@ -120,8 +128,14 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
         string loweringPath,
         string masterAnglerWindowIndexPath,
         CurrentCommunityCenterDenominatorReport? communityCenterDenominator,
-        string? snapshotPath)
+        string? snapshotPath,
+        bool currentSourcesOnly = false)
     {
+        var nativeBinding = currentSourcesOnly
+            ? AcquisitionCurrentNativeSourceBinding.Read(snapshotPath ?? throw new InvalidDataException("Current sources require a snapshot."))
+            : null;
+        Require(!currentSourcesOnly || communityCenterDenominator is null,
+            "Current-source-only mode cannot claim current Community Center authority.");
         var inventoryFullPath = Path.GetFullPath(inventoryPath);
         var loweringFullPath = Path.GetFullPath(loweringPath);
         var windowFullPath = Path.GetFullPath(masterAnglerWindowIndexPath);
@@ -129,6 +143,8 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
             AuthoritativeRequirementInventoryReport>(
             inventoryFullPath,
             "Authoritative requirement inventory");
+        Require(nativeBinding is null || nativeBinding.GameVersion == inventory.GameVersion,
+            "Current native source game version differs from the authoritative inventory.");
         var lowering = CurrentTeacherFrontierSupport.Read<
             AcquisitionRouteOptionLoweringReport>(
             loweringFullPath,
@@ -318,6 +334,14 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
             currentRouteCandidates,
             currentGeodeDropEnabled,
             windows.DeadlineTotalDayExclusive);
+        if (currentSourcesOnly)
+            routes = routes.Select(route => route.RequirementSetId == CurrentCommunityCenterRequirementAuthorityBuilder.RequirementSetId
+                ? route with
+                {
+                    Status = "blocked_current_community_center_denominator_not_requested",
+                    CalendarWindows = Array.Empty<AuthoritativeCalendarSourceWindow>(),
+                    BlockingReasons = route.BlockingReasons.Append("current_community_center_denominator_not_requested").Distinct(StringComparer.Ordinal).ToArray()
+                } : route).ToArray();
         var expectedRouteCount = ExpectedRouteCount(
             lowering,
             communityCenterAuthority);
@@ -329,7 +353,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
         var resolvedCount = routes.Count(route => route.Status ==
             "resolved_static_source_window_target_date_pending");
         var blockedCount = routes.Length - resolvedCount;
-        return new AcquisitionRouteCalendarResolutionReport
+        var report = new AcquisitionRouteCalendarResolutionReport
         {
             Status = blockedCount == 0
                 ? "complete_static_sources_target_date_pending"
@@ -342,6 +366,7 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                 CurrentTeacherFrontierSupport.HashFile(loweringFullPath),
             UsesCurrentCommunityCenterDenominator =
                 communityCenterDenominator is not null,
+            CurrentNativeSourceBinding = nativeBinding,
             CommunityCenterBundleMode =
                 communityCenterDenominator?.BundleMode ?? string.Empty,
             CommunityCenterDenominatorSha256 =
@@ -404,6 +429,9 @@ public static partial class AcquisitionRouteCalendarResolutionBuilder
                 .ToArray(),
             Routes = routes
         };
+        if (currentSourcesOnly)
+            report.AdmissionPolicy = "Current native sources are bound to the snapshot hash, state, save, actor and game version. The full route inventory is retained, but Community Center routes are explicitly blocked because its current denominator was not requested. Other sources retain their authoritative static and current candidate bindings. All target-date and downstream axes remain independently required; this report does not authorize execution or training.";
+        return report;
     }
 
 }

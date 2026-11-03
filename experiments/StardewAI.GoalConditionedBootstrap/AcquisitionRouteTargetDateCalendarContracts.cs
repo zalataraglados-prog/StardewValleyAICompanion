@@ -29,6 +29,10 @@ public sealed class AcquisitionRouteTargetDateCalendarReport
     [JsonPropertyName("uses_current_community_center_denominator")]
     public bool UsesCurrentCommunityCenterDenominator { get; set; }
 
+    [JsonPropertyName("current_native_source_binding")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public AcquisitionCurrentNativeSourceBinding? CurrentNativeSourceBinding { get; set; }
+
     [JsonPropertyName("community_center_bundle_mode")]
     public string CommunityCenterBundleMode { get; set; } = string.Empty;
 
