@@ -2,6 +2,8 @@
 
 ## 2026-11-03 当前 Rusty Key 切片与接续
 
+- **2026-11-04 live 核销调用点补齐：** 排查位置迁移时发现，前一轮恢复只覆盖 rolling 脚本，Museum 与 Rain Totem 的 C# live 核销仍直接 POST。两个现有钩子现共用同一发前留档/单次只读查询 helper，复用原 Backend 日志与查询，不新增执行器或账本；明确 4xx 不查询，未知/错绑定仍保留原失败。恢复结果还需精确绑定 portfolio/source/receipt/revision/state，并继续原 completed-ID/失败关闭路径。Backend `379/379` 通过，含真实仓储/HTTP、实际 live 方法及无窗口 PowerShell 读取 C# 日志的跨进程验证。未启动游戏、未训练或提升覆盖。原生同版本轨迹仍待静默解除，随后接位置迁移等既定缺口，见 [恢复合同](portfolio-mutation-reply-recovery.md#live-material-settlement-hooks)。
+
 - **2026-11-04 Backend 变更丢回复恢复：** 原文件账本在同一次原子发布中保留最后一次成功 portfolio commit/终端结算/准备结算的精简实际回执，不复制完整账本或快照。独立只读查询不调用会自动核销的 `Get`，不改缓存/账本/审计；精确请求、身份、修订及哈希匹配才还原回复。原 rolling 客户端发前留原始请求，失败最多查一次，仍交原 C# canonical receipt/verifier，未知或被后续版本取代即停，绝不重发变更/原生动作。本项不替代同版本原生获取→保管→捐赠→核销轨迹，primary/覆盖/正式训练锁不变；原生下一步仍待静默解除。验证与边界见 [合同](portfolio-mutation-reply-recovery.md)。
 
 - **2026-11-04 Product 丢回复恢复：** 原 live 发送点现先持久化完整请求 gzip、nonce 和原始/Product 两种哈希，再发 RPC；不新增全量快照。Product 复用原 pending/final 日志提供独立只读查询，且已授权派发在 durable intent 后由服务端按原生截止时间负责收尾落盘，不再被断开的客户端取消。传输失败只查一次，只有精确绑定同请求的 final 回执交回原 fresh/结果验证；pending、错身份或查询不可用仍停，绝不重发原生动作。独立 CLI 同样只导出观察、不结算或训练。已有 HTTP/实际 CLI、丢回复/取消/截止时间/保留 pending/防篡改反例通过；本轮未开游戏、计数不变。原生下一步仍是静默解除后同版本 current-geode 获取→保管→捐赠→核销；Backend 变更丢回复及迁移等缺口尚未闭合，见 [恢复合同](product-receipt-recovery.md)。

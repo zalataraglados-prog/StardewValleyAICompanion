@@ -168,14 +168,17 @@ static partial class Program
         return (report, prediction);
     }
 
-    private static async Task<JsonObject> PostJsonStringAsync(HttpClient http, string url, string json)
+    private static async Task<JsonObject> PostJsonStringAsync(HttpClient http, string url, string json,
+        CancellationToken cancellationToken = default)
     {
         using var content = new StringContent(json, Encoding.UTF8, "application/json");
-        using var response = await http.PostAsync(url, content);
-        var body = await response.Content.ReadAsStringAsync();
+        using var response = await http.PostAsync(url, content, cancellationToken);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
-            throw new InvalidOperationException(url + " failed with " + (int)response.StatusCode + ": " + body);
+            var failure = new InvalidOperationException(url + " failed with " + (int)response.StatusCode + ": " + body);
+            failure.Data["RuntimeHttpStatusCode"] = (int)response.StatusCode;
+            throw failure;
         }
 
         return JsonNode.Parse(body)?.AsObject() ?? new JsonObject();

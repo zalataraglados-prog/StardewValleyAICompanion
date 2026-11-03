@@ -16,25 +16,29 @@ public sealed partial class ReservationPortfolioLedgerTests
 {
     private sealed record CustodyFixture(SnapshotEnvelope Snapshot, StrategyCommitmentLedger Ledger, ReservationPortfolioLedgerService Service);
 
-    private static CustodyFixture MintMuseumCustody(bool protectSpare = false)
+    private static CustodyFixture MintMuseumCustody(bool protectSpare = false, IStrategyCommitmentRepository? repository = null)
     {
         var snapshot = MuseumCustodySnapshot();
         var service = new ReservationPortfolioLedgerService();
-        var commit = service.Commit(null, snapshot, Request(snapshot, 20, 300), "fixture-commit");
+        var commit = repository?.CommitReservationPortfolio(snapshot, Request(snapshot, 20, 300)) ??
+            service.Commit(null, snapshot, Request(snapshot, 20, 300), "fixture-commit");
         Assert.True(commit.Accepted, string.Join(";", commit.Errors));
         var request = SettlementRequest(snapshot, 1);
         request.OutputCustodyClaims = new[] { MuseumOutputClaim() };
-        var result = service.SettleCompletedRoute(commit.Ledger, snapshot, request, "fixture-native-acquisition-settled");
+        var result = repository?.SettleReservationPortfolioRoute(snapshot, request) ??
+            service.SettleCompletedRoute(commit.Ledger, snapshot, request, "fixture-native-acquisition-settled");
         Assert.True(result.Accepted, string.Join(";", result.Errors));
         var ledger = result.Ledger!;
         if (protectSpare)
         {
-            var spare = new MaterialReservationLedgerService().Upsert(ledger, snapshot, new()
+            var spareRequest = new MaterialReservationUpsertRequest
             {
                 StateHash = snapshot.StateHash, ExpectedLedgerRevision = ledger.Revision, ReservationId = "other-goal-spare",
                 SourceDecisionId = "other.goal", GoalId = "other.goal", NodeId = "player:123", SlotIndex = 1,
                 QualifiedItemId = "(O)96", Quantity = 1, Purpose = "other goal keeps the spare"
-            }, "fixture-other-goal");
+            };
+            var spare = repository?.UpsertMaterial(snapshot, spareRequest) ??
+                new MaterialReservationLedgerService().Upsert(ledger, snapshot, spareRequest, "fixture-other-goal");
             Assert.True(spare.Accepted, string.Join(";", spare.Errors));
             ledger = spare.Ledger!;
         }

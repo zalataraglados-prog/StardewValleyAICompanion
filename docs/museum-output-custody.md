@@ -62,14 +62,18 @@ No native game was started for this slice. It does not promote coverage, prove
 full acquired-output custody in gameplay or authorize training. Custody currently
 supports one exact museum item in player inventory. Relocation/rebind is rejected
 until its multi-step custody lifecycle is integrated; it is not silently treated
-as supported. Rejected/network-ambiguous settlement still requires recovery of
-the persisted receipt and lease; the failure flag alone is not that recovery.
+as supported. Backend reply retrieval now has its separate
+[recovery contract](portfolio-mutation-reply-recovery.md#live-material-settlement-hooks):
+the actual Museum/Rain Totem live hooks journal before POST and may retrieve one
+exact stored reply without replay. Unknown/pending results and missing proof
+still stop; the failure flag alone is not recovery.
 
-The next Rusty Key work remains autonomous producer/commit/execution orchestration
-and a single retained native acquisition-to-donation-to-settlement trace, joint
-time/opening-window/next-morning checks and criterion-local independent Teacher
-partitions before Year 3. In particular, existing acquisition execution binding
-currently requires verified portfolio Teacher preference; a deterministic
-control proposal must not bypass that boundary by pretending to be a Teacher.
-Keep execution evidence and preference-label admission separate when integrating
-the producer. No new planner or executor is needed.
+The subsequent [control admission](control-execution-admission.md) and
+[rolling runtime](rusty-key-runtime-rolling.md) slices already integrated the
+producer/commit/execution chain and separated safe control from Teacher preference;
+the original mandatory-Teacher binding statement is historical, not a current
+blocker. Remaining Rusty Key work includes the same-version retained native
+acquisition/custody/donation/settlement trace, relocation, joint windows/budgets,
+next-morning checks, criterion-local independent Teacher/native partitions and
+the pre-Year-3 deadline. The prepared Year-5 boundary is shared capability, not
+that deadline proof. No new planner or executor is needed.

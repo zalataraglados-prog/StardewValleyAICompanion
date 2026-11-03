@@ -12,7 +12,7 @@ function Write-RuntimeMutationJournalFile {
 
 function Get-RuntimePortfolioMutationReply {
     param($Context, [string] $JournalPath, [string] $ObservationPath)
-    $journal = Get-Content -LiteralPath $JournalPath -Raw | ConvertFrom-Json
+    $journal = Get-Content -LiteralPath $JournalPath -Raw -Encoding UTF8 | ConvertFrom-Json
     $requestPath = [IO.Path]::GetFullPath((Join-Path (Split-Path -Parent $JournalPath) $journal.request_file))
     if ($journal.schema_version -cne 'stardewai.portfolio_rpc_journal.v1' -or
         $journal.backend_url -cne $Context.BackendUrl -or
@@ -22,7 +22,7 @@ function Get-RuntimePortfolioMutationReply {
     }
     Assert-RuntimeFileIdentity -Path $requestPath -ExpectedSha256 $journal.request_sha256 `
         -Label 'Original portfolio RPC request' | Out-Null
-    $rawRequest = Get-Content -LiteralPath $requestPath -Raw
+    $rawRequest = Get-Content -LiteralPath $requestPath -Raw -Encoding UTF8
     $lookupBody = '{"operation":' + ($journal.operation | ConvertTo-Json -Compress) +
         ',"request":' + $rawRequest + '}'
     $lookup = Invoke-JsonPost -Url (
