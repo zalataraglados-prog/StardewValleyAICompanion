@@ -1,11 +1,27 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using StardewAI.Core.Training;
+using StardewAI.RuntimePrimitives;
 
 namespace StardewAI.Core.Tests;
 
 public sealed class ExecutorOwnedIdlePauseTimingTests
 {
+    [Fact]
+    public void ActualSmapiReadApiIsTopLevelPublicAndOnlyExportsTheReadMethod()
+    {
+        var type = typeof(ExecutorPlanningPauseReadApi);
+        Assert.True(type.IsPublic);
+        Assert.False(type.IsNested);
+        var methods = type.GetMethods(System.Reflection.BindingFlags.Public |
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.DeclaredOnly);
+        Assert.Equal("ReadPlanningPauseEvidence", Assert.Single(methods).Name);
+        var calls = 0;
+        var api = new ExecutorPlanningPauseReadApi(() => { calls++; return "read-only"; });
+        Assert.Equal("read-only", api.ReadPlanningPauseEvidence());
+        Assert.Equal(1, calls);
+    }
+
     [Fact]
     public void ExactOwnedPauseLoadsCalibrationWithoutClaimingCurrentNativeReadiness()
     {

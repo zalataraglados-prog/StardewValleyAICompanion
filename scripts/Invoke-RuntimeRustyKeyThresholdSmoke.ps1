@@ -44,6 +44,7 @@ if ($SupplyMode -eq 'current_geode') {
 $sourceHash = Get-DirectoryContentHash -Path $sourceSave
 $isolatedSaves = Join-Path $runRoot "isolated-saves"
 $isolatedMods = Join-Path $runRoot "smapi-mods"
+$strategyLedgerDirectory = Join-Path $runRoot "strategy-ledger"
 $backendUrl = "http://127.0.0.1:$BackendPort"
 $executorUrl = "http://127.0.0.1:8767"
 $snapshotUrl = "http://127.0.0.1:8765/api/v1/snapshot?profile=full&fresh=1"
@@ -95,7 +96,7 @@ foreach ($path in @($backendDll, $loopDll)) {
     $binaryIdentity[$path] = Get-RuntimeFileSha256 -Path $path
 }
 $savedEnvironment = Save-RuntimeProcessEnvironment -Names @(
-    "ASPNETCORE_URLS", "STARDEWAI_TEST_SAVES", "STARDEWAI_TEST_SLOT",
+    "ASPNETCORE_URLS", "STARDEWAI_STRATEGY_LEDGER_DIR", "STARDEWAI_TEST_SAVES", "STARDEWAI_TEST_SLOT",
     "STARDEWAI_TEST_AUTO_LOAD", "STARDEWAI_SAVE_ISOLATION_PATH",
     "STARDEWAI_TRAINING_RUN_ID", "STARDEWAI_TRAINING_MODE",
     "STARDEWAI_TRAINING_OUTPUT_DIR", "STARDEWAI_SUPPRESS_LOCAL_RENDER",
@@ -106,6 +107,7 @@ $steps = [Collections.Generic.List[object]]::new()
 $transitions = [Collections.Generic.List[object]]::new()
 try {
     $env:ASPNETCORE_URLS = $backendUrl
+    $env:STARDEWAI_STRATEGY_LEDGER_DIR = $strategyLedgerDirectory
     $env:STARDEWAI_TEST_SAVES = $isolatedSaves
     $env:STARDEWAI_TEST_SLOT = $SaveSlot
     $env:STARDEWAI_TEST_AUTO_LOAD = "true"
@@ -171,6 +173,7 @@ try {
             run_id = $RunId; project_head = [string](& git -C $ProjectRoot rev-parse HEAD)
             fixture_boundary = $boundary; rolling_summary_path = $rollingSummaryPath
             source_save_preserved = $true; source_save_sha256 = $sourceHash
+            strategy_ledger_directory = $strategyLedgerDirectory
             isolated_mods = $modIdentity; candidate_binary_sha256 = $binaryIdentity
             evidence_scope = 'runtime_control_observation_pending_independent_native_trace_review'
             proves_acquisition_of_60_items = $false; proves_full_criterion = $false; formal_training_started = $false
@@ -281,6 +284,7 @@ try {
         proves_acquisition_of_60_items = $false; proves_full_criterion = $false
         formal_training_started = $false
         source_save_preserved = $true; source_save_sha256 = $sourceHash
+        strategy_ledger_directory = $strategyLedgerDirectory
         candidate_binary_sha256 = $binaryIdentity; isolated_mods = $modIdentity
         native_start_total_days = $startingDay; native_end_total_days = $startingDay + 1
         actual_rusty_key_received = $true; native_event_66_completed = $true

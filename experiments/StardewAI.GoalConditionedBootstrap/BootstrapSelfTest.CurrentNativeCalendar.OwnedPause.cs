@@ -9,9 +9,10 @@ internal static partial class BootstrapSelfTest
 {
     private sealed partial class StageOneCollectionFrontierFixture
     {
-        private void VerifyCurrentNativeOwnedPauseLocation(AcquisitionRouteExecutionBindingInputs inputs,
-            SnapshotEnvelope baseline, List<string> passed)
+        private void VerifyCurrentNativeOwnedPauseLocation(List<string> passed)
         {
+            var inputs = PrepareCurrentNativeGeode();
+            var baseline = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(inputs.BeforeSnapshotPath, "Owned pause fixture");
             var snapshot = CloneSnapshot(baseline);
             var player = JsonSerializer.SerializeToNode(snapshot.State["player"])!;
             var movement = player["movement_timing_context"]!["value"]!;

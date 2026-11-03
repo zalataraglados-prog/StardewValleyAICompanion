@@ -50,9 +50,9 @@ morning before Year 3 reject. DTD/external entities are prohibited. The original
 C# admission independently rechecks the live date; held-item capability mode
 keeps its former semantics.
 
-Focused calibration/ownership tests pass 39 cases; boundary/preflight checks
+Focused calibration/ownership tests pass 40 cases; boundary/preflight checks
 pass 33 without launching a game, including the actual entry's late-date refusal.
-The current-native calendar integration passes 17 checks, including owned/unowned
+The current-native calendar integration passes 18 checks, including owned/unowned
 pause and retention of the original timing reason. Harness and bridge build against explicit E
 game references with zero warnings/errors. The same-version native
 acquisition/custody/donation/consumption trace must
@@ -64,3 +64,19 @@ current-geode validation. A fixture containing 59 donations remains a threshold
 capability test even on a Year-1 save: it does not prove acquiring 60 distinct
 items from a new save, the full Rusty Key criterion or Teacher partitions.
 Coverage counters and `formal_product_training=false` remain frozen.
+
+The first candidate `84b866ba` exposed an interop mistake in the new API:
+SMAPI's locked `ModRegistryHelper` checks `Type.IsPublic`, so a nested public API
+class was refused (confirmed by the native SMAPI warning). The actual API is now
+a top-level game-free runtime primitive with a type/surface/callback regression
+test. API failures retain bounded explicit unavailable diagnostics, never
+authorization. The CI failure on that candidate was a negative fixture mutating
+the snapshot reused by the next runtime-source test; negative cases now use a
+separate short sibling fixture, and the original snapshot hash is checked intact.
+
+The threshold launcher also now binds the existing Backend repository environment
+setting to `runRoot/strategy-ledger` and restores it afterward. Earlier attempts
+read a historical ProofFarm ledger (revision 233); a new isolated run must not
+silently reuse that test history. No old ledger, reservation or filesystem item
+is removed. The native rerun must independently confirm its own ledger and API
+evidence before any acquisition/consumption claim.
