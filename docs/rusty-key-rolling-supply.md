@@ -35,6 +35,11 @@ exports an ordinary portfolio proposal/admission; it still requires the existing
 atomic commit, execution binding, current dispatch checks and terminal receipt.
 The producer does not create another executor, allocator or reservation store.
 
+Fresh acquisition execution can now consume the independently rebuilt producer
+report through `--portfolio-control-selection`, without manufacturing a Teacher
+preference. See [control execution admission](control-execution-admission.md).
+Native outcomes and custody settlement remain separate from preference labels.
+
 At 60 or more donated items it proposes no further supply and reports that native
 key handoff is still required. The source-day bound leaves at least the following
 morning before exclusive day 224, but is not a joint donation/opening-hours proof.

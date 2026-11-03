@@ -62,10 +62,10 @@ public static partial class AcquisitionRoutePortfolioSettlementBuilder
             "Fresh terminal receipt drifted from deterministic source compilation.");
         Require(binding.DispatchBindingReady &&
                 binding.PortfolioReservationCommitVerified &&
-                binding.PortfolioTeacherPreferenceVerified &&
+                AcquisitionRouteControlSelectionVerifier.HasVerifiedExecutionSelection(binding) &&
                 !binding.FormalTrainingAuthorized &&
                 fresh.FreshTerminalReceiptVerified &&
-                fresh.RouteTrainingEvidenceEligible &&
+                (binding.PortfolioTeacherPreferenceVerified ? fresh.RouteTrainingEvidenceEligible : !fresh.RouteTrainingEvidenceEligible) &&
                 !fresh.FormalTrainingAuthorized &&
                 fresh.RouteOccurrenceId == binding.RouteOccurrenceId &&
                 fresh.GoalId == binding.GoalId &&

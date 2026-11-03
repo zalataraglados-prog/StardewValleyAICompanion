@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-04 控制来源准入：** 已重用原获取/预留/编译/结算链接受独立重建的 rolling 控制选择，不再要求把安全执行标成 Teacher 偏好。控制来源、原生结果与监督标签分离，训练标记保持 false；20 项具名检查（含实际无 Teacher 参数 CLI）、完整旧 collection Teacher、hermetic critical paths、rolling 25 和阈值 30 回归通过。本轮没有游戏运行或覆盖晋升，自主 live root 与控制 continuation/失败恢复/位置迁移仍待接续。见 [准入合同](control-execution-admission.md)，唯一 primary 仍为 Rusty Key。
+
 > **2026-11-03 Museum output custody：** 原获取结算现在同修订号完成输入并保管一件 museum 产物；候选/编译/派发复查精确消费者、目标、账本和数量，live 捐赠完成后走原 supporting-transition 核销。Backend 303、Core 聚焦 87、rolling 25、阈值 30 和 Teacher 聚焦重放通过；仅代码/合成与实际 live 方法测试，未新增原生证据。自主 producer 编排、单条原生获取到核销轨迹、网络失败回执恢复和位置迁移仍未完成，不能把控制提案标为 Teacher 偏好。见 [合同](museum-output-custody.md)，主线与冻结计数不变。
 
 > **2026-11-03 Rusty Key rolling producer：** 已有真正生成下一步的 CLI，不再只有调用方手填完整组合的校验器：安全已有库存复用原捐赠编译链，否则单项获取复用原 portfolio/原子预留预检。完整物品分母保留，单项进展不冒充完整阈值证书或 Teacher 最优偏好。24 项合成用例、30 项阈值回归、聚焦 Teacher 重放及实际 CLI 导出/拒绝保护通过；尚未接成自主 live root 供给编排、未新增原生运行。唯一接续是接既有提交/执行和持续产物租约，再收本 criterion 时间与独立证据，不重排 root。见 [合同](rusty-key-rolling-supply.md)。

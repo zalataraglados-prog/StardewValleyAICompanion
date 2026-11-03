@@ -25,7 +25,8 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         int committedLedgerRevision,
         string rankingHash,
         SmallModelActionParameter[]? additionalLineage = null,
-        AcquisitionRouteTargetDateOpportunityCost? selectedOpportunity = null)
+        AcquisitionRouteTargetDateOpportunityCost? selectedOpportunity = null,
+        bool controlSelection = false)
     {
         var source = selected.Candidate;
         var routeOptionRole = selected.RouteOptionRole;
@@ -37,6 +38,7 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             source,
             AcquisitionRouteExecutionBindingBuilder.SelectedCandidateId(
                 requirement.RouteOccurrenceId));
+        if (controlSelection) candidate.PolicyModelSource = AcquisitionRouteControlSelectionVerifier.DispatchSource;
         var teacherBudgetReasons = BindSelectedOpportunityBudget(
             candidate,
             selectedOpportunity);
@@ -46,7 +48,7 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             goalId,
             ExecutionTargetProfiles.TrainingSingleplayer,
             maxCandidates: 1);
-        plan.SourceModel =
+        plan.SourceModel = controlSelection ? AcquisitionRouteControlSelectionVerifier.DispatchSource :
             "deterministic_teacher.acquisition_route_dispatch.v1";
 
         var deferredPickupReasons = AppendDeferredNativeDropPickup(

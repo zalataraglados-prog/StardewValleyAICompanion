@@ -22,6 +22,8 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
             string replanAdmissionPath,
             AcquisitionRouteExecutionBindingInputs inputs)
     {
+        Require(!AcquisitionRouteControlSelectionVerifier.UsesControl(inputs),
+            "Rolling control supporting-transition selection must be independently rebuilt before use.");
         var portfolio = PortfolioInputs(inputs);
         var expectedPreference =
             AcquisitionRouteSupportingTransitionPortfolioBuilder
@@ -95,8 +97,10 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
             inputs.TargetDateOpportunityCostPath);
         var loweringPath = Path.GetFullPath(inputs.AcquisitionLoweringPath);
         var snapshotPath = Path.GetFullPath(inputs.BeforeSnapshotPath);
-        var portfolioPreferencePath = Path.GetFullPath(
-            inputs.PortfolioTeacherPreferencePath);
+        var usesControl = AcquisitionRouteControlSelectionVerifier.UsesControl(inputs);
+        Require(!usesControl || continuation is null && expectedPreferenceOverride is null && expectedCommitOverride is null,
+            "Rolling control continuation/supporting-transition selection must be independently rebuilt before use.");
+        var portfolioPreferencePath = usesControl ? null : Path.GetFullPath(inputs.PortfolioTeacherPreferencePath);
         var portfolioReceiptPath = Path.GetFullPath(
             inputs.PortfolioCommitReceiptPath);
         var committedLedgerPath = Path.GetFullPath(
@@ -109,11 +113,12 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
         var recomputed = RecomputeOpportunityCost(inputs);
         Require(EqualJson(opportunity, recomputed),
             "Target-date opportunity-cost report drifted from deterministic source compilation.");
-        var portfolioPreference = CurrentTeacherFrontierSupport.Read<
+        var controlSelection = usesControl ? AcquisitionRouteControlSelectionVerifier.Read(inputs) : null;
+        var portfolioPreference = usesControl ? null : CurrentTeacherFrontierSupport.Read<
             AcquisitionRoutePortfolioTeacherPreference>(
-            portfolioPreferencePath,
+            portfolioPreferencePath!,
             "Acquisition route portfolio Teacher preference");
-        var recomputedPreference = expectedPreferenceOverride ??
+        var recomputedPreference = usesControl ? null : expectedPreferenceOverride ??
             (continuation is null
             ? AcquisitionRoutePortfolioTeacherPreferenceBuilder.Build(
                 PortfolioInputs(inputs),
@@ -159,11 +164,14 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
                     commitResultPath));
         Require(EqualJson(portfolioReceipt, recomputedPortfolioReceipt),
             "Route portfolio commit receipt drifted from deterministic source compilation.");
+        var selectionProvenance = usesControl
+            ? controlSelection!.SelectedAcquisitionAdmission!.CommunityCenterProvenance
+            : portfolioPreference!.CommunityCenterProvenance;
         Require(AcquisitionRouteCommunityCenterProvenanceSupport.Equal(
-                    portfolioPreference.CommunityCenterProvenance,
+                    selectionProvenance,
                     portfolioAdmission.CommunityCenterProvenance) &&
                 AcquisitionRouteCommunityCenterProvenanceSupport.Equal(
-                    portfolioPreference.CommunityCenterProvenance,
+                    selectionProvenance,
                     portfolioReceipt.CommunityCenterProvenance),
             "Route portfolio Community Center provenance drifted before execution binding.");
         var lowering = CurrentTeacherFrontierSupport.Read<
@@ -198,8 +206,11 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
                 requirement,
                 before,
                 snapshotPath)
-            .Concat(ValidatePortfolioTeacherPreference(
-                portfolioPreference,
+            .Concat(usesControl ? ValidatePortfolioSelectionCommon(
+                controlSelection!.GoalId, controlSelection.SnapshotStateHash,
+                portfolioProposal, portfolioAdmission, portfolioReceipt, opportunity,
+                selected.RouteOccurrenceId, before.StateHash, "route_portfolio_control_") : ValidatePortfolioTeacherPreference(
+                portfolioPreference!,
                 portfolioProposal,
                 portfolioAdmission,
                 portfolioReceipt,
@@ -239,10 +250,9 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
             reason.StartsWith(
                 "route_portfolio_",
                 StringComparison.Ordinal) &&
-            !reason.StartsWith(
-                "route_portfolio_teacher_",
-                StringComparison.Ordinal));
-        var portfolioPreferenceVerified = !reasons.Any(reason =>
+            !reason.StartsWith("route_portfolio_teacher_", StringComparison.Ordinal) &&
+            !reason.StartsWith("route_portfolio_control_", StringComparison.Ordinal));
+        var portfolioPreferenceVerified = !usesControl && !reasons.Any(reason =>
             reason.StartsWith(
                 "route_portfolio_teacher_",
                 StringComparison.Ordinal));
@@ -258,13 +268,13 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
         }
         var priorSupportingTransitionReplanSha256 =
             VerifiedSupportingTransitionReplanSha256(
-                portfolioPreference.PriorSupportingTransitionReplanSha256,
+                portfolioPreference?.PriorSupportingTransitionReplanSha256 ?? string.Empty,
                 portfolioProposal.PriorSupportingTransitionReplanSha256,
                 portfolioAdmission.PriorSupportingTransitionReplanSha256,
                 portfolioReceipt.PriorSupportingTransitionReplanSha256);
 
         var items = queue.Items ?? Array.Empty<ActionQueueItem>();
-        return new AcquisitionRouteExecutionBinding
+        var binding = new AcquisitionRouteExecutionBinding
         {
             Status = reasons.Length == 0
                 ? "ready_for_exact_route_dispatch"
@@ -291,8 +301,7 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
             PortfolioCommitReceiptSha256 =
                 CurrentTeacherFrontierSupport.HashFile(portfolioReceiptPath),
             PortfolioTeacherPreferenceSha256 =
-                CurrentTeacherFrontierSupport.HashFile(
-                    portfolioPreferencePath),
+                usesControl ? string.Empty : CurrentTeacherFrontierSupport.HashFile(portfolioPreferencePath!),
             ReservationPortfolioId = portfolioReceipt.PortfolioId,
             CommittedStrategyLedgerSha256 =
                 CurrentTeacherFrontierSupport.HashFile(committedLedgerPath),
@@ -327,10 +336,18 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
             PortfolioReservationCommitVerified = portfolioCommitVerified,
             PortfolioTeacherPreferenceVerified =
                 portfolioPreferenceVerified,
+            PortfolioControlSelection = usesControl ? new AcquisitionRouteControlSelectionBinding
+            {
+                SourceSha256 = Hash(inputs.PortfolioControlSelectionPath!),
+                Verified = !reasons.Any(reason => reason.StartsWith("route_portfolio_control_", StringComparison.Ordinal))
+            } : null,
             DispatchBindingReady = reasons.Length == 0,
             FormalTrainingAuthorized = false,
             BlockingReasons = reasons
         };
+        if (usesControl)
+            binding.AdmissionPolicy = "An independently rebuilt deterministic rolling control selection may execute its exact admitted proposal after the same atomic reservation, fresh state, source-bound queue and native outcome checks. It is not a Teacher preference, cannot emit preference labels, and cannot authorize formal training.";
+        return binding;
     }
 
     internal static AcquisitionRouteTargetDateOpportunityCostReport

@@ -79,6 +79,10 @@ public sealed class AcquisitionRouteExecutionBindingInputs
     [JsonPropertyName("portfolio_teacher_preference_path")]
     public string PortfolioTeacherPreferencePath { get; init; } = string.Empty;
 
+    [JsonPropertyName("portfolio_control_selection_path")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? PortfolioControlSelectionPath { get; init; }
+
     [JsonPropertyName("portfolio_commit_receipt_path")]
     public string PortfolioCommitReceiptPath { get; init; } = string.Empty;
 
@@ -226,6 +230,10 @@ public sealed class AcquisitionRouteExecutionBinding
     [JsonPropertyName("portfolio_teacher_preference_verified")]
     public bool PortfolioTeacherPreferenceVerified { get; set; }
 
+    [JsonPropertyName("portfolio_control_selection")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public AcquisitionRouteControlSelectionBinding? PortfolioControlSelection { get; set; }
+
     [JsonPropertyName("dispatch_binding_ready")]
     public bool DispatchBindingReady { get; set; }
 
@@ -238,4 +246,14 @@ public sealed class AcquisitionRouteExecutionBinding
     [JsonPropertyName("admission_policy")]
     public string AdmissionPolicy { get; set; } =
         "A target-date route may be dispatched only after an independent, complete-denominator Teacher preference selects its exact proposal/admission and a deterministically rebuilt receipt verifies the resulting reservation portfolio commit. The immutable pending action queue and every normalized command repeat the exact route/requirement/source/quantity/quality identity plus the committed portfolio ID and ledger revision. Every option belongs to the route's authoritative endpoint/support set, and the queue retains the same fresh source state. Item identity, a caller-provided proposal, candidate alias, uncommitted preflight or stale ledger may never infer preference, ownership or execution. This pre-dispatch binding predicts no terminal receipt and cannot authorize formal training.";
+}
+
+public sealed class AcquisitionRouteControlSelectionBinding
+{
+    [JsonPropertyName("provenance_class")]
+    public string ProvenanceClass { get; set; } = "deterministic_control.rusty_key_rolling_supply.v1";
+    [JsonPropertyName("source_sha256")]
+    public string SourceSha256 { get; set; } = string.Empty;
+    [JsonPropertyName("verified")]
+    public bool Verified { get; set; }
 }
