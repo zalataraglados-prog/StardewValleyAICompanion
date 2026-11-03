@@ -101,6 +101,9 @@
     <Compile Include="NativeControlSettleRecoveryTests.cs" />
     <Compile Include="StageOneMandatoryMenuRecoveryTests.cs" />
     <Compile Include="GrandpaDirectionCatalogGovernanceTests.cs" />
+    <Compile Include="GrandpaDirectionDailyCandidateBindingTests.cs" />
+    <Compile Include="GrandpaDirectionDailyCandidateBindingTests.CatalogValidation.cs" />
+    <Compile Include="GrandpaDirectionDailyCandidateBindingTests.RustyKey.cs" />
     <Compile Include="WildTreeTapperOutputSourceGuardTests.cs" />
     <Compile Include="WildTreeChopAcquisitionMainlineTests.cs" />
     <Compile Include="DeferredNativeDropPickupTests.cs" />
