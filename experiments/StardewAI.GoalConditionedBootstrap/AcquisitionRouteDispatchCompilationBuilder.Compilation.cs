@@ -466,23 +466,24 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
             .ToLowerInvariant();
     }
 
-    private static void StabilizeQueueIdentity(
+    internal static void StabilizeQueueIdentity(
         ActionQueueEnvelope queue,
-        string compilationIdentity)
+        string compilationIdentity,
+        string prefix = "acquisition_route")
     {
-        queue.QueueId = "acquisition_route_queue." + compilationIdentity;
+        queue.QueueId = prefix + "_queue." + compilationIdentity;
         for (var index = 0; index < queue.Items.Length; index++)
         {
             var item = queue.Items[index];
             item.QueueItemId =
-                "acquisition_route_queue_item." + compilationIdentity + "." +
+                prefix + "_queue_item." + compilationIdentity + "." +
                 index;
             var steps = item.NormalizedCommand?.Steps ??
                 Array.Empty<CompiledActionStep>();
             for (var stepIndex = 0; stepIndex < steps.Length; stepIndex++)
             {
                 steps[stepIndex].StepId =
-                    "acquisition_route_primitive." + compilationIdentity +
+                    prefix + "_primitive." + compilationIdentity +
                     "." + index + "." + stepIndex;
             }
         }

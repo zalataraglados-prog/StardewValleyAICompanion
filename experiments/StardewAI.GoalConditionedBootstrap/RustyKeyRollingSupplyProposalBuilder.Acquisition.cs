@@ -21,6 +21,12 @@ public static partial class RustyKeyRollingSupplyProposalBuilder
             var requirement = AcquisitionRoutePortfolioBuilder.RequirementRoute(route);
             if (requirement.RequirementSetId != "museum_collection" || !missing.ContainsKey(requirement.RequirementId))
                 continue;
+            if (result.PendingDonationRequirementIds?.Contains(requirement.RequirementId, StringComparer.Ordinal) == true)
+            {
+                evaluations.Add(new(route.RouteOccurrenceId, requirement.RequirementId, "acquisition_route", false,
+                    new[] { "rusty_key_item_already_owned_pending_donation_or_transfer" }));
+                continue;
+            }
             var proposal = new AcquisitionRoutePortfolioProposal
             {
                 ProposalId = "rusty-key-rolling:" + route.RouteOccurrenceId + ":" + result.SnapshotStateHash +

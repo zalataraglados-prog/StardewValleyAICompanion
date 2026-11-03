@@ -60,6 +60,14 @@ public static partial class RustyKeyRollingSupplyProposalBuilder
             return result;
         }
 
+        var pending = ReadPendingDonations(source, snapshot, ledger, result.GoalId, reasons);
+        if (pending.Length > 0) result.PendingDonationRequirementIds = pending;
+        if (reasons.Count > 0 || pending.Length >= result.RemainingDonationCount)
+        {
+            result.CandidateEvaluations = evaluations.ToArray();
+            return Block(result, reasons.Count > 0 ? reasons : new[] { "rusty_key_owned_supply_pending_donation_or_transfer" });
+        }
+
         var context = acquisitionContext();
         if (context is null)
         {

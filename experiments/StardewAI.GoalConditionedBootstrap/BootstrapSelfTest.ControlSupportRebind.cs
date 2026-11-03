@@ -74,6 +74,15 @@ internal static partial class BootstrapSelfTest
             Write(admissionPath, rebound.SelectedAcquisitionAdmission!);
             var after = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(proof.AfterSnapshotPath, "After support");
             var settled = CurrentTeacherFrontierSupport.Read<StrategyCommitmentLedger>(proof.SettledLedgerPath, "Settled support ledger");
+            var preparationRankingPath = Path.Combine(nextRoot, "pre-commit-ranking.json");
+            var preparationAvailability = new CandidateOptionAvailabilityEvaluator().Evaluate(after,
+                new[] { "economy.buy_supplies" }, commitmentLedger: settled);
+            Write(preparationRankingPath, CollectionRanking(after.StateHash,
+                new EventCandidateRanker().Rank(new BaselineTrainingReport(), preparationAvailability, control.GoalId)));
+            var prepared = RustyKeyRollingStepPreparationBuilder.Build(freshInputs, controlPath, preparationRankingPath, proofPath);
+            Require(prepared.StepReady && prepared.Kind == "terminal_acquisition" &&
+                EqualJson(prepared.AtomicCommitRequest!, rebound.SelectedAcquisitionAdmission!.AtomicCommitRequest!) &&
+                !prepared.ExecutionAuthorized, "Fresh support lineage must select the terminal stage before its real commit.");
             var commit = new ReservationPortfolioLedgerService().Commit(settled, after,
                 rebound.SelectedAcquisitionAdmission!.AtomicCommitRequest!, "2026-11-04T00:02:00Z");
             Require(commit.Accepted && commit.Ledger is not null, "Rebound control atomic commit failed: " + string.Join(",", commit.Errors));

@@ -176,6 +176,27 @@ internal static partial class BootstrapSelfTest
         Require(heldCustody.RollingStepReady && heldCustody.CompiledQueue!.Items.Any(item => item.NormalizedCommand.Parameters
             .Any(parameter => parameter.Name == "museum_output_custody_reservation_id")), "Rolling producer did not reuse its own dedicated output custody.");
         passed.Add("rolling_producer_compiles_its_dedicated_custody");
+        held.ChangeMuseum("museum_mutex_locked", JsonValue.Create(true));
+        custody.Ledger!.MaterialReservations = custody.Ledger.MaterialReservations.Append(new MaterialReservation
+        {
+            ReservationId = "spare-unit-protected", SourceDecisionId = "other", GoalId = "other.goal", Revision = 1,
+            OwnerPlayerId = 1, SourceStateHash = held.Snapshot.StateHash, NodeId = "player:1", SlotIndex = 0,
+            QualifiedItemId = "(O)fixture_59", Quantity = 1, Purpose = "protect remaining unit"
+        }).ToArray();
+        var pendingCustody = RustyKeyRollingSupplyProposalBuilder.Build(held.Inventory, held.Snapshot, custody.Ledger!,
+            "fixture-inventory-sha", "fixture-snapshot-sha", "fixture-custody-sha",
+            () => throw new InvalidOperationException("Pending custody must not acquire again."));
+        Require(!pendingCustody.RollingStepReady && !pendingCustody.ThresholdSatisfied &&
+            pendingCustody.PendingDonationRequirementIds is { Length: 1 }, "Authenticated custody remains pending supply, not completed progress.");
+        passed.Add("pending_dedicated_custody_not_reacquired");
+        custody.Ledger.MaterialReservations.Single(row => row.OutputCustody is not null).OutputCustody!.FreshTerminalReceiptSha256 = new string('b', 64);
+        var missingHistoryContextCalls = 0;
+        var forgedCustody = RustyKeyRollingSupplyProposalBuilder.Build(held.Inventory, held.Snapshot, custody.Ledger,
+            "fixture-inventory-sha", "fixture-snapshot-sha", "fixture-custody-sha", () => { missingHistoryContextCalls++; return null; });
+        Require(forgedCustody.PendingDonationRequirementIds is null && missingHistoryContextCalls == 1,
+            "An unauthenticated custody marker must not count another goal's reserved unit as pending supply.");
+        passed.Add("pending_custody_requires_exact_creation_history");
+        VerifyRollingPendingInventory(passed);
         Write(Path.Combine(root, "rusty-key-rolling-self-test.json"), new
         {
             status = "passed", passed_count = passed.Count, cases = passed,

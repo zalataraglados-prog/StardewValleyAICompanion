@@ -110,12 +110,15 @@ var commandDefinitions = new CommandDefinition[]
     new("build-acquisition-route-portfolio-admission", BuildAcquisitionRoutePortfolioAdmission),
     new("build-rusty-key-acquisition-portfolio", BuildRustyKeyAcquisitionPortfolio),
     new("build-rusty-key-rolling-supply", BuildRustyKeyRollingSupply),
+    new("prepare-rusty-key-rolling-step", BuildRustyKeyRollingStepPreparation),
     new("self-test-rusty-key-rolling-supply", options =>
         BootstrapSelfTest.RunRustyKeyRollingSupply(options.Required("output-root"))),
     new("self-test-control-execution", options =>
         BootstrapSelfTest.RunControlExecution(options.Required("output-root"))),
     new("self-test-control-support-rebind", options =>
         BootstrapSelfTest.RunControlSupportRebind(options.Required("output-root"))),
+    new("self-test-rusty-key-rolling-step", options =>
+        BootstrapSelfTest.RunRustyKeyRollingStep(options.Required("output-root"))),
     new("build-acquisition-route-portfolio-teacher-preference", BuildAcquisitionRoutePortfolioTeacherPreference),
     new("build-acquisition-route-portfolio-commit-receipt", BuildAcquisitionRoutePortfolioCommitReceipt),
     new("compile-acquisition-route-dispatch", CompileAcquisitionRouteDispatch),
@@ -1401,6 +1404,16 @@ static void BuildRustyKeyRollingSupply(Arguments options)
     }
     if (!report.RollingStepReady && !report.ThresholdSatisfied)
         Environment.ExitCode = 2;
+}
+
+static void BuildRustyKeyRollingStepPreparation(Arguments options)
+{
+    var result = RustyKeyRollingStepPreparationBuilder.Build(
+        RoutePortfolioInputs(options, requireProposal: false, requireAcquisitionSources: false),
+        options.Required("portfolio-control-selection"), options.Optional("ranking") ?? string.Empty,
+        options.Optional("control-supporting-transition-proof") ?? string.Empty);
+    Write(options.Required("output"), result);
+    if (!result.StepReady && result.Kind != "native_key_handoff") Environment.ExitCode = 2;
 }
 
 static void BuildAcquisitionRoutePortfolioTeacherPreference(Arguments options)

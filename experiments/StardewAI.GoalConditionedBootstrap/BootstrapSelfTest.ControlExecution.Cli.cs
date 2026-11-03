@@ -22,7 +22,8 @@ internal static partial class BootstrapSelfTest
             "The rolling CLI must independently rebuild the same retained support selection.");
     }
 
-    private static void RunControlCli(AcquisitionRouteExecutionBindingInputs inputs, string command, string outputPath)
+    private static void RunControlCli(AcquisitionRouteExecutionBindingInputs inputs, string command, string outputPath,
+        params string[] extraArguments)
     {
         var start = new ProcessStartInfo("dotnet")
         {
@@ -40,6 +41,7 @@ internal static partial class BootstrapSelfTest
         }
         start.ArgumentList.Add("--output");
         start.ArgumentList.Add(outputPath);
+        foreach (var argument in extraArguments) start.ArgumentList.Add(argument);
         using var process = Process.Start(start) ?? throw new InvalidOperationException("Control CLI process did not start.");
         var output = process.StandardOutput.ReadToEndAsync();
         var error = process.StandardError.ReadToEndAsync();
