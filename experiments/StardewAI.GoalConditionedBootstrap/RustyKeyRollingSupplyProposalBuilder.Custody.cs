@@ -15,7 +15,7 @@ public static partial class RustyKeyRollingSupplyProposalBuilder
 
     private static bool TryStoredCustody(RustyKeyRollingSupplyProposal result,
         RustyKeyAcquisitionPortfolioBuilder.RustyKeySourceScope source, SnapshotEnvelope snapshot,
-        StrategyCommitmentLedger ledger, List<RustyKeyRollingCandidateEvaluation> evaluations)
+        StrategyCommitmentLedger ledger, List<RustyKeyRollingCandidateEvaluation> evaluations, string routeTimingCalibrationPath)
     {
         if (!MaterialInventoryGraphReader.TryRead(snapshot, out var graph)) return false;
         var players = graph!.InventoryNodes.Where(node => node.InventoryKind == "player_inventory" &&
@@ -60,6 +60,8 @@ public static partial class RustyKeyRollingSupplyProposalBuilder
         if (selected is null) return false;
         result.SelectedCandidateId = selected.Candidate.CandidateId;
         result.SelectedCustodyTransfer = selected.Selection;
+        result.SelectedCustodyDonationSchedule = RustyKeyCustodyDonationScheduleBuilder.Build(result.GoalId, snapshot, ledger, graph!,
+            selected.Selection, selected.Candidate, DonationRouteScheduler(snapshot, routeTimingCalibrationPath));
         result.CompiledPlan = selected.Plan;
         result.CompiledQueue = selected.Queue;
         result.RollingStepReady = true;

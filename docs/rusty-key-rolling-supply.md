@@ -1,5 +1,17 @@
 # Rusty Key Rolling Supply
 
+## Selected Custody Donation Schedule
+
+`selected_custody_donation_schedule` binds the already-selected original custody
+reservation/position/destination and proves complete current-day chest approach,
+shared interaction and museum continuation when the retained evidence permits.
+Local transfer uses the original compiled stand; remote travel requires the
+selected first connector. One original immediate step or bounded wait is still
+prepared, never the forecast's whole path. Fresh physical transfer checks and
+native receipt remain required; full joint verification stays false. Unknown
+date/timing or unobserved post-clearance geometry remains explicit without
+reacquisition or changing the original custody ordering/admission.
+
 ## Selected Acquisition Donation Schedule
 
 The selected acquisition retains a source-bound current-day continuation in

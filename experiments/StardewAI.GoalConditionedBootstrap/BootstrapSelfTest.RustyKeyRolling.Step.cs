@@ -53,6 +53,7 @@ internal static partial class BootstrapSelfTest
             handoff.CompiledQueue is null, "Threshold satisfaction must hand off, not invent a key or execute extra supply.");
         passed.Add("threshold_requires_native_handoff");
         VerifyRollingCustody(root, passed);
+        VerifyRollingCustodyDonationSchedule(root, passed);
         Write(Path.Combine(root, "rolling-step-self-test.json"), new
         {
             status = "passed", passed_count = passed.Count, passed, native_game_run = false,

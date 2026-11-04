@@ -54,6 +54,9 @@ public sealed class RustyKeyRollingSupplyProposal
     [JsonPropertyName("selected_custody_transfer")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public RustyKeyRollingCustodySelection? SelectedCustodyTransfer { get; set; }
+    [JsonPropertyName("selected_custody_donation_schedule")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public RustyKeyCustodyDonationSchedule? SelectedCustodyDonationSchedule { get; set; }
     [JsonPropertyName("selected_acquisition_proposal")]
     public AcquisitionRoutePortfolioProposal? SelectedAcquisitionProposal { get; set; }
     [JsonPropertyName("selected_acquisition_admission")]
@@ -93,6 +96,20 @@ public sealed record RustyKeyRollingCandidateEvaluation(
     [property: JsonPropertyName("kind")] string Kind,
     [property: JsonPropertyName("ready")] bool Ready,
     [property: JsonPropertyName("blocking_reasons")] string[] BlockingReasons);
+
+public sealed record RustyKeyCustodyDonationSchedule(
+    [property: JsonPropertyName("reservation_id")] string ReservationId,
+    [property: JsonPropertyName("position_sha256")] string PositionSha256,
+    [property: JsonPropertyName("destination_node_id")] string DestinationNodeId,
+    [property: JsonPropertyName("route_schedule")] MuseumWithdrawalDonationRouteSchedule? RouteSchedule,
+    [property: JsonPropertyName("blocking_reasons")] string[] BlockingReasons)
+{
+    [JsonPropertyName("current_day_custody_donation_route_ready")]
+    public bool CurrentDayCustodyDonationRouteReady => BlockingReasons.Length == 0 &&
+        RouteSchedule is { CurrentDayWithdrawalDonationRouteReady: true };
+    [JsonPropertyName("joint_execution_schedule_verified")]
+    public bool JointExecutionScheduleVerified => false;
+}
 
 public sealed record RustyKeyAcquisitionDonationSchedule(
     [property: JsonPropertyName("route_occurrence_id")] string RouteOccurrenceId,

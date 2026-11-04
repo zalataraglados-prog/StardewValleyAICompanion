@@ -41,6 +41,27 @@ foreach ($stage in $stages) {
     $passed.Add("actual_source_pipeline_$stage")
 }
 
+foreach ($mode in @('held', 'local', 'remote', 'deferred')) {
+    $fixture = Join-Path $StepFixtureRoot $(if ($mode -eq 'held') { 'held-donation-remote' } else { "custody-donation-$mode" })
+    $context = New-RuntimeQueueContext -LoopDll $loop -ArtifactDirectory $OutputRoot `
+        -BackendUrl 'http://unused.invalid' -SnapshotUrl 'http://unused.invalid' -SnapshotProfile full `
+        -ExecutorRoot 'http://unused.invalid' -ProductUrl 'http://unused.invalid' -RunId 'synthetic-custody-calibration' -IsolatedSavesPath $OutputRoot
+    $planning = New-RuntimeRustyKeyPlanning -Context $context -BootstrapDll $bootstrap `
+        -Directory (Join-Path $OutputRoot "actual-custody-$mode-planning") -SnapshotPath (Join-Path $fixture 'snapshot.json') `
+        -StrategyLedgerPath (Join-Path $fixture 'ledger.json') -RequirementInventoryPath (Join-Path $fixture 'inventory.json') `
+        -AcquisitionLoweringPath 'unused-owned-stock-path' -MasterAnglerWindowsPath 'unused-owned-stock-path' `
+        -RouteTimingPath (Join-Path $fixture 'timing.json') -FishingForecastManifestPath 'unused-owned-stock-path'
+    $routeReady = if ($mode -eq 'held') { $planning.Control.selected_donation_route_schedule.current_day_route_ready }
+        else { $planning.Control.selected_custody_donation_schedule.current_day_custody_donation_route_ready }
+    Assert-True ($routeReady -eq $true) `
+        "Actual $mode lightweight planning omitted route calibration."
+    Assert-True ($planning.Preparation.step_ready -and $planning.Common -contains '--route-timing-calibration' -and
+        $null -eq $planning.Control.selected_acquisition_proposal -and
+        -not (Test-Path -LiteralPath (Join-Path $planning.Directory 'planning.manifest.json'))) `
+        'Owned stock must forward calibration through build and preparation without rebuilding acquisition axes.'
+    $passed.Add("actual_owned_stock_light_path_calibration_$mode")
+}
+
 $originalReader = (Get-Item Function:Read-RuntimeLoopArtifacts).ScriptBlock
 $originalRanking = (Get-Item Function:Invoke-RuntimeRanking).ScriptBlock
 $script:optionsParser = ([Reflection.Assembly]::LoadFrom($loop)).GetType('LiveTrainingOptions').GetMethod('Parse')

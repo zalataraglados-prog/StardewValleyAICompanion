@@ -13,7 +13,8 @@ function New-RuntimeRustyKeyPlanning {
     $admissionPath = Join-Path $Directory 'admission.json'
     $queuePath = Join-Path $Directory 'queue.json'
     $common = @('--requirement-inventory', $RequirementInventoryPath,
-        '--snapshot', $SnapshotPath, '--strategy-ledger', $StrategyLedgerPath)
+        '--snapshot', $SnapshotPath, '--strategy-ledger', $StrategyLedgerPath,
+        '--route-timing-calibration', $RouteTimingPath)
     $exports = @('--output', $controlPath, '--selected-queue-output', $queuePath,
         '--selected-proposal-output', $proposalPath, '--selected-admission-output', $admissionPath)
     Invoke-RuntimeBootstrap -BootstrapDll $BootstrapDll `
