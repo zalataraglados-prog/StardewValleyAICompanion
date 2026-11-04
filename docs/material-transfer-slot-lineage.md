@@ -96,8 +96,8 @@ content-addressed read modes, corrupted-blob rejection and the original
 projector/verifier's stock/slot/owner/projection/intent refusals. Backend 384/384
 passes, including optional-wire compatibility and source boundaries. The focused
 Core material-transfer/content-addressed regressions also pass 24/24. These
-checks and the E-path Harness build do not certify the real sparse scenario;
-the next action is a new clean-source isolated native run. A Year-5 source is
+checks and the E-path Harness build alone do not certify the real sparse scenario;
+the accepted clean-source native run is recorded below. A Year-5 source is
 allowed for this shared mechanical capability, never for a pre-Year-3 criterion.
 
 The first clean `7a1d6f35` native attempt verified sparse setup but stopped before
@@ -107,7 +107,8 @@ The entry now ingests that exact original snapshot before ledger lookup; lookup
 errors are immediate rather than retried as if they were startup health. The
 ordering is guarded by regression. This is an orchestration correction, not a
 native transfer/compiler failure; the retained runtime may be reused only after
-the same source-equivalence/hash checks. The real sparse round trip remains pending.
+the same source-equivalence/hash checks. The sparse round trip was still pending
+at this attempt.
 
 The `ee2f76fa` script with the verified `7a1d6f35` runtime bundle reached native
 execution but its existing X override never opened the chest menu: zero clicks,
@@ -119,7 +120,37 @@ method once and clears the scope in `finally`. It rechecks live adjacency,
 identity, control, owner and lock, excludes giftboxes, and still waits for the
 real menu and native lock. It never calls ShowMenu directly, acquires the lock
 itself or changes inventory. The obsolete key-release state is removed rather
-than retained as a second opening path. A new clean runtime run is required.
+than retained as a second opening path. Both obsolete terminal X-release calls
+were also removed. The new clean runtime run is accepted below.
+
+### Accepted Native Boundary
+
+`material-native-open-1104` used clean script and runtime source
+`0cdc3d8daaf815af999e6cff5c6bf1745095c252`, with four explicit E-path builds,
+zero build warnings/errors and one dedicated actor/save ledger at revision zero.
+Both original daily-plan transfer directions were applied and independently
+verified: two native menu/lock lifecycles, two unit clicks per direction and four
+clicks total. Wood moved from source slot 5 to slot 0 after the first native
+withdrawal, unrelated stone moved 9 to 1, and the round trip restored eleven
+quality-4 wood and three ordinary stone. The bad projection was rejected with
+`material_transfer_source_projection_drifted`, zero clicks and both complete
+affected inventories unchanged.
+
+The independent review rebuilt both projections through the original C#
+`MaterialTransferProjector.Project` and checked full slots using its original
+`VerifyNativeSlots`; it rechecked all retained DLL hashes, the source save and
+released game/ports. Local raw evidence remains outside Git under
+`I:\StardewAITraining\material-transfer-isolation-20261104\native\material-native-open-1104`.
+`independent-native-review.json` SHA-256:
+`b470d245ed7d7bce10f090cc7ffdeb74d14b24574f99658cca30974d1e29c671`.
+Original source directory SHA-256 stayed
+`93153ed126876c240d963a484ac6bb6c880e16b4999c26c5502271721f2be79e`.
+The final focused executor/inventory tests passed 7/7. The earlier game-free20,
+Backend384 and focused Core24 are separate checks, not native action counts.
+
+This accepts only shared native physical slot lineage on the isolated Year-5
+baseline. It is not custody relocation authorization, a pre-Year-3 criterion,
+Teacher/global/fresh-save completion or training. No frozen coverage count changes.
 
 Focused Core tests cover sparse partial/full withdrawal, deposit compaction and
 split insertion, preserving player holes, unrelated stock/slot drift, malformed
@@ -147,9 +178,11 @@ before donation. The existing custody rejection guards remain enabled.
 The current-geode acquisition/custody/donation/consumption/night/key trace is now
 [accepted](geode-dialogue-lifecycle.md#accepted-native-boundary); do not repeat it
 as the next task. The isolated smoke entry described above has replaced the
-unsafe baseline-in-place flow. Its clean-source sparse native regression remains
-the next boundary before custody relocation/rebind; build/game-free tests do not
-certify it. The retained source under `RuntimeRoot/saves` is read and copied, not
+unsafe baseline-in-place flow, and the sparse native boundary above is accepted.
+The next work is complete atomic custody relocation/rebind through the existing
+ledger/supporting-transition path, retaining acquisition provenance and all
+affected other-goal reservations; the protection guards stay closed until that
+contract is implemented and verified. The retained source under `RuntimeRoot/saves` is read and copied, not
 the execution destination. The prepared Year-5 baseline remains shared mechanical
 capability, not pre-Year-3 criterion evidence. Frozen coverage and
 `formal_product_training=false` stay unchanged.
