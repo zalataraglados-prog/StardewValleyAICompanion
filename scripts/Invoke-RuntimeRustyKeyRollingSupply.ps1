@@ -14,7 +14,8 @@ param(
     [Parameter(Mandatory)] [string] $FishingForecastManifestPath,
     [ValidateRange(1, 256)] [int] $MaxSteps = 32,
     [ValidateRange(1024, 1048576)] [int] $MinFreeSpaceMb = 8192,
-    [ValidateSet('product','runtime_harness')] [string] $ExecutionTarget = 'product'
+    [ValidateSet('product','runtime_harness')] [string] $ExecutionTarget = 'product',
+    [switch] $StopAfterDonationThreshold
 )
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'lib/RuntimeEvidenceCommon.ps1')
@@ -47,6 +48,7 @@ Write-JsonFile -Path (Join-Path $runRoot 'run-inputs.json') -Value ([ordered]@{
     schema_version = 'stardewai.rusty_key_rolling_runtime_inputs.v1'; run_id = $RunId
     input_sha256 = $inputs; execution_target = $ExecutionTarget; isolated_saves_path = $IsolatedSavesPath
     max_steps = $MaxSteps; min_free_space_mb = $MinFreeSpaceMb; formal_training_authorized = $false
+    stop_after_donation_threshold = [bool]$StopAfterDonationThreshold
 })
 $context = New-RuntimeQueueContext -LoopDll $loopDll -ArtifactDirectory $runRoot -BackendUrl $BackendUrl `
     -SnapshotUrl $SnapshotUrl -SnapshotProfile full -ExecutorRoot $ExecutorUrl -ProductUrl $ExecutorUrl `
@@ -55,7 +57,7 @@ $result = Invoke-RuntimeRustyKeyRollingLoop -Context $context -BootstrapDll $boo
     -RequirementInventoryPath $RequirementInventoryPath -AcquisitionLoweringPath $AcquisitionLoweringPath `
     -MasterAnglerWindowsPath $MasterAnglerWindowsPath -RouteTimingPath $RouteTimingPath `
     -FishingForecastManifestPath $FishingForecastManifestPath -MaxSteps $MaxSteps `
-    -MinFreeSpaceMb $MinFreeSpaceMb -ExecutionTarget $ExecutionTarget
+    -MinFreeSpaceMb $MinFreeSpaceMb -ExecutionTarget $ExecutionTarget -StopAfterDonationThreshold:$StopAfterDonationThreshold
 foreach ($path in $inputs.Keys) {
     if ((Get-RuntimeFileSha256 -Path $path) -ne $inputs[$path]) {
         Write-JsonFile -Path (Join-Path $runRoot 'failure.json') -Value ([ordered]@{
@@ -68,4 +70,5 @@ foreach ($path in $inputs.Keys) {
 $result.input_identity_verified = $true
 Write-JsonFile -Path (Join-Path $runRoot 'summary.json') -Value $result
 $result
-if ($result.status -ne 'native_key_observed') { exit 2 }
+if ($result.status -ne 'native_key_observed' -and
+    -not ($StopAfterDonationThreshold -and $result.status -ceq 'native_donation_threshold_observed')) { exit 2 }

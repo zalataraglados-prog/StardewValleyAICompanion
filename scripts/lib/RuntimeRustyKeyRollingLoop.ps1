@@ -5,7 +5,8 @@ function Invoke-RuntimeRustyKeyRollingLoop {
         [string] $RouteTimingPath, [string] $FishingForecastManifestPath,
         [ValidateRange(1, 256)] [int] $MaxSteps = 32,
         [ValidateRange(1024, 1048576)] [int] $MinFreeSpaceMb = 8192,
-        [ValidateSet('product', 'runtime_harness')] [string] $ExecutionTarget = 'product')
+        [ValidateSet('product', 'runtime_harness')] [string] $ExecutionTarget = 'product',
+        [switch] $StopAfterDonationThreshold)
 
     foreach ($name in @('initial-snapshot.json','progress.json','summary.json','failure.json')) {
         if (Test-Path -LiteralPath (Join-Path $Context.ArtifactDirectory $name)) {
@@ -48,6 +49,11 @@ function Invoke-RuntimeRustyKeyRollingLoop {
                 -MasterAnglerWindowsPath $MasterAnglerWindowsPath -RouteTimingPath $RouteTimingPath `
                 -FishingForecastManifestPath $FishingForecastManifestPath -PriorSupport $support
             $kind = [string]$planning.Preparation.kind
+            if ($StopAfterDonationThreshold -and $kind -ceq 'native_key_handoff' -and
+                $planning.Control.threshold_satisfied -is [bool] -and $planning.Control.threshold_satisfied -eq $true) {
+                $status = 'native_donation_threshold_observed'
+                break
+            }
             $name = 'execution-{0:D4}' -f $index
             Write-JsonFile -Path (Join-Path $directory 'dispatch-intent.json') -Value ([ordered]@{
                 run_id = $Context.RunId; kind = $kind; preparation = $planning.Preparation
@@ -116,6 +122,7 @@ function Invoke-RuntimeRustyKeyRollingLoop {
             schema_version = 'stardewai.rusty_key_rolling_runtime.v1'; run_id = $Context.RunId; status = $status
             steps = $steps.ToArray(); last_snapshot_path = $snapshotPath; last_ledger_path = $ledgerPath
             actual_key_observed = ($status -eq 'native_key_observed'); criterion_promoted = $false
+            donation_threshold_observed = ($status -eq 'native_donation_threshold_observed')
             evidence_scope = 'runtime_control_observation_only_not_criterion_evidence'
             input_identity_verified = $false
             teacher_preference_label_eligible = $false; formal_training_authorized = $false

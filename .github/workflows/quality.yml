@@ -102,6 +102,9 @@ jobs:
       - name: Test portfolio mutation reply recovery without replay
         shell: pwsh
         run: ./scripts/Test-RuntimePortfolioMutationRecovery.ps1 -OutputRoot "$env:RUNNER_TEMP/portfolio-mutation-recovery"
+      - name: Test custody native boundary setup and scope guards without game
+        shell: pwsh
+        run: ./scripts/Test-RuntimeRustyKeyCustodyBoundary.ps1 -OutputRoot "$env:RUNNER_TEMP/custody-native-boundary"
       - name: Check whitespace
         shell: pwsh
         run: |

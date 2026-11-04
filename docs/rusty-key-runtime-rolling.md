@@ -169,8 +169,9 @@ and its three read-only CLIs are now consumed by this outer selector/client.
 Game-free coverage includes 25 step-preparation checks, original rolling stages
 plus navigation/transfer/donation orchestration, and six runtime-adapter cases
 using actual C# compilation/settlement CLIs with synthetic HTTP/native results.
-These do not prove actual chest gameplay. Next obtain real acquired-custody
-storage/withdrawal/donation proof without reacquisition or machine-input relabeling;
+Those synthetic checks did not prove chest gameplay. The real acquired-custody
+storage/withdrawal/donation boundary is now
+[accepted](museum-output-custody.md#accepted-native-stored-round-trip), without reacquisition or machine-input relabeling;
 joint opening/time budgets, criterion Teacher/native partitions and the
 pre-Year-3 deadline remain separate. The run summary alone is still only
 `runtime_control_observation_only_not_criterion_evidence`; formal training,
@@ -182,6 +183,70 @@ start needs explicit evidence of the harness-owned idle pause release. See
 [owned pause and source-date preflight](executor-owned-idle-pause.md). Use an
 explicit early baseline; neither a new date nor an owned pause waives unknown
 routes, a complete frontier, native verification or criterion acceptance.
+
+### Native Stored-Output Round Trip
+
+The existing threshold smoke now accepts `-CustodyRoundTrip` only with
+`-SupplyMode current_geode`. Use the early isolated ProofFarm baseline and the
+same explicit acquisition inputs; the prepared Year-5 fixture is still invalid.
+Before the measurement boundary, the original material-transfer fixture places
+one sparse ordinary chest in Blacksmith using its existing optional location
+field. The original ledger service protects the three stone units for another
+goal. Default ordinary-transfer fixture placement remains Farm.
+
+After geode setup ends, no further fixture or direct inventory/ledger mutation
+is allowed. In the same game process/run, the original rolling wrapper performs
+one terminal acquisition and stops at its declared step budget. This exit 2 is
+an incomplete prefix, not success. The boundary checks its exact one-step role,
+input identity and acquired one-unit custody, rejecting a free player duplicate.
+An explicit storage probe then calls the original custody request/compiler/native
+execution/settlement adapters. It is test placement, not an automatic policy
+preference or another executor. The fresh original rolling wrapper must then
+choose withdrawal and original donation/consumption itself, without reacquisition.
+
+The final guard requires exact run identity, one retrieval, original acquired
+receipt identity, completed custody and the still-active other-goal stone claim
+at its independently expected compacted slot. This local mode explicitly passes
+`-StopAfterDonationThreshold`: only the independently rebuilt typed threshold
+control may return `native_donation_threshold_observed` before any night/key
+handoff. That observed local exit is not key possession or criterion completion;
+ordinary runs retain their existing key-observation exit. Thus this test does not
+reopen the accepted key/owner gate. Script and
+binary/source identity, complete native slot maps, source-save preservation,
+process/port cleanup and independent retained-file replay remain mandatory.
+The added 20 game-free setup/final-scope/actual child-argument checks and original 33 geode-boundary
+checks pass; all three relevant Release builds have zero warnings/errors.
+This prepares a native proof and does not itself prove gameplay or training.
+The subsequent `custody-b3512d5f-1104` run and retained-file review now provide
+the [accepted scoped native proof](museum-output-custody.md#accepted-native-stored-round-trip):
+six queues/seven native steps, conserved acquired output, automatic withdrawal,
+original donation/consumption and passive other-goal protection. It stops at
+the local donation boundary, not another night/key test. No acceptance counter
+or formal-training flag is promoted. Joint future time/opening windows and
+criterion-global evidence remain the next work.
+
+The first clean `f2b0c4ef` attempt stopped during setup, before acquisition or
+material execution: the old Farm-specific search used `width - 16`, yielding no
+candidates on Blacksmith's retained native 15-by-20 map. This was an empty search,
+not evidence that the map forbids chests. The fixture now keeps a two-tile margin
+on each side and retains the original native walkability/placement/stand checks.
+That failed isolated run remains diagnostic; it is not replayed or accepted.
+The next `6d055096` run completed setup but stopped before acquisition because
+PowerShell array-expression precedence joined an input parameter name and path.
+The prefix now uses the existing explicit `List<string>.Add` pattern. An actual
+child invocation with spaced paths must reach the missing-isolation preflight,
+without HTTP/native calls; a syntactic argument list alone is not sufficient.
+Explicit cross-map fixture search also anchors to that map's native entrance,
+not the actor's coordinates in the previous map. Legacy default Farm placement
+is unchanged; this fixture choice does not weaken the actual route/slot gates.
+The `b84ced79` run completed real geode acquisition and retained one `(O)549`,
+but the wrapper's pre-storage filter confused high-level `museum.donate_items`
+with the actual `executor.donate_museum_item` consumer. The wrapper now consumes
+the original terminal result's exact custody IDs; consumer/goal/position authority
+remains with the original C# request builder. Replaying that read-only builder
+against the retained native source succeeds without native execution or mutation.
+No transfer was performed in that failed wrapper run. The runtime orchestration
+check also requires the explicit local boundary to stop before night/key dispatch.
 
 The updated shipped-Companion requirement for on-demand critical-decision Teacher
 verification remains binding; see `TEACHER_STUDENT_CONVERGENCE_CONTRACT_CN.md`.

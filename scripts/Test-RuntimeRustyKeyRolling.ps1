@@ -235,6 +235,7 @@ function New-RuntimeRustyKeyPlanning {
     $kind = if ($script:mode -eq 'blocked') { 'blocked' }
         elseif ($script:mode -eq 'custody' -and $script:planningCalls -eq 1) { 'custody_navigation' }
         elseif ($script:mode -eq 'custody' -and $script:planningCalls -eq 2) { 'custody_transfer' }
+        elseif ($script:mode -eq 'donation-boundary' -and $script:planningCalls -gt 3) { 'native_key_handoff' }
         elseif ($script:planningCalls -eq 1) { 'supporting_transition' }
         elseif ($script:planningCalls -eq 2) { 'terminal_acquisition' } else { 'held_donation' }
     if ($script:planningCalls -eq 2 -and $script:mode -ne 'custody') {
@@ -244,6 +245,7 @@ function New-RuntimeRustyKeyPlanning {
     return [pscustomobject]@{
         Preparation = @{ kind = $kind; step_ready = ($kind -ne 'blocked'); blocking_reasons = @('synthetic_block') }
         ControlPath = 'synthetic-control'; QueuePath = 'synthetic-queue'; Directory = $Directory
+        Control = @{ threshold_satisfied = ($kind -ceq 'native_key_handoff') }
         SnapshotPath = $SnapshotPath
     }
 }
@@ -252,7 +254,7 @@ function New-TestExecution($Context, [string] $Name, [string] $Kind) {
     $script:seen.Add($Kind)
     if ($script:mode -eq 'error') { throw 'synthetic ambiguous native/network failure' }
     $path = Join-Path $Context.ArtifactDirectory "$Name-after.json"
-    $after = New-TestSnapshot $script:executions ($Kind -eq 'held')
+    $after = New-TestSnapshot $script:executions ($Kind -eq 'held' -and $script:mode -ne 'donation-boundary')
     Write-JsonFile -Path $path -Value $after
     return [pscustomobject]@{ QueuePath = 'synthetic-queue'; ExecutionPath = 'synthetic-receipt'; AfterPath = $path; After = $after }
 }
@@ -285,7 +287,8 @@ function Invoke-TestLoop([string] $Mode, [int] $Budget) {
         -ExecutorRoot 'http://unused.invalid' -ProductUrl 'http://unused.invalid' -RunId "synthetic-$Mode" -IsolatedSavesPath $directory
     return Invoke-RuntimeRustyKeyRollingLoop -Context $context -BootstrapDll $bootstrap `
         -RequirementInventoryPath 'unused' -AcquisitionLoweringPath 'unused' -MasterAnglerWindowsPath 'unused' `
-        -RouteTimingPath 'unused' -FishingForecastManifestPath 'unused' -MaxSteps $Budget -MinFreeSpaceMb 1024
+        -RouteTimingPath 'unused' -FishingForecastManifestPath 'unused' -MaxSteps $Budget -MinFreeSpaceMb 1024 `
+        -StopAfterDonationThreshold:($Mode -eq 'donation-boundary')
 }
 $trace = Invoke-TestLoop 'trace' 3
 Assert-True ($trace.status -eq 'native_key_observed' -and ($script:seen -join ',') -eq 'support,terminal,held') 'Rolling stages did not advance in order.'
@@ -299,6 +302,12 @@ Assert-True ($custodyTrace.status -eq 'native_key_observed' -and ($script:seen -
     ($custodyTrace.steps.kind -join ',') -eq 'custody_navigation,custody_transfer,held_donation') `
     'Stored custody must navigate, transfer and return to the original donation stage with fresh replanning.'
 $passed.Add('custody_navigation_transfer_donation_order')
+$donationBoundary = Invoke-TestLoop 'donation-boundary' 8
+Assert-True ($donationBoundary.status -ceq 'native_donation_threshold_observed' -and
+    $donationBoundary.donation_threshold_observed -eq $true -and -not $donationBoundary.actual_key_observed -and
+    $script:executions -eq 3 -and $script:planningCalls -eq 4) `
+    'The explicit local donation boundary must stop before dispatching the already accepted night/key flow.'
+$passed.Add('local_donation_boundary_does_not_reopen_key_gate')
 $replayRejected = $false
 try { Invoke-TestLoop 'trace' 3 | Out-Null } catch { $replayRejected = $true }
 Assert-True ($replayRejected -and $script:executions -eq 0) 'An existing run must not replay any native action.'

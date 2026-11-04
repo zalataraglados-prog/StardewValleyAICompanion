@@ -106,8 +106,10 @@ key. `full_threshold_supply_verified`, `donation_output_custody_verified`,
 `teacher_preference_label_eligible` and `formal_training_authorized` are always
 false. No frozen coverage count is promoted.
 
-Continue the same Rusty Key primary: obtain the native acquired-output storage ->
-withdrawal -> original donation/consumption proof through this connected loop,
-then verify joint time/opening-window budgets and next-morning handoff,
+The native acquired-output storage -> withdrawal -> original donation/consumption
+proof is now [accepted](museum-output-custody.md#accepted-native-stored-round-trip)
+through this connected loop, with an explicit local threshold stop rather than a
+reopened key/night gate. Continue the same Rusty Key primary: verify joint
+time/opening-window budgets and the criterion's next-morning handoff bounds,
 and close the criterion's independent Teacher/native partitions and pre-Year-3
 deadline. Existing Year-5 native evidence remains separately scoped.
