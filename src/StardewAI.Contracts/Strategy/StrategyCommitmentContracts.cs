@@ -12,6 +12,10 @@ namespace StardewAI.Contracts.Strategy
 
     public sealed class StrategyCommitmentLedger
     {
+        [JsonPropertyName("prepared_material_transfer")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public PreparedMaterialTransfer? PreparedMaterialTransfer { get; set; }
+
         [JsonPropertyName("schema_version")]
         public string SchemaVersion { get; set; } = "strategy_commitment_ledger.v1";
 

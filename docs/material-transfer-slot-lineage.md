@@ -208,6 +208,85 @@ relocation/rebind rejection guards remain enabled. Continue the same lifecycle:
    guards with that verified lifecycle. No criterion/Teacher/training promotion
    follows from the map or from the earlier sparse fixture alone.
 
+### Prepared Atomic Settlement
+
+The original portfolio commit/supporting-transition service now has an optional
+prepared ordinary-transfer path. This is necessary because Backend intentionally
+retains only two full snapshots: a move/transfer queue can evict its original
+before snapshot before settlement. The snapshot limit is not increased and the
+client does not supply a replacement before graph.
+
+An optional `material_transfer_preparation` on the original portfolio commit
+identifies the native intent, explicit whole-claim relocations and route source.
+After normal portfolio validation/staging, the server derives the complete map
+from the ingested source snapshot and committed claims. It retains exactly the
+two physical inventories and their access points in one optional
+`prepared_material_transfer` inside the same ledger. The record binds source
+state/tick, actor via graph/ledger identity, goal/portfolio/route, ledger and row
+revisions, the full material-reservation metadata hash, intent and complete map.
+It is deep-cloned, hash-bound and anchored by `material_transfer_prepared` history
+in that same commit revision. Normal portfolio claims/budgets/intents retain
+their existing validation and are not replaced by a second reservation store.
+
+Settlement references `prepared_material_transfer_sha256`. Under the original
+repository lock it validates the retained origin/history and pinned metadata,
+independently rebuilds the map, and verifies both full current native inventories
+using the original projector/verifier. Other inventories' active reservations
+must still fit the final full material graph. Only then does the original
+transaction clone/update all affected material locations/revisions/source hashes,
+preserving goals, quantities, decisions and other metadata. Selected relocation
+and passive compaction are recorded at one new ledger revision; no goal is
+consumed or marked terminal. The result carries the complete optional
+`material_transfer_reservations` map. Successful publication removes the compact
+preparation; history retains its hash, not repeated graphs.
+
+A failed check, including final supply validation after staging, returns the
+original ledger and keeps its preparation. A pending preparation cannot be
+overwritten, silently omitted, or bypassed using another portfolio's marker for
+a legacy relocation. Ledger/metadata drift fails closed; this is not automatic
+cancellation, replay or permission to discard unresolved preparation. The
+existing atomic file publish and one-read mutation-reply recovery cover the new
+optional fields without re-executing native work. Legacy requests/ledgers/results
+omit the new fields when unused.
+
+Service and actual Backend HTTP/file-repository tests cover ordinary transfer,
+other-goal compaction, same-stack retained units, exact rollback, missing/forged
+bindings/history, independently rejected rehashed maps, revision/metadata drift,
+repeat refusal, restart and before-snapshot eviction. HTTP tests inject minimal
+synthetic snapshots through StateStore; they do not certify Bridge ingestion or
+new native gameplay. Lost preparation replies are retrieved read-only rather
+than POSTed again, and settlement reply lookup preserves the published file.
+
+**Production boundary:** Backend/service support is implemented, but the original
+canonical acquisition producer, commit/settlement receipt reconstruction and
+candidate/compiler/dispatch path do not yet emit/consume this preparation.
+Connect those original paths next; do not build a parallel orchestrator. Both
+selected custody and passively affected custody are still rejected, including
+an ordinary resource transfer that would rebind another custody row. The real
+acquired-output storage -> withdrawal -> authorized donation/consumption proof
+and custody guard replacement remain later in this same lifecycle. All frozen
+coverage, Teacher and formal-training counts remain unchanged.
+
+Verification: final full Backend 414/414 (30 new cases), complete game-free Core
+1155/1155. The retained native `material-native-open-1104` snapshots were also
+read through the original validated logical reader and replayed against the
+actual file repository with fifteen synthetic full-stock reservations. Both
+directions prepared exactly two inventories, settled fifteen affected claims in
+one revision and removed preparation, publishing revisions 4 and 6 with a
+repository restart between directions. Local compact preparations/results and
+`review.json` are under
+`I:\StardewAITraining\material-transfer-isolation-20261104\atomic-retained-replay-4d51d446ac144446b1aea72081a40219`;
+review SHA-256 `cc0efbc37b27ad6ff504cf0350119dbfea8006b93c2767cf28c054fb2aee03dc`.
+This is offline synthetic claim/transaction evidence over an accepted native
+profile, not a new native execution, canonical acquisition proof or custody
+authorization. No raw snapshots were copied by this replay or committed to Git.
+
+One local full run exceeded the existing 15-second outer deadline in the old
+museum malformed-reply recovery test under the two-logical-CPU throttle. The
+unchanged recovery group subsequently passed 14/14 and the complete final suite
+passed 414/414. No deadline or production retry policy was widened; retain this
+as a resource-sensitivity observation, not a waived failure or a new game bug.
+
 Earlier focused Core tests cover sparse partial/full withdrawal, deposit compaction and
 split insertion, preserving player holes, unrelated stock/slot drift, malformed
 graphs, explicit null/legacy serialization, and the actual independent receipt

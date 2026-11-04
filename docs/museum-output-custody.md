@@ -85,7 +85,10 @@ the pre-Year-3 deadline. The prepared Year-5 boundary is shared capability, not
 that deadline proof. The isolated sparse transfer boundary is now accepted.
 The original projector's complete reservation-location map and offline replay
 are implemented as the next [custody prerequisite](material-transfer-slot-lineage.md#reservation-map-before-custody-settlement),
-not yet connected production settlement or relocation authority. Canonical
-receipt binding, the original atomic ledger transaction, upstream/dispatch
-authorization and a real acquired-custody storage/withdrawal/donation lifecycle
-still remain. No new planner or executor is needed.
+not custody relocation authority. The original Backend now supports
+[compact preparation and atomic ordinary transfer settlement](material-transfer-slot-lineage.md#prepared-atomic-settlement),
+including passive other-goal slot rebinds, without retaining more full snapshots.
+The canonical producer/receipt/dispatch path is not yet wired to that protocol;
+it must be connected next, followed by custody authorization and a real
+acquired-custody storage/withdrawal/donation lifecycle. Both selected and passive
+custody remain rejected at preparation. No new planner or executor is needed.

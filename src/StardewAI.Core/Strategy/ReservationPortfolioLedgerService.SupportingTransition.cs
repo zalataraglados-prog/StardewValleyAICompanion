@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.Json;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
+using StardewAI.Core.Infrastructure;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.Strategy;
@@ -44,6 +45,8 @@ public sealed partial class ReservationPortfolioLedgerService
             currencyConsumptions,
             rebindIds,
             errors);
+        var transferProjection = ValidatePreparedMaterialTransfer(current, snapshot, request, relocations, errors,
+            out var transferAfterGraph);
         if (errors.Count > 0)
             return SupportingTransitionSettlementRejected(
                 current,
@@ -68,8 +71,19 @@ public sealed partial class ReservationPortfolioLedgerService
             value => value.CurrencyReservationId,
             StringComparer.Ordinal);
         var rebindSet = rebindIds.ToHashSet(StringComparer.Ordinal);
+        var transferByReservation = transferProjection?.ReservationTransitions.ToDictionary(
+            row => row.ReservationId, StringComparer.Ordinal);
         ledger.MaterialReservations = ledger.MaterialReservations.Select(row =>
         {
+            if (transferByReservation is not null && transferByReservation.TryGetValue(row.ReservationId, out var change))
+            {
+                var rebound = StrategyCommitmentLedgerSupport.CloneMaterial(row);
+                rebound.Revision++;
+                rebound.SourceStateHash = snapshot.StateHash;
+                rebound.NodeId = change.DestinationNodeId;
+                rebound.SlotIndex = change.DestinationSlotIndex;
+                return rebound;
+            }
             if (relocationByReservation.TryGetValue(
                     row.ReservationId,
                     out var relocation))
@@ -115,6 +129,14 @@ public sealed partial class ReservationPortfolioLedgerService
             }
             return settled;
         }).ToArray();
+        if (transferProjection is not null)
+        {
+            var supply = new MaterialSupplyProjection().Project(transferAfterGraph!, ledger.MaterialReservations);
+            if (supply.BlockingReasons.Length > 0)
+                return SupportingTransitionSettlementRejected(current, request, consumptions, relocations,
+                    currencyConsumptions, rebindIds, supply.BlockingReasons);
+            ledger.PreparedMaterialTransfer = null;
+        }
         ledger.CurrencyReservations = ledger.CurrencyReservations.Select(row =>
         {
             if (!currencyByReservation.TryGetValue(
@@ -170,6 +192,8 @@ public sealed partial class ReservationPortfolioLedgerService
                 .ToArray();
         }
         StrategyCommitmentLedgerSupport.Advance(ledger, snapshot, updatedAt);
+        if (transferProjection is not null)
+            AppendMaterialTransferHistory(ledger, request, transferProjection, updatedAt);
         var settlements = consumptions.Select(consumption =>
         {
             var settled = ledger.MaterialReservations.Single(row =>
@@ -238,6 +262,7 @@ public sealed partial class ReservationPortfolioLedgerService
             .Concat(relocations.Select(value => value.MaterialReservationId))
             .Concat(currencyConsumptions.Select(value =>
                 value.CurrencyReservationId))
+            .Concat(transferProjection?.ReservationTransitions.Select(value => value.ReservationId) ?? Array.Empty<string>())
             .ToHashSet(StringComparer.Ordinal);
         foreach (var reservationId in rebindIds.Where(id =>
                      !mutatedIds.Contains(id)))
@@ -278,6 +303,7 @@ public sealed partial class ReservationPortfolioLedgerService
             request.SupportingTransitionReceiptSha256);
         return new ReservationPortfolioSupportingTransitionSettlementResult
         {
+            MaterialTransferReservations = transferProjection,
             Accepted = true,
             PortfolioId = request.PortfolioId,
             RouteSourceDecisionId = request.RouteSourceDecisionId,
@@ -501,11 +527,8 @@ public sealed partial class ReservationPortfolioLedgerService
                 errors.Add("supporting_transition_relocated_claim_mismatch");
             }
         }
-        ValidateRelocationDestinations(
-            current,
-            snapshot,
-            relocations,
-            errors);
+        if (request.PreparedMaterialTransferSha256 is null)
+            ValidateRelocationDestinations(current, snapshot, relocations, errors);
         foreach (var consumption in currencyConsumptions)
         {
             var claims = current.CurrencyReservations.Where(row =>

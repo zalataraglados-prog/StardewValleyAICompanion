@@ -1,6 +1,6 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
-> **2026-11-04 保管迁移施工中，未授权：** 共享转移投影已能只读推导两侧全部预留的完整位置变化，保留其他目标及同叠剩余数量；聚焦56/56、Backend相关94/94和两方向各15条合成预留的保留原生快照离线核对通过，并修正有符号玩家ID限制。不是新的原生保管结算，helper尚未接生产，relocation/rebind保护门与所有覆盖/训练锁不变。下一步接canonical来源/回执绑定及原账本原子事务，详见[合同](material-transfer-slot-lineage.md#reservation-map-before-custody-settlement)。
+> **2026-11-04 普通转移的准备/原子结算已接原服务，保管仍未授权：** 原portfolio提交可保留仅两侧库存的准备记录及完整预留元数据哈希/来源历史，原结算一次核验并更新所有受影响目标的槽位；成功移除准备，失败保留原账本。Backend 414/414（新增30）、Core 1155/1155通过，HTTP/真实文件仓储覆盖重启、快照淘汰、丢回复只读恢复及拒绝重放；保留原生快照的离线文件重放又验证两方向各15条合成预留、发布修订4/6。没有新游戏动作，快照缓存仍为2，准备也拒绝主动或被动保管迁移。下一步接原canonical生产者/commit与settlement回执重建及派发绑定，再验证真实获取的保管链；保护门、coverage/Teacher及正式训练锁不变。详见[合同](material-transfer-slot-lineage.md#prepared-atomic-settlement)。
 
 > **2026-11-04 稀疏箱原生切片通过：** clean `0cdc3d8d` 脚本与四组件同源构建完成隔离的取2还2：两次原生菜单/解锁、四次单位点击，木头槽5→0、石头槽9→1且数量守恒；坏投影零点击，两侧完整库存未变。独立重建原C#投影/完整槽位验证、全部DLL哈希、账本起始0、源档未变及进程/端口退出均通过，见[接受边界](material-transfer-slot-lineage.md#accepted-native-boundary)。前置无游戏20、Backend384、Core聚焦24项，本轮聚焦7项及四组件零警告/错误构建通过。下一步为原账本中的完整原子保管迁移/rebind；保护门未提前打开，所有coverage/Teacher/正式训练计数不变，已接受晶球→钥匙链不重跑。
 

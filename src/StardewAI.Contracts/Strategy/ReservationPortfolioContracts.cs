@@ -1,10 +1,15 @@
 using System;
 using System.Text.Json.Serialization;
+using StardewAI.Contracts.Execution;
 
 namespace StardewAI.Contracts.Strategy;
 
 public sealed class ReservationPortfolioCommitRequest
 {
+    [JsonPropertyName("material_transfer_preparation")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public MaterialTransferPreparationRequest? MaterialTransferPreparation { get; set; }
+
     [JsonPropertyName("state_hash")]
     public string StateHash { get; set; } = string.Empty;
 
@@ -132,6 +137,10 @@ public sealed class ReservationPortfolioRouteSettlementResult
 
 public sealed class ReservationPortfolioSupportingTransitionSettlementRequest
 {
+    [JsonPropertyName("prepared_material_transfer_sha256")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? PreparedMaterialTransferSha256 { get; set; }
+
     [JsonPropertyName("consumer_option_id")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? ConsumerOptionId { get; set; }
@@ -257,6 +266,10 @@ public sealed class ReservationPortfolioCurrencyConsumption
 
 public sealed class ReservationPortfolioSupportingTransitionSettlementResult
 {
+    [JsonPropertyName("material_transfer_reservations")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public MaterialTransferReservationProjection? MaterialTransferReservations { get; set; }
+
     [JsonPropertyName("accepted")]
     public bool Accepted { get; set; }
 
