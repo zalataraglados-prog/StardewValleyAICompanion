@@ -54,9 +54,10 @@ Focused calibration/ownership tests pass 40 cases; boundary/preflight checks
 pass 33 without launching a game, including the actual entry's late-date refusal.
 The current-native calendar integration passes 18 checks, including owned/unowned
 pause and retention of the original timing reason. Harness and bridge build against explicit E
-game references with zero warnings/errors. The same-version native
-acquisition/custody/donation/consumption trace must
-still be verified on the final clean source. Unknown acquisition routes and
+game references with zero warnings/errors. The required native
+acquisition/custody/donation/consumption trace has since passed the
+[accepted current-geode boundary](geode-dialogue-lifecycle.md#accepted-native-boundary),
+including normal save/night/key and source preservation. Unknown acquisition routes and
 strict-frontier rules are not waived by this repair.
 
 Use an explicitly earlier isolated baseline such as `ProofFarm_450250338` for

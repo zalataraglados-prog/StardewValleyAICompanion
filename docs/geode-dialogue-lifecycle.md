@@ -1,5 +1,51 @@
 # Geode Native Dialogue Lifecycle
 
+## Accepted Native Boundary
+
+Reviewed at 2026-11-04 09:36 +08:00: run `rk-e8d7a6c3-1104` passed independent
+trace review. The script source is clean `e8d7a6c3`; native/runtime binaries are
+the retained clean `8fe21913` bundle, with compiled-source/configuration diff
+empty and retained hashes/versions rechecked before launch. This distinction
+is preserved in `source-binding.json`; it is not a rebuilt-binary claim.
+
+Fifteen queue stages contain sixteen applied, verified native actions. They
+cover the exact first-geode tutorial and control restoration, `(O)535` cracking
+to `(O)549`, one-unit canonical custody, museum entry/donation, returning home,
+normal save/night, safe next-day Farm entry and event 66 completed without
+`skipEvent`. Actual output inventory is 0 -> 1 -> 0; geode stock is 2 -> 1.
+The ledger starts at revision 0, creates custody at 2 and consumes it at 3.
+The original C# museum custody request builder independently rebuilt the exact
+recorded settlement receipt hash from real item, receipt, snapshots and source
+ledger. The normal night transaction is `complete`, with native save commit,
+expected next day and `exploration.visit_location` as the safe next action.
+
+The source-save directory SHA remains
+`68ddc8dbbe09382f2e7ba1c9d5d1e8dd6d0ffaef59acf9367415b4678f59366d`;
+owned processes and ports were released. The copied save changed normally on
+save; it must not be required to retain the source's original hash afterward.
+Exact-head CI `41753526464` passes runtime orchestration 34, Core 1123,
+Backend 381 and evidence-boundary 41 cases. Local retained-receipt replay adds
+one runtime adapter case (35). No independent reviewer approval is claimed.
+
+Raw receipts stay local at
+`I:/StardewAITraining/museum-reservation/current-geode/rk-e8d7a6c3-1104/`.
+Its `independent-native-review.json` SHA-256 is
+`91308a310a170ce85114acf47a7f90b32752ec8404dc28b4e806d484b22a668c`.
+The parent summary remains an observation; this separate reviewed trace provides
+the scoped certificate. Precompiled control receipts retain their actual
+mechanical source IDs; they are not rewritten to pretend a Teacher/daily-plan
+donation. Custody provenance was checked through the original canonical builder,
+not by weakening the older daily-plan-only receipt checker.
+
+This proves one actual acquisition across a 59-item fixture boundary, not
+collecting 60 items from scratch, a pre-Year-3 criterion, Teacher partitions,
+the default product selector or formal training. Frozen counters stay unchanged.
+Do not repeat this whole trace absent a relevant regression/authority change.
+The next gap is the safely isolated sparse-chest native lineage check, followed
+by atomic custody relocation/rebind, then the retained joint-budget and local
+Teacher/deadline requirements. The historical failed attempts below are retained,
+not outstanding requests to rerun their already resolved boundaries.
+
 ## Retained Native Finding
 
 PR #412 (`8226ae8c`, merged as `c4280406`) passed exact-head CI
@@ -50,9 +96,9 @@ mainline and source tests are now included in the game-free CI compile list;
 their previous absence there was a coverage gap. Native input/lifecycle wiring
 is checked by source guards, not presented as an actual game run.
 
-The final clean version must still run the original isolated current-geode
-chain and independently verify donation, exact custody consumption, normal
-night/key handoff and source preservation. The prior 8226 trace proves only its
+The original exit condition was an isolated current-geode chain with independent
+donation, exact custody consumption, normal night/key and source verification.
+It is now satisfied by the accepted run above. The prior 8226 trace proves only its
 own partial acquisition/custody/navigation and cannot be relabelled as this
 fix's complete native proof. The 59-item fixture, even in Year 1, is not a
 new-save collection/deadline/Teacher-partition certificate. Unknown artifact

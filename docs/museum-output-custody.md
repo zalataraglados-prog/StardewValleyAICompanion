@@ -74,8 +74,12 @@ The subsequent [control admission](control-execution-admission.md) and
 [rolling runtime](rusty-key-runtime-rolling.md) slices already integrated the
 producer/commit/execution chain and separated safe control from Teacher preference;
 the original mandatory-Teacher binding statement is historical, not a current
-blocker. Remaining Rusty Key work includes the same-version retained native
-acquisition/custody/donation/settlement trace, relocation, joint windows/budgets,
-next-morning checks, criterion-local independent Teacher/native partitions and
+blocker. The [accepted current-geode native boundary](geode-dialogue-lifecycle.md#accepted-native-boundary)
+now verifies actual acquisition/custody/donation/settlement, normal night and
+next-morning key event, including an independent rebuild by the original custody
+request builder. This supersedes the earlier no-game slice's native-proof gap,
+not its one-unit player-inventory limitation. Remaining Rusty Key work includes
+safely isolated sparse transfer evidence, relocation, joint windows/budgets,
+criterion-local independent Teacher/native partitions and
 the pre-Year-3 deadline. The prepared Year-5 boundary is shared capability, not
 that deadline proof. No new planner or executor is needed.

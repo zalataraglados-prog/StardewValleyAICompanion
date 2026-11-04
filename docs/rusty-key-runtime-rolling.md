@@ -146,12 +146,17 @@ Existing rolling 34, threshold 30,
 dispatch, supervision and command-batch regressions pass, as do 55 focused
 shared runtime source guards. No game was started for these checks.
 
-This controlled calibration entry is implemented, but no native run of this new
-entry has been certified. It is not yet the MOD's default production root selector
-or a complete criterion/Teacher acceptance. Continue with a same-version isolated
-native acquisition -> custody -> donation -> consumption trace, then ambiguous
-receipt recovery, custody relocation, joint opening/time budgets, criterion
-Teacher/native partitions and the pre-Year-3 deadline. The run summary is only
+The controlled entry's isolated native acquisition -> custody -> donation ->
+consumption -> normal night/key chain has now passed independent review on
+`e8d7a6c3` scripts and the source-equivalent clean `8fe21913` runtime bundle:
+15 queue stages, 16 verified native actions, canonical custody request independently
+rebuilt and source save preserved. See the [accepted native boundary](geode-dialogue-lifecycle.md#accepted-native-boundary).
+It is not yet the MOD's default production root selector or a complete
+criterion/Teacher acceptance. Reply recovery is implemented in the existing
+transport contracts, not permission to replay ambiguous actions. Next isolate
+the legacy transfer smoke before its sparse native regression, then integrate
+custody relocation, joint opening/time budgets, criterion Teacher/native
+partitions and the pre-Year-3 deadline. The run summary alone is still only
 `runtime_control_observation_only_not_criterion_evidence`; formal training,
 preference eligibility and coverage promotion remain false.
 
