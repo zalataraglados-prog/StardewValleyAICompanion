@@ -151,7 +151,7 @@ function Invoke-RuntimeRustyKeyNativeHandoff {
             @($_.parameters | Where-Object { $_.name -eq 'expected_target_location' -and $_.value -eq 'Farm' }).Count -eq 1 })
     }
     elseif ($option -eq 'recovery.stabilize_day') {
-        $candidates = @($candidates | Where-Object { $_.candidate_id -eq 'recovery:native_save_boundary' })
+        $candidates = @(Select-RustyKeySaveBoundaryCandidate -Ranking $ranking)
     }
     else { $candidates = @($candidates | Where-Object { $_.kind -eq 'advance_story_event_automatic' }) }
     if ($candidates.Count -ne 1) { throw "Rusty Key native handoff has no unique safe $option candidate." }

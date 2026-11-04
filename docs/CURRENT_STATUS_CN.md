@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-04 最新实测：** clean `45645d96` 真实晶球提示确认、获取→canonical保管→第60件捐赠/核销已通过；返家途中因脚本遗漏已有原生控制恢复等待而安全停止，尚未跨日取钥匙。两入口正统一精确等待/正常跨日候选选择，继续原日计划及有限 fresh replan；无新执行器/强制控制/criterion晋升或训练。原生完整闭环仍待最终版本验证，见[记录](geode-dialogue-lifecycle.md#latest-native-boundary)。
+
 > **2026-11-04 最新原生边界：** `ff77caad` 关闭了旧对话跳步，但严格完成条件随后识别到真实的首次晶球提示并停止，未把获取结算成成功。当前补齐原生 geodeFound 副作用绑定，并在精确安全条件下复用普通对话执行器；尚待最终同版本原生获取→保管→捐赠→核销/取钥匙。primary、覆盖和训练锁不变，见[合同](geode-dialogue-lifecycle.md#first-pickup-continuation)。
 
 > **2026-11-04 原生供给已前进，完整闭环未通过：** #412 的 `8226ae8c` 已真实开晶球取得一件目标并进入账本保管，两个原生地图连接后在博物馆被残留对话/不可移动状态拦截；尚未捐赠或取钥匙。该残留从开晶球 after 就存在，正修复原生 DialogueBox→GeodeMenu 生命周期，复用既有点击逻辑且不绕过控制/保管门。下一步仍是同一 Rusty Key 的完整原生轨迹，覆盖/Teacher/正式训练不晋升，见[合同](geode-dialogue-lifecycle.md)。

@@ -2,6 +2,8 @@
 
 ## 2026-11-03 当前 Rusty Key 切片与接续
 
+- **2026-11-04 晶球/捐赠原生链通过，跨日续接修正中：** clean `45645d96` 已真实确认首次晶球提示并恢复原生控制，获得 `(O)549`、canonical 输入核销/一件保管，再进入博物馆完成第60件捐赠与保管核销。返家第一条 connector 后只提供已有控制恢复等待，脚本却只选睡觉候选而停止；新旧 Rusty Key 入口现共用精确等待/正常跨日选择，仍走原日计划、有限步数及 fresh replan，不清 native 标志或重放失败动作。最终同版本闭环待复跑，未取得钥匙/Teacher/criterion 验收，见[原生记录](geode-dialogue-lifecycle.md#latest-native-boundary)。
+
 - **2026-11-04 首次晶球提示续接：** `ff77caad` 的 UI 修正已通过 CI，但更严格原生复跑在真实首次拾取晶球提示处安全停止，未结算获取。已直接核对 Farmer/Item/DialogueBox 原生规则，补 geodeFound 观察、候选/编译/请求/JIT 绑定及预计邮件副作用；缺字段不默认 false。仅在库存回执、原生标志、精确原生文本及无问答/剧情条件都匹配时，原晶球动作复用现有普通对话执行器确认提示，最终仍要求完整邮件守恒和恢复控制；不另写对话引擎或屏蔽提示。11项聚焦通过，最终 clean source 原生闭环仍待复跑，详见[生命周期合同](geode-dialogue-lifecycle.md#first-pickup-continuation)。
 
 - **2026-11-04 已取得原生获取/保管，续接开晶球对话生命周期：** #412 已合并，精确 `8226ae8c` CI Core `1112/1112`、Backend `381/381` 通过；独立账本从0起，真实开晶球获得 `(O)549` 并 canonical 核销输入/保管一件产物，随后两条 connector 到博物馆，但尚未捐赠。三份 after 均显示开晶球结束起就残留 dialogue_up=true、无菜单/剧情且 CanMove=false，保护门正确阻止重复获取/释放保管；源档哈希未变、进程已回收。反编译确认直接 answerDialogue 跳过 DialogueBox 原生收尾，现复用原对话选项点击为共享 helper，晶球完成还需原生控制恢复，不手工清标志。聚焦37项通过，下一步是 clean source 同入口原生获取→保管→捐赠→核销/取钥匙，不重开目视验收、不提升计数，见[合同](geode-dialogue-lifecycle.md)。

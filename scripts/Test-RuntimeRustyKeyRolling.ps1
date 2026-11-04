@@ -7,6 +7,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $project = Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot 'lib/RuntimeEvidenceCommon.ps1')
+. (Join-Path $PSScriptRoot 'lib/RuntimeRustyKeyEvidence.ps1')
 . (Join-Path $PSScriptRoot 'lib/RuntimeAcquisitionPlanningPipeline.ps1')
 . (Join-Path $PSScriptRoot 'lib/RuntimeRustyKeyRollingPlanning.ps1')
 . (Join-Path $PSScriptRoot 'lib/RuntimeRustyKeyRollingExecution.ps1')
@@ -40,6 +41,7 @@ foreach ($stage in $stages) {
 }
 
 $originalReader = (Get-Item Function:Read-RuntimeLoopArtifacts).ScriptBlock
+$originalRanking = (Get-Item Function:Invoke-RuntimeRanking).ScriptBlock
 function Read-RuntimeLoopArtifacts { param($LoopRoot, $RunId, $CoreAssemblyPath, [switch] $AllowVerifiedContinuation)
     return [pscustomobject]@{ VerifiedContinuationPending = $false; VerifiedObjectiveCompleted = $false }
 }
@@ -67,10 +69,30 @@ try {
             $script:dailyArguments -contains '--skip-training') 'Daily-plan adapter changed executor or training semantics.'
         $passed.Add("shared_adapter_manifest_and_executor_$target")
     }
+    function Invoke-RuntimeRanking { param($BackendUrl, $GoalId, $SnapshotStateHash, $OutputPath, $OptionId, $Parameters)
+        return @{ ranked_event_candidates = @($script:handoffCandidate) }
+    }
+    foreach ($candidate in @(
+        @{ candidate_id = 'recovery:native_save_boundary'; kind = 'recovery_sleep_immediately' },
+        @{ candidate_id = 'recovery:wait_for_native_control_settle'; kind = 'recovery_native_control_settle' }
+    )) {
+        $script:handoffCandidate = $candidate + @{ option_id = 'recovery.stabilize_day'; available = $true }
+        $snapshot = @{ state_hash = 'synthetic-handoff'; state = @{
+            time = @{ time = @{ value = 900 } }; player = @{ story_event = @{ value = @{ active = $false } } }
+        } }
+        Invoke-RuntimeRustyKeyNativeHandoff -Context $context -Name $candidate.kind -SnapshotPath $sourceManifest `
+            -Snapshot $snapshot -Directory $OutputRoot -ExecutionTarget 'runtime_harness' | Out-Null
+        $idIndex = [array]::IndexOf($script:dailyArguments, '--daily-plan-candidate-id')
+        Assert-True ($idIndex -ge 0 -and $script:dailyArguments[$idIndex + 1] -eq $candidate.candidate_id -and
+            $script:dailyArguments -contains 'control_plane.native_save_boundary=true') `
+            'Native handoff must send the actual bounded settle/save candidate through the existing daily-plan adapter.'
+        $passed.Add("native_handoff_shared_adapter_$($candidate.kind)")
+    }
 }
 finally {
     Remove-Item Function:dotnet
     Set-Item Function:Read-RuntimeLoopArtifacts $originalReader
+    Set-Item Function:Invoke-RuntimeRanking $originalRanking
 }
 
 # The following test doubles cover orchestration only; native transitions are covered separately by the canonical C# verifiers.

@@ -97,3 +97,30 @@ of depending on a physical button override during a composite operation.
 Readiness, typing, instance/speaker checks and timeouts remain the original
 engine's; ordinary callers retain their previous input backend. This switch is
 private execution state, not a caller/model permission to skip unsafe prompts.
+
+## Latest Native Boundary
+
+The clean `45645d96` run `rk-45645d96-1104` verified the exact first-geode
+tutorial acknowledgement, `geodeFound`, menu/dialogue closure and movable
+player, with money 975 and cracked counter 43. It acquired `(O)549`, settled
+the input, retained one output in canonical custody, reached the museum and
+donated the 60th item with native `museum60` and prerequisite event 295672.
+The donation then consumed the custody through the original settlement hook.
+
+The run did not complete the key/night handoff: after the first connector
+home, the original recovery producer offered its already implemented
+`recovery:wait_for_native_control_settle` while native `CanMove` recovered.
+The script incorrectly accepted only `recovery:native_save_boundary`. Both
+Rusty Key test entry points now share one exact candidate selector accepting
+that existing bounded wait or the normal boundary, never unrelated waits,
+unavailable candidates or ambiguous choices. Each still compiles via the
+original daily-plan path and consumes a step of the existing finite budget,
+then observes and replans. No native control flag is forced.
+
+This is actual acquisition/custody/donation evidence, not a completed
+key criterion, full collection route, Teacher comparison or training approval.
+The failed run remains retained; the final script version needs a fresh run.
+The shared handoff selector/evidence tests pass 41 cases; the actual source
+pipeline plus bounded orchestration checks pass 15, including both handoff
+candidates through the existing adapter. Fresh native-calendar fixtures pass
+18 checks. These checks do not launch the game or certify the night/key.
