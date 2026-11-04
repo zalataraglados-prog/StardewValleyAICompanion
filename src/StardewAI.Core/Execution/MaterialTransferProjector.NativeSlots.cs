@@ -45,7 +45,13 @@ public sealed partial class MaterialTransferProjector
     };
 
     public static string[] VerifyNativeSlots(MaterialInventoryGraph before, MaterialInventoryGraph after,
-        MaterialTransferProjection projection)
+        MaterialTransferProjection projection) => VerifySlots(before, after, projection, beforeImage: false);
+
+    public static string[] VerifyNativeBeforeSlots(MaterialInventoryGraph retained, MaterialInventoryGraph observed,
+        MaterialTransferProjection projection) => VerifySlots(retained, observed, projection, beforeImage: true);
+
+    private static string[] VerifySlots(MaterialInventoryGraph before, MaterialInventoryGraph after,
+        MaterialTransferProjection projection, bool beforeImage)
     {
         if (after.SchemaVersion != "material_inventory_graph.v1" || after.Status != "available" ||
             after.PlayerId != before.PlayerId || projection.Status != "projected" ||
@@ -67,13 +73,13 @@ public sealed partial class MaterialTransferProjector
                 reasons.Add("material_transfer_native_node_identity_drifted");
                 continue;
             }
-            var expected = group.Where(row => row.AfterSlotIndex.HasValue).ToArray();
+            var expected = group.Where(row => beforeImage ? row.BeforeSlotIndex.HasValue : row.AfterSlotIndex.HasValue).ToArray();
             var slots = current[0].Slots;
             if (slots is null || slots.Length != expected.Length ||
                 slots.Any(slot => slot is null) ||
-                expected.Any(row => slots.Count(slot => slot.SlotIndex == row.AfterSlotIndex &&
+                expected.Any(row => slots.Count(slot => slot.SlotIndex == (beforeImage ? row.BeforeSlotIndex : row.AfterSlotIndex) &&
                     slot.QualifiedItemId == row.QualifiedItemId && slot.Quality == row.Quality &&
-                    slot.RuntimeType == row.RuntimeType && slot.Stack == row.StackAfter) != 1))
+                    slot.RuntimeType == row.RuntimeType && slot.Stack == (beforeImage ? row.StackBefore : row.StackAfter)) != 1))
                 reasons.Add("material_transfer_native_slot_transition_mismatch");
         }
         return reasons.Distinct(StringComparer.Ordinal).ToArray();

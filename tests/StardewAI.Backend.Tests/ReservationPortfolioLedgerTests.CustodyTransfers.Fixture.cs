@@ -41,6 +41,11 @@ public sealed partial class ReservationPortfolioLedgerTests
                 NodeId = Chest, AccessPointId = "custody-transfer-access", AccessKind = "placed_chest", SpecialChestType = "None",
                 LocationId = "Farm", TileX = 4, TileY = 5, ActorUseAuthorized = true
             }).ToArray();
+            minted.Snapshot.State["time"] = JsonSerializer.SerializeToElement(new
+            {
+                time = new { value = 600, status = "available", confidence = 1, adapter = "test", read_at_tick = 1,
+                    source = new { kind = "game_object", path = "synthetic_custody_clock" } }
+            });
             Snapshot = WithGraph(minted.Snapshot, graph, 100);
             var request = new MaterialReservationUpsertRequest
             {
@@ -94,11 +99,7 @@ public sealed partial class ReservationPortfolioLedgerTests
             Assert.True(commit.Accepted, string.Join(",", commit.Errors));
             var before = commit.Ledger!;
             Ledger = before;
-            Assert.True(MaterialInventoryGraphReader.TryRead(Snapshot, out var graph));
-            graph!.InventoryNodes.Single(value => value.NodeId == "player:123").Slots.Single(value => value.QualifiedItemId == "(O)96").Stack = withdraw ? 2 : 1;
-            graph.InventoryNodes.Single(value => value.NodeId == Chest).Slots = withdraw
-                ? new[] { Slot(0, "(O)390", 3) } : new[] { Slot(0, "(O)390", 3), Slot(1, "(O)96", 1) };
-            var after = WithGraph(Snapshot, graph, Snapshot.GameTick + 100);
+            var after = AfterTransfer(withdraw);
             var request = new ReservationPortfolioSupportingTransitionSettlementRequest
             {
                 StateHash = after.StateHash, ExpectedLedgerRevision = before.Revision, PortfolioId = preparation.PortfolioId,
@@ -109,6 +110,15 @@ public sealed partial class ReservationPortfolioLedgerTests
                 Reason = "verified_supporting_transition_relocation"
             };
             return (before, after, request);
+        }
+
+        internal SnapshotEnvelope AfterTransfer(bool withdraw)
+        {
+            Assert.True(MaterialInventoryGraphReader.TryRead(Snapshot, out var graph));
+            graph!.InventoryNodes.Single(value => value.NodeId == "player:123").Slots.Single(value => value.QualifiedItemId == "(O)96").Stack = withdraw ? 2 : 1;
+            graph.InventoryNodes.Single(value => value.NodeId == Chest).Slots = withdraw
+                ? new[] { Slot(0, "(O)390", 3) } : new[] { Slot(0, "(O)390", 3), Slot(1, "(O)96", 1) };
+            return WithGraph(Snapshot, graph, Snapshot.GameTick + 100);
         }
 
         internal SnapshotEnvelope AtMuseum()
@@ -128,6 +138,10 @@ public sealed partial class ReservationPortfolioLedgerTests
             player["location_id"]!["value"] = graph.InventoryNodes.Single(row => row.NodeId == "player:123").LocationId;
             player["inventory"]!["value"]![0]!["stack"] = graph.InventoryNodes.Single(row => row.NodeId == "player:123").Slots.Single(row => row.QualifiedItemId == "(O)96").Stack;
             result.State["player"] = JsonSerializer.SerializeToElement(player);
+            var locations = JsonSerializer.SerializeToNode(result.State["locations"])!;
+            locations["collision_grid"]!["value"]!["location_id"] = graph.InventoryNodes.Single(row => row.NodeId == "player:123").LocationId;
+            result.State["locations"] = JsonSerializer.SerializeToElement(locations);
+            result.State["current_location"] = JsonSerializer.SerializeToElement(new { map = locations["collision_grid"] });
             result.GameTick = tick;
             result.StateHash = SnapshotHash.ComputeStateHash(result.State);
             return result;

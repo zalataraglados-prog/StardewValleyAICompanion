@@ -9,6 +9,19 @@ namespace StardewAI.Core.Tests;
 
 public sealed partial class MaterialTransferProjectorTests
 {
+    [Fact]
+    public void TypedTransferIntentCodecRoundTripsWithoutExposingMutableRequiredKeys()
+    {
+        var intent = Withdrawal(3);
+        var parameters = MaterialTransferIntentBinder.ToParameters(intent);
+        Assert.True(MaterialTransferIntentBinder.TryBuildIntent(parameters, out var rebuilt));
+        Assert.Equal(JsonSerializer.Serialize(intent), JsonSerializer.Serialize(rebuilt));
+        var names = Assert.IsAssignableFrom<IList<string>>(MaterialTransferIntentBinder.RequiredParameterNames);
+        Assert.True(names.IsReadOnly);
+        Assert.Throws<NotSupportedException>(() => names[0] = "overwritten");
+        Assert.Equal("source_node_id", MaterialTransferIntentBinder.RequiredParameterNames[0]);
+    }
+
     [Theory]
     [InlineData(5)]
     [InlineData(12)]
@@ -32,6 +45,8 @@ public sealed partial class MaterialTransferProjectorTests
         var after = TransferGraph(Node("player:1", "player_inventory", 12, "Farm", Slot(0, quantity)),
             Node("chest:Farm:4,5", "chest", 36, "Farm", chestSlots));
         Assert.Empty(MaterialTransferProjector.VerifyNativeSlots(before, after, result));
+        Assert.Empty(MaterialTransferProjector.VerifyNativeBeforeSlots(before, before, result));
+        Assert.Contains("material_transfer_native_slot_transition_mismatch", MaterialTransferProjector.VerifyNativeBeforeSlots(before, after, result));
         Assert.Equal(untouched, JsonSerializer.Serialize(before));
     }
 

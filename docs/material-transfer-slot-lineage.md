@@ -189,7 +189,9 @@ zero new game actions, live ledger mutations or training samples.
 `projected` is not authorization or native settlement. At this map-only stage
 the helper had not yet been connected to custody settlement. The original
 service now uses the [linked custody history](museum-output-custody.md#linked-position-history)
-contract; runtime custody dispatch remains closed. Continue the same lifecycle:
+contract and the [bound control/compiler/JIT path](museum-output-custody.md#original-control-and-compiler-binding).
+Only exact bound custody control is admitted; outer rolling selection and native
+round-trip proof remain incomplete. Continue the same lifecycle:
 
 1. Bind the complete map to the original canonical support request, compiled
    queue, exact dispatched/native receipt, actor and retained acquisition source.
@@ -263,9 +265,10 @@ commit/settlement receipt reconstruction, compiler and dispatch path now
 emit/consume this preparation as described below. The original service also
 conditionally admits selected/passive custody with the complete linked position
 contract, while legacy/unverifiable provenance and generic unprepared paths are
-still rejected. Runtime custody dispatch remains closed pending original control
+still rejected. JIT now admits the exact dedicated custody control and verified
+passive compaction without treating output as machine input. Outer rolling/client
 integration and real acquired-output storage -> withdrawal -> authorized
-donation/consumption proof. All frozen coverage, Teacher and formal-training
+donation/consumption proof remain incomplete. All frozen coverage, Teacher and formal-training
 counts remain unchanged.
 
 Verification for the service-only slice: full Backend 414/414 (30 new cases), complete game-free Core
@@ -375,18 +378,20 @@ This ordinary canonical slice does not complete runtime museum custody
 relocation/rebind or promote coverage/training. The subsequent original service
 now verifies compact linked acquisition/position provenance and atomically moves
 all affected reservations without changing unrelated goals/quantities. The
-authorized control candidate/compiler/dispatch and real native transfer before
-donation remain to be integrated; the JIT custody rejection guard stays enabled.
+authorized control candidate/compiler/JIT/receipt contracts are now connected,
+with independent original-service commit/settlement replay; the guard is
+conditional, not removed. Rolling/client integration and real native transfer
+before donation remain incomplete.
 
 The current-geode acquisition/custody/donation/consumption/night/key trace is now
 [accepted](geode-dialogue-lifecycle.md#accepted-native-boundary); do not repeat it
 as the next task. The isolated smoke entry described above has replaced the
 unsafe baseline-in-place flow, and the sparse native boundary above is accepted.
-The next work is to wire that verified service contract into the existing
-custody control/compile/dispatch/receipt path, retaining acquisition provenance
+The next work is to wire that verified control into the existing rolling
+pending-storage selection and runtime client, retaining acquisition provenance
 and all affected other-goal reservations, then obtain native round-trip proof.
-The runtime protection guard stays closed until that contract is integrated and
-verified. The retained source under `RuntimeRoot/saves` is read and copied, not
+Missing/forged scope and generic active custody moves remain blocked. The
+retained source under `RuntimeRoot/saves` is read and copied, not
 the execution destination. The prepared Year-5 baseline remains shared mechanical
 capability, not pre-Year-3 criterion evidence. Frozen coverage and
 `formal_product_training=false` stay unchanged.

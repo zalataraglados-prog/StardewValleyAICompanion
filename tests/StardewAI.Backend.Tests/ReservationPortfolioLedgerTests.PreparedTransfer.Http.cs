@@ -15,6 +15,17 @@ namespace StardewAI.Backend.Tests;
 
 public sealed partial class ReservationPortfolioLedgerTests
 {
+    private static async Task<JsonObject?> ReadActualLiveTransferDispatch(HttpClient client, JsonObject actual, string stateHash)
+    {
+        var program = typeof(LiveTrainingOptions).Assembly.GetType("Program", throwOnError: true)!;
+        var read = program.GetMethod("ReadDispatchReadinessAsync", BindingFlags.NonPublic | BindingFlags.Static)!;
+        return await (Task<JsonObject?>)read.Invoke(null, new object[]
+        {
+            client, new LiveTrainingOptions { BackendUrl = client.BaseAddress!.ToString().TrimEnd('/') },
+            actual, stateHash, "local-precompiled-transfer"
+        })!;
+    }
+
     [Fact]
     public async Task LiveTransferDispatchUsesActualPostedBindingAfterMovementWithoutRevisingTheLedger()
     {
@@ -50,13 +61,7 @@ public sealed partial class ReservationPortfolioLedgerTests
         Assert.Equal(fixture.Before.StateHash, original["normalized_command"]!["state_hash"]!.GetValue<string>());
         Assert.True(JsonNode.DeepEquals(original["normalized_command"]!["parameters"], rebound["normalized_command"]!["parameters"]));
 
-        var program = typeof(LiveTrainingOptions).Assembly.GetType("Program", throwOnError: true)!;
-        var read = program.GetMethod("ReadDispatchReadinessAsync", BindingFlags.NonPublic | BindingFlags.Static)!;
-        async Task<JsonObject?> Evaluate(JsonObject actual) => await (Task<JsonObject?>)read.Invoke(null, new object[]
-        {
-            client, new LiveTrainingOptions { BackendUrl = client.BaseAddress!.ToString().TrimEnd('/') },
-            actual, moved.StateHash, "local-precompiled-transfer"
-        })!;
+        Task<JsonObject?> Evaluate(JsonObject actual) => ReadActualLiveTransferDispatch(client, actual, moved.StateHash);
         var accepted = await Evaluate(rebound);
         Assert.True(accepted?["ready"]?.GetValue<bool>(), accepted?.ToJsonString());
         var parameters = rebound["normalized_command"]!["parameters"]!.AsArray();

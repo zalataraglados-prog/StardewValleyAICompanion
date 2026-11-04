@@ -53,6 +53,13 @@ already cover the deficit, the producer reports
 `rusty_key_owned_supply_pending_donation_or_transfer` without building unrelated
 acquisition axes or claiming the threshold is satisfied.
 
+The shared [output-custody transfer control](museum-output-custody.md#original-control-and-compiler-binding)
+now provides the original candidate/commit/compiler/JIT/receipt/settlement path.
+It is not yet selected by this rolling builder: stored pending supply still has
+the explicit dependency above. The next integration must choose authenticated
+retrieval as a mechanical preparation, then fresh-replan the original donation;
+do not delete the pending guard, reacquire the item or call it a machine input.
+
 Independent held-queue reconstruction also exposed random compiler-generated
 plan/queue identities. The producer now binds its plan and shared queue identity
 stabilizer to source hashes and the selected candidate. Native action semantics
@@ -81,11 +88,14 @@ The controlled runtime adapter is now implemented; its code/test boundaries and
 entrypoint are described in [runtime rolling](rusty-key-runtime-rolling.md).
 The following native trace and remaining acceptance work are still required.
 
-Connect these public sources to the existing runtime HTTP ledger endpoints and
-precompiled queue runner. After every support/native action, retain the receipt,
-settle through the canonical service, ingest a decoded fresh snapshot and rebuild
-the existing acquisition axes. Do not repeat old queues or infer donation from
-acquisition. Obtain one same-runtime acquisition/custody/donation/consumption
-trace, then close failure recovery, custody relocation, joint timing/opening
-windows, criterion partitions and the pre-Year-3 deadline. The preparation CLI is
-not yet that autonomous live-root loop. Frozen coverage counts remain unchanged.
+The direct acquisition/custody/donation/consumption/night/key trace is already
+[accepted](geode-dialogue-lifecycle.md#accepted-native-boundary); do not repeat
+it as an unmet gate. Sparse ordinary native transfer and reply recovery are also
+accepted prerequisites. Next connect the bound custody-transfer control above
+to the existing rolling preparation and runtime HTTP/precompiled runner, retain
+actual dispatched items and fresh receipts, independently verify original-service
+settlement, and fresh-replan after each transfer. Obtain real acquired output ->
+storage -> withdrawal -> original donation/consumption proof with other-goal
+protection. Joint timing/opening windows, criterion partitions and the pre-Year-3
+deadline remain later gaps. A standalone transfer CLI is not the autonomous
+live-root loop, and frozen coverage counts remain unchanged.

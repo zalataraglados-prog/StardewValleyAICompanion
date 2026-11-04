@@ -153,9 +153,13 @@ consumption -> normal night/key chain has now passed independent review on
 rebuilt and source save preserved. See the [accepted native boundary](geode-dialogue-lifecycle.md#accepted-native-boundary).
 It is not yet the MOD's default production root selector or a complete
 criterion/Teacher acceptance. Reply recovery is implemented in the existing
-transport contracts, not permission to replay ambiguous actions. Next isolate
-the legacy transfer smoke before its sparse native regression, then integrate
-custody relocation, joint opening/time budgets, criterion Teacher/native
+transport contracts, not permission to replay ambiguous actions. Sparse ordinary
+transfer is now isolated and accepted. The shared
+[custody control/compiler/JIT/receipt contract](museum-output-custody.md#original-control-and-compiler-binding)
+and its three read-only CLIs are connected, but this outer rolling selector/client
+does not yet consume stored pending supply through that control. Wire that
+preparation/retrieval without reacquisition or machine-input relabeling, then
+obtain real acquired-custody storage/withdrawal/donation proof. Joint opening/time budgets, criterion Teacher/native
 partitions and the pre-Year-3 deadline. The run summary alone is still only
 `runtime_control_observation_only_not_criterion_evidence`; formal training,
 preference eligibility and coverage promotion remain false.

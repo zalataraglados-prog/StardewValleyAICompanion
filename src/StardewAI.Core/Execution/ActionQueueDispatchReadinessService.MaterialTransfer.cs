@@ -21,7 +21,8 @@ public sealed partial class ActionQueueDispatchReadinessService
         if (parameters.Where(row => MaterialTransferIntentBinder.RequiredParameterNames.Contains(row.Name) ||
                 row.Name == PreparedMaterialTransferContract.BindingParameter ||
                 row.Name is "material_transfer_intent_json" or "material_transfer_projection_json" ||
-                row.Name.StartsWith("acquisition_", StringComparison.Ordinal))
+                row.Name.StartsWith("acquisition_", StringComparison.Ordinal) ||
+                MuseumOutputCustodyTransferBinding.IsControlParameter(row.Name))
             .GroupBy(row => row.Name, StringComparer.Ordinal).Any(group => group.Count() != 1))
             reasons.Add("dispatch_material_transfer_parameters_not_unique");
         if (item.Status != "pending") reasons.Add("dispatch_queue_item_not_pending");
@@ -33,6 +34,7 @@ public sealed partial class ActionQueueDispatchReadinessService
         var bound = ledger.PreparedMaterialTransfer is not null ||
             parameters.Any(row => row.Name == PreparedMaterialTransferContract.BindingParameter) ||
             !string.IsNullOrWhiteSpace(item.NormalizedCommand.GoalId) ||
+            parameters.Any(row => MuseumOutputCustodyTransferBinding.IsControlParameter(row.Name)) ||
             parameters.Any(row => row.Name.StartsWith("acquisition_", StringComparison.Ordinal)) ||
             intent is not null && ledger.MaterialReservations.Any(row => row.Status == StrategyCommitmentStatuses.Active &&
                 (row.NodeId == intent.SourceNodeId || row.NodeId == intent.DestinationNodeId));
@@ -42,7 +44,14 @@ public sealed partial class ActionQueueDispatchReadinessService
             var prepared = ledger.PreparedMaterialTransfer;
             result.RequiredLedgerId = ledger.LedgerId;
             result.RequiredLedgerRevision = prepared?.ExpectedLedgerRevision;
-            if (prepared is null ||
+            if (parameters.Any(row => MuseumOutputCustodyTransferBinding.IsControlParameter(row.Name)))
+            {
+                if (!MuseumOutputCustodyTransferBinding.IsBound(item, ledger) ||
+                    JsonSerializer.Serialize(intent) != JsonSerializer.Serialize(prepared?.Intent))
+                    reasons.Add("dispatch_output_custody_transfer_binding_drifted");
+                else validatedPreparation = prepared;
+            }
+            else if (prepared is null ||
                 !PreparedMaterialTransferContract.IsBound(ledger, binding,
                     Parameter(item, "acquisition_reservation_portfolio_id"), item.NormalizedCommand.GoalId,
                     prepared.RouteSourceDecisionId) ||
@@ -50,7 +59,10 @@ public sealed partial class ActionQueueDispatchReadinessService
                 Parameter(item, "acquisition_support_transition_kind") != "machine_input_material_transfer" ||
                 JsonSerializer.Serialize(intent) != JsonSerializer.Serialize(prepared.Intent))
                 reasons.Add("dispatch_material_transfer_preparation_binding_drifted");
-            else if (PreparedMaterialTransferContract.ContainsCustody(ledger, prepared.ReservationProjection))
+            else if (PreparedMaterialTransferContract.ContainsCustody(ledger, prepared.ReservationProjection) &&
+                (!PreparedMaterialTransferContract.CustodyPositionsBound(ledger, prepared.ReservationProjection) ||
+                 ledger.MaterialReservations.Any(row => row.OutputCustody is not null &&
+                     prepared.MaterialRelocations.Any(move => move.MaterialReservationId == row.ReservationId))))
                 reasons.Add("output_custody_relocation_requires_retained_terminal_lifecycle");
             else validatedPreparation = prepared;
         }

@@ -189,25 +189,7 @@ internal static class AcquisitionMachineInputMaterialStaging
     }
 
     private static SmallModelActionParameter[] IntentParameters(
-        MaterialTransferIntent intent) => new[]
-        {
-            Parameter("source_node_id", intent.SourceNodeId),
-            Parameter("destination_node_id", intent.DestinationNodeId),
-            Parameter("source_slot_index", intent.SourceSlotIndex.ToString()),
-            Parameter("qualified_item_id", intent.QualifiedItemId),
-            Parameter("quality", intent.Quality.ToString()),
-            Parameter("quantity", intent.Quantity.ToString()),
-            Parameter("expected_source_stack",
-                intent.ExpectedSourceStack.ToString())
-        };
-
-    private static SmallModelActionParameter Parameter(
-        string name,
-        string value) => new()
-        {
-            Name = name,
-            Value = value
-        };
+        MaterialTransferIntent intent) => MaterialTransferIntentBinder.ToParameters(intent);
 
     private static bool IsCurrentNormalChest(
         MaterialInventoryGraph graph,
