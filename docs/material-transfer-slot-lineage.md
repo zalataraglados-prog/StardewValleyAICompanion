@@ -63,6 +63,10 @@ revision-zero actor/save ledger, permits exactly Bridge/Harness mods, suppresses
 render/audio and owns/releases only its own hidden processes. Every build uses
 explicit E game references, one build node and no shared compiler/deploy/zip;
 execution uses the existing one-candidate daily-plan adapter with `--skip-training`.
+Before launch, `run-inputs.json` binds clean script source, one consistent runtime
+source revision, exact own-DLL/game hashes and the mod allowlist. A retained build
+is accepted only if the compiled-source/configuration diff is empty; a mixed or
+unattributable bundle is rejected rather than forcing a redundant docs-only build.
 The old training-dataset assertions/claims are removed. `KeepGameRunning` is
 rejected before launch because this verification entry must release ownership.
 

@@ -72,6 +72,31 @@ $mods = @(Get-RuntimeExactModAllowlist -ModsRoot $isolatedMods -ExpectedUniqueId
 }))
 $backendDll = Join-Path $ProjectRoot 'src/StardewAI.Backend/bin/Release/net8.0/StardewAI.Backend.dll'
 $loopDll = Join-Path $ProjectRoot 'tools/StardewAI.LiveTrainingLoop/bin/Release/net8.0/StardewAI.LiveTrainingLoop.dll'
+foreach ($entrypoint in @($backendDll,$loopDll)) {
+    if (-not (Test-Path -LiteralPath $entrypoint -PathType Leaf)) { throw "Missing runtime entrypoint: $entrypoint" }
+}
+$sourceHead = [string](& git -C $ProjectRoot rev-parse HEAD)
+if ($LASTEXITCODE -ne 0 -or @(& git -C $ProjectRoot status --porcelain).Count -ne 0) { throw 'Native verification requires a clean source revision.' }
+$binaryHashes = [ordered]@{}
+$versions = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+foreach ($directory in @((Split-Path -Parent $backendDll),(Split-Path -Parent $loopDll),
+        (Join-Path $isolatedMods 'StardewAI.TransparentBridge'),(Join-Path $isolatedMods 'StardewAI.RuntimeTestHarness'))) {
+    foreach ($dll in Get-ChildItem -LiteralPath $directory -File -Filter 'StardewAI*.dll') {
+        $binaryHashes[$dll.FullName] = Get-RuntimeFileSha256 -Path $dll.FullName
+        [void]$versions.Add([Diagnostics.FileVersionInfo]::GetVersionInfo($dll.FullName).ProductVersion)
+    }
+}
+if ($versions.Count -ne 1 -or @($versions)[0] -cnotmatch '^1\.0\.0\+([a-f0-9]{40})$') { throw 'Runtime components do not share one attributable source revision.' }
+$runtimeHead = $Matches[1]
+$sourceDiff = @(& git -C $ProjectRoot diff --name-only $runtimeHead $sourceHead -- src tools experiments `
+    Directory.Build.props Directory.Build.targets Directory.Packages.props global.json NuGet.Config)
+if ($LASTEXITCODE -ne 0 -or $sourceDiff.Count -ne 0) { throw 'Retained runtime bundle differs from current compiled source/configuration.' }
+Write-JsonFile -Path (Join-Path $runRoot 'run-inputs.json') -Value ([ordered]@{
+    schema_version='runtime_material_transfer_inputs.v1';script_head=$sourceHead;runtime_source_head=$runtimeHead
+    source_clean=$true;compiled_source_diff=@();binary_sha256=$binaryHashes;isolated_mods=$mods
+    source_save_sha256=$sourceHash;fixture_profile=$FixtureProfile;transfer_quantity=$TransferQuantity
+    game_assembly_sha256=(Get-RuntimeFileSha256 -Path (Join-Path $gameDirectory 'Stardew Valley.dll'));formal_training_authorized=$false
+})
 $backendUrl = "http://127.0.0.1:$BackendPort"
 $executorUrl = 'http://127.0.0.1:8767'
 $snapshotUrl = 'http://127.0.0.1:8765/api/v1/snapshot?profile=full&fresh=1'
@@ -155,7 +180,7 @@ try {
     if ((Get-DirectoryContentHash -Path $sourceSave) -cne $sourceHash) { throw 'Original source save changed.' }
     $summary = [ordered]@{
         schema_version='runtime_material_transfer_native_evidence.v2';status='passed';run_id=$RunId
-        project_head=[string](& git -C $ProjectRoot rev-parse HEAD);fixture_profile=$FixtureProfile;save_slot=$SaveSlot
+        project_head=$sourceHead;runtime_source_head=$runtimeHead;fixture_profile=$FixtureProfile;save_slot=$SaveSlot
         high_level_option='inventory.transfer_item';native_executor='executor.transfer_material'
         debug_fixture_excluded_from_action_evidence=$true;directions_verified=2;native_menu_lifecycles_verified=2
         original_projector_and_slot_verifier_rebuilt=$true;round_trip_restored=$true;stale_projection_failure_closed=$true
