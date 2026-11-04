@@ -116,6 +116,13 @@ also pass. No game was launched; raw diagnostics remain outside Git.
 
 ## Exact Next Step
 
+`owned_supply_deferral` is an explicit preparation role before generic held
+queues. It carries the independently rebuilt original recovery candidate and
+queue, no atomic acquisition/transfer commit and no execution/training authority.
+It cannot be relabeled as `held_donation` or as an already verified future route.
+The original runtime daily-plan adapter dispatches this recovery role and returns
+to fresh rolling selection. See [evening continuation](rusty-key-time-budget.md#owned-supply-evening-continuation).
+
 The controlled runtime adapter is now implemented; its code/test boundaries and
 entrypoint are described in [runtime rolling](rusty-key-runtime-rolling.md).
 The following native trace and remaining acceptance work are still required.

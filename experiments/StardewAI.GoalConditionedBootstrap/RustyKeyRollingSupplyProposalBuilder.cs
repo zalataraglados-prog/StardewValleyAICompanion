@@ -1,6 +1,8 @@
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
 using StardewAI.Core.Strategy;
+using StardewAI.Core.OptionRegistry;
+using StardewAI.Core.Training;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -56,14 +58,27 @@ public static partial class RustyKeyRollingSupplyProposalBuilder
         if (result.SourceTotalDay >= RustyKeyAcquisitionPortfolioBuilder.StageOneDeadlineExclusive - 1)
             return Block(result, new[] { "rusty_key_supply_date_leaves_no_pre_year3_key_handoff" });
         var evaluations = new List<RustyKeyRollingCandidateEvaluation>();
-        if (TryHeldDonation(result, source, snapshot, ledger, evaluations, routeTimingCalibrationPath))
+        string[]? pending = null;
+        var temporalRequirements = new HashSet<string>(StringComparer.Ordinal);
+        if (CandidateOptionAvailabilityEvaluator.RequiresExclusiveRecovery(snapshot) || NativeControlSettleRecovery.TryCreate(snapshot) is not null)
+        {
+            pending = ReadPendingDonations(source, snapshot, ledger, result.GoalId, reasons);
+            if (reasons.Count == 0 && TryOwnedSupplyDeferral(result, snapshot, ledger, pending, temporalRequirements, resumeOnly: true))
+                return result;
+        }
+        if (TryHeldDonation(result, source, snapshot, ledger, evaluations, routeTimingCalibrationPath, temporalRequirements))
         {
             result.CandidateEvaluations = evaluations.ToArray();
             return result;
         }
 
-        var pending = ReadPendingDonations(source, snapshot, ledger, result.GoalId, reasons);
+        pending ??= ReadPendingDonations(source, snapshot, ledger, result.GoalId, reasons);
         if (pending.Length > 0) result.PendingDonationRequirementIds = pending;
+        if (reasons.Count == 0 && TryOwnedSupplyDeferral(result, snapshot, ledger, pending, temporalRequirements))
+        {
+            result.CandidateEvaluations = evaluations.ToArray();
+            return result;
+        }
         if (reasons.Count == 0 && TryStoredCustody(result, source, snapshot, ledger, evaluations, routeTimingCalibrationPath))
         {
             result.CandidateEvaluations = evaluations.ToArray();

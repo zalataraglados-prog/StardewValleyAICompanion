@@ -26,6 +26,9 @@ public sealed class RustyKeyRollingStepPreparation
     public string RouteOccurrenceId { get; set; } = string.Empty;
     [JsonPropertyName("compiled_queue")]
     public ActionQueueEnvelope? CompiledQueue { get; set; }
+    [JsonPropertyName("owned_supply_deferral")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public RustyKeyOwnedSupplyDeferral? OwnedSupplyDeferral { get; set; }
     [JsonPropertyName("atomic_commit_request")]
     public ReservationPortfolioCommitRequest? AtomicCommitRequest { get; set; }
     [JsonPropertyName("support_inputs")]

@@ -92,6 +92,19 @@ function Invoke-RuntimeRustyKeyRollingLoop {
                 $ledgerPath = Save-RuntimeRustyKeyLatestLedger -Context $Context -StateHash $execution.After.state_hash `
                     -Path (Join-Path $directory $latestLedgerName)
             }
+            elseif ($kind -eq 'owned_supply_deferral') {
+                $deferral = $planning.Preparation.owned_supply_deferral
+                if ($null -eq $deferral -or [string]::IsNullOrWhiteSpace($deferral.recovery_candidate_id) -or
+                    [string]::IsNullOrWhiteSpace($deferral.recovery_candidate_kind)) {
+                    throw 'Rusty Key owned-supply recovery is missing its rebuilt native candidate.'
+                }
+                $execution = Invoke-RuntimeDailyPlanStep -Context $Context -Name $name -OptionId 'recovery.stabilize_day' `
+                    -CandidateId $deferral.recovery_candidate_id -CandidateKind $deferral.recovery_candidate_kind `
+                    -SourceSnapshotPath $snapshotPath -AllowVerifiedContinuation -ExecutionTarget $ExecutionTarget
+                $support = $null
+                $ledgerPath = Save-RuntimeRustyKeyLatestLedger -Context $Context -StateHash $execution.After.state_hash `
+                    -Path (Join-Path $directory 'owned-supply-recovery-ledger.json')
+            }
             elseif ($kind -eq 'native_key_handoff') {
                 $execution = Invoke-RuntimeRustyKeyNativeHandoff -Context $Context -Name $name `
                     -SnapshotPath $snapshotPath -Snapshot $snapshot -Directory $directory -ExecutionTarget $ExecutionTarget

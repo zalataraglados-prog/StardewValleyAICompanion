@@ -62,6 +62,21 @@ foreach ($mode in @('held', 'local', 'remote', 'deferred')) {
     $passed.Add("actual_owned_stock_light_path_calibration_$mode")
 }
 
+foreach ($mode in @('evening', 'sleep_prompt', 'native_settle')) {
+    $fixture = Join-Path $StepFixtureRoot "owned-deferral-$mode"
+    $planning = New-RuntimeRustyKeyPlanning -Context $context -BootstrapDll $bootstrap `
+        -Directory (Join-Path $OutputRoot "actual-deferral-$mode-planning") -SnapshotPath (Join-Path $fixture 'snapshot.json') `
+        -StrategyLedgerPath (Join-Path $fixture 'ledger.json') -RequirementInventoryPath (Join-Path $fixture 'inventory.json') `
+        -AcquisitionLoweringPath 'unused-owned-stock-path' -MasterAnglerWindowsPath 'unused-owned-stock-path' `
+        -RouteTimingPath (Join-Path $fixture 'timing.json') -FishingForecastManifestPath 'unused-owned-stock-path'
+    Assert-True ($planning.Preparation.step_ready -and $planning.Preparation.kind -ceq 'owned_supply_deferral' -and
+        $planning.Preparation.owned_supply_deferral.future_date_route_verified -eq $false -and
+        $null -eq $planning.Preparation.atomic_commit_request -and
+        -not (Test-Path -LiteralPath (Join-Path $planning.Directory 'planning.manifest.json'))) `
+        'Owned-supply recovery must rebuild its original queue without speculative acquisition or future-date evidence.'
+    $passed.Add("actual_owned_supply_deferral_light_path_$mode")
+}
+
 $originalReader = (Get-Item Function:Read-RuntimeLoopArtifacts).ScriptBlock
 $originalRanking = (Get-Item Function:Invoke-RuntimeRanking).ScriptBlock
 $script:optionsParser = ([Reflection.Assembly]::LoadFrom($loop)).GetType('LiveTrainingOptions').GetMethod('Parse')
@@ -254,17 +269,22 @@ function New-RuntimeRustyKeyPlanning {
         $AcquisitionLoweringPath, $MasterAnglerWindowsPath, $RouteTimingPath, $FishingForecastManifestPath, $PriorSupport)
     $script:planningCalls++
     $kind = if ($script:mode -eq 'blocked') { 'blocked' }
+        elseif ($script:mode.StartsWith('deferral') -and $script:planningCalls -le 2) { 'owned_supply_deferral' }
         elseif ($script:mode -eq 'custody' -and $script:planningCalls -eq 1) { 'custody_navigation' }
         elseif ($script:mode -eq 'custody' -and $script:planningCalls -eq 2) { 'custody_transfer' }
         elseif ($script:mode -eq 'donation-boundary' -and $script:planningCalls -gt 3) { 'native_key_handoff' }
         elseif ($script:planningCalls -eq 1) { 'supporting_transition' }
         elseif ($script:planningCalls -eq 2) { 'terminal_acquisition' } else { 'held_donation' }
-    if ($script:planningCalls -eq 2 -and $script:mode -ne 'custody') {
+    if ($script:planningCalls -eq 2 -and $script:mode -ne 'custody' -and -not $script:mode.StartsWith('deferral')) {
         Assert-True ($PriorSupport.Token -eq 'retained-support' -and $StrategyLedgerPath -eq 'exact-settled-ledger-path') `
             'A supporting transition lost its exact retained proof/ledger before replanning.'
     }
+    $deferral = if ($script:mode -eq 'deferral-invalid') { $null } else { @{
+        recovery_candidate_id = $(if ($script:planningCalls -eq 1) { 'recovery:return_home' } else { 'recovery:wait_for_native_control_settle' })
+        recovery_candidate_kind = $(if ($script:planningCalls -eq 1) { 'recovery_return_home' } else { 'recovery_native_control_settle' })
+    } }
     return [pscustomobject]@{
-        Preparation = @{ kind = $kind; step_ready = ($kind -ne 'blocked'); blocking_reasons = @('synthetic_block') }
+        Preparation = @{ kind = $kind; step_ready = ($kind -ne 'blocked'); blocking_reasons = @('synthetic_block'); owned_supply_deferral = $deferral }
         ControlPath = 'synthetic-control'; QueuePath = 'synthetic-queue'; Directory = $Directory
         Control = @{ threshold_satisfied = ($kind -ceq 'native_key_handoff') }
         SnapshotPath = $SnapshotPath
@@ -273,7 +293,7 @@ function New-RuntimeRustyKeyPlanning {
 function New-TestExecution($Context, [string] $Name, [string] $Kind) {
     $script:executions++
     $script:seen.Add($Kind)
-    if ($script:mode -eq 'error') { throw 'synthetic ambiguous native/network failure' }
+    if ($script:mode -in @('error', 'deferral-error')) { throw 'synthetic ambiguous native/network failure' }
     $path = Join-Path $Context.ArtifactDirectory "$Name-after.json"
     $after = New-TestSnapshot $script:executions ($Kind -eq 'held' -and $script:mode -ne 'donation-boundary')
     Write-JsonFile -Path $path -Value $after
@@ -299,6 +319,17 @@ function Invoke-RuntimeRustyKeyCustodyTransfer {
     Assert-True ($ExecutionTarget -eq 'product') 'Custody retrieval changed executor selection.'
     return [pscustomobject]@{ Execution = (New-TestExecution $Context $Name 'transfer'); LedgerPath = 'settled-retrieval'; Support = $null }
 }
+function Invoke-RuntimeDailyPlanStep {
+    param($Context, $Name, $OptionId, $CandidateId, $CandidateKind, $SourceSnapshotPath,
+        [switch] $AllowVerifiedContinuation, $ExecutionTarget)
+    Assert-True ($OptionId -ceq 'recovery.stabilize_day' -and $AllowVerifiedContinuation -and $ExecutionTarget -ceq 'product') `
+        'Deferral must use the original exact native continuation adapter, without forced save parameters.'
+    $before = Get-Content -LiteralPath $SourceSnapshotPath -Raw | ConvertFrom-Json
+    Assert-True ($before.state_hash -ceq "synthetic-$($script:executions)") 'Recovery reused a stale source instead of the latest observation.'
+    $expected = if ($script:executions -eq 0) { 'recovery:return_home' } else { 'recovery:wait_for_native_control_settle' }
+    Assert-True ($CandidateId -ceq $expected) 'Recovery lost its rebuilt candidate identity.'
+    return New-TestExecution $Context $Name 'recovery'
+}
 function Invoke-TestLoop([string] $Mode, [int] $Budget) {
     $script:mode = $Mode; $script:executions = 0; $script:planningCalls = 0; $script:seen.Clear()
     $directory = Join-Path $OutputRoot "loop-$Mode"
@@ -323,6 +354,19 @@ Assert-True ($custodyTrace.status -eq 'native_key_observed' -and ($script:seen -
     ($custodyTrace.steps.kind -join ',') -eq 'custody_navigation,custody_transfer,held_donation') `
     'Stored custody must navigate, transfer and return to the original donation stage with fresh replanning.'
 $passed.Add('custody_navigation_transfer_donation_order')
+$deferralTrace = Invoke-TestLoop 'deferral' 3
+Assert-True ($deferralTrace.status -ceq 'native_key_observed' -and ($script:seen -join ',') -ceq 'recovery,recovery,held' -and
+    ($deferralTrace.steps.kind -join ',') -ceq 'owned_supply_deferral,owned_supply_deferral,held_donation' -and
+    $deferralTrace.steps[0].ledger_path.EndsWith('owned-supply-recovery-ledger.json')) `
+    'Recovery must refresh the exact source and ledger before returning to ordinary donation; no duplicate acquisition.'
+$passed.Add('owned_supply_deferral_fresh_replan_then_donation')
+foreach ($mode in @('deferral-invalid', 'deferral-error')) {
+    $rejected = $false
+    try { Invoke-TestLoop $mode 8 | Out-Null } catch { $rejected = $true }
+    $expected = if ($mode -ceq 'deferral-invalid') { 0 } else { 1 }
+    Assert-True ($rejected -and $script:executions -eq $expected) 'Invalid or failed recovery must stop without blind retry.'
+    $passed.Add("owned_supply_no_retry_$mode")
+}
 $donationBoundary = Invoke-TestLoop 'donation-boundary' 8
 Assert-True ($donationBoundary.status -ceq 'native_donation_threshold_observed' -and
     $donationBoundary.donation_threshold_observed -eq $true -and -not $donationBoundary.actual_key_observed -and
