@@ -92,8 +92,15 @@ Continue the same Rusty Key primary: bind chosen supply to the existing rolling
 execution/reservation lifecycle and exact native donation candidate, retaining
 the output until it is donated. The [local time gates](rusty-key-time-budget.md)
 now reject over-budget held work and inconsistent clocks before offering an
-executable queue.
-Verify the joint time/opening-hour and following
+executable queue. The current-day held branch also binds the actual chosen first
+connector to the complete date-bound route, later entrance gates and Gunther
+counter completion, using the existing calibration and route producer. It keeps
+alternative first exits and emits only one original connector or bounded wait,
+then fresh-replans; retained native inputs pass both public rebuild/preparation
+CLIs. This is not yet a pre-acquisition joint schedule: the selected acquisition's
+terminal position/completion and any authorized custody withdrawal must still
+be joined to the museum route, including a legal later donation date if needed.
+Verify that joint time/opening-hour and following
 morning handoff rather than relying on summed costs. Then join this criterion's
 independent Teacher comparisons, native outcomes and train/validation/test
 partitions with its actual pre-Year-3 completion. The retained Year-5 native

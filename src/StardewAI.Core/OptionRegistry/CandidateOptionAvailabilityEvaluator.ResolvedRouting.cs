@@ -26,16 +26,20 @@ namespace StardewAI.Core.OptionRegistry
             SnapshotEnvelope snapshot,
             string startLocation,
             string targetLocation,
-            EventCandidate[] routeCandidates)
+            EventCandidate[] routeCandidates) =>
+            FindResolvedRoutePlans(snapshot, startLocation, targetLocation, routeCandidates).FirstOrDefault();
+
+        private static IEnumerable<ResolvedRoutePlan> FindResolvedRoutePlans(
+            SnapshotEnvelope snapshot, string startLocation, string targetLocation, EventCandidate[] routeCandidates)
         {
             var graph = ReadStateFieldValue(snapshot, "locations", "route_graph");
             if (!graph.HasValue ||
                 string.IsNullOrWhiteSpace(startLocation) || string.IsNullOrWhiteSpace(targetLocation))
             {
-                return null;
+                return Array.Empty<ResolvedRoutePlan>();
             }
             if (!TransparentRouteGraphResolver.TryCreate(graph.Value, out var resolver))
-                return null;
+                return Array.Empty<ResolvedRoutePlan>();
 
             var plans = new List<ResolvedRoutePlan>();
             foreach (var path in resolver.FindShortestPathsByFirstEdge(startLocation, targetLocation))
@@ -64,8 +68,7 @@ namespace StardewAI.Core.OptionRegistry
                 .ThenBy(plan => plan.Path[0].TargetLocation, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(plan => plan.Path[0].Kind, StringComparer.Ordinal)
                 .ThenBy(plan => plan.Path[0].FromY)
-                .ThenBy(plan => plan.Path[0].FromX)
-                .FirstOrDefault();
+                .ThenBy(plan => plan.Path[0].FromX);
         }
 
         private static EventCandidate? FirstRouteActionCandidate(

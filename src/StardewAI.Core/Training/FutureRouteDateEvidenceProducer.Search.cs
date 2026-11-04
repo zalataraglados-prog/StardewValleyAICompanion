@@ -30,7 +30,8 @@ namespace StardewAI.Core.Training
                     connectorTiles,
                     request,
                     timing,
-                    failures));
+                    failures),
+                request.RequiredFirstEdge);
 
         private static RouteSearchResult SearchFeasibleLocationRoute(
             TransparentRouteGraphResolver graph,
@@ -66,7 +67,8 @@ namespace StardewAI.Core.Training
             int earliestDepartureTime,
             string targetLocation,
             FutureRouteTimingCalibration timing,
-            Func<RouteSearchState, ISet<string>, RouteSearchResult?> buildTarget)
+            Func<RouteSearchState, ISet<string>, RouteSearchResult?> buildTarget,
+            TransparentRouteEdge? requiredFirstEdge = null)
         {
             var pending = new List<RouteSearchState>
             {
@@ -128,6 +130,9 @@ namespace StardewAI.Core.Training
 
                 foreach (var edge in graph.GetOutgoingEdges(current.Location))
                 {
+                    if (current.Path.Length == 0 && requiredFirstEdge is not null &&
+                        !edge.Matches(requiredFirstEdge))
+                        continue;
                     if (!TryAdvance(
                             current,
                             edge,

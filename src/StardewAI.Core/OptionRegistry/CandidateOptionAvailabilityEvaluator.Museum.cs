@@ -7,6 +7,7 @@ using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
+using StardewAI.Core.Execution;
 using StardewAI.Core.Infrastructure;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
@@ -103,7 +104,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                     QualifiedItemId = ReadString(candidate, "qualified_item_id"),
                     SlotIndex = slot,
                     Quantity = 1,
-                    EstimatedTicks = Math.Max(240, distance * 60 + 240),
+                    EstimatedTicks = Math.Max(MuseumDonationBudgetPolicy.InteractionTicks, distance * 60 + MuseumDonationBudgetPolicy.InteractionTicks),
                     AvailabilityClass = "transparent_native_museum_donation",
                     AllowedNow = reasons.Count == 0,
                     BlockReasons = reasons.Distinct(StringComparer.Ordinal).ToArray(),
@@ -121,90 +122,95 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         string targetLocation,
         MuseumDonationMaterialReservationGuard reservationGuard)
     {
-        var route = FindResolvedRoutePlan(
+        var routes = FindResolvedRoutePlans(
             snapshot,
             currentLocation,
             targetLocation,
             RouteConnectorCandidates(snapshot, int.MaxValue)
                 .Where(candidate => candidate.Kind == "route_connector_tile")
                 .ToArray());
-        var connector = route?.FirstActionCandidate;
-
-        return candidates.EnumerateArray()
-            .Where(candidate => candidate.ValueKind == JsonValueKind.Object)
-            .Select(candidate =>
-            {
-                var reasons = new List<string>();
-                if (ReadString(candidate, "action_status") !=
-                    "museum_not_current_location")
+        ResolvedRoutePlan?[] routeChoices = routes.Where(route => route.FirstActionCandidate is not null).ToArray();
+        if (routeChoices.Length == 0) routeChoices = new ResolvedRoutePlan?[] { null };
+        return routeChoices.SelectMany((route, routeIndex) =>
+        {
+            var connector = route?.FirstActionCandidate;
+            return candidates.EnumerateArray()
+                .Where(candidate => candidate.ValueKind == JsonValueKind.Object)
+                .Select(candidate =>
                 {
-                    reasons.Add("museum_remote_donation_projection_unavailable");
-                }
-                if (ReadString(candidate, "reward_projection_status") != "ready")
-                {
-                    reasons.Add("museum_reward_projection_not_verified");
-                }
-                if (ReadBool(museum, "museum_mutex_locked") == true)
-                {
-                    reasons.Add("museum_mutex_locked");
-                }
-                var slot = ReadInt(candidate, "slot_index");
-                var before = ReadInt(candidate, "donated_count_before");
-                if (slot < 0 || ReadInt(candidate, "donated_count_after") != before + 1)
-                {
-                    reasons.Add("museum_donation_candidate_typed_projection_invalid");
-                }
-                var material = reservationGuard.Evaluate(slot, ReadString(candidate, "qualified_item_id"), ReadInt(candidate, "stack_before"));
-                reasons.AddRange(material.BlockingReasons);
-                reasons.AddRange(connector?.BlockReasons ??
-                    new[] { "museum_cross_map_route_unavailable" });
-                var continuation = new[]
-                {
-                    Parameter("continuation.option_id", "museum.donate_items"),
-                    Parameter("continuation.target_location", targetLocation),
-                    Parameter("continuation.inventory_slot_index", slot.ToString(CultureInfo.InvariantCulture)),
-                    Parameter("continuation.item_id", ReadString(candidate, "item_id")),
-                    Parameter("continuation.qualified_item_id", ReadString(candidate, "qualified_item_id"))
-                };
-                var distinctReasons = reasons.Distinct(StringComparer.Ordinal).ToArray();
-                return new EventCandidate
-                {
-                    CandidateId = "museum-donate-route:" + slot + ":" +
-                        ReadString(candidate, "qualified_item_id") + ":" + currentLocation,
-                    Kind = "route_connector_tile",
-                    Available = connector is not null && connector.Available && distinctReasons.Length == 0,
-                    LocationId = currentLocation,
-                    TileX = connector?.TileX,
-                    TileY = connector?.TileY,
-                    ExpectedEffect = (connector?.ExpectedEffect ?? string.Empty) +
-                        ";museum_target_item=" + ReadString(candidate, "qualified_item_id") +
-                        ";one_connector_then_fresh_snapshot=true",
-                    ItemId = ReadString(candidate, "item_id"),
-                    QualifiedItemId = ReadString(candidate, "qualified_item_id"),
-                    DisplayName = ReadString(candidate, "display_name"),
-                    SlotIndex = slot,
-                    Quantity = 1,
-                    EstimatedTicks = connector?.EstimatedTicks ?? -1,
-                    EnergyCost = connector?.EnergyCost ?? 0,
-                    AvailabilityClass = connector is null
-                        ? "museum_donation_route_blocked"
-                        : "museum_donation_rolling_route",
-                    AllowedNow = connector?.AllowedNow,
-                    AllowedToday = connector?.AllowedToday,
-                    NextOpenTime = connector?.NextOpenTime,
-                    EffectiveOpenTime = connector?.EffectiveOpenTime,
-                    ClosesAt = connector?.ClosesAt,
-                    WaitCost = connector?.WaitCost,
-                    GateReasons = connector?.GateReasons ?? Array.Empty<string>(),
-                    BlockReasons = distinctReasons,
-                    Parameters = (connector?.Parameters ?? Array.Empty<SmallModelActionParameter>())
-                        .Concat(continuation)
-                        .Concat(MuseumDonationThresholdParameters(museum, candidate))
-                        .Concat(material.Parameters)
-                        .ToArray()
-                };
-            })
-            .ToArray();
+                    var reasons = new List<string>();
+                    if (ReadString(candidate, "action_status") !=
+                        "museum_not_current_location")
+                    {
+                        reasons.Add("museum_remote_donation_projection_unavailable");
+                    }
+                    if (ReadString(candidate, "reward_projection_status") != "ready")
+                    {
+                        reasons.Add("museum_reward_projection_not_verified");
+                    }
+                    if (ReadBool(museum, "museum_mutex_locked") == true)
+                    {
+                        reasons.Add("museum_mutex_locked");
+                    }
+                    var slot = ReadInt(candidate, "slot_index");
+                    var before = ReadInt(candidate, "donated_count_before");
+                    if (slot < 0 || ReadInt(candidate, "donated_count_after") != before + 1)
+                    {
+                        reasons.Add("museum_donation_candidate_typed_projection_invalid");
+                    }
+                    var material = reservationGuard.Evaluate(slot, ReadString(candidate, "qualified_item_id"), ReadInt(candidate, "stack_before"));
+                    reasons.AddRange(material.BlockingReasons);
+                    reasons.AddRange(connector?.BlockReasons ??
+                        new[] { "museum_cross_map_route_unavailable" });
+                    var continuation = new[]
+                    {
+                        Parameter("continuation.option_id", "museum.donate_items"),
+                        Parameter("continuation.target_location", targetLocation),
+                        Parameter("continuation.inventory_slot_index", slot.ToString(CultureInfo.InvariantCulture)),
+                        Parameter("continuation.item_id", ReadString(candidate, "item_id")),
+                        Parameter("continuation.qualified_item_id", ReadString(candidate, "qualified_item_id"))
+                    };
+                    var distinctReasons = reasons.Distinct(StringComparer.Ordinal).ToArray();
+                    return new EventCandidate
+                    {
+                        CandidateId = "museum-donate-route:" + slot + ":" +
+                            ReadString(candidate, "qualified_item_id") + ":" + currentLocation +
+                            (routeIndex == 0 ? string.Empty : ":via:" + connector?.CandidateId),
+                        Kind = connector?.Kind ?? "route_connector_tile",
+                        Available = connector is not null && connector.Available && distinctReasons.Length == 0,
+                        LocationId = currentLocation,
+                        TileX = connector?.TileX,
+                        TileY = connector?.TileY,
+                        ExpectedEffect = (connector?.ExpectedEffect ?? string.Empty) +
+                            ";museum_target_item=" + ReadString(candidate, "qualified_item_id") +
+                            ";one_connector_then_fresh_snapshot=true",
+                        ItemId = ReadString(candidate, "item_id"),
+                        QualifiedItemId = ReadString(candidate, "qualified_item_id"),
+                        DisplayName = ReadString(candidate, "display_name"),
+                        SlotIndex = slot,
+                        Quantity = 1,
+                        EstimatedTicks = connector?.EstimatedTicks ?? -1,
+                        EnergyCost = connector?.EnergyCost ?? 0,
+                        AvailabilityClass = connector is null
+                            ? "museum_donation_route_blocked"
+                            : "museum_donation_rolling_route",
+                        AllowedNow = connector?.AllowedNow,
+                        AllowedToday = connector?.AllowedToday,
+                        NextOpenTime = connector?.NextOpenTime,
+                        EffectiveOpenTime = connector?.EffectiveOpenTime,
+                        ClosesAt = connector?.ClosesAt,
+                        WaitCost = connector?.WaitCost,
+                        GateReasons = connector?.GateReasons ?? Array.Empty<string>(),
+                        BlockReasons = distinctReasons,
+                        Parameters = (connector?.Parameters ?? Array.Empty<SmallModelActionParameter>())
+                            .Concat(continuation)
+                            .Concat(MuseumDonationThresholdParameters(museum, candidate))
+                            .Concat(material.Parameters)
+                            .ToArray()
+                    };
+                })
+                .ToArray();
+        }).ToArray();
     }
 
     private static SmallModelActionParameter[] MuseumDonationParameters(

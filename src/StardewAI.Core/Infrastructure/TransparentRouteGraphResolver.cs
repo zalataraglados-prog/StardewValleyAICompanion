@@ -38,6 +38,12 @@ namespace StardewAI.Core.Infrastructure
         public int? TargetX { get; }
 
         public int? TargetY { get; }
+
+        public bool Matches(TransparentRouteEdge candidate) =>
+            string.Equals(Kind, candidate.Kind, StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(FromLocation, candidate.FromLocation, StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(TargetLocation, candidate.TargetLocation, StringComparison.OrdinalIgnoreCase) &&
+            FromX == candidate.FromX && FromY == candidate.FromY && TargetX == candidate.TargetX && TargetY == candidate.TargetY;
     }
 
     public sealed class TransparentRouteGraphResolver
@@ -121,13 +127,7 @@ namespace StardewAI.Core.Infrastructure
 
         public bool ContainsEdge(TransparentRouteEdge candidate) =>
             adjacency.TryGetValue(candidate.FromLocation, out var edges) &&
-            edges.Any(edge =>
-                string.Equals(edge.Kind, candidate.Kind, StringComparison.OrdinalIgnoreCase) &&
-                string.Equals(edge.TargetLocation, candidate.TargetLocation, StringComparison.OrdinalIgnoreCase) &&
-                edge.FromX == candidate.FromX &&
-                edge.FromY == candidate.FromY &&
-                edge.TargetX == candidate.TargetX &&
-                edge.TargetY == candidate.TargetY);
+            edges.Any(edge => edge.Matches(candidate));
 
         public bool HasTopologicalPath(
             string startLocation,

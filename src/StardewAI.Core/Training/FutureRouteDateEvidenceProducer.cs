@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using StardewAI.Core.Infrastructure;
 
 namespace StardewAI.Core.Training
@@ -31,6 +32,9 @@ namespace StardewAI.Core.Training
         public int TargetTileY { get; set; }
 
         public bool RequireExactTargetTile { get; set; }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public TransparentRouteEdge? RequiredFirstEdge { get; set; }
     }
 
     public sealed class FutureRouteDateEvidenceProduction
@@ -105,6 +109,9 @@ namespace StardewAI.Core.Training
                 return Blocked(inputBlock);
             if (context is null || context.TotalDays != request.TotalDays)
                 return Blocked("future_route_date_context_mismatch");
+            if (request.RequiredFirstEdge is { } first &&
+                (!context.Graph.ContainsEdge(first) || !string.Equals(first.FromLocation, request.StartLocation, StringComparison.OrdinalIgnoreCase)))
+                return Blocked("future_route_required_first_edge_invalid");
             var search = SearchFeasibleRoute(
                 context.Graph,
                 context.DateIndex,
