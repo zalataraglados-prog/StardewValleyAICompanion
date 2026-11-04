@@ -113,7 +113,11 @@ public sealed partial class ModEntry
             var result = active.PickupDialoguePending.Completion.Task.GetAwaiter().GetResult();
             active.PickupDialoguePending = null;
             if (result.Status != "applied" || result.PrimitiveVerificationStatus != "verified")
-            { CompleteGeodeProcessing(active, false, "geode_processing_pickup_dialogue_failed"); return; }
+            {
+                CompleteGeodeProcessing(active, false, new[] { "geode_processing_pickup_dialogue_failed" }
+                    .Concat(result.BlockReasons).Concat(result.PrimitiveVerificationReasons).Distinct(StringComparer.Ordinal).Take(8).ToArray());
+                return;
+            }
             active.PickupDialogueAcknowledged = true;
             active.StageTicks = 0;
         }
@@ -296,7 +300,7 @@ public sealed partial class ModEntry
             BlockReasons = verified ? Array.Empty<string>() : verification,
             ChangedFacts = new[] { new SimulatedFactChange { Path = "player.geode_processing",
                 Before = request.GeodeProjectionFingerprint, After = GeodeObservedEffect() },
-                new SimulatedFactChange { Path = "player.mail_received.geodeFound",
+                new SimulatedFactChange { Path = "player.geode_processing.predictor_context.geode_found_mail",
                     Before = request.GeodeFoundMailBefore?.ToString().ToLowerInvariant() ?? "unknown",
                     After = Game1.player.hasOrWillReceiveMail("geodeFound").ToString().ToLowerInvariant() } }
         });

@@ -87,3 +87,13 @@ time, and a non-tool hold-up pauses it unless the native farmer forces time.
 This is not a new multiplayer/joint-budget proof. The final candidate still
 needs a new same-version native run; the earlier failed run is retained and
 must not be rewritten as a pass.
+
+The `5e1f3f9b` native attempt verified the new mail side effect but stopped while
+the reused ordinary dialogue engine failed to finish the confirmation. The
+parent now retains its child's actual failure reasons. For this exactly bound
+internal tutorial only, the same existing advance state machine can issue the
+native menu click directly, as the question-response path already does, instead
+of depending on a physical button override during a composite operation.
+Readiness, typing, instance/speaker checks and timeouts remain the original
+engine's; ordinary callers retain their previous input backend. This switch is
+private execution state, not a caller/model permission to skip unsafe prompts.

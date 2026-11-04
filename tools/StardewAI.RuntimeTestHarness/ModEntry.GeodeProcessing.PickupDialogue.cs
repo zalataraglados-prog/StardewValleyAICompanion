@@ -21,6 +21,8 @@ public sealed partial class ModEntry
             return false;
         active.PickupDialoguePending = new PendingExecution(active.Pending.Request);
         StartDialogueAdvance(active.PickupDialoguePending);
+        if (ReferenceEquals(activeDialogueAdvance?.Pending, active.PickupDialoguePending))
+            activeDialogueAdvance.UseNativeMenuClick = true;
         return true;
     }
 }

@@ -198,6 +198,7 @@ public sealed class GeodeProcessingMainlineTests
         var pickup = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.GeodeProcessing.PickupDialogue.cs"));
         var bridge = File.ReadAllText(Path.Combine(root, "src", "StardewAI.TransparentBridge", "Adapters", "PlayerReadAdapter.GeodeProcessing.cs"));
         Assert.Contains("StartDialogueAdvance(active.PickupDialoguePending)", pickup, StringComparison.Ordinal);
+        Assert.Contains("activeDialogueAdvance.UseNativeMenuClick = true", pickup, StringComparison.Ordinal);
         Assert.Contains("checkForSpecialItemHoldUpMeessage()", pickup, StringComparison.Ordinal);
         Assert.Contains("string.Equals(dialogue.getCurrentString(), expected, StringComparison.Ordinal)", pickup, StringComparison.Ordinal);
         Assert.Contains("GeodeReceiptMatches(active)", pickup, StringComparison.Ordinal);
