@@ -84,12 +84,16 @@ neither its cause nor a repair is claimed. Both records remain local.
 The separate [rolling producer](rusty-key-rolling-supply.md) now generates legal
 one-item next-step proposals and existing held-donation queues. These are not
 automatically full-threshold certificates; this adapter's exact-deficit rule is
-unchanged. The producer's CLI still needs the existing autonomous supply/commit
-orchestration and output custody integration.
+unchanged. The controlled runtime now consumes the existing supply/commit and
+output-custody lifecycle, including the accepted same-map store/withdraw/donate
+boundary. That shared proof does not close the full fresh-save threshold.
 
 Continue the same Rusty Key primary: bind chosen supply to the existing rolling
 execution/reservation lifecycle and exact native donation candidate, retaining
-the output until it is donated. Verify the joint time/opening-hour and following
+the output until it is donated. The [local time gates](rusty-key-time-budget.md)
+now reject over-budget held work and inconsistent clocks before offering an
+executable queue.
+Verify the joint time/opening-hour and following
 morning handoff rather than relying on summed costs. Then join this criterion's
 independent Teacher comparisons, native outcomes and train/validation/test
 partitions with its actual pre-Year-3 completion. The retained Year-5 native

@@ -16,7 +16,9 @@ Caller-written readiness flags or a learner score cannot authorize a stage.
 
 - `held_donation`: return the producer's existing compiled queue, without requiring
   acquisition axes or an acquisition resource commit. Dispatch still uses the
-  existing current-state/reservation gate and native receipt verification.
+  existing current-state/reservation gate and native receipt verification. The
+  producer first applies the strict clock/day-budget gate; blocked work emits no
+  queue and the item remains pending rather than being acquired again.
 - `custody_navigation`: authenticated stored museum output is in another map.
   Return one original connector/clearance or bounded scheduled-wait queue, with
   no inventory commit. Preserve route gates; fresh-replan before touching stock.
@@ -85,9 +87,10 @@ actual hidden CLI processes, real current candidates/compiler, missing/stale
 ranking, missing candidate denominator, forged raw claims, held deterministic
 rebuilding, threshold handoff, same-map custody retrieval, cross-map navigation,
 original transfer compilation and rejection of changed custody authority.
-`self-test-rusty-key-rolling-supply` passes 34
+`self-test-rusty-key-rolling-supply` passes 44
 checks including pending supply, protected/spare units, exact custody history,
-authorized/unauthorized storage and unknown inventory. Existing 20 control,
+authorized/unauthorized storage, unknown inventory and strict local time budgets.
+See [time-budget scope](rusty-key-time-budget.md). Existing 20 control,
 18 support-rebind, full-threshold, dispatch and focused supervision regressions
 also pass. No game was launched; raw diagnostics remain outside Git.
 
