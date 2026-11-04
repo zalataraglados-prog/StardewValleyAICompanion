@@ -13,6 +13,9 @@ public sealed class RuntimeMaterialTransferExecutorTests
         Assert.Contains("MaterialTransferStage.ReleaseOpenInput", source, StringComparison.Ordinal);
         Assert.Contains("TryApplySmapiButtonOverride(SButton.X, pressed: false", source, StringComparison.Ordinal);
         Assert.Contains("menu.receiveRightClick(", source, StringComparison.Ordinal);
+        Assert.Contains("var oldKeyboard = Game1.oldKBState;", source, StringComparison.Ordinal);
+        Assert.Contains("Game1.oldKBState = default;", source, StringComparison.Ordinal);
+        Assert.Contains("Game1.oldKBState = oldKeyboard;", source, StringComparison.Ordinal);
         Assert.Contains("MaterialSourceReferenceIndex(source, active.SourceItem)", source, StringComparison.Ordinal);
         Assert.Contains("InventorySlotScreenPosition(sourceMenu, sourceSlotIndex)", source, StringComparison.Ordinal);
         Assert.DoesNotContain("InventorySlotScreenPosition(sourceMenu, intent.SourceSlotIndex)", source, StringComparison.Ordinal);

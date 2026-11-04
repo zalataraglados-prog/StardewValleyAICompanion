@@ -1,11 +1,14 @@
 function Read-RuntimeLogicalJsonArtifact {
     param(
         [Parameter(Mandatory)] [string] $Path,
-        [string] $CoreAssemblyPath = ""
+        [string] $CoreAssemblyPath = "",
+        [switch] $Raw
     )
     $fullPath = [IO.Path]::GetFullPath($Path)
-    $stored = Get-Content -LiteralPath $fullPath -Raw -Encoding utf8 | ConvertFrom-Json
+    $text = Get-Content -LiteralPath $fullPath -Raw -Encoding utf8
+    $stored = $text | ConvertFrom-Json
     if ([string]$stored.schema_version -ne "stardewai.content_addressed_json.v1") {
+        if ($Raw) { return $text }
         return $stored
     }
     $readerType = "StardewAI.Core.Infrastructure.ContentAddressedJsonArtifactReader" -as [type]
@@ -16,6 +19,7 @@ function Read-RuntimeLogicalJsonArtifact {
         }
         Add-Type -Path $CoreAssemblyPath
     }
-    $raw = [StardewAI.Core.Infrastructure.ContentAddressedJsonArtifactReader]::ReadAllText($fullPath)
-    return ConvertFrom-Json -InputObject $raw
+    $logicalText = [StardewAI.Core.Infrastructure.ContentAddressedJsonArtifactReader]::ReadAllText($fullPath)
+    if ($Raw) { return $logicalText }
+    return ConvertFrom-Json -InputObject $logicalText
 }

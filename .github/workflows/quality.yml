@@ -76,6 +76,9 @@ jobs:
       - name: Test Rusty Key runtime source pipeline and bounded orchestration without game
         shell: pwsh
         run: ./scripts/Test-RuntimeRustyKeyRolling.ps1 -StepFixtureRoot "$env:RUNNER_TEMP/rusty-key-rolling-step" -CurrentNativeFixtureRoot "$env:RUNNER_TEMP/current-native-calendar" -OutputRoot "$env:RUNNER_TEMP/rusty-key-runtime"
+      - name: Test isolated material-transfer preflight and original slot verification without game
+        shell: pwsh
+        run: ./scripts/Test-RuntimeMaterialTransferSmoke.ps1 -OutputRoot "$env:RUNNER_TEMP/material-transfer-runtime"
       - name: Restore core governance tests
         run: dotnet restore tests/StardewAI.Core.Tests/StardewAI.Core.Tests.csproj --locked-mode -p:GameFreeGovernance=true
       - name: Test core governance

@@ -384,7 +384,17 @@ public sealed partial class ModEntry
             return;
         }
 
-        menu.receiveRightClick(position.Value.X, position.Value.Y, playSound: true);
+        // InventoryMenu.rightClick reads oldKBState; Shift would take half a stack.
+        var oldKeyboard = Game1.oldKBState;
+        try
+        {
+            Game1.oldKBState = default;
+            menu.receiveRightClick(position.Value.X, position.Value.Y, playSound: true);
+        }
+        finally
+        {
+            Game1.oldKBState = oldKeyboard;
+        }
         active.ClickCount++;
         var sourceAfter = active.SourceIsPlayer
             ? Game1.player.Items

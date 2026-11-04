@@ -54,6 +54,48 @@ an externally supplied map alone is not a native receipt or authority.
 
 ## Verification And Remaining Work
 
+### Isolated Native Regression Entry
+
+The legacy transfer smoke now uses the shared runtime-evidence helpers rather
+than selecting the latest baseline save in place or running implicit builds.
+It requires an explicit source slot, verifies the copied save, starts a dedicated
+revision-zero actor/save ledger, permits exactly Bridge/Harness mods, suppresses
+render/audio and owns/releases only its own hidden processes. Every build uses
+explicit E game references, one build node and no shared compiler/deploy/zip;
+execution uses the existing one-candidate daily-plan adapter with `--skip-training`.
+The old training-dataset assertions/claims are removed. `KeepGameRunning` is
+rejected before launch because this verification entry must release ownership.
+
+Its optional training-only `fixture_material_transfer_profile` is omitted from
+legacy request JSON when null. `ordinary` preserves the old fixture;
+`sparse_source` starts with eleven quality-4 wood in slot 5 and three ordinary
+stone in slot 9, with all other slots empty. Fixture mutation ends before the
+measured boundary. Two native right-click transfers round-trip a partial
+multi-unit quantity, and the original C# projector is independently rebuilt
+before its original `VerifyNativeSlots` checks both complete affected inventories.
+The selected source must move 5 -> 0 and unrelated stone 9 -> 1 without changing
+identity/quantity; a stale projection must be blocked with zero clicks and no
+inventory mutation. This is physical lineage, not permission to move custody.
+
+Direct locked decompile also confirms `InventoryMenu.rightClick` reads
+`Game1.oldKBState`: LeftShift would transfer half a stack. The original executor
+now neutralizes that in-game old-keyboard snapshot during the synchronous native
+click and restores it in `finally`. It does not inject/release OS keys or change
+the rest of the input frame. The native receipt still verifies actual quantities.
+
+The shared logical JSON reader adds optional `-Raw` output from the same
+verified reader, retaining the default object mode. The transfer adapter uses
+this original text instead of reserializing snapshot numbers/timestamps.
+Twenty game-free checks cover actual preflight refusals (including traversal
+and recursively nested copy targets), unchanged plain and
+content-addressed read modes, corrupted-blob rejection and the original
+projector/verifier's stock/slot/owner/projection/intent refusals. Backend 384/384
+passes, including optional-wire compatibility and source boundaries. The focused
+Core material-transfer/content-addressed regressions also pass 24/24. These
+checks and the E-path Harness build do not certify the real sparse scenario;
+the next action is a new clean-source isolated native run. A Year-5 source is
+allowed for this shared mechanical capability, never for a pre-Year-3 criterion.
+
 Focused Core tests cover sparse partial/full withdrawal, deposit compaction and
 split insertion, preserving player holes, unrelated stock/slot drift, malformed
 graphs, explicit null/legacy serialization, and the actual independent receipt
