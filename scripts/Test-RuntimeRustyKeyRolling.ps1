@@ -2,6 +2,7 @@
 param(
     [Parameter(Mandatory)] [string] $StepFixtureRoot,
     [string] $CurrentNativeFixtureRoot = '',
+    [string] $CapturedControlObservationDirectory = '',
     [string] $OutputRoot = (Join-Path ([IO.Path]::GetTempPath()) ('rusty-key-runtime-test-' + [guid]::NewGuid().ToString('N')))
 )
 $ErrorActionPreference = 'Stop'
@@ -48,12 +49,20 @@ function Read-RuntimeLoopArtifacts { param($LoopRoot, $RunId, $CoreAssemblyPath,
 }
 $script:observationReceipt = @{ option_id = 'executor.wait_ticks'; status = 'applied'
     primitive_verification_status = 'verified'; selected_candidate_id = 'recovery:wait_for_native_control_settle'
-    selected_candidate_completed = $true }
+    selected_candidate_completed = $true; queue_id = 'synthetic-queue'; before_state_hash = 'synthetic-before' }
+$script:dailyExitCode = 0
+$script:observationReport = @{ stop_reason = 'primary_training_target_not_met'; run_id = $context.RunId
+    last_queue_id = 'synthetic-queue'; last_state_hash = 'synthetic-before'; attempts_started = 1
+    primary_attempts_started = 1; required_verified_actions = 1; verified_actions = 0 }
 function dotnet {
     $script:dailyArguments = @($args | ForEach-Object { $_ })
     $rootIndex = [array]::IndexOf($script:dailyArguments, '--root')
     New-Item -ItemType Directory -Path $script:dailyArguments[$rootIndex + 1] -Force | Out-Null
-    $global:LASTEXITCODE = 0
+    if ($script:dailyExitCode -eq 2) {
+        Write-JsonFile -Path (Join-Path $script:dailyArguments[$rootIndex + 1] "runs/$($context.RunId)/live-training-loop-report.json") `
+            -Value $script:observationReport
+    }
+    $global:LASTEXITCODE = $script:dailyExitCode
 }
 try {
     $sourceManifest = Join-Path $OutputRoot 'source/relative-manifest.json'
@@ -88,9 +97,8 @@ try {
             -Snapshot $snapshot -Directory $OutputRoot -ExecutionTarget 'runtime_harness' | Out-Null
         $idIndex = [array]::IndexOf($script:dailyArguments, '--daily-plan-candidate-id')
         $requiredIndex = [array]::IndexOf($script:dailyArguments, '--required-verified-actions')
-        $expectedRequired = if ($candidate.kind -eq 'recovery_native_control_settle') { '0' } else { '1' }
         Assert-True ($idIndex -ge 0 -and $script:dailyArguments[$idIndex + 1] -eq $candidate.candidate_id -and
-            $requiredIndex -ge 0 -and $script:dailyArguments[$requiredIndex + 1] -eq $expectedRequired -and
+            $requiredIndex -ge 0 -and $script:dailyArguments[$requiredIndex + 1] -eq '1' -and
             $script:dailyArguments -contains 'control_plane.native_save_boundary=true') `
             'Native handoff must send the actual bounded settle/save candidate through the existing daily-plan adapter.'
         $passed.Add("native_handoff_shared_adapter_$($candidate.kind)")
@@ -109,8 +117,58 @@ try {
                 -CandidateKind 'recovery_native_control_settle' -SourceSnapshotPath $sourceManifest | Out-Null
         } catch { $rejected = $true }
         finally { $script:observationReceipt = $original }
-        Assert-True $rejected 'An unverified, incomplete or mismatched observation must not pass just because it has no work-action target.'
+        Assert-True $rejected 'An unverified, incomplete or mismatched observation must not pass.'
         $passed.Add('rejected_control_observation_' + ($change.Keys -join '_'))
+    }
+    $script:dailyExitCode = 2
+    Invoke-RuntimeDailyPlanStep -Context $context -Name 'verified-observation-exit-2' -OptionId 'recovery.stabilize_day' `
+        -CandidateId 'recovery:wait_for_native_control_settle' -CandidateKind 'recovery_native_control_settle' `
+        -SourceSnapshotPath $sourceManifest | Out-Null
+    $passed.Add('exact_observation_exit_2_not_productive_work')
+    foreach ($change in @(
+        @{ stop_reason = 'unrelated_failure' }, @{ run_id = 'foreign' }, @{ last_queue_id = 'foreign' },
+        @{ last_state_hash = 'foreign' }, @{ attempts_started = 2 }, @{ primary_attempts_started = 2 },
+        @{ required_verified_actions = 0 }, @{ verified_actions = 1 }
+    )) {
+        $original = $script:observationReport
+        $script:observationReport = $original.Clone()
+        foreach ($name in $change.Keys) { $script:observationReport[$name] = $change[$name] }
+        $rejected = $false
+        try {
+            Invoke-RuntimeDailyPlanStep -Context $context -Name ('invalid-exit-report-' + $passed.Count) `
+                -OptionId 'recovery.stabilize_day' -CandidateId 'recovery:wait_for_native_control_settle' `
+                -CandidateKind 'recovery_native_control_settle' -SourceSnapshotPath $sourceManifest | Out-Null
+        } catch { $rejected = $true }
+        finally { $script:observationReport = $original }
+        Assert-True $rejected 'A foreign or unrelated incomplete CLI report must not authorize observation continuation.'
+        $passed.Add('rejected_observation_report_' + ($change.Keys -join '_'))
+    }
+    foreach ($case in @(
+        @{ id = 'recovery:wait_for_native_control_settle'; kind = 'recovery_native_control_settle'; exit = 1 },
+        @{ id = 'recovery:native_save_boundary'; kind = 'recovery_sleep_immediately'; exit = 2 }
+    )) {
+        $script:dailyExitCode = $case.exit
+        $rejected = $false
+        try {
+            Invoke-RuntimeDailyPlanStep -Context $context -Name ('unrelated-exit-' + $passed.Count) `
+                -OptionId 'recovery.stabilize_day' -CandidateId $case.id -CandidateKind $case.kind `
+                -SourceSnapshotPath $sourceManifest | Out-Null
+        } catch { $rejected = $true }
+        Assert-True $rejected 'Unrelated exit codes and non-observation target failures must remain failures.'
+        $passed.Add('unrelated_exit_not_accepted_' + $case.exit)
+    }
+    $script:dailyExitCode = 2
+    if (-not [string]::IsNullOrWhiteSpace($CapturedControlObservationDirectory)) {
+        $savedRunId = $context.RunId
+        $script:observationReceipt = Get-Content -LiteralPath (Join-Path $CapturedControlObservationDirectory 'live-snapshots/execution-0001.json') -Raw | ConvertFrom-Json
+        $script:observationReport = Get-Content -LiteralPath (Join-Path $CapturedControlObservationDirectory 'live-training-loop-report.json') -Raw | ConvertFrom-Json
+        $context.RunId = $script:observationReport.run_id
+        try {
+            Invoke-RuntimeDailyPlanStep -Context $context -Name 'retained-native-observation-adapter-replay' `
+                -OptionId 'recovery.stabilize_day' -CandidateId 'recovery:wait_for_native_control_settle' `
+                -CandidateKind 'recovery_native_control_settle' -SourceSnapshotPath $sourceManifest | Out-Null
+        } finally { $context.RunId = $savedRunId }
+        $passed.Add('retained_native_observation_receipt_and_report_adapter_replay')
     }
 }
 finally {

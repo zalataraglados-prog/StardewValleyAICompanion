@@ -130,13 +130,22 @@ donation and custody consumption. Its existing 30-tick native-control wait
 also applied and verified, and the fresh observation restored `CanMove`.
 The CLI correctly kept `verified_actions=0` because observation is not productive
 work; the adapter's unconditional one-work-action target then caused exit 2
-(`primary_training_target_not_met`). The adapter now asks for zero work actions
-only for the exact native-control observation candidate, while still requiring
-the exact applied/verified/completed wait and the original fresh after snapshot.
-Other candidates retain the one-action target; unrelated nonzero exits are
-not accepted. This changes orchestration only, not native runtime binaries.
-The regression now has 19 runtime checks, including receipt mismatch,
-incomplete observation and wrong-action refusals. A script-only continuation
+(`primary_training_target_not_met`). An initial zero-target script correction
+was itself rejected by the original queue-receipt startup validator in
+`18b59881`; no waiting action ran in that attempt. That was an adapter mistake,
+not a new native executor failure. The correction now retains the required
+one-action target and recognizes exit 2 only for the exact verified/completed
+native-control observation with a fresh snapshot and a report bound to the
+same run/queue/before hash, exactly one attempt, zero work actions and that exact
+stop reason. Other nonzero exits, report drift and non-observation target failures
+remain failures. This changes orchestration only, not native runtime binaries.
+The regression covers receipt mismatch, incomplete observation, wrong action,
+bound-report drift and unrelated exits; retained real wait artifacts can also
+be replayed through the adapter without modifying those originals or a game.
+All 30 game-free runtime cases pass, plus one adapter replay using the retained
+real `8fe21913` wait receipt and CLI report (31 locally). That replay verifies
+this adapter decision, not another native game action or a completed key chain.
+A script-only continuation
 may reuse the clean `8fe21913` bundle only after proving no compiled-source or
 build-configuration diff and rechecking every retained binary hash/version;
 the script commit and binary-source commit must remain separately attributable.
