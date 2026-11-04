@@ -302,6 +302,8 @@ internal static class StrategyCommitmentLedgerSupport
         SourceStateHash = row.SourceStateHash,
         RecordedAt = row.RecordedAt,
         Reason = row.Reason,
-        OutputCustodyInitialPositionSha256 = row.OutputCustodyInitialPositionSha256
+        OutputCustodyInitialPositionSha256 = row.OutputCustodyInitialPositionSha256,
+        OutputCustodyPositionTransition = row.OutputCustodyPositionTransition is null ? null :
+            JsonSerializer.Deserialize<MaterialOutputCustodyPositionTransition>(JsonSerializer.Serialize(row.OutputCustodyPositionTransition))
     };
 }

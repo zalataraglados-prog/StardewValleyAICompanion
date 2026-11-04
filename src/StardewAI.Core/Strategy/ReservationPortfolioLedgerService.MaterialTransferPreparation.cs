@@ -39,7 +39,7 @@ public sealed partial class ReservationPortfolioLedgerService
         }
         var projection = new MaterialTransferProjector().ProjectReservations(graph!, preparation.Intent, staged, moves);
         foreach (var reason in projection.BlockingReasons) errors.Add(reason);
-        if (projection.Status == "projected" && PreparedMaterialTransferContract.ContainsCustody(staged, projection))
+        if (projection.Status == "projected" && !PreparedMaterialTransferContract.CustodyPositionsBound(staged, projection))
             errors.Add("output_custody_relocation_requires_retained_terminal_lifecycle");
         if (errors.Count > 0) return;
 

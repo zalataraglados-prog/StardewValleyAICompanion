@@ -12,9 +12,12 @@ public sealed partial class ReservationPortfolioLedgerTests
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public void PreparationCannotMoveOrPassivelyRebindCustodyBeforeItsTerminalLifecycleIsAuthorized(bool moveCustody)
+    public void PreparationCannotMoveOrPassivelyRebindLegacyCustodyWithoutRetainedOrigin(bool moveCustody)
     {
         var fixture = MintMuseumCustody(protectSpare: true);
+        var custody = fixture.Ledger.MaterialReservations.Single(row => row.OutputCustody is not null);
+        custody.OutputCustody!.InitialPosition = null;
+        fixture.Ledger.History.Single(row => row.Operation == MaterialOutputCustodyContract.CreatedOperation).OutputCustodyInitialPositionSha256 = null;
         var before = JsonSerializer.Deserialize<SnapshotEnvelope>(JsonSerializer.Serialize(fixture.Snapshot))!;
         Assert.True(MaterialInventoryGraphReader.TryRead(before, out var graph));
         var player = graph!.InventoryNodes.Single(row => row.NodeId == "player:123");

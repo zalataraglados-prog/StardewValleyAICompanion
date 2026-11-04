@@ -49,6 +49,13 @@ public static class PreparedMaterialTransferContract
         ledger.MaterialReservations.Any(row => row.OutputCustody is not null &&
             projection.ReservationTransitions.Any(change => change.ReservationId == row.ReservationId));
 
+    public static bool CustodyPositionsBound(StrategyCommitmentLedger ledger, MaterialTransferReservationProjection projection)
+    {
+        var affected = projection.ReservationTransitions.Select(change => change.ReservationId).ToHashSet(StringComparer.Ordinal);
+        return ledger.MaterialReservations.Where(row => row.OutputCustody is not null && affected.Contains(row.ReservationId))
+            .All(row => MaterialOutputCustodyContract.TryGetPositionBinding(row, ledger, out _));
+    }
+
     private static string TextHash(string json)
     {
         using var sha = SHA256.Create();

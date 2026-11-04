@@ -86,6 +86,10 @@ namespace StardewAI.Contracts.Strategy
         [JsonPropertyName("output_custody_initial_position_sha256")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? OutputCustodyInitialPositionSha256 { get; set; }
+
+        [JsonPropertyName("output_custody_position_transition")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public MaterialOutputCustodyPositionTransition? OutputCustodyPositionTransition { get; set; }
     }
 
     public sealed class CropPlantingCommitment

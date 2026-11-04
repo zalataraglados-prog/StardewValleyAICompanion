@@ -58,7 +58,7 @@ public sealed partial class ReservationPortfolioLedgerService
         foreach (var reason in projection.BlockingReasons) errors.Add(reason);
         if (JsonSerializer.Serialize(projection) != JsonSerializer.Serialize(prepared.ReservationProjection))
             errors.Add("prepared_material_transfer_projection_drifted");
-        if (projection.Status == "projected" && PreparedMaterialTransferContract.ContainsCustody(current, projection))
+        if (projection.Status == "projected" && !PreparedMaterialTransferContract.CustodyPositionsBound(current, projection))
             errors.Add("output_custody_rebind_requires_retained_terminal_lifecycle");
         if (!MaterialInventoryGraphReader.TryRead(snapshot, out afterGraph))
             errors.Add("prepared_material_transfer_after_graph_unavailable");
