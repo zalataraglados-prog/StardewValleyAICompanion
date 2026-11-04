@@ -317,7 +317,13 @@ items, including local/precompiled queues. A precompiled transfer suffix reuses
 the existing queue-item state rebind after ordinary movement. Only the command's
 fresh dispatch hash changes; goal, preparation and lineage parameters are
 preserved, and the preparation stays pinned to its original ledger/source hash.
-The native executor's physical inventory, access, ownership and full-slot
+Dispatch also parses the execution intent/projection JSON with the same Web JSON
+semantics as the actual Live request builder. It requires unique payload parameters,
+an intent equal to the validated scalars and a projection equal to the original
+projector's result over the retained inventories. A precompiled/imported queue
+cannot preserve honest scalars while replacing the actual execution payload.
+Missing, null, malformed, duplicate or case-aliased conflicting JSON fails before
+native dispatch, not merely at later settlement. The native executor's physical inventory, access, ownership and full-slot
 verification still apply. Rebinding is not proof that inventory remained equal.
 
 The original canonical settlement builder carries the same preparation SHA,
@@ -337,17 +343,22 @@ an actual Live-method/Backend/file-repository test checks movement, unchanged
 ledger publication and refusal when the posted binding is removed. These are
 synthetic contract tests, not new native gameplay or custody authorization.
 
-Local final verification for canonical binding: Backend 437/437 (23 new cases),
+Local final verification for canonical binding: Backend 450/450 (36 new cases),
 game-free Core 1155/1155, original canonical transfer/settlement/terminal fixture
 and generated checkpoint check passed. The enhanced local fixture is retained
 under `I:\StardewAITraining\material-transfer-canonical-20261104\canonical-02`.
 An initial full Backend run found two CLI tests executing November 2 binaries
 with a different Core DLL. Building the original PolicyDataset/PolicyModel CLI
 projects in the same configuration resolved them; no assertions were changed.
-The existing CI already builds these entry points before Backend integration
+PR #418's validated execution-JSON review finding added thirteen further cases,
+including direct calls to the original Live request builder demonstrating that
+the guarded JSON is the JSON actually consumed. The existing CI already builds these entry points before Backend integration
 tests. Local full Backend checks must do the same; a file's existence alone
 does not establish binary freshness. No game was started and no raw/local-data
-artifacts are included in the commit.
+artifacts are included in the commit. The old museum malformed-reply recovery
+case again exceeded its existing 15-second outer deadline once under the
+two-logical-CPU throttle; its unchanged 14-case group and final complete 450-case
+suite subsequently passed. No timeout, assertion or production retry was widened.
 
 The existing `self-test-machine-material-transfer-terminal-coverage` now accepts
 an isolated `--output-root` fixture mode as well as its prior explicit

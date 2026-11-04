@@ -96,3 +96,23 @@ lifecycle with immutable acquisition provenance and authorized mutable custody
 locations, then verify real acquired-custody storage/withdrawal/donation. Both
 selected and passive custody remain rejected at preparation until that contract
 is implemented and independently verified. No new planner or executor is needed.
+
+### Remaining Location Boundary
+
+The current custody object retains acquisition portfolio/route, terminal-receipt
+SHA, consumer and creation revision. Creation-history authority alone is not a
+complete history of storage positions. Extend this same contract so immutable
+acquisition provenance remains verifiable while each authorized position change
+is tied to the prior row revision/location, prepared transfer, fresh receipt and
+atomic result. Retain compact location evidence, not whole snapshots or a second
+ledger. Missing original facts must not be inferred from a later location.
+
+Both selected custody and passive custody affected by compaction need this
+verification. Preserve their consumer, goal, owner, quantity and acquisition
+identity; a position rebind does not consume or reacquire an item. Keep generic
+upsert, release, consumption and cross-goal bypasses closed. Wire the original
+control candidate/plan/dispatch/receipt path without mislabelling museum-output
+handoff as a new machine acquisition. The native exit proof remains real acquired
+output -> storage -> withdrawal -> authorized donation/consumption, including
+other-goal protection and missing/stale/forged-lineage refusal. This is not yet
+implemented and does not reopen the accepted geode/key or owner visual gates.

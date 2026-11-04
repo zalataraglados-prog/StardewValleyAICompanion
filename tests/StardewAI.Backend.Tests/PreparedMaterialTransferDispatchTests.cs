@@ -1,4 +1,6 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Reflection;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Strategy;
 using StardewAI.Core.Execution;
@@ -8,6 +10,27 @@ namespace StardewAI.Backend.Tests;
 
 public sealed class PreparedMaterialTransferDispatchTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void GuardChecksTheJsonActuallyConsumedByTheOriginalLiveRequestBuilder(bool tamperJson)
+    {
+        var fixture = PreparedMaterialTransferTestFixture.Create();
+        var item = Item(fixture);
+        if (tamperJson) ChangeJson(item, "material_transfer_intent_json", "QUANTITY", 1);
+        var program = typeof(LiveTrainingOptions).Assembly.GetType("Program", throwOnError: true)!;
+        var build = program.GetMethod("BuildExecutionRequest", BindingFlags.NonPublic | BindingFlags.Static)!;
+        var request = (StardewAI.Contracts.Training.TrainingExecutionRequest)build.Invoke(null, new object[]
+        {
+            new LiveTrainingOptions(), JsonSerializer.SerializeToNode(item)!.AsObject(), fixture.Before.StateHash,
+            "prepared-transfer-queue", "inventory.transfer_item"
+        })!;
+        Assert.Equal(tamperJson ? 1 : 2, request.MaterialTransferIntent!.Quantity);
+        var result = new ActionQueueDispatchReadinessService().Evaluate(new ActionQueueEnvelope(), item, fixture.PreparedLedger, fixture.Before.StateHash);
+        Assert.Equal(!tamperJson, result.Ready);
+        if (tamperJson) Assert.Contains("dispatch_material_transfer_execution_intent_drifted", result.BlockingReasons);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -44,6 +67,17 @@ public sealed class PreparedMaterialTransferDispatchTests
     [InlineData("missing-origin")]
     [InlineData("map-drift")]
     [InlineData("unprepared-reserved-downgrade")]
+    [InlineData("missing-intent-json")]
+    [InlineData("missing-projection-json")]
+    [InlineData("wrong-intent-json")]
+    [InlineData("wrong-projection-json")]
+    [InlineData("duplicate-intent-json")]
+    [InlineData("duplicate-projection-json")]
+    [InlineData("malformed-intent-json")]
+    [InlineData("malformed-projection-json")]
+    [InlineData("null-intent-json")]
+    [InlineData("null-projection-json")]
+    [InlineData("case-alias-intent-json")]
     public void InvalidBindingNeverDispatchesOrMutatesLedger(string mutation)
     {
         var fixture = PreparedMaterialTransferTestFixture.Create();
@@ -75,6 +109,17 @@ public sealed class PreparedMaterialTransferDispatchTests
                 item.NormalizedCommand.Parameters = item.NormalizedCommand.Parameters.Where(row =>
                     row.Name != PreparedMaterialTransferContract.BindingParameter && !row.Name.StartsWith("acquisition_", StringComparison.Ordinal)).ToArray();
                 break;
+            case "missing-intent-json": Remove(item, "material_transfer_intent_json"); break;
+            case "missing-projection-json": Remove(item, "material_transfer_projection_json"); break;
+            case "wrong-intent-json": ChangeJson(item, "material_transfer_intent_json", "quantity", 1); break;
+            case "wrong-projection-json": ChangeJson(item, "material_transfer_projection_json", "destination_quantity_after", 999); break;
+            case "duplicate-intent-json": Duplicate(item, "material_transfer_intent_json"); break;
+            case "duplicate-projection-json": Duplicate(item, "material_transfer_projection_json"); break;
+            case "malformed-intent-json": Set(item, "material_transfer_intent_json", "{"); break;
+            case "malformed-projection-json": Set(item, "material_transfer_projection_json", "{"); break;
+            case "null-intent-json": Set(item, "material_transfer_intent_json", "null"); break;
+            case "null-projection-json": Set(item, "material_transfer_projection_json", "null"); break;
+            case "case-alias-intent-json": ChangeJson(item, "material_transfer_intent_json", "QUANTITY", 1); break;
         }
         var before = JsonSerializer.Serialize(ledger);
         var result = new ActionQueueDispatchReadinessService().Evaluate(new ActionQueueEnvelope(), item, ledger, fixture.Before.StateHash);
@@ -102,24 +147,38 @@ public sealed class PreparedMaterialTransferDispatchTests
         Assert.Equal("not_applicable", result.Status);
     }
 
-    internal static ActionQueueItem Item(PreparedMaterialTransferTestFixture fixture) => new()
+    internal static ActionQueueItem Item(PreparedMaterialTransferTestFixture fixture)
     {
-        QueueItemId = "prepared-transfer-item", OptionId = "executor.transfer_material", Status = "pending",
-        NormalizedCommand = new NormalizedCommand
+        var prepared = fixture.PreparedLedger.PreparedMaterialTransfer!;
+        return new ActionQueueItem
         {
-            OptionId = "executor.transfer_material", GoalId = "goal.grandpa_21", StateHash = fixture.Before.StateHash,
-            Parameters = new[]
+            QueueItemId = "prepared-transfer-item", OptionId = "executor.transfer_material", Status = "pending",
+            NormalizedCommand = new NormalizedCommand
             {
-                P("source_node_id", "chest:Farm:4,5"), P("destination_node_id", "player:123"), P("source_slot_index", "5"),
-                P("qualified_item_id", "(O)388"), P("quality", "0"), P("quantity", "2"), P("expected_source_stack", "11"),
-                P(PreparedMaterialTransferContract.BindingParameter, fixture.PreparedLedger.PreparedMaterialTransfer!.BindingSha256),
-                P("acquisition_reservation_portfolio_id", "support:atomic-transfer"), P("acquisition_reservation_ledger_revision", "3"),
-                P("acquisition_support_transition_kind", "machine_input_material_transfer")
+                OptionId = "executor.transfer_material", GoalId = "goal.grandpa_21", StateHash = fixture.Before.StateHash,
+                Parameters = new[]
+                {
+                    P("source_node_id", "chest:Farm:4,5"), P("destination_node_id", "player:123"), P("source_slot_index", "5"),
+                    P("qualified_item_id", "(O)388"), P("quality", "0"), P("quantity", "2"), P("expected_source_stack", "11"),
+                    P(PreparedMaterialTransferContract.BindingParameter, prepared.BindingSha256),
+                    P("acquisition_reservation_portfolio_id", "support:atomic-transfer"), P("acquisition_reservation_ledger_revision", "3"),
+                    P("acquisition_support_transition_kind", "machine_input_material_transfer"),
+                    P("material_transfer_intent_json", JsonSerializer.Serialize(prepared.Intent)),
+                    P("material_transfer_projection_json", JsonSerializer.Serialize(new MaterialTransferProjector().Project(prepared.BeforeInventoryGraph, prepared.Intent)))
+                }
             }
-        }
-    };
+        };
+    }
 
     private static SmallModelActionParameter P(string name, string value) => new() { Name = name, Value = value };
     private static void Set(ActionQueueItem item, string name, string value) => item.NormalizedCommand.Parameters.Single(row => row.Name == name).Value = value;
     private static void Remove(ActionQueueItem item, string name) => item.NormalizedCommand.Parameters = item.NormalizedCommand.Parameters.Where(row => row.Name != name).ToArray();
+    private static void Duplicate(ActionQueueItem item, string name) => item.NormalizedCommand.Parameters =
+        item.NormalizedCommand.Parameters.Append(P(name, item.NormalizedCommand.Parameters.Single(row => row.Name == name).Value)).ToArray();
+    private static void ChangeJson(ActionQueueItem item, string name, string field, int value)
+    {
+        var json = JsonNode.Parse(item.NormalizedCommand.Parameters.Single(row => row.Name == name).Value)!;
+        json[field] = value;
+        Set(item, name, json.ToJsonString());
+    }
 }
