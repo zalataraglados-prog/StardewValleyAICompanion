@@ -7,7 +7,8 @@ $ErrorActionPreference = 'Stop'
 $passed = [Collections.Generic.List[string]]::new()
 $fixtureSource = Get-Content -LiteralPath (Join-Path (Split-Path -Parent $PSScriptRoot) 'tools/StardewAI.RuntimeTestHarness/ModEntry.MaterialInventoryGraph.cs') -Raw
 if ($fixtureSource -notmatch 'Enumerable\.Range\(2, Math\.Max\(0, width - 4\)\)' -or
-    $fixtureSource -notmatch 'probe\.canBePlacedHere') { throw 'Small-map fixture search must remain nonempty while retaining native placement checks.' }
+    $fixtureSource -notmatch 'location\.warps\.FirstOrDefault\(\)' -or
+    $fixtureSource -notmatch 'probe\.canBePlacedHere') { throw 'Small-map fixture search must use its own native coordinate space and retain placement checks.' }
 $passed.Add('small_map_search_retains_native_placement_check')
 $context = [pscustomobject]@{ RunId = 'synthetic-custody-boundary'; SnapshotUrl = 'http://unused.invalid'
     BackendUrl = 'http://unused.invalid'; ExecutorRoot = 'http://unused.invalid'; IsolatedSavesPath = $OutputRoot }
@@ -100,6 +101,22 @@ foreach ($mutation in @('valid','run','reacquired','no-transfer','no-donation','
     if ($rejected -ne ($mutation -ne 'valid')) { throw "Round-trip scope guard failed: $mutation" }
     $passed.Add("proof_$mutation")
 }
+$sourceInput = Join-Path $OutputRoot 'source with spaces.json'
+Write-Utf8Text -Path $sourceInput -Value '{}'
+$parserContext = [pscustomobject]@{ RunId = $context.RunId; SnapshotUrl = $context.SnapshotUrl; BackendUrl = $context.BackendUrl
+    ExecutorRoot = $context.ExecutorRoot; IsolatedSavesPath = (Join-Path $OutputRoot 'never-created-isolation'); ArtifactDirectory = $OutputRoot }
+$inputs = @{}
+foreach ($name in @('RequirementInventoryPath','AcquisitionLoweringPath','MasterAnglerWindowsPath','RouteTimingPath','FishingForecastManifestPath')) {
+    $inputs[$name] = $sourceInput
+}
+$arguments = @(Get-RuntimeRustyKeyCustodyPrefixArguments -Context $parserContext -ProjectRoot (Split-Path -Parent $PSScriptRoot) -AcquisitionInputs $inputs)
+$parseError = Join-Path $OutputRoot 'actual-prefix-argument-binding.stderr.log'
+& pwsh @arguments 2> $parseError | Out-Null
+if ($LASTEXITCODE -ne 1 -or (Get-Content -LiteralPath $parseError -Raw) -notlike '*Isolated save directory does not exist.*') {
+    throw 'Actual child-process argument binding did not reach the intended preflight without HTTP/native execution.'
+}
+$global:LASTEXITCODE = 0
+$passed.Add('actual_child_parameter_binding_with_spaced_source_paths')
 Write-JsonFile -Path (Join-Path $OutputRoot 'summary.json') -Value ([ordered]@{
     status = 'passed'; passed_count = $passed.Count; passed = $passed.ToArray(); native_game_run = $false
     scope = 'synthetic_setup_transport_and_final_scope_guards_only'; formal_training_authorized = $false

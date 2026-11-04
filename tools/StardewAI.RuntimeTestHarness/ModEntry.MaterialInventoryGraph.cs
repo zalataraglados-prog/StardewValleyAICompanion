@@ -29,7 +29,10 @@ public sealed partial class ModEntry
         var requested = request.TargetTileX is >= 0 && request.TargetTileY is >= 0
             ? new Point(request.TargetTileX.Value, request.TargetTileY.Value)
             : (Point?)null;
-        var target = requested ?? FindMaterialTransferFixtureTarget(location);
+        var entrance = !string.IsNullOrWhiteSpace(request.LocationId) && Game1.player.currentLocation != location
+            ? location.warps.FirstOrDefault() : null;
+        var origin = entrance is null ? (Point?)null : new Point(entrance.X, entrance.Y);
+        var target = requested ?? FindMaterialTransferFixtureTarget(location, origin);
         if (!target.HasValue)
         {
             return BlockedWithPrimitive(
@@ -104,11 +107,11 @@ public sealed partial class ModEntry
         };
     }
 
-    private static Point? FindMaterialTransferFixtureTarget(GameLocation farm)
+    private static Point? FindMaterialTransferFixtureTarget(GameLocation farm, Point? origin = null)
     {
         var width = farm.Map.Layers[0].LayerWidth;
         var height = farm.Map.Layers[0].LayerHeight;
-        var player = Game1.player.TilePoint;
+        var player = origin ?? Game1.player.TilePoint;
         var probe = new Chest(playerChest: true, Vector2.Zero, "130")
         {
             Location = farm

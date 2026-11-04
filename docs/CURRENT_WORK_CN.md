@@ -2,6 +2,8 @@
 
 ## 2026-11-03 当前 Rusty Key 切片与接续
 
+- **原生准备参数修正（仍无获取/搬运）：** `6d055096`已真实准备Blacksmith稀疏箱/他目标预留和晶球边界，随后因PowerShell数组表达式将参数名与路径拼接而在子脚本参数绑定处停止。现按原仓库`List<string>.Add`逐项构造；新增带空格输入路径的真实pwsh子进程绑定检查，必须到达缺失隔离目录的预检、不得HTTP/原生派发，边界检查共20项。进程退出，旧run保留，不回放。
+
 - **原生边界首试定位（尚无获取/搬运）：** clean`f2b0c4ef`在setup阶段以`material_transfer_fixture_target_unavailable`停止，进程/端口已退出。核对已接受原生Blacksmith快照为15×20，旧农场夹具搜索`width-16`导致零候选，并非原生禁放。现只改通用两格边界，保留walkability/canBePlacedHere/相邻站位检查；边界检查补至19项。原失败证据保留，接续必须新run身份，不重发旧测量动作。
 
 - **#422已收口并进入真实边界准备：** 完整CI通过，合并`923c8f2e`并删除该轮本地/远端分支。原threshold smoke可选`-CustodyRoundTrip`仅用于current_geode：沿原夹具的显式地点准备Blacksmith稀疏箱，经原账本保护他目标石头；测量开始后同一游戏run真实获取、原控制存箱，再交给原rolling自动取回/捐赠。一个动作预算的获取前缀仍exit2、不冒充成功；拒绝玩家自由副本，最终要求获取回执来源不变、保管核销、他目标预留及压紧槽位正确，无中途fixture/物品注入。新边界18项、原晶球边界33项通过；Bridge/Harness/Backend Release构建零警告错误。下一步clean source构建后隐藏静音运行并独立复核真实轨迹；当前尚无新原生通过或计数晋升。

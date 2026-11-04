@@ -209,7 +209,7 @@ at its independently expected compacted slot. The ordinary key/day flow may
 continue naturally; it is not a reopened accepted key/owner gate. Script and
 binary/source identity, complete native slot maps, source-save preservation,
 process/port cleanup and independent retained-file replay remain mandatory.
-The added 19 game-free setup/final-scope checks and original 33 geode-boundary
+The added 20 game-free setup/final-scope/actual child-argument checks and original 33 geode-boundary
 checks pass; all three relevant Release builds have zero warnings/errors.
 This prepares a native proof and does not itself prove gameplay or training.
 
@@ -219,6 +219,14 @@ candidates on Blacksmith's retained native 15-by-20 map. This was an empty searc
 not evidence that the map forbids chests. The fixture now keeps a two-tile margin
 on each side and retains the original native walkability/placement/stand checks.
 That failed isolated run remains diagnostic; it is not replayed or accepted.
+The next `6d055096` run completed setup but stopped before acquisition because
+PowerShell array-expression precedence joined an input parameter name and path.
+The prefix now uses the existing explicit `List<string>.Add` pattern. An actual
+child invocation with spaced paths must reach the missing-isolation preflight,
+without HTTP/native calls; a syntactic argument list alone is not sufficient.
+Explicit cross-map fixture search also anchors to that map's native entrance,
+not the actor's coordinates in the previous map. Legacy default Farm placement
+is unchanged; this fixture choice does not weaken the actual route/slot gates.
 
 The updated shipped-Companion requirement for on-demand critical-decision Teacher
 verification remains binding; see `TEACHER_STUDENT_CONVERGENCE_CONTRACT_CN.md`.

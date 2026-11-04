@@ -1,11 +1,23 @@
+function Get-RuntimeRustyKeyCustodyPrefixArguments {
+    param($Context, [string] $ProjectRoot, $AcquisitionInputs)
+    $arguments = [Collections.Generic.List[string]]::new()
+    foreach ($value in @('-NoProfile', '-File', (Join-Path $ProjectRoot 'scripts/Invoke-RuntimeRustyKeyRollingSupply.ps1'),
+        '-ProjectRoot', $ProjectRoot, '-OutputDirectory', (Join-Path $Context.ArtifactDirectory 'acquisition-prefix'), '-RunId', $Context.RunId,
+        '-BackendUrl', $Context.BackendUrl, '-SnapshotUrl', $Context.SnapshotUrl, '-ExecutorUrl', $Context.ExecutorRoot,
+        '-IsolatedSavesPath', $Context.IsolatedSavesPath, '-ExecutionTarget', 'runtime_harness', '-MaxSteps', '1')) {
+        $arguments.Add([string]$value)
+    }
+    foreach ($name in $AcquisitionInputs.Keys) {
+        $arguments.Add('-' + [string]$name)
+        $arguments.Add([string]$AcquisitionInputs[$name])
+    }
+    return $arguments.ToArray()
+}
+
 function Invoke-RuntimeRustyKeyCustodyRoundTripPrefix {
     param($Context, [string] $ProjectRoot, $AcquisitionInputs, $Boundary, $CustodyBoundary)
     $prefixOutput = Join-Path $Context.ArtifactDirectory 'acquisition-prefix'
-    $arguments = @('-NoProfile', '-File', (Join-Path $ProjectRoot 'scripts/Invoke-RuntimeRustyKeyRollingSupply.ps1'),
-        '-ProjectRoot', $ProjectRoot, '-OutputDirectory', $prefixOutput, '-RunId', $Context.RunId,
-        '-BackendUrl', $Context.BackendUrl, '-SnapshotUrl', $Context.SnapshotUrl, '-ExecutorUrl', $Context.ExecutorRoot,
-        '-IsolatedSavesPath', $Context.IsolatedSavesPath, '-ExecutionTarget', 'runtime_harness', '-MaxSteps', '1')
-    foreach ($name in $AcquisitionInputs.Keys) { $arguments += @('-' + $name, [string]$AcquisitionInputs[$name]) }
+    $arguments = @(Get-RuntimeRustyKeyCustodyPrefixArguments -Context $Context -ProjectRoot $ProjectRoot -AcquisitionInputs $AcquisitionInputs)
     & pwsh @arguments > (Join-Path $Context.ArtifactDirectory 'acquisition-prefix.stdout.log')
     if ($LASTEXITCODE -ne 2) { throw 'Custody prefix must stop at its declared one-step boundary, not restart or finish the key.' }
     $prefixPath = Join-Path (Join-Path $prefixOutput $Context.RunId) 'summary.json'
