@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using StardewAI.Contracts.Training;
+using StardewAI.Core.Training;
 
 namespace StardewAI.LiveTrainingLoop;
 
@@ -28,9 +29,6 @@ public static class StageOneInventoryCapacityRecovery
 
     private const string FishingInventoryFullReason =
         "fishing_inventory_full_requires_storage_transfer";
-
-    private const string FestivalTransitClosedReason =
-        "connector_active_festival_transit_closed";
 
     public static bool HasFullInventory(JsonObject snapshot) =>
         InventoryIsFull(snapshot);
@@ -166,24 +164,7 @@ public static class StageOneInventoryCapacityRecovery
 
     private static bool IsDeferredTransitRecovery(
         PolicyEventCandidatePrediction candidate) =>
-        !candidate.Available &&
-        string.Equals(
-            candidate.Kind,
-            "route_connector_tile",
-            StringComparison.Ordinal) &&
-        candidate.AllowedNow == false &&
-        candidate.AllowedToday == true &&
-        string.Equals(
-            candidate.TimelineStatus,
-            "deferred",
-            StringComparison.Ordinal) &&
-        candidate.ScheduledStartTime.HasValue &&
-        candidate.ScheduledWaitCost is > 0 &&
-        candidate.BlockReasons is { Length: > 0 } blockReasons &&
-        blockReasons.All(reason => string.Equals(
-            reason,
-            FestivalTransitClosedReason,
-            StringComparison.Ordinal));
+        ScheduledRouteWaitPolicy.IsDeferredFestivalTransit(candidate);
 
     private static string SelectionReason(
         PolicyEventCandidatePrediction? candidate,

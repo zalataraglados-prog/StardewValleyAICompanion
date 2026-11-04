@@ -1,4 +1,5 @@
 . (Join-Path $PSScriptRoot 'RuntimePortfolioMutationRecovery.ps1')
+. (Join-Path $PSScriptRoot 'RuntimeRustyKeyCustodyTransfer.ps1')
 
 function Save-RuntimeRustyKeyLatestLedger {
     param($Context, [string] $StateHash, [string] $Path)

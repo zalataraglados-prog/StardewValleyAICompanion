@@ -1,5 +1,9 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-04 rolling 仓储待捐取回已接原链，下一门是真实存取捐赠：** #421已合并`decc7ce8`且最终CI成功，下方该轮“待CI”属于历史记录。当前rolling在重复获取前先选择本目标/消费者、有完整位置证明的箱内保管：同地图返回原搬运提交请求，异地图只编译原连接器/清障/有界等待，每段fresh replan，不提前承诺库存。运行客户端复用原提交重放、预编译执行、真实派发命令/逐动作before-after路径、原结算和独立重放；缺记录或篡改命令不能结算，丢回复仍只查询、不重发。原容量恢复与新入口共用同一延迟节日通行判定，不增加快照缓存/扫描/账本/执行器。Backend558/558、完整Core1156/1156、rolling准备25项与真实CLI客户端6项通过；均为合成/API/CLI证据，尚未取得新原生存取轨迹。
+>
+> **接续顺序与退出条件：** 先在独立存档、同一未中断run、同源构建中，真实获取一件产物，经原控制存箱，再由rolling自动导航/取回并接原捐赠核销，核对完整槽位、被动他目标预留、获取来源及源存档哈希；setup只在测量边界前，禁止中途注入物品或手工改账本。不重开已接受晶球→钥匙或owner目视门。随后才推进联合时间窗/预算、criterion独立Teacher/native分区及第三年前时限。`5/19 executable、6/19 split-complete、5/19 CoverageGateReady、4/11 root ready、formal_product_training=false`不变；不得提交`local-data`。
+
 > **2026-11-04 保管搬运已有原控制/编译/派发/回执合同，原生闭环仍待接：** #420合并为`35af02ce`并删除对应开发分支。本轮专用输出搬运绑定获取/位置史及同一准备，沿原候选、日内预算、提交重放、日计划/队列编译、JIT和结算重放；只有完整绑定才可派发，旧普通搬运仅放行经验证的被动保管压紧。实际Live/Backend移动后派发及三条真实只读CLI通过，未开游戏或训练。下一步为原rolling仓储待捐准备选择/运行客户端接线，再取真实存→取→捐赠证据；不新增执行器、不冒充机器获取。`5/19 executable、6/19 split-complete、5/19 CoverageGateReady、4/11 root ready、formal_product_training=false`不变，见[控制及剩余边界](museum-output-custody.md#original-control-and-compiler-binding)。
 >
 > 本轮验证：Backend543/543、完整Core1156/1156、控制42项加原被动保管派发1项、原canonical机器转移终端链及rolling34通过；三条真实CLI和两项exit2拒绝通过，坏结果不发布请求。Release零警告错误、检查点EVD-338一致，最终CI待完成。全部新证据为合成/API/CLI，不是新的原生或Teacher验收。

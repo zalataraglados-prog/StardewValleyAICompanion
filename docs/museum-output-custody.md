@@ -62,8 +62,8 @@ No native game was started for the original slice. It did not promote coverage,
 prove full acquired-output custody in gameplay or authorize training. The service
 now supports the history-backed position lifecycle and purpose-bound control
 below. The dispatch guard accepts only that exact verified control; generic
-unbound custody moves remain rejected. The outer rolling selection and native
-round-trip boundary remain incomplete. The [native slot-lineage prerequisite](material-transfer-slot-lineage.md)
+unbound custody moves remain rejected. The outer rolling selection is connected
+below; the native round-trip boundary remains incomplete. The [native slot-lineage prerequisite](material-transfer-slot-lineage.md)
 handles chest compaction in the existing projector/executor/receipt chain;
 physical lineage alone does not certify claim relocation. Backend reply retrieval has its separate
 [recovery contract](portfolio-mutation-reply-recovery.md#live-material-settlement-hooks):
@@ -94,8 +94,8 @@ path now consumes that protocol, including complete passive-compaction maps and
 Live readiness checks after movement. This is a tested ordinary-transfer
 prerequisite, not permission to relabel custody as machine input. The same original service now
 conditionally admits selected and passive custody only with an authenticated
-initial position and complete linked position history. Next wire the original
-control into the outer rolling selection, then verify real acquired-custody
+initial position and complete linked position history. The original control is
+now wired into outer rolling selection; next verify real acquired-custody
 storage/withdrawal/donation. Legacy/malformed provenance and unprepared generic
 relocation/rebind remain rejected. No new planner or executor is needed.
 
@@ -282,16 +282,23 @@ says synthetic-only, not native gameplay or training evidence.
 
 The current custody object retains acquisition portfolio/route, terminal-receipt
 SHA, consumer, creation revision, initial position and linked position history
-above. The service/control/compiler/JIT/receipt contracts are connected, but
-the outer rolling runtime still needs to consume this control automatically.
+above. The service/control/compiler/JIT/receipt contracts and outer rolling
+selection/runtime client are now connected through those same implementations.
 Missing original facts must not be inferred from a later location.
 
 Both selected custody and passive custody affected by compaction need this
 verification. Preserve their consumer, goal, owner, quantity and acquisition
 identity; a position rebind does not consume or reacquire an item. Keep generic
-upsert, release, consumption and cross-goal bypasses closed. Wire the original
-rolling pending-storage choice and runtime client to the control above, without
-mislabeling museum-output handoff as a new machine acquisition. The native exit proof remains real acquired
+upsert, release, consumption and cross-goal bypasses closed. Rolling chooses
+stored custody only for this goal/consumer; cross-map approach reuses the original
+resolved route and gate/repair handling without a speculative commit. Same-map
+transfer uses the original prepared request/compiler. Actual Live command JSON
+must equal the dispatched typed item; absent/changed records cannot settle.
+The runtime adapter retains per-transfer before/after paths instead of assuming
+the queue's initial snapshot is still current. It calls the original journaled
+mutation/reply recovery and independent result replay, without relabeling
+museum-output handoff as machine acquisition. No new inventory store, executor,
+full-snapshot cache or per-frame scan was introduced. The native exit proof remains real acquired
 output -> storage -> withdrawal -> authorized donation/consumption, including
 other-goal protection and missing/stale/forged-lineage refusal. The JIT guard is
 now conditional on the complete bound control, not removed. API/CLI tests alone

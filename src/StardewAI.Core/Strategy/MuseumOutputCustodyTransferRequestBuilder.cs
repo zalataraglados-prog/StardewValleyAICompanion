@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -23,30 +22,10 @@ public static partial class MuseumOutputCustodyTransferRequestBuilder
     public static MuseumOutputCustodyTransferPreparation Build(SnapshotEnvelope snapshot, StrategyCommitmentLedger ledger,
         string reservationId, string destinationNodeId)
     {
+        var source = ReadSource(snapshot, ledger, reservationId, destinationNodeId, out var sourceErrors);
+        if (source is null) return new(null, null, sourceErrors);
+        var (custody, graph, intent, position) = source;
         var errors = new List<string>();
-        if (ledger.PreparedMaterialTransfer is not null)
-            return new(null, null, new[] { "museum_custody_transfer_preparation_already_pending" });
-        var rows = ledger.MaterialReservations.Where(row => row.ReservationId == reservationId).ToArray();
-        if (rows.Length != 1 || !MaterialOutputCustodyContract.TryGetPositionBinding(rows[0], ledger, out _))
-            return new(null, null, new[] { "museum_custody_transfer_source_not_authorized" });
-        var custody = rows[0];
-        if (snapshot.SaveId.Status != FieldStatus.Available || snapshot.SaveId.Value != ledger.SaveId ||
-            snapshot.PlayerId.Status != FieldStatus.Available || snapshot.PlayerId.Value != ledger.PlayerId ||
-            string.IsNullOrWhiteSpace(snapshot.StateHash) ||
-            !MaterialInventoryGraphReader.TryRead(snapshot, out var graph) ||
-            graph!.PlayerId.ToString(CultureInfo.InvariantCulture) != ledger.PlayerId)
-            return new(null, null, new[] { "museum_custody_transfer_snapshot_identity_invalid" });
-        var nodes = graph.InventoryNodes.Where(node => node.NodeId == custody.NodeId).ToArray();
-        var slots = nodes.Length == 1 ? nodes[0].Slots.Where(slot => slot.SlotIndex == custody.SlotIndex &&
-            slot.QualifiedItemId == custody.QualifiedItemId).ToArray() : Array.Empty<MaterialInventorySlot>();
-        if (slots.Length != 1)
-            return new(null, null, new[] { "museum_custody_transfer_source_slot_not_unique" });
-        var intent = new MaterialTransferIntent
-        {
-            SourceNodeId = custody.NodeId, SourceSlotIndex = custody.SlotIndex, DestinationNodeId = destinationNodeId,
-            QualifiedItemId = custody.QualifiedItemId, Quantity = custody.Quantity,
-            Quality = slots[0].Quality, ExpectedSourceStack = slots[0].Stack
-        };
         var physical = new MaterialTransferProjector().Project(graph, intent);
         errors.AddRange(physical.BlockingReasons);
         if (physical.DestinationSlotChanges.Length != 1)
@@ -79,7 +58,6 @@ public static partial class MuseumOutputCustodyTransferRequestBuilder
         if (plan.Steps.Length == 0 || plan.CandidateAudit.Any(row => row.Decision != "accepted"))
             return new(null, null, plan.CandidateAudit.SelectMany(row => row.Reasons)
                 .Append("museum_custody_transfer_does_not_fit_day_budget").Distinct(StringComparer.Ordinal).ToArray());
-        MaterialOutputCustodyContract.TryGetPositionBinding(custody, ledger, out var position);
         var identity = Hash(new { Kind = MuseumOutputCustodyTransferBinding.Kind, ledger.LedgerId, ledger.Revision,
             snapshot.StateHash, custody.ReservationId, Position = position, Intent = intent });
         var portfolio = "museum_custody_transfer." + identity;

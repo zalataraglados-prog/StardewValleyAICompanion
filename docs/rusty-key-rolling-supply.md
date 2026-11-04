@@ -24,7 +24,13 @@ other 59 items does not prohibit one valid next step.
    active reservations first. Distinct owned undonated identities, including only
    history-authenticated custody for this goal/consumer, remain pending donations.
    Do not acquire them again merely because the museum is temporarily unavailable.
-   Authorized storage is pending transfer, not immediate donation. If these
+   Authenticated stored custody is now selected for retrieval through the original
+   custody control before any new acquisition. Same-map selection carries its
+   atomic commit request; cross-map selection carries one original route/repair
+   or bounded gate-wait queue, never a future transfer. The optional
+   `selected_custody_transfer` binds the explicit role, requirement, reservation,
+   player destination and position SHA. Authorized storage is pending transfer,
+   not immediate donation. If no such step compiles and these
    identities cover the remaining deficit, stop supply explicitly without claiming
    threshold completion. Unknown inventory fails closed; protected other-goal
    units do not count. Otherwise rebuild the existing target-date
@@ -37,7 +43,9 @@ other 59 items does not prohibit one valid next step.
    then stable route identity. This is a controller policy, not a claim that it
    optimizes the entire remaining collection or strictly dominates alternatives.
 
-Held selection exports the existing compiled plan/queue. Acquisition selection
+Held/navigation selection exports the existing compiled plan/queue. Transfer
+selection requires the actual commit before the original custody queue compiler.
+Acquisition selection
 exports an ordinary portfolio proposal/admission; it still requires the existing
 atomic commit, execution binding, current dispatch checks and terminal receipt.
 The producer does not create another executor, allocator or reservation store.
@@ -57,11 +65,11 @@ morning before exclusive day 224, but is not a joint donation/opening-hours proo
 `--strategy-ledger` and `--output`. Legal held-item donation needs no acquisition
 forecast, Community Center completion or Master Angler local prerequisite.
 
-Without a held step, provide the same retained source-axis arguments as
+Without a held or custody step, provide the same retained source-axis arguments as
 `build-acquisition-route-portfolio-admission`, without a caller `--proposal`.
 Missing acquisition sources fail closed; they do not fabricate an acquisition.
 
-Optional `--selected-plan-output` / `--selected-queue-output` export a held step;
+Optional `--selected-plan-output` / `--selected-queue-output` export a held/navigation step;
 `--selected-proposal-output` / `--selected-admission-output` export an acquisition
 step. Blocked results exit 2 and leave existing selected-output files untouched.
 The main report is diagnostic, not native execution authorization.
@@ -73,9 +81,9 @@ unaffected acquisition artifacts unchanged. See the
 [pre-commit step preparation](rusty-key-step-preparation.md) entrypoint for current
 execution-stage classification before committing any resources.
 
-This CLI is now a usable proposal producer. It is not yet the autonomous live
-loop's selected-root supply/commit orchestration; that integration must consume
-these same artifacts and services, not create a parallel donation macro.
+The controlled rolling runtime consumes these same artifacts and services,
+including custody retrieval, without a parallel donation macro. It is not yet
+the MOD's default production root selector or criterion-global acceptance.
 
 ## Verification And Remaining Work
 
@@ -98,8 +106,8 @@ key. `full_threshold_supply_verified`, `donation_output_custody_verified`,
 `teacher_preference_label_eligible` and `formal_training_authorized` are always
 false. No frozen coverage count is promoted.
 
-Continue the same Rusty Key primary: connect this producer to the existing
-rolling supply/commit/execution lifecycle, preserve acquired outputs until exact
-native donation, verify the joint time/opening-window and next-morning handoff,
+Continue the same Rusty Key primary: obtain the native acquired-output storage ->
+withdrawal -> original donation/consumption proof through this connected loop,
+then verify joint time/opening-window budgets and next-morning handoff,
 and close the criterion's independent Teacher/native partitions and pre-Year-3
 deadline. Existing Year-5 native evidence remains separately scoped.

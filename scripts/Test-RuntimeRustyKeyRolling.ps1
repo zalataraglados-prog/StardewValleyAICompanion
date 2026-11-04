@@ -233,9 +233,11 @@ function New-RuntimeRustyKeyPlanning {
         $AcquisitionLoweringPath, $MasterAnglerWindowsPath, $RouteTimingPath, $FishingForecastManifestPath, $PriorSupport)
     $script:planningCalls++
     $kind = if ($script:mode -eq 'blocked') { 'blocked' }
+        elseif ($script:mode -eq 'custody' -and $script:planningCalls -eq 1) { 'custody_navigation' }
+        elseif ($script:mode -eq 'custody' -and $script:planningCalls -eq 2) { 'custody_transfer' }
         elseif ($script:planningCalls -eq 1) { 'supporting_transition' }
         elseif ($script:planningCalls -eq 2) { 'terminal_acquisition' } else { 'held_donation' }
-    if ($script:planningCalls -eq 2) {
+    if ($script:planningCalls -eq 2 -and $script:mode -ne 'custody') {
         Assert-True ($PriorSupport.Token -eq 'retained-support' -and $StrategyLedgerPath -eq 'exact-settled-ledger-path') `
             'A supporting transition lost its exact retained proof/ledger before replanning.'
     }
@@ -266,7 +268,13 @@ function Invoke-RuntimeRustyKeyTerminal {
 }
 function Invoke-RuntimePrecompiledQueue {
     param($Context, $Name, $QueuePath, $BeforePath, $BeforeSnapshotProfile, $ExecutionTarget)
+    if ($script:mode -eq 'custody' -and $script:planningCalls -eq 1) { return New-TestExecution $Context $Name 'navigation' }
     return New-TestExecution $Context $Name 'held'
+}
+function Invoke-RuntimeRustyKeyCustodyTransfer {
+    param($Context, $BootstrapDll, $Planning, $Name, $ExecutionTarget)
+    Assert-True ($ExecutionTarget -eq 'product') 'Custody retrieval changed executor selection.'
+    return [pscustomobject]@{ Execution = (New-TestExecution $Context $Name 'transfer'); LedgerPath = 'settled-retrieval'; Support = $null }
 }
 function Invoke-TestLoop([string] $Mode, [int] $Budget) {
     $script:mode = $Mode; $script:executions = 0; $script:planningCalls = 0; $script:seen.Clear()
@@ -286,6 +294,11 @@ Assert-True ($trace.last_ledger_path -eq $trace.steps[-1].ledger_path -and
     $trace.last_ledger_path.EndsWith('donation-settled-ledger.json') -and (Test-Path -LiteralPath $trace.last_ledger_path)) `
     'The final donation must retain its post-settlement ledger rather than the pre-donation lease.'
 $passed.Add('support_terminal_donation_order_and_retained_proof')
+$custodyTrace = Invoke-TestLoop 'custody' 3
+Assert-True ($custodyTrace.status -eq 'native_key_observed' -and ($script:seen -join ',') -eq 'navigation,transfer,held' -and
+    ($custodyTrace.steps.kind -join ',') -eq 'custody_navigation,custody_transfer,held_donation') `
+    'Stored custody must navigate, transfer and return to the original donation stage with fresh replanning.'
+$passed.Add('custody_navigation_transfer_donation_order')
 $replayRejected = $false
 try { Invoke-TestLoop 'trace' 3 | Out-Null } catch { $replayRejected = $true }
 Assert-True ($replayRejected -and $script:executions -eq 0) 'An existing run must not replay any native action.'

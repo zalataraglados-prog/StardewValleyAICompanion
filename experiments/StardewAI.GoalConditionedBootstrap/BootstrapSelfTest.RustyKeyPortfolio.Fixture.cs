@@ -14,7 +14,7 @@ internal static partial class BootstrapSelfTest
         public AuthoritativeRequirementInventoryReport Inventory { get; }
         public AcquisitionRoutePortfolioProposal Proposal { get; }
         public AcquisitionRouteTargetDateOpportunityCostReport Opportunity { get; }
-        public StrategyCommitmentLedger Ledger { get; }
+        public StrategyCommitmentLedger Ledger { get; private set; }
 
         public RustyKeyPortfolioFixture(int donated = 59, int? selectedCount = null)
         {

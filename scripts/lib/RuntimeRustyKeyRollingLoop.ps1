@@ -71,12 +71,20 @@ function Invoke-RuntimeRustyKeyRollingLoop {
                 $ledgerPath = $result.LedgerPath
                 $execution = $result.Execution
             }
-            elseif ($kind -eq 'held_donation') {
+            elseif ($kind -eq 'custody_transfer') {
+                $result = Invoke-RuntimeRustyKeyCustodyTransfer -Context $Context -BootstrapDll $BootstrapDll `
+                    -Planning $planning -Name $name -ExecutionTarget $ExecutionTarget
+                $support = $null
+                $ledgerPath = $result.LedgerPath
+                $execution = $result.Execution
+            }
+            elseif ($kind -in @('held_donation', 'custody_navigation')) {
                 $execution = Invoke-RuntimePrecompiledQueue -Context $Context -Name $name -QueuePath $planning.QueuePath `
                     -BeforePath $snapshotPath -BeforeSnapshotProfile $Context.SnapshotProfile -ExecutionTarget $ExecutionTarget
                 $support = $null
+                $latestLedgerName = if ($kind -eq 'held_donation') { 'donation-settled-ledger.json' } else { 'custody-navigation-latest-ledger.json' }
                 $ledgerPath = Save-RuntimeRustyKeyLatestLedger -Context $Context -StateHash $execution.After.state_hash `
-                    -Path (Join-Path $directory 'donation-settled-ledger.json')
+                    -Path (Join-Path $directory $latestLedgerName)
             }
             elseif ($kind -eq 'native_key_handoff') {
                 $execution = Invoke-RuntimeRustyKeyNativeHandoff -Context $Context -Name $name `

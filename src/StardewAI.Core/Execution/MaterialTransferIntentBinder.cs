@@ -12,6 +12,8 @@ namespace StardewAI.Core.Execution;
 
 public static class MaterialTransferIntentBinder
 {
+    public const string PhaseParameter = "material_transfer_phase";
+    public const string ApproachPhase = "approach";
     private static readonly string[] RequiredNames =
     {
         "source_node_id",

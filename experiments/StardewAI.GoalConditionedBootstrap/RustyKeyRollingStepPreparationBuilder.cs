@@ -24,6 +24,18 @@ public static class RustyKeyRollingStepPreparationBuilder
         }
         if (!control.RollingStepReady)
             return Block(result, control.BlockingReasons);
+        if (control.SelectedCustodyTransfer is { } custody)
+        {
+            var transferReady = custody.Kind == "custody_transfer" && custody.AtomicCommitRequest is not null && control.CompiledQueue is null;
+            var navigationReady = custody.Kind == "custody_navigation" && custody.AtomicCommitRequest is null && control.CompiledQueue is not null;
+            if (!transferReady && !navigationReady)
+                return Block(result, new[] { "rusty_key_custody_selection_role_invalid" });
+            result.Kind = custody.Kind;
+            result.AtomicCommitRequest = custody.AtomicCommitRequest;
+            result.CompiledQueue = control.CompiledQueue;
+            result.StepReady = true;
+            return result;
+        }
         if (control.CompiledQueue is not null)
         {
             result.Kind = "held_donation";
