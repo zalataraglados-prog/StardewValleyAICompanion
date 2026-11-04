@@ -60,9 +60,10 @@ flag rather than manufacturing a verified training outcome.
 
 No native game was started for the original slice. It did not promote coverage,
 prove full acquired-output custody in gameplay or authorize training. The service
-now supports the history-backed position lifecycle described below; the runtime
-dispatch guard still rejects custody transfer until its original control path is
-wired and verified. The [native slot-lineage prerequisite](material-transfer-slot-lineage.md)
+now supports the history-backed position lifecycle and purpose-bound control
+below. The dispatch guard accepts only that exact verified control; generic
+unbound custody moves remain rejected. The outer rolling selection and native
+round-trip boundary remain incomplete. The [native slot-lineage prerequisite](material-transfer-slot-lineage.md)
 handles chest compaction in the existing projector/executor/receipt chain;
 physical lineage alone does not certify claim relocation. Backend reply retrieval has its separate
 [recovery contract](portfolio-mutation-reply-recovery.md#live-material-settlement-hooks):
@@ -91,10 +92,10 @@ including passive other-goal slot rebinds, without retaining more full snapshots
 The original canonical ordinary producer/receipt/compiler/dispatch/settlement
 path now consumes that protocol, including complete passive-compaction maps and
 Live readiness checks after movement. This is a tested ordinary-transfer
-prerequisite, not permission to dispatch custody. The same original service now
+prerequisite, not permission to relabel custody as machine input. The same original service now
 conditionally admits selected and passive custody only with an authenticated
 initial position and complete linked position history. Next wire the original
-control candidate/compiler/JIT path, then verify real acquired-custody
+control into the outer rolling selection, then verify real acquired-custody
 storage/withdrawal/donation. Legacy/malformed provenance and unprepared generic
 relocation/rebind remain rejected. No new planner or executor is needed.
 
@@ -192,22 +193,107 @@ the complete input ledger unchanged. The first direct-request fixture lacked
 its required reason; after correcting that setup it reproduced actual acceptance
 before the production fix. No failing fixture was counted as proof of the defect.
 
+### Original Control And Compiler Binding
+
+`MuseumOutputCustodyTransferRequestBuilder` uses the authenticated current row
+and an explicit destination to build the original `inventory.transfer_item`
+candidate and portfolio preparation. It does not mint custody, acquire another
+unit, choose a new strategic goal, consume stock or write a ledger. Unknown
+identity/origin, a pending preparation, invalid destination, unavailable menu or
+route, unreadable/conflicting clock and a transfer that does not fit the day's
+remaining minutes are rejected before commit. The time budget uses the existing
+`GameClockBudgetPolicy` and `DailyPlanCompiler`, not a new scheduler.
+
+After the original commit, compilation independently repeats that commit with
+the original service and compares the complete result, including other-goal
+claims. It then uses the original daily-plan and action-queue compilers.
+`museum_output_custody_transfer` binds the prepared SHA, portfolio and global
+revision, actual goal, selected custody ID/row revision and current position SHA.
+It has no `acquisition_*` annotation and cannot impersonate a machine input.
+The original JIT validates this binding and the actual execution JSON. Removing,
+mixing, duplicating or rewriting scope parameters does not restore a legacy path.
+
+The original ordinary prepared-transfer protocol may now passively compact an
+authenticated custody row only when it does not select that row for relocation
+and all affected position histories are valid. Actively selecting custody still
+requires the dedicated control above. It retains its own goal/source/consumer
+when another goal caused compaction, as the same original settlement proves.
+
+`MuseumOutputCustodyTransferSettlementRequestBuilder` verifies the actual queue
+item, exact receipt/actor/state identities and complete before/after images of
+both retained inventories. Normal movement may change only the dispatched item's
+state hash; all other queue authority remains pinned. The before-image check
+reuses the original slot verifier, while after-image verification remains the
+same shared native projection. It creates an original supporting-transition
+request with relocations and no consumptions. Its independent `Verify` repeats
+the original service transaction and compares the entire result/map/position
+history; a reported success or caller-provided final slot alone is insufficient.
+
+The intent parameter codec and deterministic queue-ID stabilizer are shared with
+the original machine/held-donation code, not copied alternatives. Validation is
+boundary-only and purpose-scoped to queue bindings and the material graph; full
+snapshot hash/identity admission remains at the existing ingestion/logical-reader
+boundary. There is no new full-snapshot serialization/cache, per-frame polling,
+planner, inventory store or native transfer executor. The locked decompiled
+`Chest.addItem` still compacts before stacking/appending; these changes do not
+replace that previously accepted physical behavior.
+
+The bootstrap CLI exposes three read-only adapters, using the existing artifact
+readers and atomic output writer:
+
+1. `build-museum-custody-transfer-request`: `--snapshot`, `--strategy-ledger`,
+   `--reservation-id`, `--destination-node`, `--output`, optional
+   `--commit-request-output`. Submit that request through the original journaled
+   commit endpoint and retain its complete response.
+2. `compile-museum-custody-transfer`: the same original snapshot and **pre-commit**
+   ledger/reservation/destination, plus `--commit-result` and `--output`; optional
+   `--selected-queue-output` and `--selected-plan-output`. Execute that queue with
+   the original precompiled Live path, not direct inventory writes.
+3. `build-museum-custody-transfer-settlement`: `--queue`, the actual
+   `--dispatched-item`, `--receipt`, actual transfer `--before-snapshot` and
+   `--after-snapshot`, **prepared** `--strategy-ledger`, and `--output`; optional
+   `--settlement-request-output`. The before snapshot is the transfer's fresh
+   state after movement, not necessarily the queue's initial state. After the
+   original journaled supporting-transition POST, repeat the adapter with
+   `--settlement-result` and a separate proof output to independently verify it.
+
+Each adapter reports `ready`, blocking reasons, `execution_performed=false` and
+`formal_training_authorized=false`; refusal exits 2 and must not be ignored.
+Failed result verification publishes no request authority. These commands do
+not retry mutations or execute the game. Unknown transport outcomes still use
+the existing exact read-only reply retrieval, never blind native/POST replay.
+
+The local synthetic/API group covers both directions, original donation,
+file restart, actual Live/Backend HTTP after normal movement, before/after
+inventory drift, scope downgrade, changed commit and changed settlement results.
+Three actual CLI invocations reproduce the same request/queue/settlement and
+verify the retained result; a missing destination and a changed settlement map
+return 2 with no request file/authority. Full Backend passes 543/543 (42 added
+control cases); full game-free Core passes 1156/1156. The existing passive-custody
+service case additionally exercises its actual compiled/JIT path. Original
+canonical machine-transfer/settlement/terminal proof and rolling producer 34/34
+pass after sharing the intent encoder and queue-ID stabilizer. Release build has
+zero warnings/errors and the generated checkpoint remains EVD-338.
+The bounded local fixture is under
+`I:\StardewAITraining\custody-control-20261104\public-cli-01`; its scope explicitly
+says synthetic-only, not native gameplay or training evidence.
+
 ### Remaining Location Boundary
 
 The current custody object retains acquisition portfolio/route, terminal-receipt
 SHA, consumer, creation revision, initial position and linked position history
-above. This completes the service-side compact location contract, not runtime
-dispatch authority. Missing original facts must not be inferred from a later
-location.
+above. The service/control/compiler/JIT/receipt contracts are connected, but
+the outer rolling runtime still needs to consume this control automatically.
+Missing original facts must not be inferred from a later location.
 
 Both selected custody and passive custody affected by compaction need this
 verification. Preserve their consumer, goal, owner, quantity and acquisition
 identity; a position rebind does not consume or reacquire an item. Keep generic
 upsert, release, consumption and cross-goal bypasses closed. Wire the original
-control candidate/plan/dispatch/receipt path without mislabelling museum-output
-handoff as a new machine acquisition. The native exit proof remains real acquired
+rolling pending-storage choice and runtime client to the control above, without
+mislabeling museum-output handoff as a new machine acquisition. The native exit proof remains real acquired
 output -> storage -> withdrawal -> authorized donation/consumption, including
-other-goal protection and missing/stale/forged-lineage refusal. The original JIT
-custody-transfer guard remains closed until that control integration; service
-tests alone do not open it or reopen accepted geode/key or owner visual gates.
+other-goal protection and missing/stale/forged-lineage refusal. The JIT guard is
+now conditional on the complete bound control, not removed. API/CLI tests alone
+do not prove that native trajectory or reopen accepted geode/key or owner visual gates.
 Frozen coverage counts and `formal_product_training=false` remain unchanged.

@@ -1,5 +1,9 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-04 保管搬运已有原控制/编译/派发/回执合同，原生闭环仍待接：** #420合并为`35af02ce`并删除对应开发分支。本轮专用输出搬运绑定获取/位置史及同一准备，沿原候选、日内预算、提交重放、日计划/队列编译、JIT和结算重放；只有完整绑定才可派发，旧普通搬运仅放行经验证的被动保管压紧。实际Live/Backend移动后派发及三条真实只读CLI通过，未开游戏或训练。下一步为原rolling仓储待捐准备选择/运行客户端接线，再取真实存→取→捐赠证据；不新增执行器、不冒充机器获取。`5/19 executable、6/19 split-complete、5/19 CoverageGateReady、4/11 root ready、formal_product_training=false`不变，见[控制及剩余边界](museum-output-custody.md#original-control-and-compiler-binding)。
+>
+> 本轮验证：Backend543/543、完整Core1156/1156、控制42项加原被动保管派发1项、原canonical机器转移终端链及rolling34通过；三条真实CLI和两项exit2拒绝通过，坏结果不发布请求。Release零警告错误、检查点EVD-338一致，最终CI待完成。全部新证据为合成/API/CLI，不是新的原生或Teacher验收。
+
 > **#420 审查追加修正：** 已复现“捐赠背包中的无预留副本，却核销箱内保管物”的P2；原请求构建器和账本核销现在共用明确的玩家持有消费授权，合法箱内位置证明仍有效，但不能因此获准捐赠消费。新增两个先红后绿反例，原存→取→捐赠正向链保持通过；最终Backend501/501。候选筛选与派发已有背包限制，本项补齐两个遗漏入口，不新增执行链或放宽保管迁移门。
 
 > **2026-11-04 保管位置史服务合同已通过，运行派发尚未开放：** #419已合并为`32c78ab5`，对应开发分支已删除。原账本准备/结算服务现在验证初始锚点与逐次位置证明，原子更新完整map，在原历史附紧凑前后位置/修订、前一证明、准备及fresh回执绑定，保留获取来源和他目标归属。真实原服务的合成存→取→原捐赠、他目标被动压紧、文件重启/只读回执恢复及拒绝反例26项通过，Backend499/499、完整Core1155/1155通过。旧signed-ID夹具已同步修正库存node/意图/claim/move身份；无放宽断言、无全量快照扩容或第二套事务。legacy无迁移权，通用无准备relocate/rebind继续拒绝。下一步为原控制候选/编译/JIT/回执接线，再验证真实获取产物的存→取→捐赠；JIT保管迁移门仍关闭。这不是新的原生、criterion或Teacher证据，`5/19 executable、6/19 split-complete、5/19 CoverageGateReady、4/11 root ready、formal_product_training=false`不变，见[位置史与剩余边界](museum-output-custody.md#linked-position-history)。

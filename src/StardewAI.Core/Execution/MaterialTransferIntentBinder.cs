@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
@@ -9,7 +10,7 @@ using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.Execution;
 
-internal static class MaterialTransferIntentBinder
+public static class MaterialTransferIntentBinder
 {
     private static readonly string[] RequiredNames =
     {
@@ -22,7 +23,17 @@ internal static class MaterialTransferIntentBinder
         "expected_source_stack"
     };
 
-    public static IReadOnlyList<string> RequiredParameterNames => RequiredNames;
+    private static readonly IReadOnlyList<string> ReadOnlyRequiredNames = Array.AsReadOnly(RequiredNames);
+    public static IReadOnlyList<string> RequiredParameterNames => ReadOnlyRequiredNames;
+
+    public static SmallModelActionParameter[] ToParameters(MaterialTransferIntent intent) => new[]
+    {
+        Parameter("source_node_id", intent.SourceNodeId), Parameter("destination_node_id", intent.DestinationNodeId),
+        Parameter("source_slot_index", intent.SourceSlotIndex.ToString(CultureInfo.InvariantCulture)),
+        Parameter("qualified_item_id", intent.QualifiedItemId), Parameter("quality", intent.Quality.ToString(CultureInfo.InvariantCulture)),
+        Parameter("quantity", intent.Quantity.ToString(CultureInfo.InvariantCulture)),
+        Parameter("expected_source_stack", intent.ExpectedSourceStack.ToString(CultureInfo.InvariantCulture))
+    };
 
     public static bool TryReadGraph(
         SnapshotEnvelope snapshot,
@@ -81,5 +92,7 @@ internal static class MaterialTransferIntentBinder
 
     private static int? ReadInt(
         IReadOnlyDictionary<string, string> values,
-        string name) => int.TryParse(Read(values, name), out var value) ? value : null;
+        string name) => int.TryParse(Read(values, name), NumberStyles.Integer, CultureInfo.InvariantCulture, out var value) ? value : null;
+
+    private static SmallModelActionParameter Parameter(string name, string value) => new() { Name = name, Value = value };
 }

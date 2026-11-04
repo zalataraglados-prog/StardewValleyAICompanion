@@ -470,22 +470,5 @@ public static partial class AcquisitionRouteDispatchCompilationBuilder
         ActionQueueEnvelope queue,
         string compilationIdentity,
         string prefix = "acquisition_route")
-    {
-        queue.QueueId = prefix + "_queue." + compilationIdentity;
-        for (var index = 0; index < queue.Items.Length; index++)
-        {
-            var item = queue.Items[index];
-            item.QueueItemId =
-                prefix + "_queue_item." + compilationIdentity + "." +
-                index;
-            var steps = item.NormalizedCommand?.Steps ??
-                Array.Empty<CompiledActionStep>();
-            for (var stepIndex = 0; stepIndex < steps.Length; stepIndex++)
-            {
-                steps[stepIndex].StepId =
-                    prefix + "_primitive." + compilationIdentity +
-                    "." + index + "." + stepIndex;
-            }
-        }
-    }
+        => StardewAI.Core.Execution.ActionQueueIdentity.Stabilize(queue, compilationIdentity, prefix);
 }

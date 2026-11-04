@@ -33,6 +33,7 @@ public sealed partial class ReservationPortfolioLedgerTests
             }
         }, "prepare-stone");
         Assert.True(commit.Accepted, string.Join(",", commit.Errors));
+        AssertPassiveCustodyTransferDispatches(fixture.Snapshot, commit.Ledger!);
         Assert.True(MaterialInventoryGraphReader.TryRead(fixture.Snapshot, out var graph));
         var chest = graph!.InventoryNodes.Single(row => row.NodeId == CustodyTransferFixture.Chest);
         var scroll = chest.Slots.Single(row => row.QualifiedItemId == "(O)96");

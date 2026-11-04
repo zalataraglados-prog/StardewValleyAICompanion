@@ -113,6 +113,9 @@ var commandDefinitions = new CommandDefinition[]
     new("build-rusty-key-acquisition-portfolio", BuildRustyKeyAcquisitionPortfolio),
     new("build-rusty-key-rolling-supply", BuildRustyKeyRollingSupply),
     new("prepare-rusty-key-rolling-step", BuildRustyKeyRollingStepPreparation),
+    new("build-museum-custody-transfer-request", options => MuseumOutputCustodyTransferCommands.Prepare(options, Write)),
+    new("compile-museum-custody-transfer", options => MuseumOutputCustodyTransferCommands.Compile(options, Write)),
+    new("build-museum-custody-transfer-settlement", options => MuseumOutputCustodyTransferCommands.Settle(options, Write)),
     new("build-rusty-key-current-ranking", BuildRustyKeyCurrentRanking),
     new("self-test-rusty-key-rolling-supply", options =>
         BootstrapSelfTest.RunRustyKeyRollingSupply(options.Required("output-root"))),
