@@ -340,11 +340,16 @@ with a fresh next-day date source, yesterday's date proof, missing stock and a
 broken original position anchor. A fresh source permits the original immediate
 navigation and current-day forecast; an old date cannot prove that forecast but
 does not invalidate a separately legal immediate connector. Missing stock or
-broken lineage returns no transfer/navigation queue or speculative acquisition.
+broken lineage cannot authorize that custody's transfer/navigation. A throwing
+acquisition-context probe verifies that valid owned supply and unreadable live
+stock do not rely on omitted acquisition inputs to avoid reacquisition. Broken
+lineage is separately rejected by the original transfer builder; it is not a new
+global ban on independent authorized replacement supply. Existing other-goal
+reservation and inaccessible-stock policies remain unchanged.
 The persisted original ledger bytes, receipt and position binding stay unchanged.
 No production custody logic changed. These are synthetic file-reload/CLI-source
 contracts, not new native overnight evidence. Artifacts stay outside Git at
-`I:\StardewAITraining\next-day-custody-20261105\step-01`.
+`I:\StardewAITraining\next-day-custody-20261105\step-final`.
 
 ### Accepted Native Stored Round Trip
 

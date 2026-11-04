@@ -46,6 +46,19 @@ internal static partial class BootstrapSelfTest
             Write(inputs.RouteTimingCalibrationPath, StageOneRouteTimingCalibration(1));
             var ledgerBytes = File.ReadAllBytes(inputs.StrategyLedgerPath);
             var control = RustyKeyRollingSupplyProposalBuilder.Build(inputs);
+            if (mode != "broken_lineage")
+            {
+                var probed = fixture.RunRolling(() => throw new InvalidOperationException(
+                    "Verified owned stock or an unreadable live slot must not fall through to duplicate acquisition."), inputs.RouteTimingCalibrationPath);
+                Require(probed.RollingStepReady == control.RollingStepReady && probed.SelectedAcquisitionProposal is null,
+                    "The owned-supply branch must not depend on missing acquisition inputs to avoid reacquisition: " + mode);
+            }
+            else
+            {
+                var refused = MuseumOutputCustodyTransferRequestBuilder.Build(fixture.Snapshot, fixture.Ledger, reservationId, "player:1");
+                Require(refused.Request is null && refused.Errors.Contains("museum_custody_transfer_source_not_authorized"),
+                    "Broken lineage must not authorize this custody transfer; unrelated legal supply policy is unchanged.");
+            }
             var controlPath = Path.Combine(directory, "control.json");
             Write(controlPath, control);
             var prepared = RustyKeyRollingStepPreparationBuilder.Build(inputs, controlPath);
@@ -53,7 +66,7 @@ internal static partial class BootstrapSelfTest
             Require(control.RollingStepReady == ready && prepared.StepReady == ready && control.SourceTotalDay == 1 &&
                 control.SelectedAcquisitionProposal is null && !control.ThresholdSatisfied && !control.FormalTrainingAuthorized &&
                 control.CompleteMuseumItemDenominator.Length == 95 && File.ReadAllBytes(inputs.StrategyLedgerPath).SequenceEqual(ledgerBytes),
-                "A new day must re-observe stock/authority, never rewrite custody or reacquire it: " + mode);
+                "A new day must re-observe stock/authority without rewriting custody: " + mode);
             if (ready)
             {
                 var reloaded = CurrentTeacherFrontierSupport.Read<StrategyCommitmentLedger>(inputs.StrategyLedgerPath, "Retained next-day custody");
