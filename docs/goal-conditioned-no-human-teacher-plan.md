@@ -2394,9 +2394,12 @@ Slice 7 remains assigned to the RTX 5070 node.
   bounded form: a sole Pareto-frontier member remains authoritative, while a checkpoint can rank only the verified
   multi-member frontier and cannot commit it. This is useful evidence, not yet a product interface or runtime
   admission.
-- Terminology is tightened before implementation. Runtime does not host an online Teacher beside a Student.
-  `TeacherOracle` remains offline supervision, relabeling, counterfactual, coverage and benchmark machinery. The
-  runtime unique-frontier branch is `DeterministicSelection`. A "unique strict-Pareto" decision means exactly one
+- Terminology is tightened before implementation. Runtime must not host a second independent Teacher *decision brain* beside a Student.
+  `TeacherOracle` remains offline supervision, relabeling, counterfactual, coverage and benchmark machinery. The final
+  Companion can retain a switchable, bounded Teacher Provider for critical-decision evidence review under the *same*
+  `StrategicPolicy`, without replacing deterministic strict-Pareto authority; that product-runtime feature is not a
+  prerequisite for Stage 1 formal training. The runtime unique-frontier branch is `DeterministicSelection`.
+  A "unique strict-Pareto" decision means exactly one
   admitted frontier member that passes the existing proof that it dominates every other admitted candidate under
   `OpportunityCostDominates`; neither weighted scalarization nor a model score can manufacture that status.
 - `StrategicPolicy.SelectMethod` must be a facade over the existing authoritative denominator, feasibility,

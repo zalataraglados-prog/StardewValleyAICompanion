@@ -25,9 +25,9 @@ StardewAI 的策略学习层必须允许第三方在不修改确定性游戏执�
 
 Student provider 只能在核心提供的合法候选范围内返回策略偏好结果；不能新增合法性、绕过约束或直接执行游戏动作。
 
-Teacher provider 负责训练期独立监督、重标、比较或不可满足结论；在最终产品中，还需支持**声明作用域内的关键决策复核、否决和安全替代建议**。它不得直接改写游戏状态、扩张合法候选集、绕过正式 evidence gate 或接管 Planner/Compiler/Executor。Student 的高平均正确率不能替代关键决定的可验证保证。
+Teacher provider 负责训练期独立监督、重标、比较或不可满足结论；在最终产品中，还需支持**声明作用域内的关键决策复核、证据不足时否决和须重新准入的安全替代建议**。它不得直接改写游戏状态、扩张合法候选集、绕过正式 evidence gate 或接管 Planner/Compiler/Executor；也不得凭自身评分或软偏好覆写已证明的唯一 strict-Pareto 确定性选择。若发现权威状态/候选/ledger 或证明前提不一致，必须失败关闭并 fresh replan。Student 的高平均正确率不能替代关键决定的可验证保证。
 
-最终发布 Mod 应装配一个可启停、可替换的 Teacher Provider，不要求每个普通动作调用它。Teacher 必须允许被显式禁用；玩家选择 Joja 等不使用 Community Center Teacher 的路线时不得强制调用内置 Teacher。对于实际需要额外复核的高风险决定，禁用、缺失、超时或无法确认的 Teacher **不能被视为通过**：只有已有确定性证据足以核验时才能继续，否则失败关闭或进入明确授权的人工处理路径。Teacher 的意见本身不是 100% 正确的证明。
+最终发布 Mod 应装配一个可启停、可替换的 Teacher Provider，不要求每个普通动作调用它。Teacher 必须允许被显式禁用；玩家选择 Joja 等不使用 Community Center Teacher 的路线时不得强制调用内置 Teacher。**已有充分确定性证明的决定，不因 Teacher 禁用、缺失或未调用而失效。** 只有具体安全合同确需补充独立核验、而现有证明不足的高风险决定，才要求经准入的按需复核；复核禁用、超时、无结论或与证据冲突不能被视为通过，应失败关闭或进入明确授权的人工处理路径。Teacher 的意见本身不是 100% 正确的证明。
 
 ## 3. Provider 可替换性要求
 
@@ -74,16 +74,22 @@ Teacher provider 负责训练期独立监督、重标、比较或不可满足结
 
 Codex 自行设计基准、采样方式和具体性能阈值，并在模型定型报告中证明推荐实现满足该约束。
 
-## 6. 验收
+## 6. 开训前 Provider 与模型验收
 
 开训前至少必须证明：
 
 1. provider 合同已经实现并版本化；
 2. 内置 Student 可通过该合同运行；
 3. 一个与内置实现不同的替代 / mock Student 能在不修改确定性核心的情况下接入并完成合同级测试；
-4. Teacher 可独立替换或禁用，且不会改变硬权威边界；最终产品关键决策可以按需调用已准入 Teacher 复核，反例证明禁用、缺失、超时、错误结论和不一致证据均不能静默放行；
+4. Teacher 可独立替换或禁用，且不会改变硬权威边界；此处仅验证 Provider 契约，不要求已实现产品运行时的按需 Teacher 复核、否决或高风险故障矩阵；
 5. provider 身份与输出能够被正式 provenance / manifest 绑定；
 6. Codex 已完成模型定型实验并提交可复现结论；
 7. 所选正式 Student 通过低配 / 8 GiB 整机部署约束。
 
-这些要求全部满足后，才允许进入 formal training manifest 与 training-ready preflight。
+这些**开训前要求**全部满足后，才允许进入 formal training manifest 与 training-ready preflight。
+
+## 7. 最终产品 Teacher 复核验收（非开训前置）
+
+最终 Companion 需要在统一 `StrategicPolicy` 内按需调用可替换、可禁用的 Teacher Provider，复核明确声明需要额外证明的关键决策；不得创建第二套候选合法性、规划或执行链。必须验证：已证明的唯一 strict-Pareto 解不被 Teacher 的软偏好覆盖，也不因 Teacher 未运行而降级；额外证明不足时，启用/禁用、超时、错误或互相矛盾的 Teacher 结果均不得静默放行；发现状态或证明漂移须失败关闭并 fresh replan。教师意见只有在既有硬约束和同一候选身份下才能成为有界复核证据。
+
+本节属于**发布版产品能力与运行时验收**，不提升或阻塞 Stage 1 的 `19/19`、`11/11`、Provider 模型选择、formal training manifest 及训练数据准入；具体触发阈值、调用策略、性能实现由产品阶段设计和原生验证确定，当前不宣称已实现。
