@@ -174,7 +174,12 @@ internal static class StrategyCommitmentLedgerSupport
             AcquisitionRouteSourceDecisionId = row.OutputCustody.AcquisitionRouteSourceDecisionId,
             ConsumerOptionId = row.OutputCustody.ConsumerOptionId,
             FreshTerminalReceiptSha256 = row.OutputCustody.FreshTerminalReceiptSha256,
-            CreatedLedgerRevision = row.OutputCustody.CreatedLedgerRevision
+            CreatedLedgerRevision = row.OutputCustody.CreatedLedgerRevision,
+            InitialPosition = row.OutputCustody.InitialPosition is not { } initial ? null : new MaterialOutputCustodyInitialPosition
+            {
+                SchemaVersion = initial.SchemaVersion, NodeId = initial.NodeId, SlotIndex = initial.SlotIndex,
+                SourceStateHash = initial.SourceStateHash, ReservationRevision = initial.ReservationRevision, BindingSha256 = initial.BindingSha256
+            }
         }
     };
 
@@ -296,6 +301,7 @@ internal static class StrategyCommitmentLedgerSupport
         SourceDecisionId = row.SourceDecisionId,
         SourceStateHash = row.SourceStateHash,
         RecordedAt = row.RecordedAt,
-        Reason = row.Reason
+        Reason = row.Reason,
+        OutputCustodyInitialPositionSha256 = row.OutputCustodyInitialPositionSha256
     };
 }

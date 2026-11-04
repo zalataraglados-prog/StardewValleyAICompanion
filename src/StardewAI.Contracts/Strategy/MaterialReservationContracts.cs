@@ -67,6 +67,10 @@ public sealed class MaterialOutputCustody
     public string FreshTerminalReceiptSha256 { get; set; } = string.Empty;
     [JsonPropertyName("created_ledger_revision")]
     public int CreatedLedgerRevision { get; set; }
+
+    [JsonPropertyName("initial_position")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public MaterialOutputCustodyInitialPosition? InitialPosition { get; set; }
 }
 
 public sealed class MaterialReservationUpsertRequest

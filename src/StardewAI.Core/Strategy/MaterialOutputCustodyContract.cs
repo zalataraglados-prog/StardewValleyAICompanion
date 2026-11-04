@@ -7,7 +7,7 @@ using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.Strategy;
 
-public static class MaterialOutputCustodyContract
+public static partial class MaterialOutputCustodyContract
 {
     public const string MuseumConsumer = "executor.donate_museum_item";
     public const string CreatedOperation = "material_output_custody_created";
@@ -34,11 +34,12 @@ public static class MaterialOutputCustodyContract
             return false;
         var portfolioId = PortfolioId(custody.AcquisitionPortfolioId, custody.AcquisitionRouteSourceDecisionId,
             custody.ConsumerOptionId, row.QualifiedItemId);
-        return row.SourceDecisionId == portfolioId && row.ReservationId == ReservationId(portfolioId) &&
-            ledger.History.Count(entry => entry.CommitmentId == row.ReservationId &&
+        var creation = ledger.History.Where(entry => entry.CommitmentId == row.ReservationId &&
                 entry.SourceDecisionId == portfolioId && entry.Operation == CreatedOperation &&
                 entry.LedgerRevision == custody.CreatedLedgerRevision &&
-                entry.Reason == custody.FreshTerminalReceiptSha256) == 1 &&
+                entry.Reason == custody.FreshTerminalReceiptSha256).ToArray();
+        return row.SourceDecisionId == portfolioId && row.ReservationId == ReservationId(portfolioId) &&
+            creation.Length == 1 && InitialPositionMatches(row, ledger, creation[0]) &&
             ledger.History.Count(entry => entry.CommitmentId == portfolioId && entry.SourceDecisionId == portfolioId &&
                 entry.Operation == "reservation_portfolio_commit" && entry.LedgerRevision == custody.CreatedLedgerRevision) == 1;
     }
