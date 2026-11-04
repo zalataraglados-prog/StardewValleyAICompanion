@@ -36,7 +36,8 @@ public sealed partial class ModEntry
                 request,
                 "debug_setup_material_transfer_target",
                 "ordinary_owned_chest=ready",
-                "target=unavailable",
+                "target=unavailable;location=" + location.NameOrUniqueName +
+                    ";map_width=" + location.Map.Layers[0].LayerWidth + ";map_height=" + location.Map.Layers[0].LayerHeight,
                 "material_transfer_fixture_target_unavailable");
         }
 
@@ -112,7 +113,7 @@ public sealed partial class ModEntry
         {
             Location = farm
         };
-        return Enumerable.Range(2, Math.Max(0, width - 16))
+        return Enumerable.Range(2, Math.Max(0, width - 4))
             .SelectMany(x => Enumerable.Range(2, Math.Max(0, height - 4))
                 .Select(y => new Point(x, y)))
             .Where(target => IsTileWalkable(farm, target))

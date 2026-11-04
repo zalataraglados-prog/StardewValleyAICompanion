@@ -5,6 +5,10 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'lib/RuntimeRustyKeyCustodyBoundary.ps1')
 . (Join-Path $PSScriptRoot 'lib/RuntimeRustyKeyCustodyRoundTrip.ps1')
 $passed = [Collections.Generic.List[string]]::new()
+$fixtureSource = Get-Content -LiteralPath (Join-Path (Split-Path -Parent $PSScriptRoot) 'tools/StardewAI.RuntimeTestHarness/ModEntry.MaterialInventoryGraph.cs') -Raw
+if ($fixtureSource -notmatch 'Enumerable\.Range\(2, Math\.Max\(0, width - 4\)\)' -or
+    $fixtureSource -notmatch 'probe\.canBePlacedHere') { throw 'Small-map fixture search must remain nonempty while retaining native placement checks.' }
+$passed.Add('small_map_search_retains_native_placement_check')
 $context = [pscustomobject]@{ RunId = 'synthetic-custody-boundary'; SnapshotUrl = 'http://unused.invalid'
     BackendUrl = 'http://unused.invalid'; ExecutorRoot = 'http://unused.invalid'; IsolatedSavesPath = $OutputRoot }
 function Get-FreshRuntimeSnapshot {

@@ -2,6 +2,8 @@
 
 ## 2026-11-03 当前 Rusty Key 切片与接续
 
+- **原生边界首试定位（尚无获取/搬运）：** clean`f2b0c4ef`在setup阶段以`material_transfer_fixture_target_unavailable`停止，进程/端口已退出。核对已接受原生Blacksmith快照为15×20，旧农场夹具搜索`width-16`导致零候选，并非原生禁放。现只改通用两格边界，保留walkability/canBePlacedHere/相邻站位检查；边界检查补至19项。原失败证据保留，接续必须新run身份，不重发旧测量动作。
+
 - **#422已收口并进入真实边界准备：** 完整CI通过，合并`923c8f2e`并删除该轮本地/远端分支。原threshold smoke可选`-CustodyRoundTrip`仅用于current_geode：沿原夹具的显式地点准备Blacksmith稀疏箱，经原账本保护他目标石头；测量开始后同一游戏run真实获取、原控制存箱，再交给原rolling自动取回/捐赠。一个动作预算的获取前缀仍exit2、不冒充成功；拒绝玩家自由副本，最终要求获取回执来源不变、保管核销、他目标预留及压紧槽位正确，无中途fixture/物品注入。新边界18项、原晶球边界33项通过；Bridge/Harness/Backend Release构建零警告错误。下一步clean source构建后隐藏静音运行并独立复核真实轨迹；当前尚无新原生通过或计数晋升。
 
 - **2026-11-04 rolling 仓储取回接线：** #421已合并`decc7ce8`、最终CI成功并删除对应开发分支；下方该轮待CI记载已过期。当前rolling在新获取前选择有完整位置史、归属当前目标/消费者的箱内保管；显式区分`custody_navigation`（原连接器/清障/有界时间窗等待，无提交）与`custody_transfer`（原搬运提交请求，实际提交后重建原编译/JIT），保留95项分母、待捐保护门与原捐赠核销。运行客户端读取Live实际派发命令及逐动作before/after原路径，经原journal/只读恢复调用原结算并独立重放，缺失/篡改命令或重复转移步不能结算、不重发动作。延迟通行判定与既有容量恢复统一复用；锁门/普通连接器合法等待通过，关闭/未知路线仍拒绝。Backend558/558、完整Core1156/1156、准备25项、真实CLI客户端6项通过，无新游戏/Teacher/训练证据。下一步是同源隔离run真实获取→原控制存箱→rolling自动取回→原捐赠核销，核对全部槽位和他目标保护；setup只在测量前，不重复已接受钥匙/目视门，不抬计数。详见[运行合同](rusty-key-runtime-rolling.md)。

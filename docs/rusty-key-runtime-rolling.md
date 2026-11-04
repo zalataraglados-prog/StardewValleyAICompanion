@@ -209,9 +209,16 @@ at its independently expected compacted slot. The ordinary key/day flow may
 continue naturally; it is not a reopened accepted key/owner gate. Script and
 binary/source identity, complete native slot maps, source-save preservation,
 process/port cleanup and independent retained-file replay remain mandatory.
-The added 18 game-free setup/final-scope checks and original 33 geode-boundary
+The added 19 game-free setup/final-scope checks and original 33 geode-boundary
 checks pass; all three relevant Release builds have zero warnings/errors.
 This prepares a native proof and does not itself prove gameplay or training.
+
+The first clean `f2b0c4ef` attempt stopped during setup, before acquisition or
+material execution: the old Farm-specific search used `width - 16`, yielding no
+candidates on Blacksmith's retained native 15-by-20 map. This was an empty search,
+not evidence that the map forbids chests. The fixture now keeps a two-tile margin
+on each side and retains the original native walkability/placement/stand checks.
+That failed isolated run remains diagnostic; it is not replayed or accepted.
 
 The updated shipped-Companion requirement for on-demand critical-decision Teacher
 verification remains binding; see `TEACHER_STUDENT_CONVERGENCE_CONTRACT_CN.md`.
