@@ -80,12 +80,10 @@ namespace StardewAI.Core.Training
                     Array.Empty<TransparentRouteEdge>(),
                     Array.Empty<FutureRouteSegmentEvidence>())
             };
-            var bestArrivalByState = new Dictionary<string, int>(
-                StringComparer.OrdinalIgnoreCase)
-            {
-                [StateKey(startLocation, startTileX, startTileY)] =
-                    ToMinutes(earliestDepartureTime)
-            };
+            var bestArrivalByState = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            // Before a required first edge, the source is not yet an equivalent reached state.
+            if (requiredFirstEdge is null)
+                bestArrivalByState[StateKey(startLocation, startTileX, startTileY)] = ToMinutes(earliestDepartureTime);
             var failures = new HashSet<string>(StringComparer.Ordinal);
             RouteSearchResult? bestResult = null;
 
@@ -110,7 +108,7 @@ namespace StardewAI.Core.Training
                     continue;
                 }
 
-                if (string.Equals(
+                if ((requiredFirstEdge is null || current.Path.Length > 0) && string.Equals(
                         current.Location,
                         targetLocation,
                         StringComparison.OrdinalIgnoreCase))

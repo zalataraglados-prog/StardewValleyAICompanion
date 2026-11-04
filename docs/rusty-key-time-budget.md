@@ -82,8 +82,9 @@ cache, native scanner, allocator or executor was added.
 The rolling suite now has 49 named synthetic cases, including later-door
 closure, a more expensive first connector with a better full route, missing
 calibration, deferred opening, original preparation and raw schedule-tamper rejection. Focused
-Core route/museum/clock checks pass 61 cases; full Core governance passed 1192
-before the added indoor-after-entry-close boundary case (final CI is pending).
+Core route/museum/clock/timeline checks pass 73 cases. The first PR head passed
+full CI, including 1193 Core cases; final CI is pending after the prefix-boundary
+fix below.
 Backend passed 558/558 and the original pre-commit step preparation passed 25/25.
 Initial diagnostic failures were a missing game version in the new fixture and
 an incorrect boundary expectation: the original stand resolver already starts
@@ -95,6 +96,13 @@ It now additionally accepts only the shared `ScheduledRouteWaitPolicy` predicate
 already used by custody navigation. Source/calibration checks and all other
 blocked-candidate rejection stay intact; no new wait executor or broad fallback
 was added.
+
+Self-review reproduced one required-prefix boundary: a target on the starting
+map must not return a zero-edge proof before traversing the required first edge.
+The original search now distinguishes its pre-prefix initial state from reached
+states, allowing a real return to the same tile without admitting a bypass. Three
+regressions cover unchanged unconstrained local routing, blocked one-way departure
+and a valid two-edge round trip; the pre-fix bypass failed as expected.
 
 Read-only replay of the accepted `custody-b3512d5f-1104` after-withdrawal snapshot
 and revision-7 ledger passes both original public CLIs. Its native Blacksmith ->
