@@ -1,5 +1,11 @@
 # Rusty Key Controlled Runtime
 
+The initial lightweight planning call forwards the existing route-timing
+calibration through both control build and step preparation. Held/owned custody
+does not need unrelated acquisition axes merely to obtain that argument. Actual
+runtime-CLI regression covers remote held stock, local/remote custody and a
+deferred door; all preserve one immediate step and no training authority.
+
 ## Implemented Entry
 
 `scripts/Invoke-RuntimeRustyKeyRollingSupply.ps1` connects the existing public

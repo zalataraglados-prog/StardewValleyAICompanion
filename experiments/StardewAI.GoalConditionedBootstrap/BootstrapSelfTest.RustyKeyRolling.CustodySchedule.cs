@@ -7,6 +7,23 @@ internal static partial class BootstrapSelfTest
 {
     private static void VerifyRollingCustodyDonationSchedule(string root, List<string> passed)
     {
+        var held = new RustyKeyPortfolioFixture();
+        held.EnableHeldDonation();
+        ConfigureRollingDonationRouteSchedule(held, "ready");
+        var heldDirectory = Path.Combine(root, "held-donation-remote");
+        var heldInputs = new AcquisitionRoutePortfolioInputs
+        {
+            RequirementInventoryPath = Path.Combine(heldDirectory, "inventory.json"),
+            SnapshotPath = Path.Combine(heldDirectory, "snapshot.json"), StrategyLedgerPath = Path.Combine(heldDirectory, "ledger.json"),
+            RouteTimingCalibrationPath = Path.Combine(heldDirectory, "timing.json")
+        };
+        Write(heldInputs.RequirementInventoryPath, held.Inventory);
+        Write(heldInputs.SnapshotPath, held.Snapshot);
+        Write(heldInputs.StrategyLedgerPath, held.Ledger);
+        Write(heldInputs.RouteTimingCalibrationPath, StageOneRouteTimingCalibration(0));
+        Require(RustyKeyRollingSupplyProposalBuilder.Build(heldInputs) is { RollingStepReady: true, SelectedDonationRouteSchedule.CurrentDayRouteReady: true },
+            "The runtime light-path fixture must expose an actual remote held queue without acquisition axes.");
+        passed.Add("remote_held_route_ready_for_runtime_light_path");
         foreach (var mode in new[] { "local", "remote", "later_gate_closed", "deferred", "missing_calibration", "missing_date_evidence" })
         {
             var fixture = new RustyKeyPortfolioFixture();

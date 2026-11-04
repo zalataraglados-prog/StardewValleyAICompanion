@@ -244,11 +244,20 @@ explicitly unproved. Existing legal withdrawal/navigation may still proceed and
 fresh-replan; this does not manufacture another acquisition or conclude that a
 later donation date is impossible.
 
-Focused route/museum checks passed 63 cases; original preparation passed 33,
+Focused route/museum checks passed 63 cases; original preparation passed 34,
 including local, remote, deferred first door, later closed door, missing date/
 calibration and raw-control tamper cases. The critical counterexample admits a
 direct museum trip but rejects the same trip after the extra withdrawal delay.
 Final CI is pending.
+
+Integration review also reproduced a real runtime omission: the first lightweight
+`New-RuntimeRustyKeyPlanning` call knew `RouteTimingPath` but did not forward it,
+so remote held stock could stall as calibration-missing without entering the
+acquisition pipeline. Its common build/preparation arguments now include the
+existing calibration path. Four actual lightweight CLI paths (remote held,
+local custody, remote custody, deferred custody) require ready route evidence
+without rebuilding acquisition axes. The pre-fix held case failed as expected;
+the full runtime orchestration suite now passes 39 checks without a game.
 
 Retained native `custody-b3512d5f-1104` before-withdrawal snapshot and revision-5
 ledger pass both original public CLIs. The bound Blacksmith (5,17) chest uses
