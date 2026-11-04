@@ -15,6 +15,11 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
         var reasons = new List<string>();
         if (!EqualJson(request, CanonicalRequest(context)))
             reasons.Add("support_settlement_request_mismatch");
+        var preparedMap = request.PreparedMaterialTransferSha256 is null
+            ? null : context.BaseLedger.PreparedMaterialTransfer?.ReservationProjection;
+        if (!EqualJson(result.MaterialTransferReservations, preparedMap) ||
+            preparedMap is not null && settled.PreparedMaterialTransfer is not null)
+            reasons.Add("support_settlement_transfer_preparation_not_consumed");
         var expectedSettlements = request.MaterialConsumptions.Select(
                 consumption =>
                 {
@@ -206,6 +211,7 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
                 value.MaterialReservationId))
             .Concat(request.CurrencyConsumptions.Select(value =>
                 value.CurrencyReservationId))
+            .Concat(preparedMap?.ReservationTransitions.Select(value => value.ReservationId) ?? Array.Empty<string>())
             .ToHashSet(StringComparer.Ordinal);
         foreach (var reservationId in request.RebindActiveReservationIds
                      .Where(value => !mutatedIds.Contains(value)))
@@ -303,12 +309,13 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
                  row.Reason == request.Reason) == 1);
         var reboundOnlyCount = request.RebindActiveReservationIds.Count(value =>
             !mutatedIds.Contains(value));
+        var transferHistoryCount = ValidateTransferSettlementHistory(context, request, settled, reasons);
         if (markers.Length != 1 ||
             currentHistory.Length != expectedSettlements.Length +
                 request.MaterialRelocations.Length +
                 expectedCurrencySettlements.Length +
                 reboundOnlyCount +
-                (context.MachineSupportIntent is null ? 0 : 1) + 1 ||
+                (context.MachineSupportIntent is null ? 0 : 1) + transferHistoryCount + 1 ||
             !mutationHistoryMatches)
         {
             reasons.Add("support_settlement_history_mismatch");

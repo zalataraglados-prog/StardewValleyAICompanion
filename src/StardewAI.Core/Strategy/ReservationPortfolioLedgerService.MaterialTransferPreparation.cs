@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
@@ -41,7 +39,7 @@ public sealed partial class ReservationPortfolioLedgerService
         }
         var projection = new MaterialTransferProjector().ProjectReservations(graph!, preparation.Intent, staged, moves);
         foreach (var reason in projection.BlockingReasons) errors.Add(reason);
-        if (projection.Status == "projected" && ContainsCustody(staged, projection))
+        if (projection.Status == "projected" && PreparedMaterialTransferContract.ContainsCustody(staged, projection))
             errors.Add("output_custody_relocation_requires_retained_terminal_lifecycle");
         if (errors.Count > 0) return;
 
@@ -66,38 +64,13 @@ public sealed partial class ReservationPortfolioLedgerService
             SourceStateHash = snapshot.StateHash,
             SourceGameTick = snapshot.GameTick,
             ExpectedLedgerRevision = staged.Revision,
-            MaterialReservationsSha256 = MaterialReservationsHash(staged),
+            MaterialReservationsSha256 = PreparedMaterialTransferContract.ComputeMaterialReservationsSha256(staged),
             Intent = preparation.Intent,
             MaterialRelocations = moves,
             BeforeInventoryGraph = compact,
             ReservationProjection = projection
         }))!;
-        retained.BindingSha256 = MaterialTransferPreparationHash(retained);
+        retained.BindingSha256 = PreparedMaterialTransferContract.ComputeBindingSha256(retained);
         staged.PreparedMaterialTransfer = retained;
-    }
-
-    private static bool ContainsCustody(StrategyCommitmentLedger ledger,
-        MaterialTransferReservationProjection projection) =>
-        ledger.MaterialReservations.Any(row => row.OutputCustody is not null &&
-            projection.ReservationTransitions.Any(change => change.ReservationId == row.ReservationId));
-
-    private static string MaterialTransferPreparationHash(PreparedMaterialTransfer value)
-    {
-        var json = JsonSerializer.Serialize(new
-        {
-            value.SchemaVersion, value.PortfolioId, value.GoalId, value.RouteSourceDecisionId,
-            value.SourceStateHash, value.SourceGameTick, value.ExpectedLedgerRevision, value.MaterialReservationsSha256, value.Intent,
-            value.MaterialRelocations, value.BeforeInventoryGraph, value.ReservationProjection
-        });
-        return MaterialTransferTextHash(json);
-    }
-
-    private static string MaterialReservationsHash(StrategyCommitmentLedger ledger) =>
-        MaterialTransferTextHash(JsonSerializer.Serialize(ledger.MaterialReservations));
-
-    private static string MaterialTransferTextHash(string json)
-    {
-        using var sha = SHA256.Create();
-        return string.Concat(sha.ComputeHash(Encoding.UTF8.GetBytes(json)).Select(item => item.ToString("x2")));
     }
 }

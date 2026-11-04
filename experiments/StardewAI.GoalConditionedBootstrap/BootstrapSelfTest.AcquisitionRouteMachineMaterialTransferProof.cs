@@ -1,5 +1,6 @@
 using StardewAI.Contracts.Strategy;
 using StardewAI.Contracts.Training;
+using StardewAI.Core.Strategy;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -44,6 +45,19 @@ internal static partial class BootstrapSelfTest
             UpdatedAt = "2026-09-28T00:00:00Z",
             SourceStateHash = before.StateHash
         };
+        var passive = new ReservationPortfolioLedgerService().Commit(baseLedger, before, new ReservationPortfolioCommitRequest
+        {
+            StateHash = before.StateHash, ExpectedLedgerRevision = baseLedger.Revision,
+            PortfolioId = "other-portfolio:stone", GoalId = "other-goal:stone", SourceDecisionId = "other-route:stone",
+            MaterialClaims = new[] { new MaterialReservationUpsertRequest
+            {
+                StateHash = before.StateHash, ExpectedLedgerRevision = baseLedger.Revision,
+                ReservationId = "other-reservation:stone", GoalId = "other-goal:stone", SourceDecisionId = "other-route:stone",
+                NodeId = "chest:Farm:4,5", SlotIndex = 9, QualifiedItemId = "(O)390", Quantity = 3, Purpose = "keep other goal stone"
+            } }
+        }, "2026-09-28T00:00:00Z");
+        Require(passive.Accepted && passive.Ledger is not null, "Passive transfer fixture claim failed: " + string.Join(",", passive.Errors));
+        baseLedger = passive.Ledger!;
         Write(baseLedgerPath, baseLedger);
         var portfolioInputs = BuildTargetDatePortfolioInputs(
             authority.Template,
@@ -120,6 +134,12 @@ internal static partial class BootstrapSelfTest
                     .Length == 1,
             "File-backed machine material transfer lost its native " +
             "relocation identity.");
+        Require(built.SettlementReceipt.PreparedMaterialTransferSha256 is { Length: 64 } &&
+                built.SettlementReceipt.MaterialTransferReservations?.ReservationTransitions.Length == 2 &&
+                built.SettlementReceipt.MaterialTransferReservations.ReservationTransitions.Any(row =>
+                    row.ReservationId == "other-reservation:stone" && row.SourceSlotIndex == 9 && row.DestinationSlotIndex == 0),
+            "Canonical transfer lost the passive other-goal slot-compaction map.");
+        VerifyMaterialTransferPreparationBindings(built, before, baseLedger);
 
         return VerifySupportingTransitionTerminalRoute(
             authority,

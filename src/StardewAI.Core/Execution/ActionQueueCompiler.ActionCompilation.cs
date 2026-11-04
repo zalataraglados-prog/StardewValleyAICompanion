@@ -11,6 +11,7 @@ using StardewAI.Contracts.Strategy;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Goals;
 using StardewAI.Core.OptionRegistry;
+using StardewAI.Core.Strategy;
 using StardewAI.Core.Training;
 using StardewAI.Core.Verifier;
 using StardewAI.Core.WorldModel;
@@ -308,7 +309,7 @@ namespace StardewAI.Core.Execution
                 ? CompileStrategyPlan(validatedDirection)
                 : Array.Empty<StrategyPlanStep>();
 
-            return new ActionQueueItem
+            var item = new ActionQueueItem
             {
                 QueueItemId = "queue_item." + Guid.NewGuid().ToString("N"),
                 SourceActionId = action.ActionId,
@@ -336,8 +337,10 @@ namespace StardewAI.Core.Execution
                             ? "strategy_plan"
                         : "option_request",
                     OptionId = action.OptionId,
-                    GoalId = action.OptionId == "executor.donate_museum_item" &&
-                        action.Parameters.Any(parameter => parameter.Name == "museum_output_custody_reservation_id")
+                    GoalId = (action.OptionId == "executor.donate_museum_item" &&
+                        action.Parameters.Any(parameter => parameter.Name == "museum_output_custody_reservation_id") ||
+                        (action.OptionId is "executor.transfer_material" or "inventory.transfer_item") &&
+                        action.Parameters.Any(parameter => parameter.Name == PreparedMaterialTransferContract.BindingParameter))
                             ? goalId : null,
                     BehaviorCategory = option?.BehaviorCategory ?? OptionBehaviorCategories.Unknown,
                     CompilerResponsibility = option?.CompilerResponsibility ?? CompilerResponsibilities.Unknown,
@@ -352,6 +355,18 @@ namespace StardewAI.Core.Execution
                     QuestPlan = CompileQuestPlan(action, snapshot)
                 }
             };
+            if (action.OptionId is "executor.transfer_material" or "inventory.transfer_item")
+            {
+                var readiness = new ActionQueueDispatchReadinessService().Evaluate(new ActionQueueEnvelope(), item,
+                    commitmentLedger ?? new StrategyCommitmentLedger(), snapshot.StateHash);
+                if (!readiness.Ready)
+                {
+                    item.Status = "blocked";
+                    item.BlockingReasons = item.BlockingReasons.Concat(readiness.BlockingReasons)
+                        .Distinct(StringComparer.Ordinal).ToArray();
+                }
+            }
+            return item;
         }
 
     }

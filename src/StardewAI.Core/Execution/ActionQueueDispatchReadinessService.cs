@@ -8,7 +8,7 @@ using StardewAI.Core.Strategy;
 
 namespace StardewAI.Core.Execution;
 
-public sealed class ActionQueueDispatchReadinessService
+public sealed partial class ActionQueueDispatchReadinessService
 {
     public ActionQueueDispatchReadiness Evaluate(
         ActionQueueEnvelope queue,
@@ -25,6 +25,8 @@ public sealed class ActionQueueDispatchReadinessService
             CurrentLedgerId = currentLedger.LedgerId,
             CurrentLedgerRevision = currentLedger.Revision
         };
+        if (item.OptionId is "executor.transfer_material" or "inventory.transfer_item")
+            return EvaluateMaterialTransfer(item, currentLedger, currentStateHash, result);
         if (!string.Equals(
                 item.OptionId,
                 "executor.donate_museum_item",

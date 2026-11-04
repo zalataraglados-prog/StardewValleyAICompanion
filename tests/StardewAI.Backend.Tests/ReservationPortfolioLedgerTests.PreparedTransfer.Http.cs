@@ -1,15 +1,72 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.Extensions.DependencyInjection;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
+using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.Training;
+using StardewAI.Core.Strategy;
+using StardewAI.LiveTrainingLoop;
 
 namespace StardewAI.Backend.Tests;
 
 public sealed partial class ReservationPortfolioLedgerTests
 {
+    [Fact]
+    public async Task LiveTransferDispatchUsesActualPostedBindingAfterMovementWithoutRevisingTheLedger()
+    {
+        var fixture = PreparedMaterialTransferTestFixture.Create();
+        var root = NewPortfolioReplyRoot();
+        await using var app = PortfolioReplyApplication(root);
+        using var client = app.CreateClient();
+        var store = app.Services.GetRequiredService<StateStore>();
+        store.StoreSnapshot(fixture.Before);
+        ReservationPortfolioCommitResult? committed = null;
+        foreach (var request in new[]
+                 {
+                     PreparedMaterialTransferTestFixture.RouteRequest(fixture.Before),
+                     PreparedMaterialTransferTestFixture.OtherRequest(fixture.Before), fixture.PreparationRequest
+                 })
+        {
+            using var response = await client.PostAsJsonAsync(PortfolioEndpoint + "commit", request);
+            response.EnsureSuccessStatusCode();
+            committed = await response.Content.ReadFromJsonAsync<ReservationPortfolioCommitResult>();
+        }
+        var path = Assert.Single(Directory.GetFiles(root));
+        var ledgerBytes = File.ReadAllBytes(path);
+        var moved = JsonSerializer.Deserialize<SnapshotEnvelope>(JsonSerializer.Serialize(fixture.Before))!;
+        moved.GameTick++;
+        moved.State["time"] = JsonSerializer.SerializeToElement(new { time_of_day = new { value = 620, status = "available" } });
+        moved.StateHash = SnapshotHash.ComputeStateHash(moved.State);
+        store.StoreSnapshot(moved);
+        var item = PreparedMaterialTransferDispatchTests.Item(fixture);
+        item.NormalizedCommand.Parameters.Single(row => row.Name == PreparedMaterialTransferContract.BindingParameter).Value =
+            committed!.Ledger!.PreparedMaterialTransfer!.BindingSha256;
+        var original = JsonSerializer.SerializeToNode(item)!.AsObject();
+        var rebound = TeacherPreferenceQueueLoader.RebindQueueItemToState(original, moved.StateHash);
+        Assert.Equal(fixture.Before.StateHash, original["normalized_command"]!["state_hash"]!.GetValue<string>());
+        Assert.True(JsonNode.DeepEquals(original["normalized_command"]!["parameters"], rebound["normalized_command"]!["parameters"]));
+
+        var program = typeof(LiveTrainingOptions).Assembly.GetType("Program", throwOnError: true)!;
+        var read = program.GetMethod("ReadDispatchReadinessAsync", BindingFlags.NonPublic | BindingFlags.Static)!;
+        async Task<JsonObject?> Evaluate(JsonObject actual) => await (Task<JsonObject?>)read.Invoke(null, new object[]
+        {
+            client, new LiveTrainingOptions { BackendUrl = client.BaseAddress!.ToString().TrimEnd('/') },
+            actual, moved.StateHash, "local-precompiled-transfer"
+        })!;
+        var accepted = await Evaluate(rebound);
+        Assert.True(accepted?["ready"]?.GetValue<bool>(), accepted?.ToJsonString());
+        var parameters = rebound["normalized_command"]!["parameters"]!.AsArray();
+        parameters.Remove(parameters.Single(row => row!["name"]!.GetValue<string>() == PreparedMaterialTransferContract.BindingParameter));
+        var rejected = await Evaluate(rebound);
+        Assert.False(rejected?["ready"]?.GetValue<bool>());
+        Assert.Equal(ledgerBytes, File.ReadAllBytes(path));
+        Assert.Equal(3, app.Services.GetRequiredService<IStrategyCommitmentRepository>().Get(moved).Revision);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

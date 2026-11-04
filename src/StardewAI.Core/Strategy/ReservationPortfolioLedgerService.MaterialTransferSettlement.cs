@@ -33,22 +33,11 @@ public sealed partial class ReservationPortfolioLedgerService
             errors.Add("prepared_material_transfer_missing");
             return null;
         }
-        if (!IsLowerSha256(request.PreparedMaterialTransferSha256) ||
-            prepared.SchemaVersion != "prepared_material_transfer.v1" ||
-            prepared.BindingSha256 != request.PreparedMaterialTransferSha256 ||
-            prepared.BindingSha256 != MaterialTransferPreparationHash(prepared) ||
-            (current.History ?? Array.Empty<StrategyCommitmentHistoryEntry>()).Count(row =>
-                row.CommitmentId == prepared.PortfolioId && row.SourceDecisionId == prepared.RouteSourceDecisionId &&
-                row.Operation == "material_transfer_prepared" && row.LedgerRevision == prepared.ExpectedLedgerRevision &&
-                row.CommitmentRevision == prepared.ExpectedLedgerRevision && row.Reason == prepared.BindingSha256) != 1 ||
-            prepared.MaterialReservationsSha256 != MaterialReservationsHash(current) ||
-            prepared.ExpectedLedgerRevision != current.Revision ||
-            prepared.SourceStateHash != current.SourceStateHash ||
+        if (!PreparedMaterialTransferContract.IsBound(current, request.PreparedMaterialTransferSha256,
+                request.PortfolioId, request.GoalId, request.RouteSourceDecisionId) ||
             prepared.SourceStateHash == snapshot.StateHash || snapshot.GameTick < prepared.SourceGameTick ||
-            prepared.PortfolioId != request.PortfolioId || prepared.GoalId != request.GoalId ||
-            prepared.RouteSourceDecisionId != request.RouteSourceDecisionId || relocations.Length == 0 ||
-            JsonSerializer.Serialize(prepared.MaterialRelocations) != JsonSerializer.Serialize(relocations) ||
-            prepared.Intent is null || prepared.BeforeInventoryGraph is null || prepared.ReservationProjection is null)
+            relocations.Length == 0 ||
+            JsonSerializer.Serialize(prepared.MaterialRelocations) != JsonSerializer.Serialize(relocations))
         {
             errors.Add("prepared_material_transfer_binding_drifted");
             return null;
@@ -69,7 +58,7 @@ public sealed partial class ReservationPortfolioLedgerService
         foreach (var reason in projection.BlockingReasons) errors.Add(reason);
         if (JsonSerializer.Serialize(projection) != JsonSerializer.Serialize(prepared.ReservationProjection))
             errors.Add("prepared_material_transfer_projection_drifted");
-        if (projection.Status == "projected" && ContainsCustody(current, projection))
+        if (projection.Status == "projected" && PreparedMaterialTransferContract.ContainsCustody(current, projection))
             errors.Add("output_custody_rebind_requires_retained_terminal_lifecycle");
         if (!MaterialInventoryGraphReader.TryRead(snapshot, out afterGraph))
             errors.Add("prepared_material_transfer_after_graph_unavailable");

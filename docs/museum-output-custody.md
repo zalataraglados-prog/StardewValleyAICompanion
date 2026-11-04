@@ -88,7 +88,11 @@ are implemented as the next [custody prerequisite](material-transfer-slot-lineag
 not custody relocation authority. The original Backend now supports
 [compact preparation and atomic ordinary transfer settlement](material-transfer-slot-lineage.md#prepared-atomic-settlement),
 including passive other-goal slot rebinds, without retaining more full snapshots.
-The canonical producer/receipt/dispatch path is not yet wired to that protocol;
-it must be connected next, followed by custody authorization and a real
-acquired-custody storage/withdrawal/donation lifecycle. Both selected and passive
-custody remain rejected at preparation. No new planner or executor is needed.
+The original canonical ordinary producer/receipt/compiler/dispatch/settlement
+path now consumes that protocol, including complete passive-compaction maps and
+Live readiness checks after movement. This is a tested ordinary-transfer
+prerequisite, not permission to move custody. Next extend the same retained
+lifecycle with immutable acquisition provenance and authorized mutable custody
+locations, then verify real acquired-custody storage/withdrawal/donation. Both
+selected and passive custody remain rejected at preparation until that contract
+is implemented and independently verified. No new planner or executor is needed.

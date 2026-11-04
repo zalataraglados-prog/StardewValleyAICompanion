@@ -362,7 +362,9 @@ static partial class Program
             var compiledCommandStateHash = ReadString(
                 item["normalized_command"] as JsonObject,
                 "state_hash");
-            if (options.UseTeacherPreferenceQueue)
+            var precompiledTransfer = options.UsePrecompiledQueue &&
+                (ReadString(item, "option_id") is "executor.transfer_material" or "inventory.transfer_item");
+            if (options.UseTeacherPreferenceQueue || precompiledTransfer)
             {
                 item = TeacherPreferenceQueueLoader.RebindQueueItemToState(
                     item,
@@ -458,6 +460,7 @@ static partial class Program
             execution["compiled_command_state_hash"] = compiledCommandStateHash;
             execution["teacher_preference_state_rebound"] =
                 options.UseTeacherPreferenceQueue;
+            if (precompiledTransfer) execution["precompiled_transfer_state_rebound"] = true;
             execution["effective_before_snapshot_path"] = currentBeforeSnapshotPath;
             effectiveDecisionArtifacts.Stamp(execution);
             execution["mechanical_compiled_queue_path"] = ReadString(

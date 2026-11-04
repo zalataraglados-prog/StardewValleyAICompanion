@@ -3,6 +3,7 @@ using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
 using StardewAI.Contracts.Training;
+using StardewAI.Core.Strategy;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -127,7 +128,10 @@ public static partial class AcquisitionRouteSupportingTransitionCompilationBuild
                     JsonSerializer.Serialize(
                         request.SupportCurrencyConsumptions,
                         JsonDefaults.Options))
-            }, controlSelection: controlSelection);
+            }.Concat(commit.PreparedMaterialTransferSha256 is null
+                ? Array.Empty<SmallModelActionParameter>()
+                : new[] { Parameter(PreparedMaterialTransferContract.BindingParameter, commit.PreparedMaterialTransferSha256) })
+                .ToArray(), controlSelection: controlSelection);
         compilation.SupportRequestSha256 = supportRequestSha256;
         compilation.SupportCommitReceiptSha256 = supportCommitReceiptSha256;
         compilation.SupportDeadlineTotalDay =
@@ -150,6 +154,7 @@ public static partial class AcquisitionRouteSupportingTransitionCompilationBuild
         string commitSha256,
         ICollection<string> reasons)
     {
+        AcquisitionRouteSupportingTransferBinding.Validate(request, ledger, commit.PreparedMaterialTransferSha256, reasons);
         if (!request.SupportRequestReady ||
             request.AtomicCommitRequest is null ||
             request.ExpectedReadyTotalDay is null ||

@@ -12,6 +12,14 @@ static partial class Program
         var optionId = ReadStringOrEmpty(item, "option_id");
         if (!string.Equals(
                 optionId,
+                "executor.transfer_material",
+                StringComparison.Ordinal) &&
+            !string.Equals(
+                optionId,
+                "inventory.transfer_item",
+                StringComparison.Ordinal) &&
+            !string.Equals(
+                optionId,
                 "executor.donate_museum_item",
                 StringComparison.Ordinal) &&
             !string.Equals(

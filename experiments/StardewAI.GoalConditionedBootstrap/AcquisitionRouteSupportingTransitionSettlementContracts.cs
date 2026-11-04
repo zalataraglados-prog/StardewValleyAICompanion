@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Strategy;
 
 namespace StardewAI.GoalConditionedBootstrap;
@@ -36,6 +37,14 @@ public sealed class AcquisitionRouteSupportingTransitionSettlementReceipt
     [JsonPropertyName("supporting_transition_receipt_sha256")]
     public string SupportingTransitionReceiptSha256 { get; set; } =
         string.Empty;
+
+    [JsonPropertyName("prepared_material_transfer_sha256")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? PreparedMaterialTransferSha256 { get; set; }
+
+    [JsonPropertyName("material_transfer_reservations")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public MaterialTransferReservationProjection? MaterialTransferReservations { get; set; }
 
     [JsonPropertyName("base_ledger_sha256")]
     public string BaseLedgerSha256 { get; set; } = string.Empty;

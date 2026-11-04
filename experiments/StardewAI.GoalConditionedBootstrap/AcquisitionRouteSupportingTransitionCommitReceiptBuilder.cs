@@ -62,6 +62,9 @@ public static class AcquisitionRouteSupportingTransitionCommitReceiptBuilder
         string commitResultSha256 = "")
     {
         var reasons = ValidateRequest(request, baseLedger, snapshot);
+        var preparedSha256 = request.SupportTransitionKind == "machine_input_material_transfer"
+            ? committed.PreparedMaterialTransfer?.BindingSha256 : null;
+        AcquisitionRouteSupportingTransferBinding.Validate(request, committed, preparedSha256, reasons);
         var exactClaims = ValidateExactClaims(request, committed, reasons);
         var singleRevision = false;
         if (request.AtomicCommitRequest is not null)
@@ -99,6 +102,7 @@ public static class AcquisitionRouteSupportingTransitionCommitReceiptBuilder
             BaseLedgerSha256 = baseLedgerSha256,
             CommittedLedgerSha256 = committedLedgerSha256,
             CommitResultSha256 = commitResultSha256,
+            PreparedMaterialTransferSha256 = preparedSha256,
             ReservationClaimIds = request.ReservationClaimIds.ToArray(),
             ExactActiveClaimSetVerified = exactClaims,
             SingleRevisionCommitVerified = singleRevision,
