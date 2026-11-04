@@ -210,6 +210,60 @@ Artifacts remain outside Git in
 `native-acquisition-preparation-01.json` SHA-256
 `66f16609a2969507e0fa00d3b3b3712caa03c6cee43fa199bb9fc5510af5c99a`.
 
+## Selected Custody Continuation
+
+PR #427 passed exact-head CI (Core 1214/1214, Backend 558/558, rolling 56,
+preparation 27) and merged as `d3e5b75d`. Its earlier pending-CI notes are
+historical. The selected stored-output control now retains
+`selected_custody_donation_schedule`, binding the original reservation,
+position-history hash, destination and actual selected candidate.
+
+The same museum schedule builder composes three sequential stages using one
+original date context/calibration: complete chest approach, shared native
+withdrawal interaction, then original museum continuation. Local transfer
+must use the exact original compiled adjacent stand. Remote navigation must
+traverse the actual selected first edge; an easier unselected exit cannot lend
+its proof. The original producer's exact-stand mode handles local arrival;
+remote arrival uses its ordinary adjacent-stand mode. Only the shared interaction
+ticks are added after arrival, not the candidate's whole movement estimate.
+
+Later doors and counter completion are evaluated at the resulting sequential
+times. The original execution still contains only its immediate transfer request,
+one connector or one bounded wait, then fresh-replans; no forecast is converted
+to a multi-map queue or inventory mutation. Original whole-control precommit
+rebuilding rejects edits to the new report. Only the selected custody is analyzed,
+reusing the existing parsed material graph without extra snapshots or scanners.
+
+This is a conditional current-day **route/timing** proof, not future physical
+transfer authorization, a native withdrawal receipt or the complete joint/key
+certificate. `requires_fresh_transfer_preflight=true` and native verification
+remain false. The original capacity, authorization, reservation commit and native
+settlement checks remain mandatory. Missing timing/date/calibration, or a selected
+clearance step whose post-clearance geometry has not been freshly observed, stays
+explicitly unproved. Existing legal withdrawal/navigation may still proceed and
+fresh-replan; this does not manufacture another acquisition or conclude that a
+later donation date is impossible.
+
+Focused route/museum checks passed 63 cases; original preparation passed 33,
+including local, remote, deferred first door, later closed door, missing date/
+calibration and raw-control tamper cases. The critical counterexample admits a
+direct museum trip but rejects the same trip after the extra withdrawal delay.
+Final CI is pending.
+
+Retained native `custody-b3512d5f-1104` before-withdrawal snapshot and revision-5
+ledger pass both original public CLIs. The bound Blacksmith (5,17) chest uses
+stand (5,16): arrival 09:00, withdrawal complete by 09:08, counter by 09:42,
+donation complete by 09:48. Preparation remains `custody_transfer`, with the
+original request and no compiled donation queue or execution/training authority.
+The original atomic request and source state match the retained control exactly;
+the held-route public replay also remains byte-identical at SHA-256
+`511a4127a3901d4a16f415be9a4899efc38be9b88d95785b3b6362974272a3a2`.
+No new game run is claimed. Local artifacts outside Git:
+`I:\StardewAITraining\custody-donation-schedule-20261104`, replay SHA-256
+`c7fe56180f10c438d4a572718d2775583873a970d4d590745b07708bf318a8f1`,
+preparation SHA-256
+`75732df09a8e3496b6132f8535eca243deafce92d78894c4422dd2c110e3827f`.
+
 ## Remaining Joint Schedule
 
 Continue the same Rusty Key primary. Reuse the existing target-date calendar,
@@ -217,8 +271,10 @@ route-date evidence producer, `FutureRouteAccessWindowResolver`, timing
 calibration and day-budget compiler to join the selected acquisition's real
 terminal position/completion time and any authorized custody withdrawal to this
 museum route. The selected current-day acquisition forecast now supplies the
-first of those joins; authorized withdrawal timing, retained custody across a
-legal later donation date and the actual following-morning handoff remain.
+first of those joins, and the selected custody branch now supplies the complete
+current-day withdrawal route/timing join. Fresh physical transfer/native outcomes,
+post-clearance fresh geometry, retained custody across a legal later donation
+date and the actual following-morning handoff remain.
 Do not clone/mutate the snapshot to invent future stock or pretend
 the current-date map projection is a future-date source.
 Use native date-bound gate evidence, sequential arrival times and conservative

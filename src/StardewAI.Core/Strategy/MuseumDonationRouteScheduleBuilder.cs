@@ -13,7 +13,7 @@ using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.Strategy;
 
-public sealed class MuseumDonationRouteScheduleBuilder
+public sealed partial class MuseumDonationRouteScheduleBuilder
 {
     private readonly SnapshotEnvelope snapshot;
     private readonly JsonElement graph;
@@ -77,23 +77,29 @@ public sealed class MuseumDonationRouteScheduleBuilder
     public MuseumDonationRouteSchedule Build(PolicyEventCandidatePrediction candidate)
     {
         if (errors.Length > 0) return Blocked(errors);
-        var required = new[] { "connector_kind", "expected_target_location", "expected_arrival_tile_x", "expected_arrival_tile_y" };
-        var values = candidate.Parameters.Where(parameter => required.Contains(parameter.Name, StringComparer.Ordinal)).ToArray();
-        if (candidate.Kind != "route_connector_tile" || candidate.LocationId != startLocation ||
-            !candidate.TileX.HasValue || !candidate.TileY.HasValue || values.Length != required.Length ||
-            values.Select(value => value.Name).Distinct(StringComparer.Ordinal).Count() != required.Length)
-            return Blocked(new[] { "museum_donation_route_first_connector_incomplete" });
-        var parameters = values.ToDictionary(value => value.Name, value => value.Value, StringComparer.Ordinal);
-        if (!int.TryParse(parameters["expected_arrival_tile_x"], NumberStyles.Integer, CultureInfo.InvariantCulture, out var arrivalX) ||
-            !int.TryParse(parameters["expected_arrival_tile_y"], NumberStyles.Integer, CultureInfo.InvariantCulture, out var arrivalY))
-            return Blocked(new[] { "museum_donation_route_first_connector_incomplete" });
-        var first = new TransparentRouteEdge(parameters["connector_kind"], startLocation, parameters["expected_target_location"],
-            candidate.TileX, candidate.TileY, arrivalX, arrivalY);
+        var first = ReadFirstConnector(candidate);
+        if (first is null) return Blocked(new[] { "museum_donation_route_first_connector_incomplete" });
         return BuildSchedule(new FutureRouteDateEvidenceRequest
         {
             TotalDays = day, StartLocation = startLocation, StartTileX = startX, StartTileY = startY,
             EarliestDepartureTime = startTime, RequiredFirstEdge = first
         });
+    }
+
+    private TransparentRouteEdge? ReadFirstConnector(PolicyEventCandidatePrediction candidate)
+    {
+        var required = new[] { "connector_kind", "expected_target_location", "expected_arrival_tile_x", "expected_arrival_tile_y" };
+        var values = candidate.Parameters.Where(parameter => required.Contains(parameter.Name, StringComparer.Ordinal)).ToArray();
+        if (candidate.Kind != "route_connector_tile" || candidate.LocationId != startLocation ||
+            !candidate.TileX.HasValue || !candidate.TileY.HasValue || values.Length != required.Length ||
+            values.Select(value => value.Name).Distinct(StringComparer.Ordinal).Count() != required.Length)
+            return null;
+        var parameters = values.ToDictionary(value => value.Name, value => value.Value, StringComparer.Ordinal);
+        if (!int.TryParse(parameters["expected_arrival_tile_x"], NumberStyles.Integer, CultureInfo.InvariantCulture, out var arrivalX) ||
+            !int.TryParse(parameters["expected_arrival_tile_y"], NumberStyles.Integer, CultureInfo.InvariantCulture, out var arrivalY))
+            return null;
+        return new TransparentRouteEdge(parameters["connector_kind"], startLocation, parameters["expected_target_location"],
+            candidate.TileX, candidate.TileY, arrivalX, arrivalY);
     }
 
     public MuseumDonationRouteSchedule BuildContinuation(int totalDay, string location, int tileX, int tileY, int completionTime)

@@ -10,9 +10,14 @@ ticks (one item: 307 ticks / eight conservative game minutes). Movement and
 interaction are charged separately, not by a one-minute terminal shortcut.
 No new executor or Core dependency is added to the runtime harness.
 
-This fixes interaction timing only. A complete stored-output continuation must
-still prove the full route to the chest, exact stand, actual withdrawal and
-subsequent museum route; `BuildApproach`'s current single segment is insufficient.
+The selected rolling custody now binds a current-day forecast of the full trip
+to the chest, original exact stand for local transfer, native interaction and
+subsequent museum route. Remote forecasts require the actual selected first edge;
+`BuildApproach`'s current single segment is never treated as complete arrival.
+This remains a route/timing forecast: fresh physical authorization/capacity,
+actual withdrawal and original settlement are mandatory, not granted by a ready
+flag. Missing post-clearance geometry/date/timing is explicit; later donation
+dates and the real morning key outcome remain pending.
 See the [time contract](rusty-key-time-budget.md#complete-custody-interaction-budget).
 
 ## One Ledger And One Consumption Path

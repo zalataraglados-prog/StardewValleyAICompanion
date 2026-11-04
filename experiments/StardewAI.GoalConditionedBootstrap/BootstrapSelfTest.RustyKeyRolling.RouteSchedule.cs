@@ -79,7 +79,8 @@ internal static partial class BootstrapSelfTest
         fixture.Snapshot.State["player"] = JsonSerializer.SerializeToElement(player);
         var museum = JsonSerializer.SerializeToNode(fixture.Snapshot.State["world_progress"])!;
         museum["museum"]!["value"]!["museum_is_current_location"] = false;
-        museum["museum"]!["value"]!["donation_candidates"]![0]!["action_status"] = "museum_not_current_location";
+        foreach (var candidate in museum["museum"]!["value"]!["donation_candidates"]!.AsArray().OfType<JsonObject>())
+            candidate["action_status"] = "museum_not_current_location";
         fixture.Snapshot.State["world_progress"] = JsonSerializer.SerializeToElement(museum);
         var locations = JsonSerializer.SerializeToNode(fixture.Snapshot.State["locations"])!.AsObject();
         locations["collision_grid"]!["value"]!["location_id"] = "Town";

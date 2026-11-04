@@ -1,5 +1,12 @@
 # Rusty Key Step Preparation
 
+Selected custody controls also include the independently rebuilt complete
+current-day route/timing forecast. Precommit verifies its reservation, position
+hash and sequential timestamps through the original whole-control identity.
+It still returns only the original transfer request or immediate navigation/
+bounded-wait queue; the forecast cannot authorize future inventory movement,
+bypass fresh capacity checks or count as native outcome evidence.
+
 Selected acquisition controls also carry the source-bound current-day
 acquisition-to-donation forecast. The original whole-control identity rebuild
 includes this forecast before any commit; its terminal completion, daily-budget
