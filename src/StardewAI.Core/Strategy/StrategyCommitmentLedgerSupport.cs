@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
@@ -51,6 +52,9 @@ internal static class StrategyCommitmentLedgerSupport
             Revision = current?.Revision ?? 0,
             UpdatedAt = updatedAt,
             SourceStateHash = snapshot.StateHash,
+            PreparedMaterialTransfer = current?.PreparedMaterialTransfer is null ? null :
+                JsonSerializer.Deserialize<PreparedMaterialTransfer>(
+                    JsonSerializer.Serialize(current.PreparedMaterialTransfer)),
             CropPlantingCommitments = current?.CropPlantingCommitments
                 .Select(CloneCrop)
                 .ToArray() ?? Array.Empty<CropPlantingCommitment>(),

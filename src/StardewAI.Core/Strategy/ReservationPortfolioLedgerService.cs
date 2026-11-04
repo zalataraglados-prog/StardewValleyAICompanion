@@ -98,6 +98,9 @@ public sealed partial class ReservationPortfolioLedgerService
         committed.Revision = originalRevision + 1;
         foreach (var history in committed.History.Skip(originalHistoryCount))
             history.LedgerRevision = committed.Revision;
+        PrepareMaterialTransfer(committed, snapshot, request, errors);
+        if (errors.Count > 0)
+            return Rejected(current, request, errors);
         StrategyCommitmentLedgerSupport.AppendHistory(
             committed,
             request.PortfolioId,
@@ -106,6 +109,13 @@ public sealed partial class ReservationPortfolioLedgerService
             "reservation_portfolio_commit",
             updatedAt,
             string.Empty);
+
+        if (request.MaterialTransferPreparation is not null)
+        {
+            var prepared = committed.PreparedMaterialTransfer!;
+            StrategyCommitmentLedgerSupport.AppendHistory(committed, prepared.PortfolioId, committed.Revision,
+                prepared.RouteSourceDecisionId, "material_transfer_prepared", updatedAt, prepared.BindingSha256);
+        }
 
         return new ReservationPortfolioCommitResult
         {
