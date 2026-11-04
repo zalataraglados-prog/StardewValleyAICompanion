@@ -79,7 +79,13 @@ now verifies actual acquisition/custody/donation/settlement, normal night and
 next-morning key event, including an independent rebuild by the original custody
 request builder. This supersedes the earlier no-game slice's native-proof gap,
 not its one-unit player-inventory limitation. Remaining Rusty Key work includes
-safely isolated sparse transfer evidence, relocation, joint windows/budgets,
+relocation, joint windows/budgets,
 criterion-local independent Teacher/native partitions and
 the pre-Year-3 deadline. The prepared Year-5 boundary is shared capability, not
-that deadline proof. No new planner or executor is needed.
+that deadline proof. The isolated sparse transfer boundary is now accepted.
+The original projector's complete reservation-location map and offline replay
+are implemented as the next [custody prerequisite](material-transfer-slot-lineage.md#reservation-map-before-custody-settlement),
+not yet connected production settlement or relocation authority. Canonical
+receipt binding, the original atomic ledger transaction, upstream/dispatch
+authorization and a real acquired-custody storage/withdrawal/donation lifecycle
+still remain. No new planner or executor is needed.

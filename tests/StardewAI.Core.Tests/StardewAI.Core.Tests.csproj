@@ -59,6 +59,8 @@
     <Compile Include="MaterialTransferProjectorTests.cs" />
     <Compile Include="MaterialTransferProjectorTests.NativeSlots.cs" />
     <Compile Include="MaterialTransferProjectorTests.ReceiptLineage.cs" />
+    <Compile Include="MaterialTransferProjectorTests.Reservations.cs" />
+    <Compile Include="MaterialTransferProjectorTests.Reservations.Fixture.cs" />
     <Compile Include="MoneyDependencyExpansionArchitectureTests.cs" />
     <Compile Include="MoneyThresholdNativeOutcomeRunnerSourceGuardTests.cs" />
     <Compile Include="MoneyCropNativeProductionRunnerSourceGuardTests.cs" />
