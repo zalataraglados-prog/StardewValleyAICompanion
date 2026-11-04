@@ -133,7 +133,7 @@ public sealed partial class ActionQueueCompiler
                 source + "->" + destination,
                 "material_inventory_graph transfer=" + quantity.Value +
                 ";native_chest_menu=true;source_and_destination_verified=true",
-                Math.Max(120, quantity.Value * 2 + 120))
+                MaterialTransferBudgetPolicy.InteractionTicks(quantity.Value))
         };
     }
 
