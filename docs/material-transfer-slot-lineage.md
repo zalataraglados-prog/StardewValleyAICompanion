@@ -109,6 +109,18 @@ ordering is guarded by regression. This is an orchestration correction, not a
 native transfer/compiler failure; the retained runtime may be reused only after
 the same source-equivalence/hash checks. The real sparse round trip remains pending.
 
+The `ee2f76fa` script with the verified `7a1d6f35` runtime bundle reached native
+execution but its existing X override never opened the chest menu: zero clicks,
+source wood still eleven, lock released. Direct decompile confirms a player
+chest's `checkForAction` requires `didPlayerJustRightClick(true)`, then owns its
+normal mutex/lid animation/menu path. The original state machine now reuses the
+already existing scoped `NativeRightClickEdgePatch`, calls that native object
+method once and clears the scope in `finally`. It rechecks live adjacency,
+identity, control, owner and lock, excludes giftboxes, and still waits for the
+real menu and native lock. It never calls ShowMenu directly, acquires the lock
+itself or changes inventory. The obsolete key-release state is removed rather
+than retained as a second opening path. A new clean runtime run is required.
+
 Focused Core tests cover sparse partial/full withdrawal, deposit compaction and
 split insertion, preserving player holes, unrelated stock/slot drift, malformed
 graphs, explicit null/legacy serialization, and the actual independent receipt
@@ -134,15 +146,10 @@ before donation. The existing custody rejection guards remain enabled.
 
 The current-geode acquisition/custody/donation/consumption/night/key trace is now
 [accepted](geode-dialogue-lifecycle.md#accepted-native-boundary); do not repeat it
-as the next task. First put the legacy transfer smoke under the shared isolated
-save, dedicated ledger, exact mod allowlist and owned hidden-process contract,
-and use `--skip-training` instead of its historical training path. Then complete
-the sparse-chest native regression before opening custody relocation/rebind.
-Sparse-chest native regression is
-still required separately; build/game-free tests do not certify it. The legacy
-`Invoke-RuntimeMaterialTransferDailyPlanSmoke.ps1` points directly at
-`RuntimeRoot/saves`; do not run it against a retained baseline. Any reuse must
-first use the shared isolated-save/owned-process contract and preserve source
-hashes. The prepared Year-5 baseline remains boundary capability, not pre-Year-3
-criterion evidence. Frozen coverage and `formal_product_training=false` stay
-unchanged.
+as the next task. The isolated smoke entry described above has replaced the
+unsafe baseline-in-place flow. Its clean-source sparse native regression remains
+the next boundary before custody relocation/rebind; build/game-free tests do not
+certify it. The retained source under `RuntimeRoot/saves` is read and copied, not
+the execution destination. The prepared Year-5 baseline remains shared mechanical
+capability, not pre-Year-3 criterion evidence. Frozen coverage and
+`formal_product_training=false` stay unchanged.

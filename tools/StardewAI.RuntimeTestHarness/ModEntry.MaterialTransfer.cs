@@ -84,6 +84,7 @@ public sealed partial class ModEntry
             value is not Chest chest ||
             chest.GetType() != typeof(Chest) ||
             !chest.playerChest.Value ||
+            chest.giftbox.Value ||
             chest.SpecialChestType != Chest.SpecialChestTypes.None ||
             chest.fridge.Value ||
             !AreAdjacent(target, stand))
@@ -220,24 +221,33 @@ public sealed partial class ModEntry
         if (active.Stage == MaterialTransferStage.Open)
         {
             StopAllMovement();
-            Game1.player.faceDirection(DirectionTo(Game1.player.TilePoint, active.Target));
-            if (!TryApplySmapiButtonOverride(SButton.X, pressed: true, out var pressReason))
+            if (Game1.player.TilePoint != active.Stand || !AreAdjacent(active.Stand, active.Target) ||
+                Game1.activeClickableMenu is not null || Game1.dialogueUp || Game1.eventUp ||
+                Game1.player.UsingTool || !Game1.player.CanMove ||
+                !active.Location.objects.TryGetValue(active.Target.ToVector2(), out var target) ||
+                !ReferenceEquals(target, active.Chest) || active.Chest.giftbox.Value ||
+                !MaterialChestActorUseAuthorized(active.Chest) || NativeRightClickEdgePatch.Active ||
+                active.Chest.GetMutex().IsLocked() && !active.Chest.GetMutex().IsLockHeld())
             {
-                CompleteMaterialTransferBlocked(active, "material_transfer_open_press_failed:" + pressReason);
+                CompleteMaterialTransferBlocked(active, "material_transfer_live_open_context_drifted");
                 return;
             }
-            active.Stage = MaterialTransferStage.ReleaseOpenInput;
-            active.StageStartedAt = active.ElapsedTicks;
-            return;
-        }
-
-        if (active.Stage == MaterialTransferStage.ReleaseOpenInput)
-        {
-            if (!TryApplySmapiButtonOverride(SButton.X, pressed: false, out var releaseReason))
+            Game1.player.faceDirection(DirectionTo(Game1.player.TilePoint, active.Target));
+            NativeRightClickEdgePatch.Arm();
+            bool handled;
+            bool rightClickObserved;
+            try
             {
-                CompleteMaterialTransferBlocked(
-                    active,
-                    "material_transfer_open_release_failed:" + releaseReason);
+                handled = active.Chest.checkForAction(Game1.player);
+                rightClickObserved = NativeRightClickEdgePatch.WasObserved;
+            }
+            finally
+            {
+                NativeRightClickEdgePatch.Clear();
+            }
+            if (!handled || !rightClickObserved)
+            {
+                CompleteMaterialTransferBlocked(active, "material_transfer_native_open_not_handled");
                 return;
             }
             active.Stage = MaterialTransferStage.WaitForMenu;
@@ -422,7 +432,6 @@ public sealed partial class ModEntry
     private void CompleteMaterialTransfer(ActiveMaterialTransfer active)
     {
         StopAllMovement();
-        TryApplySmapiButtonOverride(SButton.X, pressed: false, out _);
         var intent = active.Pending.Request.MaterialTransferIntent!;
         var source = active.SourceIsPlayer
             ? Game1.player.Items
@@ -446,7 +455,6 @@ public sealed partial class ModEntry
         params string[] reasons)
     {
         StopAllMovement();
-        TryApplySmapiButtonOverride(SButton.X, pressed: false, out _);
         if (Game1.activeClickableMenu is ItemGrabMenu menu &&
             ReferenceEquals(menu.sourceItem, active.Chest) &&
             menu.readyToClose())
@@ -607,7 +615,6 @@ public sealed partial class ModEntry
     {
         Move,
         Open,
-        ReleaseOpenInput,
         WaitForMenu,
         Transfer,
         CloseMenu,
