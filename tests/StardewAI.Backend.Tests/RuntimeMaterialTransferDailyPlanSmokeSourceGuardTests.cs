@@ -42,6 +42,9 @@ public sealed class RuntimeMaterialTransferDailyPlanSmokeSourceGuardTests
         Assert.Contains("Get-RuntimeExactModAllowlist", script, StringComparison.Ordinal);
         Assert.Contains("STARDEWAI_STRATEGY_LEDGER_DIR = $ledgerDirectory", script, StringComparison.Ordinal);
         Assert.Contains("$ledger.revision -ne 0", script, StringComparison.Ordinal);
+        var ingest = script.IndexOf("Save-RuntimeSnapshotAndIngest -Path $fixturePath", StringComparison.Ordinal);
+        var ledgerLookup = script.IndexOf("/api/v1/strategy/commitments/latest?stateHash=", StringComparison.Ordinal);
+        Assert.True(ingest >= 0 && ledgerLookup > ingest);
         Assert.Contains("Save-RuntimeProcessEnvironment", script, StringComparison.Ordinal);
         Assert.Contains("Restore-RuntimeProcessEnvironment", script, StringComparison.Ordinal);
         Assert.Contains("Stop-RuntimeEvidenceProcesses", script, StringComparison.Ordinal);
@@ -57,6 +60,7 @@ public sealed class RuntimeMaterialTransferDailyPlanSmokeSourceGuardTests
     {
         var fixture = RuntimeHarnessSources.File("ModEntry.MaterialInventoryGraph.cs");
         var contents = RuntimeHarnessSources.File("ModEntry.MaterialTransfer.Fixture.cs");
+        Assert.Contains("material_transfer_fixture_profile_unsupported", fixture, StringComparison.Ordinal);
         Assert.True(fixture.IndexOf("material_transfer_fixture_profile_unsupported", StringComparison.Ordinal) <
             fixture.IndexOf("farm.objects.Remove(tile)", StringComparison.Ordinal));
         Assert.Contains("5 => wood", contents, StringComparison.Ordinal);

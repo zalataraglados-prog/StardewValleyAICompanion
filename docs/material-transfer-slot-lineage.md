@@ -100,6 +100,15 @@ checks and the E-path Harness build do not certify the real sparse scenario;
 the next action is a new clean-source isolated native run. A Year-5 source is
 allowed for this shared mechanical capability, never for a pre-Year-3 criterion.
 
+The first clean `7a1d6f35` native attempt verified sparse setup but stopped before
+any measured transfer: the test requested its actor ledger before ingesting the
+fixture snapshot, so the existing Backend correctly returned unknown-state 404.
+The entry now ingests that exact original snapshot before ledger lookup; lookup
+errors are immediate rather than retried as if they were startup health. The
+ordering is guarded by regression. This is an orchestration correction, not a
+native transfer/compiler failure; the retained runtime may be reused only after
+the same source-equivalence/hash checks. The real sparse round trip remains pending.
+
 Focused Core tests cover sparse partial/full withdrawal, deposit compaction and
 split insertion, preserving player holes, unrelated stock/slot drift, malformed
 graphs, explicit null/legacy serialization, and the actual independent receipt

@@ -145,7 +145,7 @@ try {
     }
     $capture = Get-FreshRuntimeSnapshot -Url $snapshotUrl -TimeoutSeconds 30
     $fixturePath = Join-Path $runRoot 'fixture-snapshot.json'
-    Write-Utf8Text -Path $fixturePath -Value $capture.Raw
+    Save-RuntimeSnapshotAndIngest -Path $fixturePath -Capture $capture -BackendUrl $backendUrl -SnapshotProfile full
     $context = New-RuntimeQueueContext -LoopDll $loopDll -ArtifactDirectory $runRoot -BackendUrl $backendUrl `
         -SnapshotUrl $snapshotUrl -SnapshotProfile full -ExecutorRoot $executorUrl -ProductUrl $executorUrl `
         -RunId $RunId -IsolatedSavesPath $isolatedSaves
@@ -156,8 +156,10 @@ try {
     $player = $players[0]
     $chest = Get-RuntimeMaterialNode $graph $access[0].node_id
     $slot = Get-RuntimeMaterialSlot $chest '(O)388' 4
-    $ledger = Wait-Json -Url "$backendUrl/api/v1/strategy/commitments/latest?stateHash=$($capture.Value.state_hash)" -TimeoutSeconds 30
-    Write-JsonFile -Path (Join-Path $runRoot 'initial-strategy-ledger.json') -Value $ledger
+    $ledgerResponse = Invoke-WebRequest -UseBasicParsing -TimeoutSec 30 `
+        -Uri "$backendUrl/api/v1/strategy/commitments/latest?stateHash=$($capture.Value.state_hash)"
+    $ledger = $ledgerResponse.Content | ConvertFrom-Json
+    Write-Utf8Text -Path (Join-Path $runRoot 'initial-strategy-ledger.json') -Value $ledgerResponse.Content
     if ($ledger.revision -ne 0 -or $ledger.save_id -cne $capture.Value.save_id.value -or $ledger.player_id -cne $capture.Value.player_id.value) { throw 'Dedicated ledger did not start with this actor at revision zero.' }
     if ($FixtureProfile -eq 'sparse_source' -and ($slot.slot_index -ne 5 -or (Get-RuntimeMaterialSlot $chest '(O)390' 0).slot_index -ne 9)) { throw 'Sparse native fixture did not retain empty slots before measurement.' }
     # All fixture mutation ends here. Both transfers use the original candidate/compiler/native executor.
