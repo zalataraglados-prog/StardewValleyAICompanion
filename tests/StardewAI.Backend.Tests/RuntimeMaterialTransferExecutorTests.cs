@@ -9,10 +9,20 @@ public sealed class RuntimeMaterialTransferExecutorTests
         var source = RuntimeHarnessSources.File("ModEntry.MaterialTransfer.cs");
 
         Assert.Contains("StartMaterialTransfer(pending);", all, StringComparison.Ordinal);
-        Assert.Contains("TryApplySmapiButtonOverride(SButton.X, pressed: true", source, StringComparison.Ordinal);
-        Assert.Contains("MaterialTransferStage.ReleaseOpenInput", source, StringComparison.Ordinal);
-        Assert.Contains("TryApplySmapiButtonOverride(SButton.X, pressed: false", source, StringComparison.Ordinal);
+        Assert.Contains("NativeRightClickEdgePatch.Arm();", source, StringComparison.Ordinal);
+        Assert.Contains("active.Chest.checkForAction(Game1.player)", source, StringComparison.Ordinal);
+        Assert.Contains("rightClickObserved = NativeRightClickEdgePatch.WasObserved", source, StringComparison.Ordinal);
+        Assert.Contains("NativeRightClickEdgePatch.Clear();", source, StringComparison.Ordinal);
+        Assert.Contains("chest.giftbox.Value", source, StringComparison.Ordinal);
+        Assert.Contains("material_transfer_live_open_context_drifted", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("TryApplySmapiButtonOverride(SButton.X", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("ReleaseOpenInput", source, StringComparison.Ordinal);
+        Assert.DoesNotContain(".ShowMenu()", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("RequestLock(", source, StringComparison.Ordinal);
         Assert.Contains("menu.receiveRightClick(", source, StringComparison.Ordinal);
+        Assert.Contains("var oldKeyboard = Game1.oldKBState;", source, StringComparison.Ordinal);
+        Assert.Contains("Game1.oldKBState = default;", source, StringComparison.Ordinal);
+        Assert.Contains("Game1.oldKBState = oldKeyboard;", source, StringComparison.Ordinal);
         Assert.Contains("MaterialSourceReferenceIndex(source, active.SourceItem)", source, StringComparison.Ordinal);
         Assert.Contains("InventorySlotScreenPosition(sourceMenu, sourceSlotIndex)", source, StringComparison.Ordinal);
         Assert.DoesNotContain("InventorySlotScreenPosition(sourceMenu, intent.SourceSlotIndex)", source, StringComparison.Ordinal);

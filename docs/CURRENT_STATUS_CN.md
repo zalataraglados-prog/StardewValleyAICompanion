@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-04 稀疏箱原生切片通过：** clean `0cdc3d8d` 脚本与四组件同源构建完成隔离的取2还2：两次原生菜单/解锁、四次单位点击，木头槽5→0、石头槽9→1且数量守恒；坏投影零点击，两侧完整库存未变。独立重建原C#投影/完整槽位验证、全部DLL哈希、账本起始0、源档未变及进程/端口退出均通过，见[接受边界](material-transfer-slot-lineage.md#accepted-native-boundary)。前置无游戏20、Backend384、Core聚焦24项，本轮聚焦7项及四组件零警告/错误构建通过。下一步为原账本中的完整原子保管迁移/rebind；保护门未提前打开，所有coverage/Teacher/正式训练计数不变，已接受晶球→钥匙链不重跑。
+
 > **2026-11-04 09:36 当前晶球原生边界通过：** `e8d7a6c3`脚本/经源码树与哈希验证的`8fe21913`构建，15次队列/16条verified动作连续完成真实获取→保管→第60件捐赠/核销→正常保存跨日→原生事件66取钥匙；原核销请求独立重建一致，夜事务complete，源档未变，进程/端口回收。精确e8 CI编排34/Core1123/Backend381/边界41通过。下一步为安全隔离后的稀疏箱原生回归，再完整保管迁移；不重开已接受边界或目视验收。仍仅一件真实获取的59→60能力，`5/19 executable、6/19 split-complete、5/19 CoverageGateReady、4/11 root ready、formal_product_training=false`不变。见[证据与范围](geode-dialogue-lifecycle.md#accepted-native-boundary)。
 
 > **2026-11-04 最新实测与接续：** `40dad9f6` 已真实获取→保管→捐赠/核销→返家→正常保存到第8日，夜事务仍为ready_for_safe_next_day_action，未取得钥匙。清晨上层出门被既有安全层替换为等待后严格拒绝，现改为先查询精确等待再出门，不允许查询中的睡觉候选消耗新一天。35项本地（默认CI 34）检查及实际CLI解析通过；测试预期失败退出码不再泄漏给CI外壳。最终完整连续链待复跑，criterion/Teacher/训练计数不变。

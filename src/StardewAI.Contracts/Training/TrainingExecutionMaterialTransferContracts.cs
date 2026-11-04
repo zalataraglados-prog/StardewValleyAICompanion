@@ -5,6 +5,10 @@ namespace StardewAI.Contracts.Training;
 
 public sealed partial class TrainingExecutionRequest
 {
+    [JsonPropertyName("fixture_material_transfer_profile")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? FixtureMaterialTransferProfile { get; set; }
+
     [JsonPropertyName("material_transfer_intent")]
     public MaterialTransferIntent? MaterialTransferIntent { get; set; }
 

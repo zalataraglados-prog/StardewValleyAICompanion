@@ -1,503 +1,205 @@
+[CmdletBinding()]
 param(
-    [string] $ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path,
-    [string] $RuntimeRoot = "E:\StardewValleyAICompanion-runtime",
-    [string] $SaveSlot = "",
-    [string] $RunId = ("runtime-material-transfer-daily-plan-smoke-" + (Get-Date -Format "yyyyMMdd-HHmmss")),
-    [string] $OutputDirectory = "artifacts\runtime-material-transfer-daily-plan-smoke",
+    [string] $ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path,
+    [string] $RuntimeRoot = 'E:\StardewValleyAICompanion-runtime',
+    [string] $SaveSlot = '',
+    [ValidatePattern('^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$')]
+    [string] $RunId = ('runtime-material-transfer-' + (Get-Date -Format 'yyyyMMdd-HHmmss')),
+    [string] $OutputDirectory = 'artifacts/runtime-material-transfer-daily-plan-smoke',
     [int] $BackendPort = 5131,
     [int] $StartupTimeoutSeconds = 180,
     [int] $TargetTileX = -1,
     [int] $TargetTileY = -1,
-    [int] $TransferQuantity = 2,
+    [ValidateRange(1,11)] [int] $TransferQuantity = 2,
+    [ValidateSet('ordinary','sparse_source')] [string] $FixtureProfile = 'ordinary',
+    [switch] $NoBuild,
     [switch] $KeepGameRunning
 )
+$ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'lib/RuntimeEvidenceCommon.ps1')
+. (Join-Path $PSScriptRoot 'lib/RuntimeMaterialTransferSmoke.ps1')
 
-$ErrorActionPreference = "Stop"
-
-function Write-JsonFile {
-    param([string] $Path, $Value)
-    $Value | ConvertTo-Json -Depth 96 | Set-Content -LiteralPath $Path -Encoding utf8
+if ($KeepGameRunning) { throw 'Isolated verification always releases its owned processes; KeepGameRunning is not supported.' }
+if ([string]::IsNullOrWhiteSpace($SaveSlot)) { throw 'An explicit source SaveSlot is required; latest-save discovery is not safe.' }
+if ($SaveSlot -match '[\\/:]|^\.\.?$') { throw 'SaveSlot must be a single source directory name.' }
+if (($TargetTileX -lt 0) -xor ($TargetTileY -lt 0)) { throw 'TargetTileX and TargetTileY must both be supplied or omitted.' }
+if ($FixtureProfile -eq 'sparse_source' -and ($TransferQuantity -lt 2 -or $TransferQuantity -gt 10)) {
+    throw 'Sparse native verification requires a partial multi-unit transfer (2..10).'
 }
-
-function Invoke-JsonGet {
-    param([string] $Url, [int] $TimeoutSeconds = 30)
-    Invoke-RestMethod -Method Get -Uri $Url -Headers @{ "Accept" = "application/json" } -TimeoutSec $TimeoutSeconds
+$runRoot = Join-Path (Resolve-RuntimeEvidenceInputPath -ProjectRoot $ProjectRoot -Path $OutputDirectory) $RunId
+if (Test-Path -LiteralPath $runRoot) { throw "Existing run cannot be replayed: $runRoot" }
+$sourceSave = Assert-RuntimeSourceSaveSlot -Path (Join-Path (Join-Path $RuntimeRoot 'saves') $SaveSlot)
+if ($runRoot.StartsWith($sourceSave + [IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase)) {
+    throw 'Artifacts must not be nested under the source save.'
 }
-
-function Invoke-JsonPost {
-    param([string] $Url, $Body, [int] $TimeoutSeconds = 120)
-    $json = $Body | ConvertTo-Json -Depth 64
-    Invoke-RestMethod -Method Post -Uri $Url -ContentType "application/json; charset=utf-8" -Body $json -TimeoutSec $TimeoutSeconds
-}
-
-function Wait-JsonHealth {
-    param([string] $Url, [int] $TimeoutSeconds)
-    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
-    $lastError = "not_requested"
-    while ((Get-Date) -lt $deadline) {
-        try {
-            $response = Invoke-JsonGet -Url $Url -TimeoutSeconds 3
-            if ($response.status -eq "ok" -or $response.schema_version -eq "snapshot.v1") { return $response }
-        }
-        catch { $lastError = $_.Exception.Message }
-        Start-Sleep -Seconds 2
-    }
-    throw "Timed out waiting for $Url. Last error: $lastError"
-}
-
-function Wait-MaterialGraph {
-    param([string] $Url, [int] $TimeoutSeconds, [string] $DifferentFromStateHash = "")
-    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
-    $lastStatus = "not_requested"
-    while ((Get-Date) -lt $deadline) {
-        try {
-            $snapshot = Invoke-JsonGet -Url $Url -TimeoutSeconds 30
-            $field = $snapshot.state.farm.material_inventory_graph
-            $hashChanged = [string]::IsNullOrWhiteSpace($DifferentFromStateHash) -or
-                [string]$snapshot.state_hash -ne $DifferentFromStateHash
-            $lastStatus = "field=$($field.status);schema=$($field.value.schema_version);hash_changed=$hashChanged"
-            if ($field.status -in @("available", "derived") -and
-                $field.value.schema_version -eq "material_inventory_graph.v1" -and
-                $hashChanged) {
-                return $snapshot
-            }
-        }
-        catch { $lastStatus = $_.Exception.Message }
-        Start-Sleep -Milliseconds 250
-    }
-    throw "Timed out waiting for material inventory graph. Last status: $lastStatus"
-}
-
-function Find-Node {
-    param($Graph, [string] $NodeId)
-    @($Graph.inventory_nodes) | Where-Object { [string]$_.node_id -eq $NodeId } | Select-Object -First 1
-}
-
-function Find-ItemSlot {
-    param($Node, [string] $QualifiedItemId, [int] $Quality)
-    @($Node.slots) | Where-Object {
-        [string]$_.qualified_item_id -eq $QualifiedItemId -and [int]$_.quality -eq $Quality
-    } | Sort-Object slot_index | Select-Object -First 1
-}
-
-function Get-NodeQuantity {
-    param($Node, [string] $QualifiedItemId, [int] $Quality)
-    $quantity = 0
-    foreach ($slot in @($Node.slots)) {
-        if ([string]$slot.qualified_item_id -eq $QualifiedItemId -and [int]$slot.quality -eq $Quality) {
-            $quantity += [int]$slot.stack
-        }
-    }
-    return $quantity
-}
-
-function Read-QueueParameter {
-    param($QueueItem, [string] $Name)
-    @($QueueItem.normalized_command.parameters) |
-        Where-Object { [string]$_.name -eq $Name } |
-        Select-Object -ExpandProperty value -First 1
-}
-
-function Invoke-TransferDirection {
-    param(
-        [string] $Label,
-        $BeforeSnapshot,
-        [string] $SourceNodeId,
-        [string] $DestinationNodeId,
-        [int] $SourceSlotIndex,
-        [string] $QualifiedItemId,
-        [int] $Quality,
-        [int] $Quantity,
-        [int] $ExpectedSourceStack,
-        [string] $LoopRoot,
-        [string] $BackendUrl,
-        [string] $SnapshotUrl,
-        [string] $SavesPath,
-        [string] $RunDirectory
-    )
-
-    $directionRunId = $RunId
-    $arguments = @(
-        "run", "--no-restore", "--project",
-        (Join-Path $ProjectRoot "tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj"),
-        "--",
-        "--root", $LoopRoot,
-        "--backend-url", $BackendUrl,
-        "--bridge-snapshot-url", $SnapshotUrl,
-        "--executor-url", "http://127.0.0.1:8767",
-        "--no-manifest",
-        "--run-id", $directionRunId,
-        "--save-isolation-path", $SavesPath,
-        "--iterations", "1",
-        "--train-every", "1",
-        "--sleep-ms", "0",
-        "--use-daily-plan",
-        "--daily-plan-max-candidates", "1",
-        "--daily-plan-candidate-options", "inventory.transfer_item",
-        "--daily-plan-candidate-parameter", "source_node_id=$SourceNodeId",
-        "--daily-plan-candidate-parameter", "destination_node_id=$DestinationNodeId",
-        "--daily-plan-candidate-parameter", "source_slot_index=$SourceSlotIndex",
-        "--daily-plan-candidate-parameter", "qualified_item_id=$QualifiedItemId",
-        "--daily-plan-candidate-parameter", "quality=$Quality",
-        "--daily-plan-candidate-parameter", "quantity=$Quantity",
-        "--daily-plan-candidate-parameter", "expected_source_stack=$ExpectedSourceStack",
-        "--after-snapshot-wait-ms", "250",
-        "--after-snapshot-poll-ms", "100",
-        "--max-queue-item-attempts", "8"
-    )
-    & dotnet @arguments
-    if ($LASTEXITCODE -ne 0) { throw "LiveTrainingLoop $Label returned exit code $LASTEXITCODE" }
-
-    $snapshotDir = Join-Path $LoopRoot "runs\$directionRunId\live-snapshots"
-    $rankingPath = Join-Path $snapshotDir "ranking-response-0001.json"
-    $dailyPlanPath = Join-Path $snapshotDir "daily-plan-response-0001.json"
-    $queuePath = Join-Path $snapshotDir "compiled-queue-0001.json"
-    $executionPath = Join-Path $snapshotDir "execution-0001.json"
-    $episodePath = Join-Path $snapshotDir "plan-execution-episode-0001.json"
-    $datasetPath = Join-Path $LoopRoot "datasets\live-training-feature-rows.jsonl"
-    foreach ($path in @($rankingPath, $dailyPlanPath, $queuePath, $executionPath, $episodePath, $datasetPath)) {
-        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "$Label artifact missing: $path" }
-    }
-
-    $ranking = Get-Content -LiteralPath $rankingPath -Raw | ConvertFrom-Json
-    $dailyPlan = Get-Content -LiteralPath $dailyPlanPath -Raw | ConvertFrom-Json
-    $queue = Get-Content -LiteralPath $queuePath -Raw | ConvertFrom-Json
-    $execution = Get-Content -LiteralPath $executionPath -Raw | ConvertFrom-Json
-    $episode = Get-Content -LiteralPath $episodePath -Raw | ConvertFrom-Json
-    $candidate = @($ranking.ranked_event_candidates) |
-        Where-Object { $_.option_id -eq "inventory.transfer_item" -and $_.kind -eq "transfer_inventory_item" } |
-        Select-Object -First 1
-    $planStep = @($dailyPlan.plan.steps) | Where-Object { $_.kind -eq "transfer_material" } | Select-Object -First 1
-    $queueItem = @($queue.items) | Where-Object { $_.option_id -eq "executor.transfer_material" } | Select-Object -First 1
-    $transferExecution = @($execution.step_results) |
-        Where-Object { $_.option_id -eq "executor.transfer_material" } |
-        Select-Object -Last 1
-
-    if ($null -eq $candidate -or -not [bool]$candidate.available) { throw "$Label high-level candidate was not available." }
-    if ($null -eq $planStep) { throw "$Label daily plan did not contain transfer_material." }
-    if ($null -eq $queueItem) { throw "$Label queue did not contain executor.transfer_material." }
-    if ($null -eq $transferExecution -or
-        $transferExecution.status -ne "applied" -or
-        $transferExecution.primitive_verification_status -ne "verified") {
-        Write-JsonFile (Join-Path $RunDirectory "$Label-execution-rejected.json") $execution
-        throw "$Label native transfer was not applied and verified."
-    }
-    if ($transferExecution.material_transfer_native_menu_opened -ne $true -or
-        $transferExecution.material_transfer_native_lock_released -ne $true -or
-        [int]$transferExecution.material_transfer_click_count -ne $Quantity) {
-        throw "$Label native menu lifecycle or click count was not verified."
-    }
-    if ($episode.option_id -ne "executor.transfer_material" -or
-        $episode.material_transfer_native_menu_opened -ne $true -or
-        $episode.material_transfer_native_lock_released -ne $true -or
-        $null -eq $episode.material_transfer_intent -or
-        $null -eq $episode.material_transfer_projection) {
-        throw "$Label episode did not preserve material-transfer execution evidence."
-    }
-    $datasetRows = @(Get-Content -LiteralPath $datasetPath | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
-    if ($datasetRows.Count -lt 1) { throw "$Label training dataset did not record a row." }
-
-    $afterSnapshot = Wait-MaterialGraph -Url $SnapshotUrl -TimeoutSeconds 30 -DifferentFromStateHash ([string]$BeforeSnapshot.state_hash)
-    $beforeGraph = $BeforeSnapshot.state.farm.material_inventory_graph.value
-    $afterGraph = $afterSnapshot.state.farm.material_inventory_graph.value
-    $beforeSource = Find-Node $beforeGraph $SourceNodeId
-    $beforeDestination = Find-Node $beforeGraph $DestinationNodeId
-    $afterSource = Find-Node $afterGraph $SourceNodeId
-    $afterDestination = Find-Node $afterGraph $DestinationNodeId
-    $sourceBefore = Get-NodeQuantity $beforeSource $QualifiedItemId $Quality
-    $sourceAfter = Get-NodeQuantity $afterSource $QualifiedItemId $Quality
-    $destinationBefore = Get-NodeQuantity $beforeDestination $QualifiedItemId $Quality
-    $destinationAfter = Get-NodeQuantity $afterDestination $QualifiedItemId $Quality
-    if ($sourceBefore - $sourceAfter -ne $Quantity -or $destinationAfter - $destinationBefore -ne $Quantity) {
-        throw "$Label transparent before/after quantity delta did not equal $Quantity."
-    }
-    if ([int]$transferExecution.material_transfer_source_stack_before -ne $ExpectedSourceStack -or
-        [int]$transferExecution.material_transfer_source_stack_after -ne ($ExpectedSourceStack - $Quantity) -or
-        [int]$transferExecution.material_transfer_destination_quantity_before -ne $destinationBefore -or
-        [int]$transferExecution.material_transfer_destination_quantity_after -ne $destinationAfter) {
-        throw "$Label executor evidence did not match transparent before/after snapshots."
-    }
-
-    Write-JsonFile (Join-Path $RunDirectory "$Label-before-snapshot.json") $BeforeSnapshot
-    Write-JsonFile (Join-Path $RunDirectory "$Label-after-snapshot.json") $afterSnapshot
-    Write-JsonFile (Join-Path $RunDirectory "$Label-execution.json") $transferExecution
-    Copy-Item -LiteralPath $episodePath -Destination (Join-Path $RunDirectory "$Label-episode.json") -Force
-    Copy-Item -LiteralPath $datasetPath -Destination (Join-Path $RunDirectory "$Label-dataset.jsonl") -Force
-
-    return [pscustomobject]@{
-        Label = $Label
-        AfterSnapshot = $afterSnapshot
-        CandidateId = [string]$candidate.candidate_id
-        QueueItemId = [string]$queueItem.queue_item_id
-        SourceQuantityBefore = $sourceBefore
-        SourceQuantityAfter = $sourceAfter
-        DestinationQuantityBefore = $destinationBefore
-        DestinationQuantityAfter = $destinationAfter
-        NativeBranch = [string]$transferExecution.material_transfer_projection.native_branch
-        MenuOpened = [bool]$transferExecution.material_transfer_native_menu_opened
-        LockReleased = [bool]$transferExecution.material_transfer_native_lock_released
-        ClickCount = [int]$transferExecution.material_transfer_click_count
-        EpisodePath = $episodePath
-        DatasetPath = $datasetPath
+$sourceHash = Get-DirectoryContentHash -Path $sourceSave
+$gameDirectory = Join-Path $RuntimeRoot 'Stardew Valley'
+$smapi = Join-Path $gameDirectory 'StardewModdingAPI.exe'
+if (-not (Test-Path -LiteralPath $smapi -PathType Leaf)) { throw "Missing game executable: $smapi" }
+Assert-RuntimePortsUnused -Ports @($BackendPort,8765,8767)
+if (Get-Process -Name StardewModdingAPI -ErrorAction SilentlyContinue) { throw 'A game is already running; refusing to attach.' }
+$drive = [IO.DriveInfo]::new([IO.Path]::GetPathRoot($runRoot))
+if ($drive.AvailableFreeSpace -lt 8GB) { throw 'Material transfer evidence disk floor reached.' }
+New-Item -ItemType Directory -Path $runRoot | Out-Null
+if (-not $NoBuild) {
+    foreach ($project in @(
+        @{path='src/StardewAI.Backend/StardewAI.Backend.csproj';configuration='Release'},
+        @{path='tools/StardewAI.LiveTrainingLoop/StardewAI.LiveTrainingLoop.csproj';configuration='Release'},
+        @{path='src/StardewAI.TransparentBridge/StardewAI.TransparentBridge.csproj';configuration='Debug'},
+        @{path='tools/StardewAI.RuntimeTestHarness/StardewAI.RuntimeTestHarness.csproj';configuration='Debug'}
+    )) {
+        & dotnet build (Join-Path $ProjectRoot $project.path) -c $project.configuration --no-restore --nologo -m:1 /nodeReuse:false `
+            "-p:GamePath=$gameDirectory" -p:UseSharedCompilation=false -p:EnableModDeploy=false -p:EnableModZip=false
+        if ($LASTEXITCODE -ne 0) { throw "Build failed: $($project.path)" }
     }
 }
-
-if ($TransferQuantity -le 0) { throw "TransferQuantity must be positive." }
-$gameDir = Join-Path $RuntimeRoot "Stardew Valley"
-$smapiExe = Join-Path $gameDir "StardewModdingAPI.exe"
-$savesPath = Join-Path $RuntimeRoot "saves"
+foreach ($name in @('TransparentBridge','RuntimeTestHarness')) {
+    & (Join-Path $PSScriptRoot "Deploy-${name}ToRuntime.ps1") -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot `
+        -GamePath $gameDirectory -NoBuild | Out-Null
+}
+$isolatedSaves = Join-Path $runRoot 'isolated-saves'
+$isolatedMods = Join-Path $runRoot 'smapi-mods'
+$ledgerDirectory = Join-Path $runRoot 'strategy-ledger'
+New-Item -ItemType Directory -Path $isolatedSaves | Out-Null
+New-Item -ItemType Directory -Path $isolatedMods | Out-Null
+Copy-Item -LiteralPath $sourceSave -Destination (Join-Path $isolatedSaves $SaveSlot) -Recurse
+if ((Get-DirectoryContentHash -Path (Join-Path $isolatedSaves $SaveSlot)) -cne $sourceHash) { throw 'Save copy does not match its source.' }
+foreach ($name in @('StardewAI.TransparentBridge','StardewAI.RuntimeTestHarness')) {
+    Copy-Item -LiteralPath (Join-Path (Join-Path $gameDirectory 'Mods') $name) -Destination (Join-Path $isolatedMods $name) -Recurse
+}
+$mods = @(Get-RuntimeExactModAllowlist -ModsRoot $isolatedMods -ExpectedUniqueIds ([ordered]@{
+    'StardewAI.TransparentBridge'='StardewAI.TransparentBridge';'StardewAI.RuntimeTestHarness'='StardewAI.RuntimeTestHarness'
+}))
+$backendDll = Join-Path $ProjectRoot 'src/StardewAI.Backend/bin/Release/net8.0/StardewAI.Backend.dll'
+$loopDll = Join-Path $ProjectRoot 'tools/StardewAI.LiveTrainingLoop/bin/Release/net8.0/StardewAI.LiveTrainingLoop.dll'
+foreach ($entrypoint in @($backendDll,$loopDll)) {
+    if (-not (Test-Path -LiteralPath $entrypoint -PathType Leaf)) { throw "Missing runtime entrypoint: $entrypoint" }
+}
+$sourceHead = [string](& git -C $ProjectRoot rev-parse HEAD)
+if ($LASTEXITCODE -ne 0 -or @(& git -C $ProjectRoot status --porcelain).Count -ne 0) { throw 'Native verification requires a clean source revision.' }
+$binaryHashes = [ordered]@{}
+$versions = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+foreach ($directory in @((Split-Path -Parent $backendDll),(Split-Path -Parent $loopDll),
+        (Join-Path $isolatedMods 'StardewAI.TransparentBridge'),(Join-Path $isolatedMods 'StardewAI.RuntimeTestHarness'))) {
+    foreach ($dll in Get-ChildItem -LiteralPath $directory -File -Filter 'StardewAI*.dll') {
+        $binaryHashes[$dll.FullName] = Get-RuntimeFileSha256 -Path $dll.FullName
+        [void]$versions.Add([Diagnostics.FileVersionInfo]::GetVersionInfo($dll.FullName).ProductVersion)
+    }
+}
+if ($versions.Count -ne 1 -or @($versions)[0] -cnotmatch '^1\.0\.0\+([a-f0-9]{40})$') { throw 'Runtime components do not share one attributable source revision.' }
+$runtimeHead = $Matches[1]
+$sourceDiff = @(& git -C $ProjectRoot diff --name-only $runtimeHead $sourceHead -- src tools experiments `
+    Directory.Build.props Directory.Build.targets Directory.Packages.props global.json NuGet.Config)
+if ($LASTEXITCODE -ne 0 -or $sourceDiff.Count -ne 0) { throw 'Retained runtime bundle differs from current compiled source/configuration.' }
+Write-JsonFile -Path (Join-Path $runRoot 'run-inputs.json') -Value ([ordered]@{
+    schema_version='runtime_material_transfer_inputs.v1';script_head=$sourceHead;runtime_source_head=$runtimeHead
+    source_clean=$true;compiled_source_diff=@();binary_sha256=$binaryHashes;isolated_mods=$mods
+    source_save_sha256=$sourceHash;fixture_profile=$FixtureProfile;transfer_quantity=$TransferQuantity
+    game_assembly_sha256=(Get-RuntimeFileSha256 -Path (Join-Path $gameDirectory 'Stardew Valley.dll'));formal_training_authorized=$false
+})
 $backendUrl = "http://127.0.0.1:$BackendPort"
-$snapshotUrl = "http://127.0.0.1:8765/api/v1/snapshot?profile=full"
-if (-not (Test-Path -LiteralPath $smapiExe -PathType Leaf)) { throw "SMAPI executable not found: $smapiExe" }
-if (-not (Test-Path -LiteralPath $savesPath -PathType Container)) { throw "Isolated saves path not found: $savesPath" }
-
-foreach ($port in @($BackendPort, 8765, 8767)) {
-    $listener = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue
-    if ($null -ne $listener) { throw "Port $port is already listening; refusing to attach to an unknown process." }
-}
-if ($null -ne (Get-Process -Name "StardewModdingAPI" -ErrorAction SilentlyContinue)) {
-    throw "StardewModdingAPI is already running; refusing to touch an existing game process."
-}
-if ([string]::IsNullOrWhiteSpace($SaveSlot)) {
-    $slot = Get-ChildItem -LiteralPath $savesPath -Directory | Sort-Object LastWriteTime -Descending | Select-Object -First 1
-    if ($null -eq $slot) { throw "No isolated save slots found under $savesPath" }
-    $SaveSlot = $slot.Name
-}
-$slotPath = Join-Path $savesPath $SaveSlot
-if (-not (Test-Path -LiteralPath $slotPath -PathType Container)) { throw "Isolated save slot not found: $slotPath" }
-
-$runDirectory = Join-Path $ProjectRoot (Join-Path $OutputDirectory $RunId)
-$loopRoot = Join-Path $runDirectory "loop"
-$backendStdout = Join-Path $runDirectory "backend.stdout.log"
-$backendStderr = Join-Path $runDirectory "backend.stderr.log"
-New-Item -ItemType Directory -Force -Path $runDirectory | Out-Null
-
-& (Join-Path $ProjectRoot "scripts\Deploy-TransparentBridgeToRuntime.ps1") -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot | Out-Null
-& (Join-Path $ProjectRoot "scripts\Deploy-RuntimeTestHarnessToRuntime.ps1") -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot | Out-Null
-
-$previousEnv = @{
-    STARDEWAI_TEST_SAVES = $env:STARDEWAI_TEST_SAVES
-    STARDEWAI_TEST_SLOT = $env:STARDEWAI_TEST_SLOT
-    STARDEWAI_TEST_AUTO_LOAD = $env:STARDEWAI_TEST_AUTO_LOAD
-    STARDEWAI_SAVE_ISOLATION_PATH = $env:STARDEWAI_SAVE_ISOLATION_PATH
-    STARDEWAI_TRAINING_RUN_ID = $env:STARDEWAI_TRAINING_RUN_ID
-    STARDEWAI_TRAINING_MODE = $env:STARDEWAI_TRAINING_MODE
-    SDL_AUDIODRIVER = $env:SDL_AUDIODRIVER
-    ALSOFT_DRIVERS = $env:ALSOFT_DRIVERS
-    ASPNETCORE_URLS = $env:ASPNETCORE_URLS
-}
-
-$gameProcess = $null
-$backendProcess = $null
+$executorUrl = 'http://127.0.0.1:8767'
+$snapshotUrl = 'http://127.0.0.1:8765/api/v1/snapshot?profile=full&fresh=1'
+$savedEnvironment = Save-RuntimeProcessEnvironment -Names @(
+    'ASPNETCORE_URLS','STARDEWAI_STRATEGY_LEDGER_DIR','STARDEWAI_TEST_SAVES','STARDEWAI_TEST_SLOT',
+    'STARDEWAI_TEST_AUTO_LOAD','STARDEWAI_SAVE_ISOLATION_PATH','STARDEWAI_TRAINING_RUN_ID','STARDEWAI_TRAINING_MODE',
+    'STARDEWAI_TRAINING_OUTPUT_DIR','STARDEWAI_SUPPRESS_LOCAL_RENDER','SDL_AUDIODRIVER','ALSOFT_DRIVERS','CLIENT_FPS'
+)
+$processes = [Collections.Generic.List[object]]::new()
 try {
-    $env:STARDEWAI_TEST_SAVES = $savesPath
-    $env:STARDEWAI_TEST_SLOT = $SaveSlot
-    $env:STARDEWAI_TEST_AUTO_LOAD = "true"
-    $env:STARDEWAI_SAVE_ISOLATION_PATH = $savesPath
-    $env:STARDEWAI_TRAINING_RUN_ID = $RunId
-    $env:STARDEWAI_TRAINING_MODE = "1"
-    $env:SDL_AUDIODRIVER = "dummy"
-    $env:ALSOFT_DRIVERS = "null"
     $env:ASPNETCORE_URLS = $backendUrl
-
-    $backendProcess = Start-Process -FilePath "dotnet" `
-        -ArgumentList @("run", "--no-restore", "--project", (Join-Path $ProjectRoot "src\StardewAI.Backend\StardewAI.Backend.csproj"), "--no-launch-profile") `
-        -WorkingDirectory $ProjectRoot -WindowStyle Hidden `
-        -RedirectStandardOutput $backendStdout -RedirectStandardError $backendStderr -PassThru
-    Wait-JsonHealth -Url "$backendUrl/health" -TimeoutSeconds 60 | Out-Null
-
-    $gameProcess = Start-Process -FilePath $smapiExe -WorkingDirectory $gameDir -WindowStyle Hidden -PassThru
-    Wait-JsonHealth -Url "http://127.0.0.1:8767/health" -TimeoutSeconds 30 | Out-Null
-    $initialSnapshot = Wait-MaterialGraph -Url $snapshotUrl -TimeoutSeconds $StartupTimeoutSeconds
-    if (($TargetTileX -lt 0) -xor ($TargetTileY -lt 0)) {
-        throw "TargetTileX and TargetTileY must either both be supplied or both be omitted."
-    }
-    $setupRequest = [ordered]@{
-        schema_version = "training_execution_request.v1"
-        run_id = $RunId
-        queue_id = "$RunId.setup"
-        queue_item_id = "$RunId.setup.material_inventory"
-        before_state_hash = $initialSnapshot.state_hash
-        option_id = "debug.setup_material_transfer_target"
-        execution_mode = "training_singleplayer"
-        actor = "training_farmer.main"
-        save_isolation_path = $savesPath
-        request_nonce = [guid]::NewGuid().ToString("N")
-        created_at = [DateTimeOffset]::UtcNow.ToString("O")
-        target_tile_x = $TargetTileX
-        target_tile_y = $TargetTileY
-    }
-    $setupResult = Invoke-JsonPost -Url "http://127.0.0.1:8767/api/v1/training/execute" -Body $setupRequest
-    if ($setupResult.status -ne "applied" -or $setupResult.primitive_verification_status -ne "verified") {
-        throw "Material transfer fixture setup failed."
-    }
+    $env:STARDEWAI_STRATEGY_LEDGER_DIR = $ledgerDirectory
+    $env:STARDEWAI_TEST_SAVES = $isolatedSaves
+    $env:STARDEWAI_TEST_SLOT = $SaveSlot
+    $env:STARDEWAI_TEST_AUTO_LOAD = 'true'
+    $env:STARDEWAI_SAVE_ISOLATION_PATH = $isolatedSaves
+    $env:STARDEWAI_TRAINING_RUN_ID = $RunId
+    $env:STARDEWAI_TRAINING_MODE = '1'
+    $env:STARDEWAI_TRAINING_OUTPUT_DIR = $runRoot
+    $env:STARDEWAI_SUPPRESS_LOCAL_RENDER = '1'
+    $env:CLIENT_FPS = '0'
+    $env:SDL_AUDIODRIVER = 'dummy'
+    $env:ALSOFT_DRIVERS = 'null'
+    $processes.Add((Start-RuntimeEvidenceProcess -FilePath dotnet -ArgumentList @($backendDll) `
+        -WorkingDirectory (Split-Path -Parent $backendDll) -StandardOutputPath (Join-Path $runRoot 'backend.stdout.log') `
+        -StandardErrorPath (Join-Path $runRoot 'backend.stderr.log')))
+    Wait-Json -Url "$backendUrl/health" -TimeoutSeconds 60 | Out-Null
+    $processes.Add((Start-RuntimeEvidenceProcess -FilePath $smapi -WorkingDirectory $gameDirectory `
+        -ArgumentList @('--mods-path', ('"' + $isolatedMods + '"')) `
+        -StandardOutputPath (Join-Path $runRoot 'game.stdout.log') -StandardErrorPath (Join-Path $runRoot 'game.stderr.log')))
+    Wait-Json -Url "$executorUrl/health" -TimeoutSeconds $StartupTimeoutSeconds | Out-Null
+    $capture = Get-FreshRuntimeSnapshot -Url $snapshotUrl -TimeoutSeconds $StartupTimeoutSeconds
+    $fixture = Invoke-JsonPost -Url "$executorUrl/api/v1/training/execute" -Body ([ordered]@{
+        schema_version='training_execution_request.v1';run_id=$RunId;queue_id="$RunId.fixture";queue_item_id="$RunId.fixture.material_inventory"
+        before_state_hash=$capture.Value.state_hash;option_id='debug.setup_material_transfer_target';execution_mode='training_singleplayer'
+        actor='training_farmer.main';save_isolation_path=$isolatedSaves;request_nonce=[guid]::NewGuid().ToString('N')
+        created_at=[DateTimeOffset]::UtcNow.ToString('O');target_tile_x=$TargetTileX;target_tile_y=$TargetTileY
+        fixture_material_transfer_profile=$FixtureProfile
+    })
+    Write-Utf8Text -Path (Join-Path $runRoot 'setup-result.json') -Value $fixture.Raw
+    if ($fixture.Value.status -cne 'applied' -or $fixture.Value.primitive_verification_status -cne 'verified') { throw 'Material transfer setup failed.' }
     if ($TargetTileX -lt 0) {
-        if ([string]$setupResult.observed_effect -notmatch "target=(-?\d+),(-?\d+)") {
-            throw "Dynamic material transfer fixture did not report its selected target."
-        }
+        if ($fixture.Value.observed_effect -cnotmatch 'target=(-?\d+),(-?\d+)') { throw 'Dynamic material transfer fixture did not report its target.' }
         $TargetTileX = [int]$Matches[1]
         $TargetTileY = [int]$Matches[2]
     }
-    $fixtureSnapshot = Wait-MaterialGraph -Url $snapshotUrl -TimeoutSeconds 30 -DifferentFromStateHash ([string]$initialSnapshot.state_hash)
-    Write-JsonFile (Join-Path $runDirectory "setup-result.json") $setupResult
-    Write-JsonFile (Join-Path $runDirectory "fixture-snapshot.json") $fixtureSnapshot
-
-    $graph = $fixtureSnapshot.state.farm.material_inventory_graph.value
-    $playerNode = @($graph.inventory_nodes) | Where-Object { $_.inventory_kind -eq "player_inventory" } | Select-Object -First 1
-    $access = @($graph.access_points) | Where-Object {
-        $_.access_kind -eq "placed_chest" -and
-        [string]$_.location_id -eq "Farm" -and
-        [int]$_.tile_x -eq $TargetTileX -and
-        [int]$_.tile_y -eq $TargetTileY -and
-        [string]$_.special_chest_type -eq "None"
-    } | Select-Object -First 1
-    if ($null -eq $playerNode -or $null -eq $access) { throw "Fixture player node or ordinary chest access point missing." }
-    $chestNode = Find-Node $graph ([string]$access.node_id)
-    $chestSlot = Find-ItemSlot $chestNode "(O)388" 4
-    if ($null -eq $chestSlot -or [int]$chestSlot.stack -lt $TransferQuantity) {
-        throw "Fixture chest does not contain enough (O)388 quality 4 material."
-    }
-
-    $withdraw = Invoke-TransferDirection `
-        -Label "chest-to-player" `
-        -BeforeSnapshot $fixtureSnapshot `
-        -SourceNodeId ([string]$chestNode.node_id) `
-        -DestinationNodeId ([string]$playerNode.node_id) `
-        -SourceSlotIndex ([int]$chestSlot.slot_index) `
-        -QualifiedItemId "(O)388" -Quality 4 -Quantity $TransferQuantity `
-        -ExpectedSourceStack ([int]$chestSlot.stack) `
-        -LoopRoot (Join-Path $loopRoot "chest-to-player") `
-        -BackendUrl $backendUrl -SnapshotUrl $snapshotUrl -SavesPath $savesPath -RunDirectory $runDirectory
-
-    $withdrawGraph = $withdraw.AfterSnapshot.state.farm.material_inventory_graph.value
-    $playerAfterWithdraw = Find-Node $withdrawGraph ([string]$playerNode.node_id)
-    $returnSlot = Find-ItemSlot $playerAfterWithdraw "(O)388" 4
-    if ($null -eq $returnSlot -or [int]$returnSlot.stack -lt $TransferQuantity) {
-        throw "Withdrawn material was not available for the return transfer."
-    }
-    $deposit = Invoke-TransferDirection `
-        -Label "player-to-chest" `
-        -BeforeSnapshot $withdraw.AfterSnapshot `
-        -SourceNodeId ([string]$playerNode.node_id) `
-        -DestinationNodeId ([string]$chestNode.node_id) `
-        -SourceSlotIndex ([int]$returnSlot.slot_index) `
-        -QualifiedItemId "(O)388" -Quality 4 -Quantity $TransferQuantity `
-        -ExpectedSourceStack ([int]$returnSlot.stack) `
-        -LoopRoot (Join-Path $loopRoot "player-to-chest") `
-        -BackendUrl $backendUrl -SnapshotUrl $snapshotUrl -SavesPath $savesPath -RunDirectory $runDirectory
-
-    $finalGraph = $deposit.AfterSnapshot.state.farm.material_inventory_graph.value
-    $finalChest = Find-Node $finalGraph ([string]$chestNode.node_id)
-    $finalPlayer = Find-Node $finalGraph ([string]$playerNode.node_id)
-    $initialChestQuantity = Get-NodeQuantity $chestNode "(O)388" 4
-    $finalChestQuantity = Get-NodeQuantity $finalChest "(O)388" 4
-    if ($initialChestQuantity -ne $finalChestQuantity) { throw "Round-trip did not restore the fixture chest quantity." }
-
-    $finalChestSlot = Find-ItemSlot $finalChest "(O)388" 4
-    $finalPlayerQuantity = Get-NodeQuantity $finalPlayer "(O)388" 4
-    $staleExpectedStack = [int]$finalChestSlot.stack - 1
-    $negativeRequest = [ordered]@{
-        schema_version = "training_execution_request.v1"
-        run_id = $RunId
-        queue_id = "$RunId.negative"
-        queue_item_id = "$RunId.negative.stale_source"
-        before_state_hash = $deposit.AfterSnapshot.state_hash
-        option_id = "executor.transfer_material"
-        execution_mode = "training_singleplayer"
-        actor = "training_farmer.main"
-        save_isolation_path = $savesPath
-        request_nonce = [guid]::NewGuid().ToString("N")
-        created_at = [DateTimeOffset]::UtcNow.ToString("O")
-        location_id = "Farm"
-        target_tile_x = $TargetTileX
-        target_tile_y = $TargetTileY
-        stand_tile_x = [int]$deposit.AfterSnapshot.state.player.tile_x.value
-        stand_tile_y = [int]$deposit.AfterSnapshot.state.player.tile_y.value
-        max_movement_tiles = 512
-        material_transfer_intent = [ordered]@{
-            schema_version = "material_transfer_intent.v1"
-            source_node_id = [string]$finalChest.node_id
-            destination_node_id = [string]$finalPlayer.node_id
-            source_slot_index = [int]$finalChestSlot.slot_index
-            qualified_item_id = "(O)388"
-            quality = 4
-            quantity = 1
-            expected_source_stack = $staleExpectedStack
-        }
-        material_transfer_projection = [ordered]@{
-            schema_version = "material_transfer_projection.v1"
-            status = "projected"
-            native_branch = "negative_stale_projection_must_not_execute"
-            source_stack_after = $staleExpectedStack - 1
-            destination_quantity_before = $finalPlayerQuantity
-            destination_quantity_after = $finalPlayerQuantity + 1
-            destination_slot_changes = @()
-            blocking_reasons = @()
-        }
-    }
-    $negativeResult = Invoke-JsonPost -Url "http://127.0.0.1:8767/api/v1/training/execute" -Body $negativeRequest
-    $negativeSnapshot = Wait-MaterialGraph -Url $snapshotUrl -TimeoutSeconds 30
-    $negativeGraph = $negativeSnapshot.state.farm.material_inventory_graph.value
-    $negativeChest = Find-Node $negativeGraph ([string]$finalChest.node_id)
-    $negativePlayer = Find-Node $negativeGraph ([string]$finalPlayer.node_id)
-    if ($negativeResult.status -ne "blocked" -or
-        -not (@($negativeResult.block_reasons) -contains "material_transfer_source_projection_drifted") -or
-        [int]$negativeResult.material_transfer_click_count -ne 0 -or
-        (Get-NodeQuantity $negativeChest "(O)388" 4) -ne $finalChestQuantity -or
-        (Get-NodeQuantity $negativePlayer "(O)388" 4) -ne $finalPlayerQuantity) {
-        throw "Stale material-transfer projection did not fail closed without quantity mutation."
-    }
-    Write-JsonFile (Join-Path $runDirectory "negative-stale-request.json") $negativeRequest
-    Write-JsonFile (Join-Path $runDirectory "negative-stale-result.json") $negativeResult
-    Write-JsonFile (Join-Path $runDirectory "negative-stale-after-snapshot.json") $negativeSnapshot
-
-    $evidence = [ordered]@{
-        schema_version = "runtime_e3_material_transfer_evidence.v1"
-        evidence_class = "E3_runtime_output"
-        option_id = "inventory.transfer_item"
-        execution_option_id = "executor.transfer_material"
-        high_level_chain = "inventory.transfer_item->daily_plan->executor.transfer_material->native_ItemGrabMenu"
-        isolated_save_path = $savesPath
-        save_slot = $SaveSlot
-        debug_fixture_excluded_from_action_evidence = $true
-        directions = @(
-            [ordered]@{ label = $withdraw.Label; candidate_id = $withdraw.CandidateId; queue_item_id = $withdraw.QueueItemId; source_before = $withdraw.SourceQuantityBefore; source_after = $withdraw.SourceQuantityAfter; destination_before = $withdraw.DestinationQuantityBefore; destination_after = $withdraw.DestinationQuantityAfter; native_branch = $withdraw.NativeBranch; menu_opened = $withdraw.MenuOpened; lock_released = $withdraw.LockReleased; click_count = $withdraw.ClickCount },
-            [ordered]@{ label = $deposit.Label; candidate_id = $deposit.CandidateId; queue_item_id = $deposit.QueueItemId; source_before = $deposit.SourceQuantityBefore; source_after = $deposit.SourceQuantityAfter; destination_before = $deposit.DestinationQuantityBefore; destination_after = $deposit.DestinationQuantityAfter; native_branch = $deposit.NativeBranch; menu_opened = $deposit.MenuOpened; lock_released = $deposit.LockReleased; click_count = $deposit.ClickCount }
-        )
-        round_trip_chest_quantity_before = $initialChestQuantity
-        round_trip_chest_quantity_after = $finalChestQuantity
-        stale_projection_failure_closed = $true
-        stale_projection_click_count = [int]$negativeResult.material_transfer_click_count
-        result = "verified"
-    }
-    Write-JsonFile (Join-Path $runDirectory "e3-evidence.json") $evidence
+    $capture = Get-FreshRuntimeSnapshot -Url $snapshotUrl -TimeoutSeconds 30
+    $fixturePath = Join-Path $runRoot 'fixture-snapshot.json'
+    Save-RuntimeSnapshotAndIngest -Path $fixturePath -Capture $capture -BackendUrl $backendUrl -SnapshotProfile full
+    $context = New-RuntimeQueueContext -LoopDll $loopDll -ArtifactDirectory $runRoot -BackendUrl $backendUrl `
+        -SnapshotUrl $snapshotUrl -SnapshotProfile full -ExecutorRoot $executorUrl -ProductUrl $executorUrl `
+        -RunId $RunId -IsolatedSavesPath $isolatedSaves
+    $graph = Read-StateValue $capture.Value 'farm' 'material_inventory_graph'
+    $players = @($graph.inventory_nodes | Where-Object inventory_kind -CEQ 'player_inventory')
+    $access = @($graph.access_points | Where-Object { $_.access_kind -ceq 'placed_chest' -and $_.location_id -ceq 'Farm' -and $_.tile_x -eq $TargetTileX -and $_.tile_y -eq $TargetTileY })
+    if ($players.Count -ne 1 -or $access.Count -ne 1) { throw 'Fixture player/chest identity is not unique.' }
+    $player = $players[0]
+    $chest = Get-RuntimeMaterialNode $graph $access[0].node_id
+    $slot = Get-RuntimeMaterialSlot $chest '(O)388' 4
+    $ledgerResponse = Invoke-WebRequest -UseBasicParsing -TimeoutSec 30 `
+        -Uri "$backendUrl/api/v1/strategy/commitments/latest?stateHash=$($capture.Value.state_hash)"
+    $ledger = $ledgerResponse.Content | ConvertFrom-Json
+    Write-Utf8Text -Path (Join-Path $runRoot 'initial-strategy-ledger.json') -Value $ledgerResponse.Content
+    if ($ledger.revision -ne 0 -or $ledger.save_id -cne $capture.Value.save_id.value -or $ledger.player_id -cne $capture.Value.player_id.value) { throw 'Dedicated ledger did not start with this actor at revision zero.' }
+    if ($FixtureProfile -eq 'sparse_source' -and ($slot.slot_index -ne 5 -or (Get-RuntimeMaterialSlot $chest '(O)390' 0).slot_index -ne 9)) { throw 'Sparse native fixture did not retain empty slots before measurement.' }
+    # All fixture mutation ends here. Both transfers use the original candidate/compiler/native executor.
+    $withdraw = Invoke-RuntimeMaterialTransferDirection -Context $context -Name 'chest-to-player' -Before $capture.Value -BeforePath $fixturePath `
+        -SourceNodeId $chest.node_id -DestinationNodeId $player.node_id -SourceSlotIndex $slot.slot_index `
+        -Quantity $TransferQuantity -ExpectedSourceStack $slot.stack
+    $afterGraph = Read-StateValue $withdraw.After 'farm' 'material_inventory_graph'
+    $returnSlot = Get-RuntimeMaterialSlot (Get-RuntimeMaterialNode $afterGraph $player.node_id) '(O)388' 4
+    if ($FixtureProfile -eq 'sparse_source' -and $withdraw.Execution.material_transfer_source_slot_after -ne 0) { throw 'Native sparse source did not move from slot 5 to slot 0.' }
+    $deposit = Invoke-RuntimeMaterialTransferDirection -Context $context -Name 'player-to-chest' -Before $withdraw.After -BeforePath $withdraw.AfterPath `
+        -SourceNodeId $player.node_id -DestinationNodeId $chest.node_id -SourceSlotIndex $returnSlot.slot_index `
+        -Quantity $TransferQuantity -ExpectedSourceStack $returnSlot.stack
+    $finalGraph = Read-StateValue $deposit.After 'farm' 'material_inventory_graph'
+    $finalChest = Get-RuntimeMaterialNode $finalGraph $chest.node_id
+    if ((Get-RuntimeMaterialQuantity $finalChest '(O)388' 4) -ne 11 -or
+        (Get-RuntimeMaterialQuantity (Get-RuntimeMaterialNode $finalGraph $player.node_id) '(O)388' 4) -ne (Get-RuntimeMaterialQuantity $player '(O)388' 4)) { throw 'Native round trip did not restore item quantities.' }
+    if ($FixtureProfile -eq 'sparse_source' -and ((Get-RuntimeMaterialSlot $finalChest '(O)390' 0).slot_index -ne 1 -or (Get-RuntimeMaterialQuantity $finalChest '(O)390' 0) -ne 3)) { throw 'Unrelated sparse stock moved incorrectly.' }
+    Assert-RuntimeMaterialStaleProjection -Context $context -After $deposit.After -ChestNodeId $chest.node_id `
+        -PlayerNodeId $player.node_id -TargetTileX $TargetTileX -TargetTileY $TargetTileY
+    if ((Get-DirectoryContentHash -Path $sourceSave) -cne $sourceHash) { throw 'Original source save changed.' }
     $summary = [ordered]@{
-        status = "passed"
-        run_id = $RunId
-        save_slot = $SaveSlot
-        runtime_root = $RuntimeRoot
-        fixture_target_tile = "$TargetTileX,$TargetTileY"
-        hidden = $true
-        silent = $true
-        high_level_option = "inventory.transfer_item"
-        native_executor = "executor.transfer_material"
-        directions_verified = 2
-        native_menu_lifecycles_verified = 2
-        training_episode_count = 2
-        training_dataset_count = 2
-        round_trip_restored = $true
-        stale_projection_failure_closed = $true
-        e3_evidence_path = (Join-Path $runDirectory "e3-evidence.json")
+        schema_version='runtime_material_transfer_native_evidence.v2';status='passed';run_id=$RunId
+        project_head=$sourceHead;runtime_source_head=$runtimeHead;fixture_profile=$FixtureProfile;save_slot=$SaveSlot
+        high_level_option='inventory.transfer_item';native_executor='executor.transfer_material'
+        debug_fixture_excluded_from_action_evidence=$true;directions_verified=2;native_menu_lifecycles_verified=2
+        original_projector_and_slot_verifier_rebuilt=$true;round_trip_restored=$true;stale_projection_failure_closed=$true
+        source_save_preserved=$true;source_save_sha256=$sourceHash;isolated_save_path=$isolatedSaves
+        strategy_ledger_directory=$ledgerDirectory;isolated_mods=$mods;hidden=$true;silent=$true
+        evidence_scope='native_transfer_slot_lineage_not_custody_relocation_or_criterion';formal_training_authorized=$false
+        directions=@(@{label='chest-to-player';execution_path=$withdraw.ExecutionPath;queue_path=$withdraw.QueuePath;episode_path=$withdraw.EpisodePath},
+            @{label='player-to-chest';execution_path=$deposit.ExecutionPath;queue_path=$deposit.QueuePath;episode_path=$deposit.EpisodePath})
     }
-    Write-JsonFile (Join-Path $runDirectory "summary.json") $summary
-    $summary | ConvertTo-Json -Depth 16
+    Write-JsonFile -Path (Join-Path $runRoot 'summary.json') -Value $summary
+    $summary | ConvertTo-Json -Depth 20
+}
+catch {
+    Write-JsonFile -Path (Join-Path $runRoot 'failure.json') -Value @{status='failed';error=$_.Exception.Message;run_id=$RunId;formal_training_authorized=$false}
+    throw
 }
 finally {
-    foreach ($key in $previousEnv.Keys) { Set-Item -Path "env:$key" -Value $previousEnv[$key] }
-    if (-not $KeepGameRunning -and $null -ne $gameProcess -and -not $gameProcess.HasExited) {
-        Stop-Process -Id $gameProcess.Id -Force -ErrorAction SilentlyContinue
-    }
-    if ($null -ne $backendProcess -and -not $backendProcess.HasExited) {
-        Stop-Process -Id $backendProcess.Id -Force -ErrorAction SilentlyContinue
-    }
+    Stop-RuntimeEvidenceProcesses -Processes $processes.ToArray()
+    Restore-RuntimeProcessEnvironment -Values $savedEnvironment
 }

@@ -17,6 +17,11 @@ public sealed partial class ModEntry
             return Blocked(request, reasons.ToArray());
         }
 
+        var profile = request.FixtureMaterialTransferProfile ?? "ordinary";
+        if (profile is not ("ordinary" or "sparse_source"))
+        {
+            return Blocked(request, "material_transfer_fixture_profile_unsupported");
+        }
         var farm = Game1.getFarm();
         var requested = request.TargetTileX is >= 0 && request.TargetTileY is >= 0
             ? new Point(request.TargetTileX.Value, request.TargetTileY.Value)
@@ -35,6 +40,7 @@ public sealed partial class ModEntry
         var tile = target.Value.ToVector2();
         farm.objects.Remove(tile);
         var chest = CreateFixtureChest(tile, "130", "(O)388", 11);
+        ConfigureMaterialTransferFixtureContents(chest, profile);
         farm.objects[tile] = chest;
         var stand = FindMaterialTransferFixtureStand(farm, target.Value);
         var moved = stand.HasValue;
@@ -55,13 +61,10 @@ public sealed partial class ModEntry
             chest.playerChest.Value &&
             chest.SpecialChestType == Chest.SpecialChestTypes.None &&
             chest.owner.Value == Game1.player.UniqueMultiplayerID &&
-            chest.Items.Count == 1 &&
-            chest.Items[0].QualifiedItemId == "(O)388" &&
-            chest.Items[0].Quality == 4 &&
-            chest.Items[0].Stack == 11;
+            MaterialTransferFixtureContentsMatch(chest, profile);
         var observed = "target=" + TileText(tile) +
             ";stand=" + (stand.HasValue ? TileText(stand.Value.ToVector2()) : "unavailable") +
-            ";move_reason=" + moveReason;
+            ";move_reason=" + moveReason + ";fixture_profile=" + profile;
         return new TrainingExecutionResult
         {
             RunId = request.RunId,
