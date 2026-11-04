@@ -30,7 +30,8 @@ namespace StardewAI.Core.Training
                     connectorTiles,
                     request,
                     timing,
-                    failures));
+                    failures),
+                request.RequiredFirstEdge);
 
         private static RouteSearchResult SearchFeasibleLocationRoute(
             TransparentRouteGraphResolver graph,
@@ -66,7 +67,8 @@ namespace StardewAI.Core.Training
             int earliestDepartureTime,
             string targetLocation,
             FutureRouteTimingCalibration timing,
-            Func<RouteSearchState, ISet<string>, RouteSearchResult?> buildTarget)
+            Func<RouteSearchState, ISet<string>, RouteSearchResult?> buildTarget,
+            TransparentRouteEdge? requiredFirstEdge = null)
         {
             var pending = new List<RouteSearchState>
             {
@@ -78,12 +80,10 @@ namespace StardewAI.Core.Training
                     Array.Empty<TransparentRouteEdge>(),
                     Array.Empty<FutureRouteSegmentEvidence>())
             };
-            var bestArrivalByState = new Dictionary<string, int>(
-                StringComparer.OrdinalIgnoreCase)
-            {
-                [StateKey(startLocation, startTileX, startTileY)] =
-                    ToMinutes(earliestDepartureTime)
-            };
+            var bestArrivalByState = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            // Before a required first edge, the source is not yet an equivalent reached state.
+            if (requiredFirstEdge is null)
+                bestArrivalByState[StateKey(startLocation, startTileX, startTileY)] = ToMinutes(earliestDepartureTime);
             var failures = new HashSet<string>(StringComparer.Ordinal);
             RouteSearchResult? bestResult = null;
 
@@ -108,7 +108,7 @@ namespace StardewAI.Core.Training
                     continue;
                 }
 
-                if (string.Equals(
+                if ((requiredFirstEdge is null || current.Path.Length > 0) && string.Equals(
                         current.Location,
                         targetLocation,
                         StringComparison.OrdinalIgnoreCase))
@@ -128,6 +128,9 @@ namespace StardewAI.Core.Training
 
                 foreach (var edge in graph.GetOutgoingEdges(current.Location))
                 {
+                    if (current.Path.Length == 0 && requiredFirstEdge is not null &&
+                        !edge.Matches(requiredFirstEdge))
+                        continue;
                     if (!TryAdvance(
                             current,
                             edge,

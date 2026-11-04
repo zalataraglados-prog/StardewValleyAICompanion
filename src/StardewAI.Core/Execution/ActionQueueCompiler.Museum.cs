@@ -35,7 +35,7 @@ public sealed partial class ActionQueueCompiler
                     ";field_guide_quest_completed=" + ReadParameter(action, "expected_field_guide_quest_completed_after") +
                     ";pending_rewards=" + ReadParameter(action, "pending_reward_ids_after_json") +
                     ";reaches_rusty_key_threshold=" + ReadParameter(action, "reaches_rusty_key_threshold"),
-                240)
+                MuseumDonationBudgetPolicy.InteractionTicks)
         };
     }
 

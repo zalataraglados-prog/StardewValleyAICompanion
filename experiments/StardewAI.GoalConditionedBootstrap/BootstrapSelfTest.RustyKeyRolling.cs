@@ -198,6 +198,7 @@ internal static partial class BootstrapSelfTest
         passed.Add("pending_custody_requires_exact_creation_history");
         VerifyRollingPendingInventory(passed);
         VerifyRollingDonationTimeBudget(passed);
+        VerifyRollingDonationRouteSchedule(root, passed);
         Write(Path.Combine(root, "rusty-key-rolling-self-test.json"), new
         {
             status = "passed", passed_count = passed.Count, cases = passed,

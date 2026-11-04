@@ -16,13 +16,14 @@ public static partial class RustyKeyRollingSupplyProposalBuilder
             CurrentTeacherFrontierSupport.HashFile(inputs.SnapshotPath),
             CurrentTeacherFrontierSupport.HashFile(inputs.StrategyLedgerPath),
             () => string.IsNullOrWhiteSpace(inputs.TargetDateOpportunityCostPath)
-                ? null : AcquisitionRoutePortfolioBuilder.Prepare(inputs));
+                ? null : AcquisitionRoutePortfolioBuilder.Prepare(inputs), inputs.RouteTimingCalibrationPath);
     }
 
     internal static RustyKeyRollingSupplyProposal Build(
         AuthoritativeRequirementInventoryReport inventory, SnapshotEnvelope snapshot, StrategyCommitmentLedger ledger,
         string inventorySha256, string snapshotSha256, string ledgerSha256,
-        Func<AcquisitionRoutePortfolioBuilder.AcquisitionRoutePortfolioBuildContext?> acquisitionContext)
+        Func<AcquisitionRoutePortfolioBuilder.AcquisitionRoutePortfolioBuildContext?> acquisitionContext,
+        string routeTimingCalibrationPath = "")
     {
         var result = new RustyKeyRollingSupplyProposal
         {
@@ -54,7 +55,7 @@ public static partial class RustyKeyRollingSupplyProposalBuilder
         if (result.SourceTotalDay >= RustyKeyAcquisitionPortfolioBuilder.StageOneDeadlineExclusive - 1)
             return Block(result, new[] { "rusty_key_supply_date_leaves_no_pre_year3_key_handoff" });
         var evaluations = new List<RustyKeyRollingCandidateEvaluation>();
-        if (TryHeldDonation(result, source, snapshot, ledger, evaluations))
+        if (TryHeldDonation(result, source, snapshot, ledger, evaluations, routeTimingCalibrationPath))
         {
             result.CandidateEvaluations = evaluations.ToArray();
             return result;

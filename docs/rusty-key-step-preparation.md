@@ -18,7 +18,9 @@ Caller-written readiness flags or a learner score cannot authorize a stage.
   acquisition axes or an acquisition resource commit. Dispatch still uses the
   existing current-state/reservation gate and native receipt verification. The
   producer first applies the strict clock/day-budget gate; blocked work emits no
-  queue and the item remains pending rather than being acquired again.
+  queue and the item remains pending rather than being acquired again. Remote
+  work also rebuilds the full current-date route/counter schedule and exact first
+  connector, but emits only the existing connector or bounded-wait queue.
 - `custody_navigation`: authenticated stored museum output is in another map.
   Return one original connector/clearance or bounded scheduled-wait queue, with
   no inventory commit. Preserve route gates; fresh-replan before touching stock.
@@ -87,9 +89,12 @@ actual hidden CLI processes, real current candidates/compiler, missing/stale
 ranking, missing candidate denominator, forged raw claims, held deterministic
 rebuilding, threshold handoff, same-map custody retrieval, cross-map navigation,
 original transfer compilation and rejection of changed custody authority.
-`self-test-rusty-key-rolling-supply` passes 44
+`self-test-rusty-key-rolling-supply` passes 49
 checks including pending supply, protected/spare units, exact custody history,
 authorized/unauthorized storage, unknown inventory and strict local time budgets.
+The added route checks include later-door closure, alternate full-route costs,
+deferred opening, missing calibration and changed schedule rejection through
+this same preparation entrypoint.
 See [time-budget scope](rusty-key-time-budget.md). Existing 20 control,
 18 support-rebind, full-threshold, dispatch and focused supervision regressions
 also pass. No game was launched; raw diagnostics remain outside Git.

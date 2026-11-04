@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Strategy;
+using StardewAI.Core.Strategy;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -47,6 +48,9 @@ public sealed class RustyKeyRollingSupplyProposal
     public SmallModelPlanEnvelope? CompiledPlan { get; set; }
     [JsonPropertyName("compiled_queue")]
     public ActionQueueEnvelope? CompiledQueue { get; set; }
+    [JsonPropertyName("selected_donation_route_schedule")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public MuseumDonationRouteSchedule? SelectedDonationRouteSchedule { get; set; }
     [JsonPropertyName("selected_custody_transfer")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public RustyKeyRollingCustodySelection? SelectedCustodyTransfer { get; set; }

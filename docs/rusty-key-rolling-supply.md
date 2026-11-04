@@ -19,7 +19,11 @@ other 59 items does not prohibit one valid next step.
    through the existing timeline scheduler, daily-plan compiler and action-queue
    compiler. Prefer a legal held-item donation/connector step, keeping material
    protection and exact snapshot/native donation parameters. No caller ranking
-   or learner score selects the item.
+   or learner score selects the item. Remote held candidates now retain all
+   original first-connector alternatives and require a complete current-date
+   route/entry/counter schedule bound to the actual first edge. Among those
+   legal alternatives, full donation completion precedes the original stable
+   tie-break, under its explicit route-control policy identity.
 2. If no held-item donation step compiles, project the shared material graph and
    active reservations first. Distinct owned undonated identities, including only
    history-authenticated custody for this goal/consumer, remain pending donations.
@@ -48,6 +52,12 @@ to the original compiler. Missing/conflicting clocks and over-budget candidates
 are excluded before a queue is offered; owned stock remains pending, not new
 acquisition. See [local time gates and remaining joint schedule](rusty-key-time-budget.md).
 
+The optional `selected_donation_route_schedule` retains compact sequential route
+evidence, calibration SHA and counter/completion bounds. Original preparation
+independently rebuilds it; edited timing cannot authorize departure. Execute only
+one current connector or bounded wait, then fresh-replan. No future stock or
+multi-map action queue is fabricated. Local indoor donation is unchanged.
+
 Held/navigation selection exports the existing compiled plan/queue. Transfer
 selection requires the actual commit before the original custody queue compiler.
 Acquisition selection
@@ -69,6 +79,9 @@ morning before exclusive day 224, but is not a joint donation/opening-hours proo
 `build-rusty-key-rolling-supply` requires `--requirement-inventory`, `--snapshot`,
 `--strategy-ledger` and `--output`. Legal held-item donation needs no acquisition
 forecast, Community Center completion or Master Angler local prerequisite.
+Remote held routing also needs the existing `--route-timing-calibration` source;
+missing/unknown date, movement or later-gate evidence remains explicit and does
+not authorize a duplicate acquisition.
 
 Without a held or custody step, provide the same retained source-axis arguments as
 `build-acquisition-route-portfolio-admission`, without a caller `--proposal`.
@@ -92,7 +105,7 @@ the MOD's default production root selector or criterion-global acceptance.
 
 ## Verification And Remaining Work
 
-`self-test-rusty-key-rolling-supply` passed 44 synthetic cases, exercising the
+`self-test-rusty-key-rolling-supply` passed 49 synthetic cases, exercising the
 real candidate/timeline/compiler and shared resource-admission code. Cases cover
 partial deficits, only one currently usable item, preserved unavailable routes,
 protected inputs, held spare units, deterministic ties, source drift, unknown

@@ -99,6 +99,7 @@
     <Compile Include="SnapshotGameClockBudgetReaderTests.cs" />
     <Compile Include="HeadlessHostInputPumpSourceGuardTests.cs" />
     <Compile Include="FutureRouteDateEvidenceProducerTests.cs" />
+    <Compile Include="FutureRouteDateEvidenceProducerTests.FirstEdge.cs" />
     <Compile Include="FutureRouteTimingCalibrationTests.cs" />
     <Compile Include="ExecutorOwnedIdlePauseTimingTests.cs" />
     <Compile Include="GeodeProcessingMainlineTests.cs" />
@@ -124,6 +125,7 @@
     <Compile Include="ExecutorSinglePathGovernanceTests.cs" />
     <Compile Include="SkullKeySnapshotContractSourceGuardTests.cs" />
     <Compile Include="MuseumDonationMainlineTests.cs" />
+    <Compile Include="MuseumDonationMainlineTests.RouteSchedule.cs" />
     <Compile Include="MuseumDonationMainlineTests.Reservations.cs" />
     <Compile Include="MachineTaskCapacityMainlineTests.cs" />
     <Compile Include="MiningReachDepthAcquisitionIntentTests.cs" />

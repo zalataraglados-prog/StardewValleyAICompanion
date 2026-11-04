@@ -22,6 +22,11 @@ pins source/binary hashes and never silently substitutes historical inputs.
 1. Capture/ingest one initial full snapshot and retain the actor/save identity.
 2. Rebuild the rolling producer. Held donation and custody retrieval need no acquisition axes. Only
    when acquisition sources are needed, invoke the original 14-axis batch.
+   Remote held donation uses the existing timing-calibration input and native
+   date-map/gate evidence to prove the entire route to the counter, bound to its
+   actual first connector. A later closed/unknown gate blocks departure upstream;
+   owned stock stays pending. One connector or bounded wait still executes before
+   the next fresh replan; this is not a speculative multi-map donation queue.
 3. Generate current ranking through `build-rusty-key-current-ranking`, using the
    original source-bound request factory and availability/ranking classes, scoped
    to the selected route's endpoint/support options. No script-generated shop,
