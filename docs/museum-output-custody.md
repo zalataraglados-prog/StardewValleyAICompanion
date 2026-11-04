@@ -63,7 +63,7 @@ prove full acquired-output custody in gameplay or authorize training. The servic
 now supports the history-backed position lifecycle and purpose-bound control
 below. The dispatch guard accepts only that exact verified control; generic
 unbound custody moves remain rejected. The outer rolling selection is connected
-below; the native round-trip boundary remains incomplete. The [native slot-lineage prerequisite](material-transfer-slot-lineage.md)
+below; the [native stored-output round trip](#accepted-native-stored-round-trip) is now accepted within its stated scope. The [native slot-lineage prerequisite](material-transfer-slot-lineage.md)
 handles chest compaction in the existing projector/executor/receipt chain;
 physical lineage alone does not certify claim relocation. Backend reply retrieval has its separate
 [recovery contract](portfolio-mutation-reply-recovery.md#live-material-settlement-hooks):
@@ -95,8 +95,8 @@ Live readiness checks after movement. This is a tested ordinary-transfer
 prerequisite, not permission to relabel custody as machine input. The same original service now
 conditionally admits selected and passive custody only with an authenticated
 initial position and complete linked position history. The original control is
-now wired into outer rolling selection; next verify real acquired-custody
-storage/withdrawal/donation. Legacy/malformed provenance and unprepared generic
+now wired into outer rolling selection and the native acquired-custody
+storage/withdrawal/donation boundary below has passed. Legacy/malformed provenance and unprepared generic
 relocation/rebind remain rejected. No new planner or executor is needed.
 
 ### Initial Position Binding
@@ -298,9 +298,49 @@ The runtime adapter retains per-transfer before/after paths instead of assuming
 the queue's initial snapshot is still current. It calls the original journaled
 mutation/reply recovery and independent result replay, without relabeling
 museum-output handoff as machine acquisition. No new inventory store, executor,
-full-snapshot cache or per-frame scan was introduced. The native exit proof remains real acquired
+full-snapshot cache or per-frame scan was introduced. The native exit proof is real acquired
 output -> storage -> withdrawal -> authorized donation/consumption, including
 other-goal protection and missing/stale/forged-lineage refusal. The JIT guard is
 now conditional on the complete bound control, not removed. API/CLI tests alone
-do not prove that native trajectory or reopen accepted geode/key or owner visual gates.
+did not prove that native trajectory; the accepted native boundary below now does,
+without reopening accepted geode/key or owner visual gates.
 Frozen coverage counts and `formal_product_training=false` remain unchanged.
+
+### Accepted Native Stored Round Trip
+
+On 2026-11-04 the hidden/muted isolated run `custody-b3512d5f-1104` completed six
+queues and seven applied, fresh, verified native actions: geode acquisition,
+movement/store, automatic rolling withdrawal, two original map connectors and
+original museum donation/consumption. Storage was an explicit mechanical probe;
+retrieval and donation were selected by the existing rolling controller. It did
+not reacquire the stored output or substitute a free player copy.
+
+The one `(O)549` has player counts `0 -> 1 -> 0 -> 1 -> 0`, chest counts
+`0 -> 0 -> 1 -> 0 -> 0`; geodes decrease only `2 -> 1`, and museum progress
+changes only `59 -> 60` on donation. Ledger revisions are `1,3,5,7,8`; the three
+other-goal stone units remain active at the compacted slot `9 -> 1` with their
+goal/provenance retained. The final local status is
+`native_donation_threshold_observed`, with no night/key dispatch and no key claim.
+
+Retained-file review invoked the original transfer settlement CLI twice, rebuilt
+the donation request with the original C# builder and matched the original Live
+RPC journal, retrieved its result through the original read-only file-repository
+lookup (including stored reply/hash checks), and exactly replayed the original
+donation settlement. All five phase state hashes, binary/mod hashes and actor/save
+identity passed. Script `b3512d5f`, clean harness source `b84ced79` and other clean
+runtime source `f2b0c4ef` have explicit Git-tree equivalence for the code they run.
+
+Raw artifacts remain outside Git at
+`I:\StardewAITraining\custody-round-trip-20261104\native\custody-b3512d5f-1104`.
+`independent-review-03/review.json` SHA-256 is
+`681f33b01cd724f8f164a62e8920c6a98a4e860c8190b75e8a35564a3e6d238a`.
+The original ProofFarm source hash remains
+`68ddc8dbbe09382f2e7ba1c9d5d1e8dd6d0ffaef59acf9367415b4678f59366d`;
+owned processes and ports 5132/8765/8767 were released.
+
+This accepts same-map custody deposit/withdrawal plus native travel/donation,
+not native cross-map chest approach, full fresh-save sixty-item supply,
+joint future windows/budgets, criterion Teacher/native partitions, a pre-Year-3
+completion proof or formal training. Existing negative authority tests keep their
+own synthetic/API scope. Next close joint timing/windows and the remaining
+criterion evidence; do not rerun this accepted boundary as a new prerequisite.

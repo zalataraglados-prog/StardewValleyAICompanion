@@ -1,5 +1,9 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-04 真实保管存取捐赠已独立复核通过：** `custody-b3512d5f-1104`完成6队列、7条fresh/verified原生动作：真实晶球获取一件`(O)549`→原控制存箱→rolling自动取回→两次原地图连接器→原捐赠/核销。背包产物`0→1→0→1→0`、箱内`0→0→1→0→0`，晶球只`2→1`，捐赠只`59→60`；账本修订`1/3/5/7/8`，他目标石头3个仍active、压紧槽9→1。两次原C#转移结算重放、原捐赠请求与Live日志一致、原只读回执恢复和原服务精确重放均通过；五阶段state hash、源码等价/二进制/Mods哈希、源档未变及进程/端口释放均核实。只在局部捐赠观察边界退出，未跑夜间/钥匙。接受范围及本地复核SHA见[原生边界](museum-output-custody.md#accepted-native-stored-round-trip)。
+>
+> **唯一接续：** 不重开本次存取、已接受晶球→钥匙或owner目视门；继续Rusty Key联合时间窗/预算与criterion独立Teacher/native分区、第三年前时限。当前是同地图存取及原生赴博物馆捐赠的共享能力，不是全新存档从零60件或完整Teacher。`5/19 executable、6/19 split-complete、5/19 CoverageGateReady、4/11 root ready、formal_product_training=false`保持；不得提交`local-data`。
+
 > **最新原生事实：** `b84ced79`已在隔离游戏真实获得并保管一件`(O)549`，尚未存取/捐赠；存箱前的脚本拒绝来自高层/底层消费者名混用，不是原C#授权失败。现改读原terminal结算的保管ID，保留原生数据的只读C#准备CLI已ready。另明确存取捐赠的局部退出为typed donation threshold观察，不要求重跑已接受夜间/钥匙门；默认钥匙入口不变。运行编排35项、边界20项、原晶球边界33项通过。下一步新run继续真实存→取→捐赠/核销并独立复核，冻结计数和正式训练锁不变。
 
 > **本轮接续：** rolling取回接线已由#422完整CI通过并合并`923c8f2e`，对应开发分支已删除。下一原生边界入口为原threshold smoke的`-SupplyMode current_geode -CustodyRoundTrip`：测量前准备Blacksmith稀疏箱和他目标石头预留，测量中真实获取→原控制存箱→fresh rolling自动取回→原捐赠核销，同一未中断游戏进程/run，不注入产物或回放失败动作。新边界18项、原晶球边界33项及相关Release构建通过；原生轨迹尚未运行，覆盖/Teacher/训练计数不变。具体接受条件见[运行合同](rusty-key-runtime-rolling.md#native-stored-output-round-trip)。

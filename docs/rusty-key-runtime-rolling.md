@@ -169,8 +169,9 @@ and its three read-only CLIs are now consumed by this outer selector/client.
 Game-free coverage includes 25 step-preparation checks, original rolling stages
 plus navigation/transfer/donation orchestration, and six runtime-adapter cases
 using actual C# compilation/settlement CLIs with synthetic HTTP/native results.
-These do not prove actual chest gameplay. Next obtain real acquired-custody
-storage/withdrawal/donation proof without reacquisition or machine-input relabeling;
+Those synthetic checks did not prove chest gameplay. The real acquired-custody
+storage/withdrawal/donation boundary is now
+[accepted](museum-output-custody.md#accepted-native-stored-round-trip), without reacquisition or machine-input relabeling;
 joint opening/time budgets, criterion Teacher/native partitions and the
 pre-Year-3 deadline remain separate. The run summary alone is still only
 `runtime_control_observation_only_not_criterion_evidence`; formal training,
@@ -216,6 +217,13 @@ process/port cleanup and independent retained-file replay remain mandatory.
 The added 20 game-free setup/final-scope/actual child-argument checks and original 33 geode-boundary
 checks pass; all three relevant Release builds have zero warnings/errors.
 This prepares a native proof and does not itself prove gameplay or training.
+The subsequent `custody-b3512d5f-1104` run and retained-file review now provide
+the [accepted scoped native proof](museum-output-custody.md#accepted-native-stored-round-trip):
+six queues/seven native steps, conserved acquired output, automatic withdrawal,
+original donation/consumption and passive other-goal protection. It stops at
+the local donation boundary, not another night/key test. No acceptance counter
+or formal-training flag is promoted. Joint future time/opening windows and
+criterion-global evidence remain the next work.
 
 The first clean `f2b0c4ef` attempt stopped during setup, before acquisition or
 material execution: the old Farm-specific search used `width - 16`, yielding no

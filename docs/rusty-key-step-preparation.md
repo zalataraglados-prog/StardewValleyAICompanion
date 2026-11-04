@@ -104,8 +104,10 @@ accepted prerequisites. The rolling preparation/runtime client now consumes the
 bound transfer control, retains the actual dispatched command and per-transfer
 before/after snapshot paths from Live, and independently verifies original-service
 settlement. It uses the existing mutation journal/read-only reply recovery and
-fresh-replans after each stage. Next obtain real acquired output ->
-storage -> withdrawal -> original donation/consumption proof with other-goal
-protection. Joint timing/opening windows, criterion partitions and the pre-Year-3
+fresh-replans after each stage. Real acquired output -> storage -> withdrawal ->
+original donation/consumption with other-goal protection is now
+[accepted](museum-output-custody.md#accepted-native-stored-round-trip) on its scoped isolated run.
+The explicit local donation stop consumes the original typed threshold control;
+it does not require another night/key gate. Joint timing/opening windows, criterion partitions and the pre-Year-3
 deadline remain later gaps. A standalone transfer CLI is not the autonomous
 live-root loop, and frozen coverage counts remain unchanged.
