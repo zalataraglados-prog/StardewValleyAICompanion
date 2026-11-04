@@ -34,7 +34,7 @@ StardewAI 的终点不是“最会赚钱、最会下矿的自动化 Agent”，�
 - `PlayerCommandOnly` / delegated skill 不应因为“AI 会执行”就混入自主策略训练。染色、明确装饰命令、破坏性请求、真实完美小游戏代打等可以在核心训练之后独立补齐。
 - 引擎选择保持可插拔；不同大小或供应商模型共享同一输入字段、候选 option 和结果记录合同。
 - 不依赖大模型的简单量化沟通协议必须保留，供调试、低成本运行和无网络降级使用。
-- **最终发布 Mod 包含可独立替换、可禁用的 Teacher Provider**：训练阶段负责独立偏序、DAgger 重标、counterfactual、coverage 与 benchmark；发布后仍可对不可逆或高代价等**要求严格正确的关键决策**进行按需、有界复核和否决，不能因为 Student 只有小概率犯错就取消这道保障。Teacher 不必常驻接管，更不能成为第二个独立的在线主脑；所有决策仍由唯一 `StrategicPolicy` 入口整合。唯一 strict-Pareto 解由确定性分支负责，Student 只在 admitted、non-dominated 的不可比较前沿中提供软排序。Teacher 无法确认、被关闭或发生超时且缺少其他充分证明时，关键动作必须失败关闭，不能将 Teacher 判断冒充绝对正确的游戏事实。Hard constraints、Teacher preference、native outcome 和 Student observation 必须分栏，不能把 Student 自己选中的动作自动写成正例。运行时 Teacher 核验能力仍须经过独立实现与验证，本文不宣称已经可用。
+- **最终发布 Mod 保留可独立替换、可禁用的 Teacher Provider**，但不另建并列的在线 Teacher 主脑。复合决策共用唯一 `StrategicPolicy`：确定性分支负责已证明的唯一 strict-Pareto 解，Student 只在 admitted、non-dominated 的不可比较前沿内排序；对于安全合同明确要求额外证据而现有证明尚不足的关键决策，启用且已准入的 Teacher 可按需有界复核或否决。**已证明的确定性结果不能被 Teacher 的评分覆盖，也不因 Teacher 未运行而失效**；如发现事实或证明漂移，失败关闭并 fresh replan。Teacher 缺失、超时或无结论不能补足缺少的证据，模型准确率和 Teacher 意见本身都不是 100% 正确性证明。Hard constraints、Teacher preference、native outcome、Student observation 仍必须分栏。按需 Teacher 复核属于后续**产品阶段**的实现与验收，不是 Stage 1 开训前置，也不宣称当前已可用。
 - 单人 21 分最强基线不携带玩家偏好或协作分工。基线冻结后，Companion 适配数据才引入 `player_intent`、`player_preferences`、`cooperation_state` 和资源归属；关闭适配层必须恢复同一基线。
 
 ## 长期记忆边界
