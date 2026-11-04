@@ -493,7 +493,7 @@ public sealed partial class ReservationPortfolioLedgerService
                 .ToArray();
             if (claims.Length == 1 && claims[0].OutputCustody is not null)
             {
-                if (!MaterialOutputCustodyContract.IsAuthorized(claims[0], current,
+                if (!MaterialOutputCustodyContract.IsAuthorizedForConsumption(claims[0], current,
                         request.ConsumerOptionId ?? string.Empty, request.GoalId))
                     errors.Add("output_custody_consumer_not_authorized");
                 if (!MaterialOutputCustodyContract.TryMuseumDonated(snapshot, claims[0].QualifiedItemId, out var donated) || !donated)

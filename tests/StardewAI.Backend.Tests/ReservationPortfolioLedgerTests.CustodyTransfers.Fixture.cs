@@ -19,10 +19,10 @@ public sealed partial class ReservationPortfolioLedgerTests
         internal SnapshotEnvelope Snapshot { get; set; }
         internal string CustodyId { get; }
 
-        internal CustodyTransferFixture(IStrategyCommitmentRepository? repository = null)
+        internal CustodyTransferFixture(IStrategyCommitmentRepository? repository = null, bool protectSpare = true)
         {
             Repository = repository;
-            var minted = MintMuseumCustody(protectSpare: true, repository);
+            var minted = MintMuseumCustody(protectSpare, repository);
             Ledger = minted.Ledger;
             CustodyId = Ledger.MaterialReservations.Single(row => row.OutputCustody is not null).ReservationId;
             Assert.True(MaterialInventoryGraphReader.TryRead(minted.Snapshot, out var graph));

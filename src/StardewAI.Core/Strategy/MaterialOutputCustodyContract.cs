@@ -24,6 +24,10 @@ public static partial class MaterialOutputCustodyContract
         TryReadCreation(row, ledger, consumerOptionId, goalId, out var creation) &&
         PositionMatches(row, ledger, creation!, out _);
 
+    public static bool IsAuthorizedForConsumption(MaterialReservation row, StrategyCommitmentLedger ledger,
+        string consumerOptionId, string? goalId = null) =>
+        row.NodeId == "player:" + ledger.PlayerId && IsAuthorized(row, ledger, consumerOptionId, goalId);
+
     public static bool TryGetPositionBinding(MaterialReservation row, StrategyCommitmentLedger ledger, out string bindingSha256)
     {
         bindingSha256 = string.Empty;

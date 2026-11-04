@@ -22,7 +22,7 @@ public static class MuseumDonationCustodySettlementRequestBuilder
         var row = ledger.MaterialReservations.SingleOrDefault(value => value.ReservationId == id);
         var goalId = item.NormalizedCommand.GoalId;
         if (row is null || string.IsNullOrWhiteSpace(goalId) ||
-            !MaterialOutputCustodyContract.IsAuthorized(row, ledger, MaterialOutputCustodyContract.MuseumConsumer, goalId) ||
+            !MaterialOutputCustodyContract.IsAuthorizedForConsumption(row, ledger, MaterialOutputCustodyContract.MuseumConsumer, goalId) ||
             IntParameter(item, "museum_output_custody_reservation_revision") != row.Revision ||
             IntParameter(item, "inventory_slot_index") != row.SlotIndex ||
             Parameter(item, "qualified_item_id") != row.QualifiedItemId ||

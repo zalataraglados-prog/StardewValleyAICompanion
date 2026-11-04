@@ -167,10 +167,10 @@ partial position history. Ordinary clones deep-copy links; file restart and
 read-only settlement-reply retrieval preserve the published proof. The original
 donation builder and settlement consume the returned player-held custody.
 
-The 26 new Backend cases cover a service deposit/withdraw/donate round trip,
+The 28 new Backend cases cover a service deposit/withdraw/donate round trip,
 other-goal passive compaction, file restart/reply lookup, chain and marker
 tampering (including rehashed links and legacy downgrade), failed complete-slot
-checks and unprepared relocation/rebind refusal. Full Backend passes 499/499,
+checks and unprepared relocation/rebind refusal. Full Backend passes 501/501,
 complete game-free Core 1155/1155 and the original rolling producer 34/34.
 Four initial Core failures exposed an old signed-player fixture that changed
 the actor ID but retained `player:1` inventory/intent/claim/move nodes; those
@@ -178,6 +178,19 @@ fixture identities now move together, without weakening production checks or
 expected assertions. The focused museum/material group then passes 80/80.
 These are synthetic inventory/ledger/API tests using the original acquisition
 and donation services, not a new native game run or criterion/Teacher evidence.
+
+PR #420's P2 review identified that valid stored provenance must not authorize
+donation consumption. Two regressions first reproduced the old behavior: a real
+unreserved player duplicate is donated while the retained chest unit is untouched,
+yet a forged lease could pass the request builder and a direct request could
+complete the stored reservation. Both original entry points now share explicit
+`IsAuthorizedForConsumption`, which additionally requires the exact player node.
+Ordinary custody provenance remains valid in storage for transfer/planning; the
+original candidate and JIT donation checks already require player-held custody.
+The returned-player round trip still passes, and rejected consumption leaves
+the complete input ledger unchanged. The first direct-request fixture lacked
+its required reason; after correcting that setup it reproduced actual acceptance
+before the production fix. No failing fixture was counted as proof of the defect.
 
 ### Remaining Location Boundary
 
