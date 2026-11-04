@@ -273,6 +273,48 @@ No new game run is claimed. Local artifacts outside Git:
 preparation SHA-256
 `75732df09a8e3496b6132f8535eca243deafce92d78894c4422dd2c110e3827f`.
 
+## Owned Supply Evening Continuation
+
+The rolling controller can select `owned_supply_deferral`, not a new executor,
+when enough distinct missing museum requirements are already owned and the
+original current-date donation/compiler proves a time-only exclusion at or after
+19:00. Eligible exclusions are the original aggregate autonomous budget, the
+complete-route day budget, or resolved connector closure before arrival. A
+closed first door must also have its native close time and the same fully bound
+date/calibration route evidence. Unknown geometry, unresolved gates, missing
+calibration/date, changed museum progress and ownership failures do not grant a
+recovery fallback. Another useful acquisition is not suppressed when owned stock
+cannot cover the live remaining threshold.
+
+Selection reuses `recovery.stabilize_day`: one original return-home/repair step,
+ordinary terminal sleep, an exact already-open Sleep prompt, or the existing
+30-tick native-control-settle observer. It never supplies
+`control_plane.native_save_boundary=true`, closes an arbitrary menu, chooses a
+profession, or fabricates a next-day map. The same daily-plan/action compilers
+produce the bounded queue; preparation independently rebuilds the whole control.
+Runtime uses the existing daily-plan adapter, retains the latest ledger and
+fresh-replans after each receipt. Its special verified-observer handling remains
+restricted to the existing exact native-control contract; failures stop without
+native retry.
+
+Deferral binds the source day, currently owned requirement IDs and exact recovery
+candidate. It explicitly reports `future_date_route_verified=false`. Ordinary
+overnight recovery on day D must leave donation on D+1 and the real key reward on
+D+2 before exclusive day 224 (D <= 221). A same-day native-control observer does
+not consume an extra night. These are earliest-resume/deadline checks, not proof
+that the future museum route will be open. A fresh next-day source must rebuild
+that route and the original physical/custody authorization.
+
+Local verification passes 54 preparation cases, 45 actual-CLI/synthetic runtime
+checks and 137 focused shared museum/recovery regressions. It covers resolved
+first/later door closure, missing date/calibration, changed progress, insufficient
+owned stock, unknown/foreign menus, the last legal overnight day, exact sleep/
+native-control continuation, deterministic rebuilding/tamper rejection and an
+independent synthetic next-day route source. Explicit E-runtime Release build
+has zero warnings/errors; EVD-338 is unchanged. No game, HTTP server, new native
+evidence, worker/API or training was run. Raw artifacts stay outside Git at
+`I:\StardewAITraining\owned-supply-deferral-20261105`.
+
 ## Remaining Joint Schedule
 
 Continue the same Rusty Key primary. Reuse the existing target-date calendar,

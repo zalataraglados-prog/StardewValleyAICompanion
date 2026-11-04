@@ -57,6 +57,9 @@ public sealed class RustyKeyRollingSupplyProposal
     [JsonPropertyName("selected_custody_donation_schedule")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public RustyKeyCustodyDonationSchedule? SelectedCustodyDonationSchedule { get; set; }
+    [JsonPropertyName("selected_owned_supply_deferral")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public RustyKeyOwnedSupplyDeferral? SelectedOwnedSupplyDeferral { get; set; }
     [JsonPropertyName("selected_acquisition_proposal")]
     public AcquisitionRoutePortfolioProposal? SelectedAcquisitionProposal { get; set; }
     [JsonPropertyName("selected_acquisition_admission")]
@@ -80,6 +83,20 @@ public sealed class RustyKeyRollingSupplyProposal
     public string SelectionPolicyId { get; set; } = "deterministic_control.safe_held_then_elapsed_energy_stable_id.v1";
     [JsonPropertyName("blocking_reasons")]
     public string[] BlockingReasons { get; set; } = Array.Empty<string>();
+}
+
+public sealed record RustyKeyOwnedSupplyDeferral(
+    [property: JsonPropertyName("reason")] string Reason,
+    [property: JsonPropertyName("source_total_day")] int SourceTotalDay,
+    [property: JsonPropertyName("earliest_resume_total_day")] int EarliestResumeTotalDay,
+    [property: JsonPropertyName("owned_requirement_ids")] string[] OwnedRequirementIds,
+    [property: JsonPropertyName("recovery_candidate_id")] string RecoveryCandidateId,
+    [property: JsonPropertyName("recovery_candidate_kind")] string RecoveryCandidateKind)
+{
+    [JsonPropertyName("future_date_route_verified")]
+    public bool FutureDateRouteVerified => false;
+    [JsonPropertyName("fresh_snapshot_replan_required")]
+    public bool FreshSnapshotReplanRequired => true;
 }
 
 public sealed record RustyKeyRollingCustodySelection(

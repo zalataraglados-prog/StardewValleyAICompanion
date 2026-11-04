@@ -15,7 +15,8 @@ public static partial class RustyKeyRollingSupplyProposalBuilder
     private static bool TryHeldDonation(
         RustyKeyRollingSupplyProposal result, RustyKeyAcquisitionPortfolioBuilder.RustyKeySourceScope source,
         SnapshotEnvelope snapshot, StrategyCommitmentLedger ledger,
-        List<RustyKeyRollingCandidateEvaluation> evaluations, string routeTimingCalibrationPath)
+        List<RustyKeyRollingCandidateEvaluation> evaluations, string routeTimingCalibrationPath,
+        HashSet<string> temporalRequirements)
     {
         var missing = source.Museum.Groups.Where(group => !source.Progress.Requirements[group.RequirementId].Completed)
             .ToDictionary(group => group.Alternatives[0].QualifiedItemId, group => group.RequirementId, StringComparer.Ordinal);
@@ -33,15 +34,25 @@ public static partial class RustyKeyRollingSupplyProposalBuilder
             .ThenBy(candidate => candidate.EstimatedTicks is >= 0 ? candidate.EstimatedTicks : int.MaxValue)
             .ThenBy(candidate => candidate.CandidateId, StringComparer.Ordinal).ToArray();
         var currentIds = current.Select(candidate => candidate.CandidateId).ToHashSet(StringComparer.Ordinal);
+        var routeScheduler = DonationRouteScheduler(snapshot, routeTimingCalibrationPath);
         foreach (var candidate in availability.Options.SelectMany(option => option.EventCandidates)
                      .Where(candidate => missing.ContainsKey(candidate.QualifiedItemId) && !currentIds.Contains(candidate.CandidateId)))
+        {
             evaluations.Add(new(candidate.CandidateId, missing[candidate.QualifiedItemId], "held_donation", false,
                 candidate.BlockReasons.Length > 0 ? candidate.BlockReasons : new[] { "held_donation_not_currently_schedulable" }));
+            if (candidate.BlockReasons.SequenceEqual(new[] { "route_gate_closed_for_day" }) &&
+                candidate.ClosesAt is { } closes && SnapshotGameClockBudgetReader.CurrentTime(snapshot) is { } time && time >= closes)
+            {
+                var ranked = ranking.RankedEventCandidates.SingleOrDefault(row => row.CandidateId == candidate.CandidateId);
+                if (ranked is not null && CurrentTeacherFrontierSupport.TryReadUniqueIntParameter(ranked, "expected_donated_count_before", out var before) &&
+                    before == result.DonatedCount && IsTimeOnlyDonationSchedule(routeScheduler.Value.Build(ranked).BlockingReasons))
+                    temporalRequirements.Add(missing[candidate.QualifiedItemId]);
+            }
+        }
 
         var planCompiler = new DailyPlanCompiler();
         var actionCompiler = new ActionQueueCompiler();
         var availableMinutes = SnapshotGameClockBudgetReader.AvailableMinutes(snapshot, GameClockBudgetPolicy.AutonomousRecoveryStartTime);
-        var routeScheduler = DonationRouteScheduler(snapshot, routeTimingCalibrationPath);
         var selectedCompletion = int.MaxValue;
         var baseSelectionPolicyId = result.SelectionPolicyId;
         foreach (var candidate in current)
@@ -59,6 +70,8 @@ public static partial class RustyKeyRollingSupplyProposalBuilder
             var schedule = candidate.Kind == "route_connector_tile" ? routeScheduler.Value.Build(candidate) : null;
             if (schedule is { CurrentDayRouteReady: false })
             {
+                if (reasons.Count == 0 && IsTimeOnlyDonationSchedule(schedule.BlockingReasons))
+                    temporalRequirements.Add(missing[candidate.QualifiedItemId]);
                 evaluations.Add(new(candidate.CandidateId, missing[candidate.QualifiedItemId], "held_donation", false, schedule.BlockingReasons));
                 continue;
             }
@@ -66,6 +79,9 @@ public static partial class RustyKeyRollingSupplyProposalBuilder
             var neutral = CurrentStageOneCollectionTeacherPreferenceBuilder.NeutralizeLearnerSignals(candidate, selectionPolicyId);
             var plan = planCompiler.Compile(new[] { neutral }, snapshot.StateHash, goalId: result.GoalId, maxCandidates: 1,
                 availableMinutes: availableMinutes);
+            if (reasons.Count == 0 && plan.CandidateAudit.Length == 1 &&
+                plan.CandidateAudit[0].Reasons.SequenceEqual(new[] { "aggregate_time_budget_exceeded" }))
+                temporalRequirements.Add(missing[candidate.QualifiedItemId]);
             var identity = AcquisitionRoutePortfolioTeacherPreferenceBuilder.ArtifactSha256(new
             {
                 result.GoalId, SelectionPolicyId = selectionPolicyId, result.SnapshotSha256, result.RequirementInventorySha256,
@@ -95,4 +111,9 @@ public static partial class RustyKeyRollingSupplyProposalBuilder
         }
         return result.RollingStepReady;
     }
+
+    private static bool IsTimeOnlyDonationSchedule(string[] reasons) => reasons.Length > 0 && reasons.All(reason =>
+        reason == "museum_donation_full_route_exceeds_day_budget" ||
+        reason == "future_route_connector_closed_before_arrival" ||
+        reason.StartsWith("future_route_connector_closed_before_arrival:", StringComparison.Ordinal));
 }
