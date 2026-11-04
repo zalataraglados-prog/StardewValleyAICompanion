@@ -326,6 +326,26 @@ did not prove that native trajectory; the accepted native boundary below now doe
 without reopening accepted geode/key or owner visual gates.
 Frozen coverage counts and `formal_product_training=false` remain unchanged.
 
+### Next-Day Source Reuse (Synthetic Only)
+
+The original custody position state hash identifies the last authenticated
+material-position event, not the latest clock tick or day. A date-only change
+must not rewrite its acquisition receipt, initial position, linked history,
+reservation revision or position binding. The original transfer request builder
+re-observes the actual source slot/quantity/authorization in the current snapshot;
+the full donation forecast separately needs current-date map/gate/calibration.
+
+Four public build/preparation cases pass on 2026-11-05: unchanged stored custody
+with a fresh next-day date source, yesterday's date proof, missing stock and a
+broken original position anchor. A fresh source permits the original immediate
+navigation and current-day forecast; an old date cannot prove that forecast but
+does not invalidate a separately legal immediate connector. Missing stock or
+broken lineage returns no transfer/navigation queue or speculative acquisition.
+The persisted original ledger bytes, receipt and position binding stay unchanged.
+No production custody logic changed. These are synthetic file-reload/CLI-source
+contracts, not new native overnight evidence. Artifacts stay outside Git at
+`I:\StardewAITraining\next-day-custody-20261105\step-01`.
+
 ### Accepted Native Stored Round Trip
 
 On 2026-11-04 the hidden/muted isolated run `custody-b3512d5f-1104` completed six

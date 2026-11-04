@@ -105,6 +105,9 @@ jobs:
       - name: Test custody native boundary setup and scope guards without game
         shell: pwsh
         run: ./scripts/Test-RuntimeRustyKeyCustodyBoundary.ps1 -OutputRoot "$env:RUNNER_TEMP/custody-native-boundary"
+      - name: Test owned-stock evening boundary without game
+        shell: pwsh
+        run: ./scripts/Test-RuntimeRustyKeyEveningBoundary.ps1 -OutputRoot "$env:RUNNER_TEMP/rusty-key-evening-boundary"
       - name: Check whitespace
         shell: pwsh
         run: |
