@@ -152,7 +152,63 @@ This accepts only shared native physical slot lineage on the isolated Year-5
 baseline. It is not custody relocation authorization, a pre-Year-3 criterion,
 Teacher/global/fresh-save completion or training. No frozen coverage count changes.
 
-Focused Core tests cover sparse partial/full withdrawal, deposit compaction and
+### Reservation Map Before Custody Settlement
+
+The original `MaterialTransferProjector.ProjectReservations` now derives the
+complete active-claim map for both affected inventories from its original native
+physical projection and an explicit set of whole-claim moves. Each map entry
+binds the original claim ID/revision, old/new node/slot, item and unchanged
+quantity; the result also pins the ledger ID/revision. Unmoved claims follow
+their original native slot lineage, including other goals, destination stacks
+compacted before insertion and the source stack retained after partial withdrawal.
+Unchanged positions are included; unrelated inventories and inactive claims are
+not rewritten. No graph, claim, custody provenance or ledger is mutated.
+
+The map rejects missing/duplicate claim identities, invalid claim revisions, owner or
+history-backed custody, partial-claim moves, moving more reserved quantity than
+the transfer, taking an unselected goal's retained units, and allocating claims
+against pre-existing destination stock rather than the actual incoming native
+contribution. Whole claims may target different native insertion slots; a claim
+is never silently split or reassigned to an arbitrary compatible slot. Native
+identity is a signed long, not a positive counter: locked `Farmer` initializes
+the ID with `Utility.RandomLong`, which uses eight random bytes and `ToInt64`.
+The retained real actor's negative ID exposed and corrected an invalid positivity
+check; signed extrema/zero and exact ownership matching are covered by tests.
+
+Focused original-projector/claim checks pass 56/56, with 32 new cases; the final
+complete game-free Core run passes 1155/1155, and original Backend
+portfolio/transfer checks pass 94/94. The retained native before/after
+snapshots were separately replayed with fifteen synthetic full-stock claims in
+each direction. Both independently rebuilt native slot projections and all
+predicted claim locations/quantities match the real post-inventories. Local
+`offline-reservation-lineage-review.json` under the accepted native evidence root
+has SHA-256 `da2ddf66822823df2576a40e7186ff81bf880f9f0313e7f5f4973547fef07ed7`.
+This is offline synthetic reservation evidence over an accepted native trace:
+zero new game actions, live ledger mutations or training samples.
+
+`projected` is not authorization or native settlement. This helper has not yet
+been connected to the production custody path, and both existing custody
+relocation/rebind rejection guards remain enabled. Continue the same lifecycle:
+
+1. Bind the complete map to the original canonical support request, compiled
+   queue, exact dispatched/native receipt, actor and retained acquisition source.
+   Independently rebuild it from the retained before graph and current ledger;
+   caller-supplied slot maps are not evidence on their own.
+2. In the original supporting-transition transaction, validate every affected
+   claim and full fresh native slots, then clone/update all affected locations
+   atomically in one ledger revision. Preserve goals, quantities, original
+   acquisition custody and creation history; any mismatch leaves the input
+   ledger untouched. Other-goal passive compaction is not consumption authority.
+3. Carry the exact custody/ledger revisions through the existing candidate,
+   daily-plan compiler and dispatch checks, with fresh replanning after transfer.
+   Do not replace the original transfer executor or add a second ledger.
+4. Validate real acquired custody deposit -> withdrawal -> authorized donation
+   -> original consumption, including unrelated-goal preservation and stale,
+   forged or reply-loss refusals. Only then replace the corresponding rejection
+   guards with that verified lifecycle. No criterion/Teacher/training promotion
+   follows from the map or from the earlier sparse fixture alone.
+
+Earlier focused Core tests cover sparse partial/full withdrawal, deposit compaction and
 split insertion, preserving player holes, unrelated stock/slot drift, malformed
 graphs, explicit null/legacy serialization, and the actual independent receipt
 method. Full game-free Core passes 1083 tests and the original Backend suite
