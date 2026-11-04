@@ -97,10 +97,48 @@ locations, then verify real acquired-custody storage/withdrawal/donation. Both
 selected and passive custody remain rejected at preparation until that contract
 is implemented and independently verified. No new planner or executor is needed.
 
+### Initial Position Binding
+
+New custody created by the original acquisition settlement now retains an
+optional typed `initial_position`: original player node/slot, source state hash,
+reservation revision, version and binding SHA. The same existing creation-history
+entry carries `output_custody_initial_position_sha256`; the acquisition settlement
+still publishes only one new global ledger revision and one normal custody row.
+No snapshot, second ledger or extra creation-history entry is retained.
+
+The shared original custody contract binds that position to save/player/ledger,
+reservation identity, goal/owner/item/quantity/purpose and immutable acquisition
+portfolio/route/terminal receipt/consumer/creation revision. New rows must match
+the exact creation anchor and current initial position/revision. Invented slot,
+node, state, revision, metadata or one-sided missing origin/anchor fails closed.
+An unrelated global ledger revision or fresh clock state does not rewrite the
+origin or invalidate an unchanged custody row. Ordinary ledger clones deep-copy
+the position and preserve its history anchor; file-repository restart does too.
+
+This SHA is an integrity binding, not a signature or independent proof of native
+acquisition: the original canonical fresh-terminal verification remains required.
+Legacy rows with neither field retain their existing consumer-only behavior and
+serialization; no origin is fabricated on read, clone or restart. They gain no
+relocation authority. Both selected and passively affected custody are still
+rejected by the existing transfer preparation/settlement guards.
+
+Targeted tests use the actual original acquisition settlement and file repository,
+cover changed/missing facts and anchors, a rehashed but inconsistent position,
+deep copies, independent global-state refresh, restart, unchanged publication
+and legacy omission. Original museum/material Core tests (80) and Rusty Key
+rolling producer checks (34) pass without a game run or coverage/training promotion.
+Full Backend passes 473/473 (23 added cases). Under the old two-logical-CPU
+throttle the existing malformed-reply recovery case again hit its 15-second outer
+deadline; with four logical CPUs at BelowNormal the unchanged complete suite
+passed in 14 seconds, twice (472 before the added independent-clock clone case,
+473 after it). This records a load-sensitive observation, not a proof of its
+precise root cause or a widened timeout. Builds and small focused checks can
+remain two-CPU; daytime full Backend checks use the measured four-CPU profile.
+
 ### Remaining Location Boundary
 
 The current custody object retains acquisition portfolio/route, terminal-receipt
-SHA, consumer and creation revision. Creation-history authority alone is not a
+SHA, consumer, creation revision and the initial position binding above. Creation-history authority alone is not a
 complete history of storage positions. Extend this same contract so immutable
 acquisition provenance remains verifiable while each authorized position change
 is tied to the prior row revision/location, prepared transfer, fresh receipt and
@@ -115,4 +153,5 @@ control candidate/plan/dispatch/receipt path without mislabelling museum-output
 handoff as a new machine acquisition. The native exit proof remains real acquired
 output -> storage -> withdrawal -> authorized donation/consumption, including
 other-goal protection and missing/stale/forged-lineage refusal. This is not yet
-implemented and does not reopen the accepted geode/key or owner visual gates.
+implemented beyond the initial binding above and does not reopen the accepted
+geode/key or owner visual gates.

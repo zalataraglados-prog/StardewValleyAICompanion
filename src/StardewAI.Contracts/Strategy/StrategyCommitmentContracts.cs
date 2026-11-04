@@ -82,6 +82,10 @@ namespace StardewAI.Contracts.Strategy
 
         [JsonPropertyName("reason")]
         public string Reason { get; set; } = string.Empty;
+
+        [JsonPropertyName("output_custody_initial_position_sha256")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? OutputCustodyInitialPositionSha256 { get; set; }
     }
 
     public sealed class CropPlantingCommitment

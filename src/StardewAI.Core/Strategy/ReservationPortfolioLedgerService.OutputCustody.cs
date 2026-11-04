@@ -56,7 +56,8 @@ public sealed partial class ReservationPortfolioLedgerService
             } }
         }, updatedAt);
         if (!result.Accepted || result.Ledger is null) return result;
-        result.Ledger.MaterialReservations.Single(row => row.ReservationId == reservationId).OutputCustody = new()
+        var retained = result.Ledger.MaterialReservations.Single(row => row.ReservationId == reservationId);
+        retained.OutputCustody = new()
         {
             AcquisitionPortfolioId = request.PortfolioId, AcquisitionRouteSourceDecisionId = request.RouteSourceDecisionId,
             ConsumerOptionId = claim.ConsumerOptionId, FreshTerminalReceiptSha256 = request.FreshTerminalReceiptSha256,
@@ -66,6 +67,7 @@ public sealed partial class ReservationPortfolioLedgerService
             row.LedgerRevision == result.Ledger.Revision && row.Operation == "material_reservation_upsert");
         history.Operation = MaterialOutputCustodyContract.CreatedOperation;
         history.Reason = request.FreshTerminalReceiptSha256;
+        MaterialOutputCustodyContract.BindInitialPosition(retained, result.Ledger, history);
         return result;
     }
 }
