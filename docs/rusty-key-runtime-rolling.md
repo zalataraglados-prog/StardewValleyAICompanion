@@ -183,6 +183,36 @@ start needs explicit evidence of the harness-owned idle pause release. See
 explicit early baseline; neither a new date nor an owned pause waives unknown
 routes, a complete frontier, native verification or criterion acceptance.
 
+### Native Stored-Output Round Trip
+
+The existing threshold smoke now accepts `-CustodyRoundTrip` only with
+`-SupplyMode current_geode`. Use the early isolated ProofFarm baseline and the
+same explicit acquisition inputs; the prepared Year-5 fixture is still invalid.
+Before the measurement boundary, the original material-transfer fixture places
+one sparse ordinary chest in Blacksmith using its existing optional location
+field. The original ledger service protects the three stone units for another
+goal. Default ordinary-transfer fixture placement remains Farm.
+
+After geode setup ends, no further fixture or direct inventory/ledger mutation
+is allowed. In the same game process/run, the original rolling wrapper performs
+one terminal acquisition and stops at its declared step budget. This exit 2 is
+an incomplete prefix, not success. The boundary checks its exact one-step role,
+input identity and acquired one-unit custody, rejecting a free player duplicate.
+An explicit storage probe then calls the original custody request/compiler/native
+execution/settlement adapters. It is test placement, not an automatic policy
+preference or another executor. The fresh original rolling wrapper must then
+choose withdrawal and original donation/consumption itself, without reacquisition.
+
+The final guard requires exact run identity, one retrieval, original acquired
+receipt identity, completed custody and the still-active other-goal stone claim
+at its independently expected compacted slot. The ordinary key/day flow may
+continue naturally; it is not a reopened accepted key/owner gate. Script and
+binary/source identity, complete native slot maps, source-save preservation,
+process/port cleanup and independent retained-file replay remain mandatory.
+The added 18 game-free setup/final-scope checks and original 33 geode-boundary
+checks pass; all three relevant Release builds have zero warnings/errors.
+This prepares a native proof and does not itself prove gameplay or training.
+
 The updated shipped-Companion requirement for on-demand critical-decision Teacher
 verification remains binding; see `TEACHER_STUDENT_CONVERGENCE_CONTRACT_CN.md`.
 This calibration controller neither implements that future product gate nor

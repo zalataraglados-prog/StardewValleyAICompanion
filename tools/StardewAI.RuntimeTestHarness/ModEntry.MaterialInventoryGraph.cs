@@ -22,11 +22,14 @@ public sealed partial class ModEntry
         {
             return Blocked(request, "material_transfer_fixture_profile_unsupported");
         }
-        var farm = Game1.getFarm();
+        var location = string.IsNullOrWhiteSpace(request.LocationId)
+            ? Game1.getFarm() : Game1.getLocationFromName(request.LocationId);
+        if (location is null)
+            return Blocked(request, "material_transfer_fixture_location_unavailable");
         var requested = request.TargetTileX is >= 0 && request.TargetTileY is >= 0
             ? new Point(request.TargetTileX.Value, request.TargetTileY.Value)
             : (Point?)null;
-        var target = requested ?? FindMaterialTransferFixtureTarget(farm);
+        var target = requested ?? FindMaterialTransferFixtureTarget(location);
         if (!target.HasValue)
         {
             return BlockedWithPrimitive(
@@ -38,31 +41,31 @@ public sealed partial class ModEntry
         }
 
         var tile = target.Value.ToVector2();
-        farm.objects.Remove(tile);
+        location.objects.Remove(tile);
         var chest = CreateFixtureChest(tile, "130", "(O)388", 11);
         ConfigureMaterialTransferFixtureContents(chest, profile);
-        farm.objects[tile] = chest;
-        var stand = FindMaterialTransferFixtureStand(farm, target.Value);
+        location.objects[tile] = chest;
+        var stand = FindMaterialTransferFixtureStand(location, target.Value);
         var moved = stand.HasValue;
         var moveReason = moved
             ? string.Empty
             : "fixture_no_collision_safe_adjacent_tile";
         if (stand.HasValue)
         {
-            Game1.currentLocation = farm;
-            Game1.player.currentLocation = farm;
+            Game1.currentLocation = location;
+            Game1.player.currentLocation = location;
             Game1.player.Position = stand.Value.ToVector2() * Game1.tileSize;
             Game1.player.faceDirection(DirectionTo(stand.Value, target.Value));
         }
         var verified = moved &&
-            farm.objects.TryGetValue(tile, out var value) &&
+            location.objects.TryGetValue(tile, out var value) &&
             ReferenceEquals(value, chest) &&
             chest.GetType() == typeof(Chest) &&
             chest.playerChest.Value &&
             chest.SpecialChestType == Chest.SpecialChestTypes.None &&
             chest.owner.Value == Game1.player.UniqueMultiplayerID &&
             MaterialTransferFixtureContentsMatch(chest, profile);
-        var observed = "target=" + TileText(tile) +
+        var observed = "location=" + location.NameOrUniqueName + ";target=" + TileText(tile) +
             ";stand=" + (stand.HasValue ? TileText(stand.Value.ToVector2()) : "unavailable") +
             ";move_reason=" + moveReason + ";fixture_profile=" + profile;
         return new TrainingExecutionResult
