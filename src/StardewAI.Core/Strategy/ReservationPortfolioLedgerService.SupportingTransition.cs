@@ -301,6 +301,13 @@ public sealed partial class ReservationPortfolioLedgerService
             "reservation_portfolio_supporting_transition_complete",
             updatedAt,
             request.SupportingTransitionReceiptSha256);
+        if (transferProjection is not null)
+        {
+            RetainCustodyPositionTransitions(current!, ledger, request, transferProjection, errors);
+            if (errors.Count > 0)
+                return SupportingTransitionSettlementRejected(current, request, consumptions, relocations,
+                    currencyConsumptions, rebindIds, errors);
+        }
         return new ReservationPortfolioSupportingTransitionSettlementResult
         {
             MaterialTransferReservations = transferProjection,
@@ -511,7 +518,8 @@ public sealed partial class ReservationPortfolioLedgerService
             var claims = current.MaterialReservations.Where(row =>
                     row.ReservationId == relocation.MaterialReservationId)
                 .ToArray();
-            if (claims.Any(row => row.OutputCustody is not null))
+            if (claims.Any(row => row.OutputCustody is not null) &&
+                !PreparedTransferCovers(current, request, relocation.MaterialReservationId))
                 errors.Add("output_custody_relocation_requires_retained_terminal_lifecycle");
             if (claims.Length != 1 ||
                 claims[0].Status != StrategyCommitmentStatuses.Active ||
@@ -550,7 +558,8 @@ public sealed partial class ReservationPortfolioLedgerService
             var material = current.MaterialReservations.Where(row =>
                     row.ReservationId == reservationId)
                 .ToArray();
-            if (material.Any(row => row.OutputCustody is not null))
+            if (material.Any(row => row.OutputCustody is not null) &&
+                !PreparedTransferCovers(current, request, reservationId))
                 errors.Add("output_custody_rebind_requires_retained_terminal_lifecycle");
             var currency = current.CurrencyReservations.Where(row =>
                     row.ReservationId == reservationId)

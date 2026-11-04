@@ -20,8 +20,22 @@ public static partial class MaterialOutputCustodyContract
     public static string ReservationId(string custodyPortfolioId) => custodyPortfolioId + ":material";
 
     public static bool IsAuthorized(MaterialReservation row, StrategyCommitmentLedger ledger,
-        string consumerOptionId, string? goalId = null)
+        string consumerOptionId, string? goalId = null) =>
+        TryReadCreation(row, ledger, consumerOptionId, goalId, out var creation) &&
+        PositionMatches(row, ledger, creation!, out _);
+
+    public static bool TryGetPositionBinding(MaterialReservation row, StrategyCommitmentLedger ledger, out string bindingSha256)
     {
+        bindingSha256 = string.Empty;
+        return row.OutputCustody?.InitialPosition is not null &&
+            TryReadCreation(row, ledger, MuseumConsumer, null, out var creation) &&
+            PositionMatches(row, ledger, creation!, out bindingSha256);
+    }
+
+    private static bool TryReadCreation(MaterialReservation row, StrategyCommitmentLedger ledger,
+        string consumerOptionId, string? goalId, out StrategyCommitmentHistoryEntry? creationEntry)
+    {
+        creationEntry = null;
         var custody = row.OutputCustody;
         if (custody is null || row.Status != StrategyCommitmentStatuses.Active || row.Quantity != 1 ||
             row.Revision < 1 || custody.CreatedLedgerRevision < 1 || custody.CreatedLedgerRevision > ledger.Revision ||
@@ -38,10 +52,12 @@ public static partial class MaterialOutputCustodyContract
                 entry.SourceDecisionId == portfolioId && entry.Operation == CreatedOperation &&
                 entry.LedgerRevision == custody.CreatedLedgerRevision &&
                 entry.Reason == custody.FreshTerminalReceiptSha256).ToArray();
-        return row.SourceDecisionId == portfolioId && row.ReservationId == ReservationId(portfolioId) &&
-            creation.Length == 1 && InitialPositionMatches(row, ledger, creation[0]) &&
+        var valid = row.SourceDecisionId == portfolioId && row.ReservationId == ReservationId(portfolioId) &&
+            creation.Length == 1 &&
             ledger.History.Count(entry => entry.CommitmentId == portfolioId && entry.SourceDecisionId == portfolioId &&
                 entry.Operation == "reservation_portfolio_commit" && entry.LedgerRevision == custody.CreatedLedgerRevision) == 1;
+        if (valid) creationEntry = creation[0];
+        return valid;
     }
 
     public static bool IsLowerSha256(string value) => value is { Length: 64 } &&

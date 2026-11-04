@@ -186,9 +186,10 @@ has SHA-256 `da2ddf66822823df2576a40e7186ff81bf880f9f0313e7f5f4973547fef07ed7`.
 This is offline synthetic reservation evidence over an accepted native trace:
 zero new game actions, live ledger mutations or training samples.
 
-`projected` is not authorization or native settlement. This helper has not yet
-been connected to the production custody path, and both existing custody
-relocation/rebind rejection guards remain enabled. Continue the same lifecycle:
+`projected` is not authorization or native settlement. At this map-only stage
+the helper had not yet been connected to custody settlement. The original
+service now uses the [linked custody history](museum-output-custody.md#linked-position-history)
+contract; runtime custody dispatch remains closed. Continue the same lifecycle:
 
 1. Bind the complete map to the original canonical support request, compiled
    queue, exact dispatched/native receipt, actor and retained acquisition source.
@@ -259,12 +260,13 @@ than POSTed again, and settlement reply lookup preserves the published file.
 
 **Production boundary:** The original canonical ordinary acquisition producer,
 commit/settlement receipt reconstruction, compiler and dispatch path now
-emit/consume this preparation as described below. Both selected custody and
-passively affected custody are still rejected, including
-an ordinary resource transfer that would rebind another custody row. The real
-acquired-output storage -> withdrawal -> authorized donation/consumption proof
-and custody guard replacement remain later in this same lifecycle. All frozen
-coverage, Teacher and formal-training counts remain unchanged.
+emit/consume this preparation as described below. The original service also
+conditionally admits selected/passive custody with the complete linked position
+contract, while legacy/unverifiable provenance and generic unprepared paths are
+still rejected. Runtime custody dispatch remains closed pending original control
+integration and real acquired-output storage -> withdrawal -> authorized
+donation/consumption proof. All frozen coverage, Teacher and formal-training
+counts remain unchanged.
 
 Verification for the service-only slice: full Backend 414/414 (30 new cases), complete game-free Core
 1155/1155. The retained native `material-native-open-1104` snapshots were also
@@ -369,20 +371,22 @@ matrix, and CI now runs it directly. Local canonical proof and original control
 support rebind (20 checks) pass. Earlier missing-input/wrong fixture setup attempts
 were not counted as proof; their local diagnostics were not deleted.
 
-This does not complete museum custody relocation/rebind or promote coverage or
-training. That work must consume retained acquisition provenance, bind the
-authorized candidate/compiler/dispatch, move all affected reservations atomically
-without changing unrelated goals/quantities, and verify fresh native transfer
-before donation. The existing custody rejection guards remain enabled.
+This ordinary canonical slice does not complete runtime museum custody
+relocation/rebind or promote coverage/training. The subsequent original service
+now verifies compact linked acquisition/position provenance and atomically moves
+all affected reservations without changing unrelated goals/quantities. The
+authorized control candidate/compiler/dispatch and real native transfer before
+donation remain to be integrated; the JIT custody rejection guard stays enabled.
 
 The current-geode acquisition/custody/donation/consumption/night/key trace is now
 [accepted](geode-dialogue-lifecycle.md#accepted-native-boundary); do not repeat it
 as the next task. The isolated smoke entry described above has replaced the
 unsafe baseline-in-place flow, and the sparse native boundary above is accepted.
-The next work is complete atomic custody relocation/rebind through the existing
-ledger/supporting-transition path, retaining acquisition provenance and all
-affected other-goal reservations; the protection guards stay closed until that
-contract is implemented and verified. The retained source under `RuntimeRoot/saves` is read and copied, not
+The next work is to wire that verified service contract into the existing
+custody control/compile/dispatch/receipt path, retaining acquisition provenance
+and all affected other-goal reservations, then obtain native round-trip proof.
+The runtime protection guard stays closed until that contract is integrated and
+verified. The retained source under `RuntimeRoot/saves` is read and copied, not
 the execution destination. The prepared Year-5 baseline remains shared mechanical
 capability, not pre-Year-3 criterion evidence. Frozen coverage and
 `formal_product_training=false` stay unchanged.

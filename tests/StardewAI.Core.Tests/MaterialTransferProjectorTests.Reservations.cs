@@ -209,8 +209,19 @@ public sealed partial class MaterialTransferProjectorTests
         var (graph, intent, ledger, moves) = CustodyTransferProjectionFixture();
         graph.PlayerId = playerId;
         ledger.PlayerId = playerId.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        foreach (var node in graph.InventoryNodes) node.OwnerPlayerId = playerId;
-        foreach (var claim in ledger.MaterialReservations) claim.OwnerPlayerId = playerId;
+        var playerNode = "player:" + ledger.PlayerId;
+        foreach (var node in graph.InventoryNodes)
+        {
+            node.OwnerPlayerId = playerId;
+            if (node.NodeId == "player:1") node.NodeId = playerNode;
+        }
+        foreach (var claim in ledger.MaterialReservations)
+        {
+            claim.OwnerPlayerId = playerId;
+            if (claim.NodeId == "player:1") claim.NodeId = playerNode;
+        }
+        intent.SourceNodeId = playerNode;
+        foreach (var move in moves) move.SourceNodeId = playerNode;
 
         var result = new MaterialTransferProjector().ProjectReservations(graph, intent, ledger, moves);
 

@@ -37,6 +37,7 @@ public sealed partial class MaterialTransferProjectorTests
             {
                 CommitmentId = custody.ReservationId, SourceDecisionId = custodyPortfolio,
                 Operation = MaterialOutputCustodyContract.CreatedOperation, LedgerRevision = 3,
+                CommitmentRevision = custody.Revision, SourceStateHash = custody.SourceStateHash,
                 Reason = custody.OutputCustody.FreshTerminalReceiptSha256
             },
             new StrategyCommitmentHistoryEntry
