@@ -483,6 +483,9 @@ function Invoke-RuntimeDailyPlanStep {
         $sourcePath = [IO.Path]::GetFullPath($SourceSnapshotPath)
     }
     $executorUrl = if ($ExecutionTarget -eq "product") { $Context.ProductUrl } else { $Context.ExecutorRoot }
+    $nativeControlObservation = $OptionId -eq 'recovery.stabilize_day' -and
+        $CandidateId -eq 'recovery:wait_for_native_control_settle' -and
+        $CandidateKind -eq 'recovery_native_control_settle'
     $arguments = [Collections.Generic.List[string]]::new()
     foreach ($value in @(
         $Context.LoopDll,
@@ -497,7 +500,7 @@ function Invoke-RuntimeDailyPlanStep {
         "--run-id", $Context.RunId,
         "--save-isolation-path", $Context.IsolatedSavesPath,
         "--iterations", "1",
-        "--required-verified-actions", "1",
+        "--required-verified-actions", $(if ($nativeControlObservation) { "0" } else { "1" }),
         "--max-queue-item-attempts", "12",
         "--sleep-ms", "0",
         "--use-daily-plan",
@@ -523,6 +526,15 @@ function Invoke-RuntimeDailyPlanStep {
         -LoopRoot $stepRoot -RunId $Context.RunId `
         -CoreAssemblyPath (Join-Path (Split-Path -Parent $Context.LoopDll) "StardewAI.Core.dll") `
         -AllowVerifiedContinuation:$AllowVerifiedContinuation
+    if ($nativeControlObservation -and
+        ([string]$result.Execution.option_id -ne 'executor.wait_ticks' -or
+            [string]$result.Execution.status -ne 'applied' -or
+            [string]$result.Execution.primitive_verification_status -ne 'verified' -or
+            [string]$result.Execution.selected_candidate_id -ne $CandidateId -or
+            $result.Execution.selected_candidate_completed -isnot [bool] -or
+            -not $result.Execution.selected_candidate_completed)) {
+        throw 'Native control observation did not retain an exact verified wait receipt.'
+    }
     if ($exitCode -ne 0 -and
         -not $result.VerifiedContinuationPending -and
         -not $result.VerifiedObjectiveCompleted) {

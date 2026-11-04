@@ -43,8 +43,12 @@ foreach ($stage in $stages) {
 $originalReader = (Get-Item Function:Read-RuntimeLoopArtifacts).ScriptBlock
 $originalRanking = (Get-Item Function:Invoke-RuntimeRanking).ScriptBlock
 function Read-RuntimeLoopArtifacts { param($LoopRoot, $RunId, $CoreAssemblyPath, [switch] $AllowVerifiedContinuation)
-    return [pscustomobject]@{ VerifiedContinuationPending = $false; VerifiedObjectiveCompleted = $false }
+    return [pscustomobject]@{ VerifiedContinuationPending = $false; VerifiedObjectiveCompleted = $false
+        Execution = $script:observationReceipt }
 }
+$script:observationReceipt = @{ option_id = 'executor.wait_ticks'; status = 'applied'
+    primitive_verification_status = 'verified'; selected_candidate_id = 'recovery:wait_for_native_control_settle'
+    selected_candidate_completed = $true }
 function dotnet {
     $script:dailyArguments = @($args | ForEach-Object { $_ })
     $rootIndex = [array]::IndexOf($script:dailyArguments, '--root')
@@ -83,10 +87,30 @@ try {
         Invoke-RuntimeRustyKeyNativeHandoff -Context $context -Name $candidate.kind -SnapshotPath $sourceManifest `
             -Snapshot $snapshot -Directory $OutputRoot -ExecutionTarget 'runtime_harness' | Out-Null
         $idIndex = [array]::IndexOf($script:dailyArguments, '--daily-plan-candidate-id')
+        $requiredIndex = [array]::IndexOf($script:dailyArguments, '--required-verified-actions')
+        $expectedRequired = if ($candidate.kind -eq 'recovery_native_control_settle') { '0' } else { '1' }
         Assert-True ($idIndex -ge 0 -and $script:dailyArguments[$idIndex + 1] -eq $candidate.candidate_id -and
+            $requiredIndex -ge 0 -and $script:dailyArguments[$requiredIndex + 1] -eq $expectedRequired -and
             $script:dailyArguments -contains 'control_plane.native_save_boundary=true') `
             'Native handoff must send the actual bounded settle/save candidate through the existing daily-plan adapter.'
         $passed.Add("native_handoff_shared_adapter_$($candidate.kind)")
+    }
+    foreach ($change in @(
+        @{ primitive_verification_status = 'observed_mismatch' }, @{ selected_candidate_completed = $false },
+        @{ selected_candidate_id = 'foreign-wait' }, @{ option_id = 'executor.sleep' }
+    )) {
+        $original = $script:observationReceipt
+        $script:observationReceipt = $original.Clone()
+        foreach ($name in $change.Keys) { $script:observationReceipt[$name] = $change[$name] }
+        $rejected = $false
+        try {
+            Invoke-RuntimeDailyPlanStep -Context $context -Name ('invalid-wait-' + $passed.Count) `
+                -OptionId 'recovery.stabilize_day' -CandidateId 'recovery:wait_for_native_control_settle' `
+                -CandidateKind 'recovery_native_control_settle' -SourceSnapshotPath $sourceManifest | Out-Null
+        } catch { $rejected = $true }
+        finally { $script:observationReceipt = $original }
+        Assert-True $rejected 'An unverified, incomplete or mismatched observation must not pass just because it has no work-action target.'
+        $passed.Add('rejected_control_observation_' + ($change.Keys -join '_'))
     }
 }
 finally {

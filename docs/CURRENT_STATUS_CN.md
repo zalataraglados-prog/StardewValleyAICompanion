@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-04 当前续接：** `8fe21913` 原生30 tick控制等待已 verified 并恢复CanMove，包装器却因其不计工作动作而把目标未达的exit 2当失败。仅精确控制观察候选现使用零工作动作目标，仍要求对应applied/verified/completed回执和fresh快照；其他失败不放行。41项边界、19项实际源/编排回归通过，完整原生钥匙链仍待复跑；覆盖/正式训练锁不变。
+
 > **2026-11-04 最新实测：** clean `45645d96` 真实晶球提示确认、获取→canonical保管→第60件捐赠/核销已通过；返家途中因脚本遗漏已有原生控制恢复等待而安全停止，尚未跨日取钥匙。两入口正统一精确等待/正常跨日候选选择，继续原日计划及有限 fresh replan；无新执行器/强制控制/criterion晋升或训练。原生完整闭环仍待最终版本验证，见[记录](geode-dialogue-lifecycle.md#latest-native-boundary)。
 
 > **2026-11-04 最新原生边界：** `ff77caad` 关闭了旧对话跳步，但严格完成条件随后识别到真实的首次晶球提示并停止，未把获取结算成成功。当前补齐原生 geodeFound 副作用绑定，并在精确安全条件下复用普通对话执行器；尚待最终同版本原生获取→保管→捐赠→核销/取钥匙。primary、覆盖和训练锁不变，见[合同](geode-dialogue-lifecycle.md#first-pickup-continuation)。

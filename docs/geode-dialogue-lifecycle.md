@@ -124,3 +124,19 @@ The shared handoff selector/evidence tests pass 41 cases; the actual source
 pipeline plus bounded orchestration checks pass 15, including both handoff
 candidates through the existing adapter. Fresh native-calendar fixtures pass
 18 checks. These checks do not launch the game or certify the night/key.
+
+The subsequent clean `8fe21913` run reached the same verified acquisition,
+donation and custody consumption. Its existing 30-tick native-control wait
+also applied and verified, and the fresh observation restored `CanMove`.
+The CLI correctly kept `verified_actions=0` because observation is not productive
+work; the adapter's unconditional one-work-action target then caused exit 2
+(`primary_training_target_not_met`). The adapter now asks for zero work actions
+only for the exact native-control observation candidate, while still requiring
+the exact applied/verified/completed wait and the original fresh after snapshot.
+Other candidates retain the one-action target; unrelated nonzero exits are
+not accepted. This changes orchestration only, not native runtime binaries.
+The regression now has 19 runtime checks, including receipt mismatch,
+incomplete observation and wrong-action refusals. A script-only continuation
+may reuse the clean `8fe21913` bundle only after proving no compiled-source or
+build-configuration diff and rechecking every retained binary hash/version;
+the script commit and binary-source commit must remain separately attributable.
