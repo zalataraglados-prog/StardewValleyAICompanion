@@ -199,6 +199,7 @@ internal static partial class BootstrapSelfTest
         VerifyRollingPendingInventory(passed);
         VerifyRollingDonationTimeBudget(passed);
         VerifyRollingDonationRouteSchedule(root, passed);
+        VerifyRollingAcquisitionDonationSchedule(root, passed);
         Write(Path.Combine(root, "rusty-key-rolling-self-test.json"), new
         {
             status = "passed", passed_count = passed.Count, cases = passed,

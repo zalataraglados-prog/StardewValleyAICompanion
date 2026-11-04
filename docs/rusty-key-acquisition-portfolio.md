@@ -97,9 +97,11 @@ connector to the complete date-bound route, later entrance gates and Gunther
 counter completion, using the existing calibration and route producer. It keeps
 alternative first exits and emits only one original connector or bounded wait,
 then fresh-replans; retained native inputs pass both public rebuild/preparation
-CLIs. This is not yet a pre-acquisition joint schedule: the selected acquisition's
-terminal position/completion and any authorized custody withdrawal must still
-be joined to the museum route, including a legal later donation date if needed.
+CLIs. The selected acquisition now also retains a hash-bound forecast from its
+daily budget's conservative final stand/completion to the museum counter, using
+that same route builder without inventing held inventory. This is not yet the
+complete joint schedule: any authorized custody withdrawal, retained custody and
+a legal later donation date if needed still require their own sequential join.
 Verify that joint time/opening-hour and following
 morning handoff rather than relying on summed costs. Then join this criterion's
 independent Teacher comparisons, native outcomes and train/validation/test

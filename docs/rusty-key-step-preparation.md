@@ -1,5 +1,13 @@
 # Rusty Key Step Preparation
 
+Selected acquisition controls also carry the source-bound current-day
+acquisition-to-donation forecast. The original whole-control identity rebuild
+includes this forecast before any commit; its terminal completion, daily-budget
+hash and final stand are not caller-controlled authority. A missing same-day
+join does not replace acquisition's original atomic/native execution checks or
+claim that later donation is impossible. The full joint schedule and native
+outcome gates remain separate and unverified.
+
 ## Purpose And Authority
 
 The autonomous rolling coordinator must know whether the next stage is actually

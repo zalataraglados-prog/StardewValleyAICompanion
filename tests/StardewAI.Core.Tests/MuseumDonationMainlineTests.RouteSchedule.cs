@@ -68,6 +68,42 @@ public sealed partial class MuseumDonationMainlineTests
         Assert.Same(legal, builder.Build(candidates.Single(candidate => candidate.TileX == 11)));
     }
 
+    [Fact]
+    public void PlannedContinuationStartsAtTheTerminalInsteadOfReusingThePlayerPositionOrClock()
+    {
+        var snapshot = RouteScheduleSnapshot();
+        var before = JsonSerializer.Serialize(snapshot, JsonOptions);
+        var builder = new MuseumDonationRouteScheduleBuilder(snapshot, FutureRouteDateEvidenceProducerTests.CalibrationArtifactJson());
+        var first = builder.BuildContinuation(12, "Road", 5, 12, 1100);
+        var later = builder.BuildContinuation(12, "Road", 5, 12, 1200);
+
+        Assert.True(first.CurrentDayRouteReady, string.Join(";", first.BlockingReasons));
+        Assert.True(later.CurrentDayRouteReady, string.Join(";", later.BlockingReasons));
+        Assert.Equal("Road", first.RouteScenario!.StartLocation);
+        Assert.Equal(1100, first.DepartureTime);
+        Assert.Equal(1200, later.DepartureTime);
+        Assert.True(later.CounterArrivalByTime > first.CounterArrivalByTime);
+        Assert.NotSame(first, later);
+        Assert.Same(first, builder.BuildContinuation(12, "Road", 5, 12, 1100));
+        Assert.Equal(before, JsonSerializer.Serialize(snapshot, JsonOptions));
+    }
+
+    [Theory]
+    [InlineData(13, "Road", 5, 12, 1100)]
+    [InlineData(12, "Road", 5, 12, 959)]
+    [InlineData(12, "Road", 5, 12, 1060)]
+    [InlineData(12, "Road", -1, 12, 1100)]
+    [InlineData(12, "", 5, 12, 1100)]
+    public void PlannedContinuationCannotBorrowAnotherDateOrInvalidEndpoint(int day, string location, int x, int y, int time)
+    {
+        var builder = new MuseumDonationRouteScheduleBuilder(RouteScheduleSnapshot(), FutureRouteDateEvidenceProducerTests.CalibrationArtifactJson());
+        var result = builder.BuildContinuation(day, location, x, y, time);
+
+        Assert.False(result.CurrentDayRouteReady);
+        Assert.Contains("museum_donation_planned_departure_invalid", result.BlockingReasons);
+        Assert.Null(result.RouteScenario);
+    }
+
     [Theory]
     [InlineData("missing_calibration")]
     [InlineData("missing_date_evidence")]

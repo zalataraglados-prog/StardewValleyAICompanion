@@ -1,5 +1,6 @@
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
+using StardewAI.Core.Strategy;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -87,7 +88,7 @@ public static partial class RustyKeyRollingSupplyProposalBuilder
             result.CandidateEvaluations = evaluations.ToArray();
             return Block(result, new[] { "rusty_key_rolling_sources_changed_during_acquisition_rebuild" });
         }
-        BuildAcquisitionStep(result, source, context, evaluations);
+        BuildAcquisitionStep(result, source, context, evaluations, routeTimingCalibrationPath);
         result.CandidateEvaluations = evaluations.ToArray();
         return result;
     }
@@ -97,4 +98,8 @@ public static partial class RustyKeyRollingSupplyProposalBuilder
         result.BlockingReasons = reasons.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
         return result;
     }
+
+    private static Lazy<MuseumDonationRouteScheduleBuilder> DonationRouteScheduler(SnapshotEnvelope snapshot, string calibrationPath) =>
+        new(() => new(snapshot, !string.IsNullOrWhiteSpace(calibrationPath) && File.Exists(calibrationPath)
+            ? File.ReadAllText(calibrationPath) : string.Empty));
 }

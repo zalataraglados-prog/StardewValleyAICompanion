@@ -118,13 +118,70 @@ These artifacts remain under
 compatibility with retained native inputs, not a new native execution. Source
 inventory/calibration hashes still match the original run.
 
+## Selected Acquisition Continuation
+
+The current-day held-route slice passed exact-head CI (Core 1196/1196, Backend
+558/558, rolling 49 and preparation 25) and merged as PR #425, `929686f3`.
+Its earlier pending-CI wording above is historical.
+
+The selected acquisition now retains `selected_acquisition_donation_schedule`.
+It binds the original daily-time/energy evaluation hash, terminal location,
+exact final stand and conservative completion time. A multi-interaction schedule
+must agree with its last ordered terminal step. Missing endpoint/time evidence,
+invalid HHMM, a different source clock or a mismatched final step cannot prove
+the continuation. These are forecasts compiled from the original acquisition
+axes, not observations that an item has already been acquired.
+
+The same `MuseumDonationRouteScheduleBuilder` accepts that typed continuation
+origin and reuses its original date context, calibration, route producer, later
+entry gates, counter approach and interaction budget. It rejects a different day
+or a departure before the source clock. Its per-invocation cache now binds the
+entire start position/time/prefix request, so two acquisition completion times
+cannot borrow one result. No snapshot/inventory mutation or synthetic held-item
+candidate is used, and existing held-route output remains unchanged.
+
+Only the already selected acquisition is evaluated; the original safe
+elapsed/energy/stable-ID controller ordering and atomic admission stay intact.
+An unproved same-day donation is not evidence that acquisition itself is
+illegal: authorized custody and a later donation date remain possible. The
+report records this gap without granting a joint certificate or silently
+filtering the acquisition pool. Original step preparation independently rebuilds
+this field and rejects caller-edited timing. Native acquisition and full joint
+verification remain false; no additional execution/commit authority is added.
+
+Focused Core passed 55 cases, rolling passed 56 named cases and original step
+preparation passed 27, including two public precommit forecast-tamper checks.
+These synthetic cases cover the final multi-step endpoint, missing/changed
+clock or stand, a closed later gate and missing calibration. Final CI is pending.
+
+Both original public CLIs also pass retained native acquisition-prefix inputs
+from `custody-b3512d5f-1104`: the actual source is day 6 / 09:00, while the
+admitted acquisition budget ends at Blacksmith (3,15) at 09:10. The continuation
+starts there, reaches Gunther at 09:45 and finishes the original six-minute
+donation interaction at 09:51. It does not sum a second route starting at 09:00.
+The preparation still selects only original `terminal_acquisition`, with no
+compiled donation queue or execution/training authority. All retained JSON
+source bindings match the original run; there is no new native execution.
+The previously accepted held replay is byte-identical after the shared builder
+extension (`511a4127a3901d4a16f415be9a4899efc38be9b88d95785b3b6362974272a3a2`).
+
+Artifacts remain outside Git in
+`I:\StardewAITraining\acquisition-donation-schedule-20261104`:
+`native-acquisition-replay-01.json` SHA-256
+`0a18178effcb2f28a5092db16f949b1a3d847efa4b25767e96d12c472074595d`,
+`native-acquisition-preparation-01.json` SHA-256
+`66f16609a2969507e0fa00d3b3b3712caa03c6cee43fa199bb9fc5510af5c99a`.
+
 ## Remaining Joint Schedule
 
 Continue the same Rusty Key primary. Reuse the existing target-date calendar,
 route-date evidence producer, `FutureRouteAccessWindowResolver`, timing
 calibration and day-budget compiler to join the selected acquisition's real
 terminal position/completion time and any authorized custody withdrawal to this
-museum route. Do not clone/mutate the snapshot to invent future stock or pretend
+museum route. The selected current-day acquisition forecast now supplies the
+first of those joins; authorized withdrawal timing, retained custody across a
+legal later donation date and the actual following-morning handoff remain.
+Do not clone/mutate the snapshot to invent future stock or pretend
 the current-date map projection is a future-date source.
 Use native date-bound gate evidence, sequential arrival times and conservative
 travel bounds; summing independent route costs or checking only the first

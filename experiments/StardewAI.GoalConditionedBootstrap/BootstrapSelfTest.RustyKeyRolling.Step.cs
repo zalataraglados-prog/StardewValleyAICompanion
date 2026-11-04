@@ -119,6 +119,16 @@ internal static partial class BootstrapSelfTest
             catch (InvalidDataException) { rejected = true; }
             Require(rejected, "Raw control claims must be independently verified even at pre-commit preparation.");
             passed.Add("forged_control_rejected_" + shopOpen);
+            Require(control.SelectedAcquisitionDonationSchedule is not null,
+                "Public acquisition control must retain the source-bound continuation forecast, including missing evidence.");
+            forged = JsonSerializer.SerializeToNode(control, JsonDefaults.Options)!;
+            forged["selected_acquisition_donation_schedule"]!["acquisition_completion_by_time"] = 600;
+            Write(inputs.PortfolioControlSelectionPath!, forged);
+            rejected = false;
+            try { RustyKeyRollingStepPreparationBuilder.Build(portfolio, inputs.PortfolioControlSelectionPath!, rankingPath); }
+            catch (InvalidDataException) { rejected = true; }
+            Require(rejected, "Precommit must rebuild the selected acquisition's continuation instead of trusting caller-edited timing.");
+            passed.Add("forged_acquisition_donation_schedule_rejected_" + shopOpen);
         }
     }
 }
