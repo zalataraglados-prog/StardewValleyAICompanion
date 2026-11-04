@@ -27,8 +27,12 @@ function Invoke-RuntimeRustyKeyCustodyRoundTripPrefix {
         throw 'Custody prefix did not complete one original native acquisition stage.'
     }
     $ledger = Get-Content -LiteralPath $prefix.last_ledger_path -Raw | ConvertFrom-Json
-    $rows = @($ledger.material_reservations | Where-Object { $_.status -ceq 'active' -and
-        $_.output_custody.consumer_option_id -ceq 'museum.donate_items' -and $_.qualified_item_id -ceq $Boundary.target_qualified_item_id -and
+    $terminalPath = Join-Path (Split-Path -Parent $prefix.last_ledger_path) 'terminal-settlement-result.json'
+    $terminal = Get-Content -LiteralPath $terminalPath -Raw | ConvertFrom-Json
+    $custodyIds = @($terminal.output_custody_reservation_ids)
+    if ($terminal.accepted -ne $true -or $custodyIds.Count -ne 1) { throw 'Original terminal settlement did not identify one custody row.' }
+    $rows = @($ledger.material_reservations | Where-Object { $_.reservation_id -ceq $custodyIds[0] -and $_.status -ceq 'active' -and
+        $null -ne $_.output_custody -and $_.qualified_item_id -ceq $Boundary.target_qualified_item_id -and
         $_.node_id -ceq ('player:' + $ledger.player_id) -and $_.quantity -eq 1 })
     if ($rows.Count -ne 1) { throw 'Custody prefix did not retain one exact acquired-output claim.' }
     $snapshot = Read-RuntimeLogicalJsonArtifact -Path $prefix.last_snapshot_path `
@@ -60,6 +64,7 @@ function Invoke-RuntimeRustyKeyCustodyRoundTripPrefix {
         -Name 'custody-storage-execution' -ExecutionTarget runtime_harness
     $result = [ordered]@{
         run_id = $Context.RunId; prefix_summary_path = $prefixPath; storage_directory = $directory
+        terminal_settlement_result_path = $terminalPath
         storage_execution_path = $stored.Execution.ExecutionPath; storage_after_snapshot_path = $stored.Execution.AfterPath
         storage_ledger_path = $stored.LedgerPath; custody_reservation_id = $rows[0].reservation_id
         acquisition_receipt_sha256 = $rows[0].output_custody.fresh_terminal_receipt_sha256

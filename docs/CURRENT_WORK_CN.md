@@ -2,6 +2,8 @@
 
 ## 2026-11-03 当前 Rusty Key 切片与接续
 
+- **原生前缀已真实获取，修正脚本边界而非引擎：** `b84ced79`已实际开晶球并经原结算保管一件`(O)549`，但脚本把高层`museum.donate_items`当作底层消费者，存箱前错误拒绝。现直接消费原terminal结算返回的保管ID，消费者/目标/位置授权仍交原C#构建器；同一保留原生数据的真实只读准备CLI已返回ready，无新动作/提交。另修正本轮退出范围：显式`StopAfterDonationThreshold`只在原C#重建的typed threshold control成立时停止，不再把已接受跨日钥匙作为存取捐赠局部门；默认钥匙运行不变。下一步新run继续真实存→取→捐赠，不重放旧动作，计数冻结。
+
 - **原生准备参数修正（仍无获取/搬运）：** `6d055096`已真实准备Blacksmith稀疏箱/他目标预留和晶球边界，随后因PowerShell数组表达式将参数名与路径拼接而在子脚本参数绑定处停止。现按原仓库`List<string>.Add`逐项构造；新增带空格输入路径的真实pwsh子进程绑定检查，必须到达缺失隔离目录的预检、不得HTTP/原生派发，边界检查共20项。进程退出，旧run保留，不回放。
 
 - **原生边界首试定位（尚无获取/搬运）：** clean`f2b0c4ef`在setup阶段以`material_transfer_fixture_target_unavailable`停止，进程/端口已退出。核对已接受原生Blacksmith快照为15×20，旧农场夹具搜索`width-16`导致零候选，并非原生禁放。现只改通用两格边界，保留walkability/canBePlacedHere/相邻站位检查；边界检查补至19项。原失败证据保留，接续必须新run身份，不重发旧测量动作。

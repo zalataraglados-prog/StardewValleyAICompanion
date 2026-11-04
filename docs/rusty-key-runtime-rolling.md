@@ -205,8 +205,12 @@ choose withdrawal and original donation/consumption itself, without reacquisitio
 
 The final guard requires exact run identity, one retrieval, original acquired
 receipt identity, completed custody and the still-active other-goal stone claim
-at its independently expected compacted slot. The ordinary key/day flow may
-continue naturally; it is not a reopened accepted key/owner gate. Script and
+at its independently expected compacted slot. This local mode explicitly passes
+`-StopAfterDonationThreshold`: only the independently rebuilt typed threshold
+control may return `native_donation_threshold_observed` before any night/key
+handoff. That observed local exit is not key possession or criterion completion;
+ordinary runs retain their existing key-observation exit. Thus this test does not
+reopen the accepted key/owner gate. Script and
 binary/source identity, complete native slot maps, source-save preservation,
 process/port cleanup and independent retained-file replay remain mandatory.
 The added 20 game-free setup/final-scope/actual child-argument checks and original 33 geode-boundary
@@ -227,6 +231,14 @@ without HTTP/native calls; a syntactic argument list alone is not sufficient.
 Explicit cross-map fixture search also anchors to that map's native entrance,
 not the actor's coordinates in the previous map. Legacy default Farm placement
 is unchanged; this fixture choice does not weaken the actual route/slot gates.
+The `b84ced79` run completed real geode acquisition and retained one `(O)549`,
+but the wrapper's pre-storage filter confused high-level `museum.donate_items`
+with the actual `executor.donate_museum_item` consumer. The wrapper now consumes
+the original terminal result's exact custody IDs; consumer/goal/position authority
+remains with the original C# request builder. Replaying that read-only builder
+against the retained native source succeeds without native execution or mutation.
+No transfer was performed in that failed wrapper run. The runtime orchestration
+check also requires the explicit local boundary to stop before night/key dispatch.
 
 The updated shipped-Companion requirement for on-demand critical-decision Teacher
 verification remains binding; see `TEACHER_STUDENT_CONVERGENCE_CONTRACT_CN.md`.

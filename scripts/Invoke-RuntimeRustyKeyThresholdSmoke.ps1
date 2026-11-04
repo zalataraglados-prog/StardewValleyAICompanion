@@ -169,19 +169,21 @@ try {
         & (Join-Path $PSScriptRoot 'Invoke-RuntimeRustyKeyRollingSupply.ps1') @acquisitionInputs `
             -ProjectRoot $ProjectRoot -OutputDirectory $rollingOutput -RunId $RunId `
             -BackendUrl $backendUrl -SnapshotUrl $snapshotUrl -ExecutorUrl $executorUrl `
-            -IsolatedSavesPath $isolatedSaves -ExecutionTarget runtime_harness | Out-Null
+            -IsolatedSavesPath $isolatedSaves -ExecutionTarget runtime_harness -StopAfterDonationThreshold:$CustodyRoundTrip | Out-Null
         if ($LASTEXITCODE -ne 0) { throw "Rusty Key rolling acquisition stopped ($LASTEXITCODE); retain diagnostics." }
         $rollingSummaryPath = Join-Path (Join-Path $rollingOutput $RunId) 'summary.json'
         $rolling = Get-Content -LiteralPath $rollingSummaryPath -Raw | ConvertFrom-Json
-        if ($rolling.status -cne 'native_key_observed' -or $rolling.input_identity_verified -ne $true -or
+        $expectedStatus = if ($CustodyRoundTrip) { 'native_donation_threshold_observed' } else { 'native_key_observed' }
+        if ($rolling.status -cne $expectedStatus -or $rolling.input_identity_verified -ne $true -or
             (-not $CustodyRoundTrip -and @($rolling.steps | Where-Object { $_.kind -ceq 'terminal_acquisition' }).Count -eq 0) -or
             @($rolling.steps | Where-Object { $_.kind -ceq 'held_donation' }).Count -eq 0) {
-            throw 'Rolling boundary did not include acquisition, donation and an actual key observation.'
+            throw "Rolling boundary did not reach its declared $expectedStatus scope."
         }
         if ($CustodyRoundTrip) { Assert-RuntimeRustyKeyCustodyRoundTrip -Rolling $rolling -Proof $custodyProof }
         if ((Get-DirectoryContentHash -Path $sourceSave) -cne $sourceHash) { throw 'Original isolated baseline save changed.' }
         $summary = [ordered]@{
-            schema_version = 'stardewai.runtime_rusty_key_acquisition_smoke.v1'; status = 'native_key_observed'
+            schema_version = 'stardewai.runtime_rusty_key_acquisition_smoke.v1'
+            status = $(if ($CustodyRoundTrip) { 'native_custody_round_trip_observed' } else { 'native_key_observed' })
             run_id = $RunId; project_head = [string](& git -C $ProjectRoot rev-parse HEAD)
             fixture_boundary = $boundary; rolling_summary_path = $rollingSummaryPath
             custody_boundary = $custodyBoundary; custody_round_trip = $custodyProof
