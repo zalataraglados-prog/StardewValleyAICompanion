@@ -169,6 +169,7 @@ namespace StardewAI.Core.OptionRegistry
             var compilerProbe = IsUnboundSocialCandidate(candidate) ||
                 IsSocialContinuationCandidate(candidate) ||
                 IsMasterAnglerIntentCandidate(candidate) ||
+                IsMaterialTransferApproachCandidate(candidate) ||
                 IsPurchaseContinuationCandidate(candidate) ||
                 IsSaleContinuationCandidate(candidate)
                 ? new CompilerProbeResult()

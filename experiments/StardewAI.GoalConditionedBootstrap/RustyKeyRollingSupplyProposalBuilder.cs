@@ -62,6 +62,11 @@ public static partial class RustyKeyRollingSupplyProposalBuilder
 
         var pending = ReadPendingDonations(source, snapshot, ledger, result.GoalId, reasons);
         if (pending.Length > 0) result.PendingDonationRequirementIds = pending;
+        if (reasons.Count == 0 && TryStoredCustody(result, source, snapshot, ledger, evaluations))
+        {
+            result.CandidateEvaluations = evaluations.ToArray();
+            return result;
+        }
         if (reasons.Count > 0 || pending.Length >= result.RemainingDonationCount)
         {
             result.CandidateEvaluations = evaluations.ToArray();

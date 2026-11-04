@@ -73,7 +73,7 @@ function New-RuntimeRustyKeyPlanning {
     return [pscustomobject]@{
         Directory = $Directory; Common = $common; ProofArgs = $proofArgs; Control = $control
         ControlPath = $controlPath; ProposalPath = $proposalPath; AdmissionPath = $admissionPath
-        QueuePath = $queuePath; RankingPath = $rankingPath; SnapshotPath = $SnapshotPath
+        QueuePath = $queuePath; RankingPath = $rankingPath; SnapshotPath = $SnapshotPath; StrategyLedgerPath = $StrategyLedgerPath
         SupportCommon = $supportCommon; Preparation = (Get-Content -LiteralPath $preparePath -Raw | ConvertFrom-Json)
     }
 }

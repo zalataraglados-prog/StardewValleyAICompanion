@@ -20,6 +20,11 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             return Array.Empty<EventCandidate>();
         }
 
+        var phases = parameters.Where(row => row.Name == MaterialTransferIntentBinder.PhaseParameter).ToArray();
+        if (phases.Length > 1 || phases.Length == 1 && phases[0].Value != MaterialTransferIntentBinder.ApproachPhase)
+            return new[] { BlockedMaterialTransferCandidate(parameters, "material_transfer_phase_invalid") };
+        if (phases.Length == 1) return MaterialTransferApproachCandidates(snapshot, parameters);
+
         var reasons = new List<string>();
         if (!MaterialTransferIntentBinder.TryBuildIntent(parameters, out var intent) ||
             intent is null)

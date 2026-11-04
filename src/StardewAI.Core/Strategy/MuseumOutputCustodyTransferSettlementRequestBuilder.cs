@@ -13,6 +13,8 @@ namespace StardewAI.Core.Strategy;
 
 public static class MuseumOutputCustodyTransferSettlementRequestBuilder
 {
+    private static readonly JsonSerializerOptions WebJson = new(JsonSerializerDefaults.Web);
+
     public static string[] Verify(ActionQueueEnvelope queue, ActionQueueItem item, QueueExecutionStepReceipt receipt,
         SnapshotEnvelope before, SnapshotEnvelope after, StrategyCommitmentLedger ledger,
         ReservationPortfolioSupportingTransitionSettlementResult actual)
@@ -33,6 +35,8 @@ public static class MuseumOutputCustodyTransferSettlementRequestBuilder
         if (queue.Items.Count(row => row.QueueItemId == item.QueueItemId && MatchesReboundItem(row, item)) != 1 ||
             !MuseumOutputCustodyTransferBinding.IsBound(item, ledger))
             errors.Add("museum_custody_transfer_settlement_authorization_invalid");
+        if (!MatchesRecordedItem(item, receipt.EffectiveQueueItem))
+            errors.Add("museum_custody_transfer_settlement_recorded_command_mismatch");
         errors.AddRange(new ActionQueueDispatchReadinessService().Evaluate(queue, item, ledger, before.StateHash).BlockingReasons);
         if (receipt.QueueId != queue.QueueId || receipt.QueueItemId != item.QueueItemId || receipt.OptionId != item.OptionId ||
             receipt.Status != "applied" || receipt.PrimitiveVerificationStatus != "verified" || !receipt.AfterSnapshotFresh ||
@@ -86,6 +90,18 @@ public static class MuseumOutputCustodyTransferSettlementRequestBuilder
         var expected = JsonSerializer.Deserialize<ActionQueueItem>(JsonSerializer.Serialize(original))!;
         expected.NormalizedCommand.StateHash = actual.NormalizedCommand.StateHash;
         return JsonSerializer.Serialize(expected) == JsonSerializer.Serialize(actual);
+    }
+
+    private static bool MatchesRecordedItem(ActionQueueItem item, JsonElement? recorded)
+    {
+        if (recorded?.ValueKind != JsonValueKind.Object) return false;
+        try
+        {
+            var actual = recorded.Value.Deserialize<ActionQueueItem>(WebJson);
+            return actual is not null && JsonSerializer.Serialize(item) == JsonSerializer.Serialize(actual);
+        }
+        catch (JsonException) { return false; }
+        catch (NotSupportedException) { return false; }
     }
 }
 

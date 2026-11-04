@@ -84,7 +84,12 @@ jobs:
       - name: Test core governance
         run: dotnet test tests/StardewAI.Core.Tests/StardewAI.Core.Tests.csproj --configuration Release --no-restore -p:GameFreeGovernance=true
       - name: Test backend
+        env:
+          STARDEWAI_CUSTODY_CONTROL_EXPORT_ROOT: "${{ runner.temp }}/custody-control"
         run: dotnet test tests/StardewAI.Backend.Tests/StardewAI.Backend.Tests.csproj --configuration Release
+      - name: Test custody runtime adapter through original compiler and settlement CLIs without game
+        shell: pwsh
+        run: ./scripts/Test-RuntimeRustyKeyCustodyTransfer.ps1 -FixtureRoot "$env:RUNNER_TEMP/custody-control" -BootstrapDll "$env:GITHUB_WORKSPACE/experiments/StardewAI.GoalConditionedBootstrap/bin/Release/net8.0/StardewAI.GoalConditionedBootstrap.dll" -OutputRoot "$env:RUNNER_TEMP/custody-runtime-adapter"
       - name: Verify generated current checkpoint
         shell: pwsh
         run: ./scripts/Update-CurrentWorkCheckpoint.ps1 -Check

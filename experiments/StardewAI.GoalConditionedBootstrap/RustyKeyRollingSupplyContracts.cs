@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.Strategy;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -46,6 +47,9 @@ public sealed class RustyKeyRollingSupplyProposal
     public SmallModelPlanEnvelope? CompiledPlan { get; set; }
     [JsonPropertyName("compiled_queue")]
     public ActionQueueEnvelope? CompiledQueue { get; set; }
+    [JsonPropertyName("selected_custody_transfer")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public RustyKeyRollingCustodySelection? SelectedCustodyTransfer { get; set; }
     [JsonPropertyName("selected_acquisition_proposal")]
     public AcquisitionRoutePortfolioProposal? SelectedAcquisitionProposal { get; set; }
     [JsonPropertyName("selected_acquisition_admission")]
@@ -67,6 +71,14 @@ public sealed class RustyKeyRollingSupplyProposal
     [JsonPropertyName("blocking_reasons")]
     public string[] BlockingReasons { get; set; } = Array.Empty<string>();
 }
+
+public sealed record RustyKeyRollingCustodySelection(
+    [property: JsonPropertyName("kind")] string Kind,
+    [property: JsonPropertyName("requirement_id")] string RequirementId,
+    [property: JsonPropertyName("reservation_id")] string ReservationId,
+    [property: JsonPropertyName("destination_node_id")] string DestinationNodeId,
+    [property: JsonPropertyName("position_sha256")] string PositionSha256,
+    [property: JsonPropertyName("atomic_commit_request")] ReservationPortfolioCommitRequest? AtomicCommitRequest);
 
 public sealed record RustyKeyRollingCandidateEvaluation(
     [property: JsonPropertyName("candidate_id")] string CandidateId,

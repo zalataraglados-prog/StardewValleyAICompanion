@@ -17,6 +17,7 @@ public sealed partial class ReservationPortfolioLedgerTests
         {
             var receipt = CustodyReceipt(Transfer, Before, After);
             receipt.QueueId = Compilation.Queue!.QueueId;
+            receipt.EffectiveQueueItem = JsonSerializer.SerializeToElement(Transfer);
             return receipt;
         }
     }

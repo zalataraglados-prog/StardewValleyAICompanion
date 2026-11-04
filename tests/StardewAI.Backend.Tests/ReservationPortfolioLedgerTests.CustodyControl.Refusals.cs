@@ -157,6 +157,9 @@ public sealed partial class ReservationPortfolioLedgerTests
     [InlineData("before-slots")]
     [InlineData("before-passive-quality")]
     [InlineData("queue-authority")]
+    [InlineData("recorded-missing")]
+    [InlineData("recorded-shape")]
+    [InlineData("recorded-command")]
     public void CustodyControlSettlementRejectsUnverifiedNativeOrQueueAuthority(string mutation)
     {
         var attempt = PrepareCustodyControl();
@@ -168,6 +171,13 @@ public sealed partial class ReservationPortfolioLedgerTests
             case "receipt-fresh": receipt.AfterSnapshotFresh = false; break;
             case "receipt-option": receipt.OptionId = "executor.donate_museum_item"; break;
             case "receipt-after": receipt.AfterStateHash = "wrong-after"; break;
+            case "recorded-missing": receipt.EffectiveQueueItem = null; break;
+            case "recorded-shape": receipt.EffectiveQueueItem = JsonSerializer.SerializeToElement("not-an-item"); break;
+            case "recorded-command":
+                var recorded = JsonSerializer.Deserialize<ActionQueueItem>(JsonSerializer.Serialize(item))!;
+                recorded.NormalizedCommand.Actor.ActorId = "foreign-actor";
+                receipt.EffectiveQueueItem = JsonSerializer.SerializeToElement(recorded);
+                break;
             case "after-slots":
                 var farm = System.Text.Json.Nodes.JsonNode.Parse(attempt.After.State["farm"].GetRawText())!;
                 farm["material_inventory_graph"]!["value"]!["inventory_nodes"]![1]!["slots"]![0]!["stack"] = 4;
@@ -188,6 +198,7 @@ public sealed partial class ReservationPortfolioLedgerTests
                 attempt.Before.StateHash = StardewAI.Contracts.State.SnapshotHash.ComputeStateHash(attempt.Before.State);
                 item.NormalizedCommand.StateHash = attempt.Before.StateHash;
                 receipt.SourceStateHash = attempt.Before.StateHash;
+                receipt.EffectiveQueueItem = JsonSerializer.SerializeToElement(item);
                 break;
         }
         var original = JsonSerializer.Serialize(attempt.Fixture.Ledger);

@@ -190,8 +190,8 @@ zero new game actions, live ledger mutations or training samples.
 the helper had not yet been connected to custody settlement. The original
 service now uses the [linked custody history](museum-output-custody.md#linked-position-history)
 contract and the [bound control/compiler/JIT path](museum-output-custody.md#original-control-and-compiler-binding).
-Only exact bound custody control is admitted; outer rolling selection and native
-round-trip proof remain incomplete. Continue the same lifecycle:
+Only exact bound custody control is admitted; outer rolling selection is now
+connected, while native round-trip proof remains incomplete. Continue the same lifecycle:
 
 1. Bind the complete map to the original canonical support request, compiled
    queue, exact dispatched/native receipt, actor and retained acquisition source.
@@ -267,8 +267,8 @@ conditionally admits selected/passive custody with the complete linked position
 contract, while legacy/unverifiable provenance and generic unprepared paths are
 still rejected. JIT now admits the exact dedicated custody control and verified
 passive compaction without treating output as machine input. Outer rolling/client
-integration and real acquired-output storage -> withdrawal -> authorized
-donation/consumption proof remain incomplete. All frozen coverage, Teacher and formal-training
+integration now consumes the same control. Real acquired-output storage ->
+withdrawal -> authorized donation/consumption proof remains incomplete. All frozen coverage, Teacher and formal-training
 counts remain unchanged.
 
 Verification for the service-only slice: full Backend 414/414 (30 new cases), complete game-free Core
@@ -380,16 +380,16 @@ now verifies compact linked acquisition/position provenance and atomically moves
 all affected reservations without changing unrelated goals/quantities. The
 authorized control candidate/compiler/JIT/receipt contracts are now connected,
 with independent original-service commit/settlement replay; the guard is
-conditional, not removed. Rolling/client integration and real native transfer
-before donation remain incomplete.
+conditional, not removed. Rolling/client integration is now connected; real native
+transfer before donation remains incomplete.
 
 The current-geode acquisition/custody/donation/consumption/night/key trace is now
 [accepted](geode-dialogue-lifecycle.md#accepted-native-boundary); do not repeat it
 as the next task. The isolated smoke entry described above has replaced the
 unsafe baseline-in-place flow, and the sparse native boundary above is accepted.
-The next work is to wire that verified control into the existing rolling
-pending-storage selection and runtime client, retaining acquisition provenance
-and all affected other-goal reservations, then obtain native round-trip proof.
+That verified control is now wired into the existing rolling pending-storage
+selection and runtime client, retaining acquisition provenance and all affected
+other-goal reservations. Next obtain native round-trip proof through those paths.
 Missing/forged scope and generic active custody moves remain blocked. The
 retained source under `RuntimeRoot/saves` is read and copied, not
 the execution destination. The prepared Year-5 baseline remains shared mechanical

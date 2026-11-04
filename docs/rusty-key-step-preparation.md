@@ -17,6 +17,12 @@ Caller-written readiness flags or a learner score cannot authorize a stage.
 - `held_donation`: return the producer's existing compiled queue, without requiring
   acquisition axes or an acquisition resource commit. Dispatch still uses the
   existing current-state/reservation gate and native receipt verification.
+- `custody_navigation`: authenticated stored museum output is in another map.
+  Return one original connector/clearance or bounded scheduled-wait queue, with
+  no inventory commit. Preserve route gates; fresh-replan before touching stock.
+- `custody_transfer`: return the original bound custody-transfer commit request,
+  with no speculative queue or acquisition axes/ranking. After the actual commit,
+  independently replay it and compile via the shared custody transfer builder.
 - `terminal_acquisition`: the original dispatch endpoint selection and compiler
   can compile a current terminal transition. Return the ordinary admitted commit
   request, not the speculative queue. After the real commit, refresh ranking
@@ -49,16 +55,17 @@ acquisition is still needed, their route evaluations explicitly explain why they
 were not selected. Other-goal fully protected inventory does not satisfy supply;
 a spare unit does. Authorized storage avoids duplicate production but remains an
 explicit transfer/donation dependency, not completed progress. If pending items
-already cover the deficit, the producer reports
+cover the deficit and no held or authenticated retrieval step compiles, the producer reports
 `rusty_key_owned_supply_pending_donation_or_transfer` without building unrelated
 acquisition axes or claiming the threshold is satisfied.
 
 The shared [output-custody transfer control](museum-output-custody.md#original-control-and-compiler-binding)
 now provides the original candidate/commit/compiler/JIT/receipt/settlement path.
-It is not yet selected by this rolling builder: stored pending supply still has
-the explicit dependency above. The next integration must choose authenticated
-retrieval as a mechanical preparation, then fresh-replan the original donation;
-do not delete the pending guard, reacquire the item or call it a machine input.
+The rolling builder now selects authenticated stored custody before new supply,
+using explicit navigation/transfer roles and a retained position SHA. It preserves
+the full denominator and pending guard for other or blocked storage. It never
+reacquires the item or relabels output as machine input. Navigation retains the
+original route/timeline/repair semantics and performs no speculative transfer.
 
 Independent held-queue reconstruction also exposed random compiler-generated
 plan/queue identities. The producer now binds its plan and shared queue identity
@@ -73,10 +80,12 @@ and `--output <preparation>`. Acquisition also requires `--ranking <current>`.
 Optional `--control-supporting-transition-proof` retains the verified support
 lineage. Blocked reports exit 2; native handoff is reported without a supply step.
 
-`self-test-rusty-key-rolling-step` passes 18 named synthetic checks, including two
+`self-test-rusty-key-rolling-step` passes 25 named synthetic checks, including two
 actual hidden CLI processes, real current candidates/compiler, missing/stale
 ranking, missing candidate denominator, forged raw claims, held deterministic
-rebuilding and threshold handoff. `self-test-rusty-key-rolling-supply` passes 34
+rebuilding, threshold handoff, same-map custody retrieval, cross-map navigation,
+original transfer compilation and rejection of changed custody authority.
+`self-test-rusty-key-rolling-supply` passes 34
 checks including pending supply, protected/spare units, exact custody history,
 authorized/unauthorized storage and unknown inventory. Existing 20 control,
 18 support-rebind, full-threshold, dispatch and focused supervision regressions
@@ -91,10 +100,11 @@ The following native trace and remaining acceptance work are still required.
 The direct acquisition/custody/donation/consumption/night/key trace is already
 [accepted](geode-dialogue-lifecycle.md#accepted-native-boundary); do not repeat
 it as an unmet gate. Sparse ordinary native transfer and reply recovery are also
-accepted prerequisites. Next connect the bound custody-transfer control above
-to the existing rolling preparation and runtime HTTP/precompiled runner, retain
-actual dispatched items and fresh receipts, independently verify original-service
-settlement, and fresh-replan after each transfer. Obtain real acquired output ->
+accepted prerequisites. The rolling preparation/runtime client now consumes the
+bound transfer control, retains the actual dispatched command and per-transfer
+before/after snapshot paths from Live, and independently verifies original-service
+settlement. It uses the existing mutation journal/read-only reply recovery and
+fresh-replans after each stage. Next obtain real acquired output ->
 storage -> withdrawal -> original donation/consumption proof with other-goal
 protection. Joint timing/opening windows, criterion partitions and the pre-Year-3
 deadline remain later gaps. A standalone transfer CLI is not the autonomous

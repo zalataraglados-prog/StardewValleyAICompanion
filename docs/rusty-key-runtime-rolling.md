@@ -20,7 +20,7 @@ pins source/binary hashes and never silently substitutes historical inputs.
 ## Stage Flow
 
 1. Capture/ingest one initial full snapshot and retain the actor/save identity.
-2. Rebuild the rolling producer. Held donation needs no acquisition axes. Only
+2. Rebuild the rolling producer. Held donation and custody retrieval need no acquisition axes. Only
    when acquisition sources are needed, invoke the original 14-axis batch.
 3. Generate current ranking through `build-rusty-key-current-ranking`, using the
    original source-bound request factory and availability/ranking classes, scoped
@@ -38,6 +38,15 @@ pins source/binary hashes and never silently substitutes historical inputs.
    not merely the old lease. Native threshold/day/story handoff reuses the existing
    daily-plan path and must have one safe current candidate. No event skip,
    fabricated key, direct inventory mutation or bound player-answer substitution.
+7. Stored custody selects `custody_navigation` or `custody_transfer` before new
+   supply. Navigation executes one original connector/repair/bounded wait with no
+   commit. Transfer commits the original bound request, independently rebuilds
+   compilation, executes the existing precompiled queue, then uses the actual
+   transfer step's `effective_queue_item`, `effective_before_snapshot_path` and
+   `after_snapshot_path` for settlement. Missing/duplicate steps or changed actual
+   commands stop before settlement. The original journaled supporting-transition
+   endpoint and independent result replay retain all passive/other-goal claims.
+   Each stage returns to fresh rolling selection and the original donation hook.
 
 The ordinary commit-receipt CLI now accepts the same control execution arguments
 as dispatch/binding and independently rebuilds retained support lineage. Its old
@@ -156,11 +165,14 @@ criterion/Teacher acceptance. Reply recovery is implemented in the existing
 transport contracts, not permission to replay ambiguous actions. Sparse ordinary
 transfer is now isolated and accepted. The shared
 [custody control/compiler/JIT/receipt contract](museum-output-custody.md#original-control-and-compiler-binding)
-and its three read-only CLIs are connected, but this outer rolling selector/client
-does not yet consume stored pending supply through that control. Wire that
-preparation/retrieval without reacquisition or machine-input relabeling, then
-obtain real acquired-custody storage/withdrawal/donation proof. Joint opening/time budgets, criterion Teacher/native
-partitions and the pre-Year-3 deadline. The run summary alone is still only
+and its three read-only CLIs are now consumed by this outer selector/client.
+Game-free coverage includes 25 step-preparation checks, original rolling stages
+plus navigation/transfer/donation orchestration, and six runtime-adapter cases
+using actual C# compilation/settlement CLIs with synthetic HTTP/native results.
+These do not prove actual chest gameplay. Next obtain real acquired-custody
+storage/withdrawal/donation proof without reacquisition or machine-input relabeling;
+joint opening/time budgets, criterion Teacher/native partitions and the
+pre-Year-3 deadline remain separate. The run summary alone is still only
 `runtime_control_observation_only_not_criterion_evidence`; formal training,
 preference eligibility and coverage promotion remain false.
 

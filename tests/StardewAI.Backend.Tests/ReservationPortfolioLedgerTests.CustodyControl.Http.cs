@@ -30,6 +30,7 @@ public sealed partial class ReservationPortfolioLedgerTests
         after.StateHash = SnapshotHash.ComputeStateHash(after.State);
         var receipt = attempt.Receipt();
         receipt.SourceStateHash = moved.StateHash;
+        receipt.EffectiveQueueItem = JsonSerializer.SerializeToElement(rebound);
         receipt.AfterStateHash = after.StateHash;
 
         await using var app = PortfolioReplyApplication(root);
