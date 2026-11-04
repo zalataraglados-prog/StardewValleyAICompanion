@@ -1,5 +1,22 @@
 # Rusty Key Rolling Supply
 
+## Selected Acquisition Donation Schedule
+
+The selected acquisition retains a source-bound current-day continuation in
+`selected_acquisition_donation_schedule`. It reads the original admitted daily
+budget's conservative completion and exact final stand (including agreement with
+the last ordered terminal step), then reuses the held-route schedule builder to
+reach the native museum counter. No held output or modified snapshot is invented.
+Only the selected route is analyzed, with the same date/calibration inputs.
+
+This is a forecast, not acquisition evidence or a full supply-to-key certificate.
+The original acquisition ordering/admission remains unchanged: failing to prove
+same-day donation does not make otherwise legal acquisition impossible, since
+authorized custody and later donation still need to be scheduled. Missing
+evidence stays in the nested blocking reasons; native acquisition and joint
+verification remain false. Original precommit preparation rebuilds this field,
+so raw report edits cannot supply timing authority.
+
 ## Scope And Reuse
 
 `RustyKeyRollingSupplyProposalBuilder` produces a next-step proposal instead of

@@ -4,7 +4,6 @@ using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
 using StardewAI.Core.Infrastructure;
 using StardewAI.Core.OptionRegistry;
-using StardewAI.Core.Strategy;
 using StardewAI.Core.Training;
 
 namespace StardewAI.GoalConditionedBootstrap;
@@ -42,9 +41,7 @@ public static partial class RustyKeyRollingSupplyProposalBuilder
         var planCompiler = new DailyPlanCompiler();
         var actionCompiler = new ActionQueueCompiler();
         var availableMinutes = SnapshotGameClockBudgetReader.AvailableMinutes(snapshot, GameClockBudgetPolicy.AutonomousRecoveryStartTime);
-        var routeScheduler = new Lazy<MuseumDonationRouteScheduleBuilder>(() => new(snapshot,
-            !string.IsNullOrWhiteSpace(routeTimingCalibrationPath) && File.Exists(routeTimingCalibrationPath)
-                ? File.ReadAllText(routeTimingCalibrationPath) : string.Empty));
+        var routeScheduler = DonationRouteScheduler(snapshot, routeTimingCalibrationPath);
         var selectedCompletion = int.MaxValue;
         var baseSelectionPolicyId = result.SelectionPolicyId;
         foreach (var candidate in current)

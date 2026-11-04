@@ -8,9 +8,10 @@ internal static partial class BootstrapSelfTest
     private sealed partial class RustyKeyPortfolioFixture
     {
         public RustyKeyRollingSupplyProposal RunRolling(
-            Func<AcquisitionRoutePortfolioBuilder.AcquisitionRoutePortfolioBuildContext?>? contextFactory = null) =>
+            Func<AcquisitionRoutePortfolioBuilder.AcquisitionRoutePortfolioBuildContext?>? contextFactory = null,
+            string routeTimingCalibrationPath = "") =>
             RustyKeyRollingSupplyProposalBuilder.Build(Inventory, Snapshot, Ledger,
-                "fixture-inventory-sha", "fixture-snapshot-sha", "fixture-ledger-sha", contextFactory ?? (() => Context));
+                "fixture-inventory-sha", "fixture-snapshot-sha", "fixture-ledger-sha", contextFactory ?? (() => Context), routeTimingCalibrationPath);
 
         public void ChangeRoute(int index, Action<JsonObject> change)
         {

@@ -5,7 +5,7 @@ public static partial class RustyKeyRollingSupplyProposalBuilder
     private static void BuildAcquisitionStep(
         RustyKeyRollingSupplyProposal result, RustyKeyAcquisitionPortfolioBuilder.RustyKeySourceScope source,
         AcquisitionRoutePortfolioBuilder.AcquisitionRoutePortfolioBuildContext context,
-        List<RustyKeyRollingCandidateEvaluation> evaluations)
+        List<RustyKeyRollingCandidateEvaluation> evaluations, string routeTimingCalibrationPath)
     {
         if (context.Opportunity.TargetTotalDay != source.SourceTotalDay)
         {
@@ -59,6 +59,10 @@ public static partial class RustyKeyRollingSupplyProposalBuilder
         result.SelectedCandidateId = selectedProposal.SelectedRouteOccurrenceIds.Single();
         result.SelectedAcquisitionProposal = selectedProposal;
         result.SelectedAcquisitionAdmission = selectedAdmission;
+        result.SelectedAcquisitionDonationSchedule = RustyKeyAcquisitionDonationScheduleBuilder.Build(
+            context.Opportunity.TargetTotalDay,
+            context.Opportunity.Routes.Single(route => route.RouteOccurrenceId == result.SelectedCandidateId),
+            context.Snapshot, DonationRouteScheduler(context.Snapshot, routeTimingCalibrationPath));
         var selectedRequirement = selectedProposal.ScopedRequirements.Single().RequirementId;
         result.CompleteMuseumItemDenominator = result.CompleteMuseumItemDenominator
             .Select(item => item with { SelectedForAcquisition = item.RequirementId == selectedRequirement }).ToArray();

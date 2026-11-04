@@ -58,6 +58,9 @@ public sealed class RustyKeyRollingSupplyProposal
     public AcquisitionRoutePortfolioProposal? SelectedAcquisitionProposal { get; set; }
     [JsonPropertyName("selected_acquisition_admission")]
     public AcquisitionRoutePortfolioAdmission? SelectedAcquisitionAdmission { get; set; }
+    [JsonPropertyName("selected_acquisition_donation_schedule")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public RustyKeyAcquisitionDonationSchedule? SelectedAcquisitionDonationSchedule { get; set; }
     [JsonPropertyName("rolling_step_ready")]
     public bool RollingStepReady { get; set; }
     [JsonPropertyName("threshold_satisfied")]
@@ -90,3 +93,21 @@ public sealed record RustyKeyRollingCandidateEvaluation(
     [property: JsonPropertyName("kind")] string Kind,
     [property: JsonPropertyName("ready")] bool Ready,
     [property: JsonPropertyName("blocking_reasons")] string[] BlockingReasons);
+
+public sealed record RustyKeyAcquisitionDonationSchedule(
+    [property: JsonPropertyName("route_occurrence_id")] string RouteOccurrenceId,
+    [property: JsonPropertyName("acquisition_daily_budget_sha256")] string AcquisitionDailyBudgetSha256,
+    [property: JsonPropertyName("terminal_location_id")] string TerminalLocationId,
+    [property: JsonPropertyName("terminal_stand_tile_x")] int? TerminalStandTileX,
+    [property: JsonPropertyName("terminal_stand_tile_y")] int? TerminalStandTileY,
+    [property: JsonPropertyName("acquisition_completion_by_time")] int? AcquisitionCompletionByTime,
+    [property: JsonPropertyName("donation_route_schedule")] MuseumDonationRouteSchedule? DonationRouteSchedule,
+    [property: JsonPropertyName("blocking_reasons")] string[] BlockingReasons)
+{
+    [JsonPropertyName("current_day_supply_donation_schedule_ready")]
+    public bool CurrentDaySupplyDonationScheduleReady => BlockingReasons.Length == 0 && DonationRouteSchedule is { CurrentDayRouteReady: true };
+    [JsonPropertyName("native_acquisition_verified")]
+    public bool NativeAcquisitionVerified => false;
+    [JsonPropertyName("joint_execution_schedule_verified")]
+    public bool JointExecutionScheduleVerified => false;
+}

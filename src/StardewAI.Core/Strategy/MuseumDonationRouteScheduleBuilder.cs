@@ -89,28 +89,49 @@ public sealed class MuseumDonationRouteScheduleBuilder
             return Blocked(new[] { "museum_donation_route_first_connector_incomplete" });
         var first = new TransparentRouteEdge(parameters["connector_kind"], startLocation, parameters["expected_target_location"],
             candidate.TileX, candidate.TileY, arrivalX, arrivalY);
-        var key = JsonSerializer.Serialize(first);
-        if (schedules.TryGetValue(key, out var cached)) return cached;
-        var production = new FutureRouteDateEvidenceProducer().Produce(context!, new FutureRouteDateEvidenceRequest
+        return BuildSchedule(new FutureRouteDateEvidenceRequest
         {
             TotalDays = day, StartLocation = startLocation, StartTileX = startX, StartTileY = startY,
-            EarliestDepartureTime = startTime, TargetLocation = targetLocation, TargetTileX = targetX, TargetTileY = targetY,
-            RequiredFirstEdge = first
-        }, timing!);
+            EarliestDepartureTime = startTime, RequiredFirstEdge = first
+        });
+    }
+
+    public MuseumDonationRouteSchedule BuildContinuation(int totalDay, string location, int tileX, int tileY, int completionTime)
+    {
+        if (totalDay != day || string.IsNullOrWhiteSpace(location) || tileX < 0 || tileY < 0 ||
+            completionTime < startTime || completionTime is < 600 or > GameClockBudgetPolicy.DayEndTime || completionTime % 100 >= 60)
+            return Blocked(new[] { "museum_donation_planned_departure_invalid" }, completionTime);
+        return BuildSchedule(new FutureRouteDateEvidenceRequest
+        {
+            TotalDays = day, StartLocation = location, StartTileX = tileX, StartTileY = tileY,
+            EarliestDepartureTime = completionTime
+        });
+    }
+
+    private MuseumDonationRouteSchedule BuildSchedule(FutureRouteDateEvidenceRequest request)
+    {
+        var departure = request.EarliestDepartureTime;
+        if (errors.Length > 0) return Blocked(errors, departure);
+        request.TargetLocation = targetLocation;
+        request.TargetTileX = targetX;
+        request.TargetTileY = targetY;
+        var key = JsonSerializer.Serialize(request);
+        if (schedules.TryGetValue(key, out var cached)) return cached;
+        var production = new FutureRouteDateEvidenceProducer().Produce(context!, request, timing!);
         MuseumDonationRouteSchedule result;
-        if (production.Scenario is null) result = Blocked(production.BlockingReasons);
+        if (production.Scenario is null) result = Blocked(production.BlockingReasons, departure);
         else
         {
             var route = new FutureRouteAccessWindowResolver().Resolve(graph, production.Scenario, targetLocation, targetX, targetY);
             if (!route.GuaranteedArrivalByTime.HasValue || route.Status == FutureRouteAccessResolutionStatus.Blocked)
-                result = Blocked(route.BlockingReasons);
+                result = Blocked(route.BlockingReasons, departure);
             else
             {
                 var completion = GameClockBudgetPolicy.AddClockMinutes(route.GuaranteedArrivalByTime.Value,
                     GameClockBudgetPolicy.TicksToGameMinutes(MuseumDonationBudgetPolicy.InteractionTicks));
                 result = completion > GameClockBudgetPolicy.AutonomousRecoveryStartTime
-                    ? Blocked(new[] { "museum_donation_full_route_exceeds_day_budget" })
-                    : new(snapshot.StateHash, day, startTime, route.GuaranteedArrivalByTime, completion,
+                    ? Blocked(new[] { "museum_donation_full_route_exceeds_day_budget" }, departure)
+                    : new(snapshot.StateHash, day, departure, route.GuaranteedArrivalByTime, completion,
                         timing!.EvidenceSha256, production.Scenario, Array.Empty<string>());
             }
         }
@@ -118,8 +139,8 @@ public sealed class MuseumDonationRouteScheduleBuilder
         return result;
     }
 
-    private MuseumDonationRouteSchedule Blocked(string[] reasons) =>
-        new(snapshot.StateHash, day, startTime, null, null, timing?.EvidenceSha256 ?? string.Empty, null, reasons);
+    private MuseumDonationRouteSchedule Blocked(string[] reasons, int? departure = null) =>
+        new(snapshot.StateHash, day, departure ?? startTime, null, null, timing?.EvidenceSha256 ?? string.Empty, null, reasons);
 }
 
 public sealed record MuseumDonationRouteSchedule(
