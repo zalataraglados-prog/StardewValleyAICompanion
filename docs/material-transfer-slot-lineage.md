@@ -257,17 +257,16 @@ synthetic snapshots through StateStore; they do not certify Bridge ingestion or
 new native gameplay. Lost preparation replies are retrieved read-only rather
 than POSTed again, and settlement reply lookup preserves the published file.
 
-**Production boundary:** Backend/service support is implemented, but the original
-canonical acquisition producer, commit/settlement receipt reconstruction and
-candidate/compiler/dispatch path do not yet emit/consume this preparation.
-Connect those original paths next; do not build a parallel orchestrator. Both
-selected custody and passively affected custody are still rejected, including
+**Production boundary:** The original canonical ordinary acquisition producer,
+commit/settlement receipt reconstruction, compiler and dispatch path now
+emit/consume this preparation as described below. Both selected custody and
+passively affected custody are still rejected, including
 an ordinary resource transfer that would rebind another custody row. The real
 acquired-output storage -> withdrawal -> authorized donation/consumption proof
 and custody guard replacement remain later in this same lifecycle. All frozen
 coverage, Teacher and formal-training counts remain unchanged.
 
-Verification: final full Backend 414/414 (30 new cases), complete game-free Core
+Verification for the service-only slice: full Backend 414/414 (30 new cases), complete game-free Core
 1155/1155. The retained native `material-native-open-1104` snapshots were also
 read through the original validated logical reader and replayed against the
 actual file repository with fifteen synthetic full-stock reservations. Both
@@ -294,6 +293,72 @@ method. Full game-free Core passes 1083 tests and the original Backend suite
 passes 381 tests. Harness builds against the
 explicit E runtime without deployment. All local work uses single-core,
 BelowNormal execution during quiet hours; no game was started.
+
+## Canonical Preparation Binding
+
+The original support producer now includes `material_transfer_preparation`
+before its normal atomic commit preflight. It derives the route decision from
+the exact selected claims; it does not create or authorize another ledger.
+The original commit receipt independently replays the transaction, verifies the
+preparation history and pins `prepared_material_transfer_sha256`. Ordinary
+non-transfer commits omit the optional field and retain their prior protocol.
+
+The canonical compiler propagates that SHA through the original plan annotation
+and queue identities. Original action compilation and JIT dispatch share
+`PreparedMaterialTransferContract` and the same dispatch validator, checking
+goal/portfolio, intent, revision, retained origin and the full material-claim
+metadata hash. Removing the binding cannot downgrade a reserved transfer to a
+legacy unguarded command: an acquisition marker, pending preparation or active
+claim in either affected inventory requires the preparation. Unreserved legacy
+transfers remain valid; reservations in unrelated inventories do not block them.
+
+Live dispatch now calls the existing Backend readiness endpoint for transfer
+items, including local/precompiled queues. A precompiled transfer suffix reuses
+the existing queue-item state rebind after ordinary movement. Only the command's
+fresh dispatch hash changes; goal, preparation and lineage parameters are
+preserved, and the preparation stays pinned to its original ledger/source hash.
+Dispatch also parses the execution intent/projection JSON with the same Web JSON
+semantics as the actual Live request builder. It requires unique payload parameters,
+an intent equal to the validated scalars and a projection equal to the original
+projector's result over the retained inventories. A precompiled/imported queue
+cannot preserve honest scalars while replacing the actual execution payload.
+Missing, null, malformed, duplicate or case-aliased conflicting JSON fails before
+native dispatch, not merely at later settlement. The native executor's physical inventory, access, ownership and full-slot
+verification still apply. Rebinding is not proof that inventory remained equal.
+
+The original canonical settlement builder carries the same preparation SHA,
+checks the compiled binding with the shared validator, consumes the service's
+complete map and independently replays the original settlement. It verifies all
+affected rows without changing goal, quantity or ownership. Passive compaction
+history retains each other goal's own source decision; one preparation-completed
+marker closes the retained record. Its receipt includes the optional full map
+and preparation SHA, rather than reporting only the selected relocation.
+
+The existing bounded canonical file fixture now includes another goal's stone
+claim compacting from chest slot 9 to 0, then continues through the original
+terminal proof. It rejects omitted/altered preparation in commit receipts,
+missing/wrong/duplicate compiler bindings and a missing settlement map. Direct
+dispatch tests cover state refresh, invalid bindings and protected passive claims;
+an actual Live-method/Backend/file-repository test checks movement, unchanged
+ledger publication and refusal when the posted binding is removed. These are
+synthetic contract tests, not new native gameplay or custody authorization.
+
+Local final verification for canonical binding: Backend 450/450 (36 new cases),
+game-free Core 1155/1155, original canonical transfer/settlement/terminal fixture
+and generated checkpoint check passed. The enhanced local fixture is retained
+under `I:\StardewAITraining\material-transfer-canonical-20261104\canonical-02`.
+An initial full Backend run found two CLI tests executing November 2 binaries
+with a different Core DLL. Building the original PolicyDataset/PolicyModel CLI
+projects in the same configuration resolved them; no assertions were changed.
+PR #418's validated execution-JSON review finding added thirteen further cases,
+including direct calls to the original Live request builder demonstrating that
+the guarded JSON is the JSON actually consumed. The existing CI already builds these entry points before Backend integration
+tests. Local full Backend checks must do the same; a file's existence alone
+does not establish binary freshness. No game was started and no raw/local-data
+artifacts are included in the commit. The old museum malformed-reply recovery
+case again exceeded its existing 15-second outer deadline once under the
+two-logical-CPU throttle; its unchanged 14-case group and final complete 450-case
+suite subsequently passed. No timeout, assertion or production retry was widened.
 
 The existing `self-test-machine-material-transfer-terminal-coverage` now accepts
 an isolated `--output-root` fixture mode as well as its prior explicit

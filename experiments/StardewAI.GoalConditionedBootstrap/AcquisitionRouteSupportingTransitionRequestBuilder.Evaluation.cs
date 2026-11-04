@@ -128,12 +128,20 @@ public static partial class AcquisitionRouteSupportingTransitionRequestBuilder
         var preflight = false;
         if (commitRequest is not null)
         {
+            if (supportTransitionKind == "machine_input_material_transfer")
+            {
+                commitRequest.MaterialTransferPreparation = AcquisitionRouteSupportingTransferBinding.Create(
+                    reservation.ClaimSet?.MaterialClaims ?? Array.Empty<MaterialReservationUpsertRequest>(),
+                    candidateEvaluation.MaterialRelocations, candidateEvaluation.MaterialTransferIntent);
+                if (commitRequest.MaterialTransferPreparation is null)
+                    reasons.Add("support_material_transfer_preparation_request_missing");
+            }
             var result = new ReservationPortfolioLedgerService().Commit(
                 ledger,
                 snapshot,
                 commitRequest,
                 "support-request-preflight");
-            preflight = result.Accepted;
+            preflight = reasons.Count == 0 && result.Accepted;
             if (!result.Accepted)
             {
                 reasons.AddRange(result.Errors.Select(error =>

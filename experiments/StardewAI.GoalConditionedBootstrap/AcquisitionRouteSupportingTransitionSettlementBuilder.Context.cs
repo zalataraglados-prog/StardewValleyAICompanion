@@ -128,6 +128,7 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
                     transition.SelectedCandidateId &&
                 commit.CommittedLedgerRevision == ledger.Revision,
             "Support settlement source identity drifted.");
+        ValidateTransferCompilation(request, commit, compilation, ledger);
         var consumptions = new List<SettlementConsumptionContext>();
         var relocations = new List<SettlementRelocationContext>();
         var currencyConsumptions = new List<
@@ -367,6 +368,7 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
             RouteSourceDecisionId = RouteSourceDecisionId(context),
             SupportingTransitionReceiptSha256 =
                 context.SupportingTransitionReceiptSha256,
+            PreparedMaterialTransferSha256 = context.CommitReceipt.PreparedMaterialTransferSha256,
             MaterialConsumptions = context.Consumptions.Select(value =>
                     new ReservationPortfolioMaterialConsumption
                     {

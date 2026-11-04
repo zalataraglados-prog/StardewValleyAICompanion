@@ -149,6 +149,9 @@ internal static class ReservationPortfolioCommitEvidenceVerifier
                                 ? "machine_support_select"
                                 : "machine_support_bind_placement")
                 })
+            .Concat(request.MaterialTransferPreparation is null
+                ? Array.Empty<(string Id, string OperationSuffix)>()
+                : new[] { (Id: request.PortfolioId, OperationSuffix: "material_transfer_prepared") })
             .ToArray();
         var current = (committed.History ??
                 Array.Empty<StrategyCommitmentHistoryEntry>()).Where(row =>

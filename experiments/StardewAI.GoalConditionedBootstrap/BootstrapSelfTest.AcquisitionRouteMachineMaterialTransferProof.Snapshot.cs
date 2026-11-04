@@ -146,9 +146,14 @@ internal static partial class BootstrapSelfTest
         var playerSlots = afterTransfer
             ? new object[] { MachineMaterialTransferProofSlot() }
             : Array.Empty<object>();
+        var stone = new
+        {
+            slot_index = afterTransfer ? 0 : 9, item_id = "390", qualified_item_id = "(O)390",
+            runtime_type = "StardewValley.Object", stack = 3, maximum_stack_size = 999, quality = 0
+        };
         var chestSlots = afterTransfer
-            ? Array.Empty<object>()
-            : new object[] { MachineMaterialTransferProofSlot() };
+            ? new object[] { stone }
+            : new object[] { MachineMaterialTransferProofSlot(), stone };
         graph["inventory_nodes"] = JsonSerializer.SerializeToNode(new object[]
         {
             new
@@ -204,6 +209,11 @@ internal static partial class BootstrapSelfTest
                 in_process_quantity = 0,
                 restricted_quantity = 0,
                 source_slot_count = 1
+            },
+            new
+            {
+                qualified_item_id = "(O)390", quality = 0, available_quantity = 3,
+                ready_output_quantity = 0, in_process_quantity = 0, restricted_quantity = 0, source_slot_count = 1
             }
         }, JsonDefaults.Options);
         graph["physical_inventory_count"] = 2;

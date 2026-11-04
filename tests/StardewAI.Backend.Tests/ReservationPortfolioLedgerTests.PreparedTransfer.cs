@@ -1,4 +1,3 @@
-using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using StardewAI.Contracts.State;
@@ -112,8 +111,7 @@ public sealed partial class ReservationPortfolioLedgerTests
             case "prepared-history": ledger.History = ledger.History.Where(row => row.Operation != "material_transfer_prepared").ToArray(); break;
             case "forged-rehashed-map":
                 ledger.PreparedMaterialTransfer!.ReservationProjection.ReservationTransitions = ledger.PreparedMaterialTransfer.ReservationProjection.ReservationTransitions.Take(1).ToArray();
-                var hash = (string)typeof(ReservationPortfolioLedgerService).GetMethod("MaterialTransferPreparationHash", BindingFlags.NonPublic | BindingFlags.Static)!
-                    .Invoke(null, new object[] { ledger.PreparedMaterialTransfer })!;
+                var hash = PreparedMaterialTransferContract.ComputeBindingSha256(ledger.PreparedMaterialTransfer);
                 ledger.PreparedMaterialTransfer.BindingSha256 = hash;
                 ledger.History.Single(row => row.Operation == "material_transfer_prepared").Reason = hash;
                 request.PreparedMaterialTransferSha256 = hash;

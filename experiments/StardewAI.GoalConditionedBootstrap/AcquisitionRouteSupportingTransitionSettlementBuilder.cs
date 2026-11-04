@@ -177,6 +177,8 @@ public static partial class AcquisitionRouteSupportingTransitionSettlementBuilde
                 context.SupportCommitReceiptSha256,
             SupportingTransitionReceiptSha256 =
                 context.SupportingTransitionReceiptSha256,
+            PreparedMaterialTransferSha256 = context.CommitReceipt.PreparedMaterialTransferSha256,
+            MaterialTransferReservations = result.MaterialTransferReservations,
             BaseLedgerSha256 = context.BaseLedgerSha256,
             SettlementRequestSha256 = requestSha256,
             SettlementResultSha256 = resultSha256,

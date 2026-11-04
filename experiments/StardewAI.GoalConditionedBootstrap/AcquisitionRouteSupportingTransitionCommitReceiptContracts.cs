@@ -44,6 +44,10 @@ public sealed class AcquisitionRouteSupportingTransitionCommitReceipt
     [JsonPropertyName("commit_result_sha256")]
     public string CommitResultSha256 { get; set; } = string.Empty;
 
+    [JsonPropertyName("prepared_material_transfer_sha256")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? PreparedMaterialTransferSha256 { get; set; }
+
     [JsonPropertyName("reservation_claim_ids")]
     public string[] ReservationClaimIds { get; set; } = Array.Empty<string>();
 
