@@ -142,9 +142,25 @@ function Invoke-RuntimeRustyKeyNativeHandoff {
     $parameters = if ($option -eq 'recovery.stabilize_day') {
         @([ordered]@{ name = 'control_plane.native_save_boundary'; value = 'true' })
     } else { @() }
-    $ranking = Invoke-RuntimeRanking -BackendUrl $Context.BackendUrl -GoalId 'daily.closed_loop' `
-        -SnapshotStateHash $Snapshot.state_hash -OutputPath (Join-Path $Directory 'native-handoff-ranking.json') `
-        -OptionId $option -Parameters $parameters
+    $ranking = $null
+    if ($option -eq 'exploration.visit_location') {
+        $recoveryParameters = @([ordered]@{ name = 'control_plane.native_save_boundary'; value = 'true' })
+        $recoveryRanking = Invoke-RuntimeRanking -BackendUrl $Context.BackendUrl -GoalId 'daily.closed_loop' `
+            -SnapshotStateHash $Snapshot.state_hash -OutputPath (Join-Path $Directory 'native-handoff-control-ranking.json') `
+            -OptionId 'recovery.stabilize_day' -Parameters $recoveryParameters
+        if (@($recoveryRanking.ranked_event_candidates | Where-Object {
+            $_.candidate_id -ceq 'recovery:wait_for_native_control_settle' -and $_.available -eq $true
+        }).Count -gt 0) {
+            $option = 'recovery.stabilize_day'
+            $parameters = $recoveryParameters
+            $ranking = $recoveryRanking
+        }
+    }
+    if ($null -eq $ranking) {
+        $ranking = Invoke-RuntimeRanking -BackendUrl $Context.BackendUrl -GoalId 'daily.closed_loop' `
+            -SnapshotStateHash $Snapshot.state_hash -OutputPath (Join-Path $Directory 'native-handoff-ranking.json') `
+            -OptionId $option -Parameters $parameters
+    }
     $candidates = @($ranking.ranked_event_candidates | Where-Object { $_.available -eq $true })
     if ($option -eq 'exploration.visit_location') {
         $candidates = @($candidates | Where-Object { $_.kind -eq 'route_connector_tile' -and

@@ -149,3 +149,27 @@ A script-only continuation
 may reuse the clean `8fe21913` bundle only after proving no compiled-source or
 build-configuration diff and rechecking every retained binary hash/version;
 the script commit and binary-source commit must remain separately attributable.
+
+## Morning Handoff
+
+`40dad9f6` verified 13 continuous steps through actual acquisition/custody,
+donation/consumption, returning home, bounded post-connector waits and normal
+native sleep/save to Spring 8. Its night transaction observed native commit,
+expected day and safe readiness but remained `ready_for_safe_next_day_action`;
+it was not complete and the key was not received.
+
+At 06:00 the script requested the Farm connector before checking control
+settling. The existing live safety layer correctly executed its bounded wait
+instead, and the strict adapter rejected the request/receipt mismatch. The
+handoff now queries the same recovery producer first during this morning path.
+Only its exact available native-control wait can take priority. If absent,
+the original Farm connector is selected; a sleep candidate from that query
+must never consume another day. The selector, native executor, per-step fresh
+replan and finite overall budget are unchanged.
+
+The default game-free regression now passes 34 cases; local replay of the real
+morning receipt/report adds one (35). Every mocked adapter invocation also runs
+the actual `LiveTrainingOptions.Parse`, including its rejection of a zero work
+target. Expected mocked failure exits are reset only in test cleanup; production
+failure handling is unchanged. This fixes CI's red host exit after all 30 earlier
+checks had passed. The final continuous night/key native trace is still required.
