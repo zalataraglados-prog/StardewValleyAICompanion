@@ -95,6 +95,8 @@
     <Compile Include="FullShipmentAcquisitionSampleSourceGuardTests.cs" />
     <Compile Include="ShopPurchaseBudgetPolicyTests.cs" />
     <Compile Include="GameClockBudgetPolicyTests.cs" />
+    <Compile Include="EventCandidateTimelineSchedulerTests.cs" />
+    <Compile Include="SnapshotGameClockBudgetReaderTests.cs" />
     <Compile Include="HeadlessHostInputPumpSourceGuardTests.cs" />
     <Compile Include="FutureRouteDateEvidenceProducerTests.cs" />
     <Compile Include="FutureRouteTimingCalibrationTests.cs" />

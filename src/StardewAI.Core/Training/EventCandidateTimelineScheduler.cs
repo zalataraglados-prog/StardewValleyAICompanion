@@ -108,14 +108,10 @@ namespace StardewAI.Core.Training
 
         private static bool WouldFinishAfterClose(int startTime, int estimatedTicks, int closesAt)
         {
-            var estimatedMinutes = (int)Math.Ceiling(Math.Max(0, estimatedTicks) / 60.0);
-            return AddClockMinutes(startTime, estimatedMinutes) > closesAt;
-        }
-
-        private static int AddClockMinutes(int hhmm, int minutes)
-        {
-            var total = (hhmm / 100 * 60) + (hhmm % 100) + minutes;
-            return total / 60 * 100 + total % 60;
+            if (estimatedTicks < 0) return true;
+            // Action durations are runtime updates, unlike the legacy WaitCost scheduling units.
+            var estimatedMinutes = estimatedTicks == 0 ? 0 : GameClockBudgetPolicy.TicksToGameMinutes(estimatedTicks);
+            return GameClockBudgetPolicy.AddClockMinutes(startTime, estimatedMinutes) > closesAt;
         }
     }
 }

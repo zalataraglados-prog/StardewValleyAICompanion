@@ -2,6 +2,7 @@ using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
+using StardewAI.Core.Infrastructure;
 using StardewAI.Core.OptionRegistry;
 using StardewAI.Core.Training;
 
@@ -36,14 +37,22 @@ public static partial class RustyKeyRollingSupplyProposalBuilder
 
         var planCompiler = new DailyPlanCompiler();
         var actionCompiler = new ActionQueueCompiler();
+        var availableMinutes = SnapshotGameClockBudgetReader.AvailableMinutes(snapshot, GameClockBudgetPolicy.AutonomousRecoveryStartTime);
         foreach (var candidate in current)
         {
             var reasons = new List<string>();
+            if (!availableMinutes.HasValue)
+            {
+                evaluations.Add(new(candidate.CandidateId, missing[candidate.QualifiedItemId], "held_donation", false,
+                    new[] { "rusty_key_held_donation_clock_unavailable" }));
+                continue;
+            }
             if (!CurrentTeacherFrontierSupport.TryReadUniqueIntParameter(candidate, "expected_donated_count_before", out var before) ||
                 before != result.DonatedCount)
                 reasons.Add("rusty_key_held_donation_progress_drifted");
             var neutral = CurrentStageOneCollectionTeacherPreferenceBuilder.NeutralizeLearnerSignals(candidate, result.SelectionPolicyId);
-            var plan = planCompiler.Compile(new[] { neutral }, snapshot.StateHash, goalId: result.GoalId, maxCandidates: 1);
+            var plan = planCompiler.Compile(new[] { neutral }, snapshot.StateHash, goalId: result.GoalId, maxCandidates: 1,
+                availableMinutes: availableMinutes);
             var identity = AcquisitionRoutePortfolioTeacherPreferenceBuilder.ArtifactSha256(new
             {
                 result.GoalId, result.SelectionPolicyId, result.SnapshotSha256, result.RequirementInventorySha256,

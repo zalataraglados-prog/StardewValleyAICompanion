@@ -43,6 +43,11 @@ other 59 items does not prohibit one valid next step.
    then stable route identity. This is a controller policy, not a claim that it
    optimizes the entire remaining collection or strictly dominates alternatives.
 
+Held donation/navigation now passes the strict remaining autonomous day budget
+to the original compiler. Missing/conflicting clocks and over-budget candidates
+are excluded before a queue is offered; owned stock remains pending, not new
+acquisition. See [local time gates and remaining joint schedule](rusty-key-time-budget.md).
+
 Held/navigation selection exports the existing compiled plan/queue. Transfer
 selection requires the actual commit before the original custody queue compiler.
 Acquisition selection
@@ -87,11 +92,12 @@ the MOD's default production root selector or criterion-global acceptance.
 
 ## Verification And Remaining Work
 
-`self-test-rusty-key-rolling-supply` passed 25 synthetic cases, exercising the
+`self-test-rusty-key-rolling-supply` passed 44 synthetic cases, exercising the
 real candidate/timeline/compiler and shared resource-admission code. Cases cover
 partial deficits, only one currently usable item, preserved unavailable routes,
 protected inputs, held spare units, deterministic ties, source drift, unknown
-sources, date bounds and threshold handoff. The public held-file entrypoint and
+sources, date bounds, threshold handoff, pending/custody supply, day-budget
+boundaries and invalid clocks. The public held-file entrypoint and
 actual CLI exported a pending `executor.donate_museum_item` queue. A blocked CLI
 returned 2 without changing a pre-existing selected queue's SHA-256. The original
 30-case full-threshold suite and focused independent Teacher replay also passed.

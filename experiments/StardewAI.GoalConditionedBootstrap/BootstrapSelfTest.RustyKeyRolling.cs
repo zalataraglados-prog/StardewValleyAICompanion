@@ -197,6 +197,7 @@ internal static partial class BootstrapSelfTest
             "An unauthenticated custody marker must not count another goal's reserved unit as pending supply.");
         passed.Add("pending_custody_requires_exact_creation_history");
         VerifyRollingPendingInventory(passed);
+        VerifyRollingDonationTimeBudget(passed);
         Write(Path.Combine(root, "rusty-key-rolling-self-test.json"), new
         {
             status = "passed", passed_count = passed.Count, cases = passed,

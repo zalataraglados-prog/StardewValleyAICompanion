@@ -13,7 +13,6 @@ using StardewAI.Core.Execution;
 using StardewAI.Core.Infrastructure;
 using StardewAI.Core.OptionRegistry;
 using StardewAI.Core.Training;
-using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.Strategy;
 
@@ -78,16 +77,8 @@ public static partial class MuseumOutputCustodyTransferRequestBuilder
         return string.Concat(sha.ComputeHash(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(value))).Select(item => item.ToString("x2")));
     }
 
-    private static int? AvailableMinutes(SnapshotEnvelope snapshot)
-    {
-        var clocks = new[] { "time", "time_of_day" }
-            .Where(field => ReadableStatus(ReadStateFieldStatus(snapshot, "time", field)))
-            .Select(field => ReadStateFieldIntOptional(snapshot, "time", field)).ToArray();
-        if (clocks.Any(value => !value.HasValue)) return null;
-        var values = clocks.Select(value => value!.Value).Distinct().ToArray();
-        return values.Length == 1 && values[0] is >= 600 and <= GameClockBudgetPolicy.DayEndTime && values[0] % 100 < 60
-            ? GameClockBudgetPolicy.ClockMinutesBetween(values[0], GameClockBudgetPolicy.DayEndTime) : null;
-    }
+    private static int? AvailableMinutes(SnapshotEnvelope snapshot) =>
+        SnapshotGameClockBudgetReader.AvailableMinutes(snapshot, GameClockBudgetPolicy.DayEndTime);
 }
 
 public sealed record MuseumOutputCustodyTransferPreparation(
