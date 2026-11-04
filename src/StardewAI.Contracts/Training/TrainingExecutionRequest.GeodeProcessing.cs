@@ -27,6 +27,7 @@ public sealed partial class TrainingExecutionRequest
     [JsonPropertyName("geode_qi_beans_rule_active")] public bool? GeodeQiBeansRuleActive { get; set; }
     [JsonPropertyName("geode_got_mystery_book_mail_before")] public bool? GeodeGotMysteryBookMailBefore { get; set; }
     [JsonPropertyName("geode_artifact_found_mail_before")] public bool? GeodeArtifactFoundMailBefore { get; set; }
+    [JsonPropertyName("geode_found_mail_before")] public bool? GeodeFoundMailBefore { get; set; }
     [JsonPropertyName("geode_prediction_kind")] public string GeodePredictionKind { get; set; } = string.Empty;
     [JsonPropertyName("geode_expected_output_qid")] public string GeodeExpectedOutputQid { get; set; } = string.Empty;
     [JsonPropertyName("geode_expected_output_stack")] public int? GeodeExpectedOutputStack { get; set; }

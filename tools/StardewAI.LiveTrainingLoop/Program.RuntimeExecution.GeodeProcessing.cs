@@ -29,6 +29,7 @@ static partial class Program
         request.GeodeQiBeansRuleActive = ReadQueueParameterBool(item, "geode_qi_beans_rule_active");
         request.GeodeGotMysteryBookMailBefore = ReadQueueParameterBool(item, "geode_got_mystery_book_mail_before");
         request.GeodeArtifactFoundMailBefore = ReadQueueParameterBool(item, "geode_artifact_found_mail_before");
+        request.GeodeFoundMailBefore = ReadQueueParameterBool(item, "geode_found_mail_before");
         request.GeodePredictionKind = ReadQueueParameterString(item, "geode_prediction_kind");
         request.GeodeExpectedOutputQid = ReadQueueParameterString(item, "geode_expected_output_qid");
         request.GeodeExpectedOutputStack = ReadQueueParameterInt(item, "geode_expected_output_stack");

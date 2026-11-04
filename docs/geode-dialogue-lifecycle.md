@@ -58,3 +58,32 @@ fix's complete native proof. The 59-item fixture, even in Year 1, is not a
 new-save collection/deadline/Teacher-partition certificate. Unknown artifact
 route parsing and the previously listed relocation/joint-budget/criterion
 integration gaps remain; frozen coverage and formal-training flags do not change.
+
+## First-Pickup Continuation
+
+The first `ff77caad` run passed CI but its stricter native completion correctly
+stopped at an actual non-question first-geode discovery message, not another
+ghost menu. Direct decompile confirms `Farmer` queues `geodeFound` plus
+`holdUpItemThenMessage` when `(O)535` is received. Returning the held remainder
+to inventory can trigger this on a legitimate first pickup.
+
+The bridge now observes `geode_found_mail` and projects that exact native flag
+for either a returned `(O)535` remainder or `(O)535` output. The flag is bound
+through candidate/compiler/request/live validation; missing context is not
+treated as false. Pre-close conservation may wait for that one explicitly
+predicted deferred flag; final completion still requires the exact full mail
+delta. Other missing or extra mail remains a mismatch.
+
+Only the exact native geode hold-up text (obtained from the native item method),
+no speaker/question/responses/event, observed native flag and matching inventory
+receipt can delegate to the existing `StartDialogueAdvance` engine. That engine
+keeps its native press/release/safety/timeout behavior; no second dialogue engine
+or synthetic flag/menu mutation is introduced. An unexpected prompt remains
+blocked. Parent timeout cancels only its own child advance. The final receipt
+records native flag before/after and whether the tutorial was acknowledged.
+
+The single-player native clock rule was also checked: an ordinary menu pauses
+time, and a non-tool hold-up pauses it unless the native farmer forces time.
+This is not a new multiplayer/joint-budget proof. The final candidate still
+needs a new same-version native run; the earlier failed run is retained and
+must not be rewritten as a pass.

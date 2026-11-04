@@ -132,6 +132,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
             Parameter("geode_qi_beans_rule_active", (context.ValueKind == JsonValueKind.Object && ReadBool(context, "qi_beans_rule_active") == true).ToString().ToLowerInvariant()),
             Parameter("geode_got_mystery_book_mail_before", (context.ValueKind == JsonValueKind.Object && ReadBool(context, "got_mystery_book_mail") == true).ToString().ToLowerInvariant()),
             Parameter("geode_artifact_found_mail_before", (context.ValueKind == JsonValueKind.Object && ReadBool(context, "artifact_found_mail") == true).ToString().ToLowerInvariant()),
+            Parameter("geode_found_mail_before", context.ValueKind == JsonValueKind.Object
+                ? ReadBool(context, "geode_found_mail")?.ToString().ToLowerInvariant() ?? string.Empty : string.Empty),
             Parameter("geode_prediction_kind", ReadString(row, "kind")),
             Parameter("geode_expected_output_qid", primary.ValueKind == JsonValueKind.Object ? ReadString(primary, "qualified_item_id") : string.Empty),
             Parameter("geode_expected_output_stack", primary.ValueKind == JsonValueKind.Object ? ReadInt(primary, "stack").ToString(CultureInfo.InvariantCulture) : "0"),

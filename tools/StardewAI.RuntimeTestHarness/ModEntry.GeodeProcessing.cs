@@ -50,7 +50,7 @@ public sealed partial class ModEntry
         request.GoldenWalnutsBefore is >= 0 && request.GoldenWalnutsFoundBefore is >= 0 && request.GeodeArchaeologyFoundCount is >= 0 &&
         request.GeodeSaveIdHalf.HasValue && request.GeodePlayerIdHalf.HasValue && !string.IsNullOrWhiteSpace(request.GeodeSeason) &&
         request.GeodeDeepestMineLevel.HasValue && request.GeodeSkill1Level.HasValue && request.GeodeFarmingMasteryUnlocked.HasValue &&
-        request.GeodeQiBeansRuleActive.HasValue && request.GeodeGotMysteryBookMailBefore.HasValue && request.GeodeArtifactFoundMailBefore.HasValue &&
+        request.GeodeQiBeansRuleActive.HasValue && request.GeodeGotMysteryBookMailBefore.HasValue && request.GeodeArtifactFoundMailBefore.HasValue && request.GeodeFoundMailBefore.HasValue &&
         request.GeodePredictionKind is "exact" or "complete_shared_rng_crop_family" or "first_golden_coconut_mutex_contingent" &&
         accepted.Count > 0 && request.GeodeProjectionFingerprint.Length == 64 && request.GeodeActionToken == "Blacksmith" &&
         request.NativeContract == RuntimeGeodeNativeContract && request.TargetTileX.HasValue && request.TargetTileY.HasValue &&
@@ -94,7 +94,8 @@ public sealed partial class ModEntry
             (Game1.player.stats.Get(StatKeys.Mastery(0)) != 0) != request.GeodeFarmingMasteryUnlocked ||
             Game1.player.team.SpecialOrderRuleActive("DROP_QI_BEANS") != request.GeodeQiBeansRuleActive ||
             Game1.player.mailReceived.Contains("GotMysteryBook") != request.GeodeGotMysteryBookMailBefore ||
-            Game1.player.hasOrWillReceiveMail("artifactFound") != request.GeodeArtifactFoundMailBefore)
+            Game1.player.hasOrWillReceiveMail("artifactFound") != request.GeodeArtifactFoundMailBefore ||
+            Game1.player.hasOrWillReceiveMail("geodeFound") != request.GeodeFoundMailBefore)
             reasons.Add("geode_processing_output_predictor_context_drifted");
         return reasons.Distinct(StringComparer.Ordinal).ToArray();
     }
@@ -106,6 +107,16 @@ public sealed partial class ModEntry
         active.ElapsedTicks++; active.StageTicks++;
         if (active.ElapsedTicks > active.MaxTicks) { CompleteGeodeProcessing(active, false, "geode_processing_timeout:" + GeodeObservedEffect()); return; }
         var request = active.Pending.Request;
+        if (active.PickupDialoguePending is not null)
+        {
+            if (!active.PickupDialoguePending.Completion.Task.IsCompleted) return;
+            var result = active.PickupDialoguePending.Completion.Task.GetAwaiter().GetResult();
+            active.PickupDialoguePending = null;
+            if (result.Status != "applied" || result.PrimitiveVerificationStatus != "verified")
+            { CompleteGeodeProcessing(active, false, "geode_processing_pickup_dialogue_failed"); return; }
+            active.PickupDialogueAcknowledged = true;
+            active.StageTicks = 0;
+        }
         if (!active.CounterActionIssued)
         {
             var movement = AdvanceNativeObjectInteractionMovement(active, "geode_processing", out var failure);
@@ -138,8 +149,10 @@ public sealed partial class ModEntry
         }
         if (Game1.activeClickableMenu is not GeodeMenu menu)
         {
+            if (active.CloseClicked && TryStartGeodePickupDialogue(active)) return;
             if (active.CloseClicked && GeodeNativeControlRestored() && GeodeReceiptMatches(active)) CompleteGeodeProcessing(active, true);
-            else if (active.StageTicks > 240) CompleteGeodeProcessing(active, false, "geode_processing_menu_open_or_close_timeout");
+            else if (active.StageTicks > (GeodePickupTutorialExpected(active) ? 600 : 240))
+                CompleteGeodeProcessing(active, false, "geode_processing_menu_open_or_close_timeout");
             return;
         }
         if (!active.InventoryClicked)
@@ -180,7 +193,7 @@ public sealed partial class ModEntry
             active.StageTicks = 0; return;
         }
         active.HeldStackReturned = true;
-        if (!GeodeReceiptMatches(active))
+        if (!GeodeReceiptMatches(active, allowPendingPickupTutorial: true))
         { CompleteGeodeProcessing(active, false, "geode_processing_native_receipt_mismatch:" + GeodeReceiptDiagnostic(active)); return; }
         if (!active.CloseClicked)
         {
@@ -193,7 +206,7 @@ public sealed partial class ModEntry
         Game1.activeClickableMenu is null && !Game1.dialogueUp && !Game1.eventUp &&
         Game1.player.CanMove && !Game1.player.UsingTool;
 
-    private static bool GeodeReceiptMatches(ActiveGeodeProcessing active)
+    private static bool GeodeReceiptMatches(ActiveGeodeProcessing active, bool allowPendingPickupTutorial = false)
     {
         var request = active.Pending.Request;
         if (Game1.player.Money != request.GeodeMoneyBefore - 25 ||
@@ -213,6 +226,8 @@ public sealed partial class ModEntry
             if (!matches) continue;
             var expectedMail = output.ExpectedMailAdditions.ToHashSet(StringComparer.Ordinal);
             var actualMail = Game1.player.mailReceived.Where(flag => !active.MailBefore.Contains(flag)).ToHashSet(StringComparer.Ordinal);
+            if (allowPendingPickupTutorial && GeodePickupTutorialExpected(active) && !actualMail.Contains("geodeFound"))
+                expectedMail.Remove("geodeFound");
             if (!actualMail.SetEquals(expectedMail)) continue;
             var expectedGolden = request.GoldenCoconutCrackedBefore == true || output.QualifiedItemId == "(O)73";
             if (Game1.netWorldState.Value.GoldenCoconutCracked != expectedGolden) continue;
@@ -254,12 +269,20 @@ public sealed partial class ModEntry
 
     private void CompleteGeodeProcessing(ActiveGeodeProcessing active, bool verified, params string[] reasons)
     {
+        if (active.PickupDialoguePending is not null && ReferenceEquals(activeDialogueAdvance?.Pending, active.PickupDialoguePending))
+        {
+            ReleaseSmapiLeftButtonOverride();
+            activeDialogueAdvance = null;
+            active.PickupDialoguePending.Completion.TrySetCanceled();
+        }
         StopAllMovement(); activeGeodeProcessing = null;
         var request = active.Pending.Request;
         var verification = verified ? new[] { "shared_bfs_reached_exact_Blacksmith_counter",
             "native_Blacksmith_Process_and_GeodeMenu_click_sequence_completed", "native_dialogue_and_control_lifecycle_closed",
             "one_geode_money_stats_mail_team_and_output_conservation_verified" }
             : reasons.Length == 0 ? new[] { "geode_processing_post_state_mismatch" } : reasons;
+        if (verified && active.PickupDialogueAcknowledged)
+            verification = verification.Append("native_geode_found_tutorial_acknowledged").ToArray();
         active.Pending.Completion.SetResult(new TrainingExecutionResult
         {
             RunId = request.RunId, QueueId = request.QueueId, QueueItemId = request.QueueItemId,
@@ -268,10 +291,14 @@ public sealed partial class ModEntry
             StartedAt = active.StartedAt, CompletedAt = DateTimeOffset.UtcNow.ToString("O"),
             TrainingImpactScope = "executor_calibration_and_strategy_processing_feedback", PrimitiveKind = "crack_geode",
             PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch", PrimitiveVerificationReasons = verification,
-            RequestedEffect = GeodeRequestedEffect(request), ObservedEffect = GeodeObservedEffect(),
+            RequestedEffect = GeodeRequestedEffect(request), ObservedEffect = GeodeObservedEffect() +
+                ";pickup_dialogue_acknowledged=" + active.PickupDialogueAcknowledged.ToString().ToLowerInvariant(),
             BlockReasons = verified ? Array.Empty<string>() : verification,
             ChangedFacts = new[] { new SimulatedFactChange { Path = "player.geode_processing",
-                Before = request.GeodeProjectionFingerprint, After = GeodeObservedEffect() } }
+                Before = request.GeodeProjectionFingerprint, After = GeodeObservedEffect() },
+                new SimulatedFactChange { Path = "player.mail_received.geodeFound",
+                    Before = request.GeodeFoundMailBefore?.ToString().ToLowerInvariant() ?? "unknown",
+                    After = Game1.player.hasOrWillReceiveMail("geodeFound").ToString().ToLowerInvariant() } }
         });
     }
 
@@ -285,6 +312,7 @@ public sealed partial class ModEntry
     private static string GeodeObservedEffect() => "money=" + Game1.player.Money + ";geodes=" + Game1.stats.GeodesCracked +
         ";mystery=" + Game1.stats.Get("MysteryBoxesOpened") + ";golden_coconut=" + Game1.netWorldState.Value.GoldenCoconutCracked +
         ";menu=" + (Game1.activeClickableMenu?.GetType().Name ?? "none") +
+        ";geode_found_mail=" + Game1.player.hasOrWillReceiveMail("geodeFound").ToString().ToLowerInvariant() +
         ";dialogue_up=" + Game1.dialogueUp.ToString().ToLowerInvariant() +
         ";can_move=" + Game1.player.CanMove.ToString().ToLowerInvariant();
 

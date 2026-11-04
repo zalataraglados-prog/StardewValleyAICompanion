@@ -47,6 +47,8 @@ public sealed partial class ModEntry
         public bool AnimationStarted { get; set; }
         public bool HeldStackReturned { get; set; }
         public bool CloseClicked { get; set; }
+        public PendingExecution? PickupDialoguePending { get; set; }
+        public bool PickupDialogueAcknowledged { get; set; }
         public List<GeodeAcceptedOutput> Accepted { get; }
         public Dictionary<string, int> InventoryBefore { get; }
         public HashSet<string> MailBefore { get; }
