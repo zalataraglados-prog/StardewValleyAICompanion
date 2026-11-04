@@ -483,6 +483,9 @@ function Invoke-RuntimeDailyPlanStep {
         $sourcePath = [IO.Path]::GetFullPath($SourceSnapshotPath)
     }
     $executorUrl = if ($ExecutionTarget -eq "product") { $Context.ProductUrl } else { $Context.ExecutorRoot }
+    $nativeControlObservation = $OptionId -eq 'recovery.stabilize_day' -and
+        $CandidateId -eq 'recovery:wait_for_native_control_settle' -and
+        $CandidateKind -eq 'recovery_native_control_settle'
     $arguments = [Collections.Generic.List[string]]::new()
     foreach ($value in @(
         $Context.LoopDll,
@@ -523,7 +526,29 @@ function Invoke-RuntimeDailyPlanStep {
         -LoopRoot $stepRoot -RunId $Context.RunId `
         -CoreAssemblyPath (Join-Path (Split-Path -Parent $Context.LoopDll) "StardewAI.Core.dll") `
         -AllowVerifiedContinuation:$AllowVerifiedContinuation
-    if ($exitCode -ne 0 -and
+    if ($nativeControlObservation -and
+        ([string]$result.Execution.option_id -ne 'executor.wait_ticks' -or
+            [string]$result.Execution.status -ne 'applied' -or
+            [string]$result.Execution.primitive_verification_status -ne 'verified' -or
+            [string]$result.Execution.selected_candidate_id -ne $CandidateId -or
+            [string]::IsNullOrWhiteSpace([string]$result.Execution.queue_id) -or
+            [string]::IsNullOrWhiteSpace([string]$result.Execution.before_state_hash) -or
+            $result.Execution.selected_candidate_completed -isnot [bool] -or
+            -not $result.Execution.selected_candidate_completed)) {
+        throw 'Native control observation did not retain an exact verified wait receipt.'
+    }
+    $verifiedControlObservation = $false
+    if ($nativeControlObservation -and $exitCode -eq 2) {
+        $reportPath = Join-Path $stepRoot "runs/$($Context.RunId)/live-training-loop-report.json"
+        $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
+        $verifiedControlObservation = $report.stop_reason -ceq 'primary_training_target_not_met' -and
+            $report.run_id -ceq $Context.RunId -and
+            $report.last_queue_id -ceq $result.Execution.queue_id -and
+            $report.last_state_hash -ceq $result.Execution.before_state_hash -and
+            $report.attempts_started -eq 1 -and $report.primary_attempts_started -eq 1 -and
+            $report.required_verified_actions -eq 1 -and $report.verified_actions -eq 0
+    }
+    if ($exitCode -ne 0 -and -not $verifiedControlObservation -and
         -not $result.VerifiedContinuationPending -and
         -not $result.VerifiedObjectiveCompleted) {
         throw "Daily plan step $Name failed with exit $exitCode."

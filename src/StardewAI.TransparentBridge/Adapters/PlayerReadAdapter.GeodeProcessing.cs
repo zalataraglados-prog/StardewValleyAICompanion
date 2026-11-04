@@ -109,7 +109,8 @@ public sealed partial class PlayerReadAdapter
                 farming_mastery_unlocked = player.stats.Get(StatKeys.Mastery(0)) != 0,
                 qi_beans_rule_active = player.team.SpecialOrderRuleActive("DROP_QI_BEANS"),
                 got_mystery_book_mail = player.mailReceived.Contains("GotMysteryBook"),
-                artifact_found_mail = player.hasOrWillReceiveMail("artifactFound")
+                artifact_found_mail = player.hasOrWillReceiveMail("artifactFound"),
+                geode_found_mail = player.hasOrWillReceiveMail("geodeFound")
             },
             base_service_status = baseServiceStatus,
             inputs,
@@ -208,7 +209,7 @@ public sealed partial class PlayerReadAdapter
                     Array.Empty<string>(), "mutex_success_yields_(O)73;lock_failure_uses_seeded_ordinary_result");
             }
             else result = ordinary;
-            return ApplyPickupEffects(result, player);
+            return ApplyPickupEffects(result, player, geode);
         }
         catch (Exception ex)
         {
@@ -453,12 +454,15 @@ public sealed partial class PlayerReadAdapter
             !player.hasOrWillReceiveMail("artifactFound") ? Exact("(O)390", 5) : projection;
     }
 
-    private static GeodeOutputProjection ApplyPickupEffects(GeodeOutputProjection projection, Farmer player)
+    private static GeodeOutputProjection ApplyPickupEffects(GeodeOutputProjection projection, Farmer player, Item input)
     {
         GeodeProjectedItem Enrich(GeodeProjectedItem row)
         {
             var item = ItemRegistry.Create(row.QualifiedItemId, row.Stack, row.Quality);
             var mail = row.ExpectedMailAdditions.ToHashSet(StringComparer.Ordinal);
+            if (!player.hasOrWillReceiveMail("geodeFound") &&
+                (row.QualifiedItemId == "(O)535" || input.QualifiedItemId == "(O)535" && input.Stack > 1))
+                mail.Add("geodeFound");
             if (!string.IsNullOrWhiteSpace(row.SetFlagOnPickup) && !player.hasOrWillReceiveMail(row.SetFlagOnPickup))
                 mail.Add(row.SetFlagOnPickup);
             var effect = "inventory_item";

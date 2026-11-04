@@ -97,6 +97,8 @@
     <Compile Include="FutureRouteDateEvidenceProducerTests.cs" />
     <Compile Include="FutureRouteTimingCalibrationTests.cs" />
     <Compile Include="ExecutorOwnedIdlePauseTimingTests.cs" />
+    <Compile Include="GeodeProcessingMainlineTests.cs" />
+    <Compile Include="GeodeOutputSourceGuardTests.cs" />
     <Compile Include="StochasticRetryPolicyTests.cs" />
     <Compile Include="ValidationTraceSessionTests.cs" />
     <Compile Include="ValidationImpactAdvisoryTests.cs" />

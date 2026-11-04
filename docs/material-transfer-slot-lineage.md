@@ -77,8 +77,13 @@ authorized candidate/compiler/dispatch, move all affected reservations atomicall
 without changing unrelated goals/quantities, and verify fresh native transfer
 before donation. The existing custody rejection guards remain enabled.
 
-After 07:00, first obtain the already-planned same-version current-geode
-acquisition/custody/donation/consumption trace. Sparse-chest native regression is
+The current-geode acquisition/custody/donation/consumption/night/key trace is now
+[accepted](geode-dialogue-lifecycle.md#accepted-native-boundary); do not repeat it
+as the next task. First put the legacy transfer smoke under the shared isolated
+save, dedicated ledger, exact mod allowlist and owned hidden-process contract,
+and use `--skip-training` instead of its historical training path. Then complete
+the sparse-chest native regression before opening custody relocation/rebind.
+Sparse-chest native regression is
 still required separately; build/game-free tests do not certify it. The legacy
 `Invoke-RuntimeMaterialTransferDailyPlanSmoke.ps1` points directly at
 `RuntimeRoot/saves`; do not run it against a retained baseline. Any reuse must

@@ -18,6 +18,7 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'lib/RuntimeEvidenceCommon.ps1')
+. (Join-Path $PSScriptRoot 'lib/RuntimeRustyKeyEvidence.ps1')
 . (Join-Path $PSScriptRoot 'lib/RuntimeAcquisitionPlanningPipeline.ps1')
 . (Join-Path $PSScriptRoot 'lib/RuntimeRustyKeyRollingPlanning.ps1')
 . (Join-Path $PSScriptRoot 'lib/RuntimeRustyKeyRollingExecution.ps1')

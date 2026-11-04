@@ -2,11 +2,13 @@
 param(
     [Parameter(Mandatory)] [string] $StepFixtureRoot,
     [string] $CurrentNativeFixtureRoot = '',
+    [string] $CapturedControlObservationDirectory = '',
     [string] $OutputRoot = (Join-Path ([IO.Path]::GetTempPath()) ('rusty-key-runtime-test-' + [guid]::NewGuid().ToString('N')))
 )
 $ErrorActionPreference = 'Stop'
 $project = Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot 'lib/RuntimeEvidenceCommon.ps1')
+. (Join-Path $PSScriptRoot 'lib/RuntimeRustyKeyEvidence.ps1')
 . (Join-Path $PSScriptRoot 'lib/RuntimeAcquisitionPlanningPipeline.ps1')
 . (Join-Path $PSScriptRoot 'lib/RuntimeRustyKeyRollingPlanning.ps1')
 . (Join-Path $PSScriptRoot 'lib/RuntimeRustyKeyRollingExecution.ps1')
@@ -40,14 +42,31 @@ foreach ($stage in $stages) {
 }
 
 $originalReader = (Get-Item Function:Read-RuntimeLoopArtifacts).ScriptBlock
+$originalRanking = (Get-Item Function:Invoke-RuntimeRanking).ScriptBlock
+$script:optionsParser = ([Reflection.Assembly]::LoadFrom($loop)).GetType('LiveTrainingOptions').GetMethod('Parse')
 function Read-RuntimeLoopArtifacts { param($LoopRoot, $RunId, $CoreAssemblyPath, [switch] $AllowVerifiedContinuation)
-    return [pscustomobject]@{ VerifiedContinuationPending = $false; VerifiedObjectiveCompleted = $false }
+    return [pscustomobject]@{ VerifiedContinuationPending = $false; VerifiedObjectiveCompleted = $false
+        Execution = $script:observationReceipt }
 }
+$script:observationReceipt = @{ option_id = 'executor.wait_ticks'; status = 'applied'
+    primitive_verification_status = 'verified'; selected_candidate_id = 'recovery:wait_for_native_control_settle'
+    selected_candidate_completed = $true; queue_id = 'synthetic-queue'; before_state_hash = 'synthetic-before' }
+$script:dailyExitCode = 0
+$script:observationReport = @{ stop_reason = 'primary_training_target_not_met'; run_id = $context.RunId
+    last_queue_id = 'synthetic-queue'; last_state_hash = 'synthetic-before'; attempts_started = 1
+    primary_attempts_started = 1; required_verified_actions = 1; verified_actions = 0 }
 function dotnet {
     $script:dailyArguments = @($args | ForEach-Object { $_ })
+    $parserArguments = [object[]]::new(1)
+    $parserArguments[0] = [string[]]$script:dailyArguments[1..($script:dailyArguments.Count - 1)]
+    [void]$script:optionsParser.Invoke($null, $parserArguments)
     $rootIndex = [array]::IndexOf($script:dailyArguments, '--root')
     New-Item -ItemType Directory -Path $script:dailyArguments[$rootIndex + 1] -Force | Out-Null
-    $global:LASTEXITCODE = 0
+    if ($script:dailyExitCode -eq 2) {
+        Write-JsonFile -Path (Join-Path $script:dailyArguments[$rootIndex + 1] "runs/$($context.RunId)/live-training-loop-report.json") `
+            -Value $script:observationReport
+    }
+    $global:LASTEXITCODE = $script:dailyExitCode
 }
 try {
     $sourceManifest = Join-Path $OutputRoot 'source/relative-manifest.json'
@@ -67,10 +86,121 @@ try {
             $script:dailyArguments -contains '--skip-training') 'Daily-plan adapter changed executor or training semantics.'
         $passed.Add("shared_adapter_manifest_and_executor_$target")
     }
+    function Invoke-RuntimeRanking { param($BackendUrl, $GoalId, $SnapshotStateHash, $OutputPath, $OptionId, $Parameters)
+        return @{ ranked_event_candidates = @($(if ($OptionId -eq 'recovery.stabilize_day') {
+            $script:handoffRecoveryCandidate
+        } else { $script:handoffCandidate })) }
+    }
+    foreach ($candidate in @(
+        @{ candidate_id = 'recovery:native_save_boundary'; kind = 'recovery_sleep_immediately'; time = 900 },
+        @{ candidate_id = 'recovery:wait_for_native_control_settle'; kind = 'recovery_native_control_settle'; time = 900 },
+        @{ candidate_id = 'recovery:wait_for_native_control_settle'; kind = 'recovery_native_control_settle'; time = 600 },
+        @{ candidate_id = 'route:farm'; kind = 'route_connector_tile'; time = 600
+            parameters = @(@{name='expected_target_location';value='Farm'}) }
+    )) {
+        $exploration = $candidate.kind -eq 'route_connector_tile'
+        $expectedOption = if ($exploration) { 'exploration.visit_location' } else { 'recovery.stabilize_day' }
+        $script:handoffCandidate = $candidate + @{ option_id = $expectedOption; available = $true }
+        $script:handoffRecoveryCandidate = if ($exploration) {
+            @{candidate_id='recovery:native_save_boundary';kind='recovery_sleep_immediately';option_id='recovery.stabilize_day';available=$true}
+        } else { $script:handoffCandidate }
+        $snapshot = @{ state_hash = 'synthetic-handoff'; state = @{
+            time = @{ time = @{ value = $candidate.time } }; player = @{ story_event = @{ value = @{ active = $false } } }
+        } }
+        Invoke-RuntimeRustyKeyNativeHandoff -Context $context -Name $candidate.kind -SnapshotPath $sourceManifest `
+            -Snapshot $snapshot -Directory $OutputRoot -ExecutionTarget 'runtime_harness' | Out-Null
+        $idIndex = [array]::IndexOf($script:dailyArguments, '--daily-plan-candidate-id')
+        $requiredIndex = [array]::IndexOf($script:dailyArguments, '--required-verified-actions')
+        Assert-True ($idIndex -ge 0 -and $script:dailyArguments[$idIndex + 1] -eq $candidate.candidate_id -and
+            $requiredIndex -ge 0 -and $script:dailyArguments[$requiredIndex + 1] -eq '1' -and
+            ($script:dailyArguments -contains 'control_plane.native_save_boundary=true') -eq (-not $exploration)) `
+            'Native handoff must send the actual bounded settle/save candidate through the existing daily-plan adapter.'
+        $passed.Add("native_handoff_shared_adapter_$($candidate.kind)_$($candidate.time)")
+    }
+    $passed.Add('actual_adapter_arguments_pass_actual_cli_parser')
+    $zeroArguments = [object[]]::new(1)
+    $zeroValues = [string[]]$script:dailyArguments[1..($script:dailyArguments.Count - 1)]
+    $zeroValues[[array]::IndexOf($zeroValues, '--required-verified-actions') + 1] = '0'
+    $zeroArguments[0] = $zeroValues
+    $rejected = $false
+    try { [void]$script:optionsParser.Invoke($null, $zeroArguments) }
+    catch { $rejected = $_.Exception.ToString().Contains('--emit-queue-execution-receipt requires one attempt and one required verified action.') }
+    Assert-True $rejected 'Actual CLI parsing must continue rejecting the incompatible zero-work target.'
+    $passed.Add('actual_cli_parser_rejects_zero_receipt_target')
+    foreach ($change in @(
+        @{ primitive_verification_status = 'observed_mismatch' }, @{ selected_candidate_completed = $false },
+        @{ selected_candidate_id = 'foreign-wait' }, @{ option_id = 'executor.sleep' }
+    )) {
+        $original = $script:observationReceipt
+        $script:observationReceipt = $original.Clone()
+        foreach ($name in $change.Keys) { $script:observationReceipt[$name] = $change[$name] }
+        $rejected = $false
+        try {
+            Invoke-RuntimeDailyPlanStep -Context $context -Name ('invalid-wait-' + $passed.Count) `
+                -OptionId 'recovery.stabilize_day' -CandidateId 'recovery:wait_for_native_control_settle' `
+                -CandidateKind 'recovery_native_control_settle' -SourceSnapshotPath $sourceManifest | Out-Null
+        } catch { $rejected = $true }
+        finally { $script:observationReceipt = $original }
+        Assert-True $rejected 'An unverified, incomplete or mismatched observation must not pass.'
+        $passed.Add('rejected_control_observation_' + ($change.Keys -join '_'))
+    }
+    $script:dailyExitCode = 2
+    Invoke-RuntimeDailyPlanStep -Context $context -Name 'verified-observation-exit-2' -OptionId 'recovery.stabilize_day' `
+        -CandidateId 'recovery:wait_for_native_control_settle' -CandidateKind 'recovery_native_control_settle' `
+        -SourceSnapshotPath $sourceManifest | Out-Null
+    $passed.Add('exact_observation_exit_2_not_productive_work')
+    foreach ($change in @(
+        @{ stop_reason = 'unrelated_failure' }, @{ run_id = 'foreign' }, @{ last_queue_id = 'foreign' },
+        @{ last_state_hash = 'foreign' }, @{ attempts_started = 2 }, @{ primary_attempts_started = 2 },
+        @{ required_verified_actions = 0 }, @{ verified_actions = 1 }
+    )) {
+        $original = $script:observationReport
+        $script:observationReport = $original.Clone()
+        foreach ($name in $change.Keys) { $script:observationReport[$name] = $change[$name] }
+        $rejected = $false
+        try {
+            Invoke-RuntimeDailyPlanStep -Context $context -Name ('invalid-exit-report-' + $passed.Count) `
+                -OptionId 'recovery.stabilize_day' -CandidateId 'recovery:wait_for_native_control_settle' `
+                -CandidateKind 'recovery_native_control_settle' -SourceSnapshotPath $sourceManifest | Out-Null
+        } catch { $rejected = $true }
+        finally { $script:observationReport = $original }
+        Assert-True $rejected 'A foreign or unrelated incomplete CLI report must not authorize observation continuation.'
+        $passed.Add('rejected_observation_report_' + ($change.Keys -join '_'))
+    }
+    foreach ($case in @(
+        @{ id = 'recovery:wait_for_native_control_settle'; kind = 'recovery_native_control_settle'; exit = 1 },
+        @{ id = 'recovery:native_save_boundary'; kind = 'recovery_sleep_immediately'; exit = 2 }
+    )) {
+        $script:dailyExitCode = $case.exit
+        $rejected = $false
+        try {
+            Invoke-RuntimeDailyPlanStep -Context $context -Name ('unrelated-exit-' + $passed.Count) `
+                -OptionId 'recovery.stabilize_day' -CandidateId $case.id -CandidateKind $case.kind `
+                -SourceSnapshotPath $sourceManifest | Out-Null
+        } catch { $rejected = $true }
+        Assert-True $rejected 'Unrelated exit codes and non-observation target failures must remain failures.'
+        $passed.Add('unrelated_exit_not_accepted_' + $case.exit)
+    }
+    $script:dailyExitCode = 2
+    if (-not [string]::IsNullOrWhiteSpace($CapturedControlObservationDirectory)) {
+        $savedRunId = $context.RunId
+        $script:observationReceipt = Get-Content -LiteralPath (Join-Path $CapturedControlObservationDirectory 'live-snapshots/execution-0001.json') -Raw | ConvertFrom-Json
+        $script:observationReport = Get-Content -LiteralPath (Join-Path $CapturedControlObservationDirectory 'live-training-loop-report.json') -Raw | ConvertFrom-Json
+        $context.RunId = $script:observationReport.run_id
+        try {
+            Invoke-RuntimeDailyPlanStep -Context $context -Name 'retained-native-observation-adapter-replay' `
+                -OptionId 'recovery.stabilize_day' -CandidateId 'recovery:wait_for_native_control_settle' `
+                -CandidateKind 'recovery_native_control_settle' -SourceSnapshotPath $sourceManifest | Out-Null
+        } finally { $context.RunId = $savedRunId }
+        $passed.Add('retained_native_observation_receipt_and_report_adapter_replay')
+    }
 }
 finally {
     Remove-Item Function:dotnet
     Set-Item Function:Read-RuntimeLoopArtifacts $originalReader
+    Set-Item Function:Invoke-RuntimeRanking $originalRanking
+    # Expected mocked failures must not leak into the pwsh test host's exit code.
+    $global:LASTEXITCODE = 0
 }
 
 # The following test doubles cover orchestration only; native transitions are covered separately by the canonical C# verifiers.

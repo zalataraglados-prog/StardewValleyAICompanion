@@ -241,6 +241,7 @@ public sealed partial class ModEntry : Mod
         public int MaxTicks { get; }
         public int MaxPressAttempts { get; }
         public int PressAttempts { get; set; }
+        public bool UseNativeMenuClick { get; set; }
         public int AdvanceWaitTicks { get; set; }
         public int TransitionWaitTicks { get; set; }
         public int CheckCloseTicks { get; set; }

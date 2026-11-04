@@ -84,7 +84,7 @@ internal static partial class BootstrapSelfTest
         golden_walnuts_found_before = 29, archaeology_found_count = 0,
         predictor_context = new { save_id_half = 12345L, player_id_half = 678L, season = "spring", deepest_mine_level = 90,
             skill_1_unmodified_level = 8, farming_mastery_unlocked = false, qi_beans_rule_active = false,
-            got_mystery_book_mail = true, artifact_found_mail = false },
+            got_mystery_book_mail = true, artifact_found_mail = false, geode_found_mail = true },
         inventory_inputs = new[] { new { slot_index = 0, qualified_item_id = "(O)535", item_id = "535", display_name = "Geode",
             stack_before = 2, quality = 0, locked_base_1_6_15 = true, output_capacity_allowed = true, kind = "exact", status = "available",
             expected_output = new { qualified_item_id = "(O)538", stack = 1, quality = 0, set_flag_on_pickup = "", inventory_persists = true,

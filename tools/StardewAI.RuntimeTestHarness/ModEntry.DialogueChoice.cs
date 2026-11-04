@@ -57,52 +57,21 @@ public sealed partial class ModEntry : Mod
             return BlockedWithPrimitive(request, "choose_dialogue_response", DialogueRequestedEffect(request), DialogueObservedEffect(), "dialogue_response_not_whitelisted");
         }
 
-        var responseIndex = Array.FindIndex(
-            menu.responses ?? Array.Empty<Response>(),
-            item => string.Equals(
-                item.responseKey,
-                responseKey,
-                StringComparison.Ordinal));
-        if (responseIndex < 0)
-        {
-            return BlockedWithPrimitive(request, "choose_dialogue_response", DialogueRequestedEffect(request), DialogueObservedEffect(), "dialogue_response_key_not_available");
-        }
-
-        if (menu.transitioning ||
-            menu.safetyTimer > 0 ||
-            menu.responseCC is null ||
-            responseIndex >= menu.responseCC.Count)
-        {
-            return BlockedWithPrimitive(
-                request,
-                "choose_dialogue_response",
-                DialogueRequestedEffect(request),
-                DialogueObservedEffect(),
-                "dialogue_response_menu_not_ready");
-        }
-
         var beforeMenuType = Game1.activeClickableMenu?.GetType().Name ?? "none";
         var beforeQuestionKey = actualKey;
         var beforeMinigame = Game1.currentMinigame?.minigameId() ?? "none";
         var beforeDialogueUp = Game1.dialogueUp;
         var started = DateTimeOffset.UtcNow.ToString("O");
-        var responseBounds = menu.responseCC[responseIndex].bounds;
-        menu.performHoverAction(
-            responseBounds.Center.X,
-            responseBounds.Center.Y);
-        if (menu.selectedResponse != responseIndex)
+        if (!TryClickNativeDialogueResponse(menu, responseKey, out var responseReason))
         {
             return BlockedWithPrimitive(
                 request,
                 "choose_dialogue_response",
                 DialogueRequestedEffect(request),
                 DialogueObservedEffect(),
-                "dialogue_response_hover_not_selected");
+                responseReason);
         }
 
-        menu.receiveLeftClick(
-            responseBounds.Center.X,
-            responseBounds.Center.Y);
         var afterMenuType = Game1.activeClickableMenu?.GetType().Name ?? "none";
         var afterShopId = Game1.activeClickableMenu is ShopMenu shopMenu ? shopMenu.ShopId : string.Empty;
         var expectsMinigame = DialogueResponseStartsExpectedMinigame(
@@ -158,6 +127,25 @@ public sealed partial class ModEntry : Mod
                 new SimulatedFactChange { Path = "minigame.id", Before = beforeMinigame, After = Game1.currentMinigame?.minigameId() ?? "none" }
             }
         };
+    }
+
+    private static bool TryClickNativeDialogueResponse(DialogueBox menu, string responseKey, out string reason)
+    {
+        var index = Array.FindIndex(menu.responses ?? Array.Empty<Response>(),
+            response => string.Equals(response.responseKey, responseKey, StringComparison.Ordinal));
+        reason = "dialogue_response_key_not_available";
+        if (index < 0) return false;
+        reason = "dialogue_response_menu_not_ready";
+        if (!ReferenceEquals(Game1.activeClickableMenu, menu) || !menu.isQuestion || menu.transitioning ||
+            menu.safetyTimer > 0 || menu.responseCC is null || index >= menu.responseCC.Count)
+            return false;
+        var point = menu.responseCC[index].bounds.Center;
+        menu.performHoverAction(point.X, point.Y);
+        reason = "dialogue_response_hover_not_selected";
+        if (menu.selectedResponse != index) return false;
+        menu.receiveLeftClick(point.X, point.Y);
+        reason = string.Empty;
+        return true;
     }
 
     private static bool IsDialogueResponseWhitelisted(

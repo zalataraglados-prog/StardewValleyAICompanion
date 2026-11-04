@@ -1,5 +1,17 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-04 09:36 当前晶球原生边界通过：** `e8d7a6c3`脚本/经源码树与哈希验证的`8fe21913`构建，15次队列/16条verified动作连续完成真实获取→保管→第60件捐赠/核销→正常保存跨日→原生事件66取钥匙；原核销请求独立重建一致，夜事务complete，源档未变，进程/端口回收。精确e8 CI编排34/Core1123/Backend381/边界41通过。下一步为安全隔离后的稀疏箱原生回归，再完整保管迁移；不重开已接受边界或目视验收。仍仅一件真实获取的59→60能力，`5/19 executable、6/19 split-complete、5/19 CoverageGateReady、4/11 root ready、formal_product_training=false`不变。见[证据与范围](geode-dialogue-lifecycle.md#accepted-native-boundary)。
+
+> **2026-11-04 最新实测与接续：** `40dad9f6` 已真实获取→保管→捐赠/核销→返家→正常保存到第8日，夜事务仍为ready_for_safe_next_day_action，未取得钥匙。清晨上层出门被既有安全层替换为等待后严格拒绝，现改为先查询精确等待再出门，不允许查询中的睡觉候选消耗新一天。35项本地（默认CI 34）检查及实际CLI解析通过；测试预期失败退出码不再泄漏给CI外壳。最终完整连续链待复跑，criterion/Teacher/训练计数不变。
+
+> **2026-11-04 当前续接：** `8fe21913` 原生等待已verified并恢复CanMove，但不计工作动作而exit 2；`18b59881` 的零目标修正又被原回执模式启动校验拒绝，未执行等待。现保留原1工作动作约束，只有精确等待回执/fresh快照及同run/queue/hash报告证明一次尝试、零工作动作和目标未达原因，才识别为观察完成；普通失败不放行。30项无游戏回归及1项旧真实回执/报告的adapter复核通过，待重跑钥匙链；覆盖/训练锁不变。
+
+> **2026-11-04 最新实测：** clean `45645d96` 真实晶球提示确认、获取→canonical保管→第60件捐赠/核销已通过；返家途中因脚本遗漏已有原生控制恢复等待而安全停止，尚未跨日取钥匙。两入口正统一精确等待/正常跨日候选选择，继续原日计划及有限 fresh replan；无新执行器/强制控制/criterion晋升或训练。原生完整闭环仍待最终版本验证，见[记录](geode-dialogue-lifecycle.md#latest-native-boundary)。
+
+> **2026-11-04 最新原生边界：** `ff77caad` 关闭了旧对话跳步，但严格完成条件随后识别到真实的首次晶球提示并停止，未把获取结算成成功。当前补齐原生 geodeFound 副作用绑定，并在精确安全条件下复用普通对话执行器；尚待最终同版本原生获取→保管→捐赠→核销/取钥匙。primary、覆盖和训练锁不变，见[合同](geode-dialogue-lifecycle.md#first-pickup-continuation)。
+
+> **2026-11-04 原生供给已前进，完整闭环未通过：** #412 的 `8226ae8c` 已真实开晶球取得一件目标并进入账本保管，两个原生地图连接后在博物馆被残留对话/不可移动状态拦截；尚未捐赠或取钥匙。该残留从开晶球 after 就存在，正修复原生 DialogueBox→GeodeMenu 生命周期，复用既有点击逻辑且不绕过控制/保管门。下一步仍是同一 Rusty Key 的完整原生轨迹，覆盖/Teacher/正式训练不晋升，见[合同](geode-dialogue-lifecycle.md)。
+
 > **2026-11-04 原生闭环尚未通过，已定位暂停边界：** 第五年起点被时限门拒绝；第一年 ProofFarm 真实运行又发现原 harness 自持空闲暂停未被规划识别，尚未派发获取/捐赠。修正复用原 clock/校准链和可选只读 API，保留真实 native readiness，不为普通暂停或未知路线放行；启动前先核对基线日期。39项聚焦和32项边界检查通过，当前仍需 clean source 原生获取→保管→捐赠→核销轨迹；primary、覆盖和训练锁不变，见[合同](executor-owned-idle-pause.md)。
 
 > **2026-11-04 槽位压紧前置缺陷已修：** 共享转移投影增加完整两侧 lineage，原生点击不再固定旧索引，独立回执不再把压紧后索引当 before 索引，并验证其他物品未漂移；输出/episode 保留实际剩余源槽。canonical 机器转移续接与 Backend `381/381` 等无游戏回归通过，未开游戏或晋升覆盖。保管授权/原子 relocation 仍未完成且保护门仍关闭；Rusty Key primary 及 07:00 后优先 current-geode 原生边界不变。详见 [合同](material-transfer-slot-lineage.md)。

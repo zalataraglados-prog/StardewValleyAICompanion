@@ -20,7 +20,7 @@ public sealed partial class ActionQueueCompiler
         "geodes_cracked_before", "mystery_boxes_opened_before", "golden_coconut_cracked_before", "geode_prediction_kind",
         "golden_walnuts_before", "golden_walnuts_found_before", "geode_archaeology_found_count",
         "geode_save_id_half", "geode_player_id_half", "geode_season", "geode_deepest_mine_level", "geode_skill_1_level",
-        "geode_farming_mastery_unlocked", "geode_qi_beans_rule_active", "geode_got_mystery_book_mail_before", "geode_artifact_found_mail_before",
+        "geode_farming_mastery_unlocked", "geode_qi_beans_rule_active", "geode_got_mystery_book_mail_before", "geode_artifact_found_mail_before", "geode_found_mail_before",
         "geode_expected_output_qid", "geode_expected_output_stack", "geode_expected_output_quality",
         "geode_accepted_outputs_json", "geode_expected_mail_additions_json", "geode_projection_fingerprint",
         "target_location", "target_tile_x", "target_tile_y", "stand_tile_x", "stand_tile_y",
@@ -65,6 +65,9 @@ public sealed partial class ActionQueueCompiler
             Parameter("geode_qi_beans_rule_active", (context.ValueKind == JsonValueKind.Object && ReadBool(context, "qi_beans_rule_active") == true).ToString().ToLowerInvariant()),
             Parameter("geode_got_mystery_book_mail_before", (context.ValueKind == JsonValueKind.Object && ReadBool(context, "got_mystery_book_mail") == true).ToString().ToLowerInvariant()),
             Parameter("geode_artifact_found_mail_before", (context.ValueKind == JsonValueKind.Object && ReadBool(context, "artifact_found_mail") == true).ToString().ToLowerInvariant()),
+            Parameter("geode_found_mail_before", context.ValueKind == JsonValueKind.Object &&
+                context.TryGetProperty("geode_found_mail", out var foundMail) && foundMail.ValueKind is JsonValueKind.True or JsonValueKind.False
+                    ? foundMail.GetBoolean().ToString().ToLowerInvariant() : string.Empty),
             Parameter("geode_prediction_kind", ReadString(input, "kind")),
             Parameter("geode_expected_output_qid", primary.ValueKind == JsonValueKind.Object ? ReadString(primary, "qualified_item_id") : string.Empty),
             Parameter("geode_expected_output_stack", primary.ValueKind == JsonValueKind.Object ? ReadInt(primary, "stack").ToString(CultureInfo.InvariantCulture) : "0"),
@@ -119,6 +122,9 @@ public sealed partial class ActionQueueCompiler
             ? predictor : default;
         bool Exact(string name, string expected) => ReadParameter(bound, name) == expected;
         bool ExactInt(string name, int expected) => ReadIntParameter(bound, name) == expected;
+        if (context.ValueKind != JsonValueKind.Object || !context.TryGetProperty("geode_found_mail", out var foundMail) ||
+            foundMail.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
+            return reasons.Append("geode_processing_pickup_mail_context_unavailable").Distinct(StringComparer.Ordinal).ToArray();
         if (!ExactInt("geode_slot_index", ReadInt(input, "slot_index")) ||
             !ExactInt("geode_input_quality", ReadInt(input, "quality")) ||
             !ExactInt("geode_stack_before", ReadInt(input, "stack_before")) ||
@@ -139,6 +145,7 @@ public sealed partial class ActionQueueCompiler
             !Exact("geode_qi_beans_rule_active", (context.ValueKind == JsonValueKind.Object && ReadBool(context, "qi_beans_rule_active") == true).ToString().ToLowerInvariant()) ||
             !Exact("geode_got_mystery_book_mail_before", (context.ValueKind == JsonValueKind.Object && ReadBool(context, "got_mystery_book_mail") == true).ToString().ToLowerInvariant()) ||
             !Exact("geode_artifact_found_mail_before", (context.ValueKind == JsonValueKind.Object && ReadBool(context, "artifact_found_mail") == true).ToString().ToLowerInvariant()) ||
+            !Exact("geode_found_mail_before", foundMail.GetBoolean().ToString().ToLowerInvariant()) ||
             !Exact("geode_prediction_kind", ReadString(input, "kind")) ||
             !Exact("geode_expected_output_qid", primary.ValueKind == JsonValueKind.Object ? ReadString(primary, "qualified_item_id") : string.Empty) ||
             !Exact("geode_accepted_outputs_json", input.GetProperty("accepted_outputs").GetRawText()) ||

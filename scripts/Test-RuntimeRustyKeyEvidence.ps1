@@ -27,6 +27,30 @@ function New-Snapshot {
         }
     }
 }
+$boundaryCandidate = [pscustomobject]@{
+    candidate_id = 'recovery:native_save_boundary'; option_id = 'recovery.stabilize_day'
+    kind = 'recovery_sleep_immediately'; available = $true
+}
+$settleCandidate = [pscustomobject]@{
+    candidate_id = 'recovery:wait_for_native_control_settle'; option_id = 'recovery.stabilize_day'
+    kind = 'recovery_native_control_settle'; available = $true
+}
+foreach ($candidate in @($boundaryCandidate, $settleCandidate)) {
+    $selected = Select-RustyKeySaveBoundaryCandidate -Ranking @{ ranked_event_candidates = @($candidate) }
+    if (-not [object]::ReferenceEquals($candidate, $selected)) { throw 'Native handoff must retain the actual ranked candidate.' }
+    $script:passed++
+}
+foreach ($candidates in @(@(), @($boundaryCandidate, $settleCandidate), @($settleCandidate, $settleCandidate))) {
+    Assert-Rejected { Select-RustyKeySaveBoundaryCandidate -Ranking @{ ranked_event_candidates = $candidates } }
+}
+foreach ($change in @(
+    @{ available = $false }, @{ available = 'true' }, @{ kind = 'unrelated_wait' },
+    @{ candidate_id = 'unrelated_wait' }, @{ option_id = 'story.advance_event' }
+)) {
+    $candidate = $settleCandidate.PSObject.Copy()
+    foreach ($name in $change.Keys) { $candidate.$name = $change[$name] }
+    Assert-Rejected { Select-RustyKeySaveBoundaryCandidate -Ranking @{ ranked_event_candidates = @($candidate) } }
+}
 $snapshot = New-Snapshot
 Assert-RustyKeySnapshot -Snapshot $snapshot -DonatedCount 59 -RewardApplied $false -KeyReceived $false
 $script:passed++

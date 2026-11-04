@@ -281,7 +281,14 @@ public sealed partial class ModEntry : Mod
                 break;
 
             case DialogueAdvanceStage.Press:
-                if (!TryApplySmapiLeftButtonOverride(pressed: true, out var pressReason))
+                advance.SawDialogueFinishedBeforePress = currentBox.dialogueFinished;
+                advance.SawShowTypingBeforePress = currentBox.showTyping;
+                advance.SawTransitioningBeforePress = currentBox.transitioning;
+                if (advance.UseNativeMenuClick)
+                {
+                    currentBox.receiveLeftClick(0, 0);
+                }
+                else if (!TryApplySmapiLeftButtonOverride(pressed: true, out var pressReason))
                 {
                     ReleaseSmapiLeftButtonOverride();
                     activeDialogueAdvance = null;
@@ -292,14 +299,11 @@ public sealed partial class ModEntry : Mod
                 }
 
                 advance.PressAttempts++;
-                advance.SawDialogueFinishedBeforePress = currentBox.dialogueFinished;
-                advance.SawShowTypingBeforePress = currentBox.showTyping;
-                advance.SawTransitioningBeforePress = currentBox.transitioning;
                 advance.Stage = DialogueAdvanceStage.ReleaseAfterAdvance;
                 break;
 
             case DialogueAdvanceStage.ReleaseAfterAdvance:
-                if (!TryApplySmapiLeftButtonOverride(pressed: false, out var releaseReason))
+                if (!advance.UseNativeMenuClick && !TryApplySmapiLeftButtonOverride(pressed: false, out var releaseReason))
                 {
                     ReleaseSmapiLeftButtonOverride();
                     activeDialogueAdvance = null;

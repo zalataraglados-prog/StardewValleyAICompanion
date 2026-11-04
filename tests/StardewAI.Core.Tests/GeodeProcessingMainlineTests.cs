@@ -129,7 +129,8 @@ public sealed class GeodeProcessingMainlineTests
         var runtime = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.GeodeProcessing.cs"));
         var bridge = File.ReadAllText(Path.Combine(root, "src", "StardewAI.TransparentBridge", "Adapters", "PlayerReadAdapter.GeodeProcessing.cs"));
         Assert.Contains("active.Location.checkAction", runtime, StringComparison.Ordinal);
-        Assert.Contains("active.Location.answerDialogue", runtime, StringComparison.Ordinal);
+        Assert.Contains("TryClickNativeDialogueResponse(dialogue, \"Process\"", runtime, StringComparison.Ordinal);
+        Assert.DoesNotContain("active.Location.answerDialogue", runtime, StringComparison.Ordinal);
         Assert.Contains("menu.receiveLeftClick", runtime, StringComparison.Ordinal);
         Assert.DoesNotMatch(new Regex(@"Game1\.player\.Money\s*[+\-]?=(?!=)"), runtime);
         Assert.DoesNotMatch(new Regex(@"Game1\.stats\.(GeodesCracked|Set)\s*[+\-]?=(?!=)"), runtime);
@@ -137,8 +138,75 @@ public sealed class GeodeProcessingMainlineTests
         Assert.Contains("complete_current-season_family_is_published_without_consuming_it", bridge, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void GeodeSharesNativeDialogueClicksAndRequiresRestoredControlBeforeCompletion()
+    {
+        var root = FindRepositoryRoot();
+        var geode = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.GeodeProcessing.cs"));
+        var dialogue = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.DialogueChoice.cs"));
+        Assert.Contains("TryClickNativeDialogueResponse(menu, responseKey", dialogue, StringComparison.Ordinal);
+        Assert.Contains("menu.performHoverAction(point.X, point.Y)", dialogue, StringComparison.Ordinal);
+        Assert.Contains("menu.receiveLeftClick(point.X, point.Y)", dialogue, StringComparison.Ordinal);
+        Assert.Contains("GeodeNativeControlRestored() && GeodeReceiptMatches(active)", geode, StringComparison.Ordinal);
+        Assert.Contains("Game1.activeClickableMenu is null && !Game1.dialogueUp", geode, StringComparison.Ordinal);
+        Assert.Contains("Game1.player.CanMove && !Game1.player.UsingTool", geode, StringComparison.Ordinal);
+        Assert.Contains("geode_processing_native_dialogue_lifecycle_not_closed", geode, StringComparison.Ordinal);
+        Assert.DoesNotMatch(new Regex(@"Game1\.dialogueUp\s*=(?!=)"), geode);
+        Assert.DoesNotContain("forceCanMove", geode, StringComparison.Ordinal);
+    }
+
     private static OptionAvailabilityEnvelope Evaluate(SnapshotEnvelope snapshot) =>
         new CandidateOptionAvailabilityEvaluator().Evaluate(snapshot, new[] { OptionId }, true);
+
+    [Fact]
+    public void MissingPickupMailContextBlocksInsteadOfInventingFalse()
+    {
+        var snapshot = Snapshot("Blacksmith");
+        var player = JsonSerializer.SerializeToNode(snapshot.State["player"])!;
+        player["geode_processing"]!["value"]!["predictor_context"]!.AsObject().Remove("geode_found_mail");
+        snapshot.State["player"] = JsonSerializer.SerializeToElement(player);
+        var candidate = Assert.Single(Assert.Single(Evaluate(snapshot).Options).EventCandidates);
+        Assert.False(candidate.Available);
+        Assert.Contains(candidate.BlockReasons, reason => reason.Contains("geode_processing_pickup_mail_context_unavailable", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void ExplicitFirstPickupStateSurvivesCandidateAndQueueBinding()
+    {
+        var snapshot = Snapshot("Blacksmith");
+        var player = JsonSerializer.SerializeToNode(snapshot.State["player"])!;
+        player["geode_processing"]!["value"]!["predictor_context"]!["geode_found_mail"] = false;
+        var input = player["geode_processing"]!["value"]!["inventory_inputs"]![0]!;
+        input["expected_mail_additions"] = new System.Text.Json.Nodes.JsonArray("geodeFound");
+        input["expected_output"]!["expected_mail_additions"] = new System.Text.Json.Nodes.JsonArray("geodeFound");
+        foreach (var output in input["accepted_outputs"]!.AsArray())
+            output!["expected_mail_additions"] = new System.Text.Json.Nodes.JsonArray("geodeFound");
+        snapshot.State["player"] = JsonSerializer.SerializeToElement(player);
+        var candidate = Assert.Single(Assert.Single(Evaluate(snapshot).Options).EventCandidates);
+        Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
+        AssertParameter(candidate.Parameters, "geode_found_mail_before", "false");
+        var plan = new DailyPlanCompiler().Compile(new[] { Prediction(candidate) }, snapshot.StateHash);
+        var item = Assert.Single(new ActionQueueCompiler().Compile(plan, snapshot).Items);
+        Assert.Empty(item.BlockingReasons);
+        AssertParameter(item.NormalizedCommand.Parameters, "geode_found_mail_before", "false");
+    }
+
+    [Fact]
+    public void FirstPickupTutorialUsesOriginalDialogueEngineAndExactNativeMessage()
+    {
+        var root = FindRepositoryRoot();
+        var pickup = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.GeodeProcessing.PickupDialogue.cs"));
+        var bridge = File.ReadAllText(Path.Combine(root, "src", "StardewAI.TransparentBridge", "Adapters", "PlayerReadAdapter.GeodeProcessing.cs"));
+        Assert.Contains("StartDialogueAdvance(active.PickupDialoguePending)", pickup, StringComparison.Ordinal);
+        Assert.Contains("activeDialogueAdvance.UseNativeMenuClick = true", pickup, StringComparison.Ordinal);
+        Assert.Contains("checkForSpecialItemHoldUpMeessage()", pickup, StringComparison.Ordinal);
+        Assert.Contains("string.Equals(dialogue.getCurrentString(), expected, StringComparison.Ordinal)", pickup, StringComparison.Ordinal);
+        Assert.Contains("GeodeReceiptMatches(active)", pickup, StringComparison.Ordinal);
+        Assert.Contains("dialogue.isQuestion", pickup, StringComparison.Ordinal);
+        Assert.Contains("row.QualifiedItemId == \"(O)535\" || input.QualifiedItemId == \"(O)535\" && input.Stack > 1", bridge, StringComparison.Ordinal);
+        Assert.DoesNotContain("mailReceived.Add", pickup, StringComparison.Ordinal);
+        Assert.DoesNotContain("dialogueUp =", pickup, StringComparison.Ordinal);
+    }
 
     private static PolicyEventCandidatePrediction Prediction(EventCandidate candidate) => new()
     {
@@ -186,7 +254,7 @@ public sealed class GeodeProcessingMainlineTests
             golden_walnuts_before = 17, golden_walnuts_found_before = 29, archaeology_found_count = 0,
             predictor_context = new { save_id_half = 12345L, player_id_half = 678L, season = "fall",
                 deepest_mine_level = 90, skill_1_unmodified_level = 8, farming_mastery_unlocked = false,
-                qi_beans_rule_active = false, got_mystery_book_mail = true, artifact_found_mail = false },
+                qi_beans_rule_active = false, got_mystery_book_mail = true, artifact_found_mail = false, geode_found_mail = true },
             inventory_inputs = new[] { new { slot_index = 0, qualified_item_id = "(O)535", item_id = "535",
                 display_name = "Geode", stack_before = capacity ? 2 : 2, quality = 0, locked_base_1_6_15 = true,
                 output_capacity_allowed = capacity, kind = "exact", status = "available",

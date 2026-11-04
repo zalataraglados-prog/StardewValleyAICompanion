@@ -234,7 +234,7 @@ try {
                 $_.candidate_id -eq "story-event:66:advance_story_event_automatic:continue"
             })
         } elseif ($option -eq "recovery.stabilize_day") {
-            $candidates = @($candidates | Where-Object { $_.candidate_id -eq "recovery:native_save_boundary" })
+            $candidates = @(Select-RustyKeySaveBoundaryCandidate -Ranking $prediction)
         } elseif ($option -eq "exploration.visit_location") {
             $candidates = @($candidates | Where-Object {
                 $_.kind -eq "route_connector_tile" -and
