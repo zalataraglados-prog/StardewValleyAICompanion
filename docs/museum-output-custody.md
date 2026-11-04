@@ -1,5 +1,20 @@
 # Museum Output Custody
 
+## Shared Native Interaction Timing
+
+The original candidate, day plan, primitive and native menu/unlock wait checks
+now share `Contracts.Execution.MaterialTransferBudgetPolicy`. It preserves the
+runtime's 180/120 tick waits and counts their successful `limit + 1` boundaries,
+one click per item and four state transitions: `306 + quantity` interaction
+ticks (one item: 307 ticks / eight conservative game minutes). Movement and
+interaction are charged separately, not by a one-minute terminal shortcut.
+No new executor or Core dependency is added to the runtime harness.
+
+This fixes interaction timing only. A complete stored-output continuation must
+still prove the full route to the chest, exact stand, actual withdrawal and
+subsequent museum route; `BuildApproach`'s current single segment is insufficient.
+See the [time contract](rusty-key-time-budget.md#complete-custody-interaction-budget).
+
 ## One Ledger And One Consumption Path
 
 The existing acquisition settlement builder now derives one museum output claim

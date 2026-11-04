@@ -57,6 +57,8 @@
     <Compile Include="ActionQueueCompilerShopSafetyWaitTests.cs" />
     <Compile Include="MachinePlacementMainlineTests.cs" />
     <Compile Include="MaterialTransferProjectorTests.cs" />
+    <Compile Include="MaterialTransferTestFixture.cs" />
+    <Compile Include="MaterialTransferBudgetPolicyTests.cs" />
     <Compile Include="MaterialTransferProjectorTests.NativeSlots.cs" />
     <Compile Include="MaterialTransferProjectorTests.ReceiptLineage.cs" />
     <Compile Include="MaterialTransferProjectorTests.Reservations.cs" />

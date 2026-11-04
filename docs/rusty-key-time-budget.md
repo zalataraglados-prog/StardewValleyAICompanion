@@ -118,6 +118,44 @@ These artifacts remain under
 compatibility with retained native inputs, not a new native execution. Source
 inventory/calibration hashes still match the original run.
 
+## Complete Custody Interaction Budget
+
+PR #426 merged as `68020b69` after exact-head CI (Core 1202/1202, Backend
+558/558, rolling 56, preparation 27); its pending-CI notes below are historical.
+
+Preparing the full withdrawal join exposed an existing underestimate: candidate
+transfer timing used a 120-tick base, the primitive used `120 + quantity * 2`,
+and the day plan treated transfer itself as one minute. The actual original
+runtime already permits 180 updates waiting for the native chest menu and 120
+waiting for mutex release. It checks successful completion before each strict
+`> limit` timeout. Each wait can therefore succeed at `limit + 1`.
+
+`Contracts.Execution.MaterialTransferBudgetPolicy` now shares these unchanged
+runtime limits and the successful interaction bound `306 + quantity` ticks:
+two inclusive waits, one click per item, and four state transitions (Move at
+stand, Open, click-completion transition, Close). One unit is 307 ticks / eight
+conservative game minutes. The primitive and candidate reuse this bound; the
+day plan separates movement from interaction rather than charging the whole
+candidate to movement plus a one-minute terminal. Invalid physical projections
+retain unknown/blocked duration, and large positive budgets saturate instead
+of overflowing into short/negative estimates.
+
+The existing 16-tick-per-Manhattan-tile local movement estimate is unchanged;
+it is not a proof of complete travel around obstacles. The next withdrawal join
+must still use full calibrated date-bound routing to the chest, then this
+interaction bound, then the museum route. Native clicks, menu/lock behavior,
+global timeout, ownership/capacity checks, mechanical 26:00 boundary and
+single-step fresh-replan protocol are unchanged.
+
+The shared policy lives in Contracts because the runtime harness deliberately
+does not reference Core. An initial local compilation caught a misplaced Core
+reference; it was removed, and the original project dependency graph is intact.
+Eight pre-fix budget counterexamples failed as expected; the final related
+focused suite passed 109, including invalid-quantity and overflow boundaries.
+Harness builds with zero warnings/errors against explicit `E:` and no mod
+deployment. Final CI is pending. No native game run or training promotion is
+claimed.
+
 ## Selected Acquisition Continuation
 
 The current-day held-route slice passed exact-head CI (Core 1196/1196, Backend

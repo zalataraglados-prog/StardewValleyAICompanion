@@ -265,7 +265,7 @@ public sealed partial class ModEntry
                 active.Stage = MaterialTransferStage.Transfer;
                 return;
             }
-            if (active.ElapsedTicks - active.StageStartedAt > 180)
+            if (active.ElapsedTicks - active.StageStartedAt > MaterialTransferBudgetPolicy.MenuWaitTicks)
             {
                 CompleteMaterialTransferBlocked(active, "material_transfer_native_menu_timeout");
             }
@@ -303,7 +303,7 @@ public sealed partial class ModEntry
             CompleteMaterialTransfer(active);
             return;
         }
-        if (active.ElapsedTicks - active.StageStartedAt > 120)
+        if (active.ElapsedTicks - active.StageStartedAt > MaterialTransferBudgetPolicy.UnlockWaitTicks)
         {
             CompleteMaterialTransferBlocked(active, "material_transfer_native_lock_release_timeout");
         }

@@ -136,7 +136,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 QualifiedItemId = intent.QualifiedItemId,
                 SlotIndex = intent.SourceSlotIndex,
                 Quantity = intent.Quantity,
-                EstimatedTicks = Math.Max(120, distance * 16 + 120),
+                EstimatedTicks = projection.Status == "projected"
+                    ? MaterialTransferBudgetPolicy.EstimatedTicks(distance, intent.Quantity) : -1,
                 EnergyCost = 0,
                 AvailabilityClass = "explicit_material_transfer_intent",
                 AllowedNow = distinctReasons.Length == 0,

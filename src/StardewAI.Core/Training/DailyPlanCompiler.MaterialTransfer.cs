@@ -43,6 +43,10 @@ public sealed partial class DailyPlanCompiler
         }
         transferParameters.Add(Parameter("stand_tile_x", standX.Value.ToString()));
         transferParameters.Add(Parameter("stand_tile_y", standY.Value.ToString()));
+        var quantity = CandidateInt(candidate, "quantity");
+        if (quantity is null or <= 0) return Array.Empty<SmallModelPlanStep>();
+        var interactionTicks = MaterialTransferBudgetPolicy.InteractionTicks(quantity.Value);
+        var movementTicks = Math.Max(0, candidate.EstimatedTicks - interactionTicks);
 
         return new[]
         {
@@ -53,7 +57,7 @@ public sealed partial class DailyPlanCompiler
                 TargetLocation = locationId,
                 TargetTileX = standX,
                 TargetTileY = standY,
-                EstimatedMinutes = TicksToMinutes(candidate.EstimatedTicks),
+                EstimatedMinutes = movementTicks == 0 ? 0 : TicksToMinutes(movementTicks),
                 Preconditions = new[] { "candidate_id:" + candidate.CandidateId },
                 ExpectedEffects = new[] { "player.tile=" + standX + "," + standY },
                 SafetyConstraints = new[] { "collision_checked_by_action_queue_compiler" },
@@ -66,7 +70,7 @@ public sealed partial class DailyPlanCompiler
                 TargetLocation = locationId,
                 TargetTileX = targetX,
                 TargetTileY = targetY,
-                EstimatedMinutes = 1,
+                EstimatedMinutes = TicksToMinutes(interactionTicks),
                 Preconditions = new[]
                 {
                     "candidate_id:" + candidate.CandidateId,
