@@ -15,6 +15,7 @@ param(
     [string] $GeodeQualifiedItemId = '(O)275',
     [ValidateRange(0, 2147483647)] [int] $GeodesCrackedBefore = 42,
     [switch] $CustodyRoundTrip,
+    [switch] $OwnedSupplyEvening,
     [switch] $NoBuild
 )
 
@@ -24,13 +25,18 @@ $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "lib\RuntimeRustyKeyGeodeBoundary.ps1")
 . (Join-Path $PSScriptRoot 'lib/RuntimeRustyKeyCustodyBoundary.ps1')
 . (Join-Path $PSScriptRoot 'lib/RuntimeRustyKeyCustodyRoundTrip.ps1')
+. (Join-Path $PSScriptRoot 'lib/RuntimeRustyKeyEveningBoundary.ps1')
 if ($CustodyRoundTrip -and $SupplyMode -cne 'current_geode') { throw 'Custody round trip requires current_geode supply.' }
+if ($OwnedSupplyEvening -and $SupplyMode -cne 'held_item') { throw 'Evening boundary requires held_item supply, not a fabricated late geode acquisition.' }
 $acquisitionInputs = @{}
-if ($SupplyMode -eq 'current_geode') {
+if ($SupplyMode -eq 'current_geode' -or $OwnedSupplyEvening) {
     foreach ($name in @('RequirementInventoryPath','AcquisitionLoweringPath','MasterAnglerWindowsPath',
             'RouteTimingPath','FishingForecastManifestPath')) {
         $path = [string](Get-Variable -Name $name -ValueOnly)
-        if ([string]::IsNullOrWhiteSpace($path)) { throw "Current geode supply requires explicit $name." }
+        if ([string]::IsNullOrWhiteSpace($path)) {
+            $scope = if ($SupplyMode -eq 'current_geode') { 'Current geode supply' } else { 'Evening owned supply' }
+            throw "$scope requires explicit $name."
+        }
         $path = Resolve-RuntimeEvidenceInputPath -ProjectRoot $ProjectRoot -Path $path
         if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "Acquisition source is missing: $path" }
         $acquisitionInputs[$name] = $path
@@ -65,7 +71,7 @@ if (-not $NoBuild) {
         "src\StardewAI.Backend\StardewAI.Backend.csproj",
         "tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj"
     )
-    if ($SupplyMode -eq 'current_geode') {
+    if ($SupplyMode -eq 'current_geode' -or $OwnedSupplyEvening) {
         $projects += 'experiments\StardewAI.GoalConditionedBootstrap\StardewAI.GoalConditionedBootstrap.csproj'
     }
     foreach ($project in $projects) {
@@ -136,7 +142,7 @@ try {
         -StandardErrorPath (Join-Path $runRoot "game.stderr.log")))
     Wait-Json -Url "$executorUrl/health" -TimeoutSeconds 120 | Out-Null
     $initial = (Get-FreshRuntimeSnapshot -Url $snapshotUrl -TimeoutSeconds 180).Value
-    if ([int](Read-StateValue $initial "time" "time") -lt 900) {
+    if (-not $OwnedSupplyEvening -and [int](Read-StateValue $initial "time" "time") -lt 900) {
         $timeFixture = Invoke-JsonPost -Url "$executorUrl/api/v1/training/execute" -Body ([ordered]@{
             schema_version = "training_execution_request.v1"
             run_id = $RunId; queue_id = "$RunId.fixture"; queue_item_id = "$RunId.fixture.time"
@@ -200,8 +206,22 @@ try {
     $edge = @($initial.state.locations.route_graph.value.edges | Where-Object {
         $_.from_location -eq "Town" -and $_.target_location -eq "ArchaeologyHouse" -and $_.resolved
     } | Sort-Object from_y, from_x | Select-Object -First 1)
-    if ($edge.Count -ne 1) { throw "Native Town-to-museum connector is missing." }
-    # All direct state setup ends here; every measured transition below is native.
+    if (-not $OwnedSupplyEvening -and $edge.Count -ne 1) { throw "Native Town-to-museum connector is missing." }
+    $target = if ($OwnedSupplyEvening) { Get-RuntimeRustyKeyEveningFixtureTarget -Snapshot $initial }
+        else { @{ Location = 'Town'; X = [int]$edge[0].from_x; Y = [int]$edge[0].from_y } }
+    if ($OwnedSupplyEvening) {
+        $evening = Invoke-JsonPost -Url "$executorUrl/api/v1/training/execute" -Body ([ordered]@{
+            schema_version = 'training_execution_request.v1'; run_id = $RunId; queue_id = "$RunId.fixture"
+            queue_item_id = "$RunId.fixture.evening"; before_state_hash = $initial.state_hash; option_id = 'debug.advance_time_to'
+            execution_mode = 'training_singleplayer'; actor = 'training_farmer.main'; save_isolation_path = $isolatedSaves
+            request_nonce = [guid]::NewGuid().ToString('N'); created_at = [DateTimeOffset]::UtcNow.ToString('O'); target_time = 1900
+        })
+        Write-Utf8Text -Path (Join-Path $runRoot 'fixture-evening-result.json') -Value $evening.Raw
+        if ($evening.Value.status -cne 'applied' -or $evening.Value.primitive_verification_status -cne 'verified') {
+            throw 'Evening setup failed before the measured boundary.'
+        }
+        $initial = (Get-FreshRuntimeSnapshot -Url $snapshotUrl -TimeoutSeconds 60).Value
+    }
     $fixture = Invoke-JsonPost -Url "$executorUrl/api/v1/training/execute" -Body ([ordered]@{
         schema_version = "training_execution_request.v1"
         run_id = $RunId; queue_id = "$RunId.fixture"; queue_item_id = "$RunId.fixture.59"
@@ -209,18 +229,42 @@ try {
         execution_mode = "training_singleplayer"; actor = "training_farmer.main"
         save_isolation_path = $isolatedSaves; request_nonce = [guid]::NewGuid().ToString("N")
         created_at = [DateTimeOffset]::UtcNow.ToString("O")
-        location_id = "Town"; target_tile_x = [int]$edge[0].from_x; target_tile_y = [int]$edge[0].from_y
+        location_id = $target.Location; target_tile_x = $target.X; target_tile_y = $target.Y
         inventory_slot_index = 11; expected_donated_count_before = 59; field_guide_quest_present_before = $false
     })
     Write-Utf8Text -Path (Join-Path $runRoot "fixture-result.json") -Value $fixture.Raw
     if ($fixture.Value.status -ne "applied" -or $fixture.Value.primitive_verification_status -ne "verified") {
         throw "59-item museum boundary fixture failed."
     }
+    # All direct state setup ends here; every measured transition below is native.
     $context = New-RuntimeQueueContext -LoopDll $loopDll -ArtifactDirectory $runRoot `
         -BackendUrl $backendUrl -SnapshotUrl $snapshotUrl -SnapshotProfile full `
         -ExecutorRoot $executorUrl -ProductUrl $executorUrl -RunId $RunId -IsolatedSavesPath $isolatedSaves
     $capture = Get-FreshRuntimeSnapshot -Url $snapshotUrl -TimeoutSeconds 60
     Assert-RustyKeySnapshot -Snapshot $capture.Value -DonatedCount 59 -RewardApplied $false -KeyReceived $false
+    if ($OwnedSupplyEvening) {
+        $rollingOutput = Join-Path $runRoot 'rolling'
+        & (Join-Path $PSScriptRoot 'Invoke-RuntimeRustyKeyRollingSupply.ps1') @acquisitionInputs `
+            -ProjectRoot $ProjectRoot -OutputDirectory $rollingOutput -RunId $RunId -BackendUrl $backendUrl `
+            -SnapshotUrl $snapshotUrl -ExecutorUrl $executorUrl -IsolatedSavesPath $isolatedSaves `
+            -ExecutionTarget runtime_harness -StopAfterDonationThreshold | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw "Evening rolling boundary stopped ($LASTEXITCODE); retain diagnostics without retry." }
+        $rollingPath = Join-Path (Join-Path $rollingOutput $RunId) 'summary.json'
+        $rolling = Get-Content -LiteralPath $rollingPath -Raw | ConvertFrom-Json
+        $night = Wait-Json -Url "$executorUrl/api/v1/training/end-of-night-transaction" -TimeoutSeconds 15
+        Write-JsonFile -Path (Join-Path $runRoot 'native-night.json') -Value $night
+        $observation = Assert-RuntimeRustyKeyEveningObservation -Context $context -Rolling $rolling -InitialSnapshot $capture.Value -NativeNight $night
+        if ((Get-DirectoryContentHash -Path $sourceSave) -cne $sourceHash) { throw 'Original baseline save changed.' }
+        Write-JsonFile -Path (Join-Path $runRoot 'summary.json') -Value ([ordered]@{
+            schema_version = 'stardewai.runtime_rusty_key_evening_boundary.v1'; status = 'native_owned_supply_evening_observed'
+            run_id = $RunId; project_head = [string](& git -C $ProjectRoot rev-parse HEAD); observation = $observation
+            rolling_summary_path = $rollingPath; source_save_preserved = $true; source_save_sha256 = $sourceHash
+            isolated_mods = $modIdentity; candidate_binary_sha256 = $binaryIdentity
+            evidence_scope = 'owned_stack_overnight_donation_pending_independent_native_review'
+            proves_native_output_custody = $false; proves_full_criterion = $false; formal_training_started = $false
+        })
+        return
+    }
     $startingDay = [int](Read-StateValue $capture.Value "time" "total_days")
     for ($index = 0; $index -lt 20; $index++) {
         $snapshot = $capture.Value

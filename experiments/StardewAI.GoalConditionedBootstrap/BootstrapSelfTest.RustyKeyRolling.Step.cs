@@ -55,6 +55,7 @@ internal static partial class BootstrapSelfTest
         VerifyRollingCustody(root, passed);
         VerifyRollingCustodyDonationSchedule(root, passed);
         VerifyRollingOwnedSupplyDeferral(root, passed);
+        VerifyRollingCustodyNextDay(root, passed);
         Write(Path.Combine(root, "rolling-step-self-test.json"), new
         {
             status = "passed", passed_count = passed.Count, passed, native_game_run = false,

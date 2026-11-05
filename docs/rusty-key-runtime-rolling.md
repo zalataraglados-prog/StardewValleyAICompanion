@@ -71,6 +71,41 @@ as dispatch/binding and independently rebuilds retained support lineage. Its old
 Teacher call shape is unchanged. Current ranking generation is not execution
 authorization; commit, binding and dispatch gates remain mandatory.
 
+## Evening Boundary Preparation
+
+The original `Invoke-RuntimeRustyKeyThresholdSmoke.ps1` now accepts
+`-OwnedSupplyEvening -SupplyMode held_item`. Supply the same explicit requirement
+inventory, acquisition lowering, Master Angler windows, route calibration and
+forecast-manifest paths used by the rolling wrapper. Use the E runtime and an
+explicit output root outside Git; `-NoBuild` is only legal with verified matching
+runtime binaries. The original source save/hash and isolated Mods/process cleanup
+remain unchanged. The mode rejects `current_geode` before startup: a fixture may
+not fabricate a late closed-shop acquisition and call it native supply.
+
+Only setup sets 19:00 and prepares the existing 59-donation/two-unit `(O)96`
+boundary at the home entry read from the actual transparent projection. All
+setup ends before measurement. The measured run delegates entirely to the
+existing rolling wrapper with `-StopAfterDonationThreshold`: ordinary recovery,
+exact prompt/native-control continuation, fresh next-day route selection and
+native donation. No new execution loop, forced save-boundary flag, mid-run time
+or stock mutation, event-66 replay, acquisition or key-completion claim is added.
+
+The scoped observation requires one real next-day transition, the same actor/save,
+two target units retained before donation and exactly one remaining afterwards,
+59 -> 60 progress only on the next day, source-file identity and the exact final
+snapshot path. The retained same-run `end_of_night_transaction.v1` must record
+the exact start/expected next day, native save commit, expected day and safe
+control restoration, with no negative fixture. Both `ready_for_safe_next_day_action`
+and `complete` retain these native facts; this local scope does not impose the
+old Farm planning-option/event-66 completion gate. It stops at the typed local
+donation boundary. The report remains
+pending independent native review and explicitly does not prove native acquisition,
+output-custody retention, a full criterion, Teacher acceptance or formal training.
+Twenty-one synthetic boundary checks pass without a game; existing geode 33,
+custody 20 and key-evidence-contract 41 checks remain passing. The native scenario has
+not been run yet; run it only once runtime/noise restrictions permit, not as a
+new prerequisite to repeat any accepted key or owner-visual smoke.
+
 ## Authority And Failure Boundaries
 
 Rusty Key does not require a completed current Community Center denominator. The
