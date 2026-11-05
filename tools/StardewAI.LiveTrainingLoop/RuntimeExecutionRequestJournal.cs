@@ -10,8 +10,8 @@ namespace StardewAI.LiveTrainingLoop;
 
 public static partial class RuntimeExecutionRequestJournal
 {
-    public const string SchemaVersion = "stardewai.execution_request_journal.v1";
-    public const int MaximumRequestBytes = 8 * 1024 * 1024;
+    public const string SchemaVersion = StardewAI.Core.Infrastructure.ExecutionRequestJournalReader.SchemaVersion;
+    public const int MaximumRequestBytes = StardewAI.Core.Infrastructure.ExecutionRequestJournalReader.MaximumRequestBytes;
     private static readonly UTF8Encoding Utf8 = new(false, true);
     private static readonly JsonSerializerOptions JsonOptions = new()
     {

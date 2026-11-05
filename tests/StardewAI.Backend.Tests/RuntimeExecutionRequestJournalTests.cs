@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using StardewAI.Contracts.Training;
+using StardewAI.Core.Infrastructure;
 using StardewAI.LiveTrainingLoop;
 using StardewAI.ProductExecutor;
 
@@ -19,8 +20,13 @@ public sealed class RuntimeExecutionRequestJournalTests
         var record = await RuntimeExecutionRequestJournal.WriteAsync(root, 7, 1, raw,
             "http://127.0.0.1:8768/api/v1/product/execute", Path.Combine(root, "before.json"));
         var loaded = await RuntimeExecutionRequestJournal.ReadAsync(record.JournalPath);
+        var shared = await ExecutionRequestJournalReader.ReadAsync(record.JournalPath);
 
         Assert.Equal(raw, loaded.RequestJson);
+        Assert.Equal(raw, shared.RequestJson);
+        Assert.Equal(record.JournalPath, shared.JournalPath);
+        Assert.Equal(record.RequestNonce, shared.Request.RequestNonce);
+        Assert.Equal(record.RawRequestSha256, shared.Metadata.GetProperty("raw_request_sha256").GetString());
         Assert.Equal(record, loaded.Record);
         Assert.Equal(request.RequestNonce, loaded.Record.RequestNonce);
         Assert.Equal(ProductReceiptStore.Sha256(JsonNode.Parse(raw)!.ToJsonString()), loaded.Record.ProductRequestSha256);
@@ -35,6 +41,13 @@ public sealed class RuntimeExecutionRequestJournalTests
     [InlineData("schema")]
     [InlineData("payload-hash")]
     [InlineData("gzip")]
+    [InlineData("run")]
+    [InlineData("queue")]
+    [InlineData("item")]
+    [InlineData("option")]
+    [InlineData("source-state")]
+    [InlineData("raw-hash")]
+    [InlineData("relative-before")]
     public async Task ReaderRejectsTamperedIdentityScopeAndPayload(string change)
     {
         var root = NewRoot();
@@ -49,10 +62,18 @@ public sealed class RuntimeExecutionRequestJournalTests
             case "schema": metadata["schema_version"] = "forged"; break;
             case "payload-hash": metadata["product_request_sha256"] = new string('0', 64); break;
             case "gzip": await File.WriteAllBytesAsync(record.JournalPath + ".gz", new byte[] { 1, 2, 3 }); break;
+            case "run": metadata["run_id"] = "another-run"; break;
+            case "queue": metadata["queue_id"] = "another-queue"; break;
+            case "item": metadata["queue_item_id"] = "another-item"; break;
+            case "option": metadata["option_id"] = "executor.sleep"; break;
+            case "source-state": metadata["source_state_hash"] = new string('b', 64); break;
+            case "raw-hash": metadata["raw_request_sha256"] = new string('0', 64); break;
+            case "relative-before": metadata["before_snapshot_path"] = "before.json"; break;
         }
         await File.WriteAllTextAsync(record.JournalPath, metadata.ToJsonString());
 
         await Assert.ThrowsAnyAsync<InvalidDataException>(() => RuntimeExecutionRequestJournal.ReadAsync(record.JournalPath));
+        await Assert.ThrowsAnyAsync<InvalidDataException>(() => ExecutionRequestJournalReader.ReadAsync(record.JournalPath));
         if (change == "schema")
         {
             metadata.Remove("schema_version");
