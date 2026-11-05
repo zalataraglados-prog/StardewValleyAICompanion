@@ -68,6 +68,10 @@ pins source/binary hashes and never silently substitutes historical inputs.
    This role obeys the original evening/exact-prompt policy before museum
    analysis, even with incomplete or empty owned stock. Donation-route evidence
    remains mandatory for donation, not a prerequisite for current home recovery.
+   The local evening validator binds the immutable verified sleep-ready receipt
+   to the actual night transaction. Its later planning-work-handoff status is a
+   separate diagnostic, not permission to relabel `executor.*` as autonomous
+   planning work or claim the whole transaction complete.
 
 The ordinary commit-receipt CLI now accepts the same control execution arguments
 as dispatch/binding and independently rebuilds retained support lineage. Its old

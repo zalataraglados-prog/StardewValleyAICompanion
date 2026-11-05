@@ -31,13 +31,20 @@ function New-EveningSnapshot([int] $Day, [int] $Count, [int] $Stack, [int] $Cloc
 function Read-RuntimeLogicalJsonArtifact { param($Path, $CoreAssemblyPath) return Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json }
 foreach ($mode in @('normal', 'same_day', 'lost_stock', 'extra_day', 'wrong_actor', 'stale_stock', 'fake_count',
         'premature_key', 'acquisition', 'no_deferral', 'wrong_terminal', 'unverified_identity', 'missing_save_commit',
-        'wrong_night_run', 'wrong_night_day', 'negative_night', 'incomplete_night')) {
+        'wrong_night_run', 'wrong_night_day', 'negative_night', 'incomplete_night', 'handoff_timeout',
+        'sleep_unverified', 'sleep_pending', 'foreign_sleep_run', 'foreign_sleep_queue', 'foreign_sleep_item',
+        'foreign_sleep_transaction', 'foreign_sleep_evidence', 'missing_sleep')) {
     $initial = New-EveningSnapshot 5 59 2 1900
     $sleep = New-EveningSnapshot 6 59 2 600
     $donated = New-EveningSnapshot 6 60 1 930
     $night = @{ schema_version = 'end_of_night_transaction.v1'; run_id = $context.RunId; status = 'ready_for_safe_next_day_action'
+        transaction_id = 'synthetic-night'; queue_id = 'synthetic-sleep-queue'; sleep_queue_item_id = 'synthetic-sleep-item'; evidence_path = 'synthetic-night.json'
         start_total_days = 5; expected_total_days = 6; saw_native_save_commit = $true; saw_expected_new_day = $true
         saw_safe_new_day_ready_state = $true; debug_negative_fixture_injected = $false }
+    $receipt = @{ schema_version = 'queue_execution_receipt.v1'; run_id = $context.RunId; option_id = 'executor.sleep'
+        queue_id = $night.queue_id; queue_item_id = $night.sleep_queue_item_id; status = 'applied'; primitive_verification_status = 'verified'
+        end_of_night_transaction_id = $night.transaction_id; end_of_night_transaction_evidence_path = $night.evidence_path
+        end_of_night_transaction_status = 'ready_for_safe_next_day_action' }
     $directory = Join-Path $OutputRoot $mode
     New-Item -ItemType Directory -Path $directory -Force | Out-Null
     $sleepPath = Join-Path $directory 'sleep.json'
@@ -64,6 +71,15 @@ foreach ($mode in @('normal', 'same_day', 'lost_stock', 'extra_day', 'wrong_acto
         'wrong_night_day' { $night.expected_total_days = 7 }
         'negative_night' { $night.debug_negative_fixture_injected = $true }
         'incomplete_night' { $night.status = 'waiting_for_native_save_commit' }
+        'handoff_timeout' { $night.status = 'blocked'; $night.failure_reason = 'end_of_night_transition_timeout:controller_handoff' }
+        'sleep_unverified' { $receipt.primitive_verification_status = 'unverified' }
+        'sleep_pending' { $receipt.end_of_night_transaction_status = 'native_outcomes_pending' }
+        'foreign_sleep_run' { $receipt.run_id = 'foreign' }
+        'foreign_sleep_queue' { $receipt.queue_id = 'foreign' }
+        'foreign_sleep_item' { $receipt.queue_item_id = 'foreign' }
+        'foreign_sleep_transaction' { $receipt.end_of_night_transaction_id = 'foreign' }
+        'foreign_sleep_evidence' { $receipt.end_of_night_transaction_evidence_path = 'foreign' }
+        'missing_sleep' { $receipt = $null }
     }
     Write-JsonFile -Path $sleepPath -Value $sleep
     Write-JsonFile -Path $donatedPath -Value $donated
@@ -72,10 +88,14 @@ foreach ($mode in @('normal', 'same_day', 'lost_stock', 'extra_day', 'wrong_acto
     try {
         $target = Get-RuntimeRustyKeyEveningFixtureTarget -Snapshot $initial
         if ($target.Location -cne 'FarmHouse' -or $target.X -ne 3 -or $target.Y -ne 9) { throw 'Home target drifted.' }
-        $result = Assert-RuntimeRustyKeyEveningObservation -Context $context -Rolling $rolling -InitialSnapshot $initial -NativeNight $night
+        $result = Assert-RuntimeRustyKeyEveningObservation -Context $context -Rolling $rolling -InitialSnapshot $initial -NativeNight $night -SleepReceipt $receipt
         if ($result.native_review_accepted -or $result.formal_training_authorized -or $result.donation_total_day -ne 6) { throw 'Observation promoted evidence.' }
+        if ($mode -ceq 'handoff_timeout' -and (-not $result.native_sleep_boundary_verified -or $result.end_of_night_full_handoff_verified -or
+            $result.end_of_night_final_status -cne 'blocked' -or $result.end_of_night_final_failure_reason -cne $night.failure_reason)) {
+            throw 'Local sleep evidence must not conceal or promote the broader failed work handoff.'
+        }
     } catch { $rejected = $true; $failure = $_.Exception.Message }
-    if ($rejected -ne ($mode -ne 'normal')) { throw "Evening observation boundary mismatch: ${mode}: $failure" }
+    if ($rejected -ne ($mode -cnotin @('normal', 'handoff_timeout'))) { throw "Evening observation boundary mismatch: ${mode}: $failure" }
     $passed.Add("evening_observation_$mode")
 }
 foreach ($mode in @('unreadable_home', 'string_coordinate', 'negative_coordinate')) {

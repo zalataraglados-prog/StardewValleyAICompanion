@@ -326,15 +326,55 @@ the missing independence of ordinary recovery and museum-route readiness.
 No native success is inferred from them. Raw historical artifacts stay outside Git at
 `I:\StardewAITraining\owned-supply-deferral-20261105`.
 
-The corrected policy passes 61 preparation cases, 49 actual-CLI/synthetic runtime
-checks, 21 evening-boundary checks and 86 focused original museum/sleep/native
+The corrected policy passes 61 preparation cases, 56 rolling-supply cases, 49 actual-CLI/synthetic runtime
+checks, 30 evening-boundary checks and 86 focused original museum/sleep/native
 control regressions. Public Build/Prepare replay of the unmodified failed native
 snapshot now selects `recovery:return_home` with only `executor.sleep`, no
 acquisition or future-route claim. The first new runtime test supplied an empty
 PowerShell argument for missing calibration and was rejected by the existing
 argument binder; the fixture now supplies its absent file path, without changing
 production argument validation. Current artifacts remain outside Git at
-`I:\StardewAITraining\day-recovery-20261105`. Native success is still pending.
+`I:\StardewAITraining\day-recovery-20261105`.
+
+### Native Evening Boundary Result
+
+`evening-9070f94f-1105` completed 13 applied/verified native receipts on source
+`9070f94f9f60528017b05acf5aa48b725026b443`: day 6 at 19:00 in FarmHouse,
+native sleep/save to day 7, ordinary connectors and bounded opening waits, then
+donation at 08:40 in ArchaeologyHouse. The original `(O)96` stack stays 2 across
+the night and is consumed to 1 only at donation; museum progress changes 59 to
+60, `museum60` is applied, and the actual key remains false at this local stop.
+The saved XML independently shows Year 1/spring/day 8 with stack 2, matching
+zero-based total day 7 before the subsequent donation. The baseline source hash
+remains `68ddc8dbbe09382f2e7ba1c9d5d1e8dd6d0ffaef59acf9367415b4678f59366d`.
+All 13 request gzip payloads were replayed through the original journal reader;
+SHA, nonce and run/queue/item identities match the verified receipts.
+
+The initial wrapper failed its final aggregate-night-status check even though
+the measured actions finished. The immutable sleep receipt already records
+`ready_for_safe_next_day_action` for the same transaction. The longer night
+observer later reports `blocked` with
+`end_of_night_transition_timeout:controller_handoff`: the precompiled adapter
+labels requests `executor.*`, which the original observer intentionally does not
+count as registered planning work. Its policy, timeout and allowlist are not
+changed. The local validator now binds the exact immutable sleep-ready receipt
+to the same transaction/save/date facts and retains that later failure explicitly
+as `end_of_night_full_handoff_verified=false`. It does not promote the broader
+transaction to complete or conceal the diagnostic. Nine extra boundary cases
+cover this scope separation and missing/foreign/unverified sleep receipts.
+The corrected validator replays the existing capture; no successful native action
+is repeated merely to regenerate a green wrapper summary.
+
+Raw evidence is under `I:\StardewAITraining\day-recovery-20261105\native\evening-9070f94f-1105`,
+including `independent-evening-observation.json` and
+`independent-request-receipt-review.json`. The separate local review index is
+`independent-native-review.json`, SHA-256
+`861cceeb26f59fad7b5c0b9ae2111251d4eef7664b8f5b72a57270d01453d392`.
+The original wrapper remains recorded
+as failed; these narrower reviewed facts are not real acquisition, authenticated
+output-custody across night, a full 60-item trajectory, Teacher partitions or
+formal training. Owned game/backend processes and ports were reclaimed; the
+minimum sampled free memory was about 1.5 GiB and recovered to about 4.8 GiB.
 
 ## Remaining Joint Schedule
 
