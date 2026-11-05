@@ -4,7 +4,7 @@ using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Infrastructure;
-using static StardewAI.GoalConditionedBootstrap.RustyKeyNativeKeyReceiptBuilder;
+using static StardewAI.GoalConditionedBootstrap.NativeExecutionSourceSupport;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -103,6 +103,4 @@ public static partial class RustyKeyTeacherNativeJoinBuilder
         return rebuilt;
     }
 
-    private sealed record NativeAction(ActionQueueEnvelope Queue, ActionQueueItem Item, TrainingExecutionResult Result,
-        TrainingExecutionRequest Request, SnapshotEnvelope Before, SnapshotEnvelope After, string Endpoint);
 }

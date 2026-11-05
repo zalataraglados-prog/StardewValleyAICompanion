@@ -5,13 +5,13 @@ using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Infrastructure;
 using StardewAI.Core.Strategy;
-using static StardewAI.GoalConditionedBootstrap.RustyKeyNativeKeyReceiptBuilder;
+using static StardewAI.GoalConditionedBootstrap.NativeExecutionSourceSupport;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
 public static partial class RustyKeyTeacherNativeJoinBuilder
 {
-    private static string ValidateDonation(NativeAction action, RustyKeyDonationTeacherComparison comparison)
+    private static string ValidateDonation(VerifiedNativeExecutionAction action, RustyKeyDonationTeacherComparison comparison)
     {
         Require(action.Result.OptionId == "executor.donate_museum_item" && action.Before.StateHash == comparison.SourceStateHash &&
             action.Before.GameTick == comparison.GameTick && TotalDay(action.Before) == comparison.TotalDay &&
@@ -57,7 +57,7 @@ public static partial class RustyKeyTeacherNativeJoinBuilder
             left.Steps is not null && left.Steps.All(row => row is not null) && EqualJson(Projection(left), Projection(right));
     }
 
-    private static void ValidateSleep(NativeAction action, int decisionDay)
+    private static void ValidateSleep(VerifiedNativeExecutionAction action, int decisionDay)
     {
         Require(NativeDaySettlementSupport.IsSingleNativeSleepQueue(action.Queue) && TotalDay(action.Before) == decisionDay &&
             TotalDay(action.After) == decisionDay + 1 && SnapshotGameClockBudgetReader.CurrentTime(action.After) == 600 &&

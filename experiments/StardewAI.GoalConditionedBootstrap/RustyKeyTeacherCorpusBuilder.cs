@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using StardewAI.Core.Training;
-using static StardewAI.GoalConditionedBootstrap.RustyKeyNativeKeyReceiptBuilder;
+using static StardewAI.GoalConditionedBootstrap.NativeExecutionSourceSupport;
 
 namespace StardewAI.GoalConditionedBootstrap;
 

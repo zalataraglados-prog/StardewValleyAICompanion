@@ -8,7 +8,7 @@ using StardewAI.Core.Execution;
 using StardewAI.Core.Infrastructure;
 using StardewAI.Core.OptionRegistry;
 using StardewAI.Core.Training;
-using static StardewAI.GoalConditionedBootstrap.RustyKeyNativeKeyReceiptBuilder;
+using static StardewAI.GoalConditionedBootstrap.NativeExecutionSourceSupport;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
