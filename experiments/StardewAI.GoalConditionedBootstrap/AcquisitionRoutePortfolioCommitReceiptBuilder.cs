@@ -5,6 +5,14 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public static partial class AcquisitionRoutePortfolioCommitReceiptBuilder
 {
+    internal static AcquisitionRoutePortfolioCommitReceipt BuildForVerifiedControl(
+        AcquisitionRoutePortfolioInputs inputs, string admissionPath, string committedLedgerPath, string? commitResultPath,
+        RustyKeyRollingSupplyProposal control) => ObserveCommit(
+            "AcquisitionRoutePortfolioCommitReceiptBuilder.BuildForVerifiedControl", inputs, admissionPath,
+            committedLedgerPath, commitResultPath, () => BuildVerifiedAdmission(inputs, admissionPath,
+                committedLedgerPath, commitResultPath, control.SelectedAcquisitionAdmission ??
+                    throw new InvalidDataException("Verified control acquisition admission is missing.")));
+
     public static AcquisitionRoutePortfolioCommitReceipt Build(
         AcquisitionRoutePortfolioInputs inputs,
         string admissionPath,

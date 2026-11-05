@@ -114,6 +114,12 @@ if ($SupplyMode -eq 'current_geode' -or $OwnedSupplyEvening) {
 foreach ($path in $binaryPaths) {
     $binaryIdentity[$path] = Get-RuntimeFileSha256 -Path $path
 }
+Write-JsonFile -Path (Join-Path $runRoot 'run-identity.json') -Value ([ordered]@{
+    run_id = $RunId; project_head = [string](& git -C $ProjectRoot rev-parse HEAD)
+    source_save_sha256 = $sourceHash; isolated_mods = $modIdentity; candidate_binary_sha256 = $binaryIdentity
+    supply_mode = $SupplyMode; custody_round_trip = [bool]$CustodyRoundTrip; custody_overnight = [bool]$CustodyOvernight
+    owned_supply_evening = [bool]$OwnedSupplyEvening; formal_training_started = $false
+})
 $savedEnvironment = Save-RuntimeProcessEnvironment -Names @(
     "ASPNETCORE_URLS", "STARDEWAI_STRATEGY_LEDGER_DIR", "STARDEWAI_TEST_SAVES", "STARDEWAI_TEST_SLOT",
     "STARDEWAI_TEST_AUTO_LOAD", "STARDEWAI_SAVE_ISOLATION_PATH",

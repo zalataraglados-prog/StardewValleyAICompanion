@@ -2,6 +2,8 @@
 
 ## 2026-11-03 当前 Rusty Key 切片与接续
 
+- **2026-11-05 跨夜入口暴露获取准入范围错误：** `cust-night-d2d22b3e-1105`在开晶球前零动作停止；实时目标是`(O)100`，已解析晶球路线却被另一条占位`native_object_artifact_spot_chance`的比较不完整挡住。原比较门不删：generic/完整阈值/Teacher仍严格要求全比较；仅原认证控制来源复用共享所选路线安全准入，并显式保留`control_only_incomplete_comparison_scopes`、完整前沿false及Teacher false，未知所选路线/他目标资源仍拒绝。提交重建沿原精确claim验证消费独立重建的控制准入，support控制同用，不增执行器或账本。59项rolling、22项控制链通过；同一失败快照的公开构建/准备只读重放已选合法晶球终端，未改变预测目标或伪造原生成功。真实跨夜仍待新固定源码运行，缺失的artifact-spot日历解析仍是显式缺口。详见[控制范围](control-execution-admission.md#partial-comparison-scope)。
+
 - **2026-11-05 跨夜保管入口已接线：** 原存箱前缀增加`-CustodyOvernight`模式；15点setup仅在测量前，真实获取/存箱后只用原有界wait到19点，再由原rolling回家睡眠/次日取回捐赠。每次等待均保留请求、回执、fresh快照和最新账本；不明回复/时间不前进/身份库存或预留漂移即停，不重试。两处原生睡眠边界共用原校验，不改夜间总门。19项编排、原晚间30/保管20通过，尚未声称原生跨夜保管通过；下一步固定同源码在E隔离单实例后台静音验证。详见[museum-output-custody.md](museum-output-custody.md#native-overnight-continuation)。整项及冻结计数仍不变，不提交`local-data`。
 
 - **2026-11-05 最终合并与唯一接续：** PR #431最终头`31765296`的CI `41951869756`完整通过（Core1222、Backend558、准备61、编排50含可选原生日历夹具、晚间边界30），已合并`717a1845`；核实MERGED及祖先关系后删除本轮修复分支。下方“待CI”均为前态。当前在该main版本上接`test/rusty-key-native-custody-overnight`，尚未新增此切片代码或声称其原生通过：复用原geode获取→原保管存箱前缀，晚时刻setup只能发生在测量前；存箱后通过原有界native wait推进到19点，不用debug改时间/库存，再复用原rolling回家睡眠→次日授权取回→捐赠。检查获取SHA不变、旧位置史不因午夜重铸、被保护的其他目标不丢失，并区分局部保存回执与总交接诊断。之后才接本criterion独立Teacher/native分区与第三年前终态；不能把边界夹具当完整新档60件轨迹。用户要求生锈钥匙整项收口后统一汇报，局部通过不当作整项完成；WIP和冻结计数不变。

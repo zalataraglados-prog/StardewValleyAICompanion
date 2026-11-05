@@ -196,6 +196,7 @@ internal static partial class BootstrapSelfTest
         Require(forgedCustody.PendingDonationRequirementIds is null && missingHistoryContextCalls == 1,
             "An unauthenticated custody marker must not count another goal's reserved unit as pending supply.");
         passed.Add("pending_custody_requires_exact_creation_history");
+        VerifyRollingControlComparisonScope(passed);
         VerifyRollingPendingInventory(passed);
         VerifyRollingDonationTimeBudget(passed);
         VerifyRollingDonationRouteSchedule(root, passed);

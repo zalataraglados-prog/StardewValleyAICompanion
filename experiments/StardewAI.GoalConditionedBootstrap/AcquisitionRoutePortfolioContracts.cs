@@ -183,6 +183,10 @@ public sealed class AcquisitionRoutePortfolioAdmission
     [JsonPropertyName("all_routes_on_complete_pareto_frontier")]
     public bool AllRoutesOnCompleteParetoFrontier { get; set; }
 
+    [JsonPropertyName("control_only_incomplete_comparison_scopes")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string[]? ControlOnlyIncompleteComparisonScopes { get; set; }
+
     [JsonPropertyName("aggregate_cost_vector")]
     public AcquisitionOpportunityCostVector? AggregateCostVector { get; set; }
 
