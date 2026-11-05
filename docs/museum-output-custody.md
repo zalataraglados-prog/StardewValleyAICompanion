@@ -389,3 +389,32 @@ joint future windows/budgets, criterion Teacher/native partitions, a pre-Year-3
 completion proof or formal training. Existing negative authority tests keep their
 own synthetic/API scope. Next close joint timing/windows and the remaining
 criterion evidence; do not rerun this accepted boundary as a new prerequisite.
+
+## Native Overnight Continuation
+
+`Invoke-RuntimeRustyKeyThresholdSmoke.ps1 -SupplyMode current_geode
+-CustodyRoundTrip -CustodyOvernight` extends the original storage prefix, not the
+executor or ledger. The isolated boundary starts at 15:00 (all setup is before
+measurement). After native acquisition and authenticated storage, the existing
+`executor.wait_ticks` advances ordinary time in at most sixteen bounded calls
+(600 ticks, three slices, target 19:00). Every call retains its exact request,
+verified response, fresh snapshot and current ledger. Ambiguous responses,
+nonadvancing time, identity/stock drift or changed reservations stop without
+retry. No debug time/inventory/position mutation is permitted after acquisition.
+
+The original rolling selector then returns home, sleeps, re-observes the next
+date, approaches the same chest, withdraws and donates the same acquired unit.
+Only this probe has a 48-step rolling budget; other modes keep 32. The first
+next-day observation must retain the complete original custody and other-goal
+rows and their physical stock. Midnight cannot replace acquisition/position
+history with a new clock-state hash. The original round-trip final verifier
+still requires consumption and the other goal's three protected stone units.
+
+Both overnight probes reuse `RuntimeRustyKeySleepBoundary.ps1` for the immutable
+verified sleep-ready receipt and exact transaction/save/date facts, without
+altering the broader planning-work-handoff observer. Its final diagnostic is
+retained separately and is not a local sleep prerequisite or Teacher authority.
+Nineteen no-game overnight cases and the original 30 evening/20 custody checks
+pass. Native execution is pending; raw outputs stay under
+`I:\StardewAITraining\custody-overnight-20261105`. This is not a new-save sixty-item
+trajectory, preference label, complete criterion or training authorization.

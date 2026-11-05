@@ -108,6 +108,9 @@ jobs:
       - name: Test owned-stock evening boundary without game
         shell: pwsh
         run: ./scripts/Test-RuntimeRustyKeyEveningBoundary.ps1 -OutputRoot "$env:RUNNER_TEMP/rusty-key-evening-boundary"
+      - name: Test native custody overnight orchestration without game
+        shell: pwsh
+        run: ./scripts/Test-RuntimeRustyKeyCustodyOvernight.ps1 -OutputRoot "$env:RUNNER_TEMP/rusty-key-custody-overnight"
       - name: Check whitespace
         shell: pwsh
         run: |

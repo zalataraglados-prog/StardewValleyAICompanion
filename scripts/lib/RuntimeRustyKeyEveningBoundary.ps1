@@ -1,3 +1,5 @@
+. (Join-Path $PSScriptRoot 'RuntimeRustyKeySleepBoundary.ps1')
+
 function Get-RuntimeRustyKeyEveningFixtureTarget {
     param($Snapshot)
     $field = $Snapshot.state.current_location.home_context
@@ -31,29 +33,7 @@ function Assert-RuntimeRustyKeyEveningObservation {
         $clock.value -lt 1900 -or $clock.value -ge 2400 -or $clock.value % 100 -ge 60 -or
         (Read-EveningStock $InitialSnapshot) -ne 2 -or $day -gt 221) { throw 'Evening boundary must start with two owned units and legal next-morning reward slack.' }
     Assert-RustyKeySnapshot $InitialSnapshot 59 $false $false
-    if ($NativeNight.schema_version -cne 'end_of_night_transaction.v1' -or $NativeNight.run_id -cne $Context.RunId -or
-        $NativeNight.status -cnotin @('ready_for_safe_next_day_action', 'complete', 'blocked') -or
-        ($NativeNight.start_total_days -isnot [int] -and $NativeNight.start_total_days -isnot [long]) -or $NativeNight.start_total_days -ne $day -or
-        ($NativeNight.expected_total_days -isnot [int] -and $NativeNight.expected_total_days -isnot [long]) -or $NativeNight.expected_total_days -ne $day + 1 -or
-        $NativeNight.debug_negative_fixture_injected -isnot [bool] -or $NativeNight.debug_negative_fixture_injected) {
-        throw 'Evening boundary has no same-run, exact-date native night transaction.'
-    }
-    # The immutable sleep receipt proves save/control readiness; the later work-handoff observer has a broader scope.
-    if ($SleepReceipt.schema_version -cne 'queue_execution_receipt.v1' -or $SleepReceipt.run_id -cne $Context.RunId -or
-        $SleepReceipt.option_id -cne 'executor.sleep' -or $SleepReceipt.status -cne 'applied' -or
-        $SleepReceipt.primitive_verification_status -cne 'verified' -or
-        $SleepReceipt.end_of_night_transaction_status -cnotin @('ready_for_safe_next_day_action', 'complete') -or
-        [string]::IsNullOrWhiteSpace($NativeNight.transaction_id) -or
-        $SleepReceipt.end_of_night_transaction_id -cne $NativeNight.transaction_id -or
-        [string]::IsNullOrWhiteSpace($NativeNight.queue_id) -or $SleepReceipt.queue_id -cne $NativeNight.queue_id -or
-        [string]::IsNullOrWhiteSpace($NativeNight.sleep_queue_item_id) -or $SleepReceipt.queue_item_id -cne $NativeNight.sleep_queue_item_id -or
-        [string]::IsNullOrWhiteSpace($NativeNight.evidence_path) -or
-        $SleepReceipt.end_of_night_transaction_evidence_path -cne $NativeNight.evidence_path) {
-        throw 'Evening boundary requires the exact immutable verified sleep-ready receipt, not a later aggregate status.'
-    }
-    foreach ($name in @('saw_native_save_commit', 'saw_expected_new_day', 'saw_safe_new_day_ready_state')) {
-        if ($NativeNight.$name -isnot [bool] -or -not $NativeNight.$name) { throw "Native night fact was not observed: $name" }
-    }
+    Assert-RuntimeRustyKeySleepBoundary -Context $Context -NativeNight $NativeNight -SleepReceipt $SleepReceipt -SourceTotalDay $day
     foreach ($name in @('save_id', 'player_id')) {
         if ($InitialSnapshot.$name.status -cnotin @('available', 'derived') -or [string]::IsNullOrWhiteSpace($InitialSnapshot.$name.value)) {
             throw 'Evening source actor/save is unreadable.'

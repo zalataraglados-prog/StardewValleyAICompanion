@@ -15,6 +15,7 @@ param(
     [string] $GeodeQualifiedItemId = '(O)275',
     [ValidateRange(0, 2147483647)] [int] $GeodesCrackedBefore = 42,
     [switch] $CustodyRoundTrip,
+    [switch] $CustodyOvernight,
     [switch] $OwnedSupplyEvening,
     [switch] $NoBuild
 )
@@ -26,8 +27,12 @@ $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot 'lib/RuntimeRustyKeyCustodyBoundary.ps1')
 . (Join-Path $PSScriptRoot 'lib/RuntimeRustyKeyCustodyRoundTrip.ps1')
 . (Join-Path $PSScriptRoot 'lib/RuntimeRustyKeyEveningBoundary.ps1')
+. (Join-Path $PSScriptRoot 'lib/RuntimeRustyKeyCustodyOvernight.ps1')
 if ($CustodyRoundTrip -and $SupplyMode -cne 'current_geode') { throw 'Custody round trip requires current_geode supply.' }
 if ($OwnedSupplyEvening -and $SupplyMode -cne 'held_item') { throw 'Evening boundary requires held_item supply, not a fabricated late geode acquisition.' }
+if ($CustodyOvernight -and (-not $CustodyRoundTrip -or $SupplyMode -cne 'current_geode' -or $OwnedSupplyEvening)) {
+    throw 'Custody overnight requires current_geode and CustodyRoundTrip, not an owned-item fixture.'
+}
 $acquisitionInputs = @{}
 if ($SupplyMode -eq 'current_geode' -or $OwnedSupplyEvening) {
     foreach ($name in @('RequirementInventoryPath','AcquisitionLoweringPath','MasterAnglerWindowsPath',
@@ -102,7 +107,11 @@ $modIdentity = @(Get-RuntimeExactModAllowlist -ModsRoot $isolatedMods `
         "StardewAI.RuntimeTestHarness" = "StardewAI.RuntimeTestHarness"
     }))
 $binaryIdentity = [ordered]@{}
-foreach ($path in @($backendDll, $loopDll)) {
+$binaryPaths = @($backendDll, $loopDll)
+if ($SupplyMode -eq 'current_geode' -or $OwnedSupplyEvening) {
+    $binaryPaths += Join-Path $ProjectRoot 'experiments/StardewAI.GoalConditionedBootstrap/bin/Release/net8.0/StardewAI.GoalConditionedBootstrap.dll'
+}
+foreach ($path in $binaryPaths) {
     $binaryIdentity[$path] = Get-RuntimeFileSha256 -Path $path
 }
 $savedEnvironment = Save-RuntimeProcessEnvironment -Names @(
@@ -142,14 +151,15 @@ try {
         -StandardErrorPath (Join-Path $runRoot "game.stderr.log")))
     Wait-Json -Url "$executorUrl/health" -TimeoutSeconds 120 | Out-Null
     $initial = (Get-FreshRuntimeSnapshot -Url $snapshotUrl -TimeoutSeconds 180).Value
-    if (-not $OwnedSupplyEvening -and [int](Read-StateValue $initial "time" "time") -lt 900) {
+    $fixtureTime = if ($CustodyOvernight) { 1500 } else { 900 }
+    if (-not $OwnedSupplyEvening -and [int](Read-StateValue $initial "time" "time") -lt $fixtureTime) {
         $timeFixture = Invoke-JsonPost -Url "$executorUrl/api/v1/training/execute" -Body ([ordered]@{
             schema_version = "training_execution_request.v1"
             run_id = $RunId; queue_id = "$RunId.fixture"; queue_item_id = "$RunId.fixture.time"
             before_state_hash = $initial.state_hash; option_id = "debug.advance_time_to"
             execution_mode = "training_singleplayer"; actor = "training_farmer.main"
             save_isolation_path = $isolatedSaves; request_nonce = [guid]::NewGuid().ToString("N")
-            created_at = [DateTimeOffset]::UtcNow.ToString("O"); target_time = 900
+            created_at = [DateTimeOffset]::UtcNow.ToString("O"); target_time = $fixtureTime
         })
         Write-Utf8Text -Path (Join-Path $runRoot "fixture-time-result.json") -Value $timeFixture.Raw
         if ($timeFixture.Value.status -ne "applied" -or $timeFixture.Value.primitive_verification_status -ne "verified") {
@@ -171,11 +181,13 @@ try {
             Invoke-RuntimeRustyKeyCustodyRoundTripPrefix -Context $context -ProjectRoot $ProjectRoot `
                 -AcquisitionInputs $acquisitionInputs -Boundary $boundary -CustodyBoundary $custodyBoundary
         } else { $null }
+        $overnightWait = if ($CustodyOvernight) { Invoke-RuntimeRustyKeyCustodyEveningWait -Context $context -Proof $custodyProof } else { $null }
         $rollingOutput = Join-Path $runRoot 'rolling'
         & (Join-Path $PSScriptRoot 'Invoke-RuntimeRustyKeyRollingSupply.ps1') @acquisitionInputs `
             -ProjectRoot $ProjectRoot -OutputDirectory $rollingOutput -RunId $RunId `
             -BackendUrl $backendUrl -SnapshotUrl $snapshotUrl -ExecutorUrl $executorUrl `
-            -IsolatedSavesPath $isolatedSaves -ExecutionTarget runtime_harness -StopAfterDonationThreshold:$CustodyRoundTrip | Out-Null
+            -IsolatedSavesPath $isolatedSaves -ExecutionTarget runtime_harness -StopAfterDonationThreshold:$CustodyRoundTrip `
+            -MaxSteps $(if ($CustodyOvernight) { 48 } else { 32 }) | Out-Null
         if ($LASTEXITCODE -ne 0) { throw "Rusty Key rolling acquisition stopped ($LASTEXITCODE); retain diagnostics." }
         $rollingSummaryPath = Join-Path (Join-Path $rollingOutput $RunId) 'summary.json'
         $rolling = Get-Content -LiteralPath $rollingSummaryPath -Raw | ConvertFrom-Json
@@ -185,14 +197,20 @@ try {
             @($rolling.steps | Where-Object { $_.kind -ceq 'held_donation' }).Count -eq 0) {
             throw "Rolling boundary did not reach its declared $expectedStatus scope."
         }
-        if ($CustodyRoundTrip) { Assert-RuntimeRustyKeyCustodyRoundTrip -Rolling $rolling -Proof $custodyProof }
+        if ($CustodyRoundTrip -and -not $CustodyOvernight) { Assert-RuntimeRustyKeyCustodyRoundTrip -Rolling $rolling -Proof $custodyProof }
+        $overnight = if ($CustodyOvernight) {
+            $night = Wait-Json -Url "$executorUrl/api/v1/training/end-of-night-transaction" -TimeoutSeconds 15
+            Write-JsonFile -Path (Join-Path $runRoot 'native-night.json') -Value $night
+            Assert-RuntimeRustyKeyCustodyOvernight -Context $context -Rolling $rolling -Proof $custodyProof -WaitProof $overnightWait -NativeNight $night
+        } else { $null }
         if ((Get-DirectoryContentHash -Path $sourceSave) -cne $sourceHash) { throw 'Original isolated baseline save changed.' }
         $summary = [ordered]@{
             schema_version = 'stardewai.runtime_rusty_key_acquisition_smoke.v1'
-            status = $(if ($CustodyRoundTrip) { 'native_custody_round_trip_observed' } else { 'native_key_observed' })
+            status = $(if ($CustodyOvernight) { 'native_custody_overnight_observed' } elseif ($CustodyRoundTrip) { 'native_custody_round_trip_observed' } else { 'native_key_observed' })
             run_id = $RunId; project_head = [string](& git -C $ProjectRoot rev-parse HEAD)
             fixture_boundary = $boundary; rolling_summary_path = $rollingSummaryPath
             custody_boundary = $custodyBoundary; custody_round_trip = $custodyProof
+            custody_overnight = $overnight; custody_native_wait = $overnightWait
             source_save_preserved = $true; source_save_sha256 = $sourceHash
             strategy_ledger_directory = $strategyLedgerDirectory
             isolated_mods = $modIdentity; candidate_binary_sha256 = $binaryIdentity
