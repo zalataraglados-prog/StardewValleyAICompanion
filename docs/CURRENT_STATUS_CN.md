@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-05 当前状态优先：** #435最终CI`41978682410`成功，已合并`dd87b781`并清理对应临时分支。同criterion语料聚合与原coverage adapter已实现，真实旧来源公开build/Verify同SHA`fcecbed9...`，**仅一条train**；方法未可执行或Teacher/native未三分区齐全仍不能ready。261项相关回归通过，完整game-free/本切片CI待收口。下一步仍复核原方法/阈值供给/时限责任并补真正缺失的原生分区，不将mock或旧单条连接晋升整项。冻结计数/训练禁入不变，生锈钥匙整项结束后汇报。[合同](rusty-key-teacher-corpus.md)。
+
 > **2026-11-05 #435最终头待CI：** 审计指出路线wait前缀别名漏验，已以4个重算哈希仍误收的端到端反例复现并修正；Contracts统一别名供原sender/DTO/新verifier复用，不改变旧执行或格式。聚焦239含41连接检查通过，真实13动作独立重放SHA`8aea3f8e...`不变。旧头8b851的绿CI不作为修正后合并证据。整项/分区缺口/冻结计数/训练禁入与既定接续不变，待最终CI后同主线推进。
 
 > **2026-11-05 最新验证、待提交CI：** Rusty Key独立Teacher/native连接公开构建与最终独立重放SHA均`8aea3f8e...`，原13动作、81源哈希与原生保存连续到key，但只有day6决策的train。Core1344、Backend565、相关家族235含37新检查、日志17全部通过，零跳过/构建零警告错误。原执行器/旧日志/预算与恢复分类含义不变。下一步收口后仍补本criterion真实其他分区/corpus/coverage并复核原方法/供给/时限责任；整项及冻结计数不变，formal training=false，结束后汇报。[完整范围](rusty-key-teacher-native-join.md)。

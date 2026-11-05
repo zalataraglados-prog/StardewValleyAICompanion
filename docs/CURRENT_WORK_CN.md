@@ -2,6 +2,8 @@
 
 ## 2026-11-03 当前 Rusty Key 切片与接续
 
+- **2026-11-05 #435已合并，语料接线验证中（本条优先）：** 最终头`b13b2438`/CI`41978682410`成功，合并`dd87b781`；已核实清理对应临时分支。当前同主线新增`RustyKeyTeacherCorpusBuilder`，逐条调用原独立join重建，按真实决策日归组，拒绝重复run/决策组/nonce/动作；原coverage只合并同分区Teacher和native，不绕过method executable与三分区交集。真实旧13动作已生成**一条train**语料，公开build/独立Verify同SHA`fcecbed9711b9a4f89de04b8de5243ae6da6fc5eb17a438edcd76bbdc48c4c7e`。261项相关回归通过，完整game-free与提交CI待收口；合成三分区只用于负例/交集测试，不计native覆盖。**唯一接续仍Rusty Key：** 收口本语料接线，复核原方法/安全60件阈值供给/时限责任，补真正缺失的validation/test原生决策并接原coverage；不重开旧接受门或加完整Day-0反向前置。冻结计数`5/19、6/19、5/19、4/11`不变，整项完成后汇报；无worker/API/新游戏，local-data不提交。详见[语料合同](rusty-key-teacher-corpus.md)。
+
 - **2026-11-05 #435审计P2已复现并修正，待最终CI（本条优先）：** 原`8b85132f`的CI`41976500737`虽绿，不能据此直接合并。真实发送器把`route_wait_until_time/route_wait_max_slices`映射为RPC无前缀字段，新消费者只按同名DTO属性检查而漏过；4个端到端篡改反例已先红（改/删deadline或slice、重算gzip/哈希后误收）后绿。现由Contracts共享别名声明，发送器/DTO/消费者共用，原字节和执行语义不动。聚焦家族239（41新连接检查）通过，原真实13动作公开Verify仍同SHA`8aea3f8e...`；等待本修正头CI，不将旧绿灯或mock样本作为native覆盖。其余下一步及冻结计数不变：本连接合并收口后补同criterion corpus/真实其他分区/原coverage与方法供给时限责任，不换root、不重开旧门，整项结束后汇报。
 
 - **2026-11-05 连接最终验证完成、待提交CI（本条优先）：** 新连接公开build与最终独立Verify同SHA`8aea3f8e45e12676a663082ba709c24049d424b9c248d5ec902971ec3723d795`，81源文件哈希，原13动作/原生保存/最终key完整绑定，第6日决策、第7日终态、仅train。Core1344、Backend565、方向/博物馆家族235（含37新连接检查）、原/扩展请求日志17全部通过，零跳过、构建零警告错误。源after/实际机械队列路径、RPC缺字段与值、nonce/run/actor/角色/版本/隔离、帧/时间、原生日终和声明篡改均有拒绝反例。完整自读归属保持：原Registry分类和旧预算注记含义保留，单夜immutable回执不升格更广总交接；global-night/full-supply/full-criterion/formal均false。不启动游戏、不改已有native数据、不增worker/API、不提交local-data。**下一步仍同Rusty Key：** 先收口本提交/CI，再复核原方法/安全阈值供给/时限真实责任并补criterion corpus/其他真实native分区/原coverage接线；不能以该单train连接宣布整项完成或换root，也不能把完整Day-0当反向前置。冻结`5/19、6/19、5/19、4/11`不变，整项结束后汇报。
