@@ -131,6 +131,7 @@
     <Compile Include="MuseumDonationMainlineTests.RouteSchedule.cs" />
     <Compile Include="MuseumDonationMainlineTests.WithdrawalSchedule.cs" />
     <Compile Include="MuseumDonationMainlineTests.Reservations.cs" />
+    <Compile Include="MuseumDonationMainlineTests.RustyKeyTeacher.cs" />
     <Compile Include="MachineTaskCapacityMainlineTests.cs" />
     <Compile Include="MiningReachDepthAcquisitionIntentTests.cs" />
     <Compile Include="NativeShippingSourceGuardTests.cs" />

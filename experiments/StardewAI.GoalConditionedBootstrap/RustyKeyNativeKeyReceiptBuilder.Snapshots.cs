@@ -53,14 +53,14 @@ public static partial class RustyKeyNativeKeyReceiptBuilder
             afterLocation.ValueKind == JsonValueKind.String && afterLocation.ValueEquals("Farm"), "native_key_location_drift");
     }
 
-    private static int TotalDay(SnapshotEnvelope snapshot)
+    internal static int TotalDay(SnapshotEnvelope snapshot)
     {
         var value = Value(snapshot, "time", "total_days");
         Require(value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out _), "canonical_total_day_missing_or_mistyped");
         return value.GetInt32();
     }
 
-    private static JsonElement Value(SnapshotEnvelope snapshot, string section, string name)
+    internal static JsonElement Value(SnapshotEnvelope snapshot, string section, string name)
     {
         Require(snapshot.State.TryGetValue(section, out var parent) && parent.ValueKind == JsonValueKind.Object &&
             parent.TryGetProperty(name, out var field) && field.ValueKind == JsonValueKind.Object &&
@@ -82,14 +82,14 @@ public static partial class RustyKeyNativeKeyReceiptBuilder
 
     private static string String(JsonElement row, string name) => CurrentTeacherFrontierSupport.RequiredString(row, name);
 
-    private static string Identity(FieldEnvelope<string?>? field)
+    internal static string Identity(FieldEnvelope<string?>? field)
     {
         Require(field is not null && FieldEnvelopeValidator.IsReadableStatus(field.Status) && !string.IsNullOrWhiteSpace(field.Value),
             "save_or_player_identity_unreadable");
         return field!.Value!;
     }
 
-    private static T ReadTyped<T>(string path, string schema)
+    internal static T ReadTyped<T>(string path, string schema)
     {
         var raw = CurrentTeacherFrontierSupport.Read<JsonElement>(path, "Rusty Key native source");
         Require(raw.ValueKind == JsonValueKind.Object && raw.TryGetProperty("schema_version", out var version) &&
@@ -100,7 +100,7 @@ public static partial class RustyKeyNativeKeyReceiptBuilder
         return raw.Deserialize<T>(JsonDefaults.Options) ?? throw new InvalidDataException("Rusty Key native source is null.");
     }
 
-    private static string RequiredFile(string path)
+    internal static string RequiredFile(string path)
     {
         Require(!string.IsNullOrWhiteSpace(path), "source_path_missing");
         var full = Path.GetFullPath(path);

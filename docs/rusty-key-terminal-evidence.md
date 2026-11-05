@@ -138,5 +138,9 @@ an unrelated successful key receipt by actor/day alone. Keep comparisons and
 native outcomes separate. A decision on day 6 and terminal on day 7 need one
 causal trajectory split group derived from the original decision identity,
 not separately chosen labels or the terminal day substituted as decision day.
+The independent prestate producer is now implemented; its exact limited
+comparison scope, original compiler reuse and retained day-6 replay are in the
+[donation comparison contract](rusty-key-donation-teacher-comparison.md).
+The same-run native continuation and other partitions remain pending.
 This is a clarification of the pending criterion join, not an extra game test,
 new snapshot field, second executor or change to the accepted native gate.
