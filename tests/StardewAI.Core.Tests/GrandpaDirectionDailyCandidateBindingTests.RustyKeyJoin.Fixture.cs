@@ -21,7 +21,7 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
     private sealed record NativeJoinFixture(string Root, string RequestPath, RustyKeyTeacherNativeJoinRequest Request,
         string[] BeforePaths, string[] JournalPaths);
 
-    private static NativeJoinFixture CreateNativeJoinFixture()
+    private static NativeJoinFixture CreateNativeJoinFixture(bool routeWait = false)
     {
         var key = CreateNativeKeyReceiptFixture();
         var donor = MuseumDonationMainlineTests.CreateDonationTeacherFixture();
@@ -80,15 +80,39 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
         var donationQueuePath = Path.Combine(key.Root, "donation-queue.json");
         WriteNativeKeyJson(donationQueuePath, donationQueue);
         var sleepQueuePath = WriteJoinQueue(key.Root, "sleep", donatedPath);
-        var routeQueuePath = WriteJoinQueue(key.Root, "traverse_connector", morningPath);
-        var sources = new[]
+        var routeBeforePath = morningPath;
+        string? waitQueuePath = null;
+        string? waitAfterPath = null;
+        if (routeWait)
+        {
+            var waitAfter = morning.DeepClone();
+            waitAfter["game_tick"] = 70;
+            waitAfterPath = Path.Combine(key.Root, "route-wait-after.json");
+            WriteJoinSnapshot(waitAfterPath, waitAfter);
+            waitQueuePath = WriteJoinQueue(key.Root, "wait_ticks", morningPath);
+            EditNativeKeyJson(waitQueuePath, queue => queue["items"]![0]!["normalized_command"]!["parameters"] =
+                JsonSerializer.SerializeToNode(new[] { Parameter("wait_ticks", "10"),
+                    Parameter("route_wait_until_time", "600"), Parameter("route_wait_max_slices", "1") }, JsonOptions));
+            routeBeforePath = waitAfterPath;
+        }
+        var routeQueuePath = WriteJoinQueue(key.Root, "traverse_connector", routeBeforePath);
+        var sourceList = new List<RustyKeyNativeActionSource>
         {
             new RustyKeyNativeActionSource(donationQueuePath, Path.Combine(key.Root, "donation-result.json"), donatedPath),
-            new RustyKeyNativeActionSource(sleepQueuePath, Path.Combine(key.Root, "sleep-result.json"), morningPath),
-            new RustyKeyNativeActionSource(routeQueuePath, Path.Combine(key.Root, "route-result.json"), key.Request.BeforeSnapshotPath),
-            new RustyKeyNativeActionSource(key.Request.ActionQueuePath, key.Request.ExecutionReceiptPath, key.Request.AfterSnapshotPath)
+            new RustyKeyNativeActionSource(sleepQueuePath, Path.Combine(key.Root, "sleep-result.json"), morningPath)
         };
-        var beforePaths = new[] { donor.SnapshotPath, donatedPath, morningPath, key.Request.BeforeSnapshotPath };
+        var beforeList = new List<string> { donor.SnapshotPath, donatedPath };
+        if (routeWait)
+        {
+            sourceList.Add(new(waitQueuePath!, Path.Combine(key.Root, "route-wait-result.json"), waitAfterPath!));
+            beforeList.Add(morningPath);
+        }
+        sourceList.Add(new(routeQueuePath, Path.Combine(key.Root, "route-result.json"), key.Request.BeforeSnapshotPath));
+        sourceList.Add(new(key.Request.ActionQueuePath, key.Request.ExecutionReceiptPath, key.Request.AfterSnapshotPath));
+        beforeList.Add(routeBeforePath);
+        beforeList.Add(key.Request.BeforeSnapshotPath);
+        var sources = sourceList.ToArray();
+        var beforePaths = beforeList.ToArray();
         var journals = new string[sources.Length];
         for (var index = 0; index < sources.Length; index++)
         {
@@ -97,7 +121,7 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
             var actionBefore = JsonSerializer.Deserialize<SnapshotEnvelope>(File.ReadAllText(beforePaths[index]), JsonOptions)!;
             var after = JsonSerializer.Deserialize<SnapshotEnvelope>(File.ReadAllText(source.AfterSnapshotPath), JsonOptions)!;
             var kind = queue.Items[0].OptionId["executor.".Length..];
-            var raw = index == 3 ? JsonNode.Parse(File.ReadAllText(source.ExecutionReceiptPath))! :
+            var raw = index == sources.Length - 1 ? JsonNode.Parse(File.ReadAllText(source.ExecutionReceiptPath))! :
                 JsonSerializer.SerializeToNode(new TrainingExecutionResult
                 {
                     RunId = key.Request.RunId, QueueId = queue.QueueId, QueueItemId = queue.Items[0].QueueItemId,
@@ -117,7 +141,8 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
                 raw["changed_facts"] = JsonSerializer.SerializeToNode(new[] { new SimulatedFactChange
                     { Path = "time.total_days", Before = "6", After = "7" } }, JsonOptions);
             }
-            if (index == 2) raw["primitive_verification_reasons"] = JsonSerializer.SerializeToNode(new[] { "connector_location_changed_as_expected" });
+            if (kind == "traverse_connector") raw["primitive_verification_reasons"] = JsonSerializer.SerializeToNode(new[] { "connector_location_changed_as_expected" });
+            if (kind == "wait_ticks") raw["primitive_verification_reasons"] = JsonSerializer.SerializeToNode(new[] { "wait_until_time_reached" });
             raw["before_game_tick"] = actionBefore.GameTick;
             raw["after_game_tick"] = after.GameTick;
             raw["after_state_hash"] = after.StateHash;
@@ -129,7 +154,8 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
             {
                 RunId = key.Request.RunId, QueueId = queue.QueueId, QueueItemId = queue.Items[0].QueueItemId,
                 BeforeStateHash = actionBefore.StateHash, OptionId = queue.Items[0].OptionId,
-                SaveIsolationPath = Path.Combine(key.Root, "isolated-saves"), RequestNonce = Guid.NewGuid().ToString("N")
+                SaveIsolationPath = Path.Combine(key.Root, "isolated-saves"), RequestNonce = Guid.NewGuid().ToString("N"),
+                WaitUntilTime = kind == "wait_ticks" ? 600 : null, WaitMaxSlices = kind == "wait_ticks" ? 1 : null
             }, beforePaths[index], payload =>
             {
                 foreach (var parameter in queue.Items[0].NormalizedCommand.Parameters)

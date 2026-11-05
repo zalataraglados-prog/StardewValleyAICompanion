@@ -112,7 +112,9 @@ public static partial class RustyKeyTeacherNativeJoinBuilder
     private static void ValidateWireParameters(JsonElement request, NormalizedCommand command)
     {
         // Compare the declared wire fields, not a second queue-to-request compiler.
-        foreach (var group in command.Parameters.Where(row => RequestFieldNames.Contains(row.Name)).GroupBy(row => row.Name))
+        var bindings = command.Parameters.Select(row => new
+            { Name = TrainingExecutionParameterBindings.WireFieldForQueueParameter(row.Name), row.Value });
+        foreach (var group in bindings.Where(row => RequestFieldNames.Contains(row.Name)).GroupBy(row => row.Name))
         {
             var values = group.Select(row => row.Value).Distinct(StringComparer.Ordinal).ToArray();
             Require(values.Length == 1 && request.TryGetProperty(group.Key, out var field) && Equivalent(field, values[0]),

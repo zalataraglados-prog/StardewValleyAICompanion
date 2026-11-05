@@ -178,6 +178,22 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
         BindJoinJournalResult(f, index, request.RequestNonce);
     }
 
+    [Theory]
+    [InlineData("deadline")]
+    [InlineData("slices")]
+    [InlineData("missing_deadline")]
+    [InlineData("missing_slices")]
+    public void RustyKeyCausalJoinBindsRenamedRouteWaitInputs(string change)
+    {
+        var f = CreateNativeJoinFixture(routeWait: true);
+        Assert.True(RustyKeyTeacherNativeJoinBuilder.Build(f.RequestPath).CausalContinuationVerified);
+        if (change == "deadline") RewriteJoinRequest(f, 2, request => request.WaitUntilTime = 700);
+        if (change == "slices") RewriteJoinRequest(f, 2, request => request.WaitMaxSlices = 3);
+        if (change == "missing_deadline") RewriteJoinPayload(f, 2, payload => payload.Remove("wait_until_time"));
+        if (change == "missing_slices") RewriteJoinPayload(f, 2, payload => payload.Remove("wait_max_slices"));
+        Assert.Throws<InvalidDataException>(() => RustyKeyTeacherNativeJoinBuilder.Build(f.RequestPath));
+    }
+
     private static void RewriteJoinPayload(NativeJoinFixture f, int index, Action<JsonObject> edit)
     {
         var request = ExecutionRequestJournalReader.Read(f.JournalPaths[index]).Request;

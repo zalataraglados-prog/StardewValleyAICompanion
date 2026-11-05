@@ -33,6 +33,15 @@ queue/item identity, actor, native executor, save isolation and exact recorded
 before/after frames. The shared DTO's JSON field names identify wire parameters;
 declared queue values must match the actual native RPC payload, including
 missing-field rejection. This is a verifier, not a second request compiler.
+The original route-wait queue names map through the shared
+`TrainingExecutionParameterBindings` contract to `wait_until_time` and
+`wait_max_slices`. The existing sender, DTO attributes and verifier use this
+same declaration. PR #435's P2 finding reproduced four verifier holes:
+changed/missing deadline or slice budget passed before the fix, even after
+recomputing journal hashes. All four now fail closed, with their valid baseline
+still accepted. Original queue names, request bytes and runtime semantics were
+not changed. Focused direction/museum coverage is now 239, including 41 join
+checks; real retained replay keeps the same SHA below. Final-head CI is pending.
 Nonces and queue/item identities cannot repeat. Adjacent snapshots must have
 identical boundary state hashes and ticks. Different versions, actors, dates,
 endpoints, isolation roots, unrecorded gaps and unrelated actions are rejected.
