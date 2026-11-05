@@ -157,9 +157,8 @@ public static partial class CurrentFriendshipTeacherPreferenceBuilder
         report.UncomparedCandidateIds = report.Candidates.Where(row => row.CandidateId != selectedId &&
                 row.ComparisonRequired && !compared.Contains(row.CandidateId))
             .Select(row => row.CandidateId).ToArray();
-        report.TeacherPreferenceLabelEligible = report.PairwisePreferences.Length > 0 &&
-            report.UncomparedCandidateIds.Length == 0 &&
-            report.CandidateDenominatorComplete;
+        report.IndependentPairwiseLabelEligible = report.PairwisePreferences.Length > 0 && report.CandidateDenominatorComplete;
+        report.TeacherPreferenceLabelEligible = report.IndependentPairwiseLabelEligible && report.UncomparedCandidateIds.Length == 0;
         report.Status = report.TeacherPreferenceLabelEligible ? "ready_current_independent_comparison" :
             alternatives.Length == 0 && report.UncomparedCandidateIds.Length == 0
                 ? "control_only_single_candidate" : "blocked_incomplete_or_non_strict_comparison";
@@ -173,8 +172,8 @@ public static partial class CurrentFriendshipTeacherPreferenceBuilder
         var raw = CurrentTeacherFrontierSupport.Read<JsonElement>(preferencePath, "Friendship Teacher preference");
         var stored = raw.Deserialize<CurrentFriendshipTeacherPreference>(JsonDefaults.Options) ??
             throw new InvalidDataException("Friendship Teacher preference is null.");
-        if (stored.SchemaVersion != "current_friendship_teacher_preference.v3")
-            throw new InvalidDataException("Rebuild the friendship preference from its sources using the complete contact-budget intake.");
+        if (stored.SchemaVersion != "current_friendship_teacher_preference.v4")
+            throw new InvalidDataException("Rebuild the friendship preference from its sources with explicit pairwise and complete-order scopes.");
         var rebuilt = BuildCore(stored.SnapshotPath, stored.CalibrationPath);
         if (!JsonNode.DeepEquals(JsonNode.Parse(raw.GetRawText()), JsonSerializer.SerializeToNode(rebuilt, JsonDefaults.Options)))
             throw new InvalidDataException("Friendship Teacher preference differs from original sources and comparison.");

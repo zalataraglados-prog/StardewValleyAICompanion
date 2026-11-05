@@ -172,9 +172,9 @@ public sealed partial class SocialTransparentPlanningTests
             candidate.Parameters.Any(parameter => parameter.Name == "npc_name" && parameter.Value == "Abigail")), "social.talk_npc");
     }
 
-    private static (string Snapshot, string Calibration, string Directory) FriendshipRemoteFiles()
+    private static (string Snapshot, string Calibration, string Directory) FriendshipRemoteFiles(int targets = 2)
     {
-        var files = FriendshipTeacherFiles(qualifying: 4);
+        var files = FriendshipTeacherFiles(qualifying: 4, targets: targets);
         var raw = JsonNode.Parse(File.ReadAllText(files.Snapshot))!;
         var state = raw["state"]!;
         state["player"]!["location_id"]!["value"] = "Farm";

@@ -1,5 +1,7 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+> **2026-11-06 显式pair接续（当前优先）：** 新Friendship v4显式区分已证明pairs与完整排序，缺省完整门不放宽，显式模式通过原Verify/编译消费8个strict pairs，20项未比较不作负例；Teacher/共享trainer/执行器不改。真实来源公开重建同SHA`4581deab...`，原队列pending不是原生结果。下一步E副本真实5/10人数阈值，原reader/轨迹/provider/corpus/覆盖及一致输入投影；不重采校准、不过早训练或晋升`9/19、9/19、9/19、7/11`/formal=false。[当前合同](friendship-pairwise-admission.md)。
+
 > **2026-11-06 跨图接触接续（当前优先）：** 完整实际首段＋尾程预算已接新Friendship消费端，真实来源10个合法比较候选/8个严格pair通过重放，但完整排序因20个未比较项仍false。下一步显式复用原独立pair合同/原控制编译，保留完整分母和默认完整排序门，再同run原生5/10阈值及原数据覆盖；不要求每个pair承担全局完整排序，也不把其余未知/权衡当负例。模式尚未实现，无正式训练或计数晋升，`9/19、9/19、9/19、7/11`及formal=false保持。[实际来源和下一步](friendship-route-contact-budget.md)。
 
 > **2026-11-06 完整离线源接续（当前优先）：** 原运行时64预算不改，新Friendship消费端显式完整源已实际重放验证，gift410/talk43实例全部审计、不可用重复不丢失，完整分母true但跨图比较尚未准入。下一步复用原校准接触前沿/完整路线与原单连接器fresh-replan，不重写执行器、不重采校准，然后原生5/10阈值及原轨迹/corpus/覆盖。53专项及最终回归/CI见本PR收口；`9/19、9/19、9/19、7/11`和formal=false保持。[完整来源与接续](friendship-complete-intake.md)。

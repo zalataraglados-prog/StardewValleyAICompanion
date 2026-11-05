@@ -9,15 +9,19 @@ namespace StardewAI.GoalConditionedBootstrap;
 public static class FriendshipTeacherDispatchBuilder
 {
     public static (SmallModelPlanEnvelope Plan, ActionQueueEnvelope Queue) Compile(string preferencePath)
+        => Compile(preferencePath, FriendshipTeacherAdmissionMode.CompleteOrder);
+
+    public static (SmallModelPlanEnvelope Plan, ActionQueueEnvelope Queue) Compile(
+        string preferencePath, FriendshipTeacherAdmissionMode admissionMode)
     {
+        FriendshipTeacherAdmissionPolicy.Validate(admissionMode);
         var preference = CurrentFriendshipTeacherPreferenceBuilder.Verify(RequiredFile(preferencePath));
-        if (!preference.TeacherPreferenceLabelEligible || preference.SelectedCandidate is null ||
-            preference.NativeOutcomeVerified || preference.FormalProductTrainingAuthorized)
-            throw new InvalidDataException("Friendship supervised dispatch requires an independently replayed comparison.");
+        if (!FriendshipTeacherAdmissionPolicy.IsEligible(preference, admissionMode))
+            throw new InvalidDataException("Friendship dispatch requires independently replayed evidence for the explicit admission scope.");
         var snapshot = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(preference.SnapshotPath, "Friendship dispatch snapshot");
         var time = Value(snapshot, "time", "time").GetInt32();
         var energy = Value(snapshot, "player", "energy").GetDouble();
-        var plan = new DailyPlanCompiler().Compile(new[] { preference.SelectedCandidate }, snapshot.StateHash,
+        var plan = new DailyPlanCompiler().Compile(new[] { preference.SelectedCandidate! }, snapshot.StateHash,
             goalId: "goal.social.raise_friendships", maxCandidates: 1,
             availableMinutes: GameClockBudgetPolicy.ClockMinutesBetween(time, GameClockBudgetPolicy.AutonomousRecoveryStartTime),
             energyBudget: (int)Math.Floor(energy));

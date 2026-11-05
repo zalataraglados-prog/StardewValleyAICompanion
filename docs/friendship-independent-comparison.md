@@ -1,8 +1,8 @@
 # Friendship Independent Comparison
 
-Current continuation: real calibration, complete offline source intake and the
-new cross-map contact proof have passed. Follow [the actual result and explicit
-pairwise continuation](friendship-route-contact-budget.md).
+Current continuation: real calibration, complete offline source intake,
+cross-map contact proof and explicit pairwise admission are implemented. Follow
+[the actual protocol and native continuation](friendship-pairwise-admission.md).
 The old runtime/Teacher budgets remain unchanged. Do not repeat accepted
 calibration or confuse the earlier synthetic protocol with native evidence.
 
@@ -126,9 +126,9 @@ authorization remain false.
 
 ## Sole Next Slice
 
-First implement explicit independent-pair consumption as detailed in
-[the current continuation](friendship-route-contact-budget.md), preserving the
-default full-order gate and every unresolved alternative. Then use the new
+Use explicit independent-pair consumption as detailed in
+[the current continuation](friendship-pairwise-admission.md), preserving the
+default full-order gate and every unresolved alternative. Use the new
 public comparison/compile consumer with the existing isolated native
 social runner and executor to collect **real** same-run threshold outcomes for
 five and ten qualifiers. Preserve original raw source frames, actor/save/run,

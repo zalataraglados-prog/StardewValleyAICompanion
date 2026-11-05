@@ -643,26 +643,28 @@ static void BuildCurrentSocialTeacherLabel(Arguments options)
 
 static void CompileCurrentFriendshipTeacherPreference(Arguments options)
 {
+    var admission = FriendshipTeacherAdmissionPolicy.Parse(options.Optional("admission"));
     var plan = Path.GetFullPath(options.Required("plan-output"));
     var queue = Path.GetFullPath(options.Required("output"));
     if (plan.Equals(queue, OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) ||
         new[] { plan, queue }.Any(path => File.Exists(path) || Directory.Exists(path) ||
             !path.EndsWith(".json", StringComparison.OrdinalIgnoreCase)))
         throw new InvalidDataException("Friendship plan and queue outputs must be different new JSON files.");
-    var dispatch = FriendshipTeacherDispatchBuilder.Compile(options.Required("preference"));
+    var dispatch = FriendshipTeacherDispatchBuilder.Compile(options.Required("preference"), admission);
     Write(plan, dispatch.Plan);
     Write(queue, dispatch.Queue);
 }
 
 static void WriteCurrentFriendshipTeacherPreference(Arguments options, bool verify)
 {
+    var admission = FriendshipTeacherAdmissionPolicy.Parse(options.Optional("admission"));
     var output = Path.GetFullPath(options.Required("output"));
     if (!output.EndsWith(".json", StringComparison.OrdinalIgnoreCase) || File.Exists(output) || Directory.Exists(output))
         throw new InvalidDataException("Friendship Teacher output must be a new JSON file.");
     var result = verify ? CurrentFriendshipTeacherPreferenceBuilder.Verify(options.Required("preference")) :
         CurrentFriendshipTeacherPreferenceBuilder.Build(options.Required("snapshot"), options.Required("calibration"));
     Write(output, result);
-    if (!result.TeacherPreferenceLabelEligible)
+    if (!FriendshipTeacherAdmissionPolicy.IsEligible(result, admission))
         Environment.ExitCode = 2;
 }
 
