@@ -363,6 +363,119 @@ No new game, model, worker/API or server operation occurred for this adapter.
 
 ## Implementation And Verification Sequence
 
+### Crab Pot Source Capture
+
+The original fishing daily-plan smoke now has an opt-in
+`-CrabPotQualifiedItemId` boundary. It requires standalone collection Teacher,
+explicit `-FishingLocation Farm` and save/mod isolation, and rejects mixing
+other special fishing fixtures or task overrides before build/network/game
+operations. It first calls the existing native-legal placement fixture to find
+a reachable water tile, then the existing ready-pot fixture at that actual
+tile. Both calls precede the measured decision. They do not prove travel,
+crafting, placement, baiting or overnight natural production. No shared
+executor or bridge rule is changed to accommodate this source consumer.
+
+The original Teacher remains unrestricted and unpinned. The narrow collection
+profile need not have an equipped fishing rod to expose an existing ready pot.
+The smoke consumes the old `player.fish_caught[(O)...]` count/size event for
+`executor.collect_crab_pot`; it never manufactures the rod-only
+`fishing.caught_qualified_item_id` event or a rod outcome distribution. Ambiguous,
+non-increasing or malformed collection facts do not identify a successful
+capture; reward-recovery primitives are not catch events. Rod extraction and
+its complete stochastic-domain checks are retained.
+
+For trap capture the smoke feeds the actual recorded mechanical queue, raw
+execution and after frame to the original public native-catch build/Verify.
+The original journal binding, exact native call arguments, inventory/bait/
+experience checks and full 72-species transition remain authoritative; the
+sampling helper is not another physical verifier. Its summary names the
+receipt and explicitly marks rod-distribution checking inapplicable. A control
+success is not independent supervision: the original supervised row/replayer
+and exact join must still validate separately before corpus use. Natural
+production, terminal achievement and missing partitions remain distinct work.
+
+Optional `-IncludeCrabPotCounterfactual` prepares a second pot of the same
+declared species, at its own native-legal water tile, before the primary pot.
+The two coordinates are explicit inputs, not candidate pinning or labels.
+The original BFS/compiler still decides whether either action is reachable;
+the original Teacher may find a strict cost difference, a genuine tie, or no
+legal alternative. Preparation of two pots alone is not evidence of two
+eligible choices. Blocked/singleton/tied decisions must retain their original
+semantics and cannot acquire invented negative labels. The old loop's control
+fallback is unchanged: successful native capture, even with a blocked Teacher
+preference, is only physical-source evidence until the original strict replay
+and exact same-queue join pass. No new grant of training eligibility follows
+from the smoke's `passed` status.
+
+Live decompilation of the same isolated 1.6.15 `CrabPot.checkForAction` confirms
+the harvested object passes through `Farmer.caughtFish` with native random
+size/count arguments and grants fishing experience. The
+[wiki crab-pot rules](https://stardewvalleywiki.com/Crab_Pot) corroborate that
+these catches count towards fishing achievements, unlike simply owning or
+foraging the item. This does not authorize replacing the native call with a
+collection-field assignment.
+
+### Retained Trap Source And Diagnostics
+
+The isolated silent run `master-angler-crab-pot-teacher-20261105-f` retained two
+native-legal ready pots at `(39,51)` and `(39,56)`, both containing `(O)716`.
+The original Teacher independently preferred the 30-tick candidate over the
+210-tick candidate. Native `checkAction` harvested the selected pot and invoked
+`caughtFish`; the original physical builder/Verify passed. Original receipt
+and PolicyDataset replay accepted one train row, one strict pair, zero rejects.
+The source-save directory hash stayed
+`68ddc8dbbe09382f2e7ba1c9d5d1e8dd6d0ffaef59acf9367415b4678f59366d`;
+the isolated double-mod game and backend exited. No model was trained.
+
+Exact join build/Verify SHA:
+`4b1955ba6473471a8854090cc855ea848aa4ee49d954e2fe52e042dca1334f3b`.
+The rod-plus-trap corpus build/Verify SHA:
+`41ae160448ed60229483c8b351179e9d1a064dd35d283dd908dc72a25d8af2c5`.
+The two decisions remain in the original `ProofFarm:1:spring:7` train group;
+they are separate runs, not a continuous two-fish acquisition claim. Corpus
+row count is two, terminal row count zero. Original coverage with the reused
+run-local dependency closure still reports executable method, `[train]`
+comparison, no terminal partitions and not ready (expected exit 2).
+Join/corpus/dataset/coverage files remain outside Git in
+`I:\StardewAITraining\master-angler-local-20261105\crab-pot-joined-source`;
+raw sources stay in the corresponding ignored runtime-fishing run directory.
+
+Earlier runs are retained with their actual meaning, not retried for labels:
+
+| Suffix | Observed Scope | Supervision Use |
+| --- | --- | --- |
+| A | Native harvest with one eligible candidate | Physical only, no pair |
+| B/C | Second native stand existed but original BFS could not reach it | No invented negative preference |
+| D | Original second-year save exposed tied Teacher choices; required trap capture absent | Not a trap source or supervised row |
+| E | Two pots shared the same stand and both cost 30 ticks; old control fallback harvested | Physical only, not independent supervision |
+| F | Connected distinct stands, strict 30/210 comparison and actual harvest | Exact verified train join |
+
+The old 62-pixel collision grid and BFS were not bugs established by these
+tests and were not changed. Initial fixture relocation alone did not prove
+inter-pot reachability. Final coordinates were selected using the retained
+grid and original BFS before the new run; reuse them for this boundary instead
+of cycling the failed placements. Current narrow collection profile supports
+ready-pot collection/network reads; existing placement rows still require the
+original full profile and were not claimed as natural lifecycle proof here.
+Eleven event projections, five no-game preflight rejections, original queue
+mapping checks and 51 source/join/corpus regressions pass, zero skipped.
+Another 38 original runtime-entry/profile checks pass. The original public
+receipt CLI rejects exporting singleton run A as independent supervision:
+`verified_evidence_only_no_trainable_teacher_comparison`, eligibility false,
+and no successful dataset row written. A no-build filter for the game-dependent
+task-calibration guard matched no tests in the game-free assembly and is not
+counted as a pass. No shared execution changes followed these diagnostics.
+
+Next obtain actual achievement-26 terminal sources under explicitly declared
+71/72 local starting conditions, with original policy validation/test groups
+and independently valid comparisons/causal joins. Prior catches in such a
+fixture are prerequisites, not evidence of acquiring those 71 species. Do not
+repeat accepted rod/trap progress, fake a strict preference for a tie, loosen
+the denominator, or reintroduce global fresh-save prerequisites. Frozen global
+acceptance and formal=false remain unchanged.
+
+### Remaining Sequence
+
 1. Inspect retained actual rod/crab-pot executions, their original request
    journals, pre-decision snapshots and resource contexts. Classify retained
    native evidence separately from mocks and generated fixture corpora.

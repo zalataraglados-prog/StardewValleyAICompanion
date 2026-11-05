@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-11-05 蟹笼真实比较与原生收取已接入corpus
+
+- #444最终CI`42034440832`成功，已合并`42a9edd4`并清理分支，下方待CI已完成。本轮仅扩展原隔离采样消费端，调用旧合法水格/ready-pot夹具和旧收取执行器；原杆钓随机域校验保留，未修改旧Teacher、站位/BFS、碰撞或透明桥。helper分离采样投影、夹具与原公开native Verify，不复制物理验证器。
+- 最终隐藏静音运行`master-angler-crab-pot-teacher-20261105-f`在合法水格`39,51`、`39,56`准备716待收取笼。原Teacher对预计30/210tick两项产生1对严格比较并选择前者，原生收取/caughtFish使收集false→true；原公开来源build/Verify通过完整72分母和原参数/journal/前后态。源档SHA`68ddc8db...`不变，游戏/后端退出，无模型训练。准备不证明制作、放置、上饵或自然隔夜生产。
+- 原receipt/PolicyDataset独立重放接受1条train、0拒绝；精确join重放同SHA`4b1955ba6473471a8854090cc855ea848aa4ee49d954e2fe52e042dca1334f3b`。与旧708杆钓组成2行corpus，同SHA`41ae160448ed60229483c8b351179e9d1a064dd35d283dd908dc72a25d8af2c5`，仍同一原`ProofFarm:1:spring:7`组，不拆分区，不声称同局连续取得两种鱼。原coverage仍方法executable、比较`[train]`、终态`[]`、ready=false。数据仅在`I:\StardewAITraining\master-angler-local-20261105\crab-pot-joined-source`及原ignored运行目录。
+- A单候选、B/C另一站位BFS不连通、D/E原Teacher同分；诊断/物理来源保留，不入监督corpus，不改原fallback或造负偏好。最终位置按留存网格和原BFS核实，勿重采这些失败场景。当前E游戏实时反编译`CrabPot.checkForAction`及wiki已复核。11事件投影、5预检拒绝、原映射、51来源/join/corpus及38执行入口/profile聚焦通过；公开入口拒绝A导出监督行且无成功行文件。game-dependent校准守卫的game-free过滤未匹配，不计PASS。本头发布以最终CI/合并记录为准，勿凭历史待CI状态重开验证。
+- **唯一接续：** 保留已成功杆钓/蟹笼，补71/72明确局部边界下的真实成就26终态及原policy validation/test，维持独立比较/同run原生连接；71种前置不能冒充真实取得，R2与冻结`6/19、7/19、6/19、5/11`及formal=false不变。无worker/API/服务器更新，不提交local-data。[来源与诊断](master-angler-local-native-join.md#retained-trap-source-and-diagnostics)。
+
 ## 2026-11-05 Master Angler corpus已接原覆盖入口
 
 - 本轮接续上轮精确join，新增可公开build/Verify的criterion corpus，只复用原独立比较、数据集结构、原生catch及72分母验证器。原policy分区保持，按决策/trajectory/nonce/queue-item去重，混用authority或改名复制拒绝；新source kind只接原coverage聚合，不新增Teacher、编译器、执行器或覆盖计算器。
