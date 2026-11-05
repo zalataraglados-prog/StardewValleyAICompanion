@@ -94,4 +94,9 @@ try {
     throw "Expected undeclared-boundary rejection before game/build/network operations."
 }
 catch { if (-not $_.Exception.Message.StartsWith("Crab-pot counterfactual requires")) { throw } }
-Write-Output "PASS: original continuation/sparse and trap mapping, 11 catch-event checks, 5 preflight rejections; unknown/duplicate queues rejected. Fixtures retained at $OutputRoot"
+try {
+    & (Join-Path $PSScriptRoot "Invoke-RuntimeFishingDailyPlanSmoke.ps1") -MasterAnglerTerminalBoundaryDay 7
+    throw "Expected terminal-boundary rejection before game/build/network operations."
+}
+catch { if (-not $_.Exception.Message.StartsWith("Terminal save boundary capture requires")) { throw } }
+Write-Output "PASS: original continuation/sparse and trap mapping, 11 catch-event checks, 6 preflight rejections; unknown/duplicate queues rejected. Fixtures retained at $OutputRoot"

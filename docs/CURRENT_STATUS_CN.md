@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-05 Master Angler局部收口，本条优先（发布以最终CI为准）：** #445已合并`c2c0cf3c`。三个独立第二年春7/21/24日后台原生运行，在明确声明71/72前置下真正由最后716收取获得26，原Teacher比较、receipt/PolicyDataset/精确join均通过，实际原policy train/validation/test各1条、0拒绝。保留旧杆钓/蟹笼后5行corpus同SHA`78e334c1...`、3真正终态；原coverage/最终reconciliation为方法executable、双通道三分区、本项ready且open work为空。17新准备安全检查、1新登记检查、完整Core1537通过；源档未变、进程退出。无旧执行/分类语义修改、无模型训练/worker/API，不提交原始数据。最终CI后冻结并集为`7/19 executable、7/19 split-complete、7/19 CoverageGateReady、6/11 roots`，Master不重复增加split；formal=false。先收口本切片，再比较五个未关root实际成本、按R2 WIP=1接续，不从备选来源提示重开本项。[局部验收与完整边界](master-angler-local-acceptance.md)。
+
 > **2026-11-05 蟹笼来源当前事实（优先）：** #444已CI通过并合并`42a9edd4`。本轮仅扩展隔离collector，原Teacher对30/210tick两只可达716笼作严格比较，原执行器真实收取；原receipt/PolicyDataset接受1条train、1对比较、0拒绝，精确join公开重放同SHA`4b1955ba...`。与旧708杆钓合成2行corpus同SHA`41ae1604...`，均属同一原train日期组，**成就26终态仍0**，原coverage不晋升。单候选、BFS不连通和同分样本不冒充监督；未改旧Teacher/执行器/BFS/碰撞或桥。11事件、5预检拒绝、原映射和51项聚焦通过，待本切片最终CI；源档未变，进程退出，无训练/worker/API，不提交原始数据。唯一下一步为71/72声明局部前置下真实终态及原policy validation/test，不重采成功来源，保留R2、冻结`6/19、7/19、6/19、5/11`及formal=false。[合同与诊断](master-angler-local-native-join.md#retained-trap-source-and-diagnostics)。
 
 > **2026-11-05 Master Angler当前事实（优先于下方历史）：** #441/#442/#443已分别合入共享兼容修补、原独立Teacher运行入口和精确Teacher/native join，不再待开发。当前criterion corpus及原coverage来源适配已实现：保留真实1条train/6对比较，公开build/Verify同SHA`4909b009...`，但**成就26终态为0条**。原R2前置proof的run-local闭合供原coverage重建，方法`executable_frontier`，比较`[train]`、native outcome`[]`、split/ready=false；本项报告不替代冻结并集。单鱼progress不冒充Master Angler完成，终态须同原生catch的71/72→72/72及achievement26 absent→present；规则已按当前E游戏实时反编译并以wiki复核，现透明字段足够。新增13合成检查、完整Core1519/Backend594、EVD-338通过，代码待最终CI。唯一primary仍`complete_master_angler`，接下来补真正缺失的蟹笼/终态/原policy validation-test来源，不重写Teacher或执行器、不重采已成功精确杆钓，不把全局解锁反向变为局部前置。多队列续接来源链责任保留。接受面板仍`6/19 executable、7/19 split-complete、6/19 CoverageGateReady、5/11 root ready`，formal=false；无新游戏/训练/worker/API，不提交local-data。[合同与边界](master-angler-local-native-join.md#criterion-corpus-and-original-coverage)。
@@ -847,18 +849,20 @@ Money 自身最终完成，至少要同时满足：
 
 ## 7. executable / split-complete 差集与恢复队列
 
-当前 `5/19 executable` 与 `6/19 split-complete` 不是同一组，也不能相加：
+本轮 Master Angler 局部验收的最终 CI/合并完成后，与已接受冻结集合取并集为
+`7/19 executable`、`7/19 split-complete`、`7/19 CoverageGateReady`、`6/11 roots`。
+当前三组 criterion 已对齐，不能相加；单来源报告也不能覆盖这份并集：
 
 | 状态 | criterion | 后续缺口 |
 | --- | --- | --- |
-| executable 且 split-complete | Community Center 两项、Pet Love、Skull Key、Full Shipment | 已进入 `CoverageGateReady` |
-| 仅 executable | 无 | 当前五个 executable criterion 均已完成正式三分区覆盖 |
-| 仅 split-complete | Master Angler | 顶层 Goal Method 仍为 `pending_dependency_expansion` |
-| 两侧均未闭合 | 其余 13 项 | Method 与生产证据都要闭合 |
+| executable 且 split-complete | Community Center 两项、Pet Love、Skull Key、Full Shipment、Rusty Key、Master Angler | 七项交集均有局部验收 |
+| 仅 executable | 无 | 不从局部样本扩张未接受项 |
+| 仅 split-complete | 无 | Master Angler 已用原 run-local 前置闭合与当前原生来源接入交集 |
+| 两侧均未闭合 | 其余 12 项 | 分属五个未闭合根，按实际局部成本接续 |
 
-Skull Key 与 Pet Love 的旧生产工件均已按当前字典、日历、输入契约和哈希严格重放并冻结。后续清理原始中间文件不撤销该已消费验收，也不要求重采。Full Shipment 的顶层接线也已完成；Master Angler 已有两通道三分区证据，后续只允许补顶层依赖展开，不得另写第二套动作、候选或执行器。
+Skull Key、Pet Love、Full Shipment、Rusty Key 等已消费验收保持冻结；原始中间文件清理不触发重采。Master Angler 原已计入 split-complete，本次补当前精确来源与方法交集，不重复加 split 分子、不新增第二套动作/候选/执行器。其 canonical 依赖输入保持不变，消费者使用原独立前置 proof 构建的 run-local 闭合；未选备选来源提示不是新局部门。[本次边界与工件](master-angler-local-acceptance.md)。
 
-**修订 2026-11-03T15:46:34+08:00：** 前四个 root 保持冻结；Master Angler 的 split-complete 证据保留，但不能再据此认定其顶层成本很小。当前 primary 为 Rusty Key，后续按第 6 节新表执行。开发顺位变化不会改变本节任何 criterion、分区或 readiness 状态。
+**历史修订 2026-11-03T15:46:34+08:00：** 当时 Rusty Key primary/顺位记录保留为历史；当前接续以本文件顶部及当前工作为准，不恢复 R1 固定全序。
 
 ## 8. 最近的深度优化状态
 
@@ -883,9 +887,9 @@ Skull Key 与 Pet Love 的旧生产工件均已按当前字典、日历、输入
 
 - 战略分母：`19` 个 criterion、`11` 个 root method。
 - 细粒度证据分母：`19 x 2` 个独立通道（Teacher comparison/native outcome）`x 3` 个分区，共 `114` 个 channel-partition cell；也可视为 `57` 个必须同时具备双通道的 criterion-partition join cell。
-- 当前机器报告实际闭合 `36/114` 个 channel cell，即 `18/57` 个 join cell；仍缺 `78` 个 channel cell。
-- Master Angler 的 `6` 个 channel cell 已闭合但缺 Method executable；Full Shipment 的同类缺口已关闭，不再有仅 executable、等待三分区重绑的 criterion。
-- 其余 `13` 个 criterion 分属 Money、Museum、Friendship、Marriage/House、Skills、Rusty Key 六个根方法，对应 `78` 个尚未闭合的 channel cell。Money 当前以双通道 join 计为 `0/18` production cell。
+- 本轮最终 CI/合并后，已接受冻结并集覆盖 `42/114` 个 channel cell，即 `21/57` 个 join cell；其余 `72` 个 channel cell。Master Angler 原 split 已在并集中，不能将本次三行终态再加一遍。
+- Master Angler 现以原 run-local 方法闭合和真实终态接入交集；Full Shipment 与 Rusty Key 均已接受，不再从局部报告的缺来源状态重开。
+- 其余 `12` 个 criterion 分属 Money（6）、Friendship（2）、Skills（2）、Museum（1）、Marriage/House（1）五个根，对应 `72` 个未闭合 channel cell。Money 仍为 `0/18` production cell；本次不改变其完整 Exit Gate。
 
 这些逻辑格不等于同等数量的完整三年运行。相同根方法允许复用权威前缀、checkpoint、原生结果和批量分区编排，但每个逻辑格
 仍必须保留独立的 save/player/partition/criterion 身份与可重放证据，不能为了提速合并监督标签。

@@ -15,6 +15,7 @@ param(
     [switch] $IncludeCrabPotCounterfactual,
     [int] $CrabPotCounterfactualTileX = 39,
     [int] $CrabPotCounterfactualTileY = 56,
+    [ValidateRange(0, 28)] [int] $MasterAnglerTerminalBoundaryDay = 0,
     [int] $FishingMaxAttempts = 1,
     [int] $MineFishingLevel = 0,
     [int] $MineFishingMaxAttempts = 12,
@@ -46,6 +47,9 @@ $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "Deploy.Common.ps1")
 . (Join-Path $PSScriptRoot "lib\RuntimeFishingCollectionEvidence.ps1")
 $isCrabPotFixture = -not [string]::IsNullOrWhiteSpace($CrabPotQualifiedItemId)
+if ($MasterAnglerTerminalBoundaryDay -gt 0 -and (-not $isCrabPotFixture -or -not $IncludeCrabPotCounterfactual)) {
+    throw "Terminal save boundary capture requires the declared crab-pot and counterfactual boundaries."
+}
 if ($IncludeCrabPotCounterfactual -and -not $isCrabPotFixture) {
     throw "Crab-pot counterfactual requires a declared crab-pot capture boundary."
 }
@@ -474,6 +478,26 @@ foreach ($component in @(
         (Join-Path $ProjectRoot "experiments\StardewAI.GoalConditionedBootstrap")
     ) -InputFiles @((Join-Path $ProjectRoot "Directory.Build.props"), (Join-Path $ProjectRoot "Directory.Build.targets"))
 }
+$terminalSaveBoundaryPath = ""
+if ($MasterAnglerTerminalBoundaryDay -gt 0) {
+    $requestPath = Join-Path $runDirectory "terminal-save-boundary-request.json"
+    $terminalSaveBoundaryPath = Join-Path $runDirectory "terminal-save-boundary.json"
+    Write-JsonFile $requestPath ([ordered]@{
+        schema_version = "master_angler_terminal_save_boundary_request.v1"
+        source_save_file = Join-Path $sourceSavePath $SaveSlot
+        isolated_save_file = Join-Path (Join-Path $savesPath $SaveSlot) $SaveSlot
+        isolation_root = $savesPath
+        requirement_inventory_path = $RequirementInventory
+        acquisition_lowering_path = $AcquisitionLowering
+        missing_qualified_item_id = $CrabPotQualifiedItemId
+        decision_spring_day_year_two = $MasterAnglerTerminalBoundaryDay
+        declared_local_prerequisite_only = $true
+        formal_product_training_authorized = $false
+    })
+    & dotnet (Join-Path $ProjectRoot "experiments\StardewAI.GoalConditionedBootstrap\bin\Release\net8.0\StardewAI.GoalConditionedBootstrap.dll") `
+        prepare-master-angler-terminal-save-boundary --request $requestPath --output $terminalSaveBoundaryPath
+    if ($LASTEXITCODE -ne 0) { throw "Terminal save boundary preparation failed before game launch." }
+}
 $gameArguments = @{}
 if ($IsolateMods) {
     $modsPath = Join-Path $runDirectory "isolated-mods"
@@ -692,6 +716,19 @@ try {
         if ($null -eq $pot -or $pot.crab_pot_collect_status -ne "ready" -or
             $pot.crab_pot_output_qualified_item_id -ne $CrabPotQualifiedItemId) {
             throw "Transparent collection profile did not expose the declared ready-pot boundary."
+        }
+        if ($MasterAnglerTerminalBoundaryDay -gt 0) {
+            $progress = Read-FieldValue $snapshot "world_progress" "fish_collection_progress"
+            $achievements = $snapshot.state.world_progress.achievements
+            if ($progress.eligible_species_count -ne 72 -or $progress.caught_eligible_species_count -ne 71 -or
+                $progress.missing_species_count -ne 1 -or @($progress.missing_item_ids).Count -ne 1 -or
+                [string]$progress.missing_item_ids[0] -ne $CrabPotQualifiedItemId.Replace("(O)", "") -or
+                (Read-FieldValue $snapshot "time" "year") -ne 2 -or (Read-FieldValue $snapshot "time" "season") -ne "spring" -or
+                (Read-FieldValue $snapshot "time" "day") -ne $MasterAnglerTerminalBoundaryDay -or
+                (Read-FieldValue $snapshot "time" "total_days") -ne (111 + $MasterAnglerTerminalBoundaryDay) -or
+                $achievements.status -notin @("available", "derived") -or @($achievements.value) -contains 26) {
+                throw "Loaded game did not expose the declared 71/72 boundary without achievement 26."
+            }
         }
     }
     else {
@@ -985,6 +1022,7 @@ try {
         isolated_mods = $IsolateMods.IsPresent
         setup_location_fixture = $SetupLocationFixture.IsPresent
         standalone_collection_teacher = $StandaloneCollectionTeacher.IsPresent
+        terminal_save_boundary_path = $terminalSaveBoundaryPath
         teacher_preference_path = if ($null -ne $teacherPreference) { $teacherPreferencePath } else { "" }
         teacher_preference_status = if ($null -ne $teacherPreference) { $teacherPreference.status } else { "not_recorded" }
         teacher_strict_pair_count = if ($null -ne $teacherPreference) { @($teacherPreference.pairwise_preferences).Count } else { 0 }
@@ -1067,6 +1105,7 @@ finally {
         isolated_save = $IsolateSave.IsPresent
         isolated_mods = $IsolateMods.IsPresent
         standalone_collection_teacher = $StandaloneCollectionTeacher.IsPresent
+        terminal_save_boundary_path = $terminalSaveBoundaryPath
         game_kept_running = $KeepGameRunning.IsPresent
         game_process_exited = $null -eq $gameProcess -or $gameProcess.HasExited
         backend_process_exited = $null -eq $backendProcess -or $backendProcess.HasExited

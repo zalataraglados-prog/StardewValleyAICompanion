@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-11-05 Master Angler局部三分区终态收口（待最终CI发布）
+
+- #445最终CI`42042195162`已通过并合并`c2c0cf3c`、分支已清理；旧杆钓/蟹笼进度不重采。本轮新增C#隔离副本准备入口，仅声明完整权威71种前置、缺716及第二年春日期，拒绝既得26/错版本/非同字节副本/越界或重解析路径。原文件只读，原子替换副本；实际硬链接检查保住源字节，报告路径也不能覆盖源档或已有元数据。71种及24/25属于前置，不伪称真实取得；26绝不注入。
+- 三个新的后台静音原生运行分别在春7/21/24日，原Teacher独立比较30/210tick两笼，原编译/执行实际收取最后716并由游戏获得26。原receipt/PolicyDataset/精确join独立通过，各1条严格比较、0拒绝，原policy分区依次train/validation/test；源档目录SHA`68ddc8db...`不变，进程退出。非新档/连续过夜证明，未训练模型。
+- 合并已留两条进度来源后，5行corpus/独立重放同SHA`78e334c1...`，3行真正成就终态；原coverage方法executable、双通道三分区、ready=true。补上我们新来源漏登记的对账表项后，本项`open_work_kinds=[]`，最终reconciliation SHA`f662a72c...`；未改旧分类/Teacher/执行器/BFS/碰撞。旧`next_actions`未选备选通道提示不属于本项blocker，不能据此重开。
+- 新增17准备安全检查与1登记检查、完整game-free Core1537/Backend594、原轻量映射与EVD-338检查点通过，零跳过；公开CLI拒绝覆盖源文件/已有元数据且不改试验源。仅本切片最终CI/合入待收口。最终CI后，与冻结集合取并集为`7/19 executable、7/19 split-complete、7/19 CoverageGateReady、6/11 roots`；Master原已在split集合，不重复加数。formal=false，无worker/API/服务器操作，不提交local-data。
+- **唯一接续：** 先完成本头回归/提交/CI并合入清理分支，再只读比较五个未关root的真实局部成本，按R2选一个并更新施工顺序。Master局部不再重采或追加全局前置，L3/L4和完整Teacher/Student新档21分仍保留。[当前局部验收、全部工件与边界](master-angler-local-acceptance.md)。
+
 ## 2026-11-05 蟹笼真实比较与原生收取已接入corpus
 
 - #444最终CI`42034440832`成功，已合并`42a9edd4`并清理分支，下方待CI已完成。本轮仅扩展原隔离采样消费端，调用旧合法水格/ready-pot夹具和旧收取执行器；原杆钓随机域校验保留，未修改旧Teacher、站位/BFS、碰撞或透明桥。helper分离采样投影、夹具与原公开native Verify，不复制物理验证器。

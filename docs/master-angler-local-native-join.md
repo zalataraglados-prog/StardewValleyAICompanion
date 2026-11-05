@@ -2,6 +2,13 @@
 
 ## Current Work
 
+The latest [criterion-local acceptance](master-angler-local-acceptance.md)
+records the three actual achievement-26 terminal joins and original coverage
+intersection, pending this slice's final CI/merge. It supersedes the historical
+"next capture" instructions below: do not resample accepted progress or reopen
+the local root from an unused alternate-source hint. Global/fresh-save/Student
+21-point work remains distinct, and formal training is still false.
+
 After Rusty Key acceptance, `complete_master_angler` is the sole primary under
 R2. This is a source-integration task, not a new fishing executor, a return to
 the invalid R1 order, or permission to replace the 72-species denominator.
