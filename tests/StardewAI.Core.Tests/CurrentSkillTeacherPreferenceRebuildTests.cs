@@ -21,6 +21,7 @@ public sealed class CurrentSkillTeacherPreferenceRebuildTests
         File.WriteAllText(output, JsonSerializer.Serialize(report, Json));
         var replay = CurrentSkillTeacherPreferenceBuilder.Verify(output);
         Assert.Equal(JsonSerializer.Serialize(report, Json), JsonSerializer.Serialize(replay, Json));
+        Assert.Throws<InvalidDataException>(() => SkillTeacherDispatchBuilder.Compile(output));
     }
 
     [Theory]
@@ -36,6 +37,7 @@ public sealed class CurrentSkillTeacherPreferenceRebuildTests
         raw[property] = true;
         File.WriteAllText(output, raw.ToJsonString(Json));
         Assert.Throws<InvalidDataException>(() => CurrentSkillTeacherPreferenceBuilder.Verify(output));
+        Assert.Throws<InvalidDataException>(() => SkillTeacherDispatchBuilder.Compile(output));
     }
 
     [Fact]

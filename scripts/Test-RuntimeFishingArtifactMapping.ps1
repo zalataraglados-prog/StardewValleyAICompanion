@@ -13,6 +13,12 @@ $errors = $null
 $ast = [Management.Automation.Language.Parser]::ParseFile(
     (Join-Path $PSScriptRoot "Invoke-RuntimeFishingDailyPlanSmoke.ps1"), [ref]$tokens, [ref]$errors)
 if ($errors.Count -gt 0) { throw "Fishing smoke parse failed." }
+$skillSource = $ast.Extent.Text
+foreach ($required in @('"--precompiled-queue", $skillTeacherQueue.QueuePath',
+    '"--max-attempts", "1"', '"--required-verified-actions", "1"',
+    '"--max-queue-item-attempts", "1"', '"--emit-queue-execution-receipt"')) {
+    if (-not $skillSource.Contains($required)) { throw "Skills dispatch omitted original bounded queue arguments: $required" }
+}
 $function = $ast.Find({ param($node)
     $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq "Resolve-CompactTrainingAttempts"
 }, $true)
@@ -99,4 +105,30 @@ try {
     throw "Expected terminal-boundary rejection before game/build/network operations."
 }
 catch { if (-not $_.Exception.Message.StartsWith("Terminal save boundary capture requires")) { throw } }
-Write-Output "PASS: original continuation/sparse and trap mapping, 11 catch-event checks, 6 preflight rejections; unknown/duplicate queues rejected. Fixtures retained at $OutputRoot"
+foreach ($case in @(
+    @{ name = "IsolateMods"; value = $false },
+    @{ name = "IsolateSave"; value = $false },
+    @{ name = "IncludeCrabPotCounterfactual"; value = $false },
+    @{ name = "SkillTerminalBoundaryLevel"; value = 0 },
+    @{ name = "StandaloneCollectionTeacher"; value = $true },
+    @{ name = "FishingMaxAttempts"; value = 2 },
+    @{ name = "TaskFamily"; value = "ordinary_quest" }
+)) {
+    $arguments = @{
+        StandaloneSkillTeacher = $true; SkillTerminalBoundaryLevel = 15
+        IsolateSave = $true; IsolateMods = $true; FishingLocation = "Farm"
+        IncludeCrabPotCounterfactual = $true; CrabPotQualifiedItemId = "(O)716"
+    }
+    $arguments[$case.name] = $case.value
+    try {
+        & (Join-Path $PSScriptRoot "Invoke-RuntimeFishingDailyPlanSmoke.ps1") @arguments
+        throw "Expected invalid Skills preflight rejection before game/build/network operations."
+    }
+    catch { if (-not $_.Exception.Message.StartsWith("Skills threshold capture requires")) { throw } }
+}
+try {
+    & (Join-Path $PSScriptRoot "Invoke-RuntimeFishingDailyPlanSmoke.ps1") -SkillTerminalBoundaryLevel 15
+    throw "Expected Skills mode rejection before game/build/network operations."
+}
+catch { if (-not $_.Exception.Message.StartsWith("Skills terminal boundary requires")) { throw } }
+Write-Output "PASS: original continuation/sparse and trap mapping, 11 catch-event checks, 6 original and 8 Skills preflight rejections; unknown/duplicate queues rejected. Fixtures retained at $OutputRoot"

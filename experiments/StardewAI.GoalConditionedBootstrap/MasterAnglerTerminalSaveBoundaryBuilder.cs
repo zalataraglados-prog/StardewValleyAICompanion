@@ -1,6 +1,4 @@
 using System.Globalization;
-using System.Text;
-using System.Xml;
 using System.Xml.Linq;
 using static StardewAI.GoalConditionedBootstrap.NativeExecutionSourceSupport;
 
@@ -16,16 +14,7 @@ public static class MasterAnglerTerminalSaveBoundaryBuilder
             request.DecisionSpringDayYearTwo is >= 1 and <= 28, "Terminal save preparation requires an explicit local boundary and valid year-two spring day.");
         var (source, target) = ValidateScope(request.SourceSaveFile, request.IsolatedSaveFile, request.IsolationRoot);
         if (outputPath is not null)
-        {
-            Require(Path.IsPathFullyQualified(outputPath) && outputPath.IndexOfAny(new[] { '*', '?', '[', ']' }) < 0,
-                "Terminal boundary report requires an exact absolute path.");
-            var report = Path.GetFullPath(outputPath);
-            var reportRoot = Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(Path.GetFullPath(request.IsolationRoot)));
-            Require(string.Equals(Path.GetDirectoryName(report), reportRoot, PathComparison) &&
-                Path.GetExtension(report).Equals(".json", StringComparison.OrdinalIgnoreCase) && !File.Exists(report) &&
-                !Directory.Exists(report) && new FileInfo(report).LinkTarget is null,
-                "Terminal boundary report must be a new JSON file beside the isolation root, never an input or save file.");
-        }
+            IsolatedSaveBoundaryFiles.ValidateOutput(outputPath, request.IsolationRoot);
         var sourceHash = CurrentTeacherFrontierSupport.HashFile(source);
         Require(sourceHash == CurrentTeacherFrontierSupport.HashFile(target), "Terminal boundary target must be a fresh byte-identical save copy.");
         var inventoryPath = RequiredFile(request.RequirementInventoryPath);
@@ -36,22 +25,11 @@ public static class MasterAnglerTerminalSaveBoundaryBuilder
         var set = CurrentTeacherFrontierSupport.SingleSet(inventory.RequirementSets, row => row.RequirementSetId, "master_angler", "Terminal save boundary");
         var lowered = CurrentTeacherFrontierSupport.SingleSet(lowering.RequirementSets, row => row.RequirementSetId, "master_angler", "Terminal save boundary lowering");
         CurrentMasterAnglerTeacherFrontierBuilder.ValidateSets(set, lowered);
-        using var reader = XmlReader.Create(target, new XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null });
-        var document = XDocument.Load(reader);
-        reader.Close();
+        var document = IsolatedSaveBoundaryFiles.ReadDocument(target);
         PrepareXml(document, set.Groups.Select(row => row.Alternatives.Single().QualifiedItemId).ToArray(),
             request.MissingQualifiedItemId, request.DecisionSpringDayYearTwo, inventory.GameVersion);
 
-        // Replace only the clone's directory entry, even if a caller supplied a hard-linked file.
-        var staged = target + ".boundary-" + Guid.NewGuid().ToString("N") + ".tmp";
-        using (var stream = new FileStream(staged, FileMode.CreateNew, FileAccess.Write, FileShare.None))
-        using (var writer = XmlWriter.Create(stream, new XmlWriterSettings { Encoding = new UTF8Encoding(false), CloseOutput = false }))
-            document.Save(writer);
-        ValidateScope(source, target, request.IsolationRoot);
-        Require(sourceHash == CurrentTeacherFrontierSupport.HashFile(source) && sourceHash == CurrentTeacherFrontierSupport.HashFile(target),
-            "Terminal boundary source or target changed during preparation.");
-        File.Move(staged, target, overwrite: true);
-        Require(sourceHash == CurrentTeacherFrontierSupport.HashFile(source), "Original save changed during terminal boundary preparation.");
+        IsolatedSaveBoundaryFiles.Commit(source, target, request.IsolationRoot, sourceHash, document);
         return new(requestPath, CurrentTeacherFrontierSupport.HashFile(requestPath), source, target, sourceHash,
             CurrentTeacherFrontierSupport.HashFile(target), CurrentTeacherFrontierSupport.HashFile(inventoryPath),
             CurrentTeacherFrontierSupport.HashFile(loweringPath), request.MissingQualifiedItemId, request.DecisionSpringDayYearTwo);
@@ -89,29 +67,5 @@ public static class MasterAnglerTerminalSaveBoundaryBuilder
     }
 
     private static (string Source, string Target) ValidateScope(string sourcePath, string targetPath, string isolationRoot)
-    {
-        static string Absolute(string path)
-        {
-            Require(!string.IsNullOrWhiteSpace(path) && Path.IsPathFullyQualified(path) && path.IndexOfAny(new[] { '*', '?', '[', ']' }) < 0,
-                "Terminal boundary paths must be exact absolute paths without wildcards.");
-            return Path.GetFullPath(path);
-        }
-        var source = Absolute(sourcePath);
-        var target = Absolute(targetPath);
-        var root = Absolute(isolationRoot).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        var prefix = root + Path.DirectorySeparatorChar;
-        Require(Directory.Exists(root) && root != Path.GetPathRoot(root)?.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) &&
-            File.Exists(source) && File.Exists(target) && !source.Equals(target, PathComparison) &&
-            target.StartsWith(prefix, PathComparison) && !source.StartsWith(prefix, PathComparison) &&
-            Path.GetFileName(source) == Path.GetFileName(target), "Terminal boundary must write only a strict isolated copy, never its source or a drive root.");
-        foreach (var path in new[] { source, target, root })
-        {
-            Require((File.GetAttributes(path) & FileAttributes.ReparsePoint) == 0, "Terminal boundary rejects reparse points.");
-            for (var parent = new DirectoryInfo(File.Exists(path) ? Path.GetDirectoryName(path)! : path); parent is not null; parent = parent.Parent)
-                Require((parent.Attributes & FileAttributes.ReparsePoint) == 0, "Terminal boundary rejects reparse-point ancestors.");
-        }
-        return (source, target);
-    }
-
-    private static StringComparison PathComparison => OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        => IsolatedSaveBoundaryFiles.ValidateScope(sourcePath, targetPath, isolationRoot);
 }

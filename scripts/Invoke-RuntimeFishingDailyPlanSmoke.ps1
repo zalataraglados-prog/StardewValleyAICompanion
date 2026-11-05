@@ -35,6 +35,9 @@ param(
     [switch] $SetupLocationFixture,
     [switch] $NoBuild,
     [switch] $StandaloneCollectionTeacher,
+    [switch] $StandaloneSkillTeacher,
+    [ValidateSet(0, 15, 25)] [int] $SkillTerminalBoundaryLevel = 0,
+    [ValidateRange(1, 28)] [int] $SkillTerminalBoundaryDay = 7,
     [string] $RequirementInventory = (Join-Path $ProjectRoot "experiments\local-data\output\authoritative-requirement-inventory-v1.json"),
     [string] $AcquisitionLowering = (Join-Path $ProjectRoot "experiments\local-data\output\acquisition-route-option-lowering-v1.json"),
     [string] $MasterAnglerWindows = (Join-Path $ProjectRoot "experiments\local-data\output\master-angler-stage-one-window-index-v1.json"),
@@ -46,14 +49,26 @@ $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "lib\RuntimeEvidenceCommon.ps1")
 . (Join-Path $PSScriptRoot "Deploy.Common.ps1")
 . (Join-Path $PSScriptRoot "lib\RuntimeFishingCollectionEvidence.ps1")
+. (Join-Path $PSScriptRoot "lib\RuntimeSkillCollectionEvidence.ps1")
 $isCrabPotFixture = -not [string]::IsNullOrWhiteSpace($CrabPotQualifiedItemId)
+if ($StandaloneSkillTeacher) {
+    if ($StandaloneCollectionTeacher -or $MasterAnglerTerminalBoundaryDay -gt 0 -or
+        -not $IsolateSave -or -not $IsolateMods -or -not $isCrabPotFixture -or
+        -not $IncludeCrabPotCounterfactual -or $FishingLocation -ne "Farm" -or
+        $TaskFamily -ne "none" -or $SkillTerminalBoundaryLevel -notin @(15, 25) -or $FishingMaxAttempts -ne 1) {
+        throw "Skills threshold capture requires one isolated native crab-pot comparison, a declared 15/25 boundary and no collection/global override."
+    }
+}
+elseif ($SkillTerminalBoundaryLevel -ne 0) {
+    throw "Skills terminal boundary requires the explicit standalone Skills source mode."
+}
 if ($MasterAnglerTerminalBoundaryDay -gt 0 -and (-not $isCrabPotFixture -or -not $IncludeCrabPotCounterfactual)) {
     throw "Terminal save boundary capture requires the declared crab-pot and counterfactual boundaries."
 }
 if ($IncludeCrabPotCounterfactual -and -not $isCrabPotFixture) {
     throw "Crab-pot counterfactual requires a declared crab-pot capture boundary."
 }
-if ($isCrabPotFixture -and (-not $StandaloneCollectionTeacher -or -not $IsolateSave -or -not $IsolateMods -or $FishingLocation -ne "Farm")) {
+if ($isCrabPotFixture -and ((-not $StandaloneCollectionTeacher -and -not $StandaloneSkillTeacher) -or -not $IsolateSave -or -not $IsolateMods -or $FishingLocation -ne "Farm")) {
     throw "Crab-pot collection capture requires standalone Teacher, save/mod isolation and explicit Farm location."
 }
 $fixtureCount = @(
@@ -420,7 +435,7 @@ $runtimeGameDir = Join-Path $RuntimeRoot "Stardew Valley"
 $smapiExe = Join-Path $runtimeGameDir "StardewModdingAPI.exe"
 $savesPath = Join-Path $RuntimeRoot "saves"
 $backendUrl = "http://127.0.0.1:$BackendPort"
-$snapshotUrl = if ($StandaloneCollectionTeacher) {
+$snapshotUrl = if ($StandaloneCollectionTeacher -or $StandaloneSkillTeacher) {
     "http://127.0.0.1:8765/api/v1/snapshot?profile=collection_teacher"
 }
 else { "http://127.0.0.1:8765/api/v1/snapshot?profile=fishing" }
@@ -479,6 +494,24 @@ foreach ($component in @(
     ) -InputFiles @((Join-Path $ProjectRoot "Directory.Build.props"), (Join-Path $ProjectRoot "Directory.Build.targets"))
 }
 $terminalSaveBoundaryPath = ""
+$skillSaveBoundaryPath = ""
+if ($StandaloneSkillTeacher) {
+    $requestPath = Join-Path $runDirectory "skill-terminal-save-boundary-request.json"
+    $skillSaveBoundaryPath = Join-Path $runDirectory "skill-terminal-save-boundary.json"
+    Write-JsonFile $requestPath ([ordered]@{
+        schema_version = "skill_terminal_save_boundary_request.v1"
+        source_save_file = Join-Path $sourceSavePath $SaveSlot
+        isolated_save_file = Join-Path (Join-Path $savesPath $SaveSlot) $SaveSlot
+        isolation_root = $savesPath
+        target_scoring_level = $SkillTerminalBoundaryLevel
+        decision_spring_day_year_two = $SkillTerminalBoundaryDay
+        declared_local_prerequisite_only = $true
+        formal_product_training_authorized = $false
+    })
+    & dotnet (Join-Path $ProjectRoot "experiments\StardewAI.GoalConditionedBootstrap\bin\Release\net8.0\StardewAI.GoalConditionedBootstrap.dll") `
+        prepare-skill-terminal-save-boundary --request $requestPath --output $skillSaveBoundaryPath
+    if ($LASTEXITCODE -ne 0) { throw "Skills save boundary preparation failed before game launch." }
+}
 if ($MasterAnglerTerminalBoundaryDay -gt 0) {
     $requestPath = Join-Path $runDirectory "terminal-save-boundary-request.json"
     $terminalSaveBoundaryPath = Join-Path $runDirectory "terminal-save-boundary.json"
@@ -795,7 +828,21 @@ try {
     else {
         "quest.advance"
     }
-    $planningArguments = if ($StandaloneCollectionTeacher) {
+    $skillTeacherQueue = $null
+    $loopSnapshotPath = $snapshotPath
+    $dailyPlanArguments = @("--use-daily-plan")
+    $planningArguments = if ($StandaloneSkillTeacher) {
+        $skillTeacherQueue = Initialize-RuntimeSkillTeacherQueue `
+            -BootstrapDll (Join-Path $ProjectRoot "experiments\StardewAI.GoalConditionedBootstrap\bin\Release\net8.0\StardewAI.GoalConditionedBootstrap.dll") `
+            -OutputRoot $runDirectory -SnapshotUrl $snapshotUrl -TargetScoringLevel $SkillTerminalBoundaryLevel
+        $loopSnapshotPath = $skillTeacherQueue.SnapshotPath
+        $dailyPlanArguments = @()
+        @("--precompiled-queue", $skillTeacherQueue.QueuePath, "--max-attempts", "1",
+            "--required-verified-actions", "1", "--max-queue-item-attempts", "1", "--emit-queue-execution-receipt",
+            "--execution-snapshot-profile", "collection_teacher", "--snapshot-file-profile", "collection_teacher",
+            "--goal", "goal.skills.raise_skill_levels")
+    }
+    elseif ($StandaloneCollectionTeacher) {
         @(
             "--standalone-collection-teacher",
             "--execution-snapshot-profile", "collection_teacher",
@@ -812,14 +859,14 @@ try {
         --backend-url $backendUrl `
         --bridge-snapshot-url $snapshotUrl `
         --executor-url "http://127.0.0.1:8767" `
-        --snapshot-file $snapshotPath `
+        --snapshot-file $loopSnapshotPath `
         --no-manifest `
         --run-id $RunId `
         --save-isolation-path $savesPath `
         --iterations $attemptIterations `
         --skip-training `
         --sleep-ms 0 `
-        --use-daily-plan `
+        @dailyPlanArguments `
         @planningArguments `
         --after-snapshot-wait-ms 1000
     if ($LASTEXITCODE -ne 0) { throw "LiveTrainingLoop returned exit code $LASTEXITCODE" }
@@ -890,11 +937,18 @@ try {
 
     $observedCatch = Read-RuntimeFishingObservedCatch -OptionId $catchExecution.option_id -Facts $catchExecution.changed_facts
     $nativeCatchReceiptPath = ""
+    $skillNativeReceiptPath = ""
     $compiledPossibleCatchIds = @()
     $compiledExpectedCatch = ""
     $compiledDistributionComplete = ""
     $observedCatchInCompiledDistribution = $false
-    if ($isCrabPotFixture) {
+    if ($StandaloneSkillTeacher) {
+        $skillNativeReceiptPath = Build-RuntimeSkillThresholdSource `
+            -BootstrapDll (Join-Path $ProjectRoot "experiments\StardewAI.GoalConditionedBootstrap\bin\Release\net8.0\StardewAI.GoalConditionedBootstrap.dll") `
+            -OutputRoot $runDirectory -RunId $RunId -PreferencePath $skillTeacherQueue.PreferencePath `
+            -TargetScoringLevel $SkillTerminalBoundaryLevel -Step $catchExecution
+    }
+    elseif ($isCrabPotFixture) {
         $nativeCatchReceiptPath = Build-RuntimeMasterAnglerCatchSource `
             -BootstrapDll (Join-Path $ProjectRoot "experiments\StardewAI.GoalConditionedBootstrap\bin\Release\net8.0\StardewAI.GoalConditionedBootstrap.dll") `
             -OutputRoot $runDirectory -RunId $RunId -RequirementInventory $RequirementInventory `
@@ -1007,8 +1061,10 @@ try {
     if (-not $datasetContainsObservedCatch -or (-not $isCrabPotFixture -and -not $datasetContainsOutcomeDistribution)) {
         throw "Fishing training row omitted the normalized outcome distribution or observed catch label."
     }
-    $teacherPreferencePath = Join-Path $snapshotDir ("stage-one-collection-preference-{0:D4}.json" -f $winningAttempt.iteration)
-    $teacherPreference = if ($StandaloneCollectionTeacher -and (Test-Path -LiteralPath $teacherPreferencePath)) {
+    $teacherPreferencePath = if ($StandaloneSkillTeacher) { $skillTeacherQueue.PreferencePath } else {
+        Join-Path $snapshotDir ("stage-one-collection-preference-{0:D4}.json" -f $winningAttempt.iteration)
+    }
+    $teacherPreference = if (($StandaloneCollectionTeacher -or $StandaloneSkillTeacher) -and (Test-Path -LiteralPath $teacherPreferencePath)) {
         Get-Content -LiteralPath $teacherPreferencePath -Raw | ConvertFrom-Json
     }
     else { $null }
@@ -1022,11 +1078,15 @@ try {
         isolated_mods = $IsolateMods.IsPresent
         setup_location_fixture = $SetupLocationFixture.IsPresent
         standalone_collection_teacher = $StandaloneCollectionTeacher.IsPresent
+        standalone_skill_teacher = $StandaloneSkillTeacher.IsPresent
+        skill_save_boundary_path = $skillSaveBoundaryPath
+        skill_native_threshold_receipt_path = $skillNativeReceiptPath
         terminal_save_boundary_path = $terminalSaveBoundaryPath
         teacher_preference_path = if ($null -ne $teacherPreference) { $teacherPreferencePath } else { "" }
         teacher_preference_status = if ($null -ne $teacherPreference) { $teacherPreference.status } else { "not_recorded" }
-        teacher_strict_pair_count = if ($null -ne $teacherPreference) { @($teacherPreference.pairwise_preferences).Count } else { 0 }
+        teacher_strict_pair_count = if ($StandaloneSkillTeacher) { @($teacherPreference.pairwisePreferences).Count } elseif ($null -ne $teacherPreference) { @($teacherPreference.pairwise_preferences).Count } else { 0 }
         teacher_comparison_verified = $false
+        skills_independent_current_comparison_verified = $StandaloneSkillTeacher.IsPresent -and -not [string]::IsNullOrWhiteSpace($skillNativeReceiptPath)
         training_skipped = $true
         formal_training_authorized = $false
         location_id = Read-FieldValue $snapshot "player" "location_id"
@@ -1105,6 +1165,8 @@ finally {
         isolated_save = $IsolateSave.IsPresent
         isolated_mods = $IsolateMods.IsPresent
         standalone_collection_teacher = $StandaloneCollectionTeacher.IsPresent
+        standalone_skill_teacher = $StandaloneSkillTeacher.IsPresent
+        skill_save_boundary_path = $skillSaveBoundaryPath
         terminal_save_boundary_path = $terminalSaveBoundaryPath
         game_kept_running = $KeepGameRunning.IsPresent
         game_process_exited = $null -eq $gameProcess -or $gameProcess.HasExited

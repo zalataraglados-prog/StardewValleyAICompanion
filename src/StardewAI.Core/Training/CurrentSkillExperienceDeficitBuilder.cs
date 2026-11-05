@@ -12,17 +12,12 @@ public sealed class CurrentSkillExperienceDeficitBuilder
     private static readonly string[] SkillIds =
         { "farming", "fishing", "foraging", "mining", "combat", "luck" };
 
-    // Pinned to the live 1.6.15 Farmer method, not inferred from one next-level row.
-    // Source and DLL identities are recorded in docs/skills-local-intake.md.
-    private static readonly int[] NativeThresholds =
-        { 100, 380, 770, 1300, 2150, 3300, 4800, 6900, 10000, 15000 };
-
     public CurrentSkillExperienceDeficit Build(SnapshotEnvelope snapshot)
     {
         if (snapshot is null)
             throw new ArgumentNullException(nameof(snapshot));
         if (snapshot.SchemaVersion != "snapshot.v1" ||
-            snapshot.GameVersion != "1.6.15" || snapshot.GameTick < 0)
+            snapshot.GameVersion != NativeSkillExperienceRules.GameVersion || snapshot.GameTick < 0)
             return Blocked("skill_deficit_snapshot_version_or_tick_unsupported");
         if (snapshot.State is null ||
             !SnapshotHash.MatchesStateHash(snapshot.State, snapshot.StateHash))
@@ -88,12 +83,12 @@ public sealed class CurrentSkillExperienceDeficitBuilder
             !Property(row, "at_vanilla_level_cap", out var atCap) ||
             atCap.ValueKind is not (JsonValueKind.True or JsonValueKind.False) ||
             atCap.GetBoolean() != (level == 10) ||
-            experience < (level == 0 ? 0 : NativeThresholds[level - 1]) ||
-            (level < 10 && experience >= NativeThresholds[level]))
+            experience < (level == 0 ? 0 : NativeSkillExperienceRules.ExperienceForLevel(level)) ||
+            (level < 10 && experience >= NativeSkillExperienceRules.ExperienceForLevel(level + 1)))
             return false;
 
         var next = level < 10 ? level + 1 : (int?)null;
-        var nextThreshold = level < 10 ? NativeThresholds[level] : (int?)null;
+        var nextThreshold = level < 10 ? NativeSkillExperienceRules.ExperienceForLevel(level + 1) : (int?)null;
         var nextDeficit = nextThreshold.HasValue
             ? nextThreshold.Value - experience : (int?)null;
         if (!NullableInteger(row, "next_level", next) ||
@@ -110,7 +105,7 @@ public sealed class CurrentSkillExperienceDeficitBuilder
             Experience = experience,
             NextLevel = next,
             ExperienceToNextLevel = nextDeficit,
-            ExperienceToLevelTen = Math.Max(0, NativeThresholds[9] - experience)
+            ExperienceToLevelTen = Math.Max(0, NativeSkillExperienceRules.ExperienceForLevel(10) - experience)
         };
         return true;
     }

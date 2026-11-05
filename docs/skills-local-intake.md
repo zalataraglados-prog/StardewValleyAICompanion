@@ -167,7 +167,9 @@ zero skipped. Public CLI rejects a promoted formal-training declaration and
 source overwrite without creating a success artifact or mutating the source.
 The E DLL still has the versioned hash above. The final producer takes about
 2.21 seconds/183 MiB peak working set including startup and exact source reading;
-it is not a per-frame scan. This new slice still needs final CI/publication.
+it is not a per-frame scan. PR #448 accepted this slice with final CI
+`42067595027` and merged as `99d352ca9f0b5efdba562033da45f7777d6afb54`;
+its owned branch is removed. Step 3 is not pending or to be reimplemented.
 
 This is retrospective replay of a saved pre-action snapshot, not a new live
 Skills decision, native XP/15/25 outcome, dataset row, full method/corpus gate or
@@ -177,6 +179,82 @@ isolated native execution, retain the same-run queue/nonce and actual base-XP,
 base-level and scoring-threshold transition, then connect the original source
 join/corpus and partition contracts. An explicit boundary fixture may declare
 prior XP/levels; it cannot claim their acquisition or inject the measured gain.
+
+## Same-Run Native Threshold Sources
+
+Step 4 now has two new real threshold sources. Before each action the independent
+current comparison selected between equal-effect 5-XP crab pots (30 versus 210
+projected ticks); `SkillTeacherDispatchBuilder` then used the original
+`DailyPlanCompiler`/`ActionQueueCompiler` and the existing one-shot precompiled
+loop with native feedback and `--skip-training`. No loop execution, bridge,
+candidate producer or movement semantics changed; there is no second executor.
+
+| Run | Declared Prior Fishing XP/Level | Actual Native XP/Level | Scoring Level | Native Ticks |
+| --- | --- | --- | --- | --- |
+| `skills-level15-train-20261106-b` | 3295 / 5 | 3300 / 6 | 14 to 15 | 128 to 155 |
+| `skills-level25-train-20261106-b` | 14995 / 9 | 15000 / 10 | 24 to 25 | 128 to 155 |
+
+`SkillTerminalSaveBoundaryBuilder` prepares only a fresh byte-identical isolated
+copy. Shared path/atomic-replace safety was extracted unchanged from the Master
+Angler boundary; its regressions remain required. The fixture and deficit
+consumer share the single version-pinned XP ladder. Prior levels/XP, ready pots
+and second-year spring day 7 are explicit local prerequisites, not evidence of
+prior acquisition, travel, placement, baiting or overnight production. No measured
+five-point gain, inventory, achievement or pending profession choice was injected.
+Other four skills had zero measured XP change.
+
+Public `build-skill-native-threshold-receipt --request ABS --output NEW.json`
+rebuilds the independent comparison and original compilation, then invokes the
+original strong native reader for mechanical queue, journal/gzip/nonce, actor,
+run/version, exact before/after frame and native verified outcome. Every compiled
+item must match the independent selected action semantics. Complete materialized
+decision JSON must equal the native before frame, including unknown root fields;
+state hash alone is insufficient. Raw decision and compressed manifest physical
+hashes stay separately recorded. Original hash/reader rules were not relaxed.
+`verify-skill-native-threshold-receipt` independently rebuilds the entire receipt.
+
+Receipts and public Verify replays are identical outside Git in
+`I:\StardewAITraining\skills-local-20261105`:
+
+- `native-level15-b.json` / `native-level15-b-replay.json`, SHA
+  `6c86c4daeacfae7db1f3c18f46eac1607a4f5d041c1500bd88738abce3fb45ee`.
+- `native-level25-b.json` / `native-level25-b-replay.json`, SHA
+  `9eaffbcf6285c61794d556eab6b77fedfb69bed38c7cdf041d22f9314ae2ed8d`.
+
+Retain their immutable request/source dependencies under the corresponding
+ignored `artifacts/runtime-fishing-daily-plan-smoke/<run>` directories, not just
+the small reports. The source save directory SHA remains
+`68ddc8dbbe09382f2e7ba1c9d5d1e8dd6d0ffaef59acf9367415b4678f59366d`.
+Games were hidden/silent and serial; source hashes matched and owned processes
+exited. Both sources are day 118, not independent policy partitions.
+
+Diagnostics remain retained. First 15 preparation stopped before execution:
+this new caller omitted the original queue-item attempt bound. Corrected 15
+executed successfully, but its new consumer initially compared raw-file and
+manifest-file hashes. Correct full-frame materialization allowed offline
+build/Verify of that same successful action, without recollecting it. First 25
+preparation stopped at the old freshness guard before game launch; explicit
+rebuild, not bypassing that guard, preceded successful 25. These are not extra
+native successes. The public `Test-SkillNativeThresholdReceipt.ps1` probe rejects
+six wrong-run/threshold/after, forged-formal/hash and input-overwrite cases without
+success artifacts or input mutation. Eight new Skills preflight rejections
+preserve all six original cases. Full game-free Core 1634/1634 and Backend
+597/597 pass, zero skipped. The old collection-source protection test introduced
+in `0916debce` still forbids filtering to a single fishing candidate: only its
+first-branch text locator was updated for the new mutually exclusive Skills mode.
+That original intent was checked in the introducing commit; the corresponding
+local November 5 session directory was unavailable, not claimed as recovered.
+
+Final publication is governed by this slice's PR CI and closing comment; no
+repeat native sampling is required just to publish the code. Step 4 sources
+are implemented, not typed Teacher dataset rows, corpus,
+executable method gate, three-partition coverage or full Skills closure.
+Frozen union remains 7/19 executable, 7/19 split-complete, 7/19 ready and 6/11
+roots; formal=false. **Next is step 5:** connect these retained sources to the
+original Teacher row, criterion corpus and coverage; assess the original local
+method/prerequisite responsibility, then collect only missing policy partitions.
+Do not repeat successful terminal actions because a wrapper changed, reopen old
+accepted roots, or add full-new-save acquisition as a local source prerequisite.
 
 ## Implementation Order
 
