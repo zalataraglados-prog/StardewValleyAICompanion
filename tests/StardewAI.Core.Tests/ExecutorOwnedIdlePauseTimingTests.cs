@@ -31,6 +31,7 @@ public sealed class ExecutorOwnedIdlePauseTimingTests
         Assert.NotNull(result.Calibration);
         Assert.False(context["value"]!["route_timing_ready_now"]!.GetValue<bool>());
         Assert.True(context["value"]!["game_paused"]!.GetValue<bool>());
+        Assert.True(FutureRouteTimingCalibrationLoader.HasVerifiedExecutorOwnedIdlePause(JsonSerializer.SerializeToElement(context)));
     }
 
     [Theory]
@@ -86,6 +87,20 @@ public sealed class ExecutorOwnedIdlePauseTimingTests
         var result = Load(context);
         Assert.Equal(FutureRouteTimingCalibrationLoadStatus.Blocked, result.Status);
         Assert.Contains("future_route_movement_timing_context_not_ready", result.BlockingReasons);
+        Assert.False(FutureRouteTimingCalibrationLoader.HasVerifiedExecutorOwnedIdlePause(JsonSerializer.SerializeToElement(context)));
+    }
+
+    [Theory]
+    [InlineData("unknown")]
+    [InlineData("unavailable")]
+    public void PublicReadOnlyPauseCheckKeepsTheOriginalFieldAndOwnerContract(string status)
+    {
+        var context = Context();
+        var before = context.ToJsonString();
+        Assert.True(FutureRouteTimingCalibrationLoader.HasVerifiedExecutorOwnedIdlePause(JsonSerializer.SerializeToElement(context)));
+        Assert.Equal(before, context.ToJsonString());
+        context["status"] = status;
+        Assert.False(FutureRouteTimingCalibrationLoader.HasVerifiedExecutorOwnedIdlePause(JsonSerializer.SerializeToElement(context)));
     }
 
     private static FutureRouteTimingCalibrationLoadResult Load(JsonNode context) =>

@@ -105,6 +105,18 @@ public sealed class MovementTimingEvidenceSourceGuardTests
         Assert.Contains("route_timing_ready_now", adapter, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void CalibrationPreservesDecodedTimestampTicksAndExplicitRuntimeDeployment()
+    {
+        var script = File.ReadAllText(Path.Combine(RepositoryRoot(), "scripts", "Invoke-RuntimeMovementTimingCalibrationSmoke.ps1"));
+        Assert.Equal(2, script.Split("$startedAt = [DateTimeOffset]$result.started_at", StringSplitOptions.None).Length - 1);
+        Assert.Equal(2, script.Split("$completedAt = [DateTimeOffset]$result.completed_at", StringSplitOptions.None).Length - 1);
+        Assert.Equal(2, script.Split("$actionMilliseconds -gt 0", StringSplitOptions.None).Length - 1);
+        Assert.DoesNotContain("[DateTimeOffset]::Parse([string]$result.", script, StringComparison.Ordinal);
+        Assert.Equal(2, script.Split("-RuntimeRoot $RuntimeRoot -GamePath $gameDirectory -NoBuild:$NoBuild", StringSplitOptions.None).Length - 1);
+        Assert.Contains("native_datetimeoffset_ticks_preserved", script, StringComparison.Ordinal);
+    }
+
     private static string RepositoryRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
