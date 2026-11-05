@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-06 Friendship当前权威缺口（当前优先）：** #453已由CI `42104419946`全部38步接受并合入`712482ea`、分支清理。现唯一primary为`raise_friendships`：typed只读1975..999999/5与10人数缺口已实现，复用原透明桥和保留真实快照，45针对性检查通过，公开两次重建同SHA；不修改原社交/执行/训练链。完整回归及发布见本PR收口。当前读取不是偏好或动作证明，`9/19、9/19、9/19、7/11`和formal=false不变。下一步只接原社交Teacher/有序行程的独立比较，再同run原生及原覆盖，不重开已接受项。[来源、边界、接续](friendship-local-intake.md)。下方“先当前缺口”的旧下一步已实现。
+
 > **2026-11-06 Skills局部三分区收口（当前优先，发布以最终CI为准）：** #452已由CI `42095890029`接受并合入`4098b743`。四个新隔离原生5XP阈值来源及两条不重采train共6行，原Teacher/数据集/覆盖入口接受；15/25各自比较/native三分区齐全、method executable、ready=true、局部open work为空。独立样本显式模式纠正新消费端连续性输入，原默认回填及旧接口保留；最终6行、0拒绝、长期回报全pending，Core1705/Backend597零跳过。最终CI后与已接受集合取并集为`9/19 executable、9/19 split-complete、9/19 ready、7/11 roots`，formal=false，不是全新档或Teacher21/21。下一唯一primary为`raise_friendships`：复用原社交能力，先权威当前缺口及独立来源，不重新实现执行器；其他三root待后续复核。[完整验收](skills-local-acceptance.md)。下方7/19/只train/待补分区均为历史，不再触发重采。
 
 > 本切片最终本地回归：Core1699/Backend597全部通过、零跳过，18新检查；公开局部视图/原入口反例通过，发布以对应PR最终CI与收口评论为准。
