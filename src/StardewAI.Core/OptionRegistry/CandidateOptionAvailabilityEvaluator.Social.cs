@@ -51,7 +51,7 @@ namespace StardewAI.Core.OptionRegistry
                 .OrderByDescending(candidate => candidate.Available)
                 .ThenBy(candidate => candidate.LocationId, StringComparer.Ordinal)
                 .ThenBy(candidate => candidate.CandidateId, StringComparer.Ordinal)
-                .Take(64)
+                .Take(socialCandidateLimit)
                 .ToArray();
             if (!string.IsNullOrWhiteSpace(continuationNpc))
             {

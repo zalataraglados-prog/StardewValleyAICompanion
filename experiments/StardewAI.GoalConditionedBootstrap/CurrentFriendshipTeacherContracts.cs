@@ -1,3 +1,4 @@
+using StardewAI.Contracts.Options;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Training;
 
@@ -5,7 +6,7 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public sealed class CurrentFriendshipTeacherPreference
 {
-    public string SchemaVersion { get; set; } = "current_friendship_teacher_preference.v1";
+    public string SchemaVersion { get; set; } = "current_friendship_teacher_preference.v2";
     public string Status { get; set; } = "blocked";
     public string SnapshotPath { get; set; } = string.Empty;
     public string SnapshotSha256 { get; set; } = string.Empty;
@@ -14,6 +15,7 @@ public sealed class CurrentFriendshipTeacherPreference
     public CurrentFriendshipDeficit Deficit { get; set; } = new();
     public CurrentFriendshipTeacherControl OriginalTeacher { get; set; } = new();
     public string ComparisonPolicyId => "current_friendship_saturated_progress_contact_budget_frontier.v1";
+    public string CandidateSourcePolicyId => "complete_offline_social_comparison.v1";
     public string[] ConsideredOptionIds { get; set; } = Array.Empty<string>();
     public CurrentFriendshipTeacherOptionAudit[] OptionAudit { get; set; } = Array.Empty<CurrentFriendshipTeacherOptionAudit>();
     public bool CandidateDenominatorComplete { get; set; }
@@ -52,9 +54,13 @@ public sealed class CurrentFriendshipTeacherOptionAudit
     public string[] BlockingReasons { get; set; } = Array.Empty<string>();
     public int CandidateCount { get; set; }
     public int SourceCandidateCount { get; set; }
+    public int SourceSocialCandidateCount { get; set; }
+    public int? AppliedSocialCandidateLimit { get; set; }
     public bool AtLegacySocialCandidateLimit { get; set; }
     public string[] OmittedAvailableCandidateIds { get; set; } = Array.Empty<string>();
     public string[] DuplicateSourceCandidateIds { get; set; } = Array.Empty<string>();
+    public string[] BlockingDuplicateSourceCandidateIds { get; set; } = Array.Empty<string>();
+    public EventCandidate[] UnavailableDuplicateSourceOccurrences { get; set; } = Array.Empty<EventCandidate>();
 }
 
 public sealed class CurrentFriendshipTeacherCandidate

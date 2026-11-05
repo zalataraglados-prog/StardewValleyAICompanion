@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using StardewAI.Contracts.State;
+using StardewAI.Core.OptionRegistry;
 using StardewAI.GoalConditionedBootstrap;
 
 namespace StardewAI.Core.Tests;
@@ -123,16 +124,68 @@ public sealed partial class SocialTransparentPlanningTests
         Assert.Throws<InvalidDataException>(() => FriendshipTeacherDispatchBuilder.Compile(path));
     }
 
-    [Fact]
-    public void FriendshipTeacherDoesNotCallTheLegacySixtyFourCandidateWindowAFullDenominator()
+    [Theory]
+    [InlineData(64)]
+    [InlineData(65)]
+    public void FriendshipTeacherUsesFullOfflineSourceWhileRuntimeKeepsItsOriginalWindow(int targets)
     {
-        var files = FriendshipTeacherFiles(targets: 65);
+        var files = FriendshipTeacherFiles(targets: targets);
+        var snapshot = JsonSerializer.Deserialize<SnapshotEnvelope>(File.ReadAllText(files.Snapshot), JsonOptions)!;
+        var runtime = new CandidateOptionAvailabilityEvaluator();
+        var injectedRuntime = new CandidateOptionAvailabilityEvaluator(
+            new StardewAI.Core.OptionRegistry.OptionRegistry(), new StardewAI.Core.Verifier.Verifier());
+        var complete = CandidateOptionAvailabilityEvaluator.ForCompleteOfflineSocialComparison();
+        Assert.Equal(64, runtime.SocialCandidateLimit);
+        Assert.Equal(64, injectedRuntime.SocialCandidateLimit);
+        Assert.Null(complete.SocialCandidateLimit);
+        var optionIds = new[] { "social.talk_npc" };
+        var bounded = Assert.Single(runtime.Evaluate(snapshot, optionIds).Options).SocialCandidates;
+        Assert.Equal(64, bounded.Length);
+        Assert.Equal(bounded.Select(row => row.CandidateId), Assert.Single(injectedRuntime.Evaluate(snapshot, optionIds).Options)
+            .SocialCandidates.Select(row => row.CandidateId));
+        var full = Assert.Single(complete.Evaluate(snapshot, optionIds).Options).SocialCandidates;
+        Assert.Equal(targets, full.Length);
+        Assert.Equal(bounded.Select(row => row.CandidateId), full.Take(64).Select(row => row.CandidateId));
         var result = CurrentFriendshipTeacherPreferenceBuilder.Build(files.Snapshot, files.Calibration);
-        Assert.False(result.CandidateDenominatorComplete);
-        Assert.False(result.TeacherPreferenceLabelEligible);
-        Assert.Contains(result.OptionAudit, option => option.OptionId == "social.talk_npc" && option.AtLegacySocialCandidateLimit);
-        Assert.Contains("friendship_teacher_incomplete_denominator_or_legacy_candidate_limit", result.BlockingReasons);
-        Assert.Empty(result.PairwisePreferences);
+        Assert.True(result.CandidateDenominatorComplete, string.Join(",", result.BlockingReasons));
+        var audit = result.OptionAudit.Single(option => option.OptionId == "social.talk_npc");
+        Assert.Equal(targets, audit.SourceSocialCandidateCount);
+        Assert.Null(audit.AppliedSocialCandidateLimit);
+        Assert.False(audit.AtLegacySocialCandidateLimit);
+        Assert.Equal(targets, result.DecisionCandidates.Length);
+        Assert.Equal(63, result.PairwisePreferences.Length);
+        if (targets == 64)
+        {
+            Assert.True(result.TeacherPreferenceLabelEligible, string.Join(",", result.BlockingReasons));
+            Assert.Empty(result.UncomparedCandidateIds);
+        }
+        else
+        {
+            // The old compiler's immediate matcher has its own bounded source; do not bypass it.
+            Assert.False(result.TeacherPreferenceLabelEligible);
+            var unmatched = Assert.Single(result.UncomparedCandidateIds);
+            var row = result.Candidates.Single(candidate => candidate.CandidateId == unmatched);
+            Assert.Equal("excluded", row.Status);
+            Assert.Contains("social_current_state_candidate_not_available_for_executor", row.Reasons);
+        }
+        Assert.False(result.NativeOutcomeVerified);
+        Assert.Equal(64, Assert.Single(runtime.Evaluate(snapshot, optionIds).Options).SocialCandidates.Length);
+    }
+
+    [Fact]
+    public void FriendshipTeacherRejectsLegacyArtifactsAndEditedIntakeClaims()
+    {
+        var files = FriendshipTeacherFiles();
+        var result = CurrentFriendshipTeacherPreferenceBuilder.Build(files.Snapshot, files.Calibration);
+        var stored = Path.Combine(files.Directory, "intake-edited.json");
+        var json = JsonSerializer.SerializeToNode(result, JsonOptions)!;
+        json["schemaVersion"] = "current_friendship_teacher_preference.v1";
+        File.WriteAllText(stored, json.ToJsonString());
+        Assert.Throws<InvalidDataException>(() => CurrentFriendshipTeacherPreferenceBuilder.Verify(stored));
+        json["schemaVersion"] = result.SchemaVersion;
+        json["optionAudit"]![0]!["appliedSocialCandidateLimit"] = 64;
+        File.WriteAllText(stored, json.ToJsonString());
+        Assert.Throws<InvalidDataException>(() => CurrentFriendshipTeacherPreferenceBuilder.Verify(stored));
     }
 
     [Fact]
@@ -149,7 +202,41 @@ public sealed partial class SocialTransparentPlanningTests
         Assert.False(result.CandidateDenominatorComplete);
         Assert.False(result.TeacherPreferenceLabelEligible);
         Assert.Contains("social:talk:Abigail", result.OptionAudit.Single(option => option.OptionId == "social.talk_npc").DuplicateSourceCandidateIds);
+        Assert.Contains("social:talk:Abigail", result.OptionAudit.Single(option => option.OptionId == "social.talk_npc").BlockingDuplicateSourceCandidateIds);
         Assert.Empty(result.PairwisePreferences);
+    }
+
+    [Fact]
+    public void FriendshipTeacherRetainsEveryKnownUnavailableDuplicateWithoutBlockingUnrelatedTargets()
+    {
+        var files = FriendshipTeacherFiles();
+        var source = JsonNode.Parse(File.ReadAllText(files.Snapshot))!;
+        var rows = source["state"]!["npcs"]!["social_interaction"]!["value"]!.AsArray();
+        var inactive = rows[0]!.DeepClone();
+        inactive["name"] = "Inactive";
+        inactive["can_socialize"] = false;
+        inactive["can_receive_gifts"] = false;
+        rows.Add(inactive);
+        rows.Add(inactive.DeepClone());
+        var snapshot = source.Deserialize<SnapshotEnvelope>(JsonOptions)!;
+        snapshot.StateHash = SnapshotHash.ComputeStateHash(snapshot.State);
+        File.WriteAllText(files.Snapshot, JsonSerializer.Serialize(snapshot, JsonOptions));
+        var result = CurrentFriendshipTeacherPreferenceBuilder.Build(files.Snapshot, files.Calibration);
+        Assert.True(result.CandidateDenominatorComplete, string.Join(",", result.BlockingReasons));
+        var audit = result.OptionAudit.Single(option => option.OptionId == "social.talk_npc");
+        Assert.Contains("social:talk:Inactive", audit.DuplicateSourceCandidateIds);
+        Assert.Empty(audit.BlockingDuplicateSourceCandidateIds);
+        Assert.Equal(4, audit.SourceSocialCandidateCount);
+        Assert.Equal(2, audit.UnavailableDuplicateSourceOccurrences.Length);
+        Assert.All(audit.UnavailableDuplicateSourceOccurrences, row =>
+        {
+            Assert.False(row.Available);
+            Assert.NotEmpty(row.BlockReasons);
+            Assert.NotEqual(true, row.AllowedNow);
+            Assert.NotEqual(true, row.AllowedToday);
+        });
+        Assert.DoesNotContain(result.PairwisePreferences, pair => pair.AlternativeCandidateId == "social:talk:Inactive");
+        Assert.False(result.NativeOutcomeVerified);
     }
 
     private static (string Snapshot, string Calibration, string Directory) FriendshipTeacherFiles(bool gifts = false, int qualifying = 0, int targets = 2)

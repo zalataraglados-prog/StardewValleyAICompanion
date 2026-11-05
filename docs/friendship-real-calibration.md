@@ -1,5 +1,9 @@
 # Friendship Real Calibration
 
+The calibration below is accepted in #456 (`c53b6a0d`). The subsequent explicit
+complete offline intake is implemented; follow [its actual result and sole next
+step](friendship-complete-intake.md), not the historical next-step paragraph below.
+
 PR #455 passed all 38 CI steps at final head
 `76054c4d84f34391c9c9331cdd6eea67020b50c9`, merged as
 `a699a3e902c293d7b8920bc41dd3f43baf08394f`; its branch is removed.

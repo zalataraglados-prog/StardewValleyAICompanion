@@ -57,34 +57,47 @@ public static partial class CurrentFriendshipTeacherPreferenceBuilder
         report.CalibrationSha256 = CurrentTeacherFrontierSupport.HashFile(calibrationPath);
         var direction = GrandpaDirectionCatalog.Entries.Single(entry => entry.DirectionId == "raise_friendships");
         report.ConsideredOptionIds = direction.PermittedOptionIds.Order(StringComparer.Ordinal).ToArray();
-        var availability = new CandidateOptionAvailabilityEvaluator().EvaluateForAutonomousRuntimePlanning(
+        var evaluator = CandidateOptionAvailabilityEvaluator.ForCompleteOfflineSocialComparison();
+        var availability = evaluator.EvaluateForAutonomousRuntimePlanning(
             snapshot, report.ConsideredOptionIds);
         var neutral = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability,
                 direction.EffectiveGoalId)
             .Select(candidate => CurrentStageOneCollectionTeacherPreferenceBuilder.NeutralizeLearnerSignals(candidate, TeacherId))
             .OrderBy(candidate => candidate.CandidateId, StringComparer.Ordinal).ToArray();
         var rankedIds = neutral.Select(candidate => (candidate.OptionId, candidate.CandidateId)).ToHashSet();
-        report.OptionAudit = availability.Options.Select(option => new CurrentFriendshipTeacherOptionAudit
+        report.OptionAudit = availability.Options.Select(option =>
         {
-            OptionId = option.OptionId, Status = option.Status, Available = option.Available,
-            MissingStateFactors = option.MissingStateFactors, BlockingReasons = option.BlockingReasons,
-            CandidateCount = neutral.Count(candidate => candidate.OptionId == option.OptionId),
-            SourceCandidateCount = option.EventCandidates.Concat(option.SocialCandidates)
-                .Select(candidate => candidate.CandidateId).Distinct(StringComparer.Ordinal).Count(),
-            // The existing runtime SocialCandidates adapter intentionally applies Take(64).
-            AtLegacySocialCandidateLimit = option.SocialCandidates.Length >= 64,
-            OmittedAvailableCandidateIds = option.EventCandidates.Concat(option.SocialCandidates)
-                .Where(candidate => candidate.Available && !rankedIds.Contains((option.OptionId, candidate.CandidateId)))
-                .Select(candidate => candidate.CandidateId).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray(),
-            // Cross-family aliases remain the old ranker's responsibility; duplicates within the social source are ambiguous.
-            DuplicateSourceCandidateIds = option.SocialCandidates.GroupBy(candidate => candidate.CandidateId, StringComparer.Ordinal)
-                .Where(group => group.Count() > 1).Select(group => group.Key).Order(StringComparer.Ordinal).ToArray()
+            var duplicates = option.SocialCandidates.GroupBy(candidate => candidate.CandidateId, StringComparer.Ordinal)
+                .Where(group => group.Count() > 1).OrderBy(group => group.Key, StringComparer.Ordinal).ToArray();
+            var blockedDuplicates = duplicates.Where(group => group.Any(candidate => candidate.Available ||
+                candidate.AllowedNow == true || candidate.AllowedToday == true || candidate.BlockReasons.Length == 0)).ToArray();
+            var blockingIds = blockedDuplicates.Select(group => group.Key).ToHashSet(StringComparer.Ordinal);
+            return new CurrentFriendshipTeacherOptionAudit
+            {
+                OptionId = option.OptionId, Status = option.Status, Available = option.Available,
+                MissingStateFactors = option.MissingStateFactors, BlockingReasons = option.BlockingReasons,
+                CandidateCount = neutral.Count(candidate => candidate.OptionId == option.OptionId),
+                SourceCandidateCount = option.EventCandidates.Concat(option.SocialCandidates)
+                    .Select(candidate => candidate.CandidateId).Distinct(StringComparer.Ordinal).Count(),
+                SourceSocialCandidateCount = option.SocialCandidates.Length,
+                AppliedSocialCandidateLimit = evaluator.SocialCandidateLimit,
+                AtLegacySocialCandidateLimit = evaluator.SocialCandidateLimit == 64 && option.SocialCandidates.Length >= 64,
+                OmittedAvailableCandidateIds = option.EventCandidates.Concat(option.SocialCandidates)
+                    .Where(candidate => candidate.Available && !rankedIds.Contains((option.OptionId, candidate.CandidateId)))
+                    .Select(candidate => candidate.CandidateId).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray(),
+                // Keep every known-unavailable duplicate occurrence; it is neither an action nor a negative label.
+                DuplicateSourceCandidateIds = duplicates.Select(group => group.Key).ToArray(),
+                BlockingDuplicateSourceCandidateIds = blockedDuplicates.Select(group => group.Key).ToArray(),
+                UnavailableDuplicateSourceOccurrences = duplicates.Where(group => !blockingIds.Contains(group.Key))
+                    .SelectMany(group => group).ToArray()
+            };
         }).OrderBy(option => option.OptionId, StringComparer.Ordinal).ToArray();
-        report.CandidateDenominatorComplete = report.OptionAudit.Select(option => option.OptionId)
+        report.CandidateDenominatorComplete = evaluator.SocialCandidateLimit is null &&
+            report.OptionAudit.Select(option => option.OptionId)
                 .SequenceEqual(report.ConsideredOptionIds, StringComparer.Ordinal) &&
             report.OptionAudit.All(option => option.MissingStateFactors.Length == 0 &&
                 !option.AtLegacySocialCandidateLimit && option.OmittedAvailableCandidateIds.Length == 0 &&
-                option.DuplicateSourceCandidateIds.Length == 0);
+                option.BlockingDuplicateSourceCandidateIds.Length == 0);
         if (neutral.Select(candidate => candidate.CandidateId).Distinct(StringComparer.Ordinal).Count() != neutral.Length)
             return Blocked(report, "friendship_teacher_duplicate_candidate_identity");
         if (!report.CandidateDenominatorComplete)
@@ -159,6 +172,8 @@ public static partial class CurrentFriendshipTeacherPreferenceBuilder
         var raw = CurrentTeacherFrontierSupport.Read<JsonElement>(preferencePath, "Friendship Teacher preference");
         var stored = raw.Deserialize<CurrentFriendshipTeacherPreference>(JsonDefaults.Options) ??
             throw new InvalidDataException("Friendship Teacher preference is null.");
+        if (stored.SchemaVersion != "current_friendship_teacher_preference.v2")
+            throw new InvalidDataException("Rebuild the friendship preference from its sources using the complete offline intake.");
         var rebuilt = BuildCore(stored.SnapshotPath, stored.CalibrationPath);
         if (!JsonNode.DeepEquals(JsonNode.Parse(raw.GetRawText()), JsonSerializer.SerializeToNode(rebuilt, JsonDefaults.Options)))
             throw new InvalidDataException("Friendship Teacher preference differs from original sources and comparison.");
