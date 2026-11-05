@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-11-06 Skills原生15/25阈值来源已贯通
+
+- #448最终头`91ee64bf`经CI `42067595027`接受并合入`99d352ca`、对应分支已清理；下方Step3待CI已完成，不再重做。唯一primary仍`raise_skill_levels`，冻结并集`7/19 executable、7/19 split-complete、7/19 CoverageGateReady、6/11 roots`与formal=false不变。
+- 新消费端先独立比较两个同效果蟹笼，再调用原DailyPlan/ActionQueue编译和原单次预编译执行入口；新两次E后台静音运行各真正增加5XP，钓鱼`3295/5→3300/6`、评分`14→15`，以及`14995/9→15000/10`、评分`24→25`，均`128→155tick`。前置等级/XP、现成蟹笼和日期明确声明，未注入测量奖励，不冒充前期获取/自然生产。源档目录SHA`68ddc8db...`不变，进程退出。
+- 新公开native receipt build/Verify复用原强reader/请求gzip/nonce及原语义比较器，核验完整原编译项、完整解包前态、五技能真实增量和评分阈值。原始JSON与压缩清单物理哈希分别保留，不改旧哈希/执行门。独立重建分别同SHA`6c86c4da...`/`9eaffbcf...`，六类公开CLI篡改均拒绝、原输入未变。首次新调用漏参数/误比物理哈希已修，只离线重建成功15动作，不重采；25新鲜度拦截后显式重建，不绕旧门。
+- 完整Core1634/Backend597零跳过，原Collection源码测试只更新分支定位，保留不筛窄候选断言；发布结果以本PR最终CI/收口评论为准，不为发布重复采证。两次均day118，还不是typed Teacher行/corpus、方法executable或三分区整项完成，不晋升计数。来源/诊断见[Skills局部接续](skills-local-intake.md#same-run-native-threshold-sources)。无worker/API/服务器/模型训练，不提交local-data或原始产物。**唯一下一步：** 收口后沿Step5接原Teacher行/criterion corpus与coverage，复核原局部方法责任，再补真正缺失的policy分区；不重做动作或重采成功阈值。
+
 ## 2026-11-06 Skills独立当前比较已接线
 
 - #447最终头`4b3c7400`经CI `42059282002`和无发现审查接受，合入`bb336431`、分支已清理。下方当前XP缺口消费端的待CI已完成，不重新实现或重采。唯一primary仍`raise_skill_levels`；冻结并集`7/19 executable、7/19 split-complete、7/19 CoverageGateReady、6/11 roots`、formal=false不变。

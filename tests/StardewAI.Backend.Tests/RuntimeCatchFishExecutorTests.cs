@@ -34,9 +34,10 @@ public sealed class RuntimeCatchFishExecutorTests
     public void LocalTeacherCaptureUsesOriginalTeacherWithoutFilteringToOneFishingCandidate()
     {
         var source = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "scripts", "Invoke-RuntimeFishingDailyPlanSmoke.ps1"));
-        var start = source.IndexOf("$planningArguments = if ($StandaloneCollectionTeacher)", StringComparison.Ordinal);
+        var start = source.IndexOf("elseif ($StandaloneCollectionTeacher)", StringComparison.Ordinal);
+        Assert.True(start >= 0);
         var end = source.IndexOf("else { @(\"--daily-plan-max-candidates\"", start, StringComparison.Ordinal);
-        Assert.True(start >= 0 && end > start);
+        Assert.True(end > start);
         var localMode = source[start..end];
         Assert.Contains("--standalone-collection-teacher", localMode);
         Assert.Contains("\"--execution-snapshot-profile\", \"collection_teacher\"", localMode);

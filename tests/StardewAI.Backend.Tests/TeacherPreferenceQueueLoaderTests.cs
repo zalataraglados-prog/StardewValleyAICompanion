@@ -292,6 +292,24 @@ public sealed class TeacherPreferenceQueueLoaderTests
         Assert.Contains("cannot be combined", error.Message);
     }
 
+    [Fact]
+    public void SkillsThresholdCollectorUsesOneBoundedOriginalQueueWithoutTraining()
+    {
+        var options = LiveTrainingOptions.Parse(new[]
+        {
+            "--precompiled-queue", "skills-queue.json", "--skip-training",
+            "--max-attempts", "1", "--required-verified-actions", "1",
+            "--max-queue-item-attempts", "1", "--emit-queue-execution-receipt",
+            "--execution-snapshot-profile", "collection_teacher",
+            "--snapshot-file-profile", "collection_teacher",
+            "--goal", "goal.skills.raise_skill_levels"
+        });
+        Assert.True(options.UsePrecompiledQueue);
+        Assert.True(options.SkipTraining);
+        Assert.False(options.UseDailyPlan);
+        Assert.Equal(1, options.MaxQueueItemAttempts);
+    }
+
     private static string TemporaryPreferencePath(JsonObject value)
     {
         var path = Path.Combine(

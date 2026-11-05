@@ -43,6 +43,11 @@ var commandDefinitions = new CommandDefinition[]
     new("build-current-skill-experience-deficit", BuildCurrentSkillExperienceDeficit),
     new("build-current-skill-teacher-preference", options => WriteCurrentSkillTeacherPreference(options, verify: false)),
     new("verify-current-skill-teacher-preference", options => WriteCurrentSkillTeacherPreference(options, verify: true)),
+    new("prepare-skill-terminal-save-boundary", options => Write(options.Required("output"),
+        SkillTerminalSaveBoundaryBuilder.Prepare(options.Required("request"), options.Required("output")))),
+    new("compile-current-skill-teacher-preference", CompileCurrentSkillTeacherPreference),
+    new("build-skill-native-threshold-receipt", options => WriteSkillNativeThresholdReceipt(options, verify: false)),
+    new("verify-skill-native-threshold-receipt", options => WriteSkillNativeThresholdReceipt(options, verify: true)),
     new("build-goal-method-graph", BuildGoalMethodGraph),
     new("build-goal-method-teacher-coverage", BuildGoalMethodTeacherCoverage),
     new("build-goal-method-coverage-reconciliation", BuildGoalMethodCoverageReconciliation),
@@ -650,6 +655,28 @@ static void WriteCurrentSkillTeacherPreference(Arguments options, bool verify)
     Write(output, result);
     if (!result.TeacherPreferenceLabelEligible)
         Environment.ExitCode = 2;
+}
+
+static void CompileCurrentSkillTeacherPreference(Arguments options)
+{
+    var plan = Path.GetFullPath(options.Required("plan-output"));
+    var queue = Path.GetFullPath(options.Required("output"));
+    if (plan.Equals(queue, OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) ||
+        new[] { plan, queue }.Any(path => File.Exists(path) || Directory.Exists(path) ||
+            !path.EndsWith(".json", StringComparison.OrdinalIgnoreCase)))
+        throw new InvalidDataException("Skills plan and queue outputs must be different new JSON files.");
+    var dispatch = SkillTeacherDispatchBuilder.Compile(options.Required("preference"));
+    Write(plan, dispatch.Plan);
+    Write(queue, dispatch.Queue);
+}
+
+static void WriteSkillNativeThresholdReceipt(Arguments options, bool verify)
+{
+    var output = Path.GetFullPath(options.Required("output"));
+    if (File.Exists(output) || Directory.Exists(output) || !output.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+        throw new InvalidDataException("Native Skills receipt output must be a new JSON file.");
+    Write(output, verify ? SkillNativeThresholdReceiptBuilder.Verify(options.Required("receipt")) :
+        SkillNativeThresholdReceiptBuilder.Build(options.Required("request")));
 }
 
 static void BuildGoalMethodGraph(Arguments options)

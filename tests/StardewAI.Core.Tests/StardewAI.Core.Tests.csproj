@@ -88,6 +88,8 @@
     <Compile Include="CurrentSkillTeacherComparisonTests.cs" />
     <Compile Include="CurrentSkillLocalTimeAdmissionTests.cs" />
     <Compile Include="CurrentSkillTeacherPreferenceRebuildTests.cs" />
+    <Compile Include="SkillTerminalSaveBoundaryTests.cs" />
+    <Compile Include="SkillNativeThresholdRequestTests.cs" />
     <Compile Include="GrandpaDirectionDailyCandidateBindingTests.MasterAnglerNative.cs" />
     <Compile Include="CropHarvestBudgetPolicyTests.cs" />
     <Compile Include="CropHarvestSourceIdentitySourceGuardTests.cs" />
