@@ -164,7 +164,8 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
             preference,
             queueReceipt,
             before,
-            after);
+            after,
+            ReadMasterAnglerTransitionInventory(preference, inventoryFullPath));
         var failedTransitions = transitions
             .Where(value => !value.Verified)
             .Select(value =>

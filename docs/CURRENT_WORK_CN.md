@@ -1,6 +1,10 @@
 # StardewAI 当前工作
 
-## 2026-11-03 当前 Rusty Key 切片与接续
+## 当前切片与接续（Master Angler）
+
+- **2026-11-05 Master Angler来源修补已验证（当前primary不变）：** 已复现原收集回执只验目标鱼false→true、误收7种全量后态异常。现终端回执复用原前沿的同一72鱼种读取器，按原权威inventory检查前/后态并拒绝既有收集倒退；不复制校验器，不改执行器/采集奖励/旧数据或其他collection分支。9项聚焦、完整game-free Core1379、Backend565、原独立监督CLI均通过，零跳过；EVD-338不变。旧item-grab样本只是领奖恢复，前态无收集字段，保留原作用而不冒充新捕获；现有fishing profile已有所需字段，不加全量逐帧扫描。代码提交/CI收口后，下一实质仍是复用原collection Teacher/receipt/replayer建立真实比较与原生来源连接，保留72/14及R2分层，不换root。尚无本项新native验收或覆盖晋升，`6/19、7/19、6/19、5/11`与formal=false不变；无worker/API/新游戏，local-data不提交。[合同](master-angler-local-native-join.md)。
+
+- **2026-11-05 R2接续选定Master Angler（本条优先）：** Rusty Key已由#437/#438合入收口并向用户汇报，不再占WIP。按R2重新核对六个未闭合root，现唯一primary为`complete_master_angler`：原姜岛能力证书公开重建仍同SHA`6031276d...`；用当前含Rusty闭合的依赖图重建72鱼种/14前置族audit与proof仍ready，proof SHA`5d78acf7...`，无新游戏/全局核桃日程。相比Skills缺typed source adapter、Friendship缺未来日期接触证据、Marriage组合链、Museum异构来源概率和Money18格，本项已确认局部前置复用成本最低，余下实质是独立比较/真实原生来源的接线与分区核实，不把旧R1全新档长跑恢复为前置。找到的旧coverage请求明确引用self-test fixture，不能据此新增真实native完成主张；保留旧分栏计数，当前不抬Ready。**下一步：** 只读审查既有真实钓鱼/蟹笼回执与前态，复用原日志reader、CurrentMasterAngler绑定、原比较/编译执行器；缺来源或比较不独立即保留blocker。详见[本项接续合同](master-angler-local-native-join.md)与状态第6节。既有冻结并集`6/19、7/19、6/19、5/11`及formal=false不变，无worker/API，不提交local-data。
 
 - **2026-11-05 最终合入、用户汇报点（本条优先）：** #437最终头`32f43fbb`的CI`41985920364`全部成功，已合并`67f82eb6`；本轮代码分支已核实MERGED/祖先关系并清理。Rusty Key按R2的criterion-local整项已收口，`executable_frontier ∩ Teacher/native三分区`为ready且无本项open work，计数冻结为`6/19、7/19、6/19、5/11`。下条“待CI/提交/合并”已经完成，不得重新排为任务。真实三条join/corpus/原coverage、1370 Core与87阈值保护检查、源档/进程/端口和local-data隔离范围见[局部验收](rusty-key-local-acceptance.md)。正式训练、Teacher全局21分和新档零到60仍未完成，不得据本局部ready放行。当前动作是按用户要求汇报，不在汇报前开新root；后续按R2核对真实局部剩余成本决定下一primary，不恢复旧R1固定全序。
 
