@@ -25,6 +25,7 @@ namespace StardewAI.Core.OptionRegistry
         private readonly OptionRegistry optionRegistry;
         private readonly Verifier.Verifier verifier;
         private readonly ActionQueueCompiler compiler;
+        private readonly int socialCandidateLimit;
         private readonly IReadOnlyDictionary<string, Func<SnapshotEnvelope, SmallModelActionParameter[], EventCandidate[]>> eventCandidateProviders;
         private readonly SnapshotStateCache<EventCandidate[]>
             routeConnectorCandidatesBySnapshot = new();
@@ -47,12 +48,25 @@ namespace StardewAI.Core.OptionRegistry
         }
 
         public CandidateOptionAvailabilityEvaluator(OptionRegistry optionRegistry, Verifier.Verifier verifier)
+            : this(optionRegistry, verifier, 64)
+        {
+        }
+
+        private CandidateOptionAvailabilityEvaluator(
+            OptionRegistry optionRegistry, Verifier.Verifier verifier, int socialCandidateLimit)
         {
             this.optionRegistry = optionRegistry;
             this.verifier = verifier;
+            this.socialCandidateLimit = socialCandidateLimit;
             compiler = new ActionQueueCompiler(optionRegistry, verifier);
             eventCandidateProviders = CreateEventCandidateProviders();
         }
+
+        public int? SocialCandidateLimit => socialCandidateLimit == int.MaxValue ? null : socialCandidateLimit;
+
+        // Offline comparison needs the complete source; runtime constructors keep their bounded interface.
+        public static CandidateOptionAvailabilityEvaluator ForCompleteOfflineSocialComparison() =>
+            new(new OptionRegistry(), new Verifier.Verifier(), int.MaxValue);
 
         public OptionAvailabilityEnvelope Evaluate(
             SnapshotEnvelope snapshot,

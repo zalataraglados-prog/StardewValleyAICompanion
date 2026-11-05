@@ -1,9 +1,9 @@
 # Friendship Independent Comparison
 
-Current continuation: real calibration has passed and the actual intake reached
-the guarded gift-source cap. Follow [the real-source next step](friendship-real-calibration.md)
-before launching threshold actions; preserve the runtime default budget and all
-candidate families. Do not rerun the synthetic or accepted calibration slice.
+Current continuation: real calibration and complete offline source intake have
+passed. Follow [the full-source result and cross-map continuation](friendship-complete-intake.md).
+The old runtime/Teacher budgets remain unchanged. Do not repeat accepted
+calibration or confuse the earlier synthetic protocol with native evidence.
 
 ## Accepted Base And Scope
 
@@ -58,11 +58,12 @@ candidates prevent label admission. The old ranker's intentional cross-family
 alias deduplication is not changed or reclassified as a bug.
 
 The original runtime social adapter intentionally takes at most 64 candidates.
-This consumer detects a saturated legacy window and rejects it **before**
-expensive route/compilation proofs; it does not enlarge or rewrite shared runtime
-behavior or call a truncated set complete. Its audit exposes source/ranked
-counts, omitted available IDs and the limit flag. An explicit uncapped offline
-intake remains necessary when this boundary is reached.
+The original v1 consumer rejected that saturated window before expensive proofs.
+The v2 consumer now uses an explicit complete offline factory while preserving
+both old runtime constructors. Its audit retains actual source occurrence and
+ranked counts, omitted available IDs, applied limit and duplicate records; see
+[the complete intake contract](friendship-complete-intake.md). Unknown or
+potentially available ambiguous IDs still block admission.
 
 Each admitted counterfactual is bound to one unique native scoring target,
 positive exact projected transition, original dispatchable plan/queue, and a
@@ -124,7 +125,10 @@ authorization remain false.
 
 ## Sole Next Slice
 
-Use the new public comparison/compile consumer with the existing isolated native
+First finish only the new consumer's complete cross-map contact comparison using
+the existing calibrated frontier and original one-connector compiler, as detailed
+in [the current continuation](friendship-complete-intake.md). Then use the new
+public comparison/compile consumer with the existing isolated native
 social runner and executor to collect **real** same-run threshold outcomes for
 five and ten qualifiers. Preserve original raw source frames, actor/save/run,
 complete decision context, queue/item/nonce and actual native before/after counts.
