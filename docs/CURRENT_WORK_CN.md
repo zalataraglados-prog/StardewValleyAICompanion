@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-11-05 Master Angler精确决策typed join已重建
+
+- `MasterAnglerTeacherNativeJoinBuilder`及公开build/Verify已接原数据集结构校验、`PolicyPairwiseSupervisionAdmission`/原独立replayer和原精确native catch Verify。只读`PolicyTrajectoryDatasetBuilder.ValidateEnvelope`仅转发原内部校验器，旧数据集/训练器调用和规则未改变；未新增Teacher、编译器、执行器或放宽旧聚合回执。
+- 消费上轮已保留的真实监督行和708原生证明，核对原authority/降级映射、完整前后态来源、run/save、原编译队列全部语义、选中candidate/queue/item、实际tick跨度、目标鱼和原policy分区。公开build与最终Verify同SHA`8a4dccb27884008dad528db7df4040d9709361e1814a2c9953e0272d397a155a`，仍是原`ProofFarm:1:spring:7`的一条train、6对严格比较；没有重开游戏或生成新训练样本。
+- 29项新增协议/结构入口检查及完整game-free Core1506、Backend594均通过，零跳过；4个真实来源CLI反例拒绝跨run有效证明拼接、无独立比较的原生观测、篡改formal声明和不合法结构版本，且不写成功工件。原始观测未改，local-data不提交。
+- **唯一接续：** 将这些可重建join接入原`GoalMethodTeacherCoverageBuilder`的来源聚合/去重和criterion corpus，再补真正缺失的蟹笼及validation/test；不复制比较/执行系统，不重采已成功的精确杆钓决策。对多队列续接保留完整来源链责任，不把旧末端queue冒充初始Teacher queue，不把随机未命中造为负偏好；当前精确join不宣称此边界或整项已完成。原分栏`6/19、7/19、6/19、5/11`与formal=false保持不变，无worker/API/服务器操作。[精确join合同](master-angler-local-native-join.md#exact-decision-typed-join)。
+
 ## 2026-11-05 独立Teacher到真实杆钓单决策已重放
 
 - 唯一primary仍为`complete_master_angler`。新增显式`--standalone-collection-teacher`仅接原`TryBuildStageOneCollectionTeacherQueueAsync`，要求禁训、原生反馈、现存隔离目录与四份authority，拒绝learner checkpoint、候选过滤/钉选和全局模式混接。`cfcac4674`当时为作物结束后切入collection控制，旧三个激活条件及同分控制/标签分离均保留；留存JSON仅找到后续git-log引用，未臆称找回原始对话。

@@ -20,6 +20,9 @@ public sealed class PolicyTrajectoryDatasetBuilder
         supervisionAdmission = new PolicyPairwiseSupervisionAdmission(replayVerifier);
     }
 
+    public static string? ValidateEnvelope(PolicyDecisionTrajectoryEnvelope row) =>
+        new PolicyTrajectoryDatasetValidator().Validate(row);
+
     public PolicyDatasetBuildResult Build(
         string inputPath,
         string outputRoot,

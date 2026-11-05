@@ -224,13 +224,67 @@ and explicit-E Bridge/PolicyDataset builds had zero warnings/errors. An attempte
 Core no-build filter found no matching tests and is not counted as a pass;
 profile permission tests execute the linked actual context in Backend tests.
 
-Next, build the missing machine-replayable typed join/corpus binding from the
-retained final row and native proof, using the original validators and full
-source identities, not a new comparison or an edited aggregate. The two
-independently verified artifacts alone are not a completed typed corpus or
-three-partition criterion. Add only genuinely missing trap/partition scope
-after the binding is verified; do not repeat this successful rod source.
+The exact-decision typed join below now closes this retained row/native binding.
+Corpus aggregation, missing trap/partition scope and any required multi-queue
+continuation binding remain open; do not repeat this successful rod source or
+promote two standalone verification artifacts into a complete criterion.
 Accepted union and formal=false remain unchanged.
+
+## Exact Decision Typed Join
+
+`MasterAnglerTeacherNativeJoinBuilder` exposes
+`build-master-angler-teacher-native-join --request ... --output ...` and
+`verify-master-angler-teacher-native-join --receipt ... --output ...`.
+Its request names one original supervised row and one native catch receipt.
+The original dataset envelope validator is reused through the read-only
+`PolicyTrajectoryDatasetBuilder.ValidateEnvelope` facade; no old validator
+rules or dataset/trainer call paths changed. The builder then invokes the
+original `PolicyPairwiseSupervisionAdmission` with
+`CollectionTeacherSupervisionReplayVerifier`, and the original native source
+Verify (which rebuilds the request journal, queue/capture and exact 72-species
+transition). Metadata flags alone are not evidence.
+
+The new layer connects, rather than duplicates, those validators:
+
+- Teacher/native original inventory, lowering, before and after hashes must
+  match. Run/save/source-state identities and the existing policy partition
+  function are preserved; no Rusty Key split convention is substituted.
+- The complete original Teacher compiled queue must equal the recorded native
+  queue, including parameters/actor, with the same selected candidate and exact
+  queue/item. The outcome primitive, success/freshness and actual tick span must
+  bind that same capture. The physical verifier retains nonce/RPC/actor checks.
+- The selected requirement credit and independently verified false-to-true
+  transition must name the fish actually caught. Random misses, recovery
+  rewards, copied dates or independently valid foreign sources cannot stand in.
+- Source hashes cover the join request, row, native receipt, all original
+  Teacher sources and all physical source hashes. Verify rebuilds both branches
+  and compares the complete claimed proof. Formal authorization stays false.
+
+The retained real final source builds and independently verifies with SHA
+`8a4dccb27884008dad528db7df4040d9709361e1814a2c9953e0272d397a155a`.
+Files remain outside Git in the existing `native-source-binding` directory:
+`teacher-native-join-request.json`, `teacher-native-join.json` and
+`teacher-native-join-final-replay.json`. It is one original train decision with
+six strict pairs and `(O)708`, not new gameplay or extra partition coverage.
+Native data, original receipts and supervision rows were not rewritten.
+
+Verification includes 28 synthetic binding-only checks (rod/trap identity,
+source, partition, duration, queue semantics and exact transition mismatches),
+one original-envelope facade check, complete game-free Core 1506/1506 and
+Backend 594/594, zero skipped. Synthetic checks are not native acceptance.
+Public CLI tests on retained real files independently reject a foreign valid
+native proof, a native observation without comparison, a copied proof claiming
+formal training, and a copied row with invalid feature schema. Rejections do
+not create successful output artifacts.
+
+Next, reuse the original goal-method coverage source aggregation for verified
+joins/corpus, with original decision groups and native-action deduplication,
+then add genuinely missing trap/validation/test evidence. Existing original
+multi-queue aggregate behavior is preserved: this exact aligned-decision
+adapter does not certify a continuation whose initial/final queues differ.
+That source-chain responsibility remains explicit for later integration; do
+not relabel the old random-miss run or change shared execution to fit this
+consumer. Criterion/global readiness and formal training remain unproven.
 
 ## Implementation And Verification Sequence
 
