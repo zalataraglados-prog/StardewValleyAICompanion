@@ -4,7 +4,7 @@ using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
 using StardewAI.Core.Execution;
 using StardewAI.Core.Infrastructure;
-using static StardewAI.GoalConditionedBootstrap.RustyKeyNativeKeyReceiptBuilder;
+using static StardewAI.GoalConditionedBootstrap.NativeExecutionSourceSupport;
 
 namespace StardewAI.GoalConditionedBootstrap;
 

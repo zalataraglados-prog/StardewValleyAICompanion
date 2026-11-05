@@ -6,7 +6,7 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public static partial class CurrentMasterAnglerTeacherFrontierBuilder
 {
-    private static void ValidateSets(
+    internal static void ValidateSets(
         GoalRequirementSet inventory,
         AcquisitionRequirementSetLowering lowering)
     {

@@ -40,6 +40,9 @@ transition and unavailable/already-caught cases. Full game-free Core is
 CLI exits zero; no tests skipped and no new game was started for this change.
 These checks validate protocol behavior, not new native catch evidence.
 
+The receipt-guard change passed CI `41993166106` at `3f283673` and merged in
+PR #439 as `eb275df9`; its branch is removed. Do not repeat its pending-CI work.
+
 The retained `capacity_available` fishing recovery sample is specifically
 `executor.claim_fishing_item_grab_reward`; its before profile lacks collection
 progress. Preserve it as reward-recovery evidence, not a catch-to-collection
@@ -50,6 +53,57 @@ No new field, full-snapshot requirement for unrelated actions or per-frame scan
 was introduced. Reuse the original collection preference/receipt builder and
 `CollectionTeacherSupervisionReplayVerifier` for the remaining join; do not fork
 another Teacher or infer supervision from candidate rank/control selection.
+
+## Exact Native Catch Source
+
+`MasterAnglerNativeCatchReceiptBuilder` supplies the physical-source receipt
+through `build-master-angler-native-catch-receipt` and
+`verify-master-angler-native-catch-receipt`. Its request explicitly names run,
+authoritative inventory/lowering, actual mechanical queue, raw execution result
+and recorded after capture. The before frame comes only from the original
+verified request journal, never an arbitrary caller-supplied before snapshot.
+
+- The existing Rusty Key action-source reader was extracted into
+  `NativeExecutionActionSourceReader`, with original snapshot helpers moved to
+  `NativeExecutionSourceSupport`. Neither is a second executor or compiler.
+  Rusty Key retains its own option whitelist, decision identity, date horizon,
+  route/wait facts, donation/sleep/event checks and causal continuity.
+- Request gzip/hash/nonce, exact recorded queue/capture paths, actor/mode,
+  classification, declared RPC parameter aliases and observed tick/hash/freshness
+  checks remain shared. No writer or old aggregate boundary is changed.
+- The new consumer accepts only original `catch_fish` or `collect_crab_pot`
+  success. Both frames use the existing exact 72-species parser; prior catches
+  cannot regress and exactly one previously missing species must become caught.
+  The original authority/lowering validators are reused, including version pin.
+- Rod outcomes must identify the actual caught species in the original native
+  verification facts and compiled random outcome domain. This does not force
+  the intended species or make an RNG miss a negative Teacher preference.
+  Trap receipts require the original native `caughtFish` verification, eligible
+  collection call, zero previous count, positive resulting count and exact
+  `qualified_item_id` RPC field. Crafting, baiting and reward-only recovery
+  remain valid in their own scopes but cannot masquerade as new catch credit.
+- The receipt explicitly keeps `teacher_comparison_verified=false` and
+  `formal_training_authorized=false`. No partition is assigned by this
+  physical-source producer. The later causal join must use the original
+  independent Teacher decision and its existing split contract, not the native
+  terminal date or a relabeled copy.
+
+Eighteen synthetic checks cover rod/trap success and replay, unavailable or
+truncated collection state, regression/already-caught state, wrong run,
+unbound queue/capture, authority drift, wrong native outcome/domain, reward
+recovery, and trap eligibility/item drift. Full game-free Core is 1397/1397 and
+Backend 565/565, zero skipped. The original Rusty Key public corpus Verify
+reproduces SHA
+`4ae5a1ba99a3c9533cbd1d31870de2b69286766c89e7ec9fd74f4f842b64e697`
+after extraction; its accepted scope is unchanged. The replay lives outside
+Git in `I:\StardewAITraining\master-angler-local-20261105\native-source-binding`.
+
+This is not a newly acquired native fish sample. Next, capture only genuinely
+missing source in an isolated, hidden/silent E-game run with the existing
+`fishing` profile, then join the exact source to the existing collection
+Teacher/replayer and required corpus partitions. Do not reuse the old
+reward-only sample, invent comparisons, reopen accepted roots or enable
+formal/model training to obtain a source-protocol smoke.
 
 ## Implementation And Verification Sequence
 

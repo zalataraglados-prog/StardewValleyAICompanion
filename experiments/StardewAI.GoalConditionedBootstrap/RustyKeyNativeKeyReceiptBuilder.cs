@@ -6,6 +6,7 @@ using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
 using StardewAI.Core.OptionRegistry;
 using StardewAI.Core.Training;
+using static StardewAI.GoalConditionedBootstrap.NativeExecutionSourceSupport;
 
 namespace StardewAI.GoalConditionedBootstrap;
 

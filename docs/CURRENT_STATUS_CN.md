@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-05 来源入口接续：** #439已成功CI并合入`eb275df9`，旧待CI不重开。当前增加精确杆钓/蟹笼新收集来源build/Verify，复用抽出的原Rusty请求/队列/快照reader与同一72分母校验；Rusty局部白名单/跨日门保留，真实三分区corpus独立重放仍同SHA`4ae5a1ba...`。18项新合成检查、Core1397、Backend565通过，未新增真实捕鱼样本或Teacher标签，计数不变、formal=false。唯一下一步仍是该source的隔离原生采样和原collection Teacher/native连接，不换root、不重做执行器；详见[本项来源合同](master-angler-local-native-join.md#exact-native-catch-source)。
+
 > **2026-11-05 当前唯一primary：`complete_master_angler`。** Rusty Key收口已汇报；按R2比较实际局部缺口后接回Master Angler，不执行旧R1第10项/完整Day-0硬前置。原能力证书独立重建同SHA，当前依赖图上的72/14前置proof仍ready；真实Teacher/native来源仍须核对，旧self-test请求不冒充production。当前接受面板不变，formal=false。范围、选择依据和退出条件见第6节新增R2接续及[本项合同](master-angler-local-native-join.md)。
 
 > **同项实现进展：** 原收集终端回执的7类异常后态误收已先红后绿修正，复用前沿原72鱼种读取器并检查单调性；有效归因和原执行层不变。Core1379、Backend565、聚焦9及原监督CLI通过，待该头提交/CI。未增加原生捕获/分区/ready计数；下一步仍复用既有collection Teacher/receipt/replayer做真实来源连接，而非再造执行器或重开旧门。
