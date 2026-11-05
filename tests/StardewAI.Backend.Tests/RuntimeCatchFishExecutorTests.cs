@@ -31,6 +31,23 @@ public sealed class RuntimeCatchFishExecutorTests
     }
 
     [Fact]
+    public void LocalTeacherCaptureUsesOriginalTeacherWithoutFilteringToOneFishingCandidate()
+    {
+        var source = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "scripts", "Invoke-RuntimeFishingDailyPlanSmoke.ps1"));
+        var start = source.IndexOf("$planningArguments = if ($StandaloneCollectionTeacher)", StringComparison.Ordinal);
+        var end = source.IndexOf("else { @(\"--daily-plan-max-candidates\"", start, StringComparison.Ordinal);
+        Assert.True(start >= 0 && end > start);
+        var localMode = source[start..end];
+        Assert.Contains("--standalone-collection-teacher", localMode);
+        Assert.Contains("\"--execution-snapshot-profile\", \"collection_teacher\"", localMode);
+        Assert.Contains("--stage-one-collection-requirement-inventory", localMode);
+        Assert.DoesNotContain("--daily-plan-candidate-options", localMode);
+        Assert.DoesNotContain("--daily-plan-max-candidates", localMode);
+        Assert.DoesNotContain("--require-golden-walnut", localMode);
+        Assert.DoesNotContain("--continue-after-crop", localMode);
+    }
+
+    [Fact]
     public void ActionFeatureVectorCarriesNormalizedInputAndObservedOutput()
     {
         var json = JsonSerializer.Serialize(new ActionFeatureVector

@@ -20,6 +20,7 @@
   <ItemGroup>
     <Using Include="Xunit" />
     <Compile Include="..\Shared\PolicySupervisionFixture.cs" Link="PolicySupervisionFixture.cs" />
+    <Compile Include="..\..\src\StardewAI.TransparentBridge\State\SnapshotProfileContext.cs" Link="BridgeSnapshotProfileContext.cs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -79,6 +79,9 @@ jobs:
       - name: Test isolated material-transfer preflight and original slot verification without game
         shell: pwsh
         run: ./scripts/Test-RuntimeMaterialTransferSmoke.ps1 -OutputRoot "$env:RUNNER_TEMP/material-transfer-runtime"
+      - name: Test fishing source mapping across original continuation queues without game
+        shell: pwsh
+        run: ./scripts/Test-RuntimeFishingArtifactMapping.ps1 -OutputRoot "$env:RUNNER_TEMP/fishing-source-mapping"
       - name: Restore core governance tests
         run: dotnet restore tests/StardewAI.Core.Tests/StardewAI.Core.Tests.csproj --locked-mode -p:GameFreeGovernance=true
       - name: Test core governance

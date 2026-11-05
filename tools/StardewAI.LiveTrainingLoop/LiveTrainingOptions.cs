@@ -95,7 +95,9 @@ public sealed class LiveTrainingOptions
     public bool StopAfterSocialObjectiveComplete { get; set; }
     public bool StopAfterCropTeacherFirstDay { get; set; }
     public bool ContinueAfterCropTeacherRun { get; set; }
+    public bool StandaloneCollectionTeacher { get; set; }
     public bool UseStageOneCollectionTeacher =>
+        StandaloneCollectionTeacher ||
         RequireGoldenWalnutSourceScheduleReady ||
         RequireGourmandContinuationReady ||
         ContinueAfterCropTeacherRun;
@@ -482,6 +484,10 @@ public sealed class LiveTrainingOptions
             {
                 options.UsePlanOutput = true;
             }
+            else if (current == "--standalone-collection-teacher")
+            {
+                options.StandaloneCollectionTeacher = true;
+            }
             else if (current == "--use-daily-plan")
             {
                 options.UseDailyPlan = true;
@@ -652,6 +658,7 @@ public sealed class LiveTrainingOptions
                 "--daily-plan-candidate-options value.");
         }
 
+        StandaloneCollectionTeacherMode.Validate(options);
         options.ValidateTeacherPreferenceMode();
         options.ValidatePrecompiledQueueMode();
         options.ValidateQueueExecutionReceiptMode();

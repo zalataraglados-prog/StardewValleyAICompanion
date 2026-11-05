@@ -27,6 +27,11 @@ param(
     [switch] $IsolateSave,
     [switch] $SetupLocationFixture,
     [switch] $NoBuild,
+    [switch] $StandaloneCollectionTeacher,
+    [string] $RequirementInventory = (Join-Path $ProjectRoot "experiments\local-data\output\authoritative-requirement-inventory-v1.json"),
+    [string] $AcquisitionLowering = (Join-Path $ProjectRoot "experiments\local-data\output\acquisition-route-option-lowering-v1.json"),
+    [string] $MasterAnglerWindows = (Join-Path $ProjectRoot "experiments\local-data\output\master-angler-stage-one-window-index-v1.json"),
+    [string] $RouteTimingCalibration = "I:\StardewAITrainingLab\goal-conditioned-bootstrap-v1\artifacts\runtime-movement-timing-calibration\runtime-movement-timing-calibration-20260906-043908\summary.json",
     [switch] $RunSparseMappingFixture
 )
 
@@ -44,6 +49,14 @@ if ($fixtureCount.Count -gt 1) {
 }
 if ($SetupLocationFixture -and -not $IsolateSave) {
     throw "Location fishing fixtures require an isolated save copy."
+}
+if ($StandaloneCollectionTeacher) {
+    if (-not $IsolateSave -or -not $IsolateMods -or $TaskFamily -ne "none") {
+        throw "Standalone collection Teacher capture requires save/mod isolation and no task override."
+    }
+    foreach ($path in @($RequirementInventory, $AcquisitionLowering, $MasterAnglerWindows, $RouteTimingCalibration)) {
+        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "Teacher authority input is missing: $path" }
+    }
 }
 
 function Write-JsonFile {
@@ -142,13 +155,13 @@ function Resolve-CompactTrainingAttempts {
     param([string] $SnapshotDir, [string] $DatasetPath)
 
     $queueRecordsById = @{}
-    foreach ($candidateQueuePath in @(Get-ChildItem -LiteralPath $SnapshotDir -Filter "compiled-queue-*.json" | Sort-Object Name)) {
-        if ($candidateQueuePath.Name -notmatch '^compiled-queue-(\d{4})\.json$') { continue }
+    foreach ($candidateQueuePath in @(Get-ChildItem -LiteralPath $SnapshotDir -Filter "*compiled-queue-*.json" | Sort-Object Name)) {
+        if ($candidateQueuePath.Name -notmatch '^(?:compiled-queue-(?<ordinal>\d{4})|continuation-compiled-queue-(?<ordinal>\d{4})-item-\d{4})\.json$') { continue }
         $candidateQueue = Get-Content -LiteralPath $candidateQueuePath.FullName -Raw | ConvertFrom-Json
         $queueId = [string]$candidateQueue.queue_id
         if ([string]::IsNullOrWhiteSpace($queueId)) { throw "Compiled queue artifact omitted queue_id: $($candidateQueuePath.FullName)" }
         if ($queueRecordsById.ContainsKey($queueId)) { throw "Duplicate compiled queue_id in artifacts: $queueId" }
-        $iterationText = $Matches[1]
+        $iterationText = $Matches['ordinal']
         $executionPath = Join-Path $SnapshotDir "execution-$iterationText.json"
         $queueRecordsById[$queueId] = [pscustomobject]@{
             iteration = [int]$iterationText
@@ -389,7 +402,10 @@ $runtimeGameDir = Join-Path $RuntimeRoot "Stardew Valley"
 $smapiExe = Join-Path $runtimeGameDir "StardewModdingAPI.exe"
 $savesPath = Join-Path $RuntimeRoot "saves"
 $backendUrl = "http://127.0.0.1:$BackendPort"
-$snapshotUrl = "http://127.0.0.1:8765/api/v1/snapshot?profile=fishing"
+$snapshotUrl = if ($StandaloneCollectionTeacher) {
+    "http://127.0.0.1:8765/api/v1/snapshot?profile=collection_teacher"
+}
+else { "http://127.0.0.1:8765/api/v1/snapshot?profile=fishing" }
 $worldSnapshotUrl = "http://127.0.0.1:8765/api/v1/snapshot?profile=route"
 if (-not (Test-Path -LiteralPath $smapiExe -PathType Leaf)) { throw "SMAPI executable not found: $smapiExe" }
 if (-not (Test-Path -LiteralPath $savesPath -PathType Container)) { throw "Isolated saves path not found: $savesPath" }
@@ -433,12 +449,14 @@ foreach ($project in @("src\StardewAI.Backend", "tools\StardewAI.LiveTrainingLoo
         if ($LASTEXITCODE -ne 0) { throw "Fishing smoke dependency build failed: $project" }
     }
 }
-foreach ($dll in @($backendDll, $loopDll)) {
-    Assert-StardewAIBuildOutputFresh -OutputPath $dll -InputRoots @(
+foreach ($component in @(
+    @{ Dll = $backendDll; Source = "src\StardewAI.Backend" },
+    @{ Dll = $loopDll; Source = "tools\StardewAI.LiveTrainingLoop" }
+)) {
+    Assert-StardewAIBuildOutputFresh -OutputPath $component.Dll -InputRoots @(
         (Join-Path $ProjectRoot "src\StardewAI.Contracts"),
         (Join-Path $ProjectRoot "src\StardewAI.Core"),
-        (Join-Path $ProjectRoot "src\StardewAI.Backend"),
-        (Join-Path $ProjectRoot "tools\StardewAI.LiveTrainingLoop"),
+        (Join-Path $ProjectRoot $component.Source),
         (Join-Path $ProjectRoot "experiments\StardewAI.GoalConditionedBootstrap")
     ) -InputFiles @((Join-Path $ProjectRoot "Directory.Build.props"), (Join-Path $ProjectRoot "Directory.Build.targets"))
 }
@@ -693,6 +711,18 @@ try {
     else {
         "quest.advance"
     }
+    $planningArguments = if ($StandaloneCollectionTeacher) {
+        @(
+            "--standalone-collection-teacher",
+            "--execution-snapshot-profile", "collection_teacher",
+            "--snapshot-file-profile", "collection_teacher",
+            "--stage-one-collection-requirement-inventory", $RequirementInventory,
+            "--stage-one-collection-acquisition-lowering", $AcquisitionLowering,
+            "--master-angler-stage-one-window-index", $MasterAnglerWindows,
+            "--route-timing-calibration", $RouteTimingCalibration
+        )
+    }
+    else { @("--daily-plan-max-candidates", "1", "--daily-plan-candidate-options", $dailyPlanCandidateOptions) }
     & dotnet $loopDll `
         --root $loopRoot `
         --backend-url $backendUrl `
@@ -706,8 +736,7 @@ try {
         --skip-training `
         --sleep-ms 0 `
         --use-daily-plan `
-        --daily-plan-max-candidates 1 `
-        --daily-plan-candidate-options $dailyPlanCandidateOptions `
+        @planningArguments `
         --after-snapshot-wait-ms 1000
     if ($LASTEXITCODE -ne 0) { throw "LiveTrainingLoop returned exit code $LASTEXITCODE" }
 
@@ -880,6 +909,11 @@ try {
     if (-not $datasetContainsObservedCatch -or -not $datasetContainsOutcomeDistribution) {
         throw "Fishing training row omitted the normalized outcome distribution or observed catch label."
     }
+    $teacherPreferencePath = Join-Path $snapshotDir ("stage-one-collection-preference-{0:D4}.json" -f $winningAttempt.iteration)
+    $teacherPreference = if ($StandaloneCollectionTeacher -and (Test-Path -LiteralPath $teacherPreferencePath)) {
+        Get-Content -LiteralPath $teacherPreferencePath -Raw | ConvertFrom-Json
+    }
+    else { $null }
     $summary = [ordered]@{
         status = "passed"
         run_id = $RunId
@@ -889,6 +923,11 @@ try {
         isolated_save = $IsolateSave.IsPresent
         isolated_mods = $IsolateMods.IsPresent
         setup_location_fixture = $SetupLocationFixture.IsPresent
+        standalone_collection_teacher = $StandaloneCollectionTeacher.IsPresent
+        teacher_preference_path = if ($null -ne $teacherPreference) { $teacherPreferencePath } else { "" }
+        teacher_preference_status = if ($null -ne $teacherPreference) { $teacherPreference.status } else { "not_recorded" }
+        teacher_strict_pair_count = if ($null -ne $teacherPreference) { @($teacherPreference.pairwise_preferences).Count } else { 0 }
+        teacher_comparison_verified = $false
         training_skipped = $true
         formal_training_authorized = $false
         location_id = $snapshot.state.fishing.location_context.value.location_id
@@ -962,6 +1001,7 @@ finally {
         source_save_unchanged = $sourceSaveHashAfter -ceq $sourceSaveHash
         isolated_save = $IsolateSave.IsPresent
         isolated_mods = $IsolateMods.IsPresent
+        standalone_collection_teacher = $StandaloneCollectionTeacher.IsPresent
         game_kept_running = $KeepGameRunning.IsPresent
         game_process_exited = $null -eq $gameProcess -or $gameProcess.HasExited
         backend_process_exited = $null -eq $backendProcess -or $backendProcess.HasExited
