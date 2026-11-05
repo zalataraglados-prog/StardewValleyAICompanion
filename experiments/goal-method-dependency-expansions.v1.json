@@ -2034,7 +2034,7 @@
     },
     {
       "direction_id": "obtain_rusty_key",
-      "status": "in_progress",
+      "status": "complete",
       "completion_node_id": "dependency.obtain_rusty_key.has_rusty_key",
       "source_ids": [
         "native.utility",
@@ -2044,10 +2044,7 @@
         "runtime_data_objects",
         "authoritative_dependency_graph"
       ],
-      "blockers": [
-        "reuse the museum acquisition and reservation chain to select a minimum-time 60-donation portfolio without consuming protected items",
-        "prove the projected museum60 reward action native key-delivery event trigger and fresh hasRustyKey receipt before the Year 3 evaluation"
-      ],
+      "blockers": [],
       "nodes": [
         {
           "id": "dependency.obtain_rusty_key.has_rusty_key",
@@ -2079,7 +2076,10 @@
           ],
           "shared_dependency_family": "museum_item_acquisition_and_reservation",
           "rule": {
-            "target": "minimum-time set of distinct missing museum items sufficient to reach the live rusty-key donation threshold",
+            "target": "reduce the live deficit max(0, threshold - donated_count) by fresh reserve-safe acquisition, retained custody, authorized withdrawal and one exact donation at a time",
+            "producer": "RustyKeyRollingSupplyProposalBuilder reuses the original acquisition portfolio, reservation, donation timeline and action compiler",
+            "selection_scope": "acquisition uses minimum elapsed minutes then energy among currently admitted acquisition proposals; held stock, custody and recovery retain their existing ordering; not a global sixty-item optimum or Teacher label",
+            "full_threshold_certificate": "RustyKeyAcquisitionPortfolioBuilder still requires exactly the entire live deficit when a full portfolio certificate is requested; a partial rolling step cannot claim it",
             "reservation": "preserve active tasks crafting full-shipment and remaining museum commitments",
             "unknown_route_or_outcome": "fail_closed"
           }
@@ -2124,6 +2124,10 @@
           "rule": {
             "before_threshold": "repeat shared museum acquisition reservation and donation",
             "after_threshold": "wait for and progress only the fresh attributable native key event",
+            "progress_measure": "max(0, live_threshold - donated_count); each verified distinct donation reduces it by exactly one, acquisition alone does not",
+            "stage_one_deadline_exclusive": 224,
+            "date_and_time_owner": "existing acquisition, custody and donation schedule gates plus the independently verified native donor-to-key join; never summed costs alone",
+            "acceptance_scope": "criterion-local conditional method; cross-root optimal scheduling, seed robustness and complete fresh-save evaluation remain global integration responsibilities",
             "continue_while": { "path": "player.has_rusty_key", "operator": "equals", "value": false }
           }
         }

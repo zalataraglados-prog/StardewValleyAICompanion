@@ -173,6 +173,10 @@ Offline TeacherOracle -> supervision/relabel/counterfactual/coverage/benchmark
 - Executor 负责移动、工具、战斗、菜单和原生交互。
 - TeacherOracle 负责训练期独立监督与覆盖证明；发布版的可选 Teacher Provider 仅在额外核验条件确实需要时作有界证据复核或否决，不能以另一套 Teacher 评分改选已通过 strict-Pareto 证明的结果。事实/证据矛盾应失败关闭并 fresh replan；不能把 Teacher 自身的判断当作数学意义的 100% 正确证明。其产品验收不反向阻塞 Stage 1 开训。
 
+## Rusty Key 的局部与全局责任（2026-11-05）
+
+生锈钥匙局部方法按已批准的滚动获取/预留/保管/逐件捐赠递推验收，不要求当天先有其余59件路线，也不把95件博物馆全收集或完整Day-0长跑倒挂为L1前置。若调用完整阈值组合证书，原恰好覆盖实时缺口的规则仍保留；单项提案不能冒充完整证书。三分区边界原生轨迹和独立比较只证明明示前态下的局部连接，不证明从零取得60件或全局最优。L3仍须核验跨根现金/材料承诺、联合多日日历和机会成本；L4仍须在新档真实取得全部前置并完成21分/种子稳健性评测，不能拼接边界副本代替。详细来源和局部收口状态见[rusty-key-local-acceptance.md](rusty-key-local-acceptance.md)。这些全局事项未删除、未因局部ready自动完成，正式训练仍按原19项/模型/manifest准入门。
+
 ## 人类适配边界
 
 Stage 1 先形成可关闭、可复现的单人 21 分基线，Stage 2 再扩展并冻结 Perfection 100% 的完美策略基线；Stage D 才允许学习联机中的人类偏好与协作风格。`player_intent`、`player_preferences`、`cooperation_state`、资源归属、角色分工、拟人化节奏以及 human/AI 行为来源都属于基线冻结后的 Companion 适配层。

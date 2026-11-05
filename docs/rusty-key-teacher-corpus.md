@@ -1,5 +1,9 @@
 # Rusty Key Teacher Corpus
 
+Current three-partition native evidence and method responsibility reconciliation
+are tracked in [local acceptance](rusty-key-local-acceptance.md). The single-row
+evidence below records the initial adapter implementation, not the latest corpus.
+
 ## Scope
 
 `RustyKeyTeacherCorpusBuilder` groups existing independently verified
@@ -66,8 +70,9 @@ the adapter as implemented and connected, while retaining the pending method
 and missing validation/test work. Checkpoint EVD-338 remains unchanged. Final
 PR CI is still required for the committed head.
 
-Remaining work is genuine missing native decision partitions plus the original
-method, safe threshold supply and pre-Year-3 responsibilities. Do not rerun
+At initial adapter merge, remaining work was genuine missing native partitions
+and original method/supply/deadline reconciliation. Current closure status is
+owned by the linked local acceptance and canonical work/status pages. Do not rerun
 accepted local custody/key/visual gates or impose a complete Day-0 run as a
 reverse prerequisite. No worker, paid API, new game, checkpoint change or
 formal training was used to implement this adapter.

@@ -81,6 +81,13 @@ neither its cause nor a repair is claimed. Both records remain local.
 
 ## Next Closure
 
+The current criterion-local reconciliation is tracked in
+[local acceptance](rusty-key-local-acceptance.md). The obligations below describe
+the original producer's scope and the retained global integration work; they
+must not be used to impose a fresh-save or all-sixty-at-once reverse prerequisite
+on the approved local rolling method. This producer's full-threshold semantics
+and intentionally false native/joint-schedule claims are unchanged.
+
 The separate [rolling producer](rusty-key-rolling-supply.md) now generates legal
 one-item next-step proposals and existing held-donation queues. These are not
 automatically full-threshold certificates; this adapter's exact-deficit rule is

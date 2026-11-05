@@ -1,5 +1,9 @@
 # Rusty Key Donation Teacher Comparison
 
+Current criterion-local acceptance is tracked in
+[local acceptance](rusty-key-local-acceptance.md). This document retains the
+comparison producer's original scope; it does not own whole-criterion readiness.
+
 ## Scope
 
 `RustyKeyDonationTeacherComparisonBuilder` independently rebuilds one conditional

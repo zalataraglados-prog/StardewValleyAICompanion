@@ -10,7 +10,7 @@ internal static partial class BootstrapSelfTest
     public static void RunRustyKeyPortfolio(string outputRoot)
     {
         var passed = new List<string>();
-        foreach (var donated in new[] { 0, 58, 59 })
+        foreach (var donated in Enumerable.Range(0, 60))
         {
             var fixture = new RustyKeyPortfolioFixture(donated);
             var originalLedger = JsonSerializer.Serialize(fixture.Ledger, JsonDefaults.Options);

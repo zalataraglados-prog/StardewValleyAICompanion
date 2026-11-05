@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-05 Rusty Key局部验收通过，发布以本切片最终CI为准（本条优先）：** #436已合并`3ddbfe17`。原生三分区独立比较/连续捐赠到钥匙连接已齐，原公开覆盖重建为本项`coverage_ready=true`且无局部open work；方法图按已批准rolling递推同步，不宣称全局最优或新档零到60。Core1370、完整阈值/资源87项通过，原生进程/端口回收、源档保持。与原冻结集合并集后为`6/19、7/19、6/19、5/11`；本项单来源机器报告的ready count=1不是全局退回1/19。正式训练仍false，完整Teacher21分未完成。详见[局部验收与全局责任](rusty-key-local-acceptance.md)和当前工作；最终提交/CI/合并后按用户要求汇报，不自动切root。下方本项未完/冻结旧数字均为历史。
+
 > **2026-11-05 当前状态优先：** #435最终CI`41978682410`成功，已合并`dd87b781`并清理对应临时分支。同criterion语料聚合与原coverage adapter已实现，真实旧来源公开build/Verify同SHA`fcecbed9...`，**仅一条train**；方法未可执行或Teacher/native未三分区齐全仍不能ready。261项相关回归通过，完整game-free/本切片CI待收口。下一步仍复核原方法/阈值供给/时限责任并补真正缺失的原生分区，不将mock或旧单条连接晋升整项。冻结计数/训练禁入不变，生锈钥匙整项结束后汇报。[合同](rusty-key-teacher-corpus.md)。
 
 > **2026-11-05 #435最终头待CI：** 审计指出路线wait前缀别名漏验，已以4个重算哈希仍误收的端到端反例复现并修正；Contracts统一别名供原sender/DTO/新verifier复用，不改变旧执行或格式。聚焦239含41连接检查通过，真实13动作独立重放SHA`8aea3f8e...`不变。旧头8b851的绿CI不作为修正后合并证据。整项/分区缺口/冻结计数/训练禁入与既定接续不变，待最终CI后同主线推进。
@@ -143,13 +145,15 @@
 
 | 指标 | 当前值 | 含义 |
 | --- | ---: | --- |
-| Goal Method executable criteria | **5/19** | root method 已达到 `executable_frontier` 的 criterion |
-| Split-complete Teacher/native evidence | **6/19** | train/validation/test 两条证据通道完整的 criterion |
-| Promotion-grade / CoverageGateReady intersection | **5/19** | 同时满足 executable + 正式 Teacher/native 三分区证据 |
-| Coverage-ready root methods | **4/11** | 11 个战略 root method 中正式 coverage-ready 的数量 |
+| Goal Method executable criteria | **6/19** | root method 已达到 `executable_frontier` 的 criterion |
+| Split-complete Teacher/native evidence | **7/19** | train/validation/test 两条证据通道完整的 criterion |
+| Promotion-grade / CoverageGateReady intersection | **6/19** | 同时满足 executable + 正式 Teacher/native 三分区证据 |
+| Coverage-ready root methods | **5/11** | 11 个战略 root method 中正式 coverage-ready 的数量 |
 | Full Shipment runtime strata | **当前权威 26/26** | 固定 26 层均由当前源码原生重采并通过严格索引，**不是全局 /19** |
 | Money production evidence cells | **0/18** | 6 个 Money criterion × 3 partitions；hermetic fixture 不计 production |
 | Formal product training | **false** | 未通过完整正式训练准入 |
+
+2026-11-05新增Rusty Key按R2局部合同验收；以上为既有冻结集合与本项的无重复并集，合入仍须本轮最终CI。此次机器请求只接Rusty来源，因此其ready count=1；不是重新审计、覆盖或丢弃旧已接受的5项。旧Pet Love/Skull Key原始文件清理不触发重采，L3/L4仍按原合同完成。
 
 ### 2026-11-01 全新 day-zero v98 已进入原生长循环
 
