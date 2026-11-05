@@ -98,12 +98,59 @@ reproduces SHA
 after extraction; its accepted scope is unchanged. The replay lives outside
 Git in `I:\StardewAITraining\master-angler-local-20261105\native-source-binding`.
 
-This is not a newly acquired native fish sample. Next, capture only genuinely
+At the PR #440 integration point this was not a newly acquired native fish sample.
+The real rod capture below supersedes the pending rod-source acquisition, not
+the Teacher/native join. Capture only genuinely
 missing source in an isolated, hidden/silent E-game run with the existing
 `fishing` profile, then join the exact source to the existing collection
 Teacher/replayer and required corpus partitions. Do not reuse the old
 reward-only sample, invent comparisons, reopen accepted roots or enable
 formal/model training to obtain a source-protocol smoke.
+
+## Retained Real Rod Source
+
+On 2026-11-05 the original `Invoke-RuntimeFishingDailyPlanSmoke.ps1` acquired
+real rod sources through the existing daily planner/compiler/live executor.
+Its new opt-in `-IsolateSave -IsolateMods -SetupLocationFixture -NoBuild`
+controls reuse the existing `debug.setup_location_fishing` boundary fixture,
+copy the source slot, and load only Bridge/Harness from a per-run mod directory.
+The fixture supplies equipment/skill and a legal stand, not a catch. It is not
+travel, equipment-acquisition or fresh-save progression evidence. Execution
+uses the original `fishing` profile and `--skip-training`; dependency builds
+receive the explicit E game path, and no-build outputs are freshness-checked.
+
+- Initial run `master-angler-rod-source-20261105-a`, decision total day 6
+  (spring 7, Year 1), genuinely caught `(O)131`. Original before/after ticks
+  are 125/1439. Public build/Verify agree on receipt SHA
+  `c6bdecf0a32804e3a638e2618790ffff1f9ecdc3886bbd6f73117ee0544f2032`.
+- Final-driver single-attempt run `master-angler-rod-source-20261105-final`
+  genuinely caught `(O)147` on the same date. Public build/Verify agree on SHA
+  `39b7bd5e8368e803ed1680652d4cf62a69b3b1a2f41b610b9941551ee8188fa4`.
+  `isolation-audit.json` confirms source save directory SHA unchanged
+  (`68ddc8dbbe09382f2e7ba1c9d5d1e8dd6d0ffaef59acf9367415b4678f59366d`),
+  both owned processes exited, training skipped and formal authorization false.
+- Both receipts replay the exact 72-species progress and native request,
+  mechanical queue and recorded capture. They do not use the old reward-only
+  sample. Initial attempts 2/3 were an inventory-full item-grab block and a
+  freshly unavailable locked candidate, not additional successful catches.
+- These runs have the same original save/player/date decision group. They are
+  not independent train/validation/test partitions, and neither receipt claims
+  an independent Teacher comparison. No criterion or training gate is promoted.
+
+Raw runs remain ignored under
+`artifacts\runtime-fishing-daily-plan-smoke\<run-id>`. Request/receipt/replay files
+remain outside Git in
+`I:\StardewAITraining\master-angler-local-20261105\native-source-binding`
+(`rod-source-*` and `rod-final-*`). Focused Backend fishing/reward regressions
+passed 16/16, zero skipped; final driver was tested hidden/silent on E.
+
+Next, connect the original independent collection Teacher/preference/receipt
+and `CollectionTeacherSupervisionReplayVerifier` to causally matching native
+decisions, then fill only genuinely missing trap sources/decision partitions.
+Do not rebuild the fishing executor, replay this rod protocol merely for more
+counts, relabel these copies as new partitions, or promote the boundary fixture
+to full progression evidence. The frozen accepted union and formal=false stay
+unchanged.
 
 ## Implementation And Verification Sequence
 

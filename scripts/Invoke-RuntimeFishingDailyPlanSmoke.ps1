@@ -23,17 +23,27 @@ param(
     [int] $StartupTimeoutSeconds = 180,
     [switch] $VisibleGame,
     [switch] $KeepGameRunning,
+    [switch] $IsolateMods,
+    [switch] $IsolateSave,
+    [switch] $SetupLocationFixture,
+    [switch] $NoBuild,
     [switch] $RunSparseMappingFixture
 )
 
 $ErrorActionPreference = "Stop"
+. (Join-Path $PSScriptRoot "lib\RuntimeEvidenceCommon.ps1")
+. (Join-Path $PSScriptRoot "Deploy.Common.ps1")
 $fixtureCount = @(
     -not [string]::IsNullOrWhiteSpace($FishFrenzyQualifiedItemId),
     -not [string]::IsNullOrWhiteSpace($FishPondQualifiedItemId),
     $MineFishingLevel -gt 0
+    $SetupLocationFixture.IsPresent
 ) | Where-Object { $_ }
 if ($fixtureCount.Count -gt 1) {
     throw "Configure only one isolated special fishing fixture per run."
+}
+if ($SetupLocationFixture -and -not $IsolateSave) {
+    throw "Location fishing fixtures require an isolated save copy."
 }
 
 function Write-JsonFile {
@@ -394,10 +404,53 @@ $loopRoot = Join-Path $runDirectory "loop"
 $snapshotPath = Join-Path $runDirectory "fishing-snapshot.json"
 $backendStdout = Join-Path $runDirectory "backend.stdout.log"
 $backendStderr = Join-Path $runDirectory "backend.stderr.log"
+if (Test-Path -LiteralPath $runDirectory) { throw "Run directory already exists: $runDirectory" }
 New-Item -ItemType Directory -Force -Path $runDirectory | Out-Null
 
-& (Join-Path $ProjectRoot "scripts\Deploy-TransparentBridgeToRuntime.ps1") -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot | Out-Null
-& (Join-Path $ProjectRoot "scripts\Deploy-RuntimeTestHarnessToRuntime.ps1") -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot | Out-Null
+$sourceSavePath = Join-Path $savesPath $SaveSlot
+$sourceSaveHash = Get-DirectoryContentHash -Path $sourceSavePath
+if ($IsolateSave) {
+    $savesPath = Join-Path $runDirectory "isolated-saves"
+    New-Item -ItemType Directory -Path $savesPath | Out-Null
+    Copy-Item -LiteralPath $sourceSavePath -Destination (Join-Path $savesPath $SaveSlot) -Recurse
+    if ((Get-DirectoryContentHash -Path (Join-Path $savesPath $SaveSlot)) -cne $sourceSaveHash) {
+        throw "Isolated fishing save does not match its source."
+    }
+}
+foreach ($port in @($BackendPort, 8765, 8767)) {
+    if (Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue) {
+        throw "Fishing smoke port is already in use: $port"
+    }
+}
+& (Join-Path $ProjectRoot "scripts\Deploy-TransparentBridgeToRuntime.ps1") -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot -NoBuild:$NoBuild | Out-Null
+& (Join-Path $ProjectRoot "scripts\Deploy-RuntimeTestHarnessToRuntime.ps1") -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot -NoBuild:$NoBuild | Out-Null
+$backendDll = Join-Path $ProjectRoot "src\StardewAI.Backend\bin\Release\net8.0\StardewAI.Backend.dll"
+$loopDll = Join-Path $ProjectRoot "tools\StardewAI.LiveTrainingLoop\bin\Release\net8.0\StardewAI.LiveTrainingLoop.dll"
+foreach ($project in @("src\StardewAI.Backend", "tools\StardewAI.LiveTrainingLoop")) {
+    if (-not $NoBuild) {
+        & dotnet build (Join-Path $ProjectRoot $project) -c Release --disable-build-servers -m:1 `
+            -p:BuildInParallel=false -p:UseSharedCompilation=false -p:EnableModZip=false "-p:GamePath=$runtimeGameDir"
+        if ($LASTEXITCODE -ne 0) { throw "Fishing smoke dependency build failed: $project" }
+    }
+}
+foreach ($dll in @($backendDll, $loopDll)) {
+    Assert-StardewAIBuildOutputFresh -OutputPath $dll -InputRoots @(
+        (Join-Path $ProjectRoot "src\StardewAI.Contracts"),
+        (Join-Path $ProjectRoot "src\StardewAI.Core"),
+        (Join-Path $ProjectRoot "src\StardewAI.Backend"),
+        (Join-Path $ProjectRoot "tools\StardewAI.LiveTrainingLoop"),
+        (Join-Path $ProjectRoot "experiments\StardewAI.GoalConditionedBootstrap")
+    ) -InputFiles @((Join-Path $ProjectRoot "Directory.Build.props"), (Join-Path $ProjectRoot "Directory.Build.targets"))
+}
+$gameArguments = @{}
+if ($IsolateMods) {
+    $modsPath = Join-Path $runDirectory "isolated-mods"
+    New-Item -ItemType Directory -Path $modsPath | Out-Null
+    foreach ($name in @("StardewAI.TransparentBridge", "StardewAI.RuntimeTestHarness")) {
+        Copy-Item -LiteralPath (Join-Path $runtimeGameDir "Mods\$name") -Destination (Join-Path $modsPath $name) -Recurse
+    }
+    $gameArguments.ArgumentList = @('--mods-path', ('"' + $modsPath + '"'))
+}
 
 $previousEnv = @{
     STARDEWAI_TEST_SAVES = $env:STARDEWAI_TEST_SAVES
@@ -405,6 +458,7 @@ $previousEnv = @{
     STARDEWAI_SAVE_ISOLATION_PATH = $env:STARDEWAI_SAVE_ISOLATION_PATH
     STARDEWAI_TRAINING_RUN_ID = $env:STARDEWAI_TRAINING_RUN_ID
     STARDEWAI_TRAINING_MODE = $env:STARDEWAI_TRAINING_MODE
+    STARDEWAI_TRAINING_OUTPUT_DIR = $env:STARDEWAI_TRAINING_OUTPUT_DIR
     SDL_AUDIODRIVER = $env:SDL_AUDIODRIVER
     ALSOFT_DRIVERS = $env:ALSOFT_DRIVERS
     ASPNETCORE_URLS = $env:ASPNETCORE_URLS
@@ -418,12 +472,13 @@ try {
     $env:STARDEWAI_SAVE_ISOLATION_PATH = $savesPath
     $env:STARDEWAI_TRAINING_RUN_ID = $RunId
     $env:STARDEWAI_TRAINING_MODE = "1"
+    $env:STARDEWAI_TRAINING_OUTPUT_DIR = Join-Path $runDirectory "runtime-receipts"
     $env:SDL_AUDIODRIVER = "dummy"
     $env:ALSOFT_DRIVERS = "null"
     $env:ASPNETCORE_URLS = $backendUrl
 
     $backendProcess = Start-Process -FilePath "dotnet" `
-        -ArgumentList @("run", "--no-restore", "--project", (Join-Path $ProjectRoot "src\StardewAI.Backend\StardewAI.Backend.csproj"), "--no-launch-profile") `
+        -ArgumentList @('"' + $backendDll + '"') `
         -WorkingDirectory $ProjectRoot `
         -WindowStyle Hidden `
         -RedirectStandardOutput $backendStdout `
@@ -432,11 +487,36 @@ try {
     Wait-JsonHealth -Url "$backendUrl/health" -TimeoutSeconds 60 | Out-Null
 
     $gameWindowStyle = if ($VisibleGame) { "Normal" } else { "Hidden" }
-    $gameProcess = Start-Process -FilePath $smapiExe -WorkingDirectory $runtimeGameDir -WindowStyle $gameWindowStyle -PassThru
+    $gameProcess = Start-Process -FilePath $smapiExe -WorkingDirectory $runtimeGameDir -WindowStyle $gameWindowStyle -PassThru @gameArguments
     $executorHealth = Wait-JsonHealth -Url "http://127.0.0.1:8767/health" -TimeoutSeconds 30
     Start-Sleep -Seconds 20
     $worldSnapshot = Wait-WorldSnapshot -Url $worldSnapshotUrl -TimeoutSeconds $StartupTimeoutSeconds
-    if ($MineFishingLevel -gt 0) {
+    if ($SetupLocationFixture) {
+        $fixture = Invoke-JsonPost -Url "http://127.0.0.1:8767/api/v1/training/execute" -Body ([ordered]@{
+            schema_version = "training_execution_request.v1"
+            run_id = $RunId
+            queue_id = "runtime-fishing-fixture"
+            queue_item_id = "runtime-fishing-fixture.location"
+            before_state_hash = $worldSnapshot.state_hash
+            option_id = "debug.setup_location_fishing"
+            execution_mode = "training_singleplayer"
+            actor = "training_farmer.main"
+            save_isolation_path = $savesPath
+            location_id = $FishingLocation
+            request_nonce = [guid]::NewGuid().ToString("N")
+            created_at = [DateTimeOffset]::UtcNow.ToString("O")
+        })
+        Write-JsonFile (Join-Path $runDirectory "location-fixture-result.json") $fixture
+        if ($fixture.status -ne "applied" -or $fixture.primitive_verification_status -ne "verified") {
+            throw "Existing native fishing-location fixture failed: $(@($fixture.block_reasons) -join ',')"
+        }
+        $setupRoute = [pscustomobject]@{
+            Snapshot = $worldSnapshot
+            Segments = @()
+            SkipReason = "explicit boundary fixture; not evidence of travel or equipment acquisition"
+        }
+    }
+    elseif ($MineFishingLevel -gt 0) {
         $setupRoute = [pscustomobject]@{
             Snapshot = $worldSnapshot
             Segments = @()
@@ -613,7 +693,7 @@ try {
     else {
         "quest.advance"
     }
-    dotnet run --no-restore --project (Join-Path $ProjectRoot "tools\StardewAI.LiveTrainingLoop\StardewAI.LiveTrainingLoop.csproj") -- `
+    & dotnet $loopDll `
         --root $loopRoot `
         --backend-url $backendUrl `
         --bridge-snapshot-url $snapshotUrl `
@@ -804,8 +884,15 @@ try {
         status = "passed"
         run_id = $RunId
         save_slot = $SaveSlot
+        source_save_path = $sourceSavePath
+        source_save_sha256_before = $sourceSaveHash
+        isolated_save = $IsolateSave.IsPresent
+        isolated_mods = $IsolateMods.IsPresent
+        setup_location_fixture = $SetupLocationFixture.IsPresent
+        training_skipped = $true
+        formal_training_authorized = $false
         location_id = $snapshot.state.fishing.location_context.value.location_id
-        fixture_kind = if (-not [string]::IsNullOrWhiteSpace($FishFrenzyQualifiedItemId)) { "fish_frenzy" } elseif (-not [string]::IsNullOrWhiteSpace($FishPondQualifiedItemId)) { "fish_pond" } elseif ($MineFishingLevel -gt 0) { "mine_area_80" } else { "ordinary" }
+        fixture_kind = if ($SetupLocationFixture) { "location_boundary" } elseif (-not [string]::IsNullOrWhiteSpace($FishFrenzyQualifiedItemId)) { "fish_frenzy" } elseif (-not [string]::IsNullOrWhiteSpace($FishPondQualifiedItemId)) { "fish_pond" } elseif ($MineFishingLevel -gt 0) { "mine_area_80" } else { "ordinary" }
         fixture_qualified_item_id = if (-not [string]::IsNullOrWhiteSpace($FishFrenzyQualifiedItemId)) { $FishFrenzyQualifiedItemId } else { $FishPondQualifiedItemId }
         mine_level = if ($MineFishingLevel -gt 0) { $MineFishingLevel } else { $null }
         mine_area = if ($MineFishingLevel -gt 0) { 80 } else { $null }
@@ -861,8 +948,27 @@ finally {
     }
     if ($backendProcess -and -not $backendProcess.HasExited) {
         Stop-Process -Id $backendProcess.Id -Force -ErrorAction SilentlyContinue
+        $backendProcess.WaitForExit(10000) | Out-Null
     }
     if (-not $KeepGameRunning -and $gameProcess -and -not $gameProcess.HasExited) {
         Stop-Process -Id $gameProcess.Id -Force -ErrorAction SilentlyContinue
+        $gameProcess.WaitForExit(10000) | Out-Null
+    }
+    $sourceSaveHashAfter = Get-DirectoryContentHash -Path $sourceSavePath
+    Write-JsonFile (Join-Path $runDirectory "isolation-audit.json") ([ordered]@{
+        source_save_path = $sourceSavePath
+        source_save_sha256_before = $sourceSaveHash
+        source_save_sha256_after = $sourceSaveHashAfter
+        source_save_unchanged = $sourceSaveHashAfter -ceq $sourceSaveHash
+        isolated_save = $IsolateSave.IsPresent
+        isolated_mods = $IsolateMods.IsPresent
+        game_kept_running = $KeepGameRunning.IsPresent
+        game_process_exited = $null -eq $gameProcess -or $gameProcess.HasExited
+        backend_process_exited = $null -eq $backendProcess -or $backendProcess.HasExited
+        training_skipped = $true
+        formal_training_authorized = $false
+    })
+    if ($IsolateSave -and $sourceSaveHashAfter -cne $sourceSaveHash) {
+        throw "Original fishing save changed during isolated capture."
     }
 }
