@@ -34,6 +34,8 @@ public static partial class GoalMethodCoverageReconciliationBuilder
         GoalMethodFrontierMethod method)
     {
         var kinds = new List<string>();
+        if (method.DirectionId == "raise_skill_levels")
+            kinds.Add(GoalMethodTeacherCoverageSourceKinds.SkillLevelThresholdCorpus);
         if (method.RequirementSetReadiness.Length > 0)
         {
             kinds.Add(GoalMethodTeacherCoverageSourceKinds

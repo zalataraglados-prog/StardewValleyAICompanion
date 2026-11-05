@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-06 Skills corpus接入（当前优先）：** #450最终CI `42085984353`接受并合入`8f6a36fd`、分支已清理。当前typed criterion corpus复用两条最终b版监督行的原Verify，原来源去重/权威19项21分绑定，公开重建同SHA`2248b6e4...`。原coverage/reconciliation已登记Skills来源，15与25各自只有train，方法仍pending、ready=false；仅15来源不给25借分，五类公开反例拒绝、输入不变。完整Core1681/Backend597通过、零跳过，17新检查。下一步是原有条件方法/共享前置责任对齐，再只补各自validation/test；不清除全局新档预算，也不重采成功train。冻结`7/19、7/19、7/19、6/11`与formal=false不变，无新游戏/worker/API/产品训练，最终发布见对应PR收口。[来源与剩余边界](skills-local-intake.md#criterion-corpus-and-original-coverage)。下方“尚无corpus/下一步先登记”的说法均为历史前态。
+
 > 本切片最终本地回归：Core1664/Backend597全部通过、零跳过，30新检查；原PolicyDataset/PolicyModel CLI构建及原检查点通过。以下Skills行切片发布以对应PR最终CI与收口评论为准，非整项训练放行。
 
 > **2026-11-06 Skills原Teacher行（本条优先）：** #449已由CI `42076554119`接受并合入`1681ad9b`、本轮旧分支清理完成。复用两条成功原生来源产出原trajectory.v2监督行，完整候选/原队列/动作nonce和facts绑定；最终b版公开Verify同SHA`bbc5d3da...`/`ae0d1b9e...`。显式Skills监督子类型不借CC哈希，旧v1/v2校验保留；同一PolicyDataset接受旧Collection行加两条Skills行共3条、0拒绝、仅train，九类反例拒绝且源文件未变。新增显式快照投影补五技能等级/XP/缺口/cap，Teacher、推理和loop共用；未知/跨态拒绝，其他目标旧特征字节不变。不跑新游戏/worker/API/产品训练，切片回归/发布以PR CI与收口评论为准。下一步仅接typed criterion corpus/原coverage登记及局部方法责任，再补各criterion缺失分区；冻结`7/19、7/19、7/19、6/11`、formal=false不变，不重采Step4。[来源与范围](skills-local-intake.md#original-policy-teacher-rows)。
