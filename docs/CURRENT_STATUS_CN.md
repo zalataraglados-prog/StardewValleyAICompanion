@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-05 最新收口与接续：** #432最终头`32038c65`/CI `41962442740`成功，合并`154cd509`，已核实并删除对应本地及远端临时分支。当前唯一主线仍`obtain_rusty_key`，在`feat/rusty-key-native-terminal-source`接原生送钥匙类型化来源，再接本criterion独立Teacher/native三分区join与时限。不重跑已接受跨夜、钥匙或目视门。旧钥匙原始第2动作的实际before已通过原日志reader与当前公开方向绑定器只读重建ready：第7日key false→true；aggregate episode较早起点保留原含义，不改旧数据迁就新消费者。该定位不是新增原生/Teacher验收，索引SHA及精确输入、原实现复用/反例和禁止循环依赖要求已写入[当前工作](CURRENT_WORK_CN.md)。冻结计数不变，整项完成后汇报。
+
 > **2026-11-05 最新接受事实：** clean `3437b6d9`真实获取`(O)100`、原生首次古物提示、存箱跨夜、次晨等9点开门/取回、09:30捐赠59→60与保管核销已独立复核通过：32份逐动作请求日志+6次有界wait，存/取原C#结算各重放一次；原获取SHA/他目标石头3/源档/二进制及状态哈希均保持，磁盘新日存档确有产物1+石头3，进程端口回收。更广夜事务仍controller_handoff超时，不修改其原语义、不伪装总交接完成；原生实际钥匙仍false。`41959409022`完整CI通过，证据索引提交待CI。下方待验证/失败均为历史。**下一步仍是同Rusty Key的独立Teacher/native终态来源和三分区join、第三年前范围，先复用旧已接受钥匙/event66逐动作边界，不重跑旧门，不附加完整Day-0反向前置。** 整项未完成，冻结计数不变，完成后统一汇报。见[接受证据](museum-output-custody.md#accepted-native-overnight-boundary)。
 
 > **2026-11-05 最新原生进度：** `a3953fbc`完整CI通过；完整公开绑定离线重放ready且完整前沿仍false，原子提交/派发/绑定已在新游戏通过。首件`(O)100`原生开球后首次古物提示未被旧geode-only处理识别，回执blocked，不能结算或声称跨夜成功。现按E实际DLL新反编译的`Farmer.foundArtifact`/原生举物文本，在同一对话处理器补精确认领，继续原native-click引擎；没有重发失败动作、改原生库存/邮件或绕过资源检查。聚焦测试与全新固定源码原生运行待完成，Rusty Key整项和冻结计数未变，详见[当前工作](CURRENT_WORK_CN.md)与[原生边界](museum-output-custody.md#first-artifact-pickup-boundary)。
