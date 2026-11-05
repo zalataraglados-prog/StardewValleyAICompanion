@@ -1,5 +1,7 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+> **2026-11-06 Friendship当前事实接入：** Skills的#453已CI接受并合入`712482ea`。唯一primary仍为`raise_friendships`；当前严格缺口读取和公开入口已实现、复用原桥，无社交执行器改写。当前事实不能作为比较或native动作标签；下一步复用原Teacher/有序行程构造独立可重放比较，再原队列同run及原覆盖三分区。接受集合`9/19、9/19、9/19、7/11`、formal=false及全新档目标不变，完整回归/发布见本PR收口。[本轮事实、原生来源和退出边界](friendship-local-intake.md)。
+
 > **2026-11-06 当前接续：** Skills局部15/25三分区及原覆盖交集已闭合，发布以最终CI/收口为准；接受集合取并集后`9/19、9/19、9/19、7/11 roots`，formal=false。下一唯一primary为Friendship，复用现有社交/行程而非重写执行器。独立重置Teacher样本必须使用[显式独立决策合同](policy-independent-decisions.md)，不能伪造连续日回报；真实连续轨迹默认行为不变。[本项验收](skills-local-acceptance.md)。下方11月3日Rusty接续及旧计数仅为历史，全局新档21分与Student目标保持。
 
 > **当前接续决定（2026-11-03T18:30:00+08:00，用户确认）：** #390 / PR #391 已完成验收责任解耦；当前唯一 primary 为 `obtain_rusty_key`。先完成安全捐赠阈值、原生奖励与送钥匙事件的局部闭环，再补本 criterion 的 Teacher/native 分区。R2 的四层验收合同继续生效；R1 中 Master Angler 固定第 10、强制 Gourmand/source-schedule 及完整新档反向前置均已撤销。后续未开工 root 的顺位待当前项收口后按真实局部缺口决定。Pet Love、Skull Key 已消费的严格验收保持冻结，原始中间文件清理不触发重采；当前计数仍为 `5/19 executable、6/19 split-complete、5/19 CoverageGateReady、4/11 root ready`，`formal_product_training=false`。

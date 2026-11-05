@@ -40,6 +40,7 @@ var commandDefinitions = new CommandDefinition[]
     new("audit-current-social-frontier", AuditCurrentSocialFrontier),
     new("plan-current-social-day", PlanCurrentSocialDay),
     new("build-current-social-teacher-label", BuildCurrentSocialTeacherLabel),
+    new("build-current-friendship-deficit", BuildCurrentFriendshipDeficit),
     new("build-current-skill-experience-deficit", BuildCurrentSkillExperienceDeficit),
     new("build-current-skill-teacher-preference", options => WriteCurrentSkillTeacherPreference(options, verify: false)),
     new("verify-current-skill-teacher-preference", options => WriteCurrentSkillTeacherPreference(options, verify: true)),
@@ -633,6 +634,20 @@ static void BuildCurrentSocialTeacherLabel(Arguments options)
         File.ReadAllText(options.Required("calibration")));
     Write(options.Required("output"), label);
     if (!label.TrainingLabelEligible)
+        Environment.ExitCode = 2;
+}
+
+static void BuildCurrentFriendshipDeficit(Arguments options)
+{
+    var output = Path.GetFullPath(options.Required("output"));
+    if (!output.EndsWith(".json", StringComparison.OrdinalIgnoreCase) ||
+        File.Exists(output) || Directory.Exists(output))
+        throw new InvalidDataException("Friendship deficit output must be a new JSON file.");
+    var snapshot = CurrentTeacherFrontierSupport.Read<StardewAI.Contracts.State.SnapshotEnvelope>(
+        options.Required("snapshot"), "Current friendship snapshot");
+    var result = new CurrentFriendshipDeficitBuilder().Build(snapshot);
+    Write(output, result);
+    if (result.Status != "ready_current_state_only")
         Environment.ExitCode = 2;
 }
 

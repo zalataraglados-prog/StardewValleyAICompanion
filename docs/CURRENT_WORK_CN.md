@@ -1,5 +1,11 @@
 # StardewAI 当前工作
 
+## 2026-11-06 Friendship当前权威缺口接入
+
+- #453最终头`a0c6a138`经CI `42104419946`全部38步接受，合入`712482ea`，对应分支已清理；Skills局部三分区已收口，不重开。接受集合保持`9/19 executable、9/19 split-complete、9/19 ready、7/11 roots`，formal=false。
+- 唯一primary为`raise_friendships`。实时核对E游戏DLL及新反编译Utility/Farmer，新增只读typed当前缺口与公开Bootstrap入口；直接消费原桥完整原生遍历，不改桥、旧社交Teacher/行程/绑定/编译执行和训练规则。1975..999999原生边界、5/10人数分别核验；无记录保留null，不可读阻塞，重名实例保留评分计数并标记目标歧义。45项针对性检查及完整Core1750/Backend597通过、零跳过，AST/EVD-338/差异检查通过，最终CI/发布以本PR收口为准。
+- 复用原保留快照，无新游戏；公开重建两次同SHA`6404205b...`，40原生实例/0达标/37无记录/齐先生两实例，源SHA未变。仅当前事实，不是Teacher比较或native动作完成，不晋升评分项。**唯一下一步：** 复用原社交Teacher/有序行程补独立可重放比较，再原队列同run原生人数阈值和原coverage三分区；不另造执行器，不把全新档责任反挂L1。[完整合同和来源](friendship-local-intake.md)。无worker/API、服务器、训练或数据清理。
+
 ## 2026-11-06 Skills三分区局部验收收口
 
 - #452最终头`49ed4f81`经CI `42095890029`全部38步接受，合入`4098b743`、分支清理完成。本轮复用原动作/Teacher/corpus/局部视图/coverage，补四个E后台静音隔离来源，各实际5XP、原生等级`14→15`或`24→25`，真实分区validation/test。原train两行不重采，源档SHA`68ddc8db...`、游戏DLL SHA`7f1e5b8e...`保持，进程退出。
