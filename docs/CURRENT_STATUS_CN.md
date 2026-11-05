@@ -1,5 +1,9 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-05 最新验证、待提交CI：** Rusty Key独立Teacher/native连接公开构建与最终独立重放SHA均`8aea3f8e...`，原13动作、81源哈希与原生保存连续到key，但只有day6决策的train。Core1344、Backend565、相关家族235含37新检查、日志17全部通过，零跳过/构建零警告错误。原执行器/旧日志/预算与恢复分类含义不变。下一步收口后仍补本criterion真实其他分区/corpus/coverage并复核原方法/供给/时限责任；整项及冻结计数不变，formal training=false，结束后汇报。[完整范围](rusty-key-teacher-native-join.md)。
+
+> **2026-11-05 Rusty Key连接实现状态：** 原请求读取内核已共享到Core且Live接口/writer不变；类型化连接已独立重建比较和key并绑定原13动作/RPC字段/逐帧连续性/原生保存，仅day6的train。原分类与预算注记含义保留，不改旧动作或日志。新检查37、原家族235通过，完整game-free1343和日志家族17为已有回归；最终独立Verify/提交待收口。[合同](rusty-key-teacher-native-join.md)。后续仍需真实其他分区、corpus/coverage与原方法/阈值供给/时限责任复核；整项与冻结计数不变，正式训练禁入，结束后汇报。
+
 > **2026-11-05 当前接续覆盖下方待CI前态：** #434最终CI`41970315013`成功并合并`49a168e7`，相关临时分支已核实收口。独立Teacher前态比较已合入；同run13动作请求/帧连续性和原生睡眠只读复核通过，精确输入索引及下一步写入[当前工作](CURRENT_WORK_CN.md)。类型化Teacher/native因果join尚未实现，其他真实分区/coverage仍待补，不把source index当证书；下一步只做该join并复用原日志reader，禁止新建重复执行/校验系统或循环引用。Rusty Key整项/冻结计数/正式训练资格未变，结束后汇报。
 
 > **2026-11-05 最新Rusty Key接续：** #433已按最终CI合并`539ddb21`，相关分支已核实收口。独立阈值捐赠Teacher比较已实现且真实前态build/verify同SHA通过：只读前态/原账本，原候选/编译准入，全分母/拒绝/等价保留，不读control选择或native成功。第6日决策仍只属train，后续第7日key不改变分组；比较反事实仅局部600-tick不捐赠，不进自动池，不代表全局最优。原家族78含30新检查、完整game-free1307通过，零跳过；提交待CI。下一步绑定同run真实捐赠/奖励/正常跨日和key终态，再补真实其他分区及coverage；Rusty Key整项、冻结计数、正式训练禁入不变，完成后汇报。[合同与证据](rusty-key-donation-teacher-comparison.md)。

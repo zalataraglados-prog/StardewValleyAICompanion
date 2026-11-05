@@ -5,7 +5,7 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public static partial class RustyKeyNativeKeyReceiptBuilder
 {
-    private static void ValidateRecordedBoundary(JsonElement result, SnapshotEnvelope before, SnapshotEnvelope after)
+    internal static void ValidateRecordedBoundary(JsonElement result, SnapshotEnvelope before, SnapshotEnvelope after)
     {
         Require(result.TryGetProperty("after_state_hash", out var hash) && hash.ValueKind == JsonValueKind.String &&
             hash.GetString() == after.StateHash && MatchesTick("before_game_tick", before.GameTick) &&
@@ -19,14 +19,17 @@ public static partial class RustyKeyNativeKeyReceiptBuilder
     private static void ValidateSnapshots(SnapshotEnvelope before, SnapshotEnvelope after)
     {
         foreach (var snapshot in new[] { before, after })
-            Require(snapshot.GameVersion == "1.6.15" && !string.IsNullOrWhiteSpace(snapshot.BridgeVersion) &&
-                snapshot.State is not null && SnapshotHash.MatchesStateHash(snapshot.State, snapshot.StateHash),
-                "snapshot_identity_or_hash_invalid");
+            ValidateSnapshot(snapshot);
         Require(before.GameVersion == after.GameVersion && before.BridgeVersion == after.BridgeVersion &&
             Identity(before.SaveId) == Identity(after.SaveId) && Identity(before.PlayerId) == Identity(after.PlayerId) &&
             before.GameTick >= 0 && after.GameTick > before.GameTick && before.StateHash != after.StateHash,
             "snapshot_actor_version_or_frame_drift");
     }
+
+    internal static void ValidateSnapshot(SnapshotEnvelope snapshot) =>
+        Require(snapshot.GameVersion == "1.6.15" && !string.IsNullOrWhiteSpace(snapshot.BridgeVersion) &&
+            snapshot.State is not null && SnapshotHash.MatchesStateHash(snapshot.State, snapshot.StateHash),
+            "snapshot_identity_or_hash_invalid");
 
     private static void ValidateOutcome(SnapshotEnvelope before, SnapshotEnvelope after)
     {

@@ -98,3 +98,7 @@ For priority interrupts, its actual queue is the recorded
 parent-plan meaning. Do not change the writer or old data to satisfy a new
 extractor. A shared journal consumer must preserve the original reader rather
 than copy it or introduce a Bootstrap-to-Live dependency cycle.
+
+The typed causal producer is now implemented in the
+[Teacher/native join contract](rusty-key-teacher-native-join.md); its final
+verification and remaining corpus/coverage scope are tracked in current work.
