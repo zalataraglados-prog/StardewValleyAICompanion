@@ -3,6 +3,23 @@ namespace StardewAI.Core.Tests;
 public sealed class HeadlessHostInputPumpSourceGuardTests
 {
     [Fact]
+    public void HeadlessDrawSuppressionPreservesNativeFarmEventProgress()
+    {
+        var entry = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs"));
+        var start = entry.IndexOf("internal static class HostLocalDrawPatch", StringComparison.Ordinal);
+        var end = entry.IndexOf("internal static class HeadlessSaveGameMenuLifecyclePatch", start, StringComparison.Ordinal);
+        var draw = entry[start..end];
+        var nativeEvent = draw.IndexOf("if (Game1.farmEvent is not null)", StringComparison.Ordinal);
+        Assert.True(nativeEvent >= 0);
+        Assert.True(nativeEvent < draw.IndexOf("if (interval <= 0)", StringComparison.Ordinal));
+        var nativeBranch = draw[nativeEvent..draw.IndexOf("var interval =", nativeEvent, StringComparison.Ordinal)];
+        Assert.Contains("return true;", nativeBranch, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.farmEvent =", draw, StringComparison.Ordinal);
+        Assert.DoesNotContain("SetValue", draw, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void HeadlessHostKeepsNativeControlInputActiveWithoutSynthesizingActions()
     {
         var source = File.ReadAllText(FindRepositoryFile(

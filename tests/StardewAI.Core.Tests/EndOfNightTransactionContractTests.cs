@@ -150,6 +150,40 @@ public sealed class EndOfNightTransactionContractTests
 
         Assert.Contains("BeginEndOfNightTransaction(activeSleep)", sleep,
             StringComparison.Ordinal);
+        Assert.Contains("HasPendingNativeEndOfNightTransition", sleep,
+            StringComparison.Ordinal);
+        var beginTransaction = Slice(
+            tracker,
+            "private void BeginEndOfNightTransaction(",
+            "private bool HasPendingNativeEndOfNightTransition(");
+        Assert.Contains("RequiresNativeTransitionControl(", beginTransaction,
+            StringComparison.Ordinal);
+        Assert.Contains("previous.SawSafeNewDayReadyState", beginTransaction,
+            StringComparison.Ordinal);
+        Assert.True(
+            beginTransaction.IndexOf(
+                "end_of_night_followup_not_observed_before_next_sleep",
+                StringComparison.Ordinal) <
+            beginTransaction.IndexOf(
+                "endOfNightTransaction = new EndOfNightTransaction",
+                StringComparison.Ordinal));
+        Assert.Contains("BlockEndOfNightTransactionLocked(", beginTransaction,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("Status = \"complete\"", beginTransaction,
+            StringComparison.Ordinal);
+        var nativeControlGuard = Slice(
+            tracker,
+            "private bool HasPendingNativeEndOfNightTransition(",
+            "private void MarkEndOfNightSleepConfirmed(");
+        Assert.Contains("RequiresNativeTransitionControl(", nativeControlGuard,
+            StringComparison.Ordinal);
+        Assert.Contains("transaction.SawSafeNewDayReadyState", nativeControlGuard,
+            StringComparison.Ordinal);
+        var pauseEvidence = File.ReadAllText(Path.Combine(
+            root, "tools", "StardewAI.RuntimeTestHarness",
+            "ModEntry.PlanningPauseApi.cs"));
+        Assert.Contains("!HasPendingNativeEndOfNightTransition(out _)",
+            pauseEvidence, StringComparison.Ordinal);
         Assert.Contains("YieldEndOfNightForPlannedProfession(sleep)", sleep,
             StringComparison.Ordinal);
         Assert.Contains("MarkEndOfNightSleepConfirmed(sleep)", sleep,
@@ -296,20 +330,20 @@ public sealed class EndOfNightTransactionContractTests
             runtime,
             StringComparison.Ordinal);
         Assert.Contains(
-            "var hasIncompleteEndOfNightTransaction =",
+            "var hasPendingNativeEndOfNightTransition =",
             runtime,
             StringComparison.Ordinal);
         Assert.Contains(
-            "HasIncompleteEndOfNightTransaction(out _);",
+            "HasPendingNativeEndOfNightTransition(out _);",
             runtime,
             StringComparison.Ordinal);
         Assert.Contains(
-            "!hasIncompleteEndOfNightTransaction &&",
+            "!hasPendingNativeEndOfNightTransition &&",
             runtime,
             StringComparison.Ordinal);
         Assert.True(
             runtime.IndexOf(
-                "var hasIncompleteEndOfNightTransaction =",
+                "var hasPendingNativeEndOfNightTransition =",
                 StringComparison.Ordinal) <
             runtime.IndexOf(
                 "var shouldPauseForExecutorIdle =",
@@ -639,8 +673,8 @@ public sealed class EndOfNightTransactionContractTests
             StringComparison.Ordinal);
         Assert.Contains("Read-LogicalJsonArtifact", compoundSmoke,
             StringComparison.Ordinal);
-        var logicalReader = File.ReadAllText(FindRepositoryFile(
-            "scripts", "lib", "RuntimeLogicalJson.ps1"));
+        var logicalReader = File.ReadAllText(Path.Combine(
+            root, "scripts", "lib", "RuntimeLogicalJson.ps1"));
         Assert.Contains("Read-RuntimeLogicalJsonArtifact", compoundSmoke,
             StringComparison.Ordinal);
         Assert.Contains(

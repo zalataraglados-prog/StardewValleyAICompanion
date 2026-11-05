@@ -772,6 +772,7 @@ public sealed partial class ActionQueueCompilerTests
                     new SmallModelActionParameter { Name = "expected_arrival_tile_x", Value = "54" },
                     new SmallModelActionParameter { Name = "expected_arrival_tile_y", Value = "108" },
                     new SmallModelActionParameter { Name = "max_movement_tiles", Value = "2" },
+                    new SmallModelActionParameter { Name = ConnectorRouteExecutionBudgetPolicy.ShortestPathTilesParameter, Value = "999" },
                     new SmallModelActionParameter { Name = "estimated_ticks", Value = "120" },
                     new SmallModelActionParameter { Name = "estimated_minutes", Value = "3" }
                 }
@@ -785,6 +786,9 @@ public sealed partial class ActionQueueCompilerTests
             31 + ConnectorRouteExecutionBudgetPolicy
                 .DynamicOccupancyDetourAllowanceTiles;
         var expectedTicks = expectedMovementLimit * 60;
+        Assert.Equal("31", Assert.Single(item.NormalizedCommand.Parameters,
+            parameter => parameter.Name ==
+                ConnectorRouteExecutionBudgetPolicy.ShortestPathTilesParameter).Value);
         Assert.Contains(item.NormalizedCommand.Parameters, parameter =>
             parameter.Name == "max_movement_tiles" &&
             parameter.Value == expectedMovementLimit.ToString());

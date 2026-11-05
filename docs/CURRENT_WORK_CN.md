@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-11-05 共享执行器修补收尾，主线仍暂停
+
+- 修改旧执行器之前，必须先查引入提交与对应对话 JSON，确认原始故障和调用合同；新模块优先适配旧公共链路，不能仅因新增验收标准而反改旧实现。本轮已按 `989fa5f7 / d33e3c72 / deee46e9 / 48c34fb6` 核对原意，保留职业、资源归属、晶球和防重复派发等必要保护。
+- 已修三个实证共享影响：原生过夜完成后不再被后续工作证明占用；搬迁读取真实路径距离，不再把动态绕路预算反推成距离，时间预算仍保守计入；隐藏禁绘在原生 FarmEvent 期间让原生 draw 正常推进，避免齐先生飞机事件卡住。没有第二套执行器或假事件完成。
+- 验证：Core 专项225、Backend专项313、完整 game-free Core1477均通过，零跳过；E路径运行时构建零警告/错误。双MOD后台静音原生回归通过职业/保存/次日工作及无规划标记的连续两夜，空闲暂停恢复，旧未满足证明保留blocked，源存档未变。早期环境/夹具诊断不算PASS，原始数据不提交。详见[本轮溯源、证据与限制](shared-executor-compatibility-audit-20261105.md)。
+- 本轮仅审计修补，不恢复 Master Angler 原生采样或模型训练，不重开已接受的 #381 目视门。原primary、`6/19、7/19、6/19、5/11`与formal=false不变；无worker/API调用、无服务器更新。等待用户继续指令。
+
 ## 当前切片与接续（Master Angler）
 
 - **2026-11-05 精确捕鱼来源入口已实现并回归：** `MasterAnglerNativeCatchReceiptBuilder` 的build/Verify CLI只接受杆钓/蟹笼原生新收集，原72分母、版本、完整前后态和既有收集单调性必须成立；杆钓核对实际鱼种/原随机域，蟹笼核对真实caughtFish参数，不把制作/领奖恢复计捕获。请求/队列/快照绑定从原Rusty实现抽为同一reader，未复制校验器；Rusty仍保留自己的动作白名单、跨日和连续性。18项新合成检查、完整Core1397、Backend565均通过，原真实三分区Rusty公开Verify仍同SHA`4ae5a1ba...`。#439已CI通过并合入`eb275df9`，下条该轮待提交/CI已过期。当前来源入口尚待本头提交/CI；不是新增真实捕鱼验收，Teacher/native join和corpus未完成，计数及formal=false不变。**唯一接续：** 收口当前代码后，以原fishing profile/隔离E档后台静音取得真正缺失的原生source，再接原collection Teacher/receipt/replayer；禁止为来源短测误启模型训练、补写旧观测或新增第二套执行器。详见[精确来源合同](master-angler-local-native-join.md#exact-native-catch-source)。无worker/API/新游戏，local-data不提交。

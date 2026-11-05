@@ -3,6 +3,7 @@ using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
+using StardewAI.Core.Execution;
 using StardewAI.Core.OptionRegistry;
 using StardewAI.Core.Strategy;
 
@@ -56,6 +57,9 @@ public sealed class MultiConnectorMachineRelocationTests
         Assert.Equal(
             "existing_machine_cluster_resolved_route_over_eight_cycles",
             Parameter(candidate, "layout_benefit_policy"));
+        Assert.True(candidate.EstimatedTicks >= segments.Sum(segment =>
+            ConnectorRouteExecutionBudgetPolicy.EstimatedTicks(
+                segment.ApproachDistanceTiles)));
     }
 
     [Fact]

@@ -23,7 +23,7 @@ pre-existing pause is not claimed or released as its own. An ownership epoch
 advances only on acquisition, not per frame.
 
 An optional read-only SMAPI API reports the actual owner flag, empty dispatch
-queue, absence of active operation/movement/night transaction/menu, actor/world
+queue, absence of active operation/movement/native night transition/menu, actor/world
 identity, epoch and the original release-before-pending-execution policy. The
 bridge reads it synchronously while collecting the existing movement context.
 Absent/unloaded/incompatible APIs provide no authority. It neither calls HTTP
@@ -36,6 +36,12 @@ clear. Missing evidence, ordinary pause, dialogue, fade, warp, freeze, event,
 tool use, immobilization or incompatible movement still block. Existing runtime
 calibration constants and fresh source/dispatch/native checks are unchanged.
 There is no preference label, new executor, Teacher authority or training grant.
+
+A saved, safe next-day state releases native night ownership even if the
+composite acceptance still awaits its first planned work receipt. The same
+RuntimePrimitives guard governs native sleep, idle pause and this read-only
+evidence API. The remaining proof must not keep ordinary legacy callers running
+their clock or prevent their next sleep. Full composite acceptance is unchanged.
 
 No per-tick timestamp is added to semantic state: a stable idle pause must not
 invalidate every cached plan. The existing snapshot freshness/identity protocol

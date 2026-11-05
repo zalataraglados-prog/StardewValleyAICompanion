@@ -35,6 +35,7 @@ param(
     [int] $BackendPort = 8798,
     [int] $StartupTimeoutSeconds = 180,
     [switch] $NoBuild,
+    [switch] $IsolateMods,
     [switch] $VisibleGame,
     [switch] $KeepGameRunning
 )
@@ -731,6 +732,15 @@ New-Item -ItemType Directory -Force `
 & (Join-Path $ProjectRoot "scripts\Deploy-RuntimeTestHarnessToRuntime.ps1") `
     -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot `
     -NoBuild:$NoBuild | Out-Null
+$candidateModsDirectory = Join-Path $gameDirectory "Mods"
+if ($IsolateMods) {
+    $candidateModsDirectory = Join-Path $artifactDirectory "smapi-mods"
+    New-Item -ItemType Directory -Path $candidateModsDirectory | Out-Null
+    foreach ($modName in @("StardewAI.TransparentBridge", "StardewAI.RuntimeTestHarness")) {
+        Copy-Item -LiteralPath (Join-Path (Join-Path $gameDirectory "Mods") $modName) `
+            -Destination (Join-Path $candidateModsDirectory $modName) -Recurse
+    }
+}
 if (-not $NoBuild) {
     foreach ($project in @(
         "src\StardewAI.Backend\StardewAI.Backend.csproj",
@@ -756,14 +766,14 @@ foreach ($output in @($backendDll, $loopDll, $bootstrapDll)) {
     }
 }
 $candidateBinaryPaths = [ordered]@{
-    transparent_bridge = Join-Path $gameDirectory `
-        "Mods\StardewAI.TransparentBridge\StardewAI.TransparentBridge.dll"
-    runtime_test_harness = Join-Path $gameDirectory `
-        "Mods\StardewAI.RuntimeTestHarness\StardewAI.RuntimeTestHarness.dll"
-    contracts = Join-Path $gameDirectory `
-        "Mods\StardewAI.RuntimeTestHarness\StardewAI.Contracts.dll"
-    runtime_primitives = Join-Path $gameDirectory `
-        "Mods\StardewAI.RuntimeTestHarness\StardewAI.RuntimePrimitives.dll"
+    transparent_bridge = Join-Path $candidateModsDirectory `
+        "StardewAI.TransparentBridge\StardewAI.TransparentBridge.dll"
+    runtime_test_harness = Join-Path $candidateModsDirectory `
+        "StardewAI.RuntimeTestHarness\StardewAI.RuntimeTestHarness.dll"
+    contracts = Join-Path $candidateModsDirectory `
+        "StardewAI.RuntimeTestHarness\StardewAI.Contracts.dll"
+    runtime_primitives = Join-Path $candidateModsDirectory `
+        "StardewAI.RuntimeTestHarness\StardewAI.RuntimePrimitives.dll"
     backend = $backendDll
     live_training_loop = $loopDll
     goal_conditioned_bootstrap = $bootstrapDll
@@ -777,10 +787,10 @@ foreach ($entry in $candidateBinaryPaths.GetEnumerator()) {
         -LiteralPath $entry.Value -Algorithm SHA256).Hash).ToLowerInvariant()
 }
 $candidateRuntimeBundlePaths = [ordered]@{
-    transparent_bridge_mod = Join-Path $gameDirectory `
-        "Mods\StardewAI.TransparentBridge"
-    runtime_test_harness_mod = Join-Path $gameDirectory `
-        "Mods\StardewAI.RuntimeTestHarness"
+    transparent_bridge_mod = Join-Path $candidateModsDirectory `
+        "StardewAI.TransparentBridge"
+    runtime_test_harness_mod = Join-Path $candidateModsDirectory `
+        "StardewAI.RuntimeTestHarness"
     backend_output = Split-Path -Parent $backendDll
     live_training_loop_output = Split-Path -Parent $loopDll
     goal_conditioned_bootstrap_output = Split-Path -Parent $bootstrapDll
@@ -856,7 +866,12 @@ try {
     $env:SDL_AUDIODRIVER = "dummy"
     $env:ALSOFT_DRIVERS = "null"
     $gameWindowStyle = if ($VisibleGame) { "Normal" } else { "Hidden" }
+    $gameArguments = @{}
+    if ($IsolateMods) {
+        $gameArguments.ArgumentList = @('--mods-path', ('"' + $candidateModsDirectory + '"'))
+    }
     $game = Start-Process -FilePath $smapi `
+        @gameArguments `
         -WorkingDirectory $gameDirectory -WindowStyle $gameWindowStyle `
         -RedirectStandardOutput (Join-Path $artifactDirectory `
             "game.stdout.log") `

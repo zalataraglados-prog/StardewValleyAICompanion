@@ -4,6 +4,9 @@ namespace StardewAI.Core.Execution;
 
 public static class ConnectorRouteExecutionBudgetPolicy
 {
+    public const string ShortestPathTilesParameter =
+        "compiler_context.route_shortest_path_tiles";
+
     // Planning runs while the world keeps moving, so a fresh native path can
     // need a short bounded detour around characters or transient occupancy.
     public const int DynamicOccupancyDetourAllowanceTiles = 16;

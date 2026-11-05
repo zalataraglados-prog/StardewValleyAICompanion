@@ -2635,12 +2635,12 @@ public sealed partial class ModEntry : Mod
             var shouldHoldStoryEventForDispatch =
                 !hasActiveExecutorOperation &&
                 HasExecutorOwnedStoryEventDispatchBoundary();
-            var hasIncompleteEndOfNightTransaction =
-                HasIncompleteEndOfNightTransaction(out _);
+            var hasPendingNativeEndOfNightTransition =
+                HasPendingNativeEndOfNightTransition(out _);
             var shouldPauseForExecutorIdle =
                 config.FreezeClockWhileExecutorIdle &&
                 Context.IsWorldReady &&
-                !hasIncompleteEndOfNightTransaction &&
+                !hasPendingNativeEndOfNightTransition &&
                 executorMovementLease.Direction is null &&
                 (shouldHoldStoryEventForDispatch ||
                     pendingExecutions.IsEmpty &&
@@ -2993,6 +2993,12 @@ internal static class HostLocalDrawPatch
 
     public static bool Prefix()
     {
+        // QiPlaneEvent and other native farm events can advance state in draw().
+        if (Game1.farmEvent is not null)
+        {
+            return true;
+        }
+
         var interval = Volatile.Read(ref minimumIntervalMilliseconds);
         if (interval <= 0)
         {

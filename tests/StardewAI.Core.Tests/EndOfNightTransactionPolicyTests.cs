@@ -5,6 +5,42 @@ namespace StardewAI.Core.Tests;
 
 public sealed class EndOfNightTransactionPolicyTests
 {
+    [Theory]
+    [InlineData("sleep_pending", false, true)]
+    [InlineData("native_outcomes_pending", false, true)]
+    [InlineData("awaiting_planned_profession_selection", false, true)]
+    [InlineData("ready_for_safe_next_day_action", false, true)]
+    [InlineData("ready_for_safe_next_day_action", true, false)]
+    [InlineData("debug_negative_fixture_pending", true, true)]
+    [InlineData("unknown", true, true)]
+    [InlineData("complete", false, false)]
+    [InlineData("blocked", false, false)]
+    public void NativeControlOwnershipDoesNotDependOnFollowupWorkEvidence(
+        string status,
+        bool sawSafeNewDayReadyState,
+        bool expected)
+    {
+        Assert.Equal(
+            expected,
+            EndOfNightTransactionPolicy.RequiresNativeTransitionControl(
+                status,
+                sawSafeNewDayReadyState));
+    }
+
+    [Fact]
+    public void ReleasingNativeControlDoesNotCompleteTheCompositeProof()
+    {
+        const string status = "ready_for_safe_next_day_action";
+
+        Assert.False(
+            EndOfNightTransactionPolicy.RequiresNativeTransitionControl(
+                status,
+                sawSafeNewDayReadyState: true));
+        Assert.True(
+            EndOfNightTransactionPolicy.MatchesActiveSleepRequest(
+                status, "run", "queue", "item", "run", "queue", "item"));
+    }
+
     [Fact]
     public void ProductionOverallBudgetRemainsUnchangedByDebugFixtures()
     {
