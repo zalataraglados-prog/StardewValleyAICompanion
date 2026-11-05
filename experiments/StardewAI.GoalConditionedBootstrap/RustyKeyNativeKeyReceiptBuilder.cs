@@ -48,6 +48,8 @@ public static partial class RustyKeyNativeKeyReceiptBuilder
         var result = ReadTyped<TrainingExecutionResult>(resultPath, "training_execution_result.v1");
         ValidateQueue(queue, rebuilt, candidate.CandidateId, before.StateHash, goalId);
         ValidateResult(result, queue, request.RunId, before.StateHash);
+        ValidateRecordedBoundary(CurrentTeacherFrontierSupport.Read<JsonElement>(resultPath,
+            "Retained Live action boundary"), before, after);
         ValidateOutcome(before, after);
 
         return new RustyKeyNativeKeyReceipt(requestPath, new Dictionary<string, string>(StringComparer.Ordinal)

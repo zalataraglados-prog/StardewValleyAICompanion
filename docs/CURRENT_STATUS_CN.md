@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-05 #433最终修正状态：** 已先复现并修正新增消费者未绑定Live原有执行边界的P2，原回执/执行器/aggregate不动；55项新检查、家族120、完整game-free1277及真实公开CLI/Verify同SHA通过，修正待最终提交CI。下一步Teacher比较已按真实原生语义明确在**此前的阈值捐赠安排**：key在event66命令4自动给出，后续才是输入门，不能从自动领奖或旧控制选中项造偏好；沿同run连续证据把独立捐赠决策接到后续key终态并正确分组。现有透明桥已提供完整脚本，无需新增字段或重跑旧门。详见[合同](rusty-key-terminal-evidence.md#correct-teacher-decision-boundary)和当前工作。仍未完成Rusty Key整项，不抬冻结计数或训练资格。
+
 > **2026-11-05 当前同主线实现：** Rusty Key实际送钥匙终态来源已接原候选/公开方向绑定/原编译器，新增只读build/verify及强制来源重建合同，不新增执行器或Teacher标签。47项新反例/正向、原绑定112、完整game-free1269通过；真实旧第7日逐动作输入经公开CLI构建和重放SHA一致，修正的是新增消费者误把剧情可选`actual_ticks`当必填的假设，未改旧回执。代码待提交/CI。[精确范围与证据](rusty-key-terminal-evidence.md)。下一步仍同Rusty Key独立前态Teacher比较及三分区join；原生终态来源与Teacher偏好分开，现无新增criterion/覆盖或训练资格，整项完成后汇报。
 
 > **2026-11-05 最新收口与接续：** #432最终头`32038c65`/CI `41962442740`成功，合并`154cd509`，已核实并删除对应本地及远端临时分支。当前唯一主线仍`obtain_rusty_key`，在`feat/rusty-key-native-terminal-source`接原生送钥匙类型化来源，再接本criterion独立Teacher/native三分区join与时限。不重跑已接受跨夜、钥匙或目视门。旧钥匙原始第2动作的实际before已通过原日志reader与当前公开方向绑定器只读重建ready：第7日key false→true；aggregate episode较早起点保留原含义，不改旧数据迁就新消费者。该定位不是新增原生/Teacher验收，索引SHA及精确输入、原实现复用/反例和禁止循环依赖要求已写入[当前工作](CURRENT_WORK_CN.md)。冻结计数不变，整项完成后汇报。

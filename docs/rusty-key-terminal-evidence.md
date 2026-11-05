@@ -52,6 +52,16 @@ must show the actual key false-to-true transition, unchanged donation count,
 applied native museum prerequisite/reward, the native key event seen, Farm
 location and closed event/control state.
 
+Retained Live action receipts also carry `after_state_hash`, `before_game_tick`,
+`after_game_tick` and `after_snapshot_fresh`. These application-layer fields are
+read from the original JSON, not discarded by the base `TrainingExecutionResult`
+deserializer. They must exactly bind the supplied snapshots and a fresh capture.
+The PR #433 P2 finding was reproduced before the fix: a later same-state tick
+was accepted. Eight new cases now reject that substitution, changed after-state,
+wrong/missing/mistyped recorded boundaries and a stale capture. The original
+Live writer and aggregate semantics were not changed; optional `actual_ticks`
+is still not made mandatory.
+
 The original story executor intentionally does not populate optional
 `actual_ticks`. This consumer does not invent that requirement or rewrite old
 receipts. Freshness is proved by the explicit before/after snapshot ticks and
@@ -77,13 +87,14 @@ reference was added; Live already depends on Bootstrap.
 
 ## Verification And Next Step
 
-The local game-free suite passes 1269 tests. The original direction-binding
-family passes 112, including 47 new native-source positive/rejection cases.
+The local game-free suite passes 1277 tests. The original direction-binding
+family passes 120, including 55 new native-source positive/rejection cases.
 The Release build has no warnings/errors. The cases cover original compiler
 reuse, optional `actual_ticks`, canonical parent goals, wrong aggregate before,
 event/asset mismatch, missing booleans/dates/ticks, stage deadline, actor/version
 drift, stale hashes/fingerprints, unclosed events, extra choices/steps, malformed
 arrays/facts, mismatched command/receipt identity, source drift and forged claims.
+The P2 boundary regression failed before the fix; all cases pass afterwards.
 
 Both public CLI commands consumed the already accepted `rk-e8d7a6c3-1104`
 action, without another game or reopening its accepted boundary. The exact
@@ -104,3 +115,28 @@ captures. Additional partitions remain unproven. The threshold supply and
 criterion method/deadline responsibilities retain their own gates under R2;
 the accepted shared key, custody and visual boundaries are not rerun as a new
 global prerequisite. Frozen coverage and training/checkpoint state do not change.
+
+## Correct Teacher Decision Boundary
+
+The retained pre-state already contains the full native event command list and
+remaining rows, covered by its state hash and the bridge's event fingerprint.
+The actual E game DLL was freshly decompiled (SHA-256
+`7f1e5b8e58d2758b78570ba771bbeb03d33522f62188bf6c32edf0cf626deaee`).
+`Event.DefaultCommands.RustyKey` grants the key and advances the command without
+player input. In this real event, command 4 is `RustyKey`, preceding `Speak` at
+7 and 13 and `Message` at 17. The later dialogue still needs ordinary input to
+restore playable control.
+
+Therefore do not copy a Skull Key claim/defer rule and label "no event input"
+as "no Rusty Key". Do not credit automatic native progress to a learned policy.
+Event completion remains mechanical execution. The next independent Teacher
+comparison belongs at the earlier meaningful threshold-donation arrangement,
+using its actual pre-state, ownership/ledger, legal candidate, time and original
+compiler. Bind that decision's native donation/reward continuation to this
+later native key terminal through the existing same-run evidence; do not join
+an unrelated successful key receipt by actor/day alone. Keep comparisons and
+native outcomes separate. A decision on day 6 and terminal on day 7 need one
+causal trajectory split group derived from the original decision identity,
+not separately chosen labels or the terminal day substituted as decision day.
+This is a clarification of the pending criterion join, not an extra game test,
+new snapshot field, second executor or change to the accepted native gate.

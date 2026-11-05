@@ -5,6 +5,17 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public static partial class RustyKeyNativeKeyReceiptBuilder
 {
+    private static void ValidateRecordedBoundary(JsonElement result, SnapshotEnvelope before, SnapshotEnvelope after)
+    {
+        Require(result.TryGetProperty("after_state_hash", out var hash) && hash.ValueKind == JsonValueKind.String &&
+            hash.GetString() == after.StateHash && MatchesTick("before_game_tick", before.GameTick) &&
+            MatchesTick("after_game_tick", after.GameTick) && result.TryGetProperty("after_snapshot_fresh", out var fresh) &&
+            fresh.ValueKind == JsonValueKind.True, "recorded_execution_boundary_mismatch_or_missing");
+
+        bool MatchesTick(string name, long observed) => result.TryGetProperty(name, out var tick) &&
+            tick.ValueKind == JsonValueKind.Number && tick.TryGetInt64(out var recorded) && recorded == observed;
+    }
+
     private static void ValidateSnapshots(SnapshotEnvelope before, SnapshotEnvelope after)
     {
         foreach (var snapshot in new[] { before, after })

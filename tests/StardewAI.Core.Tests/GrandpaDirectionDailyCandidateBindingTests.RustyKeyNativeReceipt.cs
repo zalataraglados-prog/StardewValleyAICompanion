@@ -81,6 +81,14 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
     [InlineData("missing_schema")]
     [InlineData("wrong_goal")]
     [InlineData("command_goal")]
+    [InlineData("later_after_same_state")]
+    [InlineData("later_after_different_state")]
+    [InlineData("recorded_before_tick_mismatch")]
+    [InlineData("missing_recorded_after_hash")]
+    [InlineData("missing_recorded_before_tick")]
+    [InlineData("missing_recorded_after_tick")]
+    [InlineData("mistyped_recorded_tick")]
+    [InlineData("recorded_stale_after")]
     public void NativeRustyKeyReceiptRejectsUnboundSourcesAndIncompleteOutcomes(string mode)
     {
         var f = CreateNativeKeyReceiptFixture();
@@ -133,6 +141,14 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
             case "missing_schema": EditNativeKeyJson(f.RequestPath, node => node.AsObject().Remove("schema_version")); break;
             case "wrong_goal": EditNativeKeyJson(f.Request.ActionQueuePath, node => node["goal_id"] = "goal.other"); break;
             case "command_goal": Command(node => node["goal_id"] = "goal.other"); break;
+            case "later_after_same_state": After(node => node["game_tick"] = 201); break;
+            case "later_after_different_state": After(node => State(node)["player"]!["fixture_later"] = RustyKeyField(true)); break;
+            case "recorded_before_tick_mismatch": Result(node => node["before_game_tick"] = 99); break;
+            case "missing_recorded_after_hash": Result(node => node.AsObject().Remove("after_state_hash")); break;
+            case "missing_recorded_before_tick": Result(node => node.AsObject().Remove("before_game_tick")); break;
+            case "missing_recorded_after_tick": Result(node => node.AsObject().Remove("after_game_tick")); break;
+            case "mistyped_recorded_tick": Result(node => node["after_game_tick"] = "200"); break;
+            case "recorded_stale_after": Result(node => node["after_snapshot_fresh"] = false); break;
             default: throw new ArgumentOutOfRangeException(nameof(mode));
         }
         Assert.Throws<InvalidDataException>(() => RustyKeyNativeKeyReceiptBuilder.Build(f.RequestPath));
@@ -226,7 +242,12 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
         WriteNativeKeyJson(request.BeforeSnapshotPath, before);
         WriteNativeKeyJson(request.AfterSnapshotPath, after);
         WriteNativeKeyJson(request.ActionQueuePath, queue);
-        WriteNativeKeyJson(request.ExecutionReceiptPath, result);
+        var captured = JsonSerializer.SerializeToNode(result, JsonOptions)!;
+        captured["before_game_tick"] = before.GameTick;
+        captured["after_game_tick"] = after.GameTick;
+        captured["after_state_hash"] = after.StateHash;
+        captured["after_snapshot_fresh"] = true;
+        WriteNativeKeyJson(request.ExecutionReceiptPath, captured);
         var requestPath = Path.Combine(root, "request.json");
         WriteNativeKeyJson(requestPath, request);
         return new NativeKeyReceiptFixture(root, requestPath, request, before, after, queue);
