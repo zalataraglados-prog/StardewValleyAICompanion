@@ -102,8 +102,81 @@ All 27 focused checks, complete game-free Core 1564/1564 and Backend 594/594 pas
 zero skipped. The bound-source CLI took about 1.05 seconds/159 MiB peak working
 set including process startup, compressed source materialization and full hash
 verification. It is an offline decision-boundary consumer, not a per-frame read
-or extra full scan. This slice still requires its final CI/publication.
-Step 2 is implemented; the next implementation is step 3, not another XP reader.
+or extra full scan. This slice passed PR #447 final CI `42059282002` and
+merged as `bb336431f0dda7e4c1954a447455beea8d3f364b`; its branch is removed.
+Step 2 is accepted, not a reason to reopen the reader or repeat its native input.
+
+## Independent Current Comparison
+
+Step 3 is implemented in `CurrentSkillTeacherPreferenceBuilder` and its small
+candidate/time-admission/comparison modules. Public Bootstrap commands are
+`build-current-skill-teacher-preference --snapshot ABS --output NEW.json`
+(optional `--strategy-ledger ABS`) and
+`verify-current-skill-teacher-preference --preference ABS --output NEW.json`.
+Both refuse an existing output; Verify rebuilds original inputs and compares
+the complete stored artifact, including negative training/outcome declarations.
+
+The producer rebuilds the original registry/evaluator/ranker from one source,
+neutralizes learner scores and invokes the original direction binding and
+compiler. The catalog's 16 strategy/mixed option families retain individual
+availability, missing-state and blocker audits. Its five executor-calibration
+families remain compiler-owned support, not new strategy labels. The new typed
+XP facade materializes only formats already accepted by the original binding
+guard, preserving its rejections. The July introducing commits `4a01e38a` and
+machine extension `786e6f0b` were inspected; retained JSON only contained later
+references, not the original design conversation. No original rule was called
+incorrect or rewritten. The crab-pot consumer alone adapts its existing exact
+`expected_skill_id/expected_skill_experience_delta` into the Skills input format.
+
+The ranker already invokes its timeline scheduler. A legacy immediate native
+candidate may still leave `AllowedNow/AllowedToday` null, which the old binding
+correctly refuses. The new producer can certify that local case only from an
+original same-state accepted plan and pending native queue, on the loaded
+location and within the original time/energy budgets. Explicit false, gate,
+wait, opening/closing window, connector, cross-map step, continuation, identity
+drift or unknown cost is not converted to true. This proves current permission,
+not a future calendar; no old nullable-field or binding rule changed.
+
+Comparisons require matching complete native-effect signatures, including
+quantity/item/slot/value, all nongeometry parameters and unknown effect text.
+Only four explicit tile coordinates, the original crab-pot stand prefix, and
+this producer's already-verified minute-cost field are excluded. Five useful
+XP ranges are capped to actual remaining base-skill deficits. A preferred
+candidate must guarantee at least the alternative's possible XP in every skill,
+with no greater ticks/compiled minutes/energy and at least one strict improvement.
+Luck, capped XP, random misses, incomparable tradeoffs and ties are not fabricated
+labels. Physical aliases are excluded. Equal-effect grouping and one dominance
+witness per dominated choice avoid quadratic cross-family output; when a unique
+frontier winner exists, its explicit comparisons cover the other admitted choices.
+
+Actual read-only input is the retained content-addressed
+`master-angler-terminal-train-20261105-a/.../before-snapshot-0001.json`, source
+SHA `e288a6c6780b6134065234403f436e9a705fd95893b019c8b7e1dbec8aad164e`,
+state `2cf253b2c6258e8f8b09c39361e7c91c8c5a87809eeae1a2410a3af680364cae`, tick 128.
+The two native-legal crab-pot candidates have equal exact 5 XP/native effects;
+the producer independently prefers 30 ticks/1 compiled minute to 210 ticks/5 minutes.
+Final `current-preference-d.json` and its cache-disabled public Verify replay
+are identical SHA
+`016d4cf256c7bbabadf0f3d3ec1be6889fbf0e56850bead976da00dec1492165`.
+They remain outside Git at `I:\StardewAITraining\skills-local-20261105`.
+The initial unadapted binding rejection is retained as diagnostic `b`, not
+misreported as an executor failure or repaired by weakening its flags.
+
+All 48 new checks, complete game-free Core 1612/1612 and Backend 594/594 pass,
+zero skipped. Public CLI rejects a promoted formal-training declaration and
+source overwrite without creating a success artifact or mutating the source.
+The E DLL still has the versioned hash above. The final producer takes about
+2.21 seconds/183 MiB peak working set including startup and exact source reading;
+it is not a per-frame scan. This new slice still needs final CI/publication.
+
+This is retrospective replay of a saved pre-action snapshot, not a new live
+Skills decision, native XP/15/25 outcome, dataset row, full method/corpus gate or
+formal training. Do not splice the old Master Angler execution into this new
+decision's history. Next is step 4: generate this preference before a new
+isolated native execution, retain the same-run queue/nonce and actual base-XP,
+base-level and scoring-threshold transition, then connect the original source
+join/corpus and partition contracts. An explicit boundary fixture may declare
+prior XP/levels; it cannot claim their acquisition or inject the measured gain.
 
 ## Implementation Order
 

@@ -212,7 +212,7 @@ public sealed class CurrentSkillExperienceDeficitTests
         snapshot.StateHash = SnapshotHash.ComputeStateHash(snapshot.State);
     }
 
-    private static SnapshotEnvelope Snapshot(int level = 6, int xp = 3300)
+    internal static SnapshotEnvelope Snapshot(int level = 6, int xp = 3300)
     {
         var thresholds = new[] { 100, 380, 770, 1300, 2150, 3300, 4800, 6900, 10000, 15000 };
         var ids = new[] { "farming", "fishing", "foraging", "mining", "combat", "luck" };

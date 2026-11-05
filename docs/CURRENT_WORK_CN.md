@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-11-06 Skills独立当前比较已接线
+
+- #447最终头`4b3c7400`经CI `42059282002`和无发现审查接受，合入`bb336431`、分支已清理。下方当前XP缺口消费端的待CI已完成，不重新实现或重采。唯一primary仍`raise_skill_levels`；冻结并集`7/19 executable、7/19 split-complete、7/19 CoverageGateReady、6/11 roots`、formal=false不变。
+- 本轮新增当前Skills comparison公开build/Verify：由同一前态重新调用原registry/evaluator/ranker，清除learner信号，复用原XP绑定校验与原编译。16个策略族逐项保留原可用性/缺字段原因，5个编译器所有项不成为策略标签。蟹笼只在新消费端适配原`expected_skill_*`，没有改旧候选/桥/执行语义；通用标量、结构化及双技能格式经原guard后只做类型化读取。
+- 原ranker已调用时间轴，但旧本地候选可保留null许可；不是旧逻辑错误。新显式许可只由同位置、无门/等待/续程、原完整plan/queue pending及预算证明产生；false、跨图、未知窗口不兜底。比较保留完整native参数/未知副作用，仅剔除明确几何和本消费端时间成本字段；互有取舍、随机界重叠、同分、物理别名不造标签。按同效果分组，只保留支配见证/最终所选比较，避免跨族二次方输出。
+- 保留真实前态`master-angler-terminal-train-20261105-a`的只读重放得到两项真实可编译候选，5XP/同产物，30tick/1分钟优于210tick/5分钟。公开Verify关闭缓存独立重建同SHA`016d4cf2...`；仍只是事后读取旧前态的独立比较，不是新决策时序、Skills原生升级或可入库训练行。48新检查、完整Core1612/Backend594零跳过，CLI篡改formal/覆盖输入均拒绝；当前E DLL SHA不变，无新游戏/worker/API/服务器/训练，不提交local-data。新切片尚待最终CI/合入。
+- **唯一下一步：** 收口本切片后按[Skills局部接续](skills-local-intake.md#independent-current-comparison)第4步，在新的E隔离运行中先生成本比较、再调用原编译/执行取得精确XP及原生15/25阈值；局部边界前置须声明，不把旧Master执行拼成新Skills决策，不重复Step2/3、不增加另一套动作。之后才做同run join/corpus、原policy三分区和原覆盖入口，计数不能提前晋升。
+
 ## 2026-11-05 Master Angler已合入，接续Skills局部来源
 
 - PR #446最终头`ad3e6b5b`的CI `42054598280`全部通过，审查无发现，合并为`56a133dc`；已核实main祖先关系并清理本轮本地/远端分支。三分区终态、完整回归和冻结并集现已接受，不再待CI。游戏/后端已退出，5129/8765/8767无监听。`7/19 executable、7/19 split-complete、7/19 CoverageGateReady、6/11 roots`，formal=false。

@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-06 Skills当前独立比较（本条优先）：** #447已由CI `42059282002`接受并合入`bb336431`，原缺口消费端不再待CI。本轮新comparison build/Verify从原候选/evaluator/XP guard/绑定/编译重建，仅新消费端适配旧本地许可及蟹笼XP字段；旧共享规则未改。16策略族/5编译器项分开审计，同效果且稳健支配才有标签，未读字段/同分/取舍不造负例。旧真实前态重放两只5XP同效果笼，30/210tick严格比较1对，独立重建同SHA`016d4cf2...`；48新检查、Core1612/Backend594通过，零跳过。没有新原生执行/Skills阈值或训练行，冻结`7/19、7/19、7/19、6/11`及formal=false不变。本新切片待最终CI/合入，之后唯一下一步是新的隔离比较→原执行→原生15/25终态，不从旧Master后态补写决策。见[完整边界](skills-local-intake.md#independent-current-comparison)。
+
 > **2026-11-05 最终发布与下一primary（本条优先）：** PR #446最终头`ad3e6b5b`经CI `42054598280`全部通过、审查无发现，已合入`main@56a133dc`并清理对应分支。Master Angler局部ready，冻结并集正式为`7/19 executable、7/19 split-complete、7/19 CoverageGateReady、6/11 roots`，formal=false。下方“发布以最终CI为准/待CI/先收口”不再触发重复采证。只读复核五个剩余root后，下一唯一primary为`raise_skill_levels`，先复用现有XP候选/编译/原生验证，补基础等级缺口与独立来源；未生成Skills新证据或晋升计数。范围与顺序见[Skills局部接续](skills-local-intake.md)。
 
 > **同primary首切片：** 当前XP缺口消费端及公开CLI已实现，27项正反检查、完整Core1564/Backend594通过；当前E实时反编译/wiki支持原生阶梯/立即基础升级/15与25评分。原真实压缩快照只读重放及独立重建同SHA`cf082f34...`，无新游戏，旧共享规则未改。只证明当前状态读取与缺口，不是Skills comparison/native终态/corpus，计数与formal不变；该新切片发布仍待其最终CI/合并。下一实现为原正XP候选的独立比较连接，不重做执行器。

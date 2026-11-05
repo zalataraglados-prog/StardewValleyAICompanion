@@ -41,6 +41,8 @@ var commandDefinitions = new CommandDefinition[]
     new("plan-current-social-day", PlanCurrentSocialDay),
     new("build-current-social-teacher-label", BuildCurrentSocialTeacherLabel),
     new("build-current-skill-experience-deficit", BuildCurrentSkillExperienceDeficit),
+    new("build-current-skill-teacher-preference", options => WriteCurrentSkillTeacherPreference(options, verify: false)),
+    new("verify-current-skill-teacher-preference", options => WriteCurrentSkillTeacherPreference(options, verify: true)),
     new("build-goal-method-graph", BuildGoalMethodGraph),
     new("build-goal-method-teacher-coverage", BuildGoalMethodTeacherCoverage),
     new("build-goal-method-coverage-reconciliation", BuildGoalMethodCoverageReconciliation),
@@ -634,6 +636,19 @@ static void BuildCurrentSkillExperienceDeficit(Arguments options)
     var result = new CurrentSkillExperienceDeficitBuilder().Build(snapshot);
     Write(output, result);
     if (result.Status != "ready_current_state_only")
+        Environment.ExitCode = 2;
+}
+
+static void WriteCurrentSkillTeacherPreference(Arguments options, bool verify)
+{
+    var output = Path.GetFullPath(options.Required("output"));
+    if (!output.EndsWith(".json", StringComparison.OrdinalIgnoreCase) ||
+        File.Exists(output) || Directory.Exists(output))
+        throw new InvalidDataException("Skill Teacher output must be a new JSON file.");
+    var result = verify ? CurrentSkillTeacherPreferenceBuilder.Verify(options.Required("preference")) :
+        CurrentSkillTeacherPreferenceBuilder.Build(options.Required("snapshot"), options.Optional("strategy-ledger"));
+    Write(output, result);
+    if (!result.TeacherPreferenceLabelEligible)
         Environment.ExitCode = 2;
 }
 
