@@ -86,3 +86,15 @@ terminal. Preserve the real per-action boundaries; do not rewrite aggregate
 queue-start semantics. Additional native partitions are not yet proven. This
 is not three-partition coverage or full criterion completion, and does not
 reopen accepted key/custody/visual gates or add a Day-0 reverse prerequisite.
+
+The comparison implementation was merged by PR #434 at `49a168e7`, after
+final-head `c7ac24fe` CI `41970315013` passed. A subsequent read-only source
+index used the original C# request-journal reader and shared native sleep
+boundary checker on 13 consecutive actions, ticks 1041 through 7053. Its SHA is
+`1a4506e9a6f0bc09605fdcc68c78e830db9e93cea6d0500faee8c768fdbff4e4`.
+It remains an input index, not the pending typed join or corpus certificate.
+For priority interrupts, its actual queue is the recorded
+`mechanical_compiled_queue_path`; the older effective-plan path keeps its
+parent-plan meaning. Do not change the writer or old data to satisfy a new
+extractor. A shared journal consumer must preserve the original reader rather
+than copy it or introduce a Bootstrap-to-Live dependency cycle.

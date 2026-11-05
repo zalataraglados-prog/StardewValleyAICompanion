@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-05 当前接续覆盖下方待CI前态：** #434最终CI`41970315013`成功并合并`49a168e7`，相关临时分支已核实收口。独立Teacher前态比较已合入；同run13动作请求/帧连续性和原生睡眠只读复核通过，精确输入索引及下一步写入[当前工作](CURRENT_WORK_CN.md)。类型化Teacher/native因果join尚未实现，其他真实分区/coverage仍待补，不把source index当证书；下一步只做该join并复用原日志reader，禁止新建重复执行/校验系统或循环引用。Rusty Key整项/冻结计数/正式训练资格未变，结束后汇报。
+
 > **2026-11-05 最新Rusty Key接续：** #433已按最终CI合并`539ddb21`，相关分支已核实收口。独立阈值捐赠Teacher比较已实现且真实前态build/verify同SHA通过：只读前态/原账本，原候选/编译准入，全分母/拒绝/等价保留，不读control选择或native成功。第6日决策仍只属train，后续第7日key不改变分组；比较反事实仅局部600-tick不捐赠，不进自动池，不代表全局最优。原家族78含30新检查、完整game-free1307通过，零跳过；提交待CI。下一步绑定同run真实捐赠/奖励/正常跨日和key终态，再补真实其他分区及coverage；Rusty Key整项、冻结计数、正式训练禁入不变，完成后汇报。[合同与证据](rusty-key-donation-teacher-comparison.md)。
 
 > **2026-11-05 #433最终修正状态：** 已先复现并修正新增消费者未绑定Live原有执行边界的P2，原回执/执行器/aggregate不动；55项新检查、家族120、完整game-free1277及真实公开CLI/Verify同SHA通过，修正待最终提交CI。下一步Teacher比较已按真实原生语义明确在**此前的阈值捐赠安排**：key在event66命令4自动给出，后续才是输入门，不能从自动领奖或旧控制选中项造偏好；沿同run连续证据把独立捐赠决策接到后续key终态并正确分组。现有透明桥已提供完整脚本，无需新增字段或重跑旧门。详见[合同](rusty-key-terminal-evidence.md#correct-teacher-decision-boundary)和当前工作。仍未完成Rusty Key整项，不抬冻结计数或训练资格。
