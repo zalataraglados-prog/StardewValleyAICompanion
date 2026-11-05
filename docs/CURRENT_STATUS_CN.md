@@ -1,5 +1,9 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> 本切片最终本地回归：Core1699/Backend597全部通过、零跳过，18新检查；公开局部视图/原入口反例通过，发布以对应PR最终CI与收口评论为准。
+
+> **2026-11-06 Skills局部方法（当前优先）：** #451最终CI `42091079266`接受并合入`8d497d54`、对应分支已清理。新运行局部视图复用已验corpus，只对齐局部有条件方法；原canonical全新档预算、完整五技能规则、其他目标和旧执行器不改。最终b版从原registry完整合并所选动作字段，公开Verify同SHA`4d331504...`，五类scope反例及原coverage的篡改/错配来源拒绝、输入未变；原canonical仍pending。局部视图使两项method executable，但各自Teacher/native只有train，ready=false，其他17项覆盖不变。下一步仅补15/25原policy validation/test，再原入口收口，不重采train或重做方法。冻结整项面板`7/19、7/19、7/19、6/11`与formal=false不变；完整回归/最终发布以本PR收口为准。[来源、旧JSON上下文及边界](skills-local-intake.md#conditional-local-method-view)。下方“先对齐方法责任”的指令已完成，不再重开。
+
 > **2026-11-06 Skills corpus接入（当前优先）：** #450最终CI `42085984353`接受并合入`8f6a36fd`、分支已清理。当前typed criterion corpus复用两条最终b版监督行的原Verify，原来源去重/权威19项21分绑定，公开重建同SHA`2248b6e4...`。原coverage/reconciliation已登记Skills来源，15与25各自只有train，方法仍pending、ready=false；仅15来源不给25借分，五类公开反例拒绝、输入不变。完整Core1681/Backend597通过、零跳过，17新检查。下一步是原有条件方法/共享前置责任对齐，再只补各自validation/test；不清除全局新档预算，也不重采成功train。冻结`7/19、7/19、7/19、6/11`与formal=false不变，无新游戏/worker/API/产品训练，最终发布见对应PR收口。[来源与剩余边界](skills-local-intake.md#criterion-corpus-and-original-coverage)。下方“尚无corpus/下一步先登记”的说法均为历史前态。
 
 > 本切片最终本地回归：Core1664/Backend597全部通过、零跳过，30新检查；原PolicyDataset/PolicyModel CLI构建及原检查点通过。以下Skills行切片发布以对应PR最终CI与收口评论为准，非整项训练放行。

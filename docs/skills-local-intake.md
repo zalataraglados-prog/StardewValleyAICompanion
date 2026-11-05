@@ -19,7 +19,7 @@ coverage source registry found:
 
 | Remaining Root | Reuse | Actual Next Increment |
 | --- | --- | --- |
-| Skills | `PlayerReadAdapter.Skills`, original XP candidates/binding/compiler/native receipts, current deficit and independent comparison are reused. Native 15/25 terminals, original Teacher rows and criterion corpus/source registration are implemented below. | Reconcile the original conditional method/shared prerequisites, then add only the missing original validation/test sources for each criterion. Both accepted terminals currently belong to train. |
+| Skills | Original XP/deficit/comparison, native 15/25 terminals, original Teacher rows, corpus/source registration and a verified conditional local method view are implemented below. The original canonical graph and acquisition/execution functions are retained. | Add only the missing original validation/test sources for each criterion, then rebuild the same corpus/local view/original coverage intersection. Both accepted terminals currently belong to train. |
 | Friendship | `CurrentSocialDayTeacherLabelBuilder`, native talk/gift, ordered itinerary and bounded rollout/day-progress policies already exist. | Independent comparison/native root-source wiring is still absent; future contact production and decay/calendar composition remain separate responsibilities, not reasons to rewrite current social execution. |
 | Marriage/House | Original social, purchase, proposal and construction actions can be reused. | Partner, inventory/weather/access, wedding and two upgrade branches need precise composition and same-run native results; no root source is registered. |
 | Full Museum | Rusty Key acquisition/custody/reservation/donation and generic acquisition corpus are available. | Expand the 95-item heterogeneous denominator and artifact-spot probability/retry contract, then join independent comparisons and actual completion; do not reopen Rusty Key. |
@@ -397,7 +397,7 @@ the current goal index, SHA
 `6af84a0312a97b37ee9c32fdd56ef2a179a2c5cec88456b3edb8b55e0330e492`,
 not the stale generated frontier from a different authority hash.
 
-**Next, in order:** reconcile the original Skills recurrence's criterion-local
+**Historical next at this slice, now implemented below:** reconcile the original Skills recurrence's criterion-local
 conditional method and actual L2 prerequisite bindings. Its currently recorded
 fresh-save five-skill XP/travel/energy/competing-goal deadline proof remains
 L3/L4 work; neither delete it nor require the whole new-save run as a reverse
@@ -413,6 +413,100 @@ publication are governed by the PR closing record.
 Local regression: 17 new checks; full game-free Core 1681/1681 and Backend
 597/597, zero skipped. Explicit E Bootstrap build has zero warnings/errors;
 public corpus probes and the unchanged EVD-338 checkpoint pass.
+
+PR #451 final head `313e22c946f625cc17238873c1ec9a64fb14e39d`, CI
+`42091079266` (all 38 steps), merged as
+`8d497d54582651da2e43bc733b105761128795b3`. Its branch is closed.
+
+## Conditional Local Method View
+
+The introducing graph commit is `55dc054fee8603f885e830c0abe74a6f870dd90d`.
+It was traced to the retained original thread JSON at
+`2026-09-08T02:50:22.395Z`, following the user's convergence-plan/document
+request. The original fresh-save blocker is intentional whole-Teacher scope,
+not a broken XP executor. R2 now separates that responsibility from L1.
+
+`build-skill-local-dependency-view --corpus ABS --dependencies ABS --output NEW`
+and `verify-skill-local-dependency-view --view ABS --output NEW` produce and
+independently rebuild a run-local dependency view. The canonical dependency
+file is never edited. The original five-skill state/thresholds, 13 acquisition/
+recurrence nodes and every other root are retained; only the local recurrence
+scope is made explicit and one source-certificate gate/edge is added.
+The metadata preserves the complete original blockers and recurrence contract
+for L3/L4, including five-skill acquisition, travel/energy and competing goals.
+The local Teacher choice is the implemented current same-effect XP/cost
+dominance policy, not the unimplemented claim of globally minimizing deadline
+risk across all skill routes. Its original global policy remains in metadata.
+
+The certificate consumes the already verified original corpus; it binds exact
+decision frames, Teacher/native sources, route options, queue items and nonces,
+not a claim that functions exist or that prior acquisition occurred. Both
+native thresholds must have genuine comparison/outcome witnesses. Ready-pot
+preparation and the other four base skills remain declared prerequisites.
+The gate merges the selected options' original OptionRegistry required fields
+with the Skills/time/energy fields; object, collision and menu requirements are
+not omitted or maintained as a second hand-written route field list.
+Future availability and a guaranteed route from zero for every skill are not
+proven. The original compilation and fresh-snapshot guards remain responsible
+for every new action; no admitted route/strict comparison stays blocked.
+
+The original coverage Skills adapter receives only the existing dependency
+path as extra context. If the local method is executable it independently
+rebuilds and compares the entire view, including the exact source corpus;
+it reuses the corpus already verified in that operation, without a second
+native deep replay. Legacy source-kind semantics and the original method
+frontier/reader/executors are not changed. A hand-edited complete graph without
+the bound local view cannot grant Skills coverage through this source.
+
+Outside-Git results in `I:\StardewAITraining\skills-local-20261105`:
+
+- `local-method-probe-b/view.json` / `replay.json`, identical SHA-256
+  `4d331504164ab4ded5f9fd27882d6183a09261566aba03216c2f1be6ada8caf4`.
+  Five public scope/overwrite rejections; original corpus/rows/native receipts/
+  canonical dependency hashes unchanged.
+- `local-method-coverage-b.json`, SHA
+  `8a55d2af424ac7b6439cebff1f7f8b92e6f76e7195e5d9dae2b44f1837fc6b46`:
+  both Skills methods executable, comparison/native each train, ready=false;
+  only the missing validation/test partition gates remain. Exit 2 is the
+  original incomplete coverage gate, not a native failure.
+- `local-method-reconciliation-b.json`, SHA
+  `b9cb4635c33f0f0f05520b8bd7348baa38ddee99cd982ad11a71eb2a90110c15`:
+  open work only native split evidence and Teacher comparisons.
+- Two additional public original-coverage invocations reject forged scope and
+  the Level 15-only foreign corpus before writing a report. A fresh canonical
+  graph invocation still reports pending, not silently executable. All other
+  17 criterion coverage rows equal the prior report exactly.
+
+Initial a-view artifacts are retained diagnostics from before the certificate
+field-list union was completed; b is final. No native sample was rerun or
+rewritten for that metadata completion. The original-coverage forged-scope/
+wrong-corpus/canonical negative probes use the a fixtures; the final b positive
+coverage and independent public view probes pass with the completed field list.
+
+18 new focused projection checks pass, including global/other-root preservation,
+both witness requirements, drifted buffs/Luck/cap/native rules and duplicate or
+already-scoped graphs. They are synthetic structural checks, not native XP
+samples. Final full game-free Core 1699/1699 and Backend 597/597 pass, zero
+skipped; all script ASTs and the unchanged EVD-338 checkpoint pass. Final CI/
+publication use the PR closing record.
+
+**Only next:** after this slice is accepted, confirm canonical date partitions
+and collect the four genuinely missing 15/25 validation/test terminals in the
+existing E isolated hidden/silent sampler, one process at a time. Preserve the
+accepted train terminals unchanged. Then rebuild original Teacher rows/corpus,
+this same local view and original coverage/reconciliation to both local ready
+criteria. Only then promote the frozen whole-item release panel (currently
+7/19 executable, 7/19 split-complete, 7/19 ready, 6/11 roots). Local executable
+progress here is not complete Skills acquisition, full Teacher 21/21, new-save
+evaluation or product training; formal remains false. No new game, worker/API,
+server operation or product training was used in this slice. Do not commit
+local-data or raw/derived artifacts.
+
+The existing compiled `PolicyTrajectoryDatasetBuilder.PartitionFor` was invoked
+directly, not reimplemented: `ProofFarm:2:spring:7` = train, day 21 = validation,
+day 24 = test. Use the retained isolated source slot `ProofFarm_450250338` and
+explicit Skills threshold 15/25; still verify the actual row context after each
+run. This lookup is not a native sample or permission to relabel a partition.
 
 ## Implementation Order
 
