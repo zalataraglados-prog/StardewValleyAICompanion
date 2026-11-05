@@ -75,12 +75,16 @@ public static partial class CurrentFriendshipTeacherPreferenceBuilder
             AtLegacySocialCandidateLimit = option.SocialCandidates.Length >= 64,
             OmittedAvailableCandidateIds = option.EventCandidates.Concat(option.SocialCandidates)
                 .Where(candidate => candidate.Available && !rankedIds.Contains((option.OptionId, candidate.CandidateId)))
-                .Select(candidate => candidate.CandidateId).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray()
+                .Select(candidate => candidate.CandidateId).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray(),
+            // Cross-family aliases remain the old ranker's responsibility; duplicates within the social source are ambiguous.
+            DuplicateSourceCandidateIds = option.SocialCandidates.GroupBy(candidate => candidate.CandidateId, StringComparer.Ordinal)
+                .Where(group => group.Count() > 1).Select(group => group.Key).Order(StringComparer.Ordinal).ToArray()
         }).OrderBy(option => option.OptionId, StringComparer.Ordinal).ToArray();
         report.CandidateDenominatorComplete = report.OptionAudit.Select(option => option.OptionId)
                 .SequenceEqual(report.ConsideredOptionIds, StringComparer.Ordinal) &&
             report.OptionAudit.All(option => option.MissingStateFactors.Length == 0 &&
-                !option.AtLegacySocialCandidateLimit && option.OmittedAvailableCandidateIds.Length == 0);
+                !option.AtLegacySocialCandidateLimit && option.OmittedAvailableCandidateIds.Length == 0 &&
+                option.DuplicateSourceCandidateIds.Length == 0);
         if (neutral.Select(candidate => candidate.CandidateId).Distinct(StringComparer.Ordinal).Count() != neutral.Length)
             return Blocked(report, "friendship_teacher_duplicate_candidate_identity");
         if (!report.CandidateDenominatorComplete)

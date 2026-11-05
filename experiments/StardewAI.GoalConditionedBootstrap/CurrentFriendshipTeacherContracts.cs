@@ -54,6 +54,7 @@ public sealed class CurrentFriendshipTeacherOptionAudit
     public int SourceCandidateCount { get; set; }
     public bool AtLegacySocialCandidateLimit { get; set; }
     public string[] OmittedAvailableCandidateIds { get; set; } = Array.Empty<string>();
+    public string[] DuplicateSourceCandidateIds { get; set; } = Array.Empty<string>();
 }
 
 public sealed class CurrentFriendshipTeacherCandidate

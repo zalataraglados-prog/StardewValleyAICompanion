@@ -48,7 +48,9 @@ Both original `social.talk_npc` and `social.gift_npc` option families are always
 audited. The full ranked decision context is retained, with rank=1, score=0,
 modelScore=null and expectedReward=0; none chooses the Teacher proposal.
 Available source IDs omitted by the ranker, missing required fields, duplicate
-identities and unresolved currently plausible candidates prevent label admission.
+IDs within the original social source and unresolved currently plausible
+candidates prevent label admission. The old ranker's intentional cross-family
+alias deduplication is not changed or reclassified as a bug.
 
 The original runtime social adapter intentionally takes at most 64 candidates.
 This consumer detects a saturated legacy window and rejects it **before**
@@ -88,27 +90,29 @@ pairs and claims. Source edits or derived edits are rejected. Build/Verify retur
 JSON files, and plan/queue paths must differ. Native feedback and original
 trajectory/coverage consumers are not bypassed by any of these commands.
 
-49 focused tests include 24 new checks and 25 existing social continuation /
+50 focused tests include 25 new checks and 25 existing social continuation /
 compilation checks, reusing their original private fixture through its partial
 test class. They cover both 4/9-before count boundaries as forecasts only,
 time/progress/resource tradeoffs, ties/single choices, unknown energy,
 65-candidate rejection, legacy null-time compatibility without old-source edits,
 independent replay/source drift, and original queue compilation. Full game-free
-Core 1799 and Backend 597 passed, zero skips; PowerShell AST, EVD-338 checkpoint,
+Core 1800 and Backend 597 passed, zero skips; PowerShell AST, EVD-338 checkpoint,
 public same-output/overwrite rejection and whitespace checks passed. Final CI
 results belong in the PR closing record.
 
 Public protocol files are outside Git at
-`I:\StardewAITraining\friendship-local-20261106\protocol-20261106-a`.
+`I:\StardewAITraining\friendship-local-20261106\protocol-20261106-b`.
 **These inputs and calibration are synthetic test fixtures, not native runtime
 evidence or training samples.** Build and Verify have identical SHA256
-`6f71574d13447b25b26499ea0b4082bce959fa9ab213a3c655b4b77e250838dd`.
+`c17ebeb36d283cd77e2ea8533708541dc76100377efc84d1797c627e655c3d81`.
 The complete denominator has two talk choices and an explicit gift-family audit,
 one independent pair, and a pending two-item original move/social queue.
 The synthetic snapshot SHA is
 `a34bc1f827bc64c84e23b463727dd95a107b180adf1861defd31503e2f3e1027`;
 synthetic calibration SHA is
 `7a201650df146a086d73494bf57b8c38cb11551ebd2d232901e22960e099a62b`.
+The earlier `protocol-20261106-a` predates the explicit source-duplicate audit
+and is diagnostic only, not an accepted source for downstream admission.
 No new game, worker/API call, server operation, product training or raw-data
 commit is claimed. `NativeOutcomeVerified`, `FullCriterionVerified` and formal
 authorization remain false.
@@ -125,6 +129,16 @@ synthetic fixture above. Then join original trajectory/dataset, criterion corpus
 conditional method responsibility and original coverage/reconciliation; collect
 only genuinely missing partitions, with explicit independent-decision mode for
 reset samples. No progress count is raised by the protocol checks here.
+
+Runner preflight is mandatory: the old native social smoke chooses a latest slot
+when none is specified and operates directly on its configured saves root; do
+not run it on a source slot. The old movement calibration runner does clone and
+fingerprint its source, but requires its historical Farm 66,19 starting fixture.
+An existing E isolated calibration source slot is present; check its actual start
+before use. Explicit E paths, copied saves, the two-mod isolation, silent/hidden
+launch, raw HTTP snapshot preservation and unchanged source hashes remain
+required. No retained real calibration was found in the inspected timing roots;
+collect a new real one if none is found by a bounded source search.
 
 Full current-family tradeoffs and the uncapped source boundary remain explicit
 work where applicable; no broad all-state Teacher claim may be made from this

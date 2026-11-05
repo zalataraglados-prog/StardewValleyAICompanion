@@ -135,6 +135,23 @@ public sealed partial class SocialTransparentPlanningTests
         Assert.Empty(result.PairwisePreferences);
     }
 
+    [Fact]
+    public void FriendshipTeacherAuditsDuplicateSocialSourceIdsBeforeOriginalRankerDeduplication()
+    {
+        var files = FriendshipTeacherFiles();
+        var source = JsonNode.Parse(File.ReadAllText(files.Snapshot))!;
+        var rows = source["state"]!["npcs"]!["social_interaction"]!["value"]!.AsArray();
+        rows.Add(rows[0]!.DeepClone());
+        var snapshot = source.Deserialize<SnapshotEnvelope>(JsonOptions)!;
+        snapshot.StateHash = SnapshotHash.ComputeStateHash(snapshot.State);
+        File.WriteAllText(files.Snapshot, JsonSerializer.Serialize(snapshot, JsonOptions));
+        var result = CurrentFriendshipTeacherPreferenceBuilder.Build(files.Snapshot, files.Calibration);
+        Assert.False(result.CandidateDenominatorComplete);
+        Assert.False(result.TeacherPreferenceLabelEligible);
+        Assert.Contains("social:talk:Abigail", result.OptionAudit.Single(option => option.OptionId == "social.talk_npc").DuplicateSourceCandidateIds);
+        Assert.Empty(result.PairwisePreferences);
+    }
+
     private static (string Snapshot, string Calibration, string Directory) FriendshipTeacherFiles(bool gifts = false, int qualifying = 0, int targets = 2)
     {
         var snapshot = CompleteSocialSnapshot(inventoryValue: gifts ? null : "[]");
