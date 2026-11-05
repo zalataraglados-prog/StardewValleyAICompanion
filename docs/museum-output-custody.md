@@ -440,3 +440,54 @@ using the original native-click dialogue engine. First-geode handling remains;
 arbitrary/choice dialogues, direct mail writes and force-closing remain forbidden.
 This fix still needs a fresh same-source native run; a successful build alone
 does not upgrade the failed observation.
+
+## Accepted Native Overnight Boundary
+
+The fresh hidden/muted run `cust-night-3437b6d9b-1105` on clean
+`3437b6d9536e87307e67e314cc1e48e2f5df87d5` closes the preceding pending native
+overnight boundary. It used one unchanged game process and source/binary bundle.
+All setup ended before acquisition. Thirty-two journaled native actions plus
+six bounded native waits completed acquisition, storage, ordinary evening/time,
+return home/save, the next morning's deferred Blacksmith entrance, withdrawal,
+museum travel and donation/consumption. The first-artifact native tutorial was
+acknowledged through the shared dialogue engine, not skipped or rerolled.
+
+The six observed phases are initial/acquired/stored/evening/withdrawn/donated:
+player `(O)100` quantity `0/1/0/0/1/0`, chest quantity `0/0/1/1/0/0`, geodes
+`2/1/1/1/1/1`, museum count `59/59/59/59/59/60`. Day 6 15:00 acquisition and
+storage precede native waits to 19:00; day 7 09:00 opening precedes withdrawal and
+donation at 09:30. The actual native save is Year 1 Spring 8 and still contains
+one target and the other goal's three stone units in the Blacksmith chest.
+Custody ends completed at ledger revision 8 with original acquisition receipt
+SHA `f0a2b39767c829b9d6c7017b650cc7dc67e9ff1ec31ba37ef73cc8c958f4aef7`.
+The complete stored custody and protected rows remained equal across midnight;
+the existing validator requires no new acquisition/position hash at day change.
+
+Independent replay invoked the original request-journal gzip/hash/nonce reader
+for all 32 actions, recomputed before/after state hashes, checked actor/save and
+request/result identities, replayed the existing immutable sleep/overnight
+validator, checked all phase quantities, source/binary/mod hashes and the saved
+XML. Both store and withdrawal settlement reports rebuilt through the original
+C# `build-museum-custody-transfer-settlement` CLI with verified settlement.
+Owned processes and ports 5132/8765/8767 were released. The E baseline tree hash
+remains `68ddc8dbbe09382f2e7ba1c9d5d1e8dd6d0ffaef59acf9367415b4678f59366d`.
+
+Raw artifacts stay outside Git at
+`I:\StardewAITraining\custody-overnight-20261105\native\cust-night-3437b6d9b-1105`.
+`independent-native-review.json` SHA-256 is
+`1747f7d3ca05fb6cf294c431c73d9d80b722faec5e5e8c2b9728b6f1b3fb32e0`.
+Original-service replay hashes are
+`35385adc5205958850f7b5a78edee427ece9b73f3be4631a79ac4481493ee3ff` (store)
+and `f2695af55385c1662bbdf7399286e1ca35a9bbe66930602a4a51a2e3537405c5` (withdraw).
+
+The broader night transaction still records
+`blocked/end_of_night_transition_timeout:controller_handoff`; its intentionally
+different planning-work contract was not changed. Local verified sleep/save and
+custody evidence do not certify that full handoff. This run stops after donation:
+actual key remains false. It does not prove sixty native acquisitions, a complete
+fresh-save/pre-Year-3 criterion, Teacher comparisons/partitions, the default MOD
+root integration or formal training. Reuse the previously accepted key/event-66
+boundary instead of running it again merely to turn this probe green. Continue
+only the existing Rusty Key criterion-local Teacher/native join and deadline
+scope, binding each native action's actual before snapshot when a priority
+interrupt occurred, not the aggregate queue's earlier before snapshot.
