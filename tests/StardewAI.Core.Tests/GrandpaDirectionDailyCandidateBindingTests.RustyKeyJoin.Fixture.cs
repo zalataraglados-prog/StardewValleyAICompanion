@@ -21,14 +21,17 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
     private sealed record NativeJoinFixture(string Root, string RequestPath, RustyKeyTeacherNativeJoinRequest Request,
         string[] BeforePaths, string[] JournalPaths);
 
-    private static NativeJoinFixture CreateNativeJoinFixture(bool routeWait = false)
+    private static NativeJoinFixture CreateNativeJoinFixture(bool routeWait = false, int decisionDay = 6, string? runId = null)
     {
         var key = CreateNativeKeyReceiptFixture();
+        if (runId is not null) key.Request.RunId = runId;
+        WriteNativeKeyJson(key.RequestPath, key.Request);
         var donor = MuseumDonationMainlineTests.CreateDonationTeacherFixture();
         EditNativeKeySnapshot(donor.SnapshotPath, node =>
         {
             var state = node["state"]!;
             state["player"]!["has_rusty_key"] = RustyKeyField(false);
+            state["time"]!["total_days"]!["value"] = decisionDay;
             state["player"]!["inventory"]!["value"]![0]!["quality"] = 0;
             state["world_progress"]!["museum"]!["value"]!["donatable_items"] = JsonSerializer.SerializeToNode(
                 new[] { new { qualified_item_id = "(O)96", donated = false } });
@@ -47,7 +50,7 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
         var morning = donated.DeepClone();
         morning["game_tick"] = 60;
         morning["state"]!["time"]!["time"]!["value"] = 600;
-        morning["state"]!["time"]!["total_days"]!["value"] = 7;
+        morning["state"]!["time"]!["total_days"]!["value"] = decisionDay + 1;
         morning["state"]!["player"]!["location_id"]!["value"] = "FarmHouse";
         var morningPath = Path.Combine(key.Root, "morning.json");
         WriteJoinSnapshot(morningPath, morning);
@@ -57,6 +60,7 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
                 node["save_id"]!["value"] = "MuseumFarm";
                 node["player_id"]!["value"] = "123";
                 node["bridge_version"] = "test.v1";
+                node["state"]!["time"]!["total_days"]!["value"] = decisionDay + 1;
                 node["state"]!["identity"] = before["state"]!["identity"]!.DeepClone();
                 node["state"]!["player"]!["inventory"] = donated["state"]!["player"]!["inventory"]!.DeepClone();
             });
@@ -68,6 +72,7 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
         EditNativeKeyJson(key.Request.ExecutionReceiptPath, node =>
         {
             node["queue_id"] = keyQueue.QueueId;
+            node["run_id"] = key.Request.RunId;
             node["queue_item_id"] = keyQueue.Items[0].QueueItemId;
             node["before_state_hash"] = keyBefore.StateHash;
             var after = JsonNode.Parse(File.ReadAllText(key.Request.AfterSnapshotPath))!;
@@ -139,7 +144,8 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
                 raw["end_of_night_transaction_status"] = "ready_for_safe_next_day_action";
                 raw["end_of_night_transaction_evidence_path"] = "retained-night-not-a-global-handoff-claim.json";
                 raw["changed_facts"] = JsonSerializer.SerializeToNode(new[] { new SimulatedFactChange
-                    { Path = "time.total_days", Before = "6", After = "7" } }, JsonOptions);
+                    { Path = "time.total_days", Before = decisionDay.ToString(CultureInfo.InvariantCulture),
+                        After = (decisionDay + 1).ToString(CultureInfo.InvariantCulture) } }, JsonOptions);
             }
             if (kind == "traverse_connector") raw["primitive_verification_reasons"] = JsonSerializer.SerializeToNode(new[] { "connector_location_changed_as_expected" });
             if (kind == "wait_ticks") raw["primitive_verification_reasons"] = JsonSerializer.SerializeToNode(new[] { "wait_until_time_reached" });

@@ -283,6 +283,9 @@ public static partial class GoalMethodTeacherCoverageBuilder
                     frontier,
                     methodEvidence),
             GoalMethodTeacherCoverageSourceKinds
+                .RustyKeyThresholdDecisionCorpus =>
+                VerifyRustyKeyCorpus(source, fullPath, frontier, methodEvidence),
+            GoalMethodTeacherCoverageSourceKinds
                 .MoneyThresholdProgressionCorpus =>
                 VerifyMoneyThresholdCorpus(
                     source,

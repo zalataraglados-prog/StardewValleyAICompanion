@@ -41,7 +41,8 @@ changed/missing deadline or slice budget passed before the fix, even after
 recomputing journal hashes. All four now fail closed, with their valid baseline
 still accepted. Original queue names, request bytes and runtime semantics were
 not changed. Focused direction/museum coverage is now 239, including 41 join
-checks; real retained replay keeps the same SHA below. Final-head CI is pending.
+checks; real retained replay keeps the same SHA below. Final head `b13b2438`
+passed CI `41978682410` and merged as `dd87b781` in PR #435.
 Nonces and queue/item identities cannot repeat. Adjacent snapshots must have
 identical boundary state hashes and ticks. Different versions, actors, dates,
 endpoints, isolation roots, unrecorded gaps and unrelated actions are rejected.
@@ -113,9 +114,10 @@ substitution, wire field drift/omission, actor/role/run/nonce/isolation mismatch
 state/tick gaps, bad gzip, invalid save/day evidence, unsafe command changes,
 premature key grants and forged partition/full-criterion/training claims.
 
-Next, aggregate independently verified joins into the criterion corpus using
-real decision identities, acquire the genuinely missing native partitions and
-connect the corpus to existing method/coverage verification. Recheck the
+The [criterion corpus adapter](rusty-key-teacher-corpus.md) now aggregates
+independently verified joins and feeds the existing coverage intersection.
+The real retained corpus still has only this train row. Next, acquire the
+genuinely missing native partitions and recheck the
 separate safe threshold-supply/method/deadline responsibilities before closing
 the root. Do not promote this single conditional row into whole-criterion or
 global Teacher completion, relabel copies to fill partitions, rerun accepted
