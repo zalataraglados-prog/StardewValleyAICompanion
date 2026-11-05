@@ -58,13 +58,16 @@ pins source/binary hashes and never silently substitutes historical inputs.
    commands stop before settlement. The original journaled supporting-transition
    endpoint and independent result replay retain all passive/other-goal claims.
    Each stage returns to fresh rolling selection and the original donation hook.
-8. Owned-supply evening deferral uses only the original ordinary recovery
+8. `day_recovery` uses only the original ordinary recovery
    candidate proven by the C# controller/preparation. Dispatch uses the existing
    daily-plan adapter, including its exact native-control observer contract,
    without forcing an early save boundary. Retain the latest ledger and fresh
    snapshot before the next selection; never turn a generic blocked preparation
    or network failure into sleep/retry. The future-date route is explicitly not
    verified by this role; see [time/deadline scope](rusty-key-time-budget.md#owned-supply-evening-continuation).
+   This role obeys the original evening/exact-prompt policy before museum
+   analysis, even with incomplete or empty owned stock. Donation-route evidence
+   remains mandatory for donation, not a prerequisite for current home recovery.
 
 The ordinary commit-receipt CLI now accepts the same control execution arguments
 as dispatch/binding and independently rebuilds retained support lineage. Its old

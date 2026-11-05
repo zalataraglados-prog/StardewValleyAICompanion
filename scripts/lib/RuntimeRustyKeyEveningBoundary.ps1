@@ -48,8 +48,8 @@ function Assert-RuntimeRustyKeyEveningObservation {
     }
     if ($Rolling.run_id -cne $Context.RunId -or $Rolling.status -cne 'native_donation_threshold_observed' -or
         $Rolling.input_identity_verified -isnot [bool] -or -not $Rolling.input_identity_verified -or
-        @($Rolling.steps).Count -eq 0 -or $Rolling.steps[0].kind -cne 'owned_supply_deferral' -or
-        @($Rolling.steps | Where-Object { $_.kind -cnotin @('owned_supply_deferral', 'held_donation') }).Count -ne 0) {
+        @($Rolling.steps).Count -eq 0 -or $Rolling.steps[0].kind -cne 'day_recovery' -or
+        @($Rolling.steps | Where-Object { $_.kind -cnotin @('day_recovery', 'held_donation') }).Count -ne 0) {
         throw 'Evening boundary did not use original recovery then donation, or repeated acquisition/key gates.'
     }
     $core = Join-Path (Split-Path -Parent $Context.LoopDll) 'StardewAI.Core.dll'

@@ -6,18 +6,19 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 internal static partial class BootstrapSelfTest
 {
-    private static void VerifyRollingOwnedSupplyDeferral(string root, List<string> passed)
+    private static void VerifyRollingDayRecovery(string root, List<string> passed)
     {
         foreach (var mode in new[] { "evening", "last_legal_day", "too_late", "daytime", "missing_clock", "missing_home",
                      "bed_unconfirmed", "missing_calibration", "progress_drift", "insufficient_owned", "unknown_menu",
                      "sleep_prompt", "foreign_prompt", "native_settle", "unsafe_settle", "later_gate_closed",
-                     "first_gate_closed", "unknown_route", "closed_missing_calibration", "morning" })
+                     "first_gate_closed", "unknown_route", "closed_missing_calibration", "morning", "no_owned_stock",
+                     "daytime_sleep_prompt", "unreadable_inventory" })
         {
             var fixture = new RustyKeyPortfolioFixture(mode == "insufficient_owned" ? 58 : 59);
             fixture.EnableHeldDonation();
             ConfigureRollingDonationRouteSchedule(fixture, "ready");
             ConfigureOwnedSupplyHome(fixture, mode);
-            var directory = Path.Combine(root, "owned-deferral-" + mode);
+            var directory = Path.Combine(root, "day-recovery-" + mode);
             var inputs = new AcquisitionRoutePortfolioInputs
             {
                 RequirementInventoryPath = Path.Combine(directory, "inventory.json"), SnapshotPath = Path.Combine(directory, "snapshot.json"),
@@ -32,36 +33,41 @@ internal static partial class BootstrapSelfTest
             var snapshotBefore = JsonSerializer.Serialize(fixture.Snapshot, JsonDefaults.Options);
             var ledgerBefore = JsonSerializer.Serialize(fixture.Ledger, JsonDefaults.Options);
             var control = RustyKeyRollingSupplyProposalBuilder.Build(inputs);
-            var expected = mode is "evening" or "last_legal_day" or "sleep_prompt" or "native_settle" or "later_gate_closed" or "first_gate_closed";
-            Require((control.SelectedOwnedSupplyDeferral is not null) == expected,
-                "Only exact, source-bound ordinary recovery may defer owned supply: " + mode + ":" +
+            var expected = mode is "evening" or "last_legal_day" or "sleep_prompt" or "native_settle" or "later_gate_closed" or "first_gate_closed" or
+                "missing_calibration" or "progress_drift" or "insufficient_owned" or "unknown_route" or "closed_missing_calibration" or
+                "no_owned_stock" or "daytime_sleep_prompt";
+            Require((control.SelectedDayRecovery is not null) == expected,
+                "Original day recovery must not depend on donation-route evidence or a complete supply deficit: " + mode + ":" +
                 JsonSerializer.Serialize(control.CandidateEvaluations, JsonDefaults.Options));
             Require(control.SelectedAcquisitionProposal is null && control.CompleteMuseumItemDenominator.Length == 95 &&
                 !control.ThresholdSatisfied && !control.FormalTrainingAuthorized &&
                 snapshotBefore == JsonSerializer.Serialize(fixture.Snapshot, JsonDefaults.Options) &&
                 ledgerBefore == JsonSerializer.Serialize(fixture.Ledger, JsonDefaults.Options),
-                "Deferral cannot reacquire stock, mutate sources or promote evidence: " + mode);
+                "Recovery cannot reacquire stock, mutate sources or promote evidence: " + mode);
             if (mode == "morning") Require(control.RollingStepReady && control.SelectedDonationRouteSchedule is { CurrentDayRouteReady: true } &&
                 control.SourceTotalDay == 1 && control.CompiledQueue is not null,
                 "An independent synthetic next-day source must resume ordinary held donation without acquisition or another sleep.");
             if (expected)
             {
-                var deferral = control.SelectedOwnedSupplyDeferral!;
+                var recovery = control.SelectedDayRecovery!;
                 Require(control.RollingStepReady && control.CompiledQueue is not null &&
-                    !deferral.FutureDateRouteVerified && deferral.FreshSnapshotReplanRequired &&
-                    deferral.EarliestResumeTotalDay == control.SourceTotalDay + (mode == "native_settle" ? 0 : 1) &&
-                    deferral.OwnedRequirementIds.SequenceEqual(control.PendingDonationRequirementIds!) &&
+                    !recovery.FutureDateRouteVerified && recovery.FreshSnapshotReplanRequired &&
+                    recovery.EarliestResumeTotalDay == control.SourceTotalDay + (mode == "native_settle" ? 0 : 1) &&
+                    recovery.OwnedRequirementIds.SequenceEqual(control.PendingDonationRequirementIds!) &&
+                    control.SelectedDonationRouteSchedule is null && control.CandidateEvaluations.Length == 0 &&
                     control.CompiledQueue.Items.All(item => item.OptionId is "executor.sleep" or "executor.wait_ticks"),
                     "Recovery must reuse the original terminal/observer, not a future donation queue: " + mode);
+                if (mode == "no_owned_stock") Require(recovery.OwnedRequirementIds.Length == 0,
+                    "Ending a legal day must not require owning the remaining museum supply.");
                 var controlPath = Path.Combine(directory, "control.json");
                 Write(controlPath, control);
                 var preparation = RustyKeyRollingStepPreparationBuilder.Build(inputs, controlPath);
-                Require(preparation is { StepReady: true, Kind: "owned_supply_deferral", AtomicCommitRequest: null } &&
-                    preparation.OwnedSupplyDeferral?.RecoveryCandidateId == deferral.RecoveryCandidateId &&
+                Require(preparation is { StepReady: true, Kind: "day_recovery", AtomicCommitRequest: null } &&
+                    preparation.DayRecovery?.RecoveryCandidateId == recovery.RecoveryCandidateId &&
                     EqualJson(preparation, RustyKeyRollingStepPreparationBuilder.Build(inputs, controlPath)),
                     "Recovery preparation must independently rebuild the same typed stage and stable queue.");
                 var forged = JsonSerializer.SerializeToNode(control, JsonDefaults.Options)!;
-                forged["selected_owned_supply_deferral"]!["earliest_resume_total_day"] = 223;
+                forged["selected_day_recovery"]!["earliest_resume_total_day"] = 223;
                 Write(controlPath, forged);
                 var rejected = false;
                 try { RustyKeyRollingStepPreparationBuilder.Build(inputs, controlPath); }
@@ -70,7 +76,7 @@ internal static partial class BootstrapSelfTest
                 Write(controlPath, control);
                 Write(Path.Combine(directory, "preparation.json"), preparation);
             }
-            passed.Add("owned_supply_deferral_" + mode);
+            passed.Add("day_recovery_" + mode);
         }
     }
 
@@ -79,11 +85,11 @@ internal static partial class BootstrapSelfTest
         JsonNode Field(object value) => JsonSerializer.SerializeToNode(new
         {
             value, status = "available", confidence = 1, adapter = "test", read_at_tick = 1,
-            source = new { kind = "game_object", path = "synthetic_owned_supply_deferral" }
+            source = new { kind = "game_object", path = "synthetic_day_recovery" }
         })!;
         var day = mode == "last_legal_day" ? 221 : mode == "too_late" ? 222 : mode == "morning" ? 1 : 0;
         var clock = JsonSerializer.SerializeToNode(fixture.Snapshot.State["time"])!.AsObject();
-        clock["time"] = Field(mode is "native_settle" or "unsafe_settle" ? 600 : mode == "daytime" ? 1853 : mode == "morning" ? 1000 : 1900);
+        clock["time"] = Field(mode is "native_settle" or "unsafe_settle" ? 600 : mode is "daytime" or "daytime_sleep_prompt" ? 1853 : mode == "morning" ? 1000 : 1900);
         clock["total_days"] = Field(day);
         if (mode == "missing_clock") clock.Remove("time");
         fixture.Snapshot.State["time"] = JsonSerializer.SerializeToElement(clock);
@@ -136,7 +142,7 @@ internal static partial class BootstrapSelfTest
         }) };
         if (mode == "missing_home") home.Remove("home_context");
         fixture.Snapshot.State["current_location"] = JsonSerializer.SerializeToElement(home);
-        var prompt = mode is "sleep_prompt" or "foreign_prompt";
+        var prompt = mode is "sleep_prompt" or "foreign_prompt" or "daytime_sleep_prompt";
         fixture.Snapshot.State["menus"] = JsonSerializer.SerializeToElement(new JsonObject
         {
             ["active_menu"] = Field(new { is_open = prompt || mode == "unknown_menu", type = prompt ? "DialogueBox" : "none",
@@ -151,6 +157,16 @@ internal static partial class BootstrapSelfTest
             world["museum"]!["value"]!["donation_candidates"]![0]!["donated_count_before"] = 58;
             fixture.Snapshot.State["world_progress"] = JsonSerializer.SerializeToElement(world);
         }
+        if (mode == "no_owned_stock")
+        {
+            var farm = JsonSerializer.SerializeToNode(fixture.Snapshot.State["farm"])!;
+            farm["material_inventory_graph"]!["value"]!["inventory_nodes"]![0]!["slots"] = new JsonArray();
+            fixture.Snapshot.State["farm"] = JsonSerializer.SerializeToElement(farm);
+            player["inventory"]!["value"] = new JsonArray();
+            fixture.Snapshot.State["player"] = JsonSerializer.SerializeToElement(player);
+            fixture.ChangeMuseum("donation_candidates", new JsonArray());
+        }
+        if (mode == "unreadable_inventory") fixture.Snapshot.State.Remove("farm");
         fixture.Rehash();
     }
 }

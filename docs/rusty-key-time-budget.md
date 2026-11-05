@@ -275,16 +275,26 @@ preparation SHA-256
 
 ## Owned Supply Evening Continuation
 
-The rolling controller can select `owned_supply_deferral`, not a new executor,
-when enough distinct missing museum requirements are already owned and the
-original current-date donation/compiler proves a time-only exclusion at or after
-19:00. Eligible exclusions are the original aggregate autonomous budget, the
-complete-route day budget, or resolved connector closure before arrival. A
-closed first door must also have its native close time and the same fully bound
-date/calibration route evidence. Unknown geometry, unresolved gates, missing
-calibration/date, changed museum progress and ownership failures do not grant a
-recovery fallback. Another useful acquisition is not suppressed when owned stock
-cannot cover the live remaining threshold.
+The rolling controller selects `day_recovery`, not a new executor, under the
+original `RequiresExclusiveRecovery` policy (19:00 onward or an exact existing
+Sleep prompt), or the original native-control-settle contract. This selection
+precedes museum route analysis. It does not require enough owned items to fill
+the remaining deficit, nor a time-only museum-route failure. Missing museum
+calibration, closed doors or unrelated graph branches cannot veto a legal current
+return-home/sleep action. They still block donation/travel when that action is
+actually selected. Unreadable inventory, identity/ledger errors and invalid
+original recovery candidates remain blocking; there is no generic sleep/retry
+fallback. Before the recovery window another useful acquisition remains legal
+when owned stock cannot cover the live remaining threshold.
+
+This corrects the added controller policy, not the old route parser:
+`FailureClass` intentionally strips detail suffixes for stable classification.
+The first native evening attempt (`evening-46a03dc6-1105`) stopped before any
+measured action because the new time-only whitelist coupled ordinary recovery
+to the full museum search failures. That whitelist has been removed, not widened.
+The typed role replaces the experimental `owned_supply_deferral` field, with
+selection policy `deterministic_control.ordinary_day_recovery.v2`; whole-control
+rebuilding rejects artifacts from the superseded policy.
 
 Selection reuses `recovery.stabilize_day`: one original return-home/repair step,
 ordinary terminal sleep, an exact already-open Sleep prompt, or the existing
@@ -297,7 +307,7 @@ fresh-replans after each receipt. Its special verified-observer handling remains
 restricted to the existing exact native-control contract; failures stop without
 native retry.
 
-Deferral binds the source day, currently owned requirement IDs and exact recovery
+Recovery binds the source day, currently owned requirement IDs (possibly empty) and exact recovery
 candidate. It explicitly reports `future_date_route_verified=false`. Ordinary
 overnight recovery on day D must leave donation on D+1 and the real key reward on
 D+2 before exclusive day 224 (D <= 221). A same-day native-control observer does
@@ -305,15 +315,26 @@ not consume an extra night. These are earliest-resume/deadline checks, not proof
 that the future museum route will be open. A fresh next-day source must rebuild
 that route and the original physical/custody authorization.
 
-Local verification passes 54 preparation cases, 45 actual-CLI/synthetic runtime
+The superseded policy passed 54 preparation cases, 45 actual-CLI/synthetic runtime
 checks and 137 focused shared museum/recovery regressions. It covers resolved
 first/later door closure, missing date/calibration, changed progress, insufficient
 owned stock, unknown/foreign menus, the last legal overnight day, exact sleep/
 native-control continuation, deterministic rebuilding/tamper rejection and an
 independent synthetic next-day route source. Explicit E-runtime Release build
-has zero warnings/errors; EVD-338 is unchanged. No game, HTTP server, new native
-evidence, worker/API or training was run. Raw artifacts stay outside Git at
+had zero warnings/errors; EVD-338 was unchanged. Those checks did not establish
+the missing independence of ordinary recovery and museum-route readiness.
+No native success is inferred from them. Raw historical artifacts stay outside Git at
 `I:\StardewAITraining\owned-supply-deferral-20261105`.
+
+The corrected policy passes 61 preparation cases, 49 actual-CLI/synthetic runtime
+checks, 21 evening-boundary checks and 86 focused original museum/sleep/native
+control regressions. Public Build/Prepare replay of the unmodified failed native
+snapshot now selects `recovery:return_home` with only `executor.sleep`, no
+acquisition or future-route claim. The first new runtime test supplied an empty
+PowerShell argument for missing calibration and was rejected by the existing
+argument binder; the fixture now supplies its absent file path, without changing
+production argument validation. Current artifacts remain outside Git at
+`I:\StardewAITraining\day-recovery-20261105`. Native success is still pending.
 
 ## Remaining Joint Schedule
 

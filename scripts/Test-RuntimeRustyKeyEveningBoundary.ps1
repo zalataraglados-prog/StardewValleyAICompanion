@@ -44,7 +44,7 @@ foreach ($mode in @('normal', 'same_day', 'lost_stock', 'extra_day', 'wrong_acto
     $donatedPath = Join-Path $directory 'donation.json'
     $rolling = [pscustomobject]@{
         run_id = $context.RunId; status = 'native_donation_threshold_observed'; input_identity_verified = $true
-        steps = @(@{ kind = 'owned_supply_deferral'; after_snapshot_path = $sleepPath },
+        steps = @(@{ kind = 'day_recovery'; after_snapshot_path = $sleepPath },
             @{ kind = 'held_donation'; after_snapshot_path = $donatedPath }); last_snapshot_path = $donatedPath
     }
     switch ($mode) {

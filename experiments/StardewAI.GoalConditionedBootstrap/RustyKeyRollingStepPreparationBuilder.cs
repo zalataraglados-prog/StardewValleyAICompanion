@@ -24,12 +24,12 @@ public static class RustyKeyRollingStepPreparationBuilder
         }
         if (!control.RollingStepReady)
             return Block(result, control.BlockingReasons);
-        if (control.SelectedOwnedSupplyDeferral is { } deferral)
+        if (control.SelectedDayRecovery is { } recovery)
         {
             if (control.CompiledQueue is null || control.SelectedCustodyTransfer is not null || control.SelectedAcquisitionProposal is not null)
-                return Block(result, new[] { "rusty_key_owned_supply_deferral_role_invalid" });
-            result.Kind = "owned_supply_deferral";
-            result.OwnedSupplyDeferral = deferral;
+                return Block(result, new[] { "rusty_key_day_recovery_role_invalid" });
+            result.Kind = "day_recovery";
+            result.DayRecovery = recovery;
             result.CompiledQueue = control.CompiledQueue;
             result.StepReady = true;
             return result;

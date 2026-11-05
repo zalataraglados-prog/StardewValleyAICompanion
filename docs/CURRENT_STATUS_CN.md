@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-05 当前修正：** #430已合并`a911cb53`。首个真实晚间运行`evening-46a03dc6-1105`因新增控制器的错误依赖而在测量前停止，不是原路线解析器失效：旧`FailureClass`有意生成稳定类别。当前删除新增赴馆失败白名单，单一`day_recovery`先遵循原19点/精确Sleep提示与原生恢复候选、编译和JIT；不再要求凑齐待捐库存或完整赴馆路线。缺身份/账本/库存和非法恢复仍拒绝，捐赠时仍须完整检查日期路线。下方早期“足够库存+纯时间失败”指令失效，保留为历史。修正待本地及全新隔离原生验证，不晋升计数或Teacher/训练。WIP仍`obtain_rusty_key`，`5/19 executable、6/19 split-complete、5/19 CoverageGateReady、4/11 root ready、formal_product_training=false`保持。
+
 > **2026-11-05 跨日原链与晚间边界准备：** #429最终CI通过并合并`4ba99e18`、本轮分支已删；Core1222/Backend558/准备54/编排46通过。原解析器归一化未修改，不能将新消费端格式误判列为旧系统bug。跨日复核证明原保管记录无需重铸：保持获取/位置来源，次日只重新检查库存、授权与日期路线；4个公开构建/准备样例通过，准备合计58，无生产逻辑重写。原smoke增加`-OwnedSupplyEvening`测试模式，21项无游戏检查通过；原晶球33/保管20/钥匙证据合同41项保持。实际夜间保存事实按所属scope检查，不重开旧Farm/event66门；原生尚未运行，不能把夹具已有库存说成自主获取或产物保管跨夜，代码待CI收口。下一步为允许噪音后在隔离进程只跑晚间恢复→次日捐赠局部边界，不重开已接受钥匙/目视门；后续本criterion分区及第三年前终态仍待。冻结计数与`formal_product_training=false`不变，无worker/付费AI API/游戏/训练。见[运行入口](rusty-key-runtime-rolling.md#evening-boundary-preparation)。
 
 > **2026-11-05 晚间待捐续接：** #428最终CI通过并合并`e402af4a`，对应旧分支已删。同一Rusty Key主线现复用原普通回家/清障/睡眠、精确Sleep提示及次晨原生控制恢复，不增执行器：足够已有待捐物且原链明确时间排除才进入晚间恢复，缺字段/校准、未知门或权限异常不作为睡觉重试理由。每步保留最新账本后fresh-replan，未来路线明确未验证；D日睡眠必须给D+1捐赠、D+2实际奖励留第三年前余量。最终本地准备54、编排45、共享捐赠/恢复聚焦137项通过，显式E构建零警告错误，检查点EVD-338不变；代码待CI收口。无新游戏、原生/Teacher/训练证据，不重开已接受旧门。`5/19 executable、6/19 split-complete、5/19 CoverageGateReady、4/11 root ready、formal_product_training=false`保持。接续仍为合法后续日期/跨日保管真实边界与本criterion分区及第三年前终态，见[时间合同](rusty-key-time-budget.md#owned-supply-evening-continuation)。
