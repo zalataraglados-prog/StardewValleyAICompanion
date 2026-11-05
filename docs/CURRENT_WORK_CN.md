@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-11-06 Skills三分区局部验收收口
+
+- #452最终头`49ed4f81`经CI `42095890029`全部38步接受，合入`4098b743`、分支清理完成。本轮复用原动作/Teacher/corpus/局部视图/coverage，补四个E后台静音隔离来源，各实际5XP、原生等级`14→15`或`24→25`，真实分区validation/test。原train两行不重采，源档SHA`68ddc8db...`、游戏DLL SHA`7f1e5b8e...`保持，进程退出。
+- 首次validation a因原始书籍随机标记不同而在收取前被正确拒绝；已实时反编译并用原生HashUtility核对，只调整明确声明的对照夹具位置，不改Teacher/桥/执行器。六行最终corpus SHA`a176d5f0...`，两项比较/native各自三分区齐全；原覆盖两项ready、无blocker，对账SHA`f918dae5...`无Skills局部open work。
+- 同时纠正新消费端的输入边界：独立重置样本不能走旧连续存档的跨日期回报推断。核对旧`b326bf8c`及聊天JSON后，新增显式独立模式，复用旧backfiller逐行保持未知回报，默认规则及四参数二进制/default调用保留。最终原PolicyDataset接收6行、0拒绝、每分区2行、全部长期回报pending，manifest SHA`b3da7314...`；首份默认模式输出仅诊断、不训练。六项新检查、最终Core1705/Backend597零跳过，原生数据不重采、不提交local-data。
+- **发布及计数：** 以本PR最终CI/收口为准。与原接受集合取并集后为`9/19 executable、9/19 split-complete、9/19 CoverageGateReady、7/11 roots`；这是评分条件局部闭环，不是基本动作数量或完整新档Teacher。formal=false，完整五技能获取/全局时间资源/Teacher21分与Student仍未证明。[本项验收、完整来源与诊断](skills-local-acceptance.md)，[独立样本输入合同](policy-independent-decisions.md)。
+- **唯一下一步：** 收口后切`raise_friendships`，复用原当前社交Teacher/有序行程和talk/gift编译执行；先当前权威1975点/人数缺口，再独立比较、同run原生与原覆盖。不重开Skills/Rusty/Master已接受门，不重写社交执行器。其余婚房、全馆、Money留队列，R2与全量目标不缩减；本轮无worker/API、服务器或产品模型训练。
+
 ## 2026-11-06 Skills局部方法责任已对齐
 
 - #451最终头`313e22c9`经CI `42091079266`全部38步接受，合入`8d497d54`，对应分支已清理。corpus/原source登记已完成，本轮没有重做或重采。已沿旧提交`55dc054f`找到2026-09-08聊天JSON及原收敛计划上下文：旧图承担完整Teacher责任，不将其当bug删除。

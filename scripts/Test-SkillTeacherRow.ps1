@@ -43,11 +43,16 @@ if (-not [string]::IsNullOrWhiteSpace($LegacyTrajectoryPath)) {
 $inputPath = Join-Path $OutputRoot "mixed-trajectories.jsonl"
 Write-Utf8Text -Path $inputPath -Value (($lines -join "`n") + "`n")
 $dataset = Join-Path $OutputRoot "dataset"
-& dotnet $datasetCli --input $inputPath --output-root $dataset --no-horizon-observations | Out-Null
+& dotnet $datasetCli --input $inputPath --output-root $dataset --no-horizon-observations --independent-decisions | Out-Null
 if ($LASTEXITCODE -ne 0) { throw "Original dataset CLI rejected the independently replayed mixed Teacher rows." }
 $manifest = Get-Content -LiteralPath (Join-Path $dataset "policy-dataset-manifest.json") -Raw | ConvertFrom-Json
 if ($manifest.counts.accepted_rows -ne $lines.Count -or $manifest.counts.rejected_rows -ne 0) {
     throw "Mixed Teacher dataset lost or rejected input rows."
+}
+if (-not $manifest.independent_decisions -or $manifest.returns.day_complete -ne 0 -or
+    $manifest.returns.season_complete -ne 0 -or $manifest.returns.year_complete -ne 0 -or
+    $manifest.returns.grandpa_21_complete -ne 0) {
+    throw "Independent Teacher samples acquired unobserved continuity returns."
 }
 $rowText = Get-Content -LiteralPath $RowPaths[0] -Raw
 foreach ($case in @("outcome", "native_hash", "missing_native", "provider", "partition", "legacy_schema", "return", "unknown_claim", "overwrite_input")) {

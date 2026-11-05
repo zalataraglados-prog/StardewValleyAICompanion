@@ -17,7 +17,8 @@ static void Run(string[] args)
         options.InputPath,
         options.OutputRoot,
         options.HorizonObservationPath,
-        options.ExpectedKnowledgeDictionary);
+        options.ExpectedKnowledgeDictionary,
+        options.IndependentDecisions);
 
     Console.WriteLine(JsonSerializer.Serialize(new
     {
@@ -48,6 +49,7 @@ internal sealed class PolicyDatasetOptions
     public string OutputRoot { get; private set; } = @"E:\StardewAITraining\datasets\formal-policy";
     public string? HorizonObservationPath { get; private set; } = @"E:\StardewAITraining\datasets\policy-horizon-observations.jsonl";
     public string ExpectedKnowledgeDictionary { get; private set; } = PolicyTrajectoryVersionPins.KnowledgeDictionary;
+    public bool IndependentDecisions { get; private set; }
 
     public static PolicyDatasetOptions Parse(string[] args)
     {
@@ -62,6 +64,8 @@ internal sealed class PolicyDatasetOptions
                 result.HorizonObservationPath = args[++index];
             else if (args[index] == "--no-horizon-observations")
                 result.HorizonObservationPath = null;
+            else if (args[index] == "--independent-decisions")
+                result.IndependentDecisions = true;
             else if (args[index] == "--knowledge-dictionary-version" && index + 1 < args.Length)
                 result.ExpectedKnowledgeDictionary = args[++index];
             else

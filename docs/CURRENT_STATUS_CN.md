@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-06 Skills局部三分区收口（当前优先，发布以最终CI为准）：** #452已由CI `42095890029`接受并合入`4098b743`。四个新隔离原生5XP阈值来源及两条不重采train共6行，原Teacher/数据集/覆盖入口接受；15/25各自比较/native三分区齐全、method executable、ready=true、局部open work为空。独立样本显式模式纠正新消费端连续性输入，原默认回填及旧接口保留；最终6行、0拒绝、长期回报全pending，Core1705/Backend597零跳过。最终CI后与已接受集合取并集为`9/19 executable、9/19 split-complete、9/19 ready、7/11 roots`，formal=false，不是全新档或Teacher21/21。下一唯一primary为`raise_friendships`：复用原社交能力，先权威当前缺口及独立来源，不重新实现执行器；其他三root待后续复核。[完整验收](skills-local-acceptance.md)。下方7/19/只train/待补分区均为历史，不再触发重采。
+
 > 本切片最终本地回归：Core1699/Backend597全部通过、零跳过，18新检查；公开局部视图/原入口反例通过，发布以对应PR最终CI与收口评论为准。
 
 > **2026-11-06 Skills局部方法（当前优先）：** #451最终CI `42091079266`接受并合入`8d497d54`、对应分支已清理。新运行局部视图复用已验corpus，只对齐局部有条件方法；原canonical全新档预算、完整五技能规则、其他目标和旧执行器不改。最终b版从原registry完整合并所选动作字段，公开Verify同SHA`4d331504...`，五类scope反例及原coverage的篡改/错配来源拒绝、输入未变；原canonical仍pending。局部视图使两项method executable，但各自Teacher/native只有train，ready=false，其他17项覆盖不变。下一步仅补15/25原policy validation/test，再原入口收口，不重采train或重做方法。冻结整项面板`7/19、7/19、7/19、6/11`与formal=false不变；完整回归/最终发布以本PR收口为准。[来源、旧JSON上下文及边界](skills-local-intake.md#conditional-local-method-view)。下方“先对齐方法责任”的指令已完成，不再重开。

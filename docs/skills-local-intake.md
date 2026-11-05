@@ -1,5 +1,19 @@
 # Skills Criterion-Local Intake
 
+## Current Local Acceptance
+
+2026-11-06: both criteria's original three-split intersections are ready and
+reconciliation has no Skills local open work. Four new isolated native runs
+join the two retained train sources; no old executor or Teacher comparison
+rule was changed. Publication depends on this PR's final CI. The original
+dataset accepts 6 rows with explicit independent-decision scope and no inferred
+long-horizon closures; continuous-save defaults remain intact. See
+[Skills local acceptance](skills-local-acceptance.md) for all source hashes,
+boundaries, the rejected RNG comparison and first diagnostic dataset.
+After acceptance the union becomes 9/19, 9/19, 9/19, 7/11; formal=false.
+Next is Friendship's existing current-day/native chain. Historical next/partial
+statements below are not instructions to resample or reopen Skills.
+
 ## Accepted Starting Point
 
 Baseline: `main@56a133dcb0455d7281fe11ed0544abdf82b88d48`, 2026-11-05.

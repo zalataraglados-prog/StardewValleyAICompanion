@@ -43,6 +43,7 @@
 
   <ItemGroup Condition="'$(GameFreeGovernance)' == 'true'">
     <Compile Include="PolicyTrajectoryDatasetBuilderTests.cs" />
+    <Compile Include="PolicyIndependentDecisionDatasetTests.cs" />
     <Compile Include="StructuredPolicyTrainerTests.cs" />
     <Compile Include="PolicyPairwiseSupervisionAdmissionTests.cs" />
     <Compile Include="PolicyTeacherReplayRegistryTests.cs" />
