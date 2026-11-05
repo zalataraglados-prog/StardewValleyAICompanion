@@ -1,6 +1,14 @@
 # StardewAI 当前工作
 
-## 2026-11-05 Master Angler局部三分区终态收口（待最终CI发布）
+## 2026-11-05 Master Angler已合入，接续Skills局部来源
+
+- PR #446最终头`ad3e6b5b`的CI `42054598280`全部通过，审查无发现，合并为`56a133dc`；已核实main祖先关系并清理本轮本地/远端分支。三分区终态、完整回归和冻结并集现已接受，不再待CI。游戏/后端已退出，5129/8765/8767无监听。`7/19 executable、7/19 split-complete、7/19 CoverageGateReady、6/11 roots`，formal=false。
+- 五个未关root只读复核后，唯一primary切为`raise_skill_levels`。五类XP候选、方向绑定、原编译及原生XP验证已存在；先复用这些链路，补基础等级/XP缺口与原生阈值的类型化消费，再接独立比较、同run终态和原覆盖入口。当前没有Skills新增来源、局部完成或计数晋升。Friendship/婚房/全馆/Money留队列，不并行新建。
+- 已从当前E游戏重新反编译`Farmer`/`Utility`并与wiki复核原生XP阶梯、立即基础升级、15/25评分及精通分流。原桥`99cdba2b`的阈值读取符合原生；原始July对话未在留存JSON中找到，不冒称恢复上下文或更改旧规则。反编译及哈希仅在仓库外，见[Skills局部接续](skills-local-intake.md)。
+- 已实现单一C# `CurrentSkillExperienceDeficitBuilder`及原Bootstrap公开CLI，复用原snapshot reader/hash，不改旧桥/绑定/编译/执行：严格核对六行原字段，输出五技能基础等级、下一等级/满级XP缺口和15/25所缺基础等级；Luck/增益/精通不冒充进度。27项检查、完整Core1564/Backend594零跳过；旧真实压缩后态只读重放为钓鱼5XP、总缺74995，独立重建同SHA`cf082f34...`。重序列化诊断副本因哈希不符正确拒绝，原来源未改；CLI不能覆盖输入。该结果仅当前状态，Teacher标签/native outcome均false，未开新游戏/训练。
+- **唯一下一步：** 本切片CI/合入后，沿[Skills局部接续](skills-local-intake.md)第3步将当前缺口连接原合法正XP候选/时间资源合同，产生独立比较，再接同run原生阈值及原coverage；不另写动作、不把完整新档五技能预算提前挂到L1。无worker/API，不提交local-data。下方Master“待CI/唯一接续”均为历史前态，以本段为准。
+
+## 2026-11-05 Master Angler局部三分区终态收口（发布前记录，已由上段收口）
 
 - #445最终CI`42042195162`已通过并合并`c2c0cf3c`、分支已清理；旧杆钓/蟹笼进度不重采。本轮新增C#隔离副本准备入口，仅声明完整权威71种前置、缺716及第二年春日期，拒绝既得26/错版本/非同字节副本/越界或重解析路径。原文件只读，原子替换副本；实际硬链接检查保住源字节，报告路径也不能覆盖源档或已有元数据。71种及24/25属于前置，不伪称真实取得；26绝不注入。
 - 三个新的后台静音原生运行分别在春7/21/24日，原Teacher独立比较30/210tick两笼，原编译/执行实际收取最后716并由游戏获得26。原receipt/PolicyDataset/精确join独立通过，各1条严格比较、0拒绝，原policy分区依次train/validation/test；源档目录SHA`68ddc8db...`不变，进程退出。非新档/连续过夜证明，未训练模型。

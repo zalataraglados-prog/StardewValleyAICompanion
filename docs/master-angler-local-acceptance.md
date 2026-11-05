@@ -6,7 +6,10 @@ The current public coverage/reconciliation reports close
 `achievement_master_angler` under the approved R2 criterion-local contract:
 method `executable_frontier`, independent comparison and native outcome in
 train/validation/test, `coverage_gate_ready=true`, local `open_work_kinds=[]`.
-Publication remains subject to this slice's final CI/merge. This is not a
+PR #446 passed final CI `42054598280` and merged as
+`56a133dcb0455d7281fe11ed0544abdf82b88d48`; its exact head
+`ad3e6b5b951a923d418d1261bba2d54783f2acb8` has no review findings. The owned
+local/remote branch was removed after ancestry checks. This is not a
 complete fresh-save run, a globally integrated 21-point Teacher, or training
 authorization. Read [R2](PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md) together
 with the [source contract](master-angler-local-native-join.md).
@@ -106,15 +109,16 @@ unchanged. No worker/paid AI API, server deployment or local-data submission.
 ## Exit And Next Scope
 
 Union with the accepted frozen sets gives executable **7/19**, split-complete
-**7/19**, intersection **7/19**, ready roots **6/11**, after final CI/merge.
+**7/19**, intersection **7/19**, ready roots **6/11**, accepted after final CI/merge.
 Master Angler was already in the frozen split-complete set: do not count it
 twice or demote/recollect other accepted roots. Source-only report ready count
 one is not a global count.
 
 Preserve R2's L3/L4 calendar/resources, selected-source acquisition, global
 Teacher integration, source schedules, full new-save 21/21 and later Student
-evaluation. Reassess actual remaining local cost among the five unclosed roots
-(Skills, Friendship, Museum, Marriage/House, Money), then choose one under
-WIP=1 and update the working order. Do not restart this root from optional
+evaluation. The post-merge read-only intake selects Skills as the next sole
+primary; see [its bounded scope and implementation order](skills-local-intake.md).
+Friendship, Museum, Marriage/House and Money remain queued, not concurrent work.
+Do not restart this root from optional
 alternate-source hints, raw-file cleanup, or the superseded R1 all-root order.
 Formal product training remains false.
