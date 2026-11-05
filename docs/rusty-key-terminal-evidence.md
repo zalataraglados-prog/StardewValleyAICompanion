@@ -1,5 +1,9 @@
 # Rusty Key Native Terminal Source
 
+Current criterion-local acceptance is tracked in
+[local acceptance](rusty-key-local-acceptance.md). The terminal-source producer's
+scope and false Teacher/formal-training claims below remain unchanged.
+
 ## Scope
 
 `RustyKeyNativeKeyReceiptBuilder` turns one retained, attributable native key

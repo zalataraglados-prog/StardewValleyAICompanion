@@ -55,7 +55,7 @@ internal static partial class BootstrapSelfTest
             report.CriterionPointSum == 21 &&
             report.CriterionDenominatorCount == 19 &&
             report.CatalogMappedCriterionCount == 19 &&
-            report.ExecutableCriterionCount == 5 &&
+            report.ExecutableCriterionCount == 6 &&
             report.TeacherComparisonCoveredCriterionCount == 4 &&
             report.NativeOutcomeCoveredCriterionCount == 4 &&
             report.SplitCompleteTeacherCriterionCount == 4 &&
@@ -151,6 +151,12 @@ internal static partial class BootstrapSelfTest
         var reportPath = Path.Combine(
             fullOutputRoot,
             "goal-method-teacher-coverage-report.json");
+        var rustyKey = report.Criteria.Single(criterion =>
+            criterion.DirectionId == "obtain_rusty_key");
+        Require(rustyKey.MethodStatus == "executable_frontier" &&
+            rustyKey.TeacherSourceKinds.Length == 0 &&
+            !rustyKey.SplitCoverageComplete && !rustyKey.CoverageGateReady,
+            "An executable Rusty Key method cannot replace missing independent criterion evidence.");
         Write(reportPath, report);
 
         var reconciliation =
@@ -175,23 +181,23 @@ internal static partial class BootstrapSelfTest
             reconciliation.Status == "reconciled_open_work" &&
             reconciliation.CriterionDenominatorCount == 19 &&
             reconciliation.RootMethodCount == 11 &&
-            reconciliation.ExecutableCriterionCount == 5 &&
+            reconciliation.ExecutableCriterionCount == 6 &&
             reconciliation.CoverageGateReadyCriterionCount == 3 &&
             !reconciliation.FormalProductTrainingAuthorized &&
             criterionDispositions[
                 GoalMethodCoverageDispositions.CoverageReady] == 3 &&
             criterionDispositions[
                 GoalMethodCoverageDispositions
-                    .DependencyGraphIncomplete] == 14 &&
+                    .DependencyGraphIncomplete] == 13 &&
             criterionDispositions[
-                GoalMethodCoverageDispositions.EvidenceNotConnected] == 2 &&
+                GoalMethodCoverageDispositions.EvidenceNotConnected] == 3 &&
             methodDispositions[
                 GoalMethodCoverageDispositions.CoverageReady] == 2 &&
             methodDispositions[
                 GoalMethodCoverageDispositions
-                    .DependencyGraphIncomplete] == 7 &&
+                    .DependencyGraphIncomplete] == 6 &&
             methodDispositions[
-                GoalMethodCoverageDispositions.EvidenceNotConnected] == 2 &&
+                GoalMethodCoverageDispositions.EvidenceNotConnected] == 3 &&
             petReconciliation.PrimaryDisposition ==
                 GoalMethodCoverageDispositions.EvidenceNotConnected &&
             petReconciliation.ImplementedTeacherSourceKinds.SequenceEqual(

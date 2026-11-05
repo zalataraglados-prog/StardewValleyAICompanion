@@ -1,5 +1,9 @@
 # Rusty Key Teacher / Native Causal Join
 
+Current three-partition and original-method acceptance is tracked in
+[local acceptance](rusty-key-local-acceptance.md). The retained single-row scope
+below is historical; this producer still does not own whole-criterion readiness.
+
 ## Scope And Claims
 
 `RustyKeyTeacherNativeJoinBuilder` connects an independently rebuilt threshold
