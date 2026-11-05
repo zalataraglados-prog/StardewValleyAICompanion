@@ -623,7 +623,7 @@ try {
         --run-id $RunId `
         --save-isolation-path $savesPath `
         --iterations $attemptIterations `
-        --train-every 1 `
+        --skip-training `
         --sleep-ms 0 `
         --use-daily-plan `
         --daily-plan-max-candidates 1 `

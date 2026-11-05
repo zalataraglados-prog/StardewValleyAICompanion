@@ -8,6 +8,14 @@ namespace StardewAI.Backend.Tests;
 public sealed class RuntimeCatchFishExecutorTests
 {
     [Fact]
+    public void NativeFishingSmokeCollectsEvidenceWithoutInvokingModelTraining()
+    {
+        var source = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "scripts", "Invoke-RuntimeFishingDailyPlanSmoke.ps1"));
+        Assert.Contains("--skip-training", source);
+        Assert.DoesNotContain("--train-every", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void ActionFeatureVectorCarriesNormalizedInputAndObservedOutput()
     {
         var json = JsonSerializer.Serialize(new ActionFeatureVector
