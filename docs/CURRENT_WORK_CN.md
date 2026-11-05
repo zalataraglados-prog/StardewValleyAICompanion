@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-11-05 Master Angler corpus已接原覆盖入口
+
+- 本轮接续上轮精确join，新增可公开build/Verify的criterion corpus，只复用原独立比较、数据集结构、原生catch及72分母验证器。原policy分区保持，按决策/trajectory/nonce/queue-item去重，混用authority或改名复制拒绝；新source kind只接原coverage聚合，不新增Teacher、编译器、执行器或覆盖计算器。
+- **真实保留来源为1条train、6对严格比较、0条成就终态。** corpus构建/独立重放同SHA`4909b0098f906c6d09c8378d8bbb503cf266f2052f54e38662bf05bac494b95d`。单鱼false→true只能计collection progress，只有同一原生catch的71/72→72/72且achievement26 absent→present才计criterion native outcome；当前E游戏1.6.15的`Farmer.caughtFish`/`Stats.checkForFishingAchievements`实时反编译及wiki已交叉核对，透明桥已有全部所需字段，无须增加扫描。
+- 原R2前置proof经已有构建器重建run-local依赖闭合，再交原公开coverage CLI，得到本方法`executable_frontier`、比较`[train]`、native outcome`[]`、split/ready=false；exit2为预期未全覆盖，不是实现失败。不改canonical依赖，不把前置声明闭合当真实成就，不用本项单来源报告覆盖全局冻结并集。公开反例拒绝同原生决策改名重复入库和普通进度篡改为终态，均不写成功工件。
+- 13项新增合成分类/去重检查、完整game-free Core1519、Backend594及EVD-338检查点全部通过，零跳过；原生数据未改，不提交local-data。本轮未开游戏/模型/worker/API或更新服务器，代码待本切片最终CI收口。
+- **唯一接续：** 用原隔离collector、原collection Teacher和原执行器补真正缺失的蟹笼来源、成就26终态及原policy validation/test；可声明71/72局部边界，但不能声称此前71种已真实获取。保留72/14、代表抽样及R2四层责任，不为每鱼新增长跑。多队列续接来源链仍须独立绑定，不反改旧聚合回执来迎合消费者；本corpus不证明该缺口已解决。`6/19、7/19、6/19、5/11`及formal=false保持。[本轮合同](master-angler-local-native-join.md#criterion-corpus-and-original-coverage)。
+
 ## 2026-11-05 Master Angler精确决策typed join已重建
 
 - `MasterAnglerTeacherNativeJoinBuilder`及公开build/Verify已接原数据集结构校验、`PolicyPairwiseSupervisionAdmission`/原独立replayer和原精确native catch Verify。只读`PolicyTrajectoryDatasetBuilder.ValidateEnvelope`仅转发原内部校验器，旧数据集/训练器调用和规则未改变；未新增Teacher、编译器、执行器或放宽旧聚合回执。

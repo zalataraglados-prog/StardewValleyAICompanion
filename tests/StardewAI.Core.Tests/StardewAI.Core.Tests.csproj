@@ -81,6 +81,7 @@
     <Compile Include="FishingItemGrabRewardRecoveryTests.cs" />
     <Compile Include="MasterAnglerNativeReceiptProgressTests.cs" />
     <Compile Include="MasterAnglerTeacherNativeJoinTests.cs" />
+    <Compile Include="MasterAnglerTeacherCorpusTests.cs" />
     <Compile Include="GrandpaDirectionDailyCandidateBindingTests.MasterAnglerNative.cs" />
     <Compile Include="CropHarvestBudgetPolicyTests.cs" />
     <Compile Include="CropHarvestSourceIdentitySourceGuardTests.cs" />

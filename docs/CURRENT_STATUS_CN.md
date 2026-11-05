@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-05 Master Angler当前事实（优先于下方历史）：** #441/#442/#443已分别合入共享兼容修补、原独立Teacher运行入口和精确Teacher/native join，不再待开发。当前criterion corpus及原coverage来源适配已实现：保留真实1条train/6对比较，公开build/Verify同SHA`4909b009...`，但**成就26终态为0条**。原R2前置proof的run-local闭合供原coverage重建，方法`executable_frontier`，比较`[train]`、native outcome`[]`、split/ready=false；本项报告不替代冻结并集。单鱼progress不冒充Master Angler完成，终态须同原生catch的71/72→72/72及achievement26 absent→present；规则已按当前E游戏实时反编译并以wiki复核，现透明字段足够。新增13合成检查、完整Core1519/Backend594、EVD-338通过，代码待最终CI。唯一primary仍`complete_master_angler`，接下来补真正缺失的蟹笼/终态/原policy validation-test来源，不重写Teacher或执行器、不重采已成功精确杆钓，不把全局解锁反向变为局部前置。多队列续接来源链责任保留。接受面板仍`6/19 executable、7/19 split-complete、6/19 CoverageGateReady、5/11 root ready`，formal=false；无新游戏/训练/worker/API，不提交local-data。[合同与边界](master-angler-local-native-join.md#criterion-corpus-and-original-coverage)。
+
 > **2026-11-05 来源入口接续：** #439已成功CI并合入`eb275df9`，旧待CI不重开。当前增加精确杆钓/蟹笼新收集来源build/Verify，复用抽出的原Rusty请求/队列/快照reader与同一72分母校验；Rusty局部白名单/跨日门保留，真实三分区corpus独立重放仍同SHA`4ae5a1ba...`。18项新合成检查、Core1397、Backend565通过，未新增真实捕鱼样本或Teacher标签，计数不变、formal=false。唯一下一步仍是该source的隔离原生采样和原collection Teacher/native连接，不换root、不重做执行器；详见[本项来源合同](master-angler-local-native-join.md#exact-native-catch-source)。
 
 > **2026-11-05 当前唯一primary：`complete_master_angler`。** Rusty Key收口已汇报；按R2比较实际局部缺口后接回Master Angler，不执行旧R1第10项/完整Day-0硬前置。原能力证书独立重建同SHA，当前依赖图上的72/14前置proof仍ready；真实Teacher/native来源仍须核对，旧self-test请求不冒充production。当前接受面板不变，formal=false。范围、选择依据和退出条件见第6节新增R2接续及[本项合同](master-angler-local-native-join.md)。

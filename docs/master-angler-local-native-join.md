@@ -277,14 +277,89 @@ native proof, a native observation without comparison, a copied proof claiming
 formal training, and a copied row with invalid feature schema. Rejections do
 not create successful output artifacts.
 
-Next, reuse the original goal-method coverage source aggregation for verified
-joins/corpus, with original decision groups and native-action deduplication,
-then add genuinely missing trap/validation/test evidence. Existing original
+The criterion corpus and original coverage adapter below now aggregate these
+verified joins with original decision groups and native-action deduplication.
+Next add genuinely missing terminal/trap/validation/test evidence. Existing original
 multi-queue aggregate behavior is preserved: this exact aligned-decision
 adapter does not certify a continuation whose initial/final queues differ.
 That source-chain responsibility remains explicit for later integration; do
 not relabel the old random-miss run or change shared execution to fit this
 consumer. Criterion/global readiness and formal training remain unproven.
+
+## Criterion Corpus And Original Coverage
+
+`MasterAnglerTeacherCorpusBuilder` exposes
+`build-master-angler-teacher-corpus --request ... --output ...` and
+`verify-master-angler-teacher-corpus --corpus ... --output ...`. Each source
+names an original join receipt, not caller-declared partitions or completion
+flags. Build replays the original join, supervision and native validators;
+Verify rebuilds the whole corpus. Duplicate decisions, trajectories, native
+request nonces/actions, changed policy partitions and mixed inventory/lowering
+versions reject. Different genuine decisions in one original day group remain
+in that same partition; copying a row or renaming its source creates no data.
+
+Progress and criterion completion are deliberately different projections:
+
+- Every verified join supplies independent Teacher comparison and native
+  collection progress. It does not automatically supply a criterion outcome.
+- A terminal row must show the same exact native catch taking the full
+  authoritative collection from 71/72 to 72/72 and native achievement 26 from
+  absent to present. Missing, malformed or duplicated achievement data rejects,
+  rather than being interpreted as an empty achievement set. Original joins
+  already require the selected fish transition and monotone collection state.
+- Only those terminal rows contribute `native_outcome_partitions`. Three
+  partitions of ordinary progress cannot promote the criterion. The corpus
+  never independently declares full criterion verification or formal training.
+
+This distinction was checked against the current isolated 1.6.15 game DLL
+(`7f1e5b8e58d2758b78570ba771bbeb03d33522f62188bf6c32edf0cf626deaee`):
+live decompilation of `Farmer.caughtFish` shows the qualifying native catch
+updates `fishCaught` and invokes `Stats.checkForFishingAchievements`; the
+latter counts registry Fish objects not excluded from the fishing collection
+and awards achievement 26 when all eligible species are caught. The current
+inventory and `ProgressReadAdapter.CollectionProgress` retain that exact
+72-species denominator. Existing `world_progress.achievements` supplies the
+native terminal bit; no new bridge scan or executor is needed. The
+[wiki achievement description](https://stardewvalleywiki.com/Achievements)
+corroborates the goal, but newer wiki/version notes do not override this locked
+binary. This Windows DLL hash is not the knowledge lock's Linux DLL hash.
+
+The opt-in `master_angler_collection_decision_corpus` source kind enters the
+original `GoalMethodTeacherCoverageBuilder`, matches its exact catalog method,
+fresh-binds the current inventory/lowering hashes, and unions the two distinct
+partition sets. There is no second coverage calculator or change to old source
+kinds. The retained corpus has **one train comparison/progress row and zero
+criterion terminal rows**, SHA
+`4909b0098f906c6d09c8378d8bbb503cf266f2052f54e38662bf05bac494b95d`;
+public build and Verify reproduce the same bytes. The request, corpus, replay
+and coverage files remain outside Git in the same `native-source-binding`
+directory. Public negative checks reject duplicate native decisions under new
+source names and a copied corpus claiming a terminal row; neither writes a
+successful output. Original source artifacts remain unchanged.
+
+The retained ready R2 prerequisite proof also rebuilds the existing run-local
+`dependencies-complete.json` via the original dependency-completion builder.
+It closes the method declaration, not native fishing or achievement 26, and
+does not rewrite the canonical dependency document. Feeding that run-local
+graph and this corpus through the original public coverage CLI reports:
+`method_status=executable_frontier`, comparison partitions `[train]`, native
+outcome partitions `[]`, split/coverage ready false. CLI exit 2 is the expected
+incomplete-coverage result, not a failed implementation test. This MA-only
+report does not replace the frozen accepted global union.
+
+Next reuse the existing isolated collector, original Teacher and executors for
+genuinely missing trap scope and criterion-terminal sources in the original
+policy partitions. A declared 71/72 local boundary may test the final native
+catch, but cannot prove acquisition of the preceding 71 species. Keep all 72
+requirements/14 prerequisite families; do not mandate 72 separate long runs,
+change accepted evidence, promote fixture flags, or make L3/L4 global unlocks
+unconditional local prerequisites. Multi-queue continuation remains an explicit
+source-chain gap, not a reason to alter the shared executor or old receipts.
+
+Verification: 13 new synthetic classification/deduplication checks, complete
+game-free Core 1519/1519, Backend 594/594 and generated checkpoint EVD-338 all
+pass, zero skipped. Synthetic projection checks are not native acceptance.
+No new game, model, worker/API or server operation occurred for this adapter.
 
 ## Implementation And Verification Sequence
 

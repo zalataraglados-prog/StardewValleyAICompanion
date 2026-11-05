@@ -16,6 +16,9 @@ public static class GoalMethodTeacherCoverageSourceKinds
     public const string RustyKeyThresholdDecisionCorpus =
         "rusty_key_threshold_decision_corpus";
 
+    public const string MasterAnglerCollectionDecisionCorpus =
+        "master_angler_collection_decision_corpus";
+
     public const string MoneyThresholdProgressionCorpus =
         "money_threshold_progression_corpus";
 }
