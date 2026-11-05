@@ -8,6 +8,29 @@ namespace StardewAI.Backend.Tests;
 public sealed class RuntimeCatchFishExecutorTests
 {
     [Fact]
+    public void NativeFishingSmokeCollectsEvidenceWithoutInvokingModelTraining()
+    {
+        var source = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "scripts", "Invoke-RuntimeFishingDailyPlanSmoke.ps1"));
+        Assert.Contains("--skip-training", source);
+        Assert.DoesNotContain("--train-every", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void NativeFishingSourceCaptureSupportsSaveAndModIsolationWithoutChangingTheExecutor()
+    {
+        var source = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "scripts", "Invoke-RuntimeFishingDailyPlanSmoke.ps1"));
+        Assert.Contains("if ($SetupLocationFixture -and -not $IsolateSave)", source);
+        Assert.Contains("Copy-Item -LiteralPath $sourceSavePath", source);
+        Assert.Contains("Original fishing save changed during isolated capture.", source);
+        Assert.Contains("@('--mods-path',", source);
+        Assert.Contains("debug.setup_location_fishing", source);
+        Assert.Contains("-NoBuild:$NoBuild", source);
+        Assert.Contains("\"-p:GamePath=$runtimeGameDir\"", source);
+        Assert.Contains("Assert-StardewAIBuildOutputFresh", source);
+        Assert.Contains("formal_training_authorized = $false", source);
+    }
+
+    [Fact]
     public void ActionFeatureVectorCarriesNormalizedInputAndObservedOutput()
     {
         var json = JsonSerializer.Serialize(new ActionFeatureVector

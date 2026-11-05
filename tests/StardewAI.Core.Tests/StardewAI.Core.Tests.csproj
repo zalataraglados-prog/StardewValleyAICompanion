@@ -56,6 +56,7 @@
     <Compile Include="ActionQueueCompilerTests.SnapshotStateCache.cs" />
     <Compile Include="ActionQueueCompilerShopSafetyWaitTests.cs" />
     <Compile Include="MachinePlacementMainlineTests.cs" />
+    <Compile Include="MultiConnectorMachineRelocationTests.cs" />
     <Compile Include="MaterialTransferProjectorTests.cs" />
     <Compile Include="MaterialTransferTestFixture.cs" />
     <Compile Include="MaterialTransferBudgetPolicyTests.cs" />
@@ -146,6 +147,9 @@
     <Compile Include="RuntimeHarnessSources.cs" />
     <Compile Include="RuntimeHarnessFreshSaveSourceGuardTests.cs" />
     <Compile Include="RuntimeSleepSourceGuardTests.cs" />
+    <Compile Include="EndOfNightTransactionPolicyTests.cs" />
+    <Compile Include="EndOfNightTransactionContractTests.cs" />
+    <Compile Include="TentSleepMainlineTests.cs" />
     <Compile Include="RuntimeEvidenceFreshnessGovernanceTests.cs" />
     <PackageReference Update="Pathoschild.Stardew.ModBuildConfig"
                       ExcludeAssets="compile;runtime;build;buildTransitive;native;contentfiles;analyzers" />

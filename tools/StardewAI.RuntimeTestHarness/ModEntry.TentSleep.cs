@@ -28,7 +28,7 @@ public sealed partial class ModEntry
             pending.Completion.SetResult(BlockedWithPrimitive(request, "sleep_in_tent", requested, SleepObservedEffect(), "sleep_executor_busy"));
             return;
         }
-        if (HasIncompleteEndOfNightTransaction(out var transactionReason))
+        if (HasPendingNativeEndOfNightTransition(out var transactionReason))
         {
             pending.Completion.SetResult(BlockedWithPrimitive(
                 request,

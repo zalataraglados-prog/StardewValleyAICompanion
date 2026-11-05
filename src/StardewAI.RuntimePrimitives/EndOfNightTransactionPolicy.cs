@@ -6,6 +6,16 @@ namespace StardewAI.RuntimePrimitives
     {
         public const int MaximumOverallTicks = 36000;
 
+        public static bool RequiresNativeTransitionControl(
+            string status,
+            bool sawSafeNewDayReadyState)
+        {
+            // Follow-up work proves the composite acceptance, not native sleep.
+            return status != "complete" && status != "blocked" &&
+                !(status == "ready_for_safe_next_day_action" &&
+                  sawSafeNewDayReadyState);
+        }
+
         public static bool MatchesActiveSleepRequest(
             string status,
             string transactionRunId,

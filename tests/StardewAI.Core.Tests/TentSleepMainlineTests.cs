@@ -89,7 +89,7 @@ public sealed class TentSleepMainlineTests
         var tentRuntime = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.TentSleep.cs"));
         var state = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.RuntimeTestHarness", "ModEntry.State.RecoveryShipping.cs"));
         Assert.Contains("StartTentSleep", tentRuntime, StringComparison.Ordinal);
-        Assert.Contains("HasIncompleteEndOfNightTransaction", tentRuntime,
+        Assert.Contains("HasPendingNativeEndOfNightTransition", tentRuntime,
             StringComparison.Ordinal);
         Assert.Contains("BeginEndOfNightTransaction(activeSleep);", tentRuntime,
             StringComparison.Ordinal);

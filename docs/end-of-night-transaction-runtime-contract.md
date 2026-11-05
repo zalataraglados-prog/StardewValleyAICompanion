@@ -1,8 +1,10 @@
 # Native end-of-night transaction contract
 
-Status: local candidate for issue #381. Focused tests and a dirty-worktree native
-preflight have passed; the candidate is not yet committed, rerun under a clean
-commit identity, owner-approved, submitted, or training-eligible.
+Status: issue #381 was accepted and merged by PR #384 at `2bab1dc9`.
+The former candidate procedure at the end of this document is historical,
+not current unfinished work. The 2026-11-05 native-control compatibility repair
+preserves that acceptance contract; its focused regression evidence and limits
+are recorded in [the shared-executor audit](shared-executor-compatibility-audit-20261105.md).
 
 ## Locked authority
 
@@ -131,6 +133,27 @@ the event.
 
 ## Candidate invariants
 
+- Preserve the historical fixes when adjusting shared callers: `989fa5f7`
+  prevented executor-idle pause from freezing the native one-frame handoff
+  between profession selection, remaining level menus and saving;
+  `d33e3c72` prevented tent callbacks from reopening an unrelated terminal
+  transaction. Their originating conversation on 2026-11-02 confirms these
+  purposes. Neither protection may be removed to make a newer test pass.
+  Before changing an apparently incorrect shared guard, inspect its introducing
+  commit and the corresponding conversation JSON, then add a regression for
+  both the original failure and the proposed compatibility change.
+- Native control ownership ends once the exact saved, event/menu-free next-day
+  ready state has been observed. The pending fresh-work proof must not block
+  another home/tent sleep or disable the configured executor-idle clock pause.
+  Both entry points and idle-pause ownership use the same RuntimePrimitives
+  policy; a profession/menu/save transition still holds native ownership.
+- The composite transaction remains incomplete until its existing registered,
+  same-run fresh-work receipt is verified. If another valid sleep starts first,
+  persist the previous proof as blocked with
+  `end_of_night_followup_not_observed_before_next_sleep` before starting the new
+  transaction. This is an unfulfilled acceptance proof, not a failed native sleep
+  and never a synthetic PASS. Legacy callers need no new planning marker merely
+  to retain their original sleep and idle-pause behavior.
 - One transaction ID begins with the sleep operation, starts timeout accounting
   only after native sleep confirmation, survives the planned profession yield,
   and is attached through the terminal execution result exactly once. Later
@@ -254,9 +277,11 @@ the event.
   ordinary sleep executor has relinquished control, and records the real menu
   type before the selected timeout blocks the transaction.
 
-## Remaining gates
+## Historical Acceptance Procedure
 
-Current pre-commit evidence is intentionally non-promotional. The affected-file
+The following records the original pre-merge procedure, not a request to repeat
+the accepted owner visual gate. Historical pre-commit evidence was intentionally
+non-promotional. The affected-file
 test set passed `191/191`, the Release solution build completed with zero
 warnings and errors, story handoff matrix
 `runtime-end-of-night-story-handoff-matrix-20261102-135601` passed `2/2`, and

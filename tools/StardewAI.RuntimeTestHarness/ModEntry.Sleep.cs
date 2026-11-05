@@ -61,7 +61,7 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
-        if (HasIncompleteEndOfNightTransaction(out var transactionReason))
+        if (HasPendingNativeEndOfNightTransition(out var transactionReason))
         {
             pending.Completion.SetResult(BlockedWithPrimitive(
                 pending.Request,

@@ -12,7 +12,7 @@ public sealed partial class ModEntry
             StardewValley.Game1.paused && pendingExecutions.IsEmpty &&
             StardewValley.Game1.activeClickableMenu is null &&
             !HasActiveExecutorOperation() && executorMovementLease.Direction is null &&
-            !HasIncompleteEndOfNightTransaction(out _);
+            !HasPendingNativeEndOfNightTransition(out _);
         return System.Text.Json.JsonSerializer.Serialize(new
         {
             schema_version = "executor_owned_idle_pause.v1",

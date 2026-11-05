@@ -310,6 +310,10 @@ namespace StardewAI.Core.Execution
                 : null;
             if (pathTiles.HasValue)
             {
+                SetCompilerDerivedParameter(
+                    parameters,
+                    ConnectorRouteExecutionBudgetPolicy.ShortestPathTilesParameter,
+                    pathTiles.Value.ToString());
                 var movementTileLimit =
                     ConnectorRouteExecutionBudgetPolicy.MovementTileLimit(
                         pathTiles.Value);

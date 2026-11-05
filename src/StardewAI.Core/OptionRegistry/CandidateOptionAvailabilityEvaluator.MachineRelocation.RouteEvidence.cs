@@ -4,6 +4,7 @@ using System.Linq;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
+using StardewAI.Core.Execution;
 using StardewAI.Core.Infrastructure;
 
 namespace StardewAI.Core.OptionRegistry
@@ -16,9 +17,12 @@ namespace StardewAI.Core.OptionRegistry
                 ResolvedRoutePlan routePlan,
                 EventCandidate firstConnector)
         {
+            var firstApproachDistance = ReadParameterInt(
+                firstConnector.Parameters,
+                ConnectorRouteExecutionBudgetPolicy.ShortestPathTilesParameter);
             if (routePlan.Path.Length == 0 ||
-                firstConnector.EstimatedTicks < 60 ||
-                firstConnector.EstimatedTicks % 60 != 0)
+                !firstApproachDistance.HasValue ||
+                firstApproachDistance.Value < 0)
             {
                 return null;
             }
@@ -42,10 +46,8 @@ namespace StardewAI.Core.OptionRegistry
                 int estimatedTicks;
                 if (index == 0)
                 {
-                    approachDistance =
-                        firstConnector.EstimatedTicks / 60 - 1;
-                    estimatedTicks =
-                        firstConnector.EstimatedTicks;
+                    approachDistance = firstApproachDistance.Value;
+                    estimatedTicks = checked((approachDistance + 1) * 60);
                 }
                 else
                 {
@@ -99,6 +101,9 @@ namespace StardewAI.Core.OptionRegistry
             return new RelocationRouteEvidence(
                 segments.ToArray(),
                 totalTicks,
+                segments.Sum(segment =>
+                    ConnectorRouteExecutionBudgetPolicy.EstimatedTicks(
+                        segment.ApproachDistanceTiles)),
                 segments[^1].ArrivalTileX,
                 segments[^1].ArrivalTileY);
         }
@@ -106,6 +111,7 @@ namespace StardewAI.Core.OptionRegistry
         private sealed record RelocationRouteEvidence(
             MachineRelocationRouteSegment[] Segments,
             int EstimatedTicks,
+            int ExecutionBudgetTicks,
             int FinalArrivalX,
             int FinalArrivalY);
     }

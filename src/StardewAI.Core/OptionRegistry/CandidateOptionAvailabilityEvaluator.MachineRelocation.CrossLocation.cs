@@ -199,7 +199,7 @@ namespace StardewAI.Core.OptionRegistry
                 target.RouteDistanceTiles * 60;
             var relocationCostTicks =
                 sourceApproachTicks +
-                routeEvidence.EstimatedTicks +
+                routeEvidence.ExecutionBudgetTicks +
                 targetApproachTicks +
                 MachineLayoutActionOverheadTicks;
             var netBenefitTicks =

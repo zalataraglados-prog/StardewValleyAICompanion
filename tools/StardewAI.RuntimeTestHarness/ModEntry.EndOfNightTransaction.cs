@@ -83,12 +83,21 @@ public sealed partial class ModEntry
     {
         lock (endOfNightTransactionGate)
         {
-            if (endOfNightTransaction is { Status: not "complete" and not "blocked" })
+            if (endOfNightTransaction is { Status: not "complete" and not "blocked" } previous)
             {
-                throw new InvalidOperationException(
-                    "end_of_night_transaction_already_active:" +
-                    endOfNightTransaction.TransactionId + ":" +
-                    endOfNightTransaction.Status);
+                if (EndOfNightTransactionPolicy.RequiresNativeTransitionControl(
+                        previous.Status,
+                        previous.SawSafeNewDayReadyState))
+                {
+                    throw new InvalidOperationException(
+                        "end_of_night_transaction_already_active:" +
+                        previous.TransactionId + ":" + previous.Status);
+                }
+
+                BlockEndOfNightTransactionLocked(
+                    previous,
+                    "end_of_night_followup_not_observed_before_next_sleep",
+                    LogLevel.Debug);
             }
 
             var request = sleep.Pending.Request;
@@ -123,11 +132,14 @@ public sealed partial class ModEntry
         }
     }
 
-    private bool HasIncompleteEndOfNightTransaction(out string reason)
+    private bool HasPendingNativeEndOfNightTransition(out string reason)
     {
         lock (endOfNightTransactionGate)
         {
-            if (endOfNightTransaction is not { Status: not "complete" and not "blocked" } transaction)
+            if (endOfNightTransaction is not { } transaction ||
+                !EndOfNightTransactionPolicy.RequiresNativeTransitionControl(
+                    transaction.Status,
+                    transaction.SawSafeNewDayReadyState))
             {
                 reason = string.Empty;
                 return false;
@@ -427,7 +439,8 @@ public sealed partial class ModEntry
 
     private void BlockEndOfNightTransactionLocked(
         EndOfNightTransaction transaction,
-        string reason)
+        string reason,
+        LogLevel logLevel = LogLevel.Error)
     {
         transaction.Status = "blocked";
         transaction.FailureReason = reason;
@@ -435,7 +448,7 @@ public sealed partial class ModEntry
         PersistEndOfNightTransactionLocked(transaction);
         Monitor.Log(
             "End-of-night transaction blocked: " + reason,
-            LogLevel.Error);
+            logLevel);
     }
 
     private void PersistEndOfNightTransactionLocked(
