@@ -121,6 +121,7 @@
     <Compile Include="GrandpaDirectionDailyCandidateBindingTests.cs" />
     <Compile Include="GrandpaDirectionDailyCandidateBindingTests.CatalogValidation.cs" />
     <Compile Include="GrandpaDirectionDailyCandidateBindingTests.RustyKey.cs" />
+    <Compile Include="GrandpaDirectionDailyCandidateBindingTests.RustyKeyNativeReceipt.cs" />
     <Compile Include="WildTreeTapperOutputSourceGuardTests.cs" />
     <Compile Include="WildTreeChopAcquisitionMainlineTests.cs" />
     <Compile Include="DeferredNativeDropPickupTests.cs" />
