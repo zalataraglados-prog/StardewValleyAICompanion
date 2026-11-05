@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-11-06 Skills criterion corpus与原覆盖登记
+
+- #450最终头`927df128`经CI `42085984353`全部38步接受，合入`8f6a36fd`，对应分支已清理；原Teacher行接入已完成，不重做原生15/25样本。本轮只接Step5的typed corpus及原coverage/reconciliation source，不修改旧执行器、共享准入或方法完成规则。
+- 两条最终b版Teacher行由原行Verify重放完整native链，按原始run/save/决策/trajectory/nonce/queue-item去重，绑定当前完整19 criterion/21分权威索引。corpus公开build/Verify逐字节同SHA`2248b6e4...`；15与25各自保存Teacher/native的原policy分区交集，不做方法级借分。五类公开篡改/覆盖拒绝，仅15来源经原19项覆盖入口确认25无任何比较/终态记功，源文件未变。
+- 原覆盖与对账入口已识别`skill_level_threshold_corpus`：两项分别只有`train`、方法仍`pending_dependency_expansion`、ready=false；对账不再缺source adapter，剩下局部方法责任与真正缺失的validation/test。报告以当前权威索引重建，不消费旧SHA的缓存frontier。已有fresh-save五技能总预算没有清除或冒充完成，L3/L4也不能反向无限扩大L1。
+- **唯一下一步：** 先对齐原Skills递推图的局部有条件方法及真实共享能力前置，保留全新档五技能XP/行程/体力/跨目标预算为独立全局责任；随后仅补15/25各自缺失的原policy validation/test，并从原入口重建验收。当前源登记不等于方法executable、三分区完成或Teacher整体验收。冻结`7/19 executable、7/19 split-complete、7/19 CoverageGateReady、6/11 roots`及formal=false不变。
+- 本地完整Core1681/Backend597通过、零跳过，17新检查；Bootstrap显式E构建零警告错误、公开corpus探针及EVD-338检查点通过。发布以最终CI/收口记录为准；详细工件和边界见[Skills criterion corpus](skills-local-intake.md#criterion-corpus-and-original-coverage)。本轮无新游戏/worker/API/服务器/产品模型训练，不提交local-data或原始证据。
+
 ## 2026-11-06 Skills已接原Teacher轨迹及混合入库
 
 - 最终本地完整Core1664/Backend597零跳过，30新检查覆盖provider路由、旧schema保护、完整分母和Skills输入；两CLI构建零警告错误，原映射/预检、AST和EVD-338通过。单测仅用微型合成夹具验证原trainer，不是产品模型训练；发布仍以本PR最终CI/收口评论为准。

@@ -261,6 +261,8 @@ public static partial class GoalMethodTeacherCoverageBuilder
             "Coverage source artifact");
         return source.SourceKind switch
         {
+            GoalMethodTeacherCoverageSourceKinds.SkillLevelThresholdCorpus =>
+                VerifySkillCorpus(source, fullPath, frontier, criterionEvidence),
             GoalMethodTeacherCoverageSourceKinds
                 .AcquisitionRoutePortfolioCorpus =>
                 VerifyAcquisitionCorpus(

@@ -19,7 +19,7 @@ coverage source registry found:
 
 | Remaining Root | Reuse | Actual Next Increment |
 | --- | --- | --- |
-| Skills | `PlayerReadAdapter.Skills` projects base/effective level, exact XP and native next-level thresholds; existing XP candidates, `GrandpaDirectionDailyCandidateBinding.HasSkillExperienceEvidence`, compiler rebind and native receipts already exist. The first current-deficit consumer below is now implemented. | Bind the existing positive-XP candidates to an independent comparison and actual threshold result, then connect the original coverage source. No typed root source is registered yet. |
+| Skills | `PlayerReadAdapter.Skills`, original XP candidates/binding/compiler/native receipts, current deficit and independent comparison are reused. Native 15/25 terminals, original Teacher rows and criterion corpus/source registration are implemented below. | Reconcile the original conditional method/shared prerequisites, then add only the missing original validation/test sources for each criterion. Both accepted terminals currently belong to train. |
 | Friendship | `CurrentSocialDayTeacherLabelBuilder`, native talk/gift, ordered itinerary and bounded rollout/day-progress policies already exist. | Independent comparison/native root-source wiring is still absent; future contact production and decay/calendar composition remain separate responsibilities, not reasons to rewrite current social execution. |
 | Marriage/House | Original social, purchase, proposal and construction actions can be reused. | Partner, inventory/weather/access, wedding and two upgrade branches need precise composition and same-run native results; no root source is registered. |
 | Full Museum | Rusty Key acquisition/custody/reservation/donation and generic acquisition corpus are available. | Expand the 95-item heterogeneous denominator and artifact-spot probability/retry contract, then join independent comparisons and actual completion; do not reopen Rusty Key. |
@@ -335,23 +335,84 @@ fishing mapping/preflight, script AST and EVD-338 checkpoint checks pass.
 The mixed replay-port unit test also exercises the original trainer with a
 tiny synthetic fixture; it is not product model training or native coverage.
 
-These are two genuine supervised Skills source rows, not a criterion corpus or
-coverage promotion. Both remain the original day-118 train group. Native receipt
+These are two genuine supervised Skills source rows. At that slice they were not
+yet a criterion corpus or coverage promotion; the subsequent corpus is below.
+Both remain the original day-118 train group. Native receipt
 `teacher_dataset_row_verified=false` is an immutable step-4 scope declaration,
 not rewritten retroactively; the downstream row has its own original replay.
 No game, worker/API, server or product model training was started in this slice;
 local-data and all raw/derived data remain outside Git. Publication is governed
 by this slice's final CI and closing comment.
 
-**Next:** finish step 5's typed criterion corpus and original coverage/source
-registration, assess the original local method responsibility, then collect only
-missing policy partitions. Reuse the existing per-criterion evidence path (as in
-the Money threshold adapter): 15 and 25 must each retain their own comparison /
-native partition intersection; do not credit 25 from a 15-only terminal or union
-unrelated partitions at method level. Preserve the rows and source closures;
-do not restart the native tests or claim full Skills readiness. Frozen union
-remains 7/19 executable, 7/19 split-complete, 7/19 ready and 6/11 roots;
-formal=false. L2/L3/L4 responsibilities remain as defined below.
+PR #450 final head `927df128d9b156367c91b8b2395c0afe11e1eeb5`, CI
+`42085984353` (all 38 steps), merged as
+`8f6a36fd9d9b82d6663974d51d7a351ac517cfe9`. Its branch is closed.
+
+## Criterion Corpus And Original Coverage
+
+Step 5's typed corpus/source registration is now implemented, not the complete
+Skills local gate. `build-skill-teacher-corpus` consumes a new request containing
+the authoritative goal-index path and original Teacher-row paths;
+`verify-skill-teacher-corpus` rebuilds it independently. Both require a fresh
+output JSON path. Each row uses the original `SkillTeacherRowBuilder.Verify`
+once, which already replays the full native chain; the corpus does not add a
+second native verifier, executor, dataset format or coverage calculator.
+
+The corpus binds the complete 19-criterion/21-point authority and exact 15/25
+native rules. Original save/state/candidate decisions, run/trajectory identities,
+run/queue/item identities, native nonces and repeated row paths are checked for
+duplicates. Original policy split keys/partitions are preserved. Each criterion
+retains its own Teacher-comparison/native-outcome intersection. A Level 15-only
+source cannot credit Level 25, even if Level 15 has all three partitions.
+Full root/prior acquisition/formal training remain false even in a projection
+fixture with split-complete local rows.
+
+Original coverage and reconciliation register
+`skill_level_threshold_corpus` only for `raise_skill_levels`, using the existing
+per-criterion evidence path rather than the method-wide union. Empty criterion
+partitions do not register active evidence. The existing executable-method,
+partition and formal-training gates are unchanged.
+
+Outside-Git artifacts in `I:\StardewAITraining\skills-local-20261105`:
+
+- `corpus-request-a.json` binds the two accepted b rows and current authority.
+- `corpus-a.json` / `corpus-a-replay.json`, identical SHA-256
+  `2248b6e4183b2303d2b7cc2d7c496956a940edec11201d5c79ace42d7718b5ec`.
+- `coverage-request-a.json` / `coverage-a.json`: both criteria comparison=train,
+  native=train, method=`pending_dependency_expansion`, ready=false. Coverage SHA
+  `9d8bd53c6f5d565ba0d8124ca410d5fc81f9e590007b1d4ba01eddbcdd7a654f`.
+- `reconciliation-a.json`, SHA
+  `ee0a7974189fcda7bf706e684f575db465e29df41104bb5773d767e7ae480521`:
+  adapter implemented/active; open work is dependency graph plus missing
+  validation/test comparison/native partitions, not another adapter.
+- `corpus-probe-a`: public Verify byte equality, five forged-claim/overwrite
+  rejections and genuine Level 15-only input through the original 19-criterion
+  coverage CLI; Level 25 has no credited comparison/outcome. Inputs unchanged.
+
+The coverage CLI's incomplete-gate exit 1 is expected and is not a failed
+native action. The first diagnostic coverage call supplied the wrong existing
+option-field matrix schema; the original guard rejected it. The successful
+call uses `option-governance-matrix.json`; no guard was relaxed. Rebuild with
+the current goal index, SHA
+`6af84a0312a97b37ee9c32fdd56ef2a179a2c5cec88456b3edb8b55e0330e492`,
+not the stale generated frontier from a different authority hash.
+
+**Next, in order:** reconcile the original Skills recurrence's criterion-local
+conditional method and actual L2 prerequisite bindings. Its currently recorded
+fresh-save five-skill XP/travel/energy/competing-goal deadline proof remains
+L3/L4 work; neither delete it nor require the whole new-save run as a reverse
+L1 prerequisite. Then obtain only the missing genuine validation/test sources
+for both 15 and 25, preserving original partitioning, and rebuild the original
+coverage/reconciliation intersection. Do not resample accepted train sources or
+promote the root from source registration alone. Frozen union remains 7/19
+executable, 7/19 split-complete, 7/19 ready and 6/11 roots; formal=false.
+No game, worker/API, server or product model training was started in this slice;
+local-data and raw/derived evidence are not committed. Final regression/CI and
+publication are governed by the PR closing record.
+
+Local regression: 17 new checks; full game-free Core 1681/1681 and Backend
+597/597, zero skipped. Explicit E Bootstrap build has zero warnings/errors;
+public corpus probes and the unchanged EVD-338 checkpoint pass.
 
 ## Implementation Order
 
