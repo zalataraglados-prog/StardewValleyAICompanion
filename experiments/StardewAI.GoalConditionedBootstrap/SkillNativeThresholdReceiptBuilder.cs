@@ -17,7 +17,9 @@ public sealed record SkillNativeThresholdRequest(
 
 public static class SkillNativeThresholdReceiptBuilder
 {
-    public static object Build(string requestPath)
+    public static object Build(string requestPath) => BuildSource(requestPath).Receipt;
+
+    private static SkillNativeThresholdSource BuildSource(string requestPath)
     {
         requestPath = RequiredFile(requestPath);
         var request = ReadTyped<SkillNativeThresholdRequest>(requestPath, "skill_native_threshold_request.v1");
@@ -68,7 +70,7 @@ public static class SkillNativeThresholdReceiptBuilder
             ["preference"] = CurrentTeacherFrontierSupport.HashFile(request.PreferencePath),
             ["decision_snapshot"] = dispatch.Preference.SnapshotSha256
         };
-        return new
+        var receipt = new
         {
             schema_version = "skill_native_threshold_receipt.v1", status = "verified_local_threshold",
             request_path = requestPath, source_sha256 = hashes, run_id = request.RunId,
@@ -84,13 +86,16 @@ public static class SkillNativeThresholdReceiptBuilder
             prior_skill_acquisition_verified = false, teacher_dataset_row_verified = false,
             full_root_verified = false, formal_product_training_authorized = false
         };
+        return new(receipt, dispatch, action, request);
     }
 
-    public static object Verify(string receiptPath)
+    public static object Verify(string receiptPath) => VerifySource(receiptPath).Receipt;
+
+    internal static SkillNativeThresholdSource VerifySource(string receiptPath)
     {
         var raw = ReadTyped<JsonElement>(RequiredFile(receiptPath), "skill_native_threshold_receipt.v1");
-        var rebuilt = Build(CurrentTeacherFrontierSupport.RequiredString(raw, "request_path"));
-        Require(JsonNode.DeepEquals(JsonNode.Parse(raw.GetRawText()), JsonSerializer.SerializeToNode(rebuilt, JsonDefaults.Options)),
+        var rebuilt = BuildSource(CurrentTeacherFrontierSupport.RequiredString(raw, "request_path"));
+        Require(JsonNode.DeepEquals(JsonNode.Parse(raw.GetRawText()), JsonSerializer.SerializeToNode(rebuilt.Receipt, JsonDefaults.Options)),
             "Native Skills threshold receipt differs from original sources.");
         return rebuilt;
     }
@@ -106,3 +111,6 @@ public static class SkillNativeThresholdReceiptBuilder
         JsonNode.DeepEquals(JsonNode.Parse(CurrentTeacherFrontierSupport.ReadArtifactText(decisionPath)),
             JsonNode.Parse(CurrentTeacherFrontierSupport.ReadArtifactText(nativePath)));
 }
+
+internal sealed record SkillNativeThresholdSource(object Receipt, SkillTeacherDispatch Dispatch,
+    VerifiedNativeExecutionAction Action, SkillNativeThresholdRequest Request);

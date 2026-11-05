@@ -45,6 +45,9 @@
     <Compile Include="PolicyTrajectoryDatasetBuilderTests.cs" />
     <Compile Include="StructuredPolicyTrainerTests.cs" />
     <Compile Include="PolicyPairwiseSupervisionAdmissionTests.cs" />
+    <Compile Include="PolicyTeacherReplayRegistryTests.cs" />
+    <Compile Include="SkillTeacherReplayVerifierTests.cs" />
+    <Compile Include="SkillPolicyStateFeatureTests.cs" />
     <Compile Include="ActionOriginOutputSourceGuardTests.cs" />
     <Compile Include="ActionCatalogProvenanceGovernanceTests.cs" />
     <Compile Include="CandidateRouteConnectorCacheTests.cs" />

@@ -29,13 +29,20 @@ public sealed class PolicyPairwiseSupervisionAdmission
     {
         pairs = Array.Empty<PolicyTeacherPreferencePair>();
         var claim = row.Audit?.TeacherSupervision;
-        if (claim is null || claim.SchemaVersion != "policy_teacher_supervision.v2")
+        if (claim is null || claim.SchemaVersion is not ("policy_teacher_supervision.v2" or PolicyTeacherSupervisionSchemas.Skills))
             return "independent_teacher_preference_required";
-        if (replayVerifier is null || string.IsNullOrWhiteSpace(replayVerifier.TeacherId) ||
-            string.IsNullOrWhiteSpace(replayVerifier.TeacherVersion))
+        var verifier = replayVerifier;
+        if (replayVerifier is IPolicyTeacherSupervisionReplayRegistry registry)
+        {
+            verifier = registry.Resolve(claim.TeacherId, claim.TeacherVersion);
+            if (verifier is null)
+                return "teacher_supervision_identity_mismatch";
+        }
+        if (verifier is null || string.IsNullOrWhiteSpace(verifier.TeacherId) ||
+            string.IsNullOrWhiteSpace(verifier.TeacherVersion))
             return "teacher_replay_verifier_unavailable";
-        if (claim.TeacherId != replayVerifier.TeacherId ||
-            claim.TeacherVersion != replayVerifier.TeacherVersion ||
+        if (claim.TeacherId != verifier.TeacherId ||
+            claim.TeacherVersion != verifier.TeacherVersion ||
             claim.SourceStateHash != row.SourceStateHash ||
             claim.CandidateDenominatorSha256 != CandidateDenominatorSha256(row) ||
             claim.DatasetPartition != PolicyTrajectoryDatasetBuilder.PartitionFor(row.Context.SplitKey) ||
@@ -47,7 +54,7 @@ public sealed class PolicyPairwiseSupervisionAdmission
         PolicyDecisionTrajectoryEnvelope expected;
         try
         {
-            expected = replayVerifier.Rebuild(row);
+            expected = verifier.Rebuild(row);
         }
         catch (Exception exception) when (exception is IOException or InvalidDataException or ArgumentException or
                                          InvalidOperationException or JsonException or UnauthorizedAccessException)

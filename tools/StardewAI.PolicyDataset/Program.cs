@@ -13,7 +13,7 @@ static void Run(string[] args)
 {
     var options = PolicyDatasetOptions.Parse(args);
     var result = new PolicyTrajectoryDatasetBuilder(
-        new StardewAI.GoalConditionedBootstrap.CollectionTeacherSupervisionReplayVerifier()).Build(
+        StardewAI.GoalConditionedBootstrap.KnownTeacherSupervisionReplayVerifiers.Create()).Build(
         options.InputPath,
         options.OutputRoot,
         options.HorizonObservationPath,

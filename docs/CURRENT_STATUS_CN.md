@@ -1,5 +1,9 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> 本切片最终本地回归：Core1664/Backend597全部通过、零跳过，30新检查；原PolicyDataset/PolicyModel CLI构建及原检查点通过。以下Skills行切片发布以对应PR最终CI与收口评论为准，非整项训练放行。
+
+> **2026-11-06 Skills原Teacher行（本条优先）：** #449已由CI `42076554119`接受并合入`1681ad9b`、本轮旧分支清理完成。复用两条成功原生来源产出原trajectory.v2监督行，完整候选/原队列/动作nonce和facts绑定；最终b版公开Verify同SHA`bbc5d3da...`/`ae0d1b9e...`。显式Skills监督子类型不借CC哈希，旧v1/v2校验保留；同一PolicyDataset接受旧Collection行加两条Skills行共3条、0拒绝、仅train，九类反例拒绝且源文件未变。新增显式快照投影补五技能等级/XP/缺口/cap，Teacher、推理和loop共用；未知/跨态拒绝，其他目标旧特征字节不变。不跑新游戏/worker/API/产品训练，切片回归/发布以PR CI与收口评论为准。下一步仅接typed criterion corpus/原coverage登记及局部方法责任，再补各criterion缺失分区；冻结`7/19、7/19、7/19、6/11`、formal=false不变，不重采Step4。[来源与范围](skills-local-intake.md#original-policy-teacher-rows)。
+
 > **2026-11-06 Skills原生阈值来源（本条优先）：** #448经CI `42067595027`接受并合入`99d352ca`、对应旧分支已清理。两个新E隔离运行先独立比较，再由原编译/执行收笼，各5XP，评分`14→15`和`24→25`均27tick；源档目录SHA不变，后台静音进程退出。公开native receipt/Verify同SHA`6c86c4da...`/`9eaffbcf...`，复用原强reader并校验完整解包前态，没有改旧执行/哈希规则。六类CLI反例拒绝且原输入未变；声明前置不算先前获取。完整Core1634/Backend597零跳过；发布以本PR最终CI/收口评论为准，不重复采证。两次均day118，尚无typed Teacher行/corpus/三分区或方法晋升，冻结`7/19、7/19、7/19、6/11`、formal=false不变。下一步是Step5原Teacher行/corpus/coverage连接、原方法责任复核及真正缺失分区，不重采成功动作。[来源与诊断](skills-local-intake.md#same-run-native-threshold-sources)。
 
 > **2026-11-06 Skills当前独立比较（本条优先）：** #447已由CI `42059282002`接受并合入`bb336431`，原缺口消费端不再待CI。本轮新comparison build/Verify从原候选/evaluator/XP guard/绑定/编译重建，仅新消费端适配旧本地许可及蟹笼XP字段；旧共享规则未改。16策略族/5编译器项分开审计，同效果且稳健支配才有标签，未读字段/同分/取舍不造负例。旧真实前态重放两只5XP同效果笼，30/210tick严格比较1对，独立重建同SHA`016d4cf2...`；48新检查、Core1612/Backend594通过，零跳过。没有新原生执行/Skills阈值或训练行，冻结`7/19、7/19、7/19、6/11`及formal=false不变。本新切片待最终CI/合入，之后唯一下一步是新的隔离比较→原执行→原生15/25终态，不从旧Master后态补写决策。见[完整边界](skills-local-intake.md#independent-current-comparison)。

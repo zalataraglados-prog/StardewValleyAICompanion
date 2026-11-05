@@ -52,7 +52,7 @@ builder.Services.AddSingleton<JsonlTrainingDatasetWriter>();
 builder.Services.AddSingleton<PolicyTrainingAdmissionFilter>();
 builder.Services.AddSingleton<PolicyStateFeatureProjector>();
 builder.Services.AddSingleton<StructuredPolicyCheckpointStore>();
-builder.Services.AddSingleton<IPolicyTeacherSupervisionReplayVerifier, CollectionTeacherSupervisionReplayVerifier>();
+builder.Services.AddSingleton<IPolicyTeacherSupervisionReplayVerifier>(_ => KnownTeacherSupervisionReplayVerifiers.Create());
 builder.Services.AddSingleton(services => new StructuredPolicyTrainer(
     services.GetRequiredService<StructuredPolicyCheckpointStore>(),
     services.GetRequiredService<IPolicyTeacherSupervisionReplayVerifier>()));
@@ -823,7 +823,7 @@ app.MapPost("/api/v1/planner/baseline/rank-options", (BaselinePredictionRequest 
                     : request.ExecutionMode);
             rankedEventCandidates = structuredRanker.Rank(
                 checkpoint,
-                stateFeatureProjector.Project(worldModel),
+                stateFeatureProjector.Project(worldModel, snapshot),
                 rankedEventCandidates);
         }
         catch (Exception ex) when (ex is ArgumentException or IOException or InvalidOperationException)

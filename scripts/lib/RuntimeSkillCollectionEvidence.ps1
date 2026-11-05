@@ -23,6 +23,21 @@ function Build-RuntimeSkillThresholdSource {
     return $receiptPath
 }
 
+function Build-RuntimeSkillTeacherRow {
+    param([string] $BootstrapDll, [string] $OutputRoot, [string] $RunId,
+        [string] $NativeReceiptPath, [string] $ExecutionReceiptPath)
+    $row = Join-Path $OutputRoot "skill-teacher-row.json"
+    $replay = Join-Path $OutputRoot "skill-teacher-row-replay.json"
+    & dotnet $BootstrapDll build-skill-teacher-row --native-receipt $NativeReceiptPath `
+        --execution-receipt $ExecutionReceiptPath --trajectory-id ("skills.native." + $RunId) --output $row | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "Skills Teacher row rejected the original native queue." }
+    & dotnet $BootstrapDll verify-skill-teacher-row --row $row --output $replay | Out-Null
+    if ($LASTEXITCODE -ne 0 -or (Get-FileHash -LiteralPath $row).Hash -cne (Get-FileHash -LiteralPath $replay).Hash) {
+        throw "Skills Teacher row and independent Verify differ."
+    }
+    return $row
+}
+
 function Initialize-RuntimeSkillTeacherQueue {
     param([string] $BootstrapDll, [string] $OutputRoot, [string] $SnapshotUrl,
         [int] $TargetScoringLevel)

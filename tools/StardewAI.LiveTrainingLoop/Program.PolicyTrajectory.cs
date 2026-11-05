@@ -141,7 +141,7 @@ static partial class Program
                     new WorldModelProjector().Project(
                         snapshotEnvelope,
                         options.Goal,
-                        options.TargetExecutionMode));
+                        options.TargetExecutionMode), snapshotEnvelope);
                 var episodeId = appendResult.EpisodeId + ".policy." + iteration.ToString("D4") + "." + decisionOrdinal.ToString("D4");
                 var aggregateCandidateExecution = AggregateSelectedCandidateExecution(
                     decisionSteps,
