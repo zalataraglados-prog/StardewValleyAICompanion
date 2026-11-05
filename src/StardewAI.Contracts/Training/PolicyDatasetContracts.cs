@@ -62,6 +62,10 @@ public sealed class PolicyHorizonObservationEnvelope
 
 public sealed class PolicyDatasetManifest
 {
+    [JsonPropertyName("independent_decisions")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool IndependentDecisions { get; set; }
+
     [JsonPropertyName("training_objective")]
     public string TrainingObjective { get; set; } = string.Empty;
 

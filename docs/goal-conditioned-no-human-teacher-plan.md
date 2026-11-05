@@ -1,5 +1,7 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+> **2026-11-06 当前接续：** Skills局部15/25三分区及原覆盖交集已闭合，发布以最终CI/收口为准；接受集合取并集后`9/19、9/19、9/19、7/11 roots`，formal=false。下一唯一primary为Friendship，复用现有社交/行程而非重写执行器。独立重置Teacher样本必须使用[显式独立决策合同](policy-independent-decisions.md)，不能伪造连续日回报；真实连续轨迹默认行为不变。[本项验收](skills-local-acceptance.md)。下方11月3日Rusty接续及旧计数仅为历史，全局新档21分与Student目标保持。
+
 > **当前接续决定（2026-11-03T18:30:00+08:00，用户确认）：** #390 / PR #391 已完成验收责任解耦；当前唯一 primary 为 `obtain_rusty_key`。先完成安全捐赠阈值、原生奖励与送钥匙事件的局部闭环，再补本 criterion 的 Teacher/native 分区。R2 的四层验收合同继续生效；R1 中 Master Angler 固定第 10、强制 Gourmand/source-schedule 及完整新档反向前置均已撤销。后续未开工 root 的顺位待当前项收口后按真实局部缺口决定。Pet Love、Skull Key 已消费的严格验收保持冻结，原始中间文件清理不触发重采；当前计数仍为 `5/19 executable、6/19 split-complete、5/19 CoverageGateReady、4/11 root ready`，`formal_product_training=false`。
 
 > **作用域：** 本文件定义训练 / Teacher / Student 技术合同，不定义完整产品后期顺序；产品阶段先后以 [COMPANION_PRODUCT_ROADMAP_CN.md](COMPANION_PRODUCT_ROADMAP_CN.md) 为唯一权威。

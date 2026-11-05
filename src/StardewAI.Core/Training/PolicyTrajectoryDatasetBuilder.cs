@@ -27,8 +27,18 @@ public sealed class PolicyTrajectoryDatasetBuilder
         string inputPath,
         string outputRoot,
         string? horizonObservationPath = null,
-        string? expectedKnowledgeDictionary = null)
+        string? expectedKnowledgeDictionary = null) =>
+        Build(inputPath, outputRoot, horizonObservationPath, expectedKnowledgeDictionary, false);
+
+    public PolicyDatasetBuildResult Build(
+        string inputPath,
+        string outputRoot,
+        string? horizonObservationPath,
+        string? expectedKnowledgeDictionary,
+        bool independentDecisions)
     {
+        if (independentDecisions && !string.IsNullOrWhiteSpace(horizonObservationPath))
+            throw new ArgumentException("Independent decisions cannot attach continuity horizon observations.", nameof(horizonObservationPath));
         var fullInputPath = Path.GetFullPath(inputPath);
         if (!File.Exists(fullInputPath))
             throw new FileNotFoundException("Policy trajectory input does not exist.", fullInputPath);
@@ -62,7 +72,14 @@ public sealed class PolicyTrajectoryDatasetBuilder
                 expectedKnowledgeDictionary + "'.");
         }
 
-        returnBackfiller.Backfill(accepted, observations);
+        if (independentDecisions)
+        {
+            // Boundary samples share save/date identity, not a continuous observed episode.
+            foreach (var row in accepted)
+                returnBackfiller.Backfill(new[] { row }, observations);
+        }
+        else
+            returnBackfiller.Backfill(accepted, observations);
         foreach (var row in accepted)
             row.Context.DatasetPartition = PartitionFor(row.Context.SplitKey);
 
@@ -93,6 +110,7 @@ public sealed class PolicyTrajectoryDatasetBuilder
 
         var manifest = new PolicyDatasetManifest
         {
+            IndependentDecisions = independentDecisions,
             TrainingObjective = PolicyTrainingObjectives.IndependentTeacherPairwise,
             Input = Digest(fullInputPath, inputLines.Count(line => !string.IsNullOrWhiteSpace(line))),
             HorizonObservations = string.IsNullOrWhiteSpace(horizonObservationPath)
