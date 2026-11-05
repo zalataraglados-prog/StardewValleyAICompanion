@@ -8,7 +8,9 @@ synchronized with the approved rolling implementation. Public reconstruction
 reports the Rusty Key method `executable_frontier`, the criterion
 `coverage_ready=true`, and no local open work. Local regression is Core
 `1370/1370` and threshold/resource preflight `87/87`, zero skips; checkpoint
-EVD-338 remains unchanged. Release publication remains conditional on final PR CI.
+EVD-338 remains unchanged. PR #437 final head `32f43fbb` passed CI
+`41985920364` and merged into main as `67f82eb6`; the code branch was verified
+merged and removed. Local acceptance is now frozen, not awaiting another run.
 
 Acceptance follows [R2](PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md): the
 criterion-local method and Teacher/native intersection are L1; selected-route
@@ -69,7 +71,7 @@ Its input dependency graph is SHA-256
 The request connects only Rusty Key, so its local ready count is **1**, not a
 replacement for the frozen global baseline. Union with accepted frozen criteria
 gives executable **6/19**, split-complete **7/19**, intersection **6/19**, and
-ready roots **5/11**, subject to final publication CI. Frozen raw evidence is
+ready roots **5/11**, accepted after that final CI. Frozen raw evidence is
 not recollected merely to rebuild this local view. Formal training stays false.
 
 ## Method Responsibility Reconciliation
