@@ -164,7 +164,7 @@ public sealed partial class MuseumDonationMainlineTests
         Assert.Throws<InvalidDataException>(() => RustyKeyDonationTeacherComparisonBuilder.Verify(path));
     }
 
-    private static DonationTeacherFixture CreateDonationTeacherFixture(int reserved = 0)
+    internal static DonationTeacherFixture CreateDonationTeacherFixture(int reserved = 0)
     {
         var root = Path.Combine(Path.GetTempPath(), "stardewai-rusty-key-teacher", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
@@ -204,5 +204,5 @@ public sealed partial class MuseumDonationMainlineTests
     private static void WriteTeacherJson(string path, object value) =>
         File.WriteAllText(path, JsonSerializer.Serialize(value, JsonOptions));
 
-    private sealed record DonationTeacherFixture(string Root, string SnapshotPath, string LedgerPath, string RequestPath);
+    internal sealed record DonationTeacherFixture(string Root, string SnapshotPath, string LedgerPath, string RequestPath);
 }

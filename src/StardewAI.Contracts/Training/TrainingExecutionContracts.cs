@@ -111,10 +111,10 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("wait_ticks")]
         public int? WaitTicks { get; set; }
 
-        [JsonPropertyName("wait_until_time")]
+        [JsonPropertyName(TrainingExecutionParameterBindings.WaitUntilTime)]
         public int? WaitUntilTime { get; set; }
 
-        [JsonPropertyName("wait_max_slices")]
+        [JsonPropertyName(TrainingExecutionParameterBindings.WaitMaxSlices)]
         public int? WaitMaxSlices { get; set; }
 
         [JsonPropertyName("sleep_resume_mode")]
