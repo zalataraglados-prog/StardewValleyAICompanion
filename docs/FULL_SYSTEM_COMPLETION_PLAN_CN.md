@@ -1,5 +1,7 @@
 # StardewAI 完全体完成路线图
 
+> **2026-11-06 Friendship独立比较接续：** 当前读取已合入#454；新消费层保留原行程/控制与编译执行，补独立比较及原队列派发，未改共享社交行为。协议夹具不算真实native；下一步取得原隔离runner同run 5/10人数阈值并接原数据/覆盖，触顶分母和跨种权衡不能隐去。`9/19、9/19、9/19、7/11`、formal=false与R2、全新档Teacher21/21、Student、100%和人类适应目标保持。[本轮合同](friendship-independent-comparison.md)，最终回归/CI见本PR收口。
+
 > **2026-11-06 Friendship当前接续：** #453已CI接受并合入`712482ea`，Skills冻结。Friendship原桥字段已足够，当前权威缺口消费端已实现；下一步复用原社交Teacher/有序行程的独立比较及talk/gift原生执行，不增第二套系统。当前读取不晋升整项，`9/19、9/19、9/19、7/11 roots`及formal=false不变；完整回归/发布见本PR收口。[来源与接续合同](friendship-local-intake.md)。婚房/全馆/Money与R2、全新档Teacher21分、Student、100%及人类适应路线均保留。
 
 > **2026-11-06 当前接续：** Skills局部15/25三分区及原覆盖交集已闭合，发布以最终CI/收口为准；接受集合取并集后`9/19、9/19、9/19、7/11 roots`，formal=false。下一唯一primary为Friendship：复用原社交Teacher/有序行程、talk/gift原生能力，先权威缺口与独立来源。婚房/全馆/Money保留，R2、完整新档Teacher21分、Student与后续100%/人类适应路线不缩减。独立边界样本不推导连续回报，见[输入合同](policy-independent-decisions.md)及[Skills验收](skills-local-acceptance.md)；下方旧Rusty接续、施工全序和计数仅历史。

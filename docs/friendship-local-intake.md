@@ -112,6 +112,12 @@ part of this commit.
 
 ## Sole Next Slice And Exit Boundaries
 
+Update 2026-11-06: the independent comparison and original-compiler dispatch
+consumer is implemented; see [exact compatibility and verification scope](friendship-independent-comparison.md).
+The immediate next slice is real same-run native threshold outcomes, not another
+current-deficit read or another social executor. The sequence below retains its
+full original exit obligations; synthetic protocol checks do not close them.
+
 1. Current deficit intake is implemented. Next, adapt the existing
    `CurrentSocialDayTeacherLabelBuilder`, ordered itinerary/frontier and original
    talk/gift binding to an independently replayable comparison source. The

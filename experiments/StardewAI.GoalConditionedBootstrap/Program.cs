@@ -41,6 +41,9 @@ var commandDefinitions = new CommandDefinition[]
     new("plan-current-social-day", PlanCurrentSocialDay),
     new("build-current-social-teacher-label", BuildCurrentSocialTeacherLabel),
     new("build-current-friendship-deficit", BuildCurrentFriendshipDeficit),
+    new("build-current-friendship-teacher-preference", options => WriteCurrentFriendshipTeacherPreference(options, verify: false)),
+    new("verify-current-friendship-teacher-preference", options => WriteCurrentFriendshipTeacherPreference(options, verify: true)),
+    new("compile-current-friendship-teacher-preference", CompileCurrentFriendshipTeacherPreference),
     new("build-current-skill-experience-deficit", BuildCurrentSkillExperienceDeficit),
     new("build-current-skill-teacher-preference", options => WriteCurrentSkillTeacherPreference(options, verify: false)),
     new("verify-current-skill-teacher-preference", options => WriteCurrentSkillTeacherPreference(options, verify: true)),
@@ -634,6 +637,31 @@ static void BuildCurrentSocialTeacherLabel(Arguments options)
         File.ReadAllText(options.Required("calibration")));
     Write(options.Required("output"), label);
     if (!label.TrainingLabelEligible)
+        Environment.ExitCode = 2;
+}
+
+static void CompileCurrentFriendshipTeacherPreference(Arguments options)
+{
+    var plan = Path.GetFullPath(options.Required("plan-output"));
+    var queue = Path.GetFullPath(options.Required("output"));
+    if (plan.Equals(queue, OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) ||
+        new[] { plan, queue }.Any(path => File.Exists(path) || Directory.Exists(path) ||
+            !path.EndsWith(".json", StringComparison.OrdinalIgnoreCase)))
+        throw new InvalidDataException("Friendship plan and queue outputs must be different new JSON files.");
+    var dispatch = FriendshipTeacherDispatchBuilder.Compile(options.Required("preference"));
+    Write(plan, dispatch.Plan);
+    Write(queue, dispatch.Queue);
+}
+
+static void WriteCurrentFriendshipTeacherPreference(Arguments options, bool verify)
+{
+    var output = Path.GetFullPath(options.Required("output"));
+    if (!output.EndsWith(".json", StringComparison.OrdinalIgnoreCase) || File.Exists(output) || Directory.Exists(output))
+        throw new InvalidDataException("Friendship Teacher output must be a new JSON file.");
+    var result = verify ? CurrentFriendshipTeacherPreferenceBuilder.Verify(options.Required("preference")) :
+        CurrentFriendshipTeacherPreferenceBuilder.Build(options.Required("snapshot"), options.Required("calibration"));
+    Write(output, result);
+    if (!result.TeacherPreferenceLabelEligible)
         Environment.ExitCode = 2;
 }
 

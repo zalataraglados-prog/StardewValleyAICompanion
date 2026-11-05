@@ -1,5 +1,7 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+> **2026-11-06 Friendship比较消费端接续：** 原Teacher行程/控制提案保留；新独立比较与原编译派发入口已实现，不重写旧执行器，不将null许可或64候选截断冒充通过。合成协议检查不算真实native/训练数据；下一步按新入口接原E隔离runner取得真实5/10人数阈值及原轨迹/corpus/覆盖。跨种资源权衡和触顶分母仍显式未完，完整回归/CI见本PR收口。[来源、边界与接续](friendship-independent-comparison.md)。接受集合`9/19、9/19、9/19、7/11`及formal=false保持。
+
 > **2026-11-06 Friendship当前事实接入：** Skills的#453已CI接受并合入`712482ea`。唯一primary仍为`raise_friendships`；当前严格缺口读取和公开入口已实现、复用原桥，无社交执行器改写。当前事实不能作为比较或native动作标签；下一步复用原Teacher/有序行程构造独立可重放比较，再原队列同run及原覆盖三分区。接受集合`9/19、9/19、9/19、7/11`、formal=false及全新档目标不变，完整回归/发布见本PR收口。[本轮事实、原生来源和退出边界](friendship-local-intake.md)。
 
 > **2026-11-06 当前接续：** Skills局部15/25三分区及原覆盖交集已闭合，发布以最终CI/收口为准；接受集合取并集后`9/19、9/19、9/19、7/11 roots`，formal=false。下一唯一primary为Friendship，复用现有社交/行程而非重写执行器。独立重置Teacher样本必须使用[显式独立决策合同](policy-independent-decisions.md)，不能伪造连续日回报；真实连续轨迹默认行为不变。[本项验收](skills-local-acceptance.md)。下方11月3日Rusty接续及旧计数仅为历史，全局新档21分与Student目标保持。
