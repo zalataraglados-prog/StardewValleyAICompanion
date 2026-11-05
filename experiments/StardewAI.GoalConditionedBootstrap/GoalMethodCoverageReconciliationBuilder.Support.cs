@@ -54,6 +54,11 @@ public static partial class GoalMethodCoverageReconciliationBuilder
             kinds.Add(GoalMethodTeacherCoverageSourceKinds
                 .RustyKeyThresholdDecisionCorpus);
         }
+        if (method.DirectionId == "complete_master_angler")
+        {
+            kinds.Add(GoalMethodTeacherCoverageSourceKinds
+                .MasterAnglerCollectionDecisionCorpus);
+        }
         if (method.DirectionId == "earn_money")
         {
             kinds.Add(GoalMethodTeacherCoverageSourceKinds

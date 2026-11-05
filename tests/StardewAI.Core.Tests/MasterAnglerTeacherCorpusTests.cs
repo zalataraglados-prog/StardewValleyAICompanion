@@ -9,6 +9,18 @@ namespace StardewAI.Core.Tests;
 public sealed class MasterAnglerTeacherCorpusTests
 {
     [Fact]
+    public void OriginalReconciliationAdvertisesTheNewCorpusOnlyForItsOwnMethod()
+    {
+        var method = typeof(GoalMethodCoverageReconciliationBuilder).GetMethod("ImplementedSourceKinds", BindingFlags.NonPublic | BindingFlags.Static)!;
+        string[] Kinds(string direction) => (string[])method.Invoke(null, new object[]
+        {
+            JsonSerializer.Deserialize<GoalMethodFrontierMethod>("{\"direction_id\":\"" + direction + "\",\"requirement_set_readiness\":[]}")!
+        })!;
+        Assert.Contains(GoalMethodTeacherCoverageSourceKinds.MasterAnglerCollectionDecisionCorpus, Kinds("complete_master_angler"));
+        Assert.DoesNotContain(GoalMethodTeacherCoverageSourceKinds.MasterAnglerCollectionDecisionCorpus, Kinds("complete_full_shipment"));
+    }
+
+    [Fact]
     public void ClassificationOnlyRequiresCompleteDenominatorAndFreshNativeAchievement26()
     {
         Assert.True(Terminal(Snapshot(71), Snapshot(72, 26)));

@@ -133,6 +133,8 @@ var commandDefinitions = new CommandDefinition[]
         MasterAnglerTeacherNativeJoinBuilder.Verify(options.Required("receipt")))),
     new("build-master-angler-teacher-corpus", options => Write(options.Required("output"),
         MasterAnglerTeacherCorpusBuilder.Build(options.Required("request")))),
+    new("prepare-master-angler-terminal-save-boundary", options => Write(options.Required("output"),
+        MasterAnglerTerminalSaveBoundaryBuilder.Prepare(options.Required("request"), options.Required("output")))),
     new("verify-master-angler-teacher-corpus", options => Write(options.Required("output"),
         MasterAnglerTeacherCorpusBuilder.Verify(options.Required("corpus")))),
     new("verify-rusty-key-teacher-native-join", options => Write(options.Required("output"),
