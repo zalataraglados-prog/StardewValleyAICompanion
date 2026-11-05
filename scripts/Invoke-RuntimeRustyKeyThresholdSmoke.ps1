@@ -253,7 +253,9 @@ try {
         $rolling = Get-Content -LiteralPath $rollingPath -Raw | ConvertFrom-Json
         $night = Wait-Json -Url "$executorUrl/api/v1/training/end-of-night-transaction" -TimeoutSeconds 15
         Write-JsonFile -Path (Join-Path $runRoot 'native-night.json') -Value $night
-        $observation = Assert-RuntimeRustyKeyEveningObservation -Context $context -Rolling $rolling -InitialSnapshot $capture.Value -NativeNight $night
+        $sleepReceipt = Get-Content -LiteralPath $rolling.steps[0].execution_path -Raw | ConvertFrom-Json
+        $observation = Assert-RuntimeRustyKeyEveningObservation -Context $context -Rolling $rolling `
+            -InitialSnapshot $capture.Value -NativeNight $night -SleepReceipt $sleepReceipt
         if ((Get-DirectoryContentHash -Path $sourceSave) -cne $sourceHash) { throw 'Original baseline save changed.' }
         Write-JsonFile -Path (Join-Path $runRoot 'summary.json') -Value ([ordered]@{
             schema_version = 'stardewai.runtime_rusty_key_evening_boundary.v1'; status = 'native_owned_supply_evening_observed'

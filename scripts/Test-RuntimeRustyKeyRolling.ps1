@@ -62,19 +62,19 @@ foreach ($mode in @('held', 'local', 'remote', 'deferred')) {
     $passed.Add("actual_owned_stock_light_path_calibration_$mode")
 }
 
-foreach ($mode in @('evening', 'sleep_prompt', 'native_settle')) {
-    $fixture = Join-Path $StepFixtureRoot "owned-deferral-$mode"
+foreach ($mode in @('evening', 'sleep_prompt', 'native_settle', 'missing_calibration', 'insufficient_owned', 'no_owned_stock', 'daytime_sleep_prompt')) {
+    $fixture = Join-Path $StepFixtureRoot "day-recovery-$mode"
     $planning = New-RuntimeRustyKeyPlanning -Context $context -BootstrapDll $bootstrap `
-        -Directory (Join-Path $OutputRoot "actual-deferral-$mode-planning") -SnapshotPath (Join-Path $fixture 'snapshot.json') `
+        -Directory (Join-Path $OutputRoot "actual-recovery-$mode-planning") -SnapshotPath (Join-Path $fixture 'snapshot.json') `
         -StrategyLedgerPath (Join-Path $fixture 'ledger.json') -RequirementInventoryPath (Join-Path $fixture 'inventory.json') `
         -AcquisitionLoweringPath 'unused-owned-stock-path' -MasterAnglerWindowsPath 'unused-owned-stock-path' `
         -RouteTimingPath (Join-Path $fixture 'timing.json') -FishingForecastManifestPath 'unused-owned-stock-path'
-    Assert-True ($planning.Preparation.step_ready -and $planning.Preparation.kind -ceq 'owned_supply_deferral' -and
-        $planning.Preparation.owned_supply_deferral.future_date_route_verified -eq $false -and
+    Assert-True ($planning.Preparation.step_ready -and $planning.Preparation.kind -ceq 'day_recovery' -and
+        $planning.Preparation.day_recovery.future_date_route_verified -eq $false -and
         $null -eq $planning.Preparation.atomic_commit_request -and
         -not (Test-Path -LiteralPath (Join-Path $planning.Directory 'planning.manifest.json'))) `
-        'Owned-supply recovery must rebuild its original queue without speculative acquisition or future-date evidence.'
-    $passed.Add("actual_owned_supply_deferral_light_path_$mode")
+        'Day recovery must rebuild its original queue without speculative acquisition or future-date evidence.'
+    $passed.Add("actual_day_recovery_light_path_$mode")
 }
 
 $originalReader = (Get-Item Function:Read-RuntimeLoopArtifacts).ScriptBlock
@@ -269,7 +269,7 @@ function New-RuntimeRustyKeyPlanning {
         $AcquisitionLoweringPath, $MasterAnglerWindowsPath, $RouteTimingPath, $FishingForecastManifestPath, $PriorSupport)
     $script:planningCalls++
     $kind = if ($script:mode -eq 'blocked') { 'blocked' }
-        elseif ($script:mode.StartsWith('deferral') -and $script:planningCalls -le 2) { 'owned_supply_deferral' }
+        elseif ($script:mode.StartsWith('deferral') -and $script:planningCalls -le 2) { 'day_recovery' }
         elseif ($script:mode -eq 'custody' -and $script:planningCalls -eq 1) { 'custody_navigation' }
         elseif ($script:mode -eq 'custody' -and $script:planningCalls -eq 2) { 'custody_transfer' }
         elseif ($script:mode -eq 'donation-boundary' -and $script:planningCalls -gt 3) { 'native_key_handoff' }
@@ -284,7 +284,7 @@ function New-RuntimeRustyKeyPlanning {
         recovery_candidate_kind = $(if ($script:planningCalls -eq 1) { 'recovery_return_home' } else { 'recovery_native_control_settle' })
     } }
     return [pscustomobject]@{
-        Preparation = @{ kind = $kind; step_ready = ($kind -ne 'blocked'); blocking_reasons = @('synthetic_block'); owned_supply_deferral = $deferral }
+        Preparation = @{ kind = $kind; step_ready = ($kind -ne 'blocked'); blocking_reasons = @('synthetic_block'); day_recovery = $deferral }
         ControlPath = 'synthetic-control'; QueuePath = 'synthetic-queue'; Directory = $Directory
         Control = @{ threshold_satisfied = ($kind -ceq 'native_key_handoff') }
         SnapshotPath = $SnapshotPath
@@ -356,10 +356,10 @@ Assert-True ($custodyTrace.status -eq 'native_key_observed' -and ($script:seen -
 $passed.Add('custody_navigation_transfer_donation_order')
 $deferralTrace = Invoke-TestLoop 'deferral' 3
 Assert-True ($deferralTrace.status -ceq 'native_key_observed' -and ($script:seen -join ',') -ceq 'recovery,recovery,held' -and
-    ($deferralTrace.steps.kind -join ',') -ceq 'owned_supply_deferral,owned_supply_deferral,held_donation' -and
-    $deferralTrace.steps[0].ledger_path.EndsWith('owned-supply-recovery-ledger.json')) `
+    ($deferralTrace.steps.kind -join ',') -ceq 'day_recovery,day_recovery,held_donation' -and
+    $deferralTrace.steps[0].ledger_path.EndsWith('day-recovery-ledger.json')) `
     'Recovery must refresh the exact source and ledger before returning to ordinary donation; no duplicate acquisition.'
-$passed.Add('owned_supply_deferral_fresh_replan_then_donation')
+$passed.Add('day_recovery_fresh_replan_then_donation')
 foreach ($mode in @('deferral-invalid', 'deferral-error')) {
     $rejected = $false
     try { Invoke-TestLoop $mode 8 | Out-Null } catch { $rejected = $true }

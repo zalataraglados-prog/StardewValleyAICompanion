@@ -16,9 +16,12 @@ internal static partial class BootstrapSelfTest
             Require(result.RollingStepReady == ready && (result.CompiledQueue is not null) == ready &&
                 result.SelectedAcquisitionProposal is null && !result.ThresholdSatisfied && !result.FormalTrainingAuthorized,
                 "Held donation must fit the original autonomous day budget: " + time);
-            if (!ready)
+            if (!ready && time < 1900)
                 Require(result.CandidateEvaluations.Any(row => row.BlockingReasons.Contains("aggregate_time_budget_exceeded")),
                     "Rejected held donation must expose the original compiler's budget reason.");
+            if (time >= 1900)
+                Require(result.CandidateEvaluations.Length == 0 && result.BlockingReasons.Contains("rusty_key_current_day_recovery_not_dispatchable"),
+                    "After the original recovery window starts, this fixture's missing home must block recovery, not probe donation budgets.");
             passed.Add("held_donation_day_budget_" + time);
         }
         foreach (var mode in new[] { "missing", "unreadable", "malformed", "invalid_hhmm", "conflicting_alias" })

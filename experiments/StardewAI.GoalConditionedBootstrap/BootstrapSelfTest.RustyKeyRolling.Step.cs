@@ -54,7 +54,7 @@ internal static partial class BootstrapSelfTest
         passed.Add("threshold_requires_native_handoff");
         VerifyRollingCustody(root, passed);
         VerifyRollingCustodyDonationSchedule(root, passed);
-        VerifyRollingOwnedSupplyDeferral(root, passed);
+        VerifyRollingDayRecovery(root, passed);
         VerifyRollingCustodyNextDay(root, passed);
         Write(Path.Combine(root, "rolling-step-self-test.json"), new
         {
