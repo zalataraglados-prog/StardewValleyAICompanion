@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-05 最终事实：** Rusty Key局部收口已由#437最终CI`41985920364`验证并合入`main@67f82eb6`，相关代码分支已清理。面板`6/19 executable、7/19 split-complete、6/19 CoverageGateReady、5/11 root ready`现为已接受冻结并集，不再待本切片CI。下方本轮“待发布/待CI”保留为历史，不得触发重复采证、重新合并或反向新增门槛。按用户要求在本项结束后汇报；下一primary依R2复核后确定，正式训练与完整Teacher21分仍未完成。[验收](rusty-key-local-acceptance.md)。
+
 > **2026-11-05 Rusty Key局部验收通过，发布以本切片最终CI为准（本条优先）：** #436已合并`3ddbfe17`。原生三分区独立比较/连续捐赠到钥匙连接已齐，原公开覆盖重建为本项`coverage_ready=true`且无局部open work；方法图按已批准rolling递推同步，不宣称全局最优或新档零到60。Core1370、完整阈值/资源87项通过，原生进程/端口回收、源档保持。与原冻结集合并集后为`6/19、7/19、6/19、5/11`；本项单来源机器报告的ready count=1不是全局退回1/19。正式训练仍false，完整Teacher21分未完成。详见[局部验收与全局责任](rusty-key-local-acceptance.md)和当前工作；最终提交/CI/合并后按用户要求汇报，不自动切root。下方本项未完/冻结旧数字均为历史。
 
 > **2026-11-05 当前状态优先：** #435最终CI`41978682410`成功，已合并`dd87b781`并清理对应临时分支。同criterion语料聚合与原coverage adapter已实现，真实旧来源公开build/Verify同SHA`fcecbed9...`，**仅一条train**；方法未可执行或Teacher/native未三分区齐全仍不能ready。261项相关回归通过，完整game-free/本切片CI待收口。下一步仍复核原方法/阈值供给/时限责任并补真正缺失的原生分区，不将mock或旧单条连接晋升整项。冻结计数/训练禁入不变，生锈钥匙整项结束后汇报。[合同](rusty-key-teacher-corpus.md)。
@@ -153,7 +155,7 @@
 | Money production evidence cells | **0/18** | 6 个 Money criterion × 3 partitions；hermetic fixture 不计 production |
 | Formal product training | **false** | 未通过完整正式训练准入 |
 
-2026-11-05新增Rusty Key按R2局部合同验收；以上为既有冻结集合与本项的无重复并集，合入仍须本轮最终CI。此次机器请求只接Rusty来源，因此其ready count=1；不是重新审计、覆盖或丢弃旧已接受的5项。旧Pet Love/Skull Key原始文件清理不触发重采，L3/L4仍按原合同完成。
+2026-11-05新增Rusty Key按R2局部合同验收，#437最终CI通过并已合入；以上为既有冻结集合与本项的无重复并集。此次机器请求只接Rusty来源，因此其ready count=1；不是重新审计、覆盖或丢弃旧已接受的5项。旧Pet Love/Skull Key原始文件清理不触发重采，L3/L4仍按原合同完成。
 
 ### 2026-11-01 全新 day-zero v98 已进入原生长循环
 
