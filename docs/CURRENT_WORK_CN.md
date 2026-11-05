@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-11-06 Friendship显式成对监督准入
+
+- #458经CI `42129422453`全部38步接受，合入`f8b93506`、分支清理；原跨图预算不重做。唯一primary仍`raise_friendships`，`9/19、9/19、9/19、7/11`及formal=false保持。
+- 新v4工件显式区分成对标签可用与完整排序可用；缺省完整排序门、原单参数Compile接口保留，只有typed/CLI显式`independent_pairs`才消费已重放strict pairs。build/Verify/compile共用scope选择及原编译，未知mode拒绝；不改原Teacher/比较数学/候选/执行器/共享trainer，不把未比较项当负例。旧v1-v3保留，须从原来源重建，不覆写冒充升级。
+- 原真实来源公开入口：缺省Build退出2，显式Build/Verify退出0，三份完整工件同SHA`4581deab...`；gift410/talk43、30决策/8pairs/20未比较均保留，full=false/pairwise=true。默认compile拒绝且无输出，显式compile产生原单连接器pending队列，目标仍Lewis；非法mode无输出。无NPC动作/训练行/覆盖晋升。完整Core1833/Backend597零跳过，AST/EVD-338/差异检查通过；最终CI见本PR收口。[协议与退出边界](friendship-pairwise-admission.md)。
+- **唯一下一步：** 接E副本中真实4→5、9→10人数阈值，声明边界前置、完整保留候选/未比较项，复用原机械队列runner/社交原语/真实校准，再原native reader、轨迹/provider/corpus/覆盖三分区。旧Linus1000重置夹具不能冒充此阈值。入行时复核显式native人数/完整接触预算投影，候选点数/delta/portfolio参数原encoder已编码，不误判全缺，不改无关goal特征。当前尚无新游戏，不能因显式编译通过晋升整项或正式训练；不提交原始数据/local-data，无worker/API/服务器/清理。
+
 ## 2026-11-06 Friendship跨图完整接触预算
 
 - #457经CI `42125618154`全部38步接受，合入`75e7d9a0`、分支清理；完整候选源与真实校准不重采。唯一primary仍`raise_friendships`，`9/19、9/19、9/19、7/11`及formal=false保持。

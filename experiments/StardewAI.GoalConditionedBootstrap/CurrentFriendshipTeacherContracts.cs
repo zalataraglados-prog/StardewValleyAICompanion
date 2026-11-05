@@ -6,7 +6,7 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public sealed class CurrentFriendshipTeacherPreference
 {
-    public string SchemaVersion { get; set; } = "current_friendship_teacher_preference.v3";
+    public string SchemaVersion { get; set; } = "current_friendship_teacher_preference.v4";
     public string Status { get; set; } = "blocked";
     public string SnapshotPath { get; set; } = string.Empty;
     public string SnapshotSha256 { get; set; } = string.Empty;
@@ -26,6 +26,8 @@ public sealed class CurrentFriendshipTeacherPreference
     public string[] UncomparedCandidateIds { get; set; } = Array.Empty<string>();
     public string[] BlockingReasons { get; set; } = Array.Empty<string>();
     public bool TeacherPreferenceLabelEligible { get; set; }
+    public bool IndependentPairwiseLabelEligible { get; set; }
+    public string IndependentPairwiseScope => "explicit_replayed_pairs_only_uncompared_candidates_retained_not_complete_order";
     public bool UsesLearnerRankOrScore => false;
     public bool EmitsNegativeLabelsForUnavailableRoutes => false;
     public bool UsesObservedInteractionDuration => false;

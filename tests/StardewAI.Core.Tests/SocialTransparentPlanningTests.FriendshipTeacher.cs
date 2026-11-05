@@ -15,6 +15,7 @@ public sealed partial class SocialTransparentPlanningTests
         var before = File.ReadAllText(files.Snapshot);
         var result = CurrentFriendshipTeacherPreferenceBuilder.Build(files.Snapshot, files.Calibration);
         Assert.True(result.TeacherPreferenceLabelEligible, JsonSerializer.Serialize(result));
+        Assert.True(result.IndependentPairwiseLabelEligible);
         Assert.Equal(new[] { "social.gift_npc", "social.talk_npc" }, result.ConsideredOptionIds);
         Assert.Equal(result.OriginalTeacher.SelectedCandidateId, result.SelectedCandidate!.CandidateId);
         Assert.True(result.OriginalTeacher.Itinerary.TrainingLabelEligible);
@@ -52,6 +53,7 @@ public sealed partial class SocialTransparentPlanningTests
         var result = CurrentFriendshipTeacherPreferenceBuilder.Build(files.Snapshot, files.Calibration);
         Assert.True(result.OriginalTeacher.Itinerary.TrainingLabelEligible, JsonSerializer.Serialize(result));
         Assert.False(result.TeacherPreferenceLabelEligible);
+        Assert.True(result.IndependentPairwiseLabelEligible);
         Assert.Contains(result.Candidates, row => row.OptionId == "social.gift_npc" && row.ComparisonRequired);
         Assert.NotEmpty(result.UncomparedCandidateIds);
         Assert.DoesNotContain(result.PairwisePreferences, pair => result.Candidates
@@ -119,9 +121,11 @@ public sealed partial class SocialTransparentPlanningTests
         var result = CurrentFriendshipTeacherPreferenceBuilder.Build(files.Snapshot, files.Calibration);
         Assert.False(result.TeacherPreferenceLabelEligible);
         Assert.Empty(result.PairwisePreferences);
+        Assert.False(result.IndependentPairwiseLabelEligible);
         var path = Path.Combine(files.Directory, "control-only.json");
         File.WriteAllText(path, JsonSerializer.Serialize(result, JsonOptions));
         Assert.Throws<InvalidDataException>(() => FriendshipTeacherDispatchBuilder.Compile(path));
+        Assert.Throws<InvalidDataException>(() => FriendshipTeacherDispatchBuilder.Compile(path, FriendshipTeacherAdmissionMode.IndependentPairs));
     }
 
     [Theory]
@@ -175,6 +179,7 @@ public sealed partial class SocialTransparentPlanningTests
     [Theory]
     [InlineData("current_friendship_teacher_preference.v1")]
     [InlineData("current_friendship_teacher_preference.v2")]
+    [InlineData("current_friendship_teacher_preference.v3")]
     public void FriendshipTeacherRejectsLegacyArtifactsAndEditedIntakeClaims(string legacySchema)
     {
         var files = FriendshipTeacherFiles();

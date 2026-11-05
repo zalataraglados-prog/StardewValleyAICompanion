@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-06 Friendship显式pair准入（当前优先）：** #458已接受并合入`f8b93506`。v4分开记录成对监督与完整排序；缺省门不变，显式`independent_pairs`复用原Verify/编译，保留全部源和20项未比较，不改Teacher/执行器/trainer。真实公开Build/Verify同SHA`4581deab...`、8pairs，默认compile拒绝/显式原队列pending；完整Core1833通过，最终回归/CI见本PR收口。**下一步真实E副本4→5、9→10阈值及原数据/覆盖**，复用真实校准，不把旧重置夹具或当前编译当原生/训练。`9/19、9/19、9/19、7/11`及formal=false不变。[来源和接续](friendship-pairwise-admission.md)。
+
 > **2026-11-06 Friendship跨图接触预算（当前优先）：** #457已接受并合入`75e7d9a0`。新消费层已复用原完整路线/`RequiredFirstEdge`接原生接触窗口，旧候选/Teacher/编译执行不改；真实来源10项已证明、8个严格pair、Lewis3连接器/08:40，公开重建一致，20项未知/权衡保留、默认完整排序仍false。下一步显式独立pair准入与原控制编译，再真实5/10人数阈值及原数据覆盖；按原训练合同不把未知项当负例，也不将完整排序反挂每个有效pair。该模式尚未实现，不晋升`9/19、9/19、9/19、7/11`或formal=false；无游戏/worker/服务器/训练。[边界与唯一接续](friendship-route-contact-budget.md)。
 
 > **2026-11-06 Friendship完整离线源（当前优先）：** #456已CI接受并合入`c53b6a0d`。显式离线完整入口已实现，旧运行时两个构造函数及Teacher/执行链不改；实际gift410、talk43实例/42 ID/排名30，全部不可交互重复保留，完整分母true。公开Build/Verify同SHA`d2d7323b...`，53专项通过；完整回归/CI见本PR收口。**下一步仅新比较层接原完整校准跨图接触预算**，再同run原生5/10阈值及原数据覆盖；实际Lewis路线尚不能独立比较，不拿首段冒充全程。`9/19、9/19、9/19、7/11`及formal=false保持，无新游戏/worker/服务器/训练，不重采校准。[来源及明确边界](friendship-complete-intake.md)。

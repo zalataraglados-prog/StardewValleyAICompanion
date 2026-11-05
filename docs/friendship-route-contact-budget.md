@@ -1,5 +1,10 @@
 # Friendship Route Contact Budget
 
+This budget is accepted in #458 (`f8b93506`). Explicit pairwise admission is now
+implemented; follow [the current protocol and native continuation](friendship-pairwise-admission.md),
+not the historical next-step paragraph below. Full-order and native claims remain
+separate.
+
 PR #457 passed all 38 CI steps at `0a3ae191`, merged as `75e7d9a0`;
 its branch is removed. Complete offline source intake and accepted real movement
 calibration are reused, not reacquired. The sole primary is `raise_friendships`;
