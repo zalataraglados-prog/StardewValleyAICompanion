@@ -106,7 +106,8 @@ public static partial class CurrentFriendshipTeacherPreferenceBuilder
             return Blocked(report, "friendship_teacher_incomplete_denominator_or_legacy_candidate_limit");
         }
         var originalTeacher = new CurrentSocialDayTeacherLabelBuilder().Build(document.RootElement, calibration);
-        var frontier = new CurrentSocialContactFrontierProducer().Produce(document.RootElement, calibration);
+        var routeBudgets = new CurrentSocialRouteContactBudgetBuilder(document.RootElement, calibration);
+        var frontier = routeBudgets.Frontier;
         var admissionReasons = new Dictionary<string, string[]>(StringComparer.Ordinal);
         foreach (var candidate in neutral)
         {
@@ -131,7 +132,7 @@ public static partial class CurrentFriendshipTeacherPreferenceBuilder
         };
         report.Candidates = neutral.Select(candidate => Evaluate(candidate,
             bound.TryGetValue(candidate.CandidateId, out var value) ? value : null,
-            snapshot, report.Deficit, frontier, currentTime, minutes, availableEnergy, admissionReasons[candidate.CandidateId]))
+            snapshot, report.Deficit, frontier, routeBudgets, currentTime, minutes, availableEnergy, admissionReasons[candidate.CandidateId]))
             .ToArray();
         if (!originalTeacher.Itinerary.TrainingLabelEligible || originalTeacher.SelectedCandidate is null)
             return Blocked(report, report.OriginalTeacher.BlockingReasons.DefaultIfEmpty(
@@ -172,8 +173,8 @@ public static partial class CurrentFriendshipTeacherPreferenceBuilder
         var raw = CurrentTeacherFrontierSupport.Read<JsonElement>(preferencePath, "Friendship Teacher preference");
         var stored = raw.Deserialize<CurrentFriendshipTeacherPreference>(JsonDefaults.Options) ??
             throw new InvalidDataException("Friendship Teacher preference is null.");
-        if (stored.SchemaVersion != "current_friendship_teacher_preference.v2")
-            throw new InvalidDataException("Rebuild the friendship preference from its sources using the complete offline intake.");
+        if (stored.SchemaVersion != "current_friendship_teacher_preference.v3")
+            throw new InvalidDataException("Rebuild the friendship preference from its sources using the complete contact-budget intake.");
         var rebuilt = BuildCore(stored.SnapshotPath, stored.CalibrationPath);
         if (!JsonNode.DeepEquals(JsonNode.Parse(raw.GetRawText()), JsonSerializer.SerializeToNode(rebuilt, JsonDefaults.Options)))
             throw new InvalidDataException("Friendship Teacher preference differs from original sources and comparison.");

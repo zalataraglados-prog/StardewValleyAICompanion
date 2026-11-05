@@ -95,6 +95,7 @@
     <Compile Include="SocialTransparentPlanningTests.RemoteContinuation.cs" />
     <Compile Include="SocialTransparentPlanningTests.CompileChain.cs" />
     <Compile Include="SocialTransparentPlanningTests.FriendshipTeacher.cs" />
+    <Compile Include="SocialTransparentPlanningTests.FriendshipRouteBudget.cs" />
     <Compile Include="SkillExperienceProjectionReaderTests.cs" />
     <Compile Include="CurrentSkillTeacherComparisonTests.cs" />
     <Compile Include="CurrentSkillLocalTimeAdmissionTests.cs" />

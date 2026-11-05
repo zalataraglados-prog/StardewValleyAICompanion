@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-11-06 Friendship跨图完整接触预算
+
+- #457经CI `42125618154`全部38步接受，合入`75e7d9a0`、分支清理；完整候选源与真实校准不重采。唯一primary仍`raise_friendships`，`9/19、9/19、9/19、7/11`及formal=false保持。
+- 新只读消费端复用原`RequiredFirstEdge`路线证明/接触窗口，绑定实际首段、完整尾程、原生时间窗与预算；每实例加载一次context并按完整请求缓存。原远端即时站位留空/一次连接器后fresh-replan是旧设计，不改候选、Teacher、绑定、编译或执行器。v3完整重放拒绝旧版本/坏身份/伪造窗口及路线；不把首段当全程。
+- 原真实快照/校准公开Build/Verify及最终所有权修订重放均同SHA`769cf6ff...`：完整gift410/talk43不变，10项已证明，Lewis实际3连接器/08:40接触，8个严格成对证据。20项未比较仍保留（17无匹配当前目标窗口、2超日预算、George08:14与Lewis08:40为真实权衡）；默认完整排序标签仍false、无NPC/训练/覆盖晋升。最终完整Core1824/Backend597零跳过（含71专项及释放文档后的所有权断言）、242脚本AST与原EVD-338通过，最终CI见本PR收口。[真实结果与接续](friendship-route-contact-budget.md)。
+- **唯一下一步：** 新Friendship消费端增加显式“独立成对证据”准入/控制模式，复用现builder/Verify/原编译；默认完整排序拒绝和全部安全门保留，不伪造George等20项负标签。原#394训练合同/实际trainer只消费显式pairs，并不要求每个pair反向证明完整排序；不改共享trainer或Teacher政策。再E副本同run 5/10真实人数阈值、原轨迹/provider/corpus/覆盖三分区。此模式尚未实现，不冒充8个证据已可正式训练；全局Teacher责任保持。无新游戏/worker/API/服务器/模型训练/清理，不提交原始数据。
+
 ## 2026-11-06 Friendship全量离线源接续
 
 - #456经CI `42122800708`全部38步接受，合入`c53b6a0d`、分支清理；真实移动校准不重采。唯一primary仍`raise_friendships`，整项`9/19、9/19、9/19、7/11 roots`及formal=false不变。

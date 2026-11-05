@@ -6,7 +6,7 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public sealed class CurrentFriendshipTeacherPreference
 {
-    public string SchemaVersion { get; set; } = "current_friendship_teacher_preference.v2";
+    public string SchemaVersion { get; set; } = "current_friendship_teacher_preference.v3";
     public string Status { get; set; } = "blocked";
     public string SnapshotPath { get; set; } = string.Empty;
     public string SnapshotSha256 { get; set; } = string.Empty;
@@ -88,4 +88,5 @@ public sealed class CurrentFriendshipTeacherCandidate
     public int? GiftSlotIndex { get; set; }
     public string GiftNormalLimitEffect { get; set; } = string.Empty;
     public string OpportunityId { get; set; } = string.Empty;
+    public CurrentSocialRouteContactBudget? RouteContactBudget { get; set; }
 }

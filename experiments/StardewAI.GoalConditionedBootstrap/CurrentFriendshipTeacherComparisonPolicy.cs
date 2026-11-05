@@ -52,6 +52,9 @@ public static class CurrentFriendshipTeacherComparisonPolicy
         row.ExpectedFriendshipPointsAfter > row.FriendshipPointsBefore && row.ExpectedFriendshipPointsAfter <= 999999 &&
         row.UsefulFriendshipDelta == Math.Min(1975, row.ExpectedFriendshipPointsAfter) - row.FriendshipPointsBefore &&
         row.ExpectedNewQualifiers == (row.ExpectedFriendshipPointsAfter >= 1975 ? 1 : 0) &&
+        (row.Kind != "route_connector_tile" || row.RouteContactBudget is { FullContactBudgetVerified: true } budget &&
+            budget.CandidateId == row.CandidateId && budget.OpportunityId == row.OpportunityId &&
+            budget.TimingEvidenceId == row.TimingEvidenceId && budget.ContactWindow!.EarliestInteractionTime == row.ContactBudgetArrivalTime) &&
         row.CompiledMinutes > 0 && row.EnergyCost >= 0 &&
         row.ContactBudgetArrivalTime >= 600 && row.ContactBudgetArrivalTime < 2600 &&
         row.ContactBudgetArrivalTime % 100 < 60;
