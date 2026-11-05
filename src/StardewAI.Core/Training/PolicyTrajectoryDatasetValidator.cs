@@ -151,7 +151,7 @@ internal sealed class PolicyTrajectoryDatasetValidator
         PolicyDecisionTrajectoryEnvelope row,
         PolicyTrajectoryTeacherSupervision teacher)
     {
-        var hashes = new[]
+        var collectionHashes = new[]
         {
             teacher.PreferenceArtifactSha256,
             teacher.RequirementInventorySha256,
@@ -162,13 +162,15 @@ internal sealed class PolicyTrajectoryDatasetValidator
             teacher.ExecutionReceiptSha256,
             teacher.AfterSnapshotSha256
         };
-        return (teacher.SchemaVersion is "policy_teacher_supervision.v1" or "policy_teacher_supervision.v2") &&
+        var sourceShapeValid = teacher.SchemaVersion == PolicyTeacherSupervisionSchemas.Skills
+            ? ValidSkillSourceShape(teacher)
+            : (teacher.SchemaVersion is "policy_teacher_supervision.v1" or "policy_teacher_supervision.v2") && collectionHashes.All(IsSha256);
+        return sourceShapeValid &&
             string.Equals(
                 teacher.ProvenanceClass,
                 "independent_deterministic_teacher_preference",
                 StringComparison.Ordinal) &&
             !string.IsNullOrWhiteSpace(teacher.SelectionPolicyId) &&
-            hashes.All(IsSha256) &&
             string.Equals(
                 teacher.SelectedCandidateId,
                 row.Selection.CandidateId,
@@ -194,6 +196,18 @@ internal sealed class PolicyTrajectoryDatasetValidator
                     value.AfterValue,
                     StringComparison.Ordinal));
     }
+
+    private static bool ValidSkillSourceShape(PolicyTrajectoryTeacherSupervision teacher) =>
+        teacher.Sources is { } sources && !string.IsNullOrWhiteSpace(sources.SkillNativeThresholdReceiptPath) &&
+        IsSha256(teacher.SkillNativeThresholdReceiptSha256!) &&
+        new[] { teacher.PreferenceArtifactSha256, teacher.BeforeSnapshotSha256,
+            teacher.ExecutionReceiptSha256, teacher.AfterSnapshotSha256 }.All(IsSha256) &&
+        !string.IsNullOrWhiteSpace(sources.PreferencePath) && !string.IsNullOrWhiteSpace(sources.BeforeSnapshotPath) &&
+        !string.IsNullOrWhiteSpace(sources.ExecutionReceiptPath) && !string.IsNullOrWhiteSpace(sources.AfterSnapshotPath) &&
+        teacher.RequirementInventorySha256 == string.Empty && teacher.AcquisitionLoweringSha256 == string.Empty &&
+        teacher.CommunityCenterDenominatorSha256 == string.Empty && teacher.SourceRankingSha256 == string.Empty &&
+        sources.RequirementInventoryPath == string.Empty && sources.AcquisitionLoweringPath == string.Empty &&
+        sources.RankingPath == string.Empty && sources.TargetDateIntentsPath == string.Empty;
 
     private static bool ValidTeacherQueueEvidence(
         PolicyTrajectoryTeacherSupervision teacher)

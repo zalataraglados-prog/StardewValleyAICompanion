@@ -256,6 +256,103 @@ method/prerequisite responsibility, then collect only missing policy partitions.
 Do not repeat successful terminal actions because a wrapper changed, reopen old
 accepted roots, or add full-new-save acquisition as a local source prerequisite.
 
+## Original Policy Teacher Rows
+
+PR #449 accepted step 4 at head `18d3ff90`, CI `42076554119`, merge `1681ad9b`.
+This slice implements the Teacher-row portion of step 5 without recollecting
+either successful terminal action. The original `policy_decision_trajectory.v2`,
+feature projector, trajectory builder, dataset, trainer and date partitions are
+reused. The sampler now records `skills_teacher_row_path` after native evidence.
+Its ordinary loop feedback JSONL is not an independently supervised Teacher row.
+
+The original supervision guards (`e5e95819`, November 3) were inspected along
+with the retained session's matching commit/progress context. Their independent
+source replay requirement remains intact. Collection v1/v2 still require all
+original eight hashes; no CC hash is invented for Skills. A named supervision
+source subtype, `policy_teacher_supervision.skills.v1`, requires the actual native
+Skills receipt and four common source hashes, and rejects borrowed collection
+fields. New optional properties are omitted when null, preserving old serialized
+rows. This is not a second trajectory format, dataset builder or training loop.
+
+The exact `(teacher_id, teacher_version)` replay registry routes only explicitly
+registered Collection and Skills providers. No unknown-provider fallback or
+caller-selected label generation is allowed. The original CLI dataset/model
+entry points and Backend use the same registry; single-provider injection still
+works. Only explicitly compared eligible candidates get labels. The row rebuilds
+the complete neutralized source candidate context, including uncompared choices,
+and rejects a self-consistently rehashed but reduced denominator. Existing
+backfilled-return handling in dataset admission is unchanged; the public raw-row
+Verify compares the complete unbackfilled source row, including returns and
+unknown fields.
+
+`build-skill-teacher-row --native-receipt ABS --execution-receipt ABS
+--trajectory-id ID --output NEW.json` consumes the unchanged step-4 receipt and
+original complete queue receipt. It reuses the existing native reader, aggregate
+queue validator and episode/context builders, and also joins the exact individual
+execution path, nonce and observed facts. `verify-skill-teacher-row --row ABS
+--output NEW.json` independently replays all sources. Internal verified-source
+context is reused within each rebuild, not reread through a second verifier.
+
+The generic feature projector intentionally has a compact base view. Inspection
+of the actual first rows found total level but no individual skill XP in that
+view. Before publication, an explicit snapshot-aware Skills projection was
+added, shared by this row builder, Backend learned ranking and loop feedback.
+It validates the original snapshot/deficit and exposes all five base/effective
+levels, XP, remaining XP, explicit caps and 15/25 base-level deficits. Luck is
+excluded; an at-cap next-level field is omitted, not invented. Unknown or
+cross-state Skills input rejects. Other goals and the original projector retain
+their old feature bytes. The existing model encoder already fits per-feature
+means/scales; its normalization was not rewritten. The broader L3 all-goal input
+integration remains explicit future work, not a rewrite of accepted old rows.
+
+Two final real source rows and public replays in the same outside-Git directory:
+
+- `teacher-level15-b.json`, SHA
+  `bbc5d3da3ace21c202a51a3a4343433ec8eb591c5be8c7ee8dbb4b9f952b38a3`.
+- `teacher-level25-b.json`, SHA
+  `ae0d1b9e363246618a789b240199b998e124f5e21e06413cdaf2acf6d0b40254`.
+
+`scripts/Test-SkillTeacherRow.ps1` independently verifies those two rows and runs
+the original PolicyDataset CLI with the accepted Collection row from
+`I:\StardewAITraining\master-angler-terminals-20261105\train\teacher-row.jsonl`.
+Final result in `teacher-mixed-probe-c`: 3 accepted, 0 rejected, 3 train/0 validation/
+0 test; manifest SHA `54997c147051bff2405a4d76f660c61937e2b99c38386c5bf90c8ba1ed175642`.
+Nine public outcome/source/provider/partition/schema/return/unknown-claim and
+overwrite probes reject without output or input mutation. Initial probe `a`
+correctly rejected the old loop's selected-only feedback; it is retained as a
+diagnostic, not repaired by relaxing admission or counted as an accepted row.
+The initial `teacher-level*-a`/probe-b artifacts predate the per-skill input
+addition and are superseded, not native evidence failures. The b rows were
+rebuilt from the very same accepted native receipts, without new game actions.
+The Backend's unchanged test also caught a new registry error-classification
+regression: unknown identity must retain `teacher_supervision_identity_mismatch`,
+not become `teacher_replay_verifier_unavailable`. The new router was corrected;
+the old assertion and all old source guards stayed in place.
+
+All 30 new checks, full game-free Core 1664/1664 and Backend 597/597 pass,
+zero skipped. Dataset/model CLIs build with zero warnings/errors; original
+fishing mapping/preflight, script AST and EVD-338 checkpoint checks pass.
+The mixed replay-port unit test also exercises the original trainer with a
+tiny synthetic fixture; it is not product model training or native coverage.
+
+These are two genuine supervised Skills source rows, not a criterion corpus or
+coverage promotion. Both remain the original day-118 train group. Native receipt
+`teacher_dataset_row_verified=false` is an immutable step-4 scope declaration,
+not rewritten retroactively; the downstream row has its own original replay.
+No game, worker/API, server or product model training was started in this slice;
+local-data and all raw/derived data remain outside Git. Publication is governed
+by this slice's final CI and closing comment.
+
+**Next:** finish step 5's typed criterion corpus and original coverage/source
+registration, assess the original local method responsibility, then collect only
+missing policy partitions. Reuse the existing per-criterion evidence path (as in
+the Money threshold adapter): 15 and 25 must each retain their own comparison /
+native partition intersection; do not credit 25 from a 15-only terminal or union
+unrelated partitions at method level. Preserve the rows and source closures;
+do not restart the native tests or claim full Skills readiness. Frozen union
+remains 7/19 executable, 7/19 split-complete, 7/19 ready and 6/11 roots;
+formal=false. L2/L3/L4 responsibilities remain as defined below.
+
 ## Implementation Order
 
 1. Verify the actual E-drive game version and live decompilation of base XP

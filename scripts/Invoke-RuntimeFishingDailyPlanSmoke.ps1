@@ -938,6 +938,7 @@ try {
     $observedCatch = Read-RuntimeFishingObservedCatch -OptionId $catchExecution.option_id -Facts $catchExecution.changed_facts
     $nativeCatchReceiptPath = ""
     $skillNativeReceiptPath = ""
+    $skillTeacherRowPath = ""
     $compiledPossibleCatchIds = @()
     $compiledExpectedCatch = ""
     $compiledDistributionComplete = ""
@@ -947,6 +948,9 @@ try {
             -BootstrapDll (Join-Path $ProjectRoot "experiments\StardewAI.GoalConditionedBootstrap\bin\Release\net8.0\StardewAI.GoalConditionedBootstrap.dll") `
             -OutputRoot $runDirectory -RunId $RunId -PreferencePath $skillTeacherQueue.PreferencePath `
             -TargetScoringLevel $SkillTerminalBoundaryLevel -Step $catchExecution
+        $skillTeacherRowPath = Build-RuntimeSkillTeacherRow `
+            -BootstrapDll (Join-Path $ProjectRoot "experiments\StardewAI.GoalConditionedBootstrap\bin\Release\net8.0\StardewAI.GoalConditionedBootstrap.dll") `
+            -OutputRoot $runDirectory -RunId $RunId -NativeReceiptPath $skillNativeReceiptPath -ExecutionReceiptPath $executionPath
     }
     elseif ($isCrabPotFixture) {
         $nativeCatchReceiptPath = Build-RuntimeMasterAnglerCatchSource `
@@ -1081,6 +1085,7 @@ try {
         standalone_skill_teacher = $StandaloneSkillTeacher.IsPresent
         skill_save_boundary_path = $skillSaveBoundaryPath
         skill_native_threshold_receipt_path = $skillNativeReceiptPath
+        skills_teacher_row_path = $skillTeacherRowPath
         terminal_save_boundary_path = $terminalSaveBoundaryPath
         teacher_preference_path = if ($null -ne $teacherPreference) { $teacherPreferencePath } else { "" }
         teacher_preference_status = if ($null -ne $teacherPreference) { $teacherPreference.status } else { "not_recorded" }

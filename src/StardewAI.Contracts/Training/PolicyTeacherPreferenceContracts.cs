@@ -7,8 +7,16 @@ public static class PolicyTrainingObjectives
     public const string IndependentTeacherPairwise = "independent_teacher_pairwise.v1";
 }
 
+public static class PolicyTeacherSupervisionSchemas
+{
+    public const string Skills = "policy_teacher_supervision.skills.v1";
+}
+
 public sealed class PolicyTeacherEvidenceSources
 {
+    [JsonPropertyName("skill_native_threshold_receipt_path")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? SkillNativeThresholdReceiptPath { get; set; }
     [JsonPropertyName("strategy_ledger_path")]
     public string StrategyLedgerPath { get; set; } = string.Empty;
     [JsonPropertyName("requirement_inventory_path")]

@@ -16,8 +16,13 @@ public static partial class CurrentSkillTeacherPreferenceBuilder
     private const string DirectionId = "raise_skill_levels";
     private const string TeacherId = "deterministic_teacher.current_skill_xp.v1";
 
-    public static CurrentSkillTeacherPreference Build(string snapshotPath, string? strategyLedgerPath = null)
+    public static CurrentSkillTeacherPreference Build(string snapshotPath, string? strategyLedgerPath = null) =>
+        BuildCore(snapshotPath, strategyLedgerPath, out _);
+
+    private static CurrentSkillTeacherPreference BuildCore(string snapshotPath, string? strategyLedgerPath,
+        out PolicyEventCandidatePrediction[] decisionCandidates)
     {
+        decisionCandidates = Array.Empty<PolicyEventCandidatePrediction>();
         snapshotPath = Path.GetFullPath(snapshotPath);
         var snapshot = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(snapshotPath, "Skill Teacher snapshot");
         var report = new CurrentSkillTeacherPreference
@@ -91,6 +96,8 @@ public static partial class CurrentSkillTeacherPreferenceBuilder
         if (binding.BindingStatus != "ready")
             return Blocked(report, binding.BlockReasons);
         var bound = binding.BoundCandidates.ToDictionary(candidate => candidate.CandidateId, StringComparer.Ordinal);
+        decisionCandidates = neutral.Select(candidate => bound.TryGetValue(candidate.CandidateId, out var value)
+            ? value : candidate).ToArray();
         report.Candidates = neutral.Select(candidate => Evaluate(candidate,
             bound.TryGetValue(candidate.CandidateId, out var value) ? value : null,
             report.Deficit, snapshot, ledger, minutes, (int)Math.Floor(energy)))
@@ -130,12 +137,15 @@ public static partial class CurrentSkillTeacherPreferenceBuilder
         return report;
     }
 
-    public static CurrentSkillTeacherPreference Verify(string preferencePath)
+    public static CurrentSkillTeacherPreference Verify(string preferencePath) => Verify(preferencePath, out _);
+
+    internal static CurrentSkillTeacherPreference Verify(string preferencePath,
+        out PolicyEventCandidatePrediction[] decisionCandidates)
     {
         var raw = CurrentTeacherFrontierSupport.Read<JsonElement>(preferencePath, "Skill Teacher preference");
         var stored = raw.Deserialize<CurrentSkillTeacherPreference>(JsonDefaults.Options) ??
             throw new InvalidDataException("Skill Teacher preference is null.");
-        var rebuilt = Build(stored.SnapshotPath, stored.StrategyLedgerPath);
+        var rebuilt = BuildCore(stored.SnapshotPath, stored.StrategyLedgerPath, out decisionCandidates);
         if (!JsonNode.DeepEquals(JsonNode.Parse(raw.GetRawText()), JsonSerializer.SerializeToNode(rebuilt, JsonDefaults.Options)))
             throw new InvalidDataException("Skill Teacher preference differs from its original sources and independent comparison.");
         return rebuilt;

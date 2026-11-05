@@ -1,5 +1,14 @@
 # StardewAI 当前工作
 
+## 2026-11-06 Skills已接原Teacher轨迹及混合入库
+
+- 最终本地完整Core1664/Backend597零跳过，30新检查覆盖provider路由、旧schema保护、完整分母和Skills输入；两CLI构建零警告错误，原映射/预检、AST和EVD-338通过。单测仅用微型合成夹具验证原trainer，不是产品模型训练；发布仍以本PR最终CI/收口评论为准。
+
+- #449最终头`18d3ff90`经CI `42076554119`接受，合入`1681ad9b`，本轮旧分支已清理。Step4两条真实阈值来源不重采；本轮离线重建完整候选上下文、原队列回执及同原生动作/nonce/facts，生成两条原`policy_decision_trajectory.v2`监督行，最终b版公开Verify分别同SHA`bbc5d3da...`/`ae0d1b9e...`。
+- 复用原数据集/训练器和原分区；增加显式Skills监督来源子类型与精确ID/version路由，不是假造CC哈希或另建训练格式。旧Collection八哈希、原独立重放及单provider注入语义保留，实际旧监督行与两条Skills行经同一公开PolicyDataset CLI接受`3条、0拒绝、仅train`；原loop无独立监督反馈被正确拒绝。九类公开篡改拒绝、源输入未变；无新游戏/worker/API/服务器/产品模型训练，原始数据及local-data不提交。
+- 实际核验发现通用紧凑特征只有总等级，故本新消费端补显式Skills投影，Teacher行、Backend推理及loop反馈共用五技能等级/XP/缺口/cap与15/25缺口；未知或跨前态拒绝，旧目标特征字节不变。旧泛化投影及模型标准化未重写；a版只作诊断，同一native来源离线重建b版。完整回归以最终记录为准，旧Backend身份不匹配断言曾抓到新路由分类回退，现仅修新路由，保留旧测试。
+- 本切片最终回归/CI以PR收口评论为准；详细共享边界与来源见[Skills原Policy行](skills-local-intake.md#original-policy-teacher-rows)。**唯一下一步仍同Step5：** typed criterion corpus、原coverage/source登记与原局部方法责任，之后只补真正缺失分区。两条仍是day118/train，不晋升整项；冻结`7/19 executable、7/19 split-complete、7/19 CoverageGateReady、6/11 roots`及formal=false不变，不把旧Step4的false标记改写成更广声明。
+
 ## 2026-11-06 Skills原生15/25阈值来源已贯通
 
 - #448最终头`91ee64bf`经CI `42067595027`接受并合入`99d352ca`、对应分支已清理；下方Step3待CI已完成，不再重做。唯一primary仍`raise_skill_levels`，冻结并集`7/19 executable、7/19 split-complete、7/19 CoverageGateReady、6/11 roots`与formal=false不变。

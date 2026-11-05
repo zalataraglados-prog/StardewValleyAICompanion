@@ -296,7 +296,7 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
                 : string.Empty;
     }
 
-    private static PlanExecutionEpisodeEnvelope BuildAggregateReceipt(
+    internal static PlanExecutionEpisodeEnvelope BuildAggregateReceipt(
         QueueExecutionReceiptEnvelope receipt)
     {
         var steps = receipt.StepResults;
@@ -376,7 +376,7 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
         return clone;
     }
 
-    private static PolicyTrajectoryContext BuildContext(SnapshotEnvelope snapshot)
+    internal static PolicyTrajectoryContext BuildContext(SnapshotEnvelope snapshot)
     {
         var saveId = snapshot.SaveId.Value;
         return new PolicyTrajectoryContext

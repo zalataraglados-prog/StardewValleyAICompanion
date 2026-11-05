@@ -1,5 +1,6 @@
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
 using StardewAI.Core.Training;
 using static StardewAI.GoalConditionedBootstrap.NativeExecutionSourceSupport;
@@ -7,13 +8,16 @@ using static StardewAI.GoalConditionedBootstrap.NativeExecutionSourceSupport;
 namespace StardewAI.GoalConditionedBootstrap;
 
 public sealed record SkillTeacherDispatch(CurrentSkillTeacherPreference Preference,
-    SmallModelPlanEnvelope Plan, ActionQueueEnvelope Queue);
+    SmallModelPlanEnvelope Plan, ActionQueueEnvelope Queue)
+{
+    public PolicyEventCandidatePrediction[] DecisionCandidates { get; init; } = Array.Empty<PolicyEventCandidatePrediction>();
+}
 
 public static class SkillTeacherDispatchBuilder
 {
     public static SkillTeacherDispatch Compile(string preferencePath)
     {
-        var preference = CurrentSkillTeacherPreferenceBuilder.Verify(RequiredFile(preferencePath));
+        var preference = CurrentSkillTeacherPreferenceBuilder.Verify(RequiredFile(preferencePath), out var candidates);
         if (!preference.TeacherPreferenceLabelEligible || preference.SelectedCandidate is null ||
             preference.FormalProductTrainingAuthorized || preference.NativeOutcomeVerified)
             throw new InvalidDataException("Skills dispatch requires a fresh independent comparison, never an outcome or training claim.");
@@ -31,6 +35,6 @@ public static class SkillTeacherDispatchBuilder
         if (plan.Steps.Length == 0 || queue.Items.Length == 0 || queue.Status != "pending" ||
             queue.Items.Any(item => item.Status != "pending") || reasons.Length > 0)
             throw new InvalidDataException("Original Skills compiler rejected dispatch: " + string.Join(",", reasons));
-        return new(preference, plan, queue);
+        return new(preference, plan, queue) { DecisionCandidates = candidates };
     }
 }

@@ -14,7 +14,7 @@ static void Run(string[] args)
 {
     var options = PolicyModelOptions.Parse(args);
     var result = new StructuredPolicyTrainer(new StructuredPolicyCheckpointStore(),
-        new StardewAI.GoalConditionedBootstrap.CollectionTeacherSupervisionReplayVerifier()).Train(
+        StardewAI.GoalConditionedBootstrap.KnownTeacherSupervisionReplayVerifiers.Create()).Train(
         options.DatasetManifestPath,
         options.CheckpointPath,
         options.Hyperparameters,

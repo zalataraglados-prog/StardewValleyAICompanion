@@ -7,7 +7,7 @@ using StardewAI.Contracts.WorldModel;
 
 namespace StardewAI.Core.Training;
 
-public sealed class PolicyStateFeatureProjector
+public sealed partial class PolicyStateFeatureProjector
 {
     public FeatureVector Project(WorldModelEnvelope worldModel)
     {
