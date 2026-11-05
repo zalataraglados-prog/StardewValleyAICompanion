@@ -1,5 +1,9 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-05 当前唯一primary：`complete_master_angler`。** Rusty Key收口已汇报；按R2比较实际局部缺口后接回Master Angler，不执行旧R1第10项/完整Day-0硬前置。原能力证书独立重建同SHA，当前依赖图上的72/14前置proof仍ready；真实Teacher/native来源仍须核对，旧self-test请求不冒充production。当前接受面板不变，formal=false。范围、选择依据和退出条件见第6节新增R2接续及[本项合同](master-angler-local-native-join.md)。
+
+> **同项实现进展：** 原收集终端回执的7类异常后态误收已先红后绿修正，复用前沿原72鱼种读取器并检查单调性；有效归因和原执行层不变。Core1379、Backend565、聚焦9及原监督CLI通过，待该头提交/CI。未增加原生捕获/分区/ready计数；下一步仍复用既有collection Teacher/receipt/replayer做真实来源连接，而非再造执行器或重开旧门。
+
 > **2026-11-05 最终事实：** Rusty Key局部收口已由#437最终CI`41985920364`验证并合入`main@67f82eb6`，相关代码分支已清理。面板`6/19 executable、7/19 split-complete、6/19 CoverageGateReady、5/11 root ready`现为已接受冻结并集，不再待本切片CI。下方本轮“待发布/待CI”保留为历史，不得触发重复采证、重新合并或反向新增门槛。按用户要求在本项结束后汇报；下一primary依R2复核后确定，正式训练与完整Teacher21分仍未完成。[验收](rusty-key-local-acceptance.md)。
 
 > **2026-11-05 Rusty Key局部验收通过，发布以本切片最终CI为准（本条优先）：** #436已合并`3ddbfe17`。原生三分区独立比较/连续捐赠到钥匙连接已齐，原公开覆盖重建为本项`coverage_ready=true`且无局部open work；方法图按已批准rolling递推同步，不宣称全局最优或新档零到60。Core1370、完整阈值/资源87项通过，原生进程/端口回收、源档保持。与原冻结集合并集后为`6/19、7/19、6/19、5/11`；本项单来源机器报告的ready count=1不是全局退回1/19。正式训练仍false，完整Teacher21分未完成。详见[局部验收与全局责任](rusty-key-local-acceptance.md)和当前工作；最终提交/CI/合并后按用户要求汇报，不自动切root。下方本项未完/冻结旧数字均为历史。
@@ -718,6 +722,21 @@ Money 自身最终完成，至少要同时满足：
 **2026-11-03 范围修订：** 排第 11 的是完整 Money root/18 个 production cell，不是禁止其他 root 使用已有购种、种植、出售、预留及有限现金生产支撑。消费者只为其真实价格/材料缺口绑定可验证的有界段；不先要求百万收入，也不把有界段直接冒充完整 Money coverage。
 
 ## 6. 下一项如何选择
+
+### 2026-11-05 R2局部成本复核与当前选择
+
+本轮从`main@6b72ef84`复核，不把下方历史R1全序当有效指令。当前只选择一个primary：**Master Angler**，不是新增并行root或宣称它已完成。
+
+| 未闭合root | 本轮已确认的局部增量 | 选择判断 |
+| --- | --- | --- |
+| `complete_master_angler` | 现有72鱼种/14前置审计、局部completion和dependency producer均存在；原生姜岛证书独立重建同SHA`6031276d...`，当前图proof仍ready。现有coverage source adapter可复用，但找到的旧请求是self-test fixture；真实比较/原生来源需独立核实和接线。 | 当前primary；这是已确认的前置复用优势，不是全模块精确工时或无需新证据的保证。 |
+| `raise_skill_levels` | 五类XP生产动作已存在，尚无本root typed Teacher source adapter；需统一base XP缺口、实际生产成本及等级终态来源。 | 保留；必要XP子合同仍可被当前消费者复用，不要求完整Skills root先通过。 |
+| `raise_friendships` | 原社交动作、当前日程和未来接触消费者存在；未来日期玩家路线/门/末端接近/交互资格证据生产者及root source仍缺。 | 保留；未因动作存在直接判root ready。 |
+| `marriage_and_house_upgrade` | 仍需伴侣、采购、提议/婚礼与两次房屋升级的组合来源；共享Friendship能力按实际需求复用。 | 不抢在基础社交证据前另造实现。 |
+| `complete_museum_collection` | 可复用Rusty获取/保管/捐赠；95异构分母中的artifact-spot概率/重试生产者及独立来源仍需闭合。 | 不把95件完成反挂到已接受Rusty。 |
+| `earn_money` | 保留六阈值三分区18/18和既有crop/continuation问题，不能用局部收入替代最终门。 | 最终经济整合仍保留，不成为当前共同硬前置。 |
+
+重建工件位于`I:\StardewAITraining\master-angler-local-20261105\reassessment`，不入Git；当前proof SHA`5d78acf764e9c6e16e14c4bca91a1a07623e2d1ac0df25c595b0eb680fe7edbc`。这只是已接受局部前置的当前图重绑，不是新增捕获、三分区完成或正式训练。下一实现先核实原生来源和独立Teacher比较，不重开原生登岛、Gourmand或用户目视PASS，不修改评分/鱼种分母，不恢复失效全序；若实际来源暴露共享正确性缺陷，在同primary内修正。
 
 <!-- audit_invalidation: scope=r1_section; invalidated_at=2026-11-03T16:30:45+08:00; annotated_at=2026-11-03T18:52:51+08:00; superseded_by=PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md; historical_only=true -->
 > **局部失效说明：** 本段固定全序以全局证明错误倒挂单个 Master Angler root 为成本依据，已失效。R2 将证据分为 L1 criterion-local、L2 共享证书、L3 全局集成、L4 新档评测；Gourmand 只是核桃 OR 方案。这里的历史任务条目不能代替顶部 18:30 当前 primary 决定。

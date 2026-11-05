@@ -58,7 +58,7 @@ public static partial class CurrentMasterAnglerTeacherFrontierBuilder
         }
     }
 
-    private static Dictionary<string, bool> ReadExactProgress(
+    internal static Dictionary<string, bool> ReadExactProgress(
         SnapshotEnvelope snapshot,
         GoalRequirementSet inventory)
     {

@@ -11,7 +11,8 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
         CurrentStageOneCollectionTeacherPreferenceLabel preference,
         QueueExecutionReceiptEnvelope? receipt,
         SnapshotEnvelope before,
-        SnapshotEnvelope after)
+        SnapshotEnvelope after,
+        GoalRequirementSet? masterAnglerInventory)
     {
         var selected = preference.SelectedCandidate!;
         var queueItems = preference.CompiledQueue!.Items;
@@ -21,7 +22,8 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
                 queueItems,
                 receipt,
                 before,
-                after))
+                after,
+                masterAnglerInventory))
             .ToArray();
     }
 
@@ -30,7 +32,8 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
         ActionQueueItem[] queueItems,
         QueueExecutionReceiptEnvelope? receipt,
         SnapshotEnvelope before,
-        SnapshotEnvelope after)
+        SnapshotEnvelope after,
+        GoalRequirementSet? masterAnglerInventory)
     {
         return credit.BindingKind switch
         {
@@ -61,15 +64,11 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
                     CommunityCenterDonationQueueItem(credit, queueItems),
                     before,
                     after),
-            "authoritative_window_terminal_attempt" => VerifyCollectionBoolean(
+            "authoritative_window_terminal_attempt" => VerifyMasterAnglerCollectionTransition(
                 credit,
                 before,
                 after,
-                "fish_collection_progress",
-                "items",
-                "qualified_item_id",
-                "caught",
-                "native_collection_false_to_true"),
+                masterAnglerInventory),
             "authoritative_window_rolling_route_step" => VerifyRouteStep(
                 credit,
                 queueItems.LastOrDefault(item => !string.IsNullOrWhiteSpace(
