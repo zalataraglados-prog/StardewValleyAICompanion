@@ -49,6 +49,7 @@ public sealed partial class ModEntry
         public bool CloseClicked { get; set; }
         public PendingExecution? PickupDialoguePending { get; set; }
         public bool PickupDialogueAcknowledged { get; set; }
+        public string PickupDialogueKind { get; set; } = string.Empty;
         public List<GeodeAcceptedOutput> Accepted { get; }
         public Dictionary<string, int> InventoryBefore { get; }
         public HashSet<string> MailBefore { get; }

@@ -418,3 +418,25 @@ Nineteen no-game overnight cases and the original 30 evening/20 custody checks
 pass. Native execution is pending; raw outputs stay under
 `I:\StardewAITraining\custody-overnight-20261105`. This is not a new-save sixty-item
 trajectory, preference label, complete criterion or training authorization.
+
+### First Artifact Pickup Boundary
+
+`cust-night-a3953fbc-1105` passed the source-rebuilt control, real atomic commit,
+dispatch and binding, then performed one native geode action. Money changed
+1000 -> 975 and cracked count 42 -> 43, but the immutable result is blocked:
+the first `(O)100` artifact triggered a pickup DialogueBox that the existing
+geode-only tutorial handler did not recognize. No verified acquisition,
+settlement, custody or overnight success is inferred, and the action was not
+retried. Raw failure and request/response artifacts are retained in that run.
+
+The actual E game DLL was freshly decompiled (SHA-256
+`7f1e5b8e58d2758b78570ba771bbeb03d33522f62188bf6c32edf0cf626deaee`).
+`Farmer.foundArtifact` invokes `holdUpItemThenMessage` for the first archaeology
+entry; `Object.checkForSpecialItemHoldUpMeessage` supplies the localized artifact
+message. The same pickup handler now requires the original zero archaeology
+count, a real accepted Arch output, exact full inventory/currency/stats/mail
+receipt, the native message and a non-question/non-event DialogueBox before
+using the original native-click dialogue engine. First-geode handling remains;
+arbitrary/choice dialogues, direct mail writes and force-closing remain forbidden.
+This fix still needs a fresh same-source native run; a successful build alone
+does not upgrade the failed observation.

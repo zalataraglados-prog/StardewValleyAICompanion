@@ -286,7 +286,9 @@ public sealed partial class ModEntry
             "one_geode_money_stats_mail_team_and_output_conservation_verified" }
             : reasons.Length == 0 ? new[] { "geode_processing_post_state_mismatch" } : reasons;
         if (verified && active.PickupDialogueAcknowledged)
-            verification = verification.Append("native_geode_found_tutorial_acknowledged").ToArray();
+            verification = verification.Append(active.PickupDialogueKind == "artifact_found"
+                ? "native_artifact_found_tutorial_acknowledged"
+                : "native_geode_found_tutorial_acknowledged").ToArray();
         active.Pending.Completion.SetResult(new TrainingExecutionResult
         {
             RunId = request.RunId, QueueId = request.QueueId, QueueItemId = request.QueueItemId,

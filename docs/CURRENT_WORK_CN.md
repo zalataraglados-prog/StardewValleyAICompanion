@@ -2,6 +2,8 @@
 
 ## 2026-11-03 当前 Rusty Key 切片与接续
 
+- **2026-11-05 首次古物提示原生反例：** `a3953fbc`的完整CI已通过；新运行已走过控制/提交/派发/绑定并实际开球，但首次`(O)100`古物举物提示令旧晶球教程处理器超时，结果blocked（1000→975、42→43），不得据此结算或声称跨夜成功，原动作未重发。现从E实际DLL重新反编译核对，在原提示处理器按零考古计数、真实接受的Arch产物、完整守恒回执和原生精确本地化文本识别，复用原native-click对话引擎；不增执行器或跳任意对话。Harness构建零警告错误，晶球聚焦11项通过；新固定源码原生验证待完成。源码/失败数据索引见[古物边界](museum-output-custody.md#first-artifact-pickup-boundary)。唯一任务和整项汇报条件不变。
+
 - **2026-11-05 执行绑定范围接续：** `cust-night-bccfaf39-1105`实际原子提交和派发编译已通过，但绑定层还要求未选替代路线的完整比较，获取动作仍为零。现接完这一遗漏：只消费独立来源重建的所选控制准入/精确scope，保留所有所选路线与资源检查；比较不完整时绑定的`selected_from_complete_pareto_frontier`仍为false，落盘绑定再消费必须精确重建，不接受标志绕过。旧泛型/Teacher门不改。保留该次原始提交、队列和14轴输入的完整公开绑定CLI只读重放已ready，无Teacher/训练授权；59项rolling、23项控制（含篡改比较位拒绝）、20项support和30项完整阈值回归通过，Release零警告错误。前两次原生入口失败数据均保留，无获取成功主张；下一步固定新源码后验证真实获取产物跨夜保管，再接原定criterion分区/第三年前终态，不重开旧钥匙/目视门、不抬计数、不提交`local-data`。
 
 - **2026-11-05 跨夜入口暴露获取准入范围错误：** `cust-night-d2d22b3e-1105`在开晶球前零动作停止；实时目标是`(O)100`，已解析晶球路线却被另一条占位`native_object_artifact_spot_chance`的比较不完整挡住。原比较门不删：generic/完整阈值/Teacher仍严格要求全比较；仅原认证控制来源复用共享所选路线安全准入，并显式保留`control_only_incomplete_comparison_scopes`、完整前沿false及Teacher false，未知所选路线/他目标资源仍拒绝。提交重建沿原精确claim验证消费独立重建的控制准入，support控制同用，不增执行器或账本。59项rolling、22项控制链通过；同一失败快照的公开构建/准备只读重放已选合法晶球终端，未改变预测目标或伪造原生成功。真实跨夜仍待新固定源码运行，缺失的artifact-spot日历解析仍是显式缺口。详见[控制范围](control-execution-admission.md#partial-comparison-scope)。
