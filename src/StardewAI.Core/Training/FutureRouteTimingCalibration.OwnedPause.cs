@@ -5,6 +5,10 @@ namespace StardewAI.Core.Training
 {
     public sealed partial class FutureRouteTimingCalibrationLoader
     {
+        public static bool HasVerifiedExecutorOwnedIdlePause(JsonElement movementTimingContextField) =>
+            TryUnwrapField(movementTimingContextField, out var movement) &&
+            movement.ValueKind == JsonValueKind.Object && HasExecutorOwnedIdlePauseRecovery(movement);
+
         private static bool HasExecutorOwnedIdlePauseRecovery(JsonElement movement)
         {
             if (!movement.TryGetProperty("executor_owned_idle_pause", out var pause) ||

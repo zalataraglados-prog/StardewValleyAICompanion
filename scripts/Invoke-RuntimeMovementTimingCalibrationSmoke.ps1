@@ -7,7 +7,8 @@ param(
     [int]$StartupTimeoutSeconds = 180,
     [double]$NativeMillisecondsPerGameMinute = 700,
     [double]$ConservativeGameMinutesPerTile = 1.0,
-    [int]$ConservativeConnectorGameMinutes = 2
+    [int]$ConservativeConnectorGameMinutes = 2,
+    [switch]$NoBuild
 )
 
 $ErrorActionPreference = "Stop"
@@ -142,16 +143,27 @@ $routeSnapshotPath = Join-Path $runDirectory "initial-social-future-snapshot.jso
 $resultsPath = Join-Path $runDirectory "movement-results.json"
 $partialConnectorResultsPath = Join-Path $runDirectory "connector-results.partial.json"
 $summaryPath = Join-Path $runDirectory "summary.json"
+$pauseAuditPath = Join-Path $runDirectory "owned-planning-pause-audit.json"
+$bootstrapProject = Join-Path $ProjectRoot "experiments\StardewAI.GoalConditionedBootstrap\StardewAI.GoalConditionedBootstrap.csproj"
+$bootstrapDll = Join-Path $ProjectRoot "experiments\StardewAI.GoalConditionedBootstrap\bin\Release\net8.0\StardewAI.GoalConditionedBootstrap.dll"
 $sourceFingerprintBefore = Get-SaveFingerprint -Path $sourceSavePath
 
 New-Item -ItemType Directory -Force -Path $cloneRoot | Out-Null
 New-Item -ItemType Directory -Force -Path $smokeModsPath | Out-Null
 Copy-Item -LiteralPath $sourceSavePath -Destination $clonePath -Recurse
 
+if (-not $NoBuild) {
+    & dotnet build $bootstrapProject -c Release "-p:GamePath=$gameDirectory" -m:1 --disable-build-servers -p:UseSharedCompilation=false --nologo | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "Calibration preflight consumer build failed." }
+}
+if (-not (Test-Path -LiteralPath $bootstrapDll -PathType Leaf)) {
+    throw "Calibration preflight consumer is missing: $bootstrapDll"
+}
+
 & (Join-Path $ProjectRoot "scripts\Deploy-TransparentBridgeToRuntime.ps1") `
-    -ProjectRoot $ProjectRoot | Out-Null
+    -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot -GamePath $gameDirectory -NoBuild:$NoBuild | Out-Null
 & (Join-Path $ProjectRoot "scripts\Deploy-RuntimeTestHarnessToRuntime.ps1") `
-    -ProjectRoot $ProjectRoot | Out-Null
+    -ProjectRoot $ProjectRoot -RuntimeRoot $RuntimeRoot -GamePath $gameDirectory -NoBuild:$NoBuild | Out-Null
 foreach ($modName in @("StardewAI.TransparentBridge", "StardewAI.RuntimeTestHarness")) {
     Copy-Item -LiteralPath (Join-Path $gameDirectory ("Mods\" + $modName)) `
         -Destination (Join-Path $smokeModsPath $modName) -Recurse
@@ -222,10 +234,20 @@ try {
     }
     $movementContextField = $routeSnapshot.Parsed.state.player.movement_timing_context
     $movementContext = $movementContextField.value
+    $ownedPauseVerified = $false
+    if ($movementContext.route_timing_ready_now -ne $true) {
+        & dotnet $bootstrapDll audit-current-owned-planning-pause --snapshot $routeSnapshotPath --output $pauseAuditPath | Out-Null
+        if ($LASTEXITCODE -eq 0) {
+            $pauseAudit = Get-Content -LiteralPath $pauseAuditPath -Raw -Encoding utf8 | ConvertFrom-Json
+            $ownedPauseVerified = $pauseAudit.status -eq "verified_owned_pause_only" -and
+                $pauseAudit.source_state_hash -eq $routeSnapshot.Parsed.state_hash -and
+                $pauseAudit.executor_owned_idle_pause_verified -eq $true
+        }
+    }
     if ($movementContextField.status -notin @("available", "derived") -or
         $movementContext.projection_status -ne "exact_current_player_native_cardinal_movement_context" -or
         $movementContext.runtime_calibration_compatible -ne $true -or
-        $movementContext.route_timing_ready_now -ne $true -or
+        ($movementContext.route_timing_ready_now -ne $true -and -not $ownedPauseVerified) -or
         [double]$movementContext.theoretical_upper_bound_game_minutes_per_tile -gt $ConservativeGameMinutesPerTile) {
         throw "Current player movement context is outside the calibration scope."
     }
@@ -272,12 +294,13 @@ try {
         $after = Get-PlayerState -Snapshot $afterSnapshot.Parsed
 
         $distance = [Math]::Abs($before.X - $target.X) + [Math]::Abs($before.Y - $target.Y)
-        $startedAt = [DateTimeOffset]::Parse([string]$result.started_at)
-        $completedAt = [DateTimeOffset]::Parse([string]$result.completed_at)
+        $startedAt = [DateTimeOffset]$result.started_at
+        $completedAt = [DateTimeOffset]$result.completed_at
         $actionMilliseconds = ($completedAt - $startedAt).TotalMilliseconds
         $gameMinutesPerTile = ($actionMilliseconds / $NativeMillisecondsPerGameMinute) / $distance
         $samplePassed =
             $distance -gt 0 -and
+            $actionMilliseconds -gt 0 -and
             $result.status -eq "applied" -and
             $result.primitive_verification_status -eq "verified" -and
             [string]$result.before_state_hash -eq $before.StateHash -and
@@ -407,12 +430,13 @@ try {
         $afterSnapshot = Wait-WorldSnapshot -Profile "light" -TimeoutSeconds 60
         $after = Get-PlayerState -Snapshot $afterSnapshot.Parsed
 
-        $startedAt = [DateTimeOffset]::Parse([string]$result.started_at)
-        $completedAt = [DateTimeOffset]::Parse([string]$result.completed_at)
+        $startedAt = [DateTimeOffset]$result.started_at
+        $completedAt = [DateTimeOffset]$result.completed_at
         $actionMilliseconds = ($completedAt - $startedAt).TotalMilliseconds
         $connectorGameMinutes = $actionMilliseconds / $NativeMillisecondsPerGameMinute
         $samplePassed =
             $result.status -eq "applied" -and
+            $actionMilliseconds -gt 0 -and
             $result.primitive_verification_status -eq "verified" -and
             [string]$result.before_state_hash -eq $before.StateHash -and
             $null -ne $result.actual_ticks -and
@@ -506,6 +530,7 @@ try {
         conservative_connector_transition_game_minutes = $ConservativeConnectorGameMinutes
         calibration_scope = "ordinary_native_player_movement_on_verified_static_walkable_tiles"
         calibration_evidence_kind = "conservative_upper_bound"
+        timestamp_precision_status = "native_datetimeoffset_ticks_preserved"
         connector_transition_game_minutes_status = "runtime_proven_building_door_and_step_warp"
         source_save_fingerprint_before = $sourceFingerprintBefore
         source_save_fingerprint_after = $sourceFingerprintAfter

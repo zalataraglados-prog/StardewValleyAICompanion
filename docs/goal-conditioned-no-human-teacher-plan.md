@@ -1,5 +1,7 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+> **2026-11-06 真实来源接续：** Friendship真实E副本校准已通过并经原加载器接受，不再使用合成校准或重采本项。实际接入触及gift64源上限，下一步先显式完整离线源入口且保留旧运行时默认64，再保留原快照重放及同run 5/10阈值/原数据覆盖。旧执行器和暂停语义不改，整项`9/19、9/19、9/19、7/11`及formal=false保持。[精度修复、实际来源和接续](friendship-real-calibration.md)。
+
 > **2026-11-06 Friendship比较消费端接续：** 原Teacher行程/控制提案保留；新独立比较与原编译派发入口已实现，不重写旧执行器，不将null许可或64候选截断冒充通过。合成协议检查不算真实native/训练数据；下一步按新入口接原E隔离runner取得真实5/10人数阈值及原轨迹/corpus/覆盖。跨种资源权衡和触顶分母仍显式未完，完整回归/CI见本PR收口。[来源、边界与接续](friendship-independent-comparison.md)。接受集合`9/19、9/19、9/19、7/11`及formal=false保持。
 
 > **2026-11-06 Friendship当前事实接入：** Skills的#453已CI接受并合入`712482ea`。唯一primary仍为`raise_friendships`；当前严格缺口读取和公开入口已实现、复用原桥，无社交执行器改写。当前事实不能作为比较或native动作标签；下一步复用原Teacher/有序行程构造独立可重放比较，再原队列同run及原覆盖三分区。接受集合`9/19、9/19、9/19、7/11`、formal=false及全新档目标不变，完整回归/发布见本PR收口。[本轮事实、原生来源和退出边界](friendship-local-intake.md)。

@@ -1,5 +1,10 @@
 # Friendship Independent Comparison
 
+Current continuation: real calibration has passed and the actual intake reached
+the guarded gift-source cap. Follow [the real-source next step](friendship-real-calibration.md)
+before launching threshold actions; preserve the runtime default budget and all
+candidate families. Do not rerun the synthetic or accepted calibration slice.
+
 ## Accepted Base And Scope
 
 PR #454 passed all 38 CI steps at head `4c42d11877ab3c81df54e3068bfdd183b8e8f43f`

@@ -37,6 +37,7 @@ var commandDefinitions = new CommandDefinition[]
     new("audit-current-schedules", AuditCurrentSchedules),
     new("audit-friendship-day-transition", AuditFriendshipDayTransition),
     new("validate-route-timing", ValidateRouteTiming),
+    new("audit-current-owned-planning-pause", AuditCurrentOwnedPlanningPause),
     new("audit-current-social-frontier", AuditCurrentSocialFrontier),
     new("plan-current-social-day", PlanCurrentSocialDay),
     new("build-current-social-teacher-label", BuildCurrentSocialTeacherLabel),
@@ -662,6 +663,31 @@ static void WriteCurrentFriendshipTeacherPreference(Arguments options, bool veri
         CurrentFriendshipTeacherPreferenceBuilder.Build(options.Required("snapshot"), options.Required("calibration"));
     Write(output, result);
     if (!result.TeacherPreferenceLabelEligible)
+        Environment.ExitCode = 2;
+}
+
+static void AuditCurrentOwnedPlanningPause(Arguments options)
+{
+    var output = Path.GetFullPath(options.Required("output"));
+    if (!output.EndsWith(".json", StringComparison.OrdinalIgnoreCase) || File.Exists(output) || Directory.Exists(output))
+        throw new InvalidDataException("Planning pause audit output must be a new JSON file.");
+    var snapshot = CurrentTeacherFrontierSupport.Read<StardewAI.Contracts.State.SnapshotEnvelope>(
+        options.Required("snapshot"), "Planning pause snapshot");
+    var supported = snapshot.SchemaVersion == "snapshot.v1" && snapshot.GameVersion == "1.6.15" &&
+        snapshot.GameTick >= 0 && snapshot.State is not null &&
+        StardewAI.Contracts.State.SnapshotHash.MatchesStateHash(snapshot.State, snapshot.StateHash);
+    var verified = supported && snapshot.State!.TryGetValue("player", out var player) &&
+        player.ValueKind == JsonValueKind.Object && player.TryGetProperty("movement_timing_context", out var context) &&
+        FutureRouteTimingCalibrationLoader.HasVerifiedExecutorOwnedIdlePause(context);
+    Write(output, new
+    {
+        schema_version = "current_owned_planning_pause_audit.v1",
+        status = verified ? "verified_owned_pause_only" : "blocked",
+        source_state_hash = snapshot.StateHash, game_tick = snapshot.GameTick,
+        executor_owned_idle_pause_verified = verified,
+        scope = "existing_owned_pause_release_certificate_not_native_readiness_or_movement_calibration"
+    });
+    if (!verified)
         Environment.ExitCode = 2;
 }
 
