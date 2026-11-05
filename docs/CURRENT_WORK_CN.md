@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-11-06 Skills局部方法责任已对齐
+
+- #451最终头`313e22c9`经CI `42091079266`全部38步接受，合入`8d497d54`，对应分支已清理。corpus/原source登记已完成，本轮没有重做或重采。已沿旧提交`55dc054f`找到2026-09-08聊天JSON及原收敛计划上下文：旧图承担完整Teacher责任，不将其当bug删除。
+- 新公开build/Verify只生成仓库外的运行局部依赖视图，复用原corpus Verify及原方法图/coverage；原canonical图和其他目标不改。视图保留原全新档五技能XP/行程/体力/跨目标budget与原递推规则，另绑定两个阈值实际来源的完整frame/队列/nonce和当前合法编译，明确不是前期获取或未来供应证明。五技能10级、原15/25规则及所有获取节点保留，当前Teacher仅声明已实现的同效果支配策略，不冒充全局最优。
+- 最终b版视图将所选动作原OptionRegistry字段完整合并入证书，公开重建同SHA`4d331504...`；五类scope/覆盖反例拒绝、输入未变。原coverage入口额外拒绝手改scope和错配corpus，未增加一次native深验；原canonical图仍pending。真正局部视图下两项method为`executable_frontier`，Teacher/native仍各train、ready=false；其他17项覆盖逐项完全相同，对账剩余仅validation/test比较及原生分区，不再有方法图或adapter blocker。
+- **唯一下一步：** 本切片回归/CI收口后，只补15/25各自真正缺失的原policy validation/test来源，先核对日期分区，再顺序运行E隔离后台静音采样；原train与旧方法/执行器不重做。沿原Teacher行/corpus/局部视图及原coverage/reconciliation重建到两项局部ready，之后才晋升整项发布面板。当前冻结整项面板`7/19、7/19、7/19、6/11`及formal=false不变，局部method进展不冒充完整Skills/Teacher或正式开训。
+- 18新检查、最终完整Core1699/Backend597通过，零跳过；公开来源/入口反例、全脚本AST及EVD-338检查点通过，最终发布见本PR收口。无新游戏、worker/API、服务器或产品训练，不提交local-data。详细来源和后续边界见[局部方法视图](skills-local-intake.md#conditional-local-method-view)。
+
 ## 2026-11-06 Skills criterion corpus与原覆盖登记
 
 - #450最终头`927df128`经CI `42085984353`全部38步接受，合入`8f6a36fd`，对应分支已清理；原Teacher行接入已完成，不重做原生15/25样本。本轮只接Step5的typed corpus及原coverage/reconciliation source，不修改旧执行器、共享准入或方法完成规则。

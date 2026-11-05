@@ -56,7 +56,8 @@ public static partial class GoalMethodTeacherCoverageBuilder
                 source,
                 frontier,
                 methodEvidence,
-                criterionEvidence))
+                criterionEvidence,
+                inputs.DependencyExpansionPath))
             .ToArray();
         var methods = frontier.Methods.ToDictionary(
             method => method.MethodId,
@@ -254,7 +255,8 @@ public static partial class GoalMethodTeacherCoverageBuilder
         GoalMethodFrontierReport frontier,
         IReadOnlyDictionary<string, MethodCoverageEvidence> methodEvidence,
         IReadOnlyDictionary<string, CriterionCoverageEvidence>
-            criterionEvidence)
+            criterionEvidence,
+        string dependencyExpansionPath)
     {
         var fullPath = RequiredFullPath(
             source.ArtifactPath,
@@ -262,7 +264,7 @@ public static partial class GoalMethodTeacherCoverageBuilder
         return source.SourceKind switch
         {
             GoalMethodTeacherCoverageSourceKinds.SkillLevelThresholdCorpus =>
-                VerifySkillCorpus(source, fullPath, frontier, criterionEvidence),
+                VerifySkillCorpus(source, fullPath, frontier, criterionEvidence, dependencyExpansionPath),
             GoalMethodTeacherCoverageSourceKinds
                 .AcquisitionRoutePortfolioCorpus =>
                 VerifyAcquisitionCorpus(

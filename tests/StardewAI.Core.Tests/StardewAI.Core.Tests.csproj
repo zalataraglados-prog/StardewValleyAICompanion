@@ -48,6 +48,7 @@
     <Compile Include="PolicyTeacherReplayRegistryTests.cs" />
     <Compile Include="SkillTeacherReplayVerifierTests.cs" />
     <Compile Include="SkillTeacherCorpusTests.cs" />
+    <Compile Include="SkillLocalDependencyViewTests.cs" />
     <Compile Include="SkillPolicyStateFeatureTests.cs" />
     <Compile Include="ActionOriginOutputSourceGuardTests.cs" />
     <Compile Include="ActionCatalogProvenanceGovernanceTests.cs" />

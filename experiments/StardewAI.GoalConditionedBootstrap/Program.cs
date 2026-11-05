@@ -52,6 +52,8 @@ var commandDefinitions = new CommandDefinition[]
     new("verify-skill-teacher-row", options => WriteSkillTeacherRow(options, verify: true)),
     new("build-skill-teacher-corpus", options => WriteSkillTeacherCorpus(options, verify: false)),
     new("verify-skill-teacher-corpus", options => WriteSkillTeacherCorpus(options, verify: true)),
+    new("build-skill-local-dependency-view", options => WriteSkillLocalDependencyView(options, verify: false)),
+    new("verify-skill-local-dependency-view", options => WriteSkillLocalDependencyView(options, verify: true)),
     new("build-goal-method-graph", BuildGoalMethodGraph),
     new("build-goal-method-teacher-coverage", BuildGoalMethodTeacherCoverage),
     new("build-goal-method-coverage-reconciliation", BuildGoalMethodCoverageReconciliation),
@@ -700,6 +702,15 @@ static void WriteSkillTeacherCorpus(Arguments options, bool verify)
         throw new InvalidDataException("Skills corpus output must be a new JSON file.");
     Write(output, verify ? SkillTeacherCorpusBuilder.Verify(options.Required("corpus")) :
         SkillTeacherCorpusBuilder.Build(options.Required("request")));
+}
+
+static void WriteSkillLocalDependencyView(Arguments options, bool verify)
+{
+    var output = Path.GetFullPath(options.Required("output"));
+    if (File.Exists(output) || Directory.Exists(output) || !output.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+        throw new InvalidDataException("Skills dependency-view output must be a new JSON file.");
+    Write(output, verify ? SkillLocalDependencyViewBuilder.Verify(options.Required("view")) :
+        SkillLocalDependencyViewBuilder.Build(options.Required("corpus"), options.Required("dependencies")));
 }
 
 static void BuildGoalMethodGraph(Arguments options)
