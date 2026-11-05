@@ -40,6 +40,7 @@ var commandDefinitions = new CommandDefinition[]
     new("audit-current-social-frontier", AuditCurrentSocialFrontier),
     new("plan-current-social-day", PlanCurrentSocialDay),
     new("build-current-social-teacher-label", BuildCurrentSocialTeacherLabel),
+    new("build-current-skill-experience-deficit", BuildCurrentSkillExperienceDeficit),
     new("build-goal-method-graph", BuildGoalMethodGraph),
     new("build-goal-method-teacher-coverage", BuildGoalMethodTeacherCoverage),
     new("build-goal-method-coverage-reconciliation", BuildGoalMethodCoverageReconciliation),
@@ -619,6 +620,20 @@ static void BuildCurrentSocialTeacherLabel(Arguments options)
         File.ReadAllText(options.Required("calibration")));
     Write(options.Required("output"), label);
     if (!label.TrainingLabelEligible)
+        Environment.ExitCode = 2;
+}
+
+static void BuildCurrentSkillExperienceDeficit(Arguments options)
+{
+    var output = Path.GetFullPath(options.Required("output"));
+    if (!output.EndsWith(".json", StringComparison.OrdinalIgnoreCase) ||
+        File.Exists(output) || Directory.Exists(output))
+        throw new InvalidDataException("Skill deficit output must be a new JSON file.");
+    var snapshot = CurrentTeacherFrontierSupport.Read<StardewAI.Contracts.State.SnapshotEnvelope>(
+        options.Required("snapshot"), "Current skill snapshot");
+    var result = new CurrentSkillExperienceDeficitBuilder().Build(snapshot);
+    Write(output, result);
+    if (result.Status != "ready_current_state_only")
         Environment.ExitCode = 2;
 }
 
