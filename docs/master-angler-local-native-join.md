@@ -152,6 +152,86 @@ counts, relabel these copies as new partitions, or promote the boundary fixture
 to full progression evidence. The frozen accepted union and formal=false stay
 unchanged.
 
+## Standalone Independent Teacher Source
+
+The local source entry now accepts `--standalone-collection-teacher`. It calls
+the original `TryBuildStageOneCollectionTeacherQueueAsync`; there is no second
+Teacher, planner, compiler or executor. The new explicit mode requires native
+training-singleplayer feedback, daily planning, skip-training, an existing
+isolated save directory and all four authority inputs. It rejects learner
+checkpoints/manifests, candidate filtering/pinning, other queue overrides and
+global fresh-save/crop-continuation mode mixing. The existing three implicit
+Teacher activation conditions retain their old behavior.
+
+Historical intent was checked against `cfcac4674`: that change enabled collection
+control after Crop Teacher completion and separated tie control from preference
+labels. The retained session JSON contains a later git-log reference, not the
+original October 26 conversation; this is not evidence that the old contract
+was wrong. Its ledger/global guards and tie/no-negative-label rules were not
+weakened to accommodate the new consumer.
+
+The opt-in `collection_teacher` snapshot profile reuses exactly the original
+fishing domains, persistent inventory and crab-pot reads, plus the existing
+date-bound static route evidence reader. It does not widen `fishing`, add new
+scanning logic, enable the NPC schedule catalog or request full/per-frame
+snapshots. The local capture driver selects this profile for both initial and
+execution captures, and does not apply its old one-candidate fishing filter in
+Teacher mode. `Test-RuntimeFishingArtifactMapping.ps1` exercises the original
+mapping function without a game, including genuine continuation queue names,
+sparse iteration identities and rejection of unknown/duplicate queue IDs.
+
+Final real run: `master-angler-independent-teacher-20261105-final`, same isolated
+spring-7 boundary baseline. The original Teacher preserved the 72-fish
+denominator, emitted six strict comparisons, selected `(O)708` by
+`earliest_action_deadline_time_exclusive`, and the native executor actually
+caught `(O)708` within the original unconstrained outcome distribution.
+The original receipt builder returned ready with native collection false-to-true.
+The original PolicyDataset CLI, using `CollectionTeacherSupervisionReplayVerifier`,
+independently accepted one train row, zero rejected/duplicate rows and zero
+validation/test rows. This was validation, not model training.
+
+Retained outside Git under the existing `native-source-binding` directory:
+
+- `teacher-native-final-request.json` binds the recorded mechanical queue,
+  single raw action and exact recorded after capture. Public native build and
+  Verify reproduce SHA
+  `7e04e8bc37b6ac78dca641aa7f7d40865d194a1633293dbd9afd7276ed29f01b`.
+- `teacher-receipt-final.json` SHA
+  `880b6d84f46d5dcb380e0ed1a108011f34742ce8d3f0bf3ebef88b70aa1cb912`;
+  `teacher-row-final.jsonl` SHA
+  `0be402c2678884e42b46e68429fdf75fdc0b91744098db7956ea3196feae6a39`;
+  independently rebuilt dataset: `teacher-row-final-replay`.
+- Teacher and native before-source hashes both equal
+  `7e29a3d32e5ef21252d3188e91fa1979d5219e2bddd025b2899bc57d2f885c96`.
+  The original policy split is `ProofFarm:1:spring:7` / train. Preserve that
+  existing policy grouping; do not substitute the Rusty Key split convention.
+- Final isolation audit confirms the source slot hash unchanged, both owned
+  processes exited and training skipped. Low-level smoke/source producer flags
+  remain comparison-unverified; later independent verification is a separate
+  artifact, not a backfilled edit to the original observation.
+
+Earlier runs are not silently promoted. Run `...-a` had no native execution
+because the narrow fishing snapshot lacked date-route evidence. Run `...-b`
+produced ready preferences and two native `(O)131` catches, but its original
+aggregate episode points to the continuation queue rather than the initial
+Teacher queue. The original receipt builder correctly rejects that input with
+queue/item mismatch. The capture reader now understands the existing
+continuation artifacts; neither the old aggregate format nor those source
+records were rewritten. RNG misses are not negative preferences.
+
+Verification: Backend 594/594 with zero skipped, bounded artifact mapping passed,
+and explicit-E Bridge/PolicyDataset builds had zero warnings/errors. An attempted
+Core no-build filter found no matching tests and is not counted as a pass;
+profile permission tests execute the linked actual context in Backend tests.
+
+Next, build the missing machine-replayable typed join/corpus binding from the
+retained final row and native proof, using the original validators and full
+source identities, not a new comparison or an edited aggregate. The two
+independently verified artifacts alone are not a completed typed corpus or
+three-partition criterion. Add only genuinely missing trap/partition scope
+after the binding is verified; do not repeat this successful rod source.
+Accepted union and formal=false remain unchanged.
+
 ## Implementation And Verification Sequence
 
 1. Inspect retained actual rod/crab-pot executions, their original request

@@ -1448,7 +1448,8 @@ public static class SnapshotValidator
             return VolcanoRequiredDomains;
         }
 
-        if (string.Equals(profile, "fishing", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(profile, "fishing", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(profile, "collection_teacher", StringComparison.OrdinalIgnoreCase))
         {
             return FishingRequiredDomains;
         }

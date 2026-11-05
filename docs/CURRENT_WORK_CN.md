@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-11-05 独立Teacher到真实杆钓单决策已重放
+
+- 唯一primary仍为`complete_master_angler`。新增显式`--standalone-collection-teacher`仅接原`TryBuildStageOneCollectionTeacherQueueAsync`，要求禁训、原生反馈、现存隔离目录与四份authority，拒绝learner checkpoint、候选过滤/钉选和全局模式混接。`cfcac4674`当时为作物结束后切入collection控制，旧三个激活条件及同分控制/标签分离均保留；留存JSON仅找到后续git-log引用，未臆称找回原始对话。
+- 新`collection_teacher` profile复用原fishing域和既有日期静态路线读取器，补足Teacher真实消费的`locations.social_route_date_evidence`；不扩大旧fishing，不启用NPC日程全表。采样入口也能识别原续接队列，未修改旧聚合回执或执行器；无游戏映射测试覆盖续接/稀疏序号及未知/重复queue拒绝。
+- 最终后台静音运行`master-angler-independent-teacher-20261105-final`保留72鱼种，原Teacher产生6对严格比较，按最早关闭的窗口选择`(O)708`，同run原生实际钓获并完成收集false→true。原receipt构建器为ready，原`CollectionTeacherSupervisionReplayVerifier`经PolicyDataset公开CLI重放得到**1条train、0拒绝、validation/test=0**，并未训练模型。原生来源公开build/Verify同SHA`7e04e8bc37b6ac78dca641aa7f7d40865d194a1633293dbd9afd7276ed29f01b`；Teacher与原生前态来源SHA相同。源存档哈希不变，游戏/后端均退出。
+- 早期A运行因窄档缺日期路线而没有执行；B有独立比较和两次原生捕获131，但旧聚合回执记录续接queue，不能冒充原初始queue的精确Teacher终态，原receipt正确拒绝。保留诊断和随机未命中，不改旧日志、不造负偏好、不改共享聚合格式。完整Backend594通过（零跳过），Bridge/PolicyDataset显式E构建零警告错误；一次Core旧DLL过滤未匹配测试，不计PASS。
+- **唯一接续：** 从已保留的最终监督行和精确原生来源做机器可重建的同run typed join/corpus，复用原reader、比较/receipt/replayer；核对完整来源、状态/tick、actor、queue/item/nonce及原决策分区后，再补真正缺失的蟹笼/validation/test，不重采本单次杆钓成功或重开接受门。已有两个独立验证工件不冒充统一corpus已完成。全局`6/19、7/19、6/19、5/11`及formal=false不变，无worker/API、无服务器部署、不提交local-data。[本轮合同与证据](master-angler-local-native-join.md#standalone-independent-teacher-source)。
+
 ## 2026-11-05 已恢复Master Angler：真实杆钓来源落盘
 
 - 用户已要求继续开发，下方共享修补的“主线暂停/等待指令”仅记录上一轮结束点。唯一primary仍是`complete_master_angler`；#440来源入口已CI通过并合入`9bc2ea87`，不再是待实现/待CI任务。
