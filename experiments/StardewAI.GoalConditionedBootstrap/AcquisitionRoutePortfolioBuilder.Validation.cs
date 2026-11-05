@@ -296,7 +296,7 @@ public static partial class AcquisitionRoutePortfolioBuilder
         AcquisitionRoutePortfolioRequirementScope scope) =>
         ScopeKey(scope.RequirementSetId, scope.RequirementId);
 
-    private static string ScopeKey(string setId, string requirementId) =>
+    internal static string ScopeKey(string setId, string requirementId) =>
         Uri.EscapeDataString(setId) + "/" +
         Uri.EscapeDataString(requirementId);
 

@@ -216,7 +216,8 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
                 selected,
                 requirement,
                 before,
-                snapshotPath)
+                snapshotPath,
+                controlSelection)
             .Concat(usesControl ? ValidatePortfolioSelectionCommon(
                 controlSelection!.GoalId, controlSelection.SnapshotStateHash,
                 portfolioProposal, portfolioAdmission, portfolioReceipt, opportunity,
@@ -343,7 +344,9 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
             EndpointOptionIds = lowered.EndpointOptionIds,
             SupportingOptionIds = lowered.SupportingOptionIds,
             TerminalReceiptKind = terminalKind,
-            SelectedFromCompleteParetoFrontier = selectedFromFrontier,
+            SelectedFromCompleteParetoFrontier = selectedFromFrontier &&
+                AcquisitionRoutePortfolioBuilder.IsOpportunityScopeComplete(
+                    opportunity, requirement.RequirementSetId, requirement.RequirementId),
             QueueOptionsBoundToRoute = optionsBound,
             PortfolioReservationCommitVerified = portfolioCommitVerified,
             PortfolioTeacherPreferenceVerified =

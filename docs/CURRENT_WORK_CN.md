@@ -2,6 +2,8 @@
 
 ## 2026-11-03 当前 Rusty Key 切片与接续
 
+- **2026-11-05 执行绑定范围接续：** `cust-night-bccfaf39-1105`实际原子提交和派发编译已通过，但绑定层还要求未选替代路线的完整比较，获取动作仍为零。现接完这一遗漏：只消费独立来源重建的所选控制准入/精确scope，保留所有所选路线与资源检查；比较不完整时绑定的`selected_from_complete_pareto_frontier`仍为false，落盘绑定再消费必须精确重建，不接受标志绕过。旧泛型/Teacher门不改。保留该次原始提交、队列和14轴输入的完整公开绑定CLI只读重放已ready，无Teacher/训练授权；59项rolling、23项控制（含篡改比较位拒绝）、20项support和30项完整阈值回归通过，Release零警告错误。前两次原生入口失败数据均保留，无获取成功主张；下一步固定新源码后验证真实获取产物跨夜保管，再接原定criterion分区/第三年前终态，不重开旧钥匙/目视门、不抬计数、不提交`local-data`。
+
 - **2026-11-05 跨夜入口暴露获取准入范围错误：** `cust-night-d2d22b3e-1105`在开晶球前零动作停止；实时目标是`(O)100`，已解析晶球路线却被另一条占位`native_object_artifact_spot_chance`的比较不完整挡住。原比较门不删：generic/完整阈值/Teacher仍严格要求全比较；仅原认证控制来源复用共享所选路线安全准入，并显式保留`control_only_incomplete_comparison_scopes`、完整前沿false及Teacher false，未知所选路线/他目标资源仍拒绝。提交重建沿原精确claim验证消费独立重建的控制准入，support控制同用，不增执行器或账本。59项rolling、22项控制链通过；同一失败快照的公开构建/准备只读重放已选合法晶球终端，未改变预测目标或伪造原生成功。真实跨夜仍待新固定源码运行，缺失的artifact-spot日历解析仍是显式缺口。详见[控制范围](control-execution-admission.md#partial-comparison-scope)。
 
 - **2026-11-05 跨夜保管入口已接线：** 原存箱前缀增加`-CustodyOvernight`模式；15点setup仅在测量前，真实获取/存箱后只用原有界wait到19点，再由原rolling回家睡眠/次日取回捐赠。每次等待均保留请求、回执、fresh快照和最新账本；不明回复/时间不前进/身份库存或预留漂移即停，不重试。两处原生睡眠边界共用原校验，不改夜间总门。19项编排、原晚间30/保管20通过，尚未声称原生跨夜保管通过；下一步固定同源码在E隔离单实例后台静音验证。详见[museum-output-custody.md](museum-output-custody.md#native-overnight-continuation)。整项及冻结计数仍不变，不提交`local-data`。

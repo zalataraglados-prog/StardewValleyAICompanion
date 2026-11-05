@@ -57,6 +57,20 @@ internal static partial class BootstrapSelfTest
                 Require(!strict.PortfolioAdmissionReady && strict.ControlOnlyIncompleteComparisonScopes is null &&
                     strict.BlockingReasons.Any(reason => reason.StartsWith("scoped_opportunity_cost_frontier_incomplete:", StringComparison.Ordinal)),
                     "The original generic/Teacher admission must still reject this incomplete comparison scope.");
+                var requirement = AcquisitionRoutePortfolioBuilder.RequirementRoute(fixture.Opportunity.Routes[59]);
+                Require(AcquisitionRouteExecutionBindingBuilder.AllowsVerifiedControlComparisonScope(control, requirement) &&
+                    !AcquisitionRouteExecutionBindingBuilder.AllowsVerifiedControlComparisonScope(null, requirement),
+                    "Only the verified control source may consume its explicitly incomplete comparison scope.");
+                var foreignRequirement = JsonSerializer.SerializeToNode(requirement, JsonDefaults.Options)!;
+                foreignRequirement["requirement_id"] = "foreign-scope";
+                Require(!AcquisitionRouteExecutionBindingBuilder.AllowsVerifiedControlComparisonScope(control,
+                    foreignRequirement.Deserialize<AcquisitionRouteTargetDateUnlock>(JsonDefaults.Options)!),
+                    "A verified control source cannot exempt a different requirement scope.");
+                foreignRequirement = JsonSerializer.SerializeToNode(requirement, JsonDefaults.Options)!;
+                foreignRequirement["route_occurrence_id"] = "foreign-route";
+                Require(!AcquisitionRouteExecutionBindingBuilder.AllowsVerifiedControlComparisonScope(control,
+                    foreignRequirement.Deserialize<AcquisitionRouteTargetDateUnlock>(JsonDefaults.Options)!),
+                    "A verified control source cannot exempt an unselected route.");
             }
             passed.Add("control_comparison_scope_" + mode);
         }

@@ -109,6 +109,18 @@ A warm cache therefore cannot hide a modified replan or native receipt.
 
 ## Verification And Remaining Work
 
+The retained `cust-night-bccfaf39-1105` inputs exposed a remaining execution-binding
+scope check after the real atomic commit and dispatch compilation had passed.
+Binding now consumes only the independently rebuilt control admission's exact
+selected requirement scope. The selected route's resolved Pareto membership,
+source identity, resources and queue checks are unchanged. Incomplete comparison
+keeps `selected_from_complete_pareto_frontier=false`; persisted control bindings
+must still exactly equal full source rebuilding before a native receipt or
+settlement can consume them. No caller flag or a forged comparison bit is enough.
+The retained full public binding CLI replays ready with no Teacher authority;
+this is offline evidence, not a native acquisition. Generic/Teacher comparison
+validation remains strict.
+
 The controlled runtime adapter now connects these public services without adding
 an executor or Teacher. Its new source/commit CLI checks bring the focused counts
 to 22 fresh-control and 20 support-rebind cases; the older counts below describe
