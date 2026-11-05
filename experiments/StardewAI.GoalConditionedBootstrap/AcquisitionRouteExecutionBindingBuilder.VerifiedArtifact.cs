@@ -19,7 +19,9 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
             binding.RouteOccurrenceId == inputs.RouteOccurrenceId &&
             binding.SelectedCandidateId ==
                 SelectedCandidateId(inputs.RouteOccurrenceId) &&
-            binding.SelectedFromCompleteParetoFrontier &&
+            (binding.SelectedFromCompleteParetoFrontier ||
+                AcquisitionRouteControlSelectionVerifier.UsesControl(inputs) &&
+                binding.PortfolioControlSelection is { Verified: true }) &&
             binding.QueueOptionsBoundToRoute &&
             binding.PortfolioReservationCommitVerified &&
             AcquisitionRouteControlSelectionVerifier.HasVerifiedExecutionSelection(binding) &&

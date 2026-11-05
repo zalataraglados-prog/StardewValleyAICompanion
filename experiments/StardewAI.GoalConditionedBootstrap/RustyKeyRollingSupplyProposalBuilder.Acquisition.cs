@@ -36,7 +36,7 @@ public static partial class RustyKeyRollingSupplyProposalBuilder
                 ScopedRequirements = new[] { new AcquisitionRoutePortfolioRequirementScope("museum_collection", requirement.RequirementId) },
                 SelectedRouteOccurrenceIds = new[] { route.RouteOccurrenceId }
             };
-            var admission = AcquisitionRoutePortfolioBuilder.Build(context, proposal,
+            var admission = AcquisitionRoutePortfolioBuilder.BuildForControl(context, proposal,
                 AcquisitionRoutePortfolioTeacherPreferenceBuilder.ArtifactSha256(proposal));
             evaluations.Add(new(route.RouteOccurrenceId, requirement.RequirementId, "acquisition_route",
                 admission.PortfolioAdmissionReady, admission.BlockingReasons));

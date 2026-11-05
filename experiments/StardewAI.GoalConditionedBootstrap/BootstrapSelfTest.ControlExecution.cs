@@ -97,6 +97,11 @@ internal static partial class BootstrapSelfTest
             Write(targetDateExecutionBindingPath, forged);
             Reject("binding_cannot_promote_control_to_teacher", () =>
                 AcquisitionRouteExecutionBindingBuilder.ReadVerifiedArtifact(inputs, targetDateExecutionBindingPath));
+            forged = JsonSerializer.SerializeToNode(binding, JsonDefaults.Options)!;
+            forged["selected_from_complete_pareto_frontier"] = false;
+            Write(targetDateExecutionBindingPath, forged);
+            Reject("control_comparison_scope_requires_source_rebuild", () =>
+                AcquisitionRouteExecutionBindingBuilder.ReadVerifiedArtifact(inputs, targetDateExecutionBindingPath));
             Write(targetDateExecutionBindingPath, binding);
             VerifyControlNativeReceipt(inputs, binding, queue, before, passed);
             Write(Path.Combine(root, "control-execution-self-test.json"), new

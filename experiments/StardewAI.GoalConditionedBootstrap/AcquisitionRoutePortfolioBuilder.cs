@@ -114,7 +114,18 @@ public static partial class AcquisitionRoutePortfolioBuilder
         AcquisitionRoutePortfolioProposal proposal,
         string proposalSha256,
         AcquisitionRoutePortfolioContinuationEvidence? continuation,
-        string priorSupportingTransitionReplanSha256 = "")
+        string priorSupportingTransitionReplanSha256 = "") => BuildCore(context, proposal, proposalSha256,
+            continuation, priorSupportingTransitionReplanSha256, requireCompleteComparison: true);
+
+    internal static AcquisitionRoutePortfolioAdmission BuildForControl(
+        AcquisitionRoutePortfolioBuildContext context, AcquisitionRoutePortfolioProposal proposal,
+        string proposalSha256, string priorSupportingTransitionReplanSha256 = "") =>
+        BuildCore(context, proposal, proposalSha256, null, priorSupportingTransitionReplanSha256, requireCompleteComparison: false);
+
+    private static AcquisitionRoutePortfolioAdmission BuildCore(
+        AcquisitionRoutePortfolioBuildContext context, AcquisitionRoutePortfolioProposal proposal, string proposalSha256,
+        AcquisitionRoutePortfolioContinuationEvidence? continuation, string priorSupportingTransitionReplanSha256,
+        bool requireCompleteComparison)
     {
         var inventory = context.Inventory;
         var opportunity = context.Opportunity;
@@ -128,7 +139,7 @@ public static partial class AcquisitionRoutePortfolioBuilder
             snapshot,
             ledgerState.Ledger,
             continuation,
-            priorSupportingTransitionReplanSha256);
+            priorSupportingTransitionReplanSha256, requireCompleteComparison);
         var selected = SelectRoutes(opportunity, proposal, reasons);
         var selectionRulesSatisfied = ValidateSelectionRules(
             inventory,
@@ -137,6 +148,9 @@ public static partial class AcquisitionRoutePortfolioBuilder
             continuation,
             reasons);
         var allFrontier = ValidateParetoFrontier(selected, reasons);
+        var incompleteScopes = (proposal.ScopedRequirements ?? Array.Empty<AcquisitionRoutePortfolioRequirementScope>())
+            .Where(scope => !IsOpportunityScopeComplete(opportunity, scope.RequirementSetId, scope.RequirementId))
+            .Select(ScopeKey).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
         var aggregate = reasons.Count == 0
             ? AggregateCosts(selected, reasons)
             : null;
@@ -175,7 +189,7 @@ public static partial class AcquisitionRoutePortfolioBuilder
             .Order(StringComparer.Ordinal)
             .ToArray();
         var ready = blocking.Length == 0 && preflight;
-        return new AcquisitionRoutePortfolioAdmission
+        var admission = new AcquisitionRoutePortfolioAdmission
         {
             Status = ready
                 ? "admitted_pending_atomic_reservation_commit"
@@ -212,7 +226,8 @@ public static partial class AcquisitionRoutePortfolioBuilder
                 .Order(StringComparer.Ordinal)
                 .ToArray(),
             SelectionRulesSatisfied = selectionRulesSatisfied,
-            AllRoutesOnCompleteParetoFrontier = allFrontier,
+            AllRoutesOnCompleteParetoFrontier = allFrontier && incompleteScopes.Length == 0,
+            ControlOnlyIncompleteComparisonScopes = !requireCompleteComparison && incompleteScopes.Length > 0 ? incompleteScopes : null,
             AggregateCostVector = aggregate,
             AtomicCommitRequired = request is not null,
             AtomicCommitPreflightPassed = preflight,
@@ -221,6 +236,9 @@ public static partial class AcquisitionRoutePortfolioBuilder
             FormalTrainingAuthorized = false,
             BlockingReasons = blocking
         };
+        if (admission.ControlOnlyIncompleteComparisonScopes is not null)
+            admission.AdmissionPolicy = "Source-rebuilt deterministic control may select a resolved route on the known Pareto frontier without certifying unknown alternatives. Selected-route axes, authoritative scopes, costs, ownership and the original atomic resource preflight remain mandatory. Incomplete comparison scopes are retained explicitly; this is not complete Pareto, Teacher preference or training evidence.";
+        return admission;
     }
 
     internal sealed record AcquisitionRoutePortfolioBuildContext(

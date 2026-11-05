@@ -25,8 +25,8 @@ public static partial class RustyKeyRollingSupplyProposalBuilder
         var proposal = result.SelectedAcquisitionProposal;
         proposal.PriorSupportingTransitionReplanSha256 = CurrentTeacherFrontierSupport.HashFile(support.ReplanAdmissionPath);
         var context = AcquisitionRoutePortfolioBuilder.Prepare(inputs);
-        result.SelectedAcquisitionAdmission = AcquisitionRoutePortfolioBuilder.Build(context, proposal,
-            AcquisitionRoutePortfolioTeacherPreferenceBuilder.ArtifactSha256(proposal), null, proposal.PriorSupportingTransitionReplanSha256);
+        result.SelectedAcquisitionAdmission = AcquisitionRoutePortfolioBuilder.BuildForControl(context, proposal,
+            AcquisitionRoutePortfolioTeacherPreferenceBuilder.ArtifactSha256(proposal), proposal.PriorSupportingTransitionReplanSha256);
         if (!result.SelectedAcquisitionAdmission.PortfolioAdmissionReady)
             throw new InvalidDataException("Support-rebound control acquisition is not admitted: " +
                 string.Join(",", result.SelectedAcquisitionAdmission.BlockingReasons));

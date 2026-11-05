@@ -33,7 +33,8 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
         AcquisitionRouteTargetDateOpportunityCost selected,
         AcquisitionRouteTargetDateUnlock requirement,
         SnapshotEnvelope before,
-        string snapshotPath)
+        string snapshotPath,
+        RustyKeyRollingSupplyProposal? verifiedControl)
     {
         if (!string.Equals(
                 report.SchemaVersion,
@@ -64,7 +65,8 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
         if (!AcquisitionRoutePortfolioBuilder.IsOpportunityScopeComplete(
                 report,
                 requirement.RequirementSetId,
-                requirement.RequirementId))
+                requirement.RequirementId) &&
+            !AllowsVerifiedControlComparisonScope(verifiedControl, requirement))
         {
             yield return "route_selection_scoped_opportunity_frontier_incomplete";
         }
@@ -113,6 +115,21 @@ public static partial class AcquisitionRouteExecutionBindingBuilder
             yield return "route_selection_before_snapshot_identity_mismatch";
         }
     }
+
+    internal static bool AllowsVerifiedControlComparisonScope(
+        RustyKeyRollingSupplyProposal? verifiedControl,
+        AcquisitionRouteTargetDateUnlock requirement) =>
+        verifiedControl is { RollingStepReady: true } &&
+        verifiedControl.SelectedCandidateId == requirement.RouteOccurrenceId &&
+        verifiedControl.SelectedAcquisitionAdmission is
+        {
+            PortfolioAdmissionReady: true,
+            AtomicCommitPreflightPassed: true,
+            AllRoutesOnCompleteParetoFrontier: false,
+            ControlOnlyIncompleteComparisonScopes: { } scopes
+        } &&
+        scopes.Contains(AcquisitionRoutePortfolioBuilder.ScopeKey(
+            requirement.RequirementSetId, requirement.RequirementId), StringComparer.Ordinal);
 
     internal static IEnumerable<string> ValidateQueue(
         ActionQueueEnvelope queue,

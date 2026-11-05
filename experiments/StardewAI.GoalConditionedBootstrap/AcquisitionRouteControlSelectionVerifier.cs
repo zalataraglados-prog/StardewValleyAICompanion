@@ -55,12 +55,8 @@ internal static class AcquisitionRouteControlSelectionVerifier
     {
         var portfolioInputs = AcquisitionRouteExecutionBindingBuilder.PortfolioInputs(inputs);
         var commitResult = string.IsNullOrWhiteSpace(inputs.PortfolioCommitResultPath) ? null : inputs.PortfolioCommitResultPath;
-        return string.IsNullOrWhiteSpace(inputs.ControlSupportingTransitionProofPath)
-            ? AcquisitionRoutePortfolioCommitReceiptBuilder.Build(portfolioInputs, inputs.PortfolioAdmissionPath,
-                inputs.CommittedStrategyLedgerPath, commitResult)
-            : AcquisitionRoutePortfolioCommitReceiptBuilder.BuildAfterSupportingTransition(portfolioInputs,
-                control.SelectedAcquisitionProposal!.PriorSupportingTransitionReplanSha256, inputs.PortfolioAdmissionPath,
-                inputs.CommittedStrategyLedgerPath, commitResult);
+        return AcquisitionRoutePortfolioCommitReceiptBuilder.BuildForVerifiedControl(portfolioInputs,
+            inputs.PortfolioAdmissionPath, inputs.CommittedStrategyLedgerPath, commitResult, control);
     }
 
     internal static IEnumerable<DeterministicBuildIdentityPart> SupportingProofIdentity(AcquisitionRouteExecutionBindingInputs inputs)

@@ -12,7 +12,8 @@ public static partial class AcquisitionRoutePortfolioBuilder
         SnapshotEnvelope snapshot,
         StrategyCommitmentLedger ledger,
         AcquisitionRoutePortfolioContinuationEvidence? continuation,
-        string priorSupportingTransitionReplanSha256)
+        string priorSupportingTransitionReplanSha256,
+        bool requireCompleteComparison)
     {
         var reasons = new List<string>();
         if (inventory.SchemaVersion !=
@@ -69,7 +70,7 @@ public static partial class AcquisitionRoutePortfolioBuilder
         {
             reasons.Add("route_portfolio_requirement_scope_invalid");
         }
-        else
+        else if (requireCompleteComparison)
         {
             foreach (var scope in proposal.ScopedRequirements)
             {
@@ -295,7 +296,7 @@ public static partial class AcquisitionRoutePortfolioBuilder
         AcquisitionRoutePortfolioRequirementScope scope) =>
         ScopeKey(scope.RequirementSetId, scope.RequirementId);
 
-    private static string ScopeKey(string setId, string requirementId) =>
+    internal static string ScopeKey(string setId, string requirementId) =>
         Uri.EscapeDataString(setId) + "/" +
         Uri.EscapeDataString(requirementId);
 

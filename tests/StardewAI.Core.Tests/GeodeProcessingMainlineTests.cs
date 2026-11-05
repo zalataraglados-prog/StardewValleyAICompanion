@@ -202,6 +202,11 @@ public sealed class GeodeProcessingMainlineTests
         Assert.Contains("checkForSpecialItemHoldUpMeessage()", pickup, StringComparison.Ordinal);
         Assert.Contains("string.Equals(dialogue.getCurrentString(), expected, StringComparison.Ordinal)", pickup, StringComparison.Ordinal);
         Assert.Contains("GeodeReceiptMatches(active)", pickup, StringComparison.Ordinal);
+        Assert.Contains("GeodeArchaeologyFoundCount == 0", pickup, StringComparison.Ordinal);
+        Assert.Contains("active.ActualOutput is { PickupEffectKind: \"artifact_discovery\" }", pickup, StringComparison.Ordinal);
+        Assert.Contains("ItemRegistry.Create(row.QualifiedItemId) is StardewValley.Object { Type: \"Arch\" }", pickup, StringComparison.Ordinal);
+        Assert.Contains("artifactTutorial ? active.ActualOutput!.QualifiedItemId : \"(O)535\"", pickup, StringComparison.Ordinal);
+        Assert.Contains("Game1.player.mailReceived.Contains(\"artifactFound\")", pickup, StringComparison.Ordinal);
         Assert.Contains("dialogue.isQuestion", pickup, StringComparison.Ordinal);
         Assert.Contains("row.QualifiedItemId == \"(O)535\" || input.QualifiedItemId == \"(O)535\" && input.Stack > 1", bridge, StringComparison.Ordinal);
         Assert.DoesNotContain("mailReceived.Add", pickup, StringComparison.Ordinal);

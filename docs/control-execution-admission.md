@@ -21,6 +21,33 @@ goals' resources, stale states, mismatched queues and unknown sources retain the
 existing rejection paths. No new planner, executor, reservation store or game rule
 is introduced.
 
+## Partial Comparison Scope
+
+The `cust-night-d2d22b3e-1105` native probe stopped before acquisition because the
+real `(O)100` geode route was resolved but its alternative
+`native_object_artifact_spot_chance` calendar route remained unimplemented. The
+generic portfolio's complete-comparison guard is valid; reusing it as the sole
+control-safety gate incorrectly prevented already resolved work.
+
+Only independently rebuilt rolling control now uses the shared builder's
+selected-route admission. The selected route must still be resolved, match the
+date, have a complete cost vector, remain on the known Pareto frontier and pass
+the original authoritative selection/resource/ownership/atomic preflight rules.
+Unknown alternatives stay in the complete denominator and evaluations. The
+optional `control_only_incomplete_comparison_scopes` identifies those scopes,
+with `all_routes_on_complete_pareto_frontier=false`; neither unknown selected
+work nor other-goal inputs become legal. The original generic/full-threshold
+and Teacher admission still require complete comparison scopes.
+
+Commit reconstruction for control consumes the admission already independently
+rebuilt by the control-source verifier, then uses the original exact admission,
+committed-ledger and claim verification. The caller cannot enable this with an
+admission flag or pass a control-only artifact through the ordinary Teacher
+entrypoint. Supporting-transition control uses the same shared admission and
+original native settlement/replan verification. Complete-scope legacy artifact
+serialization remains unchanged. This correction does not implement the missing
+artifact-spot parser or certify an optimal choice against unknown routes.
+
 ## Entrypoints And Artifacts
 
 For the ordinary acquisition commands, supply `--portfolio-control-selection`
@@ -81,6 +108,18 @@ settlement proof files and replan file, not merely the enclosing manifest path.
 A warm cache therefore cannot hide a modified replan or native receipt.
 
 ## Verification And Remaining Work
+
+The retained `cust-night-bccfaf39-1105` inputs exposed a remaining execution-binding
+scope check after the real atomic commit and dispatch compilation had passed.
+Binding now consumes only the independently rebuilt control admission's exact
+selected requirement scope. The selected route's resolved Pareto membership,
+source identity, resources and queue checks are unchanged. Incomplete comparison
+keeps `selected_from_complete_pareto_frontier=false`; persisted control bindings
+must still exactly equal full source rebuilding before a native receipt or
+settlement can consume them. No caller flag or a forged comparison bit is enough.
+The retained full public binding CLI replays ready with no Teacher authority;
+this is offline evidence, not a native acquisition. Generic/Teacher comparison
+validation remains strict.
 
 The controlled runtime adapter now connects these public services without adding
 an executor or Teacher. Its new source/commit CLI checks bring the focused counts
