@@ -49,6 +49,11 @@ public static partial class GoalMethodCoverageReconciliationBuilder
             kinds.Add(GoalMethodTeacherCoverageSourceKinds
                 .SkullKeyTerminalInteractionCorpus);
         }
+        if (method.DirectionId == "obtain_rusty_key")
+        {
+            kinds.Add(GoalMethodTeacherCoverageSourceKinds
+                .RustyKeyThresholdDecisionCorpus);
+        }
         if (method.DirectionId == "earn_money")
         {
             kinds.Add(GoalMethodTeacherCoverageSourceKinds

@@ -9,6 +9,20 @@ namespace StardewAI.Core.Tests;
 public sealed partial class GrandpaDirectionDailyCandidateBindingTests
 {
     [Fact]
+    public void RustyKeyCorpusIsRegisteredInOriginalReconciliationWithoutInventingAnAdapterForOtherRoots()
+    {
+        var method = typeof(GoalMethodCoverageReconciliationBuilder).GetMethod("ImplementedSourceKinds",
+            BindingFlags.Static | BindingFlags.NonPublic)!;
+        var frontier = RustyCoverageTestFrontier("pending_dependency_expansion");
+        foreach (var root in frontier.Methods)
+        {
+            var kinds = (string[])method.Invoke(null, new object[] { root })!;
+            Assert.Equal(root.DirectionId == "obtain_rusty_key",
+                kinds.Contains(GoalMethodTeacherCoverageSourceKinds.RustyKeyThresholdDecisionCorpus));
+        }
+    }
+
+    [Fact]
     public void RustyKeyCorpusKeepsOneRealDecisionGroupPartialAndReplaysItsSources()
     {
         var f = CreateRustyCorpusFixture(splitComplete: false);

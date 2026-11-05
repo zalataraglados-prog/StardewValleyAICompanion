@@ -33,6 +33,10 @@ The existing `GoalMethodTeacherCoverageBuilder` accepts source kind
 requires exactly one catalog-backed Rusty Key method, and contributes each
 row's same partition to Teacher comparison and native outcome sets. It does
 not set readiness, edit method status or change frozen counters.
+The original reconciliation adapter inventory also registers this source kind,
+so its next-work report does not incorrectly ask for an already implemented
+adapter. A regression first reproduced that missing registration and now
+checks the Rusty Key root without assigning its adapter to unrelated roots.
 
 The original coverage intersection still requires an `executable_frontier`
 method and all three Teacher/native partitions. Tests cover partial corpus
@@ -56,8 +60,11 @@ The corpus contains only the retained `rk-e8d7a6c3-1104` decision at day 6:
 
 Local regression passes `1369/1369` game-free Core tests, including the
 direction/museum/corpus family `261/261`; no tests were skipped. The new corpus
-suite contributes 21 cases. Checkpoint EVD-338 remains unchanged. PR CI is
-still required for the committed head.
+suite initially contributed 21 cases. The reconciliation registration check
+adds one more (22/22 focused); the real public reconciliation CLI now lists
+the adapter as implemented and connected, while retaining the pending method
+and missing validation/test work. Checkpoint EVD-338 remains unchanged. Final
+PR CI is still required for the committed head.
 
 Remaining work is genuine missing native decision partitions plus the original
 method, safe threshold supply and pre-Year-3 responsibilities. Do not rerun
