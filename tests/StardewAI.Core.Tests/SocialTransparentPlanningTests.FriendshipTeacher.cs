@@ -172,14 +172,16 @@ public sealed partial class SocialTransparentPlanningTests
         Assert.Equal(64, Assert.Single(runtime.Evaluate(snapshot, optionIds).Options).SocialCandidates.Length);
     }
 
-    [Fact]
-    public void FriendshipTeacherRejectsLegacyArtifactsAndEditedIntakeClaims()
+    [Theory]
+    [InlineData("current_friendship_teacher_preference.v1")]
+    [InlineData("current_friendship_teacher_preference.v2")]
+    public void FriendshipTeacherRejectsLegacyArtifactsAndEditedIntakeClaims(string legacySchema)
     {
         var files = FriendshipTeacherFiles();
         var result = CurrentFriendshipTeacherPreferenceBuilder.Build(files.Snapshot, files.Calibration);
         var stored = Path.Combine(files.Directory, "intake-edited.json");
         var json = JsonSerializer.SerializeToNode(result, JsonOptions)!;
-        json["schemaVersion"] = "current_friendship_teacher_preference.v1";
+        json["schemaVersion"] = legacySchema;
         File.WriteAllText(stored, json.ToJsonString());
         Assert.Throws<InvalidDataException>(() => CurrentFriendshipTeacherPreferenceBuilder.Verify(stored));
         json["schemaVersion"] = result.SchemaVersion;

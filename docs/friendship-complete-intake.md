@@ -1,5 +1,10 @@
 # Friendship Complete Offline Intake
 
+This intake is accepted in #457 (`75e7d9a0`). The new consumer's complete
+cross-map contact proof is now implemented; follow [its actual result and
+explicit pairwise continuation](friendship-route-contact-budget.md), not the
+historical next-step paragraph below.
+
 PR #456 passed all 38 CI steps at `eb8333d4`, merged as `c53b6a0d`.
 Its real movement/connector calibration is accepted and is not being repeated.
 The sole primary remains `raise_friendships`; accepted totals remain 9/19

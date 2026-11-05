@@ -12,6 +12,7 @@ public static partial class CurrentFriendshipTeacherPreferenceBuilder
     private static CurrentFriendshipTeacherCandidate Evaluate(
         PolicyEventCandidatePrediction source, PolicyEventCandidatePrediction? bound,
         SnapshotEnvelope snapshot, CurrentFriendshipDeficit deficit, CurrentSocialContactFrontier frontier,
+        CurrentSocialRouteContactBudgetBuilder routeBudgets,
         int currentTime, int minutes, int availableEnergy, string[] admissionReasons)
     {
         var row = new CurrentFriendshipTeacherCandidate
@@ -47,15 +48,33 @@ public static partial class CurrentFriendshipTeacherPreferenceBuilder
         row.ExpectedNewQualifiers = after >= 1975 ? 1 : 0;
         row.UsefulFriendshipDelta = Math.Min(1975, after) - before;
         var interaction = bound.OptionId == "social.talk_npc" ? "talk" : "gift";
-        if (!Integer(bound, "npc_tile_x", out var x) || !Integer(bound, "npc_tile_y", out var y) ||
-            !Integer(bound, "stand_tile_x", out var standX) || !Integer(bound, "stand_tile_y", out var standY))
+        if (!Integer(bound, "npc_tile_x", out var x) || !Integer(bound, "npc_tile_y", out var y))
             return Excluded(row, "native_social_geometry_unavailable");
-        var opportunity = MatchedContacts(bound, frontier, x, y, standX, standY).FirstOrDefault();
+        CurrentSocialContactOpportunity? opportunity;
+        if (bound.Kind == "route_connector_tile")
+        {
+            var proofs = MatchedContacts(bound, frontier, x, y, null, null)
+                .Select(contact => (Contact: contact, Budget: routeBudgets.Build(bound, contact))).ToArray();
+            var selected = proofs.Where(proof => proof.Budget.FullContactBudgetVerified)
+                .OrderBy(proof => proof.Budget.ContactWindow!.EarliestInteractionTime)
+                .ThenBy(proof => proof.Contact.OpportunityId, StringComparer.Ordinal).FirstOrDefault();
+            if (selected.Budget is null)
+                return Excluded(row, proofs.SelectMany(proof => proof.Budget.BlockingReasons)
+                    .Distinct(StringComparer.Ordinal).DefaultIfEmpty("no_exact_cross_map_contact_budget_for_actual_first_connector").ToArray());
+            opportunity = selected.Contact;
+            row.RouteContactBudget = selected.Budget;
+        }
+        else
+        {
+            if (!Integer(bound, "stand_tile_x", out var standX) || !Integer(bound, "stand_tile_y", out var standY))
+                return Excluded(row, "native_social_geometry_unavailable");
+            opportunity = MatchedContacts(bound, frontier, x, y, standX, standY).FirstOrDefault();
+        }
         if (opportunity is null)
             return Excluded(row, "no_exact_current_geometry_calibrated_contact_budget");
-        row.ContactBudgetArrivalTime = opportunity.EarliestInteractionTime;
+        row.ContactBudgetArrivalTime = row.RouteContactBudget?.ContactWindow?.EarliestInteractionTime ?? opportunity.EarliestInteractionTime;
         row.TimingEvidenceId = opportunity.TimingEvidenceId;
-        row.TimingEvidenceKind = opportunity.RouteTimingEvidenceKind.ToString();
+        row.TimingEvidenceKind = (row.RouteContactBudget?.ContactWindow?.RouteTimingEvidenceKind ?? opportunity.RouteTimingEvidenceKind).ToString();
         row.OpportunityId = opportunity.OpportunityId;
         if (interaction == "gift")
         {
@@ -81,7 +100,7 @@ public static partial class CurrentFriendshipTeacherPreferenceBuilder
         row.NativeActionIdentity = JsonSerializer.Serialize(new
         {
             row.OptionId, row.NpcName, Location = Parameter(bound, "target_location"), x, y,
-            row.GiftQualifiedItemId, row.GiftQuality, row.GiftSlotIndex
+            row.GiftQualifiedItemId, row.GiftQuality, row.GiftSlotIndex, FirstEdge = row.RouteContactBudget?.RequiredFirstEdge
         });
         row.Status = "admitted_current_social_comparison";
         return row;
@@ -143,7 +162,7 @@ public static partial class CurrentFriendshipTeacherPreferenceBuilder
 
     private static IEnumerable<CurrentSocialContactOpportunity> MatchedContacts(
         PolicyEventCandidatePrediction candidate, CurrentSocialContactFrontier frontier,
-        int x, int y, int standX, int standY)
+        int x, int y, int? standX, int? standY)
     {
         var gift = candidate.OptionId == "social.gift_npc";
         var npcName = Parameter(candidate, "npc_name");
@@ -154,7 +173,7 @@ public static partial class CurrentFriendshipTeacherPreferenceBuilder
                 opportunity.InteractionKind == (gift ? "gift" : "talk") &&
                 opportunity.LocationName == location &&
                 opportunity.NpcTileX == x && opportunity.NpcTileY == y &&
-                opportunity.StandTileX == standX && opportunity.StandTileY == standY &&
+                (!standX.HasValue || opportunity.StandTileX == standX) && (!standY.HasValue || opportunity.StandTileY == standY) &&
                 (!gift || opportunity.GiftSlotIndex == candidate.SlotIndex &&
                     opportunity.GiftQualifiedItemId == candidate.QualifiedItemId && opportunity.ExpectedFriendshipDelta == delta))
             .OrderBy(opportunity => opportunity.EarliestInteractionTime)

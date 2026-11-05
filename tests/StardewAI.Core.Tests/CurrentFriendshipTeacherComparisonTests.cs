@@ -65,4 +65,13 @@ public sealed class CurrentFriendshipTeacherComparisonTests
         ContactBudgetArrivalTime = time, TimingEvidenceId = "calibrated-shared-context",
         TimingEvidenceKind = "ConservativeUpperBound"
     };
+
+    [Fact]
+    public void FirstConnectorTimingWithoutFullContactProofCannotBecomeAPreference()
+    {
+        var first = Row("first", 901);
+        var second = Row("second", 908);
+        first.Kind = second.Kind = "route_connector_tile";
+        Assert.Null(CurrentFriendshipTeacherComparisonPolicy.Compare(first, second));
+    }
 }
