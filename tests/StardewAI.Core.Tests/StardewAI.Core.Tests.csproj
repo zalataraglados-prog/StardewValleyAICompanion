@@ -56,6 +56,9 @@
     <Compile Include="PolicyTeacherReplayRegistryTests.cs" />
     <Compile Include="PolicyTeacherReplayRegistryTests.Friendships.cs" />
     <Compile Include="PolicyTeacherReplayRegistryTests.Marriage.cs" />
+    <Compile Include="MarriageTeacherCorpusTests.cs" />
+    <Compile Include="MarriageTeacherCorpusTests.Identity.cs" />
+    <Compile Include="MarriageTeacherCorpusTests.Coverage.cs" />
     <Compile Include="SocialTransparentPlanningTests.MarriagePolicyInputs.cs" />
     <Compile Include="StructuredPolicyTrainerTests.CandidatePolicyFeatures.cs" />
     <Compile Include="SkillTeacherReplayVerifierTests.cs" />

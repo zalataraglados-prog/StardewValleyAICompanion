@@ -54,6 +54,8 @@ var commandDefinitions = new CommandDefinition[]
     new("verify-marriage-native-joint-receipt", options => WriteMarriageNativeJointReceipt(options, verify: true)),
     new("build-marriage-teacher-rows", WriteMarriageTeacherRows),
     new("verify-marriage-teacher-row", WriteMarriageTeacherRow),
+    new("build-marriage-teacher-corpus", options => WriteMarriageTeacherCorpus(options, verify: false)),
+    new("verify-marriage-teacher-corpus", options => WriteMarriageTeacherCorpus(options, verify: true)),
     new("build-current-friendship-teacher-preference", options => WriteCurrentFriendshipTeacherPreference(options, verify: false)),
     new("verify-current-friendship-teacher-preference", options => WriteCurrentFriendshipTeacherPreference(options, verify: true)),
     new("compile-current-friendship-teacher-preference", CompileCurrentFriendshipTeacherPreference),
@@ -844,6 +846,15 @@ static void WriteMarriageNativeJointReceipt(Arguments options, bool verify)
         throw new InvalidDataException("Marriage native joint receipt output must be a new JSON file.");
     Write(output, verify ? MarriageNativeJointReceiptBuilder.Verify(options.Required("receipt")) :
         MarriageNativeJointReceiptBuilder.Build(options.Required("request")));
+}
+
+static void WriteMarriageTeacherCorpus(Arguments options, bool verify)
+{
+    var output = Path.GetFullPath(options.Required("output"));
+    if (File.Exists(output) || Directory.Exists(output) || !output.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+        throw new InvalidDataException("Marriage corpus output must be a new JSON file.");
+    Write(output, verify ? MarriageTeacherCorpusBuilder.Verify(options.Required("corpus")) :
+        MarriageTeacherCorpusBuilder.Build(options.Required("request")));
 }
 
 static void WriteMarriageTeacherRows(Arguments options)

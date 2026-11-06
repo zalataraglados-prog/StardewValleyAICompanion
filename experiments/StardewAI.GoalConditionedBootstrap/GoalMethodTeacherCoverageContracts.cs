@@ -4,6 +4,7 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public static class GoalMethodTeacherCoverageSourceKinds
 {
+    public const string MarriageJointCorpus = "marriage_joint_corpus";
     public const string FriendshipThresholdCorpus = "friendship_threshold_corpus";
     public const string SkillLevelThresholdCorpus = "skill_level_threshold_corpus";
     public const string AcquisitionRoutePortfolioCorpus =

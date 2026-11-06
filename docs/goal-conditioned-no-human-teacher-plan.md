@@ -1,5 +1,7 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+> **2026-11-07 婚房corpus接续（当前优先）：** #472已接受。两条原准备轨迹与完整C来源组成一个joint组：两次决策不重复记结婚评分，全部11队列/12primitive、分母和nonce保留；整组按原决策分区，不按婚礼日期借分区。公开重放同SHA`62c4af46...`，原覆盖/对账接新source而不清除方法图责任；新比较探针只更换过时基线，不反改既有诊断或重采成功C。下一步条件婚房局部方法/证书，保留全部新档获取/共享预算/跨日义务，再仅补缺失validation/test。`11/19、11/19、11/19、8/11 roots`、formal=false和Teacher21/Student完整目标不变，最终回归/CI见收口。[合同与来源](marriage-criterion-corpus.md)。
+
 > **2026-11-07 婚房原轨迹接续（当前优先）：** #471已接受，完整C不重采。当前接原trajectory.v2/显式Marriage provider及同一Teacher/Backend/反馈输入；每行保留83候选/1pair/81未知，机械控制只绑定完整joint来源，赠礼即时0且长期回报pending。真实接口指出非赠礼对话漏接触认证，只修新共享投影并离线重建b版，旧执行器/比较/1975点目标不改。下一步原criterion corpus/覆盖、条件局部方法和真正缺失分区；不是重做动作或要求局部gift承担完整新档获取。并集`11/19、11/19、11/19、8/11 roots`、formal=false及Teacher21/Student全局义务保持；最终回归/CI见收口。[合同与诊断](marriage-policy-teacher-rows.md)。
 
 > **2026-11-07 婚房typed接续（当前优先）：** #470已接受。C全部原生链现由新typed联合回执复用原强reader贯通，公开Build/Verify同SHA`c199b006...`、6反例拒绝，原始源未变；婚礼日评分置位、剧情完成和原生归位分别验证，旧执行器/原生门不改。下一步只接原trajectory.v2 Teacher行/显式provider/统一输入、corpus/局部方法和真正缺失分区，不重采C/Friendship、不借旧目标哈希。已有房屋/关系/夹具仍仅前置，完整新档Teacher21/Student及全局预算责任不缩减；`11/19、11/19、11/19、8/11 roots`和formal=false保持。[完整来源合同](marriage-native-joint-receipts.md)。
