@@ -51,6 +51,8 @@
     <Compile Include="StructuredPolicyTrainerTests.CandidatePolicyFeatures.cs" />
     <Compile Include="SkillTeacherReplayVerifierTests.cs" />
     <Compile Include="SkillTeacherCorpusTests.cs" />
+    <Compile Include="FriendshipTeacherCorpusTests.cs" />
+    <Compile Include="FriendshipTeacherCorpusTests.Coverage.cs" />
     <Compile Include="SkillLocalDependencyViewTests.cs" />
     <Compile Include="SkillPolicyStateFeatureTests.cs" />
     <Compile Include="ActionOriginOutputSourceGuardTests.cs" />
