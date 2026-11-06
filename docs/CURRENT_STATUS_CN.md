@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-07 全馆typed联合证明（当前唯一接续）：** #477已由38步CI接受、合入`2e082394`。离线新Build/Verify只各重建一次原比较/原强队列，精确绑定原编译、wire/nonce/环境/同tick与完整快照，原95项reader证明全95终态、唯一项变化、库存一件消耗与成就5/菜单退出。真实重放SHA`aa961fc4...`，train/day209、95项/1pair、tick126→331、slot11栈2→1；70专项含22新检查通过、4公开反例拒绝且源不变，完整回归/CI见收口。下一步接原轨迹/provider/统一输入，再corpus/条件方法/原覆盖与真缺分区，不重采成功B、不改旧执行器。并集仍`12/19、12/19、12/19、9/11 roots`、formal=false；完整新档获取/RNG/共享预算/Teacher21与Student义务保持，Money6随后。[合同](museum-terminal-native-join.md)。下方旧接续仅为历史。
+
 > **2026-11-07 全馆独立比较/原生来源（当前唯一接续）：** #476经38步CI接受、合入`5694c6de`。新全馆终局比较复用原95项入口/注册账本/候选/编译，严格94→95与已编译600tick等待；只产显式pairs，等价副本不强排，原Rusty59→60、全局Collection与执行器不改。真实B为1候选/1pair、比较重放SHA`c9ab2e0c...`，原队列94→95/成就5 false→true/slot11栈2→1，原强整队列reader通过1动作/10源digest，原档未变、进程退出。A因原测试源第5年在动作前拒绝，仅修新调用者隔离日期；已有馆藏/物品/钥匙重置等全部为声明前置。并集仍`12/19、12/19、12/19、9/11 roots`，formal=false，专项48含17新检查通过、最终回归/CI见收口。下一步仅离线消费成功B做typed全馆联合证明，再原轨迹/provider/corpus/条件方法/覆盖与真缺分区；不重采B或把局部单源当完整新档Teacher21/Student。Money6随后，全局获取/RNG/共享预算义务不减。[完整来源](museum-terminal-teacher-comparison.md)。下方旧接续仅为历史。
 
 > **2026-11-07 全馆局部接入（当前唯一接续）：** 婚房#475经CI `42283350602`全部38步接受、合入`fea19c7a`；并集冻结`12/19 executable、12/19 split-complete、12/19 ready、9/11 roots`，formal=false。唯一primary为`complete_museum_collection`，Money6随后。新局部入口只复用原95项reader/快照helper/捐赠候选，保留原依赖与不可用项，不改旧全局Teacher或执行器、不反挂其他root。真实源公开重放同SHA`5be9d272...`，已54/缺41、当前捐赠候选0，无标签/native/资源许可晋升，31项针对性检查通过，最终回归/CI见收口。下一步复核旧比较/反事实组件、建立全馆局部比较，再94→95原生来源及原数据/有条件方法/覆盖；测前声明不冒充获取，完整新档Teacher21/Student、RNG与共享预算义务不减。[来源与合同](museum-collection-local-intake.md)。下方旧接续仅为历史。
