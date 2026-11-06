@@ -92,6 +92,11 @@ raw/local-data commit belongs to this slice.
 
 ## Sole Next Slice
 
+This train-only handoff is now superseded by
+[Friendship Local Acceptance](friendship-local-acceptance.md). Its four actual
+validation/test sources close this local gap; do not repeat the following
+historical instructions or resample train/calibration.
+
 Choose genuine original policy validation/test dates first, then run only the four
 missing isolated sources (five/ten thresholds in each partition) through the
 original comparison, lawful queue and native action chain. Reuse accepted train

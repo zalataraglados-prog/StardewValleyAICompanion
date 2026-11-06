@@ -104,6 +104,7 @@
     <Compile Include="SocialTransparentPlanningTests.FriendshipAdmission.cs" />
     <Compile Include="SocialTransparentPlanningTests.FriendshipPolicyInputs.cs" />
     <Compile Include="FriendshipTerminalSaveBoundaryTests.cs" />
+    <Compile Include="FriendshipTerminalSaveBoundaryTests.Calendar.cs" />
     <Compile Include="FriendshipNativeThresholdRequestTests.cs" />
     <Compile Include="FriendshipThresholdRuntimeSourceGuardTests.cs" />
     <Compile Include="SkillExperienceProjectionReaderTests.cs" />

@@ -7,7 +7,7 @@ using StardewAI.GoalConditionedBootstrap;
 
 namespace StardewAI.Core.Tests;
 
-public sealed class FriendshipTerminalSaveBoundaryTests
+public sealed partial class FriendshipTerminalSaveBoundaryTests
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -113,6 +113,8 @@ public sealed class FriendshipTerminalSaveBoundaryTests
         var document = new XDocument(new XElement("SaveGame", new XElement("gameVersion", "1.6.15"),
             new XElement("year", 2), new XElement("currentSeason", "winter"), new XElement("dayOfMonth", 28),
             new XElement("player", new XElement("farmName", "fixture"), new XElement("UniqueMultiplayerID", "1"),
+                new XElement("stats", new XElement("Values", new XElement("item", new XElement("key", new XElement("string", "daysPlayed")),
+                    new XElement("value", new XElement("unsignedInt", 224))))),
                 new XElement("items", new XElement("item", "preserved")), new XElement("eventsSeen", new XElement("int", "existing")),
                 new XElement("lastSleepLocation", "Farm"),
                 new XElement("lastSleepPoint", new XElement("X", 66), new XElement("Y", 19)),
