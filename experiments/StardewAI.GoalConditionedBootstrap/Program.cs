@@ -47,6 +47,9 @@ var commandDefinitions = new CommandDefinition[]
     new("prepare-marriage-teacher-save-boundary", options => Write(options.Required("output"),
         MarriageTeacherSaveBoundaryBuilder.Prepare(options.Required("request"), options.Required("output")))),
     new("build-current-marriage-house-settlement-projection", BuildCurrentMarriageHouseSettlementProjection),
+    new("build-current-marriage-teacher-preference", options => WriteCurrentMarriageTeacherPreference(options, verify: false)),
+    new("verify-current-marriage-teacher-preference", options => WriteCurrentMarriageTeacherPreference(options, verify: true)),
+    new("compile-current-marriage-teacher-preference", CompileCurrentMarriageTeacherPreference),
     new("build-current-friendship-teacher-preference", options => WriteCurrentFriendshipTeacherPreference(options, verify: false)),
     new("verify-current-friendship-teacher-preference", options => WriteCurrentFriendshipTeacherPreference(options, verify: true)),
     new("compile-current-friendship-teacher-preference", CompileCurrentFriendshipTeacherPreference),
@@ -729,6 +732,33 @@ static void WriteCurrentMarriageHouseIntake(Arguments options, bool verify)
         CurrentMarriageHouseIntakeBuilder.Build(options.Required("snapshot"), options.Required("knowledge"), options.Required("dependencies"));
     Write(output, report);
     if (report.Status != "ready_current_state_only") Environment.ExitCode = 2;
+}
+
+static void WriteCurrentMarriageTeacherPreference(Arguments options, bool verify)
+{
+    var output = Path.GetFullPath(options.Required("output"));
+    if (!output.EndsWith(".json", StringComparison.OrdinalIgnoreCase) || File.Exists(output) || Directory.Exists(output))
+        throw new InvalidDataException("Marriage Teacher output must be a new JSON file.");
+    var admission = options.Optional("admission") ?? "complete_order";
+    if (admission is not ("complete_order" or "independent_pairs")) throw new ArgumentException("Marriage --admission must be complete_order or independent_pairs.");
+    var report = verify ? CurrentMarriageTeacherPreferenceBuilder.Verify(options.Required("preference")) :
+        CurrentMarriageTeacherPreferenceBuilder.Build(options.Required("intake"), options.Required("calibration"), options.Required("ledger"));
+    Write(output, report);
+    if (!(admission == "independent_pairs" ? report.IndependentPairwiseLabelEligible : report.CompletePreferenceLabelEligible)) Environment.ExitCode = 2;
+}
+
+static void CompileCurrentMarriageTeacherPreference(Arguments options)
+{
+    var plan = Path.GetFullPath(options.Required("plan-output"));
+    var queue = Path.GetFullPath(options.Required("output"));
+    if (plan.Equals(queue, OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) ||
+        new[] { plan, queue }.Any(path => File.Exists(path) || Directory.Exists(path) || !path.EndsWith(".json", StringComparison.OrdinalIgnoreCase)))
+        throw new InvalidDataException("Marriage plan and queue outputs must be different new JSON files.");
+    var admission = options.Optional("admission") ?? "complete_order";
+    if (admission is not ("complete_order" or "independent_pairs")) throw new ArgumentException("Marriage --admission must be complete_order or independent_pairs.");
+    var result = CurrentMarriageTeacherPreferenceBuilder.Compile(options.Required("preference"), admission == "independent_pairs");
+    Write(plan, result.Plan);
+    Write(queue, result.Queue);
 }
 
 static void BuildCurrentFriendshipDeficit(Arguments options)

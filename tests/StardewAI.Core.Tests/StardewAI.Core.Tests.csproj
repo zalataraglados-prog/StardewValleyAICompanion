@@ -46,6 +46,9 @@
     <Compile Include="NativeWeddingCalendarProjectionTests.cs" />
     <Compile Include="CurrentMarriageHouseSettlementTests.cs" />
     <Compile Include="MarriageTeacherSaveBoundaryTests.cs" />
+    <Compile Include="SocialTransparentPlanningTests.MarriageComparison.cs" />
+    <Compile Include="SocialTransparentPlanningTests.MarriageComparison.Fixture.cs" />
+    <Compile Include="CurrentMarriageTeacherComparisonPolicyTests.cs" />
     <Compile Include="PolicyTrajectoryDatasetBuilderTests.cs" />
     <Compile Include="PolicyIndependentDecisionDatasetTests.cs" />
     <Compile Include="StructuredPolicyTrainerTests.cs" />
