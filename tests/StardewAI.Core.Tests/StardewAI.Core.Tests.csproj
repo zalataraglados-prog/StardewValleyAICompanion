@@ -101,6 +101,8 @@
     <Compile Include="MoneyCropNativeProductionSegmentSourceGuardTests.cs" />
     <Compile Include="MoneyCropNativeProductionInitializerSourceGuardTests.cs" />
     <Compile Include="MoneyCropNativeProductionCompilerTests.cs" />
+    <Compile Include="MoneyCropTeacherSupplyTests.cs" />
+    <Compile Include="MoneyCropTeacherSupplyTests.Layout.cs" />
     <Compile Include="BushHarvestMainlineTests.cs" />
     <Compile Include="CommunityCenterDonationMainlineTests.cs" />
     <Compile Include="CommunityCenterTransparencyTests.cs" />
