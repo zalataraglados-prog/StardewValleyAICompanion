@@ -1,5 +1,7 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+> **2026-11-07 全馆比较/原生接续（当前唯一优先）：** #476已接受、合入`5694c6de`，当前全馆独立终局比较经原账本/候选/编译验证94→95与600tick等待，不改旧Rusty或全局Teacher/执行器。B真实1pair、重放SHA`c9ab2e0c...`、原生94→95/成就5 false→true/库存2→1，原强整队列reader通过、原档未变且进程退出。新调用日期与库存探针假设错误只修新消费端，声明前置不冒充获取。下一步离线接B的typed全馆联合证明，再原轨迹/provider/corpus/条件方法/覆盖和真正缺失分区，不重采成功源或倒挂完整新档Teacher总验收。并集`12/19、12/19、12/19、9/11 roots`、formal=false及完整95获取/RNG/共享预算/Teacher21/Student义务保持；Money6随后。[合同与实际来源](museum-terminal-teacher-comparison.md)。
+
 > **2026-11-07 全馆局部接续（当前唯一优先）：** 婚房#475已由38步CI接受并合入`fea19c7a`，接受并集`12/19、12/19、12/19、9/11 roots`、formal=false冻结。当前只做`complete_museum_collection`；新薄入口复用原95项reader/原快照/捐赠候选，保留原方向，不改全局Collection Teacher或执行器，不以其他收集root倒挂局部读取。真实保留源54/95/缺41、当前捐赠候选0，公开重建一致、无标签/native/资源预留或全根晋升。下一步复核现有比较/反事实组件，建立全馆独立比较，再94→95原生来源及原轨迹/corpus/有条件方法/覆盖；测前已有馆藏/物品不冒充获取，完整新档/RNG/共享预算/Teacher21与Student责任不减，Money6随后。[完整合同](museum-collection-local-intake.md)。
 
 > **2026-11-07 婚房三分区收口（当前唯一接续）：** #474已接受合入`cc61694b`。仅新增validation冬21/test冬12完整原生来源，保留train C；原corpus为8准备行/3结果，分区沿原决策日，不借婚礼日，不将控制或未知项当偏好。原数据集8接受/0拒绝、2/2/4、长期全pending；原覆盖method executable/比较与native三分区/criterion ready且无本项open work，其他18项和原输入未变。最终CI接受后晋升并集`12/19、12/19、12/19、9/11 roots`，formal=false。冬17失败是新夹具跳钟漏日程，修新调用者而不反改旧执行器。随后唯一primary为`complete_museum_collection`，先复核95项权威事实并复用Rusty捐赠/预留/保管/滚动链，再补全馆缺口；Money6随后。局部条件证据不证明原有房屋/关系/物品获取，完整新档Teacher21/Student及全局资源日程责任不减。[来源与验收](marriage-local-acceptance.md)。下方旧接续仅为历史。

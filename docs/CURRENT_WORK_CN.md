@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-11-07 全馆独立终局比较与原生来源（当前唯一接续）
+
+- #476经CI `42286239023`全部38步接受、合入`5694c6de`，原95项入口不重做。唯一primary仍`complete_museum_collection`；并集`12/19、12/19、12/19、9/11 roots`与formal=false不变，Money6随后。
+- 新比较先验完整intake，再用注册账本重评完整捐赠候选，复用原去模型分数/诊断/时钟/计划与队列编译及稳定身份helper；只比较安全94→95与原等待primitive的600tick反事实，两边均编译通过才产pair。等价副本不强排、拒绝项保留，显式选中preferred候选才编译；原Rusty59→60/全局Collection Teacher/执行器不改。[合同与来源](museum-terminal-teacher-comparison.md)。
+- B后台静音真实1候选/1pair，公开比较重放同SHA`c9ab2e0c...`，原队列完成94→95、成就5 false→true、slot11栈2→1；原强整队列reader通过1动作/10源digest，原档未变、进程退出。A历史原档实际第5年，在动作前正确拒绝；只修新调用者的隔离日期边界。新库存探针误假设夹具1件，只修探针、不改旧夹具或重跑成功B。原始数据仍仓库外，不把前94件/持有物/日期/钥匙奖励重置当获取。
+- 48项实际专项含17新检查及最终完整Core2283/Backend621零失败零跳过，构建零警告/错误、原EVD-338/差异检查通过；3类公开伪native/等待派发/覆盖探针拒绝且源未变，最终CI见收口。**唯一下一步：** 离线复用B接typed全馆比较/native联合证明，再原轨迹/provider/corpus/条件方法/覆盖及真缺分区。不重采B或已验根，不把原生单源当整项或Teacher21/Student完成，完整新档获取/RNG/共享预算责任不减。
+
 ## 2026-11-07 全馆局部接入（当前唯一接续）
 
 - 婚房#475经CI `42283350602`全部38步接受，合入`fea19c7a`，对应分支已清理；并集冻结`12/19 executable、12/19 split-complete、12/19 ready、9/11 roots`，formal=false。唯一primary改为`complete_museum_collection`，Money6随后，已验婚房/Rusty不重采。
