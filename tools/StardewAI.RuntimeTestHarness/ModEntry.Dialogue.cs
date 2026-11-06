@@ -284,6 +284,13 @@ public sealed partial class ModEntry : Mod
                 advance.SawDialogueFinishedBeforePress = currentBox.dialogueFinished;
                 advance.SawShowTypingBeforePress = currentBox.showTyping;
                 advance.SawTransitioningBeforePress = currentBox.transitioning;
+                // Native updateActiveMenu updates but skips input when unfocused.
+                // Reuse the composite dialogue path only for the hidden runtime.
+                if (ShouldSuppressLocalRendering() && Program.releaseBuild &&
+                    !Program.gamePtr.IsActiveNoOverlay)
+                {
+                    advance.UseNativeMenuClick = true;
+                }
                 if (advance.UseNativeMenuClick)
                 {
                     currentBox.receiveLeftClick(0, 0);
@@ -377,7 +384,8 @@ public sealed partial class ModEntry : Mod
             PrimitiveVerificationStatus = verificationStatus,
             PrimitiveVerificationReasons = allReasons,
             RequestedEffect = "menus.active_menu.is_open=false",
-            ObservedEffect = CloseMenuObservedEffect() + ";dialogue_press_attempts=" + advance.PressAttempts + ";advance_ticks=" + advance.ElapsedTicks,
+            ObservedEffect = CloseMenuObservedEffect() + ";dialogue_press_attempts=" + advance.PressAttempts + ";advance_ticks=" + advance.ElapsedTicks +
+                ";dialogue_native_menu_click=" + advance.UseNativeMenuClick.ToString().ToLowerInvariant(),
             BlockReasons = status == "blocked" ? allReasons : Array.Empty<string>(),
             ChangedFacts = new[]
             {

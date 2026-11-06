@@ -3,6 +3,30 @@ namespace StardewAI.Core.Tests;
 public sealed class HeadlessHostInputPumpSourceGuardTests
 {
     [Fact]
+    public void HiddenOrdinaryDialogueReusesNativeClickOnlyBehindTheOriginalSafetyGates()
+    {
+        var source = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.RuntimeTestHarness", "ModEntry.Dialogue.cs"));
+        var start = source.IndexOf("private void TickDialogueAdvanceCore", StringComparison.Ordinal);
+        var end = source.IndexOf("private static TrainingExecutionResult DialogueAdvanceResult", start, StringComparison.Ordinal);
+        var tick = source[start..end];
+        var guard = tick.IndexOf("!CanAdvanceOrdinaryDialogue(", StringComparison.Ordinal);
+        var press = tick.IndexOf("case DialogueAdvanceStage.Press:", StringComparison.Ordinal);
+        Assert.True(guard >= 0 && guard < press);
+        var input = tick[press..tick.IndexOf("case DialogueAdvanceStage.WaitAdvanceEffect:", press, StringComparison.Ordinal)];
+        Assert.Contains("ShouldSuppressLocalRendering() && Program.releaseBuild &&", input, StringComparison.Ordinal);
+        Assert.Contains("!Program.gamePtr.IsActiveNoOverlay", input, StringComparison.Ordinal);
+        Assert.Contains("advance.UseNativeMenuClick = true;", input, StringComparison.Ordinal);
+        Assert.Contains("currentBox.receiveLeftClick(0, 0);", input, StringComparison.Ordinal);
+        Assert.Contains("else if (!TryApplySmapiLeftButtonOverride(pressed: true", input, StringComparison.Ordinal);
+        Assert.Contains("!advance.UseNativeMenuClick && !TryApplySmapiLeftButtonOverride(pressed: false", input, StringComparison.Ordinal);
+        Assert.DoesNotContain("exitThisMenu", tick, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.dialogueUp =", tick, StringComparison.Ordinal);
+        Assert.DoesNotContain("Game1.player.CanMove =", tick, StringComparison.Ordinal);
+        Assert.Contains("dialogue_native_menu_click=", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void HeadlessDrawSuppressionPreservesNativeFarmEventProgress()
     {
         var entry = File.ReadAllText(FindRepositoryFile(

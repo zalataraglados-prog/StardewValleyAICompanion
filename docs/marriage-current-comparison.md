@@ -135,27 +135,68 @@ Protocol and comparison changes are separate PRs; final CI/merges belong in thei
 closing records. Old executors, Friendship goal gates and ledger services remain
 unchanged.
 
+## Same-Run Joint Outcome
+
+#468/#469 are accepted as `1bb9b40e` / `2ff53d0f`; the original comparison and
+profile protocol are not pending or reopened. Complete current source C is
+`I:\StardewAITraining\marriage-local-20261106\marriage-joint-20261106-c`.
+It is separate from G and B, not a splice of their lost process memory.
+
+A actually stopped at the gift dialogue after 17 SMAPI input attempts / 601 ticks.
+Before modifying the shared state machine, `45645d96`, its original chat JSON
+and fresh pinned-DLL decompilation were checked. Native `updateActiveMenu` skips
+input dispatch when the release-build window is unfocused. The narrow hidden
+input fix reuses the existing composite native-menu click behind the same
+ordinary-dialogue/speaker/question/transition guards. Foreground input, native
+lifecycle, attempt limits and old recovery semantics remain unchanged. B's actual
+close used two clicks / 82 ticks and restored native player control.
+
+B then proved native Dating -> Engaged, scheduled day 212, and three native
+sleeps 209 -> 210 -> 211 -> 212. Its new caller incorrectly sent wedding
+DialogueBox work through the general mandatory-menu preflight, which deliberately
+owns ordinary recovery/profession/mail, not story dialogue. No wedding primitive
+was dispatched by that attempt. The new caller now selects the original available
+story candidate, invokes the original backend DailyPlan/ActionQueue compiler and
+uses the existing precompiled-queue execution path. The saved B source passed
+that actual backend compilation before C started; no old preflight was loosened.
+
+C completed two gift queues and nine mechanical-control queues, twelve original
+primitives in total: fresh-bound gift preparation, closing its dialogue, native
+proposal, closing the proposal dialogue, two return-home connectors, three native
+sleeps and the original story executor. Wedding execution ended the native event
+with 11 dialogue clicks, no menu choices or skip. The stable final day-212 source
+has Abigail as spouse, married=true, engaged=false, farmhouse level 3 and the
+native joint Grandpa factor=true; event and menu are closed. Final snapshot SHA256
+is `361d22777a563650768e448f0941cd588fd108028610ae3b42e6448f066a565b`.
+The source save remained byte-identical; owned game/backend exited. No labelled
+phase teleport, clock jump, direct marriage/control flag edit or new executor
+was used. Fixture items, prior house and relationship state remain declared local
+prerequisites, not acquired progress.
+
+The original strong queue reader directly accepts sampled ordinary-close,
+proposal, native-sleep and completed-story receipts. These compatibility probes
+do not themselves replace a typed replay of the complete C chain. Each gift
+decision still has one independent preparation pair and all 81 incomparable
+rows, complete-order=false; mechanical controls are not preference labels.
+Core 2098 / Backend 617, 13 focused checks, E Debug build and EVD-338 pass;
+final CI/merge are recorded at PR close. Raw run data remain outside Git.
+
 ## Next Boundary
 
-The current source/Verify/compile and same-run gift boundary is accepted locally,
-pending this slice's final CI. Preserve the source save and all original inventories; fixture
-items and local current ledgers are declared prerequisites, not acquisitions.
-Do not dispatch old D hashes or use its missed current SeedShop window as a
-positive contact proof. The existing calibration can certify a later Forest
-window; native timing/position and original candidate binding must still agree.
+Consume the complete retained C source offline through the existing strong
+reader and add the typed Marriage/House native joint receipt. Preserve every
+original queue, primitive, request nonce and fresh decision binding; reject
+cross-run/source substitution, skipped days and a mere engagement or active
+wedding as a settled criterion. Do not resample accepted C, Friendship or movement
+calibration, or stitch G/B to C. The original generic native-save-boundary and
+story executors remain the only mechanical paths.
 
-G has exited; do not stitch its lost in-memory state onto a new run. For the
-complete joint-outcome source, rebuild the accepted boundary and reuse the
-original fresh gift/partnership/day-settlement chain in one run. Do not repeat
-accepted Friendship sources or movement calibration. The original generic native
-save-boundary control already requests `control_plane.native_save_boundary=true`;
-use that mechanical end-day path instead of a new sleep executor or post-label
-teleport fixture. Next obtain the typed native
-receipt chain. Engagement is not marriage, a pending house is not a new purchase,
-and a gift-preparation pair is not the joint criterion. Follow with original
-trajectory/provider/corpus, local method and genuinely missing partitions; do not
-recreate accepted Friendship work or narrow the full new-save Teacher21/Student
-responsibility to the current conditional source.
+Then follow the original trajectory/provider/corpus, local method and genuinely
+missing partitions. This native source does not yet promote coverage: accepted
+union remains 11/19 executable, 11/19 split-complete, 11/19 ready, 8/11 roots,
+formal=false. Prior acquisition, full new-save Teacher21/Student and integrated
+resource/time obligations remain independent requirements, not a subcondition
+silently imposed on or removed from the current local source.
 
 House construction and partner preparation may run in parallel: a pending house
 does not forbid a legal gift. Existing engagement/current partnership, however,
