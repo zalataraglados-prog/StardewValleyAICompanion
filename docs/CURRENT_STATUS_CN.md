@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-06 Friendship强原生来源（当前优先）：** #460已接受并合入`6a35d0b8`。两个真实阈值现经新typed Build/Verify接通原完整队列门及原逐请求检查，公开重建同SHA`ff353d1e...`/`77f215a8...`；旧独立Read的严格前态合同和原执行器不改，第二步只在完整原队列证明中消费。5pairs/未比较19与15/完整排序false及全部原始来源保留，8类CLI篡改拒绝。**下一步只接原轨迹、显式pair provider、输入投影与corpus/原覆盖，不重采成功动作或校准。** 尚无Teacher数据行或三分区晋升，`9/19、9/19、9/19、7/11`与formal=false保持。[来源、边界和接续](friendship-native-receipts.md)。最终回归/CI见本PR收口。
+
 > **2026-11-06 Friendship原生4/5、9/10来源（当前优先）：** #459已接受并合入`1f60faa7`。新隔离边界及后台入口已用原移动＋社交队列取得两次真实E阈值，均Evelyn1955→1975、源档退出后不变。新消费层仅补本地talk与已证完整跨图talk的窄适配，policy显式v2；旧调度、候选、编译执行不改，5pairs/未比较19与15/完整排序false都保留。原始快照/请求/队列/nonce在仓库外，尚待typed强回执接入，不能晋升`9/19、9/19、9/19、7/11`或formal=false。**下一步只离线接原native reader/两项队列验证、轨迹/provider/corpus/原覆盖，再补真正缺失分区；不重采成功动作或校准。** [完整来源、夹具声明及退出边界](friendship-native-thresholds.md)。完整回归/CI见本PR收口。
 
 > **2026-11-06 Friendship显式pair准入（当前优先）：** #458已接受并合入`f8b93506`。v4分开记录成对监督与完整排序；缺省门不变，显式`independent_pairs`复用原Verify/编译，保留全部源和20项未比较，不改Teacher/执行器/trainer。真实公开Build/Verify同SHA`4581deab...`、8pairs，默认compile拒绝/显式原队列pending；完整Core1833通过，最终回归/CI见本PR收口。**下一步真实E副本4→5、9→10阈值及原数据/覆盖**，复用真实校准，不把旧重置夹具或当前编译当原生/训练。`9/19、9/19、9/19、7/11`及formal=false不变。[来源和接续](friendship-pairwise-admission.md)。

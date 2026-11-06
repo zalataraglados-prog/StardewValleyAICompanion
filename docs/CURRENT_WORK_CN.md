@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-11-06 Friendship两步强回执已接入
+
+- #460经CI `42140897990`全部38步接受，合入`6a35d0b8`、分支已清理；两次原生人数阈值不重采。唯一primary仍`raise_friendships`，`9/19、9/19、9/19、7/11`和formal=false不变。
+- 核对原提取提交`3bde2048`及既有消费者：旧单动作Read要求编译态绑定动作前态，是既定合同；保留该入口/返回类型/默认严格门。新增整队列入口先走原完整queue validator，再私有复用原wire、actor、参数、nonce及快照检查；第二项只作为已验证整链的frame，不冒充旧独立动作证明，不改旧执行器或写回原队列。归档JSON哈希查询无消息，不捏造旧理由。
+- 新typed Friendship Build/Verify重放原比较/编译一次，核对完整两项队列与每个native请求/逐帧/事实/环境、目标+20点及精确人数，其他NPC和移动不能记功。实际h与ten-a来源离线公开重建b版分别同SHA`ff353d1e...`/`77f215a8...`，各5原始pairs和19/15未比较保留、完整排序false；两项criterion各自有强原生阈值，但尚无训练轨迹/provider/corpus/整项晋升。8类公开篡改拒绝且无输出，原始数据不改写。[协议和来源](friendship-native-receipts.md)。
+- 最终完整Core1876/Backend597零跳过（含107专项）；最终原始解包JSON全帧比较及未建模根字段拒绝后，两份公开Verify仍同b哈希；原EVD-338/差异检查通过。无新游戏，最终CI/发布见本PR收口。
+- **唯一下一步：** 复用这两份强来源接原`policy_decision_trajectory.v2`和显式pair replay provider，再criterion corpus/原覆盖；在行、Backend、loop统一补实需native人数/完整接触预算投影，不重写已编码候选参数或无关goal，不重采成功动作/校准、不借分区。当前day223两份来源不等于三分区；局部方法及后续真缺分区仍按原验收责任。回归/CI见本PR收口；无新游戏、worker/API、服务器、产品模型训练、原始数据/local-data提交或清理。
+
 ## 2026-11-06 Friendship真实人数阈值来源
 
 - #459经CI `42132500513`全部38步接受，合入`1f60faa7`、分支已清理；显式成对准入不重做。唯一primary仍`raise_friendships`，`9/19、9/19、9/19、7/11`及formal=false保持。

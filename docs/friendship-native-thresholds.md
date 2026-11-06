@@ -68,6 +68,11 @@ complete-order=false. This is offline replay, not a native outcome or training r
 
 ## Evidence And Next Boundary
 
+The strong typed native join is now implemented; the pending summary/status below
+is historical and is not overwritten. Follow [the typed receipts and remaining
+trajectory/provider boundary](friendship-native-receipts.md). No successful native
+action is resampled for that join.
+
 Both original two-item queues (`executor.move_to_tile`,
 `executor.social_interact`) completed with fresh after snapshots and completed
 selected candidates. Both actual conversations raised Evelyn from 1955 to 1975.

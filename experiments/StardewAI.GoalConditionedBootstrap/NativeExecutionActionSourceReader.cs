@@ -10,7 +10,7 @@ using static StardewAI.GoalConditionedBootstrap.NativeExecutionSourceSupport;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
-internal static class NativeExecutionActionSourceReader
+internal static partial class NativeExecutionActionSourceReader
 {
     private static readonly OptionRegistry Registry = new();
     private static readonly HashSet<string> RequestFieldNames = typeof(TrainingExecutionRequest)
@@ -19,6 +19,14 @@ internal static class NativeExecutionActionSourceReader
         .Where(name => name is not null).Select(name => name!).ToHashSet(StringComparer.Ordinal);
 
     internal static VerifiedNativeExecutionAction Read(string actionQueuePath, string executionReceiptPath, string afterSnapshotPath)
+    {
+        var frame = ReadFrame(actionQueuePath, executionReceiptPath, afterSnapshotPath, null);
+        return new(frame.Queue, frame.Item, frame.Result, frame.Request, frame.Before, frame.After, frame.Endpoint, frame.SourceSha256);
+    }
+
+    // Only ReadQueue supplies an origin hash, after validating the complete immutable queue chain.
+    private static NativeExecutionActionFrame ReadFrame(string actionQueuePath, string executionReceiptPath,
+        string afterSnapshotPath, string? compiledStateHash)
     {
         var resultPath = RequiredFile(executionReceiptPath);
         var raw = CurrentTeacherFrontierSupport.Read<JsonElement>(resultPath, "Native action");
@@ -51,7 +59,7 @@ internal static class NativeExecutionActionSourceReader
         var actor = queue.Actor ?? throw new InvalidDataException("Native actor is missing.");
         Require(queue.Items is not null && queue.Items.All(item => item is not null), "Native queue has malformed items.");
         var items = queue.Items!.Where(item => item.QueueItemId == result.QueueItemId).ToArray();
-        Require(items.Length == 1 && queue.Status == "pending" && queue.StateHash == before.StateHash &&
+        Require(items.Length == 1 && queue.Status == "pending" && queue.StateHash == (compiledStateHash ?? before.StateHash) &&
             queue.ExecutionMode == ExecutionTargetProfiles.TrainingSingleplayer && !string.IsNullOrWhiteSpace(queue.QueueId) &&
             EqualJson(actor, ExecutionTargetProfiles.CreateActor(queue.ExecutionMode)),
             "Native queue does not bind this action frame.");
@@ -62,7 +70,7 @@ internal static class NativeExecutionActionSourceReader
             item.PreconditionResults is not null && item.PreconditionResults.All(row => row is not null && row.Status == "passed") &&
             item.PermissionRequired == "executor" && item.BehaviorCategory == spec.BehaviorCategory &&
             item.CompilerResponsibility == spec.CompilerResponsibility && item.TrainingRole == spec.TrainingRole &&
-            queue.CompilerDiagnostics is { Length: 0 } && command.StateHash == before.StateHash &&
+            queue.CompilerDiagnostics is { Length: 0 } && command.StateHash == (compiledStateHash ?? before.StateHash) &&
             command.OptionId == result.OptionId && command.ExecutionMode == queue.ExecutionMode &&
             command.BehaviorCategory == item.BehaviorCategory && command.CompilerResponsibility == item.CompilerResponsibility &&
             command.TrainingRole == item.TrainingRole &&
@@ -90,7 +98,7 @@ internal static class NativeExecutionActionSourceReader
         foreach (var file in new[] { ("queue", queuePath), ("result", resultPath), ("before", beforePath),
             ("after", afterPath), ("journal", journalPath), ("request_gzip", journalPath + ".gz") })
             hashes[file.Item1] = CurrentTeacherFrontierSupport.HashFile(file.Item2);
-        return new(queue, item, result, native, before, after, endpoint, hashes);
+        return new(queue, item, result, native, before, after, endpoint, hashes, beforePath, afterPath);
     }
 
     private static string Text(JsonElement row, string name) => CurrentTeacherFrontierSupport.RequiredString(row, name);
@@ -123,3 +131,7 @@ internal static class NativeExecutionActionSourceReader
 internal sealed record VerifiedNativeExecutionAction(ActionQueueEnvelope Queue, ActionQueueItem Item,
     TrainingExecutionResult Result, TrainingExecutionRequest Request, SnapshotEnvelope Before, SnapshotEnvelope After,
     string Endpoint, IReadOnlyDictionary<string, string> SourceSha256);
+
+internal sealed record NativeExecutionActionFrame(ActionQueueEnvelope Queue, ActionQueueItem Item,
+    TrainingExecutionResult Result, TrainingExecutionRequest Request, SnapshotEnvelope Before, SnapshotEnvelope After,
+    string Endpoint, IReadOnlyDictionary<string, string> SourceSha256, string BeforeSnapshotPath, string AfterSnapshotPath);

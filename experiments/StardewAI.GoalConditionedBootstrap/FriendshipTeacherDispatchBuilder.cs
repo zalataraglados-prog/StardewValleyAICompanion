@@ -14,6 +14,13 @@ public static class FriendshipTeacherDispatchBuilder
     public static (SmallModelPlanEnvelope Plan, ActionQueueEnvelope Queue) Compile(
         string preferencePath, FriendshipTeacherAdmissionMode admissionMode)
     {
+        var source = CompileSource(preferencePath, admissionMode);
+        return (source.Plan, source.Queue);
+    }
+
+    internal static (CurrentFriendshipTeacherPreference Preference, SmallModelPlanEnvelope Plan, ActionQueueEnvelope Queue) CompileSource(
+        string preferencePath, FriendshipTeacherAdmissionMode admissionMode)
+    {
         FriendshipTeacherAdmissionPolicy.Validate(admissionMode);
         var preference = CurrentFriendshipTeacherPreferenceBuilder.Verify(RequiredFile(preferencePath));
         if (!FriendshipTeacherAdmissionPolicy.IsEligible(preference, admissionMode))
@@ -30,6 +37,6 @@ public static class FriendshipTeacherDispatchBuilder
         if (plan.Steps.Length == 0 || queue.Items.Length == 0 || queue.Status != "pending" ||
             queue.Items.Any(item => item.Status != "pending") || reasons.Length > 0)
             throw new InvalidDataException("Original social compiler rejected dispatch: " + string.Join(",", reasons));
-        return (plan, queue);
+        return (preference, plan, queue);
     }
 }

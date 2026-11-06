@@ -47,6 +47,8 @@ var commandDefinitions = new CommandDefinition[]
     new("compile-current-friendship-teacher-preference", CompileCurrentFriendshipTeacherPreference),
     new("prepare-friendship-terminal-save-boundary", options => Write(options.Required("output"),
         FriendshipTerminalSaveBoundaryBuilder.Prepare(options.Required("request"), options.Required("output")))),
+    new("build-friendship-native-threshold-receipt", options => WriteFriendshipNativeThresholdReceipt(options, verify: false)),
+    new("verify-friendship-native-threshold-receipt", options => WriteFriendshipNativeThresholdReceipt(options, verify: true)),
     new("build-current-skill-experience-deficit", BuildCurrentSkillExperienceDeficit),
     new("build-current-skill-teacher-preference", options => WriteCurrentSkillTeacherPreference(options, verify: false)),
     new("verify-current-skill-teacher-preference", options => WriteCurrentSkillTeacherPreference(options, verify: true)),
@@ -756,6 +758,15 @@ static void WriteSkillNativeThresholdReceipt(Arguments options, bool verify)
         throw new InvalidDataException("Native Skills receipt output must be a new JSON file.");
     Write(output, verify ? SkillNativeThresholdReceiptBuilder.Verify(options.Required("receipt")) :
         SkillNativeThresholdReceiptBuilder.Build(options.Required("request")));
+}
+
+static void WriteFriendshipNativeThresholdReceipt(Arguments options, bool verify)
+{
+    var output = Path.GetFullPath(options.Required("output"));
+    if (File.Exists(output) || Directory.Exists(output) || !output.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+        throw new InvalidDataException("Native friendship receipt output must be a new JSON file.");
+    Write(output, verify ? FriendshipNativeThresholdReceiptBuilder.Verify(options.Required("receipt")) :
+        FriendshipNativeThresholdReceiptBuilder.Build(options.Required("request")));
 }
 
 static void WriteSkillTeacherRow(Arguments options, bool verify)
