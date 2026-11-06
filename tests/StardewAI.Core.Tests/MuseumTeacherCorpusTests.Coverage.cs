@@ -74,5 +74,5 @@ public sealed partial class MuseumTeacherCorpusTests
     private static void Apply(GoalMethodFrontierReport frontier, IDictionary evidence) =>
         typeof(GoalMethodTeacherCoverageBuilder).GetMethod("ApplyMuseumCorpus", BindingFlags.NonPublic | BindingFlags.Static)!.Invoke(null,
             new object[] { new MuseumTeacherCorpus("request", "hash", "fixture", new[] { Row("train", "a") }),
-                GoalMethodTeacherCoverageSourceKinds.MuseumTerminalCorpus, frontier, evidence });
+                GoalMethodTeacherCoverageSourceKinds.MuseumTerminalCorpus, frontier, evidence, null!, null! });
 }

@@ -60,6 +60,8 @@
     <Compile Include="MuseumPolicyRowAdmissionTests.cs" />
     <Compile Include="MuseumTeacherCorpusTests.cs" />
     <Compile Include="MuseumTeacherCorpusTests.Coverage.cs" />
+    <Compile Include="MuseumTeacherCorpusTests.LocalMethodView.cs" />
+    <Compile Include="MuseumTeacherCorpusTests.LocalMethodFixture.cs" />
     <Compile Include="MarriageTeacherCorpusTests.cs" />
     <Compile Include="MarriageTeacherCorpusTests.Identity.cs" />
     <Compile Include="MarriageTeacherCorpusTests.Coverage.cs" />
