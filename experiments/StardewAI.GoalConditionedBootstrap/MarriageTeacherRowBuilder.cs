@@ -91,13 +91,27 @@ public static class MarriageTeacherRowBuilder
         return row;
     }
 
-    public static PolicyDecisionTrajectoryEnvelope Verify(string rowPath)
+    public static PolicyDecisionTrajectoryEnvelope Verify(string rowPath) =>
+        VerifyRow(rowPath, row => new MarriageTeacherSupervisionReplayVerifier().Rebuild(row));
+
+    internal static PolicyDecisionTrajectoryEnvelope VerifyFromJointSource(string rowPath, string nativeReceiptPath,
+        MarriageNativeJointSource source) => VerifyRow(rowPath, row =>
+    {
+        var claim = row.Audit?.TeacherSupervision;
+        Require(claim?.SchemaVersion == PolicyTeacherSupervisionSchemas.MarriagePreparation &&
+            claim.Sources?.MarriagePreparationIndex is >= 0 and < 64,
+            "Marriage corpus row needs its original preparation identity.");
+        return Build(source, nativeReceiptPath, claim!.Sources!.MarriagePreparationIndex!.Value, row.TrajectoryId);
+    });
+
+    private static PolicyDecisionTrajectoryEnvelope VerifyRow(string rowPath,
+        Func<PolicyDecisionTrajectoryEnvelope, PolicyDecisionTrajectoryEnvelope> rebuild)
     {
         var raw = ReadTyped<JsonElement>(RequiredFile(rowPath), PolicyTrajectoryVersionPins.TrajectorySchema);
         var row = raw.Deserialize<PolicyDecisionTrajectoryEnvelope>(JsonDefaults.Options)!;
         var error = PolicyTrajectoryDatasetBuilder.ValidateEnvelope(row);
         Require(error is null, "Marriage Teacher row replay rejected: " + error);
-        var expected = new MarriageTeacherSupervisionReplayVerifier().Rebuild(row);
+        var expected = rebuild(row);
         Require(JsonNode.DeepEquals(JsonNode.Parse(raw.GetRawText()), JsonSerializer.SerializeToNode(expected, JsonDefaults.Options)),
             "Marriage Teacher row differs from its original preparation and complete native joint source.");
         return expected;
