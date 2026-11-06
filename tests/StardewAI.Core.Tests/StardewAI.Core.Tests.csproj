@@ -96,6 +96,8 @@
     <Compile Include="MasterAnglerTerminalSaveBoundaryTests.cs" />
     <Compile Include="CurrentSkillExperienceDeficitTests.cs" />
     <Compile Include="CurrentFriendshipDeficitTests.cs" />
+    <Compile Include="CurrentMarriageHouseStateTests.cs" />
+    <Compile Include="SocialTransparentPlanningTests.MarriageHouseIntake.cs" />
     <Compile Include="CurrentFriendshipTeacherComparisonTests.cs" />
     <Compile Include="SocialTransparentPlanningTests.RemoteContinuation.cs" />
     <Compile Include="SocialTransparentPlanningTests.CompileChain.cs" />

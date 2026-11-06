@@ -42,6 +42,8 @@ var commandDefinitions = new CommandDefinition[]
     new("plan-current-social-day", PlanCurrentSocialDay),
     new("build-current-social-teacher-label", BuildCurrentSocialTeacherLabel),
     new("build-current-friendship-deficit", BuildCurrentFriendshipDeficit),
+    new("build-current-marriage-house-intake", options => WriteCurrentMarriageHouseIntake(options, verify: false)),
+    new("verify-current-marriage-house-intake", options => WriteCurrentMarriageHouseIntake(options, verify: true)),
     new("build-current-friendship-teacher-preference", options => WriteCurrentFriendshipTeacherPreference(options, verify: false)),
     new("verify-current-friendship-teacher-preference", options => WriteCurrentFriendshipTeacherPreference(options, verify: true)),
     new("compile-current-friendship-teacher-preference", CompileCurrentFriendshipTeacherPreference),
@@ -701,6 +703,17 @@ static void AuditCurrentOwnedPlanningPause(Arguments options)
     });
     if (!verified)
         Environment.ExitCode = 2;
+}
+
+static void WriteCurrentMarriageHouseIntake(Arguments options, bool verify)
+{
+    var output = Path.GetFullPath(options.Required("output"));
+    if (!output.EndsWith(".json", StringComparison.OrdinalIgnoreCase) || File.Exists(output) || Directory.Exists(output))
+        throw new InvalidDataException("Marriage/House intake output must be a new JSON file.");
+    var report = verify ? CurrentMarriageHouseIntakeBuilder.Verify(options.Required("intake")) :
+        CurrentMarriageHouseIntakeBuilder.Build(options.Required("snapshot"), options.Required("knowledge"), options.Required("dependencies"));
+    Write(output, report);
+    if (report.Status != "ready_current_state_only") Environment.ExitCode = 2;
 }
 
 static void BuildCurrentFriendshipDeficit(Arguments options)
