@@ -98,6 +98,7 @@
     <Compile Include="SocialTransparentPlanningTests.FriendshipRouteBudget.cs" />
     <Compile Include="SocialTransparentPlanningTests.FriendshipAdmission.cs" />
     <Compile Include="FriendshipTerminalSaveBoundaryTests.cs" />
+    <Compile Include="FriendshipNativeThresholdRequestTests.cs" />
     <Compile Include="FriendshipThresholdRuntimeSourceGuardTests.cs" />
     <Compile Include="SkillExperienceProjectionReaderTests.cs" />
     <Compile Include="CurrentSkillTeacherComparisonTests.cs" />
@@ -106,6 +107,7 @@
     <Compile Include="SkillTerminalSaveBoundaryTests.cs" />
     <Compile Include="SkillNativeThresholdRequestTests.cs" />
     <Compile Include="GrandpaDirectionDailyCandidateBindingTests.MasterAnglerNative.cs" />
+    <Compile Include="GrandpaDirectionDailyCandidateBindingTests.SequentialNative.cs" />
     <Compile Include="CropHarvestBudgetPolicyTests.cs" />
     <Compile Include="CropHarvestSourceIdentitySourceGuardTests.cs" />
     <Compile Include="FarmSitePreparationCandidateTests.cs" />
