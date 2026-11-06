@@ -264,7 +264,7 @@ public static partial class GoalMethodTeacherCoverageBuilder
         return source.SourceKind switch
         {
             GoalMethodTeacherCoverageSourceKinds.MarriageJointCorpus =>
-                VerifyMarriageCorpus(source, fullPath, frontier, criterionEvidence),
+                VerifyMarriageCorpus(source, fullPath, frontier, criterionEvidence, dependencyExpansionPath),
             GoalMethodTeacherCoverageSourceKinds.FriendshipThresholdCorpus =>
                 VerifyFriendshipCorpus(source, fullPath, frontier, criterionEvidence, dependencyExpansionPath),
             GoalMethodTeacherCoverageSourceKinds.SkillLevelThresholdCorpus =>

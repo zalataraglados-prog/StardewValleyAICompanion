@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-07 婚房局部方法（当前优先）：** #473已接受并合入`383ba26b`。新独立局部视图以原corpus/全部原生链为来源，实际公开Build/Verify同SHA`8188644c...`，完整保留原依赖方向/阻塞/递推与其他根，不改原图或旧执行器。礼物仅是准备依赖，原生求婚才绑定直接伴侣路线；日结算/剧情不作偏好标签，已有房屋/关系/物品仍是声明前置。原覆盖验证精确corpus和独立可重建证书，不再深验同一来源一次；最终同代码对照/反例/回归及CI见收口。**下一步只补真正validation/test完整联合来源**，不重采已验C/Friendship、不增加动作。并集`11/19、11/19、11/19、8/11 roots`与formal=false暂保持，全新档Teacher21/Student和共享预算义务不缩减。[完整合同](marriage-local-method-view.md)。
+
 > **2026-11-07 婚房criterion corpus（当前优先）：** #472已接受并合入`1503473e`。新corpus按完整原生链组织，组内只深验一次再核对全部原行，两准备决策只计一次结婚结果，11队列/12动作及完整83候选/1pair/81未知保留，公开Build/Verify同SHA`62c4af46...`。组内沿原决策分区、当前仅train，不以婚礼跨日制造另一分区；原覆盖/对账接`marriage_joint_corpus`，不清除方法依赖或晋升ready。新探针历史基线不适用只修新调用端，最终同版本对照/反例/回归及CI见收口。**下一步条件局部方法/证书，再真正缺失validation/test。** 并集`11/19、11/19、11/19、8/11 roots`和formal=false不变，原有房屋/关系/物品获取与全新档Teacher21/Student仍未证明。[合同及接续](marriage-criterion-corpus.md)。
 
 > **2026-11-07 婚房原Teacher行（当前优先）：** #471已接受并合入`cf62d769`。本切片由原C联合来源接原trajectory.v2/显式provider/原数据集，完整83候选仅标注实际1pair，机械控制不成为偏好标签，赠礼即时0/长期回报pending。Teacher、Backend和反馈同投影；真实接口发现非赠礼对话接触认证不一致，仅修新消费层并重建b版，不改旧执行器、不重采C。最终回归/CI见本PR收口。**下一步原criterion corpus/覆盖、条件局部方法及真正缺失分区。** 并集`11/19、11/19、11/19、8/11 roots`、formal=false和完整新档Teacher21/Student责任不变。[合同及来源](marriage-policy-teacher-rows.md)。
