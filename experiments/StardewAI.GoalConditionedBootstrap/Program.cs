@@ -52,6 +52,8 @@ var commandDefinitions = new CommandDefinition[]
     new("compile-current-marriage-teacher-preference", CompileCurrentMarriageTeacherPreference),
     new("build-marriage-native-joint-receipt", options => WriteMarriageNativeJointReceipt(options, verify: false)),
     new("verify-marriage-native-joint-receipt", options => WriteMarriageNativeJointReceipt(options, verify: true)),
+    new("build-marriage-teacher-rows", WriteMarriageTeacherRows),
+    new("verify-marriage-teacher-row", WriteMarriageTeacherRow),
     new("build-current-friendship-teacher-preference", options => WriteCurrentFriendshipTeacherPreference(options, verify: false)),
     new("verify-current-friendship-teacher-preference", options => WriteCurrentFriendshipTeacherPreference(options, verify: true)),
     new("compile-current-friendship-teacher-preference", CompileCurrentFriendshipTeacherPreference),
@@ -842,6 +844,23 @@ static void WriteMarriageNativeJointReceipt(Arguments options, bool verify)
         throw new InvalidDataException("Marriage native joint receipt output must be a new JSON file.");
     Write(output, verify ? MarriageNativeJointReceiptBuilder.Verify(options.Required("receipt")) :
         MarriageNativeJointReceiptBuilder.Build(options.Required("request")));
+}
+
+static void WriteMarriageTeacherRows(Arguments options)
+{
+    var root = Path.GetFullPath(options.Required("output-root"));
+    if (Directory.Exists(root) || File.Exists(root)) throw new InvalidDataException("Marriage Teacher output root must be new.");
+    var rows = MarriageTeacherRowBuilder.BuildAll(options.Required("native-receipt"), options.Required("trajectory-prefix"));
+    Directory.CreateDirectory(root);
+    for (var index = 0; index < rows.Length; index++) Write(Path.Combine(root, $"preparation-{index:D4}.json"), rows[index]);
+}
+
+static void WriteMarriageTeacherRow(Arguments options)
+{
+    var output = Path.GetFullPath(options.Required("output"));
+    if (File.Exists(output) || Directory.Exists(output) || !output.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+        throw new InvalidDataException("Marriage Teacher row output must be a new JSON file.");
+    Write(output, MarriageTeacherRowBuilder.Verify(options.Required("row")));
 }
 
 static void WriteSkillTeacherRow(Arguments options, bool verify)

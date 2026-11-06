@@ -167,12 +167,17 @@ internal sealed class PolicyTrajectoryDatasetValidator
         {
             PolicyTeacherSupervisionSchemas.Skills => ValidNativeThresholdSourceShape(teacher,
                 teacher.Sources?.SkillNativeThresholdReceiptPath, teacher.SkillNativeThresholdReceiptSha256) &&
-                teacher.FriendshipNativeThresholdReceiptSha256 is null && teacher.Sources?.FriendshipNativeThresholdReceiptPath is null,
+                teacher.FriendshipNativeThresholdReceiptSha256 is null && teacher.Sources?.FriendshipNativeThresholdReceiptPath is null && NoMarriageSource(teacher),
             PolicyTeacherSupervisionSchemas.Friendships => ValidNativeThresholdSourceShape(teacher,
                 teacher.Sources?.FriendshipNativeThresholdReceiptPath, teacher.FriendshipNativeThresholdReceiptSha256) &&
-                teacher.SkillNativeThresholdReceiptSha256 is null && teacher.Sources?.SkillNativeThresholdReceiptPath is null,
-            "policy_teacher_supervision.v1" or "policy_teacher_supervision.v2" => collectionHashes.All(IsSha256) &&
+                teacher.SkillNativeThresholdReceiptSha256 is null && teacher.Sources?.SkillNativeThresholdReceiptPath is null && NoMarriageSource(teacher),
+            PolicyTeacherSupervisionSchemas.MarriagePreparation => ValidNativeThresholdSourceShape(teacher,
+                teacher.Sources?.MarriageNativeJointReceiptPath, teacher.MarriageNativeJointReceiptSha256) &&
+                teacher.Sources?.MarriagePreparationIndex is >= 0 and < 64 &&
+                teacher.SkillNativeThresholdReceiptSha256 is null && teacher.Sources?.SkillNativeThresholdReceiptPath is null &&
                 teacher.FriendshipNativeThresholdReceiptSha256 is null && teacher.Sources?.FriendshipNativeThresholdReceiptPath is null,
+            "policy_teacher_supervision.v1" or "policy_teacher_supervision.v2" => collectionHashes.All(IsSha256) &&
+                teacher.FriendshipNativeThresholdReceiptSha256 is null && teacher.Sources?.FriendshipNativeThresholdReceiptPath is null && NoMarriageSource(teacher),
             _ => false
         };
         return sourceShapeValid &&
@@ -206,6 +211,10 @@ internal sealed class PolicyTrajectoryDatasetValidator
                     value.AfterValue,
                     StringComparison.Ordinal));
     }
+
+    private static bool NoMarriageSource(PolicyTrajectoryTeacherSupervision teacher) =>
+        teacher.MarriageNativeJointReceiptSha256 is null && teacher.Sources?.MarriageNativeJointReceiptPath is null &&
+        teacher.Sources?.MarriagePreparationIndex is null;
 
     private static bool ValidNativeThresholdSourceShape(PolicyTrajectoryTeacherSupervision teacher, string? nativePath, string? nativeHash) =>
         teacher.Sources is { } sources && !string.IsNullOrWhiteSpace(nativePath) && IsSha256(nativeHash!) &&

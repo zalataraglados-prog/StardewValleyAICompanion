@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-07 婚房原Teacher行（当前优先）：** #471已接受并合入`cf62d769`。本切片由原C联合来源接原trajectory.v2/显式provider/原数据集，完整83候选仅标注实际1pair，机械控制不成为偏好标签，赠礼即时0/长期回报pending。Teacher、Backend和反馈同投影；真实接口发现非赠礼对话接触认证不一致，仅修新消费层并重建b版，不改旧执行器、不重采C。最终回归/CI见本PR收口。**下一步原criterion corpus/覆盖、条件局部方法及真正缺失分区。** 并集`11/19、11/19、11/19、8/11 roots`、formal=false和完整新档Teacher21/Student责任不变。[合同及来源](marriage-policy-teacher-rows.md)。
+
 > **2026-11-07 婚房typed native来源（当前优先）：** #470已合入`3cb31d8a`。新公开Build/Verify复用原强reader贯通C全部11队列/12动作，绑定原礼物比较/消耗/计数、求婚日历、三次睡觉及完整婚礼；同SHA`c199b006...`，6类公开反例拒绝且原源不变。新消费端按原生语义区分婚礼日置位/剧情完成/延迟归位，保留未知current_tool，不改旧执行器、门或公共编译默认值。50新检查、最终Core2148/Backend617通过、零跳过，最终CI见收口。**下一步原Teacher行/provider/统一输入及corpus/方法/缺失分区，不重采C。** 条件源不证明先前房屋/关系获取，覆盖并集`11/19、11/19、11/19、8/11 roots`与formal=false保持。[合同与证据](marriage-native-joint-receipts.md)。
 
 > **2026-11-06 婚房同run原生链（当前优先）：** #468/#469已接受。后台普通对话实测超时经旧提交/JSON及锁定DLL核对后，仅在隐藏且原生焦点门关闭时复用既有native click；前台与安全门不改。C单run原11队列已完成赠礼、求婚、原生回家/三次睡觉及婚礼，209→212，已婚/三级房屋/联合评分=true且剧情菜单退出，原档未变、进程退出。B婚礼调用错误只修新调用端，不改旧菜单恢复器；原强reader四类回执抽样通过。Core2098/Backend617及13专项通过，最终CI/合并见收口。**下一步仅离线C完整typed联合回执及原数据覆盖链，不重采已验原生。** 既有房屋/好感/物品为声明前置，尚不晋升覆盖或完整Teacher；`11/19、11/19、11/19、8/11 roots`和formal=false保持。[范围及接续](marriage-current-comparison.md#same-run-joint-outcome)。

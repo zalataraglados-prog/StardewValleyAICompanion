@@ -138,7 +138,7 @@ static partial class Program
                 var snapshotEnvelope = JsonSerializer.Deserialize<SnapshotEnvelope>(
                     beforeSnapshot.ToJsonString(JsonOptions),
                     JsonOptions) ?? throw new InvalidOperationException("before snapshot contract is empty");
-                var policyGoal = ResolveFriendshipPolicyGoal(decision, firstStep, options.Goal);
+                var policyGoal = ResolveSocialPolicyGoal(decision, firstStep, options.Goal);
                 var stateFeatures = new PolicyStateFeatureProjector().Project(
                     new WorldModelProjector().Project(
                         snapshotEnvelope,
@@ -151,6 +151,14 @@ static partial class Program
                     decision.RankedEventCandidates = new FriendshipPolicyInputProjector(snapshotEnvelope,
                         File.ReadAllText(options.RouteTimingCalibrationPath)).ProjectCandidates(decision.RankedEventCandidates
                             ?? throw new InvalidOperationException("Friendship feedback candidate context is missing."));
+                }
+                if (policyGoal == MarriagePolicyInputProjector.GoalId)
+                {
+                    if (string.IsNullOrWhiteSpace(options.RouteTimingCalibrationPath))
+                        throw new InvalidOperationException("Marriage feedback requires its explicit route timing calibration.");
+                    decision.RankedEventCandidates = new MarriagePolicyInputProjector(snapshotEnvelope,
+                        File.ReadAllText(options.RouteTimingCalibrationPath)).ProjectCandidates(decision.RankedEventCandidates
+                            ?? throw new InvalidOperationException("Marriage feedback candidate context is missing."));
                 }
                 var episodeId = appendResult.EpisodeId + ".policy." + iteration.ToString("D4") + "." + decisionOrdinal.ToString("D4");
                 var aggregateCandidateExecution = AggregateSelectedCandidateExecution(
@@ -194,20 +202,23 @@ static partial class Program
         return result;
     }
 
-    private static string ResolveFriendshipPolicyGoal(AvailabilityAwarePolicyPredictionEnvelope decision,
+    private static string ResolveSocialPolicyGoal(AvailabilityAwarePolicyPredictionEnvelope decision,
         JsonObject firstStep, string fallbackGoal)
     {
-        if (decision.GoalResolution?.EffectiveGoalId != FriendshipPolicyInputProjector.GoalId &&
-            fallbackGoal != FriendshipPolicyInputProjector.GoalId)
+        var effective = decision.GoalResolution?.EffectiveGoalId;
+        var marriage = effective == MarriagePolicyInputProjector.GoalId || fallbackGoal == MarriagePolicyInputProjector.GoalId;
+        if (!marriage && effective != FriendshipPolicyInputProjector.GoalId && fallbackGoal != FriendshipPolicyInputProjector.GoalId)
             return fallbackGoal;
+        var goal = marriage ? MarriagePolicyInputProjector.GoalId : FriendshipPolicyInputProjector.GoalId;
+        var label = marriage ? "Marriage" : "Friendship";
         var path = ReadString(firstStep, "effective_compiled_queue_path");
         if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
-            throw new InvalidOperationException("Friendship feedback requires its original compiled queue.");
+            throw new InvalidOperationException(label + " feedback requires its original compiled queue.");
         var queue = JsonSerializer.Deserialize<ActionQueueEnvelope>(ContentAddressedJsonArtifactStore.ReadAllText(path), JsonOptions);
-        if (queue?.GoalId != FriendshipPolicyInputProjector.GoalId ||
+        if (queue?.GoalId != goal ||
             !queue.Items.Any(item => item.QueueItemId == ReadString(firstStep, "queue_item_id")))
-            throw new InvalidOperationException("Friendship feedback effective goal differs from its original compiled queue.");
-        return FriendshipPolicyInputProjector.GoalId;
+            throw new InvalidOperationException(label + " feedback effective goal differs from its original compiled queue.");
+        return goal;
     }
 
     private static PlanExecutionEpisodeEnvelope BuildPolicyExecutionEpisode(

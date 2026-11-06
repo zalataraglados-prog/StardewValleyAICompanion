@@ -11,7 +11,7 @@ public sealed class PolicyTrajectoryFriendshipInputTests
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
     private static readonly MethodInfo Resolve = typeof(LiveTrainingOptions).Assembly.GetType("Program", true)!
-        .GetMethod("ResolveFriendshipPolicyGoal", BindingFlags.NonPublic | BindingFlags.Static)!;
+        .GetMethod("ResolveSocialPolicyGoal", BindingFlags.NonPublic | BindingFlags.Static)!;
 
     [Theory]
     [InlineData(true)]
@@ -42,6 +42,17 @@ public sealed class PolicyTrajectoryFriendshipInputTests
     {
         Assert.Equal("goal.collection.master_angler", Resolve.Invoke(null, new object[]
             { new AvailabilityAwarePolicyPredictionEnvelope(), new JsonObject(), "goal.collection.master_angler" }));
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void MarriageFeedbackUsesItsOwnExactQueue(bool matching)
+    {
+        var (decision, step) = Input(matching ? MarriagePolicyInputProjector.GoalId : FriendshipPolicyInputProjector.GoalId);
+        decision.GoalResolution.EffectiveGoalId = MarriagePolicyInputProjector.GoalId;
+        if (matching) Assert.Equal(MarriagePolicyInputProjector.GoalId, Resolve.Invoke(null, new object[] { decision, step, "grandpa.maximum_21" }));
+        else Assert.Throws<TargetInvocationException>(() => Resolve.Invoke(null, new object[] { decision, step, "grandpa.maximum_21" }));
     }
 
     private static (AvailabilityAwarePolicyPredictionEnvelope, JsonObject) Input(string goal = FriendshipPolicyInputProjector.GoalId)

@@ -11,10 +11,17 @@ public static class PolicyTeacherSupervisionSchemas
 {
     public const string Skills = "policy_teacher_supervision.skills.v1";
     public const string Friendships = "policy_teacher_supervision.friendships.v1";
+    public const string MarriagePreparation = "policy_teacher_supervision.marriage_preparation.v1";
 }
 
 public sealed class PolicyTeacherEvidenceSources
 {
+    [JsonPropertyName("marriage_native_joint_receipt_path")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? MarriageNativeJointReceiptPath { get; set; }
+    [JsonPropertyName("marriage_preparation_index")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? MarriagePreparationIndex { get; set; }
     [JsonPropertyName("friendship_native_threshold_receipt_path")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? FriendshipNativeThresholdReceiptPath { get; set; }

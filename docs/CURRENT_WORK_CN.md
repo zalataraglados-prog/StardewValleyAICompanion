@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-11-07 婚房原Teacher行接续
+
+- #471已由CI `42256249915`全部38步接受，合入`cf62d769`；原完整C不重采。当前婚房接原`trajectory.v2`、显式provider及原数据集/训练器，不新造格式或执行器。每行83候选/1严格pair/81未比较，机械控制只链接完整joint来源，不另造标签；即时奖励0，全部长期回报pending。
+- Teacher/Backend/loop反馈复用同一婚房输入投影，现有contact-only组件与原1975点目标分离。实际接口探针发现第二行的非赠礼对话漏接触认证，只修新共享投影、离线重建b版，原比较/原生源和旧执行器不改。新schema独立source/index/hash，不借CC/Skills/Friendship证据，旧行缺省序列化不变。完整回归/CI以本PR收口为准。[合同及实际诊断](marriage-policy-teacher-rows.md)。
+- b版行SHA`a8179104...`/`8db29f20...`，抽样公开重放同字节；与旧Friendship行经原CLI混合接受3/0拒绝、全部train/长期回报pending，manifest`4cdd70d1...`。真实后端两次HTTP200、各83候选特征逐项相同（仅零权重测试夹具，不是训练）；24项新Core/4项新Backend检查及完整Core2172/Backend621零失败零跳过，EVD-338与差异检查通过，最终CI见收口。
+- 5类公开负索引/缺源/借用schema/伪joint哈希/覆盖写入探针全部拒绝，无成功输出、原正例与来源未变。原数据仓库外，最后代码不改变native执行器；新provider每次重放完整来源，不使用仅按路径的跨调用不安全缓存。
+- **唯一下一步：** 原criterion corpus/覆盖登记、条件局部方法与真正缺失分区；不重采已通过C或Friendship，不把原有房屋/初始关系/夹具物品记成获取。并集`11/19、11/19、11/19、8/11 roots`与formal=false不变，无worker/API、服务器、产品训练或清理，原始数据仓库外。
+
 ## 2026-11-07 婚房typed联合原生回执
 
 - #470已由CI `42246004755`全部38步接受，合入`3cb31d8a`，对应分支已清理；C完整原生来源不重采。当前唯一primary仍婚房，并集`11/19、11/19、11/19、8/11 roots`及formal=false不变。
