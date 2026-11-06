@@ -16,9 +16,14 @@ public sealed record FriendshipTerminalSaveBoundaryRequest(
     [property: JsonPropertyName("target_qualifying_count")] int TargetQualifyingCount,
     [property: JsonPropertyName("declared_local_prerequisite_only")] bool DeclaredLocalPrerequisiteOnly,
     [property: JsonPropertyName("formal_product_training_authorized")] bool FormalProductTrainingAuthorized,
-    [property: JsonPropertyName("declared_local_story_prerequisites")] bool DeclaredLocalStoryPrerequisites = false);
+    [property: JsonPropertyName("declared_local_story_prerequisites")] bool DeclaredLocalStoryPrerequisites = false)
+{
+    [JsonPropertyName("decision_winter_day_year_two")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? DecisionWinterDayYearTwo { get; init; }
+}
 
-public static class FriendshipTerminalSaveBoundaryBuilder
+public static partial class FriendshipTerminalSaveBoundaryBuilder
 {
     // Complete pinned JoshHouse event IDs, not story rewards or measured acquisitions.
     private static readonly string[] LocalStoryEventIds = { "18", "19", "21", "2119820", "56", "5837189" };
@@ -29,6 +34,8 @@ public static class FriendshipTerminalSaveBoundaryBuilder
         var request = ReadTyped<FriendshipTerminalSaveBoundaryRequest>(requestPath, "friendship_terminal_save_boundary_request.v1");
         Require(request.DeclaredLocalPrerequisiteOnly && request.DeclaredLocalStoryPrerequisites && !request.FormalProductTrainingAuthorized &&
             request.TargetQualifyingCount is 5 or 10, "Friendship boundary requires declared local five/ten prerequisites.");
+        Require(request.DecisionWinterDayYearTwo is null or >= 1 and <= 28,
+            "Friendship boundary requires a valid declared year-two winter day.");
         var (source, target) = IsolatedSaveBoundaryFiles.ValidateScope(request.SourceSaveFile, request.IsolatedSaveFile, request.IsolationRoot);
         IsolatedSaveBoundaryFiles.ValidateOutput(outputPath, request.IsolationRoot);
         var sourceHash = CurrentTeacherFrontierSupport.HashFile(source);
@@ -96,6 +103,7 @@ public static class FriendshipTerminalSaveBoundaryBuilder
             "Friendship boundary lacks distinct existing native prerequisite rows.");
         var changes = seeds.Concat(nearNames).Select(name => new { npc_name = name, before = Points(name),
             after = nearNames.Contains(name, StringComparer.Ordinal) ? threshold - 20 : Math.Max(threshold, Points(name)) }).ToArray();
+        ApplyDeclaredCalendar(root!, player, request.DecisionWinterDayYearTwo);
         foreach (var change in changes)
         {
             Required(rows[change.npc_name], "Points").Value = change.after.ToString(CultureInfo.InvariantCulture);

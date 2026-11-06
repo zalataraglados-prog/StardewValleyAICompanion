@@ -1,5 +1,7 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+> **2026-11-06 当前接续：** Friendship仅补真正缺失的四个原分区来源，六行corpus/原数据集/局部方法/原覆盖已收口；最终回归/CI接受后并集`11/19 executable、11/19 split-complete、11/19 ready、8/11 roots`。formal=false，全新档Teacher21分、全局时间资源与Student责任不变。下一唯一primary为婚房，先严格当前事实与原候选接入，复用已存在的婚姻/房屋/社交/日结算链，不重写执行器、不重采已验友谊。剩余全馆与Money保留；独立重置样本保持长期回报pending。[真实来源及下一步](friendship-local-acceptance.md)。下方旧“下一步”保留为历史，以本段及CURRENT_STATUS当前决定为准。
+
 > **2026-11-06 显式pair接续（当前优先）：** 新Friendship v4显式区分已证明pairs与完整排序，缺省完整门不放宽，显式模式通过原Verify/编译消费8个strict pairs，20项未比较不作负例；Teacher/共享trainer/执行器不改。真实来源公开重建同SHA`4581deab...`，原队列pending不是原生结果。下一步E副本真实5/10人数阈值，原reader/轨迹/provider/corpus/覆盖及一致输入投影；不重采校准、不过早训练或晋升`9/19、9/19、9/19、7/11`/formal=false。[当前合同](friendship-pairwise-admission.md)。
 
 > **2026-11-06 跨图接触接续（当前优先）：** 完整实际首段＋尾程预算已接新Friendship消费端，真实来源10个合法比较候选/8个严格pair通过重放，但完整排序因20个未比较项仍false。下一步显式复用原独立pair合同/原控制编译，保留完整分母和默认完整排序门，再同run原生5/10阈值及原数据覆盖；不要求每个pair承担全局完整排序，也不把其余未知/权衡当负例。模式尚未实现，无正式训练或计数晋升，`9/19、9/19、9/19、7/11`及formal=false保持。[实际来源和下一步](friendship-route-contact-budget.md)。

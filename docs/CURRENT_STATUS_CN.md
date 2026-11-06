@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-06 Friendship三分区收口（当前优先）：** #464经CI `42203227382`接受并合入`7005c835`。本轮复用train/原校准及原执行链，仅新采四个E后台来源；真实冬21/17对应原validation/test，人数阈值与完整nonce/队列均验证、原档不变。六行corpus SHA`ec7c58b8...`，原数据集6接受/0拒绝、2/2/2、长期回报pending；原覆盖两项ready、无本项open work，另17项相同。最终回归/CI接受后并集为`11/19 executable、11/19 split-complete、11/19 ready、8/11 roots`，formal=false；不等于完整新档Teacher或产品训练完成。**唯一下一primary为`marriage_and_house_upgrade`**，先严格当前事实/原候选接入并复用旧婚房/社交/结算链，再比较及原生来源，不重写执行器；全馆1与Money6保留。[完整来源、诊断与接续](friendship-local-acceptance.md)。下方同日旧接续均为历史，不再重做。
+
 > **2026-11-06 Friendship局部方法（当前优先）：** #463经CI `42199313265`接受并合入`33219b42`。新独立局部视图复用已验corpus，保留完整原方向及全新档/衰减/未来接触/21分义务，不改旧Skills消费者或原图；公开Build/Verify同SHA`0123b982...`。原coverage验证精确corpus和可重建证书后，两项method executable、各仅train、ready=false，另外17项相同；原canonical仍pending、formal=false。**下一步只补5/10各自真正validation/test四个隔离来源**，先核对日期分区，再原行/corpus/视图/覆盖收口，不重采train/校准。接受并集仍`9/19、9/19、9/19、7/11`，局部视图不替换完整Teacher责任；最终回归/CI见本PR收口。[完整来源与范围](friendship-local-method-view.md)。
 
 > **2026-11-06 Friendship corpus与原覆盖（当前优先）：** #462经CI `42195611122`接受并合入`94e3dcad`。新typed corpus复用已接受两行/完整原生链，数组保留四项动作与nonce、精确5/10 criterion、完整分母与显式pairs，不借分区；实际公开重建同SHA`7c5b0dbe...`。原coverage/对账已连接来源，两个阈值各有比较/native train，method仍pending/ready=false，另17项完全相同；当前局部报表不替换既接受全局并集。**下一步仅有条件当前来源方法视图及原证书接续，再真正缺失的validation/test**，不重做原行/provider/校准，不清除完整新档及21分竞争预算。`9/19、9/19、9/19、7/11`与formal=false保持；最终回归/CI见本PR收口。[协议、真实来源与边界](friendship-criterion-corpus.md)。
@@ -772,6 +774,10 @@ Money 自身最终完成，至少要同时满足：
 **2026-11-03 范围修订：** 排第 11 的是完整 Money root/18 个 production cell，不是禁止其他 root 使用已有购种、种植、出售、预留及有限现金生产支撑。消费者只为其真实价格/材料缺口绑定可验证的有界段；不先要求百万收入，也不把有界段直接冒充完整 Money coverage。
 
 ## 6. 下一项如何选择
+
+### 2026-11-06 Friendship收口后的局部成本复核
+
+Skills/Friendship局部证据不重采；Friendship发布以本PR最终回归/CI为准。剩余root为婚房、全馆、Money，唯一下一primary选择`marriage_and_house_upgrade`：现有房屋/伴侣/社交/日结算链可复用，先补当前严格事实/候选接入及独立来源；全馆仍有95异构来源工作，Money保留六阈值完整门。此为实际局部缺口的工程排序，不恢复已失效R1固定全序，不把完整新档21分义务反挂局部接口。[退出条件与实施路径](friendship-local-acceptance.md#next-primary-and-completion-boundary)。下方11月5日及更早选择记录仅供历史追溯。
 
 ### 2026-11-05 R2局部成本复核与当前选择
 

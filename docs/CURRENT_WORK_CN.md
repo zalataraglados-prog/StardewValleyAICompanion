@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-11-06 Friendship三分区局部验收收口
+
+- #464已由CI `42203227382`全部38步接受，合入`7005c835`；原方法视图、train两行和真实校准不重做。本轮仅补5/10各自validation/test四个E后台静音来源，实际人数4→5、9→10，原存档均不变，游戏与后端已退出。
+- 日期先按原policy确定：二年冬21为validation、冬17为test；仅显式声明的隔离副本日历/daysPlayed可调整，原9参数构造及缺省日期/JSON保持，原source/basis日期门仍先执行，原生加载日另校验。匹配DLL反编译及实际Evelyn日程已核对，不改旧Teacher/候选/编译执行器。
+- 六行原corpus SHA`ec7c58b8...`、原数据集接受6/0拒绝、每分区2行，长期回报全pending；每行保留29候选，实际pairs为5/5/5/5/4/3。five-test原编译仅需talk一项，不伪造移动或统一队列长度。原覆盖两项ready、对账无本项open work，另17项完全相同，完整原方向及源哈希保留。[完整验收与下一步](friendship-local-acceptance.md)。
+- 本轮汇总探针最初误读method不存在的`coverage_gate_ready`，按旧合同`primary_disposition=coverage_ready`修正新探针；不改旧对账、不重跑成功游戏或深验链。13新日历检查，最终Core1976/Backend607零跳过，243脚本AST、原EVD-338及差异检查通过，最终CI及发布见本PR收口；只提交代码/测试/文档，原始数据留仓库外，无worker/API、服务器、产品训练或清理。
+- **发布及唯一下一步：** 最终回归/CI接受后并集为`11/19 executable、11/19 split-complete、11/19 ready、8/11 roots`，formal=false，非完整新档Teacher完成。剩余婚房1、全馆1、Money6；按当前复用增量选择`marriage_and_house_upgrade`。先严格当前事实/完整候选接入与旧实现复用表，再独立比较、同run原生/原轨迹/corpus/方法/真正缺分区，不另造婚姻或房屋执行器，不把全新档责任倒挂初始接入。
+
 ## 2026-11-06 Friendship有条件当前来源方法视图
 
 - #463经CI `42199313265`全部38步接受，合入`33219b42`、分支清理。corpus/原数据行/provider/来源登记完成，不重做；唯一primary仍`raise_friendships`，接受并集`9/19、9/19、9/19、7/11`及formal=false保持。

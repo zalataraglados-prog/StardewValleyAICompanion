@@ -12,6 +12,9 @@ public sealed class FriendshipThresholdRuntimeSourceGuardTests
         Assert.Contains("$preference.selectedCandidate.candidate_id", source);
         Assert.Contains("$_.candidateId", source);
         Assert.Contains("declared_local_story_prerequisites = $true", source);
+        Assert.Contains("$boundaryRequest.decision_winter_day_year_two = $DecisionWinterDayYearTwo", source);
+        Assert.Contains("Native loaded date differs from the explicitly declared clone calendar fixture.", source);
+        Assert.Contains("calendar_fixture_is_not_native_acquisition = $true", source);
         Assert.Contains("'fixture-time-result.json'", source);
         Assert.Contains("prior_friendship_acquisition_verified = $false", source);
         Assert.Contains("formal_product_training_authorized = $false", source);

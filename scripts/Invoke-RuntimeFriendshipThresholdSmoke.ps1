@@ -6,6 +6,7 @@ param(
     [Parameter(Mandatory)] [string] $BasisSnapshot,
     [Parameter(Mandatory)] [string] $TimingCalibration,
     [Parameter(Mandatory)] [ValidateSet(5, 10)] [int] $TargetCount,
+    [ValidateRange(0, 28)] [int] $DecisionWinterDayYearTwo = 0,
     [ValidateSet(1110)] [int] $DeclaredFixtureTime = 1110,
     [string] $ArtifactRoot = 'I:\StardewAITraining\friendship-native-20261106',
     [string] $RunId = ('friendship-threshold-' + (Get-Date -Format 'yyyyMMdd-HHmmss')),
@@ -67,7 +68,7 @@ $mods = @(Get-RuntimeExactModAllowlist -ModsRoot $isolatedMods -ExpectedUniqueId
 }))
 $boundaryPath = Join-Path $runRoot 'boundary.json'
 $requestPath = Join-Path $runRoot 'boundary-request.json'
-Write-JsonFile -Path $requestPath -Value ([ordered]@{
+$boundaryRequest = [ordered]@{
     schema_version = 'friendship_terminal_save_boundary_request.v1'
     source_save_file = Join-Path $sourceSave $SaveSlot
     isolated_save_file = Join-Path $clone $SaveSlot
@@ -77,7 +78,9 @@ Write-JsonFile -Path $requestPath -Value ([ordered]@{
     declared_local_prerequisite_only = $true
     declared_local_story_prerequisites = $true
     formal_product_training_authorized = $false
-})
+}
+if ($DecisionWinterDayYearTwo -gt 0) { $boundaryRequest.decision_winter_day_year_two = $DecisionWinterDayYearTwo }
+Write-JsonFile -Path $requestPath -Value $boundaryRequest
 Invoke-RuntimeBootstrap -BootstrapDll $bootstrapDll -Arguments @(
     'prepare-friendship-terminal-save-boundary', '--request', $requestPath, '--output', $boundaryPath)
 $binaryIdentity = [ordered]@{}
@@ -116,6 +119,10 @@ $summary = [ordered]@{
     native_criterion_outcome_verified = $false; prior_friendship_acquisition_verified = $false
     formal_product_training_authorized = $false
 }
+if ($DecisionWinterDayYearTwo -gt 0) {
+    $summary.declared_fixture_winter_day_year_two = $DecisionWinterDayYearTwo
+    $summary.calendar_fixture_is_not_native_acquisition = $true
+}
 try {
     foreach ($name in $environment.Keys) { [Environment]::SetEnvironmentVariable($name, $environment[$name], 'Process') }
     $processes.Add((Start-RuntimeEvidenceProcess -FilePath dotnet -ArgumentList @($backendDll) `
@@ -128,6 +135,12 @@ try {
     Wait-Json -Url "$executorUrl/health" -TimeoutSeconds 180 | Out-Null
     $before = Get-FreshRuntimeSnapshot -Url $snapshotUrl -TimeoutSeconds 180
     Write-Utf8Text -Path (Join-Path $runRoot 'loaded.json') -Value $before.Raw
+    if ($DecisionWinterDayYearTwo -gt 0 -and (
+        [int](Read-StateValue $before.Value 'time' 'year') -ne 2 -or
+        (Read-StateValue $before.Value 'time' 'season') -cne 'winter' -or
+        [int](Read-StateValue $before.Value 'time' 'day') -ne $DecisionWinterDayYearTwo)) {
+        throw 'Native loaded date differs from the explicitly declared clone calendar fixture.'
+    }
     if ((Read-StateValue $before.Value 'player' 'story_event').event_up) {
         throw 'Native load triggered a story event; do not skip or mark it seen for this measurement.'
     }
