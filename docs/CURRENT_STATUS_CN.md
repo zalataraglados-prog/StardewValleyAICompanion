@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-06 Friendship局部方法（当前优先）：** #463经CI `42199313265`接受并合入`33219b42`。新独立局部视图复用已验corpus，保留完整原方向及全新档/衰减/未来接触/21分义务，不改旧Skills消费者或原图；公开Build/Verify同SHA`0123b982...`。原coverage验证精确corpus和可重建证书后，两项method executable、各仅train、ready=false，另外17项相同；原canonical仍pending、formal=false。**下一步只补5/10各自真正validation/test四个隔离来源**，先核对日期分区，再原行/corpus/视图/覆盖收口，不重采train/校准。接受并集仍`9/19、9/19、9/19、7/11`，局部视图不替换完整Teacher责任；最终回归/CI见本PR收口。[完整来源与范围](friendship-local-method-view.md)。
+
 > **2026-11-06 Friendship corpus与原覆盖（当前优先）：** #462经CI `42195611122`接受并合入`94e3dcad`。新typed corpus复用已接受两行/完整原生链，数组保留四项动作与nonce、精确5/10 criterion、完整分母与显式pairs，不借分区；实际公开重建同SHA`7c5b0dbe...`。原coverage/对账已连接来源，两个阈值各有比较/native train，method仍pending/ready=false，另17项完全相同；当前局部报表不替换既接受全局并集。**下一步仅有条件当前来源方法视图及原证书接续，再真正缺失的validation/test**，不重做原行/provider/校准，不清除完整新档及21分竞争预算。`9/19、9/19、9/19、7/11`与formal=false保持；最终回归/CI见本PR收口。[协议、真实来源与边界](friendship-criterion-corpus.md)。
 
 > **2026-11-06 Friendship原轨迹与输入（当前优先）：** #461已由CI `42145083661`接受并合入`3ba9796f`。本切片复用其两份强native来源，接原trajectory.v2及专属显式provider；完整队列、5原始pairs和未比较19/15保留，不借CC哈希、不改旧执行规则。原生人数及完整接触预算在行/Backend/loop统一投影，模型字段不进入动作参数，未知不冒充零或廉价首段；无关goal/原Skills输入保留。**下一步仅typed criterion corpus接原coverage/reconciliation，再局部方法及真正缺失分区，不重采已验动作/校准。** 当前两份day223来源不等于三分区，`9/19、9/19、9/19、7/11`及formal=false保持。实际公开行/数据集与最终回归/CI见本PR收口。[合同及边界](friendship-policy-inputs.md)。
