@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-11-07 全馆typed联合证明（当前唯一接续）
+
+- #477经CI `42291144137`全部38步接受，合入`2e082394`；原比较及成功B源不重做。唯一primary仍全馆，并集`12/19、12/19、12/19、9/11 roots`及formal=false保持，Money6随后。
+- 新typed Build/Verify各只重建原比较一次、原强整队列一次，再以已验digest复用元数据；原编译/原始wire/nonce/环境/完整逻辑快照/同tick与日期全部绑定。复用原95项reader核对终态，保留全95前后项及原pairs、精确槽位/品质/库存一件消耗、成就5真实变化和菜单退出，不改旧reader或执行器。[合同与来源](museum-terminal-native-join.md)。
+- 真实公开重建同SHA`aa961fc4...`：95项/1pair、train/day209、tick126→331、205跨度/204原生遥测、slot11栈2→1、94→95及成就5 false→true。70项专项含22新检查及最终完整Core2305/Backend621零失败零跳过；新合成夹具漏quality只补新夹具后全量重跑，不降真实校验。4类公开伪全根/跨run/错后态/覆盖探针拒绝、原源未变，最终代码真实重放仍同哈希；构建零警告/错误、原EVD-338/差异检查通过，最终CI见收口。
+- **唯一下一步：** 用本已验来源接原trajectory/provider及统一输入，再criterion corpus/条件方法/原覆盖与真正缺失分区。现有typed源不等于三分区、全根或完整新档Teacher21/Student；获取/RNG/共享资源和第三年预算义务不减。不重采B/已验根，无新游戏/worker/API/服务器/产品训练/清理，原始产物及local-data仓库外。
+
 ## 2026-11-07 全馆独立终局比较与原生来源（当前唯一接续）
 
 - #476经CI `42286239023`全部38步接受、合入`5694c6de`，原95项入口不重做。唯一primary仍`complete_museum_collection`；并集`12/19、12/19、12/19、9/11 roots`与formal=false不变，Money6随后。
