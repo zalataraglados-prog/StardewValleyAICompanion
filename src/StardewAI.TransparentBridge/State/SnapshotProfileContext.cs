@@ -35,13 +35,13 @@ public static class SnapshotProfileContext
     }
 
     public static bool IncludesPersistentMaterialInventoryGraph =>
-        Current is "daily" or "training_machine" or "fishing" or "full" or "collection_teacher";
+        Current is "daily" or "training_machine" or "fishing" or "full" or "collection_teacher" or "marriage_teacher";
 
     public static bool IncludesNpcScheduleCatalog =>
-        Current is "social" or "social_future" or "full";
+        Current is "social" or "social_future" or "full" or "marriage_teacher";
 
     public static bool IncludesSocialFutureRouteDateEvidence =>
-        Current is "social_future" or "full" or "collection_teacher";
+        Current is "social_future" or "full" or "collection_teacher" or "marriage_teacher";
 
     public static bool IncludesCrabPotNetwork =>
         Current is "daily" or "fishing" or "full" or "collection_teacher";
