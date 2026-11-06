@@ -177,8 +177,10 @@ commit is performed.
 
 ## Sole Next Slice
 
-Implement an independent current Marriage/House comparison consumer over these
-original sources, with explicit native calendar/settlement and resource commitments.
+The independent current gift-preparation consumer now composes these original
+sources, native calendar/settlement, registered resource commitments and full
+contact budgets; see [its exact scope and next boundary](marriage-current-comparison.md).
+It is not yet a complete Marriage/House method or native joint-outcome proof.
 The native nonterminal boundary and calendar prerequisites now exist; do not
 reopen the already-accepted original intake or manufacture a label from them.
 Reuse full social
