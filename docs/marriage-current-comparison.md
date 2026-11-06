@@ -183,6 +183,13 @@ final CI/merge are recorded at PR close. Raw run data remain outside Git.
 
 ## Next Boundary
 
+The complete C chain is now joined by the [typed native receipt](marriage-native-joint-receipts.md):
+public Build/Verify are byte-identical (`c199b006...`), with all eleven original
+queues and native wedding/return bindings. The paragraph below records the prior
+boundary and is no longer an instruction to reimplement or resample it. Current
+next work is the original trajectory/provider/shared-input and corpus/method/
+missing-partition chain, keeping the same conditional acquisition limits.
+
 Consume the complete retained C source offline through the existing strong
 reader and add the typed Marriage/House native joint receipt. Preserve every
 original queue, primitive, request nonce and fresh decision binding; reject

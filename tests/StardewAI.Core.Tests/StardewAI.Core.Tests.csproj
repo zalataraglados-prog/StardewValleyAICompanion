@@ -115,6 +115,9 @@
     <Compile Include="FriendshipTerminalSaveBoundaryTests.cs" />
     <Compile Include="FriendshipTerminalSaveBoundaryTests.Calendar.cs" />
     <Compile Include="FriendshipNativeThresholdRequestTests.cs" />
+    <Compile Include="MarriageNativeJointRequestTests.cs" />
+    <Compile Include="MarriageNativeJointContinuityTests.cs" />
+    <Compile Include="MarriageNativeJointContinuityTests.Fixture.cs" />
     <Compile Include="FriendshipThresholdRuntimeSourceGuardTests.cs" />
     <Compile Include="SkillExperienceProjectionReaderTests.cs" />
     <Compile Include="CurrentSkillTeacherComparisonTests.cs" />

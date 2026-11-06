@@ -10,6 +10,13 @@ public static partial class CurrentMarriageTeacherPreferenceBuilder
 {
     public static (SmallModelPlanEnvelope Plan, ActionQueueEnvelope Queue) Compile(string preferencePath, bool independentPairs = false)
     {
+        var source = CompileSource(preferencePath, independentPairs);
+        return (source.Plan, source.Queue);
+    }
+
+    internal static (CurrentMarriageTeacherPreference Preference, SmallModelPlanEnvelope Plan, ActionQueueEnvelope Queue)
+        CompileSource(string preferencePath, bool independentPairs = false)
+    {
         var report = Verify(preferencePath);
         if (report.SelectedCandidate is null || !(independentPairs ? report.IndependentPairwiseLabelEligible : report.CompletePreferenceLabelEligible))
             throw new InvalidDataException("Marriage dispatch requires replayed evidence for the explicit pair or complete-order scope.");
@@ -17,7 +24,7 @@ public static partial class CurrentMarriageTeacherPreferenceBuilder
         var (_, minutes, energy) = Budget(snapshot);
         var result = CompileCandidate(report.SelectedCandidate, snapshot, minutes, energy);
         if (result.Reasons.Length > 0) throw new InvalidDataException("Original marriage preparation compilation rejected: " + string.Join(",", result.Reasons));
-        return (result.Plan, result.Queue);
+        return (report, result.Plan, result.Queue);
     }
 
     private static (SmallModelPlanEnvelope Plan, ActionQueueEnvelope Queue, string[] Reasons) CompileCandidate(
