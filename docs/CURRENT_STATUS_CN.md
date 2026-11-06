@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-07 全馆criterion corpus（当前唯一接续）：** #479经CI `42299920297`全部38步接受、合入`33b74801`。本轮按旧Rusty证据型模式离线消费B完整typed来源，保留95项/原pair/候选数/精确native身份和原分区，不造训练行、不改权限/执行器。公开corpus重建同SHA`c7e75ad4...`，原覆盖已接`museum_terminal_corpus`：比较/native均仅train，方法pending/ready=false；同代码对照另18项criterion和10个method完全相同。新探针误从criterion行读分区，只修外部消费端并核对已生成报告，不重跑旧来源。下一步独立条件方法视图/原证书，再仅真正缺失分区；保留原完整95获取/RNG/共享预算/Teacher21与Student义务，不重采B。并集仍`12/19、12/19、12/19、9/11 roots`、formal=false，Money6随后。最终反例/回归/CI见[证据与接续](museum-criterion-corpus.md)。下方旧下一步仅为历史。
+
 > **2026-11-07 全馆统一输入/原准入接续（当前唯一接续）：** #478经CI `42294539442`全部38步接受、合入`b4baed10`。成功B离线接共享95项输入及可重建准入报告，Teacher消费/Backend/反馈同投影；公开原轨迹builder实测按旧确认规则正确拒绝，故撤掉未提交provider/schema草稿，不反改旧白名单/validator/执行器。原捐赠为EvaluationOnly，600tick等待只作比较参照，不能伪装成策略负例；原生save/player/day分区与原policy日期分区分别保留。下一步按原Rusty证据型模式接全馆criterion corpus/条件方法/原覆盖，再补真缺分区，不为制造轨迹卡住本项或重采B。并集仍`12/19、12/19、12/19、9/11 roots`、formal=false，完整获取/RNG/共享预算/Teacher21与Student义务不减。实际合同、验证与收口见[统一输入与准入](museum-policy-input-admission.md)。下方轨迹/provider“下一步”假设已由本条修正。
 
 > **2026-11-07 全馆typed联合证明（当前唯一接续）：** #477已由38步CI接受、合入`2e082394`。离线新Build/Verify只各重建一次原比较/原强队列，精确绑定原编译、wire/nonce/环境/同tick与完整快照，原95项reader证明全95终态、唯一项变化、库存一件消耗与成就5/菜单退出。真实重放SHA`aa961fc4...`，train/day209、95项/1pair、tick126→331、slot11栈2→1；70专项含22新检查通过、4公开反例拒绝且源不变，完整回归/CI见收口。下一步接原轨迹/provider/统一输入，再corpus/条件方法/原覆盖与真缺分区，不重采成功B、不改旧执行器。并集仍`12/19、12/19、12/19、9/11 roots`、formal=false；完整新档获取/RNG/共享预算/Teacher21与Student义务保持，Money6随后。[合同](museum-terminal-native-join.md)。下方旧接续仅为历史。

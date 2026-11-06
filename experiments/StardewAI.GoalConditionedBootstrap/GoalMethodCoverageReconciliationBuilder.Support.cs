@@ -34,6 +34,8 @@ public static partial class GoalMethodCoverageReconciliationBuilder
         GoalMethodFrontierMethod method)
     {
         var kinds = new List<string>();
+        if (method.DirectionId == "complete_museum_collection")
+            kinds.Add(GoalMethodTeacherCoverageSourceKinds.MuseumTerminalCorpus);
         if (method.DirectionId == "marriage_and_house_upgrade")
             kinds.Add(GoalMethodTeacherCoverageSourceKinds.MarriageJointCorpus);
         if (method.DirectionId == "raise_friendships")
