@@ -50,6 +50,8 @@ var commandDefinitions = new CommandDefinition[]
     new("build-current-marriage-teacher-preference", options => WriteCurrentMarriageTeacherPreference(options, verify: false)),
     new("verify-current-marriage-teacher-preference", options => WriteCurrentMarriageTeacherPreference(options, verify: true)),
     new("compile-current-marriage-teacher-preference", CompileCurrentMarriageTeacherPreference),
+    new("build-marriage-native-joint-receipt", options => WriteMarriageNativeJointReceipt(options, verify: false)),
+    new("verify-marriage-native-joint-receipt", options => WriteMarriageNativeJointReceipt(options, verify: true)),
     new("build-current-friendship-teacher-preference", options => WriteCurrentFriendshipTeacherPreference(options, verify: false)),
     new("verify-current-friendship-teacher-preference", options => WriteCurrentFriendshipTeacherPreference(options, verify: true)),
     new("compile-current-friendship-teacher-preference", CompileCurrentFriendshipTeacherPreference),
@@ -831,6 +833,15 @@ static void WriteFriendshipNativeThresholdReceipt(Arguments options, bool verify
         throw new InvalidDataException("Native friendship receipt output must be a new JSON file.");
     Write(output, verify ? FriendshipNativeThresholdReceiptBuilder.Verify(options.Required("receipt")) :
         FriendshipNativeThresholdReceiptBuilder.Build(options.Required("request")));
+}
+
+static void WriteMarriageNativeJointReceipt(Arguments options, bool verify)
+{
+    var output = Path.GetFullPath(options.Required("output"));
+    if (File.Exists(output) || Directory.Exists(output) || !output.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+        throw new InvalidDataException("Marriage native joint receipt output must be a new JSON file.");
+    Write(output, verify ? MarriageNativeJointReceiptBuilder.Verify(options.Required("receipt")) :
+        MarriageNativeJointReceiptBuilder.Build(options.Required("request")));
 }
 
 static void WriteSkillTeacherRow(Arguments options, bool verify)

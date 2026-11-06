@@ -1,5 +1,7 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+> **2026-11-07 婚房typed接续（当前优先）：** #470已接受。C全部原生链现由新typed联合回执复用原强reader贯通，公开Build/Verify同SHA`c199b006...`、6反例拒绝，原始源未变；婚礼日评分置位、剧情完成和原生归位分别验证，旧执行器/原生门不改。下一步只接原trajectory.v2 Teacher行/显式provider/统一输入、corpus/局部方法和真正缺失分区，不重采C/Friendship、不借旧目标哈希。已有房屋/关系/夹具仍仅前置，完整新档Teacher21/Student及全局预算责任不缩减；`11/19、11/19、11/19、8/11 roots`和formal=false保持。[完整来源合同](marriage-native-joint-receipts.md)。
+
 > **2026-11-06 婚房原生接续（当前优先）：** C单run原11队列已完成赠礼、求婚、回家、209→212三次原生睡觉和婚礼，联合评分条件为真、剧情菜单退出，原档未变、进程退出。后台对话焦点缺陷先查旧提交/聊天JSON与反编译，只窄复用原native输入；婚礼的新调用错误只改调用端，旧菜单恢复规则不变。下一步离线用原强reader接C完整typed联合回执及原trajectory/provider/corpus/局部方法/真正缺分区，不重采成功原生或拼接B/G。房屋/好感/物品等声明前置不冒充获取，独立礼物pair不等于整项比较；`11/19、11/19、11/19、8/11 roots`和formal=false不变，完整新档Teacher21/Student责任不缩减。Core2098/Backend617通过，最终CI/发布见收口。[完整接续](marriage-current-comparison.md#same-run-joint-outcome)。
 
 > **2026-11-06 婚房准备比较（当前优先）：** #467已接受；独立资源安全赠礼比较已用G原队列取得2420→2500原生结果，两个阶段各1pair/81未比较、公开重建一致，原档未变且进程退出。原5族不删，原社交预算/编译器复用，旧1975点Friendship和账本历史语义不改；新`marriage_teacher`显式请求缓存物资图，旧用途不变。下一步仍原求婚/通用日结算单run完整joint来源、typed回执和原轨迹/corpus/覆盖，不能借G丢失内存或把赠礼记成结婚。并集`11/19、11/19、11/19、8/11 roots`与formal=false保持，完整新档Teacher21/Student和生产预算义务不缩减。最终本地Core2097/Backend617通过，最终CI/发布见本轮分开PR收口。[当前合同及下一步](marriage-current-comparison.md)。
