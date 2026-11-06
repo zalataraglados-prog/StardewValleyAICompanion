@@ -126,6 +126,9 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
                 farm,
                 Game1.player,
                 tick);
+        var materialInventoryField = Field(materialInventoryGraph, "Game1.player.Items; Utility.ForEachLocation(includeInteriors:true, includeGenerated:false); Chest.GetItemsForPlayer/GetActualCapacity/GetMutex; GameLocation.GetFridge/GetFridgePosition; Workbench.checkForAction adjacency; Object heldObject machine/auto-grabber buffers", tick, "vanilla_1_6_material_inventory_graph");
+        if (SnapshotProfileContext.Current == "marriage_teacher")
+            return Section("farm", new Dictionary<string, object> { ["material_inventory_graph"] = materialInventoryField });
         return Section("farm", new Dictionary<string, object>
         {
             ["farm_type"] = Field(Game1.whichFarm, "Game1.whichFarm", tick, "vanilla_1_6_farm"),
@@ -146,7 +149,7 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             ["objects"] = Field(ReadObjects(farm), "Game1.getFarm().objects", tick, "vanilla_1_6_farm"),
             ["machines"] = Field(ReadCachedMachineProbeRowsOrFallback(farm), "FarmReadAdapter.RefreshMachineProbeCache on SMAPI UpdateTicked; Utility.ForEachLocation(includeInteriors:true, includeGenerated:false) plus native farm/home ownership topology; GameLocation.objects[*] machine-shaped objects", tick, "transparent_bridge_main_thread_cache"),
             ["chests"] = Field(ReadStorageInfrastructure(materialInventoryGraph), "farm.material_inventory_graph access_points filtered to placed_chest/built_in_fridge; canonical contents remain inventory_nodes[node_id]", tick, "vanilla_1_6_storage_infrastructure"),
-            ["material_inventory_graph"] = Field(materialInventoryGraph, "Game1.player.Items; Utility.ForEachLocation(includeInteriors:true, includeGenerated:false); Chest.GetItemsForPlayer/GetActualCapacity/GetMutex; GameLocation.GetFridge/GetFridgePosition; Workbench.checkForAction adjacency; Object heldObject machine/auto-grabber buffers", tick, "vanilla_1_6_material_inventory_graph"),
+            ["material_inventory_graph"] = materialInventoryField,
             ["animal_purchase_catalog"] = Field(ReadAnimalPurchaseCatalog(), "GameLocation.ShowAnimalShopMenu target locations; Utility.getPurchaseAnimalStock; Data/FarmAnimals; Data/Buildings; AnimalHouse occupancy", tick, "vanilla_1_6_animal_purchase"),
             ["animals"] = Field(ReadAnimals(farm), "Game1.locations[*].animals plus Game1.getFarm().buildings[*].GetIndoors().animals", tick, "vanilla_1_6_farm_and_animal_houses"),
             ["initial_pet_adoption"] = Field(ReadInitialPetAdoption(farm), "live Data/Events/Farm locked cat/dog entry; Event precondition handlers EarnedMoney/Time/NotDayOfWeek/Weather/MissingPet/IsHost; Game1.player pet choice/eventsSeen/totalMoneyEarned; Farm current weather", tick, "vanilla_1_6_initial_pet_adoption"),

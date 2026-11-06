@@ -1542,6 +1542,11 @@ public static class SnapshotValidator
             return RouteAndShopRequiredDomains;
         }
 
+        if (string.Equals(profile, "marriage_teacher", StringComparison.OrdinalIgnoreCase))
+        {
+            return SocialRequiredDomains.Concat(new[] { "farm" }).ToArray();
+        }
+
         if (string.Equals(profile, "social", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(
                 profile,

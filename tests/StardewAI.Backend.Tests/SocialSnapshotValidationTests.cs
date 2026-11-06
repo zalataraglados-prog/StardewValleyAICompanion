@@ -73,6 +73,29 @@ public sealed class SocialSnapshotValidationTests
         return snapshot;
     }
 
+    [Fact]
+    public void MarriageTeacherAddsOnlyTheExplicitFarmResourceDomainToSocialRequirements()
+    {
+        var snapshot = SocialSnapshot();
+        Assert.Empty(SnapshotValidator.Validate(snapshot, "social_future"));
+        Assert.Contains("missing state domain: farm", SnapshotValidator.Validate(snapshot, "marriage_teacher"));
+        snapshot.State["farm"] = JsonSerializer.SerializeToElement(new { });
+        snapshot.StateHash = SnapshotHash.ComputeStateHash(snapshot.State);
+        Assert.Empty(SnapshotValidator.Validate(snapshot, "marriage_teacher"));
+    }
+
+    [Theory]
+    [InlineData("farm")]
+    [InlineData("npcs")]
+    [InlineData("world_progress")]
+    public void MarriageTeacherNeverTreatsMissingResourceOrSocialDomainsAsEmpty(string omitted)
+    {
+        var snapshot = SocialSnapshot(omitted);
+        if (omitted != "farm") snapshot.State["farm"] = JsonSerializer.SerializeToElement(new { });
+        snapshot.StateHash = SnapshotHash.ComputeStateHash(snapshot.State);
+        Assert.Contains("missing state domain: " + omitted, SnapshotValidator.Validate(snapshot, "marriage_teacher"));
+    }
+
     private static readonly string[] SocialProfileDomains =
     {
         "environment",
