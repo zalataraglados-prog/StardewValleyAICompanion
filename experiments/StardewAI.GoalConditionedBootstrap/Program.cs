@@ -51,6 +51,8 @@ var commandDefinitions = new CommandDefinition[]
     new("verify-friendship-native-threshold-receipt", options => WriteFriendshipNativeThresholdReceipt(options, verify: true)),
     new("build-friendship-teacher-row", options => WriteFriendshipTeacherRow(options, verify: false)),
     new("verify-friendship-teacher-row", options => WriteFriendshipTeacherRow(options, verify: true)),
+    new("build-friendship-teacher-corpus", options => WriteFriendshipTeacherCorpus(options, verify: false)),
+    new("verify-friendship-teacher-corpus", options => WriteFriendshipTeacherCorpus(options, verify: true)),
     new("build-current-skill-experience-deficit", BuildCurrentSkillExperienceDeficit),
     new("build-current-skill-teacher-preference", options => WriteCurrentSkillTeacherPreference(options, verify: false)),
     new("verify-current-skill-teacher-preference", options => WriteCurrentSkillTeacherPreference(options, verify: true)),
@@ -788,6 +790,15 @@ static void WriteFriendshipTeacherRow(Arguments options, bool verify)
         throw new InvalidDataException("Friendship Teacher row output must be a new JSON file.");
     Write(output, verify ? FriendshipTeacherRowBuilder.Verify(options.Required("row")) :
         FriendshipTeacherRowBuilder.Build(options.Required("native-receipt"), options.Required("trajectory-id")));
+}
+
+static void WriteFriendshipTeacherCorpus(Arguments options, bool verify)
+{
+    var output = Path.GetFullPath(options.Required("output"));
+    if (File.Exists(output) || Directory.Exists(output) || !output.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+        throw new InvalidDataException("Friendship corpus output must be a new JSON file.");
+    Write(output, verify ? FriendshipTeacherCorpusBuilder.Verify(options.Required("corpus")) :
+        FriendshipTeacherCorpusBuilder.Build(options.Required("request")));
 }
 
 static void WriteSkillTeacherCorpus(Arguments options, bool verify)

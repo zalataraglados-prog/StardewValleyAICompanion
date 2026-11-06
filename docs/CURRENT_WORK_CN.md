@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-11-06 Friendship criterion corpus与原覆盖登记
+
+- #462经CI `42195611122`全部38步接受，合入`94e3dcad`、分支已清理；原Teacher行/provider/统一输入完成，不重做。唯一primary仍`raise_friendships`，`9/19、9/19、9/19、7/11`及formal=false保持。
+- 新typed corpus从原行Verify一次重放完整native链，再只读取已绑定元数据；保留每项队列/primitive/nonce数组、完整候选分母与5pairs/未比较范围。原19项21分/1975点人数规则及5/10各自criterion绑定，复制动作/决策/nonce、借阈值/分区均拒绝，不把末次社交当整链或推定先前获取。
+- 实际两行corpus公开Build/Verify同SHA`7c5b0dbe...`，各仅train；原coverage及reconciliation已登记新来源，两项比较/native有train，method pending、ready=false，另外17项逐项不变、输入未变。旧完整新档/衰减/跨图与21分竞争预算保留；corpus不冒充方法证书，最终回归/CI见本PR收口。[完整协议与来源](friendship-criterion-corpus.md)。
+- 最终Core1937/Backend607全部通过、零跳过（35新检查）；4类公开criterion/移动nonce/formal/覆盖写入抽样拒绝且无新输出，原Teacher行哈希仍`0e805776...`/`c8ec56d0...`，原EVD-338与差异检查通过。最终CI/发布以本PR收口为准。
+- **唯一下一步：** 复用该corpus接有条件当前来源方法视图与原frontier/coverage证书，再只补两项真正缺失的validation/test；不重采已验train/校准、不重开行/provider，不削减完整Teacher责任。无新游戏、worker/付费API、服务器、产品训练、原始数据/local-data提交或清理。
+
 ## 2026-11-06 Friendship原轨迹与统一输入
 
 - #461经CI `42145083661`全部38步接受，合入`3ba9796f`、分支清理。两份强原生来源不重采；唯一primary仍`raise_friendships`，`9/19、9/19、9/19、7/11`和formal=false保持。
