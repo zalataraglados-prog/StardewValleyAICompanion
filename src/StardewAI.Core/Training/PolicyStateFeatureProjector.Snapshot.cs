@@ -11,13 +11,15 @@ public sealed partial class PolicyStateFeatureProjector
     public FeatureVector Project(WorldModelEnvelope worldModel, SnapshotEnvelope snapshot)
     {
         var features = Project(worldModel);
-        if (worldModel.UserGoal is not ("goal.skills.raise_skill_levels" or FriendshipPolicyInputProjector.GoalId or MarriagePolicyInputProjector.GoalId)) return features;
+        if (worldModel.UserGoal is not ("goal.skills.raise_skill_levels" or FriendshipPolicyInputProjector.GoalId or MarriagePolicyInputProjector.GoalId or MuseumPolicyInputProjector.GoalId)) return features;
         if (snapshot is null || worldModel.StateHash != snapshot.StateHash)
             throw new ArgumentException(worldModel.UserGoal == "goal.skills.raise_skill_levels"
                 ? "Skills policy features require their exact original snapshot."
+                : worldModel.UserGoal == MuseumPolicyInputProjector.GoalId ? "Museum policy features require their exact original snapshot."
                 : worldModel.UserGoal == MarriagePolicyInputProjector.GoalId ? "Marriage policy features require their exact original snapshot."
                 : "Friendship policy features require their exact original snapshot.", nameof(snapshot));
         if (worldModel.UserGoal == "goal.skills.raise_skill_levels") return EnrichSkills(features, snapshot);
+        if (worldModel.UserGoal == MuseumPolicyInputProjector.GoalId) return new MuseumPolicyInputProjector(snapshot).ProjectState(features);
         if (worldModel.UserGoal == MarriagePolicyInputProjector.GoalId) return EnrichMarriage(features, snapshot);
         var deficit = new CurrentFriendshipDeficitBuilder().Build(snapshot);
         if (deficit.Status != "ready_current_state_only")

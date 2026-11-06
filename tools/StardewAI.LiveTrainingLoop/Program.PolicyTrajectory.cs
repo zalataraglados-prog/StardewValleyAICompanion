@@ -139,11 +139,11 @@ static partial class Program
                     beforeSnapshot.ToJsonString(JsonOptions),
                     JsonOptions) ?? throw new InvalidOperationException("before snapshot contract is empty");
                 var policyGoal = ResolveSocialPolicyGoal(decision, firstStep, options.Goal);
-                var stateFeatures = new PolicyStateFeatureProjector().Project(
-                    new WorldModelProjector().Project(
-                        snapshotEnvelope,
-                        policyGoal,
-                        options.TargetExecutionMode), snapshotEnvelope);
+                policyGoal = ResolveMuseumPolicyGoal(decision, firstStep, policyGoal);
+                var museumInputs = policyGoal == MuseumPolicyInputProjector.GoalId ? new MuseumPolicyInputProjector(snapshotEnvelope) : null;
+                var stateProjector = new PolicyStateFeatureProjector();
+                var worldModel = new WorldModelProjector().Project(snapshotEnvelope, policyGoal, options.TargetExecutionMode);
+                var stateFeatures = museumInputs?.ProjectState(stateProjector.Project(worldModel)) ?? stateProjector.Project(worldModel, snapshotEnvelope);
                 if (policyGoal == FriendshipPolicyInputProjector.GoalId)
                 {
                     if (string.IsNullOrWhiteSpace(options.RouteTimingCalibrationPath))
@@ -160,6 +160,9 @@ static partial class Program
                         File.ReadAllText(options.RouteTimingCalibrationPath)).ProjectCandidates(decision.RankedEventCandidates
                             ?? throw new InvalidOperationException("Marriage feedback candidate context is missing."));
                 }
+                if (museumInputs is not null)
+                    decision.RankedEventCandidates = museumInputs.ProjectCandidates(
+                        decision.RankedEventCandidates ?? throw new InvalidOperationException("Museum feedback candidate context is missing."));
                 var episodeId = appendResult.EpisodeId + ".policy." + iteration.ToString("D4") + "." + decisionOrdinal.ToString("D4");
                 var aggregateCandidateExecution = AggregateSelectedCandidateExecution(
                     decisionSteps,
@@ -219,6 +222,20 @@ static partial class Program
             !queue.Items.Any(item => item.QueueItemId == ReadString(firstStep, "queue_item_id")))
             throw new InvalidOperationException(label + " feedback effective goal differs from its original compiled queue.");
         return goal;
+    }
+
+    private static string ResolveMuseumPolicyGoal(AvailabilityAwarePolicyPredictionEnvelope decision, JsonObject firstStep, string fallbackGoal)
+    {
+        if (decision.GoalResolution?.EffectiveGoalId != MuseumPolicyInputProjector.GoalId && fallbackGoal != MuseumPolicyInputProjector.GoalId)
+            return fallbackGoal;
+        var path = ReadString(firstStep, "effective_compiled_queue_path");
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+            throw new InvalidOperationException("Museum feedback requires its original compiled queue.");
+        var queue = JsonSerializer.Deserialize<ActionQueueEnvelope>(ContentAddressedJsonArtifactStore.ReadAllText(path), JsonOptions);
+        if (queue?.Items is null || queue.GoalId is not (MuseumPolicyInputProjector.GoalId or "grandpa.maximum_21") ||
+            !queue.Items.Any(item => item.QueueItemId == ReadString(firstStep, "queue_item_id") && item.OptionId == "executor.donate_museum_item"))
+            throw new InvalidOperationException("Museum feedback effective goal differs from its original donation queue.");
+        return MuseumPolicyInputProjector.GoalId;
     }
 
     private static PlanExecutionEpisodeEnvelope BuildPolicyExecutionEpisode(

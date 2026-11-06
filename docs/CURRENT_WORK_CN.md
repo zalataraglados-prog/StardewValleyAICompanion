@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-11-07 全馆统一输入与原准入（当前唯一接续）
+
+- #478经CI `42294539442`全部38步接受、合入`b4baed10`。本轮仅离线复用B，接95项共享模型输入和公开可重建准入报告；原编译器/执行器/注册权限/训练validator/provider均不改。[合同](museum-policy-input-admission.md)。
+- 原轨迹builder真实拒绝捐赠训练行后，沿旧Collection的evidence-only分支，而不是削弱旧代码：捐赠EvaluationOnly/需确认，600tick等待是参照不是原策略候选。原生save/player/day和policy日期分区各自保留；未提交的无效provider/schema草稿已撤。报告真实1候选/1参照、全95输入、两项阻塞，policy_row_built/formal均false，原始数据仓库外。
+- 最终代码Core2317/Backend629零失败零跳过，原EVD-338/差异检查通过；4类公开篡改/覆盖探针拒绝、源未变，最终重放SHA仍`03b58baa...`。新增输入投影每调用只绑定一次快照，状态/候选复用同实例，不增全量快照或路径缓存。新后端夹具漏字段元数据只修夹具，不改入口校验；最终CI见收口。
+- **唯一下一步：** 复用原Rusty证据型criterion corpus/条件方法模式接全馆native证明及原覆盖，再补真正缺失分区；不为制造训练行停工、不重采B或已验根，不增加第二套执行链。需要策略训练时必须显式区分隔离研究授权与产品捐赠许可，不可用native成功倒推授权。并集仍`12/19、12/19、12/19、9/11 roots`，formal=false；完整95获取/RNG/共享预算/Teacher21与Student义务保持，Money6随后。下方轨迹/provider下一步假设仅为已校正历史。
+
 ## 2026-11-07 全馆typed联合证明（当前唯一接续）
 
 - #477经CI `42291144137`全部38步接受，合入`2e082394`；原比较及成功B源不重做。唯一primary仍全馆，并集`12/19、12/19、12/19、9/11 roots`及formal=false保持，Money6随后。
