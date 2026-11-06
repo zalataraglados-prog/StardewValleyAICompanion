@@ -1,5 +1,11 @@
 # StardewAI 当前工作
 
+## 2026-11-07 全馆三分区与原准入收口（当前唯一接续）
+
+- #481经CI `42306628987`全部38步接受、合入`669142f2`。原代码不改，只新增E隐藏静音validation冬12/207及test秋20/187，原C#分区与原生读回日期/身份双检；同一存档冬季无test，预检正确避免照搬婚房日期。原caller/B不动、原档哈希不变、两次游戏/后端均退出。[完整来源](museum-local-acceptance.md)。
+- 原强reader及corpus/条件证书/覆盖实际接受3源/3pair/3原生终态、全95项、三分区，本条件方法executable、criterion ready/本项无open work，另18项与固定同代码基线相同。corpus SHA`d86c7847...`、视图`3961a608...`、对账`cc3859cf...`；每个源slot11 `(O)96`栈2→1、tick126→331/原生遥测204。保留源均未变；准入未用路径缓存跳过当前proof，数据/caller/view/corpus/local-data全在仓库外。父代码Core2354/Backend629/38步CI不变，本轮显式E原生和原准入通过，最终CI见收口。无worker/API、产品训练、服务器或文件清理；后台来源不等于可视帧率验收。
+- **唯一下一primary：`earn_money`（Money6）**。全馆最终接受后冻结并集`13/19 executable、13/19 split-complete、13/19 ready、10/11 roots`，formal=false；该数是局部criterion并集，不是同一新档已获13项或Teacher总完成。先核对现有Money代码/原生耐久来源与#338/#339等issue，再补实际缺口，复用原作物Teacher/售卖出货/机器/承诺/日结算，不另起收入规划器、不重采B或旧根。全95获取/RNG/共享资源/Year3全局预算及新档Teacher21/Student义务保留。
+
 ## 2026-11-07 全馆条件方法与独立证书（当前唯一接续）
 
 - #480经CI `42303876747`全部38步接受、合入`2f398e31`。本局部方法按旧Marriage/Friendship模式消费已验corpus，原图不动；全部6角色/旧边/未知字段及10个其他方向保留，完整旧方向、阻塞与递推复制为显式全局责任。不将已有94件/手持物当获取，不新建执行器或放宽权限。[合同](museum-local-method-view.md)。

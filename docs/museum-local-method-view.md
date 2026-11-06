@@ -85,6 +85,10 @@ stay outside Git.
 
 ## Next Exit
 
+The following actual three-partition closure is indexed in
+[Museum Local Acceptance](museum-local-acceptance.md). It reuses this certificate
+and preserves its conditional scope; no new executor or policy permission is added.
+
 Collect only the genuinely missing validation/test Museum terminal sources,
 checking the original save/player/day partition before launching the isolated
 runtime. Reuse B/train, the existing original donation fixture/compiler/executor,
