@@ -1,5 +1,11 @@
 # StardewAI 当前工作
 
+## 2026-11-07 婚房缺失分区收尾（当前优先）
+
+- #474已由CI `42272593550`全部38步接受，合入`cc61694b`。本轮仅补validation/test，原C、Friendship、局部方法和旧执行器不重做。validation冬21为216→219、2准备/11队列/12动作；test冬12为207→210、4准备/15队列/16动作，均完整原生求婚/三次睡觉/婚礼、原档不变、进程退出。
+- 原policy在启动前确定分区，婚礼日不另计。完整corpus为8行/3结果，原分母83（test索引2为80）、各1pair；原数据集8接受/0拒绝/0重复、2/2/4、即时0且长期全pending。原覆盖method executable、比较/native三分区、criterion ready/本项open work为空；其他18项完全一致，原输入哈希未变。失败冬17新夹具跳过原生日程触发点，只修仓库外调用者，不改旧候选/桥/执行器。[来源、归因及边界](marriage-local-acceptance.md)。
+- 本项被原数据集/覆盖及CI接受后，接受并集才为`12/19 executable、12/19 split-complete、12/19 ready、9/11 roots`；formal=false，完整新档Teacher21/Student及获取/共享预算责任不减。随后唯一primary是`complete_museum_collection`，先核对95项权威事实并复用已验Rusty捐赠/预留/保管/路径/滚动方法，再补真实缺口；Money6随后。不重写捐赠执行器或重开已验Rusty。
+
 ## 2026-11-07 婚房有条件局部方法证书
 
 - #473已由CI `42268173931`全部38步接受，合入`383ba26b`、对应分支清理。corpus/原行/完整C不重做。本轮新独立局部视图复用原corpus验证和完整原生链，实际Build/Verify同SHA`8188644c...`；原依赖图文件不改，原方向/阻塞/递推及所有其他根完整保留，来源和前置不冒充获取。

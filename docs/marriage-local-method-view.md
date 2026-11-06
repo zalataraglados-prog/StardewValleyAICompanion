@@ -1,5 +1,10 @@
 # Marriage Local Method View
 
+The following implementation-stage counts and next step are historical. The
+three-partition source/admission close-out is tracked in
+[Marriage Local Acceptance](marriage-local-acceptance.md); its exact-head CI
+owns the later acceptance, not this earlier single-train method proof.
+
 ## Scope And Original Ownership
 
 Continue accepted #473 (`383ba26b`). The original marriage corpus, C native chain
