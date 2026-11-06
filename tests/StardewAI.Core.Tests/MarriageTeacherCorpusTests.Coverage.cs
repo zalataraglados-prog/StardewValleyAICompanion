@@ -61,5 +61,5 @@ public sealed partial class MarriageTeacherCorpusTests
 
     private static void Apply(MarriageTeacherCorpus corpus, GoalMethodFrontierReport frontier, IDictionary evidence) =>
         typeof(GoalMethodTeacherCoverageBuilder).GetMethod("ApplyMarriageCorpus", BindingFlags.Static | BindingFlags.NonPublic)!
-            .Invoke(null, new object[] { corpus, GoalMethodTeacherCoverageSourceKinds.MarriageJointCorpus, frontier, evidence });
+            .Invoke(null, new object?[] { corpus, GoalMethodTeacherCoverageSourceKinds.MarriageJointCorpus, frontier, evidence, null, null });
 }

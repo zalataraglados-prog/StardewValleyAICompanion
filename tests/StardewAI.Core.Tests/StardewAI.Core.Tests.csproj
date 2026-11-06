@@ -59,6 +59,8 @@
     <Compile Include="MarriageTeacherCorpusTests.cs" />
     <Compile Include="MarriageTeacherCorpusTests.Identity.cs" />
     <Compile Include="MarriageTeacherCorpusTests.Coverage.cs" />
+    <Compile Include="MarriageTeacherCorpusTests.LocalMethodView.cs" />
+    <Compile Include="MarriageTeacherCorpusTests.LocalMethodFixture.cs" />
     <Compile Include="SocialTransparentPlanningTests.MarriagePolicyInputs.cs" />
     <Compile Include="StructuredPolicyTrainerTests.CandidatePolicyFeatures.cs" />
     <Compile Include="SkillTeacherReplayVerifierTests.cs" />
