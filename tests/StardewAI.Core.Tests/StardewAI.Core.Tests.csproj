@@ -42,6 +42,10 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(GameFreeGovernance)' == 'true'">
+    <Compile Include="..\..\src\StardewAI.TransparentBridge\Adapters\NativeWeddingCalendarProjectionCache.cs" Link="NativeWeddingCalendarProjectionCache.cs" />
+    <Compile Include="NativeWeddingCalendarProjectionTests.cs" />
+    <Compile Include="CurrentMarriageHouseSettlementTests.cs" />
+    <Compile Include="MarriageTeacherSaveBoundaryTests.cs" />
     <Compile Include="PolicyTrajectoryDatasetBuilderTests.cs" />
     <Compile Include="PolicyIndependentDecisionDatasetTests.cs" />
     <Compile Include="StructuredPolicyTrainerTests.cs" />

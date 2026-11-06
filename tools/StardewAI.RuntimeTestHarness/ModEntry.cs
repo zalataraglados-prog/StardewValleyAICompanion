@@ -1367,6 +1367,12 @@ public sealed partial class ModEntry : Mod
                 return;
             }
 
+            if (pending.Request.OptionId == "debug.prepare_marriage_teacher_inventory")
+            {
+                pending.Completion.SetResult(ExecutePrepareMarriageTeacherInventory(pending.Request));
+                return;
+            }
+
             if (pending.Request.OptionId == "debug.setup_single_gift_item")
             {
                 pending.Completion.SetResult(ExecuteSetupSingleGiftItem(pending.Request));
