@@ -142,6 +142,7 @@ public sealed partial class ModEntry
             "debug.setup_full_shipment_terminal",
             "debug.setup_shipping_target",
             "debug.setup_single_gift_item",
+            "debug.prepare_marriage_teacher_inventory",
             "debug.setup_skull_cavern_shaft",
             "debug.setup_storage_crafting_target",
             "debug.setup_storage_placement_target",

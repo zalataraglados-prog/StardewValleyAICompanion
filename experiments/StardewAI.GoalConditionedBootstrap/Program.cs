@@ -44,6 +44,9 @@ var commandDefinitions = new CommandDefinition[]
     new("build-current-friendship-deficit", BuildCurrentFriendshipDeficit),
     new("build-current-marriage-house-intake", options => WriteCurrentMarriageHouseIntake(options, verify: false)),
     new("verify-current-marriage-house-intake", options => WriteCurrentMarriageHouseIntake(options, verify: true)),
+    new("prepare-marriage-teacher-save-boundary", options => Write(options.Required("output"),
+        MarriageTeacherSaveBoundaryBuilder.Prepare(options.Required("request"), options.Required("output")))),
+    new("build-current-marriage-house-settlement-projection", BuildCurrentMarriageHouseSettlementProjection),
     new("build-current-friendship-teacher-preference", options => WriteCurrentFriendshipTeacherPreference(options, verify: false)),
     new("verify-current-friendship-teacher-preference", options => WriteCurrentFriendshipTeacherPreference(options, verify: true)),
     new("compile-current-friendship-teacher-preference", CompileCurrentFriendshipTeacherPreference),
@@ -703,6 +706,18 @@ static void AuditCurrentOwnedPlanningPause(Arguments options)
     });
     if (!verified)
         Environment.ExitCode = 2;
+}
+
+static void BuildCurrentMarriageHouseSettlementProjection(Arguments options)
+{
+    var output = Path.GetFullPath(options.Required("output"));
+    if (!output.EndsWith(".json", StringComparison.OrdinalIgnoreCase) || File.Exists(output) || Directory.Exists(output))
+        throw new InvalidDataException("Marriage/House settlement output must be a new JSON file.");
+    var snapshot = CurrentTeacherFrontierSupport.Read<StardewAI.Contracts.State.SnapshotEnvelope>(
+        options.Required("snapshot"), "Marriage/House settlement snapshot");
+    var report = new CurrentMarriageHouseSettlementProjector().Build(snapshot);
+    Write(output, report);
+    if (report.Status != "ready_conditional_settlement_projection") Environment.ExitCode = 2;
 }
 
 static void WriteCurrentMarriageHouseIntake(Arguments options, bool verify)

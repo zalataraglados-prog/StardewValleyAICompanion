@@ -1,5 +1,7 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+> **2026-11-06 婚房原生日历与起点（当前优先）：** #466已接受，原接入不重做。已完成原生婚礼谓词的112日期依赖缓存、条件跨日结算投影及E非终态D的真实日程起点；原档未变、测试退出，原Teacher/执行器不改，不产生获取标签或计数晋升。`11/19、11/19、11/19、8/11 roots`及formal=false保持。唯一下一步仍婚房独立比较：原完整接触校准和资源承诺证明、新run鲜态重绑、原赠礼/求婚/日结算链，再原轨迹/corpus/局部方法与真正缺分区。不得把当前房屋/预置好感或本轮条件日期当完整新档Teacher21分。[实际诊断、性能限制与接续](marriage-house-local-intake.md#native-calendar-and-nonterminal-boundary)。
+
 > **2026-11-06 婚房接续（当前优先）：** Friendship #465已接受，当前婚房只读事实/完整原候选接入不产生Teacher标签或计数晋升。下一步在原5族及真实非终态边界上做独立比较，复用旧社交接触预算/房屋/伴侣/日结算，不复制执行器；联合评分、采购与施工/订婚与婚礼的区别、第三年期限及共享预算必须明确。既有已婚/三级源只供当前事实重放，不作为新获取。`11/19、11/19、11/19、8/11 roots`及formal=false保持。[协议及下一步](marriage-house-local-intake.md)。
 
 > **2026-11-06 当前接续：** Friendship仅补真正缺失的四个原分区来源，六行corpus/原数据集/局部方法/原覆盖已收口；最终回归/CI接受后并集`11/19 executable、11/19 split-complete、11/19 ready、8/11 roots`。formal=false，全新档Teacher21分、全局时间资源与Student责任不变。下一唯一primary为婚房，先严格当前事实与原候选接入，复用已存在的婚姻/房屋/社交/日结算链，不重写执行器、不重采已验友谊。剩余全馆与Money保留；独立重置样本保持长期回报pending。[真实来源及下一步](friendship-local-acceptance.md)。下方旧“下一步”保留为历史，以本段及CURRENT_STATUS当前决定为准。

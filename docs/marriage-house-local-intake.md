@@ -100,12 +100,88 @@ CI/publishing results belong in this PR's closing record.
 Raw snapshots/decompilation/probes remain outside Git and local-data is not added.
 No worker/paid API, server operation, product training or cleanup is performed.
 
+## Native Calendar And Nonterminal Boundary
+
+The next prerequisite uses the same pinned E game DLL, freshly decompiled into
+external `decompile-b`. `NPC.engagementResponse` starts at current total day +3
+and skips dates rejected by `Game1.canHaveWeddingOnDay`; that native predicate
+excludes festivals and seeded summer green rain. A constant three-day wedding is
+therefore insufficient. The bridge now adds an optional `wedding_calendar` to the
+existing GSQ calendar without changing its previous fields or consumers. It calls
+the actual native predicate for all 112 dates, cached by save seed, current year
+and festival key set. Repeated snapshots do not repeat those 112 calls; caller
+arrays cannot mutate the cache. No custom green-rain RNG is implemented.
+
+`build-current-marriage-house-settlement-projection --snapshot ABS --output NEW`
+validates the projection's version, unsigned save seed, year, current total day,
+date denominator and festival bindings. It retains known late dates and nullable
+unknowns, skips native forbidden dates and joins existing pending branches by
+their actual settlement dates, not by purchase/proposal time. A wedding due today
+requires native day-phase evidence; another year's summer is not inferred from
+the current year's seeded calendar. The existing exclusive Year-3 deadline remains
+224. These are conditional dates, not proposal legality, purchase authorization,
+a complete method budget, Teacher labels or verified native outcomes.
+
+`prepare-marriage-teacher-save-boundary --request ABS --output NEW` reuses the
+original isolated-save file guards and atomic clone replacement. It requires an
+exact fresh clone and native basis, declares year-two winter-14 / Dating / 2420
+points only in the clone, and preserves its original settled house, inventory,
+player sleep location, other relationships and historical wedding date. A second
+same-save/player unmarried native snapshot supplies normal NPC default metadata.
+Only the clone's target NPC serialized owner/default/position are restored to
+that observed normal home before load; there is no live NPC teleport. These are
+explicit local prerequisites, never evidence of prior partner/house acquisition.
+The new isolated inventory fixture fills three empty slots using native item
+creation, without deleting existing items or changing NPCs, time or friendship.
+
+Actual external sources under `marriage-local-20261106` are retained, not rewritten:
+
+- Capture A: clearing marriage alone left the serialized NPC in FarmHouse while
+  the native unmarried default became SeedShop. Excluded as a contact source;
+  used only as the observed unmarried default-metadata/calendar witness.
+- Capture B: the clone's default owner was restored, but jumping the clock to
+  10:30 skipped the native 09:00 / 10:30 schedule triggers. Excluded as a contact
+  source. The old clock-only debug helper is not defective and is unchanged.
+- Capture C: the new caller incorrectly requested ten wait slices; the existing
+  executor correctly rejected its maximum-three contract. No measured action ran.
+- Capture D: starts the clock at 08:50 and uses four original bounded waits,
+  allowing both schedule triggers to run normally. At 11:10 Abigail is physically
+  in SeedShop at (20,5), schedule loaded and current route complete. Original save
+  unchanged and owned game stopped. The native love delta is +80 for both declared
+  Amethyst and Pumpkin; their actual store-sale values are 100 and 352, not a
+  hardcoded guide price. The pendant's generic taste row is not an ordinary gift
+  alternative: the original special partnership branch still owns it.
+
+D retains all five source families, including 533 gift rows and all unavailable
+reasons; no root or candidate is silently dropped. Day 209 has a conditional
+proposal wedding on day 212 and an already-settled house, but no engagement or
+joint outcome has been acquired. Source/label/native/formal claims stay false.
+The new projection is stable across fresh snapshots. A short sample containing
+one forced broad social snapshot measured 36 updates/s and about 1400 MiB resident
+memory; it is not a smooth-play performance PASS. Existing broad social snapshots
+still cost roughly one second; do not poll them per frame or attribute that cost
+to the once-per-dependency wedding projection.
+
+Final local Core 2067 / Backend 607 pass with zero failures/skips, including 45
+new targeted checks. The E bridge Release build and isolated harness Debug build
+pass without warnings. Public projection replay is byte-identical with SHA256
+`1ce29acf76d4329fdcb2001b6de28131c18e5072193b4619d02bd4378e6f4c55`;
+the original intake Verify is also identical (`0f4d9992...`), and overwrite is
+rejected without changing accepted inputs. D's ten existing occupied inventory
+slots and all relationship points/status/daily counters remain unchanged across
+the preparation. External `calendar-probes-d/summary.json` binds source hashes,
+excluded-contact diagnostics and code hashes. The original EVD-338 checkpoint
+and whitespace check pass; final CI/publishing belongs in this PR's closing
+record. No worker/API, server operation, product training, cleanup or raw-data
+commit is performed.
+
 ## Sole Next Slice
 
 Implement an independent current Marriage/House comparison consumer over these
 original sources, with explicit native calendar/settlement and resource commitments.
-First prepare or inspect a genuinely nonterminal isolated boundary before action;
-this already-complete source cannot supply a progress label. Reuse full social
+The native nonterminal boundary and calendar prerequisites now exist; do not
+reopen the already-accepted original intake or manufacture a label from them.
+Reuse full social
 contact/route budgets and the existing housing/partnership/day-settlement chains.
 Do not manufacture alternative candidates or negative labels for incomparable,
 unavailable or already-completed work.
@@ -113,7 +189,12 @@ unavailable or already-completed work.
 A purchased upgrade is not a completed house, engagement is not marriage, and a
 pending construction/wedding must not cause another purchase/proposal. Construction
 and settlement must fit the original Year-3 deadline; an admissible action this
-minute is not automatically a feasible scoring plan. Comparison/control mode must
-state exactly what has been proved before any native dispatch. Then obtain real
+minute is not automatically a feasible scoring plan. Use the original contact
+calibration and full route/contact budgets, preserve every original source and
+uncompared alternative, and prove inventory/resource commitments before comparing
+gift preparation choices. A cheaper gift alone does not prove global dominance
+when another goal reserves that item. Comparison/control mode must state exactly
+what has been proved before any native dispatch. D's game is closed: a new run
+must rebuild from its fresh state, not dispatch D's stale hashes. Then obtain real
 same-run settlement and join the original Teacher/native/corpus/method/partition
 chain. Do not narrow the final new-save 21-point/Student goal to this intake.

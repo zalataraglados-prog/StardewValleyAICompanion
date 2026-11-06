@@ -25,16 +25,16 @@ public sealed partial class WorldProgressReadAdapter
             })
             .ToArray();
 
+        var festivalDateKeys = DataLoader.Festivals_FestivalDates(Game1.temporaryContent).Keys
+            .OrderBy(key => key, StringComparer.Ordinal).ToArray();
         return new
         {
             current_total_day = Game1.Date.TotalDays,
+            save_unique_id = Game1.uniqueIDForThisGame,
             time_of_day = Game1.timeOfDay,
             days_played = Game1.stats.DaysPlayed,
-            festival_date_keys = DataLoader
-                .Festivals_FestivalDates(Game1.temporaryContent)
-                .Keys
-                .OrderBy(key => key, StringComparer.Ordinal)
-                .ToArray(),
+            festival_date_keys = festivalDateKeys,
+            wedding_calendar = ReadNativeWeddingCalendar(festivalDateKeys),
             active_passive_festival_ids = Game1.netWorldState.Value
                 .ActivePassiveFestivals
                 .OrderBy(id => id, StringComparer.Ordinal)

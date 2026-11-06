@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-06 婚房日历/非终态接续（当前优先）：** #466已接受并合入`7ac78b1e`，原接入不重做。本轮追加原生婚礼禁用日期缓存和条件结算投影；E非终态D让NPC走原生日程抵达SeedShop(20,5)，原档未变、游戏已退出。A/B/C的新夹具/调用错误已定位，旧时钟/等待/执行器保持不变；45项针对性检查通过，完整回归/CI见本PR收口。该前置不产生Teacher标签或婚房晋升，`11/19、11/19、11/19、8/11 roots`及formal=false保持。**唯一下一步仍独立婚房比较**，用原完整接触校准及资源承诺，再新run鲜态原生赠礼/求婚/跨日结算和原数据覆盖链，不把当前房屋/已声明好感当获取成果。[范围和实际诊断](marriage-house-local-intake.md#native-calendar-and-nonterminal-boundary)。
+
 > **2026-11-06 婚房当前接入（当前优先）：** #465已通过CI `42208557116`并合入`c0e7cc80`，Friendship不重做。新只读接入从原图发现5个原转移族，复用完整离线evaluator，校验原生婚房联合事实、日期与施工，保留原报价/不可用候选，不改执行器或旧合法性。真实公开重放同SHA`9076133d...`，已婚/三级只记当前满足，不造获取成果；gift410/talk43完整保留、源未变。**下一步仅婚房独立当前比较及非终态边界**，采购/订婚不当作跨日结算完成，期限和共享资源不省略；再原生/原轨迹及覆盖。并集`11/19、11/19、11/19、8/11 roots`与formal=false不变，完整新档Teacher/Student仍未验收。[完整复用与接续](marriage-house-local-intake.md)。最终回归/CI见本PR收口。
 
 > **2026-11-06 Friendship三分区收口（当前优先）：** #464经CI `42203227382`接受并合入`7005c835`。本轮复用train/原校准及原执行链，仅新采四个E后台来源；真实冬21/17对应原validation/test，人数阈值与完整nonce/队列均验证、原档不变。六行corpus SHA`ec7c58b8...`，原数据集6接受/0拒绝、2/2/2、长期回报pending；原覆盖两项ready、无本项open work，另17项相同。最终回归/CI接受后并集为`11/19 executable、11/19 split-complete、11/19 ready、8/11 roots`，formal=false；不等于完整新档Teacher或产品训练完成。**唯一下一primary为`marriage_and_house_upgrade`**，先严格当前事实/原候选接入并复用旧婚房/社交/结算链，再比较及原生来源，不重写执行器；全馆1与Money6保留。[完整来源、诊断与接续](friendship-local-acceptance.md)。下方同日旧接续均为历史，不再重做。
