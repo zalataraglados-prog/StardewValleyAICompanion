@@ -61,6 +61,18 @@ public sealed partial class SocialTransparentPlanningTests
     }
 
     [Fact]
+    public void FriendshipTeacherDoesNotSilentlyReinterpretThePreviousComparisonPolicy()
+    {
+        var files = FriendshipTeacherFiles();
+        var result = CurrentFriendshipTeacherPreferenceBuilder.Build(files.Snapshot, files.Calibration);
+        var json = JsonSerializer.SerializeToNode(result, JsonOptions)!;
+        json["comparisonPolicyId"] = "current_friendship_saturated_progress_contact_budget_frontier.v1";
+        var stored = Path.Combine(files.Directory, "previous-policy.json");
+        File.WriteAllText(stored, json.ToJsonString());
+        Assert.Throws<InvalidDataException>(() => CurrentFriendshipTeacherPreferenceBuilder.Verify(stored));
+    }
+
+    [Fact]
     public void FriendshipTeacherVerifyRejectsEditedComparisonAndSourceDrift()
     {
         var files = FriendshipTeacherFiles();

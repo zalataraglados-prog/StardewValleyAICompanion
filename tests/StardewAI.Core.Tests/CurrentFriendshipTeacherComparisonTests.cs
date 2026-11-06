@@ -1,4 +1,6 @@
 using StardewAI.GoalConditionedBootstrap;
+using StardewAI.Core.Infrastructure;
+using StardewAI.Core.Training;
 
 namespace StardewAI.Core.Tests;
 
@@ -58,7 +60,7 @@ public sealed class CurrentFriendshipTeacherComparisonTests
 
     private static CurrentFriendshipTeacherCandidate Row(string id, int time) => new()
     {
-        CandidateId = id, NativeActionIdentity = "native:" + id, OptionId = "social.talk_npc",
+        CandidateId = id, NpcName = id, NativeActionIdentity = "native:" + id, OptionId = "social.talk_npc",
         Kind = "social_talk_current", Status = "admitted_current_social_comparison", AvailableCurrentSource = true, ComparisonRequired = true,
         FriendshipPointsBefore = 1960, ExpectedFriendshipPointsAfter = 1980,
         UsefulFriendshipDelta = 15, ExpectedNewQualifiers = 1, CompiledMinutes = 1,
@@ -73,5 +75,64 @@ public sealed class CurrentFriendshipTeacherComparisonTests
         var second = Row("second", 908);
         first.Kind = second.Kind = "route_connector_tile";
         Assert.Null(CurrentFriendshipTeacherComparisonPolicy.Compare(first, second));
+    }
+
+    [Fact]
+    public void ImmediateTalkCanDominateAProvenFullRoutedTalkWithoutChangingTheCostOrder()
+    {
+        var first = Row("local", 901);
+        var second = Routed("remote", 908);
+        Assert.NotNull(CurrentFriendshipTeacherComparisonPolicy.Compare(first, second));
+        first.ContactBudgetArrivalTime = 910;
+        Assert.Null(CurrentFriendshipTeacherComparisonPolicy.Compare(first, second));
+        Assert.Null(CurrentFriendshipTeacherComparisonPolicy.Compare(second, first));
+    }
+
+    [Theory]
+    [InlineData("missing_proof")]
+    [InlineData("candidate")]
+    [InlineData("opportunity")]
+    [InlineData("timing")]
+    [InlineData("window")]
+    [InlineData("gift")]
+    [InlineData("unknown_kind")]
+    [InlineData("progress_tradeoff")]
+    [InlineData("cost_tradeoff")]
+    [InlineData("npc_alias")]
+    [InlineData("missing_npc")]
+    public void CrossGeometryTalkStillRejectsUnprovenBindingsAndRealTradeoffs(string change)
+    {
+        var first = Row("local", 901);
+        var second = Routed("remote", 908);
+        switch (change)
+        {
+            case "missing_proof": second.RouteContactBudget!.Status = "blocked"; break;
+            case "candidate": second.RouteContactBudget!.CandidateId = "foreign"; break;
+            case "opportunity": second.RouteContactBudget!.OpportunityId = "foreign"; break;
+            case "timing": second.RouteContactBudget!.TimingEvidenceId = "foreign"; break;
+            case "window": second.RouteContactBudget!.ContactWindow!.EarliestInteractionTime = 909; break;
+            case "gift": first.OptionId = second.OptionId = "social.gift_npc"; break;
+            case "unknown_kind": first.Kind = "unknown"; break;
+            case "progress_tradeoff": first.UsefulFriendshipDelta = 10; break;
+            case "cost_tradeoff": first.CompiledMinutes = 2; break;
+            case "npc_alias": second.NpcName = first.NpcName; break;
+            case "missing_npc": second.NpcName = string.Empty; break;
+        }
+        Assert.Null(CurrentFriendshipTeacherComparisonPolicy.Compare(first, second));
+    }
+
+    private static CurrentFriendshipTeacherCandidate Routed(string id, int time)
+    {
+        var row = Row(id, time);
+        row.Kind = "route_connector_tile";
+        row.OpportunityId = "opportunity:" + id;
+        row.RouteContactBudget = new()
+        {
+            Status = "verified_for_actual_first_connector", CandidateId = id, OpportunityId = row.OpportunityId,
+            TimingEvidenceId = row.TimingEvidenceId,
+            RequiredFirstEdge = new TransparentRouteEdge("warp", "Farm", "Town", 1, 1, 2, 2),
+            RouteScenario = new(), ContactWindow = new() { EarliestInteractionTime = time }
+        };
+        return row;
     }
 }

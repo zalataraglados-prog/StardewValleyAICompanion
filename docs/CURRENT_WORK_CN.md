@@ -1,5 +1,14 @@
 # StardewAI 当前工作
 
+## 2026-11-06 Friendship真实人数阈值来源
+
+- #459经CI `42132500513`全部38步接受，合入`1f60faa7`、分支已清理；显式成对准入不重做。唯一primary仍`raise_friendships`，`9/19、9/19、9/19、7/11`及formal=false保持。
+- 新隔离边界准备器复用原安全文件层，仅在副本声明4/9人前置、1955点对话目标、临时起点及当地剧情前置；源档、婚姻/库存/礼物计数保留，不把预置好感或剧情当成果。新后台入口复用原时间夹具、原生有界等待、完整比较/Verify及原两步预编译队列；旧debug时间只改钟、Evelyn早晨游走都按原契约消费，不改旧调度/候选/执行器。
+- 核对`85d42661`/`007eb7c8`后，仅新比较层增加“本地talk优于已证完整跨图talk”的窄几何适配；原进度/资源/时间无退步标准保留，缺证明、反向首段比较、礼物/未知类仍拒绝。policy显式v2，旧工件须原输入重建；原archive哈希查询无消息，不捏造历史理由。
+- 真实E后台两次成功：`friendship-five-20261106-h`的4→5（tick1877→2003），`friendship-ten-20261106-a`的9→10（1877→1999）；均Evelyn1955→1975，原移动＋社交队列applied、fresh、selected completed。完整gift410/talk43保留，各5 strict pairs，未比较19/15仍保留、完整排序false。公开Build/Verify同SHA分别`38e29d29...`/`0326f83f...`；源目录SHA`0180b041...`退出后不变。早期a-g是动作前拒绝的夹具/消费端诊断，不算七个执行器bug；全部原始产物在仓库外。[来源、前置、边界](friendship-native-thresholds.md)。
+- 最终完整Core1860/Backend597零跳过，243脚本AST、原EVD-338及差异检查通过；另含声明数组所有权、跨几何NPC别名及旧policy拒绝，最终离线Verify不重采游戏。游戏与后端已退出。发布以最终CI/收口记录为准。
+- **唯一下一步：** 离线复用这两次原始来源，接原强native action reader和完整两项queue receipt validator，再原轨迹、显式pair replay provider、criterion corpus及覆盖/对账；各自只是真实day223的一份来源，不能借分区或提前晋升整项。核对native人数/完整接触预算在行、Backend、loop的统一投影，不重写已编码的候选参数，不重采成功动作/校准。当前仍`pending_typed_receipt_join`，不是已入训练行。完整回归/CI见本PR收口；无worker/API/服务器/产品模型训练/清理，不提交原始数据/local-data。
+
 ## 2026-11-06 Friendship显式成对监督准入
 
 - #458经CI `42129422453`全部38步接受，合入`f8b93506`、分支清理；原跨图预算不重做。唯一primary仍`raise_friendships`，`9/19、9/19、9/19、7/11`及formal=false保持。

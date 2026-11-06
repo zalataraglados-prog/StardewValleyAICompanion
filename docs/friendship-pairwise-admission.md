@@ -77,6 +77,11 @@ product model training is part of these tests.
 
 ## Sole Next Slice: Native Five/Ten Thresholds
 
+The native source portion is now obtained; the original pending text below is
+historical. Follow [the actual native sources and sole next join boundary](friendship-native-thresholds.md).
+New comparison policy v2 is explicit and requires source rebuild, not silent
+reinterpretation of the v1-policy artifacts recorded above.
+
 Connect this explicit mode to isolated E native execution using the original
 mechanical queue runner and social primitives. Start from declared boundary
 fixtures on copied saves, not a relabeled Linus1000 overnight-reset test or a

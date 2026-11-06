@@ -45,6 +45,8 @@ var commandDefinitions = new CommandDefinition[]
     new("build-current-friendship-teacher-preference", options => WriteCurrentFriendshipTeacherPreference(options, verify: false)),
     new("verify-current-friendship-teacher-preference", options => WriteCurrentFriendshipTeacherPreference(options, verify: true)),
     new("compile-current-friendship-teacher-preference", CompileCurrentFriendshipTeacherPreference),
+    new("prepare-friendship-terminal-save-boundary", options => Write(options.Required("output"),
+        FriendshipTerminalSaveBoundaryBuilder.Prepare(options.Required("request"), options.Required("output")))),
     new("build-current-skill-experience-deficit", BuildCurrentSkillExperienceDeficit),
     new("build-current-skill-teacher-preference", options => WriteCurrentSkillTeacherPreference(options, verify: false)),
     new("verify-current-skill-teacher-preference", options => WriteCurrentSkillTeacherPreference(options, verify: true)),
