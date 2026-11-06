@@ -853,9 +853,12 @@ app.MapPost("/api/v1/planner/baseline/rank-options", (BaselinePredictionRequest 
             if (effectiveGoalId == MarriagePolicyInputProjector.GoalId)
                 rankedEventCandidates = new MarriagePolicyInputProjector(snapshot, request.RouteTimingCalibrationJson)
                     .ProjectCandidates(rankedEventCandidates);
+            var museumInputs = effectiveGoalId == MuseumPolicyInputProjector.GoalId ? new MuseumPolicyInputProjector(snapshot) : null;
+            if (museumInputs is not null)
+                rankedEventCandidates = museumInputs.ProjectCandidates(rankedEventCandidates);
             rankedEventCandidates = structuredRanker.Rank(
                 checkpoint,
-                stateFeatureProjector.Project(worldModel, snapshot),
+                museumInputs?.ProjectState(stateFeatureProjector.Project(worldModel)) ?? stateFeatureProjector.Project(worldModel, snapshot),
                 rankedEventCandidates);
         }
         catch (Exception ex) when (ex is ArgumentException or IOException or InvalidOperationException or JsonException)
