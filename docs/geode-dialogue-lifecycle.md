@@ -219,3 +219,37 @@ the actual `LiveTrainingOptions.Parse`, including its rejection of a zero work
 target. Expected mocked failure exits are reset only in test cleanup; production
 failure handling is unchanged. This fixes CI's red host exit after all 30 earlier
 checks had passed. The final continuous night/key native trace is still required.
+
+## Hidden Ordinary Dialogue Input
+
+The marriage joint run `marriage-joint-20261106-a` completed its original
+gift queues but stopped at `executor.close_menu`: 17 input attempts / 601 ticks,
+`dialogue_advance_timeout`, with the same ordinary DialogueBox still open.
+It did not propose, marry or earn the joint criterion. Its original source
+save remained unchanged and its owned game/backend exited.
+
+Before changing this shared code, commit `45645d96` and its original chat JSON
+context were checked. That change deliberately reused `DialogueBox.receiveLeftClick`
+for the composite geode pickup tutorial; it did not intend to force-close menus
+or fabricate dialogue/control flags. Fresh decompilation of the pinned E 1.6.15
+DLL also confirms that `Game1.updateActiveMenu` only updates the menu and returns
+before dispatching input when the release-build window is unfocused. SMAPI mouse
+overrides therefore cannot reach an ordinary hidden dialogue through that path.
+
+The existing dialogue state machine now chooses its already implemented native
+menu-click path only when local rendering suppression is authorized and that
+exact native focus gate is closed. Foreground/non-suppressed callers keep the
+original SMAPI press/release path. Composite callers retain their explicit
+native-click choice. Speaker identity, ordinary-dialogue/question safety,
+transition/safety timers, bounded attempts and observed native completion remain
+unchanged. No system mouse, menu exit shortcut, dialogue/control flag assignment,
+new executor or Teacher admission change is introduced. The receipt's observed
+effect records which input path was used.
+
+Debug runtime build and 13 focused headless/geode checks pass. B actually closed
+the hidden gift dialogue in two clicks / 82 ticks, with native dialogue closed
+and player control restored, then completed the native proposal and three sleeps.
+C completed the continuous joint chain after correcting the new story caller,
+not the original menu-recovery contract. Final Core 2098 / Backend 617 and the
+EVD-338 checkpoint pass, zero failures/skips; final CI/merge belong in the closing
+record. This input fix does not itself grant Teacher or training admission.
