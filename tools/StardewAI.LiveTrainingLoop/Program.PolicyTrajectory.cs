@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using StardewAI.Contracts.Capabilities;
+using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
@@ -137,11 +138,20 @@ static partial class Program
                 var snapshotEnvelope = JsonSerializer.Deserialize<SnapshotEnvelope>(
                     beforeSnapshot.ToJsonString(JsonOptions),
                     JsonOptions) ?? throw new InvalidOperationException("before snapshot contract is empty");
+                var policyGoal = ResolveFriendshipPolicyGoal(decision, firstStep, options.Goal);
                 var stateFeatures = new PolicyStateFeatureProjector().Project(
                     new WorldModelProjector().Project(
                         snapshotEnvelope,
-                        options.Goal,
+                        policyGoal,
                         options.TargetExecutionMode), snapshotEnvelope);
+                if (policyGoal == FriendshipPolicyInputProjector.GoalId)
+                {
+                    if (string.IsNullOrWhiteSpace(options.RouteTimingCalibrationPath))
+                        throw new InvalidOperationException("Friendship feedback requires its explicit route timing calibration.");
+                    decision.RankedEventCandidates = new FriendshipPolicyInputProjector(snapshotEnvelope,
+                        File.ReadAllText(options.RouteTimingCalibrationPath)).ProjectCandidates(decision.RankedEventCandidates
+                            ?? throw new InvalidOperationException("Friendship feedback candidate context is missing."));
+                }
                 var episodeId = appendResult.EpisodeId + ".policy." + iteration.ToString("D4") + "." + decisionOrdinal.ToString("D4");
                 var aggregateCandidateExecution = AggregateSelectedCandidateExecution(
                     decisionSteps,
@@ -182,6 +192,22 @@ static partial class Program
         }
 
         return result;
+    }
+
+    private static string ResolveFriendshipPolicyGoal(AvailabilityAwarePolicyPredictionEnvelope decision,
+        JsonObject firstStep, string fallbackGoal)
+    {
+        if (decision.GoalResolution?.EffectiveGoalId != FriendshipPolicyInputProjector.GoalId &&
+            fallbackGoal != FriendshipPolicyInputProjector.GoalId)
+            return fallbackGoal;
+        var path = ReadString(firstStep, "effective_compiled_queue_path");
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+            throw new InvalidOperationException("Friendship feedback requires its original compiled queue.");
+        var queue = JsonSerializer.Deserialize<ActionQueueEnvelope>(ContentAddressedJsonArtifactStore.ReadAllText(path), JsonOptions);
+        if (queue?.GoalId != FriendshipPolicyInputProjector.GoalId ||
+            !queue.Items.Any(item => item.QueueItemId == ReadString(firstStep, "queue_item_id")))
+            throw new InvalidOperationException("Friendship feedback effective goal differs from its original compiled queue.");
+        return FriendshipPolicyInputProjector.GoalId;
     }
 
     private static PlanExecutionEpisodeEnvelope BuildPolicyExecutionEpisode(

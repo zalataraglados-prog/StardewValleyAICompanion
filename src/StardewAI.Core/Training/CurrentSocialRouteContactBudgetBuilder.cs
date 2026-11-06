@@ -11,7 +11,7 @@ using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.Training
 {
-    // Offline comparison only; retain one builder per snapshot, never construct it per frame.
+    // Decision-scoped contact proof; retain one builder per snapshot, never construct it per frame.
     public sealed class CurrentSocialRouteContactBudgetBuilder
     {
         private readonly string sourceStateHash = string.Empty;
@@ -28,6 +28,7 @@ namespace StardewAI.Core.Training
         private readonly Dictionary<CurrentSocialContactOpportunity, string> frontierRows = new();
 
         public CurrentSocialContactFrontier Frontier { get; } = new();
+        public string[] BlockingReasons => errors.ToArray();
         internal int RouteProductionBuildCount { get; private set; }
 
         public CurrentSocialRouteContactBudgetBuilder(JsonElement rawSnapshot, string calibrationJson)

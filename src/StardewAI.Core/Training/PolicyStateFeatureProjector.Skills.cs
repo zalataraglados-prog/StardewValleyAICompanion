@@ -8,12 +8,8 @@ namespace StardewAI.Core.Training;
 
 public sealed partial class PolicyStateFeatureProjector
 {
-    public FeatureVector Project(WorldModelEnvelope worldModel, SnapshotEnvelope snapshot)
+    private FeatureVector EnrichSkills(FeatureVector features, SnapshotEnvelope snapshot)
     {
-        var features = Project(worldModel);
-        if (worldModel.UserGoal != "goal.skills.raise_skill_levels") return features;
-        if (snapshot is null || worldModel.StateHash != snapshot.StateHash)
-            throw new ArgumentException("Skills policy features require their exact original snapshot.", nameof(snapshot));
         var deficit = new CurrentSkillExperienceDeficitBuilder().Build(snapshot);
         if (deficit.Status != "ready_current_state_only")
             throw new InvalidOperationException("Skills policy state is unreadable: " + string.Join(",", deficit.BlockingReasons));

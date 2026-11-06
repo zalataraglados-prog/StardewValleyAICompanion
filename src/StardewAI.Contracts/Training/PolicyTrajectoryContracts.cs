@@ -244,6 +244,9 @@ public sealed class PolicyTrajectoryAudit
 
 public sealed class PolicyTrajectoryTeacherSupervision
 {
+    [JsonPropertyName("friendship_native_threshold_receipt_sha256")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? FriendshipNativeThresholdReceiptSha256 { get; set; }
     [JsonPropertyName("skill_native_threshold_receipt_sha256")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? SkillNativeThresholdReceiptSha256 { get; set; }
