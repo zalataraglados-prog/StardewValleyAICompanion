@@ -187,6 +187,8 @@
     <Compile Include="ExecutorSinglePathGovernanceTests.cs" />
     <Compile Include="SkullKeySnapshotContractSourceGuardTests.cs" />
     <Compile Include="MuseumDonationMainlineTests.cs" />
+    <Compile Include="CurrentMuseumCollectionIntakeTests.cs" />
+    <Compile Include="CurrentMuseumCollectionIntakeTests.Fixture.cs" />
     <Compile Include="MuseumDonationMainlineTests.RouteSchedule.cs" />
     <Compile Include="MuseumDonationMainlineTests.WithdrawalSchedule.cs" />
     <Compile Include="MuseumDonationMainlineTests.Reservations.cs" />
