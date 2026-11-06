@@ -1,5 +1,7 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+> **2026-11-07 全馆局部接续（当前唯一优先）：** 婚房#475已由38步CI接受并合入`fea19c7a`，接受并集`12/19、12/19、12/19、9/11 roots`、formal=false冻结。当前只做`complete_museum_collection`；新薄入口复用原95项reader/原快照/捐赠候选，保留原方向，不改全局Collection Teacher或执行器，不以其他收集root倒挂局部读取。真实保留源54/95/缺41、当前捐赠候选0，公开重建一致、无标签/native/资源预留或全根晋升。下一步复核现有比较/反事实组件，建立全馆独立比较，再94→95原生来源及原轨迹/corpus/有条件方法/覆盖；测前已有馆藏/物品不冒充获取，完整新档/RNG/共享预算/Teacher21与Student责任不减，Money6随后。[完整合同](museum-collection-local-intake.md)。
+
 > **2026-11-07 婚房三分区收口（当前唯一接续）：** #474已接受合入`cc61694b`。仅新增validation冬21/test冬12完整原生来源，保留train C；原corpus为8准备行/3结果，分区沿原决策日，不借婚礼日，不将控制或未知项当偏好。原数据集8接受/0拒绝、2/2/4、长期全pending；原覆盖method executable/比较与native三分区/criterion ready且无本项open work，其他18项和原输入未变。最终CI接受后晋升并集`12/19、12/19、12/19、9/11 roots`，formal=false。冬17失败是新夹具跳钟漏日程，修新调用者而不反改旧执行器。随后唯一primary为`complete_museum_collection`，先复核95项权威事实并复用Rusty捐赠/预留/保管/滚动链，再补全馆缺口；Money6随后。局部条件证据不证明原有房屋/关系/物品获取，完整新档Teacher21/Student及全局资源日程责任不减。[来源与验收](marriage-local-acceptance.md)。下方旧接续仅为历史。
 
 > **2026-11-07 婚房有条件方法接续（当前优先）：** #473已接受。新独立局部视图保留全原图和完整新档义务，通过原corpus/原生链绑定当前求婚直接路线与原赠礼准备依赖，不重新定义目录或执行器。公开重建同SHA`8188644c...`，原覆盖只复用已验证corpus再重建精确证书，不重复native深验或借局部源宣称先前获取。下一步原policy确定日期后，仅补缺失validation/test完整joint来源，再原行/corpus/证书/覆盖收口；不重采C/Friendship或把控制当Teacher决策。并集`11/19、11/19、11/19、8/11 roots`及formal=false暂不晋升，完整Teacher21/Student、获取与全局跨日资源责任保持。最终回归/CI见收口。[合同及边界](marriage-local-method-view.md)。

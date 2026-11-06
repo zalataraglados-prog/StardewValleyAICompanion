@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-07 全馆局部接入（当前唯一接续）：** 婚房#475经CI `42283350602`全部38步接受、合入`fea19c7a`；并集冻结`12/19 executable、12/19 split-complete、12/19 ready、9/11 roots`，formal=false。唯一primary为`complete_museum_collection`，Money6随后。新局部入口只复用原95项reader/快照helper/捐赠候选，保留原依赖与不可用项，不改旧全局Teacher或执行器、不反挂其他root。真实源公开重放同SHA`5be9d272...`，已54/缺41、当前捐赠候选0，无标签/native/资源许可晋升，31项针对性检查通过，最终回归/CI见收口。下一步复核旧比较/反事实组件、建立全馆局部比较，再94→95原生来源及原数据/有条件方法/覆盖；测前声明不冒充获取，完整新档Teacher21/Student、RNG与共享预算义务不减。[来源与合同](museum-collection-local-intake.md)。下方旧接续仅为历史。
+
 > **2026-11-07 婚房三分区收口（当前唯一接续）：** #474已由CI `42272593550`全部38步接受，合入`cc61694b`。validation冬21与test冬12已各完成同run完整原生婚房链；连同不重采train C共8准备行/3结果，原数据集8接受/0拒绝、2/2/4、长期全pending。原覆盖method executable、比较/native三分区、criterion ready/本项无open work，其他18项与原输入哈希未变。最终CI接受后并集为`12/19 executable、12/19 split-complete、12/19 ready、9/11 roots`，formal=false。失败冬17因新夹具跳钟漏日程，只修外部调用者，旧执行器/候选/桥不变。下一唯一primary为`complete_museum_collection`：先复核95项权威事实与已验Rusty路径、复用原捐赠/预留/保管/滚动链，再补全馆消费与证明；Money6随后。完整新档Teacher21/Student及共享预算义务保持。[实际来源与验收](marriage-local-acceptance.md)。下方旧“下一步”仅为历史。
 
 > **2026-11-07 婚房局部方法（当前优先）：** #473已接受并合入`383ba26b`。新独立局部视图以原corpus/全部原生链为来源，实际公开Build/Verify同SHA`8188644c...`，完整保留原依赖方向/阻塞/递推与其他根，不改原图或旧执行器。礼物仅是准备依赖，原生求婚才绑定直接伴侣路线；日结算/剧情不作偏好标签，已有房屋/关系/物品仍是声明前置。原覆盖验证精确corpus和独立可重建证书，不再深验同一来源一次；最终同代码对照/反例/回归及CI见收口。**下一步只补真正validation/test完整联合来源**，不重采已验C/Friendship、不增加动作。并集`11/19、11/19、11/19、8/11 roots`与formal=false暂保持，全新档Teacher21/Student和共享预算义务不缩减。[完整合同](marriage-local-method-view.md)。

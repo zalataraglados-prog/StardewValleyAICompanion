@@ -42,6 +42,8 @@ var commandDefinitions = new CommandDefinition[]
     new("plan-current-social-day", PlanCurrentSocialDay),
     new("build-current-social-teacher-label", BuildCurrentSocialTeacherLabel),
     new("build-current-friendship-deficit", BuildCurrentFriendshipDeficit),
+    new("build-current-museum-collection-intake", options => MuseumCollectionIntakeCommands.Write(options, Write, verify: false)),
+    new("verify-current-museum-collection-intake", options => MuseumCollectionIntakeCommands.Write(options, Write, verify: true)),
     new("build-current-marriage-house-intake", options => WriteCurrentMarriageHouseIntake(options, verify: false)),
     new("verify-current-marriage-house-intake", options => WriteCurrentMarriageHouseIntake(options, verify: true)),
     new("prepare-marriage-teacher-save-boundary", options => Write(options.Required("output"),
