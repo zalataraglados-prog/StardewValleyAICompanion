@@ -850,6 +850,9 @@ app.MapPost("/api/v1/planner/baseline/rank-options", (BaselinePredictionRequest 
                 friendshipInputs ??= new FriendshipPolicyInputProjector(snapshot, request.RouteTimingCalibrationJson);
                 rankedEventCandidates = friendshipInputs.ProjectCandidates(rankedEventCandidates);
             }
+            if (effectiveGoalId == MarriagePolicyInputProjector.GoalId)
+                rankedEventCandidates = new MarriagePolicyInputProjector(snapshot, request.RouteTimingCalibrationJson)
+                    .ProjectCandidates(rankedEventCandidates);
             rankedEventCandidates = structuredRanker.Rank(
                 checkpoint,
                 stateFeatureProjector.Project(worldModel, snapshot),
