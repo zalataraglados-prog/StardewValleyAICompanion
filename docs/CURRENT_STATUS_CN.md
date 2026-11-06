@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-06 婚房当前接入（当前优先）：** #465已通过CI `42208557116`并合入`c0e7cc80`，Friendship不重做。新只读接入从原图发现5个原转移族，复用完整离线evaluator，校验原生婚房联合事实、日期与施工，保留原报价/不可用候选，不改执行器或旧合法性。真实公开重放同SHA`9076133d...`，已婚/三级只记当前满足，不造获取成果；gift410/talk43完整保留、源未变。**下一步仅婚房独立当前比较及非终态边界**，采购/订婚不当作跨日结算完成，期限和共享资源不省略；再原生/原轨迹及覆盖。并集`11/19、11/19、11/19、8/11 roots`与formal=false不变，完整新档Teacher/Student仍未验收。[完整复用与接续](marriage-house-local-intake.md)。最终回归/CI见本PR收口。
+
 > **2026-11-06 Friendship三分区收口（当前优先）：** #464经CI `42203227382`接受并合入`7005c835`。本轮复用train/原校准及原执行链，仅新采四个E后台来源；真实冬21/17对应原validation/test，人数阈值与完整nonce/队列均验证、原档不变。六行corpus SHA`ec7c58b8...`，原数据集6接受/0拒绝、2/2/2、长期回报pending；原覆盖两项ready、无本项open work，另17项相同。最终回归/CI接受后并集为`11/19 executable、11/19 split-complete、11/19 ready、8/11 roots`，formal=false；不等于完整新档Teacher或产品训练完成。**唯一下一primary为`marriage_and_house_upgrade`**，先严格当前事实/原候选接入并复用旧婚房/社交/结算链，再比较及原生来源，不重写执行器；全馆1与Money6保留。[完整来源、诊断与接续](friendship-local-acceptance.md)。下方同日旧接续均为历史，不再重做。
 
 > **2026-11-06 Friendship局部方法（当前优先）：** #463经CI `42199313265`接受并合入`33219b42`。新独立局部视图复用已验corpus，保留完整原方向及全新档/衰减/未来接触/21分义务，不改旧Skills消费者或原图；公开Build/Verify同SHA`0123b982...`。原coverage验证精确corpus和可重建证书后，两项method executable、各仅train、ready=false，另外17项相同；原canonical仍pending、formal=false。**下一步只补5/10各自真正validation/test四个隔离来源**，先核对日期分区，再原行/corpus/视图/覆盖收口，不重采train/校准。接受并集仍`9/19、9/19、9/19、7/11`，局部视图不替换完整Teacher责任；最终回归/CI见本PR收口。[完整来源与范围](friendship-local-method-view.md)。

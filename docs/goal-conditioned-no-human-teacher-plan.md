@@ -1,5 +1,7 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+> **2026-11-06 婚房接续（当前优先）：** Friendship #465已接受，当前婚房只读事实/完整原候选接入不产生Teacher标签或计数晋升。下一步在原5族及真实非终态边界上做独立比较，复用旧社交接触预算/房屋/伴侣/日结算，不复制执行器；联合评分、采购与施工/订婚与婚礼的区别、第三年期限及共享预算必须明确。既有已婚/三级源只供当前事实重放，不作为新获取。`11/19、11/19、11/19、8/11 roots`及formal=false保持。[协议及下一步](marriage-house-local-intake.md)。
+
 > **2026-11-06 当前接续：** Friendship仅补真正缺失的四个原分区来源，六行corpus/原数据集/局部方法/原覆盖已收口；最终回归/CI接受后并集`11/19 executable、11/19 split-complete、11/19 ready、8/11 roots`。formal=false，全新档Teacher21分、全局时间资源与Student责任不变。下一唯一primary为婚房，先严格当前事实与原候选接入，复用已存在的婚姻/房屋/社交/日结算链，不重写执行器、不重采已验友谊。剩余全馆与Money保留；独立重置样本保持长期回报pending。[真实来源及下一步](friendship-local-acceptance.md)。下方旧“下一步”保留为历史，以本段及CURRENT_STATUS当前决定为准。
 
 > **2026-11-06 显式pair接续（当前优先）：** 新Friendship v4显式区分已证明pairs与完整排序，缺省完整门不放宽，显式模式通过原Verify/编译消费8个strict pairs，20项未比较不作负例；Teacher/共享trainer/执行器不改。真实来源公开重建同SHA`4581deab...`，原队列pending不是原生结果。下一步E副本真实5/10人数阈值，原reader/轨迹/provider/corpus/覆盖及一致输入投影；不重采校准、不过早训练或晋升`9/19、9/19、9/19、7/11`/formal=false。[当前合同](friendship-pairwise-admission.md)。
