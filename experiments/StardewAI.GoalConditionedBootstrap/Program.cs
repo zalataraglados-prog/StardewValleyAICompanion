@@ -53,6 +53,8 @@ var commandDefinitions = new CommandDefinition[]
     new("verify-friendship-teacher-row", options => WriteFriendshipTeacherRow(options, verify: true)),
     new("build-friendship-teacher-corpus", options => WriteFriendshipTeacherCorpus(options, verify: false)),
     new("verify-friendship-teacher-corpus", options => WriteFriendshipTeacherCorpus(options, verify: true)),
+    new("build-friendship-local-dependency-view", options => WriteFriendshipLocalDependencyView(options, verify: false)),
+    new("verify-friendship-local-dependency-view", options => WriteFriendshipLocalDependencyView(options, verify: true)),
     new("build-current-skill-experience-deficit", BuildCurrentSkillExperienceDeficit),
     new("build-current-skill-teacher-preference", options => WriteCurrentSkillTeacherPreference(options, verify: false)),
     new("verify-current-skill-teacher-preference", options => WriteCurrentSkillTeacherPreference(options, verify: true)),
@@ -817,6 +819,15 @@ static void WriteSkillLocalDependencyView(Arguments options, bool verify)
         throw new InvalidDataException("Skills dependency-view output must be a new JSON file.");
     Write(output, verify ? SkillLocalDependencyViewBuilder.Verify(options.Required("view")) :
         SkillLocalDependencyViewBuilder.Build(options.Required("corpus"), options.Required("dependencies")));
+}
+
+static void WriteFriendshipLocalDependencyView(Arguments options, bool verify)
+{
+    var output = Path.GetFullPath(options.Required("output"));
+    if (File.Exists(output) || Directory.Exists(output) || !output.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+        throw new InvalidDataException("Friendship local view output must be a new JSON file.");
+    Write(output, verify ? FriendshipLocalDependencyViewBuilder.Verify(options.Required("view")) :
+        FriendshipLocalDependencyViewBuilder.Build(options.Required("corpus"), options.Required("dependencies")));
 }
 
 static void BuildGoalMethodGraph(Arguments options)

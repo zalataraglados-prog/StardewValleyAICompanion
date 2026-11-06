@@ -72,5 +72,5 @@ public sealed partial class FriendshipTeacherCorpusTests
 
     private static void Apply(FriendshipTeacherCorpus corpus, GoalMethodFrontierReport frontier, IDictionary evidence) =>
         typeof(GoalMethodTeacherCoverageBuilder).GetMethod("ApplyFriendshipCorpus", BindingFlags.Static | BindingFlags.NonPublic)!
-            .Invoke(null, new object[] { corpus, GoalMethodTeacherCoverageSourceKinds.FriendshipThresholdCorpus, frontier, evidence });
+            .Invoke(null, new object?[] { corpus, GoalMethodTeacherCoverageSourceKinds.FriendshipThresholdCorpus, frontier, evidence, null, null });
 }

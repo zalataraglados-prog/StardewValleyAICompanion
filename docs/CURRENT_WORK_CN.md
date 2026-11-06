@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-11-06 Friendship有条件当前来源方法视图
+
+- #463经CI `42199313265`全部38步接受，合入`33219b42`、分支清理。corpus/原数据行/provider/来源登记完成，不重做；唯一primary仍`raise_friendships`，接受并集`9/19、9/19、9/19、7/11`及formal=false保持。
+- 新公开Build/Verify复用已验corpus，派生独立Friendship局部视图，保留完整原方向/衰减/未来接触/十人日历与21分竞争义务、全部旧节点和其他根；原图仍pending，既有Skills文件/消费者不改，不叠加局部视图。新层最初误要求目录所有方向都有依赖图，专项据旧加载器修正为已有已知唯一图集合，不反改旧格式。
+- 实际公开视图同SHA`0123b982...`；原coverage/对账在验证精确corpus/整视图证书后，两项method executable、各只有比较/native train、ready=false，另17项完全相同、输入未变。完整四项动作/nonce、原选项Registry字段及新态重绑要求留在证书，不重复native深验、不把未比较项当负例。[方法范围、来源与边界](friendship-local-method-view.md)。
+- 最终Core1963/Backend607全部通过、零跳过（26新检查、79专项）；原覆盖入口的手改scope/同字节错配corpus和覆盖写入3类公开抽样均拒绝且无新输出，原图/来源未变，原EVD-338与差异检查通过。最终CI/发布见本PR收口。
+- **唯一下一步：** 先按原policy分区选真实日期，只补5/10各自validation/test四个E隔离来源，再原行/corpus/局部视图/原覆盖收口；train与真实校准不重采，不手改标签或删候选，不重开已接受步骤。当前无新游戏、worker/付费API、服务器、产品训练、原始数据/local-data提交或清理；最终回归/CI见本PR收口。
+
 ## 2026-11-06 Friendship criterion corpus与原覆盖登记
 
 - #462经CI `42195611122`全部38步接受，合入`94e3dcad`、分支已清理；原Teacher行/provider/统一输入完成，不重做。唯一primary仍`raise_friendships`，`9/19、9/19、9/19、7/11`及formal=false保持。
