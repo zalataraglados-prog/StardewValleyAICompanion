@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-11-07 全馆criterion corpus与原覆盖（当前唯一接续）
+
+- #479经CI `42299920297`全部38步接受、合入`33b74801`。新corpus复用B原完整typed证明一次，不重复读取native链或经过策略轨迹；95项、原pairs/候选数、唯一原生动作/nonce、库存与原决策分区保留，重复来源/组/run/nonce和混权威拒绝，不改旧权限/执行器。[合同](museum-criterion-corpus.md)。
+- 真实公开Build/Verify同SHA`c7e75ad4...`，1来源/1pair/1原生终态，仅train；原覆盖已接`museum_terminal_corpus`，方法pending/ready=false。同代码两份原对账另18criterion和10method完全相同，四个已固定来源哈希未变。外部探针误从criterion行取分区，只按旧method行合同修探针并验证已有报告，未重跑来源或反改旧格式；23新专项通过，最终反例/回归/CI见收口。
+- 最终Core离线2340/Backend629零失败零跳过，4类公开伪全根/删项/重复join/覆盖探针拒绝、源不变；最终代码重放仍同SHA，EVD-338/差异检查通过。只提交代码/测试/文档，不提交corpus/来源/raw/local-data；无新游戏、训练、worker/API、服务器或文件清理，最终CI见收口。
+- **唯一下一步：** 独立条件局部方法视图及原证书接续，再真正缺失的validation/test。保留完整原方向/阻塞与95获取、RNG、共享资源和第三年前全局预算义务，不以终局声明前置冒充获取、不重采B或已验根、不用corpus自行晋升method。并集仍`12/19、12/19、12/19、9/11 roots`、formal=false；全新档Teacher21/Student未完成，Money6随后。
+
 ## 2026-11-07 全馆统一输入与原准入（当前唯一接续）
 
 - #478经CI `42294539442`全部38步接受、合入`b4baed10`。本轮仅离线复用B，接95项共享模型输入和公开可重建准入报告；原编译器/执行器/注册权限/训练validator/provider均不改。[合同](museum-policy-input-admission.md)。

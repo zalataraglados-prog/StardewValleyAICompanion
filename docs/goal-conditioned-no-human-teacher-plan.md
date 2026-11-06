@@ -1,5 +1,7 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+> **2026-11-07 全馆corpus接续（当前唯一优先）：** #479已接受合入`33b74801`。B已离线接原证据型corpus和覆盖，95项与原生身份/分区全部保留，不生成伪policy行；真实corpus重放同SHA`c7e75ad4...`，比较/native仅train，方法pending/ready=false。原同代码对照另18criterion/10method未变；探针误读旧报表字段只修新外部调用者。下一步条件局部方法/独立证书，再真正缺失分区，不重采B/已验根、不改旧权限与执行器。并集`12/19、12/19、12/19、9/11 roots`和formal=false保持，完整95获取/RNG/共享预算与新档Teacher21/Student义务不减，Money6随后。[合同与来源](museum-criterion-corpus.md)。
+
 > **2026-11-07 全馆原准入校正（当前唯一优先）：** #478已接受、合入`b4baed10`。本轮共享95项模型输入接Teacher消费/Backend/反馈，并离线重建B准入报告。原builder实测拒绝捐赠训练行符合旧确认设计；原生比较不等于策略许可，等待参照不伪装成可训练候选，原生分区与policy分区分别保留。撤去未提交provider/schema草稿，旧白名单/validator/执行器不改。接下来复用Rusty证据型corpus/条件方法与原覆盖，再补真正缺失分区，不强造轨迹、不重采B。并集`12/19、12/19、12/19、9/11 roots`及formal=false保持，完整获取/RNG/共享预算/Teacher21与Student义务不减，Money6随后。[合同与原因](museum-policy-input-admission.md)。下方“先接trajectory/provider”假设已修正。
 
 > **2026-11-07 全馆typed接续（当前唯一优先）：** #477已接受、合入`2e082394`；成功B只离线消费。typed联合证明各一次重建原比较/原强队列，精确绑定全部native来源与95项、原偏好、唯一物品/库存/成就转换，公开重放SHA`aa961fc4...`；未改旧reader/执行器。下一步接原trajectory/provider及统一输入，再corpus/条件方法/原覆盖，最后只补真正缺失分区；不把单源当三分区、全根、先前获取或Teacher21/Student总完成。并集`12/19、12/19、12/19、9/11 roots`及formal=false保持，完整95获取/RNG/共享资源和第三年预算责任不减，Money6随后。[来源及边界](museum-terminal-native-join.md)。

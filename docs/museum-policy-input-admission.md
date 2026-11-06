@@ -91,6 +91,10 @@ native journal, local-data, game run, server change, worker/API call or training
 
 ## Next Exit
 
+The following evidence-only corpus/coverage slice is documented in
+[Museum Criterion Corpus](museum-criterion-corpus.md); no policy permission or
+provider was added to bypass this report.
+
 Reuse the existing Rusty Key evidence-only criterion corpus/conditional-method
 pattern for this Museum terminal proof, then original coverage/reconciliation
 and only genuinely missing native partitions. Do not stall this criterion on

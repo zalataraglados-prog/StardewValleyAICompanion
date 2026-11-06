@@ -263,6 +263,8 @@ public static partial class GoalMethodTeacherCoverageBuilder
             "Coverage source artifact");
         return source.SourceKind switch
         {
+            GoalMethodTeacherCoverageSourceKinds.MuseumTerminalCorpus =>
+                VerifyMuseumCorpus(source, fullPath, frontier, criterionEvidence),
             GoalMethodTeacherCoverageSourceKinds.MarriageJointCorpus =>
                 VerifyMarriageCorpus(source, fullPath, frontier, criterionEvidence, dependencyExpansionPath),
             GoalMethodTeacherCoverageSourceKinds.FriendshipThresholdCorpus =>
