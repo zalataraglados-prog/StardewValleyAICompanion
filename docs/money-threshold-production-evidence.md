@@ -1,5 +1,64 @@
 # Money Threshold Production Evidence
 
+## Current Money Resumption
+
+Museum PR #482 is accepted at `ba1de89f` after all38 CI steps. The accepted
+local witness union is13/19 executable,13/19 split-complete,13/19 ready and
+10/11 roots; formal training remains false. `earn_money` is now the only
+primary. These fixes do not fill any of the18 Money evidence cells.
+
+Issue #338 was checked against current code, not treated as an authority:
+
+- Seed supply lost finite stock. The existing purchase-stage evaluator still
+  owns route/time/authorization admission. The Teacher now joins each raw row
+  to that admitted shop/item/price/stock/output-stack/output-quality identity,
+  accepts only exact one-seed/quality-zero money purchases, and caps purchases
+  by observed finite stock. Explicit infinite stock retains the old result;
+  missing stock facts are not invented. Indistinguishable rows in the same
+  channel use a conservative minimum, never a sum or input-order tie-break.
+  This is not a multi-shop purchase portfolio. Fresh native continuation and
+  its existing strong stock/price/quantity proof remain authoritative.
+- The Teacher request has no validated layouts for old active crop
+  commitments. It now reads the base ledger through the original identity
+  reader, checks the source state, and rejects such a continuation before
+  emitting a decision. The original complete-decision path and receipt's
+  restatement requirement are unchanged; no commitment is dropped/cancelled.
+- A late32x32 guard already prevented oversized layout emission. The new
+  selector preserves every already-valid legacy choice. Only an oversized
+  choice falls back to one captured bounded region containing all refill
+  preparation tiles and enough planting tiles, with stable existing
+  status/distance ordering. No region means rejection, not compiler relaxation
+  or an invented smaller profitable plan.
+
+The original stock code was introduced by `d53defc2` and route admission by
+`c31dfa72`. Their intent was retained. A bounded search of the restored chat
+JSON did not recover the first hash; no historical chat rationale is claimed.
+No shared bridge/evaluator/compiler/executor/boundary normalizer changed, and
+existing schema/selection identifiers and valid decision output remain intact.
+Tests reuse the original source/layout fixtures instead of copying their rules.
+Final local verification:24 new checks, Core2378/2378, Backend629/629, no skips,
+and the original hermetic bootstrap critical paths pass. The explicit-E build
+has zero warnings/errors; the generated EVD-338 checkpoint and whitespace
+checks pass. One new test initially compared array references instead of
+serialized values; only that test assertion was corrected, not product guards.
+The PR closeout records CI acceptance. No new game run or native source replay
+is claimed by these offline checks.
+
+Issue #339 predates `167eb5f6` (recursive semantic-boundary normalization),
+`858a7f8b` (offline recovery), and the later native production/settlement segment
+documented on2026-10-21. Do not rerun13 days or relax resource conservation
+because its old issue is still open. The historical875g segment did not cross
+the first50,000g threshold. Re-locate and verify retained sources before
+claiming a current exact replay; missing raw evidence must not be fabricated.
+
+Next: reconcile retained production sources, the current automatic dispatch,
+legacy wrapper entry points and the current dependency graph; then extend
+the original production/retention/settlement/comparison chain only where
+evidence is actually missing. Keep all six thresholds and all three original
+partitions, use cumulative income (not wallet), and retain complete fresh-save
+acquisition/RNG/shared-budget/Year3 obligations. No new income planner, policy
+permission, product training, worker/API use or raw-data Git commit.
+
 ## Purpose
 
 The Money/Revenue coverage unit has six authoritative Grandpa thresholds and

@@ -1,5 +1,7 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+> **2026-11-07 Money6 接续：** 全馆 #482 经38步 CI 接受、合入 `ba1de89f`；并集 `13/19、13/19、13/19、10/11 roots`，formal=false。唯一 primary 是 `earn_money`，复用既有 Teacher 与生产证明链，不重新开发动作。#338 的有限库存/活动账本缺布局/跨区域紧凑选择在 Teacher 入口修复，旧合法决定与共享执行器不变；#339 已有后续边界归一化及完整生产段，不把旧 issue 当新缺口。先核对保留来源、当前 dispatch/旧入口及方法图，再补真正 Money `6×3` 比较/native证据；修复不增加覆盖、875g旧结果不当50,000g阈值。完整新档获取、RNG、共享承诺/Year3预算、Teacher21及Student义务保持。[具体合同和接续](money-threshold-production-evidence.md#current-money-resumption)。
+
 > **2026-11-07 全馆局部验收（当前唯一优先）：** #481已接受合入`669142f2`。仅新增validation冬12/207与test秋20/187真实来源，原C#分区/原生日期身份双检，完整捐赠后原档未变、进程退出。加保留B为3源/3pair/3结果，各95项，原corpus/条件证书/覆盖使本项ready、另18项未变；产品代码不改，原始数据仓库外。最终CI后并集`13/19、13/19、13/19、10/11 roots`，formal=false。下一唯一primary为Money6，先核对现有实现/证据和相关issue，再复用原链，不重采已验根、不把局部条件见证当新档Teacher21或Student。95获取/RNG/共享承诺/Year3全局责任不减；本轮未作可视帧率验收。[来源与接续](museum-local-acceptance.md)。
 
 > **2026-11-07 全馆条件证书接续（当前唯一优先）：** #480已接受合入`2f398e31`。独立局部视图保留原6节点/全边/完整方向与原阻塞递推、其他10方向不改；本来源证书绑定原corpus/95项/真实队列与nonce，原覆盖只复用一次已验corpus。真实重放同SHA`70fe76b7...`，条件方法executable，比较/native train、ready=false；同代码当前源对照另18criterion/10method未变。下一步仅真正缺失validation/test，不重采B、不变更权限/执行器；保留完整95获取/RNG/共享资源/Year3与新档Teacher21/Student义务。冻结并集`12/19、12/19、12/19、9/11 roots`及formal=false保持，Money6随后。[合同与来源](museum-local-method-view.md)。

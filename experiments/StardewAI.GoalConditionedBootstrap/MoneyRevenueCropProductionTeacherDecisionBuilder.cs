@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
 using StardewAI.Core.Infrastructure;
 
 namespace StardewAI.GoalConditionedBootstrap;
@@ -29,6 +30,7 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
             snapshotPath,
             "Money Revenue crop-production Teacher snapshot");
         ValidateSnapshot(snapshot);
+        var baseLedgerPath = ValidateBaseLedger(request, snapshot);
 
         var layouts = ReadLayoutSnapshots(
             request.FarmLayoutSnapshotPaths,
@@ -111,11 +113,13 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
             Selected = value.SeedId == selected.SeedId &&
                 value.ShopId == selected.ShopId
         }).ToArray();
-        var tiles = SelectCompactTiles(
+        var tiles = SelectBoundedCompactTiles(
             cropViableTiles,
             selected.TileCount,
             anchor.TileX,
-            anchor.TileY);
+            anchor.TileY,
+            layouts,
+            wateringRefillRoute.PreparationTiles);
         var boundedPreparationTiles = tiles
             .Concat(wateringRefillRoute.PreparationTiles)
             .Distinct()
@@ -140,12 +144,7 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
             SchemaVersion =
                 "money_revenue_crop_production_decision_request.v2",
             SnapshotPath = snapshotPath,
-            BaseStrategyLedgerPath = string.IsNullOrWhiteSpace(
-                request.BaseStrategyLedgerPath)
-                    ? string.Empty
-                    : RequiredFile(
-                        request.BaseStrategyLedgerPath,
-                        "Money Revenue crop-production Teacher base ledger"),
+            BaseStrategyLedgerPath = baseLedgerPath,
             DecisionId = request.DecisionId,
             DecisionRecordedAt = request.DecisionRecordedAt,
             GoalId = "earn_money",
@@ -182,6 +181,23 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
             TeacherCandidateEvaluations = selectedEvaluations,
             TeacherSelectionPolicy = SelectionPolicy
         };
+    }
+
+    private static string ValidateBaseLedger(
+        MoneyRevenueCropProductionTeacherRequest request,
+        SnapshotEnvelope snapshot)
+    {
+        if (string.IsNullOrWhiteSpace(request.BaseStrategyLedgerPath))
+            return string.Empty;
+        var path = RequiredFile(request.BaseStrategyLedgerPath,
+            "Money Revenue crop-production Teacher base ledger");
+        var ledger = AcquisitionStrategyLedgerReader.Read(path, snapshot).Ledger;
+        Require(ledger.SourceStateHash == snapshot.StateHash,
+            "Money Revenue crop-production Teacher base ledger is not anchored to the source snapshot.");
+        Require(!ledger.CropPlantingCommitments.Any(value =>
+                value.Status == StrategyCommitmentStatuses.Active),
+            "Money Revenue crop-production Teacher cannot continue active crop commitments without their validated layouts; use the existing complete decision path.");
+        return path;
     }
 
     private static void ValidateRequest(
