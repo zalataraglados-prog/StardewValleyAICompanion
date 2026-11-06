@@ -10,7 +10,7 @@ public static class CurrentFriendshipTeacherComparisonPolicy
         if (!Admitted(preferred) || !Admitted(alternative) ||
             preferred.CandidateId == alternative.CandidateId ||
             preferred.NativeActionIdentity == alternative.NativeActionIdentity ||
-            preferred.OptionId != alternative.OptionId || preferred.Kind != alternative.Kind ||
+            preferred.OptionId != alternative.OptionId || !SameComparisonFamily(preferred, alternative) ||
             preferred.TimingEvidenceId != alternative.TimingEvidenceId ||
             preferred.TimingEvidenceKind != alternative.TimingEvidenceKind ||
             preferred.ExpectedNewQualifiers < alternative.ExpectedNewQualifiers ||
@@ -42,6 +42,16 @@ public static class CurrentFriendshipTeacherComparisonPolicy
             LabelSemantics = "preferred_over_current_eligible_counterfactual"
         };
     }
+
+    private static bool SameComparisonFamily(
+        CurrentFriendshipTeacherCandidate preferred, CurrentFriendshipTeacherCandidate alternative) =>
+        preferred.Kind == alternative.Kind ||
+        // An immediate talk can dominate a routed talk's complete contact budget.
+        // Do not infer the reverse from a route's cheaper first dispatch segment.
+        preferred.OptionId == "social.talk_npc" && preferred.Kind == "social_talk_current" &&
+        !string.IsNullOrWhiteSpace(preferred.NpcName) && !string.IsNullOrWhiteSpace(alternative.NpcName) &&
+        preferred.NpcName != alternative.NpcName &&
+        alternative.Kind == "route_connector_tile" && alternative.RouteContactBudget is { FullContactBudgetVerified: true };
 
     private static bool Admitted(CurrentFriendshipTeacherCandidate row) =>
         row.Status == "admitted_current_social_comparison" && row.AvailableCurrentSource && row.ComparisonRequired &&

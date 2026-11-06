@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-06 Friendship原生4/5、9/10来源（当前优先）：** #459已接受并合入`1f60faa7`。新隔离边界及后台入口已用原移动＋社交队列取得两次真实E阈值，均Evelyn1955→1975、源档退出后不变。新消费层仅补本地talk与已证完整跨图talk的窄适配，policy显式v2；旧调度、候选、编译执行不改，5pairs/未比较19与15/完整排序false都保留。原始快照/请求/队列/nonce在仓库外，尚待typed强回执接入，不能晋升`9/19、9/19、9/19、7/11`或formal=false。**下一步只离线接原native reader/两项队列验证、轨迹/provider/corpus/原覆盖，再补真正缺失分区；不重采成功动作或校准。** [完整来源、夹具声明及退出边界](friendship-native-thresholds.md)。完整回归/CI见本PR收口。
+
 > **2026-11-06 Friendship显式pair准入（当前优先）：** #458已接受并合入`f8b93506`。v4分开记录成对监督与完整排序；缺省门不变，显式`independent_pairs`复用原Verify/编译，保留全部源和20项未比较，不改Teacher/执行器/trainer。真实公开Build/Verify同SHA`4581deab...`、8pairs，默认compile拒绝/显式原队列pending；完整Core1833通过，最终回归/CI见本PR收口。**下一步真实E副本4→5、9→10阈值及原数据/覆盖**，复用真实校准，不把旧重置夹具或当前编译当原生/训练。`9/19、9/19、9/19、7/11`及formal=false不变。[来源和接续](friendship-pairwise-admission.md)。
 
 > **2026-11-06 Friendship跨图接触预算（当前优先）：** #457已接受并合入`75e7d9a0`。新消费层已复用原完整路线/`RequiredFirstEdge`接原生接触窗口，旧候选/Teacher/编译执行不改；真实来源10项已证明、8个严格pair、Lewis3连接器/08:40，公开重建一致，20项未知/权衡保留、默认完整排序仍false。下一步显式独立pair准入与原控制编译，再真实5/10人数阈值及原数据覆盖；按原训练合同不把未知项当负例，也不将完整排序反挂每个有效pair。该模式尚未实现，不晋升`9/19、9/19、9/19、7/11`或formal=false；无游戏/worker/服务器/训练。[边界与唯一接续](friendship-route-contact-budget.md)。

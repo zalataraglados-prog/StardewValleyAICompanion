@@ -14,7 +14,7 @@ public sealed class CurrentFriendshipTeacherPreference
     public string CalibrationSha256 { get; set; } = string.Empty;
     public CurrentFriendshipDeficit Deficit { get; set; } = new();
     public CurrentFriendshipTeacherControl OriginalTeacher { get; set; } = new();
-    public string ComparisonPolicyId => "current_friendship_saturated_progress_contact_budget_frontier.v1";
+    public string ComparisonPolicyId => "current_friendship_saturated_progress_contact_budget_frontier.v2";
     public string CandidateSourcePolicyId => "complete_offline_social_comparison.v1";
     public string[] ConsideredOptionIds { get; set; } = Array.Empty<string>();
     public CurrentFriendshipTeacherOptionAudit[] OptionAudit { get; set; } = Array.Empty<CurrentFriendshipTeacherOptionAudit>();
