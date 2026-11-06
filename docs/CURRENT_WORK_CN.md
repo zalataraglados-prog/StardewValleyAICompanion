@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-11-07 全馆条件方法与独立证书（当前唯一接续）
+
+- #480经CI `42303876747`全部38步接受、合入`2f398e31`。本局部方法按旧Marriage/Friendship模式消费已验corpus，原图不动；全部6角色/旧边/未知字段及10个其他方向保留，完整旧方向、阻塞与递推复制为显式全局责任。不将已有94件/手持物当获取，不新建执行器或放宽权限。[合同](museum-local-method-view.md)。
+- 真实公开Build/Verify同SHA`70fe76b7...`，原覆盖精确验证corpus路径/当前视图哈希及独立重建证书后，本条件方法executable，比较/native均train、ready=false。28.15秒完成当前源Build/Verify/两份原覆盖，另18criterion/10method未变、原输入未变；源集不带无关冻结root，仍保留19项完整分母。覆盖直接复用已验corpus，协议端测试防重复深验；37相关检查含14新检查、4公开伪全根/删获取节点/错nonce/覆盖探针通过，最终回归/CI见收口。
+- 最终Core离线2354/Backend629零失败零跳过，最终代码重放同SHA、EVD-338/差异检查通过。代码/测试/文档之外均仓库外，不提交view/raw/corpus/local-data；无游戏、训练、worker/API或服务器变更；最终CI见收口。
+- **唯一下一步：** 只新增真正缺失的validation/test全馆终态来源；先按原save/player/day验分区，再复用E隔离运行时/原捐赠链/95项reader/比较/join/corpus/本证书及原覆盖，不重采B或旧根、不借policy日期分区。冻结并集仍`12/19、12/19、12/19、9/11 roots`，formal=false；全95新档获取/RNG重试/共享承诺/第三年前全局预算与Teacher21/Student义务未完成，Money6随后。
+
 ## 2026-11-07 全馆criterion corpus与原覆盖（当前唯一接续）
 
 - #479经CI `42299920297`全部38步接受、合入`33b74801`。新corpus复用B原完整typed证明一次，不重复读取native链或经过策略轨迹；95项、原pairs/候选数、唯一原生动作/nonce、库存与原决策分区保留，重复来源/组/run/nonce和混权威拒绝，不改旧权限/执行器。[合同](museum-criterion-corpus.md)。

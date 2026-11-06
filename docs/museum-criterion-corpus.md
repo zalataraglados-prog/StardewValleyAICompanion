@@ -59,6 +59,11 @@ roots are not recollected. This is not an extra game execution system.
 
 ## Actual Source And Verification
 
+The subsequent separately rebuilt conditional certificate is documented in
+[Museum Local Method View](museum-local-method-view.md). Corpus-only promotion
+still rejects; the original adapter verifies that exact certificate before an
+executable method may consume this source.
+
 Outside-Git root:
 `I:\StardewAITraining\museum-local-20261107\corpus-b-a`.
 Public Build/Verify SHA256:
