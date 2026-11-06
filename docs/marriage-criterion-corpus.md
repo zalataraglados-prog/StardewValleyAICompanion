@@ -1,5 +1,9 @@
 # Marriage Criterion Corpus
 
+The initial single-train measurements below are retained as historical evidence.
+See [Marriage Local Acceptance](marriage-local-acceptance.md) for the subsequent
+three-partition sources, original dataset admission and coverage close-out.
+
 ## Scope
 
 Continue accepted #472 (`1503473e`) and its original Teacher rows. This corpus
