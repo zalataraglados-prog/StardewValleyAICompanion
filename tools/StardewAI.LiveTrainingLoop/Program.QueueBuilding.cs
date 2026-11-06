@@ -101,6 +101,8 @@ static partial class Program
                 ? null
                 : Path.GetFullPath(options.EffectivePolicyCheckpointPath),
             require_structured_policy = options.RequireStructuredPolicy,
+            route_timing_calibration_json = string.IsNullOrWhiteSpace(options.RouteTimingCalibrationPath)
+                ? null : File.ReadAllText(options.RouteTimingCalibrationPath),
             dataset_path = Path.GetFullPath(options.DatasetPath),
             state_hash = stateHash,
             candidate_option_ids = explicitCandidates.Length == 0

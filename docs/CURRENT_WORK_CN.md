@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-11-06 Friendship原轨迹与统一输入
+
+- #461经CI `42145083661`全部38步接受，合入`3ba9796f`、分支清理。两份强原生来源不重采；唯一primary仍`raise_friendships`，`9/19、9/19、9/19、7/11`和formal=false保持。
+- 新Friendship行Build/Verify接原`policy_decision_trajectory.v2`、完整原生队列和显式身份provider；专属native来源不借CC哈希，原始5pairs/未比较19及15/完整排序false保留。已验的接触许可逻辑原样移到Core供新消费者复用，旧候选/默认窗口/编译执行/原单动作门不改。
+- 行、Backend结构化推理、loop反馈共用原生人数及完整接触到达预算投影；模型专属`policy_features`不进入动作参数，不重复已编码点数/delta。未知不当零、首段不当全程；原Skills和无关goal输入保留，loop复用已有显式校准参数及有效排名目标/原队列核对，不要求旧command的可空goal字段，不重新发现F盘。[协议和范围](friendship-policy-inputs.md)。
+- 两条真实行公开Build/Verify同SHA`0e805776...`/`c8ec56d0...`，各29候选/5pairs/2队列项/原train；与旧Collection及两条Skills共5行被原数据集接受、0拒绝、长期回报全pending。真实后台直达及Grandpa转入Friendship两路各29候选输入逐一相同，8类CLI篡改/覆盖拒绝、源未变；探针最初误要求拒绝码2，旧接口返回1且正确拒绝，只修外部断言。最终Core1902/Backend607零跳过，36新检查，原EVD-338及差异检查通过；最终CI/发布见本PR收口。
+- **唯一下一步：** typed criterion corpus接原coverage/reconciliation，再有条件局部方法与真正缺失分区；当前真实day223两行不等于三分区，不晋升整项。无新游戏、worker/付费API、服务器、产品训练、原始数据/local-data提交或清理。
+
 ## 2026-11-06 Friendship两步强回执已接入
 
 - #460经CI `42140897990`全部38步接受，合入`6a35d0b8`、分支已清理；两次原生人数阈值不重采。唯一primary仍`raise_friendships`，`9/19、9/19、9/19、7/11`和formal=false不变。

@@ -787,6 +787,23 @@ app.MapPost("/api/v1/planner/baseline/rank-options", (BaselinePredictionRequest 
         report,
         availability,
         request.GoalId);
+    FriendshipPolicyInputProjector? friendshipInputs = null;
+    string? friendshipInputError = null;
+    if (useStructuredPolicy && request.GoalId is (FriendshipPolicyInputProjector.GoalId or "grandpa.maximum_21") &&
+        !string.IsNullOrWhiteSpace(request.RouteTimingCalibrationJson))
+    {
+        try
+        {
+            friendshipInputs = new FriendshipPolicyInputProjector(snapshot, request.RouteTimingCalibrationJson);
+            broadRankedEventCandidates = friendshipInputs.CertifyCurrentCandidates(broadRankedEventCandidates);
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or JsonException)
+        {
+            if (request.GoalId == FriendshipPolicyInputProjector.GoalId)
+                return Results.BadRequest(new { detail = exception.Message });
+            friendshipInputError = exception.Message;
+        }
+    }
     var detailedGoalResolution = goalResolver.ResolveWithBinding(
         snapshot,
         request.GoalId,
@@ -805,6 +822,9 @@ app.MapPost("/api/v1/planner/baseline/rank-options", (BaselinePredictionRequest 
                 report,
                 availability,
                 effectiveGoalId);
+    if (effectiveGoalId == FriendshipPolicyInputProjector.GoalId && friendshipInputs is not null &&
+        effectiveGoalId != request.GoalId)
+        rankedEventCandidates = friendshipInputs.CertifyCurrentCandidates(rankedEventCandidates);
     rankedEventCandidates = goalResolver.ApplyBindingProvenance(
         rankedEventCandidates,
         detailedGoalResolution);
@@ -821,12 +841,21 @@ app.MapPost("/api/v1/planner/baseline/rank-options", (BaselinePredictionRequest 
                 string.IsNullOrWhiteSpace(request.ExecutionMode)
                     ? "training_singleplayer"
                     : request.ExecutionMode);
+            if (effectiveGoalId == FriendshipPolicyInputProjector.GoalId)
+            {
+                if (friendshipInputError is not null)
+                    throw new InvalidOperationException(friendshipInputError);
+                if (string.IsNullOrWhiteSpace(request.RouteTimingCalibrationJson))
+                    throw new InvalidOperationException("Friendship structured policy requires an explicit compatible route timing calibration.");
+                friendshipInputs ??= new FriendshipPolicyInputProjector(snapshot, request.RouteTimingCalibrationJson);
+                rankedEventCandidates = friendshipInputs.ProjectCandidates(rankedEventCandidates);
+            }
             rankedEventCandidates = structuredRanker.Rank(
                 checkpoint,
                 stateFeatureProjector.Project(worldModel, snapshot),
                 rankedEventCandidates);
         }
-        catch (Exception ex) when (ex is ArgumentException or IOException or InvalidOperationException)
+        catch (Exception ex) when (ex is ArgumentException or IOException or InvalidOperationException or JsonException)
         {
             return Results.BadRequest(new { detail = ex.Message });
         }

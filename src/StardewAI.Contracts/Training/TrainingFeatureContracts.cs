@@ -226,6 +226,10 @@ namespace StardewAI.Contracts.Training
 
     public sealed class BaselinePredictionRequest
     {
+        [JsonPropertyName("route_timing_calibration_json")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? RouteTimingCalibrationJson { get; set; }
+
         [JsonPropertyName("goal_id")]
         public string GoalId { get; set; } = string.Empty;
 
@@ -301,6 +305,10 @@ namespace StardewAI.Contracts.Training
 
     public sealed class PolicyEventCandidatePrediction
     {
+        [JsonPropertyName("policy_features")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public FeatureVector? PolicyFeatures { get; set; }
+
         [JsonPropertyName("candidate_id")]
         public string CandidateId { get; set; } = string.Empty;
 

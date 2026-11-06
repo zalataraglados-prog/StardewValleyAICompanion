@@ -149,6 +149,15 @@ internal static class StructuredPolicyFeatureEncoder
                 values["candidate.exclusion_reason=" + Safe(reason)] = 1;
         }
         AddSourceCandidateFeatures(values, candidate.Source);
+        if (candidate.Source.PolicyFeatures is { } policy)
+        {
+            foreach (var feature in policy.Numeric ?? Array.Empty<NumericFeature>())
+                values["candidate.policy.numeric:" + feature.Name] = feature.Value;
+            foreach (var feature in policy.Boolean ?? Array.Empty<BooleanFeature>())
+                values["candidate.policy.boolean:" + feature.Name] = feature.Value ? 1 : 0;
+            foreach (var feature in policy.Categorical ?? Array.Empty<CategoricalFeature>())
+                values["candidate.policy.categorical:" + feature.Name + "=" + Safe(feature.Value)] = 1;
+        }
         return values;
     }
 

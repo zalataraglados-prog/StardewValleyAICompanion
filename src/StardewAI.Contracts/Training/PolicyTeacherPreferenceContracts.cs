@@ -10,10 +10,14 @@ public static class PolicyTrainingObjectives
 public static class PolicyTeacherSupervisionSchemas
 {
     public const string Skills = "policy_teacher_supervision.skills.v1";
+    public const string Friendships = "policy_teacher_supervision.friendships.v1";
 }
 
 public sealed class PolicyTeacherEvidenceSources
 {
+    [JsonPropertyName("friendship_native_threshold_receipt_path")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? FriendshipNativeThresholdReceiptPath { get; set; }
     [JsonPropertyName("skill_native_threshold_receipt_path")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? SkillNativeThresholdReceiptPath { get; set; }

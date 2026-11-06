@@ -47,6 +47,8 @@
     <Compile Include="StructuredPolicyTrainerTests.cs" />
     <Compile Include="PolicyPairwiseSupervisionAdmissionTests.cs" />
     <Compile Include="PolicyTeacherReplayRegistryTests.cs" />
+    <Compile Include="PolicyTeacherReplayRegistryTests.Friendships.cs" />
+    <Compile Include="StructuredPolicyTrainerTests.CandidatePolicyFeatures.cs" />
     <Compile Include="SkillTeacherReplayVerifierTests.cs" />
     <Compile Include="SkillTeacherCorpusTests.cs" />
     <Compile Include="SkillLocalDependencyViewTests.cs" />
@@ -97,6 +99,7 @@
     <Compile Include="SocialTransparentPlanningTests.FriendshipTeacher.cs" />
     <Compile Include="SocialTransparentPlanningTests.FriendshipRouteBudget.cs" />
     <Compile Include="SocialTransparentPlanningTests.FriendshipAdmission.cs" />
+    <Compile Include="SocialTransparentPlanningTests.FriendshipPolicyInputs.cs" />
     <Compile Include="FriendshipTerminalSaveBoundaryTests.cs" />
     <Compile Include="FriendshipNativeThresholdRequestTests.cs" />
     <Compile Include="FriendshipThresholdRuntimeSourceGuardTests.cs" />

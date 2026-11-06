@@ -36,6 +36,7 @@ internal sealed class PolicyTrajectoryDatasetValidator
             return "candidate_set_empty";
         if (row.Candidates.Any(candidate => candidate is null ||
             candidate.SourceCandidate is null ||
+            candidate.SourceCandidate.PolicyFeatures is { } policyFeatures && !ValidStateFeatures(policyFeatures) ||
             string.IsNullOrWhiteSpace(candidate.CandidateId) ||
             string.IsNullOrWhiteSpace(candidate.OptionId) ||
             candidate.Rank <= 0 ||
@@ -162,9 +163,18 @@ internal sealed class PolicyTrajectoryDatasetValidator
             teacher.ExecutionReceiptSha256,
             teacher.AfterSnapshotSha256
         };
-        var sourceShapeValid = teacher.SchemaVersion == PolicyTeacherSupervisionSchemas.Skills
-            ? ValidSkillSourceShape(teacher)
-            : (teacher.SchemaVersion is "policy_teacher_supervision.v1" or "policy_teacher_supervision.v2") && collectionHashes.All(IsSha256);
+        var sourceShapeValid = teacher.SchemaVersion switch
+        {
+            PolicyTeacherSupervisionSchemas.Skills => ValidNativeThresholdSourceShape(teacher,
+                teacher.Sources?.SkillNativeThresholdReceiptPath, teacher.SkillNativeThresholdReceiptSha256) &&
+                teacher.FriendshipNativeThresholdReceiptSha256 is null && teacher.Sources?.FriendshipNativeThresholdReceiptPath is null,
+            PolicyTeacherSupervisionSchemas.Friendships => ValidNativeThresholdSourceShape(teacher,
+                teacher.Sources?.FriendshipNativeThresholdReceiptPath, teacher.FriendshipNativeThresholdReceiptSha256) &&
+                teacher.SkillNativeThresholdReceiptSha256 is null && teacher.Sources?.SkillNativeThresholdReceiptPath is null,
+            "policy_teacher_supervision.v1" or "policy_teacher_supervision.v2" => collectionHashes.All(IsSha256) &&
+                teacher.FriendshipNativeThresholdReceiptSha256 is null && teacher.Sources?.FriendshipNativeThresholdReceiptPath is null,
+            _ => false
+        };
         return sourceShapeValid &&
             string.Equals(
                 teacher.ProvenanceClass,
@@ -197,9 +207,8 @@ internal sealed class PolicyTrajectoryDatasetValidator
                     StringComparison.Ordinal));
     }
 
-    private static bool ValidSkillSourceShape(PolicyTrajectoryTeacherSupervision teacher) =>
-        teacher.Sources is { } sources && !string.IsNullOrWhiteSpace(sources.SkillNativeThresholdReceiptPath) &&
-        IsSha256(teacher.SkillNativeThresholdReceiptSha256!) &&
+    private static bool ValidNativeThresholdSourceShape(PolicyTrajectoryTeacherSupervision teacher, string? nativePath, string? nativeHash) =>
+        teacher.Sources is { } sources && !string.IsNullOrWhiteSpace(nativePath) && IsSha256(nativeHash!) &&
         new[] { teacher.PreferenceArtifactSha256, teacher.BeforeSnapshotSha256,
             teacher.ExecutionReceiptSha256, teacher.AfterSnapshotSha256 }.All(IsSha256) &&
         !string.IsNullOrWhiteSpace(sources.PreferencePath) && !string.IsNullOrWhiteSpace(sources.BeforeSnapshotPath) &&

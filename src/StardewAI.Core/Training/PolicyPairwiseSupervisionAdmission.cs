@@ -29,7 +29,7 @@ public sealed class PolicyPairwiseSupervisionAdmission
     {
         pairs = Array.Empty<PolicyTeacherPreferencePair>();
         var claim = row.Audit?.TeacherSupervision;
-        if (claim is null || claim.SchemaVersion is not ("policy_teacher_supervision.v2" or PolicyTeacherSupervisionSchemas.Skills))
+        if (claim is null || claim.SchemaVersion is not ("policy_teacher_supervision.v2" or PolicyTeacherSupervisionSchemas.Skills or PolicyTeacherSupervisionSchemas.Friendships))
             return "independent_teacher_preference_required";
         var verifier = replayVerifier;
         if (replayVerifier is IPolicyTeacherSupervisionReplayRegistry registry)

@@ -130,6 +130,8 @@ static partial class Program
                     ? null
                     : Path.GetFullPath(options.EffectivePolicyCheckpointPath),
                 RequireStructuredPolicy = options.RequireStructuredPolicy,
+                RouteTimingCalibrationJson = string.IsNullOrWhiteSpace(options.RouteTimingCalibrationPath)
+                    ? null : File.ReadAllText(options.RouteTimingCalibrationPath),
                 DatasetPath = Path.GetFullPath(options.DatasetPath),
                 StateHash = stateHash,
                 IncludeBlockedOptions = false,

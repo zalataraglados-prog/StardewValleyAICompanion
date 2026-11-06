@@ -5,7 +5,7 @@ using StardewAI.Testing;
 
 namespace StardewAI.Core.Tests;
 
-public sealed class PolicyTeacherReplayRegistryTests
+public sealed partial class PolicyTeacherReplayRegistryTests
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
