@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-07 全馆三分区收口（当前唯一接续）：** #481经CI `42306628987`全部38步接受、合入`669142f2`。只新增E隐藏静音validation冬12/day207与test秋20/day187，原C#分区预检发现冬季没有test，不照搬婚房日期；原生再核对日期/身份，原档未变、进程退出。连同保留B/train，原强reader/corpus/证书/覆盖接受3源/3pair/3原生终态、各95项；本条件方法executable、比较/native三分区、criterion ready且本项无open work，另18项同代码对照相同，原源不变。corpus SHA`d86c7847...`、视图`3961a608...`、对账`cc3859cf...`。产品代码未改，不重跑已验B或无关源；当前原生/准入通过，最终CI接受后冻结并集`13/19、13/19、13/19、10/11 roots`，formal=false。下一唯一primary为Money6，先复核已有代码/原生证据与相关issue，再复用原生产出货/日结算链，不新增第二套规划器；全95获取/RNG/共享预算/新档Teacher21/Student义务不减。未作可视帧率验收。[来源与完整边界](museum-local-acceptance.md)。下方旧下一步仅为历史。
+
 > **2026-11-07 全馆条件方法（当前唯一接续）：** #480经CI `42303876747`全部38步接受、合入`2f398e31`。新独立方法视图复用原corpus/完整B证明，保持原6节点、全部旧边/字段、10个其他方向，原完整方向/阻塞/递推另存元数据，绝不反改原图。公开重放同SHA`70fe76b7...`；原覆盖精确校验证书后本条件方法executable，比较/native仅train、ready=false。同代码当前源基线另18criterion/10method相同，28.15秒完成本来源Build/Verify/两份覆盖，不重验无关冻结root或重复深验当前native。4公开反例拒绝、输入未变、37相关检查含14新检查通过，最终回归/CI见收口。下一步仅补真正validation/test原生来源，不重采B/旧根。并集仍`12/19、12/19、12/19、9/11 roots`与formal=false；完整95获取/RNG/共享预算/新档Teacher21及Student义务保持，Money6随后。[范围与接续](museum-local-method-view.md)。下方旧下一步仅为历史。
 
 > **2026-11-07 全馆criterion corpus（当前唯一接续）：** #479经CI `42299920297`全部38步接受、合入`33b74801`。本轮按旧Rusty证据型模式离线消费B完整typed来源，保留95项/原pair/候选数/精确native身份和原分区，不造训练行、不改权限/执行器。公开corpus重建同SHA`c7e75ad4...`，原覆盖已接`museum_terminal_corpus`：比较/native均仅train，方法pending/ready=false；同代码对照另18项criterion和10个method完全相同。新探针误从criterion行读分区，只修外部消费端并核对已生成报告，不重跑旧来源。下一步独立条件方法视图/原证书，再仅真正缺失分区；保留原完整95获取/RNG/共享预算/Teacher21与Student义务，不重采B。并集仍`12/19、12/19、12/19、9/11 roots`、formal=false，Money6随后。最终反例/回归/CI见[证据与接续](museum-criterion-corpus.md)。下方旧下一步仅为历史。
@@ -805,7 +807,11 @@ Money 自身最终完成，至少要同时满足：
 
 ## 6. 下一项如何选择
 
-### 2026-11-06 Friendship收口后的局部成本复核
+### 2026-11-07 全馆收口后的当前选择
+
+婚房和全馆都已通过原条件方法/三分区准入，最终发布以各PR接受结果为准；冻结并集为`13/19、13/19、13/19、10/11 roots`、formal=false。**当前唯一primary为`earn_money`，保留50k/100k/200k/300k/500k/1M全部六个累计收益criterion。** 先核对当前Money实现、已有原生/耐久来源以及#338/#339等issue的真实缺口，再复用现有作物Teacher、承诺、售卖/出货、机器与日结算；不从零重写，不重验已接受根。已知初始资产、钱包余额或终局持有物不冒充经营收益；新档21分/RNG/跨根预算和Student仍为后续未完成责任。[证据、scope与接续](museum-local-acceptance.md#next-primary)。下方选择均为历史，不再用于当前调度。
+
+### 历史 · 2026-11-06 Friendship收口后的局部成本复核
 
 Skills/Friendship局部证据不重采；Friendship发布以本PR最终回归/CI为准。剩余root为婚房、全馆、Money，唯一下一primary选择`marriage_and_house_upgrade`：现有房屋/伴侣/社交/日结算链可复用，先补当前严格事实/候选接入及独立来源；全馆仍有95异构来源工作，Money保留六阈值完整门。此为实际局部缺口的工程排序，不恢复已失效R1固定全序，不把完整新档21分义务反挂局部接口。[退出条件与实施路径](friendship-local-acceptance.md#next-primary-and-completion-boundary)。下方11月5日及更早选择记录仅供历史追溯。
 
