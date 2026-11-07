@@ -8,12 +8,19 @@ internal static partial class BootstrapSelfTest
 {
     private static void VerifyMoneyRevenueTerminalExecutionProof()
     {
-        const string fixtureId = "terminal-execution-proof";
+        foreach (var graphPrice in new[] { 20, 40 })
+            VerifyMoneyRevenueTerminalExecutionPriceProof(graphPrice);
+    }
+
+    private static void VerifyMoneyRevenueTerminalExecutionPriceProof(int graphPrice)
+    {
+        var fixtureId = "terminal-execution-proof-" + graphPrice;
         var before = MoneyRevenueTerminalSnapshot(
             gameTick: 100,
             money: 100,
             totalMoneyEarned: 49_900,
-            inventoryStack: 1);
+            inventoryStack: 1,
+            graphSalePrice: graphPrice);
         var after = MoneyRevenueTerminalSnapshot(
             gameTick: 110,
             money: 120,
@@ -86,6 +93,23 @@ internal static partial class BootstrapSelfTest
                 evidence.ElapsedGameMinutes == 1 &&
                 evidence.EvidenceSha256.Length == 64,
             "Money Revenue terminal execution proof was rejected.");
+
+        request.TerminalCandidate.UnitPrice = graphPrice == 20 ? 21 : graphPrice;
+        request.TerminalCandidate.TotalValue = request.TerminalCandidate.UnitPrice;
+        var wrongNativeQuoteRejected = false;
+        try
+        {
+            MoneyRevenueTerminalExecutionProofBuilder.VerifyAlternative(request, proof);
+        }
+        catch (InvalidDataException error) when (error.Message ==
+            "Money Revenue native shop sale does not match its terminal request.")
+        {
+            wrongNativeQuoteRejected = true;
+        }
+        Require(wrongNativeQuoteRejected,
+            "Graph valuation replaced the exact native terminal sale price.");
+        request.TerminalCandidate.UnitPrice = 20;
+        request.TerminalCandidate.TotalValue = 20;
 
         proof.BeforeStrategyLedgerCapturePath = afterCapturePath;
         var swappedBoundaryRejected = false;
@@ -248,7 +272,8 @@ internal static partial class BootstrapSelfTest
         long gameTick,
         int money,
         uint totalMoneyEarned,
-        int inventoryStack)
+        int inventoryStack,
+        int graphSalePrice = 20)
     {
         var inventory = inventoryStack > 0
             ? new object[]
@@ -292,7 +317,7 @@ internal static partial class BootstrapSelfTest
                     stack = inventoryStack,
                     maximum_stack_size = 999,
                     quality = 0,
-                    sale_price = 20
+                    sale_price = graphSalePrice
                 }
             }
             : Array.Empty<object>();
