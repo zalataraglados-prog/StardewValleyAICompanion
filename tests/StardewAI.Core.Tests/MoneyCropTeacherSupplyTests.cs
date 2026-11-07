@@ -305,10 +305,35 @@ public sealed partial class MoneyCropTeacherSupplyTests
 
         public MoneyRevenueCropProductionDecisionReceipt Receipt(
             MoneyRevenueCropProductionDecisionRequest decision)
+            => MoneyRevenueCropProductionDecisionReceiptBuilder.Build(SaveDecision(decision));
+
+        public string SaveDecision(MoneyRevenueCropProductionDecisionRequest decision)
         {
             var path = Path.Combine(root, "decision.json");
             Write(path, decision);
-            return MoneyRevenueCropProductionDecisionReceiptBuilder.Build(path);
+            return path;
+        }
+
+        public SnapshotEnvelope SourceSnapshot => source;
+
+        public string SaveResourceReceipt(MoneyRevenueCropResourceReservationReceipt receipt)
+        {
+            var path = Path.Combine(root, "resource-receipt.json");
+            Write(path, receipt);
+            return path;
+        }
+
+        public MoneyRevenueCropProductionObligationPlan ResourcePlan(
+            MoneyRevenueCropResourceReservationReceipt receipt)
+        {
+            var ledgerPath = Path.Combine(root, "reserved-ledger.json");
+            Write(ledgerPath, receipt.ReservationResult.Ledger);
+            var path = Path.Combine(root, "obligation-request.json");
+            Write(path, new MoneyRevenueCropProductionObligationPlanRequest
+            {
+                SnapshotPath = sourcePath, StrategyLedgerPath = ledgerPath
+            });
+            return MoneyRevenueCropProductionObligationPlanBuilder.Build(path);
         }
 
         private static void Write<T>(string path, T value) =>

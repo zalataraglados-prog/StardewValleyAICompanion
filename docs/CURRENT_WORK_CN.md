@@ -1,12 +1,11 @@
 # StardewAI 当前工作
 
-## 2026-11-07 R2共享资源预算（当前唯一接续）
+## 2026-11-07 R2原子资源预留（当前唯一接续）
 
-- #502最终42步CI通过并合入`e39dd1e5`，自有分支核树后清理。E同源6/6检查点、875g结算与原failure均保留，不重跑13日周期；原生及有界离线验证细节见[接续](current-production-snapshot-handoff.md)。
-- 核原图SHA`2b937d95...`及`864fef95`/对应JSON：旧活动作物无完整布局时提前拒绝是有意合同，继续保留。发现当前作物Teacher只校验基础账本身份，却未将其中材料/货币预留用于候选规模；9个新回归先真实失败。
-- 原Teacher现在只读一次同源基础账本，复用原MaterialSupplyProjection、acquisition货币reader及NativeCurrencySupplyProjection，先扣全部活动预留再计算种子短缺量和可购买量；不排除同decision的旧承诺。非金币独立核验、不混扣金币；取消/完成预留不占当前供应。缺证据、超额或错槽预留在上游拒绝，不等执行器失败。无账本/无活动货币预留维持原证据要求，不创建第二账本或执行链。
-- 37项定向回归（含14项新检查）、完整Core2428项及原完整hermetic均通过，零跳过；原E Teacher决策公开重建与旧文件逐字节同SHA`c683188e...`。新测试曾遗漏原reader要求的confidence，只修夹具；未放宽reader。最终CI见PR收口；不重采游戏或变更19项L1/训练授权。
-- **唯一下一步：** 本片只闭合候选读取预算，不等于新计划资源已锁定。发布后先沿原ReservationPortfolioLedgerService核对/接齐所选作物种子现货与采购资金的原子预留归属，再与联合日历、跨根时间/体力、长期连续性及所选来源组合；复用已有DailyPlanCompiler聚合预算，不增第二调度器。E离线概览不是原v2运行成功摘要，不能伪造passed或凭6/6晋升整个新档；需要哪种来源就按原合同绑定。之后Provider/模型定型、正式数据/manifest/preflight及全量训练；Student新档21/21留在训练后。L1`19/19、11/11`冻结，formal=false；无worker/API/服务器/清理，local-data不提交。下方旧接续仅供历史追溯。
+- #503最终42步CI通过并合入`65bf8cc9`，自有分支核树后清理。原Teacher已先扣现存活动预留再选规模；E同源6/6、875g和原失败保留，不重跑13日周期。
+- 新类型化资源凭证独立重建原v2 Teacher/作物承诺回执，仅将当前种子现货及精确采购资金交原ReservationPortfolioLedgerService一次提交；导出账本经完整凭证重建后可被原生产义务builder读取。不虚构未来种子、不覆盖/释放其他root、不新增账本或执行器。[合同、CLI与接续](money-crop-resource-reservation.md)。
+- 提取原`1f0b5e4b`种子分配段供新旧入口共用；旧入口仍要求完整种子分母、旧ID/排序/精确上下文，未加宽松模式。51项专项（14新）、完整Core2442及原完整hermetic通过，零跳过；真实来源资源Build/Verify同SHA`830a118a...`，预留400g、仍缺5种子；原E种子证明逐字节同SHA`e128dc0a...`。三CLI覆盖探针均拒绝、原来源/检查点/失败未变。最终CI见收口；无游戏重采。
+- **唯一下一步：** 本片是规划账本的原子重放，不是运行中安装或采购结算。发布后先接原安装/commit边界及supporting-transition结算：路线保持/重绑claims，单件购买精确扣款并接真实种子槽位托管，买齐后不重复预留已有种子；箱中现货复用原转移/relocation链。新输入路径显式版本化/启用，不反改旧initializer或完整分母门。随后复用原DailyPlanCompiler聚合预算接联合日历、连续性/所选来源，再Provider/模型定型和正式manifest/preflight。L1`19/19、11/11`冻结，formal=false；Student新档21/21在训练后，无worker/API/服务器/清理，local-data不提交。下方旧接续仅供历史追溯。
 
 ## 2026-11-07 已核实审计问题499/500（当前唯一接续）
 

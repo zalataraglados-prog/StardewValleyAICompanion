@@ -1,5 +1,29 @@
 # Current Production Snapshot Handoff
 
+## R2 Atomic Resource Reservation (Current)
+
+PR503 passed all42 final CI steps and merged as65bf8cc9; tested/main trees matched
+and owned refs were removed. Its selection-time shared-budget fix is accepted.
+The next slice now atomically reserves current seed stock and exact purchase cash
+through the original portfolio service, with one shared seed allocator and no
+legacy complete-seed gate relaxation. See [contract and commands](money-crop-resource-reservation.md).
+
+51 focused checks, all2442 Core tests and original complete hermetic pass, zero
+skipped. Retained real source Build/Verify hashes match830a118a...;
+the exported planning ledger reserves400g, has no invented future seed claim and
+feeds the original production plan with5 seeds still missing. Original E native
+seed proof is byte-identical at e128dc0a...;3 overwrite probes reject and all bound
+original files/checkpoint/failure are unchanged. No game was started.
+
+This is planning-ledger atomic replay, not runtime installation or purchase
+settlement. Next bind original installation/commit and support-settlement/custody,
+preserve neutral route claims and exact one-unit purchase costs, avoid double
+reserving existing seeds and use original inventory transfer for chest stock.
+Do not substitute this export into the unmodified old native input manifest.
+Then joint calendar/aggregate budget/continuity, Provider/model choice and formal
+manifest/preflight. L1 stays19/19,11/11;formal=false. Raw callers/data remain
+outside Git. Complete regressions/final CI are recorded at PR closeout.
+
 ## R2 Shared Crop Resource Budget
 
 PR502 passed all42 final CI steps and merged as e39dd1e5. Its E source checkpoint
