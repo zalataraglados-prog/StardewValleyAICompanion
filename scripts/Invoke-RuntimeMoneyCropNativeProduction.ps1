@@ -478,6 +478,17 @@ try {
                     -RunId $RunId))
             }
             $currentPath = $homeRoute.SourcePath
+            $control = Wait-RuntimeNativeSaveBoundaryControl `
+                -Context $runtimeQueueContext -SourceSnapshotPath $currentPath `
+                -SnapshotProfile 'full' -TotalDay $totalDay `
+                -Name "day-$totalDay-sleep-control"
+            foreach ($observation in @($control.Observations)) {
+                if ($totalDay -lt $proofFirstDay) { continue }
+                $transitions.Add((New-RuntimeCropTransition `
+                    -TransitionKind 'supporting_route_to_sleep' `
+                    -TotalDay $totalDay -Artifacts $observation -RunId $RunId))
+            }
+            $currentPath = $control.SourcePath
             $sleep = Invoke-RuntimeDailyPlanStep `
                 -Context $runtimeQueueContext `
                 -Name "day-$totalDay-native-rollover" `

@@ -1,16 +1,9 @@
+. (Join-Path $PSScriptRoot 'RuntimeNativeControl.ps1')
+
 function Select-RustyKeySaveBoundaryCandidate {
     param([Parameter(Mandatory)] $Ranking)
-    $candidates = @($Ranking.ranked_event_candidates | Where-Object {
-        $_.available -is [bool] -and $_.available -and
-        $_.option_id -eq 'recovery.stabilize_day' -and
-        ($_.candidate_id -eq 'recovery:native_save_boundary' -or
-            ($_.candidate_id -eq 'recovery:wait_for_native_control_settle' -and
-                $_.kind -eq 'recovery_native_control_settle'))
-    })
-    if ($candidates.Count -ne 1) {
-        throw "Rusty Key native handoff needs one safe save-boundary or native-control-settle candidate; found $($candidates.Count)."
-    }
-    return $candidates[0]
+    return Select-RuntimeNativeSaveBoundaryCandidate -Ranking $Ranking `
+        -OperationName 'Rusty Key native handoff'
 }
 
 function Assert-RustyKeySnapshot {

@@ -15,6 +15,7 @@ internal static partial class BootstrapSelfTest
     {
         var root = TempArtifactRoot("money-crop-native-lifecycle-proof");
         var snapshot = MoneyCropProductionSnapshot();
+        VerifyCropNativeControlRoutes(snapshot);
         var mutation = new CropCommitmentLedgerService().Upsert(
             null,
             snapshot,

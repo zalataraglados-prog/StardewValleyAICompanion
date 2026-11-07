@@ -1,5 +1,53 @@
 # Current Production Snapshot Handoff
 
+## D First-Day Progress And Control Preflight
+
+PR497 is accepted at `5cc3b42c`, exact-head CI42351397889 all39 steps passed;
+owned refs were removed after tree verification. New hidden/silent D used the
+original current-v6 input, not C memory. It independently acquired5 seeds, routed
+home, prepared the site and executed5 plant plus5 water steps, both batches
+applied/success/verified. No full lifecycle, harvest or settlement pass is claimed.
+
+Its first sleep source was captured during map-transition control settling.
+The original Loop correctly substituted one30-tick verified wait, reported
+primary_training_target_not_met, required_verified_actions1/verified_actions0 and
+exit2. The fixed sleep caller then rejected it. Original save SHA is unchanged;
+owned game/backend exited and D's raw/failure artifacts remain outside Git.
+
+`18b59881`/`40dad9f6` and restored Oct28 JSON around113500-113600 explain why
+observation is not a training work success. Do not change that accounting,
+require zero work actions, broadly accept exit2 or force actor control. The
+existing Rusty save-boundary selector is extracted once into RuntimeNativeControl;
+its compatibility wrapper retains selection/error behavior. Only the two crop
+sleep callers add bounded preflight through that selector, original ranking and
+original exact-observation DailyPlan helper. At most4 observations, unique safe
+candidate, same day and source progress are required. Every wait is appended to
+the original supporting/settlement route before rebinding sleep's source.
+Original sleep command IDs, compiler and assertions remain. Review caught that
+both original route proof paths required movement in every queue. They now
+recognize only the original NativeControlSettleRecovery's exact30-tick control
+observation at unchanged readable location/tile; generic waits remain rejected.
+Full original receipt, calendar, persistent-resource and destination gates remain.
+Both proof paths pass a positive and seven negative fixtures. The complete
+hermetic suite and retained actual D receipt/lifecycle/home-ingress replay pass;
+all original D source bytes are unchanged, with no game restarted.
+
+52 new protocol/source-chain checks,41 original Rusty evidence checks and50
+original rolling runtime checks (including D's real receipt/report), plus20
+snapshot and10 goal-forwarding regressions pass. A real backend contrast on
+immutable D before/after sources compiles only control wait before, then exactly
+one original executor.sleep after. It does not execute sleep or certify rollover.
+Final CI/publication is recorded at closeout. No new local large test/game is
+started merely to repeat the already-accepted acquisition while this patch runs.
+
+Next: publish this tested caller fix, then fix verified issues499/500 (fish
+aggregate type/error contract and original wedding-story corpus compatibility)
+without native recollection. Only then resume the original current-v6 production run
+for first native rollover, daily maintenance, retention and settlement. Do not
+splice D's unsaved memory or modify original receipts. R2 global integration
+follows; L1 remains19/19 and11/11, formal=false, no workers/APIs/training/server
+or cleanup. Raw callers/data/temp stay outside Git.
+
 ## Known Context In The Shared Boundary
 
 PR496 is accepted at `416ded1f`, exact-head CI42350460137 all39 steps passed.

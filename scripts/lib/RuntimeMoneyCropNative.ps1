@@ -1,3 +1,5 @@
+. (Join-Path $PSScriptRoot 'RuntimeNativeControl.ps1')
+
 function Copy-RuntimeSnapshotArtifact {
     param(
         [Parameter(Mandatory)] [string] $SourcePath,
