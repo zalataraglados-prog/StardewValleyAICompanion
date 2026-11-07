@@ -132,9 +132,10 @@ public static partial class MoneyRevenueTerminalExecutionProofBuilder
                 row.SlotIndex == target.Slot.SlotIndex &&
                 row.QualifiedItemId == target.Slot.QualifiedItemId)
             .ToArray();
+        // item.salePrice() in the graph is not the terminal channel's quote.
+        // VerifyNativeTerminal already binds the exact candidate price to native evidence.
         Require(projected.Length == 1 &&
                 projected[0].Stack == target.Slot.Stack &&
-                target.Slot.SalePrice == candidate.UnitPrice &&
                 target.Slot.Stack >= candidate.Quantity &&
                 projected[0].AvailableQuantity >= candidate.Quantity,
             "Money Revenue terminal target quantity is reserved or unavailable.");

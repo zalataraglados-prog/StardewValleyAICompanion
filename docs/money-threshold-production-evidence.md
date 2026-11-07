@@ -1,5 +1,20 @@
 # Money Threshold Production Evidence
 
+## Current Local Native Sale
+
+PR #487 is accepted at `2f1e935b`. The next source G now passes the original
+native-only corpus, passed-run/Mod and comparison initialization chain:
+income0 to1,200,000, six thresholds, train, no Teacher comparison. Its actual
+declared held stock is not an acquisition or full fresh-save Money proof.
+The original terminal collector exposed a Money-only graph/native-price
+false equivalence from `b9455b337`. Fixing that consumer leaves native quote,
+inventory/reservation/ledger/recurrence and all shared execution gates intact.
+Final hermetic passes; original retained G accepts1/2 terminal fragments,
+pending1, final-index-ready=false. No new game is needed to replay that proof.
+[Native provenance, preserved failures, scope and exact next work](money-local-native-collection.md)
+are canonical for this continuation. No Money Teacher/native join or formal
+training promotion is claimed; final CI is recorded in this slice's closeout.
+
 ## Current Direct Concrete Union
 
 The preceding sampling fix, PR #486, is accepted at `7c78db2b` after
