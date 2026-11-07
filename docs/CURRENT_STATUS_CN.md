@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-07 Money采样消费对齐（当前唯一接续）：** #485已38步CI接受、合入`d6fa8194`。Money单阈值和wave现在消费原生economic候选，同时保留旧stage路径、完整分母及原行身份/空参数/摘要；原8项执行参数从同源事实单独绑定。D公开两入口逐字节同SHA`db993d85...`，原后端编译`出售→关闭菜单`；未执行、未增Money单元。34新场景、旧stage、最终hermetic及4公开反例通过，最终CI见收口。下一步已定位纯direct concrete消费强求不需要的rebind回执；先核历史并修消费/编排分支，不改旧强producer或伪造回执，然后原账本/反事实请求及same-run原生比较。共享执行链不改、无游戏重跑/worker/训练，并集仍`13/19、13/19、13/19、10/11`、formal=false。[具体合同](money-threshold-production-evidence.md#current-active-sale-sampling)。
+
 > **2026-11-07 Money实际菜单源接续：** D测前原生30tick等待使计时器到-6ms，新caller误要求精确0；只修新caller，保留原失败报告，离线接原公开分母，无游戏重跑。原档/库存/现金/收入保持，10节点/11候选/2比较、train、收入0，SHA`0f7258ed...`；校准非产品动作，D未保留的直接请求如实记缺失。最终完整hermetic、16新场景/3公开反例通过；无出售/标签/训练，分子仍`13/19、13/19、13/19、10/11`。下一步直接用D修Money threshold selector及wave消费旧经济候选的缺口，已离线重现event-only拒绝，不重跑成功准备、不反改共享接口。最终CI见收口。[完整事实与边界](money-threshold-production-evidence.md#native-shop-recovery-prerequisite)。
 
 > **2026-11-07 Money商店原生准备：** #484已38步CI接受、合入`48430bd1`。E隔离B通过5原路线准备及1原生剧情611439控制到铁匠ShopMenu，逐段库存/现金/累计收入不变，原档未变、进程退出；未出售、未形成Money outcome/标签。Money消费者仅新增旧恢复器“先关ShopMenu”的精确确定性前置绑定，原候选完整保留、零收入且不可比较，不反改共享执行器或睡觉合同。保留现场公开重建10/10节点，但计时器250ms仍阻塞、比较0/ready=false；全局与正式训练门不动。下一步原生bounded wait后的实际菜单源，再对齐旧经济候选格式、接原比较/原生/预留链；不重跑成功路线恢复历史、不缩减18单元或倒挂全局新档。并集仍`13/19、13/19、13/19、10/11 roots`，formal=false。[完整合同](money-threshold-production-evidence.md#native-shop-recovery-prerequisite)。

@@ -1,3 +1,4 @@
+using StardewAI.Contracts.State;
 using StardewAI.Core.Goals;
 
 namespace StardewAI.GoalConditionedBootstrap;
@@ -24,7 +25,8 @@ public static class MoneyThresholdNativeOutcomeWaveSelectionBuilder
             inputs.Catalog,
             inputs.Checkpoint,
             workPlan,
-            datasetPartition);
+            datasetPartition,
+            inputs.Snapshot);
     }
 
     internal static MoneyThresholdNativeOutcomeSelection BuildSelection(
@@ -33,7 +35,8 @@ public static class MoneyThresholdNativeOutcomeWaveSelectionBuilder
         MoneyRevenueCandidateDenominatorCatalog catalog,
         MoneyRevenueCheckpoint checkpoint,
         MoneyThresholdEvidenceWorkPlan workPlan,
-        string datasetPartition)
+        string datasetPartition,
+        SnapshotEnvelope? sourceSnapshot = null)
     {
         Require(workPlan.SchemaVersion ==
                 "money_threshold_evidence_work_plan.v1" &&
@@ -76,14 +79,9 @@ public static class MoneyThresholdNativeOutcomeWaveSelectionBuilder
                 wave.SourceTotalMoneyEarnedMaxExclusive,
             "Money threshold source is not below the collection wave lower bound.");
 
-        var maximumSaleValue = catalog.Nodes
-            .Where(node => node.PolicyChoice &&
-                node.OptionId == "economy.sell_items" &&
-                node.EnumerationComplete)
-            .SelectMany(node => node.Candidates)
-            .Where(MoneyThresholdNativeOutcomeSelectionBuilder
-                .IsExecutableShopSaleStage)
-            .Select(candidate => (uint)candidate.TotalValue)
+        var maximumSaleValue = MoneyThresholdNativeOutcomeSelectionBuilder
+            .BindShopSales(catalog, sourceSnapshot)
+            .Select(sale => (uint)sale.Candidate.TotalValue)
             .DefaultIfEmpty(0u)
             .Max();
         var maximumOutcome = checked(
@@ -102,7 +100,8 @@ public static class MoneyThresholdNativeOutcomeWaveSelectionBuilder
                 catalog,
                 checkpoint,
                 selectedThreshold.CriterionId,
-                datasetPartition);
+                datasetPartition,
+                sourceSnapshot);
         var scheduledCrossings = missing
             .Where(value => value.Target <= selectedThreshold.Target)
             .Select(value => value.CriterionId)

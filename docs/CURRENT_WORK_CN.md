@@ -1,5 +1,11 @@
 # StardewAI 当前工作
 
+## 2026-11-07 Money经济候选采样对齐（当前唯一接续）
+
+- #485经38步CI接受、合入`d6fa8194`。本轮仅Money单阈值/wave消费者适配原active-menu economic候选，旧event路径及共享桥/候选/编译/执行不改；原完整分母重建和累计收入/分区断言保留。原候选ID/channel/空参数/摘要不改，单独从同源实际位置/商店/商品绑定原8项执行参数；不造标签或晋升原生结果。[合同与事实](money-threshold-production-evidence.md#current-active-sale-sampling)。
+- D公开direct/wave逐字节相同，SHA`db993d85...`；11条原候选/2比较，选`sell:5`，实际收入0，预测1,200,000及六阈值尚未执行。原后端实际接受参数并编译`出售→关闭菜单`；来源未变、后端退出，无游戏重跑。最终完整hermetic、旧stage和34新场景/4公开反例通过；最终CI见收口。
+- **唯一下一步：** 原alternative入口已接受D的2条direct路线，但concrete消费者强求rebind回执与原producer拒绝空rebind的合同冲突已离线暴露。先查历史意图，修消费/编排层纯direct分支，不伪造空回执、不放宽真实rollout/rebind验证，再原账本/反事实请求及same-run原生结果/独立比较。D不是passed Money native run，不拼接别的run；R2原全局预检/全部长期义务保留。本轮0新Money单元，并集仍`13/19、13/19、13/19、10/11 roots`、formal=false；无worker/API、训练、服务器或清理。
+
 ## 2026-11-07 Money真实商店准备与旧恢复控制
 
 - #484经38步CI接受、合入`48430bd1`，原入口对齐不重做。当前唯一primary仍`earn_money`；并集保持`13/19 executable、13/19 split-complete、13/19 ready、10/11 roots`，formal=false。
