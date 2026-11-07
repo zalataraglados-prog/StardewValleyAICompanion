@@ -90,6 +90,13 @@ fix, planting passed103/104; the remaining control-fixture reconstruction/encodi
 mistakes were corrected without changing the original guard, and the final32
 include that actual control/HTTP/loop/settlement path. Full final-head CI owns
 the complete suite result rather than treating either earlier run as all green.
+The initial exact-head CI passed the Core suite and1009/1010 Backend cases;
+the sole failure was an old source guard locating the moved control body by
+its compatibility entry's old name. The guard now checks the real shared body,
+also verifies compatibility forwarding and the new planting branch remains
+below the original native-story-event preemption. Production logic is unchanged
+by that guard correction. Final acceptance belongs to the updated head's CI.
+The updated original control-source guard group passed15/15, zero skips.
 
 ## Unique Next Work
 
