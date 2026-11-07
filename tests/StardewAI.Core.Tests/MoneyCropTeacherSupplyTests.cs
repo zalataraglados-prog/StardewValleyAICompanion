@@ -249,6 +249,46 @@ public sealed partial class MoneyCropTeacherSupplyTests
             Write(requestPath, request);
         }
 
+        public StrategyCommitmentLedger EmptyLedger() => new()
+        {
+            LedgerId = "shared-crop-budget",
+            SaveId = source.SaveId.Value!,
+            PlayerId = source.PlayerId.Value!,
+            SourceStateHash = source.StateHash
+        };
+
+        public void ChangePlayer(Action<JsonObject> change)
+        {
+            var player = JsonNode.Parse(source.State["player"].GetRawText())!.AsObject();
+            change(player);
+            source.State["player"] = JsonSerializer.SerializeToElement(player);
+            source.StateHash = SnapshotHash.ComputeStateHash(source.State);
+            Write(sourcePath, source);
+        }
+
+        public void AddCurrencyEvidence(int money = 450, int qiGems = 0)
+        {
+            ChangePlayer(player => player["shop_currency_balances"] =
+                JsonSerializer.SerializeToNode(new
+                {
+                    status = "available",
+                    confidence = 1d,
+                    value = new
+                    {
+                        schema_version = "shop_currency_balances.v1",
+                        projection_status = "complete_locked_base_1.6.15_shop_menu_currency_domain",
+                        supported_currency_ids = NativeShopCurrencies.All.Select(row => row.Id),
+                        rows = NativeShopCurrencies.All.Select(row => new
+                        {
+                            currency_id = row.Id,
+                            currency_key = row.Key,
+                            balance = row.Id == NativeShopCurrencies.Money ? money :
+                                row.Id == NativeShopCurrencies.QiGems ? qiGems : 0
+                        })
+                    }
+                }, JsonOptions));
+        }
+
         public void SetLayouts(params SnapshotEnvelope[] layouts)
         {
             request.FarmLayoutSnapshotPaths = layouts.Select((layout, index) =>

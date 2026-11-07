@@ -1,5 +1,41 @@
 # Current Production Snapshot Handoff
 
+## R2 Shared Crop Resource Budget
+
+PR502 passed all42 final CI steps and merged as e39dd1e5. Its E source checkpoint
+remains6/6 and875g, with the original failure preserved; do not rerun13 days.
+The original dependency graph hash is2b937d95dc0bc8da3fe30510c963ef6c529087b50be6db9cfa2d557faf5ca928.
+Its global obligations remain distinct from the accepted conditional L1 methods.
+
+One actual L3 integration gap was reproduced: the existing crop Teacher validated
+BaseStrategyLedgerPath but evaluated seeds and purchases against unreserved stock
+and total wallet money. Nine new assertions failed before the fix. The same
+Teacher now passes its once-read, identity-checked ledger to the existing material
+supply projector and acquisition currency reader/native currency supply projector.
+All active reservations count, even with the same decision ID. Cancelled/completed
+claims do not consume current supply; other currencies are validated separately,
+not subtracted from gold. Overcommitted/missing-slot/missing-balance evidence fails
+before a production decision. Only the player section is serialized for the reused
+currency reader, never another full world snapshot. No new ledger/planner/executor.
+
+The intentional active-crop/layout rejection introduced by864fef95 is unchanged;
+its Git diff and historical JSON context were checked. No-base-ledger and no-active-
+currency evidence requirements stay unchanged. The real E Teacher decision rebuilds
+byte-identically as c683188e8a429b1680ae9f4862dee6656a761572f3c121f1fc856d9bd272fe29.
+37 focused tests (14 new), all2428 Core tests and original complete hermetic pass,
+with zero skipped tests. Final CI is recorded at PR closeout.
+The first new currency fixture omitted the original reader's confidence field;
+only that fixture was corrected, not the shared reader or its authority contract.
+
+Next after release: continue the original joint-calendar/time-energy and selected-
+source/continuity owners for L3. E's separate offline-finalization-summary is not
+the original v2 passed runtime summary required by the stronger segment builder;
+do not silently relabel/import it as that artifact or claim a Day-0 schedule.
+Reusing its exact checkpoint/native sources must retain their actual scope.
+Then replaceable Provider/model selection and formal data/manifest/preflight.
+L1 remains19/19,11/11;formal=false. No game, worker/API, server or cleanup here;
+all raw/test artifacts stay outside Git, and local-data is never staged.
+
 ## E Native Cycle And Bounded Offline Closeout
 
 PR501 is accepted at c01ce0be;499/500 are closed and owned merged refs removed.
