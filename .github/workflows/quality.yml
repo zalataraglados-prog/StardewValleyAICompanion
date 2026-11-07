@@ -87,6 +87,9 @@ jobs:
       - name: Test logical snapshot import and crop artifact relocation without game
         shell: pwsh
         run: ./scripts/Test-RuntimeSnapshotImport.ps1 -OutputRoot "$env:RUNNER_TEMP/snapshot-import-runtime"
+      - name: Test bounded daily goal forwarding without a second orchestrator
+        shell: pwsh
+        run: ./scripts/Test-RuntimeBoundDailyGoal.ps1 -OutputRoot "$env:RUNNER_TEMP/bound-daily-goal"
       - name: Test fishing source mapping across original continuation queues without game
         shell: pwsh
         run: ./scripts/Test-RuntimeFishingArtifactMapping.ps1 -OutputRoot "$env:RUNNER_TEMP/fishing-source-mapping"
