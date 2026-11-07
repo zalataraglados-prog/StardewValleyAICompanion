@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-08 R2原运行恢复边界（当前唯一接续）：** #518经同head审查/42步CI `42415768717`合入`cdaa347e`且核树清分支，Core2443/Backend1062。现为持久phase所有者接原intent/准备/marker/原生proof/实际消费与种子托管的完整重建；复用原kernel/ResumeTransition/journal读器，不凭summary成功、坏回包不兜底，缺回包只lookup且先于最终Get，缺proof/journal或未知lookup不重发/不伪零执行。原写入/异常帧/执行器及Get协调规则不改。首9/11的同内容before路径误限只修新consumer，后12/12通过，最终回归/CI见收口；非新游戏/训练或全跨进程所有者完成。下一步唯一持久run/plan/input/before、排他pending准入、恢复接受/推进，再未留proof/未派发业务变更/生命周期恢复及原行走维护跨日连续性；接齐后显式managed小样本、原日历/预算/模型/manifest。L1`19/19、11/11`、formal=false保持，原始数据不提交。[合同](money-crop-managed-runtime-recovery.md)。下方为历史。
+
 > **2026-11-08 R2统一seed scope（当前唯一接续）：** #517最终42步CI `42414916363`接受合入`6c83d3d9`且核树清分支，Core2443/Backend1044；首head审查origin问题已修、最终34专项/控制者审查及CI分别归因。现单一选择边界将原step绑定原采购/转运/种植scope，控制前核原物理输入/完整嵌套step，沿同一原Core/事务/8格批次/执行/结算/lookup，无第二规划器或执行器。最终20专项通过，完整CI见收口；这不是已启用managed/跨进程恢复或新游戏验收。下一步唯一持久phase所有者串run/plan/input身份、原before、pending/partial/crash恢复；旧binder拒绝活动作物不可反改，行走/维护/跨日靠原证据推进，不能假改源哈希。之后显式managed激活/小样本原生、原联合日历/预算/连续性、Provider/模型及manifest/preflight。L1`19/19、11/11`、formal=false/Student训后新档21/21保持，无游戏/服务器/worker/API，local-data不提交。[合同](money-crop-managed-seed-scopes.md)。下方为历史。
 
 > **本片审查修复补充：** 新生命周期wrapper的末尾斜杠origin在取消/日历两模式均复现释放404；只修新callback共用规范化地址、分离portfolio配置/保留原目录和异步异常边界，原HTTP helper不动。最终runtime34/34通过，含原丢回包lookup；前32/32为此修复前结果，完整最终CI见收口。

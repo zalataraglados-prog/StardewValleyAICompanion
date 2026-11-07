@@ -26,6 +26,7 @@ public sealed partial class CropTeacherSeedTransferTests
         internal LiveTrainingOptions Options { get; }
         internal MoneyRevenueCropNativeLifecycleTransitionRequest Transition { get; private set; } = null!;
         internal CropTeacherSeedTransferMarker Marker { get; private set; } = null!;
+        internal Action<string>? BeforeWrite { get; set; }
 
         internal RuntimeFixture(Fixture files, bool loseReplies = false, string fault = "")
         {
@@ -64,7 +65,11 @@ public sealed partial class CropTeacherSeedTransferTests
                 scope ?? files.Open(),
                 (diagnostic, request) => InvokeLive<Task<JsonObject>>("PostJournaledPortfolioCommitAsync", Client, Options, diagnostic, request),
                 (diagnostic, request) => InvokeLive<Task<JsonObject>>("PostJournaledPortfolioSettlementAsync", Client, Options, diagnostic, request),
-                (path, json) => InvokeLive<Task>("WritePortfolioJournalFileAsync", path, json), compile ?? Compile,
+                (path, json) =>
+                {
+                    BeforeWrite?.Invoke(path);
+                    return InvokeLive<Task>("WritePortfolioJournalFileAsync", path, json);
+                }, compile ?? Compile,
                 expectedLocation);
 
         private async Task<string> Compile(CropTeacherSeedTransferMarker marker, CropTeacherSeedTransferExecutionPlan plan)

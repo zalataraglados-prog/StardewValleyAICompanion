@@ -60,17 +60,7 @@ internal sealed partial class CropTeacherSeedRuntimeTransaction
         options = options with { EvidenceDirectory = output };
         Directory.CreateDirectory(output);
         var request = scope.ReadPreparationRequest();
-        var diagnostic = new JsonObject
-        {
-            ["schema_version"] = scope.RuntimeSchema,
-            ["commitment_id"] = scope.CommitmentId, ["support_step_id"] = request.PortfolioId,
-            ["before_snapshot_path"] = scope.SnapshotPath, ["before_state_hash"] = request.StateHash,
-            ["base_ledger_revision"] = request.ExpectedLedgerRevision, ["run_id"] = options.RunId,
-            ["input_artifact_hashes"] = JsonSerializer.SerializeToNode(scope.InputHashes, JsonOptions),
-            ["executor_version"] = options.ExecutorVersion, ["backend_url"] = options.BackendUrl,
-            ["native_dispatch_performed_by_adapter"] = false, ["support_slice_verified"] = false,
-            ["resource_settlement_verified"] = false, ["formal_product_training_authorized"] = false
-        };
+        var diagnostic = CreateIntent(options, scope, request);
         Exception? failure = null;
         try
         {
@@ -128,11 +118,28 @@ internal sealed partial class CropTeacherSeedRuntimeTransaction
         CropSeedRuntimeOptions options, string hash, string label) =>
         StrategyLedgerEvidenceStore.ReadAsync(http, options.BackendUrl, options.EvidenceDirectory, hash, JsonOptions, label);
 
-    private static void RequireLedger(StrategyCommitmentLedger expected, StrategyCommitmentLedger actual, string stage)
+    internal static void RequireLedger(StrategyCommitmentLedger expected, StrategyCommitmentLedger actual, string stage)
     {
         if (!JsonNode.DeepEquals(JsonSerializer.SerializeToNode(expected, JsonOptions),
                 JsonSerializer.SerializeToNode(actual, JsonOptions)))
             throw new InvalidDataException("Crop seed runtime " + stage + " ledger changed.");
+    }
+
+    internal static JsonObject CreateIntent(CropSeedRuntimeOptions options, CropSeedRuntimeScopeBinding scope,
+        ReservationPortfolioCommitRequest request)
+    {
+        var intent = new JsonObject
+        {
+            ["schema_version"] = scope.RuntimeSchema,
+            ["commitment_id"] = scope.CommitmentId, ["support_step_id"] = request.PortfolioId,
+            ["before_snapshot_path"] = scope.SnapshotPath, ["before_state_hash"] = request.StateHash,
+            ["base_ledger_revision"] = request.ExpectedLedgerRevision, ["run_id"] = options.RunId,
+            ["input_artifact_hashes"] = JsonSerializer.SerializeToNode(scope.InputHashes, JsonOptions),
+            ["executor_version"] = options.ExecutorVersion, ["backend_url"] = options.BackendUrl,
+            ["native_dispatch_performed_by_adapter"] = false, ["support_slice_verified"] = false,
+            ["resource_settlement_verified"] = false, ["formal_product_training_authorized"] = false
+        };
+        return intent;
     }
 
     internal static async Task WriteSummaryAsync(Func<string, string, Task> write, string path,

@@ -55,7 +55,9 @@ transfer and planting entry variants remain covered, not replaced.
 These are synthetic protocol/native-format fixtures, not new game outcomes.
 Full exact-head CI/review/merge results belong to PR closeout.
 
-Next is the UNIQUE managed phase owner: durable run/plan/input identity, original
+The [original runtime recovery boundary](money-crop-managed-runtime-recovery.md)
+is the immediate consumer needed to accept a recovered phase without trusting
+summary flags. Then connect the UNIQUE managed phase owner: durable run/plan/input identity, original
 before retention, one pending operation admission, partial execution and restart
 recovery across purchase/transfer/planting/lifecycle. Recovery must reconstruct
 original proofs and query original journals/lookup before any new operation;

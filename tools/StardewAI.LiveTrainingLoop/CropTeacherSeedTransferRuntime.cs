@@ -24,13 +24,7 @@ public sealed class CropTeacherSeedTransferRuntime : ICropTeacherSeedRuntime
         if (expectedLocationId is not null && expectedLocationId != plan.LocationId)
             throw new InvalidDataException("Managed seed transfer route location differs from its original step.");
         CropTeacherSeedTransferMarker? marker = null;
-        var binding = new CropSeedRuntimeScopeBinding(scope.CommitmentId, scope.SnapshotPath, scope.TotalDay,
-            "owned_seed_transfer", "crop_teacher_seed_transfer_runtime.v1", scope.InputHashes, () => scope.BaseLedger,
-            () => scope.PreparationRequest, scope.ValidateInputsUnchanged, reply =>
-            {
-                marker = scope.VerifyPreparationReply(reply);
-                return CropSeedRuntimeBindings.Transfer(marker);
-            });
+        var binding = CropSeedRuntimeBindings.Transfer(scope, value => marker = value);
         return new(await CropTeacherSeedRuntimeTransaction.PrepareAsync(http,
             new(options.BackendUrl, options.EvidenceDirectory, options.RunId, options.ExecutorVersion), binding,
             commit, settle, write, () => compileQueue(marker!, plan)));

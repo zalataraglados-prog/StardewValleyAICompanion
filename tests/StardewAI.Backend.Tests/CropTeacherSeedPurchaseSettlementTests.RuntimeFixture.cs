@@ -23,6 +23,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         public StateStore Store { get; }
         public FileStrategyCommitmentRepository Repository { get; }
         public LiveTrainingOptions LiveOptions { get; }
+        internal Action<string>? BeforeWrite { get; set; }
 
         public RuntimeFixture(Fixture files, bool loseReplies = false, string fault = "")
         {
@@ -55,7 +56,11 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 new(LiveOptions.BackendUrl, files.RuntimePath, transition.RunId, transition.ExecutorVersion), selectedScope ?? files.Open(),
                 (diagnostic, request) => InvokeLive<Task<JsonObject>>("PostJournaledPortfolioCommitAsync", Client, LiveOptions, diagnostic, request),
                 (diagnostic, request) => InvokeLive<Task<JsonObject>>("PostJournaledPortfolioSettlementAsync", Client, LiveOptions, diagnostic, request),
-                (path, json) => InvokeLive<Task>("WritePortfolioJournalFileAsync", path, json),
+                (path, json) =>
+                {
+                    BeforeWrite?.Invoke(path);
+                    return InvokeLive<Task>("WritePortfolioJournalFileAsync", path, json);
+                },
                 compile ?? (() =>
                 {
                     Assert.Equal(files.Ledger.Revision + 1, Repository.Get(files.Before).Revision);
@@ -96,6 +101,13 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             if (read) LedgerReads++;
             if (path.EndsWith("/lookup-mutation", StringComparison.Ordinal)) Lookups++;
             var reply = await base.SendAsync(request, token);
+            if (fault == "missing_recovery_lookup" && path.EndsWith("/lookup-mutation", StringComparison.Ordinal))
+            {
+                var missing = JsonNode.Parse(await reply.Content.ReadAsStringAsync(token))!;
+                missing["status"] = "not_found";
+                reply.Dispose();
+                return new(HttpStatusCode.OK) { Content = new StringContent(missing.ToJsonString(JsonOptions)) };
+            }
             if (loseReplies && (commit || settlement))
             {
                 Assert.True(reply.IsSuccessStatusCode);
