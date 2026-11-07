@@ -10,7 +10,7 @@ public sealed partial class CropTeacherSeedLifecycleTests
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    private sealed class Fixture : IDisposable
+    internal sealed class Fixture : IDisposable
     {
         private readonly string root = Path.Combine(Path.GetTempPath(), "crop-seed-lifecycle-" + Guid.NewGuid().ToString("N"));
         private readonly CropTeacherSeedTransferTests.Fixture source = new(nativeEvidence: true);

@@ -79,10 +79,10 @@ journal, clear pending transfers, alter inventory/money or issue native actions.
 
 ## Verification And Continuation
 
-The optional planting runtime/prefix connection now has its own
-[current continuation contract](money-crop-owned-planting-runtime.md).
-Its default managed activation remains off; lifecycle runtime integration and
-the unique scope/claim/recovery owner still follow that connection.
+The optional planting runtime/prefix connection is accepted in PR516. The
+[explicit lifecycle runtime](money-crop-seed-lifecycle-runtime.md) now connects
+this kernel to original HTTP/journals/readbacks. Default managed activation
+remains off; the unique scope/claim/recovery owner follows that connection.
 
 Tests use the accepted seed fixture, original file repository, actual cancellation,
 portfolio and latest-ledger HTTP endpoints. Cases cover explicit cancellation,

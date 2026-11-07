@@ -135,7 +135,7 @@ internal sealed partial class CropTeacherSeedRuntimeTransaction
             throw new InvalidDataException("Crop seed runtime " + stage + " ledger changed.");
     }
 
-    private static async Task WriteSummaryAsync(Func<string, string, Task> write, string path,
+    internal static async Task WriteSummaryAsync(Func<string, string, Task> write, string path,
         JsonObject diagnostic, Exception? failure)
     {
         try { await write(path, diagnostic.ToJsonString(JsonOptions)); }
