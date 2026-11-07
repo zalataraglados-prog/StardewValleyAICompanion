@@ -44,7 +44,9 @@ public sealed class CropTeacherOwnedSeedSupply
         // Consume only material/currency domains, not a serialized copy of the full world.
         var resources = AcquisitionResourceInputSnapshotState.Read(JsonSerializer.SerializeToElement(new
         {
-            state = new { farm = new { material_inventory_graph = material }, player = actor }
+            state = new { farm = new { material_inventory_graph = material }, player = actor.EnumerateObject()
+                .Where(row => row.Name is "money" or "shop_currency_balances")
+                .ToDictionary(row => row.Name, row => row.Value, StringComparer.Ordinal) }
         }, JsonDefaults.Options));
         AcquisitionReservationSupplyValidator.Validate(state, resources, resources.ShopQuotes);
         var graph = resources.MaterialGraph ?? throw new InvalidDataException("Managed crop material graph is unavailable.");
@@ -72,7 +74,8 @@ public sealed class CropTeacherOwnedSeedSupply
             var slots = seeds.Select(row =>
             {
                 var node = graph.InventoryNodes.Single(value => value.NodeId == row.NodeId);
-                Require(node.InventoryKind is "player_inventory" or "chest" && node.ActorUseAuthorized &&
+                Require((node.InventoryKind == "chest" || node.InventoryKind == "player_inventory" &&
+                        node.NodeId == players[0].NodeId) && node.ActorUseAuthorized &&
                         node.SupplyState == "available" && !string.IsNullOrWhiteSpace(node.LocationId),
                     "Managed crop seed supply requires native player/chest custody.");
                 var slot = node.Slots.Single(value => value.SlotIndex == row.SlotIndex);

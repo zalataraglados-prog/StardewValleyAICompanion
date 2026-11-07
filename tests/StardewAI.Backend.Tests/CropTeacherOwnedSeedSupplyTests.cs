@@ -192,4 +192,21 @@ public sealed partial class CropTeacherOwnedSeedSupplyTests
         Assert.Contains("material_transfer_chest_locked_by_other_player", error.Message);
     }
 
+    [Theory]
+    [InlineData("player_inventory", 456)]
+    [InlineData("machine_input", 123)]
+    public void AuthorizedNonChestExternalNodeIsRejectedBeforeRouting(string kind, int owner)
+    {
+        using var fixture = new Fixture();
+        fixture.PutOwnedSeedInChest("Farm");
+        fixture.ChangeGraph(graph =>
+        {
+            graph["inventory_nodes"]![1]!["inventory_kind"] = kind;
+            graph["inventory_nodes"]![1]!["owner_player_id"] = owner;
+        });
+        fixture.Anchor();
+        var error = Assert.Throws<InvalidDataException>(() => fixture.Supply());
+        Assert.Contains("native player/chest custody", error.Message);
+    }
+
 }

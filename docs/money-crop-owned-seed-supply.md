@@ -26,7 +26,10 @@ planting does not force another seed-supply projection for watering/harvesting.
 The typed ledger overload shares the original path-reader's complete validation.
 Current root/source/save/player identities, all active material/currency claims,
 authorized player inventory, raw player-slot identity/stack/quality and native
-location must agree. No missing raw quality is guessed as zero. Each requested
+location must agree. External player inventories and non-chest nodes are rejected
+before routing, even with a read-authorization flag. No missing raw quality is
+guessed as zero. Only money/shop-currency player fields enter the serialized
+currency projection; raw slots/location are read directly. Each requested
 active crop binds its seed, original tile denominator and planting day to the
 existing run plan/layout. Ownership requires the original Teacher decision and
 exact crop-specific claim purpose; equal seed ID or decision ID alone is not
@@ -70,6 +73,8 @@ ingested planning input, not a standalone native-proof or snapshot-import bypass
    real acquired seed-slot delta with the original material/portfolio services;
    do not reserve existing owned seeds again. The Museum-only output-custody
    consumer contract must not be repurposed or widened for ordinary crop seeds.
+   Release any verified surplus/unused purchase budget through the original
+   portfolio boundary on completion or cancellation; do not hide it in a projection.
 5. Chest staging uses original prepared-transfer/native-slot reservation
    projection and settlement, including shared-slot and chest-compaction effects
    on other claims. A projected intent alone cannot authorize movement of claims.
@@ -95,12 +100,16 @@ introduced by this plumbing.
 
 ## Validation
 
-19 new checks cover owned versus native totals, exact purchase shortfall and
+21 new checks cover owned versus native totals, exact purchase shortfall and
 budget, real additional claims rather than unowned inventory growth, another
 crop of the same seed/decision, source/actor/slot/quality/type/location/calendar
-drift, chest route/transfer and original locked-chest rejection. Synthetic test
+drift, chest route/transfer, original locked-chest rejection and early refusal of
+foreign-player/non-chest external custody. The foreign-player regression was red
+before the new consumer guard was corrected. Synthetic test
 data is not native evidence. The original13 planner checks are compiled from
 their existing source, including the whole legacy first-day progression.
-Complete Backend701/701 and Core2442/2442 pass, zero skipped tests. Original full
+Complete Backend703/703 and Core2442/2442 pass, zero skipped tests. Original full
 hermetic and final Release build (zero warnings/errors) also pass. Exact-head CI
-is recorded at PR closeout.
+is recorded at PR closeout. The final narrow currency projection passes74 focused
+checks covering owned supply, all original planner cases and original live-ledger/
+installation boundaries; it does not serialize unrelated player domains.
