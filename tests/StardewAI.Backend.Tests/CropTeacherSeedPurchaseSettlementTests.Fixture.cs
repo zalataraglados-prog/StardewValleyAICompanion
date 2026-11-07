@@ -1,8 +1,6 @@
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
-using StardewAI.Core.Infrastructure;
 using StardewAI.Core.Strategy;
 using StardewAI.GoalConditionedBootstrap;
 using StardewAI.Testing;
@@ -38,36 +36,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             Directory.CreateDirectory(root);
             Before = MoneyCropTeacherFixture.CreateSnapshot("SeedAcquisitionRuntimeBoundary",
                 MoneyCropTeacherFixture.CreateSnapshot("MoneyCropProductionSnapshot"));
-            var clock = JsonNode.Parse(Before.State["time"].GetRawText())!;
-            clock["time"] = JsonSerializer.SerializeToNode(new { status = "available", confidence = 1d, value = 600 }, JsonOptions);
-            Before.State["time"] = JsonSerializer.SerializeToElement(clock, JsonOptions);
-            Before.InGameTime = new FieldEnvelope<int?> { Status = FieldStatus.Available, Value = 600 };
-            var player = JsonNode.Parse(Before.State["player"].GetRawText())!;
-            player["money"]!["value"] = 350 + budget;
-            player["shop_currency_balances"] = JsonSerializer.SerializeToNode(new
-            {
-                status = "available", confidence = 1d, value = new
-                {
-                    schema_version = "shop_currency_balances.v1",
-                    projection_status = "complete_locked_base_1.6.15_shop_menu_currency_domain",
-                    supported_currency_ids = NativeShopCurrencies.All.Select(row => row.Id),
-                    rows = NativeShopCurrencies.All.Select(row => new { currency_id = row.Id, currency_key = row.Key,
-                        balance = row.Id == 0 ? 350 + budget : 0 })
-                }
-            }, JsonOptions);
-            player["money"]!["confidence"] = 1d;
-            Before.State["player"] = JsonSerializer.SerializeToElement(player, JsonOptions);
-            var farm = JsonNode.Parse(Before.State["farm"].GetRawText())!;
-            farm["material_inventory_graph"]!["confidence"] = 1d;
-            var node = farm["material_inventory_graph"]!["value"]!["inventory_nodes"]![0]!;
-            node["location_id"] = "Farm";
-            node["capacity"] = 12;
-            node["slots"]![0]!["quality"] = 0;
-            node["slots"]![0]!["maximum_stack_size"] = 999;
-            node["slots"]![0]!["runtime_type"] = "StardewValley.Object";
-            farm["crops"] = JsonSerializer.SerializeToNode(new { status = "available", confidence = 1d, value = Array.Empty<object>() }, JsonOptions);
-            Before.State["farm"] = JsonSerializer.SerializeToElement(farm, JsonOptions);
-            Before.StateHash = SnapshotHash.ComputeStateHash(Before.State);
+            CropTeacherNativeSupportFixture.CompleteResources(Before, 350 + budget);
             CropRequest = new CropPlantingCommitmentUpsertRequest
             {
                 StateHash = Before.StateHash, CommitmentId = Id, SourceDecisionId = "teacher.crop.owner", SeedId = "745",

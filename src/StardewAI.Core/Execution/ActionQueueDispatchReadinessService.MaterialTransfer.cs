@@ -22,6 +22,7 @@ public sealed partial class ActionQueueDispatchReadinessService
                 row.Name == PreparedMaterialTransferContract.BindingParameter ||
                 row.Name is "material_transfer_intent_json" or "material_transfer_projection_json" ||
                 row.Name.StartsWith("acquisition_", StringComparison.Ordinal) ||
+                CropSeedMaterialTransferBinding.IsControlParameter(row.Name) ||
                 MuseumOutputCustodyTransferBinding.IsControlParameter(row.Name))
             .GroupBy(row => row.Name, StringComparer.Ordinal).Any(group => group.Count() != 1))
             reasons.Add("dispatch_material_transfer_parameters_not_unique");
@@ -34,6 +35,7 @@ public sealed partial class ActionQueueDispatchReadinessService
         var bound = ledger.PreparedMaterialTransfer is not null ||
             parameters.Any(row => row.Name == PreparedMaterialTransferContract.BindingParameter) ||
             !string.IsNullOrWhiteSpace(item.NormalizedCommand.GoalId) ||
+            parameters.Any(row => CropSeedMaterialTransferBinding.IsControlParameter(row.Name)) ||
             parameters.Any(row => MuseumOutputCustodyTransferBinding.IsControlParameter(row.Name)) ||
             parameters.Any(row => row.Name.StartsWith("acquisition_", StringComparison.Ordinal)) ||
             intent is not null && ledger.MaterialReservations.Any(row => row.Status == StrategyCommitmentStatuses.Active &&
@@ -44,7 +46,13 @@ public sealed partial class ActionQueueDispatchReadinessService
             var prepared = ledger.PreparedMaterialTransfer;
             result.RequiredLedgerId = ledger.LedgerId;
             result.RequiredLedgerRevision = prepared?.ExpectedLedgerRevision;
-            if (parameters.Any(row => MuseumOutputCustodyTransferBinding.IsControlParameter(row.Name)))
+            if (parameters.Any(row => CropSeedMaterialTransferBinding.IsControlParameter(row.Name)))
+            {
+                if (!CropSeedMaterialTransferBinding.IsBound(item, ledger))
+                    reasons.Add("dispatch_crop_seed_transfer_binding_drifted");
+                else validatedPreparation = prepared;
+            }
+            else if (parameters.Any(row => MuseumOutputCustodyTransferBinding.IsControlParameter(row.Name)))
             {
                 if (!MuseumOutputCustodyTransferBinding.IsBound(item, ledger) ||
                     JsonSerializer.Serialize(intent) != JsonSerializer.Serialize(prepared?.Intent))

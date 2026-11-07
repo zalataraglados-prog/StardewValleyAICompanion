@@ -109,7 +109,9 @@ public sealed class CropTeacherOwnedSeedSupply
         .OrderBy(row => row.NodeId, StringComparer.Ordinal).ThenBy(row => row.SlotIndex)
         .ThenBy(row => row.ReservationId, StringComparer.Ordinal).FirstOrDefault();
 
-    public MaterialTransferIntent TransferIntent(CropTeacherOwnedSeedSlot slot)
+    public MaterialTransferIntent TransferIntent(CropTeacherOwnedSeedSlot slot) => ProjectTransfer(slot).Intent;
+
+    internal (MaterialTransferIntent Intent, MaterialTransferProjection Projection) ProjectTransfer(CropTeacherOwnedSeedSlot slot)
     {
         Require(Commitments.SelectMany(row => row.Slots).Contains(slot) && slot.InventoryKind == "chest",
             "Managed crop seed transfer does not belong to the selected owned supply.");
@@ -122,7 +124,7 @@ public sealed class CropTeacherOwnedSeedSupply
         var projection = new MaterialTransferProjector().Project(graph, intent);
         Require(projection.Status == "projected",
             "Managed crop seed transfer native projection is blocked: " + string.Join(",", projection.BlockingReasons));
-        return intent;
+        return (intent, projection);
     }
 
     private IEnumerable<CropTeacherOwnedSeedCommitment> Select(IEnumerable<string> ids)
