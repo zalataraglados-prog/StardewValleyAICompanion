@@ -1,5 +1,11 @@
 # StardewAI 当前工作
 
+## 2026-11-07 Money显式局部重放来源绑定（当前唯一接续）
+
+- #489经38步CI接受、合入`75d1a8ab`。H真实Gold出售后发生调用端同名程序集加载失败；保留原失败记录，干净依赖子进程离线复用原raw/nonce reader及原episode factory，再原终端/预留/账本/recurrence验证，实际累计收入`0→20,000`，没有重售或改写旧来源。原始caller/数据仓库外。
+- 新v1来源绑定仅支持声明持有库存、直接普通商店出售、revision0无承诺的隔离研究账本。独立重建两侧完整来源，全部候选/拒绝项精确一致、完整请求双射；绑定源档/副本、测前设置/Mod记录、实际run/root、执行构建身份、账本及原持久边界。只允许分别与原生请求绑定的run/path两项持久差异，未知义务不丢弃；复用旧验证器，不改共享执行或同帧门。[详细合同](money-counterfactual-source-binding.md#implemented-local-source-binding)。最终E构建零警告/错误、完整hermetic、25边界反例及10类公开反例通过，真实11候选/2请求重建同SHA`c9acb7f5...`；本轮CI见收口。
+- **唯一下一步：** 版本化重放感知比较消费者，重验每条实际替代结果后调用原比较/准入，再corpus及缺分区。来源绑定不是比较标签；G旧同帧checkpoint仍`1/2`，不把H伪装成G片段。并集保持`13/19、13/19、13/19、10/11 roots`、formal=false；新档获取/共享预算/Teacher21/Student和原全局collector义务不减，无worker/API或产品训练。
+
 ## 2026-11-07 Money反事实来源合同（当前唯一接续）
 
 - #488经38步CI接受、合入`b3874405`，原G出售和`1/2`终端证明不重采。核对确认旧计划只有采集任务描述，没有可恢复的原生分叉器；完整哈希含读取tick/执行身份，不能把独立重放叫作G原帧。[来源绑定及按序接续](money-counterfactual-source-binding.md)。
