@@ -12,8 +12,10 @@ internal sealed class MoneyCropTeacherFixture : IDisposable
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    internal static SnapshotEnvelope CreateSnapshot(string name, params object[] arguments) =>
-        (SnapshotEnvelope)typeof(MoneyRevenueCropProductionTeacherDecisionBuilder).Assembly
+    internal static SnapshotEnvelope CreateSnapshot(string name, params object[] arguments) => Create<SnapshotEnvelope>(name, arguments);
+
+    internal static T Create<T>(string name, params object[] arguments) =>
+        (T)typeof(MoneyRevenueCropProductionTeacherDecisionBuilder).Assembly
             .GetType("StardewAI.GoalConditionedBootstrap.BootstrapSelfTest")!
             .GetMethod(name, BindingFlags.NonPublic | BindingFlags.Static)!.Invoke(null, arguments)!;
 

@@ -85,4 +85,5 @@ public sealed class CropTeacherSeedTransferSupport
     }
 
     internal void ValidateInputsUnchanged() => source.ValidateInputsUnchanged();
+    internal CropTeacherSeedSupportSource Source => source;
 }

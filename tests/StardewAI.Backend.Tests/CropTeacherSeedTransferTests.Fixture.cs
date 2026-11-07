@@ -18,7 +18,7 @@ public sealed partial class CropTeacherSeedTransferTests
     private const string Timestamp = "2026-11-07T06:00:00Z";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    private sealed class Fixture : IDisposable
+    private sealed partial class Fixture : IDisposable
     {
         private readonly string root = Path.Combine(Path.GetTempPath(), "crop-seed-transfer-" + Guid.NewGuid().ToString("N"));
         internal SnapshotEnvelope Before { get; }
@@ -30,7 +30,8 @@ public sealed partial class CropTeacherSeedTransferTests
         internal string RequestPath => Path.Combine(root, "request.json");
         internal string RepositoryPath => Path.Combine(root, "repository");
 
-        internal Fixture(bool multipleDestinations = true, Action<MaterialInventoryGraph>? change = null)
+        internal Fixture(bool multipleDestinations = true, Action<MaterialInventoryGraph>? change = null,
+            bool nativeEvidence = false, bool depleteSource = false, bool emptyChest = false, bool noPlayerSeed = false)
         {
             Directory.CreateDirectory(root);
             Before = MoneyCropTeacherFixture.CreateSnapshot("SeedAcquisitionRuntimeBoundary",
@@ -43,8 +44,9 @@ public sealed partial class CropTeacherSeedTransferTests
             var player = graph.InventoryNodes[0];
             player.NodeId = "player:123";
             foreach (var node in graph.InventoryNodes) node.OwnerPlayerId = 123;
-            player.Slots = new[] { Slot(0, "(O)745", multipleDestinations ? 998 : 20) };
-            graph.InventoryNodes[1].Slots = new[] { Slot(5, "(O)745", 12), Slot(9, "(O)390", 3) };
+            player.Slots = noPlayerSeed ? System.Array.Empty<MaterialInventorySlot>() : new[] { Slot(0, "(O)745", multipleDestinations ? 998 : 20) };
+            graph.InventoryNodes[1].Slots = new[] { Slot(5, "(O)745", depleteSource || emptyChest ? 10 : 12), Slot(9, "(O)390", 3) }
+                .Where(row => !emptyChest || row.QualifiedItemId == "(O)745").ToArray();
             graph.InventoryNodes[2].Slots = new[] { Slot(0, "(O)330", 7) };
             graph.PhysicalInventoryCount = graph.InventoryNodes.Length;
             graph.AccessPointCount = graph.DeduplicatedAccessPointCount = graph.AccessPoints.Length;
@@ -56,7 +58,6 @@ public sealed partial class CropTeacherSeedTransferTests
             farm["material_inventory_graph"] = JsonNode.Parse(native.State["farm"].GetProperty("material_inventory_graph").GetRawText());
             farm["material_inventory_graph"]!["value"] = JsonSerializer.SerializeToNode(graph, JsonOptions);
             farm["material_inventory_graph"]!["read_at_tick"] = Before.GameTick;
-            Before.State["farm"] = JsonSerializer.SerializeToElement(farm, JsonOptions);
             var actor = JsonNode.Parse(Before.State["player"].GetRawText())!;
             actor["location_id"] = JsonNode.Parse(native.State["player"].GetProperty("location_id").GetRawText());
             actor["tile_x"] = JsonNode.Parse(native.State["player"].GetProperty("tile_x").GetRawText());
@@ -66,6 +67,8 @@ public sealed partial class CropTeacherSeedTransferTests
                 slot_index = row.SlotIndex, qualified_item_id = row.QualifiedItemId, stack = row.Stack,
                 quality = row.Quality, is_empty = false
             }), JsonOptions);
+            if (nativeEvidence) CompleteNativeEchoes(farm.AsObject(), actor.AsObject(), graph);
+            Before.State["farm"] = JsonSerializer.SerializeToElement(farm, JsonOptions);
             Before.State["player"] = JsonSerializer.SerializeToElement(actor, JsonOptions);
             Before.StateHash = SnapshotHash.ComputeStateHash(Before.State);
             CropRequest = new CropPlantingCommitmentUpsertRequest
@@ -85,7 +88,8 @@ public sealed partial class CropTeacherSeedTransferTests
                     Claim("other-seeds", "other-root", "chest:Farm:4,5", 5, "(O)745", 2, "other-supply"),
                     Claim("other-stone", "other-root", "chest:Farm:4,5", 9, "(O)390", 1, "other-supply"),
                     Claim("outside", "other-root", "chest:Farm:8,5", 0, "(O)330", 1, "other-supply")
-                }
+                }.Where(row => !(depleteSource || emptyChest) || row.ReservationId != "other-seeds")
+                    .Where(row => !emptyChest || row.ReservationId != "other-stone").ToArray()
             };
             var resources = new ReservationPortfolioLedgerService().Commit(crop.Ledger, Before, ResourceRequest, Timestamp);
             Assert.True(resources.Accepted, string.Join(",", resources.Errors));

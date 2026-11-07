@@ -1,5 +1,10 @@
 # Owned Crop Seed Transfer Preparation
 
+> Current successor: [native-format outcome and original settlement](money-crop-seed-native-settlement.md).
+> That kernel is implemented; original runtime/journal wiring, owned planting,
+> lifecycle release, managed activation and actual native sampling remain explicit
+> next work. The preparation-only statements below describe this slice's scope.
+
 ## Scope And Accepted Parent
 
 PR509 merged as `8e540c72c3521efa7b3b7c729c3a41f2f399667d` after all42

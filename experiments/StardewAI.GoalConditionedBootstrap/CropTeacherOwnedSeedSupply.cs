@@ -137,7 +137,7 @@ public sealed class CropTeacherOwnedSeedSupply
 
     private static int Sum(IEnumerable<int> values) => checked((int)values.Sum(value => (long)value));
 
-    private static void VerifyPlayerSlots(SnapshotEnvelope snapshot, MaterialInventoryNode player)
+    internal static void VerifyPlayerSlots(SnapshotEnvelope snapshot, MaterialInventoryNode player)
     {
         if (!snapshot.State["player"].TryGetProperty("inventory", out var value))
             throw new InvalidDataException("Managed crop native player inventory is unavailable.");
