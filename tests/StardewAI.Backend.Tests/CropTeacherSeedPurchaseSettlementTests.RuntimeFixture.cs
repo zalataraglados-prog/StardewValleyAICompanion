@@ -14,7 +14,7 @@ namespace StardewAI.Backend.Tests;
 
 public sealed partial class CropTeacherSeedPurchaseSettlementTests
 {
-    private sealed class RuntimeFixture : IDisposable
+    internal sealed class RuntimeFixture : IDisposable
     {
         private readonly WebApplicationFactory<global::Program> app;
         private readonly Fixture files;
@@ -52,8 +52,9 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         }
 
         public Task<CropTeacherSeedPurchaseRuntime> Prepare(MoneyRevenueCropNativeLifecycleTransitionRequest transition,
-            Func<Task<string>>? compile = null, CropTeacherSeedPurchaseSupport? selectedScope = null) => CropTeacherSeedPurchaseRuntime.PrepareAsync(Client,
-                new(LiveOptions.BackendUrl, files.RuntimePath, transition.RunId, transition.ExecutorVersion), selectedScope ?? files.Open(),
+            Func<Task<string>>? compile = null, CropTeacherSeedPurchaseSupport? selectedScope = null,
+            string? runtimeDirectory = null) => CropTeacherSeedPurchaseRuntime.PrepareAsync(Client,
+                new(LiveOptions.BackendUrl, runtimeDirectory ?? files.RuntimePath, transition.RunId, transition.ExecutorVersion), selectedScope ?? files.Open(),
                 (diagnostic, request) => InvokeLive<Task<JsonObject>>("PostJournaledPortfolioCommitAsync", Client, LiveOptions, diagnostic, request),
                 (diagnostic, request) => InvokeLive<Task<JsonObject>>("PostJournaledPortfolioSettlementAsync", Client, LiveOptions, diagnostic, request),
                 (path, json) =>

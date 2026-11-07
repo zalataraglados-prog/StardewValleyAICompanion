@@ -60,8 +60,8 @@ public sealed partial class CropTeacherSeedTransferTests
 
         internal Task<CropTeacherSeedTransferRuntime> Prepare(CropTeacherSeedTransferSupport? scope = null,
             Func<CropTeacherSeedTransferMarker, CropTeacherSeedTransferExecutionPlan, Task<string>>? compile = null,
-            string? expectedLocation = null) => CropTeacherSeedTransferRuntime.PrepareAsync(Client,
-                new(Options.BackendUrl, files.RuntimePath, Options.RunId, Options.PolicyTrajectoryExecutorVersion),
+            string? expectedLocation = null, string? runtimeDirectory = null) => CropTeacherSeedTransferRuntime.PrepareAsync(Client,
+                new(Options.BackendUrl, runtimeDirectory ?? files.RuntimePath, Options.RunId, Options.PolicyTrajectoryExecutorVersion),
                 scope ?? files.Open(),
                 (diagnostic, request) => InvokeLive<Task<JsonObject>>("PostJournaledPortfolioCommitAsync", Client, Options, diagnostic, request),
                 (diagnostic, request) => InvokeLive<Task<JsonObject>>("PostJournaledPortfolioSettlementAsync", Client, Options, diagnostic, request),

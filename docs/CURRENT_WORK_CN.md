@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-11-08 R2唯一持久seed阶段所有者（当前唯一接续）
+
+- #519最终head `d516a287`经42步CI `42417971193`及同head审查接受，合入`94223ee1`，Core2443/Backend1076零失败/跳过，核树且清自有分支。原事务恢复消费者不重做。
+- 本片接同一原完整plan/request/input/run/executor及初始源/完整账本，OS排他租约加实例串行准入，持久单个pending及追加式接受；实际原sealed runtime私有证书核scope/marker/原batch/claim，正常接受复用已验上下文、不增加后端读或原生proof重建。重启先恢复pending；无pending的已接受head仍须原恢复核完整backend边界。写入不确定则本实例拒绝继续，未知原执行不清不重发。原执行器/旧恢复/种植上限和默认行为不改。[合同与明确遗留](money-crop-managed-phase-owner.md)。
+- 首17项中16通过，新增种植夹具把真实planner步骤混用硬编码batch/claim，已仅修新adapter原样传步骤。PR审查指出新证书漏核backend，已先复现错误接受、再只补新证书/所有者的精确规范origin绑定，保证原intent/journal重启身份，不改旧runtime默认。最终owner26/26零跳过，含选槽/部分消费、回包/接受确认丢失、可变返回DTO、排他/并发、坏索引/目录冲突及异后端拒绝。收尾新增反例前相关380/380通过；旧恢复9/9在显式E原生依赖还原后通过（首次no-restore残留治理profile缺游戏引用，不改生产代码绕过）。最终CI见本片收口；合成原生格式不冒充新游戏证据。
+- **唯一下一步：** 本片发布后继续同一所有者的未pin/部分准备、缺native proof/零派发与未知执行区分、未派发业务变更及生命周期跨进程恢复；复用原journal/lookup和取消/日历/释放路径。再接原行走维护/原生保存连续性，保持活动作物binder拒绝和idle边界，接齐才显式managed激活/有界原生样本。随后原联合日历/聚合预算/跨根连续性、Provider/模型与manifest/preflight。L1`19/19、11/11`和formal=false保持，Student新档21/21在训练后。无游戏/服务器/worker/API，local-data不提交。下方为历史。
+
 ## 2026-11-08 R2原事务恢复边界（当前唯一接续）
 
 - #518经同head审查/42步CI `42415768717`接受合入`cdaa347e`，Core2443/Backend1062零失败/跳过且核树清分支。唯一scope选择已接受，不重做。

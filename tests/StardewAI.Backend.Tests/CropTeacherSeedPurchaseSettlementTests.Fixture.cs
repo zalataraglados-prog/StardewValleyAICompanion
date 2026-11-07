@@ -31,7 +31,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         public ReservationPortfolioCommitRequest OtherRequest { get; }
         public ReservationPortfolioCommitRequest OwnRequest { get; }
 
-        public Fixture(int tiles = 2, int budget = 80, int ownedSeeds = 1)
+        public Fixture(int tiles = 2, int budget = 80, int ownedSeeds = 1, int otherSeeds = 2)
         {
             Directory.CreateDirectory(root);
             Before = MoneyCropTeacherFixture.CreateSnapshot("SeedAcquisitionRuntimeBoundary",
@@ -49,7 +49,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             {
                 StateHash = Before.StateHash, ExpectedLedgerRevision = Ledger.Revision,
                 PortfolioId = "other-resources", SourceDecisionId = "other-root", GoalId = "complete_full_shipment",
-                MaterialClaims = new[] { SeedClaim("other-seeds", "other-root", "complete_full_shipment", "other supply", 2) },
+                MaterialClaims = new[] { SeedClaim("other-seeds", "other-root", "complete_full_shipment", "other supply", otherSeeds) },
                 CurrencyClaims = new[] { CashClaim("other-money", "other-root", "complete_full_shipment", "other funds", 350) }
             };
             var other = new ReservationPortfolioLedgerService().Commit(Ledger, Before, OtherRequest, RecordedAt);
