@@ -21,6 +21,11 @@ internal sealed partial class CropTeacherSeedRuntimeTransaction
     private readonly Func<string, string, Task> write;
     private int completionStarted;
 
+    internal string PreparedQueuePath => queuePath;
+    internal string PreparedQueueSha256 => queueSha256;
+    internal Task<StrategyLedgerEvidence> ReadOriginalAuthorityAsync() =>
+        ReadLedgerAsync(http, options, marker.Ledger.SourceStateHash, "Crop seed original batch authority");
+
     private CropTeacherSeedRuntimeTransaction(HttpClient http, CropSeedRuntimeOptions options,
         CropSeedRuntimeScopeBinding scope, CropSeedRuntimeMarkerBinding marker, string queuePath,
         string queueSha256, JsonNode preparedQueue, JsonObject diagnostic,
@@ -69,6 +74,7 @@ internal sealed partial class CropTeacherSeedRuntimeTransaction
         Exception? failure = null;
         try
         {
+            if (scope.PreparationDetails is not null) diagnostic["preparation_details"] = scope.PreparationDetails.DeepClone();
             await write(Path.Combine(output, "support-intent.json"), diagnostic.ToJsonString(JsonOptions));
             var before = await ReadLedgerAsync(http, options, request.StateHash, "Crop seed support base");
             RequireLedger(scope.ReadBaseLedger(), before.Ledger, "base");

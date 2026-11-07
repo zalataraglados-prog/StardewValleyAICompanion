@@ -11,7 +11,7 @@ using StardewAI.LiveTrainingLoop;
 
 static partial class Program
 {
-    private static async Task<JsonObject> ExecuteRuntimeTestHarnessAsync(
+    private static async Task<JsonObject> ExecuteRuntimeTestHarnessCoreAsync(
         HttpClient http,
         HttpClient executorHttp,
         LiveTrainingOptions options,
@@ -33,7 +33,8 @@ static partial class Program
         List<JsonObject> suppressedObjectiveContinuations,
         bool useDailyPlanDecisionLease = true,
         string? executionSnapshotUrlOverride = null,
-        string? executionSnapshotProfileOverride = null)
+        string? executionSnapshotProfileOverride = null,
+        ICropTeacherSeedPrefixRuntime? seedPrefix = null)
     {
         var useDailyPlan = options.UseDailyPlan && useDailyPlanDecisionLease;
         var queueItems = ExecutableQueueItems(queue);
@@ -98,6 +99,7 @@ static partial class Program
         var currentBeforeSnapshot = beforeSnapshot;
         var currentBeforeSnapshotPath = beforeSnapshotPath;
         var currentStateHash = stateHash;
+        JsonObject? ownedSeedControllerStop = null;
         var originalPlannedItemCount = queueItems.Length;
         var finalAfterJson = beforeSnapshot.ToJsonString(JsonOptions);
         JsonObject? finalExecution = null;
@@ -372,6 +374,22 @@ static partial class Program
                 queueItems[itemIndex] = item;
             }
 
+            if (seedPrefix is not null || CropSeedPlantingBinding.IsPresent(
+                    item.Deserialize<ActionQueueItem>(JsonOptions)?.NormalizedCommand.Parameters))
+            {
+                try
+                {
+                    if (seedPrefix is null) throw new InvalidDataException("Owned planting requires its verified runtime prefix owner.");
+                    await seedPrefix.ValidateBeforeDispatchAsync(itemIndex, item, currentBeforeSnapshot, currentBeforeSnapshotPath);
+                }
+                catch (Exception error) when (error is InvalidDataException or IOException or JsonException or HttpRequestException)
+                {
+                    ownedSeedControllerStop = new JsonObject { ["index"] = itemIndex, ["reason"] = error.Message,
+                        ["current_snapshot_path"] = currentBeforeSnapshotPath, ["native_request_performed"] = false };
+                    if (seedPrefix is not null) await seedPrefix.RecordControllerStopAsync(itemIndex, currentBeforeSnapshotPath, error.Message);
+                    break;
+                }
+            }
             dispatchReadiness ??= await ReadDispatchReadinessAsync(
                 http,
                 options,
@@ -497,6 +515,25 @@ static partial class Program
             attemptedSemanticKeys.Add(itemSemanticKey);
 
             var executionStatus = ReadString(execution, "status");
+            if (seedPrefix is not null)
+            {
+                execution["selected_queue_candidate_completed"] = executionStatus == "applied" &&
+                    itemIndex == originalPlannedItemCount - 1 && attemptedCount == originalPlannedItemCount;
+                try { await seedPrefix.ObserveNativeStepAsync(execution, afterPath); execution["owned_seed_prefix_verified"] = true; }
+                catch (Exception error) when (error is InvalidDataException or IOException or JsonException)
+                {
+                    execution["owned_seed_native_verification_status"] = execution["primitive_verification_status"]?.DeepClone();
+                    execution["primitive_verification_status"] = "owned_seed_prefix_unverified";
+                    execution["owned_seed_prefix_error"] = error.Message;
+                    execution["owned_seed_prefix_verified"] = false;
+                    execution["selected_queue_candidate_completed"] = false;
+                    execution["selected_queue_redecision_required"] = true;
+                    await File.WriteAllTextAsync(executionPath, execution.ToJsonString(JsonOptions), Encoding.UTF8);
+                    stepResults.Add(JsonNode.Parse(execution.ToJsonString(JsonOptions)));
+                    finalExecution = execution;
+                    break;
+                }
+            }
             var completedContinuationThisStep = false;
             var continuationForCompletion = activeObjectiveContinuation;
             if (continuationForCompletion is null &&
@@ -809,7 +846,9 @@ static partial class Program
             var nextCandidateId = EffectiveDecisionArtifactTracker.ReadQueueItemCandidateId(
                 nextItem);
             var selectedCandidateCompleted =
-                options.UseTeacherPreferenceQueue || options.UsePrecompiledQueue
+                seedPrefix is not null
+                ? execution["selected_queue_candidate_completed"]?.GetValue<bool>() == true
+                : options.UseTeacherPreferenceQueue || options.UsePrecompiledQueue
                 ? string.Equals(
                         executionStatus,
                         "applied",
@@ -838,6 +877,7 @@ static partial class Program
             options.SnapshotArtifactMode);
         var aggregate = JsonNode.Parse((finalExecution ?? new JsonObject()).ToJsonString(JsonOptions))?.AsObject() ?? new JsonObject();
         aggregate["effective_before_state_hash"] = stateHash;
+        if (ownedSeedControllerStop is not null) aggregate["owned_seed_controller_stop"] = ownedSeedControllerStop;
         aggregate["effective_before_snapshot_path"] = beforeSnapshotPath;
         aggregate["queue_execution_mode"] = "sequential_queue_items";
         aggregate["planned_item_count"] = originalPlannedItemCount;

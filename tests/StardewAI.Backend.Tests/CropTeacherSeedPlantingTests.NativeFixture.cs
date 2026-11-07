@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
 using StardewAI.GoalConditionedBootstrap;
@@ -9,16 +10,16 @@ namespace StardewAI.Backend.Tests;
 
 public sealed partial class CropTeacherSeedPlantingTests
 {
-    private sealed partial class Fixture
+    internal sealed partial class Fixture
     {
         internal string ProofPath => Path.Combine(root, "planting-proof.json");
         internal SnapshotEnvelope After { get; private set; } = null!;
         internal MoneyRevenueCropNativeLifecycleTransitionRequest NativeTransition(CropTeacherSeedPlantingMarker marker,
             int consumed = 8, bool failedSuffix = false, Action<SnapshotEnvelope>? change = null,
             Action<QueueExecutionReceiptEnvelope>? receiptChange = null, bool firstSlot = false,
-            Action<SnapshotEnvelope>? suffixChange = null)
+            Action<SnapshotEnvelope>? suffixChange = null, ActionQueueEnvelope? compiledQueue = null)
         {
-            var queue = Compile(marker, marker.BuildActions(Batch(), firstSlot ? null : OwnedSlotOne));
+            var queue = compiledQueue ?? Compile(marker, marker.BuildActions(Batch(), firstSlot ? null : OwnedSlotOne));
             consumed = Math.Min(consumed, queue.Items.Length);
             var snapshots = new SnapshotEnvelope[queue.Items.Length];
             var paths = Enumerable.Range(0, queue.Items.Length).Select(index => Path.Combine(root, "step-" + index + ".json")).ToArray();

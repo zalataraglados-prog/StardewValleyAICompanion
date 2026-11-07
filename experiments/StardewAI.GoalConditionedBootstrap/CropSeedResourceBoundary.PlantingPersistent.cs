@@ -19,12 +19,13 @@ internal static partial class CropSeedResourceBoundary
     private static void VerifyPlantingPersistentState(SnapshotEnvelope before, SnapshotEnvelope after)
     {
         var state = new Dictionary<string, JsonElement>(after.State, StringComparer.Ordinal);
-        var farm = JsonNode.Parse(after.State["farm"].GetRawText())!.AsObject();
         var prior = Field(before, "farm", "crops")!;
         // The full crop delta was verified above; normalize only that value in a comparison view.
-        farm["crops"]!["value"] = Value(prior).DeepClone();
-        farm.Remove("material_inventory_graph");
-        state["farm"] = JsonSerializer.SerializeToElement(farm, JsonDefaults.Options);
+        var comparedCrops = Field(after, "farm", "crops")!;
+        comparedCrops["value"] = Value(prior).DeepClone();
+        state["farm"] = JsonSerializer.SerializeToElement(after.State["farm"].EnumerateObject()
+            .Where(row => row.Name != "material_inventory_graph").ToDictionary(row => row.Name,
+                row => row.Name == "crops" ? JsonSerializer.SerializeToElement(comparedCrops, JsonDefaults.Options) : row.Value), JsonDefaults.Options);
         const string field = "game_state_query_unlock_state";
         var expectedStats = Field(before, "world_progress", field, required: false);
         var actualStats = Field(after, "world_progress", field, required: false);

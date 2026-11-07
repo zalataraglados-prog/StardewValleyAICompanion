@@ -783,7 +783,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             (!string.IsNullOrWhiteSpace(cropQueue.InterruptKind)
                 ? null
                 : cropStep);
-        cropSeedSupportForExecution = (ICropTeacherSeedRuntime?)cropQueue.SeedTransferSupport ?? cropQueue.SeedPurchaseSupport;
+        cropSeedSupportForExecution = (ICropTeacherSeedRuntime?)cropQueue.SeedPlantingSupport ?? cropQueue.SeedTransferSupport ?? (ICropTeacherSeedRuntime?)cropQueue.SeedPurchaseSupport;
         if (cropQueue.SitePreparationComplete)
         {
             if (!cropTeacherPreparedCommitmentIds.Add(
@@ -1491,7 +1491,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             ? new List<JsonObject>()
             : suppressedObjectiveContinuations;
         var execution = options.UseRuntimeTestHarnessExecutor
-            ? await ExecuteRuntimeTestHarnessAsync(http, executorHttp, options, iteration, snapshotPath, beforeSnapshot, queue, lastStateHash, lastQueueId, decisionModelPlanPath, decisionRankingPath, decisionCompiledQueuePath, decisionSnapshotPath, decisionSourceStateHash, selectedCandidateId, selectedQueueIndex, queuePath, deferredObjectiveContinuationForDailyMaintenance is null ? activeObjectiveContinuation : null, executionSuppressedContinuations, useDailyPlanDecisionLease, executionSnapshotUrl, executionSnapshotProfile)
+            ? await ExecuteRuntimeTestHarnessCoreAsync(http, executorHttp, options, iteration, snapshotPath, beforeSnapshot, queue, lastStateHash, lastQueueId, decisionModelPlanPath, decisionRankingPath, decisionCompiledQueuePath, decisionSnapshotPath, decisionSourceStateHash, selectedCandidateId, selectedQueueIndex, queuePath, deferredObjectiveContinuationForDailyMaintenance is null ? activeObjectiveContinuation : null, executionSuppressedContinuations, useDailyPlanDecisionLease, executionSnapshotUrl, executionSnapshotProfile, cropSeedSupportForExecution as ICropTeacherSeedPrefixRuntime)
             : await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/action-queues/" + Uri.EscapeDataString(lastQueueId) + "/execute-training-sandbox", "{}");
         if (cropSeedSupportForExecution is not null)
             await cropSeedSupportForExecution.CompleteAsync(queuePath, ReadString(execution, "execution_path"),

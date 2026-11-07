@@ -22,10 +22,11 @@ static partial class Program
         string InterruptKind = "",
         CropTeacherRunStep? ExecutionStepOverride = null,
         CropTeacherSeedPurchaseRuntime? SeedPurchaseSupport = null,
-        CropTeacherSeedTransferRuntime? SeedTransferSupport = null);
+        CropTeacherSeedTransferRuntime? SeedTransferSupport = null,
+        CropTeacherSeedPlantingRuntime? SeedPlantingSupport = null);
 
     private static async Task<CropTeacherControlQueueBuildResult>
-        BuildCropTeacherControlQueueAsync(
+        BuildCropTeacherControlQueueCoreAsync(
             HttpClient http,
             LiveTrainingOptions options,
             int iteration,
@@ -36,7 +37,8 @@ static partial class Program
             JsonObject beforeSnapshot,
             string stateHash,
             CropTeacherSeedPurchaseSupport? seedSupport = null,
-            CropTeacherSeedTransferSupport? transferSupport = null)
+            CropTeacherSeedTransferSupport? transferSupport = null,
+            CropTeacherSeedPlantingSupport? plantingSupport = null)
     {
         if (HasPriorityStoryEventInterrupt(beforeSnapshot))
         {
@@ -157,6 +159,9 @@ static partial class Program
 
         return step.Stage switch
         {
+            CropTeacherRunStageKinds.ExecuteCropBatch when plantingSupport is not null && step.ActionBatch?.OptionId == "executor.plant_seed" =>
+                await BuildCropTeacherSeedPlantingQueueAsync(http, options, iteration, step, beforeSnapshotPath,
+                    beforeSnapshot, stateHash, plantingSupport),
             CropTeacherRunStageKinds.TransferSeedSupply when transferSupport is not null =>
                 await BuildCropTeacherSeedTransferQueueAsync(http, options, iteration, step, beforeSnapshotPath,
                     beforeSnapshot, stateHash, transferSupport),

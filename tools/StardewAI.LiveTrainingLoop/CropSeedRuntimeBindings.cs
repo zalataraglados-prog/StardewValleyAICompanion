@@ -8,7 +8,8 @@ internal sealed record CropSeedRuntimeOptions(string BackendUrl, string Evidence
 internal sealed record CropSeedRuntimeScopeBinding(string CommitmentId, string SnapshotPath, int TotalDay,
     string TransitionKind, string RuntimeSchema, IReadOnlyDictionary<string, string> InputHashes,
     Func<StrategyCommitmentLedger> ReadBaseLedger, Func<ReservationPortfolioCommitRequest> ReadPreparationRequest,
-    Action ValidateInputsUnchanged, Func<ReservationPortfolioCommitResult, CropSeedRuntimeMarkerBinding> VerifyPreparationReply);
+    Action ValidateInputsUnchanged, Func<ReservationPortfolioCommitResult, CropSeedRuntimeMarkerBinding> VerifyPreparationReply,
+    System.Text.Json.Nodes.JsonObject? PreparationDetails = null);
 
 internal sealed record CropSeedRuntimeMarkerBinding(StrategyCommitmentLedger Ledger, Func<string, string> ValidateQueue,
     Func<MoneyRevenueCropNativeLifecycleTransitionRequest, string, string, CropSeedRuntimeSettlementBinding> VerifyTransition);

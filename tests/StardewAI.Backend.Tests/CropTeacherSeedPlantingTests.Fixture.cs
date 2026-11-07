@@ -12,12 +12,12 @@ public sealed partial class CropTeacherSeedPlantingTests
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    private sealed partial class Fixture : IDisposable
+    internal sealed partial class Fixture : IDisposable
     {
         private readonly string root = Path.Combine(Path.GetTempPath(), "owned-seed-planting-" + Guid.NewGuid().ToString("N"));
         private readonly CropTeacherSeedTransferTests.Fixture transfer;
         internal SnapshotEnvelope Before { get; }
-        internal StrategyCommitmentLedger Ledger { get; }
+        internal StrategyCommitmentLedger Ledger { get; private set; }
         internal string SourcePath => Path.Combine(root, "source.json");
         internal string LedgerPath => Path.Combine(root, "ledger.json");
         internal string RequestPath => Path.Combine(root, "request.json");
@@ -95,6 +95,32 @@ public sealed partial class CropTeacherSeedPlantingTests
                 GoalId = goal, Actor = ExecutionTargetProfiles.CreateActor(ExecutionTargetProfiles.TrainingSingleplayer), Actions = actions
             }, Before, marker.Ledger);
         internal static void Save<T>(string path, T value) => File.WriteAllText(path, JsonSerializer.Serialize(value, JsonOptions));
+
+        internal void RefreshSource(Action<SnapshotEnvelope> change)
+        {
+            var id = "fixture.planting.context.refresh:" + Ledger.Revision;
+            var marked = Repository.CommitReservationPortfolio(Before, new ReservationPortfolioCommitRequest
+            {
+                StateHash = Before.StateHash, ExpectedLedgerRevision = Ledger.Revision, PortfolioId = id,
+                SourceDecisionId = id, GoalId = "earn_money"
+            });
+            Assert.True(marked.Accepted, string.Join(",", marked.Errors));
+            change(Before);
+            Before.StateHash = SnapshotHash.ComputeStateHash(Before.State);
+            var owner = Ledger.CropPlantingCommitments.Single().SourceDecisionId;
+            var rebound = Repository.SettleReservationPortfolioSupportingTransition(Before, new ReservationPortfolioSupportingTransitionSettlementRequest
+            {
+                StateHash = Before.StateHash, ExpectedLedgerRevision = marked.Ledger!.Revision, PortfolioId = id,
+                RouteSourceDecisionId = owner, GoalId = "earn_money", SupportingTransitionReceiptSha256 = Before.StateHash,
+                RebindActiveReservationIds = Ledger.MaterialReservations.Where(row => row.SourceDecisionId == owner &&
+                    row.Status == StrategyCommitmentStatuses.Active).Select(row => row.ReservationId).ToArray(),
+                Reason = "fixture_only_context_refresh"
+            });
+            Assert.True(rebound.Accepted, string.Join(",", rebound.Errors));
+            Ledger = rebound.Ledger!;
+            Save(SourcePath, Before);
+            Save(LedgerPath, Ledger);
+        }
 
         public void Dispose()
         {
