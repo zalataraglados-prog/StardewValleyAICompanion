@@ -1,5 +1,11 @@
 # StardewAI 当前工作
 
+## 2026-11-07 Money既有corpus的v5原生准入（当前唯一接续）
+
+- #491已38步CI接受、合入`6fee622a`。本轮扩展原Money corpus为显式v5来源，不另建系统或伪造旧v2回执；默认v4和同帧门保留。核`0e4086a8`/`6f28fce1`旧意图，仅提取原目标/偏好公共检查，原native artifact/prefix验证不改；新source/join元数据旧记录省略，一组比较服务匹配criterion。[合同与接续](money-shop-replay-corpus.md)。
+- 复用G/H留存源，无新游戏：实际v5正向/反向Build/Verify同各自SHA`57fd1b02...`/`2b4ac8df...`，train六阈值comparison/native合法join；旧v4验证和重新生成均保持`8147889a...`。原工作表接受v5并报告18格中6格完成、两native波次待采、12格缺validation/test，非6/19总进度。21专项反例、17类公开反例及源输出别名拒绝通过，最终hermetic/CI见收口。
+- **唯一下一步：** 按原18格工作表先核原生save/player/day分区，采真正缺失的validation/test来源组，复用E隐藏静音隔离/旧执行链/显式绑定/完整比较/v5准入；不重采G/train、不改policy日期或手写分区、不把反向参考算独立样本、不把H负例当阈值成功。再条件局部Money方法/原覆盖；当前并集仍`13/19、13/19、13/19、10/11 roots`、formal=false，全新档获取/共享承诺与预算/全局collector/Teacher21/Student义务不减。原始数据/caller仓库外，无worker/API、训练、服务器或清理。
+
 ## 2026-11-07 Money完整原生重放比较（当前唯一接续）
 
 - #490经最终38步CI接受、合入`e807e125`，真实来源绑定和G旧`1/2`保留。本轮新增显式版本化比较消费者：精确原请求分母、1个原生参考见证及其余各自实际重放结果，原`VerifyAlternativeWithContext`和原比较器共同验证；保留实际ID/前后态/nonce/费用，不伪造旧同帧回执。[合同及接续](money-shop-replay-comparison.md)。

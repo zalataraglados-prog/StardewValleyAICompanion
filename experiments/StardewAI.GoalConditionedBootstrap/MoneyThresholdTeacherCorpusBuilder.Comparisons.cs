@@ -93,26 +93,12 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
             !receipt.TerminalExecutionProofsVerified ||
             !receipt.ProductionTeacherPreferenceLabelEligible ||
             receipt.FormalProductTrainingAuthorized ||
-            comparison.CriterionId != threshold.CriterionId ||
-            comparison.TargetTotalMoneyEarned != threshold.Target ||
-            comparison.SourceStateHash != receipt.SourceStateHash ||
-            receipt.SourceStateHash != outcome.SourceCheckpoint.StateHash ||
-            comparison.ExpectedLedgerRevision !=
-                receipt.SourceLedgerRevision ||
-            !comparison.CandidateDenominatorComplete ||
-            comparison.CandidateDenominatorCount !=
-                receipt.RequestDenominatorCount ||
-            comparison.SelectionDisposition !=
-                MoneyRevenueAlternativeSelectionDisposition
-                    .UniqueAuthoritativePreference ||
-            !comparison.TeacherPreferenceLabelEligible ||
-            comparison.FormalTrainingAuthorized ||
-            comparison.UsesLearnerScore ||
-            string.IsNullOrWhiteSpace(comparison.SelectedAlternativeId))
+            receipt.SourceStateHash != outcome.SourceCheckpoint.StateHash)
         {
             throw new InvalidDataException(
                 "Money-threshold comparison is not an authoritative criterion-local preference.");
         }
+        ValidatePreferenceHeader(threshold, comparison, receipt.SourceStateHash, receipt.SourceLedgerRevision, receipt.RequestDenominatorCount);
 
         var alternatives = receipt.Alternatives;
         var concreteIds = receipt.ConcreteAlternativeIds;
@@ -137,38 +123,7 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
                 "Money-threshold selected alternative is missing.");
         ValidateSelectedNativeOutcome(selected, outcome);
 
-        var rejected = concreteIds
-            .Where(value => value != comparison.SelectedAlternativeId)
-            .Order(StringComparer.Ordinal)
-            .ToArray();
-        var preferences = comparison.PairwisePreferences;
-        if (rejected.Length == 0 ||
-            preferences.Length != rejected.Length ||
-            preferences.Any(value =>
-                value.PreferredAlternativeId !=
-                    comparison.SelectedAlternativeId ||
-                value.Criterion !=
-                    "authoritative_threshold_then_reserve_aware_strict_pareto") ||
-            !preferences.Select(value => value.AlternativeId)
-                .Order(StringComparer.Ordinal)
-                .SequenceEqual(rejected, StringComparer.Ordinal))
-        {
-            throw new InvalidDataException(
-                "Money-threshold comparison pairwise denominator is incomplete.");
-        }
-        var selectedEvaluation = comparison.Evaluations.SingleOrDefault(
-            value => value.AlternativeId ==
-                comparison.SelectedAlternativeId);
-        if (selectedEvaluation is null ||
-            !selectedEvaluation.TargetSatisfied ||
-            !selectedEvaluation.OnParetoFrontier)
-        {
-            throw new InvalidDataException(
-                "Money-threshold selected alternative does not satisfy its target.");
-        }
-        return new MoneyThresholdComparisonJoin(
-            comparison.SelectedAlternativeId,
-            rejected);
+        return CompletePreference(comparison, concreteIds);
     }
 
     private static void ValidateSelectedNativeOutcome(

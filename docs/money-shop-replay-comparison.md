@@ -68,6 +68,11 @@ not a game/source rerun. Final hermetic/CI results are recorded at closeout.
 
 ## Exact Continuation
 
+The versioned existing-pipeline corpus adapter is now implemented; see
+[Money Shop Replay Corpus](money-shop-replay-corpus.md). It has actual train
+joins only, not split-complete coverage. The remaining work is the genuinely
+missing native partitions, followed by the conditional method/coverage view.
+
 Extend the **existing** Money criterion/corpus pipeline with an explicit
 versioned replay-comparison source, not a second corpus builder or a fake v2
 same-frame comparison receipt. Keep v4 defaults, exact-frame acceptance and

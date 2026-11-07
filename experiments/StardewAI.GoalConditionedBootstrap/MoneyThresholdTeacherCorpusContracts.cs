@@ -8,6 +8,8 @@ public static class MoneyThresholdTeacherCorpusVersions
         "money_threshold_teacher_corpus_request.v4";
     public const string Corpus =
         "money_threshold_teacher_corpus.v4";
+    public const string ShopReplayRequest = "money_threshold_teacher_corpus_request.v5";
+    public const string ShopReplayCorpus = "money_threshold_teacher_corpus.v5";
 }
 
 public static class MoneyThresholdNativeOutcomeKinds
@@ -40,7 +42,12 @@ public sealed record MoneyThresholdTeacherCorpusSource(
     [property: JsonPropertyName("comparison_admissions")]
         MoneyThresholdTeacherComparisonSource[]? ComparisonAdmissions = null,
     [property: JsonPropertyName("native_trajectory_receipt_path")]
-        string NativeTrajectoryReceiptPath = "");
+        string NativeTrajectoryReceiptPath = "")
+{
+    [JsonPropertyName("shop_replay_comparison_receipt_path")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? ShopReplayComparisonReceiptPath { get; init; }
+}
 
 public sealed record MoneyThresholdTeacherComparisonSource(
     [property: JsonPropertyName("criterion_id")] string CriterionId,
@@ -197,4 +204,23 @@ public sealed record MoneyThresholdTeacherComparisonEvidence(
     [property: JsonPropertyName("selection_policy")]
         string SelectionPolicy,
     [property: JsonPropertyName("selected_native_outcome_sha256")]
-        string SelectedNativeOutcomeSha256);
+        string SelectedNativeOutcomeSha256)
+{
+    [JsonPropertyName("shop_replay_join")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public MoneyThresholdShopReplayComparisonJoin? ShopReplayJoin { get; init; }
+}
+
+public sealed record MoneyThresholdShopReplayComparisonJoin(
+    [property: JsonPropertyName("reference_request_id")] string ReferenceRequestId,
+    [property: JsonPropertyName("actual_request_id")] string ActualRequestId,
+    [property: JsonPropertyName("actual_request_sha256")] string ActualRequestSha256,
+    [property: JsonPropertyName("actual_concrete_alternative_id")] string ActualConcreteAlternativeId,
+    [property: JsonPropertyName("actual_source_state_hash")] string ActualSourceStateHash,
+    [property: JsonPropertyName("source_kind")] string SourceKind,
+    [property: JsonPropertyName("source_binding_receipt_path")] string SourceBindingReceiptPath,
+    [property: JsonPropertyName("source_binding_receipt_sha256")] string SourceBindingReceiptSha256)
+{
+    [JsonPropertyName("schema_version")]
+    public string SchemaVersion { get; init; } = "money_threshold_shop_replay_comparison_join.v1";
+}

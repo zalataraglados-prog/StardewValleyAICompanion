@@ -111,6 +111,8 @@ var commandDefinitions = new CommandDefinition[]
     new("build-pet-love-teacher-corpus", BuildPetLoveTeacherCorpus),
     new("build-skull-key-teacher-corpus", BuildSkullKeyTeacherCorpus),
     new("build-money-threshold-teacher-corpus", BuildMoneyThresholdTeacherCorpus),
+    new("build-money-threshold-replay-corpus", options => MoneyThresholdShopReplayCorpusCommands.Write(options, Write, verify: false)),
+    new("verify-money-threshold-teacher-corpus", options => MoneyThresholdShopReplayCorpusCommands.Write(options, Write, verify: true)),
     new("build-money-threshold-coverage-request", BuildMoneyThresholdCoverageRequest),
     new("build-money-threshold-evidence-work-plan", BuildMoneyThresholdEvidenceWorkPlan),
     new("build-money-threshold-native-outcome-selection", BuildMoneyThresholdNativeOutcomeSelection),
@@ -333,6 +335,7 @@ var commandDefinitions = new CommandDefinition[]
     new("self-test-money-counterfactual-source-audit", _ => BootstrapSelfTest.VerifyMoneyCounterfactualSourceAudit()),
     new("self-test-money-shop-replay-source-binding", _ => BootstrapSelfTest.VerifyMoneyShopReplaySourceBinding()),
     new("self-test-money-shop-replay-comparison", _ => BootstrapSelfTest.VerifyMoneyShopReplayComparison()),
+    new("self-test-money-threshold-shop-replay-corpus", _ => BootstrapSelfTest.VerifyMoneyThresholdShopReplayCorpus()),
     new("self-test-money-direct-concrete", options => BootstrapSelfTest.VerifyMoneyDirectConcrete(options.Optional("output-root"))),
     new("self-test-money-revenue-crop-teacher-dispatch", options =>
         BootstrapSelfTest.VerifyMoneyRevenueCropTeacherDispatch(options.Optional("output-root"))),
