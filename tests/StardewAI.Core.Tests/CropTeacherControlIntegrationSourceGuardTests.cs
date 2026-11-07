@@ -237,8 +237,12 @@ public sealed partial class CropTeacherControlIntegrationSourceGuardTests
             "Program.CropTeacherControl.cs");
 
         var controlEntry = source.IndexOf(
-            "BuildCropTeacherControlQueueAsync(",
+            "BuildCropTeacherControlQueueCoreAsync(",
             StringComparison.Ordinal);
+        Assert.True(controlEntry >= 0);
+        var entry = Read("tools", "StardewAI.LiveTrainingLoop", "Program.CropTeacherControl.Entry.cs");
+        Assert.Contains("BuildCropTeacherControlQueueAsync(", entry, StringComparison.Ordinal);
+        Assert.Contains("BuildCropTeacherControlQueueCoreAsync(", entry, StringComparison.Ordinal);
         var eventCheck = source.IndexOf(
             "if (HasPriorityStoryEventInterrupt(beforeSnapshot))",
             controlEntry,
@@ -259,13 +263,14 @@ public sealed partial class CropTeacherControlIntegrationSourceGuardTests
             "BuildCropTeacherRouteQueueAsync(",
             seedBuilder,
             StringComparison.Ordinal);
+        var plantingBuilder = source.IndexOf("BuildCropTeacherSeedPlantingQueueAsync(", stageSwitch, StringComparison.Ordinal);
 
-        Assert.True(controlEntry >= 0);
         Assert.True(eventCheck > controlEntry);
         Assert.True(storyBuilder > eventCheck);
         Assert.True(stageSwitch > storyBuilder);
         Assert.True(seedBuilder > stageSwitch);
         Assert.True(routeBuilder > seedBuilder);
+        Assert.True(plantingBuilder > stageSwitch);
         Assert.Contains(
             "BuildPriorityStoryEventQueueAsync(",
             source,

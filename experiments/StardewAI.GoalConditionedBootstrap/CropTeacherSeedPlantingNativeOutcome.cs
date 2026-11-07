@@ -22,6 +22,7 @@ internal sealed record CropTeacherSeedPlantingNativeOutcome(CropTeacherSeedPlant
         var hashes = paths.ToDictionary(path => path, CurrentTeacherFrontierSupport.HashFile, comparer);
         Require(hashes[paths[0]] == queueHash, "Owned planting native queue changed after binding.");
         var before = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(paths[1], "owned planting before");
+        MoneyRevenueCropSeedAcquisitionProofBuilder.ValidateSnapshot(before, "owned planting before");
         var receipt = CurrentTeacherFrontierSupport.Read<QueueExecutionReceiptEnvelope>(paths[2], "owned planting receipt");
         var after = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(paths[3], "owned planting after");
         Require(EqualJson(before, scope.Source.Before), "Owned planting native source differs from its marker.");
@@ -67,10 +68,9 @@ internal sealed record CropTeacherSeedPlantingNativeOutcome(CropTeacherSeedPlant
             proofInputs, true, false), after, proofInputs);
     }
 
-    private static void VerifyStepBoundary(SnapshotEnvelope before, SnapshotEnvelope after, SnapshotEnvelope source,
+    internal static void VerifyStepBoundary(SnapshotEnvelope before, SnapshotEnvelope after, SnapshotEnvelope source,
         QueueExecutionStepReceipt step, int totalDay)
     {
-        MoneyRevenueCropSeedAcquisitionProofBuilder.ValidateSnapshot(before, "owned planting step before");
         MoneyRevenueCropSeedAcquisitionProofBuilder.ValidateSnapshot(after, "owned planting step after");
         var clock = MoneyRevenueCropSeedAcquisitionProofBuilder.ReadInt(after, "time", "time");
         var beforeClock = MoneyRevenueCropSeedAcquisitionProofBuilder.ReadInt(before, "time", "time");

@@ -8,9 +8,18 @@ namespace StardewAI.LiveTrainingLoop;
 internal sealed partial class CropTeacherSeedRuntimeTransaction
 {
     public Task<StrategyLedgerEvidence> CompleteAsync(string queuePath, string receiptPath,
-        string afterSnapshotPath, string selectedCandidateId) => CompleteAsync(new(
+        string afterSnapshotPath, string selectedCandidateId) => CompleteAsync(CreateTransition(queuePath, receiptPath, afterSnapshotPath, selectedCandidateId));
+
+    internal MoneyRevenueCropNativeLifecycleTransitionRequest CreateTransition(string queuePath, string receiptPath,
+        string afterSnapshotPath, string selectedCandidateId) => new(
             scope.TransitionKind, scope.TotalDay, queuePath, scope.SnapshotPath, receiptPath,
-            afterSnapshotPath, options.RunId, options.ExecutorVersion, selectedCandidateId));
+            afterSnapshotPath, options.RunId, options.ExecutorVersion, selectedCandidateId);
+
+    internal void ValidateTransitionIdentity(MoneyRevenueCropNativeLifecycleTransitionRequest transition)
+    {
+        if (transition.RunId != options.RunId || transition.ExecutorVersion != options.ExecutorVersion || transition.TotalDay != scope.TotalDay)
+            throw new InvalidDataException("Crop seed runtime native receipt identity differs from preparation.");
+    }
 
     public async Task<StrategyLedgerEvidence> CompleteAsync(MoneyRevenueCropNativeLifecycleTransitionRequest transition)
     {
@@ -19,9 +28,7 @@ internal sealed partial class CropTeacherSeedRuntimeTransaction
         Exception? failure = null;
         try
         {
-            if (transition.RunId != options.RunId || transition.ExecutorVersion != options.ExecutorVersion ||
-                transition.TotalDay != scope.TotalDay)
-                throw new InvalidDataException("Crop seed runtime native receipt identity differs from preparation.");
+            ValidateTransitionIdentity(transition);
             var nativeQueueHash = ValidateDispatchQueueCore(transition.QueuePath);
             await write(Path.Combine(options.EvidenceDirectory, "native-transition-request.json"),
                 JsonSerializer.Serialize(transition, JsonOptions));

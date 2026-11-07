@@ -59,6 +59,13 @@ public sealed class CropTeacherSeedPlantingMarker
 
     public string ValidateQueue(string path) => ReadQueue(path).Hash;
 
+    public CropTeacherSeedPlantingPrefix OpenPrefix(string path, string expectedQueueSha256)
+    {
+        var bound = ReadQueue(path);
+        Require(bound.Hash == expectedQueueSha256 && IsLowerSha256(expectedQueueSha256), "Owned planting prefix queue hash differs.");
+        return new(scope, ledger, BoundBatch, bound.Queue, Path.GetFullPath(path), bound.Hash);
+    }
+
     private (string Hash, ActionQueueEnvelope Queue) ReadQueue(string path)
     {
         scope.ValidateInputsUnchanged();

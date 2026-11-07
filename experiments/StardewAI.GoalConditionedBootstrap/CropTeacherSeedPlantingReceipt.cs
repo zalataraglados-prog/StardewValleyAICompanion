@@ -39,22 +39,7 @@ internal static class CropTeacherSeedPlantingReceipt
         for (var index = 0; index < steps.Length; index++)
         {
             var step = steps[index];
-            var item = queue.Items[index];
-            Require(step.QueueItemIndex == index && step.QueueItemCount == queue.Items.Length &&
-                    step.OriginalPlannedItemCount == queue.Items.Length && step.QueueId == queue.QueueId &&
-                    step.QueueItemId == item.QueueItemId && step.OptionId == item.OptionId && step.PrimitiveKind == "plant_seed" &&
-                    step.CompiledCommandStateHash == queue.StateHash && !step.TeacherPreferenceStateRebound &&
-                    !step.SelectedQueueCandidateCompleted && step.SourceStateHash == expectedHash && step.BeforeGameTick == expectedTick &&
-                    step.AfterGameTick >= expectedTick && !string.IsNullOrWhiteSpace(step.AfterStateHash) && step.AfterSnapshotFresh &&
-                    step.StateHashChanged == (step.SourceStateHash != step.AfterStateHash) &&
-                    step.EffectiveQueueItem is { } effective &&
-                    ExecutionReceiptValidationSupport.EffectiveQueueItemMatches(effective, item, queue.StateHash),
-                "Owned planting prefix step identity/order/source differs from its bound queue.");
-            Require(index < consumed
-                    ? step.StateHashChanged && step.PrimitiveVerificationReasons.Length > 0 && step.BlockReasons.Length == 0 &&
-                      string.IsNullOrWhiteSpace(step.FailureAttribution) && step.ChangedFacts.ValueKind == JsonValueKind.Array && step.ChangedFacts.GetArrayLength() > 0
-                    : step.Status == "blocked" && step.PrimitiveVerificationStatus != "verified" && step.BlockReasons.Length > 0,
-                "Owned planting prefix has an unverified effect or unsupported failed suffix.");
+            ValidateStep(queue, step, index, expectedHash, expectedTick, index < consumed, completed: false);
             expectedHash = step.AfterStateHash;
             expectedTick = step.AfterGameTick;
         }
@@ -62,5 +47,27 @@ internal static class CropTeacherSeedPlantingReceipt
                 receipt.BlockReasons.ToHashSet(StringComparer.Ordinal).SetEquals(steps.SelectMany(step => step.BlockReasons)),
             "Owned planting prefix terminal boundary/block reasons differ.");
         return consumed;
+    }
+
+    internal static void ValidateStep(ActionQueueEnvelope queue, QueueExecutionStepReceipt step, int index,
+        string expectedHash, long expectedTick, bool successful, bool completed)
+    {
+        var item = queue.Items[index];
+        Require(step.QueueItemIndex == index && step.QueueItemCount == queue.Items.Length &&
+                step.OriginalPlannedItemCount == queue.Items.Length && step.QueueId == queue.QueueId &&
+                step.QueueItemId == item.QueueItemId && step.OptionId == item.OptionId && step.PrimitiveKind == "plant_seed" &&
+                step.CompiledCommandStateHash == queue.StateHash && !step.TeacherPreferenceStateRebound &&
+                step.SelectedQueueCandidateCompleted == completed && step.SourceStateHash == expectedHash && step.BeforeGameTick == expectedTick &&
+                step.AfterGameTick >= expectedTick && !string.IsNullOrWhiteSpace(step.AfterStateHash) && step.AfterSnapshotFresh &&
+                step.StateHashChanged == (step.SourceStateHash != step.AfterStateHash) &&
+                step.EffectiveQueueItem is { } effective &&
+                ExecutionReceiptValidationSupport.EffectiveQueueItemMatches(effective, item, queue.StateHash),
+            "Owned planting prefix step identity/order/source differs from its bound queue.");
+        Require(successful
+                ? step.Status == "applied" && step.PrimitiveVerificationStatus == "verified" && step.StateHashChanged &&
+                  step.PrimitiveVerificationReasons.Length > 0 && step.BlockReasons.Length == 0 &&
+                  string.IsNullOrWhiteSpace(step.FailureAttribution) && step.ChangedFacts.ValueKind == JsonValueKind.Array && step.ChangedFacts.GetArrayLength() > 0
+                : step.Status == "blocked" && step.PrimitiveVerificationStatus != "verified" && step.BlockReasons.Length > 0,
+            "Owned planting prefix has an unverified effect or unsupported failed suffix.");
     }
 }
