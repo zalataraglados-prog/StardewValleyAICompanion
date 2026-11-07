@@ -207,6 +207,17 @@ function Invoke-RuntimeCropTerminalSettlement {
     }
     $currentPath = $homeRoute.SourcePath
 
+    $control = Wait-RuntimeNativeSaveBoundaryControl -Context $Context `
+        -SourceSnapshotPath $currentPath -SnapshotProfile $SnapshotProfile `
+        -TotalDay $TotalDay -Name 'terminal-settlement-sleep-control'
+    foreach ($observation in @($control.Observations)) {
+        $routeIndex++
+        $settlementRouteTransitions.Add((New-RuntimeTerminalQueueTransition `
+            -TransitionId ("terminal-settlement-control-{0:D2}" -f $routeIndex) `
+            -Artifacts $observation -RunId $RunId))
+    }
+    $currentPath = $control.SourcePath
+
     $sleep = Invoke-RuntimeDailyPlanStep -Context $Context `
         -Name "terminal-native-shipping-settlement" `
         -OptionId "recovery.stabilize_day" `

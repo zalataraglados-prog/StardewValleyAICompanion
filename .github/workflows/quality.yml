@@ -90,6 +90,9 @@ jobs:
       - name: Test bounded daily goal forwarding without a second orchestrator
         shell: pwsh
         run: ./scripts/Test-RuntimeBoundDailyGoal.ps1 -OutputRoot "$env:RUNNER_TEMP/bound-daily-goal"
+      - name: Test bounded native-control observations before original crop sleep
+        shell: pwsh
+        run: ./scripts/Test-RuntimeNativeControl.ps1 -OutputRoot "$env:RUNNER_TEMP/native-control-preflight"
       - name: Test fishing source mapping across original continuation queues without game
         shell: pwsh
         run: ./scripts/Test-RuntimeFishingArtifactMapping.ps1 -OutputRoot "$env:RUNNER_TEMP/fishing-source-mapping"
