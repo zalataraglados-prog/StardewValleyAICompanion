@@ -2,6 +2,10 @@
 
 ## Current Money Resumption
 
+The #338 Teacher fixes are accepted in PR #483 at `33cf0a4d`, after all38 CI
+steps on exact head `864fef95`.24 new checks, Core2378 and Backend629 pass;
+they add no Money production evidence. The following is the original scope.
+
 Museum PR #482 is accepted at `ba1de89f` after all38 CI steps. The accepted
 local witness union is13/19 executable,13/19 split-complete,13/19 ready and
 10/11 roots; formal training remains false. `earn_money` is now the only
@@ -51,13 +55,51 @@ because its old issue is still open. The historical875g segment did not cross
 the first50,000g threshold. Re-locate and verify retained sources before
 claiming a current exact replay; missing raw evidence must not be fabricated.
 
-Next: reconcile retained production sources, the current automatic dispatch,
-legacy wrapper entry points and the current dependency graph; then extend
+Next: apply the owner-authorized R2 layering when checking criterion-local
+consumers versus the original global collector. Reuse the exact current
+denominator/comparison/native/ledger/reservation chain for the six thresholds;
+do not require a complete fresh-save million-income schedule to admit a local
+proof. The original global collector keeps its complete-root preflight. Its
+seed-robust fresh-save schedule, cross-root opportunity-cost and future
+production/reservation obligations remain at their proper integration layer;
+actual production/reservation used by a selected local route still needs proof.
+Reconcile retained sources through known indexes, not a whole-drive scan or
+13-day replay. Reuse
 the original production/retention/settlement/comparison chain only where
 evidence is actually missing. Keep all six thresholds and all three original
 partitions, use cumulative income (not wallet), and retain complete fresh-save
 acquisition/RNG/shared-budget/Year3 obligations. No new income planner, policy
 permission, product training, worker/API use or raw-data Git commit.
+
+### Initialization Alignment
+
+The old PowerShell Teacher and production-input initializers still required
+a literal v1 selection identifier, although the current original C# builder
+emits v6. This rejected successful typed output before any native collection.
+The wrappers now consume the immediately preceding typed Build result; the
+production initializer additionally requires the receipt/decision policy to
+match exactly. The unchanged C# receipt builder first checks the current
+policy constant and then independently rebuilds the entire Teacher decision.
+There is no looser policy whitelist, duplicate constant or extra model/API call.
+
+`Test-MoneyCropInitialization.ps1` exports the existing hermetic dispatch fixture
+through the existing self-test command's optional `--output-root`, runs both
+real wrappers and the original production-input reader, and compares the
+resulting execution shape with the existing automatic dispatch.16 checks cover
+the full positive path, unchanged inputs, overwrite rejection, invalid policy
+and current-policy numeric tampering. The last two fail in the original typed
+binding/exact rebuild and cannot leave a ready manifest. The fixture export
+also rejects an existing explicit destination. This test runs inside the
+existing hermetic CI step, uses no game, and is not native or training evidence.
+The source save is deliberately synthetic and cannot prove gameplay. No shared
+executor, input reader, corpus admission or persistent-state boundary changed.
+
+The original files trace to `d53defc2` and automatic dispatch to `ff36f852`.
+This aligns their consumer contracts rather than replacing either execution
+path. Local Core2379/2379, Backend629/629, the16-check wrapper integration and
+original hermetic critical paths pass, with no skips. Explicit-E builds have
+zero warnings/errors; EVD-338 and whitespace checks pass. Final CI acceptance
+is recorded in this slice's PR closeout.
 
 ## Purpose
 

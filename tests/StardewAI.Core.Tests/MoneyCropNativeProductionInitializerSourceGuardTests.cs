@@ -16,6 +16,16 @@ public sealed class MoneyCropNativeProductionInitializerSourceGuardTests
             "Capture-MoneyRevenueCropProductionTeacherBoundary.ps1"));
 
     [Fact]
+    public void InitializersDoNotDuplicateTheTypedSelectionPolicyIdentifier()
+    {
+        foreach (var script in new[] { Initializer, TeacherInitializer })
+            Assert.DoesNotContain("authoritative_transparent_crop_net_revenue",
+                script, StringComparison.Ordinal);
+        Assert.Contains("$receipt.teacher_selection_policy -cne", Initializer,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void TeacherBoundaryCaptureUsesTheImmutableCompleteFarmBoundary()
     {
         Assert.Contains("Assert-RuntimeSourceSaveSlot", TeacherBoundaryCapture,
