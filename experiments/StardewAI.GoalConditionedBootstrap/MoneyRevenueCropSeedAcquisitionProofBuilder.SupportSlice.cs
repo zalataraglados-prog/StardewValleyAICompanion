@@ -5,6 +5,17 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public static partial class MoneyRevenueCropSeedAcquisitionProofBuilder
 {
+    internal static void ValidateSupportQueue(ActionQueueEnvelope queue, SnapshotEnvelope before,
+        string qualifiedItemId, string shopId, int maximumUnitPrice)
+    {
+        Require(queue.StateHash == before.StateHash && !string.IsNullOrWhiteSpace(queue.QueueId),
+            "Crop seed support compiled queue source is invalid.");
+        var binding = ReadPurchaseBinding(queue, qualifiedItemId);
+        Require(binding.ShopId == shopId && binding.MaxUnitPrice <= maximumUnitPrice && queue.Items.All(item =>
+                PurchaseQueueOptions.Contains(item.OptionId) || IsSeedAcquisitionSupportingOption(item.OptionId)),
+            "Crop seed support compiled queue exceeds its bound shop/seed/price scope.");
+    }
+
     public static MoneyRevenueCropSeedAcquisitionTransitionProof BuildSupportSlice(
         MoneyRevenueCropNativeLifecycleTransitionRequest request, string qualifiedItemId,
         string shopId, int maximumUnitPrice, int deadlineTotalDay) => VerifySupportSlice(

@@ -544,6 +544,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
     var executionSnapshotProfile = options.ExecutionSnapshotProfile;
     var executionSnapshotUrl = options.BridgeSnapshotUrl;
     CropTeacherRunStep? cropTeacherStepForExecution = null;
+    CropTeacherSeedPurchaseRuntime? cropSeedSupportForExecution = null;
     JsonObject? dailyPlanRanking = null;
     StageOneCollectionTeacherQueueBuildResult? nativeControlSettle = null;
     JsonObject? deferredObjectiveContinuationForDailyMaintenance = null;
@@ -782,6 +783,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             (!string.IsNullOrWhiteSpace(cropQueue.InterruptKind)
                 ? null
                 : cropStep);
+        cropSeedSupportForExecution = cropQueue.SeedPurchaseSupport;
         if (cropQueue.SitePreparationComplete)
         {
             if (!cropTeacherPreparedCommitmentIds.Add(
@@ -1288,6 +1290,13 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         executionSnapshotProfile);
     var queuePath = Path.Combine(options.SnapshotDir, "compiled-queue-" + iteration.ToString("D4") + ".json");
     await File.WriteAllTextAsync(queuePath, queue.ToJsonString(JsonOptions), Encoding.UTF8);
+    if (cropSeedSupportForExecution is not null)
+    {
+        cropSeedSupportForExecution.ValidateDispatchQueue(queuePath);
+        selectedCandidateId = EffectiveDecisionArtifactTracker.ReadQueueItemCandidateId(ExecutableQueueItems(queue).FirstOrDefault());
+        if (string.IsNullOrWhiteSpace(selectedCandidateId))
+            throw new InvalidDataException("Managed crop seed queue lost its original selected candidate identity.");
+    }
     if (options.UseTeacherPreferenceQueue || options.UsePrecompiledQueue)
     {
         decisionCompiledQueuePath = queuePath;
@@ -1484,6 +1493,9 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         var execution = options.UseRuntimeTestHarnessExecutor
             ? await ExecuteRuntimeTestHarnessAsync(http, executorHttp, options, iteration, snapshotPath, beforeSnapshot, queue, lastStateHash, lastQueueId, decisionModelPlanPath, decisionRankingPath, decisionCompiledQueuePath, decisionSnapshotPath, decisionSourceStateHash, selectedCandidateId, selectedQueueIndex, queuePath, deferredObjectiveContinuationForDailyMaintenance is null ? activeObjectiveContinuation : null, executionSuppressedContinuations, useDailyPlanDecisionLease, executionSnapshotUrl, executionSnapshotProfile)
             : await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/action-queues/" + Uri.EscapeDataString(lastQueueId) + "/execute-training-sandbox", "{}");
+        if (cropSeedSupportForExecution is not null)
+            await cropSeedSupportForExecution.CompleteAsync(queuePath, ReadString(execution, "execution_path"),
+                ReadString(execution, "after_snapshot_path"), ReadString(execution, "selected_candidate_id"));
         if (activeCropTeacherTransitionLedger is not null &&
             cropTeacherStepForExecution is not null)
         {

@@ -3,7 +3,7 @@ using StardewAI.LiveTrainingLoop;
 
 namespace StardewAI.Core.Tests;
 
-public sealed class CropTeacherControlIntegrationSourceGuardTests
+public sealed partial class CropTeacherControlIntegrationSourceGuardTests
 {
     [Fact]
     public void TeacherDispatchContinuesIntoTheFreshSnapshotControlLoop()

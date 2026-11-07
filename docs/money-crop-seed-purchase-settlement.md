@@ -76,6 +76,11 @@ are checked. No Museum-only output-custody contract is widened for seed purchase
 
 ## Remaining Runtime Integration
 
+The optional original-control/HTTP transaction path is now wired; see
+[runtime transaction and exact remaining activation work](money-crop-seed-runtime-transaction.md).
+The following list is the full integration contract, not a request to reimplement
+the already accepted kernel or its new journaled adapter.
+
 This is an offline-tested transaction kernel, not an enabled managed runner.
 The existing automatic handoff still rejects active resource claims. Do not
 remove that barrier just because this helper accepts a synthetic/native slice.

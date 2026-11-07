@@ -20,7 +20,8 @@ static partial class Program
         string SnapshotUrl,
         bool SitePreparationComplete,
         string InterruptKind = "",
-        CropTeacherRunStep? ExecutionStepOverride = null);
+        CropTeacherRunStep? ExecutionStepOverride = null,
+        CropTeacherSeedPurchaseRuntime? SeedPurchaseSupport = null);
 
     private static async Task<CropTeacherControlQueueBuildResult>
         BuildCropTeacherControlQueueAsync(
@@ -32,7 +33,8 @@ static partial class Program
             MoneyRevenueCropNativeProductionRunPlanRequest runPlanRequest,
             string beforeSnapshotPath,
             JsonObject beforeSnapshot,
-            string stateHash)
+            string stateHash,
+            CropTeacherSeedPurchaseSupport? seedSupport = null)
     {
         if (HasPriorityStoryEventInterrupt(beforeSnapshot))
         {
@@ -161,7 +163,8 @@ static partial class Program
                     step,
                     beforeSnapshotPath,
                     beforeSnapshot,
-                    stateHash),
+                    stateHash,
+                    seedSupport),
             CropTeacherRunStageKinds.RouteToFarm or
             CropTeacherRunStageKinds.RouteHome =>
                 await BuildCropTeacherRouteQueueAsync(
@@ -319,14 +322,15 @@ static partial class Program
     }
 
     private static async Task<CropTeacherControlQueueBuildResult>
-        BuildCropTeacherSeedQueueAsync(
+        CompileCropTeacherSeedQueueAsync(
             HttpClient http,
             LiveTrainingOptions options,
             int iteration,
             CropTeacherRunStep step,
             string beforeSnapshotPath,
             JsonObject beforeSnapshot,
-            string stateHash)
+            string stateHash,
+            string goalId)
     {
         if (step.RemainingQuantity <= 0 ||
             string.IsNullOrWhiteSpace(step.SeedQualifiedItemId) ||
@@ -360,7 +364,7 @@ static partial class Program
             candidateKindOverride: string.Empty,
             candidateIdOverride: string.Empty,
             maxCandidatesOverride: 1,
-            goalIdOverride: "earn_money");
+            goalIdOverride: goalId);
         var prefix = CropTeacherArtifactPrefix(options, iteration, "seed");
         var planPath = prefix + "-daily-plan.json";
         var responsePath = prefix + "-daily-plan-response.json";

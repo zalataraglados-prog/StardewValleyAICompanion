@@ -57,6 +57,10 @@ ingested planning input, not a standalone native-proof or snapshot-import bypass
 
 ## Exact Next Boundary
 
+The original optional control path now has a journaled purchase adapter; its
+[runtime contract](money-crop-seed-runtime-transaction.md) is the current successor.
+Automatic activation remains disabled pending transfer/planting/lifecycle consumers.
+
 The per-step purchase accounting kernel is now implemented; see
 [settlement contract and remaining runtime wiring](money-crop-seed-purchase-settlement.md).
 It reuses original native validators and portfolio services; the automatic runner
