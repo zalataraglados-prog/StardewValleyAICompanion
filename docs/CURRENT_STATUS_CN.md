@@ -1,5 +1,9 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **本片本地验证：** 相关418/418、最终owner41/41均通过、零失败/跳过，含15项新场景；不替代真实原生游戏或正式训练证据，完整CI见本片收口。
+
+> **2026-11-08 R2生命周期接同一owner（当前唯一接续）：** #521经最终42步CI `42424409057`/同head审查合入`1ec5bfa9`，Core2443/Backend1121且核树清分支。本片生命周期共用原owner单pending/序列/接受/恢复，准入钉已接受源内容和原intent，首次调用前持久started claim；未知只恢复不重发。原RunAsync经可选薄adapter复用原已验结果/实际journal，正常接受无额外Get；原执行器/取消/日历/释放规则不改。首混合37通过，后38/39仅新断言缺目录类型误设已修；最终定向/相关/CI见收口，非新游戏或开训。下一步原seed未完成准备/缺proof/派发归属，再原行走维护/保存连续性及managed有界原生样本；原全局日历/预算/跨根、Provider/模型与manifest仍在后续。L1`19/19、11/11`、formal=false及Student训后21/21不变，无API worker，local-data不提交。[合同](money-crop-owner-lifecycle.md)。下方为历史。
+
 > **本片最终本地验证：** 生命周期恢复及原相关链路403/403通过、零失败/跳过，含19项新增恢复场景；不重采L1、不替代原生游戏或正式训练证据，完整CI/发布见本片收口。
 
 > **2026-11-08 R2生命周期原边界恢复（当前唯一接续）：** #520最终42步CI `42423375907`/Core2443/Backend1102接受合入`7602281a`且核树清分支；初始自动审查backend遗漏修复与最终控制者审查分别归因。本片沿原intent/输入/取消完整回包或保留closure、原日历/释放kernel及journal/lookup重建；释放后最终账本不冒充原取消账本，缺释放回包先lookup再Get，未知不清不重发。复用原seed恢复守卫/读取器，旧runtime仅抽同一元数据/参数检查、旧执行规则不改；首49专项通过，后续反例/相关回归/CI见收口。下一步接同一持久owner的生命周期准入/接受和未完成准备/缺proof/派发状态，再原行走维护/保存连续性及显式managed原生小样本；之后原全局日历/预算/连续性、Provider/模型与manifest。L1`19/19、11/11`、formal=false/Student训后21/21保持；非新游戏/训练，无worker/API，local-data不提交。[合同](money-crop-lifecycle-recovery.md)。下方为历史。

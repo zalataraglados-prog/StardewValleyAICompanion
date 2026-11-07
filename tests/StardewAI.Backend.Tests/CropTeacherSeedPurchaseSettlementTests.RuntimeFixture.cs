@@ -90,6 +90,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         public int Settlements { get; private set; }
         public int Lookups { get; private set; }
         public int LedgerReads { get; private set; }
+        public int Cancellations { get; private set; }
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token)
         {
@@ -100,6 +101,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             if (commit) Commits++;
             if (settlement) Settlements++;
             if (read) LedgerReads++;
+            if (path.EndsWith("/cancel", StringComparison.Ordinal)) Cancellations++;
             if (path.EndsWith("/lookup-mutation", StringComparison.Ordinal)) Lookups++;
             var reply = await base.SendAsync(request, token);
             if (fault == "missing_recovery_lookup" && path.EndsWith("/lookup-mutation", StringComparison.Ordinal))

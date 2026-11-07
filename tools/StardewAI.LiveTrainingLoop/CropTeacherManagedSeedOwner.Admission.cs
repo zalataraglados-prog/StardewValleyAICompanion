@@ -11,34 +11,43 @@ public sealed partial class CropTeacherManagedSeedOwner
         await gate.WaitAsync().ConfigureAwait(false);
         try
         {
-            ValidateState();
-            if (Pending is not null || HeadRecoveryRequired)
-                throw new InvalidOperationException("Managed crop owner must recover its retained phase before another admission.");
-            var sequence = checked((lastAcceptedOperation?.Sequence ?? 0) + 1);
-            var runtime = Path.GetFullPath(runtimeDirectory);
-            if (!Within(options.EvidenceDirectory, runtime) || SamePath(options.EvidenceDirectory, runtime) ||
-                Directory.Exists(runtime) || File.Exists(runtime) || ReservedRuntimePath(runtime))
-                throw new IOException("Managed crop operation requires a new runtime directory inside its owner.");
-            RequireDirectoryPath(runtime);
-            var record = new JsonObject
-            {
-                ["schema_version"] = "crop_teacher_managed_seed_admission.v1", ["sequence"] = sequence,
-                ["run_id"] = options.RunId, ["support_step_id"] = StepId(sequence),
-                ["previous_accepted_sha256"] = lastAcceptedHash, ["runtime_directory"] = runtime,
-                ["before_snapshot_path"] = Path.GetFullPath(beforeSnapshotPath), ["before_ledger_path"] = Path.GetFullPath(ledgerPath),
-                ["prior_verified_snapshot_path"] = priorVerifiedSnapshotPath is null ? null : Path.GetFullPath(priorVerifiedSnapshotPath),
-                ["step"] = JsonSerializer.SerializeToNode(step, JsonOptions),
-                ["native_dispatch_performed"] = false, ["formal_product_training_authorized"] = false
-            };
+            var record = CreateAdmissionRecord(beforeSnapshotPath, ledgerPath, runtimeDirectory, priorVerifiedSnapshotPath);
+            record["step"] = JsonSerializer.SerializeToNode(step, JsonOptions);
             var scopes = OpenScopes(record);
-            record["input_artifact_hashes"] = JsonSerializer.SerializeToNode(Inputs(scopes), JsonOptions);
-            var path = RecordPath(sequence, "intent");
-            await SaveAsync(path, record).ConfigureAwait(false);
-            Pending = new(this, record, path, scopes);
-            TrackFrontier(path);
-            return Pending;
+            return await PersistAdmissionAsync(record, new(this, record, RecordPath(Sequence(record), "intent"), scopes)).ConfigureAwait(false);
         }
         finally { gate.Release(); }
+    }
+
+    private JsonObject CreateAdmissionRecord(string before, string ledger, string runtimeDirectory, string? prior = null)
+    {
+        ValidateState();
+        if (Pending is not null || HeadRecoveryRequired)
+            throw new InvalidOperationException("Managed crop owner must recover its retained phase before another admission.");
+        var sequence = checked((lastAcceptedOperation?.Sequence ?? 0) + 1);
+        var runtime = Path.GetFullPath(runtimeDirectory);
+        if (!Within(options.EvidenceDirectory, runtime) || SamePath(options.EvidenceDirectory, runtime) ||
+            Directory.Exists(runtime) || File.Exists(runtime) || ReservedRuntimePath(runtime))
+            throw new IOException("Managed crop operation requires a new runtime directory inside its owner.");
+        RequireDirectoryPath(runtime);
+        return new JsonObject
+        {
+            ["schema_version"] = "crop_teacher_managed_seed_admission.v1", ["sequence"] = sequence,
+            ["run_id"] = options.RunId, ["support_step_id"] = StepId(sequence),
+            ["previous_accepted_sha256"] = lastAcceptedHash, ["runtime_directory"] = runtime,
+            ["before_snapshot_path"] = Path.GetFullPath(before), ["before_ledger_path"] = Path.GetFullPath(ledger),
+            ["prior_verified_snapshot_path"] = prior is null ? null : Path.GetFullPath(prior),
+            ["native_dispatch_performed"] = false, ["formal_product_training_authorized"] = false
+        };
+    }
+
+    private async Task<CropTeacherManagedSeedOperation> PersistAdmissionAsync(JsonObject record, CropTeacherManagedSeedOperation operation)
+    {
+        record["input_artifact_hashes"] = JsonSerializer.SerializeToNode(OperationInputs(operation), JsonOptions);
+        await SaveAsync(operation.RecordPath, record).ConfigureAwait(false);
+        Pending = operation;
+        TrackFrontier(operation.RecordPath);
+        return operation;
     }
 
     public async Task PinPreparedAsync(CropTeacherManagedSeedOperation operation, ICropTeacherSeedRuntime runtime)
@@ -47,6 +56,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         try
         {
             RequireOperation(operation);
+            if (operation.IsLifecycle) throw new InvalidOperationException("Lifecycle operations have no native seed preparation.");
             if (operation.Prepared is not null || runtime is not ICropTeacherSeedManagedRuntime original)
                 throw new InvalidOperationException("Managed crop preparation must come once from an original runtime transaction.");
             var prepared = original.ReadPreparedBoundary();

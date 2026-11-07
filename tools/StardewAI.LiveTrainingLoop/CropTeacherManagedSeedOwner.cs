@@ -9,22 +9,27 @@ namespace StardewAI.LiveTrainingLoop;
 
 public sealed record CropTeacherManagedSeedOwnerOptions(string EvidenceDirectory, string RunId, string ExecutorVersion,
     string BackendUrl, string NativeRunPlanPath, string InitialSnapshotPath, string InitialLedgerPath,
-    string PortfolioJournalDirectory);
+    string PortfolioJournalDirectory) : ICropSeedPortfolioRecoveryOptions;
 
 public sealed class CropTeacherManagedSeedOperation
 {
     internal CropTeacherManagedSeedOperation(CropTeacherManagedSeedOwner owner, JsonObject record,
-        string recordPath, CropTeacherManagedSeedScopes scopes)
-    { Owner = owner; Record = record; RecordPath = recordPath; Scopes = scopes; }
+        string recordPath, CropTeacherManagedSeedScopes? scopes, CropTeacherSeedLifecycleSupport? lifecycle = null)
+    { Owner = owner; Record = record; RecordPath = recordPath; seedScopes = scopes; Lifecycle = lifecycle; }
+    private readonly CropTeacherManagedSeedScopes? seedScopes;
+    internal CropTeacherSeedLifecycleSupport? Lifecycle { get; }
     internal CropTeacherManagedSeedOwner Owner { get; }
     internal JsonObject Record { get; }
     internal string RecordPath { get; }
     internal JsonObject? Prepared { get; set; }
+    internal JsonObject? Started { get; set; }
     public int Sequence => Record["sequence"]!.GetValue<int>();
     public string SupportStepId => Record["support_step_id"]!.GetValue<string>();
     public string RuntimeDirectory => Record["runtime_directory"]!.GetValue<string>();
-    public CropTeacherManagedSeedScopes Scopes { get; }
-    public CropTeacherRunStep ReadStep() => Record["step"]!.Deserialize<CropTeacherRunStep>(CropTeacherManagedSeedOwner.JsonOptions)!;
+    public bool IsLifecycle => Lifecycle is not null;
+    public CropTeacherManagedSeedScopes Scopes => seedScopes ?? throw new InvalidOperationException("Lifecycle operations have no native seed scope.");
+    public CropTeacherRunStep ReadStep() => IsLifecycle ? throw new InvalidOperationException("Lifecycle operations have no native seed step.") :
+        Record["step"]!.Deserialize<CropTeacherRunStep>(CropTeacherManagedSeedOwner.JsonOptions)!;
 }
 
 public sealed partial class CropTeacherManagedSeedOwner : IAsyncDisposable
