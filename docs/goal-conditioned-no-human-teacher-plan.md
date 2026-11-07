@@ -1,5 +1,7 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+> **2026-11-07 当前接续：** L1已验并集`19/19、11/11 roots`冻结；原v6新E完整原生生产/875g结算来源保留，末端OOM后以同源离线深验得到6/6检查点、pending0，原失败不覆盖。完成精确帧复用/有界校验的最终回归与CI后，唯一后继为R2 L3跨根资源预留/联合日历/来源连续性与独立重放，不重做局部动作或重采13日生产。随后Provider/模型定型、正式数据与manifest/preflight，才开正式训练；Student新档21/21留在训练后评测，formal=false。[来源与接续](current-production-snapshot-handoff.md)。下方带日期的旧顺位和计数为历史，不覆盖此接续。
+
 > **2026-11-07 Money入口接续：** #483 已接受合入 `33cf0a4d`。现有PowerShell包装器与自动dispatch统一由原C# Teacher/回执重建确定策略；修复硬编码v1拒绝v6的旧入口，16项无游戏集成检查通过，不改共享执行器或全根准入。下一步按R2核对Money局部消费者/全局collector的责任，先复用原分母/比较/native/账本预留补六阈值局部证据，不将完整新档百万日程倒挂为L1门；全局图三项日程下界/机会成本/未来生产预留责任留在所属层，所选局部生产义务不免验。不扫描全盘或重跑旧长轨迹复原历史文件，修复不增加criterion分子或授权训练。并集 `13/19、13/19、13/19、10/11 roots`、formal=false及新档Teacher21/Student/Year3共享预算义务保持。[具体边界](money-threshold-production-evidence.md#initialization-alignment)。
 
 > **2026-11-07 Money6 接续：** 全馆 #482 经38步 CI 接受、合入 `ba1de89f`；并集 `13/19、13/19、13/19、10/11 roots`，formal=false。唯一 primary 是 `earn_money`，复用既有 Teacher 与生产证明链，不重新开发动作。#338 的有限库存/活动账本缺布局/跨区域紧凑选择在 Teacher 入口修复，旧合法决定与共享执行器不变；#339 已有后续边界归一化及完整生产段，不把旧 issue 当新缺口。先核对保留来源、当前 dispatch/旧入口及方法图，再补真正 Money `6×3` 比较/native证据；修复不增加覆盖、875g旧结果不当50,000g阈值。完整新档获取、RNG、共享承诺/Year3预算、Teacher21及Student义务保持。[具体合同和接续](money-threshold-production-evidence.md#current-money-resumption)。

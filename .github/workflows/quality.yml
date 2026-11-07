@@ -93,6 +93,9 @@ jobs:
       - name: Test bounded native-control observations before original crop sleep
         shell: pwsh
         run: ./scripts/Test-RuntimeNativeControl.ps1 -OutputRoot "$env:RUNNER_TEMP/native-control-preflight"
+      - name: Test bounded offline proof heap and environment restoration
+        shell: pwsh
+        run: ./scripts/Test-RuntimeBootstrapMemory.ps1
       - name: Test fishing source mapping across original continuation queues without game
         shell: pwsh
         run: ./scripts/Test-RuntimeFishingArtifactMapping.ps1 -OutputRoot "$env:RUNNER_TEMP/fishing-source-mapping"

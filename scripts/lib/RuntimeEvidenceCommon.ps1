@@ -297,7 +297,16 @@ function Invoke-RuntimeBootstrap {
     }
 
     $previousErrorActionPreference = $ErrorActionPreference
+    $savedHeapLimits = Save-RuntimeProcessEnvironment -Names @(
+        'DOTNET_GCHeapHardLimit', 'COMPlus_GCHeapHardLimit')
+    $requestedHeapLimit = [Environment]::GetEnvironmentVariable(
+        'STARDEWAI_BOOTSTRAP_GC_HEAP_HARD_LIMIT')
     try {
+        if (-not [string]::IsNullOrWhiteSpace($requestedHeapLimit) -and
+            [string]::IsNullOrWhiteSpace($savedHeapLimits['DOTNET_GCHeapHardLimit']) -and
+            [string]::IsNullOrWhiteSpace($savedHeapLimits['COMPlus_GCHeapHardLimit'])) {
+            $env:DOTNET_GCHeapHardLimit = $requestedHeapLimit
+        }
         # Windows PowerShell turns native stderr into ErrorRecord instances.
         # Capture it before the caller's Stop preference truncates JSON errors.
         $ErrorActionPreference = "Continue"
@@ -306,6 +315,7 @@ function Invoke-RuntimeBootstrap {
     }
     finally {
         $ErrorActionPreference = $previousErrorActionPreference
+        Restore-RuntimeProcessEnvironment -Values $savedHeapLimits
     }
     if ($exitCode -notin $AllowedExitCodes) {
         $detail = @($nativeOutput |
