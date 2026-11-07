@@ -10,6 +10,31 @@ namespace StardewAI.Core.Tests;
 
 public sealed class MasterAnglerNativeReceiptProgressTests
 {
+    public static IEnumerable<object[]> WrongAggregateTypes()
+    {
+        foreach (var field in new[] { "eligible_species_count", "caught_eligible_species_count", "missing_species_count" })
+        foreach (var json in new[] { "\"72\"", "null", "{}", "true" })
+        foreach (var beforeFrame in new[] { true, false })
+            yield return new object[] { field, json, beforeFrame };
+    }
+
+    [Theory]
+    [MemberData(nameof(WrongAggregateTypes))]
+    public void WrongTypedAggregateReturnsTheOriginalStructuredRejection(string field, string json, bool beforeFrame)
+    {
+        var before = Snapshot(caughtTarget: false);
+        var after = Snapshot(caughtTarget: true);
+        var target = beforeFrame ? before : after;
+        var world = JsonNode.Parse(target.State["world_progress"].GetRawText())!;
+        world["fish_collection_progress"]!["value"]![field] = JsonNode.Parse(json);
+        target.State["world_progress"] = JsonSerializer.SerializeToElement(world);
+        var transition = Verify(before, after);
+        Assert.False(transition.Verified);
+        Assert.Equal("native_collection_false_to_true", transition.TransitionKind);
+        Assert.Equal("unavailable_exact_denominator", transition.BeforeValue);
+        Assert.Equal("unavailable_exact_denominator", transition.AfterValue);
+    }
+
     [Fact]
     public void ExactNativeCollectionTransitionRetainsOriginalCreditSemantics()
     {

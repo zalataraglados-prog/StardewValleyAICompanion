@@ -1,5 +1,29 @@
 # Current Production Snapshot Handoff
 
+## Verified Audit Repairs499/500
+
+PR498 passed all40 final CI steps at42354205809 and merged as50349056;
+the merged tree matches its tested head. Its original native-control route
+proof compatibility is complete, not a native sleep/rollover pass.
+
+Issue499 adds Number kind guards before the three TryGetInt32 calls in the
+original shared fish-progress reader. Wrong types now reach the existing
+unavailable_exact_denominator structured rejection. Exact72, species identities,
+aggregate/missing-list agreement and previously-caught non-regression remain.
+Issue500 aligns only the corpus phase gate with its existing native verifier:
+sleep advances exactly one day, automatic wedding story stays on the same day.
+BuildRun still independently rebuilds the complete native source; exact
+queue/item/nonce/option, complete wedding, original partitions and non-label
+control roles remain. No executor/planner or raw evidence changes.
+
+The147 focused tests pass with no skips, including24 type cases, both wedding
+phases and nine story-identity/native-proof negatives. The old three-partition
+corpus replay and final exact-head CI are recorded at PR closeout. Fixtures are
+not new native evidence. Close499/500 only after acceptance, then resume the
+original current-v6 production/first rollover/maintenance/retention/settlement
+and R2 integration. No accepted L1 recollection;19/19,11/11 and formal=false
+remain unchanged. Raw data/temp stay outside Git, no worker/API/game started.
+
 ## D First-Day Progress And Control Preflight
 
 PR497 is accepted at `5cc3b42c`, exact-head CI42351397889 all39 steps passed;

@@ -32,6 +32,14 @@ frozen criteria; Master Angler itself is not yet accepted as coverage-ready.
 
 ## Implemented Receipt Guard
 
+Issue #499 adds numeric-kind checks in this same shared reader before all three
+aggregate TryGetInt32 calls. Present strings, nulls, objects and booleans now
+return the original structured unavailable_exact_denominator transition rather
+than escaping as InvalidOperationException. The exact72 denominator, species
+identities, missing-list/aggregate agreement and non-regression gates are unchanged.
+The24 before/after type cases are protocol regressions, not new native evidence;
+accepted coverage and formal-training authorization do not change.
+
 The original collection Teacher receipt now reuses
 `CurrentMasterAnglerTeacherFrontierBuilder.ReadExactProgress` for both native
 terminal frames, using the original authoritative requirement inventory. That

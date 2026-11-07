@@ -54,7 +54,11 @@ original decision context. All preparation rows in that group must agree; the
 later wedding date is not a second split or an independent evaluation sample.
 Both comparison and native coverage bind this same original group partition.
 
-The native criterion transition can occur in the final sleep's wedding setup;
+The native criterion transition can occur in the final sleep's wedding setup
+(exact day+1) or during the original automatic wedding story (exact same day);
+the corpus follows both phases already supported by the native verifier (#500).
+Both retain exact queue/item/nonce/option binding to the complete control chain.
+No raw phase claim bypasses BuildRun's independent full native receipt rebuild;
 the wedding event and delayed native home return still have to complete through
 the original joint source verifier. Final snapshot hash need not equal the last
 queue's earlier capture hash. The new corpus does not reinterpret native movement,

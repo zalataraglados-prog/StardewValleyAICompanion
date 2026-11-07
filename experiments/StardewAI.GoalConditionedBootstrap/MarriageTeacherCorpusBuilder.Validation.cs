@@ -65,9 +65,12 @@ public static partial class MarriageTeacherCorpusBuilder
                     "Marriage corpus preparation differs from its original decision, comparison or queue.");
             }
             var transition = run.JointCriterionTransition;
-            Require(Text(transition, "option_id") == "executor.sleep" &&
+            var transitionOption = Text(transition, "option_id");
+            var beforeDay = transition.GetProperty("total_day_before").GetInt32();
+            // BuildRun has independently verified the complete original wedding source.
+            Require((transitionOption == "executor.sleep" && beforeDay + 1 == run.TotalDayAfter ||
+                    transitionOption == "executor.advance_story_event" && beforeDay == run.TotalDayAfter) &&
                 transition.GetProperty("total_day_after").GetInt32() == run.TotalDayAfter &&
-                transition.GetProperty("total_day_before").GetInt32() + 1 == run.TotalDayAfter &&
                 chain.Skip(run.PreparationDecisions.Length).Any(queue => TransitionInQueue(transition, queue)),
                 "Marriage corpus requires the recorded native joint transition, not a gift or unfinished wedding.");
         }
