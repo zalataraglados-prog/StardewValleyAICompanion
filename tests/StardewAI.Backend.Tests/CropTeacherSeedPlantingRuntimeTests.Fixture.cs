@@ -112,15 +112,21 @@ public sealed partial class CropTeacherSeedPlantingRuntimeTests
             Store.Snapshots[Files.After.StateHash] = Files.After;
         }
 
-        internal async Task<CropTeacherSeedPlantingRuntime> BuildControl()
+        internal async Task<CropTeacherSeedPlantingRuntime> BuildControl(bool managedScopes = false)
         {
             var scope = Files.Open();
             var step = new CropTeacherRunStep(CropTeacherRunStageKinds.ExecuteCropBatch, scope.TotalDay, scope.CommitmentId,
                 "Farm", "FarmHouse", "(O)745", "", 0, 8, Files.Batch(), "owned_supply", SeedReservationId: Files.OwnedSlotOne);
-            var task = InvokeLive<Task>("BuildCropTeacherControlQueueCoreAsync", Client, Options, 1, step,
+            var arguments = new object[] { Client, Options, 1, step,
                 new MoneyRevenueCropNativeProductionRunPlan(), new MoneyRevenueCropNativeProductionRunPlanRequest(),
-                Files.SourcePath, JsonSerializer.SerializeToNode(Files.Before, JsonOptions)!.AsObject(), Files.Before.StateHash,
-                null!, null!, scope);
+                Files.SourcePath, JsonSerializer.SerializeToNode(Files.Before, JsonOptions)!.AsObject(), Files.Before.StateHash };
+            var task = managedScopes
+                ? InvokeLive<Task>("BuildCropTeacherManagedControlQueueAsync", arguments.Concat(new object[]
+                {
+                    CropTeacherManagedSeedScopes.Open(Files.RequestPath, Files.SourcePath, Files.LedgerPath, step,
+                        scope.MarkerRequest.PortfolioId)
+                }).ToArray())
+                : InvokeLive<Task>("BuildCropTeacherControlQueueCoreAsync", arguments.Concat(new object[] { null!, null!, scope }).ToArray());
             await task;
             var result = task.GetType().GetProperty("Result")!.GetValue(task)!;
             var rawQueue = (JsonObject)result.GetType().GetProperty("Queue")!.GetValue(result)!;

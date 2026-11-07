@@ -94,7 +94,8 @@ the wrapper's asynchronous failure boundary, not changing the expected guard.
 Complete final-head CI results belong to PR closeout; these synthetic protocol
 tests are not new native gameplay evidence.
 
-Next: finish the single managed scope/claim selection and retained-before,
+The [single scope-selection boundary](money-crop-managed-seed-scopes.md) is the
+immediate successor. Then finish the unique retained-before,
 partial/pending and crash-recovery owner across purchase/transfer/planting and
 lifecycle. Reuse original transactions/journals/proofs; never blindly resend
 native work or weaken old source gates. Only after all paths connect, opt in

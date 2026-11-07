@@ -31,6 +31,15 @@ public sealed class CropTeacherSeedPurchaseSupport
     public string CommitmentId => source.CommitmentId;
     public string SnapshotPath => source.SnapshotPath;
     public int TotalDay => source.TotalDay;
+    public MoneyRevenueCropNativeSeedAcquisitionIntent AcquisitionIntent => Copy(intent);
+    public int MaximumPurchaseQuantity
+    {
+        get
+        {
+            var owned = supply.Commitments.Single();
+            return owned.TileCount - owned.PlayerQuantity;
+        }
+    }
     public IReadOnlyDictionary<string, string> InputHashes => source.InputHashes;
     public StrategyCommitmentLedger BaseLedger => Copy(source.Ledger);
     public ReservationPortfolioCommitRequest MarkerRequest => source.MarkerRequest;

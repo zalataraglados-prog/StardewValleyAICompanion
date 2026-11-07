@@ -55,13 +55,15 @@ public sealed partial class CropTeacherSeedTransferTests
         Assert.Equal(1, runtime.Handler.Settlements);
     }
 
-    [Fact]
-    public async Task OriginalControlCompilerReturnsSameOwnedTransferRuntime()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task OriginalControlCompilerReturnsSameOwnedTransferRuntime(bool managedScopes)
     {
         using var f = new Fixture(nativeEvidence: true);
         using var runtime = new RuntimeFixture(f);
         var scope = f.Open();
-        var result = await runtime.BuildControl(scope);
+        var result = await runtime.BuildControl(scope, managedScopes: managedScopes);
         var queue = result.Queue.Deserialize<ActionQueueEnvelope>(JsonOptions)!;
         Assert.Equal("pending", queue.Status);
         Assert.Equal("executor.transfer_material", Assert.Single(queue.Items).OptionId);

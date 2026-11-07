@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-08 R2统一seed scope（当前唯一接续）：** #517最终42步CI `42414916363`接受合入`6c83d3d9`且核树清分支，Core2443/Backend1044；首head审查origin问题已修、最终34专项/控制者审查及CI分别归因。现单一选择边界将原step绑定原采购/转运/种植scope，控制前核原物理输入/完整嵌套step，沿同一原Core/事务/8格批次/执行/结算/lookup，无第二规划器或执行器。最终20专项通过，完整CI见收口；这不是已启用managed/跨进程恢复或新游戏验收。下一步唯一持久phase所有者串run/plan/input身份、原before、pending/partial/crash恢复；旧binder拒绝活动作物不可反改，行走/维护/跨日靠原证据推进，不能假改源哈希。之后显式managed激活/小样本原生、原联合日历/预算/连续性、Provider/模型及manifest/preflight。L1`19/19、11/11`、formal=false/Student训后新档21/21保持，无游戏/服务器/worker/API，local-data不提交。[合同](money-crop-managed-seed-scopes.md)。下方为历史。
+
 > **本片审查修复补充：** 新生命周期wrapper的末尾斜杠origin在取消/日历两模式均复现释放404；只修新callback共用规范化地址、分离portfolio配置/保留原目录和异步异常边界，原HTTP helper不动。最终runtime34/34通过，含原丢回包lookup；前32/32为此修复前结果，完整最终CI见收口。
 
 > **2026-11-08 R2生命周期运行接线（当前唯一接续）：** #516经最终42步CI `42412481709`核树接受合入`c53115f0`，Core2443/Backend1010；首生产head自动审查和最终源守卫小差控制者审查分别归因。现显式关闭命令复用已验取消/日历完成核心和原HTTP/journal/lookup/完整读回；取消不预Get、丢回包核唯一原事件不重发，释放只走原portfolio且丢回包先lookup不Get兜底。无资源不发空mutation、其他root全核，原before哈希在首次协调前复核、create-new intent独占输出。相关240/240、最终新runtime32/32通过，最终CI见收口，非新游戏/训练或跨进程恢复完成。下一步唯一managed scope/claim/留存源与部分/崩溃恢复所有者，然后显式激活、小样本原生验收及原联合日历/预算/连续性、Provider/模型与manifest/preflight。L1`19/19、11/11`、formal=false和Student训后新档21/21保持；无游戏/服务器/worker/API，local-data不提交。[完整合同](money-crop-seed-lifecycle-runtime.md)。下方为历史。
