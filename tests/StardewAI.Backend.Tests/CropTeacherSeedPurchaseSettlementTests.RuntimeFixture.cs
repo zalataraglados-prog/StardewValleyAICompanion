@@ -74,10 +74,11 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         }
     }
 
-    private static T InvokeLive<T>(string name, params object[] arguments) => (T)typeof(LiveTrainingOptions).Assembly
+    internal static T InvokeLive<T>(string name, params object[] arguments) => (T)typeof(LiveTrainingOptions).Assembly
         .GetType("Program")!.GetMethod(name, BindingFlags.NonPublic | BindingFlags.Static)!.Invoke(null, arguments)!;
 
-    private sealed class RuntimeHandler(HttpMessageHandler inner, bool loseReplies, string fault) : DelegatingHandler(inner)
+    internal sealed class RuntimeHandler(HttpMessageHandler inner, bool loseReplies, string fault,
+        Action<JsonObject>? corruptLedger = null) : DelegatingHandler(inner)
     {
         public int Commits { get; private set; }
         public int Settlements { get; private set; }
@@ -107,8 +108,12 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             if (!tamper) return reply;
             var body = JsonNode.Parse(await reply.Content.ReadAsStringAsync(token))!.AsObject();
             var ledger = read ? body : body["ledger"]!.AsObject();
-            var other = ledger["currency_reservations"]!.AsArray().Single(row => row!["reservation_id"]!.GetValue<string>() == "other-money")!;
-            other["amount"] = 349;
+            if (corruptLedger is not null) corruptLedger(ledger);
+            else
+            {
+                var other = ledger["currency_reservations"]!.AsArray().Single(row => row!["reservation_id"]!.GetValue<string>() == "other-money")!;
+                other["amount"] = 349;
+            }
             var changed = new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(body.ToJsonString(JsonOptions)) };
             reply.Dispose();
             return changed;

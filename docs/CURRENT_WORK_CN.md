@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-11-08 R2自有种子共享运行编排（当前唯一接续）
+
+- #511经42步CI `42391118629`、同head审查及核树接受，合入`e577b2ec`；Backend849/Core2442，自有分支已清。转运原生格式结算核心已接受，不重采L1/E。
+- 当前将转运可选scope接原control/compiler/native队列及原journal/lookup，采购事务抽为唯一共用运行主体；旧采购公共API/文件名/schema/默认语义保留，完整base/prepared/final读回及各阶段回包独立回放不减少。转运不走新购种子commit，不另写执行器/恢复器；实际编译等真实marker读回，候选仍执行前锁定。
+- 新提交前预检复用原通用转移候选的站位/时间与原owned primitive的完整准备投影编译，各自身份不混用，不反改旧绑定。原中断优先级保持，日期/种子/claim/intent/数量/位置/源路径须同原step。合成夹具补齐路线所需字段/来源/tick，不放宽旧校验器。[合同与接续](money-crop-seed-shared-runtime.md)。本片测试/CI以最终收口为准，失败迭代保留；不是新增原生游戏证据。
+- 本地完整Backend872/872（新增23项）、Core2442/2442及原完整hermetic通过，零失败/跳过；早期新consumer绑定/夹具元数据、typed队列重序列化和年龄阈值误设的失败均保留，旧校验/超时/执行器不放宽。最终同head CI/审查/核树见PR收口。
+- **唯一下一步：** 完成本片发布，再把已有种植端接精确自有槽消费及完成/取消释放，先查旧pending-transfer恢复接口，不清未验或部分已执行准备。随后唯一managed激活/恢复、显式入口原生小样本，再联合日历/预算/连续性、Provider/模型及manifest/preflight。当前自动handoff不造scope、活动claims保护仍在；L1`19/19、11/11`和formal=false冻结，Student新档21/21在训练后。无游戏/服务器/worker/API，local-data不提交。下方为历史。
+
 ## 2026-11-08 R2转运原生凭据与原结算核心（当前唯一接续）
 
 - #510经42步CI `42386221700`、同head审查及核树接受，合入`088b932b`；Backend805/Core2442，自有分支已清。准备/派发已有，不重采L1/E。

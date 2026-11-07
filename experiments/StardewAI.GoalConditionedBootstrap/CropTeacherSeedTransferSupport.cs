@@ -4,10 +4,11 @@ using StardewAI.Core.Strategy;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
-public sealed class CropTeacherSeedTransferSupport
+public sealed partial class CropTeacherSeedTransferSupport
 {
     private readonly CropTeacherSeedSupportSource source;
     private readonly ReservationPortfolioCommitRequest preparation;
+    private readonly StrategyCommitmentLedger preparationPreview;
 
     private CropTeacherSeedTransferSupport(string runRequestPath, string snapshotPath, string ledgerPath,
         string commitmentId, string supportStepId, string reservationId, string? priorVerifiedSnapshotPath)
@@ -61,6 +62,7 @@ public sealed class CropTeacherSeedTransferSupport
         var preview = new ReservationPortfolioLedgerService().Commit(source.Ledger, source.Before, preparation, source.Ledger.UpdatedAt);
         Require(preview.Accepted && preview.Ledger?.PreparedMaterialTransfer is not null,
             "Crop seed transfer preparation preflight failed: " + string.Join(",", preview.Errors));
+        preparationPreview = preview.Ledger!;
         source.ValidateInputsUnchanged();
     }
 
@@ -70,6 +72,8 @@ public sealed class CropTeacherSeedTransferSupport
 
     public string CommitmentId => source.CommitmentId;
     public string SnapshotPath => source.SnapshotPath;
+    public int TotalDay => source.TotalDay;
+    public string ReservationId => preparation.MaterialTransferPreparation!.MaterialRelocations[0].MaterialReservationId;
     public IReadOnlyDictionary<string, string> InputHashes => source.InputHashes;
     public StrategyCommitmentLedger BaseLedger => CropTeacherSeedSupportSource.Copy(source.Ledger);
     public ReservationPortfolioCommitRequest PreparationRequest
@@ -84,6 +88,6 @@ public sealed class CropTeacherSeedTransferSupport
         return new(this, ledger);
     }
 
-    internal void ValidateInputsUnchanged() => source.ValidateInputsUnchanged();
+    public void ValidateInputsUnchanged() => source.ValidateInputsUnchanged();
     internal CropTeacherSeedSupportSource Source => source;
 }

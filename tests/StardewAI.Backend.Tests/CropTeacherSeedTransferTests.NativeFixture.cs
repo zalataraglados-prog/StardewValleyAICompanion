@@ -16,9 +16,10 @@ public sealed partial class CropTeacherSeedTransferTests
         internal SnapshotEnvelope After { get; private set; } = null!;
 
         internal MoneyRevenueCropNativeLifecycleTransitionRequest NativeTransition(CropTeacherSeedTransferMarker marker,
-            Action<SnapshotEnvelope>? afterChange = null, Action<QueueExecutionReceiptEnvelope>? receiptChange = null)
+            Action<SnapshotEnvelope>? afterChange = null, Action<QueueExecutionReceiptEnvelope>? receiptChange = null,
+            ActionQueueEnvelope? compiledQueue = null)
         {
-            var queue = Compile(marker);
+            var queue = compiledQueue ?? Compile(marker);
             Assert.Equal("pending", queue.Status);
             After = JsonSerializer.Deserialize<SnapshotEnvelope>(JsonSerializer.Serialize(Before))!;
             After.GameTick += 5;
@@ -49,7 +50,7 @@ public sealed partial class CropTeacherSeedTransferTests
                 destination.Insert(held is null ? 0 : 1, seed);
             }
             var actor = JsonNode.Parse(After.State["player"].GetRawText())!.AsObject();
-            ApplyNativeEchoes(farm, actor);
+            ApplyNativeEchoes(farm, actor, After.GameTick);
             After.State["farm"] = JsonSerializer.SerializeToElement(farm, JsonOptions);
             After.State["player"] = JsonSerializer.SerializeToElement(actor, JsonOptions);
             afterChange?.Invoke(After);
