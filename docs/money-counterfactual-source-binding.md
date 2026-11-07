@@ -120,6 +120,12 @@ once per criterion.
 
 ## Ordered Continuation
 
+The complete versioned comparison consumer is now implemented; see
+[Money Shop Replay Comparison](money-shop-replay-comparison.md). It reuses the
+original comparison/context code and preserves actual source identities. The
+remaining step below is criterion/corpus/native-partition admission, not a
+second source collection or an old exact-frame G index rewrite.
+
 1. Completed: the non-authorizing audit and its exact public/source regressions.
 2. Completed: Iridium Bar's actual native outcome in its own declared isolated source
    using the original evaluator/compiler/executor, request/nonce reader,
@@ -134,9 +140,9 @@ once per criterion.
    isolation paths must bind independently to their actual raw requests and
    isolated roots. No unknown persistent delta may be discarded to obtain
    equivalence. Reference and actual identities remain separate in artifacts.
-4. **Next:** only after this binding and every actual alternative proof replay can the
-   original comparison logic, criterion admission, corpus and genuinely
-   missing partitions advance. No analytical price-only substitute or fake
+4. **Current continuation:** the versioned complete comparison consumer is
+   implemented; criterion admission, corpus and genuinely missing partitions
+   still require their explicit native joins. No analytical price-only substitute or fake
    same-frame episode is permitted. Preserve the old exact-frame path and
    full-denominator checks; do not build a second executor or reset committed
    production ledgers.
