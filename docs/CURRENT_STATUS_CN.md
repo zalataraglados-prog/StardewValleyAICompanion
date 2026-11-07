@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-07 Money真实分区与有条件方法（当前唯一接续）：** #492已合入`c157d618`；train不重采，新补原生day13/test、day17/validation两组优选/铱锭反事实，实际收入1,200,000/20,000，原档未变、游戏退出。原v5三分区同SHA`730f36d1...`、原工作表18/18，无待采波；局部方法同SHA`04cf816e...`，原覆盖对账`d6851f45...`使Money六项均ready，另13项不变。显式E零警告/错误、19专项拒绝、15实际文件反例及完整hermetic通过。原图14节点/执行引用及全部全局获取/生产/预算义务保留，旧入口不变。最终CI接受后L1并集为`19/19 executable、19/19 split-complete、19/19 ready、11/11 roots`；未接受仍保留13项，formal=false。18/18为Money六criterion×三分区，不是Teacher新档21/21或正式训练。发布后的唯一下一步是全局真实遗留对账，先核#338/#339的v22/v10保留来源与旧修复，不重采或重写已验部分。[合同与接续](money-local-method-view.md)。
+
 > **2026-11-07 Money v5实际criterion准入（当前唯一接续）：** #491已38步CI接受、合入`6fee622a`。原corpus新增显式v5重放来源，v4默认/旧字节/同帧门及原native检查保留。真实留存G/H正反向均Build/Verify通过，train六阈值comparison/native join，原工作表确认仅6/18格完成，缺validation/test两波；不是训练已开始或19项进度新增。旧v4同SHA`8147889a...`，v5正反向SHA`57fd1b02...`/`2b4ac8df...`；专项/公开反例通过，最终hermetic/CI见收口。下一步按原生分区采真缺源，再条件方法/原覆盖，不重采train或伪分区；当前并集`13/19、13/19、13/19、10/11`、formal=false。[合同](money-shop-replay-corpus.md)。
 
 > **2026-11-07 Money完整重放比较（当前唯一接续）：** #490已38步CI接受、合入`e807e125`。新增显式完整比较复用原实际context验证与原六阈值比较器，保留原始及实际身份/前缀/费用；一组已验来源服务六阈值，相同来源描述才可在调用内复用参考context，旧绑定字节不变。真实2替代/各1偏好公开重建同SHA`72e9af54...`，17专项/14公开反例及context复用/异源拒绝通过；最终hermetic/CI见收口。下一步仅原criterion/corpus的显式版本化join，不伪装旧v2回执，不造原G `2/2`或训练准入，当前并集仍`13/19、13/19、13/19、10/11`、formal=false。[详细合同](money-shop-replay-comparison.md)。

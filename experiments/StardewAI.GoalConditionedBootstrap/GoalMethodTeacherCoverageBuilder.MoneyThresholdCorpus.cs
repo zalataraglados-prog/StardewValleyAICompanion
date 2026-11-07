@@ -7,9 +7,12 @@ public static partial class GoalMethodTeacherCoverageBuilder
             GoalMethodTeacherCoverageSource source,
             string corpusPath,
             GoalMethodFrontierReport frontier,
-            IReadOnlyDictionary<string, CriterionCoverageEvidence> evidence)
+            IReadOnlyDictionary<string, CriterionCoverageEvidence> evidence,
+            string dependencyExpansionPath)
     {
         var corpus = MoneyThresholdTeacherCorpusBuilder.Verify(corpusPath);
+        MoneyLocalDependencyViewBuilder.VerifyForCoverageIfScoped(corpus, corpusPath,
+            dependencyExpansionPath, frontier.DependencyExpansionSha256);
         var methods = frontier.Methods.Where(method =>
                 method.DirectionId == corpus.DirectionId &&
                 method.MethodId == corpus.MethodId)

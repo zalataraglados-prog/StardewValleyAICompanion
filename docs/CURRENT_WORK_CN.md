@@ -1,5 +1,11 @@
 # StardewAI 当前工作
 
+## 2026-11-07 Money真实缺分区与有条件方法（当前唯一接续）
+
+- #492最终CI `42341875766`接受、合入`c157d618`，自有分支已核树一致后清理。复用G/H train，只为既有隔离档补test I/J（原生day13）与validation K/L（day17）；初始运行身份与原Core分区核对后才设置测前库存/时间，原档哈希保留，四次隐藏静音运行已结束。优选实际收入`0→1,200,000`，铱锭反事实`0→20,000`，没有policy日期改写或把反事实当成功行。
+- 原v5三分区聚合Build/Verify同SHA`730f36d1...`，原18格工作表确认native/comparison均18/18、无待采波、formal=false。局部方法Build/Verify同SHA`04cf816e...`，原覆盖对账`d6851f45...`使Money六项均ready，其他13项逐项不变。原图14节点、边、执行引用、阈值/7分阶梯、预留、获取/生产/结算及全局递推规则均不改；原coverage复用已验corpus，核同一图路径/摘要，拒绝删metadata降级，旧未作用域化入口保留。显式E构建零警告/错误、19专项拒绝、15类实际文件反例及完整hermetic均通过。[合同与收口](money-local-method-view.md)。最终CI接受前不晋升；接受后L1不重叠并集为`19/19 executable、19/19 split-complete、19/19 ready、11/11 roots`，formal仍false，不是完整Teacher新档21/21。
+- **本PR接受后的唯一后继：** 先核原全局获取/生产、共享承诺与时间预算的真实遗留，优先对照#338/#339保留的v22/v10来源、`167eb5f6`/`858a7f8b`/`ac764c00`旧修复及已记875g结果；不是从头改边界或重跑13天。再按R2所属层接原完整Teacher21/Student集成。不因直接出售关闭crop/native条款；不重采本轮成功来源或重做局部方法。若本PR尚未接受，只处理本PR真实审查/CI失败并核发布状态。原始数据/caller仓库外，无worker/API，不改共享执行器，不启动训练。
+
 ## 2026-11-07 Money既有corpus的v5原生准入（当前唯一接续）
 
 - #491已38步CI接受、合入`6fee622a`。本轮扩展原Money corpus为显式v5来源，不另建系统或伪造旧v2回执；默认v4和同帧门保留。核`0e4086a8`/`6f28fce1`旧意图，仅提取原目标/偏好公共检查，原native artifact/prefix验证不改；新source/join元数据旧记录省略，一组比较服务匹配criterion。[合同与接续](money-shop-replay-corpus.md)。
