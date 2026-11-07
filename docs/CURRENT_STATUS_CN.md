@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-07 Money v5实际criterion准入（当前唯一接续）：** #491已38步CI接受、合入`6fee622a`。原corpus新增显式v5重放来源，v4默认/旧字节/同帧门及原native检查保留。真实留存G/H正反向均Build/Verify通过，train六阈值comparison/native join，原工作表确认仅6/18格完成，缺validation/test两波；不是训练已开始或19项进度新增。旧v4同SHA`8147889a...`，v5正反向SHA`57fd1b02...`/`2b4ac8df...`；专项/公开反例通过，最终hermetic/CI见收口。下一步按原生分区采真缺源，再条件方法/原覆盖，不重采train或伪分区；当前并集`13/19、13/19、13/19、10/11`、formal=false。[合同](money-shop-replay-corpus.md)。
+
 > **2026-11-07 Money完整重放比较（当前唯一接续）：** #490已38步CI接受、合入`e807e125`。新增显式完整比较复用原实际context验证与原六阈值比较器，保留原始及实际身份/前缀/费用；一组已验来源服务六阈值，相同来源描述才可在调用内复用参考context，旧绑定字节不变。真实2替代/各1偏好公开重建同SHA`72e9af54...`，17专项/14公开反例及context复用/异源拒绝通过；最终hermetic/CI见收口。下一步仅原criterion/corpus的显式版本化join，不伪装旧v2回执，不造原G `2/2`或训练准入，当前并集仍`13/19、13/19、13/19、10/11`、formal=false。[详细合同](money-shop-replay-comparison.md)。
 
 > **名称纠正：** 留存候选`(O)337`的真实`display_name`是铱锭；旧报告和不可变运行名中的Gold为误称。执行/证明始终按337、20件、原生单价1000绑定，未卖错物品，历史身份/路径不改。#490阶段的非准入映射预检为历史记录，当前比较实现和接续以上方最新计划为准，不冒充corpus或覆盖已闭合。

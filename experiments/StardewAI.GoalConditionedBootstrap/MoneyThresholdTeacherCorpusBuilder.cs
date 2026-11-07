@@ -30,11 +30,10 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
         MoneyThresholdTeacherCorpusRequest request)
     {
         ValidateRequest(request);
-        var rows = request.Sources.Select(BuildRow)
-            .OrderBy(row => row.RowId, StringComparer.Ordinal)
-            .ToArray();
+        var rows = BuildRows(request.Sources);
         ValidateRows(rows);
-        return CreateCorpus(request.CorpusId, rows);
+        return CreateCorpus(request.CorpusId, rows, request.SchemaVersion == MoneyThresholdTeacherCorpusVersions.ShopReplayRequest
+            ? MoneyThresholdTeacherCorpusVersions.ShopReplayCorpus : MoneyThresholdTeacherCorpusVersions.Corpus);
     }
 
     public static MoneyThresholdTeacherCorpus Verify(string corpusPath)
@@ -48,31 +47,9 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
             "Money-threshold Teacher corpus");
         ValidateHeader(corpus);
 
-        var rebuilt = corpus.Rows.Select(row => BuildRow(
-                new MoneyThresholdTeacherCorpusSource(
-                    row.SourceId,
-                    row.NativeOutcomeKind ==
-                        MoneyThresholdNativeOutcomeKinds.ShopSaleEpisode
-                            ? row.ExecutionEpisodePath
-                            : string.Empty,
-                    row.CrossedThresholds
-                        .Where(value => value.TeacherComparison is not null)
-                        .Select(value =>
-                            new MoneyThresholdTeacherComparisonSource(
-                                value.CriterionId,
-                                value.TeacherComparison!
-                                    .AdmissionManifestPath,
-                                value.TeacherComparison!
-                                    .AdmissionReceiptPath))
-                        .ToArray(),
-                    row.NativeOutcomeKind ==
-                        MoneyThresholdNativeOutcomeKinds.RevenueTrajectory
-                            ? row.NativeTrajectoryReceiptPath
-                            : string.Empty)))
-            .OrderBy(row => row.RowId, StringComparer.Ordinal)
-            .ToArray();
+        var rebuilt = BuildRows(corpus.Rows.Select(SourceForRow).ToArray());
         ValidateRows(rebuilt);
-        var expected = CreateCorpus(corpus.CorpusId, rebuilt);
+        var expected = CreateCorpus(corpus.CorpusId, rebuilt, corpus.SchemaVersion);
         if (!EqualJson(corpus, expected))
         {
             throw new InvalidDataException(
@@ -91,7 +68,7 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
     private static void ValidateHeader(
         MoneyThresholdTeacherCorpus corpus)
     {
-        if (corpus.SchemaVersion != MoneyThresholdTeacherCorpusVersions.Corpus ||
+        if (corpus.SchemaVersion != MoneyThresholdTeacherCorpusVersions.Corpus && corpus.SchemaVersion != MoneyThresholdTeacherCorpusVersions.ShopReplayCorpus ||
             string.IsNullOrWhiteSpace(corpus.CorpusId) ||
             corpus.GoalId != GoalMethodTeacherCoverageGoalIds.Authoritative ||
             corpus.DirectionId != "earn_money" ||
@@ -103,11 +80,15 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
             throw new InvalidDataException(
                 "Money-threshold Teacher corpus header is invalid.");
         }
+        var hasReplay = corpus.Rows.Any(row => row.CrossedThresholds.Any(value => value.TeacherComparison?.ShopReplayJoin is not null));
+        Require(corpus.SchemaVersion == MoneyThresholdTeacherCorpusVersions.ShopReplayCorpus ? hasReplay : !hasReplay,
+            "Money-threshold corpus version does not match its replay-comparison metadata.");
     }
 
     private static MoneyThresholdTeacherCorpus CreateCorpus(
         string corpusId,
-        MoneyThresholdTeacherEvidenceRow[] rows)
+        MoneyThresholdTeacherEvidenceRow[] rows,
+        string schemaVersion = MoneyThresholdTeacherCorpusVersions.Corpus)
     {
         var coveredCriteria = rows
             .SelectMany(row => row.CrossedThresholds)
@@ -138,6 +119,7 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
                         value.TeacherComparison is not null))));
         return new MoneyThresholdTeacherCorpus
         {
+            SchemaVersion = schemaVersion,
             Status = nativeSplitComplete && teacherSplitComplete
                 ? "ready_split_complete_money_threshold_teacher_corpus"
                 : "verified_partial_money_threshold_teacher_corpus",
@@ -153,18 +135,24 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
         };
     }
 
-    private static MoneyThresholdTeacherEvidenceRow BuildRow(
-        MoneyThresholdTeacherCorpusSource source)
+    private static MoneyThresholdTeacherEvidenceRow[] BuildRows(MoneyThresholdTeacherCorpusSource[] sources)
     {
-        if (string.IsNullOrWhiteSpace(source.SourceId))
+        var cache = new Dictionary<string, VerifiedShopReplayInput>(OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
+        return sources.Select(source =>
         {
-            throw new InvalidDataException(
-                "Money-threshold corpus source ID is required.");
-        }
-        return BuildRow(
-            source.SourceId,
-            VerifyNativeOutcome(source),
-            source.ComparisonAdmissions);
+            if (string.IsNullOrWhiteSpace(source.SourceId)) throw new InvalidDataException("Money-threshold corpus source ID is required.");
+            VerifiedShopReplayInput? replay = null;
+            if (source.ShopReplayComparisonReceiptPath is not null)
+            {
+                var path = RequiredFile(source.ShopReplayComparisonReceiptPath, "Money-threshold shop replay comparison");
+                if (!cache.TryGetValue(path, out replay))
+                {
+                    replay = new(path, CurrentTeacherFrontierSupport.HashFile(path), MoneyShopReplayComparisonBuilder.Verify(path));
+                    cache.Add(path, replay);
+                }
+            }
+            return BuildRow(source.SourceId, VerifyNativeOutcome(source), source.ComparisonAdmissions, replay);
+        }).OrderBy(row => row.RowId, StringComparer.Ordinal).ToArray();
     }
 
     internal static MoneyThresholdTeacherEvidenceRow
@@ -181,7 +169,8 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
     private static MoneyThresholdTeacherEvidenceRow BuildRow(
         string sourceId,
         MoneyThresholdVerifiedNativeOutcome outcome,
-        MoneyThresholdTeacherComparisonSource[]? admissions)
+        MoneyThresholdTeacherComparisonSource[]? admissions,
+        VerifiedShopReplayInput? replay = null)
     {
         var before = outcome.SourceCheckpoint;
         var after = outcome.FinalCheckpoint;
@@ -213,7 +202,7 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
                         threshold,
                         outcome,
                         comparisonSource)
-                    : null,
+                    : replay is null ? null : BuildShopReplayComparisonEvidence(threshold, outcome, replay),
                 true))
             .ToArray();
         if (crossed.Length == 0)
@@ -221,6 +210,8 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
             throw new InvalidDataException(
                 "Money-threshold source did not cross an authoritative threshold.");
         }
+        Require(replay is null || crossed.Any(value => value.TeacherComparison?.ShopReplayJoin is not null),
+            "Money-threshold native source is not a selected eligible replay-comparison outcome.");
         var crossedIds = crossed.Select(value => value.CriterionId)
             .ToHashSet(StringComparer.Ordinal);
         if (comparisonSources.Keys.Any(value => !crossedIds.Contains(value)))

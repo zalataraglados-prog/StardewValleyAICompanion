@@ -9,7 +9,7 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
     private static void ValidateRequest(
         MoneyThresholdTeacherCorpusRequest request)
     {
-        if (request.SchemaVersion != MoneyThresholdTeacherCorpusVersions.Request ||
+        if (request.SchemaVersion != MoneyThresholdTeacherCorpusVersions.Request && request.SchemaVersion != MoneyThresholdTeacherCorpusVersions.ShopReplayRequest ||
             string.IsNullOrWhiteSpace(request.CorpusId) ||
             request.FormalProductTrainingAuthorized ||
             request.Sources.Length == 0 ||
@@ -40,6 +40,7 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
             throw new InvalidDataException(
                 "Money-threshold Teacher corpus request is invalid.");
         }
+        ValidateReplayRequestVersion(request);
     }
 
     private static void ValidateRows(MoneyThresholdTeacherEvidenceRow[] rows)
@@ -68,6 +69,7 @@ public static partial class MoneyThresholdTeacherCorpusBuilder
                         "player.total_money_earned >= " +
                         expected.Target.ToString(CultureInfo.InvariantCulture) ||
                     !ValidComparison(value, expected.CriterionId) ||
+                    !ValidShopReplayMetadata(value.TeacherComparison, row) ||
                     !value.NativeTerminalOutcomeVerified)))
         {
             throw new InvalidDataException(
