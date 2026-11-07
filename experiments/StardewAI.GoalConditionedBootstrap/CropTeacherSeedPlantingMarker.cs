@@ -57,7 +57,9 @@ public sealed class CropTeacherSeedPlantingMarker
         return CropTeacherSeedSupportSource.Copy(actions);
     }
 
-    public string ValidateQueue(string path)
+    public string ValidateQueue(string path) => ReadQueue(path).Hash;
+
+    private (string Hash, ActionQueueEnvelope Queue) ReadQueue(string path)
     {
         scope.ValidateInputsUnchanged();
         var hash = CurrentTeacherFrontierSupport.HashFile(path);
@@ -80,7 +82,25 @@ public sealed class CropTeacherSeedPlantingMarker
                 "Owned seed planting queue action/order/claim binding drifted.");
         }
         Require(CurrentTeacherFrontierSupport.HashFile(path) == hash, "Owned seed planting queue changed while binding.");
-        return hash;
+        return (hash, queue);
+    }
+
+    public CropTeacherSeedPlantingSettlement VerifyTransition(MoneyRevenueCropNativeLifecycleTransitionRequest transition,
+        string proofPath, string preparedQueueSha256) => CreateSettlement(transition, proofPath, preparedQueueSha256, null);
+
+    public CropTeacherSeedPlantingSettlement ResumeTransition(MoneyRevenueCropNativeLifecycleTransitionRequest transition,
+        string proofPath, string preparedQueueSha256, string expectedProofSha256)
+    {
+        Require(IsLowerSha256(expectedProofSha256), "Owned planting retained proof hash is invalid.");
+        return CreateSettlement(transition, proofPath, preparedQueueSha256, expectedProofSha256);
+    }
+
+    private CropTeacherSeedPlantingSettlement CreateSettlement(MoneyRevenueCropNativeLifecycleTransitionRequest transition,
+        string proofPath, string preparedQueueSha256, string? expectedProofSha256)
+    {
+        var bound = ReadQueue(transition.QueuePath);
+        Require(bound.Hash == preparedQueueSha256 && IsLowerSha256(bound.Hash), "Owned planting queue differs from its prepared hash.");
+        return new(scope, ledger, BoundBatch, transition, bound.Queue, bound.Hash, proofPath, expectedProofSha256);
     }
 
     private static SmallModelActionParameter Parameter(string name, string value) => new() { Name = name, Value = value };

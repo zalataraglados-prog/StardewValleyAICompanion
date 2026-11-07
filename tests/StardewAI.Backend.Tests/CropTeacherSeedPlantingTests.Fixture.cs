@@ -12,7 +12,7 @@ public sealed partial class CropTeacherSeedPlantingTests
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    private sealed class Fixture : IDisposable
+    private sealed partial class Fixture : IDisposable
     {
         private readonly string root = Path.Combine(Path.GetTempPath(), "owned-seed-planting-" + Guid.NewGuid().ToString("N"));
         private readonly CropTeacherSeedTransferTests.Fixture transfer;
@@ -27,11 +27,22 @@ public sealed partial class CropTeacherSeedPlantingTests
         internal string Id => Ledger.CropPlantingCommitments.Single().CommitmentId;
         internal string OwnedSlotOne => Ledger.MaterialReservations.Single(row => row.NodeId == "player:123" && row.SlotIndex == 1).ReservationId;
 
-        internal Fixture()
+        internal Fixture(int ownedStack = 9, int? beforeClock = null)
         {
             Directory.CreateDirectory(root);
-            transfer = new(nativeEvidence: true, beforeChange: snapshot =>
+            transfer = new(nativeEvidence: true, change: graph => graph.InventoryNodes[0].Slots[0].Stack = 989 + ownedStack,
+                beforeChange: snapshot =>
             {
+                var farm = JsonNode.Parse(snapshot.State["farm"].GetRawText())!.AsObject();
+                farm["crops"] = NativeField(System.Array.Empty<object>(), snapshot.GameTick);
+                snapshot.State["farm"] = JsonSerializer.SerializeToElement(farm, JsonOptions);
+                var progress = JsonNode.Parse(snapshot.State["world_progress"].GetRawText())!.AsObject();
+                progress["game_state_query_unlock_state"] = NativeField(new
+                {
+                    players = new[] { new { player_id = snapshot.PlayerId.Value, stats = new { seedsSown = 10, stepsTaken = 25 },
+                        is_current = true, is_host = true } }
+                }, snapshot.GameTick);
+                snapshot.State["world_progress"] = JsonSerializer.SerializeToElement(progress, JsonOptions);
                 var time = JsonNode.Parse(snapshot.State["time"].GetRawText())!.AsObject();
                 time["year"]!["value"] = 2;
                 time["season"]!["value"] = "spring";
@@ -62,6 +73,7 @@ public sealed partial class CropTeacherSeedPlantingTests
             var settled = Repository.SettleReservationPortfolioSupportingTransition(transfer.After, verified.SettlementRequest);
             Ledger = verified.VerifySettlementReply(settled);
             Before = transfer.After;
+            if (beforeClock.HasValue) Before.InGameTime.Value = beforeClock.Value;
             Save(SourcePath, Before);
             Save(LedgerPath, Ledger);
             File.Copy(transfer.RequestPath, RequestPath);

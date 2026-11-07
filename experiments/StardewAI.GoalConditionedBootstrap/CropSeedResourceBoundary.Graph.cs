@@ -4,7 +4,7 @@ using StardewAI.Contracts.State;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
-internal static partial class CropSeedTransferResourceBoundary
+internal static partial class CropSeedResourceBoundary
 {
     private static (JsonObject Graph, JsonObject SourceSlot, JsonArray SourceAccesses) ProjectGraph(SnapshotEnvelope before, SnapshotEnvelope after, MaterialInventoryGraph graph,
         MaterialTransferIntent intent, MaterialTransferProjection physical)
@@ -35,21 +35,26 @@ internal static partial class CropSeedTransferResourceBoundary
         var quantities = Array(expected["quantity_rows"], "quantity rows").OfType<JsonObject>().Where(row =>
             row["qualified_item_id"]?.GetValue<string>() == intent.QualifiedItemId && Int(row, "quality") == intent.Quality).ToArray();
         Require(quantities.Length == 1, "Owned seed transfer aggregate identity is not unique.");
-        var native = graph.InventoryNodes.SelectMany(node => node.Slots.Select(slot => (Node: node, Slot: slot)))
-            .Where(row => row.Slot.Stack > 0 && row.Slot.QualifiedItemId == intent.QualifiedItemId && row.Slot.Quality == intent.Quality).ToArray();
-        var nativeCount = native.Length;
-        Require(Int(quantities[0], "source_slot_count") == nativeCount, "Owned seed transfer source aggregate is inconsistent.");
-        foreach (var (field, state) in new[] { ("available_quantity", "available"), ("ready_output_quantity", "ready_output"),
-                     ("in_process_quantity", "in_process") })
-            Require(Int(quantities[0], field) == native.Where(row => row.Node.ActorUseAuthorized && row.Node.SupplyState == state)
-                    .Sum(row => (long)row.Slot.Stack), "Owned seed transfer source aggregate amount is inconsistent: " + field);
-        Require(Int(quantities[0], "restricted_quantity") == native.Where(row => !row.Node.ActorUseAuthorized).Sum(row => (long)row.Slot.Stack),
-            "Owned seed transfer source restricted aggregate is inconsistent.");
+        var nativeCount = VerifySourceQuantity(quantities[0], graph, intent.QualifiedItemId, intent.Quality);
         quantities[0]["source_slot_count"] = nativeCount + physical.NativeSlotTransitions!.Where(row =>
                 row.QualifiedItemId == intent.QualifiedItemId && row.Quality == intent.Quality)
             .Sum(row => (row.AfterSlotIndex.HasValue ? 1 : 0) - (row.BeforeSlotIndex.HasValue ? 1 : 0));
         EqualField(envelope, Field(after, "farm", "material_inventory_graph"), "native material graph");
         return (expected, source, sourceAccesses);
+    }
+
+    private static int VerifySourceQuantity(JsonObject quantity, MaterialInventoryGraph graph, string itemId, int quality)
+    {
+        var native = graph.InventoryNodes.SelectMany(node => node.Slots.Select(slot => (Node: node, Slot: slot)))
+            .Where(row => row.Slot.Stack > 0 && row.Slot.QualifiedItemId == itemId && row.Slot.Quality == quality).ToArray();
+        Require(Int(quantity, "source_slot_count") == native.Length, "Owned seed transfer source aggregate is inconsistent.");
+        foreach (var (field, state) in new[] { ("available_quantity", "available"), ("ready_output_quantity", "ready_output"),
+                     ("in_process_quantity", "in_process") })
+            Require(Int(quantity, field) == native.Where(row => row.Node.ActorUseAuthorized && row.Node.SupplyState == state)
+                    .Sum(row => (long)row.Slot.Stack), "Owned seed transfer source aggregate amount is inconsistent: " + field);
+        Require(Int(quantity, "restricted_quantity") == native.Where(row => !row.Node.ActorUseAuthorized).Sum(row => (long)row.Slot.Stack),
+            "Owned seed transfer source restricted aggregate is inconsistent.");
+        return native.Length;
     }
 
     private static void ProjectChestOccupancy(JsonObject access, int beforeCount, int afterCount, int capacity)

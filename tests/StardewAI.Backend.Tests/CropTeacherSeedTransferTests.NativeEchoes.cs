@@ -28,7 +28,7 @@ public sealed partial class CropTeacherSeedTransferTests
             ApplyNativeEchoes(farm, actor, Before.GameTick);
         }
 
-        private static void ApplyNativeEchoes(JsonObject farm, JsonObject actor, long tick)
+        internal static void ApplyNativeEchoes(JsonObject farm, JsonObject actor, long tick)
         {
             var graph = farm["material_inventory_graph"]!["value"]!;
             var nodes = graph["inventory_nodes"]!.AsArray().OfType<JsonObject>().ToArray();

@@ -475,15 +475,8 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         var afterCrop = ReadCrop(after, layout.LocationId, tile.X, tile.Y);
         if (optionId == PlantOption)
         {
-            Require(beforeCrop is null && afterCrop is not null &&
-                    CropIdentityMatches(afterCrop, commitment) &&
-                    !afterCrop.Dead && !afterCrop.ReadyForHarvest &&
-                    afterCrop.CurrentPhase == 0 &&
-                    afterCrop.DayOfCurrentPhase == 0 &&
-                    afterCrop.PhaseCount == afterCrop.PhaseDays.Length &&
-                    afterCrop.PhaseDays.Where(value => value < 99999).Sum() ==
-                        commitment.BaseGrowDays,
-                "Money Revenue native planting transition is not exact.");
+            ValidateInitialPlanting(beforeCrop, afterCrop, commitment.SeedQualifiedItemId,
+                commitment.HarvestItemQualifiedId, commitment.BaseGrowDays);
             return;
         }
         Require(beforeCrop is not null &&

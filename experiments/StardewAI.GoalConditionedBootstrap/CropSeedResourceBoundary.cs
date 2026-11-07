@@ -7,7 +7,7 @@ using StardewAI.Core.Execution;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
-internal static partial class CropSeedTransferResourceBoundary
+internal static partial class CropSeedResourceBoundary
 {
     internal static void Verify(SnapshotEnvelope before, SnapshotEnvelope after, PreparedMaterialTransfer prepared, string resolvedSeedId)
     {

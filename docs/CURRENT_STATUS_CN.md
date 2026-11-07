@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-08 R2原生种植结果/消费（当前唯一接续）：** #513经42步CI `42400639598`、同head审查/核树接受合入`4a2377b3`，Core2442/Backend909。本片复用原逐格作物读器/初态谓词、转运资源边界和原结算；完整回执仍原校验，部分成功只扣已验前缀，失败后缀不能偷消费。耗尽完成材料claim，不取消生长作物；完整持久回包独立回放、不可变proof及只读恢复。协议测试不是新游戏/已激活托管，最终回归见收口。下一步原API完成/取消释放，再唯一runtime事务/journal/读回及已验前缀派发，不改旧源门、不假用初源、不拆逐粒队列；随后显式managed激活、小样本原生边界、联合日历/预算/连续性、Provider/模型与manifest/preflight。L1`19/19、11/11`、formal=false及Student训后新档21/21不变，无游戏/服务器/worker/API，local-data不提交。[完整合同](money-crop-owned-planting-settlement.md)。下方为历史。
+
 > **2026-11-08 R2精确自有槽种植（当前唯一接续）：** #512已42步CI接受合入`077e237b`并核树/清分支，Backend872/Core2442。现原批次绑定一个自有玩家claim，仍最多8格且不超claim数量；原编译/派发与请求映射新增显式绑定，原种植/扣种函数仅在新flag下核精确槽、品质和逐步栈数，旧默认不改。实际E DLL重反编译及原生构建已核；本片是绑定/协议，不是消耗结算或新游戏验收。下一步同批次逐步原生结果/部分成功前缀、精确槽消耗/完整资源边界及原结算，再完成取消释放与唯一managed恢复/激活。中途新源不能借放宽旧派发源门处理，也不拆逐粒队列过测。之后日历/预算/连续性、Provider/模型和manifest/preflight；L1`19/19、11/11`、formal=false及Student训后新档21/21不变。回归/发布见收口，无游戏/worker/API，local-data不提交。[完整合同](money-crop-owned-planting-binding.md)。下方为历史。
 
 > **2026-11-08 R2种子共用运行事务（当前唯一接续）：** #511经42步CI接受合入`e577b2ec`并核树/清自有分支，Backend849/Core2442。当前复用原采购公共编排，将转运scope接原控制/编译/原生回执及journal/lookup：完整base/prepared/final读回、真实回包独立回放，转运不重复建立购种预留；执行器和旧绑定不改。提交前分别用原通用候选做几何/时间预检、原owned primitive对原服务只读准备投影校验授权；真实编译仍等待实际marker读回。专项/全量/CI以收口为准，合成协议非游戏实测。下一步精确自有槽种植消费/完成取消释放，再唯一managed激活恢复及小样本原生验收，随后联合日历/预算/连续性、Provider/模型和manifest/preflight。自动入口/活动claims保护不提前放开；L1`19/19、11/11`、formal=false及Student训练后新档21/21不变。无游戏/worker/API，local-data不提交。[完整合同](money-crop-seed-shared-runtime.md)。下方为历史。

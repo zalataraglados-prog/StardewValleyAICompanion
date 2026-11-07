@@ -54,7 +54,7 @@ internal sealed record CropTeacherSeedTransferNativeOutcome(CropTeacherSeedTrans
         }
         else Require(string.Equals(stepPath, paths[3], PathComparison),
             "Owned seed transfer step snapshot aliases a non-terminal artifact.");
-        CropSeedTransferResourceBoundary.Verify(before, after, committed.PreparedMaterialTransfer!,
+        CropSeedResourceBoundary.Verify(before, after, committed.PreparedMaterialTransfer!,
             committed.CropPlantingCommitments.Single(row => row.CommitmentId == scope.CommitmentId).SeedId);
         var prepared = committed.PreparedMaterialTransfer!;
         return new(new CropTeacherSeedTransferProof("crop_teacher_seed_transfer_proof.v1", scope.CommitmentId,
