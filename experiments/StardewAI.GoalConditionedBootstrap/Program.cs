@@ -38,6 +38,8 @@ var commandDefinitions = new CommandDefinition[]
     new("audit-friendship-day-transition", AuditFriendshipDayTransition),
     new("validate-route-timing", ValidateRouteTiming),
     new("audit-current-owned-planning-pause", AuditCurrentOwnedPlanningPause),
+    new("audit-money-counterfactual-source", options => MoneyCounterfactualSourceAuditCommands.Write(options, Write, verify: false)),
+    new("verify-money-counterfactual-source-audit", options => MoneyCounterfactualSourceAuditCommands.Write(options, Write, verify: true)),
     new("audit-current-social-frontier", AuditCurrentSocialFrontier),
     new("plan-current-social-day", PlanCurrentSocialDay),
     new("build-current-social-teacher-label", BuildCurrentSocialTeacherLabel),
@@ -324,6 +326,7 @@ var commandDefinitions = new CommandDefinition[]
         BootstrapSelfTest.RunGoalMethodFrontierReuse(
             GoalMethodFrontierInputs(options))),
     new("self-test-bootstrap-hermetic", _ => BootstrapSelfTest.RunHermeticCriticalPaths()),
+    new("self-test-money-counterfactual-source-audit", _ => BootstrapSelfTest.VerifyMoneyCounterfactualSourceAudit()),
     new("self-test-money-direct-concrete", options => BootstrapSelfTest.VerifyMoneyDirectConcrete(options.Optional("output-root"))),
     new("self-test-money-revenue-crop-teacher-dispatch", options =>
         BootstrapSelfTest.VerifyMoneyRevenueCropTeacherDispatch(options.Optional("output-root"))),

@@ -1,5 +1,11 @@
 # StardewAI 当前工作
 
+## 2026-11-07 Money反事实来源合同（当前唯一接续）
+
+- #488经38步CI接受、合入`b3874405`，原G出售和`1/2`终端证明不重采。核对确认旧计划只有采集任务描述，没有可恢复的原生分叉器；完整哈希含读取tick/执行身份，不能把独立重放叫作G原帧。[来源绑定及按序接续](money-counterfactual-source-binding.md)。
+- 新只读audit复用原完整request/candidate重建、active-shop绑定及原persistent projector；保留两个实际来源/候选/摘要，任何情况下都不授予重放/native/标签/训练权限。G/F真实比对经济事实、服务时间/菜单和20件Gold单价1000均相同，旧持久边界仍明确列出run ID及隔离路径两项差异；F不因审计获得Mod准入。旧验证器、缓存及执行器不改，fixture改用新不可变路径/保留原字段来源。
+- **唯一下一步：** Gold own-source原生观察（不要求负例跨最低阈值，不冒充G已闭合），随后版本化来源绑定完整证明save/setup/Mod/身份/候选映射/账本资源/时间报价及全部持久事实，再原比较/准入/corpus和缺分区。原帧与实际帧保持各自身份，不改hash、不吞未知变化、不用价格预测替代原生。G仍`1/2`，并集`13/19、13/19、13/19、10/11 roots`、formal=false；原始数据/caller仓库外，无worker/API或产品训练，最终验证/CI见收口。
+
 ## 2026-11-07 Money原生出售与终端预留（当前唯一接续）
 
 - #487经38步CI接受、合入`2f1e935b`。G局部声明库存条件下原编译出售→关菜单均执行，原v4验证累计收入`0→1,200,000`、六阈值/train、comparison=0；测前Mod身份真实保留，离线复用原raw/nonce reader及原episode factory，原passed-run/比较初始化器接受。E/F和G初始调用端失败摘要保留，不冒充获取/新档或训练。[来源与边界](money-local-native-collection.md)。
