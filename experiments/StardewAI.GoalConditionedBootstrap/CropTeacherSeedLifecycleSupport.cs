@@ -67,7 +67,7 @@ public sealed class CropTeacherSeedLifecycleSupport
         return new(this, observed);
     }
 
-    internal void ValidateInputsUnchanged()
+    public void ValidateInputsUnchanged()
     {
         foreach (var (path, hash) in inputHashes)
             Require(CurrentTeacherFrontierSupport.HashFile(path) == hash, "Crop seed lifecycle input changed: " + path);

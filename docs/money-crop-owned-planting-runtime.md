@@ -100,8 +100,9 @@ The updated original control-source guard group passed15/15, zero skips.
 
 ## Unique Next Work
 
-Connect the already accepted completion/cancellation lifecycle kernel to the
-existing durable runtime owner and original journals/readbacks. Then finish the
+[Explicit lifecycle runtime](money-crop-seed-lifecycle-runtime.md) connects the
+accepted completion/cancellation kernel to original HTTP/journals/readbacks.
+After that slice's verification and publication, finish the
 single managed scope/claim selection, retained-before inputs and crash recovery
 owner for purchase/transfer/planting, including pending/partial work without any
 blind native resend. Only after all paths connect, explicitly version/opt in
