@@ -5,7 +5,7 @@ using StardewAI.Core.Strategy;
 
 namespace StardewAI.Core.Tests;
 
-public sealed class StrategyCommitmentLedgerTests
+public sealed partial class StrategyCommitmentLedgerTests
 {
     [Fact]
     public void NativeCropCatalogBindsCrossSeasonCommitmentAndRevision()
