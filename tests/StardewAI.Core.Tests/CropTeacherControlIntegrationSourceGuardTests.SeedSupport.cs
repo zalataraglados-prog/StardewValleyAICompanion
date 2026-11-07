@@ -27,5 +27,6 @@ public sealed partial class CropTeacherControlIntegrationSourceGuardTests
         var settle = source.IndexOf("await cropSeedSupportForExecution.CompleteAsync(", execute, StringComparison.Ordinal);
         var feedback = source.IndexOf("var feedbackAvailable =", settle, StringComparison.Ordinal);
         Assert.True(validate >= 0 && execute > validate && settle > execute && feedback > settle);
+        Assert.Contains("ReadString(execution, \"after_snapshot_path\"), selectedCandidateId)", source, StringComparison.Ordinal);
     }
 }

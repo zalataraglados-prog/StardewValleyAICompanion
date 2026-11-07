@@ -1495,7 +1495,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             : await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/action-queues/" + Uri.EscapeDataString(lastQueueId) + "/execute-training-sandbox", "{}");
         if (cropSeedSupportForExecution is not null)
             await cropSeedSupportForExecution.CompleteAsync(queuePath, ReadString(execution, "execution_path"),
-                ReadString(execution, "after_snapshot_path"), ReadString(execution, "selected_candidate_id"));
+                ReadString(execution, "after_snapshot_path"), selectedCandidateId);
         if (activeCropTeacherTransitionLedger is not null &&
             cropTeacherStepForExecution is not null)
         {

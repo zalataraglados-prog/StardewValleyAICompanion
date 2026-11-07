@@ -8,15 +8,22 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
     [InlineData("run")]
     [InlineData("executor")]
     [InlineData("day")]
+    [InlineData("candidate")]
     public async Task NativeIdentityCannotDriftAfterPreparation(string target)
     {
         using var f = new Fixture();
         using var runtime = new RuntimeFixture(f);
         var transition = f.Transition();
         var prepared = await runtime.Prepare(transition);
-        var wrong = target == "run" ? transition with { RunId = "other-run" } : target == "executor" ?
-            transition with { ExecutorVersion = "other-executor" } : transition with { TotalDay = transition.TotalDay + 1 };
-        Assert.Contains("identity", (await Assert.ThrowsAsync<InvalidDataException>(() => prepared.CompleteAsync(wrong))).Message);
+        var wrong = target switch
+        {
+            "run" => transition with { RunId = "other-run" },
+            "executor" => transition with { ExecutorVersion = "other-executor" },
+            "candidate" => transition with { SelectedCandidateId = "not-the-locked-candidate" },
+            _ => transition with { TotalDay = transition.TotalDay + 1 }
+        };
+        Assert.Contains(target == "candidate" ? "receipt" : "identity",
+            (await Assert.ThrowsAsync<InvalidDataException>(() => prepared.CompleteAsync(wrong))).Message);
         Assert.Equal(0, runtime.Handler.Settlements);
     }
 
