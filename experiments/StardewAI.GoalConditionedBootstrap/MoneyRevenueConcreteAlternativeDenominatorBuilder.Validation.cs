@@ -10,18 +10,16 @@ public static partial class MoneyRevenueConcreteAlternativeDenominatorBuilder
                 !manifest.FormalProductTrainingAuthorized &&
                 !string.IsNullOrWhiteSpace(
                     manifest.AlternativeDenominatorCatalogPath) &&
-                !string.IsNullOrWhiteSpace(
-                    manifest.TerminalRebindManifestPath) &&
-                !string.IsNullOrWhiteSpace(
-                    manifest.TerminalRebindReceiptPath),
+                string.IsNullOrWhiteSpace(manifest.TerminalRebindManifestPath) ==
+                    string.IsNullOrWhiteSpace(manifest.TerminalRebindReceiptPath),
             "Money Revenue concrete alternative denominator manifest is invalid.");
     }
 
     private static void ValidateInputs(
         MoneyRevenueAlternativeDenominatorCatalog skeletonCatalog,
         MoneyRevenueCandidateDenominatorCatalog sourceCatalog,
-        MoneyRevenueTerminalCandidateRebindManifest rebindManifest,
-        MoneyRevenueTerminalCandidateRebindReceipt rebindReceipt)
+        MoneyRevenueTerminalCandidateRebindManifest? rebindManifest,
+        MoneyRevenueTerminalCandidateRebindReceipt? rebindReceipt)
     {
         Require(skeletonCatalog.AlternativeSkeletonDenominatorComplete &&
                 skeletonCatalog.SourceCandidateDenominatorAuthoritative &&
@@ -31,6 +29,23 @@ public static partial class MoneyRevenueConcreteAlternativeDenominatorBuilder
                     skeletonCatalog.SourceCandidateCatalogSha256 &&
                 sourceCatalog.SourceStateHash == skeletonCatalog.SourceStateHash,
             "Money Revenue source or skeleton denominator is not exact and authoritative.");
+        var expectedIds = skeletonCatalog.Alternatives
+            .Where(row => row.RequiresFreshTerminalCandidateRebind)
+            .Select(row => row.AlternativeId)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+        if (expectedIds.Length == 0)
+        {
+            // The consumer verifies the empty required subset; no producer receipt is invented.
+            Require(rebindManifest is null && rebindReceipt is null &&
+                    skeletonCatalog.CurrentAlternativeDenominatorAuthoritative &&
+                    skeletonCatalog.Alternatives.Length > 0 &&
+                    skeletonCatalog.Alternatives.Length == skeletonCatalog.AlternativeCount,
+                "Money Revenue direct-only denominator is incomplete or claims unnecessary rebind evidence.");
+            return;
+        }
+        if (rebindManifest is null || rebindReceipt is null)
+            throw new InvalidDataException("Money Revenue required terminal rebind evidence is missing.");
         Require(rebindReceipt.Status ==
                     "verified_terminal_candidate_rebind_denominator" &&
                 rebindReceipt.TerminalRebindDenominatorComplete &&
@@ -41,11 +56,6 @@ public static partial class MoneyRevenueConcreteAlternativeDenominatorBuilder
                 rebindReceipt.AlternativeDenominatorCatalogSha256 ==
                     skeletonCatalog.CatalogSha256,
             "Money Revenue terminal rebind denominator is not complete and bounded.");
-        var expectedIds = skeletonCatalog.Alternatives
-            .Where(row => row.RequiresFreshTerminalCandidateRebind)
-            .Select(row => row.AlternativeId)
-            .Order(StringComparer.Ordinal)
-            .ToArray();
         var requestIds = rebindManifest.Rebinds
             .Select(row => row.AlternativeId)
             .Order(StringComparer.Ordinal)

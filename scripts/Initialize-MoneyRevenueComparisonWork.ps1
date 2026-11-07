@@ -14,6 +14,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "lib\RuntimeEvidenceCommon.ps1")
+. (Join-Path $PSScriptRoot "lib\RuntimeMoneyConcreteInitialization.ps1")
 
 $summaryPath = Resolve-RuntimeEvidenceInputPath `
     -ProjectRoot $ProjectRoot -Path $RunSummaryPath
@@ -48,14 +49,8 @@ $requestPath = Join-Path $outputDirectory `
     "money-revenue-comparison-collection-plan-request.json"
 $planPath = Join-Path $outputDirectory `
     "money-revenue-comparison-collection-plan.json"
-$rebindAssemblyRequestPath = Join-Path $outputDirectory `
-    "money-revenue-terminal-rebind-manifest-assembly-request.json"
-$rebindManifestPath = Join-Path $outputDirectory `
-    "money-revenue-terminal-rebind-manifest.json"
-$rebindReceiptPath = Join-Path $outputDirectory `
-    "money-revenue-terminal-rebind-receipt.json"
-$concreteManifestPath = Join-Path $outputDirectory `
-    "money-revenue-concrete-alternative-denominator-manifest.json"
+$rebindManifestPath = ""
+$rebindReceiptPath = ""
 $concreteCatalogPath = Join-Path $outputDirectory `
     "money-revenue-concrete-alternative-denominator.json"
 $counterfactualManifestPath = Join-Path $outputDirectory `
@@ -136,33 +131,14 @@ $canBuildConcrete =
     [int]$plan.fresh_rebind_alternative_count -eq 0 -or
     -not [string]::IsNullOrWhiteSpace($AcquisitionRolloutIndex)
 if ($canBuildConcrete) {
-    Write-JsonFile -Path $rebindAssemblyRequestPath -Value ([ordered]@{
-        schema_version =
-            "money_revenue_terminal_rebind_manifest_assembly_request.v1"
-        comparison_collection_plan_path = $planPath
-        rollout_proofs = $rolloutProofs
-        formal_product_training_authorized = $false
-    })
-    Invoke-RuntimeBootstrap -BootstrapDll $bootstrapDll -Arguments @(
-        "build-money-revenue-terminal-rebind-manifest",
-        "--request", $rebindAssemblyRequestPath,
-        "--output", $rebindManifestPath)
-    Invoke-RuntimeBootstrap -BootstrapDll $bootstrapDll -Arguments @(
-        "build-money-revenue-terminal-candidate-rebind",
-        "--manifest", $rebindManifestPath,
-        "--output", $rebindReceiptPath)
-    Write-JsonFile -Path $concreteManifestPath -Value ([ordered]@{
-        schema_version =
-            "money_revenue_concrete_alternative_denominator_manifest.v1"
-        alternative_denominator_catalog_path = $alternativePath
-        terminal_rebind_manifest_path = $rebindManifestPath
-        terminal_rebind_receipt_path = $rebindReceiptPath
-        formal_product_training_authorized = $false
-    })
-    Invoke-RuntimeBootstrap -BootstrapDll $bootstrapDll -Arguments @(
-        "build-money-revenue-concrete-alternative-denominator",
-        "--manifest", $concreteManifestPath,
-        "--output", $concreteCatalogPath)
+    $concrete = Initialize-RuntimeMoneyConcreteDenominator `
+        -BootstrapDll $bootstrapDll -AlternativePath $alternativePath `
+        -OutputDirectory $outputDirectory `
+        -FreshRebindAlternativeCount ([int]$plan.fresh_rebind_alternative_count) `
+        -ComparisonCollectionPlanPath $planPath -RolloutProofs $rolloutProofs
+    $rebindManifestPath = $concrete.RebindManifestPath
+    $rebindReceiptPath = $concrete.RebindReceiptPath
+    $concreteCatalogPath = $concrete.ConcreteCatalogPath
     $concreteStatus = "current_concrete_denominator_built"
 }
 

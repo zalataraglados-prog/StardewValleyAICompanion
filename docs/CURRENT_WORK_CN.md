@@ -1,5 +1,11 @@
 # StardewAI 当前工作
 
+## 2026-11-07 Money纯direct concrete与原请求链（当前唯一接续）
+
+- 前序采样修复#486经38步CI接受、合入`7c78db2b`；本轮接续修concrete消费者，提交/CI以本轮收口为准。消费者按独立重建的原alternative集合处理纯direct分支：空重绑定集合复用原`BuildDirect`/身份/基数验证，不伪造回执；非空仍需原producer和完整rollout/rebind证明。原脚本共享helper只在正数时调用producer，空路径不产生伪文件，拒绝来源输出别名及被忽略的rollout；外层passed native summary门保留。[完整合同](money-threshold-production-evidence.md#current-direct-concrete-union)。
+- D离线真实来源已通过原concrete/强账本/反事实请求，实际2条direct与2条待native-shop-sale证明请求，公开重复重建同SHA`2ba1857b...`/`40cce1fa...`。账本为原后端读出的revision0隔离初始条件，不冒充继承生产承诺。来源未变，无游戏或执行；最终hermetic（含原混合union）、初始化器4反例、Core2380/Backend629和5公开反例通过，最终CI见收口。
+- **唯一下一步：** 先预检原反事实/原生采集的源身份、账本及recurrence合同，再经明确L1作用域的薄caller复用原执行/证明链，采same-run原生结果和独立预留比较/准入/corpus及真缺分区。原全局collector的complete-root门不删；D是离线准备，不是活跃世界或passed native run，新run重建自己的完整来源，不拼接D。18单元/R2全部长期及新档Teacher21/Student义务不减；本轮0新Money单元，并集`13/19、13/19、13/19、10/11 roots`、formal=false；无worker/API、训练、服务器或清理。
+
 ## 2026-11-07 Money经济候选采样对齐（当前唯一接续）
 
 - #485经38步CI接受、合入`d6fa8194`。本轮仅Money单阈值/wave消费者适配原active-menu economic候选，旧event路径及共享桥/候选/编译/执行不改；原完整分母重建和累计收入/分区断言保留。原候选ID/channel/空参数/摘要不改，单独从同源实际位置/商店/商品绑定原8项执行参数；不造标签或晋升原生结果。[合同与事实](money-threshold-production-evidence.md#current-active-sale-sampling)。
