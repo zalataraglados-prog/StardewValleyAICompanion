@@ -92,6 +92,11 @@ backend ledger roundtrip, not seed acquisition, production or a fresh-save score
 
 ## Remaining Mainline
 
+The original run planner now has an explicit [owned seed input](money-crop-owned-seed-supply.md).
+It distinguishes actual claimed player/chest supply and per-commitment purchase
+budgets without changing the legacy null/default path. That typed planning step
+alone is not native acquisition or settlement; the automatic barrier remains.
+
 Next connect the installed portfolio to the original supporting-transition
 ownership/settlement machinery before activating managed gameplay: neutral routes
 preserve/rebind claims, one-unit purchases consume the exact owned currency, real

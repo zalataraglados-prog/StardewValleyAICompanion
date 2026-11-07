@@ -1,5 +1,8 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
 using StardewAI.GoalConditionedBootstrap;
 
 namespace StardewAI.LiveTrainingLoop;
@@ -7,6 +10,8 @@ namespace StardewAI.LiveTrainingLoop;
 public static class CropTeacherRunStageKinds
 {
     public const string AcquireSeed = "acquire_seed";
+    public const string RouteToSeedSupply = "route_to_seed_supply";
+    public const string TransferSeedSupply = "transfer_seed_supply";
     public const string RouteToFarm = "route_to_farm";
     public const string PrepareSite = "prepare_site";
     public const string ExecuteCropBatch = "execute_crop_batch";
@@ -27,9 +32,13 @@ public sealed record CropTeacherRunStep(
     int MaxUnitPrice,
     int RemainingQuantity,
     MoneyRevenueCropNativeProductionActionBatch? ActionBatch,
-    string Reason);
+    string Reason,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    MaterialTransferIntent? SeedTransferIntent = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    string? SeedReservationId = null);
 
-public static class CropTeacherRunPlanner
+public static partial class CropTeacherRunPlanner
 {
     private const string FarmLocationId = "Farm";
     private const string PlantOptionId = "executor.plant_seed";
@@ -64,7 +73,8 @@ public static class CropTeacherRunPlanner
         SnapshotEnvelope snapshot,
         IReadOnlySet<string>? preparedCommitmentIds = null,
         IReadOnlySet<string>? completedHarvestTileKeys = null,
-        IReadOnlySet<string>? completedDayBoundaryKeys = null)
+        IReadOnlySet<string>? completedDayBoundaryKeys = null,
+        StrategyCommitmentLedger? resourceLedger = null)
     {
         ArgumentNullException.ThrowIfNull(plan);
         ArgumentNullException.ThrowIfNull(request);
@@ -146,28 +156,37 @@ public static class CropTeacherRunPlanner
             .Select(batch => FilterPlantBatch(batch, crops))
             .Where(batch => batch.Tiles.Length > 0)
             .ToArray();
-        var inventoryBySeed = ReadInventoryByQualifiedItemId(inventory);
+        var owned = resourceLedger is null || futurePendingPlantBatches.Length == 0 ? null :
+            ReadOwnedSupply(plan, request, snapshot, resourceLedger, futurePendingPlantBatches);
+        var inventoryBySeed = owned is null ? ReadInventoryByQualifiedItemId(inventory) : null;
         foreach (var seedGroup in futurePendingPlantBatches
-                     .GroupBy(batch => batch.SeedQualifiedItemId)
+                     .GroupBy(batch => owned is null ? batch.SeedQualifiedItemId : batch.CommitmentId)
                      .OrderBy(group => group.Min(batch => batch.BatchIndex)))
         {
+            var firstPendingBatch = seedGroup.OrderBy(batch => batch.BatchIndex).First();
+            var seedQualifiedItemId = firstPendingBatch.SeedQualifiedItemId;
+            var commitmentIds = seedGroup.Select(batch => batch.CommitmentId).Distinct(StringComparer.Ordinal).ToArray();
             var remainingQuantity = seedGroup.Sum(batch => batch.Tiles.Length);
-            inventoryBySeed.TryGetValue(seedGroup.Key, out var availableQuantity);
+            var availableQuantity = owned?.PlayerQuantity(commitmentIds) ??
+                inventoryBySeed!.GetValueOrDefault(seedQualifiedItemId);
             if (availableQuantity >= remainingQuantity)
             {
                 continue;
             }
 
-            var firstPendingBatch = seedGroup.OrderBy(batch => batch.BatchIndex).First();
+            var external = owned?.ExternalSlot(commitmentIds);
+            if (external is not null)
+                return OwnedSupplyStep(owned!, firstPendingBatch.CommitmentId, external,
+                    currentLocation, totalDay, remainingQuantity - availableQuantity);
             var acquisition = plan.SeedAcquisitions
                 .Where(value =>
                     value.CommitmentId == firstPendingBatch.CommitmentId &&
-                    value.SeedQualifiedItemId == seedGroup.Key)
+                    value.SeedQualifiedItemId == seedQualifiedItemId)
                 .OrderBy(value => value.AcquisitionIndex)
-                .FirstOrDefault() ?? plan.SeedAcquisitions
-                .Where(value => value.SeedQualifiedItemId == seedGroup.Key)
+                .FirstOrDefault() ?? (owned is null ? plan.SeedAcquisitions
+                .Where(value => value.SeedQualifiedItemId == seedQualifiedItemId)
                 .OrderBy(value => value.AcquisitionIndex)
-                .FirstOrDefault() ?? throw new InvalidDataException(
+                .FirstOrDefault() : null) ?? throw new InvalidDataException(
                     "crop_teacher_seed_shortfall_has_no_acquisition_intent");
             if (totalDay > acquisition.DeadlineTotalDay)
             {
@@ -177,6 +196,11 @@ public static class CropTeacherRunPlanner
                     commitmentId: acquisition.CommitmentId,
                     reason: "crop_teacher_seed_acquisition_deadline_missed");
             }
+
+            if (owned is not null && owned.PurchaseBudget(commitmentIds) <
+                (long)(remainingQuantity - availableQuantity) * acquisition.MaxUnitPrice)
+                return Step(CropTeacherRunStageKinds.ReplanRequired, totalDay,
+                    commitmentId: acquisition.CommitmentId, reason: "crop_teacher_owned_seed_purchase_budget_insufficient");
 
             return new CropTeacherRunStep(
                 CropTeacherRunStageKinds.AcquireSeed,

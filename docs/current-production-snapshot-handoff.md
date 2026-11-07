@@ -1,6 +1,21 @@
 # Current Production Snapshot Handoff
 
-## Runtime Crop And Resource Installation (Current)
+## Owned Seed Input To Original Run Planner (Current)
+
+PR506 passed all42 CI steps/review, merged as565f3a0c and removed owned refs after
+tree equality. The original run planner now has an explicit resource-ledger input
+for per-commitment owned player seeds, chest staging and purchase budgets, keeping
+the null/default path and wire bytes unchanged. No second planner or executor.
+Only seed-relevant domains are projected when pending planting needs supply.
+
+Next is the original per-step marker/compile/native receipt/support settlement,
+then exact acquired-slot seed claims and prepared-transfer reservation positions;
+see [current contract](money-crop-owned-seed-supply.md). Do not rewrite initial
+resource IDs or old settlement predicates. Automatic managed gameplay remains
+disabled until that chain is complete. L1 stays19/19,11/11;formal=false; no new
+native sampling or raw/local-data commit in this slice.
+
+## Runtime Crop And Resource Installation (Accepted PR506)
 
 PR505 passed exact-head CI42367028701/review, merged as4405fffb with matching
 trees and owned refs removed. The explicit `install-crop-reservations` command

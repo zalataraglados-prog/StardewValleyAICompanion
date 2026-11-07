@@ -21,6 +21,7 @@
     <Using Include="Xunit" />
     <Compile Include="..\Shared\PolicySupervisionFixture.cs" Link="PolicySupervisionFixture.cs" />
     <Compile Include="..\Shared\MoneyCropTeacherFixture.cs" Link="MoneyCropTeacherFixture.cs" />
+    <Compile Include="..\StardewAI.Core.Tests\CropTeacherRunPlannerTests.cs" Link="LegacyCropTeacherRunPlannerTests.cs" />
     <Compile Include="..\..\src\StardewAI.TransparentBridge\State\SnapshotProfileContext.cs" Link="BridgeSnapshotProfileContext.cs" />
   </ItemGroup>
 

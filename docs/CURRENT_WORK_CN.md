@@ -1,6 +1,15 @@
 # StardewAI 当前工作
 
-## 2026-11-07 R2作物与资源运行安装（当前唯一接续）
+## 2026-11-07 R2原计划的种子所有权输入（当前唯一接续）
+
+- #506经42步CI `42369036098`和审查接受，合入`565f3a0c`，核树/清自有分支完成。运行安装入口已接受，不重写原规划回执或重采E/L1。
+- 原`CropTeacherRunPlanner.Evaluate`新增可选账本输入，仍只有一个计划主体；默认旧行为/JSON保持。复用原账本校验与完整材料/现金供给校验，只按本承诺的现货预留判断买齐，别的root/同种子的另一承诺不混用，钱包不冒充专属采购预算。原13项计划回归直接链接进Backend game-free套件，不复制测试、不增加Core对LiveLoop依赖。[合同与接续](money-crop-owned-seed-supply.md)。
+- 箱中现货优先发原地图位置的取货路线/精确转移intent，复用原原生转移投影检查锁/容量/堆叠，不直接移动角色或修改claim。没有待播种义务就不投影种子资源，不新增快照或全世界序列化。新字段null时不改变旧step JSON。
+- 新19项及原13项计划检查通过，完整Backend701/Core2442、原完整hermetic零失败零跳过，最终Release零警告/错误；含另一同种子/同decision承诺不混用、原生数量增长不自动有所有权、预算缺失和源/槽位/品质/日期拒绝。夹具同步修正而未放宽原源/布局门；最终CI见收口。
+- **唯一下一步：** 接每步独立marker commit、原候选/编译/原生回执、原supporting-transition逐件扣款/本owner重绑、真实取得槽位新增预留及prepared-transfer位置结算。旧服务有意要求step marker的SourceDecisionId=step ID；不能改初始Teacher-owned资源portfolio来迁就。其他owner不重标，箱槽压缩复用原完整投影；Museum-only托管合同不扩用为种子。接齐前自动dispatch活动资源保护仍保留，typed步骤不是已原生执行。
+- 之后仍原聚合预算/联合日历/跨根与所选来源连续性、Provider/模型、正式manifest/preflight；L1`19/19、11/11`、formal=false不变，Student新档21/21在训练后。针对性检查与最终回归/CI见本片收口。无worker/API/游戏/服务器/清理，local-data不提交。下方接续为历史。
+
+## 2026-11-07 R2作物与资源运行安装（已接受#506）
 
 - #505最终CI `42367028701`与审查通过，合入`4405fffb`，测试/main树一致，自有分支已清。完整既有账本接入原Teacher已接受，不重复采L1或E原生周期。
 - 新显式`install-crop-reservations`入口在普通Loop/训练初始化前分流，只经原crop upsert及portfolio commit安装原v2选中承诺、现货种子和精确短缺现金。按真实时间独立重放完整结果并读回持久账本；原PR504规划回执/时间戳不改，另记运行安装结果。原始请求先持久化，crop丢回包仅同源精确读回，资源丢回包仅原lookup，均不重发；部分安装失败保留证据、不自动取消或回滚。[入口与合同](money-crop-runtime-installation.md)。

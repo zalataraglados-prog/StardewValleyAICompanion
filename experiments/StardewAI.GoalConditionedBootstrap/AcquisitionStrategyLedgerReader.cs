@@ -10,6 +10,9 @@ internal sealed record AcquisitionStrategyLedgerState(
 
 internal static class AcquisitionStrategyLedgerReader
 {
+    public static AcquisitionStrategyLedgerState Read(StrategyCommitmentLedger ledger, SnapshotEnvelope snapshot) =>
+        Validate(ledger, ReadIdentity(snapshot, "save_id"), ReadIdentity(snapshot, "player_id"));
+
     public static AcquisitionStrategyLedgerState Read(
         string path,
         SnapshotEnvelope snapshot) => Read(
@@ -46,6 +49,11 @@ internal static class AcquisitionStrategyLedgerReader
                 ex);
         }
 
+        return Validate(ledger, saveId, playerId);
+    }
+
+    private static AcquisitionStrategyLedgerState Validate(StrategyCommitmentLedger ledger, string saveId, string playerId)
+    {
         Require(long.TryParse(playerId, out var actorPlayerId),
             "Snapshot player identity is not a native numeric player ID.");
         var materialReservations = ledger.MaterialReservations ??
