@@ -6,14 +6,18 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public static partial class MoneyShopReplaySourceBindingBuilder
 {
-    public static MoneyShopReplaySourceBindingReceipt Build(string manifestPath)
+    public static MoneyShopReplaySourceBindingReceipt Build(string manifestPath) => BuildWithContext(manifestPath, null).Receipt;
+
+    private static VerifiedBinding BuildWithContext(string manifestPath, BoundSource? verifiedReference)
     {
         manifestPath = Path.GetFullPath(manifestPath);
         var manifest = Read<MoneyShopReplaySourceBindingManifest>(manifestPath);
         Require(manifest.SchemaVersion == "money_shop_replay_source_binding_manifest.v1" &&
             !manifest.FormalProductTrainingAuthorized && manifest.Reference is not null && manifest.Replay is not null,
             "Money shop replay binding manifest is invalid.");
-        var reference = LoadSource(manifest.Reference!, manifest.ReferenceRequestId);
+        if (verifiedReference is not null) VerifyReferenceDescriptor(verifiedReference.Source, manifest.Reference!);
+        var reference = verifiedReference is null ? LoadSource(manifest.Reference!, manifest.ReferenceRequestId) :
+            verifiedReference with { Request = SelectRequest(verifiedReference.Catalog, manifest.ReferenceRequestId) };
         var replay = LoadSource(manifest.Replay!, manifest.ReplayRequestId);
         Require(reference.Native.Request.RunId != replay.Native.Request.RunId &&
             reference.Inputs.Snapshot.StateHash != replay.Inputs.Snapshot.StateHash &&
@@ -43,23 +47,24 @@ public static partial class MoneyShopReplaySourceBindingBuilder
             SourceArtifacts = artifacts, SourceReplayBindingVerified = true
         };
         receipt.ReceiptSha256 = AcquisitionRoutePortfolioTeacherPreferenceBuilder.ArtifactSha256(receipt);
-        return receipt;
+        return new(receipt, reference, replay);
     }
 
-    public static MoneyShopReplaySourceBindingReceipt Verify(string receiptPath)
+    public static MoneyShopReplaySourceBindingReceipt Verify(string receiptPath) => VerifyWithContext(receiptPath).Receipt;
+
+    internal static VerifiedBinding VerifyWithContext(string receiptPath, BoundSource? verifiedReference = null)
     {
         var actual = Read<MoneyShopReplaySourceBindingReceipt>(receiptPath);
         Require(actual.SchemaVersion == "money_shop_replay_source_binding_receipt.v1", "Money replay binding receipt schema differs.");
-        var expected = Build(actual.ManifestPath);
-        Require(EqualJson(actual, expected), "Money replay binding receipt differs from its full source rebuild.");
+        var expected = BuildWithContext(actual.ManifestPath, verifiedReference);
+        Require(EqualJson(actual, expected.Receipt), "Money replay binding receipt differs from its full source rebuild.");
         return expected;
     }
 
     private static BoundSource LoadSource(MoneyShopReplaySource source, string requestId)
     {
         var catalog = MoneyRevenueCounterfactualProofRequestBuilder.Build(source.RequestManifestPath);
-        var requests = catalog.Requests.Where(row => row.RequestId == requestId).ToArray();
-        Require(requests.Length == 1, "Money replay needs an exact original request ID.");
+        var request = SelectRequest(catalog, requestId);
         VerifyCandidateLineage(catalog, source.CandidateCatalogPath);
         var inputs = MoneyThresholdNativeOutcomeSelectionBuilder.LoadInputs(source.CandidateCatalogPath);
         Require(inputs.Snapshot.StateHash == catalog.SourceStateHash && inputs.Catalog.SnapshotSha256 == catalog.SourceSnapshotSha256,
@@ -103,13 +108,21 @@ public static partial class MoneyShopReplaySourceBindingBuilder
             .Select(row => Artifact(native.Request.RunId + ":" + row.Item1, row.Item2))
             .Concat(source.SetupSteps.SelectMany(row => new[] { Artifact(native.Request.RunId + ":setup_request:" + row.Role, row.RequestPath),
                 Artifact(native.Request.RunId + ":setup_result:" + row.Role, row.ResultPath) })).ToArray();
-        return new(source, catalog, requests[0], inputs, proof, evidence, native, identity, saveHash, setup,
+        return new(source, catalog, request, inputs, proof, evidence, native, identity, saveHash, setup,
             measurement.MeasuredModRootSha256, ledger, artifacts);
     }
 
     private static bool IsDirect(MoneyRevenueCounterfactualProofRequest row) => row.NativeShopSaleProofRequired &&
         !row.AcquisitionRolloutProofRequired && !row.NativeShippingDepositProofRequired && !row.NativeShippingSettlementProofRequired &&
         row.TerminalOptionId == "economy.sell_items" && row.TerminalStateHash == row.SourceStateHash;
+    private static MoneyRevenueCounterfactualProofRequest SelectRequest(MoneyRevenueCounterfactualProofRequestCatalog catalog, string id)
+    {
+        var matches = catalog.Requests.Where(row => row.RequestId == id).ToArray();
+        Require(matches.Length == 1, "Money replay needs an exact original request ID.");
+        return matches[0];
+    }
+    internal static void VerifyReferenceDescriptor(MoneyShopReplaySource verified, MoneyShopReplaySource next) =>
+        Require(EqualJson(verified, next), "Money replay source group changed its already verified reference descriptor.");
     private static T Read<T>(string path) => CurrentTeacherFrontierSupport.Read<T>(Path.GetFullPath(path), "Money shop replay source");
     private static string Hash(string path) => CurrentTeacherFrontierSupport.HashFile(Path.GetFullPath(path));
     private static string Text(JsonElement row, string field) => CurrentTeacherFrontierSupport.RequiredString(row, field);
@@ -119,7 +132,8 @@ public static partial class MoneyShopReplaySourceBindingBuilder
     private static DateTimeOffset Timestamp(string value) => DateTimeOffset.TryParse(value, System.Globalization.CultureInfo.InvariantCulture,
         System.Globalization.DateTimeStyles.RoundtripKind, out var parsed) ? parsed : throw new InvalidDataException("Money replay timestamp is invalid.");
 
-    private sealed record BoundSource(MoneyShopReplaySource Source, MoneyRevenueCounterfactualProofRequestCatalog Catalog,
+    internal sealed record VerifiedBinding(MoneyShopReplaySourceBindingReceipt Receipt, BoundSource Reference, BoundSource Replay);
+    internal sealed record BoundSource(MoneyShopReplaySource Source, MoneyRevenueCounterfactualProofRequestCatalog Catalog,
         MoneyRevenueCounterfactualProofRequest Request, MoneyThresholdNativeOutcomeSelectionBuilder.SelectionInputs Inputs,
         MoneyRevenueTerminalAlternativeProof Witness, MoneyRevenueTerminalExecutionEvidence Evidence, VerifiedNativeExecutionAction Native,
         JsonElement Identity, string SaveHash, string SetupSignature, string ModHash, string LedgerSignature, MoneyRevenueArtifactBinding[] Artifacts);

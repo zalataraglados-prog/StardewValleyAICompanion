@@ -40,6 +40,7 @@ internal static partial class BootstrapSelfTest
         VerifyMoneyDirectConcrete();
         VerifyMoneyCounterfactualSourceAudit();
         VerifyMoneyShopReplaySourceBinding();
+        VerifyMoneyShopReplayComparison();
     }
 
     internal static void RunInvocationReadPlan() =>
