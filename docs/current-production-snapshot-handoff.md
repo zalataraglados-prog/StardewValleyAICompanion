@@ -1,5 +1,37 @@
 # Current Production Snapshot Handoff
 
+## Applied Progress Follow-Up
+
+PR495 is accepted at `6e5616e0`, exact-head CI42349146093 passed. C exited
+after nine real same-day acquisition transitions: four opening waits and five
+one-unit cauliflower purchases, total400g, inventory0->5, cash450->50. The
+original save SHA stayed unchanged; owned game/backend exited. Its original
+failure and raw data remain outside Git. This is not a full production pass.
+
+The proof initially rejected the first wait. `b95c4ca8` and the restored Oct28
+JSON around lines9530-9590 explain the intentional Loop contract: verified
+partial progress stays `applied`, while candidate completion/success stays false,
+so native story evidence is not discarded. Do not revert that producer or
+rewrite historical receipt flags. Only the crop acquisition consumer opts into
+this exact progress form; default strict validation and legacy blocked
+continuations retain their original behavior. All original per-step identity,
+freshness, tick, state, effective-item and resource checks still run. Progress
+requires explicit verification and pending continuation metadata; any recorded
+completed objective must match the still-active identity. Exact purchase deltas
+and the entire seed shortfall remain independently required by the old builder.
+
+Explicit E build passed with zero warnings/errors. The first full hermetic pass
+includes25 new progress/default/forgery checks plus the old acquisition and
+continuation cases. Public replay of retained C now reaches transition4/step1,
+then rejects `player.tool_upgrade`: observed FarmHouse->Farm, actor-control and
+service status changed, with a derived fingerprint; pending/current tool,
+inventory capacity and money did not change there. No shared persistent-boundary
+rule has been modified or bypassed. Next: finish this patch's CI/publication,
+audit that projection's historical contract, repair actual contextual false
+positives without ignoring persistent or unknown fields, then the same current-v6
+production/retention/settlement and R2 global integration. No local-root recollection,
+worker/API or training. L1 stays19/19 and11/11, formal=false.
+
 ## Current Bounded-Goal Follow-Up
 
 PR #494 is accepted at `35b83485`, exact-head CI42347958326 all39 steps.
@@ -15,8 +47,9 @@ The existing Loop default dates to `2666b1f8` and is correct for normal companio
 operation. Do not change that default, automatic Teacher policy or executor.
 `Invoke-RuntimeDailyPlanStep` now has an optional trailing `GoalId` argument:
 omitted calls keep the same parameters/default behavior, while crop seed
-acquisition explicitly passes `daily.closed_loop`, matching its existing rank
-request and the outer production owner. No second scheduler is added.
+acquisition explicitly passes `daily.closed_loop`, binding execution to the outer
+production owner. Its purchase ranking still uses `earn_money`; the goals are
+not required to be textually identical. No second scheduler is added.
 
 Ten argument/AST checks prove forwarding, old parameter positions/defaults and
 the unique crop call path. Original20 snapshot I/O checks still pass. A real

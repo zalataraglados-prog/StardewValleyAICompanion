@@ -103,7 +103,8 @@ public static partial class MoneyRevenueCropSeedAcquisitionProofBuilder
                 transition.Request.ExecutorVersion,
                 transition.Request.SelectedCandidateId,
                 transition.Before.StateHash,
-                out var effectiveItems);
+                out var effectiveItems,
+                allowAppliedVerifiedProgress: true);
             Require(receiptReasons.Length == 0,
                 "Money Revenue crop seed-acquisition queue receipt was rejected at transition " +
                 index + ": " +
