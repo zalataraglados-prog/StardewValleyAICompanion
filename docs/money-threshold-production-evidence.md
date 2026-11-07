@@ -1,5 +1,18 @@
 # Money Threshold Production Evidence
 
+## Current Counterfactual Source Binding
+
+PR #488 is accepted at `b3874405`; G's native sale and1/2 terminal fragments
+remain retained. The missing native source-fork/collection path is now explicit:
+read ticks and execution identity prevent silently substituting another run.
+The new read-only source audit reuses original rebuilds/binding/projector,
+retains actual G/F environment differences and grants no authority. The ordered
+continuation is own-source Gold native observation, explicit versioned replay
+binding, then original comparison/admission/corpus and missing partitions.
+[The source-binding contract](money-counterfactual-source-binding.md) preserves
+old exact-frame/native gates and all global obligations. No Money join or
+training permission is added by this audit.
+
 ## Current Local Native Sale
 
 PR #487 is accepted at `2f1e935b`. The next source G now passes the original

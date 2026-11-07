@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-07 Money反事实来源接续：** #488已38步CI接受、合入`b3874405`；G原生出售及`1/2`证明保留。缺口是旧计划尚无原生分叉恢复器，不能把其他运行当G原帧。新只读来源audit复用原request/候选重建、原绑定及原持久边界；G/F经济/菜单/时间/Gold报价相同，但run ID/隔离路径差异如实保留，权限全false，F不晋升。接续严格按own-source Gold原生观察→显式版本化来源绑定→原比较/准入/corpus/分区，不改旧原帧门、不吞未知字段或造hash；并集仍`13/19、13/19、13/19、10/11`，formal=false，无worker/API或训练。[合同和顺序](money-counterfactual-source-binding.md)。
+
 > **2026-11-07 Money原生出售接原证明链（当前唯一接续）：** #487已38步CI接受、合入`2f1e935b`。G显式持有库存条件下，原队列出售→关闭菜单、原生累计收入`0→1,200,000`/六阈值/train；原raw/nonce/episode及passed-run/Mod/比较入口接受。只修Money消费者错把图`SalePrice=6000`当原生卖价3000的假等价，不反改共享桥/执行器/强价格或预留门。原hermetic及G留存回放通过：终端证明`1/2`、pending1，尚无独立Teacher比较或新合法join；本轮CI见收口。唯一下一步是另一路Gold Bar的合法同源原生采集合同，不拼接售后状态/其他run，不重采已验出售。并集仍`13/19、13/19、13/19、10/11`，formal=false；原始失败摘要保留、数据仓库外、游戏已退出，无worker/API或训练。[具体来源与边界](money-local-native-collection.md)。
 
 > **2026-11-07 Money纯direct接原证明链（当前唯一接续）：** 前序采样修复#486已38步CI接受、合入`7c78db2b`；本轮接续修concrete，提交/CI见本轮收口。concrete消费者从原完整重建确认空重绑定集合，复用旧direct绑定/封签，不伪造producer回执；非空强证明、原producer及共享执行链不改。旧初始化块提取为单helper，零项不生成回执且源输出冲突拒绝，外层passed native门保持。D真实离线链得到2 concrete/2反事实请求，SHA`2ba1857b...`/`40cce1fa...`，原强账本接受显式隔离初始revision0；无游戏、执行或收入/标签。最终hermetic、Core2380/Backend629、脚本4反例/公开5反例通过，CI见收口。下一步预检并接L1 same-run原生recurrence/独立比较；不移除全局complete-root门、不拼接D或假passed。并集仍`13/19、13/19、13/19、10/11`，formal=false。[合同及真实边界](money-threshold-production-evidence.md#current-direct-concrete-union)。
