@@ -1,5 +1,9 @@
 # Original Crop Lifecycle Recovery Boundary
 
+Current successor: [lifecycle admission and acceptance in the same owner](money-crop-owner-lifecycle.md).
+This consumer stays the original reconstruction path; no parallel owner or
+execution rules replace it.
+
 ## Parent And Reuse
 
 PR520's final headde6272f401f342c0b38c58a248e20d978537ce63 passed all42 steps

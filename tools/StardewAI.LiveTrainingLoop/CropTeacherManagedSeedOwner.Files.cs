@@ -73,14 +73,16 @@ public sealed partial class CropTeacherManagedSeedOwner
         ValidateState();
         if (!ReferenceEquals(operation.Owner, this) || !ReferenceEquals(Pending, operation))
             throw new InvalidOperationException("Managed crop operation is not this owner's unique pending operation.");
-        operation.Scopes.ValidateStep(operation.ReadStep());
+        if (operation.IsLifecycle) ValidateLifecycle(operation);
+        else operation.Scopes.ValidateStep(operation.ReadStep());
     }
     private CropTeacherManagedSeedScopes OpenScopes(JsonObject record)
     {
         var prior = record["prior_verified_snapshot_path"] is null ? null : StoredPath(record, "prior_verified_snapshot_path");
         if (!SamePath(StoredPath(record, "before_ledger_path"), headLedgerPath) || prior is not null && !SamePath(prior, headSnapshotPath))
             throw new InvalidDataException("Managed crop operation does not continue its accepted source boundary.");
-        var step = record["step"]!.Deserialize<CropTeacherRunStep>(JsonOptions)!;
+        var step = record["step"]?.Deserialize<CropTeacherRunStep>(JsonOptions)
+            ?? throw new InvalidDataException("Managed seed admission lacks its original step.");
         if (!plan.CoveredCommitmentIds.Contains(step.CommitmentId, StringComparer.Ordinal))
             throw new InvalidDataException("Managed crop operation commitment is outside its retained plan.");
         return CropTeacherManagedSeedScopes.Open(plan.RequestPath, StoredPath(record, "before_snapshot_path"), headLedgerPath,
@@ -88,4 +90,6 @@ public sealed partial class CropTeacherManagedSeedOwner
     }
     private static IReadOnlyDictionary<string, string> Inputs(CropTeacherManagedSeedScopes scopes) =>
         scopes.Purchase?.InputHashes ?? scopes.Transfer?.InputHashes ?? scopes.Planting!.InputHashes;
+    private static IReadOnlyDictionary<string, string> OperationInputs(CropTeacherManagedSeedOperation operation) =>
+        operation.IsLifecycle ? operation.Lifecycle!.InputHashes : Inputs(operation.Scopes);
 }

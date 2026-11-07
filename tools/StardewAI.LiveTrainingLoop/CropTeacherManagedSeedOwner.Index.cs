@@ -22,16 +22,21 @@ public sealed partial class CropTeacherManagedSeedOwner
                 !Within(options.EvidenceDirectory, StoredPath(record, "runtime_directory")) ||
                 SamePath(options.EvidenceDirectory, StoredPath(record, "runtime_directory")))
                 throw new InvalidDataException("Managed crop admission index is incomplete, reordered or changed.");
-            var scopes = OpenScopes(record);
-            if (!JsonNode.DeepEquals(record["input_artifact_hashes"], JsonSerializer.SerializeToNode(Inputs(scopes), JsonOptions)))
+            var operation = OpenIndexedOperation(record, path);
+            if (!JsonNode.DeepEquals(record["input_artifact_hashes"], JsonSerializer.SerializeToNode(OperationInputs(operation), JsonOptions)))
                 throw new InvalidDataException("Managed crop admission inputs changed after ownership was recorded.");
-            var operation = new CropTeacherManagedSeedOperation(this, record, path, scopes);
             recognized.Add(path);
+            var startedPath = RecordPath(sequence, "started");
+            if (File.Exists(startedPath))
+            {
+                LoadLifecycleStart(operation, Read<JsonObject>(startedPath));
+                recognized.Add(startedPath);
+            }
             var preparedPath = RecordPath(sequence, "prepared");
             if (File.Exists(preparedPath))
             {
                 var prepared = Read<JsonObject>(preparedPath);
-                if (Text(prepared, "schema_version") != "crop_teacher_managed_seed_preparation.v1" ||
+                if (operation.IsLifecycle || Text(prepared, "schema_version") != "crop_teacher_managed_seed_preparation.v1" ||
                     prepared["sequence"]?.GetValue<int>() != sequence || Text(prepared, "run_id") != options.RunId ||
                     Text(prepared, "support_step_id") != operation.SupportStepId || Text(prepared, "admission_sha256") != HashFile(path) ||
                     prepared["native_dispatch_performed"]?.GetValue<bool>() != false || prepared["formal_product_training_authorized"]?.GetValue<bool>() != false ||
@@ -45,17 +50,16 @@ public sealed partial class CropTeacherManagedSeedOwner
             if (File.Exists(acceptedPath))
             {
                 var accepted = Read<JsonObject>(acceptedPath);
-                if (operation.Prepared is null || Text(accepted, "schema_version") != "crop_teacher_managed_seed_acceptance.v1" ||
+                if (Text(accepted, "schema_version") != "crop_teacher_managed_seed_acceptance.v1" ||
                     accepted["sequence"]?.GetValue<int>() != sequence || Text(accepted, "run_id") != options.RunId ||
                     Text(accepted, "support_step_id") != operation.SupportStepId || Text(accepted, "previous_accepted_sha256") != lastAcceptedHash ||
-                    Text(accepted, "admission_sha256") != HashFile(path) || Text(accepted, "prepared_sha256") != HashFile(preparedPath) ||
-                    Text(accepted, "original_intent_sha256") != Text(operation.Prepared, "original_intent_sha256") ||
-                    Text(accepted, "original_proof_sha256") != HashFile(Path.Combine(operation.RuntimeDirectory, "support-proof.json")) ||
+                    Text(accepted, "admission_sha256") != HashFile(path) ||
                     Text(accepted, "after_snapshot_sha256") != HashFile(StoredPath(accepted, "after_snapshot_path")) ||
                     Text(accepted, "after_ledger_sha256") != HashFile(StoredPath(accepted, "after_ledger_path")) ||
                     accepted["original_boundary_verified"]?.GetValue<bool>() != true ||
                     accepted["execution_authorized"]?.GetValue<bool>() != false || accepted["formal_product_training_authorized"]?.GetValue<bool>() != false)
                     throw new InvalidDataException("Managed crop acceptance index changed.");
+                ValidateAcceptedPhaseEvidence(operation, accepted);
                 SetHead(operation, accepted, acceptedPath);
                 recognized.Add(acceptedPath);
             }
@@ -65,10 +69,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             throw new InvalidDataException("Managed crop index contains an orphan phase record.");
         frontierHashes[Path.Combine(options.EvidenceDirectory, "owner-intent.json")] = headerHash;
         if (Pending is not null)
-        {
-            TrackFrontier(Pending.RecordPath);
-            if (Pending.Prepared is not null) TrackFrontier(RecordPath(Pending.Sequence, "prepared"));
-        }
+            TrackOperationRecords(Pending);
         HeadRecoveryRequired = Pending is null && lastAcceptedOperation is not null;
     }
 
@@ -84,5 +85,13 @@ public sealed partial class CropTeacherManagedSeedOwner
         frontierHashes[headSnapshotPath] = Text(accepted, "after_snapshot_sha256");
         frontierHashes[headLedgerPath] = Text(accepted, "after_ledger_sha256");
         TrackFrontier(lastAcceptedPath);
+        TrackOperationRecords(operation);
+    }
+
+    private void TrackOperationRecords(CropTeacherManagedSeedOperation operation)
+    {
+        TrackFrontier(operation.RecordPath);
+        if (operation.Prepared is not null) TrackFrontier(RecordPath(operation.Sequence, "prepared"));
+        if (operation.Started is not null) TrackFrontier(RecordPath(operation.Sequence, "started"));
     }
 }
