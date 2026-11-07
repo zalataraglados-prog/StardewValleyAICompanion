@@ -84,6 +84,13 @@ drift, incomplete/ambiguous CLI inputs, concurrent intent ownership, revision
 conflict, malformed reply recovery and full reply/final readback tampering.
 The related lifecycle/planting/transfer/purchase group passed240/240 before the
 final calendar pre-read guard; final new runtime cases passed32/32, zero skips.
+PR review identified a release callback retaining an unnormalized trailing-slash
+origin. Both closure modes reproduced the original404 before the fix. The new
+wrapper now shares runtime origin normalization with its detached portfolio
+options, preserving the original caller's configuration and journal directory.
+Both tests also exercise lost-release lookup. Final runtime cases passed34/34;
+the intervening reflected synchronous-exception mismatch was fixed by preserving
+the wrapper's asynchronous failure boundary, not changing the expected guard.
 Complete final-head CI results belong to PR closeout; these synthetic protocol
 tests are not new native gameplay evidence.
 

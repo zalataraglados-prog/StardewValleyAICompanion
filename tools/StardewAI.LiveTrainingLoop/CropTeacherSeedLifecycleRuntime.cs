@@ -22,15 +22,14 @@ public static partial class CropTeacherSeedLifecycleRuntime
     {
         if (string.IsNullOrWhiteSpace(options.RunId) ||
             options.Mode is not (CalendarCompletion or ExplicitCancellation) ||
-            (options.Mode == ExplicitCancellation ? string.IsNullOrWhiteSpace(options.CancellationReason) : options.CancellationReason != "") ||
-            !Uri.TryCreate(options.BackendUrl, UriKind.Absolute, out var origin) || origin.Scheme is not ("http" or "https") ||
-            origin.UserInfo.Length != 0 || origin.Query.Length != 0 || origin.Fragment.Length != 0 || origin.AbsolutePath != "/")
+            (options.Mode == ExplicitCancellation ? string.IsNullOrWhiteSpace(options.CancellationReason) : options.CancellationReason != ""))
             throw new ArgumentException("Crop lifecycle requires an explicit mode, run, backend origin and cancellation-only reason.");
+        var backendUrl = NormalizeBackendOrigin(options.BackendUrl);
         scope.ValidateInputsUnchanged();
         var source = scope.BaseLedger;
         var cancel = options.Mode == ExplicitCancellation ? scope.BeginCancellation(options.CancellationReason) : null;
         var output = Path.GetFullPath(options.EvidenceDirectory);
-        options = options with { BackendUrl = origin.AbsoluteUri.TrimEnd('/'), EvidenceDirectory = output };
+        options = options with { BackendUrl = backendUrl, EvidenceDirectory = output };
         if (Directory.Exists(output) || File.Exists(output))
             throw new IOException("Crop lifecycle evidence already exists; inspect original journals instead of repeating mutation.");
         Directory.CreateDirectory(output);
@@ -99,4 +98,12 @@ public static partial class CropTeacherSeedLifecycleRuntime
     private static Task<StrategyLedgerEvidence> ReadAsync(HttpClient http, CropTeacherSeedLifecycleRuntimeOptions options,
         string hash, string label) => StrategyLedgerEvidenceStore.ReadAsync(http, options.BackendUrl,
             options.EvidenceDirectory, hash, JsonOptions, label);
+
+    internal static string NormalizeBackendOrigin(string value)
+    {
+        if (!Uri.TryCreate(value, UriKind.Absolute, out var origin) || origin.Scheme is not ("http" or "https") ||
+            origin.UserInfo.Length != 0 || origin.Query.Length != 0 || origin.Fragment.Length != 0 || origin.AbsolutePath != "/")
+            throw new ArgumentException("Crop lifecycle requires an HTTP(S) backend origin without credentials, path, query or fragment.");
+        return origin.AbsoluteUri.TrimEnd('/');
+    }
 }

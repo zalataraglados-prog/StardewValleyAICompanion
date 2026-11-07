@@ -4,7 +4,7 @@
 
 - #516最终head经42步CI `42412481709`接受合入`c53115f0`，Core2443/Backend1010零失败/跳过且核树清分支；首生产head自动审查与最终源守卫小差控制者审查分开归因。种植原公共事务/8格批次/新鲜前缀/结算不重做。
 - 本片以显式`close-crop-seed-reservations`接已验生命周期核心、原HTTP/持久writer/portfolio journal与lookup。取消前不先Get，丢回包只核原journal与唯一原历史完整重放、不重发；日历完成用原Get及完整协调回放，仍生长不释放。只释放本作物种子/现金，无资源不发空mutation；释放丢回包先lookup、禁止Get兜底，其他root全核。create-new intent独占输出，源在首次协调前复核，最终完整持久读回；不新写执行器/业务完成规则。[合同](money-crop-seed-lifecycle-runtime.md)。
-- 相关生命周期/种植/转运/采购回归240/240零跳过；最后日历读前源守卫补充后的新runtime32/32零跳过，最终CI见收口。合成协议不是新游戏证据，重复输出只拒绝、跨进程恢复不冒称完成。**唯一下一步：** 验证发布本片，再统一购买/转运/种植/生命周期的managed scope/claim选择、原before留存、部分/待定执行与崩溃恢复所有者；接齐后显式版本入口激活与小样本原生验收。之后原联合日历/聚合预算/连续性、Provider/模型与manifest/preflight。L1`19/19、11/11`、formal=false冻结，Student新档21/21在训练后。无游戏/服务器/worker/API，local-data不提交。下方为历史。
+- 相关生命周期/种植/转运/采购回归240/240零跳过；读前源守卫后32/32通过。PR审查指出新回调未共用origin规范化，末尾斜杠两模式均真实复现404；仅新wrapper分离portfolio配置/保留原目录和异步异常边界，最终runtime34/34零跳过，含丢释放回包lookup。最终CI见收口，失败日志保留。合成协议不是新游戏证据，重复输出只拒绝、跨进程恢复不冒称完成。**唯一下一步：** 验证发布本片，再统一购买/转运/种植/生命周期的managed scope/claim选择、原before留存、部分/待定执行与崩溃恢复所有者；接齐后显式版本入口激活与小样本原生验收。之后原联合日历/聚合预算/连续性、Provider/模型与manifest/preflight。L1`19/19、11/11`、formal=false冻结，Student新档21/21在训练后。无游戏/服务器/worker/API，local-data不提交。下方为历史。
 
 ## 2026-11-08 R2自有种植运行前缀（当前唯一接续）
 

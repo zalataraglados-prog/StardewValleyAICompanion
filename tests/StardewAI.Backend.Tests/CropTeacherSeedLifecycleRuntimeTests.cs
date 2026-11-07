@@ -44,6 +44,21 @@ public sealed partial class CropTeacherSeedLifecycleRuntimeTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
+    public async Task TrailingSlashOriginUsesTheSameNormalizedReleaseEndpointWithoutMutatingCallerOptions(bool completion)
+    {
+        using var f = new RuntimeFixture(completion: completion, loseRelease: true);
+        f.Options.BackendUrl = "http://test/";
+        await f.Run();
+        Assert.Equal("http://test/", f.Options.BackendUrl);
+        Assert.True(f.Summary()["resource_release_verified"]!.GetValue<bool>());
+        Assert.Equal(completion ? new[] { "get", "release", "lookup", "get" } : new[] { "cancel", "release", "lookup", "get" }, f.Handler.Events);
+        var journal = Directory.GetFiles(Path.Combine(f.Output, "live-snapshots"), "*-rpc-journal.json").Single();
+        Assert.Equal("http://test", JsonNode.Parse(File.ReadAllText(journal))!["backend_url"]!.GetValue<string>());
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
     public async Task NoActiveResourcesDoesNotSendEmptyReleaseMutation(bool completion)
     {
         using var f = new RuntimeFixture(completion: completion, noResources: true);

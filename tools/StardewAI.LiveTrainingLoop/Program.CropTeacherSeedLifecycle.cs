@@ -3,11 +3,18 @@ using StardewAI.LiveTrainingLoop;
 
 static partial class Program
 {
-    private static Task<StrategyLedgerEvidence> CloseCropTeacherSeedLifecycleAsync(HttpClient http, LiveTrainingOptions options,
-        CropTeacherSeedLifecycleSupport scope, string output, string mode, string reason = "") =>
-        CropTeacherSeedLifecycleRuntime.RunAsync(http, new(options.BackendUrl, output, options.RunId, mode, reason), scope,
-            (diagnostic, request) => PostJournaledPortfolioCommitAsync(http, options, diagnostic, request),
+    private static async Task<StrategyLedgerEvidence> CloseCropTeacherSeedLifecycleAsync(HttpClient http, LiveTrainingOptions options,
+        CropTeacherSeedLifecycleSupport scope, string output, string mode, string reason = "")
+    {
+        var origin = CropTeacherSeedLifecycleRuntime.NormalizeBackendOrigin(options.BackendUrl);
+        var portfolioOptions = new LiveTrainingOptions
+        {
+            BackendUrl = origin, ManifestPath = Path.Combine(options.RunDir, "lifecycle-intent.json")
+        };
+        return await CropTeacherSeedLifecycleRuntime.RunAsync(http, new(origin, output, options.RunId, mode, reason), scope,
+            (diagnostic, request) => PostJournaledPortfolioCommitAsync(http, portfolioOptions, diagnostic, request),
             (endpoint, raw) => PostJsonStringAsync(http, endpoint, raw), WritePortfolioJournalFileAsync);
+    }
 
     private static async Task<int> CloseCropSeedReservationsAsync(string[] arguments, HttpClient http)
     {
