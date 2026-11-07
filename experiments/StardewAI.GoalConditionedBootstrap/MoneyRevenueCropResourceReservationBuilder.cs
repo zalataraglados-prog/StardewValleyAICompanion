@@ -9,7 +9,11 @@ public static class MoneyRevenueCropResourceReservationBuilder
 {
     public const string Schema = "money_revenue_crop_resource_reservation_receipt.v1";
 
-    public static MoneyRevenueCropResourceReservationReceipt Build(string decisionRequestPath)
+    public static MoneyRevenueCropResourceReservationReceipt Build(string decisionRequestPath) =>
+        BuildWithDecision(decisionRequestPath).Resources;
+
+    internal static (MoneyRevenueCropResourceReservationReceipt Resources,
+        MoneyRevenueCropProductionDecisionReceipt Decision) BuildWithDecision(string decisionRequestPath)
     {
         var path = Path.GetFullPath(decisionRequestPath);
         var decision = CurrentTeacherFrontierSupport.Read<MoneyRevenueCropProductionDecisionRequest>(
@@ -72,7 +76,7 @@ public static class MoneyRevenueCropResourceReservationBuilder
         Require(result.Accepted && result.Ledger is not null && result.Errors.Length == 0,
             "Crop resource reservation atomic commit rejected: " + string.Join(",", result.Errors));
 
-        return new MoneyRevenueCropResourceReservationReceipt
+        return (new MoneyRevenueCropResourceReservationReceipt
         {
             SchemaVersion = Schema, Status = "verified_crop_resource_reservation_replay",
             DecisionRequestPath = path, DecisionRequestSha256 = original.RequestSha256,
@@ -82,7 +86,7 @@ public static class MoneyRevenueCropResourceReservationBuilder
             SeedReservedQuantity = reserved, SeedAcquisitionQuantity = shortfall, SeedAcquisitionCost = cost,
             ReservationRequest = request, ReservationResult = result,
             ResourceReservationReplayVerified = true
-        };
+        }, original);
     }
 
     public static MoneyRevenueCropResourceReservationReceipt Verify(string receiptPath)

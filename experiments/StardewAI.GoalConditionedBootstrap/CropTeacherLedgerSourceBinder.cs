@@ -7,6 +7,13 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public static class CropTeacherLedgerSourceBinder
 {
+    public static void ValidateUnmanagedDispatch(StrategyCommitmentLedger ledger)
+    {
+        Require(!ledger.MaterialReservations.Any(row => row.Status == StrategyCommitmentStatuses.Active) &&
+                !ledger.CurrencyReservations.Any(row => row.Status == StrategyCommitmentStatuses.Active),
+            "Crop Teacher automatic dispatch requires managed seed ownership and purchase settlement for active resource claims.");
+    }
+
     public static void ValidateCurrent(string snapshotPath, string ledgerPath)
     {
         var (snapshot, state) = ReadContext(snapshotPath, ledgerPath);

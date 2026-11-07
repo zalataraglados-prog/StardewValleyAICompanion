@@ -1,6 +1,27 @@
 # Current Production Snapshot Handoff
 
-## Existing Ledger At Live Crop Handoff (Current)
+## Runtime Crop And Resource Installation (Current)
+
+PR505 passed exact-head CI42367028701/review, merged as4405fffb with matching
+trees and owned refs removed. The explicit `install-crop-reservations` command
+now installs the original selected crop/resource requests through original APIs,
+independently replays actual timestamped results and reads back the final ledger.
+It journals before mutation, recovers an ambiguous crop reply by one exact ledger
+readback and a resource reply by the original lookup, never a second mutation.
+Its separate summary is not a rewrite/promotion of PR504's planning receipt.
+
+This entry branches before loop/training startup and performs no gameplay. Do not
+activate installation in automatic dispatch until the original owned-budget
+supporting transitions, route settlement and acquired-seed custody/transfer are
+connected. The old buyer reads native balances without settling this new
+portfolio; successful compilation alone would not establish correct ownership
+consumption or acquired-slot custody.
+Then joint daily calendar/budgets and cross-root/source continuity precede model
+selection and formal manifest/preflight. L1 stays19/19,11/11;formal=false; no raw
+or local-data commit. See [installation contract](money-crop-runtime-installation.md)
+for exact entry, failure retention and successor responsibilities.
+
+## Existing Ledger At Live Crop Handoff (Accepted PR505)
 
 PR504 passed all42 final CI steps and merged asaffcc989, with matching tested/main
 trees and owned refs removed. Its resource reservation replay remains accepted.
@@ -20,7 +41,7 @@ transport checks pass, zero skipped unit tests. Final CI is recorded at PR
 closeout. No game or extra native
 snapshot; this runs only at the existing strategic handoff.
 
-Next remains installation of the newly selected crop/resource claims through the
+At PR505 closeout, the successor was installation of newly selected crop/resource claims through the
 original endpoints and strong reply checks, then neutral-route/support settlement,
 one-unit cash consumption and actual seed custody/transfer without double reserve.
 This slice does not flip PR504 runtime_ledger_installed or authorize formal training.

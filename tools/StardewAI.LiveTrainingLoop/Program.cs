@@ -19,6 +19,14 @@ if (args.Length > 0 && args[0] == "lookup-product-receipt")
     return;
 }
 
+if (args.Length > 0 && args[0] == "install-crop-reservations")
+{
+    using var installationHttp = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
+    try { Environment.ExitCode = await InstallCropReservationsAsync(args.Skip(1).ToArray(), installationHttp); }
+    catch (Exception exception) { Console.Error.WriteLine(exception.Message); Environment.ExitCode = 2; }
+    return;
+}
+
 var options = LiveTrainingOptions.Parse(args);
 options.ValidateFormalExecutionBoundary();
 Directory.CreateDirectory(options.Root);
