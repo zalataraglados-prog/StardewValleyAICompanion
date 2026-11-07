@@ -6,7 +6,7 @@ namespace StardewAI.Backend.Tests;
 
 public sealed partial class CropTeacherSeedTransferTests
 {
-    private sealed partial class Fixture
+    internal sealed partial class Fixture
     {
         private void CompleteNativeEchoes(JsonObject farm, JsonObject actor, MaterialInventoryGraph graph)
         {

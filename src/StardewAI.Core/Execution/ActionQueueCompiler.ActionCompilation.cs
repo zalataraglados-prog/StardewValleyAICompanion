@@ -157,6 +157,9 @@ namespace StardewAI.Core.Execution
             blocking.AddRange(ValidateLoadCrabPotBaitPlan(action, snapshot));
             blocking.AddRange(ValidateTillSoilPlan(action, snapshot));
             blocking.AddRange(ValidatePlantSeedPlan(action, snapshot));
+            if (CropSeedPlantingBinding.IsPresent(action.Parameters) &&
+                !CropSeedPlantingBinding.SourceMatches(action, snapshot, commitmentLedger, goalId))
+                blocking.Add("crop_seed_planting_source_binding_invalid");
             blocking.AddRange(ValidateHarvestCropPlan(action, snapshot));
             blocking.AddRange(ValidateAttachedItemHarvestQuestPlan(action, snapshot));
             blocking.AddRange(ValidateAttachedResourceCollectionQuestPlan(action, snapshot));
@@ -339,6 +342,7 @@ namespace StardewAI.Core.Execution
                     OptionId = action.OptionId,
                     GoalId = (action.OptionId == "executor.donate_museum_item" &&
                         action.Parameters.Any(parameter => parameter.Name == "museum_output_custody_reservation_id") ||
+                        action.OptionId == "executor.plant_seed" && CropSeedPlantingBinding.IsPresent(action.Parameters) ||
                         (action.OptionId is "executor.transfer_material" or "inventory.transfer_item") &&
                         action.Parameters.Any(parameter => parameter.Name == PreparedMaterialTransferContract.BindingParameter))
                             ? goalId : null,
@@ -355,7 +359,8 @@ namespace StardewAI.Core.Execution
                     QuestPlan = CompileQuestPlan(action, snapshot)
                 }
             };
-            if (action.OptionId is "executor.transfer_material" or "inventory.transfer_item")
+            if (action.OptionId is "executor.transfer_material" or "inventory.transfer_item" ||
+                CropSeedPlantingBinding.IsPresent(action.Parameters))
             {
                 var readiness = new ActionQueueDispatchReadinessService().Evaluate(new ActionQueueEnvelope(), item,
                     commitmentLedger ?? new StrategyCommitmentLedger(), snapshot.StateHash);

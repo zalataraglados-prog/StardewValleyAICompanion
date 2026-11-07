@@ -234,7 +234,13 @@ public sealed partial class ModEntry : Mod
             return BlockedWithPrimitive(request, "plant_seed", PlantSeedRequestedEffect(request, seedId), PlantSeedObservedEffect(request.TargetTileX.Value, request.TargetTileY.Value, seedId), "plant_seed_location_rule_blocked");
         }
 
-        var seedIndex = FindSeedInventoryIndex(seedId, location);
+        var ownedSeed = CropSeedPlantingInventoryContract.IsPresent(request);
+        var seedIndex = ownedSeed ? request.InventorySlotIndex.GetValueOrDefault(-1) : FindSeedInventoryIndex(seedId, location);
+        if (ownedSeed && (seedIndex < 0 || seedIndex >= Game1.player.Items.Count || Game1.player.Items[seedIndex] is not { } selectedSeed ||
+            !CropSeedPlantingInventoryContract.MatchesNativeSlot(request, seedIndex,
+                selectedSeed.QualifiedItemId, selectedSeed.ItemId, Crop.ResolveSeedId(selectedSeed.ItemId, location), selectedSeed.Quality, selectedSeed.Stack)))
+            return BlockedWithPrimitive(request, "plant_seed", PlantSeedRequestedEffect(request, seedId),
+                PlantSeedObservedEffect(request.TargetTileX.Value, request.TargetTileY.Value, seedId), "plant_seed_owned_inventory_drifted");
         if (seedIndex < 0)
         {
             return BlockedWithPrimitive(request, "plant_seed", PlantSeedRequestedEffect(request, seedId), PlantSeedObservedEffect(request.TargetTileX.Value, request.TargetTileY.Value, seedId), "plant_seed_inventory_seed_missing");
@@ -263,10 +269,11 @@ public sealed partial class ModEntry : Mod
             PrimitiveKind = "plant_seed",
             PrimitiveVerificationStatus = verified ? "verified" : "observed_mismatch",
             PrimitiveVerificationReasons = verified
-                ? new[] { "target_tile_crop_created", "seed_stack_decreased" }
+                ? ownedSeed ? new[] { "target_tile_crop_created", "seed_stack_decreased", "owned_seed_slot_decreased" }
+                    : new[] { "target_tile_crop_created", "seed_stack_decreased" }
                 : new[] { "plant_seed_post_state_mismatch" },
             RequestedEffect = PlantSeedRequestedEffect(request, seedId),
-            ObservedEffect = PlantSeedObservedEffect(request.TargetTileX.Value, request.TargetTileY.Value, seedId),
+            ObservedEffect = PlantSeedObservedEffect(request.TargetTileX.Value, request.TargetTileY.Value, seedId, ownedSeed ? seedIndex : null),
             BlockReasons = verified ? Array.Empty<string>() : new[] { "plant_seed_post_state_mismatch" },
             ChangedFacts = verified
                 ? new[]
@@ -453,14 +460,15 @@ public sealed partial class ModEntry : Mod
         return "current_location.planting_context[" + request.TargetTileX + "," + request.TargetTileY + "].has_crop=true;player.seed_inventory[" + seedId + "].stack_decreases";
     }
 
-    private static string PlantSeedObservedEffect(int x, int y, string seedId)
+    private static string PlantSeedObservedEffect(int x, int y, string seedId, int? inventorySlotIndex = null)
     {
         var location = Game1.currentLocation;
         var tile = new Vector2(x, y);
         var hasCrop = location.GetHoeDirtAtTile(tile)?.crop is not null;
-        var seedIndex = FindSeedInventoryIndex(seedId, location);
+        var seedIndex = inventorySlotIndex ?? FindSeedInventoryIndex(seedId, location);
         var stack = seedIndex >= 0 ? Game1.player.Items[seedIndex]?.Stack ?? 0 : 0;
-        return "has_crop=" + hasCrop.ToString().ToLowerInvariant() + ";seed_id=" + seedId + ";seed_stack=" + stack;
+        return "has_crop=" + hasCrop.ToString().ToLowerInvariant() + ";seed_id=" + seedId + ";seed_stack=" + stack +
+            (inventorySlotIndex.HasValue ? ";seed_inventory_slot=" + seedIndex : string.Empty);
     }
 
     private TrainingExecutionResult ExecuteHarvestCrop(TrainingExecutionRequest request)

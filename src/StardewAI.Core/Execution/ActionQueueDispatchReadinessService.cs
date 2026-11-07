@@ -27,6 +27,13 @@ public sealed partial class ActionQueueDispatchReadinessService
         };
         if (item.OptionId is "executor.transfer_material" or "inventory.transfer_item")
             return EvaluateMaterialTransfer(item, currentLedger, currentStateHash, result);
+        if (CropSeedPlantingBinding.IsPresent(item.NormalizedCommand.Parameters))
+        {
+            result.Ready = item.Status == "pending" && CropSeedPlantingBinding.IsBound(item, currentLedger, currentStateHash);
+            result.Status = result.Ready ? "ready" : "blocked";
+            result.BlockingReasons = result.Ready ? Array.Empty<string>() : new[] { "dispatch_crop_seed_planting_binding_drifted" };
+            return result;
+        }
         if (!string.Equals(
                 item.OptionId,
                 "executor.donate_museum_item",

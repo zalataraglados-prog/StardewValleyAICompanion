@@ -89,6 +89,10 @@ iterations are recorded in the PR closeout; raw files stay outside Git.
 
 ## Exact Next Work
 
+Owned planting continues in [Owned Planting Inventory Binding](money-crop-owned-planting-binding.md).
+The original successor below remains intact: exact native consumption and
+lifecycle release are not implied by completing a slot binding or compilation.
+
 1. Connect the existing planting consumer to exact owned player-slot consumption,
    retaining unowned legacy behavior; add explicit completion/cancellation
    release through original APIs. Inspect existing pending-transfer recovery
