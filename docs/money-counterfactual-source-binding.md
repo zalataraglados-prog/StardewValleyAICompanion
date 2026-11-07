@@ -3,7 +3,7 @@
 ## Verified Gap
 
 PR #488 is accepted at `b3874405`. G retains one accepted native terminal
-fragment out of two. Its Gold Bar request is
+fragment out of two. Its Iridium Bar `(O)337` request is
 `revenue-proof-request:78fa1b4eb840da49c022ea5b`.
 
 The old terminal collection plan describes native collection, but does not
@@ -31,7 +31,7 @@ certificate. Even an exact self-comparison keeps replay binding, native
 outcome, Teacher preference and formal training authorization false.
 
 Actual retained G/F source audit finds matching Money facts, native shop
-context and the unique20-unit Gold Bar quote at1000g each. Raw frame identities
+context and the unique20-unit Iridium Bar quote at1000g each. Raw frame identities
 differ. The original persistent boundary reports exactly
 `environment.training_run_id` and `environment.save_isolation_path` as changed.
 These differences are preserved, not normalized away. F still lacks accepted
@@ -45,12 +45,18 @@ their original field provenance; the old read cache and fact gates are intact.
 
 ## Implemented Local Source Binding
 
-PR #489 is accepted at `75d1a8ab`. H's Gold sale actually ran; a caller-only
+PR #489 is accepted at `75d1a8ab`. H's Iridium Bar sale actually ran; a caller-only
 same-name assembly-load failure happened after the sale. The failure record is
 retained. Offline completion reused the original raw request/nonce reader and
 original episode factory in a clean dependency process, then the original
 terminal, ledger/reservation and recurrence verifiers. Actual cumulative income
 is0 ->20,000. No sale was repeated and no failed summary was rewritten.
+
+The actual candidate says `display_name=铱锭`, `qualified_item_id=(O)337`.
+Historical reports/caller/run names said "Gold" incorrectly; those immutable
+IDs/paths remain as recorded. Execution and verification always used337,
+quantity20 and the native1000g quote. This is a reporting-name correction, not
+a changed target, price, outcome or new native run.
 
 `build-money-shop-replay-source-binding` / `verify-money-shop-replay-source-binding`
 provide an explicit v1 contract for **criterion-local declared held stock,
@@ -94,10 +100,18 @@ manifests reject. Final-code replay is identical and original sources/G's1/2
 checkpoint are unchanged. Full CI is recorded separately at exact-head closeout;
 these are not new Money coverage units or a formal-training result.
 
+A non-admitting offline preflight also reuses the original
+`VerifyAlternativeWithContext` and `CompareVerifiedArtifacts`: the explicit
+mapping retains G's1,200,000g and H's20,000g actual prefixes without rewriting
+their hashes. The original comparer returns one preference from the complete
+two-request denominator for each of the six authoritative thresholds. This
+confirms the intended consumer can reuse existing logic; it is not yet a
+versioned production comparison/corpus admission or a coverage promotion.
+
 ## Ordered Continuation
 
 1. Completed: the non-authorizing audit and its exact public/source regressions.
-2. Completed: Gold Bar's actual native outcome in its own declared isolated source
+2. Completed: Iridium Bar's actual native outcome in its own declared isolated source
    using the original evaluator/compiler/executor, request/nonce reader,
    ledger captures and terminal/recurrence verifier. Keep its actual request
    and source identity distinct from G. A20,000g losing observation need not
