@@ -1,5 +1,9 @@
 # Original Managed Crop Runtime Recovery
 
+Current successor: [the same durable phase owner](money-crop-managed-phase-owner.md).
+This accepted recovery consumer remains the sole native seed-boundary rebuilder;
+its missing-phase limits below are not retroactively claimed complete.
+
 ## Accepted Parent And Purpose
 
 PR518 merged as cdaa347ed64b63a2446dca8464f7752a4bd068af. Exact head00f41df8

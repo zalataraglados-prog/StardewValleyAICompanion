@@ -26,6 +26,24 @@ public static class CropTeacherResumeLoader
         var sourceLedger = CropTeacherTransitionLedger.OpenExisting(
             sourceLedgerPath);
         var runPlanPath = Path.GetFullPath(sourceLedger.RunPlanPath);
+        var (request, rebuiltPlan) = ReadVerifiedPlan(runPlanPath);
+        var ledger = CropTeacherTransitionLedger.ForkForResume(
+            sourceLedger,
+            resumeLedgerPath,
+            out var discardedVolatileHarvestReceiptCount);
+        return new CropTeacherResumeSession(
+            request,
+            rebuiltPlan,
+            ledger,
+            Path.GetFullPath(sourceLedger.LedgerPath),
+            Path.GetFullPath(ledger.LedgerPath),
+            runPlanPath,
+            discardedVolatileHarvestReceiptCount);
+    }
+
+    internal static (MoneyRevenueCropNativeProductionRunPlanRequest Request,
+        MoneyRevenueCropNativeProductionRunPlan Plan) ReadVerifiedPlan(string runPlanPath)
+    {
         var persistedPlan = Read<MoneyRevenueCropNativeProductionRunPlan>(
             runPlanPath,
             "crop_teacher_native_run_plan_invalid");
@@ -43,18 +61,7 @@ public static class CropTeacherResumeLoader
         var request = Read<MoneyRevenueCropNativeProductionRunPlanRequest>(
             requestPath,
             "crop_teacher_run_plan_request_invalid");
-        var ledger = CropTeacherTransitionLedger.ForkForResume(
-            sourceLedger,
-            resumeLedgerPath,
-            out var discardedVolatileHarvestReceiptCount);
-        return new CropTeacherResumeSession(
-            request,
-            rebuiltPlan,
-            ledger,
-            Path.GetFullPath(sourceLedger.LedgerPath),
-            Path.GetFullPath(ledger.LedgerPath),
-            runPlanPath,
-            discardedVolatileHarvestReceiptCount);
+        return (request, rebuiltPlan);
     }
 
     private static T Read<T>(string path, string error)

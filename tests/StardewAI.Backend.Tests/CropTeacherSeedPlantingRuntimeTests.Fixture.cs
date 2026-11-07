@@ -80,8 +80,10 @@ public sealed partial class CropTeacherSeedPlantingRuntimeTests
         }
 
         internal Task<CropTeacherSeedPlantingRuntime> Prepare(int consumed = 8, bool failedSuffix = false,
-            Action<SnapshotEnvelope>? change = null) => CropTeacherSeedPlantingRuntime.PrepareAsync(Client,
-            new(Options.BackendUrl, Output, Options.RunId, Options.PolicyTrajectoryExecutorVersion), Files.Open(), Files.Batch(), Files.OwnedSlotOne,
+            Action<SnapshotEnvelope>? change = null, CropTeacherSeedPlantingSupport? selectedScope = null,
+            string? runtimeDirectory = null, CropTeacherRunStep? selectedStep = null) => CropTeacherSeedPlantingRuntime.PrepareAsync(Client,
+            new(Options.BackendUrl, runtimeDirectory ?? Output, Options.RunId, Options.PolicyTrajectoryExecutorVersion), selectedScope ?? Files.Open(),
+            selectedStep?.ActionBatch ?? Files.Batch(), selectedStep is null ? Files.OwnedSlotOne : selectedStep.SeedReservationId,
             (diagnostic, request) => InvokeLive<Task<JsonObject>>("PostJournaledPortfolioCommitAsync", Client, Options, diagnostic, request),
             (diagnostic, request) => InvokeLive<Task<JsonObject>>("PostJournaledPortfolioSettlementAsync", Client, Options, diagnostic, request),
             (path, json) =>
@@ -95,11 +97,13 @@ public sealed partial class CropTeacherSeedPlantingRuntimeTests
                     new SmallModelActionEnvelope
                     {
                         ModelOutputId = "planting-runtime-fixture", SourceModel = "deterministic.fixture", GoalId = "earn_money",
-                        StateHash = Files.Before.StateHash, Actor = Options.TargetActor, Actions = marker.BuildActions(batch, Files.OwnedSlotOne)
+                        StateHash = Files.Before.StateHash, Actor = Options.TargetActor,
+                        Actions = marker.BuildActions(batch, selectedStep is null ? Files.OwnedSlotOne : selectedStep.SeedReservationId)
                     });
                 Assert.True(reply.IsSuccessStatusCode, await reply.Content.ReadAsStringAsync());
                 Queue = (await reply.Content.ReadFromJsonAsync<ActionQueueEnvelope>())!;
-                Transition = Files.NativeTransition(marker, consumed, failedSuffix, change, compiledQueue: Queue);
+                Transition = Files.NativeTransition(marker, consumed, failedSuffix, change,
+                    firstSlot: selectedStep is not null && selectedStep.SeedReservationId is null, compiledQueue: Queue);
                 return Transition.QueuePath;
             });
 

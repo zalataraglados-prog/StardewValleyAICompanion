@@ -62,6 +62,25 @@ internal sealed partial class CropTeacherSeedRuntimeTransaction
             diagnostic["final_ledger_path"] = final.Path;
             diagnostic["final_ledger_revision"] = final.Ledger.Revision;
             diagnostic["status"] = "crop_seed_support_roundtrip_verified";
+            if (managedBoundaryRequested)
+            {
+                var finalHash = Path.GetFileNameWithoutExtension(final.Path);
+                var verifiedLedgerJson = JsonSerializer.Serialize(final.Ledger, JsonOptions);
+                verifiedBoundaryFactory = () =>
+                {
+                    var prepared = ReadPreparedBoundary();
+                    void ValidateBoundary()
+                    {
+                        prepared.Validate();
+                        _ = verified.ReadSettlementRequest();
+                        if (PortfolioMutationRequestJournal.HashFile(final.Path) != finalHash)
+                            throw new InvalidDataException("Original verified crop final ledger changed.");
+                    }
+                    var detached = new StrategyLedgerEvidence(final.Path,
+                        JsonSerializer.Deserialize<StrategyCommitmentLedger>(verifiedLedgerJson, JsonOptions)!);
+                    return new(prepared, detached, transition.AfterSnapshotPath, ValidateBoundary);
+                };
+            }
             return final;
         }
         catch (Exception error)

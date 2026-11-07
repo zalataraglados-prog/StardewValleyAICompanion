@@ -11,7 +11,7 @@ namespace StardewAI.LiveTrainingLoop;
 public sealed record CropTeacherSeedPlantingRuntimeOptions(string BackendUrl, string EvidenceDirectory,
     string RunId, string ExecutorVersion);
 
-public sealed class CropTeacherSeedPlantingRuntime : ICropTeacherSeedRuntime, ICropTeacherSeedPrefixRuntime
+public sealed class CropTeacherSeedPlantingRuntime : ICropTeacherSeedRuntime, ICropTeacherSeedPrefixRuntime, ICropTeacherSeedManagedRuntime
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly CropTeacherSeedRuntimeTransaction transaction;
@@ -41,6 +41,8 @@ public sealed class CropTeacherSeedPlantingRuntime : ICropTeacherSeedRuntime, IC
     }
 
     public void ValidateDispatchQueue(string path) => transaction.ValidateDispatchQueue(path);
+    CropTeacherSeedPreparedBoundary ICropTeacherSeedManagedRuntime.ReadPreparedBoundary() => transaction.ReadPreparedBoundary();
+    CropTeacherSeedLiveBoundary ICropTeacherSeedManagedRuntime.ReadVerifiedBoundary() => transaction.ReadVerifiedBoundary();
 
     public async Task ValidateBeforeDispatchAsync(int index, JsonObject item, JsonObject current, string currentSnapshotPath)
     {

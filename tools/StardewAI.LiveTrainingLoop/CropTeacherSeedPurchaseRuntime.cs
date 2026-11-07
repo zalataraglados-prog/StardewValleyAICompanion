@@ -7,7 +7,7 @@ namespace StardewAI.LiveTrainingLoop;
 public sealed record CropTeacherSeedPurchaseRuntimeOptions(string BackendUrl, string EvidenceDirectory,
     string RunId, string ExecutorVersion);
 
-public sealed class CropTeacherSeedPurchaseRuntime : ICropTeacherSeedRuntime
+public sealed class CropTeacherSeedPurchaseRuntime : ICropTeacherSeedRuntime, ICropTeacherSeedManagedRuntime
 {
     private readonly CropTeacherSeedRuntimeTransaction transaction;
 
@@ -22,6 +22,8 @@ public sealed class CropTeacherSeedPurchaseRuntime : ICropTeacherSeedRuntime
             CropSeedRuntimeBindings.Purchase(scope), commit, settle, write, compileQueue));
 
     public void ValidateDispatchQueue(string path) => transaction.ValidateDispatchQueue(path);
+    CropTeacherSeedPreparedBoundary ICropTeacherSeedManagedRuntime.ReadPreparedBoundary() => transaction.ReadPreparedBoundary();
+    CropTeacherSeedLiveBoundary ICropTeacherSeedManagedRuntime.ReadVerifiedBoundary() => transaction.ReadVerifiedBoundary();
     public Task<StrategyLedgerEvidence> CompleteAsync(string queuePath, string receiptPath, string afterSnapshotPath, string selectedCandidateId) =>
         transaction.CompleteAsync(queuePath, receiptPath, afterSnapshotPath, selectedCandidateId);
     public Task<StrategyLedgerEvidence> CompleteAsync(MoneyRevenueCropNativeLifecycleTransitionRequest transition) => transaction.CompleteAsync(transition);

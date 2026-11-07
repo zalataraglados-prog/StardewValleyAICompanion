@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text;
 using StardewAI.Contracts.Strategy;
 using StardewAI.GoalConditionedBootstrap;
 
@@ -15,6 +16,7 @@ internal sealed partial class CropTeacherSeedRuntimeTransaction
     private readonly string queueSha256;
     private readonly string queuePath;
     private readonly JsonNode preparedQueue;
+    private readonly string intentSha256;
     private readonly JsonObject diagnostic;
     private readonly Func<JsonObject, ReservationPortfolioCommitRequest, Task<JsonObject>> commit;
     private readonly Func<JsonObject, ReservationPortfolioSupportingTransitionSettlementRequest, Task<JsonObject>> settle;
@@ -28,7 +30,7 @@ internal sealed partial class CropTeacherSeedRuntimeTransaction
 
     private CropTeacherSeedRuntimeTransaction(HttpClient http, CropSeedRuntimeOptions options,
         CropSeedRuntimeScopeBinding scope, CropSeedRuntimeMarkerBinding marker, string queuePath,
-        string queueSha256, JsonNode preparedQueue, JsonObject diagnostic,
+        string queueSha256, JsonNode preparedQueue, string intentSha256, JsonObject diagnostic,
         Func<JsonObject, ReservationPortfolioCommitRequest, Task<JsonObject>> commit,
         Func<JsonObject, ReservationPortfolioSupportingTransitionSettlementRequest, Task<JsonObject>> settle,
         Func<string, string, Task> write)
@@ -40,6 +42,7 @@ internal sealed partial class CropTeacherSeedRuntimeTransaction
         this.queueSha256 = queueSha256;
         this.queuePath = queuePath;
         this.preparedQueue = preparedQueue;
+        this.intentSha256 = intentSha256;
         this.diagnostic = diagnostic;
         this.commit = commit;
         this.settle = settle;
@@ -65,7 +68,9 @@ internal sealed partial class CropTeacherSeedRuntimeTransaction
         try
         {
             if (scope.PreparationDetails is not null) diagnostic["preparation_details"] = scope.PreparationDetails.DeepClone();
-            await write(Path.Combine(output, "support-intent.json"), diagnostic.ToJsonString(JsonOptions));
+            var rawIntent = diagnostic.ToJsonString(JsonOptions);
+            await write(Path.Combine(output, "support-intent.json"), rawIntent);
+            var intentHash = PortfolioMutationRequestJournal.Hash(Encoding.UTF8.GetBytes(rawIntent));
             var before = await ReadLedgerAsync(http, options, request.StateHash, "Crop seed support base");
             RequireLedger(scope.ReadBaseLedger(), before.Ledger, "base");
             diagnostic["base_ledger_path"] = before.Path;
@@ -89,7 +94,7 @@ internal sealed partial class CropTeacherSeedRuntimeTransaction
             diagnostic["compiled_queue_path"] = queuePath;
             diagnostic["compiled_queue_sha256"] = queueHash;
             diagnostic["status"] = "crop_seed_support_prepared";
-            return new(http, options, scope, verified, queuePath, queueHash, preparedQueue, diagnostic, commit, settle, write);
+            return new(http, options, scope, verified, queuePath, queueHash, preparedQueue, intentHash, diagnostic, commit, settle, write);
         }
         catch (Exception error)
         {
