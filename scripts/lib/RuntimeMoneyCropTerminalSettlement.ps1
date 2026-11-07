@@ -73,7 +73,8 @@ function Invoke-RuntimeCropTerminalSettlement {
 
     $currentPath = [IO.Path]::GetFullPath($SourceSnapshotPath)
     $current = Import-RuntimeSnapshotFile -Path $currentPath `
-        -BackendUrl $BackendUrl -SnapshotProfile $SnapshotProfile
+        -BackendUrl $BackendUrl -SnapshotProfile $SnapshotProfile `
+        -CoreAssemblyPath (Join-Path (Split-Path -Parent $Context.LoopDll) 'StardewAI.Core.dll')
     if ([string]$current.Value.state_hash -ne
             [string]$retention.after_state_hash -or
         [int](Read-StateValue $current.Value "time" "total_days") -ne
@@ -185,7 +186,8 @@ function Invoke-RuntimeCropTerminalSettlement {
     }
 
     $homeSnapshot = Import-RuntimeSnapshotFile -Path $currentPath `
-        -BackendUrl $BackendUrl -SnapshotProfile $SnapshotProfile
+        -BackendUrl $BackendUrl -SnapshotProfile $SnapshotProfile `
+        -CoreAssemblyPath (Join-Path (Split-Path -Parent $Context.LoopDll) 'StardewAI.Core.dll')
     $homeLocation = Get-RuntimeCropHomeLocation -Snapshot $homeSnapshot.Value
     $homeRoute = Invoke-RuntimeCropRoute -Context $Context `
         -BackendUrl $BackendUrl -SnapshotProfile $SnapshotProfile `
