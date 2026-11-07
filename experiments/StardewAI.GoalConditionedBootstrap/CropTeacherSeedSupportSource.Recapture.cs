@@ -5,7 +5,7 @@ using StardewAI.Core.Strategy;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
-public sealed partial class CropTeacherSeedPurchaseSupport
+internal sealed partial class CropTeacherSeedSupportSource
 {
     private StrategyCommitmentLedger ReadSupplyLedger(string? priorVerifiedSnapshotPath)
     {

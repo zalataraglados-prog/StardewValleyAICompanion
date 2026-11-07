@@ -21,6 +21,7 @@
     <Using Include="Xunit" />
     <Compile Include="..\Shared\PolicySupervisionFixture.cs" Link="PolicySupervisionFixture.cs" />
     <Compile Include="..\Shared\MoneyCropTeacherFixture.cs" Link="MoneyCropTeacherFixture.cs" />
+    <Compile Include="..\StardewAI.Core.Tests\MaterialTransferTestFixture.cs" Link="MaterialTransferTestFixture.cs" />
     <Compile Include="..\StardewAI.Core.Tests\CropTeacherRunPlannerTests.cs" Link="LegacyCropTeacherRunPlannerTests.cs" />
     <Compile Include="..\StardewAI.Core.Tests\CropTeacherControlIntegrationSourceGuardTests.cs" Link="LegacyCropTeacherControlIntegrationSourceGuardTests.cs" />
     <Compile Include="..\StardewAI.Core.Tests\CropTeacherControlIntegrationSourceGuardTests.SeedSupport.cs" Link="CropTeacherControlIntegrationSourceGuardTests.SeedSupport.cs" />

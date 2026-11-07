@@ -1,5 +1,10 @@
 # Owned Seed Runtime Transaction
 
+> Current successor: [owned chest transfer preparation](money-crop-seed-transfer-preparation.md).
+> Preparation/dispatch binding is implemented; native transfer proof/settlement,
+> exact owned planting and managed activation remain explicit next work.
+> This does not enable the automatic active-resource path or formal training.
+
 ## Accepted Baseline
 
 PR508 passed42/42 CI steps in42377567925, including Backend731/Core2442, with

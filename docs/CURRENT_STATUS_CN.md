@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-07 R2箱中自有种子准备（当前唯一接续）：** #509已42步CI接受合入`8e540c72`，Backend768/Core2442且同head审查无发现，测试/main树一致。新scope共用原采购源校验，以原intent/projector/portfolio准备和原编译/派发绑定转运；多背包格在同一次原子准备中等量拆分本owner的claim，原ID先缩量，其他owner不挪用，箱槽压缩仍由原投影处理。未伪装机器输入或扩用Museum-only合同，旧执行器/两旧绑定路径不改。**本片只完成准备与派发合同，不是已原生转运/结算**；下一步原生回执/精确槽位与完整资源边界、原supporting-transition结算及完整回放，再精确种植消费/生命周期释放与唯一managed激活恢复，之后联合日历/预算/连续性、Provider/模型及manifest/preflight。L1`19/19、11/11`、formal=false冻结，Student新档21/21在训练后。测试/发布见收口，无游戏/worker/API，local-data不提交。[精确合同与下一步](money-crop-seed-transfer-preparation.md)。下方均为历史。
+
 > **2026-11-07 R2原采购控制往返（当前唯一接续）：** #508经42步CI/同head审查合入`c96f59e2`并核树/清自有分支。可选scope已接同一原编译/队列/原生回执及journal/lookup；marker重放/读回后才编译，固定采购隔离全局Teacher，三次变更各存诊断并完整核回包/最终账本，丢回包不重发。新同日时钟比较不改旧身份规范化或真实源哈希，其他状态全比较，未结算资源变化不可冒充重捕获。Backend767本地通过，最终优化/CI见收口。自动handoff仍不构造scope，不提前开训练；下一步原prepared-transfer/种植所有权消费/生命周期释放，再唯一激活/恢复所有者及managed原生小样本。随后联合日历/聚合预算/连续性、Provider/模型、manifest/preflight；L1`19/19、11/11`、formal=false冻结，Student新档21/21在训练后。[具体接续](money-crop-seed-runtime-transaction.md)。下方为历史。
 
 > **2026-11-07 R2采购结算核心（当前唯一接续）：** #507已42步CI接受合入`f85bbfcc`并核树/清自有分支。新增逐步marker/原生凭据/实际扣款/新增种子所有权核心，复用原服务和原采购验证器；旧整链/执行器不改，其他root不重标，买齐原portfolio释放余款，单次已验上下文避免反复深验。28项协议检查通过，恢复仅核预期SHA/原生重建并只读留存proof，不是新游戏证据或已启用自动运行。下一步接原编译/队列及journal/lookup API，再prepared-transfer、种植消费/生命周期释放，完成后显式启用managed原生小样本。随后联合日历/聚合预算/连续性、Provider/模型、manifest/preflight；L1`19/19、11/11`和formal=false冻结，Student新档21/21在训练后。[合同与精确后继](money-crop-seed-purchase-settlement.md)。最终回归/发布见收口，下方接续为历史。
