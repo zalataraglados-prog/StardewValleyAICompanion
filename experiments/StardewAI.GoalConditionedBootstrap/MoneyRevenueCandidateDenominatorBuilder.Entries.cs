@@ -1,5 +1,6 @@
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
+using StardewAI.Contracts.State;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -7,7 +8,8 @@ public static partial class MoneyRevenueCandidateDenominatorBuilder
 {
     private static MoneyRevenueCandidateCatalogEntry BuildEntry(
         RevenueActionNodeDefinition definition,
-        EventCandidate candidate)
+        EventCandidate candidate,
+        SnapshotEnvelope snapshot)
     {
         var entry = BuildEntry(
             definition,
@@ -47,6 +49,11 @@ public static partial class MoneyRevenueCandidateDenominatorBuilder
             candidate.FullShipmentAlreadyShipped;
         entry.FullShipmentContributes = candidate.FullShipmentContributes;
         entry.AvailableStack = candidate.AvailableStack;
+        if (entry.SemanticKindBinding == "unbound" &&
+            IsNativeShopRecoveryPrerequisite(definition, candidate, snapshot))
+        {
+            entry.SemanticKindBinding = "deterministic_recovery_prerequisite";
+        }
         return Seal(entry);
     }
 

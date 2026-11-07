@@ -24,6 +24,7 @@ internal static partial class BootstrapSelfTest
         RunFullShipmentSettlement();
         VerifyMoneyRevenueProgression();
         VerifyMoneyRevenueCandidateDenominator();
+        VerifyMoneyRevenueRecoveryPrerequisite();
         VerifyMoneyRevenueTerminalCandidateRebind();
         VerifyMoneyRevenueTerminalExecutionProof();
         VerifyMoneyRevenueTerminalProofCollectionPlan();

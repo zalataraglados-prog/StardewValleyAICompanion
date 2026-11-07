@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-11-07 Money真实商店准备与旧恢复控制
+
+- #484经38步CI接受、合入`48430bd1`，原入口对齐不重做。当前唯一primary仍`earn_money`；并集保持`13/19 executable、13/19 split-complete、13/19 ready、10/11 roots`，formal=false。
+- E隐藏静音隔离B已通过原路线及剧情611439的原生控制走到铁匠ShopMenu，5准备队列/1剧情控制；没有出售、跳剧情或测量期资源修改，逐段库存/现金/累计收入保持，原档哈希不变、自己的进程退出。原生商店安全计时器250ms仍在；这不是收入证据。
+- Money分母现窄绑定旧恢复器的真实ShopMenu关闭前置，保留候选原kind/效果/全部行并重新封签，不当作睡觉结算、不进入比较。共享桥/候选/编译执行不改，未知或伪造控制仍拒绝。保留B公开重放由9/10变为10/10节点，但比较仍0、ready=false，计时器与全局义务不放宽。[合同与接续](money-threshold-production-evidence.md#native-shop-recovery-prerequisite)。
+- D测前原生30tick校准实际已完成，计时器-6ms；新caller误要求精确0，只修caller、保留原失败报告，离线资源/原档核对后接续，不重跑游戏。原公开分母接受10节点/11候选/2比较、train、收入0，SHA`0f7258ed...`；无出售或标签。该校准不是产品编译动作，D缺失的直接请求如实标为缺失，不伪造nonce或回执。最终完整hermetic、16新场景和3公开入口反例通过；最终CI见收口。
+- **下一步：** 原threshold selector已在D离线重现仅认event continuation、不认旧active-menu economic候选的拒绝；直接修Money采样消费端及wave路径，绑定同源真实候选/位置，不改共享接口、不伪装route或缩减分母。复用D及原比较/native/账本预留链，六阈值三分区独立join后才晋升；原全局collector预检及R2所属长期义务保留。原始数据/临时caller仓库外，无worker、API、训练、服务器或清理。
+
 ## 2026-11-07 Money6：库存、续接与 bounded 布局
 
 - #483 经 CI `42313560862` 全部38步接受、合入 `33cf0a4d`；其24项新检查和Core2378/Backend629通过，未重跑游戏或增加Money分子。新一轮确认两个旧PowerShell初始化器把已生成的v6决策/回执错当v1拒绝，现删除包装层的策略版本副本，仍由原C# Build/精确重建拥有策略校验；原输入reader/执行器/持久边界不改。16项无游戏集成检查贯通旧入口，执行形状与当前自动dispatch一致，伪策略/篡改数值/覆盖均拒绝；接入原CI步骤，不额外启动游戏或重跑长轨迹。[具体合同](money-threshold-production-evidence.md#initialization-alignment)。
