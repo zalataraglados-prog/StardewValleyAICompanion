@@ -1,5 +1,11 @@
 # StardewAI 当前工作
 
+## 2026-11-08 R2原事务恢复边界（当前唯一接续）
+
+- #518经同head审查/42步CI `42415768717`接受合入`cdaa347e`，Core2443/Backend1062零失败/跳过且核树清分支。唯一scope选择已接受，不重做。
+- 本片为唯一持久phase所有者提供原事务重建消费者：钉住原intent SHA/run/executor/输入，复用原intent构建、scope/marker/settlement/ResumeTransition与原journal读取合同；核原完整准备/base/marker/queue、原生proof、实际消费/种子托管与最终完整读回。不凭summary成功标志推进；缺回包仅原lookup且在最终Get前，已知坏回包/缺journal/缺proof/lookup不存在均不重发或伪作零执行。原Get仍可按旧规则协调，不冒称全局无副作用；共享写入/异常帧/旧执行器规则不改。[合同](money-crop-managed-runtime-recovery.md)。
+- 首9/11暴露新consumer错误限制before必须同路径，已依原完整内容/哈希合同修新限制，改变before字节仍拒绝；随后12/12、最终相关358/358通过，含新增恢复14项、零跳过，完整CI见收口。合成原生格式非游戏实测；returned boundary保留原身份并在读取时再核原transitive artifacts，不证明重启游戏未回滚。**唯一下一步：** 本片发布后以此接唯一持久phase所有者的run/plan/request/input、原before、排他pending准入和接受推进；部分/未留proof/尚未派发变更、生命周期跨进程恢复仍须原所有者路径，不冒称本reader已全部解决。保持活动作物binder拒绝/idle边界，行走维护跨日靠原证据，不假改源。接齐才显式managed激活/小样本原生，再原日历/预算/连续性、Provider/模型与manifest/preflight。L1`19/19、11/11`、formal=false及Student训后21/21不变，无游戏/服务器/worker/API，local-data不提交。下方为历史。
+
 ## 2026-11-08 R2统一自有种子scope选择（当前唯一接续）
 
 - #517最终head `c55072dd`经42步CI `42414916363`接受合入`6c83d3d9`，Core2443/Backend1044零失败/跳过且核树清分支。首head审查指出新origin回调问题已复现修复，最终34/34/控制者审查与最终CI独立归因；生命周期持久运行接线不重做。

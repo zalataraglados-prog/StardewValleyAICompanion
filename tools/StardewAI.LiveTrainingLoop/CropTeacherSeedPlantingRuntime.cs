@@ -32,18 +32,7 @@ public sealed class CropTeacherSeedPlantingRuntime : ICropTeacherSeedRuntime, IC
     {
         var bounded = scope.ValidateExecutionPreflight(batch, reservationId);
         CropTeacherSeedPlantingMarker? marker = null;
-        var binding = new CropSeedRuntimeScopeBinding(scope.CommitmentId, scope.SnapshotPath, scope.TotalDay,
-            "owned_seed_planting", "crop_teacher_seed_planting_runtime.v1", scope.InputHashes, () => scope.BaseLedger,
-            () => scope.MarkerRequest, scope.ValidateInputsUnchanged, result =>
-            {
-                marker = scope.VerifyMarkerReply(result);
-                return new(marker.Ledger, marker.ValidateQueue, (transition, proofPath, queueHash) =>
-                {
-                    var verified = marker.VerifyTransition(transition, proofPath, queueHash);
-                    return new(verified.ProofPath, verified.Proof.AfterStateHash, false, () => verified.SettlementRequest,
-                        reply => new(verified.VerifySettlementReply(reply)));
-                });
-            }, JsonSerializer.SerializeToNode(new { requested_batch = batch, bound_batch = bounded, reservation_id = reservationId }, JsonOptions)!.AsObject());
+        var binding = CropSeedRuntimeBindings.Planting(scope, batch, bounded, reservationId, value => marker = value);
         var transaction = await CropTeacherSeedRuntimeTransaction.PrepareAsync(http,
             new(options.BackendUrl, options.EvidenceDirectory, options.RunId, options.ExecutorVersion), binding,
             commit, settle, write, () => compileQueue(marker!, bounded));

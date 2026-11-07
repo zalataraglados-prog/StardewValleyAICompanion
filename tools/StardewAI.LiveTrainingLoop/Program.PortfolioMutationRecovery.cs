@@ -57,16 +57,7 @@ static partial class Program
             try
             {
                 // Same on-disk contract as the existing PowerShell recovery reader.
-                foreach (var path in new[] { journalPath, requestPath })
-                    if ((File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0)
-                        throw new InvalidDataException("Portfolio journal must be a regular file.");
-                if (new FileInfo(journalPath).Length > 16 * 1024 ||
-                    new FileInfo(requestPath).Length > RuntimeExecutionRequestJournal.MaximumRequestBytes ||
-                    !JsonNode.DeepEquals(journal, JsonNode.Parse(await File.ReadAllTextAsync(journalPath))))
-                    throw new InvalidDataException("Portfolio journal identity drifted.");
-                var original = await File.ReadAllBytesAsync(requestPath);
-                if (PortfolioWireHash(original) != hash)
-                    throw new InvalidDataException("Portfolio original request hash drifted.");
+                var original = await PortfolioMutationRequestJournal.ReadAsync(journalPath, requestPath, journal, hash);
                 using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
                 var lookup = await PostJsonStringAsync(http, endpoint + "lookup-mutation", new JsonObject
                 {

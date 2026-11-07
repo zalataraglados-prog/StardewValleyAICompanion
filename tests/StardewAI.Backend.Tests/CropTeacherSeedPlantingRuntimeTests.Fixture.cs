@@ -35,6 +35,7 @@ public sealed partial class CropTeacherSeedPlantingRuntimeTests
         internal MoneyRevenueCropNativeLifecycleTransitionRequest Transition { get; private set; } = null!;
         internal int NativeRequests { get; private set; }
         internal int FullSnapshotReads { get; private set; }
+        internal Action<string>? BeforeWrite { get; set; }
 
         internal RuntimeFixture(bool loseReplies = false, string fault = "")
         {
@@ -83,7 +84,11 @@ public sealed partial class CropTeacherSeedPlantingRuntimeTests
             new(Options.BackendUrl, Output, Options.RunId, Options.PolicyTrajectoryExecutorVersion), Files.Open(), Files.Batch(), Files.OwnedSlotOne,
             (diagnostic, request) => InvokeLive<Task<JsonObject>>("PostJournaledPortfolioCommitAsync", Client, Options, diagnostic, request),
             (diagnostic, request) => InvokeLive<Task<JsonObject>>("PostJournaledPortfolioSettlementAsync", Client, Options, diagnostic, request),
-            (path, json) => InvokeLive<Task>("WritePortfolioJournalFileAsync", path, json), async (marker, batch) =>
+            (path, json) =>
+            {
+                BeforeWrite?.Invoke(path);
+                return InvokeLive<Task>("WritePortfolioJournalFileAsync", path, json);
+            }, async (marker, batch) =>
             {
                 Marker = marker;
                 using var reply = await Client.PostAsJsonAsync(Options.BackendUrl + "/api/v1/small-model/action-queue/compile",
