@@ -27,8 +27,13 @@ with zero skipped tests. Final CI is recorded at PR closeout.
 The first new currency fixture omitted the original reader's confidence field;
 only that fixture was corrected, not the shared reader or its authority contract.
 
-Next after release: continue the original joint-calendar/time-energy and selected-
-source/continuity owners for L3. E's separate offline-finalization-summary is not
+This fixes budget consumption at selection, not resource locking for the new plan.
+Next after release: inspect/connect selected seed stock and purchase-cash ownership
+through the original ReservationPortfolioLedgerService atomic commit, then compose
+the original DailyPlanCompiler aggregate budget with joint-calendar/time-energy
+and selected-source/continuity owners for L3. Do not add a second scheduler or
+mistake a per-route cost vector for a fully scheduled day.
+E's separate offline-finalization-summary is not
 the original v2 passed runtime summary required by the stronger segment builder;
 do not silently relabel/import it as that artifact or claim a Day-0 schedule.
 Reusing its exact checkpoint/native sources must retain their actual scope.

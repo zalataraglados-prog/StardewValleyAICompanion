@@ -6,7 +6,7 @@
 - 核原图SHA`2b937d95...`及`864fef95`/对应JSON：旧活动作物无完整布局时提前拒绝是有意合同，继续保留。发现当前作物Teacher只校验基础账本身份，却未将其中材料/货币预留用于候选规模；9个新回归先真实失败。
 - 原Teacher现在只读一次同源基础账本，复用原MaterialSupplyProjection、acquisition货币reader及NativeCurrencySupplyProjection，先扣全部活动预留再计算种子短缺量和可购买量；不排除同decision的旧承诺。非金币独立核验、不混扣金币；取消/完成预留不占当前供应。缺证据、超额或错槽预留在上游拒绝，不等执行器失败。无账本/无活动货币预留维持原证据要求，不创建第二账本或执行链。
 - 37项定向回归（含14项新检查）、完整Core2428项及原完整hermetic均通过，零跳过；原E Teacher决策公开重建与旧文件逐字节同SHA`c683188e...`。新测试曾遗漏原reader要求的confidence，只修夹具；未放宽reader。最终CI见PR收口；不重采游戏或变更19项L1/训练授权。
-- **唯一下一步：** 本片回归/发布后继续R2 L3联合日历、跨根时间/体力占用、长期连续性及所选来源证明接续。E离线概览不是原v2运行成功摘要，不能伪造passed或凭6/6晋升整个新档；需要哪种来源就按原合同绑定。之后Provider/模型定型、正式数据/manifest/preflight及全量训练；Student新档21/21留在训练后。L1`19/19、11/11`冻结，formal=false；无worker/API/服务器/清理，local-data不提交。下方旧接续仅供历史追溯。
+- **唯一下一步：** 本片只闭合候选读取预算，不等于新计划资源已锁定。发布后先沿原ReservationPortfolioLedgerService核对/接齐所选作物种子现货与采购资金的原子预留归属，再与联合日历、跨根时间/体力、长期连续性及所选来源组合；复用已有DailyPlanCompiler聚合预算，不增第二调度器。E离线概览不是原v2运行成功摘要，不能伪造passed或凭6/6晋升整个新档；需要哪种来源就按原合同绑定。之后Provider/模型定型、正式数据/manifest/preflight及全量训练；Student新档21/21留在训练后。L1`19/19、11/11`冻结，formal=false；无worker/API/服务器/清理，local-data不提交。下方旧接续仅供历史追溯。
 
 ## 2026-11-07 已核实审计问题499/500（当前唯一接续）
 

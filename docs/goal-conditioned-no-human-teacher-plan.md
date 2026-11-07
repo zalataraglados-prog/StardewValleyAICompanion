@@ -1,6 +1,6 @@
 # Goal-Conditioned No-Human Teacher Plan
 
-> **2026-11-07 当前接续：** #502已合入`e39dd1e5`；L1并集`19/19、11/11 roots`冻结，E同源原生生产/875g和6/6检查点保留，原失败不覆盖。R2 L3当前补齐作物Teacher对原基础账本材料/货币活动预留的消费：先扣共享资源再选择规模，沿用原投影/身份/布局保护，不改执行器。37项专项通过，原E决策重建字节一致；完整回归/CI后接联合日历与跨根时间体力、长期连续性及所选来源证明，不重做L1或重采13日生产，不伪造原运行成功摘要。随后Provider/模型定型、正式数据与manifest/preflight，才开正式训练；Student新档21/21留在训练后评测，formal=false。[来源与接续](current-production-snapshot-handoff.md)。下方带日期的旧顺位和计数为历史，不覆盖此接续。
+> **2026-11-07 当前接续：** #502已合入`e39dd1e5`；L1并集`19/19、11/11 roots`冻结，E同源原生生产/875g和6/6检查点保留，原失败不覆盖。R2 L3当前补齐作物Teacher对原基础账本材料/货币活动预留的消费：先扣共享资源再选择规模，沿用原投影/身份/布局保护，不改执行器。37项专项、Core2428及完整hermetic通过，原E决策重建字节一致；CI后先沿原原子预留服务接齐所选计划的种子现货/采购资金，再复用原日计划聚合预算接联合日历与跨根时间体力、长期连续性及所选来源证明。本片不声称资源已经锁定，不重做L1或重采13日生产，不伪造原运行成功摘要。随后Provider/模型定型、正式数据与manifest/preflight，才开正式训练；Student新档21/21留在训练后评测，formal=false。[来源与接续](current-production-snapshot-handoff.md)。下方带日期的旧顺位和计数为历史，不覆盖此接续。
 
 > **2026-11-07 Money入口接续：** #483 已接受合入 `33cf0a4d`。现有PowerShell包装器与自动dispatch统一由原C# Teacher/回执重建确定策略；修复硬编码v1拒绝v6的旧入口，16项无游戏集成检查通过，不改共享执行器或全根准入。下一步按R2核对Money局部消费者/全局collector的责任，先复用原分母/比较/native/账本预留补六阈值局部证据，不将完整新档百万日程倒挂为L1门；全局图三项日程下界/机会成本/未来生产预留责任留在所属层，所选局部生产义务不免验。不扫描全盘或重跑旧长轨迹复原历史文件，修复不增加criterion分子或授权训练。并集 `13/19、13/19、13/19、10/11 roots`、formal=false及新档Teacher21/Student/Year3共享预算义务保持。[具体边界](money-threshold-production-evidence.md#initialization-alignment)。
 
