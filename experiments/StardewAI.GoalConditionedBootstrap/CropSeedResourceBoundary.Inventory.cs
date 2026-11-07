@@ -4,7 +4,7 @@ using StardewAI.Contracts.State;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
-internal static partial class CropSeedTransferResourceBoundary
+internal static partial class CropSeedResourceBoundary
 {
     private static void VerifyInventory(SnapshotEnvelope before, SnapshotEnvelope after, MaterialInventoryNode player,
         JsonObject seed, MaterialTransferProjection physical)

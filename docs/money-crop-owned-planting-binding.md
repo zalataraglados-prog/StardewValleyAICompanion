@@ -96,6 +96,10 @@ mistakes remain in external logs and were not fixed by weakening date rules.
 
 ## Exact Remaining Work
 
+The native consumption/partial-prefix settlement continuation is documented in
+[Owned Planting Native Consumption](money-crop-owned-planting-settlement.md).
+It does not by itself activate runtime dispatch or cancel a growing crop.
+
 1. Complete the same batch's original native receipt and per-step after-state
    verification, including exact owned-slot deltas, partial successful prefixes,
    complete persistent-resource boundary and original supporting-transition
