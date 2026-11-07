@@ -36,6 +36,7 @@ internal static partial class BootstrapSelfTest
         VerifyMoneyRuntimeModIsolation();
         VerifyMoneyThresholdNativeOutcomeOnly();
         VerifyMoneyThresholdNativeOutcomeSelection();
+        VerifyMoneyThresholdActiveShopSelection();
     }
 
     internal static void RunInvocationReadPlan() =>

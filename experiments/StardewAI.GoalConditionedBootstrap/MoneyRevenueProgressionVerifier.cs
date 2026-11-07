@@ -161,7 +161,7 @@ internal static class MoneyRevenueProgressionVerifier
             right.PendingShippingSettlementValue &&
         left.ShippingContentsSignature == right.ShippingContentsSignature;
 
-    private static JsonElement ReadValue(
+    internal static JsonElement ReadValue(
         SnapshotEnvelope snapshot,
         string section,
         string field)

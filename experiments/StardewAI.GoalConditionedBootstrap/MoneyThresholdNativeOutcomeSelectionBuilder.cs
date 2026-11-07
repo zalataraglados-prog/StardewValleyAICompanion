@@ -1,10 +1,11 @@
+using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Goals;
 using StardewAI.Core.Training;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
-public static class MoneyThresholdNativeOutcomeSelectionBuilder
+public static partial class MoneyThresholdNativeOutcomeSelectionBuilder
 {
     private static readonly HashSet<string> ObjectiveParameterNames = new(
         new[]
@@ -32,7 +33,8 @@ public static class MoneyThresholdNativeOutcomeSelectionBuilder
             inputs.Catalog,
             inputs.Checkpoint,
             criterionId,
-            datasetPartition);
+            datasetPartition,
+            inputs.Snapshot);
     }
 
     internal static MoneyThresholdNativeOutcomeSelection BuildSelection(
@@ -41,7 +43,8 @@ public static class MoneyThresholdNativeOutcomeSelectionBuilder
         MoneyRevenueCandidateDenominatorCatalog catalog,
         MoneyRevenueCheckpoint checkpoint,
         string criterionId,
-        string datasetPartition)
+        string datasetPartition,
+        SnapshotEnvelope? sourceSnapshot = null)
     {
         var threshold = GrandpaEvaluationGoalEvaluator.MoneyThresholds
             .SingleOrDefault(value => string.Equals(
@@ -74,34 +77,26 @@ public static class MoneyThresholdNativeOutcomeSelectionBuilder
         Require(checkpoint.TotalMoneyEarned < threshold.Target,
             "Money threshold source already satisfies the requested criterion.");
 
-        var saleNodes = catalog.Nodes.Where(node =>
-                node.PolicyChoice &&
-                node.OptionId == "economy.sell_items")
-            .ToArray();
-        Require(saleNodes.Length == 1 && saleNodes[0].EnumerationComplete,
-            "Money threshold source has no unique complete shop-sale node.");
-        var eligible = saleNodes[0].Candidates
-            .Where(IsExecutableShopSaleStage)
-            .OrderBy(candidate => candidate.CatalogCandidateId,
+        Require(sourceSnapshot is null || sourceSnapshot.StateHash == checkpoint.StateHash,
+            "Money threshold native context does not bind its source checkpoint.");
+        var eligible = BindShopSales(catalog, sourceSnapshot)
+            .OrderBy(sale => sale.Candidate.CatalogCandidateId,
                 StringComparer.Ordinal)
             .ToArray();
-        var crossing = eligible.Where(candidate =>
+        var crossing = eligible.Where(sale =>
                 checked(checkpoint.TotalMoneyEarned +
-                    (uint)candidate.TotalValue) >= threshold.Target)
-            .OrderBy(candidate => candidate.TotalValue)
-            .ThenBy(candidate => candidate.EstimatedTicks)
-            .ThenBy(candidate => candidate.CatalogCandidateId,
+                    (uint)sale.Candidate.TotalValue) >= threshold.Target)
+            .OrderBy(sale => sale.Candidate.TotalValue)
+            .ThenBy(sale => sale.Candidate.EstimatedTicks)
+            .ThenBy(sale => sale.Candidate.CatalogCandidateId,
                 StringComparer.Ordinal)
             .ToArray();
         Require(crossing.Length > 0,
             "Money threshold source has no current shop-sale candidate that crosses " +
             threshold.CriterionId + ".");
 
-        var selected = crossing[0];
-        var objectiveParameters = selected.Parameters
-            .Where(value => value.Name.StartsWith(
-                "continuation.",
-                StringComparison.Ordinal))
+        var selected = crossing[0].Candidate;
+        var objectiveParameters = crossing[0].ObjectiveParameters
             .OrderBy(value => value.Name, StringComparer.Ordinal)
             .ThenBy(value => value.Value, StringComparer.Ordinal)
             .ToArray();
@@ -242,14 +237,16 @@ public static class MoneyThresholdNativeOutcomeSelectionBuilder
             fullPath,
             CurrentTeacherFrontierSupport.HashFile(fullPath),
             catalog,
-            MoneyRevenueProgressionVerifier.Project(snapshot));
+            MoneyRevenueProgressionVerifier.Project(snapshot),
+            snapshot);
     }
 
     internal sealed record SelectionInputs(
         string CandidateDenominatorPath,
         string CandidateDenominatorSha256,
         MoneyRevenueCandidateDenominatorCatalog Catalog,
-        MoneyRevenueCheckpoint Checkpoint);
+        MoneyRevenueCheckpoint Checkpoint,
+        SnapshotEnvelope Snapshot);
 
     private static string RequiredFile(string path, string label)
     {

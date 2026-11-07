@@ -1,5 +1,65 @@
 # Money Threshold Production Evidence
 
+## Current Active Sale Sampling
+
+PR #485 is accepted at `d6fa8194` after all38 CI steps on `3a50cee6`.
+The retained D source is reused offline; no route, calibration or game startup
+is repeated. Money's sampling consumer now accepts the original active-menu
+economic format as well as its unchanged staged-event path. Single-threshold
+and wave selection share the same binding. This only schedules native evidence
+collection; it is not a preference, income outcome or coverage promotion.
+
+The original full catalog rebuild still owns candidate identity, price,
+quantity, protections and execution admission. The adapter requires an exact
+admitted economic sale, consistent positive value, empty unbound parameters,
+the same catalog/checkpoint/snapshot identity and a readable ready ShopMenu
+context. It reads the actual player location, not a shop-to-location guess,
+and derives the existing eight continuation parameters separately. The
+selected candidate, channel, empty parameter array, digest and complete
+denominator are unchanged. A native timer of zero or negative is ready; a
+positive/unknown timer is not. Missing context cannot silently drop economic
+rows from a mixed sample. Unknown channels/bindings and malformed rows are not
+reinterpreted as route events.
+
+The snapshot already read and hash-verified by the original progression
+projector is retained in the internal input bundle. Its unchanged field reader
+is exposed only inside this experiment assembly for reuse. No additional full
+snapshot, evaluator run, hash pass, source cache or schema is added. Shared
+bridge, candidate evaluator, compiler, executor and global collector are
+unchanged. The legacy sampler traces to `520b83c7` and wave to `78e372be`;
+their assertion-only, smallest-sufficient-sale intent is retained. The restored
+October16 chat JSON contains those hashes in a Git history output, not a
+recovered original design conversation; contemporaneous code/docs supply the
+intent, not an invented chat rationale.
+
+Verification: explicit-E bootstrap build has zero warnings/errors; old staged
+selection tests and34 new scenarios (3 positive,31 rejection) pass, as does the
+final full original hermetic suite. The real D public direct and wave commands
+produce identical bytes, file SHA-256
+`db993d85836ddbebf8ee5f3c1a9239e87ee7710f52ba134326701f48ffbc667f`.
+They select original `economic_candidate / sell:5` with no row mutation, from
+2 comparisons in the retained11-row catalog. Actual pre-income remains0;
+1,200,000g and the six crossed criteria are predictions awaiting execution.
+The original Backend accepts those generated parameters and compiles its
+normal pending `sell_shop_item -> close_menu` queue. Four real public probes
+reject wrong partition, forged parameters, relabeled channel and wrong source
+hash through the original guards. Sources stay unchanged, no queue is
+executed, and raw/probe data stays outside Git. Final CI is recorded at closeout.
+
+Next, use the original comparison chain, not another sampler or game replay.
+The original D alternative builder already accepts two complete direct-native
+shop-sale alternatives with long-horizon authority=false. A read-only next-step
+probe exposed an all-direct branch mismatch: the existing concrete consumer
+requires a rebind receipt, while the original rebind producer rejects
+an empty required set under its existing contract (`no terminal rebind skeletons`). Inspect the original
+intent and fix the unnecessary-rebind consumer/orchestration branch; do not
+fabricate a receipt or weaken real rollout/rebind proof. Then bind the actual
+source ledger and original counterfactual requests before collecting the
+required same-run native outcomes and independent comparisons. D is a source
+and offline preflight, not a passed Money native run; never fake its summary
+or join it to another run's outcome. Preserve R2, all18 Money cells, global
+fresh-save/acquisition/reservation obligations and formal=false.
+
 ## Current Money Resumption
 
 The #338 Teacher fixes are accepted in PR #483 at `33cf0a4d`, after all38 CI
@@ -174,7 +234,8 @@ No sale occurred. Long-horizon authority and production/formal permission
 remain false. Native stock was declared before measurement, never credited as
 resource acquisition or income.
 
-The next exact gap is now reproduced without game: the original threshold
+The historical next gap, now resolved by Current Active Sale Sampling above,
+was reproduced without game: the original threshold
 selector rejects D because it only recognizes staged event candidates with
 continuation parameters; the unchanged active-menu interface correctly returns
 economic candidates with empty unbound parameters. Next adapt that Money
