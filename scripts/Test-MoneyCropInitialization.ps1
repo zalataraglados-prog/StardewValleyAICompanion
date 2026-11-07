@@ -139,4 +139,6 @@ Write-JsonFile -Path (Join-Path $output 'summary.json') -Value ([ordered]@{
     game_started = $false
     formal_product_training_authorized = $false
 })
+# Expected native rejections must not become the host CI step's exit status.
+$global:LASTEXITCODE = 0
 Write-Output ("PASS: Money crop initialization ({0} checks); no game or training." -f $passed.Count)
