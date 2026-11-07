@@ -1,5 +1,54 @@
 # Current Production Snapshot Handoff
 
+## Known Context In The Shared Boundary
+
+PR496 is accepted at `416ded1f`, exact-head CI42350460137 all39 steps passed.
+Retained C was audited in one bounded pass:9 transitions and31 native steps,
+no game or backend restart. Known non-persistent changes were tool-upgrade
+location/control/service/derived fingerprint, Gourmand's global menu-clear flag,
+and Community Center event playback/derived lifecycle stage. The existing
+verified story action still owns actual mail/quest/unlock changes.
+
+`1f2bc568` bridge code and restored chat distinguish implementing tool-upgrade
+read/execution from obtaining native upgrade/claim evidence. `167eb5f6` and its
+restored context explain the existing allowlisted runtime normalization: unknown
+fields remain persistent. Neither source intent calls for removing tool progress
+or forcing the executor to freeze unrelated menus/NPCs. The fix stays in the
+original boundary projector, not the bridge, executor or raw snapshot.
+
+Only known tool_upgrade.v1 route/control/Clint schedule and derived stage/hash
+fields are normalized. Tool identity, level, source slot, pending tool/days,
+upgrade price/cost, contracts and unknown fields remain. Strict comparison also
+retains free slots/money and resource-derived capacity. Only the existing
+expected-resource-mutation view removes their duplicate projections; its caller
+still proves exact cash/inventory changes. Gourmand only loses menu_clear under
+its known schema, not request/reward/mutex/crop facts. Community Center v1
+lifecycle loses only derived stage/event_active, not seen, assets, mail,
+completion or unknown fields.
+
+Shared consumers are Full Shipment recovery, crop acquisition/lifecycle, Money
+resource-neutral routes, counterfactual source audit and replay source binding.
+No other domain is exempted; no new hash cache, execution mode or second proof
+system is introduced. These boundary hashes are internal comparison values, not
+a new serialized authority. Existing hermetic cases cover these consumers;21
+new cases compare both strict and expected-resource views, including real tool,
+cost, mail/event/completion, request/reward/lock, unknown and unsupported-schema
+changes. Explicit E build is zero warnings/errors; final full suite/CI is recorded
+at closeout.
+
+The original public Build now accepts the entire retained C acquisition:
+`verified_exact_seed_shortfall_native_acquisition`, seeds0->5, cash450->50,
+9 transitions/4 supporting/5 purchase slices, formal=false. Output SHA is
+`413feac75f5ae7b026392119dc28e6aa1bce78b7bada7a1f3b033556b932183e`.
+Original failure/raw receipts and source save are unchanged. This is not native
+planting, retention, settlement or a full fresh-save Teacher21 proof.
+
+Next: publish this tested shared repair, then use the original current-v6 full
+production entry point for planting/daily maintenance/retention/settlement. Do not
+splice C's unsaved memory or silently restore snapshot state. Keep all A/B/C
+diagnostics, no local-root recollection, worker/API or training. R2 global
+capability/resource/calendar integration follows; L1 stays19/19 and11/11.
+
 ## Applied Progress Follow-Up
 
 PR495 is accepted at `6e5616e0`, exact-head CI42349146093 passed. C exited
