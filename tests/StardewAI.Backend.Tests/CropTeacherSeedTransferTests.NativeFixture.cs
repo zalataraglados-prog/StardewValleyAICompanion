@@ -10,7 +10,7 @@ namespace StardewAI.Backend.Tests;
 
 public sealed partial class CropTeacherSeedTransferTests
 {
-    private sealed partial class Fixture
+    internal sealed partial class Fixture
     {
         internal string NativeProofPath => Path.Combine(root, "native-transfer-proof.json");
         internal SnapshotEnvelope After { get; private set; } = null!;

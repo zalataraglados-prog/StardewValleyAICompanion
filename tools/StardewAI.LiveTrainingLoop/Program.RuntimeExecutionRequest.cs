@@ -828,6 +828,8 @@ static partial class Program
         executionRequest.ExpectedNextDayMarniePetAdoptionMail = expectedNextDayMarniePetAdoptionMail;
         executionRequest.DelayedSettlement = delayedSettlement;
         executionRequest.InventorySlotIndex = inventorySlotIndex;
+        executionRequest.CropSeedPlantingVersion = ReadQueueParameterInt(item, "crop_seed_planting_version");
+        executionRequest.SeedInventoryQuality = ReadQueueParameterInt(item, "seed_inventory_quality");
         executionRequest.DonationTileX = donationTileX;
         executionRequest.DonationTileY = donationTileY;
         executionRequest.ExpectedStackBefore = expectedStackBefore;

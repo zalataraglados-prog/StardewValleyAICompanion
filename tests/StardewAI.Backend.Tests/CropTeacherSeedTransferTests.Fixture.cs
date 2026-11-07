@@ -18,7 +18,7 @@ public sealed partial class CropTeacherSeedTransferTests
     private const string Timestamp = "2026-11-07T06:00:00Z";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    private sealed partial class Fixture : IDisposable
+    internal sealed partial class Fixture : IDisposable
     {
         private readonly string root = Path.Combine(Path.GetTempPath(), "crop-seed-transfer-" + Guid.NewGuid().ToString("N"));
         internal SnapshotEnvelope Before { get; }
