@@ -72,10 +72,13 @@ public static partial class CurrentMasterAnglerTeacherFrontierBuilder
             !field.TryGetProperty("value", out var progress) ||
             progress.ValueKind != JsonValueKind.Object ||
             !progress.TryGetProperty("eligible_species_count", out var eligibleValue) ||
+            eligibleValue.ValueKind != JsonValueKind.Number ||
             !eligibleValue.TryGetInt32(out var eligible) || eligible != 72 ||
             !progress.TryGetProperty("caught_eligible_species_count", out var caughtValue) ||
+            caughtValue.ValueKind != JsonValueKind.Number ||
             !caughtValue.TryGetInt32(out var reportedCaught) || reportedCaught < 0 ||
             !progress.TryGetProperty("missing_species_count", out var missingValue) ||
+            missingValue.ValueKind != JsonValueKind.Number ||
             !missingValue.TryGetInt32(out var reportedMissing) || reportedMissing < 0 ||
             reportedCaught + reportedMissing != eligible ||
             !progress.TryGetProperty("items", out var items) ||

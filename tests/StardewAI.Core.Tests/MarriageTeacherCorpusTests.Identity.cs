@@ -8,6 +8,69 @@ namespace StardewAI.Core.Tests;
 public sealed partial class MarriageTeacherCorpusTests
 {
     [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void OriginalSleepAndSameDayWeddingStoryPhasesRetainTheOriginPartition(bool story)
+    {
+        var run = story ? StoryTransition(Run("story")) : Run("sleep");
+        var original = JsonSerializer.Serialize(run);
+        Invoke("ValidateRuns", new[] { run });
+        Assert.Equal(original, JsonSerializer.Serialize(run));
+        var corpus = Corpus(run);
+        Assert.Equal(1, corpus.NativeOutcomeCount);
+        Assert.Equal(2, corpus.RowCount);
+        Assert.False(corpus.MechanicalControlsArePreferenceLabels);
+        Assert.False(corpus.FormalProductTrainingAuthorized);
+        Assert.Equal(new[] { "train" }, corpus.CriterionCoverage.Single().NativeOutcomePartitions);
+    }
+
+    [Theory]
+    [InlineData("wrong_before_day")]
+    [InlineData("wrong_after_day")]
+    [InlineData("foreign_option")]
+    [InlineData("foreign_queue")]
+    [InlineData("foreign_item")]
+    [InlineData("foreign_nonce")]
+    [InlineData("missing_native_proof")]
+    [InlineData("repeated_transition")]
+    [InlineData("preference_label")]
+    public void WeddingStoryCompatibilityDoesNotRelaxNativeOrExactControlIdentity(string mutation)
+    {
+        var run = StoryTransition(Run("story"));
+        var transition = JsonNode.Parse(run.JointCriterionTransition.GetRawText())!;
+        var chain = JsonNode.Parse(run.QueueChain.GetRawText())!.AsArray();
+        switch (mutation)
+        {
+            case "wrong_before_day": transition["total_day_before"] = 209; break;
+            case "wrong_after_day": transition["total_day_after"] = 211; break;
+            case "foreign_option": transition["option_id"] = "executor.wait_ticks"; break;
+            case "foreign_queue": transition["queue_id"] = "foreign"; break;
+            case "foreign_item": transition["queue_item_id"] = "foreign"; break;
+            case "foreign_nonce": transition["request_nonce"] = "foreign"; break;
+            case "missing_native_proof": run = run with { NativeOutcomeVerified = false }; break;
+            case "repeated_transition": chain.Add(chain[3]!.DeepClone()); break;
+            case "preference_label": chain[3]!["role"] = "independent_gift_preparation"; break;
+        }
+        Reject("ValidateRuns", new[] { run with
+        {
+            QueueChain = JsonSerializer.SerializeToElement(chain),
+            JointCriterionTransition = JsonSerializer.SerializeToElement(transition)
+        } });
+    }
+
+    private static MarriageTeacherCorpusRun StoryTransition(MarriageTeacherCorpusRun run)
+    {
+        var queue = run.QueueChain[3];
+        return run with { JointCriterionTransition = JsonSerializer.SerializeToElement(new
+        {
+            queue_id = queue.GetProperty("queue_id").GetString(),
+            queue_item_id = queue.GetProperty("queue_item_ids")[0].GetString(),
+            request_nonce = queue.GetProperty("request_nonces")[0].GetString(),
+            option_id = "executor.advance_story_event", total_day_before = 210, total_day_after = 210
+        }) };
+    }
+
+    [Theory]
     [InlineData("omitted_preparation")]
     [InlineData("repeated_preparation")]
     [InlineData("omitted_controls")]
