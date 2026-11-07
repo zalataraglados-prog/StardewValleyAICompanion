@@ -84,6 +84,9 @@ jobs:
       - name: Test isolated material-transfer preflight and original slot verification without game
         shell: pwsh
         run: ./scripts/Test-RuntimeMaterialTransferSmoke.ps1 -OutputRoot "$env:RUNNER_TEMP/material-transfer-runtime"
+      - name: Test logical snapshot import and crop artifact relocation without game
+        shell: pwsh
+        run: ./scripts/Test-RuntimeSnapshotImport.ps1 -OutputRoot "$env:RUNNER_TEMP/snapshot-import-runtime"
       - name: Test fishing source mapping across original continuation queues without game
         shell: pwsh
         run: ./scripts/Test-RuntimeFishingArtifactMapping.ps1 -OutputRoot "$env:RUNNER_TEMP/fishing-source-mapping"

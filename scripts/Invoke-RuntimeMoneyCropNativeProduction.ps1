@@ -215,8 +215,9 @@ try {
     $initialDay = [int](Read-StateValue `
         $initial.Value "time" "total_days")
     $initialStateHash = [string]$initial.Value.state_hash
-    $expectedSourceSnapshot = Get-Content `
-        -LiteralPath $productionInput.SnapshotPath -Raw | ConvertFrom-Json
+    $expectedSourceSnapshot = Read-RuntimeLogicalJsonArtifact `
+        -Path $productionInput.SnapshotPath `
+        -CoreAssemblyPath (Join-Path (Split-Path -Parent $loopDll) 'StardewAI.Core.dll')
     $expectedSourceBoundaryHash = Get-MoneyCropSourceBoundaryHash `
         -Snapshot $expectedSourceSnapshot
     $observedSourceBoundaryHash = Get-MoneyCropSourceBoundaryHash `
@@ -357,7 +358,8 @@ try {
     foreach ($day in @($runPlan.days)) {
         $totalDay = [int]$day.total_day
         $current = Import-RuntimeSnapshotFile -Path $currentPath `
-            -BackendUrl $backendUrl -SnapshotProfile "full"
+            -BackendUrl $backendUrl -SnapshotProfile "full" `
+            -CoreAssemblyPath (Join-Path (Split-Path -Parent $loopDll) 'StardewAI.Core.dll')
         if ([int](Read-StateValue $current.Value "time" "total_days") -ne
             $totalDay) {
             throw "Crop runtime day boundary drifted before day $totalDay."
@@ -409,7 +411,8 @@ try {
             $dailyPath = Join-Path $evidenceDirectory `
                 "daily-capacity-day-$totalDay.json"
             $dailySnapshotPaths.Add((Copy-RuntimeSnapshotArtifact `
-                -SourcePath $currentPath -DestinationPath $dailyPath))
+                -SourcePath $currentPath -DestinationPath $dailyPath `
+                -CoreAssemblyPath (Join-Path (Split-Path -Parent $loopDll) 'StardewAI.Core.dll')))
         }
         foreach ($commitmentId in @($day.capture_layout_commitment_ids)) {
             $safeId = Get-MoneyCropSafeArtifactName `
@@ -418,7 +421,8 @@ try {
                 "layout-snapshot-$safeId.json"
             $layoutSnapshotByCommitment[[string]$commitmentId] =
                 Copy-RuntimeSnapshotArtifact -SourcePath $currentPath `
-                    -DestinationPath $layoutPath
+                    -DestinationPath $layoutPath `
+                    -CoreAssemblyPath (Join-Path (Split-Path -Parent $loopDll) 'StardewAI.Core.dll')
         }
 
         foreach ($batch in @($day.action_batches)) {
@@ -457,7 +461,8 @@ try {
 
         if ([bool]$day.native_sleep_required) {
             $current = Import-RuntimeSnapshotFile -Path $currentPath `
-                -BackendUrl $backendUrl -SnapshotProfile "full"
+                -BackendUrl $backendUrl -SnapshotProfile "full" `
+                -CoreAssemblyPath (Join-Path (Split-Path -Parent $loopDll) 'StardewAI.Core.dll')
             $homeLocation = Get-RuntimeCropHomeLocation `
                 -Snapshot $current.Value
             $homeRoute = Invoke-RuntimeCropRoute `
@@ -634,8 +639,8 @@ try {
     $isolatedSaveSha256After = Get-DirectoryContentHash -Path $isolatedSlot
     $finalSnapshotPath = [IO.Path]::GetFullPath([string]$currentPath)
     $finalSnapshotSha256 = Get-RuntimeFileSha256 -Path $finalSnapshotPath
-    $finalSnapshot = Get-Content -LiteralPath $finalSnapshotPath -Raw |
-        ConvertFrom-Json
+    $finalSnapshot = Read-RuntimeLogicalJsonArtifact -Path $finalSnapshotPath `
+        -CoreAssemblyPath (Join-Path (Split-Path -Parent $loopDll) 'StardewAI.Core.dll')
     if ([string]::IsNullOrWhiteSpace([string]$finalSnapshot.state_hash)) {
         throw "Money crop native production final snapshot lacks a state hash."
     }

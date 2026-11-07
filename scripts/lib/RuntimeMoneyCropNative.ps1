@@ -1,10 +1,18 @@
 function Copy-RuntimeSnapshotArtifact {
     param(
         [Parameter(Mandatory)] [string] $SourcePath,
-        [Parameter(Mandatory)] [string] $DestinationPath
+        [Parameter(Mandatory)] [string] $DestinationPath,
+        [string] $CoreAssemblyPath = ""
     )
-    Write-Utf8Text -Path $DestinationPath -Value (
-        Get-Content -LiteralPath $SourcePath -Raw)
+    $logical = Read-RuntimeLogicalJsonArtifact -Path $SourcePath `
+        -CoreAssemblyPath $CoreAssemblyPath -Raw
+    if ([string]::Equals([IO.Path]::GetFullPath($SourcePath),
+            [IO.Path]::GetFullPath($DestinationPath),
+            [StringComparison]::OrdinalIgnoreCase)) {
+        return [IO.Path]::GetFullPath($DestinationPath)
+    }
+    # A relocated manifest would lose its relative blob directory.
+    Write-Utf8Text -Path $DestinationPath -Value $logical
     return [IO.Path]::GetFullPath($DestinationPath)
 }
 
@@ -46,7 +54,8 @@ function Invoke-RuntimeBoundSingleAction {
         throw "Bound runtime action identity is incomplete."
     }
     $source = Import-RuntimeSnapshotFile -Path $SourceSnapshotPath `
-        -BackendUrl $BackendUrl -SnapshotProfile $SnapshotProfile
+        -BackendUrl $BackendUrl -SnapshotProfile $SnapshotProfile `
+        -CoreAssemblyPath (Join-Path (Split-Path -Parent $Context.LoopDll) 'StardewAI.Core.dll')
     $effectiveParameters = [Collections.Generic.List[object]]::new()
     foreach ($parameter in @($Parameters)) {
         if ([string]::IsNullOrWhiteSpace([string]$parameter.name)) {
@@ -195,7 +204,8 @@ function Invoke-RuntimeCropSitePreparationAction {
         [Parameter(Mandatory)] [string] $Name
     )
     $source = Import-RuntimeSnapshotFile -Path $SourceSnapshotPath `
-        -BackendUrl $BackendUrl -SnapshotProfile "farm_layout"
+        -BackendUrl $BackendUrl -SnapshotProfile "farm_layout" `
+        -CoreAssemblyPath (Join-Path (Split-Path -Parent $Context.LoopDll) 'StardewAI.Core.dll')
     $sourceDay = [int](Read-StateValue $source.Value "time" "total_days")
     $sourceLocation = [string](Read-StateValue `
         $source.Value "player" "location_id")
@@ -391,7 +401,8 @@ function Invoke-RuntimeCropActionBatch {
         [Parameter(Mandatory)] [string] $Name
     )
     $source = Import-RuntimeSnapshotFile -Path $SourceSnapshotPath `
-        -BackendUrl $BackendUrl -SnapshotProfile $SnapshotProfile
+        -BackendUrl $BackendUrl -SnapshotProfile $SnapshotProfile `
+        -CoreAssemblyPath (Join-Path (Split-Path -Parent $Context.LoopDll) 'StardewAI.Core.dll')
     $sourceDay = [int](Read-StateValue $source.Value "time" "total_days")
     $sourceLocation = [string](Read-StateValue `
         $source.Value "player" "location_id")
@@ -531,7 +542,8 @@ function Invoke-RuntimeCropRoute {
     $artifacts = [Collections.Generic.List[object]]::new()
     for ($step = 1; $step -le $MaxConnectorCount; $step++) {
         $source = Import-RuntimeSnapshotFile -Path $sourcePath `
-            -BackendUrl $BackendUrl -SnapshotProfile $SnapshotProfile
+            -BackendUrl $BackendUrl -SnapshotProfile $SnapshotProfile `
+            -CoreAssemblyPath (Join-Path (Split-Path -Parent $Context.LoopDll) 'StardewAI.Core.dll')
         $sourceDay = [int](Read-StateValue $source.Value "time" "total_days")
         $sourceLocation = [string](Read-StateValue `
             $source.Value "player" "location_id")

@@ -228,9 +228,13 @@ function Invoke-JsonPost {
             -TimeoutSec $TimeoutSeconds
     }
     catch {
-        $detail = ""
-        if ($null -ne $_.Exception.Response) {
-            $errorResponse = $_.Exception.Response
+        $postError = $_
+        $detail = if ($null -ne $postError.ErrorDetails) {
+            [string]$postError.ErrorDetails.Message
+        } else { "" }
+        if ([string]::IsNullOrWhiteSpace($detail) -and
+            $null -ne $postError.Exception.Response) {
+            $errorResponse = $postError.Exception.Response
             try {
                 if ($errorResponse -is [Net.Http.HttpResponseMessage]) {
                     $detail = $errorResponse.Content.ReadAsStringAsync().
@@ -251,10 +255,10 @@ function Invoke-JsonPost {
             }
         }
         $failure = [InvalidOperationException]::new(
-            "POST $Url failed: $($_.Exception.Message) $detail", $_.Exception)
-        if ($null -ne $_.Exception.Response -and
-            $null -ne $_.Exception.Response.StatusCode) {
-            $failure.Data['RuntimeHttpStatusCode'] = [int]$_.Exception.Response.StatusCode
+            "POST $Url failed: $($postError.Exception.Message) $detail", $postError.Exception)
+        if ($null -ne $postError.Exception.Response -and
+            $null -ne $postError.Exception.Response.StatusCode) {
+            $failure.Data['RuntimeHttpStatusCode'] = [int]$postError.Exception.Response.StatusCode
         }
         throw $failure
     }
@@ -368,9 +372,11 @@ function Import-RuntimeSnapshotFile {
     param(
         [Parameter(Mandatory)] [string] $Path,
         [Parameter(Mandatory)] [string] $BackendUrl,
-        [Parameter(Mandatory)] [string] $SnapshotProfile
+        [Parameter(Mandatory)] [string] $SnapshotProfile,
+        [string] $CoreAssemblyPath = ""
     )
-    $raw = Get-Content -LiteralPath $Path -Raw
+    $raw = Read-RuntimeLogicalJsonArtifact -Path $Path `
+        -CoreAssemblyPath $CoreAssemblyPath -Raw
     $snapshot = $raw | ConvertFrom-Json
     $ingest = Invoke-JsonPost `
         -Url "$BackendUrl/api/v1/snapshots?profile=$SnapshotProfile" `

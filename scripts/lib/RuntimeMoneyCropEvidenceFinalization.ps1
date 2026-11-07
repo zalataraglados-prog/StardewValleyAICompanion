@@ -98,8 +98,8 @@ function New-MoneyCropSeedReservationProof {
     if ([string]::IsNullOrWhiteSpace($CommitmentId)) {
         throw "Money crop seed-reservation commitment id is missing."
     }
-    $snapshot = Get-Content -LiteralPath $ReservationSnapshotPath -Raw |
-        ConvertFrom-Json
+    $snapshot = Read-RuntimeLogicalJsonArtifact -Path $ReservationSnapshotPath `
+        -CoreAssemblyPath (Join-Path (Split-Path -Parent $BootstrapDll) 'StardewAI.Core.dll')
     if ([string]::IsNullOrWhiteSpace([string]$snapshot.real_timestamp)) {
         throw "Money crop seed-reservation snapshot timestamp is missing."
     }

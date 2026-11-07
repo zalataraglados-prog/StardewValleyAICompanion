@@ -68,7 +68,8 @@ function Invoke-RuntimeCropSeedAcquisition {
 
     $sourcePath = [IO.Path]::GetFullPath($SourceSnapshotPath)
     $source = Import-RuntimeSnapshotFile -Path $sourcePath `
-        -BackendUrl $BackendUrl -SnapshotProfile $SnapshotProfile
+        -BackendUrl $BackendUrl -SnapshotProfile $SnapshotProfile `
+        -CoreAssemblyPath (Join-Path (Split-Path -Parent $Context.LoopDll) 'StardewAI.Core.dll')
     $sourceTotalDay = [int](Read-StateValue $source.Value "time" "total_days")
     if ($sourceTotalDay -gt $deadlineTotalDay) {
         throw "Crop seed acquisition $Name missed its deadline."
@@ -85,7 +86,8 @@ function Invoke-RuntimeCropSeedAcquisition {
 
     for ($stage = 1; $stage -le $maxStages; $stage++) {
         $current = Import-RuntimeSnapshotFile -Path $currentPath `
-            -BackendUrl $BackendUrl -SnapshotProfile $SnapshotProfile
+            -BackendUrl $BackendUrl -SnapshotProfile $SnapshotProfile `
+            -CoreAssemblyPath (Join-Path (Split-Path -Parent $Context.LoopDll) 'StardewAI.Core.dll')
         $currentTotalDay = [int](Read-StateValue `
             $current.Value "time" "total_days")
         if ($currentTotalDay -ne $sourceTotalDay -or

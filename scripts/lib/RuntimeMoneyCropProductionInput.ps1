@@ -262,8 +262,8 @@ function Read-MoneyCropNativeProductionInputManifest {
 
     $decisionRequest = Get-Content `
         -LiteralPath $artifacts.DecisionRequestPath -Raw | ConvertFrom-Json
-    $snapshot = Get-Content -LiteralPath $artifacts.SnapshotPath -Raw |
-        ConvertFrom-Json
+    $snapshot = Read-RuntimeLogicalJsonArtifact -Path $artifacts.SnapshotPath `
+        -CoreAssemblyPath (Join-Path $ProjectRoot 'tools/StardewAI.LiveTrainingLoop/bin/Release/net8.0/StardewAI.Core.dll')
     $decisionReceiptRaw = [IO.File]::ReadAllText(
         $artifacts.DecisionReceiptPath,
         [Text.Encoding]::UTF8)
