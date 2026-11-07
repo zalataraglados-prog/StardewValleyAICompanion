@@ -91,12 +91,19 @@ public sealed partial class CropTeacherSeedTransferTests
             scope.ReservationId);
 
         internal async Task<(JsonObject Queue, CropTeacherSeedTransferRuntime Runtime)> BuildControl(
-            CropTeacherSeedTransferSupport scope, CropTeacherRunStep? step = null)
+            CropTeacherSeedTransferSupport scope, CropTeacherRunStep? step = null, bool managedScopes = false)
         {
-            var task = InvokeLive<Task>("BuildCropTeacherControlQueueAsync", Client, Options, 1, step ?? StepFor(scope),
+            var selected = step ?? StepFor(scope);
+            var arguments = new object[] { Client, Options, 1, selected,
                 new MoneyRevenueCropNativeProductionRunPlan(), new MoneyRevenueCropNativeProductionRunPlanRequest(),
-                files.SourcePath, JsonNode.Parse(File.ReadAllText(files.SourcePath))!.AsObject(), files.Before.StateHash,
-                null!, scope);
+                files.SourcePath, JsonNode.Parse(File.ReadAllText(files.SourcePath))!.AsObject(), files.Before.StateHash };
+            var task = managedScopes
+                ? InvokeLive<Task>("BuildCropTeacherManagedControlQueueAsync", arguments.Concat(new object[]
+                {
+                    CropTeacherManagedSeedScopes.Open(files.RequestPath, files.SourcePath, files.LedgerPath, selected,
+                        scope.PreparationRequest.PortfolioId)
+                }).ToArray())
+                : InvokeLive<Task>("BuildCropTeacherControlQueueAsync", arguments.Concat(new object[] { null!, scope }).ToArray());
             await task;
             var result = task.GetType().GetProperty("Result")!.GetValue(task)!;
             var queue = (JsonObject)result.GetType().GetProperty("Queue")!.GetValue(result)!;

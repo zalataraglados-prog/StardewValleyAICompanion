@@ -13,7 +13,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
     private const string RecordedAt = "2026-11-07T03:00:00Z";
     private const string Id = "crop:owned-purchase";
 
-    private sealed class Fixture : IDisposable
+    internal sealed class Fixture : IDisposable
     {
         private readonly string root = Path.Combine(Path.GetTempPath(), "crop-seed-settlement-" + Guid.NewGuid().ToString("N"));
         private int sequence;

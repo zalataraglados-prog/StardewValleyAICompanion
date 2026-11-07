@@ -4,11 +4,13 @@ namespace StardewAI.Backend.Tests;
 
 public sealed partial class CropTeacherSeedPlantingRuntimeTests
 {
-    [Fact]
-    public async Task OriginalControlCompilerUsesTheSamePrefixOwnerAndMechanicalBatch()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task OriginalControlCompilerUsesTheSamePrefixOwnerAndMechanicalBatch(bool managedScopes)
     {
         using var f = new RuntimeFixture();
-        var runtime = await f.BuildControl();
+        var runtime = await f.BuildControl(managedScopes);
         Assert.Equal(8, f.Queue.Items.Length);
         Assert.Equal("pending", f.Queue.Status);
         runtime.ValidateDispatchQueue(f.Files.QueuePath);
