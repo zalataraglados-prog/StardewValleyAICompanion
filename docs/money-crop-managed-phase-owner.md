@@ -1,5 +1,9 @@
 # Durable Owner For Original Crop Seed Phases
 
+Current successor: [original lifecycle recovery](money-crop-lifecycle-recovery.md)
+for this same owner. Its presence does not claim lifecycle admission/acceptance
+or the remaining dispatch/native continuity paths are already connected here.
+
 ## Accepted Parent And Scope
 
 PR519 merged as94223ee15ec7deeb00cb8162b6d532c0560bc373. Its exact head

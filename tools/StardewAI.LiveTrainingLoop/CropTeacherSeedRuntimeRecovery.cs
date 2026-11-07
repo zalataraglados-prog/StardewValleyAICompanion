@@ -7,7 +7,7 @@ namespace StardewAI.LiveTrainingLoop;
 
 public sealed record CropTeacherSeedRuntimeRecoveryOptions(string BackendUrl, string RuntimeDirectory,
     string PortfolioJournalDirectory, string EvidenceDirectory, string RunId, string ExecutorVersion,
-    string ExpectedIntentSha256);
+    string ExpectedIntentSha256) : ICropSeedPortfolioRecoveryOptions;
 
 public sealed class CropTeacherSeedRecoveredBoundary
 {

@@ -1,5 +1,9 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **本片最终本地验证：** 生命周期恢复及原相关链路403/403通过、零失败/跳过，含19项新增恢复场景；不重采L1、不替代原生游戏或正式训练证据，完整CI/发布见本片收口。
+
+> **2026-11-08 R2生命周期原边界恢复（当前唯一接续）：** #520最终42步CI `42423375907`/Core2443/Backend1102接受合入`7602281a`且核树清分支；初始自动审查backend遗漏修复与最终控制者审查分别归因。本片沿原intent/输入/取消完整回包或保留closure、原日历/释放kernel及journal/lookup重建；释放后最终账本不冒充原取消账本，缺释放回包先lookup再Get，未知不清不重发。复用原seed恢复守卫/读取器，旧runtime仅抽同一元数据/参数检查、旧执行规则不改；首49专项通过，后续反例/相关回归/CI见收口。下一步接同一持久owner的生命周期准入/接受和未完成准备/缺proof/派发状态，再原行走维护/保存连续性及显式managed原生小样本；之后原全局日历/预算/连续性、Provider/模型与manifest。L1`19/19、11/11`、formal=false/Student训后21/21保持；非新游戏/训练，无worker/API，local-data不提交。[合同](money-crop-lifecycle-recovery.md)。下方为历史。
+
 > **2026-11-08 R2持久seed阶段所有者（当前唯一接续）：** #519经最终42步CI `42417971193`/同head审查合入`94223ee1`，Core2443/Backend1076且核树清分支。本片绑定原完整plan/request/input/actor/run与账本，OS租约/串行单pending、原runtime私有准备/已验结果证书、追加接受及原恢复consumer接续，不另造规划/执行/账本；正常接受无额外backend读取/原生proof重建，默认旧事务不做证书深验。新夹具批次混用已修，PR审查漏核backend已先复现再补新证书/所有者的精确规范origin绑定；最终26/26零跳过，相关380/380、原恢复9/9及最终CI分别见收口。下一步仍同一所有者的未完成准备/缺proof/零与未知派发/尚未派发变更及生命周期跨进程恢复，再原行走维护/原生保存连续性，接齐才显式managed原生小样本；之后原联合日历/预算/跨根连续性、Provider/模型与manifest。旧binder/idle/执行规则不改，本片非已激活/新游戏/正式开训。L1`19/19、11/11`、formal=false和Student训后21/21保持，无worker/API，local-data不提交。[合同](money-crop-managed-phase-owner.md)。下方为历史。
 
 > **2026-11-08 R2原运行恢复边界（当前唯一接续）：** #518经同head审查/42步CI `42415768717`合入`cdaa347e`且核树清分支，Core2443/Backend1062。现为持久phase所有者接原intent/准备/marker/原生proof/实际消费与种子托管的完整重建；复用原kernel/ResumeTransition/journal读器，不凭summary成功、坏回包不兜底，缺回包只lookup且先于最终Get，缺proof/journal或未知lookup不重发/不伪零执行。原写入/异常帧/执行器及Get协调规则不改。首9/11的同内容before路径误限只修新consumer，后12/12通过，最终回归/CI见收口；非新游戏/训练或全跨进程所有者完成。下一步唯一持久run/plan/input/before、排他pending准入、恢复接受/推进，再未留proof/未派发业务变更/生命周期恢复及原行走维护跨日连续性；接齐后显式managed小样本、原日历/预算/模型/manifest。L1`19/19、11/11`、formal=false保持，原始数据不提交。[合同](money-crop-managed-runtime-recovery.md)。下方为历史。

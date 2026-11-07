@@ -22,6 +22,7 @@ public sealed partial class CropTeacherSeedLifecycleRuntimeTests
         private readonly WebApplicationFactory<global::Program> app;
         internal CropTeacherSeedLifecycleTests.Fixture Files { get; }
         internal string Output => Path.Combine(root, "evidence");
+        internal string RecoveryOutput => Path.Combine(root, "recovery");
         internal LiveTrainingOptions Options { get; }
         internal HttpClient Client { get; }
         internal LifecycleHandler Handler { get; }
@@ -54,6 +55,15 @@ public sealed partial class CropTeacherSeedLifecycleRuntimeTests
         internal Task<StrategyLedgerEvidence> Run() => InvokeLive<Task<StrategyLedgerEvidence>>("CloseCropTeacherSeedLifecycleAsync",
             Client, Options, Files.Open(), Output, Mode, Reason);
 
+        internal CropTeacherSeedLifecycleRecoveryOptions RecoveryOptions => new(Options.BackendUrl, Output, Options.SnapshotDir,
+            RecoveryOutput, Options.RunId, Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
+                File.ReadAllBytes(Path.Combine(Output, "lifecycle-intent.json")))).ToLowerInvariant(), Mode, Reason);
+
+        internal Task<CropTeacherSeedLifecycleRecoveredBoundary> Recover(CropTeacherSeedLifecycleRecoveryOptions? options = null) =>
+            CropTeacherSeedLifecycleRecovery.RecoverAsync(Client, options ?? RecoveryOptions, Files.Open(),
+                (endpoint, raw) => InvokeLive<Task<JsonObject>>("PostJsonStringAsync", Client, endpoint, raw, CancellationToken.None),
+                (path, json) => InvokeLive<Task>("WritePortfolioJournalFileAsync", path, json));
+
         internal Task<int> Command(string[]? arguments = null) => InvokeLive<Task<int>>("CloseCropSeedReservationsAsync", arguments ?? Arguments(), Client);
 
         internal string[] Arguments() => new[]
@@ -69,7 +79,8 @@ public sealed partial class CropTeacherSeedLifecycleRuntimeTests
         {
             Client.Dispose();
             app.Dispose();
-            foreach (var directory in new[] { Path.Combine(Output, "teacher-ledgers"), Path.Combine(Output, "live-snapshots"), Output, root })
+            foreach (var directory in new[] { Path.Combine(Output, "teacher-ledgers"), Path.Combine(Output, "live-snapshots"), Output,
+                         Path.Combine(RecoveryOutput, "teacher-ledgers"), RecoveryOutput, root })
             {
                 if (!Directory.Exists(directory)) continue;
                 foreach (var file in Directory.EnumerateFiles(directory)) File.Delete(file);

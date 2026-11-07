@@ -20,10 +20,7 @@ public static partial class CropTeacherSeedLifecycleRuntime
         Func<string, string, Task<JsonObject>> post,
         Func<string, string, Task> write)
     {
-        if (string.IsNullOrWhiteSpace(options.RunId) ||
-            options.Mode is not (CalendarCompletion or ExplicitCancellation) ||
-            (options.Mode == ExplicitCancellation ? string.IsNullOrWhiteSpace(options.CancellationReason) : options.CancellationReason != ""))
-            throw new ArgumentException("Crop lifecycle requires an explicit mode, run, backend origin and cancellation-only reason.");
+        ValidateOptions(options);
         var backendUrl = NormalizeBackendOrigin(options.BackendUrl);
         scope.ValidateInputsUnchanged();
         var source = scope.BaseLedger;
@@ -33,18 +30,7 @@ public static partial class CropTeacherSeedLifecycleRuntime
         if (Directory.Exists(output) || File.Exists(output))
             throw new IOException("Crop lifecycle evidence already exists; inspect original journals instead of repeating mutation.");
         Directory.CreateDirectory(output);
-        var diagnostic = new JsonObject
-        {
-            ["schema_version"] = "crop_teacher_seed_lifecycle_runtime.v1", ["run_id"] = options.RunId,
-            ["mode"] = options.Mode, ["commitment_id"] = scope.CommitmentId, ["release_step_id"] = scope.ReleaseStepId,
-            ["backend_url"] = options.BackendUrl, ["source_state_hash"] = source.SourceStateHash,
-            ["source_snapshot_path"] = scope.SnapshotPath, ["base_ledger_revision"] = source.Revision,
-            ["input_artifact_hashes"] = JsonSerializer.SerializeToNode(scope.InputHashes, JsonOptions),
-            ["cancellation_request"] = cancel is null ? null : JsonSerializer.SerializeToNode(cancel.Request, JsonOptions),
-            ["crop_closure_verified"] = false, ["resource_release_verified"] = false,
-            ["release_mutation_performed"] = false, ["execution_authorized"] = false,
-            ["native_outcome_verified"] = false, ["formal_product_training_authorized"] = false
-        };
+        var diagnostic = CreateIntent(options, scope, cancel, source);
         // Winning the original create-new intent owns this output and its summary, including concurrent starts.
         await write(Path.Combine(output, "lifecycle-intent.json"), diagnostic.ToJsonString(JsonOptions));
         Exception? failure = null;
@@ -95,9 +81,34 @@ public static partial class CropTeacherSeedLifecycleRuntime
         }
     }
 
+    internal static JsonObject CreateIntent(CropTeacherSeedLifecycleRuntimeOptions options,
+        CropTeacherSeedLifecycleSupport scope, CropTeacherSeedCancellation? cancel, StrategyCommitmentLedger source)
+    {
+        return new JsonObject
+        {
+            ["schema_version"] = "crop_teacher_seed_lifecycle_runtime.v1", ["run_id"] = options.RunId,
+            ["mode"] = options.Mode, ["commitment_id"] = scope.CommitmentId, ["release_step_id"] = scope.ReleaseStepId,
+            ["backend_url"] = options.BackendUrl, ["source_state_hash"] = source.SourceStateHash,
+            ["source_snapshot_path"] = scope.SnapshotPath, ["base_ledger_revision"] = source.Revision,
+            ["input_artifact_hashes"] = JsonSerializer.SerializeToNode(scope.InputHashes, JsonOptions),
+            ["cancellation_request"] = cancel is null ? null : JsonSerializer.SerializeToNode(cancel.Request, JsonOptions),
+            ["crop_closure_verified"] = false, ["resource_release_verified"] = false,
+            ["release_mutation_performed"] = false, ["execution_authorized"] = false,
+            ["native_outcome_verified"] = false, ["formal_product_training_authorized"] = false
+        };
+    }
+
     private static Task<StrategyLedgerEvidence> ReadAsync(HttpClient http, CropTeacherSeedLifecycleRuntimeOptions options,
         string hash, string label) => StrategyLedgerEvidenceStore.ReadAsync(http, options.BackendUrl,
             options.EvidenceDirectory, hash, JsonOptions, label);
+
+    internal static void ValidateOptions(CropTeacherSeedLifecycleRuntimeOptions options)
+    {
+        if (string.IsNullOrWhiteSpace(options.RunId) ||
+            options.Mode is not (CalendarCompletion or ExplicitCancellation) ||
+            (options.Mode == ExplicitCancellation ? string.IsNullOrWhiteSpace(options.CancellationReason) : options.CancellationReason != ""))
+            throw new ArgumentException("Crop lifecycle requires an explicit mode, run, backend origin and cancellation-only reason.");
+    }
 
     internal static string NormalizeBackendOrigin(string value)
     {
