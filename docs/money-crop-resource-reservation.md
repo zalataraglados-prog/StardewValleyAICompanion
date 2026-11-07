@@ -106,6 +106,12 @@ selected crop/resource claims**. Its runtime_ledger_installed flag remains false
 
 ### Remaining Runtime Installation
 
+The explicit runtime installer now uses original endpoints and a separate strong
+actual-result/persisted-ledger observation; see [installation contract](money-crop-runtime-installation.md).
+It does not rewrite this planning receipt or enable gameplay. Owned-budget
+purchase/custody settlement is the next integration boundary before automatic
+managed execution is enabled.
+
 Before managed native execution, connect this source-bound ledger through the
 original installation/commit boundary and original supporting-transition
 settlement. Neutral route steps must preserve/rebind active claims; each one-unit

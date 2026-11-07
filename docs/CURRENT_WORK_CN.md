@@ -1,6 +1,14 @@
 # StardewAI 当前工作
 
-## 2026-11-07 R2运行账本接线（当前唯一接续）
+## 2026-11-07 R2作物与资源运行安装（当前唯一接续）
+
+- #505最终CI `42367028701`与审查通过，合入`4405fffb`，测试/main树一致，自有分支已清。完整既有账本接入原Teacher已接受，不重复采L1或E原生周期。
+- 新显式`install-crop-reservations`入口在普通Loop/训练初始化前分流，只经原crop upsert及portfolio commit安装原v2选中承诺、现货种子和精确短缺现金。按真实时间独立重放完整结果并读回持久账本；原PR504规划回执/时间戳不改，另记运行安装结果。原始请求先持久化，crop丢回包仅同源精确读回，资源丢回包仅原lookup，均不重发；部分安装失败保留证据、不自动取消或回滚。[入口与合同](money-crop-runtime-installation.md)。
+- 自动dispatch暂不启用新资源安装，并在原新handoff消费端拒绝活动材料/现金claims，无预留旧行为保持。原买种候选读原生余额、不自行消费本新portfolio/建立槽位托管，旧run planner还按背包总种子数而非本计划所有权判断买齐；能编译不代表正确结算。下一步接原supporting-transition预算所有权/路线重绑/单件结算/真实种子槽位托管及箱中转移，并把本计划可用种子数接入原获取/种植消费端，接齐后显式启用managed输入。旧initializer/完整种子门保持，不改旧通用执行器适配新实验，也不把后台账本安装当原生游戏证据。
+- 新20项Backend检查含原ASP.NET端点正常/双丢回包、真实仓库重载、其他root不变、三类完整结果篡改/并发写入/原请求损坏拒绝及非托管保护。完整Core2442/Backend669、原完整hermetic、原恢复脚本19通过，最终Release零警告/错误，实际CLI缺参在普通Loop前拒绝；最终CI见收口。无新原生游戏证据或分子晋升。
+- 之后仍为原DailyPlanCompiler聚合预算/联合日历、跨根连续性/所选来源，再Provider/模型及正式manifest/preflight。L1`19/19、11/11`冻结，formal=false；Student新档21/21是训练后评测。回归/最终CI见本片收口；无worker/API/游戏/服务器/清理，local-data不提交。下方接续为历史。
+
+## 2026-11-07 R2运行账本接线（已接受#505）
 
 - #504最终42步CI通过并合入`affcc989`，已核树/清自有分支。所选种子/采购现金的原子规划重放已接受，原E6/6、875g与原失败保留，不重跑13日周期。
 - 运行handoff原先未传基础账本，现一次读取原后端完整账本并以不可变路径/SHA送入原Teacher/dispatch。捐赠保留原触发门/格式，只共用原证据存取段；Core game-free不加LiveLoop依赖，提取共用测试夹具供原Core及Backend测试使用。[合同与接续](money-crop-resource-reservation.md)。
