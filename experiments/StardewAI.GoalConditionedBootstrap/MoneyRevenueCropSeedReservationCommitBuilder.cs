@@ -17,20 +17,39 @@ public static class MoneyRevenueCropSeedReservationCommitBuilder
             planPath,
             commitmentId,
             reservationSnapshotPath);
-        var graph = ReadGraph(context.Snapshot);
+        var claims = AllocateSeeds(context.Snapshot, context.BaseLedger,
+            context.Commitment.CommitmentId, context.CropCommitment.SourceDecisionId,
+            context.Commitment.SeedQualifiedItemId, context.Commitment.TileCount);
+        return new ReservationPortfolioCommitRequest
+        {
+            StateHash = context.Snapshot.StateHash,
+            ExpectedLedgerRevision = context.BaseLedger.Revision,
+            PortfolioId = context.Commitment.CommitmentId + ":portfolio",
+            GoalId = "earn_money",
+            SourceDecisionId = context.CropCommitment.SourceDecisionId,
+            MaterialClaims = claims
+        };
+    }
+
+    internal static MaterialReservationUpsertRequest[] AllocateSeeds(
+        SnapshotEnvelope snapshot, StrategyCommitmentLedger ledger,
+        string commitmentId, string decisionId, string seedQualifiedItemId,
+        int requiredQuantity)
+    {
+        var graph = ReadGraph(snapshot);
         var supply = new MaterialSupplyProjection().Project(
             graph,
-            context.BaseLedger.MaterialReservations);
+            ledger.MaterialReservations);
         Require(supply.Status == "available" &&
                 supply.BlockingReasons.Length == 0,
             "Money Revenue crop seed supply is unavailable for reservation.");
 
-        var remaining = context.Commitment.TileCount;
+        var remaining = requiredQuantity;
         var claims = new List<MaterialReservationUpsertRequest>();
         foreach (var slot in supply.Slots
                      .Where(row =>
                          row.QualifiedItemId ==
-                            context.Commitment.SeedQualifiedItemId &&
+                            seedQualifiedItemId &&
                          row.AvailableQuantity > 0)
                      .OrderBy(row => row.NodeId, StringComparer.Ordinal)
                      .ThenBy(row => row.SlotIndex))
@@ -40,18 +59,18 @@ public static class MoneyRevenueCropSeedReservationCommitBuilder
             var quantity = Math.Min(remaining, slot.AvailableQuantity);
             claims.Add(new MaterialReservationUpsertRequest
             {
-                StateHash = context.Snapshot.StateHash,
-                ExpectedLedgerRevision = context.BaseLedger.Revision,
-                ReservationId = context.Commitment.CommitmentId +
+                StateHash = snapshot.StateHash,
+                ExpectedLedgerRevision = ledger.Revision,
+                ReservationId = commitmentId +
                     ":seed:" + claims.Count,
-                SourceDecisionId = context.CropCommitment.SourceDecisionId,
+                SourceDecisionId = decisionId,
                 GoalId = "earn_money",
                 NodeId = slot.NodeId,
                 SlotIndex = slot.SlotIndex,
-                QualifiedItemId = context.Commitment.SeedQualifiedItemId,
+                QualifiedItemId = seedQualifiedItemId,
                 Quantity = quantity,
                 Purpose = "crop_seed_supply:" +
-                    context.Commitment.CommitmentId
+                    commitmentId
             });
             remaining -= quantity;
         }
@@ -59,20 +78,12 @@ public static class MoneyRevenueCropSeedReservationCommitBuilder
             "Money Revenue crop seed reservation cannot cover the exact tile denominator.");
         Require(claims.Select(row => row.ReservationId)
                 .Distinct(StringComparer.Ordinal).Count() == claims.Count &&
-                !context.BaseLedger.MaterialReservations.Any(existing =>
+                !ledger.MaterialReservations.Any(existing =>
                     claims.Any(claim =>
                         claim.ReservationId == existing.ReservationId)),
             "Money Revenue crop seed reservation ids are not fresh and unique.");
 
-        return new ReservationPortfolioCommitRequest
-        {
-            StateHash = context.Snapshot.StateHash,
-            ExpectedLedgerRevision = context.BaseLedger.Revision,
-            PortfolioId = context.Commitment.CommitmentId + ":portfolio",
-            GoalId = "earn_money",
-            SourceDecisionId = context.CropCommitment.SourceDecisionId,
-            MaterialClaims = claims.ToArray()
-        };
+        return claims.ToArray();
     }
 
     public static ReservationPortfolioCommitResult Replay(
