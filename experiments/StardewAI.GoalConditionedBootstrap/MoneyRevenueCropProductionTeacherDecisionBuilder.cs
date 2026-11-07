@@ -30,7 +30,7 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
             snapshotPath,
             "Money Revenue crop-production Teacher snapshot");
         ValidateSnapshot(snapshot);
-        var baseLedgerPath = ValidateBaseLedger(request, snapshot);
+        var baseLedgerPath = ValidateBaseLedger(request, snapshot, out var baseLedger);
 
         var layouts = ReadLayoutSnapshots(
             request.FarmLayoutSnapshotPaths,
@@ -87,7 +87,8 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
             snapshot,
             request.MaximumTileCount,
             cropViableTiles.Length,
-            wateringRefillRoute.Verified);
+            wateringRefillRoute.Verified,
+            baseLedger);
         var selected = evaluations
             .Where(value => value.Admitted)
             .OrderByDescending(value => value.MinimumNetRevenue)
@@ -185,13 +186,16 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
 
     private static string ValidateBaseLedger(
         MoneyRevenueCropProductionTeacherRequest request,
-        SnapshotEnvelope snapshot)
+        SnapshotEnvelope snapshot,
+        out AcquisitionStrategyLedgerState? ledgerState)
     {
+        ledgerState = null;
         if (string.IsNullOrWhiteSpace(request.BaseStrategyLedgerPath))
             return string.Empty;
         var path = RequiredFile(request.BaseStrategyLedgerPath,
             "Money Revenue crop-production Teacher base ledger");
-        var ledger = AcquisitionStrategyLedgerReader.Read(path, snapshot).Ledger;
+        ledgerState = AcquisitionStrategyLedgerReader.Read(path, snapshot);
+        var ledger = ledgerState.Ledger;
         Require(ledger.SourceStateHash == snapshot.StateHash,
             "Money Revenue crop-production Teacher base ledger is not anchored to the source snapshot.");
         Require(!ledger.CropPlantingCommitments.Any(value =>

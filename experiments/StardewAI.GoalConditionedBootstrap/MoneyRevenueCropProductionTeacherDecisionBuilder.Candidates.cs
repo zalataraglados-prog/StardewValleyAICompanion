@@ -13,14 +13,15 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
             SnapshotEnvelope snapshot,
             int maximumTileCount,
             int viableTileCount,
-            bool wateringRefillRouteVerified)
+            bool wateringRefillRouteVerified,
+            AcquisitionStrategyLedgerState? baseLedger)
     {
-        var supply = ReadMaterialSupply(snapshot);
+        var supply = ReadMaterialSupply(snapshot, baseLedger);
         var availableByItem = supply.Quantities.ToDictionary(
             value => value.QualifiedItemId,
             value => value.AvailableQuantity,
             StringComparer.Ordinal);
-        var currentMoney = ReadStateInt(snapshot, "player", "money");
+        var currentMoney = ReadUnreservedMoney(snapshot, baseLedger);
         var currentTotalDay = ReadStateInt(snapshot, "time", "total_days");
         var currentSeason = ReadStateString(snapshot, "time", "season");
         var currentDay = ReadStateInt(snapshot, "time", "day");
@@ -184,7 +185,8 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
     }
 
     private static MaterialSupplyProjectionResult ReadMaterialSupply(
-        SnapshotEnvelope snapshot)
+        SnapshotEnvelope snapshot,
+        AcquisitionStrategyLedgerState? baseLedger)
     {
         var value = ReadStateValue(
             snapshot,
@@ -195,7 +197,11 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
                 JsonDefaults.Options)
             ?? throw new InvalidDataException(
                 "Money Revenue crop-production Teacher material graph is empty.");
-        var result = new MaterialSupplyProjection().Project(graph);
+        Require(baseLedger is null || graph.PlayerId == baseLedger.ActorPlayerId,
+            "Money Revenue crop-production Teacher material graph and base ledger disagree on actor.");
+        var result = new MaterialSupplyProjection().Project(
+            graph,
+            baseLedger?.Ledger.MaterialReservations);
         Require(result.Status == "available" &&
                 result.BlockingReasons.Length == 0,
             "Money Revenue crop-production Teacher material supply is blocked: " +
