@@ -4,9 +4,15 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 internal static partial class BootstrapSelfTest
 {
-    internal static void VerifyMoneyRevenueCropTeacherDispatch()
+    internal static void VerifyMoneyRevenueCropTeacherDispatch(string? outputRoot = null)
     {
-        var root = TempArtifactRoot("money-crop-teacher-dispatch");
+        var root = outputRoot is null
+            ? TempArtifactRoot("money-crop-teacher-dispatch")
+            : Path.GetFullPath(outputRoot);
+        Require(outputRoot is null ||
+                !string.IsNullOrWhiteSpace(outputRoot) &&
+                !Directory.Exists(root) && !File.Exists(root),
+            "Money crop Teacher dispatch fixture output already exists or is invalid.");
         var sourcePath = Path.Combine(root, "source-snapshot.json");
         var layoutPath = Path.Combine(root, "farm-layout-snapshot.json");
         var capturePath = Path.Combine(root, "capture-manifest.json");

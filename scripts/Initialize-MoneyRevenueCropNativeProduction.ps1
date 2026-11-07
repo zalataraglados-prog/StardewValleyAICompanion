@@ -76,6 +76,7 @@ $receiptRaw = [IO.File]::ReadAllText(
     [Text.Encoding]::UTF8)
 $receipt = $receiptRaw | ConvertFrom-Json
 $decision = Get-Content -LiteralPath $decisionPath -Raw | ConvertFrom-Json
+# The receipt builder already rebuilt the decision against the current Teacher.
 if ([string]$receipt.schema_version -ne
         "money_revenue_crop_production_decision_receipt.v2" -or
     [string]$receipt.status -ne "crop_production_decision_committed" -or
@@ -91,8 +92,10 @@ if ([string]$receipt.schema_version -ne
     [int]$receipt.max_queue_item_count -gt 8 -or
     [string]::IsNullOrWhiteSpace([string]$receipt.teacher_request_path) -or
     [string]$receipt.teacher_request_sha256 -notmatch '^[0-9a-f]{64}$' -or
-    [string]$receipt.teacher_selection_policy -ne
-        "authoritative_transparent_crop_net_revenue_then_earliest_terminal_v1" -or
+    [string]::IsNullOrWhiteSpace(
+        [string]$receipt.teacher_selection_policy) -or
+    [string]$receipt.teacher_selection_policy -cne
+        [string]$decision.teacher_selection_policy -or
     $null -eq $receipt.final_ledger) {
     throw "Money crop production decision receipt is not committed and complete."
 }

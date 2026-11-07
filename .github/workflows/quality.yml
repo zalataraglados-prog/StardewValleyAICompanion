@@ -48,7 +48,11 @@ jobs:
       - name: Build goal-conditioned bootstrap
         run: dotnet build experiments/StardewAI.GoalConditionedBootstrap/StardewAI.GoalConditionedBootstrap.csproj --configuration Release --no-restore
       - name: Test hermetic bootstrap critical paths
-        run: dotnet run --project experiments/StardewAI.GoalConditionedBootstrap/StardewAI.GoalConditionedBootstrap.csproj --configuration Release --no-build -- self-test-bootstrap-hermetic
+        shell: pwsh
+        run: |
+          dotnet run --project experiments/StardewAI.GoalConditionedBootstrap/StardewAI.GoalConditionedBootstrap.csproj --configuration Release --no-build -- self-test-bootstrap-hermetic
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ./scripts/Test-MoneyCropInitialization.ps1 -OutputRoot "$env:RUNNER_TEMP/money-crop-initialization"
       - name: Test independent Teacher supervision replay
         shell: pwsh
         run: dotnet run --project experiments/StardewAI.GoalConditionedBootstrap/StardewAI.GoalConditionedBootstrap.csproj --configuration Release --no-build -- self-test-current-stage-one-policy-supervision --output-root "$env:RUNNER_TEMP/policy-supervision-replay"

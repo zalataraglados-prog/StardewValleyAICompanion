@@ -116,12 +116,13 @@ Invoke-RuntimeBootstrap -BootstrapDll $bootstrapDll -Arguments @(
     "--output", $decisionPath)
 
 $decision = Get-Content -LiteralPath $decisionPath -Raw | ConvertFrom-Json
+# The preceding typed builder owns the current policy identifier.
 if ([string]$decision.schema_version -ne
         "money_revenue_crop_production_decision_request.v2" -or
     [string]$decision.goal_id -ne "earn_money" -or
     [bool]$decision.formal_product_training_authorized -or
-    [string]$decision.teacher_selection_policy -ne
-        "authoritative_transparent_crop_net_revenue_then_earliest_terminal_v1" -or
+    [string]::IsNullOrWhiteSpace(
+        [string]$decision.teacher_selection_policy) -or
     @($decision.commitments).Count -ne 1 -or
     @($decision.teacher_layout_snapshots).Count -ne $layoutSnapshots.Count -or
     @($decision.teacher_candidate_evaluations |
