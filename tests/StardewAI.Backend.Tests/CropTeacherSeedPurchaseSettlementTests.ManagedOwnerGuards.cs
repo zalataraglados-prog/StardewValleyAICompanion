@@ -136,6 +136,26 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
     }
 
     [Fact]
+    public async Task ManagedOwnerRejectsAnOriginalRuntimePreparedAgainstAnotherBackend()
+    {
+        using var f = new Fixture(otherSeeds: 39);
+        using var runtime = new RuntimeFixture(f);
+        using var inputs = new OwnerInputs(f);
+        using var files = new OwnerFiles(f, runtime, inputs);
+        var transition = f.Transition();
+        await using var owner = await files.Open();
+        var step = CropTeacherRunPlanner.Evaluate(inputs.Plan, inputs.Request, f.Before, resourceLedger: f.Ledger);
+        var operation = await owner.AdmitAsync(step, f.SourcePath, f.LedgerPath, files.Native);
+        runtime.LiveOptions.BackendUrl = "http://other-backend";
+        var prepared = await runtime.Prepare(transition, selectedScope: operation.Scopes.Purchase, runtimeDirectory: operation.RuntimeDirectory);
+        await Assert.ThrowsAsync<InvalidDataException>(() => owner.PinPreparedAsync(operation, prepared));
+        Assert.Same(operation, owner.Pending);
+        Assert.False(File.Exists(Path.Combine(files.OwnerRoot, "operation-000001-prepared.json")));
+        Assert.Equal(1, runtime.Handler.Commits);
+        Assert.Equal(0, runtime.Handler.Settlements);
+    }
+
+    [Fact]
     public async Task ManagedOwnerRejectsChangedPendingRecordWithoutClearingItsOwnership()
     {
         using var f = new Fixture(otherSeeds: 39);

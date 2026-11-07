@@ -50,7 +50,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             if (operation.Prepared is not null || runtime is not ICropTeacherSeedManagedRuntime original)
                 throw new InvalidOperationException("Managed crop preparation must come once from an original runtime transaction.");
             var prepared = original.ReadPreparedBoundary();
-            RequireIdentity(operation, prepared.RuntimeDirectory, prepared.RunId, prepared.ExecutorVersion, prepared.SupportStepId);
+            RequireIdentity(operation, prepared.RuntimeDirectory, prepared.BackendUrl, prepared.RunId, prepared.ExecutorVersion, prepared.SupportStepId);
             var step = operation.ReadStep();
             var request = operation.Scopes.Purchase?.MarkerRequest ?? operation.Scopes.Transfer?.PreparationRequest ?? operation.Scopes.Planting!.MarkerRequest;
             if (prepared.CommitmentId != step.CommitmentId ||
@@ -79,10 +79,12 @@ public sealed partial class CropTeacherManagedSeedOwner
         finally { gate.Release(); }
     }
 
-    private void RequireIdentity(CropTeacherManagedSeedOperation operation, string runtime, string run,
+    private void RequireIdentity(CropTeacherManagedSeedOperation operation, string runtime, string backendUrl, string run,
         string executor, string stepId)
     {
-        if (!SamePath(operation.RuntimeDirectory, runtime) || run != options.RunId || executor != options.ExecutorVersion ||
+        // Exact canonical text preserves the original intent/journal identity on restart.
+        if (!SamePath(operation.RuntimeDirectory, runtime) || backendUrl != options.BackendUrl ||
+            run != options.RunId || executor != options.ExecutorVersion ||
             stepId != operation.SupportStepId)
             throw new InvalidDataException("Original crop runtime is not bound to this owner's admitted phase.");
     }

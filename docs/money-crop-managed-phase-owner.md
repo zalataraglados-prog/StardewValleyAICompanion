@@ -34,6 +34,13 @@ batch plus optional exact claim. It pins the original intent and compiled queue
 hashes. A public ICropTeacherSeedRuntime implementation cannot assert verification.
 Missing/unprepared work blocks admission; no fake zero-action success.
 
+The runtime's actual backend URL is also certified and must exactly match the
+owner's canonical origin. Merely canonicalizing a different textual runtime URL
+at acceptance would still break exact original intent/journal reconstruction.
+Only this new managed consumer requires canonical text; legacy runtime behavior
+is unchanged. PR review identified the missing origin binding: the regression
+first reproduced false acceptance, then passed after the certificate/check fix.
+
 ## Acceptance And Restart
 
 Live acceptance consumes the original transaction's verified context only after
@@ -69,12 +76,13 @@ The first17-case owner run exposed one NEW test adapter mismatch: it admitted a
 real planner step but prepared a hardcoded fixture batch/claim. Only the adapter
 was corrected to forward the admitted step. Both original default claim selection
 and explicit claim/partial-prefix cases now pass. No original planner, verifier,
-batch bound, executor or success semantics were relaxed. Final owner25/25 passes,
+batch bound, executor or success semantics were relaxed. Final owner26/26 passes,
 including purchase live/restart/lost reply, transfer, planting, detached mutable
 return, exclusive lease, same-instance concurrency, uncertain writes, unfinished
 work, corrupt index and lost durable-acceptance acknowledgement. Related seed/
 lifecycle regression380/380 passed before the final added acknowledgement case;
-the final25-case run also includes future-record/header directory collision cases.
+the final26-case run also includes future-record/header directory collision cases
+and the reproduced foreign-backend preparation rejection.
 Original resume-mode/transition-ledger9/9 passed after an explicit native-profile
 restore against E; its first no-restore attempt hit stale governance-only package
 assets (missing game references), with no production edit to bypass that failure.

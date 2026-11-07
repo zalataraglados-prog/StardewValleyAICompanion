@@ -16,7 +16,7 @@ public sealed partial class CropTeacherManagedSeedOwner
                 throw new InvalidOperationException("Managed crop acceptance requires the original verified runtime.");
             var boundary = original.ReadVerifiedBoundary();
             RequirePrepared(operation, boundary.Preparation.OriginalIntentSha256);
-            RequireIdentity(operation, boundary.Preparation.RuntimeDirectory, boundary.Preparation.RunId,
+            RequireIdentity(operation, boundary.Preparation.RuntimeDirectory, boundary.Preparation.BackendUrl, boundary.Preparation.RunId,
                 boundary.Preparation.ExecutorVersion, boundary.Preparation.SupportStepId);
             boundary.Validate();
             await AdvanceAsync(operation, boundary.Evidence, boundary.AfterSnapshotPath, boundary.Validate, "live_transaction").ConfigureAwait(false);

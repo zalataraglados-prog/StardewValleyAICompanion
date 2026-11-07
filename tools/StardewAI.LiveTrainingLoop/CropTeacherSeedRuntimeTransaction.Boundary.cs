@@ -17,7 +17,7 @@ internal sealed partial class CropTeacherSeedRuntimeTransaction
             ValidateDispatchQueueCore(queuePath);
         }
         Validate();
-        return new(options.EvidenceDirectory, options.RunId, options.ExecutorVersion,
+        return new(options.EvidenceDirectory, options.BackendUrl, options.RunId, options.ExecutorVersion,
             scope.ReadPreparationRequest().PortfolioId, scope.CommitmentId, scope.InputHashes,
             scope.ReadPreparationRequest(), scope.PreparationDetails?.DeepClone().AsObject(), intentSha256, queuePath, queueSha256, Validate);
     }
