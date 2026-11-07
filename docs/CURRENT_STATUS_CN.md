@@ -1,5 +1,9 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **名称纠正：** 留存候选`(O)337`的真实`display_name`是铱锭；旧报告和不可变运行名中的Gold为误称。执行/证明始终按337、20件、原生单价1000绑定，未卖错物品，历史身份/路径不改。两份已验原生前缀的非准入映射预检已在原六阈值各得到1偏好；下一步仍是正式版本化比较消费者，不冒充corpus或覆盖已闭合。
+
+> **2026-11-07 Money局部重放来源绑定（当前唯一接续）：** #489已38步CI接受、合入`75d1a8ab`。H原生Gold累计收入`0→20,000`，事后加载失败记录保留，离线原raw/nonce/episode及终端/预留/账本/recurrence验证通过，无重售。新v1绑定独立重建完整两侧候选/请求，精确源档/测前设置及Mod/实际run/root/构建身份/初始研究账本/持久边界，只允许已分别绑定的run/path持久差异。未知义务不丢、不反改共享执行或旧同帧门；本轮最终验证/CI见收口。下一步显式重放比较/准入消费者，再corpus及缺分区；G旧checkpoint仍`1/2`、来源绑定不授标签，当前并集`13/19、13/19、13/19、10/11`、formal=false，无worker/API或产品训练。[合同](money-counterfactual-source-binding.md#implemented-local-source-binding)。
+
 > **2026-11-07 Money反事实来源接续：** #488已38步CI接受、合入`b3874405`；G原生出售及`1/2`证明保留。缺口是旧计划尚无原生分叉恢复器，不能把其他运行当G原帧。新只读来源audit复用原request/候选重建、原绑定及原持久边界；G/F经济/菜单/时间/Gold报价相同，但run ID/隔离路径差异如实保留，权限全false，F不晋升。接续严格按own-source Gold原生观察→显式版本化来源绑定→原比较/准入/corpus/分区，不改旧原帧门、不吞未知字段或造hash；并集仍`13/19、13/19、13/19、10/11`，formal=false，无worker/API或训练。[合同和顺序](money-counterfactual-source-binding.md)。
 
 > **2026-11-07 Money原生出售接原证明链（当前唯一接续）：** #487已38步CI接受、合入`2f1e935b`。G显式持有库存条件下，原队列出售→关闭菜单、原生累计收入`0→1,200,000`/六阈值/train；原raw/nonce/episode及passed-run/Mod/比较入口接受。只修Money消费者错把图`SalePrice=6000`当原生卖价3000的假等价，不反改共享桥/执行器/强价格或预留门。原hermetic及G留存回放通过：终端证明`1/2`、pending1，尚无独立Teacher比较或新合法join；本轮CI见收口。唯一下一步是另一路Gold Bar的合法同源原生采集合同，不拼接售后状态/其他run，不重采已验出售。并集仍`13/19、13/19、13/19、10/11`，formal=false；原始失败摘要保留、数据仓库外、游戏已退出，无worker/API或训练。[具体来源与边界](money-local-native-collection.md)。
