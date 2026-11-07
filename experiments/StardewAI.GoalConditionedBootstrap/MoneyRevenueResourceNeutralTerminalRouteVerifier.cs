@@ -124,7 +124,10 @@ internal static class MoneyRevenueResourceNeutralTerminalRouteVerifier
                     optionIds.All(allowedOptions.Contains) &&
                     (!requireMovement || optionIds.Any(row => row is
                         "executor.move_to_tile" or
-                        "executor.traverse_connector")) &&
+                        "executor.traverse_connector") ||
+                     ReadPlayerLocation(before) == targetLocation &&
+                     QueueExecutionReceiptValidator.IsExactNativeControlObservation(
+                         queue, before, receipt, after)) &&
                     (identity is null ||
                         QueueBindsTerminalIdentity(queue, identity)),
                 "Money Revenue terminal route is not a resource-neutral continuation of its request.");
@@ -187,7 +190,7 @@ internal static class MoneyRevenueResourceNeutralTerminalRouteVerifier
         return location.GetString() ?? string.Empty;
     }
 
-    private static bool TryStateFieldValue(
+    internal static bool TryStateFieldValue(
         SnapshotEnvelope snapshot,
         string section,
         string field,

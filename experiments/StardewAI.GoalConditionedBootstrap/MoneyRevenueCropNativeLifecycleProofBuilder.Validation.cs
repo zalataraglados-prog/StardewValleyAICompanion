@@ -241,9 +241,12 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
                 "Money Revenue crop supporting route crossed a day boundary.");
             Require(optionIds.Length > 0 &&
                     optionIds.All(SupportingRouteOptions.Contains) &&
-                    optionIds.Any(value => value is
+                    (optionIds.Any(value => value is
                         "executor.move_to_tile" or
-                        "executor.traverse_connector"),
+                        "executor.traverse_connector") ||
+                     transition.Request.TransitionKind == "supporting_route_to_sleep" &&
+                     QueueExecutionReceiptValidator.IsExactNativeControlObservation(
+                         transition.Queue, transition.Before, transition.Receipt, transition.After)),
                 "Money Revenue crop supporting route contains a non-route action.");
             FullShipmentRecoverySettlementBoundary? afterBoundary = null;
             Require(FullShipmentRecoverySettlementBoundaryProjector.TryProject(
