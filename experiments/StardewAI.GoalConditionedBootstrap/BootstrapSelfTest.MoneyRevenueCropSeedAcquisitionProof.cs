@@ -186,6 +186,7 @@ internal static partial class BootstrapSelfTest
     private static void VerifySeedAcquisitionRuntimeBoundaryNormalization(
         SnapshotEnvelope source)
     {
+        VerifyContextualResourceBoundary(source);
         var planned = CloneSnapshot(source);
         var observed = CloneSnapshot(source);
         SetSeedAcquisitionMovieTheaterBoundary(

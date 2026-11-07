@@ -102,6 +102,9 @@ internal static partial class FullShipmentRecoverySettlementBoundaryProjector
 
         switch (domain, field)
         {
+            case ("player", "tool_upgrade"):
+                NormalizeToolUpgradeResourceProjection(value);
+                break;
             case ("player", "prize_ticket_reward"):
                 RemoveFields(value,
                     "inventory_occupied_slots",

@@ -34,6 +34,9 @@ internal static partial class FullShipmentRecoverySettlementBoundaryProjector
             case ("player", "prize_ticket_reward"):
                 NormalizeRemoteRewardRuntimeState(value);
                 break;
+            case ("player", "tool_upgrade"):
+                NormalizeToolUpgradeRuntimeState(value);
+                break;
             case ("quests", "adventure_guild_reward"):
                 NormalizeAdventureGuildReward(value);
                 break;
@@ -54,6 +57,13 @@ internal static partial class FullShipmentRecoverySettlementBoundaryProjector
                 break;
             case ("world_progress", "island_field_office"):
                 NormalizeIslandFieldOfficeRuntimeState(value);
+                break;
+            case ("world_progress", "island_gourmand"):
+                if (HasBoundaryProjectionSchema(value, "island_gourmand_progress.v1"))
+                    RemoveFields(value, "menu_clear");
+                break;
+            case ("world_progress", "community_center"):
+                NormalizeCommunityCenterLifecycleRuntimeState(value);
                 break;
             case ("world_progress", "marriage_house"):
                 NormalizeMarriageHouse(value);
