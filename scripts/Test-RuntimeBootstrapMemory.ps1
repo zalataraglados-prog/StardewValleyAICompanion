@@ -69,4 +69,5 @@ try {
     }
 }
 finally { Restore-RuntimeProcessEnvironment -Values $saved }
+$global:LASTEXITCODE = 0
 "PASS: $script:checks Bootstrap heap budget, explicit overrides, failure cleanup and original argument checks."
