@@ -18,10 +18,13 @@ internal static partial class QueueExecutionReceiptValidator
         string expectedExecutorVersion,
         string expectedSelectedCandidateId,
         string compiledCommandStateHash,
-        out ActionQueueItem[] effectiveItems)
+        out ActionQueueItem[] effectiveItems,
+        bool allowAppliedVerifiedProgress = false)
     {
         effectiveItems = ReadEffectiveItems(receipt);
-        if (string.Equals(receipt.Status, "applied", StringComparison.Ordinal))
+        if (string.Equals(receipt.Status, "applied", StringComparison.Ordinal) &&
+            !(allowAppliedVerifiedProgress && !receipt.Success &&
+              !receipt.SelectedCandidateCompleted))
         {
             return Validate(
                 queue,
@@ -135,7 +138,9 @@ internal static partial class QueueExecutionReceiptValidator
         }
 
         var continuation = ReadContinuationState(receiptPath, reasons);
-        var verifiedPending = continuation is not null &&
+        var appliedProgress = allowAppliedVerifiedProgress &&
+            IsAppliedVerifiedContinuationProgress(receipt, continuation);
+        var verifiedPending = appliedProgress || continuation is not null &&
             continuation.PrimitiveVerificationStatus == "verified" &&
             receipt.AfterSnapshotFresh &&
             (continuation.RetryNextIteration &&
@@ -160,7 +165,8 @@ internal static partial class QueueExecutionReceiptValidator
         var completionMarkerMatches = verifiedCompleted
             ? receipt.SelectedCandidateCompleted
             : !receipt.SelectedCandidateCompleted;
-        if (!string.Equals(receipt.Status, "blocked", StringComparison.Ordinal) ||
+        if (!(appliedProgress || string.Equals(
+                receipt.Status, "blocked", StringComparison.Ordinal)) ||
             receipt.Success ||
             !completionMarkerMatches ||
             verifiedPending == verifiedCompleted)
@@ -366,7 +372,13 @@ internal static partial class QueueExecutionReceiptValidator
                 objectiveCompleted,
                 decisionComplete,
                 completed.GetArrayLength(),
-                resumeIndex);
+                resumeIndex,
+                TryBool(root, "queue_progress_verified", out var progress) &&
+                    progress,
+                completed.GetArrayLength() == 1 &&
+                    hasActiveObjectiveContinuation &&
+                    BootstrapArtifactGuard.EqualJson(
+                        activeContinuation, completed[0]));
         }
         catch (JsonException)
         {
@@ -419,7 +431,9 @@ internal static partial class QueueExecutionReceiptValidator
         bool ObjectiveCompleted,
         bool DecisionComplete,
         int CompletedObjectiveCount,
-        int ResumeIndex);
+        int ResumeIndex,
+        bool QueueProgressVerified,
+        bool CompletedContinuationMatchesActive);
 
     private static bool IsRecoverablePriorityStoryInterruptStep(
         QueueExecutionStepReceipt step)

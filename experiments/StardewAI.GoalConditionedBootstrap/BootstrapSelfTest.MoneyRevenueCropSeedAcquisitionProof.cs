@@ -92,6 +92,8 @@ internal static partial class BootstrapSelfTest
             "Money crop seed-acquisition proof lost the exact shortfall.");
 
         var completeTransitions = manifest.Transitions.ToArray();
+        VerifyAppliedSeedAcquisitionProgress(
+            root, planPath, manifest, completeTransitions);
         RequireSeedAcquisitionRejects(
             root,
             "partial",
