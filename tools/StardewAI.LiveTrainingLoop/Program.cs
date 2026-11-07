@@ -544,7 +544,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
     var executionSnapshotProfile = options.ExecutionSnapshotProfile;
     var executionSnapshotUrl = options.BridgeSnapshotUrl;
     CropTeacherRunStep? cropTeacherStepForExecution = null;
-    CropTeacherSeedPurchaseRuntime? cropSeedSupportForExecution = null;
+    ICropTeacherSeedRuntime? cropSeedSupportForExecution = null;
     JsonObject? dailyPlanRanking = null;
     StageOneCollectionTeacherQueueBuildResult? nativeControlSettle = null;
     JsonObject? deferredObjectiveContinuationForDailyMaintenance = null;
@@ -783,7 +783,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             (!string.IsNullOrWhiteSpace(cropQueue.InterruptKind)
                 ? null
                 : cropStep);
-        cropSeedSupportForExecution = cropQueue.SeedPurchaseSupport;
+        cropSeedSupportForExecution = (ICropTeacherSeedRuntime?)cropQueue.SeedTransferSupport ?? cropQueue.SeedPurchaseSupport;
         if (cropQueue.SitePreparationComplete)
         {
             if (!cropTeacherPreparedCommitmentIds.Add(

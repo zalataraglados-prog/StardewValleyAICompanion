@@ -25,10 +25,10 @@ public sealed partial class CropTeacherSeedTransferTests
                     AvailableQuantity = rows.Sum(row => row.Stack), SourceSlotCount = rows.Count() }).ToArray();
             foreach (var access in graph.AccessPoints) access.RelocationHeavyToolSlotIndices = new[] { 3 };
             farm["material_inventory_graph"]!["value"] = JsonSerializer.SerializeToNode(graph, JsonOptions);
-            ApplyNativeEchoes(farm, actor);
+            ApplyNativeEchoes(farm, actor, Before.GameTick);
         }
 
-        private static void ApplyNativeEchoes(JsonObject farm, JsonObject actor)
+        private static void ApplyNativeEchoes(JsonObject farm, JsonObject actor, long tick)
         {
             var graph = farm["material_inventory_graph"]!["value"]!;
             var nodes = graph["inventory_nodes"]!.AsArray().OfType<JsonObject>().ToArray();
@@ -62,18 +62,18 @@ public sealed partial class CropTeacherSeedTransferTests
                     sale_price = slot?["sale_price"]?.GetValue<int>(), is_empty = slot is null
                 }, JsonOptions));
             }
-            actor["inventory"] = NativeField(inventory);
+            actor["inventory"] = NativeField(inventory, tick);
             actor["inventory_capacity"] = NativeField(new
             {
                 max_items = capacity, occupied_item_stacks = slots.Length, empty_slots = capacity - slots.Length,
                 has_empty_slot = capacity > slots.Length
-            });
+            }, tick);
             actor["seed_inventory"] = NativeField(slots.Where(row => row["qualified_item_id"]!.GetValue<string>() == "(O)745").Select(row => new
             {
                 slot_index = row["slot_index"]!.GetValue<int>(), item_id = "745", qualified_item_id = "(O)745",
                 display_name = row["display_name"]!.GetValue<string>(), stack = row["stack"]!.GetValue<int>(),
                 quality = row["quality"]!.GetValue<int>(), seed_id = "745", crop_catalog_match = true
-            }).ToArray());
+            }).ToArray(), tick);
             farm["chests"] = NativeField(new StorageInfrastructureProjection
             {
                 SourceGraphPlayerId = 123, AccessPoints = accesses.Select(row => row.Deserialize<MaterialInventoryAccessPoint>(JsonOptions)!).ToArray(),
@@ -81,12 +81,12 @@ public sealed partial class CropTeacherSeedTransferTests
                 ActorAuthorizedAccessPointCount = accesses.Length,
                 RemovableEmptyAccessPointCount = accesses.Count(row => row["occupied_slot_count"]!.GetValue<int>() == 0),
                 NonemptyShoveAccessPointCount = accesses.Count(row => row["occupied_slot_count"]!.GetValue<int>() > 0)
-            });
+            }, tick);
         }
 
-        private static JsonObject NativeField(object value) => JsonSerializer.SerializeToNode(new
+        private static JsonObject NativeField(object value, long tick) => JsonSerializer.SerializeToNode(new
         {
-            status = "available", confidence = 1d, value, read_at_tick = 1,
+            status = "available", confidence = 1d, value, read_at_tick = tick,
             source = new { kind = "game_object", path = "fixture.native.transfer" }, adapter = "test"
         }, JsonOptions)!.AsObject();
     }

@@ -5,11 +5,11 @@ using StardewAI.GoalConditionedBootstrap;
 
 namespace StardewAI.LiveTrainingLoop;
 
-public sealed partial class CropTeacherSeedPurchaseRuntime
+internal sealed partial class CropTeacherSeedRuntimeTransaction
 {
     public Task<StrategyLedgerEvidence> CompleteAsync(string queuePath, string receiptPath,
         string afterSnapshotPath, string selectedCandidateId) => CompleteAsync(new(
-            "seed_acquisition_stage", scope.TotalDay, queuePath, scope.SnapshotPath, receiptPath,
+            scope.TransitionKind, scope.TotalDay, queuePath, scope.SnapshotPath, receiptPath,
             afterSnapshotPath, options.RunId, options.ExecutorVersion, selectedCandidateId));
 
     public async Task<StrategyLedgerEvidence> CompleteAsync(MoneyRevenueCropNativeLifecycleTransitionRequest transition)
@@ -28,26 +28,26 @@ public sealed partial class CropTeacherSeedPurchaseRuntime
             var verified = marker.VerifyTransition(transition, Path.Combine(options.EvidenceDirectory, "support-proof.json"), nativeQueueHash);
             diagnostic["support_proof_path"] = verified.ProofPath;
             diagnostic["after_snapshot_path"] = transition.AfterSnapshotPath;
-            diagnostic["after_state_hash"] = verified.Proof.AfterStateHash;
+            diagnostic["after_state_hash"] = verified.AfterStateHash;
             diagnostic["support_slice_verified"] = true;
             var settlementDiagnostic = new JsonObject();
             diagnostic["settlement"] = settlementDiagnostic;
-            var reply = await settle(settlementDiagnostic, verified.SettlementRequest);
+            var reply = await settle(settlementDiagnostic, verified.ReadSettlementRequest());
             await write(Path.Combine(options.EvidenceDirectory, "settlement-reply.json"), reply.ToJsonString(JsonOptions));
             var result = reply.Deserialize<ReservationPortfolioSupportingTransitionSettlementResult>(JsonOptions)
                 ?? throw new InvalidDataException("Crop seed runtime settlement reply is empty.");
             var custody = verified.VerifySettlementReply(result);
             diagnostic["resource_settlement_verified"] = true;
             var expected = custody.Ledger;
-            if (verified.Proof.Stage == "purchase_slice")
+            if (verified.RequiresAcquisition)
             {
                 var acquisitionDiagnostic = new JsonObject();
                 diagnostic["acquisition"] = acquisitionDiagnostic;
-                var acquiredReply = await commit(acquisitionDiagnostic, custody.AcquiredSeedRequest);
+                var acquiredReply = await commit(acquisitionDiagnostic, custody.ReadAcquiredSeedRequest!());
                 await write(Path.Combine(options.EvidenceDirectory, "acquisition-reply.json"), acquiredReply.ToJsonString(JsonOptions));
                 var acquired = acquiredReply.Deserialize<ReservationPortfolioCommitResult>(JsonOptions)
                     ?? throw new InvalidDataException("Crop seed runtime acquisition reply is empty.");
-                expected = custody.VerifyAcquiredSeedReply(acquired);
+                expected = custody.VerifyAcquiredSeedReply!(acquired);
                 diagnostic["seed_custody_verified"] = true;
             }
             var final = await ReadLedgerAsync(http, options, expected.SourceStateHash, "Crop seed support final readback");

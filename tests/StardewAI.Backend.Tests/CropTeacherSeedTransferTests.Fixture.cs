@@ -29,16 +29,29 @@ public sealed partial class CropTeacherSeedTransferTests
         internal string LedgerPath => Path.Combine(root, "ledger.json");
         internal string RequestPath => Path.Combine(root, "request.json");
         internal string RepositoryPath => Path.Combine(root, "repository");
+        internal string RuntimePath => Path.Combine(root, "runtime");
+        internal string RunPath => Path.Combine(root, "run");
 
         internal Fixture(bool multipleDestinations = true, Action<MaterialInventoryGraph>? change = null,
-            bool nativeEvidence = false, bool depleteSource = false, bool emptyChest = false, bool noPlayerSeed = false)
+            bool nativeEvidence = false, bool depleteSource = false, bool emptyChest = false, bool noPlayerSeed = false,
+            Action<SnapshotEnvelope>? beforeChange = null)
         {
             Directory.CreateDirectory(root);
             Before = MoneyCropTeacherFixture.CreateSnapshot("SeedAcquisitionRuntimeBoundary",
                 MoneyCropTeacherFixture.CreateSnapshot("MoneyCropProductionSnapshot"));
             CropTeacherNativeSupportFixture.CompleteResources(Before, 500);
+            var clock = JsonNode.Parse(Before.State["time"].GetRawText())!.AsObject();
+            clock["time"] = NativeField(600, Before.GameTick);
+            Before.State["time"] = JsonSerializer.SerializeToElement(clock, JsonOptions);
             var native = StardewAI.Core.Tests.MaterialTransferTestFixture.Snapshot(false);
-            foreach (var domain in new[] { "current_location", "locations", "menus" }) Before.State[domain] = native.State[domain];
+            foreach (var domain in new[] { "current_location", "locations", "menus" })
+            {
+                var fields = JsonNode.Parse(native.State[domain].GetRawText())!.AsObject();
+                foreach (var field in fields)
+                    if (field.Value is JsonObject envelope && envelope.ContainsKey("read_at_tick"))
+                        envelope["read_at_tick"] = Before.GameTick;
+                Before.State[domain] = JsonSerializer.SerializeToElement(fields, JsonOptions);
+            }
             Assert.True(MaterialTransferIntentBinder.TryReadGraph(native, out var graph));
             graph!.PlayerId = 123;
             var player = graph.InventoryNodes[0];
@@ -59,9 +72,11 @@ public sealed partial class CropTeacherSeedTransferTests
             farm["material_inventory_graph"]!["value"] = JsonSerializer.SerializeToNode(graph, JsonOptions);
             farm["material_inventory_graph"]!["read_at_tick"] = Before.GameTick;
             var actor = JsonNode.Parse(Before.State["player"].GetRawText())!;
+            actor["energy"] = NativeField(100d, Before.GameTick);
             actor["location_id"] = JsonNode.Parse(native.State["player"].GetProperty("location_id").GetRawText());
             actor["tile_x"] = JsonNode.Parse(native.State["player"].GetProperty("tile_x").GetRawText());
             actor["tile_y"] = JsonNode.Parse(native.State["player"].GetProperty("tile_y").GetRawText());
+            foreach (var name in new[] { "location_id", "tile_x", "tile_y" }) actor[name]!["read_at_tick"] = Before.GameTick;
             actor["inventory"]!["value"] = JsonSerializer.SerializeToNode(player.Slots.Select(row => new
             {
                 slot_index = row.SlotIndex, qualified_item_id = row.QualifiedItemId, stack = row.Stack,
@@ -70,6 +85,7 @@ public sealed partial class CropTeacherSeedTransferTests
             if (nativeEvidence) CompleteNativeEchoes(farm.AsObject(), actor.AsObject(), graph);
             Before.State["farm"] = JsonSerializer.SerializeToElement(farm, JsonOptions);
             Before.State["player"] = JsonSerializer.SerializeToElement(actor, JsonOptions);
+            beforeChange?.Invoke(Before);
             Before.StateHash = SnapshotHash.ComputeStateHash(Before.State);
             CropRequest = new CropPlantingCommitmentUpsertRequest
             {
@@ -139,6 +155,15 @@ public sealed partial class CropTeacherSeedTransferTests
 
         public void Dispose()
         {
+            var control = Path.Combine(RunPath, "live-snapshots", "crop-teacher-seed-transfer-0001");
+            foreach (var directory in new[] { Path.Combine(control, "teacher-ledgers"), control,
+                         Path.Combine(RunPath, "live-snapshots"), RunPath,
+                         Path.Combine(RuntimePath, "teacher-ledgers"), RuntimePath })
+            {
+                if (!Directory.Exists(directory)) continue;
+                foreach (var path in Directory.EnumerateFiles(directory)) File.Delete(path);
+                Directory.Delete(directory);
+            }
             if (Directory.Exists(RepositoryPath))
             {
                 foreach (var path in Directory.EnumerateFiles(RepositoryPath)) File.Delete(path);

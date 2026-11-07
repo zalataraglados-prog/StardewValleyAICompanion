@@ -111,6 +111,10 @@ Incomplete/partial native execution is not relabeled completed or rolled back.
 
 ## Exact Next Work
 
+Runtime integration continues in [Owned Seed Shared Runtime](money-crop-seed-shared-runtime.md).
+The following list is the accepted kernel's original handoff, not a request to
+reimplement completed preparation, proof or settlement.
+
 1. Connect these accepted transfer scopes to the original control/compiler/native
    queue path and original journal/lookup callbacks, including full base/prepared/
    final readback and candidate identity locked **before** execution. Reuse the

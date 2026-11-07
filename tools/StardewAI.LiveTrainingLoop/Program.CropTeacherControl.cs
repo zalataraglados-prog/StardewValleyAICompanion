@@ -21,7 +21,8 @@ static partial class Program
         bool SitePreparationComplete,
         string InterruptKind = "",
         CropTeacherRunStep? ExecutionStepOverride = null,
-        CropTeacherSeedPurchaseRuntime? SeedPurchaseSupport = null);
+        CropTeacherSeedPurchaseRuntime? SeedPurchaseSupport = null,
+        CropTeacherSeedTransferRuntime? SeedTransferSupport = null);
 
     private static async Task<CropTeacherControlQueueBuildResult>
         BuildCropTeacherControlQueueAsync(
@@ -34,7 +35,8 @@ static partial class Program
             string beforeSnapshotPath,
             JsonObject beforeSnapshot,
             string stateHash,
-            CropTeacherSeedPurchaseSupport? seedSupport = null)
+            CropTeacherSeedPurchaseSupport? seedSupport = null,
+            CropTeacherSeedTransferSupport? transferSupport = null)
     {
         if (HasPriorityStoryEventInterrupt(beforeSnapshot))
         {
@@ -155,6 +157,9 @@ static partial class Program
 
         return step.Stage switch
         {
+            CropTeacherRunStageKinds.TransferSeedSupply when transferSupport is not null =>
+                await BuildCropTeacherSeedTransferQueueAsync(http, options, iteration, step, beforeSnapshotPath,
+                    beforeSnapshot, stateHash, transferSupport),
             CropTeacherRunStageKinds.AcquireSeed =>
                 await BuildCropTeacherSeedQueueAsync(
                     http,
@@ -166,6 +171,7 @@ static partial class Program
                     stateHash,
                     seedSupport),
             CropTeacherRunStageKinds.RouteToFarm or
+            CropTeacherRunStageKinds.RouteToSeedSupply or
             CropTeacherRunStageKinds.RouteHome =>
                 await BuildCropTeacherRouteQueueAsync(
                     http,
