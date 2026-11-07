@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using StardewAI.Contracts.State;
 using StardewAI.Core.Infrastructure;
+using Fixture = StardewAI.Testing.MoneyCropTeacherFixture;
 
 namespace StardewAI.Core.Tests;
 

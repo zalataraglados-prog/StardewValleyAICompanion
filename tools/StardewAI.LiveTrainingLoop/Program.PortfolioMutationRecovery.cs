@@ -11,6 +11,17 @@ static partial class Program
 
     private static async Task<JsonObject> PostJournaledPortfolioSettlementAsync(HttpClient http,
         LiveTrainingOptions options, JsonObject execution, ReservationPortfolioSupportingTransitionSettlementRequest request)
+        => await PostJournaledPortfolioMutationAsync(http, options, execution, request,
+            PortfolioSettlementOperation, "material_reservation_settlement", PortfolioSettlementReplyMatches);
+
+    private static async Task<JsonObject> PostJournaledPortfolioCommitAsync(HttpClient http,
+        LiveTrainingOptions options, JsonObject execution, ReservationPortfolioCommitRequest request)
+        => await PostJournaledPortfolioMutationAsync(http, options, execution, request,
+            "commit", "crop_teacher_ledger_commit", PortfolioCommitReplyMatches);
+
+    private static async Task<JsonObject> PostJournaledPortfolioMutationAsync<T>(HttpClient http,
+        LiveTrainingOptions options, JsonObject execution, T request, string operation, string evidencePrefix,
+        Func<JsonObject, T, bool> replyMatches)
     {
         var raw = JsonSerializer.Serialize(request, JsonOptions);
         var bytes = Encoding.UTF8.GetBytes(raw);
@@ -24,16 +35,16 @@ static partial class Program
         var journal = new JsonObject
         {
             ["schema_version"] = "stardewai.portfolio_rpc_journal.v1",
-            ["backend_url"] = options.BackendUrl, ["operation"] = PortfolioSettlementOperation,
+            ["backend_url"] = options.BackendUrl, ["operation"] = operation,
             ["request_file"] = Path.GetFileName(requestPath), ["request_sha256"] = hash
         };
         Directory.CreateDirectory(options.SnapshotDir);
         await WritePortfolioJournalFileAsync(requestPath, raw);
         await WritePortfolioJournalFileAsync(journalPath, journal.ToJsonString(JsonOptions));
-        execution["material_reservation_settlement_request_journal_path"] = journalPath;
-        execution["material_reservation_settlement_request_sha256"] = hash;
+        execution[evidencePrefix + "_request_journal_path"] = journalPath;
+        execution[evidencePrefix + "_request_sha256"] = hash;
         var endpoint = options.BackendUrl + "/api/v1/strategy/commitments/reservation-portfolios/";
-        try { return await PostJsonStringAsync(http, endpoint + PortfolioSettlementOperation, raw); }
+        try { return await PostJsonStringAsync(http, endpoint + operation, raw); }
         catch (Exception failure) when (failure is HttpRequestException or TaskCanceledException or
             JsonException or InvalidOperationException or IOException)
         {
@@ -41,7 +52,7 @@ static partial class Program
             await RecordPortfolioFailureAsync(stem + "-rpc-failure.txt", failure.Message, failure);
             if (failure.Data["RuntimeHttpStatusCode"] is int status && status is >= 400 and < 500)
                 throw;
-            execution["material_reservation_settlement_lookup_path"] = observationPath;
+            execution[evidencePrefix + "_lookup_path"] = observationPath;
             JsonObject? restored = null;
             try
             {
@@ -59,7 +70,7 @@ static partial class Program
                 using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
                 var lookup = await PostJsonStringAsync(http, endpoint + "lookup-mutation", new JsonObject
                 {
-                    ["operation"] = PortfolioSettlementOperation, ["request"] = JsonNode.Parse(original)
+                    ["operation"] = operation, ["request"] = JsonNode.Parse(original)
                 }.ToJsonString(JsonOptions), timeout.Token);
                 await WritePortfolioJournalFileAsync(observationPath, lookup.ToJsonString(JsonOptions));
                 if (ReadString(lookup, "schema_version") != "stardewai.portfolio_mutation_lookup.v1" ||
@@ -69,17 +80,18 @@ static partial class Program
                     lookup["native_outcome_verified"]?.GetValue<bool>() != false ||
                     lookup["formal_product_training"]?.GetValue<bool>() != false ||
                     lookup["requires_independent_verification"]?.GetValue<bool>() != true ||
-                    lookup["reply"] is not JsonObject reply || !PortfolioSettlementReplyMatches(reply, request))
-                    throw new InvalidDataException("No stored reply matches the original portfolio settlement.");
+                    lookup["reply"] is not JsonObject reply || !replyMatches(reply, request))
+                    throw new InvalidDataException("No stored reply matches the original portfolio " +
+                        (operation == "commit" ? "commit." : "settlement."));
                 restored = (JsonObject)reply.DeepClone();
-                execution["material_reservation_settlement_reply_recovered"] = true;
-                execution["material_reservation_settlement_lookup_path"] = observationPath;
+                execution[evidencePrefix + "_reply_recovered"] = true;
+                execution[evidencePrefix + "_lookup_path"] = observationPath;
             }
             catch (Exception lookupFailure) when (lookupFailure is IOException or InvalidDataException or UnauthorizedAccessException or
                 HttpRequestException or TaskCanceledException or JsonException or InvalidOperationException or FormatException)
             {
                 failure.Data["portfolio_lookup_failure"] = lookupFailure.Message;
-                execution["material_reservation_settlement_lookup_failure"] = lookupFailure.Message;
+                execution[evidencePrefix + "_lookup_failure"] = lookupFailure.Message;
                 if (!File.Exists(observationPath))
                     await RecordPortfolioFailureAsync(observationPath, new JsonObject
                     {
@@ -101,6 +113,17 @@ static partial class Program
         return reply["errors"] is JsonArray { Count: 0 } && result is { Accepted: true, Ledger: not null } &&
             result.PortfolioId == request.PortfolioId && result.RouteSourceDecisionId == request.RouteSourceDecisionId &&
             result.SupportingTransitionReceiptSha256 == request.SupportingTransitionReceiptSha256 &&
+            result.CommittedLedgerRevision == (long)request.ExpectedLedgerRevision + 1 &&
+            result.Ledger.Revision == result.CommittedLedgerRevision && result.Ledger.SourceStateHash == request.StateHash;
+    }
+
+    private static bool PortfolioCommitReplyMatches(JsonObject reply, ReservationPortfolioCommitRequest request)
+    {
+        var result = reply.Deserialize<ReservationPortfolioCommitResult>(JsonOptions);
+        return reply["errors"] is JsonArray { Count: 0 } && result is { Accepted: true, Ledger: not null } &&
+            result.PortfolioId == request.PortfolioId &&
+            result.MaterialClaimCount == request.MaterialClaims.Length &&
+            result.CurrencyClaimCount == request.CurrencyClaims.Length &&
             result.CommittedLedgerRevision == (long)request.ExpectedLedgerRevision + 1 &&
             result.Ledger.Revision == result.CommittedLedgerRevision && result.Ledger.SourceStateHash == request.StateHash;
     }

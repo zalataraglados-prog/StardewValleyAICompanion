@@ -40,13 +40,21 @@ static partial class Program
         var teacherDispatchDirectory = Path.Combine(
             Path.GetDirectoryName(capture.ManifestPath)!,
             "teacher-dispatch");
+        var captureManifest = JsonSerializer.Deserialize<PlanningHandoffCaptureManifest>(
+            await File.ReadAllTextAsync(capture.ManifestPath), JsonOptions)
+            ?? throw new InvalidDataException("crop_teacher_capture_manifest_invalid");
+        var decisionId = options.RunId + ".crop-teacher." + artifactKind + "." + iteration.ToString("D4");
+        var baseLedger = await CropTeacherStrategyLedgerBridge.PrepareAsync(http, options.BackendUrl,
+            Path.GetDirectoryName(capture.ManifestPath)!, capture.SourceStateHash,
+            captureManifest.SourceSnapshotPath, decisionId, JsonOptions,
+            (diagnostic, request) => PostJournaledPortfolioCommitAsync(http, options, diagnostic, request));
         var teacherDispatch =
             MoneyRevenueCropTeacherDispatchBuilder.Build(
                 capture.ManifestPath,
                 teacherDispatchDirectory,
-                options.RunId + ".crop-teacher." + artifactKind + "." +
-                    iteration.ToString("D4"),
-                DateTimeOffset.UtcNow.ToString("O"));
+                decisionId,
+                DateTimeOffset.UtcNow.ToString("O"),
+                baseStrategyLedgerPath: baseLedger.Path);
         var runPlanRequest = JsonSerializer.Deserialize<
                 MoneyRevenueCropNativeProductionRunPlanRequest>(
                     await File.ReadAllTextAsync(

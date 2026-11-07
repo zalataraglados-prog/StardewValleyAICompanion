@@ -16,7 +16,8 @@ public static class MoneyRevenueCropTeacherDispatchBuilder
         string decisionId,
         string decisionRecordedAt,
         int maximumTileCount = 8,
-        int maxQueueItemCount = 8)
+        int maxQueueItemCount = 8,
+        string? baseStrategyLedgerPath = null)
     {
         Require(!string.IsNullOrWhiteSpace(decisionId),
             "Money crop Teacher dispatch decision ID is required.");
@@ -63,6 +64,8 @@ public static class MoneyRevenueCropTeacherDispatchBuilder
                 .ToArray(),
             DecisionId = decisionId,
             DecisionRecordedAt = recordedAt.ToUniversalTime().ToString("O"),
+            BaseStrategyLedgerPath = string.IsNullOrWhiteSpace(baseStrategyLedgerPath)
+                ? string.Empty : RequiredFile(baseStrategyLedgerPath, "Crop Teacher base strategy ledger"),
             MaximumTileCount = maximumTileCount,
             MaxQueueItemCount = maxQueueItemCount,
             FormalProductTrainingAuthorized = false
@@ -150,6 +153,10 @@ public static class MoneyRevenueCropTeacherDispatchBuilder
             CaptureManifestSha256 = Hash(capturePath),
             SourceStateHash = capture.SourceStateHash,
             DecisionId = decisionId,
+            BaseStrategyLedgerPath = string.IsNullOrWhiteSpace(baseStrategyLedgerPath)
+                ? null : Path.GetFullPath(baseStrategyLedgerPath),
+            BaseStrategyLedgerSha256 = string.IsNullOrWhiteSpace(baseStrategyLedgerPath)
+                ? null : Hash(baseStrategyLedgerPath),
             TeacherRequestPath = teacherRequestPath,
             TeacherRequestSha256 = Hash(teacherRequestPath),
             TeacherDecisionPath = teacherDecisionPath,

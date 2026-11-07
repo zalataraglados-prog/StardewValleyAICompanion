@@ -69,6 +69,43 @@ final CI is recorded at PR closeout.
 
 ## Successor
 
+### Current Ledger At Crop Handoff
+
+The live crop handoff now reads the complete backend ledger once and passes its
+immutable path into the original Teacher request. Dispatch records its path/SHA;
+the original optional-argument/default path remains unchanged. Donation still
+uses its original candidate gate, formatting and immutable ledger evidence store.
+
+If the backend ledger already matches the captured source, its identity and all
+active material/currency reservations are checked without a mutation. If stale,
+the same original validators check current reserved slots, quantities, balances
+and actor identity before requesting a marker-only portfolio commit. No resource
+claim is added, cancelled, consumed or relabeled. An active crop must continue
+its complete original commitment/layout rather than starting an empty ledger.
+
+The original portfolio service advances one revision and anchors only the ledger
+root. Its result is independently replayed through the original commit-evidence
+verifier, including full ledger/history equality at the actual recorded time.
+No direct SourceStateHash assignment or repository reconciliation change is used.
+The original durable journal/lookup transport is shared with settlement: a lost
+commit reply triggers one bounded lookup of the exact request, never another
+commit. Legacy settlement keys and behavior remain unchanged. A rejected result,
+altered claim/history/revision or untrusted lookup fails before Teacher dispatch.
+
+20 new Backend checks include a real file repository commit/reload/lookup, fresh
+and stale handoff, complete-resource forwarding to the original dispatch builder,
+actor/supply/active-crop refusals, source mismatch, no-replay recovery and legacy
+settlement compatibility. HTTP loss is scripted; this is not native-game evidence.
+No new game snapshot is captured by the ledger bridge and it runs only at the
+existing planning handoff, not per frame or action. Complete regressions/final CI
+are recorded at PR closeout: all2442 Core and649 Backend tests, original complete
+hermetic and19 original PowerShell transport checks pass, zero skipped unit tests.
+
+This closes existing-ledger source binding, **not installation of PR504's newly
+selected crop/resource claims**. Its runtime_ledger_installed flag remains false.
+
+### Remaining Runtime Installation
+
 Before managed native execution, connect this source-bound ledger through the
 original installation/commit boundary and original supporting-transition
 settlement. Neutral route steps must preserve/rebind active claims; each one-unit

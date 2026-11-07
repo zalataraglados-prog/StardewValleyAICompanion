@@ -1,6 +1,6 @@
 # Goal-Conditioned No-Human Teacher Plan
 
-> **2026-11-07 当前接续：** #503已合入`65bf8cc9`，候选预算先扣活动预留。L1`19/19、11/11 roots`、E6/6/875g及原失败冻结。新凭证重建原v2 Teacher并通过原原子服务预留当前种子/采购资金，导出账本接原生产义务；51项专项及真实来源CLI通过，旧种子证明字节一致，未启动游戏。该片仅证明规划账本重放，不冒充运行安装/采购。发布后先接原安装、support结算、真实种子托管/转移及不重复预留，再复用原日计划聚合预算接联合日历、长期连续性与所选来源。随后Provider/模型定型、正式数据与manifest/preflight；Student新档21/21留在训练后，formal=false。[合同与接续](money-crop-resource-reservation.md)。下方旧顺位与计数为历史，不覆盖此接续。
+> **2026-11-07 当前接续：** #504已合入`affcc989`，L1`19/19、11/11 roots`与E6/6/875g/原失败冻结。原运行handoff现传入完整后端账本；旧源经原资源校验、零claim marker commit及独立精确重放更新锚点，丢回包仅lookup、不重发，旧捐赠/settlement合同保留。20新Backend检查通过，完整回归/CI见收口，无新游戏快照。这是既有账本源绑定，不是#504新计划claims已安装；后继仍为原crop/资源commit安装、support结算/种子托管/转移，再聚合预算/联合日历/长期连续性和所属来源。随后Provider/模型、正式manifest/preflight；Student新档21/21在训练后，formal=false。[合同与接续](money-crop-resource-reservation.md)。下方旧顺位/计数为历史。
 
 > **2026-11-07 Money入口接续：** #483 已接受合入 `33cf0a4d`。现有PowerShell包装器与自动dispatch统一由原C# Teacher/回执重建确定策略；修复硬编码v1拒绝v6的旧入口，16项无游戏集成检查通过，不改共享执行器或全根准入。下一步按R2核对Money局部消费者/全局collector的责任，先复用原分母/比较/native/账本预留补六阈值局部证据，不将完整新档百万日程倒挂为L1门；全局图三项日程下界/机会成本/未来生产预留责任留在所属层，所选局部生产义务不免验。不扫描全盘或重跑旧长轨迹复原历史文件，修复不增加criterion分子或授权训练。并集 `13/19、13/19、13/19、10/11 roots`、formal=false及新档Teacher21/Student/Year3共享预算义务保持。[具体边界](money-threshold-production-evidence.md#initialization-alignment)。
 
