@@ -101,6 +101,99 @@ original hermetic critical paths pass, with no skips. Explicit-E builds have
 zero warnings/errors; EVD-338 and whitespace checks pass. Final CI acceptance
 is recorded in this slice's PR closeout.
 
+### Native Shop Recovery Prerequisite
+
+PR #484 is accepted at `48430bd1` after all38 CI steps on final head
+`1b032a21`. The next source preparation reused the original isolated E runtime,
+route compiler and native story control. Run `money-sale-menu-20261107-b`
+reached the actual Blacksmith ShopMenu through five preparation queues and one
+`story.advance_event` control for611439. No event was marked seen manually or
+skipped. Inventory, cash and cumulative income remained unchanged after every
+stage; the immutable original save hash matched after both owned processes
+exited. This proves preparation, not sale, acquisition, a Money outcome or a
+Teacher label. Raw sources and the caller remain outside Git under
+`I:\StardewAITraining\money-resumption-20261107`.
+
+The retained source exposed two separate conditions: the native shop safety
+timer was still250ms, and the Money catalog could not bind the original
+recovery evaluator's `recovery_close_menu` to its deterministic day-support
+node. That evaluator intentionally closes an intervening menu before any
+sleep work. The Money consumer must understand that prerequisite rather than
+change the shared recovery behavior or call it a completed settlement.
+
+The catalog now accepts only the exact native shop-close prerequisite on a
+non-policy deterministic `recovery.stabilize_day` node that declares sleep
+support. It requires a current available ShopMenu, matching player location,
+the original candidate ID/kind/effect, the sole `executor.close_menu` parameter,
+zero revenue and quantity, and no block reasons. It retains the original row,
+assigns the separate `deterministic_recovery_prerequisite` binding, reseals its
+digest and never makes it comparison-eligible. Unknown kinds, other menus,
+context drift, extra parameters, policy nodes and fabricated revenue remain
+unbound. Actual day settlement still requires the original native proof.
+
+On retained B, the public original catalog CLI now reconstructs all10 nodes and
+all9 candidates, with zero comparisons and current-comparison readiness=false:
+the safety timer remains a real blocker. Long-horizon authority, production
+labels and formal training remain false. No diagnostic candidate was removed
+and no full-root obligation was cleared. The catalog implementation traces to
+`ca6a5806`; its general unknown-kind guard is retained. The referenced
+October14/15 chat directories were not present and the bounded hash search of
+the restored October16 main-thread JSON found no match, so no recovered chat
+rationale is claimed. Contemporaneous commit documentation confirms the full
+candidate-preservation intent. The shared bridge, candidate evaluator, compiler and executor are
+unchanged.
+
+Run C then correctly rejected an unbound generic open-menu wait in the original
+compiler (`active_menu_must_be_closed_before_action`). Its five route stages
+and one native story control were retained, resources and source save stayed
+unchanged, and no wait or sale was executed. The original scoped shop wait is
+purchase-bound; do not invent a sale permission or expand that shared gate.
+For source calibration only, a subsequent isolated caller may invoke the
+original native test-interface30-tick wait before the Money measurement
+boundary, retaining its request/nonce/receipt and resource-conservation check.
+That privileged setup is not a compiled product/model action, an executor
+coverage upgrade, an income outcome or a Teacher label. The previous blocked
+compile remains retained, not rewritten as success.
+
+Run D completed the30-tick native calibration, with the actual timer reaching
+-6ms. The new caller incorrectly required exact zero; only that caller's check
+was corrected to the old native `timer > 0` blocking contract. No new game was
+launched to repeat the successful path. The failed original summary remains
+unchanged; a separate offline recovery binds its exact source, applied native
+wait result, before hash, resource conservation and original save hash. The
+direct calibration request was not retained in D and is explicitly reported
+as absent, not fabricated; later caller invocations now retain it. This is a
+source-preparation recovery, not a replay-verified product action.
+
+The original public catalog rebuild on D's `after-menu-settle.json` accepts
+all10 nodes, all11 candidates and2 comparisons, with cumulative income0 and
+the two actual sale values1,200,000g/20,000g. The original C# split is train.
+Catalog file SHA-256 is
+`0f7258ed77c4118a6e18ad449339942b402dd1d9fa0b7a33d922145d2ca6b594`.
+No sale occurred. Long-horizon authority and production/formal permission
+remain false. Native stock was declared before measurement, never credited as
+resource acquisition or income.
+
+The next exact gap is now reproduced without game: the original threshold
+selector rejects D because it only recognizes staged event candidates with
+continuation parameters; the unchanged active-menu interface correctly returns
+economic candidates with empty unbound parameters. Next adapt that Money
+sampling consumer, including its wave path, to the original source-backed
+economic format. Preserve exact original candidate identity and derive the
+execution objective from its actual source context, not a relabeled route or
+fabricated target. Reuse D rather than recollect its route or calibration.
+Keep R2 local/global boundaries and all18 Money evidence cells unchanged until
+their independent joined proofs exist.
+
+The original hermetic suite includes one positive and15 rejection scenarios
+for the new prerequisite binding. The focused invocation of that exact final
+compiled test and final full hermetic run pass. The B public rebuild reproduces
+SHA-256 `14aaef68...`; three real public-ingress probes reject a false
+settlement binding, dropped control and forged global authority through the
+original exact rebuild, leaving sources unchanged. Final CI acceptance is
+recorded in this slice's closeout. No extra CI
+step or game startup was added to the test suite.
+
 ## Purpose
 
 The Money/Revenue coverage unit has six authoritative Grandpa thresholds and

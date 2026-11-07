@@ -149,7 +149,7 @@ public static partial class MoneyRevenueCandidateDenominatorBuilder
 
         var option = matches[0];
         var candidates = option.EventCandidates
-            .Select(candidate => BuildEntry(definition, candidate))
+            .Select(candidate => BuildEntry(definition, candidate, snapshot))
             .Concat(option.EconomicCandidates.Select(candidate =>
                 BuildEntry(definition, candidate)))
             .OrderBy(candidate => candidate.CatalogCandidateId,
