@@ -1,5 +1,16 @@
 # Money Threshold Production Evidence
 
+## Current Selected Production Closeout
+
+L1 Money6 and the19/19,11/11 union remain accepted. Current-v6 native E additionally
+completed its selected crop cycle and875g shipping settlement. Its original online
+closeout OOM remains recorded; exact-frame reuse permits same-source offline
+terminal/checkpoint reconstruction under1.5GiB heap,6/6,pending0. Lifecycle output
+bytes are unchanged. No game rerun, old receipt rewrite, threshold promotion or
+training authorization follows. See [current handoff](current-production-snapshot-handoff.md)
+for exact source/proof identities and the R2 global resource/calendar successor.
+The G/F/source-binding sections below retain their historical scope.
+
 ## Current Counterfactual Source Binding
 
 PR #488 is accepted at `b3874405`; G's native sale and1/2 terminal fragments

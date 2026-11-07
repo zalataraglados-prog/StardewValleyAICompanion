@@ -1,5 +1,59 @@
 # Current Production Snapshot Handoff
 
+## E Native Cycle And Bounded Offline Closeout
+
+PR501 is accepted at c01ce0be;499/500 are closed and owned merged refs removed.
+New hidden/silent E used the original current-v6 input, not D memory. It acquired5
+seeds, prepared/planted5 tiles, watered50 times, crossed12 native growth-day save
+boundaries and harvested5 cauliflower. Five original shipping deposits and one
+more native sleep settled5 units at175g,875g total. Original source save remains
+68ddc8dbbe09382f2e7ba1c9d5d1e8dd6d0ffaef59acf9367415b4678f59366d.
+
+Original lifecycle/retention checks passed, but offline proof children reached
+roughly3.2/3.4GiB while PowerShell retained about2.7GiB of frame graphs. Available
+RAM approached0.5GiB. A temporary1.5GiB managed-heap cap made terminal rebuilding
+fail explicitly with OOM; the original finally exited the isolated processes.
+No attempted manual stop found its already-exited proof PID; no manual process
+termination was executed. The temporary generated runtimeconfig change is restored.
+
+The lifecycle builder now shares only fully loaded, whole-envelope canonical
+content identities within that one call. Actual E has120 frame references but61
+distinct logical frames (about539MiB duplicated logical data). No claimed state
+hash, CAS index or path-only identity can authorize sharing. Original source
+paths/SHA, receipts, continuity, calendar, resources and final outcomes still verify.
+No global cache/parser/executor/Teacher is added. Only crop orchestration opts in
+to1.5GiB through STARDEWAI_BOOTSTRAP_GC_HEAP_HARD_LIMIT. The original helper's
+unconfigured default stays unchanged; an opted-in budget applies only when
+neither explicit DOTNET nor COMPlus limit exists. Environment restores even on
+failure. The game heap is not changed by this policy. Crop orchestration drops
+unused full captures before proof reconstruction and collects once at that barrier,
+never per frame. Its end-to-end memory improvement still needs future native sampling.
+
+Using the same retained E sources with no game restart, terminal public Build and
+the original checkpoint pass under1.5GiB managed heap. Checkpoint is6/6,pending0:
+2bc8f05a7dfb0d548d20cf24dada231d647080122fc7aae69794cf80bac9aff5.
+Terminal proof is46a8835343ffbe5b028a3adc46e5f684878ca9531d6ec424a712be2d69af175a.
+Lifecycle public Build is byte-identical before/after optimization:
+e9d092069378cd093c23efe42a92043726cc95dced3ec0a3f987e7ef854733ec.
+78 focused policy/environment/source-lifetime checks, original snapshot20 and
+control52 plus complete hermetic pass. Final CI is recorded at PR closeout.
+
+Raw root: I:\StardewAITraining\money-resumption-20261107\current-production-runs\money-current-production-native-20261107-e.
+evidence/offline-finalization-summary.json records recovery separately. Original
+failure.json remains byte-identical,d8d37885d7b34fa0b2987743bfa7dfd1d1d01e978bf52c6433de584e71fa6be3.
+Do not replace it with a passed runtime summary. This is complete selected-cycle
+evidence, not an uninterrupted zero-failure run, historical v22 conversion,50k
+threshold, fresh-save Teacher21 or Student training. No raw artifacts/local-data
+or external recovery callers enter Git; L1 remains19/19,11/11;formal=false.
+
+After accepting this patch, next is R2 L3 composition of accepted local capabilities
+and selected production: cross-root reservations/cash/materials, joint calendars,
+continuity and selected-source schedules/independent replay. Reuse original owners;
+do not recollect L1 or turn an optional route into a universal prerequisite. Then
+verify replaceable Provider/model experiments and freeze formal dataset/manifest/
+preflight. Student fresh-save21/21 is a post-training evaluation, not its own entry
+condition. Stage2 Perfection and humanization remain later product stages.
+
 ## Verified Audit Repairs499/500
 
 PR498 passed all40 final CI steps at42354205809 and merged as50349056;

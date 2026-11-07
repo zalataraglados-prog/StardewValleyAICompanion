@@ -173,6 +173,7 @@ $environmentNames = @(
     "SDL_AUDIODRIVER",
     "ALSOFT_DRIVERS",
     "SMAPI_MODS_PATH",
+    "STARDEWAI_BOOTSTRAP_GC_HEAP_HARD_LIMIT",
     "ASPNETCORE_URLS")
 $savedEnvironment = Save-RuntimeProcessEnvironment -Names $environmentNames
 $backendProcess = $null
@@ -180,6 +181,9 @@ $gameProcess = $null
 $sourceSaveSha256After = "not_checked"
 
 try {
+    if ([string]::IsNullOrWhiteSpace($env:STARDEWAI_BOOTSTRAP_GC_HEAP_HARD_LIMIT)) {
+        $env:STARDEWAI_BOOTSTRAP_GC_HEAP_HARD_LIMIT = '0x60000000'
+    }
     $env:STARDEWAI_TEST_SAVES = $isolatedSaves
     $env:STARDEWAI_TEST_SLOT = $sourceSlotName
     $env:STARDEWAI_TEST_AUTO_LOAD = "true"
@@ -255,6 +259,8 @@ try {
     if (-not $sourceBoundaryMatches) {
         throw "Isolated crop save does not match the exact run-plan source boundary."
     }
+    $initial = $null
+    $expectedSourceSnapshot = $null
 
     $runtimeQueueContext = New-RuntimeQueueContext `
         -LoopDll $loopDll -ArtifactDirectory $artifactDirectory `
@@ -364,6 +370,7 @@ try {
             $totalDay) {
             throw "Crop runtime day boundary drifted before day $totalDay."
         }
+        $current = $null
         $visitCropLocation = [bool]$day.capture_daily_capacity_snapshot -or
             @($day.action_batches).Count -gt 0
         if ($visitCropLocation) {
@@ -465,6 +472,7 @@ try {
                 -CoreAssemblyPath (Join-Path (Split-Path -Parent $loopDll) 'StardewAI.Core.dll')
             $homeLocation = Get-RuntimeCropHomeLocation `
                 -Snapshot $current.Value
+            $current = $null
             $homeRoute = Invoke-RuntimeCropRoute `
                 -Context $runtimeQueueContext -BackendUrl $backendUrl `
                 -SnapshotProfile "full" -SourceSnapshotPath $currentPath `
@@ -512,6 +520,11 @@ try {
         }
     }
 
+    # Only paths/scalars cross this barrier; do not retain gameplay frame graphs
+    # while a separate process performs full offline proof reconstruction.
+    $current = $result = $route = $routeArtifact = $preparation = $null
+    $homeRoute = $control = $observation = $sleep = $null
+    [GC]::Collect()
     $layoutProofPaths = [Collections.Generic.List[string]]::new()
     $layoutProofByCommitment = @{}
     foreach ($intent in @($runPlanRequest.layout_intents)) {

@@ -100,7 +100,16 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
             value.Commitment.CommitmentId == commitment.CommitmentId);
         Require(SamePath(primaryContext.LayoutPath, layoutPath),
             "Money Revenue crop lifecycle primary layout drifted from aggregate capacity support.");
-        var transitions = request.Transitions.Select(LoadTransition).ToArray();
+        var frames = new LifecycleFramePool();
+        var transitions = request.Transitions.Select(value =>
+        {
+            var loaded = LoadTransition(value);
+            return loaded with
+            {
+                Before = frames.Share(loaded.Before),
+                After = frames.Share(loaded.After)
+            };
+        }).ToArray();
         var checkpointResumeProofs = ValidateTransitionChain(
             transitions,
             sourceSnapshot,
