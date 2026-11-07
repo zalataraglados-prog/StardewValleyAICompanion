@@ -1,5 +1,38 @@
 # Current Production Snapshot Handoff
 
+## Current Bounded-Goal Follow-Up
+
+PR #494 is accepted at `35b83485`, exact-head CI42347958326 all39 steps.
+Its I/O fix passed repeated native imports. B was deliberately stopped after
+exposing a separate ownership conflict, not a renewed422: its one-step purchase
+Loop inherited `grandpa_max_score_year3`, produced a new crop Teacher commitment
+and entered many control iterations instead of returning the bound purchase.
+Owned Loop/backend processes were revalidated and stopped; the parent's normal
+finally stopped its game. Original save and A/B evidence remain unchanged.
+The abort audit/PR494 closeout supersede the older running-B status below.
+
+The existing Loop default dates to `2666b1f8` and is correct for normal companion
+operation. Do not change that default, automatic Teacher policy or executor.
+`Invoke-RuntimeDailyPlanStep` now has an optional trailing `GoalId` argument:
+omitted calls keep the same parameters/default behavior, while crop seed
+acquisition explicitly passes `daily.closed_loop`, matching its existing rank
+request and the outer production owner. No second scheduler is added.
+
+Ten argument/AST checks prove forwarding, old parameter positions/defaults and
+the unique crop call path. Original20 snapshot I/O checks still pass. A real
+backend comparison on the same immutable B source SHA
+`102bd3debf2ce8c543cb540610ee4b31158f9aca03c1ad305a96d588a94a61a3`
+reproduces the global Teacher handoff, while the explicit daily goal produces
+no handoff and compiles the exact counter interaction. These are routing/compile
+facts, not a native production outcome.
+
+Fresh isolated C uses the same immutable current-v6 input and unchanged original
+save, not stitched A/B memory. Its full native outcome remains pending until
+production, retention and settlement verify. Continue this run and genuine
+consumer failures, then the existing R2 global resource/calendar integration.
+L1 remains19/19 and11/11; formal training stays false. Final C/CI results are
+recorded at closeout; do not resume the intentionally terminated B process.
+
 ## Scope And Reason
 
 PR #493 is accepted at `709bfe6c`, exact-head CI42344762784 all38 steps.

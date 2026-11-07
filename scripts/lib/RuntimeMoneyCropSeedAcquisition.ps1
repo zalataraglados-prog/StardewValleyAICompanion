@@ -194,6 +194,7 @@ function Invoke-RuntimeCropSeedAcquisition {
         })
         $execution = Invoke-RuntimeDailyPlanStep -Context $Context `
             -Name $stageName -OptionId "economy.buy_supplies" `
+            -GoalId "daily.closed_loop" `
             -CandidateKind ([string]$candidate.kind) `
             -CandidateId ([string]$candidate.candidate_id) `
             -CandidateParameters $parameterStrings `

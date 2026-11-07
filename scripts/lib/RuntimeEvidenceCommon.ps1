@@ -475,7 +475,8 @@ function Invoke-RuntimeDailyPlanStep {
         [string] $SourceSnapshotPath = "",
         [switch] $AllowVerifiedContinuation,
         [ValidateSet("product", "runtime_harness")]
-        [string] $ExecutionTarget = "runtime_harness"
+        [string] $ExecutionTarget = "runtime_harness",
+        [string] $GoalId = ""
     )
     $stepRoot = Join-Path $Context.ArtifactDirectory $Name
     $sourcePath = Join-Path $stepRoot "source-snapshot.json"
@@ -519,6 +520,10 @@ function Invoke-RuntimeDailyPlanStep {
         "--after-snapshot-poll-ms", "250",
         "--continue-after-blocked-queue-items"
     )) { $arguments.Add([string]$value) }
+    if (-not [string]::IsNullOrWhiteSpace($GoalId)) {
+        $arguments.Add("--goal")
+        $arguments.Add($GoalId)
+    }
     foreach ($parameter in $CandidateParameters) {
         $arguments.Add("--daily-plan-candidate-parameter")
         $arguments.Add($parameter)
