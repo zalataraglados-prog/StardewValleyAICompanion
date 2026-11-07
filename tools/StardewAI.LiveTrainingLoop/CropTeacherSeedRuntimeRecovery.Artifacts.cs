@@ -10,11 +10,11 @@ public static partial class CropTeacherSeedRuntimeRecovery
 {
     private static StringComparer PathComparer => OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
     private static bool SamePath(string first, string second) => PathComparer.Equals(Path.GetFullPath(first), Path.GetFullPath(second));
-    private static bool Contains(string parent, string child) => SamePath(parent, child) ||
+    internal static bool Contains(string parent, string child) => SamePath(parent, child) ||
         Path.GetFullPath(child).StartsWith(Path.TrimEndingDirectorySeparator(Path.GetFullPath(parent)) + Path.DirectorySeparatorChar,
             OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
 
-    private sealed class Artifacts(IReadOnlyDictionary<string, string> initial)
+    internal sealed class Artifacts(IReadOnlyDictionary<string, string> initial)
     {
         internal Dictionary<string, string> Hashes { get; } = new(initial, PathComparer);
         internal string Pin(string path)

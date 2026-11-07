@@ -4,9 +4,15 @@ using System.Text.Json.Nodes;
 
 namespace StardewAI.LiveTrainingLoop;
 
+internal interface ICropSeedPortfolioRecoveryOptions
+{
+    string BackendUrl { get; }
+    string PortfolioJournalDirectory { get; }
+}
+
 public static partial class CropTeacherSeedRuntimeRecovery
 {
-    private static async Task<JsonObject> ReadReplyAsync<T>(CropTeacherSeedRuntimeRecoveryOptions options,
+    internal static async Task<JsonObject> ReadReplyAsync<T>(ICropSeedPortfolioRecoveryOptions options,
         string origin, string root, string output, Artifacts artifacts, string phase, string operation, T request,
         Func<string, string, Task<JsonObject>> post, Func<string, string, Task> write)
     {

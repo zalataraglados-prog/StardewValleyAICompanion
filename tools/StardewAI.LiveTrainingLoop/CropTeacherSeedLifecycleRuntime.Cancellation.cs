@@ -21,12 +21,7 @@ public static partial class CropTeacherSeedLifecycleRuntime
         var journalPath = Path.Combine(options.EvidenceDirectory, "crop-cancel-journal.json");
         var endpoint = options.BackendUrl + "/api/v1/strategy/commitments/crops/" + Uri.EscapeDataString(scope.CommitmentId) + "/cancel";
         var hash = Hash(bytes);
-        var journal = new JsonObject
-        {
-            ["schema_version"] = "crop_teacher_cancel_rpc_journal.v1", ["endpoint"] = endpoint,
-            ["request_file"] = Path.GetFileName(requestPath), ["request_sha256"] = hash,
-            ["commitment_id"] = scope.CommitmentId, ["run_id"] = options.RunId
-        };
+        var journal = CreateCancellationJournal(endpoint, requestPath, hash, scope.CommitmentId, options.RunId);
         await write(requestPath, raw);
         await write(journalPath, journal.ToJsonString(JsonOptions));
         diagnostic["cancellation_request_path"] = requestPath;
@@ -73,4 +68,12 @@ public static partial class CropTeacherSeedLifecycleRuntime
     }
 
     private static string Hash(byte[] value) => Convert.ToHexString(SHA256.HashData(value)).ToLowerInvariant();
+
+    internal static JsonObject CreateCancellationJournal(string endpoint, string requestPath, string hash,
+        string commitmentId, string runId) => new()
+    {
+        ["schema_version"] = "crop_teacher_cancel_rpc_journal.v1", ["endpoint"] = endpoint,
+        ["request_file"] = Path.GetFileName(requestPath), ["request_sha256"] = hash,
+        ["commitment_id"] = commitmentId, ["run_id"] = runId
+    };
 }
