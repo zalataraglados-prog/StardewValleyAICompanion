@@ -57,6 +57,12 @@ ingested planning input, not a standalone native-proof or snapshot-import bypass
 
 ## Exact Next Boundary
 
+The per-step purchase accounting kernel is now implemented; see
+[settlement contract and remaining runtime wiring](money-crop-seed-purchase-settlement.md).
+It reuses original native validators and portfolio services; the automatic runner
+is not enabled. The list below is the full integration scope, not a claim that
+every item still requires a new implementation.
+
 1. Before each route/interaction/purchase/transfer, use the original portfolio
    service/API to create a unique marker-only support commit. Its portfolio and
    source-decision IDs are the support-step ID. Do not change PR504/506's original

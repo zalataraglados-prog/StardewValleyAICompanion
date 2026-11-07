@@ -29,6 +29,9 @@ public sealed class CropTeacherOwnedSeedSupply
 
     public IReadOnlyList<CropTeacherOwnedSeedCommitment> Commitments { get; }
 
+    internal MaterialInventoryNode CopyPlayerInventory() => JsonSerializer.Deserialize<MaterialInventoryNode>(
+        JsonSerializer.Serialize(player, JsonDefaults.Options), JsonDefaults.Options)!;
+
     public static CropTeacherOwnedSeedSupply Read(SnapshotEnvelope snapshot, StrategyCommitmentLedger ledger,
         IReadOnlyCollection<string> commitmentIds)
     {

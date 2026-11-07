@@ -6,7 +6,7 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public static partial class MoneyRevenueCropSeedAcquisitionProofBuilder
 {
-    private static void ValidateSnapshot(
+    internal static void ValidateSnapshot(
         SnapshotEnvelope snapshot,
         string boundary)
     {
@@ -108,7 +108,7 @@ public static partial class MoneyRevenueCropSeedAcquisitionProofBuilder
         return quantity;
     }
 
-    private static int ReadInt(
+    internal static int ReadInt(
         SnapshotEnvelope snapshot,
         string section,
         string field)

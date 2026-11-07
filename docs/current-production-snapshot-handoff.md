@@ -1,5 +1,25 @@
 # Current Production Snapshot Handoff
 
+## Owned Seed Purchase Accounting (Current)
+
+PR507 passed42 CI steps in42372731074 and merged asf85bbfcc with identical tested/main
+trees; owned refs were removed. The new transaction kernel reuses original native
+seed validators and portfolio/support settlement services for unique step markers,
+actual cash debit, owner-only rebind, acquired-slot delta claims and unused cash
+release. It retains one verified settlement instead of repeatedly validating a
+mutable reply.28 new protocol checks pass, including read-only proof recovery by
+expected hash/native rebuild; they are not native gameplay evidence. The retained
+E whole-chain acquisition proof rebuilds to identical bytes. Core2442 and original
+full hermetic pass; final clean CI and fixture-export rerun details are in closeout.
+
+Next wire the kernel to original compilation/native dispatch and journal/lookup,
+then prepared transfer, owned planting consumption and lifecycle release; only
+then explicitly enable managed input and sample native boundaries. The existing
+automatic active-claim barrier stays. No old executor or full-shortfall proof is
+rewritten. See [exact contract](money-crop-seed-purchase-settlement.md). Joint
+calendar/budgets/continuity, Provider/model and formal manifest follow. L1 stays
+19/19,11/11;formal=false. Raw/local-data/test files stay outside Git.
+
 ## Owned Seed Input To Original Run Planner (Current)
 
 PR506 passed all42 CI steps/review, merged as565f3a0c and removed owned refs after

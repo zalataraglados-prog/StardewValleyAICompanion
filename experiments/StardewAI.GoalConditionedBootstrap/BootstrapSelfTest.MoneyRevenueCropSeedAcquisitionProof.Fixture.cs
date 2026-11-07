@@ -16,7 +16,8 @@ internal static partial class BootstrapSelfTest
         int sequence,
         int purchaseQuantity,
         int unitPrice,
-        string supportingOptionId = "executor.traverse_connector")
+        string supportingOptionId = "executor.traverse_connector",
+        Action<SnapshotEnvelope>? afterChange = null)
     {
         var prefix = "seed-acquisition-transition-" +
             sequence.ToString("D3");
@@ -42,6 +43,7 @@ internal static partial class BootstrapSelfTest
             : supportingOptionId == "executor.wait_ticks"
                 ? SeedAcquisitionWait(before)
                 : SeedAcquisitionRoute(before);
+        afterChange?.Invoke(after);
         var selectedCandidateId = "candidate." + prefix;
         var stepSnapshots = SeedAcquisitionStepSnapshots(
             before,
@@ -361,7 +363,9 @@ internal static partial class BootstrapSelfTest
         row["stack"] = row["stack"]!.GetValue<int>() + quantity;
         player["money"]!["value"] =
             player["money"]!["value"]!.GetValue<int>() - unitPrice;
-        player["shop_currency_balances"]!["value"]![0]!["balance"] =
+        var balances = player["shop_currency_balances"]!["value"]!;
+        var currencyRows = balances is JsonArray ? balances.AsArray() : balances["rows"]!.AsArray();
+        currencyRows.Single(value => value!["currency_id"]!.GetValue<int>() == 0)!["balance"] =
             player["money"]!["value"]!.GetValue<int>();
         after.State["player"] = JsonSerializer.SerializeToElement(
             player,
