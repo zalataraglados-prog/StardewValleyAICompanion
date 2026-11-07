@@ -27,6 +27,7 @@ public sealed partial class CropTeacherSeedPlantingTests
             {
                 var next = JsonSerializer.Deserialize<SnapshotEnvelope>(JsonSerializer.Serialize(current, JsonOptions), JsonOptions)!;
                 next.GameTick += 5;
+                next.InGameTime.Value = next.State["time"].GetProperty("time").GetProperty("value").GetInt32();
                 if (index < consumed) Plant(next, marker, index, firstSlot ? 0 : 1);
                 if (index == consumed - 1) change?.Invoke(next);
                 if (index == consumed && failedSuffix) suffixChange?.Invoke(next);

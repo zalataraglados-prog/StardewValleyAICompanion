@@ -73,12 +73,14 @@ internal sealed record CropTeacherSeedPlantingNativeOutcome(CropTeacherSeedPlant
         MoneyRevenueCropSeedAcquisitionProofBuilder.ValidateSnapshot(before, "owned planting step before");
         MoneyRevenueCropSeedAcquisitionProofBuilder.ValidateSnapshot(after, "owned planting step after");
         var clock = MoneyRevenueCropSeedAcquisitionProofBuilder.ReadInt(after, "time", "time");
+        var beforeClock = MoneyRevenueCropSeedAcquisitionProofBuilder.ReadInt(before, "time", "time");
         Require(after.SaveId.Value == source.SaveId.Value && after.PlayerId.Value == source.PlayerId.Value &&
                 after.GameVersion == source.GameVersion && step.SourceStateHash == before.StateHash &&
                 step.AfterStateHash == after.StateHash && step.BeforeGameTick == before.GameTick && step.AfterGameTick == after.GameTick &&
                 after.GameTick >= before.GameTick &&
                 MoneyRevenueCropSeedAcquisitionProofBuilder.ReadInt(after, "time", "total_days") == totalDay &&
-                clock >= MoneyRevenueCropSeedAcquisitionProofBuilder.ReadInt(before, "time", "time") &&
+                clock >= beforeClock && FieldEnvelopeValidator.IsReadableStatus(before.InGameTime.Status) &&
+                before.InGameTime.Value == beforeClock &&
                 FieldEnvelopeValidator.IsReadableStatus(after.InGameTime.Status) && after.InGameTime.Value == clock,
             "Owned planting step source/actor/tick/day/clock drifted.");
     }

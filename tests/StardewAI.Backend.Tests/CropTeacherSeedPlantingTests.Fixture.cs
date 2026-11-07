@@ -27,7 +27,7 @@ public sealed partial class CropTeacherSeedPlantingTests
         internal string Id => Ledger.CropPlantingCommitments.Single().CommitmentId;
         internal string OwnedSlotOne => Ledger.MaterialReservations.Single(row => row.NodeId == "player:123" && row.SlotIndex == 1).ReservationId;
 
-        internal Fixture(int ownedStack = 9)
+        internal Fixture(int ownedStack = 9, int? beforeClock = null)
         {
             Directory.CreateDirectory(root);
             transfer = new(nativeEvidence: true, change: graph => graph.InventoryNodes[0].Slots[0].Stack = 989 + ownedStack,
@@ -73,6 +73,7 @@ public sealed partial class CropTeacherSeedPlantingTests
             var settled = Repository.SettleReservationPortfolioSupportingTransition(transfer.After, verified.SettlementRequest);
             Ledger = verified.VerifySettlementReply(settled);
             Before = transfer.After;
+            if (beforeClock.HasValue) Before.InGameTime.Value = beforeClock.Value;
             Save(SourcePath, Before);
             Save(LedgerPath, Ledger);
             File.Copy(transfer.RequestPath, RequestPath);

@@ -121,4 +121,14 @@ public sealed partial class CropTeacherSeedPlantingTests
         var transition = f.NativeTransition(marker, 3, failedSuffix: true, suffixChange: snapshot => Change(snapshot, fault));
         Assert.Throws<InvalidDataException>(() => f.Verify(marker, transition));
     }
+
+    [Fact]
+    public void FirstSourceClockCannotDisagreeWithItsTransparentStateEvenIfAfterIsConsistent()
+    {
+        using var f = new Fixture(beforeClock: 700);
+        var marker = f.Mark();
+        var transition = f.NativeTransition(marker);
+        var error = Assert.Throws<InvalidDataException>(() => f.Verify(marker, transition));
+        Assert.Contains("step source/actor/tick/day/clock drifted", error.Message);
+    }
 }

@@ -84,6 +84,12 @@ at16 seconds. That failure remains in the log. Final planting74 plus the full
 old Museum group14 passed88/88, with zero skips. No old timeout was changed.
 Final exact-head full CI/review/tree results belong to the slice closeout;
 the intermediate new-fixture accessibility compile error is also retained.
+The first head af9cb070 subsequently passed all42 CI steps. A final opt-in
+consumer check also requires the initial source's top clock to match its state,
+not just each after clock. The38th new case injects the mismatch only after the
+accepted transfer fixture; an earlier misplaced injection was correctly blocked
+by the old transfer gate and remains in the failed log. Final planting75/75
+passed. Final-head CI and review, not the earlier head, own final acceptance.
 No additional full-world capture or global cache is introduced. Full-source
 checks occur at the scope boundary, and existing per-step after artifacts are
 read once for their effect boundary. Complete hermetic replay is delegated to
