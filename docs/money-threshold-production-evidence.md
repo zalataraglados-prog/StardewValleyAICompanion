@@ -1,5 +1,72 @@
 # Money Threshold Production Evidence
 
+## Current Direct Concrete Union
+
+The preceding sampling fix, PR #486, is accepted at `7c78db2b` after
+all38 CI steps on `3337c66f`. This subsequent slice fixes concrete consumption.
+The pure-direct concrete consumer now derives its empty required rebind set
+from the independently rebuilt original alternative catalog. It accepts absent
+rebind metadata only when that exact nonempty direct denominator is already
+authoritative. It then reuses the original source binding, `BuildDirect`, union
+construction, identity sealing and cardinality checks. No empty producer
+receipt is constructed. The existing completion boolean means every required
+rebind was accounted for (zero in this branch), not that a rebind ran.
+
+Any real acquisition/processing rebind still requires both original files,
+independent producer rebuild, exact subset/rollout/inventory proof and identity
+checks. Missing, partial, unnecessary or invented evidence is rejected.
+Mixed direct/rebound behavior and schemas remain unchanged. The old rebind
+producer's nonempty-set guard, shared executor and global collector preflight
+are untouched. This follows the original `1d7f0ee2` subset contract and
+`387bffa0` direct/rebound union intent; the old initializer explicitly attempted
+concrete construction at zero rebind count. Bounded restored-chat searches did
+not recover those original design conversations; contemporaneous commit docs
+and code provide the intent.
+
+The original initializer delegates its existing concrete block to one shared
+helper. Only positive rebind counts invoke the old assembly/producer commands;
+zero counts retain empty paths and emit no rebind artifacts. The helper rejects
+unused rollout evidence and source/output aliases. The outer initializer still
+requires a passed versioned native run summary; D's failed setup summary is
+never relabeled or fed through that guard. Tests exercise this extracted block
+with the real C# consumer, without fabricating a native run.
+
+Real D offline replay now produces two concrete alternatives (SHA-256
+`2ba1857bf5d8e28bf336447aa432ff2dca7480bdc81eb99a33e8b2eeafc17869`)
+and two original counterfactual requests (SHA-256
+`40cce1fa5e1a659938fd5b46a116638b1d640aa5fe15ad4c8f963ad0388f046b`).
+Both public rebuilds are byte-identical. The original strong ledger reader
+accepts the source-bound revision0 ledger from the original Backend; its
+initially empty isolated-research scope is explicit, not inherited production
+continuity. Both requests still require native shop-sale proof. Original
+inputs remain unchanged; no game, sale, outcome, preference or coverage cell
+is claimed. Long-horizon/label/formal authority remains false.
+
+Verification: explicit-E build zero warnings/errors; final original hermetic
+suite (including the original mixed union), new direct consumer/public fixture
+checks, initializer with four exact rejection cases, Core2380/2380 and
+Backend629/629 pass with no skips. Five real native-source public probes reject
+partial/unneeded metadata, forged alternatives, formal permission and empty
+producer invocation. The helper test runs inside the existing CI step, not a
+new long lane. New test-helper/API assumptions and fixture provenance/tick
+metadata were corrected only in the new tests; the original verifier was not
+relaxed. Source/output alias rejection verifies the copied input bytes remain
+unchanged. Final CI acceptance is recorded in this slice's closeout.
+
+Next, consume the original counterfactual/native collection contracts, first
+preflighting their source identity, ledger and recurrence requirements. The
+global collector keeps its complete-root guard; do not remove it to obtain L1
+evidence. Use a properly scoped criterion-local caller and original execution/
+proof readers, with immutable save/mod isolation and full same-run provenance.
+D is offline preparation only, not an executable running world or a passed
+native result. Any new native run must rebuild and bind its own actual source,
+candidate catalog, selection and proof requests; never splice D's checkpoint
+or failed summary into another outcome. Collect required native recurrences,
+then independent reserve-aware comparison/admission/corpus and true missing
+partitions. All18 cells, R2 obligations, full fresh-save acquisition/budget and
+Teacher21/Student requirements remain; this slice adds no Money cell and no
+training permission. Raw/native/ledger/probe data stays outside Git.
+
 ## Current Active Sale Sampling
 
 PR #485 is accepted at `d6fa8194` after all38 CI steps on `3a50cee6`.
@@ -46,7 +113,8 @@ reject wrong partition, forged parameters, relabeled channel and wrong source
 hash through the original guards. Sources stay unchanged, no queue is
 executed, and raw/probe data stays outside Git. Final CI is recorded at closeout.
 
-Next, use the original comparison chain, not another sampler or game replay.
+Historical next step, now corrected by Current Direct Concrete Union above:
+use the original comparison chain, not another sampler or game replay.
 The original D alternative builder already accepts two complete direct-native
 shop-sale alternatives with long-horizon authority=false. A read-only next-step
 probe exposed an all-direct branch mismatch: the existing concrete consumer

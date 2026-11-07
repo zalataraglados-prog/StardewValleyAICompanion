@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-07 Money纯direct接原证明链（当前唯一接续）：** 前序采样修复#486已38步CI接受、合入`7c78db2b`；本轮接续修concrete，提交/CI见本轮收口。concrete消费者从原完整重建确认空重绑定集合，复用旧direct绑定/封签，不伪造producer回执；非空强证明、原producer及共享执行链不改。旧初始化块提取为单helper，零项不生成回执且源输出冲突拒绝，外层passed native门保持。D真实离线链得到2 concrete/2反事实请求，SHA`2ba1857b...`/`40cce1fa...`，原强账本接受显式隔离初始revision0；无游戏、执行或收入/标签。最终hermetic、Core2380/Backend629、脚本4反例/公开5反例通过，CI见收口。下一步预检并接L1 same-run原生recurrence/独立比较；不移除全局complete-root门、不拼接D或假passed。并集仍`13/19、13/19、13/19、10/11`，formal=false。[合同及真实边界](money-threshold-production-evidence.md#current-direct-concrete-union)。
+
 > **2026-11-07 Money采样消费对齐（当前唯一接续）：** #485已38步CI接受、合入`d6fa8194`。Money单阈值和wave现在消费原生economic候选，同时保留旧stage路径、完整分母及原行身份/空参数/摘要；原8项执行参数从同源事实单独绑定。D公开两入口逐字节同SHA`db993d85...`，原后端编译`出售→关闭菜单`；未执行、未增Money单元。34新场景、旧stage、最终hermetic及4公开反例通过，最终CI见收口。下一步已定位纯direct concrete消费强求不需要的rebind回执；先核历史并修消费/编排分支，不改旧强producer或伪造回执，然后原账本/反事实请求及same-run原生比较。共享执行链不改、无游戏重跑/worker/训练，并集仍`13/19、13/19、13/19、10/11`、formal=false。[具体合同](money-threshold-production-evidence.md#current-active-sale-sampling)。
 
 > **2026-11-07 Money实际菜单源接续：** D测前原生30tick等待使计时器到-6ms，新caller误要求精确0；只修新caller，保留原失败报告，离线接原公开分母，无游戏重跑。原档/库存/现金/收入保持，10节点/11候选/2比较、train、收入0，SHA`0f7258ed...`；校准非产品动作，D未保留的直接请求如实记缺失。最终完整hermetic、16新场景/3公开反例通过；无出售/标签/训练，分子仍`13/19、13/19、13/19、10/11`。下一步直接用D修Money threshold selector及wave消费旧经济候选的缺口，已离线重现event-only拒绝，不重跑成功准备、不反改共享接口。最终CI见收口。[完整事实与边界](money-threshold-production-evidence.md#native-shop-recovery-prerequisite)。

@@ -324,6 +324,7 @@ var commandDefinitions = new CommandDefinition[]
         BootstrapSelfTest.RunGoalMethodFrontierReuse(
             GoalMethodFrontierInputs(options))),
     new("self-test-bootstrap-hermetic", _ => BootstrapSelfTest.RunHermeticCriticalPaths()),
+    new("self-test-money-direct-concrete", options => BootstrapSelfTest.VerifyMoneyDirectConcrete(options.Optional("output-root"))),
     new("self-test-money-revenue-crop-teacher-dispatch", options =>
         BootstrapSelfTest.VerifyMoneyRevenueCropTeacherDispatch(options.Optional("output-root"))),
     new("self-test-goal-method-incomparable-live-shadow", SelfTestGoalMethodIncomparableLiveShadow),

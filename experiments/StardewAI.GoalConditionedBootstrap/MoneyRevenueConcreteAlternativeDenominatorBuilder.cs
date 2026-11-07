@@ -26,6 +26,21 @@ public static partial class MoneyRevenueConcreteAlternativeDenominatorBuilder
         Require(EqualJson(alternatives, rebuiltAlternatives),
             "Money Revenue alternative denominator did not equal its source rebuild.");
 
+        var sourceCatalog = CurrentTeacherFrontierSupport.Read<
+            MoneyRevenueCandidateDenominatorCatalog>(
+                alternatives.SourceCandidateCatalogPath,
+                "Money Revenue source candidate denominator catalog");
+        if (!alternatives.Alternatives.Any(row => row.RequiresFreshTerminalCandidateRebind))
+        {
+            Require(string.IsNullOrWhiteSpace(manifest.TerminalRebindManifestPath) &&
+                    string.IsNullOrWhiteSpace(manifest.TerminalRebindReceiptPath),
+                "Money Revenue direct-only alternatives must not claim unnecessary rebind evidence.");
+            return BuildCatalog(fullManifestPath, Hash(fullManifestPath), alternativePath, Hash(alternativePath),
+                alternatives, sourceCatalog, string.Empty, string.Empty, null, string.Empty, string.Empty, null);
+        }
+        Require(!string.IsNullOrWhiteSpace(manifest.TerminalRebindManifestPath) &&
+                !string.IsNullOrWhiteSpace(manifest.TerminalRebindReceiptPath),
+            "Money Revenue required terminal rebind evidence is missing.");
         var rebindManifestPath = RequiredFile(
             manifest.TerminalRebindManifestPath,
             "Money Revenue terminal rebind manifest");
@@ -60,10 +75,6 @@ public static partial class MoneyRevenueConcreteAlternativeDenominatorBuilder
                     alternatives.CatalogSha256,
             "Money Revenue terminal rebind does not bind the selected alternative denominator.");
 
-        var sourceCatalog = CurrentTeacherFrontierSupport.Read<
-            MoneyRevenueCandidateDenominatorCatalog>(
-            alternatives.SourceCandidateCatalogPath,
-            "Money Revenue source candidate denominator catalog");
         return BuildCatalog(
             fullManifestPath,
             Hash(fullManifestPath),
@@ -89,21 +100,25 @@ public static partial class MoneyRevenueConcreteAlternativeDenominatorBuilder
             MoneyRevenueCandidateDenominatorCatalog sourceCatalog,
             string rebindManifestPath,
             string rebindManifestSha256,
-            MoneyRevenueTerminalCandidateRebindManifest rebindManifest,
+            MoneyRevenueTerminalCandidateRebindManifest? rebindManifest,
             string rebindReceiptPath,
             string rebindReceiptSha256,
-            MoneyRevenueTerminalCandidateRebindReceipt rebindReceipt)
+            MoneyRevenueTerminalCandidateRebindReceipt? rebindReceipt)
     {
         ValidateInputs(
             skeletonCatalog,
             sourceCatalog,
             rebindManifest,
             rebindReceipt);
+        Require(rebindManifest is not null ||
+                string.IsNullOrEmpty(rebindManifestPath) && string.IsNullOrEmpty(rebindManifestSha256) &&
+                string.IsNullOrEmpty(rebindReceiptPath) && string.IsNullOrEmpty(rebindReceiptSha256),
+            "Money Revenue direct-only denominator contains dangling rebind metadata.");
         var sourceCandidates = SourceCandidates(sourceCatalog);
-        var requests = rebindManifest.Rebinds.ToDictionary(
+        var requests = (rebindManifest?.Rebinds ?? Array.Empty<MoneyRevenueTerminalCandidateRebindRequest>()).ToDictionary(
             row => row.AlternativeId,
             StringComparer.Ordinal);
-        var reboundEvidence = rebindReceipt.Rebinds.ToDictionary(
+        var reboundEvidence = (rebindReceipt?.Rebinds ?? Array.Empty<MoneyRevenueTerminalCandidateRebindEvidence>()).ToDictionary(
             row => row.AlternativeId,
             StringComparer.Ordinal);
         var concrete = new List<MoneyRevenueConcreteAlternative>();

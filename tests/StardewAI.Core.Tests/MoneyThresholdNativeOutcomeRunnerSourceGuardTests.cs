@@ -22,6 +22,8 @@ public sealed class MoneyThresholdNativeOutcomeRunnerSourceGuardTests
         FindRepositoryFile(
             "scripts",
             "Complete-MoneyRevenueComparisonWork.ps1"));
+    private static readonly string ConcreteInitializationSource = File.ReadAllText(
+        FindRepositoryFile("scripts", "lib", "RuntimeMoneyConcreteInitialization.ps1"));
     private static readonly string TerminalProofCollectionSource =
         File.ReadAllText(
             FindRepositoryFile(
@@ -173,11 +175,11 @@ public sealed class MoneyThresholdNativeOutcomeRunnerSourceGuardTests
         Assert.Contains("build-money-revenue-comparison-collection-plan",
             ComparisonPlanSource, StringComparison.Ordinal);
         Assert.Contains("build-money-revenue-terminal-rebind-manifest",
-            ComparisonPlanSource, StringComparison.Ordinal);
+            ConcreteInitializationSource, StringComparison.Ordinal);
         Assert.Contains("build-money-revenue-terminal-candidate-rebind",
-            ComparisonPlanSource, StringComparison.Ordinal);
+            ConcreteInitializationSource, StringComparison.Ordinal);
         Assert.Contains("build-money-revenue-concrete-alternative-denominator",
-            ComparisonPlanSource, StringComparison.Ordinal);
+            ConcreteInitializationSource, StringComparison.Ordinal);
         Assert.Contains("build-money-revenue-counterfactual-proof-requests",
             ComparisonPlanSource, StringComparison.Ordinal);
         Assert.Contains(
@@ -204,6 +206,20 @@ public sealed class MoneyThresholdNativeOutcomeRunnerSourceGuardTests
             StringComparison.Ordinal);
         Assert.DoesNotContain("training/execute", ComparisonPlanSource,
             StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ComparisonInitializerUsesOriginalConsumerWithoutInventingEmptyRebindProof()
+    {
+        Assert.Contains("Initialize-RuntimeMoneyConcreteDenominator", ComparisonPlanSource, StringComparison.Ordinal);
+        Assert.Contains("-FreshRebindAlternativeCount ([int]$plan.fresh_rebind_alternative_count)", ComparisonPlanSource, StringComparison.Ordinal);
+        Assert.Contains("if ($FreshRebindAlternativeCount -gt 0)", ConcreteInitializationSource, StringComparison.Ordinal);
+        Assert.Contains("$rebindManifestPath = ''", ConcreteInitializationSource, StringComparison.Ordinal);
+        Assert.Contains("$rebindReceiptPath = ''", ConcreteInitializationSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("debug.", ConcreteInitializationSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("training/execute", ConcreteInitializationSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("StardewModdingAPI", ConcreteInitializationSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("verified_terminal_candidate_rebind_denominator", ConcreteInitializationSource, StringComparison.Ordinal);
     }
 
     [Fact]
