@@ -93,18 +93,7 @@ public sealed partial class FileStrategyCommitmentRepository : IStrategyCommitme
             var key = IdentityKey(snapshot);
             var current = Load(key, snapshot);
             var updatedAt = DateTimeOffset.UtcNow.ToString("O");
-            var reconciled = service.ReconcileCompleted(
-                current,
-                snapshot,
-                updatedAt);
-            reconciled = machineRelocationService.ReconcileCompleted(
-                reconciled,
-                snapshot,
-                updatedAt);
-            reconciled = machineSupportService.ReconcileCompleted(
-                reconciled,
-                snapshot,
-                updatedAt);
+            var reconciled = StrategyCommitmentReadReconciler.Reconcile(current, snapshot, updatedAt);
             if (reconciled.Revision != current.Revision)
             {
                 Save(key, reconciled);

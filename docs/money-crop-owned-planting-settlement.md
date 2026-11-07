@@ -76,6 +76,10 @@ are detached. This kernel does not itself resend mutations after lost replies.
 
 ## Verification And Next
 
+The existing completion/cancellation release successor is documented in
+[Owned Seed Lifecycle Release](money-crop-seed-lifecycle-release.md). Calendar
+closure is not a substitute for this proof's native effects or terminal evidence.
+
 Focused tests use the accepted original transfer fixture, actual compiler,
 native-format queue receipts and original file repository. Synthetic protocol
 evidence is not new gameplay evidence. The37 new cases passed in the complete

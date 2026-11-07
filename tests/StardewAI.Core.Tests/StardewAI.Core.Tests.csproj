@@ -84,6 +84,7 @@
     <Compile Include="CandidateOptionAvailabilityEvaluatorTests.Recovery.cs" />
     <Compile Include="SnapshotStateCacheTests.cs" />
     <Compile Include="StrategyCommitmentLedgerTests.cs" />
+    <Compile Include="StrategyCommitmentLedgerTests.ReadReconciler.cs" />
     <Compile Include="SequentialPlanProjectionTests.cs" />
     <Compile Include="ActionQueueCompilerTests.SnapshotStateCache.cs" />
     <Compile Include="ActionQueueCompilerShopSafetyWaitTests.cs" />
