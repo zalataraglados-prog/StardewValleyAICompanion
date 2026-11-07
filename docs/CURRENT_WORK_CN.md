@@ -1,11 +1,12 @@
 # StardewAI 当前工作
 
-## 2026-11-07 R2原子资源预留（当前唯一接续）
+## 2026-11-07 R2运行账本接线（当前唯一接续）
 
-- #503最终42步CI通过并合入`65bf8cc9`，自有分支核树后清理。原Teacher已先扣现存活动预留再选规模；E同源6/6、875g和原失败保留，不重跑13日周期。
-- 新类型化资源凭证独立重建原v2 Teacher/作物承诺回执，仅将当前种子现货及精确采购资金交原ReservationPortfolioLedgerService一次提交；导出账本经完整凭证重建后可被原生产义务builder读取。不虚构未来种子、不覆盖/释放其他root、不新增账本或执行器。[合同、CLI与接续](money-crop-resource-reservation.md)。
-- 提取原`1f0b5e4b`种子分配段供新旧入口共用；旧入口仍要求完整种子分母、旧ID/排序/精确上下文，未加宽松模式。51项专项（14新）、完整Core2442及原完整hermetic通过，零跳过；真实来源资源Build/Verify同SHA`830a118a...`，预留400g、仍缺5种子；原E种子证明逐字节同SHA`e128dc0a...`。三CLI覆盖探针均拒绝、原来源/检查点/失败未变。最终CI见收口；无游戏重采。
-- **唯一下一步：** 本片是规划账本的原子重放，不是运行中安装或采购结算。发布后先接原安装/commit边界及supporting-transition结算：路线保持/重绑claims，单件购买精确扣款并接真实种子槽位托管，买齐后不重复预留已有种子；箱中现货复用原转移/relocation链。新输入路径显式版本化/启用，不反改旧initializer或完整分母门。随后复用原DailyPlanCompiler聚合预算接联合日历、连续性/所选来源，再Provider/模型定型和正式manifest/preflight。L1`19/19、11/11`冻结，formal=false；Student新档21/21在训练后，无worker/API/服务器/清理，local-data不提交。下方旧接续仅供历史追溯。
+- #504最终42步CI通过并合入`affcc989`，已核树/清自有分支。所选种子/采购现金的原子规划重放已接受，原E6/6、875g与原失败保留，不重跑13日周期。
+- 运行handoff原先未传基础账本，现一次读取原后端完整账本并以不可变路径/SHA送入原Teacher/dispatch。捐赠保留原触发门/格式，只共用原证据存取段；Core game-free不加LiveLoop依赖，提取共用测试夹具供原Core及Backend测试使用。[合同与接续](money-crop-resource-reservation.md)。
+- 旧SourceHash不直接改写：先用原身份/材料/货币校验验证当前全部预留，再经原零claim marker commit推进一版，由原commit证据验证器按真实RecordedAt独立重放整个结果。现存claim不变；已匹配源不发mutation，活动作物继续原完整承诺/布局。共用原journal/lookup，丢回包只查原请求、不重发；旧settlement的操作/日志键不变。
+- 20项新Backend检查、完整Core2442/Backend649、原完整hermetic及旧恢复脚本19项均通过，零跳过；含真实文件仓库提交/重载/回包查找、完整账本到原dispatch、三类结果篡改和旧settlement正常/丢回包。运行程序Release构建零警告/错误；HTTP丢包为脚本夹具，不当原生游戏证据，最终CI见收口。无新增全量快照，入口只在规划handoff触发。
+- **唯一下一步：** 现有账本锚点接线不是#504新计划claims已安装。发布后接原crop-upsert及资源portfolio的真实安装/回包核对，再接supporting-transition中性路线重绑、单件采购扣款和真实种子槽位托管；不要覆盖旧initializer/源门，买齐后不重复预留，箱中现货复用原转移/relocation。然后原DailyPlanCompiler聚合预算/联合日历、连续性/所选来源、Provider/模型与正式manifest/preflight。L1`19/19、11/11`冻结，formal=false；Student新档21/21在训练后，无worker/API/游戏/服务器/清理，local-data不提交。下方旧接续仅供历史追溯。
 
 ## 2026-11-07 已核实审计问题499/500（当前唯一接续）
 

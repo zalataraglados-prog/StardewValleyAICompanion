@@ -1,6 +1,9 @@
 using System.Text.Json;
 using StardewAI.Contracts.Strategy;
 
+using Fixture = StardewAI.Testing.MoneyCropTeacherFixture;
+using static StardewAI.Testing.MoneyCropTestReservations;
+
 namespace StardewAI.Core.Tests;
 
 public sealed partial class MoneyCropTeacherSupplyTests
@@ -157,21 +160,4 @@ public sealed partial class MoneyCropTeacherSupplyTests
             Assert.Throws<InvalidDataException>(() => fixture.Build()).Message);
     }
 
-    private static CurrencyReservation MoneyReservation(StrategyCommitmentLedger ledger, int amount) => new()
-    {
-        ReservationId = "house-upgrade-budget", Revision = 1,
-        SourceDecisionId = "house-upgrade", SourceStateHash = ledger.SourceStateHash,
-        GoalId = "marriage_and_house_upgrade", OwnerPlayerId = long.Parse(ledger.PlayerId),
-        CurrencyId = NativeShopCurrencies.Money, CurrencyKey = "money", Amount = amount,
-        Purpose = "preserve another root's construction budget"
-    };
-
-    private static MaterialReservation SeedReservation(StrategyCommitmentLedger ledger, int quantity) => new()
-    {
-        ReservationId = "collection-seed-budget", Revision = 1,
-        SourceDecisionId = "collection-supply", SourceStateHash = ledger.SourceStateHash,
-        GoalId = "complete_full_shipment", OwnerPlayerId = long.Parse(ledger.PlayerId),
-        NodeId = "player:inventory", SlotIndex = 0, QualifiedItemId = "(O)474", Quantity = quantity,
-        Purpose = "preserve another root's exact material allocation"
-    };
 }
