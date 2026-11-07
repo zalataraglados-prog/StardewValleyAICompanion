@@ -1,5 +1,7 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+> **2026-11-07 当前唯一接续：** #507经42步CI合入`f85bbfcc`并核树/清自有分支。逐步采购账务核心现共用原生回执验证器与原服务：step marker、实际扣款、本承诺重绑、真实新增槽位claim及买齐余款释放；完整结果重放，其他root不动，不扩大Museum-only合同。已验上下文只算一次，28项新协议检查通过，恢复只核预期SHA及原生重建/只读旧proof；它不是自动运行/新原生证据。下一步接原编译/队列和journal/lookup，再原prepared-transfer/种植消费/生命周期释放，齐后显式启用managed入口小样本。其后仍联合日历/聚合预算/连续性、Provider/模型及正式manifest/preflight；L1`19/19、11/11`冻结，formal=false，Student新档21/21在训练后。[具体合同与接续](money-crop-seed-purchase-settlement.md)。完整回归/最终CI见本片收口，下方为历史。
+
 > **2026-11-07 当前唯一接续：** #506已42步CI/审查接受合入`565f3a0c`。原作物计划的显式所有权输入已接，默认路径/旧JSON不改：种子按本承诺预留算，现金按本承诺采购预算算，箱中已有种子先取不重复买；只投影相关域且非逐帧。下一步每步独立marker→原编译/原生回执→supporting-transition逐件扣款/同owner重绑→真实新增种子槽位预留或prepared-transfer结算，再启用版本化managed入口。不能改原初始portfolio/旧服务身份门来迁就新模块，其他owner及Museum-only合同不扩大。当前保护继续、步骤非已原生执行；随后联合日历/共享预算/连续性、Provider/模型及manifest/preflight。L1`19/19、11/11`冻结，formal=false；Student新档21/21在训练后，最终回归/CI见收口。[所有权输入与具体后继](money-crop-owned-seed-supply.md)。下方接续为历史。
 
 > **2026-11-07 当前唯一接续：** #505已CI/审查接受合入`4405fffb`，既有账本源绑定不重做。新增显式运行安装入口复用原Teacher和两类原mutation，真实时间独立重放/持久读回，丢回包仅精确读回或原lookup，不重发。原PR504规划回执不晋升；安装不执行游戏或训练，自动dispatch在专属预留采购/托管接齐前不启用。下一步原supporting-transition预算所有权、路线重绑、单件扣款、真实种子槽位及箱中转移，再联合日历/聚合预算/跨根连续性与所属来源。然后Provider/模型、正式manifest/preflight；L1`19/19、11/11`冻结，formal=false，Student新档21/21在训练后。测试/发布以本片收口为准。[当前入口与边界](money-crop-runtime-installation.md)。下方旧接续只供追溯。

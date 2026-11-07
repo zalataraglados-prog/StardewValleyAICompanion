@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-11-07 R2逐步采购结算核心（当前唯一接续）
+
+- #507经42步CI `42372731074`接受，合入`f85bbfcc`且测试/main树一致，自有分支已清；所有权计划输入已接受，不重做L1/E来源。
+- 新增机械结算上下文：绑定原run request/当前源/完整账本/本承诺，以独立step ID经原服务建marker；原采购/续接/逐步原生持久边界验证器共用，不改旧整链短缺门或执行器。新proof只create-new并落盘flush，后续核原始artifact哈希。
+- 原supporting-transition只扣实际成交价、重绑本承诺存续claims，其他root不重标；完整结果按实际时间独立重放后才验after供给。保留一次已验结算上下文，新增种子只按真实槽位delta补本目标缺额；同槽原claim原服务增量upsert，不重复预留已有种子/占用其他root。买齐用原portfolio释放余款，整包多余量保持未预留；Museum-only合同不扩用。[合同与接续](money-crop-seed-purchase-settlement.md)。
+- 新28项协议检查通过，包括连续购买、共享槽/新槽、整包余量、三次mutation的其他root篡改拒绝、中性等待/真实位置切换和输入不可变/输出不覆盖；中断恢复须预期SHA及原生精确重建相符，只读留存proof、不重发。Core2442、原完整hermetic通过，留存E完整获取证明逐字节相同。最终Backend仅旧导出夹具要求新目录一次拒绝，换独立导出目标仅重跑受影响两模式加新28项，30/30通过；未改产品逻辑，失败保留，最终干净CI见收口。夹具非新原生游戏证据。
+- **唯一下一步：** 将此核心接原plan/compiler/native queue及原journal/lookup API，持久回包/读回；然后原prepared-transfer/箱槽压缩、已有种植消费端的所有权消费和完成/取消释放。接齐后才显式版本化启用managed入口、小样本原生验收；当前自动dispatch活动资源保护不删除。之后仍联合日历/聚合预算/连续性，再Provider/模型与正式manifest/preflight。L1`19/19、11/11`、formal=false冻结，Student新档21/21在训练后。无worker/API/游戏/服务器/清理，local-data不提交；下方为历史。
+
 ## 2026-11-07 R2原计划的种子所有权输入（当前唯一接续）
 
 - #506经42步CI `42369036098`和审查接受，合入`565f3a0c`，核树/清自有分支完成。运行安装入口已接受，不重写原规划回执或重采E/L1。

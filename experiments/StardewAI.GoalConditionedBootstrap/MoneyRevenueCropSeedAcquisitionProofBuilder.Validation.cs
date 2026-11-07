@@ -180,36 +180,8 @@ public static partial class MoneyRevenueCropSeedAcquisitionProofBuilder
                     index);
             }
 
-            proofs.Add(new MoneyRevenueCropSeedAcquisitionTransitionProof(
-                index,
-                stage,
-                transition.QueuePath,
-                Hash(transition.QueuePath),
-                transition.BeforePath,
-                Hash(transition.BeforePath),
-                transition.ReceiptPath,
-                Hash(transition.ReceiptPath),
-                transition.AfterPath,
-                Hash(transition.AfterPath),
-                transition.Queue.QueueId,
-                transition.Before.StateHash,
-                transition.After.StateHash,
-                transition.Before.GameTick,
-                transition.After.GameTick,
-                optionIds,
-                binding.ShopId,
-                binding.StockId,
-                binding.OutputStack,
-                binding.OutputQuality,
-                binding.MaxUnitPrice,
-                expectedUnitPrice,
-                beforeQuantity,
-                afterQuantity,
-                afterQuantity - beforeQuantity,
-                beforeMoney,
-                afterMoney,
-                beforeMoney - afterMoney,
-                true));
+            proofs.Add(TransitionProof(transition, binding, optionIds, index, stage,
+                expectedUnitPrice, beforeQuantity, afterQuantity, beforeMoney, afterMoney));
         }
 
         var initialQuantity = ReadSeedQuantity(
