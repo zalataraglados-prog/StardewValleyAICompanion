@@ -122,5 +122,6 @@ internal static partial class BootstrapSelfTest
         Reject(() => MoneyThresholdShopReplayCorpusCommands.Write(Arguments.Parse(new[] { "--output", source }),
             (_, _) => throw new Exception("Output guard did not run first."), false), "Replay corpus overwrote its own source.");
         Console.WriteLine($"PASS: explicit replay corpus join, original v4 wire/verification, criterion/partition identity and {checks} rejection checks.");
+        VerifyMoneyLocalDependencyView(row);
     }
 }

@@ -113,6 +113,8 @@ var commandDefinitions = new CommandDefinition[]
     new("build-money-threshold-teacher-corpus", BuildMoneyThresholdTeacherCorpus),
     new("build-money-threshold-replay-corpus", options => MoneyThresholdShopReplayCorpusCommands.Write(options, Write, verify: false)),
     new("verify-money-threshold-teacher-corpus", options => MoneyThresholdShopReplayCorpusCommands.Write(options, Write, verify: true)),
+    new("build-money-local-dependency-view", options => MoneyLocalDependencyViewCommands.Write(options, Write, verify: false)),
+    new("verify-money-local-dependency-view", options => MoneyLocalDependencyViewCommands.Write(options, Write, verify: true)),
     new("build-money-threshold-coverage-request", BuildMoneyThresholdCoverageRequest),
     new("build-money-threshold-evidence-work-plan", BuildMoneyThresholdEvidenceWorkPlan),
     new("build-money-threshold-native-outcome-selection", BuildMoneyThresholdNativeOutcomeSelection),

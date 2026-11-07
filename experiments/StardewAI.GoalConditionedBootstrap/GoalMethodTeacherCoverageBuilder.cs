@@ -304,7 +304,8 @@ public static partial class GoalMethodTeacherCoverageBuilder
                     source,
                     fullPath,
                     frontier,
-                    criterionEvidence),
+                    criterionEvidence,
+                    dependencyExpansionPath),
             _ => throw new InvalidDataException(
                 "Unsupported goal-method Teacher coverage source kind: " +
                 source.SourceKind)
