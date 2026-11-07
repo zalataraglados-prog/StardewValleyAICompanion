@@ -1,6 +1,33 @@
 # Current Production Snapshot Handoff
 
-## R2 Atomic Resource Reservation (Current)
+## Existing Ledger At Live Crop Handoff (Current)
+
+PR504 passed all42 final CI steps and merged asaffcc989, with matching tested/main
+trees and owned refs removed. Its resource reservation replay remains accepted.
+The live crop handoff now reads the complete existing backend ledger once, anchors
+stale source only through the original validators/marker commit/exact verifier,
+then passes the immutable path/SHA into the original Teacher and dispatch. Current
+source needs no mutation. Active crops retain the original complete-continuation
+requirement. Claims are not released, consumed or relabeled by source anchoring.
+
+The original durable journal/lookup serves both commit and old settlement; lost
+reply never resends a mutation. Donation keeps its exact gate/format. Shared test
+fixtures avoid duplicate suites and keep Core's game-free dependency boundary.
+20 new Backend checks pass, including actual file-repository persistence/reload/
+lookup, scripted HTTP loss, original dispatch consumption and legacy settlement.
+All2442 Core/649 Backend, original complete hermetic and19 original PowerShell
+transport checks pass, zero skipped unit tests. Final CI is recorded at PR
+closeout. No game or extra native
+snapshot; this runs only at the existing strategic handoff.
+
+Next remains installation of the newly selected crop/resource claims through the
+original endpoints and strong reply checks, then neutral-route/support settlement,
+one-unit cash consumption and actual seed custody/transfer without double reserve.
+This slice does not flip PR504 runtime_ledger_installed or authorize formal training.
+Then joint daily budget/calendar, source continuity, Provider/model selection and
+formal manifest/preflight. L1 stays19/19,11/11;formal=false; no raw/local-data commit.
+
+## R2 Atomic Resource Reservation (Accepted PR504)
 
 PR503 passed all42 final CI steps and merged as65bf8cc9; tested/main trees matched
 and owned refs were removed. Its selection-time shared-budget fix is accepted.

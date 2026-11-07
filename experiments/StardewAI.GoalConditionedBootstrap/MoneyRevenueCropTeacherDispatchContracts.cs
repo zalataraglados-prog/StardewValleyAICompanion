@@ -69,6 +69,14 @@ public sealed class PlanningHandoffLayoutSnapshotBinding
 
 public sealed class MoneyRevenueCropTeacherDispatchManifest
 {
+    [JsonPropertyName("base_strategy_ledger_path")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? BaseStrategyLedgerPath { get; set; }
+
+    [JsonPropertyName("base_strategy_ledger_sha256")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? BaseStrategyLedgerSha256 { get; set; }
+
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
         "money_revenue_crop_teacher_dispatch_manifest.v1";

@@ -2,6 +2,8 @@ using System.Text.Json;
 using StardewAI.Contracts.Strategy;
 using StardewAI.Core.Strategy;
 using StardewAI.GoalConditionedBootstrap;
+using Fixture = StardewAI.Testing.MoneyCropTeacherFixture;
+using static StardewAI.Testing.MoneyCropTestReservations;
 
 namespace StardewAI.Core.Tests;
 
