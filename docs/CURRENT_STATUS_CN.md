@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-07 R2原采购控制往返（当前唯一接续）：** #508经42步CI/同head审查合入`c96f59e2`并核树/清自有分支。可选scope已接同一原编译/队列/原生回执及journal/lookup；marker重放/读回后才编译，固定采购隔离全局Teacher，三次变更各存诊断并完整核回包/最终账本，丢回包不重发。新同日时钟比较不改旧身份规范化或真实源哈希，其他状态全比较，未结算资源变化不可冒充重捕获。Backend767本地通过，最终优化/CI见收口。自动handoff仍不构造scope，不提前开训练；下一步原prepared-transfer/种植所有权消费/生命周期释放，再唯一激活/恢复所有者及managed原生小样本。随后联合日历/聚合预算/连续性、Provider/模型、manifest/preflight；L1`19/19、11/11`、formal=false冻结，Student新档21/21在训练后。[具体接续](money-crop-seed-runtime-transaction.md)。下方为历史。
+
 > **2026-11-07 R2采购结算核心（当前唯一接续）：** #507已42步CI接受合入`f85bbfcc`并核树/清自有分支。新增逐步marker/原生凭据/实际扣款/新增种子所有权核心，复用原服务和原采购验证器；旧整链/执行器不改，其他root不重标，买齐原portfolio释放余款，单次已验上下文避免反复深验。28项协议检查通过，恢复仅核预期SHA/原生重建并只读留存proof，不是新游戏证据或已启用自动运行。下一步接原编译/队列及journal/lookup API，再prepared-transfer、种植消费/生命周期释放，完成后显式启用managed原生小样本。随后联合日历/聚合预算/连续性、Provider/模型、manifest/preflight；L1`19/19、11/11`和formal=false冻结，Student新档21/21在训练后。[合同与精确后继](money-crop-seed-purchase-settlement.md)。最终回归/发布见收口，下方接续为历史。
 
 > **2026-11-07 R2种子所有权输入（当前唯一接续）：** #506经42步CI/审查合入`565f3a0c`并核树/清自有分支。原计划主体新增显式账本输入：本承诺的预留种子/现金不与别的root或同种子别的承诺混用，箱中现货先路线/转移intent，原默认/JSON及13项旧回归保留。按需只投影材料/玩家域，无新快照；这不是已原生采购/转移，自动dispatch活动资源保护仍在。下一步每步独立marker、原编译/回执、原supporting-transition扣款和owner重绑、真实新增种子预留及prepared-transfer结算，不改旧服务/初始资源身份或扩用Museum-only合同。之后日历/聚合预算/连续性、Provider/模型和正式manifest/preflight。回归/发布以本片收口为准；L1`19/19、11/11`、formal=false冻结，Student新档21/21在训练后。[合同](money-crop-owned-seed-supply.md)。下方旧接续为历史。

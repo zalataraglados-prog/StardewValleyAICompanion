@@ -26,12 +26,22 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         public string LedgerPath => Path.Combine(root, "ledger.json");
         public string RequestPath => Path.Combine(root, "run-request.json");
         public string ProofPath => Path.Combine(root, "proof-" + sequence + ".json");
+        public string RuntimePath => Path.Combine(root, "runtime");
+        public string RepositoryPath => Path.Combine(root, "repository");
+        public string? PriorSourcePath { get; private set; }
+        public CropPlantingCommitmentUpsertRequest CropRequest { get; }
+        public ReservationPortfolioCommitRequest OtherRequest { get; }
+        public ReservationPortfolioCommitRequest OwnRequest { get; }
 
         public Fixture(int tiles = 2, int budget = 80, int ownedSeeds = 1)
         {
             Directory.CreateDirectory(root);
             Before = MoneyCropTeacherFixture.CreateSnapshot("SeedAcquisitionRuntimeBoundary",
                 MoneyCropTeacherFixture.CreateSnapshot("MoneyCropProductionSnapshot"));
+            var clock = JsonNode.Parse(Before.State["time"].GetRawText())!;
+            clock["time"] = JsonSerializer.SerializeToNode(new { status = "available", confidence = 1d, value = 600 }, JsonOptions);
+            Before.State["time"] = JsonSerializer.SerializeToElement(clock, JsonOptions);
+            Before.InGameTime = new FieldEnvelope<int?> { Status = FieldStatus.Available, Value = 600 };
             var player = JsonNode.Parse(Before.State["player"].GetRawText())!;
             player["money"]!["value"] = 350 + budget;
             player["shop_currency_balances"] = JsonSerializer.SerializeToNode(new
@@ -58,30 +68,33 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             farm["crops"] = JsonSerializer.SerializeToNode(new { status = "available", confidence = 1d, value = Array.Empty<object>() }, JsonOptions);
             Before.State["farm"] = JsonSerializer.SerializeToElement(farm, JsonOptions);
             Before.StateHash = SnapshotHash.ComputeStateHash(Before.State);
-            var crop = new CropCommitmentLedgerService().Upsert(null, Before, new CropPlantingCommitmentUpsertRequest
+            CropRequest = new CropPlantingCommitmentUpsertRequest
             {
                 StateHash = Before.StateHash, CommitmentId = Id, SourceDecisionId = "teacher.crop.owner", SeedId = "745",
                 TileCount = tiles, PlantingYear = 2, PlantingSeason = "spring", PlantingDayOfMonth = 1
-            }, RecordedAt);
+            };
+            var crop = new CropCommitmentLedgerService().Upsert(null, Before, CropRequest, RecordedAt);
             Assert.True(crop.Accepted, string.Join(",", crop.Errors));
             Ledger = crop.Ledger!;
-            var other = new ReservationPortfolioLedgerService().Commit(Ledger, Before, new ReservationPortfolioCommitRequest
+            OtherRequest = new ReservationPortfolioCommitRequest
             {
                 StateHash = Before.StateHash, ExpectedLedgerRevision = Ledger.Revision,
                 PortfolioId = "other-resources", SourceDecisionId = "other-root", GoalId = "complete_full_shipment",
                 MaterialClaims = new[] { SeedClaim("other-seeds", "other-root", "complete_full_shipment", "other supply", 2) },
                 CurrencyClaims = new[] { CashClaim("other-money", "other-root", "complete_full_shipment", "other funds", 350) }
-            }, RecordedAt);
+            };
+            var other = new ReservationPortfolioLedgerService().Commit(Ledger, Before, OtherRequest, RecordedAt);
             Assert.True(other.Accepted, string.Join(",", other.Errors));
             Ledger = other.Ledger!;
-            var own = new ReservationPortfolioLedgerService().Commit(Ledger, Before, new ReservationPortfolioCommitRequest
+            OwnRequest = new ReservationPortfolioCommitRequest
             {
                 StateHash = Before.StateHash, ExpectedLedgerRevision = Ledger.Revision,
                 PortfolioId = "initial-crop-resources", SourceDecisionId = "teacher.crop.owner", GoalId = "earn_money",
                 MaterialClaims = ownedSeeds > 0 ? new[] { SeedClaim("owned-seed", "teacher.crop.owner", "earn_money",
                     "crop_seed_supply:" + Id, ownedSeeds) } : Array.Empty<MaterialReservationUpsertRequest>(),
                 CurrencyClaims = new[] { CashClaim(Id + ":seed-purchase:money", "teacher.crop.owner", "earn_money", "crop_seed_purchase:" + Id, budget) }
-            }, RecordedAt);
+            };
+            var own = new ReservationPortfolioLedgerService().Commit(Ledger, Before, OwnRequest, RecordedAt);
             Assert.True(own.Accepted, string.Join(",", own.Errors));
             Ledger = own.Ledger!;
             Save(SourcePath, Before);
@@ -108,7 +121,15 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         };
 
         public CropTeacherSeedPurchaseSupport Open(string step = "support.step.1") =>
-            CropTeacherSeedPurchaseSupport.Open(RequestPath, SourcePath, LedgerPath, Id, step);
+            CropTeacherSeedPurchaseSupport.Open(RequestPath, SourcePath, LedgerPath, Id, step, PriorSourcePath);
+
+        public void Recapture(SnapshotEnvelope observed)
+        {
+            PriorSourcePath = Path.Combine(root, "prior-source.json");
+            Save(PriorSourcePath, Before);
+            Before = observed;
+            Save(SourcePath, Before);
+        }
 
         public ReservationPortfolioCommitResult Mark(CropTeacherSeedPurchaseSupport support) =>
             new ReservationPortfolioLedgerService().Commit(Ledger, Before, support.MarkerRequest, RecordedAt);
@@ -145,8 +166,13 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
 
         public void Dispose()
         {
-            foreach (var path in Directory.EnumerateFiles(root)) File.Delete(path);
-            Directory.Delete(root);
+            foreach (var directory in new[] { Path.Combine(RuntimePath, "live-snapshots"),
+                         Path.Combine(RuntimePath, "teacher-ledgers"), RuntimePath, RepositoryPath, root })
+            {
+                if (!Directory.Exists(directory)) continue;
+                foreach (var path in Directory.EnumerateFiles(directory)) File.Delete(path);
+                Directory.Delete(directory);
+            }
         }
     }
 }

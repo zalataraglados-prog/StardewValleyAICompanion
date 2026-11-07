@@ -1,5 +1,25 @@
 # Current Production Snapshot Handoff
 
+## Original Seed Control Transaction (Current)
+
+PR508 passed42 steps in42377567925 and same-head review, merged asc96f59e2 with
+identical tested/main trees and removed owned refs. The optional original seed
+control path now brackets original compilation/execution with marker verification,
+original journaled settlement/acquisition and full ledger readback. Default
+behavior and the automatic active-claim barrier are unchanged. No second executor.
+
+Runtime recapture needs its exact prior verified source and all claims; original
+identity projection is retained, with only conservative same-day clock comparison
+in the new adapter. Other state is still compared, native debit cannot be washed
+away, and only real marker/replay advances the ledger. See the
+[current contract and exact successor](money-crop-seed-runtime-transaction.md).
+
+Next reuse prepared-transfer/chest compaction, owned planting/lifecycle release,
+then the unique managed activation/recover-only owner before native boundary
+sampling. Automatic handoff still does not create scopes. Local Backend767 passes;
+final optimized regression/CI in closeout. Synthetic receipts are not new gameplay.
+L1 stays19/19,11/11;formal=false. No raw/local-data/generated files are committed.
+
 ## Owned Seed Purchase Accounting (Current)
 
 PR507 passed42 CI steps in42372731074 and merged asf85bbfcc with identical tested/main
