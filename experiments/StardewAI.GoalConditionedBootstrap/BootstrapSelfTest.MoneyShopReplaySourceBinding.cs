@@ -31,6 +31,15 @@ internal static partial class BootstrapSelfTest
             Require(rejected, reason);
             checks++;
         }
+        var localEpisodePath = Path.Combine(root, "own-native-episode.json");
+        var localRecurrence = JsonSerializer.SerializeToElement(new { transitions = new[] {
+            new { proof_kind = MoneyRevenueRecurrenceProofKinds.NativeShopSale, shop_sale_episode_path = localEpisodePath } } });
+        MoneyShopReplaySourceBindingBuilder.VerifyLocalRecurrence(localRecurrence, localEpisodePath);
+        var futureRecurrence = JsonSerializer.SerializeToElement(new { transitions = new[] {
+            new { proof_kind = MoneyRevenueRecurrenceProofKinds.NativeShopSale, shop_sale_episode_path = localEpisodePath },
+            new { proof_kind = MoneyRevenueRecurrenceProofKinds.NativeShopSale, shop_sale_episode_path = Path.Combine(root, "future-episode.json") } } });
+        Reject(() => MoneyShopReplaySourceBindingBuilder.VerifyLocalRecurrence(futureRecurrence, localEpisodePath), "Local shop-source binding authorized a future recurrence outside its scope.");
+        Reject(() => MoneyShopReplaySourceBindingBuilder.VerifyLocalRecurrence(localRecurrence, Path.Combine(root, "other-episode.json")), "Local source binding authorized an unrelated native episode.");
         foreach (var mutation in new[] { "unknown", "revision", "history", "reservation", "source", "actor", "missing", "schema" })
         {
             var node = JsonNode.Parse(File.ReadAllText(ledgerPath))!.AsObject();
@@ -78,6 +87,26 @@ internal static partial class BootstrapSelfTest
         Write(requestManifest, new MoneyRevenueCounterfactualProofRequestManifest { ConcreteAlternativeCatalogPath = concretePath, SourceStrategyLedgerPath = ledgerPath });
         var catalog = MoneyRevenueCounterfactualProofRequestBuilder.Build(requestManifest);
         var inputs = MoneyThresholdNativeOutcomeSelectionBuilder.LoadInputs(Path.Combine(root, "candidate-catalog.json"));
+        MoneyShopReplaySourceBindingBuilder.VerifyCandidateLineage(catalog, inputs.CandidateDenominatorPath);
+        var otherDependencies = JsonNode.Parse(File.ReadAllText(Path.Combine(root, "dependencies.json")))!.AsObject();
+        var direction = otherDependencies["directions"]![0]!;
+        foreach (var node in direction["nodes"]!.AsArray().OfType<JsonObject>())
+            if (node["id"]?.GetValue<string>() == "sale") node["id"] = "other-sale";
+        foreach (var edge in direction["edges"]!.AsArray().OfType<JsonObject>())
+            if (edge["from"]?.GetValue<string>() == "sale") edge["from"] = "other-sale";
+        var otherDependencyPath = Path.Combine(root, "other-dependencies.json");
+        Write(otherDependencyPath, otherDependencies);
+        var otherCandidatePath = Path.Combine(root, "other-candidates.json");
+        var otherCandidates = MoneyRevenueCandidateDenominatorBuilder.Build(Path.Combine(root, "source.json"), otherDependencyPath);
+        Write(otherCandidatePath, otherCandidates);
+        var otherInputs = MoneyThresholdNativeOutcomeSelectionBuilder.LoadInputs(otherCandidatePath);
+        Require(otherInputs.Snapshot.StateHash == inputs.Snapshot.StateHash && otherInputs.Catalog.CurrentComparisonDenominatorReady &&
+            otherInputs.Catalog.ComparisonCandidateCount == 2 && !EqualJson(inputs.Catalog.Nodes, otherInputs.Catalog.Nodes),
+            "Foreign-lineage fixture is not a valid same-snapshot catalog with different nodes.");
+        Reject(() => MoneyShopReplaySourceBindingBuilder.VerifyCandidateLineage(catalog, otherCandidatePath), "Replay substituted another valid same-snapshot dependency/candidate lineage.");
+        var aliasPath = Path.Combine(root, "candidate-copy.json");
+        File.Copy(inputs.CandidateDenominatorPath, aliasPath);
+        Reject(() => MoneyShopReplaySourceBindingBuilder.VerifyCandidateLineage(catalog, aliasPath), "Replay substituted an unbound catalog path with identical bytes.");
         var mapping = MoneyShopReplaySourceBindingBuilder.BindDenominator(catalog, catalog, inputs, inputs);
         Require(mapping.Length == 2 && mapping.Select(row => row.ReplayRequestId).Distinct(StringComparer.Ordinal).Count() == 2,
             "Complete original direct denominator did not map bijectively.");

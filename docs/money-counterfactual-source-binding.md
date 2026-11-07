@@ -64,6 +64,10 @@ direct ordinary shop sales, isolated initial research ledgers only**. This is
 not a restorable global world fork or a production-ledger migration. Each side
 independently rebuilds its full original candidate/concrete/request lineage;
 every original node and candidate, including rejected rows, must agree exactly.
+The supplied candidate file is also bound by exact path and file digest to the
+already rebuilt concrete -> alternative -> source-candidate chain. Merely
+sharing a snapshot is not enough: a valid catalog with a different dependency
+expansion or an unbound byte-identical copy cannot replace that lineage.
 All direct requests map bijectively, retaining actual request IDs and digests.
 The target replay request must have its own native proof. The reference source
 must have an independently verified own-source native witness; that witness
@@ -80,6 +84,9 @@ ledger source hash are excluded from resource-identity equality. The only
 allowed persistent differences are run ID and isolation root, each separately
 bound to its own raw request. Other unknown persistent differences still reject.
 Original shared projectors, read caches and exact-frame proof gates do not change.
+The bound recurrence must be exactly the witnessed immediate native shop sale;
+later multi-action/day recurrences require their own wider source contract.
+The original multi-transition revenue verifier is not restricted or replaced.
 
 The receipt preserves both source hashes, full candidate/request mapping,
 separate native evidence and file digests. `source_replay_binding_verified` is
@@ -92,11 +99,11 @@ and criterion-partition join. Final verification/CI results are recorded at
 slice closeout; local raw/caller artifacts remain outside Git.
 
 Explicit-E final build has zero warnings/errors. The original full hermetic
-suite and25 new boundary rejection checks pass. Actual G/H public Build/Verify
+suite and29 new boundary rejection checks pass. Actual G/H public Build/Verify
 rebuilds retain all11 candidates and2 mapped requests, byte-identical file SHA
 `c9acb7f54dd9d485e3cb9824ea25d27843c2f97cc3e493471c30029322f73437`.
-Four forged receipt variants and six wrong-source/authorization/setup/producer
-manifests reject. Final-code replay is identical and original sources/G's1/2
+Four forged receipt variants and seven wrong-source/authorization/setup/producer/
+candidate-lineage manifests reject. Final-code replay is identical and original sources/G's1/2
 checkpoint are unchanged. Full CI is recorded separately at exact-head closeout;
 these are not new Money coverage units or a formal-training result.
 
@@ -107,6 +114,9 @@ their hashes. The original comparer returns one preference from the complete
 two-request denominator for each of the six authoritative thresholds. This
 confirms the intended consumer can reuse existing logic; it is not yet a
 versioned production comparison/corpus admission or a coverage promotion.
+The versioned consumer should reuse one verified source group across all six
+thresholds, rather than repeating native collection or full source verification
+once per criterion.
 
 ## Ordered Continuation
 

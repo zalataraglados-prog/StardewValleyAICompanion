@@ -60,6 +60,7 @@ public static partial class MoneyShopReplaySourceBindingBuilder
         var catalog = MoneyRevenueCounterfactualProofRequestBuilder.Build(source.RequestManifestPath);
         var requests = catalog.Requests.Where(row => row.RequestId == requestId).ToArray();
         Require(requests.Length == 1, "Money replay needs an exact original request ID.");
+        VerifyCandidateLineage(catalog, source.CandidateCatalogPath);
         var inputs = MoneyThresholdNativeOutcomeSelectionBuilder.LoadInputs(source.CandidateCatalogPath);
         Require(inputs.Snapshot.StateHash == catalog.SourceStateHash && inputs.Catalog.SnapshotSha256 == catalog.SourceSnapshotSha256,
             "Money replay request and original candidate catalog have different sources.");
@@ -68,6 +69,7 @@ public static partial class MoneyShopReplaySourceBindingBuilder
         Require(witnesses.Length == 1 && IsDirect(witnesses[0]) && (proof.RouteTransitions?.Length ?? 0) == 0,
             "Money replay native witness is not an own-source direct request.");
         var evidence = MoneyRevenueTerminalExecutionProofBuilder.VerifyAlternative(witnesses[0], proof);
+        VerifyLocalRecurrence(Read<JsonElement>(proof.RevenueRecurrenceManifestPath), proof.ShopSaleEpisodePath);
         var episode = Read<PlanExecutionEpisodeEnvelope>(proof.ShopSaleEpisodePath);
         var native = NativeExecutionActionSourceReader.Read(episode.CompiledQueuePath, episode.ExecutionResultPath, episode.AfterSnapshotPath);
         Require(native.Before.StateHash == catalog.SourceStateHash && evidence.StrategyLedgerExecutionRunId == native.Request.RunId,

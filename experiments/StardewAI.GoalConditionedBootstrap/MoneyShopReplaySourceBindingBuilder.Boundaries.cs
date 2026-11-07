@@ -7,6 +7,25 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public static partial class MoneyShopReplaySourceBindingBuilder
 {
+    internal static void VerifyLocalRecurrence(JsonElement manifest, string episodePath)
+    {
+        var transitions = manifest.GetProperty("transitions");
+        Require(transitions.ValueKind == JsonValueKind.Array && transitions.GetArrayLength() == 1 &&
+            Text(transitions[0], "proof_kind") == MoneyRevenueRecurrenceProofKinds.NativeShopSale &&
+            SamePath(Text(transitions[0], "shop_sale_episode_path"), episodePath),
+            "Money shop replay v1 binds only its single immediate native sale, not an unrelated future recurrence.");
+    }
+
+    internal static void VerifyCandidateLineage(MoneyRevenueCounterfactualProofRequestCatalog rebuilt, string candidatePath)
+    {
+        var concrete = Read<MoneyRevenueConcreteAlternativeDenominatorCatalog>(rebuilt.ConcreteAlternativeCatalogPath);
+        var alternative = Read<MoneyRevenueAlternativeDenominatorCatalog>(concrete.AlternativeDenominatorCatalogPath);
+        Require(Hash(rebuilt.ConcreteAlternativeCatalogPath) == rebuilt.ConcreteAlternativeCatalogFileSha256 &&
+            Hash(concrete.AlternativeDenominatorCatalogPath) == concrete.AlternativeDenominatorFileSha256 &&
+            SamePath(candidatePath, alternative.SourceCandidateCatalogPath) && Hash(candidatePath) == alternative.SourceCandidateCatalogFileSha256,
+            "Money replay candidate catalog is not the exact rebuilt request lineage.");
+    }
+
     internal static void VerifySourceFacts(MoneyCounterfactualSourceAudit audit)
     {
         Require(audit.SameActorAndVersion && audit.SameMoneyCheckpointFacts && audit.SameNativeShopContext &&
