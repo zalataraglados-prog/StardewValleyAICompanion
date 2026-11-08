@@ -21,18 +21,25 @@ public sealed partial class ModEntry
     private void BeginActionOriginOutputCapture(PendingExecution pending)
     {
         var request = pending.Request;
-        if (!Context.IsWorldReady ||
-            !IsActionOriginProducer(request) ||
-            string.IsNullOrWhiteSpace(request.QueueId) ||
-            string.IsNullOrWhiteSpace(request.QueueItemId) ||
-            string.IsNullOrWhiteSpace(request.AcquisitionRouteKind) ||
-            string.IsNullOrWhiteSpace(
-                request.AcquisitionRouteOccurrenceId))
+        var observe = request.ActionOriginObservationScopeId is not null;
+        if (observe) pendingActionOriginCaptures.Add(pending);
+        var retainAcquisitionOutput = IsActionOriginProducer(request) &&
+            !string.IsNullOrWhiteSpace(request.QueueId) && !string.IsNullOrWhiteSpace(request.QueueItemId) &&
+            !string.IsNullOrWhiteSpace(request.AcquisitionRouteKind) && !string.IsNullOrWhiteSpace(request.AcquisitionRouteOccurrenceId);
+        var authorizedObservation = observe && ValidateExecutionRequest(request).Count == 0;
+        if (observe && !authorizedObservation) pending.OutputObservationFailure = "observation_request_not_admitted";
+        if (!Context.IsWorldReady || !authorizedObservation && !retainAcquisitionOutput)
         {
             return;
         }
 
         var location = Game1.currentLocation;
+        if (authorizedObservation && !NativeCollectionObservation.CanCapture(location, Game1.player))
+        {
+            authorizedObservation = false;
+            pending.OutputObservationFailure = "observation_initial_state_limit_exceeded";
+            if (!retainAcquisitionOutput) return;
+        }
         var preexistingChunkItems = CaptureDebrisChunkItems(location);
         var capture = new ActionOriginOutputCapture(
             location,
@@ -42,9 +49,10 @@ public sealed partial class ModEntry
             preexistingChunkItems.Keys.ToHashSet(
                 ReferenceIdentityComparer<Chunk>.Instance),
             preexistingChunkItems,
-            CaptureInventoryItemCounts());
+            CaptureInventoryItemCounts()) { RetainAcquisitionOutput = retainAcquisitionOutput };
         pending.ActionOriginOutputCapture = capture;
-        pendingActionOriginCaptures.Add(pending);
+        if (authorizedObservation) BeginOutputObservation(pending, capture);
+        if (!observe) pendingActionOriginCaptures.Add(pending);
     }
 
     private void FinalizeActionOriginOutputCaptures()
@@ -64,6 +72,12 @@ public sealed partial class ModEntry
             pending.ActionOriginOutputCapture = null;
             if (capture is null)
             {
+                CompleteOutputObservation(pending, null);
+                continue;
+            }
+            if (!capture.RetainAcquisitionOutput)
+            {
+                CompleteOutputObservation(pending, capture);
                 continue;
             }
 
@@ -101,7 +115,8 @@ public sealed partial class ModEntry
                 appliedAndVerified,
                 sameLocation,
                 ++actionOriginSequence);
-            StoreActionOriginOutput(record);
+            if (capture.RetainAcquisitionOutput) StoreActionOriginOutput(record);
+            CompleteOutputObservation(pending, capture);
         }
     }
 
@@ -386,7 +401,10 @@ public sealed partial class ModEntry
         HashSet<Debris> DebrisBefore,
         HashSet<Chunk> ChunksBefore,
         IReadOnlyDictionary<Chunk, ActionOriginItemKey> PreexistingChunkItems,
-        IReadOnlyDictionary<ActionOriginItemKey, int> InventoryBefore);
+        IReadOnlyDictionary<ActionOriginItemKey, int> InventoryBefore)
+    {
+        public bool RetainAcquisitionOutput { get; init; }
+    }
 
     private sealed record ActionOriginOutputRecord(
         string QueueId,

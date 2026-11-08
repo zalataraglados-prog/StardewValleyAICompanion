@@ -559,17 +559,26 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
+        var observationRejection = ObservationRequestRejection(request);
+        if (observationRejection is not null)
+        {
+            await WriteJsonAsync(context, 400, new { error = observationRejection });
+            return;
+        }
+
         var pending = new PendingExecution(request);
         pendingExecutions.Enqueue(pending);
         var timeoutSeconds = Math.Clamp(config.ExecutorRequestTimeoutSeconds, 5, 3600);
-        var completed = await Task.WhenAny(pending.Completion.Task, Task.Delay(TimeSpan.FromSeconds(timeoutSeconds)));
-        if (completed != pending.Completion.Task)
+        var response = request.ActionOriginObservationScopeId is null ? pending.Completion.Task :
+            NativeObservationCompletion.AwaitFinalObservationAsync(pending.Completion.Task, pending.OutputObservationCompleted!.Task);
+        var completed = await Task.WhenAny(response, Task.Delay(TimeSpan.FromSeconds(timeoutSeconds)));
+        if (completed != response)
         {
             await WriteJsonAsync(context, 504, new { error = "training_execution_timeout", timeout_seconds = timeoutSeconds });
             return;
         }
 
-        var result = pending.Completion.Task.Result;
+        var result = response.Result;
         result.SourcePlanningOptionId = request.SourcePlanningOptionId;
         ObserveCompletedExecutionForEndOfNight(result);
         AttachEndOfNightTransaction(result);

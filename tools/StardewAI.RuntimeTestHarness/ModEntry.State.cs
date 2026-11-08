@@ -31,11 +31,16 @@ public sealed partial class ModEntry : Mod
         public PendingExecution(TrainingExecutionRequest request)
         {
             Request = request;
+            if (request.ActionOriginObservationScopeId is not null)
+                OutputObservationCompleted = new(TaskCreationOptions.RunContinuationsAsynchronously);
         }
 
         public TrainingExecutionRequest Request { get; }
         public TaskCompletionSource<TrainingExecutionResult> Completion { get; } = new();
         public ActionOriginOutputCapture? ActionOriginOutputCapture { get; set; }
+        public NativeCollectionObservation? OutputObservation { get; set; }
+        public string? OutputObservationFailure { get; set; }
+        public TaskCompletionSource<bool>? OutputObservationCompleted { get; }
         public List<SimulatedFactChange> ChangedFacts { get; } = new();
         public int MovementClearanceActions { get; set; }
         public int MovementExtraTicks { get; set; }
