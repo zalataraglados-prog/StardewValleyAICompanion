@@ -16,8 +16,8 @@ public sealed partial class CropTeacherSupportingRoute
         private readonly string ledgerPath;
         private readonly string[] commitmentIds;
         private readonly string stepId;
-        private readonly InputGuard inputs;
-        private readonly RouteSource source;
+        private readonly CropTeacherRetainedInputs inputs;
+        private readonly CropTeacherSupportingSource source;
 
         private Preparation(string runRequestPath, string sourcePath, string ledgerPath, IReadOnlyCollection<string> commitmentIds,
             string stepId, string kind, string modelPlanPath, string queuePath)
@@ -26,7 +26,7 @@ public sealed partial class CropTeacherSupportingRoute
                 .Distinct(CropTeacherSeedTransferNativeOutcome.PathComparer).ToArray();
             using var reads = InvocationReadSession.Start(paths);
             inputs = new(paths);
-            source = ReadSource(runRequestPath, sourcePath, ledgerPath, commitmentIds, stepId);
+            source = CropTeacherSupportingSource.Read(runRequestPath, sourcePath, ledgerPath, commitmentIds, stepId);
             this.runRequestPath = Path.GetFullPath(runRequestPath); this.ledgerPath = Path.GetFullPath(ledgerPath);
             this.commitmentIds = commitmentIds.ToArray(); this.stepId = stepId;
             SourcePath = Path.GetFullPath(sourcePath); QueuePath = Path.GetFullPath(queuePath); Kind = kind;

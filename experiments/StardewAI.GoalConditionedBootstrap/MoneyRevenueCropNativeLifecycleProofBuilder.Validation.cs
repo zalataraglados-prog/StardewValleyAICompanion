@@ -487,9 +487,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
             "Money Revenue crop action target identity drifted.");
         if (optionId == WaterOption)
         {
-            Require(verifiedAfter.Watered &&
-                    SameGrowthState(verifiedBefore, verifiedAfter),
-                "Money Revenue native watering transition is not exact.");
+            ValidateNativeWatering(verifiedBefore, verifiedAfter);
             return;
         }
         Require(verifiedBefore.ReadyForHarvest,
@@ -656,8 +654,14 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
     private static bool CropIdentityMatches(
         CropState crop,
         MoneyRevenueCropProductionCommitmentPlan commitment) =>
-        NormalizeObjectId(crop.SeedId) == commitment.SeedQualifiedItemId &&
-        crop.HarvestQualifiedItemId == commitment.HarvestItemQualifiedId;
+        CropIdentityMatches(crop, commitment.SeedQualifiedItemId, commitment.HarvestItemQualifiedId);
+
+    private static bool CropIdentityMatches(CropState crop, string seedId, string harvestId) =>
+        NormalizeObjectId(crop.SeedId) == seedId && crop.HarvestQualifiedItemId == harvestId;
+
+    private static void ValidateNativeWatering(CropState before, CropState after) =>
+        Require(after.Watered && SameGrowthState(before, after),
+            "Money Revenue native watering transition is not exact.");
 
     private static int ActionRank(string optionId) => optionId switch
     {

@@ -91,6 +91,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         public int Lookups { get; private set; }
         public int LedgerReads { get; private set; }
         public int Cancellations { get; private set; }
+        internal JsonObject? LastCompiledQueue { get; private set; }
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token)
         {
@@ -104,6 +105,8 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             if (path.EndsWith("/cancel", StringComparison.Ordinal)) Cancellations++;
             if (path.EndsWith("/lookup-mutation", StringComparison.Ordinal)) Lookups++;
             var reply = await base.SendAsync(request, token);
+            if (path.EndsWith("/action-queue/compile", StringComparison.Ordinal) && reply.IsSuccessStatusCode)
+                LastCompiledQueue = JsonNode.Parse(await reply.Content.ReadAsStringAsync(token))!.AsObject();
             if (fault == "missing_recovery_lookup" && path.EndsWith("/lookup-mutation", StringComparison.Ordinal))
             {
                 var missing = JsonNode.Parse(await reply.Content.ReadAsStringAsync(token))!;
