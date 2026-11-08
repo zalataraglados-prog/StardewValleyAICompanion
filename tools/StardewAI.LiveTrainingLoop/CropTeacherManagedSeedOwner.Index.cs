@@ -29,7 +29,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             var startedPath = RecordPath(sequence, "started");
             if (File.Exists(startedPath))
             {
-                LoadLifecycleStart(operation, Read<JsonObject>(startedPath));
+                LoadRuntimeStart(operation, Read<JsonObject>(startedPath));
                 recognized.Add(startedPath);
             }
             var preparedPath = RecordPath(sequence, "prepared");
@@ -44,6 +44,7 @@ public sealed partial class CropTeacherManagedSeedOwner
                     Text(prepared, "queue_sha256") != HashFile(StoredPath(prepared, "queue_path")))
                     throw new InvalidDataException("Managed crop preparation index changed.");
                 operation.Prepared = prepared;
+                RequireAdmittedSeedIntent(operation, Text(prepared, "original_intent_sha256"));
                 recognized.Add(preparedPath);
             }
             var acceptedPath = RecordPath(sequence, "accepted");

@@ -14,7 +14,8 @@ public sealed class CropTeacherSeedRecoveredBoundary
     private readonly StrategyCommitmentLedger ledger;
     private readonly Action validate;
     internal CropTeacherSeedRecoveredBoundary(StrategyLedgerEvidence evidence, string afterSnapshotPath,
-        string supportStepId, CropTeacherSeedRuntimeRecoveryOptions options, Action validate)
+        string supportStepId, CropTeacherSeedRuntimeRecoveryOptions options, Action validate,
+        string preparedQueuePath, string preparedQueueSha256)
     {
         ledger = evidence.Ledger;
         LedgerPath = evidence.Path;
@@ -24,6 +25,8 @@ public sealed class CropTeacherSeedRecoveredBoundary
         ExecutorVersion = options.ExecutorVersion;
         OriginalIntentSha256 = options.ExpectedIntentSha256;
         OriginalRuntimeDirectory = Path.GetFullPath(options.RuntimeDirectory);
+        PreparedQueuePath = preparedQueuePath;
+        PreparedQueueSha256 = preparedQueueSha256;
         this.validate = validate;
     }
     public string LedgerPath { get; }
@@ -33,6 +36,8 @@ public sealed class CropTeacherSeedRecoveredBoundary
     public string ExecutorVersion { get; }
     public string OriginalIntentSha256 { get; }
     public string OriginalRuntimeDirectory { get; }
+    public string PreparedQueuePath { get; }
+    public string PreparedQueueSha256 { get; }
     public StrategyCommitmentLedger ReadLedger()
     {
         validate();
@@ -65,7 +70,7 @@ public static partial class CropTeacherSeedRuntimeRecovery
         var intent = artifacts.Read<JsonObject>(intentPath);
         var expected = CropTeacherSeedRuntimeTransaction.CreateIntent(
             new(options.BackendUrl, root, options.RunId, options.ExecutorVersion), binding, markerRequest);
-        if (binding.PreparationDetails is not null) expected["preparation_details"] = binding.PreparationDetails.DeepClone();
+        CropTeacherSeedRuntimeTransaction.AddPreparationDetails(expected, binding);
         if (artifacts.Hashes[intentPath] != options.ExpectedIntentSha256 || !JsonNode.DeepEquals(expected, intent))
             throw new InvalidDataException("Crop seed recovery differs from its pinned original intent.");
         if (Directory.Exists(output) || File.Exists(output) || Contains(root, output) || Contains(output, root) ||
@@ -137,7 +142,8 @@ public static partial class CropTeacherSeedRuntimeRecovery
             diagnostic["after_snapshot_path"] = transition.AfterSnapshotPath;
             diagnostic["final_ledger_path"] = final.Path;
             diagnostic["artifact_hashes"] = JsonSerializer.SerializeToNode(artifacts.Hashes, JsonOptions);
-            return new(final, transition.AfterSnapshotPath, markerRequest.PortfolioId, options, Validate);
+            return new(final, transition.AfterSnapshotPath, markerRequest.PortfolioId, options, Validate,
+                preparedQueuePath, artifacts.Hashes[preparedQueuePath]);
         }
         catch (Exception error)
         {

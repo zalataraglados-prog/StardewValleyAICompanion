@@ -7,7 +7,12 @@ public sealed partial class CropTeacherManagedSeedOwner
     private CropTeacherManagedSeedOperation OpenIndexedOperation(JsonObject record, string path)
     {
         var kind = record["operation_kind"]?.GetValue<string>();
-        if (kind is null or "seed") return new(this, record, path, OpenScopes(record));
+        if (kind is null or "seed")
+        {
+            var seed = new CropTeacherManagedSeedOperation(this, record, path, OpenScopes(record));
+            ValidateSeedIntent(seed);
+            return seed;
+        }
         if (kind != "lifecycle") throw new InvalidDataException("Managed crop phase kind is unsupported.");
         try
         {
@@ -31,6 +36,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         }
         else
         {
+            if (operation.Started is not null) accepted["runtime_start_sha256"] = HashFile(RecordPath(operation.Sequence, "started"));
             accepted["prepared_sha256"] = HashFile(RecordPath(operation.Sequence, "prepared"));
             accepted["original_intent_sha256"] = Text(operation.Prepared!, "original_intent_sha256");
             accepted["original_proof_sha256"] = HashFile(Path.Combine(operation.RuntimeDirectory, "support-proof.json"));
@@ -50,20 +56,22 @@ public sealed partial class CropTeacherManagedSeedOwner
                 throw new InvalidDataException("Managed crop lifecycle acceptance evidence changed.");
         }
         else if (operation.Prepared is null || accepted["operation_kind"]?.GetValue<string>() is not (null or "seed") ||
+            (operation.Started is null ? accepted["runtime_start_sha256"] is not null :
+                Text(accepted, "runtime_start_sha256") != HashFile(RecordPath(operation.Sequence, "started"))) ||
             Text(accepted, "prepared_sha256") != HashFile(RecordPath(operation.Sequence, "prepared")) ||
             Text(accepted, "original_intent_sha256") != Text(operation.Prepared, "original_intent_sha256") ||
             Text(accepted, "original_proof_sha256") != HashFile(Path.Combine(operation.RuntimeDirectory, "support-proof.json")))
             throw new InvalidDataException("Managed crop seed acceptance evidence changed.");
     }
 
-    private void LoadLifecycleStart(CropTeacherManagedSeedOperation operation, JsonObject started)
+    private void LoadRuntimeStart(CropTeacherManagedSeedOperation operation, JsonObject started)
     {
-        if (!operation.IsLifecycle || Text(started, "schema_version") != "crop_teacher_managed_lifecycle_start.v1" ||
+        if (Text(started, "schema_version") != InvocationSchema(operation) ||
             started["sequence"]?.GetValue<int>() != operation.Sequence || Text(started, "run_id") != options.RunId ||
             Text(started, "support_step_id") != operation.SupportStepId || Text(started, "admission_sha256") != HashFile(operation.RecordPath) ||
             Text(started, "original_intent_sha256") != Text(operation.Record, "original_intent_sha256") ||
             started["runtime_invocation_claimed"]?.GetValue<bool>() != true || started["formal_product_training_authorized"]?.GetValue<bool>() != false)
-            throw new InvalidDataException("Managed lifecycle invocation claim changed.");
+            throw new InvalidDataException("Managed crop invocation claim changed.");
         operation.Started = started;
     }
 }

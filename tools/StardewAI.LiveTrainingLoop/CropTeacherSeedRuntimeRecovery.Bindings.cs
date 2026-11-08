@@ -4,7 +4,7 @@ namespace StardewAI.LiveTrainingLoop;
 
 public static partial class CropTeacherSeedRuntimeRecovery
 {
-    private static CropSeedRuntimeScopeBinding Bind(CropTeacherManagedSeedScopes scopes, CropTeacherRunStep step)
+    internal static CropSeedRuntimeScopeBinding Bind(CropTeacherManagedSeedScopes scopes, CropTeacherRunStep step)
     {
         if (scopes.Purchase is { } purchase) return CropSeedRuntimeBindings.Purchase(purchase);
         if (scopes.Transfer is { } transfer) return CropSeedRuntimeBindings.Transfer(transfer);

@@ -1,5 +1,14 @@
 # StardewAI 当前工作
 
+## 2026-11-08 R2原seed准备调用归属与预固定intent（当前唯一接续）
+
+- 本片最终相关428/428通过、零失败/跳过，含10项新增场景；checkpoint仍匹配EVD338。完整CI/发布见本片收口，本机不重复全量Core/Backend。
+
+- #522最终head `6d6482f8`经42步CI `42426869336`及同head审查接受，Core2443/Backend1136零失败/跳过，合入`4f057050`且核树清自有分支。同一owner的生命周期接线不重做。
+- 本片准入用原binder/preflight/intent及准备细节固定原SHA，原seed准备factory与生命周期共用一次性调用记录/锁/pending；只在实际sealed runtime私有证书、原身份/batch/claim及真实marker journal根验证、owner准备记录持久后返回原runtime。旧standalone Prepare+Pin保持，不追认旧记录预固定。完整原准备/原生proof/消费托管/journal/最终读回已由原consumer验证后，才可补回缺失的owner准备记录并接受；不是重放或伪零执行。[合同](money-crop-seed-preparation-ownership.md)。
+- 初45/45、扩展49/49通过，新增测试不可达分支警告已移除；转运/种植各增原factory抽样，最终相关/CI见收口。未启动游戏或新native来源，不晋升L1/训练。
+- **唯一下一步：** 本片发布后继续准备-only/部分准备恢复与native派发归属，复用原journal/lookup和`CompleteWithoutNativeDispatchAsync`严格控制器停止上下文；缺proof不当零执行，未知不清不重发。再原行走维护/保存连续性、显式managed有界原生样本，然后原联合日历/聚合预算/跨根、Provider/模型与manifest/preflight。旧活动作物binder/idle界限不改，L1`19/19、11/11`、formal=false与Student训后21/21保持。无游戏/服务器/API worker，local-data不提交。下方为历史。
+
 ## 2026-11-08 R2同一owner的生命周期准入/接受（当前唯一接续）
 
 - 本片最终相关418/418、末次接口整理后owner41/41通过，均零失败/跳过，含15项新增生命周期owner场景；checkpoint仍匹配EVD338。完整CI/发布见本片收口，本地不重复全量Core/Backend。

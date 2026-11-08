@@ -7,8 +7,10 @@ namespace StardewAI.Backend.Tests;
 
 public sealed partial class CropTeacherSeedTransferTests
 {
-    [Fact]
-    public async Task ManagedOwnerUsesTheSameOriginalTransferAndLiveCertificate()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ManagedOwnerUsesTheSameOriginalTransferAndLiveCertificate(bool managedPreparation)
     {
         using var f = new Fixture(nativeEvidence: true);
         using var runtime = new RuntimeFixture(f);
@@ -18,8 +20,10 @@ public sealed partial class CropTeacherSeedTransferTests
         var step = CropTeacherRunPlanner.Evaluate(inputs.Plan, inputs.Request, f.Before, resourceLedger: f.Ledger);
         Assert.Equal(CropTeacherRunStageKinds.TransferSeedSupply, step.Stage);
         var operation = await owner.AdmitAsync(step, f.SourcePath, f.LedgerPath, files.Native);
-        var prepared = await runtime.Prepare(operation.Scopes.Transfer, runtimeDirectory: operation.RuntimeDirectory);
-        await owner.PinPreparedAsync(operation, prepared);
+        var prepared = managedPreparation
+            ? await owner.PrepareSeedAsync(operation, () => runtime.Prepare(operation.Scopes.Transfer, runtimeDirectory: operation.RuntimeDirectory))
+            : await runtime.Prepare(operation.Scopes.Transfer, runtimeDirectory: operation.RuntimeDirectory);
+        if (!managedPreparation) await owner.PinPreparedAsync(operation, prepared);
         runtime.ObserveAfter();
         await prepared.CompleteAsync(runtime.Transition);
         var reads = runtime.Handler.LedgerReads;
