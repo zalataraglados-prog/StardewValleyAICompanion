@@ -15,7 +15,7 @@ public sealed class CropTeacherRefillApproachNativeTrace
     private readonly Dictionary<string, string> requestBlobs = new(CropTeacherSeedTransferNativeOutcome.PathComparer);
 
     private CropTeacherRefillApproachNativeTrace(CropTeacherRefillApproachCompilation compilation,
-        string receiptPath, string afterPath, string runId)
+        string receiptPath, string afterPath, string runId, bool verifySnapshotInventoryContinuity)
     {
         this.compilation = compilation;
         compilation.ValidateInputsUnchanged();
@@ -57,8 +57,11 @@ public sealed class CropTeacherRefillApproachNativeTrace
                     NativeExecutionSourceSupport.TotalDay(frame.After) == compilation.TotalDay &&
                     Location(frame.Before) == "Farm" && Location(frame.After) == "Farm",
                 "native refill trace lacks its original same-day Farm scope/observation");
-            var summary = NativeOutputObservationBoundary.Read(frame.Request, frame.Result.ActionOriginObservation!,
-                frame.Before.GameTick, frame.After.GameTick, "Farm");
+            var summary = verifySnapshotInventoryContinuity
+                ? NativeOutputObservationSnapshotBoundary.Read(frame.Request, frame.Result.ActionOriginObservation!,
+                    frame.Before, frame.After, "Farm")
+                : NativeOutputObservationBoundary.Read(frame.Request, frame.Result.ActionOriginObservation!,
+                    frame.Before.GameTick, frame.After.GameTick, "Farm");
             captureSession ??= summary.CaptureSessionId;
             Require(summary.CaptureSessionId == captureSession, "native trace crossed observation-process reference namespaces");
             summaries.Add(new(frame.Item.QueueItemId, frame.Item.OptionId, summary));
@@ -77,14 +80,22 @@ public sealed class CropTeacherRefillApproachNativeTrace
         Steps = summaries.AsReadOnly();
         AfterSnapshotPath = afterPath;
         ValidateInputsUnchanged();
+        SnapshotInventoryContinuityVerified = verifySnapshotInventoryContinuity;
     }
 
+    // Calibration-only: validates captured observations, not their inventory snapshot denominator.
     public static CropTeacherRefillApproachNativeTrace Open(CropTeacherRefillApproachCompilation compilation,
         string executionReceiptPath, string afterSnapshotPath, string runId) =>
-        new(compilation, executionReceiptPath, afterSnapshotPath, runId);
+        new(compilation, executionReceiptPath, afterSnapshotPath, runId, verifySnapshotInventoryContinuity: false);
+
+    // Stronger quantity-only gate on every original frame; not full metadata/world/producer proof.
+    public static CropTeacherRefillApproachNativeTrace OpenWithSnapshotInventoryContinuity(
+        CropTeacherRefillApproachCompilation compilation, string executionReceiptPath, string afterSnapshotPath, string runId) =>
+        new(compilation, executionReceiptPath, afterSnapshotPath, runId, verifySnapshotInventoryContinuity: true);
 
     public IReadOnlyList<CropTeacherRefillObservedStep> Steps { get; }
     public string AfterSnapshotPath { get; }
+    public bool SnapshotInventoryContinuityVerified { get; }
     public IReadOnlyDictionary<string, string> InputHashes => inputs.ReadHashes().Concat(requestBlobs)
         .ToDictionary(pair => pair.Key, pair => pair.Value, CropTeacherSeedTransferNativeOutcome.PathComparer);
     public bool ResourceCreditAuthorized => false;
