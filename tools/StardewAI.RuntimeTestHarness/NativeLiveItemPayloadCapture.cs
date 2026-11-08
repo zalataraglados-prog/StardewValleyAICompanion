@@ -1,11 +1,11 @@
 using System.Security.Cryptography;
 using System.Text;
+using StardewAI.Contracts.Training;
 using StardewAI.RuntimePrimitives;
 using StardewValley;
 using StardewValley.Enchantments;
 using StardewValley.Objects;
 using StardewValley.SaveSerialization;
-using StardewValley.Tools;
 
 namespace StardewAI.RuntimeTestHarness;
 
@@ -24,13 +24,24 @@ internal static partial class NativeLiveItemPayloadCapture
             throw new ArgumentOutOfRangeException(nameof(maximumCharacters));
         ArgumentNullException.ThrowIfNull(item);
         new GraphCheck().Visit(item, 1);
+        using var writer = new CappedNativeObservationWriter(maximumCharacters);
+        var payload = CaptureWithWriter(item, writer, maximumCharacters);
+        ValidateXml(payload.Xml, maximumCharacters);
+        return payload;
+    }
+
+    // Existing observation callers retain writer ownership and its limit-failure diagnostic.
+    internal static NativeLiveItemPayload CaptureWithWriter(Item item, CappedNativeObservationWriter writer, int maximumCharacters)
+    {
+        if (maximumCharacters is < 1 or > 65536)
+            throw new ArgumentOutOfRangeException(nameof(maximumCharacters));
+        ArgumentNullException.ThrowIfNull(item);
+        ArgumentNullException.ThrowIfNull(writer);
 
         // Preserve the original observer's EXACT TextWriter overload/options/formatting.
         // Do not wrap in XmlWriter, construct/clone an Item, or normalize any live fields.
-        using var writer = new CappedNativeObservationWriter(maximumCharacters);
         SaveSerializer.GetSerializer(item.GetType()).Serialize(writer, item);
         var xml = writer.ToString();
-        ValidateXml(xml, maximumCharacters);
         return new NativeLiveItemPayload(xml,
             Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(xml))).ToLowerInvariant());
     }
@@ -38,13 +49,8 @@ internal static partial class NativeLiveItemPayloadCapture
     // Exact native types with known Item edges. Other native graph families (e.g. Chest,
     // Furniture, Sign, Trinket) fail explicitly until their own edges have been vetted.
     private static bool SupportedItem(Type type) => type.Assembly == typeof(Item).Assembly &&
-        (type == typeof(StardewValley.Object) || type == typeof(ColoredObject) ||
-         type == typeof(Boots) || type == typeof(Clothing) || type == typeof(Hat) ||
-         type == typeof(Ring) || type == typeof(CombinedRing) || type == typeof(SpecialItem) ||
-         type == typeof(Axe) || type == typeof(ErrorTool) || type == typeof(FishingRod) ||
-         type == typeof(GenericTool) || type == typeof(Hoe) || type == typeof(MeleeWeapon) ||
-         type == typeof(MilkPail) || type == typeof(Pan) || type == typeof(Pickaxe) ||
-         type == typeof(Shears) || type == typeof(Slingshot) || type == typeof(Wand) || type == typeof(WateringCan));
+        NativeInventoryPayloadTypes.TryGet(type.FullName, out var descriptor) &&
+        descriptor.IsTool == typeof(Tool).IsAssignableFrom(type);
 
     private sealed class GraphCheck
     {

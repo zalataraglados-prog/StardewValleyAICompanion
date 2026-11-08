@@ -1,5 +1,9 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **本片本地收口：** Backend200/200、Core36/36、扩展原生CLR夹具171通过，四端Release/重放构建零警告/错误；加固消费者复用保留原生记录2/2，另存报告，未重开游戏。远端CI/发布另记。
+
+> **2026-11-09 当前增量：** #543已合入`72dc6d1a`且核树。本片沿原observer补可选完整槽位持久XML/选择/引用，原生23次有界纯度/旧字节核及两条保留重放通过，原档未变、进程退出；非完整瞬态/世界/生产来源或资源credit。互审两项P2先红6例后共用21原生类型/身份合同修复，扩展原生CLR夹具171通过，最终回归/构建/发布另记。协作旧停用规则已纠正，原API同一会话任务真实成功并正常退出、授权空闲；未替换内部子代理、未推断余额。唯一接续见[当前工作](CURRENT_WORK_CN.md)和[合同](native-inventory-payload-observation.md)，下方为历史。
+
 > **2026-11-08 实际工具输入（当前唯一接续）：** #542最终42步CI合入`ecb8fab0`、核树清自有引用，Core2590/Backend1542。同一真实API第四块与Codex接原observer，默认关闭的工具输入保留base后/实际power、setter/跳过及父入口出口，不改旧工具/动画/普通模式。[合同](native-clearance-tool-observation.md)。API IL/原子53、合成65；互审同引用类型冲突反例先红修复，Backend156/Core38通过，嵌套结束顺序保留、安装失败不污染旧观测。真实Axe/Pickaxe均270→268，后者原始参数1/实际power0；含两空调用移动共4记录经原来源/数量/输入/客户端重放4/4，原档未变、进程退出。Pickaxe两次新夹具/测试假设失败留档，C复用原raw clear/实际槽位，不改桥/候选门或冒称石头产出已准入；最终CI见收口。发布后继续同trace完整物品/世界/生产来源含前置/被动间隙接唯一owner，再收获/保存跨日/managed及原全局/其余probe/Provider/模型/manifest。L1`19/19、11/11`冻结、formal=false，Student21/21训后、local-data不提交。API合作已实际恢复且持续，不继承旧永久禁用。下方为历史。
 
 > **2026-11-08 原观察同帧锚定（当前唯一接续）：** #541经最终42步CI合入`fed58419`、核树清分支，Core2552/Backend1529。本片由同一真实API peer与Codex分工，显式默认关闭的主线程fresh-full/cache锚定接原observer收口，不改默认工具/动画/移动。Core39/39、客户端加固38/38、四端Release通过；互审两项P2已修，未改旧解析以适配新夹具。真实隔离砍树→17次拾取collection、两记录原来源/数量核/加固客户端复用2/2，同帧2140/2140、3038/3038，原档未变、双进程退出，旧间隙记录不改判。[合同](native-output-snapshot-anchor.md)。发布后继续同trace实际工具输入、完整物品/世界/生产来源含前置/被动间隙接唯一owner，再收获/保存跨日/managed及原全局/其余probe/Provider/模型/manifest。L1`19/19、11/11`冻结、formal=false、Student21/21训后，local-data不提交。API合作仍授权，旧额度故障非永久禁用。下方为历史。
