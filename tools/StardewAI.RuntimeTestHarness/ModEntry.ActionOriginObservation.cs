@@ -11,6 +11,7 @@ public sealed partial class ModEntry
     private bool nativeObservationPatchesFailed;
 
     private static string? ObservationRequestRejection(TrainingExecutionRequest request) =>
+        request.ActionOriginSnapshotAnchor && request.ActionOriginObservationScopeId is null ? "snapshot_anchor_requires_native_observation" :
         request.ActionOriginObservationScopeId is null ? null : NativeObservationScopePolicy.Rejection(request.ActionOriginObservationScopeId, request.ExecutionMode, request.OptionId,
             new[] { request.RunId, request.QueueId, request.QueueItemId, request.RequestNonce, request.BeforeStateHash, request.SaveIsolationPath });
 
@@ -60,11 +61,13 @@ public sealed partial class ModEntry
         }
     }
 
-    private static void CompleteOutputObservation(PendingExecution pending, ActionOriginOutputCapture? capture)
+    private void CompleteOutputObservation(PendingExecution pending, ActionOriginOutputCapture? capture)
     {
         if (pending.Request.ActionOriginObservationScopeId is null) return;
         try
         {
+            var anchor = pending.Request.ActionOriginSnapshotAnchor && pending.Completion.Task.IsCompletedSuccessfully
+                ? CaptureOutputSnapshotAnchor(pending, capture) : null;
             var receipt = pending.OutputObservation?.Finish(capture!) ?? new ActionOriginObservationReceipt
             {
                 ScopeId = pending.Request.ActionOriginObservationScopeId,
@@ -73,7 +76,16 @@ public sealed partial class ModEntry
                 Diagnostics = new[] { pending.OutputObservationFailure ?? "observation_world_unavailable" }
             };
             if (pending.Completion.Task.IsCompletedSuccessfully)
+            {
+                if (anchor is not null)
+                {
+                    if (receipt.Status != "observed" || receipt.AfterGameTick != anchor.GameTick)
+                        throw new InvalidOperationException("Snapshot anchor and final observation do not share a complete native tick.");
+                    pending.Completion.Task.Result.ProductAfterStateHash = anchor.StateHash;
+                    pending.Completion.Task.Result.ProductAfterGameTick = anchor.GameTick;
+                }
                 pending.Completion.Task.Result.ActionOriginObservation = receipt;
+            }
         }
         catch (Exception error)
         {

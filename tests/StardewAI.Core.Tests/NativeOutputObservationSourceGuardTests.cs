@@ -3,6 +3,22 @@ namespace StardewAI.Core.Tests;
 public sealed class NativeOutputObservationSourceGuardTests
 {
     [Fact]
+    public void ExplicitSnapshotAnchorCapturesBeforeEndingTheSameObserverAndDoesNotChangeTools()
+    {
+        var scope = RuntimeHarnessSources.LoadFile("ModEntry.ActionOriginObservation.cs");
+        var anchor = RuntimeHarnessSources.LoadFile("ModEntry.ActionOriginObservation.SnapshotAnchor.cs");
+        Assert.True(scope.IndexOf("CaptureOutputSnapshotAnchor(pending, capture)", StringComparison.Ordinal) <
+            scope.IndexOf("pending.OutputObservation?.Finish(capture!)", StringComparison.Ordinal));
+        Assert.Contains("pending.Request.ActionOriginSnapshotAnchor && pending.Completion.Task.IsCompletedSuccessfully", scope);
+        Assert.Contains("receipt.AfterGameTick != anchor.GameTick", scope);
+        Assert.Contains("snapshot_anchor_requires_native_observation", scope);
+        Assert.Contains("GetApi<INativeOutputSnapshotReadApi>", anchor);
+        Assert.Contains("NativeOutputSnapshotAnchor.Read", anchor);
+        foreach (var forbidden in new[] { ".collect(", ".DoFunction(", "Thread.Sleep", "Game1.paused =", "Game1.random", "HttpClient" })
+            Assert.DoesNotContain(forbidden, anchor);
+    }
+
+    [Fact]
     public void OptionalResponseWaitsForCaptureWithoutChangingTheDefaultPath()
     {
         var entry = RuntimeHarnessSources.LoadFile("ModEntry.cs");

@@ -9,6 +9,9 @@ public static class NativeOutputObservationMode
 {
     public static void Validate(LiveTrainingOptions options)
     {
+        if (options.ObserveNativeOutputSnapshotAnchor &&
+            (!options.ObserveNativeOutputs || !string.Equals(options.ExecutionSnapshotProfile, "full", StringComparison.OrdinalIgnoreCase)))
+            throw new ArgumentException("--observe-native-output-snapshot-anchor requires --observe-native-outputs and full execution snapshots.");
         if (!options.ObserveNativeOutputs) return;
         if (!options.SkipTraining || !options.RequireExecutorFeedback ||
             !options.UseRuntimeTestHarnessExecutor || options.UseProductExecutor ||

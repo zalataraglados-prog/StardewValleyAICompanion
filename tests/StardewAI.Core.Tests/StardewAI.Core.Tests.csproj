@@ -86,6 +86,8 @@
     <Compile Include="NativeHayStorageProjectorTests.cs" />
     <Compile Include="NativeHayStorageSourceGuardTests.cs" />
     <Compile Include="NativeClearanceToolCostProjectorTests.cs" />
+    <Compile Include="NativeOutputSnapshotAnchorTests.cs" />
+    <Compile Include="NativeOutputSnapshotReadApiTests.cs" />
     <Compile Include="NativeOutputObservationSourceGuardTests.cs" />
     <Compile Include="ActionCatalogProvenanceGovernanceTests.cs" />
     <Compile Include="CandidateRouteConnectorCacheTests.cs" />

@@ -97,18 +97,30 @@ static partial class Program
         return (json, JsonNode.Parse(json)?.AsObject() ?? new JsonObject());
     }
 
-    private static async Task<(string Json, JsonObject Snapshot, bool Fresh, string Note)> ReadAfterExecutionSnapshotAsync(
+    private static Task<(string Json, JsonObject Snapshot, bool Fresh, string Note)> ReadAfterExecutionSnapshotAsync(
         HttpClient http,
         LiveTrainingOptions options,
         JsonObject beforeSnapshot,
         JsonObject execution,
         string? snapshotUrlOverride = null,
-        string? snapshotProfileOverride = null)
+        string? snapshotProfileOverride = null) =>
+        ReadAfterExecutionSnapshotCoreAsync(http, options, beforeSnapshot, execution, false,
+            snapshotUrlOverride, snapshotProfileOverride);
+
+    private static async Task<(string Json, JsonObject Snapshot, bool Fresh, string Note)> ReadAfterExecutionSnapshotCoreAsync(
+        HttpClient http, LiveTrainingOptions options, JsonObject beforeSnapshot, JsonObject execution,
+        bool requiresObservationAnchor, string? snapshotUrlOverride = null, string? snapshotProfileOverride = null)
     {
         var beforeHash = ReadString(beforeSnapshot, "state_hash");
         var beforeTick = ReadLong(beforeSnapshot, "game_tick");
         var productAfterHash = ReadString(execution, "product_after_state_hash");
         var productAfterTick = ReadLong(execution, "product_after_game_tick");
+        var observation = execution["action_origin_observation"] as JsonObject;
+        if (requiresObservationAnchor &&
+            (observation?["status"] is not JsonValue observedStatus || !observedStatus.TryGetValue<string>(out var status) || status != "observed" ||
+             observation["after_game_tick"] is not JsonValue receiptTick || !receiptTick.TryGetValue<long>(out var observedAfterTick) || observedAfterTick != productAfterTick ||
+             string.IsNullOrWhiteSpace(productAfterHash) || productAfterTick < beforeTick))
+            throw new InvalidDataException("Explicit native output snapshot anchor is unavailable; no later-frame fallback is permitted.");
         var initial = await ReadExecutionSnapshotAsync(
             http,
             options,
@@ -134,6 +146,9 @@ static partial class Program
                 true,
                 "product_after_snapshot_cache_match");
         }
+
+        if (requiresObservationAnchor)
+            throw new InvalidDataException("Explicit native output snapshot anchor cache identity changed; no later-frame fallback is permitted.");
 
         if (!string.Equals(latestHash, beforeHash, StringComparison.Ordinal))
         {

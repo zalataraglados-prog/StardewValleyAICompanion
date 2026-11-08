@@ -1068,7 +1068,8 @@
       "stardewai.transparentbridge": {
         "type": "Project",
         "dependencies": {
-          "StardewAI.Contracts": "[1.0.0, )"
+          "StardewAI.Contracts": "[1.0.0, )",
+          "StardewAI.RuntimePrimitives": "[1.0.0, )"
         }
       }
     }
