@@ -45,6 +45,7 @@ public sealed partial class ModEntry : Mod
 
     public override void Entry(IModHelper helper)
     {
+        InitializeNativeOutputSnapshotApi();
         config = helper.ReadConfig<BridgeConfig>();
         stateCollector = CreateStateCollector(helper);
 
