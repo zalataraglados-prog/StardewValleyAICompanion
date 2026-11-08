@@ -33,11 +33,12 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task OriginalRouteUsesOriginalCompilerAndSameOwnerNativeInvocationThenRebind(bool multiHop)
+    [InlineData(false, "warp")]
+    [InlineData(true, "warp")]
+    [InlineData(false, "building_door")]
+    public async Task OriginalRouteUsesOriginalCompilerAndSameOwnerNativeInvocationThenRebind(bool multiHop, string connectorKind)
     {
-        using var f = new OwnedRouteFixture(multiHop);
+        using var f = new OwnedRouteFixture(multiHop, connectorKind);
         await using var owner = await f.Files.Open();
         var operation = await f.Prepare(owner);
         var calls = 0;

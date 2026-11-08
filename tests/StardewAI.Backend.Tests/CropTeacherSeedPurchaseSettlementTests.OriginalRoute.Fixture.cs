@@ -26,10 +26,10 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             Source.Before.State["time"].GetProperty("total_days").GetProperty("value").GetInt32(),
             string.Empty, "FarmHouse", "FarmHouse", string.Empty, string.Empty, 0, 0, null, "original_route_fixture");
 
-        internal OwnedRouteFixture(bool multiHop = false)
+        internal OwnedRouteFixture(bool multiHop = false, string connectorKind = "warp")
         {
             Source = new(otherSeeds: 39);
-            SetInitialRouteSource(Source, multiHop);
+            SetInitialRouteSource(Source, multiHop, connectorKind);
             Runtime = new(Source);
             Inputs = new(Source);
             Files = new(Source, Runtime, Inputs);
@@ -111,7 +111,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         public void Dispose() { Files.Dispose(); Inputs.Dispose(); Runtime.Dispose(); Source.Dispose(); }
     }
 
-    private static void SetInitialRouteSource(Fixture f, bool multiHop)
+    private static void SetInitialRouteSource(Fixture f, bool multiHop, string connectorKind)
     {
         ChangeState(f.Before, "player", node =>
         {
@@ -131,10 +131,10 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             collision_grid = new { status = "available", value = new { location_id = "Farm", width = 20, height = 20, notable_tiles = Array.Empty<object>() } },
             route_action_branch_coverage = new { status = "available", value = new { rows = Array.Empty<object>() } },
             route_connectors = new { status = "available", value = new { location_id = "Farm", connectors = new[]
-            { new { kind = "warp", tile_x = 1, tile_y = 0, target_location = firstTarget, target_x = 5, target_y = 6, resolved = true } } } },
+            { new { kind = connectorKind, tile_x = 1, tile_y = 0, target_location = firstTarget, target_x = 5, target_y = 6, resolved = true } } } },
             route_graph = new { status = "available", value = new { edges = new[]
             {
-                new { kind = "warp", from_location = "Farm", from_x = 1, from_y = 0, target_location = firstTarget, target_x = 5, target_y = 6, resolved = true },
+                new { kind = connectorKind, from_location = "Farm", from_x = 1, from_y = 0, target_location = firstTarget, target_x = 5, target_y = 6, resolved = true },
                 new { kind = "warp", from_location = "Town", from_x = 6, from_y = 6, target_location = "FarmHouse", target_x = 5, target_y = 6, resolved = true }
             } } }
         })!;

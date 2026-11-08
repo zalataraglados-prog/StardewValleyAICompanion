@@ -11,7 +11,7 @@ public sealed partial class CropTeacherSupportingRoute
     public sealed class Preparation
     {
         private static readonly HashSet<string> NeutralIngressConnectorKinds = new(new[]
-        { "warp", "door", "action_warp", "touch_action_warp", "locked_door_warp", "magic_warp" }, StringComparer.Ordinal);
+        { "warp", "door", "building_door", "action_warp", "touch_action_warp", "locked_door_warp", "magic_warp" }, StringComparer.Ordinal);
         private readonly string runRequestPath;
         private readonly string ledgerPath;
         private readonly string[] commitmentIds;

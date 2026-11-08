@@ -12,11 +12,11 @@ public sealed partial class CropTeacherManagedSeedOwner
 {
     internal void ValidateOriginalRouteExecutor(LiveTrainingOptions live)
     {
-        if (!live.UseRuntimeTestHarnessExecutor || live.RunId != options.RunId ||
+        if (!live.UseRuntimeTestHarnessExecutor || !live.EmitQueueExecutionReceipt || live.RunId != options.RunId ||
             live.PolicyTrajectoryExecutorVersion != options.ExecutorVersion ||
             CropTeacherSeedLifecycleRuntime.NormalizeBackendOrigin(live.BackendUrl) != options.BackendUrl ||
             !SamePath(live.SnapshotDir, options.PortfolioJournalDirectory))
-            throw new InvalidDataException("Original route compiler/executor must share this owner's original run/backend/journal identity.");
+            throw new InvalidDataException("Original route compiler/executor requires receipt emission and this owner's original run/backend/journal identity.");
     }
 
     public async Task<CropTeacherManagedSeedOperation> AdmitOriginalRouteAsync(string kind, string modelPlanPath, string queuePath,

@@ -38,7 +38,7 @@ original full supply validation. Completed/cancelled covered crops are not
 incorrectly required to stay active forever.
 
 This neutral ingress entry admits the ordinary connector kinds exposed by the
-existing bridge route graph (`warp`, `door`, `action_warp`, `touch_action_warp`,
+existing bridge route graph (`warp`, `door`, `building_door`, `action_warp`, `touch_action_warp`,
 `locked_door_warp`, `magic_warp`). Native carriers with unproven costs require their
 separate original resource/settlement scope **before** dispatch; they cannot spend
 other roots' reservations and merely fail neutral verification afterwards. No
@@ -53,6 +53,9 @@ calling the original execution callback under the same gate. The claim explicitl
 has `native_request_performed=null`: it is not proof of either zero or success.
 An existing claim is never redispatched. The callback is trusted host orchestration,
 not a sandbox or model/API permission grant.
+The new adapter requires explicit receipt emission before both compilation and
+execution; otherwise the original loop may act without its required complete
+aggregate receipt. Changing this option after admission cannot claim native work.
 
 The explicit Program adapter calls `BuildCropTeacherControlQueueCoreAsync` and
 `ExecuteRuntimeTestHarnessCoreAsync`. Actual selected story/dialogue/sleep/capacity
@@ -102,6 +105,12 @@ passed and the later two-leg/restart set passed19/19. Related regression passed
 638/638; the final focused set passed57/57, including semantic/opaque-ID mutation
 guards (zero failures/skips). The checkpoint matches EVD338. Exact-head CI/review
 are reported separately in closeout; local checks do not substitute for them.
+The initial PR review identified missing `building_door` admission and missing
+explicit receipt-emission configuration. Both reproduced before the fix (3 failing
+cases, 2 existing positives); only this new allowlist/config gate was corrected.
+Ordinary building ingress and disabled receipts before/after admission are covered
+by the final focused rerun (60/60, zero failures/skips); the final head's CI is
+reported in closeout.
 
 These are native-format fixtures and actual backend HTTP/original execution loop,
 **not a real game run**. Automatic managed activation stays off. Next is original

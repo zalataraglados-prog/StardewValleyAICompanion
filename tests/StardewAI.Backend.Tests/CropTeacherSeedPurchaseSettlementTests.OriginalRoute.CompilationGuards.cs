@@ -5,6 +5,29 @@ namespace StardewAI.Backend.Tests;
 public sealed partial class CropTeacherSeedPurchaseSettlementTests
 {
     [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task OriginalRouteRequiresReceiptEmissionBeforeCompilationAndNativeInvocation(bool afterAdmission)
+    {
+        using var f = new OwnedRouteFixture();
+        await using var owner = await f.Files.Open();
+        var operation = afterAdmission ? await f.Prepare(owner) : null;
+        f.Runtime.LiveOptions.EmitQueueExecutionReceipt = false;
+        await Assert.ThrowsAsync<InvalidDataException>(async () =>
+        {
+            if (operation is null) await f.Prepare(owner);
+            else await InvokeLive<Task>("ExecuteCropTeacherOwnedRouteAsync", f.Runtime.Client, f.Runtime.Client,
+                f.Runtime.LiveOptions, 1, owner, operation);
+        });
+        Assert.Same(operation, owner.Pending);
+        Assert.Equal(afterAdmission, File.Exists(f.QueuePath));
+        Assert.False(File.Exists(Path.Combine(f.Files.Native, "route-native-claim.json")));
+        Assert.False(File.Exists(f.ReceiptPath));
+        Assert.False(File.Exists(f.AfterPath));
+        Assert.Equal(0, f.Runtime.Handler.Commits);
+    }
+
+    [Theory]
     [InlineData("target")]
     [InlineData("budget")]
     [InlineData("opaque_id")]
