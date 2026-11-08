@@ -35,6 +35,14 @@ public sealed partial class CropTeacherManagedSeedOwner
             var operation = Pending ?? throw new InvalidOperationException("Managed crop owner has no pending phase.");
             RequireOperation(operation);
             var recovered = await RecoverAsync(http, operation, evidenceDirectory, post).ConfigureAwait(false);
+            if (!operation.IsLifecycle && operation.Prepared is null)
+            {
+                var seed = recovered.Seed!;
+                seed.ValidateArtifactsUnchanged();
+                await PersistPreparedAsync(operation, seed.OriginalIntentSha256, seed.PreparedQueuePath,
+                    seed.PreparedQueueSha256, recoveredAfterNativeVerification: true).ConfigureAwait(false);
+                seed.ValidateArtifactsUnchanged();
+            }
             await AdvanceAsync(operation, recovered.Evidence, recovered.SnapshotPath,
                 recovered.Validate, "original_recovery").ConfigureAwait(false);
         }
@@ -60,7 +68,8 @@ public sealed partial class CropTeacherManagedSeedOwner
         finally { gate.Release(); }
     }
 
-    private sealed record RecoveredOwnerBoundary(StrategyLedgerEvidence Evidence, string SnapshotPath, Action Validate);
+    private sealed record RecoveredOwnerBoundary(StrategyLedgerEvidence Evidence, string SnapshotPath, Action Validate,
+        CropTeacherSeedRecoveredBoundary? Seed = null);
 
     private async Task<RecoveredOwnerBoundary> RecoverAsync(HttpClient http, CropTeacherManagedSeedOperation operation,
         string output, Func<string, string, Task<JsonObject>> post)
@@ -74,13 +83,15 @@ public sealed partial class CropTeacherManagedSeedOwner
                     Text(operation.Record, "original_intent_sha256"), value.Mode, value.CancellationReason), operation.Lifecycle!, post, write).ConfigureAwait(false);
             return new(new(lifecycle.LedgerPath, lifecycle.ReadLedger()), lifecycle.SnapshotPath, lifecycle.ValidateArtifactsUnchanged);
         }
-        var intentHash = operation.Prepared is null
-            ? throw new InvalidOperationException("Managed crop phase has no pinned preparation; inspect its original pending journals without replay.")
-            : Text(operation.Prepared, "original_intent_sha256");
+        var intentHash = operation.Prepared is not null ? Text(operation.Prepared, "original_intent_sha256") :
+            operation.Record["original_intent_sha256"]?.GetValue<string>() ??
+            throw new InvalidOperationException("Legacy seed phase has no pinned intent/preparation; retain its original journals without replay.");
+        if (operation.Prepared is null && operation.Started is null && !File.Exists(Path.Combine(operation.RuntimeDirectory, "support-intent.json")))
+            throw new InvalidOperationException("Seed phase has no retained original preparation to recover; this is not proof of zero execution.");
         var seed = await CropTeacherSeedRuntimeRecovery.RecoverAsync(http,
             new(options.BackendUrl, operation.RuntimeDirectory, options.PortfolioJournalDirectory, output,
                 options.RunId, options.ExecutorVersion, intentHash), operation.Scopes, operation.ReadStep(), post, write).ConfigureAwait(false);
-        return new(new(seed.LedgerPath, seed.ReadLedger()), seed.AfterSnapshotPath, seed.ValidateArtifactsUnchanged);
+        return new(new(seed.LedgerPath, seed.ReadLedger()), seed.AfterSnapshotPath, seed.ValidateArtifactsUnchanged, seed);
     }
 
     private void RequirePrepared(CropTeacherManagedSeedOperation operation, string intentHash)

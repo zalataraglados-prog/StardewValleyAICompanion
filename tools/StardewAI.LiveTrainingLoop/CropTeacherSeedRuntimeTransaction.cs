@@ -67,7 +67,7 @@ internal sealed partial class CropTeacherSeedRuntimeTransaction
         Exception? failure = null;
         try
         {
-            if (scope.PreparationDetails is not null) diagnostic["preparation_details"] = scope.PreparationDetails.DeepClone();
+            AddPreparationDetails(diagnostic, scope);
             var rawIntent = diagnostic.ToJsonString(JsonOptions);
             await write(Path.Combine(output, "support-intent.json"), rawIntent);
             var intentHash = PortfolioMutationRequestJournal.Hash(Encoding.UTF8.GetBytes(rawIntent));
@@ -145,6 +145,11 @@ internal sealed partial class CropTeacherSeedRuntimeTransaction
             ["resource_settlement_verified"] = false, ["formal_product_training_authorized"] = false
         };
         return intent;
+    }
+
+    internal static void AddPreparationDetails(JsonObject intent, CropSeedRuntimeScopeBinding scope)
+    {
+        if (scope.PreparationDetails is not null) intent["preparation_details"] = scope.PreparationDetails.DeepClone();
     }
 
     internal static async Task WriteSummaryAsync(Func<string, string, Task> write, string path,

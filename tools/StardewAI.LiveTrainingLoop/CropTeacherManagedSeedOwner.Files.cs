@@ -74,7 +74,11 @@ public sealed partial class CropTeacherManagedSeedOwner
         if (!ReferenceEquals(operation.Owner, this) || !ReferenceEquals(Pending, operation))
             throw new InvalidOperationException("Managed crop operation is not this owner's unique pending operation.");
         if (operation.IsLifecycle) ValidateLifecycle(operation);
-        else operation.Scopes.ValidateStep(operation.ReadStep());
+        else
+        {
+            operation.Scopes.ValidateStep(operation.ReadStep());
+            ValidateSeedIntent(operation);
+        }
     }
     private CropTeacherManagedSeedScopes OpenScopes(JsonObject record)
     {

@@ -1,4 +1,3 @@
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -16,16 +15,8 @@ public static partial class CropTeacherSeedRuntimeRecovery
         string origin, string root, string output, Artifacts artifacts, string phase, string operation, T request,
         Func<string, string, Task<JsonObject>> post, Func<string, string, Task> write)
     {
-        var raw = JsonSerializer.Serialize(request, JsonOptions);
-        var hash = PortfolioMutationRequestJournal.Hash(Encoding.UTF8.GetBytes(raw));
-        var stem = Path.Combine(Path.GetFullPath(options.PortfolioJournalDirectory), "portfolio-mutation-" + hash);
-        var requestPath = stem + "-rpc-request.json";
-        var journalPath = stem + "-rpc-journal.json";
-        var expected = new JsonObject
-        {
-            ["schema_version"] = "stardewai.portfolio_rpc_journal.v1", ["backend_url"] = options.BackendUrl,
-            ["operation"] = operation, ["request_file"] = Path.GetFileName(requestPath), ["request_sha256"] = hash
-        };
+        var (requestPath, journalPath, hash, expected) = PortfolioMutationRequestJournal.Describe(
+            options.BackendUrl, options.PortfolioJournalDirectory, operation, request, JsonOptions);
         artifacts.Pin(requestPath);
         artifacts.Pin(journalPath);
         var original = await PortfolioMutationRequestJournal.ReadAsync(journalPath, requestPath, expected, hash);

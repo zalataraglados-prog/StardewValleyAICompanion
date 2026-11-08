@@ -1,5 +1,9 @@
 # Lifecycle In The Same Durable Crop Owner
 
+Current successor: [original seed preparation ownership](money-crop-seed-preparation-ownership.md).
+It extends the same invocation/index mechanisms; this lifecycle runtime/recovery
+is not duplicated or replaced.
+
 ## Accepted Parent
 
 PR521's exact headc2d18d8512c4714f9688351c33b9cd99fc15242d passed all42 steps

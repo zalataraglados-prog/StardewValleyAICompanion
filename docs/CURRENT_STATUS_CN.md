@@ -1,5 +1,9 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **本片本地验证：** 原准备/恢复和混合owner相关428/428通过、零失败/跳过，含10项新场景；不是新native或正式训练证据，完整CI/发布见本片收口。
+
+> **2026-11-08 R2原seed准备归属（当前唯一接续）：** #522经最终42步CI `42426869336`/同head审查合入`4f057050`，Core2443/Backend1136且核树清分支。本片在变更前以原binder/preflight/intent固定SHA，原factory调用共用同一owner一次性claim及私有证书/实际journal/pin；仅完整原准备和原native结果经原consumer全验后才补缺失准备记录、接受，不造证明/零执行或重发。旧standalone记录兼容但不追认预固定；初45、49专项通过，最终相关/CI见收口。下一步准备-only/部分准备及派发归属，复用原严格零派发核验，再原行走维护/保存连续性和managed原生小样本；原全局日历/预算/跨根、Provider/模型/manifest仍在后续。L1`19/19、11/11`、formal=false/Student训后21/21不变，无API worker，local-data不提交。[合同](money-crop-seed-preparation-ownership.md)。下方为历史。
+
 > **本片本地验证：** 相关418/418、最终owner41/41均通过、零失败/跳过，含15项新场景；不替代真实原生游戏或正式训练证据，完整CI见本片收口。
 
 > **2026-11-08 R2生命周期接同一owner（当前唯一接续）：** #521经最终42步CI `42424409057`/同head审查合入`1ec5bfa9`，Core2443/Backend1121且核树清分支。本片生命周期共用原owner单pending/序列/接受/恢复，准入钉已接受源内容和原intent，首次调用前持久started claim；未知只恢复不重发。原RunAsync经可选薄adapter复用原已验结果/实际journal，正常接受无额外Get；原执行器/取消/日历/释放规则不改。首混合37通过，后38/39仅新断言缺目录类型误设已修；最终定向/相关/CI见收口，非新游戏或开训。下一步原seed未完成准备/缺proof/派发归属，再原行走维护/保存连续性及managed有界原生样本；原全局日历/预算/跨根、Provider/模型与manifest仍在后续。L1`19/19、11/11`、formal=false及Student训后21/21不变，无API worker，local-data不提交。[合同](money-crop-owner-lifecycle.md)。下方为历史。

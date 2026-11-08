@@ -8,9 +8,10 @@ namespace StardewAI.Backend.Tests;
 public sealed partial class CropTeacherSeedPlantingRuntimeTests
 {
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task ManagedOwnerUsesOriginalPlantingSelectionAndPartialConsumption(bool explicitClaim)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task ManagedOwnerUsesOriginalPlantingSelectionAndPartialConsumption(bool explicitClaim, bool managedPreparation)
     {
         using var f = new RuntimeFixture();
         using var inputs = new OwnerInputs(f.Files.SourcePath, f.Files.LedgerPath, f.Files.RequestPath);
@@ -21,9 +22,10 @@ public sealed partial class CropTeacherSeedPlantingRuntimeTests
         Assert.Equal(CropTeacherRunStageKinds.ExecuteCropBatch, step.Stage);
         if (explicitClaim) step = step with { SeedReservationId = f.Files.OwnedSlotOne };
         var operation = await owner.AdmitAsync(step, f.Files.SourcePath, f.Files.LedgerPath, files.Native);
-        var runtime = await f.Prepare(consumed: explicitClaim ? 3 : 1, failedSuffix: explicitClaim,
+        Task<CropTeacherSeedPlantingRuntime> Prepare() => f.Prepare(consumed: explicitClaim ? 3 : 1, failedSuffix: explicitClaim,
             selectedScope: operation.Scopes.Planting, runtimeDirectory: operation.RuntimeDirectory, selectedStep: operation.ReadStep());
-        await owner.PinPreparedAsync(operation, runtime);
+        var runtime = managedPreparation ? await owner.PrepareSeedAsync(operation, Prepare) : await Prepare();
+        if (!managedPreparation) await owner.PinPreparedAsync(operation, runtime);
         await f.Observe(runtime);
         await runtime.CompleteAsync(f.Transition);
         var reads = f.Handler.LedgerReads;

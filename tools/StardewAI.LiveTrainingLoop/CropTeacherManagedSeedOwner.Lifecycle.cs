@@ -35,20 +35,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         {
             RequireOperation(operation);
             if (!operation.IsLifecycle) throw new InvalidOperationException("Managed crop operation is not a lifecycle closure.");
-            if (operation.Started is not null)
-                throw new InvalidOperationException("Managed lifecycle invocation is already claimed; recover original evidence instead of repeating it.");
-            var started = new JsonObject
-            {
-                ["schema_version"] = "crop_teacher_managed_lifecycle_start.v1", ["sequence"] = operation.Sequence,
-                ["run_id"] = options.RunId, ["support_step_id"] = operation.SupportStepId,
-                ["admission_sha256"] = HashFile(operation.RecordPath),
-                ["original_intent_sha256"] = Text(operation.Record, "original_intent_sha256"),
-                ["runtime_invocation_claimed"] = true, ["formal_product_training_authorized"] = false
-            };
-            var startedPath = RecordPath(operation.Sequence, "started");
-            await SaveAsync(startedPath, started).ConfigureAwait(false);
-            operation.Started = started;
-            TrackFrontier(startedPath);
+            await ClaimRuntimeInvocationAsync(operation).ConfigureAwait(false);
             var boundary = await CropTeacherSeedLifecycleRuntime.RunManagedAsync(http, LifecycleOptions(operation.Record), operation.Lifecycle!,
                 commit, post, write).ConfigureAwait(false);
             var artifacts = boundary.Artifacts;
