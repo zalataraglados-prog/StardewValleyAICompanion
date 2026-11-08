@@ -74,7 +74,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         if (!ReferenceEquals(operation.Owner, this) || !ReferenceEquals(Pending, operation))
             throw new InvalidOperationException("Managed crop operation is not this owner's unique pending operation.");
         operation.RuntimeArtifactGuard?.Invoke();
-        if (operation.IsSupportingRoute) ValidateSupportingRoute(operation);
+        if (operation.IsSupportingTransition) ValidateSupportingTransition(operation);
         else if (operation.IsLifecycle) ValidateLifecycle(operation);
         else
         {
@@ -97,6 +97,6 @@ public sealed partial class CropTeacherManagedSeedOwner
     private static IReadOnlyDictionary<string, string> Inputs(CropTeacherManagedSeedScopes scopes) =>
         scopes.Purchase?.InputHashes ?? scopes.Transfer?.InputHashes ?? scopes.Planting!.InputHashes;
     private static IReadOnlyDictionary<string, string> OperationInputs(CropTeacherManagedSeedOperation operation) =>
-        operation.RouteStart is not null ? operation.RouteStart.InputHashes : operation.IsSupportingRoute ? operation.SupportingRoute!.InputHashes :
+        operation.RouteStart is not null ? operation.RouteStart.InputHashes : operation.IsSupportingTransition ? operation.SupportingTransition!.InputHashes :
         operation.IsLifecycle ? operation.Lifecycle!.InputHashes : Inputs(operation.Scopes);
 }

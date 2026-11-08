@@ -6,7 +6,7 @@ using StardewAI.Core.Infrastructure;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
-public sealed class CropTeacherWateringMaintenance
+public sealed class CropTeacherWateringMaintenance : ICropTeacherSupportingTransition
 {
     private readonly CropTeacherRetainedInputs inputs;
     private readonly CropTeacherSupportingRebind rebind;
