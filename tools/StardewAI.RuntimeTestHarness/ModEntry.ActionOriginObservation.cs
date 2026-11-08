@@ -11,6 +11,7 @@ public sealed partial class ModEntry
     private bool nativeObservationPatchesFailed;
 
     private static string? ObservationRequestRejection(TrainingExecutionRequest request) =>
+        request.ActionOriginInventoryTransients && !request.ActionOriginInventoryPayload ? "inventory_transients_require_payload" :
         request.ActionOriginInventoryPayload && !request.ActionOriginToolInputs ? "inventory_payload_requires_tool_inputs" :
         request.ActionOriginToolInputs && !request.ActionOriginSnapshotAnchor ? "tool_inputs_require_snapshot_anchor" :
         request.ActionOriginSnapshotAnchor && request.ActionOriginObservationScopeId is null ? "snapshot_anchor_requires_native_observation" :

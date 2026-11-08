@@ -69,6 +69,7 @@ public sealed class LiveTrainingOptions
     public bool ObserveNativeOutputSnapshotAnchor { get; set; }
     public bool ObserveNativeClearanceToolInputs { get; set; }
     public bool ObserveNativeInventoryPayload { get; set; }
+    public bool ObserveNativeInventoryTransients { get; set; }
     public string TeacherPreferencePath { get; set; } = string.Empty;
     public bool UseTeacherPreferenceQueue =>
         !string.IsNullOrWhiteSpace(TeacherPreferencePath);
@@ -628,6 +629,10 @@ public sealed class LiveTrainingOptions
             else if (current == "--observe-native-inventory-payload")
             {
                 options.ObserveNativeInventoryPayload = true;
+            }
+            else if (current == "--observe-native-inventory-transients")
+            {
+                options.ObserveNativeInventoryTransients = true;
             }
             else if (current == "--stop-after-social-objective-complete")
             {
