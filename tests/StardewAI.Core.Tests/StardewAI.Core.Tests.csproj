@@ -85,6 +85,7 @@
     <Compile Include="CanonicalObjectUnitSourceGuardTests.cs" />
     <Compile Include="NativeHayStorageProjectorTests.cs" />
     <Compile Include="NativeHayStorageSourceGuardTests.cs" />
+    <Compile Include="NativeClearanceToolCostProjectorTests.cs" />
     <Compile Include="NativeOutputObservationSourceGuardTests.cs" />
     <Compile Include="ActionCatalogProvenanceGovernanceTests.cs" />
     <Compile Include="CandidateRouteConnectorCacheTests.cs" />

@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-08 原清障资源连续性（当前唯一接续）：** #540最终42步CI合入`f95fd37f`并核树清分支，Core2521/Backend1489。API peer的精确单次工具体力投影已复核接入，Core65/65；新完整库存数量/快照两端核Backend90/90。旧实际4观察重用3通过、1发现真实capture后间隙（tick2295木材16→快照2297为17），不把它判成资源闭环。[合同](native-clearance-resource-continuity.md)。下一步原trace显式强绑定及观察/快照生命周期窗口；实际工具输入、完整资源/生产来源齐后才唯一owner，再收获/原生保存跨日和managed及原全局/其余probe/Provider/模型/manifest。L1`19/19、11/11`冻结，formal=false，Student21/21训后，local-data不提交。真实API合作已恢复并有提交，旧耗尽暂停无效。下方为历史。
+
 > **2026-11-08 干草资源视图（当前唯一接续）：** #539最终42步CI合入`5bf13fbc`并核树，Core2487/Backend1483。本片分开稳定干草存量与当前地点/遍历上下文，不改旧资源核/执行器；纯分配不等于RNG产出或资源credit。Core34/34、相关Backend355/355，原生B的87地点/24读、7分支/跨地点/patch核通过；B空元组留档保留，C只补完整双schema留档，原档未变、进程退出。[合同](canonical-hay-storage-resource.md)。发布后仍精确clear/pickup/工具资源与生产来源含capture间隙接唯一owner，再收获/原生保存跨日及managed，随后全局协调/其余probe/Provider/模型/manifest。L1`19/19、11/11`冻结、formal=false、Student21/21训后，local-data不提交。用户已重新启用真实赠送API合作，旧耗尽暂停不再当永久禁用。下方为历史。
 
 > **新trace审查增量：** 初head审查4506032233指出排序接收区间/任意端点会误收颠倒/未来零量历史，2例先红；只新消费者改为沿原记录顺序逐次核库存，不重排不明确回调历史，旧共享执行器/来源格式不改。末次定向/原生离线回放与最终head CI另记，不冒称初审覆盖后续增量。
