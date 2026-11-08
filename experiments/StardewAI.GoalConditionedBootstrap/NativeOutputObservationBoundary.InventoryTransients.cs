@@ -76,7 +76,8 @@ public static partial class NativeOutputObservationBoundary
 
     private static void CountTransientText(string? value, int maximum, ref int characters)
     {
-        Require(value is not null && value.Length <= maximum && (characters += value.Length) <= 1024 * 1024,
+        Require(value is not null && value.Length <= maximum && NativeObservationText.IsWellFormedUtf16(value) &&
+                (characters += value.Length) <= 1024 * 1024,
             "native transient text is unavailable or exceeds the shared payload budget");
     }
 
