@@ -10,6 +10,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         CropTeacherManagedSeedOperation operation, string evidenceDirectory, Func<string, string, Task<JsonObject>> post)
     {
         if (operation.Started is null) throw new InvalidOperationException("Managed supporting route has not claimed its original rebind invocation.");
+        if (operation.RouteStart is not null) LoadOriginalRouteOutcome(operation);
         var output = Path.GetFullPath(evidenceDirectory);
         if (Directory.Exists(output) || File.Exists(output) || Within(operation.RuntimeDirectory, output) ||
             Within(output, operation.RuntimeDirectory) || operation.SupportingRoute!.InputHashes.Keys.Any(path => Within(output, path)))
@@ -63,10 +64,24 @@ public sealed partial class CropTeacherManagedSeedOwner
         accepted["native_outcome_verified"] = true;
         accepted["native_crop_lifecycle_verified"] = false;
         accepted["teacher_preference_label_eligible"] = false;
+        if (operation.RouteStart is not null)
+        {
+            accepted["route_native_claim_sha256"] = HashFile(Path.Combine(operation.RuntimeDirectory, "route-native-claim.json"));
+            accepted["route_native_result_sha256"] = HashFile(Path.Combine(operation.RuntimeDirectory, "route-native-result.json"));
+            accepted["route_target_reached"] = operation.SupportingRoute!.RouteTargetReached;
+        }
     }
 
     private void ValidateSupportingRouteAcceptance(CropTeacherManagedSeedOperation operation, JsonObject accepted)
     {
+        if (operation.RouteStart is not null)
+        {
+            LoadOriginalRouteOutcome(operation);
+            if (Text(accepted, "route_native_claim_sha256") != HashFile(Path.Combine(operation.RuntimeDirectory, "route-native-claim.json")) ||
+                Text(accepted, "route_native_result_sha256") != HashFile(Path.Combine(operation.RuntimeDirectory, "route-native-result.json")) ||
+                accepted["route_target_reached"]?.GetValue<bool>() != operation.SupportingRoute!.RouteTargetReached)
+                throw new InvalidDataException("Owned crop native route acceptance changed.");
+        }
         if (operation.Started is null || accepted["operation_kind"]?.GetValue<string>() != "supporting_route" ||
             accepted["prepared_sha256"] is not null || accepted["original_proof_sha256"] is not null || accepted["dispatch_sha256"] is not null ||
             Text(accepted, "runtime_start_sha256") != HashFile(RecordPath(operation.Sequence, "started")) ||

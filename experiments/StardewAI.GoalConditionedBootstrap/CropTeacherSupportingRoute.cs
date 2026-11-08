@@ -11,23 +11,38 @@ public sealed partial class CropTeacherSupportingRoute
     private readonly SnapshotEnvelope after;
     private readonly StrategyCommitmentLedger ledger;
     private readonly ReservationPortfolioCommitRequest request;
-    private readonly Dictionary<string, string> hashes;
-    private readonly Dictionary<string, string> logicalHashes;
+    private readonly InputGuard inputs;
 
     private CropTeacherSupportingRoute(string runRequestPath, string sourcePath, string ledgerPath,
-        IReadOnlyCollection<string> commitmentIds, MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId)
+        IReadOnlyCollection<string> commitmentIds, MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId,
+        string? verifiedHopTarget = null)
     {
         var paths = new[] { runRequestPath, sourcePath, ledgerPath, transition.QueuePath, transition.BeforeSnapshotPath,
             transition.ExecutionReceiptPath, transition.AfterSnapshotPath }.Select(Path.GetFullPath)
             .Distinct(CropTeacherSeedTransferNativeOutcome.PathComparer).ToArray();
-        foreach (var path in paths) RequireRegularInput(path);
         // Retain only these explicit phase inputs. A fresh validation below also checks CAS blob content.
         using var reads = InvocationReadSession.Start(paths);
-        hashes = paths.ToDictionary(path => path, CurrentTeacherFrontierSupport.HashFile, CropTeacherSeedTransferNativeOutcome.PathComparer);
-        logicalHashes = paths.ToDictionary(path => path, LogicalHash, CropTeacherSeedTransferNativeOutcome.PathComparer);
+        inputs = new(paths);
+        var data = ReadSource(runRequestPath, sourcePath, ledgerPath, commitmentIds, stepId);
+        ledger = data.Ledger;
+        var finalTarget = MoneyRevenueCropNativeLifecycleProofBuilder.SupportingRouteTarget(data.Snapshot, transition.TransitionKind, data.CropLocation);
+        after = MoneyRevenueCropNativeLifecycleProofBuilder.VerifySupportingRoute(data.Snapshot, transition, data.CropLocation, verifiedHopTarget);
+        RouteTargetReached = verifiedHopTarget is null || verifiedHopTarget == finalTarget;
+        request = new ReservationPortfolioCommitRequest
+        {
+            StateHash = after.StateHash, ExpectedLedgerRevision = ledger.Revision,
+            PortfolioId = stepId, SourceDecisionId = stepId, GoalId = "earn_money"
+        };
+        AfterSnapshotPath = Path.GetFullPath(transition.AfterSnapshotPath);
+        ValidateInputsUnchanged();
+    }
+
+    private static RouteSource ReadSource(string runRequestPath, string sourcePath, string ledgerPath,
+        IReadOnlyCollection<string> commitmentIds, string stepId)
+    {
         var source = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(sourcePath, "crop supporting route source");
         MoneyRevenueCropSeedAcquisitionProofBuilder.ValidateSnapshot(source, "crop supporting route source");
-        ledger = AcquisitionStrategyLedgerReader.Read(ledgerPath, source).Ledger;
+        var ledger = AcquisitionStrategyLedgerReader.Read(ledgerPath, source).Ledger;
         Require(ledger.PreparedMaterialTransfer is null,
             "Crop supporting route cannot cross an unresolved prepared material transfer.");
         var supply = CropTeacherOwnedSeedSupply.Read(source, ledger, commitmentIds);
@@ -48,14 +63,7 @@ public sealed partial class CropTeacherSupportingRoute
         Require(!string.IsNullOrWhiteSpace(stepId) && !ledger.History.Any(row => row.CommitmentId == stepId || row.SourceDecisionId == stepId) &&
                 !ledger.CropPlantingCommitments.Any(row => row.CommitmentId == stepId || row.SourceDecisionId == stepId),
             "Crop supporting route marker identity is not new/distinct.");
-        after = MoneyRevenueCropNativeLifecycleProofBuilder.VerifySupportingRoute(source, transition, locations.Single());
-        request = new ReservationPortfolioCommitRequest
-        {
-            StateHash = after.StateHash, ExpectedLedgerRevision = ledger.Revision,
-            PortfolioId = stepId, SourceDecisionId = stepId, GoalId = "earn_money"
-        };
-        AfterSnapshotPath = Path.GetFullPath(transition.AfterSnapshotPath);
-        ValidateInputsUnchanged();
+        return new(source, ledger, locations.Single());
     }
 
     public static CropTeacherSupportingRoute Open(string runRequestPath, string sourcePath, string ledgerPath,
@@ -63,10 +71,11 @@ public sealed partial class CropTeacherSupportingRoute
         new(runRequestPath, sourcePath, ledgerPath, commitmentIds, transition, stepId);
 
     public string AfterSnapshotPath { get; }
+    public bool RouteTargetReached { get; }
     public StrategyCommitmentLedger BaseLedger => CropTeacherSeedSupportSource.Copy(ledger);
     public bool NativeCropLifecycleVerified => false;
     public bool FormalProductTrainingAuthorized => false;
-    public IReadOnlyDictionary<string, string> InputHashes => new Dictionary<string, string>(hashes, CropTeacherSeedTransferNativeOutcome.PathComparer);
+    public IReadOnlyDictionary<string, string> InputHashes => inputs.ReadHashes();
     public ReservationPortfolioCommitRequest RebindRequest
     {
         get { ValidateInputsUnchanged(); return CropTeacherSeedSupportSource.Copy(request); }
@@ -81,4 +90,6 @@ public sealed partial class CropTeacherSupportingRoute
             "Crop supporting route rebind does not replay the original marker: " + string.Join(",", reasons));
         return CropTeacherSeedSupportSource.Copy(reply.Ledger!);
     }
+
+    private sealed record RouteSource(SnapshotEnvelope Snapshot, StrategyCommitmentLedger Ledger, string CropLocation);
 }

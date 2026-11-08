@@ -6,7 +6,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
 {
     // A leaf witness reuses the lifecycle kernels, not its whole-cycle success flag.
     internal static SnapshotEnvelope VerifySupportingRoute(SnapshotEnvelope source,
-        MoneyRevenueCropNativeLifecycleTransitionRequest request, string cropLocation)
+        MoneyRevenueCropNativeLifecycleTransitionRequest request, string cropLocation, string? verifiedHopTarget = null)
     {
         Require(request.TransitionKind is CropIngressRouteKind or SleepIngressRouteKind,
             "Crop supporting-route witness requires an original ingress route kind.");
@@ -18,10 +18,16 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         Require(EqualJson(source, transition.Before),
             "Crop supporting-route witness does not continue its exact accepted source.");
         ValidateQueueReceipt(transition);
-        var target = request.TransitionKind == SleepIngressRouteKind ? ReadHomeLocation(source) : cropLocation;
+        var target = verifiedHopTarget ?? SupportingRouteTarget(source, request.TransitionKind, cropLocation);
         Require(!string.IsNullOrWhiteSpace(target), "Crop supporting-route witness lacks its original target location.");
         ValidateSupportingRoutes(request.TotalDay, new List<LoadedTransition> { transition }, target);
         return transition.After;
+    }
+
+    internal static string SupportingRouteTarget(SnapshotEnvelope source, string kind, string cropLocation)
+    {
+        Require(kind is CropIngressRouteKind or SleepIngressRouteKind, "Crop supporting route kind is invalid.");
+        return kind == SleepIngressRouteKind ? ReadHomeLocation(source) : cropLocation;
     }
 
     private static void ValidateQueueReceipt(LoadedTransition transition)

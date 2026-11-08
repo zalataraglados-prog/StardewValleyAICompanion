@@ -1,5 +1,10 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **本片最终本地验证：** 相关638/638、末次定向57/57通过，零失败/跳过；包含原编译语义及准入后ID篡改反例，checkpoint匹配EVD338。完整CI/审查/发布见收口，非新游戏或训练证据。
+> **审查修复：** 初head两项建议均已源码核实并先复现，仅补新入口`building_door`与显式完整回执前置门，普通建筑入口及编译前/准入后关闭回执三项新增覆盖后，最终定向60/60通过，旧编译/执行规则未改。完整CI按最终head收口。
+
+> **2026-11-08 R2原路线发起与执行归属（当前唯一接续）：** #527经42步CI `42439814108`/同head审查合入`ef6c74a9`且核树清分支，Core2443/Backend1248。本片在同owner gate下接原编译、固定实际队列/源与预定原生输出、调用前一次性claim和原循环；未知不重发，完整原生后才走原marker，原回包/lookup/完整Get恢复共用。按原单连接器重规划区分中间/最终到达，新入口仅动作边界取真实full，旧profile/执行器不改；两段同链和重启已验。53专项及后续19通过，最终反例/相关/CI见收口。[合同](money-crop-owned-route-execution.md)。发布后唯一下一步原维护/补水/恢复与原生保存，再managed真实有界集成，随后全局日历/预算/跨根/carrier和Provider/模型/manifest。L1`19/19、11/11`、formal=false及Student训后21/21保持，非新游戏或训练，无API worker，local-data不提交。下方为历史。
+
 > **2026-11-08 R2原路线证据接同一owner（当前唯一接续）：** #526经42步CI `42436793211`/同head审查合入`5e16e081`且核树清分支，Core2443/Backend1213。本片将已完成原路线经原身份/回执/资源不变核与原marker完整回放，作为同一持久owner的新phase接续；不派发移动/不重写执行器，缺journal或未知mutation不重发，丢回包只原lookup，完整读回后才推进。旧活动crop/idle边界不改，单步路线非整周期/Teacher标签。首4/4、同owner9/9及扩展34/34通过，相关回归/CI见收口；下一步原路线发起到该边界，再维护/原生保存与managed有界原生，然后原全局日历/预算/跨根及Provider/模型/manifest。L1`19/19、11/11`、formal=false及Student训后21/21保持，无游戏/训练/API worker，local-data不提交。[合同](money-crop-supporting-route-continuity.md)。下方为历史。
 
 > **本片最终本地验证：** 相关495/495通过，零失败/跳过，含26项新增；末次仅修新夹具提取方法缩进，checkpoint匹配EVD338。完整CI/发布见收口，非新游戏或训练证据。

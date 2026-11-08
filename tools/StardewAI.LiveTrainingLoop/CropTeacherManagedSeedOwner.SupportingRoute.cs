@@ -39,13 +39,18 @@ public sealed partial class CropTeacherManagedSeedOwner
         {
             RequireOperation(operation);
             if (!operation.IsSupportingRoute) throw new InvalidOperationException("Managed crop operation is not a supporting route.");
+            if (operation.RouteStart is not null)
+                await EnsureOriginalRouteOutcomeAsync(operation).ConfigureAwait(false);
             await ClaimRuntimeInvocationAsync(operation).ConfigureAwait(false);
             var scope = operation.SupportingRoute!;
             var root = operation.RuntimeDirectory;
-            if (Directory.Exists(root) || File.Exists(root)) throw new IOException("Retained route runtime requires recovery, not another mutation.");
-            Directory.CreateDirectory(root);
-            var intent = CreateSupportingRouteIntent(operation.Record, scope);
-            await write(Path.Combine(root, "route-intent.json"), intent.ToJsonString(JsonOptions)).ConfigureAwait(false);
+            if (operation.RouteStart is null)
+            {
+                if (Directory.Exists(root) || File.Exists(root)) throw new IOException("Retained route runtime requires recovery, not another mutation.");
+                Directory.CreateDirectory(root);
+                var intent = CreateSupportingRouteIntent(operation.Record, scope);
+                await write(Path.Combine(root, "route-intent.json"), intent.ToJsonString(JsonOptions)).ConfigureAwait(false);
+            }
             var before = await StrategyLedgerEvidenceStore.ReadAsync(http, options.BackendUrl, root,
                 scope.BaseLedger.SourceStateHash, JsonOptions, "Crop supporting route base").ConfigureAwait(false);
             CropTeacherSeedRuntimeTransaction.RequireLedger(scope.BaseLedger, before.Ledger, "supporting route base");
@@ -62,6 +67,8 @@ public sealed partial class CropTeacherManagedSeedOwner
 
     private CropTeacherSupportingRoute OpenSupportingRoute(JsonObject record)
     {
+        if (record["route_execution_protocol"] is not null)
+            throw new InvalidDataException("Completed-route admission cannot adopt an unknown native execution protocol.");
         var transition = record["route_transition"]?.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)
             ?? throw new InvalidDataException("Managed crop supporting route lacks its original transition.");
         if (record["step"] is not null || record["prior_verified_snapshot_path"] is not null ||
@@ -78,24 +85,27 @@ public sealed partial class CropTeacherManagedSeedOwner
         return scope;
     }
 
-    private JsonObject CreateSupportingRouteIntent(JsonObject record, CropTeacherSupportingRoute scope) => new()
+    private JsonObject CreateSupportingRouteIntent(JsonObject record, CropTeacherSupportingRoute? scope) =>
+        record["route_execution_protocol"]?.GetValue<string>() == "original_loop.v1" ? CreateOriginalRouteIntent(record) : new()
     {
         ["schema_version"] = "crop_teacher_managed_supporting_route.v1", ["run_id"] = options.RunId,
         ["executor_version"] = options.ExecutorVersion, ["backend_url"] = options.BackendUrl,
         ["runtime_directory"] = StoredPath(record, "runtime_directory"), ["support_step_id"] = Text(record, "support_step_id"),
         ["route_transition"] = record["route_transition"]!.DeepClone(),
-        ["input_artifact_hashes"] = JsonSerializer.SerializeToNode(scope.InputHashes, JsonOptions),
+        ["input_artifact_hashes"] = JsonSerializer.SerializeToNode(scope!.InputHashes, JsonOptions),
         ["rebind_request"] = JsonSerializer.SerializeToNode(scope.RebindRequest, JsonOptions),
         ["native_dispatch_performed_by_adapter"] = false, ["native_crop_lifecycle_verified"] = false,
         ["teacher_preference_label_eligible"] = false, ["formal_product_training_authorized"] = false
     };
 
-    private string SupportingRouteIntentHash(JsonObject record, CropTeacherSupportingRoute scope) =>
+    private string SupportingRouteIntentHash(JsonObject record, CropTeacherSupportingRoute? scope) =>
         PortfolioMutationRequestJournal.Hash(Encoding.UTF8.GetBytes(CreateSupportingRouteIntent(record, scope).ToJsonString(JsonOptions)));
 
     private void ValidateSupportingRoute(CropTeacherManagedSeedOperation operation)
     {
-        operation.SupportingRoute!.ValidateInputsUnchanged();
+        operation.RouteStart?.ValidateInputsUnchanged();
+        operation.SupportingRoute?.ValidateInputsUnchanged();
+        if (operation.RouteStart is not null && operation.SupportingRoute is not null) operation.RuntimeArtifactGuard?.Invoke();
         if (SupportingRouteIntentHash(operation.Record, operation.SupportingRoute) != Text(operation.Record, "original_intent_sha256"))
             throw new InvalidDataException("Managed crop supporting route changed its admitted original intent.");
     }
