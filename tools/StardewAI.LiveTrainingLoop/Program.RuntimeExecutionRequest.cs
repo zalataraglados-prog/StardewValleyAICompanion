@@ -1595,6 +1595,8 @@ static partial class Program
             executionRequest.ActionOriginObservationScopeId is not null;
         executionRequest.ActionOriginToolInputs = options.ObserveNativeClearanceToolInputs &&
             executionRequest.ActionOriginObservationScopeId is not null;
+        executionRequest.ActionOriginInventoryPayload = options.ObserveNativeInventoryPayload &&
+            executionRequest.ActionOriginObservationScopeId is not null;
         return executionRequest;
     }
 

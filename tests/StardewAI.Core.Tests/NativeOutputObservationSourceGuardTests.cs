@@ -3,6 +3,32 @@ namespace StardewAI.Core.Tests;
 public sealed class NativeOutputObservationSourceGuardTests
 {
     [Fact]
+    public void InventoryPayloadEndpointsReuseTheSameObserverBudgetAndNeverBroadenOldAdmissionPolicy()
+    {
+        var scope = RuntimeHarnessSources.LoadFile("ModEntry.ActionOriginObservation.cs");
+        var recorder = RuntimeHarnessSources.LoadFile("ModEntry.ActionOriginObservation.Recorder.cs");
+        var inventory = RuntimeHarnessSources.LoadFile("ModEntry.ActionOriginObservation.InventoryPayload.cs");
+        var helper = RuntimeHarnessSources.LoadFile("NativeLiveItemPayloadCapture.cs");
+        Assert.Contains("inventory_payload_requires_tool_inputs", scope);
+        Assert.Contains("if (pending.Request.ActionOriginInventoryPayload) pending.OutputObservation.BeginInventoryPayload()", scope);
+        var finish = recorder[recorder.IndexOf("internal ActionOriginObservationReceipt Finish", StringComparison.Ordinal)..];
+        Assert.True(finish.IndexOf("CaptureInventoryPayload()", StringComparison.Ordinal) < finish.IndexOf("Stop();", StringComparison.Ordinal));
+        Assert.Contains("InventoryPayloadBefore = inventoryPayloadBefore", recorder);
+        Assert.Contains("remainingPayloadCharacters -= payload.Xml.Length", inventory);
+        Assert.Contains("item.GetType().Assembly != typeof(Item).Assembly", inventory);
+        Assert.Contains("SlotIndex = index, IsEmpty = true", inventory);
+        Assert.Contains("item.GetType() != typeof(StardewValley.Object)", recorder);
+        Assert.Contains("observation_nested_item_graph_not_supported", recorder);
+        Assert.Contains("NativeInventoryPayloadTypes.TryGet(type.FullName, out var descriptor)", helper);
+        var oldMechanics = helper[helper.IndexOf("internal static NativeLiveItemPayload CaptureWithWriter", StringComparison.Ordinal)..
+            helper.IndexOf("private static bool SupportedItem", StringComparison.Ordinal)];
+        Assert.DoesNotContain("ValidateXml(", oldMechanics);
+        Assert.DoesNotContain("new GraphCheck", oldMechanics);
+        foreach (var forbidden in new[] { ".getOne(", "Game1.random", ".Stack =", ".Quality =", "ItemRegistry.Create", "new HttpClient" })
+            Assert.DoesNotContain(forbidden, inventory);
+    }
+
+    [Fact]
     public void ToolInputsJoinTheOriginalObserverOnlyOnAnExplicitRequest()
     {
         var scope = RuntimeHarnessSources.LoadFile("ModEntry.ActionOriginObservation.cs");
@@ -77,7 +103,10 @@ public sealed class NativeOutputObservationSourceGuardTests
         Assert.Contains("if (owner is null || !owner.active) return", hooks);
         Assert.Contains("ItemStackAfterCall = __state.Item.Stack", hooks);
         Assert.Contains("ReferenceIds.For(debris)", recorder);
-        Assert.Contains("SaveSerializer.GetSerializer(item.GetType()).Serialize(writer, item)", recorder);
+        Assert.Contains("NativeLiveItemPayloadCapture.CaptureWithWriter(item, writer", recorder);
+        var payload = RuntimeHarnessSources.LoadFile("NativeLiveItemPayloadCapture.cs");
+        Assert.Contains("SaveSerializer.GetSerializer(item.GetType()).Serialize(writer, item)", payload);
+        Assert.Contains("CappedNativeObservationWriter", payload);
         Assert.DoesNotContain("ClearanceOutputItemKey.From", recorder);
         Assert.Contains("observation_native_return_missing", recorder);
         Assert.Contains("observation_chunk_limit_exceeded", recorder);

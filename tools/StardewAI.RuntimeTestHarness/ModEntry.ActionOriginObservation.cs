@@ -11,6 +11,7 @@ public sealed partial class ModEntry
     private bool nativeObservationPatchesFailed;
 
     private static string? ObservationRequestRejection(TrainingExecutionRequest request) =>
+        request.ActionOriginInventoryPayload && !request.ActionOriginToolInputs ? "inventory_payload_requires_tool_inputs" :
         request.ActionOriginToolInputs && !request.ActionOriginSnapshotAnchor ? "tool_inputs_require_snapshot_anchor" :
         request.ActionOriginSnapshotAnchor && request.ActionOriginObservationScopeId is null ? "snapshot_anchor_requires_native_observation" :
         request.ActionOriginObservationScopeId is null ? null : NativeObservationScopePolicy.Rejection(request.ActionOriginObservationScopeId, request.ExecutionMode, request.OptionId,
@@ -62,6 +63,7 @@ public sealed partial class ModEntry
             pending.OutputObservation = new NativeCollectionObservation(pending.Request, capture);
             NativeCollectionObservation.Begin(pending.OutputObservation);
             if (pending.Request.ActionOriginToolInputs) pending.OutputObservation.BeginToolInputs();
+            if (pending.Request.ActionOriginInventoryPayload) pending.OutputObservation.BeginInventoryPayload();
         }
         catch (Exception error)
         {

@@ -1,10 +1,7 @@
-using System.Security.Cryptography;
-using System.Text;
 using StardewAI.Contracts.Training;
 using StardewAI.RuntimePrimitives;
 using StardewModdingAPI;
 using StardewValley;
-using StardewValley.SaveSerialization;
 
 namespace StardewAI.RuntimeTestHarness;
 
@@ -75,6 +72,7 @@ public sealed partial class ModEntry
             if (!ReferenceEquals(original, capture) || !ReferenceEquals(current, this) ||
                 Environment.CurrentManagedThreadId != threadId || collection is not null)
                 Reject("observation_context_incomplete");
+            var inventoryPayloadAfter = request.ActionOriginInventoryPayload ? CaptureInventoryPayload() : null;
             Stop();
             if (collections.Snapshot().Any(row => row.NativeReturn is null || row.InventoryAdmissions.Any(admission => admission.NativeReturn is null)))
                 Reject("observation_native_return_missing");
@@ -95,6 +93,7 @@ public sealed partial class ModEntry
                 InventoryBefore = InventoryRows(capture.InventoryBefore),
                 InventoryAfter = boundedInventory ? InventoryRows(CaptureInventoryItemCounts()) : Array.Empty<ActionOriginInventoryCount>(),
                 Collections = collections.Snapshot().OrderBy(row => row.Ordinal).ToArray(),
+                InventoryPayloadBefore = inventoryPayloadBefore, InventoryPayloadAfter = inventoryPayloadAfter,
                 ClearanceToolCalls = request.ActionOriginToolInputs ? toolCalls.Snapshot() : null
             };
         }
@@ -150,10 +149,10 @@ public sealed partial class ModEntry
             try
             {
                 // Observe the live payload: getOne() constructs Object and consumes native RNG.
-                SaveSerializer.GetSerializer(item.GetType()).Serialize(writer, item);
-                result.SerializedStateXml = writer.ToString();
+                var payload = NativeLiveItemPayloadCapture.CaptureWithWriter(item, writer, Math.Min(65536, remainingPayloadCharacters));
+                result.SerializedStateXml = payload.Xml;
                 remainingPayloadCharacters -= result.SerializedStateXml.Length;
-                result.SerializedStateSha256 = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(result.SerializedStateXml))).ToLowerInvariant();
+                result.SerializedStateSha256 = payload.Sha256;
             }
             catch (Exception error)
             {

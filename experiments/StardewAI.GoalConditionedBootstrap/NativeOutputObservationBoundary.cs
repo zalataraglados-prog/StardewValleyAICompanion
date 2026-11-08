@@ -24,6 +24,13 @@ public static partial class NativeOutputObservationBoundary
     public static NativeOutputObservationSummary Read(TrainingExecutionRequest request, ActionOriginObservationReceipt receipt,
         long earliestTick, long latestTick, string locationId)
     {
+        var payloadCharacters = 0;
+        return ReadWithPayloadBudget(request, receipt, earliestTick, latestTick, locationId, ref payloadCharacters);
+    }
+
+    private static NativeOutputObservationSummary ReadWithPayloadBudget(TrainingExecutionRequest request,
+        ActionOriginObservationReceipt receipt, long earliestTick, long latestTick, string locationId, ref int payloadCharacters)
+    {
         Require(request.ExecutionMode == "training_singleplayer" &&
                 request.OptionId is "executor.move_to_tile" or "executor.clear_obstacle" &&
                 !string.IsNullOrWhiteSpace(request.SourcePlanningOptionId) && !string.IsNullOrWhiteSpace(request.SaveIsolationPath) &&
@@ -40,7 +47,6 @@ public static partial class NativeOutputObservationBoundary
                 receipt.AfterGameTick <= latestTick,
             "scope identity, status or native tick interval differs from the original request/frame");
 
-        var payloadCharacters = 0;
         var chunkReferences = 0;
         var before = ReadDebris(receipt.BeforeDebris, ref payloadCharacters, ref chunkReferences);
         ReadDebris(receipt.AfterDebris, ref payloadCharacters, ref chunkReferences);
