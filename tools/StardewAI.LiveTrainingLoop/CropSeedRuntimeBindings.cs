@@ -14,7 +14,8 @@ internal sealed record CropSeedRuntimeScopeBinding(string CommitmentId, string S
 
 internal sealed record CropSeedRuntimeMarkerBinding(StrategyCommitmentLedger Ledger, Func<string, string> ValidateQueue,
     Func<MoneyRevenueCropNativeLifecycleTransitionRequest, string, string, CropSeedRuntimeSettlementBinding> VerifyTransition,
-    Func<MoneyRevenueCropNativeLifecycleTransitionRequest, string, string, string, CropSeedRuntimeSettlementBinding> ResumeTransition);
+    Func<MoneyRevenueCropNativeLifecycleTransitionRequest, string, string, string, CropSeedRuntimeSettlementBinding> ResumeTransition,
+    Func<string, string, CropTeacherSeedPlantingPrefix>? OpenPlantingPrefix = null);
 
 internal sealed record CropSeedRuntimeSettlementBinding(string ProofPath, string AfterStateHash, bool RequiresAcquisition,
     Func<ReservationPortfolioSupportingTransitionSettlementRequest> ReadSettlementRequest,
@@ -66,7 +67,7 @@ internal static class CropSeedRuntimeBindings
     internal static CropSeedRuntimeMarkerBinding Planting(CropTeacherSeedPlantingMarker marker) => new(
         marker.Ledger, marker.ValidateQueue,
         (transition, path, hash) => PlantingSettlement(marker.VerifyTransition(transition, path, hash)),
-        (transition, path, hash, proof) => PlantingSettlement(marker.ResumeTransition(transition, path, hash, proof)));
+        (transition, path, hash, proof) => PlantingSettlement(marker.ResumeTransition(transition, path, hash, proof)), marker.OpenPrefix);
 
     private static CropSeedRuntimeSettlementBinding PurchaseSettlement(CropTeacherSeedPurchaseSettlement verified)
     {

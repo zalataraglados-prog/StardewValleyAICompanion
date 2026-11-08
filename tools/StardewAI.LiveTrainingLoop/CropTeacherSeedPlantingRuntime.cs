@@ -19,7 +19,7 @@ public sealed class CropTeacherSeedPlantingRuntime : ICropTeacherSeedRuntime, IC
     private readonly string output;
     private readonly Func<string, string, Task> write;
 
-    private CropTeacherSeedPlantingRuntime(CropTeacherSeedRuntimeTransaction transaction, CropTeacherSeedPlantingPrefix prefix,
+    internal CropTeacherSeedPlantingRuntime(CropTeacherSeedRuntimeTransaction transaction, CropTeacherSeedPlantingPrefix prefix,
         string output, Func<string, string, Task> write)
     { this.transaction = transaction; this.prefix = prefix; this.output = output; this.write = write; }
 
@@ -43,9 +43,11 @@ public sealed class CropTeacherSeedPlantingRuntime : ICropTeacherSeedRuntime, IC
     public void ValidateDispatchQueue(string path) => transaction.ValidateDispatchQueue(path);
     CropTeacherSeedPreparedBoundary ICropTeacherSeedManagedRuntime.ReadPreparedBoundary() => transaction.ReadPreparedBoundary();
     CropTeacherSeedLiveBoundary ICropTeacherSeedManagedRuntime.ReadVerifiedBoundary() => transaction.ReadVerifiedBoundary();
+    void ICropTeacherSeedManagedRuntime.BindExecutionGuard(Action guard) => transaction.BindExecutionGuard(guard);
 
     public async Task ValidateBeforeDispatchAsync(int index, JsonObject item, JsonObject current, string currentSnapshotPath)
     {
+        transaction.RequireExecutionLease();
         // This read is explicitly the locked original authority, never a stale hash presented as current native state.
         var authority = await transaction.ReadOriginalAuthorityAsync();
         prefix.ValidateBeforeDispatch(index, item.Deserialize<ActionQueueItem>(JsonOptions)!,

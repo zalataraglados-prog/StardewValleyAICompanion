@@ -49,6 +49,14 @@ internal sealed partial class CropTeacherSeedRuntimeTransaction
         this.write = write;
     }
 
+    internal static CropTeacherSeedRuntimeTransaction RestorePrepared(HttpClient http, CropSeedRuntimeOptions options,
+        CropSeedRuntimeScopeBinding scope, CropSeedRuntimeMarkerBinding marker, string queuePath, string queueHash,
+        JsonNode preparedQueue, string intentHash, JsonObject diagnostic,
+        Func<JsonObject, ReservationPortfolioCommitRequest, Task<JsonObject>> commit,
+        Func<JsonObject, ReservationPortfolioSupportingTransitionSettlementRequest, Task<JsonObject>> settle,
+        Func<string, string, Task> write) => new(http, options, scope, marker, queuePath, queueHash,
+            preparedQueue.DeepClone(), intentHash, diagnostic.DeepClone().AsObject(), commit, settle, write);
+
     internal static async Task<CropTeacherSeedRuntimeTransaction> PrepareAsync(HttpClient http,
         CropSeedRuntimeOptions options, CropSeedRuntimeScopeBinding scope,
         Func<JsonObject, ReservationPortfolioCommitRequest, Task<JsonObject>> commit,
@@ -109,7 +117,11 @@ internal sealed partial class CropTeacherSeedRuntimeTransaction
         }
     }
 
-    public void ValidateDispatchQueue(string path) => ValidateDispatchQueueCore(path);
+    public void ValidateDispatchQueue(string path)
+    {
+        RequireExecutionLease();
+        ValidateDispatchQueueCore(path);
+    }
 
     private string ValidateDispatchQueueCore(string path)
     {

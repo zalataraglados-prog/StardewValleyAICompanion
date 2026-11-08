@@ -23,6 +23,10 @@ public sealed class CropTeacherManagedSeedOperation
     internal string RecordPath { get; }
     internal JsonObject? Prepared { get; set; }
     internal JsonObject? Started { get; set; }
+    internal JsonObject? Dispatch { get; set; }
+    internal ICropTeacherSeedRuntime? PreparedRuntime { get; set; }
+    internal Action? RuntimeArtifactGuard { get; set; }
+    internal bool ExecutionActive { get; set; }
     public int Sequence => Record["sequence"]!.GetValue<int>();
     public string SupportStepId => Record["support_step_id"]!.GetValue<string>();
     public string RuntimeDirectory => Record["runtime_directory"]!.GetValue<string>();

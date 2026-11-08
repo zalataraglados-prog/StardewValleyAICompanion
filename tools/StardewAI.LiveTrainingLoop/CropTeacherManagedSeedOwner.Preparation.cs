@@ -55,6 +55,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             ["queue_path"] = queuePath, ["queue_sha256"] = queueHash,
             ["native_dispatch_performed"] = false, ["formal_product_training_authorized"] = false
         };
+        if (HasOwnedDispatchProtocol(operation)) record["dispatch_protocol"] = "owner_loop.v1";
         if (recoveredAfterNativeVerification) record["reconstructed_after_original_native_verification"] = true;
         var path = RecordPath(operation.Sequence, "prepared");
         await SaveAsync(path, record).ConfigureAwait(false);

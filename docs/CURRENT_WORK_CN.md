@@ -1,5 +1,14 @@
 # StardewAI 当前工作
 
+## 2026-11-08 R2原准备态恢复与执行循环归属（当前唯一接续）
+
+- 本片最终相关448/448通过、零失败/跳过，含20项新增；checkpoint仍匹配EVD338。完整CI/发布见本片收口，本机不重复全量Core/Backend。
+
+- #523最终head `1f5f6e6d`经42步CI `42429129597`及同head审查接受，Core2443/Backend1146零失败/跳过，合入`834c4cca`、核树清自有分支。原intent预固定/准备归属不重做。
+- 新owned seed-start v2在原执行循环前持久一次性dispatch claim；它表示进入循环、不是native请求证明，`native_request_performed=null`不能改成零。只有尚未进入循环的新协议准备态可复用原完整准备/marker/queue/账本检查恢复同一个原runtime；已声明未知和旧记录不重发。复用原种植八格prefix、原事务和执行循环，旧standalone默认/共享执行器不改。[合同](money-crop-prepared-runtime-restore.md)。
+- 原owner初36/36、新重点首12/15后15/15；两项新测试字段/文件名错误仅修夹具，另一项确证执行后marker lookup可能退休，现只在全验后留存查回的原回包，已知坏回包仍拒绝。相关/最终CI见收口；不将协议样本冒称游戏实测。
+- **唯一下一步：** 完成本片验证发布，再复用原严格`CompleteWithoutNativeDispatchAsync`处理已知控制器零派发与未完成准备/缺完整queue，未知不清不重发；接原行走维护/保存连续性及managed有界原生，再原联合日历/聚合预算/跨根、Provider/模型与manifest/preflight。不重采L1，`19/19、11/11`与formal=false保持，Student新档21/21在训练后。无游戏/服务器/API worker，local-data不提交。下方为历史。
+
 ## 2026-11-08 R2原seed准备调用归属与预固定intent（当前唯一接续）
 
 - 本片最终相关428/428通过、零失败/跳过，含10项新增场景；checkpoint仍匹配EVD338。完整CI/发布见本片收口，本机不重复全量Core/Backend。

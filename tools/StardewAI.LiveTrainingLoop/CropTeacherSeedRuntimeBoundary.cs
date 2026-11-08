@@ -14,4 +14,5 @@ internal interface ICropTeacherSeedManagedRuntime
 {
     CropTeacherSeedPreparedBoundary ReadPreparedBoundary();
     CropTeacherSeedLiveBoundary ReadVerifiedBoundary();
+    void BindExecutionGuard(Action guard);
 }

@@ -55,28 +55,8 @@ public static partial class CropTeacherSeedRuntimeRecovery
         CropTeacherSeedRuntimeRecoveryOptions options, CropTeacherManagedSeedScopes scopes, CropTeacherRunStep step,
         Func<string, string, Task<JsonObject>> post, Func<string, string, Task> write)
     {
-        if (string.IsNullOrWhiteSpace(options.RunId) || string.IsNullOrWhiteSpace(options.ExecutorVersion) ||
-            string.IsNullOrEmpty(options.ExpectedIntentSha256) || options.ExpectedIntentSha256.Length != 64 ||
-            options.ExpectedIntentSha256.Any(value => !char.IsAsciiHexDigitLower(value)))
-            throw new ArgumentException("Crop seed recovery requires original run, executor and pinned intent SHA256.");
-        var origin = CropTeacherSeedLifecycleRuntime.NormalizeBackendOrigin(options.BackendUrl);
-        scopes.ValidateStep(step);
-        var binding = Bind(scopes, step);
-        var markerRequest = binding.ReadPreparationRequest();
-        var root = Path.GetFullPath(options.RuntimeDirectory);
-        var output = Path.GetFullPath(options.EvidenceDirectory);
-        var artifacts = new Artifacts(binding.InputHashes);
-        var intentPath = Path.Combine(root, "support-intent.json");
-        var intent = artifacts.Read<JsonObject>(intentPath);
-        var expected = CropTeacherSeedRuntimeTransaction.CreateIntent(
-            new(options.BackendUrl, root, options.RunId, options.ExecutorVersion), binding, markerRequest);
-        CropTeacherSeedRuntimeTransaction.AddPreparationDetails(expected, binding);
-        if (artifacts.Hashes[intentPath] != options.ExpectedIntentSha256 || !JsonNode.DeepEquals(expected, intent))
-            throw new InvalidDataException("Crop seed recovery differs from its pinned original intent.");
-        if (Directory.Exists(output) || File.Exists(output) || Contains(root, output) || Contains(output, root) ||
-            binding.InputHashes.Keys.Any(path => Contains(output, path)))
-            throw new IOException("Crop seed recovery requires a new, separate evidence directory.");
-        Directory.CreateDirectory(output);
+        var context = OpenOriginalPreparation(options, scopes, step);
+        var (origin, root, output, binding, markerRequest, artifacts, _) = context;
         var diagnostic = new JsonObject
         {
             ["schema_version"] = "crop_teacher_seed_runtime_recovery.v1", ["run_id"] = options.RunId,
@@ -88,21 +68,10 @@ public static partial class CropTeacherSeedRuntimeRecovery
         Exception? failure = null;
         try
         {
-            var preparation = artifacts.Read<JsonObject>(Path.Combine(root, "preparation-summary.json"));
-            if (preparation["status"]?.GetValue<string>() != "crop_seed_support_prepared" ||
-                expected.Any(row => !JsonNode.DeepEquals(row.Value, preparation[row.Key])))
-                throw new InvalidDataException("Crop seed recovery has no completed original preparation.");
-            var markerReply = await ReadReplyAsync(options, origin, root, output, artifacts, "marker", "commit",
-                markerRequest, post, write);
-            var marker = binding.VerifyPreparationReply(markerReply.Deserialize<ReservationPortfolioCommitResult>(JsonOptions)
-                ?? throw new InvalidDataException("Recovered crop marker reply is empty."));
-            ValidateRetainedLedger(artifacts, preparation, "base_ledger_path", root, binding.ReadBaseLedger());
-            ValidateRetainedLedger(artifacts, preparation, "marker_ledger_path", root, marker.Ledger);
-            var preparedQueuePath = RequiredPath(preparation, "compiled_queue_path");
-            var preparedQueue = artifacts.Read<JsonNode>(preparedQueuePath);
-            if (artifacts.Hashes[preparedQueuePath] != preparation["compiled_queue_sha256"]?.GetValue<string>())
-                throw new InvalidDataException("Original prepared crop queue hash drifted.");
-            marker.ValidateQueue(preparedQueuePath);
+            var prepared = await ReadOriginalPreparationAsync(options, context, post, write);
+            var marker = prepared.Marker;
+            var preparedQueuePath = prepared.QueuePath;
+            var preparedQueue = prepared.Queue;
             var transition = artifacts.Read<MoneyRevenueCropNativeLifecycleTransitionRequest>(Path.Combine(root, "native-transition-request.json"));
             if (transition.RunId != options.RunId || transition.ExecutorVersion != options.ExecutorVersion ||
                 transition.TotalDay != binding.TotalDay || transition.TransitionKind != binding.TransitionKind ||

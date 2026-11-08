@@ -11,7 +11,7 @@ public sealed class CropTeacherSeedPurchaseRuntime : ICropTeacherSeedRuntime, IC
 {
     private readonly CropTeacherSeedRuntimeTransaction transaction;
 
-    private CropTeacherSeedPurchaseRuntime(CropTeacherSeedRuntimeTransaction transaction) => this.transaction = transaction;
+    internal CropTeacherSeedPurchaseRuntime(CropTeacherSeedRuntimeTransaction transaction) => this.transaction = transaction;
 
     public static async Task<CropTeacherSeedPurchaseRuntime> PrepareAsync(HttpClient http,
         CropTeacherSeedPurchaseRuntimeOptions options, CropTeacherSeedPurchaseSupport scope,
@@ -24,6 +24,7 @@ public sealed class CropTeacherSeedPurchaseRuntime : ICropTeacherSeedRuntime, IC
     public void ValidateDispatchQueue(string path) => transaction.ValidateDispatchQueue(path);
     CropTeacherSeedPreparedBoundary ICropTeacherSeedManagedRuntime.ReadPreparedBoundary() => transaction.ReadPreparedBoundary();
     CropTeacherSeedLiveBoundary ICropTeacherSeedManagedRuntime.ReadVerifiedBoundary() => transaction.ReadVerifiedBoundary();
+    void ICropTeacherSeedManagedRuntime.BindExecutionGuard(Action guard) => transaction.BindExecutionGuard(guard);
     public Task<StrategyLedgerEvidence> CompleteAsync(string queuePath, string receiptPath, string afterSnapshotPath, string selectedCandidateId) =>
         transaction.CompleteAsync(queuePath, receiptPath, afterSnapshotPath, selectedCandidateId);
     public Task<StrategyLedgerEvidence> CompleteAsync(MoneyRevenueCropNativeLifecycleTransitionRequest transition) => transaction.CompleteAsync(transition);
