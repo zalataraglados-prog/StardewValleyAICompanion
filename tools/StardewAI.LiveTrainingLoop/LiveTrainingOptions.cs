@@ -67,6 +67,7 @@ public sealed class LiveTrainingOptions
     public bool EmitQueueExecutionReceipt { get; set; }
     public bool ObserveNativeOutputs { get; set; }
     public bool ObserveNativeOutputSnapshotAnchor { get; set; }
+    public bool ObserveNativeClearanceToolInputs { get; set; }
     public string TeacherPreferencePath { get; set; } = string.Empty;
     public bool UseTeacherPreferenceQueue =>
         !string.IsNullOrWhiteSpace(TeacherPreferencePath);
@@ -618,6 +619,10 @@ public sealed class LiveTrainingOptions
             else if (current == "--observe-native-output-snapshot-anchor")
             {
                 options.ObserveNativeOutputSnapshotAnchor = true;
+            }
+            else if (current == "--observe-native-clearance-tool-inputs")
+            {
+                options.ObserveNativeClearanceToolInputs = true;
             }
             else if (current == "--stop-after-social-objective-complete")
             {

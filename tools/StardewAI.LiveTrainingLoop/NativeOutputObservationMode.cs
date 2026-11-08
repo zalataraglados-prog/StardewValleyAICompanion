@@ -9,6 +9,8 @@ public static class NativeOutputObservationMode
 {
     public static void Validate(LiveTrainingOptions options)
     {
+        if (options.ObserveNativeClearanceToolInputs && !options.ObserveNativeOutputSnapshotAnchor)
+            throw new ArgumentException("--observe-native-clearance-tool-inputs requires --observe-native-output-snapshot-anchor.");
         if (options.ObserveNativeOutputSnapshotAnchor &&
             (!options.ObserveNativeOutputs || !string.Equals(options.ExecutionSnapshotProfile, "full", StringComparison.OrdinalIgnoreCase)))
             throw new ArgumentException("--observe-native-output-snapshot-anchor requires --observe-native-outputs and full execution snapshots.");

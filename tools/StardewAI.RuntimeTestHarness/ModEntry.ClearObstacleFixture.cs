@@ -31,7 +31,7 @@ public sealed partial class ModEntry
             ? "grass"
             : request.RuleKey;
         if (fixtureKind is not (
-            "grass" or "twig" or "seed_spot" or "artifact_spot" or "tree_moss" or "tree_chop"))
+            "grass" or "twig" or "seed_spot" or "artifact_spot" or "tree_moss" or "tree_chop" or "stone"))
         {
             return BlockedWithPrimitive(
                 request,
@@ -138,17 +138,20 @@ public sealed partial class ModEntry
             var qualifiedItemId = fixtureKind switch
             {
                 "twig" => "(O)294",
+                "stone" => "(O)343",
                 "seed_spot" => "(O)SeedSpot",
                 _ => "(O)590"
             };
             var createdObstacle =
                 ItemRegistry.Create<StardewValley.Object>(
                     qualifiedItemId);
+            if (fixtureKind == "stone" && !createdObstacle.IsBreakableStone())
+                return Blocked(request, "native_stone_fixture_not_breakable");
             createdObstacle.TileLocation = tile;
             createdObstacle.Location = location;
             location.objects[tile] = createdObstacle;
             EnsureClearObstacleFixtureTool(
-                fixtureKind == "twig" ? "axe" : "hoe");
+                fixtureKind == "stone" ? "pickaxe" : fixtureKind == "twig" ? "axe" : "hoe");
             if (fixtureKind == "artifact_spot")
             {
                 var activeHoe = Game1.player.Items
@@ -177,6 +180,7 @@ public sealed partial class ModEntry
                 fixtureKind switch
                 {
                     "twig" => observedObstacle.IsTwig(),
+                    "stone" => observedObstacle.IsBreakableStone() && observedObstacle.QualifiedItemId == "(O)343",
                     "seed_spot" =>
                         observedObstacle.QualifiedItemId ==
                         "(O)SeedSpot",
@@ -248,6 +252,7 @@ public sealed partial class ModEntry
         var hasTool = requiredToolKind switch
         {
             "axe" => Game1.player.Items.OfType<Axe>().Any(),
+            "pickaxe" => Game1.player.Items.OfType<Pickaxe>().Any(),
             "scythe" => Game1.player.Items.OfType<MeleeWeapon>().Any(weapon => weapon.isScythe()),
             _ => Game1.player.Items.OfType<Hoe>().Any()
         };
@@ -260,6 +265,7 @@ public sealed partial class ModEntry
         var tool = requiredToolKind switch
         {
             "axe" => (Tool)new Axe(),
+            "pickaxe" => new Pickaxe(),
             "scythe" => ItemRegistry.Create<Tool>("(W)47"),
             _ => new Hoe()
         };

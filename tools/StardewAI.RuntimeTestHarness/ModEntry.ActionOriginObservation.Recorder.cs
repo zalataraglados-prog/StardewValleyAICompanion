@@ -59,6 +59,7 @@ public sealed partial class ModEntry
 
         internal void Stop()
         {
+            StopToolInputs();
             active = false;
             if (ReferenceEquals(current, this)) current = null;
             collection = null;
@@ -93,7 +94,8 @@ public sealed partial class ModEntry
                 BeforeDebris = beforeDebris, AfterDebris = afterDebris,
                 InventoryBefore = InventoryRows(capture.InventoryBefore),
                 InventoryAfter = boundedInventory ? InventoryRows(CaptureInventoryItemCounts()) : Array.Empty<ActionOriginInventoryCount>(),
-                Collections = collections.Snapshot().OrderBy(row => row.Ordinal).ToArray()
+                Collections = collections.Snapshot().OrderBy(row => row.Ordinal).ToArray(),
+                ClearanceToolCalls = request.ActionOriginToolInputs ? toolCalls.Snapshot() : null
             };
         }
 

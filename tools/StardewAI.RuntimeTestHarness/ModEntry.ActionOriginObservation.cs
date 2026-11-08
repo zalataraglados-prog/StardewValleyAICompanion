@@ -11,6 +11,7 @@ public sealed partial class ModEntry
     private bool nativeObservationPatchesFailed;
 
     private static string? ObservationRequestRejection(TrainingExecutionRequest request) =>
+        request.ActionOriginToolInputs && !request.ActionOriginSnapshotAnchor ? "tool_inputs_require_snapshot_anchor" :
         request.ActionOriginSnapshotAnchor && request.ActionOriginObservationScopeId is null ? "snapshot_anchor_requires_native_observation" :
         request.ActionOriginObservationScopeId is null ? null : NativeObservationScopePolicy.Rejection(request.ActionOriginObservationScopeId, request.ExecutionMode, request.OptionId,
             new[] { request.RunId, request.QueueId, request.QueueItemId, request.RequestNonce, request.BeforeStateHash, request.SaveIsolationPath });
@@ -19,6 +20,15 @@ public sealed partial class ModEntry
     {
         try
         {
+            if (pending.Request.ActionOriginToolInputs)
+            {
+                try { EnsureNativeToolInputPatches(); }
+                catch (Exception error)
+                {
+                    pending.OutputObservationFailure = "tool_input_patch_installation_failed:" + error.GetType().Name;
+                    return;
+                }
+            }
             if (nativeObservationPatchesFailed)
             {
                 pending.OutputObservationFailure = "observation_patch_installation_failed";
@@ -51,6 +61,7 @@ public sealed partial class ModEntry
             }
             pending.OutputObservation = new NativeCollectionObservation(pending.Request, capture);
             NativeCollectionObservation.Begin(pending.OutputObservation);
+            if (pending.Request.ActionOriginToolInputs) pending.OutputObservation.BeginToolInputs();
         }
         catch (Exception error)
         {

@@ -17,6 +17,9 @@ public sealed class ClearObstacleRuntimeCalibrationSourceGuardTests
         Assert.Contains("\"grass\" or \"twig\" or \"seed_spot\" or \"artifact_spot\" or \"tree_moss\"", fixture, StringComparison.Ordinal);
         Assert.Contains("ItemRegistry.Create<StardewValley.Object>", fixture, StringComparison.Ordinal);
         Assert.Contains("\"twig\" => \"(O)294\"", fixture, StringComparison.Ordinal);
+        Assert.Contains("\"stone\" => \"(O)343\"", fixture, StringComparison.Ordinal);
+        Assert.Contains("!createdObstacle.IsBreakableStone()", fixture, StringComparison.Ordinal);
+        Assert.Contains("\"stone\" => observedObstacle.IsBreakableStone()", fixture, StringComparison.Ordinal);
         Assert.Contains("\"seed_spot\" => \"(O)SeedSpot\"", fixture, StringComparison.Ordinal);
         Assert.Contains("_ => \"(O)590\"", fixture, StringComparison.Ordinal);
         Assert.DoesNotContain("ApplyClearanceTool", fixture, StringComparison.Ordinal);
