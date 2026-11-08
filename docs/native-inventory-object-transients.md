@@ -70,7 +70,9 @@ collection callbacks, but that alone is not full producer attribution.
 Both actual records passed the original source reader, quantity continuity,
 tool-input/persisted/common transient readers, NEW `requireObjectState: true` and
 current one-cache-read anchor client (2/2). The replay explicitly checked the new
-strict feature markers and positive Object occurrence counts. Source save hash
+strict feature markers. Object occurrences were0 for tree and4 for move; only
+the move record supplies actual Object-subtype calibration. The zero-domain tree
+record is not promoted to an Object sample. Source save hash
 remained `68ddc8dbbe09382f2e7ba1c9d5d1e8dd6d0ffaef59acf9367415b4678f59366d`;
 owned game34172/backend2312 exited. No live runtime remains or model training ran.
 Exact-head remote CI/review/publication status is recorded in current-work/status.
