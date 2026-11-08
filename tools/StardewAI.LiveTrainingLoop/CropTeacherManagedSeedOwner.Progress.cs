@@ -13,6 +13,8 @@ public sealed partial class CropTeacherManagedSeedOwner
         {
             RequireOperation(operation);
             if (operation.IsLifecycle) throw new InvalidOperationException("Lifecycle acceptance uses its original lifecycle runtime.");
+            if (HasOwnedDispatchProtocol(operation) && (operation.Dispatch is null || !ReferenceEquals(operation.PreparedRuntime, runtime)))
+                throw new InvalidOperationException("Owned seed live acceptance requires its claimed original execution loop/runtime.");
             if (runtime is not ICropTeacherSeedManagedRuntime original)
                 throw new InvalidOperationException("Managed crop acceptance requires the original verified runtime.");
             var boundary = original.ReadVerifiedBoundary();

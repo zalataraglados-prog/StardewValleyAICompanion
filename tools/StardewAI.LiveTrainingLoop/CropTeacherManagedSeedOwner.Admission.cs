@@ -91,6 +91,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             _ = await PortfolioMutationRequestJournal.ReadAsync(journal.JournalPath, journal.RequestPath, journal.Expected, journal.Hash).ConfigureAwait(false);
             ValidateState();
         }
+        if (HasOwnedDispatchProtocol(operation)) AttachPreparedRuntime(operation, runtime);
         await PersistPreparedAsync(operation, prepared.OriginalIntentSha256, prepared.QueuePath, prepared.QueueSha256).ConfigureAwait(false);
     }
 

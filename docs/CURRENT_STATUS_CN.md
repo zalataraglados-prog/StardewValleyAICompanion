@@ -1,5 +1,9 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **本片最终本地验证：** 原准备恢复/owner/生命周期/采购转运种植相关448/448通过、零失败/跳过，含20项新增；checkpoint匹配EVD338。完整CI/发布见本片收口，不冒称新游戏或训练证据。
+
+> **2026-11-08 R2原准备态恢复/循环归属（当前唯一接续）：** #523经最终42步CI `42429129597`与同head审查合入`834c4cca`、核树清分支，Core2443/Backend1146零失败/跳过。本片新seed-start v2在原执行循环前持久claim（native是否请求仍未知），未进入循环且原完整准备成立才恢复同一个原事务/种植八格prefix，不重交marker/重编译；新协议live接受钉同一runtime/claim，旧记录不追认可重放。缺回包先原journal/lookup，全验后留原回包以支持执行后再恢复，已知坏回包不兜底。初36专项/修后15重点通过，最终相关/CI见收口。[合同](money-crop-prepared-runtime-restore.md)。下一步原严格零派发/不完整准备，再原行走维护/原生保存连续性、managed有界原生及全局日历/预算/跨根、Provider/模型/manifest。L1`19/19、11/11`、formal=false/Student训后21/21保持，无API worker或新游戏，local-data不提交。下方为历史。
+
 > **本片本地验证：** 原准备/恢复和混合owner相关428/428通过、零失败/跳过，含10项新场景；不是新native或正式训练证据，完整CI/发布见本片收口。
 
 > **2026-11-08 R2原seed准备归属（当前唯一接续）：** #522经最终42步CI `42426869336`/同head审查合入`4f057050`，Core2443/Backend1136且核树清分支。本片在变更前以原binder/preflight/intent固定SHA，原factory调用共用同一owner一次性claim及私有证书/实际journal/pin；仅完整原准备和原native结果经原consumer全验后才补缺失准备记录、接受，不造证明/零执行或重发。旧standalone记录兼容但不追认预固定；初45、49专项通过，最终相关/CI见收口。下一步准备-only/部分准备及派发归属，复用原严格零派发核验，再原行走维护/保存连续性和managed原生小样本；原全局日历/预算/跨根、Provider/模型/manifest仍在后续。L1`19/19、11/11`、formal=false/Student训后21/21不变，无API worker，local-data不提交。[合同](money-crop-seed-preparation-ownership.md)。下方为历史。

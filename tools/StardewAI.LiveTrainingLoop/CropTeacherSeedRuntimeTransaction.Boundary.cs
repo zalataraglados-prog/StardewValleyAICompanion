@@ -5,6 +5,15 @@ internal sealed partial class CropTeacherSeedRuntimeTransaction
     private CropTeacherSeedLiveBoundary? verifiedBoundary;
     private Func<CropTeacherSeedLiveBoundary>? verifiedBoundaryFactory;
     private bool managedBoundaryRequested;
+    private Action? executionGuard;
+
+    internal void BindExecutionGuard(Action guard)
+    {
+        if (executionGuard is not null) throw new InvalidOperationException("Original seed runtime already has an execution owner.");
+        executionGuard = guard;
+    }
+
+    internal void RequireExecutionLease() => executionGuard?.Invoke();
 
     internal CropTeacherSeedPreparedBoundary ReadPreparedBoundary()
     {

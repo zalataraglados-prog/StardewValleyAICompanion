@@ -28,8 +28,12 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         Assert.True(File.Exists(Path.Combine(files.OwnerRoot, "operation-000001-prepared.json")));
         await Assert.ThrowsAsync<InvalidOperationException>(() => owner.PrepareSeedAsync(operation, () => { calls++; return Task.FromResult(prepared); }));
         Assert.Equal(1, calls);
-        runtime.ObserveAfter();
-        await prepared.CompleteAsync(transition);
+        await owner.ExecuteSeedAsync(operation, async original =>
+        {
+            original.ValidateDispatchQueue(transition.QueuePath);
+            runtime.ObserveAfter();
+            return await prepared.CompleteAsync(transition);
+        });
         await owner.AcceptLiveAsync(operation, prepared);
         Assert.Null(owner.Pending);
         Assert.Equal(2, runtime.Handler.Commits);
