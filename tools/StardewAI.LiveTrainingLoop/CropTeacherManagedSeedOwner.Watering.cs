@@ -71,13 +71,14 @@ public sealed partial class CropTeacherManagedSeedOwner
             ["native_dispatch_performed_by_adapter"] = false, ["native_crop_lifecycle_verified"] = false,
             ["teacher_preference_label_eligible"] = false, ["formal_product_training_authorized"] = false
         };
-        AddWateringPrefixEvidence(scope, intent);
+        AddWateringOutcomeEvidence(scope, intent);
         return intent;
     }
 
-    private static void AddWateringPrefixEvidence(CropTeacherWateringMaintenance scope, JsonObject document)
+    private static void AddWateringOutcomeEvidence(CropTeacherWateringMaintenance scope, JsonObject document)
     {
-        document["native_watering_prefix_verified"] = true;
+        document["native_watering_prefix_verified"] = !scope.RefillControlVerified;
+        if (scope.RefillControlVerified) document["native_refill_control_verified"] = true;
         document["applied_tile_count"] = scope.AppliedTileCount;
         document["complete_batch"] = scope.CompleteBatch;
         document["applied_tiles"] = JsonSerializer.SerializeToNode(scope.AppliedTiles, JsonOptions);

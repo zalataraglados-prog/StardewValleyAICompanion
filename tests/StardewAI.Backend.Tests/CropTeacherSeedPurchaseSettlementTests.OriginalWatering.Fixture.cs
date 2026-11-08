@@ -9,7 +9,9 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
 {
     private sealed class OwnedWateringFixture : IDisposable
     {
-        internal WateringFixture Basis { get; } = new(bowlMirrors: true);
+        internal WateringFixture Basis { get; }
+        internal OwnedWateringFixture(int water = 20, bool atRefillApproach = false) =>
+            Basis = new(water: water, bowlMirrors: true, atRefillApproach: atRefillApproach);
         internal OwnedRouteFixture Shared => Basis.Shared;
         internal string QueuePath => Path.Combine(Shared.Runtime.LiveOptions.SnapshotDir, "crop-teacher-batch-0001-compiled-queue.json");
         internal string ModelPath => Path.Combine(Shared.Runtime.LiveOptions.SnapshotDir, "crop-teacher-batch-0001-model-action.json");
@@ -20,9 +22,9 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             InvokeLive<Task<CropTeacherManagedSeedOperation>>("PrepareCropTeacherOwnedWateringAsync", Shared.Runtime.Client,
                 Shared.Runtime.LiveOptions, 1, Basis.Step, Shared.Inputs.Plan, Shared.Inputs.Request, owner, Shared.Files.Native);
 
-        internal async Task<JsonObject> EmitNative(int applied = 2, bool failedSuffix = false)
+        internal async Task<JsonObject> EmitNative(int applied = 2, bool failedSuffix = false, bool refillOnlySuffix = false)
         {
-            await Basis.Emit(applied: applied, failedSuffix: failedSuffix, retainedQueuePath: QueuePath);
+            await Basis.Emit(applied: applied, failedSuffix: failedSuffix, refillOnlySuffix: refillOnlySuffix, retainedQueuePath: QueuePath);
             Fixture.Save(ReceiptPath, JsonNode.Parse(File.ReadAllText(Basis.Transition.ExecutionReceiptPath))!);
             Fixture.Save(AfterPath, Basis.After);
             return new JsonObject { ["execution_path"] = ReceiptPath, ["after_snapshot_path"] = AfterPath };

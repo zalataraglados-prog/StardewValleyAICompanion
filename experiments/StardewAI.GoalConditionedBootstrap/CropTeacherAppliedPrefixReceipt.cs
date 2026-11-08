@@ -20,7 +20,41 @@ internal static class CropTeacherAppliedPrefixReceipt
         }
         var steps = receipt.StepResults ?? Array.Empty<QueueExecutionStepReceipt>();
         var consumed = steps.TakeWhile(step => step.Status == "applied" && step.PrimitiveVerificationStatus == "verified").Count();
-        Require(consumed > 0 && consumed < queue.Items.Length && steps.Length <= consumed + 1 && steps.Length <= queue.Items.Length &&
+        Require(consumed > 0 && consumed < queue.Items.Length,
+            label + " incomplete receipt is not an exact applied prefix.");
+        ValidateIncompleteHeader(queue, before, receipt, after, request, consumed, label);
+        var expectedHash = before.StateHash;
+        var expectedTick = before.GameTick;
+        for (var index = 0; index < steps.Length; index++)
+        {
+            ValidateStep(queue, steps[index], index, expectedHash, expectedTick, index < consumed, completed: false, primitiveKind, label);
+            expectedHash = steps[index].AfterStateHash;
+            expectedTick = steps[index].AfterGameTick;
+        }
+        Require(expectedHash == after.StateHash && expectedTick == after.GameTick &&
+                receipt.BlockReasons.ToHashSet(StringComparer.Ordinal).SetEquals(steps.SelectMany(step => step.BlockReasons)),
+            label + " prefix terminal boundary/block reasons differ.");
+        return consumed;
+    }
+
+    internal static void ValidateRefillControl(ActionQueueEnvelope queue, SnapshotEnvelope before, QueueExecutionReceiptEnvelope receipt,
+        SnapshotEnvelope after, MoneyRevenueCropNativeLifecycleTransitionRequest request)
+    {
+        const string label = "Crop watering refill control";
+        Require(!receipt.Success && receipt.StepResults is { Length: 1 } && receipt.Status == "blocked",
+            label + " requires one known blocked native watering attempt, not zero dispatch or an applied prefix.");
+        ValidateIncompleteHeader(queue, before, receipt, after, request, consumed: 0, label);
+        ValidateStep(queue, receipt.StepResults[0], 0, before.StateHash, before.GameTick,
+            successful: false, completed: false, "water_crop", label);
+        Require(receipt.BlockReasons.ToHashSet(StringComparer.Ordinal).SetEquals(receipt.StepResults[0].BlockReasons),
+            label + " terminal block reasons differ.");
+    }
+
+    private static void ValidateIncompleteHeader(ActionQueueEnvelope queue, SnapshotEnvelope before, QueueExecutionReceiptEnvelope receipt,
+        SnapshotEnvelope after, MoneyRevenueCropNativeLifecycleTransitionRequest request, int consumed, string label)
+    {
+        var steps = receipt.StepResults ?? Array.Empty<QueueExecutionStepReceipt>();
+        Require(steps.Length <= consumed + 1 && steps.Length <= queue.Items.Length &&
                 receipt.SchemaVersion == "queue_execution_receipt.v1" && receipt.QueueExecutionMode == "sequential_queue_items" &&
                 receipt.RunId == request.RunId && !string.IsNullOrWhiteSpace(request.RunId) &&
                 PolicyTrajectoryVersionPins.IsKnownExecutor(request.ExecutorVersion) && receipt.QueueId == queue.QueueId &&
@@ -34,18 +68,6 @@ internal static class CropTeacherAppliedPrefixReceipt
                 receipt.MaxQueueItemAttempts >= steps.Length && receipt.MaxQueueItemAttempts <= TeacherEvidenceRolloutLimits.MaxQueueItems &&
                 receipt.Status == (steps.Length == consumed ? "applied" : "blocked"),
             label + " incomplete receipt is not an exact applied prefix.");
-        var expectedHash = before.StateHash;
-        var expectedTick = before.GameTick;
-        for (var index = 0; index < steps.Length; index++)
-        {
-            ValidateStep(queue, steps[index], index, expectedHash, expectedTick, index < consumed, completed: false, primitiveKind, label);
-            expectedHash = steps[index].AfterStateHash;
-            expectedTick = steps[index].AfterGameTick;
-        }
-        Require(expectedHash == after.StateHash && expectedTick == after.GameTick &&
-                receipt.BlockReasons.ToHashSet(StringComparer.Ordinal).SetEquals(steps.SelectMany(step => step.BlockReasons)),
-            label + " prefix terminal boundary/block reasons differ.");
-        return consumed;
     }
 
     internal static void ValidateStep(ActionQueueEnvelope queue, QueueExecutionStepReceipt step, int index,

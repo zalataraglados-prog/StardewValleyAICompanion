@@ -1,5 +1,7 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+> **2026-11-08 原生补水接续：** #531已接受合入`ec08ea9f`，原维护派发归属不重做；当前以同一owner的原凭据严格消费“已补水但0作物进度”的blocked原生结果，旧正前缀和执行器不改，不当零派发或偏好标签。[合同](money-crop-refill-control-outcome.md)。下一步仍原补水接近/控制的开路归因、收获和原生保存跨日，再有界managed真实集成；其后全局协调/Provider/模型/manifest，不重采冻结L1或倒挂Student训后21分。当前唯一接续见两个Canonical文档顶部，下方旧顺位仅历史。
+
 > **2026-11-08 当前运行接续入口：** 以 [CURRENT_WORK_CN.md](CURRENT_WORK_CN.md) 和 [CURRENT_STATUS_CN.md](CURRENT_STATUS_CN.md) 顶部唯一接续为准，下方逐片“下一步”均供历史追溯，不重做已接受片段。#530已合入`9da505d6`（CI42451484629、同head审查接受），同owner已消费原维护结果；当前正接原维护编译和一次原执行循环归属，共用路线claim/result与marker恢复，不新增执行器或默认启用managed。随后原补水/控制/收获归属/原生保存跨日，齐后有界真实集成，再联合日历/共享预算/跨根、Provider/模型、正式manifest/preflight。L1`19/19、11/11`冻结，formal=false；Student新档21/21仍为训后评测。[本片合同](money-crop-owned-maintenance-execution.md)。
 
 > **2026-11-07 当前唯一接续：** #508经42步CI/同head审查合入`c96f59e2`且核树/清自有分支。原采购控制的可选scope已接：同一原编译/执行/原生凭据、原journal/lookup、独立marker/结算/到货诊断和完整回包/读回。默认路径不改，托管固定采购不重入全局Teacher；精确prior源加保守同日时钟视图只经真实marker推进，资源/未知进度不能洗作重捕获。Backend767本地通过，最终CI见收口；不当新游戏证据。自动handoff保护仍在；下一步复用原prepared-transfer/种植消费/生命周期释放，再唯一托管激活与原journal恢复，齐后显式managed原生小样本。其后联合日历/聚合预算/跨根连续性、Provider/模型和正式manifest/preflight保持；L1`19/19、11/11`冻结，formal=false，Student新档21/21在训练后。[精确合同](money-crop-seed-runtime-transaction.md)。下方为历史。

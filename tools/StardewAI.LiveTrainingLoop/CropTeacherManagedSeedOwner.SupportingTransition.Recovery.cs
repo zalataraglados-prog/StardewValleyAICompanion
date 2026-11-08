@@ -64,7 +64,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         accepted["native_outcome_verified"] = true;
         accepted["native_crop_lifecycle_verified"] = false;
         accepted["teacher_preference_label_eligible"] = false;
-        if (operation.Watering is { } watering) AddWateringPrefixEvidence(watering, accepted);
+        if (operation.Watering is { } watering) AddWateringOutcomeEvidence(watering, accepted);
         if (operation.OriginalStart is not null)
         {
             accepted[NativeSupportingRole(operation) + "_native_claim_sha256"] = HashFile(NativeSupportingPath(operation, "claim"));
@@ -79,8 +79,9 @@ public sealed partial class CropTeacherManagedSeedOwner
         if (operation.Watering is { } watering)
         {
             var expected = new JsonObject();
-            AddWateringPrefixEvidence(watering, expected);
+            AddWateringOutcomeEvidence(watering, expected);
             if (expected.Any(field => !JsonNode.DeepEquals(field.Value, accepted[field.Key])) ||
+                !watering.RefillControlVerified && accepted["native_refill_control_verified"] is not null ||
                 accepted["route_native_claim_sha256"] is not null || accepted["route_native_result_sha256"] is not null || accepted["route_target_reached"] is not null)
                 throw new InvalidDataException("Managed crop watering prefix acceptance changed.");
         }

@@ -48,7 +48,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             ["native_outcome_verified"] = true
         };
         if (scope is CropTeacherSupportingRoute route) result["route_target_reached"] = route.RouteTargetReached;
-        if (scope is CropTeacherWateringMaintenance watering) AddWateringPrefixEvidence(watering, result);
+        if (scope is CropTeacherWateringMaintenance watering) AddWateringOutcomeEvidence(watering, result);
         result["native_crop_lifecycle_verified"] = false;
         result["teacher_preference_label_eligible"] = false;
         result["formal_product_training_authorized"] = false;
