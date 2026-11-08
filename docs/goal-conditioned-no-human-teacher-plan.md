@@ -1,5 +1,9 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+> **本片末次增量：** 初head42步CI/审查通过，合并前补registry查询被patch时保留旧链；定向D核实Harmony撤patch留空info，新准入改看实际owners，E的6次旧回调/原哈希/撤patch恢复及相关47通过。只核新增分支、不重采792矩阵，最终head CI/发布另记，formal=false不变。
+
+> **2026-11-08 原普通对象单位读取接续：** #536已42步CI/同head审查接受合入`b27ee575`并核树清分支。本片保留原单位栈/翻转归零/库存历史/工具节拍与序列化语义，以同一E反编译共享固定原版且未patch的无抽样普通对象构造；两端哈希/Cold FromStandard复用，特殊与未知保留原路径。[合同](canonical-object-unit-purity.md)。原生A/B792输入字节等价，实际调用/异常/patch回退和所核RNG/玩家/当前地图状态不变，原档未变且进程退出；首4/相关47通过，最终验证发布见收口。只读RNG诊断仅测试，不是#29全局或训练准入完成。下一步原补水涉及的registry掉落投影等价/读取纯度，再真实资源接唯一owner、收获/原生保存跨日及managed，然后原全局协调/其余probe/Provider/模型/manifest；已验矩阵/L1不重采，L1`19/19、11/11`冻结、formal=false、Student21/21训后，无worker/local-data提交。下方为历史。
+
 > **本片验证补记：** Core22、最终相关Backend152及E四模块Release通过；隔离默认/显式clear-move四项、原砍树候选→掉落移动两项均applied/verified，移动scope记录16次实际原生collect/admission，原wire/身份/tick/XML摘要核验、原档未变且进程退出。只证明传输/回调校准，不是RNG等价/生产credit或开训；未覆盖回调样本与初脚本漏参数保留。发布后继续剩余物品/世界/RNG对照和#29原意修复，已校准样本不重采，再原补水资源与既定后续层。
 
 > **2026-11-08 原客户端观测接续：** #535经42步CI及同head审查接受合入`6774d22b`并核树清分支。新观测字段按同一E源码改为`item_stack_after_call`，不把空槽完整接收后的Stack或部分合并false错误解释成余量/零效果。原客户端默认关闭`--observe-native-outputs`仅校准单人harness/反馈，复用原工厂/journal/HTTP给原move/clear附完整身份scope，不改其他队列项/默认/执行器。[合同](native-output-observation.md)。验证发布见收口；下一步剩余物品/世界/RNG对照和#29原意修复，已校准传输/回调不重采，再原补水真实清障/拾取资源接唯一owner、收获/原生保存跨日及managed集成，其后原全局协调/Provider/模型/manifest。观测不授予生产或训练credit，L1`19/19、11/11`冻结、formal=false、Student21/21训后；无worker，local-data不提交。下方为历史。

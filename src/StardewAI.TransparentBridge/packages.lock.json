@@ -2,6 +2,15 @@
   "version": 1,
   "dependencies": {
     "net6.0": {
+      "Lib.Harmony": {
+        "type": "Direct",
+        "requested": "[2.3.3, )",
+        "resolved": "2.3.3",
+        "contentHash": "qxO8d2q7luoY8mTfCStQFOgRSd3dWZSS0Ffi5nrjX4qFkZxEBAEvNh5b/ZejTl2kY0fJs62LmfRJkBBTeiuuyQ==",
+        "dependencies": {
+          "System.Text.Json": "6.0.9"
+        }
+      },
       "Pathoschild.Stardew.ModBuildConfig": {
         "type": "Direct",
         "requested": "[4.4.0, )",

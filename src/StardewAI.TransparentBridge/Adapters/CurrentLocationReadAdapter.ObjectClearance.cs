@@ -223,7 +223,8 @@ internal sealed record ClearanceOutputItemProjection(
     {
         var unit = StandardUnitCache.GetOrAdd(
             qualifiedItemId,
-            static id => From(ItemRegistry.Create(id)) with { Quantity = 1 });
+            static id => From(StardewAI.NativePrimitives.CanonicalVanillaObjectUnit.TryCreateStandard(id, out var unit)
+                ? unit : ItemRegistry.Create(id)) with { Quantity = 1 });
         return unit with { Quantity = quantity };
     }
 
@@ -242,7 +243,8 @@ internal sealed record ClearanceOutputItemProjection(
 
     private static Item CloneUnit(Item item)
     {
-        var unit = item.getOne();
+        var unit = StardewAI.NativePrimitives.CanonicalVanillaObjectUnit.TryClone(item, out var nativeUnit)
+            ? nativeUnit : item.getOne();
         unit.Stack = 1;
         if (item is Tool sourceTool && unit is Tool unitTool)
         {
