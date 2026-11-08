@@ -65,6 +65,7 @@ public sealed class LiveTrainingOptions
         string.Empty;
     public bool UseParameterizedAction { get; set; }
     public bool EmitQueueExecutionReceipt { get; set; }
+    public bool ObserveNativeOutputs { get; set; }
     public string TeacherPreferencePath { get; set; } = string.Empty;
     public bool UseTeacherPreferenceQueue =>
         !string.IsNullOrWhiteSpace(TeacherPreferencePath);
@@ -609,6 +610,10 @@ public sealed class LiveTrainingOptions
             {
                 options.EmitQueueExecutionReceipt = true;
             }
+            else if (current == "--observe-native-outputs")
+            {
+                options.ObserveNativeOutputs = true;
+            }
             else if (current == "--stop-after-social-objective-complete")
             {
                 options.StopAfterSocialObjectiveComplete = true;
@@ -659,6 +664,7 @@ public sealed class LiveTrainingOptions
         }
 
         StandaloneCollectionTeacherMode.Validate(options);
+        NativeOutputObservationMode.Validate(options);
         options.ValidateTeacherPreferenceMode();
         options.ValidatePrecompiledQueueMode();
         options.ValidateQueueExecutionReceiptMode();

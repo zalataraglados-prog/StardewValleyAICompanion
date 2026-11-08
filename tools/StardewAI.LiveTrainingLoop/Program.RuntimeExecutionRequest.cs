@@ -1590,6 +1590,7 @@ static partial class Program
         ApplyTextSignEditingRequestFields(
             executionRequest,
             item);
+        executionRequest.ActionOriginObservationScopeId = NativeOutputObservationMode.CreateScopeId(options, executionRequest);
         return executionRequest;
     }
 

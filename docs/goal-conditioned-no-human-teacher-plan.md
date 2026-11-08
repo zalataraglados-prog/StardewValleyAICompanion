@@ -1,5 +1,9 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+> **本片验证补记：** Core22、最终相关Backend152及E四模块Release通过；隔离默认/显式clear-move四项、原砍树候选→掉落移动两项均applied/verified，移动scope记录16次实际原生collect/admission，原wire/身份/tick/XML摘要核验、原档未变且进程退出。只证明传输/回调校准，不是RNG等价/生产credit或开训；未覆盖回调样本与初脚本漏参数保留。发布后继续剩余物品/世界/RNG对照和#29原意修复，已校准样本不重采，再原补水资源与既定后续层。
+
+> **2026-11-08 原客户端观测接续：** #535经42步CI及同head审查接受合入`6774d22b`并核树清分支。新观测字段按同一E源码改为`item_stack_after_call`，不把空槽完整接收后的Stack或部分合并false错误解释成余量/零效果。原客户端默认关闭`--observe-native-outputs`仅校准单人harness/反馈，复用原工厂/journal/HTTP给原move/clear附完整身份scope，不改其他队列项/默认/执行器。[合同](native-output-observation.md)。验证发布见收口；下一步剩余物品/世界/RNG对照和#29原意修复，已校准传输/回调不重采，再原补水真实清障/拾取资源接唯一owner、收获/原生保存跨日及managed集成，其后原全局协调/Provider/模型/manifest。观测不授予生产或训练credit，L1`19/19、11/11`冻结、formal=false、Student21/21训后；无worker，local-data不提交。下方为历史。
+
 > **2026-11-08 显式原生观测：** #534已接受合入`3270e2d3`，当前复用原捕获/execute接默认关闭的单人move/clear观测：实际引用、原生接收与有界真实XML，原生完成和捕获均完成才回包，旧默认/权限/采集白名单/歧义/需求量规则不松。[合同](native-output-observation.md)。首36/相关97/末次37通过，最终发布另记，尚非原生/RNG实测；旧单位hash构造器RNG路径已补#29但未改共享helper。下一步隔离原生/控制对照、旧路径按原意修复，再真实清障/拾取资源接同一owner及收获/原生保存跨日，继而原全局协调/Provider/模型/manifest。L1`19/19、11/11`冻结、formal=false，Student21/21不反挂。下方为历史。
 
 > **2026-11-08 原补水接近编译边界：** #533已接受合入`a0be56cc`，共享拾取完成门不重做；当前以原源/账本/到期承诺/原站位、模型及原编译核保留完整补水接近队列和清障ID。它是只读编译边界，不是原生准入/执行或中性路线证明；首14及错误分支三项通过，最终发布另记。[合同](money-crop-refill-approach-compilation.md)。下一步同一原编译的精确开路/拾取资源归因，再唯一owner、收获/原生保存跨日、有界真实集成和原全局协调/Provider/模型/manifest；L1`19/19、11/11`冻结、formal=false，Student21/21不反挂。下方为历史。

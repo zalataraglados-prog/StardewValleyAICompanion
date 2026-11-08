@@ -1,5 +1,9 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **本片验证补记：** Core22、最终相关Backend152通过，E四模块Release零警告/错误；隔离默认/显式clear-move四项及原砍树候选→真实掉落移动两项均applied/verified，移动scope捕获16次实际collect/admission，库存木材5→16、树液1→6。原wire/nonce/身份/tick/XML摘要核验，原档未变、双Mod、进程退出。不是RNG等价/生产credit；初脚本漏参数及无回调样本如实留档。完成本片发布后只续剩余物品/世界/RNG对照及#29原意修复，不重采已校准传输/回调；再原补水资源归因等既定链。
+
+> **2026-11-08 R2原客户端观测接入（当前唯一接续）：** #535已同head42步CI/审查接受合入`6774d22b`、核树清分支，Core2476/Backend1395。本片据同一E原生源码将新Stack字段更正为`item_stack_after_call`，避免将空槽插入/部分合并误读为余量或成功；原LiveTrainingLoop默认关闭的`--observe-native-outputs`只允许校准单人harness/反馈，原工厂/journal/HTTP仅为原move/clear附完整身份有界scope，其他项/执行器/默认不改。[合同](native-output-observation.md)。验证/发布见收口，观测不授予生产或训练credit。下一步为剩余物品/世界/RNG对照和#29原意修复，不重采已校准传输/回调，再原补水真实清障/拾取资源接唯一owner、收获/原生保存跨日/managed集成，然后原全局协调/Provider/模型/manifest。L1`19/19、11/11`冻结、formal=false，Student21/21训后；无worker、local-data不提交。下方为历史。
+
 > **2026-11-08 R2显式收集观测（当前唯一接续）：** #534经42步CI `42459220203`/同head审查合入`3270e2d3`并核树清分支，Core2458/Backend1395。本片在原execute/capture中接默认省略的单人move/clear显式scope，原现场权限门后懒装只读原生collect/admission钩子；实际引用身份/原生部分接收/有界XML记录，等最终捕获后回包，默认路径/旧采集白名单/完成/歧义规则不变。记录不等于native效果或训练；异常/未知/超限不可用。[合同](native-output-observation.md)。首36/相关97/末次37及E构建通过，最终发布见收口。旧getOne单位哈希的RNG路径已补#29，未改旧helper或冻结凭证；下一步本片原生/控制对照、旧路径按原意修复，再真实清障/拾取资源接唯一owner及收获/保存跨日/managed集成，之后原全局协调/Provider/模型/manifest。L1`19/19、11/11`、formal=false/Student训后21/21不变；无worker，local-data不提交。下方为历史。
 
 > **2026-11-08 R2原补水接近编译边界（当前唯一接续）：** #533经42步CI `42458156939`/同head审查合入`a0be56cc`，核树一致，Core2458/Backend1381。本片只固定原run/source/完整ledger/到期浇水承诺/原站位/模型和真实修路队列，复用原源核/retained-CAS/编译等价核，保留clear项ID；不把开路当中性移动，也不实现原生phase准入/执行。首14和错误分支三项通过，相关回归/最终发布见收口。[合同](money-crop-refill-approach-compilation.md)。下一步同一原编译的精确清障/拾取资源归因，再接唯一owner、收获/原生保存跨日及有界真实集成；其后全局日历预算/跨根、Provider/模型/manifest。L1`19/19、11/11`、formal=false/Student训后21/21不变；非新游戏，无worker，local-data不提交。下方为历史。
