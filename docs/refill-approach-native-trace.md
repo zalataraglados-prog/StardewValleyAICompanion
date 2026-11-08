@@ -38,9 +38,10 @@ rows,4096 total exported chunk references,64Ki characters per item XML and1Mi pe
 receipt. Limits fail closed instead of truncating into a success summary.
 
 Admission quantity comes from actual inventory-before/after,not native_return or
-item_stack_after_call. Positive intervals must form a contiguous nonoverlapping
-chain from the scope's aggregate before to after;zero-delta calls must occur at an
-observed quantity boundary. This rejects missing/doubled gain and foreign baselines
+item_stack_after_call. Admissions follow recorded collection/admission order,with
+every baseline(including zero-delta calls)equal to the current cursor from aggregate
+before through after. Counter values are never sorted to repair a history. This
+rejects missing/doubled gain,reversed calls,future zero-delta quantities and foreign baselines
 even if total differences alone would coincide. Full merge,empty-slot insertion,
 partial merge with false return,and no-inventory receive remain distinct.
 
@@ -75,6 +76,15 @@ Backend429/429;original source/criterion Core212/212 also passed,zero failures/s
 The replay build has zero warnings/errors. Exact-head CI is recorded in closeout.
 Fixtures explicitly declare their synthetic native-format
 records;they are not native production evidence or Teacher supervision.
+
+On-open review4506032233 correctly identified that the initial positive-interval
+sort and any-endpoint zero check could admit an impossible order. Two new cases
+failed before correction. Only the new consumer now walks recorded intervals
+without sorting;no old executor/reader/receipt format changes. If a future nested
+callback history cannot establish that order under v1,it is insufficient rather
+than reordered into proof. Final focused63/63 and all six retained actual native
+source/observation replays pass;the replay build has zero warnings/errors. Exact-
+head CI is recorded in closeout;the initial review does not cover a later commit.
 
 Six previously captured actual actions from output-client-native-b and tree-b
 replay through the original native source reader;four observed scopes pass this

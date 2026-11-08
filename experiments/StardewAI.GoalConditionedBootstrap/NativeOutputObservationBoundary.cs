@@ -88,13 +88,12 @@ public static partial class NativeOutputObservationBoundary
             var last = inventoryAfter.GetValueOrDefault(key);
             var observed = admissions.GetValueOrDefault(key) ?? new();
             var cursor = first;
-            var endpoints = new HashSet<int> { first };
-            foreach (var transition in observed.Where(row => row.After > row.Before).OrderBy(row => row.Before))
+            foreach (var transition in observed)
             {
                 Require(transition.Before == cursor, "inventory admission chain has a gap, overlap or foreign baseline");
-                cursor = transition.After; endpoints.Add(cursor);
+                cursor = transition.After;
             }
-            Require(cursor == last && observed.Where(row => row.Before == row.After).All(row => endpoints.Contains(row.Before)),
+            Require(cursor == last,
                 "scope inventory change is not exhausted by the actual admission observations");
             rows.Add(new(key.Id, key.Quality, first, last, observed.Count));
         }

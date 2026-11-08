@@ -70,6 +70,20 @@ public sealed class NativeOutputObservationBoundaryTests
     }
 
     [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void AdmissionExecutionOrderCannotBeRepairedBySortingOrFutureEndpoints(bool futureZero)
+    {
+        var (request, receipt) = Fixture();
+        var initial = receipt.Collections[0].InventoryAdmissions[0];
+        var later = new ActionOriginInventoryAdmission { Item = initial.Item, OfferedQuantity = 6,
+            InventoryBefore = futureZero ? 16 : 12, InventoryAfter = 16, NativeReturn = true };
+        if (!futureZero) initial.InventoryAfter = 12;
+        receipt.Collections[0].InventoryAdmissions = [later, initial];
+        Assert.Throws<InvalidDataException>(() => Read(request, receipt));
+    }
+
+    [Theory]
     [InlineData("scope")]
     [InlineData("nonce")]
     [InlineData("queue-item")]
