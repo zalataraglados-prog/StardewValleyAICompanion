@@ -8,7 +8,7 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public sealed partial class CropTeacherSupportingRoute
 {
-    public sealed class Preparation
+    public sealed class Preparation : ICropTeacherSupportingPreparation
     {
         private static readonly HashSet<string> NeutralIngressConnectorKinds = new(new[]
         { "warp", "door", "building_door", "action_warp", "touch_action_warp", "locked_door_warp", "magic_warp" }, StringComparer.Ordinal);
@@ -38,7 +38,7 @@ public sealed partial class CropTeacherSupportingRoute
                     move.Kind == "move_to_tile" && move.TargetLocation == FinalTargetLocation,
                 "Owned crop route compilation differs from its original target/plan scope.");
             var rebuilt = new ActionQueueCompiler().Compile(plan, source.Snapshot, source.Ledger);
-            VerifyOriginalCompilation(queue, rebuilt);
+            CropTeacherOriginalQueueCompilation.Verify(queue, rebuilt, "Owned crop route");
             Require(queue.Status == "pending" && queue.CompilerDiagnostics.Length == 0 && queue.Items is [var item] &&
                     item.OptionId == "executor.traverse_connector" && item.NormalizedCommand.StateHash == source.Snapshot.StateHash,
                 "Owned crop route requires the original single-connector compilation, not an interrupt/wait or resource action.");
@@ -88,27 +88,7 @@ public sealed partial class CropTeacherSupportingRoute
             return result;
         }
 
-        private static void VerifyOriginalCompilation(ActionQueueEnvelope queue, ActionQueueEnvelope rebuilt)
-        {
-            Require(queue.Items is { Length: > 0 } && queue.Items.All(item => item is not null && item.NormalizedCommand is not null),
-                "Owned crop route compiled items are unavailable.");
-            var original = CropTeacherSeedSupportSource.Copy(queue);
-            Require(!string.IsNullOrWhiteSpace(original.QueueId) && original.Items.All(row => !string.IsNullOrWhiteSpace(row.QueueItemId)) &&
-                    original.Items.Select(row => row.QueueItemId).Distinct(StringComparer.Ordinal).Count() == original.Items.Length,
-                "Owned crop route compiler queue identities are invalid.");
-            foreach (var value in new[] { original, rebuilt })
-            {
-                value.QueueId = string.Empty;
-                foreach (var item in value.Items)
-                {
-                    item.QueueItemId = string.Empty;
-                    Require(item.NormalizedCommand.Steps.All(step => !string.IsNullOrWhiteSpace(step.StepId)) &&
-                            item.NormalizedCommand.Steps.Select(step => step.StepId).Distinct(StringComparer.Ordinal).Count() == item.NormalizedCommand.Steps.Length,
-                        "Owned crop route native step identities are invalid.");
-                    foreach (var step in item.NormalizedCommand.Steps) step.StepId = string.Empty;
-                }
-            }
-            Require(EqualJson(original, rebuilt), "Owned crop route does not replay its original compiler (except opaque generated IDs).");
-        }
+        ICropTeacherSupportingTransition ICropTeacherSupportingPreparation.VerifyTransition(
+            MoneyRevenueCropNativeLifecycleTransitionRequest transition) => VerifyTransition(transition);
     }
 }

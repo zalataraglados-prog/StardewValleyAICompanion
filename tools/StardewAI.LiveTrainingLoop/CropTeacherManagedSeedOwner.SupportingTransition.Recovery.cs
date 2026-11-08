@@ -10,7 +10,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         CropTeacherManagedSeedOperation operation, string evidenceDirectory, Func<string, string, Task<JsonObject>> post)
     {
         if (operation.Started is null) throw new InvalidOperationException("Managed supporting route has not claimed its original rebind invocation.");
-        if (operation.RouteStart is not null) LoadOriginalRouteOutcome(operation);
+        if (operation.OriginalStart is not null) LoadOriginalSupportingOutcome(operation);
         var output = Path.GetFullPath(evidenceDirectory);
         if (Directory.Exists(output) || File.Exists(output) || Within(operation.RuntimeDirectory, output) ||
             Within(output, operation.RuntimeDirectory) || operation.SupportingTransition!.InputHashes.Keys.Any(path => Within(output, path)))
@@ -65,16 +65,17 @@ public sealed partial class CropTeacherManagedSeedOwner
         accepted["native_crop_lifecycle_verified"] = false;
         accepted["teacher_preference_label_eligible"] = false;
         if (operation.Watering is { } watering) AddWateringPrefixEvidence(watering, accepted);
-        if (operation.RouteStart is not null)
+        if (operation.OriginalStart is not null)
         {
-            accepted["route_native_claim_sha256"] = HashFile(Path.Combine(operation.RuntimeDirectory, "route-native-claim.json"));
-            accepted["route_native_result_sha256"] = HashFile(Path.Combine(operation.RuntimeDirectory, "route-native-result.json"));
-            accepted["route_target_reached"] = operation.SupportingRoute!.RouteTargetReached;
+            accepted[NativeSupportingRole(operation) + "_native_claim_sha256"] = HashFile(NativeSupportingPath(operation, "claim"));
+            accepted[NativeSupportingRole(operation) + "_native_result_sha256"] = HashFile(NativeSupportingPath(operation, "result"));
+            if (operation.SupportingRoute is { } route) accepted["route_target_reached"] = route.RouteTargetReached;
         }
     }
 
     private void ValidateSupportingTransitionAcceptance(CropTeacherManagedSeedOperation operation, JsonObject accepted)
     {
+        if (operation.OriginalStart is not null) LoadOriginalSupportingOutcome(operation);
         if (operation.Watering is { } watering)
         {
             var expected = new JsonObject();
@@ -83,14 +84,15 @@ public sealed partial class CropTeacherManagedSeedOwner
                 accepted["route_native_claim_sha256"] is not null || accepted["route_native_result_sha256"] is not null || accepted["route_target_reached"] is not null)
                 throw new InvalidDataException("Managed crop watering prefix acceptance changed.");
         }
-        if (operation.RouteStart is not null)
+        if (operation.OriginalStart is not null)
         {
-            LoadOriginalRouteOutcome(operation);
-            if (Text(accepted, "route_native_claim_sha256") != HashFile(Path.Combine(operation.RuntimeDirectory, "route-native-claim.json")) ||
-                Text(accepted, "route_native_result_sha256") != HashFile(Path.Combine(operation.RuntimeDirectory, "route-native-result.json")) ||
-                accepted["route_target_reached"]?.GetValue<bool>() != operation.SupportingRoute!.RouteTargetReached)
+            if (Text(accepted, NativeSupportingRole(operation) + "_native_claim_sha256") != HashFile(NativeSupportingPath(operation, "claim")) ||
+                Text(accepted, NativeSupportingRole(operation) + "_native_result_sha256") != HashFile(NativeSupportingPath(operation, "result")) ||
+                operation.SupportingRoute is { } route && accepted["route_target_reached"]?.GetValue<bool>() != route.RouteTargetReached)
                 throw new InvalidDataException("Owned crop native route acceptance changed.");
         }
+        else if (operation.IsWateringMaintenance && (accepted["maintenance_native_claim_sha256"] is not null || accepted["maintenance_native_result_sha256"] is not null))
+            throw new InvalidDataException("Completed watering cannot claim ownership of a native invocation.");
         if (operation.Started is null || accepted["operation_kind"]?.GetValue<string>() != (operation.IsWateringMaintenance ? "watering_maintenance" : "supporting_route") ||
             accepted["prepared_sha256"] is not null || accepted["original_proof_sha256"] is not null || accepted["dispatch_sha256"] is not null ||
             Text(accepted, "runtime_start_sha256") != HashFile(RecordPath(operation.Sequence, "started")) ||

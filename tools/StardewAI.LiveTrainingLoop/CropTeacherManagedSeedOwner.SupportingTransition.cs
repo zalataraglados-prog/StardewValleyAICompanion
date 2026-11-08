@@ -11,6 +11,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         Path.Combine(operation.RuntimeDirectory, operation.IsWateringMaintenance ? "maintenance-intent.json" : "route-intent.json");
 
     private JsonObject CreateSupportingTransitionIntent(JsonObject record, ICropTeacherSupportingTransition? scope) =>
+        record["maintenance_execution_protocol"]?.GetValue<string>() == "original_loop.v1" ? CreateOriginalWateringIntent(record) :
         scope is CropTeacherWateringMaintenance watering
             ? CreateWateringMaintenanceIntent(record, watering)
             : CreateSupportingRouteIntent(record, (CropTeacherSupportingRoute?)scope);
@@ -27,8 +28,12 @@ public sealed partial class CropTeacherManagedSeedOwner
         if (operation.IsSupportingRoute) ValidateSupportingRoute(operation);
         else
         {
-            var scope = operation.Watering ?? throw new InvalidOperationException("Managed crop operation has no supporting transition.");
-            scope.ValidateInputsUnchanged();
+            if (operation.Watering is null && operation.WateringStart is null)
+                throw new InvalidOperationException("Managed crop operation has no supporting transition.");
+            operation.WateringStart?.ValidateInputsUnchanged();
+            operation.Watering?.ValidateInputsUnchanged();
+            if (operation.WateringStart is not null && operation.Watering is not null) operation.RuntimeArtifactGuard?.Invoke();
+            var scope = operation.Watering;
             if (SupportingTransitionIntentHash(operation.Record, scope) != Text(operation.Record, "original_intent_sha256"))
                 throw new InvalidDataException("Managed crop watering maintenance changed its admitted original intent.");
         }
@@ -44,12 +49,12 @@ public sealed partial class CropTeacherManagedSeedOwner
             RequireOperation(operation);
             if (watering ? !operation.IsWateringMaintenance : !operation.IsSupportingRoute)
                 throw new InvalidOperationException(watering ? "Managed crop operation is not watering maintenance." : "Managed crop operation is not a supporting route.");
-            if (operation.RouteStart is not null)
-                await EnsureOriginalRouteOutcomeAsync(operation).ConfigureAwait(false);
+            if (operation.OriginalStart is not null)
+                await EnsureOriginalSupportingOutcomeAsync(operation).ConfigureAwait(false);
             await ClaimRuntimeInvocationAsync(operation).ConfigureAwait(false);
             var scope = operation.SupportingTransition!;
             var root = operation.RuntimeDirectory;
-            if (operation.RouteStart is null)
+            if (operation.OriginalStart is null)
             {
                 if (Directory.Exists(root) || File.Exists(root)) throw new IOException(watering
                     ? "Retained maintenance runtime requires recovery, not another mutation."

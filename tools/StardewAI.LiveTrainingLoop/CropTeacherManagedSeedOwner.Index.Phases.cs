@@ -9,7 +9,9 @@ public sealed partial class CropTeacherManagedSeedOwner
         var kind = record["operation_kind"]?.GetValue<string>();
         if (kind == "watering_maintenance")
         {
-            var watering = new CropTeacherManagedSeedOperation(this, record, path, null, watering: OpenWateringMaintenance(record));
+            var watering = record["maintenance_execution_protocol"]?.GetValue<string>() == "original_loop.v1"
+                ? new CropTeacherManagedSeedOperation(this, record, path, null, wateringStart: OpenOriginalWateringStart(record))
+                : new CropTeacherManagedSeedOperation(this, record, path, null, watering: OpenWateringMaintenance(record));
             ValidateSupportingTransition(watering);
             return watering;
         }
