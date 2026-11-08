@@ -18,12 +18,35 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         internal List<string> Results { get; } = [];
         internal List<string> Journals { get; } = [];
         internal List<string> AfterFrames { get; } = [];
+        private readonly bool completeSnapshotInventory;
 
-        internal RefillTraceFixture(bool repair)
+        internal RefillTraceFixture(bool repair, bool completeSnapshotInventory = false)
         {
+            this.completeSnapshotInventory = completeSnapshotInventory;
             Approach = new(repair, prepareSource: source =>
             {
                 source.Before.GameVersion = "1.6.15";
+                if (completeSnapshotInventory)
+                {
+                    ChangeState(source.Before, "player", node => node["inventory"] = JsonSerializer.SerializeToNode(new
+                    {
+                        status = "available",
+                        // Declared synthetic complete raw slots; seed count preserves the original compiler fixture.
+                        value = new object[]
+                        {
+                            new { slot_index = 0, item_id = "745", qualified_item_id = "(O)745", stack = 40, quality = 0, is_empty = false },
+                            new { slot_index = 1, item_id = "388", qualified_item_id = "(O)388", stack = 5, quality = 0, is_empty = false },
+                            new { slot_index = 2, qualified_item_id = (string?)null, stack = (int?)null, quality = (int?)null, is_empty = true }
+                        }
+                    }));
+                    ChangeState(source.Before, "farm", node =>
+                        node["material_inventory_graph"]!["value"]!["inventory_nodes"]![0]!["slots"]!.AsArray().Add(
+                            JsonSerializer.SerializeToNode(new
+                            {
+                                slot_index = 1, item_id = "388", qualified_item_id = "(O)388", stack = 5,
+                                quality = 0, maximum_stack_size = 999, runtime_type = "StardewValley.Object"
+                            })));
+                }
                 source.Before.State["environment"] = JsonSerializer.SerializeToElement(new
                 {
                     training_run_id = new { status = "available", value = "run.seed-acquisition.fixture" },
@@ -76,7 +99,9 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                         ScopeId = request.ActionOriginObservationScopeId!, CaptureSessionId = session, RunId = options.RunId,
                         QueueId = scope.QueueId, QueueItemId = item.QueueItemId, RequestNonce = request.RequestNonce,
                         BeforeStateHash = before.StateHash, LocationId = "Farm", BeforeGameTick = before.GameTick,
-                        AfterGameTick = after.GameTick, Status = "observed"
+                        AfterGameTick = after.GameTick, Status = "observed",
+                        InventoryBefore = completeSnapshotInventory ? DeclaredInventoryCounts() : [],
+                        InventoryAfter = completeSnapshotInventory ? DeclaredInventoryCounts() : []
                     }
                 }, JsonOptions)!.AsObject();
                 result["execution_request_journal_path"] = journal.JournalPath;
@@ -114,6 +139,15 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
 
         internal CropTeacherRefillApproachNativeTrace Open() => CropTeacherRefillApproachNativeTrace.Open(
             Approach.Open(), ReceiptPath, AfterPath, Approach.Watering.Shared.Runtime.LiveOptions.RunId);
+        internal CropTeacherRefillApproachNativeTrace OpenWithSnapshotInventoryContinuity() =>
+            CropTeacherRefillApproachNativeTrace.OpenWithSnapshotInventoryContinuity(
+                Approach.Open(), ReceiptPath, AfterPath, Approach.Watering.Shared.Runtime.LiveOptions.RunId);
+
+        private static ActionOriginInventoryCount[] DeclaredInventoryCounts() =>
+        [
+            new() { QualifiedItemId = "(O)745", Quality = 0, Quantity = 40 },
+            new() { QualifiedItemId = "(O)388", Quality = 0, Quantity = 5 }
+        ];
         public void Dispose() => Approach.Dispose();
     }
 }
