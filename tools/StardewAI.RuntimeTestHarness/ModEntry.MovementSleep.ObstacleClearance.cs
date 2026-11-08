@@ -1300,7 +1300,8 @@ public sealed partial class ModEntry : Mod
 
         private static ClearanceOutputItemKey FromUnit(Item item, bool hasBeenInInventory)
         {
-            var unit = item.getOne();
+            var unit = StardewAI.NativePrimitives.CanonicalVanillaObjectUnit.TryClone(item, out var nativeUnit)
+                ? nativeUnit : item.getOne();
             unit.Stack = 1;
             unit.HasBeenInInventory = hasBeenInInventory;
             if (item is Tool sourceTool && unit is Tool unitTool)

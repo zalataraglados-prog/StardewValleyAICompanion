@@ -30,6 +30,7 @@
     <Using Include="Xunit" />
     <Compile Include="..\Shared\PolicySupervisionFixture.cs" Link="PolicySupervisionFixture.cs" />
     <Compile Include="..\Shared\MoneyCropTeacherFixture.cs" Link="MoneyCropTeacherFixture.cs" />
+    <Compile Include="..\Shared\NativeRandomStateFingerprint.cs" Link="NativeRandomStateFingerprint.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -80,6 +81,8 @@
     <Compile Include="ActionOriginOutputSourceGuardTests.cs" />
     <Compile Include="ActionOriginInventoryCreditTests.cs" />
     <Compile Include="NativeOutputObservationTests.cs" />
+    <Compile Include="NativeRandomStateFingerprintTests.cs" />
+    <Compile Include="CanonicalObjectUnitSourceGuardTests.cs" />
     <Compile Include="NativeOutputObservationSourceGuardTests.cs" />
     <Compile Include="ActionCatalogProvenanceGovernanceTests.cs" />
     <Compile Include="CandidateRouteConnectorCacheTests.cs" />

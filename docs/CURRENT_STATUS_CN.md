@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-08 R2普通对象原单位哈希纯度（当前唯一接续）：** #536已42步CI/同head审查合入`b27ee575`并核树清分支，Core2480/Backend1420。本片按原`f3133e72/6f21e240/e847e04f`语义和同一E反编译，原两端单位哈希及Cold FromStandard共享普通对象构造，去掉无用抽样，固定二进制/类型/未patch方法，保留旧规范化/原生fallback，不换RNG或执行器。[合同](canonical-object-unit-purity.md)。原生A/B及最终C的792输入字节等价、两端实际调用/异常及patch回退、所核RNG/玩家/当前地图状态未变，34特殊类型保留旧路径，原档未变且进程退出。首4及最终相关47通过，最终CI/发布见收口；只读RNG传感器仅测试，不代表#29全局完成。下一步仍原补水涉及的registry掉落投影等价/读取纯度、真实资源接同一owner及收获/保存跨日/managed，再原全局协调/其余probe/Provider/模型/manifest。已验单位矩阵与L1不重采；L1`19/19、11/11`、formal=false及Student训后21/21不变，无worker、local-data不提交。下方为历史。
+
 > **本片验证补记：** Core22、最终相关Backend152通过，E四模块Release零警告/错误；隔离默认/显式clear-move四项及原砍树候选→真实掉落移动两项均applied/verified，移动scope捕获16次实际collect/admission，库存木材5→16、树液1→6。原wire/nonce/身份/tick/XML摘要核验，原档未变、双Mod、进程退出。不是RNG等价/生产credit；初脚本漏参数及无回调样本如实留档。完成本片发布后只续剩余物品/世界/RNG对照及#29原意修复，不重采已校准传输/回调；再原补水资源归因等既定链。
 
 > **2026-11-08 R2原客户端观测接入（当前唯一接续）：** #535已同head42步CI/审查接受合入`6774d22b`、核树清分支，Core2476/Backend1395。本片据同一E原生源码将新Stack字段更正为`item_stack_after_call`，避免将空槽插入/部分合并误读为余量或成功；原LiveTrainingLoop默认关闭的`--observe-native-outputs`只允许校准单人harness/反馈，原工厂/journal/HTTP仅为原move/clear附完整身份有界scope，其他项/执行器/默认不改。[合同](native-output-observation.md)。验证/发布见收口，观测不授予生产或训练credit。下一步为剩余物品/世界/RNG对照和#29原意修复，不重采已校准传输/回调，再原补水真实清障/拾取资源接唯一owner、收获/原生保存跨日/managed集成，然后原全局协调/Provider/模型/manifest。L1`19/19、11/11`冻结、formal=false，Student21/21训后；无worker、local-data不提交。下方为历史。
