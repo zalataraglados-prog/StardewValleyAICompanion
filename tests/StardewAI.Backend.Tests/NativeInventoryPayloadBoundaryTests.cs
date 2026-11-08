@@ -223,7 +223,7 @@ public sealed class NativeInventoryPayloadBoundaryTests
         Assert.Throws<InvalidDataException>(() => Read(request, receipt));
     }
 
-    private static (TrainingExecutionRequest Request, ActionOriginObservationReceipt Receipt) IdentityFixture(
+    internal static (TrainingExecutionRequest Request, ActionOriginObservationReceipt Receipt) IdentityFixture(
         string type, string id, bool tool, string discriminator)
     {
         var (request, receipt) = Fixture();
@@ -245,7 +245,7 @@ public sealed class NativeInventoryPayloadBoundaryTests
     private static NativeInventoryPayloadSummary Read(TrainingExecutionRequest request, ActionOriginObservationReceipt receipt) =>
         NativeOutputObservationBoundary.ReadInventoryPayload(request, receipt, 99, 111, "Farm", "123");
 
-    private static (TrainingExecutionRequest Request, ActionOriginObservationReceipt Receipt) Fixture()
+    internal static (TrainingExecutionRequest Request, ActionOriginObservationReceipt Receipt) Fixture()
     {
         var (request, receipt) = NativeOutputObservationBoundaryTests.Fixture();
         request.ActionOriginInventoryPayload = request.ActionOriginToolInputs = request.ActionOriginSnapshotAnchor = true;

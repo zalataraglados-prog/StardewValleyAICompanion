@@ -3,6 +3,29 @@ namespace StardewAI.Core.Tests;
 public sealed class NativeOutputObservationSourceGuardTests
 {
     [Fact]
+    public void TransientWitnessIsExplicitAndReadsCachesBeforeTheOriginalItemHeaders()
+    {
+        var scope = RuntimeHarnessSources.LoadFile("ModEntry.ActionOriginObservation.cs");
+        var inventory = RuntimeHarnessSources.LoadFile("ModEntry.ActionOriginObservation.InventoryPayload.cs");
+        var adapter = RuntimeHarnessSources.LoadFile("ModEntry.ActionOriginObservation.InventoryTransients.cs");
+        var helper = RuntimeHarnessSources.LoadFile("NativeLiveItemTransientCapture.cs");
+        var fields = RuntimeHarnessSources.LoadFile("NativeLiveItemTransientCapture.Fields.cs");
+        Assert.Contains("inventory_transients_require_payload", scope);
+        Assert.Contains("if (request.ActionOriginInventoryTransients)", inventory);
+        Assert.Contains("item.itemId.Value is null", inventory);
+        Assert.Contains("remainingPayloadCharacters -= transient.Characters", inventory);
+        Assert.True(inventory.IndexOf("NativeLiveItemTransientCapture.Capture(item", StringComparison.Ordinal) <
+            inventory.IndexOf("QualifiedItemId = item.QualifiedItemId", StringComparison.Ordinal));
+        Assert.Contains("ReferenceEquals(state.Tool.LastUser, farmer)", adapter);
+        Assert.Contains("ReferenceIds.For(farmer)", adapter);
+        Assert.Contains("NativeInventoryPayloadTypes.TryGet", helper);
+        Assert.Contains("BindingFlags.DeclaredOnly", fields);
+        Assert.Contains("field.FieldType != fieldType", fields);
+        foreach (var forbidden in new[] { ".getOne(", "ItemRegistry.Create", "item.QualifiedItemId", "Game1.random", ".SetValue(", "GetProperties(" })
+            Assert.DoesNotContain(forbidden, helper + fields);
+    }
+
+    [Fact]
     public void InventoryPayloadEndpointsReuseTheSameObserverBudgetAndNeverBroadenOldAdmissionPolicy()
     {
         var scope = RuntimeHarnessSources.LoadFile("ModEntry.ActionOriginObservation.cs");

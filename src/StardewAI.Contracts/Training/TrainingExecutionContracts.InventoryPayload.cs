@@ -20,7 +20,7 @@ public sealed partial class ActionOriginObservationReceipt
     public ActionOriginInventoryPayload? InventoryPayloadAfter { get; set; }
 }
 
-public sealed class ActionOriginInventoryPayload
+public sealed partial class ActionOriginInventoryPayload
 {
     [JsonPropertyName("schema_version")] public string SchemaVersion { get; set; } = string.Empty;
     [JsonPropertyName("payload_kind")] public string PayloadKind { get; set; } = string.Empty;
@@ -35,7 +35,7 @@ public sealed class ActionOriginInventoryPayload
     [JsonPropertyName("full_transient_state_verified")] public bool FullTransientStateVerified => false;
 }
 
-public sealed class ActionOriginInventoryPayloadSlot
+public sealed partial class ActionOriginInventoryPayloadSlot
 {
     [JsonPropertyName("slot_index")] public int? SlotIndex { get; set; }
     [JsonPropertyName("is_empty")] public bool? IsEmpty { get; set; }

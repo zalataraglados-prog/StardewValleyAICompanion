@@ -25,9 +25,16 @@ public static partial class NativeOutputObservationBoundary
     public static NativeInventoryPayloadSummary ReadInventoryPayload(TrainingExecutionRequest request,
         ActionOriginObservationReceipt receipt, long earliestTick, long latestTick, string locationId, string actorId)
     {
+        var payloadCharacters = 0;
+        return ReadInventoryPayloadWithBudget(request, receipt, earliestTick, latestTick, locationId, actorId, ref payloadCharacters);
+    }
+
+    private static NativeInventoryPayloadSummary ReadInventoryPayloadWithBudget(TrainingExecutionRequest request,
+        ActionOriginObservationReceipt receipt, long earliestTick, long latestTick, string locationId, string actorId,
+        ref int payloadCharacters)
+    {
         Require(request.ActionOriginInventoryPayload && request.ActionOriginToolInputs && request.ActionOriginSnapshotAnchor &&
                 !string.IsNullOrWhiteSpace(actorId), "persisted inventory payload was not explicitly requested with its original scope");
-        var payloadCharacters = 0;
         var original = ReadWithPayloadBudget(request, receipt, earliestTick, latestTick, locationId, ref payloadCharacters);
         var types = new Dictionary<Guid, string>();
         var before = ReadInventoryPayloadState(receipt.InventoryPayloadBefore, receipt.BeforeGameTick, actorId,

@@ -9,6 +9,8 @@ public static class NativeOutputObservationMode
 {
     public static void Validate(LiveTrainingOptions options)
     {
+        if (options.ObserveNativeInventoryTransients && !options.ObserveNativeInventoryPayload)
+            throw new ArgumentException("--observe-native-inventory-transients requires --observe-native-inventory-payload.");
         if (options.ObserveNativeInventoryPayload && !options.ObserveNativeClearanceToolInputs)
             throw new ArgumentException("--observe-native-inventory-payload requires --observe-native-clearance-tool-inputs.");
         if (options.ObserveNativeClearanceToolInputs && !options.ObserveNativeOutputSnapshotAnchor)
