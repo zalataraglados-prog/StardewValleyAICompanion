@@ -104,8 +104,8 @@ internal static partial class NativeLiveItemTransientCapture
         internal string? String(string? value, int fieldMaximum = 4096)
         {
             int length = value?.Length ?? 0;
-            if (length > fieldMaximum || length > maximum - Characters)
-                throw new InvalidDataException("Native transient raw string field/total character budget exceeded.");
+            if (length > fieldMaximum || length > maximum - Characters || !NativeObservationText.IsWellFormedUtf16(value))
+                throw new InvalidDataException("Native transient text exceeds its budget or cannot round-trip through JSON without replacement.");
             Characters += length;
             return value;
         }

@@ -40,6 +40,14 @@ FromStarterGiftBox/IsBossFish booleans and __Inventory_ReduceId_Remove string; t
 codec does not infer meanings or restrict key names. Raw null HashSet tag elements
 are preserved separately from absent/empty sets, not normalized away.
 
+The JSON-string transport requires well-formed UTF-16. A lone surrogate otherwise
+silently becomes U+FFFD during System.Text.Json serialization, changing the observed
+native value. One shared pure code-unit check now rejects malformed raw flags,
+keys/values/tags/caches at the producer and consumer, rather than recording normalized
+success. Valid control characters, CJK and supplementary pairs remain exact. This
+is an explicit unsupported transport case, not a claim of arbitrary CLR text/mod
+compatibility. The guard changes no fields, encoder settings or gameplay methods.
+
 Containers have256-entry bounds, keys/tags256 characters, other strings4096.
 Each item's raw transient strings total at most64Ki characters, sharing the
 original1Mi total across old admission/debris XML, both slot XML arrays AND both
@@ -114,6 +122,20 @@ All full-transient/native-outcome/resource/formal-training flags remain false.
 No model training, server deployment, frozen L1 rerun or local-data commit.
 
 ## Required Successor
+
+PR545 is accepted as main87e1f1ef after final head1d1faa0a passed42-step
+CI42509339649 (Core2596/Backend1726), equal treec024778f. A bounded metadata-only
+query of the pinned DLL now indexes21 roots/44 enchantment types/67 selected types/
+477 unique declared fields (243 static/234 instance).477 is not an unimplemented
+field count; wrapper/persistence/resource meanings remain explicit unknowns.
+The initial resolver facade collision and corrected separate index are preserved
+externally, with no native constructors/getters/values or game run involved.
+
+Text guard verification: all65536 single UTF-16 code units compared with actual JSON
+round trip, valid controls/CJK/pairs, seven malformed consumer field families and40
+targeted native-CLR producer checks pass. Related Backend275/275, four Release
+components and replay build pass; current stricter reader reuses retained native
+records2/2. No old178 matrix or native game calibration was repeated.
 
 Complete remaining relevant subtype transients and world/producer/interval evidence
 on this SAME trace before joining the existing single persistent owner. Then harvest/
