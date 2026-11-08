@@ -50,6 +50,31 @@ Implementation/verification status is recorded in CURRENT_WORK_CN.md and
 CURRENT_STATUS_CN.md; source preparation is not live-game proof. Native-CLR
 fixtures, consumer negatives and any live probe must be identified separately.
 
+Controller/retained API peer implementation is integrated from peer `3a4ca38e`
+as `f3dc5840`, two owned helper files only. Constructor-bypassed pinned native CLR
+fixtures passed84 focused checks (Object/ColoredObject/non-Object applicability,
+false/0, signed extrema, detached values, raw-cache inconsistency retention,
+private layout failures and legacy UTF16/container guards); no game startup there.
+Local consumer suite266/Core26 passed, zero failures/skips. Four normal E: Release
+components and replay/probe builds completed with zero warnings/errors. An initial
+nullable assertion warning was corrected; unchanged old matrices were not rerun.
+
+Hidden/silent isolated `native-object-transients-a` completed original tree/move
+actions. Existing helper-only probe passed28/28 reads, including4 ordinary Object
+return-value comparisons against independent raw-field reads; RNG fingerprints,
+bounded measured state and raw references/scalars did not change within helpers.
+These actual Object values were false,false,0,10; other values/ColoredObject remain
+native-CLR fixture coverage, not live-game claims. The move scope recorded16 native
+collection callbacks, but that alone is not full producer attribution.
+
+Both actual records passed the original source reader, quantity continuity,
+tool-input/persisted/common transient readers, NEW `requireObjectState: true` and
+current one-cache-read anchor client (2/2). The replay explicitly checked the new
+strict feature markers and positive Object occurrence counts. Source save hash
+remained `68ddc8dbbe09382f2e7ba1c9d5d1e8dd6d0ffaef59acf9367415b4678f59366d`;
+owned game34172/backend2312 exited. No live runtime remains or model training ran.
+Exact-head remote CI/review/publication status is recorded in current-work/status.
+
 This four-field ROOT subset is not complete Object state, recursive child state,
 enchantment `_applied`/Farmer membership, world/light effects, producer provenance,
 before-capture/passive intervals or final owner admission. Next nested work must
