@@ -14,7 +14,9 @@ namespace StardewAI.Core.WorldModel
     /// EffectiveSkillLevel is
     /// Farmer.ForagingLevel for Axe or Farmer.MiningLevel for Pickaxe (including buffs).
     /// MaxStamina is the effective getter value; HasStaminaDecreaseProtection means
-    /// Farmer.hasBuff("statue_of_blessings_2"). Both powers are raw native int values.
+    /// Farmer.hasBuff("statue_of_blessings_2"). ArgumentPower retains the original
+    /// raw argument. FarmerToolPower is only consumed by Pickaxe; its value is not
+    /// an additional applicable/measured Axe input.
     /// </summary>
     public sealed class NativeClearanceToolCostInput
     {

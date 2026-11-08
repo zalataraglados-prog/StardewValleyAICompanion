@@ -5,7 +5,11 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public sealed record NativeObservedClearanceToolCall(int Ordinal, string ToolReferenceId,
     string QualifiedToolId, int X, int Y, long GameTick, float StaminaAtEntry,
-    float StaminaAtExit, NativeClearanceToolCostProjection Debit);
+    float StaminaAtExit, NativeClearanceToolCostProjection Debit)
+{
+    public int NativePower => Debit.Input.Tool == NativeClearanceToolKind.Axe
+        ? Debit.Input.ArgumentPower : Debit.Input.FarmerToolPower;
+}
 
 public sealed record NativeClearanceToolInputSummary(string ScopeId, string CaptureSessionId,
     IReadOnlyList<NativeObservedClearanceToolCall> Calls)

@@ -14,6 +14,7 @@ public sealed class NativeClearanceToolObservationBoundaryTests
         var result = Read(request, receipt);
         var call = Assert.Single(result.Calls);
         Assert.Equal(10f, call.StaminaAtEntry);
+        Assert.Equal(1, call.NativePower);
         Assert.Equal(14f, call.Debit.Input.StaminaBefore);
         Assert.Equal(12f, call.Debit.StaminaAfter);
         Assert.Equal(13f, call.StaminaAtExit);
@@ -41,6 +42,7 @@ public sealed class NativeClearanceToolObservationBoundaryTests
         var call = Assert.Single(Read(request, receipt).Calls);
         Assert.Equal(99, call.Debit.Input.ArgumentPower);
         Assert.Equal(2, call.Debit.Input.FarmerToolPower);
+        Assert.Equal(2, call.NativePower);
         Assert.Equal(!efficient, call.Debit.StaminaSetterInvoked);
         Assert.Equal(efficient, call.Debit.RequestedStamina is null);
     }
