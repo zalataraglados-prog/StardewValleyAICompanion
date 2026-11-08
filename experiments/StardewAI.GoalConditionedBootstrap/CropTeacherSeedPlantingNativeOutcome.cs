@@ -42,7 +42,7 @@ internal sealed record CropTeacherSeedPlantingNativeOutcome(CropTeacherSeedPlant
                 "Owned planting step path escaped, repeated or aliased an input artifact.");
             if (!hashes.ContainsKey(path)) hashes[path] = CurrentTeacherFrontierSupport.HashFile(path);
             var next = comparer.Equals(path, paths[3]) ? after : CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(path, "owned planting step after");
-            VerifyStepBoundary(current, next, before, step, scope.TotalDay);
+            CropTeacherNativeStepBoundary.Verify(current, next, before, step, scope.TotalDay);
             if (index < consumed)
             {
                 Require(CropSeedPlantingBinding.TryInventory(queue.Items[index].NormalizedCommand.Parameters, out var inventory),
@@ -68,20 +68,4 @@ internal sealed record CropTeacherSeedPlantingNativeOutcome(CropTeacherSeedPlant
             proofInputs, true, false), after, proofInputs);
     }
 
-    internal static void VerifyStepBoundary(SnapshotEnvelope before, SnapshotEnvelope after, SnapshotEnvelope source,
-        QueueExecutionStepReceipt step, int totalDay)
-    {
-        MoneyRevenueCropSeedAcquisitionProofBuilder.ValidateSnapshot(after, "owned planting step after");
-        var clock = MoneyRevenueCropSeedAcquisitionProofBuilder.ReadInt(after, "time", "time");
-        var beforeClock = MoneyRevenueCropSeedAcquisitionProofBuilder.ReadInt(before, "time", "time");
-        Require(after.SaveId.Value == source.SaveId.Value && after.PlayerId.Value == source.PlayerId.Value &&
-                after.GameVersion == source.GameVersion && step.SourceStateHash == before.StateHash &&
-                step.AfterStateHash == after.StateHash && step.BeforeGameTick == before.GameTick && step.AfterGameTick == after.GameTick &&
-                after.GameTick >= before.GameTick &&
-                MoneyRevenueCropSeedAcquisitionProofBuilder.ReadInt(after, "time", "total_days") == totalDay &&
-                clock >= beforeClock && FieldEnvelopeValidator.IsReadableStatus(before.InGameTime.Status) &&
-                before.InGameTime.Value == beforeClock &&
-                FieldEnvelopeValidator.IsReadableStatus(after.InGameTime.Status) && after.InGameTime.Value == clock,
-            "Owned planting step source/actor/tick/day/clock drifted.");
-    }
 }

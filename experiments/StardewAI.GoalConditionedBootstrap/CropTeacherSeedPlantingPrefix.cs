@@ -77,7 +77,7 @@ public sealed class CropTeacherSeedPlantingPrefix
                 var successful = step.Status == "applied" && step.PrimitiveVerificationStatus == "verified";
                 CropTeacherSeedPlantingReceipt.ValidateStep(queue, step, verified, last.StateHash, last.GameTick, successful,
                     completed: successful && verified == queue.Items.Length - 1);
-                CropTeacherSeedPlantingNativeOutcome.VerifyStepBoundary(last, after, scope.Source.Before, step, scope.TotalDay);
+                CropTeacherNativeStepBoundary.Verify(last, after, scope.Source.Before, step, scope.TotalDay);
                 if (successful)
                 {
                     var item = queue.Items[verified];

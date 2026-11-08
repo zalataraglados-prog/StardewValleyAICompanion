@@ -26,10 +26,10 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             Source.Before.State["time"].GetProperty("total_days").GetProperty("value").GetInt32(),
             string.Empty, "FarmHouse", "FarmHouse", string.Empty, string.Empty, 0, 0, null, "original_route_fixture");
 
-        internal OwnedRouteFixture(bool multiHop = false, string connectorKind = "warp")
+        internal OwnedRouteFixture(bool multiHop = false, string connectorKind = "warp", Action<Fixture>? prepareSource = null)
         {
             Source = new(otherSeeds: 39);
-            SetInitialRouteSource(Source, multiHop, connectorKind);
+            SetInitialRouteSource(Source, multiHop, connectorKind, prepareSource);
             Runtime = new(Source);
             Inputs = new(Source);
             Files = new(Source, Runtime, Inputs);
@@ -111,7 +111,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         public void Dispose() { Files.Dispose(); Inputs.Dispose(); Runtime.Dispose(); Source.Dispose(); }
     }
 
-    private static void SetInitialRouteSource(Fixture f, bool multiHop, string connectorKind)
+    private static void SetInitialRouteSource(Fixture f, bool multiHop, string connectorKind, Action<Fixture>? prepareSource)
     {
         ChangeState(f.Before, "player", node =>
         {
@@ -158,6 +158,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 node[field]!["adapter"] = "test";
             }
         });
+        prepareSource?.Invoke(f);
         f.Before.RealTimestamp = "2026-11-08T12:00:00Z";
         foreach (var domain in new[] { "mods", "npcs", "quests", "menus", "modded_state" })
             if (!f.Before.State.ContainsKey(domain)) f.Before.State[domain] = JsonSerializer.SerializeToElement(new JsonObject());
