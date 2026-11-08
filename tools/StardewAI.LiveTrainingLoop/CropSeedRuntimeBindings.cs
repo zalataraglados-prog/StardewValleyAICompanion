@@ -4,7 +4,12 @@ using StardewAI.GoalConditionedBootstrap;
 
 namespace StardewAI.LiveTrainingLoop;
 
-internal sealed record CropSeedRuntimeOptions(string BackendUrl, string EvidenceDirectory, string RunId, string ExecutorVersion);
+internal sealed record CropSeedRuntimeOptions(string BackendUrl, string EvidenceDirectory, string RunId, string ExecutorVersion)
+{
+    internal CropSeedPreparationReference? PreparationReference { get; init; }
+}
+
+internal sealed record CropSeedPreparationReference(string Path, string Sha256);
 
 internal sealed record CropSeedRuntimeScopeBinding(string CommitmentId, string SnapshotPath, int TotalDay,
     string TransitionKind, string RuntimeSchema, IReadOnlyDictionary<string, string> InputHashes,

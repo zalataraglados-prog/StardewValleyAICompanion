@@ -43,7 +43,8 @@ public sealed partial class CropTeacherManagedSeedOwner
                 var seed = recovered.Seed!;
                 seed.ValidateArtifactsUnchanged();
                 await PersistPreparedAsync(operation, seed.OriginalIntentSha256, seed.PreparedQueuePath,
-                    seed.PreparedQueueSha256, recoveredAfterNativeVerification: true).ConfigureAwait(false);
+                    seed.PreparedQueueSha256, recoveredAfterNativeVerification: true,
+                    preparationReference: seed.PreparationReference).ConfigureAwait(false);
                 seed.ValidateArtifactsUnchanged();
             }
             await AdvanceAsync(operation, recovered.Evidence, recovered.SnapshotPath,
@@ -94,14 +95,16 @@ public sealed partial class CropTeacherManagedSeedOwner
         {
             var stopped = await CropTeacherSeedRuntimeRecovery.RecoverNoDispatchAsync(http,
                 new(options.BackendUrl, operation.RuntimeDirectory, options.PortfolioJournalDirectory, output,
-                    options.RunId, options.ExecutorVersion, intentHash), operation.Scopes, operation.ReadStep(), post, write).ConfigureAwait(false);
+                    options.RunId, options.ExecutorVersion, intentHash) { PreparationReference = ReadPreparationReference(operation) },
+                operation.Scopes, operation.ReadStep(), post, write).ConfigureAwait(false);
             return new(stopped.Evidence, stopped.SnapshotPath, stopped.Validate, Stop: stopped);
         }
         if (operation.Prepared is null && operation.Started is null && !File.Exists(Path.Combine(operation.RuntimeDirectory, "support-intent.json")))
             throw new InvalidOperationException("Seed phase has no retained original preparation to recover; this is not proof of zero execution.");
         var seed = await CropTeacherSeedRuntimeRecovery.RecoverAsync(http,
             new(options.BackendUrl, operation.RuntimeDirectory, options.PortfolioJournalDirectory, output,
-                options.RunId, options.ExecutorVersion, intentHash), operation.Scopes, operation.ReadStep(), post, write).ConfigureAwait(false);
+                options.RunId, options.ExecutorVersion, intentHash) { PreparationReference = ReadPreparationReference(operation) },
+            operation.Scopes, operation.ReadStep(), post, write).ConfigureAwait(false);
         return new(new(seed.LedgerPath, seed.ReadLedger()), seed.AfterSnapshotPath, seed.ValidateArtifactsUnchanged, seed);
     }
 

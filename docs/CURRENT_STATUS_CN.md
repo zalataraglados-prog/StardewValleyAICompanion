@@ -1,5 +1,9 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **本片最终本地验证：** 相关495/495通过，零失败/跳过，含26项新增；末次仅修新夹具提取方法缩进，checkpoint匹配EVD338。完整CI/发布见收口，非新游戏或训练证据。
+
+> **2026-11-08 R2原不完整准备追加续编（当前唯一接续）：** #525经42步CI `42433919421`/同head审查合入`47648545`、核树清分支，Core2443/Backend1187。本片同一owner续编声明/追加attempt，仅核原intent/base/marker/journal/lookup与完整当前authority后调用原编译，不重交marker/覆盖失败/重发未知；新准备path/SHA显式接原证书和所有恢复消费者，旧默认不改。采购2、修后17通过；三类首21/22暴露新种植重复绑定adapter已只修新层，后22/22通过，最终扩展/相关/CI见收口。[合同](money-crop-partial-preparation-continuation.md)。下一步原行走维护/保存连续性、managed有界原生，再全局日历/预算/跨根及Provider/模型/manifest。L1`19/19、11/11`、formal=false/Student训后21/21保持，无新游戏/训练/API worker，local-data不提交。下方为历史。
+
 > **本片本地验证：** 相关469/469、共用守卫提取后最终75/75通过，零失败/跳过，含21项新增；checkpoint匹配EVD338。完整CI/发布见本片收口，不冒称游戏或训练证据。
 
 > **2026-11-08 R2原零派发收口（当前唯一接续）：** #524经42步CI `42431798046`/同head审查合入`e333a279`且核树清分支，Core2443/Backend1166。本片按`c53115f0`/JSON旧意图复用严格零派发kernel，只有新owned runtime在明确零请求/完整未变源和marker成立后留完整上下文；同一owner接受/恢复为非native停止边界，不是动作成功或训练标签。缺context/receipt、未知执行、混入native证明或完整后端漂移均不重试/不放行；旧standalone默认不新增文件，文件守卫原样共用。初11专项/19重点通过，最终验证/CI见收口。[合同](money-crop-controller-stop-recovery.md)。下一步不完整准备/缺queue的原journal/lookup/编译恢复，随后原行走维护/保存连续性、managed原生样本、全局日历/预算/跨根及Provider/模型/manifest。L1`19/19、11/11`、formal=false/Student训后21/21保持，无API worker、新游戏或训练，local-data不提交。下方为历史。

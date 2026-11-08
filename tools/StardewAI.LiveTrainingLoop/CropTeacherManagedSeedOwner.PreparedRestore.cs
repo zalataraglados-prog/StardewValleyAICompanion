@@ -20,27 +20,34 @@ public sealed partial class CropTeacherManagedSeedOwner
             RequireUninvokedRuntime(operation);
             var restored = await CropTeacherSeedRuntimeRecovery.RestorePreparationAsync(http,
                 new(options.BackendUrl, operation.RuntimeDirectory, options.PortfolioJournalDirectory, evidenceDirectory,
-                    options.RunId, options.ExecutorVersion, Text(operation.Record, "original_intent_sha256")),
+                    options.RunId, options.ExecutorVersion, Text(operation.Record, "original_intent_sha256"))
+                    { PreparationReference = ReadPreparationReference(operation) },
                 operation.Scopes, operation.ReadStep(), post, commit, settle, write).ConfigureAwait(false);
-            RequireOperation(operation);
-            RequireUninvokedRuntime(operation);
-            // PinPreparedCore also binds the original runtime's private lease and the configured marker journal root.
-            if (operation.Prepared is null) await PinPreparedCoreAsync(operation, restored.Runtime).ConfigureAwait(false);
-            else
-            {
-                var prepared = ((ICropTeacherSeedManagedRuntime)restored.Runtime).ReadPreparedBoundary();
-                RequirePrepared(operation, prepared.OriginalIntentSha256);
-                RequireIdentity(operation, prepared.RuntimeDirectory, prepared.BackendUrl, prepared.RunId,
-                    prepared.ExecutorVersion, prepared.SupportStepId);
-                if (Text(operation.Prepared, "queue_sha256") != prepared.QueueSha256 ||
-                    !SamePath(StoredPath(operation.Prepared, "queue_path"), prepared.QueuePath))
-                    throw new InvalidDataException("Restored original preparation differs from its pinned queue.");
-                AttachPreparedRuntime(operation, restored.Runtime);
-            }
-            operation.RuntimeArtifactGuard = restored.Validate;
-            restored.Validate();
+            await InstallRestoredPreparationAsync(operation, restored).ConfigureAwait(false);
             return restored.Runtime;
         }
         finally { gate.Release(); }
+    }
+
+    private async Task InstallRestoredPreparationAsync(CropTeacherManagedSeedOperation operation,
+        CropTeacherSeedRuntimeRecovery.RestoredPreparation restored)
+    {
+        RequireOperation(operation);
+        RequireUninvokedRuntime(operation);
+        if (operation.Prepared is null) await PinPreparedCoreAsync(operation, restored.Runtime).ConfigureAwait(false);
+        else
+        {
+            var prepared = ((ICropTeacherSeedManagedRuntime)restored.Runtime).ReadPreparedBoundary();
+            RequirePrepared(operation, prepared.OriginalIntentSha256);
+            RequireIdentity(operation, prepared.RuntimeDirectory, prepared.BackendUrl, prepared.RunId,
+                prepared.ExecutorVersion, prepared.SupportStepId);
+            if (Text(operation.Prepared, "queue_sha256") != prepared.QueueSha256 ||
+                !SamePath(StoredPath(operation.Prepared, "queue_path"), prepared.QueuePath) ||
+                ReadPreparationReference(operation) != prepared.PreparationReference)
+                throw new InvalidDataException("Restored original preparation differs from its pinned queue.");
+            AttachPreparedRuntime(operation, restored.Runtime);
+        }
+        operation.RuntimeArtifactGuard = restored.Validate;
+        restored.Validate();
     }
 }

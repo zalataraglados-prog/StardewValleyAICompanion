@@ -1,5 +1,14 @@
 # StardewAI 当前工作
 
+## 2026-11-08 R2原不完整准备的追加续编（当前唯一接续）
+
+- 本片最终相关495/495通过，零失败/跳过，含26项新增；末次仅修新夹具方法提取的缩进，checkpoint仍匹配EVD338。完整CI/发布见收口，本机不重复全量Core/Backend。
+
+- #525最终head `5c302f9e`经42步CI `42433919421`及同head审查接受，Core2443/Backend1187零失败/跳过，合入`47648545`、核树清自有分支。原严格零派发收口不重做。
+- 同一owner为尚未派发的原不完整准备钉续编命名空间，只凭原intent/完整base/marker/journal/lookup及当前完整marker读回调用原编译器；旧失败不覆盖，缺/未知不重交mutation。已有队列原校验不兜底重编，纯编译无队列失败可追加独立attempt。完成视图显式path/SHA和transitive hashes接原私有准备证书/owner pin，原完整native恢复、准备态恢复和零派发消费者共用，旧默认读取不改。[合同](money-crop-partial-preparation-continuation.md)。
+- 初采购2/2、扩展9中8/9仅新测试复用恢复输出目录已修，采购17/17通过；三类首21/22暴露新种植adapter重复绑定，仅新adapter改为复用队列才绑定、重新编译交原callback，保留旧一次性限制，后22/22通过。最终扩展/相关/CI见收口，不将fixture冒充游戏/训练证据。
+- **唯一下一步：** 发布本片后，接原行走/维护/原生保存连续性，再显式managed激活与有界原生样本；然后原联合日历/聚合预算/跨根、Provider/模型和manifest/preflight。旧活动作物binder/idle界限不改，不反采L1。`19/19、11/11`及formal=false保持，Student新档21/21在训练后。无游戏/服务器/API worker，local-data不提交。下方为历史。
+
 ## 2026-11-08 R2原控制器零派发的持久收口（当前唯一接续）
 
 - 本片相关469/469、共用守卫提取后最终75/75通过，零失败/跳过，含21项新增；checkpoint仍匹配EVD338。完整CI/发布见收口，本机不重复全量Core/Backend。

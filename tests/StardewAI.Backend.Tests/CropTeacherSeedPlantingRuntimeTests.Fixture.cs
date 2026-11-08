@@ -92,22 +92,33 @@ public sealed partial class CropTeacherSeedPlantingRuntimeTests
                 BeforeWrite?.Invoke(path);
                 await InvokeLive<Task>("WritePortfolioJournalFileAsync", path, json);
                 AfterWrite?.Invoke(path);
-            }, async (marker, batch) =>
-            {
-                Marker = marker;
-                using var reply = await Client.PostAsJsonAsync(Options.BackendUrl + "/api/v1/small-model/action-queue/compile",
-                    new SmallModelActionEnvelope
-                    {
-                        ModelOutputId = "planting-runtime-fixture", SourceModel = "deterministic.fixture", GoalId = "earn_money",
-                        StateHash = Files.Before.StateHash, Actor = Options.TargetActor,
-                        Actions = marker.BuildActions(batch, selectedStep is null ? Files.OwnedSlotOne : selectedStep.SeedReservationId)
-                    });
-                Assert.True(reply.IsSuccessStatusCode, await reply.Content.ReadAsStringAsync());
-                Queue = (await reply.Content.ReadFromJsonAsync<ActionQueueEnvelope>())!;
-                Transition = Files.NativeTransition(marker, consumed, failedSuffix, change,
-                    firstSlot: selectedStep is not null && selectedStep.SeedReservationId is null, compiledQueue: Queue);
-                return Transition.QueuePath;
-            });
+            }, (marker, batch) => Compile(marker, batch, consumed, failedSuffix, change, selectedStep));
+
+        internal async Task<string> CompileContinuation(CropTeacherSeedCompilationContext context)
+        {
+            var original = await Compile(context.Planting!, context.Step.ActionBatch!, 8, false, null, context.Step);
+            var path = Path.Combine(context.OutputDirectory, "compiled-seed-queue.json");
+            await InvokeLive<Task>("WritePortfolioJournalFileAsync", path, File.ReadAllText(original));
+            return path;
+        }
+
+        private async Task<string> Compile(CropTeacherSeedPlantingMarker marker, MoneyRevenueCropNativeProductionActionBatch batch,
+            int consumed, bool failedSuffix, Action<SnapshotEnvelope>? change, CropTeacherRunStep? selectedStep)
+        {
+            Marker = marker;
+            using var reply = await Client.PostAsJsonAsync(Options.BackendUrl + "/api/v1/small-model/action-queue/compile",
+                new SmallModelActionEnvelope
+                {
+                    ModelOutputId = "planting-runtime-fixture", SourceModel = "deterministic.fixture", GoalId = "earn_money",
+                    StateHash = Files.Before.StateHash, Actor = Options.TargetActor,
+                    Actions = marker.BuildActions(batch, selectedStep is null ? Files.OwnedSlotOne : selectedStep.SeedReservationId)
+                });
+            Assert.True(reply.IsSuccessStatusCode, await reply.Content.ReadAsStringAsync());
+            Queue = (await reply.Content.ReadFromJsonAsync<ActionQueueEnvelope>())!;
+            Transition = Files.NativeTransition(marker, consumed, failedSuffix, change,
+                firstSlot: selectedStep is not null && selectedStep.SeedReservationId is null, compiledQueue: Queue);
+            return Transition.QueuePath;
+        }
 
         internal async Task Observe(CropTeacherSeedPlantingRuntime runtime)
         {

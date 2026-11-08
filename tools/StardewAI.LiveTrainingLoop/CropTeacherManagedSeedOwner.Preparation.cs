@@ -44,7 +44,7 @@ public sealed partial class CropTeacherManagedSeedOwner
     }
 
     private async Task PersistPreparedAsync(CropTeacherManagedSeedOperation operation, string intentHash, string queuePath,
-        string queueHash, bool recoveredAfterNativeVerification = false)
+        string queueHash, bool recoveredAfterNativeVerification = false, CropSeedPreparationReference? preparationReference = null)
     {
         RequireAdmittedSeedIntent(operation, intentHash);
         var record = new JsonObject
@@ -56,6 +56,12 @@ public sealed partial class CropTeacherManagedSeedOwner
             ["native_dispatch_performed"] = false, ["formal_product_training_authorized"] = false
         };
         if (HasOwnedDispatchProtocol(operation)) record["dispatch_protocol"] = "owner_loop.v1";
+        if (preparationReference is not null)
+        {
+            if (!HasOwnedDispatchProtocol(operation)) throw new InvalidOperationException("Legacy preparation cannot acquire a continuation reference.");
+            record["preparation_reference"] = System.Text.Json.JsonSerializer.SerializeToNode(preparationReference, JsonOptions);
+            record["continuation_sha256"] = HashFile(RecordPath(operation.Sequence, "continuation"));
+        }
         if (recoveredAfterNativeVerification) record["reconstructed_after_original_native_verification"] = true;
         var path = RecordPath(operation.Sequence, "prepared");
         await SaveAsync(path, record).ConfigureAwait(false);
