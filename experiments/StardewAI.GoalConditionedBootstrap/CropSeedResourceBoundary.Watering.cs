@@ -64,8 +64,13 @@ internal static partial class CropSeedResourceBoundary
                 finalEnergy == (applied ? initialEnergy - cost : initialEnergy),
             "Crop watering native energy delta differs from its verified tool action.");
 
+        var bowlMirrors = VerifyWateringBowlMirrors(before, after);
         var state = new Dictionary<string, JsonElement>(after.State, StringComparer.Ordinal);
-        foreach (var (domain, names) in new[] { ("farm", new[] { "crops" }), ("player", new[] { "watering_can_state", "energy" }) })
+        foreach (var (domain, names) in new[]
+        {
+            ("farm", bowlMirrors ? new[] { "crops", "pet_bowls" } : new[] { "crops" }),
+            ("player", new[] { "watering_can_state", "energy" })
+        })
         {
             var fields = JsonNode.Parse(after.State[domain].GetRawText())!.AsObject();
             // Normalize only the independently verified native deltas, in a comparison view.

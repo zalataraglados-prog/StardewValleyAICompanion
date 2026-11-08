@@ -19,7 +19,8 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         internal MoneyRevenueCropNativeLifecycleTransitionRequest Transition { get; private set; } = null!;
         internal string QueuePath => Path.Combine(Shared.Runtime.LiveOptions.SnapshotDir, "water-queue.json");
 
-        internal WateringFixture(int water = 20, bool bottomless = false, bool enchanted = false, bool efficient = false, int farmingLevel = 0)
+        internal WateringFixture(int water = 20, bool bottomless = false, bool enchanted = false, bool efficient = false,
+            int farmingLevel = 0, bool bowlMirrors = false, float energy = 100f, bool inconsistentBeforeMirror = false)
         {
             Shared = new(prepareSource: source =>
             {
@@ -50,7 +51,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                     JsonNode.Parse(source.Before.State["farm"].GetRawText())!["crops"]!.DeepClone());
                 ChangeState(source.Before, "player", node =>
                 {
-                    node["energy"] = JsonSerializer.SerializeToNode(new { status = "available", value = 100f });
+                    node["energy"] = JsonSerializer.SerializeToNode(new { status = "available", value = energy });
                     node["watering_can_state"] = JsonSerializer.SerializeToNode(new { status = "available", value = new
                     {
                         projection_status = "exact_vanilla_power_zero", runtime_type = "StardewValley.Tools.WateringCan",
@@ -60,11 +61,16 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                         energy_cost_per_power_zero_action = efficient ? 0d : Math.Max(0d, 2d - farmingLevel * 0.1d)
                     } });
                 });
+                if (bowlMirrors)
+                {
+                    RefreshBowlMirrors(source.Before, create: true);
+                    if (inconsistentBeforeMirror) ChangeState(source.Before, "farm", node => node["pet_bowls"]!["value"]![0]!["energy_before"] = 99);
+                }
             });
         }
 
         internal async Task Emit(int applied = 2, bool failedSuffix = false, bool refillOnlySuffix = false,
-            Action<SnapshotEnvelope>? change = null, Action<QueueExecutionReceiptEnvelope>? receiptChange = null)
+            Action<SnapshotEnvelope>? change = null, Action<QueueExecutionReceiptEnvelope>? receiptChange = null, int? executableTileCount = null)
         {
             var batch = Shared.Inputs.Plan.Days.Single(day => day.TotalDay == TransitionDay).ActionBatches
                 .Single(row => row.OptionId == "executor.water_crop");
@@ -72,7 +78,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 "Farm", "FarmHouse", "(O)745", string.Empty, 0, 0, batch, "original_watering_fixture");
             var task = InvokeLive<Task>("BuildCropTeacherActionBatchQueueAsync",
                 Shared.Runtime.Client, Shared.Runtime.LiveOptions, 1, step, Shared.Source.SourcePath,
-                JsonNode.Parse(JsonSerializer.Serialize(Before, JsonOptions))!.AsObject(), Before.StateHash, null!);
+                JsonNode.Parse(JsonSerializer.Serialize(Before, JsonOptions))!.AsObject(), Before.StateHash, executableTileCount!);
             try { await task; }
             catch (InvalidDataException error) when (Shared.Runtime.Handler.LastCompiledQueue is { })
             {
@@ -112,6 +118,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 }
                 if (refillOnlySuffix && index == applied)
                     ChangeState(next, "player", node => node["watering_can_state"]!["value"]!["water_left"] = 40);
+                RefreshBowlMirrors(next);
                 if (index == attempted - 1) change?.Invoke(next);
                 next.StateHash = SnapshotHash.ComputeStateHash(next.State);
                 snapshots.Add(next);
@@ -151,5 +158,43 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         internal CropTeacherWateringMaintenance Open() => CropTeacherWateringMaintenance.Open(Shared.Inputs.Plan.RequestPath,
             Shared.Source.SourcePath, Shared.Source.LedgerPath, new[] { Id }, Id, Transition, "watering.step.1");
         public void Dispose() => Shared.Dispose();
+
+        private static void RefreshBowlMirrors(SnapshotEnvelope snapshot, bool create = false)
+        {
+            ChangeState(snapshot, "farm", farm =>
+            {
+                if (create) farm["pet_bowls"] = JsonSerializer.SerializeToNode(new { status = "available", value = new[] { new
+                {
+                    location_id = "Farm", runtime_type = "StardewValley.Buildings.PetBowl",
+                    building_tile_x = 7, building_tile_y = 8, watered = false, assigned_pet_present = true,
+                    assigned_pet_id = "00000000-0000-0000-0000-000000000001", friendship_before_next_day = 10,
+                    friendship_after_fill_and_next_day_update = 16, pet_love_mail_before = false,
+                    action_status = "ready", unknown_native_bowl_detail = "retained"
+                } } }, JsonOptions);
+                if (farm["pet_bowls"] is not JsonObject bowls) return;
+                var player = JsonNode.Parse(snapshot.State["player"].GetRawText())!;
+                var can = player["watering_can_state"]!["value"]!;
+                var water = can["water_left"]!.GetValue<int>();
+                var energy = player["energy"]!["value"]!.GetValue<float>();
+                var cost = can["energy_cost_per_power_zero_action"]!.GetValue<double>();
+                foreach (var row in bowls["value"]!.AsArray().OfType<JsonObject>())
+                {
+                    row["watering_can_slot_index"] = can["slot_index"]!.DeepClone();
+                    row["watering_can_runtime_type"] = can["runtime_type"]!.DeepClone();
+                    row["watering_can_upgrade_level"] = can["upgrade_level"]!.DeepClone();
+                    row["watering_can_bottomless"] = can["is_bottomless"]!.DeepClone();
+                    row["farmer_has_watering_can_enchantment"] = can["farmer_has_watering_can_enchantment"]!.DeepClone();
+                    row["watering_can_efficient"] = can["is_efficient"]!.DeepClone();
+                    row["watering_can_water_left"] = water;
+                    row["expected_watering_can_water_after"] = can["is_bottomless"]!.GetValue<bool>() ? water : water - 1;
+                    row["energy_before"] = energy;
+                    row["watering_energy_cost"] = cost;
+                    row["expected_energy_after"] = energy - cost;
+                    row["energy_delta_projection_status"] = "exact_vanilla_power_zero";
+                    row["action_status"] = water <= 0 && !can["farmer_has_watering_can_enchantment"]!.GetValue<bool>() ? "watering_can_empty" :
+                        energy < cost ? "insufficient_stamina" : "ready";
+                }
+            });
+        }
     }
 }

@@ -65,6 +65,13 @@ re-decompiled for this work; no wiki/example constants substitute for them.
   in-memory comparison view for the **original complete persistent-resource
   projector**. Actual files and state hashes are unchanged. Extra money/inventory,
   another crop, changed tool metadata or unknown persistent progress are rejected.
+- Current `FarmReadAdapter.ReadPetBowls` also echoes the actor's water/energy and
+  derived action status even when no bowl is touched. The new consumer validates
+  the complete before/after echo against the actual tool/energy and retained
+  friendship projection, preserving float energy versus double projected cost.
+  Only that verified derived echo is normalized in the comparison view; physical
+  bowl water, friendship, mail, tool identity and unknown fields must remain exact.
+  The shared persistent projector and frozen Pet Love acceptance are not changed.
 - Movement/clock/observation volatility follows the original projector. This is
   not a general permission for pickup, clearance, harvest or recovery consumption;
   those deltas still require their original #236 attribution/settlement scope.
@@ -80,6 +87,12 @@ Original/shared focus initially passed167/167. After the derived projection fix,
 related regression passed669/669; after final original-location/tool-shape guards,
 the final focused set passed94/94 (zero failures/skips). Checkpoint matches EVD338.
 Exact-head CI/review are reported separately in closeout.
+That initial head (`4ef2de54`) passed full42-step CI42447875583 (Core2443,
+Backend1299) and same-head automatic review. A subsequent current-bridge field
+audit found the passive pet-bowl echo above before merge. Its extra12 cases and
+the full watering set passed38/38; final route/planting-prefix/watering focus
+passed106/106, zero failures/skips. Final-head CI and controller review of this
+new-only attribution delta are separate from the initial head's review/results.
 These tests are **not a real game run** and produce no policy training evidence.
 
 The required successor is to bind this verified maintenance result to the same
