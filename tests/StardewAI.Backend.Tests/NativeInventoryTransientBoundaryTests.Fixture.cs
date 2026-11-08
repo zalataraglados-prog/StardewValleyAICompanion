@@ -9,7 +9,7 @@ public sealed partial class NativeInventoryTransientBoundaryTests
     private static NativeInventoryTransientSummary Read(TrainingExecutionRequest request, ActionOriginObservationReceipt receipt) =>
         NativeOutputObservationBoundary.ReadInventoryTransients(request, receipt, 99, 111, "Farm", "123");
 
-    private static (TrainingExecutionRequest Request, ActionOriginObservationReceipt Receipt) Fixture(bool pickaxe = false)
+    internal static (TrainingExecutionRequest Request, ActionOriginObservationReceipt Receipt) Fixture(bool pickaxe = false)
     {
         var (request, receipt) = pickaxe ? NativeInventoryPayloadBoundaryTests.IdentityFixture(
             "StardewValley.Tools.Pickaxe", "(T)Pickaxe", true, "<bigCraftable>false</bigCraftable>") :
@@ -29,7 +29,7 @@ public sealed partial class NativeInventoryTransientBoundaryTests
         return (request, receipt);
     }
 
-    private static ActionOriginItemTransientState ItemState(bool tool, bool pickaxe = false) => new()
+    internal static ActionOriginItemTransientState ItemState(bool tool, bool pickaxe = false) => new()
     {
         SchemaVersion = "native_item_transients.v1", SetFlagOnPickup = Text(null), TempDataPresent = false,
         Cache = new() { QualifiedItemId = Text(null), ContextTagsDirty = true, ContextTagsPresent = false },

@@ -22,6 +22,9 @@ public sealed partial class ModEntry
                     throw new InvalidOperationException("Inventory payload lacks the original bounded native scope.");
                 var tick = (long)Game1.ticks;
                 var slotCount = farmer.Items.Count;
+                var graph = request.ActionOriginInventoryGraph ? CaptureInventoryGraphState() : null;
+                var graphItems = graph?.Nodes.Where(node => node.Item is not null)
+                    .ToDictionary(node => node.Reference, node => node.Item!, ReferenceEqualityComparer.Instance);
                 var slots = new List<ActionOriginInventoryPayloadSlot>();
                 for (var index = 0; index < slotCount; index++)
                 {
@@ -40,8 +43,13 @@ public sealed partial class ModEntry
                     {
                         if (item.itemId.Value is null)
                             throw new InvalidDataException("Native ItemId would require a mutating legacy migration before observation.");
-                        transient = NativeLiveItemTransientCapture.Capture(item, Math.Min(65536, remainingPayloadCharacters));
-                        remainingPayloadCharacters -= transient.Characters;
+                        if (graph is null)
+                        {
+                            transient = NativeLiveItemTransientCapture.Capture(item, Math.Min(65536, remainingPayloadCharacters));
+                            remainingPayloadCharacters -= transient.Characters;
+                        }
+                        else transient = graphItems!.TryGetValue(item, out var observed) ? observed :
+                            throw new InvalidDataException("Graph root raw state is unavailable.");
                     }
                     var row = new ActionOriginInventoryPayloadSlot
                     {
@@ -49,7 +57,8 @@ public sealed partial class ModEntry
                         RuntimeType = item.GetType().FullName, QualifiedItemId = item.QualifiedItemId,
                         IsTool = item is Tool, Quality = item.Quality, Stack = item.Stack
                     };
-                    var payload = NativeLiveItemPayloadCapture.Capture(item, Math.Min(65536, remainingPayloadCharacters));
+                    var payload = graph is null ? NativeLiveItemPayloadCapture.Capture(item, Math.Min(65536, remainingPayloadCharacters)) :
+                        NativeLiveItemPayloadCapture.CaptureGraphRoot(item, graph, Math.Min(65536, remainingPayloadCharacters));
                     row.SerializedStateXml = payload.Xml; row.SerializedStateSha256 = payload.Sha256;
                     remainingPayloadCharacters -= payload.Xml.Length;
                     if (transient is not null) row.TransientState = ReadItemTransientPayload(transient);
@@ -71,7 +80,7 @@ public sealed partial class ModEntry
                     SelectedSlotIndex = selected, SelectedItemReferenceId = selected < 0 ? null : slots[selected].ItemReferenceId,
                     CurrentToolReferenceId = (selection is null ? farmer.CurrentTool : selection.CurrentTool) is { } tool ? ReferenceIds.For(tool) : null,
                     SelectionTransientState = selection is null ? null : ReadSelectionTransientPayload(selection),
-                    Slots = slots.ToArray()
+                    Slots = slots.ToArray(), GraphState = graph is null ? null : ReadInventoryGraphPayload(graph, slots)
                 };
             }
             catch (Exception error)

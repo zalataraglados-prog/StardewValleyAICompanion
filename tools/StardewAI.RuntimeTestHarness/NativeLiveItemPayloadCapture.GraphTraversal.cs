@@ -86,6 +86,23 @@ internal static partial class NativeLiveItemPayloadCapture
                     }
                     observer?.Collection(ring, NativeInventoryGraphRoles.CombinedRings, ordinal);
                 }
+                // Hat's persisted list exists even though vanilla currently has no call sites.
+                // Observe it only in the new graph mode; the legacy traversal stays unchanged.
+                if (observer is not null && item is Hat hat)
+                {
+                    if (hat.enchantments is null || hat.previousEnchantments is null)
+                        throw new InvalidDataException("Native inventory graph Hat enchantment wrapper is unavailable.");
+                    CheckCount(hat.enchantments.Count);
+                    observer.Collection(hat, NativeInventoryGraphRoles.Enchantments, hat.enchantments.Count);
+                    var ordinal = 0;
+                    foreach (var enchantment in hat.enchantments)
+                    {
+                        observer.Edge(hat, NativeInventoryGraphRoles.Enchantments, ordinal++, enchantment);
+                        VisitEnchantment(enchantment, depth + 1);
+                    }
+                    observer.Collection(hat, NativeInventoryGraphRoles.Enchantments, ordinal);
+                    CheckCount(hat.previousEnchantments.Count);
+                }
             }
             finally { ancestors.Remove(item); }
         }

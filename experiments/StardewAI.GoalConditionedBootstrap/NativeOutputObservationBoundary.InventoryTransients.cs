@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Xml.Linq;
 using StardewAI.Contracts.Training;
 
 namespace StardewAI.GoalConditionedBootstrap;
@@ -38,9 +39,23 @@ public static partial class NativeOutputObservationBoundary
         ActionOriginObservationReceipt receipt, long earliestTick, long latestTick, string locationId, string actorId,
         bool requireObjectState)
     {
-        Require(request.ActionOriginInventoryTransients, "native inventory transients were not explicitly requested");
         var characters = 0;
-        var original = ReadInventoryPayloadWithBudget(request, receipt, earliestTick, latestTick, locationId, actorId, ref characters);
+        return ReadInventoryTransientScope(request, receipt, earliestTick, latestTick, locationId, actorId,
+            requireObjectState, ref characters, retainXml: false).Transients;
+    }
+
+    private sealed record InventoryTransientScope(NativeInventoryTransientSummary Transients, NativeInventoryPayloadSummary Payload,
+        Dictionary<Guid, string> References, Dictionary<Guid, XElement>? BeforeXml, Dictionary<Guid, XElement>? AfterXml);
+
+    private static InventoryTransientScope ReadInventoryTransientScope(TrainingExecutionRequest request,
+        ActionOriginObservationReceipt receipt, long earliestTick, long latestTick, string locationId, string actorId,
+        bool requireObjectState, ref int characters, bool retainXml)
+    {
+        Require(request.ActionOriginInventoryTransients, "native inventory transients were not explicitly requested");
+        var beforeXml = retainXml ? new Dictionary<Guid, XElement>() : null;
+        var afterXml = retainXml ? new Dictionary<Guid, XElement>() : null;
+        var original = ReadInventoryPayloadWithBudget(request, receipt, earliestTick, latestTick, locationId, actorId,
+            ref characters, beforeXml, afterXml);
         var references = new Dictionary<Guid, string>();
         foreach (var slot in original.Before.Slots.Concat(original.After.Slots).Where(slot => !slot.IsEmpty))
             BindTransientReference(slot.ItemReferenceId, slot.RuntimeType!, references);
@@ -48,7 +63,9 @@ public static partial class NativeOutputObservationBoundary
         var after = ReadTransientEndpoint(receipt.InventoryPayloadAfter!, original.After, actorId, references, ref characters, requireObjectState);
         Require(before.Selection.ActorReferenceId == after.Selection.ActorReferenceId,
             "native transient actor physical reference changed across the original scope");
-        return new(original.ScopeId, original.CaptureSessionId, before, after) { ObjectSubtypeStateVerified = requireObjectState };
+        var transients = new NativeInventoryTransientSummary(original.ScopeId, original.CaptureSessionId, before, after)
+            { ObjectSubtypeStateVerified = requireObjectState };
+        return new(transients, original, references, beforeXml, afterXml);
     }
 
     private static NativeObservedInventoryTransientEndpoint ReadTransientEndpoint(ActionOriginInventoryPayload wire,

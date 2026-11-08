@@ -31,22 +31,22 @@ public static partial class NativeOutputObservationBoundary
 
     private static NativeInventoryPayloadSummary ReadInventoryPayloadWithBudget(TrainingExecutionRequest request,
         ActionOriginObservationReceipt receipt, long earliestTick, long latestTick, string locationId, string actorId,
-        ref int payloadCharacters)
+        ref int payloadCharacters, Dictionary<Guid, XElement>? beforeXml = null, Dictionary<Guid, XElement>? afterXml = null)
     {
         Require(request.ActionOriginInventoryPayload && request.ActionOriginToolInputs && request.ActionOriginSnapshotAnchor &&
                 !string.IsNullOrWhiteSpace(actorId), "persisted inventory payload was not explicitly requested with its original scope");
         var original = ReadWithPayloadBudget(request, receipt, earliestTick, latestTick, locationId, ref payloadCharacters);
         var types = new Dictionary<Guid, string>();
         var before = ReadInventoryPayloadState(receipt.InventoryPayloadBefore, receipt.BeforeGameTick, actorId,
-            locationId, receipt.InventoryBefore, types, ref payloadCharacters);
+            locationId, receipt.InventoryBefore, types, ref payloadCharacters, beforeXml);
         var after = ReadInventoryPayloadState(receipt.InventoryPayloadAfter, receipt.AfterGameTick, actorId,
-            locationId, receipt.InventoryAfter, types, ref payloadCharacters);
+            locationId, receipt.InventoryAfter, types, ref payloadCharacters, afterXml);
         return new(original.ScopeId, original.CaptureSessionId, before, after);
     }
 
     private static NativeObservedInventoryPayloadState ReadInventoryPayloadState(ActionOriginInventoryPayload? state,
         long tick, string actorId, string locationId, ActionOriginInventoryCount[] inventory,
-        Dictionary<Guid, string> types, ref int payloadCharacters)
+        Dictionary<Guid, string> types, ref int payloadCharacters, Dictionary<Guid, XElement>? xmlRoots)
     {
         Require(state is not null && state.SchemaVersion == "native_inventory_payload.v1" && state.PayloadKind == "persisted_xml" &&
                 state.GameTick == tick && state.ActorId == actorId && state.LocationId == locationId &&
@@ -85,30 +85,9 @@ public static partial class NativeOutputObservationBoundary
             Require(root.Name == descriptor.XmlRoot && root.Attribute(XName.Get("type", "http://www.w3.org/2001/XMLSchema-instance")) is null,
                 "persisted inventory XML root does not match its actual runtime type");
             ValidateInventoryXmlDepth(slot.SerializedStateXml!);
-            var id = ItemXmlValue(root, "itemId");
-            var qualifierEnd = slot.QualifiedItemId!.IndexOf(')');
-            Require(slot.QualifiedItemId.StartsWith('(') && qualifierEnd > 1 && slot.QualifiedItemId[(qualifierEnd + 1)..] == id &&
-                    !string.IsNullOrWhiteSpace(id) &&
-                    int.TryParse(ItemXmlValue(root, "quality"), NumberStyles.Integer, CultureInfo.InvariantCulture, out var quality) && quality == slot.Quality &&
-                    int.TryParse(ItemXmlValue(root, "stack"), NumberStyles.Integer, CultureInfo.InvariantCulture, out var stack) && stack == slot.Stack,
-                "persisted inventory XML identity, quality or stack differs from its actual header");
-            var qualifier = descriptor.FixedQualifier;
-            if (descriptor.IdentityRule == NativeInventoryPayloadIdentityRule.ObjectBigCraftable)
-            {
-                Require(bool.TryParse(ItemXmlValue(root, "bigCraftable"), out var big),
-                    "inventory Object bigCraftable discriminator is unavailable");
-                qualifier = big ? "(BC)" : "(O)";
-            }
-            else if (descriptor.IdentityRule == NativeInventoryPayloadIdentityRule.ClothingType)
-            {
-                var value = ItemXmlValue(root, "clothesType");
-                Require(value is "SHIRT" or "PANTS" || int.TryParse(value, NumberStyles.Integer,
-                        CultureInfo.InvariantCulture, out _), "inventory clothing type discriminator is not a native enum value");
-                qualifier = value == "PANTS" || int.TryParse(value, NumberStyles.Integer,
-                    CultureInfo.InvariantCulture, out var numeric) && numeric == 1 ? "(P)" : "(S)";
-            }
-            Require(slot.QualifiedItemId == qualifier + id, "inventory qualification differs from its native type/XML");
-            var key = new ItemKey(slot.QualifiedItemId, slot.Quality!.Value);
+            ValidateInventoryXmlIdentity(root, descriptor, slot.QualifiedItemId!, slot.Quality!.Value, slot.Stack!.Value);
+            xmlRoots?.Add(reference, root);
+            var key = new ItemKey(slot.QualifiedItemId!, slot.Quality!.Value);
             var total = (long)quantities.GetValueOrDefault(key) + slot.Stack!.Value;
             Require(total <= int.MaxValue, "inventory payload quantity exceeds its native range");
             quantities[key] = (int)total;

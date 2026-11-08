@@ -1599,6 +1599,8 @@ static partial class Program
             executionRequest.ActionOriginObservationScopeId is not null;
         executionRequest.ActionOriginInventoryTransients = options.ObserveNativeInventoryTransients &&
             executionRequest.ActionOriginObservationScopeId is not null;
+        executionRequest.ActionOriginInventoryGraph = options.ObserveNativeInventoryGraph &&
+            executionRequest.ActionOriginObservationScopeId is not null;
         return executionRequest;
     }
 
