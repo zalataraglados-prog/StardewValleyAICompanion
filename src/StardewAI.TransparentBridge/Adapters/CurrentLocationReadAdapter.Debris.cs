@@ -15,10 +15,13 @@ public sealed partial class CurrentLocationReadAdapter
                 var projectedItem = debris.item;
                 if (projectedItem is null && !string.IsNullOrWhiteSpace(qualifiedItemId))
                 {
-                    var registryItem = ItemRegistry.Create(
-                        qualifiedItemId,
-                        1,
-                        debris.itemQuality);
+                    var registryItem = StardewAI.NativePrimitives.CanonicalVanillaObjectUnit.TryCreateProjection(
+                        qualifiedItemId, debris.itemQuality, out var ordinaryItem)
+                        ? ordinaryItem
+                        : ItemRegistry.Create(
+                            qualifiedItemId,
+                            1,
+                            debris.itemQuality);
                     if (string.Equals(
                             registryItem.QualifiedItemId,
                             qualifiedItemId,

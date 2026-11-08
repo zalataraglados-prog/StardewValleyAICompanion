@@ -46,6 +46,29 @@ public sealed class CanonicalObjectUnitSourceGuardTests
         Assert.Contains("? unit : ItemRegistry.Create(id)", bridge);
     }
 
+    [Fact]
+    public void DropProjectionKeepsLiveItemsQualityFixupsStatusesAndNativeFallback()
+    {
+        var source = File.ReadAllText(Path.Combine(Root(), "src", "SharedNative", "CanonicalVanillaObjectUnit.cs"));
+        var debris = File.ReadAllText(Path.Combine(Root(), "src", "StardewAI.TransparentBridge", "Adapters", "CurrentLocationReadAdapter.Debris.cs"));
+        Assert.Contains("var projectedItem = debris.item", debris);
+        Assert.Contains("if (projectedItem is null", debris);
+        Assert.Contains("CanonicalVanillaObjectUnit.TryCreateProjection(", debris);
+        Assert.Contains("qualifiedItemId, debris.itemQuality, out var ordinaryItem", debris);
+        Assert.Contains(": ItemRegistry.Create(", debris);
+        Assert.Contains("projected.Quality = quality", source);
+        Assert.Contains("projected.FixQuality()", source);
+        Assert.Contains("nameof(Item.Quality)", source);
+        Assert.Contains("nameof(Item.FixQuality)", source);
+        Assert.Contains("MethodBase.GetMethodFromHandle(method.MethodHandle, method.DeclaringType.TypeHandle)", source);
+        Assert.Contains("if (quality != 0)", source);
+        foreach (var status in new[] { "exact_live_item", "exact_item_registry_projection", "item_registry_projection_unavailable" })
+            Assert.Contains(status, debris);
+        Assert.Contains("item_quality = debris.itemQuality", debris);
+        Assert.Contains("item = SummarizeItem(projectedItem)", debris);
+        Assert.Contains("debris.Chunks", debris);
+    }
+
     private static string Root()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

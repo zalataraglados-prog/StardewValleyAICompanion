@@ -1,5 +1,9 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+> **2026-11-08 掉落读取校准补记：** 相关48/48、E两端零警告/错误。原生A保留73普通/混合等价与RNG/所核世界/实际物品不变及3特殊/错误回退，随后夹具失败；B确证继承反射patch漏检，修共享声明方法归一化。C/D摘要一致而旧已内联setter回调为0，修夹具为同补丁旧新对照，E定向通过品质方法/零品质/撤patch及两端继承ItemId setter拒绝恢复。原档未变、进程退出，失败留存，不反采73/792。最终CI/发布另记；继续原补水实际清障/拾取资源边界到唯一owner及原定后继，不授予生产或正式训练credit。
+
+> **2026-11-08 原掉落摘要接续：** #537经最终42步CI接受合入`086a24e1`并核树清分支，已验792单位矩阵不重采。本片保留旧`792902669`registry摘要和实际held-item/原始品质/身份/状态字段，仅复用同一共享普通构造及原生品质setter/FixQuality，未知/特殊/patch保持旧链。[合同](ordinary-drop-projection-purity.md)。验证/发布另记，不是全桥纯度/资源或训练credit。下一步仍原补水实际开路/拾取资源接唯一owner、收获/原生保存跨日与managed，然后原全局协调/其余probe/Provider/模型/manifest；L1`19/19、11/11`冻结、formal=false、Student21/21训后，无worker/local-data提交。下方为历史。
+
 > **本片末次增量：** 初head42步CI/审查通过，合并前补registry查询被patch时保留旧链；定向D核实Harmony撤patch留空info，新准入改看实际owners，E的6次旧回调/原哈希/撤patch恢复及相关47通过。只核新增分支、不重采792矩阵，最终head CI/发布另记，formal=false不变。
 
 > **2026-11-08 原普通对象单位读取接续：** #536已42步CI/同head审查接受合入`b27ee575`并核树清分支。本片保留原单位栈/翻转归零/库存历史/工具节拍与序列化语义，以同一E反编译共享固定原版且未patch的无抽样普通对象构造；两端哈希/Cold FromStandard复用，特殊与未知保留原路径。[合同](canonical-object-unit-purity.md)。原生A/B792输入字节等价，实际调用/异常/patch回退和所核RNG/玩家/当前地图状态不变，原档未变且进程退出；首4/相关47通过，最终验证发布见收口。只读RNG诊断仅测试，不是#29全局或训练准入完成。下一步原补水涉及的registry掉落投影等价/读取纯度，再真实资源接唯一owner、收获/原生保存跨日及managed，然后原全局协调/其余probe/Provider/模型/manifest；已验矩阵/L1不重采，L1`19/19、11/11`冻结、formal=false、Student21/21训后，无worker/local-data提交。下方为历史。

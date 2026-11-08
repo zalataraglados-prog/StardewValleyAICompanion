@@ -1,5 +1,9 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-08 原掉落摘要验证补记：** 相关48/48与E两端构建通过，原生A的73普通/混合等价/RNG/所核世界/实际物品不变及3特殊/错误回退通过后夹具失败；B确证继承反射方法漏检patch，现共享守卫归一到声明方法。C/D仅夹具误要求旧原生已内联setter产生回调，摘要哈希相同；E定向证明旧新同补丁摘要/回调一致、零品质跳过/撤patch恢复及两端ItemId继承setter拒绝/恢复。原档未变、进程退出，失败保留，未重采73/792。最终CI/发布另记，后继仍原补水清障/拾取资源接唯一owner、收获/原生保存跨日和managed，再全局协调/其余probe/Provider/模型/manifest；L1冻结`19/19、11/11`，formal=false，无worker/local-data提交。
+
+> **2026-11-08 R2原普通掉落投影纯度（当前唯一接续）：** #537已最终42步CI合入`086a24e1`、核树清分支，Core2486/Backend1420，792单位矩阵不重采。本片保留`792902669`原registry摘要用途，以同一共享函数处理普通无held-item掉落，保留实际物品、raw品质、字段/身份匹配与状态；非零品质沿原生setter/FixQuality，未知/特殊/patch走旧链。[合同](ordinary-drop-projection-purity.md)。验证/发布见收口，不是全桥纯度或生产credit。下一步同一原补水真实清障/拾取资源接唯一owner、收获/原生保存跨日和managed，再原全局协调/其余probe/Provider/模型/manifest；L1`19/19、11/11`、formal=false/Student训后21/21不变，无worker/local-data提交。下方为历史。
+
 > **本片末次增量：** 初head42步CI/审查通过后补新入口对registry查询patch的拒绝。定向D发现Harmony撤patch后留下空info，已仅修新判定为实际owners；定向E通过（6次旧查询回调、哈希不变、撤patch恢复准入），相关47通过。792矩阵不重采，最终head CI/发布另记，旧执行器不改。
 
 > **2026-11-08 R2普通对象原单位哈希纯度（当前唯一接续）：** #536已42步CI/同head审查合入`b27ee575`并核树清分支，Core2480/Backend1420。本片按原`f3133e72/6f21e240/e847e04f`语义和同一E反编译，原两端单位哈希及Cold FromStandard共享普通对象构造，去掉无用抽样，固定二进制/类型/未patch方法，保留旧规范化/原生fallback，不换RNG或执行器。[合同](canonical-object-unit-purity.md)。原生A/B及最终C的792输入字节等价、两端实际调用/异常及patch回退、所核RNG/玩家/当前地图状态未变，34特殊类型保留旧路径，原档未变且进程退出。首4及最终相关47通过，最终CI/发布见收口；只读RNG传感器仅测试，不代表#29全局完成。下一步仍原补水涉及的registry掉落投影等价/读取纯度、真实资源接同一owner及收获/保存跨日/managed，再原全局协调/其余probe/Provider/模型/manifest。已验单位矩阵与L1不重采；L1`19/19、11/11`、formal=false及Student训后21/21不变，无worker、local-data不提交。下方为历史。

@@ -52,6 +52,21 @@ internal static class CanonicalVanillaObjectUnit
         return true;
     }
 
+    public static bool TryCreateProjection(string qualifiedItemId, int quality, out ObjectItem unit)
+    {
+        unit = null!;
+        if (quality != 0 && (!Unpatched(typeof(ObjectItem).GetProperty(nameof(Item.Quality))?.SetMethod) ||
+            !Unpatched(typeof(ObjectItem).GetMethod(nameof(Item.FixQuality))))) return false;
+        if (!TryCreateStandard(qualifiedItemId, out var projected)) return false;
+        if (quality != 0)
+        {
+            projected.Quality = quality;
+            projected.FixQuality();
+        }
+        unit = projected;
+        return true;
+    }
+
     private static bool Eligible(string id) => MatchingBinary.Value && !string.IsNullOrWhiteSpace(id) &&
         !ItemRegistry.IsQualifiedItemId(id) && Game1.objectData.ContainsKey(id);
 
@@ -79,7 +94,9 @@ internal static class CanonicalVanillaObjectUnit
 
     private static bool Unpatched(MethodBase? method)
     {
-        if (method is null) return false;
+        if (method?.DeclaringType is null) return false;
+        if (method.ReflectedType != method.DeclaringType)
+            method = MethodBase.GetMethodFromHandle(method.MethodHandle, method.DeclaringType.TypeHandle);
         var patches = Harmony.GetPatchInfo(method);
         return patches is null || !patches.Owners.Any();
     }
