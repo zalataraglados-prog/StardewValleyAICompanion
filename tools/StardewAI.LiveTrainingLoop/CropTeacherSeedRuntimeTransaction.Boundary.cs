@@ -25,11 +25,14 @@ internal sealed partial class CropTeacherSeedRuntimeTransaction
             if (PortfolioMutationRequestJournal.HashFile(Path.Combine(options.EvidenceDirectory, "support-intent.json")) != intentSha256)
                 throw new InvalidDataException("Original crop seed runtime intent changed after preparation.");
             ValidateDispatchQueueCore(queuePath);
+            if (options.PreparationReference is { } reference && PortfolioMutationRequestJournal.HashFile(reference.Path) != reference.Sha256)
+                throw new InvalidDataException("Original crop seed preparation continuation changed.");
         }
         Validate();
         return new(options.EvidenceDirectory, options.BackendUrl, options.RunId, options.ExecutorVersion,
             scope.ReadPreparationRequest().PortfolioId, scope.CommitmentId, scope.InputHashes,
-            scope.ReadPreparationRequest(), scope.PreparationDetails?.DeepClone().AsObject(), intentSha256, queuePath, queueSha256, Validate);
+            scope.ReadPreparationRequest(), scope.PreparationDetails?.DeepClone().AsObject(), intentSha256, queuePath, queueSha256, Validate,
+            options.PreparationReference);
     }
 
     internal CropTeacherSeedLiveBoundary ReadVerifiedBoundary()

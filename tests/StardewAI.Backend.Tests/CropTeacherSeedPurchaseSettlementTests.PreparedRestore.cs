@@ -102,8 +102,8 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         Assert.Equal(0, runtime.Handler.Settlements);
     }
 
-    private static Task<ICropTeacherSeedRuntime> RestorePrepared(OwnerFiles files, CropTeacherManagedSeedOwner owner, RuntimeFixture runtime) =>
-        owner.RestorePreparedSeedAsync(runtime.Client, files.Recovery, files.Post,
+    private static Task<ICropTeacherSeedRuntime> RestorePrepared(OwnerFiles files, CropTeacherManagedSeedOwner owner, RuntimeFixture runtime, string? evidence = null) =>
+        owner.RestorePreparedSeedAsync(runtime.Client, evidence ?? files.Recovery, files.Post,
             (diagnostic, request) => InvokeLive<Task<JsonObject>>("PostJournaledPortfolioCommitAsync", runtime.Client, runtime.LiveOptions, diagnostic, request),
             (diagnostic, request) => InvokeLive<Task<JsonObject>>("PostJournaledPortfolioSettlementAsync", runtime.Client, runtime.LiveOptions, diagnostic, request));
 }

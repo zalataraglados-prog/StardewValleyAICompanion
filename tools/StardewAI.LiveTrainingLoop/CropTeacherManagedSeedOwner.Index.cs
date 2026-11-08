@@ -33,6 +33,12 @@ public sealed partial class CropTeacherManagedSeedOwner
                 recognized.Add(startedPath);
             }
             var preparedPath = RecordPath(sequence, "prepared");
+            var continuationPath = RecordPath(sequence, "continuation");
+            if (File.Exists(continuationPath))
+            {
+                LoadContinuation(operation, Read<JsonObject>(continuationPath));
+                recognized.Add(continuationPath);
+            }
             if (File.Exists(preparedPath))
             {
                 var prepared = Read<JsonObject>(preparedPath);
@@ -47,6 +53,7 @@ public sealed partial class CropTeacherManagedSeedOwner
                 RequireAdmittedSeedIntent(operation, Text(prepared, "original_intent_sha256"));
                 if (HasOwnedDispatchProtocol(operation) != (prepared["dispatch_protocol"]?.GetValue<string>() == "owner_loop.v1"))
                     throw new InvalidDataException("Managed crop preparation dispatch protocol changed.");
+                _ = ReadPreparationReference(operation);
                 recognized.Add(preparedPath);
             }
             var dispatchPath = RecordPath(sequence, "dispatch");
@@ -103,5 +110,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         if (operation.Prepared is not null) TrackFrontier(RecordPath(operation.Sequence, "prepared"));
         if (operation.Started is not null) TrackFrontier(RecordPath(operation.Sequence, "started"));
         if (operation.Dispatch is not null) TrackFrontier(RecordPath(operation.Sequence, "dispatch"));
+        if (operation.Continuation is not null) TrackFrontier(RecordPath(operation.Sequence, "continuation"));
+        if (ReadPreparationReference(operation) is { } reference) TrackFrontier(reference.Path);
     }
 }

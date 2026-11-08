@@ -38,7 +38,7 @@ public static partial class CropTeacherSeedRuntimeRecovery
         var preparation = new CropTeacherSeedPreparedBoundary(context.Root, options.BackendUrl, options.RunId,
             options.ExecutorVersion, context.Request.PortfolioId, context.Binding.CommitmentId,
             context.Binding.InputHashes, context.Request, context.Binding.PreparationDetails?.DeepClone().AsObject(),
-            options.ExpectedIntentSha256, prepared.QueuePath, prepared.QueueSha256, Validate);
+            options.ExpectedIntentSha256, prepared.QueuePath, prepared.QueueSha256, Validate, options.PreparationReference);
         await write(Path.Combine(context.Output, "no-dispatch-recovery.json"), new JsonObject
         {
             ["schema_version"] = "crop_teacher_seed_no_dispatch_recovery.v1", ["run_id"] = options.RunId,

@@ -7,7 +7,10 @@ namespace StardewAI.LiveTrainingLoop;
 
 public sealed record CropTeacherSeedRuntimeRecoveryOptions(string BackendUrl, string RuntimeDirectory,
     string PortfolioJournalDirectory, string EvidenceDirectory, string RunId, string ExecutorVersion,
-    string ExpectedIntentSha256) : ICropSeedPortfolioRecoveryOptions;
+    string ExpectedIntentSha256) : ICropSeedPortfolioRecoveryOptions
+{
+    internal CropSeedPreparationReference? PreparationReference { get; init; }
+}
 
 public sealed class CropTeacherSeedRecoveredBoundary
 {
@@ -38,6 +41,7 @@ public sealed class CropTeacherSeedRecoveredBoundary
     public string OriginalRuntimeDirectory { get; }
     public string PreparedQueuePath { get; }
     public string PreparedQueueSha256 { get; }
+    internal CropSeedPreparationReference? PreparationReference { get; init; }
     public StrategyCommitmentLedger ReadLedger()
     {
         validate();
@@ -112,7 +116,7 @@ public static partial class CropTeacherSeedRuntimeRecovery
             diagnostic["final_ledger_path"] = final.Path;
             diagnostic["artifact_hashes"] = JsonSerializer.SerializeToNode(artifacts.Hashes, JsonOptions);
             return new(final, transition.AfterSnapshotPath, markerRequest.PortfolioId, options, Validate,
-                preparedQueuePath, artifacts.Hashes[preparedQueuePath]);
+                preparedQueuePath, artifacts.Hashes[preparedQueuePath]) { PreparationReference = options.PreparationReference };
         }
         catch (Exception error)
         {

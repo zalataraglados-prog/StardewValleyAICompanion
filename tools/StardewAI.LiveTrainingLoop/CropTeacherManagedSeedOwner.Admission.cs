@@ -92,7 +92,8 @@ public sealed partial class CropTeacherManagedSeedOwner
             ValidateState();
         }
         if (HasOwnedDispatchProtocol(operation)) AttachPreparedRuntime(operation, runtime);
-        await PersistPreparedAsync(operation, prepared.OriginalIntentSha256, prepared.QueuePath, prepared.QueueSha256).ConfigureAwait(false);
+        await PersistPreparedAsync(operation, prepared.OriginalIntentSha256, prepared.QueuePath, prepared.QueueSha256,
+            preparationReference: prepared.PreparationReference).ConfigureAwait(false);
     }
 
     private void RequireIdentity(CropTeacherManagedSeedOperation operation, string runtime, string backendUrl, string run,

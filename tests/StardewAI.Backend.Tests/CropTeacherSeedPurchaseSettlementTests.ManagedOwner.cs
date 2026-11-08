@@ -168,7 +168,15 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         {
             if (Directory.Exists(OwnerRoot))
                 foreach (var native in Directory.EnumerateDirectories(OwnerRoot))
-                { Clean(Path.Combine(native, "teacher-ledgers")); Clean(native); }
+                {
+                    var continuations = Path.Combine(native, "preparation-continuations");
+                    if (Directory.Exists(continuations))
+                    {
+                        foreach (var attempt in Directory.EnumerateDirectories(continuations)) Clean(attempt);
+                        Clean(continuations);
+                    }
+                    Clean(Path.Combine(native, "teacher-ledgers")); Clean(native);
+                }
             Clean(OwnerRoot);
             if (Directory.Exists(root))
                 foreach (var recovery in Directory.EnumerateDirectories(root))

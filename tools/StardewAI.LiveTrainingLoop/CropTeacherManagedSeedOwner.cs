@@ -24,6 +24,7 @@ public sealed class CropTeacherManagedSeedOperation
     internal JsonObject? Prepared { get; set; }
     internal JsonObject? Started { get; set; }
     internal JsonObject? Dispatch { get; set; }
+    internal JsonObject? Continuation { get; set; }
     internal ICropTeacherSeedRuntime? PreparedRuntime { get; set; }
     internal Action? RuntimeArtifactGuard { get; set; }
     internal bool ExecutionActive { get; set; }

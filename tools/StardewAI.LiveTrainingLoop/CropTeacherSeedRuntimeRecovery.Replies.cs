@@ -12,6 +12,19 @@ internal interface ICropSeedPortfolioRecoveryOptions
 
 public static partial class CropTeacherSeedRuntimeRecovery
 {
+    private static async Task RetainOriginalMarkerReplyAsync(string root, Artifacts artifacts, JsonObject reply,
+        Func<string, string, Task> write)
+    {
+        var path = Path.Combine(root, "marker-reply.json");
+        artifacts.Validate();
+        if (!artifacts.Hashes.ContainsKey(path))
+        {
+            await write(path, reply.ToJsonString(JsonOptions));
+            if (!JsonNode.DeepEquals(reply, artifacts.Read<JsonObject>(path)))
+                throw new InvalidDataException("Restored original marker reply changed while retaining it.");
+        }
+    }
+
     internal static async Task<JsonObject> ReadReplyAsync<T>(ICropSeedPortfolioRecoveryOptions options,
         string origin, string root, string output, Artifacts artifacts, string phase, string operation, T request,
         Func<string, string, Task<JsonObject>> post, Func<string, string, Task> write)
