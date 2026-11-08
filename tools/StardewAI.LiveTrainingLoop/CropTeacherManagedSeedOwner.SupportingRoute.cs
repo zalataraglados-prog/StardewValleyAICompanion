@@ -30,40 +30,9 @@ public sealed partial class CropTeacherManagedSeedOwner
         finally { gate.Release(); }
     }
 
-    public async Task RunSupportingRouteAsync(CropTeacherManagedSeedOperation operation, HttpClient http,
+    public Task RunSupportingRouteAsync(CropTeacherManagedSeedOperation operation, HttpClient http,
         Func<JsonObject, ReservationPortfolioCommitRequest, Task<JsonObject>> commit,
-        Func<string, string, Task<JsonObject>> post)
-    {
-        await gate.WaitAsync().ConfigureAwait(false);
-        try
-        {
-            RequireOperation(operation);
-            if (!operation.IsSupportingRoute) throw new InvalidOperationException("Managed crop operation is not a supporting route.");
-            if (operation.RouteStart is not null)
-                await EnsureOriginalRouteOutcomeAsync(operation).ConfigureAwait(false);
-            await ClaimRuntimeInvocationAsync(operation).ConfigureAwait(false);
-            var scope = operation.SupportingRoute!;
-            var root = operation.RuntimeDirectory;
-            if (operation.RouteStart is null)
-            {
-                if (Directory.Exists(root) || File.Exists(root)) throw new IOException("Retained route runtime requires recovery, not another mutation.");
-                Directory.CreateDirectory(root);
-                var intent = CreateSupportingRouteIntent(operation.Record, scope);
-                await write(Path.Combine(root, "route-intent.json"), intent.ToJsonString(JsonOptions)).ConfigureAwait(false);
-            }
-            var before = await StrategyLedgerEvidenceStore.ReadAsync(http, options.BackendUrl, root,
-                scope.BaseLedger.SourceStateHash, JsonOptions, "Crop supporting route base").ConfigureAwait(false);
-            CropTeacherSeedRuntimeTransaction.RequireLedger(scope.BaseLedger, before.Ledger, "supporting route base");
-            ValidateSupportingRoute(operation);
-            var reply = await commit(new JsonObject(), scope.RebindRequest).ConfigureAwait(false);
-            await write(Path.Combine(root, "marker-reply.json"), reply.ToJsonString(JsonOptions)).ConfigureAwait(false);
-            // Even a local reply must have the same durable original request/journal as recovery.
-            var recovered = await ReadSupportingRouteBoundaryAsync(http, operation, root, post).ConfigureAwait(false);
-            await AdvanceAsync(operation, recovered.Evidence, recovered.SnapshotPath, recovered.Validate,
-                "live_supporting_route").ConfigureAwait(false);
-        }
-        finally { gate.Release(); }
-    }
+        Func<string, string, Task<JsonObject>> post) => RunSupportingTransitionAsync(operation, http, commit, post, watering: false);
 
     private CropTeacherSupportingRoute OpenSupportingRoute(JsonObject record)
     {

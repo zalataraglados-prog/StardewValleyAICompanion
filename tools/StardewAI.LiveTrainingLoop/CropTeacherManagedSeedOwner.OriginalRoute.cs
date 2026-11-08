@@ -50,7 +50,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         record["operation_kind"] = "supporting_route";
         record["route_execution_protocol"] = "original_loop.v1";
         record["original_model_plan_path"] = Path.GetFullPath(value.ModelPlanPath);
-        record["route_active_commitment_ids"] = JsonSerializer.SerializeToNode(ActiveRouteCommitments(), JsonOptions);
+        record["route_active_commitment_ids"] = JsonSerializer.SerializeToNode(ActiveCoveredCommitments(), JsonOptions);
         var transition = new MoneyRevenueCropNativeLifecycleTransitionRequest(value.Kind, 0, Path.GetFullPath(value.QueuePath), headSnapshotPath,
             Path.GetFullPath(value.ReceiptPath), Path.GetFullPath(value.AfterSnapshotPath), options.RunId, options.ExecutorVersion, "pending-original-candidate");
         record["route_transition"] = JsonSerializer.SerializeToNode(transition, JsonOptions);
@@ -122,7 +122,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             transition.RunId != options.RunId || transition.ExecutorVersion != options.ExecutorVersion)
             throw new InvalidDataException("Original route changed its owner/run/executor/source identity.");
         var active = record["route_active_commitment_ids"]?.Deserialize<string[]>(JsonOptions);
-        if (active is null || !active.SequenceEqual(ActiveRouteCommitments(), StringComparer.Ordinal))
+        if (active is null || !active.SequenceEqual(ActiveCoveredCommitments(), StringComparer.Ordinal))
             throw new InvalidDataException("Original route active coverage differs from its retained original ledger/plan.");
         var start = CropTeacherSupportingRoute.Preparation.Open(plan.RequestPath, StoredPath(record, "before_snapshot_path"), headLedgerPath,
             active, Text(record, "support_step_id"), transition.TransitionKind,
@@ -137,10 +137,6 @@ public sealed partial class CropTeacherManagedSeedOwner
             throw new IOException("Original route native output overlaps its retained inputs.");
         return start;
     }
-
-    private string[] ActiveRouteCommitments() => Read<StrategyCommitmentLedger>(headLedgerPath).CropPlantingCommitments
-        .Where(row => row.Status == StrategyCommitmentStatuses.Active && plan.CoveredCommitmentIds.Contains(row.CommitmentId, StringComparer.Ordinal))
-        .Select(row => row.CommitmentId).OrderBy(value => value, StringComparer.Ordinal).ToArray();
 
     private static MoneyRevenueCropNativeLifecycleTransitionRequest RouteTransition(JsonObject record) =>
         record["route_transition"]?.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)

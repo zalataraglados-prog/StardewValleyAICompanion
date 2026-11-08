@@ -64,7 +64,7 @@ public sealed partial class CropTeacherManagedSeedOwner
     private async Task PinPreparedCoreAsync(CropTeacherManagedSeedOperation operation, ICropTeacherSeedRuntime runtime)
     {
         RequireOperation(operation);
-        if (operation.IsLifecycle || operation.IsSupportingRoute) throw new InvalidOperationException("Non-seed operations have no native seed preparation.");
+        if (operation.IsLifecycle || operation.IsSupportingTransition) throw new InvalidOperationException("Non-seed operations have no native seed preparation.");
         if (operation.Prepared is not null || runtime is not ICropTeacherSeedManagedRuntime original)
             throw new InvalidOperationException("Managed crop preparation must come once from an original runtime transaction.");
         var prepared = original.ReadPreparedBoundary();

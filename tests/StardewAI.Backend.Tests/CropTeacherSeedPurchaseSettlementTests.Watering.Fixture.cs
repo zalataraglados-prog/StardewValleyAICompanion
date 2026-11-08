@@ -126,6 +126,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 current = next;
             }
             After = snapshots[attempted - 1];
+            Shared.Runtime.Store.Snapshots[After.StateHash] = After;
             var candidate = queue.Items[0].NormalizedCommand.Parameters.Single(row => row.Name == "precondition" &&
                 row.Value.StartsWith("candidate_id:", StringComparison.Ordinal)).Value["candidate_id:".Length..];
             var receipt = MoneyCropTeacherFixture.Create<QueueExecutionReceiptEnvelope>("SeedAcquisitionReceipt", queue,

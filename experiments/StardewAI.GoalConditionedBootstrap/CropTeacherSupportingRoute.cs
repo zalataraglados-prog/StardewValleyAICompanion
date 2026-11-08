@@ -4,7 +4,7 @@ using StardewAI.Core.Infrastructure;
 namespace StardewAI.GoalConditionedBootstrap;
 
 // Consumes original route evidence; it neither plans nor executes another action.
-public sealed partial class CropTeacherSupportingRoute
+public sealed partial class CropTeacherSupportingRoute : ICropTeacherSupportingTransition
 {
     private readonly CropTeacherSupportingRebind rebind;
     private readonly CropTeacherRetainedInputs inputs;
