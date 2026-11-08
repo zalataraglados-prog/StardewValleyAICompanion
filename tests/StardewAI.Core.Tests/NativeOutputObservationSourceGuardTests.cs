@@ -37,7 +37,7 @@ public sealed class NativeOutputObservationSourceGuardTests
         Assert.Contains("public static void AdmissionPostfix(Farmer __instance, bool __result", hooks);
         Assert.DoesNotContain("ref bool __result", hooks);
         Assert.Contains("if (owner is null || !owner.active) return", hooks);
-        Assert.Contains("RemainingItemStack = __state.Item.Stack", hooks);
+        Assert.Contains("ItemStackAfterCall = __state.Item.Stack", hooks);
         Assert.Contains("ReferenceIds.For(debris)", recorder);
         Assert.Contains("SaveSerializer.GetSerializer(item.GetType()).Serialize(writer, item)", recorder);
         Assert.DoesNotContain("ClearanceOutputItemKey.From", recorder);

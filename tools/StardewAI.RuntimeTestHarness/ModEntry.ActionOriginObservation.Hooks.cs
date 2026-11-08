@@ -87,7 +87,7 @@ public sealed partial class ModEntry
             {
                 if (!ReferenceEquals(owner.collection, __state.Collection)) owner.Reject("observation_admission_context_mismatch");
                 __state.Row.NativeReturn = __result;
-                __state.Row.RemainingItemStack = __state.Item.Stack;
+                __state.Row.ItemStackAfterCall = __state.Item.Stack;
                 __state.Row.InventoryAfter = InventoryCount(__instance, __state.Row.Item!);
             }
             catch (Exception error) { owner.Reject("observation_admission_postfix_failed:" + error.GetType().Name); }

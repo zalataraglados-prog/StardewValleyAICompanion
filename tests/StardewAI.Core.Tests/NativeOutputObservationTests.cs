@@ -24,16 +24,37 @@ public sealed class NativeOutputObservationTests
         var receipt = JsonSerializer.Deserialize<ActionOriginObservationReceipt>("""
             {"scope_id":"refill:original:1","native_outcome_verified":true,"formal_product_training_authorized":true,
              "collections":[{"native_return":true,"inventory_admissions":[]},
-               {"native_return":true,"inventory_admissions":[{"native_return":true,"offered_quantity":6,
-                  "remaining_item_stack":4,"inventory_before":10,"inventory_after":12}]}]}
+               {"native_return":false,"inventory_admissions":[{"native_return":false,"offered_quantity":6,
+                  "item_stack_after_call":4,"inventory_before":10,"inventory_after":12}]}]}
             """, Json)!;
         Assert.False(receipt.NativeOutcomeVerified);
         Assert.False(receipt.FormalProductTrainingAuthorized);
         Assert.Empty(receipt.Collections[0].InventoryAdmissions);
-        Assert.Equal(4, receipt.Collections[1].InventoryAdmissions.Single().RemainingItemStack);
+        Assert.False(receipt.Collections[1].NativeReturn);
+        Assert.False(receipt.Collections[1].InventoryAdmissions.Single().NativeReturn);
+        Assert.Equal(4, receipt.Collections[1].InventoryAdmissions.Single().ItemStackAfterCall);
         var result = new TrainingExecutionResult { ActionOriginObservation = receipt };
         var restored = JsonSerializer.Deserialize<TrainingExecutionResult>(JsonSerializer.Serialize(result, Json), Json)!;
         Assert.Equal(12, restored.ActionOriginObservation!.Collections[1].InventoryAdmissions.Single().InventoryAfter);
+    }
+
+    // Full merge, empty-slot insertion, partial merge, and no-inventory receive.
+    [Theory]
+    [InlineData(0, 16, true)]
+    [InlineData(6, 16, true)]
+    [InlineData(4, 12, false)]
+    [InlineData(6, 10, true)]
+    public void ActualPostCallStackAndReturnAreIndependentOfInventoryDelta(int stackAfter, int inventoryAfter, bool nativeReturn)
+    {
+        var admission = new ActionOriginInventoryAdmission { OfferedQuantity = 6, ItemStackAfterCall = stackAfter,
+            InventoryBefore = 10, InventoryAfter = inventoryAfter, NativeReturn = nativeReturn };
+        var raw = JsonSerializer.Serialize(admission, Json);
+        Assert.DoesNotContain("remaining_item_stack", raw);
+        Assert.Contains("item_stack_after_call", raw);
+        var restored = JsonSerializer.Deserialize<ActionOriginInventoryAdmission>(raw, Json)!;
+        Assert.Equal(stackAfter, restored.ItemStackAfterCall);
+        Assert.Equal(inventoryAfter - 10, restored.InventoryAfter - restored.InventoryBefore);
+        Assert.Equal(nativeReturn, restored.NativeReturn);
     }
 
     [Theory]

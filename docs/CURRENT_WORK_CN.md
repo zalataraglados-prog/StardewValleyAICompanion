@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-11-08 R2原客户端显式观测接入（当前唯一接续）
+
+- #535经42步CI `42463019944`与同head审查接受，合入`6774d22b`、树`73290565`一致并清自有分支；Core2476/Backend1395零失败/跳过。已有观测出口不重做。
+- 同一E二进制源码核实：空槽完整接收后传入Stack可不变，部分合并可返回false。新字段改为中性`item_stack_after_call`，分别保留原生返回、调用后数量和库存变化；不把它误称未接收余量。原客户端新增默认关闭`--observe-native-outputs`，仅校准单人harness/反馈模式，沿原请求工厂、journal和HTTP，为原move/clear加完整身份的有界scope；其他队列项/执行器/默认保持。[合同](native-output-observation.md)。验证/发布见本片收口，观测不授予生产或训练credit。
+- Core22及最终相关Backend152通过，E四模块Release构建零警告/错误。隔离原生短校准：默认/显式clear-move四项及原砍树候选→真实掉落移动两项均applied/verified，后者实际捕获16次collect/admission（木材5→16、树液1→6），原wire/nonce/身份/tick/XML摘要已独立核验，原档未变、双Mod且进程退出。初启动漏参数和未覆盖回调的样本保留；不是RNG等价或生产credit，最终CI/发布见收口。
+- **唯一下一步：** 完成本片验证发布，继续剩余物品/世界/RNG控制对照与#29旧路径按原意修复；已校准传输/回调不重采，再同一补水编译的真实清障/拾取资源接唯一owner，继续收获/原生保存跨日及managed真实集成。其后原全局协调/Provider/模型/manifest；L1`19/19、11/11`冻结、formal=false，Student21/21训后，不启worker、local-data不提交。下方为历史。
+
 ## 2026-11-08 R2显式原生收集观测（当前唯一接续）
 
 - #534经42步CI `42459220203`及同head审查接受，合入`3270e2d3`，Core2458/Backend1395零失败/跳过，核树清自有分支。原补水接近编译证书不重做，仍不是原生效果证明。

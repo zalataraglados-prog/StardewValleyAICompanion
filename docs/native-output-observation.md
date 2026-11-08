@@ -10,9 +10,12 @@ That compilation remains read-only and does not grant native output credit.
 The current E DLL retains SHA256
 7f1e5b8e58d2758b78570ba771bbeb03d33522f62188bf6c32edf0cf626deaee.
 Fresh Debris/Farmer/Item/Object decompilation establishes distinct native branches:
-collect can succeed without inventory admission;Farmer admission reports at least
-partial acceptance and can receive special items without ordinary inventory space.
-Neither native boolean alone proves the requested resource quantity.
+collect can succeed without inventory admission;Farmer can receive special items
+without ordinary inventory space. In the actual implementation a partial merge can
+return false even though inventory increased. A complete empty-slot insertion can
+return true while the offered item retains its original Stack. The native comment
+is not sufficient authority for either case. Neither boolean nor post-call Stack
+alone proves the accepted resource quantity.
 
 ## Same Capture, Optional Read-Only Witness
 
@@ -38,8 +41,31 @@ unavailable and is not repeatedly retried;rollback targets only this observation
 The receipt binds a process capture-session ID and weak reference IDs for actual
 debris/chunks,original request identity and capture ticks,before/after debris and
 inventory aggregates,and actual nested collection/admission calls. Offered amount,
-remaining native stack,inventory before/after and native returns are recorded as
+item_stack_after_call,inventory before/after and native returns are recorded as
 observations,not converted into invented production or pickup credit.
+
+The neutral post-call stack name intentionally does not mean unaccepted remainder.
+For an offered stack of six,ordinary complete merge can leave Stack zero and add
+six;complete empty-slot insertion can leave Stack six and add six;partial merge can
+leave Stack four,add two and return false. No-inventory receive behavior can return
+true with no ordinary inventory delta. Protocol fixtures preserve these independent
+observations;they are not executions of those native branches.
+
+## Original Client Opt-In
+
+LiveTrainingLoop accepts --observe-native-outputs,off by default. It requires
+--skip-training,training_singleplayer,the original runtime-test-harness executor
+and executor feedback. Product/sandbox/coop/formal configurations fail before
+dispatch. Only original move_to_tile/clear_obstacle requests get a scope;other
+items in the same compiled queue retain their original unobserved behavior.
+
+The scope is a bounded versioned SHA256 of a structured array of the complete
+original run/queue/item/nonce/before/source/save/option identity. Long IDs and
+delimiter collisions cannot overflow or ambiguously concatenate the scope. The
+original request factory,journal and HTTP dispatcher retain the same endpoint,
+nonce,body,action parameters and action/observation statuses independently. There
+is no new dispatcher,automatic retry,policy candidate or native-success inference.
+Directly constructed opt-in options are checked at request construction too.
 
 One same-thread scope owns the hook context. Native RPC response waits for both
 original action completion and final capture publication under the old timeout;
@@ -76,9 +102,50 @@ reference identity and both completion/failure orderings;source guards cover gam
 glue. These are not native hook/RNG equivalence evidence. Exact-head CI/review and
 release are recorded in closeout. No game/server/worker/model training launched.
 
-Next prove this optional observation path in a bounded isolated native/control
-smoke,including capture finalization and no additional item/world/RNG side effects;
+PR535 was accepted at main6774d22b,tree73290565,CI42463019944 all42,
+Core2476/Backend1395,zero failures/skips;same-head review6719263449 had no
+findings. The client successor corrects the new observation vocabulary/fixtures
+against the same E binary and tests the original request factory/journal/HTTP
+path. Its validation and release are recorded separately;it does not itself
+establish native hook equivalence or activate managed production.
+
+### Client And Native Calibration
+
+Client focused/journal39 passed,then the final related Backend152 passed after
+three direct request/options drift cases were added;Core observation22 passed.
+Release Backend/LiveTrainingLoop/Bridge/Harness builds had zero warnings/errors,
+explicit E GamePath,no deployment to shared runtime Mods. The initial Core test
+placement was rejected by the game-free profile that deliberately excludes the
+client reference;the new client tests now live in the existing Backend test group.
+
+External output-client-native-b exercised original compiled clear/move with the
+flag off/on:all four native primitives applied and verified;default fields stayed
+omitted. Those scopes had no collection callbacks;pickup occurred between commands.
+The first external launcher attempt omitted the original required-verified-actions
+argument and was rejected before action dispatch;only that launcher was corrected.
+
+The existing chop-wild-tree DailyPlan candidate in output-client-native-tree-b,
+followed by an original compiled move toward a real remaining wood-drop tile,
+exercised two more applied/verified primitives. The move scope captured16 actual
+Debris.collect and16 nested Farmer admission calls,inventory wood5->16 and sap1->6.
+Raw-wire journal hashes/nonces,receipt identities/tick intervals,weak debris/chunk
+links and all16 actual XML digests were independently checked. Original source save
+tree68ddc8dbbe09382f2e7ba1c9d5d1e8dd6d0ffaef59acf9367415b4678f59366d
+stayed unchanged,only two allowlisted Mods were loaded,and owned processes exited.
+The earlier tree-only attempt had no callback coverage and is retained as such.
+An external audit corrects a PowerShell null-array count in the raw B summary;
+control callbacks are zero,not one. No source artifact was rewritten to claim success.
+
+This is bounded native transport/callback calibration on copied fixture saves,
+NOT paired RNG/item/world equivalence,partial-admission native coverage,production
+resource admission or Teacher/training credit. In particular,the wood/sap already
+present before the move must not be relabeled as receipts from that move. Logs,
+raw snapshots,copies and audit stay outside the repository;formal remains false.
+
+Next complete the remaining isolated item/world/RNG control verification and
 inspect/fix the concrete legacy issue29 path with canonical identity preserved.
+Do not repeat the now-calibrated transport or tree-to-drop callback sample merely
+because the residual purity proof is separate.
 Then consume the same pinned original refill compilation and actual resource/
 provenance witnesses in the single persistent owner. Do not let observed status
 replace the independent resource boundary or expand old neutral/watering gates.

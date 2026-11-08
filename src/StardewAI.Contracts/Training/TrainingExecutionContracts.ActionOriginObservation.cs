@@ -86,7 +86,7 @@ public sealed class ActionOriginInventoryAdmission
 {
     [JsonPropertyName("item")] public ActionOriginObservedItem? Item { get; set; }
     [JsonPropertyName("offered_quantity")] public int OfferedQuantity { get; set; }
-    [JsonPropertyName("remaining_item_stack")] public int RemainingItemStack { get; set; }
+    [JsonPropertyName("item_stack_after_call")] public int ItemStackAfterCall { get; set; }
     [JsonPropertyName("inventory_before")] public int InventoryBefore { get; set; }
     [JsonPropertyName("inventory_after")] public int InventoryAfter { get; set; }
     [JsonPropertyName("native_return")] public bool? NativeReturn { get; set; }
