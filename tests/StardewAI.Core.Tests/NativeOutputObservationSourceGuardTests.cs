@@ -10,6 +10,7 @@ public sealed class NativeOutputObservationSourceGuardTests
         var adapter = RuntimeHarnessSources.LoadFile("ModEntry.ActionOriginObservation.InventoryTransients.cs");
         var helper = RuntimeHarnessSources.LoadFile("NativeLiveItemTransientCapture.cs");
         var fields = RuntimeHarnessSources.LoadFile("NativeLiveItemTransientCapture.Fields.cs");
+        var codec = RuntimeHarnessSources.LoadFile("NativeLiveItemTransientCapture.FieldCodec.cs");
         Assert.Contains("inventory_transients_require_payload", scope);
         Assert.Contains("if (request.ActionOriginInventoryTransients)", inventory);
         Assert.Contains("item.itemId.Value is null", inventory);
@@ -19,10 +20,13 @@ public sealed class NativeOutputObservationSourceGuardTests
         Assert.Contains("ReferenceEquals(state.Tool.LastUser, farmer)", adapter);
         Assert.Contains("ReferenceIds.For(farmer)", adapter);
         Assert.Contains("NativeInventoryPayloadTypes.TryGet", helper);
-        Assert.Contains("BindingFlags.DeclaredOnly", fields);
-        Assert.Contains("field.FieldType != fieldType", fields);
+        Assert.Contains("NativeLiveTransientFieldCodec.RequireField", fields);
+        Assert.Contains("NativeLiveTransientFieldCodec.ReadNullable<T>", fields);
+        Assert.Contains("NativeLiveTransientFieldCodec.ReadValue<T>", fields);
+        Assert.Contains("BindingFlags.DeclaredOnly", codec);
+        Assert.Contains("field.FieldType != fieldType", codec);
         foreach (var forbidden in new[] { ".getOne(", "ItemRegistry.Create", "item.QualifiedItemId", "Game1.random", ".SetValue(", "GetProperties(" })
-            Assert.DoesNotContain(forbidden, helper + fields);
+            Assert.DoesNotContain(forbidden, helper + fields + codec);
     }
 
     [Fact]

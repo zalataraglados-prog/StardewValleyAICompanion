@@ -31,6 +31,7 @@
     <Compile Include="..\Shared\PolicySupervisionFixture.cs" Link="PolicySupervisionFixture.cs" />
     <Compile Include="..\Shared\MoneyCropTeacherFixture.cs" Link="MoneyCropTeacherFixture.cs" />
     <Compile Include="..\Shared\NativeRandomStateFingerprint.cs" Link="NativeRandomStateFingerprint.cs" />
+    <Compile Include="..\..\tools\StardewAI.RuntimeTestHarness\NativeLiveItemTransientCapture.FieldCodec.cs" Link="NativeLiveTransientFieldCodec.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -89,6 +90,7 @@
     <Compile Include="NativeOutputSnapshotAnchorTests.cs" />
     <Compile Include="NativeOutputSnapshotReadApiTests.cs" />
     <Compile Include="NativeOutputObservationSourceGuardTests.cs" />
+    <Compile Include="NativeTransientFieldCodecTests.cs" />
     <Compile Include="ClearObstacleRuntimeCalibrationSourceGuardTests.cs" />
     <Compile Include="ActionCatalogProvenanceGovernanceTests.cs" />
     <Compile Include="CandidateRouteConnectorCacheTests.cs" />

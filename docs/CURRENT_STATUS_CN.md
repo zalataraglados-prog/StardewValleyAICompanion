@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-09 当前唯一接续：Debris/Chunk原始状态施工。** #548末head `70ceed36`经42步CI `42531314358`（Core2596/Backend1781）合入`8eaaad03`并核树/同步两库，自有分支已清，原图块已验收。下一原世界缺口已核实际DLL字段和Getter副作用；共享码元/引用/事件合同与原字段工具复用已准备，读取端、记录器/消费核/CLI和新原生样本仍待完成，不计作已实现动作或正式训练准入。默认关闭、不改旧执行器/桥；全世界/生产/间隙和唯一owner仍在后续。所有full-state/resource/formal标记false、L1冻结，local-data不提交。详见[当前工作](CURRENT_WORK_CN.md)。下方为历史。
+
 > **2026-11-09 当前唯一接续：嵌套物品/附魔图收口。** #547经最终CI合入`0e428a16`并核树。本块原API helper集成`1337e05b`，控制端按原生元数据补Hat边；83原生CLR/另6项Hat、77消费客户端/6项源码守卫及E构建通过。实际隐藏静音tree/move四端图与附魔各4/4、原XML和Item/选择探针各54/54；严格当前消费者/锚点客户端2/2且强制真实夹具正样本，原档未变、进程退出。实际注入夹具不是赚取/生产或完整世界证明；最终回归/CI发布另记。原API两次任务均有界退出，现授权空闲、无写/build权限；余额未知，不用Codex周用量代替。后续仍原世界/来源/间隙与唯一owner，全部完整状态/resource/formal门保持false，L1冻结，无训练/local-data提交。详见[合同](native-inventory-graph-observation.md)及[当前工作](CURRENT_WORK_CN.md)。下方为历史。
 
 > **2026-11-09 Object子型（当前唯一接续）：** #546合入`e9e56d74`；本块原API两文件helper `3a4ca38e`集成`f3dc5840`，原生CLR84、Backend266/Core26及四端Release/探针/重放构建通过，零失败/跳过，末次构建零警告错误。实际tree/move两记录严格全链2/2，Object出现数分别0/4：tree无适用Object，只有move提供4次普通Object原生字段对照，不能把空域算成Object实测。probe共28/28，原档未变、双进程退出；Color/极值仅CLR覆盖。此为根指定子集，下一步原GraphCheck/引用上的嵌套/附魔状态，再世界/来源/间隙与唯一owner；formal/resource仍false、无local-data提交。详情见[合同](native-inventory-object-transients.md)，互审/CI发布另记。下方为历史。
