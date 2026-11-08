@@ -6,6 +6,7 @@
 - 最新原API源码合同已按实际E DLL刷新/抽核：Object四字段是真实省略状态；已有XML包装字段不重复补。旧停用被续用授权取代，专用agent收紧默认权限；报告路径误拦时立即退出，原补丁由控制端恢复，无重复付费核验。
 - 本块生产/消费分工不重叠：原API只改原helper与新增Object字段文件，`3a4ca38e`集成`f3dc5840`；Codex复用原消费核、DTO/adapter和测试。新严格范围要求两端全部适用Object的四字段，缺失拒绝；旧12字段记录不冒充新子型证明。[合同](native-inventory-object-transients.md)。原生CLR84、消费266/Core26通过；初测试nullable警告已修。四端Release/探针/重放构建零警告错误。
 - 隐藏静音实际a完成原tree/move，28/28只读probe含4次普通Object返回值直接对照，原字段/引用及有界RNG指纹未变；两实际记录经新严格字段核/原来源-数量-工具-XML-锚点客户端全链2/2，明确新feature。Object数量分别0/4，仅move是Object实测，tree空域不晋升。实际四值false/false/0/10，其他值和ColoredObject仅CLR夹具证明。move有16收集回调但非生产归因全证据；原档未变、游戏/后台退出。互审/远端CI与发布另记，无训练credit。
+- 原API一次接口互审无新实质耦合意见；首head `bfba26e0`远端CI通过。控制端进一步发现可选第7参改变旧二进制签名，先红复现，再保留原6参入口薄转同一实现，14项Object/ABI通过；不改原观察守卫/数据、不重开游戏。末head CI另记，不把首head绿当成最终证据。协作4文件包完整哈希归档后从81752缩至7607字节，只当前指令生效；源码/成果未删。
 - **唯一下一步：** 完成本块原生读取与完整链验证/提交，再复用原GraphCheck/引用/本helper补嵌套Item和附魔应用/所属；世界/生产来源/before-capture与被动间隙仍在唯一owner之前。L1`19/19、11/11`冻结、formal=false，Student21/21训后，local-data不提交。下方为历史。
 
 ## 2026-11-09 R2瞬态文本保真收口（当前唯一接续）

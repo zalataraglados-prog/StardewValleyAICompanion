@@ -44,6 +44,13 @@ Legacy receipts do not gain new subtype credit. Returned values are immutable,
 not aliases to the mutable wire objects. All full-state, native-outcome, resource
 and formal-training authorization flags remain false.
 
+The original six-argument reader entry remains binary-compatible and forwards to
+the same seven-argument implementation with strict Object mode disabled. Merely
+adding an optional parameter would preserve source calls but remove that compiled
+signature. The exact old-signature regression was reproduced red, then all14
+Object/ABI cases passed after the thin forwarder; the original game evidence was
+not rerun for this metadata/entry-point-only fix.
+
 ## Verification And Remaining Work
 
 Implementation/verification status is recorded in CURRENT_WORK_CN.md and

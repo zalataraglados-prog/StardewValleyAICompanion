@@ -31,8 +31,12 @@ public sealed record NativeInventoryTransientSummary(string ScopeId, string Capt
 public static partial class NativeOutputObservationBoundary
 {
     public static NativeInventoryTransientSummary ReadInventoryTransients(TrainingExecutionRequest request,
+        ActionOriginObservationReceipt receipt, long earliestTick, long latestTick, string locationId, string actorId) =>
+        ReadInventoryTransients(request, receipt, earliestTick, latestTick, locationId, actorId, requireObjectState: false);
+
+    public static NativeInventoryTransientSummary ReadInventoryTransients(TrainingExecutionRequest request,
         ActionOriginObservationReceipt receipt, long earliestTick, long latestTick, string locationId, string actorId,
-        bool requireObjectState = false)
+        bool requireObjectState)
     {
         Require(request.ActionOriginInventoryTransients, "native inventory transients were not explicitly requested");
         var characters = 0;

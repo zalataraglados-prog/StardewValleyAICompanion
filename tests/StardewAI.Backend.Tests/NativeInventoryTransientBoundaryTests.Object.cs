@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Security.Cryptography;
 using System.Text;
 using System.Xml.Linq;
+using System.Reflection;
 using StardewAI.Contracts.Training;
 using StardewAI.GoalConditionedBootstrap;
 
@@ -61,6 +62,20 @@ public sealed partial class NativeInventoryTransientBoundaryTests
         Assert.False(legacy.ObjectSubtypeStateVerified);
         Assert.Equal(0, legacy.ObservedObjectOccurrences);
         Assert.Throws<InvalidDataException>(() => ReadObjects(request, receipt));
+    }
+
+    [Fact]
+    public void RetainedClientsCanStillResolveTheOriginalSixArgumentReader()
+    {
+        var signature = new[] { typeof(TrainingExecutionRequest), typeof(ActionOriginObservationReceipt),
+            typeof(long), typeof(long), typeof(string), typeof(string) };
+        var method = typeof(NativeOutputObservationBoundary).GetMethod("ReadInventoryTransients",
+            BindingFlags.Public | BindingFlags.Static, null, signature, null);
+        Assert.NotNull(method);
+        var (request, receipt) = Fixture();
+        var result = (NativeInventoryTransientSummary)method.Invoke(null, new object[] { request, receipt, 99L, 111L, "Farm", "123" })!;
+        Assert.False(result.ObjectSubtypeStateVerified);
+        Assert.Equal(0, result.ObservedObjectOccurrences);
     }
 
     [Fact]
