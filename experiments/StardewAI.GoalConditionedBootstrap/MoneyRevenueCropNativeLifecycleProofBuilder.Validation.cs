@@ -79,19 +79,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
                         index + ".");
                 }
             }
-            var receiptReasons = QueueExecutionReceiptValidator.Validate(
-                transition.Queue,
-                transition.Before,
-                transition.Receipt,
-                transition.After,
-                transition.Request.RunId,
-                transition.Request.ExecutorVersion,
-                transition.Request.SelectedCandidateId,
-                transition.Before.StateHash,
-                requireTeacherPreferenceStateRebound: false);
-            Require(receiptReasons.Length == 0,
-                "Money Revenue crop lifecycle queue receipt was rejected: " +
-                string.Join(",", receiptReasons));
+            ValidateQueueReceipt(transition);
         }
 
         var cursor = 0;

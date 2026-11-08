@@ -128,5 +128,9 @@ internal static partial class BootstrapSelfTest
         Require(Passes(() => type.GetMethod("ValidateSupportingRoutes", flags)!.Invoke(null, new object[]
             { before.State["time"].GetProperty("total_days").GetProperty("value").GetInt32(), list, "FarmHouse" })) == accepted,
             "Lifecycle control route acceptance drifted: " + name);
+        Require(Passes(() => MoneyRevenueCropNativeLifecycleProofBuilder.VerifySupportingRoute(before,
+            new("supporting_route_to_sleep", before.State["time"].GetProperty("total_days").GetProperty("value").GetInt32(),
+                queuePath, beforePath, receiptPath, afterPath, receipt.RunId, request.ExecutorVersion, candidateId), "Farm")) == accepted,
+            "Managed route leaf changed the original native control-observation rule: " + name);
     }
 }

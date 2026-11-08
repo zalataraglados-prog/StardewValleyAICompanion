@@ -42,7 +42,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             if (File.Exists(preparedPath))
             {
                 var prepared = Read<JsonObject>(preparedPath);
-                if (operation.IsLifecycle || Text(prepared, "schema_version") != "crop_teacher_managed_seed_preparation.v1" ||
+                if (operation.IsLifecycle || operation.IsSupportingRoute || Text(prepared, "schema_version") != "crop_teacher_managed_seed_preparation.v1" ||
                     prepared["sequence"]?.GetValue<int>() != sequence || Text(prepared, "run_id") != options.RunId ||
                     Text(prepared, "support_step_id") != operation.SupportStepId || Text(prepared, "admission_sha256") != HashFile(path) ||
                     prepared["native_dispatch_performed"]?.GetValue<bool>() != false || prepared["formal_product_training_authorized"]?.GetValue<bool>() != false ||

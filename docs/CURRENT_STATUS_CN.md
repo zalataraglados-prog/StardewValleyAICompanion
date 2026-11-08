@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-08 R2原路线证据接同一owner（当前唯一接续）：** #526经42步CI `42436793211`/同head审查合入`5e16e081`且核树清分支，Core2443/Backend1213。本片将已完成原路线经原身份/回执/资源不变核与原marker完整回放，作为同一持久owner的新phase接续；不派发移动/不重写执行器，缺journal或未知mutation不重发，丢回包只原lookup，完整读回后才推进。旧活动crop/idle边界不改，单步路线非整周期/Teacher标签。首4/4、同owner9/9及扩展34/34通过，相关回归/CI见收口；下一步原路线发起到该边界，再维护/原生保存与managed有界原生，然后原全局日历/预算/跨根及Provider/模型/manifest。L1`19/19、11/11`、formal=false及Student训后21/21保持，无游戏/训练/API worker，local-data不提交。[合同](money-crop-supporting-route-continuity.md)。下方为历史。
+
 > **本片最终本地验证：** 相关495/495通过，零失败/跳过，含26项新增；末次仅修新夹具提取方法缩进，checkpoint匹配EVD338。完整CI/发布见收口，非新游戏或训练证据。
 
 > **2026-11-08 R2原不完整准备追加续编（当前唯一接续）：** #525经42步CI `42433919421`/同head审查合入`47648545`、核树清分支，Core2443/Backend1187。本片同一owner续编声明/追加attempt，仅核原intent/base/marker/journal/lookup与完整当前authority后调用原编译，不重交marker/覆盖失败/重发未知；新准备path/SHA显式接原证书和所有恢复消费者，旧默认不改。采购2、修后17通过；三类首21/22暴露新种植重复绑定adapter已只修新层，后22/22通过，最终扩展/相关/CI见收口。[合同](money-crop-partial-preparation-continuation.md)。下一步原行走维护/保存连续性、managed有界原生，再全局日历/预算/跨根及Provider/模型/manifest。L1`19/19、11/11`、formal=false/Student训后21/21保持，无新游戏/训练/API worker，local-data不提交。下方为历史。

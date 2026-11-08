@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-11-08 R2原路线证据接回同一owner（当前唯一接续）
+
+- 相关回归618/618、末次定向35/35通过、零失败/跳过；末次含原控制观察八例复用、新route启动记录排除seed协议及更精确反例断言，完整CI见收口。checkpoint仍匹配EVD338，不在本机重跑全量Core/Backend。
+
+- #526经42步CI `42436793211`及同head审查接受，合入`5e16e081`、核树清自有分支；Core2443/Backend1213零失败/跳过。原不完整准备追加续编不重做。
+- 本片新消费者复用原生命周期路线/身份/回执和完整资源不变核，再由原零claim marker服务及完整回放更新来源；已完成原路线作为同一owner的独立phase，原run/executor/完整plan覆盖/接受源及intent固定、一次性marker调用、原journal/lookup/完整Get恢复。不是另写执行器、不是将行走等同idle，也不把路线当整周期或训练标签；旧活动crop binder/种子期限/执行器保持。[合同](money-crop-supporting-route-continuity.md)。首叶4/4、同owner首9/9及扩展34/34通过，相关回归/完整CI见收口。
+- **唯一下一步：** 接原路线发起/编译/派发与此持久接续边界，再原维护/原生保存跨日连续性；接齐才显式managed激活与有界真实原生样本。其后原联合日历/聚合预算/跨根、Provider/模型和manifest/preflight，不反挂成局部整场游戏验收。L1`19/19、11/11`与formal=false保持，Student新档21/21在训练后。无游戏/服务器/API worker，local-data不提交。下方为历史。
+
 ## 2026-11-08 R2原不完整准备的追加续编（当前唯一接续）
 
 - 本片最终相关495/495通过，零失败/跳过，含26项新增；末次仅修新夹具方法提取的缩进，checkpoint仍匹配EVD338。完整CI/发布见收口，本机不重复全量Core/Backend。

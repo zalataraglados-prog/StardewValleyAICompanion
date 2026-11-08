@@ -14,10 +14,12 @@ public sealed record CropTeacherManagedSeedOwnerOptions(string EvidenceDirectory
 public sealed class CropTeacherManagedSeedOperation
 {
     internal CropTeacherManagedSeedOperation(CropTeacherManagedSeedOwner owner, JsonObject record,
-        string recordPath, CropTeacherManagedSeedScopes? scopes, CropTeacherSeedLifecycleSupport? lifecycle = null)
-    { Owner = owner; Record = record; RecordPath = recordPath; seedScopes = scopes; Lifecycle = lifecycle; }
+        string recordPath, CropTeacherManagedSeedScopes? scopes, CropTeacherSeedLifecycleSupport? lifecycle = null,
+        CropTeacherSupportingRoute? supportingRoute = null)
+    { Owner = owner; Record = record; RecordPath = recordPath; seedScopes = scopes; Lifecycle = lifecycle; SupportingRoute = supportingRoute; }
     private readonly CropTeacherManagedSeedScopes? seedScopes;
     internal CropTeacherSeedLifecycleSupport? Lifecycle { get; }
+    internal CropTeacherSupportingRoute? SupportingRoute { get; }
     internal CropTeacherManagedSeedOwner Owner { get; }
     internal JsonObject Record { get; }
     internal string RecordPath { get; }
@@ -34,8 +36,9 @@ public sealed class CropTeacherManagedSeedOperation
     public string SupportStepId => Record["support_step_id"]!.GetValue<string>();
     public string RuntimeDirectory => Record["runtime_directory"]!.GetValue<string>();
     public bool IsLifecycle => Lifecycle is not null;
+    public bool IsSupportingRoute => SupportingRoute is not null;
     public CropTeacherManagedSeedScopes Scopes => seedScopes ?? throw new InvalidOperationException("Lifecycle operations have no native seed scope.");
-    public CropTeacherRunStep ReadStep() => IsLifecycle ? throw new InvalidOperationException("Lifecycle operations have no native seed step.") :
+    public CropTeacherRunStep ReadStep() => IsLifecycle || IsSupportingRoute ? throw new InvalidOperationException("Non-seed operations have no native seed step.") :
         Record["step"]!.Deserialize<CropTeacherRunStep>(CropTeacherManagedSeedOwner.JsonOptions)!;
 }
 
