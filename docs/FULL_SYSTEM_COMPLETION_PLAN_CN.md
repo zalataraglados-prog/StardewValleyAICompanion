@@ -1,5 +1,7 @@
 # StardewAI 完全体完成路线图
 
+> **2026-11-08 最新状态入口：** 本文保留历史，施工按[CURRENT_WORK](CURRENT_WORK_CN.md)和[CURRENT_STATUS](CURRENT_STATUS_CN.md)顶部。L1已冻结`19/19、11/11`，不是下方历史`9/19`；当前须同一补水清障/拾取精确资源与来源接唯一owner、收获/原生保存跨日和managed真实有界集成，再原全局日历/预算/跨根、其余probe、Provider/模型及manifest。干草视图分离见[合同](canonical-hay-storage-resource.md)。不重写执行器、不把校准当训练；formal=false，Student新档21/21训后，全部产品目标不缩减。
+
 > **2026-11-06 显式成对监督接续（当前优先）：** 新Friendship消费层已分离pairs与完整排序，只有显式模式复用原编译消费独立证据，缺省完整排序门/旧执行链不改。真实来源8pairs和20未比较均保留，公开编译pending；下一步E副本真实5/10人数阈值及原数据/覆盖，不把当前编译当原生、整项或训练通过。`9/19、9/19、9/19、7/11`、formal=false及全部全量目标保持。[实际协议与下一步](friendship-pairwise-admission.md)。
 
 > **2026-11-06 跨图预算接续（当前优先）：** 新Friendship消费端完整实际首段/尾程接触预算已证明，旧Teacher/执行链保持；真实来源8个独立pair、20项未比较均保留，默认完整排序仍false。下一步增加显式独立pair准入、原控制编译与真实5/10阈值/原数据覆盖，不清除未知或全局责任、不改共享trainer。当前没有原生阈值/训练晋升，`9/19、9/19、9/19、7/11`和formal=false保持，全量目标不变。[合同与实际结果](friendship-route-contact-budget.md)。

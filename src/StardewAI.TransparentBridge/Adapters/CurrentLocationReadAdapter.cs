@@ -108,6 +108,7 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
                 "current_location.dwarf_king_statue_power",
                 "current_location.statue_blessing",
                 "current_location.chests",
+                "current_location.hay_storage_context",
                 "current_location.terrain_features",
                 "current_location.large_terrain_features",
                 "current_location.resource_clumps",
@@ -142,6 +143,9 @@ public sealed partial class CurrentLocationReadAdapter : ReadAdapterBase
             ["dwarf_king_statue_power"] = Field(location is null ? null : ReadDwarfKingStatuePower(location), "Object.checkForAction StatueOfTheDwarfKing; ChooseFromIconsMenu dwarfStatue deterministic daily offers; five native buff use branches", tick, "vanilla_1_6_15_dwarf_king_statue_power"),
             ["statue_blessing"] = Field(location is null ? null : ReadStatueBlessing(location), "Object.CheckForActionOnBlessedStatue deterministic daily blessing; farming mastery, daily lock and seven native effect branches", tick, "vanilla_1_6_15_statue_blessing"),
             ["chests"] = chestsField,
+            ["hay_storage_context"] = SnapshotProfileContext.IncludesHayStorage
+                ? Field(location is null || farm is null ? null : HayStorageReadSupport.ReadContext(farm, location), "GameLocation.StoreHayInAnySilo/tryToAddHay; actual source/Farm plus Utility.ForEachLocation(includeInteriors:false,includeGenerated:false) order", tick, "vanilla_1_6_15_hay_storage_context")
+                : Unavailable("not_requested_by_snapshot_profile", "SnapshotProfileContext.IncludesHayStorage", tick, "snapshot_profile"),
             ["terrain_features"] = Field(location is null ? null : ReadTerrainFeatures(location), "Game1.currentLocation.terrainFeatures; FruitTree native harvest projection", tick),
             ["large_terrain_features"] = Field(location is null ? null : ReadLargeTerrainFeatures(location), "Game1.currentLocation.largeTerrainFeatures; Bush native harvest projection", tick),
             ["resource_clumps"] = Field(location is null ? null : ReadCurrentLocationResourceClumps(location, Game1.player), "Game1.currentLocation.resourceClumps; ResourceClump.performToolAction/destroy decompiled projections", tick),

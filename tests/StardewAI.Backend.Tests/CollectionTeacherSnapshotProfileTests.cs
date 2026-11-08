@@ -5,6 +5,20 @@ namespace StardewAI.Backend.Tests;
 public sealed class CollectionTeacherSnapshotProfileTests
 {
     [Theory]
+    [InlineData("full", true)]
+    [InlineData("daily", true)]
+    [InlineData("collection_teacher", true)]
+    [InlineData("light", false)]
+    [InlineData("machine", false)]
+    [InlineData("marriage_teacher", false)]
+    public void HayResourceReadIsLimitedToRequestedPlanningProfiles(string profile, bool requested)
+    {
+        var previous = SnapshotProfileContext.Current;
+        try { SnapshotProfileContext.Current = profile; Assert.Equal(requested, SnapshotProfileContext.IncludesHayStorage); }
+        finally { SnapshotProfileContext.Current = previous; }
+    }
+
+    [Theory]
     [InlineData("fishing", true, false, false)]
     [InlineData("collection_teacher", true, true, false)]
     [InlineData("full", true, true, true)]
