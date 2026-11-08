@@ -79,6 +79,8 @@
     <Compile Include="SkillPolicyStateFeatureTests.cs" />
     <Compile Include="ActionOriginOutputSourceGuardTests.cs" />
     <Compile Include="ActionOriginInventoryCreditTests.cs" />
+    <Compile Include="NativeOutputObservationTests.cs" />
+    <Compile Include="NativeOutputObservationSourceGuardTests.cs" />
     <Compile Include="ActionCatalogProvenanceGovernanceTests.cs" />
     <Compile Include="CandidateRouteConnectorCacheTests.cs" />
     <Compile Include="CandidateOptionAvailabilityEvaluatorTests.EconomyRouting.cs" />
