@@ -1,5 +1,11 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **新trace审查增量：** 初head审查4506032233指出排序接收区间/任意端点会误收颠倒/未来零量历史，2例先红；只新消费者改为沿原记录顺序逐次核库存，不重排不明确回调历史，旧共享执行器/来源格式不改。末次定向/原生离线回放与最终head CI另记，不冒称初审覆盖后续增量。
+
+> **本片最终相关验证：** 含7上限增例的Backend429/429及原来源/criterion Core212/212通过，零失败/跳过；重放构建零警告/错误，完整CI/发布另记。6旧实际动作已独立回放，不重采成功矩阵或L1，不当新原生/资源credit/训练准入。
+
+> **2026-11-08 原补水trace绑定（当前唯一接续）：** #538经42步CI `42473610429`/同head审查合入`9452e4b2`并核树清分支，Core2487/Backend1420。当前复用原补水编译/ReadQueue/ReadFrame和step边界绑定完整clear/move原生链、journal/gzip与同进程引用；纯消费者核XML/引用/接收库存连续性和总量，不把新ID当产出或为capture后间隙授credit。留存原生误拒定位旧wire的可空空占位→显式null，核`3bde2048`和JSON原意后两例先红，仅修该等价；初32/链41/扩45、修后54通过，6实际动作/4观察scope/16接收离线回放通过。[合同](refill-approach-native-trace.md)。末次相关/最终CI另记；接续同一trace的精确clear/pickup资源/生产来源到唯一owner，再收获/原生保存跨日及managed/全局/其余probe/Provider/模型/manifest。非新游戏/资源credit/正式训练，无worker，L1冻结`19/19、11/11`，formal=false，local-data不提交。下方为历史。
+
 > **2026-11-08 原掉落摘要验证补记：** 相关48/48与E两端构建通过，原生A的73普通/混合等价/RNG/所核世界/实际物品不变及3特殊/错误回退通过后夹具失败；B确证继承反射方法漏检patch，现共享守卫归一到声明方法。C/D仅夹具误要求旧原生已内联setter产生回调，摘要哈希相同；E定向证明旧新同补丁摘要/回调一致、零品质跳过/撤patch恢复及两端ItemId继承setter拒绝/恢复。原档未变、进程退出，失败保留，未重采73/792。最终CI/发布另记，后继仍原补水清障/拾取资源接唯一owner、收获/原生保存跨日和managed，再全局协调/其余probe/Provider/模型/manifest；L1冻结`19/19、11/11`，formal=false，无worker/local-data提交。
 
 > **2026-11-08 R2原普通掉落投影纯度（当前唯一接续）：** #537已最终42步CI合入`086a24e1`、核树清分支，Core2486/Backend1420，792单位矩阵不重采。本片保留`792902669`原registry摘要用途，以同一共享函数处理普通无held-item掉落，保留实际物品、raw品质、字段/身份匹配与状态；非零品质沿原生setter/FixQuality，未知/特殊/patch走旧链。[合同](ordinary-drop-projection-purity.md)。验证/发布见收口，不是全桥纯度或生产credit。下一步同一原补水真实清障/拾取资源接唯一owner、收获/原生保存跨日和managed，再原全局协调/其余probe/Provider/模型/manifest；L1`19/19、11/11`、formal=false/Student训后21/21不变，无worker/local-data提交。下方为历史。

@@ -13,10 +13,10 @@ namespace StardewAI.GoalConditionedBootstrap;
 internal static partial class NativeExecutionActionSourceReader
 {
     private static readonly OptionRegistry Registry = new();
-    private static readonly HashSet<string> RequestFieldNames = typeof(TrainingExecutionRequest)
+    private static readonly IReadOnlyDictionary<string, Type> RequestFieldTypes = typeof(TrainingExecutionRequest)
         .GetProperties(BindingFlags.Public | BindingFlags.Instance)
-        .Select(property => property.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name)
-        .Where(name => name is not null).Select(name => name!).ToHashSet(StringComparer.Ordinal);
+        .Select(property => (Name: property.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name, Type: property.PropertyType))
+        .Where(field => field.Name is not null).ToDictionary(field => field.Name!, field => field.Type, StringComparer.Ordinal);
 
     internal static VerifiedNativeExecutionAction Read(string actionQueuePath, string executionReceiptPath, string afterSnapshotPath)
     {
@@ -110,19 +110,21 @@ internal static partial class NativeExecutionActionSourceReader
         // Compare the declared wire fields, not a second queue-to-request compiler.
         var bindings = command.Parameters.Select(row => new
             { Name = TrainingExecutionParameterBindings.WireFieldForQueueParameter(row.Name), row.Value });
-        foreach (var group in bindings.Where(row => RequestFieldNames.Contains(row.Name)).GroupBy(row => row.Name))
+        foreach (var group in bindings.Where(row => RequestFieldTypes.ContainsKey(row.Name)).GroupBy(row => row.Name))
         {
             var values = group.Select(row => row.Value).Distinct(StringComparer.Ordinal).ToArray();
-            Require(values.Length == 1 && request.TryGetProperty(group.Key, out var field) && Equivalent(field, values[0]),
+            Require(values.Length == 1 && request.TryGetProperty(group.Key, out var field) && Equivalent(field, values[0], RequestFieldTypes[group.Key]),
                 "Native request differs from its compiled wire parameter: " + group.Key);
         }
     }
 
-    private static bool Equivalent(JsonElement actual, string expected) => actual.ValueKind switch
+    private static bool Equivalent(JsonElement actual, string expected, Type fieldType) => actual.ValueKind switch
     {
         JsonValueKind.String => actual.GetString() == expected,
         JsonValueKind.Number => actual.GetRawText() == expected,
         JsonValueKind.True or JsonValueKind.False => bool.TryParse(expected, out var boolean) && actual.GetBoolean() == boolean,
+        // Original nullable numeric/bool request mapping uses null for an empty compiled placeholder.
+        JsonValueKind.Null => expected.Length == 0 && Nullable.GetUnderlyingType(fieldType) is not null,
         _ => false
     };
 

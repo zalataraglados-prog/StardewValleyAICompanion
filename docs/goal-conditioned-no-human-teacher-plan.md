@@ -1,5 +1,11 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+> **新trace审查增量：** 初head审查指出排序区间/未来端点可能误收逆序记录，2例先红后只新消费者改为记录顺序的逐次库存核（零增量也须当前值），不重排嵌套不明确历史。末次定向/原生离线回放/最终head CI另记，初审与新增量分别归因，原执行器/格式不变。
+
+> **本片最终相关验证：** Backend429/429与原来源/criterion Core212/212通过、零失败/跳过，重放构建零警告/错误；完整CI/发布另记。6实际动作只是原留存离线重放，不反采L1、不晋升资源credit或正式训练。
+
+> **2026-11-08 原补水trace接续：** #538经42步CI/同head审查合入`9452e4b2`并核树清分支。当前同一原补水编译消费原native queue/frame/journal/gzip/step核，保留所有clear ID；观察消费者核引用/实际XML/库存接收连续性，既有掉落不冒充本次产出，capture到快照间隙不免验。旧wire可空空占位/null误拒已查原提交/JSON并先红，仅修等价；修后54通过，6实际动作/4观察scope/16接收离线回放通过，未重跑游戏或晋升旧样本。[合同](refill-approach-native-trace.md)。末次回归/发布另记；下一步仍同一trace的完整资源/生产归因到唯一owner，再收获/原生保存跨日/managed及原全局/其余probe/Provider/模型/manifest，非新局部门。L1冻结`19/19、11/11`，formal=false，无worker/local-data提交。
+
 > **2026-11-08 掉落读取校准补记：** 相关48/48、E两端零警告/错误。原生A保留73普通/混合等价与RNG/所核世界/实际物品不变及3特殊/错误回退，随后夹具失败；B确证继承反射patch漏检，修共享声明方法归一化。C/D摘要一致而旧已内联setter回调为0，修夹具为同补丁旧新对照，E定向通过品质方法/零品质/撤patch及两端继承ItemId setter拒绝恢复。原档未变、进程退出，失败留存，不反采73/792。最终CI/发布另记；继续原补水实际清障/拾取资源边界到唯一owner及原定后继，不授予生产或正式训练credit。
 
 > **2026-11-08 原掉落摘要接续：** #537经最终42步CI接受合入`086a24e1`并核树清分支，已验792单位矩阵不重采。本片保留旧`792902669`registry摘要和实际held-item/原始品质/身份/状态字段，仅复用同一共享普通构造及原生品质setter/FixQuality，未知/特殊/patch保持旧链。[合同](ordinary-drop-projection-purity.md)。验证/发布另记，不是全桥纯度/资源或训练credit。下一步仍原补水实际开路/拾取资源接唯一owner、收获/原生保存跨日与managed，然后原全局协调/其余probe/Provider/模型/manifest；L1`19/19、11/11`冻结、formal=false、Student21/21训后，无worker/local-data提交。下方为历史。

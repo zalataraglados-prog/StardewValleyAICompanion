@@ -88,7 +88,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         internal string QueuePath => ModelPath.Replace("-model-plan.json", "-compiled-queue.json", StringComparison.Ordinal);
         internal ActionQueueEnvelope Queue { get; private set; } = null!;
 
-        internal RefillApproachFixture(bool repair, int water = 0, bool atApproach = false)
+        internal RefillApproachFixture(bool repair, int water = 0, bool atApproach = false, Action<Fixture>? prepareSource = null)
         {
             Watering = new(water: water, prepareSource: source =>
             {
@@ -109,6 +109,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                     grid["notable_tiles"] = JsonSerializer.SerializeToNode(Enumerable.Range(repair ? 0 : 1, repair ? 4 : 3)
                         .Select(x => new { tile_x = x, tile_y = 2, collision_blocked = true }));
                 });
+                prepareSource?.Invoke(source);
             });
         }
 
