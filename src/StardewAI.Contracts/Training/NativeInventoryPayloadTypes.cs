@@ -22,6 +22,7 @@ public readonly struct NativeInventoryPayloadType
     public bool IsTool { get; }
     public string? FixedQualifier { get; }
     public NativeInventoryPayloadIdentityRule IdentityRule { get; }
+    public bool HasEnchantmentGraphCollection => IsTool || XmlRoot == "Hat";
 }
 
 // The bounded persisted-payload producer and consumer share this exact vanilla domain.

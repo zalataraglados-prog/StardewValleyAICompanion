@@ -15,8 +15,8 @@ internal sealed record NativeLiveItemPayload(string Xml, string Sha256);
 // calibration belong to the caller. In particular this is NOT a normalized unit-state hash.
 internal static partial class NativeLiveItemPayloadCapture
 {
-    private const int MaximumGraphDepth = 16;
-    private const int MaximumGraphNodes = 256;
+    private const int MaximumGraphDepth = NativeInventoryGraphLimits.MaximumDepth;
+    private const int MaximumGraphNodes = NativeInventoryGraphLimits.MaximumRootOccurrences;
 
     internal static NativeLiveItemPayload Capture(Item item, int maximumCharacters)
     {
@@ -52,67 +52,4 @@ internal static partial class NativeLiveItemPayloadCapture
         NativeInventoryPayloadTypes.TryGet(type.FullName, out var descriptor) &&
         descriptor.IsTool == typeof(Tool).IsAssignableFrom(type);
 
-    private sealed class GraphCheck
-    {
-        private readonly HashSet<object> ancestors = new(ReferenceEqualityComparer.Instance);
-        private int nodes;
-
-        internal void Visit(Item? item, int depth)
-        {
-            if (item is null) return;
-            var type = item.GetType(); // No virtual Item getter/serializer before type admission.
-            if (!SupportedItem(type))
-                throw new InvalidDataException("Live item payload runtime type is unsupported: " + type.FullName);
-            Enter(item, depth);
-            try
-            {
-                if (item is StardewValley.Object obj)
-                {
-                    Visit(obj.heldObject.Value, depth + 1);
-                    Visit(obj.lastInputItem.Value, depth + 1);
-                }
-                if (item is Tool tool)
-                {
-                    CheckCount(tool.attachments.Length);
-                    foreach (var attachment in tool.attachments) Visit(attachment, depth + 1);
-                    CheckCount(tool.enchantments.Count);
-                    foreach (var enchantment in tool.enchantments)
-                    {
-                        if (enchantment is null) continue;
-                        var enchantmentType = enchantment.GetType();
-                        // Native enchantments have persisted scalar state (BaseEnchantment.Level),
-                        // not Item children. Never call custom enchantment properties or serializers.
-                        if (enchantmentType.Assembly != typeof(BaseEnchantment).Assembly ||
-                            enchantmentType.Namespace != typeof(BaseEnchantment).Namespace)
-                            throw new InvalidDataException("Live item payload enchantment type is unsupported: " + enchantmentType.FullName);
-                        Enter(enchantment, depth + 1);
-                        ancestors.Remove(enchantment);
-                    }
-                    CheckCount(tool.previousEnchantments.Count);
-                }
-                if (item is CombinedRing ring)
-                {
-                    CheckCount(ring.combinedRings.Count);
-                    foreach (var child in ring.combinedRings) Visit(child, depth + 1);
-                }
-            }
-            finally { ancestors.Remove(item); }
-        }
-
-        private static void CheckCount(int count)
-        {
-            if (count is < 0 or > MaximumGraphNodes)
-                throw new InvalidDataException("Live item payload graph collection exceeds its bound.");
-        }
-
-        private void Enter(object value, int depth)
-        {
-            // Count every serialized occurrence, including repeated aliases, not just unique
-            // references: XmlSerializer expands aliases rather than retaining graph identity.
-            if (depth > MaximumGraphDepth || ++nodes > MaximumGraphNodes)
-                throw new InvalidDataException("Live item payload graph depth/node bound exceeded.");
-            if (!ancestors.Add(value))
-                throw new InvalidDataException("Live item payload graph contains a cycle.");
-        }
-    }
 }
