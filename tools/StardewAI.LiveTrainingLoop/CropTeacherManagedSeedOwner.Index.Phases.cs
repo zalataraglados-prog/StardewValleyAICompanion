@@ -9,7 +9,9 @@ public sealed partial class CropTeacherManagedSeedOwner
         var kind = record["operation_kind"]?.GetValue<string>();
         if (kind == "supporting_route")
         {
-            var route = new CropTeacherManagedSeedOperation(this, record, path, null, supportingRoute: OpenSupportingRoute(record));
+            var route = record["route_execution_protocol"]?.GetValue<string>() == "original_loop.v1"
+                ? new CropTeacherManagedSeedOperation(this, record, path, null, routeStart: OpenOriginalRouteStart(record))
+                : new CropTeacherManagedSeedOperation(this, record, path, null, supportingRoute: OpenSupportingRoute(record));
             ValidateSupportingRoute(route);
             return route;
         }

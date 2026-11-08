@@ -6,16 +6,30 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public sealed partial class CropTeacherSupportingRoute
 {
-    public void ValidateInputsUnchanged()
+    public void ValidateInputsUnchanged() => inputs.Validate();
+
+    private sealed class InputGuard
     {
-        // Never accept a warm materialization when validating a durable phase boundary.
-        using var fresh = InvocationReadSession.Start(Array.Empty<string>(), enabled: false);
-        foreach (var (path, hash) in hashes)
+        private readonly Dictionary<string, string> hashes;
+        private readonly Dictionary<string, string> logicalHashes;
+        internal InputGuard(string[] paths)
         {
-            RequireRegularInput(path);
-            Require(CurrentTeacherFrontierSupport.HashFile(path) == hash && LogicalHash(path) == logicalHashes[path] &&
-                    CurrentTeacherFrontierSupport.HashFile(path) == hash,
-                "Crop supporting route retained input changed: " + path);
+            foreach (var path in paths) RequireRegularInput(path);
+            hashes = paths.ToDictionary(path => path, CurrentTeacherFrontierSupport.HashFile, CropTeacherSeedTransferNativeOutcome.PathComparer);
+            logicalHashes = paths.ToDictionary(path => path, LogicalHash, CropTeacherSeedTransferNativeOutcome.PathComparer);
+        }
+        internal IReadOnlyDictionary<string, string> ReadHashes() => new Dictionary<string, string>(hashes, CropTeacherSeedTransferNativeOutcome.PathComparer);
+        internal void Validate()
+        {
+            // Never accept a warm materialization when validating a durable phase boundary.
+            using var fresh = InvocationReadSession.Start(Array.Empty<string>(), enabled: false);
+            foreach (var (path, hash) in hashes)
+            {
+                RequireRegularInput(path);
+                Require(CurrentTeacherFrontierSupport.HashFile(path) == hash && LogicalHash(path) == logicalHashes[path] &&
+                        CurrentTeacherFrontierSupport.HashFile(path) == hash,
+                    "Crop supporting route retained input changed: " + path);
+            }
         }
     }
 
