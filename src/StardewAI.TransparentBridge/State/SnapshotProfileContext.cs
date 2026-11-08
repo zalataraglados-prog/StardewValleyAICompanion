@@ -48,6 +48,9 @@ public static class SnapshotProfileContext
 
     public static bool IncludesFarmSitePreparation =>
         Current == "farm_layout";
+
+    public static bool IncludesHayStorage =>
+        Current is "daily" or "full" or "collection_teacher";
 }
 
 public sealed record FarmSitePreparationBounds(

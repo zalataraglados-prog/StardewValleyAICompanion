@@ -30,6 +30,7 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
         "crop_catalog",
         "shipping_bins",
         "buildings",
+        "hay_storage",
         "crops",
         "terrain_features",
         "objects",
@@ -144,6 +145,9 @@ public sealed partial class FarmReadAdapter : ReadAdapterBase
             ["shipping_bins"] = Field(ReadShippingBins(farm), "Game1.getFarm().buildings as ShippingBin", tick, "vanilla_1_6_farm"),
             ["grandpa_score"] = Field(farm.grandpaScore.Value, "Game1.getFarm().grandpaScore.Value", tick, "vanilla_1_6_farm"),
             ["buildings"] = Field(ReadBuildings(farm), "Game1.getFarm().buildings", tick, "vanilla_1_6_farm"),
+            ["hay_storage"] = SnapshotProfileContext.IncludesHayStorage
+                ? Field(HayStorageReadSupport.ReadInventory(farm), "Utility.ForEachLocation(includeInteriors:false,includeGenerated:false) plus Farm; raw piecesOfHay/building count/GetHayCapacity, without actor navigation context", tick, "vanilla_1_6_15_hay_storage")
+                : Unavailable("not_requested_by_snapshot_profile", "SnapshotProfileContext.IncludesHayStorage", tick, "snapshot_profile"),
             ["crops"] = Field(ReadCrops(farm), "Game1.getFarm().terrainFeatures[*] as HoeDirt.crop; IndoorPot.hoeDirt.crop", tick, "vanilla_1_6_farm"),
             ["terrain_features"] = Field(ReadTerrainFeatures(farm), "Game1.getFarm().terrainFeatures", tick, "vanilla_1_6_farm"),
             ["objects"] = Field(ReadObjects(farm), "Game1.getFarm().objects", tick, "vanilla_1_6_farm"),

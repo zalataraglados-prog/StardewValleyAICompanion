@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-11-08 R2干草规范资源读取（当前唯一接续）
+
+- #539经最终42步CI `42476060159`合入`5bf13fbc`并核树，Core2487/Backend1483。原6实际来源重放与L1不重采。
+- 同一补水清障补直接入筒仓资源：`farm.hay_storage`为稳定非室内/非生成地点加Farm存量，`current_location.hay_storage_context`单列当前源/原生顺序；换图不污染持久资源核。旧执行器/资源核不改，纯分配不预测割草RNG或授生产credit。[合同](canonical-hay-storage-resource.md)。
+- Core34/34、相关Backend355/355通过；原生B核87地点/24读、7分支/跨地点及patch拒绝恢复。B空元组留档保留，C只补完整双schema读留档，不重采7分支；原档未变、进程退出。发布见收口。
+- **唯一下一步：** 本片发布后，同一原trace的精确clear/pickup资源与生产来源（含capture间隙、工具体力）接唯一owner，再收获/原生保存跨日和managed真实有界集成，随后原全局协调/其余probe/Provider/模型/manifest。L1`19/19、11/11`冻结，formal=false，Student21/21训后，local-data不提交。
+- **协作纠偏：** 用户11月8日重新启用赠送API，旧11月1日耗尽暂停已被取代；真实OpenAI常驻peer独立负责清障工具精确体力，Codex负责本片/资源接入，路径不重叠。授权/实际session/退出条件见外部 `I:\StardewAI-Collab\resident-refill-20261108\COLLAB_BOARD.md`，故障只停对应接口，不冒充内部子代理、不重试风暴。下方为历史。
+
 ## 2026-11-08 R2原补水清障/拾取的原生trace绑定（当前唯一接续）
 
 - #538经42步CI `42473610429`及同head审查合入`9452e4b2`，树`f0bdb211`一致并清自有分支，Core2487/Backend1420零失败/跳过。原掉落73/单位792矩阵不重采。
