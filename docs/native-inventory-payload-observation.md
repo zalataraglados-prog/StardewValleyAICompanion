@@ -55,6 +55,15 @@ diagnostics stay in their original caller. New inventory graph/XML/domain policy
 does not broaden or tighten those old callers. The original tool-input consumer
 must still validate scalar invocation evidence separately.
 
+CurrentTool is the native getter result, NOT universally the selected slot's tool.
+Pinned Farmer.CurrentItem first returns TemporaryItem, then null when _itemStowed,
+then the selected inventory item; CurrentTool only casts that result to Tool.
+Seven actual getter cases on controlled constructor-bypassed native-CLR fixtures
+confirm null with a selected tool, a different temporary tool, and a tool while a
+non-tool slot is selected. The reader therefore checks reference coverage but does
+not invent selection/current-tool equality. Exact temporary/stowed resolution is
+still part of the remaining transient witness, not a claim of this persisted API.
+
 ## Evidence And Limits
 
 Same resident external API peerfe74fbbc (integrateddcfafcb4) supplied the helper;
@@ -69,7 +78,8 @@ bypassed native-CLR fixtures171 pass, including all21 roots/tool classifications
 Clothing scalars and previous cap/hash/graph/security checks. Diagnostic failures
 from uninitialized fixture qualifier fields and an initially assumed clothing
 wrapper were preserved; actual serializer output corrected only the new reader.
-Final focused Backend200/200 and Core36/36 passed; four component Release builds
+Final focused Backend203/203 (including three native-selection counterexamples)
+and Core36/36 passed. Four component Release builds
 and the retained-replay build had zero warnings/errors. The final stricter consumer
 again accepted both retained native records2/2, writing a separate report rather
 than overwriting the earlier replay. Remote CI/publication are recorded separately.
@@ -92,7 +102,8 @@ is granted. L1 remains frozen19/19 and11/11; Student21/21 is post-training.
 ## Required Successor
 
 Continue this SAME refill trace with remaining transient/world effects and producer
-provenance, including before-capture/passive gaps, then join the existing single
+provenance, including native temporary/stowed selection resolution and before-
+capture/passive gaps, then join the existing single
 persistent owner. Harvest/native-save/day and bounded managed integration follow;
 then original global calendar/budget/cross-root/probes/Provider/model/manifest gates.
 Do not reopen frozen L1 or introduce another orchestrator. Raw evidence/test mods/

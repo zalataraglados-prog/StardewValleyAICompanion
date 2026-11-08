@@ -28,6 +28,35 @@ public sealed class NativeInventoryPayloadBoundaryTests
     }
 
     [Theory]
+    [InlineData("stowed")]
+    [InlineData("temporary-tool")]
+    [InlineData("non-tool-selected")]
+    public void RetainsNativeCurrentToolGetterExceptionsWithoutClaimingSelectionResolution(string mode)
+    {
+        var (request, receipt) = Fixture();
+        var state = receipt.InventoryPayloadBefore!;
+        if (mode == "stowed") state.CurrentToolReferenceId = null;
+        else if (mode == "non-tool-selected")
+        {
+            state.SelectedSlotIndex = 0;
+            state.SelectedItemReferenceId = state.Slots![0].ItemReferenceId;
+        }
+        else
+        {
+            var pick = Slot(2, "StardewValley.Tools.Pickaxe", "(T)Pickaxe", 1, true);
+            state.Slots![2] = pick;
+            receipt.InventoryPayloadAfter!.Slots![2] = JsonSerializer.Deserialize<ActionOriginInventoryPayloadSlot>(JsonSerializer.Serialize(pick))!;
+            receipt.InventoryBefore = [.. receipt.InventoryBefore, new() { QualifiedItemId = "(T)Pickaxe", Quantity = 1 }];
+            receipt.InventoryAfter = [.. receipt.InventoryAfter, new() { QualifiedItemId = "(T)Pickaxe", Quantity = 1 }];
+            state.CurrentToolReferenceId = state.Slots[2].ItemReferenceId;
+        }
+        var result = Read(request, receipt);
+        Assert.Equal(state.CurrentToolReferenceId, result.Before.CurrentToolReferenceId);
+        Assert.Equal(state.SelectedItemReferenceId, result.Before.SelectedItemReferenceId);
+        Assert.False(result.FullTransientStateVerified);
+    }
+
+    [Theory]
     [InlineData("request")]
     [InlineData("tool-mode")]
     [InlineData("anchor")]
