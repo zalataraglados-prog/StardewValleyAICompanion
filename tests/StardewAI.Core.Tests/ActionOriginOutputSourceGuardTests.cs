@@ -69,6 +69,7 @@ public sealed class ActionOriginOutputSourceGuardTests
         Assert.Contains("!capture.ChunksBefore.Contains(chunk)", attribution);
         Assert.Contains("CaptureDebrisChunkItems(location)", attribution);
         Assert.Contains("preexistingCollectionAmbiguous", attribution);
+        Assert.Contains("ActionOriginInventoryCredit.LowerBound(", attribution);
         Assert.Contains(
             "deferred_pickup_action_origin_preexisting_collection_ambiguous",
             attribution);
@@ -110,6 +111,23 @@ public sealed class ActionOriginOutputSourceGuardTests
         Assert.Contains("active.ChunksBefore", bushes);
         Assert.Contains("CaptureDebrisChunkIdentitySet(location)", ginger);
         Assert.Contains("tool.ChunksBefore!", ginger);
+    }
+
+    [Fact]
+    public void DeferredCompletionUsesProducerCreditInsteadOfEarlierRequestInventory()
+    {
+        var source = ReadRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.MachinesAndPickup.cs");
+        var start = source.IndexOf("requiredItemCountAfter =", StringComparison.Ordinal);
+        var end = source.IndexOf("        Debris debris;", start, StringComparison.Ordinal);
+        var completion = source[start..end];
+        Assert.Contains("actionOrigin.Record.InventoryBefore", completion);
+        Assert.DoesNotContain("request.InventoryItemTotalBefore.Value +", completion);
+        Assert.Contains("actionOrigin.DirectInventoryQuantity", completion);
+        Assert.Contains("HasCollectedRequiredActionOriginOutput(active)", source);
+        Assert.Contains("itemCountAfter != active.LastActionOriginInventoryCount", source);
+        var receipts = ReadRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.ActionOriginOutputs.Receipts.cs");
+        Assert.Contains("action_origin.producer_inventory.count[", receipts);
+        Assert.Contains("action_origin.collected_quantity_lower_bound[", receipts);
     }
 
     private static string ReadRepositoryFile(params string[] segments)

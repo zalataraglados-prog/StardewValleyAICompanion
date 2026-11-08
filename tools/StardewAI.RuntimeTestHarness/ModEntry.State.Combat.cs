@@ -368,7 +368,7 @@ public sealed partial class ModEntry : Mod
 
     private sealed class ActivePickupDebris
     {
-        public ActivePickupDebris(PendingExecution pending, GameLocation location, Debris debris, Chunk chunk, Point initialTarget, string qualifiedItemId, int debrisCountBefore, int chunkCountBefore, int itemCountBefore, string inventoryBefore, string requestedEffect, int minimumQuality, int? requiredItemCountAfter, ActionOriginOutputRecord? actionOriginRecord)
+        public ActivePickupDebris(PendingExecution pending, GameLocation location, Debris debris, Chunk chunk, Point initialTarget, string qualifiedItemId, int debrisCountBefore, int chunkCountBefore, int itemCountBefore, string inventoryBefore, string requestedEffect, int minimumQuality, long? requiredItemCountAfter, ActionOriginOutputRecord? actionOriginRecord)
         {
             Pending = pending;
             Location = location;
@@ -380,6 +380,7 @@ public sealed partial class ModEntry : Mod
             DebrisCountBefore = debrisCountBefore;
             ChunkCountBefore = chunkCountBefore;
             ItemCountBefore = itemCountBefore;
+            LastActionOriginInventoryCount = itemCountBefore;
             InventoryBefore = inventoryBefore;
             RequestedEffect = requestedEffect;
             MinimumQuality = minimumQuality;
@@ -400,7 +401,8 @@ public sealed partial class ModEntry : Mod
         public string InventoryBefore { get; }
         public string RequestedEffect { get; }
         public int MinimumQuality { get; }
-        public int? RequiredItemCountAfter { get; }
+        public long? RequiredItemCountAfter { get; }
+        public int LastActionOriginInventoryCount { get; set; }
         public ActionOriginOutputRecord? ActionOriginRecord { get; }
         public string StartedAt { get; } = DateTimeOffset.UtcNow.ToString("O");
         public int MaxTicks { get; } = 3600;

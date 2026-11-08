@@ -204,7 +204,7 @@ public sealed partial class MiningFloorStepPlannerTests
         Assert.DoesNotContain("private void TickManualAutoCombatClearance", combatSource, StringComparison.Ordinal);
         Assert.Contains("AreAdjacent(Game1.player.TilePoint, target.TilePoint)", combatSource, StringComparison.Ordinal);
         Assert.Contains("active.Target.GetBoundingBox().Center", combatSource, StringComparison.Ordinal);
-        Assert.Contains("BuildAdjacentToolPath(mine, targetTile", combatSource, StringComparison.Ordinal);
+        Assert.Matches(@"BuildAdjacentToolPath\(\s*mine,\s*targetTile", combatSource);
         Assert.Contains(".OrderBy(weapon => CombatExpectedHitCount(weapon, target))", combatSource, StringComparison.Ordinal);
         Assert.Contains("private static int CombatExpectedHitCount", combatSource, StringComparison.Ordinal);
         Assert.Contains("Game1.player.maxHealth * 3 / 4", source, StringComparison.Ordinal);
@@ -218,7 +218,7 @@ public sealed partial class MiningFloorStepPlannerTests
         Assert.Contains("combat_no_movement_or_damage_progress", combatSource, StringComparison.Ordinal);
         Assert.Contains("active.Target.isGlider.Value", combatSource, StringComparison.Ordinal);
         Assert.Contains("combat_glider_waiting_for_native_approach", combatSource, StringComparison.Ordinal);
-        Assert.Contains("out var pathReason, avoidSoftObstacles: true", combatSource, StringComparison.Ordinal);
+        Assert.Matches(@"out var pathReason,\s*avoidSoftObstacles:\s*true", combatSource);
         Assert.Contains("ApplyExecutorMovementInput", source, StringComparison.Ordinal);
         Assert.Contains("SButton.W, SButton.D, SButton.S, SButton.A", source, StringComparison.Ordinal);
         Assert.DoesNotContain("Game1.player.MovePosition", source, StringComparison.Ordinal);
