@@ -1593,6 +1593,8 @@ static partial class Program
         executionRequest.ActionOriginObservationScopeId = NativeOutputObservationMode.CreateScopeId(options, executionRequest);
         executionRequest.ActionOriginSnapshotAnchor = options.ObserveNativeOutputSnapshotAnchor &&
             executionRequest.ActionOriginObservationScopeId is not null;
+        executionRequest.ActionOriginToolInputs = options.ObserveNativeClearanceToolInputs &&
+            executionRequest.ActionOriginObservationScopeId is not null;
         return executionRequest;
     }
 

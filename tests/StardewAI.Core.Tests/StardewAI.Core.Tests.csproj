@@ -89,6 +89,7 @@
     <Compile Include="NativeOutputSnapshotAnchorTests.cs" />
     <Compile Include="NativeOutputSnapshotReadApiTests.cs" />
     <Compile Include="NativeOutputObservationSourceGuardTests.cs" />
+    <Compile Include="ClearObstacleRuntimeCalibrationSourceGuardTests.cs" />
     <Compile Include="ActionCatalogProvenanceGovernanceTests.cs" />
     <Compile Include="CandidateRouteConnectorCacheTests.cs" />
     <Compile Include="CandidateOptionAvailabilityEvaluatorTests.EconomyRouting.cs" />

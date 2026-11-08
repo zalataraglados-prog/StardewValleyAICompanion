@@ -17,7 +17,7 @@ public sealed partial class TrainingExecutionResult
     public ActionOriginObservationReceipt? ActionOriginObservation { get; set; }
 }
 
-public sealed class ActionOriginObservationReceipt
+public sealed partial class ActionOriginObservationReceipt
 {
     [JsonPropertyName("schema_version")] public string SchemaVersion { get; set; } = "action_origin_observation.v1";
     [JsonPropertyName("scope_id")] public string ScopeId { get; set; } = string.Empty;

@@ -3,6 +3,28 @@ namespace StardewAI.Core.Tests;
 public sealed class NativeOutputObservationSourceGuardTests
 {
     [Fact]
+    public void ToolInputsJoinTheOriginalObserverOnlyOnAnExplicitRequest()
+    {
+        var scope = RuntimeHarnessSources.LoadFile("ModEntry.ActionOriginObservation.cs");
+        var recorder = RuntimeHarnessSources.LoadFile("ModEntry.ActionOriginObservation.Recorder.cs");
+        var adapter = RuntimeHarnessSources.LoadFile("ModEntry.ActionOriginObservation.ToolInputs.cs");
+        Assert.Contains("if (pending.Request.ActionOriginToolInputs)", scope);
+        var inputInstall = scope[scope.IndexOf("try { EnsureNativeToolInputPatches(); }", StringComparison.Ordinal)..
+            scope.IndexOf("if (nativeObservationPatchesFailed)", StringComparison.Ordinal)];
+        Assert.Contains("tool_input_patch_installation_failed:", inputInstall);
+        Assert.DoesNotContain("nativeObservationPatchesFailed =", inputInstall);
+        Assert.Contains("if (pending.Request.ActionOriginToolInputs) pending.OutputObservation.BeginToolInputs()", scope);
+        Assert.Contains("tool_inputs_require_snapshot_anchor", scope);
+        Assert.Contains("StopToolInputs();", recorder);
+        Assert.Contains("ClearanceToolCalls = request.ActionOriginToolInputs ?", recorder);
+        Assert.Contains("ReferenceEquals(call.Farmer, farmer)", adapter);
+        Assert.Contains("ReferenceEquals(call.Location, capture.Location)", adapter);
+        Assert.Contains("toolCalls.TryAdd(row)", adapter);
+        foreach (var forbidden in new[] { ".DoFunction(", ".Stamina =", "Game1.random", "Thread.Sleep", "new HttpClient" })
+            Assert.DoesNotContain(forbidden, adapter);
+    }
+
+    [Fact]
     public void ExplicitSnapshotAnchorCapturesBeforeEndingTheSameObserverAndDoesNotChangeTools()
     {
         var scope = RuntimeHarnessSources.LoadFile("ModEntry.ActionOriginObservation.cs");

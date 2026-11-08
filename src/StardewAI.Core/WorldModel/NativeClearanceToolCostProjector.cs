@@ -9,10 +9,14 @@ namespace StardewAI.Core.WorldModel
     }
 
     /// <summary>
-    /// Actual vanilla 1.6.15 call inputs, not route estimates. EffectiveSkillLevel is
+    /// Actual vanilla 1.6.15 inputs at the explicit debit boundary, after base
+    /// DoFunction and Pickaxe's power copy, not parent-entry values or route estimates.
+    /// EffectiveSkillLevel is
     /// Farmer.ForagingLevel for Axe or Farmer.MiningLevel for Pickaxe (including buffs).
     /// MaxStamina is the effective getter value; HasStaminaDecreaseProtection means
-    /// Farmer.hasBuff("statue_of_blessings_2"). Both powers are raw native int values.
+    /// Farmer.hasBuff("statue_of_blessings_2"). ArgumentPower retains the original
+    /// raw argument. FarmerToolPower is only consumed by Pickaxe; its value is not
+    /// an additional applicable/measured Axe input.
     /// </summary>
     public sealed class NativeClearanceToolCostInput
     {
