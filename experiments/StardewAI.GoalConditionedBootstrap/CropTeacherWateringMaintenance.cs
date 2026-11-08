@@ -13,7 +13,7 @@ public sealed partial class CropTeacherWateringMaintenance : ICropTeacherSupport
 
     private CropTeacherWateringMaintenance(string runRequestPath, string sourcePath, string ledgerPath,
         IReadOnlyCollection<string> commitmentIds, string commitmentId,
-        MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId)
+        MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId, bool refillControl = false)
     {
         var comparer = CropTeacherSeedTransferNativeOutcome.PathComparer;
         var paths = new[] { runRequestPath, sourcePath, ledgerPath, transition.QueuePath, transition.BeforeSnapshotPath,
@@ -40,7 +40,13 @@ public sealed partial class CropTeacherWateringMaintenance : ICropTeacherSupport
             "Crop watering queue repeats a tile or leaves its original layout.");
         var receipt = CurrentTeacherFrontierSupport.Read<QueueExecutionReceiptEnvelope>(transition.ExecutionReceiptPath, "watering maintenance receipt");
         var after = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(transition.AfterSnapshotPath, "watering maintenance after");
-        AppliedTileCount = CropTeacherAppliedPrefixReceipt.Validate(queue, before, receipt, after, transition, "water_crop", "Crop watering");
+        if (refillControl)
+        {
+            CropTeacherAppliedPrefixReceipt.ValidateRefillControl(queue, before, receipt, after, transition);
+            CropSeedResourceBoundary.VerifyRefillControlWaterDelta(before, after);
+        }
+        AppliedTileCount = refillControl ? 0 : CropTeacherAppliedPrefixReceipt.Validate(queue, before, receipt, after, transition, "water_crop", "Crop watering");
+        RefillControlVerified = refillControl;
         CompleteBatch = AppliedTileCount == tiles.Length;
         var stepPaths = ReadStepPaths(transition, receipt, paths);
         inputs = new(paths.Concat(stepPaths).Distinct(comparer).ToArray());
@@ -70,7 +76,13 @@ public sealed partial class CropTeacherWateringMaintenance : ICropTeacherSupport
         MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId) =>
         new(runRequestPath, sourcePath, ledgerPath, commitmentIds, commitmentId, transition, stepId);
 
+    public static CropTeacherWateringMaintenance OpenRefillControl(string runRequestPath, string sourcePath, string ledgerPath,
+        IReadOnlyCollection<string> commitmentIds, string commitmentId,
+        MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId) =>
+        new(runRequestPath, sourcePath, ledgerPath, commitmentIds, commitmentId, transition, stepId, refillControl: true);
+
     public int AppliedTileCount { get; }
+    public bool RefillControlVerified { get; }
     public bool CompleteBatch { get; }
     public IReadOnlyList<MoneyRevenueCropPlantingTile> AppliedTiles { get; }
     public string AfterSnapshotPath { get; }

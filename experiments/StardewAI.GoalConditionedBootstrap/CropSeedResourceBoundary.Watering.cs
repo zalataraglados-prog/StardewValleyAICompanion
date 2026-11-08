@@ -6,6 +6,15 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 internal static partial class CropSeedResourceBoundary
 {
+    internal static void VerifyRefillControlWaterDelta(SnapshotEnvelope before, SnapshotEnvelope after)
+    {
+        var first = Value(Field(before, "player", "watering_can_state")!);
+        var next = Value(Field(after, "player", "watering_can_state")!);
+        Require(Int(first, "water_left") == 0 && first["farmer_has_watering_can_enchantment"]?.GetValue<bool>() == false &&
+                Int(next, "water_left") == Int(first, "capacity") && Int(first, "capacity") > 0,
+            "Crop refill control lacks its exact empty-to-full original native water delta.");
+    }
+
     internal static void VerifyWatering(SnapshotEnvelope before, SnapshotEnvelope after, string location,
         MoneyRevenueCropPlantingTile tile, bool applied)
     {

@@ -1,5 +1,6 @@
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Strategy;
+using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
 using StardewAI.Core.Infrastructure;
 
@@ -76,7 +77,10 @@ public sealed partial class CropTeacherWateringMaintenance
                     CropTeacherSeedTransferNativeOutcome.PathComparer.Equals(Path.GetFullPath(transition.QueuePath), QueuePath) &&
                     CropTeacherSeedTransferNativeOutcome.PathComparer.Equals(Path.GetFullPath(transition.BeforeSnapshotPath), SourcePath),
                 "Owned crop watering differs from its pinned original compilation/source.");
-            var result = CropTeacherWateringMaintenance.Open(runRequestPath, SourcePath, ledgerPath, commitmentIds, commitmentId, transition, stepId);
+            var receipt = CurrentTeacherFrontierSupport.Read<QueueExecutionReceiptEnvelope>(transition.ExecutionReceiptPath, "original watering outcome kind");
+            var result = !receipt.Success && receipt.StepResults is [{ Status: "blocked" }]
+                ? CropTeacherWateringMaintenance.OpenRefillControl(runRequestPath, SourcePath, ledgerPath, commitmentIds, commitmentId, transition, stepId)
+                : CropTeacherWateringMaintenance.Open(runRequestPath, SourcePath, ledgerPath, commitmentIds, commitmentId, transition, stepId);
             inputs.Validate();
             return result;
         }

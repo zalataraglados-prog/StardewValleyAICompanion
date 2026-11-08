@@ -23,7 +23,8 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 .ActionBatches.Single(row => row.OptionId == "executor.water_crop"), "original_watering_fixture");
 
         internal WateringFixture(int water = 20, bool bottomless = false, bool enchanted = false, bool efficient = false,
-            int farmingLevel = 0, bool bowlMirrors = false, float energy = 100f, bool inconsistentBeforeMirror = false)
+            int farmingLevel = 0, bool bowlMirrors = false, float energy = 100f, bool inconsistentBeforeMirror = false,
+            bool atRefillApproach = false)
         {
             Shared = new(prepareSource: source =>
             {
@@ -54,6 +55,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                     JsonNode.Parse(source.Before.State["farm"].GetRawText())!["crops"]!.DeepClone());
                 ChangeState(source.Before, "player", node =>
                 {
+                    if (atRefillApproach) node["tile_y"]!["value"] = 1;
                     node["energy"] = JsonSerializer.SerializeToNode(new { status = "available", value = energy });
                     node["watering_can_state"] = JsonSerializer.SerializeToNode(new { status = "available", value = new
                     {

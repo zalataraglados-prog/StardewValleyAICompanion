@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-08 R2原生零credit补水接续（当前唯一接续）：** #531经42步CI `42453157961`/同head审查接受合入`ec08ea9f`并核树清分支，Core2443/Backend1357。当前E DLL已重新反编译核补水语义，本片以独立严格零credit结果门接原owned维护：一个blocked原生尝试、空壶到原容量、原完整作物/资源/未知与回显核；旧正前缀/执行器不变，不伪零派发。原claim/result/marker恢复共用，refill=true、watering_prefix=false、0 tiles及batch未完成，不成偏好/训练标签。首75/扩展87通过，相关/最终CI见收口，非新游戏证据。[合同](money-crop-refill-control-outcome.md)。下一步原补水接近/控制（保留开路并归因）、收获/原生保存跨日，齐后managed真实有界集成，再全局日历预算/跨根、Provider/模型/manifest。L1`19/19、11/11`、formal=false/Student训后21/21不变，无新游戏/训练/API worker，local-data不提交。下方为历史。
+
 > **2026-11-08 R2原维护编译/执行归属（当前唯一接续）：** #530经42步CI `42451484629`/同head审查接受合入`9da505d6`并核树清分支，Core2443/Backend1332。本片固定原维护模型动作/编译/完整source-ledger/活动覆盖/到期batch，以同一份原生claim/result和Program adapter接原执行循环；旧路线格式/默认与执行器保持，一次claim为一次循环而非一次工具RPC。原57、新22通过；接受记录重启重建顺序遗漏已三反例复现修正，3/3通过。相关/最终CI见收口，非新游戏证据。[合同](money-crop-owned-maintenance-execution.md)。下一步原补水接近/控制/收获归属/原生保存跨日，齐后managed真实有界集成，再全局日历预算/跨根、Provider/模型/manifest。L1`19/19、11/11`、formal=false/Student训后21/21不变，无新游戏/训练/API worker，local-data不提交。下方为历史。
 
 > **2026-11-08 R2同owner维护接续（当前唯一接续）：** #529最终42步CI `42449067897`接受合入`a7d55248`、核树清分支，Core2443/Backend1311。本片将原维护结果接同一持久owner，路线/维护共用原marker事务和恢复，旧路线API/schema/路径保留，维护独立kind与实际前缀计数/tiles；未知不重交，重启全验，不信summary，不进seed回调。首42/扩展56、维护→原路线混链重启及相关703/703通过；末次定向/最终CI见收口。[合同](money-crop-managed-maintenance.md)。下一步仍原维护编译/一次性原生归属，再补水接近/控制恢复/收获归属/原生保存跨日，接齐才managed真实有界集成；全局日历预算/跨根、Provider/模型/manifest不反挂。L1`19/19、11/11`、formal=false/Student训后21/21不变，无新游戏/训练/API worker，local-data不提交。下方为历史。
