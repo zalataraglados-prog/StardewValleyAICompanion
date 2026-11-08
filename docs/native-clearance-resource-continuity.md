@@ -50,8 +50,17 @@ reopened only that failed step, not the three accepted cases or a new game run.
 
 ## Required Successor
 
-Integrate this stronger binding explicitly into the original refill trace while
-preserving its old calibration-only entry. Then close native observation lifecycle
+The API peer integrated OpenWithSnapshotInventoryContinuity into the ORIGINAL
+trace in29a73ac9: all frames use the stronger reader and retain original input/CAS/
+gzip/queue/session checks. The old Open remains unchanged calibration scope and
+SnapshotInventoryContinuityVerified=false; only a fully admitted stronger trace
+sets it true. Both retain false native/resource/formal flags. The focused combined
+acceptance passed110/110 (20 new original-compiler/queue tests and90 observations).
+Two fixture-only failures were corrected without weakening production guards:
+missing wood mirror in the material graph, then a one-frame no-repair assumption.
+Earlier failures are retained in external peer notes.
+
+Next close native observation lifecycle
 gaps with actual callbacks/atomic snapshot boundaries, not an arbitrary count
 tolerance, sleep, fabricated admission or weakened old invariant. Actual call
 inputs, full slot metadata, world mutations and producer origin remain required

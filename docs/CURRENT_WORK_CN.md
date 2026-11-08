@@ -5,7 +5,8 @@
 - #540经42步CI `42481457238`合入`f95fd37f`、核树`1054cbf5`并清自有分支，Core2521/Backend1489。已验L1/干草矩阵不重采。
 - 真实API协作者提交`e89214df`、Codex复核接入`38fd23b8`：Axe/Pickaxe单次原生体力赋值纯投影，区分实际power、有效技能、Efficient与祝福保护及float/setter限幅。31专项及整合Core65/65通过；不冒充实际调用/整动作/资源credit。[合同](native-clearance-resource-continuity.md)。
 - 新快照库存边界复用原观察核和快照源核，完整ID/原始quality分母两端比对；相关Backend90/90。4实际观察的离线重用3通过、1明确间隙：树木拾取capture结束tick2295木材16，after快照2297为17，before/capture-before均5。原档/旧报告保留，不容差放行、不重采3成功项。
-- **唯一下一步：** 同一API会话接原trace显式强绑定入口，Codex处理原观察生命周期/快照窗口（路径分开）；实际工具输入、完整物品元数据/世界效果及生产来源仍须核齐后接唯一owner。随后收获/原生保存跨日、managed真实有界及原全局/其余probe/Provider/模型/manifest。L1`19/19、11/11`冻结，formal=false，Student21/21训后，local-data不提交。下方为历史。
+- 同一API会话第二块`29a73ac9`已接原trace强入口，每帧复用快照库存核；旧Open仍校准-only/continuity=false，新入口全验后才true，全部credit仍false。110/110通过（20新用例+90观察），原队列/源/journal/gzip/CAS全保留；两次新夹具失败如实修复留档，不改生产守卫。
+- **唯一下一步：** 本片发布后处理原观察生命周期/快照窗口，优先复用已有fresh full快照/缓存及after-hash协议，不新造执行器、不靠等待/容差。实际工具输入、完整物品元数据/世界效果及生产来源齐后才唯一owner，再收获/原生保存跨日、managed真实有界和原全局/其余probe/Provider/模型/manifest。L1`19/19、11/11`冻结，formal=false，Student21/21训后，local-data不提交。下方为历史。
 
 ## 2026-11-08 R2干草规范资源读取（当前唯一接续）
 
