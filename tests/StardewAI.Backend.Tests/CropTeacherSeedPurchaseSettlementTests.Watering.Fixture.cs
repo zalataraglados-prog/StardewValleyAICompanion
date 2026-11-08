@@ -24,7 +24,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
 
         internal WateringFixture(int water = 20, bool bottomless = false, bool enchanted = false, bool efficient = false,
             int farmingLevel = 0, bool bowlMirrors = false, float energy = 100f, bool inconsistentBeforeMirror = false,
-            bool atRefillApproach = false)
+            bool atRefillApproach = false, Action<Fixture>? prepareSource = null)
         {
             Shared = new(prepareSource: source =>
             {
@@ -71,6 +71,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                     RefreshBowlMirrors(source.Before, create: true);
                     if (inconsistentBeforeMirror) ChangeState(source.Before, "farm", node => node["pet_bowls"]!["value"]![0]!["energy_before"] = 99);
                 }
+                prepareSource?.Invoke(source);
             });
         }
 
