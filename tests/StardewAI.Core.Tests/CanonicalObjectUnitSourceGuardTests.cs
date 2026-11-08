@@ -14,9 +14,12 @@ public sealed class CanonicalObjectUnitSourceGuardTests
         Assert.Contains("hash.ComputeHash(stream)", source);
         Assert.Contains("source.GetType() != typeof(ObjectItem)", source);
         Assert.Contains("data.ItemType.GetType() != typeof(ObjectDataDefinition)", source);
-        Assert.Contains("Harmony.GetPatchInfo(method) is null", source);
+        Assert.Contains("var patches = Harmony.GetPatchInfo(method)", source);
+        Assert.Contains("patches is null || !patches.Owners.Any()", source);
         Assert.Contains("nameof(Item.CopyFieldsFrom)", source);
         Assert.Contains("InitializerSetters.All(Unpatched)", source);
+        Assert.Contains("RegistryMethods.All(Unpatched)", source);
+        Assert.Contains("nameof(ItemRegistry.GetDataOrErrorItem)", source);
         Assert.Contains("unit.CopyFieldsFrom(source)", source);
         Assert.DoesNotContain("Game1.random", source);
         Assert.DoesNotContain("ItemRegistry.Create(", source);

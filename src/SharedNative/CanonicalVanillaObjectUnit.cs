@@ -41,9 +41,7 @@ internal static class CanonicalVanillaObjectUnit
         unit = null!;
         if (!qualifiedItemId.StartsWith("(O)", StringComparison.Ordinal) ||
             !Eligible(qualifiedItemId.Substring(3)) || !NativeCloneMethodsUnpatched() ||
-            !Unpatched(typeof(ObjectDataDefinition).GetMethod(nameof(ObjectDataDefinition.CreateItem))) ||
-            typeof(ItemRegistry).GetMethods(BindingFlags.Public | BindingFlags.Static)
-                .Where(method => method.Name == nameof(ItemRegistry.Create)).Any(method => !Unpatched(method))) return false;
+            !Unpatched(typeof(ObjectDataDefinition).GetMethod(nameof(ObjectDataDefinition.CreateItem)))) return false;
         var data = ItemRegistry.GetData(qualifiedItemId);
         if (data is null || data.IsErrorItem || data.QualifiedItemId != qualifiedItemId ||
             data.ItemType.GetType() != typeof(ObjectDataDefinition)) return false;
@@ -73,9 +71,18 @@ internal static class CanonicalVanillaObjectUnit
         nameof(ObjectItem.IsSpawnedObject), nameof(ObjectItem.Fragility), nameof(ObjectItem.MinutesUntilReady)
     }.Select(name => typeof(ObjectItem).GetProperty(name)?.SetMethod).ToArray();
 
-    private static bool NativeCloneMethodsUnpatched() => CloneMethods.All(Unpatched) && InitializerSetters.All(Unpatched);
+    private static readonly MethodInfo[] RegistryMethods = typeof(ItemRegistry).GetMethods(BindingFlags.Public | BindingFlags.Static)
+        .Where(method => method.Name is nameof(ItemRegistry.Create) or nameof(ItemRegistry.GetData) or nameof(ItemRegistry.GetDataOrErrorItem)).ToArray();
 
-    private static bool Unpatched(MethodBase? method) => method is not null && Harmony.GetPatchInfo(method) is null;
+    private static bool NativeCloneMethodsUnpatched() => CloneMethods.All(Unpatched) &&
+        InitializerSetters.All(Unpatched) && RegistryMethods.All(Unpatched);
+
+    private static bool Unpatched(MethodBase? method)
+    {
+        if (method is null) return false;
+        var patches = Harmony.GetPatchInfo(method);
+        return patches is null || !patches.Owners.Any();
+    }
 
     private static ObjectItem CreateDetached(string id)
     {

@@ -27,8 +27,10 @@ normalization,serialization and native fallback.
 The same factory handles eligible ordinary FromStandard cold-cache construction.
 It checks the exact binary,exact Object type,non-big-craftable data and native
 ObjectDataDefinition. Native clone/constructor/copy and introduced setter methods
-must be unpatched;standard creation also checks ItemRegistry/ObjectDataDefinition
-factory patches. Patch state is checked live,not cached as permanent permission.
+must be unpatched;registry Create/GetData/GetDataOrErrorItem and the native
+ObjectDataDefinition factory are checked too. Patch state is checked live,not
+cached as permanent permission. An empty retained Harmony patch-info record is
+not an active patch:eligibility returns after the last owner is unpatched.
 The bridge uses the same existing Harmony2.3.3 dependency as the harness,excluding
 its runtime asset so SMAPI remains the runtime owner.
 
@@ -68,7 +70,12 @@ declined rather than newly invoked. Owned patches alone are removed afterwards.
 Final C follows relocation of the unchanged diagnostic algorithm into tests/Shared;
 it uses the final native caller artifacts and test-only sensor. Final focused47
 passed with zero failures/skips;native Bridge/Harness and calibration builds have
-zero warnings/errors. Initial build API/language mismatches were corrected before
+zero warnings/errors. A targeted lookup-patch D run rejected the patched query and
+kept legacy bytes but exposed retained empty patch-info after unpatch. The final
+guard checks actual owners;targeted E passes with six legacy query callbacks,
+unchanged legacy hashes and restored eligibility after unpatch. Only this new
+branch was rerun,not the792-case matrix. D is retained as a failed lifecycle test.
+Initial build API/language mismatches were corrected before
 native runs;they are not runtime regressions or grounds to change old contracts.
 Original save hash68ddc8dbbe09382f2e7ba1c9d5d1e8dd6d0ffaef59acf9367415b4678f59366d
 stays unchanged;owned game processes exit. Raw matrices,source copies,failures and
