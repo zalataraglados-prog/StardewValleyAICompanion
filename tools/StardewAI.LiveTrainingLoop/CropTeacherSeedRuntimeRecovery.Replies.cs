@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Artifacts = StardewAI.LiveTrainingLoop.CropSeedRuntimeArtifacts;
 
 namespace StardewAI.LiveTrainingLoop;
 

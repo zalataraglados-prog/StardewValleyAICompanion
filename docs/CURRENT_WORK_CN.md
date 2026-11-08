@@ -1,5 +1,14 @@
 # StardewAI 当前工作
 
+## 2026-11-08 R2原控制器零派发的持久收口（当前唯一接续）
+
+- 本片相关469/469、共用守卫提取后最终75/75通过，零失败/跳过，含21项新增；checkpoint仍匹配EVD338。完整CI/发布见收口，本机不重复全量Core/Backend。
+
+- #524最终head `f9d8389a`经42步CI `42431798046`及同head审查接受，Core2443/Backend1166零失败/跳过，合入`e333a279`、核树清自有分支。原完整准备态恢复/一次性循环归属不重做。
+- 核`c53115f0`及JSON原上下文，原严格零派发身份/源路径/queue/完整before-after/tick/停止/marker检查提取共用，不改旧默认；文件守卫原样提为runtime/lifecycle/recovery共用，避免运行事务反向依赖恢复器。只新owned runtime在原严格检查后留完整停止上下文；同一owner live或重启全验收口，类型明确非native、零请求、无proof/训练标签，旧claim不重试。日志success不当证明、缺原上下文仍待定。[合同](money-crop-controller-stop-recovery.md)。
+- 初新旧11/11、新重点19/19通过，新增持久上下文确认丢失/从未落盘反例及共用守卫移动后的验证/最终CI见收口。不以协议fixture冒充新游戏或Teacher证据。
+- **唯一下一步：** 完成本片发布，接真正不完整准备/缺完整queue的原intent/journal/lookup/编译器恢复，追加保留而不覆盖旧失败，未知mutation不重发；再原行走维护/保存连续性及显式managed有界原生，再原联合日历/聚合预算/跨根、Provider/模型与manifest/preflight。L1`19/19、11/11`和formal=false不变，Student新档21/21在训练后。无游戏/服务器/API worker，local-data不提交。下方为历史。
+
 ## 2026-11-08 R2原准备态恢复与执行循环归属（当前唯一接续）
 
 - 本片最终相关448/448通过、零失败/跳过，含20项新增；checkpoint仍匹配EVD338。完整CI/发布见本片收口，本机不重复全量Core/Backend。

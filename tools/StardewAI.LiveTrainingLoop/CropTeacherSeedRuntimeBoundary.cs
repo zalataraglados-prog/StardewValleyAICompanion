@@ -10,9 +10,13 @@ internal sealed record CropTeacherSeedPreparedBoundary(string RuntimeDirectory, 
 internal sealed record CropTeacherSeedLiveBoundary(CropTeacherSeedPreparedBoundary Preparation,
     StrategyLedgerEvidence Evidence, string AfterSnapshotPath, Action Validate);
 
+internal sealed record CropTeacherSeedNoDispatchBoundary(CropTeacherSeedPreparedBoundary Preparation,
+    StrategyLedgerEvidence Evidence, string SnapshotPath, string TransitionPath, string ReceiptPath, Action Validate);
+
 internal interface ICropTeacherSeedManagedRuntime
 {
     CropTeacherSeedPreparedBoundary ReadPreparedBoundary();
     CropTeacherSeedLiveBoundary ReadVerifiedBoundary();
+    CropTeacherSeedNoDispatchBoundary ReadVerifiedStopBoundary();
     void BindExecutionGuard(Action guard);
 }

@@ -37,6 +37,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             var operation = Pending ?? throw new InvalidOperationException("Managed crop owner has no pending phase.");
             RequireOperation(operation);
             var recovered = await RecoverAsync(http, operation, evidenceDirectory, post).ConfigureAwait(false);
+            operation.VerifiedStop = recovered.Stop;
             if (!operation.IsLifecycle && operation.Prepared is null)
             {
                 var seed = recovered.Seed!;
@@ -71,7 +72,7 @@ public sealed partial class CropTeacherManagedSeedOwner
     }
 
     private sealed record RecoveredOwnerBoundary(StrategyLedgerEvidence Evidence, string SnapshotPath, Action Validate,
-        CropTeacherSeedRecoveredBoundary? Seed = null);
+        CropTeacherSeedRecoveredBoundary? Seed = null, CropTeacherSeedNoDispatchBoundary? Stop = null);
 
     private async Task<RecoveredOwnerBoundary> RecoverAsync(HttpClient http, CropTeacherManagedSeedOperation operation,
         string output, Func<string, string, Task<JsonObject>> post)
@@ -88,6 +89,14 @@ public sealed partial class CropTeacherManagedSeedOwner
         var intentHash = operation.Prepared is not null ? Text(operation.Prepared, "original_intent_sha256") :
             operation.Record["original_intent_sha256"]?.GetValue<string>() ??
             throw new InvalidOperationException("Legacy seed phase has no pinned intent/preparation; retain its original journals without replay.");
+        if (operation.StopAccepted || HasOwnedDispatchProtocol(operation) && operation.Dispatch is not null &&
+            File.Exists(Path.Combine(operation.RuntimeDirectory, "controller-stop-transition.json")))
+        {
+            var stopped = await CropTeacherSeedRuntimeRecovery.RecoverNoDispatchAsync(http,
+                new(options.BackendUrl, operation.RuntimeDirectory, options.PortfolioJournalDirectory, output,
+                    options.RunId, options.ExecutorVersion, intentHash), operation.Scopes, operation.ReadStep(), post, write).ConfigureAwait(false);
+            return new(stopped.Evidence, stopped.SnapshotPath, stopped.Validate, Stop: stopped);
+        }
         if (operation.Prepared is null && operation.Started is null && !File.Exists(Path.Combine(operation.RuntimeDirectory, "support-intent.json")))
             throw new InvalidOperationException("Seed phase has no retained original preparation to recover; this is not proof of zero execution.");
         var seed = await CropTeacherSeedRuntimeRecovery.RecoverAsync(http,

@@ -36,6 +36,7 @@ public sealed partial class CropTeacherSeedPlantingRuntimeTests
         internal int NativeRequests { get; private set; }
         internal int FullSnapshotReads { get; private set; }
         internal Action<string>? BeforeWrite { get; set; }
+        internal Action<string>? AfterWrite { get; set; }
 
         internal RuntimeFixture(bool loseReplies = false, string fault = "")
         {
@@ -86,10 +87,11 @@ public sealed partial class CropTeacherSeedPlantingRuntimeTests
             selectedStep?.ActionBatch ?? Files.Batch(), selectedStep is null ? Files.OwnedSlotOne : selectedStep.SeedReservationId,
             (diagnostic, request) => InvokeLive<Task<JsonObject>>("PostJournaledPortfolioCommitAsync", Client, Options, diagnostic, request),
             (diagnostic, request) => InvokeLive<Task<JsonObject>>("PostJournaledPortfolioSettlementAsync", Client, Options, diagnostic, request),
-            (path, json) =>
+            async (path, json) =>
             {
                 BeforeWrite?.Invoke(path);
-                return InvokeLive<Task>("WritePortfolioJournalFileAsync", path, json);
+                await InvokeLive<Task>("WritePortfolioJournalFileAsync", path, json);
+                AfterWrite?.Invoke(path);
             }, async (marker, batch) =>
             {
                 Marker = marker;

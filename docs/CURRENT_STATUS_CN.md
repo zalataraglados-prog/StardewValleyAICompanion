@@ -1,5 +1,9 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **本片本地验证：** 相关469/469、共用守卫提取后最终75/75通过，零失败/跳过，含21项新增；checkpoint匹配EVD338。完整CI/发布见本片收口，不冒称游戏或训练证据。
+
+> **2026-11-08 R2原零派发收口（当前唯一接续）：** #524经42步CI `42431798046`/同head审查合入`e333a279`且核树清分支，Core2443/Backend1166。本片按`c53115f0`/JSON旧意图复用严格零派发kernel，只有新owned runtime在明确零请求/完整未变源和marker成立后留完整上下文；同一owner接受/恢复为非native停止边界，不是动作成功或训练标签。缺context/receipt、未知执行、混入native证明或完整后端漂移均不重试/不放行；旧standalone默认不新增文件，文件守卫原样共用。初11专项/19重点通过，最终验证/CI见收口。[合同](money-crop-controller-stop-recovery.md)。下一步不完整准备/缺queue的原journal/lookup/编译恢复，随后原行走维护/保存连续性、managed原生样本、全局日历/预算/跨根及Provider/模型/manifest。L1`19/19、11/11`、formal=false/Student训后21/21保持，无API worker、新游戏或训练，local-data不提交。下方为历史。
+
 > **本片最终本地验证：** 原准备恢复/owner/生命周期/采购转运种植相关448/448通过、零失败/跳过，含20项新增；checkpoint匹配EVD338。完整CI/发布见本片收口，不冒称新游戏或训练证据。
 
 > **2026-11-08 R2原准备态恢复/循环归属（当前唯一接续）：** #523经最终42步CI `42429129597`与同head审查合入`834c4cca`、核树清分支，Core2443/Backend1146零失败/跳过。本片新seed-start v2在原执行循环前持久claim（native是否请求仍未知），未进入循环且原完整准备成立才恢复同一个原事务/种植八格prefix，不重交marker/重编译；新协议live接受钉同一runtime/claim，旧记录不追认可重放。缺回包先原journal/lookup，全验后留原回包以支持执行后再恢复，已知坏回包不兜底。初36专项/修后15重点通过，最终相关/CI见收口。[合同](money-crop-prepared-runtime-restore.md)。下一步原严格零派发/不完整准备，再原行走维护/原生保存连续性、managed有界原生及全局日历/预算/跨根、Provider/模型/manifest。L1`19/19、11/11`、formal=false/Student训后21/21保持，无API worker或新游戏，local-data不提交。下方为历史。
