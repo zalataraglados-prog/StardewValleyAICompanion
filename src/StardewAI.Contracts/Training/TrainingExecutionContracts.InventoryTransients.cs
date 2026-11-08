@@ -39,6 +39,9 @@ public sealed class ActionOriginItemTransientState
     [JsonPropertyName("cache")] public ActionOriginItemCacheState? Cache { get; set; }
     [JsonPropertyName("tool")] public ActionOriginToolTransientState? Tool { get; set; }
     [JsonPropertyName("pickaxe")] public ActionOriginPickaxeTransientState? Pickaxe { get; set; }
+    [JsonPropertyName("object")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public ActionOriginObjectTransientState? Object { get; set; }
 }
 
 public sealed class ActionOriginTempDataEntry

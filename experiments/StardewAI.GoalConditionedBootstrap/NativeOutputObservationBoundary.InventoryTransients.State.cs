@@ -6,7 +6,7 @@ public static partial class NativeOutputObservationBoundary
 {
     private static NativeObservedItemTransientState ReadItemTransient(ActionOriginItemTransientState? state,
         NativeObservedInventoryPayloadSlot slot, string actorId, string actorReference,
-        Dictionary<Guid, string> references, ref int characters)
+        Dictionary<Guid, string> references, ref int characters, bool requireObjectState)
     {
         var itemStart = characters;
         Require(state is not null && state.SchemaVersion == "native_item_transients.v1" && state.TempDataPresent.HasValue,
@@ -33,7 +33,7 @@ public static partial class NativeOutputObservationBoundary
         }
         else Require(state.Pickaxe is null, "non-Pickaxe inventory slot has fabricated private hit state");
         Require(characters - itemStart <= 65536, "native per-item transient character budget exceeded");
-        return new(flag, tempData, cache, tool, pickaxe);
+        return new(flag, tempData, cache, tool, pickaxe, ReadObjectTransient(state.Object, slot.RuntimeType!, requireObjectState));
     }
 
     private static IReadOnlyList<NativeObservedTempDataEntry>? ReadTransientTempData(bool present,

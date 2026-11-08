@@ -10,7 +10,8 @@ public sealed record NativeObservedToolTransientState(NativeObservedTransientAct
     string? Description, string? DisplayName);
 public sealed record NativeObservedPickaxeTransientState(int BoulderTileX, int BoulderTileY, int HitsToBoulder);
 public sealed record NativeObservedItemTransientState(string? SetFlagOnPickup, IReadOnlyList<NativeObservedTempDataEntry>? TempData,
-    NativeObservedItemCacheState Cache, NativeObservedToolTransientState? Tool, NativeObservedPickaxeTransientState? Pickaxe);
+    NativeObservedItemCacheState Cache, NativeObservedToolTransientState? Tool, NativeObservedPickaxeTransientState? Pickaxe,
+    NativeObservedObjectTransientState? Object = null);
 public sealed record NativeObservedTransientItem(string ReferenceId, string RuntimeType, bool IsTool);
 public sealed record NativeObservedSelectionTransientState(string ActorReferenceId, bool ItemStowed,
     NativeObservedTransientItem? TemporaryItem, NativeObservedTransientItem? CurrentItem);
@@ -19,6 +20,8 @@ public sealed record NativeObservedInventoryTransientEndpoint(NativeObservedSele
 public sealed record NativeInventoryTransientSummary(string ScopeId, string CaptureSessionId,
     NativeObservedInventoryTransientEndpoint Before, NativeObservedInventoryTransientEndpoint After)
 {
+    public bool ObjectSubtypeStateVerified { get; init; }
+    public int ObservedObjectOccurrences => Before.Slots.Concat(After.Slots).Count(slot => slot?.Object is not null);
     public bool FullTransientStateVerified => false;
     public bool NativeOutcomeVerified => false;
     public bool ResourceCreditAuthorized => false;
@@ -28,7 +31,8 @@ public sealed record NativeInventoryTransientSummary(string ScopeId, string Capt
 public static partial class NativeOutputObservationBoundary
 {
     public static NativeInventoryTransientSummary ReadInventoryTransients(TrainingExecutionRequest request,
-        ActionOriginObservationReceipt receipt, long earliestTick, long latestTick, string locationId, string actorId)
+        ActionOriginObservationReceipt receipt, long earliestTick, long latestTick, string locationId, string actorId,
+        bool requireObjectState = false)
     {
         Require(request.ActionOriginInventoryTransients, "native inventory transients were not explicitly requested");
         var characters = 0;
@@ -36,15 +40,16 @@ public static partial class NativeOutputObservationBoundary
         var references = new Dictionary<Guid, string>();
         foreach (var slot in original.Before.Slots.Concat(original.After.Slots).Where(slot => !slot.IsEmpty))
             BindTransientReference(slot.ItemReferenceId, slot.RuntimeType!, references);
-        var before = ReadTransientEndpoint(receipt.InventoryPayloadBefore!, original.Before, actorId, references, ref characters);
-        var after = ReadTransientEndpoint(receipt.InventoryPayloadAfter!, original.After, actorId, references, ref characters);
+        var before = ReadTransientEndpoint(receipt.InventoryPayloadBefore!, original.Before, actorId, references, ref characters, requireObjectState);
+        var after = ReadTransientEndpoint(receipt.InventoryPayloadAfter!, original.After, actorId, references, ref characters, requireObjectState);
         Require(before.Selection.ActorReferenceId == after.Selection.ActorReferenceId,
             "native transient actor physical reference changed across the original scope");
-        return new(original.ScopeId, original.CaptureSessionId, before, after);
+        return new(original.ScopeId, original.CaptureSessionId, before, after) { ObjectSubtypeStateVerified = requireObjectState };
     }
 
     private static NativeObservedInventoryTransientEndpoint ReadTransientEndpoint(ActionOriginInventoryPayload wire,
-        NativeObservedInventoryPayloadState original, string actorId, Dictionary<Guid, string> references, ref int characters)
+        NativeObservedInventoryPayloadState original, string actorId, Dictionary<Guid, string> references, ref int characters,
+        bool requireObjectState)
     {
         var selection = ReadTransientSelection(wire.SelectionTransientState, original, references);
         var slots = new List<NativeObservedItemTransientState?>();
@@ -57,7 +62,7 @@ public static partial class NativeOutputObservationBoundary
                 Require(state is null, "empty inventory slot has fabricated transient state");
                 slots.Add(null);
             }
-            else slots.Add(ReadItemTransient(state, slot, actorId, selection.ActorReferenceId, references, ref characters));
+            else slots.Add(ReadItemTransient(state, slot, actorId, selection.ActorReferenceId, references, ref characters, requireObjectState));
         }
         return new(selection, slots.AsReadOnly());
     }
