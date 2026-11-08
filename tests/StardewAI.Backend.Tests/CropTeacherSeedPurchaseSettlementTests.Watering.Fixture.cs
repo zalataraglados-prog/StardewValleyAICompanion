@@ -18,6 +18,9 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         internal SnapshotEnvelope After { get; private set; } = null!;
         internal MoneyRevenueCropNativeLifecycleTransitionRequest Transition { get; private set; } = null!;
         internal string QueuePath => Path.Combine(Shared.Runtime.LiveOptions.SnapshotDir, "water-queue.json");
+        internal CropTeacherRunStep Step => new(CropTeacherRunStageKinds.ExecuteCropBatch, TransitionDay, Id,
+            "Farm", "FarmHouse", "(O)745", string.Empty, 0, 0, Shared.Inputs.Plan.Days.Single(day => day.TotalDay == TransitionDay)
+                .ActionBatches.Single(row => row.OptionId == "executor.water_crop"), "original_watering_fixture");
 
         internal WateringFixture(int water = 20, bool bottomless = false, bool enchanted = false, bool efficient = false,
             int farmingLevel = 0, bool bowlMirrors = false, float energy = 100f, bool inconsistentBeforeMirror = false)
@@ -69,15 +72,10 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             });
         }
 
-        internal async Task Emit(int applied = 2, bool failedSuffix = false, bool refillOnlySuffix = false,
-            Action<SnapshotEnvelope>? change = null, Action<QueueExecutionReceiptEnvelope>? receiptChange = null, int? executableTileCount = null)
+        internal async Task<ActionQueueEnvelope> Compile(int? executableTileCount = null)
         {
-            var batch = Shared.Inputs.Plan.Days.Single(day => day.TotalDay == TransitionDay).ActionBatches
-                .Single(row => row.OptionId == "executor.water_crop");
-            var step = new CropTeacherRunStep(CropTeacherRunStageKinds.ExecuteCropBatch, TransitionDay, Id,
-                "Farm", "FarmHouse", "(O)745", string.Empty, 0, 0, batch, "original_watering_fixture");
             var task = InvokeLive<Task>("BuildCropTeacherActionBatchQueueAsync",
-                Shared.Runtime.Client, Shared.Runtime.LiveOptions, 1, step, Shared.Source.SourcePath,
+                Shared.Runtime.Client, Shared.Runtime.LiveOptions, 1, Step, Shared.Source.SourcePath,
                 JsonNode.Parse(JsonSerializer.Serialize(Before, JsonOptions))!.AsObject(), Before.StateHash, executableTileCount!);
             try { await task; }
             catch (InvalidDataException error) when (Shared.Runtime.Handler.LastCompiledQueue is { })
@@ -89,6 +87,15 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             var result = task.GetType().GetProperty("Result")!.GetValue(task)!;
             var queue = ((JsonObject)result.GetType().GetProperty("Queue")!.GetValue(result)!).Deserialize<ActionQueueEnvelope>(JsonOptions)!;
             Fixture.Save(QueuePath, queue);
+            return queue;
+        }
+
+        internal async Task Emit(int applied = 2, bool failedSuffix = false, bool refillOnlySuffix = false,
+            Action<SnapshotEnvelope>? change = null, Action<QueueExecutionReceiptEnvelope>? receiptChange = null, int? executableTileCount = null,
+            string? retainedQueuePath = null)
+        {
+            var queue = retainedQueuePath is null ? await Compile(executableTileCount) :
+                JsonSerializer.Deserialize<ActionQueueEnvelope>(File.ReadAllText(retainedQueuePath), JsonOptions)!;
             var snapshots = new List<SnapshotEnvelope>();
             var paths = new List<string>();
             var attempted = applied + (failedSuffix ? 1 : 0);
@@ -151,7 +158,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             for (var index = 0; index < attempted; index++) Fixture.Save(paths[index], snapshots[index]);
             var receiptPath = Path.Combine(Shared.Runtime.LiveOptions.SnapshotDir, "water-receipt.json");
             Fixture.Save(receiptPath, receipt);
-            Transition = new("crop_actions", TransitionDay, QueuePath, Shared.Source.SourcePath, receiptPath, paths[attempted - 1],
+            Transition = new("crop_actions", TransitionDay, retainedQueuePath ?? QueuePath, Shared.Source.SourcePath, receiptPath, paths[attempted - 1],
                 Shared.Files.Options.RunId, Shared.Files.Options.ExecutorVersion, candidate);
         }
 
