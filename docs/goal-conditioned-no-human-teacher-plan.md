@@ -1,5 +1,7 @@
 # Goal-Conditioned No-Human Teacher Plan
 
+> **2026-11-08 共享拾取完成归因：** #532已接受合入`c0717ae3`，补水零credit接续不重做；当前修#236原共享完成门，用实际producer时库存及原歧义下界，不把先前路上拾取记作本次产出。保留`4b744100`需求量而非全保证掉落的旧意图、原捕获白名单/执行器默认，仅库存变动重观察；168/168与E原生构建通过，最终发布另记。[合同](action-origin-required-output.md)。下一步仍原补水接近/控制的精确开路归因、收获/原生保存跨日，再managed真实有界集成及全局协调/Provider/模型/manifest。L1`19/19、11/11`冻结、formal=false，Student21/21不反挂。下方为历史。
+
 > **2026-11-08 原生补水接续：** #531已接受合入`ec08ea9f`，原维护派发归属不重做；当前以同一owner的原凭据严格消费“已补水但0作物进度”的blocked原生结果，旧正前缀和执行器不改，不当零派发或偏好标签。[合同](money-crop-refill-control-outcome.md)。下一步仍原补水接近/控制的开路归因、收获和原生保存跨日，再有界managed真实集成；其后全局协调/Provider/模型/manifest，不重采冻结L1或倒挂Student训后21分。当前唯一接续见两个Canonical文档顶部，下方旧顺位仅历史。
 
 > **2026-11-08 当前运行接续入口：** 以 [CURRENT_WORK_CN.md](CURRENT_WORK_CN.md) 和 [CURRENT_STATUS_CN.md](CURRENT_STATUS_CN.md) 顶部唯一接续为准，下方逐片“下一步”均供历史追溯，不重做已接受片段。#530已合入`9da505d6`（CI42451484629、同head审查接受），同owner已消费原维护结果；当前正接原维护编译和一次原执行循环归属，共用路线claim/result与marker恢复，不新增执行器或默认启用managed。随后原补水/控制/收获归属/原生保存跨日，齐后有界真实集成，再联合日历/共享预算/跨根、Provider/模型、正式manifest/preflight。L1`19/19、11/11`冻结，formal=false；Student新档21/21仍为训后评测。[本片合同](money-crop-owned-maintenance-execution.md)。

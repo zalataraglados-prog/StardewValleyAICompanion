@@ -6,6 +6,7 @@ using System.Net;
 using System.Reflection;
 using System.Text.Json;
 using StardewAI.Contracts.Training;
+using StardewAI.RuntimePrimitives;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
@@ -66,7 +67,7 @@ public sealed partial class ModEntry : Mod
         }
         ActionOriginOutputResolution? actionOrigin = null;
         var minimumQuality = 0;
-        int? requiredItemCountAfter = null;
+        long? requiredItemCountAfter = null;
         if (deferredNativeDrop)
         {
             if (!request.DeferredPickupMinimumQuality.HasValue ||
@@ -149,10 +150,10 @@ public sealed partial class ModEntry : Mod
                     actionOriginReason));
                 return;
             }
-            requiredItemCountAfter =
-                request.InventoryItemTotalBefore.Value +
-                request.AcquisitionRequiredAmount.Value;
-            if (inventoryNow >= requiredItemCountAfter.Value)
+            var requiredQuantity = request.AcquisitionRequiredAmount.Value;
+            requiredItemCountAfter = ActionOriginInventoryCredit.RequiredInventoryThreshold(
+                InventoryQuantity(actionOrigin.Record.InventoryBefore, request.QualifiedItemId, minimumQuality), requiredQuantity);
+            if (ActionOriginInventoryCredit.MeetsRequirement(actionOrigin.DirectInventoryQuantity, requiredQuantity))
             {
                 pending.Completion.SetResult(
                     CompletePickupDebrisAlreadyCollected(
@@ -286,8 +287,11 @@ public sealed partial class ModEntry : Mod
             : CountInventoryItemAtOrAboveQuality(
                 active.QualifiedItemId,
                 active.MinimumQuality);
+        var originInventoryChanged = itemCountAfter != active.LastActionOriginInventoryCount;
+        active.LastActionOriginInventoryCount = itemCountAfter;
         if (active.RequiredItemCountAfter.HasValue &&
-            itemCountAfter >= active.RequiredItemCountAfter.Value ||
+            itemCountAfter >= active.RequiredItemCountAfter.Value && originInventoryChanged &&
+            HasCollectedRequiredActionOriginOutput(active) ||
             !active.RequiredItemCountAfter.HasValue &&
             (!debrisStillPresent || !chunkStillPresent) &&
             itemCountAfter > active.ItemCountBefore)
@@ -538,36 +542,13 @@ public sealed partial class ModEntry : Mod
             RequestedEffect = DebrisRequestedEffect(request),
             ObservedEffect =
                 beforeObserved +
-                ";debris_present=false;item_count=" +
+                (actionOrigin is null ? ";debris_present=false" : ";action_origin_collected_quantity_lower_bound=" + actionOrigin.DirectInventoryQuantity) + ";item_count=" +
                 itemCountAfter +
                 ";player.tile=" +
                 Game1.player.TilePoint.X +
                 "," +
                 Game1.player.TilePoint.Y,
-            ChangedFacts = new[]
-            {
-                new SimulatedFactChange
-                {
-                    Path = "player.inventory.count[" +
-                        request.QualifiedItemId +
-                        "]",
-                    Before = request.InventoryItemTotalBefore!.Value
-                        .ToString(),
-                    After = itemCountAfter.ToString()
-                },
-                new SimulatedFactChange
-                {
-                    Path = "locations[" +
-                        location.NameOrUniqueName +
-                        "].debris.near[" +
-                        target.X +
-                        "," +
-                        target.Y +
-                        "]",
-                    Before = "present_in_snapshot",
-                    After = "absent_at_executor_start"
-                }
-            }
+            ChangedFacts = AlreadyCollectedPickupFacts(request, location, target, itemCountAfter, actionOrigin)
         };
     }
 

@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-08 R2共享拾取完成归因（当前唯一接续）：** #532经42步CI `42455296540`/同head审查接受合入`c0717ae3`并核树清分支，Core2443/Backend1381。本片修#236已有共享缺陷：完成改用原capture生产时库存下界并复核原歧义拒绝，非旧request增量；仍只等需求量，核`4b744100`/历史JSON，不引入估算。仅目标库存变动重观察，普通拾取/白名单/战斗/动画/默认不改。原门先红，最终168/168及E原生构建零警告/错误；两处旧战斗源码断言仅兼容换行。[合同](action-origin-required-output.md)。最终CI/发布见收口，非新游戏证据。发布后继续补水接近/控制开路归因、收获/原生保存跨日，齐后managed真实有界集成，再全局日历预算/跨根、Provider/模型/manifest。L1`19/19、11/11`、formal=false/Student训后21/21不变，不启worker，local-data不提交。下方为历史。
+
 > **2026-11-08 R2原生零credit补水接续（当前唯一接续）：** #531经42步CI `42453157961`/同head审查接受合入`ec08ea9f`并核树清分支，Core2443/Backend1357。当前E DLL已重新反编译核补水语义，本片以独立严格零credit结果门接原owned维护：一个blocked原生尝试、空壶到原容量、原完整作物/资源/未知与回显核；旧正前缀/执行器不变，不伪零派发。原claim/result/marker恢复共用，refill=true、watering_prefix=false、0 tiles及batch未完成，不成偏好/训练标签。首75/扩展87通过，相关/最终CI见收口，非新游戏证据。[合同](money-crop-refill-control-outcome.md)。下一步原补水接近/控制（保留开路并归因）、收获/原生保存跨日，齐后managed真实有界集成，再全局日历预算/跨根、Provider/模型/manifest。L1`19/19、11/11`、formal=false/Student训后21/21不变，无新游戏/训练/API worker，local-data不提交。下方为历史。
 
 > **2026-11-08 R2原维护编译/执行归属（当前唯一接续）：** #530经42步CI `42451484629`/同head审查接受合入`9da505d6`并核树清分支，Core2443/Backend1332。本片固定原维护模型动作/编译/完整source-ledger/活动覆盖/到期batch，以同一份原生claim/result和Program adapter接原执行循环；旧路线格式/默认与执行器保持，一次claim为一次循环而非一次工具RPC。原57、新22通过；接受记录重启重建顺序遗漏已三反例复现修正，3/3通过。相关/最终CI见收口，非新游戏证据。[合同](money-crop-owned-maintenance-execution.md)。下一步原补水接近/控制/收获归属/原生保存跨日，齐后managed真实有界集成，再全局日历预算/跨根、Provider/模型/manifest。L1`19/19、11/11`、formal=false/Student训后21/21不变，无新游戏/训练/API worker，local-data不提交。下方为历史。

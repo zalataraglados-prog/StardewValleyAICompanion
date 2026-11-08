@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework;
 using System.Runtime.CompilerServices;
 using StardewAI.Contracts.Training;
+using StardewAI.RuntimePrimitives;
 using StardewModdingAPI;
 using StardewValley;
 
@@ -177,6 +178,21 @@ public sealed partial class ModEntry
             return false;
         }
 
+        resolution = ObserveActionOriginOutput(record, location, qualifiedItemId, minimumQuality);
+        if ((long)resolution.DirectInventoryQuantity + resolution.RetainedDebrisQuantity < guaranteedMinimum)
+        {
+            reason = resolution.PreexistingCollectionAmbiguous && resolution.InventoryNow >
+                InventoryQuantity(record.InventoryBefore, qualifiedItemId, minimumQuality)
+                ? "deferred_pickup_action_origin_preexisting_collection_ambiguous"
+                : "deferred_pickup_action_origin_conservation_mismatch";
+            return false;
+        }
+        return true;
+    }
+
+    private static ActionOriginOutputResolution ObserveActionOriginOutput(ActionOriginOutputRecord record,
+        GameLocation location, string qualifiedItemId, int minimumQuality)
+    {
         var currentProducedDebris = location.debris
             .Where(debris =>
                 DebrisMatches(
@@ -201,38 +217,29 @@ public sealed partial class ModEntry
                     StringComparison.OrdinalIgnoreCase) &&
                 pair.Value.Quality >= minimumQuality &&
                 !liveChunks.Contains(pair.Key));
-        var inventoryIncrease = Math.Max(
-            0,
-            CountInventoryItemAtOrAboveQuality(
-                qualifiedItemId,
-                minimumQuality) -
-            InventoryQuantity(
-                record.InventoryBefore,
-                qualifiedItemId,
-                minimumQuality));
-        var directInventoryQuantity = preexistingCollectionAmbiguous
-            ? 0
-            : inventoryIncrease;
+        var inventoryNow = CountInventoryItemAtOrAboveQuality(qualifiedItemId, minimumQuality);
+        var directInventoryQuantity = ActionOriginInventoryCredit.LowerBound(
+            InventoryQuantity(record.InventoryBefore, qualifiedItemId, minimumQuality), inventoryNow, preexistingCollectionAmbiguous);
         var retainedDebrisQuantity = ProducedDebrisQuantity(
             record,
             currentProducedDebris,
             currentProducedChunks);
-        if (directInventoryQuantity + retainedDebrisQuantity <
-            guaranteedMinimum)
-        {
-            reason = preexistingCollectionAmbiguous && inventoryIncrease > 0
-                ? "deferred_pickup_action_origin_preexisting_collection_ambiguous"
-                : "deferred_pickup_action_origin_conservation_mismatch";
-            return false;
-        }
-
-        resolution = new ActionOriginOutputResolution(
+        return new ActionOriginOutputResolution(
             record,
             currentProducedDebris,
             currentProducedChunks,
             directInventoryQuantity,
-            retainedDebrisQuantity);
-        return true;
+            retainedDebrisQuantity, inventoryNow, preexistingCollectionAmbiguous);
+    }
+
+    private static bool HasCollectedRequiredActionOriginOutput(ActivePickupDebris active)
+    {
+        var record = active.ActionOriginRecord!;
+        if (!record.AppliedAndVerified || !record.SameLocation || !ReferenceEquals(record.Location, active.Location))
+            return false;
+        var observed = ObserveActionOriginOutput(record, active.Location, active.QualifiedItemId, active.MinimumQuality);
+        return ActionOriginInventoryCredit.MeetsRequirement(observed.DirectInventoryQuantity,
+            active.Pending.Request.AcquisitionRequiredAmount!.Value);
     }
 
     private void ConsumeActionOriginOutput(TrainingExecutionRequest request)
@@ -400,7 +407,7 @@ public sealed partial class ModEntry
         Debris[] CurrentProducedDebris,
         Chunk[] CurrentProducedChunks,
         int DirectInventoryQuantity,
-        int RetainedDebrisQuantity);
+        int RetainedDebrisQuantity, int InventoryNow, bool PreexistingCollectionAmbiguous);
 
     private readonly record struct ActionOriginItemKey(
         string QualifiedItemId,
