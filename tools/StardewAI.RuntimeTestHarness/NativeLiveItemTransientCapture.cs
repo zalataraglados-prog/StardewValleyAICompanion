@@ -9,7 +9,8 @@ internal sealed record NativeLiveItemCacheState(string? QualifiedItemId, bool Co
 internal sealed record NativeLiveToolTransientState(Farmer? LastUser, bool PlayUseSounds, string? Description, string? DisplayName);
 internal sealed record NativeLivePickaxeTransientState(int BoulderTileX, int BoulderTileY, int HitsToBoulder);
 internal sealed record NativeLiveItemTransientState(string? SetFlagOnPickup, IReadOnlyList<NativeLiveItemTempDataEntry>? TempData,
-    NativeLiveItemCacheState Cache, NativeLiveToolTransientState? Tool, NativeLivePickaxeTransientState? Pickaxe, int Characters);
+    NativeLiveItemCacheState Cache, NativeLiveToolTransientState? Tool, NativeLivePickaxeTransientState? Pickaxe, int Characters,
+    NativeLiveObjectTransientState? Object = null);
 internal sealed record NativeLiveSelectionState(bool ItemStowed, Item? TemporaryItem, Item? CurrentItem, Tool? CurrentTool);
 
 // Detached values of a SPECIFIED subset of native transients, not full item/world state.
@@ -79,7 +80,7 @@ internal static partial class NativeLiveItemTransientCapture
             pickaxeState = new(ReadValue<int>(BoulderTileXField, pickaxe), ReadValue<int>(BoulderTileYField, pickaxe),
                 ReadValue<int>(HitsToBoulderField, pickaxe));
 
-        return new(flag, tempData, new(qualified, dirty, tags), toolState, pickaxeState, budget.Characters);
+        return new(flag, tempData, new(qualified, dirty, tags), toolState, pickaxeState, budget.Characters, CaptureObject(item));
     }
 
     internal static NativeLiveSelectionState CaptureSelection(Farmer farmer)

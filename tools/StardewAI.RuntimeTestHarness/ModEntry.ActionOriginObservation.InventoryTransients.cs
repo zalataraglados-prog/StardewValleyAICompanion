@@ -37,6 +37,11 @@ public sealed partial class ModEntry
             {
                 BoulderTileX = state.Pickaxe.BoulderTileX, BoulderTileY = state.Pickaxe.BoulderTileY,
                 HitsToBoulder = state.Pickaxe.HitsToBoulder
+            },
+            Object = state.Object is null ? null : new()
+            {
+                HasHeldObject = state.Object.HasHeldObject, HasLightSource = state.Object.HasLightSource,
+                ShakeTimer = state.Object.ShakeTimer, Health = state.Object.Health
             }
         };
 

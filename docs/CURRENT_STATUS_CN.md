@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **2026-11-09 Object子型（当前唯一接续）：** #546合入`e9e56d74`；本块原API两文件helper `3a4ca38e`集成`f3dc5840`，原生CLR84、Backend266/Core26及四端Release/探针/重放构建通过，零失败/跳过，末次构建零警告错误。实际tree/move两记录严格全链2/2，Object出现数分别0/4：tree无适用Object，只有move提供4次普通Object原生字段对照，不能把空域算成Object实测。probe共28/28，原档未变、双进程退出；Color/极值仅CLR覆盖。此为根指定子集，下一步原GraphCheck/引用上的嵌套/附魔状态，再世界/来源/间隙与唯一owner；formal/resource仍false、无local-data提交。详情见[合同](native-inventory-object-transients.md)，互审/CI发布另记。下方为历史。
+
 > **2026-11-09 文本保真（当前唯一接续）：** #545已合入`87e1f1ef`、核树/同步两库；Core2596/Backend1726。原生字段元数据索引完成（477含243静态，不是缺口数）。本片补异常UTF16的JSON无损边界：65536码元对照、40生产端、相关Backend275及四端构建通过，真实数据在新消费者仍2/2；无新游戏/模型训练。接续Object/附魔及嵌套状态，再原世界/生产/间隙与唯一owner，所有formal/resource标记仍false，详情见[当前工作](CURRENT_WORK_CN.md)。下方为历史。
 
 > **2026-11-09 瞬态增量（当前唯一接续）：** #544最终CI42/42合入`62f7bfe1`且核树，原生getter审查已辨析回复。本片同API helper/Codex整合补明确只读瞬态与真实临时/收起分支，178原生CLR、Backend267/Core37和四端Release通过；隔离26次新读取核通过、原档未变/进程退出，新消费者明确重放2/2。两scope无收集回调，不冒称生产或拾取归属，所有资源/全瞬态/formal标记仍false。首重放过早消费构建被特征检查拒收，后终止再重放通过，日志保留。接续与限制见[当前工作](CURRENT_WORK_CN.md)和[合同](native-inventory-transient-observation.md)，下方为历史。
