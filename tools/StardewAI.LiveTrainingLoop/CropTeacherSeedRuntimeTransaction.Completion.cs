@@ -15,9 +15,13 @@ internal sealed partial class CropTeacherSeedRuntimeTransaction
             scope.TransitionKind, scope.TotalDay, queuePath, scope.SnapshotPath, receiptPath,
             afterSnapshotPath, options.RunId, options.ExecutorVersion, selectedCandidateId);
 
-    internal void ValidateTransitionIdentity(MoneyRevenueCropNativeLifecycleTransitionRequest transition)
+    internal void ValidateTransitionIdentity(MoneyRevenueCropNativeLifecycleTransitionRequest transition) =>
+        ValidateTransitionIdentity(options, scope.TotalDay, transition);
+
+    private static void ValidateTransitionIdentity(CropSeedRuntimeOptions options, int totalDay,
+        MoneyRevenueCropNativeLifecycleTransitionRequest transition)
     {
-        if (transition.RunId != options.RunId || transition.ExecutorVersion != options.ExecutorVersion || transition.TotalDay != scope.TotalDay)
+        if (transition.RunId != options.RunId || transition.ExecutorVersion != options.ExecutorVersion || transition.TotalDay != totalDay)
             throw new InvalidDataException("Crop seed runtime native receipt identity differs from preparation.");
     }
 

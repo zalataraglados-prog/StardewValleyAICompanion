@@ -101,5 +101,6 @@ public sealed partial class CropTeacherSeedPlantingRuntimeTests
         Assert.False(f.Summary()["support_slice_verified"]!.GetValue<bool>());
         Assert.False(f.Summary()["resource_settlement_verified"]!.GetValue<bool>());
         Assert.Equal("crop_seed_support_prepared_no_native_dispatch", f.Summary()["status"]!.GetValue<string>());
+        Assert.False(File.Exists(Path.Combine(f.Output, "controller-stop-transition.json")));
     }
 }

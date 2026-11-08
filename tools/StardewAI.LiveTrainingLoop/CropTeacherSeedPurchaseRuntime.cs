@@ -24,6 +24,7 @@ public sealed class CropTeacherSeedPurchaseRuntime : ICropTeacherSeedRuntime, IC
     public void ValidateDispatchQueue(string path) => transaction.ValidateDispatchQueue(path);
     CropTeacherSeedPreparedBoundary ICropTeacherSeedManagedRuntime.ReadPreparedBoundary() => transaction.ReadPreparedBoundary();
     CropTeacherSeedLiveBoundary ICropTeacherSeedManagedRuntime.ReadVerifiedBoundary() => transaction.ReadVerifiedBoundary();
+    CropTeacherSeedNoDispatchBoundary ICropTeacherSeedManagedRuntime.ReadVerifiedStopBoundary() => transaction.ReadVerifiedStopBoundary();
     void ICropTeacherSeedManagedRuntime.BindExecutionGuard(Action guard) => transaction.BindExecutionGuard(guard);
     public Task<StrategyLedgerEvidence> CompleteAsync(string queuePath, string receiptPath, string afterSnapshotPath, string selectedCandidateId) =>
         transaction.CompleteAsync(queuePath, receiptPath, afterSnapshotPath, selectedCandidateId);

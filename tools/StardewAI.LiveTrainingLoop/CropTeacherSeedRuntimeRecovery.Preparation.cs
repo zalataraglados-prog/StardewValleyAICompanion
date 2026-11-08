@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using StardewAI.Contracts.Strategy;
 using StardewAI.GoalConditionedBootstrap;
+using Artifacts = StardewAI.LiveTrainingLoop.CropSeedRuntimeArtifacts;
 
 namespace StardewAI.LiveTrainingLoop;
 

@@ -123,7 +123,11 @@ internal sealed partial class CropTeacherSeedRuntimeTransaction
         ValidateDispatchQueueCore(path);
     }
 
-    private string ValidateDispatchQueueCore(string path)
+    private string ValidateDispatchQueueCore(string path) =>
+        ValidatePreparedQueue(marker, queuePath, queueSha256, preparedQueue, path);
+
+    internal static string ValidatePreparedQueue(CropSeedRuntimeMarkerBinding marker, string queuePath,
+        string queueSha256, JsonNode preparedQueue, string path)
     {
         if (marker.ValidateQueue(queuePath) != queueSha256 || !JsonNode.DeepEquals(preparedQueue,
                 JsonNode.Parse(File.ReadAllText(path))))

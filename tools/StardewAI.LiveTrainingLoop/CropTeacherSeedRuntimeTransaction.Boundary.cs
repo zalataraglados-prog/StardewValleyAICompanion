@@ -3,6 +3,7 @@ namespace StardewAI.LiveTrainingLoop;
 internal sealed partial class CropTeacherSeedRuntimeTransaction
 {
     private CropTeacherSeedLiveBoundary? verifiedBoundary;
+    private CropTeacherSeedNoDispatchBoundary? verifiedStopBoundary;
     private Func<CropTeacherSeedLiveBoundary>? verifiedBoundaryFactory;
     private bool managedBoundaryRequested;
     private Action? executionGuard;
@@ -35,6 +36,13 @@ internal sealed partial class CropTeacherSeedRuntimeTransaction
     {
         var result = verifiedBoundary ??= verifiedBoundaryFactory?.Invoke()
             ?? throw new InvalidOperationException("Original native crop completion is not verified.");
+        result.Validate();
+        return result;
+    }
+
+    internal CropTeacherSeedNoDispatchBoundary ReadVerifiedStopBoundary()
+    {
+        var result = verifiedStopBoundary ?? throw new InvalidOperationException("Original zero-dispatch controller stop is not verified.");
         result.Validate();
         return result;
     }

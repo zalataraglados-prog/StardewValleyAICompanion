@@ -27,6 +27,8 @@ public sealed class CropTeacherManagedSeedOperation
     internal ICropTeacherSeedRuntime? PreparedRuntime { get; set; }
     internal Action? RuntimeArtifactGuard { get; set; }
     internal bool ExecutionActive { get; set; }
+    internal CropTeacherSeedNoDispatchBoundary? VerifiedStop { get; set; }
+    internal bool StopAccepted { get; set; }
     public int Sequence => Record["sequence"]!.GetValue<int>();
     public string SupportStepId => Record["support_step_id"]!.GetValue<string>();
     public string RuntimeDirectory => Record["runtime_directory"]!.GetValue<string>();
