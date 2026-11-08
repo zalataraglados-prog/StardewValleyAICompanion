@@ -444,13 +444,11 @@ static partial class Program
                 executorHttp, options, iteration, attemptedCount + 1, executionRequest, currentBeforeSnapshotPath);
             attemptedCount++;
 
-            var afterSnapshot = await ReadAfterExecutionSnapshotAsync(
-                http,
-                options,
-                currentBeforeSnapshot,
-                execution,
-                executionSnapshotUrlOverride,
-                executionSnapshotProfileOverride);
+            var afterSnapshot = executionRequest.ActionOriginSnapshotAnchor
+                ? await ReadAfterExecutionSnapshotCoreAsync(http, options, currentBeforeSnapshot, execution,
+                    executionRequest.ActionOriginSnapshotAnchor, executionSnapshotUrlOverride, executionSnapshotProfileOverride)
+                : await ReadAfterExecutionSnapshotAsync(http, options, currentBeforeSnapshot, execution,
+                    executionSnapshotUrlOverride, executionSnapshotProfileOverride);
             finalAfterJson = afterSnapshot.Json;
             finalAfterSnapshot = afterSnapshot.Snapshot;
             var itemSuffix = "-item-" + attemptedCount.ToString("D4");

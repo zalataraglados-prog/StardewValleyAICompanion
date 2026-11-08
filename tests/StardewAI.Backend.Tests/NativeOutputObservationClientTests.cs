@@ -7,7 +7,7 @@ using StardewAI.LiveTrainingLoop;
 
 namespace StardewAI.Backend.Tests;
 
-public sealed class NativeOutputObservationClientTests
+public sealed partial class NativeOutputObservationClientTests
 {
     [Theory]
     [InlineData("executor.move_to_tile")]

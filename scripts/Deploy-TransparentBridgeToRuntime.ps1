@@ -14,6 +14,7 @@ $sourceDir = Join-Path $ProjectRoot "src\StardewAI.TransparentBridge\bin\Debug\n
 $targetDir = Join-Path $RuntimeModsDir "StardewAI.TransparentBridge"
 $bridgeAssembly = Join-Path $sourceDir "StardewAI.TransparentBridge.dll"
 $contractAssembly = Join-Path $sourceDir "StardewAI.Contracts.dll"
+$runtimePrimitivesAssembly = Join-Path $sourceDir "StardewAI.RuntimePrimitives.dll"
 $buildConfigurationInputs = @(
     (Join-Path $ProjectRoot "Directory.Build.props"),
     (Join-Path $ProjectRoot "Directory.Build.targets"),
@@ -23,7 +24,8 @@ $requiredFiles = @(
     "manifest.json",
     "StardewAI.TransparentBridge.dll",
     "StardewAI.TransparentBridge.deps.json",
-    "StardewAI.Contracts.dll"
+    "StardewAI.Contracts.dll",
+    "StardewAI.RuntimePrimitives.dll"
 )
 
 if (-not $NoBuild -and -not $DryRun) {
@@ -49,12 +51,17 @@ if ($NoBuild -and -not $DryRun) {
         -OutputPath $bridgeAssembly `
         -InputRoots @(
             (Join-Path $ProjectRoot "src\StardewAI.TransparentBridge"),
-            (Join-Path $ProjectRoot "src\StardewAI.Contracts")
+            (Join-Path $ProjectRoot "src\StardewAI.Contracts"),
+            (Join-Path $ProjectRoot "src\StardewAI.RuntimePrimitives")
         ) `
         -InputFiles $buildConfigurationInputs
     Assert-StardewAIBuildOutputFresh `
         -OutputPath $contractAssembly `
         -InputRoots @((Join-Path $ProjectRoot "src\StardewAI.Contracts")) `
+        -InputFiles $buildConfigurationInputs
+    Assert-StardewAIBuildOutputFresh `
+        -OutputPath $runtimePrimitivesAssembly `
+        -InputRoots @((Join-Path $ProjectRoot "src\StardewAI.RuntimePrimitives")) `
         -InputFiles $buildConfigurationInputs
 }
 
