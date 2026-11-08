@@ -61,6 +61,20 @@ No second collector/cache/orchestrator, per-frame scan or gameplay control is ad
   2140/2140 and3038/3038. Native run predates client-only hardening; its unchanged
   records are reused, not recollected. Old2295 wood16 ->2297 wood17 failure remains
   preserved/rejected, not promoted or edited.
+- Initial-head remote CI42489147413 passed all42 steps. Subsequent automated
+  review4506531085 correctly found that the standard bridge deployment omitted
+  its new RuntimePrimitives dependency; the native calibration's whole-directory
+  copy had not exercised that sparse deployment list. The original4801b0aa stale-
+  output guard remains intact: the dependency is now copied, independently checked
+  for freshness and included among bridge build inputs. A regression failed before
+  the fix; the four focused deployment source guards then passed.
+- External snapshot-anchor-bridge-deploy-a exercises the actual deployment script
+  with isolated source/output timestamps and actual built binaries: dry-run copies
+  nothing, all five deployed hashes match, existing config survives and the public
+  interop type loads. Newer dependency source and stale dependency DLL both reject
+  before changing target files. This is hermetic deployment evidence, not a new
+  game run or proof of arbitrary installed-mod compatibility. Final-head CI and
+  resolution of the initial review are recorded separately at publication.
 
 Raw reports/source hashes/binaries and API transcripts remain external. These are
 calibration and protocol results, not all-probe purity, full slot metadata, world

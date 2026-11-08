@@ -3,6 +3,18 @@ namespace StardewAI.Core.Tests;
 public sealed class DeployScriptSourceGuardTests
 {
     [Fact]
+    public void TransparentBridgeDeployCarriesAndChecksItsSnapshotInteropDependency()
+    {
+        var source = File.ReadAllText(FindRepositoryFile("scripts", "Deploy-TransparentBridgeToRuntime.ps1"));
+        Assert.Contains("\"StardewAI.RuntimePrimitives.dll\"", source);
+        Assert.Contains("-OutputPath $runtimePrimitivesAssembly", source);
+        Assert.Contains("(Join-Path $ProjectRoot \"src\\StardewAI.RuntimePrimitives\")", source);
+        var bridgeGuard = source[source.IndexOf("-OutputPath $bridgeAssembly", StringComparison.Ordinal)..
+            source.IndexOf("-OutputPath $contractAssembly", StringComparison.Ordinal)];
+        Assert.Contains("src\\StardewAI.RuntimePrimitives", bridgeGuard);
+    }
+
+    [Fact]
     public void SharedDeployGuardRejectsStaleOutputsAndVerifiesCopiedHashes()
     {
         var source = File.ReadAllText(FindRepositoryFile(

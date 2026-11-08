@@ -6,6 +6,7 @@
 - 同一真实API会话第三块`baf62883`（集成`ad72e82d`）完成只读主线程fresh-full快照API，Codex补轻量引用和默认关闭的请求/观察收口/缓存读回。只显式校准move/clear在原observer结束前取同帧快照，复用原full缓存及after-hash/tick协议；默认工具/动画/移动不改。[合同](native-output-snapshot-anchor.md)。
 - Core39/39、四端Release零警告/错误、初客户端35/35；同peer互审两项P2已核实修复：必须性改取真实派发request、独立核receipt末tick等于锚点，扩展38/38。初9失败仅新夹具int/long类型修正，旧ReadLong不改；依赖失败/审查如实留档。
 - 静音隔离真实砍树→拾取applied/observed，拾取17次collection；原档未变、双进程退出。两记录经原source reader/完整库存数量核及加固客户端离线复用2/2，同帧2140/2140、3038/3038，每次只读一份精确缓存。旧2295→2297间隙记录仍拒绝、不重采成功项。非完整物品/世界/生产来源或训练credit。
+- #542初head42步CI通过后，自动审查指出标准部署漏带新RuntimePrimitives依赖，意见正确；已补清单、依赖自身及桥输入新鲜度核，未改旧守卫。回归先红后4/4绿，隔离真实部署脚本核5文件哈希/config保留/API类型及两类过期构建写入前拒绝通过，无新游戏；最终head CI另记。
 - **唯一下一步：** 本片验证发布后，同一trace补实际工具调用输入、完整物品元数据/世界效果与生产来源，含before-capture/被动间隙，齐后唯一owner，再收获/原生保存跨日和managed真实有界及原全局/其余probe/Provider/模型/manifest。L1`19/19、11/11`冻结，formal=false，Student21/21训后，local-data不提交；API合作仍授权，任务边界空闲不等于禁用。下方为历史。
 
 ## 2026-11-08 R2原清障物理消耗/库存间隙（当前唯一接续）
