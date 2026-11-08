@@ -12,7 +12,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         try
         {
             RequireOperation(operation);
-            if (operation.IsLifecycle || operation.Prepared is not null || operation.Record["original_intent_sha256"] is null)
+            if (operation.IsLifecycle || operation.IsSupportingRoute || operation.Prepared is not null || operation.Record["original_intent_sha256"] is null)
                 throw new InvalidOperationException("Original seed preparation requires a new, intent-pinned seed admission.");
             await ClaimRuntimeInvocationAsync(operation).ConfigureAwait(false);
             var runtime = await prepareOriginal().ConfigureAwait(false);

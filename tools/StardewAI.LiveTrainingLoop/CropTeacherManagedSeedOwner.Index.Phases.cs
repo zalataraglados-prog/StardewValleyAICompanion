@@ -7,6 +7,12 @@ public sealed partial class CropTeacherManagedSeedOwner
     private CropTeacherManagedSeedOperation OpenIndexedOperation(JsonObject record, string path)
     {
         var kind = record["operation_kind"]?.GetValue<string>();
+        if (kind == "supporting_route")
+        {
+            var route = new CropTeacherManagedSeedOperation(this, record, path, null, supportingRoute: OpenSupportingRoute(record));
+            ValidateSupportingRoute(route);
+            return route;
+        }
         if (kind is null or "seed")
         {
             var seed = new CropTeacherManagedSeedOperation(this, record, path, OpenScopes(record));
@@ -25,7 +31,9 @@ public sealed partial class CropTeacherManagedSeedOwner
 
     private void AddAcceptedPhaseEvidence(CropTeacherManagedSeedOperation operation, JsonObject accepted)
     {
-        if (operation.IsLifecycle)
+        if (operation.IsSupportingRoute)
+            AddSupportingRouteAcceptance(operation, accepted);
+        else if (operation.IsLifecycle)
         {
             if (operation.Started is null) throw new InvalidDataException("Managed lifecycle has no original invocation claim.");
             accepted["operation_kind"] = "lifecycle";
@@ -47,7 +55,9 @@ public sealed partial class CropTeacherManagedSeedOwner
 
     private void ValidateAcceptedPhaseEvidence(CropTeacherManagedSeedOperation operation, JsonObject accepted)
     {
-        if (operation.IsLifecycle)
+        if (operation.IsSupportingRoute)
+            ValidateSupportingRouteAcceptance(operation, accepted);
+        else if (operation.IsLifecycle)
         {
             if (operation.Started is null || Text(accepted, "runtime_start_sha256") != HashFile(RecordPath(operation.Sequence, "started")) ||
                 accepted["operation_kind"]?.GetValue<string>() != "lifecycle" || accepted["prepared_sha256"] is not null ||
@@ -78,7 +88,8 @@ public sealed partial class CropTeacherManagedSeedOwner
     private void LoadRuntimeStart(CropTeacherManagedSeedOperation operation, JsonObject started)
     {
         var schema = Text(started, "schema_version");
-        var supported = operation.IsLifecycle ? schema == InvocationSchema(operation) :
+        var supported = operation.IsSupportingRoute ? schema == InvocationSchema(operation) && started["dispatch_protocol"] is null :
+            operation.IsLifecycle ? schema == InvocationSchema(operation) :
             schema == "crop_teacher_managed_seed_start.v1" ||
             schema == InvocationSchema(operation) && started["dispatch_protocol"]?.GetValue<string>() == "owner_loop.v1";
         if (!supported ||

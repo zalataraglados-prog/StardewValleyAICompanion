@@ -12,7 +12,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         try
         {
             RequireOperation(operation);
-            if (operation.IsLifecycle) throw new InvalidOperationException("Lifecycle acceptance uses its original lifecycle runtime.");
+            if (operation.IsLifecycle || operation.IsSupportingRoute) throw new InvalidOperationException("Non-seed acceptance uses its original phase runtime.");
             if (HasOwnedDispatchProtocol(operation) && (operation.Dispatch is null || !ReferenceEquals(operation.PreparedRuntime, runtime)))
                 throw new InvalidOperationException("Owned seed live acceptance requires its claimed original execution loop/runtime.");
             if (runtime is not ICropTeacherSeedManagedRuntime original)
@@ -38,7 +38,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             RequireOperation(operation);
             var recovered = await RecoverAsync(http, operation, evidenceDirectory, post).ConfigureAwait(false);
             operation.VerifiedStop = recovered.Stop;
-            if (!operation.IsLifecycle && operation.Prepared is null)
+            if (!operation.IsLifecycle && !operation.IsSupportingRoute && operation.Prepared is null)
             {
                 var seed = recovered.Seed!;
                 seed.ValidateArtifactsUnchanged();
@@ -78,6 +78,8 @@ public sealed partial class CropTeacherManagedSeedOwner
     private async Task<RecoveredOwnerBoundary> RecoverAsync(HttpClient http, CropTeacherManagedSeedOperation operation,
         string output, Func<string, string, Task<JsonObject>> post)
     {
+        if (operation.IsSupportingRoute)
+            return await RecoverSupportingRouteAsync(http, operation, output, post).ConfigureAwait(false);
         if (operation.IsLifecycle)
         {
             if (operation.Started is null) throw new InvalidOperationException("Managed lifecycle has not claimed an original invocation.");
