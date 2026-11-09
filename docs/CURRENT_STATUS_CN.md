@@ -1,6 +1,6 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
-> **2026-11-09 当前唯一接续：Debris/Chunk原始状态施工。** #548末head `70ceed36`经42步CI `42531314358`（Core2596/Backend1781）合入`8eaaad03`并核树/同步两库，自有分支已清，原图块已验收。下一原世界缺口已核实际DLL字段和Getter副作用；共享码元/引用/事件合同与原字段工具复用已准备，读取端、记录器/消费核/CLI和新原生样本仍待完成，不计作已实现动作或正式训练准入。默认关闭、不改旧执行器/桥；全世界/生产/间隙和唯一owner仍在后续。所有full-state/resource/formal标记false、L1冻结，local-data不提交。详见[当前工作](CURRENT_WORK_CN.md)。下方为历史。
+> **2026-11-09 当前唯一接续：Debris/Chunk原始状态本地收口。** #548已合入`8eaaad03`并核树；本块同一原API helper `efa57fbf`集成`24ec3414`，原生CLR95、相关Backend378/Core10及E构建通过。实际隐藏静音tree/move的raw48/48、107个Chunk出现不变，移动17收集回调；图/附魔各4/4、XML56/56、Item/选择54/54，当前严格全链重放2/2。实际事件队列为空，非空仅CLR覆盖；原档未变、进程退出。协作者22步正常退出，accepted-idle且临时权限全撤，启动器已加退出自动撤权；余额未知，不沿用旧暂停。新模式默认关闭，旧重复Chunk身份拒绝/旧执行器不改，未晋升资源或完整世界证明。唯一下一步同head审查/CI发布，再原held/offered图/生产/before-capture/被动间隙与唯一owner；full-state/nativeoutcome/resource/formal=false、L1冻结、local-data不提交。详见[当前工作](CURRENT_WORK_CN.md)和[合同](native-debris-state-observation.md)。下方为历史。
 
 > **2026-11-09 当前唯一接续：嵌套物品/附魔图收口。** #547经最终CI合入`0e428a16`并核树。本块原API helper集成`1337e05b`，控制端按原生元数据补Hat边；83原生CLR/另6项Hat、77消费客户端/6项源码守卫及E构建通过。实际隐藏静音tree/move四端图与附魔各4/4、原XML和Item/选择探针各54/54；严格当前消费者/锚点客户端2/2且强制真实夹具正样本，原档未变、进程退出。实际注入夹具不是赚取/生产或完整世界证明；最终回归/CI发布另记。原API两次任务均有界退出，现授权空闲、无写/build权限；余额未知，不用Codex周用量代替。后续仍原世界/来源/间隙与唯一owner，全部完整状态/resource/formal门保持false，L1冻结，无训练/local-data提交。详见[合同](native-inventory-graph-observation.md)及[当前工作](CURRENT_WORK_CN.md)。下方为历史。
 

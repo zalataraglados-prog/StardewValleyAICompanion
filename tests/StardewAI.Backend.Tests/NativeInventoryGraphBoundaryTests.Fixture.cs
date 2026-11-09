@@ -12,7 +12,7 @@ public sealed partial class NativeInventoryGraphBoundaryTests
     private static NativeInventoryGraphSummary Read(TrainingExecutionRequest request, ActionOriginObservationReceipt receipt) =>
         NativeOutputObservationBoundary.ReadInventoryGraph(request, receipt, 99, 111, "Farm", "123");
 
-    private static (TrainingExecutionRequest Request, ActionOriginObservationReceipt Receipt) Fixture()
+    internal static (TrainingExecutionRequest Request, ActionOriginObservationReceipt Receipt) Fixture()
     {
         var fixture = NativeInventoryTransientBoundaryTests.Fixture();
         fixture.Request.ActionOriginInventoryGraph = true;

@@ -1,12 +1,14 @@
 # StardewAI 当前工作
 
-## 2026-11-09 R2掉落物原始状态（当前唯一接续，施工中）
+## 2026-11-09 R2掉落物原始状态（当前唯一接续，本地收口）
 
 - #548末head `70ceed36`经最终42步CI `42531314358`（Core2596/Backend1781，零失败/跳过）和同head审查合入`8eaaad03`，测试/主线树`a10cefcf`一致；主/peer同步，三份helper blob逐字节保留，第四份仅增加17行Hat分支，原补丁外部留档，自有合并分支已清。原生图与重放证据已收口，不重开旧矩阵。
 - 继续原世界/生产来源缺口，先补原Debris/Chunk读取的明确瞬态和物理字段。对同一E1.6.15 DLL重新反编译并做只读元数据核：Debris29、Chunk16声明实例字段；43个非抽象Character类型和7个Debris枚举值来自实际图像，均不是动作/缺失字段计数。NetPosition.Value/Get/Paused可消费暂停事件或取消插值；NetFarmerRef.UID会在未定义时隐藏实际uid，新侧车使用真实底层字段，不改旧桥/行走器行为。
-- 共享合同已定义显式请求、原始浮点码元、空值可用性、物理引用、暂停事件顺序/时间戳和两端/回调共用上限；原字段/文本工具提取复用，保留旧私有入口及异常行为。提取导致源码守卫仍查旧文件而先红1例，现核实际共享实现及转发，9/9通过；独立18项字段/文本核、E运行时构建零警告/错误通过。读取端/消费核/CLI/真实运行尚未完成，不将共享合同当作已可执行能力。
-- 下一分工按同一原API会话与精确路径：peer只做新Debris/Chunk原生读取helper及外部CLR夹具；Codex做DTO、原记录器adapter、消费验证/CLI、测试/文档和最终原生运行/合并。默认关闭；不新增执行器、第二个Item walker、资源owner或训练标签。只有当前任务ready才启动，验收或阻塞退出，不自动重试/兜底。原raw大文件和存档继续外留，local-data不提交。
-- **本块结束标志：** 新模式在原tree/move观察链产生真实非空掉落物/Chunk状态，字段/引用/事件不被观察改动，当前消费者通过两端与回调全域预算/身份/旧字段绑定；最终相关测试、同head CI与提交收口。GPU内容、网络传输内部/委托闭包、held/offered Item原始图及其他子型/全世界/生产/before-capture和被动间隙仍明确待证，不借本侧车放宽旧guard或全状态准入。后继仍唯一资源owner、收获/保存跨日/managed、原全局协调及Provider/模型/manifest。L1`19/19、11/11`冻结，full-state/nativeoutcome/resource/formal=false、Student21/21训后，无正式训练或服务器部署。
+- 共享合同定义显式请求、原始浮点码元、空值可用性、物理引用、暂停事件顺序/时间戳和两端/回调共用上限；复用原字段/文本工具，保留旧私有入口及异常行为。提取后源码守卫查旧位置先红1例，修测试定位而非放宽产品；独立18项字段/文本核通过。原API同一会话三文件helper `efa57fbf`集成`24ec3414`，首轮原生CLR95项通过，实际getter陷阱确证读取不会消费暂停队列。Codex完成原adapter/消费核/CLI，复用同一图/XML与引用字典，不建第二walker。[合同](native-debris-state-observation.md)。
+- 当前相关Backend378/378、Core10/10通过，零失败/跳过；E harness/bridge/backend/CLI/外部probe/replay构建零警告错误。新测试曾误以为重复Chunk可准入，实际旧receipt guard已拒绝；仅改为保留原身份拒绝的防回退测试，未修改旧消费守卫。新模式默认关闭，旧held-item getter求值顺序及所有旧unsupported guard保留。
+- 隐藏静音、单逻辑处理器实际 `output-client-native-debris-state-a`完成原tree/move：raw Debris48/48，Chunk出现107次全核不变；图/附魔各4/4，原XML56/56、Item/选择54/54。tree两端行0/19、Chunk0/57；move两端行11/1、Chunk20/3，加17次收集回调/27个Chunk出现。当前source/数量/工具/XML/锚点/图/新raw消费者全链重放2/2；实际暂停队列均空，非空/别名/极值仅CLR覆盖，不能混算。原档SHA未变，game13280/backend7060均退出，夹具注入不是赚取资源或生产来源证明。
+- 协作者22步、零API错误、正常退出；任务accepted-idle、授权保留，同一会话不消耗空闲轮询。专用最终生效edit/bash/external允许项均为0，启动器新增进程退出自动撤销本块授权，撤销失败blocked-idle；离线保留其他配置/幂等/拒绝未知agent和idle启动门测试通过，无付费探针或重试。旧账期暂停已被本次续用授权取代；美元余额未知，不用Codex周用量代替。
+- **唯一下一步：** 完成本块同head审查/CI与提交发布；然后接原世界held/offered Item图、生产归属、before-capture和被动间隙证据。GPU内容、网络传输内部/委托闭包及其他子型/全世界仍明确待证，旧重复Chunk身份拒绝不放宽。齐后唯一资源owner、收获/保存跨日/managed、原全局协调及Provider/模型/manifest。L1`19/19、11/11`冻结，full-state/nativeoutcome/resource/formal=false、Student21/21训后；原raw/存档/夹具外留、local-data不提交，无正式训练/服务器部署。
 
 ## 2026-11-09 R2嵌套物品与附魔图（历史，已由#548收口）
 

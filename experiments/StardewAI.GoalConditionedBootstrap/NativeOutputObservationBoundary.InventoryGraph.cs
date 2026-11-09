@@ -27,11 +27,20 @@ public static partial class NativeOutputObservationBoundary
     public static NativeInventoryGraphSummary ReadInventoryGraph(TrainingExecutionRequest request,
         ActionOriginObservationReceipt receipt, long earliestTick, long latestTick, string locationId, string actorId)
     {
+        var characters = 0;
+        return ReadInventoryGraphWithBudget(request, receipt, earliestTick, latestTick, locationId, actorId,
+            ref characters, out _);
+    }
+
+    private static NativeInventoryGraphSummary ReadInventoryGraphWithBudget(TrainingExecutionRequest request,
+        ActionOriginObservationReceipt receipt, long earliestTick, long latestTick, string locationId, string actorId,
+        ref int characters, out Dictionary<Guid, string> references)
+    {
         Require(request.ActionOriginInventoryGraph && request.ActionOriginInventoryTransients,
             "native inventory graph was not explicitly requested with its original transient scope");
-        var characters = 0;
         var scope = ReadInventoryTransientScope(request, receipt, earliestTick, latestTick, locationId, actorId,
             requireObjectState: true, ref characters, retainXml: true);
+        references = scope.References;
         var nodeOccurrences = 0; var edgeOccurrences = 0;
         var before = ReadInventoryGraphEndpoint(receipt.InventoryPayloadBefore!.GraphState, scope.Payload.Before,
             scope.Transients.Before, scope.BeforeXml!, actorId, scope.References, ref characters, ref nodeOccurrences, ref edgeOccurrences);

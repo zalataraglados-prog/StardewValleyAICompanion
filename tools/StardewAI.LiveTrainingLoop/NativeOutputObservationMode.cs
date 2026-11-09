@@ -9,6 +9,8 @@ public static class NativeOutputObservationMode
 {
     public static void Validate(LiveTrainingOptions options)
     {
+        if (options.ObserveNativeDebrisState && !options.ObserveNativeInventoryGraph)
+            throw new ArgumentException("--observe-native-debris-state requires --observe-native-inventory-graph.");
         if (options.ObserveNativeInventoryGraph && !options.ObserveNativeInventoryTransients)
             throw new ArgumentException("--observe-native-inventory-graph requires --observe-native-inventory-transients.");
         if (options.ObserveNativeInventoryTransients && !options.ObserveNativeInventoryPayload)

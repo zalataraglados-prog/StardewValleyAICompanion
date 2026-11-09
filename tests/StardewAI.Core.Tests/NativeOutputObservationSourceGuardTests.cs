@@ -3,6 +3,27 @@ namespace StardewAI.Core.Tests;
 public sealed class NativeOutputObservationSourceGuardTests
 {
     [Fact]
+    public void DebrisStateReusesTheOriginalObserverOnlyWhenExplicitlyEnabled()
+    {
+        var scope = RuntimeHarnessSources.LoadFile("ModEntry.ActionOriginObservation.cs");
+        var recorder = RuntimeHarnessSources.LoadFile("ModEntry.ActionOriginObservation.Recorder.cs");
+        var adapter = RuntimeHarnessSources.LoadFile("ModEntry.ActionOriginObservation.DebrisState.cs");
+        var helper = RuntimeHarnessSources.LoadFile("NativeLiveDebrisCapture.cs");
+        var chunks = RuntimeHarnessSources.LoadFile("NativeLiveDebrisCapture.Chunks.cs");
+        Assert.Contains("debris_state_requires_inventory_graph", scope);
+        Assert.Contains("if (!request.ActionOriginDebrisState) return null", adapter);
+        Assert.Contains("remainingPayloadCharacters -= state.Characters", adapter);
+        Assert.Contains("remainingDebrisEvents -= state.EventOccurrences", adapter);
+        Assert.Contains("CaptureDebrisRawState(debris)", recorder);
+        Assert.Contains("RawState = raw is null ? null : ReadDebrisRawPayload(raw)", recorder);
+        Assert.Contains("var vector = Wrapper(position.Field).Value", chunks);
+        Assert.Contains("PositionPaused, position", chunks);
+        Assert.Contains("NativeLiveTransientFieldCodec.CharacterBudget", helper);
+        foreach (var forbidden in new[] { "Game1.", ".SetValue(", ".Poll(", ".Fire(", ".GetVisualPosition(", "ItemRegistry.Create", "new Debris(", "new Chunk(" })
+            Assert.DoesNotContain(forbidden, helper + chunks + adapter);
+    }
+
+    [Fact]
     public void TransientWitnessIsExplicitAndReadsCachesBeforeTheOriginalItemHeaders()
     {
         var scope = RuntimeHarnessSources.LoadFile("ModEntry.ActionOriginObservation.cs");
