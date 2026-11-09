@@ -71,6 +71,7 @@ public sealed class LiveTrainingOptions
     public bool ObserveNativeInventoryPayload { get; set; }
     public bool ObserveNativeInventoryTransients { get; set; }
     public bool ObserveNativeInventoryGraph { get; set; }
+    public bool ObserveNativeDebrisState { get; set; }
     public string TeacherPreferencePath { get; set; } = string.Empty;
     public bool UseTeacherPreferenceQueue =>
         !string.IsNullOrWhiteSpace(TeacherPreferencePath);
@@ -634,6 +635,10 @@ public sealed class LiveTrainingOptions
             else if (current == "--observe-native-inventory-transients")
             {
                 options.ObserveNativeInventoryTransients = true;
+            }
+            else if (current == "--observe-native-debris-state")
+            {
+                options.ObserveNativeDebrisState = true;
             }
             else if (current == "--observe-native-inventory-graph")
             {

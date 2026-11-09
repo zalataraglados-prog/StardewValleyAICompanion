@@ -3,6 +3,27 @@ namespace StardewAI.Core.Tests;
 public sealed class NativeOutputObservationSourceGuardTests
 {
     [Fact]
+    public void DebrisStateReusesTheOriginalObserverOnlyWhenExplicitlyEnabled()
+    {
+        var scope = RuntimeHarnessSources.LoadFile("ModEntry.ActionOriginObservation.cs");
+        var recorder = RuntimeHarnessSources.LoadFile("ModEntry.ActionOriginObservation.Recorder.cs");
+        var adapter = RuntimeHarnessSources.LoadFile("ModEntry.ActionOriginObservation.DebrisState.cs");
+        var helper = RuntimeHarnessSources.LoadFile("NativeLiveDebrisCapture.cs");
+        var chunks = RuntimeHarnessSources.LoadFile("NativeLiveDebrisCapture.Chunks.cs");
+        Assert.Contains("debris_state_requires_inventory_graph", scope);
+        Assert.Contains("if (!request.ActionOriginDebrisState) return null", adapter);
+        Assert.Contains("remainingPayloadCharacters -= state.Characters", adapter);
+        Assert.Contains("remainingDebrisEvents -= state.EventOccurrences", adapter);
+        Assert.Contains("CaptureDebrisRawState(debris)", recorder);
+        Assert.Contains("RawState = raw is null ? null : ReadDebrisRawPayload(raw)", recorder);
+        Assert.Contains("var vector = Wrapper(position.Field).Value", chunks);
+        Assert.Contains("PositionPaused, position", chunks);
+        Assert.Contains("NativeLiveTransientFieldCodec.CharacterBudget", helper);
+        foreach (var forbidden in new[] { "Game1.", ".SetValue(", ".Poll(", ".Fire(", ".GetVisualPosition(", "ItemRegistry.Create", "new Debris(", "new Chunk(" })
+            Assert.DoesNotContain(forbidden, helper + chunks + adapter);
+    }
+
+    [Fact]
     public void TransientWitnessIsExplicitAndReadsCachesBeforeTheOriginalItemHeaders()
     {
         var scope = RuntimeHarnessSources.LoadFile("ModEntry.ActionOriginObservation.cs");
@@ -10,6 +31,7 @@ public sealed class NativeOutputObservationSourceGuardTests
         var adapter = RuntimeHarnessSources.LoadFile("ModEntry.ActionOriginObservation.InventoryTransients.cs");
         var helper = RuntimeHarnessSources.LoadFile("NativeLiveItemTransientCapture.cs");
         var fields = RuntimeHarnessSources.LoadFile("NativeLiveItemTransientCapture.Fields.cs");
+        var codec = RuntimeHarnessSources.LoadFile("NativeLiveItemTransientCapture.FieldCodec.cs");
         Assert.Contains("inventory_transients_require_payload", scope);
         Assert.Contains("if (request.ActionOriginInventoryTransients)", inventory);
         Assert.Contains("item.itemId.Value is null", inventory);
@@ -19,10 +41,13 @@ public sealed class NativeOutputObservationSourceGuardTests
         Assert.Contains("ReferenceEquals(state.Tool.LastUser, farmer)", adapter);
         Assert.Contains("ReferenceIds.For(farmer)", adapter);
         Assert.Contains("NativeInventoryPayloadTypes.TryGet", helper);
-        Assert.Contains("BindingFlags.DeclaredOnly", fields);
-        Assert.Contains("field.FieldType != fieldType", fields);
+        Assert.Contains("NativeLiveTransientFieldCodec.RequireField", fields);
+        Assert.Contains("NativeLiveTransientFieldCodec.ReadNullable<T>", fields);
+        Assert.Contains("NativeLiveTransientFieldCodec.ReadValue<T>", fields);
+        Assert.Contains("BindingFlags.DeclaredOnly", codec);
+        Assert.Contains("field.FieldType != fieldType", codec);
         foreach (var forbidden in new[] { ".getOne(", "ItemRegistry.Create", "item.QualifiedItemId", "Game1.random", ".SetValue(", "GetProperties(" })
-            Assert.DoesNotContain(forbidden, helper + fields);
+            Assert.DoesNotContain(forbidden, helper + fields + codec);
     }
 
     [Fact]

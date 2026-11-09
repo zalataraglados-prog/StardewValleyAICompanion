@@ -117,16 +117,22 @@ public sealed partial class ModEntry
         private ActionOriginObservedDebris ReadDebris(Debris debris)
         {
             if (debris.GetType() != typeof(Debris)) Reject("observation_custom_debris_runtime_type");
-            if (debris.Chunks.Count > remainingChunkIds) Reject("observation_chunk_limit_exceeded");
-            var chunks = debris.Chunks.Take(remainingChunkIds).Select(chunk => ReferenceIds.For(chunk)).ToArray();
+            var raw = CaptureDebrisRawState(debris);
+            if (raw is null && debris.Chunks.Count > remainingChunkIds) Reject("observation_chunk_limit_exceeded");
+            var chunks = raw is null ? debris.Chunks.Take(remainingChunkIds).Select(chunk => ReferenceIds.For(chunk)).ToArray()
+                : raw.Chunks.Select(chunk => ReferenceIds.For(chunk.Reference)).ToArray();
             remainingChunkIds -= chunks.Length;
+            var held = raw?.Identity.HeldItem;
             return new ActionOriginObservedDebris
             {
                 DebrisId = ReferenceIds.For(debris), RuntimeType = debris.GetType().FullName ?? debris.GetType().Name,
-                DebrisType = debris.debrisType.Value.ToString(), ChunkType = debris.chunkType.Value,
-                RawItemId = debris.itemId.Value ?? string.Empty, ItemQuality = debris.itemQuality,
-                HeldItemStack = debris.item?.Stack, HeldItem = debris.item is null ? null : ReadItem(debris.item),
-                ChunkIds = chunks
+                DebrisType = raw is null ? debris.debrisType.Value.ToString() : ((Debris.DebrisType)raw.Identity.DebrisType).ToString(),
+                ChunkType = raw?.Identity.ChunkType ?? debris.chunkType.Value,
+                RawItemId = raw is null ? debris.itemId.Value ?? string.Empty : raw.Identity.ItemId ?? string.Empty,
+                ItemQuality = raw?.Identity.ItemQuality ?? debris.itemQuality,
+                HeldItemStack = raw is null ? debris.item?.Stack : held?.Stack,
+                HeldItem = raw is null ? (debris.item is null ? null : ReadItem(debris.item)) : (held is null ? null : ReadItem(held)),
+                ChunkIds = chunks, RawState = raw is null ? null : ReadDebrisRawPayload(raw)
             };
         }
 

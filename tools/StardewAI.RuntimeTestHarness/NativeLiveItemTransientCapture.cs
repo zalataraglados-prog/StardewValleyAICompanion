@@ -97,18 +97,8 @@ internal static partial class NativeLiveItemTransientCapture
             throw new InvalidDataException("Native transient container exceeds its 256-entry bound.");
     }
 
-    private sealed class CharacterBudget
+    private sealed class CharacterBudget : NativeLiveTransientFieldCodec.CharacterBudget
     {
-        private readonly int maximum;
-        internal int Characters { get; private set; }
-        internal CharacterBudget(int maximum) => this.maximum = maximum;
-        internal string? String(string? value, int fieldMaximum = 4096)
-        {
-            int length = value?.Length ?? 0;
-            if (length > fieldMaximum || length > maximum - Characters || !NativeObservationText.IsWellFormedUtf16(value))
-                throw new InvalidDataException("Native transient text exceeds its budget or cannot round-trip through JSON without replacement.");
-            Characters += length;
-            return value;
-        }
+        internal CharacterBudget(int maximum) : base(maximum) { }
     }
 }

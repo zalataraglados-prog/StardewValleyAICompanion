@@ -17,25 +17,12 @@ internal static partial class NativeLiveItemTransientCapture
     private static readonly FieldInfo HitsToBoulderField = RequireField(typeof(Pickaxe), "hitsToBoulder", typeof(int));
     private static readonly FieldInfo ItemStowedField = RequireField(typeof(Farmer), "_itemStowed", typeof(bool));
 
-    private static FieldInfo RequireField(Type declaringType, string name, Type fieldType)
-    {
-        var field = declaringType.GetField(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
-        if (field is null || field.DeclaringType != declaringType || field.IsStatic || field.FieldType != fieldType)
-            throw new InvalidDataException("Native transient field layout is unavailable or unsupported: " + declaringType.FullName + "." + name);
-        return field;
-    }
+    private static FieldInfo RequireField(Type declaringType, string name, Type fieldType) =>
+        NativeLiveTransientFieldCodec.RequireField(declaringType, name, fieldType);
 
-    private static T? ReadNullable<T>(FieldInfo field, object instance) where T : class
-    {
-        var value = field.GetValue(instance);
-        if (value is null) return null;
-        if (value is T typed) return typed;
-        throw new InvalidDataException("Native transient reference field is unreadable: " + field.Name);
-    }
+    private static T? ReadNullable<T>(FieldInfo field, object instance) where T : class =>
+        NativeLiveTransientFieldCodec.ReadNullable<T>(field, instance);
 
-    private static T ReadValue<T>(FieldInfo field, object instance) where T : struct
-    {
-        if (field.GetValue(instance) is T typed) return typed;
-        throw new InvalidDataException("Native transient value field is unreadable: " + field.Name);
-    }
+    private static T ReadValue<T>(FieldInfo field, object instance) where T : struct =>
+        NativeLiveTransientFieldCodec.ReadValue<T>(field, instance);
 }

@@ -41,7 +41,7 @@ public sealed partial class ActionOriginObservationReceipt
     [JsonPropertyName("formal_product_training_authorized")] public bool FormalProductTrainingAuthorized => false;
 }
 
-public sealed class ActionOriginObservedDebris
+public sealed partial class ActionOriginObservedDebris
 {
     [JsonPropertyName("debris_id")] public string DebrisId { get; set; } = string.Empty;
     [JsonPropertyName("runtime_type")] public string RuntimeType { get; set; } = string.Empty;
