@@ -1,5 +1,9 @@
 # StardewAI 完全体完成路线图
 
+> **2026-11-11T00:52:08+08:00 Stage 1 施工入口更新。** 从当前代码到第一批正式数据的步骤与退出条件统一见 [R2 开训前执行顺序](FORMAL_FULL_TRAINING_READINESS_CN.md#r2-开训前执行顺序)。后续产品阶段仍按 [产品路线图](COMPANION_PRODUCT_ROADMAP_CN.md) 执行。
+
+<!-- audit_invalidation: scope=2026-11-08_current_execution_order_summary; invalidated_at=2026-11-11T00:52:08+08:00; superseded_by=FORMAL_FULL_TRAINING_READINESS_CN.md#r2-开训前执行顺序; reason=旧摘要未区分选中路线所需观测、全局原生准入和数据启动前置; historical_only=true -->
+
 > **2026-11-08 最新状态入口：** 本文保留历史，施工按[CURRENT_WORK](CURRENT_WORK_CN.md)和[CURRENT_STATUS](CURRENT_STATUS_CN.md)顶部。L1已冻结`19/19、11/11`，不是下方历史`9/19`；当前须同一补水清障/拾取精确资源与来源接唯一owner、收获/原生保存跨日和managed真实有界集成，再原全局日历/预算/跨根、其余probe、Provider/模型及manifest。干草视图分离见[合同](canonical-hay-storage-resource.md)。不重写执行器、不把校准当训练；formal=false，Student新档21/21训后，全部产品目标不缩减。
 
 > **2026-11-06 显式成对监督接续（当前优先）：** 新Friendship消费层已分离pairs与完整排序，只有显式模式复用原编译消费独立证据，缺省完整排序门/旧执行链不改。真实来源8pairs和20未比较均保留，公开编译pending；下一步E副本真实5/10人数阈值及原数据/覆盖，不把当前编译当原生、整项或训练通过。`9/19、9/19、9/19、7/11`、formal=false及全部全量目标保持。[实际协议与下一步](friendship-pairwise-admission.md)。
