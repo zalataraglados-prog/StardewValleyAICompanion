@@ -1,5 +1,8 @@
 # StardewAI 文档权威层级与维护状态（2026-09-05 r35）
 
+<!-- audit_invalidation: scope=r35_current_status_and_document_priority; invalidated_at=2026-11-11T01:06:05+08:00; superseded_by=DOCUMENTATION_INDEX_CN.md; reason=本文记录r35时点，当前入口及编辑规则已统一到总目录和交接规范; historical_only=true -->
+> **2026-11-11T01:06:05+08:00 历史说明。** 本文保留 r35 的状态、证据和治理记录。下方「当前」均指当时的版本。今天的读取顺序见 [文档总目录](DOCUMENTATION_INDEX_CN.md)，维护流程见 [文档编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)。
+
 本文解决仓库文档随着 EVD/rN 快速推进而产生的“历史段落仍存在，但容易被搜索引擎或 Agent 当作当前状态”问题。当前权威层是 **r29 有序高层队列边界 + issue #89 运行证据新鲜度治理 + r34 透明候选缓存 + r35 动态角色避障与连续有界原生跨日训练事务**。
 
 ## 1. 当前权威状态

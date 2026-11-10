@@ -1,5 +1,7 @@
 # Stardew Valley AI Companion
 
+项目文档见 [总目录](docs/DOCUMENTATION_INDEX_CN.md)，贡献者可查 [文档编辑与交接规范](docs/DOCUMENTATION_MAINTENANCE_CN.md)。
+
 **Stardew Valley AI Companion** 是一个正在开发中的《星露谷物语》AI 伙伴 Mod。
 
 项目希望让 AI 伙伴能够根据真实游戏状态自主规划和行动，通过原版游戏机制完成种田、探索和日常事务，并逐步实现与玩家共同生活、协作游玩的体验。

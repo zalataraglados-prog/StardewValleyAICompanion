@@ -1,5 +1,10 @@
 # StardewAI 当前工作
 
+[文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
+
+<!-- audit_invalidation: scope=2026-11-09_debris_next_steps; invalidated_at=2026-11-11T00:52:08+08:00; superseded_by=FORMAL_FULL_TRAINING_READINESS_CN.md#r2-开训前执行顺序; reason=原摘要未区分观测校准、账本消费和正式启动条件，容易把深层字段读作共同前置; historical_only=true -->
+> **2026-11-11T00:52:08+08:00 接续修订。** #549 已合入 `a4cb6b43`。本轮仍沿同一条作物托管主线，先核对所选补水路线的资源结果，再接同一账本、收获和原生保存，随后按阶段验收。下方 #549 段的原生记录与回归结果保留，其「唯一下一步」排期由 [R2 开训前执行顺序](FORMAL_FULL_TRAINING_READINESS_CN.md#r2-开训前执行顺序) 取代。
+
 ## 2026-11-09 R2掉落物原始状态（当前唯一接续，本地收口）
 
 - #548末head `70ceed36`经最终42步CI `42531314358`（Core2596/Backend1781，零失败/跳过）和同head审查合入`8eaaad03`，测试/主线树`a10cefcf`一致；主/peer同步，三份helper blob逐字节保留，第四份仅增加17行Hat分支，原补丁外部留档，自有合并分支已清。原生图与重放证据已收口，不重开旧矩阵。

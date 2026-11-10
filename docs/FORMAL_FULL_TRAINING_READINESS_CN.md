@@ -1,5 +1,9 @@
 # StardewAI 正式全量训练准入与实施路线
 
+> **2026-11-11T00:52:08+08:00 施工顺序修订。** 以本文件末尾的 [R2 开训前执行顺序](#r2-开训前执行顺序) 为当前入口。每一步区分已有实现、待接线和待验收。
+
+<!-- audit_invalidation: scope=2026-11-08_pretraining_sequence_summary; invalidated_at=2026-11-11T00:52:08+08:00; superseded_by=#r2-开训前执行顺序; reason=旧摘要缺少各步退出条件，也未列出正式启动器的两个固定阻塞; historical_only=true -->
+
 > **2026-11-08 当前训练前缺口：** 最新事实和顺序见[CURRENT_WORK](CURRENT_WORK_CN.md)顶部，历史数字/旧长跑要求不覆盖新条款。L1`19/19、11/11`冻结；当前完成同一补水clear/pickup精确资源/来源（含工具和capture间隙）接唯一owner，再收获/原生保存跨日、managed有界真实集成和原全局协调/其余probe/Provider/模型/manifest。新增[干草规范视图](canonical-hay-storage-resource.md)只补物理资源输入，不授训练credit；formal=false，Student新档21/21为训后验收，不能倒挂。
 
 > **#394 监督修复不等于训练解禁：** dataset/trainer、Backend、CLI 和 live loop 已统一要求可独立重放的显式 Teacher 比较；单纯 Student 选择/成功回执不能产生监督数据或覆盖正式工件。19/19、11/11、Provider/模型选择、原生和 manifest 总门继续独立生效，launcher 锁未修改。详见 [合同](independent-teacher-pairwise-admission.md)。
@@ -1187,6 +1191,9 @@ ML.NET 的 LightGBM/FastTree 排序器目前不支持直接导出 ONNX；若必�
 - 不可逆动作授权规则不可被模型绕过；
 - 长运行无日志失控、存储失控或死锁。
 
+<!-- audit_invalidation: scope=section_4_as_current_remaining_work_order; invalidated_at=2026-11-11T00:52:08+08:00; superseded_by=#r2-开训前执行顺序; reason=旧表混列已完成的底座、开训前验收和训后任务，未体现R2范围与真实调用方; historical_only=true -->
+> **2026-11-11T00:52:08+08:00 排期失效说明。** 下列原始全程顺序保留供追溯。当前剩余施工以 [R2 开训前执行顺序](#r2-开训前执行顺序) 为准，准入条件仍按各自合同核验。
+
 ## 4. 执行顺序
 
 1. 实现证据注册表和生成式准入清单；
@@ -1455,3 +1462,60 @@ v71 继续携带 `--skip-training`，没有 Student 更新、checkpoint 或 GPU 
 同一运行在 iteration `162-170` 暴露控制层缺口：满包钓鱼已产生 essential `ItemGrabMenu`，统一排名也已有可用的强制奖励恢复候选，但 Stage One collection 先按 collection membership 过滤并错误让出控制，导致后续普通路线因菜单开启而失败关闭。修复只把现有 mandatory menu recovery 提到 continuation、membership 和策略选择之前，继续复用既有编译与执行链；该队列明确不生成 Teacher preference 标签、不进入正式训练数据。
 
 验证为聚焦 `11/11`、GameFreeGovernance `521/521`、LiveTrainingLoop Release 零警告零错误。v71 的未保存尾部不能拼接；下一准入运行必须是全新 v72，先原生证明该 control queue 闭合并避免菜单开启时派发 Crop Teacher，再继续 Golden Walnut source schedule。#345 Provider/Student 定型前 `formal_product_training_authorized=false` 保持。
+
+## R2 开训前执行顺序
+
+<!-- audit_revision: id=r2-pretraining-execution-order-20261111; authored_at=2026-11-11T00:52:08+08:00; baseline=a4cb6b4369f2847a366affb89c22886e4e00506a; scope=docs-only -->
+
+修订时间 **2026-11-11T00:52:08+08:00**（Asia/Shanghai）。核查基线 `main@a4cb6b43`。本节在合入后取代 2026-11-08 顶部摘要、第 4 节作为当前剩余任务顺序的用途，以及 #549 状态记录中的旧「唯一下一步」。旧运行记录和验收事实保留。各阶段是依赖关系，阶段内部按当前真实阻塞决定施工顺序。
+
+沿用 [R2 四层验收](PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md#3-修正后的四层验收合同) 和 WIP=1。L1 `19/19`、`11/11` 作为已冻结的局部证据复用。当前 primary 仍是作物托管闭环。前瞻实验室可以先做只读的证据核对和实验设计，实施与验收走既有主线。
+
+### 1. 先核对所选路线与正式门的证据需求
+
+- 在现有工件可用时，用 `build-goal-method-coverage-reconciliation` 对照覆盖、已登记选项和当前缺口。已有文档分子用于定位，完整报告仍须用对应版本工件重建。工件缺失时先记具体缺项和来源，保留未判定。
+- 及早核对全局计划实际选用的姜岛／钓鱼路线和核桃来源。`StardewTrainingSessionLauncher.ValidateFormalBoundary()` 在基线上无条件加入 `golden_walnut_master_angler_native_admission_not_bound` 与 `gourmand_orders_2_3_native_admission_not_bound`。即使作物托管通过，`prepare` 和 `launch` 仍会被这两个固定项拦住。先确定所选分支及它所需的可重放证据，接入排在全局集成阶段。 [覆盖入口](../experiments/StardewAI.GoalConditionedBootstrap/Program.cs#L1001) · [固定阻塞](../src/StardewAI.Core/Training/StardewTrainingSessionLauncher.cs#L16) · [启动校验](../src/StardewAI.Core/Training/StardewTrainingSessionLauncher.cs#L383)
+
+### 2. 用现有补水队列收口清障与拾取的结算证据
+
+- `BuildCropTeacherWateringRefillApproachQueueAsync()` 已能编译补水接近路线。`CropTeacherRefillApproachNativeTrace.OpenWithSnapshotInventoryContinuity()` 已能重放原队列、回执和库存数量连续性，当前仍是核验入口，未接到账本结算。保持原队列、动作身份、站位、时间预算和原生回执。 [补水路线编译](money-crop-refill-approach-compilation.md) · [补水记录读取器](../experiments/StardewAI.GoalConditionedBootstrap/CropTeacherRefillApproachNativeTrace.cs#L87)
+- 所选路线只要求到达和补水时，以通路、实际水量和地块状态判定动作进度，同时对实际资源变化分类。若账本需要把掉落计为本动作产出，则必须区分既有掉落、本次产生和实际入包。无法归因的增量保留为未结算，未知资源漂移继续由原保护条件拒绝。#541 的数量间隙与 #542 的同帧记录优先用于重放验证时间边界，生产来源由能独立区分两种历史的证据确认。
+- #549 的深层图和掉落字段作为默认关闭的校准证据保留。`held/offered Item` 图、观察开始前和被动间隙的补充范围，按所选动作缺少的结算事实确定。先查现有观察能否判定，再针对能改变结算的缺口补最小字段和正反例。单次 `unavailable` 或必填字段缺失只记录拒绝原因，不能裁决字段必要性。读取副作用沿 [#29](https://github.com/zalataraglados-prog/StardewValleyAICompanion/issues/29) 的原责任处理，当前所选路径涉及的风险在使用前核验。 [#541](https://github.com/zalataraglados-prog/StardewValleyAICompanion/pull/541) · [#542](https://github.com/zalataraglados-prog/StardewValleyAICompanion/pull/542) · [#549](https://github.com/zalataraglados-prog/StardewValleyAICompanion/pull/549) · [#550 审查](https://github.com/zalataraglados-prog/StardewValleyAICompanion/issues/550#issuecomment-6772496351)
+
+**退出条件。** 对当前合法队列能确定到达、工具消耗与库存变化。需记产出时，合法来源可入账，既有掉落和来源未明的变化不会误记为本动作产出。优先复用已有原生轨迹，只有现有材料无法判定时才补对应的隔离短测。
+
+### 3. 接同一账本、主循环和跨日恢复
+
+- `PrepareCropTeacherOwnedWateringAsync()` 当前会拒绝带 `InterruptKind` 的补水接近队列。将所选接近／清障队列及其已验证结果接到现有 `CropTeacherManagedSeedOwner` 和主循环，复用派发登记、队列／来源身份、回执、账本提交与只读恢复。补水但零块作物完成仍保留为控制结果。 [浇水入口](../tools/StardewAI.LiveTrainingLoop/Program.CropTeacherOwnedWatering.cs#L26) · [已有补水控制结果](money-crop-refill-control-outcome.md)
+- 接续收获留存、所选销售方式的原生结算、睡眠保存和重载。复用 `CheckCropTeacherDayBoundaryAsync()` 等既有检查，核对同一存档的物品、作物、金币、日期及账本进度。可复用 #502 的作物实跑和离线重建来核对已有阶段，托管接线要由新入口的实际结果验证。具体结算消费者沿现有合同绑定。 [跨日检查](../tools/StardewAI.LiveTrainingLoop/Program.CropTeacherDayBoundary.cs#L125) · [#502](https://github.com/zalataraglados-prog/StardewValleyAICompanion/pull/502)
+
+**退出条件。** 原生执行、账本提交和保存边界在同一条运行中可追踪。回包丢失或中断后能通过原回执和存档读回确定已执行的部分，重复调用不会重复购买、扣物或记收入。
+
+### 4. 显式启用后做一次有界托管原生验收
+
+在隔离存档上走实际选中的合法作物路线，从购种或声明的已有种子，到播种、维护、收获、销售与保存恢复。保留同一 run/save/actor、队列回执和前后状态。失败先保留首个实际断点，只补该断点所缺的证据。#550 的无清障 A 可以用于验收一条合法无清障路线。有清障路线的资源判定沿第 2 步验证。两者分别登记其覆盖范围。
+
+**退出条件。** 同一托管流程的状态和账本跨日一致，可重载恢复，并能独立重放产出留存和真实结算。校准与验收工件按原范围归档。
+
+### 5. 做 L3 跨目标组合与新档原生重放
+
+- 用既有 `DailyPlanCompiler` 和资源预留账本组合跨目标的资金、材料、时间、体力与日历，核验所选路线的来源和消费顺序。按实际依赖消费 L2 能力证书，复用已验 L1 和六类支持步骤的原生终态证据。当前组合报告仍要重新核验这些证据身份。 [L3 组合责任](current-production-snapshot-handoff.md#L217) · [六类支持步骤](../experiments/StardewAI.GoalConditionedBootstrap/AcquisitionRouteSupportingTransitionKinds.cs#L15)
+- 在所属全局层完成所选路线的 Day-0／长期原生证明及独立重放。若计划依赖姜岛，绑定同一新档取得相关解锁、核桃来源、日程及钓鱼前置。Gourmand 属于可选来源。选中它时核验对应订单连续回执，使用替代路线时核验该路线实际取得并消耗的核桃及解锁证据。 [R2 来源规则](PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md#全局证明的保留与迁移) · [核桃日程验证](GOLDEN_WALNUT_SOURCE_SCHEDULE_VERIFICATION.md)
+
+**退出条件。** 当前全局对账能解释选中路线及共享资源、日程、存档连续性。需晋升的选项通过透明读取、原生执行、五门证据及内部执行管线检查。对剩余 #29 问题按正式路径是否使用及其风险记账，涉及当前准入的副作用和无法验证的输入继续阻断对应路径。 [现有选项缺口计算](../experiments/StardewAI.GoalConditionedBootstrap/GoalMethodFormalTrainingAdmissionBuilder.cs#L307)
+
+### 6. 把全局证据接到正式准入
+
+在正式准入报告和启动器复用同一个证据校验。将第 1 步的两个固定阻塞改成基于所选路线的实际验证结果。姜岛／钓鱼证据缺失时仍阻断。Gourmand 分支按实际选择验收，替代分支须有独立证据证明其达到同一解锁条件。覆盖缺失、证据篡改、跨存档替换和错误路线都应被拒绝。这个步骤需要实现与回归，当前基线的锁仍在。 [R2 准入归属](PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md#全局证明的保留与迁移) · [准入报告消费方](../experiments/StardewAI.GoalConditionedBootstrap/GoalMethodFormalTrainingAdmissionBuilder.cs#L82)
+
+### 7. 冻结语料、完成 Provider 与模型定型
+
+- 全局证据和晋升范围核对后，用当前监督合同重建启动语料。保留决策时的候选全集、独立 Teacher 比较、原生结果和版本身份。按存档／日隔离 train、validation、test，冻结数据及哈希。现有 `PolicyTrajectoryDatasetBuilder` 执行准入与切分，启动前仍需生成与实际版本匹配的工件。 [独立监督合同](independent-teacher-pairwise-admission.md)
+- 按现有合同实现并验收版本化 Provider。内置与替代／mock Student 都要接通，Teacher 可独立替换和启停，实际身份可追溯。以冻结语料完成可复现选型、独立测试、checkpoint 往返和最低配置级、8 GiB 整机实测。实验室可以提前设计比较和失败判据，正式选型使用已冻结的输入。 [Provider 验收](STUDENT_TEACHER_PROVIDER_INTERFACE_REQUIREMENTS_CN.md#6-开训前-provider-与模型验收)
+
+### 8. 重建总报告、生成 manifest 并启动
+
+- 用 `build-goal-method-formal-training-admission-reconciliation` 重放覆盖、支持步骤谱系、Goal Method 语料／checkpoint 绑定和留出评估，提交独立的正式准入审查。该报告与实际启动所用的策略数据 manifest 和运行 checkpoint 分别核对。 [总报告入口](../experiments/StardewAI.GoalConditionedBootstrap/Program.cs#L1009)
+- 获得既有正式准入授权后，准备当前正式轨迹输入、数据集 manifest、运行 checkpoint 和隔离存档。`/training/session/prepare` 固定运行身份及工件哈希。`/launch` 重新校验并等待执行器、游戏与匹配 `run_id` 的快照就绪，随后启动正式 `LiveTrainingLoop`。 [启动入口](../src/StardewAI.Backend/Program.cs#L661) · [运行工件检查](../src/StardewAI.Core/Training/StardewTrainingSessionLauncher.cs#L417)
+
+**正式数据边界。** 新的策略轨迹先由 `AppendPolicyDecisionTrajectories()` 写入本次运行的暂存目录。满足本轮验证目标与原生保存边界后，`FormalTrainingDataTransaction.Complete()` 才提交到正式目录。按既有约定，至少完成一个真实游戏日并取得新策略轨迹、原生回执、数据集 manifest 和 checkpoint 哈希后，才登记正式训练已启动。Student 新档 21/21 继续作为训后验收。 [轨迹写入](../tools/StardewAI.LiveTrainingLoop/Program.PolicyTrajectory.cs#L178) · [正式提交条件](../tools/StardewAI.LiveTrainingLoop/Program.cs#L2100)
