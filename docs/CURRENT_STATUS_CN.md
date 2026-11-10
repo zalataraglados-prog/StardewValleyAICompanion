@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+[文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
+
 > **2026-11-11T00:52:08+08:00 开训前施工顺序修订。** #549 已合入。L1 `19/19`、`11/11` 已冻结，`formal_product_training=false`。当前阶段是所选作物补水路线的资源证据与托管账本接线。 [逐步退出条件与启动硬锁](FORMAL_FULL_TRAINING_READINESS_CN.md#r2-开训前执行顺序)
 
 <!-- audit_invalidation: scope=2026-11-09_debris_next_steps_only; invalidated_at=2026-11-11T00:52:08+08:00; superseded_by=FORMAL_FULL_TRAINING_READINESS_CN.md#r2-开训前执行顺序; reason=该条按发布前状态写成，且将观测范围和账本准入顺序合写; historical_only=true -->
