@@ -1,5 +1,70 @@
 # Original Refill Native Trace
 
+## 2026-11-12 Selected Resource Trace Consumption
+
+Parent556 accepted main310b5c61,tested69ee03b0/tree5bb1e827,
+CI43089775742 all42/Core2600/Backend2036,zero failure/skip,same-head clean review.
+This slice adds OpenWithSelectedResourceEffects on the SAME trace/source reader,
+original immutable queue,nonce/journal/gzip/namespace/target guards. Every original
+frame contributes a typed resource-effect entry; unobserved strictly neutral
+moves need no invented observation or optional XML. Requested missing observation
+and persistent drift still refuse. Observed pickup and complete-tree effects
+consume their existing boundaries. Internal pickup overloads accept the SAME
+already-read immutable ResourceEvidence; reference-identity tests prevent a second
+read. No new walker,default capture/executor change or producer/ledger credit.
+
+Original peer083cd042 tests integrated592b6d4b,25/25 after one allowed intermediate
+fixture-position correction (first24/1). Baseline165/165 and final isolated trace
+slice32/32,zero failures/skips/warnings. Neutral observed/unobserved original queues,
+retained hashes,old entrypoint flags,tampering/missing/foreign evidence and immutable
+tree/pickup components are covered. Component fixtures are NOT a full native queue.
+
+Source-slice original six-frame replay block18-selected-resource-replay-b.json
+SHA25627cc24e3ebb8a0e59923c4c2370e5c470bf67cf03e34afce44f9085e91edad3c:
+current tree15calls/270->240 and following17-unit pickup plus two old neutral moves
+accepted; two old clears remain unavailable for absent original observation/tool
+input. No old failures are relabeled PASS. Accepted components reuse their exact
+Evidence object; timing gaps/provenance limitations remain. No new native game run.
+
+Old SnapshotInventoryContinuity/ResourceNeutral/PickupInventory mode flags retain
+their exact meanings; selected mode gets its own flag and frame list. Producer,
+resource-credit,native-outcome and formal authorization remain false. Next is the
+separately tested original watering preparation/owner/recovery consumption,then
+toploop/harvest/sales/native-save/restore/bounded managed. Unsupported actual effects
+stay unsettled; do not disable original repair/pickup or imply global coverage.
+
+## 2026-11-12 Retained Harvest Resource Handoff
+
+The next same-cycle resource boundary was inspected without a new game or full-world
+scan. The original E lifecycle request under money-resumption-20261107/current-production-runs/
+money-current-production-native-20261107-e identifies the actual final harvest queue.
+The SAME NativeExecutionActionSourceReader.ReadQueue verifies all5 original actions,
+immutable queue/actor/nonce/request journal/gzip/receipt and sequential snapshots.
+No historical source is rewritten or promoted to managed acceptance.
+
+External block20-harvest-resource-drift-a.json SHA256
+3427c29c2032f7dd8fb53b104ecdbb3b6824cb67d5fc24a252791cf684ca02d7
+records the original projector's exact persistent differences. Harvest changes crops,
+inventory/material graph and farming XP; its first new occupied slot also changes
+capacity echoes in prize-ticket/tool-upgrade/guild/mail projections and Community
+Center donation candidates. The final farming level crossing changes watering-can,
+pet-bowl and mastery-claim projections. Currency and energy remain unchanged on all5
+frames. These are existing transparent fields, not missing bridge observations and
+not evidence that the old shared projector is wrong. New consumers must account for
+their derived mirrors rather than deleting fields or relaxing that shared guard.
+
+Pinned E1.6.15 PE-only extraction of Crop.harvest/GetHarvestMethod/RegrowsAfterHarvest
+completed3methods/9686bytes/zero diagnostics, with19 previous outputs byte-identical.
+Source index SHA256606e11ecc73c0452f870b7831b5f8c7da817dcec68b16db9e891a2757e23e4c4.
+It confirms native primary inventory admission, separate extra debris and farming XP;
+quality/extra yield are not a fixed one-item formula. Retain those distinctions.
+
+This analysis localizes harvest/retention work in R2 step3 and is NOT a new harvest
+consumer, owner commit, production-attribution proof or full managed run. Reuse the
+original lifecycle crop verifier and existing inventory/identity/skill helpers for
+those effects; first reconcile actual mirrors, then remaining original main-loop/
+harvest/sales/native-save/recovery integration. No formal authorization or L1 change.
+
 ## 2026-11-12 Original Wild Tree Persistent Effects
 
 Parent PR555 accepted at mainbb314d7b,tested head17f007af/treef0a4fb2c,

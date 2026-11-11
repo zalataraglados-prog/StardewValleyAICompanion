@@ -95,7 +95,7 @@ public sealed class NativeWildTreeClearanceBoundaryTests
     private static NativeWildTreeClearanceSummary Read(TrainingExecutionRequest request, ActionOriginObservationReceipt receipt,
         SnapshotEnvelope before, SnapshotEnvelope after) => NativeOutputObservationBoundary.ReadWildTreeClearanceResources(request, receipt, before, after, "Farm");
 
-    private static (TrainingExecutionRequest Request, ActionOriginObservationReceipt Receipt, SnapshotEnvelope Before, SnapshotEnvelope After) Fixture(int experience)
+    internal static (TrainingExecutionRequest Request, ActionOriginObservationReceipt Receipt, SnapshotEnvelope Before, SnapshotEnvelope After) Fixture(int experience)
     {
         var f = NativeClearanceTerrainBoundaryTests.Fixture();
         f.Receipt.Collections = [];

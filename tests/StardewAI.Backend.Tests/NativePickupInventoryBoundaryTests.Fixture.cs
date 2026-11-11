@@ -10,7 +10,7 @@ namespace StardewAI.Backend.Tests;
 
 public sealed partial class NativePickupInventoryBoundaryTests
 {
-    private sealed class PickupFixture
+    internal sealed class PickupFixture
     {
         internal readonly TrainingExecutionRequest Request;
         internal readonly ActionOriginObservationReceipt Receipt;

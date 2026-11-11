@@ -2,6 +2,14 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-12T04:31:59+08:00 R2 原补水 trace 统一资源消费
+
+- #556 已合入 `310b5c61`，最终 head `69ee03b0` 与 main 树 `5bb1e827` 一致；CI `43089775742` 全42步、Core2600/Backend2036零失败/跳过，同 head 审查无发现，自有发布分支已清。下方“待审查”属于发布前历史。
+- 新显式 `OpenWithSelectedResourceEffects` 复用同一原 trace／source reader／队列／journal/gzip／命名空间与到达守卫，逐原帧分为严格资源不变的移动、原合同完整砍树、实际拾取。零入包移动使用原完整资源 projector，不要求可选 XML；已请求但缺失的观察不能借此绕过。拾取经内部复用入口沿用同一 `ReadResourceEvidence` 对象，不第二次读取或新增 walker；旧入口和默认保持。[范围](refill-approach-native-trace.md#2026-11-12-selected-resource-trace-consumption)。
+- 原 API 同会话两测试文件 `083cd042` 已审查集成 `592b6d4b`；首24通过／1重复中间状态 hash 的夹具错误，唯一修正只使中间站位不同、终点不变，随后25/25。新前基线165/165、独立 trace 分片末次32/32，均零失败/跳过、零警告。
+- 原 native source 的独立 b 重放6帧：完整树／17单位拾取／2条旧中性移动共4条接受，2条旧清障因当时缺观察或实际工具输入保持 unavailable，不算 PASS。接受项均复用原证据引用，401tick前置间隙保留。`block18-selected-resource-replay-b.json` SHA `27cc24e3ebb8a0e59923c4c2370e5c470bf67cf03e34afce44f9085e91edad3c`；原 a 和既有失败留存，无新游戏。
+- **接续与退出：** 本片只发布 trace 消费，单独同 head CI/审查；后续显式资源 preparation／同一 watering owner／丢确认恢复在独立开发分片中，不混为本片已合入。当前顶层依旧 unmanaged，尚无完整托管原生实跑、生产归属或正式训练。接续所选实际效果、同一账本与顶层，再收获／销售／原生保存恢复和有界 managed；不禁用旧开路／自动拾取来适配有限覆盖，未结算效果仍拒绝。L1`19/19、11/11`冻结，#339/#550跟踪中、local-data不提交。
+
 ## 2026-11-12T03:37:21+08:00 R2 原完整砍树的持久资源效果
 
 - #555 已由最终 head `17f007af` 的 CI `43087459524` 全42步和同 head 无发现审查合入 `bb314d7b`；测试／main 树 `f0a4fb2c` 一致，Core2600/Backend1975、零失败/跳过。有效房屋阈值审查已回复解决，下方待发布记录仅属历史。本片清障增量随后单独 CI/审查。

@@ -13,6 +13,9 @@ public sealed record CropTeacherRefillResourceEvidenceStep(string QueueItemId, s
 public sealed record CropTeacherRefillPickupInventoryStep(string QueueItemId, string OptionId,
     NativePickupInventorySummary Inventory);
 
+public sealed record CropTeacherRefillResourceEffectStep(string QueueItemId, string OptionId,
+    NativeRefillFrameResourceEffects Effects);
+
 // Retains the original successful native queue. No dispatch or producer credit.
 public sealed class CropTeacherRefillApproachNativeTrace
 {
@@ -22,7 +25,8 @@ public sealed class CropTeacherRefillApproachNativeTrace
 
     private CropTeacherRefillApproachNativeTrace(CropTeacherRefillApproachCompilation compilation,
         string receiptPath, string afterPath, string runId, bool verifySnapshotInventoryContinuity,
-        bool classifyResourceEvidence = false, bool requireResourceNeutrality = false, bool verifyPickupInventory = false)
+        bool classifyResourceEvidence = false, bool requireResourceNeutrality = false, bool verifyPickupInventory = false,
+        bool verifySelectedResourceEffects = false)
     {
         this.compilation = compilation;
         compilation.ValidateInputsUnchanged();
@@ -43,6 +47,7 @@ public sealed class CropTeacherRefillApproachNativeTrace
         var summaries = new List<CropTeacherRefillObservedStep>();
         var resourceEvidence = new List<CropTeacherRefillResourceEvidenceStep>();
         var pickupInventory = new List<CropTeacherRefillPickupInventoryStep>();
+        var resourceEffects = new List<CropTeacherRefillResourceEffectStep>();
         string? captureSession = null;
         for (var index = 0; index < native.Actions.Length; index++)
         {
@@ -63,7 +68,8 @@ public sealed class CropTeacherRefillApproachNativeTrace
                 if (label == "request_gzip") requestBlobs[path] = hash;
             }
             Require(frame.Request.OptionId is "executor.move_to_tile" or "executor.clear_obstacle" &&
-                    (requireResourceNeutrality || frame.Result.ActionOriginObservation is not null) &&
+                    (requireResourceNeutrality || verifySelectedResourceEffects && frame.Request.OptionId == "executor.move_to_tile" ||
+                        frame.Result.ActionOriginObservation is not null) &&
                     NativeExecutionSourceSupport.TotalDay(frame.Before) == compilation.TotalDay &&
                     NativeExecutionSourceSupport.TotalDay(frame.After) == compilation.TotalDay &&
                     Location(frame.Before) == "Farm" && Location(frame.After) == "Farm",
@@ -83,10 +89,17 @@ public sealed class CropTeacherRefillApproachNativeTrace
                 Require(frame.Result.ActionOriginObservation is not null,
                     "requested native observation is missing from the resource-neutral approach");
             }
-            var pickup = verifyPickupInventory
+            var effects = verifySelectedResourceEffects ? CropTeacherRefillResourceEffects.Read(frame.Request,
+                frame.Result.ActionOriginObservation, frame.Before, frame.After, "Farm") : null;
+            if (effects is not null)
+            {
+                resourceEffects.Add(new(frame.Item.QueueItemId, frame.Item.OptionId, effects));
+                if (effects.Evidence is null) continue; // Original unobserved, strictly resource-neutral move.
+            }
+            var pickup = effects?.Pickup?.Inventory ?? (verifyPickupInventory
                 ? NativeOutputObservationBoundary.ReadPickupInventory(frame.Request, frame.Result.ActionOriginObservation!,
-                    frame.Before, frame.After, "Farm") : null;
-            var classified = pickup?.Evidence ?? (classifyResourceEvidence
+                    frame.Before, frame.After, "Farm") : null);
+            var classified = effects?.Evidence ?? pickup?.Evidence ?? (classifyResourceEvidence
                 ? NativeOutputObservationBoundary.ReadResourceEvidence(frame.Request, frame.Result.ActionOriginObservation!,
                     frame.Before, frame.After, "Farm") : null);
             var summary = classified?.Observation ?? (verifySnapshotInventoryContinuity || requireResourceNeutrality
@@ -114,11 +127,13 @@ public sealed class CropTeacherRefillApproachNativeTrace
         Steps = summaries.AsReadOnly();
         ResourceEvidence = resourceEvidence.AsReadOnly();
         PickupInventory = pickupInventory.AsReadOnly();
+        ResourceEffects = resourceEffects.AsReadOnly();
         AfterSnapshotPath = afterPath;
         ValidateInputsUnchanged();
         SnapshotInventoryContinuityVerified = verifySnapshotInventoryContinuity;
         ResourceNeutralBoundaryVerified = requireResourceNeutrality;
         PickupInventoryCaptureVerified = verifyPickupInventory;
+        SelectedResourceEffectsVerified = verifySelectedResourceEffects;
     }
 
     // Calibration-only: validates captured observations, not their inventory snapshot denominator.
@@ -141,6 +156,11 @@ public sealed class CropTeacherRefillApproachNativeTrace
         new(compilation, executionReceiptPath, afterSnapshotPath, runId, verifySnapshotInventoryContinuity: true,
             verifyPickupInventory: true);
 
+    public static CropTeacherRefillApproachNativeTrace OpenWithSelectedResourceEffects(
+        CropTeacherRefillApproachCompilation compilation, string executionReceiptPath, string afterSnapshotPath, string runId) =>
+        new(compilation, executionReceiptPath, afterSnapshotPath, runId, verifySnapshotInventoryContinuity: false,
+            verifySelectedResourceEffects: true);
+
     // No repair or pickup exemption: every frame must preserve the original full resource boundary.
     public static CropTeacherRefillApproachNativeTrace OpenResourceNeutral(
         CropTeacherRefillApproachCompilation compilation, string executionReceiptPath, string afterSnapshotPath, string runId) =>
@@ -150,10 +170,12 @@ public sealed class CropTeacherRefillApproachNativeTrace
     public IReadOnlyList<CropTeacherRefillObservedStep> Steps { get; }
     public IReadOnlyList<CropTeacherRefillResourceEvidenceStep> ResourceEvidence { get; }
     public IReadOnlyList<CropTeacherRefillPickupInventoryStep> PickupInventory { get; }
+    public IReadOnlyList<CropTeacherRefillResourceEffectStep> ResourceEffects { get; }
     public string AfterSnapshotPath { get; }
     public bool SnapshotInventoryContinuityVerified { get; }
     public bool ResourceNeutralBoundaryVerified { get; }
     public bool PickupInventoryCaptureVerified { get; }
+    public bool SelectedResourceEffectsVerified { get; }
     public IReadOnlyDictionary<string, string> InputHashes => inputs.ReadHashes().Concat(requestBlobs)
         .ToDictionary(pair => pair.Key, pair => pair.Value, CropTeacherSeedTransferNativeOutcome.PathComparer);
     public bool ResourceCreditAuthorized => false;
