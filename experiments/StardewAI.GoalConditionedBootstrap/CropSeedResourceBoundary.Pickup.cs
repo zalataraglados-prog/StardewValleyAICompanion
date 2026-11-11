@@ -78,7 +78,7 @@ internal static partial class CropSeedResourceBoundary
             return "carpenter_action_tile_unavailable";
         if (!Flag(house, "robin_present_at_counter")) return "robin_not_present_at_counter";
         var menu = Value(Field(snapshot, "player", "active_menu")!).GetValue<string>();
-        var timing = Value(Field(snapshot, "player", "movement_timing")!);
+        var timing = Value(Field(snapshot, "player", "movement_timing_context")!);
         return menu != "none" || Flag(timing, "dialogue_up") ? "carpenter_menu_or_dialogue_not_clear" : "ready";
     }
 }

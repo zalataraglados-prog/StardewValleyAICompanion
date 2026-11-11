@@ -38,7 +38,7 @@ public sealed partial class NativePickupInventoryBoundaryTests
         {
             Put(snapshot, "player", "money", JsonValue.Create(branch == "money" ? 500 : 20000)!);
             Put(snapshot, "player", "active_menu", JsonValue.Create(branch == "menu" ? "StardewValley.Menus.InventoryPage" : "none")!);
-            Put(snapshot, "player", "movement_timing", new JsonObject { ["dialogue_up"] = branch == "dialogue" });
+            Put(snapshot, "player", "movement_timing_context", new JsonObject { ["dialogue_up"] = branch == "dialogue" });
             Edit(snapshot, "world_progress", "marriage_house", house =>
             {
                 house["days_until_farmhouse_upgrade"] = branch == "upgrade-underway" ? 1 : -1;
