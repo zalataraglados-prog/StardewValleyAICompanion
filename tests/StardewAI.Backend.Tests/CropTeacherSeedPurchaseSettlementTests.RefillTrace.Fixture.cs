@@ -142,6 +142,9 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         internal CropTeacherRefillApproachNativeTrace OpenWithSnapshotInventoryContinuity() =>
             CropTeacherRefillApproachNativeTrace.OpenWithSnapshotInventoryContinuity(
                 Approach.Open(), ReceiptPath, AfterPath, Approach.Watering.Shared.Runtime.LiveOptions.RunId);
+        internal CropTeacherRefillApproachNativeTrace OpenWithResourceEvidence() =>
+            CropTeacherRefillApproachNativeTrace.OpenWithResourceEvidence(
+                Approach.Open(), ReceiptPath, AfterPath, Approach.Watering.Shared.Runtime.LiveOptions.RunId);
 
         private static ActionOriginInventoryCount[] DeclaredInventoryCounts() =>
         [

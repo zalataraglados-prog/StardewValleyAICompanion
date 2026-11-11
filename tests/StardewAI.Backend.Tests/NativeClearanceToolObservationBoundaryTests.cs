@@ -196,7 +196,7 @@ public sealed class NativeClearanceToolObservationBoundaryTests
     private static NativeClearanceToolInputSummary Read(TrainingExecutionRequest request, ActionOriginObservationReceipt receipt) =>
         NativeClearanceToolObservationBoundary.Read(request, receipt, 99, 111, "Farm", "123");
 
-    private static (TrainingExecutionRequest Request, ActionOriginObservationReceipt Receipt) Fixture()
+    internal static (TrainingExecutionRequest Request, ActionOriginObservationReceipt Receipt) Fixture()
     {
         var (request, receipt) = NativeOutputObservationBoundaryTests.Fixture();
         request.ActionOriginToolInputs = request.ActionOriginSnapshotAnchor = true;

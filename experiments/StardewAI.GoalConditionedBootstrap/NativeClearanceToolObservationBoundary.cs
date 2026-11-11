@@ -29,6 +29,16 @@ public static class NativeClearanceToolObservationBoundary
         Require(request.ActionOriginToolInputs && request.ActionOriginSnapshotAnchor,
             "tool input observation was not explicitly requested with a snapshot anchor");
         var original = NativeOutputObservationBoundary.Read(request, receipt, earliestTick, latestTick, locationId);
+        return ReadValidated(request, receipt, original, locationId, actorId);
+    }
+
+    internal static NativeClearanceToolInputSummary ReadValidated(TrainingExecutionRequest request,
+        ActionOriginObservationReceipt receipt, NativeOutputObservationSummary original, string locationId, string actorId)
+    {
+        Require(request.ActionOriginToolInputs && request.ActionOriginSnapshotAnchor,
+            "tool input observation was not explicitly requested with a snapshot anchor");
+        Require(original.ScopeId == receipt.ScopeId && original.CaptureSessionId == receipt.CaptureSessionId,
+            "tool input observation differs from its validated original scope");
         Require(Text(actorId) && receipt.ClearanceToolCalls is { Length: <= 256 },
             "actor or complete bounded tool call list is unavailable");
         var result = new List<NativeObservedClearanceToolCall>();

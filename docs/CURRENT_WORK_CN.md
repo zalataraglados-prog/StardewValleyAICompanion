@@ -2,6 +2,15 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-11T23:54:09+08:00 R2 所选补水路线的资源证据接续
+
+- 已同步 #551/main `74990fea`，按[R2 第1-3步](FORMAL_FULL_TRAINING_READINESS_CN.md#r2-开训前执行顺序)施工，不恢复旧“先补全所有 held/offered/世界私有字段”的排期。#550 的事实与当前代码核对相符：深层校准默认关闭、未接资源结算；它是有界验证建议，不新增通用训练门或第二主线。
+- 原 API 同会话用12步完成独立来源核对，零错误、正常退出且自动撤权，当前 accepted-idle。两个固定启动阻塞仍同时存在于共享列表，正式报告与 launcher 共用；未改锁。实际全局 OR 分支尚未由本轮引用的工件确定，记未判定，不用文档示例猜选中路线，也不因此阻断当前作物接线。
+- 新 `OpenWithResourceEvidence` 复用原补水编译/同一 trace、原严格库存连续性核和原工具输入核，保留逐 admission 实际增量、顺序、scope 起始引用状态与可用的实际工具调用。旧入口、旧守卫、执行器及候选池不改；没有第二 walker/verifier。新 ID/返回 true/最终涨库存均不产生生产 credit，所有增量保持未结算。[专题](refill-approach-native-trace.md#2026-11-11-selected-route-resource-evidence)。
+- 相关 Backend161/161、零失败/跳过；声明夹具验证 repair/no-repair 原队列接线而非游戏 PASS。最新外部重放 `I:\StardewAI-Collab\resident-refill-20261108\block11-resource-replay-b.json` 复用8个原生观察区间，7通过、1按 #541 数量间隙拒绝，另2个未观察对照不计 PASS；共34入包单位与15工具调用，source/run/save/actor/queue/nonce/tick/hash已留存。一个17单位正例深校准开关关闭，另一17单位正例开启；均未授资源/生产归属 credit。没有新游戏、托管周期或训练。
+- 该 b 重放工件 SHA-256 为 `5f66f102295bc0a01ec5c195e3f2f2251aa5c56e7c10111f517523784f272f3a`；旧 a/历史失败保留，不覆盖或重标。最终同 head CI/发布在 PR 收口记录，不沿用旧版本绿灯。
+- **下一步及退出条件：** 本片审查/CI发布后继续同一路线的完整持久资源/槽位、实际消耗与需结算的因果来源，复用已有 guard/projector 接同一 owner；未知漂移仍拒绝，无法归因不伪记生产。然后收获/原生保存及 #550 A 的单一有界 managed 实战。B 已有数量正例/间隙反例，但字段必要性、完整生产归属与 A 仍未判定，不能把这些统计写成第2-4步整体完成。L1`19/19、11/11`冻结，full-state/nativeoutcome/resource/formal=false，Student21/21训后；local-data/raw不提交。当前周61%起续，停点改为约80%USED。
+
 <!-- audit_invalidation: scope=2026-11-09_debris_next_steps; invalidated_at=2026-11-11T00:52:08+08:00; superseded_by=FORMAL_FULL_TRAINING_READINESS_CN.md#r2-开训前执行顺序; reason=原摘要未区分观测校准、账本消费和正式启动条件，容易把深层字段读作共同前置; historical_only=true -->
 > **2026-11-11T00:52:08+08:00 接续修订。** #549 已合入 `a4cb6b43`。本轮仍沿同一条作物托管主线，先核对所选补水路线的资源结果，再接同一账本、收获和原生保存，随后按阶段验收。下方 #549 段的原生记录与回归结果保留，其「唯一下一步」排期由 [R2 开训前执行顺序](FORMAL_FULL_TRAINING_READINESS_CN.md#r2-开训前执行顺序) 取代。
 

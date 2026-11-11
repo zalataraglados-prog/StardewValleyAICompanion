@@ -101,3 +101,54 @@ native save/day and bounded managed real integration remain next;original global
 calendar/shared budgets/cross-root/carrier,remaining probe policy,Provider/model
 and manifest follow. L1 remains19/19 and11/11,formal=false;Student fresh-save21/21
 is post-training. Already accepted matrices and L1 evidence are not recollected.
+
+## 2026-11-11 Selected-Route Resource Evidence
+
+The current sequence is the [R2 execution order](FORMAL_FULL_TRAINING_READINESS_CN.md#r2-开训前执行顺序),
+as revised by #551. The older successor paragraph above does not require complete
+world/private-field capture before the selected managed route. #550 is a bounded
+validation hypothesis, not a new formal gate or an already-proven failure cause.
+
+`OpenWithResourceEvidence` reuses the SAME original compilation, native source
+reader, request/journal identity, ordered receipt, capture namespace, endpoint
+quantity guard and retained hashes. Old entrypoints keep their original behavior.
+The new entrypoint retains the original summary and ordered per-admission facts
+without parsing the base observation twice or creating another native verifier.
+Optional tool evidence reuses the original exact tool-call validation. Entry/exit
+stamina and native debit inputs remain distinct; debit is not silently called the
+entire scope's net energy cost. Absent tool observation is unavailable, not zero.
+
+The three reference classifications describe only SCOPE-START evidence: actual
+Debris+Chunk present, Debris present with unresolved Chunk, or Debris not observed.
+They are not production origins. A move's prior reference may have been created
+by an earlier clear in the same queue; these facts do not independently establish
+that causal link. New references likewise do not prove production by this action.
+Actual admission quantity is inventory-after minus inventory-before, never offered
+stack, remaining stack or native boolean return. Positive amounts remain unsettled;
+no producer witness or resource/Teacher/formal authorization is fabricated.
+
+Related Backend161/161 passed with zero failures/skips. Declared compiler/receipt
+fixtures cover both original repair/no-repair queues, unchanged defaults, shared
+summary reuse and original artifact/quantity rejection. These are not new managed
+native runs. External current-source replay reused eight observed primitive scopes:
+seven pass, one exact historical #541 after-capture inventory gap rejects. Two
+unobserved controls are not counted as passes. Across the passing scopes there
+are34 admitted units and15 actual tool calls; all production credit remains zero.
+The report pins source hashes, run/save/actor, queue/nonce and snapshot/capture ticks.
+No original source was rewritten, game started or old matrix recollected.
+
+One passing native sample has17 admitted units with graph/raw-Debris calibration
+flags OFF. Another has17 with those flags ON, plus15 tree tool calls in its clear
+scope. This proves the original quantity/classification path can use existing
+fields in those scopes; it does NOT establish that all deep fields are optional
+for every producer or that the full managed resource boundary is complete.
+The rejected historical scope ends tick2295 and its after snapshot is2297; the
+extra wood is still rejected, not relabeled as production or tolerated.
+
+The selected-route successor remains exact persistent resource/slot/consumption
+and producer or precondition evidence where settlement needs it, then SAME owner,
+harvest and native-save continuity. A required-field format failure or a lone
+unavailable result does not establish field necessity. #550 A remains unverified;
+B now has bounded positive quantity and negative gap decisions, but producer
+credit and full persistent-boundary acceptance remain unproved. L1 frozen19/19,
+11/11; full-state/nativeoutcome/resource/formalfalse. Raw data stays outside Git.
