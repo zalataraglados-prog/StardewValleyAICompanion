@@ -77,8 +77,9 @@ public sealed partial class CropTeacherManagedSeedOwner
 
     private static void AddWateringOutcomeEvidence(CropTeacherWateringMaintenance scope, JsonObject document)
     {
-        document["native_watering_prefix_verified"] = !scope.RefillControlVerified;
+        document["native_watering_prefix_verified"] = !scope.RefillControlVerified && !scope.RefillApproachVerified;
         if (scope.RefillControlVerified) document["native_refill_control_verified"] = true;
+        if (scope.RefillApproachVerified) document["native_refill_approach_verified"] = true;
         document["applied_tile_count"] = scope.AppliedTileCount;
         document["complete_batch"] = scope.CompleteBatch;
         document["applied_tiles"] = JsonSerializer.SerializeToNode(scope.AppliedTiles, JsonOptions);

@@ -19,10 +19,15 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         internal List<string> Journals { get; } = [];
         internal List<string> AfterFrames { get; } = [];
         private readonly bool completeSnapshotInventory;
+        private readonly bool resourceNeutral;
+        private readonly bool observeNativeOutputs;
 
-        internal RefillTraceFixture(bool repair, bool completeSnapshotInventory = false)
+        internal RefillTraceFixture(bool repair, bool completeSnapshotInventory = false, bool resourceNeutral = false,
+            bool observeNativeOutputs = true)
         {
             this.completeSnapshotInventory = completeSnapshotInventory;
+            this.resourceNeutral = resourceNeutral;
+            this.observeNativeOutputs = observeNativeOutputs;
             Approach = new(repair, prepareSource: source =>
             {
                 source.Before.GameVersion = "1.6.15";
@@ -57,12 +62,14 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             });
         }
 
-        internal async Task Build()
+        internal async Task Build(Action<SnapshotEnvelope, int>? changeFrame = null, bool? emitObservations = null,
+            bool retainCompilation = false)
         {
-            await Approach.Compile();
+            if (retainCompilation) Approach.LoadOriginalCompilation();
+            else await Approach.Compile();
             var scope = Approach.Open();
             var options = Approach.Watering.Shared.Runtime.LiveOptions;
-            options.ObserveNativeOutputs = true; options.SkipTraining = true;
+            options.ObserveNativeOutputs = observeNativeOutputs; options.SkipTraining = true;
             options.SaveIsolationPath = "isolated-refill-trace-fixture";
             Assert.Equal("run.seed-acquisition.fixture", options.RunId);
             var before = Approach.Watering.Before;
@@ -79,7 +86,11 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                     node["tile_x"]!["value"] = scope.Target.TileX;
                     node["tile_y"]!["value"] = scope.Target.TileY;
                 });
-                after.State["trace_fixture"] = JsonSerializer.SerializeToElement(new { status = "available", value = index + 1 });
+                if (!resourceNeutral)
+                    after.State["trace_fixture"] = JsonSerializer.SerializeToElement(new { status = "available", value = index + 1 });
+                // Mutate before hashing/writing the frame, result and receipt so guard tests
+                // exercise physical snapshot differences rather than stale evidence hashes.
+                changeFrame?.Invoke(after, index);
                 after.StateHash = SnapshotHash.ComputeStateHash(after.State);
                 var afterPath = Path.Combine(options.SnapshotDir, "refill-frame-" + index + ".json");
                 Fixture.Save(afterPath, after); AfterFrames.Add(afterPath);
@@ -88,15 +99,17 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 var journal = await RuntimeExecutionRequestJournal.WriteAsync(options.SnapshotDir, 200, index + 1,
                     JsonSerializer.Serialize(request, JsonOptions), "http://test/api/v1/training/execute", beforePath);
                 Journals.Add(journal.JournalPath);
-                var facts = new[] { new SimulatedFactChange { Path = "trace_fixture", Before = index.ToString(), After = (index + 1).ToString() } };
+                var facts = new[] { new SimulatedFactChange { Path = resourceNeutral ? "player.tile" : "trace_fixture",
+                    Before = resourceNeutral ? $"{before.State["player"].GetProperty("tile_x").GetProperty("value").GetInt32()},{before.State["player"].GetProperty("tile_y").GetProperty("value").GetInt32()}" : index.ToString(),
+                    After = resourceNeutral ? $"{after.State["player"].GetProperty("tile_x").GetProperty("value").GetInt32()},{after.State["player"].GetProperty("tile_y").GetProperty("value").GetInt32()}" : (index + 1).ToString() } };
                 var result = JsonSerializer.SerializeToNode(new TrainingExecutionResult
                 {
                     RunId = options.RunId, QueueId = scope.QueueId, QueueItemId = item.QueueItemId, OptionId = item.OptionId,
                     BeforeStateHash = before.StateHash, Status = "applied", FeedbackAvailable = true,
                     PrimitiveKind = item.OptionId["executor.".Length..], PrimitiveVerificationStatus = "verified", ChangedFacts = facts,
-                    ActionOriginObservation = new()
+                    ActionOriginObservation = !(emitObservations ?? observeNativeOutputs) ? null : new()
                     {
-                        ScopeId = request.ActionOriginObservationScopeId!, CaptureSessionId = session, RunId = options.RunId,
+                        ScopeId = request.ActionOriginObservationScopeId ?? "unrequested.fixture.scope", CaptureSessionId = session, RunId = options.RunId,
                         QueueId = scope.QueueId, QueueItemId = item.QueueItemId, RequestNonce = request.RequestNonce,
                         BeforeStateHash = before.StateHash, LocationId = "Farm", BeforeGameTick = before.GameTick,
                         AfterGameTick = after.GameTick, Status = "observed",

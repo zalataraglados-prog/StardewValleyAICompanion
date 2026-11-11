@@ -76,6 +76,46 @@ Next continue original refill-approach/control continuity, including its existin
 route repair and attributed clearance/pickup effects, then harvest attribution and
 native-save/day continuity. Do not call a resource-changing repair a neutral move,
 disable the old repair to simplify tests or rewrite old full-cycle/idle/binder rules.
+
+## Resource-Neutral Approach On The Same Owner
+
+The explicit approach preparation reuses CropTeacherRefillApproachCompilation and
+the SAME native trace/whole persistent-resource projector. It does not call a
+resource-changing move neutral: compiled clear items reject BEFORE dispatch;
+each admitted native move frame must independently preserve the whole original
+inventory/currency/persistent projection. Unknown drift, water/crop/energy changes
+and full-slot metadata changes reject, rather than widening a volatile-field list.
+Existing repair planning stays enabled with its original budget. Repair/pickup
+settlement and producer credit remain separate pending work, not silently skipped.
+
+When observations were not requested, original raw request/journal/gzip/native
+receipts are still required but optional calibration fields are not made mandatory.
+If observations were requested, their original quantity/snapshot denominator must
+validate; a missing observation or an unsolicited attached one is rejected.
+
+Only this original owned preparation records maintenance_control_kind=refill_approach.
+The original six-argument compilation constructor and ordinary watering intent
+shape are retained. Dispatch/result/marker/lookup and restart use the SAME owner;
+no replacement executor or second controller is introduced. New outcome evidence
+is native_refill_approach_verified=true, native_watering_prefix_verified=false,
+zero applied tiles, incomplete batch, and preference/formal=false. It has NOT yet
+filled the watering can. A subsequent original watering/refill phase is still due.
+Forged approach evidence on a different accepted outcome is rejected on recovery.
+
+The owned helpers are adapters, not automatic proof that the top-level loop uses
+them. Current DispatchCropTeacherAsync still explicitly validates UNMANAGED dispatch.
+Joining these adapters to the original top-level run, exact resourceful clearing,
+harvest/native save and a bounded real managed cycle remain required under PR551.
+Declared HTTP/native-format fixture success must not be reported as that real run.
+
+Latest focused integration79/79 passed, including original wire dispatch, native/
+marker/acceptance acknowledgement loss, read-only restart, next watering compile,
+forged approach flags and the14-case Museum recovery group. Complete local Backend
+was1874passed/1failed/0skipped: that old Museum malformed-reply case exceeded its
+15-second bound. The failure is retained; focused reproduction passed without
+changing Museum, timeouts or filters in CI. Its cause remains unconfirmed, and
+final-head complete CI is still required. The new outcome reuses the trace-owned
+artifact guard rather than decoding/hashing the same full snapshots twice.
 Only after these are joined explicitly enable bounded real managed integration.
 Global calendar/budget/cross-root/carrier, Provider/model and manifest/preflight
 remain; L1 stays19/19 and11/11, formal=false; Student21/21 is post-training.

@@ -10,7 +10,7 @@ public sealed record CropTeacherRefillObservedStep(string QueueItemId, string Op
 public sealed record CropTeacherRefillResourceEvidenceStep(string QueueItemId, string OptionId,
     NativeOutputResourceEvidence Evidence);
 
-// Retains the original successful native queue. No dispatch, resource rebind or producer credit.
+// Retains the original successful native queue. No dispatch or producer credit.
 public sealed class CropTeacherRefillApproachNativeTrace
 {
     private readonly CropTeacherRefillApproachCompilation compilation;
@@ -19,10 +19,12 @@ public sealed class CropTeacherRefillApproachNativeTrace
 
     private CropTeacherRefillApproachNativeTrace(CropTeacherRefillApproachCompilation compilation,
         string receiptPath, string afterPath, string runId, bool verifySnapshotInventoryContinuity,
-        bool classifyResourceEvidence = false)
+        bool classifyResourceEvidence = false, bool requireResourceNeutrality = false)
     {
         this.compilation = compilation;
         compilation.ValidateInputsUnchanged();
+        Require(!requireResourceNeutrality || compilation.ClearanceQueueItemIds.Count == 0,
+            "resource-neutral approach cannot replace a compiled repair/resource settlement");
         receiptPath = Path.GetFullPath(receiptPath); afterPath = Path.GetFullPath(afterPath);
         var initialPaths = compilation.InputHashes.Keys.Concat(new[] { receiptPath, afterPath })
             .Distinct(CropTeacherSeedTransferNativeOutcome.PathComparer).ToArray();
@@ -57,15 +59,30 @@ public sealed class CropTeacherRefillApproachNativeTrace
                 if (label == "request_gzip") requestBlobs[path] = hash;
             }
             Require(frame.Request.OptionId is "executor.move_to_tile" or "executor.clear_obstacle" &&
-                    frame.Result.ActionOriginObservation is not null &&
+                    (requireResourceNeutrality || frame.Result.ActionOriginObservation is not null) &&
                     NativeExecutionSourceSupport.TotalDay(frame.Before) == compilation.TotalDay &&
                     NativeExecutionSourceSupport.TotalDay(frame.After) == compilation.TotalDay &&
                     Location(frame.Before) == "Farm" && Location(frame.After) == "Farm",
                 "native refill trace lacks its original same-day Farm scope/observation");
+            if (requireResourceNeutrality)
+            {
+                Require(frame.Request.OptionId == "executor.move_to_tile" &&
+                        FullShipmentRecoverySettlementBoundaryProjector.TryProject(frame.Before, out var first) &&
+                        FullShipmentRecoverySettlementBoundaryProjector.TryProject(frame.After, out var next) && first == next,
+                    "resource-neutral approach changed persistent resources/state or lacks its original projection");
+                if (frame.Request.ActionOriginObservationScopeId is null)
+                {
+                    Require(frame.Result.ActionOriginObservation is null,
+                        "unrequested native observation cannot be attached to a resource-neutral approach");
+                    continue;
+                }
+                Require(frame.Result.ActionOriginObservation is not null,
+                    "requested native observation is missing from the resource-neutral approach");
+            }
             var classified = classifyResourceEvidence
                 ? NativeOutputObservationBoundary.ReadResourceEvidence(frame.Request, frame.Result.ActionOriginObservation!,
                     frame.Before, frame.After, "Farm") : null;
-            var summary = classified?.Observation ?? (verifySnapshotInventoryContinuity
+            var summary = classified?.Observation ?? (verifySnapshotInventoryContinuity || requireResourceNeutrality
                 ? NativeOutputObservationSnapshotBoundary.Read(frame.Request, frame.Result.ActionOriginObservation!,
                     frame.Before, frame.After, "Farm")
                 : NativeOutputObservationBoundary.Read(frame.Request, frame.Result.ActionOriginObservation!,
@@ -91,6 +108,7 @@ public sealed class CropTeacherRefillApproachNativeTrace
         AfterSnapshotPath = afterPath;
         ValidateInputsUnchanged();
         SnapshotInventoryContinuityVerified = verifySnapshotInventoryContinuity;
+        ResourceNeutralBoundaryVerified = requireResourceNeutrality;
     }
 
     // Calibration-only: validates captured observations, not their inventory snapshot denominator.
@@ -108,10 +126,17 @@ public sealed class CropTeacherRefillApproachNativeTrace
         new(compilation, executionReceiptPath, afterSnapshotPath, runId, verifySnapshotInventoryContinuity: true,
             classifyResourceEvidence: true);
 
+    // No repair or pickup exemption: every frame must preserve the original full resource boundary.
+    public static CropTeacherRefillApproachNativeTrace OpenResourceNeutral(
+        CropTeacherRefillApproachCompilation compilation, string executionReceiptPath, string afterSnapshotPath, string runId) =>
+        new(compilation, executionReceiptPath, afterSnapshotPath, runId, verifySnapshotInventoryContinuity: false,
+            requireResourceNeutrality: true);
+
     public IReadOnlyList<CropTeacherRefillObservedStep> Steps { get; }
     public IReadOnlyList<CropTeacherRefillResourceEvidenceStep> ResourceEvidence { get; }
     public string AfterSnapshotPath { get; }
     public bool SnapshotInventoryContinuityVerified { get; }
+    public bool ResourceNeutralBoundaryVerified { get; }
     public IReadOnlyDictionary<string, string> InputHashes => inputs.ReadHashes().Concat(requestBlobs)
         .ToDictionary(pair => pair.Key, pair => pair.Value, CropTeacherSeedTransferNativeOutcome.PathComparer);
     public bool ResourceCreditAuthorized => false;

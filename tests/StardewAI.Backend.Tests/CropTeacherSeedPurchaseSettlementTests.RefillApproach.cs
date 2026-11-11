@@ -133,6 +133,9 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             Watering.Shared.Inputs.Plan.RequestPath, Watering.Shared.Source.SourcePath, Watering.Shared.Source.LedgerPath,
             Watering.Shared.Inputs.Plan.CoveredCommitmentIds, Id, "refill-approach.original", ModelPath, QueuePath);
 
+        internal void LoadOriginalCompilation() => Queue =
+            JsonSerializer.Deserialize<ActionQueueEnvelope>(File.ReadAllText(QueuePath), JsonOptions)!;
+
         public void Dispose() => Watering.Dispose();
     }
 }
