@@ -2,6 +2,14 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-12T06:34:00+08:00 R2 原收获作物转换核复用
+
+- 接续 #560 技能片，原 `MoneyRevenueCropNativeLifecycleProofBuilder` 的单次／再生收获规则提取为同一私有核，旧生命周期调用与新内部目标消费者共用。复用原 CropState、catalog 和身份规则；无新执行器、目录字段或第二套生长规则。
+- 目标消费者沿原请求定位唯一 live/ready 作物。单次收获只移除该行；再生仅按原生 Crop.harvest 与原桥推导更新 fully_grown、phase day、ready 和下一收获倒计时，其他作物、目标未知属性和外层元数据保留。按原生命周期范围只证明 Farm，不用同坐标代替其他地图。
+- 本片20例与原技能／砍树回归，含 #560 missing-can 修正，整合91/91、零失败/跳过、构建零警告/错误。还直接调用原 `VerifyMoneyCropNativeLifecycleProof`，一次完成其既有生命周期、留存／销售／shipping、跨日／恢复及反例自测，正常退出；这是原声明夹具回归，不是新游戏证据。临时产物在仓库外 I 盘。
+- 同一 E 强队列5次收获由新构建独立重放：技能镜像和目标作物组件各5/5；剩余持久余差每帧只有 `world_progress.community_center` 的库存捐赠候选回显。报告 SHA `18ea6f7b18d65fa9320870536839a961f6524cd6cd452e00569ea23c39ff4173`。原 native E 未重跑13日，无新游戏／服务器／训练。再生分支目前是 CLR／原夹具证据，不能算新的再生原生实跑。[范围](refill-approach-native-trace.md#2026-11-12-original-crop-harvest-target-kernel)。
+- **唯一接续：** 对准原 Bundle 匹配／投影语义消费库存驱动的捐赠候选，并结算实际收获留存；随后同一 owner／主循环、销售／原生保存读回与有界 managed。组件不是生产归属、完整资源、托管或正式训练通过。#560 审查修正 head 仍须最终 CI；本片单独验收发布。L1冻结、formal=false、local-data不提交。
+
 ## 2026-11-12T06:20:00+08:00 R2 收获经验与升级镜像消费
 
 - #559 文档片由最终 `455b9e7f` 全42步 CI／同 head 无发现审查合入 `879b5e3a`；核测试／main树 `38b2588b` 一致后才分别清理自有远端／本地引用。仍按 R2 第2步收尾接第3步，不重开冻结的 L1。
