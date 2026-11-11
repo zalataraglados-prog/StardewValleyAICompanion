@@ -2,6 +2,11 @@
 
 ## 2026-11-12 Original Wild Tree Persistent Effects
 
+Parent PR555 accepted at mainbb314d7b,tested head17f007af/treef0a4fb2c,
+CI43087459524 all42/Core2600/Backend1975,zero failure/skip and same-head clean
+review. The house-threshold finding is resolved. This clearance increment is
+reviewed/validated separately; parent CI is not its acceptance result.
+
 The original API peer contributed terrain component2d875aa9,39/39 focused,reviewed
 and integrated8bb9de0a. ReadClearanceTerrain reuses ReadClearanceConsumption once
 and original CropSeedResourceBoundary envelope helpers; exactly the requested
