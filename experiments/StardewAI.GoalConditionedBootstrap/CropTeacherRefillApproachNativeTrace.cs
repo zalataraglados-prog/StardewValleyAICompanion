@@ -10,6 +10,9 @@ public sealed record CropTeacherRefillObservedStep(string QueueItemId, string Op
 public sealed record CropTeacherRefillResourceEvidenceStep(string QueueItemId, string OptionId,
     NativeOutputResourceEvidence Evidence);
 
+public sealed record CropTeacherRefillPickupInventoryStep(string QueueItemId, string OptionId,
+    NativePickupInventorySummary Inventory);
+
 // Retains the original successful native queue. No dispatch or producer credit.
 public sealed class CropTeacherRefillApproachNativeTrace
 {
@@ -19,7 +22,7 @@ public sealed class CropTeacherRefillApproachNativeTrace
 
     private CropTeacherRefillApproachNativeTrace(CropTeacherRefillApproachCompilation compilation,
         string receiptPath, string afterPath, string runId, bool verifySnapshotInventoryContinuity,
-        bool classifyResourceEvidence = false, bool requireResourceNeutrality = false)
+        bool classifyResourceEvidence = false, bool requireResourceNeutrality = false, bool verifyPickupInventory = false)
     {
         this.compilation = compilation;
         compilation.ValidateInputsUnchanged();
@@ -39,6 +42,7 @@ public sealed class CropTeacherRefillApproachNativeTrace
         var retained = new Dictionary<string, string>(initial.ReadHashes(), CropTeacherSeedTransferNativeOutcome.PathComparer);
         var summaries = new List<CropTeacherRefillObservedStep>();
         var resourceEvidence = new List<CropTeacherRefillResourceEvidenceStep>();
+        var pickupInventory = new List<CropTeacherRefillPickupInventoryStep>();
         string? captureSession = null;
         for (var index = 0; index < native.Actions.Length; index++)
         {
@@ -79,9 +83,12 @@ public sealed class CropTeacherRefillApproachNativeTrace
                 Require(frame.Result.ActionOriginObservation is not null,
                     "requested native observation is missing from the resource-neutral approach");
             }
-            var classified = classifyResourceEvidence
-                ? NativeOutputObservationBoundary.ReadResourceEvidence(frame.Request, frame.Result.ActionOriginObservation!,
+            var pickup = verifyPickupInventory
+                ? NativeOutputObservationBoundary.ReadPickupInventory(frame.Request, frame.Result.ActionOriginObservation!,
                     frame.Before, frame.After, "Farm") : null;
+            var classified = pickup?.Evidence ?? (classifyResourceEvidence
+                ? NativeOutputObservationBoundary.ReadResourceEvidence(frame.Request, frame.Result.ActionOriginObservation!,
+                    frame.Before, frame.After, "Farm") : null);
             var summary = classified?.Observation ?? (verifySnapshotInventoryContinuity || requireResourceNeutrality
                 ? NativeOutputObservationSnapshotBoundary.Read(frame.Request, frame.Result.ActionOriginObservation!,
                     frame.Before, frame.After, "Farm")
@@ -91,6 +98,7 @@ public sealed class CropTeacherRefillApproachNativeTrace
             Require(summary.CaptureSessionId == captureSession, "native trace crossed observation-process reference namespaces");
             summaries.Add(new(frame.Item.QueueItemId, frame.Item.OptionId, summary));
             if (classified is not null) resourceEvidence.Add(new(frame.Item.QueueItemId, frame.Item.OptionId, classified));
+            if (pickup is not null) pickupInventory.Add(new(frame.Item.QueueItemId, frame.Item.OptionId, pickup));
         }
         Require(summaries.Where(step => step.OptionId == "executor.clear_obstacle").Select(step => step.QueueItemId)
                 .SequenceEqual(compilation.ClearanceQueueItemIds, StringComparer.Ordinal),
@@ -105,10 +113,12 @@ public sealed class CropTeacherRefillApproachNativeTrace
         initial.Validate();
         Steps = summaries.AsReadOnly();
         ResourceEvidence = resourceEvidence.AsReadOnly();
+        PickupInventory = pickupInventory.AsReadOnly();
         AfterSnapshotPath = afterPath;
         ValidateInputsUnchanged();
         SnapshotInventoryContinuityVerified = verifySnapshotInventoryContinuity;
         ResourceNeutralBoundaryVerified = requireResourceNeutrality;
+        PickupInventoryCaptureVerified = verifyPickupInventory;
     }
 
     // Calibration-only: validates captured observations, not their inventory snapshot denominator.
@@ -126,6 +136,11 @@ public sealed class CropTeacherRefillApproachNativeTrace
         new(compilation, executionReceiptPath, afterSnapshotPath, runId, verifySnapshotInventoryContinuity: true,
             classifyResourceEvidence: true);
 
+    public static CropTeacherRefillApproachNativeTrace OpenWithPickupInventory(
+        CropTeacherRefillApproachCompilation compilation, string executionReceiptPath, string afterSnapshotPath, string runId) =>
+        new(compilation, executionReceiptPath, afterSnapshotPath, runId, verifySnapshotInventoryContinuity: true,
+            verifyPickupInventory: true);
+
     // No repair or pickup exemption: every frame must preserve the original full resource boundary.
     public static CropTeacherRefillApproachNativeTrace OpenResourceNeutral(
         CropTeacherRefillApproachCompilation compilation, string executionReceiptPath, string afterSnapshotPath, string runId) =>
@@ -134,9 +149,11 @@ public sealed class CropTeacherRefillApproachNativeTrace
 
     public IReadOnlyList<CropTeacherRefillObservedStep> Steps { get; }
     public IReadOnlyList<CropTeacherRefillResourceEvidenceStep> ResourceEvidence { get; }
+    public IReadOnlyList<CropTeacherRefillPickupInventoryStep> PickupInventory { get; }
     public string AfterSnapshotPath { get; }
     public bool SnapshotInventoryContinuityVerified { get; }
     public bool ResourceNeutralBoundaryVerified { get; }
+    public bool PickupInventoryCaptureVerified { get; }
     public IReadOnlyDictionary<string, string> InputHashes => inputs.ReadHashes().Concat(requestBlobs)
         .ToDictionary(pair => pair.Key, pair => pair.Value, CropTeacherSeedTransferNativeOutcome.PathComparer);
     public bool ResourceCreditAuthorized => false;

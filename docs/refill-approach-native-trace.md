@@ -169,3 +169,73 @@ documents the project property and pre-host environment configuration.
 No production setting, executor, exception swallowing, retry, filter or skip was
 added. Focused7/7 and complete local Backend1834/1834 passed with zero skips.
 The initial failure remains recorded; latest-head CI/review must pass separately.
+
+## 2026-11-12 Pickup Inventory Capture Consumption
+
+Parent PR553 merged d7cf8d3c, equal tested0fc9a262 tree0b2b9ec8. Exact-head
+CI43066397745 passed42steps, Core2600/Backend1875, no failures/skips, and review
+had no findings. This increment still belongs to R2 step2, not a new formal gate.
+
+`ReadPickupInventory` consumes the ORIGINAL quantity/resource evidence and complete
+persisted inventory payload. Raw snapshots bind each actual slot, runtime type,
+quality, stack and maximum, not just the aggregate item count. Existing physical
+references cannot be swapped or replaced; complete persisted XML and raw metadata
+must retain their values except verified stack/receive-history effects. Empty slot
+metadata cannot drift. New slots require a real admission's persisted XML. Native
+boolean return and remaining offered stack are not the admitted amount.
+
+Pinned1.6.15 metadata confirms Object inherits Item.canStackWith, with no override.
+The native method compares type, stackability, quality, identity, name and Object
+orderData; it does NOT require arbitrary modData/full input XML to match an existing
+stack. Farmer.addItemToInventory keeps the resident and OnItemReceived updates that
+actual item. An already-received input takes the original early return; otherwise
+receive history changes. Non-null pickup mail flags and unexplained item metadata
+are refused here rather than guessed. Other receive-side effects (quests, orders,
+collections, currency, recipes, statistics) still require their persistent boundary.
+
+The selected PE-only source index is external source-inventory-admission-index-c.json,
+SHAac8351b45beb9b9a4179c04de4cb69ab3b3fe7d87fe65d5ce89d8438e14a1c30,
+under I:/StardewAI-Collab/resident-refill-20261108/block12-native-source. Native pins
+remain SHA7f1e5b8e58d2758b78570ba771bbeb03d33522f62188bf6c32edf0cf626deaee,
+MVIDaa1f513a-94f0-4ef6-a35f-2d5b4a3721bf. Seven actual selected methods,13471bytes,
+zero diagnostics; all eight prior output hashes unchanged. No game code was executed.
+The original API peer produced the bounded draft but stopped without a final report
+after correctly rejecting the nonexistent Object override; controller completion and
+the failed source index remain explicit, not misreported as a clean peer delivery.
+
+`OpenWithPickupInventory` joins the SAME trace, compilation, original queue/readers,
+request journal/gzip and retained guards. It reuses the new evidence object instead
+of re-reading it as a second trace. Old entrypoints and default game observation
+settings are unchanged. This explicit stronger capture consumer is NOT a prerequisite
+for a resource-neutral/no-calibration route or all-world private-field completeness.
+
+Capture verification is deliberately named `PickupInventoryCaptureVerified` /
+`CaptureSlotEffectsVerified`, not full-frame continuity. The actual after snapshot
+must have the same tick as the captured persisted endpoint. `BeforeCaptureGapTicks`
+retains any earlier snapshot-to-capture window. This consumer does not prove that
+window, world effects, complete resource conservation or producer ownership.
+Resource/native-outcome/formal flags remain false, with no new ledger mutation.
+
+Related151/151 passed with zero failures/skips, including unchanged older readers,
+native-format repair/no-repair trace fixtures, raw slot swaps that preserve the old
+aggregate denominator, same-quantity late snapshots, new/merged/split slots and
+retained gzip tampering. Initial fixture compile errors remain outside Git; no
+timeout increase, suppressed tests or unchanged full local suite rerun was used.
+Subsequent admission-XML depth/node hardening reuses the existing payload budget
+guard; its final focused21/21 passed. Final CI/review must cover the published head.
+
+External final block15-pickup-replay-c.json reuses four original native frames and pins
+every source hash; SHAa16c8ff8cce1fc25429aebe80eaece753772e62a74fad5d222218698e9e9b64e.
+Earlier a/b artifacts and failures remain retained, not overwritten or relabeled.
+The original move admits wood3->15 and sap1->6:17units pass capture-slot verification.
+Its frame-before1876/capture-before2277 leaves401ticks explicitly unproved. Two
+older non-payload controls remain unavailable, not passes. The actual clear is
+still rejected for Axe.currentParentTileIndex189->191 and swingTicker8868->8883;
+15 native tool calls are recorded but their complete XML effects are not yet settled.
+No field was dropped to obtain a pass, no source overwritten or new game launched.
+
+Next bind those actual tool-state effects and exact consumption to the original
+resource projector, then reconcile the existing material graph/capacity/house-stock
+mirrors and unexplained persistent effects. Join the SAME ledger/top-level owner,
+harvest/native save and one bounded managed run in R2 order. This evidence does not
+close #339/#550, repeat frozen L1, or authorize formal training/local-data publication.
