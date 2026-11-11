@@ -109,9 +109,18 @@ public sealed partial class NativePickupInventoryBoundaryTests
     private static NativePickupResourceSummary Resources(PickupFixture f) =>
         NativeOutputObservationBoundary.ReadPickupResources(f.Request, f.Receipt, f.Before, f.After, "Farm");
 
-    private static PickupFixture ResourceFixture(bool newSlot = false, bool newKind = false)
+    private static PickupFixture ResourceFixture(bool newSlot = false, bool newKind = false, int woodBefore = 10)
     {
         var f = new PickupFixture(newSlot);
+        if (!newSlot && woodBefore != 10)
+        {
+            SetSlotStack(f.Receipt.InventoryPayloadBefore!.Slots![0], woodBefore);
+            SetSlotStack(f.Receipt.InventoryPayloadAfter!.Slots![0], woodBefore + 6);
+            f.Receipt.InventoryBefore[0].Quantity = woodBefore;
+            f.Receipt.InventoryAfter[0].Quantity = woodBefore + 6;
+            f.Receipt.Collections[0].InventoryAdmissions[0].InventoryBefore = woodBefore;
+            f.Receipt.Collections[0].InventoryAdmissions[0].InventoryAfter = woodBefore + 6;
+        }
         foreach (var payload in new[] { f.Receipt.InventoryPayloadBefore!, f.Receipt.InventoryPayloadAfter! })
             foreach (var slot in payload.Slots!.Where(slot => slot.IsTool == false && slot.IsEmpty == false))
             {

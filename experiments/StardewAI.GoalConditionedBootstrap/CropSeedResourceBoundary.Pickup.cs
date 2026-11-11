@@ -39,7 +39,8 @@ internal static partial class CropSeedResourceBoundary
             EqualField(expected, actual, "pickup house mirror availability");
             return null;
         }
-        var upgrade = Value(expected!).AsObject()["house_upgrade"] as JsonObject;
+        var house = Value(expected!).AsObject();
+        var upgrade = house["house_upgrade"] as JsonObject;
         if (upgrade is not null)
         {
             var id = upgrade["required_item_id"]?.GetValue<string>() ?? throw new InvalidDataException("Pickup house required item is missing.");
@@ -47,9 +48,37 @@ internal static partial class CropSeedResourceBoundary
                 .Values.Where(row => row["is_empty"]?.GetValue<bool>() != true && row["qualified_item_id"]?.GetValue<string>() == id)
                 .Sum(row => (long)Int(row, "stack")));
             Require(Int(upgrade, "inventory_item_count") == Count(before), "Pickup original house inventory mirror is inconsistent.");
+            var projectsStatus = upgrade.ContainsKey("action_status");
+            if (projectsStatus)
+                Require(upgrade["action_status"]?.GetValue<string>() == PickupHouseActionStatus(house, upgrade, before),
+                    "Pickup original house action-status mirror is inconsistent.");
             upgrade["inventory_item_count"] = Count(after);
+            if (projectsStatus) upgrade["action_status"] = PickupHouseActionStatus(house, upgrade, after);
         }
         EqualField(expected, actual, "pickup house inventory mirror");
         return Field(before, "world_progress", "marriage_house")!;
+    }
+
+    // Mirrors ProgressReadAdapter.MarriageHouse's ordered native prerequisites;
+    // no arbitrary replacement status is accepted when stock crosses the threshold.
+    private static string PickupHouseActionStatus(JsonObject house, JsonObject upgrade, SnapshotEnvelope snapshot)
+    {
+        bool Flag(JsonNode value, string name) => value[name] is JsonValue flag && flag.TryGetValue<bool>(out var result)
+            ? result : throw new InvalidDataException("Pickup house boolean is unavailable: " + name);
+        Require(Int(house, "money") == Value(Field(snapshot, "player", "money")!).GetValue<int>(),
+            "Pickup house money mirror differs from raw player money.");
+        if (Int(house, "days_until_farmhouse_upgrade") >= 0) return "farmhouse_upgrade_already_in_progress";
+        if (Flag(house, "building_under_construction")) return "another_building_under_construction";
+        if (Int(house, "money") < Int(upgrade, "price")) return "insufficient_money";
+        if (Int(upgrade, "inventory_item_count") < Int(upgrade, "required_item_count")) return "insufficient_required_material";
+        if (!Flag(house, "is_current_location")) return "science_house_not_current_location";
+        Require(house.ContainsKey("carpenter_action_tile_x") && house.ContainsKey("carpenter_action_tile_y"),
+            "Pickup carpenter action-tile mirror is unavailable.");
+        if (house["carpenter_action_tile_x"] is null || house["carpenter_action_tile_y"] is null)
+            return "carpenter_action_tile_unavailable";
+        if (!Flag(house, "robin_present_at_counter")) return "robin_not_present_at_counter";
+        var menu = Value(Field(snapshot, "player", "active_menu")!).GetValue<string>();
+        var timing = Value(Field(snapshot, "player", "movement_timing")!);
+        return menu != "none" || Flag(timing, "dialogue_up") ? "carpenter_menu_or_dialogue_not_clear" : "ready";
     }
 }
