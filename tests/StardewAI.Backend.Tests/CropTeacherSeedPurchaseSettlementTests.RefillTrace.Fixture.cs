@@ -21,13 +21,17 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         private readonly bool completeSnapshotInventory;
         private readonly bool resourceNeutral;
         private readonly bool observeNativeOutputs;
+        private readonly bool observePickupInventory;
 
         internal RefillTraceFixture(bool repair, bool completeSnapshotInventory = false, bool resourceNeutral = false,
-            bool observeNativeOutputs = true)
+            bool observeNativeOutputs = true, bool observePickupInventory = false)
         {
             this.completeSnapshotInventory = completeSnapshotInventory;
             this.resourceNeutral = resourceNeutral;
             this.observeNativeOutputs = observeNativeOutputs;
+            this.observePickupInventory = observePickupInventory;
+            if (observePickupInventory && (!completeSnapshotInventory || !observeNativeOutputs))
+                throw new ArgumentException("Pickup inventory fixture requires its original quantity observations.");
             Approach = new(repair, prepareSource: source =>
             {
                 source.Before.GameVersion = "1.6.15";
@@ -52,6 +56,8 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                                 quality = 0, maximum_stack_size = 999, runtime_type = "StardewValley.Object"
                             })));
                 }
+                if (observePickupInventory)
+                    ChangeState(source.Before, "player", node => PrepareRefillPickupRawSlots(node.AsObject()));
                 source.Before.State["environment"] = JsonSerializer.SerializeToElement(new
                 {
                     training_run_id = new { status = "available", value = "run.seed-acquisition.fixture" },
@@ -70,12 +76,18 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             var scope = Approach.Open();
             var options = Approach.Watering.Shared.Runtime.LiveOptions;
             options.ObserveNativeOutputs = observeNativeOutputs; options.SkipTraining = true;
+            if (observePickupInventory)
+            {
+                options.ObserveNativeInventoryPayload = options.ObserveNativeClearanceToolInputs = options.ObserveNativeOutputSnapshotAnchor = true;
+                options.ExecutionSnapshotProfile = "full";
+            }
             options.SaveIsolationPath = "isolated-refill-trace-fixture";
             Assert.Equal("run.seed-acquisition.fixture", options.RunId);
             var before = Approach.Watering.Before;
             var beforePath = scope.SourcePath;
             var rows = new List<JsonObject>();
             var session = Guid.NewGuid().ToString("N");
+            var inventoryReferences = Enumerable.Range(0, 12).Select(_ => Guid.NewGuid().ToString("N")).ToArray();
             for (var index = 0; index < Approach.Queue.Items.Length; index++)
             {
                 var item = Approach.Queue.Items[index];
@@ -114,7 +126,10 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                         BeforeStateHash = before.StateHash, LocationId = "Farm", BeforeGameTick = before.GameTick,
                         AfterGameTick = after.GameTick, Status = "observed",
                         InventoryBefore = completeSnapshotInventory ? DeclaredInventoryCounts() : [],
-                        InventoryAfter = completeSnapshotInventory ? DeclaredInventoryCounts() : []
+                        InventoryAfter = completeSnapshotInventory ? DeclaredInventoryCounts() : [],
+                        ClearanceToolCalls = observePickupInventory ? [] : null,
+                        InventoryPayloadBefore = observePickupInventory ? RefillPickupPayload(before, inventoryReferences) : null,
+                        InventoryPayloadAfter = observePickupInventory ? RefillPickupPayload(after, inventoryReferences) : null
                     }
                 }, JsonOptions)!.AsObject();
                 result["execution_request_journal_path"] = journal.JournalPath;

@@ -2,6 +2,16 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-12T02:02:33+08:00 R2 原入包载荷的槽位消费
+
+- **2026-11-12T02:27:18+08:00 审查修正。** #554 初 head `e04e7ac1` 虽通过全42步 CI（Core2600/Backend1899），审查正确发现连续同类入包可借后一次 XML 替换新栈创建者元数据。反例先红1/2；现按原生顺序逐次合并兼容旧栈、再占第一个空槽，不能从末态任选见证。相关104/104、最终定向26/26通过，错误的“一次入包拆成两个未满同类栈”夹具一并纠正；修正 head 须重新 CI/审查，不沿用初版绿灯。最终 `block15-pickup-replay-d.json`（2条原来源）SHA `127de9475a93c32e05773a25f1b567c41d3c65dd195db69e14087d2e527ea6b8`，move17单位/capture前401tick间隙/clear工具状态拒绝不变；c中的旧未请求对照与早期工件保留。
+- #553 已合入 `d7cf8d3c`，与测试 head `0fc9a262` 树一致；CI `43066397745` 全42步通过，Core2600/Backend1875、零失败/跳过，同 head 审查无发现。主/peer 已同步，旧自有引用和原 peer 补丁经保存与内容核对后收口。
+- 本片 `feat/native-pickup-inventory` 待最终 CI/审查后合入。`ReadPickupInventory` 与 `OpenWithPickupInventory` 消费原入包 XML、原完整槽位载荷、原数量核、同一 trace 和工件保护，不新增游戏扫描、默认观察开关或执行器。原生堆叠保留已有栈而非要求输入整份 XML 相同；新槽需实际 XML 见证，已有槽的引用/完整持久和原始元数据不得随意变更，末态要求同 tick。原旧入口不改。[专题](refill-approach-native-trace.md#2026-11-12-pickup-inventory-capture-consumption)。
+- 相关151/151通过、零失败/跳过，覆盖同 key 不同输入元数据、原生 receive-history 提前返回、新槽/跨槽入包、原始槽位错配、末态时间间隙、repair/no-repair 原队列和工件防篡改；随后入包 XML 深度/节点预算复用旧核，定向21/21通过。两次新测试夹具编译错误已修正并留日志；未改旧生产守卫或扩大超时，未重跑全量本地套件。
+- 复用原 native source 的最终 c 重放：真实 move 的木材3→15/树液1→6共17单位通过完整 capture 槽位核；两条未请求载荷的旧对照为不可验证，不算 PASS。clear 仍因斧头 XML `currentParentTileIndex`189→191、`swingTicker`8868→8883拒绝，不能直接删字段。move 的 frame-before1876/capture-before2277 有401tick前置间隙，结果明确保留 `BeforeCaptureGapTicks`，不是全 frame、生产归属或完整资源通过。外部 `block15-pickup-replay-c.json` SHA `a16c8ff8cce1fc25429aebe80eaece753772e62a74fad5d222218698e9e9b64e`；早期 a/b 及失败均保留。
+- 原 API 同会话只负责独立原生源码小块；首轮8步正确拒绝并不存在的 `Object.canStackWith`，末尾空结果/无报告不计完成。控制器核实实际继承 `Item` 后完成7方法/13471字节有界提取，原8工件不变，未付费重试/换 provider。`OnItemReceived` 的任务/邮件/统计等副作用未因此获豁免，协作者退出并撤权、授权空闲；原件不入 Git。
+- **唯一接续与退出：** 仍按 #551/R2 第2步，将已定位的原工具状态变化与实际调用/消耗对应，再核材料图、容量、房屋库存镜像和未知持久变化，接同一资源账本；不是扩展所有私有字段。随后第3步把既有 owned 适配层接原顶层循环并收获/原生保存，再第4步有界 managed 实测。当前顶层仍 unmanaged、#550/#339开放，resource/full-state/formal=false、L1`19/19、11/11`冻结，local-data不提交。
+
 ## 2026-11-12T01:06:16+08:00 原 owner 的补水接近子阶段
 
 - #552 已合入 `8d2d2d24`；最终测试 head `078de6a4` 与主线树一致，CI `43058702815` 全42步通过（Core2600/Backend1834，零失败/跳过），同 head 审查无实质问题，自有分支已收。初 CI 失败仍保留，不以初版审查代替最终验证。
