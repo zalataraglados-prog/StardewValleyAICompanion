@@ -1,5 +1,55 @@
 # Original Refill Native Trace
 
+## 2026-11-12 Native Consumption And Pickup Resource Mirrors
+
+PR554 accepted at main bb4abe27, tested head8b2b76d7/tree3622ab08,
+CI43078519411 all42/Core2600/Backend1904 with zero failure/skip and same-head
+clean review. Earlier pending-publication statements below are historical.
+
+ReadClearanceConsumption consumes ReadResourceEvidence once, preserving the old
+native tool projector and captured completion order. Flat ordinal1..N calls must
+connect the exact finite float bits at raw-before,entry,debit-input,debit-output,
+exit,next-entry and raw-after. No summed/tolerated/sorted repair is admitted.
+An observed empty list proves unchanged energy only; absent input is unavailable.
+Nested completion remains valid old calibration but explicitly unsettled here.
+Snapshot-to-capture timing gaps are recorded,not universally forbidden.
+
+ReadPickupResources consumes ReadPickupInventory and the EXISTING
+CropSeedResourceBoundary helpers,MaterialTransferIntentBinder reader,
+VerifySourceQuantity,VerifyCapacity,VerifyPlayerSlots and original persistent
+resource invariant. No fake chest/debris source,second graph walker or volatile
+field exemption is added. Raw inventory and persisted item fields bind player
+graph metadata; known quantities change only by the original admission deltas.
+New slots and aggregate rows follow the existing native graph projection.
+Foreign nodes,accesses,locks,ownership,workbench links and unknown fields remain
+unchanged. Currency/wallet and as-yet-unprojected seed inventory must be unchanged.
+House required-item count is independently recomputed from both raw inventories;
+only its verified value is restored in a comparison-only view. Real snapshots
+and their hashes remain intact. Other persistent drift still fails the OLD
+resource invariant. This component records physical stock,NOT action production,
+owner/ledger settlement,complete clearance world effects or formal training.
+
+Integrated related157/157 passed,zero failures/skips. Initial86/86 passed with one
+new nullable warning; corrected related build has none. Original API peer29/29
+was retained; its pre-commit git-log permission mismatch ended the invocation,
+then controller reviewed/committed3104c196 and integratedc8a87612 without API retry.
+Peer is authorized/idle,process exited and grants withdrawn.
+
+External block16-resource-replay-a.json SHA256
+7bd5fcabb1d5f3fa438ff45cbb32e1b9c9f0c3362e6ae07126e36602ce29a893 reuses
+the two original native output-client-native-debris-state-a frames via the
+original action source reader. Fifteen Axe calls connect energy270->240;
+the following zero-tool move admits17units with exact graph/capacity/house mirrors
+and unrelated persistent equality. Its401tick before-capture gap remains explicit.
+No game/new native sample/training or producer credit is claimed.
+
+The optional full-XML pickup calibration still rejects clear's Tool animation
+state changes. That is NOT an existing ledger requirement or a new common hard
+gate. Continue R2 step2 with the actual clearance target/terrain,experience,stats
+and necessary derived mirrors,then SAME owner/toploop,harvest/native-save/restore
+and bounded managed acceptance. Default capture/executors and old guards do not
+change. Full-resource/producer/native-outcome/formal claims remain false.
+
 ## Accepted Parent And Scope
 
 PR538 accepted at main9452e4b2,treef0bdb211,CI42473610429 all42,

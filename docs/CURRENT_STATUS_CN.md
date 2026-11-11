@@ -2,6 +2,8 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+> **2026-11-12T03:08:22+08:00 R2 实际消耗与资源镜像。** #554 已由最终同 head CI/审查合入 `bb4abe27`；下方待合并为历史。本片相关157/157，旧原生 clear15次工具270→240连续性、move17单位的材料图／容量／房屋材料镜像及原持久核通过。仍未接账本或证明生产归属；完整 XML 的工具动画校准拒绝不新增为硬门。接续原清障实际地形／经验／统计及必要镜像，再同一 owner／顶层循环和收获／保存／有界实跑。L1冻结、formal=false，本片待最终 CI/审查。[当前接续](CURRENT_WORK_CN.md#2026-11-12t0308220800-r2-实际工具消耗与拾取资源镜像) · [范围](refill-approach-native-trace.md#2026-11-12-native-consumption-and-pickup-resource-mirrors)。
+
 > **2026-11-12T02:27:18+08:00 #554 审查修正，待新 head 验证。** 初版 CI 全42步通过但不是合并依据：新栈元数据可能错取后一次入包的 XML，已先红复现后改为原生先后顺序分配。相关104/104、最终定向26/26，修正后真实 move17单位仍通过 capture 槽位核，clear 工具状态和401tick前置间隙仍未晋升。原 R2 后继不变，不把这个修复或初版绿灯当作完整托管/训练通过。[当前接续](CURRENT_WORK_CN.md#2026-11-12t0202330800-r2-原入包载荷的槽位消费)。
 
 > **2026-11-12T02:02:33+08:00 入包 capture 的槽位消费（本片待最终 CI/审查合入）。** #553 已最终全42步 CI/审查合入 `d7cf8d3c`，Core2600/Backend1875、零失败/跳过。新消费复用原入包 XML/完整载荷/数量和 trace，末次151/151通过；旧真实 move 的17单位可绑定完整 capture 槽位，401tick的 before-capture 间隙显式保留，clear 的两个斧头 XML 变化仍拒绝。不是完整 frame/资源/生产/托管或训练 PASS，旧默认入口和执行器不改。后继仍原工具状态/资源镜像结算接同一账本，再原顶层 owner、收获/保存和有界实战，#551顺序不变。[当前接续](CURRENT_WORK_CN.md#2026-11-12t0202330800-r2-原入包载荷的槽位消费) · [专题](refill-approach-native-trace.md#2026-11-12-pickup-inventory-capture-consumption)。
