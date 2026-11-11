@@ -1,5 +1,36 @@
 # Original Refill Native Trace
 
+## 2026-11-12 Retained Owner Resource Selection
+
+The original private PrepareCropTeacherOwnedWateringAsync now consumes the explicit
+UseSelectedRefillResourceEffects option on CropTeacherManagedSeedOwnerOptions. This
+is a selection bridge, not a second preparation path: it sets the existing compilation
+flag only for an actual original refill-approach interrupt. Ordinary watering stays
+ordinary. Default false leaves the historical owner-intent shape unchanged; opt-in
+adds selected_refill_resource_effects=true to that SAME durable identity. Reopening
+the directory with a changed setting fails its original full header comparison.
+
+Before admission, the selected approach uses the SAME existing tool-input guard and
+NativeOutputObservationMode.Validate. No incomplete selected observation profile can
+be admitted first and discovered only after the native invocation claim. Neutral moves
+with no observer requested still need no optional XML or full-world private fields.
+Execution rechecks that same profile before writing a native claim, including a
+configuration changed after admission; an invalid profile cannot strand an uncalled claim.
+The controller owns production; the original retained API peer independently tests
+configuration identity, actual preparation selection and one original wire/recovery
+boundary. Its8 focused tests passed once without correction (0ed1b383 integrated
+73cdf3fc). Controller final related219/219 passed with zero failure/skip/warning,
+including the separate changed-after-admission profile regression. The earlier extra
+313 run overlapped source edits and is auxiliary, not exact-head acceptance. Include
+this selection bridge in the same owner PR558; its final CI/review remains required.
+
+This has NOT installed an owner into Program.cs: its crop path still calls the original
+unmanaged control builder. Keep that distinction explicit. Remaining R2 step3 includes
+the one main-loop owner/session lifecycle, actual route effects and the existing
+harvest/sales/native day/save/reload consumers. Do not add a parallel orchestrator or
+fall back to unowned dispatch after a managed operation has been admitted. Real bounded
+managed acceptance follows the same chain, not these declared fixtures.
+
 ## 2026-11-12 Opted-In Original Watering Owner
 
 This successor to PR557 uses the SAME preparation, original watering wire, owner,
