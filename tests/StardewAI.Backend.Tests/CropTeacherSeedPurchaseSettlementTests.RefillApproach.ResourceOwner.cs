@@ -142,7 +142,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         options.ObserveNativeOutputs = outputs; options.ObserveNativeClearanceToolInputs = tools;
         var record = new JsonObject { ["maintenance_control_kind"] = "refill_approach_resources" };
         var queue = new JsonObject { ["items"] = new JsonArray(new JsonObject { ["option_id"] = "executor.clear_obstacle" }) };
-        void Check() => InvokeLive<object?>("RequireSelectedRefillToolObservation", options, record, queue);
+        void Check() => InvokeLive<object?>("RequireSelectedRefillToolInputs", options, queue);
         if (rejects)
             Assert.IsType<InvalidDataException>(Assert.Throws<System.Reflection.TargetInvocationException>(Check).InnerException);
         else Check();
@@ -150,6 +150,26 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         Check(); // Neutral moves never acquire an optional XML/tool observation requirement.
         record["maintenance_control_kind"] = "refill_approach";
         queue["items"]![0]!["option_id"] = "executor.clear_obstacle";
-        Check(); // The new mode does not change historical protocol validation.
+        InvokeLive<object?>("RequireSelectedRefillToolObservation", options, record, queue);
+        // The new mode does not change historical protocol validation.
+    }
+
+    [Fact]
+    public async Task SelectedRefillResourceChangedObservationProfileRejectsBeforeNativeClaim()
+    {
+        using var f = new RefillTraceFixture(repair: false, completeSnapshotInventory: true,
+            resourceNeutral: true, observeNativeOutputs: false);
+        await f.Approach.Compile();
+        var shared = f.Approach.Watering.Shared;
+        await using var owner = await shared.Files.Open();
+        var operation = await AdmitSelectedResourceRefill(owner, f.Approach);
+        shared.Runtime.LiveOptions.ObserveNativeOutputs = true;
+        shared.Runtime.LiveOptions.SkipTraining = false;
+        await Assert.ThrowsAsync<ArgumentException>(() => InvokeLive<Task>("ExecuteCropTeacherOwnedWateringAsync",
+            shared.Runtime.Client, shared.Runtime.Client, shared.Runtime.LiveOptions, 1, owner, operation));
+        Assert.Same(operation, owner.Pending);
+        Assert.False(File.Exists(Path.Combine(shared.Files.Native, "maintenance-native-claim.json")));
+        Assert.False(File.Exists(Path.Combine(shared.Files.Native, "maintenance-native-result.json")));
+        Assert.Equal(0, shared.Runtime.Handler.Commits);
     }
 }

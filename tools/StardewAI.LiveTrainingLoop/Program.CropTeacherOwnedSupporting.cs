@@ -42,6 +42,7 @@ static partial class Program
     {
         if (record["maintenance_control_kind"]?.GetValue<string>() != "refill_approach_resources") return;
         RequireSelectedRefillToolInputs(options, queue);
+        NativeOutputObservationMode.Validate(options);
     }
 
     private static void RequireSelectedRefillToolInputs(LiveTrainingOptions options, JsonObject queue)
