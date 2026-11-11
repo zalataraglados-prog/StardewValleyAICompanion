@@ -9,7 +9,10 @@ namespace StardewAI.LiveTrainingLoop;
 
 public sealed record CropTeacherManagedSeedOwnerOptions(string EvidenceDirectory, string RunId, string ExecutorVersion,
     string BackendUrl, string NativeRunPlanPath, string InitialSnapshotPath, string InitialLedgerPath,
-    string PortfolioJournalDirectory) : ICropSeedPortfolioRecoveryOptions;
+    string PortfolioJournalDirectory) : ICropSeedPortfolioRecoveryOptions
+{
+    public bool UseSelectedRefillResourceEffects { get; init; }
+}
 
 public sealed class CropTeacherManagedSeedOperation
 {
@@ -75,6 +78,7 @@ public sealed partial class CropTeacherManagedSeedOwner : IAsyncDisposable
     public bool HeadRecoveryRequired { get; private set; }
     public string CurrentSnapshotPath => headSnapshotPath;
     public string CurrentLedgerPath => headLedgerPath;
+    internal bool UsesSelectedRefillResourceEffects => options.UseSelectedRefillResourceEffects;
 
     private CropTeacherManagedSeedOwner(CropTeacherManagedSeedOwnerOptions options, MoneyRevenueCropNativeProductionRunPlan plan,
         FileStream lease, Func<string, string, Task> write, Dictionary<string, string> fixedHashes, string headerHash,
@@ -126,6 +130,8 @@ public sealed partial class CropTeacherManagedSeedOwner : IAsyncDisposable
             ["input_artifact_hashes"] = JsonSerializer.SerializeToNode(hashes, JsonOptions),
             ["execution_authorized"] = false, ["formal_product_training_authorized"] = false
         };
+        if (options.UseSelectedRefillResourceEffects)
+            header["selected_refill_resource_effects"] = true;
         var headerPath = Path.Combine(options.EvidenceDirectory, "owner-intent.json");
         if (Directory.Exists(options.EvidenceDirectory) && !File.Exists(headerPath) &&
             Directory.EnumerateFileSystemEntries(options.EvidenceDirectory).Any(path => Path.GetFileName(path) != "owner.lock"))

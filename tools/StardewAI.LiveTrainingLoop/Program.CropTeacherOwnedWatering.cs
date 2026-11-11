@@ -32,9 +32,15 @@ static partial class Program
                 compiled.StateHash != stateHash || !string.Equals(Path.GetFullPath(compiled.BeforeSnapshotPath), Path.GetFullPath(sourcePath),
                     OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
                 throw new InvalidDataException("Original crop control selected an interrupt, not the admitted watering batch.");
+            var selectedResources = refill && owner.UsesSelectedRefillResourceEffects;
+            if (selectedResources)
+            {
+                RequireSelectedRefillToolInputs(options, compiled.Queue);
+                NativeOutputObservationMode.Validate(options);
+            }
             await WriteJsonAsync(prefix + "-compiled-queue.json", compiled.Queue).ConfigureAwait(false);
             return new(step, compiled.ModelPlanPath, prefix + "-compiled-queue.json", receiptPath, afterPath, runtimeDirectory)
-                { IsRefillApproach = refill };
+                { IsRefillApproach = refill, UseSelectedRefillResourceEffects = selectedResources };
         }).ConfigureAwait(false);
     }
 

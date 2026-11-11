@@ -41,6 +41,11 @@ static partial class Program
     private static void RequireSelectedRefillToolObservation(LiveTrainingOptions options, JsonObject record, JsonObject queue)
     {
         if (record["maintenance_control_kind"]?.GetValue<string>() != "refill_approach_resources") return;
+        RequireSelectedRefillToolInputs(options, queue);
+    }
+
+    private static void RequireSelectedRefillToolInputs(LiveTrainingOptions options, JsonObject queue)
+    {
         var items = queue["items"]?.AsArray() ?? throw new InvalidDataException("Selected refill has no original queue items.");
         if (items.Any(item => item?["option_id"]?.GetValue<string>() == "executor.clear_obstacle") &&
             (!options.ObserveNativeOutputs || !options.ObserveNativeClearanceToolInputs))
