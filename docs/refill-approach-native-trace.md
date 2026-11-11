@@ -1,5 +1,46 @@
 # Original Refill Native Trace
 
+## 2026-11-12 Harvest Skill Effect Consumer
+
+R2 step2 closeout into step3 reuses the original wild-tree skill verifier instead of
+adding another XP/level engine. The extracted helper still uses the original current
+skill builder, exact skill/index/XP, preserved buff, pending-level additions, scoring
+and full field equality. The old tree wrapper retains its exact16 request contract;
+tree stats, terrain and unrelated-resource guards are unchanged. The crop wrapper
+binds the original request/hash/actor/target and the existing target's exact native
+harvest XP projection. No bridge fields, native executor or XP formula are added.
+
+Only the independently checked skill fields and derived can/bowl/mastery projections
+can be considered accounted-for. The original double/clamped watering DISPLAY cost
+is not confused with the native float stamina debit. Existing bowl verification and
+MasteryClaimIdentity are reused; unspent levels, stats, rewards, unrelated skills,
+professions and unknown state remain protected. A MasteryExp change is not waived.
+The original expected-resource field lists/normalizer behavior remain unchanged;
+an internal forwarding method permits the new comparison to reuse that normalizer.
+
+The first64 fixture cases passed but all5 original native frames rejected the new
+consumer's invented short status exact. The actual producer requires
+exact_from_decompiled_native_harvest. Correcting only the new consumer/fixture and
+adding a short-status negative yields65/65,zero failure/skip,zero build warnings/errors.
+The failed native report block21-harvest-skill-replay-a.json remains external with SHA
+998150740599ea44cd99416e243d0d80afa11ba61e8bfaa7f4deb669b8bf680c.
+Fresh-source b replay verifies the skill/level-mirror component5/5, including the final
+level crossing. Its SHA is5378281ceafd54a346a2a66c9138480af14e7aab9135f804caa2d781f654ea52.
+All5 still have farm.crops and world_progress.community_center unexplained under the
+original expected-resource boundary. These are NOT full harvest, producer, managed,
+native outcome or formal successes. No new game/server/training or13-day replay ran.
+
+Original API block21 produced no source/test/commit: both bounded invocations stopped
+on instruction/source discovery permissions. The second process exited, its task
+grants were withdrawn and no third same-block call/fallback was made. Controller
+completed the extraction and tests; retained authorization is idle, not disabled.
+Applicable parent instructions must be packaged before a future distinct assignment.
+
+Next reuse the original lifecycle crop transition kernel and account for crop and
+inventory-derived donation-candidate changes/retained output, then the SAME owner
+harvest/sales/save/readback/main loop and bounded managed acceptance. Program.cs is
+still unmanaged; frozen L1 and the actual formal gates are not promoted by this slice.
+
 ## 2026-11-12 Original Resource Contract Correction
 
 Source PR557 accepted941f817d at main57d88171 (CI43101653435,42steps,

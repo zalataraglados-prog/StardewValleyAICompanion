@@ -83,6 +83,9 @@ internal static partial class FullShipmentRecoverySettlementBoundaryProjector
             "shop_currency_balances" ||
         domain == "farm" && field == "material_inventory_graph";
 
+    internal static JsonElement ProjectExpectedResourceEnvelope(string domain, string field, JsonElement envelope) =>
+        NormalizeExpectedResourceMutationEnvelope(domain, field, envelope);
+
     private static JsonElement NormalizeExpectedResourceMutationEnvelope(
         string domain,
         string field,

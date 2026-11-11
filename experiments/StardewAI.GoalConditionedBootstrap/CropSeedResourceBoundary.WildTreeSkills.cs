@@ -1,7 +1,6 @@
 using System.Text.Json.Nodes;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
-using StardewAI.Core.Training;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -9,35 +8,11 @@ internal static partial class CropSeedResourceBoundary
 {
     private static void VerifyWildTreeSkillEffects(SnapshotEnvelope before, SnapshotEnvelope after, TrainingExecutionRequest request)
     {
-        var builder = new CurrentSkillExperienceDeficitBuilder();
-        var first = builder.Build(before); var next = builder.Build(after);
-        Require(first.Status == "ready_current_state_only" && next.Status == "ready_current_state_only",
-            "Wild-tree clearance original skill/level projections are unavailable.");
-        var priorSkill = first.Skills.Single(skill => skill.SkillId == "foraging");
-        var skill = next.Skills.Single(skill => skill.SkillId == "foraging");
-        Require(request.ExpectedForagingExperienceBefore == priorSkill.Experience && request.ExpectedForagingExperienceDelta == 16 &&
-                request.ExpectedForagingExperienceAfter == checked(priorSkill.Experience + 16) &&
-                skill.Experience == request.ExpectedForagingExperienceAfter &&
-                skill.EffectiveLevel - priorSkill.EffectiveLevel == skill.UnmodifiedLevel - priorSkill.UnmodifiedLevel,
-            "Wild-tree clearance foraging XP or preserved buff differs from the original native contract.");
-        var expected = Field(before, "player", "skills_detail")!;
-        var value = Value(expected).AsObject();
-        var target = Unique(Array(value["skills"], "wild-tree skills"), "skill_id", "foraging");
-        var actualTarget = Unique(Array(Value(Field(after, "player", "skills_detail")!)["skills"], "wild-tree after skills"), "skill_id", "foraging");
-        foreach (var name in new[] { "experience", "unmodified_level", "effective_level", "next_level", "next_level_experience",
-                     "experience_to_next_level", "at_vanilla_level_cap" })
-            target[name] = actualTarget[name]?.DeepClone();
-        value["scoring_level"] = next.ScoringLevel;
-        var pending = Array(value["new_levels"], "wild-tree pending levels");
-        Require(pending.All(row => row is JsonObject), "Wild-tree pending-level row is invalid.");
-        for (var level = priorSkill.UnmodifiedLevel + 1; level <= skill.UnmodifiedLevel; level++)
-            pending.Add(new JsonObject { ["skill_index"] = 2, ["level"] = level });
-        value["new_levels"] = new JsonArray(pending.OrderBy(row => Int(row!, "skill_index")).ThenBy(row => Int(row!, "level"))
-            .Select(row => row!.DeepClone()).ToArray());
-        EqualField(expected, Field(after, "player", "skills_detail"), "wild-tree skill effects or unrelated skill/profession state");
-        var score = Field(before, "player", "level")!;
-        score["value"] = next.ScoringLevel;
-        EqualField(score, Field(after, "player", "level"), "wild-tree scoring level");
+        Require(request.ExpectedForagingExperienceBefore is >= 0 && request.ExpectedForagingExperienceDelta == 16 &&
+                request.ExpectedForagingExperienceAfter == (long)request.ExpectedForagingExperienceBefore + 16,
+            "Wild-tree clearance XP differs from the original exact16 native contract.");
+        _ = VerifySkillExperienceDelta(before, after, "foraging", 2, request.ExpectedForagingExperienceBefore!.Value, 16,
+            "Wild-tree clearance");
     }
 
     private static void VerifyWildTreeStatEffects(SnapshotEnvelope before, SnapshotEnvelope after, TrainingExecutionRequest request)
