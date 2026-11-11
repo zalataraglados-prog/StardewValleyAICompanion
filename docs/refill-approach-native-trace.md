@@ -2,6 +2,11 @@
 
 ## 2026-11-12 Original Crop Harvest Target Kernel
 
+Parent PR560 final55ca9670 accepted by CI43112255928 all42steps,
+Core2600/Backend2133,zero failure/skip and clean same-head review; merged e57cb02e.
+Tested/main tree3f5ea0e8 matched before exact owned ref cleanup. This target increment
+requires its own final-head CI/review; parent acceptance is not substituted.
+
 The original MoneyRevenueCropNativeLifecycleProofBuilder one-shot/regrow harvest
 checks now share one private kernel with its new internal owned-target entry. Existing
 CropState/catalog/location/identity parsing is reused, not reimplemented. Old lifecycle
