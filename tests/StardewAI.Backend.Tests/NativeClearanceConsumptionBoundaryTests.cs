@@ -157,7 +157,7 @@ public sealed class NativeClearanceConsumptionBoundaryTests
     private static NativeClearanceConsumptionSummary Read(TrainingExecutionRequest request, ActionOriginObservationReceipt receipt,
         SnapshotEnvelope before, SnapshotEnvelope after) => NativeOutputObservationBoundary.ReadClearanceConsumption(request, receipt, before, after, "Farm");
 
-    private static (TrainingExecutionRequest Request, ActionOriginObservationReceipt Receipt, SnapshotEnvelope Before, SnapshotEnvelope After) Fixture()
+    internal static (TrainingExecutionRequest Request, ActionOriginObservationReceipt Receipt, SnapshotEnvelope Before, SnapshotEnvelope After) Fixture()
     {
         var (request, receipt) = NativeClearanceToolObservationBoundaryTests.Fixture();
         var before = NativeOutputObservationSnapshotBoundaryTests.Snapshot(99, [NativeOutputObservationSnapshotBoundaryTests.Row(0, 10)]);
