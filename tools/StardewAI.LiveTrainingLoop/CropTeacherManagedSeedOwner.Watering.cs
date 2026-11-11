@@ -80,6 +80,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         document["native_watering_prefix_verified"] = !scope.RefillControlVerified && !scope.RefillApproachVerified;
         if (scope.RefillControlVerified) document["native_refill_control_verified"] = true;
         if (scope.RefillApproachVerified) document["native_refill_approach_verified"] = true;
+        if (scope.RefillResourceEffectsVerified) document["native_refill_resource_effects_verified"] = true;
         document["applied_tile_count"] = scope.AppliedTileCount;
         document["complete_batch"] = scope.CompleteBatch;
         document["applied_tiles"] = JsonSerializer.SerializeToNode(scope.AppliedTiles, JsonOptions);

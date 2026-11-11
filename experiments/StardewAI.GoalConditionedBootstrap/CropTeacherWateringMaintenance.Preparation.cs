@@ -18,10 +18,13 @@ public sealed partial class CropTeacherWateringMaintenance
         private readonly CropTeacherRetainedInputs inputs;
         private readonly CropTeacherSupportingSource source;
         private readonly CropTeacherRefillApproachCompilation? refillApproach;
+        private readonly bool selectedRefillResources;
 
         private Preparation(string runRequestPath, string sourcePath, string ledgerPath, IReadOnlyCollection<string> commitmentIds,
-            string commitmentId, string stepId, string modelActionPath, string queuePath, bool refill = false)
+            string commitmentId, string stepId, string modelActionPath, string queuePath, bool refill = false,
+            bool selectedRefillResources = false)
         {
+            this.selectedRefillResources = selectedRefillResources;
             var paths = new[] { runRequestPath, sourcePath, ledgerPath, modelActionPath, queuePath }.Select(Path.GetFullPath)
                 .Distinct(CropTeacherSeedTransferNativeOutcome.PathComparer).ToArray();
             using var reads = InvocationReadSession.Start(paths);
@@ -39,8 +42,12 @@ public sealed partial class CropTeacherWateringMaintenance
             {
                 refillApproach = CropTeacherRefillApproachCompilation.Open(runRequestPath, sourcePath, ledgerPath,
                     commitmentIds, commitmentId, stepId, modelActionPath, queuePath);
-                Require(refillApproach.ClearanceQueueItemIds.Count == 0,
-                    "Owned refill repair requires its separate exact resource settlement before dispatch.");
+                if (selectedRefillResources)
+                    Require(refillApproach.SelectedResourceClearanceSupported,
+                        "Owned refill repair has no supported selected-resource contract before dispatch.");
+                else
+                    Require(refillApproach.ClearanceQueueItemIds.Count == 0,
+                        "Owned refill repair requires its separate exact resource settlement before dispatch.");
                 CandidateId = refillApproach.CandidateId;
                 Tiles = Array.AsReadOnly(Array.Empty<MoneyRevenueCropPlantingTile>());
                 inputs.Validate();
@@ -76,7 +83,12 @@ public sealed partial class CropTeacherWateringMaintenance
         public static Preparation OpenRefillApproach(string runRequestPath, string sourcePath, string ledgerPath,
             IReadOnlyCollection<string> commitmentIds, string commitmentId, string stepId, string modelPlanPath, string queuePath) =>
             new(runRequestPath, sourcePath, ledgerPath, commitmentIds, commitmentId, stepId, modelPlanPath, queuePath, refill: true);
+        public static Preparation OpenRefillApproachWithSelectedResourceEffects(string runRequestPath, string sourcePath, string ledgerPath,
+            IReadOnlyCollection<string> commitmentIds, string commitmentId, string stepId, string modelPlanPath, string queuePath) =>
+            new(runRequestPath, sourcePath, ledgerPath, commitmentIds, commitmentId, stepId, modelPlanPath, queuePath,
+                refill: true, selectedRefillResources: true);
         public bool IsRefillApproach => refillApproach is not null;
+        public bool UsesSelectedRefillResourceEffects => selectedRefillResources;
         public string SourcePath { get; }
         public string QueuePath { get; }
         public int TotalDay { get; }
@@ -94,7 +106,7 @@ public sealed partial class CropTeacherWateringMaintenance
                     CropTeacherSeedTransferNativeOutcome.PathComparer.Equals(Path.GetFullPath(transition.BeforeSnapshotPath), SourcePath),
                 "Owned crop watering differs from its pinned original compilation/source.");
             if (refillApproach is not null)
-                return new CropTeacherWateringMaintenance(refillApproach, transition, stepId);
+                return new CropTeacherWateringMaintenance(refillApproach, transition, stepId, selectedRefillResources);
             var receipt = CurrentTeacherFrontierSupport.Read<QueueExecutionReceiptEnvelope>(transition.ExecutionReceiptPath, "original watering outcome kind");
             var result = !receipt.Success && receipt.StepResults is [{ Status: "blocked" }]
                 ? CropTeacherWateringMaintenance.OpenRefillControl(runRequestPath, SourcePath, ledgerPath, commitmentIds, commitmentId, transition, stepId)
