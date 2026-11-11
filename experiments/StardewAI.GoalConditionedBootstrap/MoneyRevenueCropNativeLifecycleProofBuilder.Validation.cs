@@ -475,8 +475,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
             "Money Revenue crop action target identity drifted.");
         if (optionId == HarvestOption && !catalog.RegrowDays.HasValue)
         {
-            Require(verifiedBefore.ReadyForHarvest && afterCrop is null,
-                "Money Revenue native one-shot harvest transition is not exact.");
+            ValidateNativeHarvestTransition(verifiedBefore, afterCrop, catalog);
             return;
         }
         Require(afterCrop is not null &&
@@ -490,16 +489,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
             ValidateNativeWatering(verifiedBefore, verifiedAfter);
             return;
         }
-        Require(verifiedBefore.ReadyForHarvest,
-            "Money Revenue crop harvest was not performed on a ready crop.");
-        if (catalog.RegrowDays.HasValue)
-        {
-            Require(verifiedAfter.FullyGrown &&
-                    !verifiedAfter.ReadyForHarvest &&
-                    verifiedAfter.DayOfCurrentPhase == catalog.RegrowDays &&
-                    verifiedAfter.CurrentPhase == verifiedBefore.CurrentPhase,
-                "Money Revenue native regrow harvest transition is not exact.");
-        }
+        ValidateNativeHarvestTransition(verifiedBefore, verifiedAfter, catalog);
     }
 
     private static void ValidateDayRollover(
