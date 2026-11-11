@@ -12,6 +12,10 @@ External block16-resource-replay-b.json SHA256
 e0cbeed34dad75cbc94568754cceaa4cdaa96aedb2bb87cedf2e4f4b63928d8f retains the
 same component results and limitations. Old a/red reports retained; corrected
 head requires new CI/review. No shared normalization or executor was weakened.
+Final source cross-check binds dialogue to the EXISTING
+player.movement_timing_context.dialogue_up field,correcting the new projection/
+fixture misnaming without adding bridge data. Final pickup68/68 passed with no
+failure/skip/warning; this delta receives its own exact-head CI/review.
 
 PR554 accepted at main bb4abe27, tested head8b2b76d7/tree3622ab08,
 CI43078519411 all42/Core2600/Backend1904 with zero failure/skip and same-head
