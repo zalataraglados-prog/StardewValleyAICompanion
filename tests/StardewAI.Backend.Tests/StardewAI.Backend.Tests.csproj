@@ -7,6 +7,7 @@
 
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <RunSettingsFilePath Condition="'$(RunSettingsFilePath)' == ''">$(MSBuildProjectDirectory)/BackendTests.runsettings</RunSettingsFilePath>
   </PropertyGroup>
 
   <ItemGroup>

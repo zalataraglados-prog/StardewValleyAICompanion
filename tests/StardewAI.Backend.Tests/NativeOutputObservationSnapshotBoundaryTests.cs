@@ -92,11 +92,11 @@ public sealed class NativeOutputObservationSnapshotBoundaryTests
         Assert.Throws<InvalidDataException>(() => NativeOutputObservationSnapshotBoundary.Read(request, receipt, before, after, "Farm"));
     }
 
-    private static JsonObject Row(int slot, int count, string id = "(O)388", int quality = 0) => new()
+    internal static JsonObject Row(int slot, int count, string id = "(O)388", int quality = 0) => new()
     { ["slot_index"] = slot, ["qualified_item_id"] = id, ["stack"] = count, ["quality"] = quality, ["is_empty"] = false };
     private static JsonObject Empty(int slot) => new()
     { ["slot_index"] = slot, ["qualified_item_id"] = null, ["stack"] = null, ["quality"] = null, ["is_empty"] = true };
-    private static SnapshotEnvelope Snapshot(long tick, JsonObject[] rows)
+    internal static SnapshotEnvelope Snapshot(long tick, JsonObject[] rows)
     {
         var snapshot = new SnapshotEnvelope
         {

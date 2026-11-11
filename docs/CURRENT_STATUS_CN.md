@@ -2,6 +2,10 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+> **2026-11-11T23:54:09+08:00 所选补水路线资源证据。** 同步 #551 后按现行 R2 顺序接线；新入口复用原 trace/数量/工具核，保留实际入包与引用状态，不授生产 credit。相关161/161，旧原生观察回放7正/1精确数量间隙拒绝、2未观察对照不计 PASS，34单位入包和15工具调用；不是新 managed 实战或完整资源守恒。实际全局分支未由当前工件确定，两个共享正式启动硬锁保持。下一步仍所选路线完整资源/因果结算接唯一 owner，再收获/保存/有界managed。L1冻结、formal=false、local-data不提交。[当前接续](CURRENT_WORK_CN.md#2026-11-11t2354090800-r2-所选补水路线的资源证据接续) · [专题](refill-approach-native-trace.md#2026-11-11-selected-route-resource-evidence)。
+
+> **2026-11-12T00:27:42+08:00 PR#552 测试宿主修正。** 初 CI 的唯一失败是旧 owner 测试销毁宿主时的文件监视器异常；保留失败，只在测试进程建 host 前禁用 JSON 配置热监视。真实配置断言先红后绿，本地 Backend1834/1834、零失败/跳过；未改生产配置或资源准入，最终 CI 另核。
+
 > **2026-11-11T00:52:08+08:00 开训前施工顺序修订。** #549 已合入。L1 `19/19`、`11/11` 已冻结，`formal_product_training=false`。当前阶段是所选作物补水路线的资源证据与托管账本接线。 [逐步退出条件与启动硬锁](FORMAL_FULL_TRAINING_READINESS_CN.md#r2-开训前执行顺序)
 
 <!-- audit_invalidation: scope=2026-11-09_debris_next_steps_only; invalidated_at=2026-11-11T00:52:08+08:00; superseded_by=FORMAL_FULL_TRAINING_READINESS_CN.md#r2-开训前执行顺序; reason=该条按发布前状态写成，且将观测范围和账本准入顺序合写; historical_only=true -->

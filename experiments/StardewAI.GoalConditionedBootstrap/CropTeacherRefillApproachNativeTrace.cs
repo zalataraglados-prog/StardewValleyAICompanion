@@ -7,6 +7,9 @@ namespace StardewAI.GoalConditionedBootstrap;
 public sealed record CropTeacherRefillObservedStep(string QueueItemId, string OptionId,
     NativeOutputObservationSummary Observation);
 
+public sealed record CropTeacherRefillResourceEvidenceStep(string QueueItemId, string OptionId,
+    NativeOutputResourceEvidence Evidence);
+
 // Retains the original successful native queue. No dispatch, resource rebind or producer credit.
 public sealed class CropTeacherRefillApproachNativeTrace
 {
@@ -15,7 +18,8 @@ public sealed class CropTeacherRefillApproachNativeTrace
     private readonly Dictionary<string, string> requestBlobs = new(CropTeacherSeedTransferNativeOutcome.PathComparer);
 
     private CropTeacherRefillApproachNativeTrace(CropTeacherRefillApproachCompilation compilation,
-        string receiptPath, string afterPath, string runId, bool verifySnapshotInventoryContinuity)
+        string receiptPath, string afterPath, string runId, bool verifySnapshotInventoryContinuity,
+        bool classifyResourceEvidence = false)
     {
         this.compilation = compilation;
         compilation.ValidateInputsUnchanged();
@@ -32,6 +36,7 @@ public sealed class CropTeacherRefillApproachNativeTrace
         var steps = raw.GetProperty("step_results").EnumerateArray().ToArray();
         var retained = new Dictionary<string, string>(initial.ReadHashes(), CropTeacherSeedTransferNativeOutcome.PathComparer);
         var summaries = new List<CropTeacherRefillObservedStep>();
+        var resourceEvidence = new List<CropTeacherRefillResourceEvidenceStep>();
         string? captureSession = null;
         for (var index = 0; index < native.Actions.Length; index++)
         {
@@ -57,14 +62,18 @@ public sealed class CropTeacherRefillApproachNativeTrace
                     NativeExecutionSourceSupport.TotalDay(frame.After) == compilation.TotalDay &&
                     Location(frame.Before) == "Farm" && Location(frame.After) == "Farm",
                 "native refill trace lacks its original same-day Farm scope/observation");
-            var summary = verifySnapshotInventoryContinuity
+            var classified = classifyResourceEvidence
+                ? NativeOutputObservationBoundary.ReadResourceEvidence(frame.Request, frame.Result.ActionOriginObservation!,
+                    frame.Before, frame.After, "Farm") : null;
+            var summary = classified?.Observation ?? (verifySnapshotInventoryContinuity
                 ? NativeOutputObservationSnapshotBoundary.Read(frame.Request, frame.Result.ActionOriginObservation!,
                     frame.Before, frame.After, "Farm")
                 : NativeOutputObservationBoundary.Read(frame.Request, frame.Result.ActionOriginObservation!,
-                    frame.Before.GameTick, frame.After.GameTick, "Farm");
+                    frame.Before.GameTick, frame.After.GameTick, "Farm"));
             captureSession ??= summary.CaptureSessionId;
             Require(summary.CaptureSessionId == captureSession, "native trace crossed observation-process reference namespaces");
             summaries.Add(new(frame.Item.QueueItemId, frame.Item.OptionId, summary));
+            if (classified is not null) resourceEvidence.Add(new(frame.Item.QueueItemId, frame.Item.OptionId, classified));
         }
         Require(summaries.Where(step => step.OptionId == "executor.clear_obstacle").Select(step => step.QueueItemId)
                 .SequenceEqual(compilation.ClearanceQueueItemIds, StringComparer.Ordinal),
@@ -78,6 +87,7 @@ public sealed class CropTeacherRefillApproachNativeTrace
             "native trace source changed while retaining original frame evidence");
         initial.Validate();
         Steps = summaries.AsReadOnly();
+        ResourceEvidence = resourceEvidence.AsReadOnly();
         AfterSnapshotPath = afterPath;
         ValidateInputsUnchanged();
         SnapshotInventoryContinuityVerified = verifySnapshotInventoryContinuity;
@@ -93,7 +103,13 @@ public sealed class CropTeacherRefillApproachNativeTrace
         CropTeacherRefillApproachCompilation compilation, string executionReceiptPath, string afterSnapshotPath, string runId) =>
         new(compilation, executionReceiptPath, afterSnapshotPath, runId, verifySnapshotInventoryContinuity: true);
 
+    public static CropTeacherRefillApproachNativeTrace OpenWithResourceEvidence(
+        CropTeacherRefillApproachCompilation compilation, string executionReceiptPath, string afterSnapshotPath, string runId) =>
+        new(compilation, executionReceiptPath, afterSnapshotPath, runId, verifySnapshotInventoryContinuity: true,
+            classifyResourceEvidence: true);
+
     public IReadOnlyList<CropTeacherRefillObservedStep> Steps { get; }
+    public IReadOnlyList<CropTeacherRefillResourceEvidenceStep> ResourceEvidence { get; }
     public string AfterSnapshotPath { get; }
     public bool SnapshotInventoryContinuityVerified { get; }
     public IReadOnlyDictionary<string, string> InputHashes => inputs.ReadHashes().Concat(requestBlobs)
