@@ -131,7 +131,7 @@ public sealed class NativeClearanceTerrainBoundaryTests
 
     private static NativeClearanceTerrainSummary Read(TrainingExecutionRequest request, ActionOriginObservationReceipt receipt,
         SnapshotEnvelope before, SnapshotEnvelope after) => NativeOutputObservationBoundary.ReadClearanceTerrain(request, receipt, before, after, "Farm");
-    private static (TrainingExecutionRequest Request, ActionOriginObservationReceipt Receipt, SnapshotEnvelope Before, SnapshotEnvelope After) Fixture()
+    internal static (TrainingExecutionRequest Request, ActionOriginObservationReceipt Receipt, SnapshotEnvelope Before, SnapshotEnvelope After) Fixture()
     {
         var fixture = NativeClearanceConsumptionBoundaryTests.Fixture();
         fixture.Request.OptionId = "executor.clear_obstacle";

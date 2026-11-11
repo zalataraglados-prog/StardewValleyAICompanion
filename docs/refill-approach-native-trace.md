@@ -1,5 +1,50 @@
 # Original Refill Native Trace
 
+## 2026-11-12 Original Wild Tree Persistent Effects
+
+The original API peer contributed terrain component2d875aa9,39/39 focused,reviewed
+and integrated8bb9de0a. ReadClearanceTerrain reuses ReadClearanceConsumption once
+and original CropSeedResourceBoundary envelope helpers; exactly the requested
+terrain row disappears while full ordered foreign rows/unknown metadata remain.
+The raw farm.terrain_features proof is explicitly Farm-scoped,not evidence for
+the same coordinates in another location. Other terrain types get presence-only
+proof,NOT an assumed tree/skill/resource outcome.
+
+ReadWildTreeClearanceResources consumes that component and the EXISTING complete
+wild_tree_removed request. Original Axe calls must target this tree; original
+foraging XP16 and TreesChopped1 match both endpoints. Existing
+CurrentSkillExperienceDeficitBuilder/NativeSkillExperienceRules validate all six
+skill rows/thresholds/scoring. Only the known foraging XP,level,buff-preserving
+effective level,next-threshold,sorted native pending-level additions and scoring
+changes are projected. All unrelated skill/profession/stat/player/unlock changes
+remain rejected. The old watering bowl mirror verifies derived energy fields;
+an independently checked comparison view then runs the OLD complete resource
+projector,including unchanged raw inventory/currency. No shared exclusions,
+executor/animation logic or private inventory XML requirements were added.
+
+Pinned E1.6.15 PE-only gainExperience source:one method1728UTF8bytes,0diagnostics,
+17 original outputs byte-identical. Source index SHA256
+62da8405ccfb40f0052df6d8601271ed7f2fd47712ede104d7d7b04182fa7e4a confirms
+native level/pending-level behavior and additional MasteryExp at totalLevel25.
+Unsettled mastery/other effects are NOT silently exempted. Initial command-line
+argument rejection wrote no outputs; explicit build then bounded extraction passed.
+
+First integrated61 cases:60pass/1new fixture slot-index error,corrected only in
+the fixture. Final related158/158,zero failure/skip/warning. External original
+source-reader replay block17-resource-replay-a.json SHA256
+8b82f6ef8927fa1e9cc13ef3d38c4fddadddce234c314c31d111671aa8349773 verifies
+the retained clear's15calls/energy270->240,target removal,XP/stat/bowl effects and
+original full persistent-resource equality; following move still reconciles17stock
+units. No new game or successful-matrix resampling. Before-capture gaps retained.
+
+Scope is the observed complete-tree/no-clear-pickup path,not all clearance kinds
+or production attribution. Clear-time admission or mastery side effects still
+need their actual existing-contract settlement; do not disable original automatic
+pickup/route clearing to fit this branch. Native source/request identity must
+still come from original trace readers. Next wire these same verified components
+to the original refill trace,ledger/owner/toploop,harvest,sales and native save/
+restore; no second execution system or extra calibration hard gate.
+
 ## 2026-11-12 Native Consumption And Pickup Resource Mirrors
 
 PR555 review follow-up: initial head d89d8a71 passed CI43084616175 but omitted

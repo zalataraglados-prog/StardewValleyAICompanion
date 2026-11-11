@@ -20,6 +20,7 @@ public static partial class NativeOutputObservationBoundary
     public static NativeClearanceTerrainSummary ReadClearanceTerrain(TrainingExecutionRequest request,
         ActionOriginObservationReceipt receipt, SnapshotEnvelope before, SnapshotEnvelope after, string locationId)
     {
+        Require(locationId == "Farm", "the original Farm terrain field cannot prove clearance in another location");
         var consumption = ReadClearanceConsumption(request, receipt, before, after, locationId);
         var target = CropSeedResourceBoundary.VerifyClearanceTerrain(request, before, after);
         return new(consumption, target.TileX, target.TileY, target.RuntimeType);
