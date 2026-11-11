@@ -2,6 +2,15 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-12T07:34:00+08:00 R2 所选收获帧资源消费收口
+
+- #562 最终 `8fb48259` 经 CI `43116326415` 全42步／Core2600／Backend2171零失败/跳过及同 head 无发现审查合入 `16b039ae`；核测试／main树 `79a8658d` 一致后清理自有引用。本片独立验收。
+- 原拾取的 actor／图读取与数量汇总核提取复用；XML、入包顺序、对象身份、edibility 与未知元数据守卫仍留在原拾取入口，未降低旧输入要求。新收获物理存量消费者复用 `ExactInventoryReceiptVerifier`、原玩家槽位／容量／种子回显检查，核目标增量、原槽位元数据、外部保管与访问、全图汇总及货币；额外观察量不自动归本作物产出。种子类别 -74 已用同 pin PE 常量元数据核对，未执行游戏代码。
+- 同一 `VerifyHarvestResources` 入口顺序消费原目标／技能／stock／社区中心比较，绑定输出与原目标；只还原已独立核实的比较值，再调用**原** expected-resource invariant 拒绝其他持久漂移。仅房屋材料镜像实际变化才复用旧检查，不为未变化字段新增门。字段级 JsonElement 引用复用，每个修改域只序列化一次，未复制世界或另建执行器。
+- 最终相关211/211、零失败/跳过、构建零警告/错误，含原拾取与新增组合、种子回显反例。夹具是组件声明，不是新的游戏获取。原 E 五次收获通过同一强队列读取器／消费者各次完整调用：`SpecificPersistentResourceBoundaryVerified=true`，实际花椰菜0→1→2→3→4→5，货币不变；b报告 SHA `0ab7695b218b9b94b3d1178f5d572c4efe6dd5b816825d794d1f5bb4ca6684d8`。先前物理存量a报告 SHA `854a2b40294f59a597cba8b97ca8de1194f9897850b8c2b54d7ad8994521e330` 保留。末次加种子用例前后三个生产依赖 DLL 哈希不变且 Bootstrap 等于b记录，未重复已经接受的native重放。
+- **证据边界不新增门。** 本次每帧 minimum=1 是诊断参数，尚未绑定真实 commitment／wave／owner；生产归属、私有 Item 全状态、原生终局与正式训练声明仍未作出。这些 false 不是新增的全世界 XML／生产证明硬门，按既有合同决定所选结算何时需要更强事实。当前只证明所选帧的已读资源效果，不能当完整托管、生产收入或模型更新。[范围](refill-approach-native-trace.md#2026-11-12-integrated-harvest-resource-consumer)。无新游戏／服务器／训练。
+- **唯一接续：** 沿原 supporting-transition／owner 类型体系接收获适配，绑定原 plan.Day/ActionBatch、commitment／wave、原队列和回执，复用本资源入口与既有 output-retention 合同；再同一次账本提交、丢确认／中断幂等恢复，并接原 `Program.cs` 主循环。接续原销售／原生保存读回和一次有界 managed，不另建 owner／执行器，不回到逐项 L1 重验。当前顶层仍 unmanaged，L1冻结、formal=false、local-data不提交。本片待最终同 head CI／审查。
+
 ## 2026-11-12T06:58:00+08:00 R2 收获库存预览与实际进度分离
 
 - #561 最终 `3c919775` 经 CI `43114142195` 全42步／Core2600／Backend2153零失败/跳过及同 head 无发现审查合入 `6894b961`；核测试／main树 `931d09eb` 一致后清理自有引用。当前片不借父片验收。
