@@ -24,8 +24,7 @@ public sealed partial class CropTeacherWateringMaintenance
         inputs = new(Array.Empty<string>());
         AppliedTiles = Array.AsReadOnly(Array.Empty<MoneyRevenueCropPlantingTile>());
         AfterSnapshotPath = refillTrace.AfterSnapshotPath;
-        var after = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
-            AfterSnapshotPath, "original verified refill approach after");
+        var after = refillTrace.VerifiedAfterSnapshot;
         rebind = new(after, compilation.BaseLedger, stepId, ValidateInputsUnchanged, "Crop refill approach");
         ValidateInputsUnchanged();
     }

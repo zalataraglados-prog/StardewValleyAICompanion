@@ -31,6 +31,11 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         Assert.False(result.CompleteBatch);
         Assert.False(result.NativeCropLifecycleVerified);
         Assert.False(result.FormalProductTrainingAuthorized);
+        const System.Reflection.BindingFlags privateInstance = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+        var trace = typeof(CropTeacherWateringMaintenance).GetField("refillTrace", privateInstance)!.GetValue(result)!;
+        var rebind = typeof(CropTeacherWateringMaintenance).GetField("rebind", privateInstance)!.GetValue(result)!;
+        Assert.Same(trace.GetType().GetProperty("VerifiedAfterSnapshot", privateInstance)!.GetValue(trace),
+            rebind.GetType().GetField("after", privateInstance)!.GetValue(rebind));
         var after = JsonSerializer.Deserialize<SnapshotEnvelope>(File.ReadAllText(f.AfterPath), JsonOptions)!;
         var reply = new ReservationPortfolioLedgerService().Commit(shared.Source.Ledger, after, result.RebindRequest, RecordedAt);
         Assert.True(reply.Accepted, string.Join(",", reply.Errors));

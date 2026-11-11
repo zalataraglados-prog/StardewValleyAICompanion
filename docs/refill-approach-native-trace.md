@@ -1,5 +1,40 @@
 # Original Refill Native Trace
 
+## 2026-11-12 Opted-In Original Watering Owner
+
+This successor to PR557 uses the SAME preparation, original watering wire, owner,
+portfolio ledger and durable claim/result/recovery protocol. The explicit
+OpenRefillApproachWithSelectedResourceEffects factory and compilation init flag
+UseSelectedRefillResourceEffects produce control kind refill_approach_resources.
+Historical callers retain their original default and refill_approach marker.
+Restore independently rebuilds the selected mode; its extra acceptance bit cannot
+be forged onto a legacy result or removed from an actual selected-mode result.
+
+Before dispatch the new preparation rejects unsupported clearance contract families;
+complete wild_tree_removed contracts and no-clear approaches are supported, not all
+contextual tree effects. The original live bridge additionally requires existing
+tool-input observation for an actual clear. Neutral movement acquires no optional
+XML requirement. Unknown persistent drift, clear-time pickup, Mastery and other
+unsettled effects still refuse; original repair/automatic pickup is not disabled.
+
+The verified final trace SnapshotEnvelope is reused by the original ledger rebind,
+avoiding a second deserialization of the same full after-snapshot. Original retained
+file hashes and trace checks remain; this internal object is not a new cache API.
+Reference-identity coverage proves the reuse. Supporting arrival stays zero crop
+progress: no applied tile, complete batch, preference label or formal authorization.
+
+Related313/313 passed, then the final snapshot-reuse change passed53/53, no failure,
+skip or compiler warning. Declared fixtures exercise one native request/one ledger
+commit, native/marker/acceptance acknowledgement-loss recovery, original protocol
+identity and acceptance-bit tampering. They do NOT constitute a new native managed
+run; actual six-frame source replay is reported separately in the parent section.
+
+The private top-level preparation does not yet select this new mode. Publish and
+verify this small owner slice, then wire that existing entry and observation profile,
+settle actual selected effects, and continue harvest/sales/native-save/restore and
+bounded managed acceptance in R2 order. Toploop remains unmanaged, global/producer/
+formal claims remain unproved, frozen L1 counts unchanged, local-data outside Git.
+
 ## 2026-11-12 Selected Resource Trace Consumption
 
 Parent556 accepted main310b5c61,tested69ee03b0/tree5bb1e827,
