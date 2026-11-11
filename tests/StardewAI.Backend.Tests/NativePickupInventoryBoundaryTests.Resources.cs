@@ -109,7 +109,7 @@ public sealed partial class NativePickupInventoryBoundaryTests
     private static NativePickupResourceSummary Resources(PickupFixture f) =>
         NativeOutputObservationBoundary.ReadPickupResources(f.Request, f.Receipt, f.Before, f.After, "Farm");
 
-    private static PickupFixture ResourceFixture(bool newSlot = false, bool newKind = false, int woodBefore = 10)
+    internal static PickupFixture ResourceFixture(bool newSlot = false, bool newKind = false, int woodBefore = 10)
     {
         var f = new PickupFixture(newSlot);
         if (!newSlot && woodBefore != 10)

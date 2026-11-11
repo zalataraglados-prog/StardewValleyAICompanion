@@ -23,9 +23,13 @@ public static partial class NativeOutputObservationBoundary
 {
     // Slot effects consume the original admission and persisted-payload witnesses, not a new capture.
     public static NativePickupInventorySummary ReadPickupInventory(TrainingExecutionRequest request,
-        ActionOriginObservationReceipt receipt, SnapshotEnvelope before, SnapshotEnvelope after, string locationId)
+        ActionOriginObservationReceipt receipt, SnapshotEnvelope before, SnapshotEnvelope after, string locationId) =>
+        ReadPickupInventory(request, receipt, before, after, locationId, ReadResourceEvidence(request, receipt, before, after, locationId));
+
+    internal static NativePickupInventorySummary ReadPickupInventory(TrainingExecutionRequest request,
+        ActionOriginObservationReceipt receipt, SnapshotEnvelope before, SnapshotEnvelope after, string locationId,
+        NativeOutputResourceEvidence evidence)
     {
-        var evidence = ReadResourceEvidence(request, receipt, before, after, locationId);
         var payload = ReadInventoryPayload(request, receipt, before.GameTick, after.GameTick, locationId,
             before.PlayerId.Value ?? throw new InvalidDataException("Pickup inventory actor is unavailable."));
         Require(payload.After.GameTick == after.GameTick,
