@@ -152,3 +152,20 @@ unavailable result does not establish field necessity. #550 A remains unverified
 B now has bounded positive quantity and negative gap decisions, but producer
 credit and full persistent-boundary acceptance remain unproved. L1 frozen19/19,
 11/11; full-state/nativeoutcome/resource/formalfalse. Raw data stays outside Git.
+
+### Test-Host Validation Follow-Up
+
+Initial PR#552 CI43053842387 on ddd59a80 passed Core2600 and Backend1832,
+but one OLD owner theory failed in FileSystemWatcher.Dispose during host teardown.
+The unchanged theory passed6/6 locally; that alone was not accepted as a fix.
+A new assertion against actual host JSON providers first failed with reload enabled.
+BackendTests.runsettings now sets DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE=false
+BEFORE the test host starts; the project supplies this default unless a caller
+explicitly selects other runsettings. The guard checks actual providers as well as
+the process value. The default JSON source reads this host setting when installed
+([.NET8 host source](https://github.com/dotnet/runtime/blob/v8.0.18/src/libraries/Microsoft.Extensions.Hosting/src/HostingHostBuilderExtensions.cs));
+[VSTest runsettings](https://learn.microsoft.com/en-us/visualstudio/test/configure-unit-tests-by-using-a-dot-runsettings-file)
+documents the project property and pre-host environment configuration.
+No production setting, executor, exception swallowing, retry, filter or skip was
+added. Focused7/7 and complete local Backend1834/1834 passed with zero skips.
+The initial failure remains recorded; latest-head CI/review must pass separately.

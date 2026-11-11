@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using StardewAI.Contracts.Strategy;
@@ -23,6 +24,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         public StateStore Store { get; }
         public FileStrategyCommitmentRepository Repository { get; }
         public LiveTrainingOptions LiveOptions { get; }
+        internal IConfiguration HostConfiguration => app.Services.GetRequiredService<IConfiguration>();
         internal Action<string>? BeforeWrite { get; set; }
 
         public RuntimeFixture(Fixture files, bool loseReplies = false, string fault = "")
