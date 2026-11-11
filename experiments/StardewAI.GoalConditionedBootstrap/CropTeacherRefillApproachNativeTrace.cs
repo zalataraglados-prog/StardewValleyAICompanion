@@ -129,6 +129,7 @@ public sealed class CropTeacherRefillApproachNativeTrace
         PickupInventory = pickupInventory.AsReadOnly();
         ResourceEffects = resourceEffects.AsReadOnly();
         AfterSnapshotPath = afterPath;
+        VerifiedAfterSnapshot = native.After;
         ValidateInputsUnchanged();
         SnapshotInventoryContinuityVerified = verifySnapshotInventoryContinuity;
         ResourceNeutralBoundaryVerified = requireResourceNeutrality;
@@ -172,6 +173,7 @@ public sealed class CropTeacherRefillApproachNativeTrace
     public IReadOnlyList<CropTeacherRefillPickupInventoryStep> PickupInventory { get; }
     public IReadOnlyList<CropTeacherRefillResourceEffectStep> ResourceEffects { get; }
     public string AfterSnapshotPath { get; }
+    internal SnapshotEnvelope VerifiedAfterSnapshot { get; }
     public bool SnapshotInventoryContinuityVerified { get; }
     public bool ResourceNeutralBoundaryVerified { get; }
     public bool PickupInventoryCaptureVerified { get; }

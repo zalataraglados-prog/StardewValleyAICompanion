@@ -6,7 +6,7 @@ namespace StardewAI.GoalConditionedBootstrap;
 public sealed partial class CropTeacherWateringMaintenance
 {
     private CropTeacherWateringMaintenance(CropTeacherRefillApproachCompilation compilation,
-        MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId)
+        MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId, bool selectedResources = false)
     {
         Require(transition.TransitionKind == "crop_actions" && transition.TotalDay == compilation.TotalDay &&
                 transition.ExecutorVersion == PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor &&
@@ -14,15 +14,17 @@ public sealed partial class CropTeacherWateringMaintenance
                 CropTeacherSeedTransferNativeOutcome.PathComparer.Equals(Path.GetFullPath(transition.QueuePath), compilation.QueuePath) &&
                 CropTeacherSeedTransferNativeOutcome.PathComparer.Equals(Path.GetFullPath(transition.BeforeSnapshotPath), compilation.SourcePath),
             "Crop refill approach changed its pinned original transition.");
-        refillTrace = CropTeacherRefillApproachNativeTrace.OpenResourceNeutral(compilation,
-            transition.ExecutionReceiptPath, transition.AfterSnapshotPath, transition.RunId);
+        refillTrace = selectedResources
+            ? CropTeacherRefillApproachNativeTrace.OpenWithSelectedResourceEffects(compilation,
+                transition.ExecutionReceiptPath, transition.AfterSnapshotPath, transition.RunId)
+            : CropTeacherRefillApproachNativeTrace.OpenResourceNeutral(compilation,
+                transition.ExecutionReceiptPath, transition.AfterSnapshotPath, transition.RunId);
         // The original trace owns all retained artifacts, including compressed requests.
         // Do not decode/hash those same snapshots again in a second retainer.
         inputs = new(Array.Empty<string>());
         AppliedTiles = Array.AsReadOnly(Array.Empty<MoneyRevenueCropPlantingTile>());
         AfterSnapshotPath = refillTrace.AfterSnapshotPath;
-        var after = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
-            AfterSnapshotPath, "original resource-neutral refill approach after");
+        var after = refillTrace.VerifiedAfterSnapshot;
         rebind = new(after, compilation.BaseLedger, stepId, ValidateInputsUnchanged, "Crop refill approach");
         ValidateInputsUnchanged();
     }

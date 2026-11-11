@@ -8,6 +8,7 @@ public sealed record CropTeacherOriginalWateringCompilation(CropTeacherRunStep S
     string QueuePath, string ReceiptPath, string AfterSnapshotPath, string RuntimeDirectory)
 {
     public bool IsRefillApproach { get; init; }
+    public bool UseSelectedRefillResourceEffects { get; init; }
 }
 
 public sealed partial class CropTeacherManagedSeedOwner
@@ -22,10 +23,13 @@ public sealed partial class CropTeacherManagedSeedOwner
             if (Pending is not null || HeadRecoveryRequired)
                 throw new InvalidOperationException("Recover the existing crop phase before original watering compilation.");
             var value = await compileOriginal().ConfigureAwait(false);
+            if (value.UseSelectedRefillResourceEffects && !value.IsRefillApproach)
+                throw new InvalidDataException("Selected refill resource effects require the original refill approach phase.");
             var record = CreateAdmissionRecord(headSnapshotPath, headLedgerPath, value.RuntimeDirectory);
             record["operation_kind"] = "watering_maintenance";
             record["maintenance_execution_protocol"] = "original_loop.v1";
-            if (value.IsRefillApproach) record["maintenance_control_kind"] = "refill_approach";
+            if (value.IsRefillApproach) record["maintenance_control_kind"] = value.UseSelectedRefillResourceEffects
+                ? "refill_approach_resources" : "refill_approach";
             record["commitment_id"] = value.Step.CommitmentId;
             record["maintenance_step"] = JsonSerializer.SerializeToNode(value.Step, JsonOptions);
             record["original_model_action_path"] = Path.GetFullPath(value.ModelActionPath);
@@ -59,9 +63,10 @@ public sealed partial class CropTeacherManagedSeedOwner
             .SingleOrDefault(row => row.BatchIndex == batch?.BatchIndex);
         var active = record["active_commitment_ids"]?.Deserialize<string[]>(JsonOptions);
         var control = record["maintenance_control_kind"]?.GetValue<string>();
-        var refill = control == "refill_approach";
+        var resources = control == "refill_approach_resources";
+        var refill = control == "refill_approach" || resources;
         if (record["step"] is not null || record["prior_verified_snapshot_path"] is not null || record["route_transition"] is not null ||
-            control is not (null or "refill_approach") ||
+            control is not (null or "refill_approach" or "refill_approach_resources") ||
             record["route_execution_protocol"] is not null || record["maintenance_execution_protocol"]?.GetValue<string>() != "original_loop.v1" ||
             !SamePath(StoredPath(record, "before_ledger_path"), headLedgerPath) ||
             new[] { transition.QueuePath, transition.BeforeSnapshotPath, transition.ExecutionReceiptPath, transition.AfterSnapshotPath }.Any(path => !Path.IsPathFullyQualified(path)) ||
@@ -74,11 +79,15 @@ public sealed partial class CropTeacherManagedSeedOwner
             batch.Tiles.Length is < 1 or > 8 || !batch.Tiles.SequenceEqual(original.Tiles.Where(tile => batch.Tiles.Contains(tile))) ||
             active is null || !active.SequenceEqual(ActiveCoveredCommitments(), StringComparer.Ordinal))
             throw new InvalidDataException("Original watering changed its owner/run/executor/source or original due batch.");
-        var start = refill
-            ? CropTeacherWateringMaintenance.Preparation.OpenRefillApproach(plan.RequestPath, StoredPath(record, "before_snapshot_path"), headLedgerPath,
+        var start = !refill
+            ? CropTeacherWateringMaintenance.Preparation.Open(plan.RequestPath, StoredPath(record, "before_snapshot_path"), headLedgerPath,
                 active, step.CommitmentId, Text(record, "support_step_id"), StoredPath(record, "original_model_action_path"), transition.QueuePath)
-            : CropTeacherWateringMaintenance.Preparation.Open(plan.RequestPath, StoredPath(record, "before_snapshot_path"), headLedgerPath,
-                active, step.CommitmentId, Text(record, "support_step_id"), StoredPath(record, "original_model_action_path"), transition.QueuePath);
+            : resources
+                ? CropTeacherWateringMaintenance.Preparation.OpenRefillApproachWithSelectedResourceEffects(plan.RequestPath,
+                    StoredPath(record, "before_snapshot_path"), headLedgerPath, active, step.CommitmentId,
+                    Text(record, "support_step_id"), StoredPath(record, "original_model_action_path"), transition.QueuePath)
+                : CropTeacherWateringMaintenance.Preparation.OpenRefillApproach(plan.RequestPath, StoredPath(record, "before_snapshot_path"), headLedgerPath,
+                    active, step.CommitmentId, Text(record, "support_step_id"), StoredPath(record, "original_model_action_path"), transition.QueuePath);
         var expected = frontierHashes.TryGetValue(headSnapshotPath, out var hash) ? hash : fixedHashes[headSnapshotPath];
         if (start.InputHashes[start.SourcePath] != expected || start.TotalDay != step.TotalDay || transition.TotalDay != step.TotalDay ||
             (!refill && start.CandidateId != $"crop:{step.TotalDay}:{step.CommitmentId}:{batch.BatchIndex}") ||

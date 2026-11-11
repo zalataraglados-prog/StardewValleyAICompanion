@@ -2,6 +2,22 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-12T05:03:00+08:00 R2 持久 owner 配置接原 preparation
+
+- 同一 `CropTeacherManagedSeedOwnerOptions` 显式配置接入原 `PrepareCropTeacherOwnedWateringAsync`，仅实际补水接近才选资源模式，普通浇水不变。默认 false 不增加旧 owner header 字段；显式 true 绑定同一持久身份，重开时正反切换均拒绝，不能沿旧目录改模式。
+- 准入前复用原工具输入门及 `NativeOutputObservationMode.Validate`；执行入口再次核原观察配置，准入后改坏配置也在 native claim 前拒绝。不要求无观察中性移动补 XML，不改执行器或旧默认守卫。[范围](refill-approach-native-trace.md#2026-11-12-retained-owner-resource-selection)。
+- 原 API 同会话独立8项测试一次通过、无修正，`0ed1b383` 已审查集成 `73cdf3fc`。控制器补准入后配置变化反例；最终相关219/219通过，零失败/跳过、零编译警告。协作者已正常退出、临时 edit/bash/external 允许项均0，授权空闲。声明夹具不是新游戏证据；期间另一313项运行与源码编辑重叠，仅作辅助记录，不作当前 head 验收。
+- 本接线纳入同一 owner PR #558，不另增第三条发布链；#557／#558 旧提交审查无发现，但 hosted CI 排队、尚无测试 job，不能借父片绿灯合并。更新后的 #558 重新按最终 head CI／审查验收。当前 `Program.cs` 仍走 unmanaged crop builder，不能把 preparation 可选模式说成顶层托管已完成。
+- **唯一接续：** 完成本片发布验收，再将同一 owner 的会话生命周期和已验证路线接入原主循环，接续收获／销售／原生保存读回与中断恢复，随后一条有界真实 managed 作物周期。不另建 orchestrator，不在已准入后退回无主派发；原生所选效果和未结算来源继续保留边界。L1冻结`19/19、11/11`，fullmanaged／生产归属／全局／formal未证，#339/#550跟踪中、local-data不提交。
+
+## 2026-11-12T04:48:00+08:00 R2 原 watering owner 的显式资源接续
+
+- 本片接续 #557 的同一 trace，不新增执行器、账本或顶层循环。显式 preparation／`UseSelectedRefillResourceEffects` 使用独立 `refill_approach_resources` 意图和验收位；旧入口、默认意图和旧恢复规则不变。原 owner 仍复核完整来源、队列、日界、nonce、持久 claim／result 和单次账本提交。
+- 新模式在派发前拒绝不支持的清障合同，并要求实际清障的原工具输入观察；中性移动不增加可选 XML 门。到达只是接近，不算浇水、作物进度、偏好标签或正式训练。支持的是完整原树合同／移动拾取与严格中性帧，不代表其他清障、清障期间入包或 Mastery 等效果已结算。
+- 声明夹具覆盖原 wire、单次 native 请求／账本提交、native／marker／acceptance 丢确认恢复及新旧验收位防伪。整合相关313/313通过；末态快照复用优化后的53/53通过，零失败/跳过、零警告。复用已核对象而非再解析同一大快照，文件哈希／原守卫不减。这些不是新游戏或完整托管原生 PASS。[详细范围](refill-approach-native-trace.md#2026-11-12-opted-in-original-watering-owner)。
+- #557 的最终 head `34877b27` CI `43096924399` 当前排队，未借父片绿灯合并。本 owner 增量另行发布／同 head CI审查；#339 被 #555 否定句误触自动关闭已查明并恢复开放，后续未完 issue 不使用关闭关键词。当前顶层仍 unmanaged，`PrepareCropTeacherOwnedWateringAsync` 尚不启用资源模式。
+- **唯一接续：** 完成本片验收发布，再接实际顶层选择／观察配置和同一账本，补当前选中路线的未结算效果，然后收获／销售／原生保存恢复及有界 managed。原 native 六帧重放与前置间隙见上一片，不改称本片实战。L1`19/19、11/11`冻结，生产归属／全局／formal未证，#339/#550跟踪中，local-data不提交。
+
 ## 2026-11-12T04:31:59+08:00 R2 原补水 trace 统一资源消费
 
 - #556 已合入 `310b5c61`，最终 head `69ee03b0` 与 main 树 `5bb1e827` 一致；CI `43089775742` 全42步、Core2600/Backend2036零失败/跳过，同 head 审查无发现，自有发布分支已清。下方“待审查”属于发布前历史。

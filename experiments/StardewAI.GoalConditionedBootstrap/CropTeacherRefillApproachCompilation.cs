@@ -70,6 +70,9 @@ public sealed class CropTeacherRefillApproachCompilation
         CandidateId = candidates.Single(); QueueId = queue.QueueId;
         ClearanceQueueItemIds = Array.AsReadOnly(queue.Items.Where(item => item.OptionId == "executor.clear_obstacle")
             .Select(item => item.QueueItemId).ToArray());
+        SelectedResourceClearanceSupported = queue.Items.Where(item => item.OptionId == "executor.clear_obstacle").All(item =>
+            item.NormalizedCommand.Parameters.Where(parameter => parameter.Name == "clear_completion_mode").ToArray()
+                is [{ Value: "wild_tree_removed" }]);
         ledger = source.Ledger;
         inputs.Validate();
     }
@@ -85,6 +88,7 @@ public sealed class CropTeacherRefillApproachCompilation
     public string QueueId { get; }
     public MoneyRevenueCropPlantingTile Target { get; }
     public IReadOnlyList<string> ClearanceQueueItemIds { get; }
+    internal bool SelectedResourceClearanceSupported { get; }
     public StrategyCommitmentLedger BaseLedger => CropTeacherSeedSupportSource.Copy(ledger);
     public IReadOnlyDictionary<string, string> InputHashes => inputs.ReadHashes();
     public bool NativeOutcomeVerified => false;

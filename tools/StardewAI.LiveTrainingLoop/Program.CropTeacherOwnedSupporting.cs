@@ -20,6 +20,7 @@ static partial class Program
             throw new InvalidDataException(watering ? "Owned watering executor output slot changed before dispatch." : "Owned crop route executor output slot changed before dispatch.");
         var before = JsonNode.Parse(ContentAddressedJsonArtifactReader.ReadAllText(start.SourcePath))!.AsObject();
         var queue = JsonNode.Parse(ContentAddressedJsonArtifactReader.ReadAllText(start.QueuePath))!.AsObject();
+        RequireSelectedRefillToolObservation(options, operation.Record, queue);
         Task<JsonObject> Execute() => ExecuteRuntimeTestHarnessCoreAsync(http, executorHttp,
             options, iteration, start.SourcePath, before, queue, ReadString(before, "state_hash"), ReadString(queue, "queue_id"),
             operation.Record[watering ? "original_model_action_path" : "original_model_plan_path"]!.GetValue<string>(), string.Empty, start.QueuePath, start.SourcePath,
@@ -35,5 +36,20 @@ static partial class Program
         else await owner.RunSupportingRouteAsync(operation, http,
             (diagnostic, request) => PostJournaledPortfolioCommitAsync(http, options, diagnostic, request),
             (endpoint, raw) => PostJsonStringAsync(http, endpoint, raw, CancellationToken.None)).ConfigureAwait(false);
+    }
+
+    private static void RequireSelectedRefillToolObservation(LiveTrainingOptions options, JsonObject record, JsonObject queue)
+    {
+        if (record["maintenance_control_kind"]?.GetValue<string>() != "refill_approach_resources") return;
+        RequireSelectedRefillToolInputs(options, queue);
+        NativeOutputObservationMode.Validate(options);
+    }
+
+    private static void RequireSelectedRefillToolInputs(LiveTrainingOptions options, JsonObject queue)
+    {
+        var items = queue["items"]?.AsArray() ?? throw new InvalidDataException("Selected refill has no original queue items.");
+        if (items.Any(item => item?["option_id"]?.GetValue<string>() == "executor.clear_obstacle") &&
+            (!options.ObserveNativeOutputs || !options.ObserveNativeClearanceToolInputs))
+            throw new InvalidDataException("Selected refill clearance requires its original tool-input observation before dispatch.");
     }
 }
