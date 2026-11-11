@@ -14,19 +14,27 @@ internal static partial class CropSeedResourceBoundary
         var actualCan = Field(after, "player", "watering_can_state", required: false);
         var canValue = Readable(can) ? Value(can!) as JsonObject : null;
         var projectedCan = canValue?["projection_status"]?.GetValue<string>() == "exact_vanilla_power_zero";
-        if (projectedCan)
+        var missingCan = canValue?["projection_status"]?.GetValue<string>() == "watering_can_missing";
+        if (projectedCan || missingCan)
         {
             var value = Value(can!);
             var prior = first.Skills.Single(row => row.SkillId == "farming").EffectiveLevel;
             var level = next.Skills.Single(row => row.SkillId == "farming").EffectiveLevel;
-            var efficient = HarvestMirrorBoolean(value, "is_efficient");
-            double Cost(int farming) => efficient ? 0d : Math.Max(0d, 2d - farming * 0.1d);
-            Require(Int(value, "farming_level") == prior && value["energy_cost_per_power_zero_action"] is JsonValue cost &&
-                    cost.TryGetValue<double>(out var number) && double.IsFinite(number) && number == Cost(prior),
-                "Crop harvest original watering-can level/cost mirror is inconsistent.");
-            // This is PlayerReadAdapter's double/clamped display projection, not a native stamina debit.
+            Require(Int(value, "farming_level") == prior, "Crop harvest original watering-can level mirror is inconsistent.");
+            if (projectedCan)
+            {
+                var efficient = HarvestMirrorBoolean(value, "is_efficient");
+                double Cost(int farming) => efficient ? 0d : Math.Max(0d, 2d - farming * 0.1d);
+                Require(value["energy_cost_per_power_zero_action"] is JsonValue cost && cost.TryGetValue<double>(out var number) &&
+                        double.IsFinite(number) && number == Cost(prior), "Crop harvest original watering-can cost mirror is inconsistent.");
+                // This is PlayerReadAdapter's double/clamped display projection, not a native stamina debit.
+                value["energy_cost_per_power_zero_action"] = Cost(level);
+            }
+            else Require(value is JsonObject fields && value["runtime_type"]?.GetValue<string>() == "" &&
+                    new[] { "slot_index", "upgrade_level", "water_left", "capacity", "is_bottomless", "is_efficient", "energy_cost_per_power_zero_action" }
+                        .All(name => fields.ContainsKey(name) && fields[name] is null),
+                "Crop harvest missing watering-can tool/cost projection is inconsistent.");
             value["farming_level"] = level;
-            value["energy_cost_per_power_zero_action"] = Cost(level);
         }
         EqualHarvestResourceField("player", "watering_can_state", can, actualCan);
         if (projectedCan) _ = VerifyWateringBowlMirrors(before, after);
