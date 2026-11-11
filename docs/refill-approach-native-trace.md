@@ -1,5 +1,47 @@
 # Original Refill Native Trace
 
+## 2026-11-12 Harvest Inventory Previews Are Not Donations
+
+Parent PR561 final3c919775 passed CI43114142195 all42steps,
+Core2600/Backend2153,zero failure/skip and clean same-head review; merged6894b961.
+Tested/main tree931d09eb matched before exact owned ref cleanup.
+
+Pinned E1.6.15 PE-only Bundle.GetBundleIngredientDescriptionIndexForItem and
+IsValidItemForThisIngredientDescription extraction selected2 methods/1444bytes with
+zero diagnostics, preserving21 prior artifacts (the second profile protects23).
+External source indexes SHA1a8065e846f4d2b7c55a700b25b350a23a155a3de198a2a049665ae6ed273938
+and76f958851ab9cc4ec5b11bae0e519796322a6aac7feba739b9d6b1306110bf1c.
+The original adapter uses native Bundle matching and actor inventory; its candidate
+completion/reward/mail fields describe a FUTURE donation, not an actual harvest effect.
+This consumer does not port the matcher or execute ItemQueryResolver/Game1.random;
+the original read-side risks remain separately tracked under#29.
+
+The harvest-only comparison checks both endpoints' candidate slot/item/runtime/quality,
+stack/total and unfinished ingredient/required-count bindings, then restores only the
+known donation_candidates preview in a cloned comparison envelope. Actual bundle bits,
+rewards, areas/mail, ingredient configuration, other progress and unknowns still use
+the original expected-resource comparison. Unknown candidate fields reject. Shared
+normalizers, field predicates and legacy execution are unchanged. Native eligibility
+enumeration and counterfactual outcome correctness remain the read adapter/L1 contract;
+this is NOT an independent new certificate for those previews, nor donation/production
+progress or a training reward. Actual inventory mutation must be settled separately.
+
+New18cases plus prior related tests pass109/109,zero fail/skip/build warnings/errors.
+Fresh-source replay of the SAME5 strong-queue native E frames passes the current
+community-progress comparison5/5 alongside target/skill5/5. External report
+block23-harvest-community-replay-a.json SHA27eda868c621b6b23c5d4c78830e2e18e7c2d4baca4336cc28a999feb909c14d.
+The original unexplained persistent-field list is empty AFTER these checked components,
+but full_resource_boundary_verified remains false. The original resource contract
+excludes inventory/material graph/currency; their actual retention, provenance and
+the SAME owner/main-loop/save/managed integration are still required. No game/server/
+training start, raw Git content, new fields or extra old13-day replay.
+
+Next reuse ExactInventoryReceiptVerifier and the original output-retention contract,
+binding the commitment/wave and actual stock/graph/currency. Do not credit incidental
+pickups as crop production or disable pickup to avoid accounting. Then SAME owner,
+sales/native-save/readback/main loop and bounded managed acceptance; frozen L1 and
+formal gates remain unchanged. This slice requires its own final-head CI/review.
+
 ## 2026-11-12 Original Crop Harvest Target Kernel
 
 Parent PR560 final55ca9670 accepted by CI43112255928 all42steps,

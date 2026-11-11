@@ -2,6 +2,14 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-12T06:58:00+08:00 R2 收获库存预览与实际进度分离
+
+- #561 最终 `3c919775` 经 CI `43114142195` 全42步／Core2600／Backend2153零失败/跳过及同 head 无发现审查合入 `6894b961`；核测试／main树 `931d09eb` 一致后清理自有引用。当前片不借父片验收。
+- 对同一 E1.6.15 SHA/MVID 做 PE-only 的 Bundle 两方法提取，合计1444字节、零诊断，前21旧工件及第二片包含的23工件逐字节不变。匹配属于原 native Bundle，候选由原 adapter 从 player.Items 生成，候选内的“完成献祭”等是未来操作预测，不是本次收获已经推进的游戏状态。本片不复制 matcher、不调用游戏代码／ItemQueryResolver，不新增 RNG 读取副作用；原读端风险仍按 #29 的既有责任处理。
+- 新内部比较组件绑定两端候选的原始库存槽位、物品／运行类型、品质、stack／总量、ingredient index／所需量与当前未完成状态。只在收获专用比较副本里还原已知 `donation_candidates` 预览；实际 bundle bits、奖励、区域／邮件、材料配置、其他进度及未知字段继续走原 expected-resource 比较，未知候选字段拒绝。共享 normalizer／字段列表／旧执行器不改；不独立重建原生资格全集或未来结果，也不把预览作真实捐赠、产出或训练奖励。
+- 新18例及原相关整合109/109、零失败/跳过、构建零警告/错误。原强队列5次收获独立重放：技能、目标及当前社区中心进度比较各5/5；原持久差异清单在这些组件之后为空。报告 SHA `27eda868c621b6b23c5d4c78830e2e18e7c2d4baca4336cc28a999feb909c14d`。**全资源边界仍为 false**：原合同排除的库存／材料图／货币必须由调用方结算，不能把余差为空当完整收获留存／生产归属／托管通过。[范围](refill-approach-native-trace.md#2026-11-12-harvest-inventory-previews-are-not-donations)。无新游戏／服务器／训练。
+- **唯一接续：** 复用既有 `ExactInventoryReceiptVerifier` 与原作物 output-retention 合同，绑定原 commitment／wave 的实际库存留存和材料图／货币边界；额外拾取只按已证范围处理，不误归本作物产出。随后接同一 owner／账本／主循环、销售和原生保存恢复、有界 managed，不另建执行器或全局门。`Program.cs` 仍 unmanaged，L1冻结、formal=false、local-data不提交。本片待最终同 head CI／审查。
+
 ## 2026-11-12T06:34:00+08:00 R2 原收获作物转换核复用
 
 - #560 修正最终 `55ca9670` 经 CI `43112255928` 全42步／Core2600／Backend2133零失败/跳过、同 head 无发现审查合入 `e57cb02e`。核测试／main树 `3f5ea0e8` 一致后独立清理自有引用。本片只发布其上的目标作物增量，未借父片绿灯验收。
