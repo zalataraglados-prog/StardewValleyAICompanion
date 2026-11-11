@@ -12,6 +12,35 @@ namespace StardewAI.Backend.Tests;
 public sealed class NativeCropHarvestSkillBoundaryTests
 {
     [Theory]
+    [InlineData(0)]
+    [InlineData(90)]
+    public void MissingWateringCanStillProjectsThePlayersFarmingLevel(int experience)
+    {
+        var f = MissingCanFixture(experience);
+        _ = Read(f.Request, f.Before, f.After);
+    }
+
+    [Theory]
+    [InlineData("level")]
+    [InlineData("slot")]
+    [InlineData("cost")]
+    [InlineData("bowl")]
+    public void MissingWateringCanRejectsContradictoryToolOrUnrelatedBowlState(string change)
+    {
+        var f = MissingCanFixture(0);
+        foreach (var snapshot in new[] { f.Before, f.After })
+        {
+            if (change == "level") Edit(snapshot, "player", "watering_can_state", row => row["farming_level"] = 1);
+            if (change == "slot") Edit(snapshot, "player", "watering_can_state", row => row["slot_index"] = 1);
+            if (change == "cost") Edit(snapshot, "player", "watering_can_state", row => row["energy_cost_per_power_zero_action"] = 99d);
+        }
+        if (change == "bowl") Edit(f.After, "farm", "pet_bowls", rows => rows[0]!["future_persistent"] = "changed");
+        f.Before.StateHash = SnapshotHash.ComputeStateHash(f.Before.State); f.After.StateHash = SnapshotHash.ComputeStateHash(f.After.State);
+        f.Request.BeforeStateHash = f.Before.StateHash;
+        Assert.Throws<InvalidDataException>(() => Read(f.Request, f.Before, f.After));
+    }
+
+    [Theory]
     [InlineData(0, true)]
     [InlineData(90, true)]
     [InlineData(90, false)]
@@ -144,6 +173,30 @@ public sealed class NativeCropHarvestSkillBoundaryTests
         before.StateHash = SnapshotHash.ComputeStateHash(before.State); after.StateHash = SnapshotHash.ComputeStateHash(after.State);
         return (new TrainingExecutionRequest { OptionId = "executor.harvest_crop", LocationId = "Farm", TargetTileX = 10,
             TargetTileY = 11, BeforeStateHash = before.StateHash }, before, after);
+    }
+
+    private static (TrainingExecutionRequest Request, SnapshotEnvelope Before, SnapshotEnvelope After) MissingCanFixture(int experience)
+    {
+        var f = Fixture(experience);
+        foreach (var snapshot in new[] { f.Before, f.After })
+        {
+            var level = snapshot.State["player"].GetProperty("watering_can_state").GetProperty("value").GetProperty("farming_level").GetInt32();
+            Put(snapshot, "player", "watering_can_state", new JsonObject { ["projection_status"] = "watering_can_missing", ["slot_index"] = null,
+                ["runtime_type"] = "", ["upgrade_level"] = null, ["water_left"] = null, ["capacity"] = null, ["is_bottomless"] = null,
+                ["is_efficient"] = null, ["farmer_has_watering_can_enchantment"] = false, ["farming_level"] = level,
+                ["energy_cost_per_power_zero_action"] = null });
+            Edit(snapshot, "farm", "pet_bowls", rows =>
+            {
+                var row = rows[0]!;
+                foreach (var name in new[] { "watering_can_slot_index", "watering_can_upgrade_level", "watering_can_water_left", "watering_can_bottomless",
+                    "watering_can_efficient", "expected_watering_can_water_after", "watering_energy_cost", "expected_energy_after" }) row[name] = null;
+                row["watering_can_runtime_type"] = ""; row["energy_delta_projection_status"] = "watering_can_unavailable";
+                row["action_status"] = "watering_can_missing";
+            });
+            snapshot.StateHash = SnapshotHash.ComputeStateHash(snapshot.State);
+        }
+        f.Request.BeforeStateHash = f.Before.StateHash;
+        return f;
     }
 
     private static void Put(SnapshotEnvelope snapshot, string domain, string name, JsonNode value)

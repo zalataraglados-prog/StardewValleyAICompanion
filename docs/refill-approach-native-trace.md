@@ -30,6 +30,14 @@ All5 still have farm.crops and world_progress.community_center unexplained under
 original expected-resource boundary. These are NOT full harvest, producer, managed,
 native outcome or formal successes. No new game/server/training or13-day replay ran.
 
+PR560's valid P2 review identified the actual watering_can_missing producer shape:
+it still emits the player's farming_level, while tool/cost fields stay null. Six new
+fixture cases first failed4/passed2. The new consumer now verifies/projects that level,
+requires the original null tool/cost shape and preserves bowl/unrelated state.
+Final related71/71 pass with zero failure/skip/build warnings/errors. This branch is
+CLR-only evidence; the earlier five native frames had a can and do not prove a new
+missing-can runtime test. The corrected head requires its own CI/review.
+
 Original API block21 produced no source/test/commit: both bounded invocations stopped
 on instruction/source discovery permissions. The second process exited, its task
 grants were withdrawn and no third same-block call/fallback was made. Controller
