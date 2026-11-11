@@ -82,6 +82,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             AddWateringOutcomeEvidence(watering, expected);
             if (expected.Any(field => !JsonNode.DeepEquals(field.Value, accepted[field.Key])) ||
                 !watering.RefillControlVerified && accepted["native_refill_control_verified"] is not null ||
+                !watering.RefillApproachVerified && accepted["native_refill_approach_verified"] is not null ||
                 accepted["route_native_claim_sha256"] is not null || accepted["route_native_result_sha256"] is not null || accepted["route_target_reached"] is not null)
                 throw new InvalidDataException("Managed crop watering prefix acceptance changed.");
         }

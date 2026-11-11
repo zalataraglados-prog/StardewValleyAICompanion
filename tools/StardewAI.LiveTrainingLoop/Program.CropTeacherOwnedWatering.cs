@@ -18,19 +18,23 @@ static partial class Program
             var source = JsonNode.Parse(ContentAddressedJsonArtifactReader.ReadAllText(sourcePath))!.AsObject();
             var stateHash = ReadString(source, "state_hash");
             var prefix = CropTeacherArtifactPrefix(options, iteration, "batch");
+            var refillPrefix = CropTeacherArtifactPrefix(options, iteration, "watering-refill-approach");
             var receiptPath = Path.Combine(options.SnapshotDir, "execution-" + iteration.ToString("D4") + ".json");
             var afterPath = Path.Combine(options.SnapshotDir, "after-snapshot-" + iteration.ToString("D4") + ".json");
-            if (new[] { prefix + "-model-action.json", prefix + "-compiled-queue.json", receiptPath, afterPath }
+            if (new[] { prefix + "-model-action.json", prefix + "-compiled-queue.json", receiptPath, afterPath,
+                    refillPrefix + "-model-plan.json", refillPrefix + "-compiled-queue.json" }
                 .Any(path => File.Exists(path) || Directory.Exists(path)))
                 throw new IOException("Owned watering needs new artifact slots; retain/recover existing compilation instead of overwriting it.");
             var compiled = await BuildCropTeacherControlQueueCoreAsync(http, options, iteration, step, runPlan, runRequest,
                 sourcePath, source, stateHash).ConfigureAwait(false);
-            if (compiled.Queue is null || compiled.InterruptKind.Length != 0 || compiled.ExecutionStepOverride is not null || compiled.SitePreparationComplete ||
+            var refill = compiled.InterruptKind == "crop_teacher_watering_refill_approach";
+            if (compiled.Queue is null || (compiled.InterruptKind.Length != 0 && !refill) || compiled.ExecutionStepOverride is not null || compiled.SitePreparationComplete ||
                 compiled.StateHash != stateHash || !string.Equals(Path.GetFullPath(compiled.BeforeSnapshotPath), Path.GetFullPath(sourcePath),
                     OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
                 throw new InvalidDataException("Original crop control selected an interrupt, not the admitted watering batch.");
             await WriteJsonAsync(prefix + "-compiled-queue.json", compiled.Queue).ConfigureAwait(false);
-            return new(step, compiled.ModelPlanPath, prefix + "-compiled-queue.json", receiptPath, afterPath, runtimeDirectory);
+            return new(step, compiled.ModelPlanPath, prefix + "-compiled-queue.json", receiptPath, afterPath, runtimeDirectory)
+                { IsRefillApproach = refill };
         }).ConfigureAwait(false);
     }
 

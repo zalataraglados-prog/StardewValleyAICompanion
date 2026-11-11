@@ -35,18 +35,22 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
 
     private sealed class OriginalWateringTransport : HttpMessageHandler
     {
-        private readonly OwnedWateringFixture fixture;
+        private readonly RuntimeFixture runtime;
         private readonly HttpMessageInvoker backend;
         private readonly QueueExecutionReceiptEnvelope receipt;
+        private readonly bool fullExecutionResult;
         private SnapshotEnvelope current;
         internal int NativeRequests { get; private set; }
         internal int FullSnapshotReads { get; private set; }
-        internal OriginalWateringTransport(OwnedWateringFixture fixture)
+        internal OriginalWateringTransport(OwnedWateringFixture fixture) : this(fixture.Shared.Runtime, fixture.Basis.Before,
+            JsonSerializer.Deserialize<QueueExecutionReceiptEnvelope>(File.ReadAllText(fixture.Basis.Transition.ExecutionReceiptPath), JsonOptions)!) { }
+
+        internal OriginalWateringTransport(RuntimeFixture runtime, SnapshotEnvelope before,
+            QueueExecutionReceiptEnvelope receipt, bool fullExecutionResult = false)
         {
-            this.fixture = fixture;
-            backend = new(fixture.Shared.Runtime.Handler, disposeHandler: false);
-            current = fixture.Basis.Before;
-            receipt = JsonSerializer.Deserialize<QueueExecutionReceiptEnvelope>(File.ReadAllText(fixture.Basis.Transition.ExecutionReceiptPath), JsonOptions)!;
+            this.runtime = runtime; this.receipt = receipt; this.fullExecutionResult = fullExecutionResult;
+            backend = new(runtime.Handler, disposeHandler: false);
+            current = before;
         }
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token)
         {
@@ -55,7 +59,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 if (!request.RequestUri.Query.Contains("profile=clock", StringComparison.Ordinal)) FullSnapshotReads++;
                 return new(HttpStatusCode.OK) { Content = JsonContent.Create(current, options: JsonOptions) };
             }
-            if (request.RequestUri.AbsolutePath == fixture.Shared.Runtime.LiveOptions.ExecutorEndpointPath)
+            if (request.RequestUri.AbsolutePath == runtime.LiveOptions.ExecutorEndpointPath)
             {
                 var bound = (await request.Content!.ReadFromJsonAsync<TrainingExecutionRequest>(JsonOptions, token))!;
                 var next = receipt.StepResults[NativeRequests];
@@ -63,7 +67,16 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 Assert.Equal(next.QueueItemId, bound.QueueItemId);
                 NativeRequests++;
                 current = JsonSerializer.Deserialize<SnapshotEnvelope>(File.ReadAllText(next.AfterSnapshotPath!), JsonOptions)!;
-                fixture.Shared.Runtime.Store.Snapshots[current.StateHash] = current;
+                runtime.Store.Snapshots[current.StateHash] = current;
+                if (fullExecutionResult)
+                    return new(HttpStatusCode.OK) { Content = JsonContent.Create(new TrainingExecutionResult
+                    {
+                        RunId = bound.RunId, QueueId = bound.QueueId, QueueItemId = bound.QueueItemId, OptionId = bound.OptionId,
+                        BeforeStateHash = bound.BeforeStateHash, Status = next.Status, FeedbackAvailable = true,
+                        PrimitiveKind = next.PrimitiveKind, PrimitiveVerificationStatus = next.PrimitiveVerificationStatus,
+                        PrimitiveVerificationReasons = next.PrimitiveVerificationReasons,
+                        ChangedFacts = next.ChangedFacts.Deserialize<SimulatedFactChange[]>(JsonOptions)!
+                    }, options: JsonOptions) };
                 return new(HttpStatusCode.OK) { Content = JsonContent.Create(next, options: JsonOptions) };
             }
             return await backend.SendAsync(request, token);

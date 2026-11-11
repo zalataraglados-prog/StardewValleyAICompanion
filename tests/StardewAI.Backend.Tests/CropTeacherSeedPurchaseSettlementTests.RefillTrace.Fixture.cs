@@ -62,9 +62,11 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             });
         }
 
-        internal async Task Build(Action<SnapshotEnvelope, int>? changeFrame = null, bool? emitObservations = null)
+        internal async Task Build(Action<SnapshotEnvelope, int>? changeFrame = null, bool? emitObservations = null,
+            bool retainCompilation = false)
         {
-            await Approach.Compile();
+            if (retainCompilation) Approach.LoadOriginalCompilation();
+            else await Approach.Compile();
             var scope = Approach.Open();
             var options = Approach.Watering.Shared.Runtime.LiveOptions;
             options.ObserveNativeOutputs = observeNativeOutputs; options.SkipTraining = true;

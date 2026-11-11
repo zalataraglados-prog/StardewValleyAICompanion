@@ -19,6 +19,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         var transition = new MoneyRevenueCropNativeLifecycleTransitionRequest("crop_actions", preparation.TotalDay,
             approach.QueuePath, shared.Source.SourcePath, f.ReceiptPath, f.AfterPath,
             shared.Runtime.LiveOptions.RunId, shared.Runtime.LiveOptions.PolicyTrajectoryExecutorVersion, preparation.CandidateId);
+        Assert.Throws<InvalidDataException>(() => preparation.VerifyTransition(transition with { ExecutorVersion = "foreign-executor" }));
         var outcome = preparation.VerifyTransition(transition);
         Assert.True(outcome.RefillApproachVerified);
         Assert.False(outcome.RefillControlVerified);

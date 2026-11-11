@@ -5,7 +5,10 @@ using StardewAI.GoalConditionedBootstrap;
 namespace StardewAI.LiveTrainingLoop;
 
 public sealed record CropTeacherOriginalWateringCompilation(CropTeacherRunStep Step, string ModelActionPath,
-    string QueuePath, string ReceiptPath, string AfterSnapshotPath, string RuntimeDirectory);
+    string QueuePath, string ReceiptPath, string AfterSnapshotPath, string RuntimeDirectory)
+{
+    public bool IsRefillApproach { get; init; }
+}
 
 public sealed partial class CropTeacherManagedSeedOwner
 {
@@ -22,6 +25,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             var record = CreateAdmissionRecord(headSnapshotPath, headLedgerPath, value.RuntimeDirectory);
             record["operation_kind"] = "watering_maintenance";
             record["maintenance_execution_protocol"] = "original_loop.v1";
+            if (value.IsRefillApproach) record["maintenance_control_kind"] = "refill_approach";
             record["commitment_id"] = value.Step.CommitmentId;
             record["maintenance_step"] = JsonSerializer.SerializeToNode(value.Step, JsonOptions);
             record["original_model_action_path"] = Path.GetFullPath(value.ModelActionPath);
@@ -54,7 +58,10 @@ public sealed partial class CropTeacherManagedSeedOwner
         var original = plan.Days.SingleOrDefault(day => day.TotalDay == step.TotalDay)?.ActionBatches
             .SingleOrDefault(row => row.BatchIndex == batch?.BatchIndex);
         var active = record["active_commitment_ids"]?.Deserialize<string[]>(JsonOptions);
+        var control = record["maintenance_control_kind"]?.GetValue<string>();
+        var refill = control == "refill_approach";
         if (record["step"] is not null || record["prior_verified_snapshot_path"] is not null || record["route_transition"] is not null ||
+            control is not (null or "refill_approach") ||
             record["route_execution_protocol"] is not null || record["maintenance_execution_protocol"]?.GetValue<string>() != "original_loop.v1" ||
             !SamePath(StoredPath(record, "before_ledger_path"), headLedgerPath) ||
             new[] { transition.QueuePath, transition.BeforeSnapshotPath, transition.ExecutionReceiptPath, transition.AfterSnapshotPath }.Any(path => !Path.IsPathFullyQualified(path)) ||
@@ -67,11 +74,14 @@ public sealed partial class CropTeacherManagedSeedOwner
             batch.Tiles.Length is < 1 or > 8 || !batch.Tiles.SequenceEqual(original.Tiles.Where(tile => batch.Tiles.Contains(tile))) ||
             active is null || !active.SequenceEqual(ActiveCoveredCommitments(), StringComparer.Ordinal))
             throw new InvalidDataException("Original watering changed its owner/run/executor/source or original due batch.");
-        var start = CropTeacherWateringMaintenance.Preparation.Open(plan.RequestPath, StoredPath(record, "before_snapshot_path"), headLedgerPath,
-            active, step.CommitmentId, Text(record, "support_step_id"), StoredPath(record, "original_model_action_path"), transition.QueuePath);
+        var start = refill
+            ? CropTeacherWateringMaintenance.Preparation.OpenRefillApproach(plan.RequestPath, StoredPath(record, "before_snapshot_path"), headLedgerPath,
+                active, step.CommitmentId, Text(record, "support_step_id"), StoredPath(record, "original_model_action_path"), transition.QueuePath)
+            : CropTeacherWateringMaintenance.Preparation.Open(plan.RequestPath, StoredPath(record, "before_snapshot_path"), headLedgerPath,
+                active, step.CommitmentId, Text(record, "support_step_id"), StoredPath(record, "original_model_action_path"), transition.QueuePath);
         var expected = frontierHashes.TryGetValue(headSnapshotPath, out var hash) ? hash : fixedHashes[headSnapshotPath];
         if (start.InputHashes[start.SourcePath] != expected || start.TotalDay != step.TotalDay || transition.TotalDay != step.TotalDay ||
-            start.CandidateId != $"crop:{step.TotalDay}:{step.CommitmentId}:{batch.BatchIndex}" ||
+            (!refill && start.CandidateId != $"crop:{step.TotalDay}:{step.CommitmentId}:{batch.BatchIndex}") ||
             !start.Tiles.SequenceEqual(batch.Tiles.Take(start.Tiles.Count)) ||
             requireNativeIdentity && transition.SelectedCandidateId != start.CandidateId)
             throw new InvalidDataException("Original watering does not continue its accepted source/candidate/day/targets.");
@@ -81,17 +91,23 @@ public sealed partial class CropTeacherManagedSeedOwner
         return start;
     }
 
-    private JsonObject CreateOriginalWateringIntent(JsonObject record) => new()
+    private JsonObject CreateOriginalWateringIntent(JsonObject record)
     {
-        ["schema_version"] = "crop_teacher_owned_maintenance_execution.v1", ["run_id"] = options.RunId,
-        ["executor_version"] = options.ExecutorVersion, ["backend_url"] = options.BackendUrl,
-        ["runtime_directory"] = StoredPath(record, "runtime_directory"), ["support_step_id"] = Text(record, "support_step_id"),
-        ["commitment_id"] = Text(record, "commitment_id"), ["maintenance_step"] = record["maintenance_step"]!.DeepClone(),
-        ["original_model_action_path"] = StoredPath(record, "original_model_action_path"),
-        ["active_commitment_ids"] = record["active_commitment_ids"]!.DeepClone(),
-        ["maintenance_transition"] = record["maintenance_transition"]!.DeepClone(),
-        ["input_artifact_hashes"] = record["input_artifact_hashes"]!.DeepClone(),
-        ["native_crop_lifecycle_verified"] = false, ["teacher_preference_label_eligible"] = false,
-        ["formal_product_training_authorized"] = false
-    };
+        var intent = new JsonObject
+        {
+            ["schema_version"] = "crop_teacher_owned_maintenance_execution.v1", ["run_id"] = options.RunId,
+            ["executor_version"] = options.ExecutorVersion, ["backend_url"] = options.BackendUrl,
+            ["runtime_directory"] = StoredPath(record, "runtime_directory"), ["support_step_id"] = Text(record, "support_step_id"),
+            ["commitment_id"] = Text(record, "commitment_id"), ["maintenance_step"] = record["maintenance_step"]!.DeepClone(),
+            ["original_model_action_path"] = StoredPath(record, "original_model_action_path"),
+            ["active_commitment_ids"] = record["active_commitment_ids"]!.DeepClone(),
+            ["maintenance_transition"] = record["maintenance_transition"]!.DeepClone(),
+            ["input_artifact_hashes"] = record["input_artifact_hashes"]!.DeepClone(),
+            ["native_crop_lifecycle_verified"] = false, ["teacher_preference_label_eligible"] = false,
+            ["formal_product_training_authorized"] = false
+        };
+        // Preserve the exact historical watering intent when no new control phase was admitted.
+        if (record["maintenance_control_kind"] is { } control) intent["maintenance_control_kind"] = control.DeepClone();
+        return intent;
+    }
 }

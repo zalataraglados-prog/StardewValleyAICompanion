@@ -2,6 +2,15 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-12T01:06:16+08:00 原 owner 的补水接近子阶段
+
+- #552 已合入 `8d2d2d24`；最终测试 head `078de6a4` 与主线树一致，CI `43058702815` 全42步通过（Core2600/Backend1834，零失败/跳过），同 head 审查无实质问题，自有分支已收。初 CI 失败仍保留，不以初版审查代替最终验证。
+- 新显式中性接近入口复用原 compilation、逐帧原生读取、完整持久资源 projector 和同一 watering owner/rebind。只接受原编译确实无清障、每个 native frame 资源不变的路线；未开启额外观察时不强加深层校准字段，已请求的观察仍必须通过原库存分母核。清障在此分支派发前拒绝，原 planner 的清障能力/预算不关闭；这不替代有清障或拾取路线的结算。
+- 仅新阶段写 `maintenance_control_kind=refill_approach` 和 `native_refill_approach_verified`，不改旧普通浇水 intent 的序列化。到达不等于补满水或浇完地：crop count/tiles 为0/空，batch 未完成、preference/formal=false。原 claim、原 execution loop、marker/journal 的三处丢确认/只读恢复、下一浇水队列及防伪标记已联调，末次相关79/79、零失败/跳过。全量1874通过/1旧 Museum 15秒超时，随后该组14项在79项中全通过；未扩大超时或修改 Museum，共享超时根因未定，最终 CI 另核。新 outcome 直接复用 trace 的制品保护，不再第二次解码/哈希同批快照。[专题](money-crop-refill-control-outcome.md#resource-neutral-approach-on-the-same-owner)。
+- 原 API 同会话独立交付三测试文件 `83bc55e9`，已审查集成为 `011ec3ca`；22步、零 API 错误、正常退出并自动撤权。29新增加2既有测试通过，单次测试命名空间错误已在唯一修正内解决。最大上下文92607，修正后的提前压缩配置保留；当前授权空闲，不换 provider 或会话。
+- 旧原生 `output-client-native-b` 的原 projector 对照有2条 move 持久/库存/货币相等、2条 clear 持久变化拒绝。外部 `block13-neutral-resource-replay-a.json` SHA `79f41fca4a4b18398393c6231c6faed45b626aa38f36328484557a6731ce9269` 留存原来源/hash；不是新 owned 回执或 A 实战。此前17单位拾取与清障仍不能借此获得生产 credit。
+- **接续与退出：** 完成本次 owner 子阶段的最终同 head CI/审查及发布，再继续所选清障/拾取资源边界，并将已有 owned 适配层接到原顶层循环，随后收获、原生保存和一次有界 managed 验收。当前顶层 dispatch 仍明确走 unmanaged，不能把 helper/声明夹具通过当作全主循环已托管。R2 既定顺序、#550/#339 开放、L1冻结 `19/19、11/11`、resource/full-state/formal=false 和 local-data 不提交不变。
+
 ## 2026-11-11T23:54:09+08:00 R2 所选补水路线的资源证据接续
 
 - 已同步 #551/main `74990fea`，按[R2 第1-3步](FORMAL_FULL_TRAINING_READINESS_CN.md#r2-开训前执行顺序)施工，不恢复旧“先补全所有 held/offered/世界私有字段”的排期。#550 的事实与当前代码核对相符：深层校准默认关闭、未接资源结算；它是有界验证建议，不新增通用训练门或第二主线。
