@@ -1,5 +1,42 @@
 # Original Refill Native Trace
 
+## 2026-11-12 Original Resource Contract Correction
+
+Source PR557 accepted941f817d at main57d88171 (CI43101653435,42steps,
+Core2600/Backend2061,no fail/skip,clean same-head review,identical tree13c22120).
+Owner PR558 accepted1727bf5b at mainb1e2afb5 (CI43103487742,42steps,
+Core2600/Backend2084,no fail/skip,clean review,identical tree4c737193).
+It required merging the main ancestor under the strict up-to-date rule; do not confuse
+the previously successful but outdated7c3d6b73 run with final acceptance.
+
+The raw strict-projector differences reported below are NOT all blockers under the
+existing expected-resource-mutation contract. Its original c31dfa72 implementation
+already normalizes capacity echoes/fingerprints in prize-ticket/guild/mail views;
+5cc3b42c/PR497 preserves the exact-resource view for tool-upgrade resource echoes.
+Actual slot/material/currency deltas remain the caller's responsibility. No new
+mandatory capacity mirror verifier is necessary merely because strict rows differ.
+
+An unpublished additional-verifier draft582bcf97/docsb7d9f814 was rejected after this
+historical-intent check: it would tighten the old pickup behavior. It remains only on
+private archive/controller-capacity-mirror-draft-20261112, NOT for merge/publication.
+Its110 tests and five component comparisons are experiments, not accepted product
+progress. Current code retains original visibility and shared normalization unchanged.
+
+After rebuilding accepted code (zero warnings/errors), the external analyzer refuses
+a stale draft helper and uses the ORIGINAL expected-resource field predicate and
+envelope normalizer. Report block20-harvest-resource-drift-c.json,
+SHAdabcf02e6fe8a0008f23638ed80365d4920a543656a730267a5f4d15dc4f77eb,
+binds5 original strong queue frames and reproduces the invariant decision5/5.
+For the first4, actual remaining fields are farm.crops,player.skills_detail and
+world_progress.community_center. The final level crossing adds farm.pet_bowls,
+player.mastery_claim and player.watering_can_state. Original raw a/draft b reports
+remain retained and scoped, not overwritten or relabeled full-resource successes.
+
+Next consume these actual crop/skill/collection effects with existing helpers, then
+SAME owner harvest/sales/native-save/readback/main-loop integration and bounded
+managed acceptance. This is not a new bridge-field requirement, full harvest or
+managed/native/formal PASS. No game/server/training was started; L1 remains frozen.
+
 ## 2026-11-12 Retained Owner Resource Selection
 
 The original private PrepareCropTeacherOwnedWateringAsync now consumes the explicit
