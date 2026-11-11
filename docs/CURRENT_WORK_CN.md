@@ -2,6 +2,15 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-12T05:43:00+08:00 R2 原 owner 发布与收获合同收敛
+
+- #557 的 `941f817d` 经最终 CI `43101653435` 全42步／Core2600／Backend2061、零失败/跳过和同 head 无发现审查合入 `57d88171`，树 `13c22120` 一致。#558 更新严格 base 后，最终 `1727bf5b` 经 CI `43103487742` 全42步／Core2600／Backend2084、零失败/跳过及同 head 无发现审查合入 `b1e2afb5`；测试／主线树 `4c737193` 一致。自有已合入发布引用已独立核验后清理。
+- **发布纠正。** #558 首次被严格 base 门拒绝后，控制器未正确短路后续命令，误删未合入的 owner 引用、使 PR 被关闭。全部提交仍在子分支历史，已恢复精确引用和同一 PR，补 main 祖先后按新 head 重验、正式合入，无代码／测试／证据丢失。合并、远端 MERGED/merge commit/内容树核验与引用清理现分开执行，任何失败立即停止，不使用 admin 绕过。
+- 原 E 的5次收获已复用原强队列／actor／nonce／journal/gzip／逐帧快照读取；同 SHA/MVID 的 PE-only Crop 3方法／9686字节、零诊断，19旧源工件字节不变，索引 SHA `606e11ec`。未启动游戏、服务器或训练。
+- **拒收无效草稿。** 严格 projector 的原始差异不等于预期资源变化合同的阻塞。追到 `c31dfa72`、`5cc3b42c` 和 #497 原意后确认：原 `TryProjectExpectedResourceMutationInvariant` 已归一化奖券／工具／公会／邮件的容量回显，调用者另证实际资源变化。新增4类校验会无依据收紧旧 pickup；草稿 `582bcf97`／`b7d9f814` 只留私有 `archive/controller-capacity-mirror-draft-20261112`，不推送、不合入。其110测试与5组件实验不计当前产品验收，旧共享代码／可见性完全保留。
+- 重新构建已接受代码，明确拒绝旧草稿二进制后，用原字段谓词及原 normalizer 生成 c 报告；5/5差异清单与原 invariant 判定一致。前4帧只剩 `farm.crops`、`player.skills_detail`、`world_progress.community_center`；末帧另有 `farm.pet_bowls`、`player.mastery_claim`、`player.watering_can_state` 的升级镜像。SHA `dabcf02e6fe8a0008f23638ed80365d4920a543656a730267a5f4d15dc4f77eb`，旧 a/b 及失败／草稿保留，不重标为 PASS。[范围和依据](refill-approach-native-trace.md#2026-11-12-original-resource-contract-correction)。
+- **唯一接续：** 沿真实3类／升级后6类余差，复用原生命周期作物验证、技能经验规则与库存/集合投影，接收获留存和原销售／睡眠保存读回，再将同一 owner 会话接原主循环并做有界 managed。`Program.cs` 仍 unmanaged，无完整托管／生产归属／全局／formal新通过；L1冻结`19/19、11/11`，#339/#550保持跟踪，local-data不提交。
+
 ## 2026-11-12T05:03:00+08:00 R2 持久 owner 配置接原 preparation
 
 - 同一 `CropTeacherManagedSeedOwnerOptions` 显式配置接入原 `PrepareCropTeacherOwnedWateringAsync`，仅实际补水接近才选资源模式，普通浇水不变。默认 false 不增加旧 owner header 字段；显式 true 绑定同一持久身份，重开时正反切换均拒绝，不能沿旧目录改模式。
