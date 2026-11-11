@@ -1,5 +1,41 @@
 # Original Refill Native Trace
 
+## 2026-11-12 Original Crop Harvest Target Kernel
+
+Parent PR560 final55ca9670 accepted by CI43112255928 all42steps,
+Core2600/Backend2133,zero failure/skip and clean same-head review; merged e57cb02e.
+Tested/main tree3f5ea0e8 matched before exact owned ref cleanup. This target increment
+requires its own final-head CI/review; parent acceptance is not substituted.
+
+The original MoneyRevenueCropNativeLifecycleProofBuilder one-shot/regrow harvest
+checks now share one private kernel with its new internal owned-target entry. Existing
+CropState/catalog/location/identity parsing is reused, not reimplemented. Old lifecycle
+and new selected-target consumers call the same rule. The new complete crop-field
+comparison removes only a one-shot target, or updates only fully_grown, phase day,
+ready and derived next-harvest countdown for a regrow target; all other ordered crop
+rows, target unknown properties and envelope metadata remain protected. Farm-only
+scope is inherited from the original reader, not generalized from matching coordinates.
+
+The pinned PE-only Crop.harvest source confirms its positive RegrowDays branch sets
+fullyGrown and dayOfCurrentPhase, while the original bridge derives readiness/countdown.
+Twenty new cases plus old skill/tree and corrected missing-can cases pass91/91,
+zero failure/skip/build warnings/errors. Directly invoking the ORIGINAL existing
+VerifyMoneyCropNativeLifecycleProof also exits successfully once, covering its
+declared lifecycle/retention/shop/shipping/day/recovery and rejection fixtures.
+Its generated artifacts stay under the external I: task root; this is not native play.
+
+Fresh-source replay of the SAME5 original native E harvest frames verifies both
+skill/mirror and target components5/5. External block22-harvest-target-replay-a.json
+SHA18ea6f7b18d65fa9320870536839a961f6524cd6cd452e00569ea23c39ff4173.
+After only those independently checked effects, world_progress.community_center
+inventory donation candidates remain unexplained in all5. Actual inventory retention,
+production attribution and the complete resource/owner/main-loop boundary are not
+promoted. Regrow remains CLR/original-fixture coverage, not a new native regrow run.
+
+Next bind the ORIGINAL Bundle matching/projection semantics for inventory-driven
+candidates and retained output, then SAME owner harvest/sales/save/readback/main loop
+and bounded managed acceptance. No game/server/training started or old13-day replay.
+
 ## 2026-11-12 Harvest Skill Effect Consumer
 
 R2 step2 closeout into step3 reuses the original wild-tree skill verifier instead of
