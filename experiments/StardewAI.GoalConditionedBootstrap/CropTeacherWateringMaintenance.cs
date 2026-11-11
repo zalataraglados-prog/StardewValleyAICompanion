@@ -10,6 +10,7 @@ public sealed partial class CropTeacherWateringMaintenance : ICropTeacherSupport
 {
     private readonly CropTeacherRetainedInputs inputs;
     private readonly CropTeacherSupportingRebind rebind;
+    private readonly CropTeacherRefillApproachNativeTrace? refillTrace;
 
     private CropTeacherWateringMaintenance(string runRequestPath, string sourcePath, string ledgerPath,
         IReadOnlyCollection<string> commitmentIds, string commitmentId,
@@ -83,6 +84,7 @@ public sealed partial class CropTeacherWateringMaintenance : ICropTeacherSupport
 
     public int AppliedTileCount { get; }
     public bool RefillControlVerified { get; }
+    public bool RefillApproachVerified => refillTrace?.ResourceNeutralBoundaryVerified == true;
     public bool CompleteBatch { get; }
     public IReadOnlyList<MoneyRevenueCropPlantingTile> AppliedTiles { get; }
     public string AfterSnapshotPath { get; }
@@ -91,8 +93,8 @@ public sealed partial class CropTeacherWateringMaintenance : ICropTeacherSupport
     public StrategyCommitmentLedger BaseLedger => rebind.BaseLedger;
     public ReservationPortfolioCommitRequest RebindRequest => rebind.Request;
     public StrategyCommitmentLedger VerifyRebindReply(ReservationPortfolioCommitResult reply) => rebind.VerifyReply(reply);
-    public IReadOnlyDictionary<string, string> InputHashes => inputs.ReadHashes();
-    public void ValidateInputsUnchanged() => inputs.Validate();
+    public IReadOnlyDictionary<string, string> InputHashes => refillTrace?.InputHashes ?? inputs.ReadHashes();
+    public void ValidateInputsUnchanged() { inputs.Validate(); refillTrace?.ValidateInputsUnchanged(); }
 
     private static string[] ReadStepPaths(MoneyRevenueCropNativeLifecycleTransitionRequest transition,
         QueueExecutionReceiptEnvelope receipt, string[] inputs)

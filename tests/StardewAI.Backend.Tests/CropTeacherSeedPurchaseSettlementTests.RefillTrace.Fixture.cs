@@ -19,10 +19,12 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         internal List<string> Journals { get; } = [];
         internal List<string> AfterFrames { get; } = [];
         private readonly bool completeSnapshotInventory;
+        private readonly bool resourceNeutral;
 
-        internal RefillTraceFixture(bool repair, bool completeSnapshotInventory = false)
+        internal RefillTraceFixture(bool repair, bool completeSnapshotInventory = false, bool resourceNeutral = false)
         {
             this.completeSnapshotInventory = completeSnapshotInventory;
+            this.resourceNeutral = resourceNeutral;
             Approach = new(repair, prepareSource: source =>
             {
                 source.Before.GameVersion = "1.6.15";
@@ -79,7 +81,8 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                     node["tile_x"]!["value"] = scope.Target.TileX;
                     node["tile_y"]!["value"] = scope.Target.TileY;
                 });
-                after.State["trace_fixture"] = JsonSerializer.SerializeToElement(new { status = "available", value = index + 1 });
+                if (!resourceNeutral)
+                    after.State["trace_fixture"] = JsonSerializer.SerializeToElement(new { status = "available", value = index + 1 });
                 after.StateHash = SnapshotHash.ComputeStateHash(after.State);
                 var afterPath = Path.Combine(options.SnapshotDir, "refill-frame-" + index + ".json");
                 Fixture.Save(afterPath, after); AfterFrames.Add(afterPath);
@@ -88,7 +91,9 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 var journal = await RuntimeExecutionRequestJournal.WriteAsync(options.SnapshotDir, 200, index + 1,
                     JsonSerializer.Serialize(request, JsonOptions), "http://test/api/v1/training/execute", beforePath);
                 Journals.Add(journal.JournalPath);
-                var facts = new[] { new SimulatedFactChange { Path = "trace_fixture", Before = index.ToString(), After = (index + 1).ToString() } };
+                var facts = new[] { new SimulatedFactChange { Path = resourceNeutral ? "player.tile" : "trace_fixture",
+                    Before = resourceNeutral ? $"{before.State["player"].GetProperty("tile_x").GetProperty("value").GetInt32()},{before.State["player"].GetProperty("tile_y").GetProperty("value").GetInt32()}" : index.ToString(),
+                    After = resourceNeutral ? $"{scope.Target.TileX},{scope.Target.TileY}" : (index + 1).ToString() } };
                 var result = JsonSerializer.SerializeToNode(new TrainingExecutionResult
                 {
                     RunId = options.RunId, QueueId = scope.QueueId, QueueItemId = item.QueueItemId, OptionId = item.OptionId,

@@ -17,9 +17,10 @@ public sealed partial class CropTeacherWateringMaintenance
         private readonly string stepId;
         private readonly CropTeacherRetainedInputs inputs;
         private readonly CropTeacherSupportingSource source;
+        private readonly CropTeacherRefillApproachCompilation? refillApproach;
 
         private Preparation(string runRequestPath, string sourcePath, string ledgerPath, IReadOnlyCollection<string> commitmentIds,
-            string commitmentId, string stepId, string modelActionPath, string queuePath)
+            string commitmentId, string stepId, string modelActionPath, string queuePath, bool refill = false)
         {
             var paths = new[] { runRequestPath, sourcePath, ledgerPath, modelActionPath, queuePath }.Select(Path.GetFullPath)
                 .Distinct(CropTeacherSeedTransferNativeOutcome.PathComparer).ToArray();
@@ -34,6 +35,17 @@ public sealed partial class CropTeacherWateringMaintenance
                 row.Status == StrategyCommitmentStatuses.Active && commitmentIds.Contains(commitmentId, StringComparer.Ordinal));
             Require(crop is not null && crop.RequiredWateringTotalDays.Contains(TotalDay),
                 "Owned crop watering is outside its original active obligation/day.");
+            if (refill)
+            {
+                refillApproach = CropTeacherRefillApproachCompilation.Open(runRequestPath, sourcePath, ledgerPath,
+                    commitmentIds, commitmentId, stepId, modelActionPath, queuePath);
+                Require(refillApproach.ClearanceQueueItemIds.Count == 0,
+                    "Owned refill repair requires its separate exact resource settlement before dispatch.");
+                CandidateId = refillApproach.CandidateId;
+                Tiles = Array.AsReadOnly(Array.Empty<MoneyRevenueCropPlantingTile>());
+                inputs.Validate();
+                return;
+            }
             var model = CurrentTeacherFrontierSupport.Read<SmallModelActionEnvelope>(modelActionPath, "original watering action");
             var queue = CurrentTeacherFrontierSupport.Read<ActionQueueEnvelope>(queuePath, "original watering compilation");
             Require(model.SchemaVersion == "small_model_action.v1" && model.SourceModel == "authoritative_crop_native_run_plan.v1" &&
@@ -61,6 +73,10 @@ public sealed partial class CropTeacherWateringMaintenance
         public static Preparation Open(string runRequestPath, string sourcePath, string ledgerPath, IReadOnlyCollection<string> commitmentIds,
             string commitmentId, string stepId, string modelActionPath, string queuePath) =>
             new(runRequestPath, sourcePath, ledgerPath, commitmentIds, commitmentId, stepId, modelActionPath, queuePath);
+        public static Preparation OpenRefillApproach(string runRequestPath, string sourcePath, string ledgerPath,
+            IReadOnlyCollection<string> commitmentIds, string commitmentId, string stepId, string modelPlanPath, string queuePath) =>
+            new(runRequestPath, sourcePath, ledgerPath, commitmentIds, commitmentId, stepId, modelPlanPath, queuePath, refill: true);
+        public bool IsRefillApproach => refillApproach is not null;
         public string SourcePath { get; }
         public string QueuePath { get; }
         public int TotalDay { get; }
@@ -68,15 +84,17 @@ public sealed partial class CropTeacherWateringMaintenance
         public IReadOnlyList<MoneyRevenueCropPlantingTile> Tiles { get; }
         public StrategyCommitmentLedger BaseLedger => CropTeacherSeedSupportSource.Copy(source.Ledger);
         public IReadOnlyDictionary<string, string> InputHashes => inputs.ReadHashes();
-        public void ValidateInputsUnchanged() => inputs.Validate();
+        public void ValidateInputsUnchanged() { inputs.Validate(); refillApproach?.ValidateInputsUnchanged(); }
 
         public CropTeacherWateringMaintenance VerifyTransition(MoneyRevenueCropNativeLifecycleTransitionRequest transition)
         {
-            inputs.Validate();
+            ValidateInputsUnchanged();
             Require(transition.TransitionKind == "crop_actions" && transition.TotalDay == TotalDay && transition.SelectedCandidateId == CandidateId &&
                     CropTeacherSeedTransferNativeOutcome.PathComparer.Equals(Path.GetFullPath(transition.QueuePath), QueuePath) &&
                     CropTeacherSeedTransferNativeOutcome.PathComparer.Equals(Path.GetFullPath(transition.BeforeSnapshotPath), SourcePath),
                 "Owned crop watering differs from its pinned original compilation/source.");
+            if (refillApproach is not null)
+                return new CropTeacherWateringMaintenance(refillApproach, transition, stepId);
             var receipt = CurrentTeacherFrontierSupport.Read<QueueExecutionReceiptEnvelope>(transition.ExecutionReceiptPath, "original watering outcome kind");
             var result = !receipt.Success && receipt.StepResults is [{ Status: "blocked" }]
                 ? CropTeacherWateringMaintenance.OpenRefillControl(runRequestPath, SourcePath, ledgerPath, commitmentIds, commitmentId, transition, stepId)
