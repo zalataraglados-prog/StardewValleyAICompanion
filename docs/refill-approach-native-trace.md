@@ -2,6 +2,17 @@
 
 ## 2026-11-12 Native Consumption And Pickup Resource Mirrors
 
+PR555 review follow-up: initial head d89d8a71 passed CI43084616175 but omitted
+house action-status threshold changes. Nine native prerequisite branches first
+reproduced6fail/3pass. The projection now validates the original derived status,
+then follows the adapter's ordered construction/money/material/location/tile/
+Robin/menu/dialogue prerequisites; forged before/after status still fails.
+Related168/168 and the same two original source frames pass after correction.
+External block16-resource-replay-b.json SHA256
+e0cbeed34dad75cbc94568754cceaa4cdaa96aedb2bb87cedf2e4f4b63928d8f retains the
+same component results and limitations. Old a/red reports retained; corrected
+head requires new CI/review. No shared normalization or executor was weakened.
+
 PR554 accepted at main bb4abe27, tested head8b2b76d7/tree3622ab08,
 CI43078519411 all42/Core2600/Backend1904 with zero failure/skip and same-head
 clean review. Earlier pending-publication statements below are historical.
