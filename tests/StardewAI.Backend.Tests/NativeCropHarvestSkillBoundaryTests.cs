@@ -120,7 +120,7 @@ public sealed class NativeCropHarvestSkillBoundaryTests
         { ExceptionDispatchInfo.Capture(error.InnerException).Throw(); throw; }
     }
 
-    private static (TrainingExecutionRequest Request, SnapshotEnvelope Before, SnapshotEnvelope After) Fixture(int experience, bool mirrors = true)
+    internal static (TrainingExecutionRequest Request, SnapshotEnvelope Before, SnapshotEnvelope After) Fixture(int experience, bool mirrors = true)
     {
         var before = NativeWildTreeClearanceBoundaryTests.Fixture(0).Before;
         var after = JsonSerializer.Deserialize<SnapshotEnvelope>(JsonSerializer.Serialize(before))!;

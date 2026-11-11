@@ -1,5 +1,53 @@
 # Original Refill Native Trace
 
+## 2026-11-12 Integrated Harvest Resource Consumer
+
+Parent PR562 final8fb48259 passed CI43116326415 all42steps,
+Core2600/Backend2171,zero failure/skip and clean same-head review; merged16b039ae.
+Tested/main tree79a8658d matched before exact owned ref cleanup.
+
+The original pickup actor/graph/aggregate kernel is extracted once and reused;
+its XML, ordered admissions, object-reference, edibility and unknown-state checks
+remain in the ORIGINAL pickup path unchanged. New harvest stock reuses the original
+ExactInventoryReceiptVerifier, player-slot/capacity/seed checks, protects existing
+slot metadata, foreign custody/access, all aggregate rows and currencies. Newly
+observed item data is not a persisted-item or producer witness, and surplus is not
+automatically attributed to crop production. Pinned PE constant metadata verifies
+Object.SeedsCategory=-74 without executing native code or rewriting old source output.
+
+VerifyHarvestResources composes the ORIGINAL target/skill rules, retained stock and
+community progress comparison, binds the output to its original target and finally
+runs the ORIGINAL expected-resource invariant on a comparison view containing ONLY
+independently checked value substitutions. Actual envelope metadata/unknowns remain
+guarded. House material echoes use the old verifier only when they actually differ.
+Field-level JsonElement references are retained and each modified domain is serialized
+once; no new world scan, executor, owner or second growth/XP engine is introduced.
+
+Final related211/211 pass,zero fail/skip/build warnings/errors,including original
+pickup and new composition/seed branches. Declared fixtures are not native acquisitions.
+Physical-only E replay a SHA854a2b40294f59a597cba8b97ca8de1194f9897850b8c2b54d7ad8994521e330.
+Integrated same-strong-queue5-frame replay b SHA0ab7695b218b9b94b3d1178f5d572c4efe6dd5b816825d794d1f5bb4ca6684d8:
+all5 specific persistent resource boundaries pass,cauliflower0->1->2->3->4->5,
+currency unchanged. Unlike the earlier component-list diagnostic, this calls the
+whole consumer once per frame. Required minimum1 is diagnostic; commitment/wave
+binding remains false. Adding the final seed tests did not change Bootstrap/Core/
+Contracts hashes, and current Bootstrap matches b's ac0d612c consumer; no redundant
+native replay was performed. Raw reports remain outside Git.
+
+Scope is observed selected-frame resource effects, not complete managed play,
+production provenance, full private Item state, native terminal outcome or training.
+These unasserted flags are NOT additional global admission requirements: apply the
+existing contract to facts needed for the chosen settlement, not a new full-world XML
+gate. Preserve incidental stock without miscrediting it as this crop's production.
+
+Next implement harvest admission in the EXISTING supporting-transition/owner types,
+binding original plan.Day/ActionBatch/commitment/wave/source/queue/receipt and reusing
+this consumer plus the original output-retention contract. Then one ledger commit,
+lost-ack/interruption recovery, original Program.cs main loop, sales/native save/readback
+and bounded managed acceptance. Top-level crop execution remains unmanaged; frozen L1
+and formal gates unchanged. This slice needs its own final-head CI/review. No new
+game/server/training, old13-day rerun or raw/local-data commit.
+
 ## 2026-11-12 Harvest Inventory Previews Are Not Donations
 
 Parent PR561 final3c919775 passed CI43114142195 all42steps,
