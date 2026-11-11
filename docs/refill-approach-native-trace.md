@@ -1,5 +1,38 @@
 # Original Refill Native Trace
 
+## 2026-11-12 Selected Resource Trace Consumption
+
+Parent556 accepted main310b5c61,tested69ee03b0/tree5bb1e827,
+CI43089775742 all42/Core2600/Backend2036,zero failure/skip,same-head clean review.
+This slice adds OpenWithSelectedResourceEffects on the SAME trace/source reader,
+original immutable queue,nonce/journal/gzip/namespace/target guards. Every original
+frame contributes a typed resource-effect entry; unobserved strictly neutral
+moves need no invented observation or optional XML. Requested missing observation
+and persistent drift still refuse. Observed pickup and complete-tree effects
+consume their existing boundaries. Internal pickup overloads accept the SAME
+already-read immutable ResourceEvidence; reference-identity tests prevent a second
+read. No new walker,default capture/executor change or producer/ledger credit.
+
+Original peer083cd042 tests integrated592b6d4b,25/25 after one allowed intermediate
+fixture-position correction (first24/1). Baseline165/165 and final isolated trace
+slice32/32,zero failures/skips/warnings. Neutral observed/unobserved original queues,
+retained hashes,old entrypoint flags,tampering/missing/foreign evidence and immutable
+tree/pickup components are covered. Component fixtures are NOT a full native queue.
+
+Source-slice original six-frame replay block18-selected-resource-replay-b.json
+SHA25627cc24e3ebb8a0e59923c4c2370e5c470bf67cf03e34afce44f9085e91edad3c:
+current tree15calls/270->240 and following17-unit pickup plus two old neutral moves
+accepted; two old clears remain unavailable for absent original observation/tool
+input. No old failures are relabeled PASS. Accepted components reuse their exact
+Evidence object; timing gaps/provenance limitations remain. No new native game run.
+
+Old SnapshotInventoryContinuity/ResourceNeutral/PickupInventory mode flags retain
+their exact meanings; selected mode gets its own flag and frame list. Producer,
+resource-credit,native-outcome and formal authorization remain false. Next is the
+separately tested original watering preparation/owner/recovery consumption,then
+toploop/harvest/sales/native-save/restore/bounded managed. Unsupported actual effects
+stay unsettled; do not disable original repair/pickup or imply global coverage.
+
 ## 2026-11-12 Original Wild Tree Persistent Effects
 
 Parent PR555 accepted at mainbb314d7b,tested head17f007af/treef0a4fb2c,
