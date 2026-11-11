@@ -2,6 +2,15 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-12T03:37:21+08:00 R2 原完整砍树的持久资源效果
+
+- #555 已由最终 head `17f007af` 的 CI `43087459524` 全42步和同 head 无发现审查合入 `bb314d7b`；测试／main 树 `f0a4fb2c` 一致，Core2600/Backend1975、零失败/跳过。有效房屋阈值审查已回复解决，下方待发布记录仅属历史。本片清障增量随后单独 CI/审查。
+- 本片沿 #555 的工具消耗／拾取资源核，不新增执行器或默认扫描。原 API 同会话交付目标地形组件 `2d875aa9`、39/39，控制器审查集成 `8bb9de0a`；仅原请求格被移除，其他有序地形／未知元数据完整保留。额外限定原 `farm.terrain_features` 只能证明 Farm，不能借同坐标证明 Town。
+- 控制器消费旧 `wild_tree_removed` 请求和原 XP／统计合同，复用 `CurrentSkillExperienceDeficitBuilder`、技能等级规则、原水盆镜像及完整资源 projector。核实际 Axe 调用目标、体力、目标树移除、foraging +16、TreesChopped +1、跨阈值等级／待结算升级／总等级；其他技能、职业、玩家、统计、货币与未知持久变化仍拒绝。只对已经逐项核实的效果建立比较视图，不删共享字段、不要求 Tool 私有 XML。
+- E1.6.15 同 SHA/MVID 有界反编译 `Farmer.gainExperience`：1方法/1728字节、零诊断、17旧工件逐字节不变。确认原生升级／待升级列表，以及满总等级后的 MasteryExp 额外效果；后者未被豁免，相关变化仍属未结算。外部索引 SHA `62da8405ccfb40f0052df6d8601271ed7f2fd47712ede104d7d7b04182fa7e4a`。最初命令行参数误传仅拒绝参数、无输出，后显式构建再运行成功。
+- 新整合首61项为60通过／1夹具越界（把单槽夹具误当双槽），只修夹具；末次相关158/158、零失败/跳过、零警告。原生离线重放同一 clear/move 两帧：clear15次工具、270→240、目标移除／XP／统计／水盆镜像及原完整持久资源核通过；move17单位仍通过拾取图／镜像。外部 `block17-resource-replay-a.json` SHA `8b82f6ef8927fa1e9cc13ef3d38c4fddadddce234c314c31d111671aa8349773`。无新游戏、训练或成功矩阵重采。[专题](refill-approach-native-trace.md#2026-11-12-original-wild-tree-persistent-effects)。
+- **接续与退出：** 把上述已验证结果接回同一补水 trace／账本和原 owned 适配层／顶层循环，再收获、销售、原生保存恢复及一次有界 managed。当前明确覆盖完整原生砍树且 clear 本身无入包、随后移动拾取的已验路径；其他清障合同、清障期间入包或 Mastery 等额外效果仍须依实际选中路线消费已有合同，不禁用原自动拾取／开路来迁就此分支。生产归属未明的拾取只作物理存量，不能误记本动作产出。主循环仍 unmanaged，完整托管／全局／正式训练未通过，L1冻结、#339/#550开放、local-data不提交。本片待最终同 head CI/审查。
+
 ## 2026-11-12T03:08:22+08:00 R2 实际工具消耗与拾取资源镜像
 
 - **透明字段复核。** 菜单分支的对话输入已对准原 adapter 实际 `player.movement_timing_context.dialogue_up`，修正新增代码／夹具中的误名，不新增桥字段。末次拾取专项68/68，零失败/跳过、零警告；该增量重新接受同 head CI/审查。
