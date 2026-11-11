@@ -239,3 +239,25 @@ resource projector, then reconcile the existing material graph/capacity/house-st
 mirrors and unexplained persistent effects. Join the SAME ledger/top-level owner,
 harvest/native save and one bounded managed run in R2 order. This evidence does not
 close #339/#550, repeat frozen L1, or authorize formal training/local-data publication.
+
+### Ordered Slot Founder Review Correction
+
+Initial e04e7ac1 passed CI43075666382 all42steps, Core2600/Backend1899, but
+review correctly found that a new slot could pick the later of two compatible
+admissions as its XML witness. The A3->B3/modData counterexample first failed1/2:
+the native resident must retain A, not B. Initial CI is not final acceptance.
+
+The corrected consumer allocates each admission in observed order, merges existing
+compatible stacks first, then uses the first empty active slot. Its founding input
+owns the new XML; later compatible inputs cannot replace that metadata. The unused
+endpoint-selection helper was removed. A mistaken fixture splitting one input into
+two underfilled compatible new stacks was corrected, with an explicit negative
+case; full-stack overflow and incompatible orderData remain separately covered.
+Related104/104 and final focused26/26 passed, zero failures/skips, no timeout waiver.
+
+Final post-review block15-pickup-replay-d.json reuses only the two affected original
+payload frames, SHA127de9475a93c32e05773a25f1b567c41d3c65dd195db69e14087d2e527ea6b8.
+Move17units still passes with401before-capture gap ticks; clear still refuses the
+same Axe metadata changes. Previous c retains the two non-payload controls. All
+earlier artifacts/failures remain preserved. Corrected-head CI/review is required;
+there is still no full resource/managed/producer/formal authorization.

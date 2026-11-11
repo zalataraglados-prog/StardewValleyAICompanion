@@ -22,17 +22,20 @@ public sealed partial class NativePickupInventoryBoundaryTests
     }
 
     [Fact]
-    public void ExhaustsOneActualAdmissionAcrossTwoNewPhysicalSlots()
+    public void ExhaustsSequentialAdmissionsAcrossTwoFullNewPhysicalSlots()
     {
         var f = new PickupFixture(newSlot: true);
+        SetOrderedAdmissions(f, 999, 999);
         var after = f.Receipt.InventoryPayloadAfter!;
         var extra = JsonSerializer.Deserialize<StardewAI.Contracts.Training.ActionOriginInventoryPayloadSlot>(JsonSerializer.Serialize(after.Slots![0]))!;
         extra.SlotIndex = 2; extra.ItemReferenceId = Guid.NewGuid().ToString("N");
-        SetSlotStack(extra, 3); SetSlotStack(after.Slots[0], 3); after.Slots[2] = extra;
+        var xml = XElement.Parse(extra.SerializedStateXml!);
+        xml.Descendants("value").Single().Element("string")!.Value = "B"; SetXml(extra, xml);
+        SetSlotStack(extra, 999); SetSlotStack(after.Slots[0], 999); after.Slots[2] = extra;
         f.RefreshSnapshots();
         var slots = f.Read().Slots;
         Assert.Equal(new[] { 0, 2 }, slots.Select(slot => slot.SlotIndex));
-        Assert.Equal(6, slots.Sum(slot => slot.StackAfter - slot.StackBefore));
+        Assert.Equal(1998, slots.Sum(slot => slot.StackAfter - slot.StackBefore));
     }
 
     [Theory]

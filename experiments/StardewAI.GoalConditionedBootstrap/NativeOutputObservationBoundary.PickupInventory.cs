@@ -46,56 +46,69 @@ public static partial class NativeOutputObservationBoundary
                 return new PendingPickupAdmission(row, ReadItemXml(row.Item.SerializedStateXml,
                     row.Item.SerializedStateSha256, ref characters));
             }).ToArray();
-        var changes = new List<NativeObservedPickupSlot>();
         var originalReferences = payload.Before.Slots.Where(slot => !slot.IsEmpty)
             .Select(slot => Guid.ParseExact(slot.ItemReferenceId!, "N")).ToHashSet();
-        for (var index = 0; index < payload.Before.Slots.Count; index++)
+        var states = new PickupInventorySlotState?[payload.Before.Slots.Count];
+        for (var index = 0; index < states.Length; index++)
+        {
+            var slot = payload.Before.Slots[index];
+            if (!slot.IsEmpty)
+                states[index] = new(slot, ReadItemXml(slot.Xml, slot.Sha256, ref characters),
+                    slot.Stack!.Value, firstRows[index].GetProperty("maximum_stack_size").GetInt32());
+        }
+        // Replay the native admission order: existing compatible stacks, then the first
+        // empty active slot. The founding admission, never an endpoint match, owns its XML.
+        foreach (var admission in admissions)
+        {
+            foreach (var state in states.Take(capacity))
+            {
+                if (admission.Remaining == 0) break;
+                if (state is null || state.Maximum <= 1 || !PickupStackMatches(admission, state.Header, state.Xml)) continue;
+                var quantity = Math.Min(admission.Remaining, state.Maximum - state.Count);
+                if (quantity <= 0) continue;
+                ApplyPickupReceiveFlags(state.Xml, admission.Xml);
+                state.Count += quantity;
+                admission.Remaining -= quantity;
+            }
+            if (admission.Remaining == 0) continue;
+            var index = Array.FindIndex(states, 0, capacity, state => state is null);
+            Require(index >= 0, "pickup admission exceeds its actual compatible stacks and active empty slots");
+            var next = payload.After.Slots[index];
+            Require(!next.IsEmpty && next.RuntimeType == admission.Item.RuntimeType &&
+                    next.QualifiedItemId == admission.Item.QualifiedItemId && next.Quality == admission.Item.Quality &&
+                    !originalReferences.Contains(Guid.ParseExact(next.ItemReferenceId!, "N")),
+                "pickup first empty slot differs from its founding admission or reuses an existing reference");
+            var maximum = nextRows[index].GetProperty("maximum_stack_size").GetInt32();
+            Require(admission.Remaining <= maximum, "pickup founding stack exceeds the observed native maximum");
+            var founded = new PickupInventorySlotState(next, new XElement(admission.Xml), admission.Remaining, maximum);
+            ApplyPickupReceiveFlags(founded.Xml, admission.Xml);
+            states[index] = founded;
+            admission.Remaining = 0;
+        }
+        var changes = new List<NativeObservedPickupSlot>();
+        for (var index = 0; index < states.Length; index++)
         {
             var first = payload.Before.Slots[index];
             var next = payload.After.Slots[index];
-            if (first.IsEmpty && next.IsEmpty)
+            var state = states[index];
+            if (state is null)
             {
+                Require(next.IsEmpty, "pickup created a slot without an allocated native admission");
                 VerifyPickupRawEmpty(firstRows[index], nextRows[index]);
                 continue;
             }
-            Require(!next.IsEmpty, "pickup removed an existing inventory item");
-            var nextXml = ReadItemXml(next.Xml, next.Sha256, ref characters);
-            XElement expected;
+            Require(!next.IsEmpty && Guid.ParseExact(state.Header.ItemReferenceId!, "N") == Guid.ParseExact(next.ItemReferenceId!, "N") &&
+                    state.Header.RuntimeType == next.RuntimeType && state.Header.QualifiedItemId == next.QualifiedItemId &&
+                    state.Header.Quality == next.Quality && state.Count == next.Stack,
+                "pickup changed the allocated physical slot, identity or exact native stack");
+            SetPickupXmlStack(state.Xml, state.Count);
+            var actual = ReadItemXml(next.Xml, next.Sha256, ref characters);
+            Require(XNode.DeepEquals(state.Xml, actual), "pickup changed unexplained persisted inventory metadata");
+            if (!first.IsEmpty) VerifyPickupRawRow(firstRows[index], nextRows[index], state.Count);
             var initial = first.Stack ?? 0;
-            if (first.IsEmpty)
-            {
-                Require(!originalReferences.Contains(Guid.ParseExact(next.ItemReferenceId!, "N")),
-                    "pickup moved an existing physical item into another slot");
-                expected = NewPickupSlot(next, nextXml, admissions);
-            }
-            else
-            {
-                Require(Guid.ParseExact(first.ItemReferenceId!, "N") == Guid.ParseExact(next.ItemReferenceId!, "N") &&
-                        first.RuntimeType == next.RuntimeType && first.QualifiedItemId == next.QualifiedItemId && first.Quality == next.Quality &&
-                        next.Stack >= first.Stack, "pickup replaced, relocated or consumed an existing inventory item");
-                expected = ReadItemXml(first.Xml, first.Sha256, ref characters);
-            }
-            var remaining = next.Stack!.Value - initial;
-            Require(remaining == 0 || index < capacity, "pickup added stock outside the actor's active inventory capacity");
-            Require(first.IsEmpty || remaining == 0 || firstRows[index].GetProperty("maximum_stack_size").GetInt32() > 1,
-                "pickup merged a non-stackable inventory item");
-            foreach (var admission in admissions.Where(row => row.Remaining > 0))
-            {
-                if (remaining == 0) break;
-                if (!PickupStackMatches(admission, next, expected)) continue;
-                var quantity = Math.Min(remaining, admission.Remaining);
-                ApplyPickupReceiveFlags(expected, admission.Xml);
-                admission.Remaining -= quantity;
-                remaining -= quantity;
-            }
-            Require(remaining == 0, "pickup slot increase lacks its actual compatible admission");
-            SetPickupXmlStack(expected, next.Stack.Value);
-            Require(XNode.DeepEquals(expected, nextXml), "pickup changed unexplained persisted inventory metadata");
-            if (!first.IsEmpty) VerifyPickupRawRow(firstRows[index], nextRows[index], next.Stack.Value);
-            if (next.Stack != initial)
-                changes.Add(new(index, next.ItemReferenceId!, next.QualifiedItemId!, next.Quality!.Value, initial, next.Stack.Value));
+            if (state.Count != initial)
+                changes.Add(new(index, next.ItemReferenceId!, next.QualifiedItemId!, next.Quality!.Value, initial, state.Count));
         }
-        Require(admissions.All(row => row.Remaining == 0), "pickup admissions exceed the verified native slot increases");
         return new(evidence, payload, changes.AsReadOnly(), before.GameTick, after.GameTick);
     }
 
@@ -109,5 +122,15 @@ public static partial class NativeOutputObservationBoundary
         internal ActionOriginObservedItem Item { get; }
         internal XElement Xml { get; }
         internal int Remaining { get; set; }
+    }
+
+    private sealed class PickupInventorySlotState
+    {
+        internal PickupInventorySlotState(NativeObservedInventoryPayloadSlot header, XElement xml, int count, int maximum)
+        { Header = header; Xml = xml; Count = count; Maximum = maximum; }
+        internal NativeObservedInventoryPayloadSlot Header { get; }
+        internal XElement Xml { get; }
+        internal int Count { get; set; }
+        internal int Maximum { get; }
     }
 }

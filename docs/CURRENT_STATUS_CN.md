@@ -2,6 +2,8 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+> **2026-11-12T02:27:18+08:00 #554 审查修正，待新 head 验证。** 初版 CI 全42步通过但不是合并依据：新栈元数据可能错取后一次入包的 XML，已先红复现后改为原生先后顺序分配。相关104/104、最终定向26/26，修正后真实 move17单位仍通过 capture 槽位核，clear 工具状态和401tick前置间隙仍未晋升。原 R2 后继不变，不把这个修复或初版绿灯当作完整托管/训练通过。[当前接续](CURRENT_WORK_CN.md#2026-11-12t0202330800-r2-原入包载荷的槽位消费)。
+
 > **2026-11-12T02:02:33+08:00 入包 capture 的槽位消费（本片待最终 CI/审查合入）。** #553 已最终全42步 CI/审查合入 `d7cf8d3c`，Core2600/Backend1875、零失败/跳过。新消费复用原入包 XML/完整载荷/数量和 trace，末次151/151通过；旧真实 move 的17单位可绑定完整 capture 槽位，401tick的 before-capture 间隙显式保留，clear 的两个斧头 XML 变化仍拒绝。不是完整 frame/资源/生产/托管或训练 PASS，旧默认入口和执行器不改。后继仍原工具状态/资源镜像结算接同一账本，再原顶层 owner、收获/保存和有界实战，#551顺序不变。[当前接续](CURRENT_WORK_CN.md#2026-11-12t0202330800-r2-原入包载荷的槽位消费) · [专题](refill-approach-native-trace.md#2026-11-12-pickup-inventory-capture-consumption)。
 
 > **2026-11-12T01:06:16+08:00 owner 补水接近子阶段。** #552 已最终 CI/审查合入 `8d2d2d24`。本片用同一原 trace/完整资源 projector/rebind 接显式中性接近，额外观察未请求则不强加，清障/资源变化不豁免；到达仍是零浇水进度。原 API 测试已集成，末次派发/恢复/防伪及 Museum 复现相关79/79通过；全量1874通过/1旧 Museum 超时保留，最终 CI 另核。顶层循环目前仍 unmanaged，不冒称完整自动托管；后继仍所选资源结算、同一顶层 owner、收获/保存/有界实战。L1冻结、formal=false。[当前接续](CURRENT_WORK_CN.md#2026-11-12t0106160800-原-owner-的补水接近子阶段)。
