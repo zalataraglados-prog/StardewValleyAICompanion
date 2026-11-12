@@ -29,6 +29,7 @@ internal sealed partial class CropTeacherTerminalShippingSelection
     internal int StandX { get; }
     internal int StandY { get; }
     internal IReadOnlyDictionary<string, string> InputHashes => inputs.Hashes;
+    internal CropTeacherTerminalProductionReference ProductionReference { get; }
     internal void ValidateInputsUnchanged() => inputs.Validate();
     internal CropTeacherTerminalShippingTarget CreateTarget(int acceptedDepositCount) => new(
         RetentionProofPath, inputs.Hashes[RetentionProofPath], saveId, playerId, gameVersion, totalDay,
@@ -105,6 +106,7 @@ internal sealed partial class CropTeacherTerminalShippingSelection
         var terminalPaths = new[] { evidence.ManifestPath, nativePlanPath, snapshotPath, ledgerPath, RetentionProofPath }
             .Select(Path.GetFullPath).ToHashSet(PathComparer);
         inputs = new(inputs.Hashes.Where(row => terminalPaths.Contains(row.Key)).ToDictionary(row => row.Key, row => row.Value, PathComparer));
+        ProductionReference = new(Path.GetFullPath(evidence.ManifestPath), evidence.ManifestSha256);
     }
 
     private static JsonElement Field(SnapshotEnvelope source, string domain, string name)

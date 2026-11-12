@@ -38,6 +38,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         }
         else if (operation.IsTerminalShipping)
         {
+            ValidateTerminalProductionReference(operation.Record);
             operation.TerminalStart!.ValidateInputsUnchanged();
             operation.Terminal?.ValidateInputsUnchanged();
             if (operation.Terminal is not null) operation.RuntimeArtifactGuard?.Invoke();

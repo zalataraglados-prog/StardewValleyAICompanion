@@ -98,7 +98,10 @@ public sealed partial class CropTeacherManagedSeedOwner
         lastAcceptedHash = HashFile(path);
         acceptedHistory.Add((operation.Sequence, path, lastAcceptedHash));
         if (operation.Terminal is { } terminal)
+        {
             terminalTarget = terminal.Target with { AcceptedDepositCount = terminal.AcceptedDepositCountAfter };
+            terminalProductionReference = ReadTerminalProductionReference(operation.Record);
+        }
         frontierHashes.Clear();
         frontierHashes[Path.Combine(options.EvidenceDirectory, "owner-intent.json")] = headerHash;
         frontierHashes[headSnapshotPath] = Text(accepted, "after_snapshot_sha256");

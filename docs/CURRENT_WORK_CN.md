@@ -2,6 +2,14 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-12T17:41:00+08:00 R2 原终局证书与保存读回绑定
+
+- 前片 `b642a79f` 的 CI `43187885475` 已成功，仍沿 R2 第3步、PR #567 草稿。原结算组装器现由同一核心支持只读重放：验证现存五文件，不创建／修补／覆盖；原 BuildAsync 默认拒绝覆盖、原收益／序列／native／资源规则不变。读端只接受实际 trace 或 trace 已 pin 的原生产 manifest 输入来源，后续 load 工件不倒灌到旧证书。
+- 自查发现原生产 manifest 的引用仅留在主循环内存，未进入可恢复的终局 intent。现由原选择器将其路径／哈希接入原 admission／intent／acceptance／trace，接受回执后保留引用，接续不能丢弃或替换；首次绑定要求原生产 head／ledger／计划／留存路径一致。旧无引用校准调用保持原合同，不能借此得到新完整收尾标签；不重复构建整波、不新增执行器。
+- 保存收尾端取同一 accepted 链最后原生 overnight 的原 snapshot／ledger／保存指纹和已接受销售目标，调用原选择器／只读结算重放，再绑定当前已验证读回及完整输入哈希。主入口只有本次读回和原终局均核实才标 complete_managed_runtime；不把 reset tick 新头当旧原生终点、入箱 pending 当收入，formal／Teacher 标签仍false。完整 owner 正向串联尚待实机，不能从当前分项测试晋升实际通过。
+- 原 API `9e0f90e3→11afa744` 三文件保留；首轮缺新文件 namespace 的编译失败经唯一修正后16/16（原8＋新8）。控制端最终聚焦 **34/34**、同构建相关 **260/260**（2分42秒），零失败／跳过／构建警告／错误，重叠不加；含只读字节不变、缺件／篡改／warm cache、引用跨重开及篡改／丢弃拒绝、缺保存／销售不能晋升。声明／HTTP／原 golden 重放不是新的完整 owner 实机 PASS。协作者退出撤权、授权仍空闲，成本未知，无 provider／内部代理替换。
+- **唯一接续：实际运行验收。** 在 E 隔离存档接当前 opt-in 托管入口及上述恢复命令，走所选合法无清障 A 的购种或声明已有种子→播种→维护／收获→销售／原生保存→新进程重载→同 owner 读回／证书绑定，并验证一次原只读恢复。现有 `Invoke-RuntimeCropTeacherFirstDaySmoke.ps1` 是非托管旧入口，需显式接当前模式，不能直接计新 R2。保留第一个实际断点再修，不重跑冻结 L1，不把未选剧情／清障追加为前置；L1保持19/19、11/11，formal=false，#339/#550开放。E测试临时目录CPU1／heap1GiB，无游戏／服务器／训练／部署／清理或 local-data 提交。
+
 ## 2026-11-12T16:56:00+08:00 R2 原 owner 显式恢复与重载主入口
 
 - 前片 `6f829689` 的 CI `43181617520` 已成功，仍为 R2 第3步、PR #567 草稿。新增 `resume-crop-managed-owner` 命令，消费原 header／初始输入／索引／lease，先走原恢复，再接已有实际进程／桥／日志／保存指纹采集、原 full snapshot ingest 和同一 owner 单次读回。普通旧入口不暗用这些参数；没有新执行器、游戏启动／关闭或 native 派发，旧资源／24tick／legacy fork 拒绝不变。

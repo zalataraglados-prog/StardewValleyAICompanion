@@ -60,7 +60,7 @@ static partial class Program
             selection.ValidateInputsUnchanged();
             compiled = JsonSerializer.SerializeToNode(queue, JsonOptions)!.AsObject();
             return new(modelPath, queuePath, receipt, after, Path.Combine(owner.EvidenceDirectory, "native-" + iteration.ToString("D4")));
-        }).ConfigureAwait(false);
+        }, selection.ProductionReference).ConfigureAwait(false);
         return new(StandardResult(compiled!, modelPath, string.Empty, sourcePath, JsonNode.Parse(source)!.AsObject(),
             snapshot.StateHash, options, "crop_teacher_terminal_shipping", "full"), operation);
     }

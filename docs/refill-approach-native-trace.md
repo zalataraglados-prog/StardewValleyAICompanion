@@ -1,5 +1,48 @@
 # Original Refill Native Trace
 
+## 2026-11-12 Retained Native Certificate To Saved Closeout
+
+Original terminal BuildAsync retains its five-argument/default nonoverwrite
+contract. ReadAsync uses the SAME core/validators, requires all five existing
+outputs and compares expected JSON, with no write/create/repair. Fresh physical
+reads reject warm-cache tampering. Original pre-emission inputs must come from
+the actual trace or its pinned production manifest map; later load evidence is
+not injected into old certificate input sets. Revenue/native/resource rules are
+unchanged, with no second settlement algorithm.
+
+Controller inspection found production manifest identity was only in main's
+retained selection, NOT in recoverable terminal intent. Original selection now
+supplies a path/hash reference to admission/intent/acceptance/trace. It binds the
+first original production snapshot/ledger/plan/retention identity; accepted
+continuations cannot drop/replace it. Only the small certificate is checked per
+step, not whole-wave rebuild. Original no-reference calibration callers retain
+their prior contract, not authority to claim new full saved closeout.
+
+Saved closeout selects the last actual overnight OwnerSequence from the accepted
+trace and pins its original admission/acceptance/native snapshot/ledger/save
+report. It requires the same accepted terminal target and canonical save report
+as current verified readback. Original selection plus read-only terminal replay
+run at the OLD native head, never reset-tick current head. All original terminal
+input hashes and readback inputs are retained in the combined evidence. Main
+marks complete_managed_runtime only when both this invocation's readback and the
+original native terminal bind; Teacher/formal flags remainfalse.
+
+Peer9e0f90e3->11afa744 preserved; missing namespace compile failure corrected once,
+then16/16 (original8/new8). Controller final34/34 +same-product related260/260
+(2m42s), zero fail/skip/build warning/error, overlaps not added. Covers immutable
+replay, partial/corrupt outputs, source authority/warm cache, reference
+reopen/tampering/drop and rejection without native save/load/deposits. These are
+declared golden/in-process HTTP proofs; the COMPLETE same-owner positive remains
+UNVERIFIED until actual isolated runtime. No game/server/train/deploy/cleanup.
+
+UNIQUE NEXT actual opt-in managed main +resume on legal no-clearance A, original
+sale/save, fresh process load and one read-only recovery. Existing first-day smoke
+is UNMANAGED and must be explicitly adapted, not reused as a new R2 PASS. Retain
+the first actual breakpoint; no frozenL1 rerun or unused story prerequisites.
+Priorb642a79fCI43187885475SUCCESS/newheadneedsCI/DRAFT567/L1frozen/formalfalse/
+#339/#550 open/local-data excluded. Test temp E CPU1heap1GiB; API accepted-idle,
+grantswithdrawn/authorizationretained/costunknown/no providerfallback.
+
 ## 2026-11-12 Explicit Managed Resume Entry
 
 `resume-crop-managed-owner` now calls the original retained-owner helper and

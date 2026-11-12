@@ -67,6 +67,15 @@ static partial class Program
         artifacts.Pin(independent.Path);
         if (source.StateHash != ledger.SourceStateHash || source.SaveId.Value != ledger.SaveId || source.PlayerId.Value != ledger.PlayerId)
             throw new InvalidDataException("Managed resume snapshot/ledger lost their accepted source/actor binding.");
+        var savedCloseout = freshReadback && owner.HasCompletedTerminalDeposits
+            ? await owner.ReadSavedTerminalCloseoutAsync(Path.Combine(owner.EvidenceDirectory, "settlement-terminal", "terminal-evidence.json")).ConfigureAwait(false)
+            : null;
+        if (savedCloseout is not null)
+        {
+            savedCloseout.ValidateInputsUnchanged();
+            foreach (var (path, hash) in savedCloseout.InputHashes)
+                if (artifacts.Pin(path) != hash) throw new InvalidDataException("Managed resume saved closeout changed.");
+        }
         artifacts.Validate();
         var reportPath = Path.Combine(output, "managed-owner-resume.json");
         await WritePortfolioJournalFileAsync(reportPath, new JsonObject
@@ -76,7 +85,9 @@ static partial class Program
             ["ledger_path"] = owner.CurrentLedgerPath, ["state_hash"] = source.StateHash,
             ["reload_observation_path"] = observationPath, ["restored_historical_readback_verified"] = restoredHistoricalReadback,
             ["native_saved_content_readback_verified"] = freshReadback, ["fresh_accepted_head_verified"] = freshReadback,
-            ["native_dispatch_performed"] = false, ["complete_managed_runtime_verified"] = false,
+            ["native_dispatch_performed"] = false, ["complete_managed_runtime_verified"] = savedCloseout is not null,
+            ["terminal_settlement_verified"] = savedCloseout is not null,
+            ["saved_terminal_closeout"] = JsonSerializer.SerializeToNode(savedCloseout, JsonOptions),
             ["teacher_preference_label_eligible"] = false, ["formal_product_training_authorized"] = false,
             ["input_artifact_hashes"] = JsonSerializer.SerializeToNode(artifacts.Hashes, JsonOptions)
         }.ToJsonString(JsonOptions)).ConfigureAwait(false);

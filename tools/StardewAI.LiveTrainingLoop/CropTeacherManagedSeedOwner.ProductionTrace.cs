@@ -98,6 +98,8 @@ public sealed partial class CropTeacherManagedSeedOwner
                 };
                 if (role is not null)
                 {
+                    if (role == "terminal" && record["terminal_production_manifest_path"] is not null)
+                        Reference("terminal_production_manifest_sha256", StoredPath(record, "terminal_production_manifest_path"));
                     Reference("original_intent_sha256", Path.Combine(runtime, role + "-intent.json"));
                     Reference(role + "_native_claim_sha256", Path.Combine(runtime, role + "-native-claim.json"));
                     var resultPath = Path.Combine(runtime, role + "-native-result.json");

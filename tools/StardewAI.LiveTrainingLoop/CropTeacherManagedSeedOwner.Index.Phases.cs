@@ -96,6 +96,7 @@ public sealed partial class CropTeacherManagedSeedOwner
     private void ValidateAcceptedPhaseEvidence(CropTeacherManagedSeedOperation operation, JsonObject accepted)
     {
         ValidateSavedReadbackEvidence(operation, accepted);
+        ValidateTerminalProductionReferenceAcceptance(operation, accepted);
         if (operation.IsSupportingTransition)
             ValidateSupportingTransitionAcceptance(operation, accepted);
         else if (operation.IsLifecycle)

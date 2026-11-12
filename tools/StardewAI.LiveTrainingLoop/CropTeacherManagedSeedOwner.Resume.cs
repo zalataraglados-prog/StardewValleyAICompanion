@@ -4,6 +4,8 @@ public sealed partial class CropTeacherManagedSeedOwner
 {
     internal bool AcceptedSavedContentReadbackVerified => lastAcceptedOperation?.IsSavedContentReadback == true;
     internal CropTeacherManagedSeedOperation? AcceptedSavedReadbackOperation => AcceptedSavedContentReadbackVerified ? lastAcceptedOperation : null;
+    internal bool HasCompletedTerminalDeposits => terminalTarget is { RequiredQuantity: > 0 } target &&
+        target.AcceptedDepositCount == target.RequiredQuantity;
 
     internal async Task<string> ReadAcceptedNativeSaveBoundaryPathAsync()
     {

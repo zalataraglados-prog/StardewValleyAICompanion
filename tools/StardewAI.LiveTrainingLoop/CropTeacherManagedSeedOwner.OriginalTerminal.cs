@@ -7,11 +7,12 @@ namespace StardewAI.LiveTrainingLoop;
 
 public sealed record CropTeacherOriginalTerminalCompilation(string ModelActionPath, string QueuePath,
     string ReceiptPath, string AfterSnapshotPath, string RuntimeDirectory);
+public sealed record CropTeacherTerminalProductionReference(string ManifestPath, string ManifestSha256);
 
 public sealed partial class CropTeacherManagedSeedOwner
 {
     public async Task<CropTeacherManagedSeedOperation> CompileAndAdmitOriginalTerminalAsync(CropTeacherTerminalShippingTarget target,
-        Func<Task<CropTeacherOriginalTerminalCompilation>> compileOriginal)
+        Func<Task<CropTeacherOriginalTerminalCompilation>> compileOriginal, CropTeacherTerminalProductionReference? production = null)
     {
         await gate.WaitAsync().ConfigureAwait(false);
         try
@@ -25,6 +26,11 @@ public sealed partial class CropTeacherManagedSeedOwner
             record["operation_kind"] = "terminal_shipping";
             record["terminal_execution_protocol"] = "original_loop.v1";
             record["terminal_target"] = JsonSerializer.SerializeToNode(target, JsonOptions);
+            if (production is not null)
+            {
+                record["terminal_production_manifest_path"] = Path.GetFullPath(production.ManifestPath);
+                record["terminal_production_manifest_sha256"] = production.ManifestSha256;
+            }
             record["original_model_action_path"] = Path.GetFullPath(value.ModelActionPath);
             record["active_commitment_ids"] = JsonSerializer.SerializeToNode(ActiveCoveredCommitments(), JsonOptions);
             var transition = new MoneyRevenueCropNativeLifecycleTransitionRequest("pending-original-kind", target.TotalDay,
@@ -75,6 +81,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             transition.RunId != options.RunId || transition.ExecutorVersion != options.ExecutorVersion || transition.TotalDay != target.TotalDay ||
             active is null || !active.SequenceEqual(ActiveCoveredCommitments(), StringComparer.Ordinal))
             throw new InvalidDataException("Original terminal changed its owner/run/executor/source/coverage.");
+        ValidateTerminalProductionReference(record);
         var start = CropTeacherTerminalShipping.Preparation.Open(plan.RequestPath, StoredPath(record, "before_snapshot_path"),
             headLedgerPath, active, Text(record, "support_step_id"), target, StoredPath(record, "original_model_action_path"), transition.QueuePath);
         var expected = frontierHashes.TryGetValue(headSnapshotPath, out var hash) ? hash : fixedHashes[headSnapshotPath];
@@ -89,7 +96,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         return start;
     }
 
-    private JsonObject CreateOriginalTerminalIntent(JsonObject record) => new()
+    private JsonObject CreateOriginalTerminalIntent(JsonObject record) => AddTerminalProductionIntentReference(record, new()
     {
         ["schema_version"] = "crop_teacher_owned_terminal_shipping.v1", ["run_id"] = options.RunId,
         ["executor_version"] = options.ExecutorVersion, ["backend_url"] = options.BackendUrl,
@@ -100,7 +107,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         ["input_artifact_hashes"] = record["input_artifact_hashes"]!.DeepClone(),
         ["native_crop_lifecycle_verified"] = false, ["teacher_preference_label_eligible"] = false,
         ["formal_product_training_authorized"] = false
-    };
+    });
 
     private static void AddTerminalOutcomeEvidence(CropTeacherTerminalShipping scope, JsonObject document)
     {

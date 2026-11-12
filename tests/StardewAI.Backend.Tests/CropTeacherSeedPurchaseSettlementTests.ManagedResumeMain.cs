@@ -45,6 +45,8 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         Assert.True(result["native_saved_content_readback_verified"]!.GetValue<bool>());
         Assert.True(result["fresh_accepted_head_verified"]!.GetValue<bool>());
         Assert.False(result["complete_managed_runtime_verified"]!.GetValue<bool>());
+        Assert.False(result["terminal_settlement_verified"]!.GetValue<bool>());
+        Assert.Null(result["saved_terminal_closeout"]);
         Assert.False(result["native_dispatch_performed"]!.GetValue<bool>());
         Assert.False(result["formal_product_training_authorized"]!.GetValue<bool>());
         Assert.Equal(f.LoadedPath, result["snapshot_path"]!.GetValue<string>());
