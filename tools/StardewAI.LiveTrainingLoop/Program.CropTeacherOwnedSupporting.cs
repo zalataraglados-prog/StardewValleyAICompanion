@@ -45,6 +45,10 @@ static partial class Program
         else if (harvest) await owner.ExecuteOriginalHarvestAsync(operation, http, Execute).ConfigureAwait(false);
         else if (watering) await owner.ExecuteOriginalWateringAsync(operation, http, Execute).ConfigureAwait(false);
         else await owner.ExecuteOriginalRouteAsync(operation, http, Execute).ConfigureAwait(false);
+        // Native polling may evict the accepted head from the bounded backend cache.
+        var retained = new CropSeedRuntimeArtifacts(operation.SupportingTransition!.InputHashes);
+        await IngestCropTeacherManagedSnapshotAsync(http, options, start.SourcePath, retained).ConfigureAwait(false);
+        await IngestCropTeacherManagedSnapshotAsync(http, options, transition.AfterSnapshotPath, retained).ConfigureAwait(false);
         if (terminal) await owner.RunTerminalShippingAsync(operation, http,
             (diagnostic, request) => PostJournaledPortfolioCommitAsync(http, options, diagnostic, request),
             (endpoint, raw) => PostJsonStringAsync(http, endpoint, raw, CancellationToken.None)).ConfigureAwait(false);

@@ -1,5 +1,31 @@
 # Original Refill Native Trace
 
+## 2026-11-12 Retained Supporting Boundaries And Bounded Cache
+
+New native E accepted4 waits,6 seed purchases and1 return-route segment (11
+verified actions). Actual accepted location is Town, NOT Farm. Iteration13's
+original native control result exists; its ledger lookup404 uses accepted
+ae6a5ddc...c9b6100/tick10729 after fresh tick10770 and post-wait tick10801.
+The original backend retains only2 snapshots for memory safety. Do not enlarge
+that limit, trust latest, redispatch the wait or fabricate its missing mutation
+journal. Original StateStore/ledger/executor/time/resource contracts stay intact.
+
+Only the new managed supporting caller reimports its pinned original source and
+after snapshots after verified native execution, before the original marker and
+independent readback. Reuse the exact retained-snapshot ingest helper from the
+resume path; accepted=true plus identical returned state_hash are mandatory.
+Content-addressed gzip is read through the original reader. No additional game
+snapshot generation, ledger service, native dispatch or policy credit is added.
+
+Focused30/30 pass. Same-product related156/157, with one original fixture's
+File.Move denied during initialization; isolated recheck1/1 passes, original
+failure retained. Final isolated accepted=false/wrong-hash negatives plus that
+original failed case6/6 pass, zero fail/skip/build warning/error; overlap not added.
+Prior1d34 CI43208213320 succeeds. Fresh native validation remains required;
+planting/day/sale/save/new-process reload/full A/formal are NOT established.
+Same original API session review hit app-path permission denial twice and exited
+without accepted report; no further paid retry or provider/internal-agent switch.
+
 ## 2026-11-12 Exact Native Farm Tutorial Control Effect
 
 At the original seed per-step consumer, a narrow new branch requires the

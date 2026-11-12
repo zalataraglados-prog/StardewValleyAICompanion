@@ -9,7 +9,7 @@ static partial class Program
         var explicitReadback = ManagedResumeMatchesReadbackObservation(owner.Pending, options.ManagedCropReloadObservationPath);
         if (owner.Pending is { Started: null } && !explicitReadback)
             throw new InvalidOperationException("Read-only managed resume cannot create an unclaimed mutation; provide its explicit original readback continuation.");
-        await IngestCropTeacherManagedResumeSnapshotAsync(http, options, owner.CurrentSnapshotPath, artifacts).ConfigureAwait(false);
+        await IngestCropTeacherManagedSnapshotAsync(http, options, owner.CurrentSnapshotPath, artifacts).ConfigureAwait(false);
         CropTeacherManagedSeedOperation? completed = null;
         if (owner.Pending is { } pending)
         {
@@ -25,7 +25,7 @@ static partial class Program
                 var path = Path.Combine(pending.RuntimeDirectory, "native-transition-request.json");
                 if (File.Exists(path)) after = artifacts.Read<MoneyRevenueCropNativeLifecycleTransitionRequest>(path).AfterSnapshotPath;
             }
-            if (after is not null) await IngestCropTeacherManagedResumeSnapshotAsync(http, options, after, artifacts).ConfigureAwait(false);
+            if (after is not null) await IngestCropTeacherManagedSnapshotAsync(http, options, after, artifacts).ConfigureAwait(false);
             if (pending.Started is not null)
                 await owner.RecoverPendingAsync(http, Path.Combine(output, "pending-recovery"),
                     (endpoint, raw) => PostJsonStringAsync(http, endpoint, raw)).ConfigureAwait(false);

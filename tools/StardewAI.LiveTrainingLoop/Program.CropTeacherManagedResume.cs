@@ -42,7 +42,7 @@ static partial class Program
             var scope = operation.SavedReadback!;
             foreach (var (path, hash) in scope.InputHashes)
                 if (artifacts.Pin(path) != hash) throw new InvalidDataException("Managed resume readback inputs changed.");
-            await IngestCropTeacherManagedResumeSnapshotAsync(http, options, scope.AfterSnapshotPath, artifacts).ConfigureAwait(false);
+            await IngestCropTeacherManagedSnapshotAsync(http, options, scope.AfterSnapshotPath, artifacts).ConfigureAwait(false);
             await owner.RunSavedContentReadbackAsync(operation, http,
                 (diagnostic, request) => PostJournaledPortfolioCommitAsync(http, options, diagnostic, request),
                 (endpoint, raw) => PostJsonStringAsync(http, endpoint, raw)).ConfigureAwait(false);
@@ -93,17 +93,6 @@ static partial class Program
         }.ToJsonString(JsonOptions)).ConfigureAwait(false);
         artifacts.Validate();
         return reportPath;
-    }
-
-    private static async Task IngestCropTeacherManagedResumeSnapshotAsync(HttpClient http, LiveTrainingOptions options,
-        string path, CropSeedRuntimeArtifacts artifacts)
-    {
-        var snapshot = artifacts.Read<SnapshotEnvelope>(path);
-        var reply = await PostJsonStringAsync(http, SnapshotIngestUrl(options, "full"),
-            ContentAddressedJsonArtifactReader.ReadAllText(path)).ConfigureAwait(false);
-        if (reply["accepted"]?.GetValue<bool>() != true || reply["state_hash"]?.GetValue<string>() != snapshot.StateHash)
-            throw new InvalidDataException("Managed resume snapshot ingest did not accept its exact retained state hash.");
-        artifacts.Validate();
     }
 
     private static bool ManagedResumeSamePath(string first, string second) =>
