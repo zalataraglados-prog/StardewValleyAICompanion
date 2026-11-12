@@ -26,7 +26,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         internal int NativeNightCalls { get; private set; }
         internal int NativeHarvestCalls { get; private set; }
 
-        internal OvernightFixture(bool noCrops = false)
+        internal OvernightFixture(bool noCrops = false, Action<Fixture>? prepareSource = null)
         {
             // A declared one-day catalog isolates owner sequencing; it is NOT vanilla growth evidence.
             Watering = new(prepareSource: source =>
@@ -60,6 +60,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 ChangeState(source.Before, "locations", node => node["route_graph"]!["value"]!["edges"]!.AsArray().Add(
                     JsonSerializer.SerializeToNode(new { kind = "warp", from_location = "FarmHouse", from_x = 6, from_y = 6,
                         target_location = "Farm", target_x = 5, target_y = 6, resolved = true })));
+                prepareSource?.Invoke(source);
             });
             var live = Shared.Runtime.LiveOptions;
             live.UseDailyPlan = true;
@@ -118,10 +119,12 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         {
             NativeNightCalls++;
             var before = Read(owner.CurrentSnapshotPath); var after = Copy(before); after.GameTick++;
+            after.InGameTime.Value = 600;
             ChangeState(after, "time", node =>
             {
                 node["total_days"]!["value"] = node["total_days"]!["value"]!.GetValue<int>() + 1;
                 node["day"]!["value"] = node["day"]!["value"]!.GetValue<int>() + 1;
+                node["time"]!["value"] = 600;
             });
             ChangeState(after, "farm", farm =>
             {
