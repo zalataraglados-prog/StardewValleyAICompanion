@@ -3,6 +3,7 @@ using StardewAI.Contracts.Plans;
 using StardewAI.Contracts.Strategy;
 using StardewAI.Core.Execution;
 using StardewAI.Core.Infrastructure;
+using StardewAI.Core.Training;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -20,7 +21,7 @@ public sealed partial class CropTeacherSupportingRoute
         private readonly CropTeacherSupportingSource source;
 
         private Preparation(string runRequestPath, string sourcePath, string ledgerPath, IReadOnlyCollection<string> commitmentIds,
-            string stepId, string kind, string modelPlanPath, string queuePath)
+            string stepId, string kind, string modelPlanPath, string queuePath, bool nativeControlObservation)
         {
             var paths = new[] { runRequestPath, sourcePath, ledgerPath, modelPlanPath, queuePath }.Select(Path.GetFullPath)
                 .Distinct(CropTeacherSeedTransferNativeOutcome.PathComparer).ToArray();
@@ -33,6 +34,44 @@ public sealed partial class CropTeacherSupportingRoute
             FinalTargetLocation = MoneyRevenueCropNativeLifecycleProofBuilder.SupportingRouteTarget(source.Snapshot, kind, source.CropLocation);
             var plan = CurrentTeacherFrontierSupport.Read<SmallModelPlanEnvelope>(modelPlanPath, "original crop route plan");
             var queue = CurrentTeacherFrontierSupport.Read<ActionQueueEnvelope>(queuePath, "original crop route compilation");
+            if (nativeControlObservation)
+            {
+                var observationCandidate = NativeControlSettleRecovery.TryCreate(source.Snapshot);
+                Require(kind == "supporting_route_to_sleep" && observationCandidate is not null,
+                    "Owned crop control observation requires its authoritative native-control gap and sleep-route scope.");
+                Require(plan.SchemaVersion == "small_model_plan.v1" &&
+                        plan.SourceModel == "StardewAI.Core.Training.DailyPlanCompiler" &&
+                        plan.StateHash == source.Snapshot.StateHash && plan.PlanType == "daily_candidate_plan" &&
+                        plan.ExecutionMode == ExecutionTargetProfiles.TrainingSingleplayer &&
+                        EqualJson(plan.Actor, ExecutionTargetProfiles.CreateActor(plan.ExecutionMode)) &&
+                        plan.CandidateAudit is [var audit] && audit.CandidateId == observationCandidate!.CandidateId &&
+                        audit.Kind == observationCandidate.Kind && audit.Decision == "accepted" &&
+                        audit.Reasons.SequenceEqual(new[] { "fits_aggregate_budget" }) &&
+                        plan.Steps is [var wait] && wait.Kind == "wait_ticks" &&
+                        wait.WaitTicks == NativeControlSettleRecovery.WaitTicks &&
+                        wait.Preconditions.SequenceEqual(new[] { "candidate_id:" + observationCandidate.CandidateId }) &&
+                        wait.ExpectedEffects.SequenceEqual(new[] { observationCandidate.ExpectedEffect }) &&
+                        wait.SafetyConstraints.Contains("wait_only_recovery_candidate", StringComparer.Ordinal) &&
+                        wait.FailurePolicy.SequenceEqual(new[] { "refresh_snapshot_and_replan" }),
+                    "Owned crop control observation differs from its original wait-only plan/candidate/replan scope.");
+                var observation = new ActionQueueCompiler().Compile(plan, source.Snapshot);
+                CropTeacherOriginalQueueCompilation.Verify(queue, observation, "Owned crop control observation");
+                Require(queue.Status == "pending" && queue.CompilerDiagnostics.Length == 0 &&
+                        queue.Items is [var observationItem] && observationItem.Status == "pending" &&
+                        observationItem.BlockingReasons.Length == 0 && observationItem.MissingStateFactors.Length == 0 &&
+                        observationItem.OptionId == "executor.wait_ticks" &&
+                        observationItem.NormalizedCommand.StateHash == source.Snapshot.StateHash &&
+                        observationItem.NormalizedCommand.Steps is [var nativeWait] &&
+                        nativeWait.StepType == "wait_ticks" && nativeWait.Target == NativeControlSettleRecovery.WaitTicks.ToString(),
+                    "Owned crop control observation requires its original single pending native wait compilation.");
+                // This hop observes the current position; the original home remains the final target.
+                Require(!string.IsNullOrWhiteSpace(observationCandidate!.LocationId), "Owned crop control observation lacks its source location.");
+                ExpectedHopTargetLocation = observationCandidate.LocationId;
+                CandidateId = observationCandidate.CandidateId;
+                TotalDay = MoneyRevenueCropSeedAcquisitionProofBuilder.ReadInt(source.Snapshot, "time", "total_days");
+                inputs.Validate();
+                return;
+            }
             Require(plan.SchemaVersion == "small_model_plan.v1" && plan.SourceModel == "authoritative_crop_native_route.v1" &&
                     plan.StateHash == source.Snapshot.StateHash && plan.PlanType == "mechanical_plan" && plan.Steps is [var move] &&
                     move.Kind == "move_to_tile" && move.TargetLocation == FinalTargetLocation,
@@ -63,8 +102,8 @@ public sealed partial class CropTeacherSupportingRoute
         }
 
         public static Preparation Open(string runRequestPath, string sourcePath, string ledgerPath, IReadOnlyCollection<string> commitmentIds,
-            string stepId, string kind, string modelPlanPath, string queuePath) =>
-            new(runRequestPath, sourcePath, ledgerPath, commitmentIds, stepId, kind, modelPlanPath, queuePath);
+            string stepId, string kind, string modelPlanPath, string queuePath, bool nativeControlObservation = false) =>
+            new(runRequestPath, sourcePath, ledgerPath, commitmentIds, stepId, kind, modelPlanPath, queuePath, nativeControlObservation);
         public string SourcePath { get; }
         public string QueuePath { get; }
         public string Kind { get; }
