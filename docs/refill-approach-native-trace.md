@@ -1,5 +1,43 @@
 # Original Refill Native Trace
 
+## 2026-11-12 Original Late-day Route and Overnight Reuse
+
+R2step3 managed late-day selection uses the ORIGINAL recovery window/home projection.
+Outside home it admits the original home ingress, then at home admits the existing
+overnight/native-save scope. Original ordinary wrapper/control behavior and all
+route/sleep proof kernels remain unchanged; no extra executor/kind/growth rule.
+Only the managed late-day route core calls the original route compiler directly,
+after rechecking the old clock and higher-priority story/dialogue controls.
+
+The Build retains crop_teacher_late_day_recovery and returns the ACTUAL RouteHome
+or NativeSleep execution override to the original day-boundary recording path.
+Interrupted crop/seed/transfer fields are cleared, so control recovery cannot be
+recorded as their completion. Existing owner admission, native claim, queue/receipt,
+single marker, read-only recovery and save binding remain the only execution chain.
+
+Local5167f52a existing affected74/74 and source guards9/9 passed. The same original
+API session delivered eight cases in two test paths, d7221ccb ->67b80135, then exited
+after28pass/1fail instead of paid retry. Original morning EmitNight hardcoded a
+candidate ID. Controller derives the receipt identity from the ACTUAL original
+compiled queue, without product/verifier relaxation. An additional controller
+guessed-ID assertion was also rejected and retained, not accepted as authority.
+Final affected82/82 passed with zero failures/skips/build warnings/errors, including
+same-owner late route/night/save/morning readback and marker recovery. Two unplanted
+layout tiles remain unverified, never crop progress. Counts overlap, not added.
+These are declared CLR/HTTP/named-save fixtures, NOT native-game/vanilla growth,
+real saved-state readback or whole managed success.
+Earlier46078644 CI43147930682 had Core2599pass/1 stale generic-lease assertion;
+the guard now distinguishes owner/default leases while retaining one priority
+selection. New final head needs fresh CI, not inherited green checks.
+
+Selected story/dialogue/site-preparation effects, terminal/replan, whole-wave output
+retention/selected sale/native saved-state readback and fresh-head continuity remain
+required before SAME-loop positive/recovery and bounded managed native acceptance.
+The existing output-retention builder requires its ORIGINAL full wave/shared native
+lifecycle proof; terminal settlement consumes its original selected-mode evidence.
+Do not substitute single-harvest minimum or control-only proof. PR567 stays DRAFT,
+L1 frozen/formal=false, no game/server/train/local-data.
+
 ## 2026-11-12 Owned Native-control Observation
 
 This remains R2 step3, not another executor or supporting-operation kind. The

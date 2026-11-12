@@ -135,8 +135,10 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 }
             });
             var queue = JsonSerializer.Deserialize<ActionQueueEnvelope>(File.ReadAllText(NightQueue), JsonOptions)!;
+            var candidate = queue.Items.Single().NormalizedCommand.Parameters.Single(row => row.Name == "precondition" &&
+                row.Value.StartsWith("candidate_id:", StringComparison.Ordinal)).Value["candidate_id:".Length..];
             var receipt = MoneyCropTeacherFixture.Create<QueueExecutionReceiptEnvelope>("LifecycleReceipt", queue, before, after,
-                Shared.Files.Options.RunId, "recovery:native_save_boundary", "sleep");
+                Shared.Files.Options.RunId, candidate, "sleep");
             receipt.StepResults.Single().AfterSnapshotPath = NightAfter;
             var path = Path.Combine(Shared.Runtime.LiveOptions.SnapshotDir, "execution-0003.json");
             Fixture.Save(path, receipt); Fixture.Save(NightAfter, after);

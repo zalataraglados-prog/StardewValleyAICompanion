@@ -2,6 +2,15 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-12T11:40:00+08:00 R2 晚间恢复复用原回家与睡眠
+
+- 仍沿 R2 第3步，不改变剧情／对话优先级、普通模式或冻结 L1。新托管晚间选择只复用原 `GameClockBudgetPolicy` 的恢复窗口和当前可读 home：不在家走原回家 route，到家后走原 overnight／原生保存绑定，没有新增执行器、supporting kind 或生长规则。
+- 中断返回原 `crop_teacher_late_day_recovery` 标记，并把实际 `RouteHome`／`NativeSleep` 交给既有日边界记录。清除被打断步骤的作物批次、购种／转移参数，不能把回家或睡眠当成原任务执行成功。route 保留旧默认 wrapper，仅托管晚间入口在复核时钟／更高优先级中断后调用原 route 编译器；原 route／sleep preparation、回执、账本／保存／恢复核不变。
+- 本地接线 `5167f52a` 的已有相关74/74、源码守卫9/9通过；原 API 同会话限定两份测试交付8个用例，`d7221ccb` 审查集成 `67b80135`。初轮测试误用 internal 成员修正后28通过／1未过即退出交接，未继续付费修正。原因是原早晨夹具把睡眠候选 ID 写死；控制端改为从原编译队列读取实际身份，未改产品或放宽原回执验证。控制端额外猜测另一个 ID 的断言同样被拒，记录保留，不把猜测当权威。
+- 最终当前产物相关82/82、零失败／跳过／构建警告／错误；与既有74和源码9项的范围不混算。同一原 owner 晚间回家→睡眠保存→早晨重开读回、marker丢确认恢复、未验证头／pending阻断、时钟／home／更高优先级中断反例均通过。两块未种布局仍为 unverified，不能冒充作物完成。其一日目录及命名保存文件仍是声明夹具，无新游戏／服务器／训练或真实存档读回通过。
+- 前片 `46078644` 的 CI `43147930682` 暴露另一条旧源码断言：Core2599通过／1失败，仍要求通用决策租约恒 true。现区分新 owner／普通租约，保留优先控制只选择一次的约束；9项聚焦通过。最终发布 head 重新 CI，不借旧 head。
+- **后续保持原范围：** 剧情／对话的所选原生控制结果、实际 site preparation／资源、终局／replan、整波留存／所选销售／保存读回与实际主循环恢复，随后 R2 有界 managed 原生验收。已查到原 output-retention 的全波次／共享生命周期及 terminal 的所选销售合同，接线时复用，不降成单次收获最低量或以普通控制冒充其通过。PR #567 仍 DRAFT，formal=false，local-data不提交。
+
 ## 2026-11-12T11:22:00+08:00 R2 原控制等待接同一 owner
 
 - 沿原 R2 第3步接续，不重开冻结 L1。原 API 同会话在限定两文件交付 `9428a22f`，控制端审查集成 `13e682cd`；新增 preparation 显式 `nativeControlObservation=false`，只有 opt-in 才接原 `TryBuildNativeControlSettleQueueAsync` 的实际计划／编译队列。默认单连接器路径完全保留，没有第二套执行器或 supporting kind。

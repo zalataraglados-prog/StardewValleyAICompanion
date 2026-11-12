@@ -53,6 +53,9 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         Assert.Equal("declared-before-native-night", File.ReadAllText(f.NativeSaveFile));
         var sleepQueue = JsonSerializer.Deserialize<ActionQueueEnvelope>(File.ReadAllText(f.NightQueue), JsonOptions)!;
         Assert.Equal("executor.sleep", Assert.Single(sleepQueue.Items).OptionId);
+        var sleepCandidate = sleepQueue.Items[0].NormalizedCommand.Parameters.Single(row => row.Name == "precondition" &&
+            row.Value.StartsWith("candidate_id:", StringComparison.Ordinal)).Value["candidate_id:".Length..];
+        Assert.NotEqual("recovery:native_save_boundary", sleepCandidate);
         await owner.ExecuteOriginalOvernightAsync(night.Operation, f.Shared.Runtime.Client, () => f.EmitNight(owner));
         Assert.Equal(homeSource, owner.CurrentSnapshotPath);
         await f.RebindNight(owner, night.Operation);
