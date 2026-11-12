@@ -1,5 +1,37 @@
 # Original Refill Native Trace
 
+## 2026-11-12 Original Native Shipping Settlement Closeout
+
+After accepted deposits the opt-in main loop reuses ORIGINAL owned home ingress,
+control waits, native overnight and save fingerprint. At the next accepted day it
+consumes the SAME owner's complete terminal suffix through ORIGINAL recurrence
+and crop-terminal builders. There is no new executor, revenue formula or per-action
+whole-wave rebuild. Pending shipping alone never grants income. The final ledger
+must bind the same accepted snapshot/save/player. Outputs are separate/new/pinned.
+
+The new consumer accepts ORIGINAL supporting_route_to_sleep, not a fabricated
+generic native kind. It does not filter unknown/interrupted transitions to obtain a
+PASS. Only original verified native settlement enables terminal_settlement_verified;
+semantic_saved_content_verified/formal remain false. Main still stops for actual
+saved-content/fresh-head/top-level recovery, rather than marking the whole run done.
+
+Peer d3b4254a->a2f1f379 retains three files/raw8tests4pass4fail after one correction;
+the original declared helper used distinct run IDs. Controller fixes NEW fixture
+construction and the NEW consumer kind, never old executors/guards. Failed early
+negative rejections are not targeted guard proof. Final focused16/16 and related
+source guards42/42 and same-product-output related1059/1059 pass, zero failures/skips/
+build warnings/errors; broad run13m30, counts overlap and are not added. Declared
+original production/settlement golden and selector tests are NOT new game/full
+managed evidence. This test temp used I; future isolated temp uses E (NVMe), repo/
+archive stay I (SATA), with no move/delete of current retained artifacts;
+no cleanup/game/server/train/mod deployment. Original peer exited/grants withdrawn,
+authorization idle; cost unknown. Prior ca6cc678 CI43167187296 SUCCESS; new head needs CI.
+
+NEXT saved inventory/crop/currency/calendar content and fresh bridge/accepted head,
+actual main-entry recovery, then bounded selected legal no-clearance A native.
+Reload tick reset must not weaken the old passive-handoff guard. Frozen L1 remains;
+PR567 DRAFT/formal=false/local-data excluded, no all-unused-branch prerequisites.
+
 ## 2026-11-12 Original Terminal Owner Dispatch And Recovery
 
 R2step3 now binds ORIGINAL shipping approach/deposit preparation and outcomes to

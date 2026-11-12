@@ -11,12 +11,19 @@ static partial class Program
         internal CropTeacherManagedSeedOwner? Current { get; private set; }
         internal CropTeacherManagedProductionEvidence? TerminalProduction { get; private set; }
         internal CropTeacherTerminalShippingSelection? TerminalSelection { get; private set; }
+        internal CropTeacherManagedTerminalEvidence? TerminalSettlement { get; private set; }
         internal void AttachTerminal(CropTeacherManagedProductionEvidence production, CropTeacherTerminalShippingSelection selection)
         {
             if (Current is null || TerminalProduction is not null || TerminalSelection is not null)
                 throw new InvalidOperationException("Retain one terminal production boundary for the current managed owner.");
             TerminalProduction = production;
             TerminalSelection = selection;
+        }
+        internal void AttachTerminalSettlement(CropTeacherManagedTerminalEvidence settlement)
+        {
+            if (TerminalProduction is null || TerminalSelection is null || TerminalSettlement is not null)
+                throw new InvalidOperationException("Retain one original settlement proof for the selected production boundary.");
+            TerminalSettlement = settlement;
         }
         internal void Attach(CropTeacherManagedSeedOwner owner)
         {

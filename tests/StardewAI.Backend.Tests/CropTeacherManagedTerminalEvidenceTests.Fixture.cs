@@ -2,6 +2,8 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Text.Json;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
+using StardewAI.Contracts.Training;
 using StardewAI.GoalConditionedBootstrap;
 using StardewAI.LiveTrainingLoop;
 using StardewAI.Testing;
@@ -18,7 +20,7 @@ public sealed partial class CropTeacherManagedTerminalEvidenceTests
     // One immutable declared original whole-wave/settlement golden. It is not an actual managed/native run.
     private sealed record Golden(CropTeacherProductionEvidenceTests.Fixture ProductionFixture,
         CropTeacherManagedProductionEvidence Production, CropTeacherTerminalShippingTarget Target,
-        CropTeacherManagedProductionTransition[] Transitions, Dictionary<string, string> Hashes, string FinalPath)
+        CropTeacherManagedProductionTransition[] Transitions, Dictionary<string, string> Hashes, string FinalPath, string FinalLedgerPath)
     {
         internal static async Task<Golden> Create()
         {
@@ -51,13 +53,16 @@ public sealed partial class CropTeacherManagedTerminalEvidenceTests
                 // Bind the exact accepted predecessor only when the entire parsed envelope agrees.
                 Assert.True(System.Text.Json.Nodes.JsonNode.DeepEquals(
                     Read<System.Text.Json.Nodes.JsonNode>(previous), Read<System.Text.Json.Nodes.JsonNode>(value.BeforeSnapshotPath)));
+                var receipt = Read<QueueExecutionReceiptEnvelope>(value.ExecutionReceiptPath);
+                receipt.RunId = "declared-managed-terminal-run";
+                File.WriteAllText(value.ExecutionReceiptPath, JsonSerializer.Serialize(receipt, JsonOptions));
                 transitions.Add(new(transitions.Count + 1, operation, new(kind, target.TotalDay, value.QueuePath,
-                    previous, value.ExecutionReceiptPath, value.AfterSnapshotPath, value.RunId, value.ExecutorVersion, value.SelectedCandidateId)));
+                    previous, value.ExecutionReceiptPath, value.AfterSnapshotPath, receipt.RunId, value.ExecutorVersion, value.SelectedCandidateId)));
                 previous = value.AfterSnapshotPath;
             }
             foreach (var row in request.RouteTransitions) Add(row, "terminal_shipping", "shipping_approach");
             foreach (var row in request.ShippingDepositTransitions) Add(row, "terminal_shipping", "shipping_deposit");
-            foreach (var row in request.SettlementRouteTransitions) Add(row, "supporting_route", "supporting_route");
+            foreach (var row in request.SettlementRouteTransitions) Add(row, "supporting_route", "supporting_route_to_sleep");
             Add(new MoneyRevenueTerminalQueueTransitionProof
             {
                 QueuePath = recurrence.QueuePath, BeforeSnapshotPath = recurrence.BeforeSnapshotPath,
@@ -70,7 +75,12 @@ public sealed partial class CropTeacherManagedTerminalEvidenceTests
                 foreach (var path in new[] { row.NativeTransition.QueuePath, row.NativeTransition.BeforeSnapshotPath,
                     row.NativeTransition.ExecutionReceiptPath, row.NativeTransition.AfterSnapshotPath }) hashes[path] = Hash(path);
             foreach (var path in new[] { f.NativePlanPath, f.LedgerPath, production.ManifestPath, retentionPath }) hashes[path] = Hash(path);
-            return new(f, production, target, transitions.ToArray(), hashes, previous);
+            var finalLedgerPath = Path.Combine(root, "declared-final-ledger.json");
+            var finalLedger = Read<StrategyCommitmentLedger>(f.LedgerPath);
+            finalLedger.SourceStateHash = Read<SnapshotEnvelope>(previous).StateHash;
+            File.WriteAllText(finalLedgerPath, JsonSerializer.Serialize(finalLedger, JsonOptions));
+            hashes[finalLedgerPath] = Hash(finalLedgerPath);
+            return new(f, production, target, transitions.ToArray(), hashes, previous, finalLedgerPath);
         }
     }
 
@@ -86,7 +96,7 @@ public sealed partial class CropTeacherManagedTerminalEvidenceTests
         internal async Task<CropTeacherManagedTerminalEvidence> Build()
         {
             var trace = (CropTeacherManagedProductionTrace)typeof(CropTeacherManagedProductionTrace).GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic)
-                .Single().Invoke(new object[] { golden.ProductionFixture.NativePlanPath, FinalPath, golden.ProductionFixture.LedgerPath, Transitions.ToArray(), Hashes });
+                .Single().Invoke(new object[] { golden.ProductionFixture.NativePlanPath, FinalPath, golden.FinalLedgerPath, Transitions.ToArray(), Hashes });
             var type = typeof(CropTeacherManagedSeedOwner).Assembly.GetType("StardewAI.LiveTrainingLoop.CropTeacherTerminalSettlementEvidence")!;
             await Task.Yield();
             Task<CropTeacherManagedTerminalEvidence> task;

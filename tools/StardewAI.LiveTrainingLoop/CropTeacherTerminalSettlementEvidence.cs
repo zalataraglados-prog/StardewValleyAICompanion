@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
 using StardewAI.GoalConditionedBootstrap;
 
 namespace StardewAI.LiveTrainingLoop;
@@ -97,7 +98,7 @@ internal static class CropTeacherTerminalSettlementEvidence
             };
             if (row.OperationKind == "terminal_shipping" && native.TransitionKind == "shipping_approach" && i == 0) routes.Add(transition);
             else if (row.OperationKind == "terminal_shipping" && native.TransitionKind == "shipping_deposit" && home.Count == 0 && deposits.Count < target.RequiredQuantity) deposits.Add(transition);
-            else if (row.OperationKind == "supporting_route" && native.TransitionKind == "supporting_route" && deposits.Count == target.RequiredQuantity) home.Add(transition);
+            else if (row.OperationKind == "supporting_route" && native.TransitionKind == "supporting_route_to_sleep" && deposits.Count == target.RequiredQuantity) home.Add(transition);
             else Require(i == suffix.Length - 1 && row.OperationKind == "overnight_control" && native.TransitionKind == "native_day_rollover" &&
                 deposits.Count == target.RequiredQuantity, "unsupported or unconsumed suffix transition.");
             previous = native.AfterSnapshotPath; sequence = row.OwnerSequence;
@@ -107,8 +108,11 @@ internal static class CropTeacherTerminalSettlementEvidence
             deposits.Count == target.RequiredQuantity && Same(previous, trace.AcceptedSnapshotPath), "missing final native settlement/head.");
         Pin(trace.AcceptedSnapshotPath); Pin(trace.AcceptedLedgerPath);
         var final = artifacts.Read<SnapshotEnvelope>(trace.AcceptedSnapshotPath);
+        var ledger = artifacts.Read<StrategyCommitmentLedger>(trace.AcceptedLedgerPath);
         Require(final.SaveId.Value == target.SaveId && final.PlayerId.Value == target.PlayerId && final.GameVersion == target.GameVersion,
             "final accepted actor/game differs.");
+        Require(ledger.SourceStateHash == final.StateHash && ledger.SaveId == target.SaveId && ledger.PlayerId == target.PlayerId,
+            "final accepted ledger differs from the same native source/actor.");
         output = Path.GetFullPath(output);
         Require(!artifacts.Hashes.Keys.Any(path => Same(path, output) || Below(path, output) || Below(output, path)), "output overlaps retained inputs.");
         if (Directory.Exists(output) || File.Exists(output)) throw new IOException("Managed terminal output already exists.");

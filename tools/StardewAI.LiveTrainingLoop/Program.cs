@@ -784,11 +784,11 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 AppendProgress(options, "crop_teacher_managed_terminal_selected", iteration, lastStateHash, string.Empty,
                     "selection=" + terminalSelection.Path + " native_dispatch_performed=false");
             }
-            managedTerminalControl = await BuildCropTeacherOwnedTerminalQueueAsync(options, iteration, managedOwner,
-                cropTeacherManagedOwner.TerminalSelection!).ConfigureAwait(false);
+            managedTerminalControl = await BuildCropTeacherOwnedTerminalContinuationAsync(http, options, iteration,
+                activeCropTeacherRunPlan, activeCropTeacherRunPlanRequest!, cropTeacherManagedOwner).ConfigureAwait(false);
             if (managedTerminalControl is null)
             {
-                stopReason = "crop_teacher_managed_terminal_deposits_require_native_settlement_save_closeout";
+                stopReason = "crop_teacher_managed_terminal_settlement_requires_semantic_save_fresh_head_closeout";
                 break;
             }
         }
