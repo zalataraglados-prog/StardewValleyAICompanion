@@ -4,6 +4,8 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
+using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.Training;
 using StardewAI.Core.Infrastructure;
 using StardewAI.Core.Strategy;
 using StardewAI.GoalConditionedBootstrap;
@@ -51,7 +53,7 @@ public sealed class CropTeacherProductionEvidenceTests
         Assert.False(File.Exists(Path.Combine(f.Output, "production-evidence.json")));
     }
 
-    private sealed class Fixture
+    internal sealed class Fixture
     {
         private static readonly Lazy<Fixture> Golden = new(() => new Fixture(null));
         private readonly string root = Path.Combine(Path.GetTempPath(), "managed-production-proof-" + Guid.NewGuid().ToString("N"));
@@ -60,6 +62,9 @@ public sealed class CropTeacherProductionEvidenceTests
         private readonly string ledgerPath;
         private readonly string finalSnapshotPath;
         internal string Output => Path.Combine(root, "proofs");
+        internal string SourcePath => finalSnapshotPath;
+        internal string NativePlanPath => nativePlanPath;
+        internal string LedgerPath => ledgerPath;
         internal List<CropTeacherManagedProductionTransition> Transitions { get; } = [];
 
         internal Fixture() : this(Golden.Value) { }
@@ -100,6 +105,9 @@ public sealed class CropTeacherProductionEvidenceTests
             var current = MoneyCropTeacherFixture.CreateSnapshot("MoneyCropPlantingDaySnapshot");
             var daily = MoneyCropTeacherFixture.CreateSnapshot("MoneyCropDailyCapacitySnapshot", crop.PlantingTotalDay, 100);
             current.State["time"] = daily.State["time"]; current.State["locations"] = daily.State["locations"];
+            var farmState = JsonNode.Parse(current.State["farm"].GetRawText())!;
+            farmState["shipping_bins"] = JsonNode.Parse(daily.State["farm"].GetRawText())!["shipping_bins"]!.DeepClone();
+            current.State["farm"] = JsonSerializer.SerializeToElement(farmState);
             var player = JsonNode.Parse(current.State["player"].GetRawText())!.AsObject();
             foreach (var field in JsonNode.Parse(daily.State["player"].GetRawText())!.AsObject()) player[field.Key] = field.Value!.DeepClone();
             current.State["player"] = JsonSerializer.SerializeToElement(player);
@@ -109,6 +117,20 @@ public sealed class CropTeacherProductionEvidenceTests
             {
                 object[] args = { root, nativeTransitions, current, day, sequence, option, new[] { 5, 6 }, target, false };
                 current = MoneyCropTeacherFixture.CreateSnapshot("AddLifecycleTransition", args); sequence = (int)args[4];
+                if (option == "executor.harvest_crop")
+                {
+                    var playerState = JsonNode.Parse(current.State["player"].GetRawText())!;
+                    foreach (var row in playerState["inventory"]!["value"]!.AsArray().OfType<JsonObject>())
+                        if (row["qualified_item_id"]?.GetValue<string>() == "(O)400") row["can_be_shipped"] = true;
+                    current.State["player"] = JsonSerializer.SerializeToElement(playerState);
+                    current.StateHash = SnapshotHash.ComputeStateHash(current.State);
+                    var native = nativeTransitions[^1];
+                    File.WriteAllText(native.AfterSnapshotPath, JsonSerializer.Serialize(current, JsonOptions));
+                    var queue = Read<ActionQueueEnvelope>(native.QueuePath); var before = Read<SnapshotEnvelope>(native.BeforeSnapshotPath);
+                    var receipt = MoneyCropTeacherFixture.Create<QueueExecutionReceiptEnvelope>("LifecycleReceipt", queue, before,
+                        current, native.RunId, native.SelectedCandidateId, "harvest_crop");
+                    File.WriteAllText(native.ExecutionReceiptPath, JsonSerializer.Serialize(receipt, JsonOptions));
+                }
             }
             for (var day = crop.PlantingTotalDay; day <= crop.HarvestWaves.Single().HarvestTotalDay; day++)
             {

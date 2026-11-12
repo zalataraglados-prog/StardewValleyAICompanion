@@ -5,7 +5,8 @@ using StardewAI.GoalConditionedBootstrap;
 namespace StardewAI.LiveTrainingLoop;
 
 public sealed record CropTeacherManagedProductionEvidence(string ManifestPath, string[] PlantingLayoutProofPaths,
-    string[] DailyCapacityProofPaths, string[] NativeLifecycleProofPaths, string[] OutputRetentionProofPaths);
+    string[] DailyCapacityProofPaths, string[] NativeLifecycleProofPaths, string[] OutputRetentionProofPaths,
+    string ManifestSha256 = "");
 
 internal static class CropTeacherProductionEvidence
 {
@@ -106,7 +107,7 @@ internal static class CropTeacherProductionEvidence
             formal_product_training_authorized = false
         }).ConfigureAwait(false);
         artifacts.Validate();
-        return new(manifest, layouts.Values.ToArray(), capacities.ToArray(), lifecycles.ToArray(), retentions.ToArray());
+        return new(manifest, layouts.Values.ToArray(), capacities.ToArray(), lifecycles.ToArray(), retentions.ToArray(), artifacts.Hashes[manifest]);
     }
 
     private static T Read<T>(string path) => JsonSerializer.Deserialize<T>(ContentAddressedJsonArtifactReader.ReadAllText(path),

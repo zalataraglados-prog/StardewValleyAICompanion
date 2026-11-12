@@ -84,14 +84,19 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         foreach (var kind in new[] { "money", "seed", "world" })
         {
             using var fixture = new ShippingResourcesFixture();
-            if (kind == "money") fixture.Mutate("player", "money", _ => { });
             if (kind == "money")
             {
                 var fields = JsonNode.Parse(fixture.After.State["player"].GetRawText())!;
                 fields["money"]!["value"] = 999999;
                 fixture.After.State["player"] = System.Text.Json.JsonSerializer.SerializeToElement(fields); fixture.Rebind();
             }
-            else if (kind == "seed") fixture.Mutate("player", "seed_inventory", rows => rows.AsArray()[0]!["stack"] = 999);
+            else if (kind == "seed")
+            {
+                var fields = JsonNode.Parse(fixture.After.State["player"].GetRawText())!;
+                fields["seed_inventory"] = new JsonObject { ["status"] = "available", ["value"] = new JsonArray(new JsonObject
+                    { ["slot_index"] = fixture.Index, ["stack"] = 999, ["seed_id"] = "injected" }) };
+                fixture.After.State["player"] = System.Text.Json.JsonSerializer.SerializeToElement(fields); fixture.Rebind();
+            }
             else
             {
                 fixture.After.State["shipping_unknown_world"] = System.Text.Json.JsonSerializer.SerializeToElement(new { changed = true });
@@ -104,7 +109,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
     [Fact]
     public void ShippingResources_RejectsReceiptSourceIdentityDayAndTickDrift()
     {
-        foreach (var kind in new[] { "run", "candidate", "source", "actor", "day", "tick" })
+        foreach (var kind in new[] { "run", "candidate", "source", "actor", "day", "tick", "kind" })
         {
             using var fixture = new ShippingResourcesFixture();
             switch (kind)
@@ -115,8 +120,33 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 case "actor": fixture.After.PlayerId = new FieldEnvelope<string?> { Value = "456", Status = FieldStatus.Available }; break;
                 case "day": fixture.Transition = fixture.Transition with { TotalDay = fixture.Transition.TotalDay + 1 }; break;
                 case "tick": fixture.Receipt.StepResults[0].AfterGameTick++; break;
+                case "kind": fixture.Transition = fixture.Transition with { TransitionKind = "crop_actions" }; break;
             }
             Assert.Throws<InvalidDataException>(() => fixture.Verify());
         }
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void ShippingResources_ReducesInventoryPreviewsWithoutDonating(int stack)
+    {
+        using var fixture = new ShippingResourcesFixture(stack: stack);
+        fixture.BindCommunityPreviews();
+        Assert.True(fixture.Verify().SpecificPersistentResourceBoundaryVerified);
+    }
+
+    [Theory]
+    [InlineData("progress")]
+    [InlineData("candidate")]
+    public void ShippingResources_StillRejectsDonationProgressOrForgedPreview(string kind)
+    {
+        using var fixture = new ShippingResourcesFixture(); fixture.BindCommunityPreviews();
+        fixture.Mutate("world_progress", "community_center", center =>
+        {
+            if (kind == "progress") center["completed"] = true;
+            else center["bundle_rows"]![0]!["donation_candidates"]![0]!["stack_before"] = 999;
+        });
+        Assert.Throws<InvalidDataException>(() => fixture.Verify());
     }
 }

@@ -22,6 +22,7 @@ public static class CropTeacherShippingDepositResources
         QueueExecutionReceiptEnvelope receipt, MoneyRevenueCropNativeLifecycleTransitionRequest transition,
         string qualifiedItemId)
     {
+        Require(transition.TransitionKind == "shipping_deposit", "Shipping resources require the original deposit transition kind.");
         var reasons = QueueExecutionReceiptValidator.Validate(queue, before, receipt, after,
             transition.RunId, transition.ExecutorVersion, transition.SelectedCandidateId,
             before.StateHash, requireTeacherPreferenceStateRebound: false);

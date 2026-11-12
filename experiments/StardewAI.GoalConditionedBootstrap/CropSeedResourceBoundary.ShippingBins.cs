@@ -76,6 +76,13 @@ internal static partial class CropSeedResourceBoundary
         var view = new SnapshotEnvelope { SaveId = after.SaveId, PlayerId = after.PlayerId, GameVersion = after.GameVersion,
             State = new Dictionary<string, JsonElement>(after.State, StringComparer.Ordinal) };
         view.State["farm"] = JsonSerializer.SerializeToElement(farm);
+        var community = CompareHarvestCommunityCenterProgress(before, after);
+        if (community is not null)
+        {
+            var compared = new Dictionary<string, Dictionary<string, JsonElement>>(StringComparer.Ordinal);
+            SetHarvestComparisonField(after, compared, "world_progress", "community_center", community);
+            foreach (var (domain, fields) in compared) view.State[domain] = JsonSerializer.SerializeToElement(fields);
+        }
         Require(FullShipmentRecoverySettlementBoundaryProjector.TryProjectExpectedResourceMutationInvariant(before, out var first) &&
                 FullShipmentRecoverySettlementBoundaryProjector.TryProjectExpectedResourceMutationInvariant(view, out var next) && first == next,
             "Shipping changed unrelated persistent resources/state.");

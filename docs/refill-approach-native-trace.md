@@ -1,5 +1,45 @@
 # Original Refill Native Trace
 
+## 2026-11-12 Original Shipping Resource And Terminal Selection
+
+The new deposit leaf reuses ORIGINAL queue/receipt/native-step/deposit verifiers
+and stock graph/capacity/currency/persistent kernels. Exact one-unit decrement,
+final-unit raw-empty/graph/aggregate removal, same-bank physical-bin echoes and
+the original signature are verified; other contents/metadata/foreign custody
+remain protected. The old addition-only quantity helper and native executor stay
+unchanged. Existing community-center preview/progress comparison handles reduced
+inventory candidates; real donation/reward/unknown progress still rejects.
+
+The SAME owner's terminal binds its just-built production manifest HASH to the
+accepted source/ledger and original wave, exact shippable stack/quality/price/bin/
+stand. It emits the original PS terminal recipe through ActionQueueCompiler, not
+a new executor. Approach precedes a one-unit deposit. Only an accepted owner
+outcome may advance the future cursor; caller/model counts are not evidence.
+Full-trajectory validation occurs once at selection; actions keep compact terminal
+certificate hashes rather than rebuilding the entire lifecycle. Current main
+entry retains model/queue/selection ONLY and STOPS before unbound native ownership;
+native_dispatch=false/execution_authorized=false, no generic dispatch fallback.
+
+Peer45d65712 ->5cebff25 retained five paths. First compile fixture setter corrected
+once; final peer7/8 stopped on missing seed-echo mutation BEFORE verification.
+Controller tests missing-to-added drift, pins deposit kind and reuses the original
+community preview kernel. Initial controller5 failures shared an old golden's
+missing stand fields, fixed using ORIGINAL daily-capacity shipping fields plus the
+actual existing raw can_be_shipped field. No bridge/schema/old-guard relaxation.
+Final38/38 and same-built-output regression884/884 pass, zero failures/skips/build
+warnings/errors, overlapping counts not added. Peer exited/grants withdrawn,
+authorization retained/idle, no paid correction/fallback; dollar spend unknown.
+
+A bounded private read-only replay of the FIRST retained actual E deposit also
+passes: (O)190, unit175, pending0->175, four file hashes unchanged. This is resource
+leaf evidence, NOT a new native run/managed owner/whole-wave sale/save proof.
+NEXT same-owner terminal approach/deposit admission/claim/outcome/marker/recovery
+and accepted cursor, original home/control/sleep+recurrence real settlement,
+semantic saved content/fresh-head continuity, same-loop recovery and bounded legal
+no-clearance A native. Unknown outcomes never redispatch. Prior29b8dc99 CI43158312225
+passed; this head needs its own CI. PR567 remains DRAFT, L1frozen19/19,11/11,
+formal=false, local-data excluded, no game/server/train/cleanup.
+
 ## 2026-11-12 Original Whole-wave Production Closeout
 
 R2step3 managed terminal now consumes the SAME owner's accepted history through

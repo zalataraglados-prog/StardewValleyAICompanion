@@ -113,6 +113,31 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         }
 
         internal CropTeacherShippingDepositResourceEffects Verify() => CropTeacherShippingDepositResources.Verify(Before, After, Queue, Receipt, Transition, Item);
+        internal void BindCommunityPreviews()
+        {
+            var raw = Get(Before, "player", "inventory").AsArray().OfType<JsonObject>()
+                .Single(row => row["slot_index"]!.GetValue<int>() == Index);
+            foreach (var snapshot in new[] { Before, After })
+            {
+                var units = ReferenceEquals(snapshot, Before) ? stack : stack - 1;
+                var candidate = new CommunityCenterDonationCandidateRef { InventorySlotIndex = Index, IngredientIndex = 0,
+                    ItemId = raw["item_id"]!.GetValue<string>(), QualifiedItemId = Item, RuntimeType = raw["runtime_type"]!.GetValue<string>(),
+                    Quality = 0, StackBefore = units, StackAfter = units - 1, RequiredStack = 1, InventoryItemTotalBefore = units,
+                    InventoryItemTotalAfter = units - 1, CompletedIngredientCountBefore = 0, CompletedIngredientCountAfter = 1 };
+                Set(snapshot, "world_progress", "community_center", new JsonObject
+                {
+                    ["completed"] = false, ["bundles"] = new JsonObject { ["0"] = new JsonArray(false) },
+                    ["bundle_rewards"] = new JsonObject { ["0"] = false }, ["pending_area_mail_flags"] = new JsonArray(),
+                    ["bundle_rows"] = new JsonArray(new JsonObject { ["bundle_id"] = 0, ["required_slot_count"] = 1,
+                        ["completed_ingredient_count"] = 0, ["ingredients"] = new JsonArray(JsonSerializer.SerializeToNode(
+                            new CommunityCenterIngredientProgressRef { IngredientIndex = 0, ItemIdOrCategory = Item[3..], RequiredStack = 1, MinimumQuality = 0 })),
+                        ["donation_candidates"] = units > 0 ? new JsonArray(JsonSerializer.SerializeToNode(candidate)) : new JsonArray() })
+                });
+                snapshot.StateHash = SnapshotHash.ComputeStateHash(snapshot.State);
+            }
+            Queue.StateHash = Before.StateHash; Queue.Items[0].NormalizedCommand.StateHash = Before.StateHash;
+            Rebind();
+        }
         internal void Mutate(string domain, string field, Action<JsonNode> change)
         { var value = Get(After, domain, field); change(value); Set(After, domain, field, value); Rebind(); }
         internal static JsonNode Get(SnapshotEnvelope snapshot, string domain, string field) => JsonNode.Parse(snapshot.State[domain].GetProperty(field).GetProperty("value").GetRawText())!;
