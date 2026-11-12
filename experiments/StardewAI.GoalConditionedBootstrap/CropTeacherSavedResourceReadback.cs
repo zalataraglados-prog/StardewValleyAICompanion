@@ -23,17 +23,7 @@ public sealed class CropTeacherSavedResourceReadback : ICropTeacherSupportingTra
         inputs = new(paths);
         var before = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(paths[0], "saved-resource before");
         var after = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(paths[1], "saved-resource after");
-        MoneyRevenueCropSeedAcquisitionProofBuilder.ValidateSnapshot(before, "saved-resource before");
-        MoneyRevenueCropSeedAcquisitionProofBuilder.ValidateSnapshot(after, "saved-resource after");
-        Require(before.SaveId.Value == after.SaveId.Value && before.PlayerId.Value == after.PlayerId.Value &&
-            before.GameVersion == after.GameVersion, "snapshot actor/game identity differs.");
-        RequireCoreFields(before, "before");
-        RequireCoreFields(after, "after");
-        Require(FullShipmentRecoverySettlementBoundaryProjector.TryProject(before, out var beforeBoundary) &&
-            FullShipmentRecoverySettlementBoundaryProjector.TryProject(after, out var afterBoundary) &&
-            beforeBoundary == afterBoundary,
-            "persistent resources differ or cannot be projected: " + string.Join(",",
-                FullShipmentRecoverySettlementBoundaryProjector.ChangedPersistentFields(before, after)));
+        VerifySnapshotContent(before, after);
 
         var ledger = AcquisitionStrategyLedgerReader.Read(
             CurrentTeacherFrontierSupport.Read<StrategyCommitmentLedger>(paths[2], "saved-resource source ledger"), before).Ledger;
@@ -63,6 +53,19 @@ public sealed class CropTeacherSavedResourceReadback : ICropTeacherSupportingTra
     public StrategyCommitmentLedger VerifyRebindReply(ReservationPortfolioCommitResult reply) => rebind.VerifyReply(reply);
     public IReadOnlyDictionary<string, string> InputHashes => inputs.ReadHashes();
     public void ValidateInputsUnchanged() => inputs.Validate();
+
+    public static void VerifySnapshotContent(SnapshotEnvelope before, SnapshotEnvelope after)
+    {
+        MoneyRevenueCropSeedAcquisitionProofBuilder.ValidateSnapshot(before, "saved-resource before");
+        MoneyRevenueCropSeedAcquisitionProofBuilder.ValidateSnapshot(after, "saved-resource after");
+        Require(before.SaveId.Value == after.SaveId.Value && before.PlayerId.Value == after.PlayerId.Value &&
+            before.GameVersion == after.GameVersion, "snapshot actor/game identity differs.");
+        RequireCoreFields(before, "before"); RequireCoreFields(after, "after");
+        Require(FullShipmentRecoverySettlementBoundaryProjector.TryProject(before, out var beforeBoundary) &&
+            FullShipmentRecoverySettlementBoundaryProjector.TryProject(after, out var afterBoundary) && beforeBoundary == afterBoundary,
+            "persistent resources differ or cannot be projected: " + string.Join(",",
+                FullShipmentRecoverySettlementBoundaryProjector.ChangedPersistentFields(before, after)));
+    }
 
     private static void RequireCoreFields(SnapshotEnvelope snapshot, string boundary)
     {

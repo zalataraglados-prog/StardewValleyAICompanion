@@ -1,5 +1,37 @@
 # Original Refill Native Trace
 
+## 2026-11-12 Saved Resource And Actual Reload Consumers
+
+The new Bootstrap leaf reuses ORIGINAL full persistent-resource projection and
+supporting rebind, with explicit readable inventory/crops/currencies/calendar,
+identity/hash/ledger checks. A matched snapshot alone grants NO native-reload,
+semantic-save or formal claim. One comparison entry also checks the canonical
+saved snapshot separately from the current accepted head; ledger rebind consumes
+the latter, so volatile readback heads do not redefine what was saved.
+
+The NEW Live consumer additionally verifies the original completed-save report,
+unchanged save fingerprint around reads, a newly started exact SMAPI executable,
+its original isolated-root/slot log, and the existing bridge v2 genesis/hash chain
+with SaveLoaded and the actual published loaded snapshot. Immutable bounded log
+copies are inputs, not a live mutable file. No bridge fields, executor/tick guard
+changes, generic native receipt fabrication or game launch/stop was added. The
+read-only actual-process capture function exists but IS NOT wired into main yet.
+
+Peer61958bdd->a68572d0 final10/10 after one no-op season-fixture correction.
+Controller final24/24 and same-product related60/60(52s) pass, zero failures/skips/
+build warnings/errors; counts overlap. Two missing test imports and a NEW consumer
+using a JSON-only reader for plain log text failed and were corrected/retained.
+The actual current non-game process is rejected before HTTP/output in a capture
+guard test. These are declared content/synthetic process+event/log observations, NOT new game
+reload or full managed PASS. Test temp E; unchanged1059 matrix was not rerun.
+
+NEXT bind readback to the SAME owner admission/one original marker/index/read-only
+recovery, explicit retained-owner main entry and actual isolated relaunch capture;
+then actual same-loop recovery and bounded legal no-clearance A. The old legacy
+resume rejection and24tick passive guard remain. Main still stops at semantic-save/
+fresh-head closeout. Prior87935184 CI43171332787SUCCESS; this head needs CI.
+PR567 DRAFT/frozenL1/formal=false/local-data excluded; no game/server/train/deploy/cleanup.
+
 ## 2026-11-12 Original Native Shipping Settlement Closeout
 
 After accepted deposits the opt-in main loop reuses ORIGINAL owned home ingress,
