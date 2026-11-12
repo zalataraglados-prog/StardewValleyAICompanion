@@ -504,6 +504,29 @@ public sealed partial class LiveTrainingOptions
             {
                 options.UseManagedCropTeacher = true;
             }
+            else if (current == "--resume-managed-crop-owner")
+            {
+                options.ResumeManagedCropOwnerDirectory = ReadManagedCropResumeArgument(args, ref i);
+            }
+            else if (current == "--managed-crop-reload-observation")
+            {
+                options.ManagedCropReloadObservationPath = ReadManagedCropResumeArgument(args, ref i);
+            }
+            else if (current == "--managed-crop-reload-process-id")
+            {
+                var value = ReadManagedCropResumeArgument(args, ref i);
+                if (!int.TryParse(value, out var processId) || processId <= 0)
+                    throw new ArgumentException("--managed-crop-reload-process-id requires a positive integer.");
+                options.ManagedCropReloadProcessId = processId;
+            }
+            else if (current == "--managed-crop-reload-executable")
+            {
+                options.ManagedCropReloadExecutablePath = ReadManagedCropResumeArgument(args, ref i);
+            }
+            else if (current == "--managed-crop-reload-log")
+            {
+                options.ManagedCropReloadLogPath = ReadManagedCropResumeArgument(args, ref i);
+            }
             else if (current == "--resume-crop-teacher-transition-ledger" &&
                 i + 1 < args.Length)
             {
@@ -706,6 +729,7 @@ public sealed partial class LiveTrainingOptions
         options.ValidateGoldenWalnutFreshSaveEvidenceMode();
         options.ValidateCropTeacherResumeMode();
         options.ValidateManagedCropTeacherMode();
+        options.ValidateManagedCropTeacherResumeMode();
 
         return options;
     }
