@@ -1,5 +1,33 @@
 # Original Refill Native Trace
 
+## 2026-11-12 Exact Native Farm Tutorial Control Effect
+
+At the original seed per-step consumer, a narrow new branch requires the
+original applied/fresh/verified traverse_connector, exact before/after hashes
+and ticks, FarmHouse->Farm on1.6.15. Only current player's newly added
+button_tut_2 plus the SAME current-player GSQ mail mirror are eligible. Current
+actor binding must be unique/readable/is_current; all other rows/mail/progress
+are protected. The exact native method/IL evidence is in the previous section.
+
+Reuse original PersistentStateRows/HashCanonical, normalize only these two
+comparison-view values and compare the complete original boundary. Never edit
+snapshots/state hashes/raw mail. Original default TryProject still sees the
+real persistent difference; no global mail/unlock ignore, alternate comparison
+algorithm, ledger service or executor. Unknown fields/resources/currency,
+missing mirrors, malformed/duplicate/current-actor changes and unverified or
+other-step contexts reject. Original cb7bbb071 protection intent remains.
+
+Final focused50/50 +same-build related49/49 pass, zero fail/skip/buildwarning/
+error, overlap not added; includes26 new boundary tests. Actual retained D
+native ten-step request replay via ORIGINAL BuildSupportSlice now yields
+purchase_slice/unitprice80. Five entry files' physical hashes unchanged.
+New offline proof SHA91efe08cc48a9419879f173827103aad95342e0bc5f08ac0b90b6ceea141fa1b.
+This is OLD native evidence re-evaluation, NOT a new game run, accepted D
+settlement, full A or training PASS. Never redispatch D's executed purchase.
+Previous f736 CI43203117611 succeeded. Next bounded peer review, fresh E native
+production/sale/save/new-process reload/same-owner closeout/read-only recovery.
+L1frozen19/19,11/11; formalfalse; DRAFT567; no local-data/raw sources committed.
+
 ## 2026-11-12 Native Purchase And First Farm Tutorial Boundary
 
 Run managed-d-20261112-1826 uses bcf8af9b product source and accepted4 original
