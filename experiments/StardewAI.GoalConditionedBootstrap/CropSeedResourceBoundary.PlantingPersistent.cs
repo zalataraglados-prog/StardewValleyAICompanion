@@ -7,13 +7,16 @@ namespace StardewAI.GoalConditionedBootstrap;
 internal static partial class CropSeedResourceBoundary
 {
     internal static void VerifyUnconsumedPlanting(SnapshotEnvelope before, SnapshotEnvelope after)
+        => VerifyUnconsumedCropAction(before, after, "Owned planting", requireSeedInventory: true);
+
+    internal static void VerifyUnconsumedCropAction(SnapshotEnvelope before, SnapshotEnvelope after, string label, bool requireSeedInventory)
     {
         foreach (var name in new[] { "inventory", "inventory_capacity", "seed_inventory", "money", "shop_currency_balances", "multiplayer_wallet" })
-            SameField(before, after, "player", name, required: name != "multiplayer_wallet");
+            SameField(before, after, "player", name, required: name != "multiplayer_wallet" && (name != "seed_inventory" || requireSeedInventory));
         foreach (var name in new[] { "crops", "material_inventory_graph" }) SameField(before, after, "farm", name, required: true);
         Require(FullShipmentRecoverySettlementBoundaryProjector.TryProjectExpectedResourceMutationInvariant(before, out var first) &&
                 FullShipmentRecoverySettlementBoundaryProjector.TryProjectExpectedResourceMutationInvariant(after, out var next) && first == next,
-            "Owned planting failed suffix changed persistent state.");
+            label + " failed suffix changed persistent state.");
     }
 
     private static void VerifyPlantingPersistentState(SnapshotEnvelope before, SnapshotEnvelope after)

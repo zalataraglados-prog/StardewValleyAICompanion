@@ -1,5 +1,45 @@
 # Original Refill Native Trace
 
+## 2026-11-12 Original Harvest Batch Adapter
+
+Parent PR563 final3a0fda00 passed CI43121236133 all42steps and clean same-head
+review, merged6b7c2388. Tested/main tree49983bdf matched before owned ref cleanup.
+The accepted211 tests and five retained E resource frames keep their prior scope;
+no new game/server/training or repeat of that successful native matrix occurred.
+
+CropTeacherHarvest.Preparation implements the EXISTING supporting preparation
+interface. It replays the ORIGINAL run-plan builder, pins transitive artifacts,
+and binds original save/player/decision ownership, active commitment, due day,
+batch index, wave/output/minimum, ordered layout subset, model candidate and the
+original ActionQueueCompiler result. Harvest batches' empty seed id is not output.
+Per-tile minimum is derived from that verified wave.MinimumUnits/TileCount.
+
+The outcome uses the original receipt validator/applied-prefix logic, native-step
+identity/time boundaries, shared path guards and VerifyHarvestResources for each
+applied target. Executed blocked suffixes must retain resources; unexecuted targets
+receive no progress. The ORIGINAL SupportingRebind supplies marker request/reply
+verification. Observed stock surplus is not producer credit, and a completed
+compiled subset is not the whole wave. WholeWaveOutputRetentionVerified and
+NativeCropLifecycleVerified remain false; the original output-retention proof is
+still responsible for the wave denominator. These flags do not add global gates.
+
+The watering path validator is extracted without behavior/message changes.
+The original planting failed-suffix entry retains mandatory seed_inventory;
+harvest uses its pre-existing optional seed-field contract, still comparing it
+when present. No native rule, bridge schema, old intent or admission lock changes.
+
+Final related192 tests passed, zero failure/skip/build warning/error, including
+original-save/owner binding cases and old watering/planting. Initial compiler/declared-fixture failures remain diagnostic,
+not acceptance. The original API peer delivered a24-line read-only map in13steps,
+zero API errors, no source edits/shell/tests/commit; exited0 with grants withdrawn.
+
+NEXT: extend operation/admission classification in the SAME managed seed owner,
+consume these interfaces through its existing original supporting native claim,
+one marker commit, read-only lost-ack recovery and accepted index. Then bind the
+SAME Program.cs loop, original sale/save/readback and bounded managed acceptance.
+This adapter alone does not prove those integrations. L1 stays frozen; no local-data
+commit and no formal training claim.
+
 ## 2026-11-12 Integrated Harvest Resource Consumer
 
 Parent PR562 final8fb48259 passed CI43116326415 all42steps,

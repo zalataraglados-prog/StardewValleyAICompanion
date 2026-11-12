@@ -49,7 +49,7 @@ public sealed partial class CropTeacherWateringMaintenance : ICropTeacherSupport
         AppliedTileCount = refillControl ? 0 : CropTeacherAppliedPrefixReceipt.Validate(queue, before, receipt, after, transition, "water_crop", "Crop watering");
         RefillControlVerified = refillControl;
         CompleteBatch = AppliedTileCount == tiles.Length;
-        var stepPaths = ReadStepPaths(transition, receipt, paths);
+        var stepPaths = CropTeacherNativeStepPaths.Read(transition, receipt, paths, "Crop watering");
         inputs = new(paths.Concat(stepPaths).Distinct(comparer).ToArray());
         originalInputs.Validate();
         var current = before;
@@ -97,23 +97,4 @@ public sealed partial class CropTeacherWateringMaintenance : ICropTeacherSupport
     public IReadOnlyDictionary<string, string> InputHashes => refillTrace?.InputHashes ?? inputs.ReadHashes();
     public void ValidateInputsUnchanged() { inputs.Validate(); refillTrace?.ValidateInputsUnchanged(); }
 
-    private static string[] ReadStepPaths(MoneyRevenueCropNativeLifecycleTransitionRequest transition,
-        QueueExecutionReceiptEnvelope receipt, string[] inputs)
-    {
-        var comparer = CropTeacherSeedTransferNativeOutcome.PathComparer;
-        var paths = new List<string>();
-        var root = Path.GetDirectoryName(Path.GetFullPath(transition.ExecutionReceiptPath))! + Path.DirectorySeparatorChar;
-        var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-        for (var index = 0; index < receipt.StepResults.Length; index++)
-        {
-            var path = receipt.StepResults[index].AfterSnapshotPath;
-            Require(!string.IsNullOrWhiteSpace(path) && Path.IsPathFullyQualified(path), "Crop watering step snapshot path is missing or relative.");
-            path = Path.GetFullPath(path!);
-            Require(path.StartsWith(root, comparison) && !paths.Contains(path, comparer) &&
-                    (!inputs.Contains(path, comparer) || index == receipt.StepResults.Length - 1 && comparer.Equals(path, Path.GetFullPath(transition.AfterSnapshotPath))),
-                "Crop watering step path escaped, repeated or aliased a retained input.");
-            paths.Add(path);
-        }
-        return paths.ToArray();
-    }
 }
