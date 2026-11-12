@@ -9,11 +9,15 @@ namespace StardewAI.LiveTrainingLoop;
 public sealed record CropTeacherManagedTerminalEvidence(string ManifestPath, string ManifestSha256,
     string TerminalProofPath, string RecurrenceProofPath, long SettledRevenue);
 
-internal static class CropTeacherTerminalSettlementEvidence
+internal static partial class CropTeacherTerminalSettlementEvidence
 {
-    internal static async Task<CropTeacherManagedTerminalEvidence> BuildAsync(CropTeacherManagedProductionTrace trace,
+    internal static Task<CropTeacherManagedTerminalEvidence> BuildAsync(CropTeacherManagedProductionTrace trace,
         CropTeacherManagedProductionEvidence production, CropTeacherTerminalShippingTarget target,
-        string output, Func<string, string, Task> write)
+        string output, Func<string, string, Task> write) => BuildCoreAsync(trace, production, target, output, write, readExisting: false);
+
+    private static async Task<CropTeacherManagedTerminalEvidence> BuildCoreAsync(CropTeacherManagedProductionTrace trace,
+        CropTeacherManagedProductionEvidence production, CropTeacherTerminalShippingTarget target,
+        string output, Func<string, string, Task> write, bool readExisting)
     {
         trace.ValidateInputsUnchanged();
         var artifacts = new CropSeedRuntimeArtifacts(trace.InputHashes);
@@ -115,13 +119,15 @@ internal static class CropTeacherTerminalSettlementEvidence
             "final accepted ledger differs from the same native source/actor.");
         output = Path.GetFullPath(output);
         Require(!artifacts.Hashes.Keys.Any(path => Same(path, output) || Below(path, output) || Below(output, path)), "output overlaps retained inputs.");
-        if (Directory.Exists(output) || File.Exists(output)) throw new IOException("Managed terminal output already exists.");
+        if (readExisting) RequireRetainedPath(output, directory: true);
+        else if (Directory.Exists(output) || File.Exists(output)) throw new IOException("Managed terminal output already exists.");
         artifacts.Validate();
-        Directory.CreateDirectory(output);
+        if (!readExisting) Directory.CreateDirectory(output);
         async Task<string> Emit<T>(string name, T value)
         {
             var path = Path.Combine(output, name + ".json");
-            await write(path, JsonSerializer.Serialize(value, CropTeacherManagedSeedOwner.JsonOptions)).ConfigureAwait(false);
+            if (readExisting) RequireRetainedPath(path, directory: false);
+            else await write(path, JsonSerializer.Serialize(value, CropTeacherManagedSeedOwner.JsonOptions)).ConfigureAwait(false);
             Require(JsonNode.DeepEquals(JsonSerializer.SerializeToNode(value, CropTeacherManagedSeedOwner.JsonOptions), artifacts.Read<JsonNode>(path)), "writer changed original proof output.");
             return path;
         }
