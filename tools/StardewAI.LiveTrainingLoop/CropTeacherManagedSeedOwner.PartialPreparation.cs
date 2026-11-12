@@ -20,6 +20,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             if (!HasOwnedDispatchProtocol(operation) || operation.Prepared is not null || operation.Dispatch is not null || operation.PreparedRuntime is not null)
                 throw new InvalidOperationException("Only an uninvoked owned partial preparation may continue its original compiler.");
             RequireUninvokedRuntime(operation);
+            RequireOutsideNativeSaveSlot(new[] { Path.GetFullPath(evidenceDirectory) }, options.NativeSaveBinding);
             await ClaimContinuationAsync(operation).ConfigureAwait(false);
             var (attempt, reference) = SelectContinuationAttempt(operation);
             var originalOptions = new CropTeacherSeedRuntimeRecoveryOptions(options.BackendUrl, operation.RuntimeDirectory,

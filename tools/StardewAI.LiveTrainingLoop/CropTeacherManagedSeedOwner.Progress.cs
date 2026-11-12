@@ -78,6 +78,7 @@ public sealed partial class CropTeacherManagedSeedOwner
     private async Task<RecoveredOwnerBoundary> RecoverAsync(HttpClient http, CropTeacherManagedSeedOperation operation,
         string output, Func<string, string, Task<JsonObject>> post)
     {
+        RequireOutsideNativeSaveSlot(new[] { Path.GetFullPath(output) }, options.NativeSaveBinding);
         if (operation.IsSupportingTransition)
             return await RecoverSupportingTransitionAsync(http, operation, output, post).ConfigureAwait(false);
         if (operation.IsLifecycle)

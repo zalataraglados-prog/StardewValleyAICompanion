@@ -66,6 +66,12 @@ public sealed partial class CropTeacherManagedSeedOwner
         accepted["teacher_preference_label_eligible"] = false;
         if (operation.Watering is { } watering) AddWateringOutcomeEvidence(watering, accepted);
         if (operation.Harvest is { } harvest) AddHarvestOutcomeEvidence(harvest, accepted);
+        if (operation.Overnight is { } overnight)
+        {
+            AddOvernightOutcomeEvidence(overnight, accepted);
+            accepted["native_save_boundary_verified"] = true;
+            accepted["overnight_save_boundary_sha256"] = HashFile(OriginalOvernightSavePath(operation));
+        }
         if (operation.OriginalStart is not null)
         {
             accepted[NativeSupportingRole(operation) + "_native_claim_sha256"] = HashFile(NativeSupportingPath(operation, "claim"));
@@ -77,6 +83,21 @@ public sealed partial class CropTeacherManagedSeedOwner
     private void ValidateSupportingTransitionAcceptance(CropTeacherManagedSeedOperation operation, JsonObject accepted)
     {
         if (operation.OriginalStart is not null) LoadOriginalSupportingOutcome(operation);
+        if (operation.Overnight is { } overnight)
+        {
+            var expected = new JsonObject();
+            AddOvernightOutcomeEvidence(overnight, expected);
+            if (expected.Any(field => !JsonNode.DeepEquals(field.Value, accepted[field.Key])) ||
+                accepted["native_save_boundary_verified"]?.GetValue<bool>() != true ||
+                Text(accepted, "overnight_save_boundary_sha256") != HashFile(OriginalOvernightSavePath(operation)) ||
+                accepted["route_native_claim_sha256"] is not null || accepted["route_native_result_sha256"] is not null ||
+                accepted["maintenance_native_claim_sha256"] is not null || accepted["maintenance_native_result_sha256"] is not null)
+                throw new InvalidDataException("Managed crop overnight control acceptance changed.");
+        }
+        else if (accepted["native_overnight_control_verified"] is not null || accepted["overnight_native_claim_sha256"] is not null ||
+                 accepted["overnight_native_result_sha256"] is not null || accepted["overnight_save_boundary_sha256"] is not null ||
+                 accepted["native_save_boundary_verified"] is not null)
+            throw new InvalidDataException("A different phase cannot claim an overnight boundary.");
         if (operation.Harvest is { } harvest)
         {
             var expected = new JsonObject();

@@ -18,6 +18,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             if (!HasOwnedDispatchProtocol(operation) || operation.Dispatch is not null || operation.PreparedRuntime is not null)
                 throw new InvalidOperationException("Only an uninvoked owned seed runtime may restore its original preparation.");
             RequireUninvokedRuntime(operation);
+            RequireOutsideNativeSaveSlot(new[] { Path.GetFullPath(evidenceDirectory) }, options.NativeSaveBinding);
             var restored = await CropTeacherSeedRuntimeRecovery.RestorePreparationAsync(http,
                 new(options.BackendUrl, operation.RuntimeDirectory, options.PortfolioJournalDirectory, evidenceDirectory,
                     options.RunId, options.ExecutorVersion, Text(operation.Record, "original_intent_sha256"))

@@ -2,6 +2,15 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-12T09:26:00+08:00 R2 同一 owner 跨日到收获联调
+
+- 本片续接 PR #565 草稿 `296c5be6`，仍属 [R2 第3步](FORMAL_FULL_TRAINING_READINESS_CN.md#3-接同一账本主循环和跨日恢复)。原 supporting 引擎增加明确 overnight 分类，复用原单次 NativeSleep 队列／回执、逐地块生长核、原保存指纹核、一次账本 marker、accepted index 和只读恢复。未另造执行器或生命周期算法，旧无保存绑定的 owner header 与水路格式保持。
+- 保存根／slot 进入本 owner 的原身份；保存前指纹在 admission 固定，跨日和实际 slot 指纹变化都核实后才提交。证据／journal／native 输出不得与 slot 重叠，避免写证据制造 SaveChanged。保存未完成保留原 native claim，只读补查，不能再睡一次。保留的保存报告及哈希参与 outcome／acceptance，历史恢复消费原报告，不拿后续保存覆盖历史事实；完整原生存档读回仍是后续责任。
+- 已从**同一个原始 owner 起点**联调浇水→回家→睡眠保存→回农场→收获并重新打开。11种新夜晚／收获 admission、native、保存报告、result、marker、acceptance 丢确认，以及保存未完成恢复均通过，实际 native 回调和每阶段账本提交各一次。未种布局的夜晚只记控制推进／未验证地块，不伪记作物完成；另覆盖错 slot、证据污染、重启换绑定和保存报告篡改。
+- 原 API 独立只读核对提出有效P2：恢复证据输出漏用新 slot 隔离核。原失败保留实际 `marker-lookup.json` 写进声明 slot 的证据，首两例 teardown 的非空目录错误遮蔽断言，不把它当精确红例诊断；夹具现会保留异常工件而不遮蔽原断言。修正只在显式绑定保存的 owner 复用原隔离检查，覆盖 pending／已接受头恢复及种子准备恢复／续接的外部输出；旧未绑定路径不变。两项反例核目录未创建、无 lookup、原保存指纹不变，再走合法恢复，各阶段不重提交。最初交接快照漏共享文件，14步退出后在同会话补上下文一次10步完成审查，零API错误；进程退出撤权、accepted-idle，未第三次调用或倒灌完整输出。
+- 初次相关203/203；审查修复后扩大到 owner 测试族，最终 **534/534**，零失败／跳过／构建警告／错误。新增20例使用明确声明的单日生长夹具，只证明接线／恢复，**不是原版生长参数或游戏托管原生 PASS**。首次路径／菜单事实装配不足及收获 helper 重建字段来源的夹具失败已修；生产资源守卫未放宽。无新游戏／服务器／训练，local-data不提交。本片尚待最终发布 head 的 CI／审查，不借旧 head 绿灯。
+- **唯一接续：** 本片验收发布后，接原 `Program.cs` 的同一 owner 生命周期／实际派发、原收获留存与销售结算、原日边界记录／保存读回，然后做一次有界 managed 原生流程。当前顶层仍 unmanaged，不能把这20例当已开训。L1冻结19/19、11/11，#339/#550开放、formal=false。[专题](refill-approach-native-trace.md#2026-11-12-original-owner-overnight-to-harvest)。下方08:35的正向／丢确认待补已由本片声明夹具补齐，其原生与主循环未完成范围保留。
+
 ## 2026-11-12T08:35:00+08:00 R2 同一 owner 收获阶段与跨日前置
 
 - #564 最终 `a251a5cc` 经 CI `43125520994` 全42步和同 head 无发现审查合入 `f786f9d6`；测试／main树 `bec82be7` 一致后清理自有发布引用。未提交 local-data，未启动游戏／服务器／训练。
