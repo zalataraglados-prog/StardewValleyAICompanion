@@ -1,5 +1,39 @@
 # Original Refill Native Trace
 
+## 2026-11-12 Original Whole-wave Production Closeout
+
+R2step3 managed terminal now consumes the SAME owner's accepted history through
+the ORIGINAL layout/daily-capacity/lifecycle/per-wave retention builders. Original
+acceptance/admission/proof/native hashes bind the actual source and result. Only
+sequence/path/hash references persist, not old scope/snapshot graphs. Pending,
+unknown native claims or unrestored heads cannot become production evidence.
+Original purchase scalar and planting/transfer artifact-map formats stay intact.
+Verified owned planting adapts to crop_actions without changing queue/receipt;
+acquisition/preparation precede the planting denominator, with no hidden filtering
+inside it. Whole-wave requirements remain at terminal, never on each action.
+
+Outputs require a fresh separate owner-owned directory outside inputs/reserved
+index/native-save slot. Partial evidence stays retained. Full-history validation
+runs at overall boundaries, not every request write; no new gameplay snapshot
+polling. Same-product-output regression842/842 passed in4m27; afterwards only the
+test fixture changed to one shared bounded golden per process and actual missing-
+day/copy-tamper negatives, final focused14/14 passed without repeating842. Zero
+failures/skips/build warnings/errors, overlapping counts not added. The original eight-day strawberry golden
+trace is declared adapter evidence, NOT an actually managed/native-game proof.
+Initial new-test internal hash-helper compile failure is retained, fixed using
+standard SHA256 rather than broader APIs or relaxed verification.
+
+Original peer Block32 delivered only22line read-only interface mapping, exited
+and withdrew grants; no code/test/native claims. Original shipping deposit,
+recurrence/terminal and day/save fingerprint APIs were crosschecked. Shipping is
+a recommendation, not current-plan selection. Pending bin value is NOT revenue;
+changed save hash is NOT persisted inventory/crop/currency content readback.
+NEXT: same-owner selected terminal/real settlement, saved content/fresh bridge
+continuity, actual same-loop recovery and bounded legal no-clearance A native.
+Other selected branches retain their own obligations, not ALL-unused-story gates.
+Prior8d9baaa3 CI43154315788 passed; this new head needs its own CI. PR567 stays DRAFT,
+L1frozen19/19,11/11, formal=false, local-data excluded, no game/server/train/cleanup.
+
 ## 2026-11-12 Original Safe-dialogue Control Outcome
 
 Previouscd347961 CI43150917338 succeeded, but PR567 remains DRAFT pending full

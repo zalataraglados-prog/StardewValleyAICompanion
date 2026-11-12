@@ -774,7 +774,11 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         {
             if (managedOwner is not null)
             {
-                stopReason = "crop_teacher_managed_terminal_requires_retention_sale_save_closeout";
+                var productionEvidence = await managedOwner.BuildProductionEvidenceAsync(
+                    Path.Combine(managedOwner.EvidenceDirectory, "production-terminal")).ConfigureAwait(false);
+                AppendProgress(options, "crop_teacher_managed_production_evidence", iteration, lastStateHash, string.Empty,
+                    "manifest=" + productionEvidence.ManifestPath + " retention_proofs=" + productionEvidence.OutputRetentionProofPaths.Length);
+                stopReason = "crop_teacher_managed_terminal_requires_original_sale_save_closeout";
                 break;
             }
             completedCropTeacherBoundaryStart =

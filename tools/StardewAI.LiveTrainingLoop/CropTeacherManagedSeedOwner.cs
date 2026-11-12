@@ -93,6 +93,7 @@ public sealed partial class CropTeacherManagedSeedOwner : IAsyncDisposable
     private string lastAcceptedHash;
     private string? lastAcceptedPath;
     private CropTeacherManagedSeedOperation? lastAcceptedOperation;
+    private readonly List<(int Sequence, string Path, string Hash)> acceptedHistory = [];
     private Action? liveHeadGuard;
     private bool disposed;
     private bool faulted;
