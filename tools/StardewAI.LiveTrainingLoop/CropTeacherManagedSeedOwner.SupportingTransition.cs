@@ -11,6 +11,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         Path.Combine(operation.RuntimeDirectory, NativeSupportingRole(operation) + "-intent.json");
 
     private JsonObject CreateSupportingTransitionIntent(JsonObject record, ICropTeacherSupportingTransition? scope) =>
+        record["operation_kind"]?.GetValue<string>() == "saved_content_readback" ? CreateSavedReadbackIntent(record, (CropTeacherNativeSavedContentReadback)scope!) :
         record["operation_kind"]?.GetValue<string>() == "terminal_shipping" ? CreateOriginalTerminalIntent(record) :
         record["operation_kind"]?.GetValue<string>() == "control_recovery" ? CreateOriginalControlIntent(record) :
         record["operation_kind"]?.GetValue<string>() == "overnight_control" ? CreateOriginalOvernightIntent(record) :
@@ -29,7 +30,13 @@ public sealed partial class CropTeacherManagedSeedOwner
 
     private void ValidateSupportingTransition(CropTeacherManagedSeedOperation operation)
     {
-        if (operation.IsTerminalShipping)
+        if (operation.IsSavedContentReadback)
+        {
+            operation.SavedReadback!.ValidateInputsUnchanged();
+            if (SupportingTransitionIntentHash(operation.Record, operation.SavedReadback) != Text(operation.Record, "original_intent_sha256"))
+                throw new InvalidDataException("Managed saved readback changed its admitted original intent.");
+        }
+        else if (operation.IsTerminalShipping)
         {
             operation.TerminalStart!.ValidateInputsUnchanged();
             operation.Terminal?.ValidateInputsUnchanged();
@@ -109,7 +116,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             // Local success still requires the original durable journal and full replay.
             var recovered = await ReadSupportingTransitionBoundaryAsync(http, operation, root, post).ConfigureAwait(false);
             await AdvanceAsync(operation, recovered.Evidence, recovered.SnapshotPath, recovered.Validate,
-                operation.IsTerminalShipping ? "live_terminal_shipping" : operation.IsControlRecovery ? "live_control_recovery" : operation.IsOvernight ? "live_overnight_control" : operation.IsHarvest ? "live_crop_harvest" : watering ? "live_watering_maintenance" : "live_supporting_route").ConfigureAwait(false);
+                operation.IsSavedContentReadback ? "live_saved_content_readback" : operation.IsTerminalShipping ? "live_terminal_shipping" : operation.IsControlRecovery ? "live_control_recovery" : operation.IsOvernight ? "live_overnight_control" : operation.IsHarvest ? "live_crop_harvest" : watering ? "live_watering_maintenance" : "live_supporting_route").ConfigureAwait(false);
         }
         finally { gate.Release(); }
     }

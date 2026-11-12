@@ -7,6 +7,12 @@ public sealed partial class CropTeacherManagedSeedOwner
     private CropTeacherManagedSeedOperation OpenIndexedOperation(JsonObject record, string path)
     {
         var kind = record["operation_kind"]?.GetValue<string>();
+        if (kind == "saved_content_readback")
+        {
+            var readback = new CropTeacherManagedSeedOperation(this, record, path, null, savedReadback: OpenSavedReadback(record));
+            ValidateSupportingTransition(readback);
+            return readback;
+        }
         if (kind == "terminal_shipping")
         {
             var terminal = new CropTeacherManagedSeedOperation(this, record, path, null, terminalStart: OpenOriginalTerminalStart(record));
@@ -89,6 +95,7 @@ public sealed partial class CropTeacherManagedSeedOwner
 
     private void ValidateAcceptedPhaseEvidence(CropTeacherManagedSeedOperation operation, JsonObject accepted)
     {
+        ValidateSavedReadbackEvidence(operation, accepted);
         if (operation.IsSupportingTransition)
             ValidateSupportingTransitionAcceptance(operation, accepted);
         else if (operation.IsLifecycle)

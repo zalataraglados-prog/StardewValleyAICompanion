@@ -4,7 +4,8 @@ namespace StardewAI.LiveTrainingLoop;
 
 public sealed partial class CropTeacherManagedSeedOwner
 {
-    private static string InvocationSchema(CropTeacherManagedSeedOperation operation) => operation.IsTerminalShipping
+    private static string InvocationSchema(CropTeacherManagedSeedOperation operation) => operation.IsSavedContentReadback
+        ? "crop_teacher_managed_saved_readback_start.v1" : operation.IsTerminalShipping
         ? "crop_teacher_managed_terminal_start.v1" : operation.IsControlRecovery
         ? "crop_teacher_managed_control_start.v1" : operation.IsOvernight
         ? "crop_teacher_managed_overnight_start.v1" : operation.IsHarvest

@@ -21,8 +21,8 @@ public sealed partial class CropTeacherManagedSeedOwner
             throw new IOException((watering ? "Original watering" : "Original route") + " requires new native receipt/snapshot paths before dispatch.");
     }
 
-    private static string NativeSupportingRole(CropTeacherManagedSeedOperation operation) => operation.IsTerminalShipping ? "terminal" : operation.IsControlRecovery ? "control" : operation.IsOvernight ? "overnight" : operation.IsHarvest ? "harvest" : operation.IsWateringMaintenance ? "maintenance" : "route";
-    private static string SupportingOperationTag(CropTeacherManagedSeedOperation operation) => operation.IsTerminalShipping ? "terminal_shipping" : operation.IsControlRecovery ? "control_recovery" : operation.IsOvernight ? "overnight_control" : operation.IsHarvest ? "crop_harvest" :
+    private static string NativeSupportingRole(CropTeacherManagedSeedOperation operation) => operation.IsSavedContentReadback ? "saved-readback" : operation.IsTerminalShipping ? "terminal" : operation.IsControlRecovery ? "control" : operation.IsOvernight ? "overnight" : operation.IsHarvest ? "harvest" : operation.IsWateringMaintenance ? "maintenance" : "route";
+    private static string SupportingOperationTag(CropTeacherManagedSeedOperation operation) => operation.IsSavedContentReadback ? "saved_content_readback" : operation.IsTerminalShipping ? "terminal_shipping" : operation.IsControlRecovery ? "control_recovery" : operation.IsOvernight ? "overnight_control" : operation.IsHarvest ? "crop_harvest" :
         operation.IsWateringMaintenance ? "watering_maintenance" : "supporting_route";
     private static bool IsSupportingKind(CropTeacherManagedSeedOperation operation, CropTeacherSupportingOperationKind kind) => kind switch
     {
@@ -32,6 +32,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         CropTeacherSupportingOperationKind.Overnight => operation.IsOvernight,
         CropTeacherSupportingOperationKind.Control => operation.IsControlRecovery,
         CropTeacherSupportingOperationKind.Terminal => operation.IsTerminalShipping,
+        CropTeacherSupportingOperationKind.SavedReadback => operation.IsSavedContentReadback,
         _ => false
     };
     private static string NativeSupportingPath(CropTeacherManagedSeedOperation operation, string suffix) =>

@@ -1,5 +1,44 @@
 # Original Refill Native Trace
 
+## 2026-11-12 Same-owner Saved Readback And Retained Reopen
+
+R2step3 now has an explicit saved_content_readback owner operation. Admission
+binds run/current accepted source+ledger/native save slot and the EXACT completed
+save report of the accepted overnight (or preceding verified readback of that
+same saved boundary). An identical copied foreign report/ledger is not authority.
+It reuses the original supporting rebind, one marker, original full ledger read,
+index and read-only lost-ack recovery. There is NO native queue/claim/result for
+this observed load, no movement fallback, crop progress or Teacher/formal credit.
+The original production trace pins load evidence but never invents a production
+action for it. Keep original production/settlement certificates at their native
+heads; do not rebuild them against reset tick/current readback head.
+
+Original peer6d729342->2b5d69c4 adds only retained-owner helper/tests. It requires
+existing regular header/original inputs, exact current run/executor/backend/
+journal/slot, original opt-in flags, header immutability and original OpenAsync
+index/lease. It neither installs another owner nor copies a current ledger into
+new initial authority. Peer focused8/8; controller focused17/17 and same-product
+related131/131 (1m29s), zero fail/skip/build warning/error; counts overlap. Includes
+reopen, admitted restart, marker/acceptance lost acknowledgements, unknown claim
+no recommit, foreign owner inputs, fabricated progress and native-entry rejection.
+Evidence remains declared/in-process HTTP, not actual native reload/full managed.
+
+The first peer invocation correctly stopped on stale private AGENTS blocks36/34,
+with no source/tests. Controller preserved/hash-verified the old worktree file
+and made both private instructions reference the CURRENT lifecycle/package,
+then one original-session correction succeeded. Grants withdrawn/accepted-idle;
+authorization retained, no provider fallback, API dollar cost unknown.
+
+NEXT main entry explicitly reopens this SAME owner; bind existing actual-process
+capture/bridge/log/save fingerprints and original snapshot ingest, then one
+verified readback/recovery. Retain terminal certificates; do not reinterpret old
+24tick/native guards or legacy resume fork. Explicit backend stateHash must be
+checked: a previous process's larger GameTick in latest is not fresh-head proof.
+Then actual same-loop positive/recovery and bounded legal no-clearance A. The
+helper/capture are still NOT main-wired; semantic-save/fresh-head stop remains.
+L1frozen19/19,11/11/formalfalse/DRAFT567/#339/#550 open/local-data excluded.
+No game/server/train/deploy/cleanup; E temp CPU1heap1GiB, no unchanged large matrix.
+
 ## 2026-11-12 Saved Resource And Actual Reload Consumers
 
 The new Bootstrap leaf reuses ORIGINAL full persistent-resource projection and

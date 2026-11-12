@@ -2,6 +2,13 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-12T16:16:00+08:00 R2 同一 owner 保存读回与原运行重开组件
+
+- 仍沿 11月11日更新的 R2 第3步，前片 `049bdc85` 的 CI `43177385955` 已成功，PR #567 保持草稿。本片把已核的读回 scope 注册为独立 `saved_content_readback`：复用原 admission、单次 supporting rebind marker、索引、完整账本读回和只读恢复，不伪造 queue、native claim／result，也不进入移动执行器。run、当前 accepted source／ledger、隔离槽及原保存报告必须绑定本 owner 已接受的 overnight；复制同内容的外来报告或账本也拒绝。保存源与当前 volatile 头仍分别核验，旧资源／执行器／24tick 核未放宽。
+- 原 API 同会话两文件 `6d729342` 保存并集成 `2b5d69c4`，聚焦8/8；新 retained-owner helper 只读取原 header／初始输入并调用原 OpenAsync／索引／独占 lease，不重新安装或复制账本，要求当前 run／executor／backend／journal／slot 一致并跨 open 核 header 未变。首次调用被我漏更新的私有 AGENTS 旧 Block36／34 范围正确拦住，无代码／测试；两处说明已改为引用当前 lifecycle／任务包，同会话唯一修正成功，原文件保存并核哈希。进程退出撤权、accepted-idle、授权仍保留，未换 provider／内部代理；美元成本未知。
+- 控制端最终聚焦 **17/17**，同一构建产物相关 **131/131**、1分29秒，零失败／跳过／构建警告／错误，重叠不加。含原睡眠后读回、admission 重开、marker／acceptance 丢确认、未知 rebind claim 不重复提交、外来 run／ledger／保存报告拒绝及拒入 native 派发／伪造作物进度。原生产 trace 保留读回输入证据但不把 load 编造为原生产动作；重载后的新头不用于冒充原终局 native 头。均为声明／进程内 HTTP，**未启动实际游戏／重载／训练**。E 临时目录、CPU1／heap1GiB，无未变大矩阵重跑或清理。
+- **唯一接续：** 在主入口显式打开此原 owner，接已有实际进程／桥／日志／保存指纹采集和原 snapshot ingest，再走本片单次读回与恢复；保留原终局证书，不在重载后重算整波来适配 reset tick，不放行旧 legacy resume fork。需核 backend 当前显式 stateHash，不能把旧较大 GameTick 的 latest 当 fresh head。随后实际同一主循环正向／恢复及 R2 第4步有界合法无清障 A。当前 helper／capture 尚未接主入口，主循环仍停在 semantic-save/fresh-head；L1冻结19/19、11/11，formal=false，#339/#550开放，local-data不提交，无游戏／服务器／部署。
+
 ## 2026-11-12T15:33:00+08:00 R2 保存内容与实际重载来源消费者
 
 - 前片 `87935184` 的 CI `43171332787` 已成功，仍沿 R2 第3步、PR #567 草稿。新内容叶复用原完整持久资源 projector／未知字段保护和原 supporting rebind，显式核库存／作物／原币种／年月季日可读、原存档／玩家／游戏身份及账本 before source。独立内容相同只能标 SnapshotResourceContentMatches，不能标实际重载／保存语义或训练成功。

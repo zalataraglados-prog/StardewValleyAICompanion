@@ -82,6 +82,13 @@ public sealed partial class CropTeacherManagedSeedOwner
                 var inputs = record["input_artifact_hashes"]!.Deserialize<Dictionary<string, string>>(JsonOptions)!;
                 foreach (var (input, expected) in inputs) Pin(input, expected);
                 previous = hash;
+                if (kind == "saved_content_readback")
+                {
+                    Reference("original_intent_sha256", Path.Combine(runtime, "saved-readback-intent.json"));
+                    Reference("reload_observation_sha256", StoredPath(record, "reload_observation_path"));
+                    // An observed load is not a native production action or a fabricated queue.
+                    continue;
+                }
                 if (kind == "lifecycle" || accepted["seed_boundary_kind"]?.GetValue<string>() == "controller_stop_no_native_dispatch") continue;
                 var role = kind switch
                 {

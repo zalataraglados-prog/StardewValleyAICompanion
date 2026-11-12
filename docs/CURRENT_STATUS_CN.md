@@ -2,6 +2,8 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+> **2026-11-12T16:16:00+08:00 R2 原 owner 保存读回接线组件。** 新独立读回角色复用原 admission／单 marker／索引／只读恢复，绑定实际 accepted overnight 报告和当前 run／source／ledger／slot，不伪造 native 队列或作物／Teacher credit。原 API 两文件6d729342→2b5d69c4实现原 owner 重开 helper，8/8；控制端聚焦17/17、同产物相关131/131（1分29秒），零失败／跳过／构建警告／错误，均声明／HTTP而非新游戏重载。下一步主入口显式 retained owner＋实际 capture／原 ingest／fresh head，再有界A；旧24tick／legacy拒绝不变、原终局证书保留不在reset tick后重算。前片049bdc85 CI43177385955成功，本片另验；PR567草稿、L1冻结、formal=false、local-data不提交。[接续](CURRENT_WORK_CN.md#2026-11-12t1616000800-r2-同一-owner-保存读回与原运行重开组件)。
+
 > **2026-11-12T15:33:00+08:00 R2 保存内容／重载来源组件。** 原持久资源比较／rebind 已复用，独立内容叶不授原生／保存语义标签；新消费者另核原保存指纹、新SMAPI进程／日志、bridge v2完整事件链和加载后发布的 full 快照。保存时快照与当前accepted头分别核验，未改旧资源／24tick守卫。聚焦24/24、相关60/60，声明／合成来源而非新游戏重载PASS；实际只读采集函数尚未接主入口。下一步同一 owner 登记／marker／恢复和 retained-owner 主入口，再实际重载／有界A。前片87935184 CI43171332787成功，本片另验；PR567草稿、L1冻结、formal=false、local-data不提交。[接续](CURRENT_WORK_CN.md#2026-11-12t1533000800-r2-保存内容与实际重载来源消费者)。
 
 > **2026-11-12T14:47:00+08:00 R2 原日结终局接线。** 入箱后复用原回家／等待／睡眠和同一 owner，以原 recurrence／terminal 验证器消费完整已接受后缀，不另算收益；新消费者已对准旧 `supporting_route_to_sleep`，旧执行器／核不改。末态账本绑定真实源；聚焦16/16、源码守卫42/42、同产物相关1059/1059，零失败／跳过／构建警告／错误，重叠不相加，均仍声明／接线而非新原生 PASS。原API原4/8身份夹具阻塞交付保留，控制端补正；前片ca6cc678 CI43167187296成功。本片主入口仍停在保存内容／fresh head／恢复收尾，然后才有界A；PR567草稿、L1冻结、formal=false、local-data不提交。[接续](CURRENT_WORK_CN.md#2026-11-12t1447000800-r2-原回家睡眠与终局收入证明接线)。

@@ -14,6 +14,8 @@ static partial class Program
         LiveTrainingOptions options, int iteration, CropTeacherManagedSeedOwner owner, CropTeacherManagedSeedOperation operation,
         string queuePath, Func<Task<JsonObject>> executeOriginal)
     {
+        if (operation.IsSavedContentReadback)
+            throw new InvalidOperationException("Saved-content readback is an observed load/rebind, not a native action queue.");
         if (operation.IsSupportingTransition)
         {
             var kind = operation.IsTerminalShipping ? CropTeacherSupportingOperationKind.Terminal : operation.IsControlRecovery ? CropTeacherSupportingOperationKind.Control : operation.IsOvernight ? CropTeacherSupportingOperationKind.Overnight : operation.IsHarvest
