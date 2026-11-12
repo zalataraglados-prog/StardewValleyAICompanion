@@ -54,6 +54,12 @@ internal static class MoneyRevenueResourceNeutralTerminalRouteVerifier
             requireMovement: true);
     }
 
+    internal static MoneyRevenueResourceNeutralTerminalRouteVerification VerifyRecoveryControl(
+        SnapshotEnvelope start, MoneyRevenueTerminalQueueTransitionProof proof) => VerifyCore(
+            start, new[] { proof }, identity: null,
+            new HashSet<string>(new[] { "executor.close_menu" }, StringComparer.Ordinal),
+            targetLocation: ReadPlayerLocation(start), requireMovement: false);
+
     private static MoneyRevenueResourceNeutralTerminalRouteVerification
         VerifyCore(
             SnapshotEnvelope start,
