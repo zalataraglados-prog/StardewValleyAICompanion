@@ -2,6 +2,15 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-12T20:16:00+08:00 R2 缓存接续实跑通过与整地接近首断点
+
+- `19773b15` 已推送，远端CI `43214258647` 已成功。新隔离 `managed-f-20261112-2003` 走原托管／Product入口，iteration13、15、17三个地图切换后的原等待均被同一owner接受，未再出现旧accepted hash的404；不增缓存／重采全量快照或修改原资源／时间核。共16个owner acceptance，其中13条计入verified action，3个短控制等待仍不计作物／策略credit。
+- 原链正常完成6次购种和3段返回路线，最后原after-snapshot-0017确认为Farm、day0、tick11969、hash `9764670a8e728239ba397c8a11cc2ae02807a09fca6ec7a755ac0c9845e0126d`。这次“已回农场”有原快照依据，不沿用E仅到Town的错误口头说法。
+- iteration18首断点在原`PrepareSite`保护：已有`crop-teacher-site-approach-0018-compiled-queue.json`只有一个pending的`executor.move_to_tile`、无blocker，但尚未绑定托管资源／owner消费者，故**派发前拒绝**。不是原移动执行器缺失，也不是此步已执行耕地或清障；不因queue pending而直接放行、不预先修改存档／地块。
+- 游戏／Product停止后，原`resume-crop-managed-owner`在原backend上只读恢复同一owner成功，读回相同accepted hash；报告`native_dispatch_performed=false`、保存内容／fresh重载／complete／formal标记均false。此为当前实际accepted链恢复，**不是新进程游戏重载、销售保存或完整A通过**。最后backend也按记录PID／命令行停止，4个归属进程均已退出，留档未清理。
+- **唯一下一步：** 按R2第3/4步，先把原场地接近`move_to_tile`的原model／编译／native回执／目标站位及持久资源不变验证接入同一owner与原rebind／恢复；复用原移动执行器和比较核，不能把它生搬为只收单connector的原跨地图route，也不能把已在Farm误当目标站位已到。随后对所选原整地／耕地或清障的实际资源效果接线，再继续播种／维护／收获／销售／原生保存／新进程重载与完整只读恢复。未选全剧情／全清障不加局部门。
+- 聚焦30/30、相关156/157及原File.Move失败独立1/1、最终独立拒绝反例＋原失败项6/6均按前节范围登记，重叠不相加。L1冻结19/19、11/11、formal=false，PR567草稿，#339/#550开放，local-data不提交；原API本块权限失败退出后未再调用。周额度最新79%USED，接近约定80%USED，安全收尾不启动下一轮长测；目标仍未完成，后续从本条继续。
+
 ## 2026-11-12T20:00:00+08:00 R2 真实购种接续与有界快照缓存
 
 - `1d34b008` 的 CI `43208213320` 已成功。新 E 隔离运行 `managed-e-20261112-1928` 实际接受4次原等待、6次花椰菜购种和1段返回路线，共11条 verified action。首次农场教程资源断点已越过；**返回路线仅到 Town，不是已经回到 Farm**，先前口头“返回农场完成”的表述撤回。尚无播种、跨日、销售／保存重载或完整A通过。

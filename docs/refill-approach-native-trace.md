@@ -1,5 +1,29 @@
 # Original Refill Native Trace
 
+## 2026-11-12 Native F Retained-Head Recovery And Next Site Boundary
+
+19773b15 exactCI43214258647 succeeded. Fresh native F accepted the original
+post-warp waits at13/15/17; old accepted-hash404 no longer blocks. Same owner
+has16 accepted operations/13 verified actions;3 short controls get no crop/policy
+credit. Original after17 is Farm/day0/tick11969/hash
+9764670a8e728239ba397c8a11cc2ae02807a09fca6ec7a755ac0c9845e0126d.
+
+Iteration18 rejects BEFORE dispatch: existing site-approach queue contains one
+pending executor.move_to_tile/no blockers, but has no managed resource/owner
+binding. Next adapt THIS original approach consumer/target stand/persistent
+neutral result to the same owner/rebind/recovery. Reuse original move executor
+and resource kernel; do not relax old single-connector route preparation or
+confuse already-in-Farm with reached stand. Then bind selected actual till/clear
+effects before planting and the remaining production/sale/save/new-game-load.
+
+After stopping game/product, original resume-crop-managed-owner reopens this
+actual accepted chain and reads the same hash without native dispatch. Saved
+content/fresh reload/complete/formal remainfalse: not a new game-process reload,
+native saved-sale closeout or full A pass. All4 owned processes now stopped by
+recorded PID/command identity; no artifact cleanup. L1frozen/PR567DRAFT, no
+local-data committed. Latest79%USED is near the agreed80% boundary; preserve this
+exact next step and incomplete objective rather than starting another long run.
+
 ## 2026-11-12 Retained Supporting Boundaries And Bounded Cache
 
 New native E accepted4 waits,6 seed purchases and1 return-route segment (11
