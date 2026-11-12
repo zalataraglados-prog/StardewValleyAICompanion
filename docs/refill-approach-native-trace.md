@@ -1,5 +1,41 @@
 # Original Refill Native Trace
 
+## 2026-11-12 Owned Native-control Observation
+
+This remains R2 step3, not another executor or supporting-operation kind. The
+original route preparation gains a default-false nativeControlObservation opt-in
+for the original TryBuildNativeControlSettleQueueAsync producer. It replays the
+existing compiler and uses the ALREADY supported exact observation proof under
+supporting_route_to_sleep: original candidate/30ticks/receipt, same day/position,
+unchanged persistent resources. The verified hop is the actual observed location;
+the original home remains the final target. Waiting at Farm does not reach home,
+complete crops or create Teacher labels.
+
+The original API peer delivered only two owned files (9428a22f ->13e682cd), final
+14/14 after a name-collision and accepted-audit-reason correction. Controller
+binds the opt-in in the existing owner admission/intent and compiles priority waits
+from its accepted head, then reuses the same original native claim/executor/marker
+and read-only recovery. Old route intent keys and defaults remain unchanged when
+the opt-in is absent. No overwritten artifacts, parallel pending phase or unknown
+native redispatch is permitted. Related focused39/39 passed with zero failures,
+skips/build warnings/errors; broader affected regression on the same built outputs
+passed760/760, zero failures/skips. Counts overlap and are not added.
+These are declared/HTTP tests, NOT new native-game evidence. Initial controller
+fixture import failures are retained rather than relabeled.
+
+CI43144541959 for the earlier draftc2778802 had Backend2305 pass/1 failure: a
+source guard searched for the pre-wrapper execution statement and indexed -1.
+The guard now checks validation/execution/settlement ordering for BOTH paths and
+the managed no-double-settlement branch. Final head requires fresh CI.
+
+PR567 stays DRAFT. Next bind selected original story/dialogue/late-day and actual
+site-preparation effects, then terminal/replan, whole-wave retention, selected sale,
+day-boundary/native saved-state readback and fresh-bridge/accepted-head continuity.
+Only afterward verify the actual same main-loop positive/recovery path and a
+bounded managed native run. None of these unfinished requirements is excluded or
+claimed complete; L1 remains frozen, formal=false, issues339/550 open, local-data
+uncommitted. No game/server/train was started for this block.
+
 ## 2026-11-12 Managed Main-loop Entry Draft
 
 PR565 accepted finalfced4ab6 with CI43135815619 all42/clean same-head review,

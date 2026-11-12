@@ -561,18 +561,27 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
     var inventoryCapacityRecoveryControlActive = false;
     if (options.UseDailyPlan)
     {
-        var settlePrefix = Path.Combine(
-            options.SnapshotDir,
-            $"native-control-settle-{{0}}-{iteration:D4}.json");
-        nativeControlSettle = await TryBuildNativeControlSettleQueueAsync(
-            options,
-            snapshotJson,
-            lastStateHash,
-            snapshotPath,
-            string.Format(settlePrefix, "preference"),
-            string.Format(settlePrefix, "compiled-plan"),
-            string.Format(settlePrefix, "ranking"),
-            string.Format(settlePrefix, "compiled-queue"));
+        if (cropTeacherManagedOwner.Current is { } controlOwner)
+        {
+            var managedSettle = await PrepareCropTeacherOwnedNativeControlSettleAsync(options, iteration, controlOwner);
+            nativeControlSettle = managedSettle?.Build;
+            cropManagedOperationForExecution = managedSettle?.Operation;
+        }
+        else
+        {
+            var settlePrefix = Path.Combine(
+                options.SnapshotDir,
+                $"native-control-settle-{{0}}-{iteration:D4}.json");
+            nativeControlSettle = await TryBuildNativeControlSettleQueueAsync(
+                options,
+                snapshotJson,
+                lastStateHash,
+                snapshotPath,
+                string.Format(settlePrefix, "preference"),
+                string.Format(settlePrefix, "compiled-plan"),
+                string.Format(settlePrefix, "ranking"),
+                string.Format(settlePrefix, "compiled-queue"));
+        }
     }
     JsonObject queue;
     if (nativeControlSettle?.Queue is not null)
@@ -585,9 +594,10 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         decisionRankingPath = nativeControlSettle.RankingPath;
         decisionCompiledQueuePath = nativeControlSettle.QueuePath;
         decisionSnapshotPath = nativeControlSettle.SnapshotPath;
+        decisionSourceStateHash = ReadString(queue, "state_hash");
         selectedCandidateId = nativeControlSettle.SelectedCandidateId;
         selectedQueueIndex = 0;
-        useDailyPlanDecisionLease = true;
+        useDailyPlanDecisionLease = cropManagedOperationForExecution is null;
         stageOneCollectionControlQueueCount++;
         AppendProgress(
             options,

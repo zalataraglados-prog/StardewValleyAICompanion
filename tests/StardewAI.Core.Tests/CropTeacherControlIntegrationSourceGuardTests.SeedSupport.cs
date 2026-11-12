@@ -23,10 +23,20 @@ public sealed partial class CropTeacherControlIntegrationSourceGuardTests
     {
         var source = Read("tools", "StardewAI.LiveTrainingLoop", "Program.cs");
         var validate = source.IndexOf("cropSeedSupportForExecution.ValidateDispatchQueue(queuePath)", StringComparison.Ordinal);
-        var execute = source.IndexOf("var execution = options.UseRuntimeTestHarnessExecutor", StringComparison.Ordinal);
+        var execute = source.IndexOf("var execution = cropManagedOperationForExecution is null", StringComparison.Ordinal);
+        Assert.True(validate >= 0 && execute > validate);
         var settle = source.IndexOf("await cropSeedSupportForExecution.CompleteAsync(", execute, StringComparison.Ordinal);
+        Assert.True(settle > execute);
         var feedback = source.IndexOf("var feedbackAvailable =", settle, StringComparison.Ordinal);
         Assert.True(validate >= 0 && execute > validate && settle > execute && feedback > settle);
         Assert.Contains("ReadString(execution, \"after_snapshot_path\"), selectedCandidateId)", source, StringComparison.Ordinal);
+        var managed = Read("tools", "StardewAI.LiveTrainingLoop", "Program.CropTeacherManagedLoop.Execution.cs");
+        var managedValidate = managed.IndexOf("runtime.ValidateDispatchQueue(queuePath)", StringComparison.Ordinal);
+        var managedExecute = managed.IndexOf("await executeOriginal()", StringComparison.Ordinal);
+        var managedSettle = managed.IndexOf("await runtime.CompleteAsync(", StringComparison.Ordinal);
+        var managedAccept = managed.IndexOf("await owner.AcceptLiveAsync(", StringComparison.Ordinal);
+        Assert.True(managedValidate >= 0 && managedExecute > managedValidate &&
+            managedSettle > managedExecute && managedAccept > managedSettle);
+        Assert.Contains("cropSeedSupportForExecution is not null && cropManagedOperationForExecution is null", source, StringComparison.Ordinal);
     }
 }

@@ -6,7 +6,7 @@ using StardewAI.GoalConditionedBootstrap;
 namespace StardewAI.LiveTrainingLoop;
 
 public sealed record CropTeacherOriginalRouteCompilation(string Kind, string ModelPlanPath, string QueuePath,
-    string ReceiptPath, string AfterSnapshotPath, string RuntimeDirectory);
+    string ReceiptPath, string AfterSnapshotPath, string RuntimeDirectory, bool NativeControlObservation = false);
 
 public sealed partial class CropTeacherManagedSeedOwner
 {
@@ -42,6 +42,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         var record = CreateAdmissionRecord(headSnapshotPath, headLedgerPath, value.RuntimeDirectory);
         record["operation_kind"] = "supporting_route";
         record["route_execution_protocol"] = "original_loop.v1";
+        if (value.NativeControlObservation) record["route_native_control_observation"] = true;
         record["original_model_plan_path"] = Path.GetFullPath(value.ModelPlanPath);
         record["route_active_commitment_ids"] = JsonSerializer.SerializeToNode(ActiveCoveredCommitments(), JsonOptions);
         var transition = new MoneyRevenueCropNativeLifecycleTransitionRequest(value.Kind, 0, Path.GetFullPath(value.QueuePath), headSnapshotPath,
@@ -74,9 +75,12 @@ public sealed partial class CropTeacherManagedSeedOwner
         var active = record["route_active_commitment_ids"]?.Deserialize<string[]>(JsonOptions);
         if (active is null || !active.SequenceEqual(ActiveCoveredCommitments(), StringComparer.Ordinal))
             throw new InvalidDataException("Original route active coverage differs from its retained original ledger/plan.");
+        var nativeControl = record["route_native_control_observation"];
+        if (nativeControl is not null && nativeControl.GetValue<bool>() != true)
+            throw new InvalidDataException("Original route control observation must be explicitly enabled or absent.");
         var start = CropTeacherSupportingRoute.Preparation.Open(plan.RequestPath, StoredPath(record, "before_snapshot_path"), headLedgerPath,
             active, Text(record, "support_step_id"), transition.TransitionKind,
-            StoredPath(record, "original_model_plan_path"), transition.QueuePath);
+            StoredPath(record, "original_model_plan_path"), transition.QueuePath, nativeControlObservation: nativeControl is not null);
         var expected = frontierHashes.TryGetValue(headSnapshotPath, out var hash) ? hash : fixedHashes[headSnapshotPath];
         if (start.InputHashes[start.SourcePath] != expected ||
             requireNativeIdentity && (transition.TotalDay != start.TotalDay || transition.SelectedCandidateId != start.CandidateId))
@@ -92,16 +96,22 @@ public sealed partial class CropTeacherManagedSeedOwner
         record["route_transition"]?.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)
         ?? throw new InvalidDataException("Original route transition is missing.");
 
-    private JsonObject CreateOriginalRouteIntent(JsonObject record) => new()
+    private JsonObject CreateOriginalRouteIntent(JsonObject record)
     {
-        ["schema_version"] = "crop_teacher_owned_route_execution.v1", ["run_id"] = options.RunId,
-        ["executor_version"] = options.ExecutorVersion, ["backend_url"] = options.BackendUrl,
-        ["runtime_directory"] = StoredPath(record, "runtime_directory"), ["support_step_id"] = Text(record, "support_step_id"),
-        ["original_model_plan_path"] = StoredPath(record, "original_model_plan_path"),
-        ["route_active_commitment_ids"] = record["route_active_commitment_ids"]!.DeepClone(),
-        ["route_transition"] = record["route_transition"]!.DeepClone(), ["input_artifact_hashes"] = record["input_artifact_hashes"]!.DeepClone(),
-        ["native_crop_lifecycle_verified"] = false, ["teacher_preference_label_eligible"] = false,
-        ["formal_product_training_authorized"] = false
-    };
+        var intent = new JsonObject
+        {
+            ["schema_version"] = "crop_teacher_owned_route_execution.v1", ["run_id"] = options.RunId,
+            ["executor_version"] = options.ExecutorVersion, ["backend_url"] = options.BackendUrl,
+            ["runtime_directory"] = StoredPath(record, "runtime_directory"), ["support_step_id"] = Text(record, "support_step_id"),
+            ["original_model_plan_path"] = StoredPath(record, "original_model_plan_path"),
+            ["route_active_commitment_ids"] = record["route_active_commitment_ids"]!.DeepClone(),
+            ["route_transition"] = record["route_transition"]!.DeepClone(), ["input_artifact_hashes"] = record["input_artifact_hashes"]!.DeepClone(),
+            ["native_crop_lifecycle_verified"] = false, ["teacher_preference_label_eligible"] = false,
+            ["formal_product_training_authorized"] = false
+        };
+        if (record["route_native_control_observation"] is not null)
+            intent["route_native_control_observation"] = record["route_native_control_observation"]!.DeepClone();
+        return intent;
+    }
 
 }

@@ -2,6 +2,15 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-12T11:22:00+08:00 R2 原控制等待接同一 owner
+
+- 沿原 R2 第3步接续，不重开冻结 L1。原 API 同会话在限定两文件交付 `9428a22f`，控制端审查集成 `13e682cd`；新增 preparation 显式 `nativeControlObservation=false`，只有 opt-in 才接原 `TryBuildNativeControlSettleQueueAsync` 的实际计划／编译队列。默认单连接器路径完全保留，没有第二套执行器或 supporting kind。
+- 控制等待复用旧 `supporting_route_to_sleep` 的精确观察证明：原候选、30帧、原队列重放、回执、同日／原站位和持久资源不变。hop 是实际等待位置，最终目标仍是原家位置；在 Farm 等待不能宣称已回家，更不能记作物完成或 Teacher 标签。owner 的可选标记写入原意图哈希，重启仍用相同模式。
+- 主循环的托管优先控制改从同一 owner 已接受头编译／登记，再走原 route native claim、原执行核心、一次 marker 和只读恢复；不借通用派发／决策租约绕开 owner。已存在工件不覆盖，pending 不再编译，不明 native 结果不重派发。未绑定的其他优先控制仍由原中央守卫在派发前停止留证。
+- 聚焦39/39、零失败／跳过／构建警告／错误，覆盖实际执行入口的 HTTP 夹具、四种丢确认、未知 claim、同一 owner 重开和不误记回家。复用同一已构建产物扩大相关回归，最终760/760、零失败／跳过；两组有重叠，不相加。原 API 最终14/14，先前变量重名及 accepted-audit reason 误读已修；控制端两次夹具 using 编译失败保留，均非原生失败。
+- 草稿首 head `c2778802` 的 CI `43144541959` 在 Backend 2305通过／1失败：旧源码结构测试仍搜索重构前执行语句，索引 -1 抛异常。现同时核旧派发与新 owner 的校验→执行→结算顺序及 managed 不重复结算，聚焦已通过；最终 head 必须重跑 CI，不能借父 head 绿灯。
+- **唯一接续与草稿退出不缩减：** 接所选原剧情／对话／晚间恢复及 site preparation 的实际控制／资源结果，随后终局／replan、整波留存、所选销售、日边界／原生保存读回与 fresh bridge／accepted head 连续性，再同一实际入口正向／恢复及有界 managed 原生验收。当前只是控制等待接线通过，未新开游戏／服务器／训练；PR #567 继续 DRAFT，formal=false，#339/#550开放，local-data不提交。[专题](refill-approach-native-trace.md#2026-11-12-owned-native-control-observation)。
+
 ## 2026-11-12T10:50:00+08:00 R2 真实安装与主循环入口草稿
 
 - #565 最终 `fced4ab6` 由 CI `43135815619` 全42步及同 head 无发现审查合入 `b2c5a8fb`，测试／main树 `8a6814ce` 一致后才清理发布引用。#566 将**已有**安装命令提取为返回实际 `StrategyLedgerEvidence` 的同一核心，最终 `16abb521` 经 CI `43141192487` 全42步／同 head 无发现审查合入 `4984c1d3`，核树 `d2a7afc1` 后清理发布引用。本工作树20项未提交接线逐文件 SHA 核对，快进父提交前后未丢失。
