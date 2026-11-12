@@ -2,6 +2,16 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-12T10:50:00+08:00 R2 真实安装与主循环入口草稿
+
+- #565 最终 `fced4ab6` 由 CI `43135815619` 全42步及同 head 无发现审查合入 `b2c5a8fb`，测试／main树 `8a6814ce` 一致后才清理发布引用。#566 将**已有**安装命令提取为返回实际 `StrategyLedgerEvidence` 的同一核心，最终 `16abb521` 经 CI `43141192487` 全42步／同 head 无发现审查合入 `4984c1d3`，核树 `d2a7afc1` 后清理发布引用。本工作树20项未提交接线逐文件 SHA 核对，快进父提交前后未丢失。
+- 原 API 同会话独立交付安装三文件：14步、零API错误，22/22，原 upsert／journal／丢回复只读恢复核不改；控制器审查保存 `bd5bcc70` 并集成 `16abb521`，进程退出撤权、accepted-idle，无修正或重复构建。此小片已独立合入，不把未完成主循环混入其验收。
+- 当前开发草稿显式 `--use-managed-crop-teacher`，仅单人校准／skip-training，默认旧模式不变。原初始 dispatch 经原安装核读回真实账本后打开同一 owner；完整原生库存／所有权要求复用旧 owner 读取器前置核验，缺失时在安装／owner创建入口的任何后端读写及托管目录创建前拒绝；上游原 dispatch 的 capture／源账本刷新范围不由此改称零操作。离线资源投影只用于可执行性预检，绝不作运行账本；仍用原请求、实际时间戳与读回结果。复用原 slot 隔离／backend-origin 检查，不新增桥字段或全世界门。
+- 原 Program 入口增加 owner 租约管理、原阶段选择及原执行核心派发。购种／转移／播种仅增加 owner 内 runtime 路径覆盖参数，旧调用默认值不改；路由／浇水／收获／夜晚调用已存在的 owned adapter。支持阶段不再走通用执行回退，seed 的 Complete 与 Accept 各走原链一次。活动 owner 遇到尚未绑定的优先控制也在原生派发前拒绝，不能绕过 owner 去执行。
+- 扩展旧／新相关720/720、零失败／跳过／构建警告；其后仅新增调度守卫与声明选择用例，最终聚焦4/4。含正常／丢回复实际安装启动、缺库存归属前置拒绝、默认模式、路由不回退、种子准备在 owner 内，以及同一 owner 跨日到收获选择。均为声明／HTTP夹具，单日生长不是原版规则，无游戏／服务器／训练。控制端初次 partial namespace 与夹具缺字段／固定 layout 路径误用的失败留存，修正仅相应接线／夹具，未放宽旧生产校验。
+- **尚未完成，草稿不可当准入。** `nativeControlSettle` 等优先控制、剧情／对话、晚间恢复及实际 site preparation 仍未绑定 owner；终局／replan 保留原账本后明确停止。新入口尚未完成真实游戏验收、终局留存／销售／保存读回或整轮恢复；不是完整托管或开训。旧默认主线仍 unmanaged，L1冻结19/19、11/11，formal=false、#339/#550开放，local-data不提交。
+- **唯一接续与草稿退出：** 首先把既有 `TryBuildNativeControlSettleQueueAsync` 的所选实际控制队列接入同一 owner，随后原中断／开路结果、终局留存／所选销售及日边界保存读回。核 fresh bridge 与 accepted head 的时间／中断衔接，沿原回执与只读恢复，不放开未归属执行、不再造控制器。完成同一实际主循环正向／恢复和相关回归后才将草稿转正式审查，再按 R2 做有界 managed 原生验收。[范围](refill-approach-native-trace.md#2026-11-12-managed-main-loop-entry-draft)。下方“顶层仍 unmanaged”描述旧默认及当时状态，不代表新 opt-in 已验收。
+
 ## 2026-11-12T09:26:00+08:00 R2 同一 owner 跨日到收获联调
 
 - 本片续接 PR #565 草稿 `296c5be6`，仍属 [R2 第3步](FORMAL_FULL_TRAINING_READINESS_CN.md#3-接同一账本主循环和跨日恢复)。原 supporting 引擎增加明确 overnight 分类，复用原单次 NativeSleep 队列／回执、逐地块生长核、原保存指纹核、一次账本 marker、accepted index 和只读恢复。未另造执行器或生命周期算法，旧无保存绑定的 owner header 与水路格式保持。

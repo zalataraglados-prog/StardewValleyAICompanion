@@ -8,7 +8,7 @@ using StardewAI.Contracts.Options;
 using StardewAI.Contracts.Training;
 using StardewAI.LiveTrainingLoop;
 
-public sealed class LiveTrainingOptions
+public sealed partial class LiveTrainingOptions
 {
     public string Root { get; set; } = @"E:\StardewAITraining";
     public string BackendUrl { get; set; } = "http://localhost:5108";
@@ -165,6 +165,7 @@ public sealed class LiveTrainingOptions
 
     public void ValidateFormalExecutionBoundary()
     {
+        ValidateManagedCropTeacherMode();
         if (SkipTraining)
             return;
         if (!UseProductExecutor)
@@ -499,6 +500,10 @@ public sealed class LiveTrainingOptions
             {
                 options.UseDailyPlan = true;
             }
+            else if (current == "--use-managed-crop-teacher")
+            {
+                options.UseManagedCropTeacher = true;
+            }
             else if (current == "--resume-crop-teacher-transition-ledger" &&
                 i + 1 < args.Length)
             {
@@ -700,6 +705,7 @@ public sealed class LiveTrainingOptions
         options.ValidateQueueExecutionReceiptMode();
         options.ValidateGoldenWalnutFreshSaveEvidenceMode();
         options.ValidateCropTeacherResumeMode();
+        options.ValidateManagedCropTeacherMode();
 
         return options;
     }

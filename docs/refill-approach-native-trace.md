@@ -1,5 +1,44 @@
 # Original Refill Native Trace
 
+## 2026-11-12 Managed Main-loop Entry Draft
+
+PR565 accepted finalfced4ab6 with CI43135815619 all42/clean same-head review,
+mergedb2c5a8fb/tree8a6814ce. PR566 extracts the ORIGINAL installation body into
+one reusable core returning actual independently verified backend evidence.
+Peer14steps/zeroerrors/22tests, controllerbd5bcc70->16abb521 identical treed2a7afc1;
+CI43141192487 all42/clean same-head review, merged4984c1d3. Owned publishing refs
+were removed only after separate remote merge/head/tree verification. No source
+work was discarded:20 uncommitted files were SHA-checked across the fast-forward.
+
+The new explicit --use-managed-crop-teacher is a singleplayer calibration draft,
+not formal training. Startup reuses the original dispatch and installation, then
+opens the SAME owner with actual installed ledger evidence. Existing owner source
+requirements are checked before installation/owner-start RPC or directory writes
+using the already-built resource projection; upstream dispatch capture/source-ledger
+refresh keeps its original separate scope. The projection never becomes runtime authority. Original slot/backend
+guards are reused, no bridge/world/private-state prerequisite is invented.
+
+The Program entry owns the lease, selects existing owned route/water/harvest/night
+adapters and prepares original seed runtimes inside the owner subtree. Optional
+seed output overrides preserve old defaults. The original execution core is reused,
+not copied; an active owner cannot silently execute an unowned priority control.
+Related720/720 passed, zero fail/skip/build warning/error. After the new dispatch
+guard and declared cross-day selector case, final focused4/4 passed. These are
+declaration/HTTP fixtures, NOT a game run or native vanilla one-day growth proof.
+Initial partial-namespace and incomplete/fixed-layout fixture failures are retained;
+production evidence gates were not loosened for them.
+
+Known incomplete boundaries remain explicit: nativeControlSettle, other priority
+story/dialogue/late-day controls, actual site preparation, terminal/replan closure,
+retention/sale/native saved-state readback. The draft stops and retains evidence,
+not a claim those behaviors are done or intentionally excluded from the goal.
+Next bind ORIGINAL TryBuildNativeControlSettleQueueAsync to this same owner, then
+remaining selected controls and original closeout/save contracts; check fresh
+bridge time/interrupt continuity against its accepted head. Only after same-loop
+positive/recovery verification may the draft become ready and a bounded managed
+native run establish its actual scope. Default legacy top-level stays unmanaged;
+L1 frozen19/19,11/11, #339/#550open, formal=false, no local-data publication.
+
 ## 2026-11-12 Original Owner Overnight to Harvest
 
 Development PR565 continues R2 step3 on the SAME owner. Overnight is an explicit

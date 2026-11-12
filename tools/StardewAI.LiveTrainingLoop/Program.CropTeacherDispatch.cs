@@ -48,7 +48,8 @@ static partial class Program
             Path.GetDirectoryName(capture.ManifestPath)!, capture.SourceStateHash,
             captureManifest.SourceSnapshotPath, decisionId, JsonOptions,
             (diagnostic, request) => PostJournaledPortfolioCommitAsync(http, options, diagnostic, request));
-        CropTeacherLedgerSourceBinder.ValidateUnmanagedDispatch(baseLedger.Ledger);
+        if (!options.UseManagedCropTeacher)
+            CropTeacherLedgerSourceBinder.ValidateUnmanagedDispatch(baseLedger.Ledger);
         var teacherDispatch =
             MoneyRevenueCropTeacherDispatchBuilder.Build(
                 capture.ManifestPath,

@@ -53,24 +53,7 @@ public sealed partial class MoneyCropTeacherLedgerBridgeTests
         Assert.Equal(1, choice.ExistingSeedQuantity);
         Assert.Equal(2, choice.TileCount);
         Assert.Equal(80, choice.SeedAcquisitionCost);
-        var layout = JsonSerializer.Deserialize<SnapshotEnvelope>(File.ReadAllText(fixture.LayoutPath), JsonOptions)!;
-        var capturePath = Path.Combine(files.Root, "capture.json");
-        File.WriteAllText(capturePath, JsonSerializer.Serialize(new PlanningHandoffCaptureManifest
-        {
-            SchemaVersion = "planning_handoff_capture_manifest.v1", Status = "farm_layout_capture_complete",
-            SourceStateHash = fixture.SourceSnapshot.StateHash, SourceSnapshotPath = fixture.SnapshotPath,
-            SourceSnapshotSha256 = FileHash(fixture.SnapshotPath), MapWidth = 4, MapHeight = 3,
-            LayoutChunkSize = 32, LayoutSnapshotCount = 1,
-            LayoutSnapshots = new[] { new PlanningHandoffLayoutSnapshotBinding
-            {
-                Path = fixture.LayoutPath, Sha256 = FileHash(fixture.LayoutPath), StateHash = layout.StateHash,
-                MinX = 0, MinY = 0, MaxX = 3, MaxY = 2, TileCount = 12
-            } },
-            PlanningHandoff = JsonSerializer.SerializeToElement(new
-            {
-                handoff_kind = "crop_production_teacher", automatic_dispatch_required = true
-            })
-        }, JsonOptions));
+        var capturePath = MoneyCropTeacherCaptureFixture.Save(fixture, Path.Combine(files.Root, "capture.json"));
         var dispatch = MoneyRevenueCropTeacherDispatchBuilder.Build(capturePath, Path.Combine(files.Root, "dispatch"),
             "bound-dispatch", "2026-11-07T00:02:00Z", baseStrategyLedgerPath: evidence.Path);
         Assert.Equal(evidence.Path, dispatch.BaseStrategyLedgerPath);

@@ -94,6 +94,7 @@ public sealed partial class CropTeacherManagedSeedOwner : IAsyncDisposable
     public bool HeadRecoveryRequired { get; private set; }
     public string CurrentSnapshotPath => headSnapshotPath;
     public string CurrentLedgerPath => headLedgerPath;
+    internal string EvidenceDirectory => options.EvidenceDirectory;
     internal bool UsesSelectedRefillResourceEffects => options.UseSelectedRefillResourceEffects;
 
     private CropTeacherManagedSeedOwner(CropTeacherManagedSeedOwnerOptions options, MoneyRevenueCropNativeProductionRunPlan plan,
