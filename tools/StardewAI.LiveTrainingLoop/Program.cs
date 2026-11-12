@@ -1366,10 +1366,8 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
     await File.WriteAllTextAsync(queuePath, queue.ToJsonString(JsonOptions), Encoding.UTF8);
     if (cropSeedSupportForExecution is not null)
     {
-        cropSeedSupportForExecution.ValidateDispatchQueue(queuePath);
-        selectedCandidateId = EffectiveDecisionArtifactTracker.ReadQueueItemCandidateId(ExecutableQueueItems(queue).FirstOrDefault());
-        if (string.IsNullOrWhiteSpace(selectedCandidateId))
-            throw new InvalidDataException("Managed crop seed queue lost its original selected candidate identity.");
+        selectedCandidateId = ValidateCropTeacherSeedQueueBeforeDispatch(cropSeedSupportForExecution,
+            cropTeacherManagedOwner.Current, cropManagedOperationForExecution, queue, queuePath);
     }
     if (options.UseTeacherPreferenceQueue || options.UsePrecompiledQueue)
     {

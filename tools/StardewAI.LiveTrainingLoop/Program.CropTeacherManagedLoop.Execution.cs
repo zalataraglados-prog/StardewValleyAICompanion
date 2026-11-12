@@ -4,6 +4,23 @@ using StardewAI.LiveTrainingLoop;
 
 static partial class Program
 {
+    private static string ValidateCropTeacherSeedQueueBeforeDispatch(ICropTeacherSeedRuntime runtime,
+        CropTeacherManagedSeedOwner? owner, CropTeacherManagedSeedOperation? operation, JsonObject queue, string queuePath)
+    {
+        if (owner is null) runtime.ValidateDispatchQueue(queuePath);
+        else
+        {
+            RequireManagedCropDispatch(owner, operation);
+            if (!ReferenceEquals(operation!.PreparedRuntime, runtime))
+                throw new InvalidOperationException("Managed crop seed dispatch lost its original prepared runtime.");
+            // The original queue validator requires the lease acquired by ExecuteSeedAsync below.
+        }
+        var candidateId = EffectiveDecisionArtifactTracker.ReadQueueItemCandidateId(ExecutableQueueItems(queue).FirstOrDefault());
+        if (string.IsNullOrWhiteSpace(candidateId))
+            throw new InvalidDataException("Managed crop seed queue lost its original selected candidate identity.");
+        return candidateId;
+    }
+
     private static void RequireManagedCropDispatch(CropTeacherManagedSeedOwner? owner, CropTeacherManagedSeedOperation? operation)
     {
         if (owner is not null && (operation is null || !ReferenceEquals(operation.Owner, owner) || !ReferenceEquals(owner.Pending, operation)))

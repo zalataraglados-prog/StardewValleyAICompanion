@@ -2,6 +2,8 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+> **2026-11-12T18:05:00+08:00 R2 真实首断点。** E隔离 `managed-a-20261112-1750` 已走原排名／Teacher／真实安装；iteration2购种准备被租约外校验拒绝，尚未派发原生动作。新入口现核归属后将托管校验留在原执行租约内，旧非托管／owner／执行器／资源核不改。聚焦8/8、同产物相关184/184（54秒）零失败／跳过／构建警告／错误，重叠不加，原失败／新测试夹具失败保留；无完整managed／跨日重载PASS。前片aa6CI43193886486成功。下一步提交修复后新隔离档复验，非续接未保存尾部；L1冻结、formal=false、PR567草稿、local-data不提交。[接续](CURRENT_WORK_CN.md#2026-11-12t1805000800-r2-首次托管原生运行的租约顺序断点)。
+
 > **2026-11-12T17:41:00+08:00 R2 原证书／保存读回收尾接线。** 原结算共享核心只读重放五文件，生产manifest引用现随原终局intent/acceptance/trace持久化，修复仅内存引用的恢复缺口。收尾核原overnight终点、销售目标、原结算与当前读回，不重算整波／放宽旧核。聚焦34/34、同产物相关260/260（2分42秒）零失败／跳过／构建警告／错误；完整owner正向仍待实机，不是训练解禁。下一步仅当前托管＋恢复入口有界A实跑／重载／只读恢复，旧非托管smoke不能替代。b642 CI43187885475成功，本片另验，PR567草稿、L1冻结、formal=false。[接续](CURRENT_WORK_CN.md#2026-11-12t1741000800-r2-原终局证书与保存读回绑定)。
 
 > **2026-11-12T16:56:00+08:00 R2 显式恢复主入口。** `resume-crop-managed-owner` 已接原 owner／只读恢复／实际 load capture／原 snapshot ingest／单读回 marker，显式 stateHash 不信旧高tick latest。未开始提交需同一观察显式接续，已接受重复请求不再登记；不发 native 队列。聚焦18/18、同产物相关244/244（2分14秒）零失败／跳过／构建警告／错误，错误CLI按预期exit2；无实际游戏PASS，complete_managed_runtime仍false。下一步绑定原终局证书与accepted链，再实际同一owner＋有界A。前片6fCI43181617520成功，本片另验；PR567草稿、L1冻结、formalfalse、local-data不提交。[接续](CURRENT_WORK_CN.md#2026-11-12t1656000800-r2-原-owner-显式恢复与重载主入口)。

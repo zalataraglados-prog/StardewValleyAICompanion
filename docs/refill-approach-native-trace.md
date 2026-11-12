@@ -1,5 +1,37 @@
 # Original Refill Native Trace
 
+## 2026-11-12 Actual Managed Entry Lease Breakpoint
+
+The original ranking/Teacher installed one owner in the E isolated native run
+`managed-a-20261112-1750` on aa6c4b37 (CI43193886486 succeeded). Starter seeds
+were claimed by the normal native interaction; no deep observation switches or
+formal training were enabled. At iteration2, acquire_seed failed BEFORE native
+dispatch: the old unmanaged preflight called ValidateDispatchQueue outside the
+lease now required by the managed owner. No dispatch claim exists. This is an
+entry integration failure, not evidence that more Debris fields are necessary.
+
+Original preflight provenance: 8e540c72; original owner lease: e333a279. Keep
+both original contracts. The main preflight now checks managed owner/pending/
+prepared-runtime identity, then the EXISTING owned execution adapter invokes
+the SAME queue validator inside ExecuteSeedAsync. Unmanaged callers still
+validate before execution. No owner/executor/resource/time guard changes.
+
+Retained report SHA256:
+`24535319dfbdd3d0f5f2bcd896c50e3e439e34704216b4903d6978b4c8b89d23`.
+Original native-run-plan SHA256:
+`0dd991ebdb298c226c9d121d419c76b04fa1c7a309fe738029f67add775a25a9`.
+Both remain under the unique E run; nothing is removed or committed as raw data.
+Final focused8/8 verifies owned lease/settlement, tampered queue rejected before
+callback, unmanaged validation and original prepared recovery; related184/184
+passed on the same product build in54seconds (overlaps not added). Earlier new-test
+candidate/receipt fixture failures and namespace compile failure are retained.
+No complete native managed pass, cross-day or saved reload is claimed. Stop
+only recorded owned processes. After related regression and commit, use a NEW
+isolated run, never splice this unsaved in-memory tail across changed code.
+The selected legal route still needs original sale/save/new-process load and
+same-owner readback/certificate/read-only recovery. DRAFT567; L1frozen19/19,
+11/11; formal=false; no local-data commit or new global prerequisite.
+
 ## 2026-11-12 Retained Native Certificate To Saved Closeout
 
 Original terminal BuildAsync retains its five-argument/default nonoverwrite
