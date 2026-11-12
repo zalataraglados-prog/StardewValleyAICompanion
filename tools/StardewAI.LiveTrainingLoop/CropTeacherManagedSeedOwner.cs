@@ -19,16 +19,19 @@ public sealed class CropTeacherManagedSeedOperation
     internal CropTeacherManagedSeedOperation(CropTeacherManagedSeedOwner owner, JsonObject record,
         string recordPath, CropTeacherManagedSeedScopes? scopes, CropTeacherSeedLifecycleSupport? lifecycle = null,
         CropTeacherSupportingRoute? supportingRoute = null, CropTeacherSupportingRoute.Preparation? routeStart = null,
-        CropTeacherWateringMaintenance? watering = null, CropTeacherWateringMaintenance.Preparation? wateringStart = null)
-    { Owner = owner; Record = record; RecordPath = recordPath; seedScopes = scopes; Lifecycle = lifecycle; SupportingRoute = supportingRoute; RouteStart = routeStart; Watering = watering; WateringStart = wateringStart; }
+        CropTeacherWateringMaintenance? watering = null, CropTeacherWateringMaintenance.Preparation? wateringStart = null,
+        CropTeacherHarvest.Preparation? harvestStart = null)
+    { Owner = owner; Record = record; RecordPath = recordPath; seedScopes = scopes; Lifecycle = lifecycle; SupportingRoute = supportingRoute; RouteStart = routeStart; Watering = watering; WateringStart = wateringStart; HarvestStart = harvestStart; }
     private readonly CropTeacherManagedSeedScopes? seedScopes;
     internal CropTeacherSeedLifecycleSupport? Lifecycle { get; }
     internal CropTeacherSupportingRoute? SupportingRoute { get; set; }
     internal CropTeacherSupportingRoute.Preparation? RouteStart { get; }
     internal CropTeacherWateringMaintenance? Watering { get; set; }
     internal CropTeacherWateringMaintenance.Preparation? WateringStart { get; }
-    internal ICropTeacherSupportingPreparation? OriginalStart => (ICropTeacherSupportingPreparation?)RouteStart ?? WateringStart;
-    internal ICropTeacherSupportingTransition? SupportingTransition => (ICropTeacherSupportingTransition?)SupportingRoute ?? Watering;
+    internal CropTeacherHarvest.Preparation? HarvestStart { get; }
+    internal CropTeacherHarvest? Harvest { get; set; }
+    internal ICropTeacherSupportingPreparation? OriginalStart => (ICropTeacherSupportingPreparation?)RouteStart ?? (ICropTeacherSupportingPreparation?)WateringStart ?? HarvestStart;
+    internal ICropTeacherSupportingTransition? SupportingTransition => (ICropTeacherSupportingTransition?)SupportingRoute ?? (ICropTeacherSupportingTransition?)Watering ?? Harvest;
     internal CropTeacherManagedSeedOwner Owner { get; }
     internal JsonObject Record { get; }
     internal string RecordPath { get; }
@@ -47,7 +50,8 @@ public sealed class CropTeacherManagedSeedOperation
     public bool IsLifecycle => Lifecycle is not null;
     public bool IsSupportingRoute => SupportingRoute is not null || RouteStart is not null;
     public bool IsWateringMaintenance => Watering is not null || WateringStart is not null;
-    public bool IsSupportingTransition => IsSupportingRoute || IsWateringMaintenance;
+    public bool IsHarvest => HarvestStart is not null || Harvest is not null;
+    public bool IsSupportingTransition => IsSupportingRoute || IsWateringMaintenance || IsHarvest;
     public CropTeacherManagedSeedScopes Scopes => seedScopes ?? throw new InvalidOperationException("Lifecycle operations have no native seed scope.");
     public CropTeacherRunStep ReadStep() => IsLifecycle || IsSupportingTransition ? throw new InvalidOperationException("Non-seed operations have no native seed step.") :
         Record["step"]!.Deserialize<CropTeacherRunStep>(CropTeacherManagedSeedOwner.JsonOptions)!;

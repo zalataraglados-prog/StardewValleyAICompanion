@@ -33,7 +33,7 @@ public sealed partial class CropTeacherManagedSeedOwner
 
     public Task RunWateringMaintenanceAsync(CropTeacherManagedSeedOperation operation, HttpClient http,
         Func<JsonObject, ReservationPortfolioCommitRequest, Task<JsonObject>> commit,
-        Func<string, string, Task<JsonObject>> post) => RunSupportingTransitionAsync(operation, http, commit, post, watering: true);
+        Func<string, string, Task<JsonObject>> post) => RunSupportingTransitionAsync(operation, http, commit, post, CropTeacherSupportingOperationKind.Watering);
 
     private CropTeacherWateringMaintenance OpenWateringMaintenance(JsonObject record)
     {

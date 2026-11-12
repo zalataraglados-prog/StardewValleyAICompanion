@@ -7,6 +7,12 @@ public sealed partial class CropTeacherManagedSeedOwner
     private CropTeacherManagedSeedOperation OpenIndexedOperation(JsonObject record, string path)
     {
         var kind = record["operation_kind"]?.GetValue<string>();
+        if (kind == "crop_harvest")
+        {
+            var harvest = new CropTeacherManagedSeedOperation(this, record, path, null, harvestStart: OpenOriginalHarvestStart(record));
+            ValidateSupportingTransition(harvest);
+            return harvest;
+        }
         if (kind == "watering_maintenance")
         {
             var watering = record["maintenance_execution_protocol"]?.GetValue<string>() == "original_loop.v1"

@@ -1,5 +1,37 @@
 # Original Refill Native Trace
 
+## 2026-11-12 Original Owner Harvest and Day-growth Handoff
+
+PR564 finala251a5cc passed CI43125520994 all42steps and clean same-head review,
+mergedf786f9d6. Tested/main treebec82be7 matched before owned ref cleanup.
+The current DEVELOPMENT branch adds an explicit harvest operation to the SAME
+owner's admission/intent/index/native claim/outcome and existing supporting
+dispatch/marker/recovery/advance. An internal three-way kind replaces binary
+dispatch classification; historical water/route serialization stays unchanged.
+Their original due-batch predicate is shared, not rewritten for a new standard.
+Program adapters still use the original compiler and execution core.
+
+The original API peer delivered ONLY the shared day-growth extraction and40
+declared tests,18steps/zeroerrors, one focused test and git diff --check exit0.
+Controller reviewed and committed5aa8a2f6, integratedecf4a573. Old global lifecycle
+and new selected-crop leaf share ProjectNativeDay/SameNativeDayState and original
+identity/messages; leaf-specific live-crop checks do not tighten the old path.
+No new native rule, bridge field, whole-world or whole-lifecycle leaf gate.
+
+Final controller related185/185, zero failure/skip/build warning/error. This includes
+old owner paths, harvest adapter, growth leaf and new owner guards, NOT a successful
+harvest owner run or harvest lost-ack acceptance. The branch must remain draft
+until the selected owner can actually advance from its ORIGINAL source to harvest.
+
+NEXT IN R2 STEP3: consume original NativeSleep/CheckCropTeacherDayBoundaryAsync save
+boundary and selected growth through the SAME owner's durable head, then prove
+the positive sleep-to-harvest path and native/marker/acceptance lost-ack recovery.
+Save pending means read-only inspection, not another sleep. Keep original isolated
+save root/slot, run/save/actor, queue/receipt identity and retained evidence; no fake
+post-growth initial owner and no whole L1 cycle prerequisite for a local night.
+Then connect the SAME Program loop, original output-retention/sale/native save
+readback and bounded managed. Existing scope flags/formal=false remain unchanged.
+
 ## 2026-11-12 Original Harvest Batch Adapter
 
 Parent PR563 final3a0fda00 passed CI43121236133 all42steps and clean same-head

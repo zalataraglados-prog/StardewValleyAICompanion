@@ -2,6 +2,15 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-12T08:35:00+08:00 R2 同一 owner 收获阶段与跨日前置
+
+- #564 最终 `a251a5cc` 经 CI `43125520994` 全42步和同 head 无发现审查合入 `f786f9d6`；测试／main树 `bec82be7` 一致后清理自有发布引用。未提交 local-data，未启动游戏／服务器／训练。
+- 当前收获接线在开发分支：原 owner 增加明确 harvest operation／admission／intent／index／native claim／outcome 分类，复用同一 supporting 派发、journaled marker、只读恢复与 advance。两个旧阶段的 bool 分类扩为内部显式三类；旧 water/route 格式、schema、文件名与 intent 字段顺序保留。原 due batch 条件提取同一核供 water/harvest 使用，Program 适配仍调用同一原控制编译与执行核心，没有第二套执行器。
+- 原 API 同会话18步／零错误，限定三文件交付原逐地块 Crop.newDay 核提取及40项声明夹具；原全局生命周期继续使用相同投影、身份规则和错误文本，新叶只证明所选生长。控制端核对差异后保存 `5aa8a2f6` 并集成 `ecf4a573`；两条允许命令实际均 exit0，无修正或重复构建。进程退出撤权，accepted-idle；AGENTS.md 是私有工作树指令，不入产品提交。
+- 控制端最终相关185/185、零失败/跳过、零构建警告/错误，含原 water/route、收获适配、生长叶及三项 owner 守卫。守卫证明：已有 watering 不可冒充 harvest、pending 不会再编译新阶段、不能把未来长好快照当原 owner 的当前头。**这些不是 owner 成功收获／原生托管通过**，当前分支应保持草稿，不能借旧水路的恢复测试宣称新收获丢确认已经实证。
+- **唯一接续与退出：** 先把原 `NativeSleep`／`CheckCropTeacherDayBoundaryAsync` 的保存边界接到同一 owner 的实际头推进，并消费本次共享生长叶；随后做同一 owner 从原起点跨日到收获的正向联调，再验新阶段 native/marker/acceptance 丢确认不重派发／不重提交。保存未完成只能只读核对，不再睡一次；不能伪造长好后的初始 owner，也不以整轮 L1 生命周期证明作为每次睡眠的局部门。复用原保存根／slot、run/save/actor、队列／回执身份及恢复合同，保护其证据；原保存读回与整波 output-retention 的范围不由生长叶代替。
+- 这仍是 R2 第3步内部接线依赖，不新增项目阶段或验收分母。完成上述正向／恢复联调后接原 Program.cs 主循环、原销售／原生保存读回，再一次有界 managed。顶层仍 unmanaged；L1冻结19/19、11/11，#339/#550开放、formal=false。[范围](refill-approach-native-trace.md#2026-11-12-original-owner-harvest-and-day-growth-handoff)。
+
 ## 2026-11-12T08:08:00+08:00 R2 原计划收获批次适配
 
 - #563 最终 `3a0fda00` 由 CI `43121236133` 全42步及同 head 无发现审查接受，合入 `6b7c2388`；测试／main树 `49983bdf` 相同后才清理自有引用。旧211测试和 E 五帧资源重放按原范围复用，无新游戏／服务器／训练。

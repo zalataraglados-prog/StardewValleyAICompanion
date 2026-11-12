@@ -57,7 +57,7 @@ public sealed partial class CropTeacherManagedSeedOwner
     }
 
     public Task ExecuteOriginalRouteAsync(CropTeacherManagedSeedOperation operation, HttpClient http,
-        Func<Task<JsonObject>> executeOriginal) => ExecuteOriginalSupportingAsync(operation, http, executeOriginal, watering: false);
+        Func<Task<JsonObject>> executeOriginal) => ExecuteOriginalSupportingAsync(operation, http, executeOriginal, CropTeacherSupportingOperationKind.Route);
 
     private CropTeacherSupportingRoute.Preparation OpenOriginalRouteStart(JsonObject record, bool requireNativeIdentity = true)
     {
