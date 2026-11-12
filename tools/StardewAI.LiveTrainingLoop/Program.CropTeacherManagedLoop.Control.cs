@@ -18,9 +18,10 @@ static partial class Program
         var beforePath = owner.CurrentSnapshotPath;
         var before = JsonNode.Parse(ContentAddressedJsonArtifactReader.ReadAllText(beforePath))!.AsObject();
         var hash = ReadString(before, "state_hash");
-        if (HasPriorityStoryEventInterrupt(before) || CropTeacherControlInterruptClassifier.HasSafeSpeakerlessDialogue(before) ||
-            step.Stage != CropTeacherRunStageKinds.NativeSleep && GameClockBudgetPolicy.RecoveryWindowStarted(ReadInGameTime(before)))
+        if (HasPriorityStoryEventInterrupt(before) || CropTeacherControlInterruptClassifier.HasSafeSpeakerlessDialogue(before))
             throw new InvalidDataException("Managed crop control interrupt requires its original verified owner boundary before another crop dispatch.");
+        if (step.Stage != CropTeacherRunStageKinds.NativeSleep && GameClockBudgetPolicy.RecoveryWindowStarted(ReadInGameTime(before)))
+            return await BuildCropTeacherOwnedLateDayQueueAsync(http, options, iteration, step, plan, request, owner).ConfigureAwait(false);
         if (step.Stage == CropTeacherRunStageKinds.PrepareSite)
         {
             var site = await BuildCropTeacherControlQueueCoreAsync(http, options, iteration, step, plan, request,
