@@ -54,7 +54,11 @@ static partial class Program
                 return (ICropTeacherSeedRuntime?)build.SeedPurchaseSupport ?? build.SeedTransferSupport ??
                     (ICropTeacherSeedRuntime?)build.SeedPlantingSupport ?? throw new InvalidDataException("Original seed preparation returned no owned runtime.");
             }).ConfigureAwait(false);
-            return new(build!, operation);
+            return new(build! with
+            {
+                SnapshotProfile = "full",
+                SnapshotUrl = SnapshotUrlForProfile(options.BridgeSnapshotUrl, "full", forceRefresh: true)
+            }, operation);
         }
         var supporting = step.Stage switch
         {

@@ -1563,8 +1563,10 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         var executionSuppressedContinuations = capacityRecoveryControlActive
             ? new List<JsonObject>()
             : suppressedObjectiveContinuations;
+        var useOwnedSeedPurchaseContinuation = cropManagedOperationForExecution is not null &&
+            cropSeedSupportForExecution is CropTeacherSeedPurchaseRuntime;
         async Task<JsonObject> ExecuteOriginalCropQueue() => options.UseRuntimeTestHarnessExecutor
-            ? await ExecuteRuntimeTestHarnessCoreAsync(http, executorHttp, options, iteration, snapshotPath, beforeSnapshot, queue, lastStateHash, lastQueueId, decisionModelPlanPath, decisionRankingPath, decisionCompiledQueuePath, decisionSnapshotPath, decisionSourceStateHash, selectedCandidateId, selectedQueueIndex, queuePath, deferredObjectiveContinuationForDailyMaintenance is null ? activeObjectiveContinuation : null, executionSuppressedContinuations, useDailyPlanDecisionLease, executionSnapshotUrl, executionSnapshotProfile, cropSeedSupportForExecution as ICropTeacherSeedPrefixRuntime)
+            ? await ExecuteRuntimeTestHarnessCoreAsync(http, executorHttp, options, iteration, snapshotPath, beforeSnapshot, queue, lastStateHash, lastQueueId, decisionModelPlanPath, decisionRankingPath, decisionCompiledQueuePath, decisionSnapshotPath, decisionSourceStateHash, selectedCandidateId, selectedQueueIndex, queuePath, deferredObjectiveContinuationForDailyMaintenance is null ? activeObjectiveContinuation : null, executionSuppressedContinuations, useDailyPlanDecisionLease || useOwnedSeedPurchaseContinuation, executionSnapshotUrl, executionSnapshotProfile, cropSeedSupportForExecution as ICropTeacherSeedPrefixRuntime)
             : await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/action-queues/" + Uri.EscapeDataString(lastQueueId) + "/execute-training-sandbox", "{}");
         var execution = cropManagedOperationForExecution is null ? await ExecuteOriginalCropQueue() :
             await ExecuteCropTeacherManagedOperationAsync(http, executorHttp, options, iteration, cropTeacherManagedOwner.Current!,

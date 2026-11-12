@@ -2,6 +2,13 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-12T18:23:00+08:00 R2 托管购种接续回执的真实消费断点
+
+- `616a186b` 已推送。新档 `managed-b-20261112-1808` 越过租约断点，但本次测试命令误将 product 请求指向 harness 的8767端口而404；属于控制端测试接线错误，未修改产品规则。后续 `managed-c-20261112-1813` 复用既有 ProductExecutor 独立8768服务，健康报告绑定本 run、原8767及原桥，无新执行器。
+- C 已取得真实原生等待回执：1800ticks、6:00→6:40，primitive verified；product 终态与事后 full 请求快照同 tick2464、同 hash `699773f68eb115e7bce4470c46ec6879a789d0422149cbe59b1446ae1bf8ffe9`。原收尾核仍正确拒绝：新主入口沿用作物机械批次的关闭日计划接续参数，原执行循环未生成 selected_queue_decision_complete／resume_index；同时购种沿用的 shop 窄快照不能替代原完整持久资源核。等待不是购种成功，未入账／未取得完整 managed PASS。
+- 仅调整新消费者：托管购种向已有 ExecuteRuntimeTestHarnessCoreAsync 启用其原候选接续租约，外层仍由唯一 owner 管理；托管 seed 结果使用 full 请求快照，旧普通路径窄化不变。不补造回执字段、不改原执行器／接续验证器／时间／资源规则，不重发已声明或未知执行。最终相关 **184/184**（52秒），零失败／跳过／构建警告／错误，包含新托管 full profile／URL断言与原购种、移种／播种租约／前缀回归；仍不是新入口接续的原生通过。B/C首断点及产品回执保留，记录归属的游戏／服务已停止，无清理。
+- **唯一接续：** 验证并提交本次调用参数修复，再用新 E 隔离档复验真实购种／生产到销售、原生保存、新进程加载及同 owner 读回／证书／只读恢复。仍 R2 第3步收尾／第4步，A完整与无清障覆盖未证明，L1冻结19/19、11/11，formal=false，#339/#550开放，local-data不提交。
+
 ## 2026-11-12T18:05:00+08:00 R2 首次托管原生运行的租约顺序断点
 
 - 前片 `aa6c4b37` 的 CI `43193886486` 已成功。E 隔离新档 `managed-a-20261112-1750` 只加载原桥／harness，后台隐藏静音，正常领取15颗开局种子；显式当前 managed/product/receipt/save 入口由原排名交 Teacher，生成84动作计划并安装同一 owner。**首断点在 iteration2、acquire_seed：主入口在 owner 执行租约前调用原队列校验，原守卫正确拒绝。** 无 dispatch claim、原生动作、收获／跨日／保存读回或完整 managed PASS；不是缺深层掉落字段。

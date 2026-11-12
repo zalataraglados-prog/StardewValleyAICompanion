@@ -89,7 +89,11 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         await using var owner = await files.Open();
         var step = CropTeacherRunPlanner.Evaluate(inputs.Plan, inputs.Request, f.Before, resourceLedger: f.Ledger);
         CropTeacherManagedSeedOperation? operation;
-        try { operation = await BuildManagedOperation(runtime, inputs, owner, step); }
+        try { operation = await BuildManagedOperation(runtime, inputs, owner, step, inspectBuild: build =>
+        {
+            Assert.Equal("full", build.GetType().GetProperty("SnapshotProfile")!.GetValue(build));
+            Assert.Contains("profile=full", (string)build.GetType().GetProperty("SnapshotUrl")!.GetValue(build)!);
+        }); }
         catch (InvalidDataException error)
         {
             var path = Path.Combine(runtime.LiveOptions.SnapshotDir, "crop-teacher-seed-0001-ranking.json");
@@ -108,12 +112,14 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
     }
 
     private static async Task<CropTeacherManagedSeedOperation?> BuildManagedOperation(RuntimeFixture runtime,
-        OwnerInputs inputs, CropTeacherManagedSeedOwner owner, CropTeacherRunStep step, int iteration = 1)
+        OwnerInputs inputs, CropTeacherManagedSeedOwner owner, CropTeacherRunStep step, int iteration = 1,
+        Action<object>? inspectBuild = null)
     {
         var task = InvokeLive<Task>("BuildCropTeacherOwnedControlQueueAsync", runtime.Client, runtime.LiveOptions,
             iteration, step, inputs.Plan, inputs.Request, owner);
         await task;
         var result = task.GetType().GetProperty("Result")!.GetValue(task)!;
+        inspectBuild?.Invoke(result.GetType().GetProperty("Build")!.GetValue(result)!);
         return (CropTeacherManagedSeedOperation?)result.GetType().GetProperty("Operation")!.GetValue(result);
     }
 }

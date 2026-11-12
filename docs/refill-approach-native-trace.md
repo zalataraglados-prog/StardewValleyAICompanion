@@ -1,5 +1,39 @@
 # Original Refill Native Trace
 
+## 2026-11-12 Actual Seed Continuation Receipt Consumption
+
+Run managed-b-20261112-1808 passed the lease boundary but the CONTROLLER test
+command incorrectly sent product requests to native harness8767 (404). No
+executor change fixes that environment error. Run managed-c-20261112-1813 uses
+the EXISTING ProductExecutor8768 bound to this run/native8767/original bridge.
+Its native wait applied1800ticks, clock600->640. The product final and later
+full-request snapshot match tick2464/hash699773f68eb115e7bce4470c46ec6879a789d0422149cbe59b1446ae1bf8ffe9.
+This proves the wait, NOT seed acquisition, resource settlement or whole managed
+acceptance. Original consumer refused missing selected-queue decision/resume
+fields: the NEW main caller disabled original daily-plan continuation for all
+crop controls. Its shop-profile after snapshot is also not full owner evidence.
+
+Adapt only the NEW managed caller: owned PURCHASE enables the EXISTING core's
+selected-candidate lease, without enabling an outer second owner or changing
+plant/transfer prefix control. Managed seed returns full snapshot URL/profile
+for original persistent-resource validation; normal old narrow paths remain.
+No forged receipt fields, relaxed validator, alternate executor or redispatch.
+B/C processes stopped by recorded identity, all failures retained. Final related
+184/184 passed in52seconds, zero failure/skip/build warning/error, including owned
+full profile/URL and original seed purchase/transfer/planting lease/prefix tests.
+This is not the new caller's native continuation acceptance. Fresh native
+revalidation remains explicit; full-request is not a claim that
+all optional bridge fields were readable.
+
+C aggregate receipt SHA256:
+`68124a0bf7f2ed8da5ad50935e84541b95cea9f50b6162d34483c0fcf1823fa9`.
+C product final SHA256:
+`8510c5db58a7a1f34cf8f0176fa1cfabbeb2798c032f7eff8719c434aee0e447`.
+C post-failure full snapshot SHA256:
+`bce27e2a20b3ef4c87727d9b4e84e2a2ddd6b92ed2fc2e7455ad62fcba7643e0`.
+Next is unchanged same-owner native production/sale/save/new load/readback/
+original certificate/read-only recovery. L1frozen/formalfalse/no local-data.
+
 ## 2026-11-12 Actual Managed Entry Lease Breakpoint
 
 The original ranking/Teacher installed one owner in the E isolated native run
