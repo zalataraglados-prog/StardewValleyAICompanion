@@ -35,7 +35,21 @@ if (args.Length > 0 && args[0] == "close-crop-seed-reservations")
     return;
 }
 
+if (args.Length > 0 && args[0] == "resume-crop-managed-owner")
+{
+    using var resumeHttp = new HttpClient { Timeout = TimeSpan.FromSeconds(180) };
+    try
+    {
+        var resumeOptions = LiveTrainingOptions.Parse(args.Skip(1).ToArray());
+        Console.WriteLine(await ResumeCropTeacherManagedOwnerAsync(resumeHttp, resumeOptions, string.Empty));
+    }
+    catch (Exception exception) { Console.Error.WriteLine(exception.Message); Environment.ExitCode = 2; }
+    return;
+}
+
 var options = LiveTrainingOptions.Parse(args);
+if (!string.IsNullOrWhiteSpace(options.ResumeManagedCropOwnerDirectory))
+    throw new ArgumentException("Use the explicit resume-crop-managed-owner command to reopen retained managed evidence.");
 options.ValidateFormalExecutionBoundary();
 Directory.CreateDirectory(options.Root);
 Directory.CreateDirectory(options.RunDir);

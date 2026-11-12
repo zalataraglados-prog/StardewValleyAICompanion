@@ -1,5 +1,54 @@
 # Original Refill Native Trace
 
+## 2026-11-12 Explicit Managed Resume Entry
+
+`resume-crop-managed-owner` now calls the original retained-owner helper and
+recovery, actual-load capture, original full snapshot ingest, one readback marker
+and explicit accepted-stateHash full ledger read. It never launches/stops a game,
+dispatches a native queue, reinstalls reservations or forks a legacy ledger.
+Default normal entry rejects resume arguments rather than silently dispatching.
+
+Reuse original valid managed/receipt arguments and the SAME root/run/artifact-run
+or manifest-derived snapshot/journal directory, backend, executor and save slot.
+New arguments are `--resume-managed-crop-owner`, optional
+`--managed-crop-reload-observation`, or the mutually exclusive actual
+`--managed-crop-reload-process-id` + `--managed-crop-reload-executable` +
+`--managed-crop-reload-log`. Actual capture requires an ALREADY newly started
+isolated SMAPI process and the original loopback bridge; existing profile/fresh
+queries remain legal and original capture forces full/fresh. This does not grant
+game control or a new process-launch permission.
+
+Owner-only restoration cannot start an unclaimed mutation. An explicit original
+pending readback observation may finish its original marker; claimed operations
+use original read-only reply recovery. Repeating an accepted observation performs
+no new admission/marker and remains historical, not a fresh accepted head. Native
+unknown outcomes are not redispatched. Ingest stages exact validated source/after
+snapshots; final ledger reads use explicit stateHash, not old larger-tick latest.
+The owner lease is disposed on success/failure, outputs are new owned directories.
+
+Peer9ac8ebce->f1c7ba05 preserved three files. Both raw tests5/8 stopped at old receipt
+configuration, including after its single correction. Controller fixes NEW test
+arguments and NEW over-restrictive query check, not original guard semantics.
+Test-only optional product mode (defaultfalse) creates the correct executor from
+the start; new product fixtures retain files and release only their host. Missing
+test assignment to a read-only property, old fixture mode and cleanup-assumption
+failures are retained.
+Final focused18/18 +same-product related244/244(2m14s), zero fail/skip/build
+warning/error, overlapping counts not added.
+Earlier241 belongs to pre-correction output, not current acceptance. Actual CLI
+missing-owner call exits2 with the intended reason; no normal training entry.
+All content/process observations in positives are declared/in-process HTTP, not
+actual new game/reload or full managed proof. E temp CPU1heap1GiB, no cleanup.
+
+NEXT bind the saved-readback resume report to original retained production/native
+settlement certificates and the owner accepted chain. Replay original validators
+at the original native terminal snapshot/ledger; never rebuild old production
+against reset tick/readback head, duplicate settlement math or infer income from
+pending shipping. Resume currently keeps complete_managed_runtime_verified=false.
+Then actual same-owner main+resume positive/recovery and bounded legal no-clearance
+A. FrozenL1/formalfalse/DRAFT567/#339/#550 open/local-data excluded; no game/server/
+train/deploy. Prior6f829689CI43181617520SUCCESS, new head needs CI.
+
 ## 2026-11-12 Same-owner Saved Readback And Retained Reopen
 
 R2step3 now has an explicit saved_content_readback owner operation. Admission

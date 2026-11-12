@@ -61,7 +61,8 @@ public sealed class ManagedCropResumeOptionsTests
     [Fact]
     public void ManagedCropResumeOptionsActualTripleParsesWithOriginalExecutableAndLoopbackBridge()
     {
-        foreach (var bridge in new[] { "http://127.0.0.1:8765/api/v1/snapshot", "http://[::1]:8765/api/v1/snapshot", "https://localhost/api/v1/snapshot" })
+        foreach (var bridge in new[] { "http://127.0.0.1:8765/api/v1/snapshot", "http://[::1]:8765/api/v1/snapshot",
+            "https://localhost/api/v1/snapshot", "http://127.0.0.1:8765/api/v1/snapshot?profile=planning&fresh=0" })
         {
             var executable = EvidencePath("unused", "..", "game", "StardewModdingAPI.exe");
             var log = EvidencePath("unused", "..", "game.log");
@@ -167,7 +168,7 @@ public sealed class ManagedCropResumeOptionsTests
         Assert.Throws<ArgumentException>(() => Parse("--resume-managed-crop-owner", "relative-owner"));
         Assert.Throws<ArgumentException>(() => Parse("--resume-managed-crop-owner", OwnerPath, "--managed-crop-reload-observation", "relative.json"));
         foreach (var bridge in new[] { "http://remote.invalid/api/v1/snapshot", "http://localhost/wrong", "relative",
-            "file:///api/v1/snapshot", "http://user@localhost/api/v1/snapshot", "http://localhost/api/v1/snapshot?query=1", "http://localhost/api/v1/snapshot#fragment" })
+            "file:///api/v1/snapshot", "http://user@localhost/api/v1/snapshot", "http://localhost/api/v1/snapshot#fragment" })
         {
             var options = ActualOptions();
             options.BridgeSnapshotUrl = bridge;
@@ -191,7 +192,7 @@ public sealed class ManagedCropResumeOptionsTests
     {
         UseManagedCropTeacher = true, SkipTraining = true, UseDailyPlan = true, UseRuntimeTestHarnessExecutor = true,
         UseProductExecutor = true, EmitQueueExecutionReceipt = true, RequireExecutorFeedback = true,
-        MaxAttempts = 1, RequiredVerifiedActions = 1, DailyPlanMaxCandidates = 1,
+        MaxAttempts = 1, RequiredVerifiedActions = 1, MaxQueueItemAttempts = 1, DailyPlanMaxCandidates = 1,
         DailyPlanCandidateKind = "declared-crop-teacher", DailyPlanCandidateId = "declared-candidate",
         RequireNativeSaveBoundary = true, SaveIsolationPath = EvidencePath("saves"), SaveSlot = "declared-slot",
         Root = EvidencePath("artifacts"), RunId = "declared-managed-resume", ResumeManagedCropOwnerDirectory = OwnerPath
@@ -210,7 +211,7 @@ public sealed class ManagedCropResumeOptionsTests
     {
         "--root", EvidencePath("artifacts"), "--run-id", "declared-managed-resume", "--use-managed-crop-teacher",
         "--skip-training", "--use-daily-plan", "--use-product-executor", "--emit-queue-execution-receipt",
-        "--max-attempts", "1", "--required-verified-actions", "1", "--daily-plan-max-candidates", "1",
+        "--max-attempts", "1", "--required-verified-actions", "1", "--max-queue-item-attempts", "1", "--daily-plan-max-candidates", "1",
         "--daily-plan-candidate-kind", "declared-crop-teacher", "--daily-plan-candidate-id", "declared-candidate",
         "--require-native-save-boundary", "--save-isolation-path", EvidencePath("saves"), "--save-slot", "declared-slot"
     };

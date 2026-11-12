@@ -2,6 +2,14 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-12T16:56:00+08:00 R2 原 owner 显式恢复与重载主入口
+
+- 前片 `6f829689` 的 CI `43181617520` 已成功，仍为 R2 第3步、PR #567 草稿。新增 `resume-crop-managed-owner` 命令，消费原 header／初始输入／索引／lease，先走原恢复，再接已有实际进程／桥／日志／保存指纹采集、原 full snapshot ingest 和同一 owner 单次读回。普通旧入口不暗用这些参数；没有新执行器、游戏启动／关闭或 native 派发，旧资源／24tick／legacy fork 拒绝不变。
+- 仅指定 owner 时不创建未开始的账本提交；显式给出与 pending 相同的观察，才可完成其原读回 marker。已接受的同一观察再次请求只核旧结果，不重复登记或把历史恢复算新重载。原 backend 归一化后按明确 stateHash 导入／读取账本，不把较大旧 tick 的 latest 当 fresh head。输出在 owner 内独立新一级目录，不覆盖原输入。
+- 原 API 三文件 `9ac8ebce→f1c7ba05` 保存；两次原聚焦均5通过／3在旧 receipt 配置门失败，达到修正上限退出撤权，未继续付费纠错。控制端只补新测试有效参数、放行原桥已有 profile/fresh 查询；测试夹具新增默认关闭的 product 模式，避免创建旧 harness 版本后才切配置。只读属性赋值编译失败、模式错位与旧夹具收尾不认识新目录的失败均留存，未放宽原生产守卫；product 夹具保留工件，仅释放进程内 host。
+- 最终聚焦 **18/18**、同一构建产物相关 **244/244**（2分14秒），零失败／跳过／构建警告／错误，重叠不加；真实 CLI 缺 owner 调用按预期 exit2，未进入普通训练。前次241只属于只读边界修正前产物，最终244才覆盖新增拒绝／显式接续及重复观察反例。均声明／进程内 HTTP及错误参数 CLI，尚无实际游戏／新重载／完整 managed PASS。E临时目录、CPU1／heap1GiB，无清理、部署或 local-data 提交。
+- **唯一接续：** 将此保存读回报告与原已留存生产／真实结算证书及 owner accepted 链绑定，使用保存时原生终局 snapshot／ledger，不拿 reset tick 后的新头重算旧证明；恢复报告当前故意保持 `complete_managed_runtime_verified=false`。然后实际同一 owner 主循环＋此恢复入口正向／中断验收及 R2 第4步有界合法无清障 A，保留首个真实断点。不补全未选剧情为前置，L1冻结19/19、11/11，formal=false，#339/#550继续开放。
+
 ## 2026-11-12T16:16:00+08:00 R2 同一 owner 保存读回与原运行重开组件
 
 - 仍沿 11月11日更新的 R2 第3步，前片 `049bdc85` 的 CI `43177385955` 已成功，PR #567 保持草稿。本片把已核的读回 scope 注册为独立 `saved_content_readback`：复用原 admission、单次 supporting rebind marker、索引、完整账本读回和只读恢复，不伪造 queue、native claim／result，也不进入移动执行器。run、当前 accepted source／ledger、隔离槽及原保存报告必须绑定本 owner 已接受的 overnight；复制同内容的外来报告或账本也拒绝。保存源与当前 volatile 头仍分别核验，旧资源／执行器／24tick 核未放宽。

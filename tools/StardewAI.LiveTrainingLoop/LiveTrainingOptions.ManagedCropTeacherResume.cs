@@ -38,7 +38,7 @@ public sealed partial class LiveTrainingOptions
             if (!Uri.TryCreate(BridgeSnapshotUrl, UriKind.Absolute, out var endpoint) ||
                 endpoint.Scheme is not ("http" or "https") || !endpoint.IsLoopback ||
                 endpoint.AbsolutePath != "/api/v1/snapshot" || endpoint.UserInfo.Length != 0 ||
-                endpoint.Query.Length != 0 || endpoint.Fragment.Length != 0)
+                endpoint.Fragment.Length != 0)
                 throw new ArgumentException("Managed reload capture requires a loopback HTTP(S) /api/v1/snapshot bridge URL.");
         }
 

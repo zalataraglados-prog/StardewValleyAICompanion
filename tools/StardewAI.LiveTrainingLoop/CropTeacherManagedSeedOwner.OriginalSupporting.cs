@@ -37,7 +37,7 @@ public sealed partial class CropTeacherManagedSeedOwner
     };
     private static string NativeSupportingPath(CropTeacherManagedSeedOperation operation, string suffix) =>
         Path.Combine(operation.RuntimeDirectory, NativeSupportingRole(operation) + "-native-" + suffix + ".json");
-    private static MoneyRevenueCropNativeLifecycleTransitionRequest OriginalSupportingTransition(CropTeacherManagedSeedOperation operation) =>
+    internal static MoneyRevenueCropNativeLifecycleTransitionRequest OriginalSupportingTransition(CropTeacherManagedSeedOperation operation) =>
         operation.IsTerminalShipping ? operation.Record["terminal_transition"]!.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)! :
         operation.IsControlRecovery ? operation.Record["control_transition"]!.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)! :
         operation.IsOvernight ? operation.Record["overnight_transition"]!.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)! :

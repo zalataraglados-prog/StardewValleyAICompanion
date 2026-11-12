@@ -26,10 +26,10 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         internal int NativeNightCalls { get; private set; }
         internal int NativeHarvestCalls { get; private set; }
 
-        internal OvernightFixture(bool noCrops = false, Action<Fixture>? prepareSource = null)
+        internal OvernightFixture(bool noCrops = false, Action<Fixture>? prepareSource = null, bool productExecutor = false)
         {
             // A declared one-day catalog isolates owner sequencing; it is NOT vanilla growth evidence.
-            Watering = new(prepareSource: source =>
+            Watering = new(productExecutor: productExecutor, prepareSource: source =>
             {
                 HarvestFixture.PrepareSource(source);
                 ChangeState(source.Before, "farm", farm =>

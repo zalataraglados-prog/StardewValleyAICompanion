@@ -2,6 +2,8 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+> **2026-11-12T16:56:00+08:00 R2 显式恢复主入口。** `resume-crop-managed-owner` 已接原 owner／只读恢复／实际 load capture／原 snapshot ingest／单读回 marker，显式 stateHash 不信旧高tick latest。未开始提交需同一观察显式接续，已接受重复请求不再登记；不发 native 队列。聚焦18/18、同产物相关244/244（2分14秒）零失败／跳过／构建警告／错误，错误CLI按预期exit2；无实际游戏PASS，complete_managed_runtime仍false。下一步绑定原终局证书与accepted链，再实际同一owner＋有界A。前片6fCI43181617520成功，本片另验；PR567草稿、L1冻结、formalfalse、local-data不提交。[接续](CURRENT_WORK_CN.md#2026-11-12t1656000800-r2-原-owner-显式恢复与重载主入口)。
+
 > **2026-11-12T16:16:00+08:00 R2 原 owner 保存读回接线组件。** 新独立读回角色复用原 admission／单 marker／索引／只读恢复，绑定实际 accepted overnight 报告和当前 run／source／ledger／slot，不伪造 native 队列或作物／Teacher credit。原 API 两文件6d729342→2b5d69c4实现原 owner 重开 helper，8/8；控制端聚焦17/17、同产物相关131/131（1分29秒），零失败／跳过／构建警告／错误，均声明／HTTP而非新游戏重载。下一步主入口显式 retained owner＋实际 capture／原 ingest／fresh head，再有界A；旧24tick／legacy拒绝不变、原终局证书保留不在reset tick后重算。前片049bdc85 CI43177385955成功，本片另验；PR567草稿、L1冻结、formal=false、local-data不提交。[接续](CURRENT_WORK_CN.md#2026-11-12t1616000800-r2-同一-owner-保存读回与原运行重开组件)。
 
 > **2026-11-12T15:33:00+08:00 R2 保存内容／重载来源组件。** 原持久资源比较／rebind 已复用，独立内容叶不授原生／保存语义标签；新消费者另核原保存指纹、新SMAPI进程／日志、bridge v2完整事件链和加载后发布的 full 快照。保存时快照与当前accepted头分别核验，未改旧资源／24tick守卫。聚焦24/24、相关60/60，声明／合成来源而非新游戏重载PASS；实际只读采集函数尚未接主入口。下一步同一 owner 登记／marker／恢复和 retained-owner 主入口，再实际重载／有界A。前片87935184 CI43171332787成功，本片另验；PR567草稿、L1冻结、formal=false、local-data不提交。[接续](CURRENT_WORK_CN.md#2026-11-12t1533000800-r2-保存内容与实际重载来源消费者)。

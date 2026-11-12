@@ -10,14 +10,21 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
 {
     private sealed class SavedReadbackOwnerFixture : IDisposable
     {
-        internal OvernightFixture Night { get; } = new(prepareSource: source => ChangeState(source.Before, "time", time =>
-        {
-            time["year"] ??= JsonSerializer.SerializeToNode(new { status = "available", value = 2 });
-            time["season"] ??= JsonSerializer.SerializeToNode(new { status = "available", value = "spring" });
-        }));
+        internal OvernightFixture Night { get; }
         internal NativeReloadFixture Witness { get; } = new();
+        private readonly bool preserveArtifacts;
         internal string Runtime => Path.Combine(Night.Options.EvidenceDirectory, "saved-readback");
         internal string LoadedPath => Path.Combine(Witness.Root, "owner-loaded.json");
+
+        internal SavedReadbackOwnerFixture(bool productExecutor = false)
+        {
+            preserveArtifacts = productExecutor;
+            Night = new(productExecutor: productExecutor, prepareSource: source => ChangeState(source.Before, "time", time =>
+            {
+                time["year"] ??= JsonSerializer.SerializeToNode(new { status = "available", value = 2 });
+                time["season"] ??= JsonSerializer.SerializeToNode(new { status = "available", value = "spring" });
+            }));
+        }
 
         internal async Task CompleteNight(CropTeacherManagedSeedOwner owner)
         {
@@ -70,6 +77,10 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             owner.RunSavedContentReadbackAsync(operation, Night.Shared.Runtime.Client, (diagnostic, request) =>
                 InvokeLive<Task<JsonObject>>("PostJournaledPortfolioCommitAsync", Night.Shared.Runtime.Client,
                     Night.Shared.Runtime.LiveOptions, diagnostic, request), Night.Shared.Files.Post);
-        public void Dispose() => Night.Dispose();
+        public void Dispose()
+        {
+            if (preserveArtifacts) Night.Shared.Runtime.Dispose();
+            else Night.Dispose();
+        }
     }
 }
