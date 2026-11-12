@@ -1,5 +1,36 @@
 # Original Refill Native Trace
 
+## 2026-11-12 Original Terminal Owner Dispatch And Recovery
+
+R2step3 now binds ORIGINAL shipping approach/deposit preparation and outcomes to
+the SAME owner admission, original native loop, one native claim/result, marker,
+index and read-only recovery. Only accepted deposits increase the durable cursor;
+movement does not. Pending shipping value is NOT income. Existing default mode,
+executor and resource kernels stay unchanged. The terminal model recipe is shared
+between selection and preparation rather than maintained as two production copies.
+
+The main loop retains one whole-wave production boundary/selection, compiles each
+original single action inside admission, and never uses generic dispatch fallback.
+Its separate interrupt cannot mark crop work complete. Completed deposits stop at
+the still-unbound native settlement/save closeout. A process-level cache is not a
+claim that top-level process restart or semantic saved-content recovery is done.
+
+Peer84327264->4452d78e preserves five source/test files and raw8tests3pass5fail;
+the bounded one-correction exit was honored. Controller corrected NEW fixture
+shippability/null-item fields and original move/deposit changed facts, not old guards.
+Final focused34/34 pass, zero failures/skips/build warnings/errors: original HTTP
+entry, same-owner approach then deposit, last-unit removal, five acknowledgement
+boundaries, restart/cursor and unknown-result no-redispatch. Broader same-output
+regression1043/1043 passes in4m39, zero failures/skips; counts overlap, not added.
+These are declared/HTTP fixtures, NOT new native/full managed
+or sale/save PASS. Prior dc2aabb9 CI43162500304 succeeded; this head needs fresh CI.
+
+NEXT reuse original home/control/native sleep and recurrence/terminal real revenue,
+semantic saved inventory/crop/currency/calendar plus fresh bridge/head continuity,
+then actual same-loop recovery and bounded legal no-clearance A native. No all-unused
+story/clearance prerequisite. PR567 DRAFT, frozen L1, formal=false/local-data excluded;
+no game/server/train/cleanup. Peer exited/grants withdrawn, authorization idle.
+
 ## 2026-11-12 Original Shipping Resource And Terminal Selection
 
 The new deposit leaf reuses ORIGINAL queue/receipt/native-step/deposit verifiers

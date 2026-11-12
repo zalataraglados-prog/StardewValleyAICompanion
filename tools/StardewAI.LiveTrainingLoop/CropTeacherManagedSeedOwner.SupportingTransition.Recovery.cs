@@ -64,6 +64,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         accepted["native_outcome_verified"] = true;
         accepted["native_crop_lifecycle_verified"] = false;
         accepted["teacher_preference_label_eligible"] = false;
+        if (operation.Terminal is { } terminal) AddTerminalOutcomeEvidence(terminal, accepted);
         if (operation.Control is { } control) AddControlOutcomeEvidence(control, accepted);
         if (operation.Watering is { } watering) AddWateringOutcomeEvidence(watering, accepted);
         if (operation.Harvest is { } harvest) AddHarvestOutcomeEvidence(harvest, accepted);
@@ -84,6 +85,19 @@ public sealed partial class CropTeacherManagedSeedOwner
     private void ValidateSupportingTransitionAcceptance(CropTeacherManagedSeedOperation operation, JsonObject accepted)
     {
         if (operation.OriginalStart is not null) LoadOriginalSupportingOutcome(operation);
+        if (operation.Terminal is { } terminal)
+        {
+            var expected = new JsonObject(); AddTerminalOutcomeEvidence(terminal, expected);
+            if (expected.Any(field => !JsonNode.DeepEquals(field.Value, accepted[field.Key])) ||
+                accepted["route_target_reached"] is not null || accepted["native_control_recovery_verified"] is not null ||
+                accepted["native_watering_prefix_verified"] is not null || accepted["native_harvest_prefix_verified"] is not null ||
+                accepted["native_overnight_control_verified"] is not null)
+                throw new InvalidDataException("Managed terminal acceptance changed or claimed unrelated progress.");
+        }
+        else if (new[] { "native_terminal_shipping_step_verified", "terminal_kind", "accepted_deposit_count_before",
+            "accepted_deposit_count_after", "terminal_pending_value_after", "terminal_settlement_verified",
+            "terminal_native_claim_sha256", "terminal_native_result_sha256" }.Any(name => accepted[name] is not null))
+            throw new InvalidDataException("A different phase cannot claim terminal shipping evidence.");
         if (operation.Control is { } control)
         {
             var expected = new JsonObject();

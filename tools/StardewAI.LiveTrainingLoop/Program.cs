@@ -770,20 +770,30 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 " total_day=" + cropStep.TotalDay);
             break;
         }
-        if (cropStep.Stage == CropTeacherRunStageKinds.Complete)
+        ManagedCropControl? managedTerminalControl = null;
+        if (cropStep.Stage == CropTeacherRunStageKinds.Complete && managedOwner is not null)
         {
-            if (managedOwner is not null)
+            if (cropTeacherManagedOwner.TerminalSelection is null)
             {
                 var productionEvidence = await managedOwner.BuildProductionEvidenceAsync(
                     Path.Combine(managedOwner.EvidenceDirectory, "production-terminal")).ConfigureAwait(false);
                 AppendProgress(options, "crop_teacher_managed_production_evidence", iteration, lastStateHash, string.Empty,
                     "manifest=" + productionEvidence.ManifestPath + " retention_proofs=" + productionEvidence.OutputRetentionProofPaths.Length);
                 var terminalSelection = await PrepareCropTeacherManagedTerminalAsync(managedOwner, productionEvidence).ConfigureAwait(false);
+                cropTeacherManagedOwner.AttachTerminal(productionEvidence, terminalSelection.Selection);
                 AppendProgress(options, "crop_teacher_managed_terminal_selected", iteration, lastStateHash, string.Empty,
-                    "selection=" + terminalSelection + " native_dispatch_performed=false");
-                stopReason = "crop_teacher_managed_terminal_requires_original_owner_sale_save_closeout";
+                    "selection=" + terminalSelection.Path + " native_dispatch_performed=false");
+            }
+            managedTerminalControl = await BuildCropTeacherOwnedTerminalQueueAsync(options, iteration, managedOwner,
+                cropTeacherManagedOwner.TerminalSelection!).ConfigureAwait(false);
+            if (managedTerminalControl is null)
+            {
+                stopReason = "crop_teacher_managed_terminal_deposits_require_native_settlement_save_closeout";
                 break;
             }
+        }
+        if (cropStep.Stage == CropTeacherRunStageKinds.Complete && managedOwner is null)
+        {
             completedCropTeacherBoundaryStart =
                 await CaptureCropTeacherTerminalBoundaryStartAsync(
                     options,
@@ -813,8 +823,8 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 attemptOrdinal);
             continue;
         }
-        var managedControl = managedOwner is null ? null : await BuildCropTeacherOwnedControlQueueAsync(http, options, iteration,
-            cropStep, activeCropTeacherRunPlan, activeCropTeacherRunPlanRequest!, managedOwner);
+        var managedControl = managedTerminalControl ?? (managedOwner is null ? null : await BuildCropTeacherOwnedControlQueueAsync(http, options, iteration,
+            cropStep, activeCropTeacherRunPlan, activeCropTeacherRunPlanRequest!, managedOwner));
         var cropQueue = managedControl?.Build ?? await BuildCropTeacherControlQueueAsync(
             http,
             options,

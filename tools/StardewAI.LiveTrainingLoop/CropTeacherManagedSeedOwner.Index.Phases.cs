@@ -7,6 +7,12 @@ public sealed partial class CropTeacherManagedSeedOwner
     private CropTeacherManagedSeedOperation OpenIndexedOperation(JsonObject record, string path)
     {
         var kind = record["operation_kind"]?.GetValue<string>();
+        if (kind == "terminal_shipping")
+        {
+            var terminal = new CropTeacherManagedSeedOperation(this, record, path, null, terminalStart: OpenOriginalTerminalStart(record));
+            ValidateSupportingTransition(terminal);
+            return terminal;
+        }
         if (kind == "control_recovery")
         {
             var control = new CropTeacherManagedSeedOperation(this, record, path, null, controlStart: OpenOriginalControlStart(record));

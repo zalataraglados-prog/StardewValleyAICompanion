@@ -30,7 +30,7 @@ public sealed partial class CropTeacherManagedSeedOwner
 
     private OriginalSupportingOutcome ReadOriginalSupportingOutcome(CropTeacherManagedSeedOperation operation, bool deferOvernightSave = false)
     {
-        var label = operation.IsControlRecovery ? "Original control recovery" : operation.IsOvernight ? "Original overnight" : operation.IsHarvest ? "Original harvest" : operation.IsWateringMaintenance ? "Original watering" : "Original route";
+        var label = operation.IsTerminalShipping ? "Original terminal shipping" : operation.IsControlRecovery ? "Original control recovery" : operation.IsOvernight ? "Original overnight" : operation.IsHarvest ? "Original harvest" : operation.IsWateringMaintenance ? "Original watering" : "Original route";
         var start = operation.OriginalStart ?? throw new InvalidOperationException(label + " preparation is missing.");
         start.ValidateInputsUnchanged();
         var artifacts = new CropSeedRuntimeArtifacts(start.InputHashes);
@@ -57,6 +57,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         if (scope is CropTeacherHarvest harvest) AddHarvestOutcomeEvidence(harvest, result);
         if (scope is CropTeacherOvernight overnight) AddOvernightOutcomeEvidence(overnight, result);
         if (scope is CropTeacherControlRecovery control) AddControlOutcomeEvidence(control, result);
+        if (scope is CropTeacherTerminalShipping terminal) AddTerminalOutcomeEvidence(terminal, result);
         result["native_crop_lifecycle_verified"] = false;
         result["teacher_preference_label_eligible"] = false;
         result["formal_product_training_authorized"] = false;
@@ -77,6 +78,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         else if (outcome.Scope is CropTeacherHarvest harvest) operation.Harvest = harvest;
         else if (outcome.Scope is CropTeacherOvernight overnight) operation.Overnight = overnight;
         else if (outcome.Scope is CropTeacherControlRecovery control) operation.Control = control;
+        else if (outcome.Scope is CropTeacherTerminalShipping terminal) operation.Terminal = terminal;
         else throw new InvalidDataException("Owned crop outcome has an unsupported supporting type.");
         operation.RuntimeArtifactGuard = () =>
         { operation.OriginalStart!.ValidateInputsUnchanged(); outcome.Scope.ValidateInputsUnchanged(); outcome.Artifacts.Validate(); };

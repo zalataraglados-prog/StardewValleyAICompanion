@@ -1,7 +1,7 @@
-using System.Globalization;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
 using StardewAI.Core.Infrastructure;
+using StardewAI.GoalConditionedBootstrap;
 
 namespace StardewAI.LiveTrainingLoop;
 
@@ -28,30 +28,6 @@ internal sealed partial class CropTeacherTerminalShippingSelection
             !Boolean(bin, "pending_settlement_value_complete") || Long(bin, "pending_settlement_value") != checked((long)completedDeposits * UnitPrice))
             throw new InvalidDataException("Selected crop terminal source bin differs from accepted deposits.");
         if (completedDeposits == MinimumUnits) return null;
-        var approach = Number(Field(source, "player", "tile_x")) != StandX || Number(Field(source, "player", "tile_y")) != StandY;
-        var root = $"ship:Farm:{BinX},{BinY}:{SlotIndex}:{QualifiedItemId}";
-        var candidate = root + (approach ? ":approach" : ":deposit:" + (completedDeposits + 1).ToString(CultureInfo.InvariantCulture));
-        var parameters = new List<SmallModelActionParameter>();
-        void Add(string name, object value) => parameters.Add(new() { Name = name, Value = Convert.ToString(value, CultureInfo.InvariantCulture)! });
-        if (approach) { Add("target_tile_x", StandX); Add("target_tile_y", StandY); }
-        else
-        {
-            Add("target_location", "Farm"); Add("target_tile_x", BinX); Add("target_tile_y", BinY);
-            Add("stand_tile_x", StandX); Add("stand_tile_y", StandY); Add("slot_index", SlotIndex);
-            Add("qualified_item_id", QualifiedItemId); Add("quantity", 1); Add("expected_unit_price", UnitPrice);
-        }
-        Add("continuation.option_id", "executor.ship_inventory_item_to_bin"); Add("continuation.target_location", "Farm");
-        Add("continuation.qualified_item_id", QualifiedItemId); Add("continuation.slot_index", SlotIndex);
-        Add("continuation.quantity", 1); Add("continuation.expected_unit_price", UnitPrice); Add("precondition", "candidate_id:" + candidate);
-        return new()
-        {
-            ModelOutputId = "model-output:" + candidate, SourceModel = "authoritative_crop_terminal_continuation.v1",
-            StateHash = source.StateHash, GoalId = "daily.closed_loop", ExecutionMode = ExecutionTargetProfiles.TrainingSingleplayer,
-            Actor = ExecutionTargetProfiles.CreateActor(ExecutionTargetProfiles.TrainingSingleplayer), Actions = new[] { new SmallModelAction
-            {
-                ActionId = candidate + ":action", OptionId = approach ? "executor.move_to_tile" : "executor.ship_inventory_item_to_bin",
-                Rationale = "authoritative_crop_terminal_continuation", Parameters = parameters.ToArray()
-            } }
-        };
+        return CropTeacherTerminalShipping.Preparation.BuildOriginalAction(source, CreateTarget(completedDeposits));
     }
 }

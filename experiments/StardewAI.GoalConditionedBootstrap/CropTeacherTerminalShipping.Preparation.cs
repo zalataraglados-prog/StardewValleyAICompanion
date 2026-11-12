@@ -61,7 +61,7 @@ public sealed partial class CropTeacherTerminalShipping
             CandidateId = FormattableString.Invariant($"ship:Farm:{target.BinTileX},{target.BinTileY}:{target.SlotIndex}:{target.QualifiedItemId}") +
                 (approach ? ":approach" : ":deposit:" + (target.AcceptedDepositCount + 1).ToString(CultureInfo.InvariantCulture));
             var model = CurrentTeacherFrontierSupport.Read<SmallModelActionEnvelope>(modelActionPath, "terminal original model action");
-            Require(BootstrapArtifactGuard.EqualJson(model, ExpectedOriginalModel(source.Snapshot, target, CandidateId, approach)),
+            Require(BootstrapArtifactGuard.EqualJson(model, BuildOriginalAction(source.Snapshot, target)),
                 "Terminal model differs from the entire original single-action continuation recipe.");
             var queue = CurrentTeacherFrontierSupport.Read<ActionQueueEnvelope>(queuePath, "terminal original compilation");
             CropTeacherOriginalQueueCompilation.Verify(queue, new ActionQueueCompiler().Compile(model, source.Snapshot, source.Ledger), "Terminal shipping");
@@ -102,6 +102,14 @@ public sealed partial class CropTeacherTerminalShipping
             MoneyRevenueCropNativeLifecycleTransitionRequest transition) => VerifyTransition(transition);
 
         // Exact original RuntimeMoneyCropNative/terminal-selection recipe, for admission comparison only.
+        public static SmallModelActionEnvelope BuildOriginalAction(SnapshotEnvelope snapshot, CropTeacherTerminalShippingTarget target)
+        {
+            var approach = !AtStand(snapshot, target);
+            var candidate = FormattableString.Invariant($"ship:Farm:{target.BinTileX},{target.BinTileY}:{target.SlotIndex}:{target.QualifiedItemId}") +
+                (approach ? ":approach" : ":deposit:" + (target.AcceptedDepositCount + 1).ToString(CultureInfo.InvariantCulture));
+            return ExpectedOriginalModel(snapshot, target, candidate, approach);
+        }
+
         private static SmallModelActionEnvelope ExpectedOriginalModel(SnapshotEnvelope snapshot,
             CropTeacherTerminalShippingTarget target, string candidate, bool approach)
         {

@@ -18,12 +18,13 @@ static partial class Program
         var harvest = kind == CropTeacherSupportingOperationKind.Harvest;
         var overnight = kind == CropTeacherSupportingOperationKind.Overnight;
         var control = kind == CropTeacherSupportingOperationKind.Control;
+        var terminal = kind == CropTeacherSupportingOperationKind.Terminal;
         owner.ValidateOriginalSupportingExecutor(options, watering);
         if (overnight) owner.ValidateOriginalOvernightSaveBinding(options);
-        if (control ? operation.ControlStart is null : overnight ? operation.OvernightStart is null : harvest ? operation.HarvestStart is null : watering ? operation.WateringStart is null : operation.RouteStart is null)
+        if (terminal ? operation.TerminalStart is null : control ? operation.ControlStart is null : overnight ? operation.OvernightStart is null : harvest ? operation.HarvestStart is null : watering ? operation.WateringStart is null : operation.RouteStart is null)
             throw new InvalidOperationException(watering ? "Owned watering has no original compilation." : "Owned crop route has no original compilation.");
         var start = operation.OriginalStart!;
-        var transition = operation.Record[control ? "control_transition" : overnight ? "overnight_transition" : harvest ? "harvest_transition" : watering ? "maintenance_transition" : "route_transition"]!.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)!;
+        var transition = operation.Record[terminal ? "terminal_transition" : control ? "control_transition" : overnight ? "overnight_transition" : harvest ? "harvest_transition" : watering ? "maintenance_transition" : "route_transition"]!.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)!;
         var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
         if (!string.Equals(Path.GetFullPath(transition.ExecutionReceiptPath), Path.GetFullPath(Path.Combine(options.SnapshotDir, "execution-" + iteration.ToString("D4") + ".json")), comparison) ||
             !string.Equals(Path.GetFullPath(transition.AfterSnapshotPath), Path.GetFullPath(Path.Combine(options.SnapshotDir, "after-snapshot-" + iteration.ToString("D4") + ".json")), comparison))
@@ -33,17 +34,21 @@ static partial class Program
         RequireSelectedRefillToolObservation(options, operation.Record, queue);
         Task<JsonObject> Execute() => ExecuteRuntimeTestHarnessCoreAsync(http, executorHttp,
             options, iteration, start.SourcePath, before, queue, ReadString(before, "state_hash"), ReadString(queue, "queue_id"),
-            operation.Record[watering || harvest ? "original_model_action_path" : "original_model_plan_path"]!.GetValue<string>(), string.Empty, start.QueuePath, start.SourcePath,
+            operation.Record[terminal || watering || harvest ? "original_model_action_path" : "original_model_plan_path"]!.GetValue<string>(), string.Empty, start.QueuePath, start.SourcePath,
             ReadString(before, "state_hash"), start.CandidateId, -1, start.QueuePath, null, new List<JsonObject>(),
             useDailyPlanDecisionLease: false,
             executionSnapshotUrlOverride: SnapshotUrlForProfile(options.BridgeSnapshotUrl, "full", forceRefresh: true),
             executionSnapshotProfileOverride: "full");
-        if (control) await owner.ExecuteOriginalControlAsync(operation, http, Execute).ConfigureAwait(false);
+        if (terminal) await owner.ExecuteOriginalTerminalAsync(operation, http, Execute).ConfigureAwait(false);
+        else if (control) await owner.ExecuteOriginalControlAsync(operation, http, Execute).ConfigureAwait(false);
         else if (overnight) await owner.ExecuteOriginalOvernightAsync(operation, http, Execute).ConfigureAwait(false);
         else if (harvest) await owner.ExecuteOriginalHarvestAsync(operation, http, Execute).ConfigureAwait(false);
         else if (watering) await owner.ExecuteOriginalWateringAsync(operation, http, Execute).ConfigureAwait(false);
         else await owner.ExecuteOriginalRouteAsync(operation, http, Execute).ConfigureAwait(false);
-        if (control) await owner.RunControlRecoveryAsync(operation, http,
+        if (terminal) await owner.RunTerminalShippingAsync(operation, http,
+            (diagnostic, request) => PostJournaledPortfolioCommitAsync(http, options, diagnostic, request),
+            (endpoint, raw) => PostJsonStringAsync(http, endpoint, raw, CancellationToken.None)).ConfigureAwait(false);
+        else if (control) await owner.RunControlRecoveryAsync(operation, http,
             (diagnostic, request) => PostJournaledPortfolioCommitAsync(http, options, diagnostic, request),
             (endpoint, raw) => PostJsonStringAsync(http, endpoint, raw, CancellationToken.None)).ConfigureAwait(false);
         else if (overnight) await owner.RunOvernightAsync(operation, http,

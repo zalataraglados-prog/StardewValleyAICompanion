@@ -30,6 +30,10 @@ internal sealed partial class CropTeacherTerminalShippingSelection
     internal int StandY { get; }
     internal IReadOnlyDictionary<string, string> InputHashes => inputs.Hashes;
     internal void ValidateInputsUnchanged() => inputs.Validate();
+    internal CropTeacherTerminalShippingTarget CreateTarget(int acceptedDepositCount) => new(
+        RetentionProofPath, inputs.Hashes[RetentionProofPath], saveId, playerId, gameVersion, totalDay,
+        QualifiedItemId, SlotIndex, Quality, UnitPrice, BinX, BinY, StandX, StandY, initialQuantity,
+        MinimumUnits, acceptedDepositCount);
 
     internal CropTeacherTerminalShippingSelection(CropTeacherManagedProductionEvidence evidence,
         string nativePlanPath, string snapshotPath, string ledgerPath)

@@ -9,6 +9,15 @@ static partial class Program
     private sealed class CropTeacherOwnerLifetime : IAsyncDisposable
     {
         internal CropTeacherManagedSeedOwner? Current { get; private set; }
+        internal CropTeacherManagedProductionEvidence? TerminalProduction { get; private set; }
+        internal CropTeacherTerminalShippingSelection? TerminalSelection { get; private set; }
+        internal void AttachTerminal(CropTeacherManagedProductionEvidence production, CropTeacherTerminalShippingSelection selection)
+        {
+            if (Current is null || TerminalProduction is not null || TerminalSelection is not null)
+                throw new InvalidOperationException("Retain one terminal production boundary for the current managed owner.");
+            TerminalProduction = production;
+            TerminalSelection = selection;
+        }
         internal void Attach(CropTeacherManagedSeedOwner owner)
         {
             if (Current is not null) throw new InvalidOperationException("Complete or recover the original managed crop owner before another dispatch.");

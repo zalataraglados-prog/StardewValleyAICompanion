@@ -86,7 +86,7 @@ public sealed partial class CropTeacherManagedSeedOwner
                 var role = kind switch
                 {
                     "supporting_route" => "route", "watering_maintenance" => "maintenance", "crop_harvest" => "harvest",
-                    "overnight_control" => "overnight", "control_recovery" => "control", "seed" => null,
+                    "overnight_control" => "overnight", "control_recovery" => "control", "terminal_shipping" => "terminal", "seed" => null,
                     _ => throw new InvalidDataException("Accepted crop history contains an unsupported production role.")
                 };
                 if (role is not null)

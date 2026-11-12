@@ -8,20 +8,11 @@ using StardewAI.LiveTrainingLoop;
 
 static partial class Program
 {
-    private static async Task<string> PrepareCropTeacherManagedTerminalAsync(CropTeacherManagedSeedOwner owner,
+    private static async Task<(string Path, CropTeacherTerminalShippingSelection Selection)> PrepareCropTeacherManagedTerminalAsync(CropTeacherManagedSeedOwner owner,
         CropTeacherManagedProductionEvidence production)
     {
         var selection = await owner.SelectTerminalShippingAsync(production).ConfigureAwait(false);
-        var snapshot = JsonSerializer.Deserialize<SnapshotEnvelope>(ContentAddressedJsonArtifactReader.ReadAllText(owner.CurrentSnapshotPath), JsonOptions)!;
-        var ledger = JsonSerializer.Deserialize<StrategyCommitmentLedger>(ContentAddressedJsonArtifactReader.ReadAllText(owner.CurrentLedgerPath), JsonOptions)!;
-        var model = selection.BuildOriginalAction(snapshot, completedDeposits: 0)
-            ?? throw new InvalidDataException("New crop terminal selection cannot start with already-completed deposits.");
-        var queue = new ActionQueueCompiler().Compile(model, snapshot, ledger);
         var output = Path.GetDirectoryName(production.ManifestPath)!;
-        var modelPath = Path.Combine(output, "shipping-model-action.json");
-        var queuePath = Path.Combine(output, "shipping-compiled-queue.json");
-        await WritePortfolioJournalFileAsync(modelPath, JsonSerializer.Serialize(model, JsonOptions)).ConfigureAwait(false);
-        await WritePortfolioJournalFileAsync(queuePath, JsonSerializer.Serialize(queue, JsonOptions)).ConfigureAwait(false);
         selection.ValidateInputsUnchanged();
         var result = Path.Combine(output, "shipping-selection.json");
         await WritePortfolioJournalFileAsync(result, new JsonObject
@@ -29,7 +20,6 @@ static partial class Program
             ["schema_version"] = "crop_teacher_managed_shipping_selection.v1", ["production_manifest_path"] = production.ManifestPath,
             ["production_manifest_sha256"] = production.ManifestSha256, ["retention_proof_path"] = selection.RetentionProofPath,
             ["source_snapshot_path"] = owner.CurrentSnapshotPath, ["source_ledger_path"] = owner.CurrentLedgerPath,
-            ["model_action_path"] = modelPath, ["queue_path"] = queuePath, ["queue_status"] = queue.Status,
             ["qualified_item_id"] = selection.QualifiedItemId, ["minimum_units"] = selection.MinimumUnits,
             ["minimum_gross_revenue"] = selection.MinimumGrossRevenue, ["slot_index"] = selection.SlotIndex,
             ["quality"] = selection.Quality, ["unit_price"] = selection.UnitPrice, ["bin_tile_x"] = selection.BinX,
@@ -38,6 +28,40 @@ static partial class Program
             ["execution_authorized"] = false, ["formal_product_training_authorized"] = false
         }.ToJsonString(JsonOptions)).ConfigureAwait(false);
         selection.ValidateInputsUnchanged();
-        return result;
+        return (result, selection);
+    }
+
+    private static async Task<ManagedCropControl?> BuildCropTeacherOwnedTerminalQueueAsync(LiveTrainingOptions options,
+        int iteration, CropTeacherManagedSeedOwner owner, CropTeacherTerminalShippingSelection selection)
+    {
+        owner.ValidateOriginalSupportingExecutor(options, watering: false);
+        if (owner.Pending is not null || owner.HeadRecoveryRequired)
+            throw new InvalidOperationException("Recover the retained terminal phase before compiling another deposit.");
+        var sourcePath = owner.CurrentSnapshotPath;
+        var source = ContentAddressedJsonArtifactReader.ReadAllText(sourcePath);
+        var snapshot = JsonSerializer.Deserialize<SnapshotEnvelope>(source, JsonOptions)!;
+        var model = selection.BuildOriginalAction(snapshot, owner.AcceptedTerminalDepositCount);
+        if (model is null) return null;
+        var prefix = CropTeacherArtifactPrefix(options, iteration, "terminal-shipping");
+        var modelPath = prefix + "-model-action.json";
+        var queuePath = prefix + "-compiled-queue.json";
+        var receipt = Path.Combine(options.SnapshotDir, "execution-" + iteration.ToString("D4") + ".json");
+        var after = Path.Combine(options.SnapshotDir, "after-snapshot-" + iteration.ToString("D4") + ".json");
+        JsonObject? compiled = null;
+        var operation = await owner.CompileAndAdmitOriginalTerminalAsync(selection.CreateTarget(owner.AcceptedTerminalDepositCount), async () =>
+        {
+            if (new[] { modelPath, queuePath, receipt, after }.Any(path => File.Exists(path) || Directory.Exists(path)))
+                throw new IOException("Owned terminal requires new output slots; recover retained evidence instead of overwriting it.");
+            var ledger = JsonSerializer.Deserialize<StrategyCommitmentLedger>(
+                ContentAddressedJsonArtifactReader.ReadAllText(owner.CurrentLedgerPath), JsonOptions)!;
+            var queue = new ActionQueueCompiler().Compile(model, snapshot, ledger);
+            await WritePortfolioJournalFileAsync(modelPath, JsonSerializer.Serialize(model, JsonOptions)).ConfigureAwait(false);
+            await WritePortfolioJournalFileAsync(queuePath, JsonSerializer.Serialize(queue, JsonOptions)).ConfigureAwait(false);
+            selection.ValidateInputsUnchanged();
+            compiled = JsonSerializer.SerializeToNode(queue, JsonOptions)!.AsObject();
+            return new(modelPath, queuePath, receipt, after, Path.Combine(owner.EvidenceDirectory, "native-" + iteration.ToString("D4")));
+        }).ConfigureAwait(false);
+        return new(StandardResult(compiled!, modelPath, string.Empty, sourcePath, JsonNode.Parse(source)!.AsObject(),
+            snapshot.StateHash, options, "crop_teacher_terminal_shipping", "full"), operation);
     }
 }

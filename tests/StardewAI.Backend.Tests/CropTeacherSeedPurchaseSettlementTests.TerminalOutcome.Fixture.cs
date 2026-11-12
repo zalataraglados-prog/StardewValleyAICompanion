@@ -33,24 +33,25 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         internal MoneyRevenueCropNativeLifecycleTransitionRequest Transition { get; private set; } = null!;
         private readonly bool approach;
         private readonly int cursor;
+        private readonly int quantity;
         internal string Candidate => FormattableString.Invariant($"ship:Farm:5,4:{resources.Index}:{resources.Item}") +
             (approach ? ":approach" : ":deposit:" + (cursor + 1).ToString(CultureInfo.InvariantCulture));
 
-        internal TerminalOutcomeFixture(bool approach = false, int cursor = 0)
+        internal TerminalOutcomeFixture(bool approach = false, int cursor = 0, int quantity = 2)
         {
-            this.approach = approach; this.cursor = cursor;
-            resources = new(stack: 2, bankCount: cursor);
+            this.approach = approach; this.cursor = cursor; this.quantity = quantity;
+            resources = new(stack: quantity, bankCount: cursor);
             Shared = new(prepareSource: source =>
             {
                 foreach (var field in resources.Before.State) source.Before.State[field.Key] = field.Value.Clone();
-                Geometry(source.Before, approach);
+                Geometry(source.Before, approach, resources.Index);
             });
             After = approach ? Copy(Before) : Copy(resources.After);
-            Geometry(After, false); After.GameTick = Before.GameTick + 1;
+            Geometry(After, false, resources.Index); After.GameTick = Before.GameTick + 1;
             After.StateHash = SnapshotHash.ComputeStateHash(After.State);
             var initial = Copy(Before);
             ChangeState(initial, "player", node => node["inventory"]!["value"]!.AsArray()
-                .Single(row => row!["slot_index"]!.GetValue<int>() == resources.Index)!["stack"] = 2 + cursor);
+                .Single(row => row!["slot_index"]!.GetValue<int>() == resources.Index)!["stack"] = quantity + cursor);
             ChangeState(initial, "farm", node =>
             {
                 foreach (var bin in node["shipping_bins"]!["value"]!.AsArray())
@@ -60,23 +61,23 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                     bin["contents_signature"] = Convert.ToHexString(SHA256.HashData(Array.Empty<byte>())).ToLowerInvariant();
                 }
                 var graph = node["material_inventory_graph"]!["value"]!;
-                graph["inventory_nodes"]![0]!["slots"]!.AsArray().Single(row => row!["slot_index"]!.GetValue<int>() == resources.Index)!["stack"] = 2 + cursor;
-                graph["quantity_rows"]!.AsArray().Single(row => row!["qualified_item_id"]!.GetValue<string>() == resources.Item)!["available_quantity"] = 2 + cursor;
+                graph["inventory_nodes"]![0]!["slots"]!.AsArray().Single(row => row!["slot_index"]!.GetValue<int>() == resources.Index)!["stack"] = quantity + cursor;
+                graph["quantity_rows"]!.AsArray().Single(row => row!["qualified_item_id"]!.GetValue<string>() == resources.Item)!["available_quantity"] = quantity + cursor;
             });
             Fixture.Save(InitialPath, initial);
             Fixture.Save(ProofPath, new MoneyRevenueCropOutputRetentionProof
             {
                 Status = "verified_native_crop_output_retention", NativeOutputRetentionVerified = true,
-                CommitmentId = Id, HarvestItemQualifiedId = resources.Item, MinimumUnits = 2, MinimumGrossRevenue = 100,
+                CommitmentId = Id, HarvestItemQualifiedId = resources.Item, MinimumUnits = Math.Min(2, quantity + cursor), MinimumGrossRevenue = 50 * Math.Min(2, quantity + cursor),
                 HarvestTotalDay = Before.State["time"].GetProperty("total_days").GetProperty("value").GetInt32(),
                 CropProductionPlanPath = Shared.Inputs.Request.CropProductionPlanPath,
                 CropProductionPlanSha256 = Hash(Shared.Inputs.Request.CropProductionPlanPath),
                 AfterSnapshotPath = InitialPath, AfterSnapshotSha256 = Hash(InitialPath), AfterStateHash = initial.StateHash,
-                InventoryQuantityAfter = 2 + cursor
+                InventoryQuantityAfter = quantity + cursor
             });
             Target = new(ProofPath, Hash(ProofPath), Before.SaveId.Value!, Before.PlayerId.Value!, Before.GameVersion,
                 Before.State["time"].GetProperty("total_days").GetProperty("value").GetInt32(), resources.Item, resources.Index,
-                0, 50, 5, 4, 4, 4, 2 + cursor, 2, cursor);
+                0, 50, 5, 4, 4, 4, quantity + cursor, Math.Min(2, quantity + cursor), cursor);
             var parameters = new List<SmallModelActionParameter>();
             void Add(string name, object value) => parameters.Add(new() { Name = name, Value = Convert.ToString(value, CultureInfo.InvariantCulture)! });
             if (approach) { Add("target_tile_x", 4); Add("target_tile_y", 4); }
@@ -110,18 +111,36 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         {
             After.StateHash = SnapshotHash.ComputeStateHash(After.State);
             Fixture.Save(AfterPath, After);
-            var receipt = MoneyCropTeacherFixture.Create<QueueExecutionReceiptEnvelope>("MoneyCropQueueReceipt", Queue, Before, After,
+            var receipt = approach
+                ? MoneyCropTeacherFixture.Create<QueueExecutionReceiptEnvelope>("LifecycleReceipt", Queue, Before, After,
+                    Shared.Files.Options.RunId, Candidate, "move_to_tile")
+                : MoneyCropTeacherFixture.Create<QueueExecutionReceiptEnvelope>("MoneyCropQueueReceipt", Queue, Before, After,
                 Candidate, approach ? "move_to_tile" : "ship_inventory_item_to_bin", approach ? Array.Empty<object>() : new object[] {
-                    new { path = "player.inventory." + resources.Item + ".count", before = 2, after = 1 },
+                    new { path = "player.inventory." + resources.Item + ".count", before = quantity, after = quantity - 1 },
                     new { path = "farm.shipping_bin." + resources.Item + ".count", before = cursor, after = cursor + 1 } });
+            receipt.RunId = Shared.Files.Options.RunId;
             Fixture.Save(ReceiptPath, receipt);
             Transition = new(approach ? "shipping_approach" : "shipping_deposit", Target.TotalDay, QueuePath, Shared.Source.SourcePath,
                 ReceiptPath, AfterPath, receipt.RunId, Shared.Files.Options.ExecutorVersion, Candidate);
         }
 
-        private static void Geometry(SnapshotEnvelope snapshot, bool approaching)
+        internal SnapshotEnvelope DepositAfter(SnapshotEnvelope current)
         {
-            ChangeState(snapshot, "player", node => { node["tile_x"]!["value"] = approaching ? 0 : 4; node["tile_y"]!["value"] = approaching ? 0 : 4; });
+            var after = Copy(resources.After);
+            Geometry(after, false, resources.Index);
+            after.GameTick = current.GameTick + 1;
+            after.StateHash = SnapshotHash.ComputeStateHash(after.State);
+            return after;
+        }
+
+        private static void Geometry(SnapshotEnvelope snapshot, bool approaching, int slotIndex)
+        {
+            ChangeState(snapshot, "player", node =>
+            {
+                node["tile_x"]!["value"] = approaching ? 0 : 4; node["tile_y"]!["value"] = approaching ? 0 : 4;
+                var row = node["inventory"]!["value"]!.AsArray().Single(row => row!["slot_index"]!.GetValue<int>() == slotIndex)!;
+                row["can_be_shipped"] = row["is_empty"]?.GetValue<bool>() == true ? null : JsonValue.Create(true);
+            });
             ChangeState(snapshot, "farm", node =>
             {
                 // ShippingResourcesFixture adds a retained foreign node; full source admission

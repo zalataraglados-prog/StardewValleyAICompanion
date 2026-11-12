@@ -24,11 +24,11 @@ public sealed class CropTeacherManagedSeedOperation
         CropTeacherSupportingRoute? supportingRoute = null, CropTeacherSupportingRoute.Preparation? routeStart = null,
         CropTeacherWateringMaintenance? watering = null, CropTeacherWateringMaintenance.Preparation? wateringStart = null,
         CropTeacherHarvest.Preparation? harvestStart = null, CropTeacherOvernight.Preparation? overnightStart = null,
-        CropTeacherControlRecovery.Preparation? controlStart = null)
+        CropTeacherControlRecovery.Preparation? controlStart = null, CropTeacherTerminalShipping.Preparation? terminalStart = null)
     {
         Owner = owner; Record = record; RecordPath = recordPath; seedScopes = scopes; Lifecycle = lifecycle;
         SupportingRoute = supportingRoute; RouteStart = routeStart; Watering = watering; WateringStart = wateringStart;
-        HarvestStart = harvestStart; OvernightStart = overnightStart; ControlStart = controlStart;
+        HarvestStart = harvestStart; OvernightStart = overnightStart; ControlStart = controlStart; TerminalStart = terminalStart;
     }
     private readonly CropTeacherManagedSeedScopes? seedScopes;
     internal CropTeacherSeedLifecycleSupport? Lifecycle { get; }
@@ -42,12 +42,14 @@ public sealed class CropTeacherManagedSeedOperation
     internal CropTeacherOvernight? Overnight { get; set; }
     internal CropTeacherControlRecovery.Preparation? ControlStart { get; }
     internal CropTeacherControlRecovery? Control { get; set; }
+    internal CropTeacherTerminalShipping.Preparation? TerminalStart { get; }
+    internal CropTeacherTerminalShipping? Terminal { get; set; }
     internal ICropTeacherSupportingPreparation? OriginalStart => (ICropTeacherSupportingPreparation?)RouteStart ??
         (ICropTeacherSupportingPreparation?)WateringStart ?? (ICropTeacherSupportingPreparation?)HarvestStart ??
-        (ICropTeacherSupportingPreparation?)OvernightStart ?? ControlStart;
+        (ICropTeacherSupportingPreparation?)OvernightStart ?? (ICropTeacherSupportingPreparation?)ControlStart ?? TerminalStart;
     internal ICropTeacherSupportingTransition? SupportingTransition => (ICropTeacherSupportingTransition?)SupportingRoute ??
         (ICropTeacherSupportingTransition?)Watering ?? (ICropTeacherSupportingTransition?)Harvest ??
-        (ICropTeacherSupportingTransition?)Overnight ?? Control;
+        (ICropTeacherSupportingTransition?)Overnight ?? (ICropTeacherSupportingTransition?)Control ?? Terminal;
     internal CropTeacherManagedSeedOwner Owner { get; }
     internal JsonObject Record { get; }
     internal string RecordPath { get; }
@@ -69,7 +71,8 @@ public sealed class CropTeacherManagedSeedOperation
     public bool IsHarvest => HarvestStart is not null || Harvest is not null;
     public bool IsOvernight => OvernightStart is not null || Overnight is not null;
     public bool IsControlRecovery => ControlStart is not null || Control is not null;
-    public bool IsSupportingTransition => IsSupportingRoute || IsWateringMaintenance || IsHarvest || IsOvernight || IsControlRecovery;
+    public bool IsTerminalShipping => TerminalStart is not null || Terminal is not null;
+    public bool IsSupportingTransition => IsSupportingRoute || IsWateringMaintenance || IsHarvest || IsOvernight || IsControlRecovery || IsTerminalShipping;
     public CropTeacherManagedSeedScopes Scopes => seedScopes ?? throw new InvalidOperationException("Lifecycle operations have no native seed scope.");
     public CropTeacherRunStep ReadStep() => IsLifecycle || IsSupportingTransition ? throw new InvalidOperationException("Non-seed operations have no native seed step.") :
         Record["step"]!.Deserialize<CropTeacherRunStep>(CropTeacherManagedSeedOwner.JsonOptions)!;
@@ -94,6 +97,8 @@ public sealed partial class CropTeacherManagedSeedOwner : IAsyncDisposable
     private string? lastAcceptedPath;
     private CropTeacherManagedSeedOperation? lastAcceptedOperation;
     private readonly List<(int Sequence, string Path, string Hash)> acceptedHistory = [];
+    private CropTeacherTerminalShippingTarget? terminalTarget;
+    public int AcceptedTerminalDepositCount => terminalTarget?.AcceptedDepositCount ?? 0;
     private Action? liveHeadGuard;
     private bool disposed;
     private bool faulted;
