@@ -11,6 +11,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         Path.Combine(operation.RuntimeDirectory, NativeSupportingRole(operation) + "-intent.json");
 
     private JsonObject CreateSupportingTransitionIntent(JsonObject record, ICropTeacherSupportingTransition? scope) =>
+        record["operation_kind"]?.GetValue<string>() == "control_recovery" ? CreateOriginalControlIntent(record) :
         record["operation_kind"]?.GetValue<string>() == "overnight_control" ? CreateOriginalOvernightIntent(record) :
         record["operation_kind"]?.GetValue<string>() == "crop_harvest" ? CreateOriginalHarvestIntent(record) :
         record["maintenance_execution_protocol"]?.GetValue<string>() == "original_loop.v1" ? CreateOriginalWateringIntent(record) :
@@ -27,7 +28,15 @@ public sealed partial class CropTeacherManagedSeedOwner
 
     private void ValidateSupportingTransition(CropTeacherManagedSeedOperation operation)
     {
-        if (operation.IsSupportingRoute) ValidateSupportingRoute(operation);
+        if (operation.IsControlRecovery)
+        {
+            operation.ControlStart!.ValidateInputsUnchanged();
+            operation.Control?.ValidateInputsUnchanged();
+            if (operation.Control is not null) operation.RuntimeArtifactGuard?.Invoke();
+            if (SupportingTransitionIntentHash(operation.Record, operation.Control) != Text(operation.Record, "original_intent_sha256"))
+                throw new InvalidDataException("Managed crop control changed its admitted original intent.");
+        }
+        else if (operation.IsSupportingRoute) ValidateSupportingRoute(operation);
         else if (operation.IsOvernight)
         {
             operation.OvernightStart!.ValidateInputsUnchanged();
@@ -91,7 +100,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             // Local success still requires the original durable journal and full replay.
             var recovered = await ReadSupportingTransitionBoundaryAsync(http, operation, root, post).ConfigureAwait(false);
             await AdvanceAsync(operation, recovered.Evidence, recovered.SnapshotPath, recovered.Validate,
-                operation.IsOvernight ? "live_overnight_control" : operation.IsHarvest ? "live_crop_harvest" : watering ? "live_watering_maintenance" : "live_supporting_route").ConfigureAwait(false);
+                operation.IsControlRecovery ? "live_control_recovery" : operation.IsOvernight ? "live_overnight_control" : operation.IsHarvest ? "live_crop_harvest" : watering ? "live_watering_maintenance" : "live_supporting_route").ConfigureAwait(false);
         }
         finally { gate.Release(); }
     }

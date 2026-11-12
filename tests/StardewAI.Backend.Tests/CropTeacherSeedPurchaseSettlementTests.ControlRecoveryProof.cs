@@ -141,13 +141,23 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
     private static OwnedRouteFixture ControlProofFixture() => new(prepareSource: f =>
         f.Before.State["menus"] = JsonSerializer.SerializeToElement(new
         {
-            active_menu = new { status = "available", value = SafeControlMenu() }
+            active_menu = new { status = "available", value = SafeControlMenu() },
+            sleep_prompt_context = new { status = "available", value = new { prompt_open = false } }
         }));
 
     private static async Task<(string Model, string Queue)> BuildControlProof(OwnedRouteFixture f)
     {
-        await InvokeLive<Task>("BuildCropTeacherDialogueRecoveryQueueAsync", f.Runtime.Client, f.Runtime.LiveOptions, 1,
-            f.Source.SourcePath, JsonSerializer.SerializeToNode(f.Source.Before, JsonOptions)!.AsObject(), f.Source.Before.StateHash);
+        try
+        {
+            await InvokeLive<Task>("BuildCropTeacherDialogueRecoveryQueueAsync", f.Runtime.Client, f.Runtime.LiveOptions, 1,
+                f.Source.SourcePath, JsonSerializer.SerializeToNode(f.Source.Before, JsonOptions)!.AsObject(), f.Source.Before.StateHash);
+        }
+        catch (InvalidDataException error) when (f.Runtime.Handler.LastCompiledQueue is { } raw)
+        {
+            var queue = raw.Deserialize<ActionQueueEnvelope>(JsonOptions)!;
+            throw new InvalidDataException(error.Message + ";" + queue.Status + ";" + string.Join(",", queue.CompilerDiagnostics.Concat(
+                queue.Items.SelectMany(item => item.BlockingReasons.Concat(item.MissingStateFactors)))), error);
+        }
         var prefix = Path.Combine(f.Runtime.LiveOptions.SnapshotDir, "crop-teacher-dialogue-recovery-0001");
         return (prefix + "-model-plan.json", prefix + "-compiled-queue.json");
     }
@@ -165,7 +175,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         ChangeState(after, "menus", node => node["active_menu"]!["value"]!["is_open"] = fault == "unclosed");
         if (fault == "resources") ChangeState(after, "player", node => node["money"]!["value"] = 1);
         if (fault == "position") ChangeState(after, "player", node => node["tile_x"]!["value"] = 4);
-        if (fault == "identity") after.PlayerId += ":other";
+        if (fault == "identity") after.PlayerId.Value += ":other";
         if (fault == "day") ChangeState(after, "time", node =>
             node["total_days"]!["value"] = preparation.TotalDay + 1);
         if (fault == "clock") ChangeState(after, "time", node => node["time"]!["value"] = 500);

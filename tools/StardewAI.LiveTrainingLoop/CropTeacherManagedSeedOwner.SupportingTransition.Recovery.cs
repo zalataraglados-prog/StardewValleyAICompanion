@@ -64,6 +64,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         accepted["native_outcome_verified"] = true;
         accepted["native_crop_lifecycle_verified"] = false;
         accepted["teacher_preference_label_eligible"] = false;
+        if (operation.Control is { } control) AddControlOutcomeEvidence(control, accepted);
         if (operation.Watering is { } watering) AddWateringOutcomeEvidence(watering, accepted);
         if (operation.Harvest is { } harvest) AddHarvestOutcomeEvidence(harvest, accepted);
         if (operation.Overnight is { } overnight)
@@ -83,6 +84,21 @@ public sealed partial class CropTeacherManagedSeedOwner
     private void ValidateSupportingTransitionAcceptance(CropTeacherManagedSeedOperation operation, JsonObject accepted)
     {
         if (operation.OriginalStart is not null) LoadOriginalSupportingOutcome(operation);
+        if (operation.Control is { } control)
+        {
+            var expected = new JsonObject();
+            AddControlOutcomeEvidence(control, expected);
+            if (expected.Any(field => !JsonNode.DeepEquals(field.Value, accepted[field.Key])) ||
+                accepted["route_target_reached"] is not null || accepted["route_native_claim_sha256"] is not null ||
+                accepted["route_native_result_sha256"] is not null || accepted["maintenance_native_claim_sha256"] is not null ||
+                accepted["maintenance_native_result_sha256"] is not null || accepted["native_watering_prefix_verified"] is not null ||
+                accepted["native_refill_control_verified"] is not null || accepted["native_refill_approach_verified"] is not null ||
+                accepted["native_refill_resource_effects_verified"] is not null)
+                throw new InvalidDataException("Managed control recovery acceptance changed or claimed unrelated progress.");
+        }
+        else if (accepted["native_control_recovery_verified"] is not null || accepted["control_kind"] is not null ||
+            accepted["control_native_claim_sha256"] is not null || accepted["control_native_result_sha256"] is not null)
+            throw new InvalidDataException("A different supporting phase cannot claim control recovery evidence.");
         if (operation.Overnight is { } overnight)
         {
             var expected = new JsonObject();

@@ -1,5 +1,39 @@
 # Original Refill Native Trace
 
+## 2026-11-12 Original Safe-dialogue Control Outcome
+
+Previouscd347961 CI43150917338 succeeded, but PR567 remains DRAFT pending full
+managed native closure. This R2step3 block shares the EXACT original safe speakerless
+dialogue predicate through Core plus the existing Live wrapper. Transitioning keeps
+its original HasValue rule; available and Sleep/SleepTent exclusions are unchanged.
+
+The new Control result is not a second executor: preparation replays the original
+dialogue plan/compiler, outcome reuses the original resource-neutral terminal kernel,
+native step save/actor/tick/day/clock boundary and ledger rebind. Same-position,
+readably closed/no-persistent-resource-change scope is explicit. Extra story/callback
+effects stay unverified for their own binding, not hidden or removed from the goal.
+Owner admission/intent/index/native claim/execution/marker/read-only recovery reuse
+the existing supporting pipeline, with distinct control evidence rather than fake
+route/water/harvest/overnight progress.
+
+Peer six-path f19b3e15 ->8626cf08 was retained after two compiler failures, with ZERO
+tests executed (System import then incorrect PlayerId envelope fixture). Controller
+corrected Value. Initial22 failures shared the original compile gate; a bounded
+diagnostic found fixtures missing OLD menus.sleep_prompt_context. Only declared
+inputs were filled, no bridge/validator relaxation. Controller final focused31/31 and
+same-built-output affected790/790 passed, zero fail/skip/build warnings/errors;
+overlapping counts not added. Original-entry HTTP dispatch, four lost-ack modes,
+unknown native no-repeat, reopen and original receipt/resource/identity rejection
+are covered. Old failures retained. These are NOT game/native/full lifecycle proofs.
+
+Next prioritize the selected legal no-clearance A route's terminal/replan, ORIGINAL
+whole-wave retention/selected sale/native saved-state readback and fresh-head
+continuity, then actual SAME-loop recovery and bounded managed native acceptance.
+Rechecked issue550/current R2: don't make ALL story/clearance branches prerequisites
+when absent from the selected route. Retain their later selected-branch obligations
+and stop at the first actual unsupported effect. L1 frozen/formal=false, no
+game/server/train/local-data. Final head requires fresh CI; PR567 stays DRAFT.
+
 ## 2026-11-12 Original Late-day Route and Overnight Reuse
 
 R2step3 managed late-day selection uses the ORIGINAL recovery window/home projection.

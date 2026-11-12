@@ -16,7 +16,7 @@ static partial class Program
     {
         if (operation.IsSupportingTransition)
         {
-            var kind = operation.IsOvernight ? CropTeacherSupportingOperationKind.Overnight : operation.IsHarvest
+            var kind = operation.IsControlRecovery ? CropTeacherSupportingOperationKind.Control : operation.IsOvernight ? CropTeacherSupportingOperationKind.Overnight : operation.IsHarvest
                 ? CropTeacherSupportingOperationKind.Harvest : operation.IsWateringMaintenance
                     ? CropTeacherSupportingOperationKind.Watering : CropTeacherSupportingOperationKind.Route;
             await ExecuteCropTeacherOwnedSupportingCoreAsync(http, executorHttp, options, iteration, owner, operation, kind).ConfigureAwait(false);

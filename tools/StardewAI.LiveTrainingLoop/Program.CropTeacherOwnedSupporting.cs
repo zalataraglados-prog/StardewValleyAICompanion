@@ -17,12 +17,13 @@ static partial class Program
         var watering = kind == CropTeacherSupportingOperationKind.Watering;
         var harvest = kind == CropTeacherSupportingOperationKind.Harvest;
         var overnight = kind == CropTeacherSupportingOperationKind.Overnight;
+        var control = kind == CropTeacherSupportingOperationKind.Control;
         owner.ValidateOriginalSupportingExecutor(options, watering);
         if (overnight) owner.ValidateOriginalOvernightSaveBinding(options);
-        if (overnight ? operation.OvernightStart is null : harvest ? operation.HarvestStart is null : watering ? operation.WateringStart is null : operation.RouteStart is null)
+        if (control ? operation.ControlStart is null : overnight ? operation.OvernightStart is null : harvest ? operation.HarvestStart is null : watering ? operation.WateringStart is null : operation.RouteStart is null)
             throw new InvalidOperationException(watering ? "Owned watering has no original compilation." : "Owned crop route has no original compilation.");
         var start = operation.OriginalStart!;
-        var transition = operation.Record[overnight ? "overnight_transition" : harvest ? "harvest_transition" : watering ? "maintenance_transition" : "route_transition"]!.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)!;
+        var transition = operation.Record[control ? "control_transition" : overnight ? "overnight_transition" : harvest ? "harvest_transition" : watering ? "maintenance_transition" : "route_transition"]!.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)!;
         var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
         if (!string.Equals(Path.GetFullPath(transition.ExecutionReceiptPath), Path.GetFullPath(Path.Combine(options.SnapshotDir, "execution-" + iteration.ToString("D4") + ".json")), comparison) ||
             !string.Equals(Path.GetFullPath(transition.AfterSnapshotPath), Path.GetFullPath(Path.Combine(options.SnapshotDir, "after-snapshot-" + iteration.ToString("D4") + ".json")), comparison))
@@ -37,11 +38,15 @@ static partial class Program
             useDailyPlanDecisionLease: false,
             executionSnapshotUrlOverride: SnapshotUrlForProfile(options.BridgeSnapshotUrl, "full", forceRefresh: true),
             executionSnapshotProfileOverride: "full");
-        if (overnight) await owner.ExecuteOriginalOvernightAsync(operation, http, Execute).ConfigureAwait(false);
+        if (control) await owner.ExecuteOriginalControlAsync(operation, http, Execute).ConfigureAwait(false);
+        else if (overnight) await owner.ExecuteOriginalOvernightAsync(operation, http, Execute).ConfigureAwait(false);
         else if (harvest) await owner.ExecuteOriginalHarvestAsync(operation, http, Execute).ConfigureAwait(false);
         else if (watering) await owner.ExecuteOriginalWateringAsync(operation, http, Execute).ConfigureAwait(false);
         else await owner.ExecuteOriginalRouteAsync(operation, http, Execute).ConfigureAwait(false);
-        if (overnight) await owner.RunOvernightAsync(operation, http,
+        if (control) await owner.RunControlRecoveryAsync(operation, http,
+            (diagnostic, request) => PostJournaledPortfolioCommitAsync(http, options, diagnostic, request),
+            (endpoint, raw) => PostJsonStringAsync(http, endpoint, raw, CancellationToken.None)).ConfigureAwait(false);
+        else if (overnight) await owner.RunOvernightAsync(operation, http,
             (diagnostic, request) => PostJournaledPortfolioCommitAsync(http, options, diagnostic, request),
             (endpoint, raw) => PostJsonStringAsync(http, endpoint, raw, CancellationToken.None)).ConfigureAwait(false);
         else if (harvest) await owner.RunHarvestAsync(operation, http,

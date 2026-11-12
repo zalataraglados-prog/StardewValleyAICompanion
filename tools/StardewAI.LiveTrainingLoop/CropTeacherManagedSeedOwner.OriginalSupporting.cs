@@ -21,8 +21,8 @@ public sealed partial class CropTeacherManagedSeedOwner
             throw new IOException((watering ? "Original watering" : "Original route") + " requires new native receipt/snapshot paths before dispatch.");
     }
 
-    private static string NativeSupportingRole(CropTeacherManagedSeedOperation operation) => operation.IsOvernight ? "overnight" : operation.IsHarvest ? "harvest" : operation.IsWateringMaintenance ? "maintenance" : "route";
-    private static string SupportingOperationTag(CropTeacherManagedSeedOperation operation) => operation.IsOvernight ? "overnight_control" : operation.IsHarvest ? "crop_harvest" :
+    private static string NativeSupportingRole(CropTeacherManagedSeedOperation operation) => operation.IsControlRecovery ? "control" : operation.IsOvernight ? "overnight" : operation.IsHarvest ? "harvest" : operation.IsWateringMaintenance ? "maintenance" : "route";
+    private static string SupportingOperationTag(CropTeacherManagedSeedOperation operation) => operation.IsControlRecovery ? "control_recovery" : operation.IsOvernight ? "overnight_control" : operation.IsHarvest ? "crop_harvest" :
         operation.IsWateringMaintenance ? "watering_maintenance" : "supporting_route";
     private static bool IsSupportingKind(CropTeacherManagedSeedOperation operation, CropTeacherSupportingOperationKind kind) => kind switch
     {
@@ -30,11 +30,13 @@ public sealed partial class CropTeacherManagedSeedOwner
         CropTeacherSupportingOperationKind.Watering => operation.IsWateringMaintenance,
         CropTeacherSupportingOperationKind.Harvest => operation.IsHarvest,
         CropTeacherSupportingOperationKind.Overnight => operation.IsOvernight,
+        CropTeacherSupportingOperationKind.Control => operation.IsControlRecovery,
         _ => false
     };
     private static string NativeSupportingPath(CropTeacherManagedSeedOperation operation, string suffix) =>
         Path.Combine(operation.RuntimeDirectory, NativeSupportingRole(operation) + "-native-" + suffix + ".json");
     private static MoneyRevenueCropNativeLifecycleTransitionRequest OriginalSupportingTransition(CropTeacherManagedSeedOperation operation) =>
+        operation.IsControlRecovery ? operation.Record["control_transition"]!.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)! :
         operation.IsOvernight ? operation.Record["overnight_transition"]!.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)! :
         operation.IsHarvest ? operation.Record["harvest_transition"]!.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)! :
         operation.IsWateringMaintenance ? operation.Record["maintenance_transition"]!.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)! : RouteTransition(operation.Record);
@@ -52,7 +54,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             var start = operation.OriginalStart!;
             var root = operation.RuntimeDirectory;
             var claimPath = NativeSupportingPath(operation, "claim");
-            var label = operation.IsOvernight ? "Original overnight" : operation.IsHarvest ? "Original harvest" : watering ? "Original watering" : "Original route";
+            var label = operation.IsControlRecovery ? "Original control recovery" : operation.IsOvernight ? "Original overnight" : operation.IsHarvest ? "Original harvest" : watering ? "Original watering" : "Original route";
             if (operation.Started is not null || File.Exists(claimPath))
                 throw new InvalidOperationException(label + " native invocation is already claimed; verify retained outcome, never redispatch.");
             var transition = OriginalSupportingTransition(operation);

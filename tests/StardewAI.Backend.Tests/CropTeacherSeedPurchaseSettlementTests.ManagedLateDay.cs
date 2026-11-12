@@ -170,7 +170,8 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                         is_open = true, type = "DialogueBox", is_sleep_prompt = false, event_up = false,
                         dialogue_is_question = false, dialogue_response_count = 0, dialogue_transitioning = false,
                         dialogue_character_present = false, dialogue_speaker_name = "", last_question_key = ""
-                    } }
+                    } },
+                    sleep_prompt_context = new { status = "available", value = new { prompt_open = false } }
                 });
             else ChangeState(source.Before, "player", node => node["story_event"] = JsonSerializer.SerializeToNode(new
             {
@@ -182,10 +183,21 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         var source = JsonNode.Parse(File.ReadAllText(owner.CurrentSnapshotPath))!.AsObject();
         Assert.True(dialogue ? CropTeacherControlInterruptClassifier.HasSafeSpeakerlessDialogue(source)
             : InvokeLive<bool>("HasPriorityStoryEventInterrupt", source));
-        var error = await Assert.ThrowsAsync<InvalidDataException>(() => SelectManagedLateDay(f, owner, f.Step));
-        Assert.Contains("control interrupt", error.Message);
+        if (dialogue)
+        {
+            var selected = await SelectManagedLateDay(f, owner, f.Step);
+            Assert.True(selected.Operation.IsControlRecovery);
+            Assert.Equal("safe_dialogue_recovery", selected.Interrupt);
+            Assert.Null(selected.Override); Assert.Same(selected.Operation, owner.Pending);
+        }
+        else
+        {
+            var error = await Assert.ThrowsAsync<InvalidDataException>(() => SelectManagedLateDay(f, owner, f.Step));
+            Assert.Contains("control interrupt", error.Message);
+            Assert.Null(owner.Pending);
+        }
         await Assert.ThrowsAsync<InvalidDataException>(() => SelectManagedLateDay(f, owner, f.Step, direct: true));
-        Assert.Null(owner.Pending); Assert.False(File.Exists(f.QueuePath)); Assert.Equal(0, f.Runtime.Handler.Commits);
+        Assert.False(File.Exists(f.QueuePath)); Assert.Equal(0, f.Runtime.Handler.Commits);
     }
 
     private static void SetManagedLateDayClock(Fixture source, int time)
