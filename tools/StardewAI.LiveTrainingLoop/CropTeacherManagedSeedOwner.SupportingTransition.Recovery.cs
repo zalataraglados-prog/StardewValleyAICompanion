@@ -57,7 +57,7 @@ public sealed partial class CropTeacherManagedSeedOwner
     private void AddSupportingTransitionAcceptance(CropTeacherManagedSeedOperation operation, JsonObject accepted)
     {
         if (operation.Started is null) throw new InvalidDataException("Managed supporting route lacks its original rebind claim.");
-        accepted["operation_kind"] = operation.IsWateringMaintenance ? "watering_maintenance" : "supporting_route";
+        accepted["operation_kind"] = SupportingOperationTag(operation);
         accepted["runtime_start_sha256"] = HashFile(RecordPath(operation.Sequence, "started"));
         accepted["original_intent_sha256"] = Text(operation.Record, "original_intent_sha256");
         accepted["original_marker_reply_sha256"] = HashFile(Path.Combine(operation.RuntimeDirectory, "marker-reply.json"));
@@ -65,6 +65,13 @@ public sealed partial class CropTeacherManagedSeedOwner
         accepted["native_crop_lifecycle_verified"] = false;
         accepted["teacher_preference_label_eligible"] = false;
         if (operation.Watering is { } watering) AddWateringOutcomeEvidence(watering, accepted);
+        if (operation.Harvest is { } harvest) AddHarvestOutcomeEvidence(harvest, accepted);
+        if (operation.Overnight is { } overnight)
+        {
+            AddOvernightOutcomeEvidence(overnight, accepted);
+            accepted["native_save_boundary_verified"] = true;
+            accepted["overnight_save_boundary_sha256"] = HashFile(OriginalOvernightSavePath(operation));
+        }
         if (operation.OriginalStart is not null)
         {
             accepted[NativeSupportingRole(operation) + "_native_claim_sha256"] = HashFile(NativeSupportingPath(operation, "claim"));
@@ -76,6 +83,38 @@ public sealed partial class CropTeacherManagedSeedOwner
     private void ValidateSupportingTransitionAcceptance(CropTeacherManagedSeedOperation operation, JsonObject accepted)
     {
         if (operation.OriginalStart is not null) LoadOriginalSupportingOutcome(operation);
+        if (operation.Overnight is { } overnight)
+        {
+            var expected = new JsonObject();
+            AddOvernightOutcomeEvidence(overnight, expected);
+            if (expected.Any(field => !JsonNode.DeepEquals(field.Value, accepted[field.Key])) ||
+                accepted["native_save_boundary_verified"]?.GetValue<bool>() != true ||
+                Text(accepted, "overnight_save_boundary_sha256") != HashFile(OriginalOvernightSavePath(operation)) ||
+                accepted["route_native_claim_sha256"] is not null || accepted["route_native_result_sha256"] is not null ||
+                accepted["maintenance_native_claim_sha256"] is not null || accepted["maintenance_native_result_sha256"] is not null)
+                throw new InvalidDataException("Managed crop overnight control acceptance changed.");
+        }
+        else if (accepted["native_overnight_control_verified"] is not null || accepted["overnight_native_claim_sha256"] is not null ||
+                 accepted["overnight_native_result_sha256"] is not null || accepted["overnight_save_boundary_sha256"] is not null ||
+                 accepted["native_save_boundary_verified"] is not null)
+            throw new InvalidDataException("A different phase cannot claim an overnight boundary.");
+        if (operation.Harvest is { } harvest)
+        {
+            var expected = new JsonObject();
+            AddHarvestOutcomeEvidence(harvest, expected);
+            if (expected.Any(field => !JsonNode.DeepEquals(field.Value, accepted[field.Key])) ||
+                accepted["route_native_claim_sha256"] is not null || accepted["route_native_result_sha256"] is not null ||
+                accepted["maintenance_native_claim_sha256"] is not null || accepted["maintenance_native_result_sha256"] is not null ||
+                accepted["native_watering_prefix_verified"] is not null || accepted["route_target_reached"] is not null ||
+                accepted["native_refill_control_verified"] is not null || accepted["native_refill_approach_verified"] is not null ||
+                accepted["native_refill_resource_effects_verified"] is not null)
+                throw new InvalidDataException("Managed crop harvest prefix acceptance changed.");
+        }
+        else if (accepted["native_harvest_prefix_verified"] is not null || accepted["harvest_native_claim_sha256"] is not null ||
+                 accepted["harvest_native_result_sha256"] is not null || accepted["harvest_wave_index"] is not null ||
+                 accepted["output_retention_key"] is not null || accepted["observed_retained_quantity_increase"] is not null ||
+                 accepted["whole_wave_output_retention_verified"] is not null)
+            throw new InvalidDataException("A different supporting phase cannot claim harvest evidence.");
         if (operation.Watering is { } watering)
         {
             var expected = new JsonObject();
@@ -96,7 +135,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         }
         else if (operation.IsWateringMaintenance && (accepted["maintenance_native_claim_sha256"] is not null || accepted["maintenance_native_result_sha256"] is not null))
             throw new InvalidDataException("Completed watering cannot claim ownership of a native invocation.");
-        if (operation.Started is null || accepted["operation_kind"]?.GetValue<string>() != (operation.IsWateringMaintenance ? "watering_maintenance" : "supporting_route") ||
+        if (operation.Started is null || accepted["operation_kind"]?.GetValue<string>() != SupportingOperationTag(operation) ||
             accepted["prepared_sha256"] is not null || accepted["original_proof_sha256"] is not null || accepted["dispatch_sha256"] is not null ||
             Text(accepted, "runtime_start_sha256") != HashFile(RecordPath(operation.Sequence, "started")) ||
             Text(accepted, "original_intent_sha256") != Text(operation.Record, "original_intent_sha256") ||

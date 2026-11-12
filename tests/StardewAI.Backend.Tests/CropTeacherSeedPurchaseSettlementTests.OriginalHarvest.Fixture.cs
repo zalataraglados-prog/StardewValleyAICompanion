@@ -28,54 +28,10 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         internal string Candidate => $"crop:{Day}:{Id}:{Batch.BatchIndex}";
         internal ActionQueueEnvelope Queue { get; private set; } = null!;
         internal MoneyRevenueCropNativeLifecycleTransitionRequest Transition { get; private set; } = null!;
-        private readonly int slot;
 
         internal HarvestFixture()
         {
-            Shared = new(prepareSource: source =>
-            {
-                var skills = NativeCropHarvestSkillBoundaryTests.Fixture(0, mirrors: false).Before;
-                foreach (var field in new[] { "skills_detail", "level" }) Put(source.Before, "player", field, Field(skills, "player", field));
-                var output = source.Ledger.CropPlantingCommitments.Single().HarvestItemQualifiedId;
-                var raw = Field(source.Before, "player", "inventory").AsArray();
-                var graph = Field(source.Before, "farm", "material_inventory_graph");
-                var nodes = graph["inventory_nodes"]!.AsArray();
-                var player = nodes.OfType<JsonObject>().Single(row => row["node_id"]!.GetValue<string>() == "player:123");
-                foreach (var item in player["slots"]!.AsArray().OfType<JsonObject>())
-                {
-                    var row = raw.OfType<JsonObject>().Single(value => value["slot_index"]!.GetValue<int>() == item["slot_index"]!.GetValue<int>());
-                    foreach (var name in new[] { "item_id", "qualified_item_id", "display_name", "runtime_type", "context_tags", "stack", "maximum_stack_size", "quality", "sale_price" })
-                    {
-                        row[name] ??= item[name]?.DeepClone() ?? (name is "context_tags" ? new JsonArray() : name is "sale_price" ? JsonValue.Create(0) : JsonValue.Create("fixture"));
-                        item[name] = row[name]!.DeepClone();
-                    }
-                }
-                var occupied = raw.OfType<JsonObject>().Where(row => row["is_empty"]?.GetValue<bool>() == false)
-                    .Select(row => row["slot_index"]!.GetValue<int>()).ToHashSet();
-                var selected = Enumerable.Range(0, 12).First(index => !occupied.Contains(index));
-                var template = Field(NativePickupInventoryBoundaryTests.ResourceFixture().Before, "player", "inventory").AsArray()[0]!.DeepClone();
-                template["slot_index"] = selected; template["item_id"] = output[3..]; template["qualified_item_id"] = output;
-                template["display_name"] = "Declared harvest fixture"; template["stack"] = 1;
-                template["context_tags"] = new JsonArray(); template["category"] = -79;
-                foreach (var empty in raw.OfType<JsonObject>().Where(row => row["slot_index"]!.GetValue<int>() == selected).ToArray()) raw.Remove(empty);
-                raw.Add(template);
-                player["slots"]!.AsArray().Add(template.Deserialize<MaterialInventorySlot>(JsonOptions) is { } material
-                    ? JsonSerializer.SerializeToNode(material, JsonOptions) : throw new InvalidDataException());
-                graph["quantity_rows"] = new JsonArray(nodes.OfType<JsonObject>().SelectMany(node => node["slots"]!.AsArray().OfType<JsonObject>()
-                    .Select(item => (Node: node, Item: item))).Where(row => row.Item["stack"]!.GetValue<int>() > 0)
-                    .GroupBy(row => (Id: row.Item["qualified_item_id"]!.GetValue<string>(), Quality: row.Item["quality"]!.GetValue<int>()))
-                    .OrderBy(group => group.Key.Id, StringComparer.Ordinal).ThenBy(group => group.Key.Quality).Select(group => (JsonNode)new JsonObject
-                    {
-                        ["qualified_item_id"] = group.Key.Id, ["quality"] = group.Key.Quality,
-                        ["available_quantity"] = group.Where(row => row.Node["actor_use_authorized"]!.GetValue<bool>()).Sum(row => row.Item["stack"]!.GetValue<int>()),
-                        ["restricted_quantity"] = group.Where(row => !row.Node["actor_use_authorized"]!.GetValue<bool>()).Sum(row => row.Item["stack"]!.GetValue<int>()),
-                        ["ready_output_quantity"] = 0, ["in_process_quantity"] = 0, ["source_slot_count"] = group.Count()
-                    }).ToArray());
-                Put(source.Before, "player", "inventory", raw);
-                Put(source.Before, "farm", "material_inventory_graph", graph);
-                Put(source.Before, "player", "inventory_capacity", JsonSerializer.SerializeToNode(new { max_items = 12,
-                    occupied_item_stacks = occupied.Count + 1, empty_slots = 11 - occupied.Count, has_empty_slot = occupied.Count < 11 })!);
-            });
+            Shared = new(prepareSource: PrepareSource);
             var crop = Shared.Source.Ledger.CropPlantingCommitments.Single();
             Output = crop.HarvestItemQualifiedId; Day = crop.FirstHarvestTotalDay;
             Batch = Shared.Inputs.Plan.Days.Single(row => row.TotalDay == Day).ActionBatches.Single(row => row.OptionId == "executor.harvest_crop");
@@ -96,10 +52,53 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             Before.StateHash = SnapshotHash.ComputeStateHash(Before.State);
             Ledger = JsonSerializer.Deserialize<StrategyCommitmentLedger>(JsonSerializer.Serialize(Shared.Source.Ledger, JsonOptions), JsonOptions)!;
             Ledger.SourceStateHash = Before.StateHash;
-            slot = Field(Before, "player", "inventory").AsArray().OfType<JsonObject>()
-                .Single(row => row["qualified_item_id"]?.GetValue<string>() == Output)["slot_index"]!.GetValue<int>();
             Fixture.Save(SourcePath, Before); Fixture.Save(LedgerPath, Ledger);
             Compile();
+        }
+
+        internal static void PrepareSource(Fixture source)
+        {
+            var skills = NativeCropHarvestSkillBoundaryTests.Fixture(0, mirrors: false).Before;
+            foreach (var field in new[] { "skills_detail", "level" }) Put(source.Before, "player", field, Field(skills, "player", field));
+            var output = source.Ledger.CropPlantingCommitments.Single().HarvestItemQualifiedId;
+            var raw = Field(source.Before, "player", "inventory").AsArray();
+            var graph = Field(source.Before, "farm", "material_inventory_graph");
+            var nodes = graph["inventory_nodes"]!.AsArray();
+            var player = nodes.OfType<JsonObject>().Single(row => row["node_id"]!.GetValue<string>() == "player:123");
+            foreach (var item in player["slots"]!.AsArray().OfType<JsonObject>())
+            {
+                var row = raw.OfType<JsonObject>().Single(value => value["slot_index"]!.GetValue<int>() == item["slot_index"]!.GetValue<int>());
+                foreach (var name in new[] { "item_id", "qualified_item_id", "display_name", "runtime_type", "context_tags", "stack", "maximum_stack_size", "quality", "sale_price" })
+                {
+                    row[name] ??= item[name]?.DeepClone() ?? (name is "context_tags" ? new JsonArray() : name is "sale_price" ? JsonValue.Create(0) : JsonValue.Create("fixture"));
+                    item[name] = row[name]!.DeepClone();
+                }
+            }
+            var occupied = raw.OfType<JsonObject>().Where(row => row["is_empty"]?.GetValue<bool>() == false)
+                .Select(row => row["slot_index"]!.GetValue<int>()).ToHashSet();
+            var selected = Enumerable.Range(0, 12).First(index => !occupied.Contains(index));
+            var template = Field(NativePickupInventoryBoundaryTests.ResourceFixture().Before, "player", "inventory").AsArray()[0]!.DeepClone();
+            template["slot_index"] = selected; template["item_id"] = output[3..]; template["qualified_item_id"] = output;
+            template["display_name"] = "Declared harvest fixture"; template["stack"] = 1;
+            template["context_tags"] = new JsonArray(); template["category"] = -79;
+            foreach (var empty in raw.OfType<JsonObject>().Where(row => row["slot_index"]!.GetValue<int>() == selected).ToArray()) raw.Remove(empty);
+            raw.Add(template);
+            player["slots"]!.AsArray().Add(template.Deserialize<MaterialInventorySlot>(JsonOptions) is { } material
+                ? JsonSerializer.SerializeToNode(material, JsonOptions) : throw new InvalidDataException());
+            graph["quantity_rows"] = new JsonArray(nodes.OfType<JsonObject>().SelectMany(node => node["slots"]!.AsArray().OfType<JsonObject>()
+                .Select(item => (Node: node, Item: item))).Where(row => row.Item["stack"]!.GetValue<int>() > 0)
+                .GroupBy(row => (Id: row.Item["qualified_item_id"]!.GetValue<string>(), Quality: row.Item["quality"]!.GetValue<int>()))
+                .OrderBy(group => group.Key.Id, StringComparer.Ordinal).ThenBy(group => group.Key.Quality).Select(group => (JsonNode)new JsonObject
+                {
+                    ["qualified_item_id"] = group.Key.Id, ["quality"] = group.Key.Quality,
+                    ["available_quantity"] = group.Where(row => row.Node["actor_use_authorized"]!.GetValue<bool>()).Sum(row => row.Item["stack"]!.GetValue<int>()),
+                    ["restricted_quantity"] = group.Where(row => !row.Node["actor_use_authorized"]!.GetValue<bool>()).Sum(row => row.Item["stack"]!.GetValue<int>()),
+                    ["ready_output_quantity"] = 0, ["in_process_quantity"] = 0, ["source_slot_count"] = group.Count()
+                }).ToArray());
+            Put(source.Before, "player", "inventory", raw);
+            Put(source.Before, "farm", "material_inventory_graph", graph);
+            Put(source.Before, "player", "inventory_capacity", JsonSerializer.SerializeToNode(new { max_items = 12,
+                occupied_item_stacks = occupied.Count + 1, empty_slots = 11 - occupied.Count, has_empty_slot = occupied.Count < 11 })!);
         }
 
         internal void Compile(bool reversed = false, int? count = null)
@@ -131,23 +130,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 var next = Copy(current); next.GameTick++;
                 if (index < applied)
                 {
-                    var rows = Field(next, "farm", "crops").AsArray();
-                    var tile = Batch.Tiles[index];
-                    var target = rows.Single(row => row!["tile_x"]!.GetValue<int>() == tile.TileX && row["tile_y"]!.GetValue<int>() == tile.TileY)!;
-                    if (target["regrow_days"] is null) rows.Remove(target);
-                    else { target["fully_grown"] = true; target["ready_for_harvest"] = false; target["day_of_current_phase"] = target["regrow_days"]!.DeepClone();
-                        target["days_until_next_harvest_if_watered"] = target["regrow_days"]!.DeepClone(); }
-                    Put(next, "farm", "crops", rows);
-                    Put(next, "current_location", "crops", Field(next, "farm", "crops"));
-                    var inventory = Field(next, "player", "inventory"); var item = inventory.AsArray().OfType<JsonObject>().Single(row => row["slot_index"]!.GetValue<int>() == slot);
-                    item["stack"] = item["stack"]!.GetValue<int>() + 1; Put(next, "player", "inventory", inventory);
-                    var graph = Field(next, "farm", "material_inventory_graph");
-                    var graphItem = graph["inventory_nodes"]![0]!["slots"]!.AsArray().OfType<JsonObject>().Single(row => row["slot_index"]!.GetValue<int>() == slot);
-                    graphItem["stack"] = item["stack"]!.DeepClone();
-                    var quantity = graph["quantity_rows"]!.AsArray().OfType<JsonObject>().Single(row => row["qualified_item_id"]!.GetValue<string>() == Output);
-                    quantity["available_quantity"] = item["stack"]!.DeepClone(); Put(next, "farm", "material_inventory_graph", graph);
-                    var skill = NativeCropHarvestSkillBoundaryTests.Fixture(index * 23, mirrors: false).After;
-                    foreach (var field in new[] { "skills_detail", "level" }) Put(next, "player", field, Field(skill, "player", field));
+                    ApplyHarvestDelta(next, Batch.Tiles[index], Output);
                 }
                 next.StateHash = SnapshotHash.ComputeStateHash(next.State);
                 var path = Path.Combine(Shared.Runtime.LiveOptions.SnapshotDir, $"harvest-step-{index}.json");
@@ -167,6 +150,29 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 step.BlockReasons = receipt.BlockReasons = new[] { "declared_fixture_harvest_blocked" }; }
             var receiptPath = Path.Combine(Shared.Runtime.LiveOptions.SnapshotDir, "harvest-receipt.json"); Fixture.Save(receiptPath, receipt);
             Transition = new("crop_actions", Day, QueuePath, SourcePath, receiptPath, paths[^1], Shared.Files.Options.RunId, Shared.Files.Options.ExecutorVersion, Candidate);
+        }
+
+        internal static void ApplyHarvestDelta(SnapshotEnvelope next, MoneyRevenueCropPlantingTile tile, string output)
+        {
+            var rows = Field(next, "farm", "crops").AsArray();
+            var target = rows.Single(row => row!["tile_x"]!.GetValue<int>() == tile.TileX && row["tile_y"]!.GetValue<int>() == tile.TileY)!;
+            if (target["regrow_days"] is null) rows.Remove(target);
+            else { target["fully_grown"] = true; target["ready_for_harvest"] = false; target["day_of_current_phase"] = target["regrow_days"]!.DeepClone();
+                target["days_until_next_harvest_if_watered"] = target["regrow_days"]!.DeepClone(); }
+            ChangeState(next, "farm", node => node["crops"]!["value"] = rows);
+            ChangeState(next, "current_location", node => node["crops"]!["value"] = Field(next, "farm", "crops"));
+            var inventory = Field(next, "player", "inventory");
+            var item = inventory.AsArray().OfType<JsonObject>().Single(row => row["qualified_item_id"]?.GetValue<string>() == output);
+            var index = item["slot_index"]!.GetValue<int>();
+            item["stack"] = item["stack"]!.GetValue<int>() + 1; Put(next, "player", "inventory", inventory);
+            var graph = Field(next, "farm", "material_inventory_graph");
+            var graphItem = graph["inventory_nodes"]![0]!["slots"]!.AsArray().OfType<JsonObject>().Single(row => row["slot_index"]!.GetValue<int>() == index);
+            graphItem["stack"] = item["stack"]!.DeepClone();
+            var quantity = graph["quantity_rows"]!.AsArray().OfType<JsonObject>().Single(row => row["qualified_item_id"]!.GetValue<string>() == output);
+            quantity["available_quantity"] = item["stack"]!.DeepClone(); Put(next, "farm", "material_inventory_graph", graph);
+            var experience = Field(next, "player", "skills_detail")["skills"]!.AsArray().Single(row => row!["skill_index"]!.GetValue<int>() == 0)!["experience"]!.GetValue<int>();
+            var skill = NativeCropHarvestSkillBoundaryTests.Fixture(experience, mirrors: false).After;
+            foreach (var field in new[] { "skills_detail", "level" }) Put(next, "player", field, Field(skill, "player", field));
         }
 
         private static SnapshotEnvelope Copy(SnapshotEnvelope snapshot) => JsonSerializer.Deserialize<SnapshotEnvelope>(JsonSerializer.Serialize(snapshot, JsonOptions), JsonOptions)!;

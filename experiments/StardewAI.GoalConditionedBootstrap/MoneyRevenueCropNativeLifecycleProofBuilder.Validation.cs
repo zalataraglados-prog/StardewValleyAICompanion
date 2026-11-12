@@ -521,20 +521,10 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
                     context.Layout.LocationId,
                     tile.TileX,
                     tile.TileY);
-                Require(before is not null && after is not null &&
-                        CropIdentityMatches(before, context.Commitment) &&
-                        CropIdentityMatches(after, context.Commitment),
-                    "Money Revenue crop disappeared across native sleep.");
-                var verifiedBefore = before ?? throw new InvalidDataException(
-                    "Money Revenue crop disappeared across native sleep.");
-                var verifiedAfter = after ?? throw new InvalidDataException(
-                    "Money Revenue crop disappeared across native sleep.");
-                var projected = ProjectNativeDay(
-                    verifiedBefore,
+                ValidateNativeDayGrowth(before, after, tile,
+                    context.Commitment.SeedQualifiedItemId,
+                    context.Commitment.HarvestItemQualifiedId,
                     context.Catalog.NeedsWatering);
-                Require(SameNativeDayState(projected, verifiedAfter),
-                    "Money Revenue crop state did not follow Crop.newDay on tile " +
-                    tile.TileX + "," + tile.TileY + ".");
             }
         }
     }

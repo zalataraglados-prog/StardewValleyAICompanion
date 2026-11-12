@@ -1,5 +1,88 @@
 # Original Refill Native Trace
 
+## 2026-11-12 Original Owner Overnight to Harvest
+
+Development PR565 continues R2 step3 on the SAME owner. Overnight is an explicit
+supporting kind, reusing the original single NativeSleep queue/receipt, selected
+crop-day kernel, native save fingerprint verifier and journaled marker/recovery.
+The optional original save root/slot is pinned in the owner header; old unbound
+headers and water/route wire formats remain unchanged. Evidence/journal/native
+outputs cannot overlap the slot and accidentally manufacture SaveChanged.
+
+Before-save fingerprint is retained at admission. The original calendar/receipt,
+selected planted-tile growth and changed native slot are independently consumed.
+Unplanted obligations stay unverified; a control sleep is not crop completion or
+a whole lifecycle gate. Save pending retains the native claim and permits only
+read-only inspection, never another sleep. Retained save report/hashes bind result
+and acceptance. Historical replay uses its original fingerprints rather than a
+later live save; full native saved-state readback remains a later R2 contract.
+
+The original-start declared fixture now goes water/home/night/save/farm/harvest
+without replacing the initial owner/source. Eleven new phase-specific restart or
+lost-ack cases cover admission/native/save report/result/marker/acceptance with
+one native callback and one ledger marker per phase. Pending save and later-save
+historical replay, missing planted crops, wrong slot, evidence pollution, changed
+binding and altered report are separately covered. Initial related203/203 passed;
+the post-review expanded owner-family regression passed534/534, zero fail/skip/
+build warning/error. E GamePath was explicit, CPU1/heap1GiB.
+
+The original API peer identified a valid P2: recovery output could be a new child
+of the bound save slot. A retained marker-lookup.json proves actual contamination;
+the initial two failing tests' teardown error masked the assertion, so those are
+not claimed as precise red-assertion diagnostics. The fixture now retains unknown
+artifacts without masking the primary assertion. The SAME slot-exclusion helper
+now guards central pending/head recovery and preparation restore/continuation
+outputs only for explicitly bound owners; old unbound behavior stays unchanged.
+Two counterexamples assert no directory/lookup/save-fingerprint change, followed
+by valid recovery without repeat commit. There are20 new declared overnight cases.
+The peer's initial14step context-gap stop and one10step same-session correction
+had zero API errors; reports/snapshots are retained, process exited/revoked and
+accepted-idle. No third review call or full event-output ingestion.
+
+The fixture explicitly declares one-day growth; it is NOT a vanilla rule or new
+native evidence. Early missing menu/return connector facts and crop-field source
+metadata replacement were fixture mistakes; original production guards were not
+weakened. No game/server/training or successful-matrix native resampling occurred.
+The new final head still needs CI/review, not the old296c5be6 green check.
+
+Next wire the actual original Program.cs owner lifetime/dispatch, whole-wave
+retention/sale, day-boundary records/native save readback, then one bounded managed
+native flow. Current top-level remains unmanaged; L1 frozen19/19,11/11, #339/#550
+open, formal=false, no local-data publication. The previous section's pending
+declared positive/recovery cases are now fulfilled, not its native/main-loop scope.
+
+## 2026-11-12 Original Owner Harvest and Day-growth Handoff
+
+PR564 finala251a5cc passed CI43125520994 all42steps and clean same-head review,
+mergedf786f9d6. Tested/main treebec82be7 matched before owned ref cleanup.
+The current DEVELOPMENT branch adds an explicit harvest operation to the SAME
+owner's admission/intent/index/native claim/outcome and existing supporting
+dispatch/marker/recovery/advance. An internal three-way kind replaces binary
+dispatch classification; historical water/route serialization stays unchanged.
+Their original due-batch predicate is shared, not rewritten for a new standard.
+Program adapters still use the original compiler and execution core.
+
+The original API peer delivered ONLY the shared day-growth extraction and40
+declared tests,18steps/zeroerrors, one focused test and git diff --check exit0.
+Controller reviewed and committed5aa8a2f6, integratedecf4a573. Old global lifecycle
+and new selected-crop leaf share ProjectNativeDay/SameNativeDayState and original
+identity/messages; leaf-specific live-crop checks do not tighten the old path.
+No new native rule, bridge field, whole-world or whole-lifecycle leaf gate.
+
+Final controller related185/185, zero failure/skip/build warning/error. This includes
+old owner paths, harvest adapter, growth leaf and new owner guards, NOT a successful
+harvest owner run or harvest lost-ack acceptance. The branch must remain draft
+until the selected owner can actually advance from its ORIGINAL source to harvest.
+
+NEXT IN R2 STEP3: consume original NativeSleep/CheckCropTeacherDayBoundaryAsync save
+boundary and selected growth through the SAME owner's durable head, then prove
+the positive sleep-to-harvest path and native/marker/acceptance lost-ack recovery.
+Save pending means read-only inspection, not another sleep. Keep original isolated
+save root/slot, run/save/actor, queue/receipt identity and retained evidence; no fake
+post-growth initial owner and no whole L1 cycle prerequisite for a local night.
+Then connect the SAME Program loop, original output-retention/sale/native save
+readback and bounded managed. Existing scope flags/formal=false remain unchanged.
+
 ## 2026-11-12 Original Harvest Batch Adapter
 
 Parent PR563 final3a0fda00 passed CI43121236133 all42steps and clean same-head

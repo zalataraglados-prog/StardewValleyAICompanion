@@ -11,7 +11,12 @@ public sealed partial class CropTeacherManagedSeedOwner
     private async Task EnsureOriginalSupportingOutcomeAsync(CropTeacherManagedSeedOperation operation)
     {
         if (operation.SupportingTransition is not null) { operation.RuntimeArtifactGuard?.Invoke(); return; }
-        var outcome = ReadOriginalSupportingOutcome(operation);
+        var outcome = ReadOriginalSupportingOutcome(operation, deferOvernightSave: operation.IsOvernight);
+        if (operation.IsOvernight)
+        {
+            await EnsureOriginalOvernightSaveEvidenceAsync(operation, (CropTeacherOvernight)outcome.Scope).ConfigureAwait(false);
+            BindOriginalOvernightSaveEvidence(operation, outcome);
+        }
         var path = NativeSupportingPath(operation, "result");
         if (!File.Exists(path)) await write(path, outcome.Result.ToJsonString(JsonOptions)).ConfigureAwait(false);
         InstallOriginalSupportingOutcome(operation, outcome);
@@ -23,9 +28,9 @@ public sealed partial class CropTeacherManagedSeedOwner
         InstallOriginalSupportingOutcome(operation, ReadOriginalSupportingOutcome(operation));
     }
 
-    private OriginalSupportingOutcome ReadOriginalSupportingOutcome(CropTeacherManagedSeedOperation operation)
+    private OriginalSupportingOutcome ReadOriginalSupportingOutcome(CropTeacherManagedSeedOperation operation, bool deferOvernightSave = false)
     {
-        var label = operation.IsWateringMaintenance ? "Original watering" : "Original route";
+        var label = operation.IsOvernight ? "Original overnight" : operation.IsHarvest ? "Original harvest" : operation.IsWateringMaintenance ? "Original watering" : "Original route";
         var start = operation.OriginalStart ?? throw new InvalidOperationException(label + " preparation is missing.");
         start.ValidateInputsUnchanged();
         var artifacts = new CropSeedRuntimeArtifacts(start.InputHashes);
@@ -43,18 +48,22 @@ public sealed partial class CropTeacherManagedSeedOwner
         {
             ["schema_version"] = "crop_teacher_owned_" + NativeSupportingRole(operation) + "_native_result.v1", ["original_intent_sha256"] = Text(operation.Record, "original_intent_sha256"),
             [NativeSupportingRole(operation) + "_native_claim_sha256"] = artifacts.Hashes[claimPath],
-            [operation.IsWateringMaintenance ? "maintenance_transition" : "route_transition"] = operation.Record[operation.IsWateringMaintenance ? "maintenance_transition" : "route_transition"]!.DeepClone(),
+            [NativeSupportingRole(operation) + "_transition"] = operation.Record[NativeSupportingRole(operation) + "_transition"]!.DeepClone(),
             ["input_artifact_hashes"] = JsonSerializer.SerializeToNode(artifacts.Hashes, JsonOptions),
             ["native_outcome_verified"] = true
         };
         if (scope is CropTeacherSupportingRoute route) result["route_target_reached"] = route.RouteTargetReached;
         if (scope is CropTeacherWateringMaintenance watering) AddWateringOutcomeEvidence(watering, result);
+        if (scope is CropTeacherHarvest harvest) AddHarvestOutcomeEvidence(harvest, result);
+        if (scope is CropTeacherOvernight overnight) AddOvernightOutcomeEvidence(overnight, result);
         result["native_crop_lifecycle_verified"] = false;
         result["teacher_preference_label_eligible"] = false;
         result["formal_product_training_authorized"] = false;
         scope.ValidateInputsUnchanged();
         artifacts.Validate();
-        return new(scope, result, artifacts);
+        var outcome = new OriginalSupportingOutcome(scope, result, artifacts);
+        if (operation.IsOvernight && !deferOvernightSave) BindOriginalOvernightSaveEvidence(operation, outcome);
+        return outcome;
     }
 
     private void InstallOriginalSupportingOutcome(CropTeacherManagedSeedOperation operation, OriginalSupportingOutcome outcome)
@@ -63,7 +72,10 @@ public sealed partial class CropTeacherManagedSeedOwner
         if (!JsonNode.DeepEquals(outcome.Result, outcome.Artifacts.Read<JsonObject>(path)))
             throw new InvalidDataException(operation.IsWateringMaintenance ? "Original watering native result differs from its independently verified receipt boundary." : "Original route native result differs from its independently verified receipt boundary.");
         if (outcome.Scope is CropTeacherSupportingRoute route) operation.SupportingRoute = route;
-        else operation.Watering = (CropTeacherWateringMaintenance)outcome.Scope;
+        else if (outcome.Scope is CropTeacherWateringMaintenance watering) operation.Watering = watering;
+        else if (outcome.Scope is CropTeacherHarvest harvest) operation.Harvest = harvest;
+        else if (outcome.Scope is CropTeacherOvernight overnight) operation.Overnight = overnight;
+        else throw new InvalidDataException("Owned crop outcome has an unsupported supporting type.");
         operation.RuntimeArtifactGuard = () =>
         { operation.OriginalStart!.ValidateInputsUnchanged(); outcome.Scope.ValidateInputsUnchanged(); outcome.Artifacts.Validate(); };
         operation.RuntimeArtifactGuard();

@@ -42,13 +42,14 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             Directory.CreateDirectory(Runtime.LiveOptions.SnapshotDir);
         }
 
-        internal async Task<CropTeacherManagedSeedOperation> Prepare(CropTeacherManagedSeedOwner owner, int iteration = 1)
+        internal async Task<CropTeacherManagedSeedOperation> Prepare(CropTeacherManagedSeedOwner owner, int iteration = 1,
+            CropTeacherRunStep? step = null, string? runtimeDirectory = null)
         {
             try
             {
                 return await InvokeLive<Task<CropTeacherManagedSeedOperation>>("PrepareCropTeacherOwnedRouteAsync", Runtime.Client,
-                    Runtime.LiveOptions, iteration, Step, Inputs.Plan, Inputs.Request, owner,
-                    iteration == 1 ? Files.Native : Files.Native + "-next");
+                    Runtime.LiveOptions, iteration, step ?? Step, Inputs.Plan, Inputs.Request, owner,
+                    runtimeDirectory ?? (iteration == 1 ? Files.Native : Files.Native + "-next"));
             }
             catch (InvalidDataException error) when (File.Exists(QueuePath))
             {
@@ -58,9 +59,9 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             }
         }
 
-        internal async Task<JsonObject> EmitNative(int iteration = 1, string? sourcePath = null)
+        internal async Task<JsonObject> EmitNative(int iteration = 1, string? sourcePath = null, Action<SnapshotEnvelope>? change = null)
         {
-            var (after, receipt) = BuildNativeResult(iteration, sourcePath);
+            var (after, receipt) = BuildNativeResult(iteration, sourcePath, change);
             var afterPath = Path.Combine(Runtime.LiveOptions.SnapshotDir, $"after-snapshot-{iteration:D4}.json");
             var receiptPath = Path.Combine(Runtime.LiveOptions.SnapshotDir, $"execution-{iteration:D4}.json");
             Fixture.Save(afterPath, after);
@@ -70,7 +71,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             return new JsonObject { ["execution_path"] = receiptPath, ["after_snapshot_path"] = afterPath };
         }
 
-        internal (SnapshotEnvelope After, QueueExecutionReceiptEnvelope Receipt) BuildNativeResult(int iteration = 1, string? sourcePath = null)
+        internal (SnapshotEnvelope After, QueueExecutionReceiptEnvelope Receipt) BuildNativeResult(int iteration = 1, string? sourcePath = null, Action<SnapshotEnvelope>? change = null)
         {
             var before = sourcePath is null ? Source.Before : JsonSerializer.Deserialize<SnapshotEnvelope>(File.ReadAllText(sourcePath), JsonOptions)!;
             var queue = JsonSerializer.Deserialize<ActionQueueEnvelope>(File.ReadAllText(Path.Combine(Runtime.LiveOptions.SnapshotDir,
@@ -99,6 +100,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 foreach (var field in new[] { "collision_grid", "route_connectors", "route_action_branch_coverage", "route_graph" })
                     node[field]!["read_at_tick"] = after.GameTick;
             });
+            change?.Invoke(after);
             var receipt = MoneyCropTeacherFixture.Create<QueueExecutionReceiptEnvelope>("LifecycleReceipt", queue, before, after,
                 Files.Options.RunId, candidate, "traverse_connector");
             return (after, receipt);

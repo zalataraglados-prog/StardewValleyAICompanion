@@ -10,8 +10,8 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
     private sealed class OwnedWateringFixture : IDisposable
     {
         internal WateringFixture Basis { get; }
-        internal OwnedWateringFixture(int water = 20, bool atRefillApproach = false) =>
-            Basis = new(water: water, bowlMirrors: true, atRefillApproach: atRefillApproach);
+        internal OwnedWateringFixture(int water = 20, bool atRefillApproach = false, Action<Fixture>? prepareSource = null) =>
+            Basis = new(water: water, bowlMirrors: true, atRefillApproach: atRefillApproach, prepareSource: prepareSource);
         internal OwnedRouteFixture Shared => Basis.Shared;
         internal string QueuePath => Path.Combine(Shared.Runtime.LiveOptions.SnapshotDir, "crop-teacher-batch-0001-compiled-queue.json");
         internal string ModelPath => Path.Combine(Shared.Runtime.LiveOptions.SnapshotDir, "crop-teacher-batch-0001-model-action.json");

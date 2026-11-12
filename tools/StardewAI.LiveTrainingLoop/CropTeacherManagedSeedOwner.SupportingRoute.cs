@@ -32,7 +32,7 @@ public sealed partial class CropTeacherManagedSeedOwner
 
     public Task RunSupportingRouteAsync(CropTeacherManagedSeedOperation operation, HttpClient http,
         Func<JsonObject, ReservationPortfolioCommitRequest, Task<JsonObject>> commit,
-        Func<string, string, Task<JsonObject>> post) => RunSupportingTransitionAsync(operation, http, commit, post, watering: false);
+        Func<string, string, Task<JsonObject>> post) => RunSupportingTransitionAsync(operation, http, commit, post, CropTeacherSupportingOperationKind.Route);
 
     private CropTeacherSupportingRoute OpenSupportingRoute(JsonObject record)
     {

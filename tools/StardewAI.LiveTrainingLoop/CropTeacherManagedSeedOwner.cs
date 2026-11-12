@@ -12,23 +12,37 @@ public sealed record CropTeacherManagedSeedOwnerOptions(string EvidenceDirectory
     string PortfolioJournalDirectory) : ICropSeedPortfolioRecoveryOptions
 {
     public bool UseSelectedRefillResourceEffects { get; init; }
+    public CropTeacherNativeSaveBinding? NativeSaveBinding { get; init; }
 }
+
+public sealed record CropTeacherNativeSaveBinding(string SaveIsolationPath, string SaveSlot);
 
 public sealed class CropTeacherManagedSeedOperation
 {
     internal CropTeacherManagedSeedOperation(CropTeacherManagedSeedOwner owner, JsonObject record,
         string recordPath, CropTeacherManagedSeedScopes? scopes, CropTeacherSeedLifecycleSupport? lifecycle = null,
         CropTeacherSupportingRoute? supportingRoute = null, CropTeacherSupportingRoute.Preparation? routeStart = null,
-        CropTeacherWateringMaintenance? watering = null, CropTeacherWateringMaintenance.Preparation? wateringStart = null)
-    { Owner = owner; Record = record; RecordPath = recordPath; seedScopes = scopes; Lifecycle = lifecycle; SupportingRoute = supportingRoute; RouteStart = routeStart; Watering = watering; WateringStart = wateringStart; }
+        CropTeacherWateringMaintenance? watering = null, CropTeacherWateringMaintenance.Preparation? wateringStart = null,
+        CropTeacherHarvest.Preparation? harvestStart = null, CropTeacherOvernight.Preparation? overnightStart = null)
+    {
+        Owner = owner; Record = record; RecordPath = recordPath; seedScopes = scopes; Lifecycle = lifecycle;
+        SupportingRoute = supportingRoute; RouteStart = routeStart; Watering = watering; WateringStart = wateringStart;
+        HarvestStart = harvestStart; OvernightStart = overnightStart;
+    }
     private readonly CropTeacherManagedSeedScopes? seedScopes;
     internal CropTeacherSeedLifecycleSupport? Lifecycle { get; }
     internal CropTeacherSupportingRoute? SupportingRoute { get; set; }
     internal CropTeacherSupportingRoute.Preparation? RouteStart { get; }
     internal CropTeacherWateringMaintenance? Watering { get; set; }
     internal CropTeacherWateringMaintenance.Preparation? WateringStart { get; }
-    internal ICropTeacherSupportingPreparation? OriginalStart => (ICropTeacherSupportingPreparation?)RouteStart ?? WateringStart;
-    internal ICropTeacherSupportingTransition? SupportingTransition => (ICropTeacherSupportingTransition?)SupportingRoute ?? Watering;
+    internal CropTeacherHarvest.Preparation? HarvestStart { get; }
+    internal CropTeacherHarvest? Harvest { get; set; }
+    internal CropTeacherOvernight.Preparation? OvernightStart { get; }
+    internal CropTeacherOvernight? Overnight { get; set; }
+    internal ICropTeacherSupportingPreparation? OriginalStart => (ICropTeacherSupportingPreparation?)RouteStart ??
+        (ICropTeacherSupportingPreparation?)WateringStart ?? (ICropTeacherSupportingPreparation?)HarvestStart ?? OvernightStart;
+    internal ICropTeacherSupportingTransition? SupportingTransition => (ICropTeacherSupportingTransition?)SupportingRoute ??
+        (ICropTeacherSupportingTransition?)Watering ?? (ICropTeacherSupportingTransition?)Harvest ?? Overnight;
     internal CropTeacherManagedSeedOwner Owner { get; }
     internal JsonObject Record { get; }
     internal string RecordPath { get; }
@@ -47,7 +61,9 @@ public sealed class CropTeacherManagedSeedOperation
     public bool IsLifecycle => Lifecycle is not null;
     public bool IsSupportingRoute => SupportingRoute is not null || RouteStart is not null;
     public bool IsWateringMaintenance => Watering is not null || WateringStart is not null;
-    public bool IsSupportingTransition => IsSupportingRoute || IsWateringMaintenance;
+    public bool IsHarvest => HarvestStart is not null || Harvest is not null;
+    public bool IsOvernight => OvernightStart is not null || Overnight is not null;
+    public bool IsSupportingTransition => IsSupportingRoute || IsWateringMaintenance || IsHarvest || IsOvernight;
     public CropTeacherManagedSeedScopes Scopes => seedScopes ?? throw new InvalidOperationException("Lifecycle operations have no native seed scope.");
     public CropTeacherRunStep ReadStep() => IsLifecycle || IsSupportingTransition ? throw new InvalidOperationException("Non-seed operations have no native seed step.") :
         Record["step"]!.Deserialize<CropTeacherRunStep>(CropTeacherManagedSeedOwner.JsonOptions)!;
@@ -99,10 +115,13 @@ public sealed partial class CropTeacherManagedSeedOwner : IAsyncDisposable
         {
             EvidenceDirectory = Path.GetFullPath(value.EvidenceDirectory), BackendUrl = CropTeacherSeedLifecycleRuntime.NormalizeBackendOrigin(value.BackendUrl),
             NativeRunPlanPath = Path.GetFullPath(value.NativeRunPlanPath), InitialSnapshotPath = Path.GetFullPath(value.InitialSnapshotPath),
-            InitialLedgerPath = Path.GetFullPath(value.InitialLedgerPath), PortfolioJournalDirectory = Path.GetFullPath(value.PortfolioJournalDirectory)
+            InitialLedgerPath = Path.GetFullPath(value.InitialLedgerPath), PortfolioJournalDirectory = Path.GetFullPath(value.PortfolioJournalDirectory),
+            NativeSaveBinding = NormalizeNativeSaveBinding(value.NativeSaveBinding)
         };
         if (SamePath(options.EvidenceDirectory, Path.GetPathRoot(options.EvidenceDirectory)!))
             throw new IOException("Managed crop owner cannot own a drive root.");
+        if (options.NativeSaveBinding is { } nativeSave)
+            RequireOutsideNativeSaveSlot(new[] { options.EvidenceDirectory, options.PortfolioJournalDirectory }, nativeSave);
         var hashes = new[] { options.NativeRunPlanPath, options.InitialSnapshotPath, options.InitialLedgerPath }
             .Distinct(PathComparer).ToDictionary(path => path, HashFile, PathComparer);
         var (_, plan) = CropTeacherResumeLoader.ReadVerifiedPlan(options.NativeRunPlanPath);
@@ -132,6 +151,8 @@ public sealed partial class CropTeacherManagedSeedOwner : IAsyncDisposable
         };
         if (options.UseSelectedRefillResourceEffects)
             header["selected_refill_resource_effects"] = true;
+        if (options.NativeSaveBinding is { } binding)
+            header["native_save_binding"] = JsonSerializer.SerializeToNode(binding, JsonOptions);
         var headerPath = Path.Combine(options.EvidenceDirectory, "owner-intent.json");
         if (Directory.Exists(options.EvidenceDirectory) && !File.Exists(headerPath) &&
             Directory.EnumerateFileSystemEntries(options.EvidenceDirectory).Any(path => Path.GetFileName(path) != "owner.lock"))
