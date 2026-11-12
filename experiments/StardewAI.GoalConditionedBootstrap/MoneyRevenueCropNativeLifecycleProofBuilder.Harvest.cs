@@ -4,6 +4,14 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
 {
+    internal static void VerifyOwnedHarvestSource(SnapshotEnvelope source, string location, MoneyRevenueCropPlantingTile tile,
+        string seedId, string harvestId)
+    {
+        var crop = ReadCrop(source, location, tile.TileX, tile.TileY);
+        Require(crop is not null && !crop.Dead && crop.ReadyForHarvest && CropIdentityMatches(crop, seedId, harvestId),
+            "Owned harvest target is not its original ready live commitment crop.");
+    }
+
     internal static int? VerifyOwnedHarvestTarget(SnapshotEnvelope before, SnapshotEnvelope after, string location, int x, int y)
     {
         var first = ReadCrop(before, location, x, y);

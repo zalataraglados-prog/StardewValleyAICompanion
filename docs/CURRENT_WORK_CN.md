@@ -2,6 +2,14 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-12T08:08:00+08:00 R2 原计划收获批次适配
+
+- #563 最终 `3a0fda00` 由 CI `43121236133` 全42步及同 head 无发现审查接受，合入 `6b7c2388`；测试／main树 `49983bdf` 相同后才清理自有引用。旧211测试和 E 五帧资源重放按原范围复用，无新游戏／服务器／训练。
+- 新 `CropTeacherHarvest.Preparation`／outcome 实现原 supporting 两接口。重放并锁定原计划及传递输入，核原存档／玩家／决策归属、active commitment、Day/BatchIndex、到期波次、输出／最低量、原布局有序子集及候选。沿原 ActionQueueCompiler 重放，不另建规划／执行／账本，也不把 harvest 的空 SeedQualifiedItemId 当输出。最低量来自原 wave.MinimumUnits/TileCount，不是诊断 minimum=1。
+- 逐项核原回执、成功前缀、源状态／时间／路径，再调用已接受资源入口；未执行尾部不记完成，已执行阻塞尾部须无资源变化。沿原 SupportingRebind 产生请求并验证 reply，不把批次通过当整波 output-retention、生产归属或完整生命周期。原 watering 路径核抽取复用，行为／错误文本不改；原 planting 失败核保留种子字段必需，harvest 按其原合同可缺省，出现时仍比较。未改桥字段、旧 intent 或全局准入。
+- 最终相关192/192、零失败/跳过、零构建警告/错误，含原浇水／播种与跨计划存档／归属反例。首轮嵌套私有访问编译错误及夹具 actor／当前地图／聚合／部分回执装配错误已修；最后一例只修新 harvest 调用误继承的种子必需条件，旧 planting 要求不变。声明夹具不是新原生证据。原 API 同会话13步／零错误、24行只读接线核对，无代码／shell／测试／提交权限；进程退出撤权、工作树干净，已 accepted-idle，未换 provider。[范围](refill-approach-native-trace.md#2026-11-12-original-harvest-batch-adapter)。
+- **唯一接续：** 在原 owner admission／operation 分类中接本适配，复用 original supporting invocation、一次账本 marker、丢确认只读恢复与 accepted index，再接 Program.cs 同一主循环、原销售／原生保存读回、有界 managed。当前适配尚未接 owner／主循环，不称完整托管／正式训练；L1冻结19/19、11/11，#339/#550开放、formal=false、local-data不提交。本片待同 head CI／审查。
+
 ## 2026-11-12T07:34:00+08:00 R2 所选收获帧资源消费收口
 
 - #562 最终 `8fb48259` 经 CI `43116326415` 全42步／Core2600／Backend2171零失败/跳过及同 head 无发现审查合入 `16b039ae`；核测试／main树 `79a8658d` 一致后清理自有引用。本片独立验收。
