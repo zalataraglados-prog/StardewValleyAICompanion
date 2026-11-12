@@ -1,5 +1,38 @@
 # Original Refill Native Trace
 
+## 2026-11-12 Native Purchase And First Farm Tutorial Boundary
+
+Run managed-d-20261112-1826 uses bcf8af9b product source and accepted4 original
+owned control/settlement operations. Iteration6 has10 applied/verified native
+steps, arrives Pierre's actual counter, opens shop, buys1 cauliflower seed at80g
+and closes the menu. Cash500->420; cauliflower0->1; starter parsnip15 unchanged.
+The aggregate purchase remains UNACCEPTED: step1 FarmHouse->Farm introduces
+button_tut_2 in quests.mail_received and its game-state-query mirror. Original
+strict resource guard refuses it. Do not redispatch an already executed purchase.
+
+Exact current E native DLL7f1e5b8e58d2758b78570ba771bbeb03d33522f62188bf6c32edf0cf626deaee,
+MVIDaa1f513a-94f0-4ef6-a35f-2d5b4a3721bf was freshly decompiled by MethodDef only,
+two methods/zero diagnostics/no native execution. Farm.resetLocalState token
+0x06000e35 ILf5b523d0693fa1b93c7ed234c2c6521fc4c89bc76fac303dc34d147ddd933b19
+adds this flag and ButtonTutorialMenu on first entry. TitleMenu.createdNewCharacter
+token0x06002d4b IL31de08520eb8429aa8e338d4e89c388febb816e6daf013b400263c8be19fc337
+uses the same actual fresh skip-intro path without pre-filling it. Thus do not
+"fix" this by changing native fresh initialization, filtering all mail/unlock
+state, forging progress or weakening unknown-field protection.
+
+Next: precise native tutorial control-effect consumption using the existing
+canonical projector, protected unrelated/mirrored resources, original D replay
+and negative cases, then a fresh native cycle. No planting/day/save/reload/full A
+or training PASS yet. All owned D processes stopped; files retained.
+
+CI43197619479 at616a had2507pass/1 old source-location guard failure. The guard
+now checks unmanaged preflight, managed ownership and validation INSIDE original
+lease before execute/settle/accept, plus purchase continuation/full input source.
+Final24/24 targeted pass, zero fail/skip/buildwarning/error. First local test
+build hit running product DLL locks; retained, not a code pass. Test-only build
+then passed without forcing a native restart. Only tests/docs changed after
+bcf8af9b product source, no live executor edits. L1frozen/formalfalse/no local-data.
+
 ## 2026-11-12 Actual Seed Continuation Receipt Consumption
 
 Run managed-b-20261112-1808 passed the lease boundary but the CONTROLLER test
