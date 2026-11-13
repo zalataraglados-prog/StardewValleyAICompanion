@@ -16,6 +16,10 @@ static partial class Program
             beforePath, before, hash).ConfigureAwait(false);
         if (site.SitePreparationComplete) return new(site, null);
         var observedModel = JsonNode.Parse(ContentAddressedJsonArtifactReader.ReadAllText(site.ModelPlanPath))!.AsObject();
+        if (site.Queue is not null && ReadString(observedModel, "source_model") == "authoritative_crop_site_preparation_plan.v1" &&
+            ExecutableQueueItems(site.Queue) is [var till] && ReadString(till, "option_id") == "executor.till_soil")
+            return await BuildCropTeacherOwnedSiteTillAsync(http, options, iteration, step, plan, owner,
+                beforePath, before, hash, site).ConfigureAwait(false);
         if (site.Queue is null || ReadString(observedModel, "source_model") != "authoritative_crop_site_approach.v1")
             throw new InvalidDataException("Retain original site-preparation queue; its resource effects must be bound before managed dispatch.");
         JsonObject? queue = null;

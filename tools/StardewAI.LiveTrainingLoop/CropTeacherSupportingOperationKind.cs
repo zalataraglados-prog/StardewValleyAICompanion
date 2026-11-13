@@ -1,3 +1,3 @@
 namespace StardewAI.LiveTrainingLoop;
 
-internal enum CropTeacherSupportingOperationKind { Route, Watering, Harvest, Overnight, Control, Terminal, SavedReadback }
+internal enum CropTeacherSupportingOperationKind { Route, Watering, Harvest, Overnight, Control, Terminal, SavedReadback, Tilling }

@@ -23,7 +23,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         internal string Queue { get; }
         internal MoneyRevenueCropSitePreparationPlan SitePlan { get; }
 
-        internal SiteTillFiles(Action<JsonNode>? adjustContext = null)
+        internal SiteTillFiles(Action<JsonNode>? adjustContext = null, Action<Fixture>? prepareSource = null)
         {
             F = new OwnedRouteFixture(prepareSource: source =>
             {
@@ -59,6 +59,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                     });
                     adjustContext?.Invoke(location["site_preparation_context"]!["value"]!);
                 });
+                prepareSource?.Invoke(source);
             });
             var observed = ReadSiteSnapshot(WriteValidSiteMainObservation(F));
             observed.State["current_location"] = F.Source.Before.State["current_location"];

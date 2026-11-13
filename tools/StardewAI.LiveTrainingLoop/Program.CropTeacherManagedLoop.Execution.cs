@@ -35,7 +35,7 @@ static partial class Program
             throw new InvalidOperationException("Saved-content readback is an observed load/rebind, not a native action queue.");
         if (operation.IsSupportingTransition)
         {
-            var kind = operation.IsTerminalShipping ? CropTeacherSupportingOperationKind.Terminal : operation.IsControlRecovery ? CropTeacherSupportingOperationKind.Control : operation.IsOvernight ? CropTeacherSupportingOperationKind.Overnight : operation.IsHarvest
+            var kind = operation.IsSiteTilling ? CropTeacherSupportingOperationKind.Tilling : operation.IsTerminalShipping ? CropTeacherSupportingOperationKind.Terminal : operation.IsControlRecovery ? CropTeacherSupportingOperationKind.Control : operation.IsOvernight ? CropTeacherSupportingOperationKind.Overnight : operation.IsHarvest
                 ? CropTeacherSupportingOperationKind.Harvest : operation.IsWateringMaintenance
                     ? CropTeacherSupportingOperationKind.Watering : CropTeacherSupportingOperationKind.Route;
             await ExecuteCropTeacherOwnedSupportingCoreAsync(http, executorHttp, options, iteration, owner, operation, kind).ConfigureAwait(false);

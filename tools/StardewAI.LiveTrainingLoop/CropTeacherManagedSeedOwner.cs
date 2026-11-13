@@ -25,12 +25,13 @@ public sealed class CropTeacherManagedSeedOperation
         CropTeacherWateringMaintenance? watering = null, CropTeacherWateringMaintenance.Preparation? wateringStart = null,
         CropTeacherHarvest.Preparation? harvestStart = null, CropTeacherOvernight.Preparation? overnightStart = null,
         CropTeacherControlRecovery.Preparation? controlStart = null, CropTeacherTerminalShipping.Preparation? terminalStart = null,
-        CropTeacherNativeSavedContentReadback? savedReadback = null)
+        CropTeacherNativeSavedContentReadback? savedReadback = null, CropTeacherSiteTillCompilation? tillingStart = null)
     {
         Owner = owner; Record = record; RecordPath = recordPath; seedScopes = scopes; Lifecycle = lifecycle;
         SupportingRoute = supportingRoute; RouteStart = routeStart; Watering = watering; WateringStart = wateringStart;
         HarvestStart = harvestStart; OvernightStart = overnightStart; ControlStart = controlStart; TerminalStart = terminalStart;
         SavedReadback = savedReadback;
+        TillingStart = tillingStart;
     }
     private readonly CropTeacherManagedSeedScopes? seedScopes;
     internal CropTeacherSeedLifecycleSupport? Lifecycle { get; }
@@ -47,13 +48,16 @@ public sealed class CropTeacherManagedSeedOperation
     internal CropTeacherTerminalShipping.Preparation? TerminalStart { get; }
     internal CropTeacherTerminalShipping? Terminal { get; set; }
     internal CropTeacherNativeSavedContentReadback? SavedReadback { get; }
+    internal CropTeacherSiteTillCompilation? TillingStart { get; }
+    internal CropTeacherSiteTilling? Tilling { get; set; }
     internal ICropTeacherSupportingPreparation? OriginalStart => (ICropTeacherSupportingPreparation?)RouteStart ??
         (ICropTeacherSupportingPreparation?)WateringStart ?? (ICropTeacherSupportingPreparation?)HarvestStart ??
-        (ICropTeacherSupportingPreparation?)OvernightStart ?? (ICropTeacherSupportingPreparation?)ControlStart ?? TerminalStart;
+        (ICropTeacherSupportingPreparation?)OvernightStart ?? (ICropTeacherSupportingPreparation?)ControlStart ??
+        (ICropTeacherSupportingPreparation?)TerminalStart ?? TillingStart;
     internal ICropTeacherSupportingTransition? SupportingTransition => (ICropTeacherSupportingTransition?)SupportingRoute ??
         (ICropTeacherSupportingTransition?)Watering ?? (ICropTeacherSupportingTransition?)Harvest ??
         (ICropTeacherSupportingTransition?)Overnight ?? (ICropTeacherSupportingTransition?)Control ??
-        (ICropTeacherSupportingTransition?)Terminal ?? SavedReadback;
+        (ICropTeacherSupportingTransition?)Terminal ?? (ICropTeacherSupportingTransition?)SavedReadback ?? Tilling;
     internal CropTeacherManagedSeedOwner Owner { get; }
     internal JsonObject Record { get; }
     internal string RecordPath { get; }
@@ -77,7 +81,8 @@ public sealed class CropTeacherManagedSeedOperation
     public bool IsControlRecovery => ControlStart is not null || Control is not null;
     public bool IsTerminalShipping => TerminalStart is not null || Terminal is not null;
     public bool IsSavedContentReadback => SavedReadback is not null;
-    public bool IsSupportingTransition => IsSupportingRoute || IsWateringMaintenance || IsHarvest || IsOvernight || IsControlRecovery || IsTerminalShipping || IsSavedContentReadback;
+    public bool IsSiteTilling => TillingStart is not null || Tilling is not null;
+    public bool IsSupportingTransition => IsSupportingRoute || IsWateringMaintenance || IsHarvest || IsOvernight || IsControlRecovery || IsTerminalShipping || IsSavedContentReadback || IsSiteTilling;
     public CropTeacherManagedSeedScopes Scopes => seedScopes ?? throw new InvalidOperationException("Lifecycle operations have no native seed scope.");
     public CropTeacherRunStep ReadStep() => IsLifecycle || IsSupportingTransition ? throw new InvalidOperationException("Non-seed operations have no native seed step.") :
         Record["step"]!.Deserialize<CropTeacherRunStep>(CropTeacherManagedSeedOwner.JsonOptions)!;
