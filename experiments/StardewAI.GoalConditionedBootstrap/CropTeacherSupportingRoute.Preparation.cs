@@ -9,7 +9,7 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public sealed partial class CropTeacherSupportingRoute
 {
-    public sealed class Preparation : ICropTeacherSupportingPreparation
+    public sealed partial class Preparation : ICropTeacherSupportingPreparation
     {
         private static readonly HashSet<string> NeutralIngressConnectorKinds = new(new[]
         { "warp", "door", "building_door", "action_warp", "touch_action_warp", "locked_door_warp", "magic_warp" }, StringComparer.Ordinal);
@@ -122,7 +122,8 @@ public sealed partial class CropTeacherSupportingRoute
                     CropTeacherSeedTransferNativeOutcome.PathComparer.Equals(Path.GetFullPath(transition.QueuePath), QueuePath) &&
                     CropTeacherSeedTransferNativeOutcome.PathComparer.Equals(Path.GetFullPath(transition.BeforeSnapshotPath), SourcePath),
                 "Owned crop native route differs from its pinned original compilation/source.");
-            var result = new CropTeacherSupportingRoute(runRequestPath, SourcePath, ledgerPath, commitmentIds, transition, stepId, ExpectedHopTargetLocation);
+            var result = new CropTeacherSupportingRoute(runRequestPath, SourcePath, ledgerPath, commitmentIds, transition, stepId,
+                ExpectedHopTargetLocation, SiteApproachTarget, siteObservationPath);
             inputs.Validate();
             return result;
         }
