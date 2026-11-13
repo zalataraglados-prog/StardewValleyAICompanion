@@ -29,10 +29,13 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         internal string ReceiptPath => Path.Combine(Files.F.Source.RuntimePath, "till-native-aggregate.json");
         private readonly ActionOriginObservationReceipt observation;
         private readonly bool productTransport;
+        private readonly bool productStateHashDrift;
 
-        internal SiteTillNativeFixture(Action<Fixture>? prepareSource = null, bool productTransport = false)
+        internal SiteTillNativeFixture(Action<Fixture>? prepareSource = null, bool productTransport = false,
+            bool productStateHashDrift = false)
         {
             this.productTransport = productTransport;
+            this.productStateHashDrift = productStateHashDrift;
             (_, observation) = NativeInventoryGraphBoundaryTests.Fixture();
             observation.BeforeDebris = observation.AfterDebris = [];
             observation.Collections = []; observation.ClearanceToolCalls = [];
@@ -178,9 +181,12 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 result["product_authorization_status"] = "authorized";
                 result["product_receipt_id"] = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(request.RunId + "\n" + request.RequestNonce))).ToLowerInvariant();
                 result["product_request_sha256"] = journal.ProductRequestSha256;
-                result["product_request_before_state_hash"] = before.StateHash; result["product_before_state_hash"] = before.StateHash;
-                result["product_before_game_tick"] = before.GameTick; result["product_request_state_hash_drift"] = false;
-                result["product_dispatch_guard"] = "native_action_preconditions"; result["product_replan_required"] = true;
+                result["product_request_before_state_hash"] = before.StateHash;
+                result["product_before_state_hash"] = productStateHashDrift
+                    ? Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(before.StateHash))).ToLowerInvariant()
+                    : before.StateHash;
+                result["product_before_game_tick"] = before.GameTick; result["product_request_state_hash_drift"] = productStateHashDrift;
+                result["product_dispatch_guard"] = "native_action_preconditions"; result["product_replan_required"] = productStateHashDrift;
                 result["product_idempotent_replay"] = false;
             }
             ResultPath = Path.Combine(Files.F.Source.RuntimePath, "till-native-result.json"); Fixture.Save(ResultPath, result);

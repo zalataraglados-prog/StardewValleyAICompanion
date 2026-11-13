@@ -25,6 +25,7 @@ internal static partial class NativeExecutionActionSourceReader
         var receiptId = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(request.RunId + "\n" + request.RequestNonce))).ToLowerInvariant();
         var observed = nativeResult.ActionOriginObservation;
         var productBefore = Text(result, "product_before_state_hash");
+        var requestStateHashDrift = productBefore != request.BeforeStateHash;
         Require(endpoint.Scheme is "http" or "https" && endpoint.UserInfo.Length == 0 && endpoint.Query.Length == 0 &&
             endpoint.Fragment.Length == 0 && NativeTillingObservationContract.IsCompleteRequest(request) && observed is not null &&
             Text(result, "source") == "product_executor" && Text(result, "product_executor_schema_version") == "stardewai.product_executor.v1" &&
@@ -33,10 +34,11 @@ internal static partial class NativeExecutionActionSourceReader
             Text(result, "product_request_before_state_hash") == request.BeforeStateHash &&
             Hash(productBefore) && Tick("product_before_game_tick", out var firstTick) &&
             firstTick >= before.GameTick && firstTick <= observed.BeforeGameTick &&
-            Flag("product_request_state_hash_drift", productBefore != request.BeforeStateHash) &&
+            Flag("product_request_state_hash_drift", requestStateHashDrift) &&
             Text(result, "product_after_state_hash") == after.StateHash && Tick("product_after_game_tick", out var lastTick) &&
             lastTick == after.GameTick && Text(result, "product_dispatch_guard") == "native_action_preconditions" &&
-            Flag("product_replan_required", true) && Flag("product_idempotent_replay", false),
+            // ReadFrame already requires applied/verified; Product then replans only for live-before drift.
+            Flag("product_replan_required", requestStateHashDrift) && Flag("product_idempotent_replay", false),
             "Selected till Product receipt does not bind its original request, isolated observation and native frame.");
     }
 }

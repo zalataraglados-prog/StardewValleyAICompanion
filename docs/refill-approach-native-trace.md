@@ -1,5 +1,35 @@
 # Original Refill Native Trace
 
+## 2026-11-14 Native I And Product No-Drift Contract
+
+Fresh isolated managed-i-20261113-2356 used the original managed/product loop,
+hidden/silent/no debug resource setup. It accepted18boundaries including its first
+real till71,16 with native_site_till_verified=true/pickup0. Accepted artifact SHA
+05ff504347e2840103035bc07416c351ea3ce53cdbfb478cf0a00222f74c81da;
+after state9e17dc297417b403685935b0852a6df4809898c1bafa035b499c7a08460eb30d.
+This is an actual live owner acceptance, not a fixture or post-exit completion.
+
+I20 till70,17 applied/verified/observed with zero diagnostics, but the NEW consumer
+wrongly required product_replan_required=true. The EXISTING ProductExecutionService
+sets replan only for hash drift, non-applied or non-verified output. I20 has matching
+request/live-before hashes, drift=false/replan=false. ReadFrame already requires
+applied/verified, so only the NEW consumer now checks replan against actual drift.
+The fixture's identical wrong constant was removed. Both drift branches and both
+contradictory flag directions are tested; legacy Product/native services untouched.
+Never generalize a single sample's flags into the producer's protocol semantics.
+
+Final related55/55 in33seconds, no failures/skips/final build warnings/errors,
+includes original12-mode owner recovery and Product service tests. The existing
+generic read-only probe verified I20 full resources and original in-process rebind,
+20input/verifier hashes unchanged; reportSHA
+255a93c6a7019cc5cadf9eb27fec81793a1bc02d2ba53a4723619c139c82f967.
+After tick12150/state5012f33e85ac743aa78dd0c7865a344be2fc82b7e8ca4bade54bc90615d1a23a,
+pickup0. Actual I20 owner acceptance=false; no native redispatch or old-failure edit.
+All4owned processes exited. No post-action native save/full production/sale/reload
+proof. Next NEW isolated managed route, not loading H/I memory as a save. H's
+separate persistent completion remains valid. bd483aba CI43456855166 succeeded;
+L1frozen/formalfalse/PR567draft/issue569pre-manifest lab handoff unchanged.
+
 ## 2026-11-13 Original H Persistent Completion
 
 The known successful H19 receipt was explicitly completed through the EXISTING

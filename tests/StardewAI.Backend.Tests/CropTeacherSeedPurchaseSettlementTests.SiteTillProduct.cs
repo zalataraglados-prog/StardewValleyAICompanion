@@ -6,10 +6,12 @@ namespace StardewAI.Backend.Tests;
 
 public sealed partial class CropTeacherSeedPurchaseSettlementTests
 {
-    [Fact]
-    public async Task SiteTillProductUsesExplicitBoundReceiptWhileLegacyNativeReaderStillRejectsItsEndpoint()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task SiteTillProductUsesExplicitBoundReceiptWhileLegacyNativeReaderStillRejectsItsEndpoint(bool stateHashDrift)
     {
-        var f = new SiteTillNativeFixture(productTransport: true); using var host = f.Files.F.Runtime;
+        var f = new SiteTillNativeFixture(productTransport: true, productStateHashDrift: stateHashDrift); using var host = f.Files.F.Runtime;
         await f.Build();
         var type = typeof(CropTeacherSiteTilling).Assembly.GetType("StardewAI.GoalConditionedBootstrap.NativeExecutionActionSourceReader")!;
         var method = type.GetMethod("ReadQueue", BindingFlags.Static | BindingFlags.NonPublic)!;
@@ -34,16 +36,18 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
     [InlineData("product_dispatch_guard")]
     [InlineData("product_replan_required")]
     [InlineData("product_idempotent_replay")]
-    public async Task SiteTillProductRejectsUnboundTransportFieldsAfterValidBaseline(string field)
+    [InlineData("product_request_state_hash_drift", true)]
+    [InlineData("product_replan_required", true)]
+    public async Task SiteTillProductRejectsUnboundTransportFieldsAfterValidBaseline(string field, bool stateHashDrift = false)
     {
-        var f = new SiteTillNativeFixture(productTransport: true); using var host = f.Files.F.Runtime;
+        var f = new SiteTillNativeFixture(productTransport: true, productStateHashDrift: stateHashDrift); using var host = f.Files.F.Runtime;
         await f.Build(); _ = f.Preparation.VerifyTransition(f.Transition);
         var raw = JsonNode.Parse(File.ReadAllText(f.ResultPath))!;
         raw[field] = field switch
         {
             "product_before_game_tick" => JsonValue.Create(f.After.GameTick + 1),
-            "product_request_state_hash_drift" or "product_idempotent_replay" => JsonValue.Create(true),
-            "product_replan_required" => JsonValue.Create(false),
+            "product_request_state_hash_drift" or "product_replan_required" => JsonValue.Create(!stateHashDrift),
+            "product_idempotent_replay" => JsonValue.Create(true),
             _ => JsonValue.Create("unbound")
         };
         Fixture.Save(f.ResultPath, raw);

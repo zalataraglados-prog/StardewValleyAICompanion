@@ -2,6 +2,14 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-14T00:12:00+08:00 R2 新I原生耕地入账及无漂移Product修正
+
+- 新E隔离 `managed-i-20261113-2356` 由原 managed/product 主循环真实接受18个边界，包含首个耕地71,16，`native_site_till_verified=true`、pickup0；accepted SHA `05ff504347e2840103035bc07416c351ea3ce53cdbfb478cf0a00222f74c81da`，after hash `9e17dc297417b403685935b0852a6df4809898c1bafa035b499c7a08460eb30d`。这补上了新入口实际派发→同owner入账，不只是H事后续接或fixture。
+- 第二次耕地70,17已原生 applied／verified／observed、零诊断，却被**新消费者**要求 `product_replan_required=true` 的常量拒绝。旧 `ProductExecutionService` 的既有公式是“状态漂移或未applied或未verified才replan”；该次请求与fresh-before hash一致，drift=false／replan=false正确。仅改新适配器按已要求applied／verified后的漂移值核replan，旧服务／执行器／默认门不改；夹具同步去除错误常量，新增有／无漂移正向和两种矛盾标记反例。不得从一次样本值推导整个原协议。
+- 最终相关 **55/55（33秒）**，覆盖Product边界、原12种owner恢复及旧Product服务；零失败／跳过／最终构建警告／错误。复用原通用只读probe打开I20未改原件，完整资源核及进程内rebind通过，20输入及verifier hash复核不变，报告SHA `255a93c6a7019cc5cadf9eb27fec81793a1bc02d2ba53a4723619c139c82f967`；after tick12150/hash `5012f33e85ac743aa78dd0c7865a344be2fc82b7e8ca4bade54bc90615d1a23a`、pickup0。**I20尚未实际owner接受**，没有新native派发，不改写旧失败。
+- I的四个归属进程全部退出，原生保存／完整生产／销售／新进程加载仍未过；H持久完成记录继续有效。`bd483aba` CI43456855166成功。核对公开issue未发现比#569更新的外部任务；其正式manifest前实验室交接继续生效。R2正文两处旧“尚未接线”已改为当前实现／待原生验收，不重新开发已有模块或增加准入门。
+- **唯一接续：** 用修正代码的新E隔离原managed/product运行，验证连续整地、播种／维护／收获／销售／原生保存及新进程加载；不重发I20，不把H或I未保存内存态当存档。优先首个真实阻断，不重采已过L1／旧恢复矩阵。L1冻结19/19／11/11、formal=false、PR567草稿、#339/#550/#569开放、local-data不提交不变。
+
 ## 2026-11-13T23:50:00+08:00 R2 原H耕地实际入账与持久读回
 
 - 原H已知成功回执通过既有 `RunTillingAsync` 明确续接，原 Backend 持久账本 revision **35→36**、同 owner 生成第18个 accepted；关闭并重开 owner 后，原恢复入口读回相同 ledger／state hash。只提交原 marker，不调用执行器，原 native 派发次数仍为1。20份原输入、accepted 哈希及4份本地内容寻址 verifier 归档已复核；原失败报告和原 loop 的17 accepted／14 verified统计不改写。

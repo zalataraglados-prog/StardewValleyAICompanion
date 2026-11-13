@@ -1478,7 +1478,7 @@ v71 继续携带 `--skip-training`，没有 Student 更新、checkpoint 或 GPU 
 
 ### 2. 用现有补水队列收口清障与拾取的结算证据
 
-- `BuildCropTeacherWateringRefillApproachQueueAsync()` 已能编译补水接近路线。`CropTeacherRefillApproachNativeTrace.OpenWithSnapshotInventoryContinuity()` 已能重放原队列、回执和库存数量连续性，当前仍是核验入口，未接到账本结算。保持原队列、动作身份、站位、时间预算和原生回执。 [补水路线编译](money-crop-refill-approach-compilation.md) · [补水记录读取器](../experiments/StardewAI.GoalConditionedBootstrap/CropTeacherRefillApproachNativeTrace.cs#L87)
+- `BuildCropTeacherWateringRefillApproachQueueAsync()` 复用原补水接近编译，`CropTeacherRefillApproachNativeTrace.OpenWithSnapshotInventoryContinuity()` 复用原队列、回执和库存连续性读取核。修订基线曾仅有核验入口；后续所选资源组合及同owner接线已有实现，具体进度以第3步接续定位为准，不再把基线缺口重复记为未开发。保持原队列、动作身份、站位、时间预算和原生回执；未观察的生产来源不能因此获credit。 [补水路线编译](money-crop-refill-approach-compilation.md) · [补水记录读取器](../experiments/StardewAI.GoalConditionedBootstrap/CropTeacherRefillApproachNativeTrace.cs#L87)
 - 所选路线只要求到达和补水时，以通路、实际水量和地块状态判定动作进度，同时对实际资源变化分类。若账本需要把掉落计为本动作产出，则必须区分既有掉落、本次产生和实际入包。无法归因的增量保留为未结算，未知资源漂移继续由原保护条件拒绝。#541 的数量间隙与 #542 的同帧记录优先用于重放验证时间边界，生产来源由能独立区分两种历史的证据确认。
 - #549 的深层图和掉落字段作为默认关闭的校准证据保留。`held/offered Item` 图、观察开始前和被动间隙的补充范围，按所选动作缺少的结算事实确定。先查现有观察能否判定，再针对能改变结算的缺口补最小字段和正反例。单次 `unavailable` 或必填字段缺失只记录拒绝原因，不能裁决字段必要性。读取副作用沿 [#29](https://github.com/zalataraglados-prog/StardewValleyAICompanion/issues/29) 的原责任处理，当前所选路径涉及的风险在使用前核验。 [#541](https://github.com/zalataraglados-prog/StardewValleyAICompanion/pull/541) · [#542](https://github.com/zalataraglados-prog/StardewValleyAICompanion/pull/542) · [#549](https://github.com/zalataraglados-prog/StardewValleyAICompanion/pull/549) · [#550 审查](https://github.com/zalataraglados-prog/StardewValleyAICompanion/issues/550#issuecomment-6772496351)
 
@@ -1486,9 +1486,9 @@ v71 继续携带 `--skip-training`，没有 Student 更新、checkpoint 或 GPU 
 
 ### 3. 接同一账本、主循环和跨日恢复
 
-- **2026-11-13T23:50 接续定位：** 原H19已由既有明确续接／marker接入同owner第18项接受，原持久账本35→36，重开owner读回一致，没有native重发；20原输入和accepted哈希未变。API将原六种恢复扩为native／Product12项，生产／旧默认不改。H没有该动作后的原生保存，不得将内存快照冒充可加载续档；下一步新E隔离档继续原managed生产／销售／原生保存／新进程加载，遇首断点保留并修最小接线。持久读回不是完整作物或本步退出。[当前证据与唯一接续](CURRENT_WORK_CN.md#2026-11-13t2350000800-r2-原h耕地实际入账与持久读回)。
+- **2026-11-14T00:12 接续定位：** H已完成原持久marker入账与owner重开读回；新I由原managed/product入口真实接受18边界及首耕地。第二耕地成功但被新消费者的replan恒true错误拒绝；已按旧Product“成功验证时replan等于实际hash漂移”的公式修正新适配器／夹具，55/55及I20原件完整资源／进程内rebind通过，实际I20 owner接受仍false。下一步新E隔离运行连续整地及原生产／销售／原生保存／新进程加载；不重发已执行动作，不把H／I未保存内存态当续档。组件或单耕入账不是本步退出。[当前证据与唯一接续](CURRENT_WORK_CN.md#2026-11-14t0012000800-r2-新i原生耕地入账及无漂移product修正)。
 
-- `PrepareCropTeacherOwnedWateringAsync()` 当前会拒绝带 `InterruptKind` 的补水接近队列。将所选接近／清障队列及其已验证结果接到现有 `CropTeacherManagedSeedOwner` 和主循环，复用派发登记、队列／来源身份、回执、账本提交与只读恢复。补水但零块作物完成仍保留为控制结果。 [浇水入口](../tools/StardewAI.LiveTrainingLoop/Program.CropTeacherOwnedWatering.cs#L26) · [已有补水控制结果](money-crop-refill-control-outcome.md)
+- `PrepareCropTeacherOwnedWateringAsync()` 现已显式接纳原 `crop_teacher_watering_refill_approach`，其他未支持interrupt继续拒绝；同一 `CropTeacherManagedSeedOwner` 和主循环复用派发登记、队列／来源身份、回执、marker账本提交与只读恢复。所选清障／拾取资源组合与耕地同owner接线已有实现，仍须由下面的完整真实流程验收，不能以实现或组件测试代替跨日证据。补水但零块作物完成仍保留为控制结果。 [浇水入口](../tools/StardewAI.LiveTrainingLoop/Program.CropTeacherOwnedWatering.cs#L26) · [已有补水控制结果](money-crop-refill-control-outcome.md)
 - 接续收获留存、所选销售方式的原生结算、睡眠保存和重载。复用 `CheckCropTeacherDayBoundaryAsync()` 等既有检查，核对同一存档的物品、作物、金币、日期及账本进度。可复用 #502 的作物实跑和离线重建来核对已有阶段，托管接线要由新入口的实际结果验证。具体结算消费者沿现有合同绑定。 [跨日检查](../tools/StardewAI.LiveTrainingLoop/Program.CropTeacherDayBoundary.cs#L125) · [#502](https://github.com/zalataraglados-prog/StardewValleyAICompanion/pull/502)
 
 **退出条件。** 原生执行、账本提交和保存边界在同一条运行中可追踪。回包丢失或中断后能通过原回执和存档读回确定已执行的部分，重复调用不会重复购买、扣物或记收入。
