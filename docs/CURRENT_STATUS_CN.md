@@ -2,6 +2,8 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+> **2026-11-13T17:25:00+08:00 R2 补充观测组件。** 已将原site stand选择提取为Core单实现，旧Loop入口保留语义／对象身份；新只读绑定分别核accepted full源和同frame窄布局观测，不替换hash／资源头。最终绑定22/22、原选择与兼容7/7，F留档重放73,17且4输入不变；首次错误假设map.id与临时脚本空值passed已定位／作废，严格重放才计有效，不是原生执行PASS。原派发门仍保留，下一步接原模型／编译／实际移动及同owner结算恢复。#569明确正式manifest前由主线交工程／证据，实验室负责D盘选型／训练／训后评估，原门不降低，当前顺序不变。L1冻结、formal=false、PR567草稿、local-data不提交。[接续](CURRENT_WORK_CN.md#2026-11-13t1725000800-r2-整地补充观测绑定与实验室交接责任)。
+
 > **2026-11-12T20:16:00+08:00 R2 当前实跑收尾。** `19773b15` CI43214258647成功；F新档3次地图后控制等待已接受，旧hash404越过，同owner共16次acceptance／13条verified action（另3短控制不授作物／策略credit），最终原快照确认为Farm。iteration18原场地接近队列是单个pending move_to_tile，尚无托管资源／owner绑定，派发前停止。停游戏后原CLI只读恢复同一accepted hash成功、零native派发；不是游戏新进程重载或完整销售保存PASS。全部记录归属进程已停。下一步仅原site approach目标站位／资源中性结果接同owner，不能放宽旧单connector路线合同；再所选整地和完整生产／销售／保存重载。79%USED附近收尾，目标未完成、L1冻结／formal=false／PR567草稿／local-data不提交。[接续](CURRENT_WORK_CN.md#2026-11-12t2016000800-r2-缓存接续实跑通过与整地接近首断点)。
 
 > **2026-11-12T20:00:00+08:00 R2 实际购种与快照缓存接续。** `1d34b008` CI43208213320成功。新E同一owner接受4等待、6购种、1段返回路线共11条动作，实际仍在Town，撤回口头“已回农场”。iteration13原等待结果留存后，原accepted源被后端既有双快照缓存淘汰，账本按hash读取404。仅新supporting消费者复用原恢复导入helper，按原pin重导source／after、严格核accepted与hash，再走原rebind；不增缓存、不取latest、不改旧核或重发。聚焦30/30，相关156/157（1旧夹具File.Move访问拒绝），该项独立复验1/1；最终独立拒绝反例＋原失败项6/6通过、零失败／跳过／构建警告／错误，重叠不加。下一步新E合法闭环，仍R2第3/4步、无完整managed／训练PASS。原API审查权限受阻退出、本块不再调用；L1冻结、PR567草稿、local-data不提交。[接续](CURRENT_WORK_CN.md#2026-11-12t2000000800-r2-真实购种接续与有界快照缓存)。

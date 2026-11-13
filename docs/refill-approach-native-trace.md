@@ -1,5 +1,36 @@
 # Original Refill Native Trace
 
+## 2026-11-13 Site Observation Is Not An Accepted Resource Head
+
+CropTeacherSiteApproachObservation pins the original request/accepted full
+source/ledger and separate same-frame bounded farm_layout observation. Match
+actor/save/version/tick/calendar/clock/position and original active layout; validate
+read_at_tick, Farm identity, map dimensions, complete unique bounded rows and
+typed standability. Reuse the original selection via one Core implementation;
+legacy Loop entry keeps target/tie/fallback/null/first-valid object semantics.
+Keep both state hashes: narrow observation never replaces the full resource head
+or grants native/resource/formal credit. Default bridge profiles remain unchanged.
+
+Final22 binding tests and7 original/compatibility selection tests pass, zero
+failures/skips/build warnings/errors. Strict retained native F replay selects
+original73,17 and preserves all4 input hashes. Verified reportSHA
+16042baa676153de8fa98d7e6847583e188e9a9e6ca7d575bd5541265c52d065.
+This is observation binding ONLY, not a new movement or settlement/native PASS.
+The initial consumer assumed map.id=Farm; actual IDs are empty. Only the new
+consumer now compares original map IDs/dimensions while player/context bind Farm.
+Initial nonterminating PowerShell failure emitted a null-valued passed artifact:
+SHA506411c01e80a409e8f8cb9b1e80430fabdba6ea21d40f963e84cc10c7405785
+is INVALIDATED by its retained sidecar, never accepted. Strict script stops on
+errors, checks all exact nonnull targets/false flags and refuses output overwrite.
+
+Next connect original model/compilation to accepted full source with observation
+provenance, then original native stand/resource outcome and same-owner recovery.
+Do not remove original bounded repair=4 or broaden default single-connector route
+guards; current managed site dispatch still rejects until its consumer is bound.
+No new game/cleanup/formal run, frozen L1 unchanged. #569 moves model selection,
+formal manifest/training and post-training evaluation to the laboratory AFTER
+mainline selected-route engineering/evidence handoff, without lowering any gate.
+
 ## 2026-11-12 Native F Retained-Head Recovery And Next Site Boundary
 
 19773b15 exactCI43214258647 succeeded. Fresh native F accepted the original

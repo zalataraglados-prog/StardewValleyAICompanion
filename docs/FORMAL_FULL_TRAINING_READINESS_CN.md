@@ -1510,6 +1510,8 @@ v71 继续携带 `--skip-training`，没有 Student 更新、checkpoint 或 GPU 
 
 ### 7. 冻结语料、完成 Provider 与模型定型
 
+**2026-11-13 执行归属修订（[#569](https://github.com/zalataraglados-prog/StardewValleyAICompanion/issues/569)）：** 主线完成第1—6步所选路线的原生验收、覆盖／对账和准入工程接线，在生成正式训练manifest之前交接。交付可运行提交／构建、对应报告及可重放语料来源，注明版本、存档来源、独立Teacher比较、候选特征与工件哈希，并附现有Provider／数据构建／训练入口用法。前瞻实验室在当前电脑D盘接手本步的数据冻结、选型／实验和配置验证，以及第8步正式manifest／启动、训练跟踪／checkpoint／恢复与训后评估；旧电脑仍用于实际Student与游戏／SMAPI共跑的8GiB验收。实验室对具体工程缺口提交复现和修复需求，由主线返修后接续验证。移交不等于任一准入门通过，不改变当前作物托管施工顺序，也不授权主线提前开训。下列验收条件及既有正式授权继续生效。
+
 - 全局证据和晋升范围核对后，用当前监督合同重建启动语料。保留决策时的候选全集、独立 Teacher 比较、原生结果和版本身份。按存档／日隔离 train、validation、test，冻结数据及哈希。现有 `PolicyTrajectoryDatasetBuilder` 执行准入与切分，启动前仍需生成与实际版本匹配的工件。 [独立监督合同](independent-teacher-pairwise-admission.md)
 - 按现有合同实现并验收版本化 Provider。内置与替代／mock Student 都要接通，Teacher 可独立替换和启停，实际身份可追溯。以冻结语料完成可复现选型、独立测试、checkpoint 往返和最低配置级、8 GiB 整机实测。实验室可以提前设计比较和失败判据，正式选型使用已冻结的输入。 [Provider 验收](STUDENT_TEACHER_PROVIDER_INTERFACE_REQUIREMENTS_CN.md#6-开训前-provider-与模型验收)
 

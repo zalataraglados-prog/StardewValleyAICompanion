@@ -2,6 +2,15 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-13T17:25:00+08:00 R2 整地补充观测绑定与实验室交接责任
+
+- 主线仍为F原生iteration18的整地接近，不另起动作系统。原accepted full源没有site context；同tick的farm_layout窄观测有上下文却没有完整持久物品图，不能用窄快照替换owner头或补造完整资源证明。新增只读`CropTeacherSiteApproachObservation`将原run request／ledger／full源／窄观测分别pin，核原active布局、同存档／角色／版本／tick／日期／时钟／位置、完整有界地块与地图宽高，复用原站位选择。来源hash分别保留，native／resource／formal标记均false。
+- `c196f6c6`的原站位算法提取到Core共享，旧Loop公开入口保留并委托同一实现，仍保持最近安全／非种植位优先／Y-X排序／已有站位不移动及首个有效重复项对象身份。不把窄观测合入full JSON、不改变旧profile默认范围或单connector路线保护，也不丢掉原模型声明的4次有界开路。
+- 绑定最终22/22、旧入口及兼容性7/7通过，零失败／跳过／构建警告／错误。实际F四份原件的严格离线重放复现原站位73,17、原件哈希不变，报告SHA `16042baa676153de8fa98d7e6847583e188e9a9e6ca7d575bd5541265c52d065`。只是已有原生观测的绑定重放，不是新移动／结算／托管全流程PASS。
+- 重放先发现新消费者误要求map.id等于Farm；原生两份map.id实际均为空，地点身份由player／context给出。只修新消费者，按原map ID一致性及宽高核验，正例夹具加入空ID。首次临时PowerShell未设置遇错即止，错误后写出空值passed报告：原件保留，SHA `506411c01e80a409e8f8cb9b1e80430fabdba6ea21d40f963e84cc10c7405785` 已有invalidated旁证，禁止消费；严格脚本拒绝覆盖、异常即止且核全部非空目标和false标记后，才生成上述有效报告。失败不计通过，未污染游戏／账本／正式语料。
+- 已核对新[#569](https://github.com/zalataraglados-prog/StardewValleyAICompanion/issues/569)：主线完成R2所选路线原生验收、覆盖／对账及正式准入工程接线，交付版本／构建、可重放语料来源与原Provider／数据构建／训练入口说明；**正式manifest之前交接**。前瞻实验室在当前电脑D盘负责语料冻结、模型定型／实验、正式训练与训后评估，旧电脑承担实际Student＋游戏8GiB整机验证。原准入与Provider要求不降低，工程缺口由实验室提交复现返修；本次不触D、不启动训练，不改变当前整地施工顺序。
+- **唯一接续：** 原场地接近model／队列应绑定已接受完整源，在保留窄观测来源和原开路声明的前提下复用原编译器；再把实际原生移动／目标站位、资源中性或实际修路效果接同一owner的claim／rebind／恢复。当前派发保护仍在，不把当前观测组件算这条执行链已完；随后原整地／播种／维护／收获／销售／保存／新进程重载与读回，其他R2门保持。L1冻结19/19、11/11、formal=false，PR567草稿、#339/#550开放，local-data不提交。新额度已刷新，最新用户说明有重置机会时60%限定不生效；不继承旧80%停止状态，亦不擅自使用重置。
+
 ## 2026-11-12T20:16:00+08:00 R2 缓存接续实跑通过与整地接近首断点
 
 - `19773b15` 已推送，远端CI `43214258647` 已成功。新隔离 `managed-f-20261112-2003` 走原托管／Product入口，iteration13、15、17三个地图切换后的原等待均被同一owner接受，未再出现旧accepted hash的404；不增缓存／重采全量快照或修改原资源／时间核。共16个owner acceptance，其中13条计入verified action，3个短控制等待仍不计作物／策略credit。
