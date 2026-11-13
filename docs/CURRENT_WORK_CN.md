@@ -2,6 +2,15 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-14 R2 同tick库存图缓存修正
+
+- `dc5df200`已推送，CI43510625527成功；M原source重新导入的修复及12/12／只读HTTP证据继续有效。新N原入口接受5个owner边界，iteration7购种队列在第4步close_menu原生applied／verified后被资源核拒绝；loop63076实际退出2，四归属进程3024／4028／2080／17896已退出。
+- 已核原始逐步快照：tick10461购前money420／背包种子1／库存图1，购后同tick money340／背包2／库存图仍1；tick10462关菜单后money340／背包2／库存图2。不是关菜单凭空增添物品，而是透明桥按tick复用的图滞后。三原件未改，诊断报告SHA `357bf7bfc7e594564ee8738b7770829c5dde105abf579964a13a3f7ecde79413`。N旧证据仍失败，不补写／重标成功。
+- 旧缓存由`f3f046f7`为current-location／farm共用规范库存图引入，保留这个目的：原`ReadCachedMaterialInventoryGraph`委托单次采集作用域缓存，`TransparentStateCollector.BuildSnapshot`以using进入／释放；同一次采集同farm／actor／tick只读一次，新采集即便同tick也重读，非采集调用不跨请求复用，嵌套／异常恢复作用域。未增加快照频率、关闭其他缓存、修改旧购买／关菜单执行器或资源核。
+- 控制端首次新测试因Assert.Throws重载歧义未编译，仅显式Action修正。最终缓存／三类种子入口／原transfer owner／profile及原graph守卫**25/25（2秒）**；真实E引用的net6 Bridge构建零警告／错误。另补跑旧Core源码守卫，19/20的一项旧字面量落后于`7da69574`共用materialInventoryField改写，仅改守卫为同时验证Field构造和原输出绑定，旧含义不放松；重新正常构建后该组**20/20（110毫秒）**，不把初次红色重标。
+- 原API Block77首轮因控制端给不存在的独立record文件而7steps零编辑退出；核实私有record实际在Program.CropTeacherControl.cs:13，沿原会话唯一修正后13steps交两份测试草稿`049901ac`，接为`606defdf`。控制端23/25发现新夹具缺sleep context／完整envelope及准备阶段错误调用执行租约API，只修新测试夹具／断言，最终25项通过。草稿／失败／完整API流均保留，不称peer首次验收绿；现accepted-idle／撤权，未替换内部代理或fallback。
+- **唯一接续：** 提交本块后带两项缓存修正的新E原managed/product入口，实际完成播种维护→收获销售→原生保存／新进程加载。N未到原M播种位置、不能证明M缓存修复已在新实际播种通过；L／M／N未保存尾部不能伪装续档。不要为每项私有字段再建证明门，不把通用采样objective_completed当完整周期。L1冻结19/19、11/11；formal=false、PR567草稿、#339/#550/#569分工和local-data不提交不变。
+
 ## 2026-11-14 R2 原生动作信任边界修正
 
 - 用户指出：原生割草不应以逐字段模拟私有状态、随机掉落或邻格清除为前置门。接受这一修正；此前B校准的镰刀动作已成功，后续拒绝来自新增消费者不接受正常工具XML变化，并非发现原执行器乱删或作弊。**撤销下方历史接续中“先完成Scythe私有元数据／weed范围／所有未变资源证明，才准许整地清障”的要求**；历史失败和原件保留，不改写为成功。

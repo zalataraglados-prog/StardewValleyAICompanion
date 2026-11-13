@@ -13,7 +13,25 @@ public sealed partial class CropTeacherSeedTransferTests
     [Fact]
     public async Task ManagedSeedTransferCacheReimportsAcceptedSourceBeforePreparingOriginalTransfer()
     {
-        using var f = new Fixture(nativeEvidence: true);
+        using var f = new Fixture(nativeEvidence: true, beforeChange: snapshot =>
+        {
+            snapshot.RealTimestamp = "2026-11-08T06:00:00Z";
+            foreach (var domain in new[] { "mods", "npcs", "quests", "modded_state" })
+                if (!snapshot.State.ContainsKey(domain)) snapshot.State[domain] = JsonSerializer.SerializeToElement(new JsonObject());
+            foreach (var domain in snapshot.State.Keys.ToArray())
+            {
+                var fields = JsonNode.Parse(snapshot.State[domain].GetRawText())!.AsObject();
+                foreach (var row in fields)
+                    if (row.Value is JsonObject envelope && envelope.ContainsKey("status"))
+                    {
+                        envelope["source"] ??= new JsonObject { ["kind"] = "test", ["path"] = "managed-cache." + domain + "." + row.Key };
+                        envelope["adapter"] ??= "test";
+                        envelope["read_at_tick"] ??= snapshot.GameTick;
+                        envelope["confidence"] ??= 1d;
+                    }
+                snapshot.State[domain] = JsonSerializer.SerializeToElement(fields, JsonOptions);
+            }
+        });
         using var runtime = new RuntimeFixture(f);
         runtime.Options.UseRuntimeTestHarnessExecutor = true;
         using var inputs = new OwnerInputs(f.SourcePath, f.LedgerPath, f.RequestPath);
@@ -40,7 +58,8 @@ public sealed partial class CropTeacherSeedTransferTests
         Assert.Equal(f.Before.StateHash, queue.StateHash);
         Assert.Empty(queue.CompilerDiagnostics);
         Assert.Equal("executor.transfer_material", Assert.Single(queue.Items).OptionId);
-        prepared.ValidateDispatchQueue(Path.Combine(operation.RuntimeDirectory, "compiled-seed-queue.json"));
+        Assert.Throws<InvalidOperationException>(() => prepared.ValidateDispatchQueue(
+            Path.Combine(operation.RuntimeDirectory, "compiled-seed-queue.json")));
         Assert.Equal("full", build.GetType().GetProperty("SnapshotProfile")!.GetValue(build));
         Assert.True(runtime.Store.Snapshots.ContainsKey(f.Before.StateHash));
         Assert.Equal(sourceBytes, File.ReadAllBytes(f.SourcePath));

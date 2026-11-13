@@ -1488,6 +1488,8 @@ v71 继续携带 `--skip-training`，没有 Student 更新、checkpoint 或 GPU 
 
 ### 3. 接同一账本、主循环和跨日恢复
 
+- **最新断点覆盖下方历史：** dc5df200的CI43510625527成功。N原入口购种后同tick的背包种子已2而库存图仍1，下一tick关菜单时图才2，导致原资源核拒绝；只修透明桥库存图缓存为单次采集内共享／跨采集刷新，不改执行器／资源核或加快照扫描。相关25/25及实际Bridge构建通过，下一步新E原入口继续播种维护、收获销售、原生保存／新进程加载；N旧失败保留，尚未证明新实际播种或完整周期，formal=false。[证据与接续](CURRENT_WORK_CN.md#2026-11-14-r2-同tick库存图缓存修正)。
+
 - **2026-11-14 接续定位（原生信任修正）：** 清障共享原编译／原生回执／真实after／同owner恢复已接（124/124＋共享抽样6/6；b0eCI成功），正常副作用由引擎裁决，不再做私有XML／weed范围证明门。L25边界／六耕暴露旧种子claim来源，f8dbe970只在播种marker通过原服务刷新，原编译规则保留；原输入／六格计划只读预检及f8CI43501813625已过。M25边界／六耕已越过该预检并创建播种intent，随后因有界缓存缺原source而账本GET404，未派发。共同种子入口现复用原精确来源导入，不扩大缓存或改账本；同404回归＋来源／HTTP／恢复相关12/12。下一步原留存准备链检查后新E原入口继续生产／销售／原生保存加载；L／M未保存尾部非续档，完整周期／formal未过，冻结项不重做。[当前证据与唯一接续](CURRENT_WORK_CN.md#2026-11-14-r2-原生动作信任边界修正)。
 
 - `PrepareCropTeacherOwnedWateringAsync()` 现已显式接纳原 `crop_teacher_watering_refill_approach`，其他未支持interrupt继续拒绝；同一 `CropTeacherManagedSeedOwner` 和主循环复用派发登记、队列／来源身份、回执、marker账本提交与只读恢复。所选清障／拾取资源组合与耕地同owner接线已有实现，仍须由下面的完整真实流程验收，不能以实现或组件测试代替跨日证据。补水但零块作物完成仍保留为控制结果。 [浇水入口](../tools/StardewAI.LiveTrainingLoop/Program.CropTeacherOwnedWatering.cs#L26) · [已有补水控制结果](money-crop-refill-control-outcome.md)

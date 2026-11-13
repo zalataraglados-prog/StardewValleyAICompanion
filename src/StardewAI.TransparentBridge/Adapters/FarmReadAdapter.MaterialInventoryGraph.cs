@@ -1,5 +1,6 @@
 using Microsoft.Xna.Framework;
 using StardewAI.Contracts.State;
+using StardewAI.TransparentBridge.State;
 using StardewValley;
 using StardewValley.Inventories;
 using StardewValley.Locations;
@@ -11,12 +12,6 @@ namespace StardewAI.TransparentBridge.Adapters;
 
 public sealed partial class FarmReadAdapter
 {
-    private static readonly object MaterialInventoryGraphCacheLock = new();
-    private static MaterialInventoryGraph? cachedMaterialInventoryGraph;
-    private static Farm? cachedMaterialInventoryGraphFarm;
-    private static long cachedMaterialInventoryGraphTick = -1;
-    private static long cachedMaterialInventoryGraphPlayerId;
-
     internal static readonly Vector2[] WorkbenchChestOffsets =
     {
         new(-1f, 1f), new(0f, 1f), new(1f, 1f),
@@ -104,27 +99,8 @@ public sealed partial class FarmReadAdapter
         Farmer player,
         long tick)
     {
-        lock (MaterialInventoryGraphCacheLock)
-        {
-            if (cachedMaterialInventoryGraph is not null &&
-                ReferenceEquals(
-                    cachedMaterialInventoryGraphFarm,
-                    farm) &&
-                cachedMaterialInventoryGraphTick == tick &&
-                cachedMaterialInventoryGraphPlayerId ==
-                player.UniqueMultiplayerID)
-            {
-                return cachedMaterialInventoryGraph;
-            }
-
-            cachedMaterialInventoryGraph =
-                ReadMaterialInventoryGraph(farm, player);
-            cachedMaterialInventoryGraphFarm = farm;
-            cachedMaterialInventoryGraphTick = tick;
-            cachedMaterialInventoryGraphPlayerId =
-                player.UniqueMultiplayerID;
-            return cachedMaterialInventoryGraph;
-        }
+        return MaterialInventoryGraphCapture.Read(farm, player.UniqueMultiplayerID, tick,
+            () => ReadMaterialInventoryGraph(farm, player));
     }
 
     internal static StorageInfrastructureProjection

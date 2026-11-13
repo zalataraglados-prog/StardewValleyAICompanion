@@ -34,7 +34,8 @@ public sealed class MaterialSupplyProjectionTests
         Assert.Contains("workbench_native_container_not_actor_authorized", source, StringComparison.Ordinal);
         Assert.Contains(".Distinct(StringComparer.Ordinal)", source, StringComparison.Ordinal);
         Assert.Contains("ReadCachedMaterialInventoryGraph(", source, StringComparison.Ordinal);
-        Assert.Contains("[\"material_inventory_graph\"] = Field(materialInventoryGraph", source, StringComparison.Ordinal);
+        Assert.Contains("var materialInventoryField = Field(materialInventoryGraph,", source, StringComparison.Ordinal);
+        Assert.Contains("[\"material_inventory_graph\"] = materialInventoryField", source, StringComparison.Ordinal);
         Assert.Contains("ReadStorageInfrastructure(materialInventoryGraph)", source, StringComparison.Ordinal);
         Assert.Contains("chest.GetActualCapacity()", source, StringComparison.Ordinal);
         Assert.Contains("chest.GetMutex()", source, StringComparison.Ordinal);

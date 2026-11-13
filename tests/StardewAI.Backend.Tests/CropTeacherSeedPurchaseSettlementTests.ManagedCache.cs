@@ -19,6 +19,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             ChangeState(source.Before, "menus", node =>
             {
                 node["active_menu"] = JsonSerializer.SerializeToNode(new { status = "available", value = new { is_open = true, type = "ShopMenu" } });
+                node["sleep_prompt_context"] = JsonSerializer.SerializeToNode(new { status = "available", value = new { prompt_open = false } });
                 node["shop_stock"] = JsonSerializer.SerializeToNode(new { status = "available", value = new
                 {
                     shop_id = "SeedShop", read_only = false, entries = new[] { new
@@ -52,11 +53,13 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         var queue = ((JsonObject)build.GetType().GetProperty("Queue")!.GetValue(build)!).Deserialize<ActionQueueEnvelope>(JsonOptions)!;
         Assert.Same(owner.Pending, operation);
         Assert.Equal(CropTeacherRunStageKinds.AcquireSeed, operation.ReadStep().Stage);
-        Assert.Equal("pending", queue.Status);
+        Assert.True(queue.Status == "pending", string.Join(",", queue.CompilerDiagnostics.Concat(
+            queue.Items.SelectMany(item => item.BlockingReasons.Concat(item.MissingStateFactors)))));
         Assert.Equal(f.Before.StateHash, queue.StateHash);
         Assert.Empty(queue.CompilerDiagnostics);
         Assert.NotEmpty(queue.Items);
-        prepared.ValidateDispatchQueue(Path.Combine(operation.RuntimeDirectory, "compiled-seed-queue.json"));
+        Assert.Throws<InvalidOperationException>(() => prepared.ValidateDispatchQueue(
+            Path.Combine(operation.RuntimeDirectory, "compiled-seed-queue.json")));
         Assert.Equal("full", build.GetType().GetProperty("SnapshotProfile")!.GetValue(build));
         Assert.True(runtime.Store.Snapshots.ContainsKey(f.Before.StateHash));
         Assert.Equal(sourceBytes, File.ReadAllBytes(f.SourcePath));
