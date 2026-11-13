@@ -28,6 +28,7 @@
     <Compile Include="..\StardewAI.Core.Tests\CropTeacherControlIntegrationSourceGuardTests.SeedSupport.cs" Link="CropTeacherControlIntegrationSourceGuardTests.SeedSupport.cs" />
     <Compile Include="..\..\src\StardewAI.TransparentBridge\State\SnapshotProfileContext.cs" Link="BridgeSnapshotProfileContext.cs" />
     <Compile Include="..\..\src\StardewAI.TransparentBridge\State\MaterialInventoryGraphCapture.cs" Link="MaterialInventoryGraphCapture.cs" />
+    <Compile Include="..\..\src\StardewAI.TransparentBridge\State\MapActionCapture.cs" Link="MapActionCapture.cs" />
   </ItemGroup>
 
   <ItemGroup>
