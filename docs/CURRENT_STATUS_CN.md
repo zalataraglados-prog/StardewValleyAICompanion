@@ -2,6 +2,8 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+> **2026-11-13T21:53:00+08:00 R2 till工具XML已绑定。** 新消费者核原成功回执／锚点、目的限定实际last-equipped／引用／power／动画上下文及actor facing，按实时原生链生成三字段期望，复用原槽位比较核，默认旧入口仍严格拒绝同样变化，未改执行器或忽略未知XML。新E原生F重放工具元数据＋原无额外资源组合通过，报告SHA4c7918bb…8900901，7输入及最终verifier hash未变；仅debug校准／该次pickup0分支，不是G19／owner／全掉落／作物／formal PASS。最终Backend528/528＋Core69/69，API纯函数27首次通过并已退出撤权、授权idle、费用未知。唯一下一步同次库存／掉落接原物理资源图／镜像核，再原owner claim／rebind／恢复及managed实跑；G19保护／L1冻结／PR草稿／#569分工不变，local-data不提交。[接续](CURRENT_WORK_CN.md#2026-11-13t2153000800-r2-耕地工具xml绑定与新原生重放通过)。
+
 > **2026-11-13T20:56:00+08:00 R2 till观察接入／工具XML断点。** 默认省略的显式till观察合同复用原scope／锚点／采集与读取核，旧move／clearance默认不放宽。相关Backend277/277＋Core69/69通过；原生E观察observed／零诊断，原精确缓存读取得同一锚点，debris graph／库存数量读取通过，原槽位核拒绝Hoe三处实际XML变化。局部分析SHA26936baa…38bfe19、7原件不变，完整资源／owner／formal仍false；C锚点漏接与D校准脚本fresh重读失败均保留，产品原缓存协议未改。唯一下一步按原生来源绑定hasBeenInInventory／currentParentTileIndex／swingTicker，再同次掉落／原owner接线；不是新增动作或旧执行器重写。API互审叶未见具体缺陷，退出撤权、授权idle；launcher新增任务读取付费前机械门6/6。G19保护／L1冻结／PR草稿／#569归属／local-data不提交不变。[接续](CURRENT_WORK_CN.md#2026-11-13t2056000800-r2-显式耕地观察与实际工具边界)。
 
 > **2026-11-13T20:18:00+08:00 R2 till精力／无额外资源分支通过。** 原Hoe float运算与同frame工具／等级／效率／祝福绑定已接入，原farm_layout只新增效率bool，旧执行器／默认扫描／资源核不改。新E校准B真实270→268、HoeDirt／dirtHoed+1及pet-bowl镜像经原核重放，剩余持久变化为空、原7输入不变，报告SHA33d7494e…a15f290。153/153相关回归通过（14秒），早期新测试编译失败保留。仅debug校准／无额外产出分支，不是G19／managed／Teacher／formal PASS；Clay／Treasure／拾取仍须沿原观察／payload／debris基础显式绑定，不能放宽旧move／clearance入口。G19保护仍在，接着原owner派发／重绑恢复，再完整生产保存重载。API本块退出撤权、授权accepted-idle；#569归属、L1冻结／PR草稿／local-data不提交不变。[接续](CURRENT_WORK_CN.md#2026-11-13t2018000800-r2-耕地精力与真实单次资源重放)。

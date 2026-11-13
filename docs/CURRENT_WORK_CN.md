@@ -2,6 +2,15 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-13T21:53:00+08:00 R2 耕地工具XML绑定与新原生重放通过
+
+- 原生字段引用／IL操作数定位后，实时核对`Farmer.Update 0x06000953 → Equip 0x06000941`：原`_lastEquippedTool`与当前tool引用不同时才装备并设置HasBeenInInventory。工具索引setter本身不设置该标志。`endUsing`的swingTicker恰好+1；begin／Update／动画tick／原生动画表共同决定结束贴图，N/E/S/W偏移为4/2/1/2。原生请求传8帧参数，但动画表实际构造5帧，已逐项核对，不能把参数当实际长度或一律+2。反编译原件／方法hash留本地，不提交游戏源码。
+- API同provider／模型／session实现纯元数据函数，`2157a195`审查接入`47b8e254`，首次27/27，无修正；只处理显式输入／unchecked整型回绕及已核实Equip bool，不读游戏或授credit。控制端并行完成目的限定raw上下文：仅显式till观察读实际private last-equipped引用、actor／Hoe引用／槽、power／idle动画状态及原生字段，旧请求不扫描也不增加wire字段，缺schema／输入不能默认。
+- 新`till`消费者把同一原生成功回执／精确锚点、原graph／transient／debris／库存数量／XML与上下文绑定，额外核after actor facing；只为已验证的那个Hoe构造三字段**期望XML**，仍走原槽位比较核。未知XML／其他槽／属性不抹除，原件／hash不改；旧拾取入口默认投影为null，仍拒绝相同工具变化，不是改旧执行器或放宽全局validator。
+- E新隔离校准F使用原执行器／精确缓存读取：full before tick664/hash `a67a19aeed456646281ab9e73f462ffecb7bd6c278e9f1c9c63a1a248e8d1c29`，窄观测hash `f51e3dcbce44481ba92bb7ac58920dde184b35ff9bf250e9441a60a90d108862`；after tick701/hash `6f959c5a2d6794416722aa597160b93bf79d0d04f4fc8aca6c3e61d9dc6144d3`。实际context before665为Axe／slot0，after为同Hoe／slot1；facing1、power0、idle均明确，history false→true、sprite21→23、swing96226→96227符合原生链。新工具XML核及原精力／碗／地形／统计／无额外资源组合核通过，旧拾取入口仍拒绝。报告SHA `4c7918bb233236e4dc501442334a43237f9f77ee7e3044f24facd50148900901`，7输入及最终verifier DLL hash复核未变；实际pickup0，仅**该次无额外资源分支**，不是所有掉落分支／G19／owner／作物／Teacher／formal PASS。debug setup仅校准，游戏已停。
+- 最终同代码相关 **Backend528/528（17秒）＋Core69/69（不到1秒）**，零失败／跳过／最终产品构建警告／错误；原262／263／51为子集不累计。覆盖原库存／物理拾取／graph／debris、工具／精力、准备及harvest／watering回归；新反例包括schema／引用／装备来源／动画／回执身份／锚点／额外XML，以及同时伪造facing和XML仍被原actor快照拒绝。首轮仅新caller一处nullable warning已修，原件留存。API17个step_finish及短报告已复制hash核，退出撤权、授权idle，费用／余额未知，无新provider／内部代理。
+- **唯一接续：** 将同一次till已采集的库存／掉落通过原物理资源图与镜像核组合，保持生产归因／奖励credit独立；未知副作用仍拒绝，不重新枚举／重写已过动作。随后复用现有准备和同owner supporting协议接claim／rebind／恢复，才新managed实跑。当前G19保护仍在，完整生产／销售／原生保存／新游戏进程加载尚未通过；#569最新责任归属、L1冻结19/19／11/11、formal=false、PR567草稿、#339/#550/#569开放、local-data不提交不变。前一6adcf82a CI43429491093已成功，新提交CI另验。
+
 ## 2026-11-13T20:56:00+08:00 R2 显式耕地观察与实际工具边界
 
 - 已追溯原`6774d22b/#535`观察器、`ecb8fab0`快照锚点及对应JSON记录：旧move／clearance限制是原有意图，不是旧bug。新增默认省略的`action_origin_tilling_resources`开关，只有training_singleplayer、原till及source option、完整六层witness请求才能走显式till scope；原scope身份／预算核、采集器、锚点、XML／graph／debris读取实现复用，默认入口继续拒绝till，不新增执行器或自动启用主循环。初版遗漏锚点门，由实际C拒绝暴露；补同一显式合同及反例，未放宽旧默认门。

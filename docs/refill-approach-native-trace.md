@@ -1,5 +1,43 @@
 # Original Refill Native Trace
 
+## 2026-11-13 Selected Till Tool XML Binding And Native F
+
+Pinned native field/call references establish Farmer.Update->Equip history changes,
+not mere slot selection; endUsing increments swingTicker. Original directional
+begin/Update/tick and actual5-frame animation tables establish terminal sprite offsets
+N/E/S/W4/2/1/2 (the requested8frames is NOT the actual table length). No game source
+is committed. Peer pure arithmetic2157a195->47b8e254 passes27first attempt; controller
+owns purpose-only raw context, strict binding, native runtime and original-slot reuse.
+
+Only explicit till observation captures actual last-equipped actor/tool references,
+slots/power/idle states and native values. Default requests omit the new fields and
+perform no extra scan. New consumer binds the original success/anchor, graph/raw
+payload/quantity evidence and raw metadata, plus actual anchored actor facing. Its
+verified selected-Hoe3field expected XML goes through the ORIGINAL slot comparison;
+legacy null projection stays strict, unknown XML/other slots never disappear.
+
+Fresh isolatedF before664/hasha67a19aeed456646281ab9e73f462ffecb7bd6c278e9f1c9c63a1a248e8d1c29,
+observationhashf51e3dcbce44481ba92bb7ac58920dde184b35ff9bf250e9441a60a90d108862,
+after701/hash6f959c5a2d6794416722aa597160b93bf79d0d04f4fc8aca6c3e61d9dc6144d3.
+Actual context starts665/Axe slot0, ends same Hoe slot1, facing1/power0/idle; history
+false->true, sprite21->23, swing96226->96227. New metadata plus original no-additional-
+resource composition PASS; legacy pickup still rejects the same XML. ReportSHA
+4c7918bb233236e4dc501442334a43237f9f77ee7e3044f24facd50148900901;7raw inputs and
+final verifier DLL hash unchanged. Debug setup/calibration ONLY, pickup0, not all
+possible output branches, G19/owner/crop/Teacher/formal proof. Game has exited.
+
+Final same-code relatedBackend528/528(17s)+Core69/69(<1s), no final fail/skip/product
+warnings. Earlier subset counts are not summed. Tests include legacy strictness,
+missing schema/identity/equip/idle fields, result/anchor corruption, unknown XML and
+jointly forged facing/XML rejected by the anchored actor snapshot. A new nullable
+warning was corrected, raw attempt retained. Peer17step_finish metadata/report retained,
+process exited/grants withdrawn/authorization idle, billing unknown.
+
+NEXT compose same-till observed inventory/debris through original physical resource
+graph/mirror kernels with producer/reward credit still separate; then original
+preparation and owner supporting claim/rebind/recovery, new managed native run.
+G19 guard/full crop-sale-save-new-process-load/frozenL1/formalfalse/PRdraft unchanged.
+
 ## 2026-11-13 Explicit Till Observation And Actual Tool Metadata Boundary
 
 After tracing6774d22b/#535/ecb8fab0 and their JSON history, keep the intentional
