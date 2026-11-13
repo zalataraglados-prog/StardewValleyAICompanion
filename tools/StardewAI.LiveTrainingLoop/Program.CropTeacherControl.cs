@@ -959,26 +959,8 @@ static partial class Program
         string candidateId,
         string optionId,
         SmallModelActionParameter[] parameters) =>
-        JsonSerializer.SerializeToNode(new
-        {
-            schema_version = "small_model_action.v1",
-            model_output_id = "model-output:" + candidateId,
-            source_model = sourceModel,
-            state_hash = stateHash,
-            goal_id = "daily.closed_loop",
-            execution_mode = options.TargetExecutionMode,
-            actor = options.TargetActor,
-            actions = new[]
-            {
-                new
-                {
-                    action_id = candidateId + ":action",
-                    option_id = optionId,
-                    rationale = sourceModel,
-                    parameters
-                }
-            }
-        }, JsonOptions)!.AsObject();
+        CropMechanicalActionModelBuilder.Build(stateHash, sourceModel, candidateId, optionId, parameters,
+            options.TargetExecutionMode, JsonSerializer.SerializeToNode(options.TargetActor, JsonOptions)!);
 
     private static CropTeacherControlQueueBuildResult StandardResult(
         JsonObject queue,

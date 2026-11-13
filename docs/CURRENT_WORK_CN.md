@@ -2,6 +2,13 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-13 R2 所选耕地的原完整源编译与共享配方
+
+- G19留存原till模型在**另一个内存对象**绑定G18 accepted full源后，原ActionQueueCompiler直接得到单个pending till_soil，无diagnostics／blocker／missing factor。原full／窄观测同tick12033、分别保留hash，五个入口文件未改。报告SHA `7c5d583a68d731251bdaa27fbf2e35a559679df21293c68e48f8179200d2e206`；仅编译诊断，没有派发、资源结算或formal信用。
+- 将原通用`BuildCropTeacherActionModel`配方共享到Core，原Loop入口仍委托同一实现；原整地frontier移入Bootstrap共享，Loop公开facade保留。模型目标／actor／参数／source身份及原选择顺序、对象身份、空／阻塞行为不改，不另写till选择器。最终相关27/27通过、零失败／跳过／构建警告／错误。G19**整个原模型**与共享配方DeepEquals，原frontier仍选`till:Farm:71,16`、原件哈希未变，报告SHA `db3097225984256a3d7868baf27ff1c55d4efe2bed123dbe52fbfa15752af7ca`。
+- 当前E原版DLL按SHA／MVID实时提取Hoe.DoFunction `0x0600183a`及GameLocation.makeHoeDirt `0x06000fac`，仅两个MethodDef、零反编译诊断，研究输出留本地不提交。确认需核工具／精力、土壤与DirtHoed以及原生buried-item分支；这不是资源效果验证已完成，base Tool与所选Farm派生分支仍按实际调用追溯，不根据文档例子忽略掉落或其他持久变化。
+- **接续不变：** 先用共享原frontier／动作配方和原编译器绑定原site request／plan／观测、当前完整源／ledger、候选／工具／目标／日期；并行核所选这一次till的真实资源／土壤效果，再接同owner派发／rebind／恢复。未验证不能派发；不用第二套选择器、执行器或比较核。G18站位／只读恢复已通过不重做，完整生产／销售／保存重载仍未通过；L1冻结、formal=false、PR567草稿、local-data不提交。
+
 ## 2026-11-13T18:41:00+08:00 R2 原生站位接近与只读恢复通过
 
 - `64f84c6d` 已推送，代码CI **43408739507 SUCCESS**。新E隔离G `managed-g-20261113-1827` 使用原managed／Product／Teacher入口，后台隐藏静音：4次开店等待、6次购种、3段返回及3次短控制等待后，iteration18的原`move_to_tile`实际到Farm **73,17**，资源中性／回执核及同owner rebind接受。共 **17次owner acceptance／14条verified action**，另3个短控制不计动作／作物／策略credit；site结果`native_site_approach_verified=true`、`route_target_reached=false`、作物／Teacher／formal均false，未将“在Farm”误记站位到达。

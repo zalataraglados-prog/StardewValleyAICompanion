@@ -1,5 +1,26 @@
 # Original Refill Native Trace
 
+## 2026-11-13 Selected Till Reuses Original Compilation And Recipe
+
+Actual G19 narrow till model, cloned as a new in-memory full-source model, compiles
+through the original ActionQueueCompiler to one pending executor.till_soil without
+diagnostics/blockers/missing fields. Full source and narrow observation share
+native tick12033, keep separate hashes and five unchanged original input files.
+Diagnostic SHA7c5d583a68d731251bdaa27fbf2e35a559679df21293c68e48f8179200d2e206;
+no dispatch/resource/formal credit. Display-only dictionary selection initially
+printed nulls; the retained JSON contains explicit validated values, not a null PASS.
+
+CropMechanicalActionModelBuilder shares the exact original action recipe; the old
+Loop producer delegates. Site frontier now has one Bootstrap implementation with
+the old Loop facade, preserving order/object identity/null/blocked contracts.
+Related27/27 passes. The WHOLE original G19 model matches the shared recipe; the
+original frontier still selects till:Farm:71,16, with unchanged input hashes.
+Replay SHAdb3097225984256a3d7868baf27ff1c55d4efe2bed123dbe52fbfa15752af7ca.
+Two current pinned native MethodDefs (Hoe.DoFunction0600183a/makeHoeDirt06000fac)
+decompile without diagnostics. Tool/base/energy/soil/DirtHoed/buried-item effects
+are NOT yet settled. Next bind only that actual selected till's preparation and
+native resource outcome to the same owner, preserving old kernel/executor guards.
+
 ## 2026-11-13 Actual Managed Site Arrival And Retained-head Resume
 
 Fresh hidden/silent native G on64f84c6d accepted iteration18 original move_to_tile
