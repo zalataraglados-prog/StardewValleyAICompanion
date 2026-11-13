@@ -52,7 +52,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             ["input_artifact_hashes"] = JsonSerializer.SerializeToNode(artifacts.Hashes, JsonOptions),
             ["native_outcome_verified"] = true
         };
-        if (scope is CropTeacherSupportingRoute route) result["route_target_reached"] = route.RouteTargetReached;
+        if (scope is CropTeacherSupportingRoute route) AddRouteOutcomeEvidence(route, result);
         if (scope is CropTeacherWateringMaintenance watering) AddWateringOutcomeEvidence(watering, result);
         if (scope is CropTeacherHarvest harvest) AddHarvestOutcomeEvidence(harvest, result);
         if (scope is CropTeacherOvernight overnight) AddOvernightOutcomeEvidence(overnight, result);

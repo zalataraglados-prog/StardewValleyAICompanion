@@ -6,7 +6,11 @@ using StardewAI.GoalConditionedBootstrap;
 namespace StardewAI.LiveTrainingLoop;
 
 public sealed record CropTeacherOriginalRouteCompilation(string Kind, string ModelPlanPath, string QueuePath,
-    string ReceiptPath, string AfterSnapshotPath, string RuntimeDirectory, bool NativeControlObservation = false);
+    string ReceiptPath, string AfterSnapshotPath, string RuntimeDirectory, bool NativeControlObservation = false)
+{
+    public string SiteApproachObservationPath { get; init; } = string.Empty;
+    public string SiteApproachCommitmentId { get; init; } = string.Empty;
+}
 
 public sealed partial class CropTeacherManagedSeedOwner
 {
@@ -43,6 +47,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         record["operation_kind"] = "supporting_route";
         record["route_execution_protocol"] = "original_loop.v1";
         if (value.NativeControlObservation) record["route_native_control_observation"] = true;
+        AddSiteApproachAdmission(record, value);
         record["original_model_plan_path"] = Path.GetFullPath(value.ModelPlanPath);
         record["route_active_commitment_ids"] = JsonSerializer.SerializeToNode(ActiveCoveredCommitments(), JsonOptions);
         var transition = new MoneyRevenueCropNativeLifecycleTransitionRequest(value.Kind, 0, Path.GetFullPath(value.QueuePath), headSnapshotPath,
@@ -78,9 +83,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         var nativeControl = record["route_native_control_observation"];
         if (nativeControl is not null && nativeControl.GetValue<bool>() != true)
             throw new InvalidDataException("Original route control observation must be explicitly enabled or absent.");
-        var start = CropTeacherSupportingRoute.Preparation.Open(plan.RequestPath, StoredPath(record, "before_snapshot_path"), headLedgerPath,
-            active, Text(record, "support_step_id"), transition.TransitionKind,
-            StoredPath(record, "original_model_plan_path"), transition.QueuePath, nativeControlObservation: nativeControl is not null);
+        var start = OpenOriginalRoutePreparation(record, transition, active, nativeControl is not null);
         var expected = frontierHashes.TryGetValue(headSnapshotPath, out var hash) ? hash : fixedHashes[headSnapshotPath];
         if (start.InputHashes[start.SourcePath] != expected ||
             requireNativeIdentity && (transition.TotalDay != start.TotalDay || transition.SelectedCandidateId != start.CandidateId))
@@ -111,6 +114,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         };
         if (record["route_native_control_observation"] is not null)
             intent["route_native_control_observation"] = record["route_native_control_observation"]!.DeepClone();
+        CopySiteApproachIntentFields(record, intent);
         return intent;
     }
 

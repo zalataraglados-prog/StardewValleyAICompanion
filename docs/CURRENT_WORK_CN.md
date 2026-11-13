@@ -2,6 +2,15 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-13T18:24:00+08:00 R2 原场地接近接同一 owner
+
+- 原API协作者完成限定Bootstrap准备／结果及测试四文件，`469313db`审查后接入`c9a47805`；控制端独立完成Loop入口、原admission／intent／claim／acceptance／恢复接线。显式`OpenSiteApproach`不改变旧默认单connector／控制等待合同；继续使用原站位算法、共享配方、原编译器与原路线资源／回执核，另核实际到达精确站位，`route_target_reached=false`，不把同在Farm当已到站位。
+- 原窄观测／模型留存不改；新模型绑定已接受full源，两个hash分别保留，执行结果要求full资源快照。原12分钟／repair4／fresh replan保留，已知清障队列仍须专门资源绑定；不筛掉clear项，不放宽未知持久变化，未绑定的整地动作仍派发前拒绝。站位结果仅登记自身原生证据，不授作物／Teacher／formal credit。
+- 最终同产物相关 **114/114**（32秒）通过，零失败／跳过；包含原路线、原生等待、缓存接续、共享配方、新绑定和owner中断／marker／acceptance恢复，重叠不相加。原入口HTTP测试实际编译原窄模型与新full模型，再复用原执行adapter，单次派发／单次rebind。最初新代码多传StandardResult参数、测试误用internal成员、复用恢复目录及不完整envelope／模糊文件匹配的失败均保留，仅修新调用／夹具，不改旧核。此为声明原生结果的测试，不是游戏实跑或完整闭环PASS。
+- `8c741045`的CI43404650427失败在旧源码字符串守卫：共享配方提取后它仍要求Loop内含repair参数字面量。已改为同时要求Loop调用共享构建器、不得残留内联参数、共享配方仍repair4；实际行为测试与原配方重放保留，不删除防回退意图。修正提交的CI另验。
+- 协作者聚焦24/24（此前22/24为测试站位／可重绑不透明ID的假设错误，唯一修正未改核）；真实进程退出0、临时权限已撤回，本块accepted-idle，授权保留，无替代provider／内部代理。记录23个step_finish的原token字段，费用／余额未知，不从cache token或零cost推断。#569及全部今日更新issue已再核对，无新增施工顺序变更。
+- **唯一接续：** 新E隔离档后台静音走当前入口，实证越过原iteration18站位接近断点，并保留首个真实整地／资源断点；再接所选原整地效果与生产／销售／原生保存／新进程加载及只读恢复。当前仍R2第3/4步，L1冻结19/19、11/11、formal=false、PR567草稿、#339/#550/#569开放，local-data不提交；无D盘／正式训练／清理。
+
 ## 2026-11-13T17:46:00+08:00 R2 原有界接近配方共享与真实API互审恢复
 
 - `e07307ea` 的CI `43401482428` 已成功。沿本步骤继续提取原`BuildCropTeacherBoundedApproachQueueAsync`的模型配方到Core共享构建器，旧site／refill生产端调用同一实现，后续新消费者可用它独立重建原模型。Farm目标、actor、目标坐标、candidate／source身份、12分钟预算、repair=4、fresh replan、purpose及失败策略均原样保留；不是第二个规划器，也没有关闭顺路开路。

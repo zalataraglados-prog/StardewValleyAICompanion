@@ -83,13 +83,14 @@ public sealed partial class CropTeacherManagedSeedOwner
         {
             accepted[NativeSupportingRole(operation) + "_native_claim_sha256"] = HashFile(NativeSupportingPath(operation, "claim"));
             accepted[NativeSupportingRole(operation) + "_native_result_sha256"] = HashFile(NativeSupportingPath(operation, "result"));
-            if (operation.SupportingRoute is { } route) accepted["route_target_reached"] = route.RouteTargetReached;
+            if (operation.SupportingRoute is { } route) AddRouteOutcomeEvidence(route, accepted);
         }
     }
 
     private void ValidateSupportingTransitionAcceptance(CropTeacherManagedSeedOperation operation, JsonObject accepted)
     {
         if (operation.OriginalStart is not null) LoadOriginalSupportingOutcome(operation);
+        ValidateSiteApproachAcceptance(operation, accepted);
         if (operation.Terminal is { } terminal)
         {
             var expected = new JsonObject(); AddTerminalOutcomeEvidence(terminal, expected);

@@ -1,5 +1,29 @@
 # Original Refill Native Trace
 
+## 2026-11-13 Owned Site Approach Uses The Original Route Boundary
+
+The explicit Preparation.OpenSiteApproach role binds the separate same-frame
+bounded observation to the accepted full source and ledger. It rebuilds the
+original singleplayer site model through CropBoundedApproachPlanBuilder and the
+original compiler. Raw recipe, actor, candidate/coordinates, 12minutes, repair4,
+fresh replan and original queue compilation must match. The default Open remains
+single-connector/control-only; a special site model cannot enter that old role.
+
+The managed entry retains the narrow source/model unchanged, compiles a NEW model
+for the accepted full hash, and uses the existing owner claim/native/rebind/recovery
+path. The original full resource/receipt/identity/calendar verifier still runs,
+plus exact after-tile equality. Site approach keeps RouteTargetReached=false and
+records its own stand evidence; no crop/Teacher/formal label is gained. The bounded
+cache still holds two snapshots and exact retained source/after inputs are imported
+by the original helper, not recaptured or replaced with latest.
+
+Known clear queues are not silently filtered or admitted as neutral movement;
+dynamic resource changes remain rejected by the old kernel. The selected till or
+clear effect needs its own original resource binding next. Final related114/114,
+including old-route/wait/cache cases and same-owner interrupted/replayed outcomes,
+passes on the integrated product. These are declared-native-result fixtures, not
+new live-game movement/full managed/saved-load or formal-training acceptance.
+
 ## 2026-11-13 Shared Original Bounded Approach Model Recipe
 
 The original site/refill producer now calls CropBoundedApproachPlanBuilder in

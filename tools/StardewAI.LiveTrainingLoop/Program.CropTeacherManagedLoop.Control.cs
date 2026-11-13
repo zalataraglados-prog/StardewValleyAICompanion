@@ -25,13 +25,8 @@ static partial class Program
         if (step.Stage != CropTeacherRunStageKinds.NativeSleep && GameClockBudgetPolicy.RecoveryWindowStarted(ReadInGameTime(before)))
             return await BuildCropTeacherOwnedLateDayQueueAsync(http, options, iteration, step, plan, request, owner).ConfigureAwait(false);
         if (step.Stage == CropTeacherRunStageKinds.PrepareSite)
-        {
-            var site = await BuildCropTeacherControlQueueCoreAsync(http, options, iteration, step, plan, request,
-                beforePath, before, hash).ConfigureAwait(false);
-            if (!site.SitePreparationComplete)
-                throw new InvalidDataException("Retain original site-preparation queue; its resource effects must be bound before managed dispatch.");
-            return new(site, null);
-        }
+            return await BuildCropTeacherOwnedSiteQueueAsync(http, options, iteration, step, plan, request,
+                owner, beforePath, before, hash).ConfigureAwait(false);
         var runtime = Path.Combine(owner.EvidenceDirectory, "native-" + iteration.ToString("D4"));
         var seed = step.Stage is CropTeacherRunStageKinds.AcquireSeed or CropTeacherRunStageKinds.TransferSeedSupply ||
             step.Stage == CropTeacherRunStageKinds.ExecuteCropBatch && step.ActionBatch?.OptionId == "executor.plant_seed";

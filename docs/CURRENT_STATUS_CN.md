@@ -2,6 +2,8 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+> **2026-11-13T18:24:00+08:00 R2 原场地接近 owner 接线。** 原API四文件469313db接入c9a47805，控制端接原主循环／admission／claim／rebind／恢复；窄观测／原模型不改，新模型绑定原accepted full源，保留repair4／12分钟和旧默认路线合同，精确到站位才记site证据、general arrival及作物／formal仍false。最终相关114/114通过（32秒），包含原路线／等待／缓存与新中断恢复，非游戏实跑；早期新调用／夹具失败留存。8c CI43404650427的旧内联字符串守卫已按共享构建器修正，实际原配方不改。peer退出撤权、accepted-idle授权保留；#569更新已核。下一步仅新E后台静音实跑越过站位断点，再所选整地／完整生产保存重载；PR567草稿、L1冻结、formal=false、local-data不提交。[接续](CURRENT_WORK_CN.md#2026-11-13t1824000800-r2-原场地接近接同一-owner)。
+
 > **2026-11-13T17:46:00+08:00 R2 原模型配方共享。** e073 CI43401482428成功；原site／refill生产端现复用Core原有界模型配方，actor／12分钟／repair4／目标及replan策略不变。聚焦35/35、原生产端＋原backend／配方4/4通过，F整个原模型结构重放一致且原件未变，仍非新队列／native结算PASS。原API同一会话完成20行e073只读互审后退出撤权、accepted-idle；安装版相对read规则已修，未换provider或内部代理，余额未知。下一步原完整源上重建site模型／编译，再显式site角色的原生站位／资源结果接同owner恢复，旧路线／派发门保留。#569已回复分工，L1冻结／formal=false／PR567草稿／local-data不提交。[接续](CURRENT_WORK_CN.md#2026-11-13t1746000800-r2-原有界接近配方共享与真实api互审恢复)。
 
 > **2026-11-13T17:25:00+08:00 R2 补充观测组件。** 已将原site stand选择提取为Core单实现，旧Loop入口保留语义／对象身份；新只读绑定分别核accepted full源和同frame窄布局观测，不替换hash／资源头。最终绑定22/22、原选择与兼容7/7，F留档重放73,17且4输入不变；首次错误假设map.id与临时脚本空值passed已定位／作废，严格重放才计有效，不是原生执行PASS。原派发门仍保留，下一步接原模型／编译／实际移动及同owner结算恢复。#569明确正式manifest前由主线交工程／证据，实验室负责D盘选型／训练／训后评估，原门不降低，当前顺序不变。L1冻结、formal=false、PR567草稿、local-data不提交。[接续](CURRENT_WORK_CN.md#2026-11-13t1725000800-r2-整地补充观测绑定与实验室交接责任)。
