@@ -16,6 +16,10 @@ static partial class Program
             // The original queue validator requires the lease acquired by ExecuteSeedAsync below.
         }
         var candidateId = EffectiveDecisionArtifactTracker.ReadQueueItemCandidateId(ExecutableQueueItems(queue).FirstOrDefault());
+        // Original planting expands a bound mechanical batch, not a ranked candidate plan.
+        if (string.IsNullOrWhiteSpace(candidateId) && runtime is CropTeacherSeedPlantingRuntime &&
+            owner is not null && operation!.Scopes.Planting is not null)
+            candidateId = operation.SupportStepId;
         if (string.IsNullOrWhiteSpace(candidateId))
             throw new InvalidDataException("Managed crop seed queue lost its original selected candidate identity.");
         return candidateId;
