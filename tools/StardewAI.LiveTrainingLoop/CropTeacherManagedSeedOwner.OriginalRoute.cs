@@ -10,6 +10,7 @@ public sealed record CropTeacherOriginalRouteCompilation(string Kind, string Mod
 {
     public string SiteApproachObservationPath { get; init; } = string.Empty;
     public string SiteApproachCommitmentId { get; init; } = string.Empty;
+    public bool SiteApproachNativeActionEffects { get; init; }
 }
 
 public sealed partial class CropTeacherManagedSeedOwner

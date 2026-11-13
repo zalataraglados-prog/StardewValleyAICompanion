@@ -65,7 +65,8 @@ static partial class Program
             scope.ValidateInputsUnchanged(); artifacts.Validate();
             return new CropTeacherOriginalRouteCompilation("supporting_route_to_crop", modelPath, queuePath,
                 receiptPath, afterPath, Path.Combine(owner.EvidenceDirectory, "native-" + iteration.ToString("D4")))
-            { SiteApproachObservationPath = site.BeforeSnapshotPath, SiteApproachCommitmentId = step.CommitmentId };
+            { SiteApproachObservationPath = site.BeforeSnapshotPath, SiteApproachCommitmentId = step.CommitmentId,
+                SiteApproachNativeActionEffects = options.UseProductExecutor };
         }).ConfigureAwait(false);
         return new(StandardResult(queue!, modelPath!, string.Empty, beforePath, before, hash, options,
             snapshotProfile: "full"), operation);
