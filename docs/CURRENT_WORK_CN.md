@@ -9,7 +9,10 @@
 - `74c28522`抽取原耕地回执／留存／rebind为同一共享协议，旧耕地仍调用原资源核；清障显式消费原生结果与真实after，无第二套执行器。聚焦44/44通过，首次新代码误用不存在的request.TargetLocation导致编译失败已修；该失败留本地。尚未完成真实owner／整地生产保存加载，不称完整循环通过。
 - 原API Block72在漏配rg权限后7steps退出、零编辑／测试；尚未启动的补跑已取消，旧任务／三份未编译草稿归档并hash核对。Block73沿原provider／模型／session实际协作：peer负责同owner清障注册及限定测试，控制端负责Bootstrap、Program入口、原生结果测试和集成；单一build owner、输出留本地供审查，不倒灌完整流。
 - Block73已交付12文件草稿，项目全部编译；其测试工具120秒终止、无最终计数，不能称peer验收通过。确认无遗留测试进程后，草稿完整保存在peer `e42f7e99`、接为`29319218`；控制端补原入口与原生协议组合测试，最终**124/124（52秒）**及旧route／watering／control共享owner抽样**6/6（3秒）**。覆盖clear／access、训练／Product回执、正常私有／邻格副作用、身份拒绝、同owner正常／native回包丢失／marker回包丢失、一次native／一次commit及trace；均为合成协议测试，不冒称游戏实跑。控制端首次测试缺Testing导入的编译失败留存，仅补新测试导入。
-- **唯一接续：** 完成清障注册与主循环接线，针对身份／恢复边界抽样回归，然后新E隔离原managed/product入口继续整地→播种维护→收获销售→原生保存／新进程加载。只修真实阻断；不再为每个私有字段追加证明链。L1冻结19/19、11/11及#569正式manifest前交实验室不变；formal=false、PR567草稿、local-data不提交。
+- `b0e58677`已推送，CI43497118254全部成功。新E隔离原入口 `managed-l-20261114-0352` 实际接受**25个owner边界／22条verified action／六次耕地**，到iteration28播种准入前停在`crop_seed_planting_source_binding_invalid`／`dispatch_crop_seed_planting_binding_drifted`。该档障碍分布不同，**未遇清障，不能算清障实际owner通过**；中途控制端曾沿用K迭代位置误报“即将清障”，已按本轮模型／回执纠正。四归属进程全部退出；首次日界／收获／销售／原生保存加载均未过。报告`objective_completed=true`仅表示通用`required_verified_actions=1`采样额度，不是作物闭环成功。
+- 播种断点是准备层遗漏：账本头随中性整地更新，但六粒自有种子的预留仍指购入时source hash。保留原编译器／`CropSeedPlantingBinding`的同源要求，通过原portfolio marker／MaterialReservationUpsert仅刷新当前承诺已核物理玩家种子预留，保留reservation／来源decision／槽位／品种／数量／purpose；已当前的预留仍走原空marker，其他共享调用／执行器不改。红测1失败／1通过；生产修正的相关265项通过，新回归初版漏补既有growth夹具而失败，复用原helper后关键新旧**3/3**，不宣称同一次266/266。
+- L原accepted25（tick12395／hash`b75f2cfc7fd3a7d290d85f27655f8c42e14da09caf8e56d3f638d14eb9fdfbe4`）、原账本／原六格计划只读重放原编译与growth预检通过：仅一条六粒预留刷新，六输入不变、三实际加载依赖hash留本地；报告SHA`55eea88ca49e945d0143f6bf344b9b0b1cabe936b618a3a8cbd11cdc09a09790`。**没有新native派发或实际播种owner准入**，不改写L旧失败，也不拿其未保存内存态伪造续档。
+- **唯一接续：** 修正版新E隔离原managed/product入口继续整地→播种维护→收获销售→原生保存／新进程加载；清障注册已实现，遇到则走原生信任入口，不再列私有XML／weed范围证明为前置。只修真实阻断，不重做已过冻结项。L1冻结19/19、11/11及#569正式manifest前交实验室不变；formal=false、PR567草稿、local-data不提交。
 
 ## 2026-11-14T02:15:00+08:00 R2 原首选杂草清障编译与资源断点
 

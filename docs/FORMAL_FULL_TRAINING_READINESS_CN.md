@@ -1488,7 +1488,7 @@ v71 继续携带 `--skip-training`，没有 Student 更新、checkpoint 或 GPU 
 
 ### 3. 接同一账本、主循环和跨日恢复
 
-- **2026-11-14 接续定位（原生信任修正）：** H持久完成、J连续三耕等既有成果复用。K原首选70,17杂草清障在派发前被新消费者挡住，不是旧动作失败。用户已纠正其过细验证要求：停止Scythe私有XML／weed范围／所有未变资源预计的前置证明；复用原编译、原生成功回执／真实after、一次claim及同owner rebind／恢复，正常副作用由引擎裁决。74c28522共享协议／旧耕地回归44/44，清障owner与Program接线实施中；之后新隔离完整生产／销售／原生保存加载。不筛首选、不重写执行器、不把未保存内存态当续档，组件通过仍不等于本步退出。[当前证据与唯一接续](CURRENT_WORK_CN.md#2026-11-14-r2-原生动作信任边界修正)。
+- **2026-11-14 接续定位（原生信任修正）：** H持久完成、J连续三耕等成果复用。清障共享原编译／原生成功回执／真实after／一次claim／同owner恢复已接线（124/124＋共享抽样6/6；b0e58677CI成功），正常副作用由引擎裁决，不再要求Scythe私有XML／weed范围／所有资源预计证明。新L接受25边界／六耕，未遇清障，在播种前暴露旧种子claim来源未随账本头更新；仅播种准备marker通过原服务刷新已核自有种子预留，旧编译绑定不放宽。相关265项及补夹具后关键3/3、L原六输入／原计划只读编译growth预检通过；无实际播种owner或完整周期PASS。下一步修正版新E原入口继续生产／销售／原生保存加载，不用L未保存尾部伪造续档、不重做冻结项。[当前证据与唯一接续](CURRENT_WORK_CN.md#2026-11-14-r2-原生动作信任边界修正)。
 
 - `PrepareCropTeacherOwnedWateringAsync()` 现已显式接纳原 `crop_teacher_watering_refill_approach`，其他未支持interrupt继续拒绝；同一 `CropTeacherManagedSeedOwner` 和主循环复用派发登记、队列／来源身份、回执、marker账本提交与只读恢复。所选清障／拾取资源组合与耕地同owner接线已有实现，仍须由下面的完整真实流程验收，不能以实现或组件测试代替跨日证据。补水但零块作物完成仍保留为控制结果。 [浇水入口](../tools/StardewAI.LiveTrainingLoop/Program.CropTeacherOwnedWatering.cs#L26) · [已有补水控制结果](money-crop-refill-control-outcome.md)
 - 接续收获留存、所选销售方式的原生结算、睡眠保存和重载。复用 `CheckCropTeacherDayBoundaryAsync()` 等既有检查，核对同一存档的物品、作物、金币、日期及账本进度。可复用 #502 的作物实跑和离线重建来核对已有阶段，托管接线要由新入口的实际结果验证。具体结算消费者沿现有合同绑定。 [跨日检查](../tools/StardewAI.LiveTrainingLoop/Program.CropTeacherDayBoundary.cs#L125) · [#502](https://github.com/zalataraglados-prog/StardewValleyAICompanion/pull/502)
