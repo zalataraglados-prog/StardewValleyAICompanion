@@ -32,6 +32,10 @@ static partial class Program
             step.Stage == CropTeacherRunStageKinds.ExecuteCropBatch && step.ActionBatch?.OptionId == "executor.plant_seed";
         if (seed)
         {
+            var artifacts = new CropSeedRuntimeArtifacts(new Dictionary<string, string>());
+            artifacts.Pin(beforePath);
+            artifacts.Pin(owner.CurrentLedgerPath);
+            await IngestCropTeacherManagedSnapshotAsync(http, options, beforePath, artifacts).ConfigureAwait(false);
             var operation = await owner.AdmitAsync(step, beforePath, owner.CurrentLedgerPath, runtime).ConfigureAwait(false);
             CropTeacherControlQueueBuildResult? build = null;
             await owner.PrepareSeedAsync<ICropTeacherSeedRuntime>(operation, async () =>

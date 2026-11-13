@@ -12,7 +12,11 @@
 - `b0e58677`已推送，CI43497118254全部成功。新E隔离原入口 `managed-l-20261114-0352` 实际接受**25个owner边界／22条verified action／六次耕地**，到iteration28播种准入前停在`crop_seed_planting_source_binding_invalid`／`dispatch_crop_seed_planting_binding_drifted`。该档障碍分布不同，**未遇清障，不能算清障实际owner通过**；中途控制端曾沿用K迭代位置误报“即将清障”，已按本轮模型／回执纠正。四归属进程全部退出；首次日界／收获／销售／原生保存加载均未过。报告`objective_completed=true`仅表示通用`required_verified_actions=1`采样额度，不是作物闭环成功。
 - 播种断点是准备层遗漏：账本头随中性整地更新，但六粒自有种子的预留仍指购入时source hash。保留原编译器／`CropSeedPlantingBinding`的同源要求，通过原portfolio marker／MaterialReservationUpsert仅刷新当前承诺已核物理玩家种子预留，保留reservation／来源decision／槽位／品种／数量／purpose；已当前的预留仍走原空marker，其他共享调用／执行器不改。红测1失败／1通过；生产修正的相关265项通过，新回归初版漏补既有growth夹具而失败，复用原helper后关键新旧**3/3**，不宣称同一次266/266。
 - L原accepted25（tick12395／hash`b75f2cfc7fd3a7d290d85f27655f8c42e14da09caf8e56d3f638d14eb9fdfbe4`）、原账本／原六格计划只读重放原编译与growth预检通过：仅一条六粒预留刷新，六输入不变、三实际加载依赖hash留本地；报告SHA`55eea88ca49e945d0143f6bf344b9b0b1cabe936b618a3a8cbd11cdc09a09790`。**没有新native派发或实际播种owner准入**，不改写L旧失败，也不拿其未保存内存态伪造续档。
-- **唯一接续：** 修正版新E隔离原managed/product入口继续整地→播种维护→收获销售→原生保存／新进程加载；清障注册已实现，遇到则走原生信任入口，不再列私有XML／weed范围证明为前置。只修真实阻断，不重做已过冻结项。L1冻结19/19、11/11及#569正式manifest前交实验室不变；formal=false、PR567草稿、local-data不提交。
+- f8dbe970的CI43501813625全部成功。新M `managed-m-20261114-0433` 再接受25边界／22verified／六次耕地，iteration28已通过来源预检并持久化第26项播种intent／准备claim，随后读取账本时HTTP404，尚未编译／派发播种。Backend原`commitments/latest`明确在匹配快照被有界缓存淘汰时返回404；种子父入口漏了其他owner路径已有的精确来源重新导入。只在共同种子入口admit前pin原source／ledger并复用原`IngestCropTeacherManagedSnapshotAsync`，不扩大缓存、fresh替换来源、改账本或执行器。
+- 缓存淘汰入口回归已按同一HTTP404／调用链复现，修正后连同来源刷新／HTTP正常与丢回包／原事务及owner选取共**12/12（8秒）**。新缓存测试初版误用internal成员、随后漏绝对测试URL均只修新测试，失败留本地。API Block75在M实跑时仅编辑一份75行HTTP草稿、无编译或运行权限，15steps后退出撤权；`e524f724`保留、接为`8252736d`。控制端首次6/8，新两例把预制回执误当实际派发回执来断言重复完成，已只修测试调用并通过最终12项，旧原生前缀保护不改，不冒称peer首次全绿。
+- M四归属进程已退出，实际loop／外层脚本现均退出2；本地包装器已归档旧版并保留原生退出码，避免外壳0被误当成功。M未遇清障，也没有实际播种／日界／收获销售／保存加载。`objective_completed=true`仍只是通用采样额度，不是本目标。API授权保留idle，会话／完整输出／草稿均留存，未调用fallback。
+- M原accepted25／source `40f21bdc…1dbeeac2`／原ledger经独立原Backend HTTP检查：初始缓存404→原Program精确导入→整个原账本DeepEquals，三输入未变；无游戏／native／ledger mutation／实际owner准入，报告SHA `3d4b56c93ed5d5d9e819b0aa14fa79f5916727db8e4551dd15012af0b293a3b1`。本地工具首次直接访问internal类型的编译失败仅改反射调用，项目接口未变；不能把此只读HTTP证据当完整准备或作物PASS。
+- **唯一接续：** 带精确来源重新导入修正的新E隔离原managed/product入口，继续播种维护→收获销售→原生保存／新进程加载。原协议组件12/12及M留存HTTP检查已过，不为同一缓存错误再建验证框架。清障遇到即走原生信任入口，不增加私有XML／weed范围证明门。L／M未保存尾部不可伪装续档，原恢复接口和一次claim规则保留。L1冻结19/19、11/11及#569正式manifest前交实验室不变；formal=false、PR567草稿、local-data不提交。
 
 ## 2026-11-14T02:15:00+08:00 R2 原首选杂草清障编译与资源断点
 

@@ -61,7 +61,9 @@ public sealed partial class CropTeacherSeedPlantingRuntimeTests
         Assert.False(f.Summary()["formal_product_training_authorized"]!.GetValue<bool>());
         Assert.Null(f.Summary()["acquisition"]);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => runtime.CompleteAsync(f.Transition));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => runtime.CompleteAsync(f.Files.QueuePath,
+            receipt["execution_path"]!.GetValue<string>(), receipt["after_snapshot_path"]!.GetValue<string>(),
+            f.Transition.SelectedCandidateId));
         var step = RecoveryStep(f);
         var scopes = CropTeacherManagedSeedScopes.Open(f.Files.RequestPath, f.Files.SourcePath, f.Files.LedgerPath,
             step, f.Files.Open().MarkerRequest.PortfolioId);
