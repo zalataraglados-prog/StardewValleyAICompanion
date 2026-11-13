@@ -1488,6 +1488,8 @@ v71 继续携带 `--skip-training`，没有 Student 更新、checkpoint 或 GPU 
 
 ### 3. 接同一账本、主循环和跨日恢复
 
+- **显式站位接线更新：** 71d9c09e公开native-site准备复用同一NativeSiteTransition，O未改原件的站位／rebind重放已过（SHA6f1d5c0f…ad08c916）。原API接原owner mode持久化／恢复、仅Product主入口选择，peer95/95；控制端保存e3257369→3414f371后独立组合113/113通过。缺字段旧记录／false不升级，不从当前选项推断原模式。下一步新E真实站位→播种维护／收获销售／原生保存加载，监护3600秒、游戏速率／标准不变。原生owner正向接受／完整周期／formal仍未过，不拿离线重放重标O历史。
+
 - **O最新接续：** 两项缓存修复622ef4b6的CI43514002736成功，25/25＋原守卫20/20及Bridge编译通过。O真实24owner／21verified／六耕后，在站位move自动拾取1黏土时被旧中性route资源核拒绝，未实际播种；原生来源读取器对O原queue／journal／Product／actor帧／after绑定只读重放通过，实际owner／完整周期／formal仍false。先为所选站位接近显式复用原NativeSiteTransition协议并持久化owner模式，保留默认中性route／一次claim，不做逐私有字段模拟；再新E生产／销售／原生保存加载。full约1.28s的性能取样单独记录，不扩成新的动作准入门。[唯一接续](CURRENT_WORK_CN.md#2026-11-14-r2-同tick库存图缓存修正)。
 
 - **最新断点覆盖下方历史：** dc5df200的CI43510625527成功。N原入口购种后同tick的背包种子已2而库存图仍1，下一tick关菜单时图才2，导致原资源核拒绝；只修透明桥库存图缓存为单次采集内共享／跨采集刷新，不改执行器／资源核或加快照扫描。相关25/25及实际Bridge构建通过，下一步新E原入口继续播种维护、收获销售、原生保存／新进程加载；N旧失败保留，尚未证明新实际播种或完整周期，formal=false。[证据与接续](CURRENT_WORK_CN.md#2026-11-14-r2-同tick库存图缓存修正)。
