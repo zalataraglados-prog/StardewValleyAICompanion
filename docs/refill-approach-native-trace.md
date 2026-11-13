@@ -1,5 +1,28 @@
 # Original Refill Native Trace
 
+## 2026-11-13 Actual Managed Site Arrival And Retained-head Resume
+
+Fresh hidden/silent native G on64f84c6d accepted iteration18 original move_to_tile
+at Farm73,17, day0/tick12033, accepted hash
+86d28791babe57f63a32eed32798814d64b4e9b00931a43526e9d2cc0027c02e.
+The same owner has17acceptances/14verified actions plus3excluded short controls.
+Site evidence is true but general RouteTargetReached/crop/Teacher/formal remain
+false. Original narrow and new full-source model hashes are distinct and retained.
+
+Iteration19 produces one pending original executor.till_soil with no compiler
+diagnostics, then refuses BEFORE dispatch because its resource effects are not yet
+bound. There is no execution-0019 and no actual till/clear credit. After stopping
+the isolated game/product, the original CLI restores the same accepted after18
+hash without native dispatch. Saved-content/fresh-game-load/full-managed flags
+remain false. All four recorded owned processes then exited; no cleanup occurred.
+Strict retained summary SHA1e9e83e17c19bb16d96487494fbee88239b9288e47e667f223c7a0c27da24ddd;
+product CI43408739507 passed. Local raw inputs stay outside Git.
+
+NEXT use actual G19 request/plan/model/queue and accepted G18 full source to check
+original full-source compilation, then bind that selected till's actual tool/soil
+effects to the existing resource foundation and same-owner recovery. Do not repeat
+site arrival, change old executors, drop unexplained effects or add a second kernel.
+
 ## 2026-11-13 Owned Site Approach Uses The Original Route Boundary
 
 The explicit Preparation.OpenSiteApproach role binds the separate same-frame

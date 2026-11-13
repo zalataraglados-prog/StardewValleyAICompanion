@@ -2,6 +2,8 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+> **2026-11-13T18:41:00+08:00 R2 原生站位接近已过。** 64f84c6d代码CI43408739507成功；新隔离G同owner接受iteration18原move_to_tile到Farm73,17，共17次acceptance／14条verified action（另3短控制不计）。site自身证据true、general arrival／作物／formal仍false。G19原队列单个pending till_soil、无编译诊断，在资源绑定前拒绝，未派发；下一步只接这次实际耕地的完整源编译／窄观测／真实工具与地块效果及原owner恢复，不重复站位模块。停游戏后原CLI只读恢复同一after18/hash成功、零native派发，非原生保存／新进程加载或完整managed PASS。四个归属进程已停，原件保留；#569分工／L1冻结／PR草稿／formal=false／local-data不提交保持。[接续](CURRENT_WORK_CN.md#2026-11-13t1841000800-r2-原生站位接近与只读恢复通过)。
+
 > **2026-11-13T18:24:00+08:00 R2 原场地接近 owner 接线。** 原API四文件469313db接入c9a47805，控制端接原主循环／admission／claim／rebind／恢复；窄观测／原模型不改，新模型绑定原accepted full源，保留repair4／12分钟和旧默认路线合同，精确到站位才记site证据、general arrival及作物／formal仍false。最终相关114/114通过（32秒），包含原路线／等待／缓存与新中断恢复，非游戏实跑；早期新调用／夹具失败留存。8c CI43404650427的旧内联字符串守卫已按共享构建器修正，实际原配方不改。peer退出撤权、accepted-idle授权保留；#569更新已核。下一步仅新E后台静音实跑越过站位断点，再所选整地／完整生产保存重载；PR567草稿、L1冻结、formal=false、local-data不提交。[接续](CURRENT_WORK_CN.md#2026-11-13t1824000800-r2-原场地接近接同一-owner)。
 
 > **2026-11-13T17:46:00+08:00 R2 原模型配方共享。** e073 CI43401482428成功；原site／refill生产端现复用Core原有界模型配方，actor／12分钟／repair4／目标及replan策略不变。聚焦35/35、原生产端＋原backend／配方4/4通过，F整个原模型结构重放一致且原件未变，仍非新队列／native结算PASS。原API同一会话完成20行e073只读互审后退出撤权、accepted-idle；安装版相对read规则已修，未换provider或内部代理，余额未知。下一步原完整源上重建site模型／编译，再显式site角色的原生站位／资源结果接同owner恢复，旧路线／派发门保留。#569已回复分工，L1冻结／formal=false／PR567草稿／local-data不提交。[接续](CURRENT_WORK_CN.md#2026-11-13t1746000800-r2-原有界接近配方共享与真实api互审恢复)。

@@ -2,6 +2,14 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-13T18:41:00+08:00 R2 原生站位接近与只读恢复通过
+
+- `64f84c6d` 已推送，代码CI **43408739507 SUCCESS**。新E隔离G `managed-g-20261113-1827` 使用原managed／Product／Teacher入口，后台隐藏静音：4次开店等待、6次购种、3段返回及3次短控制等待后，iteration18的原`move_to_tile`实际到Farm **73,17**，资源中性／回执核及同owner rebind接受。共 **17次owner acceptance／14条verified action**，另3个短控制不计动作／作物／策略credit；site结果`native_site_approach_verified=true`、`route_target_reached=false`、作物／Teacher／formal均false，未将“在Farm”误记站位到达。
+- 原accepted after18为day0、tick12033、hash `86d28791babe57f63a32eed32798814d64b4e9b00931a43526e9d2cc0027c02e`。原窄观测／模型留存，新full模型另建，来源hash不同。G在iteration19派发前停止：原整地队列为单个pending **`executor.till_soil`**，无compiler diagnostics，未生成execution-0019。不是站位接近仍失败，也不是耕地／清障已执行。
+- 停游戏及Product后，原`resume-crop-managed-owner`只读恢复同一owner成功，返回同一after18/hash，`native_dispatch_performed=false`。未发生原生保存内容读回、新游戏进程重载、销售结算或完整managed PASS；相应标记继续false。随后backend也按原PID／命令行／创建时间核身份停止，四个归属进程均退出，工件未清理。严格核值且拒绝覆盖的本地摘要SHA `1e9e83e17c19bb16d96487494fbee88239b9288e47e667f223c7a0c27da24ddd`，输入／原生原件保留E，不提交local-data。
+- **唯一下一步：** 以G19实际原request／plan／till模型／队列及G18 accepted full源为依据，先核原编译器是否可直接为完整源重建该动作，并绑定对应窄规划观测与原候选／工具／目标／日期。再复用原资源／工具／地块比较基础，给**所选这一次耕地**接真实消耗及土壤效果、同owner claim／rebind／恢复；未验证效果不派发，不重写旧执行器、不补造资源／回执或新建第二套比较核。随后才原播种／维护／收获／销售／原生保存／新进程加载。已通过站位接近不重复施工或再列为缺失。
+- #569已重新核对，实验室在正式manifest前交接后的职责不变；原API本块实现已接受并退出／撤权、授权accepted-idle，不是停用或仍计费运行。仍R2第3/4步、L1冻结19/19／11/11、formal=false、PR567草稿，#339/#550/#569保持开放。
+
 ## 2026-11-13T18:24:00+08:00 R2 原场地接近接同一 owner
 
 - 原API协作者完成限定Bootstrap准备／结果及测试四文件，`469313db`审查后接入`c9a47805`；控制端独立完成Loop入口、原admission／intent／claim／acceptance／恢复接线。显式`OpenSiteApproach`不改变旧默认单connector／控制等待合同；继续使用原站位算法、共享配方、原编译器与原路线资源／回执核，另核实际到达精确站位，`route_target_reached=false`，不把同在Farm当已到站位。
