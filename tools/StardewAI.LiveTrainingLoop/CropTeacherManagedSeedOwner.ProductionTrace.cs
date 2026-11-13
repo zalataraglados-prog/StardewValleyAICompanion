@@ -92,7 +92,7 @@ public sealed partial class CropTeacherManagedSeedOwner
                 if (kind == "lifecycle" || accepted["seed_boundary_kind"]?.GetValue<string>() == "controller_stop_no_native_dispatch") continue;
                 var role = kind switch
                 {
-                    "site_till" => "till", "supporting_route" => "route", "watering_maintenance" => "maintenance", "crop_harvest" => "harvest",
+                    "site_clearance" => "clearance", "site_till" => "till", "supporting_route" => "route", "watering_maintenance" => "maintenance", "crop_harvest" => "harvest",
                     "overnight_control" => "overnight", "control_recovery" => "control", "terminal_shipping" => "terminal", "seed" => null,
                     _ => throw new InvalidDataException("Accepted crop history contains an unsupported production role.")
                 };

@@ -59,6 +59,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         if (scope is CropTeacherControlRecovery control) AddControlOutcomeEvidence(control, result);
         if (scope is CropTeacherTerminalShipping terminal) AddTerminalOutcomeEvidence(terminal, result);
         if (scope is CropTeacherSiteTilling tilling) AddTillingOutcomeEvidence(tilling, operation.TillingStart!, result);
+        if (scope is CropTeacherSiteClearance clearance) AddClearanceOutcomeEvidence(clearance, operation.ClearanceStart!, result);
         result["native_crop_lifecycle_verified"] = false;
         result["teacher_preference_label_eligible"] = false;
         result["formal_product_training_authorized"] = false;
@@ -81,6 +82,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         else if (outcome.Scope is CropTeacherControlRecovery control) operation.Control = control;
         else if (outcome.Scope is CropTeacherTerminalShipping terminal) operation.Terminal = terminal;
         else if (outcome.Scope is CropTeacherSiteTilling tilling) operation.Tilling = tilling;
+        else if (outcome.Scope is CropTeacherSiteClearance clearance) operation.Clearance = clearance;
         else throw new InvalidDataException("Owned crop outcome has an unsupported supporting type.");
         operation.RuntimeArtifactGuard = () =>
         { operation.OriginalStart!.ValidateInputsUnchanged(); outcome.Scope.ValidateInputsUnchanged(); outcome.Artifacts.Validate(); };

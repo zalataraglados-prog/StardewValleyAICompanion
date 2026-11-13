@@ -11,6 +11,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         Path.Combine(operation.RuntimeDirectory, NativeSupportingRole(operation) + "-intent.json");
 
     private JsonObject CreateSupportingTransitionIntent(JsonObject record, ICropTeacherSupportingTransition? scope) =>
+        record["operation_kind"]?.GetValue<string>() == "site_clearance" ? CreateOriginalClearanceIntent(record) :
         record["operation_kind"]?.GetValue<string>() == "site_till" ? CreateOriginalTillingIntent(record) :
         record["operation_kind"]?.GetValue<string>() == "saved_content_readback" ? CreateSavedReadbackIntent(record, (CropTeacherNativeSavedContentReadback)scope!) :
         record["operation_kind"]?.GetValue<string>() == "terminal_shipping" ? CreateOriginalTerminalIntent(record) :
@@ -53,6 +54,14 @@ public sealed partial class CropTeacherManagedSeedOwner
             if (operation.Control is not null) operation.RuntimeArtifactGuard?.Invoke();
             if (SupportingTransitionIntentHash(operation.Record, operation.Control) != Text(operation.Record, "original_intent_sha256"))
                 throw new InvalidDataException("Managed crop control changed its admitted original intent.");
+        }
+        else if (operation.IsSiteClearance)
+        {
+            operation.ClearanceStart!.ValidateInputsUnchanged();
+            operation.Clearance?.ValidateInputsUnchanged();
+            if (operation.Clearance is not null) operation.RuntimeArtifactGuard?.Invoke();
+            if (SupportingTransitionIntentHash(operation.Record, operation.Clearance) != Text(operation.Record, "original_intent_sha256"))
+                throw new InvalidDataException("Managed site clearance changed its admitted original intent.");
         }
         else if (operation.IsSiteTilling)
         {
@@ -126,7 +135,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             // Local success still requires the original durable journal and full replay.
             var recovered = await ReadSupportingTransitionBoundaryAsync(http, operation, root, post).ConfigureAwait(false);
             await AdvanceAsync(operation, recovered.Evidence, recovered.SnapshotPath, recovered.Validate,
-                operation.IsSiteTilling ? "live_site_till" : operation.IsSavedContentReadback ? "live_saved_content_readback" : operation.IsTerminalShipping ? "live_terminal_shipping" : operation.IsControlRecovery ? "live_control_recovery" : operation.IsOvernight ? "live_overnight_control" : operation.IsHarvest ? "live_crop_harvest" : watering ? "live_watering_maintenance" : "live_supporting_route").ConfigureAwait(false);
+                operation.IsSiteClearance ? "live_site_clearance" : operation.IsSiteTilling ? "live_site_till" : operation.IsSavedContentReadback ? "live_saved_content_readback" : operation.IsTerminalShipping ? "live_terminal_shipping" : operation.IsControlRecovery ? "live_control_recovery" : operation.IsOvernight ? "live_overnight_control" : operation.IsHarvest ? "live_crop_harvest" : watering ? "live_watering_maintenance" : "live_supporting_route").ConfigureAwait(false);
         }
         finally { gate.Release(); }
     }
