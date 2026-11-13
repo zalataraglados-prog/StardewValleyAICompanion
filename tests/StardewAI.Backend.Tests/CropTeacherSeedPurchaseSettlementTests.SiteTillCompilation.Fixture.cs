@@ -23,13 +23,15 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         internal string Queue { get; }
         internal MoneyRevenueCropSitePreparationPlan SitePlan { get; }
 
-        internal SiteTillFiles(Action<JsonNode>? adjustContext = null, Action<Fixture>? prepareSource = null)
+        internal SiteTillFiles(Action<JsonNode>? adjustContext = null, Action<Fixture>? prepareSource = null,
+            string frontier = "till")
         {
             F = new OwnedRouteFixture(prepareSource: source =>
             {
                 ChangeState(source.Before, "player", player =>
                 {
-                    player["tile_x"]!["value"] = 0; player["tile_y"]!["value"] = 1;
+                    player["tile_x"]!["value"] = frontier == "access" ? 2 : 0;
+                    player["tile_y"]!["value"] = 1;
                     player["energy"] = JsonSerializer.SerializeToNode(new { status = "available", value = 270d });
                 });
                 source.Before.State["menus"] = JsonSerializer.SerializeToElement(new
@@ -57,8 +59,31 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                             }).ToArray()
                         }
                     });
-                    adjustContext?.Invoke(location["site_preparation_context"]!["value"]!);
+                    var context = location["site_preparation_context"]!["value"]!;
+                    if (frontier == "clear")
+                    {
+                        var target = context["tiles"]!.AsArray().Single(row =>
+                            row!["tile_x"]!.GetValue<int>() == 0 && row["tile_y"]!.GetValue<int>() == 0)!;
+                        target["status"] = "requires_single_clearance_then_till";
+                        target["clearable_blocker_kinds"] = new JsonArray("object");
+                    }
+                    if (frontier == "noop")
+                        foreach (var row in context["tiles"]!.AsArray()) row!["status"] = "already_prepared";
+                    if (frontier is "clear" or "access")
+                    {
+                        location["terrain_features"] = JsonSerializer.SerializeToNode(new
+                            { status = "available", value = Array.Empty<object>() });
+                        location["objects"] = JsonSerializer.SerializeToNode(new { status = "available", value = new[]
+                        { new { tile_x = frontier == "access" ? 1 : 0, tile_y = 0,
+                            qualified_item_id = "(O)784", name = "Weeds", clear_kind = "weeds" } } });
+                    }
+                    adjustContext?.Invoke(context);
                 });
+                if (frontier == "access")
+                    ChangeState(source.Before, "locations", locations =>
+                        locations["collision_grid"]!["value"]!["notable_tiles"] = JsonSerializer.SerializeToNode(new[]
+                        { new { tile_x = 1, tile_y = 0, collision_blocked = true },
+                            new { tile_x = 0, tile_y = 1, collision_blocked = true } }));
                 prepareSource?.Invoke(source);
             });
             var observed = ReadSiteSnapshot(WriteValidSiteMainObservation(F));
@@ -74,8 +99,10 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             });
             SitePlan = MoneyRevenueCropSitePreparationPlanBuilder.Build(Request);
             Plan = Write("till-plan.json", SitePlan);
-            var step = MoneyRevenueCropSitePreparationPlanBuilder.SelectNextExecutableStep(SitePlan)!;
-            Assert.Equal("direct_till_ready", step.PlanStatus);
+            var step = MoneyRevenueCropSitePreparationPlanBuilder.SelectNextExecutableStep(SitePlan) ?? SitePlan.Steps[0];
+            Assert.Equal(frontier switch { "clear" => "clear_then_fresh_snapshot_rebind",
+                "access" => "clear_access_then_fresh_snapshot_rebind", "noop" => "already_prepared",
+                _ => "direct_till_ready" }, step.PlanStatus);
             var parameters = step.Parameters.Concat(new[] { new SmallModelActionParameter
                 { Name = "precondition", Value = "candidate_id:" + step.CandidateId } }).ToArray();
             JsonObject Model(string hash) => CropMechanicalActionModelBuilder.Build(hash,
@@ -97,5 +124,10 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             CropTeacherSiteTillCompilation.Open(F.Inputs.Plan.RequestPath, F.Source.SourcePath, F.Source.LedgerPath,
                 F.Inputs.Plan.CoveredCommitmentIds, commitment ?? Id, "site.till", observation ?? Observation,
                 Request, Plan, original ?? Narrow, Full, Queue);
+        internal CropTeacherSiteClearanceCompilation OpenClear(string? original = null, string? full = null,
+            string? source = null, string? observation = null) =>
+            CropTeacherSiteClearanceCompilation.Open(F.Inputs.Plan.RequestPath, source ?? F.Source.SourcePath, F.Source.LedgerPath,
+                F.Inputs.Plan.CoveredCommitmentIds, Id, "site.clear", observation ?? Observation,
+                Request, Plan, original ?? Narrow, full ?? Full, Queue);
     }
 }

@@ -9,21 +9,4 @@ public sealed partial class CropTeacherSiteTillCompilation
     {
         if (!valid) throw new InvalidDataException(message);
     }
-
-    private static CropTeacherRetainedInputs RetainDependencies(string[] explicitPaths, string productionPath)
-    {
-        // Pin each discovery document before following it, then validate discovery again.
-        var planPath = Path.GetFullPath(productionPath);
-        var planPin = new CropTeacherRetainedInputs(new[] { planPath });
-        var plan = Read<MoneyRevenueCropProductionObligationPlan>(planPath);
-        var requestPath = Path.GetFullPath(plan.RequestPath);
-        var requestPin = new CropTeacherRetainedInputs(new[] { requestPath });
-        var request = Read<MoneyRevenueCropProductionObligationPlanRequest>(requestPath);
-        var paths = explicitPaths.Concat(new[] { planPath, requestPath, plan.SnapshotPath, plan.StrategyLedgerPath,
-            request.SnapshotPath, request.StrategyLedgerPath }).Select(Path.GetFullPath)
-            .Distinct(CropTeacherSeedTransferNativeOutcome.PathComparer).ToArray();
-        var retained = new CropTeacherRetainedInputs(paths);
-        planPin.Validate(); requestPin.Validate();
-        return retained;
-    }
 }

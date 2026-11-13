@@ -2,6 +2,15 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-14T02:15:00+08:00 R2 原首选杂草清障编译与资源断点
+
+- 修正版新E隔离 `managed-k-20261114-0052` 原managed/product循环接受19个边界、两次耕地。iteration21原首选是 `clear:Farm:70,17:weeds`／`(O)784`，站位71,17、整地父目标70,18；原保护在派发前拒绝尚未绑定资源效果的整地清障，未生成该动作的owner intent／claim／acceptance。不是南向耕地再次失败，不筛掉该首选去做后续till。原K已退出，未保存尾部不能当续档；`4e72d0cd` CI43466162896成功。
+- 从已有till准备组件提取同一原request／plan／观测／ledger／whole-model／原编译器绑定，till仍委托同一实现并保留到站位／Hoe／精力核。新增**只读**clear准备，显式区分整地父目标、实际清障目标与站位，不接派发／owner或放宽旧资源核。原API六文件草稿完整保存在本地`bfd38516`；其首次77/96，新夹具缺terrain_features、误写碰撞字段，控制端修后94/96，再把错误的固定13输入断言改成实际依赖路径集合，最终**96/96（44秒）**。旧失败留存，不把草稿退出码0写成验收通过。
+- K未改原件经原共享配方为accepted full源另建模型、原编译器及新准备组件重放通过，13输入不变，source／窄观测hash分别保留。报告SHA `d735f48b4ea746de97f9799fde72fc14d04fcb5ca17b7efe9409d2abf0522d76`，三实际加载依赖hash在本地报告；**native／resource／actual owner／formal均false**。本地probe首次误用internal序列化入口、随后误把内容寻址manifest当快照的失败均保留；最终复用原内容寻址读取器并校验实际snapshot身份，未改项目读取合同。
+- 同一E原版SHA／MVID实时提取7个精确MethodDef、零诊断，另记录MeleeWeapon未声明DoFunction、实际继承Tool。`cutWeed`有随机纤维／种子及条件掉落，`DoDamage`遍历范围内物体，不能先假设仅目标删除或固定掉落。新增显式weeds debug夹具复用旧镰刀执行器，未改其动画／动作。短校准A原生成功，但控制端漏填原合同的`source_planning_option_id`，锚点正确拒绝；按`ecb8fab0`及对话JSON确认原保护意图，只修本地调用，A留存、不重发、不计资源通过。
+- 独立新档B `weed-resource-b-20261114-0224` 实际23ticks完成，scope／同帧缓存有效、零诊断，tick664→688，270→270；无Axe／Pickaxe调用、无拾取，after有2个地面掉落实体。原`ReadClearanceConsumption`严格重放通过，剩余持久差异仅`farm.objects`：原生范围动作同时移除71,16和71,17两棵`(O)784`。分析报告SHA `8024f2b7039c9bbc7268e17103eea908e27d7fe6afe7fb8a3200f37f4efc4a80`，原件未变、3依赖hash留存；**完整资源／生产归因／owner／Teacher／formal仍false**。两档都仅debug校准，全部归属游戏进程已退出，不代表K清障或managed闭环通过。
+- **唯一接续：** 复用原消耗／数量／库存图核，对所选Scythe／Weeds的实际`farm.objects`范围删除建立最小严格比较叶，绑定原生范围与未变的其他对象／持久资源；再接原同owner claim／rebind／恢复。未支持效果继续派发前拒绝，不先删保护或另建执行器。随后才新隔离原入口完成整地、播种／维护／收获／销售／原生保存／新进程加载。#569正式manifest前交实验室、L1冻结19/19／11/11、formal=false、PR567草稿及local-data不提交不变。[详细证据](refill-approach-native-trace.md#2026-11-14-native-k-site-clearance-preparation)。
+
 ## 2026-11-14T00:46:00+08:00 R2 新J连续耕地与南向完成态修正
 
 - 新E隔离 `managed-j-20261114-0016` 走原managed/product主循环，20个边界接受，其中耕地71,16／70,17／71,17连续三次自动入账、各pickup0；accepted18→19→20及pending21的前驱哈希、三个after快照／ledger哈希已独立核对。第二次未漂移回执现正常接受，I20暴露的replan错误已获新实跑验证；`f61b5dff` CI43460584032成功。

@@ -1,5 +1,69 @@
 # Original Refill Native Trace
 
+## 2026-11-14 Native K Site Clearance Preparation
+
+Original managed/product run `managed-k-20261114-0052` accepted 19 boundaries,
+including two tills. At iteration21 the ORIGINAL first executable frontier was
+`clear:Farm:70,17:weeds`, source `(O)784`, stand71,17, preparation parent70,18.
+The existing resourceful-site guard rejected BEFORE dispatch: no corresponding
+owner intent, claim or acceptance. Do not skip that frontier for a later till,
+rewrite an old native outcome, or claim the unsaved K world is reloadable.
+`4e72d0cd` CI43466162896 succeeded; this is a different gap from J's south metadata.
+
+The original till compilation binding now has ONE shared implementation for
+request/plan/layout/observation/ledger, whole narrow/full recipe, original compiler
+and retained physical inputs. Till still requires its original stand/Hoe/energy
+checks. New `CropTeacherSiteClearanceCompilation` is read-only, has no transition
+or owner admission API, and keeps native/resource/formal flags false. It preserves
+PreparationTarget separately from Target and Stand for access clearances.
+
+Peer draft six paths were preserved as local `bfd38516`, not accepted merely
+because its process exited0. Its first77/96 exposed an incomplete synthetic
+terrain projection and an invented collision field. Controller repair reached94/96;
+the remaining two fixed-count assertions confused fixture-shared source/ledger
+paths with the real K's13 distinct paths. Exact path-set/integrity assertions now
+pass96/96 (44s), no failures/skips. Original failure reports remain local.
+
+Retained K compilation report SHA256:
+`d735f48b4ea746de97f9799fde72fc14d04fcb5ca17b7efe9409d2abf0522d76`.
+The probe builds a NEW full-source model using the original shared recipe and
+compiler, preserving the original narrow model. Its13 preparation inputs remain
+unchanged, target70,17/parent70,18/stand71,17 are independently asserted, and loaded
+Contracts/Core/Bootstrap hashes are recorded. Source hash
+`fae888c5d695a4a9bbfe1a5d87593fb1d4b5dec64eb5b241b35ccaa3bba4f07f` differs
+from observation hash `62d9154770df9c2860a501dd2c1e0a8b3a1313eaf53bcf1165e7b88ad8041e78`.
+Local probe failures (internal serialization access, then reading a chunk manifest
+as a snapshot) were preserved; final probe uses the existing content-addressed
+reader and verifies the actual snapshot identity. No production reader was changed.
+This is NOT a native clear, resource settlement, owner acceptance or formal PASS.
+
+Pinned E native SHA/MVID remain unchanged. Exact fresh extraction selected7 source
+MethodDefs with zero diagnostics plus one metadata absence: MeleeWeapon inherits
+Tool.DoFunction. Object.cutWeed has random and condition-dependent drops;
+MeleeWeapon.DoDamage visits an area border, not only the target. Do not replace
+this with assumed single-object deletion/fixed fiber or infer production credit
+from inventory delta.
+
+Debug calibration A's native clear applied/verified in23ticks, but the controller
+omitted SourcePlanningOptionId. The ORIGINAL snapshot anchor correctly rejected
+the incomplete request. ecb8fab0 and its conversation JSON confirmed that identity
+requirement was intentional; only the local calibration caller was corrected.
+A remains failed, was not redispatched, and has no valid after/resource claim.
+
+Independent fresh B `weed-resource-b-20261114-0224` applied/verified in23ticks.
+Observation is observed/zero diagnostics and the original cached after matches
+tick688 (before664); energy270->270, zero Axe/Pickaxe calls, zero pickups, two
+after-debris entities. The original ReadClearanceConsumption passes unchanged.
+Remaining persistent changes are ONLY farm.objects: both71,16 and71,17 base
+`(O)784` objects were removed, demonstrating the native scythe area effect.
+Report SHA256 `8024f2b7039c9bbc7268e17103eea908e27d7fe6afe7fb8a3200f37f4efc4a80`;
+all inputs and three actual loaded verifier dependencies are hash-recorded.
+Full resource/producer/owner/Teacher/formal remain false. Both owned games exited.
+The explicit debug weed fixture reuses the old actuator; no old animation,
+anchor, field defaults or resource validators were changed. Next bind the selected
+area's weed-only object delta, unchanged survivors and remaining persistent world
+through the original quantity/inventory/resource boundary, then the same owner.
+
 ## 2026-11-14 Native J South Completion
 
 Fresh isolated managed-j-20261114-0016 accepted20boundaries in the ORIGINAL
