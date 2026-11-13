@@ -2,6 +2,8 @@
 
 > **2026-11-11T00:52:08+08:00 施工顺序修订。** 以本文件末尾的 [R2 开训前执行顺序](#r2-开训前执行顺序) 为当前入口。每一步区分已有实现、待接线和待验收。
 
+> **2026-11-14 原生动作信任边界修正。** 原生工具动作的正常私有XML、随机掉落和邻格作用不再要求逐项预计证明；严格核原候选／编译／成功回执、同存档run／actor／帧、真实after、一次claim及原owner记账恢复。准备动作不直接授生产或Teacher信用，调试资源仍隔离。下方历史精确副作用研究不再阻塞当前清障接线，旧接口与已过耕地资源合同不改。[当前实施](CURRENT_WORK_CN.md#2026-11-14-r2-原生动作信任边界修正)。
+
 <!-- audit_invalidation: scope=2026-11-08_pretraining_sequence_summary; invalidated_at=2026-11-11T00:52:08+08:00; superseded_by=#r2-开训前执行顺序; reason=旧摘要缺少各步退出条件，也未列出正式启动器的两个固定阻塞; historical_only=true -->
 
 > **2026-11-08 当前训练前缺口：** 最新事实和顺序见[CURRENT_WORK](CURRENT_WORK_CN.md)顶部，历史数字/旧长跑要求不覆盖新条款。L1`19/19、11/11`冻结；当前完成同一补水clear/pickup精确资源/来源（含工具和capture间隙）接唯一owner，再收获/原生保存跨日、managed有界真实集成和原全局协调/其余probe/Provider/模型/manifest。新增[干草规范视图](canonical-hay-storage-resource.md)只补物理资源输入，不授训练credit；formal=false，Student新档21/21为训后验收，不能倒挂。
@@ -1486,7 +1488,7 @@ v71 继续携带 `--skip-training`，没有 Student 更新、checkpoint 或 GPU 
 
 ### 3. 接同一账本、主循环和跨日恢复
 
-- **2026-11-14T02:15 接续定位：** H持久完成、J连续三耕与南向元数据修正可复用。新K原循环19边界／2tills后，原首选70,17杂草清障（父整地目标70,18）因资源效果未绑定在派发前拒绝。原绑定现共享，till旧合同保留；新只读clear准备96/96及K原件13输入／原full源编译重放通过。独立debug校准B的旧镰刀执行／同帧观察及原消耗核已过，实际范围删除两棵weeds，剩余持久差异仅farm.objects；**不是K原清障、完整资源或owner接受通过**。下一步绑定所选weed范围删除及未变对象／资源，复用数量／库存图核和原owner恢复，再新隔离完整生产／销售／保存加载；不筛首选、不删保护、不把H／I／J／K未保存内存态当续档。组件通过不等于本步退出。[当前证据与唯一接续](CURRENT_WORK_CN.md#2026-11-14t0215000800-r2-原首选杂草清障编译与资源断点)。
+- **2026-11-14 接续定位（原生信任修正）：** H持久完成、J连续三耕等既有成果复用。K原首选70,17杂草清障在派发前被新消费者挡住，不是旧动作失败。用户已纠正其过细验证要求：停止Scythe私有XML／weed范围／所有未变资源预计的前置证明；复用原编译、原生成功回执／真实after、一次claim及同owner rebind／恢复，正常副作用由引擎裁决。74c28522共享协议／旧耕地回归44/44，清障owner与Program接线实施中；之后新隔离完整生产／销售／原生保存加载。不筛首选、不重写执行器、不把未保存内存态当续档，组件通过仍不等于本步退出。[当前证据与唯一接续](CURRENT_WORK_CN.md#2026-11-14-r2-原生动作信任边界修正)。
 
 - `PrepareCropTeacherOwnedWateringAsync()` 现已显式接纳原 `crop_teacher_watering_refill_approach`，其他未支持interrupt继续拒绝；同一 `CropTeacherManagedSeedOwner` 和主循环复用派发登记、队列／来源身份、回执、marker账本提交与只读恢复。所选清障／拾取资源组合与耕地同owner接线已有实现，仍须由下面的完整真实流程验收，不能以实现或组件测试代替跨日证据。补水但零块作物完成仍保留为控制结果。 [浇水入口](../tools/StardewAI.LiveTrainingLoop/Program.CropTeacherOwnedWatering.cs#L26) · [已有补水控制结果](money-crop-refill-control-outcome.md)
 - 接续收获留存、所选销售方式的原生结算、睡眠保存和重载。复用 `CheckCropTeacherDayBoundaryAsync()` 等既有检查，核对同一存档的物品、作物、金币、日期及账本进度。可复用 #502 的作物实跑和离线重建来核对已有阶段，托管接线要由新入口的实际结果验证。具体结算消费者沿现有合同绑定。 [跨日检查](../tools/StardewAI.LiveTrainingLoop/Program.CropTeacherDayBoundary.cs#L125) · [#502](https://github.com/zalataraglados-prog/StardewValleyAICompanion/pull/502)

@@ -1,5 +1,11 @@
 # Original Refill Native Trace
 
+## 2026-11-14 Native-action authority correction
+
+Current site-clearance integration trusts successful original native execution and retains the actual after state. It verifies the original candidate/compiled request, same run/save/actor/frame, journal and one-owner claim/rebind/recovery. Private tool XML, random drops and normal collateral effects are not independently predicted admission conditions. No direct production/Teacher/formal credit is granted by preparatory clearance. Old default readers and passed till resource checks remain intact. The historical Scythe/weed research below is retained, not an unfinished prerequisite. Current integration and exit conditions: [CURRENT_WORK](CURRENT_WORK_CN.md#2026-11-14-r2-原生动作信任边界修正).
+
+Controller integration:124/124 focused site-clearance/till cases passed in52s, plus6/6 shared-route/watering/control owner samples in3s. Original API peer produced12 scoped files and compiled all projects but its120s test-tool timeout yielded no completed count; draft e42f7e99 is preserved and integrated as29319218, not recorded as a peer PASS. Synthetic Product/native receipts, normal collateral/private changes and native/marker acknowledgement-loss recovery retain one dispatch/one marker; real managed game execution remains next.
+
 ## 2026-11-14 Native K Site Clearance Preparation
 
 Original managed/product run `managed-k-20261114-0052` accepted 19 boundaries,

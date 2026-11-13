@@ -20,9 +20,10 @@ static partial class Program
         var control = kind == CropTeacherSupportingOperationKind.Control;
         var terminal = kind == CropTeacherSupportingOperationKind.Terminal;
         var tilling = kind == CropTeacherSupportingOperationKind.Tilling;
+        var clearance = kind == CropTeacherSupportingOperationKind.Clearance;
         owner.ValidateOriginalSupportingExecutor(options, watering);
         if (overnight) owner.ValidateOriginalOvernightSaveBinding(options);
-        if (tilling ? operation.TillingStart is null : terminal ? operation.TerminalStart is null : control ? operation.ControlStart is null : overnight ? operation.OvernightStart is null : harvest ? operation.HarvestStart is null : watering ? operation.WateringStart is null : operation.RouteStart is null)
+        if (clearance ? operation.ClearanceStart is null : tilling ? operation.TillingStart is null : terminal ? operation.TerminalStart is null : control ? operation.ControlStart is null : overnight ? operation.OvernightStart is null : harvest ? operation.HarvestStart is null : watering ? operation.WateringStart is null : operation.RouteStart is null)
             throw new InvalidOperationException(watering ? "Owned watering has no original compilation." : "Owned crop route has no original compilation.");
         var start = operation.OriginalStart!;
         var transition = CropTeacherManagedSeedOwner.OriginalSupportingTransition(operation);
@@ -36,12 +37,13 @@ static partial class Program
         var executionOptions = tilling ? options.WithSelectedTillingResources() : options;
         Task<JsonObject> Execute() => ExecuteRuntimeTestHarnessCoreAsync(http, executorHttp,
             executionOptions, iteration, start.SourcePath, before, queue, ReadString(before, "state_hash"), ReadString(queue, "queue_id"),
-            operation.Record[tilling || terminal || watering || harvest ? "original_model_action_path" : "original_model_plan_path"]!.GetValue<string>(), string.Empty, start.QueuePath, start.SourcePath,
+            operation.Record[clearance || tilling || terminal || watering || harvest ? "original_model_action_path" : "original_model_plan_path"]!.GetValue<string>(), string.Empty, start.QueuePath, start.SourcePath,
             ReadString(before, "state_hash"), start.CandidateId, -1, start.QueuePath, null, new List<JsonObject>(),
             useDailyPlanDecisionLease: false,
             executionSnapshotUrlOverride: SnapshotUrlForProfile(options.BridgeSnapshotUrl, "full", forceRefresh: true),
             executionSnapshotProfileOverride: "full");
-        if (tilling) await owner.ExecuteOriginalTillingAsync(operation, http, Execute).ConfigureAwait(false);
+        if (clearance) await owner.ExecuteOriginalClearanceAsync(operation, http, Execute).ConfigureAwait(false);
+        else if (tilling) await owner.ExecuteOriginalTillingAsync(operation, http, Execute).ConfigureAwait(false);
         else if (terminal) await owner.ExecuteOriginalTerminalAsync(operation, http, Execute).ConfigureAwait(false);
         else if (control) await owner.ExecuteOriginalControlAsync(operation, http, Execute).ConfigureAwait(false);
         else if (overnight) await owner.ExecuteOriginalOvernightAsync(operation, http, Execute).ConfigureAwait(false);
@@ -52,7 +54,10 @@ static partial class Program
         var retained = new CropSeedRuntimeArtifacts(operation.SupportingTransition!.InputHashes);
         await IngestCropTeacherManagedSnapshotAsync(http, options, start.SourcePath, retained).ConfigureAwait(false);
         await IngestCropTeacherManagedSnapshotAsync(http, options, transition.AfterSnapshotPath, retained).ConfigureAwait(false);
-        if (tilling) await owner.RunTillingAsync(operation, http,
+        if (clearance) await owner.RunClearanceAsync(operation, http,
+            (diagnostic, request) => PostJournaledPortfolioCommitAsync(http, options, diagnostic, request),
+            (endpoint, raw) => PostJsonStringAsync(http, endpoint, raw, CancellationToken.None)).ConfigureAwait(false);
+        else if (tilling) await owner.RunTillingAsync(operation, http,
             (diagnostic, request) => PostJournaledPortfolioCommitAsync(http, options, diagnostic, request),
             (endpoint, raw) => PostJsonStringAsync(http, endpoint, raw, CancellationToken.None)).ConfigureAwait(false);
         else if (terminal) await owner.RunTerminalShippingAsync(operation, http,
