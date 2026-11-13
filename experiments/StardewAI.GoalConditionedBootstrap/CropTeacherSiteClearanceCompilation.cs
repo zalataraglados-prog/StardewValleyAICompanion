@@ -3,10 +3,11 @@ using StardewAI.Contracts.Strategy;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
-// Read-only first-frontier preparation, deliberately not ICropTeacherSupportingPreparation.
-public sealed class CropTeacherSiteClearanceCompilation
+// Reuses the original frontier and compiler; dispatch remains owned by the supporting protocol.
+public sealed class CropTeacherSiteClearanceCompilation : ICropTeacherSupportingPreparation
 {
     private readonly CropTeacherSitePreparationCompilation preparation;
+    private readonly string stepId;
 
     private CropTeacherSiteClearanceCompilation(string runRequestPath, string sourcePath, string ledgerPath,
         IReadOnlyCollection<string> commitmentIds, string commitmentId, string stepId, string observationPath,
@@ -14,6 +15,7 @@ public sealed class CropTeacherSiteClearanceCompilation
     {
         preparation = new(runRequestPath, sourcePath, ledgerPath, commitmentIds, commitmentId, stepId,
             observationPath, siteRequestPath, sitePlanPath, originalModelPath, modelPath, queuePath);
+        this.stepId = stepId;
         var step = preparation.Step;
         if (step.ActionOptionId != "executor.clear_obstacle" || step.PlanStatus is not
             ("clear_then_fresh_snapshot_rebind" or "clear_access_then_fresh_snapshot_rebind"))
@@ -58,4 +60,21 @@ public sealed class CropTeacherSiteClearanceCompilation
     public StrategyCommitmentLedger BaseLedger => preparation.BaseLedger;
     public IReadOnlyDictionary<string, string> InputHashes => preparation.InputHashes;
     public void ValidateInputsUnchanged() => preparation.ValidateInputsUnchanged();
+
+    public CropTeacherSiteClearance VerifyTransition(MoneyRevenueCropNativeLifecycleTransitionRequest transition)
+    {
+        ValidateInputsUnchanged();
+        var comparer = CropTeacherSeedTransferNativeOutcome.PathComparer;
+        if (new[] { transition.QueuePath, transition.BeforeSnapshotPath, transition.ExecutionReceiptPath,
+                transition.AfterSnapshotPath }.Any(path => !Path.IsPathFullyQualified(path)) ||
+            transition.TransitionKind != "crop_actions" || transition.TotalDay != TotalDay ||
+            transition.SelectedCandidateId != CandidateId ||
+            !comparer.Equals(Path.GetFullPath(transition.QueuePath), QueuePath) ||
+            !comparer.Equals(Path.GetFullPath(transition.BeforeSnapshotPath), SourcePath))
+            throw new InvalidDataException("Clearance outcome changed its original compilation/source/day/candidate.");
+        return new(this, transition, stepId);
+    }
+
+    ICropTeacherSupportingTransition ICropTeacherSupportingPreparation.VerifyTransition(
+        MoneyRevenueCropNativeLifecycleTransitionRequest transition) => VerifyTransition(transition);
 }

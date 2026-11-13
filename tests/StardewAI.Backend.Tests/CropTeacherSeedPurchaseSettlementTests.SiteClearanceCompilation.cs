@@ -41,7 +41,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         Assert.Equal(expectedPaths.Order(StringComparer.Ordinal), scope.InputHashes.Keys.Order(StringComparer.Ordinal));
         Assert.False(scope.NativeOutcomeVerified); Assert.False(scope.ResourceBoundaryVerified);
         Assert.False(scope.FormalProductTrainingAuthorized);
-        Assert.Null(typeof(CropTeacherSiteClearanceCompilation).GetMethod("VerifyTransition"));
+        Assert.IsAssignableFrom<ICropTeacherSupportingPreparation>(scope);
         Assert.NotSame(scope.BaseLedger, scope.BaseLedger);
         scope.ValidateInputsUnchanged();
         foreach (var path in paths) Assert.Equal(bytes[path], File.ReadAllBytes(path));
