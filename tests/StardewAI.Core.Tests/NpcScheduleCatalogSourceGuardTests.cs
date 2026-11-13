@@ -2,6 +2,16 @@ namespace StardewAI.Core.Tests;
 
 public sealed class NpcScheduleCatalogSourceGuardTests
 {
+    private const string NativeWarpInvocation = @"\bGame1\s*\.\s*warpFarmer\s*\(";
+
+    [Theory]
+    [InlineData("Game1.warpFarmer active-festival branch", false)]
+    [InlineData("Game1.warpFarmer(\"Town\", 1, 2, false);", true)]
+    [InlineData("Game1 . warpFarmer (\"Town\", 1, 2, false);", true)]
+    [InlineData("Game1\n.\nwarpFarmer\n(\"Town\", 1, 2, false);", true)]
+    public void ReadOnlyRouteGuardDistinguishesSourceDescriptionFromWarpInvocation(string source, bool invokes)
+        => Assert.Equal(invokes, System.Text.RegularExpressions.Regex.IsMatch(source, NativeWarpInvocation));
+
     [Fact]
     public void ScheduleCatalogIsRestrictedToSocialAndFullProfiles()
     {
@@ -143,8 +153,8 @@ public sealed class NpcScheduleCatalogSourceGuardTests
         Assert.Contains("mailReceived.Contains(\"OpenedSewer\")", gates, StringComparison.Ordinal);
         Assert.Contains("var executableNow = opened || hasRustyKey", gates, StringComparison.Ordinal);
         Assert.Contains("required_action_count", gates, StringComparison.Ordinal);
-        Assert.DoesNotContain("Game1.warpFarmer", routeGraph, StringComparison.Ordinal);
-        Assert.DoesNotContain("Game1.warpFarmer", gates, StringComparison.Ordinal);
+        Assert.DoesNotMatch(NativeWarpInvocation, routeGraph);
+        Assert.DoesNotMatch(NativeWarpInvocation, gates);
 
         var movement = File.ReadAllText(Path.Combine(
             root,
