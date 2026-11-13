@@ -1,5 +1,28 @@
 # Original Refill Native Trace
 
+## 2026-11-13 Shared Original Bounded Approach Model Recipe
+
+The original site/refill producer now calls CropBoundedApproachPlanBuilder in
+Core; consumers can rebuild the SAME model recipe without a second planner.
+Keep exact actor/source/candidate/target,12minutes,repair4,purpose,fresh-replan and
+failure policy. Actor JSON is cloned, never detached or changed in caller data.
+Focused35/35 plus original producer/backend compiler and recipe4/4 pass, zero
+fail/skip/build warning/error; overlaps not added. Retained F whole original
+model DeepEquals the shared recipe and original hash is unchanged. ReportSHA
+5550aae978220de5405cd19131ec49936a7cb823d3d991d17d657fb05f0cf57a.
+This is OLD model recipe replay, NOT new queue/native/resource outcome evidence.
+
+e073 exactCI43401482428 succeeds. Original API/session independently reviewed
+only e073 observation/selection and emitted20bounded lines/no material finding;
+no build/native claims, no review of later recipe changes. Invocation exited with
+edit/bash/external grants withdrawn, authorized accepted-idle. Correct installed
+1.17.11 worktree-relative read rules fixed the prior app denial; no provider or
+internal-agent replacement. Invoice cost/balance unknown. Next generate a NEW
+original mechanical model for accepted FULL source using retained observation
+selection, then original queue/native stand/resource result and same-owner
+rebind/recovery. Never overwrite narrow model hash, merge snapshots, drop repairs
+or broaden the default single-connector guard. No new game/formal run/cleanup.
+
 ## 2026-11-13 Site Observation Is Not An Accepted Resource Head
 
 CropTeacherSiteApproachObservation pins the original request/accepted full

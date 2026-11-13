@@ -2,6 +2,14 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-13T17:46:00+08:00 R2 原有界接近配方共享与真实API互审恢复
+
+- `e07307ea` 的CI `43401482428` 已成功。沿本步骤继续提取原`BuildCropTeacherBoundedApproachQueueAsync`的模型配方到Core共享构建器，旧site／refill生产端调用同一实现，后续新消费者可用它独立重建原模型。Farm目标、actor、目标坐标、candidate／source身份、12分钟预算、repair=4、fresh replan、purpose及失败策略均原样保留；不是第二个规划器，也没有关闭顺路开路。
+- 当前产品产物聚焦35/35（含原refill编译拒绝及观测回归）、原生产端＋原backend编译入口和recipe最终4/4通过，零失败／跳过／构建警告／错误，重叠不加。F留存的**整个**原site模型与新共享配方JsonNode.DeepEquals一致，原件哈希不变，离线报告SHA `5550aae978220de5405cd19131ec49936a7cb823d3d991d17d657fb05f0cf57a`；并非新编译队列、原生移动或资源结算通过。actor子树克隆不重挂／修改调用者原对象。
+- 原API协作者保持原`openai-direct/gpt-6.1-sol high`／同一会话，已真实完成20行独立审查，范围为e073观测／选择组件，未发现实质缺陷；未运行测试、访问E原始存档或证明后续配方／native链。进程退出，临时edit／bash／external权限撤回，授权保留accepted-idle，不冒称仍在运行或永久停用。
+- 权限修复来自安装版1.17.11的实际read资源合同：工作树相对路径（含外部任务文件的相对形式）与Windows／slash分隔符；不套用V2配置。已有API失败任务包8文件＋peer AGENTS已复制校验归档，新包6516字节。首次只离线核5个允许／4个拒绝读取、原provider配置不变，再通过专用ValidateOnly；随后一次有用审查成功，无试探调用／重试／fallback／内部代理。skill已写明read同样是相对规则，以及ValidateOnly不验证read可达性的局限。本块记录8个completed step的token字段，账单余额／费用仍未知，不从Codex额度或零cost推断。
+- **唯一接续不变：** 用已绑定的窄观测选原站位，借共享配方为**已接受full源**生成新的原机械模型并走原编译器，保留各自hash／路径；不是原位改窄模型hash或合并快照。随后显式限定site-approach角色，核原生到站位与真实资源效果，接原owner claim／rebind／恢复；旧单connector路线与派发保护不放宽。再原整地／播种／维护／收获／销售／保存／重载，不新增未选局部门。#569分工已回复核实，formal=false、L1冻结、PR567草稿、local-data不提交；无新游戏／训练／清理。
+
 ## 2026-11-13T17:25:00+08:00 R2 整地补充观测绑定与实验室交接责任
 
 - 主线仍为F原生iteration18的整地接近，不另起动作系统。原accepted full源没有site context；同tick的farm_layout窄观测有上下文却没有完整持久物品图，不能用窄快照替换owner头或补造完整资源证明。新增只读`CropTeacherSiteApproachObservation`将原run request／ledger／full源／窄观测分别pin，核原active布局、同存档／角色／版本／tick／日期／时钟／位置、完整有界地块与地图宽高，复用原站位选择。来源hash分别保留，native／resource／formal标记均false。
