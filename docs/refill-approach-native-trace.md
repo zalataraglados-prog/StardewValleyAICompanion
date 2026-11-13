@@ -1,5 +1,35 @@
 # Original Refill Native Trace
 
+## 2026-11-13 Original H Persistent Completion
+
+The known successful H19 receipt was explicitly completed through the EXISTING
+RunTillingAsync, original marker commit and persistent Backend repository. The
+same owner accepted operation18; ledger revision35 became36. A second owner open
+and original RestoreHeadAsync read back the identical accepted ledger/state.
+No executor request was issued: original native dispatch count remains1.
+All20 retained input hashes and the accepted artifact hash were rechecked; four
+exact verifier assemblies were archived locally by content hash before rebuilding.
+Completion report SHA256:
+4329dc7b597166a789e33359fcae8dd098df7cb66523dfc9100bc704dc755939.
+actual_owner_acceptance=true, persistent_backend_ledger_verified=true,
+reopened_readback_verified=true. After remains tick12091/state
+eea16ffd732df180e7a13bcd967a6b48a05ef420265e6ca20d6f120740367e75.
+
+The earlier loop17accepted/14verified and read-only replay's false acceptance
+remain historical facts, not rewritten artifacts. H has NO native save after this
+action and NO new-game-process reload proof. An in-memory snapshot is not a saved
+continuation. Next use a NEW isolated E save and the original managed/product loop
+for production, sale, native save and new-process reload; never redispatch H19.
+Full crop lifecycle/formal training/producer and reward credit remain false.
+
+Peer b2b76a70, integrated c8dcbfb9, adds Product/native transport parameters to the
+EXISTING six-mode recovery theory,12 cases without duplicating recovery logic.
+Peer acceptance12/12 on its first test; controller integration independently
+passed12/12 in21seconds, no failures/skips. No fixture/production changes;
+process0/grants withdrawn/authorizedidle.
+CI43452644390 succeeded for108748f4. Issue569's pre-manifest lab handoff remains
+unchanged; PR567 stays draft until the original full native route is proved.
+
 ## 2026-11-13 Same Owner Till And Product Transport
 
 Main4e96a0d1 adds site_till via the EXISTING supporting preparation/outcome,

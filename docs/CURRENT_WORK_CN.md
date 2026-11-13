@@ -2,6 +2,13 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-13T23:50:00+08:00 R2 原H耕地实际入账与持久读回
+
+- 原H已知成功回执通过既有 `RunTillingAsync` 明确续接，原 Backend 持久账本 revision **35→36**、同 owner 生成第18个 accepted；关闭并重开 owner 后，原恢复入口读回相同 ledger／state hash。只提交原 marker，不调用执行器，原 native 派发次数仍为1。20份原输入、accepted 哈希及4份本地内容寻址 verifier 归档已复核；原失败报告和原 loop 的17 accepted／14 verified统计不改写。
+- 完成报告 SHA `4329dc7b597166a789e33359fcae8dd098df7cb66523dfc9100bc704dc755939`，`actual_owner_acceptance=true`、持久账本／重开读回均 true；after 仍 tick12091/hash `eea16ffd732df180e7a13bcd967a6b48a05ef420265e6ca20d6f120740367e75`。**没有原生保存／新游戏进程重载或完整作物周期**，旧只读重放报告的 false 是当时事实，不回改成成功。
+- 原 API 协作者 `b2b76a70` 经逐行审查接为 `c8dcbfb9`：在原恢复 theory 增加 Product 参数，6种场景各 native／Product 两种，共12项；保留所有一次 native／一次 commit／重复只读恢复／无生产信用断言，没有复制实现或改生产、fixture。协作者首次12/12、控制端独立12/12（21秒），无失败／跳过；进程退出0、权限撤回，授权保留 idle。此前 `108748f4` 的 CI43452644390 已成功。
+- 最新公开 issue 核对至 #569：正式 manifest 前交前瞻实验室已按原计划落地，主线不接管D盘模型定型／正式训练。**唯一接续：** 新E隔离档走原 managed/product 入口，验证耕地后播种／维护／原生睡眠／收获／销售及原生保存／新进程加载；H未保存内存态不得伪装可加载存档，不重发H19。遇首个真实阻断保留原件并修最小接线。L1冻结19/19／11/11、formal=false、PR567草稿、#339/#550/#569开放、local-data不提交不变。
+
 ## 2026-11-13T23:25:00+08:00 R2 耕地同owner接线与真实Product断点修正
 
 - `4e96a0d1`接独立`site_till`角色，共用原supporting准备／回执／一次native claim／marker提交与重放、索引／恢复／trace，不新建执行器。保留原窄观测／request／plan／模型，用共享完整配方和原编译器绑定accepted full源；其他未支持整地资源仍拒绝。深层观察仅启用在该次执行的私有options副本，原options、旧方法签名及全局默认不变。

@@ -2,6 +2,8 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+> **2026-11-13T23:50:00+08:00 R2 原H耕地已实际入账。** 原已执行回执经既有明确续接／marker提交，同 owner 第18项接受、原持久账本35→36，重开 owner 读回一致；没有 native 重发，20份原输入及 accepted 哈希复核不变。完成报告 SHA4329dc7b…755939，actual_owner_acceptance=true；旧 loop17／14和旧重放 false 保留为历史事实。H没有原生保存／新游戏进程重载，不能从快照伪造续档。API原恢复 theory 扩为native／Product12项，协作者及控制端独立均12/12，退出撤权／授权idle。108748f4 CI已成功。下一步新E隔离档继续原生产／销售／原生保存加载链；#569正式manifest前交实验室、L1冻结、formal=false、PR草稿不变。[接续](CURRENT_WORK_CN.md#2026-11-13t2350000800-r2-原h耕地实际入账与持久读回)。
+
 > **2026-11-13T23:25:00+08:00 R2 同owner耕地已接，真实Product断点已修正重放。** 原claim／marker／索引／恢复／trace复用，私有options仅给所选till启用观察，旧默认不变。主入口／六种恢复聚焦147及前版共享owner1002通过；新H19实际耕地applied／verified／observed，被旧native专用endpoint门拒绝，仍17accepted／14verified。新消费者现显式绑定Product回执并复用原核，旧默认继续拒绝Product；最终相关698/698，H未改件完整资源＋进程内rebind通过，20输入／verifier不变、报告SHAd63fdcc2…1083fc6e。**H19尚无实际owner接受或完整作物闭环**。下一步核持久账本／存档边界，明确续接原H回执／marker读回（不重发native），必要时新隔离档，再完整生产保存重载。全部归属进程已停；API草稿保留／控制端修复、授权idle；L1冻结／formal=false／PR草稿／#569分工不变。[接续](CURRENT_WORK_CN.md#2026-11-13t2325000800-r2-耕地同owner接线与真实product断点修正)。
 
 > **2026-11-13T22:22:00+08:00 R2 till物理资源组合通过。** 新显式till入口复用原槽位／物理图／容量／房屋镜像核，仅最终不变量消费已核精力／地形／统计比较视图，旧默认入口和执行器不变。API测试21首次通过并已退出撤权；控制端最终相关559/559、原生F未改件public资源重放通过，报告SHAeebc9750…b4a320f、7输入及verifier hash未变。实际pickup0；有拾取正例目前为组合叶测试，不是原生全分支。原准备接口与单次回执→原rebind消费者已实现、角色边界10项通过，但尚无该消费者正向原生／rebind或owner派发恢复验收，G19保护保留。下一步完成既定同owner接线与反例后新managed实跑，不重写执行器／不重做元数据。完整作物闭环、正式训练仍未通过；#569分工、L1冻结、PR草稿、local-data不提交不变。[接续](CURRENT_WORK_CN.md#2026-11-13t2222000800-r2-所选耕地物理资源组合通过)。
