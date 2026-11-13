@@ -1,5 +1,36 @@
 # Original Refill Native Trace
 
+## 2026-11-13 Selected Till Energy And Native Resource Replay
+
+The pure Hoe arithmetic preserves the pinned native float order, efficient-tool
+setter skip, decrease-only blessing protection and stamina clamp. Its new consumer
+binds the same-frame full source and bounded observation, first inventory Hoe,
+effective farming/max stamina and the existing blessing field. Only the bounded
+farm_layout projection gains hoe_is_efficient; old executors/default scans and
+resource comparators are unchanged. The original pet-bowl mirror verifier is reused.
+
+Fresh isolated calibration B captured full source and bounded observation at tick664,
+then one original native till at tick701: stamina270->268, one HoeDirt/dirtHoed+1,
+and passive bowl mirrors. The composed original resource comparison leaves no
+unexplained persistent change. Read-only replay SHA
+33d7494e54eb25348a380b9fbff561dd5efbb7623d8d3e91e1b89f916a15f290;
+all7input hashes unchanged. Explicit debug setup is calibration only; this is NOT
+G19 dispatch, owner acceptance, crop production, Teacher or formal PASS. The game
+has exited; calibration A without a bounded before observation remains partial.
+
+Final same-build related153/153 in14s includes numeric27, binding28, geometry19,
+preparation19 and existing harvest/watering60. The initial new-test JsonNode Remove
+compile error is retained; only that caller was corrected. Peer arithmetic commit
+a94a1f33 was reviewed/cherry-picked as dbfafca4; process exited0/grants withdrawn,
+original authorization accepted-idle.15step_finish records retained; dollar cost
+and balance unknown.
+
+NEXT explicitly bind possible till buried outputs/pickups via the original bounded
+observation/payload/debris foundations, then original owner claim/rebind/recovery.
+The current move/clearance-only observation entry must not be silently broadened.
+The verified no-additional-resource branch is not universal till coverage. G19 guard,
+full crop/sale/save/new-process-load gaps, frozen L1 and formal=false remain.
+
 ## 2026-11-13 Selected Till Preparation And Partial Resource Leaf
 
 CropTeacherSiteTillCompilation independently replays the original site plan and

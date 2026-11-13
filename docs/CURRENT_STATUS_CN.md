@@ -2,6 +2,8 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+> **2026-11-13T20:18:00+08:00 R2 till精力／无额外资源分支通过。** 原Hoe float运算与同frame工具／等级／效率／祝福绑定已接入，原farm_layout只新增效率bool，旧执行器／默认扫描／资源核不改。新E校准B真实270→268、HoeDirt／dirtHoed+1及pet-bowl镜像经原核重放，剩余持久变化为空、原7输入不变，报告SHA33d7494e…a15f290。153/153相关回归通过（14秒），早期新测试编译失败保留。仅debug校准／无额外产出分支，不是G19／managed／Teacher／formal PASS；Clay／Treasure／拾取仍须沿原观察／payload／debris基础显式绑定，不能放宽旧move／clearance入口。G19保护仍在，接着原owner派发／重绑恢复，再完整生产保存重载。API本块退出撤权、授权accepted-idle；#569归属、L1冻结／PR草稿／local-data不提交不变。[接续](CURRENT_WORK_CN.md#2026-11-13t2018000800-r2-耕地精力与真实单次资源重放)。
+
 > **2026-11-13T19:25:00+08:00 R2 till准备／局部效果叶。** 原site plan／frontier／recipe／compiler现有只读准备组件，真实G19留存输入重放成功、13依赖分别pin，三类credit仍false、未派发。新资源叶只验证HoeDirt单行与当前actor dirtHoed+1；精力／工具／库存／掉落仍未归一化，不能算完整资源结算。最终相关105/105（7秒），含原harvest60回归；早期新夹具／导入／括号失败保留，仅修新代码。原API两次失败草稿11bf4381已保留，由控制端独立修复测试／重放；退出撤权、授权accepted-idle。下一步所选till实际工具／精力／埋藏物效果，再原owner／managed实跑；旧原生空目录不可当证据，不用默认旧存档。L1冻结、formal=false、PR草稿、local-data不提交。[接续](CURRENT_WORK_CN.md#2026-11-13t1925000800-r2-所选耕地编译准备与地形统计叶)。
 
 > **2026-11-13 R2 所选 till 编译基础。** G19原动作的独立full源模型经原编译器得到单个pending till_soil，无缺字段／诊断；原件不改，未派发。原通用动作模型配方和整地frontier现共享单实现、旧Loop入口语义保留；聚焦27/27，实际G19整个模型重放一致、目标仍71,16。当前E两个精确MethodDef反编译零诊断，资源核仍须处理真实工具／土壤／DirtHoed和buried-item分支，未完成效果绑定或完整闭环。下一步继续该till编译准备／效果结算／原owner恢复，不重复G18站位，不开训或提交local-data。[接续](CURRENT_WORK_CN.md#2026-11-13-r2-所选耕地的原完整源编译与共享配方)。

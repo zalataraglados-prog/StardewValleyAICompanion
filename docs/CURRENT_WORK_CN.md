@@ -2,6 +2,14 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-13T20:18:00+08:00 R2 耕地精力与真实单次资源重放
+
+- 原API同provider／模型／session完成纯数值Hoe精力函数，`a94a1f33`审查接入`dbfafca4`；保留原生float顺序、efficient跳过setter、祝福仅跳过下降、setter的[-16,max]及高等级增益，不拿旧double候选投影代替实际消耗。27项纯数值测试首次通过；进程退出0、临时权限已撤回，授权accepted-idle。15个step_finish原token字段及短报告已本地留存／校验，费用／余额未知，无fallback。
+- 新消费者绑定同frame full源／窄观测的Hoe槽／ID／效率、原库存first-Hoe顺序、effective farming／max_energy及已有statue_blessing；只给原farm_layout有界投影增加`hoe_is_efficient`，不增加默认全量扫描。复用原pet-bowl镜像比较和地形／统计叶，比较视图只归一化核实的精力／碗／HoeDirt／dirtHoed，原件／hash不改，不是新执行器或原生快照。未知库存／工具／debris／持久变化继续拒绝。
+- E新隔离校准B真实执行一次原`till_soil`，同tick664的before full与窄观测hash分别为`30d9544d7144bf854d6cbdd52f8a619c5634980699cefa05c5f7c4ca24eca061`／`82a780c13ffc418263b01c5ca80ac3146369c38a9a9f0bbebf2321c1a24eab41`；after tick701/hash `201344e2a9ec1709edd7fee6c1959c59aaa24c11f1f426a95c75c1794aa38b2c`，精力270→268。原持久变化仅farm.pet_bowls／terrain_features、player.energy及GSQ统计，组合原比较核后剩余变化为空。只读重放报告SHA `33d7494e54eb25348a380b9fbff561dd5efbb7623d8d3e91e1b89f916a15f290`；原7输入hash不变。显式debug setup只是校准夹具，**不是G19派发、owner入账或生产信用**，游戏已按归属停止；A缺before窄观测仍只保留局部证据，不补造。
+- 最终同Release产物相关 **153/153**（14秒），含数值27、新精力28、地形统计19、准备19及原harvest／watering相关60，重叠不相加；零最终失败／跳过／构建警告／错误。首次新测试JsonNode误用Remove导致编译失败，改为AsObject后93/93再回归；失败原样留存，未修改旧validator迁就。
+- **唯一接续：** 这只完成所选“无额外资源变化”分支；当前原观察器明确只接move／clearance，不得偷偷放宽或把随机Clay／Treasure等可能分支当不存在。先沿原有界观察／库存payload／debris比较核，显式绑定所选till额外产出／拾取，再将原编译准备和效果接同owner claim／rebind／恢复；G19派发保护仍在。随后才完整生产／销售／原生保存／新进程加载。#569实验室在正式manifest前接手、L1冻结19/19／11/11、formal=false、PR567草稿、local-data不提交均不变。
+
 ## 2026-11-13T19:25:00+08:00 R2 所选耕地编译准备与地形统计叶
 
 - 新`CropTeacherSiteTillCompilation`只读准备组件复用原观测绑定、原整地plan重建／共享frontier、共享动作配方、原ActionQueueCompiler及原queue比较器。分别pin当前full源／ledger、窄观测、原site request／plan／窄model、新full model／queue及原生产plan／request／snapshot／ledger；核原active布局／日期、先完成接近、首个direct till、候选／工具／目标／原短路段参数，不修改原件／source hash。生产plan路径先核一致再读取依赖，Hoe工具槽／ID／精力投影的根与地块镜像须一致。
