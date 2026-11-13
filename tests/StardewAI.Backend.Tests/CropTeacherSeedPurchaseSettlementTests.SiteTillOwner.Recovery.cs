@@ -7,15 +7,21 @@ namespace StardewAI.Backend.Tests;
 public sealed partial class CropTeacherSeedPurchaseSettlementTests
 {
     [Theory]
-    [InlineData("normal")]
-    [InlineData("admitted_restart")]
-    [InlineData("native_ack_lost")]
-    [InlineData("native_result_ack_lost")]
-    [InlineData("marker_reply_lost")]
-    [InlineData("acceptance_ack_lost")]
-    public async Task SiteTillOwnerReusesOriginalNativeAndMarkerRecoveryWithoutDoubleExecutionOrProductionCredit(string mode)
+    [InlineData("normal", false)]
+    [InlineData("normal", true)]
+    [InlineData("admitted_restart", false)]
+    [InlineData("admitted_restart", true)]
+    [InlineData("native_ack_lost", false)]
+    [InlineData("native_ack_lost", true)]
+    [InlineData("native_result_ack_lost", false)]
+    [InlineData("native_result_ack_lost", true)]
+    [InlineData("marker_reply_lost", false)]
+    [InlineData("marker_reply_lost", true)]
+    [InlineData("acceptance_ack_lost", false)]
+    [InlineData("acceptance_ack_lost", true)]
+    public async Task SiteTillOwnerReusesOriginalNativeAndMarkerRecoveryWithoutDoubleExecutionOrProductionCredit(string mode, bool productTransport)
     {
-        var f = new SiteTillNativeFixture(); using var host = f.Files.F.Runtime;
+        var f = new SiteTillNativeFixture(productTransport: productTransport); using var host = f.Files.F.Runtime;
         var files = f.Files.F.Files; var runtime = f.Files.F.Runtime;
         var lose = true;
         await using var owner = await files.Open(writer: async (path, json) =>
