@@ -2,6 +2,15 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-13T20:56:00+08:00 R2 显式耕地观察与实际工具边界
+
+- 已追溯原`6774d22b/#535`观察器、`ecb8fab0`快照锚点及对应JSON记录：旧move／clearance限制是原有意图，不是旧bug。新增默认省略的`action_origin_tilling_resources`开关，只有training_singleplayer、原till及source option、完整六层witness请求才能走显式till scope；原scope身份／预算核、采集器、锚点、XML／graph／debris读取实现复用，默认入口继续拒绝till，不新增执行器或自动启用主循环。初版遗漏锚点门，由实际C拒绝暴露；补同一显式合同及反例，未放宽旧默认门。
+- 最终同代码相关 **Backend277/277（14秒）＋Core69/69（不到1秒）**，零失败／跳过／产品构建警告／错误，前面的124／153／33均为其子集，不相加。首次新Backend测试引用不存在的RuntimePrimitives依赖，已把scope测试放回原有引用的Core测试项目，不给生产或Backend新加依赖。全部原失败留存。
+- E新隔离校准E由原`ReadAfterExecutionSnapshotCoreAsync`取得`product_after_snapshot_cache_match`；before tick664/hash `28afa30ed2ca42ea2465ea811c6c9450d0738ac0fbbc82eeeec88fe5cc234f8e`，原锚点after tick701/hash `c2af036caea60d600a286dd3b6a93b51021605e061f5e3a1509ac67e81bd85c2`。原观察为observed／零diagnostics，原debris graph／库存数量读取通过、pickup单位0；**原槽位XML核正确拒绝Hoe的hasBeenInInventory false→true、currentParentTileIndex 21→23、swingTicker 781697→781698**。只读局部分析SHA `26936baabd0aea4b12d2aadd3c6776da7e29681959298038b3caf48d438bfe19`，7原输入hash不变，status=partial_observation_only、槽位metadata／完整资源／owner／formal均false。debug setup仅校准，无G19／生产信用，游戏已停止。
+- C保留为新锚点接线失败；D观察已observed，但本地校准脚本错误fresh重读得到同tick异hash，不能当原锚点或拿来补造。已改用上面的原产品读取函数，E才是可用固定帧材料；未修改产品端既有正确缓存协议，也未把D晋升PASS。原生HandleTreasure及createObjectDebris共5个精确MethodDef实时反编译零诊断，来源SHA／MVID继续固定；首次旧研究工具的3重载上限拒绝实际4重载，失败保留，后续限定提取成功。
+- 原API同会话互审精力绑定叶未见具体缺陷，未独立运行测试或重放原生。首次因遗漏外部任务目录admission没有审到代码，一次离线修正后完成；分别2／11个step_finish、失败和短报告均留存，退出撤权、授权accepted-idle，费用未知。skill专用launcher现于载入凭据／付费前检查外部任务目录双分隔符及三份必读任务的精确相对read规则，6/6离线反例通过，不自动提权／试探调用；其他source read仍须按原安装版规则检查。
+- **唯一接续：** 对实际E这三项Hoe XML变化按当前原生方法逐项核因，在新till消费者中绑定，复用原槽位比较核，不能删除旧校验或归一化未知字段。这是原所选till资源接线的工具边界，不是新动作模块。再核同次可能Clay／Treasure／拾取，接同owner claim／rebind／恢复及managed实跑。G19保护、完整生产／销售／保存／新进程重载缺口、L1冻结19/19／11/11、formal=false、PR567草稿、#339/#550/#569开放及local-data不提交不变；#569最新分工没有改变施工顺序。
+
 ## 2026-11-13T20:18:00+08:00 R2 耕地精力与真实单次资源重放
 
 - 原API同provider／模型／session完成纯数值Hoe精力函数，`a94a1f33`审查接入`dbfafca4`；保留原生float顺序、efficient跳过setter、祝福仅跳过下降、setter的[-16,max]及高等级增益，不拿旧double候选投影代替实际消耗。27项纯数值测试首次通过；进程退出0、临时权限已撤回，授权accepted-idle。15个step_finish原token字段及短报告已本地留存／校验，费用／余额未知，无fallback。

@@ -1,5 +1,42 @@
 # Original Refill Native Trace
 
+## 2026-11-13 Explicit Till Observation And Actual Tool Metadata Boundary
+
+After tracing6774d22b/#535/ecb8fab0 and their JSON history, keep the intentional
+legacy move/clearance-only defaults. The default-omitted till-resources flag admits
+only original singleplayer till/source-option and all six requested witness tiers.
+Reuse original scope bounds/identity, capture, snapshot anchor and payload readers;
+no new executor or automatic main-loop activation. The omitted anchor admission
+was caught by nativeC and fixed under the SAME explicit contract, with negatives.
+Final relatedBackend277/277(14s) andCore69/69(<1s), no final fail/skip/product warning.
+
+Fresh isolatedE obtains the original product_after_snapshot_cache_match:
+before664/hash28afa30ed2ca42ea2465ea811c6c9450d0738ac0fbbc82eeeec88fe5cc234f8e,
+after701/hashc2af036caea60d600a286dd3b6a93b51021605e061f5e3a1509ac67e81bd85c2.
+Observation is observed/zero diagnostics; original debris graph/quantity readers
+pass, pickup units0. Original slot XML comparison correctly rejects Hoe fields
+hasBeenInInventory false->true, currentParentTileIndex21->23, swingTicker781697->781698.
+Partial analysis SHA26936baabd0aea4b12d2aadd3c6776da7e29681959298038b3caf48d438bfe19;
+seven original hashes unchanged. Status remains partial_observation_only, NOT full
+resource/owner/production/Teacher/formal PASS. Debug calibration only; game exited.
+
+NativeC anchor rejection and nativeD same-tick/different-hash local fresh-read
+failure remain retained. The calibration now calls the original product reader;
+the old product cache protocol was already correct, not rewritten. Five pinned
+Treasure/object-debris MethodDefs extracted with zero diagnostics. A local research
+overload-count bound failure is preserved, not called a native code failure.
+Peer source review found no concrete defect in the energy leaf but ran no tests or
+native replay; initial task-directory denial and one corrected review retained,
+process exited/grants withdrawn, authorization idle, dollar cost unknown. Dedicated
+launcher now checks required task read/external admission before credentials/API;
+6/6 offline cases, no automatic permission expansion.
+
+NEXT explain and bind those THREE observed Hoe XML mutations from pinned native
+methods in the new till consumer, retaining the original strict slot kernel; then
+same-action possible buried/pickup effects and original owner claim/rebind/recovery.
+This is the existing selected-till resource boundary, not a new action subsystem.
+G19 guard/full crop-sale-save-new-load gap/frozenL1/formalfalse/PRdraft remain.
+
 ## 2026-11-13 Selected Till Energy And Native Resource Replay
 
 The pure Hoe arithmetic preserves the pinned native float order, efficient-tool
