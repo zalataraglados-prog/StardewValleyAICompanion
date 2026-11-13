@@ -64,6 +64,13 @@ anchor, field defaults or resource validators were changed. Next bind the select
 area's weed-only object delta, unchanged survivors and remaining persistent world
 through the original quantity/inventory/resource boundary, then the same owner.
 
+626752ca CI43482684774 failed two source-whitelist assertions (Core2606/2608):
+the new debug weed fixture and smoke option had not been included in their exact
+source strings. The guard update retains every prohibition against fixture-side
+clearing, debris and XP mutation, adds native weed/scythe/target checks, and passes
+its local3/3. This is test-only follow-up, not another native pass or actuator fix.
+The failed CI remains historical; the successor CI is verified separately.
+
 ## 2026-11-14 Native J South Completion
 
 Fresh isolated managed-j-20261114-0016 accepted20boundaries in the ORIGINAL

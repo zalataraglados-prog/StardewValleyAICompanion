@@ -9,6 +9,7 @@
 - K未改原件经原共享配方为accepted full源另建模型、原编译器及新准备组件重放通过，13输入不变，source／窄观测hash分别保留。报告SHA `d735f48b4ea746de97f9799fde72fc14d04fcb5ca17b7efe9409d2abf0522d76`，三实际加载依赖hash在本地报告；**native／resource／actual owner／formal均false**。本地probe首次误用internal序列化入口、随后误把内容寻址manifest当快照的失败均保留；最终复用原内容寻址读取器并校验实际snapshot身份，未改项目读取合同。
 - 同一E原版SHA／MVID实时提取7个精确MethodDef、零诊断，另记录MeleeWeapon未声明DoFunction、实际继承Tool。`cutWeed`有随机纤维／种子及条件掉落，`DoDamage`遍历范围内物体，不能先假设仅目标删除或固定掉落。新增显式weeds debug夹具复用旧镰刀执行器，未改其动画／动作。短校准A原生成功，但控制端漏填原合同的`source_planning_option_id`，锚点正确拒绝；按`ecb8fab0`及对话JSON确认原保护意图，只修本地调用，A留存、不重发、不计资源通过。
 - 独立新档B `weed-resource-b-20261114-0224` 实际23ticks完成，scope／同帧缓存有效、零诊断，tick664→688，270→270；无Axe／Pickaxe调用、无拾取，after有2个地面掉落实体。原`ReadClearanceConsumption`严格重放通过，剩余持久差异仅`farm.objects`：原生范围动作同时移除71,16和71,17两棵`(O)784`。分析报告SHA `8024f2b7039c9bbc7268e17103eea908e27d7fe6afe7fb8a3200f37f4efc4a80`，原件未变、3依赖hash留存；**完整资源／生产归因／owner／Teacher／formal仍false**。两档都仅debug校准，全部归属游戏进程已退出，不代表K清障或managed闭环通过。
+- `626752ca`已推送；其CI43482684774在Core2606/2608处发现两项源码守卫未同步新增weeds白名单。已保留旧防直接清障／掉落／经验修改的全部断言，更新名单并增加原版`(O)784`／IsWeeds／Scythe及透明目标检查，控制端聚焦**3/3**通过；仅测试修正，不重跑游戏或修改执行器。新提交CI另核，不能以96/96或旧绿色结果代替。
 - **唯一接续：** 复用原消耗／数量／库存图核，对所选Scythe／Weeds的实际`farm.objects`范围删除建立最小严格比较叶，绑定原生范围与未变的其他对象／持久资源；再接原同owner claim／rebind／恢复。未支持效果继续派发前拒绝，不先删保护或另建执行器。随后才新隔离原入口完成整地、播种／维护／收获／销售／原生保存／新进程加载。#569正式manifest前交实验室、L1冻结19/19／11/11、formal=false、PR567草稿及local-data不提交不变。[详细证据](refill-approach-native-trace.md#2026-11-14-native-k-site-clearance-preparation)。
 
 ## 2026-11-14T00:46:00+08:00 R2 新J连续耕地与南向完成态修正
