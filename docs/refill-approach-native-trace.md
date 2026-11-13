@@ -1,5 +1,49 @@
 # Original Refill Native Trace
 
+## 2026-11-13 Same Owner Till And Product Transport
+
+Main4e96a0d1 adds site_till via the EXISTING supporting preparation/outcome,
+single native claim, original marker/replay, owner index/recovery and production
+trace. The original recipe/compiler rebuild on accepted full source; bounded
+observation/request/plan/model stay distinct. A private shallow options copy enables
+the6witness tiers for this invocation only. Legacy signatures/defaults unchanged.
+Synthetic8 native-contract/tamper and6 normal/lost-ack/restart scenarios pass,
+each native1/commit1 with repeated readback; unknown claims never redispatch.
+Final main-entry/related147 passed; earlier shared-owner1002 passed4m36s.
+Peer59 draftbed2e113 retained after2compile failures/no tests; controller fixed
+the import and graph contract fixture.27step_finish, no paid third attempt/fallback.
+
+Fresh isolated H managed-h-20261113-2256 uses the original managed/product entry,
+hidden/silent, no debug resource setup.17accepted boundaries/14reported verified
+actions. H19 tillFarm71,16 really applied/verified/observed without diagnostics,
+but the new consumer incorrectly used the original native-only source reader.
+It rejected the real /api/v1/product/execute journal.5bf13fbc/#539 establishes the
+old restriction was intentional. No old executor/validator was defective here.
+
+The new explicit selected-till entry reuses ReadQueue/ReadFrame, verifies Product
+schema/authorization, run+nonce receipt ID, original journal canonical request
+hash, request before, live-before tick/drift, exact after anchor, dispatch/replan
+and non-replay. Legacy entry still rejects Product.12 Product positive/negative
+tests; final related698/698,1m4s, no final failures/skips/warnings/errors. Earlier
+168/147 are subsets; earlier1002 is a prior same-owner build, do not sum them.
+
+Unmodified H read-only replay passes the FULL consumer/resources and original
+in-process rebind. Before hash4ce9feb2882a4c06c64e88cc20f80d831e1818e099c3f44241b221e945f2945c,
+bounded hashd9c9481693912bed7c07cb13f4dd9f47a629d1e132f19a1f3eeff73a9e322d26,
+after tick12091/hasheea16ffd732df180e7a13bcd967a6b48a05ef420265e6ca20d6f120740367e75,
+pickup0. ReportSHA d63fdcc22a9614768aa7b1621932f7b92d3deefcf624289fd1d59a241083fc6e;
+20inputs/finalverifier hash unchanged. actual_owner_acceptance=false, no native
+redispatch or old artifact/ledger rewrite. All4owned processes exited; wrapper's
+duplicate-stop/already-exited PID race repaired locally, original failure retained.
+
+NEXT validate persisted Backend ledger/save boundaries and explicitly continue
+the known executed H receipt through original same-owner marker/readback. Read-only
+resume must NOT invent an unclaimed mutation. Never redispatch H19. If prerequisites
+cannot be met, retain refusal then fresh isolated managed runtime. Crop production,
+sale/native-save/new-process reload and full managed acceptance remain incomplete.
+L1 frozen,formalfalse,PR567draft,#339/#550/#569open,lab handoff before formalmanifest;
+no local-data publication. Prior bb7a097e CI43442221839SUCCESS, new head separate.
+
 ## 2026-11-13 Selected Till Physical Resource Composition
 
 ReadTillingResources composes the verified native selected-Hoe XML/payload/debris

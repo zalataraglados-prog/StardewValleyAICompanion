@@ -28,9 +28,11 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         internal string AfterPath => Path.Combine(Files.F.Source.RuntimePath, "till-native-final.json");
         internal string ReceiptPath => Path.Combine(Files.F.Source.RuntimePath, "till-native-aggregate.json");
         private readonly ActionOriginObservationReceipt observation;
+        private readonly bool productTransport;
 
-        internal SiteTillNativeFixture(Action<Fixture>? prepareSource = null)
+        internal SiteTillNativeFixture(Action<Fixture>? prepareSource = null, bool productTransport = false)
         {
+            this.productTransport = productTransport;
             (_, observation) = NativeInventoryGraphBoundaryTests.Fixture();
             observation.BeforeDebris = observation.AfterDebris = [];
             observation.Collections = []; observation.ClearanceToolCalls = [];
@@ -150,7 +152,8 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             request.ActionOriginInventoryTransients = request.ActionOriginInventoryGraph = request.ActionOriginDebrisState = true;
             request.ActionOriginTillingResources = true;
             var journal = await RuntimeExecutionRequestJournal.WriteAsync(options.SnapshotDir, 300, 1,
-                JsonSerializer.Serialize(request, JsonOptions), "http://test/api/v1/training/execute", Preparation.SourcePath);
+                JsonSerializer.Serialize(request, JsonOptions), productTransport ? "http://test/api/v1/product/execute" :
+                    "http://test/api/v1/training/execute", Preparation.SourcePath);
             JournalPath = journal.JournalPath;
             observation.ScopeId = request.ActionOriginObservationScopeId; observation.RunId = request.RunId;
             observation.QueueId = request.QueueId; observation.QueueItemId = request.QueueItemId;
@@ -169,6 +172,17 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             result["execution_request_sha256"] = journal.RawRequestSha256; result["mechanical_compiled_queue_path"] = Files.Queue;
             result["after_snapshot_path"] = FramePath; result["after_state_hash"] = After.StateHash;
             result["before_game_tick"] = before.GameTick; result["after_game_tick"] = After.GameTick; result["after_snapshot_fresh"] = true;
+            if (productTransport)
+            {
+                result["source"] = "product_executor"; result["product_executor_schema_version"] = "stardewai.product_executor.v1";
+                result["product_authorization_status"] = "authorized";
+                result["product_receipt_id"] = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(request.RunId + "\n" + request.RequestNonce))).ToLowerInvariant();
+                result["product_request_sha256"] = journal.ProductRequestSha256;
+                result["product_request_before_state_hash"] = before.StateHash; result["product_before_state_hash"] = before.StateHash;
+                result["product_before_game_tick"] = before.GameTick; result["product_request_state_hash_drift"] = false;
+                result["product_dispatch_guard"] = "native_action_preconditions"; result["product_replan_required"] = true;
+                result["product_idempotent_replay"] = false;
+            }
             ResultPath = Path.Combine(Files.F.Source.RuntimePath, "till-native-result.json"); Fixture.Save(ResultPath, result);
             var step = JsonSerializer.SerializeToNode(new QueueExecutionStepReceipt
             {

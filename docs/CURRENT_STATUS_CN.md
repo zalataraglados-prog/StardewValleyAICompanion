@@ -2,6 +2,8 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+> **2026-11-13T23:25:00+08:00 R2 同owner耕地已接，真实Product断点已修正重放。** 原claim／marker／索引／恢复／trace复用，私有options仅给所选till启用观察，旧默认不变。主入口／六种恢复聚焦147及前版共享owner1002通过；新H19实际耕地applied／verified／observed，被旧native专用endpoint门拒绝，仍17accepted／14verified。新消费者现显式绑定Product回执并复用原核，旧默认继续拒绝Product；最终相关698/698，H未改件完整资源＋进程内rebind通过，20输入／verifier不变、报告SHAd63fdcc2…1083fc6e。**H19尚无实际owner接受或完整作物闭环**。下一步核持久账本／存档边界，明确续接原H回执／marker读回（不重发native），必要时新隔离档，再完整生产保存重载。全部归属进程已停；API草稿保留／控制端修复、授权idle；L1冻结／formal=false／PR草稿／#569分工不变。[接续](CURRENT_WORK_CN.md#2026-11-13t2325000800-r2-耕地同owner接线与真实product断点修正)。
+
 > **2026-11-13T22:22:00+08:00 R2 till物理资源组合通过。** 新显式till入口复用原槽位／物理图／容量／房屋镜像核，仅最终不变量消费已核精力／地形／统计比较视图，旧默认入口和执行器不变。API测试21首次通过并已退出撤权；控制端最终相关559/559、原生F未改件public资源重放通过，报告SHAeebc9750…b4a320f、7输入及verifier hash未变。实际pickup0；有拾取正例目前为组合叶测试，不是原生全分支。原准备接口与单次回执→原rebind消费者已实现、角色边界10项通过，但尚无该消费者正向原生／rebind或owner派发恢复验收，G19保护保留。下一步完成既定同owner接线与反例后新managed实跑，不重写执行器／不重做元数据。完整作物闭环、正式训练仍未通过；#569分工、L1冻结、PR草稿、local-data不提交不变。[接续](CURRENT_WORK_CN.md#2026-11-13t2222000800-r2-所选耕地物理资源组合通过)。
 
 > **2026-11-13T21:53:00+08:00 R2 till工具XML已绑定。** 新消费者核原成功回执／锚点、目的限定实际last-equipped／引用／power／动画上下文及actor facing，按实时原生链生成三字段期望，复用原槽位比较核，默认旧入口仍严格拒绝同样变化，未改执行器或忽略未知XML。新E原生F重放工具元数据＋原无额外资源组合通过，报告SHA4c7918bb…8900901，7输入及最终verifier hash未变；仅debug校准／该次pickup0分支，不是G19／owner／全掉落／作物／formal PASS。最终Backend528/528＋Core69/69，API纯函数27首次通过并已退出撤权、授权idle、费用未知。唯一下一步同次库存／掉落接原物理资源图／镜像核，再原owner claim／rebind／恢复及managed实跑；G19保护／L1冻结／PR草稿／#569分工不变，local-data不提交。[接续](CURRENT_WORK_CN.md#2026-11-13t2153000800-r2-耕地工具xml绑定与新原生重放通过)。

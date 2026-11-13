@@ -11,7 +11,15 @@ namespace StardewAI.GoalConditionedBootstrap;
 internal static partial class NativeExecutionActionSourceReader
 {
     internal static VerifiedNativeExecutionQueue ReadQueue(string queuePath, string beforePath, string receiptPath,
-        string afterPath, string runId, string candidateId)
+        string afterPath, string runId, string candidateId) =>
+        ReadQueueCore(queuePath, beforePath, receiptPath, afterPath, runId, candidateId, false);
+
+    internal static VerifiedNativeExecutionQueue ReadSelectedTillingQueue(string queuePath, string beforePath, string receiptPath,
+        string afterPath, string runId, string candidateId) =>
+        ReadQueueCore(queuePath, beforePath, receiptPath, afterPath, runId, candidateId, true);
+
+    private static VerifiedNativeExecutionQueue ReadQueueCore(string queuePath, string beforePath, string receiptPath,
+        string afterPath, string runId, string candidateId, bool selectedTillingProduct)
     {
         queuePath = RequiredFile(queuePath);
         beforePath = RequiredFile(beforePath);
@@ -39,7 +47,7 @@ internal static partial class NativeExecutionActionSourceReader
         {
             var step = receipt.StepResults[index];
             var resultPath = RequiredFile(Text(rows[index], "execution_path"));
-            var frame = ReadFrame(queuePath, resultPath, RequiredFile(step.AfterSnapshotPath), queue.StateHash);
+            var frame = ReadFrame(queuePath, resultPath, RequiredFile(step.AfterSnapshotPath), queue.StateHash, selectedTillingProduct);
             Require(frame.Result.RunId == runId && frame.Item.QueueItemId == queue.Items[index].QueueItemId &&
                 frame.Before.StateHash == step.SourceStateHash && frame.After.StateHash == step.AfterStateHash &&
                 frame.Before.GameTick == step.BeforeGameTick && frame.After.GameTick == step.AfterGameTick &&

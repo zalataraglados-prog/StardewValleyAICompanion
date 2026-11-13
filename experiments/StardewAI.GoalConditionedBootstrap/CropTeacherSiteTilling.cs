@@ -28,7 +28,7 @@ public sealed class CropTeacherSiteTilling : ICropTeacherSupportingTransition
         var paths = preparation.InputHashes.Keys.Concat(outputs.Select(Path.GetFullPath)).ToArray();
         using var reads = InvocationReadSession.Start(paths);
         var original = new CropTeacherRetainedInputs(paths);
-        var native = NativeExecutionActionSourceReader.ReadQueue(preparation.QueuePath, preparation.SourcePath,
+        var native = NativeExecutionActionSourceReader.ReadSelectedTillingQueue(preparation.QueuePath, preparation.SourcePath,
             transition.ExecutionReceiptPath, transition.AfterSnapshotPath, transition.RunId, preparation.CandidateId);
         Require(native.Actions is [var action] && native.Queue.Items is [var item] &&
             item.OptionId == "executor.till_soil" && action.Request.OptionId == item.OptionId &&

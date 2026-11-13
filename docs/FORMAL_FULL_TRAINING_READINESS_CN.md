@@ -1486,7 +1486,7 @@ v71 继续携带 `--skip-training`，没有 Student 更新、checkpoint 或 GPU 
 
 ### 3. 接同一账本、主循环和跨日恢复
 
-- **2026-11-13T22:22 接续定位：** 当前所选till已组合原槽位／物理图／镜像及精力／地形／统计核，未改件原生F零拾取重放通过；supporting准备接口和原回执→原rebind消费者已实现，但其正向原生／rebind及owner派发／恢复尚未验收。继续此同owner接线和显式观察参数，再新managed实跑；G19保护在验证前保留。不是新增执行器，也不把局部资源重放晋升本步退出。[当前证据与唯一接续](CURRENT_WORK_CN.md#2026-11-13t2222000800-r2-所选耕地物理资源组合通过)。
+- **2026-11-13T23:25 接续定位：** 所选till已接同owner原claim／rebind／恢复，通过合成正向及六种恢复；新H19实际执行因新消费者误用直连native入口而未入账。显式Product绑定已通过反例和H原件完整资源／进程内rebind，默认旧门不变。下一步核持久账本／存档边界，对已执行原回执做明确同owner续接和marker读回，不重发H19、不让只读resume创建未claim变更；必要时新隔离档，再完整生产保存重载。组件重放尚非本步退出。[当前证据与唯一接续](CURRENT_WORK_CN.md#2026-11-13t2325000800-r2-耕地同owner接线与真实product断点修正)。
 
 - `PrepareCropTeacherOwnedWateringAsync()` 当前会拒绝带 `InterruptKind` 的补水接近队列。将所选接近／清障队列及其已验证结果接到现有 `CropTeacherManagedSeedOwner` 和主循环，复用派发登记、队列／来源身份、回执、账本提交与只读恢复。补水但零块作物完成仍保留为控制结果。 [浇水入口](../tools/StardewAI.LiveTrainingLoop/Program.CropTeacherOwnedWatering.cs#L26) · [已有补水控制结果](money-crop-refill-control-outcome.md)
 - 接续收获留存、所选销售方式的原生结算、睡眠保存和重载。复用 `CheckCropTeacherDayBoundaryAsync()` 等既有检查，核对同一存档的物品、作物、金币、日期及账本进度。可复用 #502 的作物实跑和离线重建来核对已有阶段，托管接线要由新入口的实际结果验证。具体结算消费者沿现有合同绑定。 [跨日检查](../tools/StardewAI.LiveTrainingLoop/Program.CropTeacherDayBoundary.cs#L125) · [#502](https://github.com/zalataraglados-prog/StardewValleyAICompanion/pull/502)

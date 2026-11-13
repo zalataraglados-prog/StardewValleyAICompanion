@@ -2,6 +2,15 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-13T23:25:00+08:00 R2 耕地同owner接线与真实Product断点修正
+
+- `4e96a0d1`接独立`site_till`角色，共用原supporting准备／回执／一次native claim／marker提交与重放、索引／恢复／trace，不新建执行器。保留原窄观测／request／plan／模型，用共享完整配方和原编译器绑定accepted full源；其他未支持整地资源仍拒绝。深层观察仅启用在该次执行的私有options副本，原options、旧方法签名及全局默认不变。
+- 合成原协议正向／篡改8项、六种同owner正常／丢回包／重开恢复均过，每种native1、commit1，重复读回不重发；未知claim仍pending。主入口聚焦147/147，前版共享owner回归1002/1002（4分36秒）。API59两次测试因缺SnapshotHash导入均未编译；草稿完整保存在`bed2e113`，控制端补导入和夹具物理图policy／count后验证，无第三次API／fallback。27个step_finish／短报告本地留存，退出撤权、授权idle，费用未知。
+- E新独立档H `managed-h-20261113-2256`沿原managed/product入口后台隐藏静音，无debug资源布置。17个accepted边界／原报告14个verified action；H19真实`till:Farm:71,16`已applied／primitive verified／observed、零诊断，**owner尚未接受**。首断点为新消费者误用原直连native专用入口，而实际journal是`/api/v1/product/execute`。原`5bf13fbc/#539`限制是有意设计，不是旧执行器bug。
+- 新所选till显式Product入口复用同一个ReadQueue／ReadFrame核，默认仍直连native；额外绑定Product schema／authorized、run+nonce receipt ID、journal canonical request hash、请求before、fresh before tick范围／drift、精确after、dispatch guard／replan和非replay。旧默认仍拒绝同一Product endpoint。12个Product正反例通过；最终当前代码相关**698/698（1分4秒）**，168／147是重叠子集，1002属于前一同owner版、不累加。零最终失败／跳过／构建警告／错误。
+- H原件经修正入口完整资源＋原进程内rebind重放通过，实际pickup0；after tick12091/hash`eea16ffd732df180e7a13bcd967a6b48a05ef420265e6ca20d6f120740367e75`。报告SHA`d63fdcc22a9614768aa7b1621932f7b92d3deefcf624289fd1d59a241083fc6e`，20输入及verifier hash复核不变；**actual_owner_acceptance=false**，没有补写H旧回执／账本或重发native。四个归属进程均已退出；重复Stop碰到已退出PID的本地脚本竞态已修、原失败保留，无用户进程／存档受影响。[详细证据边界](refill-approach-native-trace.md#2026-11-13-same-owner-till-and-product-transport)。
+- **唯一接续：** 核原Backend持久账本与存档边界，对H已知已执行原回执走既有明确续接／同owner marker提交和持久读回；不让只读resume创建未claim变更，不重发H19。条件不满足时保留拒绝、用新隔离档复验，再继续播种／维护／收获／销售／原生保存／新进程加载。完整链未过，不能把组件重放当闭环；L1冻结19/19／11/11、formal=false、PR567草稿、#339/#550/#569开放、正式manifest前交实验室及local-data不提交不变。此前bb7a097e的CI43442221839已成功，新提交另验。
+
 ## 2026-11-13T22:22:00+08:00 R2 所选耕地物理资源组合通过
 
 - 最新issue已复核：#569正式manifest前交实验室的责任分工已在本库落地，不改变当前R2第3／4步，不操作D盘或开训。`da5ecfc8`的CI43437873724已成功；不拿旧CI代表本轮新提交。
