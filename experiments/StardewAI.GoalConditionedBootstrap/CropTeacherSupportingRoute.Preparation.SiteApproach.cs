@@ -66,7 +66,14 @@ public sealed partial class CropTeacherSupportingRoute
             string modelPlanPath, string queuePath) =>
             new(runRequestPath, sourcePath, ledgerPath, commitmentIds, commitmentId, stepId, observationPath, modelPlanPath, queuePath);
 
+        public static Preparation OpenNativeSiteApproach(string runRequestPath, string sourcePath, string ledgerPath,
+            IReadOnlyCollection<string> commitmentIds, string commitmentId, string stepId, string observationPath,
+            string modelPlanPath, string queuePath) =>
+            new(runRequestPath, sourcePath, ledgerPath, commitmentIds, commitmentId, stepId, observationPath, modelPlanPath, queuePath)
+                { UsesNativeActionEffects = true };
+
         public bool IsSiteApproach => SiteApproachTarget is not null;
+        public bool UsesNativeActionEffects { get; private init; }
         public MoneyRevenueCropPlantingTile? SiteApproachTarget { get; }
     }
 }

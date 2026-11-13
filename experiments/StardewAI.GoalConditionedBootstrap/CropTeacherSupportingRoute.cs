@@ -6,8 +6,9 @@ namespace StardewAI.GoalConditionedBootstrap;
 // Consumes original route evidence; it neither plans nor executes another action.
 public sealed partial class CropTeacherSupportingRoute : ICropTeacherSupportingTransition
 {
-    private readonly CropTeacherSupportingRebind rebind;
-    private readonly CropTeacherRetainedInputs inputs;
+    private readonly CropTeacherSupportingRebind? rebind;
+    private readonly CropTeacherRetainedInputs? inputs;
+    private readonly CropTeacherSiteNativeTransition? nativeSiteApproach;
 
     private CropTeacherSupportingRoute(string runRequestPath, string sourcePath, string ledgerPath,
         IReadOnlyCollection<string> commitmentIds, MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId,
@@ -40,12 +41,18 @@ public sealed partial class CropTeacherSupportingRoute : ICropTeacherSupportingT
     public string AfterSnapshotPath { get; }
     public bool RouteTargetReached { get; }
     public bool IsSiteApproach => SiteApproachTarget is not null;
+    public bool UsesNativeActionEffects => nativeSiteApproach is not null;
     public MoneyRevenueCropPlantingTile? SiteApproachTarget { get; }
-    public StrategyCommitmentLedger BaseLedger => rebind.BaseLedger;
+    public StrategyCommitmentLedger BaseLedger => nativeSiteApproach?.BaseLedger ?? rebind!.BaseLedger;
     public bool NativeCropLifecycleVerified => false;
     public bool FormalProductTrainingAuthorized => false;
-    public IReadOnlyDictionary<string, string> InputHashes => inputs.ReadHashes();
-    public void ValidateInputsUnchanged() => inputs.Validate();
-    public ReservationPortfolioCommitRequest RebindRequest => rebind.Request;
-    public StrategyCommitmentLedger VerifyRebindReply(ReservationPortfolioCommitResult reply) => rebind.VerifyReply(reply);
+    public IReadOnlyDictionary<string, string> InputHashes => nativeSiteApproach?.InputHashes ?? inputs!.ReadHashes();
+    public void ValidateInputsUnchanged()
+    {
+        if (nativeSiteApproach is not null) nativeSiteApproach.ValidateInputsUnchanged();
+        else inputs!.Validate();
+    }
+    public ReservationPortfolioCommitRequest RebindRequest => nativeSiteApproach?.RebindRequest ?? rebind!.Request;
+    public StrategyCommitmentLedger VerifyRebindReply(ReservationPortfolioCommitResult reply) => nativeSiteApproach is not null
+        ? nativeSiteApproach.VerifyRebindReply(reply) : rebind!.VerifyReply(reply);
 }

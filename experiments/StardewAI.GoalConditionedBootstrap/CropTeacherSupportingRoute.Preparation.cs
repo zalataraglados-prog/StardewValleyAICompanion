@@ -122,8 +122,10 @@ public sealed partial class CropTeacherSupportingRoute
                     CropTeacherSeedTransferNativeOutcome.PathComparer.Equals(Path.GetFullPath(transition.QueuePath), QueuePath) &&
                     CropTeacherSeedTransferNativeOutcome.PathComparer.Equals(Path.GetFullPath(transition.BeforeSnapshotPath), SourcePath),
                 "Owned crop native route differs from its pinned original compilation/source.");
-            var result = new CropTeacherSupportingRoute(runRequestPath, SourcePath, ledgerPath, commitmentIds, transition, stepId,
-                ExpectedHopTargetLocation, SiteApproachTarget, siteObservationPath);
+            var result = UsesNativeActionEffects
+                ? new CropTeacherSupportingRoute(this, transition, stepId)
+                : new CropTeacherSupportingRoute(runRequestPath, SourcePath, ledgerPath, commitmentIds, transition, stepId,
+                    ExpectedHopTargetLocation, SiteApproachTarget, siteObservationPath);
             inputs.Validate();
             return result;
         }
