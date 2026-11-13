@@ -1,5 +1,40 @@
 # Original Refill Native Trace
 
+## 2026-11-14 Native J South Completion
+
+Fresh isolated managed-j-20261114-0016 accepted20boundaries in the ORIGINAL
+managed/product loop, including three consecutive till71,16/70,17/71,17, pickup0.
+Accepted18->19->20 and pending21 predecessor hashes, all three after snapshots and
+ledgers independently hash-verified. The no-drift Product fix is now live-proven;
+f61b5dff CI43460584032 succeeded. No debug resources/visible window/audio.
+
+J22 till70,18 really applied/verified/observed, zero diagnostics, but the NEW pure
+metadata model expected south initial+1 instead of its actual idle terminal initial.
+47b8e254/peer2157a195 were located in the conversation JSON: a bounded arithmetic
+assignment/27tests, NOT native south acceptance or an old actuator. Fresh extraction
+from the unchanged pinned E native SHA/MVID verified21exact MethodDefs/zero warnings.
+At the final frame, canMoveNow clears UsingTool/PauseForSingleAnimation. Then
+doneWithAnimation -> Farmer.Halt -> Character.Halt -> FarmerSprite.StopAnimation
+resets the south animation index but retains currentSingleAnimation160. The SAME
+animateOnce then calls Tool.Update(2,0), restoring InitialParentTileIndex. The prior
+model stopped at the animating frame, missing this terminal callback chain.
+
+Only the NEW pure south offset changes1->0; north/east/west, swing/history and old
+executors remain unchanged. No wider accepted range, new fields or global scanning.
+A literal21 full-consumer positive and forged22 negative avoid circular expected
+values. Related292/292 in48seconds, no failures/skips/final build warnings/errors;
+the prior55 is a prior code version, not additive.
+
+J22 unmodified full-resource/original in-process rebind replay passed,20pins intact,
+aftertick12254/stateb75e5f6996769bcd4d2f0eb0a78438f8d28ee0429951722f15eac7ea7cf52e31,
+pickup0. ReportSHA34542ef33ef5112403a5f5aaf96ed9d00496c554b8916d447c8b4fcafc9e0ce0.
+Actual loaded Contracts/Core/Bootstrap dependencies content-addressed locally;
+dependency manifestSHAeb59546bc3f7ac51deeb220c125e97266a8f53f1416840b293734db14852c344.
+Actual J22 owner acceptance=false; no native redispatch/old artifact rewrite. All4
+owned processes exited. Full production/sale/native-save/new-process load unproved.
+NEXT corrected NEW E isolated original route; never load H/I/J unsaved memory as
+a save. L1frozen/formalfalse/PR567draft/issue569lab handoff unchanged.
+
 ## 2026-11-14 Native I And Product No-Drift Contract
 
 Fresh isolated managed-i-20261113-2356 used the original managed/product loop,

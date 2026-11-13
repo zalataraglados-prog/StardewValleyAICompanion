@@ -1486,7 +1486,7 @@ v71 继续携带 `--skip-training`，没有 Student 更新、checkpoint 或 GPU 
 
 ### 3. 接同一账本、主循环和跨日恢复
 
-- **2026-11-14T00:12 接续定位：** H已完成原持久marker入账与owner重开读回；新I由原managed/product入口真实接受18边界及首耕地。第二耕地成功但被新消费者的replan恒true错误拒绝；已按旧Product“成功验证时replan等于实际hash漂移”的公式修正新适配器／夹具，55/55及I20原件完整资源／进程内rebind通过，实际I20 owner接受仍false。下一步新E隔离运行连续整地及原生产／销售／原生保存／新进程加载；不重发已执行动作，不把H／I未保存内存态当续档。组件或单耕入账不是本步退出。[当前证据与唯一接续](CURRENT_WORK_CN.md#2026-11-14t0012000800-r2-新i原生耕地入账及无漂移product修正)。
+- **2026-11-14T00:46 接续定位：** H原持久完成可复用；新J的原managed/product主循环已连续三次耕地入账（总20边界），确认未漂移Product修正。第四次南向元数据原生成功，新增预计函数漏核动画退出链而误拒；21个精确原生MethodDef实时核对后修该新函数，292/292及J22原件完整资源／进程内rebind通过，实际J22 owner接受仍false。下一步修正版新E隔离原入口继续整地至完整生产／销售／原生保存／新进程加载；不重发已执行动作，不把H／I／J未保存内存态当续档。连续三耕或组件重放不是本步退出。[当前证据与唯一接续](CURRENT_WORK_CN.md#2026-11-14t0046000800-r2-新j连续耕地与南向完成态修正)。
 
 - `PrepareCropTeacherOwnedWateringAsync()` 现已显式接纳原 `crop_teacher_watering_refill_approach`，其他未支持interrupt继续拒绝；同一 `CropTeacherManagedSeedOwner` 和主循环复用派发登记、队列／来源身份、回执、marker账本提交与只读恢复。所选清障／拾取资源组合与耕地同owner接线已有实现，仍须由下面的完整真实流程验收，不能以实现或组件测试代替跨日证据。补水但零块作物完成仍保留为控制结果。 [浇水入口](../tools/StardewAI.LiveTrainingLoop/Program.CropTeacherOwnedWatering.cs#L26) · [已有补水控制结果](money-crop-refill-control-outcome.md)
 - 接续收获留存、所选销售方式的原生结算、睡眠保存和重载。复用 `CheckCropTeacherDayBoundaryAsync()` 等既有检查，核对同一存档的物品、作物、金币、日期及账本进度。可复用 #502 的作物实跑和离线重建来核对已有阶段，托管接线要由新入口的实际结果验证。具体结算消费者沿现有合同绑定。 [跨日检查](../tools/StardewAI.LiveTrainingLoop/Program.CropTeacherDayBoundary.cs#L125) · [#502](https://github.com/zalataraglados-prog/StardewValleyAICompanion/pull/502)

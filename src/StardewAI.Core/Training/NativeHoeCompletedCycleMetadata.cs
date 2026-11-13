@@ -12,13 +12,14 @@ public static class NativeHoeCompletedCycleMetadata
     public static int ExpectedSpriteIndex(int initialParentTileIndex, int facingDirection)
     {
         // Pinned Tool.beginUsing 0x060015bb, Tool.endUsing 0x060015ba,
-        // FarmerSprite.animateOnce 0x060009e4 and Tool.Update 0x060015b4:
-        // north/south update through completion; east/west retain begin's +2.
+        // FarmerSprite.animateOnce 0x060009e4 and Tool.Update 0x060015b4.
+        // On south completion, doneWithAnimation -> Halt -> StopAnimation resets
+        // the animation index before the final Tool.Update; east/west retain +2.
         var offset = facingDirection switch
         {
             0 => 4,
             1 => 2,
-            2 => 1,
+            2 => 0,
             3 => 2,
             _ => throw new InvalidDataException("Completed Hoe cycle requires facing direction 0 through 3.")
         };

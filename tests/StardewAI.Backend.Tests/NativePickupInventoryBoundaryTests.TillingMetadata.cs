@@ -93,6 +93,23 @@ public sealed partial class NativePickupInventoryBoundaryTests
         Assert.Throws<InvalidDataException>(() => ReadTillingMetadata(f));
     }
 
+    [Fact]
+    public void CompletedSouthBindsLiteralNativeResetAndRejectsLastAnimatingSprite()
+    {
+        var f = TillingMetadataFixture(facing: 2);
+        var receipt = f.Result.ActionOriginObservation!;
+        var slot = receipt.InventoryPayloadAfter!.Slots![1];
+        var xml = XElement.Parse(slot.SerializedStateXml!);
+        // Native J22 ends at21 after the completion/Halt reset, not the animating22.
+        receipt.TillingToolMetadataAfter!.CurrentParentTileIndex = 21;
+        xml.Element("currentParentTileIndex")!.Value = "21"; SetXml(slot, xml);
+        _ = ReadTillingMetadata(f);
+        receipt.TillingToolMetadataAfter.CurrentParentTileIndex = 22;
+        xml.Element("currentParentTileIndex")!.Value = "22"; SetXml(slot, xml);
+        var error = Assert.Throws<InvalidDataException>(() => ReadTillingMetadata(f));
+        Assert.Contains("completed-cycle projection", error.Message);
+    }
+
     private sealed record TillingFixture(TrainingExecutionRequest Request, TrainingExecutionResult Result, SnapshotEnvelope Before, SnapshotEnvelope After);
     private static NativePickupInventorySummary ReadTillingMetadata(TillingFixture f) => NativeOutputObservationBoundary.ReadTillingPickupInventory(
         f.Request, f.Result, f.Before, f.After, "Farm", new(71, 16), 1, "(T)Hoe");

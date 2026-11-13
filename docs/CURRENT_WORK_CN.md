@@ -2,6 +2,14 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-14T00:46:00+08:00 R2 新J连续耕地与南向完成态修正
+
+- 新E隔离 `managed-j-20261114-0016` 走原managed/product主循环，20个边界接受，其中耕地71,16／70,17／71,17连续三次自动入账、各pickup0；accepted18→19→20及pending21的前驱哈希、三个after快照／ledger哈希已独立核对。第二次未漂移回执现正常接受，I20暴露的replan错误已获新实跑验证；`f61b5dff` CI43460584032成功。
+- J22第四次耕地70,18原生成功，新增元数据预计函数却把南向终态算为initial+1，实际为initial。已按提交`47b8e254`／peer原`2157a195`查回本对话JSON：当时是限定纯数值模型／27项测试，未作南向原生验证，不是旧执行器。当前E原版SHA／MVID不变，重新实时反编译21个精确MethodDef、零诊断：结束帧回调解锁后，`doneWithAnimation→Farmer.Halt→Character.Halt→FarmerSprite.StopAnimation`在南向重置animation index，随后同次`animateOnce→Tool.Update(2,0)`恢复initial。旧推导漏了这个退出链，不能用最后动画帧替代idle终态。
+- 只修新增纯预计函数南向offset1→0，保留N/E/W和swing／history规则；未改旧执行器／动画、未增加观察字段／全局扫描，也未接受任意贴图范围。新增完整消费者的独立字面量21正例和伪造22反例，非仅用被测公式生成预期。最终相关 **292/292（48秒）**，零失败／跳过／最终构建警告／错误，旧55属于前次replan修正版，不相加。
+- J22原件经既有通用probe完整资源＋进程内rebind通过，20输入未变，after tick12254/hash `b75e5f6996769bcd4d2f0eb0a78438f8d28ee0429951722f15eac7ea7cf52e31`、pickup0；报告SHA `34542ef33ef5112403a5f5aaf96ed9d00496c554b8916d447c8b4fcafc9e0ce0`。本地另存实际加载的Contracts／Core／Bootstrap三依赖的内容寻址hash清单（SHA `eb59546bc3f7ac51deeb220c125e97266a8f53f1416840b293734db14852c344`），避免只pin上层DLL而漏Core预计函数。**J22实际owner接受仍false**，不改写J旧失败，不重发native；四归属进程全部退出。
+- **唯一接续：** 修正版新E隔离原managed/product运行，继续连续整地至播种／维护／收获／销售／原生保存／新进程加载。已有三耕入账和原回执重放不代表完整周期；H／I／J未保存内存态均不可当存档。#569分工、L1冻结19/19／11/11、formal=false、PR567草稿、#339/#550/#569开放、local-data不提交不变，新提交CI另核。
+
 ## 2026-11-14T00:12:00+08:00 R2 新I原生耕地入账及无漂移Product修正
 
 - 新E隔离 `managed-i-20261113-2356` 由原 managed/product 主循环真实接受18个边界，包含首个耕地71,16，`native_site_till_verified=true`、pickup0；accepted SHA `05ff504347e2840103035bc07416c351ea3ce53cdbfb478cf0a00222f74c81da`，after hash `9e17dc297417b403685935b0852a6df4809898c1bafa035b499c7a08460eb30d`。这补上了新入口实际派发→同owner入账，不只是H事后续接或fixture。

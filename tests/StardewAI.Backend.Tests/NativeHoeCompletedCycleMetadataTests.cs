@@ -6,16 +6,16 @@ namespace StardewAI.Backend.Tests;
 public sealed class NativeHoeCompletedCycleMetadataTests
 {
     [Theory]
-    [InlineData(0, 4, 2, 1)]
-    [InlineData(21, 25, 23, 22)]
-    [InlineData(-1, 3, 1, 0)]
-    [InlineData(-21, -17, -19, -20)]
-    [InlineData(int.MinValue, int.MinValue + 4, int.MinValue + 2, int.MinValue + 1)]
-    [InlineData(int.MaxValue, int.MinValue + 3, int.MinValue + 1, int.MinValue)]
-    [InlineData(int.MaxValue - 1, int.MinValue + 2, int.MinValue, int.MaxValue)]
-    [InlineData(int.MaxValue - 2, int.MinValue + 1, int.MaxValue, int.MaxValue - 1)]
-    [InlineData(int.MaxValue - 3, int.MinValue, int.MaxValue - 1, int.MaxValue - 2)]
-    [InlineData(int.MaxValue - 4, int.MaxValue, int.MaxValue - 2, int.MaxValue - 3)]
+    [InlineData(0, 4, 2, 0)]
+    [InlineData(21, 25, 23, 21)]
+    [InlineData(-1, 3, 1, -1)]
+    [InlineData(-21, -17, -19, -21)]
+    [InlineData(int.MinValue, int.MinValue + 4, int.MinValue + 2, int.MinValue)]
+    [InlineData(int.MaxValue, int.MinValue + 3, int.MinValue + 1, int.MaxValue)]
+    [InlineData(int.MaxValue - 1, int.MinValue + 2, int.MinValue, int.MaxValue - 1)]
+    [InlineData(int.MaxValue - 2, int.MinValue + 1, int.MaxValue, int.MaxValue - 2)]
+    [InlineData(int.MaxValue - 3, int.MinValue, int.MaxValue - 1, int.MaxValue - 3)]
+    [InlineData(int.MaxValue - 4, int.MaxValue, int.MaxValue - 2, int.MaxValue - 4)]
     public void CompletedSpriteUsesDirectionalNativeOffsetAndUncheckedWrap(
         int initial, int north, int eastOrWest, int south)
     {
