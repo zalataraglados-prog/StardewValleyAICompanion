@@ -1,5 +1,41 @@
 # Original Refill Native Trace
 
+## 2026-11-13 Selected Till Preparation And Partial Resource Leaf
+
+CropTeacherSiteTillCompilation independently replays the original site plan and
+shared frontier/action recipe/compiler, retaining separate accepted full source,
+ledger, observation, site request/plan/narrow model/new full model/queue and original
+production dependencies. Production path equality precedes following dependencies;
+root/tile Hoe slot/ID/energy mirrors must agree. Actual G19 inputs open successfully,
+13pins, candidate till:Farm:71,16; replay SHA
+7a4ca3fd4093aadedfb04051ce692246c4a3f65fa0ab43b63bdb6fcd1979a171.
+Native/resource/formal flags remain false. No dispatch, owner settlement or full
+managed outcome is established by preparation.
+
+The partial resource leaf verifies only one native target HoeDirt terrain row and
+current-actor dirtHoed+1, using the original semantic-envelope comparison (old
+harvest facade delegates unchanged). Its comparison view does NOT normalize energy,
+tool XML, inventory/debris or any other effect and never changes original hashes.
+Unknown terrain/stat changes, extra target data and unbound overflow reject. This
+leaf alone cannot prove complete resource continuity or become a native snapshot.
+Current pinned native Tool/base, buried-item and Stats accessor extraction confirms
+the dirtHoed key and possible buried outputs; metadata confirms no Farm override.
+Six MethodDefs, zero diagnostics, local-only research, no speculative RNG exclusion.
+
+Final integrated105/105 in7s: preparation19, geometry/stat19, original harvest60,
+shared recipe7; overlap not added. Earlier new-fixture/missing namespace/bracket
+failures retained. Peer reached its two-test cap without acceptance; draft11bf4381
+was preserved, controller repaired and independently tested/replayed, no third paid
+attempt/fallback. Remaining authentic earlier-clear/CAS-specific fixture combinations
+are not falsely claimed tested; original rebuild/retainer guards remain.
+
+NEXT bind actual selected till energy/tool and possible buried/pickup effects,
+then original same-owner claim/rebind/recovery. G19 dispatch guard remains. Existing
+till artifact directory is empty, not evidence. If necessary collect ONE fresh E
+isolated native calibration, never default/latest player save or unsaved G tail;
+debug setup has no production/Teacher credit. Full native production/sale/save/load
+and formal training remain incomplete; no local-data publication.
+
 ## 2026-11-13 Selected Till Reuses Original Compilation And Recipe
 
 Actual G19 narrow till model, cloned as a new in-memory full-source model, compiles

@@ -2,6 +2,15 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-13T19:25:00+08:00 R2 所选耕地编译准备与地形统计叶
+
+- 新`CropTeacherSiteTillCompilation`只读准备组件复用原观测绑定、原整地plan重建／共享frontier、共享动作配方、原ActionQueueCompiler及原queue比较器。分别pin当前full源／ledger、窄观测、原site request／plan／窄model、新full model／queue及原生产plan／request／snapshot／ledger；核原active布局／日期、先完成接近、首个direct till、候选／工具／目标／原短路段参数，不修改原件／source hash。生产plan路径先核一致再读取依赖，Hoe工具槽／ID／精力投影的根与地块镜像须一致。
+- G19真实留存输入已独立打开该组件，仍选`till:Farm:71,16`，13份依赖固定且校验不变，full与窄观测hash分别保留，报告SHA `7a4ca3fd4093aadedfb04051ce692246c4a3f65fa0ab43b63bdb6fcd1979a171`。这只是**实际原生输入上的编译准备重放**；native／resource／formal标记均false，无新派发或G19入账。
+- 资源层新增限定比较视图叶：只接受原空目标新增唯一的三字段HoeDirt terrain row、当前actor原生`dirtHoed`恰好+1；拒绝其他地形／actor／统计变化、未知target属性与未绑定溢出。复用原resource-envelope语义比较，原harvest helper改为同一实现的薄委托，旧默认规则／消息／执行器不变。仅归一化已验证地形与统计，**精力、工具、库存、debris等仍保留给后续核**，原快照及hash不改，比较视图不能作为真实snapshot或完整resource PASS。原生`Tool.DoFunction`／`checkForBuriedItem`及dirtHoed getter/setter也按当前E SHA／MVID实时提取，Farm无override由metadata确认；本地共6个MethodDef零诊断，不把埋藏物当不存在。
+- 最终同产物相关 **105/105**（7秒），零失败／跳过／构建警告／错误，含新准备19、新地形统计19、原harvest相关60及共享配方7，重叠不相加。此前相关79/98中19项均在新准备夹具初始化时被原候选缺`player.energy`／`menus.active_menu`拒绝，补正确夹具后19/19；新命名空间／测试括号失败保留，不改旧validator迁就。新的拒绝断言改为具体InvalidDataException，并补投影镜像矛盾反例；真实earlier-clear组合fixture及专用CAS篡改组合未额外宣称覆盖，原plan精确重建和既有retainer保护继续复用。
+- 原API同session Block48达到两次测试上限后退出／撤权：先16个新夹具hash失败，唯一修正后因缺SnapshotHash命名空间未编译，无peer验收通过。四文件草稿保存在peer私有`11bf4381`，控制端以no-commit接入、修夹具／核输入顺序和镜像，再独立完成上述测试及G重放；未丢弃、未冒称peer全绿、无付费第三次／fallback。25个step_finish的原token字段留B，费用未知。当前协作授权保留、accepted-idle，进程不运行。
+- **唯一接续：** 完成同一次till的精力／原Hoe字段及可能埋藏物／拾取变化核，再接原owner claim／rebind／恢复；G19派发前保护仍在。先查可用旧原生材料，当前`artifacts/runtime-till-soil-smoke/...`仅空目录，不能当有证据或重开旧已过动作验收。缺实际工具效果时，用**新E隔离校准**采单次原Hoe before／after，明确debug setup只是校准、无生产／Teacher信用；不得用旧TillSmoke默认`saves`或“最新存档”误选玩家／旧档，不拿G未保存尾部当新游戏存档。随后才新managed原生闭环验收。完整生产／销售／保存／新进程重载尚未通过；L1冻结、formal=false、PR567草稿，local-data不提交。
+
 ## 2026-11-13 R2 所选耕地的原完整源编译与共享配方
 
 - G19留存原till模型在**另一个内存对象**绑定G18 accepted full源后，原ActionQueueCompiler直接得到单个pending till_soil，无diagnostics／blocker／missing factor。原full／窄观测同tick12033、分别保留hash，五个入口文件未改。报告SHA `7c5d583a68d731251bdaa27fbf2e35a559679df21293c68e48f8179200d2e206`；仅编译诊断，没有派发、资源结算或formal信用。
