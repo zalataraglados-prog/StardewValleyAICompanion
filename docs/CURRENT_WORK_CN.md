@@ -2,6 +2,15 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-14 R2 原播种机械批次身份接线
+
+- **当前覆盖下方历史P／Q接续。** Q原新E managed/product运行实际接受25个owner边界／22verified／六次耕地／三次显式native站位移动；iteration28已准备原六粒种子队列，但在派发前被新增Main入口的`Managed crop seed queue lost its original selected candidate identity`拒绝。没有第26项dispatch claim／播种native，wrapper65723退出2、四归属进程9856／12520／2284／8全退出；日界／收获销售／原生保存加载仍未过。原件与旧失败保留，摘要SHA`84ce152df5cfa5a65b5740acc412a534bd74b816d494fa99375de82933ac4222`；不以通用objective_completed或未保存尾部冒充作物成功／续档。
+- 核过`616a186b`原提交及同次交接记录：它将队列校验移入原owner执行租约，目的是保护所有权，不是要求直接机械批次改写为排名计划。原`CropTeacherSeedPlantingMarker.BuildActions/ReadQueue`按support step展开`:plant:index`并严格比对完整参数，本来无`candidate_id:`；新入口误把购种的候选约定套给播种。**37a81982只修新增Main适配器**：同一prepared runtime／owner／pending及原planting scope已绑定时，无排名ID使用既有`SupportStepId`作为该控制批次的回执身份。旧无主入口／其他种子路径的缺身份拒绝保留；原marker／动作／编译器／租约／资源核不改，不给原参数增加伪候选或授Teacher标签。
+- 新主入口测试先复现同错误（1失败／1通过），修后相关**65/65（47秒）**。涵盖无排名参数的原机械队列不被改写、同一主执行入口／八步prefix／一次marker与settlement／owner接受，以及旧非托管拒绝和原播种恢复／来源刷新等；这是合成native协议测试，不是Q原件补写接受或真实播种PASS。
+- Q只读performance取样（不额外生成快照）：full137次平均1327.587ms、locations403.398ms，仍有停顿。原API同会话Block84在Q运行时只写独立五文件草稿`610fda97`，控制端接为`b51c7b05`；同一次ShopAccess.Collect内以location／map引用共享原MapActionRow数组，跨采集即失效，原扫描／字段／排序、collision／动态gate／库存缓存与执行器不改。peer未构建／运行游戏，不称peer测试或性能已过。控制端组合首次85/87：两项旧播种fixture在FileStrategyCommitmentRepository.File.Move出现AccessDenied，其余（含新缓存9项）通过；不改共享仓库、不跳过断言，原产物不改源码的一次聚焦重放33/33（8秒），包括两失败theory及新缓存／原库存缓存／商店／连接器守卫。保留初败，具体外部文件锁原因未证实，不能把整组87重标为全绿；真实E引用net6 Bridge构建0警告／0错误。原始交流60条JSONL及完整日志本地留存，未用内部代理／fallback。
+- 扩展旧route／social源码守卫首次6/7：`55dc054fe`旧守卫用整个`Game1.warpFarmer`文本断言，命中了基线fae6a461已经存在的`"Game1.warpFarmer active-festival branch"`来源说明，并非本轮添加调用。只将该守卫改成识别函数调用语法，补说明文字与三类实际调用反例；未改GameLocation、gate或执行器。最终相关**11/11（41毫秒）**，初败留存；这只是源码回归，不外推为完整游戏只读证明。
+- **唯一接续：** 本片组合验收／提交同步后，新E隔离原managed/product入口继续真实播种维护→收获销售→原生保存／新进程加载；不重发Q未派发批次来伪造内存续档，不再为原机械批次新增排名前置或私有字段预测门。性能优化不是新的动作准入门；L1冻结19/19、11/11，formal=false、PR567草稿、#339/#550/#569分工与local-data不提交不变。
+
 ## 2026-11-14 R2 同tick库存图缓存修正
 
 - `dc5df200`已推送，CI43510625527成功；M原source重新导入的修复及12/12／只读HTTP证据继续有效。新N原入口接受5个owner边界，iteration7购种队列在第4步close_menu原生applied／verified后被资源核拒绝；loop63076实际退出2，四归属进程3024／4028／2080／17896已退出。
