@@ -2,7 +2,7 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
-> **当前：显式原生站位模式已接线，下一步P实跑。** O24边界／21verified／六耕后，站位移动拾取1黏土被中性route核拒绝，旧失败保留。71d9c09e显式准备复用同一NativeSiteTransition，O原件精确站位／rebind离线重放已过；peer e3257369／Main3414f371接原owner模式持久化／恢复与Product主入口。peer95/95、控制端独立113/113，旧缺字段／false默认仍中性，未改执行器或预测私有副作用。尚无本轮实际native owner／播种／完整周期／formal PASS；下一步新E原入口，监护单轮3600秒但游戏速度和标准不变。两缓存旧CI已绿，新代码CI另核。性能full约1.28秒仍有停顿，非准入门优化项保留。[证据与接续](CURRENT_WORK_CN.md#2026-11-14-r2-同tick库存图缓存修正)。
+> **当前：P真实显式模式已入账并只读恢复，因默认磁盘保留线退出，下一步Q。** 显式入口和owner接线已通过peer95/95、控制端独立113/113；P实际18边界／15verified，accepted17原生mode＋站位73,17及accepted18耕地通过。随后E可用约7.996GiB略低于默认8GiB，保护正常退出、stderr空、四进程全退出；原只读resume通过且241既有输入未变，不是保存内容读回／新游戏加载。未删除旧数据，下一轮显式`--min-free-space-mb 6144`仍保留6GiB和3600秒上限，默认8GiB／游戏速度／验收标准不变。Q继续生产／收获销售／原生保存加载；实际播种／完整周期／formal仍未过。性能full约1.28秒的非准入门优化保留。[证据与接续](CURRENT_WORK_CN.md#2026-11-14-r2-同tick库存图缓存修正)。
 
 > **2026-11-14 原生动作信任边界修正，覆盖下方历史“严格weed／Scythe效果叶”接续。** 用户确认原生割草应信任游戏规则；保留原候选／编译／成功回执、同run／存档／actor／帧、真实after与一次claim／原owner恢复，停止把每项私有XML／随机掉落／邻格清除的独立预测当派发门。旧执行器／默认读取器／耕地资源合同保留。74c28522共享原回执／留存／rebind、显式清障结果入口聚焦44/44；完整清障owner、生产销售及原生保存加载尚待实跑。原API Block73与控制端分工接线／测试，Block72未启动的补跑已取消、草稿保留。Main7e4ab946 CI43484697557 attempt2成功，首次museum超时历史不改写。L1冻结、#569分工、formal=false不变。[当前接续](CURRENT_WORK_CN.md#2026-11-14-r2-原生动作信任边界修正)。
 
