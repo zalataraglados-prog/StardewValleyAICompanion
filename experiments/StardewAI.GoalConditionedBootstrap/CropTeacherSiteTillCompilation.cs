@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.Strategy;
 using StardewAI.Core.Execution;
 using StardewAI.Core.Infrastructure;
 using StardewAI.Core.Training;
@@ -9,9 +10,11 @@ using StardewAI.Core.Training;
 namespace StardewAI.GoalConditionedBootstrap;
 
 // Read-only preparation: neither dispatch nor an assertion about native effects.
-public sealed partial class CropTeacherSiteTillCompilation
+public sealed partial class CropTeacherSiteTillCompilation : ICropTeacherSupportingPreparation
 {
     private readonly CropTeacherRetainedInputs inputs;
+    private readonly StrategyCommitmentLedger baseLedger;
+    private readonly string stepId;
 
     private CropTeacherSiteTillCompilation(string runRequestPath, string sourcePath, string ledgerPath,
         IReadOnlyCollection<string> commitmentIds, string commitmentId, string stepId, string observationPath,
@@ -58,6 +61,8 @@ public sealed partial class CropTeacherSiteTillCompilation
             JsonNode.DeepEquals(Model(observation.SourceStateHash), Read<JsonNode>(modelPath)),
             "Till whole original/full model differs from its shared recipe.");
         var source = CropTeacherSupportingSource.Read(runRequestPath, sourcePath, ledgerPath, commitmentIds, stepId);
+        baseLedger = CropTeacherSeedSupportSource.Copy(source.Ledger);
+        this.stepId = stepId;
         var queue = Read<ActionQueueEnvelope>(queuePath);
         var rebuilt = new ActionQueueCompiler().Compile(Read<SmallModelActionEnvelope>(modelPath), source.Snapshot, source.Ledger);
         CropTeacherOriginalQueueCompilation.Verify(queue, rebuilt, "Selected site till");
@@ -107,6 +112,24 @@ public sealed partial class CropTeacherSiteTillCompilation
     public bool NativeOutcomeVerified => false;
     public bool ResourceBoundaryVerified => false;
     public bool FormalProductTrainingAuthorized => false;
+    public StrategyCommitmentLedger BaseLedger => CropTeacherSeedSupportSource.Copy(baseLedger);
     public IReadOnlyDictionary<string, string> InputHashes => inputs.ReadHashes();
     public void ValidateInputsUnchanged() => inputs.Validate();
+
+    public CropTeacherSiteTilling VerifyTransition(MoneyRevenueCropNativeLifecycleTransitionRequest transition)
+    {
+        inputs.Validate();
+        Check(new[] { transition.QueuePath, transition.BeforeSnapshotPath, transition.ExecutionReceiptPath,
+            transition.AfterSnapshotPath }.All(Path.IsPathFullyQualified) &&
+            transition.TransitionKind == "crop_actions" && transition.TotalDay == TotalDay &&
+            transition.SelectedCandidateId == CandidateId && SamePath(transition.QueuePath, QueuePath) &&
+            SamePath(transition.BeforeSnapshotPath, SourcePath),
+            "Till outcome changed its pinned original compilation/source/day/candidate.");
+        var outcome = new CropTeacherSiteTilling(this, transition, stepId);
+        inputs.Validate();
+        return outcome;
+    }
+
+    ICropTeacherSupportingTransition ICropTeacherSupportingPreparation.VerifyTransition(
+        MoneyRevenueCropNativeLifecycleTransitionRequest transition) => VerifyTransition(transition);
 }

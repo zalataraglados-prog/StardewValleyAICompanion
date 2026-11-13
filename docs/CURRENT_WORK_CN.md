@@ -2,6 +2,15 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-13T22:22:00+08:00 R2 所选耕地物理资源组合通过
+
+- 最新issue已复核：#569正式manifest前交实验室的责任分工已在本库落地，不改变当前R2第3／4步，不操作D盘或开训。`da5ecfc8`的CI43437873724已成功；不拿旧CI代表本轮新提交。
+- 新`ReadTillingResources`组合同次显式原生till的槽位XML／deep graph／debris／数量证据、原精力／地形／统计叶，以及**原物理库存图、容量、房屋材料镜像核**。旧拾取入口仅提取同一私有核心，默认comparison为null、原规则不变；物理校验仍对原始before／after，只有最终持久不变量使用已验证比较视图，同时保留GSQ和house归一化。未知XML／其他资源或进度仍拒绝；实际库存增量不是生产归因或奖励credit。
+- 原API同provider／模型／session的`c8f56c89`全部审查后接入`424b6250`：21/21首次通过、零修正，覆盖原物理拾取旧栈／新槽／新quantity种类、图／外部库存／容量／房屋／未知持久变化拒绝、原件不变。**有拾取正例是组合叶测试，完整public正例仅零拾取**，不混称原生全分支通过。进程退出0、权限撤回、授权accepted-idle，18个step_finish原字段与短报告本地留存，费用／余额未知。
+- 控制端将未改动的原生F留存输入交新完整public资源入口，通过工具／精力／地形统计＋物理图／镜像组合，仍pickup0、旧入口仍拒绝；7输入及最终verifier DLL hash复核不变。报告SHA`eebc9750eddbb438529c6d395f575079fd206d82ecaf3f6219d97b2e9b4a320f`，仅debug校准来源，不是G19派发、owner入账或作物生产。最终相关**Backend559/559（17秒）**，聚焦252是子集不累计；零失败／跳过／最终构建警告／错误。首轮新测试缺Contracts.Training导入导致编译失败，已修、原失败保留。
+- 原`CropTeacherSiteTillCompilation`现实现既有supporting准备接口、返回账本副本；新单次`CropTeacherSiteTilling`复用原队列／逐帧回执读取、nonce／journal／gzip、原生步骤与上述资源核，再交原`CropTeacherSupportingRebind`，不执行或提交。10项接口／角色／绝对路径／输入输出别名测试通过；**该消费者尚无正向原生／rebind验收，也未接owner派发与恢复**，不能移除G19保护。
+- **唯一接续：** 在既定同owner接线中验证消费者正向及保留原件篡改反例，接原owner admission／claim／rebind／只读恢复与显式till观察参数，然后新E隔离managed实跑。复用原编译器／执行器／资源核，不重做已过元数据或扩大为全掉落枚举。完整生产／销售／原生保存／新进程加载尚未通过；L1冻结19/19／11/11、formal=false、PR567草稿、#339/#550/#569开放、local-data不提交不变。
+
 ## 2026-11-13T21:53:00+08:00 R2 耕地工具XML绑定与新原生重放通过
 
 - 原生字段引用／IL操作数定位后，实时核对`Farmer.Update 0x06000953 → Equip 0x06000941`：原`_lastEquippedTool`与当前tool引用不同时才装备并设置HasBeenInInventory。工具索引setter本身不设置该标志。`endUsing`的swingTicker恰好+1；begin／Update／动画tick／原生动画表共同决定结束贴图，N/E/S/W偏移为4/2/1/2。原生请求传8帧参数，但动画表实际构造5帧，已逐项核对，不能把参数当实际长度或一律+2。反编译原件／方法hash留本地，不提交游戏源码。

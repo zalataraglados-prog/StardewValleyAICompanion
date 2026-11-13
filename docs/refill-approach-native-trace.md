@@ -1,5 +1,33 @@
 # Original Refill Native Trace
 
+## 2026-11-13 Selected Till Physical Resource Composition
+
+ReadTillingResources composes the verified native selected-Hoe XML/payload/debris
+and quantity witnesses with original energy/terrain/statistic leaves and the
+original physical graph/capacity/house mirror kernel. Physical checks retain raw
+frames; only the final persistent invariant receives the verified comparison view,
+preserving BOTH GSQ and house normalization. Legacy pickup passes null and retains
+its existing rejection policy. Unknown effects still reject; observed stock is
+not producer provenance, reward credit, an owner commit or a formal outcome.
+
+Peer c8f56c89 -> 424b6250: one reviewed test file,21 first-attempt passes, no
+correction,18 step_finish records retained, process exited/grants withdrawn,
+authorization idle/cost unknown. Pickup cases exercise the composition leaf;
+only zero pickup exercises the full public synthetic path. Controller final
+related regression559/559 (17s), focused252 is a subset; no final warnings/errors.
+One initial missing import in a new controller test was fixed; failure retained.
+
+Original nativeF replay through this public entry PASS, still actual pickup0 and
+debug-setup calibration only. Seven original inputs and final verifier hash remain
+unchanged; report SHA eebc9750eddbb438529c6d395f575079fd206d82ecaf3f6219d97b2e9b4a320f.
+Legacy still rejects. This is not all possible outputs, managedG19, crop/Teacher
+or formal acceptance. The new existing-interface preparation/one-till native
+receipt-to-original-rebind consumer has10 interface/role/alias tests; its positive
+native/rebind path and owner admission/claim/recovery remain unverified/unwired.
+Keep G19 guard. Continue that integration, then fresh isolated managed runtime;
+do not repeat metadata work or introduce another compiler/executor. #569 lab
+handoff before formal manifest, frozen L1, draftPR567 and local-data policy stand.
+
 ## 2026-11-13 Selected Till Tool XML Binding And Native F
 
 Pinned native field/call references establish Farmer.Update->Equip history changes,
