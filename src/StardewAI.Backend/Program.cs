@@ -889,22 +889,36 @@ app.MapPost("/api/v1/planner/daily-plan/compile", (DailyPlanCompileRequest reque
         ? StardewAI.Core.Infrastructure.SnapshotGameClockBudgetReader.CurrentTime(snapshot) : null;
     if (request.UseJointCalendar && (snapshot is null || snapshot.StateHash != request.StateHash || !jointTime.HasValue))
         return Results.UnprocessableEntity(new { detail = "joint calendar requires a matching snapshot with a readable native game clock" });
+    if (request.RequiredCandidateIds is { Length: > 0 } && !request.UseJointCalendar)
+        return Results.UnprocessableEntity(new { detail = "required candidates require explicit joint calendar mode" });
     var availableMinutes = jointTime.HasValue
         ? DailyPlanBudgetReader.AvailablePlanMinutes(jointTime.Value, request.RankedEventCandidates)
         : DailyPlanBudgetReader.AvailablePlanMinutes(snapshot, request.RankedEventCandidates);
-    var energyBudget = DailyPlanBudgetReader.ReadSnapshotInt(snapshot, "player", "energy");
-    var plan = request.UseJointCalendar ? dailyPlanCompiler.CompileWithJointCalendar(
-        request.RankedEventCandidates, request.StateHash, jointTime!.Value,
-        string.IsNullOrWhiteSpace(request.GoalId) ? "daily.closed_loop" : request.GoalId,
-        string.IsNullOrWhiteSpace(request.ExecutionMode) ? "training_singleplayer" : request.ExecutionMode,
-        request.MaxCandidates <= 0 ? 4 : request.MaxCandidates, availableMinutes, energyBudget) : dailyPlanCompiler.Compile(
-        request.RankedEventCandidates,
-        request.StateHash,
-        string.IsNullOrWhiteSpace(request.GoalId) ? "daily.closed_loop" : request.GoalId,
-        string.IsNullOrWhiteSpace(request.ExecutionMode) ? "training_singleplayer" : request.ExecutionMode,
-        request.MaxCandidates <= 0 ? 4 : request.MaxCandidates,
-        availableMinutes,
-        energyBudget);
+    var energyBudget = request.UseJointCalendar ? DailyPlanBudgetReader.JointEnergyBudget(snapshot)
+        : DailyPlanBudgetReader.ReadSnapshotInt(snapshot, "player", "energy");
+    if (request.UseJointCalendar && !energyBudget.HasValue)
+        return Results.UnprocessableEntity(new { detail = "joint calendar requires readable native energy" });
+    SmallModelPlanEnvelope plan;
+    try
+    {
+        plan = request.UseJointCalendar ? dailyPlanCompiler.CompileWithJointCalendar(
+            request.RankedEventCandidates, request.StateHash, jointTime!.Value,
+            request.RequiredCandidateIds ?? Array.Empty<string>(),
+            string.IsNullOrWhiteSpace(request.GoalId) ? "daily.closed_loop" : request.GoalId,
+            string.IsNullOrWhiteSpace(request.ExecutionMode) ? "training_singleplayer" : request.ExecutionMode,
+            request.MaxCandidates <= 0 ? 4 : request.MaxCandidates, availableMinutes, energyBudget) : dailyPlanCompiler.Compile(
+            request.RankedEventCandidates,
+            request.StateHash,
+            string.IsNullOrWhiteSpace(request.GoalId) ? "daily.closed_loop" : request.GoalId,
+            string.IsNullOrWhiteSpace(request.ExecutionMode) ? "training_singleplayer" : request.ExecutionMode,
+            request.MaxCandidates <= 0 ? 4 : request.MaxCandidates,
+            availableMinutes,
+            energyBudget);
+    }
+    catch (ArgumentException error) when (request.UseJointCalendar)
+    {
+        return Results.UnprocessableEntity(new { detail = error.Message });
+    }
 
     if (!request.CompileActionQueue)
     {
@@ -1797,6 +1811,9 @@ public static class CapabilityValidator
 
 public static class DailyPlanBudgetReader
 {
+    public static int? JointEnergyBudget(SnapshotEnvelope? snapshot)
+        => StardewAI.Core.Infrastructure.SnapshotEnergyBudgetReader.AvailableWholeActionEnergy(snapshot);
+
     public static int? AvailablePlanMinutes(
         SnapshotEnvelope? snapshot,
         IEnumerable<PolicyEventCandidatePrediction> rankedCandidates)

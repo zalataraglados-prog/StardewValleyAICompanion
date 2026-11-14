@@ -23,16 +23,44 @@ LiveTrainingLoop opts in with --use-daily-plan --joint-daily-calendar for BOTH i
 selection and selected-candidate fresh compilation. Default is OFF; legacy request
 bytes, Compile signature/semantics, native executors and existing owners are retained.
 
-Core/legacy compiler/timeline/clock checks81/81; Backend/runtime/options/old resume/
-dispatch/supplement/museum/original watering queue checks62/62. No game, native dispatch or training occurred.
-Prior765CI still has the original museum15s timeout; test-only phase diagnostics
-were added without extending deadlines or changing transport/business semantics.
+174 adds required_candidate_ids to the explicit joint-calendar request and an
+overload of the SAME compiler core. Required candidates and existing shop-open
+prerequisites retain their original relative ordering but precede optional work.
+All use the same time/energy/count/reservation checks. Unschedulable required work
+blocks optional spending; bounded waits still require a fresh-source replan.
+Joint mode floors readable native fractional stamina; missing energy rejects,
+not an unlimited budget. The legacy endpoint/default reader is unchanged.
 
-Next originalstep5: compose due crop obligations with other roots through the
-same DailyPlan and reservation ledger. Do not claim all L3/shared-resource/source-
-schedule integration from this calendar mode. Originalsteps3/4automatic properties
-remain unproven; observe them with planned global native work, not another separate
-thirteen-day restart. L1/original8steps/#569scope unchanged; formal=false.
+CropTeacherRunPlanner.BindDailyComposition uses the exact snapshot/save/actor
+ledger and original progress/evaluator to bind due watering/harvest tiles to
+uniquely materialized unblocked candidates. Keep the complete other-goal candidate
+pool and existing required IDs. Satisfied maintenance adds nothing; missing or
+ambiguous work fails. Original seed/route/site/planting prefixes remain original
+owner work, not a demand to validate later crops before planting. The old
+EvaluateNextBatch still lazily takes only the first pending batch from its shared
+iterator. No new executor, costs, ledger writes or owner receipts are generated.
+
+The returned request has CompileActionQueue=false: planning composition is NOT
+permission to dispatch a mixed queue through the intentionally crop-only owner.
+The global caller must retain original control/recovery preemption, dispatch each
+work class through its existing owner, and return verified results plus fresh
+source/ledger to the same plan. This is the next originalstep5 implementation,
+not authority to loosen old owners or an additional acceptance stage.
+
+174 Core checks92/92(142ms), Backend/old planner/binding/endpoint/budget/resume/
+dispatch/supplement/museum/original queue checks89/89(11s). No game/native dispatch/
+worker/training. The new planting test initially used winter supply planning to
+assert spring work; only the fixture date was corrected, not the old evaluator.
+4b6fa676 CI43618869359FAILED3154/3155: museum timeout stopped on its first ledger
+GET with zero mutation/lookup and no journal. Test-only pure /health routing
+readiness now precedes the unchanged15s recovery measurement. Do NOT warm a ledger
+GET, which can reconcile/write; all single-submit/read-only recovery assertions
+remain. Local14branches pass; a new remote result is still required.
+
+Do not claim full L3/shared-resource/source-schedule integration from this binding.
+Originalsteps3/4automatic properties remain unproven; observe them with planned
+global native work, not another separate thirteen-day restart. Accepted manual
+certificates stay frozen. L1/original8steps/#569scope unchanged; formal=false.
 
 ## Original Seed Control Transaction (Current)
 

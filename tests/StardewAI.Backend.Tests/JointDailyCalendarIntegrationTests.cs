@@ -97,6 +97,77 @@ public sealed class JointDailyCalendarIntegrationTests
         Assert.DoesNotContain("use_joint_calendar", JsonSerializer.Serialize(new DailyPlanCompileRequest(), Json));
     }
 
+    [Fact]
+    public async Task RequiredCandidatesShareTheOriginalEndpointBudgetBeforeOptionalWork()
+    {
+        await using var app = new WebApplicationFactory<global::Program>();
+        using var http = app.CreateClient();
+        app.Services.GetRequiredService<StateStore>().Snapshots["joint.day"] = Snapshot(new
+            { time = new { value = 900, status = "available" } });
+        using var response = await http.PostAsJsonAsync("/api/v1/planner/daily-plan/compile", new DailyPlanCompileRequest
+        {
+            StateHash = "joint.day", UseJointCalendar = true, RequiredCandidateIds = ["required"],
+            RankedEventCandidates = [Work("optional", 1, 210, 910), Work("required", 2, 420)]
+        });
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = JsonNode.Parse(await response.Content.ReadAsStringAsync())!;
+        var plan = body["plan"]!.Deserialize<SmallModelPlanEnvelope>(Json)!;
+        Assert.Equal("required", plan.CandidateAudit[0].CandidateId);
+        Assert.Equal("accepted", plan.CandidateAudit[0].Decision);
+        Assert.Contains("aggregate_calendar_window_missed", plan.CandidateAudit[1].Reasons);
+    }
+
+    [Theory]
+    [InlineData(false, "required")]
+    [InlineData(true, "absent")]
+    public async Task RequiredCandidateBindingsRejectWrongModeOrMissingSourceWithoutCreatingAQueue(bool mode, string id)
+    {
+        await using var app = new WebApplicationFactory<global::Program>();
+        using var http = app.CreateClient();
+        app.Services.GetRequiredService<StateStore>().Snapshots["joint.day"] = Snapshot(new
+            { time = new { value = 900, status = "available" } });
+        using var response = await http.PostAsJsonAsync("/api/v1/planner/daily-plan/compile", new DailyPlanCompileRequest
+        {
+            StateHash = "joint.day", UseJointCalendar = mode, RequiredCandidateIds = [id],
+            RankedEventCandidates = [Work("required", 1, 42)], CompileActionQueue = true
+        });
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        Assert.Empty(app.Services.GetRequiredService<StateStore>().ActionQueues);
+    }
+
+    [Fact]
+    public async Task JointEnergyUsesConservativeReadableFractionalStaminaInsteadOfUnlimitedMissingIntegerBudget()
+    {
+        await using var app = new WebApplicationFactory<global::Program>();
+        using var http = app.CreateClient();
+        var snapshot = Snapshot(new { time = new { value = 900, status = "available" } });
+        snapshot.State["player"] = JsonSerializer.SerializeToElement(new { energy = new { value = 2.9, status = "available" } });
+        app.Services.GetRequiredService<StateStore>().Snapshots["joint.day"] = snapshot;
+        using var response = await http.PostAsJsonAsync("/api/v1/planner/daily-plan/compile", new DailyPlanCompileRequest
+        {
+            StateHash = "joint.day", UseJointCalendar = true, RankedEventCandidates = [Work("one", 1, 42), Work("two", 2, 42)]
+        });
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var plan = JsonNode.Parse(await response.Content.ReadAsStringAsync())!["plan"]!.Deserialize<SmallModelPlanEnvelope>(Json)!;
+        Assert.Equal("accepted", plan.CandidateAudit[0].Decision);
+        Assert.Contains("aggregate_energy_budget_exceeded", plan.CandidateAudit[1].Reasons);
+        Assert.Equal(2, plan.CandidateAudit[0].RemainingEnergyBefore);
+    }
+
+    [Fact]
+    public async Task JointEnergyCannotSilentlyBecomeUnlimitedWhenItsStatusIsUnavailable()
+    {
+        await using var app = new WebApplicationFactory<global::Program>();
+        using var http = app.CreateClient();
+        var snapshot = Snapshot(new { time = new { value = 900, status = "available" } });
+        snapshot.State["player"] = JsonSerializer.SerializeToElement(new { energy = new { value = 270, status = "unavailable" } });
+        app.Services.GetRequiredService<StateStore>().Snapshots["joint.day"] = snapshot;
+        using var response = await http.PostAsJsonAsync("/api/v1/planner/daily-plan/compile", new DailyPlanCompileRequest
+        { StateHash = "joint.day", UseJointCalendar = true, RankedEventCandidates = [Work("one", 1, 42)] });
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        Assert.Contains("readable native energy", await response.Content.ReadAsStringAsync());
+    }
+
     private static SnapshotEnvelope Snapshot(object clock) => new()
     {
         StateHash = "joint.day", State = new Dictionary<string, JsonElement>
