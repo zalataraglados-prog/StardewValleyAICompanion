@@ -9,6 +9,8 @@ public sealed record CropTeacherDailyCompositionBinding(string Status, string So
     int LedgerRevision, CropTeacherRunStep OriginalNextStep, string[] RequiredCandidateIds,
     string[] BlockingReasons, DailyPlanCompileRequest? CompileRequest)
 {
+    // Required expresses global priority; ownership comes only from this original crop plan.
+    public string[] OwnedCandidateIds { get; init; } = [];
     public bool NativeOwnerInterleavingAuthorized => false;
     public bool FormalProductTrainingAuthorized => false;
 }
@@ -42,7 +44,7 @@ public static partial class CropTeacherRunPlanner
                 GoalId = candidateRequest.GoalId, ExecutionMode = candidateRequest.ExecutionMode,
                 // A composed input is not authority to dispatch a mixed queue through the crop-only owner.
                 CompileActionQueue = false
-            } : null);
+            } : null) { OwnedCandidateIds = cropRequired.ToArray() };
         if (next.Stage == CropTeacherRunStageKinds.ReplanRequired) return Result("blocked", next.Reason);
         if (next.Stage is CropTeacherRunStageKinds.Complete or CropTeacherRunStageKinds.RouteHome or CropTeacherRunStageKinds.NativeSleep)
             return Result("ready");

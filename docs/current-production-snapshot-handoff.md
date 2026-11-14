@@ -114,6 +114,20 @@ new formal session identity bind separately, not by literal run-id equality.
 Both gate results still require separate formal promotion review; all other
 authorization/gates and569handoff remain. No extra acceptance stage.
 
+178 distinguishes global RequiredCandidateIds from OwnedCandidateIds derived ONLY
+from the original crop batches. Required foreign goals must not acquire crop
+ownership or disappear when crop maintenance completes. The old test named for
+foreign requirements actually used only crop rows; it now includes actual foreign
+work and same-action/different-batch work. Held foreign selection now goes through
+the EXISTING BuildQueueFromSelectedCandidateAsync compiler with fresh source,
+without policy rerank. Plan/queue/evidence retain the original selected identity
+and real unavailable status. This is PREPARATION ONLY: no native dispatch, crop
+owner acceptance or formal authority. Main logs the exact foreign candidate and
+queue status. Current commit's CI must prove compilation/regressions (not177green);
+no local build/test/game during quiet hours. NEXT is consuming that original
+execution exit with verified shared-source/ledger return; the original owned
+dispatch guard remains. No foreign action is reclassified as crop control.
+
 174 Core checks92/92(142ms), Backend/old planner/binding/endpoint/budget/resume/
 dispatch/supplement/museum/original queue checks89/89(11s). No game/native dispatch/
 worker/training. The new planting test initially used winter supply planning to

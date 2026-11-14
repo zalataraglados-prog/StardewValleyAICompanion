@@ -863,6 +863,11 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             {
                 if (composed.Step is null)
                 {
+                    if (composed.OtherGoalPreparation is { } preparedOther)
+                        AppendProgress(options, "crop_teacher_joint_daily_other_goal_prepared", iteration, lastStateHash, string.Empty,
+                            "candidate_id=" + preparedOther.Candidate.CandidateId + " option_id=" + preparedOther.Candidate.OptionId +
+                            " queue=" + preparedOther.QueuePath + " queue_status=" + preparedOther.QueueStatus +
+                            " shared_source_return_required=true native_dispatch_performed=false");
                     stopReason = composed.BlockReason;
                     break;
                 }

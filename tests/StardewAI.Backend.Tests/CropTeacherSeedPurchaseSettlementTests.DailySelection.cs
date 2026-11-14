@@ -138,6 +138,84 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         f.Shared.Runtime.LiveOptions.DailyPlanMaxCandidates = maxCandidates;
     }
 
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task RequiredForeignGoalSurvivesOwnedCompletionWithoutBeingRetiredByTheCropRefresh(bool sameOption, bool corruptForeign)
+    {
+        using var f = new OwnedWateringFixture(prepareSource: source =>
+        {
+            CompleteDailySelectionSurface(source);
+            ChangeState(source.Before, "current_location", node => node["home_context"]!["value"]!["current_location_is_home"] = false);
+        });
+        await using var owner = await f.Shared.Files.Open();
+        ConfigureJointSelection(f, 3);
+        var foreign = sameOption ? ActualWaterSelectionCandidates(f).Single(row => row.TileX == 9) : new PolicyEventCandidatePrediction
+        {
+            CandidateId = "required-other-goal", Kind = "pet_daily_interaction", OptionId = "farm.care_for_pets", Rank = 9,
+            LocationId = "Farm", TileX = 7, TileY = 8, TimelineStatus = "ready_now", EstimatedTicks = 42
+        };
+        foreign.Rank = 9;
+        var rows = ActualWaterSelectionCandidates(f).Where(row => row.TileX != 9).Append(foreign).ToArray();
+        var input = CompositionRequest(f.Basis.Before, rows);
+        input.RequiredCandidateIds = [foreign.CandidateId];
+        var binding = CropTeacherRunPlanner.BindDailyComposition(f.Shared.Inputs.Plan, f.Shared.Inputs.Request,
+            f.Basis.Before, f.Shared.Source.Ledger, input);
+        var plan = new DailyPlanCompiler().CompileWithJointCalendar(rows, f.Basis.Before.StateHash,
+            SnapshotGameClockBudgetReader.CurrentTime(f.Basis.Before)!.Value, binding.RequiredCandidateIds, goalId: "earn_money");
+        var ranking = new JsonObject { ["ranked_event_candidates"] = JsonSerializer.SerializeToNode(rows, JsonOptions) };
+        var lease = SelectedQueueDecisionLease.CreateFromPlan(plan, ranking);
+        Assert.Contains(lease.Candidates, row => row.CandidateId == foreign.CandidateId);
+        var selectionType = typeof(LiveTrainingOptions).Assembly.GetType("Program")!
+            .GetNestedType("CropTeacherDailySelection", System.Reflection.BindingFlags.NonPublic)!;
+        var selection = Activator.CreateInstance(selectionType, binding.OriginalNextStep.TotalDay, plan.GoalId, lease,
+            binding.OwnedCandidateIds.ToHashSet(StringComparer.Ordinal), "original-plan.json", "original-ranking.json")!;
+        var selected = CropTeacherRunPlanner.SelectOriginalDailyBatch(binding, plan, f.Shared.Inputs.Plan)!;
+        Assert.Equal(2, selected.ActionBatch!.Tiles.Length);
+        var operation = await InvokeLive<Task<CropTeacherManagedSeedOperation>>("PrepareCropTeacherOwnedWateringAsync",
+            f.Shared.Runtime.Client, f.Shared.Runtime.LiveOptions, 1, selected, f.Shared.Inputs.Plan,
+            f.Shared.Inputs.Request, owner, f.Shared.Files.Native);
+        await owner.ExecuteOriginalWateringAsync(operation, f.Shared.Runtime.Client, () => f.EmitNative());
+        await f.Rebind(owner, operation);
+        using var handler = new DailyCompositionRankingHandler(f.Shared.Runtime.Handler, rows);
+        if (corruptForeign) handler.CorruptAvailabilityReadNumber = 2;
+        using var http = new HttpClient(handler, disposeHandler: false);
+        if (corruptForeign)
+        {
+            var error = await Assert.ThrowsAsync<InvalidDataException>(() => ComposeSelection(f, owner, http, 2, f.Basis.After, selection));
+            Assert.Contains("different snapshot", error.Message);
+            Assert.Equal(0, handler.Ranks);
+            Assert.Equal(2, handler.AvailabilityReads);
+            Assert.Null(owner.Pending);
+            Assert.Equal(1, f.Shared.Runtime.Handler.Commits);
+            return;
+        }
+        var result = await ComposeSelection(f, owner, http, 2, f.Basis.After, selection);
+        Assert.Same(selection, SelectionProperty<object>(result, "Selection"));
+        Assert.Null(SelectionProperty<CropTeacherRunStep>(result, "Step"));
+        Assert.Equal("crop_teacher_joint_daily_selected_other_owner_required", SelectionProperty<string>(result, "BlockReason"));
+        Assert.Equal(0, handler.Ranks);
+        Assert.Equal(2, handler.AvailabilityReads);
+        var preparation = SelectionProperty<object>(result, "OtherGoalPreparation")!;
+        Assert.Equal(foreign.CandidateId, SelectionProperty<SelectedQueueCandidateLock>(preparation, "Candidate")!.CandidateId);
+        var evidence = JsonNode.Parse(File.ReadAllText(SelectionProperty<string>(preparation, "EvidencePath")!))!;
+        Assert.Equal(f.Basis.After.StateHash, evidence["state_hash"]!.GetValue<string>());
+        Assert.False(evidence["policy_model_invoked"]!.GetValue<bool>());
+        Assert.False(evidence["native_dispatch_performed"]!.GetValue<bool>());
+        Assert.False(evidence["native_owner_interleaving_authorized"]!.GetValue<bool>());
+        Assert.True(evidence["shared_source_return_required"]!.GetValue<bool>());
+        if (sameOption)
+        {
+            Assert.Equal(1, evidence["selected_candidate_count"]!.GetValue<int>());
+            var queue = JsonNode.Parse(File.ReadAllText(SelectionProperty<string>(preparation, "QueuePath")!))!;
+            Assert.Equal(f.Basis.After.StateHash, queue["state_hash"]!.GetValue<string>());
+            Assert.NotEmpty(queue["items"]!.AsArray());
+        }
+        Assert.Null(owner.Pending);
+        Assert.Equal(1, f.Shared.Runtime.Handler.Commits);
+    }
+
     [Fact]
     public async Task WrongSourceAvailabilityCannotRefreshOrReplaceTheRetainedDecision()
     {

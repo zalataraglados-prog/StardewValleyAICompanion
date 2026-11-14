@@ -173,6 +173,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         internal int Ranks { get; private set; }
         internal int AvailabilityReads { get; private set; }
         internal bool CorruptAvailabilitySourceHash { get; set; }
+        internal int CorruptAvailabilityReadNumber { get; set; }
         internal bool PlanOnly { get; private set; }
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token)
         {
@@ -189,7 +190,8 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 PlanOnly = JsonNode.Parse(await request.Content!.ReadAsStringAsync(token))!["compile_action_queue"]!.GetValue<bool>() == false;
             if (request.RequestUri.AbsolutePath.EndsWith("/options/availability", StringComparison.Ordinal)) AvailabilityReads++;
             var response = await base.SendAsync(request, token);
-            if (CorruptAvailabilitySourceHash && request.RequestUri.AbsolutePath.EndsWith("/options/availability", StringComparison.Ordinal))
+            if ((CorruptAvailabilitySourceHash || AvailabilityReads == CorruptAvailabilityReadNumber) &&
+                request.RequestUri.AbsolutePath.EndsWith("/options/availability", StringComparison.Ordinal))
             {
                 var body = JsonNode.Parse(await response.Content.ReadAsStringAsync(token))!;
                 body["state_hash"] = "another-source";

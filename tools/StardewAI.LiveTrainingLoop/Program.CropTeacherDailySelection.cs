@@ -39,11 +39,11 @@ static partial class Program
                 .SelectMany(option => option.EventCandidates).Take(8).Select(row => row.CandidateId + ":" + string.Join(",", row.BlockReasons))) +
             "; options=" + string.Join(";", availability.Options.Select(row => row.OptionId + ":missing=" +
                 string.Join(",", row.MissingStateFactors) + ":blocked=" + string.Join(",", row.BlockingReasons))));
-        var required = candidates.Where(row => binding.RequiredCandidateIds.Contains(row.CandidateId, StringComparer.Ordinal)).ToArray();
+        var required = candidates.Where(row => binding.OwnedCandidateIds.Contains(row.CandidateId, StringComparer.Ordinal)).ToArray();
         var pending = new List<SelectedQueueCandidateLock>();
         foreach (var selected in selection.Lease.Candidates)
         {
-            if (selection.RequiredCandidateIds.Contains(selected.CandidateId))
+            if (selection.OwnedCandidateIds.Contains(selected.CandidateId))
             {
                 var original = selected.RankedCandidate.Deserialize<PolicyEventCandidatePrediction>(JsonOptions)!;
                 var sameTarget = required.Where(row => row.Kind == original.Kind && row.LocationId == original.LocationId &&
@@ -56,7 +56,7 @@ static partial class Program
             pending.Add(selected);
         }
         if (pending.Count == 0) return null; // A completed high-level decision may now select the next one.
-        var prefix = pending.TakeWhile(row => selection.RequiredCandidateIds.Contains(row.CandidateId)).ToArray();
+        var prefix = pending.TakeWhile(row => selection.OwnedCandidateIds.Contains(row.CandidateId)).ToArray();
         var evidence = new JsonObject
         {
             ["schema_version"] = "selected_joint_daily_refresh.v1", ["state_hash"] = snapshot.StateHash,
@@ -70,7 +70,8 @@ static partial class Program
         {
             evidence["status"] = "other_owner_required";
             await WritePortfolioJournalFileAsync(output + "-ranking.json", evidence.ToJsonString(JsonOptions)).ConfigureAwait(false);
-            return new(null, false, selection, "crop_teacher_joint_daily_selected_other_owner_required");
+            return await PrepareCropTeacherSelectedOtherGoalAsync(http, options, iteration, snapshot, selection,
+                pending[0]).ConfigureAwait(false);
         }
         var materialized = JsonSerializer.SerializeToNode(candidates, JsonOptions)!.AsArray();
         var locked = prefix.Select((selected, index) =>

@@ -11,9 +11,12 @@ using StardewAI.LiveTrainingLoop;
 static partial class Program
 {
     private sealed record CropTeacherDailySelection(int TotalDay, string GoalId, SelectedQueueDecisionLease Lease,
-        IReadOnlySet<string> RequiredCandidateIds, string PlanPath, string RankingPath);
+        IReadOnlySet<string> OwnedCandidateIds, string PlanPath, string RankingPath);
+    private sealed record CropTeacherOtherGoalPreparation(SelectedQueueCandidateLock Candidate,
+        string PlanPath, string QueuePath, string EvidencePath, string QueueStatus);
     private sealed record ComposedCropDispatch(CropTeacherRunStep? Step, bool ControlPreempted,
-        CropTeacherDailySelection? Selection = null, string BlockReason = "crop_teacher_joint_daily_required_batch_not_scheduled");
+        CropTeacherDailySelection? Selection = null, string BlockReason = "crop_teacher_joint_daily_required_batch_not_scheduled",
+        CropTeacherOtherGoalPreparation? OtherGoalPreparation = null);
 
     private static async Task<ComposedCropDispatch> ComposeCropTeacherDailyDispatchAsync(HttpClient http, LiveTrainingOptions options,
         int iteration, MoneyRevenueCropNativeProductionRunPlan plan, MoneyRevenueCropNativeProductionRunPlanRequest request,
@@ -64,8 +67,17 @@ static partial class Program
         var typedPlan = built.Plan.Deserialize<SmallModelPlanEnvelope>(JsonOptions)!;
         var decision = typedPlan.Steps.Length == 0 ? null : new CropTeacherDailySelection(next.TotalDay, typedPlan.GoalId,
             SelectedQueueDecisionLease.CreateFromPlan(typedPlan, built.Ranking),
-            binding.RequiredCandidateIds.ToHashSet(StringComparer.Ordinal), prefix + "-plan.json", prefix + "-ranking.json");
-        return new(CropTeacherRunPlanner.SelectOriginalDailyBatch(binding, typedPlan, plan), false, decision);
+            binding.OwnedCandidateIds.ToHashSet(StringComparer.Ordinal), prefix + "-plan.json", prefix + "-ranking.json");
+        var selectedStep = CropTeacherRunPlanner.SelectOriginalDailyBatch(binding, typedPlan, plan);
+        if (selectedStep is null && decision is not null &&
+            !decision.OwnedCandidateIds.Contains(decision.Lease.Candidates[0].CandidateId))
+        {
+            var other = await PrepareCropTeacherSelectedOtherGoalAsync(http, options, iteration, snapshot, decision,
+                decision.Lease.Candidates[0]).ConfigureAwait(false);
+            artifacts.Validate();
+            return other;
+        }
+        return new(selectedStep, false, decision);
     }
 
     private static bool OriginalWateringRefillApproachPreemptsComposition(CropTeacherRunStep next,

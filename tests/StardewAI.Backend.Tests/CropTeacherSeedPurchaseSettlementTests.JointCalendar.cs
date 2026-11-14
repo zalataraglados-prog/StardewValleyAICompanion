@@ -157,20 +157,32 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         Assert.Null(binding.CompileRequest);
     }
 
-    [Fact]
-    public void CompositionPreservesOtherGoalRequirementsAndRejectsStaleCandidateSource()
+    [Theory]
+    [InlineData("pet_daily_interaction", "farm.care_for_pets")]
+    [InlineData("water_crop_tile", "farm.maintain_crops")]
+    public void CompositionPreservesOtherGoalRequirementsAndRejectsStaleCandidateSource(string kind, string optionId)
     {
         using var f = new WateringFixture();
         var ledger = JsonSerializer.Deserialize<StrategyCommitmentLedger>(JsonSerializer.Serialize(f.Shared.Source.Ledger, JsonOptions), JsonOptions)!;
         ledger.SourceStateHash = f.Before.StateHash;
-        var request = CompositionRequest(f.Before, WateringCompositionCandidates(f));
-        request.RequiredCandidateIds = request.RankedEventCandidates.Select(row => row.CandidateId).ToArray();
+        var request = CompositionRequest(f.Before, WateringCompositionCandidates(f).Prepend(new PolicyEventCandidatePrediction
+        {
+            CandidateId = "required-other-goal", Kind = kind, OptionId = optionId, Rank = 1,
+            LocationId = "Farm", TileX = 7, TileY = 8, TimelineStatus = "ready_now", EstimatedTicks = 42
+        }));
+        request.RequiredCandidateIds = ["required-other-goal"];
         var originalIds = request.RequiredCandidateIds.ToArray();
         var binding = CropTeacherRunPlanner.BindDailyComposition(f.Shared.Inputs.Plan, f.Shared.Inputs.Request, f.Before, ledger,
             request, completedDayBoundaryKeys: CompositionPriorNights(f));
         Assert.Equal("ready", binding.Status);
-        Assert.Equal(originalIds, binding.RequiredCandidateIds);
+        Assert.Equal(originalIds.Concat(binding.OwnedCandidateIds), binding.RequiredCandidateIds);
+        Assert.Equal(f.Step.ActionBatch!.Tiles.Length, binding.OwnedCandidateIds.Length);
+        Assert.DoesNotContain("required-other-goal", binding.OwnedCandidateIds);
         Assert.Equal(originalIds, request.RequiredCandidateIds);
+        var compiled = new DailyPlanCompiler().CompileWithJointCalendar(binding.CompileRequest!.RankedEventCandidates,
+            f.Before.StateHash, SnapshotGameClockBudgetReader.CurrentTime(f.Before)!.Value, binding.RequiredCandidateIds);
+        Assert.Equal("required-other-goal", compiled.CandidateAudit.First(row => row.Decision == "accepted").CandidateId);
+        Assert.Null(CropTeacherRunPlanner.SelectOriginalDailyBatch(binding, compiled, f.Shared.Inputs.Plan));
         request.StateHash = "stale";
         Assert.Throws<InvalidDataException>(() => CropTeacherRunPlanner.BindDailyComposition(f.Shared.Inputs.Plan,
             f.Shared.Inputs.Request, f.Before, ledger, request, completedDayBoundaryKeys: CompositionPriorNights(f)));
