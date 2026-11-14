@@ -47,20 +47,23 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         Assert.False(File.Exists(Path.Combine(operation.RuntimeDirectory, "shared-source-native-claim.json")));
     }
 
-    [Fact]
-    public async Task SharedSourceReturnRecoversTheOriginalMarkerReplyWithoutRepeatingNativeOrMutation()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task SharedSourceReturnRecoversTheOriginalMarkerReplyWithoutRepeatingNativeOrMutation(bool replyRetained)
     {
         var f = new SiteTillNativeFixture();
         using var host = f.Files.F.Runtime;
         var failed = false;
         await using var owner = await f.Files.F.Files.Open(writer: async (path, json) =>
         {
-            await InvokeLive<Task>("WritePortfolioJournalFileAsync", path, json);
             if (!failed && Path.GetFileName(path) == "marker-reply.json")
             {
                 failed = true;
+                if (replyRetained) await InvokeLive<Task>("WritePortfolioJournalFileAsync", path, json);
                 throw new IOException("Synthetic shared-return reply acknowledgement lost.");
             }
+            await InvokeLive<Task>("WritePortfolioJournalFileAsync", path, json);
         });
         var operation = await AdmitObservedSharedReturn(f, owner);
         var nativeHashes = f.NativePaths.ToDictionary(path => path, SiteTillNativeFixture.FileHash);
@@ -74,7 +77,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         Assert.Null(reopened.Pending);
         Assert.Equal(f.AfterPath, reopened.CurrentSnapshotPath);
         Assert.Equal(1, f.Files.F.Runtime.Handler.Commits);
-        Assert.True(f.Files.F.Runtime.Handler.Lookups > 0);
+        Assert.Equal(replyRetained ? 0 : 1, f.Files.F.Runtime.Handler.Lookups);
         Assert.All(nativeHashes, pair => Assert.Equal(pair.Value, SiteTillNativeFixture.FileHash(pair.Key)));
     }
 

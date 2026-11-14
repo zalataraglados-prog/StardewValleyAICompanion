@@ -162,6 +162,12 @@ still exists. An exhausted lease returns to original control without policy
 rerank. Original preparation/terminal/recovery precedence and nonjoint default
 remain; current commit must verify these caller/owner cases independently.
 
+63e54a89CI43638257021had3230/3231Backendpass, only a NEW fixture expected a network
+lookup despite an intact retained reply. Original ReadReplyAsync intentionally
+prefers local reply (5e16e081context). Fix ONLY that new test: retained reply ->0
+lookups, missing reply ->1read-only lookup, both1original commit/no native resend.
+Production unchanged; failure retained; corrected final SHA needs its own CI.
+
 174 Core checks92/92(142ms), Backend/old planner/binding/endpoint/budget/resume/
 dispatch/supplement/museum/original queue checks89/89(11s). No game/native dispatch/
 worker/training. The new planting test initially used winter supply planning to
