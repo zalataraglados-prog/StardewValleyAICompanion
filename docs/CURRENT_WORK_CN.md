@@ -2,6 +2,14 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-14 R2 显式 Product 补水消费接线收尾
+
+- 已复用原 `ReadSelectedNativeActionQueue` 接显式 native refill trace／preparation，匹配已验证原生请求的实际 endpoint 与固定 executor；旧 Runtime 默认入口和共享读取／编译／执行器不变。owner 仅按持久记录的 Product 版本选新入口，恢复不从当前开关反推旧模式。
+- 补水本身仍保留原 `blocked` 回执、零浇水产量与零 Teacher 标签。Main 只在同一 owner 已接受该补水控制结果、当前 head 一致且无 pending 时继续下一队列，不把一般失败改成成功。未接受／旧操作／新 pending 仍不放行。
+- 原 API Block118 只交付两份合成 Product 协议测试草稿，未获构建权限，未自行宣称测试通过；控制端接线及 owner 恢复测试后，补水／旧入口组合 **73/73（26秒）**，随后 Main 控制续接／规划输入／旧守卫专项 **61/61（26秒）**。两组不相加。首次新 owner 夹具在 claim 前生成回执，被原输出保护正确拒绝；仅修夹具生成顺序，原失败留存。`e0c5c86a` CI43557890232成功，不代表本轮新提交已过远端CI。
+- S 原112／pending72完整 scope 已只读重放通过：11项留存输入、8份原物理输入未变，旧默认仍拒同一 Product；资源与接近可验证、作物credit为0。没有补写 native／ledger／owner 接受，不能据此续接已丢失的未保存尾部。
+- **唯一接续：** 提交并同步后，用新隔离真实开局经原 managed／Product 入口跑完整13日／84计划，到收获、销售、原生保存及新进程重载读回；旧S全部保留，不拼尾部、不缩分母。仍是原八步的第3步收尾／第4步验收，第3—8步尚未整体关闭。L1冻结19/19、11/11，Teacher总验收／formal=false、#569移交及local-data不提交不变。
+
 ## 2026-11-14 R2 春季第9天补水 Product 消费者缺口
 
 - `bb24e045` 的真实112已越过旧账本登记错误，同一进程连续推进到春季第9天：本调用20条verified Product队列，原owner71已接受，最后持久日界owner68为7→8。第9天水量只够4株时原编译器先编译并接受4株，剩2株转去补水点；iteration71的补水接近结果在新消费者绑定处被拒，owner72 pending。loop退出2／监督器退出1，四归属进程已关闭。原失败保留，完整收获／销售周期未通过。

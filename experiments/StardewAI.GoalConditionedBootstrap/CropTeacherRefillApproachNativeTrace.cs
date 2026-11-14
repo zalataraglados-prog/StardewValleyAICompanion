@@ -1,5 +1,6 @@
 using System.Text.Json;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Training;
 using StardewAI.Core.Infrastructure;
 
 namespace StardewAI.GoalConditionedBootstrap;
@@ -26,7 +27,7 @@ public sealed class CropTeacherRefillApproachNativeTrace
     private CropTeacherRefillApproachNativeTrace(CropTeacherRefillApproachCompilation compilation,
         string receiptPath, string afterPath, string runId, bool verifySnapshotInventoryContinuity,
         bool classifyResourceEvidence = false, bool requireResourceNeutrality = false, bool verifyPickupInventory = false,
-        bool verifySelectedResourceEffects = false)
+        bool verifySelectedResourceEffects = false, string? nativeExecutorVersion = null)
     {
         this.compilation = compilation;
         compilation.ValidateInputsUnchanged();
@@ -37,8 +38,11 @@ public sealed class CropTeacherRefillApproachNativeTrace
             .Distinct(CropTeacherSeedTransferNativeOutcome.PathComparer).ToArray();
         using var reads = InvocationReadSession.Start(initialPaths);
         var initial = new CropTeacherRetainedInputs(initialPaths);
-        var native = NativeExecutionActionSourceReader.ReadQueue(compilation.QueuePath, compilation.SourcePath,
-            receiptPath, afterPath, runId, compilation.CandidateId);
+        var native = nativeExecutorVersion is null
+            ? NativeExecutionActionSourceReader.ReadQueue(compilation.QueuePath, compilation.SourcePath,
+                receiptPath, afterPath, runId, compilation.CandidateId)
+            : NativeExecutionActionSourceReader.ReadSelectedNativeActionQueue(compilation.QueuePath, compilation.SourcePath,
+                receiptPath, afterPath, runId, compilation.CandidateId);
         Require(native.Queue.QueueId == compilation.QueueId && native.Actions.Length == native.Queue.Items.Length,
             "native trace changed the original compiled queue");
         var raw = CurrentTeacherFrontierSupport.Read<JsonElement>(receiptPath, "original refill native trace");
@@ -52,6 +56,11 @@ public sealed class CropTeacherRefillApproachNativeTrace
         for (var index = 0; index < native.Actions.Length; index++)
         {
             var frame = native.Actions[index];
+            if (nativeExecutorVersion is not null)
+                Require(new Uri(frame.Endpoint, UriKind.Absolute).AbsolutePath ==
+                    (nativeExecutorVersion == PolicyTrajectoryVersionPins.ProductExecutor
+                        ? "/api/v1/product/execute" : "/api/v1/training/execute"),
+                    "native refill declared executor differs from its verified request endpoint");
             CropTeacherNativeStepBoundary.Verify(frame.Before, frame.After, native.Before,
                 native.Receipt.StepResults[index], compilation.TotalDay, "Original refill trace");
             var resultPath = Path.GetFullPath(steps[index].GetProperty("execution_path").GetString()!);
@@ -168,6 +177,18 @@ public sealed class CropTeacherRefillApproachNativeTrace
         new(compilation, executionReceiptPath, afterSnapshotPath, runId, verifySnapshotInventoryContinuity: false,
             requireResourceNeutrality: true);
 
+    public static CropTeacherRefillApproachNativeTrace OpenNativeResourceNeutral(
+        CropTeacherRefillApproachCompilation compilation, string executionReceiptPath, string afterSnapshotPath,
+        string runId, string executorVersion) =>
+        new(compilation, executionReceiptPath, afterSnapshotPath, runId, verifySnapshotInventoryContinuity: false,
+            requireResourceNeutrality: true, nativeExecutorVersion: RequireNativeExecutorVersion(executorVersion));
+
+    public static CropTeacherRefillApproachNativeTrace OpenNativeWithSelectedResourceEffects(
+        CropTeacherRefillApproachCompilation compilation, string executionReceiptPath, string afterSnapshotPath,
+        string runId, string executorVersion) =>
+        new(compilation, executionReceiptPath, afterSnapshotPath, runId, verifySnapshotInventoryContinuity: false,
+            verifySelectedResourceEffects: true, nativeExecutorVersion: RequireNativeExecutorVersion(executorVersion));
+
     public IReadOnlyList<CropTeacherRefillObservedStep> Steps { get; }
     public IReadOnlyList<CropTeacherRefillResourceEvidenceStep> ResourceEvidence { get; }
     public IReadOnlyList<CropTeacherRefillPickupInventoryStep> PickupInventory { get; }
@@ -190,6 +211,13 @@ public sealed class CropTeacherRefillApproachNativeTrace
         foreach (var (path, hash) in requestBlobs)
             Require((File.GetAttributes(path) & FileAttributes.ReparsePoint) == 0 && CurrentTeacherFrontierSupport.HashFile(path) == hash,
                 "native trace compressed original request changed");
+    }
+
+    private static string RequireNativeExecutorVersion(string value)
+    {
+        Require(value is PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor or PolicyTrajectoryVersionPins.ProductExecutor,
+            "explicit native refill requires a known native executor version");
+        return value;
     }
 
     private static string Location(SnapshotEnvelope snapshot) =>

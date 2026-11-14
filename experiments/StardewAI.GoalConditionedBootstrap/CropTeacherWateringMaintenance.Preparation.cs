@@ -19,12 +19,14 @@ public sealed partial class CropTeacherWateringMaintenance
         private readonly CropTeacherSupportingSource source;
         private readonly CropTeacherRefillApproachCompilation? refillApproach;
         private readonly bool selectedRefillResources;
+        private readonly bool nativeRefillExecution;
 
         private Preparation(string runRequestPath, string sourcePath, string ledgerPath, IReadOnlyCollection<string> commitmentIds,
             string commitmentId, string stepId, string modelActionPath, string queuePath, bool refill = false,
-            bool selectedRefillResources = false)
+            bool selectedRefillResources = false, bool nativeRefillExecution = false)
         {
             this.selectedRefillResources = selectedRefillResources;
+            this.nativeRefillExecution = nativeRefillExecution;
             var paths = new[] { runRequestPath, sourcePath, ledgerPath, modelActionPath, queuePath }.Select(Path.GetFullPath)
                 .Distinct(CropTeacherSeedTransferNativeOutcome.PathComparer).ToArray();
             using var reads = InvocationReadSession.Start(paths);
@@ -87,7 +89,17 @@ public sealed partial class CropTeacherWateringMaintenance
             IReadOnlyCollection<string> commitmentIds, string commitmentId, string stepId, string modelPlanPath, string queuePath) =>
             new(runRequestPath, sourcePath, ledgerPath, commitmentIds, commitmentId, stepId, modelPlanPath, queuePath,
                 refill: true, selectedRefillResources: true);
+        public static Preparation OpenNativeRefillApproach(string runRequestPath, string sourcePath, string ledgerPath,
+            IReadOnlyCollection<string> commitmentIds, string commitmentId, string stepId, string modelPlanPath, string queuePath) =>
+            new(runRequestPath, sourcePath, ledgerPath, commitmentIds, commitmentId, stepId, modelPlanPath, queuePath,
+                refill: true, nativeRefillExecution: true);
+        public static Preparation OpenNativeRefillApproachWithSelectedResourceEffects(string runRequestPath, string sourcePath,
+            string ledgerPath, IReadOnlyCollection<string> commitmentIds, string commitmentId, string stepId,
+            string modelPlanPath, string queuePath) =>
+            new(runRequestPath, sourcePath, ledgerPath, commitmentIds, commitmentId, stepId, modelPlanPath, queuePath,
+                refill: true, selectedRefillResources: true, nativeRefillExecution: true);
         public bool IsRefillApproach => refillApproach is not null;
+        public bool UsesNativeRefillExecution => nativeRefillExecution;
         public bool UsesSelectedRefillResourceEffects => selectedRefillResources;
         public string SourcePath { get; }
         public string QueuePath { get; }
@@ -106,7 +118,7 @@ public sealed partial class CropTeacherWateringMaintenance
                     CropTeacherSeedTransferNativeOutcome.PathComparer.Equals(Path.GetFullPath(transition.BeforeSnapshotPath), SourcePath),
                 "Owned crop watering differs from its pinned original compilation/source.");
             if (refillApproach is not null)
-                return new CropTeacherWateringMaintenance(refillApproach, transition, stepId, selectedRefillResources);
+                return new CropTeacherWateringMaintenance(refillApproach, transition, stepId, selectedRefillResources, nativeRefillExecution);
             var receipt = CurrentTeacherFrontierSupport.Read<QueueExecutionReceiptEnvelope>(transition.ExecutionReceiptPath, "original watering outcome kind");
             var result = !receipt.Success && receipt.StepResults is [{ Status: "blocked" }]
                 ? CropTeacherWateringMaintenance.OpenRefillControl(runRequestPath, SourcePath, ledgerPath, commitmentIds, commitmentId, transition, stepId)

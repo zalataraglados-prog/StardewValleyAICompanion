@@ -26,9 +26,9 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         internal IReadOnlyList<string> Journals => product ? productJournals : Trace.Journals;
         internal string RunId => Trace.Approach.Watering.Shared.Runtime.LiveOptions.RunId;
 
-        internal async Task Build()
+        internal async Task Build(bool retainCompilation = false)
         {
-            await Trace.Build();
+            await Trace.Build(retainCompilation: retainCompilation);
             if (!product) return;
             var aggregate = JsonNode.Parse(File.ReadAllText(Trace.ReceiptPath))!.AsObject();
             for (var index = 0; index < Trace.Results.Count; index++)

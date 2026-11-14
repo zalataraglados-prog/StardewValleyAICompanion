@@ -1614,6 +1614,15 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                     " ledger=" + cropTeacherTransitionLedgerPath);
             }
         }
+        if (cropManagedOperationForExecution is not null &&
+            cropTeacherManagedOwner.Current?.HasAcceptedOriginalRefillControl(cropManagedOperationForExecution) == true)
+        {
+            unverifiedExecutionBackoff.Reset();
+            AppendProgress(options, "crop_teacher_native_refill_control_accepted", iteration, lastStateHash, lastQueueId,
+                "original_blocked_receipt_retained=true watering_credit=false teacher_preference_label_eligible=false formal_training_authorized=false");
+            await DelayBeforeNextAttemptAsync(options, attemptOrdinal);
+            continue;
+        }
         var feedbackAvailable = execution["feedback_available"]?.GetValue<bool>() == true;
         if (!feedbackAvailable && !options.UseRuntimeTestHarnessExecutor)
         {

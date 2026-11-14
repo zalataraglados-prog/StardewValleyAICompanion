@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using StardewAI.Contracts.Training;
 using StardewAI.GoalConditionedBootstrap;
 
 namespace StardewAI.LiveTrainingLoop;
@@ -76,6 +77,14 @@ public sealed partial class CropTeacherManagedSeedOwner
         var start = !refill
             ? CropTeacherWateringMaintenance.Preparation.Open(plan.RequestPath, StoredPath(record, "before_snapshot_path"), headLedgerPath,
                 active, step.CommitmentId, Text(record, "support_step_id"), StoredPath(record, "original_model_action_path"), transition.QueuePath)
+            : transition.ExecutorVersion == PolicyTrajectoryVersionPins.ProductExecutor
+                ? resources
+                    ? CropTeacherWateringMaintenance.Preparation.OpenNativeRefillApproachWithSelectedResourceEffects(plan.RequestPath,
+                        StoredPath(record, "before_snapshot_path"), headLedgerPath, active, step.CommitmentId,
+                        Text(record, "support_step_id"), StoredPath(record, "original_model_action_path"), transition.QueuePath)
+                    : CropTeacherWateringMaintenance.Preparation.OpenNativeRefillApproach(plan.RequestPath,
+                        StoredPath(record, "before_snapshot_path"), headLedgerPath, active, step.CommitmentId,
+                        Text(record, "support_step_id"), StoredPath(record, "original_model_action_path"), transition.QueuePath)
             : resources
                 ? CropTeacherWateringMaintenance.Preparation.OpenRefillApproachWithSelectedResourceEffects(plan.RequestPath,
                     StoredPath(record, "before_snapshot_path"), headLedgerPath, active, step.CommitmentId,
