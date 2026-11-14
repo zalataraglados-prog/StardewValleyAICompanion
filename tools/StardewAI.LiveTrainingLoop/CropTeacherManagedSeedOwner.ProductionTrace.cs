@@ -21,18 +21,23 @@ public sealed class CropTeacherManagedProductionTrace
     public string AcceptedLedgerPath { get; }
     public IReadOnlyList<CropTeacherManagedProductionTransition> Transitions { get; }
     public IReadOnlyDictionary<string, string> InputHashes { get; }
+    public bool RetainedReplayOnly { get; internal init; }
     public void ValidateInputsUnchanged() => new CropSeedRuntimeArtifacts(InputHashes).Validate();
 }
 
 public sealed partial class CropTeacherManagedSeedOwner
 {
-    public async Task<CropTeacherManagedProductionTrace> ReadProductionTraceAsync()
+    public Task<CropTeacherManagedProductionTrace> ReadProductionTraceAsync() => ReadProductionTraceCoreAsync(retainedReplay: false);
+
+    public Task<CropTeacherManagedProductionTrace> ReadRetainedProductionTraceAsync() => ReadProductionTraceCoreAsync(retainedReplay: true);
+
+    private async Task<CropTeacherManagedProductionTrace> ReadProductionTraceCoreAsync(bool retainedReplay)
     {
         await gate.WaitAsync().ConfigureAwait(false);
         try
         {
             ValidateState();
-            if (Pending is not null || HeadRecoveryRequired)
+            if (Pending is not null || HeadRecoveryRequired && !retainedReplay)
                 throw new InvalidOperationException("Recover the original crop phase before reading its production trace.");
             var hashes = new Dictionary<string, string>(fixedHashes, PathComparer);
             foreach (var (path, hash) in frontierHashes) hashes[path] = hash;
@@ -121,7 +126,8 @@ public sealed partial class CropTeacherManagedSeedOwner
                 throw new InvalidDataException("Managed crop production history does not reach the current accepted head.");
             ValidateState();
             var result = new CropTeacherManagedProductionTrace(options.NativeRunPlanPath, headSnapshotPath, headLedgerPath,
-                transitions.ToArray(), new System.Collections.ObjectModel.ReadOnlyDictionary<string, string>(hashes));
+                transitions.ToArray(), new System.Collections.ObjectModel.ReadOnlyDictionary<string, string>(hashes))
+                { RetainedReplayOnly = retainedReplay };
             result.ValidateInputsUnchanged();
             return result;
         }

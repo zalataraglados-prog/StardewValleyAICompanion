@@ -21,7 +21,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         using var f = new NativeVariantTerminalFixture();
         await using var owner = await f.Shared.Files.Open();
         using var document = JsonDocument.Parse(JsonSerializer.Serialize(f.Target, JsonOptions));
-        Assert.NotNull(document.RootElement.GetProperty("nativeVariants"));
+        Assert.Equal(JsonValueKind.Object, document.RootElement.GetProperty("nativeVariants").ValueKind);
         Assert.Equal(f.Target, JsonSerializer.Deserialize<CropTeacherTerminalShippingTarget>(document.RootElement.GetRawText(), JsonOptions));
         var source = f.Shared.Source.Before;
         for (var index = 0; index < 6; index++)
@@ -41,7 +41,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             var receipt = f.Receipt(queue, source, after, candidate, index);
             var operation = await owner.CompileAndAdmitOriginalTerminalAsync(target, () => Task.FromResult(
                 new CropTeacherOriginalTerminalCompilation(modelPath, queuePath, receiptPath, afterPath,
-                    Path.Combine(f.Shared.Files.Native, "variant-" + index))));
+                    f.Shared.Files.Native + "-variant-" + index)));
             await owner.ExecuteOriginalTerminalAsync(operation, f.Shared.Runtime.Client, () =>
             {
                 Fixture.Save(receiptPath, receipt); Fixture.Save(afterPath, after);
@@ -89,6 +89,33 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         if (fault == "day") ChangeState(source, "time", node => node["total_days"]!["value"] = f.Target.TotalDay + 1);
         if (fault == "bin") ChangeState(source, "farm", node => node["shipping_bins"]!["value"]![0]!["player_id"] = "foreign");
         Assert.Throws<InvalidDataException>(() => f.Target.VerifyNativeVariantSource(source, fault == "cursor" ? 1 : 0, 1050));
+    }
+
+    [Fact]
+    public void NativeVariantTerminalLeavesUnselectedSurplusInItsOriginalSlot()
+    {
+        using var f = new NativeVariantTerminalFixture();
+        var target = f.Target with
+        {
+            RequiredQuantity = 5,
+            NativeVariants = f.Target.NativeVariants! with
+            {
+                First = f.Target.NativeVariants.First with { DepositQuantity = 4 }
+            }
+        };
+        target.VerifyNativeVariantSource(f.Shared.Source.Before, 0, 918);
+        Assert.Equal(f.SilverSlot, target.VariantAt(4).SlotIndex);
+        Assert.Equal(918, target.PendingValueAt(5));
+        var after = NativeVariantTerminalFixture.Copy(f.Shared.Source.Before);
+        ChangeState(after, "player", node =>
+            node["inventory"]!["value"]!.AsArray().Single(row => row!["slot_index"]!.GetValue<int>() == f.NormalSlot)!["stack"] = 1);
+        ChangeState(after, "farm", node => node["shipping_bins"]!["value"]![0]!["pending_settlement_value"] = 700);
+        target.VerifyNativeVariantSource(after, 4);
+        Assert.Throws<InvalidDataException>(() => target.VerifyNativeVariantSource(after, -1));
+        var invalid = target with { NativeVariants = target.NativeVariants! with
+            { First = target.NativeVariants.First with { DepositQuantity = 6 } } };
+        Assert.Throws<InvalidDataException>(() => invalid.ReadNativeVariants().ToArray());
+        Assert.Equal(target, JsonSerializer.Deserialize<CropTeacherTerminalShippingTarget>(JsonSerializer.Serialize(target, JsonOptions), JsonOptions));
     }
 
     [Fact]
@@ -175,8 +202,10 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
 
         internal NativeVariantTerminalFixture()
         {
-            SilverSlot = resources.Before.State["player"].GetProperty("inventory").GetProperty("value").EnumerateArray()
-                .Max(row => row.GetProperty("slot_index").GetInt32()) + 1;
+            var inventoryRows = resources.Before.State["player"].GetProperty("inventory").GetProperty("value").EnumerateArray().ToArray();
+            SilverSlot = inventoryRows.Where(row => row.TryGetProperty("is_empty", out var empty) && empty.ValueKind == JsonValueKind.True)
+                .Select(row => (int?)row.GetProperty("slot_index").GetInt32()).FirstOrDefault() ??
+                inventoryRows.Max(row => row.GetProperty("slot_index").GetInt32()) + 1;
             Shared = new(prepareSource: source =>
             {
                 foreach (var field in resources.Before.State) source.Before.State[field.Key] = field.Value.Clone();
@@ -187,7 +216,9 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                     var row = inventory.Single(row => row!["slot_index"]!.GetValue<int>() == NormalSlot)!;
                     row["stack"] = 5; row["sell_to_store_price"] = 175; row["can_be_shipped"] = true;
                     var silver = row.DeepClone(); silver["slot_index"] = SilverSlot; silver["stack"] = 1;
-                    silver["quality"] = 1; silver["sell_to_store_price"] = 218; inventory.Add(silver);
+                    silver["quality"] = 1; silver["sell_to_store_price"] = 218;
+                    var empty = inventory.SingleOrDefault(item => item!["slot_index"]!.GetValue<int>() == SilverSlot);
+                    if (empty is null) inventory.Add(silver); else inventory[inventory.IndexOf(empty)] = silver;
                     var capacity = node["inventory_capacity"]!["value"]!;
                     capacity["occupied_item_stacks"] = capacity["occupied_item_stacks"]!.GetValue<int>() + 1;
                     capacity["empty_slots"] = capacity["empty_slots"]!.GetValue<int>() - 1;
@@ -200,6 +231,11 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                     var slot = slots.Single(row => row!["slot_index"]!.GetValue<int>() == NormalSlot)!;
                     slot["stack"] = 5;
                     var silver = slot.DeepClone(); silver["slot_index"] = SilverSlot; silver["stack"] = 1; silver["quality"] = 1; slots.Add(silver);
+                    var quantities = graph["quantity_rows"]!.AsArray();
+                    var quantity = quantities.Single(row => row!["qualified_item_id"]!.GetValue<string>() == resources.Item)!;
+                    quantity["available_quantity"] = 5;
+                    var silverQuantity = quantity.DeepClone(); silverQuantity["quality"] = 1; silverQuantity["available_quantity"] = 1;
+                    quantities.Add(silverQuantity);
                     foreach (var bin in node["shipping_bins"]!["value"]!.AsArray())
                     { bin!["interaction_stand_tile_x"] = 4; bin["interaction_stand_tile_y"] = 4; bin["interaction_stand_tile_blocked_reason"] = ""; }
                 });
@@ -253,8 +289,10 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 var slot = slots.Single(row => row!["slot_index"]!.GetValue<int>() == selected.SlotIndex)!;
                 if (slot["stack"]!.GetValue<int>() == 1) slots.Remove(slot); else slot["stack"] = slot["stack"]!.GetValue<int>() - 1;
                 var quantities = graph["quantity_rows"]!.AsArray();
-                var quantity = quantities.Single(row => row!["qualified_item_id"]!.GetValue<string>() == resources.Item)!;
-                if (index == 5) quantities.Remove(quantity); else quantity["available_quantity"] = 5 - index;
+                var quantity = quantities.Single(row => row!["qualified_item_id"]!.GetValue<string>() == resources.Item &&
+                    row["quality"]!.GetValue<int>() == selected.Quality)!;
+                var remaining = quantity["available_quantity"]!.GetValue<int>() - 1;
+                if (remaining == 0) quantities.Remove(quantity); else quantity["available_quantity"] = remaining;
                 foreach (var bin in node["shipping_bins"]!["value"]!.AsArray())
                 {
                     var count = Math.Min(index + 1, 5); var silver = index == 5;

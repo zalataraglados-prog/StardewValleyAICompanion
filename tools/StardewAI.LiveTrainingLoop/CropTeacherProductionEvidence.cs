@@ -59,24 +59,22 @@ internal static class CropTeacherProductionEvidence
                 MoneyRevenueCropPlantingLayoutProofBuilder.Build(path)).ConfigureAwait(false);
         }
         var capacities = new List<string>(); var lifecycles = new List<string>(); var retentions = new List<string>();
-        var refills = requiredDays.Select(day => transitions.FirstOrDefault(row => row.TotalDay == day &&
-                SamePath(row.BeforeSnapshotPath, dayStarts[day]) && HasRefill(row.ExecutionReceiptPath)))
-            .Where(row => row is not null).Select(row => new MoneyRevenueCropDailyCapacityRefillReceiptRequest(row!.TotalDay,
-                row.ExecutionReceiptPath)).ToArray();
         for (var index = 0; index < production.Commitments.Length; index++)
         {
             var crop = production.Commitments[index];
             var capacityRequest = await Emit("capacity-request-" + index, new MoneyRevenueCropDailyCapacityProofRequest
             {
+                SchemaVersion = "money_revenue_crop_daily_capacity_proof_request.v2",
                 CropProductionPlanPath = plan.CropProductionPlanPath, CommitmentId = crop.CommitmentId,
                 PlantingLayoutProofPaths = layouts.Values.ToArray(), DailySnapshotPaths = requiredDays.Select(day => dayStarts[day]).ToArray(),
-                WateringCanRefillReceipts = refills
+                NativeDayTransitions = transitions
             }).ConfigureAwait(false);
             var capacity = await Emit("capacity-proof-" + index,
-                MoneyRevenueCropDailyCapacityProofBuilder.Build(capacityRequest)).ConfigureAwait(false);
+                MoneyRevenueCropDailyCapacityProofBuilder.BuildNativeObserved(capacityRequest)).ConfigureAwait(false);
             capacities.Add(capacity);
             var lifecycleRequest = await Emit("lifecycle-request-" + index, new MoneyRevenueCropNativeLifecycleProofRequest
             {
+                SchemaVersion = "money_revenue_crop_native_lifecycle_proof_request.v5",
                 CropProductionPlanPath = plan.CropProductionPlanPath, CommitmentId = crop.CommitmentId,
                 PlantingLayoutProofPath = layouts[crop.CommitmentId], DailyCapacityProofPath = capacity, Transitions = transitions
             }).ConfigureAwait(false);
@@ -112,14 +110,6 @@ internal static class CropTeacherProductionEvidence
 
     private static T Read<T>(string path) => JsonSerializer.Deserialize<T>(ContentAddressedJsonArtifactReader.ReadAllText(path),
         CropTeacherManagedSeedOwner.JsonOptions) ?? throw new InvalidDataException("Managed crop production artifact is empty.");
-    private static bool HasRefill(string path)
-    {
-        using var receipt = JsonDocument.Parse(ContentAddressedJsonArtifactReader.ReadAllText(path));
-        return receipt.RootElement.GetProperty("step_results").EnumerateArray().Any(step =>
-            step.GetProperty("option_id").GetString() == "executor.water_crop" &&
-            step.TryGetProperty("water_before", out var before) && before.TryGetInt32(out var oldWater) && oldWater == 0 &&
-            step.TryGetProperty("water_after", out var after) && after.TryGetInt32(out var newWater) && newWater > 0);
-    }
     private static bool SamePath(string first, string second) => string.Equals(Path.GetFullPath(first), Path.GetFullPath(second),
         OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
 }

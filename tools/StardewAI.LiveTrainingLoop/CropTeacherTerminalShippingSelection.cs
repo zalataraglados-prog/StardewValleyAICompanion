@@ -94,6 +94,23 @@ internal sealed partial class CropTeacherTerminalShippingSelection
             Integer(row, "sell_to_store_price") > 0 && Boolean(row, "can_be_shipped")).OrderBy(row => Integer(row, "slot_index")).ToArray();
         if (stacks.Length == 0 || !useNativeVariants && stacks.Length != 1)
             throw new InvalidDataException("Selected crop terminal requires the original exact shippable retained stack.");
+        var selectedVariants = new List<CropTeacherTerminalVariant>();
+        if (useNativeVariants)
+        {
+            var remaining = MinimumUnits;
+            foreach (var row in stacks.OrderByDescending(row => Integer(row, "sell_to_store_price")).ThenBy(row => Integer(row, "slot_index")))
+            {
+                var quantity = Integer(row, "stack");
+                var deposit = Math.Min(remaining, quantity);
+                selectedVariants.Add(new(Integer(row, "slot_index"), Integer(row, "quality"),
+                    Integer(row, "sell_to_store_price"), quantity) { DepositQuantity = deposit == quantity ? null : deposit });
+                remaining -= deposit;
+                if (remaining == 0) break;
+            }
+            if (remaining != 0) throw new InvalidDataException("Native terminal retained inventory cannot meet its whole obligation.");
+            var selectedSlots = selectedVariants.Select(row => row.SlotIndex).ToHashSet();
+            stacks = stacks.Where(row => selectedSlots.Contains(Integer(row, "slot_index"))).ToArray();
+        }
         var stack = stacks[0];
         SlotIndex = Integer(stack, "slot_index"); Quality = Integer(stack, "quality");
         initialQuantity = Integer(stack, "stack"); UnitPrice = Integer(stack, "sell_to_store_price");
@@ -113,8 +130,7 @@ internal sealed partial class CropTeacherTerminalShippingSelection
         if (useNativeVariants)
         {
             CropTeacherTerminalVariant? next = null;
-            foreach (var row in stacks.Reverse()) next = new(Integer(row, "slot_index"), Integer(row, "quality"),
-                Integer(row, "sell_to_store_price"), Integer(row, "stack"), next);
+            foreach (var row in selectedVariants.OrderByDescending(row => row.SlotIndex)) next = row with { Next = next };
             nativeVariants = new("crop_teacher_native_terminal_variants.v1", binScope, next!);
             CreateTarget(0).VerifyNativeVariantSource(source, 0, MinimumGrossRevenue);
         }

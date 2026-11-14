@@ -5,6 +5,23 @@ namespace StardewAI.Backend.Tests;
 public sealed partial class CropTeacherManagedTerminalEvidenceTests
 {
     [Fact]
+    public async Task NativeVariantAggregateRejectsSparseLegacyGoldenWithoutInventingNativeFields()
+    {
+        var golden = await Shared.Value;
+        var f = new Case(golden);
+        var initial = Read<StardewAI.Contracts.State.SnapshotEnvelope>(golden.ProductionFixture.SourcePath);
+        var bin = initial.State["farm"].GetProperty("shipping_bins").GetProperty("value").EnumerateArray().Single(row =>
+            row.GetProperty("tile_x").GetInt32() == f.Target.BinTileX && row.GetProperty("tile_y").GetInt32() == f.Target.BinTileY);
+        f.Target = f.Target with { NativeVariants = new("crop_teacher_native_terminal_variants.v1",
+            bin.GetProperty("bin_scope").GetString()!, new(f.Target.SlotIndex, f.Target.Quality, f.Target.UnitPrice, f.Target.InitialQuantity)) };
+        // The legacy golden omits accessibility and full stock graphs; it is not a native-mode positive fixture.
+        var error = await Assert.ThrowsAsync<InvalidDataException>(() => f.Build());
+        Assert.Contains("observed stand accessibility", error.Message);
+        Assert.False(Directory.Exists(f.Output));
+        foreach (var row in golden.Hashes) Assert.Equal(row.Value, Hash(row.Key));
+    }
+
+    [Fact]
     public async Task OriginalProofClosesDeclaredGoldenWithoutSaveOrTrainingClaimsAndWithoutOverwrite()
     {
         var golden = await Shared.Value;

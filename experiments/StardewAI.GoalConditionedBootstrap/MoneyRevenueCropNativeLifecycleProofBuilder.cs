@@ -15,8 +15,9 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
             MoneyRevenueCropNativeLifecycleProofRequest>(
                 fullRequestPath,
                 "Money Revenue crop native-lifecycle proof request");
-        Require(request.SchemaVersion ==
-                    "money_revenue_crop_native_lifecycle_proof_request.v4" &&
+        var nativeObservedCapacity = request.SchemaVersion == "money_revenue_crop_native_lifecycle_proof_request.v5";
+        Require((nativeObservedCapacity || request.SchemaVersion ==
+                    "money_revenue_crop_native_lifecycle_proof_request.v4") &&
                 !string.IsNullOrWhiteSpace(request.CommitmentId) &&
                 request.Transitions is { Length: > 0 } &&
                 request.CheckpointResumes is not null &&
@@ -74,10 +75,12 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
             MoneyRevenueCropDailyCapacityProof>(
                 capacityPath,
                 "Money Revenue crop daily-capacity proof");
-        var rebuiltCapacity = MoneyRevenueCropDailyCapacityProofBuilder.Build(
-            capacity.RequestPath);
-        Require(capacity.SchemaVersion ==
-                    "money_revenue_crop_daily_capacity_proof.v1" &&
+        var rebuiltCapacity = nativeObservedCapacity
+            ? MoneyRevenueCropDailyCapacityProofBuilder.BuildNativeObserved(capacity.RequestPath)
+            : MoneyRevenueCropDailyCapacityProofBuilder.Build(capacity.RequestPath);
+        Require(capacity.SchemaVersion == (nativeObservedCapacity
+                    ? "money_revenue_crop_daily_capacity_proof.v2"
+                    : "money_revenue_crop_daily_capacity_proof.v1") &&
                 BootstrapArtifactGuard.EqualJson(capacity, rebuiltCapacity) &&
                 SamePath(capacity.CropProductionPlanPath, planPath) &&
                 capacity.CropProductionPlanSha256 == planSha256 &&
