@@ -35,6 +35,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         var transition = record["shared_source_transition"]?.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)
             ?? throw new InvalidDataException("Managed shared source return lacks its original native boundary.");
         if (record["step"] is not null || record["prior_verified_snapshot_path"] is not null ||
+            record["shared_source_execution_protocol"] is not null || record["shared_source_selection"] is not null ||
             !SamePath(StoredPath(record, "before_snapshot_path"), headSnapshotPath) ||
             !SamePath(StoredPath(record, "before_ledger_path"), headLedgerPath) ||
             !SamePath(transition.BeforeSnapshotPath, headSnapshotPath) || transition.RunId != options.RunId ||
@@ -76,7 +77,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         accepted["crop_production_credit_authorized"] = false;
     }
 
-    private static void ValidateSharedSourceReturnEvidence(CropTeacherManagedSeedOperation operation, JsonObject accepted)
+    private void ValidateSharedSourceReturnEvidence(CropTeacherManagedSeedOperation operation, JsonObject accepted)
     {
         var fields = new[] { "native_shared_source_return_verified", "shared_source_state_hash", "shared_after_state_hash",
             "shared_verified_native_step_count", "crop_production_credit_authorized" };
@@ -86,6 +87,7 @@ public sealed partial class CropTeacherManagedSeedOwner
                 throw new InvalidDataException("A different phase cannot claim shared source return evidence.");
             return;
         }
+        if (operation.SharedSourceStart is not null) LoadOriginalSupportingOutcome(operation);
         var expected = new JsonObject(); AddSharedSourceReturnEvidence(operation, expected);
         if (expected.Any(field => !JsonNode.DeepEquals(field.Value, accepted[field.Key])) ||
             new[] { "route_target_reached", "native_watering_prefix_verified", "native_harvest_prefix_verified",

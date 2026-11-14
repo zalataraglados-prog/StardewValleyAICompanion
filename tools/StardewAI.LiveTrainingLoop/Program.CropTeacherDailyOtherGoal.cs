@@ -23,6 +23,7 @@ static partial class Program
         var evidencePath = prefix + "-evidence.json";
         prepared.Evidence["decision_plan_path"] = selection.PlanPath;
         prepared.Evidence["decision_ranking_path"] = selection.RankingPath;
+        prepared.Evidence["decision_snapshot_path"] = selection.SourceSnapshotPath;
         prepared.Evidence["native_dispatch_performed"] = false;
         prepared.Evidence["shared_source_return_required"] = true;
         prepared.Evidence["native_owner_interleaving_authorized"] = false;
@@ -31,6 +32,11 @@ static partial class Program
         await WritePortfolioJournalFileAsync(queuePath, prepared.Queue.ToJsonString(JsonOptions)).ConfigureAwait(false);
         await WritePortfolioJournalFileAsync(evidencePath, prepared.Evidence.ToJsonString(JsonOptions)).ConfigureAwait(false);
         return new(null, false, selection, "crop_teacher_joint_daily_selected_other_owner_required",
-            new(candidate, planPath, queuePath, evidencePath, ReadString(prepared.Queue, "status")));
+            new(candidate, planPath, queuePath, evidencePath, ReadString(prepared.Queue, "status"))
+            {
+                SourceSelection = new(selection.SourceSnapshotPath, selection.PlanPath, selection.RankingPath,
+                    planPath, queuePath, evidencePath, candidate.QueueIndex,
+                    selection.OwnedCandidateIds.OrderBy(id => id, StringComparer.Ordinal).ToArray())
+            });
     }
 }

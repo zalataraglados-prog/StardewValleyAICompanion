@@ -41,6 +41,7 @@ public sealed partial class CropTeacherManagedSeedOwner
     private static string NativeSupportingPath(CropTeacherManagedSeedOperation operation, string suffix) =>
         Path.Combine(operation.RuntimeDirectory, NativeSupportingRole(operation) + "-native-" + suffix + ".json");
     internal static MoneyRevenueCropNativeLifecycleTransitionRequest OriginalSupportingTransition(CropTeacherManagedSeedOperation operation) =>
+        operation.IsSharedSourceReturn ? operation.Record["shared_source_transition"]!.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)! :
         operation.IsSiteClearance ? operation.Record["clearance_transition"]!.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)! :
         operation.IsSiteTilling ? operation.Record["till_transition"]!.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)! :
         operation.IsTerminalShipping ? operation.Record["terminal_transition"]!.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)! :

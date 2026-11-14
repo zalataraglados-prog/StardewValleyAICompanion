@@ -1,5 +1,29 @@
 # Current Production Snapshot Handoff
 
+## Selected Work Source Yield (180, 2026-11-15)
+
+179 final26f279c9/CI43639621997 passed Core2675 and Backend3232, zero skipped.
+180 adds opt-in selected_work_yield.v1 within the SAME shared_source_return
+bookkeeping phase: immutable original decision snapshot/plan/ranking, fresh
+selected-candidate evidence/plan/queue, current source/ledger and expected native
+output paths. It occupies the original owner's pending slot before native work.
+ClaimSharedSourceExecutionAsync returns one claim to the GLOBAL caller; it does
+not invoke native and does not let the crop executor dispatch foreign work.
+Unclaimed reopen permits one claim; a retained claim with unknown outcome never
+permits another. VerifySharedSourceExecutionAsync reads the original native
+journals/output through the existing source-return verifier, then the original
+marker/lookup/head recovery completes bookkeeping. The old observed-only return
+API remains unchanged. Joint trace retains claim/result/native-input hashes
+without crop production or Teacher credit. Same-day/unconsumed-reservation scope
+is unchanged; partial/blocked native outcomes and reserved spending are NOT waived.
+
+180 code and synthetic contract tests require final-SHA CI. Main's foreign
+execution exit/recovery and the global joint trace consumer are still unwired;
+this is NOT native interleaving acceptance. Continue that SAME step5 capability,
+then actual selected-route/source/calendar reconciliation and step6 admission.
+No new stages, L1 recapture, thirteen-day restart, model experiment or training.
+#569 handoff stays before formal manifest; formal=false; local-data stays local.
+
 ## Joint Current-Day Calendar (2026-11-15)
 
 This section and CURRENT_WORK supersede older "Current" successors below.

@@ -48,7 +48,8 @@ public sealed partial class CropTeacherManagedSeedOwner
         {
             ["schema_version"] = "crop_teacher_owned_" + NativeSupportingRole(operation) + "_native_result.v1", ["original_intent_sha256"] = Text(operation.Record, "original_intent_sha256"),
             [NativeSupportingRole(operation) + "_native_claim_sha256"] = artifacts.Hashes[claimPath],
-            [NativeSupportingRole(operation) + "_transition"] = operation.Record[NativeSupportingRole(operation) + "_transition"]!.DeepClone(),
+            [NativeSupportingRole(operation) + "_transition"] = operation.Record[operation.IsSharedSourceReturn
+                ? "shared_source_transition" : NativeSupportingRole(operation) + "_transition"]!.DeepClone(),
             ["input_artifact_hashes"] = JsonSerializer.SerializeToNode(artifacts.Hashes, JsonOptions),
             ["native_outcome_verified"] = true
         };
@@ -60,6 +61,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         if (scope is CropTeacherTerminalShipping terminal) AddTerminalOutcomeEvidence(terminal, result);
         if (scope is CropTeacherSiteTilling tilling) AddTillingOutcomeEvidence(tilling, operation.TillingStart!, result);
         if (scope is CropTeacherSiteClearance clearance) AddClearanceOutcomeEvidence(clearance, operation.ClearanceStart!, result);
+        if (scope is CropTeacherSharedSourceReturn) result["crop_production_credit_authorized"] = false;
         result["native_crop_lifecycle_verified"] = false;
         result["teacher_preference_label_eligible"] = false;
         result["formal_product_training_authorized"] = false;
@@ -83,6 +85,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         else if (outcome.Scope is CropTeacherTerminalShipping terminal) operation.Terminal = terminal;
         else if (outcome.Scope is CropTeacherSiteTilling tilling) operation.Tilling = tilling;
         else if (outcome.Scope is CropTeacherSiteClearance clearance) operation.Clearance = clearance;
+        else if (outcome.Scope is CropTeacherSharedSourceReturn shared) operation.SharedSourceReturn = shared;
         else throw new InvalidDataException("Owned crop outcome has an unsupported supporting type.");
         operation.RuntimeArtifactGuard = () =>
         { operation.OriginalStart!.ValidateInputsUnchanged(); outcome.Scope.ValidateInputsUnchanged(); outcome.Artifacts.Validate(); };

@@ -110,6 +110,12 @@ public sealed partial class CropTeacherManagedSeedOwner
                     if (!includeSharedReturns)
                         throw new InvalidDataException("Shared source return requires the explicit joint trace; it is not a crop production action.");
                     Reference("original_intent_sha256", Path.Combine(runtime, "shared-source-intent.json"));
+                    Reference("shared-source_native_claim_sha256", Path.Combine(runtime, "shared-source-native-claim.json"));
+                    var sharedResult = Path.Combine(runtime, "shared-source-native-result.json");
+                    Reference("shared-source_native_result_sha256", sharedResult);
+                    if (accepted["shared-source_native_result_sha256"] is not null)
+                        foreach (var (input, expected) in Read<JsonObject>(sharedResult)["input_artifact_hashes"]!
+                                     .Deserialize<Dictionary<string, string>>(JsonOptions)!) Pin(input, expected);
                     var shared = record["shared_source_transition"]!.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)!;
                     if (!SamePath(shared.BeforeSnapshotPath, StoredPath(record, "before_snapshot_path")) ||
                         !SamePath(shared.AfterSnapshotPath, StoredPath(accepted, "after_snapshot_path")) ||

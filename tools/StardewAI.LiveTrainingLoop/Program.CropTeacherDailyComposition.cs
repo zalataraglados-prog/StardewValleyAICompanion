@@ -11,9 +11,15 @@ using StardewAI.LiveTrainingLoop;
 static partial class Program
 {
     private sealed record CropTeacherDailySelection(int TotalDay, string GoalId, SelectedQueueDecisionLease Lease,
-        IReadOnlySet<string> OwnedCandidateIds, string PlanPath, string RankingPath);
+        IReadOnlySet<string> OwnedCandidateIds, string PlanPath, string RankingPath)
+    {
+        public string SourceSnapshotPath { get; init; } = string.Empty;
+    }
     private sealed record CropTeacherOtherGoalPreparation(SelectedQueueCandidateLock Candidate,
-        string PlanPath, string QueuePath, string EvidencePath, string QueueStatus);
+        string PlanPath, string QueuePath, string EvidencePath, string QueueStatus)
+    {
+        public CropTeacherSharedSourceSelection? SourceSelection { get; init; }
+    }
     private sealed record ComposedCropDispatch(CropTeacherRunStep? Step, bool ControlPreempted,
         CropTeacherDailySelection? Selection = null, string BlockReason = "crop_teacher_joint_daily_required_batch_not_scheduled",
         CropTeacherOtherGoalPreparation? OtherGoalPreparation = null);
@@ -69,7 +75,8 @@ static partial class Program
         var typedPlan = built.Plan.Deserialize<SmallModelPlanEnvelope>(JsonOptions)!;
         var decision = typedPlan.Steps.Length == 0 ? null : new CropTeacherDailySelection(next.TotalDay, typedPlan.GoalId,
             SelectedQueueDecisionLease.CreateFromPlan(typedPlan, built.Ranking),
-            binding.OwnedCandidateIds.ToHashSet(StringComparer.Ordinal), prefix + "-plan.json", prefix + "-ranking.json");
+            binding.OwnedCandidateIds.ToHashSet(StringComparer.Ordinal), prefix + "-plan.json", prefix + "-ranking.json")
+            { SourceSnapshotPath = owner.CurrentSnapshotPath };
         var selectedStep = CropTeacherRunPlanner.SelectOriginalDailyBatch(binding, typedPlan, plan);
         if (selectedStep is null && decision is not null &&
             !decision.OwnedCandidateIds.Contains(decision.Lease.Candidates[0].CandidateId))

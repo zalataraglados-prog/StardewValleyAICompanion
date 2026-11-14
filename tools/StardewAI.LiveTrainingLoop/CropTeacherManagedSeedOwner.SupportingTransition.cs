@@ -11,6 +11,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         Path.Combine(operation.RuntimeDirectory, NativeSupportingRole(operation) + "-intent.json");
 
     private JsonObject CreateSupportingTransitionIntent(JsonObject record, ICropTeacherSupportingTransition? scope) =>
+        record["shared_source_execution_protocol"]?.GetValue<string>() == "selected_work_yield.v1" ? CreateSharedSourceYieldIntent(record) :
         record["operation_kind"]?.GetValue<string>() == "shared_source_return" ? CreateSharedSourceReturnIntent(record, (CropTeacherSharedSourceReturn)scope!) :
         record["operation_kind"]?.GetValue<string>() == "site_clearance" ? CreateOriginalClearanceIntent(record) :
         record["operation_kind"]?.GetValue<string>() == "site_till" ? CreateOriginalTillingIntent(record) :
@@ -33,7 +34,15 @@ public sealed partial class CropTeacherManagedSeedOwner
 
     private void ValidateSupportingTransition(CropTeacherManagedSeedOperation operation)
     {
-        if (operation.SharedSourceReturn is { } shared)
+        if (operation.SharedSourceStart is { } yielded)
+        {
+            yielded.ValidateInputsUnchanged();
+            operation.SharedSourceReturn?.ValidateInputsUnchanged();
+            operation.RuntimeArtifactGuard?.Invoke();
+            if (SupportingTransitionIntentHash(operation.Record, operation.SharedSourceReturn) != Text(operation.Record, "original_intent_sha256"))
+                throw new InvalidDataException("Managed shared source yield changed its admitted selected intent.");
+        }
+        else if (operation.SharedSourceReturn is { } shared)
         {
             shared.ValidateInputsUnchanged();
             if (SupportingTransitionIntentHash(operation.Record, shared) != Text(operation.Record, "original_intent_sha256"))
