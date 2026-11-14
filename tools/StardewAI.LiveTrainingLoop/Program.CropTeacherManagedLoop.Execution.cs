@@ -27,7 +27,7 @@ static partial class Program
 
     private static void RequireManagedCropDispatch(CropTeacherManagedSeedOwner? owner, CropTeacherManagedSeedOperation? operation)
     {
-        if (owner is not null && (operation is null || !ReferenceEquals(operation.Owner, owner) || !ReferenceEquals(owner.Pending, operation)))
+        if (owner is not null && (operation is null || operation.IsSharedSourceReturn || !ReferenceEquals(operation.Owner, owner) || !ReferenceEquals(owner.Pending, operation)))
             throw new InvalidOperationException("An active managed crop owner cannot dispatch an unowned control queue; retain and bind its original control boundary first.");
     }
 
@@ -37,6 +37,8 @@ static partial class Program
     {
         if (operation.IsSavedContentReadback)
             throw new InvalidOperationException("Saved-content readback is an observed load/rebind, not a native action queue.");
+        if (operation.IsSharedSourceReturn)
+            throw new InvalidOperationException("Shared source return is observed bookkeeping, not a native action queue.");
         if (operation.IsSupportingTransition)
         {
             var kind = operation.IsSiteClearance ? CropTeacherSupportingOperationKind.Clearance : operation.IsSiteTilling ? CropTeacherSupportingOperationKind.Tilling : operation.IsTerminalShipping ? CropTeacherSupportingOperationKind.Terminal : operation.IsControlRecovery ? CropTeacherSupportingOperationKind.Control : operation.IsOvernight ? CropTeacherSupportingOperationKind.Overnight : operation.IsHarvest

@@ -14,6 +14,23 @@ namespace StardewAI.Backend.Tests;
 public sealed partial class CropTeacherSeedPurchaseSettlementTests
 {
     [Theory]
+    [InlineData(CropTeacherRunStageKinds.RouteHome, false, false)]
+    [InlineData(CropTeacherRunStageKinds.RouteHome, true, true)]
+    [InlineData(CropTeacherRunStageKinds.NativeSleep, false, false)]
+    [InlineData(CropTeacherRunStageKinds.NativeSleep, true, true)]
+    [InlineData(CropTeacherRunStageKinds.PrepareSite, true, false)]
+    [InlineData(CropTeacherRunStageKinds.Complete, true, false)]
+    public void LiveDailyCompositionExitKeepsTheCurrentSelectionWithoutTakingOverOriginalPrefixes(string stage,
+        bool currentSelection, bool expected)
+    {
+        using var f = new WateringFixture();
+        Assert.Equal(expected, CropTeacherRunPlanner.ShouldComposeDailyDispatch(f.Step with { Stage = stage }, currentSelection));
+        Assert.True(CropTeacherRunPlanner.ShouldComposeDailyDispatch(f.Step, hasCurrentSelection: false));
+        Assert.False(CropTeacherRunPlanner.ShouldComposeDailyDispatch(f.Step with
+            { ActionBatch = f.Step.ActionBatch! with { OptionId = "executor.plant_seed" } }, hasCurrentSelection: true));
+    }
+
+    [Theory]
     [InlineData(0)]
     [InlineData(1)]
     [InlineData(2)]

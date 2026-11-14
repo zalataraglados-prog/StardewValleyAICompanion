@@ -11,6 +11,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         Path.Combine(operation.RuntimeDirectory, NativeSupportingRole(operation) + "-intent.json");
 
     private JsonObject CreateSupportingTransitionIntent(JsonObject record, ICropTeacherSupportingTransition? scope) =>
+        record["operation_kind"]?.GetValue<string>() == "shared_source_return" ? CreateSharedSourceReturnIntent(record, (CropTeacherSharedSourceReturn)scope!) :
         record["operation_kind"]?.GetValue<string>() == "site_clearance" ? CreateOriginalClearanceIntent(record) :
         record["operation_kind"]?.GetValue<string>() == "site_till" ? CreateOriginalTillingIntent(record) :
         record["operation_kind"]?.GetValue<string>() == "saved_content_readback" ? CreateSavedReadbackIntent(record, (CropTeacherNativeSavedContentReadback)scope!) :
@@ -32,7 +33,13 @@ public sealed partial class CropTeacherManagedSeedOwner
 
     private void ValidateSupportingTransition(CropTeacherManagedSeedOperation operation)
     {
-        if (operation.IsSavedContentReadback)
+        if (operation.SharedSourceReturn is { } shared)
+        {
+            shared.ValidateInputsUnchanged();
+            if (SupportingTransitionIntentHash(operation.Record, shared) != Text(operation.Record, "original_intent_sha256"))
+                throw new InvalidDataException("Managed shared source return changed its admitted original intent.");
+        }
+        else if (operation.IsSavedContentReadback)
         {
             operation.SavedReadback!.ValidateInputsUnchanged();
             if (SupportingTransitionIntentHash(operation.Record, operation.SavedReadback) != Text(operation.Record, "original_intent_sha256"))
@@ -135,7 +142,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             // Local success still requires the original durable journal and full replay.
             var recovered = await ReadSupportingTransitionBoundaryAsync(http, operation, root, post).ConfigureAwait(false);
             await AdvanceAsync(operation, recovered.Evidence, recovered.SnapshotPath, recovered.Validate,
-                operation.IsSiteClearance ? "live_site_clearance" : operation.IsSiteTilling ? "live_site_till" : operation.IsSavedContentReadback ? "live_saved_content_readback" : operation.IsTerminalShipping ? "live_terminal_shipping" : operation.IsControlRecovery ? "live_control_recovery" : operation.IsOvernight ? "live_overnight_control" : operation.IsHarvest ? "live_crop_harvest" : watering ? "live_watering_maintenance" : "live_supporting_route").ConfigureAwait(false);
+                operation.IsSharedSourceReturn ? "live_shared_source_return" : operation.IsSiteClearance ? "live_site_clearance" : operation.IsSiteTilling ? "live_site_till" : operation.IsSavedContentReadback ? "live_saved_content_readback" : operation.IsTerminalShipping ? "live_terminal_shipping" : operation.IsControlRecovery ? "live_control_recovery" : operation.IsOvernight ? "live_overnight_control" : operation.IsHarvest ? "live_crop_harvest" : watering ? "live_watering_maintenance" : "live_supporting_route").ConfigureAwait(false);
         }
         finally { gate.Release(); }
     }

@@ -47,6 +47,8 @@ static partial class Program
                 snapshot, ledger, preparedCommitmentIds, progress, selection).ConfigureAwait(false);
             artifacts.Validate();
             if (refreshed is not null) return refreshed;
+            if (next.Stage != CropTeacherRunStageKinds.ExecuteCropBatch)
+                return new(null, true); // The retained decision is exhausted; continue the original owner control.
         }
         CropTeacherDailyCompositionBinding? binding = null;
         var built = await BuildQueueFromDailyPlanAsync(http, options, snapshot.StateHash, Array.Empty<JsonObject>(),

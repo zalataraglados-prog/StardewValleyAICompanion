@@ -8,6 +8,16 @@ namespace StardewAI.LiveTrainingLoop;
 public sealed record CropTeacherManagedProductionTransition(int OwnerSequence, string OperationKind,
     MoneyRevenueCropNativeLifecycleTransitionRequest NativeTransition);
 
+public sealed record CropTeacherManagedSharedSourceReturn(int OwnerSequence, string SupportStepId,
+    MoneyRevenueCropNativeLifecycleTransitionRequest NativeTransition);
+
+public sealed record CropTeacherManagedJointProductionTrace(CropTeacherManagedProductionTrace CropTrace,
+    IReadOnlyList<CropTeacherManagedSharedSourceReturn> SharedSourceReturns)
+{
+    public bool NativeCropLifecycleVerified => false;
+    public bool FormalProductTrainingAuthorized => false;
+}
+
 public sealed class CropTeacherManagedProductionTrace
 {
     internal CropTeacherManagedProductionTrace(string planPath, string snapshotPath, string ledgerPath,
@@ -22,6 +32,7 @@ public sealed class CropTeacherManagedProductionTrace
     public IReadOnlyList<CropTeacherManagedProductionTransition> Transitions { get; }
     public IReadOnlyDictionary<string, string> InputHashes { get; }
     public bool RetainedReplayOnly { get; internal init; }
+    internal IReadOnlyList<CropTeacherManagedSharedSourceReturn> SharedSourceReturnReferences { get; init; } = [];
     public void ValidateInputsUnchanged() => new CropSeedRuntimeArtifacts(InputHashes).Validate();
 }
 
@@ -31,7 +42,13 @@ public sealed partial class CropTeacherManagedSeedOwner
 
     public Task<CropTeacherManagedProductionTrace> ReadRetainedProductionTraceAsync() => ReadProductionTraceCoreAsync(retainedReplay: true);
 
-    private async Task<CropTeacherManagedProductionTrace> ReadProductionTraceCoreAsync(bool retainedReplay)
+    public async Task<CropTeacherManagedJointProductionTrace> ReadJointProductionTraceAsync()
+    {
+        var trace = await ReadProductionTraceCoreAsync(retainedReplay: false, includeSharedReturns: true).ConfigureAwait(false);
+        return new(trace, trace.SharedSourceReturnReferences);
+    }
+
+    private async Task<CropTeacherManagedProductionTrace> ReadProductionTraceCoreAsync(bool retainedReplay, bool includeSharedReturns = false)
     {
         await gate.WaitAsync().ConfigureAwait(false);
         try
@@ -50,6 +67,7 @@ public sealed partial class CropTeacherManagedSeedOwner
                 hashes[path] = actual;
             }
             var transitions = new List<CropTeacherManagedProductionTransition>();
+            var sharedReturns = new List<CropTeacherManagedSharedSourceReturn>();
             var previous = headerHash;
             foreach (var (sequence, path, hash) in acceptedHistory)
             {
@@ -87,6 +105,22 @@ public sealed partial class CropTeacherManagedSeedOwner
                 var inputs = record["input_artifact_hashes"]!.Deserialize<Dictionary<string, string>>(JsonOptions)!;
                 foreach (var (input, expected) in inputs) Pin(input, expected);
                 previous = hash;
+                if (kind == "shared_source_return")
+                {
+                    if (!includeSharedReturns)
+                        throw new InvalidDataException("Shared source return requires the explicit joint trace; it is not a crop production action.");
+                    Reference("original_intent_sha256", Path.Combine(runtime, "shared-source-intent.json"));
+                    var shared = record["shared_source_transition"]!.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)!;
+                    if (!SamePath(shared.BeforeSnapshotPath, StoredPath(record, "before_snapshot_path")) ||
+                        !SamePath(shared.AfterSnapshotPath, StoredPath(accepted, "after_snapshot_path")) ||
+                        shared.RunId != options.RunId || shared.ExecutorVersion != options.ExecutorVersion ||
+                        accepted["native_shared_source_return_verified"]?.GetValue<bool>() != true ||
+                        accepted["crop_production_credit_authorized"]?.GetValue<bool>() != false)
+                        throw new InvalidDataException("Shared source return trace differs from the accepted original boundary.");
+                    foreach (var input in new[] { shared.QueuePath, shared.BeforeSnapshotPath, shared.ExecutionReceiptPath, shared.AfterSnapshotPath }) Pin(input);
+                    sharedReturns.Add(new(sequence, Text(record, "support_step_id"), shared));
+                    continue;
+                }
                 if (kind == "saved_content_readback")
                 {
                     Reference("original_intent_sha256", Path.Combine(runtime, "saved-readback-intent.json"));
@@ -127,7 +161,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             ValidateState();
             var result = new CropTeacherManagedProductionTrace(options.NativeRunPlanPath, headSnapshotPath, headLedgerPath,
                 transitions.ToArray(), new System.Collections.ObjectModel.ReadOnlyDictionary<string, string>(hashes))
-                { RetainedReplayOnly = retainedReplay };
+                { RetainedReplayOnly = retainedReplay, SharedSourceReturnReferences = Array.AsReadOnly(sharedReturns.ToArray()) };
             result.ValidateInputsUnchanged();
             return result;
         }

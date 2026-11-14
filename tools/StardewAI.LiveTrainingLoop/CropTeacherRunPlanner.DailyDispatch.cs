@@ -4,6 +4,10 @@ namespace StardewAI.LiveTrainingLoop;
 
 public static partial class CropTeacherRunPlanner
 {
+    public static bool ShouldComposeDailyDispatch(CropTeacherRunStep step, bool hasCurrentSelection) =>
+        (step.Stage == CropTeacherRunStageKinds.ExecuteCropBatch && step.ActionBatch?.OptionId is WaterOptionId or HarvestOptionId) ||
+        (hasCurrentSelection && step.Stage is CropTeacherRunStageKinds.RouteHome or CropTeacherRunStageKinds.NativeSleep);
+
     public static CropTeacherRunStep? SelectOriginalDailyBatch(CropTeacherDailyCompositionBinding binding, SmallModelPlanEnvelope plan,
         StardewAI.GoalConditionedBootstrap.MoneyRevenueCropNativeProductionRunPlan originalPlan)
     {

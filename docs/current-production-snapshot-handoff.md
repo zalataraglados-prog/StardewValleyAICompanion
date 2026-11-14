@@ -142,6 +142,26 @@ New adapter/tests need this commit's CI, not178green. NEXT is explicit shared-re
 binding to owner hold/recovery/trace and the original foreign execution exit;
 never swap a head path or label a foreign action as crop control. No new stage.
 
+179source leaf ab2d4b06 CI43636205689SUCCESS: Core2675,Backend3218,zero skipped;
+includes13new source/marker cases. Initial2abdaa8c only missed Contracts.Training
+import (compile failure, no tests); fixed in new file only, failure retained.
+Same capability now connects explicit shared_source_return to original owner
+records/marker lookup/full readback/head restore and a separate joint trace;
+current commit's CI must prove this continuation, not the earlier source green.
+This new owner branch does NOT execute native work or credit crop progress;
+old kinds/defaults and native executors remain unchanged. Original dispatch guard
+rejects source-return operations as native queues. ReadJointProductionTraceAsync
+keeps shared native references separate; old pure-crop trace rejects mixed work.
+NEXT after owner regressions: explicit foreign dispatch ownership, original
+execution exit and global joint-trace consumption. No unowned mutation, head-path
+swap, foreign earnings counted as crop revenue or relabeling as crop control.
+
+Same continuation fixes the opt-in Main exit: a retained same-day selection is
+also consumed before original RouteHome/NativeSleep, not only while maintenance
+still exists. An exhausted lease returns to original control without policy
+rerank. Original preparation/terminal/recovery precedence and nonjoint default
+remain; current commit must verify these caller/owner cases independently.
+
 174 Core checks92/92(142ms), Backend/old planner/binding/endpoint/budget/resume/
 dispatch/supplement/museum/original queue checks89/89(11s). No game/native dispatch/
 worker/training. The new planting test initially used winter supply planning to

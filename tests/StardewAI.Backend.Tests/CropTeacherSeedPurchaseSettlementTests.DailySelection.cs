@@ -138,6 +138,32 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         f.Shared.Runtime.LiveOptions.DailyPlanMaxCandidates = maxCandidates;
     }
 
+    [Fact]
+    public async Task ExhaustedMaintenanceSelectionReturnsToOriginalControlWithoutAnotherPolicyDecision()
+    {
+        using var f = new OwnedWateringFixture(prepareSource: source =>
+        {
+            CompleteDailySelectionSurface(source);
+            ChangeState(source.Before, "current_location", node => node["home_context"]!["value"]!["current_location_is_home"] = false);
+        });
+        await using var owner = await f.Shared.Files.Open();
+        ConfigureJointSelection(f, 2);
+        using var handler = new DailyCompositionRankingHandler(f.Shared.Runtime.Handler, ActualWaterSelectionCandidates(f));
+        using var http = new HttpClient(handler, disposeHandler: false);
+        var first = await ComposeSelection(f, owner, http, 1, f.Basis.Before);
+        var step = SelectionProperty<CropTeacherRunStep>(first, "Step")!;
+        var operation = await InvokeLive<Task<CropTeacherManagedSeedOperation>>("PrepareCropTeacherOwnedWateringAsync",
+            f.Shared.Runtime.Client, f.Shared.Runtime.LiveOptions, 1, step, f.Shared.Inputs.Plan, f.Shared.Inputs.Request,
+            owner, f.Shared.Files.Native);
+        await owner.ExecuteOriginalWateringAsync(operation, f.Shared.Runtime.Client, () => f.EmitNative());
+        await f.Rebind(owner, operation);
+        var result = await ComposeSelection(f, owner, http, 2, f.Basis.After, SelectionProperty<object>(first, "Selection"));
+        Assert.True(SelectionProperty<bool>(result, "ControlPreempted"));
+        Assert.Null(SelectionProperty<object>(result, "Selection"));
+        Assert.Equal(1, handler.Ranks);
+        Assert.Null(owner.Pending);
+    }
+
     [Theory]
     [InlineData(false, false)]
     [InlineData(true, false)]

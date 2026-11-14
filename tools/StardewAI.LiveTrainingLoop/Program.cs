@@ -852,8 +852,8 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             continue;
         }
         if (options.UseJointDailyCalendar && managedOwner is not null &&
-            cropStep.Stage == CropTeacherRunStageKinds.ExecuteCropBatch &&
-            cropStep.ActionBatch?.OptionId is "executor.water_crop" or "executor.harvest_crop")
+            CropTeacherRunPlanner.ShouldComposeDailyDispatch(cropStep,
+                cropTeacherManagedOwner.DailySelection?.TotalDay == cropStep.TotalDay))
         {
             var composed = await ComposeCropTeacherDailyDispatchAsync(http, options, iteration, activeCropTeacherRunPlan,
                 activeCropTeacherRunPlanRequest!, managedOwner, cropTeacherPreparedCommitmentIds, typedSnapshot,

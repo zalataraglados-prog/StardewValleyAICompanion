@@ -64,6 +64,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         accepted["native_outcome_verified"] = true;
         accepted["native_crop_lifecycle_verified"] = false;
         accepted["teacher_preference_label_eligible"] = false;
+        AddSharedSourceReturnEvidence(operation, accepted);
         AddSavedReadbackEvidence(operation, accepted);
         if (operation.Tilling is { } tilling) AddTillingOutcomeEvidence(tilling, operation.TillingStart!, accepted);
         if (operation.Clearance is { } clearance) AddClearanceOutcomeEvidence(clearance, operation.ClearanceStart!, accepted);

@@ -7,6 +7,12 @@ public sealed partial class CropTeacherManagedSeedOwner
     private CropTeacherManagedSeedOperation OpenIndexedOperation(JsonObject record, string path)
     {
         var kind = record["operation_kind"]?.GetValue<string>();
+        if (kind == "shared_source_return")
+        {
+            var shared = new CropTeacherManagedSeedOperation(this, record, path, null, sharedSourceReturn: OpenSharedSourceReturn(record));
+            ValidateSupportingTransition(shared);
+            return shared;
+        }
         if (kind == "site_clearance")
         {
             var clearance = new CropTeacherManagedSeedOperation(this, record, path, null, clearanceStart: OpenOriginalClearanceStart(record));
@@ -107,6 +113,7 @@ public sealed partial class CropTeacherManagedSeedOwner
 
     private void ValidateAcceptedPhaseEvidence(CropTeacherManagedSeedOperation operation, JsonObject accepted)
     {
+        ValidateSharedSourceReturnEvidence(operation, accepted);
         ValidateClearanceAcceptance(operation, accepted);
         ValidateTillingAcceptance(operation, accepted);
         ValidateSavedReadbackEvidence(operation, accepted);
