@@ -1492,11 +1492,11 @@ v71 继续携带 `--skip-training`，没有 Student 更新、checkpoint 或 GPU 
 
 ### 2. 用现有补水队列收口清障与拾取的结算证据
 
-- `BuildCropTeacherWateringRefillApproachQueueAsync()` 复用原补水接近编译，`CropTeacherRefillApproachNativeTrace.OpenWithSnapshotInventoryContinuity()` 复用原队列、回执和库存连续性读取核。修订基线曾仅有核验入口；后续所选资源组合及同owner接线已有实现，具体进度以第3步接续定位为准，不再把基线缺口重复记为未开发。保持原队列、动作身份、站位、时间预算和原生回执；未观察的生产来源不能因此获credit。 [补水路线编译](money-crop-refill-approach-compilation.md) · [补水记录读取器](../experiments/StardewAI.GoalConditionedBootstrap/CropTeacherRefillApproachNativeTrace.cs#L87)
-- 所选路线只要求到达和补水时，以通路、实际水量和地块状态判定动作进度，同时对实际资源变化分类。若账本需要把掉落计为本动作产出，则必须区分既有掉落、本次产生和实际入包。无法归因的增量保留为未结算，未知资源漂移继续由原保护条件拒绝。#541 的数量间隙与 #542 的同帧记录优先用于重放验证时间边界，生产来源由能独立区分两种历史的证据确认。
-- #549 的深层图和掉落字段作为默认关闭的校准证据保留。`held/offered Item` 图、观察开始前和被动间隙的补充范围，按所选动作缺少的结算事实确定。先查现有观察能否判定，再针对能改变结算的缺口补最小字段和正反例。单次 `unavailable` 或必填字段缺失只记录拒绝原因，不能裁决字段必要性。读取副作用沿 [#29](https://github.com/zalataraglados-prog/StardewValleyAICompanion/issues/29) 的原责任处理，当前所选路径涉及的风险在使用前核验。 [#541](https://github.com/zalataraglados-prog/StardewValleyAICompanion/pull/541) · [#542](https://github.com/zalataraglados-prog/StardewValleyAICompanion/pull/542) · [#549](https://github.com/zalataraglados-prog/StardewValleyAICompanion/pull/549) · [#550 审查](https://github.com/zalataraglados-prog/StardewValleyAICompanion/issues/550#issuecomment-6772496351)
+- `BuildCropTeacherWateringRefillApproachQueueAsync()` 复用原补水接近编译。当前显式 `OpenNativeObservedEffects()`／`OpenNativeObservedRefillApproach()` 消费原生请求、成功回执、目标与真实after，并由原owner记录模式、一次派发和恢复；原库存连续性／所选野树精确资源入口仍保留其旧合同，不代替当前原生结果模式。保持原队列、动作身份、站位、时间预算和原生回执，准备动作不授作物产量、producer或Teacher信用。[补水路线编译](money-crop-refill-approach-compilation.md) · [补水记录读取器](../experiments/StardewAI.GoalConditionedBootstrap/CropTeacherRefillApproachNativeTrace.cs)
+- 所选路线只要求到达和补水时，以原生动作结果、通路、实际水量和地块状态判定动作进度，正常工具XML、邻格效果和随机掉落不要求逐项预测，不把私有观察缺失变成清草派发门。只有账本确实需要把掉落计为本动作产出时，才沿既有精确资源合同区分既有掉落、本次产生和实际入包；来源不明的增量不授本动作生产信用，不能反过来阻止已确认合法的原生准备动作。#541／#542用于该归因需求的时间边界，不扩大成每次普通清障的必要条件。
+- #549 的深层图和掉落字段继续作为默认关闭的校准证据。仅在所选结算确实需要且现有原生材料无法判定时，补能改变该结算的最小字段和针对性用例；不为普通原生副作用重新搭建预测模拟器。旧精确归因分支的未知资源保护不变，新模式也不得伪造成功、跨run／存档／actor、重复派发或冒领生产信用。读取副作用沿 [#29](https://github.com/zalataraglados-prog/StardewValleyAICompanion/issues/29) 的原责任处理。[#541](https://github.com/zalataraglados-prog/StardewValleyAICompanion/pull/541) · [#542](https://github.com/zalataraglados-prog/StardewValleyAICompanion/pull/542) · [#549](https://github.com/zalataraglados-prog/StardewValleyAICompanion/pull/549) · [#550 审查](https://github.com/zalataraglados-prog/StardewValleyAICompanion/issues/550#issuecomment-6772496351)
 
-**退出条件。** 对当前合法队列能确定到达、工具消耗与库存变化。需记产出时，合法来源可入账，既有掉落和来源未明的变化不会误记为本动作产出。优先复用已有原生轨迹，只有现有材料无法判定时才补对应的隔离短测。
+**退出条件。** 当前合法队列通过原生请求／回执／目标／真实after及同owner恢复确定到达和补水进度。需记产出时才验证对应的资源来源，既有掉落和来源未明的变化不误记为本动作产出；不增加普通清障的私有字段预测门。优先复用已有原生轨迹，只有现有材料无法判定所需事实时才补对应的隔离短测。
 
 ### 3. 接同一账本、主循环和跨日恢复
 
