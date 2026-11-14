@@ -666,17 +666,15 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             managedOwner is null ? snapshotJson : ContentAddressedJsonArtifactReader.ReadAllText(managedOwner.CurrentSnapshotPath),
             JsonOptions) ?? throw new InvalidDataException(
                 "crop_teacher_full_snapshot_invalid");
-        var cropStep = CropTeacherRunPlanner.Evaluate(
+        var cropStep = EvaluateCropTeacherCurrentRunStep(
             activeCropTeacherRunPlan,
             activeCropTeacherRunPlanRequest ??
                 throw new InvalidOperationException(
                     "crop_teacher_run_plan_request_missing"),
             typedSnapshot,
             cropTeacherPreparedCommitmentIds,
-            activeCropTeacherTransitionLedger?.CompletedHarvestTileKeys,
-            activeCropTeacherTransitionLedger?.CompletedDayBoundaryKeys,
-            managedOwner is null ? null : JsonSerializer.Deserialize<StardewAI.Contracts.Strategy.StrategyCommitmentLedger>(
-                ContentAddressedJsonArtifactReader.ReadAllText(managedOwner.CurrentLedgerPath), JsonOptions));
+            activeCropTeacherTransitionLedger,
+            managedOwner);
         if (!cropTeacherFirstDayCompleted &&
             (cropStep.TotalDay > activeCropTeacherRunPlan.FirstTotalDay ||
              cropStep.Stage == CropTeacherRunStageKinds.Complete))

@@ -2,6 +2,14 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-14 R2 原 owner 完成凭据接回原规划器
+
+- `06eb63e0` 已推送，CI43551647606成功。隐藏原S／新PID16348经原入口实际接受第34项fresh native readback，原plan／request／存档未换、下一工件35未覆盖旧序号；随后派发前因 `crop_teacher_run_day_advanced_without_verified_save_boundary` 退出2，四归属进程全退出。不是原生睡眠再次失败：原第32项日界0→1已接受，但新Main仅把旧transition ledger完成键传给原规划器，漏接托管owner记录。首次Block104调用路径空格未引用而在解析前失败亦保留，脚本修正不改旧参数校验。
+- 新只读 `ReadPlanningProgress` 在同一owner锁内消费既有已验证接受证书的hash链，原日界只映射native overnight＋save已接受的from→to，原收获只映射已接受applied tiles，复用原DayBoundaryKey／HarvestTileKey。返回独立集合，不按当前日期／作物缺失推断、不把readback／控制算生产、不另建ledger；每次只读小证书，不重新深验全部历史快照，终局原完整trace证明不变。Main薄适配给原 `CropTeacherRunPlanner.Evaluate` 供键，非托管默认不变，原planner／旧owner索引／桥／执行器未修改。
+- 控制端首次 **53/54**：唯一失败是新测试误调用旧seed-only `ReadStep()`，已改读原harvest admission，旧API保持拒绝非种子。最终同组 **54/54（1分4秒）**，覆盖日界与加载后接续、收获不重收、未接受日界仍阻塞、重开／pending／历史证书篡改／集合隔离和旧恢复／trace；不与前组相加，不称真实生产周期通过。
+- 原APIBlock105同会话只读审查11steps未发现问题，未发现本次真实集成漏参；Block107初次因缺必需rg／gitlog停下，唯一修正因猜错依赖文件名按过严退出规则停下，均零代码／零测试。原输出／任务包／失败保留，控制端接管实现验收，不再支付第三次调用；权限已撤、授权仍在，此块blocked-idle不是provider限额。后续文件名错误应由已授权的窄rg纠正，不当成权限／provider故障。
+- **唯一接续：** 提交后原S新日志目录隐藏静音重开，经同一owner新加载接受后继续原13日84动作维护→收获→销售→终端保存／内容读回；不回改Block106失败、不拼未保存尾部。原performance只读取样：106累计57.891更新／秒、仅2次full（平均2382.464ms），冷恢复约4分钟仍有代价，不称性能已解决。完整周期／Teacher总验收／formal仍false，local-data不提交。
+
 ## 2026-11-14 R2 同一 owner 显式生产续跑入口
 
 - 新命令 `continue-crop-managed-owner` 复用原 readonly resume 的完整恢复／报告正文及原 Main 生产循环，普通入口和 `resume-crop-managed-owner` 默认不变。恢复同一 owner 的原 plan／request、当前账本和原 artifact 序号；派发前要求本次真实新进程加载被原验证器接受，并绑定该 PID／启动时间／可执行文件，进程退出即停止，不使用旧15724帧。

@@ -2,7 +2,7 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
-> **当前：同一owner显式生产续跑入口已接线，尚待真实续跑。** 原S第32项睡眠保存／第33项加载读回接受仍有效；新 `continue-crop-managed-owner` 复用原恢复正文、原Main循环、原plan／request和账本，默认readonly resume不变，必须绑定当前新进程加载并在退出后停止派发。控制端组合59/59（1分3秒）；原APIBlock102红0/6后编译失败，草稿留存、旧文件原样恢复、控制端修复验收，不称peer全绿。NEW路径离线预检7/7，7209ebdd远端CI成功。下一步同S隐藏静音执行原13日84动作余下维护／收获／销售／终端保存读回；真实完整周期／Teacher总验收／formal仍false，local-data不提交。[当前证据与唯一接续](CURRENT_WORK_CN.md#2026-11-14-r2-同一-owner-显式生产续跑入口)。
+> **当前：同一S原生加载已接受34，日界凭据适配54/54。** 06eb63e0 CI成功；真实106新PID加载接受同owner34，工件35派发前因新Main漏传托管已接受日界键而退出，原planner正确拒绝。现只读消费原接受证书hash链给原规划器供日界／实际收获格键，不建新账本／推断完成／重放每个历史full快照；原planner、owner索引和执行器不改。首次53/54的新测试seed-only API误用修正后54/54（1分4秒）。原API105仅只读审查，107两调用零代码／测试后控制端接管，失败保留、无第三次重试；授权有效／此块blocked-idle。下一步同S隐藏静音再续原13日84动作到终局销售／保存内容读回，完整周期／Teacher总验收／formal仍false，local-data不提交。[当前证据与唯一接续](CURRENT_WORK_CN.md#2026-11-14-r2-原-owner-完成凭据接回原规划器)。
 
 > **2026-11-14 原生动作信任边界修正，覆盖下方历史“严格weed／Scythe效果叶”接续。** 用户确认原生割草应信任游戏规则；保留原候选／编译／成功回执、同run／存档／actor／帧、真实after与一次claim／原owner恢复，停止把每项私有XML／随机掉落／邻格清除的独立预测当派发门。旧执行器／默认读取器／耕地资源合同保留。74c28522共享原回执／留存／rebind、显式清障结果入口聚焦44/44；完整清障owner、生产销售及原生保存加载尚待实跑。原API Block73与控制端分工接线／测试，Block72未启动的补跑已取消、草稿保留。Main7e4ab946 CI43484697557 attempt2成功，首次museum超时历史不改写。L1冻结、#569分工、formal=false不变。[当前接续](CURRENT_WORK_CN.md#2026-11-14-r2-原生动作信任边界修正)。
 
