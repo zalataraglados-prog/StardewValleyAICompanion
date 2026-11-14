@@ -2,7 +2,7 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
-> **当前：同S真实维护／第二夜已接受41，保存到春季第3天。** 109越过原日界漏参断点，原owner接受回农场、六株维护、回家及日界1→2保存；之后新Main错误要求旧transition ledger而退出，失败保留。现仅分流新增loop观察／收获登记：托管只走原owner，非托管原capture／save要求不变。组合60/61的唯一旧用例File.Move AccessDenied保留；原二进制不改源码聚焦失败旧用例＋三新用例4/4，不冒称61/61。之前54/54继续有效；下一步同一已保存第3天新进程读回后继续原13日84动作到销售／终端保存内容读回，不重发已接受日界。完整周期／Teacher总验收／formal仍false，原API授权空闲／撤权、local-data不提交。[唯一接续](CURRENT_WORK_CN.md#2026-11-14-r2-托管日界不再进入旧账本登记)。
+> **当前：真实112已保存到春季第9天，在补水Product消费者处停止。** 本调用20条verified队列，owner71已接受／72pending；原编译器水量不足先做4株，再为剩2株接近补水点。旧补水消费者固定Runtime版本且下层Runtime-only读取，未接Product；下一步显式接原native reader／严格executor绑定，不改旧默认或另造执行器。原指纹证明磁盘仍是春9最后保存，4株浇水和接近为已丢失未保存尾部，无合法现成回滚合同，不假续owner72；修复并完整只读核旧证据后，用新隔离真实开局重跑原13日84全周期，旧S全部保留。CI旧直接调用源码守卫已按委托链修复，20/20（290ms），旧CI3042/3043失败保留。完整周期／Teacher总验收／formal仍false，local-data不提交。[唯一接续](CURRENT_WORK_CN.md#2026-11-14-r2-春季第9天补水-product-消费者缺口)。
 
 > **2026-11-14 原生动作信任边界修正，覆盖下方历史“严格weed／Scythe效果叶”接续。** 用户确认原生割草应信任游戏规则；保留原候选／编译／成功回执、同run／存档／actor／帧、真实after与一次claim／原owner恢复，停止把每项私有XML／随机掉落／邻格清除的独立预测当派发门。旧执行器／默认读取器／耕地资源合同保留。74c28522共享原回执／留存／rebind、显式清障结果入口聚焦44/44；完整清障owner、生产销售及原生保存加载尚待实跑。原API Block73与控制端分工接线／测试，Block72未启动的补跑已取消、草稿保留。Main7e4ab946 CI43484697557 attempt2成功，首次museum超时历史不改写。L1冻结、#569分工、formal=false不变。[当前接续](CURRENT_WORK_CN.md#2026-11-14-r2-原生动作信任边界修正)。
 

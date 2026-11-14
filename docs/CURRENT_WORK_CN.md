@@ -2,6 +2,14 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-14 R2 春季第9天补水 Product 消费者缺口
+
+- `bb24e045` 的真实112已越过旧账本登记错误，同一进程连续推进到春季第9天：本调用20条verified Product队列，原owner71已接受，最后持久日界owner68为7→8。第9天水量只够4株时原编译器先编译并接受4株，剩2株转去补水点；iteration71的补水接近结果在新消费者绑定处被拒，owner72 pending。loop退出2／监督器退出1，四归属进程已关闭。原失败保留，完整收获／销售周期未通过。
+- 直接根因：原 `CropTeacherWateringMaintenance.RefillApproach` 仍固定Runtime executor，实际已固定的transition为Product；原 `CropTeacherRefillApproachNativeTrace` 默认也用Runtime-only `ReadQueue`。两文件最近提交 `09aa1acf`；这说明尚缺明确的Product消费接线，不是原编译器／移动执行器没有能力。**不得为此把旧默认读取器改成普遍接受Product**，或只改版本字符串而漏下层原请求／回执证明。
+- **后续唯一实现块：** 复用既有 `ReadSelectedNativeActionQueue`，新增显式native refill trace／preparation入口；完整匹配声明executor与真实receipt，保留原queue／source／run／actor／帧／原生请求nonce／目标及资源模式。原Runtime入口默认不变，owner只对其已固定Product记录显式选择新消费者；不新增执行器／ledger、不给补水接近授作物产量信用。补真实Product协议正例、旧默认拒绝Product及错声明／错nonce／错来源反例，再用未改的112留存原件只读验完整scope，不补写native／owner接受。
+- **持久性限制必须保留。** 用原 `NativeSaveBoundaryVerifier.Capture` 核实物理原档4文件／7486991bytes，SHA `b4db592b14b539b3c86875a50d7a89bfa9b645ad17d344a234d3b4e647ca8395`，与原native0067的春9保存完全一致；后4株浇水及接近水点是关闭进程后已丢失的未保存尾部。现有owner没有挥发尾部回滚协议，且readback只接受原已接受过夜／读回头；不得改写原accepted链、伪造新加载一致或直接再发已claim72。修复后从**新的隔离真实开局**重跑原完整13日／84计划，不缩小分母、不拿S部分轨迹拼成新全周期；原S所有保存、失败、native和ledger留存。若发现既有明确的合法恢复能力，先验证其原合同，不能默认存在。
+- `bb24e045` CI43554993177的Backend3042/3043唯一失败是旧源码守卫要求Main直接调用旧capture名称。只更新守卫验证Main→新owner分流→原非托管capture完整委托，原断言意义保留，相关 **20/20（290ms）**；运行代码未为CI改动，原失败不回标成功。112只读performance53.85更新／秒、137次full平均1450.404ms／最大4119.631ms，仍有明显采集停顿。L1冻结、#550／#569、Teacher总验收／formal=false、local-data不提交不变。
+
 ## 2026-11-14 R2 托管日界不再进入旧账本登记
 
 - 修正版109实际越过106断点：同S新加载后，原owner接受回农场、六株第2日浇水、回家及再次原生睡眠保存，最新第41项真实日界1→2／六株／native save均true；原存档已春季第3天。本调用报告在末次sleep后旧分支异常前记录3条verified队列，不把6个浇水primitive混为6个队列。四归属进程均退出，原失败不回改。

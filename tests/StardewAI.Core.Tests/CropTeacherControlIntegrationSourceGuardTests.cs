@@ -371,9 +371,14 @@ public sealed partial class CropTeacherControlIntegrationSourceGuardTests
             program,
             StringComparison.Ordinal);
         Assert.Contains(
-            "CaptureCropTeacherDayBoundaryStartAsync(",
+            "CaptureCropTeacherLoopDayBoundaryStartAsync(",
             program,
             StringComparison.Ordinal);
+        Assert.Contains("cropTeacherManagedOwner.Current,", program, StringComparison.Ordinal);
+        var boundaryOwner = Read("tools", "StardewAI.LiveTrainingLoop", "Program.CropTeacherManagedLoop.DayBoundary.cs");
+        Assert.Contains("owner is not null ? Task.FromResult<CropTeacherDayBoundaryStart?>(null)", boundaryOwner, StringComparison.Ordinal);
+        Assert.Contains("CaptureCropTeacherDayBoundaryStartAsync(options, step, beforeSnapshot, beforeStateHash)",
+            boundaryOwner, StringComparison.Ordinal);
     }
 
     [Fact]
