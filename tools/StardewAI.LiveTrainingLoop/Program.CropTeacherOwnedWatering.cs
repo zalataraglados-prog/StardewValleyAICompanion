@@ -33,14 +33,15 @@ static partial class Program
                     OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
                 throw new InvalidDataException("Original crop control selected an interrupt, not the admitted watering batch.");
             var selectedResources = refill && owner.UsesSelectedRefillResourceEffects;
-            if (selectedResources)
+            var nativeObserved = selectedResources && owner.UsesNativeRefillOutcomeAuthority;
+            if (selectedResources && !nativeObserved)
             {
                 RequireSelectedRefillToolInputs(options, compiled.Queue);
                 NativeOutputObservationMode.Validate(options);
             }
             await WriteJsonAsync(prefix + "-compiled-queue.json", compiled.Queue).ConfigureAwait(false);
             return new(step, compiled.ModelPlanPath, prefix + "-compiled-queue.json", receiptPath, afterPath, runtimeDirectory)
-                { IsRefillApproach = refill, UseSelectedRefillResourceEffects = selectedResources };
+                { IsRefillApproach = refill, UseSelectedRefillResourceEffects = selectedResources, UseNativeRefillOutcomeAuthority = nativeObserved };
         }).ConfigureAwait(false);
     }
 

@@ -202,10 +202,10 @@ public sealed partial class CropTeacherControlIntegrationSourceGuardTests
             "crop_teacher_watering_refill_approach",
             source,
             StringComparison.Ordinal);
-        Assert.Contains(
-            "\"max_route_repair_clears\"",
-            source,
-            StringComparison.Ordinal);
+        Assert.Contains("CropBoundedApproachPlanBuilder.Build(", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("\"max_route_repair_clears\"", source, StringComparison.Ordinal);
+        var approach = Read("src", "StardewAI.Core", "Training", "CropBoundedApproachPlanBuilder.cs");
+        Assert.Contains("name = \"max_route_repair_clears\", value = \"4\"", approach, StringComparison.Ordinal);
         Assert.Contains(
             "\"executor.move_to_tile\"",
             source,
@@ -371,9 +371,14 @@ public sealed partial class CropTeacherControlIntegrationSourceGuardTests
             program,
             StringComparison.Ordinal);
         Assert.Contains(
-            "CaptureCropTeacherDayBoundaryStartAsync(",
+            "CaptureCropTeacherLoopDayBoundaryStartAsync(",
             program,
             StringComparison.Ordinal);
+        Assert.Contains("cropTeacherManagedOwner.Current,", program, StringComparison.Ordinal);
+        var boundaryOwner = Read("tools", "StardewAI.LiveTrainingLoop", "Program.CropTeacherManagedLoop.DayBoundary.cs");
+        Assert.Contains("owner is not null ? Task.FromResult<CropTeacherDayBoundaryStart?>(null)", boundaryOwner, StringComparison.Ordinal);
+        Assert.Contains("CaptureCropTeacherDayBoundaryStartAsync(options, step, beforeSnapshot, beforeStateHash)",
+            boundaryOwner, StringComparison.Ordinal);
     }
 
     [Fact]

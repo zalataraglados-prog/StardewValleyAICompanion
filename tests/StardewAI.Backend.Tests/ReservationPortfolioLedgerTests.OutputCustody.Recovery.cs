@@ -33,6 +33,9 @@ public sealed partial class ReservationPortfolioLedgerTests
         await using var app = PortfolioReplyApplication(root);
         using var setup = app.CreateClient();
         app.Services.GetRequiredService<StateStore>().Snapshots[after.StateHash] = after;
+        // Initialize the test server's routing before measuring recovery, without reading/reconciling the ledger.
+        using var readiness = await setup.GetAsync("/health");
+        readiness.EnsureSuccessStatusCode();
         var options = new LiveTrainingOptions { Root = NewPortfolioReplyRoot(), RunId = "isolated-live-custody", BackendUrl = "http://localhost" };
         using var transport = new LivePortfolioSettlementTestHandler(app.Server.CreateHandler(), mode, options.SnapshotDir);
         using var http = new HttpClient(transport);
@@ -41,11 +44,18 @@ public sealed partial class ReservationPortfolioLedgerTests
         var method = typeof(LiveTrainingOptions).Assembly.GetType("Program", true)!
             .GetMethod("SettleMuseumOutputCustodyAsync", BindingFlags.NonPublic | BindingFlags.Static)!;
 
-        await ((Task)method.Invoke(null, new object[]
+        var settlement = (Task)method.Invoke(null, new object[]
         {
             http, options, JsonSerializer.SerializeToNode(item)!.AsObject(), execution,
             JsonSerializer.SerializeToNode(fixture.Snapshot)!.AsObject(), JsonSerializer.SerializeToNode(after)!.AsObject()
-        })!).WaitAsync(TimeSpan.FromSeconds(15));
+        })!;
+        try { await settlement.WaitAsync(TimeSpan.FromSeconds(15)); }
+        catch (TimeoutException)
+        {
+            throw new Xunit.Sdk.XunitException($"Museum settlement timed out: mode={mode}, stage={transport.LastStage}, " +
+                $"ledger_reads={transport.LedgerReads}, mutations={transport.MutationCalls}, lookups={transport.LookupCalls}, " +
+                $"task={settlement.Status}, journal_exists={File.Exists(execution["material_reservation_settlement_request_journal_path"]?.GetValue<string>())}");
+        }
 
         Assert.Equal(1, transport.MutationCalls);
         Assert.Equal(lookups, transport.LookupCalls);

@@ -1,5 +1,67 @@
 # Current Production Snapshot Handoff
 
+## Joint Current-Day Calendar (2026-11-15)
+
+This section and CURRENT_WORK supersede older "Current" successors below.
+Accepted172manual final-day/production/revenue certificates remain frozen; no
+thirteen-day restart or recovery framework is required for this development.
+
+The existing per-candidate timeline and aggregate DailyPlan budget have different
+scopes: individually open candidates can miss a closing window after earlier work.
+CompileWithJointCalendar now uses the SAME compiler loop, ordering, native step
+generation, reservations and aggregate time/energy checks. It accumulates accepted
+compiled durations, checks each non-deferred candidate's opening/closing window,
+and annotates candidate start/end clock values. Rejected windows consume no budget
+or candidate count. Existing bounded wait/fresh-source barriers remain unchanged;
+this is a current-day estimate, not a second scheduler or long-horizon proof.
+
+The original daily-plan/compile endpoint opts in with use_joint_calendar=true.
+It requires the exact requested snapshot and the original native clock reader;
+missing/unreadable/conflicting aliases fail instead of using a different/latest
+source or unlimited time. Alias-only clocks share the old recovery deadline policy.
+LiveTrainingLoop opts in with --use-daily-plan --joint-daily-calendar for BOTH initial
+selection and selected-candidate fresh compilation. Default is OFF; legacy request
+bytes, Compile signature/semantics, native executors and existing owners are retained.
+
+174 adds required_candidate_ids to the explicit joint-calendar request and an
+overload of the SAME compiler core. Required candidates and existing shop-open
+prerequisites retain their original relative ordering but precede optional work.
+All use the same time/energy/count/reservation checks. Unschedulable required work
+blocks optional spending; bounded waits still require a fresh-source replan.
+Joint mode floors readable native fractional stamina; missing energy rejects,
+not an unlimited budget. The legacy endpoint/default reader is unchanged.
+
+CropTeacherRunPlanner.BindDailyComposition uses the exact snapshot/save/actor
+ledger and original progress/evaluator to bind due watering/harvest tiles to
+uniquely materialized unblocked candidates. Keep the complete other-goal candidate
+pool and existing required IDs. Satisfied maintenance adds nothing; missing or
+ambiguous work fails. Original seed/route/site/planting prefixes remain original
+owner work, not a demand to validate later crops before planting. The old
+EvaluateNextBatch still lazily takes only the first pending batch from its shared
+iterator. No new executor, costs, ledger writes or owner receipts are generated.
+
+The returned request has CompileActionQueue=false: planning composition is NOT
+permission to dispatch a mixed queue through the intentionally crop-only owner.
+The global caller must retain original control/recovery preemption, dispatch each
+work class through its existing owner, and return verified results plus fresh
+source/ledger to the same plan. This is the next originalstep5 implementation,
+not authority to loosen old owners or an additional acceptance stage.
+
+174 Core checks92/92(142ms), Backend/old planner/binding/endpoint/budget/resume/
+dispatch/supplement/museum/original queue checks89/89(11s). No game/native dispatch/
+worker/training. The new planting test initially used winter supply planning to
+assert spring work; only the fixture date was corrected, not the old evaluator.
+4b6fa676 CI43618869359FAILED3154/3155: museum timeout stopped on its first ledger
+GET with zero mutation/lookup and no journal. Test-only pure /health routing
+readiness now precedes the unchanged15s recovery measurement. Do NOT warm a ledger
+GET, which can reconcile/write; all single-submit/read-only recovery assertions
+remain. Local14branches pass; a new remote result is still required.
+
+Do not claim full L3/shared-resource/source-schedule integration from this binding.
+Originalsteps3/4automatic properties remain unproven; observe them with planned
+global native work, not another separate thirteen-day restart. Accepted manual
+certificates stay frozen. L1/original8steps/#569scope unchanged; formal=false.
+
 ## Original Seed Control Transaction (Current)
 
 PR508 passed42 steps in42377567925 and same-head review, merged asc96f59e2 with

@@ -846,7 +846,7 @@ static partial class Program
             var selectedCandidateCompleted =
                 seedPrefix is not null
                 ? execution["selected_queue_candidate_completed"]?.GetValue<bool>() == true
-                : options.UseTeacherPreferenceQueue || options.UsePrecompiledQueue
+                : options.UseTeacherPreferenceQueue || options.UsePrecompiledQueue || options.UseOwnedSupportingQueueBoundary
                 ? string.Equals(
                         executionStatus,
                         "applied",

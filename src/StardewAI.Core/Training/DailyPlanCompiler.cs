@@ -45,6 +45,18 @@ namespace StardewAI.Core.Training
             int maxCandidates = 4,
             int? availableMinutes = null,
             int? energyBudget = null)
+            => CompileCore(candidates, stateHash, goalId, executionMode, maxCandidates, availableMinutes, energyBudget, null);
+
+        private SmallModelPlanEnvelope CompileCore(
+            IEnumerable<PolicyEventCandidatePrediction> candidates,
+            string stateHash,
+            string goalId,
+            string executionMode,
+            int maxCandidates,
+            int? availableMinutes,
+            int? energyBudget,
+            JointCalendarBudget? calendar,
+            ISet<string>? requiredCandidates = null)
         {
             var steps = new List<SmallModelPlanStep>();
             var audit = new List<SmallModelPlanCandidateAudit>();
@@ -61,7 +73,13 @@ namespace StardewAI.Core.Training
             var reservedInventorySlotQuantities = new Dictionary<int, int>();
             var reservedDebrisTargets = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var reservedDecisionGroups = new HashSet<string>(StringComparer.Ordinal);
-            foreach (var candidate in OrderedCandidates(candidates))
+            var orderedCandidates = OrderedCandidates(candidates).ToArray();
+            var pendingRequired = new HashSet<string>(requiredCandidates ?? new HashSet<string>(), StringComparer.Ordinal);
+            var requiredShops = new HashSet<string>(orderedCandidates.Where(row => pendingRequired.Contains(row.CandidateId) &&
+                row.Kind == "buy_shop_item" && !string.IsNullOrWhiteSpace(row.ShopId)).Select(row => row.ShopId), StringComparer.OrdinalIgnoreCase);
+            bool RequiredOrPrerequisite(PolicyEventCandidatePrediction row) => requiredCandidates?.Contains(row.CandidateId) == true ||
+                row.Kind == "interact_endpoint" && requiredShops.Contains(row.ShopId);
+            foreach (var candidate in orderedCandidates.OrderBy(row => RequiredOrPrerequisite(row) ? 0 : 1))
             {
                 var rollingDeferred = string.Equals(candidate.TimelineStatus, "deferred", StringComparison.Ordinal) &&
                     (candidate.ScheduledWaitCost ?? 0) > 0;
@@ -86,6 +104,12 @@ namespace StardewAI.Core.Training
                         remainingMinutes,
                         remainingEnergy,
                         remainingEnergy));
+                    continue;
+                }
+                if (pendingRequired.Count > 0 && !RequiredOrPrerequisite(candidate))
+                {
+                    audit.Add(CandidateAudit(candidate, "skipped", new[] { "required_work_not_fully_scheduled" }, candidateMinutes,
+                        remainingMinutes, remainingMinutes, remainingEnergy, remainingEnergy));
                     continue;
                 }
                 if (candidateSteps.Length == 0 && waitSteps.Length == 0)
@@ -173,6 +197,14 @@ namespace StardewAI.Core.Training
                     continue;
                 }
 
+                var calendarBlock = calendar?.BlockReason(candidate, candidateMinutes, rollingDeferred);
+                if (calendarBlock is not null)
+                {
+                    audit.Add(CandidateAudit(candidate, "skipped", new[] { calendarBlock }, candidateMinutes,
+                        remainingMinutes, remainingMinutes, remainingEnergy, remainingEnergy));
+                    continue;
+                }
+
                 var nextRemainingMinutes = remainingMinutes.HasValue ? Math.Max(0, remainingMinutes.Value - candidateMinutes) : (int?)null;
                 var nextRemainingEnergy = remainingEnergy.HasValue ? Math.Max(0, remainingEnergy.Value - effectiveEnergyCost) : (int?)null;
                 var acceptedSteps = waitSteps
@@ -186,6 +218,7 @@ namespace StardewAI.Core.Training
                         nextRemainingMinutes,
                         remainingEnergy,
                         nextRemainingEnergy))
+                    .Select(step => calendar?.Annotate(step, candidateMinutes) ?? step)
                     .ToArray();
                 steps.AddRange(acceptedSteps);
                 audit.Add(CandidateAudit(
@@ -217,6 +250,8 @@ namespace StardewAI.Core.Training
                 {
                     rollingHorizonReplanBarrierAccepted = true;
                 }
+                calendar?.Accept(candidateMinutes);
+                if (!rollingDeferred) pendingRequired.Remove(candidate.CandidateId);
                 selected++;
             }
 

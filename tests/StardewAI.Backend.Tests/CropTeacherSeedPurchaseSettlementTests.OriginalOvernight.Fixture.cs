@@ -21,15 +21,20 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         internal string HarvestRuntime => Shared.Files.Native + "-harvest";
         internal string NightQueue => Path.Combine(Shared.Runtime.LiveOptions.SnapshotDir, "crop-teacher-sleep-0003-compiled-queue.json");
         internal string NightAfter => Path.Combine(Shared.Runtime.LiveOptions.SnapshotDir, "after-snapshot-0003.json");
+        internal string NightStepAfter => separateTerminalCopy
+            ? Path.Combine(Shared.Runtime.LiveOptions.SnapshotDir, "after-snapshot-0003-item-0001.json") : NightAfter;
+        private readonly bool separateTerminalCopy;
         internal string HarvestQueue => Path.Combine(Shared.Runtime.LiveOptions.SnapshotDir, "crop-teacher-batch-0005-compiled-queue.json");
         internal string HarvestAfter => Path.Combine(Shared.Runtime.LiveOptions.SnapshotDir, "after-snapshot-0005.json");
         internal int NativeNightCalls { get; private set; }
         internal int NativeHarvestCalls { get; private set; }
 
-        internal OvernightFixture(bool noCrops = false)
+        internal OvernightFixture(bool noCrops = false, Action<Fixture>? prepareSource = null, bool productExecutor = false,
+            bool separateTerminalCopy = false)
         {
+            this.separateTerminalCopy = separateTerminalCopy;
             // A declared one-day catalog isolates owner sequencing; it is NOT vanilla growth evidence.
-            Watering = new(prepareSource: source =>
+            Watering = new(productExecutor: productExecutor, prepareSource: source =>
             {
                 HarvestFixture.PrepareSource(source);
                 ChangeState(source.Before, "farm", farm =>
@@ -60,6 +65,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 ChangeState(source.Before, "locations", node => node["route_graph"]!["value"]!["edges"]!.AsArray().Add(
                     JsonSerializer.SerializeToNode(new { kind = "warp", from_location = "FarmHouse", from_x = 6, from_y = 6,
                         target_location = "Farm", target_x = 5, target_y = 6, resolved = true })));
+                prepareSource?.Invoke(source);
             });
             var live = Shared.Runtime.LiveOptions;
             live.UseDailyPlan = true;
@@ -118,10 +124,12 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         {
             NativeNightCalls++;
             var before = Read(owner.CurrentSnapshotPath); var after = Copy(before); after.GameTick++;
+            after.InGameTime.Value = 600;
             ChangeState(after, "time", node =>
             {
                 node["total_days"]!["value"] = node["total_days"]!["value"]!.GetValue<int>() + 1;
                 node["day"]!["value"] = node["day"]!["value"]!.GetValue<int>() + 1;
+                node["time"]!["value"] = 600;
             });
             ChangeState(after, "farm", farm =>
             {
@@ -132,11 +140,14 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 }
             });
             var queue = JsonSerializer.Deserialize<ActionQueueEnvelope>(File.ReadAllText(NightQueue), JsonOptions)!;
+            var candidate = queue.Items.Single().NormalizedCommand.Parameters.Single(row => row.Name == "precondition" &&
+                row.Value.StartsWith("candidate_id:", StringComparison.Ordinal)).Value["candidate_id:".Length..];
             var receipt = MoneyCropTeacherFixture.Create<QueueExecutionReceiptEnvelope>("LifecycleReceipt", queue, before, after,
-                Shared.Files.Options.RunId, "recovery:native_save_boundary", "sleep");
-            receipt.StepResults.Single().AfterSnapshotPath = NightAfter;
+                Shared.Files.Options.RunId, candidate, "sleep");
+            receipt.StepResults.Single().AfterSnapshotPath = NightStepAfter;
             var path = Path.Combine(Shared.Runtime.LiveOptions.SnapshotDir, "execution-0003.json");
             Fixture.Save(path, receipt); Fixture.Save(NightAfter, after);
+            if (separateTerminalCopy) Fixture.Save(NightStepAfter, after);
             Shared.Runtime.Store.Snapshots[after.StateHash] = after;
             if (save) CompleteSave();
             return Task.FromResult(new JsonObject { ["execution_path"] = path, ["after_snapshot_path"] = NightAfter });

@@ -99,7 +99,11 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                     node["tile_y"]!["value"] = scope.Target.TileY;
                 });
                 if (!resourceNeutral)
-                    after.State["trace_fixture"] = JsonSerializer.SerializeToElement(new { status = "available", value = index + 1 });
+                    after.State["trace_fixture"] = JsonSerializer.SerializeToElement(new
+                    {
+                        status = "available", value = index + 1, source = "declared_fixture",
+                        adapter = "refill_trace_fixture", read_at_tick = after.GameTick, confidence = 1.0
+                    });
                 // Mutate before hashing/writing the frame, result and receipt so guard tests
                 // exercise physical snapshot differences rather than stale evidence hashes.
                 changeFrame?.Invoke(after, index);
@@ -143,7 +147,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 {
                     QueueItemIndex = index, QueueItemCount = Approach.Queue.Items.Length, OriginalPlannedItemCount = Approach.Queue.Items.Length,
                     QueueId = scope.QueueId, QueueItemId = item.QueueItemId, OptionId = item.OptionId, SourceStateHash = before.StateHash,
-                    CompiledCommandStateHash = Approach.Queue.StateHash, AfterStateHash = after.StateHash, StateHashChanged = true,
+                    CompiledCommandStateHash = Approach.Queue.StateHash, AfterStateHash = after.StateHash, StateHashChanged = before.StateHash != after.StateHash,
                     BeforeGameTick = before.GameTick, AfterGameTick = after.GameTick, AfterSnapshotPath = afterPath, AfterSnapshotFresh = true,
                     Status = "applied", PrimitiveKind = item.OptionId["executor.".Length..], PrimitiveVerificationStatus = "verified",
                     PrimitiveVerificationReasons = ["declared_trace_fixture"], ChangedFacts = JsonSerializer.SerializeToElement(facts, JsonOptions),

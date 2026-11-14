@@ -1,5 +1,33 @@
 # Original Refill Approach Compilation Boundary
 
+## Current Integration: 2026-11-14
+
+The original compilation below is now consumed by the existing managed owner and
+Main loop. The explicit Product path uses
+`Preparation.OpenNativeRefillApproach` or
+`Preparation.OpenNativeRefillApproachWithSelectedResourceEffects`, which select
+`CropTeacherRefillApproachNativeTrace.OpenNativeResourceNeutral` or
+`OpenNativeWithSelectedResourceEffects`. These reuse
+`ReadSelectedNativeActionQueue` and compare each verified request endpoint with
+the declared executor version. The aggregate receipt has no ExecutorVersion
+property. Existing Runtime defaults and the shared reader/executor are unchanged.
+
+Owner selection comes from the persisted transition version, not the current
+live executor switch. Source/run/actor/queue/nonces/frames and selected resource
+mode remain bound through the original trace/rebind and recovery. Approach is
+still not a refill or watering completion and grants no crop/Teacher credit.
+Normal native tool effects follow the current native-trust correction in
+[CURRENT_WORK](CURRENT_WORK_CN.md#2026-11-14-r2-原生动作信任边界修正), not an
+independent prediction of every private XML/random side effect.
+
+Controller protocol/owner regression passed73/73; subsequent Main control
+continuation regression passed61/61 independently. The retained actual S112
+complete refill scope replay passed with11retained inputs/8physical originals
+unchanged, but did not retroactively accept pending72. S's unsaved tail is gone.
+A new isolated original13day84action managed/Product cycle is required; complete
+harvest/sale/native-save/fresh-load acceptance remains unproven. The dated
+successor descriptions below are historical, not new work orders.
+
 ## Accepted Parent
 
 PR533 accepted the shared producer-time required-output completion fix. Tested

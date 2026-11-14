@@ -6,7 +6,11 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 internal static partial class CropSeedResourceBoundary
 {
-    internal static void VerifyObservedPickup(SnapshotEnvelope before, SnapshotEnvelope after, NativePickupInventorySummary pickup)
+    internal static void VerifyObservedPickup(SnapshotEnvelope before, SnapshotEnvelope after, NativePickupInventorySummary pickup) =>
+        VerifyObservedPickupCore(before, after, pickup, null);
+
+    private static void VerifyObservedPickupCore(SnapshotEnvelope before, SnapshotEnvelope after,
+        NativePickupInventorySummary pickup, SnapshotEnvelope? verifiedInvariantView)
     {
         var (priorPlayer, player) = VerifyPickupGraph(before, after, pickup);
         var inventoryEnvelope = Field(before, "player", "inventory")!;
@@ -16,12 +20,13 @@ internal static partial class CropSeedResourceBoundary
         foreach (var name in new[] { "money", "shop_currency_balances", "multiplayer_wallet", "seed_inventory" })
             SameField(before, after, "player", name, required: name is "money" or "shop_currency_balances");
         var house = VerifyPickupHouseMirror(before, after);
+        var comparison = verifiedInvariantView ?? after;
         var view = new SnapshotEnvelope { SaveId = after.SaveId, PlayerId = after.PlayerId, GameVersion = after.GameVersion,
-            State = new Dictionary<string, JsonElement>(after.State, StringComparer.Ordinal) };
+            State = new Dictionary<string, JsonElement>(comparison.State, StringComparer.Ordinal) };
         if (house is not null)
         {
             // Only a comparison view restores the independently verified inventory-count echo.
-            var world = JsonNode.Parse(after.State["world_progress"].GetRawText())!.AsObject();
+            var world = JsonNode.Parse(comparison.State["world_progress"].GetRawText())!.AsObject();
             world["marriage_house"] = house;
             view.State["world_progress"] = JsonSerializer.SerializeToElement(world);
         }

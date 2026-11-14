@@ -35,7 +35,24 @@ if (args.Length > 0 && args[0] == "close-crop-seed-reservations")
     return;
 }
 
+if (args.Length > 0 && args[0] == "resume-crop-managed-owner")
+{
+    using var resumeHttp = new HttpClient { Timeout = TimeSpan.FromSeconds(180) };
+    try
+    {
+        var resumeOptions = LiveTrainingOptions.Parse(args.Skip(1).ToArray());
+        Console.WriteLine(await ResumeCropTeacherManagedOwnerAsync(resumeHttp, resumeOptions, string.Empty));
+    }
+    catch (Exception exception) { Console.Error.WriteLine(exception.Message); Environment.ExitCode = 2; }
+    return;
+}
+
+var continueManagedOwner = args.Length > 0 && args[0] == "continue-crop-managed-owner";
+if (continueManagedOwner) args = args.Skip(1).ToArray();
 var options = LiveTrainingOptions.Parse(args);
+if (continueManagedOwner) options.ValidateManagedCropTeacherContinueMode();
+else if (!string.IsNullOrWhiteSpace(options.ResumeManagedCropOwnerDirectory))
+    throw new ArgumentException("Use the explicit resume-crop-managed-owner command to reopen retained managed evidence.");
 options.ValidateFormalExecutionBoundary();
 Directory.CreateDirectory(options.Root);
 Directory.CreateDirectory(options.RunDir);
@@ -69,6 +86,7 @@ MoneyRevenueCropNativeProductionRunPlan? activeCropTeacherRunPlan = null;
 MoneyRevenueCropNativeProductionRunPlanRequest?
     activeCropTeacherRunPlanRequest = null;
 CropTeacherTransitionLedger? activeCropTeacherTransitionLedger = null;
+await using var cropTeacherManagedOwner = new CropTeacherOwnerLifetime();
 PendingCropTeacherDayBoundary? pendingCropTeacherDayBoundary = null;
 CropTeacherTransitionLedger? pendingCropTeacherDayBoundaryLedger = null;
 CropTeacherDayBoundaryStart? completedCropTeacherBoundaryStart = null;
@@ -186,8 +204,21 @@ var unverifiedExecutionBackoff = new NoProgressBackoffPolicy(
     options.NoProgressMaxBackoffMs);
 var routeOscillationGuard = new RouteOscillationGuard();
 
+if (continueManagedOwner)
+{
+    var continued = await ContinueCropTeacherManagedOwnerAsync(http, options);
+    cropTeacherManagedOwner.Attach(continued.Owner, continued.GameProcess);
+    activeCropTeacherRunPlanRequest = continued.Source.RunPlanRequest;
+    activeCropTeacherRunPlan = continued.Source.RunPlan;
+    lastPlanningHandoffNativeRunPlanPath = continued.Source.NativeRunPlanPath;
+    AppendProgress(options, "crop_teacher_managed_run_continued", 0, continued.Restore.StateHash, string.Empty,
+        "owner=" + options.ResumeManagedCropOwnerDirectory + " original_plan=" + continued.Source.NativeRunPlanPath +
+        " next_artifact_iteration=" + nextArtifactIteration + " reload_report=" + continued.Restore.ReportPath);
+}
+
 for (var attemptOrdinal = 1; ; attemptOrdinal++)
 {
+    cropTeacherManagedOwner.RequireLiveContinuation();
     var explicitPrimaryTargetMet =
         (options.RequiredVerifiedActions <= 0 ||
          verifiedActions >= options.RequiredVerifiedActions) &&
@@ -553,24 +584,34 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
     var executionSnapshotUrl = options.BridgeSnapshotUrl;
     CropTeacherRunStep? cropTeacherStepForExecution = null;
     ICropTeacherSeedRuntime? cropSeedSupportForExecution = null;
+    CropTeacherManagedSeedOperation? cropManagedOperationForExecution = null;
     JsonObject? dailyPlanRanking = null;
     StageOneCollectionTeacherQueueBuildResult? nativeControlSettle = null;
     JsonObject? deferredObjectiveContinuationForDailyMaintenance = null;
     var inventoryCapacityRecoveryControlActive = false;
     if (options.UseDailyPlan)
     {
-        var settlePrefix = Path.Combine(
-            options.SnapshotDir,
-            $"native-control-settle-{{0}}-{iteration:D4}.json");
-        nativeControlSettle = await TryBuildNativeControlSettleQueueAsync(
-            options,
-            snapshotJson,
-            lastStateHash,
-            snapshotPath,
-            string.Format(settlePrefix, "preference"),
-            string.Format(settlePrefix, "compiled-plan"),
-            string.Format(settlePrefix, "ranking"),
-            string.Format(settlePrefix, "compiled-queue"));
+        if (cropTeacherManagedOwner.Current is { } controlOwner)
+        {
+            var managedSettle = await PrepareCropTeacherOwnedNativeControlSettleAsync(options, iteration, controlOwner);
+            nativeControlSettle = managedSettle?.Build;
+            cropManagedOperationForExecution = managedSettle?.Operation;
+        }
+        else
+        {
+            var settlePrefix = Path.Combine(
+                options.SnapshotDir,
+                $"native-control-settle-{{0}}-{iteration:D4}.json");
+            nativeControlSettle = await TryBuildNativeControlSettleQueueAsync(
+                options,
+                snapshotJson,
+                lastStateHash,
+                snapshotPath,
+                string.Format(settlePrefix, "preference"),
+                string.Format(settlePrefix, "compiled-plan"),
+                string.Format(settlePrefix, "ranking"),
+                string.Format(settlePrefix, "compiled-queue"));
+        }
     }
     JsonObject queue;
     if (nativeControlSettle?.Queue is not null)
@@ -583,9 +624,10 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         decisionRankingPath = nativeControlSettle.RankingPath;
         decisionCompiledQueuePath = nativeControlSettle.QueuePath;
         decisionSnapshotPath = nativeControlSettle.SnapshotPath;
+        decisionSourceStateHash = ReadString(queue, "state_hash");
         selectedCandidateId = nativeControlSettle.SelectedCandidateId;
         selectedQueueIndex = 0;
-        useDailyPlanDecisionLease = true;
+        useDailyPlanDecisionLease = cropManagedOperationForExecution is null;
         stageOneCollectionControlQueueCount++;
         AppendProgress(
             options,
@@ -619,19 +661,20 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
     }
     else if (options.UseDailyPlan && activeCropTeacherRunPlan is not null)
     {
+        var managedOwner = cropTeacherManagedOwner.Current;
         var typedSnapshot = JsonSerializer.Deserialize<SnapshotEnvelope>(
-            snapshotJson,
+            managedOwner is null ? snapshotJson : ContentAddressedJsonArtifactReader.ReadAllText(managedOwner.CurrentSnapshotPath),
             JsonOptions) ?? throw new InvalidDataException(
                 "crop_teacher_full_snapshot_invalid");
-        var cropStep = CropTeacherRunPlanner.Evaluate(
+        var cropStep = EvaluateCropTeacherCurrentRunStep(
             activeCropTeacherRunPlan,
             activeCropTeacherRunPlanRequest ??
                 throw new InvalidOperationException(
                     "crop_teacher_run_plan_request_missing"),
             typedSnapshot,
             cropTeacherPreparedCommitmentIds,
-            activeCropTeacherTransitionLedger?.CompletedHarvestTileKeys,
-            activeCropTeacherTransitionLedger?.CompletedDayBoundaryKeys);
+            activeCropTeacherTransitionLedger,
+            managedOwner);
         if (!cropTeacherFirstDayCompleted &&
             (cropStep.TotalDay > activeCropTeacherRunPlan.FirstTotalDay ||
              cropStep.Stage == CropTeacherRunStageKinds.Complete))
@@ -649,6 +692,11 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             if (options.StopAfterCropTeacherFirstDay &&
                 cropStep.Stage != CropTeacherRunStageKinds.Complete)
             {
+                if (managedOwner is not null)
+                {
+                    stopReason = "crop_teacher_managed_first_day_saved_owner_retained";
+                    break;
+                }
                 activeCropTeacherRunPlan = null;
                 activeCropTeacherRunPlanRequest = null;
                 activeCropTeacherTransitionLedger = null;
@@ -660,6 +708,11 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         }
         if (cropStep.Stage == CropTeacherRunStageKinds.ReplanRequired)
         {
+            if (managedOwner is not null)
+            {
+                stopReason = "crop_teacher_managed_replan_requires_original_lifecycle reason=" + cropStep.Reason;
+                break;
+            }
             if (CropTeacherRunPlanner.IsTeacherRedispatchReason(
                     cropStep.Reason) &&
                 cropTeacherReplanCount < 8)
@@ -745,7 +798,29 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 " total_day=" + cropStep.TotalDay);
             break;
         }
-        if (cropStep.Stage == CropTeacherRunStageKinds.Complete)
+        ManagedCropControl? managedTerminalControl = null;
+        if (cropStep.Stage == CropTeacherRunStageKinds.Complete && managedOwner is not null)
+        {
+            if (cropTeacherManagedOwner.TerminalSelection is null)
+            {
+                var productionEvidence = await managedOwner.BuildProductionEvidenceAsync(
+                    Path.Combine(managedOwner.EvidenceDirectory, "production-terminal")).ConfigureAwait(false);
+                AppendProgress(options, "crop_teacher_managed_production_evidence", iteration, lastStateHash, string.Empty,
+                    "manifest=" + productionEvidence.ManifestPath + " retention_proofs=" + productionEvidence.OutputRetentionProofPaths.Length);
+                var terminalSelection = await PrepareCropTeacherManagedTerminalAsync(managedOwner, productionEvidence).ConfigureAwait(false);
+                cropTeacherManagedOwner.AttachTerminal(productionEvidence, terminalSelection.Selection);
+                AppendProgress(options, "crop_teacher_managed_terminal_selected", iteration, lastStateHash, string.Empty,
+                    "selection=" + terminalSelection.Path + " native_dispatch_performed=false");
+            }
+            managedTerminalControl = await BuildCropTeacherOwnedTerminalContinuationAsync(http, options, iteration,
+                activeCropTeacherRunPlan, activeCropTeacherRunPlanRequest!, cropTeacherManagedOwner).ConfigureAwait(false);
+            if (managedTerminalControl is null)
+            {
+                stopReason = "crop_teacher_managed_terminal_settlement_requires_semantic_save_fresh_head_closeout";
+                break;
+            }
+        }
+        if (cropStep.Stage == CropTeacherRunStageKinds.Complete && managedOwner is null)
         {
             completedCropTeacherBoundaryStart =
                 await CaptureCropTeacherTerminalBoundaryStartAsync(
@@ -776,7 +851,9 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 attemptOrdinal);
             continue;
         }
-        var cropQueue = await BuildCropTeacherControlQueueAsync(
+        var managedControl = managedTerminalControl ?? (managedOwner is null ? null : await BuildCropTeacherOwnedControlQueueAsync(http, options, iteration,
+            cropStep, activeCropTeacherRunPlan, activeCropTeacherRunPlanRequest!, managedOwner));
+        var cropQueue = managedControl?.Build ?? await BuildCropTeacherControlQueueAsync(
             http,
             options,
             iteration,
@@ -786,6 +863,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             snapshotPath,
             beforeSnapshot,
             lastStateHash);
+        cropManagedOperationForExecution = managedControl?.Operation;
         cropTeacherStepForExecution =
             cropQueue.ExecutionStepOverride ??
             (!string.IsNullOrWhiteSpace(cropQueue.InterruptKind)
@@ -1221,6 +1299,8 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                         rawSnapshotJson,
                         planningHandoff,
                         "initial");
+                    if (options.UseManagedCropTeacher)
+                        cropTeacherManagedOwner.Attach(await OpenCropTeacherManagedOwnerAsync(http, options, iteration, dispatch));
                     lastPlanningHandoffCaptureManifestPath =
                         dispatch.Capture.ManifestPath;
                     lastPlanningHandoffTeacherDispatchManifestPath =
@@ -1300,10 +1380,8 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
     await File.WriteAllTextAsync(queuePath, queue.ToJsonString(JsonOptions), Encoding.UTF8);
     if (cropSeedSupportForExecution is not null)
     {
-        cropSeedSupportForExecution.ValidateDispatchQueue(queuePath);
-        selectedCandidateId = EffectiveDecisionArtifactTracker.ReadQueueItemCandidateId(ExecutableQueueItems(queue).FirstOrDefault());
-        if (string.IsNullOrWhiteSpace(selectedCandidateId))
-            throw new InvalidDataException("Managed crop seed queue lost its original selected candidate identity.");
+        selectedCandidateId = ValidateCropTeacherSeedQueueBeforeDispatch(cropSeedSupportForExecution,
+            cropTeacherManagedOwner.Current, cropManagedOperationForExecution, queue, queuePath);
     }
     if (options.UseTeacherPreferenceQueue || options.UsePrecompiledQueue)
     {
@@ -1476,9 +1554,12 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 "executing_pending_subset count=" + executableSubsetCount + " queue_status=" + queueStatus);
         }
 
+        cropTeacherManagedOwner.RequireLiveContinuation();
+        RequireManagedCropDispatch(cropTeacherManagedOwner.Current, cropManagedOperationForExecution);
         var cropTeacherDayBoundaryStart =
-            await CaptureCropTeacherDayBoundaryStartAsync(
+            await CaptureCropTeacherLoopDayBoundaryStartAsync(
                 options,
+                cropTeacherManagedOwner.Current,
                 cropTeacherStepForExecution,
                 beforeSnapshot,
                 lastStateHash);
@@ -1498,13 +1579,18 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         var executionSuppressedContinuations = capacityRecoveryControlActive
             ? new List<JsonObject>()
             : suppressedObjectiveContinuations;
-        var execution = options.UseRuntimeTestHarnessExecutor
-            ? await ExecuteRuntimeTestHarnessCoreAsync(http, executorHttp, options, iteration, snapshotPath, beforeSnapshot, queue, lastStateHash, lastQueueId, decisionModelPlanPath, decisionRankingPath, decisionCompiledQueuePath, decisionSnapshotPath, decisionSourceStateHash, selectedCandidateId, selectedQueueIndex, queuePath, deferredObjectiveContinuationForDailyMaintenance is null ? activeObjectiveContinuation : null, executionSuppressedContinuations, useDailyPlanDecisionLease, executionSnapshotUrl, executionSnapshotProfile, cropSeedSupportForExecution as ICropTeacherSeedPrefixRuntime)
+        var useOwnedSeedPurchaseContinuation = cropManagedOperationForExecution is not null &&
+            cropSeedSupportForExecution is CropTeacherSeedPurchaseRuntime;
+        async Task<JsonObject> ExecuteOriginalCropQueue() => options.UseRuntimeTestHarnessExecutor
+            ? await ExecuteRuntimeTestHarnessCoreAsync(http, executorHttp, options, iteration, snapshotPath, beforeSnapshot, queue, lastStateHash, lastQueueId, decisionModelPlanPath, decisionRankingPath, decisionCompiledQueuePath, decisionSnapshotPath, decisionSourceStateHash, selectedCandidateId, selectedQueueIndex, queuePath, deferredObjectiveContinuationForDailyMaintenance is null ? activeObjectiveContinuation : null, executionSuppressedContinuations, useDailyPlanDecisionLease || useOwnedSeedPurchaseContinuation, executionSnapshotUrl, executionSnapshotProfile, cropSeedSupportForExecution as ICropTeacherSeedPrefixRuntime)
             : await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/action-queues/" + Uri.EscapeDataString(lastQueueId) + "/execute-training-sandbox", "{}");
-        if (cropSeedSupportForExecution is not null)
+        var execution = cropManagedOperationForExecution is null ? await ExecuteOriginalCropQueue() :
+            await ExecuteCropTeacherManagedOperationAsync(http, executorHttp, options, iteration, cropTeacherManagedOwner.Current!,
+                cropManagedOperationForExecution, queuePath, ExecuteOriginalCropQueue);
+        if (cropSeedSupportForExecution is not null && cropManagedOperationForExecution is null)
             await cropSeedSupportForExecution.CompleteAsync(queuePath, ReadString(execution, "execution_path"),
                 ReadString(execution, "after_snapshot_path"), selectedCandidateId);
-        if (activeCropTeacherTransitionLedger is not null &&
+        if (cropTeacherManagedOwner.Current is null && activeCropTeacherTransitionLedger is not null &&
             cropTeacherStepForExecution is not null)
         {
             var receiptsAppended =
@@ -1527,6 +1613,15 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                     activeCropTeacherTransitionLedger.HarvestReceipts.Count +
                     " ledger=" + cropTeacherTransitionLedgerPath);
             }
+        }
+        if (cropManagedOperationForExecution is not null &&
+            cropTeacherManagedOwner.Current?.HasAcceptedOriginalRefillControl(cropManagedOperationForExecution) == true)
+        {
+            unverifiedExecutionBackoff.Reset();
+            AppendProgress(options, "crop_teacher_native_refill_control_accepted", iteration, lastStateHash, lastQueueId,
+                "original_blocked_receipt_retained=true watering_credit=false teacher_preference_label_eligible=false formal_training_authorized=false");
+            await DelayBeforeNextAttemptAsync(options, attemptOrdinal);
+            continue;
         }
         var feedbackAvailable = execution["feedback_available"]?.GetValue<bool>() == true;
         if (!feedbackAvailable && !options.UseRuntimeTestHarnessExecutor)
@@ -2007,6 +2102,11 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         var detail = "error_type=" + ex.GetType().Name + " message=" + SanitizeProgressValue(ex.Message);
         AppendProgress(options, "error", iteration, lastStateHash, lastQueueId, detail);
         Console.Error.WriteLine("Live training iteration " + iteration + " failed: " + ex);
+        if (options.UseManagedCropTeacher)
+        {
+            stopReason = "crop_teacher_managed_interrupted_preserve_original_evidence";
+            break;
+        }
         if (consecutiveErrors >= options.MaxConsecutiveErrors)
         {
             stopReason = "max_consecutive_errors_reached count=" + consecutiveErrors;

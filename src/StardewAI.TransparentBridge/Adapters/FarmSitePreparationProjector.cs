@@ -80,6 +80,7 @@ internal static class FarmSitePreparationProjector
             hoe_tool_slot_index = hoeEntry?.SlotIndex,
             hoe_tool_qualified_item_id =
                 hoeEntry?.Tool?.QualifiedItemId ?? string.Empty,
+            hoe_is_efficient = hoeEntry?.Tool?.isEfficient.Value,
             hoe_energy_cost_per_single_tile_action = hoeEntry is null
                 ? (double?)null
                 : hoeEnergyCost,

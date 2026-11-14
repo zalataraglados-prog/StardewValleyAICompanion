@@ -27,6 +27,10 @@ public sealed class MoneyRevenueCropDailyCapacityProofRequest
         WateringCanRefillReceipts { get; set; } =
             Array.Empty<MoneyRevenueCropDailyCapacityRefillReceiptRequest>();
 
+    [JsonPropertyName("native_day_transitions")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public MoneyRevenueCropNativeLifecycleTransitionRequest[]? NativeDayTransitions { get; set; }
+
     [JsonPropertyName("formal_product_training_authorized")]
     public bool FormalProductTrainingAuthorized { get; set; }
 }

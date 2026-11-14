@@ -250,7 +250,8 @@ static partial class Program
             compile_action_queue = true,
             ranked_event_candidates = JsonNode.Parse(selectedCandidates.ToJsonString(JsonOptions))
         }, JsonOptions);
-        var response = await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/planner/daily-plan/compile", compileRequest);
+        var response = await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/planner/daily-plan/compile",
+            WithJointDailyCalendar(compileRequest, options));
         var plan = response["plan"]?.AsObject() ?? throw new InvalidOperationException("daily plan response did not include plan");
         var queue = response["action_queue"]?.AsObject() ?? throw new InvalidOperationException("daily plan response did not include action_queue");
         return (response, plan, queue, ranking);
@@ -385,12 +386,20 @@ static partial class Program
         var response = await PostJsonStringAsync(
             http,
             options.BackendUrl + "/api/v1/planner/daily-plan/compile",
-            compileRequest);
+            WithJointDailyCalendar(compileRequest, options));
         var plan = response["plan"]?.AsObject() ?? throw new InvalidOperationException(
             "selected queue candidate response did not include plan");
         var queue = response["action_queue"]?.AsObject() ?? throw new InvalidOperationException(
             "selected queue candidate response did not include action_queue");
         return (response, plan, queue, evidence);
+    }
+
+    private static string WithJointDailyCalendar(string request, LiveTrainingOptions options)
+    {
+        if (!options.UseJointDailyCalendar) return request;
+        var node = JsonNode.Parse(request)!.AsObject();
+        node["use_joint_calendar"] = true;
+        return node.ToJsonString(JsonOptions);
     }
 
     private static JsonArray ContinuationRequestParameters(

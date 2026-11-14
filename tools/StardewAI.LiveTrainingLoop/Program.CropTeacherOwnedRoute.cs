@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using StardewAI.Core.Execution;
 using StardewAI.Core.Infrastructure;
 using StardewAI.GoalConditionedBootstrap;
 using StardewAI.LiveTrainingLoop;
@@ -8,6 +9,13 @@ static partial class Program
     private static async Task<CropTeacherManagedSeedOperation> PrepareCropTeacherOwnedRouteAsync(HttpClient http,
         LiveTrainingOptions options, int iteration, CropTeacherRunStep step, MoneyRevenueCropNativeProductionRunPlan runPlan,
         MoneyRevenueCropNativeProductionRunPlanRequest runRequest, CropTeacherManagedSeedOwner owner, string runtimeDirectory)
+        => await PrepareCropTeacherOwnedRouteCoreAsync(http, options, iteration, step, runPlan, runRequest, owner,
+            runtimeDirectory, lateDayRecovery: false).ConfigureAwait(false);
+
+    private static async Task<CropTeacherManagedSeedOperation> PrepareCropTeacherOwnedRouteCoreAsync(HttpClient http,
+        LiveTrainingOptions options, int iteration, CropTeacherRunStep step, MoneyRevenueCropNativeProductionRunPlan runPlan,
+        MoneyRevenueCropNativeProductionRunPlanRequest runRequest, CropTeacherManagedSeedOwner owner, string runtimeDirectory,
+        bool lateDayRecovery)
     {
         owner.ValidateOriginalRouteExecutor(options);
         var kind = step.Stage switch
@@ -29,8 +37,14 @@ static partial class Program
             if (new[] { prefix + "-model-plan.json", prefix + "-compiled-queue.json", receiptPath, afterPath }
                 .Any(path => File.Exists(path) || Directory.Exists(path)))
                 throw new IOException("Owned crop route needs new artifact slots; retain/recover existing compilation instead of overwriting it.");
-            var compiled = await BuildCropTeacherControlQueueCoreAsync(http, options, iteration, step, runPlan, runRequest,
-                sourcePath, source, stateHash).ConfigureAwait(false);
+            if (lateDayRecovery && (step.Stage != CropTeacherRunStageKinds.RouteHome || step.ActionBatch is not null ||
+                !GameClockBudgetPolicy.RecoveryWindowStarted(ReadInGameTime(source)) || HasPriorityStoryEventInterrupt(source) ||
+                CropTeacherControlInterruptClassifier.HasSafeSpeakerlessDialogue(source)))
+                throw new InvalidDataException("Owned late-day ingress requires the original recovery window without a higher-priority interrupt.");
+            var compiled = lateDayRecovery
+                ? await BuildCropTeacherRouteQueueAsync(http, options, iteration, step, sourcePath, source, stateHash).ConfigureAwait(false)
+                : await BuildCropTeacherControlQueueCoreAsync(http, options, iteration, step, runPlan, runRequest,
+                    sourcePath, source, stateHash).ConfigureAwait(false);
             if (compiled.InterruptKind.Length != 0 || compiled.ExecutionStepOverride is not null || compiled.SitePreparationComplete ||
                 compiled.StateHash != stateHash || !string.Equals(Path.GetFullPath(compiled.BeforeSnapshotPath), Path.GetFullPath(sourcePath),
                     OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))

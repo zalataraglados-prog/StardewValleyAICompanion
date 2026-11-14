@@ -73,6 +73,31 @@ public sealed class CropTeacherSiteApproachPlannerTests
         Assert.Null(result);
     }
 
+    [Fact]
+    public void PreservesOriginalYThenXTieBreak()
+    {
+        var result = CropTeacherSiteApproachPlanner.SelectApproach(2, 2, new[] { (0, 0), (1, 0) },
+            new[] { Tile(1, 1), Tile(2, 0), Tile(0, 1) });
+        Assert.Equal((2, 0), (result!.TileX, result.TileY));
+    }
+
+    [Fact]
+    public void PrefersOutsidePreparationEvenWhenAnInsideStandIsNearer()
+    {
+        var result = CropTeacherSiteApproachPlanner.SelectApproach(1, 3, new[] { (1, 1), (1, 2) },
+            new[] { Tile(1, 2), Tile(2, 1) });
+        Assert.Equal((2, 1), (result!.TileX, result.TileY));
+    }
+
+    [Fact]
+    public void PreservesFirstValidOriginalTileIdentityForDuplicateCoordinates()
+    {
+        var original = Tile(1, 0);
+        var result = CropTeacherSiteApproachPlanner.SelectApproach(8, 8, new[] { (0, 0) },
+            new[] { Tile(1, 0, blocked: true), original, Tile(1, 0) });
+        Assert.Same(original, result);
+    }
+
     private static CropTeacherSiteApproachTile Tile(
         int x,
         int y,

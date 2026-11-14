@@ -1,6 +1,20 @@
 # StardewAI 正式全量训练准入与实施路线
 
+> **最新接续覆盖下方历史运行描述：** 按用户决定沿用172冻结生产／人工末日／1050g收入证据，不再重跑十三天或建恢复体系。174已将当日承诺维护绑定已有候选，与其他目标进入173原DailyPlan联合日历及同一预算／预留；原控制／前置步骤和owner权限不放宽。核心92/92、后端及相邻89/89通过，无游戏。组合只形成规划请求，不授权混合owner派发；下一步原第5步全局调用接原控制／恢复优先级、各既有owner派发及fresh账本回接。全L3来源／连续性／正式准入仍未完成；原第3／4自动属性保留未证明，后续既定全局原生运行一并观察。原八步／L1／#569／正式门不变，formal=false。[报告与唯一接续](CURRENT_WORK_CN.md#2026-11-14-常驻能力块收敛与账户暂停)。
+
+> **2026-11-14十七点后的当前分工与工作方式。** 原API同会话接生命周期控制／准备消费，控制端推进不重叠的显式checkpoint接线，未通过证据不晋升。长期无进展先核目标／合同／旧意图，一个完整能力块内连续调试，不为小错新增交接或验收层；见[规范](DOCUMENTATION_MAINTENANCE_CN.md#能力块与持续阻塞)。八步、L1冻结及正式训练锁不变，当前状态见[接续](CURRENT_WORK_CN.md#2026-11-14-十七点协作接续与能力块规则)。
+
+> **2026-11-14最新消费合同修正：** a41CI已通过；按旧设计1.5GiB重放后，真正断点是新总汇总未消费原已接受播种前缀，不是要求旧执行器整队列完成。显式v5复用原prefix合同及真实已执行计数，旧v4／默认仍严格，24/24；完整148待结果。仍原第3／4步，不新增验收步骤。2026-11-14今天17:00未收口则由原授权协作者同会话接当前块，控制端推进后续不重叠部分，不越过L2／formal准入。[接续](CURRENT_WORK_CN.md#2026-11-14-r2-汇总复用原分批播种合同)。
+
+> **2026-11-14 R2真实十三日收获，覆盖旧补水断点。** 原T接受六株收获，但销售前组装失败，终端保存／重载未发生。显式容量v2／生命周期v5及混合品质终端消费已接线，旧默认／共享执行器不改；组合48/48后扩大65/65，首次完整重放OOM保留。逐日读取后实际容量叶13/13天在原1GiB限制通过，142完整生产组装仍待独立结果。混合聚合真实正例未验；未保存收获尾部禁止拼接假续，完整重放通过后才新隔离原生结算。八步第3步收尾／第4步验收，第3—8步未整体关闭；#569移交仍在第1—6步验收后、正式manifest前。[当前接续](CURRENT_WORK_CN.md#2026-11-14-r2-真实十三日收获与终局组装修正)。
+
 > **2026-11-11T00:52:08+08:00 施工顺序修订。** 以本文件末尾的 [R2 开训前执行顺序](#r2-开训前执行顺序) 为当前入口。每一步区分已有实现、待接线和待验收。
+
+> **2026-11-14 R2补水接线收尾，覆盖下方旧断点接续。** 显式native/Product补水复用原完整请求读取证明与同owner恢复；旧Runtime默认不改。Main仅续接该owner已接受的真实补水控制结果，原blocked回执保留、零作物／Teacher信用。控制端组合73/73、后续控制续接专项61/61；S原112完整scope只读通过（11留存／8物理原输入不变），不补写旧接受。提交后新隔离真实开局跑原13日84计划及收获／销售／原生保存／新进程读回，不假续已丢失尾部。当前仍第3步收尾／第4步验收，第3—8步未整体关闭；完整周期／Teacher总验收／formal=false、local-data不提交。[接续](CURRENT_WORK_CN.md#2026-11-14-r2-显式-product-补水消费接线收尾)。
+
+> **2026-11-14 R2当前断点。** 真实112已保存到春9，20条新verified队列；第9天4株维护接受后剩2株触发补水，但原消费者Runtime-only，Product接线未完成。下一块新增显式native refill消费者／完整executor与原生请求绑定，旧默认不改。物理原档仍春9保存，已关闭进程的4株／接近尾部未保存，不篡改owner71／pending72拼接新加载；修复后新隔离真实开局重跑完整13日84计划，旧S留存。CI直接调用源码守卫按完整委托链修复20/20，完整周期／Teacher总验收／formal仍false、local-data不提交。[接续](CURRENT_WORK_CN.md#2026-11-14-r2-春季第9天补水-product-消费者缺口)。
+
+> **2026-11-14 原生动作信任边界修正。** 原生工具动作的正常私有XML、随机掉落和邻格作用不再要求逐项预计证明；严格核原候选／编译／成功回执、同存档run／actor／帧、真实after、一次claim及原owner记账恢复。准备动作不直接授生产或Teacher信用，调试资源仍隔离。下方历史精确副作用研究不再阻塞当前清障接线，旧接口与已过耕地资源合同不改。[当前实施](CURRENT_WORK_CN.md#2026-11-14-r2-原生动作信任边界修正)。
 
 <!-- audit_invalidation: scope=2026-11-08_pretraining_sequence_summary; invalidated_at=2026-11-11T00:52:08+08:00; superseded_by=#r2-开训前执行顺序; reason=旧摘要缺少各步退出条件，也未列出正式启动器的两个固定阻塞; historical_only=true -->
 
@@ -1478,15 +1492,37 @@ v71 继续携带 `--skip-training`，没有 Student 更新、checkpoint 或 GPU 
 
 ### 2. 用现有补水队列收口清障与拾取的结算证据
 
-- `BuildCropTeacherWateringRefillApproachQueueAsync()` 已能编译补水接近路线。`CropTeacherRefillApproachNativeTrace.OpenWithSnapshotInventoryContinuity()` 已能重放原队列、回执和库存数量连续性，当前仍是核验入口，未接到账本结算。保持原队列、动作身份、站位、时间预算和原生回执。 [补水路线编译](money-crop-refill-approach-compilation.md) · [补水记录读取器](../experiments/StardewAI.GoalConditionedBootstrap/CropTeacherRefillApproachNativeTrace.cs#L87)
-- 所选路线只要求到达和补水时，以通路、实际水量和地块状态判定动作进度，同时对实际资源变化分类。若账本需要把掉落计为本动作产出，则必须区分既有掉落、本次产生和实际入包。无法归因的增量保留为未结算，未知资源漂移继续由原保护条件拒绝。#541 的数量间隙与 #542 的同帧记录优先用于重放验证时间边界，生产来源由能独立区分两种历史的证据确认。
-- #549 的深层图和掉落字段作为默认关闭的校准证据保留。`held/offered Item` 图、观察开始前和被动间隙的补充范围，按所选动作缺少的结算事实确定。先查现有观察能否判定，再针对能改变结算的缺口补最小字段和正反例。单次 `unavailable` 或必填字段缺失只记录拒绝原因，不能裁决字段必要性。读取副作用沿 [#29](https://github.com/zalataraglados-prog/StardewValleyAICompanion/issues/29) 的原责任处理，当前所选路径涉及的风险在使用前核验。 [#541](https://github.com/zalataraglados-prog/StardewValleyAICompanion/pull/541) · [#542](https://github.com/zalataraglados-prog/StardewValleyAICompanion/pull/542) · [#549](https://github.com/zalataraglados-prog/StardewValleyAICompanion/pull/549) · [#550 审查](https://github.com/zalataraglados-prog/StardewValleyAICompanion/issues/550#issuecomment-6772496351)
+- `BuildCropTeacherWateringRefillApproachQueueAsync()` 复用原补水接近编译。当前显式 `OpenNativeObservedEffects()`／`OpenNativeObservedRefillApproach()` 消费原生请求、成功回执、目标与真实after，并由原owner记录模式、一次派发和恢复；原库存连续性／所选野树精确资源入口仍保留其旧合同，不代替当前原生结果模式。保持原队列、动作身份、站位、时间预算和原生回执，准备动作不授作物产量、producer或Teacher信用。[补水路线编译](money-crop-refill-approach-compilation.md) · [补水记录读取器](../experiments/StardewAI.GoalConditionedBootstrap/CropTeacherRefillApproachNativeTrace.cs)
+- 所选路线只要求到达和补水时，以原生动作结果、通路、实际水量和地块状态判定动作进度，正常工具XML、邻格效果和随机掉落不要求逐项预测，不把私有观察缺失变成清草派发门。只有账本确实需要把掉落计为本动作产出时，才沿既有精确资源合同区分既有掉落、本次产生和实际入包；来源不明的增量不授本动作生产信用，不能反过来阻止已确认合法的原生准备动作。#541／#542用于该归因需求的时间边界，不扩大成每次普通清障的必要条件。
+- #549 的深层图和掉落字段继续作为默认关闭的校准证据。仅在所选结算确实需要且现有原生材料无法判定时，补能改变该结算的最小字段和针对性用例；不为普通原生副作用重新搭建预测模拟器。旧精确归因分支的未知资源保护不变，新模式也不得伪造成功、跨run／存档／actor、重复派发或冒领生产信用。读取副作用沿 [#29](https://github.com/zalataraglados-prog/StardewValleyAICompanion/issues/29) 的原责任处理。[#541](https://github.com/zalataraglados-prog/StardewValleyAICompanion/pull/541) · [#542](https://github.com/zalataraglados-prog/StardewValleyAICompanion/pull/542) · [#549](https://github.com/zalataraglados-prog/StardewValleyAICompanion/pull/549) · [#550 审查](https://github.com/zalataraglados-prog/StardewValleyAICompanion/issues/550#issuecomment-6772496351)
 
-**退出条件。** 对当前合法队列能确定到达、工具消耗与库存变化。需记产出时，合法来源可入账，既有掉落和来源未明的变化不会误记为本动作产出。优先复用已有原生轨迹，只有现有材料无法判定时才补对应的隔离短测。
+**退出条件。** 当前合法队列通过原生请求／回执／目标／真实after及同owner恢复确定到达和补水进度。需记产出时才验证对应的资源来源，既有掉落和来源未明的变化不误记为本动作产出；不增加普通清障的私有字段预测门。优先复用已有原生轨迹，只有现有材料无法判定所需事实时才补对应的隔离短测。
 
 ### 3. 接同一账本、主循环和跨日恢复
 
-- `PrepareCropTeacherOwnedWateringAsync()` 当前会拒绝带 `InterruptKind` 的补水接近队列。将所选接近／清障队列及其已验证结果接到现有 `CropTeacherManagedSeedOwner` 和主循环，复用派发登记、队列／来源身份、回执、账本提交与只读恢复。补水但零块作物完成仍保留为控制结果。 [浇水入口](../tools/StardewAI.LiveTrainingLoop/Program.CropTeacherOwnedWatering.cs#L26) · [已有补水控制结果](money-crop-refill-control-outcome.md)
+- **用户最新裁定覆盖下方“再新隔离整轮”接续：** 不为163未保存尾部新增日界恢复系统。169只从已核春13保存的隔离副本手动执行末日，原生收获／出货／睡眠保存／春14新进程读回事实均已补齐，原读取器核验7队列／17动作；人工报告保留完整来源和作用范围。自动同owner日志不补造，未完成项不虚报。后续复用164／165等既有证书及本次末日补证解决汇总接线，禁止把此局部修复又扩大成全十三日或全生产重放；详见[当前工作](CURRENT_WORK_CN.md#2026-11-14-常驻能力块收敛与账户暂停)。
+
+- **最新覆盖下方旧pending：** 163真实补水接近与剩两株维护、六株收获已接受，销售前因live占用叠加全历史帧峰值OOM。164独立全生产组装通过、原件不变；native-v5完整帧有界缓存与主仓库124/124、真实证明字节一致重放已过。宿主旧1.5GiB非业务门，当前loop／读回2GiB并监测整机余量。下一步仍新隔离原完整轮次到销售／保存／新进程读回，不续未保存尾部，本步及第4步仍未整体通过。[当前入口](CURRENT_WORK_CN.md#2026-11-14-常驻能力块收敛与账户暂停)。
+
+- **当前接续覆盖下方S／T旧启动描述：** T原13日计划已收获六株；销售前组装停止。显式容量v2／生命周期v5、混合品质及保留轨迹入口组合65/65；实际容量叶13/13天在1GiB限制通过，完整T生产组装与混合终端真实结算仍待结果。不把未保存收获接旧磁盘保存；先完整离线核原轨迹，再新隔离原生生产／销售／保存加载。第3、4步未整体验收，不增加总步骤。[唯一接续](CURRENT_WORK_CN.md#2026-11-14-r2-真实十三日收获与终局组装修正)。
+
+- **当前接续覆盖下方S历史断点：** 显式Product补水消费者与同owner控制续接已实现，组合73/73及随后专项61/61独立通过；S原112完整scope只读核验通过，没有新native／ledger／owner接受。物理春9保存不含后续4株浇水／接近尾部，禁止伪续pending72。提交后新隔离真实开局走原13日84计划到收获／销售／保存重载；本步及第4步尚未整体验收，不增加总步骤或重做L1。[当前唯一接续](CURRENT_WORK_CN.md#2026-11-14-r2-显式-product-补水消费接线收尾)。
+
+- **S当前覆盖下方Q／R历史：** 65205431 CI43543869020成功。六粒播种／首次浇水／原生睡眠保存已获owner第32项接受。原API钱包红0/18→28/28，控制端Cellar／显式加载接线后105/105；普通默认比较、共享投影／读取／执行器不改。原S更正加载见证完整回放通过native＋semantic、10输入／存档未变／四依赖hash匹配；既有resume命令随后实际接受同owner第33项，native-saved-content／fresh-head均true、415既有输入／存档不变、无新游戏／native。读回不等同生产循环续跑：下一步接原owner／head／计划回Main，复用NextArtifactIteration，并在动作前绑定当前新进程加载见证；不能拿已退出15724的旧帧直接执行。原13日／84动作维护收获销售及完整周期未过，formal=false、local-data不提交。[唯一接续](CURRENT_WORK_CN.md#2026-11-14-r2-显式原生加载比较与读回接续)。
+
+- **Q当前接续覆盖下方P／O历史：** Q原入口25owner／22verified／六耕／三次显式native移动，iteration28原六种子队列已准备、未派发，被新增Main的排名candidate要求误拒；四进程退出，无实际播种／日界／保存加载。37a81982仅在已绑定owned planting入口以原SupportStepId标识控制批次，不改原机械动作／严格参数／编译器／执行器／租约或资源核。红测复现后相关65/65；同采集地图扫描优化由原API独立提交，控制端聚焦33/33、旧route／social守卫修误判后11/11及实际Bridge编译已过，初次环境替换失败保留，不冒称整组87全绿或优化后性能达标。这不是新的动作证明门。下一步提交／同步后，新E原managed/product继续生产／销售／原生保存加载，不将Q未保存尾部当续档，formal仍false。[唯一接续](CURRENT_WORK_CN.md#2026-11-14-r2-原播种机械批次身份接线)。
+
+- **P实际模式边界及环境停止：** P18owner／15verified中，原生站位73,17的显式mode接受及下一次耕地已过；同owner原只读resume通过、241既有输入未变，无新native或saved-content-readback。随后仅因E可用约7.996GiB低于默认8GiB停止，非动作异常；旧保护／失败保留、无清理。下一新Q明确用既有6144MiB保留参数（不改默认8192），继续连续整地／播种维护→收获销售→原生保存加载。P仅补局部实际owner和只读恢复，完整周期／formal未过，未保存尾部不可续档。[唯一接续](CURRENT_WORK_CN.md#2026-11-14-r2-同tick库存图缓存修正)。
+
+- **显式站位接线更新：** 71d9c09e公开native-site准备复用同一NativeSiteTransition，O未改原件的站位／rebind重放已过（SHA6f1d5c0f…ad08c916）。原API接原owner mode持久化／恢复、仅Product主入口选择，peer95/95；控制端保存e3257369→3414f371后独立组合113/113通过。缺字段旧记录／false不升级，不从当前选项推断原模式。下一步新E真实站位→播种维护／收获销售／原生保存加载，监护3600秒、游戏速率／标准不变。原生owner正向接受／完整周期／formal仍未过，不拿离线重放重标O历史。
+
+- **O最新接续：** 两项缓存修复622ef4b6的CI43514002736成功，25/25＋原守卫20/20及Bridge编译通过。O真实24owner／21verified／六耕后，在站位move自动拾取1黏土时被旧中性route资源核拒绝，未实际播种；原生来源读取器对O原queue／journal／Product／actor帧／after绑定只读重放通过，实际owner／完整周期／formal仍false。先为所选站位接近显式复用原NativeSiteTransition协议并持久化owner模式，保留默认中性route／一次claim，不做逐私有字段模拟；再新E生产／销售／原生保存加载。full约1.28s的性能取样单独记录，不扩成新的动作准入门。[唯一接续](CURRENT_WORK_CN.md#2026-11-14-r2-同tick库存图缓存修正)。
+
+- **最新断点覆盖下方历史：** dc5df200的CI43510625527成功。N原入口购种后同tick的背包种子已2而库存图仍1，下一tick关菜单时图才2，导致原资源核拒绝；只修透明桥库存图缓存为单次采集内共享／跨采集刷新，不改执行器／资源核或加快照扫描。相关25/25及实际Bridge构建通过，下一步新E原入口继续播种维护、收获销售、原生保存／新进程加载；N旧失败保留，尚未证明新实际播种或完整周期，formal=false。[证据与接续](CURRENT_WORK_CN.md#2026-11-14-r2-同tick库存图缓存修正)。
+
+- **2026-11-14 接续定位（原生信任修正）：** 清障共享原编译／原生回执／真实after／同owner恢复已接（124/124＋共享抽样6/6；b0eCI成功），正常副作用由引擎裁决，不再做私有XML／weed范围证明门。L25边界／六耕暴露旧种子claim来源，f8dbe970只在播种marker通过原服务刷新，原编译规则保留；原输入／六格计划只读预检及f8CI43501813625已过。M25边界／六耕已越过该预检并创建播种intent，随后因有界缓存缺原source而账本GET404，未派发。共同种子入口现复用原精确来源导入，不扩大缓存或改账本；同404回归＋来源／HTTP／恢复相关12/12。下一步原留存准备链检查后新E原入口继续生产／销售／原生保存加载；L／M未保存尾部非续档，完整周期／formal未过，冻结项不重做。[当前证据与唯一接续](CURRENT_WORK_CN.md#2026-11-14-r2-原生动作信任边界修正)。
+
+- `PrepareCropTeacherOwnedWateringAsync()` 现已显式接纳原 `crop_teacher_watering_refill_approach`，其他未支持interrupt继续拒绝；同一 `CropTeacherManagedSeedOwner` 和主循环复用派发登记、队列／来源身份、回执、marker账本提交与只读恢复。所选清障／拾取资源组合与耕地同owner接线已有实现，仍须由下面的完整真实流程验收，不能以实现或组件测试代替跨日证据。补水但零块作物完成仍保留为控制结果。 [浇水入口](../tools/StardewAI.LiveTrainingLoop/Program.CropTeacherOwnedWatering.cs#L26) · [已有补水控制结果](money-crop-refill-control-outcome.md)
 - 接续收获留存、所选销售方式的原生结算、睡眠保存和重载。复用 `CheckCropTeacherDayBoundaryAsync()` 等既有检查，核对同一存档的物品、作物、金币、日期及账本进度。可复用 #502 的作物实跑和离线重建来核对已有阶段，托管接线要由新入口的实际结果验证。具体结算消费者沿现有合同绑定。 [跨日检查](../tools/StardewAI.LiveTrainingLoop/Program.CropTeacherDayBoundary.cs#L125) · [#502](https://github.com/zalataraglados-prog/StardewValleyAICompanion/pull/502)
 
 **退出条件。** 原生执行、账本提交和保存边界在同一条运行中可追踪。回包丢失或中断后能通过原回执和存档读回确定已执行的部分，重复调用不会重复购买、扣物或记收入。
@@ -1499,6 +1535,11 @@ v71 继续携带 `--skip-training`，没有 Student 更新、checkpoint 或 GPU 
 
 ### 5. 做 L3 跨目标组合与新档原生重放
 
+- **2026-11-15联合日历与维护组合已接：** `CompileWithJointCalendar`调用原编译循环；后端`use_joint_calendar`和Live`--joint-daily-calendar`默认关闭。174新增`required_candidate_ids`及`BindDailyComposition`，从同来源账本／原进度绑定已有当日浇水／收获候选，保留其他目标候选及必做项；必做和原商店前置优先共享原预算／预留，尚未满足的必做不让可选挤占。原播种等前缀由原owner先做，联合预算保守读取原生小数体力；旧默认不改。核心92/92、后端及相邻89/89仅证明此层及相邻合同，无游戏。组合请求不授权混排原生派发；下一块全局调用复用原控制／恢复优先级、各既有owner及fresh账本回接。全局source schedule、连续性、原生运行与准入仍为本节原责任，不新增验收步骤。[接线合同](current-production-snapshot-handoff.md#joint-current-day-calendar-2026-11-15)。
+
+- **2026-11-15人工补证来源接续：** 172补证汇总通过真实工件读回；CLI要求新的输出路径，默认旧segment／Teacher比较入口未改。它保留已接受证书hash、同计划保存边界与真实1050g收入，并显式标注手工末日和未证明的自动运行属性。此为开发和交接用的已接受证据摘要，不是新的必过阶段或正式训练证明。接下来推进本节既有组合接线；不为把摘要改成自动PASS重新展开十三日测试，也不取消最终全局原生／准入责任。
+
+- 现行托管来源的Teacher调度清单可由`verify-money-revenue-crop-teacher-dispatch --manifest <原清单> --output <独立报告>`只读核对；该入口复用原构建核及来源绑定，不重新派发／写账本或复制整套计划。后续汇总显式适配现行证书，不把它包装成旧smoke运行目录；清单读回或单次收入证书不能独自授予完整生产、Teacher比较或正式训练资格。
 - 用既有 `DailyPlanCompiler` 和资源预留账本组合跨目标的资金、材料、时间、体力与日历，核验所选路线的来源和消费顺序。按实际依赖消费 L2 能力证书，复用已验 L1 和六类支持步骤的原生终态证据。当前组合报告仍要重新核验这些证据身份。 [L3 组合责任](current-production-snapshot-handoff.md#L217) · [六类支持步骤](../experiments/StardewAI.GoalConditionedBootstrap/AcquisitionRouteSupportingTransitionKinds.cs#L15)
 - 在所属全局层完成所选路线的 Day-0／长期原生证明及独立重放。若计划依赖姜岛，绑定同一新档取得相关解锁、核桃来源、日程及钓鱼前置。Gourmand 属于可选来源。选中它时核验对应订单连续回执，使用替代路线时核验该路线实际取得并消耗的核桃及解锁证据。 [R2 来源规则](PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md#全局证明的保留与迁移) · [核桃日程验证](GOLDEN_WALNUT_SOURCE_SCHEDULE_VERIFICATION.md)
 
@@ -1509,6 +1550,8 @@ v71 继续携带 `--skip-training`，没有 Student 更新、checkpoint 或 GPU 
 在正式准入报告和启动器复用同一个证据校验。将第 1 步的两个固定阻塞改成基于所选路线的实际验证结果。姜岛／钓鱼证据缺失时仍阻断。Gourmand 分支按实际选择验收，替代分支须有独立证据证明其达到同一解锁条件。覆盖缺失、证据篡改、跨存档替换和错误路线都应被拒绝。这个步骤需要实现与回归，当前基线的锁仍在。 [R2 准入归属](PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md#全局证明的保留与迁移) · [准入报告消费方](../experiments/StardewAI.GoalConditionedBootstrap/GoalMethodFormalTrainingAdmissionBuilder.cs#L82)
 
 ### 7. 冻结语料、完成 Provider 与模型定型
+
+**2026-11-13 执行归属修订（[#569](https://github.com/zalataraglados-prog/StardewValleyAICompanion/issues/569)）：** 主线完成第1—6步所选路线的原生验收、覆盖／对账和准入工程接线，在生成正式训练manifest之前交接。交付可运行提交／构建、对应报告及可重放语料来源，注明版本、存档来源、独立Teacher比较、候选特征与工件哈希，并附现有Provider／数据构建／训练入口用法。前瞻实验室在当前电脑D盘接手本步的数据冻结、选型／实验和配置验证，以及第8步正式manifest／启动、训练跟踪／checkpoint／恢复与训后评估；旧电脑仍用于实际Student与游戏／SMAPI共跑的8GiB验收。实验室对具体工程缺口提交复现和修复需求，由主线返修后接续验证。移交不等于任一准入门通过，不改变当前作物托管施工顺序，也不授权主线提前开训。下列验收条件及既有正式授权继续生效。
 
 - 全局证据和晋升范围核对后，用当前监督合同重建启动语料。保留决策时的候选全集、独立 Teacher 比较、原生结果和版本身份。按存档／日隔离 train、validation、test，冻结数据及哈希。现有 `PolicyTrajectoryDatasetBuilder` 执行准入与切分，启动前仍需生成与实际版本匹配的工件。 [独立监督合同](independent-teacher-pairwise-admission.md)
 - 按现有合同实现并验收版本化 Provider。内置与替代／mock Student 都要接通，Teacher 可独立替换和启停，实际身份可追溯。以冻结语料完成可复现选型、独立测试、checkpoint 往返和最低配置级、8 GiB 整机实测。实验室可以提前设计比较和失败判据，正式选型使用已冻结的输入。 [Provider 验收](STUDENT_TEACHER_PROVIDER_INTERFACE_REQUIREMENTS_CN.md#6-开训前-provider-与模型验收)

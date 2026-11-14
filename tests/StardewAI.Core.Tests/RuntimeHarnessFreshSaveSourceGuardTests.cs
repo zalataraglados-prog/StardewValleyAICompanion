@@ -724,7 +724,9 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
         var settleBranch = program[settleIndex..program.IndexOf(
             "else if (options.UsePrecompiledQueue)", settleIndex, StringComparison.Ordinal)];
         Assert.Contains("queue = nativeControlSettle.Queue;", settleBranch, StringComparison.Ordinal);
-        Assert.Contains("useDailyPlanDecisionLease = true;", settleBranch, StringComparison.Ordinal);
+        Assert.Contains("useDailyPlanDecisionLease = cropManagedOperationForExecution is null;", settleBranch, StringComparison.Ordinal);
+        Assert.Contains("cropManagedOperationForExecution = managedSettle?.Operation;", program[..settleIndex], StringComparison.Ordinal);
+        Assert.Equal(1, CountOccurrences(program, "PrepareCropTeacherOwnedNativeControlSettleAsync("));
         Assert.DoesNotContain("MasterAnglerTargetDateIntentBuilder.Build(", program[..collectionIndex], StringComparison.Ordinal);
         Assert.Contains("MasterAnglerTargetDateIntentBuilder.Build(", collectionTeacher, StringComparison.Ordinal);
         Assert.Equal(

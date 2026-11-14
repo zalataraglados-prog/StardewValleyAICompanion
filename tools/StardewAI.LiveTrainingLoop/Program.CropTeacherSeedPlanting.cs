@@ -8,7 +8,7 @@ static partial class Program
 {
     private static async Task<CropTeacherControlQueueBuildResult> BuildCropTeacherSeedPlantingQueueAsync(HttpClient http,
         LiveTrainingOptions options, int iteration, CropTeacherRunStep step, string beforeSnapshotPath,
-        JsonObject beforeSnapshot, string stateHash, CropTeacherSeedPlantingSupport support)
+        JsonObject beforeSnapshot, string stateHash, CropTeacherSeedPlantingSupport support, string? runtimeDirectory = null)
     {
         if (!options.UseRuntimeTestHarnessExecutor || !options.EmitQueueExecutionReceipt || options.UseTeacherPreferenceQueue ||
             options.MaxQueueItemAttempts is < 1 or > StardewAI.Contracts.Training.TeacherEvidenceRolloutLimits.MaxQueueItems ||
@@ -19,7 +19,7 @@ static partial class Program
             support.MarkerRequest.StateHash != stateHash || !string.Equals(Path.GetFullPath(beforeSnapshotPath), support.SnapshotPath,
                 OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
             throw new InvalidDataException("Managed planting differs from the original native control batch.");
-        var output = CropTeacherArtifactPrefix(options, iteration, "seed-planting");
+        var output = runtimeDirectory ?? CropTeacherArtifactPrefix(options, iteration, "seed-planting");
         CropTeacherControlQueueBuildResult? compiled = null;
         var runtime = await CropTeacherSeedPlantingRuntime.PrepareAsync(http,
             new(options.BackendUrl, output, options.RunId, options.PolicyTrajectoryExecutorVersion), support,

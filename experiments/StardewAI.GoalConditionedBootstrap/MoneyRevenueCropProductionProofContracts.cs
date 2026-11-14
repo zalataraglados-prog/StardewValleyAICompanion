@@ -144,7 +144,22 @@ public sealed record MoneyRevenueCropNativeLifecycleTransitionRequest(
     [property: JsonPropertyName("after_snapshot_path")] string AfterSnapshotPath,
     [property: JsonPropertyName("run_id")] string RunId,
     [property: JsonPropertyName("executor_version")] string ExecutorVersion,
-    [property: JsonPropertyName("selected_candidate_id")] string SelectedCandidateId);
+    [property: JsonPropertyName("selected_candidate_id")] string SelectedCandidateId)
+{
+    [JsonPropertyName("native_refill_preparation")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public MoneyRevenueCropNativeRefillPreparationReference? NativeRefillPreparation { get; init; }
+}
+
+// Explicit v5 only: original owner compilation inputs, never an inferred move/refill witness.
+public sealed record MoneyRevenueCropNativeRefillPreparationReference(
+    [property: JsonPropertyName("run_request_path")] string RunRequestPath,
+    [property: JsonPropertyName("ledger_path")] string LedgerPath,
+    [property: JsonPropertyName("covered_commitment_ids")] string[] CoveredCommitmentIds,
+    [property: JsonPropertyName("commitment_id")] string CommitmentId,
+    [property: JsonPropertyName("step_id")] string StepId,
+    [property: JsonPropertyName("model_plan_path")] string ModelPlanPath,
+    [property: JsonPropertyName("resource_mode")] string ResourceMode);
 
 public sealed record MoneyRevenueCropNativeLifecycleCheckpointResumeRequest(
     [property: JsonPropertyName("transition_index")] int TransitionIndex);

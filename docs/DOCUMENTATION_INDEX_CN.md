@@ -23,6 +23,7 @@
 - **2026-10。** Full Shipment 补采记录与运行边界按专题归档。姜岛核桃来源日程及独立重放也在这个阶段形成专门的证明合同。 [Full Shipment 交接](stardewai-full-handoff/SHORT_HANDOFF_20261005_FULL_SHIPMENT_SAMPLES_CN.md) · [核桃日程证明](GOLDEN_WALNUT_SOURCE_SCHEDULE_VERIFICATION.md)
 - **2026-11-03。** R2 取代 R1 在单根验收、固定施工顺序及 Gourmand 前置方面的旧条款。局部验收、共享前置、全局组合和新档评测分层。独立成对监督与正式启动准入分别处理。 [R2 纠偏](PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md) · [独立成对监督](independent-teacher-pairwise-admission.md)
 - **2026-11-07 至 11。** L1 局部覆盖冻结后，接续转向作物托管和 L3 全局集成。#551 把从当前代码到正式数据的施工顺序、退出条件和启动硬锁集中到正式准入文档的 R2 小节。 [作物证据交接](current-production-snapshot-handoff.md) · [R2 开训前执行顺序](FORMAL_FULL_TRAINING_READINESS_CN.md#r2-开训前执行顺序)
+- **2026-11-14。** 按能力块持续负责调试与集成，长期无进展先核对目标、合同归属及旧实现意图；小错误不反复新建交接或验收层。十七点后原API协作者接生命周期消费，控制端推进不重叠的checkpoint接线，原八步及正式训练锁不变。 [持续阻塞规则](DOCUMENTATION_MAINTENANCE_CN.md#能力块与持续阻塞) · [当前分工](CURRENT_WORK_CN.md#2026-11-14-十七点协作接续与能力块规则)
 
 ## 全量时间目录
 

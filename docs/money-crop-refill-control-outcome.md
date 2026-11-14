@@ -1,5 +1,37 @@
 # Original Native Refill Control Outcome
 
+## Current Main Continuation: 2026-11-14
+
+Actual isolated run T reached the original13day harvest: owner68 accepted the
+native Product refill approach between four and two verified watering tiles.
+It did not exercise the zero-watering blocked-control continuation below.
+Production aggregation stopped before terminal sale; no full-cycle or formal
+credit follows from that refill acceptance. The retained whole trajectory is
+being replayed read-only before another complete native run.
+
+The original managed watering/refill adapters are now explicitly called by Main.
+Product refill approach has a separate native entry that reuses the existing
+selected native request reader; Runtime defaults remain unchanged. See
+[the compilation boundary](money-crop-refill-approach-compilation.md#current-integration-2026-11-14).
+
+A genuine zero-watering refill control deliberately retains its original blocked
+receipt. After the original owner verifies the refill and commits/rebinds the
+accepted head, Main may continue the next original queue only when
+`HasAcceptedOriginalRefillControl` confirms that exact owner's last accepted
+operation, matching head and no pending/recovery. It does not relabel blocked as
+applied, increment verified production, emit a Teacher preference or bypass the
+ordinary failure policy. Pending/unaccepted, stale operations and a new pending
+operation cannot use that continuation.
+
+Controller Runtime/Product owner and protocol combination passed73/73; the later
+accepted-control/Main-planning/source-guard suite passed61/61 independently.
+These fixtures are not full-cycle native acceptance. The current isolated run
+must still finish the original13day84plan, harvest/sale/native save and fresh
+loaded-process closeout. Normal native effects follow the current native-trust
+correction; historical private-side-effect work below does not add a new dispatch
+gate. All earlier "not joined to Main" or "no game launched" statements below
+describe their original dated slices only. Formal training remains unauthorized.
+
 ## Accepted Parent And Current Native Source
 
 PR531 accepted original watering compilation/one execution-loop invocation on the

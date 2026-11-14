@@ -32,7 +32,8 @@ public static partial class NativeOutputObservationBoundary
         ActionOriginObservationReceipt receipt, long earliestTick, long latestTick, string locationId, ref int payloadCharacters)
     {
         Require(request.ExecutionMode == "training_singleplayer" &&
-                request.OptionId is "executor.move_to_tile" or "executor.clear_obstacle" &&
+                (request.ActionOriginTillingResources ? NativeTillingObservationContract.IsCompleteRequest(request) :
+                    request.OptionId is "executor.move_to_tile" or "executor.clear_obstacle") &&
                 !string.IsNullOrWhiteSpace(request.SourcePlanningOptionId) && !string.IsNullOrWhiteSpace(request.SaveIsolationPath) &&
                 !string.IsNullOrWhiteSpace(request.ActionOriginObservationScopeId) && request.ActionOriginObservationScopeId.Length <= 128 &&
                 !request.ActionOriginObservationScopeId.Any(char.IsControl) &&

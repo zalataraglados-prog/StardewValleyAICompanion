@@ -93,13 +93,7 @@ internal static partial class CropSeedResourceBoundary
     }
 
     private static void EqualHarvestResourceField(string domain, string name, JsonObject? expected, JsonObject? actual)
-    {
-        if (expected is null || actual is null) { EqualField(expected, actual, domain + "." + name); return; }
-        var first = FullShipmentRecoverySettlementBoundaryProjector.ProjectExpectedResourceEnvelope(domain, name, JsonSerializer.SerializeToElement(expected));
-        var next = FullShipmentRecoverySettlementBoundaryProjector.ProjectExpectedResourceEnvelope(domain, name, JsonSerializer.SerializeToElement(actual));
-        Require(SnapshotHash.CanonicalizeSemantic(first) == SnapshotHash.CanonicalizeSemantic(next),
-            "Crop harvest changed unexpected " + domain + "." + name + ".");
-    }
+        => EqualExpectedResourceField(domain, name, expected, actual, "Crop harvest");
 
     private static bool HarvestMirrorBoolean(JsonNode value, string name) => value[name] is JsonValue flag && flag.TryGetValue<bool>(out var result)
         ? result : throw new InvalidDataException("Crop harvest boolean is unavailable: " + name);

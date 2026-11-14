@@ -7,6 +7,36 @@ public sealed partial class CropTeacherManagedSeedOwner
     private CropTeacherManagedSeedOperation OpenIndexedOperation(JsonObject record, string path)
     {
         var kind = record["operation_kind"]?.GetValue<string>();
+        if (kind == "site_clearance")
+        {
+            var clearance = new CropTeacherManagedSeedOperation(this, record, path, null, clearanceStart: OpenOriginalClearanceStart(record));
+            ValidateSupportingTransition(clearance);
+            return clearance;
+        }
+        if (kind == "site_till")
+        {
+            var till = new CropTeacherManagedSeedOperation(this, record, path, null, tillingStart: OpenOriginalTillingStart(record));
+            ValidateSupportingTransition(till);
+            return till;
+        }
+        if (kind == "saved_content_readback")
+        {
+            var readback = new CropTeacherManagedSeedOperation(this, record, path, null, savedReadback: OpenSavedReadback(record));
+            ValidateSupportingTransition(readback);
+            return readback;
+        }
+        if (kind == "terminal_shipping")
+        {
+            var terminal = new CropTeacherManagedSeedOperation(this, record, path, null, terminalStart: OpenOriginalTerminalStart(record));
+            ValidateSupportingTransition(terminal);
+            return terminal;
+        }
+        if (kind == "control_recovery")
+        {
+            var control = new CropTeacherManagedSeedOperation(this, record, path, null, controlStart: OpenOriginalControlStart(record));
+            ValidateSupportingTransition(control);
+            return control;
+        }
         if (kind == "overnight_control")
         {
             var overnight = new CropTeacherManagedSeedOperation(this, record, path, null, overnightStart: OpenOriginalOvernightStart(record));
@@ -77,6 +107,10 @@ public sealed partial class CropTeacherManagedSeedOwner
 
     private void ValidateAcceptedPhaseEvidence(CropTeacherManagedSeedOperation operation, JsonObject accepted)
     {
+        ValidateClearanceAcceptance(operation, accepted);
+        ValidateTillingAcceptance(operation, accepted);
+        ValidateSavedReadbackEvidence(operation, accepted);
+        ValidateTerminalProductionReferenceAcceptance(operation, accepted);
         if (operation.IsSupportingTransition)
             ValidateSupportingTransitionAcceptance(operation, accepted);
         else if (operation.IsLifecycle)

@@ -2,6 +2,441 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-14 常驻能力块收敛与账户暂停
+
+- 用户要求固化“长卡先核目标／要求错位、按完整能力块持续负责”。已更新本机AGENTS／worker skill、沙箱AGENTS及当前TASK／BOARD，并写入[持续阻塞规则](DOCUMENTATION_MAINTENANCE_CN.md#能力块与持续阻塞)。153原API同会话的工具读取回执确认AGENTS／TASK／验收增量均completed且包含新规则；不是只写文件或另付纯确认调用。临时worker修正次数不再打断有进展的常驻能力块；权限、额度和重复无进展仍有退出边界，不新增验收层。
+- 原151交付控制／准备消费者，33/33，但缺完整六格组合；控制端保留为peer39919995／Main6acae9cd。153同能力块续做新增六格组合及负例，随后明确报`insufficient_quota / credit_balance_exhausted`，已退出1、撤权，原账户进入本次观测期provider-paused。授权仍在，但仅用户确认补充额度并请求恢复后才允许一次原provider有效任务；不重试、不换源、不推断美元金额／账期。未完测试保留peer a8d70839／Main8677d4a4，没有丢弃。
+- 控制端已完成同一块的普通调试与集成：六格夹具复用原有效map声明及隔离environment，不改旧编译器。首次地图空值、随后隔离绑定失败均保留；修后六格第8天water4→原Product补水接近→water2及原控制／旧默认／容量／混合终端／原owner引用／显式checkpoint组合 **46/46（27秒）**，不是46次原生成功。新checkpoint仅消费已有证书，缺终端仍pending、formal=false。
+- 157完整T真实轨迹只读生产组装已通过：原89转换／1233输入、全部930物理原文件不变，已测四依赖hash一致，原1.5GiB预算；没有启动游戏、派发、owner／ledger补写或销售。报告`I:\StardewAI-Collab\resident-refill-20261108\block157-t-production-v6-report.json`，SHA256 `87a297fffd23227a403c322a608aed69cd8a767648f611fe0ada8f095b8d45b1`。158回归日志同目录`block158-controller-final-tests.log`，SHA256 `49e88c235fd598d74f23854e076056c56125621bec6bec815a2892dffde697f3`。原生命周期控制／准备消费者、producer引用接线和checkpoint源码可提交；不声称完整managed周期通过。
+- **终端接续已实现／待真实整轮：** 留存收获after0090→原合法控制等待→head0091的显式原生接续复用同一控制核，选择与结算共用一份绑定逻辑；混合终端请求仅在有尾部时附加`NativeControlTail`，旧空值字节形状／默认单栈入口不变。控制尾部和真正出货路线分开验证并完整留证，不能把原等待要求成带出货参数的模型动作。透明桥源码明确定义无遮挡原因为nullable；新混合目标消费者只修为接受存在的null／空字符串，缺字段／错误类型／真实阻塞仍拒，未改桥或旧执行器。
+- 159相关回归 **49/49（53秒）**：旧选择／终端／留存重放、混合品质及余量、控制链顺序／身份／缺输入负例、nullable stand形状；新测试局部变量／别名路径错误已在原块修正，初败保留。原T真实终端选择只读预检通过，原slot6普通5×175和slot7银星1×218、目标六件、cursor0，未派发／接受／销售／保存。报告同协作目录`block159-t-terminal-selection-v2.json`，SHA256 `0d79875cf35c5c2a5afc0aec9d9ca5632dc43445715c5d64911e22afa301f500`；这是潜在1093g，不是收入。运行只读预检与旧完整生产重放分开记证，不能拼成完整周期成功。
+- **真实160／161结果：** 160由控制端在准备阶段主动中断，因为私有caller仍把完整证明loop限制为1GiB；这不是执行器失败。修为显式完整轮次loop1.5GiB、其他进程及旧默认1GiB，局部环境恢复成功／失败桩4/4；125新进程读回caller同样仅对loop配置1.5GiB，恢复桩2/2，尚未真实读回。161实际记录1610612736bytes，完成51条verified队列，春季第7天water4后、剩2株补水接近编译出move→clear weeds→move，在第69次派发前被旧工具观察门拒绝。四归属进程及只读performance watcher均退出；未收获／销售／终端保存，不能续已丢失的四株未保存尾部。
+- **同块修复162：** 回查`893b63a1`确认旧分支有意只验野树精确资源，不把它改成接受杂草。新增显式`native_engine_observed`消费者／持久owner模式，复用原native队列／请求journal／nonce／目标／同run-save-actor帧与真实after；不要求预测正常私有XML或随机掉落，准备动作零作物／producer／Teacher信用。主入口、恢复及生命周期汇总消费同一模式，旧默认不变。相关回归 **120/120（57秒）**；首次新夹具的状态变化／绑定路径错误在原块修正，失败保留。public控制尾部所有行的run／executor／day绑定同步补齐，并有负例，不增加验收门。
+- 161原失败三步队列的只读准备预检通过：第7天candidate`crop-watering-refill-approach:69:72,27`，新模式接纳、旧模式仍拒，8份原输入不变；没有派发或owner接受。报告`I:\StardewAI-Collab\resident-refill-20261108\block162-real-refill-preparation.json`，回归日志同目录`block162-final-tests.log`；小调用器首次变量重名编译失败保留，修正后实际调用通过。不是实际清草／完整周期证据。
+- **真实163已越过补水并收获，仍未销售：** source`42131a9b`的新隔离13日原计划完成67条verified队列；owner67water4→68显式native接近（本次只有move，零作物信用）→69water2，随后原生保存到totalDay12、六株收获已接受。第92轮销售前生命周期组装在实际1.5GiB中OOM，四归属进程和watcher均退出；收获／控制尾部未保存，不伪续。独立164同预算只读生产组装通过89转换／1233输入，932物理原件不变，说明live既有占用与全历史帧峰值叠加，不是补水或收获动作失败。报告`I:\StardewAI-Collab\resident-refill-20261108\block164-current-production-replay-report.json`；已验证trace包SHA`9d68d88364427fde7d182e82be371dc2cdac34949eb89055394a9ac5fef3fdf1`可用于后续只读重放，不再重复昂贵的冷恢复。
+- **内存修复及预算纠偏：** 显式lifecycle v5新增8帧有界完整原件缓存，淘汰后按原物理hash和完整canonical身份重读，不投影／删除字段；旧v4／原exact-frame pool／执行器不变。沙箱15/15后，真实164生命周期请求在1.5GiB且额外保留512MiB的压力重放通过，生成证明与基线逐字节相同，SHA均`96ffedb94fb43f27f1b2c39137f185d3e0db54826be3a267a5510e0f4e698d51`，峰值working set1660780544bytes（包含ballast，不是heap数）；主仓库集成 **124/124（61秒）**。peer`b81a561a`保留并接为Main`9fd73183`；同样保留规划第2节普通原生进度／产出归因的澄清`f1f4424d`→`c042a0bc`，并非新执行器。
+- 用户质疑1.5GiB硬限制后明确纠偏：它仅来自`e39dd1e5`旧测试设置，非业务／训练要求，不能将守住它变成新验收门。控制端按当前本机余量先给完整loop及独立读回 **2GiB上限**，不是用户指定永恒常量；游戏／Backend／Product及旧caller默认仍1GiB，读取原performance计数同时记录整机可用物理内存。原源代码spawn／finally环境恢复离线8/8、无进程启动，首个桩漏`output`变量已在原块修复；不再追加ballast门或无上限放开。
+- **真实167／新消费者记账断点：** source`0ac96bac`、实际loop2GiB，完成53条verified队列；iteration71的move→clear weeds→move全部实际applied／verified／fresh，但子步骤候选完成标记为true／false／true，原严格汇总正确拒绝。不是内存或原生清障失败；四归属进程和watcher已退出，原失败回执保留，未保存尾部不伪续。原新supporting入口把冻结的单root编译队列交给通用日计划的内部candidate边界记账，是调用配置错位，不修改旧执行器／分类器／验证器来适配。
+- **168定点修复：** 仅在原owner校验后的supporting调用副本启用固定root完成边界；共享Loop只在原末步记账分支增加此内部选项，原生动作实现、旧默认、分类器、验证器及派发规则不变，不启用CLI precompiled源或改全局options。三步Product协议通过原实际Loop产生journals／逐步回执／汇总，完整组合接受后重开不重派，部分与未验证组合仍拒，准备动作零作物／Teacher信用。定点3/3、最终相邻组合38/38（19秒，包含前3项，不相加，负例核确切拒绝原因）；日志`I:\StardewAI-Collab\resident-refill-20261108\block168-queue-boundary-final.log`，SHA256`3bbd0f656639cbc8c9e09c3683ede7b8357606e2c7b88173c046e8d6207eba00`。首次合成快照元数据、随后合成响应漏验证原因两处夹具错误已修，失败留存；不是新增原生周期成功。
+- **169按用户最终决定手动补证，不开发日界恢复框架：** 163第85项保存为春13早晨，原4文件7066921bytes的SHA`c8ead1a3c08fe2989c1ed057b378d4938df486c44ae52f3ac0a5e0174c55d73a`实核一致。复制到独立隔离存档，只执行最后一天；旧86—89未保存尾部、原档及owner均保留不改，不伪续、不补造旧接受。原编译器／Product执行器完成出屋→六株收获→接近运输箱→六次投箱→回屋→原生控制等待→睡眠结算；7条队列／17个原生动作由现有`ReadSelectedNativeActionQueue`逐队核验真实journals／nonce／source／after／Product回执，不重验前十二天。
+- 新末日实际为六个普通品质花椰菜175g／个，待结算1050g；20→1070g，累计收入1050g，原生睡到春14。关闭原游戏后另起新进程，唯一SaveLoaded事件、同save／actor、日期／钱款／空运输箱及物理保存hash均通过；来源存档未变，全部归属进程已停。只补真实观察，不沿用旧未保存5普通＋1银星的1093g。报告`E:\StardewAITraining\managed-native-20261113\manual-terminal-20261114-169\manual-native-closeout.json`，SHA`53aa69983d75ad7805dcb14b72c692bcf1062561dd9158458bf582c8e98c3742`。这是显式人工原生业务补证，`automatic_owner_resume_verified/complete_managed_runtime_verified=false`；不是自动同owner全周期或Teacher／正式训练通过。
+- 私有调用首次误用Bridge health路径、旧helper默认8GiB、预编译sleep多primitive及把零策略信用控制的exit2误当原生失败，均按原合同修正调用并保留初败，不改生产代码：控制原回执applied／verified／success、rows0保持，睡眠改走原recovery日计划；绑定实际recorded mechanical queue而非Loop展示副本。原生补证通过后不再扩成新产品功能。
+- 5455e743远端CI43608816763实际为3116/3117，唯一旧博物馆`malformed-reply`用例在15秒`WaitAsync`超时；本机只定点复核该原方法全14分支，14/14（6秒），未改博物馆生产实现或加宽超时，也不把本机定点绿当原CI全绿。日志同协作目录`block169-ci-museum-focused.log`；后续提交的独立CI另记。
+- **170收入证书已接原核：** 对169真正的最后一次sleep，直接用原`MoneyRevenueRecurrenceProofBuilder`重建收入证明，通过1050g；没有游戏启动、native派发或owner补写。工件在169运行根的`native-revenue-proof-block170/recurrence-proof.json`，SHA`4a375b2c7e9149b33bc2fe0ddee800d38f9ddfca0cf470d4f5628cc2f4a343ee`，formal=false。163原87／89记录证明30tick控制本就标为supporting_route且旧路线核已支持，取消“等待漏接”的错误预判，未据此修改任何执行／终端生产代码。
+- **2026-11-15现行调度清单读回入口：** 新`MoneyRevenueCropTeacherDispatchBuilder.ReadVerified()`与`verify-money-revenue-crop-teacher-dispatch --manifest <原清单> --output <新报告>`只读原Teacher调度清单，复用原capture、Teacher决策、receipt／账本、obligation及native plan核，核完整绑定与摘要分母，不重建另一套输出目录。原producer仅改partial声明、旧smoke输入／执行器／训练门不变，不把本入口插入逐步运行循环或增加必过阶段。首次新代码误引用decision字段／nullable已在同块修复；最终新入口及原账本桥组合15/15（1秒），日志同协作目录`block171-dispatch-reader-final.log`。
+- 171现行CLI实际读163原84动作调度清单通过，21份原输入hash与原dispatch文件清单均不变，未生成新的Teacher请求／计划副本。报告`I:\StardewAI-Collab\resident-refill-20261108\block171-real-dispatch-final.json`，SHA`401995418a6f8c5daeafd9097b0cb1e40da430ba88f033747b715357c7d61eb1`；只证明规划来源读回，native_execution／Teacher comparison／formal字段仍false。26369052 CI43611829966成功，后续新代码CI另记，不混用旧绿。
+- **172补证归并已接实际来源：** `summarize-money-revenue-crop-supplement --request <已接受来源及hash> --output <新报告>`复用171清单读取器，引用164原生产证书、169手工报告／第85项保存边界和170原收入证书。它核对计划／run／save／actor／日期／末次sleep工件与1050g金额，保留未续86—89尾部；不重建生产证明、不伪造旧smoke目录或自动owner行。输入是控制端已接受的冻结证据引用，不是自动准入入口；输出明确`accepted_*_reused=true`且`production_replayed/native_dispatch/owner_mutation/complete_managed_runtime/Teacher/formal=false`，不能用任意自填hash把摘要当原生重放证明。
+- 172改动层及171相邻回归 **29/29（3秒）**；真实原件归并通过，7份直接绑定原件hash不变，重复输出命令拒绝且旧报告未改。最终报告`I:\StardewAI-Collab\resident-refill-20261108\block172-real-supplement-final.json`，SHA`c7ddd3a2cf7dfc93d27cea9e7fcaa7ad0dba8ae3984730f2598dc42a0f540320`。没有启动游戏、全生产重放、worker调用或正式轨迹写入；旧执行器／segment／Teacher比较默认入口不变。当前开放issue无新增待裁决建议，#339／#550保持其原分层含义，不因本摘要擅自关闭。
+- **173原第5步联合日历接线：** 原时间轴只判断每个候选在当前时刻的窗口，原DailyPlan累计时间／体力但未把前序动作耗时反映到后续关门窗口；这不是要求旧局部执行器改合同。新增显式`CompileWithJointCalendar`复用原编译器的同一排序／动作生成／预留／预算循环，按已接受候选的完整编译耗时累计绝对钟点，错过开放／关门或日终的候选在队列生成前排除，不占名额、时间、体力和预留。原`Compile`签名／默认行为不变，原滚动等待仍只派发有界wait并fresh重规划；不新增scheduler或原生动作实现。
+- 后端原`daily-plan/compile`支持显式`use_joint_calendar=true`，必须绑定精确snapshot及原时钟读取核，未知hash、缺失／不可读／别名冲突拒绝；别名时钟仍沿同一恢复预算。LiveTrainingLoop用`--use-daily-plan --joint-daily-calendar`显式启用，首次选择与已选候选fresh重编译都传同一模式；默认关闭且旧请求原字节不变。步骤携带候选预计起止时间和joint-calendar标记，仅为当前日估算，不冒领长期source schedule或正式准入。详见[现行接线合同](current-production-snapshot-handoff.md#joint-current-day-calendar-2026-11-15)。
+- 173核心／原编译器／原timeline与时钟相邻回归 **81/81（141ms）**；后端／runtime参数／旧resume／清单与补证／原博物馆及原动作队列编译组合 **62/62（11秒）**，包含先前47／61项，不相加。新增组合复用原浇水夹具，经联合日历到原ActionQueueCompiler仍得pending原生队列，无新执行要求。日志同协作目录`block173-core-joint-calendar.log`和`block173-backend-queue-final.log`；均为单核、1GiB构建／测试，无游戏启动。765e6255 CI43616432095为3145/3146，仍同一个博物馆15秒外层超时；只在测试handler及Timeout诊断增加GET／mutation／lookup阶段／次数／journal存在性，不改时限、HTTP恢复或业务实现，待新CI实际诊断，不声称已修复或全绿。
+- **174当日维护与其他目标已在原计划层组合：** `BindDailyComposition`读取原作物计划、同snapshot／save／actor账本和原进度，绑定已有的当日浇水／收获候选；保留其他目标的候选全集与已有必做ID，不新造动作／成本或把别人的作物自动算成当前承诺。已满足维护不重复加入；缺失／重复／阻塞候选及过期来源拒绝。备种、路线、整地、待播种前缀仍交原owner先完成，不提前验证尚不存在的作物。`required_candidate_ids`只在显式联合日历启用，必做及原商店前置沿原排序优先进入同一时间／体力／名额／预留循环；必做容量不足时不让可选工作挤占。新模式以原数值读取器向下取整原生小数体力，不把读取失败当无限预算；旧默认不改。
+- 174核心 **92/92（142ms）**、后端及相邻组合 **89/89（11秒）**，包括旧作物规划、原动作队列、来源／雨天／播种前缀、联合预算、原清单补证及14个博物馆恢复分支；只验证修改层及相邻合同，无游戏／重放十三日／worker调用。新夹具误用冬季备种来源验证春季播种，现按原承诺日期修夹具，不改旧执行器；全部初败日志保留。日志同协作目录`block174-core-required-work.log`（SHA`12a4a826986ec37fa46d36b9c0de3d445ba51a48d9851f19507ef232bd6e9fbc`）及`block174-backend-final.log`（SHA`174d7e78960fd472aa7a3072a3a36755cfcf25fc0f954620302cf5be7c6465c7`）。4b6fa676 CI43618869359为3154/3155，新增诊断确认唯一超时停在首个账本GET、mutations=0／lookups=0／journal不存在；仅在测试计时前请求纯只读`/health`初始化路由，不预读可能触发reconcile的账本，原15秒／单次提交／只读查询断言保留。远端修复仍待新CI，不冒称已绿。
+- **唯一接续按用户纠正：** 人工末日补证／来源归并和当日候选组合已收口；本块只产组合请求，`CompileActionQueue=false`，不授权把混合队列塞入原crop-only owner。下一步仍原第5步：在全局调用中接组合结果、原控制／恢复优先级、各既有owner的派发与同一账本fresh回接，处理共享资源和剩余日程，不造第二执行器或改旧owner接陌生动作；尚非全L3完成。不另为自动属性重跑十三天、全生产证明或新建恢复体系；原第3／4步完整自动同owner属性仍未证明，后续既定全局原生运行一并观察，正式门不放行。L1不重采、formal=false，#569交接及原八步完整范围不变。
+- 仍原八步第3／4步未闭，第3—8步合计6步；L1冻结，Teacher总验收／formal=false，local-data／原存档／日志／二进制不提交。
+
+## 2026-11-14 十七点协作接续与能力块规则
+
+- 按用户确认的今天17:00分工，原OpenCode API同会话149于17:00:03实际启动，先因控制端漏授一个Goal目录校验器只读路径退出，零代码／测试；修正该依赖后同会话151运行并已产生生命周期源代码改动，尚未取得结果。原6.1-sol high／会话／sandbox不变，不是内部子代理或provider限额，控制端只看短报告／元数据／窄patch，不倒灌全部输出。
+- 控制端已转后续checkpoint／L3证书消费接线：显式新入口支持native容量v2／混合终端证书，旧默认保持；当前代码及测试草稿未构建，等待协作者释放唯一构建通道，不称通过。双方不同文件所有权；peer专管lifecycle及其可选原引用合同，控制端不改该共享合同文件。
+- 148原T完整只读重放已越过播种前缀，仍在旧序列语法遇控制等待时漏收后续浇水：报“required crop tile unwatered”不是实际没浇。第8天原序列还有water4→原补水接近→water2，必须保留全部转换并分别消费零产量控制／准备与真实作物动作，不能删等待、改旧执行器或给准备动作生产信用。930原文件仍不变，完整周期／Teacher／formal=false。
+- 按用户最新纠正，[能力块与持续阻塞](DOCUMENTATION_MAINTENANCE_CN.md#能力块与持续阻塞)已固化：长期无进展先核目标／合同归属／旧意图；小错留在一个完整能力块内连续修复；依赖只读权限按模块预检，不逐文件付费试错。同步本机AGENTS／worker skill、沙箱AGENTS及当前TASK／BOARD，不另加验收阶段或改变剩余八步。
+
+## 2026-11-14 R2 汇总复用原分批播种合同
+
+- `a41b3137`已推送且CI43575371727成功；协作树eb130109与Main树5260cc5ac82b81d44986eb18d5f6146efb561245一致。控制端65/65、真实T容量13/13天通过，完整生产／销售／保存重载仍未通过，不晋升L1／Teacher／formal。
+- 142完整T保留重放在1GiB下生命周期装帧OOM，930原文件不变；89转换／1233输入的只读trace包已保留并绑定SHA。回查`e39dd1e5`发现旧生产caller原本显式配置1.5GiB及完整帧复用；本次1GiB重放限制设低，不能据此判旧验证器有缺陷。144恢复原1.5GiB后越过该内存断点，未修改旧FramePool／执行器／共享动作规则，仍930原文件不变。
+- 144真正失败在新总汇总套旧整队列条件：原播种execution28计划6／执行2，execution29计划4／执行2，最后2另批完成；这些是原owner已接受的合法前缀。原`CropTeacherSeedPlantingReceipt`／`CropTeacherAppliedPrefixReceipt`早已支持，不能反要求旧执行器一次做完或把原receipt改completed。
+- 显式生命周期v5新增只读前缀适配，复用上述原核与逐步native边界；保留原全队列／回执／未执行后缀，只将已执行数量用于当日动作与输出计数。旧v4／旧默认LoadTransition不打标，仍拒同一部分回执。新专项及原生产／容量／prefix组合 **24/24（5秒）**，146首次新测试漏引用及nullable警告留存，147仅修新引用／分流，不能把24/24当完整周期。148用原trace包／匹配已测四依赖／原1.5GiB预算重放，结果未出前保留未判定。
+- **当前接续与2026-11-14一次性分工时点：** 先读148实际结果，继续修新消费层与原合同不匹配的断点；不改旧执行器，不重跑游戏或把测试条件扩成新目标。用户确认今天 **17:00（Asia/Shanghai）** 若仍未收口，当前块交原授权OpenCode API协作者同会话接续，控制端转后续不重叠工作；文件／构建／运行所有权先划清，L2未过不冒充L3／formal通过。仍原八步第3步收尾／第4步验收，第3—8步未整体关闭，local-data不提交。
+
+## 2026-11-14 R2 真实十三日收获与终局组装修正
+
+- 新隔离T沿原13日84生产动作计划实际跑到收获，owner第88项接受六株收获，第89项接受末次控制；本调用67条verified队列／92次迭代。实际Product补水已在owner68接受，前4株与后2株浇水分别接受；本次未触发零浇水blocked控制续接，不将其合成专项当作原生证据。
+- 原生循环exit2停在销售前的生产证据组装：第2天雨天六株已湿，原day source是FarmHouse，旧v1容量核刻意要求Farm碰撞图／站位；时间错误来自不可达派生值，并非真实超时。另有日中补水晚于首4株浇水，以及实际5普通／1银星花椰菜的终端消费形状。原失败、owner、存档和部分输出全部保留。
+- 显式容量request v2／`BuildNativeObserved`及lifecycle request v5只适配已观察整日轨迹：零工作日核原六株活体已满足，日中补水核完整原生前缀；旧v1默认、共享容量核及执行器不改。显式混合品质终端沿原单件编译／执行／资源核和同owner游标，每槽绑定实际品质／售价，并区分物理库存与计划出货量，余量不被要求额外卖出；旧单栈入口仍严格。
+- 原API修正调用退出，交付编译草稿但测试工具超时，未记验收通过；peer7fdaf8ef／Main4b7ff150保留其产物。控制端先21/22（新夹具多层目录遮蔽实际失败），后47/48（新夹具漏银星库存汇总），仅修新夹具路径及品质汇总，最终组合 **48/48（30秒）**；未放宽原资源核，不执行递归清理。此组含容量／生产、原终端选择、混合品质／余量／恢复、保留轨迹与旧保护；不是完整原生周期通过。
+- 新 `ReadRetainedProductionTraceAsync`仅允许无pending的历史证据读取，不清除`HeadRecoveryRequired`，默认活动trace／生产入口仍要求恢复。首次134误用活动trace被原守卫拒绝；138已读89转换／1233留存输入，生产组装因1GiB堆限制OOM，930物理原文件不变。新原生容量入口改逐日读取，只存补水终态路径／哈希，不同时保留13个完整状态；旧默认读取方式不改。扩大组合 **65/65（1分3秒）**，实际T完整容量叶 **13/13天** 在相同1GiB限制通过，第8天仍六株／原补水前缀940ticks，雨天零工作日不假造Farm站位。各组不相加。
+- 新聚合层正向试用旧golden时，旧夹具缺可达字段和完整材料图而被拒绝；这是不适用的正向材料，不为适配夹具放宽新协议。明确改记稀疏材料拒绝用例并保留失败，混合终端聚合的真实正向结果仍待原生完整流程。142完整T生产组装另行重放，匹配本次已测四依赖；结果未出前不称生命周期／留存整体通过，容量叶也不授owner／ledger／native／Teacher信用。
+- **接续：** 先让完整保留T生产组装逐叶通过，再用新隔离原入口完成真实生产→混合出货→原生睡眠保存→新进程读回。T磁盘最后保存为收获前第12天，收获／控制尾部未保存且已丢失，禁止伪续owner89或拼接旧收获。八步仍第3步收尾／第4步验收，第3—8步未整体关闭；L1冻结、#550／#569分工、Teacher总验收／formal=false、local-data不提交不变。
+
+## 2026-11-14 R2 显式 Product 补水消费接线收尾
+
+- 已复用原 `ReadSelectedNativeActionQueue` 接显式 native refill trace／preparation，匹配已验证原生请求的实际 endpoint 与固定 executor；旧 Runtime 默认入口和共享读取／编译／执行器不变。owner 仅按持久记录的 Product 版本选新入口，恢复不从当前开关反推旧模式。
+- 补水本身仍保留原 `blocked` 回执、零浇水产量与零 Teacher 标签。Main 只在同一 owner 已接受该补水控制结果、当前 head 一致且无 pending 时继续下一队列，不把一般失败改成成功。未接受／旧操作／新 pending 仍不放行。
+- 原 API Block118 只交付两份合成 Product 协议测试草稿，未获构建权限，未自行宣称测试通过；控制端接线及 owner 恢复测试后，补水／旧入口组合 **73/73（26秒）**，随后 Main 控制续接／规划输入／旧守卫专项 **61/61（26秒）**。两组不相加。首次新 owner 夹具在 claim 前生成回执，被原输出保护正确拒绝；仅修夹具生成顺序，原失败留存。`e0c5c86a` CI43557890232成功，不代表本轮新提交已过远端CI。
+- S 原112／pending72完整 scope 已只读重放通过：11项留存输入、8份原物理输入未变，旧默认仍拒同一 Product；资源与接近可验证、作物credit为0。没有补写 native／ledger／owner 接受，不能据此续接已丢失的未保存尾部。
+- **唯一接续：** 提交并同步后，用新隔离真实开局经原 managed／Product 入口跑完整13日／84计划，到收获、销售、原生保存及新进程重载读回；旧S全部保留，不拼尾部、不缩分母。仍是原八步的第3步收尾／第4步验收，第3—8步尚未整体关闭。L1冻结19/19、11/11，Teacher总验收／formal=false、#569移交及local-data不提交不变。
+
+## 2026-11-14 R2 春季第9天补水 Product 消费者缺口
+
+- `bb24e045` 的真实112已越过旧账本登记错误，同一进程连续推进到春季第9天：本调用20条verified Product队列，原owner71已接受，最后持久日界owner68为7→8。第9天水量只够4株时原编译器先编译并接受4株，剩2株转去补水点；iteration71的补水接近结果在新消费者绑定处被拒，owner72 pending。loop退出2／监督器退出1，四归属进程已关闭。原失败保留，完整收获／销售周期未通过。
+- 直接根因：原 `CropTeacherWateringMaintenance.RefillApproach` 仍固定Runtime executor，实际已固定的transition为Product；原 `CropTeacherRefillApproachNativeTrace` 默认也用Runtime-only `ReadQueue`。两文件最近提交 `09aa1acf`；这说明尚缺明确的Product消费接线，不是原编译器／移动执行器没有能力。**不得为此把旧默认读取器改成普遍接受Product**，或只改版本字符串而漏下层原请求／回执证明。
+- **后续唯一实现块：** 复用既有 `ReadSelectedNativeActionQueue`，新增显式native refill trace／preparation入口；完整匹配声明executor与真实receipt，保留原queue／source／run／actor／帧／原生请求nonce／目标及资源模式。原Runtime入口默认不变，owner只对其已固定Product记录显式选择新消费者；不新增执行器／ledger、不给补水接近授作物产量信用。补真实Product协议正例、旧默认拒绝Product及错声明／错nonce／错来源反例，再用未改的112留存原件只读验完整scope，不补写native／owner接受。
+- **持久性限制必须保留。** 用原 `NativeSaveBoundaryVerifier.Capture` 核实物理原档4文件／7486991bytes，SHA `b4db592b14b539b3c86875a50d7a89bfa9b645ad17d344a234d3b4e647ca8395`，与原native0067的春9保存完全一致；后4株浇水及接近水点是关闭进程后已丢失的未保存尾部。现有owner没有挥发尾部回滚协议，且readback只接受原已接受过夜／读回头；不得改写原accepted链、伪造新加载一致或直接再发已claim72。修复后从**新的隔离真实开局**重跑原完整13日／84计划，不缩小分母、不拿S部分轨迹拼成新全周期；原S所有保存、失败、native和ledger留存。若发现既有明确的合法恢复能力，先验证其原合同，不能默认存在。
+- `bb24e045` CI43554993177的Backend3042/3043唯一失败是旧源码守卫要求Main直接调用旧capture名称。只更新守卫验证Main→新owner分流→原非托管capture完整委托，原断言意义保留，相关 **20/20（290ms）**；运行代码未为CI改动，原失败不回标成功。112只读performance53.85更新／秒、137次full平均1450.404ms／最大4119.631ms，仍有明显采集停顿。L1冻结、#550／#569、Teacher总验收／formal=false、local-data不提交不变。
+
+## 2026-11-14 R2 托管日界不再进入旧账本登记
+
+- 修正版109实际越过106断点：同S新加载后，原owner接受回农场、六株第2日浇水、回家及再次原生睡眠保存，最新第41项真实日界1→2／六株／native save均true；原存档已春季第3天。本调用报告在末次sleep后旧分支异常前记录3条verified队列，不把6个浇水primitive混为6个队列。四归属进程均退出，原失败不回改。
+- 断点为新Main接续仍无条件启动旧 `CropTeacherDayBoundaryStart`，托管过夜已由原owner接受，随后却要求旧transition ledger。只在新增loop薄接线中按owner选择：托管路径不再开第二份旧日界观察／收获登记，非托管继续原capture与原save要求；不修改旧日界验证器、owner／原生睡眠或保存结果。
+- 组合61项首次60通过／1旧Overnight用例在 `FileStrategyCommitmentRepository.File.Move` 出现AccessDenied；没有修改该共享存储或跳过断言。原二进制不改源码／不重建聚焦重放，失败旧用例＋新日界三项 **4/4**。保留首次61项失败，不标为61/61；本次新托管分流与非托管严格保存检查均过。之前54/54和59d16079仍独立保留，最新CI另核。
+- **唯一接续：** 从同一已保存春季第3天／原owner41，当前新进程读回后继续原13日84动作计划到收获、销售、终端保存内容读回；不重发已接受第二夜、不建新owner／ledger／计划、不缩为前三天成功。完整周期／Teacher总验收／formal仍false，local-data不提交。原API块已退出撤权／授权空闲；技能已修正普通FileNotFound可用已授权窄rg纠正，不当作权限或provider故障停止。
+
+## 2026-11-14 R2 原 owner 完成凭据接回原规划器
+
+- `06eb63e0` 已推送，CI43551647606成功。隐藏原S／新PID16348经原入口实际接受第34项fresh native readback，原plan／request／存档未换、下一工件35未覆盖旧序号；随后派发前因 `crop_teacher_run_day_advanced_without_verified_save_boundary` 退出2，四归属进程全退出。不是原生睡眠再次失败：原第32项日界0→1已接受，但新Main仅把旧transition ledger完成键传给原规划器，漏接托管owner记录。首次Block104调用路径空格未引用而在解析前失败亦保留，脚本修正不改旧参数校验。
+- 新只读 `ReadPlanningProgress` 在同一owner锁内消费既有已验证接受证书的hash链，原日界只映射native overnight＋save已接受的from→to，原收获只映射已接受applied tiles，复用原DayBoundaryKey／HarvestTileKey。返回独立集合，不按当前日期／作物缺失推断、不把readback／控制算生产、不另建ledger；每次只读小证书，不重新深验全部历史快照，终局原完整trace证明不变。Main薄适配给原 `CropTeacherRunPlanner.Evaluate` 供键，非托管默认不变，原planner／旧owner索引／桥／执行器未修改。
+- 控制端首次 **53/54**：唯一失败是新测试误调用旧seed-only `ReadStep()`，已改读原harvest admission，旧API保持拒绝非种子。最终同组 **54/54（1分4秒）**，覆盖日界与加载后接续、收获不重收、未接受日界仍阻塞、重开／pending／历史证书篡改／集合隔离和旧恢复／trace；不与前组相加，不称真实生产周期通过。
+- 原APIBlock105同会话只读审查11steps未发现问题，未发现本次真实集成漏参；Block107初次因缺必需rg／gitlog停下，唯一修正因猜错依赖文件名按过严退出规则停下，均零代码／零测试。原输出／任务包／失败保留，控制端接管实现验收，不再支付第三次调用；权限已撤、授权仍在，此块blocked-idle不是provider限额。后续文件名错误应由已授权的窄rg纠正，不当成权限／provider故障。
+- **唯一接续：** 提交后原S新日志目录隐藏静音重开，经同一owner新加载接受后继续原13日84动作维护→收获→销售→终端保存／内容读回；不回改Block106失败、不拼未保存尾部。原performance只读取样：106累计57.891更新／秒、仅2次full（平均2382.464ms），冷恢复约4分钟仍有代价，不称性能已解决。完整周期／Teacher总验收／formal仍false，local-data不提交。
+
+## 2026-11-14 R2 同一 owner 显式生产续跑入口
+
+- 新命令 `continue-crop-managed-owner` 复用原 readonly resume 的完整恢复／报告正文及原 Main 生产循环，普通入口和 `resume-crop-managed-owner` 默认不变。恢复同一 owner 的原 plan／request、当前账本和原 artifact 序号；派发前要求本次真实新进程加载被原验证器接受，并绑定该 PID／启动时间／可执行文件，进程退出即停止，不使用旧15724帧。
+- 原13日／84生产动作、原 S 存档与输入身份不变。未另造 planner／executor／owner，也未改旧桥、资源读取器或动作合同。控制端组合 **59/59（1分3秒）**，含模式反例、进程寿命、元数据和原读回／恢复回归；原恢复报告正文机械比较与上一提交完全一致。这些是协议测试，不代表真实续跑或完整周期通过。
+- 原API同会话Block102两次测试为0/6红色及编译失败，原因包含控制端误把已有 `Continuation.cs` 声明为新文件。原草稿／失败记录均保留；控制端恢复旧文件原内容，把新元数据移至 `RuntimeContinuationSource.cs` 并修复集成后通过上述59项，不将其写成peer验收绿。新增NEW路径预检在加载凭据前拒绝既存／已跟踪文件，离线7/7；不再支付第三次重试。7209ebdd CI43547548530成功。
+- **唯一接续：** 提交后以同一 S 原存档隐藏静音启动新进程，经新显式入口接回原完整维护→收获→销售→终端保存／新进程读回链。运行脚本不覆盖旧调用／进程日志，以原只读performance接口取样，不额外轮询full快照；保留首次真实断点。完整周期／Teacher总验收／formal仍false，local-data及原生日志／存档不提交。协作授权继续有效，Block102进程已退出、权限已撤，下一块须替换任务包后才调用。
+
+## 2026-11-14 R2 显式原生加载比较与读回接续
+
+- `65205431` CI43543869020已成功。本轮沿既定R2第3／4步解决同一S存档的加载语义，不新增动作／字段／全量验收分母。原 `CropTeacherSavedResourceReadback.Open/VerifySnapshotContent` 默认严格行为、共享 `FullShipmentRecoverySettlementBoundaryProjector`、桥和执行器均保留；新增显式 `OpenNativeLoad/VerifyNativeLoadSnapshotContent`，仅由原生加载见证在验证进程、保存、日志、事件之后调用。
+- 比较视图只处理已重新反编译确认的初始化：保留所有既有hay行，只移除新增且结构完整、名字规范、building／hay／capacity均为0的原生Cellar行；真实存量、容量、建筑、未知字段及重复身份仍拒绝。钱包先从原值完整推导每位参与者的individual初始化，核对全部其他属性，再将已验证字段映射回比较值；不忽略整个钱包，不复制旧投影器。派生fingerprint只在确有初始化时允许变化，单独变fingerprint仍拒绝。视图不落盘、不入快照缓存，不改原before／after或其hash，rebind仍使用真实after。
+- 原API同会话Block97负责钱包函数／纯测试两文件，控制端并行负责Cellar、显式入口接线和完整消费者测试。peer `acb8fe80` 接为Main `188ebfee`；原工具红0/18（缺接口）→钱包＋旧读回28/28（2秒），仅两次测试，无修正／fallback／内部代理。控制端交叉审查后独立组合 **105/105（1分19秒）**，覆盖默认严格入口仍拒绝合法加载初始化、新显式入口／原marker rebind、钱包与Cellar反例、读回／owner／原overnight恢复。此处是合成协议测试，不独立授予真实加载信用；原始交流70条JSONL本地保存。
+- 同一份今天上午S／15724真实加载的更正日志见证，交新原验证器完整只读回放，`NativeReloadVerified/SemanticSavedContentVerified=true`，10份原输入及当前原存档字节未变；未再开游戏／派发动作，尚未自行记owner接受。薄.NET8调用器先与Main四个依赖逐个核hash一致，排除旧DLL重放；旧失败及更正来源记录不改写。
+- **实际owner接续已过。** 既有 `resume-crop-managed-owner --managed-crop-reload-observation <原更正见证>` 实际接受同一owner第33项，`native_saved_content_readback_verified/fresh_accepted_head_verified=true`；415份既有输入／原存档未变、无新游戏／native，`complete_managed_runtime_verified=false`。这是今天上午已真实发生的15724加载之留存结果入账，不称本轮新开一次游戏，也不回改Block92失败或Block94来源更正。后端／CLI均退出；原加载、存档和之前两轮失败证据继续保留。
+- **后续仍是原R2第3／4步主循环接线：** 原只读resume命令不是生产循环；Main普通入口当前明确拒绝resume参数，不能把读回报告称作“已恢复行走”。须显式接回同一原owner／accepted head、原native run plan／request／账本，复用原 `NextArtifactIteration` 避免覆盖S旧快照；动作派发前绑定当前真实新进程加载见证，不拿已退出15724的帧直接执行。继续原13日／84生产动作的维护、收获、销售与终端保存读回，不新建owner／执行器／计划，旧普通入口和只读恢复默认不变。完整周期／Teacher总验收／formal仍false，#569正式manifest前交实验室及local-data不提交不变。
+
+## 2026-11-14 R2 原生睡眠终端副本适配
+
+- **S覆盖下方R历史接续。** 原E隔离 `managed-s-20261114-0840` 在原13日／84动作计划内，六粒播种和首次浇水全部被同owner接受，回家后iteration34原生睡眠applied／success=true；磁盘原档已为春季第2天。原loop退出2、四归属进程全退出，原因是新增Overnight消费者要求单步after与汇总after同文件名，非游戏睡觉失败。两原件内容SHA均为 `5ae3b8977389fd21db17e8a35238fcc261829cd1595a2150207b6a2b7d31c4a5`；原执行器正常写单步文件并另存终端汇总，不修改这套写法。
+- 只适配新消费者：复用Harvest的完整typed快照比较／两路径留存模式，接受内容一致的终端副本，原路径、单步／run／actor／帧／跨日生长和编译合同保留。未更改旧桥、执行器、共享守卫或原回执，不逐项预测私有字段／随机结果。原API同会话草稿保留为 `5a5865b9`：首轮漏两条必需只读命令而零编辑退出；唯一权限修正后首测缺import未编译、第二次28/29且最后夹具修正未测，**不能称peer验收通过**。控制端新测试在旧消费者上4通过／5失败，修后原睡眠／收获／恢复／读回相关 **59/59（1分4秒）**。
+- 原S留存准备→原完整Overnight范围只读重放，从同路径误拒转为通过：total day 0→1、六株生长、八输入均未变，两个物理after均被固定。这是范围重放，不自行补记owner接受。续接只走既有 `RunOvernightAsync` 处理已经claim的原结果，再核原生存档边界／原owner持久读回；绝不重发睡觉或修改原存档。薄调用工具最初两次在.NET10 PowerShell编译绑定处失败，均未启动后端／改账本，改用同版本.NET8调用原API，失败记录留存。
+- **实际续接已过。** 原 `RunOvernightAsync` 给原S第32项生成真实accepted，`native_overnight_control_verified/native_save_boundary_verified=true`、六株day0→1；随后既有resume重开同owner并读回持久账本，404份既有输入／存档均未变、零新native。原失败回执与此前只读报告不改写。两次完整冷重开约7分钟，这是真实恢复代价，不混称native动作耗时或API等待；本轮不改旧索引／哈希缓存来规避检查。
+- **新进程加载已实际发生，完整读回尚未接受。** Block92用同一原档／原smoke-mods／E可执行文件隐藏静音启动15724，原入口取得真实SaveLoaded事件、full加载快照和进程／保存指纹；调用工具误将UTF16控制台stdout当UTF8 SMAPI原日志，故原命令退出2。原失败保留。正确SMAPI文件确有根目录／槽位记录，最后写入01:46:33Z早于原观测01:46:37Z、晚于进程启动01:42:39Z；另建更正日志引用的证据描述，原快照／事件／进程／原描述hash均保留，不补写时间、重跑游戏或改原记录。还修本地调用器未设独立training-output的遗漏，未修改Harness。原验证器已越过日志检查，当前只拒绝 `farm.hay_storage,player.multiplayer_wallet`。原存档指纹仍等于加载前／后，全部归属进程已退出，readback owner接受／完整周期／formal仍false。
+- **下一缺口有当前DLL依据，不是新增游戏能力。** 只读差异：loaded多出零building／hay／capacity的Cellar2…8；钱包同一actor／有效钱20不变，仅individual条目由缺失变20及派生fingerprint变化。对当前E DLL（SHA `7f1e5b8e…6deaee`／MVID `aa1f513a-94f0-4ef6-a35f-2d5b4a3721bf`）重新定点反编译Game1.AddLocations `0x06000b58`、SaveGame.getLoadEnumerator `0x0600143f` 与Game1.loadForNewGame，三方法零诊断：Load先取max(saved limit,MaxPlayers)，loadedGame入口建默认Cellar，随后逐farmer将individualMoney设为当前Money。完整原件／IL及源码hash仅本地留存，不提交游戏源码。
+- **唯一接续：** 只修新增saved-load消费者对上述原生初始化的持久资源比较语义，复用旧资源投影，不修改共享读取器／同进程recovery守卫，不忽略整个hay／wallet字段；实际hay／容量／建筑／资金／钱包模式／参与者变化仍须拒绝。补精确正反例后先用同一份未改的更正加载证据验证，再经原owner入口接受读回；不为拿日志重跑游戏。只读resume本身不是生产主循环续跑，随后仍须完成原13日／84动作收获销售周期。9c828594 CI43535210356成功，新提交CI另核；#339/#550/#569、L1冻结及local-data不提交不变。
+
+## 2026-11-14 R2 原播种机械批次身份接线
+
+- **当前R覆盖下方Q／P接续。** 506f15a8的CI43529962446成功；R原新E managed/product实际27owner／24verified／六次耕地，accepted26／27已将前四粒真实播种归入同一owner，证实37a81982入口身份及此前来源／缓存修正已越过真实播种。iteration30最后两粒native均applied，最终快照有六株／所选种子0，但末粒1→0被新增播种消费者的空槽投影误拒，最后两粒**未获owner接受**。原native loop退出2，四归属进程3256／22768／6592／3144全退出；工具外壳0只是调用命令未显式exit原生退出码，不是游戏成功。摘要SHA`514bf102392590f7c0300e0fec9f5b02b0e2f216b956be5554ac4baa39a55b78`。尚无日界／收获销售／保存加载，原失败与未保存尾部不补写／续档。
+- 根因是实际空槽的`donate_color_context`仍为非空不适用对象；末粒前后均为`is_colored_object=false／parent=null／tags=[]／not_applicable_not_colored_object`。核当前PlayerReadAdapter及4d93623d原投影，错误在a3869f97新增播种消费者把它预计为null；5cebff25出货投影已有正确做法。原API同会话Block87仅将原出货空槽函数原样移到公共Inventory partial并给播种复用，删除其重复白名单，peer`bf4f5038`接为Main`4a6e3146`。**旧桥、执行器、marker、prefix／资源比较／回执守卫均未放宽**，不是新增字段或逐私有状态模拟。
+- peer原工具实证：新20项先18通过／2失败（拒绝合法对象、接受错误null），修后原播种／出货及新反例**109/109（13秒）**；仅两次明确测试，四文件提交，退出撤权。控制端逐文件复核后独立扩大**114/114（18秒）**，与109不相加。原R末粒的原queue／marker ledger／前后full快照经原**完整VerifyPlanting资源叶**只读检查，从同库存错误转为通过，五输入hash未变，报告SHA`5709d2331133c6c02fdcaeaabd314420a2973186ea646912c33f63a382df4ee2`；无native派发／ledger mutation／实际owner接受。初版因PowerShell对象装箱未进入原函数而失败留存，修工具后准确复现原错误，不将工具失败当游戏缺口。该重放不证明整个prefix／owner／完整作物闭环，不能补写R最后两粒信用。87原始交流68条JSONL及完整日志本地留存。
+- **Q历史断点。** Q原新E managed/product运行实际接受25个owner边界／22verified／六次耕地／三次显式native站位移动；iteration28已准备原六粒种子队列，但在派发前被新增Main入口的`Managed crop seed queue lost its original selected candidate identity`拒绝。没有第26项dispatch claim／播种native，wrapper65723退出2、四归属进程9856／12520／2284／8全退出；日界／收获销售／原生保存加载仍未过。原件与旧失败保留，摘要SHA`84ce152df5cfa5a65b5740acc412a534bd74b816d494fa99375de82933ac4222`；不以通用objective_completed或未保存尾部冒充作物成功／续档。
+- 核过`616a186b`原提交及同次交接记录：它将队列校验移入原owner执行租约，目的是保护所有权，不是要求直接机械批次改写为排名计划。原`CropTeacherSeedPlantingMarker.BuildActions/ReadQueue`按support step展开`:plant:index`并严格比对完整参数，本来无`candidate_id:`；新入口误把购种的候选约定套给播种。**37a81982只修新增Main适配器**：同一prepared runtime／owner／pending及原planting scope已绑定时，无排名ID使用既有`SupportStepId`作为该控制批次的回执身份。旧无主入口／其他种子路径的缺身份拒绝保留；原marker／动作／编译器／租约／资源核不改，不给原参数增加伪候选或授Teacher标签。
+- 新主入口测试先复现同错误（1失败／1通过），修后相关**65/65（47秒）**。涵盖无排名参数的原机械队列不被改写、同一主执行入口／八步prefix／一次marker与settlement／owner接受，以及旧非托管拒绝和原播种恢复／来源刷新等；这是合成native协议测试，不是Q原件补写接受或真实播种PASS。
+- Q只读performance取样（不额外生成快照）：full137次平均1327.587ms、locations403.398ms，仍有停顿。原API同会话Block84在Q运行时只写独立五文件草稿`610fda97`，控制端接为`b51c7b05`；同一次ShopAccess.Collect内以location／map引用共享原MapActionRow数组，跨采集即失效，原扫描／字段／排序、collision／动态gate／库存缓存与执行器不改。peer未构建／运行游戏，不称peer测试或性能已过。控制端组合首次85/87：两项旧播种fixture在FileStrategyCommitmentRepository.File.Move出现AccessDenied，其余（含新缓存9项）通过；不改共享仓库、不跳过断言，原产物不改源码的一次聚焦重放33/33（8秒），包括两失败theory及新缓存／原库存缓存／商店／连接器守卫。保留初败，具体外部文件锁原因未证实，不能把整组87重标为全绿；真实E引用net6 Bridge构建0警告／0错误。原始交流60条JSONL及完整日志本地留存，未用内部代理／fallback。
+- 扩展旧route／social源码守卫首次6/7：`55dc054fe`旧守卫用整个`Game1.warpFarmer`文本断言，命中了基线fae6a461已经存在的`"Game1.warpFarmer active-festival branch"`来源说明，并非本轮添加调用。只将该守卫改成识别函数调用语法，补说明文字与三类实际调用反例；未改GameLocation、gate或执行器。最终相关**11/11（41毫秒）**，初败留存；这只是源码回归，不外推为完整游戏只读证明。
+- R早期只读performance full94次平均1171.142ms／locations360.898ms；相比Q的1327.587／403.398ms数值较低，但不同阶段负载，不作为受控因果比较或“卡顿修好”。只读旧13MB工件的Net10宿主取样显示反序列化／canonical hash仍有秒级成本；该宿主和CPU争用不同，文本作用域复用不是typed对象安全复用证明，不据此擅改共享哈希／旧读取器或新增准入门。
+- **唯一接续：** 空槽共享修正组合验收／原R资源重放／提交同步后，新S在E隔离原managed/product入口继续真实播种维护→收获销售→原生保存／新进程加载；原计划13日／84生产动作，不能把整地或四粒入账缩成闭环成功。不重发Q／R批次来伪造内存续档，不再为原机械批次新增排名前置或私有字段预测门。性能优化不是新的动作准入门；L1冻结19/19、11/11，formal=false、PR567草稿、#339/#550/#569分工与local-data不提交不变。
+
+## 2026-11-14 R2 同tick库存图缓存修正
+
+- `dc5df200`已推送，CI43510625527成功；M原source重新导入的修复及12/12／只读HTTP证据继续有效。新N原入口接受5个owner边界，iteration7购种队列在第4步close_menu原生applied／verified后被资源核拒绝；loop63076实际退出2，四归属进程3024／4028／2080／17896已退出。
+- 已核原始逐步快照：tick10461购前money420／背包种子1／库存图1，购后同tick money340／背包2／库存图仍1；tick10462关菜单后money340／背包2／库存图2。不是关菜单凭空增添物品，而是透明桥按tick复用的图滞后。三原件未改，诊断报告SHA `357bf7bfc7e594564ee8738b7770829c5dde105abf579964a13a3f7ecde79413`。N旧证据仍失败，不补写／重标成功。
+- 旧缓存由`f3f046f7`为current-location／farm共用规范库存图引入，保留这个目的：原`ReadCachedMaterialInventoryGraph`委托单次采集作用域缓存，`TransparentStateCollector.BuildSnapshot`以using进入／释放；同一次采集同farm／actor／tick只读一次，新采集即便同tick也重读，非采集调用不跨请求复用，嵌套／异常恢复作用域。未增加快照频率、关闭其他缓存、修改旧购买／关菜单执行器或资源核。
+- 控制端首次新测试因Assert.Throws重载歧义未编译，仅显式Action修正。最终缓存／三类种子入口／原transfer owner／profile及原graph守卫**25/25（2秒）**；真实E引用的net6 Bridge构建零警告／错误。另补跑旧Core源码守卫，19/20的一项旧字面量落后于`7da69574`共用materialInventoryField改写，仅改守卫为同时验证Field构造和原输出绑定，旧含义不放松；重新正常构建后该组**20/20（110毫秒）**，不把初次红色重标。
+- 原API Block77首轮因控制端给不存在的独立record文件而7steps零编辑退出；核实私有record实际在Program.CropTeacherControl.cs:13，沿原会话唯一修正后13steps交两份测试草稿`049901ac`，接为`606defdf`。控制端23/25发现新夹具缺sleep context／完整envelope及准备阶段错误调用执行租约API，只修新测试夹具／断言，最终25项通过。草稿／失败／完整API流均保留，不称peer首次验收绿；现accepted-idle／撤权，未替换内部代理或fallback。
+- **O真实结果（当前）：** `622ef4b6`已推送、CI43514002736成功。O原入口真实接受24个owner边界／21verified／六次耕地，已越过N购买失败；iteration26在随后接近播种站位72,17时原生move_to_tile applied／verified（12ticks），但旧中性路线核拒绝。原after25 tick12375有1个debris、背包无黏土；after26 tick12391该debris为0、slot7新增`(O)330`×1，六粒作物种子不变；所列prize／tool／quest字段均是库存变化的派生投影，不另加白名单模拟。O包装器55219退出2、四进程23520／16368／18416／14824全退出；首次日界／播种／收获销售／原生保存加载均未通过，旧失败不改写。
+- O五份原顶层输入经现有`NativeExecutionActionSourceReader.ReadSelectedNativeActionQueue`只读重放通过：原queue／request journal／Product授权／run／actor／帧与真实after绑定有效，before／after hash `194d9151…7f93a8e`→`6f71192b…23035cb`，报告SHA `d3688842d45edab62d0eb453432cc87fd9f4a1b13c0ccbb4515e476fdceefb02`；无新派发／ledger mutation／实际owner接受。原移动result的target_location为空、target_tile为null是既有形态，后续核实际after位置和原编译站位，不新增要求这些回执字段才准入。
+- 同轮已有只读performance接口取样：full122次、平均1277.992ms／最大3595.648ms，locations平均402.59ms、player156.221ms、farm4.711ms，累计更新52.367/s；这是仍有停顿，不称性能解决。未额外生成快照或扩缓存。后续优化以原指标定位重复采集／序列化，保持字段／hash／原生绑定，不恢复跨采集tick缓存、不默认删字段；不将性能工作另造为本次动作证明门。
+- 显式`OpenNativeSiteApproach`已实现，准备／原模型／原编译绑定不变，默认`OpenSiteApproach`仍走原中性资源核；新结果委托同一`CropTeacherSiteNativeTransition`，只核原动作与真实after的精确站位，不要求旧move回执新增target字段。旧／新模式及相关clear／till／owner回归**49/49（14秒）**。O未改原件经新公开准备→同一原生协议→精确72,17→原rebind请求只读重放通过，报告SHA `6f1d5c0f3f493bde36c0643ec767ef89cbb69aef059d7ea6da9395a4ad08c916`；留存输入未变，没有新派发／ledger mutation／实际owner接受。模式尚未接主入口／持久化，不能称本轮实跑修复通过。
+- 原API Block81已将显式模式接原owner admission／supporting intent／重开恢复，Product主入口选择true，缺字段旧记录及显式false仍为原中性route；拒绝非boolean／错角色／native-control组合，不从当前live选项反推旧模式。结果／acceptance绑定`native_site_approach_effects_trusted`，不授crop／Teacher／formal信用。peer原测试一次**95/95（23秒）**；最后合并多条Git命令被精确白名单拒绝，控制端检查四份变更、stage后diff-check、提交保存为peer`e3257369`／Main`3414f371`，未改其代码或付费重试。控制端独立扩大组合**113/113（31秒）**通过，不与95或49相加；尚无正向native owner outcome／acceptance恢复fixture，真实P必须补这段证据。
+- 已查后续生产证据组装：取得所有原accepted历史／hash后，从首个真实planting起进入原作物生命周期分母；本次播种前站位拾取不会在终端再按中性route重验。生产区间内转换不删除／重标。下一原生监护单轮有界上限3600秒（原1800不足以给生产段留裕量），仅本地监督预算／invocation元数据变化，不改变游戏速度、动作超时或验收标准。
+- **P实跑（当前）：** c7864265原新E运行实际接受18个owner边界／15verified，accepted17明确`native_site_approach_verified=true`／`native_site_approach_effects_trusted=true`并到73,17，随后accepted18原耕地通过。iteration19因磁盘保护正常停止：E可用8585445376bytes，低于默认8589934592bytes约4.28MiB；不是动作异常，stderr为空、四归属进程14788／12404／14052／3532已退出，包装器73750退出2。原P同owner经原`resume-crop-managed-owner`只读重开通过，241份既有owner／head输入未变、零新native；报告仍明确saved-content-readback／complete-runtime／formal=false，不能称新游戏加载或续档。摘要SHA `627b65b27820742fcfdf19b73031a1b306e6abe4a0c694b31290efffe15139d9`。带拾取的O公开协议重放与P实际mode入账／只读恢复分开陈述，不声称P发生同一黏土拾取。
+- M／N／O／P目录只读统计分别137.34／80.64／134.03／104.37MiB。未清理／移动任何旧证据。下一轮通过既有`--min-free-space-mb 6144`显式预留6GiB，当前约8GiB留下约2GiB写入余量，仍逐轮检查保护；应用与本地调用器未传参默认均8192MiB，不改项目默认值、不禁用保护。调用器参数传递／语法已核对，原脚本归档hash核对；60分钟监护／游戏速率／动作超时／成功标准不变。
+- **唯一接续：** 新Q显式6GiB保留预算，原E managed/product继续实际站位移动／连续整地→播种维护→收获销售→原生保存／新进程加载。P补上真实显式模式入账及原只读恢复，但未播种／日界／收获／销售／实际保存读回；不能用其未保存尾部或O新模式离线重放补写旧接受，不能称M缓存修复已获实际播种PASS。L／M／N／O／P未保存尾部都不是续档。不新增执行器、私有字段证明或字段白名单。L1冻结19/19、11/11；formal=false、PR567草稿、#339/#550/#569分工和local-data不提交不变。
+
+## 2026-11-14 R2 原生动作信任边界修正
+
+- 用户指出：原生割草不应以逐字段模拟私有状态、随机掉落或邻格清除为前置门。接受这一修正；此前B校准的镰刀动作已成功，后续拒绝来自新增消费者不接受正常工具XML变化，并非发现原执行器乱删或作弊。**撤销下方历史接续中“先完成Scythe私有元数据／weed范围／所有未变资源证明，才准许整地清障”的要求**；历史失败和原件保留，不改写为成功。
+- 保留严格边界：原候选与首个frontier、编译参数、原生成功回执、同run／存档／actor／帧、完整真实after、一次claim及原同owner账本续接／恢复。正常原生副作用由游戏引擎裁决并记录，不独立预测全部XML；准备动作不直接授予生产／Teacher／formal信用。调试夹具仍不得作为正式产出。旧默认读取器与已过耕地资源合同不放宽、不增加默认扫描。
+- `74c28522`抽取原耕地回执／留存／rebind为同一共享协议，旧耕地仍调用原资源核；清障显式消费原生结果与真实after，无第二套执行器。聚焦44/44通过，首次新代码误用不存在的request.TargetLocation导致编译失败已修；该失败留本地。尚未完成真实owner／整地生产保存加载，不称完整循环通过。
+- 原API Block72在漏配rg权限后7steps退出、零编辑／测试；尚未启动的补跑已取消，旧任务／三份未编译草稿归档并hash核对。Block73沿原provider／模型／session实际协作：peer负责同owner清障注册及限定测试，控制端负责Bootstrap、Program入口、原生结果测试和集成；单一build owner、输出留本地供审查，不倒灌完整流。
+- Block73已交付12文件草稿，项目全部编译；其测试工具120秒终止、无最终计数，不能称peer验收通过。确认无遗留测试进程后，草稿完整保存在peer `e42f7e99`、接为`29319218`；控制端补原入口与原生协议组合测试，最终**124/124（52秒）**及旧route／watering／control共享owner抽样**6/6（3秒）**。覆盖clear／access、训练／Product回执、正常私有／邻格副作用、身份拒绝、同owner正常／native回包丢失／marker回包丢失、一次native／一次commit及trace；均为合成协议测试，不冒称游戏实跑。控制端首次测试缺Testing导入的编译失败留存，仅补新测试导入。
+- `b0e58677`已推送，CI43497118254全部成功。新E隔离原入口 `managed-l-20261114-0352` 实际接受**25个owner边界／22条verified action／六次耕地**，到iteration28播种准入前停在`crop_seed_planting_source_binding_invalid`／`dispatch_crop_seed_planting_binding_drifted`。该档障碍分布不同，**未遇清障，不能算清障实际owner通过**；中途控制端曾沿用K迭代位置误报“即将清障”，已按本轮模型／回执纠正。四归属进程全部退出；首次日界／收获／销售／原生保存加载均未过。报告`objective_completed=true`仅表示通用`required_verified_actions=1`采样额度，不是作物闭环成功。
+- 播种断点是准备层遗漏：账本头随中性整地更新，但六粒自有种子的预留仍指购入时source hash。保留原编译器／`CropSeedPlantingBinding`的同源要求，通过原portfolio marker／MaterialReservationUpsert仅刷新当前承诺已核物理玩家种子预留，保留reservation／来源decision／槽位／品种／数量／purpose；已当前的预留仍走原空marker，其他共享调用／执行器不改。红测1失败／1通过；生产修正的相关265项通过，新回归初版漏补既有growth夹具而失败，复用原helper后关键新旧**3/3**，不宣称同一次266/266。
+- L原accepted25（tick12395／hash`b75f2cfc7fd3a7d290d85f27655f8c42e14da09caf8e56d3f638d14eb9fdfbe4`）、原账本／原六格计划只读重放原编译与growth预检通过：仅一条六粒预留刷新，六输入不变、三实际加载依赖hash留本地；报告SHA`55eea88ca49e945d0143f6bf344b9b0b1cabe936b618a3a8cbd11cdc09a09790`。**没有新native派发或实际播种owner准入**，不改写L旧失败，也不拿其未保存内存态伪造续档。
+- f8dbe970的CI43501813625全部成功。新M `managed-m-20261114-0433` 再接受25边界／22verified／六次耕地，iteration28已通过来源预检并持久化第26项播种intent／准备claim，随后读取账本时HTTP404，尚未编译／派发播种。Backend原`commitments/latest`明确在匹配快照被有界缓存淘汰时返回404；种子父入口漏了其他owner路径已有的精确来源重新导入。只在共同种子入口admit前pin原source／ledger并复用原`IngestCropTeacherManagedSnapshotAsync`，不扩大缓存、fresh替换来源、改账本或执行器。
+- 缓存淘汰入口回归已按同一HTTP404／调用链复现，修正后连同来源刷新／HTTP正常与丢回包／原事务及owner选取共**12/12（8秒）**。新缓存测试初版误用internal成员、随后漏绝对测试URL均只修新测试，失败留本地。API Block75在M实跑时仅编辑一份75行HTTP草稿、无编译或运行权限，15steps后退出撤权；`e524f724`保留、接为`8252736d`。控制端首次6/8，新两例把预制回执误当实际派发回执来断言重复完成，已只修测试调用并通过最终12项，旧原生前缀保护不改，不冒称peer首次全绿。
+- M四归属进程已退出，实际loop／外层脚本现均退出2；本地包装器已归档旧版并保留原生退出码，避免外壳0被误当成功。M未遇清障，也没有实际播种／日界／收获销售／保存加载。`objective_completed=true`仍只是通用采样额度，不是本目标。API授权保留idle，会话／完整输出／草稿均留存，未调用fallback。
+- M原accepted25／source `40f21bdc…1dbeeac2`／原ledger经独立原Backend HTTP检查：初始缓存404→原Program精确导入→整个原账本DeepEquals，三输入未变；无游戏／native／ledger mutation／实际owner准入，报告SHA `3d4b56c93ed5d5d9e819b0aa14fa79f5916727db8e4551dd15012af0b293a3b1`。本地工具首次直接访问internal类型的编译失败仅改反射调用，项目接口未变；不能把此只读HTTP证据当完整准备或作物PASS。
+- **唯一接续：** 带精确来源重新导入修正的新E隔离原managed/product入口，继续播种维护→收获销售→原生保存／新进程加载。原协议组件12/12及M留存HTTP检查已过，不为同一缓存错误再建验证框架。清障遇到即走原生信任入口，不增加私有XML／weed范围证明门。L／M未保存尾部不可伪装续档，原恢复接口和一次claim规则保留。L1冻结19/19、11/11及#569正式manifest前交实验室不变；formal=false、PR567草稿、local-data不提交。
+
+## 2026-11-14T02:15:00+08:00 R2 原首选杂草清障编译与资源断点
+
+- 修正版新E隔离 `managed-k-20261114-0052` 原managed/product循环接受19个边界、两次耕地。iteration21原首选是 `clear:Farm:70,17:weeds`／`(O)784`，站位71,17、整地父目标70,18；原保护在派发前拒绝尚未绑定资源效果的整地清障，未生成该动作的owner intent／claim／acceptance。不是南向耕地再次失败，不筛掉该首选去做后续till。原K已退出，未保存尾部不能当续档；`4e72d0cd` CI43466162896成功。
+- 从已有till准备组件提取同一原request／plan／观测／ledger／whole-model／原编译器绑定，till仍委托同一实现并保留到站位／Hoe／精力核。新增**只读**clear准备，显式区分整地父目标、实际清障目标与站位，不接派发／owner或放宽旧资源核。原API六文件草稿完整保存在本地`bfd38516`；其首次77/96，新夹具缺terrain_features、误写碰撞字段，控制端修后94/96，再把错误的固定13输入断言改成实际依赖路径集合，最终**96/96（44秒）**。旧失败留存，不把草稿退出码0写成验收通过。
+- K未改原件经原共享配方为accepted full源另建模型、原编译器及新准备组件重放通过，13输入不变，source／窄观测hash分别保留。报告SHA `d735f48b4ea746de97f9799fde72fc14d04fcb5ca17b7efe9409d2abf0522d76`，三实际加载依赖hash在本地报告；**native／resource／actual owner／formal均false**。本地probe首次误用internal序列化入口、随后误把内容寻址manifest当快照的失败均保留；最终复用原内容寻址读取器并校验实际snapshot身份，未改项目读取合同。
+- 同一E原版SHA／MVID实时提取7个精确MethodDef、零诊断，另记录MeleeWeapon未声明DoFunction、实际继承Tool。`cutWeed`有随机纤维／种子及条件掉落，`DoDamage`遍历范围内物体，不能先假设仅目标删除或固定掉落。新增显式weeds debug夹具复用旧镰刀执行器，未改其动画／动作。短校准A原生成功，但控制端漏填原合同的`source_planning_option_id`，锚点正确拒绝；按`ecb8fab0`及对话JSON确认原保护意图，只修本地调用，A留存、不重发、不计资源通过。
+- 独立新档B `weed-resource-b-20261114-0224` 实际23ticks完成，scope／同帧缓存有效、零诊断，tick664→688，270→270；无Axe／Pickaxe调用、无拾取，after有2个地面掉落实体。原`ReadClearanceConsumption`严格重放通过，剩余持久差异仅`farm.objects`：原生范围动作同时移除71,16和71,17两棵`(O)784`。分析报告SHA `8024f2b7039c9bbc7268e17103eea908e27d7fe6afe7fb8a3200f37f4efc4a80`，原件未变、3依赖hash留存；**完整资源／生产归因／owner／Teacher／formal仍false**。两档都仅debug校准，全部归属游戏进程已退出，不代表K清障或managed闭环通过。
+- `626752ca`已推送；其CI43482684774在Core2606/2608处发现两项源码守卫未同步新增weeds白名单。已保留旧防直接清障／掉落／经验修改的全部断言，更新名单并增加原版`(O)784`／IsWeeds／Scythe及透明目标检查，控制端聚焦**3/3**通过；仅测试修正，不重跑游戏或修改执行器。新提交CI另核，不能以96/96或旧绿色结果代替。
+- **唯一接续：** 复用原消耗／数量／库存图核，对所选Scythe／Weeds的实际`farm.objects`范围删除建立最小严格比较叶，绑定原生范围与未变的其他对象／持久资源；再接原同owner claim／rebind／恢复。未支持效果继续派发前拒绝，不先删保护或另建执行器。随后才新隔离原入口完成整地、播种／维护／收获／销售／原生保存／新进程加载。#569正式manifest前交实验室、L1冻结19/19／11/11、formal=false、PR567草稿及local-data不提交不变。[详细证据](refill-approach-native-trace.md#2026-11-14-native-k-site-clearance-preparation)。
+
+## 2026-11-14T00:46:00+08:00 R2 新J连续耕地与南向完成态修正
+
+- 新E隔离 `managed-j-20261114-0016` 走原managed/product主循环，20个边界接受，其中耕地71,16／70,17／71,17连续三次自动入账、各pickup0；accepted18→19→20及pending21的前驱哈希、三个after快照／ledger哈希已独立核对。第二次未漂移回执现正常接受，I20暴露的replan错误已获新实跑验证；`f61b5dff` CI43460584032成功。
+- J22第四次耕地70,18原生成功，新增元数据预计函数却把南向终态算为initial+1，实际为initial。已按提交`47b8e254`／peer原`2157a195`查回本对话JSON：当时是限定纯数值模型／27项测试，未作南向原生验证，不是旧执行器。当前E原版SHA／MVID不变，重新实时反编译21个精确MethodDef、零诊断：结束帧回调解锁后，`doneWithAnimation→Farmer.Halt→Character.Halt→FarmerSprite.StopAnimation`在南向重置animation index，随后同次`animateOnce→Tool.Update(2,0)`恢复initial。旧推导漏了这个退出链，不能用最后动画帧替代idle终态。
+- 只修新增纯预计函数南向offset1→0，保留N/E/W和swing／history规则；未改旧执行器／动画、未增加观察字段／全局扫描，也未接受任意贴图范围。新增完整消费者的独立字面量21正例和伪造22反例，非仅用被测公式生成预期。最终相关 **292/292（48秒）**，零失败／跳过／最终构建警告／错误，旧55属于前次replan修正版，不相加。
+- J22原件经既有通用probe完整资源＋进程内rebind通过，20输入未变，after tick12254/hash `b75e5f6996769bcd4d2f0eb0a78438f8d28ee0429951722f15eac7ea7cf52e31`、pickup0；报告SHA `34542ef33ef5112403a5f5aaf96ed9d00496c554b8916d447c8b4fcafc9e0ce0`。本地另存实际加载的Contracts／Core／Bootstrap三依赖的内容寻址hash清单（SHA `eb59546bc3f7ac51deeb220c125e97266a8f53f1416840b293734db14852c344`），避免只pin上层DLL而漏Core预计函数。**J22实际owner接受仍false**，不改写J旧失败，不重发native；四归属进程全部退出。
+- **唯一接续：** 修正版新E隔离原managed/product运行，继续连续整地至播种／维护／收获／销售／原生保存／新进程加载。已有三耕入账和原回执重放不代表完整周期；H／I／J未保存内存态均不可当存档。#569分工、L1冻结19/19／11/11、formal=false、PR567草稿、#339/#550/#569开放、local-data不提交不变，新提交CI另核。
+
+## 2026-11-14T00:12:00+08:00 R2 新I原生耕地入账及无漂移Product修正
+
+- 新E隔离 `managed-i-20261113-2356` 由原 managed/product 主循环真实接受18个边界，包含首个耕地71,16，`native_site_till_verified=true`、pickup0；accepted SHA `05ff504347e2840103035bc07416c351ea3ce53cdbfb478cf0a00222f74c81da`，after hash `9e17dc297417b403685935b0852a6df4809898c1bafa035b499c7a08460eb30d`。这补上了新入口实际派发→同owner入账，不只是H事后续接或fixture。
+- 第二次耕地70,17已原生 applied／verified／observed、零诊断，却被**新消费者**要求 `product_replan_required=true` 的常量拒绝。旧 `ProductExecutionService` 的既有公式是“状态漂移或未applied或未verified才replan”；该次请求与fresh-before hash一致，drift=false／replan=false正确。仅改新适配器按已要求applied／verified后的漂移值核replan，旧服务／执行器／默认门不改；夹具同步去除错误常量，新增有／无漂移正向和两种矛盾标记反例。不得从一次样本值推导整个原协议。
+- 最终相关 **55/55（33秒）**，覆盖Product边界、原12种owner恢复及旧Product服务；零失败／跳过／最终构建警告／错误。复用原通用只读probe打开I20未改原件，完整资源核及进程内rebind通过，20输入及verifier hash复核不变，报告SHA `255a93c6a7019cc5cadf9eb27fec81793a1bc02d2ba53a4723619c139c82f967`；after tick12150/hash `5012f33e85ac743aa78dd0c7865a344be2fc82b7e8ca4bade54bc90615d1a23a`、pickup0。**I20尚未实际owner接受**，没有新native派发，不改写旧失败。
+- I的四个归属进程全部退出，原生保存／完整生产／销售／新进程加载仍未过；H持久完成记录继续有效。`bd483aba` CI43456855166成功。核对公开issue未发现比#569更新的外部任务；其正式manifest前实验室交接继续生效。R2正文两处旧“尚未接线”已改为当前实现／待原生验收，不重新开发已有模块或增加准入门。
+- **唯一接续：** 用修正代码的新E隔离原managed/product运行，验证连续整地、播种／维护／收获／销售／原生保存及新进程加载；不重发I20，不把H或I未保存内存态当存档。优先首个真实阻断，不重采已过L1／旧恢复矩阵。L1冻结19/19／11/11、formal=false、PR567草稿、#339/#550/#569开放、local-data不提交不变。
+
+## 2026-11-13T23:50:00+08:00 R2 原H耕地实际入账与持久读回
+
+- 原H已知成功回执通过既有 `RunTillingAsync` 明确续接，原 Backend 持久账本 revision **35→36**、同 owner 生成第18个 accepted；关闭并重开 owner 后，原恢复入口读回相同 ledger／state hash。只提交原 marker，不调用执行器，原 native 派发次数仍为1。20份原输入、accepted 哈希及4份本地内容寻址 verifier 归档已复核；原失败报告和原 loop 的17 accepted／14 verified统计不改写。
+- 完成报告 SHA `4329dc7b597166a789e33359fcae8dd098df7cb66523dfc9100bc704dc755939`，`actual_owner_acceptance=true`、持久账本／重开读回均 true；after 仍 tick12091/hash `eea16ffd732df180e7a13bcd967a6b48a05ef420265e6ca20d6f120740367e75`。**没有原生保存／新游戏进程重载或完整作物周期**，旧只读重放报告的 false 是当时事实，不回改成成功。
+- 原 API 协作者 `b2b76a70` 经逐行审查接为 `c8dcbfb9`：在原恢复 theory 增加 Product 参数，6种场景各 native／Product 两种，共12项；保留所有一次 native／一次 commit／重复只读恢复／无生产信用断言，没有复制实现或改生产、fixture。协作者首次12/12、控制端独立12/12（21秒），无失败／跳过；进程退出0、权限撤回，授权保留 idle。此前 `108748f4` 的 CI43452644390 已成功。
+- 最新公开 issue 核对至 #569：正式 manifest 前交前瞻实验室已按原计划落地，主线不接管D盘模型定型／正式训练。**唯一接续：** 新E隔离档走原 managed/product 入口，验证耕地后播种／维护／原生睡眠／收获／销售及原生保存／新进程加载；H未保存内存态不得伪装可加载存档，不重发H19。遇首个真实阻断保留原件并修最小接线。L1冻结19/19／11/11、formal=false、PR567草稿、#339/#550/#569开放、local-data不提交不变。
+
+## 2026-11-13T23:25:00+08:00 R2 耕地同owner接线与真实Product断点修正
+
+- `4e96a0d1`接独立`site_till`角色，共用原supporting准备／回执／一次native claim／marker提交与重放、索引／恢复／trace，不新建执行器。保留原窄观测／request／plan／模型，用共享完整配方和原编译器绑定accepted full源；其他未支持整地资源仍拒绝。深层观察仅启用在该次执行的私有options副本，原options、旧方法签名及全局默认不变。
+- 合成原协议正向／篡改8项、六种同owner正常／丢回包／重开恢复均过，每种native1、commit1，重复读回不重发；未知claim仍pending。主入口聚焦147/147，前版共享owner回归1002/1002（4分36秒）。API59两次测试因缺SnapshotHash导入均未编译；草稿完整保存在`bed2e113`，控制端补导入和夹具物理图policy／count后验证，无第三次API／fallback。27个step_finish／短报告本地留存，退出撤权、授权idle，费用未知。
+- E新独立档H `managed-h-20261113-2256`沿原managed/product入口后台隐藏静音，无debug资源布置。17个accepted边界／原报告14个verified action；H19真实`till:Farm:71,16`已applied／primitive verified／observed、零诊断，**owner尚未接受**。首断点为新消费者误用原直连native专用入口，而实际journal是`/api/v1/product/execute`。原`5bf13fbc/#539`限制是有意设计，不是旧执行器bug。
+- 新所选till显式Product入口复用同一个ReadQueue／ReadFrame核，默认仍直连native；额外绑定Product schema／authorized、run+nonce receipt ID、journal canonical request hash、请求before、fresh before tick范围／drift、精确after、dispatch guard／replan和非replay。旧默认仍拒绝同一Product endpoint。12个Product正反例通过；最终当前代码相关**698/698（1分4秒）**，168／147是重叠子集，1002属于前一同owner版、不累加。零最终失败／跳过／构建警告／错误。
+- H原件经修正入口完整资源＋原进程内rebind重放通过，实际pickup0；after tick12091/hash`eea16ffd732df180e7a13bcd967a6b48a05ef420265e6ca20d6f120740367e75`。报告SHA`d63fdcc22a9614768aa7b1621932f7b92d3deefcf624289fd1d59a241083fc6e`，20输入及verifier hash复核不变；**actual_owner_acceptance=false**，没有补写H旧回执／账本或重发native。四个归属进程均已退出；重复Stop碰到已退出PID的本地脚本竞态已修、原失败保留，无用户进程／存档受影响。[详细证据边界](refill-approach-native-trace.md#2026-11-13-same-owner-till-and-product-transport)。
+- **唯一接续：** 核原Backend持久账本与存档边界，对H已知已执行原回执走既有明确续接／同owner marker提交和持久读回；不让只读resume创建未claim变更，不重发H19。条件不满足时保留拒绝、用新隔离档复验，再继续播种／维护／收获／销售／原生保存／新进程加载。完整链未过，不能把组件重放当闭环；L1冻结19/19／11/11、formal=false、PR567草稿、#339/#550/#569开放、正式manifest前交实验室及local-data不提交不变。此前bb7a097e的CI43442221839已成功，新提交另验。
+
+## 2026-11-13T22:22:00+08:00 R2 所选耕地物理资源组合通过
+
+- 最新issue已复核：#569正式manifest前交实验室的责任分工已在本库落地，不改变当前R2第3／4步，不操作D盘或开训。`da5ecfc8`的CI43437873724已成功；不拿旧CI代表本轮新提交。
+- 新`ReadTillingResources`组合同次显式原生till的槽位XML／deep graph／debris／数量证据、原精力／地形／统计叶，以及**原物理库存图、容量、房屋材料镜像核**。旧拾取入口仅提取同一私有核心，默认comparison为null、原规则不变；物理校验仍对原始before／after，只有最终持久不变量使用已验证比较视图，同时保留GSQ和house归一化。未知XML／其他资源或进度仍拒绝；实际库存增量不是生产归因或奖励credit。
+- 原API同provider／模型／session的`c8f56c89`全部审查后接入`424b6250`：21/21首次通过、零修正，覆盖原物理拾取旧栈／新槽／新quantity种类、图／外部库存／容量／房屋／未知持久变化拒绝、原件不变。**有拾取正例是组合叶测试，完整public正例仅零拾取**，不混称原生全分支通过。进程退出0、权限撤回、授权accepted-idle，18个step_finish原字段与短报告本地留存，费用／余额未知。
+- 控制端将未改动的原生F留存输入交新完整public资源入口，通过工具／精力／地形统计＋物理图／镜像组合，仍pickup0、旧入口仍拒绝；7输入及最终verifier DLL hash复核不变。报告SHA`eebc9750eddbb438529c6d395f575079fd206d82ecaf3f6219d97b2e9b4a320f`，仅debug校准来源，不是G19派发、owner入账或作物生产。最终相关**Backend559/559（17秒）**，聚焦252是子集不累计；零失败／跳过／最终构建警告／错误。首轮新测试缺Contracts.Training导入导致编译失败，已修、原失败保留。
+- 原`CropTeacherSiteTillCompilation`现实现既有supporting准备接口、返回账本副本；新单次`CropTeacherSiteTilling`复用原队列／逐帧回执读取、nonce／journal／gzip、原生步骤与上述资源核，再交原`CropTeacherSupportingRebind`，不执行或提交。10项接口／角色／绝对路径／输入输出别名测试通过；**该消费者尚无正向原生／rebind验收，也未接owner派发与恢复**，不能移除G19保护。
+- **唯一接续：** 在既定同owner接线中验证消费者正向及保留原件篡改反例，接原owner admission／claim／rebind／只读恢复与显式till观察参数，然后新E隔离managed实跑。复用原编译器／执行器／资源核，不重做已过元数据或扩大为全掉落枚举。完整生产／销售／原生保存／新进程加载尚未通过；L1冻结19/19／11/11、formal=false、PR567草稿、#339/#550/#569开放、local-data不提交不变。
+
+## 2026-11-13T21:53:00+08:00 R2 耕地工具XML绑定与新原生重放通过
+
+- 原生字段引用／IL操作数定位后，实时核对`Farmer.Update 0x06000953 → Equip 0x06000941`：原`_lastEquippedTool`与当前tool引用不同时才装备并设置HasBeenInInventory。工具索引setter本身不设置该标志。`endUsing`的swingTicker恰好+1；begin／Update／动画tick／原生动画表共同决定结束贴图，N/E/S/W偏移为4/2/1/2。原生请求传8帧参数，但动画表实际构造5帧，已逐项核对，不能把参数当实际长度或一律+2。反编译原件／方法hash留本地，不提交游戏源码。
+- API同provider／模型／session实现纯元数据函数，`2157a195`审查接入`47b8e254`，首次27/27，无修正；只处理显式输入／unchecked整型回绕及已核实Equip bool，不读游戏或授credit。控制端并行完成目的限定raw上下文：仅显式till观察读实际private last-equipped引用、actor／Hoe引用／槽、power／idle动画状态及原生字段，旧请求不扫描也不增加wire字段，缺schema／输入不能默认。
+- 新`till`消费者把同一原生成功回执／精确锚点、原graph／transient／debris／库存数量／XML与上下文绑定，额外核after actor facing；只为已验证的那个Hoe构造三字段**期望XML**，仍走原槽位比较核。未知XML／其他槽／属性不抹除，原件／hash不改；旧拾取入口默认投影为null，仍拒绝相同工具变化，不是改旧执行器或放宽全局validator。
+- E新隔离校准F使用原执行器／精确缓存读取：full before tick664/hash `a67a19aeed456646281ab9e73f462ffecb7bd6c278e9f1c9c63a1a248e8d1c29`，窄观测hash `f51e3dcbce44481ba92bb7ac58920dde184b35ff9bf250e9441a60a90d108862`；after tick701/hash `6f959c5a2d6794416722aa597160b93bf79d0d04f4fc8aca6c3e61d9dc6144d3`。实际context before665为Axe／slot0，after为同Hoe／slot1；facing1、power0、idle均明确，history false→true、sprite21→23、swing96226→96227符合原生链。新工具XML核及原精力／碗／地形／统计／无额外资源组合核通过，旧拾取入口仍拒绝。报告SHA `4c7918bb233236e4dc501442334a43237f9f77ee7e3044f24facd50148900901`，7输入及最终verifier DLL hash复核未变；实际pickup0，仅**该次无额外资源分支**，不是所有掉落分支／G19／owner／作物／Teacher／formal PASS。debug setup仅校准，游戏已停。
+- 最终同代码相关 **Backend528/528（17秒）＋Core69/69（不到1秒）**，零失败／跳过／最终产品构建警告／错误；原262／263／51为子集不累计。覆盖原库存／物理拾取／graph／debris、工具／精力、准备及harvest／watering回归；新反例包括schema／引用／装备来源／动画／回执身份／锚点／额外XML，以及同时伪造facing和XML仍被原actor快照拒绝。首轮仅新caller一处nullable warning已修，原件留存。API17个step_finish及短报告已复制hash核，退出撤权、授权idle，费用／余额未知，无新provider／内部代理。
+- **唯一接续：** 将同一次till已采集的库存／掉落通过原物理资源图与镜像核组合，保持生产归因／奖励credit独立；未知副作用仍拒绝，不重新枚举／重写已过动作。随后复用现有准备和同owner supporting协议接claim／rebind／恢复，才新managed实跑。当前G19保护仍在，完整生产／销售／原生保存／新游戏进程加载尚未通过；#569最新责任归属、L1冻结19/19／11/11、formal=false、PR567草稿、#339/#550/#569开放、local-data不提交不变。前一6adcf82a CI43429491093已成功，新提交CI另验。
+
+## 2026-11-13T20:56:00+08:00 R2 显式耕地观察与实际工具边界
+
+- 已追溯原`6774d22b/#535`观察器、`ecb8fab0`快照锚点及对应JSON记录：旧move／clearance限制是原有意图，不是旧bug。新增默认省略的`action_origin_tilling_resources`开关，只有training_singleplayer、原till及source option、完整六层witness请求才能走显式till scope；原scope身份／预算核、采集器、锚点、XML／graph／debris读取实现复用，默认入口继续拒绝till，不新增执行器或自动启用主循环。初版遗漏锚点门，由实际C拒绝暴露；补同一显式合同及反例，未放宽旧默认门。
+- 最终同代码相关 **Backend277/277（14秒）＋Core69/69（不到1秒）**，零失败／跳过／产品构建警告／错误，前面的124／153／33均为其子集，不相加。首次新Backend测试引用不存在的RuntimePrimitives依赖，已把scope测试放回原有引用的Core测试项目，不给生产或Backend新加依赖。全部原失败留存。
+- E新隔离校准E由原`ReadAfterExecutionSnapshotCoreAsync`取得`product_after_snapshot_cache_match`；before tick664/hash `28afa30ed2ca42ea2465ea811c6c9450d0738ac0fbbc82eeeec88fe5cc234f8e`，原锚点after tick701/hash `c2af036caea60d600a286dd3b6a93b51021605e061f5e3a1509ac67e81bd85c2`。原观察为observed／零diagnostics，原debris graph／库存数量读取通过、pickup单位0；**原槽位XML核正确拒绝Hoe的hasBeenInInventory false→true、currentParentTileIndex 21→23、swingTicker 781697→781698**。只读局部分析SHA `26936baabd0aea4b12d2aadd3c6776da7e29681959298038b3caf48d438bfe19`，7原输入hash不变，status=partial_observation_only、槽位metadata／完整资源／owner／formal均false。debug setup仅校准，无G19／生产信用，游戏已停止。
+- C保留为新锚点接线失败；D观察已observed，但本地校准脚本错误fresh重读得到同tick异hash，不能当原锚点或拿来补造。已改用上面的原产品读取函数，E才是可用固定帧材料；未修改产品端既有正确缓存协议，也未把D晋升PASS。原生HandleTreasure及createObjectDebris共5个精确MethodDef实时反编译零诊断，来源SHA／MVID继续固定；首次旧研究工具的3重载上限拒绝实际4重载，失败保留，后续限定提取成功。
+- 原API同会话互审精力绑定叶未见具体缺陷，未独立运行测试或重放原生。首次因遗漏外部任务目录admission没有审到代码，一次离线修正后完成；分别2／11个step_finish、失败和短报告均留存，退出撤权、授权accepted-idle，费用未知。skill专用launcher现于载入凭据／付费前检查外部任务目录双分隔符及三份必读任务的精确相对read规则，6/6离线反例通过，不自动提权／试探调用；其他source read仍须按原安装版规则检查。
+- **唯一接续：** 对实际E这三项Hoe XML变化按当前原生方法逐项核因，在新till消费者中绑定，复用原槽位比较核，不能删除旧校验或归一化未知字段。这是原所选till资源接线的工具边界，不是新动作模块。再核同次可能Clay／Treasure／拾取，接同owner claim／rebind／恢复及managed实跑。G19保护、完整生产／销售／保存／新进程重载缺口、L1冻结19/19／11/11、formal=false、PR567草稿、#339/#550/#569开放及local-data不提交不变；#569最新分工没有改变施工顺序。
+
+## 2026-11-13T20:18:00+08:00 R2 耕地精力与真实单次资源重放
+
+- 原API同provider／模型／session完成纯数值Hoe精力函数，`a94a1f33`审查接入`dbfafca4`；保留原生float顺序、efficient跳过setter、祝福仅跳过下降、setter的[-16,max]及高等级增益，不拿旧double候选投影代替实际消耗。27项纯数值测试首次通过；进程退出0、临时权限已撤回，授权accepted-idle。15个step_finish原token字段及短报告已本地留存／校验，费用／余额未知，无fallback。
+- 新消费者绑定同frame full源／窄观测的Hoe槽／ID／效率、原库存first-Hoe顺序、effective farming／max_energy及已有statue_blessing；只给原farm_layout有界投影增加`hoe_is_efficient`，不增加默认全量扫描。复用原pet-bowl镜像比较和地形／统计叶，比较视图只归一化核实的精力／碗／HoeDirt／dirtHoed，原件／hash不改，不是新执行器或原生快照。未知库存／工具／debris／持久变化继续拒绝。
+- E新隔离校准B真实执行一次原`till_soil`，同tick664的before full与窄观测hash分别为`30d9544d7144bf854d6cbdd52f8a619c5634980699cefa05c5f7c4ca24eca061`／`82a780c13ffc418263b01c5ca80ac3146369c38a9a9f0bbebf2321c1a24eab41`；after tick701/hash `201344e2a9ec1709edd7fee6c1959c59aaa24c11f1f426a95c75c1794aa38b2c`，精力270→268。原持久变化仅farm.pet_bowls／terrain_features、player.energy及GSQ统计，组合原比较核后剩余变化为空。只读重放报告SHA `33d7494e54eb25348a380b9fbff561dd5efbb7623d8d3e91e1b89f916a15f290`；原7输入hash不变。显式debug setup只是校准夹具，**不是G19派发、owner入账或生产信用**，游戏已按归属停止；A缺before窄观测仍只保留局部证据，不补造。
+- 最终同Release产物相关 **153/153**（14秒），含数值27、新精力28、地形统计19、准备19及原harvest／watering相关60，重叠不相加；零最终失败／跳过／构建警告／错误。首次新测试JsonNode误用Remove导致编译失败，改为AsObject后93/93再回归；失败原样留存，未修改旧validator迁就。
+- **唯一接续：** 这只完成所选“无额外资源变化”分支；当前原观察器明确只接move／clearance，不得偷偷放宽或把随机Clay／Treasure等可能分支当不存在。先沿原有界观察／库存payload／debris比较核，显式绑定所选till额外产出／拾取，再将原编译准备和效果接同owner claim／rebind／恢复；G19派发保护仍在。随后才完整生产／销售／原生保存／新进程加载。#569实验室在正式manifest前接手、L1冻结19/19／11/11、formal=false、PR567草稿、local-data不提交均不变。
+
+## 2026-11-13T19:25:00+08:00 R2 所选耕地编译准备与地形统计叶
+
+- 新`CropTeacherSiteTillCompilation`只读准备组件复用原观测绑定、原整地plan重建／共享frontier、共享动作配方、原ActionQueueCompiler及原queue比较器。分别pin当前full源／ledger、窄观测、原site request／plan／窄model、新full model／queue及原生产plan／request／snapshot／ledger；核原active布局／日期、先完成接近、首个direct till、候选／工具／目标／原短路段参数，不修改原件／source hash。生产plan路径先核一致再读取依赖，Hoe工具槽／ID／精力投影的根与地块镜像须一致。
+- G19真实留存输入已独立打开该组件，仍选`till:Farm:71,16`，13份依赖固定且校验不变，full与窄观测hash分别保留，报告SHA `7a4ca3fd4093aadedfb04051ce692246c4a3f65fa0ab43b63bdb6fcd1979a171`。这只是**实际原生输入上的编译准备重放**；native／resource／formal标记均false，无新派发或G19入账。
+- 资源层新增限定比较视图叶：只接受原空目标新增唯一的三字段HoeDirt terrain row、当前actor原生`dirtHoed`恰好+1；拒绝其他地形／actor／统计变化、未知target属性与未绑定溢出。复用原resource-envelope语义比较，原harvest helper改为同一实现的薄委托，旧默认规则／消息／执行器不变。仅归一化已验证地形与统计，**精力、工具、库存、debris等仍保留给后续核**，原快照及hash不改，比较视图不能作为真实snapshot或完整resource PASS。原生`Tool.DoFunction`／`checkForBuriedItem`及dirtHoed getter/setter也按当前E SHA／MVID实时提取，Farm无override由metadata确认；本地共6个MethodDef零诊断，不把埋藏物当不存在。
+- 最终同产物相关 **105/105**（7秒），零失败／跳过／构建警告／错误，含新准备19、新地形统计19、原harvest相关60及共享配方7，重叠不相加。此前相关79/98中19项均在新准备夹具初始化时被原候选缺`player.energy`／`menus.active_menu`拒绝，补正确夹具后19/19；新命名空间／测试括号失败保留，不改旧validator迁就。新的拒绝断言改为具体InvalidDataException，并补投影镜像矛盾反例；真实earlier-clear组合fixture及专用CAS篡改组合未额外宣称覆盖，原plan精确重建和既有retainer保护继续复用。
+- 原API同session Block48达到两次测试上限后退出／撤权：先16个新夹具hash失败，唯一修正后因缺SnapshotHash命名空间未编译，无peer验收通过。四文件草稿保存在peer私有`11bf4381`，控制端以no-commit接入、修夹具／核输入顺序和镜像，再独立完成上述测试及G重放；未丢弃、未冒称peer全绿、无付费第三次／fallback。25个step_finish的原token字段留B，费用未知。当前协作授权保留、accepted-idle，进程不运行。
+- **唯一接续：** 完成同一次till的精力／原Hoe字段及可能埋藏物／拾取变化核，再接原owner claim／rebind／恢复；G19派发前保护仍在。先查可用旧原生材料，当前`artifacts/runtime-till-soil-smoke/...`仅空目录，不能当有证据或重开旧已过动作验收。缺实际工具效果时，用**新E隔离校准**采单次原Hoe before／after，明确debug setup只是校准、无生产／Teacher信用；不得用旧TillSmoke默认`saves`或“最新存档”误选玩家／旧档，不拿G未保存尾部当新游戏存档。随后才新managed原生闭环验收。完整生产／销售／保存／新进程重载尚未通过；L1冻结、formal=false、PR567草稿，local-data不提交。
+
+## 2026-11-13 R2 所选耕地的原完整源编译与共享配方
+
+- G19留存原till模型在**另一个内存对象**绑定G18 accepted full源后，原ActionQueueCompiler直接得到单个pending till_soil，无diagnostics／blocker／missing factor。原full／窄观测同tick12033、分别保留hash，五个入口文件未改。报告SHA `7c5d583a68d731251bdaa27fbf2e35a559679df21293c68e48f8179200d2e206`；仅编译诊断，没有派发、资源结算或formal信用。
+- 将原通用`BuildCropTeacherActionModel`配方共享到Core，原Loop入口仍委托同一实现；原整地frontier移入Bootstrap共享，Loop公开facade保留。模型目标／actor／参数／source身份及原选择顺序、对象身份、空／阻塞行为不改，不另写till选择器。最终相关27/27通过、零失败／跳过／构建警告／错误。G19**整个原模型**与共享配方DeepEquals，原frontier仍选`till:Farm:71,16`、原件哈希未变，报告SHA `db3097225984256a3d7868baf27ff1c55d4efe2bed123dbe52fbfa15752af7ca`。
+- 当前E原版DLL按SHA／MVID实时提取Hoe.DoFunction `0x0600183a`及GameLocation.makeHoeDirt `0x06000fac`，仅两个MethodDef、零反编译诊断，研究输出留本地不提交。确认需核工具／精力、土壤与DirtHoed以及原生buried-item分支；这不是资源效果验证已完成，base Tool与所选Farm派生分支仍按实际调用追溯，不根据文档例子忽略掉落或其他持久变化。
+- **接续不变：** 先用共享原frontier／动作配方和原编译器绑定原site request／plan／观测、当前完整源／ledger、候选／工具／目标／日期；并行核所选这一次till的真实资源／土壤效果，再接同owner派发／rebind／恢复。未验证不能派发；不用第二套选择器、执行器或比较核。G18站位／只读恢复已通过不重做，完整生产／销售／保存重载仍未通过；L1冻结、formal=false、PR567草稿、local-data不提交。
+
+## 2026-11-13T18:41:00+08:00 R2 原生站位接近与只读恢复通过
+
+- `64f84c6d` 已推送，代码CI **43408739507 SUCCESS**。新E隔离G `managed-g-20261113-1827` 使用原managed／Product／Teacher入口，后台隐藏静音：4次开店等待、6次购种、3段返回及3次短控制等待后，iteration18的原`move_to_tile`实际到Farm **73,17**，资源中性／回执核及同owner rebind接受。共 **17次owner acceptance／14条verified action**，另3个短控制不计动作／作物／策略credit；site结果`native_site_approach_verified=true`、`route_target_reached=false`、作物／Teacher／formal均false，未将“在Farm”误记站位到达。
+- 原accepted after18为day0、tick12033、hash `86d28791babe57f63a32eed32798814d64b4e9b00931a43526e9d2cc0027c02e`。原窄观测／模型留存，新full模型另建，来源hash不同。G在iteration19派发前停止：原整地队列为单个pending **`executor.till_soil`**，无compiler diagnostics，未生成execution-0019。不是站位接近仍失败，也不是耕地／清障已执行。
+- 停游戏及Product后，原`resume-crop-managed-owner`只读恢复同一owner成功，返回同一after18/hash，`native_dispatch_performed=false`。未发生原生保存内容读回、新游戏进程重载、销售结算或完整managed PASS；相应标记继续false。随后backend也按原PID／命令行／创建时间核身份停止，四个归属进程均退出，工件未清理。严格核值且拒绝覆盖的本地摘要SHA `1e9e83e17c19bb16d96487494fbee88239b9288e47e667f223c7a0c27da24ddd`，输入／原生原件保留E，不提交local-data。
+- **唯一下一步：** 以G19实际原request／plan／till模型／队列及G18 accepted full源为依据，先核原编译器是否可直接为完整源重建该动作，并绑定对应窄规划观测与原候选／工具／目标／日期。再复用原资源／工具／地块比较基础，给**所选这一次耕地**接真实消耗及土壤效果、同owner claim／rebind／恢复；未验证效果不派发，不重写旧执行器、不补造资源／回执或新建第二套比较核。随后才原播种／维护／收获／销售／原生保存／新进程加载。已通过站位接近不重复施工或再列为缺失。
+- #569已重新核对，实验室在正式manifest前交接后的职责不变；原API本块实现已接受并退出／撤权、授权accepted-idle，不是停用或仍计费运行。仍R2第3/4步、L1冻结19/19／11/11、formal=false、PR567草稿，#339/#550/#569保持开放。
+
+## 2026-11-13T18:24:00+08:00 R2 原场地接近接同一 owner
+
+- 原API协作者完成限定Bootstrap准备／结果及测试四文件，`469313db`审查后接入`c9a47805`；控制端独立完成Loop入口、原admission／intent／claim／acceptance／恢复接线。显式`OpenSiteApproach`不改变旧默认单connector／控制等待合同；继续使用原站位算法、共享配方、原编译器与原路线资源／回执核，另核实际到达精确站位，`route_target_reached=false`，不把同在Farm当已到站位。
+- 原窄观测／模型留存不改；新模型绑定已接受full源，两个hash分别保留，执行结果要求full资源快照。原12分钟／repair4／fresh replan保留，已知清障队列仍须专门资源绑定；不筛掉clear项，不放宽未知持久变化，未绑定的整地动作仍派发前拒绝。站位结果仅登记自身原生证据，不授作物／Teacher／formal credit。
+- 最终同产物相关 **114/114**（32秒）通过，零失败／跳过；包含原路线、原生等待、缓存接续、共享配方、新绑定和owner中断／marker／acceptance恢复，重叠不相加。原入口HTTP测试实际编译原窄模型与新full模型，再复用原执行adapter，单次派发／单次rebind。最初新代码多传StandardResult参数、测试误用internal成员、复用恢复目录及不完整envelope／模糊文件匹配的失败均保留，仅修新调用／夹具，不改旧核。此为声明原生结果的测试，不是游戏实跑或完整闭环PASS。
+- `8c741045`的CI43404650427失败在旧源码字符串守卫：共享配方提取后它仍要求Loop内含repair参数字面量。已改为同时要求Loop调用共享构建器、不得残留内联参数、共享配方仍repair4；实际行为测试与原配方重放保留，不删除防回退意图。修正提交的CI另验。
+- 协作者聚焦24/24（此前22/24为测试站位／可重绑不透明ID的假设错误，唯一修正未改核）；真实进程退出0、临时权限已撤回，本块accepted-idle，授权保留，无替代provider／内部代理。记录23个step_finish的原token字段，费用／余额未知，不从cache token或零cost推断。#569及全部今日更新issue已再核对，无新增施工顺序变更。
+- **唯一接续：** 新E隔离档后台静音走当前入口，实证越过原iteration18站位接近断点，并保留首个真实整地／资源断点；再接所选原整地效果与生产／销售／原生保存／新进程加载及只读恢复。当前仍R2第3/4步，L1冻结19/19、11/11、formal=false、PR567草稿、#339/#550/#569开放，local-data不提交；无D盘／正式训练／清理。
+
+## 2026-11-13T17:46:00+08:00 R2 原有界接近配方共享与真实API互审恢复
+
+- `e07307ea` 的CI `43401482428` 已成功。沿本步骤继续提取原`BuildCropTeacherBoundedApproachQueueAsync`的模型配方到Core共享构建器，旧site／refill生产端调用同一实现，后续新消费者可用它独立重建原模型。Farm目标、actor、目标坐标、candidate／source身份、12分钟预算、repair=4、fresh replan、purpose及失败策略均原样保留；不是第二个规划器，也没有关闭顺路开路。
+- 当前产品产物聚焦35/35（含原refill编译拒绝及观测回归）、原生产端＋原backend编译入口和recipe最终4/4通过，零失败／跳过／构建警告／错误，重叠不加。F留存的**整个**原site模型与新共享配方JsonNode.DeepEquals一致，原件哈希不变，离线报告SHA `5550aae978220de5405cd19131ec49936a7cb823d3d991d17d657fb05f0cf57a`；并非新编译队列、原生移动或资源结算通过。actor子树克隆不重挂／修改调用者原对象。
+- 原API协作者保持原`openai-direct/gpt-6.1-sol high`／同一会话，已真实完成20行独立审查，范围为e073观测／选择组件，未发现实质缺陷；未运行测试、访问E原始存档或证明后续配方／native链。进程退出，临时edit／bash／external权限撤回，授权保留accepted-idle，不冒称仍在运行或永久停用。
+- 权限修复来自安装版1.17.11的实际read资源合同：工作树相对路径（含外部任务文件的相对形式）与Windows／slash分隔符；不套用V2配置。已有API失败任务包8文件＋peer AGENTS已复制校验归档，新包6516字节。首次只离线核5个允许／4个拒绝读取、原provider配置不变，再通过专用ValidateOnly；随后一次有用审查成功，无试探调用／重试／fallback／内部代理。skill已写明read同样是相对规则，以及ValidateOnly不验证read可达性的局限。本块记录8个completed step的token字段，账单余额／费用仍未知，不从Codex额度或零cost推断。
+- **唯一接续不变：** 用已绑定的窄观测选原站位，借共享配方为**已接受full源**生成新的原机械模型并走原编译器，保留各自hash／路径；不是原位改窄模型hash或合并快照。随后显式限定site-approach角色，核原生到站位与真实资源效果，接原owner claim／rebind／恢复；旧单connector路线与派发保护不放宽。再原整地／播种／维护／收获／销售／保存／重载，不新增未选局部门。#569分工已回复核实，formal=false、L1冻结、PR567草稿、local-data不提交；无新游戏／训练／清理。
+
+## 2026-11-13T17:25:00+08:00 R2 整地补充观测绑定与实验室交接责任
+
+- 主线仍为F原生iteration18的整地接近，不另起动作系统。原accepted full源没有site context；同tick的farm_layout窄观测有上下文却没有完整持久物品图，不能用窄快照替换owner头或补造完整资源证明。新增只读`CropTeacherSiteApproachObservation`将原run request／ledger／full源／窄观测分别pin，核原active布局、同存档／角色／版本／tick／日期／时钟／位置、完整有界地块与地图宽高，复用原站位选择。来源hash分别保留，native／resource／formal标记均false。
+- `c196f6c6`的原站位算法提取到Core共享，旧Loop公开入口保留并委托同一实现，仍保持最近安全／非种植位优先／Y-X排序／已有站位不移动及首个有效重复项对象身份。不把窄观测合入full JSON、不改变旧profile默认范围或单connector路线保护，也不丢掉原模型声明的4次有界开路。
+- 绑定最终22/22、旧入口及兼容性7/7通过，零失败／跳过／构建警告／错误。实际F四份原件的严格离线重放复现原站位73,17、原件哈希不变，报告SHA `16042baa676153de8fa98d7e6847583e188e9a9e6ca7d575bd5541265c52d065`。只是已有原生观测的绑定重放，不是新移动／结算／托管全流程PASS。
+- 重放先发现新消费者误要求map.id等于Farm；原生两份map.id实际均为空，地点身份由player／context给出。只修新消费者，按原map ID一致性及宽高核验，正例夹具加入空ID。首次临时PowerShell未设置遇错即止，错误后写出空值passed报告：原件保留，SHA `506411c01e80a409e8f8cb9b1e80430fabdba6ea21d40f963e84cc10c7405785` 已有invalidated旁证，禁止消费；严格脚本拒绝覆盖、异常即止且核全部非空目标和false标记后，才生成上述有效报告。失败不计通过，未污染游戏／账本／正式语料。
+- 已核对新[#569](https://github.com/zalataraglados-prog/StardewValleyAICompanion/issues/569)：主线完成R2所选路线原生验收、覆盖／对账及正式准入工程接线，交付版本／构建、可重放语料来源与原Provider／数据构建／训练入口说明；**正式manifest之前交接**。前瞻实验室在当前电脑D盘负责语料冻结、模型定型／实验、正式训练与训后评估，旧电脑承担实际Student＋游戏8GiB整机验证。原准入与Provider要求不降低，工程缺口由实验室提交复现返修；本次不触D、不启动训练，不改变当前整地施工顺序。
+- **唯一接续：** 原场地接近model／队列应绑定已接受完整源，在保留窄观测来源和原开路声明的前提下复用原编译器；再把实际原生移动／目标站位、资源中性或实际修路效果接同一owner的claim／rebind／恢复。当前派发保护仍在，不把当前观测组件算这条执行链已完；随后原整地／播种／维护／收获／销售／保存／新进程重载与读回，其他R2门保持。L1冻结19/19、11/11、formal=false，PR567草稿、#339/#550开放，local-data不提交。新额度已刷新，最新用户说明有重置机会时60%限定不生效；不继承旧80%停止状态，亦不擅自使用重置。
+
+## 2026-11-12T20:16:00+08:00 R2 缓存接续实跑通过与整地接近首断点
+
+- `19773b15` 已推送，远端CI `43214258647` 已成功。新隔离 `managed-f-20261112-2003` 走原托管／Product入口，iteration13、15、17三个地图切换后的原等待均被同一owner接受，未再出现旧accepted hash的404；不增缓存／重采全量快照或修改原资源／时间核。共16个owner acceptance，其中13条计入verified action，3个短控制等待仍不计作物／策略credit。
+- 原链正常完成6次购种和3段返回路线，最后原after-snapshot-0017确认为Farm、day0、tick11969、hash `9764670a8e728239ba397c8a11cc2ae02807a09fca6ec7a755ac0c9845e0126d`。这次“已回农场”有原快照依据，不沿用E仅到Town的错误口头说法。
+- iteration18首断点在原`PrepareSite`保护：已有`crop-teacher-site-approach-0018-compiled-queue.json`只有一个pending的`executor.move_to_tile`、无blocker，但尚未绑定托管资源／owner消费者，故**派发前拒绝**。不是原移动执行器缺失，也不是此步已执行耕地或清障；不因queue pending而直接放行、不预先修改存档／地块。
+- 游戏／Product停止后，原`resume-crop-managed-owner`在原backend上只读恢复同一owner成功，读回相同accepted hash；报告`native_dispatch_performed=false`、保存内容／fresh重载／complete／formal标记均false。此为当前实际accepted链恢复，**不是新进程游戏重载、销售保存或完整A通过**。最后backend也按记录PID／命令行停止，4个归属进程均已退出，留档未清理。
+- **唯一下一步：** 按R2第3/4步，先把原场地接近`move_to_tile`的原model／编译／native回执／目标站位及持久资源不变验证接入同一owner与原rebind／恢复；复用原移动执行器和比较核，不能把它生搬为只收单connector的原跨地图route，也不能把已在Farm误当目标站位已到。随后对所选原整地／耕地或清障的实际资源效果接线，再继续播种／维护／收获／销售／原生保存／新进程重载与完整只读恢复。未选全剧情／全清障不加局部门。
+- 聚焦30/30、相关156/157及原File.Move失败独立1/1、最终独立拒绝反例＋原失败项6/6均按前节范围登记，重叠不相加。L1冻结19/19、11/11、formal=false，PR567草稿，#339/#550开放，local-data不提交；原API本块权限失败退出后未再调用。周额度最新79%USED，接近约定80%USED，安全收尾不启动下一轮长测；目标仍未完成，后续从本条继续。
+
+## 2026-11-12T20:00:00+08:00 R2 真实购种接续与有界快照缓存
+
+- `1d34b008` 的 CI `43208213320` 已成功。新 E 隔离运行 `managed-e-20261112-1928` 实际接受4次原等待、6次花椰菜购种和1段返回路线，共11条 verified action。首次农场教程资源断点已越过；**返回路线仅到 Town，不是已经回到 Farm**，先前口头“返回农场完成”的表述撤回。尚无播种、跨日、销售／保存重载或完整A通过。
+- iteration13 原生控制等待已留存结果，随后按原 accepted hash `ae6a5ddc…c9b6100` 读账本404。原 accepted 快照tick10729，主循环新观测tick10770，等待后tick10801。原后端从`90b21bb4`起只保留两个快照；这是内存保护，不应扩容或改成读取latest。新消费者未在结算前重新导入原 accepted 源，后续观测已将它淘汰。
+- 新托管 supporting 主入口在原生结果通过原核后，按已pin的原输入重新导入 source／after，再运行原账本rebind／读回。复用已有恢复入口的精确导入函数，抽出同一helper供两处调用；要求accepted=true及返回hash完全一致，读取压缩留档而非重采游戏。原StateStore上限、owner、执行器、资源／时间／原生核和未知执行不重发规则不改，没有第二套账本或执行器。
+- 聚焦30/30通过；同产品产物相关157项中156通过、1项旧夹具初始化File.Move访问拒绝，独立复验1/1通过，失败保留，不能把首次相关运行写成全绿。最初新测试namespace、gzip夹具释放和helper导入编译失败均保留；新测试仅释放进程内host并留存证据，不为夹具修改旧保护或添加清理。最终加强反例将accepted=false／错误hash分别单独触发，连同原失败项6/6通过，零失败／跳过／构建警告／错误，重叠不相加。
+- 原API同一会话只读审查两次因应用路径权限失败退出，无报告／代码验收，本块不再付费调用；不是额度耗尽结论。授权与空闲／受阻状态分开，其他provider／内部代理未启用。
+- **唯一接续：** 提交此接线修复，再用新E隔离档走原入口，验证越过旧hash淘汰断点并继续所选合法生产／销售／原生保存／新进程重载／同owner读回和只读恢复。E已执行等待不重发、不补造缺少的原账本mutation journal。仍为R2第3步收尾／第4步实际验收；L1冻结19/19、11/11，formal=false、PR567草稿、#339/#550开放、local-data不提交。周额度79%USED，接近80%USED安全收尾，不把未完目标登记完成。
+
+## 2026-11-12T19:20:00+08:00 R2 首次农场教程的精确资源分支
+
+- 前片 `f7364d7c` 的 CI `43203117611` 已成功。沿 D 首断点和当前 E 两个 MethodDef，购种分步消费者新增限定原生教程分支：必须为 applied／fresh／verified 的原 traverse_connector，源／终点 hash和tick一致、FarmHouse→Farm、原版1.6.15。当前玩家只新增button_tut_2，且GSQ当前玩家行同步；不把此UI标记授作物／策略credit。
+- 分支复用原 PersistentStateRows／HashCanonical，对**比较视图**移除这一个已验证增量后比较全部边界；原快照／hash／原始邮件不改，默认TryProject仍判定这两个字段有变化。其他玩家、其他邮件、任务／世界未知字段、库存／资金／身份／日期仍保护；状态不可读、缺镜像／重复玩家／非当前行、额外增量或其他动作均拒绝。没有新执行器／账本服务，亦未全局忽略邮件或改原通用资源投影。
+- 最终聚焦 **50/50**、同产物原购种／归属／幂等／拒绝回归 **49/49**，零失败／跳过／构建警告／错误，重叠不相加；新26项包含输入字节语义不变、默认严格投影未被改变及上下文／镜像／未知资源反例。原D未改件重放调用原BuildSupportSlice成功，stage=purchase_slice、单价80；5个入口文件哈希前后不变，输出SHA `91efe08cc48a9419879f173827103aad95342e0bc5f08ac0b90b6ceea141fa1b`。这是**旧原生证据的离线重判**，不代表D被补写结算、新游戏PASS或整轮完成。
+- **唯一接续：** 交叉审查此边界、用新 E 隔离档接现有主入口继续合法生产／销售／原生保存／新进程重载／同owner读回和只读恢复。D已执行购种不重发、不修补旧失败工件；原保护意图追溯cb7bbb071，仍拒绝未知进度。未通过播种／跨日／完整A，PR567草稿，L1冻结19/19、11/11，formal=false，#339/#550开放，local-data不提交。
+
+## 2026-11-12T18:45:00+08:00 R2 已入账控制结果与首次农场教程断点
+
+- 新隔离 `managed-d-20261112-1826` 使用 `bcf8af9b` 的产品源码，租约／原候选接续／full资源输入已实际越过前两断点：同一 owner 连续接受4次原生等待及资源结算。iteration6随后10个原生步骤均 applied/verified，正常出屋→农场→城镇→皮埃尔柜台／开店／等待／购买／关菜单，末态9:10、金币500→420、花椰菜种子0→1（开局防风草15不变）；但该购种波次**尚未被账本接受**，不能把原生成功当已结算收入或完整闭环。
+- 首个新的资源断点在 step1 的 FarmHouse→Farm：仅新增 `quests.mail_received` 的 `button_tut_2` 及 `world_progress.game_state_query_unlock_state` 镜像，原纯支持步骤核拒绝。现已对当前 E 游戏 SHA `7f1e5b8e…26deaee`／MVID `aa1f513a-94f0-4ef6-a35f-2d5b4a3721bf` 实时提取两个准确 MethodDef，零诊断、无原生执行：Farm.resetLocalState（token0x06000e35、IL SHA `f5b523d0…933b19`）在首次进入时写此标记并创建 ButtonTutorialMenu；TitleMenu.createdNewCharacter(true) 并不预填它。不是测试新档漏模拟初始化，不得向存档预塞标记或全局忽略邮件／世界进度。
+- `616a186b` 远端 CI `43197619479` 为2507通过／1个旧源码位置断言失败；守卫现按新前置归属核与原租约内校验／执行／结算／接受分开核，并补托管购种接续及full资源输入断言。最终定向 **24/24**、零失败／跳过／构建警告／错误；首次测试构建误触运行中产品DLL发生文件锁，失败原样保留，改为仅构建测试项目后通过，未为此重启运行或改生产守卫。D的产品源码未因测试修正改变，游戏／服务现已按记录归属停止，无清理。
+- **唯一接续：** 按实时原版依据给这个已观察的原生教程副作用接精确控制结果／资源消费者，复用原规范投影，保护所有其他邮件、其他玩家镜像、金币／库存／任务／未知字段；先重放D首断点与反例，不能重发该已执行购种请求。随后新隔离档继续所选合法生产／销售／原生保存／重载／同owner读回和只读恢复。尚无播种、跨日／保存重载或完整A通过；L1冻结19/19、11/11，formal=false，PR567草稿，#339/#550开放，local-data不提交。
+
+## 2026-11-12T18:23:00+08:00 R2 托管购种接续回执的真实消费断点
+
+- `616a186b` 已推送。新档 `managed-b-20261112-1808` 越过租约断点，但本次测试命令误将 product 请求指向 harness 的8767端口而404；属于控制端测试接线错误，未修改产品规则。后续 `managed-c-20261112-1813` 复用既有 ProductExecutor 独立8768服务，健康报告绑定本 run、原8767及原桥，无新执行器。
+- C 已取得真实原生等待回执：1800ticks、6:00→6:40，primitive verified；product 终态与事后 full 请求快照同 tick2464、同 hash `699773f68eb115e7bce4470c46ec6879a789d0422149cbe59b1446ae1bf8ffe9`。原收尾核仍正确拒绝：新主入口沿用作物机械批次的关闭日计划接续参数，原执行循环未生成 selected_queue_decision_complete／resume_index；同时购种沿用的 shop 窄快照不能替代原完整持久资源核。等待不是购种成功，未入账／未取得完整 managed PASS。
+- 仅调整新消费者：托管购种向已有 ExecuteRuntimeTestHarnessCoreAsync 启用其原候选接续租约，外层仍由唯一 owner 管理；托管 seed 结果使用 full 请求快照，旧普通路径窄化不变。不补造回执字段、不改原执行器／接续验证器／时间／资源规则，不重发已声明或未知执行。最终相关 **184/184**（52秒），零失败／跳过／构建警告／错误，包含新托管 full profile／URL断言与原购种、移种／播种租约／前缀回归；仍不是新入口接续的原生通过。B/C首断点及产品回执保留，记录归属的游戏／服务已停止，无清理。
+- **唯一接续：** 验证并提交本次调用参数修复，再用新 E 隔离档复验真实购种／生产到销售、原生保存、新进程加载及同 owner 读回／证书／只读恢复。仍 R2 第3步收尾／第4步，A完整与无清障覆盖未证明，L1冻结19/19、11/11，formal=false，#339/#550开放，local-data不提交。
+
+## 2026-11-12T18:05:00+08:00 R2 首次托管原生运行的租约顺序断点
+
+- 前片 `aa6c4b37` 的 CI `43193886486` 已成功。E 隔离新档 `managed-a-20261112-1750` 只加载原桥／harness，后台隐藏静音，正常领取15颗开局种子；显式当前 managed/product/receipt/save 入口由原排名交 Teacher，生成84动作计划并安装同一 owner。**首断点在 iteration2、acquire_seed：主入口在 owner 执行租约前调用原队列校验，原守卫正确拒绝。** 无 dispatch claim、原生动作、收获／跨日／保存读回或完整 managed PASS；不是缺深层掉落字段。
+- 追溯 `8e540c72` 的旧提前校验与 `e333a279` 的原租约合同，只适配新入口：非托管仍提前调用原校验；托管先核原 owner／pending／prepared runtime 归属，在已有 ExecuteSeedAsync 租约内调用同一个队列校验／完成核。旧 owner、执行器、资源／时间核不改，未知执行仍不能重发。
+- 聚焦最终 **8/8**、同一构建相关 **184/184**（54秒），零失败／跳过／构建警告／错误，重叠不相加；原生失败及新测试夹具缺候选身份、回执副本未同步和测试 namespace 编译失败均保留，不修改旧共享夹具／校验器迁就测试。原运行已退出，仅停止记录归属的游戏／backend，工件未删。
+- **唯一接续：** 提交此断点修复，用新 E 隔离档重新接当前托管入口，继续同一 owner 的所选合法路线→真实销售／原生保存→新进程重载／读回证书→只读恢复。A 的完整通过及无清障覆盖尚未证明，不拿旧 smoke 或声明测试替代；仍 R2 第3步收尾／第4步验收，L1冻结19/19、11/11，formal=false，#339/#550开放，local-data不提交。
+
+## 2026-11-12T17:41:00+08:00 R2 原终局证书与保存读回绑定
+
+- 前片 `b642a79f` 的 CI `43187885475` 已成功，仍沿 R2 第3步、PR #567 草稿。原结算组装器现由同一核心支持只读重放：验证现存五文件，不创建／修补／覆盖；原 BuildAsync 默认拒绝覆盖、原收益／序列／native／资源规则不变。读端只接受实际 trace 或 trace 已 pin 的原生产 manifest 输入来源，后续 load 工件不倒灌到旧证书。
+- 自查发现原生产 manifest 的引用仅留在主循环内存，未进入可恢复的终局 intent。现由原选择器将其路径／哈希接入原 admission／intent／acceptance／trace，接受回执后保留引用，接续不能丢弃或替换；首次绑定要求原生产 head／ledger／计划／留存路径一致。旧无引用校准调用保持原合同，不能借此得到新完整收尾标签；不重复构建整波、不新增执行器。
+- 保存收尾端取同一 accepted 链最后原生 overnight 的原 snapshot／ledger／保存指纹和已接受销售目标，调用原选择器／只读结算重放，再绑定当前已验证读回及完整输入哈希。主入口只有本次读回和原终局均核实才标 complete_managed_runtime；不把 reset tick 新头当旧原生终点、入箱 pending 当收入，formal／Teacher 标签仍false。完整 owner 正向串联尚待实机，不能从当前分项测试晋升实际通过。
+- 原 API `9e0f90e3→11afa744` 三文件保留；首轮缺新文件 namespace 的编译失败经唯一修正后16/16（原8＋新8）。控制端最终聚焦 **34/34**、同构建相关 **260/260**（2分42秒），零失败／跳过／构建警告／错误，重叠不加；含只读字节不变、缺件／篡改／warm cache、引用跨重开及篡改／丢弃拒绝、缺保存／销售不能晋升。声明／HTTP／原 golden 重放不是新的完整 owner 实机 PASS。协作者退出撤权、授权仍空闲，成本未知，无 provider／内部代理替换。
+- **唯一接续：实际运行验收。** 在 E 隔离存档接当前 opt-in 托管入口及上述恢复命令，走所选合法无清障 A 的购种或声明已有种子→播种→维护／收获→销售／原生保存→新进程重载→同 owner 读回／证书绑定，并验证一次原只读恢复。现有 `Invoke-RuntimeCropTeacherFirstDaySmoke.ps1` 是非托管旧入口，需显式接当前模式，不能直接计新 R2。保留第一个实际断点再修，不重跑冻结 L1，不把未选剧情／清障追加为前置；L1保持19/19、11/11，formal=false，#339/#550开放。E测试临时目录CPU1／heap1GiB，无游戏／服务器／训练／部署／清理或 local-data 提交。
+
+## 2026-11-12T16:56:00+08:00 R2 原 owner 显式恢复与重载主入口
+
+- 前片 `6f829689` 的 CI `43181617520` 已成功，仍为 R2 第3步、PR #567 草稿。新增 `resume-crop-managed-owner` 命令，消费原 header／初始输入／索引／lease，先走原恢复，再接已有实际进程／桥／日志／保存指纹采集、原 full snapshot ingest 和同一 owner 单次读回。普通旧入口不暗用这些参数；没有新执行器、游戏启动／关闭或 native 派发，旧资源／24tick／legacy fork 拒绝不变。
+- 仅指定 owner 时不创建未开始的账本提交；显式给出与 pending 相同的观察，才可完成其原读回 marker。已接受的同一观察再次请求只核旧结果，不重复登记或把历史恢复算新重载。原 backend 归一化后按明确 stateHash 导入／读取账本，不把较大旧 tick 的 latest 当 fresh head。输出在 owner 内独立新一级目录，不覆盖原输入。
+- 原 API 三文件 `9ac8ebce→f1c7ba05` 保存；两次原聚焦均5通过／3在旧 receipt 配置门失败，达到修正上限退出撤权，未继续付费纠错。控制端只补新测试有效参数、放行原桥已有 profile/fresh 查询；测试夹具新增默认关闭的 product 模式，避免创建旧 harness 版本后才切配置。只读属性赋值编译失败、模式错位与旧夹具收尾不认识新目录的失败均留存，未放宽原生产守卫；product 夹具保留工件，仅释放进程内 host。
+- 最终聚焦 **18/18**、同一构建产物相关 **244/244**（2分14秒），零失败／跳过／构建警告／错误，重叠不加；真实 CLI 缺 owner 调用按预期 exit2，未进入普通训练。前次241只属于只读边界修正前产物，最终244才覆盖新增拒绝／显式接续及重复观察反例。均声明／进程内 HTTP及错误参数 CLI，尚无实际游戏／新重载／完整 managed PASS。E临时目录、CPU1／heap1GiB，无清理、部署或 local-data 提交。
+- **唯一接续：** 将此保存读回报告与原已留存生产／真实结算证书及 owner accepted 链绑定，使用保存时原生终局 snapshot／ledger，不拿 reset tick 后的新头重算旧证明；恢复报告当前故意保持 `complete_managed_runtime_verified=false`。然后实际同一 owner 主循环＋此恢复入口正向／中断验收及 R2 第4步有界合法无清障 A，保留首个真实断点。不补全未选剧情为前置，L1冻结19/19、11/11，formal=false，#339/#550继续开放。
+
+## 2026-11-12T16:16:00+08:00 R2 同一 owner 保存读回与原运行重开组件
+
+- 仍沿 11月11日更新的 R2 第3步，前片 `049bdc85` 的 CI `43177385955` 已成功，PR #567 保持草稿。本片把已核的读回 scope 注册为独立 `saved_content_readback`：复用原 admission、单次 supporting rebind marker、索引、完整账本读回和只读恢复，不伪造 queue、native claim／result，也不进入移动执行器。run、当前 accepted source／ledger、隔离槽及原保存报告必须绑定本 owner 已接受的 overnight；复制同内容的外来报告或账本也拒绝。保存源与当前 volatile 头仍分别核验，旧资源／执行器／24tick 核未放宽。
+- 原 API 同会话两文件 `6d729342` 保存并集成 `2b5d69c4`，聚焦8/8；新 retained-owner helper 只读取原 header／初始输入并调用原 OpenAsync／索引／独占 lease，不重新安装或复制账本，要求当前 run／executor／backend／journal／slot 一致并跨 open 核 header 未变。首次调用被我漏更新的私有 AGENTS 旧 Block36／34 范围正确拦住，无代码／测试；两处说明已改为引用当前 lifecycle／任务包，同会话唯一修正成功，原文件保存并核哈希。进程退出撤权、accepted-idle、授权仍保留，未换 provider／内部代理；美元成本未知。
+- 控制端最终聚焦 **17/17**，同一构建产物相关 **131/131**、1分29秒，零失败／跳过／构建警告／错误，重叠不加。含原睡眠后读回、admission 重开、marker／acceptance 丢确认、未知 rebind claim 不重复提交、外来 run／ledger／保存报告拒绝及拒入 native 派发／伪造作物进度。原生产 trace 保留读回输入证据但不把 load 编造为原生产动作；重载后的新头不用于冒充原终局 native 头。均为声明／进程内 HTTP，**未启动实际游戏／重载／训练**。E 临时目录、CPU1／heap1GiB，无未变大矩阵重跑或清理。
+- **唯一接续：** 在主入口显式打开此原 owner，接已有实际进程／桥／日志／保存指纹采集和原 snapshot ingest，再走本片单次读回与恢复；保留原终局证书，不在重载后重算整波来适配 reset tick，不放行旧 legacy resume fork。需核 backend 当前显式 stateHash，不能把旧较大 GameTick 的 latest 当 fresh head。随后实际同一主循环正向／恢复及 R2 第4步有界合法无清障 A。当前 helper／capture 尚未接主入口，主循环仍停在 semantic-save/fresh-head；L1冻结19/19、11/11，formal=false，#339/#550开放，local-data不提交，无游戏／服务器／部署。
+
+## 2026-11-12T15:33:00+08:00 R2 保存内容与实际重载来源消费者
+
+- 前片 `87935184` 的 CI `43171332787` 已成功，仍沿 R2 第3步、PR #567 草稿。新内容叶复用原完整持久资源 projector／未知字段保护和原 supporting rebind，显式核库存／作物／原币种／年月季日可读、原存档／玩家／游戏身份及账本 before source。独立内容相同只能标 SnapshotResourceContentMatches，不能标实际重载／保存语义或训练成功。
+- 原 API 三文件 `61958bdd` 已保存并集成 `a68572d0`，10/10聚焦通过；原9通过／1季节反例改成同值的夹具失败经唯一修正后通过，旧核不动。控制端将新叶的同一比较逻辑提取为可复用入口，分别核**保存时的快照**与**当前 accepted head**，实际 rebind 只对当前账本，避免将多次重载的 volatile 头当保存源，未复制另一套资源算法。
+- 新来源消费者／只读采集入口绑定：保存后的原报告与指纹、保存文件在读取前后未变、保存后新启动的精确 SMAPI进程／可执行文件哈希、原 harness 的完整保存根／槽加载日志、原 bridge v2 从 genesis 起的完整哈希事件链及 SaveLoaded 后实际发布的 full 快照。日志是不可变有界副本，不把可变直播日志作为未来输入；复制旧快照、错槽同前缀、旧进程、断链／篡改、缺加载／发布或资源漂移均拒绝。不新增桥字段，不放宽旧24tick／原生动作时钟守卫，也没有在此入口启动／关闭游戏。
+- 控制端最终聚焦 **24/24**、同产物相关 **60/60**（52秒），零失败／跳过／构建警告／错误，重叠不加；包含真实当前测试进程不等于绑定游戏时，在任何 HTTP 请求／输出前拒绝采集。原两个测试 using 编译失败、一次把纯文本日志误交 JSON 专用 reader 的集成失败均保留，修正只在新测试／新消费者。测试采用 E 隔离临时目录，没有重跑未变化的1059矩阵；全为声明内容／合成进程日志事件／相关回归，**不是新的实际游戏重载或完整 managed PASS**。实际进程采集函数已实现但主入口尚未调用，不能据本片晋升全局／训练；目录318/318无漏项／重复。
+- **唯一接续：** 把已核的读回 scope 接同一 owner 的 admission／单次原 rebind marker／索引与只读恢复，再接显式 retained-owner 主入口和实际隔离游戏重载采集；原 legacy resume fork 拒绝保持，不用匹配快照冒充真实加载，不重派发已知或未知原生结果。随后实际同一主循环正向／恢复及 R2 第4步有界合法无清障 A。当前主循环仍明确停在 semantic-save/fresh-head 收尾；L1冻结19/19、11/11，formal=false，#339/#550开放，local-data不提交，无游戏／服务器／训练／部署／清理。
+
+## 2026-11-12T14:47:00+08:00 R2 原回家睡眠与终局收入证明接线
+
+- 前片 `ca6cc678` 的 CI `43167187296` 已成功，仍为 R2 第3步、PR #567 草稿。本片所选入箱完成后复用原 owned route／控制等待／overnight 和保存指纹，不改原执行器、原生长／日界或旧回家种类。主循环在次日从同一 owner 的已接受历史组装原 recurrence／terminal 证明；只有原验证器核实实际日结才标 terminal settlement，仍明确停在保存内容语义／fresh head 收尾，不冒充整个托管运行完成。
+- 新组装层核原生产 manifest 实际哈希、所选原留存证书／目标和完整终局后缀。接近／每件入箱、原 `supporting_route_to_sleep` 的回家／等待和唯一原生睡眠逐项消费，不能过滤中断、漏步骤或把入箱待结算当收入；末态账本必须绑定同一原生快照／存档／玩家。调用原 recurrence／terminal builder，不重算收益、不逐动作重建整波生命周期。输出独立新目录且不可覆盖，semantic_saved_content=false、formal=false。
+- 原 API 三文件 `d3b4254a` 已保存并集成 `a2f1f379`，原8项4通过／4在声明 helper 的不同 run 身份处失败，按一次修正上限退出。控制端对准旧合同修正**新消费者**中的泛称 route kind，并在新声明 golden 构建期统一 run／真实末态 ledger；旧执行器／验证器不改。初始失败保留，不把提前拒绝的反例计作目标边界已验证；协作者已退出撤权、授权仍空闲，未换 provider／内部代理，美元成本未知。
+- 最终聚焦 **16/16**、相关源码守卫 **42/42**，零失败／跳过／构建警告／错误。含原完整生产／日结声明 golden、无原生睡眠的 pending-only 拒绝、缺入箱／跨头／异类转移／价格／哈希、输出不覆盖与输入不变，以及主循环回家／睡眠选择与未接受游标拒绝。同一产品产物扩大相关回归 **1059/1059**、13分30秒、零失败／跳过，计数重叠不相加。没有新游戏／服务器／训练／MOD部署；本次测试临时目录 I，旧工件未清理。
+- **测试落盘诊断。** 当前回归持续有 CPU／新工件进展，未重启或重复开测。只读磁盘映射确认 C／E 同属 Samsung NVMe、I 属 ST1000LM035 SATA；本片把临时目录从 C 改 I 后大矩阵显著变慢。后续临时测试目录设为隔离的 `E:\StardewAITraining\test-temp\<block>`（进程级 TEMP／TMP），项目与归档仍 I；不迁移／删除当前工件，不为窄改重复未变化的大矩阵。E当时10.16GiB、C6.63GiB可用。
+- **唯一接续：** 复用既有隔离保存／恢复合同，补库存、作物、金币、日期的保存内容读回及 fresh bridge／accepted head 连续性和主入口恢复；指纹不等于内容，重载的 tick 重置不应变成旧被动连续性守卫的放宽。随后 R2 第4步一次有界合法无清障 A 原生验收，首个实际断点留证处理；不重跑冻结 L1、也不以全未选剧情／清障作局部前置。L1保持19/19、11/11，#339/#550开放，local-data不提交，无清理。
+
+## 2026-11-12T14:17:13+08:00 R2 原终局接同一 owner 派发与恢复
+
+- 仍沿 R2 第3步，前片 `dc2aabb9` 的 CI `43162500304` 已成功，PR #567 保持草稿。本片将既有终局接近／单件入箱接入同一 owner 的 admission、原执行入口、native claim／结果、单次 marker、索引和只读恢复。默认旧模式、原执行器及资源核不变；接近不增加入箱游标，游标只由已接受回执推进，待结算金额仍不算收入。
+- 主循环保留一次原整波生产证明与终局选择，不在每次入箱重建生命周期；选定目标／原留存证书／槽位／品质／价格／箱／站位绑定后，复用唯一原模型配方和 ActionQueueCompiler。终局队列独立标记，不误记作物批次完成，也不走通用无主回退。入箱完成后明确停在原生结算／保存收尾，尚不宣称完整运行结束。
+- 原 API 五文件 `84327264` 已保存并集成 `4452d78e`，原8项3通过／5在库存源门失败，按一次修正上限退出交接。控制端仅补新夹具缺少的原 `can_be_shipped`、空物品 null 回显和原移动／入箱 ChangedFacts；未放宽旧生产校验。原失败记录保留，协作者撤权／授权空闲，美元成本未知，未换 provider／内部代理。
+- 最终聚焦 **34/34**、零失败／跳过／构建警告／错误，含同一 owner 接近→入箱、最后一件原空槽／图删除、原 HTTP 执行入口无通用回退、五种丢确认／重开、未知结果不重派发及游标防伪。扩大相关回归复用同一构建产物 **1043/1043**、4分39秒、零失败／跳过，重叠不相加；均为声明／HTTP 接线证据，未启动新游戏／服务器／训练，不将旧884矩阵算本片。目录318/318无漏项／重复。
+- **唯一接续：** 所选入箱后复用原回家／控制等待／原生睡眠，消费原 recurrence／terminal 的真实结算，再接保存内容语义读回与 fresh bridge／accepted head 连续性；随后实际同一主循环恢复及 R2 第4步有界合法无清障 A。指纹不代替库存／作物／金币读回，不扩为全未选剧情／清障局部门。L1冻结19/19、11/11，formal=false，#339/#550开放，local-data不提交，无清理。
+
+## 2026-11-12T13:31:06+08:00 R2 原入箱资源与终局选择接线
+
+- 前片 `29b8dc99` 的 CI `43158312225` 已成功，PR #567 仍草稿。本片沿 R2 第3步，新增原单件入箱资源消费者：复用原 queue／receipt／native step／deposit 验证器及原库存图、容量、货币和持久资源核，精确保护唯一槽位减1、最后一件的空槽／图聚合删除，以及同一 bank 的多个物理箱镜像、原 contents signature 和其他内容／未知属性。旧只加库存的数量 helper、原执行器和共享规则不改；待结算金额不授收入或资源 credit。
+- 原 API 同会话五文件 `45d65712` 已审查保存并集成 `5cebff25`。原首次 fixture setter 编译失败后一次修正，末次8项7通过／1在不存在的 seed_inventory 上修改即失败；按退出条件停止，未继续付费纠错。控制端改成真实缺失→新增漂移反例，补入箱 kind 检查；新消费者复用已有社区中心库存候选／真实进度分离核，支持卖出后预览数量减少或消失，真实献祭／奖励／未知进度变化仍拒绝。未新增桥字段或修改旧核以迎合用例。
+- 同一 owner 终局现在固定原生产 manifest 的实际哈希，选择其 accepted head 对应的原留存波次和原脚本要求的精确可出货栈／空完成箱／站位，生成原 authoritative_crop_terminal_continuation 单动作模型并调用原 ActionQueueCompiler。每次只是一件，先走站位、到位后才生成入箱；品质、价格、数量、箱归属和候选身份固定，游标只能来自后续已接受 owner 回执。本片主入口仍仅保留模型／编译队列／选择记录，native_dispatch=false、execution_authorized=false，明确停在 owner 销售／保存接线，不经通用回退派发。整体轨迹只在终局选择核一次，每动作只核精简终局证书，不重放整条生命周期。
+- 最终聚焦 **38/38**、同一构建产物扩大相关回归 **884/884**，零失败／跳过／构建警告／错误，重叠不相加。控制端初轮5个同因失败是声明 golden 缺旧站位字段，现复用原日容量夹具 shipping_bins；同时补已有原始 can_be_shipped 投影，未改生产校验。均为声明／HTTP／接线证据，无新游戏／训练。私有 CPU1／heap1GiB 小型读端另重放旧 E 轨迹首个实际入箱：`(O)190`、单价175、待结算0→175，原资源叶通过，四输入文件哈希未变；这不是新的 managed、整波销售或保存内容验收，报告 `block33-native-shipping-replay-a.json` 私有留存。
+- **唯一下一步：** 把已经选定／编译的原终局接近与单件入箱接入同一 owner 的 admission／native claim／结果／marker／恢复，以实际已接受入箱回执推进游标；随后复用原回家／观察／原生睡眠与 recurrence 实际结算，补保存内容读回和 fresh bridge／accepted head 连续性，再同一主循环正向／恢复与 R2 第4步有界合法无清障 A 原生验收。不重建生产证明来重试入箱，不将不明结果重派发；指纹不冒充语义读回，其他所选分支仍在原层。L1冻结19/19、11/11，formal=false，#339/#550开放，local-data不提交，无清理／新游戏／服务器／训练。原 API 已退出撤权、授权空闲，未换 provider／内部代理。
+
+## 2026-11-12T12:51:14+08:00 R2 终局复用原整波生产证明
+
+- 仍是 R2 第3步、PR #567 草稿。前片 `8d9baaa3` 的 CI `43154315788` 已成功，不能借其绿灯晋升本片。新 opt-in 主循环到原 Complete 时，从同一 owner 已接受历史调用原布局／日容量／完整生命周期／每波留存 Build，随后仍明确停在原所选销售和保存内容读回待接线处；日历完成、单次收获和入箱待结算均不算真实收入。
+- 历史只存序号／路径／哈希，不常驻每阶段 scope／快照图。终局锁内核原 acceptance 链、admission／结果／proof／队列／回执／前后快照；pending、不明 native claim、未恢复头禁止导出。按实际格式消费旧购种标量 proof 和播种／转移 artifact map。已验 owned planting 仅适配为生命周期原 crop_actions，队列／回执不改；取得种子／准备前缀在种植分母之前，分母内部不漏控制或冒充中性。完整原波次／最低产量不降级，不把终局全局证明作为每次动作的门。
+- 输出须为 owner 内独立新目录，隔离原输入／索引名／原生 slot，部分结果保留不覆盖。整体边界核验替代每写请求重复全轨迹重哈希；不增加游戏快照。最终聚焦 **14/14**，零失败／跳过／构建警告／错误：原 owner 跨日导出／重开、两种种子 proof、历史篡改／不明结果／输出范围，以及原8日草莓状态机声明轨迹整波重建／缺失反例。声明 golden trace 不是实际 managed owner 或新游戏证明；初次测试误用 internal 哈希工具的编译失败保留，仅改标准 SHA256。同一产品构建产物扩大相关回归 **842/842**，零失败／跳过，4分27秒；随后只优化测试夹具为每进程共用一份有界 golden、缺整日／独立副本篡改反例，末次14/14再次通过，未重复842矩阵，计数重叠不相加。原工件保留，无清理。
+- 原 API 同会话只读接口映射22行后已退出／撤权／accepted-idle，无代码／测试。已交叉核实原 shipping deposit、recurrence／terminal、日边界和保存指纹入口；出货只是接口建议，实际计划／波次／终点仍须派发前绑定。**保存哈希变化不是库存／作物／金币的存档内容读回。**
+- **唯一下一步：** 整波留存后所选原终局路线／销售（出货需原生睡眠结算）接同一 owner claim／结果／账本／只读恢复，接真实保存内容读回与 fresh bridge／accepted head 连续性，再实际同一主循环正向／恢复与 R2 第4步有界无清障 A 原生验收。不增加全未选剧情／清障局部前置，其他分支责任留原层。L1冻结19/19、11/11，formal=false，#339/#550开放，无新游戏／服务器／训练／清理，local-data不提交。
+
+## 2026-11-12T12:15:00+08:00 R2 安全对话控制结果接线
+
+- 前片 `cd347961` 的 CI `43150917338` 已全通过，仍保留 PR #567 草稿，不能把 CI 当完整托管原生验收。当前仍属 R2 第3步：复用原安全无人物对话判定／原关闭对话模型与编译器，把原回执、资源不变和账本恢复接入同一 owner。
+- 原 predicate 提取到 Core 供原 Live wrapper 与验证消费者共用。`dialogue_transitioning` 仍只要求有布尔值，`available` 与 Sleep／SleepTent 排除等旧语义保持；不复制判定或收紧旧动作。新增 Control 结果分类与准备／验收记录，不是第二个执行器；沿原 supporting 派发、claim、marker、index 和只读恢复，不能冒充回家、浇水、收获或睡眠成功。
+- 新消费者重放原计划／队列，复用原资源中性 terminal 验证核、native step 的 save／actor／tick／day／clock 验证和原 ledger rebind。仅接受原生已核实关闭、位置不变且无持久资源变化的安全对话；剧情或关闭回调带来的额外持久效果仍保留实际断点，不能归一化消失，也不从最终目标排除。
+- 原 API 限定六文件交付 `f19b3e15`，控制端审查集成 `8626cf08`。其两次编译遇到 Core 显式 System 引用、测试误写 PlayerId envelope；已按上限停止交接，未执行测试、不可计为通过。控制端改正确 Value；首轮22项同一旧编译断点由诊断定位为测试遗漏原有 `menus.sleep_prompt_context`，仅补声明输入，不新增桥字段或放宽规则；原失败日志保留。
+- 控制端最终聚焦31/31，扩大同一构建产物的相关回归790/790，零失败／跳过／构建警告／错误，重叠计数不相加。包含原执行入口的 HTTP 派发、四种丢确认恢复、不明原生结果不重派发、同一 owner 重开、原资源／位置／时钟／身份／菜单与工件篡改拒绝。旧晚间用例现核对安全对话先进入自己的控制恢复，不冒充晚间回家。声明／HTTP证据不是新游戏或完整托管通过，最终 head 仍须新 CI。
+- **唯一接续与退出不缩减：** 已复核 #550 与原 R2：优先收口实际选定无清障 A 路径必需的终局／replan、原整波留存、所选销售／真实保存读回和 fresh bridge 连续性，再实际同一主循环恢复及有界 managed 原生验收。若该合法路径不含剧情／清障，不把全剧情或全清障扩为局部前置；实际首个中断按原证据处理，其他分支的所选效果／资源责任保留在原所属层。无新游戏／服务器／训练；L1冻结19/19、11/11，formal=false，local-data不提交。
+
+## 2026-11-12T11:40:00+08:00 R2 晚间恢复复用原回家与睡眠
+
+- 仍沿 R2 第3步，不改变剧情／对话优先级、普通模式或冻结 L1。新托管晚间选择只复用原 `GameClockBudgetPolicy` 的恢复窗口和当前可读 home：不在家走原回家 route，到家后走原 overnight／原生保存绑定，没有新增执行器、supporting kind 或生长规则。
+- 中断返回原 `crop_teacher_late_day_recovery` 标记，并把实际 `RouteHome`／`NativeSleep` 交给既有日边界记录。清除被打断步骤的作物批次、购种／转移参数，不能把回家或睡眠当成原任务执行成功。route 保留旧默认 wrapper，仅托管晚间入口在复核时钟／更高优先级中断后调用原 route 编译器；原 route／sleep preparation、回执、账本／保存／恢复核不变。
+- 本地接线 `5167f52a` 的已有相关74/74、源码守卫9/9通过；原 API 同会话限定两份测试交付8个用例，`d7221ccb` 审查集成 `67b80135`。初轮测试误用 internal 成员修正后28通过／1未过即退出交接，未继续付费修正。原因是原早晨夹具把睡眠候选 ID 写死；控制端改为从原编译队列读取实际身份，未改产品或放宽原回执验证。控制端额外猜测另一个 ID 的断言同样被拒，记录保留，不把猜测当权威。
+- 最终当前产物相关82/82、零失败／跳过／构建警告／错误；与既有74和源码9项的范围不混算。同一原 owner 晚间回家→睡眠保存→早晨重开读回、marker丢确认恢复、未验证头／pending阻断、时钟／home／更高优先级中断反例均通过。两块未种布局仍为 unverified，不能冒充作物完成。其一日目录及命名保存文件仍是声明夹具，无新游戏／服务器／训练或真实存档读回通过。
+- 前片 `46078644` 的 CI `43147930682` 暴露另一条旧源码断言：Core2599通过／1失败，仍要求通用决策租约恒 true。现区分新 owner／普通租约，保留优先控制只选择一次的约束；9项聚焦通过。最终发布 head 重新 CI，不借旧 head。
+- **后续保持原范围：** 剧情／对话的所选原生控制结果、实际 site preparation／资源、终局／replan、整波留存／所选销售／保存读回与实际主循环恢复，随后 R2 有界 managed 原生验收。已查到原 output-retention 的全波次／共享生命周期及 terminal 的所选销售合同，接线时复用，不降成单次收获最低量或以普通控制冒充其通过。PR #567 仍 DRAFT，formal=false，local-data不提交。
+
+## 2026-11-12T11:22:00+08:00 R2 原控制等待接同一 owner
+
+- 沿原 R2 第3步接续，不重开冻结 L1。原 API 同会话在限定两文件交付 `9428a22f`，控制端审查集成 `13e682cd`；新增 preparation 显式 `nativeControlObservation=false`，只有 opt-in 才接原 `TryBuildNativeControlSettleQueueAsync` 的实际计划／编译队列。默认单连接器路径完全保留，没有第二套执行器或 supporting kind。
+- 控制等待复用旧 `supporting_route_to_sleep` 的精确观察证明：原候选、30帧、原队列重放、回执、同日／原站位和持久资源不变。hop 是实际等待位置，最终目标仍是原家位置；在 Farm 等待不能宣称已回家，更不能记作物完成或 Teacher 标签。owner 的可选标记写入原意图哈希，重启仍用相同模式。
+- 主循环的托管优先控制改从同一 owner 已接受头编译／登记，再走原 route native claim、原执行核心、一次 marker 和只读恢复；不借通用派发／决策租约绕开 owner。已存在工件不覆盖，pending 不再编译，不明 native 结果不重派发。未绑定的其他优先控制仍由原中央守卫在派发前停止留证。
+- 聚焦39/39、零失败／跳过／构建警告／错误，覆盖实际执行入口的 HTTP 夹具、四种丢确认、未知 claim、同一 owner 重开和不误记回家。复用同一已构建产物扩大相关回归，最终760/760、零失败／跳过；两组有重叠，不相加。原 API 最终14/14，先前变量重名及 accepted-audit reason 误读已修；控制端两次夹具 using 编译失败保留，均非原生失败。
+- 草稿首 head `c2778802` 的 CI `43144541959` 在 Backend 2305通过／1失败：旧源码结构测试仍搜索重构前执行语句，索引 -1 抛异常。现同时核旧派发与新 owner 的校验→执行→结算顺序及 managed 不重复结算，聚焦已通过；最终 head 必须重跑 CI，不能借父 head 绿灯。
+- **唯一接续与草稿退出不缩减：** 接所选原剧情／对话／晚间恢复及 site preparation 的实际控制／资源结果，随后终局／replan、整波留存、所选销售、日边界／原生保存读回与 fresh bridge／accepted head 连续性，再同一实际入口正向／恢复及有界 managed 原生验收。当前只是控制等待接线通过，未新开游戏／服务器／训练；PR #567 继续 DRAFT，formal=false，#339/#550开放，local-data不提交。[专题](refill-approach-native-trace.md#2026-11-12-owned-native-control-observation)。
+
+## 2026-11-12T10:50:00+08:00 R2 真实安装与主循环入口草稿
+
+- #565 最终 `fced4ab6` 由 CI `43135815619` 全42步及同 head 无发现审查合入 `b2c5a8fb`，测试／main树 `8a6814ce` 一致后才清理发布引用。#566 将**已有**安装命令提取为返回实际 `StrategyLedgerEvidence` 的同一核心，最终 `16abb521` 经 CI `43141192487` 全42步／同 head 无发现审查合入 `4984c1d3`，核树 `d2a7afc1` 后清理发布引用。本工作树20项未提交接线逐文件 SHA 核对，快进父提交前后未丢失。
+- 原 API 同会话独立交付安装三文件：14步、零API错误，22/22，原 upsert／journal／丢回复只读恢复核不改；控制器审查保存 `bd5bcc70` 并集成 `16abb521`，进程退出撤权、accepted-idle，无修正或重复构建。此小片已独立合入，不把未完成主循环混入其验收。
+- 当前开发草稿显式 `--use-managed-crop-teacher`，仅单人校准／skip-training，默认旧模式不变。原初始 dispatch 经原安装核读回真实账本后打开同一 owner；完整原生库存／所有权要求复用旧 owner 读取器前置核验，缺失时在安装／owner创建入口的任何后端读写及托管目录创建前拒绝；上游原 dispatch 的 capture／源账本刷新范围不由此改称零操作。离线资源投影只用于可执行性预检，绝不作运行账本；仍用原请求、实际时间戳与读回结果。复用原 slot 隔离／backend-origin 检查，不新增桥字段或全世界门。
+- 原 Program 入口增加 owner 租约管理、原阶段选择及原执行核心派发。购种／转移／播种仅增加 owner 内 runtime 路径覆盖参数，旧调用默认值不改；路由／浇水／收获／夜晚调用已存在的 owned adapter。支持阶段不再走通用执行回退，seed 的 Complete 与 Accept 各走原链一次。活动 owner 遇到尚未绑定的优先控制也在原生派发前拒绝，不能绕过 owner 去执行。
+- 扩展旧／新相关720/720、零失败／跳过／构建警告；其后仅新增调度守卫与声明选择用例，最终聚焦4/4。含正常／丢回复实际安装启动、缺库存归属前置拒绝、默认模式、路由不回退、种子准备在 owner 内，以及同一 owner 跨日到收获选择。均为声明／HTTP夹具，单日生长不是原版规则，无游戏／服务器／训练。控制端初次 partial namespace 与夹具缺字段／固定 layout 路径误用的失败留存，修正仅相应接线／夹具，未放宽旧生产校验。
+- **尚未完成，草稿不可当准入。** `nativeControlSettle` 等优先控制、剧情／对话、晚间恢复及实际 site preparation 仍未绑定 owner；终局／replan 保留原账本后明确停止。新入口尚未完成真实游戏验收、终局留存／销售／保存读回或整轮恢复；不是完整托管或开训。旧默认主线仍 unmanaged，L1冻结19/19、11/11，formal=false、#339/#550开放，local-data不提交。
+- **唯一接续与草稿退出：** 首先把既有 `TryBuildNativeControlSettleQueueAsync` 的所选实际控制队列接入同一 owner，随后原中断／开路结果、终局留存／所选销售及日边界保存读回。核 fresh bridge 与 accepted head 的时间／中断衔接，沿原回执与只读恢复，不放开未归属执行、不再造控制器。完成同一实际主循环正向／恢复和相关回归后才将草稿转正式审查，再按 R2 做有界 managed 原生验收。[范围](refill-approach-native-trace.md#2026-11-12-managed-main-loop-entry-draft)。下方“顶层仍 unmanaged”描述旧默认及当时状态，不代表新 opt-in 已验收。
+
 ## 2026-11-12T09:26:00+08:00 R2 同一 owner 跨日到收获联调
 
 - 本片续接 PR #565 草稿 `296c5be6`，仍属 [R2 第3步](FORMAL_FULL_TRAINING_READINESS_CN.md#3-接同一账本主循环和跨日恢复)。原 supporting 引擎增加明确 overnight 分类，复用原单次 NativeSleep 队列／回执、逐地块生长核、原保存指纹核、一次账本 marker、accepted index 和只读恢复。未另造执行器或生命周期算法，旧无保存绑定的 owner header 与水路格式保持。

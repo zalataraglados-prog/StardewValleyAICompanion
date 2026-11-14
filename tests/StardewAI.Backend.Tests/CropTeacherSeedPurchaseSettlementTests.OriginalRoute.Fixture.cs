@@ -26,11 +26,13 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             Source.Before.State["time"].GetProperty("total_days").GetProperty("value").GetInt32(),
             string.Empty, "FarmHouse", "FarmHouse", string.Empty, string.Empty, 0, 0, null, "original_route_fixture");
 
-        internal OwnedRouteFixture(bool multiHop = false, string connectorKind = "warp", Action<Fixture>? prepareSource = null)
+        internal OwnedRouteFixture(bool multiHop = false, string connectorKind = "warp", Action<Fixture>? prepareSource = null,
+            bool productExecutor = false)
         {
             Source = new(otherSeeds: 39);
             SetInitialRouteSource(Source, multiHop, connectorKind, prepareSource);
             Runtime = new(Source);
+            Runtime.LiveOptions.UseProductExecutor = productExecutor;
             Inputs = new(Source);
             Files = new(Source, Runtime, Inputs);
             Runtime.LiveOptions.RunId = Files.Options.RunId;

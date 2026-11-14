@@ -61,6 +61,7 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
             return Section("locations", unavailableFields, unavailablePaths, "unavailable");
         }
 
+        using var mapActionCapture = MapActionCapture<MapActionRow>.Begin();
         var fields = new Dictionary<string, object>
         {
             ["shops"] = Field(ReadShopAccess(), "DataLoader.Shops(Game1.content); ShopBuilder.GetCurrentOwners; Utility.isFestivalDay; GameLocation.AreStoresClosedForFestival", tick, "vanilla_1_6_shops"),

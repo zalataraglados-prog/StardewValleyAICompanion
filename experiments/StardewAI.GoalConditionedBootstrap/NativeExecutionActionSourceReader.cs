@@ -12,6 +12,7 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 internal static partial class NativeExecutionActionSourceReader
 {
+    private enum NativeProductBoundary { None, Tilling, NativeAction }
     private static readonly OptionRegistry Registry = new();
     private static readonly IReadOnlyDictionary<string, Type> RequestFieldTypes = typeof(TrainingExecutionRequest)
         .GetProperties(BindingFlags.Public | BindingFlags.Instance)
@@ -26,7 +27,7 @@ internal static partial class NativeExecutionActionSourceReader
 
     // Only ReadQueue supplies an origin hash, after validating the complete immutable queue chain.
     private static NativeExecutionActionFrame ReadFrame(string actionQueuePath, string executionReceiptPath,
-        string afterSnapshotPath, string? compiledStateHash)
+        string afterSnapshotPath, string? compiledStateHash, NativeProductBoundary productBoundary = NativeProductBoundary.None)
     {
         var resultPath = RequiredFile(executionReceiptPath);
         var raw = CurrentTeacherFrontierSupport.Read<JsonElement>(resultPath, "Native action");
@@ -92,8 +93,13 @@ internal static partial class NativeExecutionActionSourceReader
             "Native request/result identity or verification drifted.");
         ValidateWireParameters(requestRaw, command!);
         var endpoint = Text(journal.Metadata, "executor_url");
-        Require(Uri.TryCreate(endpoint, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https" &&
-            uri.AbsolutePath == "/api/v1/training/execute", "Source is not a native training executor request.");
+        if (productBoundary != NativeProductBoundary.None && Uri.TryCreate(endpoint, UriKind.Absolute, out var productUri) &&
+            productUri.AbsolutePath == "/api/v1/product/execute")
+            VerifySelectedProduct(productUri, journal, raw, result, before, after,
+                requireTillingObservation: productBoundary == NativeProductBoundary.Tilling);
+        else
+            Require(Uri.TryCreate(endpoint, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https" &&
+                uri.AbsolutePath == "/api/v1/training/execute", "Source is not a native training executor request.");
         var hashes = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var file in new[] { ("queue", queuePath), ("result", resultPath), ("before", beforePath),
             ("after", afterPath), ("journal", journalPath), ("request_gzip", journalPath + ".gz") })
