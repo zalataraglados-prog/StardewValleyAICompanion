@@ -63,7 +63,9 @@ public sealed partial class CropTeacherManagedSeedOwner
             var production = new CropTeacherManagedProductionEvidence(productionPath,
                 ProofPaths("planting_layout_proof_paths"), ProofPaths("daily_capacity_proof_paths"),
                 ProofPaths("native_lifecycle_proof_paths"), ProofPaths("output_retention_proof_paths"), artifacts.Hashes[productionPath]);
-            var selection = new CropTeacherTerminalShippingSelection(production, options.NativeRunPlanPath,
+            var selection = terminalTarget?.NativeVariants is null ? new CropTeacherTerminalShippingSelection(production, options.NativeRunPlanPath,
+                StoredPath(productionManifest, "accepted_snapshot_path"), StoredPath(productionManifest, "accepted_ledger_path")) :
+                CropTeacherTerminalShippingSelection.OpenNativeVariants(production, options.NativeRunPlanPath,
                 StoredPath(productionManifest, "accepted_snapshot_path"), StoredPath(productionManifest, "accepted_ledger_path"));
             if (selection.CreateTarget(AcceptedTerminalDepositCount) != terminalTarget)
                 throw new InvalidDataException("Saved closeout changed this owner's original selected terminal target.");

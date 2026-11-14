@@ -53,9 +53,10 @@ internal static partial class CropTeacherTerminalSettlementEvidence
             retention.CropProductionPlanSha256 == cropPlanHash && retention.HarvestItemQualifiedId == target.QualifiedItemId &&
             retention.HarvestTotalDay == target.TotalDay && target.RequiredQuantity == retention.MinimumUnits &&
             target.RequiredQuantity > 0 && target.AcceptedDepositCount == target.RequiredQuantity &&
-            target.InitialQuantity >= target.RequiredQuantity && target.UnitPrice > 0 && target.Quality >= 0 && target.SlotIndex >= 0,
+            (target.NativeVariants is not null || target.InitialQuantity >= target.RequiredQuantity) && target.UnitPrice > 0 && target.Quality >= 0 && target.SlotIndex >= 0,
             "target differs from the original selected retained wave/cursor.");
         var initial = artifacts.Read<SnapshotEnvelope>(retention.AfterSnapshotPath);
+        if (target.NativeVariants is not null) target.VerifyNativeVariantSource(initial, 0, retention.MinimumGrossRevenue);
         Require(Pin(retention.AfterSnapshotPath) == retention.AfterSnapshotSha256 && initial.StateHash == retention.AfterStateHash &&
             Same(manifest.GetProperty("accepted_snapshot_path").GetString()!, retention.AfterSnapshotPath), "retained production head differs.");
         JsonElement Field(string domain, string name) => initial.State[domain].GetProperty(name).GetProperty("value");
@@ -145,17 +146,22 @@ internal static partial class CropTeacherTerminalSettlementEvidence
         var recurrence = MoneyRevenueRecurrenceProofBuilder.Build(recurrenceManifest);
         Require(recurrence.ProofVerified && !recurrence.FormalProductTrainingAuthorized, "original recurrence did not verify.");
         var recurrencePath = await Emit("recurrence-proof", recurrence).ConfigureAwait(false);
-        var requestPath = await Emit("terminal-request", new MoneyRevenueCropTerminalSettlementProofRequest
+        var request = new MoneyRevenueCropTerminalSettlementProofRequest
         {
             CropProductionPlanPath = plan.CropProductionPlanPath, OutputRetentionProofPath = target.RetentionProofPath,
             RouteTransitions = routes.ToArray(), ShippingDepositTransitions = deposits.ToArray(), SettlementRouteTransitions = home.ToArray(),
             RevenueRecurrenceManifestPath = recurrenceManifest, RevenueRecurrenceReceiptPath = recurrencePath
-        }).ConfigureAwait(false);
+        };
+        var requestPath = target.NativeVariants is null ? await Emit("terminal-request", request).ConfigureAwait(false) :
+            await Emit("terminal-request", new CropTeacherNativeVariantTerminalRequest("crop_teacher_native_variant_terminal_request.v1", target, request)).ConfigureAwait(false);
         // The original builder owns all settlement math and its mandatory support verification.
-        var proof = MoneyRevenueCropTerminalSettlementProofBuilder.Build(requestPath);
+        var proof = target.NativeVariants is null ? MoneyRevenueCropTerminalSettlementProofBuilder.Build(requestPath) :
+            CropTeacherNativeVariantTerminalProof.Build(requestPath);
         Require(proof.Status == "verified_native_crop_terminal_settlement" && proof.NativeTerminalSettlementVerified &&
-            !proof.FormalProductTrainingAuthorized && proof.SettledQuantity == target.RequiredQuantity && proof.UnitPrice == target.UnitPrice &&
-            proof.SlotIndex == target.SlotIndex && proof.HarvestItemQualifiedId == target.QualifiedItemId &&
+            !proof.FormalProductTrainingAuthorized && proof.SettledQuantity == target.RequiredQuantity &&
+            (target.NativeVariants is not null ? proof.SchemaVersion == "crop_teacher_native_variant_terminal_proof.v1" &&
+                proof.SettledRevenue == target.PendingValueAt(target.RequiredQuantity) : proof.UnitPrice == target.UnitPrice && proof.SlotIndex == target.SlotIndex) &&
+            proof.HarvestItemQualifiedId == target.QualifiedItemId &&
             proof.SettledRevenue >= retention.MinimumGrossRevenue && proof.TerminalActionAfterStateHash == final.StateHash,
             "original terminal proof differs from selected target/final head.");
         var terminalPath = await Emit("terminal-proof", proof).ConfigureAwait(false);

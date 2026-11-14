@@ -71,7 +71,7 @@ public sealed class CropTeacherTerminalShippingSelectionTests
     }
 
     private static object Open(CropTeacherProductionEvidenceTests.Fixture f, CropTeacherManagedProductionEvidence evidence,
-        string? head = null, string? ledger = null) => Unwrap(() => Selection.GetConstructors(BindingFlags.NonPublic | BindingFlags.Instance).Single()
+        string? head = null, string? ledger = null) => Unwrap(() => Selection.GetConstructors(BindingFlags.NonPublic | BindingFlags.Instance).Single(row => row.GetParameters().Length == 4)
             .Invoke(new object[] { evidence, f.NativePlanPath, head ?? f.SourcePath, ledger ?? f.LedgerPath }))!;
     private static SmallModelActionEnvelope? Build(object selection, SnapshotEnvelope source, int cursor) =>
         (SmallModelActionEnvelope?)Unwrap(() => Selection.GetMethod("BuildOriginalAction", BindingFlags.NonPublic | BindingFlags.Instance)!

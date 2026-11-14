@@ -82,7 +82,9 @@ public sealed partial class CropTeacherManagedSeedOwner
             active is null || !active.SequenceEqual(ActiveCoveredCommitments(), StringComparer.Ordinal))
             throw new InvalidDataException("Original terminal changed its owner/run/executor/source/coverage.");
         ValidateTerminalProductionReference(record);
-        var start = CropTeacherTerminalShipping.Preparation.Open(plan.RequestPath, StoredPath(record, "before_snapshot_path"),
+        var start = target.NativeVariants is null ? CropTeacherTerminalShipping.Preparation.Open(plan.RequestPath, StoredPath(record, "before_snapshot_path"),
+            headLedgerPath, active, Text(record, "support_step_id"), target, StoredPath(record, "original_model_action_path"), transition.QueuePath) :
+            CropTeacherTerminalShipping.Preparation.OpenNativeVariants(plan.RequestPath, StoredPath(record, "before_snapshot_path"),
             headLedgerPath, active, Text(record, "support_step_id"), target, StoredPath(record, "original_model_action_path"), transition.QueuePath);
         var expected = frontierHashes.TryGetValue(headSnapshotPath, out var hash) ? hash : fixedHashes[headSnapshotPath];
         if (start.InputHashes[start.SourcePath] != expected || requireNativeIdentity &&

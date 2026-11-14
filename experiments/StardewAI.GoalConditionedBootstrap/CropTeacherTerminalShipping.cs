@@ -26,6 +26,8 @@ public sealed partial class CropTeacherTerminalShipping : ICropTeacherSupporting
         var after = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(transition.AfterSnapshotPath, "terminal native after");
         var queue = CurrentTeacherFrontierSupport.Read<ActionQueueEnvelope>(transition.QueuePath, "terminal native queue");
         var receipt = CurrentTeacherFrontierSupport.Read<QueueExecutionReceiptEnvelope>(transition.ExecutionReceiptPath, "terminal native receipt");
+        var selected = target.NativeVariants is null ? new CropTeacherTerminalVariant(target.SlotIndex, target.Quality, target.UnitPrice, target.InitialQuantity) :
+            target.VariantAt(target.AcceptedDepositCount);
         Require(AtStand(after, target), "Terminal native after did not reach/remain on the exact Farm stand.");
         if (kind == "shipping_approach")
         {
@@ -36,23 +38,24 @@ public sealed partial class CropTeacherTerminalShipping : ICropTeacherSupporting
                 RunId = transition.RunId, ExecutorVersion = transition.ExecutorVersion, SelectedCandidateId = transition.SelectedCandidateId
             };
             MoneyRevenueResourceNeutralTerminalRouteVerifier.Verify(before, new[] { proof },
-                new("executor.ship_inventory_item_to_bin", target.QualifiedItemId, target.SlotIndex, 1, target.UnitPrice, string.Empty));
+                new("executor.ship_inventory_item_to_bin", target.QualifiedItemId, selected.SlotIndex, 1, selected.UnitPrice, string.Empty));
             CropTeacherNativeStepBoundary.Verify(before, after, before, receipt.StepResults.Single(), target.TotalDay, "Terminal approach");
             AcceptedDepositCountAfter = target.AcceptedDepositCount;
             VerifySource(after, target, AcceptedDepositCountAfter);
-            PendingValueAfter = checked((long)AcceptedDepositCountAfter * target.UnitPrice);
+            PendingValueAfter = target.PendingValueAt(AcceptedDepositCountAfter);
         }
         else
         {
             Require(kind == "shipping_deposit" && AtStand(before, target), "Terminal deposit did not start at its exact stand.");
             var deposit = CropTeacherShippingDepositResources.Verify(before, after, queue, receipt, transition, target.QualifiedItemId);
-            Require(deposit.SlotIndex == target.SlotIndex && deposit.Quality == target.Quality && deposit.UnitPrice == target.UnitPrice &&
+            Require(deposit.SlotIndex == selected.SlotIndex && deposit.Quality == selected.Quality && deposit.UnitPrice == selected.UnitPrice &&
                     deposit.BinTileX == target.BinTileX && deposit.BinTileY == target.BinTileY &&
-                    deposit.PendingValueBefore == checked((long)target.AcceptedDepositCount * target.UnitPrice),
+                    deposit.PendingValueBefore == target.PendingValueAt(target.AcceptedDepositCount),
                 "Terminal native deposit differs from its selected variant/bin/accepted cursor.");
             AcceptedDepositCountAfter = checked(target.AcceptedDepositCount + 1);
             PendingValueAfter = deposit.PendingValueAfter;
-            Require(PendingValueAfter == checked((long)AcceptedDepositCountAfter * target.UnitPrice), "Terminal actual pending value differs from its verified deposit cursor.");
+            Require(PendingValueAfter == target.PendingValueAt(AcceptedDepositCountAfter), "Terminal actual pending value differs from its verified deposit cursor.");
+            if (target.NativeVariants is not null) target.VerifyNativeVariantSource(after, AcceptedDepositCountAfter);
         }
         AfterSnapshotPath = Path.GetFullPath(transition.AfterSnapshotPath);
         rebind = new(after, source.Ledger, stepId, inputs.Validate, "Terminal shipping");
@@ -74,6 +77,7 @@ public sealed partial class CropTeacherTerminalShipping : ICropTeacherSupporting
 
     private static void VerifySource(SnapshotEnvelope snapshot, CropTeacherTerminalShippingTarget target, int count)
     {
+        if (target.NativeVariants is not null) { target.VerifyNativeVariantSource(snapshot, count); return; }
         MoneyRevenueCropSeedAcquisitionProofBuilder.ValidateSnapshot(snapshot, "terminal source");
         Require(snapshot.SaveId.Value == target.SaveId && snapshot.PlayerId.Value == target.PlayerId && snapshot.GameVersion == target.GameVersion &&
                 MoneyRevenueCropSeedAcquisitionProofBuilder.ReadInt(snapshot, "time", "total_days") == target.TotalDay &&

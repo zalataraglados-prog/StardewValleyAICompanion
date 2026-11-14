@@ -17,6 +17,7 @@ internal sealed partial class CropTeacherTerminalShippingSelection
     private readonly int initialQuantity;
     private readonly string binScope;
     private readonly string binPlayer;
+    private readonly CropTeacherTerminalVariantPlan? nativeVariants;
     internal string RetentionProofPath { get; }
     internal string QualifiedItemId { get; }
     internal int MinimumUnits { get; }
@@ -34,10 +35,16 @@ internal sealed partial class CropTeacherTerminalShippingSelection
     internal CropTeacherTerminalShippingTarget CreateTarget(int acceptedDepositCount) => new(
         RetentionProofPath, inputs.Hashes[RetentionProofPath], saveId, playerId, gameVersion, totalDay,
         QualifiedItemId, SlotIndex, Quality, UnitPrice, BinX, BinY, StandX, StandY, initialQuantity,
-        MinimumUnits, acceptedDepositCount);
+        MinimumUnits, acceptedDepositCount) { NativeVariants = nativeVariants };
 
     internal CropTeacherTerminalShippingSelection(CropTeacherManagedProductionEvidence evidence,
-        string nativePlanPath, string snapshotPath, string ledgerPath)
+        string nativePlanPath, string snapshotPath, string ledgerPath) : this(evidence, nativePlanPath, snapshotPath, ledgerPath, false) { }
+
+    internal static CropTeacherTerminalShippingSelection OpenNativeVariants(CropTeacherManagedProductionEvidence evidence,
+        string nativePlanPath, string snapshotPath, string ledgerPath) => new(evidence, nativePlanPath, snapshotPath, ledgerPath, true);
+
+    private CropTeacherTerminalShippingSelection(CropTeacherManagedProductionEvidence evidence,
+        string nativePlanPath, string snapshotPath, string ledgerPath, bool useNativeVariants)
     {
         if (string.IsNullOrWhiteSpace(evidence.ManifestSha256))
             throw new InvalidDataException("Selected crop terminal requires its just-built production manifest hash.");
@@ -83,12 +90,14 @@ internal sealed partial class CropTeacherTerminalShippingSelection
             Field(source, "player", "location_id").GetString() != "Farm")
             throw new InvalidDataException("Selected crop terminal source actor/day/location is unavailable.");
         var stacks = Field(source, "player", "inventory").EnumerateArray().Where(row =>
-            String(row, "qualified_item_id") == QualifiedItemId && Integer(row, "stack") >= MinimumUnits &&
-            Integer(row, "sell_to_store_price") > 0 && Boolean(row, "can_be_shipped")).ToArray();
-        if (stacks is not [var stack]) throw new InvalidDataException("Selected crop terminal requires the original exact shippable retained stack.");
+            String(row, "qualified_item_id") == QualifiedItemId && Integer(row, "stack") >= (useNativeVariants ? 1 : MinimumUnits) &&
+            Integer(row, "sell_to_store_price") > 0 && Boolean(row, "can_be_shipped")).OrderBy(row => Integer(row, "slot_index")).ToArray();
+        if (stacks.Length == 0 || !useNativeVariants && stacks.Length != 1)
+            throw new InvalidDataException("Selected crop terminal requires the original exact shippable retained stack.");
+        var stack = stacks[0];
         SlotIndex = Integer(stack, "slot_index"); Quality = Integer(stack, "quality");
         initialQuantity = Integer(stack, "stack"); UnitPrice = Integer(stack, "sell_to_store_price");
-        if (SlotIndex < 0 || Quality < 0 || checked((long)MinimumUnits * UnitPrice) < MinimumGrossRevenue)
+        if (SlotIndex < 0 || Quality < 0 || (!useNativeVariants && checked((long)MinimumUnits * UnitPrice) < MinimumGrossRevenue))
             throw new InvalidDataException("Selected crop terminal quantity/price does not meet its original wave.");
         var bins = Field(source, "farm", "shipping_bins").EnumerateArray().Where(row => Boolean(row, "completed") &&
             Boolean(row, "pending_settlement_value_complete") && Long(row, "pending_settlement_value") == 0 &&
@@ -101,6 +110,14 @@ internal sealed partial class CropTeacherTerminalShippingSelection
         binScope = String(bin, "bin_scope"); binPlayer = bin.GetProperty("player_id").ToString();
         if (new[] { BinX, BinY, StandX, StandY }.Any(value => value < 0) || string.IsNullOrWhiteSpace(binScope) || binPlayer != playerId)
             throw new InvalidDataException("Selected crop terminal bin identity is unavailable.");
+        if (useNativeVariants)
+        {
+            CropTeacherTerminalVariant? next = null;
+            foreach (var row in stacks.Reverse()) next = new(Integer(row, "slot_index"), Integer(row, "quality"),
+                Integer(row, "sell_to_store_price"), Integer(row, "stack"), next);
+            nativeVariants = new("crop_teacher_native_terminal_variants.v1", binScope, next!);
+            CreateTarget(0).VerifyNativeVariantSource(source, 0, MinimumGrossRevenue);
+        }
         inputs.Validate();
         // The full trajectory was checked once above. Per-action binding keeps only its terminal certificate and source.
         var terminalPaths = new[] { evidence.ManifestPath, nativePlanPath, snapshotPath, ledgerPath, RetentionProofPath }

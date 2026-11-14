@@ -17,8 +17,9 @@ public sealed partial class CropTeacherTerminalShipping
 
         private Preparation(string runRequestPath, string sourcePath, string ledgerPath,
             IReadOnlyCollection<string> commitmentIds, string stepId, CropTeacherTerminalShippingTarget target,
-            string modelActionPath, string queuePath)
+            string modelActionPath, string queuePath, bool nativeVariants = false)
         {
+            Require(nativeVariants == (target.NativeVariants is not null), "Terminal variant mode must be explicitly selected.");
             Target = target;
             this.stepId = stepId;
             SourcePath = Path.GetFullPath(sourcePath); QueuePath = Path.GetFullPath(queuePath);
@@ -42,8 +43,9 @@ public sealed partial class CropTeacherTerminalShipping
                     proof.CropProductionPlanSha256 == hashes[Path.GetFullPath(source.RunRequest.CropProductionPlanPath)] &&
                     proof.HarvestItemQualifiedId == target.QualifiedItemId && proof.HarvestTotalDay == target.TotalDay &&
                     target.RequiredQuantity == proof.MinimumUnits && target.RequiredQuantity > 0 && proof.MinimumGrossRevenue > 0 &&
-                    target.UnitPrice > 0 && checked((long)target.UnitPrice * target.RequiredQuantity) >= proof.MinimumGrossRevenue &&
-                    target.InitialQuantity >= target.RequiredQuantity && target.SlotIndex >= 0 && target.Quality >= 0 &&
+                     target.UnitPrice > 0 && (nativeVariants ? target.PendingValueAt(target.RequiredQuantity) >= proof.MinimumGrossRevenue :
+                         checked((long)target.UnitPrice * target.RequiredQuantity) >= proof.MinimumGrossRevenue && target.InitialQuantity >= target.RequiredQuantity) &&
+                     target.SlotIndex >= 0 && target.Quality >= 0 &&
                     target.AcceptedDepositCount >= 0 && target.AcceptedDepositCount < target.RequiredQuantity &&
                     new[] { target.BinTileX, target.BinTileY, target.StandTileX, target.StandTileY }.All(value => value >= 0),
                 "Terminal target differs from its pinned original retained wave/active commitment/production plan.");
@@ -58,7 +60,8 @@ public sealed partial class CropTeacherTerminalShipping
             Require(Text(initialBin, "bin_scope") == Text(currentBin, "bin_scope"), "Terminal bin custody scope changed.");
             var approach = !AtStand(source.Snapshot, target);
             Kind = approach ? "shipping_approach" : "shipping_deposit";
-            CandidateId = FormattableString.Invariant($"ship:Farm:{target.BinTileX},{target.BinTileY}:{target.SlotIndex}:{target.QualifiedItemId}") +
+            var selectedSlot = target.NativeVariants is null ? target.SlotIndex : target.VariantAt(target.AcceptedDepositCount).SlotIndex;
+            CandidateId = FormattableString.Invariant($"ship:Farm:{target.BinTileX},{target.BinTileY}:{selectedSlot}:{target.QualifiedItemId}") +
                 (approach ? ":approach" : ":deposit:" + (target.AcceptedDepositCount + 1).ToString(CultureInfo.InvariantCulture));
             var model = CurrentTeacherFrontierSupport.Read<SmallModelActionEnvelope>(modelActionPath, "terminal original model action");
             Require(BootstrapArtifactGuard.EqualJson(model, BuildOriginalAction(source.Snapshot, target)),
@@ -78,6 +81,10 @@ public sealed partial class CropTeacherTerminalShipping
             string modelActionPath, string queuePath) =>
             new(runRequestPath, sourcePath, ledgerPath, commitmentIds, stepId, target, modelActionPath, queuePath);
         public CropTeacherTerminalShippingTarget Target { get; }
+        public static Preparation OpenNativeVariants(string runRequestPath, string sourcePath, string ledgerPath,
+            IReadOnlyCollection<string> commitmentIds, string stepId, CropTeacherTerminalShippingTarget target,
+            string modelActionPath, string queuePath) =>
+            new(runRequestPath, sourcePath, ledgerPath, commitmentIds, stepId, target, modelActionPath, queuePath, nativeVariants: true);
         public string Kind { get; }
         public string SourcePath { get; }
         public string QueuePath { get; }
@@ -104,6 +111,12 @@ public sealed partial class CropTeacherTerminalShipping
         // Exact original RuntimeMoneyCropNative/terminal-selection recipe, for admission comparison only.
         public static SmallModelActionEnvelope BuildOriginalAction(SnapshotEnvelope snapshot, CropTeacherTerminalShippingTarget target)
         {
+            // Only action parameters select the next pinned slot; persisted target stays the whole immutable plan.
+            if (target.NativeVariants is not null)
+            {
+                var selected = target.VariantAt(target.AcceptedDepositCount);
+                target = target with { SlotIndex = selected.SlotIndex, Quality = selected.Quality, UnitPrice = selected.UnitPrice };
+            }
             var approach = !AtStand(snapshot, target);
             var candidate = FormattableString.Invariant($"ship:Farm:{target.BinTileX},{target.BinTileY}:{target.SlotIndex}:{target.QualifiedItemId}") +
                 (approach ? ":approach" : ":deposit:" + (target.AcceptedDepositCount + 1).ToString(CultureInfo.InvariantCulture));

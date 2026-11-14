@@ -16,6 +16,12 @@ internal sealed partial class CropTeacherTerminalShippingSelection
             source.StateHash != SnapshotHash.ComputeStateHash(source.State) || Number(Field(source, "time", "total_days")) != totalDay ||
             Field(source, "player", "location_id").GetString() != "Farm")
             throw new InvalidDataException("Selected crop terminal action changed its actor/day/source or accepted cursor.");
+        if (nativeVariants is not null)
+        {
+            var target = CreateTarget(completedDeposits);
+            target.VerifyNativeVariantSource(source, completedDeposits, MinimumGrossRevenue);
+            return completedDeposits == MinimumUnits ? null : CropTeacherTerminalShipping.Preparation.BuildOriginalAction(source, target);
+        }
         var rows = Field(source, "player", "inventory").EnumerateArray().Where(row => Integer(row, "slot_index") == SlotIndex).ToArray();
         if (rows is not [var slot]) throw new InvalidDataException("Selected crop terminal source slot is not unique.");
         var remaining = initialQuantity - completedDeposits;
