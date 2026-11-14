@@ -106,7 +106,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         var frames = new LifecycleFramePool();
         var transitions = request.Transitions.Select(value =>
         {
-            var loaded = LoadTransition(value);
+            var loaded = nativeObservedCapacity ? LoadNativeObservedTransition(value) : LoadTransition(value);
             return loaded with
             {
                 Before = frames.Share(loaded.Before),
@@ -135,7 +135,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
                 value.Queue.QueueId,
                 value.Before.StateHash,
                 value.After.StateHash,
-                value.Queue.Items.Length,
+                value.NativeAppliedItemCount ?? value.Queue.Items.Length,
                 value.Request.TransitionKind == DayRolloverKind
                     ? "executor.sleep"
                     : value.Queue.Items[0].OptionId,
@@ -238,7 +238,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
     private static int CountOption(
         IEnumerable<LoadedTransition> transitions,
         string optionId) => transitions.Sum(value =>
-            value.Queue.Items.Count(item => item.OptionId == optionId));
+            value.Queue.Items.Take(value.NativeAppliedItemCount ?? value.Queue.Items.Length).Count(item => item.OptionId == optionId));
 
     private const string CropActionsKind = "crop_actions";
     private const string CropIngressRouteKind =
@@ -259,7 +259,10 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         ActionQueueEnvelope Queue,
         SnapshotEnvelope Before,
         QueueExecutionReceiptEnvelope Receipt,
-        SnapshotEnvelope After);
+        SnapshotEnvelope After)
+    {
+        public int? NativeAppliedItemCount { get; init; }
+    }
 
     private sealed record CropCatalogRow(
         bool NeedsWatering,

@@ -291,7 +291,9 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
             Require(beforeCalendar.TotalDay == totalDay &&
                     afterCalendar.TotalDay == totalDay,
                 "Money Revenue crop action crossed a day boundary.");
-            var items = transition.Queue.Items ?? Array.Empty<ActionQueueItem>();
+            var originalItems = transition.Queue.Items ?? Array.Empty<ActionQueueItem>();
+            var items = transition.NativeAppliedItemCount is { } applied
+                ? originalItems.Take(applied).ToArray() : originalItems;
             var optionIds = items.Select(value => value.OptionId)
                 .Distinct(StringComparer.Ordinal).ToArray();
             Require(optionIds.Length == 1 &&

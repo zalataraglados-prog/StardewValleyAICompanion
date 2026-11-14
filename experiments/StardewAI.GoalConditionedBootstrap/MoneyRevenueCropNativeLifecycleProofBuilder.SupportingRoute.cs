@@ -32,6 +32,13 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
 
     private static void ValidateQueueReceipt(LoadedTransition transition)
     {
+        if (transition.NativeAppliedItemCount is { } applied)
+        {
+            Require(CropTeacherSeedPlantingReceipt.Validate(transition.Queue, transition.Before, transition.Receipt,
+                    transition.After, transition.Request) == applied,
+                "Native crop lifecycle planting prefix differs from its original receipt.");
+            return;
+        }
         var reasons = QueueExecutionReceiptValidator.Validate(transition.Queue, transition.Before, transition.Receipt,
             transition.After, transition.Request.RunId, transition.Request.ExecutorVersion,
             transition.Request.SelectedCandidateId, transition.Before.StateHash, requireTeacherPreferenceStateRebound: false);
