@@ -99,7 +99,11 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                     node["tile_y"]!["value"] = scope.Target.TileY;
                 });
                 if (!resourceNeutral)
-                    after.State["trace_fixture"] = JsonSerializer.SerializeToElement(new { status = "available", value = index + 1 });
+                    after.State["trace_fixture"] = JsonSerializer.SerializeToElement(new
+                    {
+                        status = "available", value = index + 1, source = "declared_fixture",
+                        adapter = "refill_trace_fixture", read_at_tick = after.GameTick, confidence = 1.0
+                    });
                 // Mutate before hashing/writing the frame, result and receipt so guard tests
                 // exercise physical snapshot differences rather than stale evidence hashes.
                 changeFrame?.Invoke(after, index);

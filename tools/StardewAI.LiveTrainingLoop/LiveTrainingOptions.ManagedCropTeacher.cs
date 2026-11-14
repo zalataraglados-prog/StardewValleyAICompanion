@@ -4,6 +4,14 @@ using StardewAI.Contracts.Execution;
 public sealed partial class LiveTrainingOptions
 {
     public bool UseManagedCropTeacher { get; set; }
+    internal bool UseOwnedSupportingQueueBoundary { get; private set; }
+
+    internal LiveTrainingOptions WithOwnedSupportingQueueBoundary()
+    {
+        var copy = (LiveTrainingOptions)MemberwiseClone();
+        copy.UseOwnedSupportingQueueBoundary = true;
+        return copy;
+    }
 
     public void ValidateManagedCropTeacherMode()
     {

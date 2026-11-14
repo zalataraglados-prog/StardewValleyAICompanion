@@ -34,7 +34,9 @@ static partial class Program
         var before = JsonNode.Parse(ContentAddressedJsonArtifactReader.ReadAllText(start.SourcePath))!.AsObject();
         var queue = JsonNode.Parse(ContentAddressedJsonArtifactReader.ReadAllText(start.QueuePath))!.AsObject();
         RequireSelectedRefillToolObservation(options, operation.Record, queue);
-        var executionOptions = tilling ? options.WithSelectedTillingResources() : options;
+        // Compiler-internal candidates do not end this owner's frozen root queue.
+        var executionOptions = options.WithOwnedSupportingQueueBoundary();
+        if (tilling) executionOptions = executionOptions.WithSelectedTillingResources();
         Task<JsonObject> Execute() => ExecuteRuntimeTestHarnessCoreAsync(http, executorHttp,
             executionOptions, iteration, start.SourcePath, before, queue, ReadString(before, "state_hash"), ReadString(queue, "queue_id"),
             operation.Record[clearance || tilling || terminal || watering || harvest ? "original_model_action_path" : "original_model_plan_path"]!.GetValue<string>(), string.Empty, start.QueuePath, start.SourcePath,
