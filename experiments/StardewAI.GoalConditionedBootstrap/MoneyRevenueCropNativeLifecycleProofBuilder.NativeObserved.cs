@@ -7,6 +7,14 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
     private static LoadedTransition LoadNativeObservedTransition(MoneyRevenueCropNativeLifecycleTransitionRequest request)
     {
         var transition = LoadTransition(request);
+        transition = transition with { NativeObserved = true };
+        if (request.NativeRefillPreparation is not null)
+            return LoadNativePreparation(transition);
+        if (IsNativeControl(transition))
+        {
+            ValidateNativeControl(transition);
+            return transition with { NativeNonProduction = true };
+        }
         if (transition.Receipt.Success || request.TransitionKind != CropActionsKind ||
             transition.Queue.Items is not { Length: > 0 } items || items.Any(item => item.OptionId != PlantOption))
             return transition;

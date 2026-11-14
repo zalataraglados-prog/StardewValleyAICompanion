@@ -116,11 +116,12 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
             var dayActions = new List<LoadedTransition>();
             while (cursor < transitions.Length &&
                 transitions[cursor].Request.TotalDay == day &&
-                transitions[cursor].Request.TransitionKind == CropActionsKind)
+                (transitions[cursor].Request.TransitionKind == CropActionsKind ||
+                    transitions[cursor].NativeNonProduction))
             {
                 dayActions.Add(transitions[cursor++]);
             }
-            Require(dayActions.Count == 0 ||
+            Require(!dayActions.Any(value => !value.NativeNonProduction) ||
                     ReadPlayerLocation(dayStart) ==
                         contexts[0].Layout.LocationId,
                 "Money Revenue crop lifecycle day actions did not start at the shared crop location on day " +
@@ -135,6 +136,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
                 dayActions,
                 dayStart,
                 contexts);
+            ValidateNativePreparationContinuations(dayActions, contexts);
 
             if (day < lastDay)
             {
@@ -218,6 +220,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
     {
         foreach (var transition in transitions)
         {
+            if (transition.NativeNonProduction) continue; // Already verified against its original native control kernel.
             var beforeCalendar = ReadCalendar(transition.Before);
             var afterCalendar = ReadCalendar(transition.After);
             var optionIds = (transition.Queue.Items ??
@@ -286,6 +289,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         var locationId = contexts[0].Layout.LocationId;
         foreach (var transition in transitions)
         {
+            if (transition.NativeNonProduction) continue;
             var beforeCalendar = ReadCalendar(transition.Before);
             var afterCalendar = ReadCalendar(transition.After);
             Require(beforeCalendar.TotalDay == totalDay &&

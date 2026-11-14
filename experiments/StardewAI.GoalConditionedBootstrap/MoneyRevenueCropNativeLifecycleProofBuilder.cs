@@ -24,6 +24,8 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
                 !request.FormalProductTrainingAuthorized,
             "Money Revenue crop native-lifecycle proof request is invalid.");
         var checkpointResumes = request.CheckpointResumes!;
+        Require(nativeObservedCapacity || request.Transitions.All(value => value.NativeRefillPreparation is null),
+            "Native refill preparation references require explicit lifecycle v5.");
 
         var planPath = RequiredFile(
             request.CropProductionPlanPath,
@@ -113,6 +115,11 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
                 After = frames.Share(loaded.After)
             };
         }).ToArray();
+        foreach (var transition in transitions.Where(value => value.NativePreparationPlanPath is not null))
+            Require(SamePath(transition.NativePreparationPlanPath!, planPath) &&
+                    contexts.Any(value => value.Commitment.CommitmentId == transition.Request.NativeRefillPreparation!.CommitmentId &&
+                        value.Commitment.RequiredWateringTotalDays.Contains(transition.Request.TotalDay)),
+                "Native refill preparation changed its original crop-production obligation/day.");
         var checkpointResumeProofs = ValidateTransitionChain(
             transitions,
             sourceSnapshot,
@@ -139,7 +146,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
                 value.Request.TransitionKind == DayRolloverKind
                     ? "executor.sleep"
                     : value.Queue.Items[0].OptionId,
-                ResolveActionCommitmentId(value, contexts),
+                value.NativeNonProduction ? string.Empty : ResolveActionCommitmentId(value, contexts),
                 true)).ToArray();
         return new MoneyRevenueCropNativeLifecycleProof
         {
@@ -165,7 +172,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
             SharedNativeTrajectoryVerified = true,
             TransitionCount = transitions.Length,
             CropActionQueueCount = transitions.Count(value =>
-                value.Request.TransitionKind == CropActionsKind),
+                value.Request.TransitionKind == CropActionsKind && !value.NativeNonProduction),
             SupportingRouteQueueCount = transitions.Count(value =>
                 value.Request.TransitionKind is CropIngressRouteKind or
                     SleepIngressRouteKind),
@@ -237,7 +244,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
 
     private static int CountOption(
         IEnumerable<LoadedTransition> transitions,
-        string optionId) => transitions.Sum(value =>
+        string optionId) => transitions.Where(value => !value.NativeNonProduction).Sum(value =>
             value.Queue.Items.Take(value.NativeAppliedItemCount ?? value.Queue.Items.Length).Count(item => item.OptionId == optionId));
 
     private const string CropActionsKind = "crop_actions";
@@ -262,6 +269,9 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         SnapshotEnvelope After)
     {
         public int? NativeAppliedItemCount { get; init; }
+        public bool NativeObserved { get; init; }
+        public bool NativeNonProduction { get; init; }
+        public string? NativePreparationPlanPath { get; init; }
     }
 
     private sealed record CropCatalogRow(
