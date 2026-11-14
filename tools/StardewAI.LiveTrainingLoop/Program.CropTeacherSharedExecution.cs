@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.Training;
 using StardewAI.Core.Infrastructure;
 using StardewAI.GoalConditionedBootstrap;
 using StardewAI.LiveTrainingLoop;
