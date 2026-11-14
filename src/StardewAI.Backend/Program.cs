@@ -885,16 +885,26 @@ app.MapPost("/api/v1/planner/daily-plan/compile", (DailyPlanCompileRequest reque
     var snapshot = !string.IsNullOrWhiteSpace(request.StateHash) && store.Snapshots.TryGetValue(request.StateHash, out var selected)
         ? selected
         : store.LatestSnapshot();
-    var plan = dailyPlanCompiler.Compile(
+    var jointTime = request.UseJointCalendar && snapshot is not null
+        ? StardewAI.Core.Infrastructure.SnapshotGameClockBudgetReader.CurrentTime(snapshot) : null;
+    if (request.UseJointCalendar && (snapshot is null || snapshot.StateHash != request.StateHash || !jointTime.HasValue))
+        return Results.UnprocessableEntity(new { detail = "joint calendar requires a matching snapshot with a readable native game clock" });
+    var availableMinutes = jointTime.HasValue
+        ? DailyPlanBudgetReader.AvailablePlanMinutes(jointTime.Value, request.RankedEventCandidates)
+        : DailyPlanBudgetReader.AvailablePlanMinutes(snapshot, request.RankedEventCandidates);
+    var energyBudget = DailyPlanBudgetReader.ReadSnapshotInt(snapshot, "player", "energy");
+    var plan = request.UseJointCalendar ? dailyPlanCompiler.CompileWithJointCalendar(
+        request.RankedEventCandidates, request.StateHash, jointTime!.Value,
+        string.IsNullOrWhiteSpace(request.GoalId) ? "daily.closed_loop" : request.GoalId,
+        string.IsNullOrWhiteSpace(request.ExecutionMode) ? "training_singleplayer" : request.ExecutionMode,
+        request.MaxCandidates <= 0 ? 4 : request.MaxCandidates, availableMinutes, energyBudget) : dailyPlanCompiler.Compile(
         request.RankedEventCandidates,
         request.StateHash,
         string.IsNullOrWhiteSpace(request.GoalId) ? "daily.closed_loop" : request.GoalId,
         string.IsNullOrWhiteSpace(request.ExecutionMode) ? "training_singleplayer" : request.ExecutionMode,
         request.MaxCandidates <= 0 ? 4 : request.MaxCandidates,
-        DailyPlanBudgetReader.AvailablePlanMinutes(
-            snapshot,
-            request.RankedEventCandidates),
-        DailyPlanBudgetReader.ReadSnapshotInt(snapshot, "player", "energy"));
+        availableMinutes,
+        energyBudget);
 
     if (!request.CompileActionQueue)
     {
@@ -1797,6 +1807,12 @@ public static class DailyPlanBudgetReader
             return null;
         }
 
+        return AvailablePlanMinutes(currentTime.Value, rankedCandidates);
+    }
+
+    public static int AvailablePlanMinutes(int currentTime, IEnumerable<PolicyEventCandidatePrediction> rankedCandidates)
+    {
+
         var recoveryPlan = rankedCandidates.Any(candidate =>
             string.Equals(
                 candidate.OptionId,
@@ -1812,7 +1828,7 @@ public static class DailyPlanBudgetReader
         return Math.Max(
             0,
             GameClockBudgetPolicy.ClockMinutesBetween(
-                currentTime.Value,
+                currentTime,
                 deadline) - buffer);
     }
 

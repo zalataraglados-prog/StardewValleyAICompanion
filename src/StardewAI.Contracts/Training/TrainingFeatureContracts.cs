@@ -299,6 +299,10 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("compile_action_queue")]
         public bool CompileActionQueue { get; set; }
 
+        [JsonPropertyName("use_joint_calendar")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public bool UseJointCalendar { get; set; }
+
         [JsonPropertyName("ranked_event_candidates")]
         public PolicyEventCandidatePrediction[] RankedEventCandidates { get; set; } = Array.Empty<PolicyEventCandidatePrediction>();
     }

@@ -45,6 +45,17 @@ namespace StardewAI.Core.Training
             int maxCandidates = 4,
             int? availableMinutes = null,
             int? energyBudget = null)
+            => CompileCore(candidates, stateHash, goalId, executionMode, maxCandidates, availableMinutes, energyBudget, null);
+
+        private SmallModelPlanEnvelope CompileCore(
+            IEnumerable<PolicyEventCandidatePrediction> candidates,
+            string stateHash,
+            string goalId,
+            string executionMode,
+            int maxCandidates,
+            int? availableMinutes,
+            int? energyBudget,
+            JointCalendarBudget? calendar)
         {
             var steps = new List<SmallModelPlanStep>();
             var audit = new List<SmallModelPlanCandidateAudit>();
@@ -173,6 +184,14 @@ namespace StardewAI.Core.Training
                     continue;
                 }
 
+                var calendarBlock = calendar?.BlockReason(candidate, candidateMinutes, rollingDeferred);
+                if (calendarBlock is not null)
+                {
+                    audit.Add(CandidateAudit(candidate, "skipped", new[] { calendarBlock }, candidateMinutes,
+                        remainingMinutes, remainingMinutes, remainingEnergy, remainingEnergy));
+                    continue;
+                }
+
                 var nextRemainingMinutes = remainingMinutes.HasValue ? Math.Max(0, remainingMinutes.Value - candidateMinutes) : (int?)null;
                 var nextRemainingEnergy = remainingEnergy.HasValue ? Math.Max(0, remainingEnergy.Value - effectiveEnergyCost) : (int?)null;
                 var acceptedSteps = waitSteps
@@ -186,6 +205,7 @@ namespace StardewAI.Core.Training
                         nextRemainingMinutes,
                         remainingEnergy,
                         nextRemainingEnergy))
+                    .Select(step => calendar?.Annotate(step, candidateMinutes) ?? step)
                     .ToArray();
                 steps.AddRange(acceptedSteps);
                 audit.Add(CandidateAudit(
@@ -217,6 +237,7 @@ namespace StardewAI.Core.Training
                 {
                     rollingHorizonReplanBarrierAccepted = true;
                 }
+                calendar?.Accept(candidateMinutes);
                 selected++;
             }
 

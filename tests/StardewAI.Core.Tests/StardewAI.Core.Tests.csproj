@@ -175,6 +175,8 @@
     <Compile Include="IslandGourmandSupplyScheduleProofTests.cs" />
     <Compile Include="WildTreeProductMainlineTests.cs" />
     <Compile Include="DailyPlanCompilerSources.cs" />
+    <Compile Include="DailyPlanCompilerTests.cs" />
+    <Compile Include="DailyPlanJointCalendarTests.cs" />
     <Compile Include="DeployScriptSourceGuardTests.cs" />
     <Compile Include="FullShipmentAcquisitionSampleSourceGuardTests.cs" />
     <Compile Include="ShopPurchaseBudgetPolicyTests.cs" />

@@ -61,6 +61,7 @@ public sealed partial class LiveTrainingOptions
     public bool UseProductExecutor { get; set; }
     public bool UsePlanOutput { get; set; }
     public bool UseDailyPlan { get; set; }
+    public bool UseJointDailyCalendar { get; set; }
     public string ResumeCropTeacherTransitionLedgerPath { get; set; } =
         string.Empty;
     public bool UseParameterizedAction { get; set; }
@@ -500,6 +501,10 @@ public sealed partial class LiveTrainingOptions
             {
                 options.UseDailyPlan = true;
             }
+            else if (current == "--joint-daily-calendar")
+            {
+                options.UseJointDailyCalendar = true;
+            }
             else if (current == "--use-managed-crop-teacher")
             {
                 options.UseManagedCropTeacher = true;
@@ -721,6 +726,8 @@ public sealed partial class LiveTrainingOptions
                 "--daily-plan-candidate-options value.");
         }
 
+        if (options.UseJointDailyCalendar && !options.UseDailyPlan)
+            throw new ArgumentException("--joint-daily-calendar requires --use-daily-plan.");
         StandaloneCollectionTeacherMode.Validate(options);
         NativeOutputObservationMode.Validate(options);
         options.ValidateTeacherPreferenceMode();

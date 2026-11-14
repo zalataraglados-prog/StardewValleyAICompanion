@@ -1,5 +1,39 @@
 # Current Production Snapshot Handoff
 
+## Joint Current-Day Calendar (2026-11-15)
+
+This section and CURRENT_WORK supersede older "Current" successors below.
+Accepted172manual final-day/production/revenue certificates remain frozen; no
+thirteen-day restart or recovery framework is required for this development.
+
+The existing per-candidate timeline and aggregate DailyPlan budget have different
+scopes: individually open candidates can miss a closing window after earlier work.
+CompileWithJointCalendar now uses the SAME compiler loop, ordering, native step
+generation, reservations and aggregate time/energy checks. It accumulates accepted
+compiled durations, checks each non-deferred candidate's opening/closing window,
+and annotates candidate start/end clock values. Rejected windows consume no budget
+or candidate count. Existing bounded wait/fresh-source barriers remain unchanged;
+this is a current-day estimate, not a second scheduler or long-horizon proof.
+
+The original daily-plan/compile endpoint opts in with use_joint_calendar=true.
+It requires the exact requested snapshot and the original native clock reader;
+missing/unreadable/conflicting aliases fail instead of using a different/latest
+source or unlimited time. Alias-only clocks share the old recovery deadline policy.
+LiveTrainingLoop opts in with --use-daily-plan --joint-daily-calendar for BOTH initial
+selection and selected-candidate fresh compilation. Default is OFF; legacy request
+bytes, Compile signature/semantics, native executors and existing owners are retained.
+
+Core/legacy compiler/timeline/clock checks81/81; Backend/runtime/options/old resume/
+dispatch/supplement/museum/original watering queue checks62/62. No game, native dispatch or training occurred.
+Prior765CI still has the original museum15s timeout; test-only phase diagnostics
+were added without extending deadlines or changing transport/business semantics.
+
+Next originalstep5: compose due crop obligations with other roots through the
+same DailyPlan and reservation ledger. Do not claim all L3/shared-resource/source-
+schedule integration from this calendar mode. Originalsteps3/4automatic properties
+remain unproven; observe them with planned global native work, not another separate
+thirteen-day restart. L1/original8steps/#569scope unchanged; formal=false.
+
 ## Original Seed Control Transaction (Current)
 
 PR508 passed42 steps in42377567925 and same-head review, merged asc96f59e2 with
