@@ -21,13 +21,18 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         internal string HarvestRuntime => Shared.Files.Native + "-harvest";
         internal string NightQueue => Path.Combine(Shared.Runtime.LiveOptions.SnapshotDir, "crop-teacher-sleep-0003-compiled-queue.json");
         internal string NightAfter => Path.Combine(Shared.Runtime.LiveOptions.SnapshotDir, "after-snapshot-0003.json");
+        internal string NightStepAfter => separateTerminalCopy
+            ? Path.Combine(Shared.Runtime.LiveOptions.SnapshotDir, "after-snapshot-0003-item-0001.json") : NightAfter;
+        private readonly bool separateTerminalCopy;
         internal string HarvestQueue => Path.Combine(Shared.Runtime.LiveOptions.SnapshotDir, "crop-teacher-batch-0005-compiled-queue.json");
         internal string HarvestAfter => Path.Combine(Shared.Runtime.LiveOptions.SnapshotDir, "after-snapshot-0005.json");
         internal int NativeNightCalls { get; private set; }
         internal int NativeHarvestCalls { get; private set; }
 
-        internal OvernightFixture(bool noCrops = false, Action<Fixture>? prepareSource = null, bool productExecutor = false)
+        internal OvernightFixture(bool noCrops = false, Action<Fixture>? prepareSource = null, bool productExecutor = false,
+            bool separateTerminalCopy = false)
         {
+            this.separateTerminalCopy = separateTerminalCopy;
             // A declared one-day catalog isolates owner sequencing; it is NOT vanilla growth evidence.
             Watering = new(productExecutor: productExecutor, prepareSource: source =>
             {
@@ -139,9 +144,10 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 row.Value.StartsWith("candidate_id:", StringComparison.Ordinal)).Value["candidate_id:".Length..];
             var receipt = MoneyCropTeacherFixture.Create<QueueExecutionReceiptEnvelope>("LifecycleReceipt", queue, before, after,
                 Shared.Files.Options.RunId, candidate, "sleep");
-            receipt.StepResults.Single().AfterSnapshotPath = NightAfter;
+            receipt.StepResults.Single().AfterSnapshotPath = NightStepAfter;
             var path = Path.Combine(Shared.Runtime.LiveOptions.SnapshotDir, "execution-0003.json");
             Fixture.Save(path, receipt); Fixture.Save(NightAfter, after);
+            if (separateTerminalCopy) Fixture.Save(NightStepAfter, after);
             Shared.Runtime.Store.Snapshots[after.StateHash] = after;
             if (save) CompleteSave();
             return Task.FromResult(new JsonObject { ["execution_path"] = path, ["after_snapshot_path"] = NightAfter });

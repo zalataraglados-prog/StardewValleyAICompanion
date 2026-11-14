@@ -2,6 +2,16 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-14 R2 原生睡眠终端副本适配
+
+- **S覆盖下方R历史接续。** 原E隔离 `managed-s-20261114-0840` 在原13日／84动作计划内，六粒播种和首次浇水全部被同owner接受，回家后iteration34原生睡眠applied／success=true；磁盘原档已为春季第2天。原loop退出2、四归属进程全退出，原因是新增Overnight消费者要求单步after与汇总after同文件名，非游戏睡觉失败。两原件内容SHA均为 `5ae3b8977389fd21db17e8a35238fcc261829cd1595a2150207b6a2b7d31c4a5`；原执行器正常写单步文件并另存终端汇总，不修改这套写法。
+- 只适配新消费者：复用Harvest的完整typed快照比较／两路径留存模式，接受内容一致的终端副本，原路径、单步／run／actor／帧／跨日生长和编译合同保留。未更改旧桥、执行器、共享守卫或原回执，不逐项预测私有字段／随机结果。原API同会话草稿保留为 `5a5865b9`：首轮漏两条必需只读命令而零编辑退出；唯一权限修正后首测缺import未编译、第二次28/29且最后夹具修正未测，**不能称peer验收通过**。控制端新测试在旧消费者上4通过／5失败，修后原睡眠／收获／恢复／读回相关 **59/59（1分4秒）**。
+- 原S留存准备→原完整Overnight范围只读重放，从同路径误拒转为通过：total day 0→1、六株生长、八输入均未变，两个物理after均被固定。这是范围重放，不自行补记owner接受。续接只走既有 `RunOvernightAsync` 处理已经claim的原结果，再核原生存档边界／原owner持久读回；绝不重发睡觉或修改原存档。薄调用工具最初两次在.NET10 PowerShell编译绑定处失败，均未启动后端／改账本，改用同版本.NET8调用原API，失败记录留存。
+- **实际续接已过。** 原 `RunOvernightAsync` 给原S第32项生成真实accepted，`native_overnight_control_verified/native_save_boundary_verified=true`、六株day0→1；随后既有resume重开同owner并读回持久账本，404份既有输入／存档均未变、零新native。原失败回执与此前只读报告不改写。两次完整冷重开约7分钟，这是真实恢复代价，不混称native动作耗时或API等待；本轮不改旧索引／哈希缓存来规避检查。
+- **新进程加载已实际发生，完整读回尚未接受。** Block92用同一原档／原smoke-mods／E可执行文件隐藏静音启动15724，原入口取得真实SaveLoaded事件、full加载快照和进程／保存指纹；调用工具误将UTF16控制台stdout当UTF8 SMAPI原日志，故原命令退出2。原失败保留。正确SMAPI文件确有根目录／槽位记录，最后写入01:46:33Z早于原观测01:46:37Z、晚于进程启动01:42:39Z；另建更正日志引用的证据描述，原快照／事件／进程／原描述hash均保留，不补写时间、重跑游戏或改原记录。还修本地调用器未设独立training-output的遗漏，未修改Harness。原验证器已越过日志检查，当前只拒绝 `farm.hay_storage,player.multiplayer_wallet`。原存档指纹仍等于加载前／后，全部归属进程已退出，readback owner接受／完整周期／formal仍false。
+- **下一缺口有当前DLL依据，不是新增游戏能力。** 只读差异：loaded多出零building／hay／capacity的Cellar2…8；钱包同一actor／有效钱20不变，仅individual条目由缺失变20及派生fingerprint变化。对当前E DLL（SHA `7f1e5b8e…6deaee`／MVID `aa1f513a-94f0-4ef6-a35f-2d5b4a3721bf`）重新定点反编译Game1.AddLocations `0x06000b58`、SaveGame.getLoadEnumerator `0x0600143f` 与Game1.loadForNewGame，三方法零诊断：Load先取max(saved limit,MaxPlayers)，loadedGame入口建默认Cellar，随后逐farmer将individualMoney设为当前Money。完整原件／IL及源码hash仅本地留存，不提交游戏源码。
+- **唯一接续：** 只修新增saved-load消费者对上述原生初始化的持久资源比较语义，复用旧资源投影，不修改共享读取器／同进程recovery守卫，不忽略整个hay／wallet字段；实际hay／容量／建筑／资金／钱包模式／参与者变化仍须拒绝。补精确正反例后先用同一份未改的更正加载证据验证，再经原owner入口接受读回；不为拿日志重跑游戏。只读resume本身不是生产主循环续跑，随后仍须完成原13日／84动作收获销售周期。9c828594 CI43535210356成功，新提交CI另核；#339/#550/#569、L1冻结及local-data不提交不变。
+
 ## 2026-11-14 R2 原播种机械批次身份接线
 
 - **当前R覆盖下方Q／P接续。** 506f15a8的CI43529962446成功；R原新E managed/product实际27owner／24verified／六次耕地，accepted26／27已将前四粒真实播种归入同一owner，证实37a81982入口身份及此前来源／缓存修正已越过真实播种。iteration30最后两粒native均applied，最终快照有六株／所选种子0，但末粒1→0被新增播种消费者的空槽投影误拒，最后两粒**未获owner接受**。原native loop退出2，四归属进程3256／22768／6592／3144全退出；工具外壳0只是调用命令未显式exit原生退出码，不是游戏成功。摘要SHA`514bf102392590f7c0300e0fec9f5b02b0e2f216b956be5554ac4baa39a55b78`。尚无日界／收获销售／保存加载，原失败与未保存尾部不补写／续档。
