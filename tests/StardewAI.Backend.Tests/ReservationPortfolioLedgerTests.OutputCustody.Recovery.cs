@@ -33,6 +33,9 @@ public sealed partial class ReservationPortfolioLedgerTests
         await using var app = PortfolioReplyApplication(root);
         using var setup = app.CreateClient();
         app.Services.GetRequiredService<StateStore>().Snapshots[after.StateHash] = after;
+        // Initialize the test server's routing before measuring recovery, without reading/reconciling the ledger.
+        using var readiness = await setup.GetAsync("/health");
+        readiness.EnsureSuccessStatusCode();
         var options = new LiveTrainingOptions { Root = NewPortfolioReplyRoot(), RunId = "isolated-live-custody", BackendUrl = "http://localhost" };
         using var transport = new LivePortfolioSettlementTestHandler(app.Server.CreateHandler(), mode, options.SnapshotDir);
         using var http = new HttpClient(transport);
