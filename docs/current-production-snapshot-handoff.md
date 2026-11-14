@@ -90,6 +90,18 @@ Full selected-route source/calendar/continuity and step6formal engineering remai
 Issue569hands off before formal manifest; lab owns model/data freeze/experiments/
 training/evaluation,not extra mainline work.
 
+Issue570's factual blocker is verified in current source: launcher still adds
+both unconditional native blockers and the admission report reads that same list.
+The existing source-schedule replay command/bootstrap capture switches/Gourmand
+continuation verifier exist. Next FIRST inspect the actual selected global route
+and retained episode/source-schedule/fishing prerequisites for the first missing
+receipt/identity link. Do not assume artifacts suffice from the issue text,force
+an unselected Gourmand branch,substitute an already-unlocked save or delete locks.
+This is existing R2step1/5source work; other-owner integration remains open.
+Step6must share one selected-route validator across report/prepare/launch,with
+Gourmand or timely sufficient same-save alternative-source branches and negatives;
+all other authorization/gates and569handoff remain. No extra acceptance stage.
+
 174 Core checks92/92(142ms), Backend/old planner/binding/endpoint/budget/resume/
 dispatch/supplement/museum/original queue checks89/89(11s). No game/native dispatch/
 worker/training. The new planting test initially used winter supply planning to

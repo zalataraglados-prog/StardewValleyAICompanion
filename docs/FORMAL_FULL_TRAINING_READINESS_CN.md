@@ -1487,6 +1487,7 @@ v71 继续携带 `--skip-training`，没有 Student 更新、checkpoint 或 GPU 
 
 ### 1. 先核对所选路线与正式门的证据需求
 
+- **2026-11-15 #570接续：** 事实断点已对照当前源码核实；先从实际全局选线核对核桃来源、鱼区、数量／日期和封存工件，只定位第一处缺证／身份绑定。用原source-schedule验证器只读重放原件；尚未核实工件是否足够。选Gourmand才补同谱系连续订单，选替代来源则核同档实际来源／支出／解锁是否按时足量。此为本步／第5步既有来源责任，不先改门或补未选分支，已验L1与169—172手工补证冻结不重采。
 - 在现有工件可用时，用 `build-goal-method-coverage-reconciliation` 对照覆盖、已登记选项和当前缺口。已有文档分子用于定位，完整报告仍须用对应版本工件重建。工件缺失时先记具体缺项和来源，保留未判定。
 - 及早核对全局计划实际选用的姜岛／钓鱼路线和核桃来源。`StardewTrainingSessionLauncher.ValidateFormalBoundary()` 在基线上无条件加入 `golden_walnut_master_angler_native_admission_not_bound` 与 `gourmand_orders_2_3_native_admission_not_bound`。即使作物托管通过，`prepare` 和 `launch` 仍会被这两个固定项拦住。先确定所选分支及它所需的可重放证据，接入排在全局集成阶段。 [覆盖入口](../experiments/StardewAI.GoalConditionedBootstrap/Program.cs#L1001) · [固定阻塞](../src/StardewAI.Core/Training/StardewTrainingSessionLauncher.cs#L16) · [启动校验](../src/StardewAI.Core/Training/StardewTrainingSessionLauncher.cs#L383)
 
@@ -1548,6 +1549,8 @@ v71 继续携带 `--skip-training`，没有 Student 更新、checkpoint 或 GPU 
 **退出条件。** 当前全局对账能解释选中路线及共享资源、日程、存档连续性。需晋升的选项通过透明读取、原生执行、五门证据及内部执行管线检查。对剩余 #29 问题按正式路径是否使用及其风险记账，涉及当前准入的副作用和无法验证的输入继续阻断对应路径。 [现有选项缺口计算](../experiments/StardewAI.GoalConditionedBootstrap/GoalMethodFormalTrainingAdmissionBuilder.cs#L307)
 
 ### 6. 把全局证据接到正式准入
+
+**#570限定此处两项固定阻塞的修复范围：** 报告、prepare与launch复用同一所选路线核，分别得出验证通过、缺证或Gourmand不适用；自报passed、错误／跨档路线和哈希替换不得放行。回归覆盖完整Gourmand链及足量按时替代路线两种正例，并覆盖缺后续订单、替代来源不足／逾期及身份／哈希负例。真实封存来源须独立重放核实；现有授权和其他门不删除，正式manifest／训练仍由#569实验室接续。
 
 在正式准入报告和启动器复用同一个证据校验。将第 1 步的两个固定阻塞改成基于所选路线的实际验证结果。姜岛／钓鱼证据缺失时仍阻断。Gourmand 分支按实际选择验收，替代分支须有独立证据证明其达到同一解锁条件。覆盖缺失、证据篡改、跨存档替换和错误路线都应被拒绝。这个步骤需要实现与回归，当前基线的锁仍在。 [R2 准入归属](PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md#全局证明的保留与迁移) · [准入报告消费方](../experiments/StardewAI.GoalConditionedBootstrap/GoalMethodFormalTrainingAdmissionBuilder.cs#L82)
 
