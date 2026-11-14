@@ -1,7 +1,7 @@
 using System.Text.Json;
 using StardewAI.Contracts.Strategy;
+using StardewAI.Contracts.Training;
 using StardewAI.Core.Infrastructure;
-using StardewAI.Core.Training;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
