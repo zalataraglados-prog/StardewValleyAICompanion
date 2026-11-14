@@ -72,8 +72,8 @@ public sealed class CropTeacherNativeSavedContentReadback : ICropTeacherSupporti
             lines.Any(line => line.EndsWith("Loading isolated test save slot " + binding.SaveSlot, StringComparison.Ordinal)),
             "Native reload lacks the original harness save-root/slot load observations.");
         VerifyEvents(inputs.Read<EventStreamEnvelope>(Observation.EventStreamPath), loaded, started, observed);
-        CropTeacherSavedResourceReadback.VerifySnapshotContent(savedSnapshot, loaded);
-        content = CropTeacherSavedResourceReadback.Open(Observation.SourceSnapshotPath, Observation.LoadedSnapshotPath,
+        CropTeacherSavedResourceReadback.VerifyNativeLoadSnapshotContent(savedSnapshot, loaded);
+        content = CropTeacherSavedResourceReadback.OpenNativeLoad(Observation.SourceSnapshotPath, Observation.LoadedSnapshotPath,
             Observation.LedgerPath, stepId);
         foreach (var (path, hash) in content.InputHashes) Require(inputs.Pin(path) == hash, "Native reload resource inputs changed.");
         ValidateInputsUnchanged();

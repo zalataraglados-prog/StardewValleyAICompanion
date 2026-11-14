@@ -6,12 +6,13 @@ using StardewAI.Core.Infrastructure;
 namespace StardewAI.GoalConditionedBootstrap;
 
 // Content comparison only. A controller must independently establish actual saved-file load provenance.
-public sealed class CropTeacherSavedResourceReadback : ICropTeacherSupportingTransition
+public sealed partial class CropTeacherSavedResourceReadback : ICropTeacherSupportingTransition
 {
     private readonly CropTeacherRetainedInputs inputs;
     private readonly CropTeacherSupportingRebind rebind;
 
-    private CropTeacherSavedResourceReadback(string beforeSnapshotPath, string afterSnapshotPath, string ledgerPath, string stepId)
+    private CropTeacherSavedResourceReadback(string beforeSnapshotPath, string afterSnapshotPath, string ledgerPath, string stepId,
+        bool nativeLoadInitialization = false)
     {
         var paths = new[] { beforeSnapshotPath, afterSnapshotPath, ledgerPath };
         Require(paths.All(path => !string.IsNullOrWhiteSpace(path) && Path.IsPathFullyQualified(path)),
@@ -23,7 +24,7 @@ public sealed class CropTeacherSavedResourceReadback : ICropTeacherSupportingTra
         inputs = new(paths);
         var before = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(paths[0], "saved-resource before");
         var after = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(paths[1], "saved-resource after");
-        VerifySnapshotContent(before, after);
+        VerifySnapshotContentCore(before, after, nativeLoadInitialization);
 
         var ledger = AcquisitionStrategyLedgerReader.Read(
             CurrentTeacherFrontierSupport.Read<StrategyCommitmentLedger>(paths[2], "saved-resource source ledger"), before).Ledger;
@@ -43,6 +44,9 @@ public sealed class CropTeacherSavedResourceReadback : ICropTeacherSupportingTra
     public static CropTeacherSavedResourceReadback Open(string beforeSnapshotPath, string afterSnapshotPath,
         string ledgerPath, string stepId) => new(beforeSnapshotPath, afterSnapshotPath, ledgerPath, stepId);
 
+    public static CropTeacherSavedResourceReadback OpenNativeLoad(string beforeSnapshotPath, string afterSnapshotPath,
+        string ledgerPath, string stepId) => new(beforeSnapshotPath, afterSnapshotPath, ledgerPath, stepId, nativeLoadInitialization: true);
+
     public string AfterSnapshotPath { get; }
     public bool SnapshotResourceContentMatches => true;
     public bool NativeReloadVerified => false;
@@ -55,16 +59,23 @@ public sealed class CropTeacherSavedResourceReadback : ICropTeacherSupportingTra
     public void ValidateInputsUnchanged() => inputs.Validate();
 
     public static void VerifySnapshotContent(SnapshotEnvelope before, SnapshotEnvelope after)
+        => VerifySnapshotContentCore(before, after, nativeLoadInitialization: false);
+
+    public static void VerifyNativeLoadSnapshotContent(SnapshotEnvelope before, SnapshotEnvelope after)
+        => VerifySnapshotContentCore(before, after, nativeLoadInitialization: true);
+
+    private static void VerifySnapshotContentCore(SnapshotEnvelope before, SnapshotEnvelope after, bool nativeLoadInitialization)
     {
         MoneyRevenueCropSeedAcquisitionProofBuilder.ValidateSnapshot(before, "saved-resource before");
         MoneyRevenueCropSeedAcquisitionProofBuilder.ValidateSnapshot(after, "saved-resource after");
         Require(before.SaveId.Value == after.SaveId.Value && before.PlayerId.Value == after.PlayerId.Value &&
             before.GameVersion == after.GameVersion, "snapshot actor/game identity differs.");
         RequireCoreFields(before, "before"); RequireCoreFields(after, "after");
+        var comparison = nativeLoadInitialization ? NativeLoadComparisonView(before, after) : after;
         Require(FullShipmentRecoverySettlementBoundaryProjector.TryProject(before, out var beforeBoundary) &&
-            FullShipmentRecoverySettlementBoundaryProjector.TryProject(after, out var afterBoundary) && beforeBoundary == afterBoundary,
+            FullShipmentRecoverySettlementBoundaryProjector.TryProject(comparison, out var afterBoundary) && beforeBoundary == afterBoundary,
             "persistent resources differ or cannot be projected: " + string.Join(",",
-                FullShipmentRecoverySettlementBoundaryProjector.ChangedPersistentFields(before, after)));
+                FullShipmentRecoverySettlementBoundaryProjector.ChangedPersistentFields(before, comparison)));
     }
 
     private static void RequireCoreFields(SnapshotEnvelope snapshot, string boundary)

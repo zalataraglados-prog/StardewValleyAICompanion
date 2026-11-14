@@ -2,7 +2,7 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
-> **当前：S六粒真实播种／首次浇水／首次原生保存已同owner入账，新进程加载已发生、读回资源比较仍有两项待适配。** Overnight终端副本只修新消费者；控制端红4/9→相关59/59，原S完整范围重放day0→1／六株／八输入未变；既有RunOvernightAsync已接受第32项／native-save，原owner重开和持久账本读回通过，404既有输入／存档未变、零新native。Block92原加载先因调用器选错UTF16 stdout日志失败，正确SMAPI日志引用另建描述、旧失败不改；原验证器现在只拒绝hay_storage空Cellar2…8与钱包individual条目原生初始化。当前E DLL三方法实时反编译零诊断已确认加载规则。下一步只适配新saved-load比较视图，旧共享读取／recovery守卫不改、不得忽略整个字段。原存档指纹未变、归属进程全退出；完整读回owner／13日84动作生产销售周期及formal仍false。peer草稿／失败完整保留，9c CI成功，local-data不提交。[当前证据与唯一接续](CURRENT_WORK_CN.md#2026-11-14-r2-原生睡眠终端副本适配)。
+> **当前：原S真实新进程加载的读回已被同owner第33项接受。** 显式native-load只适配已确认的空Cellar和钱包初始化，普通内容比较默认／共享投影器／桥／执行器保持原严格行为。原API钱包两文件红0/18→28/28，控制端接线后独立105/105；同一S更正见证完整回放native＋semantic均true，10原输入／存档字节不变且四依赖hash匹配。随后既有resume原生读回命令实际接受第33项，native-saved-content／fresh-accepted-head均true，415份既有输入和存档未变，无新游戏／native；原第32项睡眠／保存接受继续有效。后续仍按R2接同一owner回主生产循环，只读resume不是已续跑；原13日84动作维护／收获销售及完整周期／formal未过。65205431 CI成功，local-data不提交。[当前证据与唯一接续](CURRENT_WORK_CN.md#2026-11-14-r2-显式原生加载比较与读回接续)。
 
 > **2026-11-14 原生动作信任边界修正，覆盖下方历史“严格weed／Scythe效果叶”接续。** 用户确认原生割草应信任游戏规则；保留原候选／编译／成功回执、同run／存档／actor／帧、真实after与一次claim／原owner恢复，停止把每项私有XML／随机掉落／邻格清除的独立预测当派发门。旧执行器／默认读取器／耕地资源合同保留。74c28522共享原回执／留存／rebind、显式清障结果入口聚焦44/44；完整清障owner、生产销售及原生保存加载尚待实跑。原API Block73与控制端分工接线／测试，Block72未启动的补跑已取消、草稿保留。Main7e4ab946 CI43484697557 attempt2成功，首次museum超时历史不改写。L1冻结、#569分工、formal=false不变。[当前接续](CURRENT_WORK_CN.md#2026-11-14-r2-原生动作信任边界修正)。
 

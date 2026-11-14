@@ -1488,7 +1488,7 @@ v71 继续携带 `--skip-training`，没有 Student 更新、checkpoint 或 GPU 
 
 ### 3. 接同一账本、主循环和跨日恢复
 
-- **S当前覆盖下方Q／R历史：** 9c828594 CI43535210356成功。S原13日／84动作计划已接受六粒播种／首次浇水；Overnight终端副本适配控制端红4/9→相关59/59，原S完整范围重放day0→1／六株／八输入不变；既有RunOvernightAsync真实接受第32项／native-save，原owner重开及持久账本读回通过、404既有输入／存档未变、零新native。新原生进程实际加载同一档；调用器错误stdout日志引用已另建更正描述，原验证器仍拒绝hay_storage空Cellar及钱包individual初始化。当前E DLL三方法实时反编译确认其原生来源，原存档指纹未变、进程全退出。下一步只适配新saved-load消费者，保留共享读取／recovery和真实资源变化拒绝；实际读回owner／收获销售／完整周期未过，formal=false、local-data不提交。[唯一接续](CURRENT_WORK_CN.md#2026-11-14-r2-原生睡眠终端副本适配)。
+- **S当前覆盖下方Q／R历史：** 65205431 CI43543869020成功。六粒播种／首次浇水／原生睡眠保存已获owner第32项接受。原API钱包红0/18→28/28，控制端Cellar／显式加载接线后105/105；普通默认比较、共享投影／读取／执行器不改。原S更正加载见证完整回放通过native＋semantic、10输入／存档未变／四依赖hash匹配；既有resume命令随后实际接受同owner第33项，native-saved-content／fresh-head均true、415既有输入／存档不变、无新游戏／native。读回不等同生产循环续跑：下一步接原owner／head／计划回Main，复用NextArtifactIteration，并在动作前绑定当前新进程加载见证；不能拿已退出15724的旧帧直接执行。原13日／84动作维护收获销售及完整周期未过，formal=false、local-data不提交。[唯一接续](CURRENT_WORK_CN.md#2026-11-14-r2-显式原生加载比较与读回接续)。
 
 - **Q当前接续覆盖下方P／O历史：** Q原入口25owner／22verified／六耕／三次显式native移动，iteration28原六种子队列已准备、未派发，被新增Main的排名candidate要求误拒；四进程退出，无实际播种／日界／保存加载。37a81982仅在已绑定owned planting入口以原SupportStepId标识控制批次，不改原机械动作／严格参数／编译器／执行器／租约或资源核。红测复现后相关65/65；同采集地图扫描优化由原API独立提交，控制端聚焦33/33、旧route／social守卫修误判后11/11及实际Bridge编译已过，初次环境替换失败保留，不冒称整组87全绿或优化后性能达标。这不是新的动作证明门。下一步提交／同步后，新E原managed/product继续生产／销售／原生保存加载，不将Q未保存尾部当续档，formal仍false。[唯一接续](CURRENT_WORK_CN.md#2026-11-14-r2-原播种机械批次身份接线)。
 

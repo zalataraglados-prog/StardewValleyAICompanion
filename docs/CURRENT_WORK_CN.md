@@ -2,6 +2,15 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-14 R2 显式原生加载比较与读回接续
+
+- `65205431` CI43543869020已成功。本轮沿既定R2第3／4步解决同一S存档的加载语义，不新增动作／字段／全量验收分母。原 `CropTeacherSavedResourceReadback.Open/VerifySnapshotContent` 默认严格行为、共享 `FullShipmentRecoverySettlementBoundaryProjector`、桥和执行器均保留；新增显式 `OpenNativeLoad/VerifyNativeLoadSnapshotContent`，仅由原生加载见证在验证进程、保存、日志、事件之后调用。
+- 比较视图只处理已重新反编译确认的初始化：保留所有既有hay行，只移除新增且结构完整、名字规范、building／hay／capacity均为0的原生Cellar行；真实存量、容量、建筑、未知字段及重复身份仍拒绝。钱包先从原值完整推导每位参与者的individual初始化，核对全部其他属性，再将已验证字段映射回比较值；不忽略整个钱包，不复制旧投影器。派生fingerprint只在确有初始化时允许变化，单独变fingerprint仍拒绝。视图不落盘、不入快照缓存，不改原before／after或其hash，rebind仍使用真实after。
+- 原API同会话Block97负责钱包函数／纯测试两文件，控制端并行负责Cellar、显式入口接线和完整消费者测试。peer `acb8fe80` 接为Main `188ebfee`；原工具红0/18（缺接口）→钱包＋旧读回28/28（2秒），仅两次测试，无修正／fallback／内部代理。控制端交叉审查后独立组合 **105/105（1分19秒）**，覆盖默认严格入口仍拒绝合法加载初始化、新显式入口／原marker rebind、钱包与Cellar反例、读回／owner／原overnight恢复。此处是合成协议测试，不独立授予真实加载信用；原始交流70条JSONL本地保存。
+- 同一份今天上午S／15724真实加载的更正日志见证，交新原验证器完整只读回放，`NativeReloadVerified/SemanticSavedContentVerified=true`，10份原输入及当前原存档字节未变；未再开游戏／派发动作，尚未自行记owner接受。薄.NET8调用器先与Main四个依赖逐个核hash一致，排除旧DLL重放；旧失败及更正来源记录不改写。
+- **实际owner接续已过。** 既有 `resume-crop-managed-owner --managed-crop-reload-observation <原更正见证>` 实际接受同一owner第33项，`native_saved_content_readback_verified/fresh_accepted_head_verified=true`；415份既有输入／原存档未变、无新游戏／native，`complete_managed_runtime_verified=false`。这是今天上午已真实发生的15724加载之留存结果入账，不称本轮新开一次游戏，也不回改Block92失败或Block94来源更正。后端／CLI均退出；原加载、存档和之前两轮失败证据继续保留。
+- **后续仍是原R2第3／4步主循环接线：** 原只读resume命令不是生产循环；Main普通入口当前明确拒绝resume参数，不能把读回报告称作“已恢复行走”。须显式接回同一原owner／accepted head、原native run plan／request／账本，复用原 `NextArtifactIteration` 避免覆盖S旧快照；动作派发前绑定当前真实新进程加载见证，不拿已退出15724的帧直接执行。继续原13日／84生产动作的维护、收获、销售与终端保存读回，不新建owner／执行器／计划，旧普通入口和只读恢复默认不变。完整周期／Teacher总验收／formal仍false，#569正式manifest前交实验室及local-data不提交不变。
+
 ## 2026-11-14 R2 原生睡眠终端副本适配
 
 - **S覆盖下方R历史接续。** 原E隔离 `managed-s-20261114-0840` 在原13日／84动作计划内，六粒播种和首次浇水全部被同owner接受，回家后iteration34原生睡眠applied／success=true；磁盘原档已为春季第2天。原loop退出2、四归属进程全退出，原因是新增Overnight消费者要求单步after与汇总after同文件名，非游戏睡觉失败。两原件内容SHA均为 `5ae3b8977389fd21db17e8a35238fcc261829cd1595a2150207b6a2b7d31c4a5`；原执行器正常写单步文件并另存终端汇总，不修改这套写法。
