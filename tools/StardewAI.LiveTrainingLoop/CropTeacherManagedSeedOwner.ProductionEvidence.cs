@@ -2,9 +2,16 @@ namespace StardewAI.LiveTrainingLoop;
 
 public sealed partial class CropTeacherManagedSeedOwner
 {
-    public async Task<CropTeacherManagedProductionEvidence> BuildProductionEvidenceAsync(string evidenceDirectory)
+    public Task<CropTeacherManagedProductionEvidence> BuildProductionEvidenceAsync(string evidenceDirectory) =>
+        BuildProductionEvidenceCoreAsync(evidenceDirectory, joint: false);
+
+    public Task<CropTeacherManagedProductionEvidence> BuildJointProductionEvidenceAsync(string evidenceDirectory) =>
+        BuildProductionEvidenceCoreAsync(evidenceDirectory, joint: true);
+
+    private async Task<CropTeacherManagedProductionEvidence> BuildProductionEvidenceCoreAsync(string evidenceDirectory, bool joint)
     {
-        var trace = await ReadProductionTraceAsync().ConfigureAwait(false);
+        var combined = joint ? await ReadJointProductionTraceAsync().ConfigureAwait(false) : null;
+        var trace = combined?.CropTrace ?? await ReadProductionTraceAsync().ConfigureAwait(false);
         await gate.WaitAsync().ConfigureAwait(false);
         try
         {
@@ -18,7 +25,8 @@ public sealed partial class CropTeacherManagedSeedOwner
                 throw new IOException("Managed crop production evidence requires a separate owned output directory.");
             RequireDirectoryPath(output);
             RequireOutsideNativeSaveSlot(new[] { output }, options.NativeSaveBinding);
-            var result = await CropTeacherProductionEvidence.BuildAsync(trace, output, write).ConfigureAwait(false);
+            var result = combined is null ? await CropTeacherProductionEvidence.BuildAsync(trace, output, write).ConfigureAwait(false) :
+                await CropTeacherProductionEvidence.BuildJointAsync(combined, output, write).ConfigureAwait(false);
             ValidateState(); trace.ValidateInputsUnchanged();
             return result;
         }

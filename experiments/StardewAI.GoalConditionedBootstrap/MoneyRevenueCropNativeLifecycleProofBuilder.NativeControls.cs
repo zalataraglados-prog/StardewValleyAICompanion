@@ -8,7 +8,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
     public static MoneyRevenueTerminalQueueTransitionEvidence[] VerifyNativeObservedControlTail(string sourcePath,
         MoneyRevenueCropNativeLifecycleTransitionRequest[] transitions, string terminalPath)
     {
-        Require(transitions is { Length: > 0 } && transitions.All(row => row.NativeRefillPreparation is null) &&
+        Require(transitions is { Length: > 0 } && transitions.All(row => row.NativeRefillPreparation is null && row.NativeSharedSource is null) &&
                 transitions.All(row => row.RunId == transitions[0].RunId && row.ExecutorVersion == transitions[0].ExecutorVersion &&
                     row.TotalDay == transitions[0].TotalDay) &&
                 transitions.Select(row => Path.GetFullPath(row.QueuePath)).Distinct(PathComparer).Count() == transitions.Length &&

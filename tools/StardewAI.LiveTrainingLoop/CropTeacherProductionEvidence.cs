@@ -11,16 +11,24 @@ public sealed record CropTeacherManagedProductionEvidence(string ManifestPath, s
 internal static partial class CropTeacherProductionEvidence
 {
     internal static async Task<CropTeacherManagedProductionEvidence> BuildAsync(CropTeacherManagedProductionTrace trace,
-        string output, Func<string, string, Task> write)
+        string output, Func<string, string, Task> write) =>
+        await BuildCoreAsync(trace, Array.Empty<CropTeacherManagedSharedSourceReturn>(), output, write).ConfigureAwait(false);
+
+    internal static Task<CropTeacherManagedProductionEvidence> BuildJointAsync(CropTeacherManagedJointProductionTrace trace,
+        string output, Func<string, string, Task> write) => BuildCoreAsync(trace.CropTrace, trace.SharedSourceReturns, output, write);
+
+    private static async Task<CropTeacherManagedProductionEvidence> BuildCoreAsync(CropTeacherManagedProductionTrace trace,
+        IReadOnlyList<CropTeacherManagedSharedSourceReturn> shared, string output, Func<string, string, Task> write)
     {
         trace.ValidateInputsUnchanged();
         var (request, plan) = CropTeacherResumeLoader.ReadVerifiedPlan(trace.NativeRunPlanPath);
         var production = Read<MoneyRevenueCropProductionObligationPlan>(plan.CropProductionPlanPath);
-        var firstPlanting = trace.Transitions.ToList().FindIndex(row => row.OperationKind == "owned_seed_planting");
+        var ordered = MergeSharedSources(trace, shared, production.SnapshotPath, plan.RequestPath);
+        var firstPlanting = Array.FindIndex(ordered, row => row.OperationKind == "owned_seed_planting");
         if (firstPlanting < 0) throw new InvalidDataException("Managed crop production has no accepted original planting boundary.");
         // Acquisition/site preparation precede the original lifecycle's planting denominator.
         // Nothing inside that lifecycle is filtered out or relabelled as resource-neutral.
-        var transitions = trace.Transitions.Skip(firstPlanting).Select(row => BindNativePreparation(trace, plan, row)).ToArray();
+        var transitions = ordered.Skip(firstPlanting).Select(row => BindNativePreparation(trace, plan, row)).ToArray();
         if (!SamePath(transitions[^1].AfterSnapshotPath, trace.AcceptedSnapshotPath))
             throw new InvalidDataException("Managed crop production does not reach its accepted terminal source.");
         var dayStarts = transitions.GroupBy(row => row.TotalDay).ToDictionary(group => group.Key, group =>
@@ -73,7 +81,8 @@ internal static partial class CropTeacherProductionEvidence
             capacities.Add(capacity);
             var lifecycleRequest = await Emit("lifecycle-request-" + index, new MoneyRevenueCropNativeLifecycleProofRequest
             {
-                SchemaVersion = "money_revenue_crop_native_lifecycle_proof_request.v5",
+                SchemaVersion = shared.Count > 0 ? "money_revenue_crop_native_lifecycle_proof_request.v6" :
+                    "money_revenue_crop_native_lifecycle_proof_request.v5",
                 CropProductionPlanPath = plan.CropProductionPlanPath, CommitmentId = crop.CommitmentId,
                 PlantingLayoutProofPath = layouts[crop.CommitmentId], DailyCapacityProofPath = capacity, Transitions = transitions
             }).ConfigureAwait(false);
@@ -92,7 +101,7 @@ internal static partial class CropTeacherProductionEvidence
             }
         }
         artifacts.Validate();
-        var manifest = await Emit("production-evidence", new
+        var manifestValue = new
         {
             schema_version = "crop_teacher_managed_production_evidence.v1", native_run_plan_path = trace.NativeRunPlanPath,
             accepted_snapshot_path = trace.AcceptedSnapshotPath, accepted_ledger_path = trace.AcceptedLedgerPath,
@@ -102,7 +111,9 @@ internal static partial class CropTeacherProductionEvidence
             native_crop_lifecycle_verified = true, whole_wave_output_retention_verified = true,
             terminal_settlement_verified = false, native_save_content_readback_verified = false,
             formal_product_training_authorized = false
-        }).ConfigureAwait(false);
+        };
+        var manifest = shared.Count == 0 ? await Emit("production-evidence", manifestValue).ConfigureAwait(false) :
+            await Emit("production-evidence", AddJointSourceManifest(manifestValue, shared, ordered)).ConfigureAwait(false);
         artifacts.Validate();
         return new(manifest, layouts.Values.ToArray(), capacities.ToArray(), lifecycles.ToArray(), retentions.ToArray(), artifacts.Hashes[manifest]);
     }

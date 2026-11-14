@@ -149,7 +149,19 @@ public sealed record MoneyRevenueCropNativeLifecycleTransitionRequest(
     [JsonPropertyName("native_refill_preparation")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public MoneyRevenueCropNativeRefillPreparationReference? NativeRefillPreparation { get; init; }
+
+    [JsonPropertyName("native_shared_source")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public MoneyRevenueCropNativeSharedSourceReference? NativeSharedSource { get; init; }
 }
+
+// Explicit lifecycle v6: immutable original source/ledger/native inputs, not a claim of crop output.
+public sealed record MoneyRevenueCropNativeSharedSourceReference(
+    [property: JsonPropertyName("run_request_path")] string RunRequestPath,
+    [property: JsonPropertyName("ledger_path")] string LedgerPath,
+    [property: JsonPropertyName("covered_commitment_ids")] string[] CoveredCommitmentIds,
+    [property: JsonPropertyName("step_id")] string StepId,
+    [property: JsonPropertyName("input_artifact_hashes")] IReadOnlyDictionary<string, string> InputArtifactHashes);
 
 // Explicit v5 only: original owner compilation inputs, never an inferred move/refill witness.
 public sealed record MoneyRevenueCropNativeRefillPreparationReference(

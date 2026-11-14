@@ -1,5 +1,33 @@
 # Current Production Snapshot Handoff
 
+## Joint Lifecycle Source Consumer (182)
+
+Local current-code E GamePath restore/build and focused adjacent72/72 passed in49s,
+zero skipped, after07:00 quiet expiry. Initial48/51 failed only because NEW shared
+loader called old kind-only entry; fixed NEW opt-in path, old default preserved.
+Joint tests8/8 include existing whole synthetic crop chain with separately credited
+original Product movement and missing/duplicate negatives. No game/native claim.
+Final-SHA remoteCI still required; no old181green substitution. Logs retained.
+
+181final0401b26c/CI43647821603 passed Core2675/Backend3251,zero skipped.
+182 adds explicit lifecycle-request v6 and native_shared_source input bindings.
+Reuses179native source/claims verifier, pins full original JSON/gzip/native inputs,
+protects owned crop projections and retains distinct foreign transitions with NO
+crop action/commitment/production credit. v4/v5 reject new bindings; old control
+tail and pure defaults remain. v6 permits original crop-ingress after foreign
+work through the SAME old route verifier, not a crop-neutral relabeling.
+
+Owner joint trace now carries original source ledger/request/step/hash references.
+Explicit joint production merges original owner sequence, verifies shared neighbor
+state/tick and run/save/player/version, and retains a separate foreign-source
+manifest list. Main selects it only for joint mode. No-foreign path keeps original
+v5/output shape. Code/new and adjacent regressions still require verification.
+Full mixed native/calendar reconciliation, original daily-selection restore,
+general partial/multi-queue outcomes and producer-aware interleaved-harvest
+retention remain UNPROVEN. Original contiguous-retention verifier is NOT relaxed.
+No new global stage, Planner, L1 recapture or thirteen-day restart. #569lab split,
+step6/actual route duties unchanged; formal=false/local-data stays local.
+
 ## Original Main Foreign Dispatch (181)
 
 180final73a9ae6f/CI43643537316 passed Core2675/Backend3246, zero skipped.

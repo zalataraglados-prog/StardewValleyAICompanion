@@ -200,5 +200,14 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         internal object Validate(IEnumerable<MoneyRevenueCropNativeLifecycleTransitionRequest>? rows = null, bool native = true) =>
             LifecycleInvoke("ValidateTransitionChain", LifecycleLoad(rows ?? Rows, native), source, Contexts, capacity,
                 Array.Empty<MoneyRevenueCropNativeLifecycleCheckpointResumeRequest>());
+
+        internal object ValidateJoint(IEnumerable<MoneyRevenueCropNativeLifecycleTransitionRequest> rows)
+        {
+            var loaded = rows.Select(LoadJointLifecycleLeaf).ToArray();
+            var values = Array.CreateInstance(loaded[0].GetType(), loaded.Length);
+            for (var index = 0; index < loaded.Length; index++) values.SetValue(loaded[index], index);
+            return LifecycleInvoke("ValidateTransitionChain", values, source, Contexts, capacity,
+                Array.Empty<MoneyRevenueCropNativeLifecycleCheckpointResumeRequest>());
+        }
     }
 }

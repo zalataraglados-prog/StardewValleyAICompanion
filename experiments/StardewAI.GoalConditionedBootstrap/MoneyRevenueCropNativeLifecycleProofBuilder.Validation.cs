@@ -80,6 +80,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
                 }
             }
             ValidateQueueReceipt(transition);
+            if (transition.NativeSharedSource) ValidateSharedCropBoundary(transition, contexts);
         }
 
         var cursor = 0;
@@ -117,11 +118,12 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
             while (cursor < transitions.Length &&
                 transitions[cursor].Request.TotalDay == day &&
                 (transitions[cursor].Request.TransitionKind == CropActionsKind ||
-                    transitions[cursor].NativeNonProduction))
+                    transitions[cursor].NativeNonProduction || transitions[cursor].NativeSharedSource ||
+                    transitions[cursor].JointObserved && transitions[cursor].Request.TransitionKind == CropIngressRouteKind))
             {
                 dayActions.Add(transitions[cursor++]);
             }
-            Require(!dayActions.Any(value => !value.NativeNonProduction) ||
+            Require(!dayActions.Any(value => !value.NativeNonProduction && !value.NativeSharedSource) ||
                     ReadPlayerLocation(dayStart) ==
                         contexts[0].Layout.LocationId,
                 "Money Revenue crop lifecycle day actions did not start at the shared crop location on day " +
@@ -289,7 +291,12 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         var locationId = contexts[0].Layout.LocationId;
         foreach (var transition in transitions)
         {
-            if (transition.NativeNonProduction) continue;
+            if (transition.NativeNonProduction || transition.NativeSharedSource) continue;
+            if (transition.JointObserved && transition.Request.TransitionKind == CropIngressRouteKind)
+            {
+                ValidateSupportingRoutes(totalDay, new() { transition }, locationId);
+                continue;
+            }
             var beforeCalendar = ReadCalendar(transition.Before);
             var afterCalendar = ReadCalendar(transition.After);
             Require(beforeCalendar.TotalDay == totalDay &&

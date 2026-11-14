@@ -35,6 +35,21 @@ public sealed class CropTeacherProductionEvidenceTests
         await Assert.ThrowsAsync<IOException>(() => f.Build());
     }
 
+    [Fact]
+    public async Task ExplicitJointConsumerWithNoForeignWorkPreservesOriginalWholeProductionEvidence()
+    {
+        var f = new Fixture();
+        var pure = await f.Build();
+        var combined = await f.BuildJointEmpty();
+        var oldLifecycle = Read<MoneyRevenueCropNativeLifecycleProof>(Assert.Single(pure.NativeLifecycleProofPaths));
+        var jointLifecycle = Read<MoneyRevenueCropNativeLifecycleProof>(Assert.Single(combined.NativeLifecycleProofPaths));
+        Assert.Equal(JsonSerializer.Serialize(oldLifecycle.Transitions, JsonOptions), JsonSerializer.Serialize(jointLifecycle.Transitions, JsonOptions));
+        Assert.Equal(oldLifecycle.VerifiedHarvestActionCount, jointLifecycle.VerifiedHarvestActionCount);
+        Assert.True(jointLifecycle.NativeCropLifecycleVerified);
+        Assert.Null(Read<JsonObject>(combined.ManifestPath)["owner_shared_source_returns"]);
+        Assert.False(Read<JsonObject>(combined.ManifestPath)["formal_product_training_authorized"]!.GetValue<bool>());
+    }
+
     [Theory]
     [InlineData("missing_day")]
     [InlineData("missing_harvest")]
@@ -163,13 +178,21 @@ public sealed class CropTeacherProductionEvidenceTests
 
         internal Task<CropTeacherManagedProductionEvidence> Build()
         {
-            var trace = (CropTeacherManagedProductionTrace)typeof(CropTeacherManagedProductionTrace).GetConstructors(
-                BindingFlags.NonPublic | BindingFlags.Instance).Single().Invoke(new object[]
-                { nativePlanPath, finalSnapshotPath, ledgerPath, Transitions.ToArray(), hashes });
+            var trace = Trace();
             var builder = typeof(CropTeacherManagedSeedOwner).Assembly.GetType("StardewAI.LiveTrainingLoop.CropTeacherProductionEvidence")!;
             return (Task<CropTeacherManagedProductionEvidence>)builder.GetMethod("BuildAsync", BindingFlags.NonPublic | BindingFlags.Static)!
                 .Invoke(null, new object[] { trace, Output, (Func<string, string, Task>)((path, json) => File.WriteAllTextAsync(path, json)) })!;
         }
+        internal Task<CropTeacherManagedProductionEvidence> BuildJointEmpty()
+        {
+            var builder = typeof(CropTeacherManagedSeedOwner).Assembly.GetType("StardewAI.LiveTrainingLoop.CropTeacherProductionEvidence")!;
+            return (Task<CropTeacherManagedProductionEvidence>)builder.GetMethod("BuildJointAsync", BindingFlags.NonPublic | BindingFlags.Static)!
+                .Invoke(null, new object[] { new CropTeacherManagedJointProductionTrace(Trace(), []), Path.Combine(Output, "joint"),
+                    (Func<string, string, Task>)((path, json) => File.WriteAllTextAsync(path, json)) })!;
+        }
+        private CropTeacherManagedProductionTrace Trace() => (CropTeacherManagedProductionTrace)typeof(CropTeacherManagedProductionTrace).GetConstructors(
+            BindingFlags.NonPublic | BindingFlags.Instance).Single().Invoke(new object[]
+                { nativePlanPath, finalSnapshotPath, ledgerPath, Transitions.ToArray(), hashes });
         internal void ChangeInput()
         {
             Directory.CreateDirectory(root);

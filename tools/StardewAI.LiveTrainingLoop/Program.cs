@@ -804,8 +804,10 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         {
             if (cropTeacherManagedOwner.TerminalSelection is null)
             {
-                var productionEvidence = await managedOwner.BuildProductionEvidenceAsync(
-                    Path.Combine(managedOwner.EvidenceDirectory, "production-terminal")).ConfigureAwait(false);
+                var productionOutput = Path.Combine(managedOwner.EvidenceDirectory, "production-terminal");
+                var productionEvidence = options.UseJointDailyCalendar
+                    ? await managedOwner.BuildJointProductionEvidenceAsync(productionOutput).ConfigureAwait(false)
+                    : await managedOwner.BuildProductionEvidenceAsync(productionOutput).ConfigureAwait(false);
                 AppendProgress(options, "crop_teacher_managed_production_evidence", iteration, lastStateHash, string.Empty,
                     "manifest=" + productionEvidence.ManifestPath + " retention_proofs=" + productionEvidence.OutputRetentionProofPaths.Length);
                 var terminalSelection = await PrepareCropTeacherManagedTerminalAsync(managedOwner, productionEvidence).ConfigureAwait(false);

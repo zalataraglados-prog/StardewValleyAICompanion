@@ -9,7 +9,10 @@ public sealed record CropTeacherManagedProductionTransition(int OwnerSequence, s
     MoneyRevenueCropNativeLifecycleTransitionRequest NativeTransition);
 
 public sealed record CropTeacherManagedSharedSourceReturn(int OwnerSequence, string SupportStepId,
-    MoneyRevenueCropNativeLifecycleTransitionRequest NativeTransition);
+    MoneyRevenueCropNativeLifecycleTransitionRequest NativeTransition)
+{
+    public MoneyRevenueCropNativeSharedSourceReference? SourceReference { get; init; }
+}
 
 public sealed record CropTeacherManagedJointProductionTrace(CropTeacherManagedProductionTrace CropTrace,
     IReadOnlyList<CropTeacherManagedSharedSourceReturn> SharedSourceReturns)
@@ -124,7 +127,19 @@ public sealed partial class CropTeacherManagedSeedOwner
                         accepted["crop_production_credit_authorized"]?.GetValue<bool>() != false)
                         throw new InvalidDataException("Shared source return trace differs from the accepted original boundary.");
                     foreach (var input in new[] { shared.QueuePath, shared.BeforeSnapshotPath, shared.ExecutionReceiptPath, shared.AfterSnapshotPath }) Pin(input);
-                    sharedReturns.Add(new(sequence, Text(record, "support_step_id"), shared));
+                    var sourceLedgerPath = StoredPath(record, "before_ledger_path");
+                    var sourceLedger = Read<StardewAI.Contracts.Strategy.StrategyCommitmentLedger>(sourceLedgerPath);
+                    var covered = sourceLedger.CropPlantingCommitments.Where(row =>
+                            row.Status == StardewAI.Contracts.Strategy.StrategyCommitmentStatuses.Active &&
+                            plan.CoveredCommitmentIds.Contains(row.CommitmentId, StringComparer.Ordinal))
+                        .Select(row => row.CommitmentId).OrderBy(value => value, StringComparer.Ordinal).ToArray();
+                    var scope = CropTeacherSharedSourceReturn.Open(plan.RequestPath, shared.BeforeSnapshotPath,
+                        sourceLedgerPath, covered, shared, Text(record, "support_step_id"));
+                    foreach (var (input, expected) in scope.InputHashes) Pin(input, expected);
+                    sharedReturns.Add(new(sequence, Text(record, "support_step_id"), shared)
+                    {
+                        SourceReference = new(plan.RequestPath, sourceLedgerPath, covered, Text(record, "support_step_id"), scope.InputHashes)
+                    });
                     continue;
                 }
                 if (kind == "saved_content_readback")
