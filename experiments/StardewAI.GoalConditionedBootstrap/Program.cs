@@ -344,6 +344,12 @@ var commandDefinitions = new CommandDefinition[]
     new("self-test-money-direct-concrete", options => BootstrapSelfTest.VerifyMoneyDirectConcrete(options.Optional("output-root"))),
     new("self-test-money-revenue-crop-teacher-dispatch", options =>
         BootstrapSelfTest.VerifyMoneyRevenueCropTeacherDispatch(options.Optional("output-root"))),
+    new("summarize-money-revenue-crop-supplement", options =>
+    {
+        var output = Path.GetFullPath(options.Required("output"));
+        if (File.Exists(output) || Directory.Exists(output)) throw new IOException("Supplement summary output already exists.");
+        Write(output, MoneyRevenueCropSupplementalEvidenceSummary.Build(options.Required("request")));
+    }),
     new("verify-money-revenue-crop-teacher-dispatch", options =>
     {
         var path = Path.GetFullPath(options.Required("manifest"));

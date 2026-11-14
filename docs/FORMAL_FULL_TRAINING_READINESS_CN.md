@@ -1,6 +1,6 @@
 # StardewAI 正式全量训练准入与实施路线
 
-> **最新接续覆盖下方历史运行描述：** 169人工原生末日补证及170原核1050g收入证书可复用，不重跑十三天或新增恢复系统。171只读入口`MoneyRevenueCropTeacherDispatchBuilder.ReadVerified()`／`verify-money-revenue-crop-teacher-dispatch`已核现行Teacher、receipt／账本、承诺与运行计划，15/15；实际163原84动作清单读回且21原件不变。它是后续显式汇总源适配的读取接口，不是另一套Teacher、native执行或新增准入门。下一步接现行来源而非伪造旧smoke摘要。原生／旧producer语义不变，人工记录不冒领自动owner／Teacher／formal通过；原八步／L1／Provider正式门不变，formal=false。[报告与唯一接续](CURRENT_WORK_CN.md#2026-11-14-常驻能力块收敛与账户暂停)。
+> **最新接续覆盖下方历史运行描述：** 169人工原生末日补证及170原核1050g收入证书可复用，不重跑十三天或新增恢复系统。171核现行原84动作Teacher清单；172的`summarize-money-revenue-crop-supplement`现已把164原生产证书、169手工末日／第85项保存边界和170收入证书归并，29/29及真实7份直接绑定原件不变。输出只复用已接受证据，不冒领生产重放／完整自动owner／Teacher比较／formal通过，不伪造旧smoke摘要。补证归并收口后推进原第5步所选路线／共享预算的组合接线开发；原第3／4步自动属性保留未证明，后续既定全局原生运行一并观察，不能因此放行正式门。旧执行器、原八步完整范围／L1／Provider门不变，formal=false。[报告与唯一接续](CURRENT_WORK_CN.md#2026-11-14-常驻能力块收敛与账户暂停)。
 
 > **2026-11-14十七点后的当前分工与工作方式。** 原API同会话接生命周期控制／准备消费，控制端推进不重叠的显式checkpoint接线，未通过证据不晋升。长期无进展先核目标／合同／旧意图，一个完整能力块内连续调试，不为小错新增交接或验收层；见[规范](DOCUMENTATION_MAINTENANCE_CN.md#能力块与持续阻塞)。八步、L1冻结及正式训练锁不变，当前状态见[接续](CURRENT_WORK_CN.md#2026-11-14-十七点协作接续与能力块规则)。
 
@@ -1534,6 +1534,8 @@ v71 继续携带 `--skip-training`，没有 Student 更新、checkpoint 或 GPU 
 **退出条件。** 同一托管流程的状态和账本跨日一致，可重载恢复，并能独立重放产出留存和真实结算。校准与验收工件按原范围归档。
 
 ### 5. 做 L3 跨目标组合与新档原生重放
+
+- **2026-11-15人工补证来源接续：** 172补证汇总通过真实工件读回；CLI要求新的输出路径，默认旧segment／Teacher比较入口未改。它保留已接受证书hash、同计划保存边界与真实1050g收入，并显式标注手工末日和未证明的自动运行属性。此为开发和交接用的已接受证据摘要，不是新的必过阶段或正式训练证明。接下来推进本节既有组合接线；不为把摘要改成自动PASS重新展开十三日测试，也不取消最终全局原生／准入责任。
 
 - 现行托管来源的Teacher调度清单可由`verify-money-revenue-crop-teacher-dispatch --manifest <原清单> --output <独立报告>`只读核对；该入口复用原构建核及来源绑定，不重新派发／写账本或复制整套计划。后续汇总显式适配现行证书，不把它包装成旧smoke运行目录；清单读回或单次收入证书不能独自授予完整生产、Teacher比较或正式训练资格。
 - 用既有 `DailyPlanCompiler` 和资源预留账本组合跨目标的资金、材料、时间、体力与日历，核验所选路线的来源和消费顺序。按实际依赖消费 L2 能力证书，复用已验 L1 和六类支持步骤的原生终态证据。当前组合报告仍要重新核验这些证据身份。 [L3 组合责任](current-production-snapshot-handoff.md#L217) · [六类支持步骤](../experiments/StardewAI.GoalConditionedBootstrap/AcquisitionRouteSupportingTransitionKinds.cs#L15)
