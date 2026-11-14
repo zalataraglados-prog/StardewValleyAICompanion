@@ -85,13 +85,32 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
 
         private async Task AddOriginalRefill(CropTeacherProductionEvidenceTests.Fixture production)
         {
-            ChangeState(current, "player", node => node["watering_can_state"]!["value"]!["water_left"] = 0);
+            var native = new NativeRefillProductFixture();
+            var approach = native.Trace.Approach; var shared = approach.Watering.Shared;
+            current.State["environment"] = approach.Watering.Before.State["environment"].Clone();
+            var originalMap = JsonNode.Parse(approach.Watering.Before.State["current_location"].GetProperty("map").GetRawText())!;
+            var grid = current.State["locations"].GetProperty("collision_grid").GetProperty("value");
+            ChangeState(current, "player", node =>
+            {
+                node["watering_can_state"]!["value"]!["water_left"] = 0;
+                foreach (var field in new[] { "location_id", "tile_x", "tile_y" })
+                {
+                    node[field]!["confidence"] = 1d;
+                    node[field]!["read_at_tick"] = current.GameTick;
+                }
+            });
+            ChangeState(current, "current_location", node =>
+            {
+                node["map"] = originalMap.DeepClone();
+                node["map"]!["value"]!["width"] = grid.GetProperty("width").GetInt32();
+                node["map"]!["value"]!["height"] = grid.GetProperty("height").GetInt32();
+                node["map"]!["confidence"] = 1d;
+                node["map"]!["read_at_tick"] = current.GameTick;
+            });
             current.StateHash = SnapshotHash.ComputeStateHash(current.State);
             PinPreviousAfter();
             // Reuse the existing compiler and Product native-wire fixture with the SAME six-tile plan,
             // commitment, ledger capture and water4 terminal source, all bound BEFORE compilation/verification.
-            var native = new NativeRefillProductFixture();
-            var approach = native.Trace.Approach; var shared = approach.Watering.Shared;
             shared.Source.Recapture(current);
             var ledger = LifecycleRead<StrategyCommitmentLedger>(production.LedgerPath);
             ledger.SourceStateHash = current.StateHash;

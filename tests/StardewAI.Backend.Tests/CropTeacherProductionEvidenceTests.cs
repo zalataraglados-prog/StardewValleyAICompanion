@@ -122,7 +122,6 @@ public sealed class CropTeacherProductionEvidenceTests
                 { new { slot_index = 0, item_id = "745", qualified_item_id = "(O)745", stack = 40, quality = 0, is_empty = false } } });
                 current.State["player"] = JsonSerializer.SerializeToElement(player);
                 var location = JsonNode.Parse(current.State["current_location"].GetRawText())!;
-                location["map"] = JsonSerializer.SerializeToNode(new { status = "available", value = new { id = "Farm", width = 100, height = 100 } });
                 location["objects"] = JsonSerializer.SerializeToNode(new { status = "available", value = Array.Empty<object>() });
                 location["terrain_features"] = JsonSerializer.SerializeToNode(new { status = "available", value = Array.Empty<object>() });
                 current.State["current_location"] = JsonSerializer.SerializeToElement(location);

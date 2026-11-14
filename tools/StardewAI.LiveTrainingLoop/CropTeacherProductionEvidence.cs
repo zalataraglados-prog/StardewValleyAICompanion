@@ -8,7 +8,7 @@ public sealed record CropTeacherManagedProductionEvidence(string ManifestPath, s
     string[] DailyCapacityProofPaths, string[] NativeLifecycleProofPaths, string[] OutputRetentionProofPaths,
     string ManifestSha256 = "");
 
-internal static class CropTeacherProductionEvidence
+internal static partial class CropTeacherProductionEvidence
 {
     internal static async Task<CropTeacherManagedProductionEvidence> BuildAsync(CropTeacherManagedProductionTrace trace,
         string output, Func<string, string, Task> write)
@@ -20,8 +20,7 @@ internal static class CropTeacherProductionEvidence
         if (firstPlanting < 0) throw new InvalidDataException("Managed crop production has no accepted original planting boundary.");
         // Acquisition/site preparation precede the original lifecycle's planting denominator.
         // Nothing inside that lifecycle is filtered out or relabelled as resource-neutral.
-        var transitions = trace.Transitions.Skip(firstPlanting).Select(row => row.OperationKind == "owned_seed_planting"
-            ? row.NativeTransition with { TransitionKind = "crop_actions" } : row.NativeTransition).ToArray();
+        var transitions = trace.Transitions.Skip(firstPlanting).Select(row => BindNativePreparation(trace, plan, row)).ToArray();
         if (!SamePath(transitions[^1].AfterSnapshotPath, trace.AcceptedSnapshotPath))
             throw new InvalidDataException("Managed crop production does not reach its accepted terminal source.");
         var dayStarts = transitions.GroupBy(row => row.TotalDay).ToDictionary(group => group.Key, group =>

@@ -2,6 +2,22 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-14 常驻能力块收敛与账户暂停
+
+- 用户要求固化“长卡先核目标／要求错位、按完整能力块持续负责”。已更新本机AGENTS／worker skill、沙箱AGENTS及当前TASK／BOARD，并写入[持续阻塞规则](DOCUMENTATION_MAINTENANCE_CN.md#能力块与持续阻塞)。153原API同会话的工具读取回执确认AGENTS／TASK／验收增量均completed且包含新规则；不是只写文件或另付纯确认调用。临时worker修正次数不再打断有进展的常驻能力块；权限、额度和重复无进展仍有退出边界，不新增验收层。
+- 原151交付控制／准备消费者，33/33，但缺完整六格组合；控制端保留为peer39919995／Main6acae9cd。153同能力块续做新增六格组合及负例，随后明确报`insufficient_quota / credit_balance_exhausted`，已退出1、撤权，原账户进入本次观测期provider-paused。授权仍在，但仅用户确认补充额度并请求恢复后才允许一次原provider有效任务；不重试、不换源、不推断美元金额／账期。未完测试保留peer a8d70839／Main8677d4a4，没有丢弃。
+- 控制端已完成同一块的普通调试与集成：六格夹具复用原有效map声明及隔离environment，不改旧编译器。首次地图空值、随后隔离绑定失败均保留；修后六格第8天water4→原Product补水接近→water2及原控制／旧默认／容量／混合终端／原owner引用／显式checkpoint组合 **46/46（27秒）**，不是46次原生成功。新checkpoint仅消费已有证书，缺终端仍pending、formal=false。
+- 157完整T真实轨迹只读生产组装已通过：原89转换／1233输入、全部930物理原文件不变，已测四依赖hash一致，原1.5GiB预算；没有启动游戏、派发、owner／ledger补写或销售。报告`I:\StardewAI-Collab\resident-refill-20261108\block157-t-production-v6-report.json`，SHA256 `87a297fffd23227a403c322a608aed69cd8a767648f611fe0ada8f095b8d45b1`。158回归日志同目录`block158-controller-final-tests.log`，SHA256 `49e88c235fd598d74f23854e076056c56125621bec6bec815a2892dffde697f3`。原生命周期控制／准备消费者、producer引用接线和checkpoint源码可提交；不声称完整managed周期通过。
+- **唯一接续：** 终端只读预检已定位`Selected crop terminal lacks one exact retained wave at its accepted head`：留存锚在收获after0090，owner合法控制等待后head为after0091。下一步让显式新终端消费者复用已验证原控制链接续，旧单栈／默认合同和执行器不改，不删等待／篡改收获帧。只读预检通过后才新隔离原入口完成真实混合出货→原生保存→新进程加载；旧T尾部未保存，不能伪续。协作者额度暂停期间控制端持续负责，不为每个错误另立交接或验收层。
+- 仍原八步第3／4步未闭，第3—8步合计6步；L1冻结，Teacher总验收／formal=false，local-data／原存档／日志／二进制不提交。
+
+## 2026-11-14 十七点协作接续与能力块规则
+
+- 按用户确认的今天17:00分工，原OpenCode API同会话149于17:00:03实际启动，先因控制端漏授一个Goal目录校验器只读路径退出，零代码／测试；修正该依赖后同会话151运行并已产生生命周期源代码改动，尚未取得结果。原6.1-sol high／会话／sandbox不变，不是内部子代理或provider限额，控制端只看短报告／元数据／窄patch，不倒灌全部输出。
+- 控制端已转后续checkpoint／L3证书消费接线：显式新入口支持native容量v2／混合终端证书，旧默认保持；当前代码及测试草稿未构建，等待协作者释放唯一构建通道，不称通过。双方不同文件所有权；peer专管lifecycle及其可选原引用合同，控制端不改该共享合同文件。
+- 148原T完整只读重放已越过播种前缀，仍在旧序列语法遇控制等待时漏收后续浇水：报“required crop tile unwatered”不是实际没浇。第8天原序列还有water4→原补水接近→water2，必须保留全部转换并分别消费零产量控制／准备与真实作物动作，不能删等待、改旧执行器或给准备动作生产信用。930原文件仍不变，完整周期／Teacher／formal=false。
+- 按用户最新纠正，[能力块与持续阻塞](DOCUMENTATION_MAINTENANCE_CN.md#能力块与持续阻塞)已固化：长期无进展先核目标／合同归属／旧意图；小错留在一个完整能力块内连续修复；依赖只读权限按模块预检，不逐文件付费试错。同步本机AGENTS／worker skill、沙箱AGENTS及当前TASK／BOARD，不另加验收阶段或改变剩余八步。
+
 ## 2026-11-14 R2 汇总复用原分批播种合同
 
 - `a41b3137`已推送且CI43575371727成功；协作树eb130109与Main树5260cc5ac82b81d44986eb18d5f6146efb561245一致。控制端65/65、真实T容量13/13天通过，完整生产／销售／保存重载仍未通过，不晋升L1／Teacher／formal。
