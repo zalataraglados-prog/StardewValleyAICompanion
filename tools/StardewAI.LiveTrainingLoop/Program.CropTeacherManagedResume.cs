@@ -7,6 +7,9 @@ using StardewAI.LiveTrainingLoop;
 
 static partial class Program
 {
+    private sealed record CropTeacherManagedRestoreReport(string ReportPath, string? ObservationPath,
+        bool FreshReadback, bool CompleteManagedRuntimeVerified, string StateHash);
+
     private static async Task<string> ResumeCropTeacherManagedOwnerAsync(HttpClient http, LiveTrainingOptions options, string outputDirectory)
     {
         options.ValidateManagedCropTeacherResumeMode();
@@ -17,6 +20,12 @@ static partial class Program
         await using var owner = await CropTeacherManagedOwnerResume.OpenAsync(options.ResumeManagedCropOwnerDirectory,
             options.RunId, options.PolicyTrajectoryExecutorVersion, options.BackendUrl, options.SnapshotDir,
             binding, WritePortfolioJournalFileAsync).ConfigureAwait(false);
+        return (await RestoreCropTeacherManagedOwnerWithReportAsync(http, options, owner, binding, outputDirectory).ConfigureAwait(false)).ReportPath;
+    }
+
+    private static async Task<CropTeacherManagedRestoreReport> RestoreCropTeacherManagedOwnerWithReportAsync(HttpClient http,
+        LiveTrainingOptions options, CropTeacherManagedSeedOwner owner, CropTeacherNativeSaveBinding binding, string outputDirectory)
+    {
         var output = string.IsNullOrWhiteSpace(outputDirectory)
             ? Path.Combine(owner.EvidenceDirectory, "reload-entry-" + Guid.NewGuid().ToString("N")) : Path.GetFullPath(outputDirectory);
         owner.ValidateResumeOutputDirectory(output);
@@ -92,7 +101,7 @@ static partial class Program
             ["input_artifact_hashes"] = JsonSerializer.SerializeToNode(artifacts.Hashes, JsonOptions)
         }.ToJsonString(JsonOptions)).ConfigureAwait(false);
         artifacts.Validate();
-        return reportPath;
+        return new(reportPath, observationPath, freshReadback, savedCloseout is not null, source.StateHash);
     }
 
     private static bool ManagedResumeSamePath(string first, string second) =>

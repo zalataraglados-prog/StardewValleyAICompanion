@@ -2,7 +2,7 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
-> **当前：原S真实新进程加载的读回已被同owner第33项接受。** 显式native-load只适配已确认的空Cellar和钱包初始化，普通内容比较默认／共享投影器／桥／执行器保持原严格行为。原API钱包两文件红0/18→28/28，控制端接线后独立105/105；同一S更正见证完整回放native＋semantic均true，10原输入／存档字节不变且四依赖hash匹配。随后既有resume原生读回命令实际接受第33项，native-saved-content／fresh-accepted-head均true，415份既有输入和存档未变，无新游戏／native；原第32项睡眠／保存接受继续有效。后续仍按R2接同一owner回主生产循环，只读resume不是已续跑；原13日84动作维护／收获销售及完整周期／formal未过。65205431 CI成功，local-data不提交。[当前证据与唯一接续](CURRENT_WORK_CN.md#2026-11-14-r2-显式原生加载比较与读回接续)。
+> **当前：同一owner显式生产续跑入口已接线，尚待真实续跑。** 原S第32项睡眠保存／第33项加载读回接受仍有效；新 `continue-crop-managed-owner` 复用原恢复正文、原Main循环、原plan／request和账本，默认readonly resume不变，必须绑定当前新进程加载并在退出后停止派发。控制端组合59/59（1分3秒）；原APIBlock102红0/6后编译失败，草稿留存、旧文件原样恢复、控制端修复验收，不称peer全绿。NEW路径离线预检7/7，7209ebdd远端CI成功。下一步同S隐藏静音执行原13日84动作余下维护／收获／销售／终端保存读回；真实完整周期／Teacher总验收／formal仍false，local-data不提交。[当前证据与唯一接续](CURRENT_WORK_CN.md#2026-11-14-r2-同一-owner-显式生产续跑入口)。
 
 > **2026-11-14 原生动作信任边界修正，覆盖下方历史“严格weed／Scythe效果叶”接续。** 用户确认原生割草应信任游戏规则；保留原候选／编译／成功回执、同run／存档／actor／帧、真实after与一次claim／原owner恢复，停止把每项私有XML／随机掉落／邻格清除的独立预测当派发门。旧执行器／默认读取器／耕地资源合同保留。74c28522共享原回执／留存／rebind、显式清障结果入口聚焦44/44；完整清障owner、生产销售及原生保存加载尚待实跑。原API Block73与控制端分工接线／测试，Block72未启动的补跑已取消、草稿保留。Main7e4ab946 CI43484697557 attempt2成功，首次museum超时历史不改写。L1冻结、#569分工、formal=false不变。[当前接续](CURRENT_WORK_CN.md#2026-11-14-r2-原生动作信任边界修正)。
 

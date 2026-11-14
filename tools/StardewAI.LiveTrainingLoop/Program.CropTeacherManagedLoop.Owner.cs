@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using StardewAI.Core.Infrastructure;
@@ -8,6 +9,7 @@ static partial class Program
 {
     private sealed class CropTeacherOwnerLifetime : IAsyncDisposable
     {
+        private Process? continuationProcess;
         internal CropTeacherManagedSeedOwner? Current { get; private set; }
         internal CropTeacherManagedProductionEvidence? TerminalProduction { get; private set; }
         internal CropTeacherTerminalShippingSelection? TerminalSelection { get; private set; }
@@ -25,14 +27,21 @@ static partial class Program
                 throw new InvalidOperationException("Retain one original settlement proof for the selected production boundary.");
             TerminalSettlement = settlement;
         }
-        internal void Attach(CropTeacherManagedSeedOwner owner)
+        internal void Attach(CropTeacherManagedSeedOwner owner, Process? liveContinuationProcess = null)
         {
             if (Current is not null) throw new InvalidOperationException("Complete or recover the original managed crop owner before another dispatch.");
             Current = owner;
+            continuationProcess = liveContinuationProcess;
+        }
+        internal void RequireLiveContinuation()
+        {
+            if (continuationProcess is { HasExited: true })
+                throw new InvalidOperationException("Managed production continuation game exited; retain the owner and recover it, never dispatch against its old frame.");
         }
         public async ValueTask DisposeAsync()
         {
-            if (Current is not null) await Current.DisposeAsync().ConfigureAwait(false);
+            try { if (Current is not null) await Current.DisposeAsync().ConfigureAwait(false); }
+            finally { continuationProcess?.Dispose(); }
         }
     }
 

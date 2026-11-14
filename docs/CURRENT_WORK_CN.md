@@ -2,6 +2,13 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-14 R2 同一 owner 显式生产续跑入口
+
+- 新命令 `continue-crop-managed-owner` 复用原 readonly resume 的完整恢复／报告正文及原 Main 生产循环，普通入口和 `resume-crop-managed-owner` 默认不变。恢复同一 owner 的原 plan／request、当前账本和原 artifact 序号；派发前要求本次真实新进程加载被原验证器接受，并绑定该 PID／启动时间／可执行文件，进程退出即停止，不使用旧15724帧。
+- 原13日／84生产动作、原 S 存档与输入身份不变。未另造 planner／executor／owner，也未改旧桥、资源读取器或动作合同。控制端组合 **59/59（1分3秒）**，含模式反例、进程寿命、元数据和原读回／恢复回归；原恢复报告正文机械比较与上一提交完全一致。这些是协议测试，不代表真实续跑或完整周期通过。
+- 原API同会话Block102两次测试为0/6红色及编译失败，原因包含控制端误把已有 `Continuation.cs` 声明为新文件。原草稿／失败记录均保留；控制端恢复旧文件原内容，把新元数据移至 `RuntimeContinuationSource.cs` 并修复集成后通过上述59项，不将其写成peer验收绿。新增NEW路径预检在加载凭据前拒绝既存／已跟踪文件，离线7/7；不再支付第三次重试。7209ebdd CI43547548530成功。
+- **唯一接续：** 提交后以同一 S 原存档隐藏静音启动新进程，经新显式入口接回原完整维护→收获→销售→终端保存／新进程读回链。运行脚本不覆盖旧调用／进程日志，以原只读performance接口取样，不额外轮询full快照；保留首次真实断点。完整周期／Teacher总验收／formal仍false，local-data及原生日志／存档不提交。协作授权继续有效，Block102进程已退出、权限已撤，下一块须替换任务包后才调用。
+
 ## 2026-11-14 R2 显式原生加载比较与读回接续
 
 - `65205431` CI43543869020已成功。本轮沿既定R2第3／4步解决同一S存档的加载语义，不新增动作／字段／全量验收分母。原 `CropTeacherSavedResourceReadback.Open/VerifySnapshotContent` 默认严格行为、共享 `FullShipmentRecoverySettlementBoundaryProjector`、桥和执行器均保留；新增显式 `OpenNativeLoad/VerifyNativeLoadSnapshotContent`，仅由原生加载见证在验证进程、保存、日志、事件之后调用。

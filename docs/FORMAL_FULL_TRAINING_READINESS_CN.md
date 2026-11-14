@@ -2,6 +2,8 @@
 
 > **2026-11-11T00:52:08+08:00 施工顺序修订。** 以本文件末尾的 [R2 开训前执行顺序](#r2-开训前执行顺序) 为当前入口。每一步区分已有实现、待接线和待验收。
 
+> **2026-11-14 R2原生产接续入口。** 显式 `continue-crop-managed-owner` 已接回同一owner、原plan／request／账本及Main循环，组合59/59；原readonly resume和普通入口默认不改，要求当前真实新进程加载被接受，旧进程帧不能派发。原13日84动作及维护→收获→销售→终端保存／读回退出条件不缩小；尚未跑通完整周期，不增加Teacher／formal分子。原API失败草稿及控制端修复分开记账，未启动训练，local-data不提交。[唯一接续](CURRENT_WORK_CN.md#2026-11-14-r2-同一-owner-显式生产续跑入口)。
+
 > **2026-11-14 原生动作信任边界修正。** 原生工具动作的正常私有XML、随机掉落和邻格作用不再要求逐项预计证明；严格核原候选／编译／成功回执、同存档run／actor／帧、真实after、一次claim及原owner记账恢复。准备动作不直接授生产或Teacher信用，调试资源仍隔离。下方历史精确副作用研究不再阻塞当前清障接线，旧接口与已过耕地资源合同不改。[当前实施](CURRENT_WORK_CN.md#2026-11-14-r2-原生动作信任边界修正)。
 
 <!-- audit_invalidation: scope=2026-11-08_pretraining_sequence_summary; invalidated_at=2026-11-11T00:52:08+08:00; superseded_by=#r2-开训前执行顺序; reason=旧摘要缺少各步退出条件，也未列出正式启动器的两个固定阻塞; historical_only=true -->

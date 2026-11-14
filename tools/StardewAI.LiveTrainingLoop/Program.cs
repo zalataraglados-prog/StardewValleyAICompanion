@@ -47,8 +47,11 @@ if (args.Length > 0 && args[0] == "resume-crop-managed-owner")
     return;
 }
 
+var continueManagedOwner = args.Length > 0 && args[0] == "continue-crop-managed-owner";
+if (continueManagedOwner) args = args.Skip(1).ToArray();
 var options = LiveTrainingOptions.Parse(args);
-if (!string.IsNullOrWhiteSpace(options.ResumeManagedCropOwnerDirectory))
+if (continueManagedOwner) options.ValidateManagedCropTeacherContinueMode();
+else if (!string.IsNullOrWhiteSpace(options.ResumeManagedCropOwnerDirectory))
     throw new ArgumentException("Use the explicit resume-crop-managed-owner command to reopen retained managed evidence.");
 options.ValidateFormalExecutionBoundary();
 Directory.CreateDirectory(options.Root);
@@ -201,8 +204,21 @@ var unverifiedExecutionBackoff = new NoProgressBackoffPolicy(
     options.NoProgressMaxBackoffMs);
 var routeOscillationGuard = new RouteOscillationGuard();
 
+if (continueManagedOwner)
+{
+    var continued = await ContinueCropTeacherManagedOwnerAsync(http, options);
+    cropTeacherManagedOwner.Attach(continued.Owner, continued.GameProcess);
+    activeCropTeacherRunPlanRequest = continued.Source.RunPlanRequest;
+    activeCropTeacherRunPlan = continued.Source.RunPlan;
+    lastPlanningHandoffNativeRunPlanPath = continued.Source.NativeRunPlanPath;
+    AppendProgress(options, "crop_teacher_managed_run_continued", 0, continued.Restore.StateHash, string.Empty,
+        "owner=" + options.ResumeManagedCropOwnerDirectory + " original_plan=" + continued.Source.NativeRunPlanPath +
+        " next_artifact_iteration=" + nextArtifactIteration + " reload_report=" + continued.Restore.ReportPath);
+}
+
 for (var attemptOrdinal = 1; ; attemptOrdinal++)
 {
+    cropTeacherManagedOwner.RequireLiveContinuation();
     var explicitPrimaryTargetMet =
         (options.RequiredVerifiedActions <= 0 ||
          verifiedActions >= options.RequiredVerifiedActions) &&
@@ -1540,6 +1556,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 "executing_pending_subset count=" + executableSubsetCount + " queue_status=" + queueStatus);
         }
 
+        cropTeacherManagedOwner.RequireLiveContinuation();
         RequireManagedCropDispatch(cropTeacherManagedOwner.Current, cropManagedOperationForExecution);
         var cropTeacherDayBoundaryStart =
             await CaptureCropTeacherDayBoundaryStartAsync(
