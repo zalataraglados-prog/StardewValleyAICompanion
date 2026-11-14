@@ -1,6 +1,6 @@
 # StardewAI 正式全量训练准入与实施路线
 
-> **最新接续覆盖下方历史运行描述：** 按用户最终决定不开发日界恢复框架，以手动验证补证。169从163春13已核保存复制隔离副本，只执行最后一天：原编译／Product及原读取器核验7队列／17原生动作，六个普通花椰菜实际结算1050g，现金20→1070，春14新进程读回日期／收入／物理存档通过；原档／owner／旧失败保留不改。人工业务补证成立，自动同owner全周期／恢复及Teacher／formal不据此标真。168定点38/38及164／165生产／缓存证明继续复用，不从头跑十三天／完整证明，不补写旧native或owner接受；后续消费末日补证与原证书，对齐真正未接的汇总接口。原八步／L1／Provider正式门不变，formal=false。[报告与唯一接续](CURRENT_WORK_CN.md#2026-11-14-常驻能力块收敛与账户暂停)。
+> **最新接续覆盖下方历史运行描述：** 169人工原生末日补证及170原核1050g收入证书可复用，不重跑十三天或新增恢复系统。171只读入口`MoneyRevenueCropTeacherDispatchBuilder.ReadVerified()`／`verify-money-revenue-crop-teacher-dispatch`已核现行Teacher、receipt／账本、承诺与运行计划，15/15；实际163原84动作清单读回且21原件不变。它是后续显式汇总源适配的读取接口，不是另一套Teacher、native执行或新增准入门。下一步接现行来源而非伪造旧smoke摘要。原生／旧producer语义不变，人工记录不冒领自动owner／Teacher／formal通过；原八步／L1／Provider正式门不变，formal=false。[报告与唯一接续](CURRENT_WORK_CN.md#2026-11-14-常驻能力块收敛与账户暂停)。
 
 > **2026-11-14十七点后的当前分工与工作方式。** 原API同会话接生命周期控制／准备消费，控制端推进不重叠的显式checkpoint接线，未通过证据不晋升。长期无进展先核目标／合同／旧意图，一个完整能力块内连续调试，不为小错新增交接或验收层；见[规范](DOCUMENTATION_MAINTENANCE_CN.md#能力块与持续阻塞)。八步、L1冻结及正式训练锁不变，当前状态见[接续](CURRENT_WORK_CN.md#2026-11-14-十七点协作接续与能力块规则)。
 
@@ -1535,6 +1535,7 @@ v71 继续携带 `--skip-training`，没有 Student 更新、checkpoint 或 GPU 
 
 ### 5. 做 L3 跨目标组合与新档原生重放
 
+- 现行托管来源的Teacher调度清单可由`verify-money-revenue-crop-teacher-dispatch --manifest <原清单> --output <独立报告>`只读核对；该入口复用原构建核及来源绑定，不重新派发／写账本或复制整套计划。后续汇总显式适配现行证书，不把它包装成旧smoke运行目录；清单读回或单次收入证书不能独自授予完整生产、Teacher比较或正式训练资格。
 - 用既有 `DailyPlanCompiler` 和资源预留账本组合跨目标的资金、材料、时间、体力与日历，核验所选路线的来源和消费顺序。按实际依赖消费 L2 能力证书，复用已验 L1 和六类支持步骤的原生终态证据。当前组合报告仍要重新核验这些证据身份。 [L3 组合责任](current-production-snapshot-handoff.md#L217) · [六类支持步骤](../experiments/StardewAI.GoalConditionedBootstrap/AcquisitionRouteSupportingTransitionKinds.cs#L15)
 - 在所属全局层完成所选路线的 Day-0／长期原生证明及独立重放。若计划依赖姜岛，绑定同一新档取得相关解锁、核桃来源、日程及钓鱼前置。Gourmand 属于可选来源。选中它时核验对应订单连续回执，使用替代路线时核验该路线实际取得并消耗的核桃及解锁证据。 [R2 来源规则](PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md#全局证明的保留与迁移) · [核桃日程验证](GOLDEN_WALNUT_SOURCE_SCHEDULE_VERIFICATION.md)
 
