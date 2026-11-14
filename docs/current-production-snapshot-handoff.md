@@ -81,7 +81,7 @@ are unchanged. A completed selected decision or next day may select anew.
 176related108/108(17s),zero-credit refill plus original recovery4/4(2s),no game.
 Initial new integration fixture lacked original high-level planting_context and
 weather fields; only that fixture was completed,no old reader/executor relaxation.
-175CI43625997425SUCCESS;176remote result is separate.
+175CI43625997425SUCCESS; c969fe62 CI43629209552SUCCESS.
 
 Next originalstep5: consume the same lease's held other goals at the global
 maintenance/preparation exit,dispatch through their ORIGINAL owners,and return
@@ -93,14 +93,26 @@ training/evaluation,not extra mainline work.
 Issue570's factual blocker is verified in current source: launcher still adds
 both unconditional native blockers and the admission report reads that same list.
 The existing source-schedule replay command/bootstrap capture switches/Gourmand
-continuation verifier exist. Next FIRST inspect the actual selected global route
-and retained episode/source-schedule/fishing prerequisites for the first missing
-receipt/identity link. Do not assume artifacts suffice from the issue text,force
-an unselected Gourmand branch,substitute an already-unlocked save or delete locks.
-This is existing R2step1/5source work; other-owner integration remains open.
-Step6must share one selected-route validator across report/prepare/launch,with
-Gourmand or timely sufficient same-save alternative-source branches and negatives;
-all other authorization/gates and569handoff remain. No extra acceptance stage.
+continuation verifier exist. 177 completed the bounded A1 inspection:
+selected_route_unavailable for the accepted held input, which is only the original
+84-action crop plan, not a hash-fixed global walnut/fishing source/date choice.
+The known I/E historical layouts had 92 roots/402 metadata directories/11 original
+episode manifests and no emitted source schedule or complete original input pair.
+This is not a whole-disk absence claim. No native verifier was invoked, no refusal
+or PASS fabricated. Use private block177-route-input-inventory-v2.json (v1 had a
+missing-array count bug) and block177-selected-route-status.json, SHA256
+7288fde7b356ed68c3fb4e087326298e599f4924e76d2507face7582baba2fb9.
+Accepted unlocked-island L2 evidence remains local; the Gourmand preference has
+route_selection_complete=false. Static 51 capacity is not wallet/payment proof.
+Island fish 836/837/838 need their areas; Lava Eel already has ordinary mine area80
+as an alternative, so do not force Volcano progression for it. L1 stays frozen.
+NEXT is original step5 owner/shared-source composition above, not another inventory
+pass or a second Planner inside570. Step6must share one selected-route validator
+across report/prepare/launch,with Gourmand or timely sufficient same-lineage
+alternative-source branches and negatives. Source run/save/player identity and
+new formal session identity bind separately, not by literal run-id equality.
+Both gate results still require separate formal promotion review; all other
+authorization/gates and569handoff remain. No extra acceptance stage.
 
 174 Core checks92/92(142ms), Backend/old planner/binding/endpoint/budget/resume/
 dispatch/supplement/museum/original queue checks89/89(11s). No game/native dispatch/
