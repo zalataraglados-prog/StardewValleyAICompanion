@@ -1488,6 +1488,8 @@ v71 继续携带 `--skip-training`，没有 Student 更新、checkpoint 或 GPU 
 
 ### 3. 接同一账本、主循环和跨日恢复
 
+- **R当前覆盖下方Q历史：** 506f15a8 CI43529962446成功。R27owner／24verified／六耕，accepted26／27已接受前四粒真实播种；最后两粒native实际applied、六株／种子0，但末粒空槽非空donate_color_context被新消费者预计为null而拒绝。4a6e3146仅复用已有正确出货空槽投影，删除播种重复实现，不改桥／执行器／prefix／资源和回执守卫。原API红测18/20→相关109/109，控制端独立114/114、原R末粒完整VerifyPlanting资源叶只读重放已过，五输入hash未变；不补写R最后两粒owner信用、不把未保存尾部续档。下一新S继续原13日／84动作生产维护／收获销售／原生保存加载，完整周期／formal仍false。[唯一接续](CURRENT_WORK_CN.md#2026-11-14-r2-原播种机械批次身份接线)。
+
 - **Q当前接续覆盖下方P／O历史：** Q原入口25owner／22verified／六耕／三次显式native移动，iteration28原六种子队列已准备、未派发，被新增Main的排名candidate要求误拒；四进程退出，无实际播种／日界／保存加载。37a81982仅在已绑定owned planting入口以原SupportStepId标识控制批次，不改原机械动作／严格参数／编译器／执行器／租约或资源核。红测复现后相关65/65；同采集地图扫描优化由原API独立提交，控制端聚焦33/33、旧route／social守卫修误判后11/11及实际Bridge编译已过，初次环境替换失败保留，不冒称整组87全绿或优化后性能达标。这不是新的动作证明门。下一步提交／同步后，新E原managed/product继续生产／销售／原生保存加载，不将Q未保存尾部当续档，formal仍false。[唯一接续](CURRENT_WORK_CN.md#2026-11-14-r2-原播种机械批次身份接线)。
 
 - **P实际模式边界及环境停止：** P18owner／15verified中，原生站位73,17的显式mode接受及下一次耕地已过；同owner原只读resume通过、241既有输入未变，无新native或saved-content-readback。随后仅因E可用约7.996GiB低于默认8GiB停止，非动作异常；旧保护／失败保留、无清理。下一新Q明确用既有6144MiB保留参数（不改默认8192），继续连续整地／播种维护→收获销售→原生保存加载。P仅补局部实际owner和只读恢复，完整周期／formal未过，未保存尾部不可续档。[唯一接续](CURRENT_WORK_CN.md#2026-11-14-r2-同tick库存图缓存修正)。
