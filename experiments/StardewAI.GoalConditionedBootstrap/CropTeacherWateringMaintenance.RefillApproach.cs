@@ -7,7 +7,7 @@ public sealed partial class CropTeacherWateringMaintenance
 {
     private CropTeacherWateringMaintenance(CropTeacherRefillApproachCompilation compilation,
         MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId, bool selectedResources = false,
-        bool nativeRefillExecution = false)
+        bool nativeRefillExecution = false, bool nativeObservedRefillEffects = false)
     {
         Require(transition.TransitionKind == "crop_actions" && transition.TotalDay == compilation.TotalDay &&
                 (transition.ExecutorVersion == PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor ||
@@ -16,7 +16,10 @@ public sealed partial class CropTeacherWateringMaintenance
                 CropTeacherSeedTransferNativeOutcome.PathComparer.Equals(Path.GetFullPath(transition.QueuePath), compilation.QueuePath) &&
                 CropTeacherSeedTransferNativeOutcome.PathComparer.Equals(Path.GetFullPath(transition.BeforeSnapshotPath), compilation.SourcePath),
             "Crop refill approach changed its pinned original transition.");
-        refillTrace = nativeRefillExecution
+        refillTrace = nativeObservedRefillEffects
+            ? CropTeacherRefillApproachNativeTrace.OpenNativeObservedEffects(compilation,
+                transition.ExecutionReceiptPath, transition.AfterSnapshotPath, transition.RunId, transition.ExecutorVersion)
+            : nativeRefillExecution
             ? selectedResources
                 ? CropTeacherRefillApproachNativeTrace.OpenNativeWithSelectedResourceEffects(compilation,
                     transition.ExecutionReceiptPath, transition.AfterSnapshotPath, transition.RunId, transition.ExecutorVersion)

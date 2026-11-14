@@ -84,7 +84,8 @@ public sealed partial class CropTeacherWateringMaintenance : ICropTeacherSupport
 
     public int AppliedTileCount { get; }
     public bool RefillControlVerified { get; }
-    public bool RefillApproachVerified => refillTrace?.ResourceNeutralBoundaryVerified == true || RefillResourceEffectsVerified;
+    public bool RefillApproachVerified => refillTrace?.ResourceNeutralBoundaryVerified == true || RefillResourceEffectsVerified || RefillNativeEffectsObserved;
+    public bool RefillNativeEffectsObserved => refillTrace?.NativeEngineEffectsObserved == true;
     public bool RefillResourceEffectsVerified => refillTrace?.SelectedResourceEffectsVerified == true;
     public bool CompleteBatch { get; }
     public IReadOnlyList<MoneyRevenueCropPlantingTile> AppliedTiles { get; }

@@ -15,6 +15,7 @@ public sealed class CropTeacherNativeRefillReferenceTests
     [Theory]
     [InlineData("refill_approach_resources", "native_selected_resource_effects")]
     [InlineData("refill_approach", "native_resource_neutral")]
+    [InlineData("refill_approach_native", "native_engine_observed")]
     public void NativeRefillReferenceUsesOnlyPinnedOriginalOwnerFieldsWithoutMutatingReceipt(string control, string expectedMode)
     {
         var f = new Case(control);

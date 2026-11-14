@@ -13,10 +13,10 @@ namespace StardewAI.Backend.Tests;
 public sealed partial class CropTeacherSeedPurchaseSettlementTests
 {
     // Synthetic wire conversion only: no native execution or training evidence is produced.
-    private sealed class NativeRefillProductFixture(bool product = true) : IDisposable
+    private sealed class NativeRefillProductFixture(bool product = true, bool repair = false, bool nativeObserved = false) : IDisposable
     {
-        internal RefillTraceFixture Trace { get; } = new(repair: false,
-            completeSnapshotInventory: true, resourceNeutral: true, observeNativeOutputs: false);
+        internal RefillTraceFixture Trace { get; } = new(repair: repair,
+            completeSnapshotInventory: true, resourceNeutral: !nativeObserved, observeNativeOutputs: false);
         private readonly List<string> productResults = [];
         private readonly List<string> productJournals = [];
         private string DirectoryPath => Trace.Approach.Watering.Shared.Runtime.LiveOptions.SnapshotDir;
@@ -28,7 +28,25 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
 
         internal async Task Build(bool retainCompilation = false)
         {
-            await Trace.Build(retainCompilation: retainCompilation);
+            await Trace.Build(changeFrame: nativeObserved ? (after, index) =>
+            {
+                var item = Trace.Approach.Queue.Items[index];
+                int Target(string name) => int.Parse(item.NormalizedCommand.Parameters.Single(row => row.Name == name).Value,
+                    System.Globalization.CultureInfo.InvariantCulture);
+                if (item.OptionId == "executor.move_to_tile") ChangeState(after, "player", node =>
+                { node["tile_x"]!["value"] = Target("target_tile_x"); node["tile_y"]!["value"] = Target("target_tile_y"); });
+                else
+                {
+                    var prior = index == 0 ? Trace.Approach.Watering.Before : JsonSerializer.Deserialize<SnapshotEnvelope>(
+                        File.ReadAllText(Trace.AfterFrames[index - 1]), JsonOptions)!;
+                    ChangeState(after, "player", node =>
+                    {
+                        node["tile_x"]!["value"] = prior.State["player"].GetProperty("tile_x").GetProperty("value").GetInt32();
+                        node["tile_y"]!["value"] = prior.State["player"].GetProperty("tile_y").GetProperty("value").GetInt32();
+                    });
+                    ChangeState(after, "current_location", node => node["terrain_features"]!["value"] = new JsonArray());
+                }
+            } : null, retainCompilation: retainCompilation);
             if (!product) return;
             var aggregate = JsonNode.Parse(File.ReadAllText(Trace.ReceiptPath))!.AsObject();
             for (var index = 0; index < Trace.Results.Count; index++)
@@ -64,6 +82,12 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 result["product_dispatch_guard"] = "native_action_preconditions";
                 result["product_replan_required"] = false;
                 result["product_idempotent_replay"] = false;
+                if (nativeObserved && request.OptionId == "executor.clear_obstacle")
+                {
+                    result["target_location"] = "Farm";
+                    result["target_tile_x"] = request.TargetTileX;
+                    result["target_tile_y"] = request.TargetTileY;
+                }
                 var resultPath = Path.Combine(DirectoryPath, "refill-product-result-" + index + ".json");
                 Fixture.Save(resultPath, result);
                 productResults.Add(resultPath);

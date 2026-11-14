@@ -161,9 +161,12 @@ public sealed partial class CropTeacherManagedSeedOwner
                 !watering.RefillControlVerified && accepted["native_refill_control_verified"] is not null ||
                 !watering.RefillApproachVerified && accepted["native_refill_approach_verified"] is not null ||
                 !watering.RefillResourceEffectsVerified && accepted["native_refill_resource_effects_verified"] is not null ||
+                !watering.RefillNativeEffectsObserved && accepted["native_refill_observed_outcome_verified"] is not null ||
                 accepted["route_native_claim_sha256"] is not null || accepted["route_native_result_sha256"] is not null || accepted["route_target_reached"] is not null)
                 throw new InvalidDataException("Managed crop watering prefix acceptance changed.");
         }
+        if (operation.Watering is null && accepted["native_refill_observed_outcome_verified"] is not null)
+            throw new InvalidDataException("A different supporting phase cannot claim native refill evidence.");
         if (operation.OriginalStart is not null)
         {
             if (Text(accepted, NativeSupportingRole(operation) + "_native_claim_sha256") != HashFile(NativeSupportingPath(operation, "claim")) ||

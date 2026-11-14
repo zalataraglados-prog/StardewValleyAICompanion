@@ -47,6 +47,7 @@ public static class CropTeacherManagedOwnerResume
             InputPath(header, "initial_ledger_path"), journal)
         {
             UseSelectedRefillResourceEffects = true,
+            UseNativeRefillOutcomeAuthority = header["native_refill_outcome_authority"]?.GetValue<bool>() == true,
             NativeSaveBinding = binding
         };
         ValidateHeader();

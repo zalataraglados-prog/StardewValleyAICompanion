@@ -83,7 +83,8 @@ static partial class Program
             installed.Path, options.SnapshotDir)
         {
             NativeSaveBinding = new(options.SaveIsolationPath, options.SaveSlot),
-            UseSelectedRefillResourceEffects = true
+            UseSelectedRefillResourceEffects = true,
+            UseNativeRefillOutcomeAuthority = true
         }, WritePortfolioJournalFileAsync).ConfigureAwait(false);
         try
         {

@@ -9,6 +9,8 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         MoneyRevenueCropNativeLifecycleTransitionRequest[] transitions, string terminalPath)
     {
         Require(transitions is { Length: > 0 } && transitions.All(row => row.NativeRefillPreparation is null) &&
+                transitions.All(row => row.RunId == transitions[0].RunId && row.ExecutorVersion == transitions[0].ExecutorVersion &&
+                    row.TotalDay == transitions[0].TotalDay) &&
                 transitions.Select(row => Path.GetFullPath(row.QueuePath)).Distinct(PathComparer).Count() == transitions.Length &&
                 transitions.Select(row => Path.GetFullPath(row.ExecutionReceiptPath)).Distinct(PathComparer).Count() == transitions.Length,
             "Native crop control tail is empty, duplicated or contains preparation.");

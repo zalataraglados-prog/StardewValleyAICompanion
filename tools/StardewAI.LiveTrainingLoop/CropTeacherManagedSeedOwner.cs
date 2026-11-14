@@ -12,6 +12,7 @@ public sealed record CropTeacherManagedSeedOwnerOptions(string EvidenceDirectory
     string PortfolioJournalDirectory) : ICropSeedPortfolioRecoveryOptions
 {
     public bool UseSelectedRefillResourceEffects { get; init; }
+    public bool UseNativeRefillOutcomeAuthority { get; init; }
     public CropTeacherNativeSaveBinding? NativeSaveBinding { get; init; }
 }
 
@@ -124,6 +125,7 @@ public sealed partial class CropTeacherManagedSeedOwner : IAsyncDisposable
     public string CurrentLedgerPath => headLedgerPath;
     internal string EvidenceDirectory => options.EvidenceDirectory;
     internal bool UsesSelectedRefillResourceEffects => options.UseSelectedRefillResourceEffects;
+    internal bool UsesNativeRefillOutcomeAuthority => options.UseNativeRefillOutcomeAuthority;
 
     private CropTeacherManagedSeedOwner(CropTeacherManagedSeedOwnerOptions options, MoneyRevenueCropNativeProductionRunPlan plan,
         FileStream lease, Func<string, string, Task> write, Dictionary<string, string> fixedHashes, string headerHash,
@@ -140,6 +142,8 @@ public sealed partial class CropTeacherManagedSeedOwner : IAsyncDisposable
     {
         if (string.IsNullOrWhiteSpace(value.RunId) || string.IsNullOrWhiteSpace(value.ExecutorVersion))
             throw new ArgumentException("Managed crop owner requires original run and executor identity.");
+        if (value.UseNativeRefillOutcomeAuthority && !value.UseSelectedRefillResourceEffects)
+            throw new InvalidDataException("Native refill authority requires an explicitly selected refill owner.");
         var options = value with
         {
             EvidenceDirectory = Path.GetFullPath(value.EvidenceDirectory), BackendUrl = CropTeacherSeedLifecycleRuntime.NormalizeBackendOrigin(value.BackendUrl),
@@ -180,6 +184,8 @@ public sealed partial class CropTeacherManagedSeedOwner : IAsyncDisposable
         };
         if (options.UseSelectedRefillResourceEffects)
             header["selected_refill_resource_effects"] = true;
+        if (options.UseNativeRefillOutcomeAuthority)
+            header["native_refill_outcome_authority"] = true;
         if (options.NativeSaveBinding is { } binding)
             header["native_save_binding"] = JsonSerializer.SerializeToNode(binding, JsonOptions);
         var headerPath = Path.Combine(options.EvidenceDirectory, "owner-intent.json");

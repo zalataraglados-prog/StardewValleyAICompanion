@@ -18,7 +18,7 @@ public sealed record CropTeacherRefillResourceEffectStep(string QueueItemId, str
     NativeRefillFrameResourceEffects Effects);
 
 // Retains the original successful native queue. No dispatch or producer credit.
-public sealed class CropTeacherRefillApproachNativeTrace
+public sealed partial class CropTeacherRefillApproachNativeTrace
 {
     private readonly CropTeacherRefillApproachCompilation compilation;
     private readonly CropTeacherRetainedInputs inputs;
@@ -27,9 +27,11 @@ public sealed class CropTeacherRefillApproachNativeTrace
     private CropTeacherRefillApproachNativeTrace(CropTeacherRefillApproachCompilation compilation,
         string receiptPath, string afterPath, string runId, bool verifySnapshotInventoryContinuity,
         bool classifyResourceEvidence = false, bool requireResourceNeutrality = false, bool verifyPickupInventory = false,
-        bool verifySelectedResourceEffects = false, string? nativeExecutorVersion = null)
+        bool verifySelectedResourceEffects = false, string? nativeExecutorVersion = null, bool nativeObservedEffects = false)
     {
         this.compilation = compilation;
+        Require(!nativeObservedEffects || nativeExecutorVersion is not null && !verifySelectedResourceEffects && !requireResourceNeutrality,
+            "native observed refill requires its explicit native protocol, not a legacy resource assertion");
         compilation.ValidateInputsUnchanged();
         Require(!requireResourceNeutrality || compilation.ClearanceQueueItemIds.Count == 0,
             "resource-neutral approach cannot replace a compiled repair/resource settlement");
@@ -52,6 +54,7 @@ public sealed class CropTeacherRefillApproachNativeTrace
         var resourceEvidence = new List<CropTeacherRefillResourceEvidenceStep>();
         var pickupInventory = new List<CropTeacherRefillPickupInventoryStep>();
         var resourceEffects = new List<CropTeacherRefillResourceEffectStep>();
+        var nativeOutcomes = new List<CropTeacherRefillNativeOutcomeStep>();
         string? captureSession = null;
         for (var index = 0; index < native.Actions.Length; index++)
         {
@@ -77,12 +80,18 @@ public sealed class CropTeacherRefillApproachNativeTrace
                 if (label == "request_gzip") requestBlobs[path] = hash;
             }
             Require(frame.Request.OptionId is "executor.move_to_tile" or "executor.clear_obstacle" &&
-                    (requireResourceNeutrality || verifySelectedResourceEffects && frame.Request.OptionId == "executor.move_to_tile" ||
+                    (nativeObservedEffects || requireResourceNeutrality || verifySelectedResourceEffects && frame.Request.OptionId == "executor.move_to_tile" ||
                         frame.Result.ActionOriginObservation is not null) &&
                     NativeExecutionSourceSupport.TotalDay(frame.Before) == compilation.TotalDay &&
                     NativeExecutionSourceSupport.TotalDay(frame.After) == compilation.TotalDay &&
                     Location(frame.Before) == "Farm" && Location(frame.After) == "Farm",
                 "native refill trace lacks its original same-day Farm scope/observation");
+            if (nativeObservedEffects)
+            {
+                VerifyNativeObservedTarget(frame);
+                nativeOutcomes.Add(new(frame.Item.QueueItemId, frame.Item.OptionId, frame.Before.StateHash, frame.After.StateHash));
+                continue;
+            }
             if (requireResourceNeutrality)
             {
                 Require(frame.Request.OptionId == "executor.move_to_tile" &&
@@ -122,7 +131,8 @@ public sealed class CropTeacherRefillApproachNativeTrace
             if (classified is not null) resourceEvidence.Add(new(frame.Item.QueueItemId, frame.Item.OptionId, classified));
             if (pickup is not null) pickupInventory.Add(new(frame.Item.QueueItemId, frame.Item.OptionId, pickup));
         }
-        Require(summaries.Where(step => step.OptionId == "executor.clear_obstacle").Select(step => step.QueueItemId)
+        Require((nativeObservedEffects ? nativeOutcomes.Where(step => step.OptionId == "executor.clear_obstacle").Select(step => step.QueueItemId) :
+                summaries.Where(step => step.OptionId == "executor.clear_obstacle").Select(step => step.QueueItemId))
                 .SequenceEqual(compilation.ClearanceQueueItemIds, StringComparer.Ordinal),
             "native trace changed the original explicit repair identities/order");
         var final = native.After;
@@ -137,6 +147,8 @@ public sealed class CropTeacherRefillApproachNativeTrace
         ResourceEvidence = resourceEvidence.AsReadOnly();
         PickupInventory = pickupInventory.AsReadOnly();
         ResourceEffects = resourceEffects.AsReadOnly();
+        NativeOutcomes = nativeOutcomes.AsReadOnly();
+        NativeEngineEffectsObserved = nativeObservedEffects;
         AfterSnapshotPath = afterPath;
         VerifiedAfterSnapshot = native.After;
         ValidateInputsUnchanged();
@@ -202,7 +214,7 @@ public sealed class CropTeacherRefillApproachNativeTrace
     public IReadOnlyDictionary<string, string> InputHashes => inputs.ReadHashes().Concat(requestBlobs)
         .ToDictionary(pair => pair.Key, pair => pair.Value, CropTeacherSeedTransferNativeOutcome.PathComparer);
     public bool ResourceCreditAuthorized => false;
-    public bool NativeOutcomeVerified => false;
+    public bool NativeOutcomeVerified => NativeEngineEffectsObserved;
     public bool FormalProductTrainingAuthorized => false;
     public void ValidateInputsUnchanged()
     {

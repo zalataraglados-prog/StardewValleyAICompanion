@@ -50,8 +50,8 @@ public static class CropTeacherNativeVariantTerminalProof
         MoneyRevenueTerminalQueueTransitionEvidence[] controls = [];
         if (wrapper.NativeControlTail is { } controlTail)
         {
-            Require(controlTail.Length > 0 && controlTail.All(row => row.TotalDay == target.TotalDay) &&
-                controlTail[^1].RunId == transitions![0].RunId && controlTail[^1].ExecutorVersion == transitions[0].ExecutorVersion,
+            Require(controlTail.Length > 0 && controlTail.All(row => row.TotalDay == target.TotalDay &&
+                row.RunId == transitions![0].RunId && row.ExecutorVersion == transitions[0].ExecutorVersion),
                 "control tail differs from terminal native identity/day.");
             controls = MoneyRevenueCropNativeLifecycleProofBuilder.VerifyNativeObservedControlTail(
                 retention.AfterSnapshotPath, controlTail, controlTail[^1].AfterSnapshotPath);

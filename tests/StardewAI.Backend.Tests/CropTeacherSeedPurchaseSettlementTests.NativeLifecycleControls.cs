@@ -19,6 +19,13 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         f.Rows[^1] = row;
         var verified = Assert.Single(MoneyRevenueCropNativeLifecycleProofBuilder.VerifyNativeObservedControlTail(row.BeforeSnapshotPath, [row], row.AfterSnapshotPath));
         Assert.Equal("executor.wait_ticks", Assert.Single(verified.OptionIds));
+        foreach (var changed in new[] { row with { RunId = "another-run" },
+                     row with { ExecutorVersion = "another-executor" }, row with { TotalDay = row.TotalDay + 1 } })
+        {
+            var error = Assert.Throws<InvalidDataException>(() => MoneyRevenueCropNativeLifecycleProofBuilder.VerifyNativeObservedControlTail(
+                row.BeforeSnapshotPath, [changed, row], row.AfterSnapshotPath));
+            Assert.Contains("control tail is empty, duplicated or contains preparation", error.Message);
+        }
         foreach (var fault in new[] { "missing", "duplicate", "candidate", "movement", "head", "source" })
         {
             var rows = fault == "missing" ? Array.Empty<MoneyRevenueCropNativeLifecycleTransitionRequest>() :

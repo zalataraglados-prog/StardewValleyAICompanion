@@ -19,7 +19,7 @@ internal static partial class CropTeacherProductionEvidence
         var record = inputs.Read<JsonObject>(recordPath);
         var control = record["maintenance_control_kind"]?.GetValue<string>();
         if (control is null) return transition;
-        if (control is not ("refill_approach" or "refill_approach_resources") ||
+        if (control is not ("refill_approach" or "refill_approach_resources" or "refill_approach_native") ||
             record["sequence"]?.GetValue<int>() != row.OwnerSequence ||
             record["operation_kind"]?.GetValue<string>() != row.OperationKind ||
             record["maintenance_execution_protocol"]?.GetValue<string>() != "original_loop.v1" ||
@@ -40,6 +40,7 @@ internal static partial class CropTeacherProductionEvidence
             throw new InvalidDataException("Native refill reference changed its covered commitments or step identity.");
         return transition with { NativeRefillPreparation = new(Pinned(plan.RequestPath), Pinned(Text("before_ledger_path")),
             commitments, commitment, Text("support_step_id"), Pinned(Text("original_model_action_path")),
-            control == "refill_approach_resources" ? "native_selected_resource_effects" : "native_resource_neutral") };
+            control == "refill_approach_native" ? "native_engine_observed" :
+                control == "refill_approach_resources" ? "native_selected_resource_effects" : "native_resource_neutral") };
     }
 }

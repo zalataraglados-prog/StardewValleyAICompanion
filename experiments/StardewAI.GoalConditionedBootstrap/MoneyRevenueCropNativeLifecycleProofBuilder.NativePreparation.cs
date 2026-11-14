@@ -8,7 +8,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         Require(transition.Request.TransitionKind == CropActionsKind &&
                 reference.CoveredCommitmentIds is { Length: > 0 } &&
                 reference.CoveredCommitmentIds.Distinct(StringComparer.Ordinal).Count() == reference.CoveredCommitmentIds.Length &&
-                reference.ResourceMode is "native_resource_neutral" or "native_selected_resource_effects",
+                reference.ResourceMode is "native_resource_neutral" or "native_selected_resource_effects" or "native_engine_observed",
             "Native lifecycle refill preparation reference is invalid.");
         var compilation = CropTeacherRefillApproachCompilation.Open(reference.RunRequestPath, transition.BeforePath,
             reference.LedgerPath, reference.CoveredCommitmentIds, reference.CommitmentId, reference.StepId,
@@ -16,7 +16,10 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         Require(compilation.CandidateId == transition.Request.SelectedCandidateId &&
                 compilation.TotalDay == transition.Request.TotalDay,
             "Native lifecycle preparation changed its selected original compilation/day.");
-        var trace = reference.ResourceMode == "native_resource_neutral"
+        var trace = reference.ResourceMode == "native_engine_observed"
+            ? CropTeacherRefillApproachNativeTrace.OpenNativeObservedEffects(compilation, transition.ReceiptPath,
+                transition.AfterPath, transition.Request.RunId, transition.Request.ExecutorVersion)
+            : reference.ResourceMode == "native_resource_neutral"
             ? CropTeacherRefillApproachNativeTrace.OpenNativeResourceNeutral(compilation, transition.ReceiptPath,
                 transition.AfterPath, transition.Request.RunId, transition.Request.ExecutorVersion)
             : CropTeacherRefillApproachNativeTrace.OpenNativeWithSelectedResourceEffects(compilation, transition.ReceiptPath,

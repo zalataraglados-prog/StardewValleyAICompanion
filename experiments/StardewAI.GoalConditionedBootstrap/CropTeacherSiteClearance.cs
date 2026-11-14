@@ -10,12 +10,14 @@ public sealed class CropTeacherSiteClearance : ICropTeacherSupportingTransition
         MoneyRevenueCropNativeLifecycleTransitionRequest request, string stepId)
     {
         transition = new(preparation, request, stepId, "clear_obstacle", frame =>
-        {
-            if (frame.Result.TargetLocation != "Farm" ||
-                frame.Request.TargetTileX != preparation.Target.TileX || frame.Request.TargetTileY != preparation.Target.TileY ||
-                frame.Result.TargetTileX != preparation.Target.TileX || frame.Result.TargetTileY != preparation.Target.TileY)
-                throw new InvalidDataException("Native clearance did not execute its original selected target.");
-        });
+            VerifyNativeTarget(frame, preparation.Target.TileX, preparation.Target.TileY));
+    }
+
+    internal static void VerifyNativeTarget(NativeExecutionActionFrame frame, int x, int y)
+    {
+        if (frame.Result.TargetLocation != "Farm" || frame.Request.TargetTileX != x || frame.Request.TargetTileY != y ||
+            frame.Result.TargetTileX != x || frame.Result.TargetTileY != y)
+            throw new InvalidDataException("Native clearance did not execute its original selected target.");
     }
 
     public bool NativeOutcomeVerified => true;

@@ -143,7 +143,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 {
                     QueueItemIndex = index, QueueItemCount = Approach.Queue.Items.Length, OriginalPlannedItemCount = Approach.Queue.Items.Length,
                     QueueId = scope.QueueId, QueueItemId = item.QueueItemId, OptionId = item.OptionId, SourceStateHash = before.StateHash,
-                    CompiledCommandStateHash = Approach.Queue.StateHash, AfterStateHash = after.StateHash, StateHashChanged = true,
+                    CompiledCommandStateHash = Approach.Queue.StateHash, AfterStateHash = after.StateHash, StateHashChanged = before.StateHash != after.StateHash,
                     BeforeGameTick = before.GameTick, AfterGameTick = after.GameTick, AfterSnapshotPath = afterPath, AfterSnapshotFresh = true,
                     Status = "applied", PrimitiveKind = item.OptionId["executor.".Length..], PrimitiveVerificationStatus = "verified",
                     PrimitiveVerificationReasons = ["declared_trace_fixture"], ChangedFacts = JsonSerializer.SerializeToElement(facts, JsonOptions),
