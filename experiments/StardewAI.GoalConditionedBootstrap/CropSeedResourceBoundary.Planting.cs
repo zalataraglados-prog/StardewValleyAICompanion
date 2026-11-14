@@ -57,18 +57,7 @@ internal static partial class CropSeedResourceBoundary
         var rows = Rows(Value(expected));
         var row = rows[index];
         if (remaining > 0) row["stack"] = remaining;
-        else
-        {
-            // Exact null-item shape published by PlayerReadAdapter; unknown metadata remains guarded.
-            foreach (var key in row.Select(pair => pair.Key).ToArray())
-                if (key is "is_object" or "is_furniture" or "is_wallpaper" or "protected_from_auto_sell") row[key] = false;
-                else if (key == "is_empty") row[key] = true;
-                else if (key == "auto_sell_protection_reasons") row[key] = new JsonArray();
-                else if (key is "item_id" or "qualified_item_id" or "display_name" or "stack" or "quality" or "category" or
-                    "maximum_stack_size" or "can_be_shipped" or "can_be_trashed" or "sell_to_store_price" or "sale_price" or
-                    "runtime_type" or "special_state" or "special_item" or "context_tags" or "donate_color_context" or
-                    "base_tag_not_giftable" or "object_type" or "object_quest_item" or "object_big_craftable" or "can_be_given_as_gift") row[key] = null;
-        }
+        else ProjectEmptyPlayerInventorySlot(row);
         EqualField(expected, Field(after, "player", "inventory"), "owned planting exact inventory/no compaction");
     }
 

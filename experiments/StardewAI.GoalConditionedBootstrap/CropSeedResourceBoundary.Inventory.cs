@@ -6,6 +6,26 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 internal static partial class CropSeedResourceBoundary
 {
+    private static void ProjectEmptyPlayerInventorySlot(JsonObject slot)
+    {
+        // PlayerReadAdapter.Collect emits a retained index with nullable item fields for a null Item.
+        // Graph slots/quantity rows, in contrast, omit that removed physical item.
+        foreach (var name in new[] { "item_id", "qualified_item_id", "display_name", "stack", "quality", "category",
+                     "maximum_stack_size", "can_be_shipped", "can_be_trashed", "sell_to_store_price", "sale_price",
+                     "runtime_type", "special_state", "special_item", "context_tags", "base_tag_not_giftable",
+                     "object_type", "object_quest_item", "object_big_craftable", "can_be_given_as_gift" })
+            if (slot.ContainsKey(name)) slot[name] = null;
+        foreach (var name in new[] { "is_object", "is_furniture", "is_wallpaper", "protected_from_auto_sell" })
+            if (slot.ContainsKey(name)) slot[name] = false;
+        if (slot.ContainsKey("auto_sell_protection_reasons")) slot["auto_sell_protection_reasons"] = new JsonArray();
+        if (slot.ContainsKey("donate_color_context")) slot["donate_color_context"] = new JsonObject
+        {
+            ["is_colored_object"] = false, ["preserved_parent_item_id"] = null,
+            ["preserved_parent_base_context_tags"] = new JsonArray(), ["projection_status"] = "not_applicable_not_colored_object"
+        };
+        slot["is_empty"] = true;
+    }
+
     private static void VerifyInventory(SnapshotEnvelope before, SnapshotEnvelope after, MaterialInventoryNode player,
         JsonObject seed, MaterialTransferProjection physical)
     {
