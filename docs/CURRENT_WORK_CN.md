@@ -2,6 +2,13 @@
 
 [文档总目录](DOCUMENTATION_INDEX_CN.md) · [编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md)
 
+## 2026-11-14 R2 托管日界不再进入旧账本登记
+
+- 修正版109实际越过106断点：同S新加载后，原owner接受回农场、六株第2日浇水、回家及再次原生睡眠保存，最新第41项真实日界1→2／六株／native save均true；原存档已春季第3天。本调用报告在末次sleep后旧分支异常前记录3条verified队列，不把6个浇水primitive混为6个队列。四归属进程均退出，原失败不回改。
+- 断点为新Main接续仍无条件启动旧 `CropTeacherDayBoundaryStart`，托管过夜已由原owner接受，随后却要求旧transition ledger。只在新增loop薄接线中按owner选择：托管路径不再开第二份旧日界观察／收获登记，非托管继续原capture与原save要求；不修改旧日界验证器、owner／原生睡眠或保存结果。
+- 组合61项首次60通过／1旧Overnight用例在 `FileStrategyCommitmentRepository.File.Move` 出现AccessDenied；没有修改该共享存储或跳过断言。原二进制不改源码／不重建聚焦重放，失败旧用例＋新日界三项 **4/4**。保留首次61项失败，不标为61/61；本次新托管分流与非托管严格保存检查均过。之前54/54和59d16079仍独立保留，最新CI另核。
+- **唯一接续：** 从同一已保存春季第3天／原owner41，当前新进程读回后继续原13日84动作计划到收获、销售、终端保存内容读回；不重发已接受第二夜、不建新owner／ledger／计划、不缩为前三天成功。完整周期／Teacher总验收／formal仍false，local-data不提交。原API块已退出撤权／授权空闲；技能已修正普通FileNotFound可用已授权窄rg纠正，不当作权限或provider故障停止。
+
 ## 2026-11-14 R2 原 owner 完成凭据接回原规划器
 
 - `06eb63e0` 已推送，CI43551647606成功。隐藏原S／新PID16348经原入口实际接受第34项fresh native readback，原plan／request／存档未换、下一工件35未覆盖旧序号；随后派发前因 `crop_teacher_run_day_advanced_without_verified_save_boundary` 退出2，四归属进程全退出。不是原生睡眠再次失败：原第32项日界0→1已接受，但新Main仅把旧transition ledger完成键传给原规划器，漏接托管owner记录。首次Block104调用路径空格未引用而在解析前失败亦保留，脚本修正不改旧参数校验。

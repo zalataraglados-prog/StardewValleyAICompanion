@@ -1557,8 +1557,9 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         cropTeacherManagedOwner.RequireLiveContinuation();
         RequireManagedCropDispatch(cropTeacherManagedOwner.Current, cropManagedOperationForExecution);
         var cropTeacherDayBoundaryStart =
-            await CaptureCropTeacherDayBoundaryStartAsync(
+            await CaptureCropTeacherLoopDayBoundaryStartAsync(
                 options,
+                cropTeacherManagedOwner.Current,
                 cropTeacherStepForExecution,
                 beforeSnapshot,
                 lastStateHash);
@@ -1589,7 +1590,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         if (cropSeedSupportForExecution is not null && cropManagedOperationForExecution is null)
             await cropSeedSupportForExecution.CompleteAsync(queuePath, ReadString(execution, "execution_path"),
                 ReadString(execution, "after_snapshot_path"), selectedCandidateId);
-        if (activeCropTeacherTransitionLedger is not null &&
+        if (cropTeacherManagedOwner.Current is null && activeCropTeacherTransitionLedger is not null &&
             cropTeacherStepForExecution is not null)
         {
             var receiptsAppended =
