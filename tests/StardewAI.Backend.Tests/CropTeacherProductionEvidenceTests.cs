@@ -68,8 +68,9 @@ public sealed class CropTeacherProductionEvidenceTests
         internal List<CropTeacherManagedProductionTransition> Transitions { get; } = [];
 
         internal Fixture() : this(Golden.Value) { }
+        internal Fixture(int tileCount, string commitmentId) : this(null, tileCount, commitmentId) { }
 
-        private Fixture(Fixture? template)
+        private Fixture(Fixture? template, int tileCount = 2, string commitmentId = "declared.managed.production")
         {
             if (template is not null)
             {
@@ -84,8 +85,8 @@ public sealed class CropTeacherProductionEvidenceTests
             var source = MoneyCropTeacherFixture.CreateSnapshot("MoneyCropProductionSnapshot");
             var result = new CropCommitmentLedgerService().Upsert(null, source, new CropPlantingCommitmentUpsertRequest
             {
-                StateHash = source.StateHash, ExpectedLedgerRevision = 0, CommitmentId = "declared.managed.production",
-                SourceDecisionId = "declared.production.adapter.fixture", SeedId = "745", TileCount = 2,
+                StateHash = source.StateHash, ExpectedLedgerRevision = 0, CommitmentId = commitmentId,
+                SourceDecisionId = "declared.production.adapter.fixture", SeedId = "745", TileCount = tileCount,
                 PlantingYear = 2, PlantingSeason = "spring", PlantingDayOfMonth = 20, LocationContext = "outdoor_seasonal"
             }, "2026-11-12T00:00:00Z");
             Assert.True(result.Accepted);
@@ -95,11 +96,12 @@ public sealed class CropTeacherProductionEvidenceTests
             var plan = MoneyRevenueCropProductionObligationPlanBuilder.Build(request);
             var production = Save("production-plan", plan); var crop = plan.Commitments.Single();
             Assert.Single(crop.HarvestWaves);
-            var tiles = new[] { new MoneyRevenueCropPlantingTile(5, 6), new MoneyRevenueCropPlantingTile(6, 6) };
+            var xs = Enumerable.Range(5, tileCount).ToArray();
+            var tiles = xs.Select(x => new MoneyRevenueCropPlantingTile(x, 6)).ToArray();
             var nativeRequest = Save("native-request", new MoneyRevenueCropNativeProductionRunPlanRequest
             {
                 CropProductionPlanPath = production, LayoutIntents = new[] { new MoneyRevenueCropNativeProductionLayoutIntent(
-                    crop.CommitmentId, "Farm", tiles, WateringRefillApproachTile: new(4, 6)) }
+                    crop.CommitmentId, "Farm", tiles, WateringRefillApproachTile: tileCount == 2 ? new(4, 6) : new(0, 1)) }
             });
             nativePlanPath = Save("native-plan", MoneyRevenueCropNativeProductionRunPlanBuilder.Build(nativeRequest));
             var current = MoneyCropTeacherFixture.CreateSnapshot("MoneyCropPlantingDaySnapshot");
@@ -111,11 +113,25 @@ public sealed class CropTeacherProductionEvidenceTests
             var player = JsonNode.Parse(current.State["player"].GetRawText())!.AsObject();
             foreach (var field in JsonNode.Parse(daily.State["player"].GetRawText())!.AsObject()) player[field.Key] = field.Value!.DeepClone();
             current.State["player"] = JsonSerializer.SerializeToElement(player);
+            if (tileCount != 2)
+            {
+                // Opt-in original refill-reader inputs. The two-tile shared golden is unchanged.
+                CropTeacherNativeSupportFixture.CompleteResources(current, 0);
+                player = JsonNode.Parse(current.State["player"].GetRawText())!.AsObject();
+                player["inventory"] = JsonSerializer.SerializeToNode(new { status = "available", value = new[]
+                { new { slot_index = 0, item_id = "745", qualified_item_id = "(O)745", stack = 40, quality = 0, is_empty = false } } });
+                current.State["player"] = JsonSerializer.SerializeToElement(player);
+                var location = JsonNode.Parse(current.State["current_location"].GetRawText())!;
+                location["map"] = JsonSerializer.SerializeToNode(new { status = "available", value = new { id = "Farm", width = 100, height = 100 } });
+                location["objects"] = JsonSerializer.SerializeToNode(new { status = "available", value = Array.Empty<object>() });
+                location["terrain_features"] = JsonSerializer.SerializeToNode(new { status = "available", value = Array.Empty<object>() });
+                current.State["current_location"] = JsonSerializer.SerializeToElement(location);
+            }
             current.StateHash = SnapshotHash.ComputeStateHash(current.State);
             var nativeTransitions = new List<MoneyRevenueCropNativeLifecycleTransitionRequest>(); var sequence = 0;
             void Add(int day, string option, string target = "")
             {
-                object[] args = { root, nativeTransitions, current, day, sequence, option, new[] { 5, 6 }, target, false };
+                object[] args = { root, nativeTransitions, current, day, sequence, option, xs, target, false };
                 current = MoneyCropTeacherFixture.CreateSnapshot("AddLifecycleTransition", args); sequence = (int)args[4];
                 if (option == "executor.harvest_crop")
                 {

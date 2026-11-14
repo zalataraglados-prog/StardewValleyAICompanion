@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Infrastructure;
 using StardewAI.Core.Training;
@@ -37,11 +38,13 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
     }
 
     // Rebuilds synthetic fixture wires only; never edits the shared golden or claims a native-v5 capacity proof.
-    private sealed class LifecycleControlsFixture
+    private sealed class LifecycleControlsFixture(bool combinedRefill = false)
     {
         internal string Root { get; } = Path.Combine(Path.GetTempPath(), "native-lifecycle-controls-" + Guid.NewGuid().ToString("N"));
         internal List<MoneyRevenueCropNativeLifecycleTransitionRequest> Rows { get; } = [];
         internal object Contexts { get; private set; } = null!;
+        internal int SplitDay { get; private set; }
+        internal IReadOnlyDictionary<string, string> PreparationInputs { get; private set; } = new Dictionary<string, string>();
         private SnapshotEnvelope source = null!;
         private MoneyRevenueCropDailyCapacityProof capacity = null!;
         private SnapshotEnvelope current = null!;
@@ -50,7 +53,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         internal async Task Build()
         {
             Directory.CreateDirectory(Root);
-            var golden = new CropTeacherProductionEvidenceTests.Fixture();
+            var golden = combinedRefill ? new CropTeacherProductionEvidenceTests.Fixture(6, Id) : new CropTeacherProductionEvidenceTests.Fixture();
             var evidence = await golden.Build();
             var proof = LifecycleRead<MoneyRevenueCropNativeLifecycleProof>(Assert.Single(evidence.NativeLifecycleProofPaths));
             var request = LifecycleRead<MoneyRevenueCropNativeLifecycleProofRequest>(proof.RequestPath);
@@ -60,22 +63,65 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             var hash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(request.CropProductionPlanPath))).ToLowerInvariant();
             Contexts = LifecycleInvoke("LoadLifecycleContexts", plan, request.CropProductionPlanPath, hash, capacity, source);
             current = LifecycleRead<SnapshotEnvelope>(request.Transitions[0].BeforeSnapshotPath);
-            var splitDay = request.Transitions[0].TotalDay + 1;
+            SplitDay = request.Transitions[0].TotalDay + (combinedRefill ? 7 : 1);
+            var xs = Enumerable.Range(5, combinedRefill ? 6 : 2).ToArray();
             foreach (var original in request.Transitions)
             {
                 var queue = LifecycleRead<ActionQueueEnvelope>(original.QueuePath);
                 var option = queue.Items[0].OptionId;
-                if (original.TotalDay == splitDay && option == "executor.water_crop")
+                if (original.TotalDay == SplitDay && option == "executor.water_crop")
                 {
                     AddWait(); // Original day1-shaped pre-water wait.
-                    Add(original.TotalDay, option, [5]);
-                    AddWait(); // Control between homogeneous crop batches.
-                    Add(original.TotalDay, option, [6]);
+                    Add(original.TotalDay, option, combinedRefill ? xs[..4] : [5]);
+                    if (combinedRefill) await AddOriginalRefill(golden);
+                    else AddWait(); // Control between homogeneous crop batches.
+                    Add(original.TotalDay, option, combinedRefill ? xs[4..] : [6]);
                 }
-                else Add(original.TotalDay, option, [5, 6], original.TransitionKind == "supporting_route_to_crop" ? "Farm" : "FarmHouse");
-                if (original.TotalDay == splitDay && original.TransitionKind == "supporting_route_to_sleep") AddWait();
+                else Add(original.TotalDay, option, xs, original.TransitionKind == "supporting_route_to_crop" ? "Farm" : "FarmHouse");
+                if (original.TotalDay == SplitDay && original.TransitionKind == "supporting_route_to_sleep") AddWait();
             }
             AddWait(); // Final control tail, after the last harvest.
+        }
+
+        private async Task AddOriginalRefill(CropTeacherProductionEvidenceTests.Fixture production)
+        {
+            ChangeState(current, "player", node => node["watering_can_state"]!["value"]!["water_left"] = 0);
+            current.StateHash = SnapshotHash.ComputeStateHash(current.State);
+            PinPreviousAfter();
+            // Reuse the existing compiler and Product native-wire fixture with the SAME six-tile plan,
+            // commitment, ledger capture and water4 terminal source, all bound BEFORE compilation/verification.
+            var native = new NativeRefillProductFixture();
+            var approach = native.Trace.Approach; var shared = approach.Watering.Shared;
+            shared.Source.Recapture(current);
+            var ledger = LifecycleRead<StrategyCommitmentLedger>(production.LedgerPath);
+            ledger.SourceStateHash = current.StateHash;
+            Fixture.Save(shared.Source.LedgerPath, ledger);
+            var runPlan = LifecycleRead<MoneyRevenueCropNativeProductionRunPlan>(production.NativePlanPath);
+            Fixture.Save(shared.Inputs.Plan.RequestPath, LifecycleRead<MoneyRevenueCropNativeProductionRunPlanRequest>(runPlan.RequestPath));
+            shared.Runtime.Store.Snapshots[current.StateHash] = current;
+            await approach.Compile(forceOriginalApproach: true);
+            await native.Build(retainCompilation: true);
+            var preparation = native.OpenPreparation(selected: false, native: true);
+            var row = native.Transition(preparation, PolicyTrajectoryVersionPins.ProductExecutor) with
+            {
+                NativeRefillPreparation = new(shared.Inputs.Plan.RequestPath, shared.Source.LedgerPath,
+                    [Id], Id, "refill-approach.original", approach.ModelPath, "native_resource_neutral")
+            };
+            var trace = native.OpenTrace(selected: false, PolicyTrajectoryVersionPins.ProductExecutor);
+            Assert.False(trace.ResourceCreditAuthorized); Assert.False(trace.FormalProductTrainingAuthorized);
+            PreparationInputs = trace.InputHashes;
+            Rows.Add(row);
+            current = LifecycleRead<SnapshotEnvelope>(row.AfterSnapshotPath);
+        }
+
+        private void PinPreviousAfter()
+        {
+            var previous = Rows[^1];
+            Fixture.Save(previous.AfterSnapshotPath, current);
+            var receipt = LifecycleRead<QueueExecutionReceiptEnvelope>(previous.ExecutionReceiptPath);
+            receipt.AfterStateHash = current.StateHash;
+            receipt.StepResults[^1].AfterStateHash = current.StateHash;
+            Fixture.Save(previous.ExecutionReceiptPath, receipt);
         }
 
         private void Add(int day, string option, int[] xs, string target = "")
@@ -105,11 +151,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             current.StateHash = SnapshotHash.ComputeStateHash(current.State);
             // Pin this control gap into the preceding synthetic producer's original terminal capture/receipt.
             var previous = Rows[^1];
-            Fixture.Save(previous.AfterSnapshotPath, current);
-            var previousReceipt = LifecycleRead<QueueExecutionReceiptEnvelope>(previous.ExecutionReceiptPath);
-            previousReceipt.AfterStateHash = current.StateHash;
-            previousReceipt.StepResults[^1].AfterStateHash = current.StateHash;
-            Fixture.Save(previous.ExecutionReceiptPath, previousReceipt);
+            PinPreviousAfter();
             var after = JsonSerializer.Deserialize<SnapshotEnvelope>(JsonSerializer.Serialize(current, JsonOptions), JsonOptions)!;
             ChangeState(after, "player", node =>
             {
