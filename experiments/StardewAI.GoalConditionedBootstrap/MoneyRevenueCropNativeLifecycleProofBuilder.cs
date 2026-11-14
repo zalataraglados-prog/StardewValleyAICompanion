@@ -106,9 +106,11 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         Require(SamePath(primaryContext.LayoutPath, layoutPath),
             "Money Revenue crop lifecycle primary layout drifted from aggregate capacity support.");
         var frames = new LifecycleFramePool();
+        var nativeFrames = nativeObservedCapacity ? new NativeLifecycleFrameCache() : null;
         var transitions = request.Transitions.Select(value =>
         {
             var loaded = nativeObservedCapacity ? LoadNativeObservedTransition(value) : LoadTransition(value);
+            if (nativeFrames is not null) return loaded.WithNativeFrames(nativeFrames);
             return loaded with
             {
                 Before = frames.Share(loaded.Before),
@@ -148,6 +150,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
                     : value.Queue.Items[0].OptionId,
                 value.NativeNonProduction ? string.Empty : ResolveActionCommitmentId(value, contexts),
                 true)).ToArray();
+        nativeFrames?.ValidateInputsUnchanged();
         return new MoneyRevenueCropNativeLifecycleProof
         {
             Status = "verified_native_crop_lifecycle",
@@ -268,6 +271,19 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         QueueExecutionReceiptEnvelope Receipt,
         SnapshotEnvelope After)
     {
+        private SnapshotEnvelope before = Before;
+        private SnapshotEnvelope after = After;
+        private NativeLifecycleFrameCache? nativeFrames;
+        public SnapshotEnvelope Before { get => nativeFrames?.Read(BeforePath) ?? before; init => before = value; }
+        public SnapshotEnvelope After { get => nativeFrames?.Read(AfterPath) ?? after; init => after = value; }
+
+        internal LoadedTransition WithNativeFrames(NativeLifecycleFrameCache cache)
+        {
+            cache.Bind(BeforePath, Before); cache.Bind(AfterPath, After);
+            // Keep every original field on disk, not every decoded historical graph in memory.
+            return this with { nativeFrames = cache, before = null!, after = null! };
+        }
+
         public int? NativeAppliedItemCount { get; init; }
         public bool NativeObserved { get; init; }
         public bool NativeNonProduction { get; init; }
