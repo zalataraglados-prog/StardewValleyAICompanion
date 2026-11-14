@@ -11,6 +11,7 @@ static partial class Program
     {
         private Process? continuationProcess;
         internal CropTeacherManagedSeedOwner? Current { get; private set; }
+        internal CropTeacherDailySelection? DailySelection { get; set; }
         internal CropTeacherManagedProductionEvidence? TerminalProduction { get; private set; }
         internal CropTeacherTerminalShippingSelection? TerminalSelection { get; private set; }
         internal CropTeacherManagedTerminalEvidence? TerminalSettlement { get; private set; }

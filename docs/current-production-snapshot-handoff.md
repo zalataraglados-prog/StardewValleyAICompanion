@@ -66,11 +66,29 @@ targeted a game-free DLL excluding those classes; it matched zero and is not a
 PASS. Run the existing Backend-linked guards, not another test project.
 174 remote CI43623737100 now SUCCESS; new175remote result remains separate.
 
-Next originalstep5 still needs other-goal owner interleaving and shared-ledger
-fresh return through the existing selected decision lease, without policy rerank
-for every low-level action. Full selected-route source/calendar/continuity and
-step6formal engineering remain. Issue569hands off before formal manifest; lab
-owns model/data freeze/experiments/training/evaluation, not extra mainline work.
+176 now reuses SelectedQueueDecisionLease for the same daily high-level decision.
+CreateFromPlan adapts ONLY selection annotations to the existing lease readers;
+it is not a native queue or dispatch authority. Mechanical prefixes/refill do not
+invoke policy again: original availability and deterministic EventCandidateRanker
+freshly compile the still-selected owned prefix against current source/ledger.
+Only current original-owner obligations/progress retire satisfied owned targets.
+Foreign selected work stays held; waits/owners cannot be skipped or relabeled.
+A selected later original batch maps to that batch's original owner instead of
+assuming the default first batch. Original refill approach preempts composition;
+zero-crop refill keeps all dry targets. Old lease/native owner/executor defaults
+are unchanged. A completed selected decision or next day may select anew.
+
+176related108/108(17s),zero-credit refill plus original recovery4/4(2s),no game.
+Initial new integration fixture lacked original high-level planting_context and
+weather fields; only that fixture was completed,no old reader/executor relaxation.
+175CI43625997425SUCCESS;176remote result is separate.
+
+Next originalstep5: consume the same lease's held other goals at the global
+maintenance/preparation exit,dispatch through their ORIGINAL owners,and return
+verified shared ledger/source. Other-owner live interleaving remains unimplemented.
+Full selected-route source/calendar/continuity and step6formal engineering remain.
+Issue569hands off before formal manifest; lab owns model/data freeze/experiments/
+training/evaluation,not extra mainline work.
 
 174 Core checks92/92(142ms), Backend/old planner/binding/endpoint/budget/resume/
 dispatch/supplement/museum/original queue checks89/89(11s). No game/native dispatch/

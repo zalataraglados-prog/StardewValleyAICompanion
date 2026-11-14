@@ -104,7 +104,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         using var handler = new DailyCompositionRankingHandler(f.Shared.Runtime.Handler, candidates);
         using var http = new HttpClient(handler, disposeHandler: false);
         var task = InvokeLive<Task>("ComposeCropTeacherDailyDispatchAsync", http, options, 1, f.Shared.Inputs.Plan,
-            f.Shared.Inputs.Request, owner, new HashSet<string>(StringComparer.Ordinal), f.Basis.Before);
+            f.Shared.Inputs.Request, owner, new HashSet<string>(StringComparer.Ordinal), f.Basis.Before, null!);
         await task;
         var result = task.GetType().GetProperty("Result")!.GetValue(task)!;
         Assert.Equal(recovery, (bool)result.GetType().GetProperty("ControlPreempted")!.GetValue(result)!);
@@ -151,7 +151,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         using var handler = new DailyCompositionRankingHandler(f.Shared.Runtime.Handler, WateringCompositionCandidates(f.Basis).ToArray());
         using var http = new HttpClient(handler, disposeHandler: false);
         var task = InvokeLive<Task>("ComposeCropTeacherDailyDispatchAsync", http, options, 1, f.Shared.Inputs.Plan,
-            f.Shared.Inputs.Request, owner, new HashSet<string>(StringComparer.Ordinal), f.Basis.Before);
+            f.Shared.Inputs.Request, owner, new HashSet<string>(StringComparer.Ordinal), f.Basis.Before, null!);
         await task;
         var result = task.GetType().GetProperty("Result")!.GetValue(task)!;
         Assert.True((bool)result.GetType().GetProperty("ControlPreempted")!.GetValue(result)!);
@@ -171,6 +171,8 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
     private sealed class DailyCompositionRankingHandler(HttpMessageHandler inner, PolicyEventCandidatePrediction[] candidates) : DelegatingHandler(inner)
     {
         internal int Ranks { get; private set; }
+        internal int AvailabilityReads { get; private set; }
+        internal bool CorruptAvailabilitySourceHash { get; set; }
         internal bool PlanOnly { get; private set; }
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token)
         {
@@ -185,7 +187,16 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             }
             if (request.RequestUri.AbsolutePath.EndsWith("/daily-plan/compile", StringComparison.Ordinal))
                 PlanOnly = JsonNode.Parse(await request.Content!.ReadAsStringAsync(token))!["compile_action_queue"]!.GetValue<bool>() == false;
-            return await base.SendAsync(request, token);
+            if (request.RequestUri.AbsolutePath.EndsWith("/options/availability", StringComparison.Ordinal)) AvailabilityReads++;
+            var response = await base.SendAsync(request, token);
+            if (CorruptAvailabilitySourceHash && request.RequestUri.AbsolutePath.EndsWith("/options/availability", StringComparison.Ordinal))
+            {
+                var body = JsonNode.Parse(await response.Content.ReadAsStringAsync(token))!;
+                body["state_hash"] = "another-source";
+                response.Dispose();
+                return new(HttpStatusCode.OK) { Content = new StringContent(body.ToJsonString(JsonOptions), Encoding.UTF8, "application/json") };
+            }
+            return response;
         }
     }
 }

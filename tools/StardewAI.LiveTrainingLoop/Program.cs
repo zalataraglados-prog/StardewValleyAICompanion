@@ -856,12 +856,14 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             cropStep.ActionBatch?.OptionId is "executor.water_crop" or "executor.harvest_crop")
         {
             var composed = await ComposeCropTeacherDailyDispatchAsync(http, options, iteration, activeCropTeacherRunPlan,
-                activeCropTeacherRunPlanRequest!, managedOwner, cropTeacherPreparedCommitmentIds, typedSnapshot);
+                activeCropTeacherRunPlanRequest!, managedOwner, cropTeacherPreparedCommitmentIds, typedSnapshot,
+                cropTeacherManagedOwner.DailySelection);
+            cropTeacherManagedOwner.DailySelection = composed.Selection;
             if (!composed.ControlPreempted)
             {
                 if (composed.Step is null)
                 {
-                    stopReason = "crop_teacher_joint_daily_required_batch_not_scheduled";
+                    stopReason = composed.BlockReason;
                     break;
                 }
                 cropStep = composed.Step;

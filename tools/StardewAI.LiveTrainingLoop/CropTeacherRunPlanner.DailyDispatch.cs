@@ -4,6 +4,29 @@ namespace StardewAI.LiveTrainingLoop;
 
 public static partial class CropTeacherRunPlanner
 {
+    public static CropTeacherRunStep? SelectOriginalDailyBatch(CropTeacherDailyCompositionBinding binding, SmallModelPlanEnvelope plan,
+        StardewAI.GoalConditionedBootstrap.MoneyRevenueCropNativeProductionRunPlan originalPlan)
+    {
+        var first = plan.CandidateAudit.FirstOrDefault(row => row.Decision == "accepted");
+        if (first is null || binding.CompileRequest is null) return SelectOriginalDailyBatch(binding, plan);
+        var candidate = binding.CompileRequest.RankedEventCandidates.SingleOrDefault(row => row.CandidateId == first.CandidateId);
+        if (candidate is null || !binding.RequiredCandidateIds.Contains(candidate.CandidateId, StringComparer.Ordinal)) return null;
+        var option = candidate.Kind == "water_crop_tile" ? WaterOptionId : candidate.Kind == "harvest_crop_tile" ? HarvestOptionId : string.Empty;
+        var matches = originalPlan.Days.Where(day => day.TotalDay == binding.OriginalNextStep.TotalDay).SelectMany(day => day.ActionBatches)
+            .Where(batch => batch.OptionId == option && batch.LocationId == candidate.LocationId &&
+                batch.Tiles.Any(tile => tile.TileX == candidate.TileX && tile.TileY == candidate.TileY)).ToArray();
+        if (matches.Length != 1) throw new InvalidDataException("Selected daily candidate has no unique original owned batch.");
+        var source = matches[0];
+        var required = binding.CompileRequest.RankedEventCandidates.Where(row => binding.RequiredCandidateIds.Contains(row.CandidateId, StringComparer.Ordinal) &&
+            row.Kind == candidate.Kind && row.LocationId == source.LocationId).ToArray();
+        var pending = source.Tiles.Where(tile => required.Any(row => row.TileX == tile.TileX && row.TileY == tile.TileY)).ToArray();
+        return SelectOriginalDailyBatch(binding with { OriginalNextStep = binding.OriginalNextStep with
+        {
+            CommitmentId = source.CommitmentId, TargetLocationId = source.LocationId,
+            ActionBatch = source with { Tiles = pending }, RemainingQuantity = pending.Length
+        } }, plan);
+    }
+
     public static CropTeacherRunStep? SelectOriginalDailyBatch(CropTeacherDailyCompositionBinding binding, SmallModelPlanEnvelope plan)
     {
         var request = binding.CompileRequest;
