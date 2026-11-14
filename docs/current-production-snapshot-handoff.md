@@ -128,6 +128,20 @@ no local build/test/game during quiet hours. NEXT is consuming that original
 execution exit with verified shared-source/ledger return; the original owned
 dispatch guard remains. No foreign action is reclassified as crop control.
 
+178cc2fc0ec remoteCI43633639261SUCCESS: Core2675/2675,Backend3205/3205,zero skipped,
+all remaining existing workflow steps/builds passed. Not native interleaving.
+179 CropTeacherSharedSourceReturn reuses original native queue/request-journal/
+nonce/frame reading, same-day native boundary checks, active reservation supply
+validation and original marker/reply rebind kernel. It pins original JSON/step
+frames/request gzip hashes rather than re-running native parsing at each getter.
+It is SOURCE RETURN ONLY, not native dispatch, crop production, Teacher credit,
+owner-head mutation or another executor. Reserved consumption not settled by its
+original owner and cross-day returns are not accepted through this marker-only
+adapter. Other goals' own business proofs remain their original responsibility.
+New adapter/tests need this commit's CI, not178green. NEXT is explicit shared-return
+binding to owner hold/recovery/trace and the original foreign execution exit;
+never swap a head path or label a foreign action as crop control. No new stage.
+
 174 Core checks92/92(142ms), Backend/old planner/binding/endpoint/budget/resume/
 dispatch/supplement/museum/original queue checks89/89(11s). No game/native dispatch/
 worker/training. The new planting test initially used winter supply planning to
