@@ -44,8 +44,33 @@ The returned request has CompileActionQueue=false: planning composition is NOT
 permission to dispatch a mixed queue through the intentionally crop-only owner.
 The global caller must retain original control/recovery preemption, dispatch each
 work class through its existing owner, and return verified results plus fresh
-source/ledger to the same plan. This is the next originalstep5 implementation,
-not authority to loosen old owners or an additional acceptance stage.
+source/ledger to the same plan, not loosen old owners or add acceptance stages.
+
+175 now wires the first dispatch consumer into Main's explicit joint+managed
+watering/harvest path. It calls the original ranking/compile function with an
+opt-in composition hook; other-goal candidates stay visible, but legacy calls
+without a hook retain exact resolved-goal filtering. Story/dialogue/late-day and
+exclusive recovery keep their original precedence. Only the accepted contiguous
+current-owner/batch prefix is projected to the ORIGINAL batch's ordered tile
+subset, which the old owner already supports. No accepted tiles stops with the
+owner retained; it must not fall back to executing the unbudgeted whole batch.
+The original compiler, dispatch claim, result settlement and fresh remaining-work
+evaluation are used; other-owner/wait entries cannot be jumped over or relabeled.
+
+Reuse Main's already-read typed source, project only the tiny story-event field
+for its old predicate, and pass the accepted source into the original ingest
+helper to avoid another full-world parse. No new game snapshot/capture loop.
+175 related72/72(15s) and existing integration source guards17/17(51ms) pass;
+these are fixtures, not new native-game evidence. The first source-guard command
+targeted a game-free DLL excluding those classes; it matched zero and is not a
+PASS. Run the existing Backend-linked guards, not another test project.
+174 remote CI43623737100 now SUCCESS; new175remote result remains separate.
+
+Next originalstep5 still needs other-goal owner interleaving and shared-ledger
+fresh return through the existing selected decision lease, without policy rerank
+for every low-level action. Full selected-route source/calendar/continuity and
+step6formal engineering remain. Issue569hands off before formal manifest; lab
+owns model/data freeze/experiments/training/evaluation, not extra mainline work.
 
 174 Core checks92/92(142ms), Backend/old planner/binding/endpoint/budget/resume/
 dispatch/supplement/museum/original queue checks89/89(11s). No game/native dispatch/
@@ -55,7 +80,7 @@ assert spring work; only the fixture date was corrected, not the old evaluator.
 GET with zero mutation/lookup and no journal. Test-only pure /health routing
 readiness now precedes the unchanged15s recovery measurement. Do NOT warm a ledger
 GET, which can reconcile/write; all single-submit/read-only recovery assertions
-remain. Local14branches pass; a new remote result is still required.
+remain. Local14branches and174remoteCI43623737100pass;175requires its own result.
 
 Do not claim full L3/shared-resource/source-schedule integration from this binding.
 Originalsteps3/4automatic properties remain unproven; observe them with planned

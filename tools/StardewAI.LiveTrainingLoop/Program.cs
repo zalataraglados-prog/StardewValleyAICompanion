@@ -851,6 +851,22 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 attemptOrdinal);
             continue;
         }
+        if (options.UseJointDailyCalendar && managedOwner is not null &&
+            cropStep.Stage == CropTeacherRunStageKinds.ExecuteCropBatch &&
+            cropStep.ActionBatch?.OptionId is "executor.water_crop" or "executor.harvest_crop")
+        {
+            var composed = await ComposeCropTeacherDailyDispatchAsync(http, options, iteration, activeCropTeacherRunPlan,
+                activeCropTeacherRunPlanRequest!, managedOwner, cropTeacherPreparedCommitmentIds, typedSnapshot);
+            if (!composed.ControlPreempted)
+            {
+                if (composed.Step is null)
+                {
+                    stopReason = "crop_teacher_joint_daily_required_batch_not_scheduled";
+                    break;
+                }
+                cropStep = composed.Step;
+            }
+        }
         var managedControl = managedTerminalControl ?? (managedOwner is null ? null : await BuildCropTeacherOwnedControlQueueAsync(http, options, iteration,
             cropStep, activeCropTeacherRunPlan, activeCropTeacherRunPlanRequest!, managedOwner));
         var cropQueue = managedControl?.Build ?? await BuildCropTeacherControlQueueAsync(

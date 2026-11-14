@@ -64,7 +64,8 @@ static partial class Program
         int? maxCandidatesOverride = null,
         string? goalIdOverride = null,
         bool priorityStoryEventInterrupt = false,
-        JsonObject? activeObjectiveContinuation = null)
+        JsonObject? activeObjectiveContinuation = null,
+        Func<DailyPlanCompileRequest, DailyPlanCompileRequest>? prepareCompositionRequest = null)
     {
         var requestedGoalId = string.IsNullOrWhiteSpace(goalIdOverride)
             ? options.Goal
@@ -130,7 +131,9 @@ static partial class Program
                     "recovery_",
                     StringComparison.Ordinal);
         });
-        var goalBoundCandidates = priorityStoryEventInterrupt &&
+        var goalBoundCandidates = prepareCompositionRequest is not null && !exclusiveRecovery && !priorityStoryEventInterrupt
+            ? JsonNode.Parse(rankedCandidates.ToJsonString())!.AsArray()
+            : priorityStoryEventInterrupt &&
             !exclusiveRecovery
                 ? QueueReplanFilter.FilterPriorityStoryEventInterruptCandidates(
                     rankedCandidates)
@@ -250,10 +253,21 @@ static partial class Program
             compile_action_queue = true,
             ranked_event_candidates = JsonNode.Parse(selectedCandidates.ToJsonString(JsonOptions))
         }, JsonOptions);
+        var compileActionQueue = true;
+        if (prepareCompositionRequest is not null && !exclusiveRecovery && !priorityStoryEventInterrupt)
+        {
+            var prepared = prepareCompositionRequest(JsonSerializer.Deserialize<DailyPlanCompileRequest>(compileRequest, JsonOptions)!);
+            compileActionQueue = prepared.CompileActionQueue;
+            compileRequest = JsonSerializer.Serialize(prepared, JsonOptions);
+            ranking["goal_resolution_binding_filter"]!["active"] = false;
+            ranking["goal_resolution_binding_filter"]!["policy"] = "joint_daily_composition_preserves_other_goal_candidates";
+        }
         var response = await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/planner/daily-plan/compile",
             WithJointDailyCalendar(compileRequest, options));
         var plan = response["plan"]?.AsObject() ?? throw new InvalidOperationException("daily plan response did not include plan");
-        var queue = response["action_queue"]?.AsObject() ?? throw new InvalidOperationException("daily plan response did not include action_queue");
+        var queue = compileActionQueue
+            ? response["action_queue"]?.AsObject() ?? throw new InvalidOperationException("daily plan response did not include action_queue")
+            : new JsonObject();
         return (response, plan, queue, ranking);
     }
 
