@@ -23,8 +23,11 @@ public sealed partial class CropTeacherControlIntegrationSourceGuardTests
     {
         var source = Read("tools", "StardewAI.LiveTrainingLoop", "Program.cs");
         var validate = source.IndexOf("selectedCandidateId = ValidateCropTeacherSeedQueueBeforeDispatch(", StringComparison.Ordinal);
-        var execute = source.IndexOf("var execution = cropManagedOperationForExecution is null", StringComparison.Ordinal);
+        var execute = source.IndexOf("var execution = sharedSourceOperationForExecution is not null", StringComparison.Ordinal);
         Assert.True(validate >= 0 && execute > validate);
+        Assert.Contains("cropManagedOperationForExecution is null ? await ExecuteOriginalCropQueue() :", source, StringComparison.Ordinal);
+        Assert.Contains("RequireManagedCropDispatch(cropTeacherManagedOwner.Current, cropManagedOperationForExecution)", source, StringComparison.Ordinal);
+        Assert.Contains("RequireSharedSourceDispatch(cropTeacherManagedOwner.Current!, sharedSourceOperationForExecution, queuePath)", source, StringComparison.Ordinal);
         var settle = source.IndexOf("await cropSeedSupportForExecution.CompleteAsync(", execute, StringComparison.Ordinal);
         Assert.True(settle > execute);
         var feedback = source.IndexOf("var feedbackAvailable =", settle, StringComparison.Ordinal);

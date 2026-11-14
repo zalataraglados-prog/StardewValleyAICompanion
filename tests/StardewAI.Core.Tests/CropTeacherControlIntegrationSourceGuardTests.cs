@@ -319,11 +319,8 @@ public sealed partial class CropTeacherControlIntegrationSourceGuardTests
         var program = Read("tools", "StardewAI.LiveTrainingLoop", "Program.cs");
 
         Assert.Contains(
-            "cropQueue.ExecutionStepOverride ??\n" +
-            "            (!string.IsNullOrWhiteSpace(cropQueue.InterruptKind)\n" +
-            "                ? null\n" +
-            "                : cropStep);",
-            program.Replace("\r\n", "\n"),
+            "cropQueue.ExecutionStepOverride ?? (!string.IsNullOrWhiteSpace(cropQueue.InterruptKind) ? null : cropStep);",
+            System.Text.RegularExpressions.Regex.Replace(program, @"\s+", " "),
             StringComparison.Ordinal);
         Assert.Contains(
             "cropQueue.InterruptKind",
