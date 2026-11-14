@@ -41,6 +41,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         var first = await ComposeSelection(f, owner, http, 1, f.Basis.Before);
         var selected = SelectionProperty<CropTeacherRunStep>(first, "Step")!;
         var lease = SelectionProperty<object>(first, "Selection")!;
+        Assert.Equal(owner.CurrentSnapshotPath, SelectionProperty<string>(lease, "SourceSnapshotPath"));
         Assert.Equal(2, selected.ActionBatch!.Tiles.Length);
         var operation = await InvokeLive<Task<CropTeacherManagedSeedOperation>>("PrepareCropTeacherOwnedWateringAsync",
             f.Shared.Runtime.Client, f.Shared.Runtime.LiveOptions, 1, selected, f.Shared.Inputs.Plan,
@@ -240,6 +241,12 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         }
         Assert.Null(owner.Pending);
         Assert.Equal(1, f.Shared.Runtime.Handler.Commits);
+        selectionType.GetProperty("CompletedForeignCandidateIds")!.SetValue(selection,
+            new HashSet<string>(StringComparer.Ordinal) { foreign.CandidateId });
+        var exhausted = await ComposeSelection(f, owner, http, 3, f.Basis.After, selection);
+        Assert.True(SelectionProperty<bool>(exhausted, "ControlPreempted"));
+        Assert.Null(SelectionProperty<object>(exhausted, "Selection"));
+        Assert.Equal(0, handler.Ranks);
     }
 
     [Fact]

@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **181当前覆盖下方“Main未接”：** 180最终73a9ae6f／CI43643537316已全绿（Core2675／Backend3246，零跳过）。本次Main显式joint外目标pending队列进入同一执行／反馈／episode流程，由全局source-yield guard／claim调原执行器，原marker接受后才退休该已选目标；旧crop guard／默认不放宽，固定queue不重写，blocked或未知结果不补发。新增及增强合成回归待本提交CI，不声称真实游戏交错通过。跨进程日选择恢复、一般部分结果／全局联合消费和实际选线仍未闭，继续原第5步，不增加阶段或L1重采；#569／formal=false保持。[细节](CURRENT_WORK_CN.md#2026-11-14-常驻能力块收敛与账户暂停)。
+
 > **180当前覆盖下方pending：** 179最终26f279c9／CI43639621997成功（Core2675／Backend3232，零跳过）。本次显式执行前source-yield占原owner pending，绑定原决策来源／fresh队列；一次native claim由全局调用方领取，crop owner不执行外动作。结果未知不补发，读原回执后复用179返回／恢复／联合trace；旧观察入口／默认不改。本次新增实现和合成契约正反例需独立CI，尚未接Main外目标原执行出口／全局消费者或取得原生交错证据。下一处仍原第5步这条执行接续，#569／L1冻结／formal=false不变。[细节](CURRENT_WORK_CN.md#2026-11-14-常驻能力块收敛与账户暂停)。
 
 > **179owner续作：** 来源叶ab2d4b06远端CI43636205689已全绿（Core2675／Backend3218，含13项新增、零跳过）。同能力块已实现显式`shared_source_return`的原owner记录／marker lookup／head恢复及单独联合trace，当前提交尚待CI验证；它不执行、不授作物信用，旧kind／默认及游戏执行器不改。外目标的显式派发所有权、原执行出口和全局联合轨迹消费仍待接，不能据来源叶通过宣称完整交错或Teacher通过。[唯一接续](CURRENT_WORK_CN.md#2026-11-14-常驻能力块收敛与账户暂停)。

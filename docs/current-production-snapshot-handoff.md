@@ -1,5 +1,26 @@
 # Current Production Snapshot Handoff
 
+## Original Main Foreign Dispatch (181)
+
+180final73a9ae6f/CI43643537316 passed Core2675/Backend3246, zero skipped.
+181 wires pending foreign preparation into the SAME Main execution/feedback/
+episode path. Dedicated GLOBAL source-yield guard/claim invokes the original
+runtime callback, verifies original outputs and returns through the original
+marker. Crop guard/dispatcher never authorizes foreign work; existing defaults
+are unchanged. The pinned foreign queue is referenced, NOT copied/rewritten.
+Only original full native completion AND accepted source return retire the held
+foreign candidate. Keep the original decision/lease/logical index separate from
+fresh mechanical queue index0; refresh skips only accepted foreign completions.
+Blocked preparation still stops; unknown output retains pending/no resend.
+
+Current code/synthetic callback+Backend/negative tests need final-SHA CI, not
+180green. No new game/native interleaving acceptance. Cross-process original
+daily-selection restoration, general partial/multi-queue result adaptation and
+global joint trace/source/calendar consumption remain step5 work; do not loosen
+179's immutable full-queue/same-day/unconsumed-reservation verifier to hide it.
+Actual selected route/global native evidence and step6 still required. L1 and
+169-172frozen; #569 lab split unchanged; formal=false/local-data stays local.
+
 ## Selected Work Source Yield (180, 2026-11-15)
 
 179 final26f279c9/CI43639621997 passed Core2675 and Backend3232, zero skipped.

@@ -14,6 +14,7 @@ static partial class Program
         IReadOnlySet<string> OwnedCandidateIds, string PlanPath, string RankingPath)
     {
         public string SourceSnapshotPath { get; init; } = string.Empty;
+        public IReadOnlySet<string> CompletedForeignCandidateIds { get; init; } = new HashSet<string>(StringComparer.Ordinal);
     }
     private sealed record CropTeacherOtherGoalPreparation(SelectedQueueCandidateLock Candidate,
         string PlanPath, string QueuePath, string EvidencePath, string QueueStatus)

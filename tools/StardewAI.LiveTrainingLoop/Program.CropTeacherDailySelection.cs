@@ -43,6 +43,8 @@ static partial class Program
         var pending = new List<SelectedQueueCandidateLock>();
         foreach (var selected in selection.Lease.Candidates)
         {
+            if (!selection.OwnedCandidateIds.Contains(selected.CandidateId) &&
+                selection.CompletedForeignCandidateIds.Contains(selected.CandidateId)) continue;
             if (selection.OwnedCandidateIds.Contains(selected.CandidateId))
             {
                 var original = selected.RankedCandidate.Deserialize<PolicyEventCandidatePrediction>(JsonOptions)!;

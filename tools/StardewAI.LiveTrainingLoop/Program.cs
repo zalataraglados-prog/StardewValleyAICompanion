@@ -585,6 +585,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
     CropTeacherRunStep? cropTeacherStepForExecution = null;
     ICropTeacherSeedRuntime? cropSeedSupportForExecution = null;
     CropTeacherManagedSeedOperation? cropManagedOperationForExecution = null;
+    CropTeacherManagedSeedOperation? sharedSourceOperationForExecution = null;
     JsonObject? dailyPlanRanking = null;
     StageOneCollectionTeacherQueueBuildResult? nativeControlSettle = null;
     JsonObject? deferredObjectiveContinuationForDailyMaintenance = null;
@@ -851,6 +852,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 attemptOrdinal);
             continue;
         }
+        CropTeacherOtherGoalPreparation? selectedOtherForExecution = null;
         if (options.UseJointDailyCalendar && managedOwner is not null &&
             CropTeacherRunPlanner.ShouldComposeDailyDispatch(cropStep,
                 cropTeacherManagedOwner.DailySelection?.TotalDay == cropStep.TotalDay))
@@ -864,89 +866,125 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 if (composed.Step is null)
                 {
                     if (composed.OtherGoalPreparation is { } preparedOther)
+                    {
                         AppendProgress(options, "crop_teacher_joint_daily_other_goal_prepared", iteration, lastStateHash, string.Empty,
                             "candidate_id=" + preparedOther.Candidate.CandidateId + " option_id=" + preparedOther.Candidate.OptionId +
                             " queue=" + preparedOther.QueuePath + " queue_status=" + preparedOther.QueueStatus +
                             " shared_source_return_required=true native_dispatch_performed=false");
-                    stopReason = composed.BlockReason;
-                    break;
+                        if (preparedOther.QueueStatus == "pending") selectedOtherForExecution = preparedOther;
+                    }
+                    if (selectedOtherForExecution is null)
+                    {
+                        stopReason = composed.BlockReason;
+                        break;
+                    }
                 }
-                cropStep = composed.Step;
+                else cropStep = composed.Step;
             }
         }
-        var managedControl = managedTerminalControl ?? (managedOwner is null ? null : await BuildCropTeacherOwnedControlQueueAsync(http, options, iteration,
-            cropStep, activeCropTeacherRunPlan, activeCropTeacherRunPlanRequest!, managedOwner));
-        var cropQueue = managedControl?.Build ?? await BuildCropTeacherControlQueueAsync(
-            http,
-            options,
-            iteration,
-            cropStep,
-            activeCropTeacherRunPlan,
-            activeCropTeacherRunPlanRequest,
-            snapshotPath,
-            beforeSnapshot,
-            lastStateHash);
-        cropManagedOperationForExecution = managedControl?.Operation;
-        cropTeacherStepForExecution =
-            cropQueue.ExecutionStepOverride ??
-            (!string.IsNullOrWhiteSpace(cropQueue.InterruptKind)
-                ? null
-                : cropStep);
-        cropSeedSupportForExecution = (ICropTeacherSeedRuntime?)cropQueue.SeedPlantingSupport ?? cropQueue.SeedTransferSupport ?? (ICropTeacherSeedRuntime?)cropQueue.SeedPurchaseSupport;
-        if (cropQueue.SitePreparationComplete)
+        if (selectedOtherForExecution is { } other)
         {
-            if (!cropTeacherPreparedCommitmentIds.Add(
-                    cropStep.CommitmentId))
+            sharedSourceOperationForExecution = await managedOwner!.AdmitSharedSourceYieldAsync(
+                other.SourceSelection ?? throw new InvalidDataException("Selected global work lost its original source selection."),
+                Path.Combine(options.SnapshotDir, $"execution-{iteration:D4}.json"),
+                Path.Combine(options.SnapshotDir, $"after-snapshot-{iteration:D4}.json"),
+                Path.Combine(managedOwner.EvidenceDirectory, $"shared-source-{iteration:D4}"));
+            var start = sharedSourceOperationForExecution.SharedSourceStart!;
+            queue = JsonNode.Parse(ContentAddressedJsonArtifactReader.ReadAllText(start.QueuePath))!.AsObject();
+            snapshotPath = start.SourcePath;
+            beforeSnapshot = JsonNode.Parse(ContentAddressedJsonArtifactReader.ReadAllText(snapshotPath))!.AsObject();
+            lastStateHash = ReadString(beforeSnapshot, "state_hash");
+            modelPlanPath = other.PlanPath;
+            rankingPath = other.EvidencePath;
+            dailyPlanRanking = JsonNode.Parse(ContentAddressedJsonArtifactReader.ReadAllText(rankingPath))!.AsObject();
+            decisionModelPlanPath = modelPlanPath;
+            decisionRankingPath = rankingPath;
+            decisionCompiledQueuePath = start.QueuePath;
+            decisionSnapshotPath = snapshotPath;
+            decisionSourceStateHash = lastStateHash;
+            selectedCandidateId = start.CandidateId;
+            selectedQueueIndex = 0; // Physical fresh queue index; logical lease index remains in the source-yield binding.
+            useDailyPlanDecisionLease = false;
+            activeObjectiveContinuation = other.Candidate.ObjectiveContinuation;
+            executionSnapshotProfile = "full";
+            executionSnapshotUrl = SnapshotUrlForProfile(options.BridgeSnapshotUrl, "full", forceRefresh: true);
+        }
+        else
+        {
+            var managedControl = managedTerminalControl ?? (managedOwner is null ? null : await BuildCropTeacherOwnedControlQueueAsync(http, options, iteration,
+                cropStep, activeCropTeacherRunPlan, activeCropTeacherRunPlanRequest!, managedOwner));
+            var cropQueue = managedControl?.Build ?? await BuildCropTeacherControlQueueAsync(
+                http,
+                options,
+                iteration,
+                cropStep,
+                activeCropTeacherRunPlan,
+                activeCropTeacherRunPlanRequest,
+                snapshotPath,
+                beforeSnapshot,
+                lastStateHash);
+            cropManagedOperationForExecution = managedControl?.Operation;
+            cropTeacherStepForExecution =
+                cropQueue.ExecutionStepOverride ??
+                (!string.IsNullOrWhiteSpace(cropQueue.InterruptKind)
+                    ? null
+                    : cropStep);
+            cropSeedSupportForExecution = (ICropTeacherSeedRuntime?)cropQueue.SeedPlantingSupport ?? cropQueue.SeedTransferSupport ?? (ICropTeacherSeedRuntime?)cropQueue.SeedPurchaseSupport;
+            if (cropQueue.SitePreparationComplete)
             {
-                throw new InvalidOperationException(
-                    "crop_teacher_site_preparation_completion_replayed");
+                if (!cropTeacherPreparedCommitmentIds.Add(
+                        cropStep.CommitmentId))
+                {
+                    throw new InvalidOperationException(
+                        "crop_teacher_site_preparation_completion_replayed");
+                }
+                AppendProgress(
+                    options,
+                    "crop_teacher_site_preparation_complete",
+                    iteration,
+                    cropQueue.StateHash,
+                    string.Empty,
+                    "commitment_id=" + cropStep.CommitmentId);
+                await DelayBeforeNextAttemptAsync(options, attemptOrdinal);
+                continue;
             }
+            queue = cropQueue.Queue ?? throw new InvalidOperationException(
+                "crop_teacher_control_queue_missing");
+            modelPlanPath = cropQueue.ModelPlanPath;
+            rankingPath = cropQueue.RankingPath;
+            decisionModelPlanPath = modelPlanPath;
+            decisionRankingPath = rankingPath;
+            snapshotPath = cropQueue.BeforeSnapshotPath;
+            beforeSnapshot = cropQueue.BeforeSnapshot;
+            decisionSnapshotPath = snapshotPath;
+            lastStateHash = cropQueue.StateHash;
+            decisionSourceStateHash = lastStateHash;
+            executionSnapshotProfile = cropQueue.SnapshotProfile;
+            executionSnapshotUrl = cropQueue.SnapshotUrl;
+            useDailyPlanDecisionLease = false;
+            activeObjectiveContinuation = null;
+            inventoryCapacityRecoveryControlActive = string.Equals(
+                cropQueue.InterruptKind,
+                "crop_teacher_harvest_inventory_capacity_recovery",
+                StringComparison.Ordinal);
             AppendProgress(
                 options,
-                "crop_teacher_site_preparation_complete",
+                "crop_teacher_control_queue_compiled",
                 iteration,
-                cropQueue.StateHash,
-                string.Empty,
-                "commitment_id=" + cropStep.CommitmentId);
-            await DelayBeforeNextAttemptAsync(options, attemptOrdinal);
-            continue;
+                lastStateHash,
+                ReadString(queue, "queue_id"),
+                "stage=" + (!string.IsNullOrWhiteSpace(
+                        cropQueue.InterruptKind)
+                    ? cropQueue.InterruptKind
+                    : cropStep.Stage) +
+                " interrupted_stage=" + (!string.IsNullOrWhiteSpace(
+                        cropQueue.InterruptKind)
+                    ? cropStep.Stage
+                    : string.Empty) +
+                " reason=" + cropStep.Reason +
+                " commitment_id=" + cropStep.CommitmentId +
+                " remaining=" + cropStep.RemainingQuantity);
         }
-        queue = cropQueue.Queue ?? throw new InvalidOperationException(
-            "crop_teacher_control_queue_missing");
-        modelPlanPath = cropQueue.ModelPlanPath;
-        rankingPath = cropQueue.RankingPath;
-        decisionModelPlanPath = modelPlanPath;
-        decisionRankingPath = rankingPath;
-        snapshotPath = cropQueue.BeforeSnapshotPath;
-        beforeSnapshot = cropQueue.BeforeSnapshot;
-        decisionSnapshotPath = snapshotPath;
-        lastStateHash = cropQueue.StateHash;
-        decisionSourceStateHash = lastStateHash;
-        executionSnapshotProfile = cropQueue.SnapshotProfile;
-        executionSnapshotUrl = cropQueue.SnapshotUrl;
-        useDailyPlanDecisionLease = false;
-        activeObjectiveContinuation = null;
-        inventoryCapacityRecoveryControlActive = string.Equals(
-            cropQueue.InterruptKind,
-            "crop_teacher_harvest_inventory_capacity_recovery",
-            StringComparison.Ordinal);
-        AppendProgress(
-            options,
-            "crop_teacher_control_queue_compiled",
-            iteration,
-            lastStateHash,
-            ReadString(queue, "queue_id"),
-            "stage=" + (!string.IsNullOrWhiteSpace(
-                    cropQueue.InterruptKind)
-                ? cropQueue.InterruptKind
-                : cropStep.Stage) +
-            " interrupted_stage=" + (!string.IsNullOrWhiteSpace(
-                    cropQueue.InterruptKind)
-                ? cropStep.Stage
-                : string.Empty) +
-            " reason=" + cropStep.Reason +
-            " commitment_id=" + cropStep.CommitmentId +
-            " remaining=" + cropStep.RemainingQuantity);
     }
     else if (options.UseDailyPlan)
     {
@@ -1399,8 +1437,10 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
     executionSnapshotProfile = ExecutionSnapshotProfileSelector.ResolveForQueue(
         queue,
         executionSnapshotProfile);
-    var queuePath = Path.Combine(options.SnapshotDir, "compiled-queue-" + iteration.ToString("D4") + ".json");
-    await File.WriteAllTextAsync(queuePath, queue.ToJsonString(JsonOptions), Encoding.UTF8);
+    var queuePath = sharedSourceOperationForExecution?.SharedSourceStart?.QueuePath ??
+        Path.Combine(options.SnapshotDir, "compiled-queue-" + iteration.ToString("D4") + ".json");
+    if (sharedSourceOperationForExecution is null)
+        await File.WriteAllTextAsync(queuePath, queue.ToJsonString(JsonOptions), Encoding.UTF8);
     if (cropSeedSupportForExecution is not null)
     {
         selectedCandidateId = ValidateCropTeacherSeedQueueBeforeDispatch(cropSeedSupportForExecution,
@@ -1578,7 +1618,9 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         }
 
         cropTeacherManagedOwner.RequireLiveContinuation();
-        RequireManagedCropDispatch(cropTeacherManagedOwner.Current, cropManagedOperationForExecution);
+        if (sharedSourceOperationForExecution is not null)
+            RequireSharedSourceDispatch(cropTeacherManagedOwner.Current!, sharedSourceOperationForExecution, queuePath);
+        else RequireManagedCropDispatch(cropTeacherManagedOwner.Current, cropManagedOperationForExecution);
         var cropTeacherDayBoundaryStart =
             await CaptureCropTeacherLoopDayBoundaryStartAsync(
                 options,
@@ -1607,9 +1649,20 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         async Task<JsonObject> ExecuteOriginalCropQueue() => options.UseRuntimeTestHarnessExecutor
             ? await ExecuteRuntimeTestHarnessCoreAsync(http, executorHttp, options, iteration, snapshotPath, beforeSnapshot, queue, lastStateHash, lastQueueId, decisionModelPlanPath, decisionRankingPath, decisionCompiledQueuePath, decisionSnapshotPath, decisionSourceStateHash, selectedCandidateId, selectedQueueIndex, queuePath, deferredObjectiveContinuationForDailyMaintenance is null ? activeObjectiveContinuation : null, executionSuppressedContinuations, useDailyPlanDecisionLease || useOwnedSeedPurchaseContinuation, executionSnapshotUrl, executionSnapshotProfile, cropSeedSupportForExecution as ICropTeacherSeedPrefixRuntime)
             : await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/action-queues/" + Uri.EscapeDataString(lastQueueId) + "/execute-training-sandbox", "{}");
-        var execution = cropManagedOperationForExecution is null ? await ExecuteOriginalCropQueue() :
+        var execution = sharedSourceOperationForExecution is not null
+            ? await ExecuteCropTeacherSharedOperationAsync(http, options, cropTeacherManagedOwner.Current!,
+                sharedSourceOperationForExecution, queuePath, ExecuteOriginalCropQueue)
+            : cropManagedOperationForExecution is null ? await ExecuteOriginalCropQueue() :
             await ExecuteCropTeacherManagedOperationAsync(http, executorHttp, options, iteration, cropTeacherManagedOwner.Current!,
                 cropManagedOperationForExecution, queuePath, ExecuteOriginalCropQueue);
+        if (sharedSourceOperationForExecution is not null)
+        {
+            cropTeacherManagedOwner.DailySelection = CompleteCropTeacherSharedSelection(cropTeacherManagedOwner.Current!,
+                sharedSourceOperationForExecution, cropTeacherManagedOwner.DailySelection ??
+                    throw new InvalidDataException("Shared execution lost its original daily selection."));
+            AppendProgress(options, "crop_teacher_joint_daily_other_goal_returned", iteration, lastStateHash, lastQueueId,
+                "shared_source_return_verified=true crop_production_credit=false policy_reranked=false");
+        }
         if (cropSeedSupportForExecution is not null && cropManagedOperationForExecution is null)
             await cropSeedSupportForExecution.CompleteAsync(queuePath, ReadString(execution, "execution_path"),
                 ReadString(execution, "after_snapshot_path"), selectedCandidateId);
