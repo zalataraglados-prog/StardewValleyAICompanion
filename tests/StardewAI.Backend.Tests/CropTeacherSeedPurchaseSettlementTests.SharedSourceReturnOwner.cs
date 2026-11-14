@@ -127,6 +127,22 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         return await owner.AdmitSharedSourceReturnAsync(f.Transition, f.Files.F.Files.Native);
     }
 
+    [Fact]
+    public async Task ObservedOnlySharedReturnCannotClaimPreparedNativeOwnershipOnReopen()
+    {
+        var f = new SiteTillNativeFixture();
+        using var host = f.Files.F.Runtime;
+        await using var owner = await f.Files.F.Files.Open();
+        var operation = await AdmitObservedSharedReturn(f, owner);
+        await RunObservedSharedReturn(f, owner, operation);
+        await owner.DisposeAsync();
+        var path = Path.Combine(f.Files.F.Files.OwnerRoot, $"operation-{operation.Sequence:D6}-accepted.json");
+        var accepted = JsonNode.Parse(File.ReadAllText(path))!;
+        accepted["shared-source_native_claim_sha256"] = new string('a', 64);
+        Fixture.Save(path, accepted);
+        await Assert.ThrowsAsync<InvalidDataException>(() => f.Files.F.Files.Open());
+    }
+
     private static Task RunObservedSharedReturn(SiteTillNativeFixture f, CropTeacherManagedSeedOwner owner,
         CropTeacherManagedSeedOperation operation) => owner.RunSharedSourceReturnAsync(operation, f.Files.F.Runtime.Client,
         (diagnostic, request) => InvokeLive<Task<JsonObject>>("PostJournaledPortfolioCommitAsync", f.Files.F.Runtime.Client,

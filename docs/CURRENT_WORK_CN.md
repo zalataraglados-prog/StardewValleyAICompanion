@@ -6,6 +6,7 @@
 
 - **180原第5步执行前交接（实现待本提交CI）：** 179最终`26f279c9`／CI43639621997已全绿，Core2675／Backend3232、零跳过。现为外目标增加显式`selected_work_yield.v1`：原选择快照／plan／ranking、fresh selected-candidate证据／plan／queue与当前owner来源一并固定，占用原pending槽位；原队列编译核和时间预算核复用，不新造执行器。全局调用方领取一次native claim，crop owner不接收外动作执行回调；旧已观察返回入口与其他kind默认不变。重开后未claim可领取一次，已claim而结果未知只保留pending，读原journal／真实输出后才回179原marker／head恢复链，不自动补发。联合trace保留新claim／result及native输入hash，外动作不授作物／Teacher信用。
 - 本次还保留联合决策的原source-snapshot路径，并在原外目标准备结果提供类型化交接引用。新增正反例为合成契约测试，不是游戏原生通过；当前尚未把Main的外目标执行出口接到新claim，全局联合轨迹消费者、真实选线／原生对账及第6步仍未完成。下一处在同一能力块接原全局执行出口与恢复分支，不重新盘点／重采L1／重跑十三天，#569正式manifest前交接分工不变。夜间无本地构建／测试／游戏／API调用，`local-data`不提交、formal=false。
+- 180首次远端CI43643228681在新Live文件缺`Contracts.Training`导入处编译失败，未运行新增测试；已在本块补导入，并补旧观察入口不能冒领新native claim的负例，旧恢复／执行器不改。以修正提交的新CI为准，不用179绿代替。
 
 - 用户要求固化“长卡先核目标／要求错位、按完整能力块持续负责”。已更新本机AGENTS／worker skill、沙箱AGENTS及当前TASK／BOARD，并写入[持续阻塞规则](DOCUMENTATION_MAINTENANCE_CN.md#能力块与持续阻塞)。153原API同会话的工具读取回执确认AGENTS／TASK／验收增量均completed且包含新规则；不是只写文件或另付纯确认调用。临时worker修正次数不再打断有进展的常驻能力块；权限、额度和重复无进展仍有退出边界，不新增验收层。
 - 原151交付控制／准备消费者，33/33，但缺完整六格组合；控制端保留为peer39919995／Main6acae9cd。153同能力块续做新增六格组合及负例，随后明确报`insufficient_quota / credit_balance_exhausted`，已退出1、撤权，原账户进入本次观测期provider-paused。授权仍在，但仅用户确认补充额度并请求恢复后才允许一次原provider有效任务；不重试、不换源、不推断美元金额／账期。未完测试保留peer a8d70839／Main8677d4a4，没有丢弃。

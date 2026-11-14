@@ -3,6 +3,7 @@ using System.Text.Json.Nodes;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Training;
 using StardewAI.Core.Training;
 using StardewAI.GoalConditionedBootstrap;
 

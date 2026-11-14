@@ -80,13 +80,17 @@ public sealed partial class CropTeacherManagedSeedOwner
     private void ValidateSharedSourceReturnEvidence(CropTeacherManagedSeedOperation operation, JsonObject accepted)
     {
         var fields = new[] { "native_shared_source_return_verified", "shared_source_state_hash", "shared_after_state_hash",
-            "shared_verified_native_step_count", "crop_production_credit_authorized" };
+            "shared_verified_native_step_count", "crop_production_credit_authorized",
+            "shared-source_native_claim_sha256", "shared-source_native_result_sha256" };
         if (!operation.IsSharedSourceReturn)
         {
             if (fields.Any(name => accepted[name] is not null))
                 throw new InvalidDataException("A different phase cannot claim shared source return evidence.");
             return;
         }
+        if (operation.SharedSourceStart is null &&
+            new[] { "shared-source_native_claim_sha256", "shared-source_native_result_sha256" }.Any(name => accepted[name] is not null))
+            throw new InvalidDataException("Observed-only source return cannot claim ownership of a native invocation.");
         if (operation.SharedSourceStart is not null) LoadOriginalSupportingOutcome(operation);
         var expected = new JsonObject(); AddSharedSourceReturnEvidence(operation, expected);
         if (expected.Any(field => !JsonNode.DeepEquals(field.Value, accepted[field.Key])) ||
