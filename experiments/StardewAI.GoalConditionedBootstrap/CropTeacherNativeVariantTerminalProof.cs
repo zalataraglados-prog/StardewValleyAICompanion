@@ -1,11 +1,16 @@
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
+using System.Text.Json.Serialization;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
 public sealed record CropTeacherNativeVariantTerminalRequest(string SchemaVersion,
-    CropTeacherTerminalShippingTarget Target, MoneyRevenueCropTerminalSettlementProofRequest Settlement);
+    CropTeacherTerminalShippingTarget Target, MoneyRevenueCropTerminalSettlementProofRequest Settlement)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public MoneyRevenueCropNativeLifecycleTransitionRequest[]? NativeControlTail { get; init; }
+}
 
 // Explicit aggregate adapter; old scalar builders/readers never admit this request/version.
 public static class CropTeacherNativeVariantTerminalProof
@@ -42,6 +47,17 @@ public static class CropTeacherNativeVariantTerminalProof
             transitions.Select(row => Path.GetFullPath(row.ExecutionReceiptPath)).Distinct(StringComparer.OrdinalIgnoreCase).Count() == transitions.Length,
             "missing/replayed deposit evidence.");
         var expected = start;
+        MoneyRevenueTerminalQueueTransitionEvidence[] controls = [];
+        if (wrapper.NativeControlTail is { } controlTail)
+        {
+            Require(controlTail.Length > 0 && controlTail.All(row => row.TotalDay == target.TotalDay) &&
+                controlTail[^1].RunId == transitions![0].RunId && controlTail[^1].ExecutorVersion == transitions[0].ExecutorVersion,
+                "control tail differs from terminal native identity/day.");
+            controls = MoneyRevenueCropNativeLifecycleProofBuilder.VerifyNativeObservedControlTail(
+                retention.AfterSnapshotPath, controlTail, controlTail[^1].AfterSnapshotPath);
+            expected = Read<SnapshotEnvelope>(controlTail[^1].AfterSnapshotPath);
+            target.VerifyNativeVariantSource(expected, 0, retention.MinimumGrossRevenue);
+        }
         var deposits = new List<MoneyRevenueCropShippingDepositEvidence>();
         MoneyRevenueTerminalQueueTransitionEvidence[] route = [];
         var beforeHash = string.Empty;
@@ -81,7 +97,8 @@ public static class CropTeacherNativeVariantTerminalProof
             HarvestItemQualifiedId = target.QualifiedItemId, MinimumUnits = retention.MinimumUnits, MinimumGrossRevenue = retention.MinimumGrossRevenue,
             TerminalKind = MoneyRevenueRecurrenceProofKinds.NativeShippingSettlement, TerminalStartStateHash = start.StateHash,
             TerminalActionBeforeStateHash = beforeHash, TerminalActionAfterStateHash = recurrence.FinalStateHash,
-            RouteTransitions = route, ShippingDeposits = deposits.ToArray(), SettlementRouteTransitions = ingress.Evidence,
+            RouteTransitions = controls.Concat(route.Select(row => row with { TransitionIndex = row.TransitionIndex + controls.Length })).ToArray(),
+            ShippingDeposits = deposits.ToArray(), SettlementRouteTransitions = ingress.Evidence,
             // There is no scalar slot/price for this version. Each verified unit carries its own exact fields.
             SlotIndex = -1, UnitPrice = 0, SettledQuantity = deposits.Count,
             SettledRevenue = checked((int)target.PendingValueAt(target.RequiredQuantity)),

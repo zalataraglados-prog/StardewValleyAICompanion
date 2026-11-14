@@ -105,7 +105,7 @@ public sealed record CropTeacherTerminalShippingTarget(
         if (bins.Length != 1) throw new InvalidDataException("Native terminal bin is missing or duplicated.");
         var selected = bins[0];
         if (!selected.TryGetProperty("interaction_stand_tile_blocked_reason", out var standReason) ||
-            standReason.ValueKind != JsonValueKind.String)
+            standReason.ValueKind is not (JsonValueKind.String or JsonValueKind.Null))
             throw new InvalidDataException("Native terminal bin lacks its observed stand accessibility.");
         if (!selected.GetProperty("completed").GetBoolean() || selected.GetProperty("bin_scope").GetString() != NativeVariants!.BinScope ||
             selected.GetProperty("player_id").ToString() != PlayerId || selected.GetProperty("interaction_stand_tile_x").GetInt32() != StandTileX ||

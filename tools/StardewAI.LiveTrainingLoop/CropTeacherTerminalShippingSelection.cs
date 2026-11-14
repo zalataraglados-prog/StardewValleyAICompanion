@@ -72,10 +72,12 @@ internal sealed partial class CropTeacherTerminalShippingSelection
         var plan = inputs.Read<MoneyRevenueCropNativeProductionRunPlan>(nativePlanPath);
         var source = inputs.Read<SnapshotEnvelope>(snapshotPath);
         var matches = proofPaths.Select(path => (Path: path, Proof: inputs.Read<MoneyRevenueCropOutputRetentionProof>(path)))
-            .Where(row => SamePath(row.Proof.AfterSnapshotPath, snapshotPath) && row.Proof.AfterStateHash == source.StateHash).ToArray();
+            .Where(row => SamePath(row.Proof.AfterSnapshotPath, snapshotPath) && row.Proof.AfterStateHash == source.StateHash ||
+                useNativeVariants && !SamePath(row.Proof.AfterSnapshotPath, snapshotPath) &&
+                    ReadNativeRetentionControlTail(inputs, row.Proof, manifest, snapshotPath) is not null).ToArray();
         if (matches is not [var selected] || !selected.Proof.NativeOutputRetentionVerified ||
             selected.Proof.FormalProductTrainingAuthorized || selected.Proof.MinimumUnits <= 0 || selected.Proof.MinimumGrossRevenue <= 0 ||
-            selected.Proof.AfterSnapshotSha256 != inputs.Hashes[Path.GetFullPath(snapshotPath)] ||
+            selected.Proof.AfterSnapshotSha256 != inputs.Hashes[Path.GetFullPath(selected.Proof.AfterSnapshotPath)] ||
             !SamePath(selected.Proof.CropProductionPlanPath, plan.CropProductionPlanPath) ||
             selected.Proof.CropProductionPlanSha256 != plan.CropProductionPlanSha256 ||
             source.StateHash != SnapshotHash.ComputeStateHash(source.State))

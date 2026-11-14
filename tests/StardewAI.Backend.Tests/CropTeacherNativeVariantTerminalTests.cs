@@ -69,6 +69,27 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
     }
 
     [Theory]
+    [InlineData("native_null", true)]
+    [InlineData("empty", true)]
+    [InlineData("missing", false)]
+    [InlineData("blocked", false)]
+    [InlineData("boolean", false)]
+    public void NativeVariantTerminalUsesOriginalNullableStandReasonWithoutInventingAccessibility(string shape, bool valid)
+    {
+        using var f = new NativeVariantTerminalFixture();
+        var source = NativeVariantTerminalFixture.Copy(f.Shared.Source.Before);
+        ChangeState(source, "farm", node =>
+        {
+            var bin = node["shipping_bins"]!["value"]![0]!.AsObject();
+            if (shape == "missing") bin.Remove("interaction_stand_tile_blocked_reason");
+            else bin["interaction_stand_tile_blocked_reason"] = shape switch
+            { "native_null" => null, "empty" => JsonValue.Create(""), "blocked" => JsonValue.Create("dynamic_transient_blocked"), _ => JsonValue.Create(false) };
+        });
+        if (valid) f.Target.VerifyNativeVariantSource(source, 0, 1050);
+        else Assert.Throws<InvalidDataException>(() => f.Target.VerifyNativeVariantSource(source, 0, 1050));
+    }
+
+    [Theory]
     [InlineData("price")]
     [InlineData("quality")]
     [InlineData("quantity")]
@@ -125,6 +146,8 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         var legacy = JsonSerializer.Serialize(f.Target, JsonOptions);
         Assert.DoesNotContain("nativeVariants", legacy, StringComparison.Ordinal);
         var marked = MarkTerminalVariant(f.Target, f.Before);
+        Assert.DoesNotContain("nativeControlTail", JsonSerializer.Serialize(new CropTeacherNativeVariantTerminalRequest(
+            "crop_teacher_native_variant_terminal_request.v1", marked, new MoneyRevenueCropTerminalSettlementProofRequest()), JsonOptions));
         Assert.Throws<InvalidDataException>(() => f.Prepare(marked));
         Assert.Equal(f.Target, JsonSerializer.Deserialize<CropTeacherTerminalShippingTarget>(legacy, JsonOptions));
     }

@@ -1,13 +1,62 @@
 using System.Reflection;
 using System.Security.Cryptography;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
 using StardewAI.GoalConditionedBootstrap;
+using StardewAI.LiveTrainingLoop;
 
 namespace StardewAI.Backend.Tests;
 
 public sealed partial class CropTeacherSeedPurchaseSettlementTests
 {
+    [Fact]
+    public async Task NativeTerminalControlTailReusesExactControlChecksWithoutAcceptingMovementMissingOrMisboundTails()
+    {
+        var f = new LifecycleControlsFixture(); await f.Build();
+        var row = f.Rows[^1] with { BeforeSnapshotPath = f.Rows[^2].AfterSnapshotPath };
+        f.Rows[^1] = row;
+        var verified = Assert.Single(MoneyRevenueCropNativeLifecycleProofBuilder.VerifyNativeObservedControlTail(row.BeforeSnapshotPath, [row], row.AfterSnapshotPath));
+        Assert.Equal("executor.wait_ticks", Assert.Single(verified.OptionIds));
+        foreach (var fault in new[] { "missing", "duplicate", "candidate", "movement", "head", "source" })
+        {
+            var rows = fault == "missing" ? Array.Empty<MoneyRevenueCropNativeLifecycleTransitionRequest>() :
+                fault == "duplicate" ? [row, row] : new[] { fault == "candidate" ? row with { SelectedCandidateId = "foreign" } :
+                    fault == "movement" ? f.Rows[^3] : row };
+            Assert.Throws<InvalidDataException>(() => MoneyRevenueCropNativeLifecycleProofBuilder.VerifyNativeObservedControlTail(
+                fault == "source" ? row.AfterSnapshotPath : row.BeforeSnapshotPath, rows,
+                fault == "head" ? row.BeforeSnapshotPath : row.AfterSnapshotPath));
+        }
+        // Declared metadata binding only; this does not fabricate a production certificate or native sale.
+        var source = LifecycleRead<SnapshotEnvelope>(row.BeforeSnapshotPath);
+        var hashes = f.Rows.SelectMany(value => new[] { value.QueuePath, value.BeforeSnapshotPath, value.ExecutionReceiptPath, value.AfterSnapshotPath })
+            .Distinct().ToDictionary(path => path, path => Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant());
+        var retention = new MoneyRevenueCropOutputRetentionProof { AfterSnapshotPath = row.BeforeSnapshotPath,
+            AfterStateHash = source.StateHash, AfterSnapshotSha256 = hashes[row.BeforeSnapshotPath], HarvestTotalDay = row.TotalDay };
+        var ownerRows = f.Rows.Select((value, index) => new CropTeacherManagedProductionTransition(index + 1,
+            index == f.Rows.Count - 1 ? "supporting_route" : "declared_original_transition", value)).ToArray();
+        var manifest = new JsonObject { ["owner_transitions"] = JsonSerializer.SerializeToNode(ownerRows, JsonOptions) };
+        var assembly = typeof(CropTeacherManagedSeedOwner).Assembly;
+        var artifacts = assembly.GetType("StardewAI.LiveTrainingLoop.CropSeedRuntimeArtifacts")!;
+        var helper = assembly.GetType("StardewAI.LiveTrainingLoop.CropTeacherTerminalShippingSelection")!
+            .GetMethod("ReadNativeRetentionControlTail", BindingFlags.NonPublic | BindingFlags.Static)!;
+        object? ReadTail(JsonObject document, IReadOnlyDictionary<string, string> pins) => helper.Invoke(null,
+            [Activator.CreateInstance(artifacts, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, [pins], null)!,
+                retention, document, row.AfterSnapshotPath]);
+        Assert.Single(Assert.IsType<CropTeacherManagedProductionTransition[]>(ReadTail(manifest, hashes)));
+        foreach (var fault in new[] { "role", "sequence", "missing" })
+        {
+            var changed = (JsonObject)manifest.DeepClone(); var tail = changed["owner_transitions"]!.AsArray();
+            if (fault == "role") tail[^1]!["operationKind"] = "terminal_shipping";
+            if (fault == "sequence") tail[^1]!["ownerSequence"] = 1;
+            if (fault == "missing") tail.RemoveAt(tail.Count - 1);
+            Assert.Null(ReadTail(changed, hashes));
+        }
+        var unpinned = new Dictionary<string, string>(hashes); unpinned.Remove(row.ExecutionReceiptPath);
+        Assert.IsType<InvalidDataException>(Assert.Throws<TargetInvocationException>(() => ReadTail(manifest, unpinned)).InnerException);
+    }
+
     [Fact]
     public async Task NativeLifecycleConsumesSixTileDay8Water4OriginalProductRefillApproachWater2()
     {

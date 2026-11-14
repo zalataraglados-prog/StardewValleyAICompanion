@@ -57,8 +57,11 @@ internal static partial class CropTeacherTerminalSettlementEvidence
             "target differs from the original selected retained wave/cursor.");
         var initial = artifacts.Read<SnapshotEnvelope>(retention.AfterSnapshotPath);
         if (target.NativeVariants is not null) target.VerifyNativeVariantSource(initial, 0, retention.MinimumGrossRevenue);
+        var productionHead = manifest.GetProperty("accepted_snapshot_path").GetString()!;
+        var controlTail = target.NativeVariants is null ? null : CropTeacherTerminalShippingSelection.ReadNativeRetentionControlTail(
+            artifacts, retention, JsonNode.Parse(manifest.GetRawText())!.AsObject(), productionHead);
         Require(Pin(retention.AfterSnapshotPath) == retention.AfterSnapshotSha256 && initial.StateHash == retention.AfterStateHash &&
-            Same(manifest.GetProperty("accepted_snapshot_path").GetString()!, retention.AfterSnapshotPath), "retained production head differs.");
+            (Same(productionHead, retention.AfterSnapshotPath) || target.NativeVariants is not null && controlTail is not null), "retained production head differs.");
         JsonElement Field(string domain, string name) => initial.State[domain].GetProperty(name).GetProperty("value");
         Require(initial.SaveId.Value == target.SaveId && initial.PlayerId.Value == target.PlayerId && initial.GameVersion == target.GameVersion &&
             Field("time", "total_days").GetInt32() == target.TotalDay && Field("player", "location_id").GetString() == "Farm",
@@ -75,13 +78,17 @@ internal static partial class CropTeacherTerminalSettlementEvidence
             bins[0].GetProperty("pending_settlement_value").GetInt64() == 0, "selected bin/stand differs.");
 
         var starts = trace.Transitions.Select((row, index) => (row, index))
-            .Where(pair => Same(pair.row.NativeTransition.BeforeSnapshotPath, retention.AfterSnapshotPath)).ToArray();
+            .Where(pair => Same(pair.row.NativeTransition.BeforeSnapshotPath, productionHead)).ToArray();
         Require(starts.Length == 1, "terminal suffix must have one original production boundary.");
+        if (controlTail is { Length: > 0 })
+            Require(starts[0].index >= controlTail.Length && JsonNode.DeepEquals(
+                JsonSerializer.SerializeToNode(trace.Transitions.Skip(starts[0].index - controlTail.Length).Take(controlTail.Length), CropTeacherManagedSeedOwner.JsonOptions),
+                JsonSerializer.SerializeToNode(controlTail, CropTeacherManagedSeedOwner.JsonOptions)), "terminal trace lost its original production control tail.");
         var suffix = trace.Transitions.Skip(starts[0].index).ToArray();
         var routes = new List<MoneyRevenueTerminalQueueTransitionProof>();
         var deposits = new List<MoneyRevenueTerminalQueueTransitionProof>();
         var home = new List<MoneyRevenueTerminalQueueTransitionProof>();
-        var previous = retention.AfterSnapshotPath;
+        var previous = productionHead;
         var sequence = starts[0].index == 0 ? 0 : trace.Transitions[starts[0].index - 1].OwnerSequence;
         var run = suffix[0].NativeTransition.RunId;
         var executor = suffix[0].NativeTransition.ExecutorVersion;
@@ -153,7 +160,8 @@ internal static partial class CropTeacherTerminalSettlementEvidence
             RevenueRecurrenceManifestPath = recurrenceManifest, RevenueRecurrenceReceiptPath = recurrencePath
         };
         var requestPath = target.NativeVariants is null ? await Emit("terminal-request", request).ConfigureAwait(false) :
-            await Emit("terminal-request", new CropTeacherNativeVariantTerminalRequest("crop_teacher_native_variant_terminal_request.v1", target, request)).ConfigureAwait(false);
+            await Emit("terminal-request", new CropTeacherNativeVariantTerminalRequest("crop_teacher_native_variant_terminal_request.v1", target, request)
+                { NativeControlTail = controlTail is { Length: > 0 } ? controlTail.Select(row => row.NativeTransition).ToArray() : null }).ConfigureAwait(false);
         // The original builder owns all settlement math and its mandatory support verification.
         var proof = target.NativeVariants is null ? MoneyRevenueCropTerminalSettlementProofBuilder.Build(requestPath) :
             CropTeacherNativeVariantTerminalProof.Build(requestPath);
