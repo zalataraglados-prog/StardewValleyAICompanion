@@ -93,6 +93,8 @@ internal static partial class CropTeacherProductionEvidence
             {
                 var retentionRequest = await Emit($"retention-request-{index}-{wave.WaveIndex}", new MoneyRevenueCropOutputRetentionProofRequest
                 {
+                    SchemaVersion = shared.Count > 0 ? "money_revenue_crop_output_retention_proof_request.v2" :
+                        "money_revenue_crop_output_retention_proof_request.v1",
                     CropProductionPlanPath = plan.CropProductionPlanPath, NativeLifecycleProofPath = lifecycle,
                     CommitmentId = crop.CommitmentId, WaveIndex = wave.WaveIndex
                 }).ConfigureAwait(false);

@@ -100,10 +100,15 @@ internal sealed partial class CropTeacherTerminalShippingSelection
         if (useNativeVariants)
         {
             var remaining = MinimumUnits;
+            var producerLimits = MoneyRevenueCropOutputRetentionProofBuilder.HasProducerRetention(selected.Proof) ?
+                selected.Proof.ProducerRetention!.Variants.ToDictionary(row => row.InventoryIdentitySha256, row => row.RetainedQuantity) : null;
             foreach (var row in stacks.OrderByDescending(row => Integer(row, "sell_to_store_price")).ThenBy(row => Integer(row, "slot_index")))
             {
                 var quantity = Integer(row, "stack");
-                var deposit = Math.Min(remaining, quantity);
+                var key = producerLimits is null ? "" : MoneyRevenueCropRetentionAccount.InventoryIdentity(row);
+                var deposit = Math.Min(Math.Min(remaining, quantity), producerLimits?.GetValueOrDefault(key) ?? (producerLimits is null ? quantity : 0));
+                if (deposit == 0) continue;
+                if (producerLimits is not null) producerLimits[key] -= deposit;
                 selectedVariants.Add(new(Integer(row, "slot_index"), Integer(row, "quality"),
                     Integer(row, "sell_to_store_price"), quantity) { DepositQuantity = deposit == quantity ? null : deposit });
                 remaining -= deposit;
@@ -136,6 +141,7 @@ internal sealed partial class CropTeacherTerminalShippingSelection
             nativeVariants = new("crop_teacher_native_terminal_variants.v1", binScope, next!);
             CreateTarget(0).VerifyNativeVariantSource(source, 0, MinimumGrossRevenue);
         }
+        MoneyRevenueCropOutputRetentionProofBuilder.VerifyProducerTerminalTarget(selected.Proof, CreateTarget(0), source);
         inputs.Validate();
         // The full trajectory was checked once above. Per-action binding keeps only its terminal certificate and source.
         var terminalPaths = new[] { evidence.ManifestPath, nativePlanPath, snapshotPath, ledgerPath, RetentionProofPath }

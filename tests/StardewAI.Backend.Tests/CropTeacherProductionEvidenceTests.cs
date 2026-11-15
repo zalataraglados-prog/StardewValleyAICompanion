@@ -14,7 +14,7 @@ using StardewAI.Testing;
 
 namespace StardewAI.Backend.Tests;
 
-public sealed class CropTeacherProductionEvidenceTests
+public sealed partial class CropTeacherProductionEvidenceTests
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 

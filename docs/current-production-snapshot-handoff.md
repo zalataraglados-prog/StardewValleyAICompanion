@@ -1,5 +1,33 @@
 # Current Production Snapshot Handoff
 
+## Producer-Aware Interleaved Harvest Retention (183)
+
+182 final f840308a / CI43652352863 passed Core2675 and Backend3261, zero skipped.
+183 adds an explicit output-retention request/proof v2 to the SAME lifecycle builder.
+Only owned harvest batches add fungible inventory-variant credit. Original shared
+native action frames debit observed variant losses in order; foreign gains never
+replenish crop credit. Observed item metadata defines the variant, excluding
+slot/quantity/empty marker and PlayerReadAdapter's contextual price/sell-protection
+fields. Unknown item metadata remains bound. This is conservative fungible attribution, NOT a
+persisted-item identity simulator. Legacy inventory before/after/increase retain
+their actual aggregate meaning; producer_retention is separate. Original v1 and
+scalar settlement/checkpoint defaults remain strict. Joint production opts into v2;
+no-shared-source production remains v1.
+
+The existing explicit native variant terminal selection, preparation and final
+settlement check the SAME per-variant credit (including existing partial-stack
+plans). Original compiler, owner, reservation and settlement contracts remain.
+Initial focus35/35(15s), final rebuilt producer14/14(6s) and adjacent74/74(54s)
+passed, zero skipped. Both native transports and changed-journal rejection covered.
+First new test-helper compile failure and new reader's null-empty-slot failures
+are retained; only NEW code was corrected against the original PlayerReadAdapter.
+Final-head remote CI pending. Synthetic source/whole-crop fixtures are NOT actual mixed-game proof.
+Remaining original step5: selected-decision restore, general partial/multi-queue
+results, actual mixed source/calendar/selected-route reconciliation. Observe open
+step3/4 automatic properties in that planned run, not another thirteen-day replay.
+Step6 still binds two native gates per #570; #569 lab handoff is BEFORE formal
+manifest. L1 and169-172 accepted sources frozen; formal=false; no raw/local-data commit.
+
 ## Joint Lifecycle Source Consumer (182)
 
 Local current-code E GamePath restore/build and focused adjacent72/72 passed in49s,

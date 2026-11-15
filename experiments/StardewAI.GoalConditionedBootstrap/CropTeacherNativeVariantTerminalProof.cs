@@ -40,6 +40,7 @@ public static class CropTeacherNativeVariantTerminalProof
         Require(Hash(retention.AfterSnapshotPath) == retention.AfterSnapshotSha256 && start.StateHash == retention.AfterStateHash,
             "retained start differs.");
         target.VerifyNativeVariantSource(start, 0, retention.MinimumGrossRevenue);
+        MoneyRevenueCropOutputRetentionProofBuilder.VerifyProducerTerminalTarget(retention, target, start);
         var transitions = request.ShippingDepositTransitions;
         Require(transitions is not null && transitions.Length == target.RequiredQuantity &&
             transitions.All(row => row is not null && !string.IsNullOrWhiteSpace(row.TransitionId)) &&

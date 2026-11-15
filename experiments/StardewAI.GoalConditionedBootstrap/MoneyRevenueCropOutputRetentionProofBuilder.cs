@@ -2,7 +2,7 @@ using StardewAI.Contracts.State;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
-public static class MoneyRevenueCropOutputRetentionProofBuilder
+public static partial class MoneyRevenueCropOutputRetentionProofBuilder
 {
     public static MoneyRevenueCropOutputRetentionProof Build(
         string requestPath)
@@ -14,8 +14,9 @@ public static class MoneyRevenueCropOutputRetentionProofBuilder
             MoneyRevenueCropOutputRetentionProofRequest>(
                 fullRequestPath,
                 "Money Revenue crop output-retention proof request");
-        Require(request.SchemaVersion ==
-                    "money_revenue_crop_output_retention_proof_request.v1" &&
+        var producerAware = request.SchemaVersion == "money_revenue_crop_output_retention_proof_request.v2";
+        Require((producerAware || request.SchemaVersion ==
+                    "money_revenue_crop_output_retention_proof_request.v1") &&
                 !string.IsNullOrWhiteSpace(request.CommitmentId) &&
                 request.WaveIndex > 0 &&
                 !request.FormalProductTrainingAuthorized,
@@ -103,9 +104,9 @@ public static class MoneyRevenueCropOutputRetentionProofBuilder
         var lastIndex = Array.IndexOf(
             lifecycle.Transitions,
             harvestTransitions[^1]);
-        Require(firstIndex >= 0 && lastIndex >= firstIndex &&
+        Require(firstIndex >= 0 && lastIndex >= firstIndex && (producerAware ||
                 lifecycle.Transitions[firstIndex..(lastIndex + 1)]
-                    .SequenceEqual(harvestTransitions),
+                    .SequenceEqual(harvestTransitions)),
             "Money Revenue crop output-retention harvest queues are not contiguous.");
 
         var beforePath = RequiredBoundFile(
@@ -131,7 +132,7 @@ public static class MoneyRevenueCropOutputRetentionProofBuilder
             verifiedCommitment.HarvestItemQualifiedId,
             wave.MinimumUnits,
             minimumQuality: 0);
-        Require(receipt.Resolved && receipt.Verified &&
+        Require(receipt.Resolved && (producerAware || receipt.Verified) &&
                 receipt.BeforeQuantity.HasValue &&
                 receipt.AfterQuantity.HasValue &&
                 receipt.QuantityIncrease.HasValue,
@@ -146,6 +147,8 @@ public static class MoneyRevenueCropOutputRetentionProofBuilder
         var quantityIncrease = receipt.QuantityIncrease ??
             throw new InvalidDataException(
                 "Money Revenue crop output-retention quantity increase is unavailable.");
+        var attribution = producerAware ? BuildProducerRetention(lifecycle, harvestTransitions, firstIndex, lastIndex,
+            verifiedCommitment.HarvestItemQualifiedId, wave.MinimumUnits, verifiedCommitment.TileCount) : null;
 
         var queueEvidence = harvestTransitions.Select(value =>
         {
@@ -168,7 +171,7 @@ public static class MoneyRevenueCropOutputRetentionProofBuilder
                 value.ItemCount);
         }).ToArray();
 
-        return new MoneyRevenueCropOutputRetentionProof
+        var proof = new MoneyRevenueCropOutputRetentionProof
         {
             Status = "verified_native_crop_output_retention",
             RequestPath = fullRequestPath,
@@ -205,6 +208,17 @@ public static class MoneyRevenueCropOutputRetentionProofBuilder
             NativeOutputRetentionVerified = true,
             FormalProductTrainingAuthorized = false
         };
+        if (attribution is not null)
+        {
+            proof.SchemaVersion = "money_revenue_crop_output_retention_proof.v2";
+            proof.ProducerRetention = attribution;
+            proof.ProofPolicy = "One exact native harvest wave with an independently rebuilt lifecycle. " +
+                "Only owned harvest inventory deltas create fungible variant credit; foreign increases do not. " +
+                "Every intervening original native action frame deducts observed variant losses conservatively. " +
+                "Inventory before/after/increase remain the actual aggregate quantities, not producer credit. " +
+                "Retained variant credit limits the explicit native terminal plan; reservations and settlement remain separate.";
+        }
+        return proof;
     }
 
     private static string RequiredBoundFile(

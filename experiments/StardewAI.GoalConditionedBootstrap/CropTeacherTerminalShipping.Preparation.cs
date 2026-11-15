@@ -34,7 +34,8 @@ public sealed partial class CropTeacherTerminalShipping
             proof = CurrentTeacherFrontierSupport.Read<MoneyRevenueCropOutputRetentionProof>(target.RetentionProofPath, "terminal pinned retention certificate");
             var hashes = inputs.ReadHashes();
             Require(hashes[Path.GetFullPath(target.RetentionProofPath)] == target.RetentionProofSha256 &&
-                    proof.SchemaVersion == "money_revenue_crop_output_retention_proof.v1" &&
+                    (proof.SchemaVersion == "money_revenue_crop_output_retention_proof.v1" ||
+                     nativeVariants && MoneyRevenueCropOutputRetentionProofBuilder.HasProducerRetention(proof)) &&
                     proof.Status == "verified_native_crop_output_retention" && proof.NativeOutputRetentionVerified &&
                     !proof.FormalProductTrainingAuthorized && commitmentIds.Contains(proof.CommitmentId, StringComparer.Ordinal) &&
                     source.Ledger.CropPlantingCommitments.Any(row => row.CommitmentId == proof.CommitmentId &&
@@ -53,6 +54,7 @@ public sealed partial class CropTeacherTerminalShipping
                 "Terminal initial retained snapshot bytes changed.");
             var initial = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(proof.AfterSnapshotPath, "terminal initial retained snapshot");
             Require(initial.StateHash == proof.AfterStateHash, "Terminal initial retained state changed.");
+            MoneyRevenueCropOutputRetentionProofBuilder.VerifyProducerTerminalTarget(proof, target, initial);
             VerifySource(initial, target, 0);
             VerifySource(source.Snapshot, target, target.AcceptedDepositCount);
             var initialBin = ReadBin(initial, target);

@@ -366,6 +366,10 @@ public sealed record MoneyRevenueCropOutputRetentionHarvestQueueEvidence(
 
 public sealed class MoneyRevenueCropOutputRetentionProof
 {
+    [JsonPropertyName("producer_retention")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public MoneyRevenueCropProducerRetention? ProducerRetention { get; set; }
+
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
         "money_revenue_crop_output_retention_proof.v1";

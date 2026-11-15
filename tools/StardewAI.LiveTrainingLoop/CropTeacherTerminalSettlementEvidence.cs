@@ -57,6 +57,7 @@ internal static partial class CropTeacherTerminalSettlementEvidence
             "target differs from the original selected retained wave/cursor.");
         var initial = artifacts.Read<SnapshotEnvelope>(retention.AfterSnapshotPath);
         if (target.NativeVariants is not null) target.VerifyNativeVariantSource(initial, 0, retention.MinimumGrossRevenue);
+        MoneyRevenueCropOutputRetentionProofBuilder.VerifyProducerTerminalTarget(retention, target, initial);
         var productionHead = manifest.GetProperty("accepted_snapshot_path").GetString()!;
         var controlTail = target.NativeVariants is null ? null : CropTeacherTerminalShippingSelection.ReadNativeRetentionControlTail(
             artifacts, retention, JsonNode.Parse(manifest.GetRawText())!.AsObject(), productionHead);
