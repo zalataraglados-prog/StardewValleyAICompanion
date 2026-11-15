@@ -1,5 +1,27 @@
 # Current Production Snapshot Handoff
 
+## Issue572 Terminal Consumers And Remaining Repairs (211)
+
+210 OWN43741315779 SUCCESS, Core2762(1m13s)/Backend3531(7m27s), zero skipped;
+log SHA eb2279dde3279cb9b834c74eff8c47b31e59cb2a232615e5a75f98c90cf565c1.
+Peer d0d2eace/tree673af87ab5a40d6e7da572db61f2cacb9c2abf2f equals210.
+572's four requested findings match source. First fix ONLY terminal/saved-closeout
+callers to original joint trace/CropTrace; crop-only reader still rejects sharing.
+Red Runtime/Product entry cases reproduced. Adjacent21/21(~69.9s), zero skipped,
+SHA6dfd7ae5f51a97abeceef491e2e76457700a5925454216f443fe002b888caee6.
+Tests prove correct entry/precondition protection, NOT whole joint shipping/load.
+Do not close572 or claim native/formal acceptance. Own211 CI still required.
+
+NEXT in order: carry accepted saved-readback connection into original lifecycle
+resume declarations (no fabricated action/owner rewind); independent publication
+attempt after retained write failure (no overwrite/native resend); count verified
+refill-prefix work ONCE over the same coverage, preserving tile/water/prefix checks.
+Then original550 actual chosen route,570 ->569 PRE-MANIFEST. No new gates/13day replay.
+Original saved85 spring13 and169 independent spring14 native fingerprints match
+frozen evidence; generic script tree hash is not native fingerprint authority.
+Current Efree6,269,624,320B BELOW6144MiB, owner notified; no game/cleanup/lowered gate.
+Public baseline remains210 payloads. ModeOFF/formalfalse, no API/raw commits unchanged.
+
 ## Integrate PR571 In One Shared Aggregator (210)
 
 Owner confirmed finalized571/acdea0c1 and authorized integration. Preserve it as

@@ -114,6 +114,17 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         Assert.Equal(2, Assert.IsType<CropTeacherManagedProductionTransition[]>(merge.Invoke(null, args)).Length);
         args[^1] = false;
         Assert.IsType<InvalidDataException>(Assert.Throws<TargetInvocationException>(() => merge.Invoke(null, args)).InnerException);
+        var legacy = await Assert.ThrowsAsync<InvalidDataException>(() => owner.ReadProductionTraceAsync());
+        Assert.Contains("explicit joint trace", legacy.Message);
+        var source = f.Native.Files.F.Source.Before;
+        var unrelatedTarget = new CropTeacherTerminalShippingTarget("", "", source.SaveId.Value!, source.PlayerId.Value!,
+            source.GameVersion, f.Native.Preparation.TotalDay, "(O)400", 0, 0, 175, 0, 0, 0, 1, 1, 1, 0);
+        var terminalError = await Assert.ThrowsAsync<InvalidOperationException>(() => owner.BuildTerminalSettlementEvidenceAsync(
+            null!, unrelatedTarget, Path.Combine(f.Native.Files.F.Files.OwnerRoot, "not-terminal-evidence")));
+        Assert.Contains("completed deposits/native sleep", terminalError.Message);
+        var savedError = await Assert.ThrowsAsync<InvalidOperationException>(() => ReadSavedCloseout(owner,
+            Path.Combine(f.Native.Files.F.Files.OwnerRoot, "not-terminal-evidence", "terminal-evidence.json")));
+        Assert.Contains("accepted load", savedError.Message);
         await owner.DisposeAsync();
         await using var reopened = await f.Native.Files.F.Files.Open(options);
         await reopened.RestoreHeadAsync(f.Native.Files.F.Runtime.Client, f.Native.Files.F.Files.Recovery, f.Native.Files.F.Files.Post);

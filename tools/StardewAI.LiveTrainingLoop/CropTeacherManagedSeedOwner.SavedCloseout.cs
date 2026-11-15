@@ -16,7 +16,7 @@ public sealed partial class CropTeacherManagedSeedOwner
 {
     internal async Task<CropTeacherManagedSavedCloseoutEvidence> ReadSavedTerminalCloseoutAsync(string terminalManifestPath)
     {
-        var trace = await ReadProductionTraceAsync().ConfigureAwait(false);
+        var trace = (await ReadJointProductionTraceAsync().ConfigureAwait(false)).CropTrace;
         await gate.WaitAsync().ConfigureAwait(false);
         try
         {

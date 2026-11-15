@@ -7,7 +7,7 @@ public sealed partial class CropTeacherManagedSeedOwner
     public async Task<CropTeacherManagedTerminalEvidence> BuildTerminalSettlementEvidenceAsync(
         CropTeacherManagedProductionEvidence production, CropTeacherTerminalShippingTarget target, string evidenceDirectory)
     {
-        var trace = await ReadProductionTraceAsync().ConfigureAwait(false);
+        var trace = (await ReadJointProductionTraceAsync().ConfigureAwait(false)).CropTrace;
         await gate.WaitAsync().ConfigureAwait(false);
         try
         {
