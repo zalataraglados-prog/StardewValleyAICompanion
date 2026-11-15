@@ -37,10 +37,15 @@ public sealed partial class CropTeacherSeedTransferTests
         internal string ReferencePath => Path.Combine(Root, "cooking-settlement-reference.json");
         internal string NativeResultPath => Path.Combine(Root, "cooking-native-result.json");
         internal string Root => Path.GetDirectoryName(Files.SourcePath)!;
+        internal const string SaleStockItem = "(O)400";
+        internal const string SaleStockWave = "declared.cooking.sale-stock.wave";
+        private readonly bool includesReservedSaleStock;
 
-        internal SharedCookingFixture()
+        internal SharedCookingFixture(bool includesReservedSaleStock = false)
         {
-            Files = new Fixture(nativeEvidence: true, emptyChest: true, noPlayerSeed: true, beforeChange: ConfigureCooking);
+            this.includesReservedSaleStock = includesReservedSaleStock;
+            Files = new Fixture(nativeEvidence: true, emptyChest: true, noPlayerSeed: true,
+                beforeChange: before => ConfigureCooking(before, includesReservedSaleStock));
             Runtime = new(Files);
         }
 
@@ -57,6 +62,29 @@ public sealed partial class CropTeacherSeedTransferTests
                     MaterialClaims = [new() { StateHash = Files.Before.StateHash, ExpectedLedgerRevision = current.Revision,
                         ReservationId = id, SourceDecisionId = id, GoalId = goal, NodeId = "chest:FarmHouse:9,8", SlotIndex = slot,
                         QualifiedItemId = item, Quantity = 1, Purpose = "declared unrelated protected material" }]
+                });
+                Assert.True(result.Accepted, string.Join(",", result.Errors));
+            }
+            if (includesReservedSaleStock)
+            {
+                var current = Runtime.Repository.Get(Files.Before);
+                var item = Files.Before.State["player"].GetProperty("inventory").GetProperty("value").EnumerateArray()
+                    .Single(row => row.GetProperty("qualified_item_id").GetString() == SaleStockItem);
+                var variant = MoneyRevenueCropRetentionAccount.InventoryIdentity(item);
+                const string producer = "declared.cooking.crop-harvest";
+                var result = Runtime.Repository.CommitReservationPortfolio(Files.Before, new()
+                {
+                    StateHash = Files.Before.StateHash, ExpectedLedgerRevision = current.Revision, PortfolioId = producer,
+                    SourceDecisionId = producer, GoalId = "earn_money",
+                    MaterialClaims = new[] { (Origin: 2, Slot: 2, Node: "player:123"), (Origin: 3, Slot: 6, Node: "chest:FarmHouse:9,8") }
+                        .Select(row => new MaterialReservationUpsertRequest
+                        {
+                            StateHash = Files.Before.StateHash, ExpectedLedgerRevision = current.Revision,
+                            ReservationId = CropSaleStockReservationContract.ReservationId(producer, row.Origin),
+                            SourceDecisionId = producer, GoalId = "earn_money", NodeId = row.Node, SlotIndex = row.Slot,
+                            QualifiedItemId = SaleStockItem, Quantity = 1,
+                            Purpose = CropSaleStockReservationContract.TransferablePurpose(Id, SaleStockWave, variant, row.Origin)
+                        }).ToArray()
                 });
                 Assert.True(result.Accepted, string.Join(",", result.Errors));
             }
@@ -148,7 +176,8 @@ public sealed partial class CropTeacherSeedTransferTests
             var slots = player["slots"]!.AsArray(); slots.Remove(slots.Single(row => row!["qualified_item_id"]!.GetValue<string>() == "(O)917"));
             slots.Add(JsonSerializer.SerializeToNode(Slot(0, "(O)194", 1, 2), JsonOptions));
             var fridge = graph["inventory_nodes"]!.AsArray().Single(row => row!["node_id"]!.GetValue<string>() == "chest:FarmHouse:9,8")!["slots"]!.AsArray();
-            fridge.RemoveAt(0); fridge[0]!["slot_index"] = 0; fridge[1]!["slot_index"] = 1;
+            fridge.RemoveAt(0);
+            for (var slot = 0; slot < fridge.Count; slot++) fridge[slot]!["slot_index"] = slot;
             var updated = graph.Deserialize<MaterialInventoryGraph>(JsonOptions)!; UpdateGraphTotals(updated);
             farm["material_inventory_graph"]!["value"] = JsonSerializer.SerializeToNode(updated, JsonOptions);
             var actor = JsonNode.Parse(After.State["player"].GetRawText())!.AsObject(); Fixture.ApplyNativeEchoes(farm, actor, After.GameTick);
@@ -191,7 +220,7 @@ public sealed partial class CropTeacherSeedTransferTests
             raw["after_snapshot_path"] = Transition.AfterSnapshotPath; Fixture.Save(Transition.ExecutionReceiptPath, raw);
         }
 
-        private static void ConfigureCooking(SnapshotEnvelope before)
+        private static void ConfigureCooking(SnapshotEnvelope before, bool includesReservedSaleStock)
         {
             Assert.True(MaterialInventoryGraphReader.TryRead(before, out var graph));
             graph!.InventoryNodes[0].LocationId = "FarmHouse";
@@ -199,6 +228,11 @@ public sealed partial class CropTeacherSeedTransferTests
             graph.InventoryNodes = graph.InventoryNodes.Append(new MaterialInventoryNode
             { NodeId = "chest:FarmHouse:9,8", InventoryKind = "fridge", SupplyState = "available", ActorUseAuthorized = true, OwnerPlayerId = 123,
                 LocationId = "FarmHouse", TileX = 9, TileY = 8, Capacity = 36, Slots = [Slot(0, "(O)176", 1), Slot(2, "(O)388", 2), Slot(4, "(O)390", 2)] }).ToArray();
+            if (includesReservedSaleStock)
+            {
+                graph.InventoryNodes[0].Slots = graph.InventoryNodes[0].Slots.Append(Slot(2, SaleStockItem, 1)).ToArray();
+                graph.InventoryNodes[^1].Slots = graph.InventoryNodes[^1].Slots.Append(Slot(6, SaleStockItem, 1)).ToArray();
+            }
             graph.AccessPoints = graph.AccessPoints.Append(new MaterialInventoryAccessPoint
             { AccessPointId = "declared-cooking-main-fridge", NodeId = "chest:FarmHouse:9,8", AccessKind = "built_in_fridge", LocationId = "FarmHouse",
                 TileX = 9, TileY = 8, IsFridge = true, ActorUseAuthorized = true }).ToArray();

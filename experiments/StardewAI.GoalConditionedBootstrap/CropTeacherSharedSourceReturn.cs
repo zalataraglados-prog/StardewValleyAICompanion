@@ -14,6 +14,10 @@ public sealed partial class CropTeacherSharedSourceReturn : ICropTeacherSupporti
     private readonly CropTeacherRetainedInputs inputs;
     private readonly Dictionary<string, string> requestBlobs = new(CropTeacherSeedTransferNativeOutcome.PathComparer);
     private readonly CropTeacherSupportingRebind rebind;
+    internal VerifiedNativeExecutionQueue NativeTransition { get; }
+    internal StrategyCommitmentLedger SourceLedger { get; }
+    internal PreparedMaterialTransfer? PreparedTransfer { get; }
+    internal StrategyCommitmentLedger SettledLedger { get; }
 
     private CropTeacherSharedSourceReturn(string runRequestPath, string sourcePath, string ledgerPath,
         IReadOnlyCollection<string> commitmentIds, MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId,
@@ -126,6 +130,10 @@ public sealed partial class CropTeacherSharedSourceReturn : ICropTeacherSupporti
         TransferSettlement = transfer;
         ConsumptionSettlement = consumption;
         ValidateInputsUnchanged();
+        NativeTransition = native;
+        SourceLedger = source.Ledger;
+        PreparedTransfer = preparedLedger.PreparedMaterialTransfer;
+        SettledLedger = baseLedger;
         rebind = new(native.After, baseLedger, stepId, ValidateInputsUnchanged, "Shared source return");
         ReleasesTransferLease = inventoryLease;
         if (inventoryLease) rebind.ReleaseTransferLease(preparedLedger.PreparedMaterialTransfer!.MaterialRelocations

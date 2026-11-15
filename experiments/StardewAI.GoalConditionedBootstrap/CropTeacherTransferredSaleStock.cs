@@ -1,7 +1,6 @@
 using System.Text.Json;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
-using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
 using StardewAI.Core.Infrastructure;
 using StardewAI.Core.Strategy;
@@ -34,62 +33,35 @@ internal sealed class CropTeacherTransferredSaleStock(string commitmentId, strin
     {
         var scope = inventoryEffects ? MoneyRevenueCropNativeSharedSourceVerifier.VerifyWithSharedInventoryEffects(request) :
             MoneyRevenueCropNativeSharedSourceVerifier.VerifyWithTransferredSaleStock(request);
-        var reference = request.NativeSharedSource!;
-        var sourceLedger = CurrentTeacherFrontierSupport.Read<StrategyCommitmentLedger>(reference.LedgerPath,
-            "transferred sale-stock original ledger");
-        var before = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(request.BeforeSnapshotPath,
-            "transferred sale-stock original source");
-        Require(sourceLedger.SourceStateHash == before.StateHash, "Transferred sale stock has another original source.");
-        var native = request.ExecutorVersion == PolicyTrajectoryVersionPins.ProductExecutor
-            ? CropTeacherSharedSourceReturn.ReadProductNativeTransition(before, request)
-            : CropTeacherSharedSourceReturn.ReadNativeTransition(before, request);
-        if (ledger is not null) _ = Read(before, ledger);
-        ledger = sourceLedger;
-        var settlement = reference.SettledMaterialTransfer;
-        var consumption = reference.SettledInventoryConsumption;
-        StrategyCommitmentLedger? prepared = null, settled = null;
-        if (settlement is not null)
-        {
-            Require(settlement.Preparation is not null,
-                "Transferred sale stock requires its original preparation and settlement.");
-            prepared = CropTeacherSharedTransferPreparation.Verify(before, sourceLedger, settlement.Preparation!);
-            settled = CropTeacherSharedTransferSettlement.Verify(prepared, native, settlement);
-        }
-        if (consumption is not null)
-        {
-            prepared = CropTeacherSharedConsumption.VerifyPreparation(before, sourceLedger, consumption.Preparation);
-            settled = CropTeacherSharedConsumption.Verify(prepared, native, consumption);
-        }
+        Require(scope.TransferSettlement is not { Preparation: null },
+            "Transferred sale stock requires its original preparation and settlement.");
+        var native = scope.NativeTransition;
+        Require(scope.SourceLedger.SourceStateHash == native.Before.StateHash,
+            "Transferred sale stock has another original source.");
+        if (ledger is not null) _ = Read(native.Before, ledger);
+        ledger = scope.SourceLedger;
         foreach (var frame in native.Actions)
         {
             var stockBefore = Read(frame.Before, ledger);
             if (frame.Item.OptionId == "executor.transfer_material")
             {
-                Require(prepared is not null && settled is not null,
+                var transfer = scope.PreparedTransfer;
+                Require(scope.TransferSettlement is not null && transfer is not null,
                     "Transferred sale stock has no original settled position projection.");
-                var transfer = prepared!.PreparedMaterialTransfer!;
                 var beforeReadable = MaterialInventoryGraphReader.TryRead(frame.Before, out var beforeGraph);
                 var afterReadable = MaterialInventoryGraphReader.TryRead(frame.After, out var graph);
                 Require(beforeReadable && afterReadable, "Transferred sale stock native frame graphs are unavailable.");
-                var physical = new MaterialTransferProjector().Project(transfer.BeforeInventoryGraph, transfer.Intent);
+                var physical = new MaterialTransferProjector().Project(transfer!.BeforeInventoryGraph, transfer.Intent);
                 Require(MaterialTransferProjector.VerifyNativeBeforeSlots(transfer.BeforeInventoryGraph, beforeGraph!, physical).Length == 0 &&
                     MaterialTransferProjector.VerifyNativeSlots(transfer.BeforeInventoryGraph, graph!, physical).Length == 0,
                     "Transferred sale stock positions changed outside their original native transfer frame.");
                 // The original service already replays moved AND passive claim reindexing.
-                ledger = settled!;
+                ledger = scope.SettledLedger;
             }
-            else if (frame.Item.OptionId == "executor.cook_recipe" && consumption is not null)
+            else if (frame.Item.OptionId == "executor.cook_recipe" && scope.ConsumptionSettlement is not null)
             {
-                Require(prepared?.PreparedInventoryConsumption is not null && settled is not null,
-                    "Cooking sale-stock retention lacks its original settled consumption projection.");
-                // Only the observed cook frame may apply the original settlement's passive positions.
-                var readableBefore = MaterialInventoryGraphReader.TryRead(frame.Before, out var beforeGraph);
-                var readableAfter = MaterialInventoryGraphReader.TryRead(frame.After, out var afterGraph);
-                Require(readableBefore && readableAfter &&
-                    InventoryConsumptionProjector.VerifyBefore(prepared!.PreparedInventoryConsumption!, beforeGraph!).Length == 0 &&
-                    InventoryConsumptionProjector.VerifyAfter(prepared.PreparedInventoryConsumption!, afterGraph!).Length == 0,
-                    "Cooking sale-stock positions changed outside the original native consumption frame.");
-                ledger = settled!;
+                // The shared source verifier validates the prepared one-action cook and its physical before/after.
+                ledger = scope.SettledLedger;
             }
             account.ObserveTransferredStock(frame.Before, frame.After, false, stockBefore, Read(frame.After, ledger));
         }
