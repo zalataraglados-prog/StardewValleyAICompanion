@@ -732,7 +732,9 @@ public sealed partial class LiveTrainingOptions
         NativeOutputObservationMode.Validate(options);
         options.ValidateTeacherPreferenceMode();
         options.ValidatePrecompiledQueueMode();
-        options.ValidateQueueExecutionReceiptMode();
+        // Managed Main emits original owner queues; fixed-candidate calibration is a separate mode.
+        if (options.UseManagedCropTeacher) options.ValidateQueueItemAttemptLimit();
+        else options.ValidateQueueExecutionReceiptMode();
         options.ValidateGoldenWalnutFreshSaveEvidenceMode();
         options.ValidateCropTeacherResumeMode();
         options.ValidateManagedCropTeacherMode();
@@ -1011,14 +1013,7 @@ public sealed partial class LiveTrainingOptions
                 "--emit-queue-execution-receipt requires one attempt and " +
                 "one required verified action.");
         }
-        if (MaxQueueItemAttempts is < 1 or >
-            TeacherEvidenceRolloutLimits.MaxQueueItems)
-        {
-            throw new ArgumentException(
-                "--emit-queue-execution-receipt requires " +
-                "--max-queue-item-attempts between 1 and " +
-                TeacherEvidenceRolloutLimits.MaxQueueItems + ".");
-        }
+        ValidateQueueItemAttemptLimit();
         if (DailyPlanMaxCandidates != 1 ||
             string.IsNullOrWhiteSpace(DailyPlanCandidateKind) ||
             string.IsNullOrWhiteSpace(DailyPlanCandidateId))
@@ -1027,6 +1022,13 @@ public sealed partial class LiveTrainingOptions
                 "--emit-queue-execution-receipt requires one exact daily-plan " +
                 "candidate kind and ID.");
         }
+    }
+
+    private void ValidateQueueItemAttemptLimit()
+    {
+        if (MaxQueueItemAttempts is < 1 or > TeacherEvidenceRolloutLimits.MaxQueueItems)
+            throw new ArgumentException("--emit-queue-execution-receipt requires " +
+                "--max-queue-item-attempts between 1 and " + TeacherEvidenceRolloutLimits.MaxQueueItems + ".");
     }
 
     private static string ReadTextOrEmpty(string path)

@@ -1,5 +1,14 @@
 # StardewAI 当前工作
 
+## 2026-11-16 真实联合Main启动前模式接线（215）
+
+- 214 `e9ef614f` 自身CI43752272783成功：Core2770/2770（54秒）、Backend3564/3564（9分14秒），零跳过，日志SHA `98b7576c4c0277275c16e2dd5251ef81938d1bf573810c1d4a08bc745f1dd84a`；沙箱merge `56f30e42` 跟踪树 `c38749e4` 与214一致。#572八项代码修复及相邻验证保留，实际联合业务验收仍未完成。
+- 准备实际运行时先调用原 `LiveTrainingOptions.Parse`，未开游戏即复现：合法managed/product/joint、队列上限12、候选数4、不指定kind/ID，被旧**单指定候选校准模式**拒绝。旧写法用于隔离校准有正当意义；问题是新managed Main的调用分流，不是应删掉旧精确候选约束。最初预检漏填队列attempt上限时触发的是正确保护，补齐12后才复现本项，不将用法错误报成产品bug。
+- Parse仅让显式managed模式走其既有managed/产品/反馈/回执/保存/隔离/禁止正式训练检查，复用抽出的原1—12队列attempt门；不再套用standalone单候选校准的固定kind/ID、候选数1。旧 `ValidateQueueExecutionReceiptMode` 原检查顺序／条件保留，仍拒绝不指定候选的standalone校准，合法精确校准仍通过。原0到1的参数归一化没有改变；新反例错以为0必须拒绝，已只修测试。
+- 最终原managed／恢复参数／续行／后端联合入口相邻 **53/53（2.4秒）**，零跳过，日志SHA `9cec38d48f0d55fb295b2e8403ece9369d13149465bb4b7290ce7250c354098d`；含10新例，旧mandatory guards及standalone正反例保留。最后构建后C#未改，本机测试调用全部终止，本提交自身CI另核。这里证明的是**原实际启动参数入口**，不是原生游戏、出货或Teacher成功。
+- 下一步继续原#550真实联合运行，不再为已绿叶子补无关验证。必须显式managed+joint，使用原planner/编译/执行器与同episode owner，不写死候选池；旧max-attempts=1可以是宏循环内的原有边界，不因其数字自行升格为错误或新增门。旧85保存／89未保存尾部不能换head续接；可用原初始化生成明确声明的新隔离episode，冻结169人工证据不改成自动恢复。仍原#570→#569、formal=false，不新增十三日重跑。
+- 当前CLI Release准备已构建到214，但本块改了入口，**真正启动前须重新构建LiveTrainingLoop Release并确认新入口**，不得执行旧DLL。E约6.53GB略高原6144MiB，16GB内存；保持单CPU/BelowNormal/隐藏/静音/无渲染，测试host 1.5GiB不是native heap新门。先核盘余量及原端口，无游戏进程；本块未启动游戏、worker/API、部署、清理或raw提交。有关原启动/部署脚本已只读检查，部署只精确复制并核hash，不递归删除；不能把旧unmanaged smoke直接当新联合验收。
+
 ## 2026-11-16 补水同范围计时与联合剩余等待（214）
 
 - 213 `d62de68a` 自身CI43749482329成功，Core2765/2765（1分11秒）、Backend3550/3550（8分8秒），零跳过；日志SHA `960ce96e4c2c487fc63aaa2a459fc376ff22df33df0be472155bd696b27e8fec`。沙箱merge `11664ce6` 跟踪树 `5f2ac06f` 与213一致。没有恢复API调用／权限；本块CI仍须核自身提交。

@@ -1,5 +1,39 @@
 # Current Production Snapshot Handoff
 
+## Actual Managed Joint Startup Mode (215)
+
+214 e9ef614f OWN43752272783 SUCCESS: Core2770(54s)/Backend3564(9m14s), zero
+skipped; logSHA98b7576c4c0277275c16e2dd5251ef81938d1bf573810c1d4a08bc745f1dd84a.
+Peer merge56f30e42/treec38749e4 equals214; no provider invocation/grants.
+
+BEFORE game launch, original LiveTrainingOptions.Parse rejected valid managed+
+Product+joint/free4-candidate args because the caller reused standalone exact-one-
+candidate calibration. The old calibration restriction is intentional, not a bad
+executor. Route only explicit managed Parse through its existing mandatory guards
+plus the SAME extracted1-12 item-attempt bound; leave standalone validation/order
+and0->1 normalization intact. Do not fake kind/ID to satisfy a different mode.
+The first preflight omitted the required attempt bound: that was usage, not a bug;
+with12 supplied, the exact-candidate mismatch was reproduced. No game was started.
+
+Final adjacent53/53(2.4s), zero skipped, SHA
+9cec38d48f0d55fb295b2e8403ece9369d13149465bb4b7290ce7250c354098d;
+10 new parse/mandatory/bounds/legacy cases, existing resume/continuation/API intact.
+New0-rejection test was corrected to old intentional normalization, not vice versa.
+No C# after final build/local test handles terminal; own215 CI still required.
+
+NEXT original550 actual chosen managed+joint Main/one episode owner. Rebuild
+LiveTrainingLoop Release for215 before launch (current prepared Release is214).
+Use coherent saved source or original initialization of a declared new isolated
+episode; no old89->85 head swap, fabricated progress or169 automatic-owner credit.
+One queue at a time/max-attempts1 can be intentional: don't add another numeric gate.
+E runtime/save isolation, I project/evidence, single CPU/BelowNormal/hidden/silent,
+no rendering; test-host1.5GiB is NOT a native heap limit. No existing game observed,
+16GB RAM/E~6.53GB (original6144MiB reserve retained), check current ports/space first.
+Original deployment helpers inspected: exact copy/hash, no recursive delete.
+Old first-day smoke is unmanaged/nonjoint; do not run unchanged and call it joint.
+Then570 ->569 PRE-MANIFEST,572 full business exit still OPEN/ModeOFF/formalfalse.
+No game/API/deploy/cleanup/raw this block. Public guard baseline214 payloads.
+
 ## Same-Coverage Native Time And Remaining Wait (214)
 
 213 d62de68a OWN43749482329 SUCCESS: Core2765(1m11s)/Backend3550(8m8s), zero skipped;
