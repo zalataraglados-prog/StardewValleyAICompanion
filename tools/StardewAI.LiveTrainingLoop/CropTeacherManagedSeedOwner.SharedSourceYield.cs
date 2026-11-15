@@ -186,7 +186,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         return mechanical.Candidates[0];
     }
 
-    private CropTeacherSharedSourcePreparation OpenSharedSourceStart(JsonObject record, string? executionGoal = null)
+    private CropTeacherSharedSourcePreparation OpenSharedSourceStart(JsonObject record, string? executionGoal = null, bool productTransfer = false)
     {
         var selected = ReadSharedSourceSelection(record, executionGoal);
         var selection = SharedSourceSelection(record);
@@ -211,6 +211,10 @@ public sealed partial class CropTeacherManagedSeedOwner
         var start = preparation is null
             ? CropTeacherSharedSourcePreparation.Open(plan.RequestPath, headSnapshotPath, headLedgerPath,
                 ActiveCoveredCommitments(), Text(record, "support_step_id"), selection.ModelPlanPath, transition, pins.Hashes)
+            : productTransfer
+                ? CropTeacherSharedSourcePreparation.OpenPreparedProductTransfer(plan.RequestPath, headSnapshotPath, headLedgerPath,
+                    ActiveCoveredCommitments(), Text(record, "support_step_id"), selection.ModelPlanPath, transition, pins.Hashes,
+                    preparation, SharedTransferReferencePath(record))
             : CropTeacherSharedSourcePreparation.OpenPreparedTransfer(plan.RequestPath, headSnapshotPath, headLedgerPath,
                 ActiveCoveredCommitments(), Text(record, "support_step_id"), selection.ModelPlanPath, transition, pins.Hashes,
                 preparation, SharedTransferReferencePath(record));

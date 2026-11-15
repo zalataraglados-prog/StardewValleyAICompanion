@@ -19,11 +19,13 @@ public sealed class CropTeacherSharedSourcePreparation : ICropTeacherSupportingP
     private readonly SnapshotEnvelope snapshot;
     private readonly CropTeacherSharedTransferPreparationReference? transferPreparation;
     private readonly string? settlementReferencePath;
+    private readonly bool productTransfer;
 
     private CropTeacherSharedSourcePreparation(string runRequestPath, string sourcePath, string ledgerPath,
         IReadOnlyCollection<string> commitmentIds, string stepId, string modelPlanPath,
         MoneyRevenueCropNativeLifecycleTransitionRequest boundary, IReadOnlyDictionary<string, string> selectionHashes,
-        CropTeacherSharedTransferPreparationReference? transferPreparation = null, string? settlementReferencePath = null)
+        CropTeacherSharedTransferPreparationReference? transferPreparation = null, string? settlementReferencePath = null,
+        bool productTransfer = false)
     {
         var comparer = CropTeacherSeedTransferNativeOutcome.PathComparer;
         var paths = new[] { runRequestPath, sourcePath, ledgerPath, modelPlanPath, boundary.QueuePath };
@@ -63,7 +65,9 @@ public sealed class CropTeacherSharedSourcePreparation : ICropTeacherSupportingP
         var budget = new TimeBudgetValidator().Validate(new WorldModelProjector().Project(source.Snapshot, queue.GoalId, queue.ExecutionMode), queue);
         Require(budget.FitsRequiredPlusOptional, "Shared source selected queue exceeds its original time budget: " + string.Join(",", budget.BlockReasons));
         TotalDay = MoneyRevenueCropSeedAcquisitionProofBuilder.ReadInt(source.Snapshot, "time", "total_days");
-        Require(boundary.TotalDay == TotalDay && boundary.ExecutorVersion == PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor &&
+        Require(boundary.TotalDay == TotalDay && boundary.ExecutorVersion == (productTransfer
+                    ? PolicyTrajectoryVersionPins.ProductExecutor : PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor) &&
+                (!productTransfer || transferPreparation is not null) &&
                 !string.IsNullOrWhiteSpace(boundary.RunId) && !string.IsNullOrWhiteSpace(boundary.SelectedCandidateId),
             "Shared source preparation differs from its original day/run/executor/candidate.");
         var outputs = new[] { Path.GetFullPath(boundary.ExecutionReceiptPath), Path.GetFullPath(boundary.AfterSnapshotPath) };
@@ -74,6 +78,7 @@ public sealed class CropTeacherSharedSourcePreparation : ICropTeacherSupportingP
         this.commitmentIds = commitmentIds.ToArray(); this.stepId = stepId; this.boundary = boundary;
         CandidateId = boundary.SelectedCandidateId; BaseLedger = ledger; snapshot = source.Snapshot;
         this.transferPreparation = transferPreparation;
+        this.productTransfer = productTransfer;
         this.settlementReferencePath = settlementReferencePath is null ? null : Path.GetFullPath(settlementReferencePath);
         ValidateInputsUnchanged();
     }
@@ -89,6 +94,13 @@ public sealed class CropTeacherSharedSourcePreparation : ICropTeacherSupportingP
         CropTeacherSharedTransferPreparationReference preparation, string settlementReferencePath) =>
         new(runRequestPath, sourcePath, ledgerPath, commitmentIds, stepId, modelPlanPath, boundary, selectionHashes,
             preparation ?? throw new ArgumentNullException(nameof(preparation)), settlementReferencePath);
+
+    public static CropTeacherSharedSourcePreparation OpenPreparedProductTransfer(string runRequestPath, string sourcePath, string ledgerPath,
+        IReadOnlyCollection<string> commitmentIds, string stepId, string modelPlanPath,
+        MoneyRevenueCropNativeLifecycleTransitionRequest boundary, IReadOnlyDictionary<string, string> selectionHashes,
+        CropTeacherSharedTransferPreparationReference preparation, string settlementReferencePath) =>
+        new(runRequestPath, sourcePath, ledgerPath, commitmentIds, stepId, modelPlanPath, boundary, selectionHashes,
+            preparation ?? throw new ArgumentNullException(nameof(preparation)), settlementReferencePath, productTransfer: true);
 
     public string SourcePath { get; }
     public string QueuePath { get; }
@@ -112,8 +124,11 @@ public sealed class CropTeacherSharedSourcePreparation : ICropTeacherSupportingP
                 "shared prepared transfer settlement");
             Require(reference.Preparation == transferPreparation && reference.BackendUrl == transferPreparation.BackendUrl,
                 "Shared prepared transfer changed its original preparation or backend.");
-            result = CropTeacherSharedSourceReturn.OpenAfterPreparedTransferYield(runRequestPath, SourcePath,
-                ledgerPath, commitmentIds, transition, stepId, reference, settlementReferencePath!);
+            result = productTransfer
+                ? CropTeacherSharedSourceReturn.OpenAfterPreparedProductTransferYield(runRequestPath, SourcePath,
+                    ledgerPath, commitmentIds, transition, stepId, reference, settlementReferencePath!)
+                : CropTeacherSharedSourceReturn.OpenAfterPreparedTransferYield(runRequestPath, SourcePath,
+                    ledgerPath, commitmentIds, transition, stepId, reference, settlementReferencePath!);
         }
         ValidateInputsUnchanged();
         return result;
@@ -124,7 +139,7 @@ public sealed class CropTeacherSharedSourcePreparation : ICropTeacherSupportingP
         ValidateInputsUnchanged();
         Require(RequiresTransferSettlement, "Shared source yield has no prepared material transfer.");
         return CropTeacherSharedTransferSettlement.CreateRequest(BaseLedger,
-            CropTeacherSharedSourceReturn.ReadNativeTransition(snapshot, boundary));
+            ReadPreparedNativeTransition());
     }
 
     public StrategyCommitmentLedger VerifyTransferSettlementReply(ReservationPortfolioSupportingTransitionSettlementRequest request,
@@ -132,11 +147,15 @@ public sealed class CropTeacherSharedSourcePreparation : ICropTeacherSupportingP
     {
         ValidateInputsUnchanged();
         Require(RequiresTransferSettlement, "Shared source yield has no prepared material transfer.");
-        var native = CropTeacherSharedSourceReturn.ReadNativeTransition(snapshot, boundary);
+        var native = ReadPreparedNativeTransition();
         Require(EqualJson(request, CropTeacherSharedTransferSettlement.CreateRequest(BaseLedger, native)),
             "Shared transfer settlement changed its original native-bound request.");
         var result = CropTeacherSharedTransferSettlement.VerifyReply(BaseLedger, native, request, reply);
         ValidateInputsUnchanged();
         return result;
     }
+
+    private VerifiedNativeExecutionQueue ReadPreparedNativeTransition() => productTransfer
+        ? CropTeacherSharedSourceReturn.ReadProductNativeTransition(snapshot, boundary)
+        : CropTeacherSharedSourceReturn.ReadNativeTransition(snapshot, boundary);
 }

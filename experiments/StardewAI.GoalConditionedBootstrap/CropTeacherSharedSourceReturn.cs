@@ -15,7 +15,8 @@ public sealed class CropTeacherSharedSourceReturn : ICropTeacherSupportingTransi
 
     private CropTeacherSharedSourceReturn(string runRequestPath, string sourcePath, string ledgerPath,
         IReadOnlyCollection<string> commitmentIds, MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId,
-        CropTeacherSharedTransferSettlementReference? transfer = null, bool includePreparation = false, string? retainedReferencePath = null)
+        CropTeacherSharedTransferSettlementReference? transfer = null, bool includePreparation = false, string? retainedReferencePath = null,
+        bool productTransfer = false)
     {
         Require(includePreparation == (transfer?.Preparation is not null) &&
                 (!includePreparation || transfer!.Preparation!.BackendUrl == transfer.BackendUrl),
@@ -46,7 +47,9 @@ public sealed class CropTeacherSharedSourceReturn : ICropTeacherSupportingTransi
         var source = transfer is null || includePreparation
             ? CropTeacherSupportingSource.Read(paths[0], paths[1], paths[2], commitmentIds, stepId)
             : CropTeacherSupportingSource.ReadBeforeSettledTransfer(paths[0], paths[1], paths[2], commitmentIds, stepId);
-        var native = ReadNativeTransition(source.Snapshot, transition);
+        Require(!productTransfer || includePreparation && retainedReferencePath is not null,
+            "Product shared transfer requires its explicit original prepared-yield boundary.");
+        var native = productTransfer ? ReadProductNativeTransition(source.Snapshot, transition) : ReadNativeTransition(source.Snapshot, transition);
 
         // The explicit mode observes an already settled transfer; this adapter never performs that mutation.
         var preparedLedger = includePreparation ? CropTeacherSharedTransferPreparation.Verify(source.Snapshot, source.Ledger,
@@ -102,14 +105,23 @@ public sealed class CropTeacherSharedSourceReturn : ICropTeacherSupportingTransi
         new(runRequestPath, sourcePath, ledgerPath, commitmentIds, transition, stepId);
 
     internal static VerifiedNativeExecutionQueue ReadNativeTransition(SnapshotEnvelope source,
-        MoneyRevenueCropNativeLifecycleTransitionRequest transition)
+        MoneyRevenueCropNativeLifecycleTransitionRequest transition) => ReadNativeTransitionCore(source, transition, productTransfer: false);
+
+    internal static VerifiedNativeExecutionQueue ReadProductNativeTransition(SnapshotEnvelope source,
+        MoneyRevenueCropNativeLifecycleTransitionRequest transition) => ReadNativeTransitionCore(source, transition, productTransfer: true);
+
+    private static VerifiedNativeExecutionQueue ReadNativeTransitionCore(SnapshotEnvelope source,
+        MoneyRevenueCropNativeLifecycleTransitionRequest transition, bool productTransfer)
     {
-        Require(transition.ExecutorVersion == PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor &&
+        Require(transition.ExecutorVersion == (productTransfer ? PolicyTrajectoryVersionPins.ProductExecutor : PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor) &&
                 transition.TotalDay == MoneyRevenueCropSeedAcquisitionProofBuilder.ReadInt(source, "time", "total_days"),
             "Shared source return differs from the original executor/day boundary.");
-        var native = NativeExecutionActionSourceReader.ReadSelectedNativeActionQueue(transition.QueuePath,
-            transition.BeforeSnapshotPath, transition.ExecutionReceiptPath, transition.AfterSnapshotPath,
-            transition.RunId, transition.SelectedCandidateId);
+        var native = productTransfer
+            ? NativeExecutionActionSourceReader.ReadSelectedProductActionQueue(transition.QueuePath, transition.BeforeSnapshotPath,
+                transition.ExecutionReceiptPath, transition.AfterSnapshotPath, transition.RunId, transition.SelectedCandidateId)
+            : NativeExecutionActionSourceReader.ReadSelectedNativeActionQueue(transition.QueuePath,
+                transition.BeforeSnapshotPath, transition.ExecutionReceiptPath, transition.AfterSnapshotPath,
+                transition.RunId, transition.SelectedCandidateId);
         Require(native.Actions.Length > 0 && native.Before.StateHash == source.StateHash,
             "Shared source return has no original native source chain.");
         for (var index = 0; index < native.Actions.Length; index++)
@@ -134,6 +146,11 @@ public sealed class CropTeacherSharedSourceReturn : ICropTeacherSupportingTransi
         IReadOnlyCollection<string> commitmentIds, MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId,
         CropTeacherSharedTransferSettlementReference transfer, string retainedReferencePath) =>
         new(runRequestPath, sourcePath, ledgerPath, commitmentIds, transition, stepId, transfer, true, retainedReferencePath);
+
+    public static CropTeacherSharedSourceReturn OpenAfterPreparedProductTransferYield(string runRequestPath, string sourcePath, string ledgerPath,
+        IReadOnlyCollection<string> commitmentIds, MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId,
+        CropTeacherSharedTransferSettlementReference transfer, string retainedReferencePath) =>
+        new(runRequestPath, sourcePath, ledgerPath, commitmentIds, transition, stepId, transfer, true, retainedReferencePath, productTransfer: true);
 
     public string SourceStateHash { get; }
     public string AfterStateHash { get; }

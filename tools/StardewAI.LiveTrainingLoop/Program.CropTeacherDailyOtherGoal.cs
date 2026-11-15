@@ -1,15 +1,21 @@
 using System.Text.Json.Nodes;
 using StardewAI.Contracts.State;
+using StardewAI.Core.Strategy;
 using StardewAI.LiveTrainingLoop;
 
 static partial class Program
 {
     private static async Task<ComposedCropDispatch> PrepareCropTeacherSelectedOtherGoalAsync(HttpClient http,
         LiveTrainingOptions options, int iteration, SnapshotEnvelope snapshot, CropTeacherDailySelection selection,
-        SelectedQueueCandidateLock candidate)
+        SelectedQueueCandidateLock candidate, CropTeacherManagedSeedOwner? owner = null)
     {
         if (selection.OwnedCandidateIds.Contains(candidate.CandidateId))
             throw new InvalidOperationException("Owned crop work must stay with its original crop dispatch.");
+        var parameters = candidate.RankedCandidate["parameters"] as JsonArray;
+        if (parameters?.Any(row => row is JsonObject parameter && parameter["name"] is JsonValue name &&
+            name.TryGetValue<string>(out var value) && value.Equals(CropSaleStockTransferPreparation.RequestParameter, StringComparison.OrdinalIgnoreCase)) == true)
+            return await PrepareCropTeacherSelectedSaleStockAsync(http, options, iteration, snapshot, selection, candidate,
+                owner ?? throw new InvalidOperationException("Selected sale stock preparation requires its current owner before mutation.")).ConfigureAwait(false);
         // Compile through the existing selected-candidate path, never through the crop executor.
         var prepared = await BuildQueueFromSelectedCandidateAsync(http, options, snapshot.StateHash, selection.GoalId,
             candidate).ConfigureAwait(false);

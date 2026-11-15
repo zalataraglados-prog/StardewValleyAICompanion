@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using StardewAI.Contracts.Strategy;
+using StardewAI.Contracts.Training;
 using StardewAI.GoalConditionedBootstrap;
 
 namespace StardewAI.LiveTrainingLoop;
@@ -77,6 +78,7 @@ public sealed partial class CropTeacherManagedSeedOwner
     private CropTeacherSharedSourceReturn OpenRecordedSharedSourceScope(JsonObject record, string sourcePath, string ledgerPath,
         string[] covered, MoneyRevenueCropNativeLifecycleTransitionRequest transition)
     {
+        var productYield = IsSharedTransferPreparation(record) && transition.ExecutorVersion == PolicyTrajectoryVersionPins.ProductExecutor;
         record = SharedExecutionRecord(record);
         var protocol = record["shared_source_return_protocol"]?.GetValue<string>();
         if (record["shared_source_execution_protocol"]?.GetValue<string>() == "selected_work_yield.v2")
@@ -87,8 +89,11 @@ public sealed partial class CropTeacherManagedSeedOwner
             if (protocol is not null || record["original_transfer_settlement"] is not null || yieldPreparation is null ||
                 yieldPreparation.BackendUrl != options.BackendUrl || reference.Preparation != yieldPreparation || reference.BackendUrl != options.BackendUrl)
                 throw new InvalidDataException("Shared transfer yield changed its original preparation or settlement protocol.");
-            return CropTeacherSharedSourceReturn.OpenAfterPreparedTransferYield(plan.RequestPath, sourcePath, ledgerPath,
-                covered, transition, Text(record, "support_step_id"), reference, path);
+            return productYield
+                ? CropTeacherSharedSourceReturn.OpenAfterPreparedProductTransferYield(plan.RequestPath, sourcePath, ledgerPath,
+                    covered, transition, Text(record, "support_step_id"), reference, path)
+                : CropTeacherSharedSourceReturn.OpenAfterPreparedTransferYield(plan.RequestPath, sourcePath, ledgerPath,
+                    covered, transition, Text(record, "support_step_id"), reference, path);
         }
         if (protocol is null && record["original_transfer_settlement"] is null)
             return CropTeacherSharedSourceReturn.Open(plan.RequestPath, sourcePath, ledgerPath, covered,

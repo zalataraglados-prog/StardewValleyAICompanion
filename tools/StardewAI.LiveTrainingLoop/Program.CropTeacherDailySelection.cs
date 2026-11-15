@@ -14,7 +14,7 @@ static partial class Program
     private static async Task<ComposedCropDispatch?> RefreshCropTeacherDailySelectionAsync(HttpClient http, LiveTrainingOptions options,
         int iteration, MoneyRevenueCropNativeProductionRunPlan plan, MoneyRevenueCropNativeProductionRunPlanRequest request,
         SnapshotEnvelope snapshot, StrategyCommitmentLedger ledger, IReadOnlySet<string> prepared,
-        CropTeacherManagedPlanningProgress progress, CropTeacherDailySelection selection)
+        CropTeacherManagedPlanningProgress progress, CropTeacherDailySelection selection, CropTeacherManagedSeedOwner? owner = null)
     {
         // Materialize the owned maintenance surface only. The policy's high-level order remains locked.
         var availabilityNode = await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/planner/options/availability",
@@ -73,7 +73,7 @@ static partial class Program
             evidence["status"] = "other_owner_required";
             await WritePortfolioJournalFileAsync(output + "-ranking.json", evidence.ToJsonString(JsonOptions)).ConfigureAwait(false);
             return await PrepareCropTeacherSelectedOtherGoalAsync(http, options, iteration, snapshot, selection,
-                pending[0]).ConfigureAwait(false);
+                pending[0], owner).ConfigureAwait(false);
         }
         var materialized = JsonSerializer.SerializeToNode(candidates, JsonOptions)!.AsArray();
         var locked = prefix.Select((selected, index) =>

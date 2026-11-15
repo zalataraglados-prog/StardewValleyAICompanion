@@ -1,5 +1,58 @@
 # Current Production Snapshot Handoff
 
+## Main Selected Preparation And Product Source (197, Stock Capability Open)
+
+196 0df28e73/quality43694186124 SUCCESS: Core2675/2675(39s),
+Backend3445/3445(7m25s), zero skipped. Log SHA
+eae7d4af0a8694995f080d47c960b3cd03f82d6426b3dc8686bd8b3fdf6574f5.
+Its local1405/1406 failure is NOT relabeled. Peer merge05e7f182/
+treeac52c7285f5b82783b19d34817fd9710c05c60dc equals accepted196, not this successor.
+
+Main explicit selected preview re-materializes ORIGINAL choice against its
+original anchored ledger, checking complete original params/marker/controls.
+Current preparation preserves intent/claim ownership; mechanical destination
+allocation may change after other work. SAME owner admits BEFORE RPC, fresh
+compile uses actual reply binding/child goal without changing parent decision or
+calling policy again. Main reuses the already-held operation, no second admission.
+Non-preview defaults remain.
+
+Explicit verbs, using original managed arguments and
+`--resume-managed-crop-owner <original-owner-directory>`:
+- `recover-crop-shared-preparation`: existing journal/reply or lookup only.
+- `continue-crop-shared-preparation`: ONLY when both original request and journal
+  are absent, admitted inputs/retained intent/summaries match, and original full
+  GET still equals pre-preparation ledger; continues FIRST original commit.
+Both stop at prepared, no native/game/reload/training. Old readonly resume gains
+no mutation permission; any attempted-RPC artifact forbids first-commit continuation.
+Earlier incomplete summaries are preserved, not cleaned/overwritten.
+
+Actual Product command exposed original Runtime-only proof contract (origin
+26f279c9). New NAMED Product prepared/yield/source entries reuse SAME native
+reader/receipt kernel with actual Product aggregate version AND every original
+Product wire. Old entries/defaults/v1-v2 unchanged, no relabel of old evidence.
+V3 owner/return/reopen use named mode; existing global consumers are NOT silently
+upgraded and still need explicit integration in the original stock/global block.
+
+Final E rebuilt adjacent140/140(1m2s), zero skipped, includes12 new; earlier7/16/12/
+75 overlap, not additive. Logblock197-final-original-source-adjacent-tests.log SHA
+221c3600f25a0f6c5af04e7dc13e0ee0f36892d829bdb59c5e51898f4bd42fb4.
+Real original Backend/Main methods, full two-step stock queue, retained choice
+across accepted other work, reply/first-RPC recovery, bound owner command,
+Product native wire/settlement/reopen and old daily/shared-source contracts.
+Declared stock/synthetic native artifacts, NOT game L3 or storage production
+attribution. New fixture revision/name/Product configuration failures retained;
+corrected Product redtest retained separately. Own final-SHA CI still required.
+
+NEXT storage/withdrawal owned-output attribution: original ReadActive/inventory
+checks and retention account still use PLAYER inventory by default. Reuse original
+transfer/reservation projection in new explicit consumer, do not relax old defaults
+or claim transfer implies retained production. Then partitions/free-passive/other
+consumption/explicit global Product consumers/paired stock activation, original
+partial/global reconciliation, #570, #569 PRE-MANIFEST lab handoff. Main can consume
+explicit preview but ordinary preview generation/paired stock mode remain OFF.
+L1/169-172 frozen, formal=false, no new phase/gate/game/API/cleanup/deploy/raw/local-data.
+[Current work197](CURRENT_WORK_CN.md#2026-11-15-main所选预览接原准备事务与product来源197库存能力块未总闭).
+
 ## Owner Held Before Original Preparation (196, Stock Capability Open)
 
 195 a8cdf518 / quality43690007147 SUCCESS: Core2675/2675(32s),

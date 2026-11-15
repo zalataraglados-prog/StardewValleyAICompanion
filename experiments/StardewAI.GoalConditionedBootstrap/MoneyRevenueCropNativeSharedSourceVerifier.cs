@@ -1,4 +1,5 @@
 using StardewAI.Core.Infrastructure;
+using StardewAI.Contracts.Training;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -16,8 +17,11 @@ public static class MoneyRevenueCropNativeSharedSourceVerifier
     public static CropTeacherSharedSourceReturn VerifyWithPreparedTransferYields(MoneyRevenueCropNativeLifecycleTransitionRequest transition)
         => VerifyCore(transition, allowSettledTransfer: true, allowPreparation: true, allowPreparedYield: true);
 
+    public static CropTeacherSharedSourceReturn VerifyWithPreparedProductTransferYields(MoneyRevenueCropNativeLifecycleTransitionRequest transition)
+        => VerifyCore(transition, allowSettledTransfer: true, allowPreparation: true, allowPreparedYield: true, productTransfer: true);
+
     private static CropTeacherSharedSourceReturn VerifyCore(MoneyRevenueCropNativeLifecycleTransitionRequest transition,
-        bool allowSettledTransfer, bool allowPreparation = false, bool allowPreparedYield = false)
+        bool allowSettledTransfer, bool allowPreparation = false, bool allowPreparedYield = false, bool productTransfer = false)
     {
         var reference = transition.NativeSharedSource
             ?? throw new InvalidDataException("Shared native transition lacks its original source/ledger binding.");
@@ -30,7 +34,13 @@ public static class MoneyRevenueCropNativeSharedSourceVerifier
             "Transfer preparation requires its explicit original-source consumer.");
         Require(reference.SettledTransferReferencePath is null || allowPreparedYield && reference.SettledMaterialTransfer?.Preparation is not null,
             "Prepared transfer yield requires its explicit retained-reference consumer.");
-        var scope = reference.SettledTransferReferencePath is { } retainedReferencePath
+        Require(!productTransfer || transition.ExecutorVersion == PolicyTrajectoryVersionPins.ProductExecutor &&
+                reference.SettledTransferReferencePath is not null && reference.SettledMaterialTransfer?.Preparation is not null,
+            "Product shared transfer requires the explicit Product prepared-yield source.");
+        var scope = productTransfer
+            ? CropTeacherSharedSourceReturn.OpenAfterPreparedProductTransferYield(reference.RunRequestPath, transition.BeforeSnapshotPath,
+                reference.LedgerPath, reference.CoveredCommitmentIds, transition, reference.StepId, reference.SettledMaterialTransfer!, reference.SettledTransferReferencePath!)
+            : reference.SettledTransferReferencePath is { } retainedReferencePath
             ? CropTeacherSharedSourceReturn.OpenAfterPreparedTransferYield(reference.RunRequestPath, transition.BeforeSnapshotPath,
                 reference.LedgerPath, reference.CoveredCommitmentIds, transition, reference.StepId, reference.SettledMaterialTransfer!, retainedReferencePath)
             : reference.SettledMaterialTransfer?.Preparation is not null

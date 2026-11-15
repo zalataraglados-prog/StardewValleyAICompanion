@@ -1,5 +1,14 @@
 # StardewAI 当前工作
 
+## 2026-11-15 Main所选预览接原准备事务与Product来源（197，库存能力块未总闭）
+
+- 196最终 `0df28e73`／CI `43694186124` 成功：Core2675/2675（39秒）、Backend3445/3445（7分25秒）、零跳过；日志 `block196-final-ci43694186124.log` SHA `eae7d4af0a8694995f080d47c960b3cd03f82d6426b3dc8686bd8b3fdf6574f5`。该提交本地1405/1406的文件访问失败仍保留，不追认。沙箱merge `05e7f182`／树 `ac52c7285f5b82783b19d34817fd9710c05c60dc` 等于已验196，本轮另核。
+- Main的显式所选预览先由同owner回到原日选择／原锚定账本重新物化，完整核原参数、marker和控制，不清洗混用或漂移；再在当前来源重建真实准备，保持高层意图和原预留归属，仅重新分配机械目标槽。admission在RPC前落盘，fresh编译只使用已验回包的新绑定和原子执行目标，父日目标不改、不重调policy。Main执行出口复用这个已持有操作，不二次admit。普通非预览选择仍走原路径。
+- 明确区分两个入口：`recover-crop-shared-preparation` 只查已有原journal／回包并恢复编译；`continue-crop-shared-preparation` 仅在原请求及journal均不存在、原持有／输入／历史摘要一致且完整GET仍等于准备前账本时，继续**第一次**原提交。二者沿原managed参数及 `--resume-managed-crop-owner <原owner目录>`，复用原隔离、run/backend/journal检查；不带reload参数、不启动游戏、不执行native，止于prepared。旧只读resume不扩权；有任何已尝试RPC原件时不得用continue补发。中断摘要保留，未提交的残留目录不靠删除或改头恢复。
+- Product命令测试确认新调用层的实质兼容缺口：原共享证明 `26f279c9` 固定Runtime版本，不能接实际Product owner／aggregate。新增**具名Product prepared/yield/source consumer**，复用同一原native reader／回执核，绑定真实Product版本并要求每步均为已核Product wire；旧入口、默认及旧v1/v2不改义，不重标旧原件。v3 owner及其返回／重开走具名入口。完整全局consumer仍须在既定后续显式接入，不能用该叶子证明替代全局日历／来源验收。
+- 最终显式E重建相邻 **140/140（1分2秒）、零跳过**，新增12项已包含；此前7／16／12和75项均有重叠、不累加。日志 `block197-final-original-source-adjacent-tests.log` SHA `221c3600f25a0f6c5af04e7dc13e0ee0f36892d829bdb59c5e51898f4bd42fb4`。覆盖实际Main方法、完整两步待售队列、原安排跨已接受其他工作／当前槽重分配、原回包恢复、RPC前首次接续、绑定owner命令入口、Product原始wire／结算／重开及旧日选择／共享来源。均为声明的库存／合成native原件和真实原Backend，不是游戏L3或自产存箱归因证明。初始新夹具漏claim修订、错误动作名和Product owner配置仅修夹具；Product不兼容红测 `block197-product-version-red-test.log` 独立保留，随后仅接新具名模式。最终SHA完整CI另核。
+- **唯一接续仍原库存能力块：** Main现在能消费显式所选预览，但常规运行的预览候选生成及收获／留存／终端成对新库存模式仍未启用。下一处接存箱／取回的自产归因；已核 `CropTeacherSaleStockInventory.ReadActive/ValidateInventory` 与留存account仍以玩家库存为默认，不能把只验证了转移当归因已闭，也不能直接放宽旧默认去信任箱子。复用原native转移／预留投影，接分区／自由及被动重排、其他消耗、具名全局Product来源消费者及成对启用；随后原partial／多队列、真实跨根选线／日历／来源对账，第6步#570及#569正式manifest前交接。无新阶段／门，L1及169—172冻结、formal=false，无游戏／API／清理／部署，local-data不提交。
+
 ## 2026-11-15 同一owner从准备前持有转移事务（196，库存能力块未总闭）
 
 - 195最终 `a8cdf518`／CI `43690007147` 成功：Core2675/2675（32秒）、Backend3438/3438（5分48秒）、零跳过；日志 `block195-final-ci43690007147.log` SHA `fb100fea37e72e80d1284baf2ef1767fa0c2d6da07fed806cdca66ef29b9205f`。沙箱常规merge `69a8a474`／树 `80cd35fb0c37033a208c74eb674033b571c9239f` 等于已验195，不与本轮新工作目录混称一致。

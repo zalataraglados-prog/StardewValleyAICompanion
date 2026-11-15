@@ -47,6 +47,20 @@ if (args.Length > 0 && args[0] == "resume-crop-managed-owner")
     return;
 }
 
+if (args.Length > 0 && args[0] is "recover-crop-shared-preparation" or "continue-crop-shared-preparation")
+{
+    using var recoveryHttp = new HttpClient { Timeout = TimeSpan.FromSeconds(180) };
+    try
+    {
+        var recoveryOptions = LiveTrainingOptions.Parse(args.Skip(1).ToArray());
+        Console.WriteLine(args[0] == "continue-crop-shared-preparation"
+            ? await ContinueCropTeacherSelectedSaleStockAsync(recoveryHttp, recoveryOptions)
+            : await RecoverCropTeacherSelectedSaleStockAsync(recoveryHttp, recoveryOptions));
+    }
+    catch (Exception exception) { Console.Error.WriteLine(exception.Message); Environment.ExitCode = 2; }
+    return;
+}
+
 var continueManagedOwner = args.Length > 0 && args[0] == "continue-crop-managed-owner";
 if (continueManagedOwner) args = args.Skip(1).ToArray();
 var options = LiveTrainingOptions.Parse(args);
@@ -895,7 +909,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         if (selectedOtherForExecution is { } other)
         {
             var sourceSelection = other.SourceSelection ?? throw new InvalidDataException("Selected global work lost its original source selection.");
-            sharedSourceOperationForExecution = sourceSelection.MaterialTransferPreparation is { } transferPreparation
+            sharedSourceOperationForExecution = other.Operation ?? (sourceSelection.MaterialTransferPreparation is { } transferPreparation
                 ? await managedOwner!.AdmitPreparedSharedTransferYieldAsync(sourceSelection,
                     Path.Combine(options.SnapshotDir, $"execution-{iteration:D4}.json"),
                     Path.Combine(options.SnapshotDir, $"after-snapshot-{iteration:D4}.json"),
@@ -903,7 +917,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 : await managedOwner!.AdmitSharedSourceYieldAsync(sourceSelection,
                 Path.Combine(options.SnapshotDir, $"execution-{iteration:D4}.json"),
                 Path.Combine(options.SnapshotDir, $"after-snapshot-{iteration:D4}.json"),
-                Path.Combine(managedOwner.EvidenceDirectory, $"shared-source-{iteration:D4}"));
+                Path.Combine(managedOwner.EvidenceDirectory, $"shared-source-{iteration:D4}")));
             var start = sharedSourceOperationForExecution.SharedSourceStart!;
             queue = JsonNode.Parse(ContentAddressedJsonArtifactReader.ReadAllText(start.QueuePath))!.AsObject();
             snapshotPath = start.SourcePath;

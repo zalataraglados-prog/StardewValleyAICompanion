@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using StardewAI.Contracts.Training;
 using StardewAI.GoalConditionedBootstrap;
 
 namespace StardewAI.LiveTrainingLoop;
@@ -19,8 +20,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         };
         var execution = SharedPreparedExecutionRecord(operation.Record, selection, reference);
         record["shared_source_transition"] = execution["shared_source_transition"]!.DeepClone();
-        var start = OpenSharedSourceStart(execution,
-            operation.SharedTransferSupport!.PreparationRequest.GoalId);
+        var start = OpenSharedTransferStart(operation, execution);
         record["input_artifact_hashes"] = JsonSerializer.SerializeToNode(start.InputHashes, JsonOptions);
         var path = RecordPath(operation.Sequence, "prepared");
         await SaveAsync(path, record).ConfigureAwait(false);
@@ -54,7 +54,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             throw new InvalidDataException("Shared prepared record changed its original native transition.");
         var hashes = prepared["input_artifact_hashes"]!.Deserialize<Dictionary<string, string>>(JsonOptions)!;
         new CropSeedRuntimeArtifacts(hashes).Validate();
-        var fresh = OpenSharedSourceStart(execution, support.PreparationRequest.GoalId);
+        var fresh = OpenSharedTransferStart(operation, execution);
         if (!JsonNode.DeepEquals(prepared["input_artifact_hashes"], JsonSerializer.SerializeToNode(fresh.InputHashes, JsonOptions)))
             throw new InvalidDataException("Shared prepared record lost its complete original input hashes.");
     }
@@ -63,9 +63,8 @@ public sealed partial class CropTeacherManagedSeedOwner
     {
         ValidateSharedTransferPrepared(operation, prepared);
         operation.Prepared = prepared;
-        operation.SharedSourceStart = OpenSharedSourceStart(SharedPreparedExecutionRecord(operation.Record, SharedSourceSelection(prepared),
-            prepared["original_transfer_preparation"]!.Deserialize<CropTeacherSharedTransferPreparationReference>(JsonOptions)!),
-            operation.SharedTransferSupport!.PreparationRequest.GoalId);
+        operation.SharedSourceStart = OpenSharedTransferStart(operation, SharedPreparedExecutionRecord(operation.Record, SharedSourceSelection(prepared),
+            prepared["original_transfer_preparation"]!.Deserialize<CropTeacherSharedTransferPreparationReference>(JsonOptions)!));
     }
 
     private JsonObject SharedExecutionRecord(JsonObject record)
@@ -102,4 +101,8 @@ public sealed partial class CropTeacherManagedSeedOwner
 
     internal CropTeacherSharedSourceSelection ReadSharedSourceExecutionSelection(CropTeacherManagedSeedOperation operation) =>
         SharedSourceSelection(SharedExecutionRecord(operation.Record));
+
+    private CropTeacherSharedSourcePreparation OpenSharedTransferStart(CropTeacherManagedSeedOperation operation, JsonObject execution) =>
+        OpenSharedSourceStart(execution, operation.SharedTransferSupport!.PreparationRequest.GoalId,
+            productTransfer: options.ExecutorVersion == PolicyTrajectoryVersionPins.ProductExecutor);
 }

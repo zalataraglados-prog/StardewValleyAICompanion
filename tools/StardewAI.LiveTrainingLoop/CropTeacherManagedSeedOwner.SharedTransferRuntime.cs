@@ -7,9 +7,19 @@ namespace StardewAI.LiveTrainingLoop;
 
 public sealed partial class CropTeacherManagedSeedOwner
 {
-    public async Task<CropTeacherSharedSourceSelection> PrepareSharedTransferAsync(CropTeacherManagedSeedOperation operation,
+    public Task<CropTeacherSharedSourceSelection> PrepareSharedTransferAsync(CropTeacherManagedSeedOperation operation,
         HttpClient http, Func<JsonObject, ReservationPortfolioCommitRequest, Task<JsonObject>> commit,
-        Func<StrategyCommitmentLedger, string, Task<CropTeacherSharedSourceSelection>> compileOriginal)
+        Func<StrategyCommitmentLedger, string, Task<CropTeacherSharedSourceSelection>> compileOriginal) =>
+        PrepareSharedTransferCoreAsync(operation, http, commit, compileOriginal, continueUnattempted: false);
+
+    public Task<CropTeacherSharedSourceSelection> ContinueUnattemptedSharedTransferPreparationAsync(CropTeacherManagedSeedOperation operation,
+        HttpClient http, Func<JsonObject, ReservationPortfolioCommitRequest, Task<JsonObject>> commit,
+        Func<StrategyCommitmentLedger, string, Task<CropTeacherSharedSourceSelection>> compileOriginal) =>
+        PrepareSharedTransferCoreAsync(operation, http, commit, compileOriginal, continueUnattempted: true);
+
+    private async Task<CropTeacherSharedSourceSelection> PrepareSharedTransferCoreAsync(CropTeacherManagedSeedOperation operation,
+        HttpClient http, Func<JsonObject, ReservationPortfolioCommitRequest, Task<JsonObject>> commit,
+        Func<StrategyCommitmentLedger, string, Task<CropTeacherSharedSourceSelection>> compileOriginal, bool continueUnattempted)
     {
         await gate.WaitAsync().ConfigureAwait(false);
         try
@@ -18,8 +28,9 @@ public sealed partial class CropTeacherManagedSeedOwner
             var root = StoredPath(operation.Record, "preparation_runtime_directory");
             var request = support.PreparationRequest;
             var journal = PortfolioMutationRequestJournal.Describe(options.BackendUrl, options.PortfolioJournalDirectory, "commit", request, JsonOptions);
-            if (Directory.Exists(root) || File.Exists(root) || File.Exists(journal.RequestPath) || File.Exists(journal.JournalPath))
+            if ((!continueUnattempted && Directory.Exists(root)) || File.Exists(root) || File.Exists(journal.RequestPath) || File.Exists(journal.JournalPath))
                 throw new InvalidOperationException("Shared preparation has retained state; recover its original reply, never resend.");
+            var prepareWrite = continueUnattempted ? UnattemptedSharedPreparationWriter(operation, root) : write;
             Directory.CreateDirectory(root);
             var reference = new CropTeacherSharedTransferPreparationReference(journal.RequestPath,
                 Path.Combine(root, "marker-reply.json"), journal.JournalPath, options.BackendUrl);
@@ -33,7 +44,7 @@ public sealed partial class CropTeacherManagedSeedOwner
                 {
                     selection = await CompileSharedTransferAsync(operation, preparedLedger, reference, compileOriginal).ConfigureAwait(false);
                     return selection.QueuePath;
-                }, path => ValidateSharedTransferSelection(operation, selection, reference, path), commit, write,
+                }, path => ValidateSharedTransferSelection(operation, selection, reference, path), commit, prepareWrite,
                 "Shared transfer support", "shared_transfer_support").ConfigureAwait(false);
             await PersistSharedTransferPreparedAsync(operation, selection, reference, prepared.IntentSha256).ConfigureAwait(false);
             return selection;
@@ -112,7 +123,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             JsonSerializer.SerializeToNode(selection, JsonOptions)))
             throw new InvalidDataException("Shared preparation changed its original selected decision.");
         var record = SharedPreparedExecutionRecord(operation.Record, selection, reference);
-        var start = OpenSharedSourceStart(record, operation.SharedTransferSupport!.PreparationRequest.GoalId);
+        var start = OpenSharedTransferStart(operation, record);
         start.ValidateInputsUnchanged();
         return HashFile(queuePath);
     }

@@ -93,6 +93,8 @@ public sealed partial class CropTeacherSeedTransferTests
             Fixture.Save(NativeResultPath, result);
             var template = NativeTemplate ?? Runtime.Transition;
             var aggregate = JsonNode.Parse(File.ReadAllText(template.ExecutionReceiptPath))!;
+            if (alreadyPrepared && Runtime.Options.UseProductExecutor)
+                aggregate["executor_version"] = Runtime.Options.PolicyTrajectoryExecutorVersion;
             var step = aggregate["step_results"]![0]!;
             aggregate["queue_id"] = queue.QueueId; step["effective_queue_id"] = queue.QueueId; step["queue_item_id"] = item.QueueItemId;
             step["option_id"] = item.OptionId; step["effective_queue_item"] = JsonSerializer.SerializeToNode(item, JsonOptions);

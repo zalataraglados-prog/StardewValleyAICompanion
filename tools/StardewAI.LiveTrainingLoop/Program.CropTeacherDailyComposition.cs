@@ -21,6 +21,7 @@ static partial class Program
         string PlanPath, string QueuePath, string EvidencePath, string QueueStatus)
     {
         public CropTeacherSharedSourceSelection? SourceSelection { get; init; }
+        public CropTeacherManagedSeedOperation? Operation { get; init; }
     }
     private sealed record ComposedCropDispatch(CropTeacherRunStep? Step, bool ControlPreempted,
         CropTeacherDailySelection? Selection = null, string BlockReason = "crop_teacher_joint_daily_required_batch_not_scheduled",
@@ -53,7 +54,7 @@ static partial class Program
         if (selection?.TotalDay == next.TotalDay)
         {
             var refreshed = await RefreshCropTeacherDailySelectionAsync(http, options, iteration, plan, request,
-                snapshot, ledger, preparedCommitmentIds, progress, selection).ConfigureAwait(false);
+                snapshot, ledger, preparedCommitmentIds, progress, selection, owner).ConfigureAwait(false);
             artifacts.Validate();
             if (refreshed is not null) return refreshed;
             if (next.Stage != CropTeacherRunStageKinds.ExecuteCropBatch)
@@ -90,7 +91,7 @@ static partial class Program
             !decision.OwnedCandidateIds.Contains(decision.Lease.Candidates[0].CandidateId))
         {
             var other = await PrepareCropTeacherSelectedOtherGoalAsync(http, options, iteration, snapshot, decision,
-                decision.Lease.Candidates[0]).ConfigureAwait(false);
+                decision.Lease.Candidates[0], owner).ConfigureAwait(false);
             artifacts.Validate();
             return other;
         }

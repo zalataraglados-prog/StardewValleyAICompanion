@@ -23,7 +23,8 @@ internal static partial class NativeExecutionActionSourceReader
         ReadQueueCore(queuePath, beforePath, receiptPath, afterPath, runId, candidateId, NativeProductBoundary.NativeAction);
 
     private static VerifiedNativeExecutionQueue ReadQueueCore(string queuePath, string beforePath, string receiptPath,
-        string afterPath, string runId, string candidateId, NativeProductBoundary productBoundary)
+        string afterPath, string runId, string candidateId, NativeProductBoundary productBoundary,
+        string expectedExecutorVersion = PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor)
     {
         queuePath = RequiredFile(queuePath);
         beforePath = RequiredFile(beforePath);
@@ -37,7 +38,7 @@ internal static partial class NativeExecutionActionSourceReader
         var receipt = ReadTyped<QueueExecutionReceiptEnvelope>(receiptPath, "queue_execution_receipt.v1");
         var raw = CurrentTeacherFrontierSupport.Read<JsonElement>(receiptPath, "Native sequential receipt");
         var reasons = QueueExecutionReceiptValidator.Validate(queue, before, receipt, after, runId,
-            PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor, candidateId, queue.StateHash,
+            expectedExecutorVersion, candidateId, queue.StateHash,
             requireTeacherPreferenceStateRebound: false);
         Require(reasons.Length == 0, "Native sequential queue proof rejected: " + string.Join(",", reasons));
         Require(SamePath(afterPath, RequiredFile(Text(raw, "after_snapshot_path"))) &&

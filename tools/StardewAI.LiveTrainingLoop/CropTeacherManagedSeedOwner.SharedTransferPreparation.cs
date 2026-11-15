@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using StardewAI.Contracts.Strategy;
 using StardewAI.GoalConditionedBootstrap;
 
@@ -8,6 +9,8 @@ namespace StardewAI.LiveTrainingLoop;
 public sealed record CropTeacherSharedTransferDecision(string SnapshotPath, string PlanPath, string RankingPath,
     int SelectedQueueIndex, string[] OwnedCandidateIds, CropTeacherDailyDecisionReference? DecisionReference = null)
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? OriginalLedgerPath { get; init; }
     internal CropTeacherSharedSourceSelection WithOutputs(string plan, string queue, string evidence) =>
         new(SnapshotPath, PlanPath, RankingPath, plan, queue, evidence, SelectedQueueIndex, OwnedCandidateIds)
             { DecisionReference = DecisionReference };
@@ -25,26 +28,32 @@ public sealed partial class CropTeacherManagedSeedOwner
         await gate.WaitAsync().ConfigureAwait(false);
         try
         {
-            var record = CreateAdmissionRecord(headSnapshotPath, headLedgerPath, runtimeDirectory);
-            record["operation_kind"] = "shared_source_return";
-            record["shared_source_execution_protocol"] = "selected_work_yield.v3";
-            record["shared_transfer_decision"] = JsonSerializer.SerializeToNode(decision, JsonOptions);
-            record["shared_transfer_request"] = JsonSerializer.SerializeToNode(request, JsonOptions);
-            record["preparation_runtime_directory"] = StoredPath(record, "runtime_directory") + "-prepare";
-            record["native_receipt_path"] = Path.GetFullPath(receiptPath);
-            record["native_after_snapshot_path"] = Path.GetFullPath(afterSnapshotPath);
-            var support = OpenSharedTransferSupport(record);
-            var preparationRoot = StoredPath(record, "preparation_runtime_directory");
-            if (Directory.Exists(preparationRoot) || File.Exists(preparationRoot) ||
-                File.Exists(StoredPath(record, "native_receipt_path")) || Directory.Exists(StoredPath(record, "native_receipt_path")) ||
-                File.Exists(StoredPath(record, "native_after_snapshot_path")) || Directory.Exists(StoredPath(record, "native_after_snapshot_path")))
-                throw new IOException("Shared preparation requires new preparation/native outputs.");
-            record["input_artifact_hashes"] = JsonSerializer.SerializeToNode(support.InputHashes, JsonOptions);
-            record["original_intent_sha256"] = SupportingTransitionIntentHash(record, null);
-            return await PersistAdmissionAsync(record, new(this, record, RecordPath(Sequence(record), "intent"), null,
-                sharedTransferSupport: support)).ConfigureAwait(false);
+            return await AdmitSharedTransferPreparationCoreAsync(decision, request, receiptPath, afterSnapshotPath, runtimeDirectory).ConfigureAwait(false);
         }
         finally { gate.Release(); }
+    }
+
+    private async Task<CropTeacherManagedSeedOperation> AdmitSharedTransferPreparationCoreAsync(CropTeacherSharedTransferDecision decision,
+        ReservationPortfolioCommitRequest request, string receiptPath, string afterSnapshotPath, string runtimeDirectory)
+    {
+        var record = CreateAdmissionRecord(headSnapshotPath, headLedgerPath, runtimeDirectory);
+        record["operation_kind"] = "shared_source_return";
+        record["shared_source_execution_protocol"] = "selected_work_yield.v3";
+        record["shared_transfer_decision"] = JsonSerializer.SerializeToNode(decision, JsonOptions);
+        record["shared_transfer_request"] = JsonSerializer.SerializeToNode(request, JsonOptions);
+        record["preparation_runtime_directory"] = StoredPath(record, "runtime_directory") + "-prepare";
+        record["native_receipt_path"] = Path.GetFullPath(receiptPath);
+        record["native_after_snapshot_path"] = Path.GetFullPath(afterSnapshotPath);
+        var support = OpenSharedTransferSupport(record);
+        var preparationRoot = StoredPath(record, "preparation_runtime_directory");
+        if (Directory.Exists(preparationRoot) || File.Exists(preparationRoot) ||
+            File.Exists(StoredPath(record, "native_receipt_path")) || Directory.Exists(StoredPath(record, "native_receipt_path")) ||
+            File.Exists(StoredPath(record, "native_after_snapshot_path")) || Directory.Exists(StoredPath(record, "native_after_snapshot_path")))
+            throw new IOException("Shared preparation requires new preparation/native outputs.");
+        record["input_artifact_hashes"] = JsonSerializer.SerializeToNode(support.InputHashes, JsonOptions);
+        record["original_intent_sha256"] = SupportingTransitionIntentHash(record, null);
+        return await PersistAdmissionAsync(record, new(this, record, RecordPath(Sequence(record), "intent"), null,
+            sharedTransferSupport: support)).ConfigureAwait(false);
     }
 
     private CropTeacherSharedTransferSupport OpenSharedTransferSupport(JsonObject record)
@@ -65,6 +74,12 @@ public sealed partial class CropTeacherManagedSeedOwner
         if (selected.OptionId != "inventory.transfer_item")
             throw new InvalidDataException("Shared preparation requires an original selected material transfer.");
         if (decision.DecisionReference is not null) pins.Pin(decision.DecisionReference.Path);
+        if (decision.OriginalLedgerPath is not null)
+        {
+            if (!SamePath(decision.OriginalLedgerPath, ReadSharedDecisionLedgerPath(decision)))
+                throw new InvalidDataException("Shared selected preparation changed its original ledger source.");
+            pins.Pin(decision.OriginalLedgerPath);
+        }
         var support = CropTeacherSharedTransferSupport.Open(plan.RequestPath, headSnapshotPath, headLedgerPath,
             ActiveCoveredCommitments(), Text(record, "support_step_id"), request, pins.Hashes);
         var runtime = StoredPath(record, "runtime_directory");
