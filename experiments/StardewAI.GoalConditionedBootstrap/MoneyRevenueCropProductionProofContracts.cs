@@ -166,6 +166,10 @@ public sealed record MoneyRevenueCropNativeSharedSourceReference(
     [JsonPropertyName("settled_material_transfer")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public CropTeacherSharedTransferSettlementReference? SettledMaterialTransfer { get; init; }
+
+    [JsonPropertyName("settled_transfer_reference_path")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? SettledTransferReferencePath { get; init; }
 }
 
 // Explicit v5 only: original owner compilation inputs, never an inferred move/refill witness.

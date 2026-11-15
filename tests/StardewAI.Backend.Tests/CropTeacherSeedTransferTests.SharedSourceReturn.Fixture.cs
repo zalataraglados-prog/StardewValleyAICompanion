@@ -26,18 +26,21 @@ public sealed partial class CropTeacherSeedTransferTests
                     training_mode = new { status = "available", value = "1" },
                     save_isolation_path = new { status = "available", value = "isolated-shared-transfer-fixture" }
                 });
+                CropTeacherNativeSupportFixture.CompleteEnvelopeMetadata(before, "declared-shared-transfer-fixture", "2026-11-15T00:00:00Z");
             });
         internal RuntimeFixture Runtime { get; }
-        internal MoneyRevenueCropNativeLifecycleTransitionRequest Transition { get; private set; } = null!;
+        internal MoneyRevenueCropNativeLifecycleTransitionRequest Transition { get; set; } = null!;
         internal CropTeacherSharedTransferSettlementReference Reference { get; private set; } = null!;
         internal ReservationPortfolioSupportingTransitionSettlementRequest Request { get; private set; } = null!;
         internal ReservationPortfolioSupportingTransitionSettlementResult Reply { get; private set; } = null!;
+        internal CropTeacherSharedTransferPreparationReference PreparationReference { get; private set; } = null!;
         internal string NativeResultPath => Path.Combine(Path.GetDirectoryName(Files.SourcePath)!, "shared-transfer-native-result.json");
         internal string ReplyPath => Path.Combine(Path.GetDirectoryName(Files.SourcePath)!, "shared-transfer-settlement-reply.json");
 
         internal SharedTransferReturnFixture() => Runtime = new(Files);
 
-        internal async Task Build(bool product = false, bool includePreparation = false)
+        internal async Task Build(bool product = false, bool includePreparation = false,
+            Func<SharedTransferReturnFixture, Task>? beforeNative = null, bool settle = true)
         {
             Runtime.Options.SaveIsolationPath = "isolated-shared-transfer-fixture";
             Runtime.Options.SkipTraining = true;
@@ -45,6 +48,12 @@ public sealed partial class CropTeacherSeedTransferTests
             var preparedLedger = Runtime.Repository.Get(Files.Before);
             if (!includePreparation) Files.AdoptLedger(preparedLedger);
             Transition = Runtime.Transition with { TransitionKind = "shared_source_return" };
+            var preparationJournal = Directory.EnumerateFiles(Runtime.Options.SnapshotDir, "*-rpc-journal.json")
+                .Single(path => JsonNode.Parse(File.ReadAllText(path))!["operation"]!.GetValue<string>() == "commit");
+            var preparation = JsonNode.Parse(File.ReadAllText(preparationJournal))!;
+            PreparationReference = new(Path.Combine(Path.GetDirectoryName(preparationJournal)!, preparation["request_file"]!.GetValue<string>()),
+                Path.Combine(Files.RuntimePath, "marker-reply.json"), preparationJournal, Runtime.Options.BackendUrl);
+            if (beforeNative is not null) await beforeNative(this);
             var queue = JsonSerializer.Deserialize<ActionQueueEnvelope>(File.ReadAllText(Transition.QueuePath), JsonOptions)!;
             var item = Assert.Single(queue.Items);
             var request = InvokeLive<TrainingExecutionRequest>("BuildExecutionRequest", Runtime.Options,
@@ -78,14 +87,19 @@ public sealed partial class CropTeacherSeedTransferTests
                 result["product_replan_required"] = false; result["product_idempotent_replay"] = false;
             }
             Fixture.Save(NativeResultPath, result);
-            var aggregate = JsonNode.Parse(File.ReadAllText(Transition.ExecutionReceiptPath))!;
+            var aggregate = JsonNode.Parse(File.ReadAllText(Runtime.Transition.ExecutionReceiptPath))!;
             var step = aggregate["step_results"]![0]!;
+            aggregate["queue_id"] = queue.QueueId; step["effective_queue_id"] = queue.QueueId; step["queue_item_id"] = item.QueueItemId;
+            step["option_id"] = item.OptionId; step["effective_queue_item"] = JsonSerializer.SerializeToNode(item, JsonOptions);
+            step["before_snapshot_path"] = Transition.BeforeSnapshotPath; step["after_snapshot_path"] = Transition.AfterSnapshotPath;
             step["execution_path"] = NativeResultPath; step["execution_request_nonce"] = request.RequestNonce;
             step["changed_facts"] = JsonSerializer.SerializeToNode(facts, JsonOptions);
             step["selected_queue_candidate_completed"] = true;
             aggregate["after_snapshot_path"] = Transition.AfterSnapshotPath;
+            if (Transition.AfterSnapshotPath != Runtime.Transition.AfterSnapshotPath) Fixture.Save(Transition.AfterSnapshotPath, Files.After);
             Fixture.Save(Transition.ExecutionReceiptPath, aggregate);
             Runtime.ObserveAfter();
+            if (!settle) return;
             var prepared = preparedLedger.PreparedMaterialTransfer!;
             var moved = prepared.ReservationProjection.ReservationTransitions.Select(row => row.ReservationId).ToHashSet(StringComparer.Ordinal);
             Request = new()
@@ -110,14 +124,7 @@ public sealed partial class CropTeacherSeedTransferTests
                 ReplyPath, rpc, Runtime.Options.BackendUrl);
             if (includePreparation)
             {
-                var preparationJournal = Directory.EnumerateFiles(Runtime.Options.SnapshotDir, "*-rpc-journal.json")
-                    .Single(path => JsonNode.Parse(File.ReadAllText(path))!["operation"]!.GetValue<string>() == "commit");
-                var preparation = JsonNode.Parse(File.ReadAllText(preparationJournal))!;
-                Reference = Reference with
-                {
-                    Preparation = new(Path.Combine(Path.GetDirectoryName(preparationJournal)!, preparation["request_file"]!.GetValue<string>()),
-                        Path.Combine(Files.RuntimePath, "marker-reply.json"), preparationJournal, Runtime.Options.BackendUrl)
-                };
+                Reference = Reference with { Preparation = PreparationReference };
             }
         }
 

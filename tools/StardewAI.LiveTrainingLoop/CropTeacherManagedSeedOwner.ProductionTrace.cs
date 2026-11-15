@@ -138,7 +138,9 @@ public sealed partial class CropTeacherManagedSeedOwner
                     sharedReturns.Add(new(sequence, Text(record, "support_step_id"), shared)
                     {
                         SourceReference = new(plan.RequestPath, sourceLedgerPath, covered, Text(record, "support_step_id"), scope.InputHashes)
-                            { SettledMaterialTransfer = scope.TransferSettlement }
+                            { SettledMaterialTransfer = scope.TransferSettlement,
+                                SettledTransferReferencePath = record["shared_source_execution_protocol"]?.GetValue<string>() == "selected_work_yield.v2"
+                                    ? SharedTransferReferencePath(record) : null }
                     });
                     continue;
                 }

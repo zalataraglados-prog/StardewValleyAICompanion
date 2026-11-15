@@ -894,8 +894,13 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         }
         if (selectedOtherForExecution is { } other)
         {
-            sharedSourceOperationForExecution = await managedOwner!.AdmitSharedSourceYieldAsync(
-                other.SourceSelection ?? throw new InvalidDataException("Selected global work lost its original source selection."),
+            var sourceSelection = other.SourceSelection ?? throw new InvalidDataException("Selected global work lost its original source selection.");
+            sharedSourceOperationForExecution = sourceSelection.MaterialTransferPreparation is { } transferPreparation
+                ? await managedOwner!.AdmitPreparedSharedTransferYieldAsync(sourceSelection,
+                    Path.Combine(options.SnapshotDir, $"execution-{iteration:D4}.json"),
+                    Path.Combine(options.SnapshotDir, $"after-snapshot-{iteration:D4}.json"),
+                    Path.Combine(managedOwner.EvidenceDirectory, $"shared-source-{iteration:D4}"), transferPreparation)
+                : await managedOwner!.AdmitSharedSourceYieldAsync(sourceSelection,
                 Path.Combine(options.SnapshotDir, $"execution-{iteration:D4}.json"),
                 Path.Combine(options.SnapshotDir, $"after-snapshot-{iteration:D4}.json"),
                 Path.Combine(managedOwner.EvidenceDirectory, $"shared-source-{iteration:D4}"));

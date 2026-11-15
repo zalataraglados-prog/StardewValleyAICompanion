@@ -9,7 +9,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         var kind = record["operation_kind"]?.GetValue<string>();
         if (kind == "shared_source_return")
         {
-            var shared = record["shared_source_execution_protocol"]?.GetValue<string>() == "selected_work_yield.v1"
+            var shared = record["shared_source_execution_protocol"]?.GetValue<string>() is "selected_work_yield.v1" or "selected_work_yield.v2"
                 ? new CropTeacherManagedSeedOperation(this, record, path, null, sharedSourceStart: OpenSharedSourceStart(record))
                 : new CropTeacherManagedSeedOperation(this, record, path, null, sharedSourceReturn: OpenSharedSourceReturn(record));
             ValidateSupportingTransition(shared);

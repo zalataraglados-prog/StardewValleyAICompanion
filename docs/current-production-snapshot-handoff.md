@@ -1,5 +1,45 @@
 # Current Production Snapshot Handoff
 
+## Prepared Yield Execution And Settlement (194, Stock Capability Open)
+
+193 finalb4fa75ca/quality43682799377 SUCCESS: Core2675(55s), Backend3422(7m14s),
+zero skipped. CI log SHA46360a2a42b46f3040039052a95742a8da4956e277f38fc344b31987ec1e987a.
+Peer merge7a663df8/treea0a9489dca565cc7741ed5f55a5cd6f23d0893bc equals accepted193,
+NOT this successor. Historical local105/106 failure remains unchanged.
+
+Explicit selected_work_yield.v2 replays original preparation from SAME owner
+pre-preparation source, claims original native ONCE, and uses Main's ORIGINAL
+journaled settlement/full reply/full GET BEFORE marker return. No head/source
+rewrite or second executor/RPC/ledger. Recovery reuses original reply reader and
+lookup ONLY, never native/settlement resubmit. Retained reference bytes are hashed;
+old/default consumers reject, named yield consumer accepts. Original native,
+claim and settlement validation factored, not weakened.
+
+Actual daily-plan integration exposed new stock control loss in the original
+whitelist. Carry new stock binding/control ONLY when explicitly present, including
+conflicting families for fresh rejection rather than sanitization. Old defaults
+unchanged. Prepared Main path imports ONE existing snapshot pair, not duplicate
+imports or additional game captures; reply validation reuses one native read.
+
+Final E rebuilt adjacent412/412(2m56s), zero skipped; log SHA
+b4ac14e2c45af8015ff9f052b412ea3c3fade55b2a45b7f7103a4bc5eb8b42bb.
+Includes11 new cases: actual Main hook/two transports, same-owner return/reopen,
+two settlement-reply recovery modes, reference byte drift, candidate->daily plan->
+action compiler and control-family rejection. Earlier9/11 overlap, not additive.
+New fixture candidate/output/receipt/full-envelope mistakes fixed only within
+this block; original failures retained. Seed cases declare a terminal slice;
+stock daily-plan cases use real candidate materialization. Synthetic native wire/
+original Backend mutations, NOT actual game L3. Own final-SHA CI pending.
+
+NEXT original support stage must GENERATE/INJECT actual preparation RPC reference
+into fresh selection; current Main CONSUMES it but automatic producer is not wired.
+Then storage attribution/partition/other consumption/explicit global consumers,
+paired Main activation, original partial/multi-queue and real global route/calendar/
+source reconciliation. Step6 #570 two native gates, then #569 engineering handoff
+BEFORE formal manifest; lab owns models/training. #569 body rechecked, no new issue
+feedback. L1/169-172 frozen, Main stock OFF, formal=false. No game/API/cleanup/
+deploy/raw/local-data commit. Exact recovery point: [current work194](CURRENT_WORK_CN.md#2026-11-15-同一owner准备态转移执行与结算194库存能力块未总闭).
+
 ## Explicit Sale-Stock Dispatch Binding (193, Stock Capability Open)
 
 192 final9b60d3a6/quality43678841623 SUCCESS: Core2675, Backend3405,

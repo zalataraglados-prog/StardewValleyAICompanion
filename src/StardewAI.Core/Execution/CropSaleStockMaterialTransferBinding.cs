@@ -16,6 +16,9 @@ public static class CropSaleStockMaterialTransferBinding
 
     public static bool IsControlParameter(string name) => name.StartsWith(Prefix, StringComparison.OrdinalIgnoreCase);
 
+    internal static bool IsForeignControlParameter(string name) => CropSeedMaterialTransferBinding.IsControlParameter(name) ||
+        MuseumOutputCustodyTransferBinding.IsControlParameter(name) || name.StartsWith("acquisition_", StringComparison.OrdinalIgnoreCase);
+
     public static SmallModelActionParameter[] ToParameters(StrategyCommitmentLedger ledger)
     {
         var prepared = ledger.PreparedMaterialTransfer ?? throw new InvalidOperationException("Sale-stock transfer is not prepared.");
@@ -35,8 +38,7 @@ public static class CropSaleStockMaterialTransferBinding
     {
         if (parameters is null || parameters.Any(row => row is null) ||
             parameters.Count(row => row.Name == PreparedMaterialTransferContract.BindingParameter) != 1 ||
-            parameters.Any(row => CropSeedMaterialTransferBinding.IsControlParameter(row.Name) ||
-                MuseumOutputCustodyTransferBinding.IsControlParameter(row.Name) || row.Name.StartsWith("acquisition_", StringComparison.OrdinalIgnoreCase)) ||
+            parameters.Any(row => IsForeignControlParameter(row.Name)) ||
             Names.Any(name => parameters.Count(row => row.Name == name) != 1) ||
             parameters.Where(row => IsControlParameter(row.Name)).Any(row => !Names.Contains(row.Name))) return false;
         string Read(string name) => parameters.SingleOrDefault(row => row.Name == name)?.Value ?? string.Empty;

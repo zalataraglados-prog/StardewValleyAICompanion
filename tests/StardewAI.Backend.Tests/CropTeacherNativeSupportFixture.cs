@@ -8,6 +8,26 @@ namespace StardewAI.Backend.Tests;
 
 internal static class CropTeacherNativeSupportFixture
 {
+    internal static void CompleteEnvelopeMetadata(SnapshotEnvelope snapshot, string sourcePrefix, string? timestamp = null)
+    {
+        if (timestamp is not null) snapshot.RealTimestamp = timestamp;
+        foreach (var domain in new[] { "mods", "npcs", "quests", "menus", "modded_state" })
+            if (!snapshot.State.ContainsKey(domain)) snapshot.State[domain] = JsonSerializer.SerializeToElement(new JsonObject());
+        foreach (var domain in snapshot.State.Keys.ToArray())
+        {
+            var fields = JsonNode.Parse(snapshot.State[domain].GetRawText())!.AsObject();
+            foreach (var field in fields)
+                if (field.Value is JsonObject envelope && envelope.ContainsKey("status"))
+                {
+                    envelope["source"] ??= new JsonObject { ["kind"] = "test", ["path"] = sourcePrefix + "." + domain + "." + field.Key };
+                    envelope["adapter"] ??= "test";
+                    envelope["read_at_tick"] ??= snapshot.GameTick;
+                    envelope["confidence"] ??= 1d;
+                }
+            snapshot.State[domain] = JsonSerializer.SerializeToElement(fields);
+        }
+    }
+
     internal static void CompleteResources(SnapshotEnvelope snapshot, int money)
     {
         var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);

@@ -29,11 +29,24 @@ static partial class Program
         if (!SameSharedPath(ReadString(execution, "execution_path"), claim.Transition.ExecutionReceiptPath) ||
             !SameSharedPath(ReadString(execution, "after_snapshot_path"), claim.Transition.AfterSnapshotPath))
             throw new InvalidDataException("Selected global executor returned different original output paths.");
+        var transferSettlement = operation.SharedSourceStart!.RequiresTransferSettlement;
+        if (transferSettlement)
+        {
+            _ = operation.SharedSourceStart.ReadTransferSettlementRequest();
+            var transferInputs = new CropSeedRuntimeArtifacts(operation.SharedSourceStart.InputHashes);
+            await IngestCropTeacherManagedSnapshotAsync(http, options, claim.Transition.BeforeSnapshotPath, transferInputs).ConfigureAwait(false);
+            await IngestCropTeacherManagedSnapshotAsync(http, options, claim.Transition.AfterSnapshotPath, transferInputs).ConfigureAwait(false);
+            await owner.SettleSharedTransferExecutionAsync(operation, http,
+                (diagnostic, request) => PostJournaledPortfolioSettlementAsync(http, options, diagnostic, request)).ConfigureAwait(false);
+        }
         await owner.VerifySharedSourceExecutionAsync(operation).ConfigureAwait(false);
         // Reuse the original source ingest after bounded native polling may have evicted the old head.
-        var retained = new CropSeedRuntimeArtifacts(operation.SupportingTransition!.InputHashes);
-        await IngestCropTeacherManagedSnapshotAsync(http, options, claim.Transition.BeforeSnapshotPath, retained).ConfigureAwait(false);
-        await IngestCropTeacherManagedSnapshotAsync(http, options, claim.Transition.AfterSnapshotPath, retained).ConfigureAwait(false);
+        if (!transferSettlement)
+        {
+            var retained = new CropSeedRuntimeArtifacts(operation.SupportingTransition!.InputHashes);
+            await IngestCropTeacherManagedSnapshotAsync(http, options, claim.Transition.BeforeSnapshotPath, retained).ConfigureAwait(false);
+            await IngestCropTeacherManagedSnapshotAsync(http, options, claim.Transition.AfterSnapshotPath, retained).ConfigureAwait(false);
+        }
         await owner.RunSharedSourceReturnAsync(operation, http,
             (diagnostic, request) => PostJournaledPortfolioCommitAsync(http, options, diagnostic, request),
             (endpoint, raw) => PostJsonStringAsync(http, endpoint, raw, CancellationToken.None)).ConfigureAwait(false);

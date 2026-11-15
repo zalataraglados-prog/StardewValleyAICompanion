@@ -32,15 +32,8 @@ public sealed partial class CropTeacherManagedSeedOwner
     {
         var label = operation.IsTerminalShipping ? "Original terminal shipping" : operation.IsControlRecovery ? "Original control recovery" : operation.IsOvernight ? "Original overnight" : operation.IsHarvest ? "Original harvest" : operation.IsWateringMaintenance ? "Original watering" : "Original route";
         var start = operation.OriginalStart ?? throw new InvalidOperationException(label + " preparation is missing.");
-        start.ValidateInputsUnchanged();
-        var artifacts = new CropSeedRuntimeArtifacts(start.InputHashes);
-        var intentPath = SupportingIntentPath(operation);
-        if (!JsonNode.DeepEquals(CreateSupportingTransitionIntent(operation.Record, operation.SupportingTransition), artifacts.Read<JsonObject>(intentPath)) ||
-            artifacts.Hashes[intentPath] != Text(operation.Record, "original_intent_sha256"))
-            throw new InvalidDataException(label + " execution intent changed.");
+        var artifacts = ReadOriginalSupportingClaim(operation, label);
         var claimPath = NativeSupportingPath(operation, "claim");
-        if (!JsonNode.DeepEquals(CreateOriginalSupportingNativeClaim(operation), artifacts.Read<JsonObject>(claimPath)))
-            throw new InvalidDataException(label + " native invocation claim changed.");
         var scope = start.VerifyTransition(OriginalSupportingTransition(operation));
         foreach (var (path, hash) in scope.InputHashes)
             if (artifacts.Pin(path) != hash) throw new InvalidDataException(label + " outcome changed while binding.");
@@ -70,6 +63,21 @@ public sealed partial class CropTeacherManagedSeedOwner
         var outcome = new OriginalSupportingOutcome(scope, result, artifacts);
         if (operation.IsOvernight && !deferOvernightSave) BindOriginalOvernightSaveEvidence(operation, outcome);
         return outcome;
+    }
+
+    private CropSeedRuntimeArtifacts ReadOriginalSupportingClaim(CropTeacherManagedSeedOperation operation, string label)
+    {
+        operation.OriginalStart!.ValidateInputsUnchanged();
+        var artifacts = new CropSeedRuntimeArtifacts(operation.OriginalStart.InputHashes);
+        var intentPath = SupportingIntentPath(operation);
+        if (!JsonNode.DeepEquals(CreateSupportingTransitionIntent(operation.Record, operation.SupportingTransition), artifacts.Read<JsonObject>(intentPath)) ||
+            artifacts.Hashes[intentPath] != Text(operation.Record, "original_intent_sha256"))
+            throw new InvalidDataException(label + " execution intent changed.");
+        var claimPath = NativeSupportingPath(operation, "claim");
+        if (!JsonNode.DeepEquals(CreateOriginalSupportingNativeClaim(operation), artifacts.Read<JsonObject>(claimPath)))
+            throw new InvalidDataException(label + " native invocation claim changed.");
+        artifacts.Validate();
+        return artifacts;
     }
 
     private void InstallOriginalSupportingOutcome(CropTeacherManagedSeedOperation operation, OriginalSupportingOutcome outcome)

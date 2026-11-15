@@ -1,5 +1,6 @@
 using System.Text.Json;
 using StardewAI.Contracts.Strategy;
+using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Infrastructure;
 
@@ -14,7 +15,7 @@ public sealed class CropTeacherSharedSourceReturn : ICropTeacherSupportingTransi
 
     private CropTeacherSharedSourceReturn(string runRequestPath, string sourcePath, string ledgerPath,
         IReadOnlyCollection<string> commitmentIds, MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId,
-        CropTeacherSharedTransferSettlementReference? transfer = null, bool includePreparation = false)
+        CropTeacherSharedTransferSettlementReference? transfer = null, bool includePreparation = false, string? retainedReferencePath = null)
     {
         Require(includePreparation == (transfer?.Preparation is not null) &&
                 (!includePreparation || transfer!.Preparation!.BackendUrl == transfer.BackendUrl),
@@ -25,6 +26,7 @@ public sealed class CropTeacherSharedSourceReturn : ICropTeacherSupportingTransi
         if (transfer is not null) paths = paths.Concat(new[] { transfer.RequestPath, transfer.ReplyPath, transfer.JournalPath }).ToArray();
         if (includePreparation) paths = paths.Concat(new[] { transfer!.Preparation!.RequestPath, transfer.Preparation.ReplyPath,
             transfer.Preparation.JournalPath }).ToArray();
+        if (retainedReferencePath is not null) paths = paths.Append(retainedReferencePath).ToArray();
         Require(paths.All(path => !string.IsNullOrWhiteSpace(path) && Path.IsPathFullyQualified(path)) &&
                 !string.IsNullOrWhiteSpace(transition.BeforeSnapshotPath) && Path.IsPathFullyQualified(transition.BeforeSnapshotPath),
             "Shared source return requires absolute original artifact paths.");
@@ -37,19 +39,14 @@ public sealed class CropTeacherSharedSourceReturn : ICropTeacherSupportingTransi
             "Shared source return aliases an original role or has another source.");
         using var reads = InvocationReadSession.Start(paths);
         var original = new CropTeacherRetainedInputs(paths);
+        if (retainedReferencePath is not null)
+            Require(transfer?.Preparation is not null && EqualJson(transfer,
+                    CurrentTeacherFrontierSupport.Read<CropTeacherSharedTransferSettlementReference>(retainedReferencePath, "shared transfer retained reference")),
+                "Shared transfer retained reference differs from its original protocol.");
         var source = transfer is null || includePreparation
             ? CropTeacherSupportingSource.Read(paths[0], paths[1], paths[2], commitmentIds, stepId)
             : CropTeacherSupportingSource.ReadBeforeSettledTransfer(paths[0], paths[1], paths[2], commitmentIds, stepId);
-        Require(transition.ExecutorVersion == PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor &&
-                transition.TotalDay == MoneyRevenueCropSeedAcquisitionProofBuilder.ReadInt(source.Snapshot, "time", "total_days"),
-            "Shared source return differs from the original executor/day boundary.");
-        var native = NativeExecutionActionSourceReader.ReadSelectedNativeActionQueue(paths[3], paths[1], paths[4], paths[5],
-            transition.RunId, transition.SelectedCandidateId);
-        Require(native.Actions.Length > 0 && native.Before.StateHash == source.Snapshot.StateHash,
-            "Shared source return has no original native source chain.");
-        for (var index = 0; index < native.Actions.Length; index++)
-            CropTeacherNativeStepBoundary.Verify(native.Actions[index].Before, native.Actions[index].After, source.Snapshot,
-                native.Receipt.StepResults[index], transition.TotalDay, "Shared source return");
+        var native = ReadNativeTransition(source.Snapshot, transition);
 
         // The explicit mode observes an already settled transfer; this adapter never performs that mutation.
         var preparedLedger = includePreparation ? CropTeacherSharedTransferPreparation.Verify(source.Snapshot, source.Ledger,
@@ -104,6 +101,23 @@ public sealed class CropTeacherSharedSourceReturn : ICropTeacherSupportingTransi
         IReadOnlyCollection<string> commitmentIds, MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId) =>
         new(runRequestPath, sourcePath, ledgerPath, commitmentIds, transition, stepId);
 
+    internal static VerifiedNativeExecutionQueue ReadNativeTransition(SnapshotEnvelope source,
+        MoneyRevenueCropNativeLifecycleTransitionRequest transition)
+    {
+        Require(transition.ExecutorVersion == PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor &&
+                transition.TotalDay == MoneyRevenueCropSeedAcquisitionProofBuilder.ReadInt(source, "time", "total_days"),
+            "Shared source return differs from the original executor/day boundary.");
+        var native = NativeExecutionActionSourceReader.ReadSelectedNativeActionQueue(transition.QueuePath,
+            transition.BeforeSnapshotPath, transition.ExecutionReceiptPath, transition.AfterSnapshotPath,
+            transition.RunId, transition.SelectedCandidateId);
+        Require(native.Actions.Length > 0 && native.Before.StateHash == source.StateHash,
+            "Shared source return has no original native source chain.");
+        for (var index = 0; index < native.Actions.Length; index++)
+            CropTeacherNativeStepBoundary.Verify(native.Actions[index].Before, native.Actions[index].After, source,
+                native.Receipt.StepResults[index], transition.TotalDay, "Shared source return");
+        return native;
+    }
+
     public static CropTeacherSharedSourceReturn OpenAfterSettledMaterialTransfer(string runRequestPath, string sourcePath, string ledgerPath,
         IReadOnlyCollection<string> commitmentIds, MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId,
         CropTeacherSharedTransferSettlementReference transfer) =>
@@ -115,6 +129,11 @@ public sealed class CropTeacherSharedSourceReturn : ICropTeacherSupportingTransi
         CropTeacherSharedTransferSettlementReference transfer) =>
         new(runRequestPath, sourcePath, ledgerPath, commitmentIds, transition, stepId,
             transfer ?? throw new ArgumentNullException(nameof(transfer)), includePreparation: true);
+
+    public static CropTeacherSharedSourceReturn OpenAfterPreparedTransferYield(string runRequestPath, string sourcePath, string ledgerPath,
+        IReadOnlyCollection<string> commitmentIds, MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId,
+        CropTeacherSharedTransferSettlementReference transfer, string retainedReferencePath) =>
+        new(runRequestPath, sourcePath, ledgerPath, commitmentIds, transition, stepId, transfer, true, retainedReferencePath);
 
     public string SourceStateHash { get; }
     public string AfterStateHash { get; }

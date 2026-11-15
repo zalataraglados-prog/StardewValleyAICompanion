@@ -16,6 +16,9 @@ public sealed record CropTeacherSharedSourceSelection(string DecisionSnapshotPat
 {
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public CropTeacherDailyDecisionReference? DecisionReference { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public CropTeacherSharedTransferPreparationReference? MaterialTransferPreparation { get; init; }
 }
 
 public sealed record CropTeacherSharedExecutionClaim(int OwnerSequence, string SupportStepId,
@@ -23,15 +26,27 @@ public sealed record CropTeacherSharedExecutionClaim(int OwnerSequence, string S
 
 public sealed partial class CropTeacherManagedSeedOwner
 {
-    public async Task<CropTeacherManagedSeedOperation> AdmitSharedSourceYieldAsync(CropTeacherSharedSourceSelection selection,
-        string receiptPath, string afterSnapshotPath, string runtimeDirectory)
+    public Task<CropTeacherManagedSeedOperation> AdmitSharedSourceYieldAsync(CropTeacherSharedSourceSelection selection,
+        string receiptPath, string afterSnapshotPath, string runtimeDirectory) =>
+        AdmitSharedSourceYieldCoreAsync(selection, receiptPath, afterSnapshotPath, runtimeDirectory, null);
+
+    public Task<CropTeacherManagedSeedOperation> AdmitPreparedSharedTransferYieldAsync(CropTeacherSharedSourceSelection selection,
+        string receiptPath, string afterSnapshotPath, string runtimeDirectory, CropTeacherSharedTransferPreparationReference preparation) =>
+        AdmitSharedSourceYieldCoreAsync(selection, receiptPath, afterSnapshotPath, runtimeDirectory,
+            preparation ?? throw new ArgumentNullException(nameof(preparation)));
+
+    private async Task<CropTeacherManagedSeedOperation> AdmitSharedSourceYieldCoreAsync(CropTeacherSharedSourceSelection selection,
+        string receiptPath, string afterSnapshotPath, string runtimeDirectory, CropTeacherSharedTransferPreparationReference? preparation)
     {
         await gate.WaitAsync().ConfigureAwait(false);
         try
         {
+            if (selection.MaterialTransferPreparation is not null && selection.MaterialTransferPreparation != preparation)
+                throw new InvalidDataException("Prepared transfer selection requires its explicit matching yield mode.");
             var record = CreateAdmissionRecord(headSnapshotPath, headLedgerPath, runtimeDirectory);
             record["operation_kind"] = "shared_source_return";
-            record["shared_source_execution_protocol"] = "selected_work_yield.v1";
+            record["shared_source_execution_protocol"] = preparation is null ? "selected_work_yield.v1" : "selected_work_yield.v2";
+            if (preparation is not null) record["original_transfer_preparation"] = JsonSerializer.SerializeToNode(preparation, JsonOptions);
             record["shared_source_selection"] = JsonSerializer.SerializeToNode(selection, JsonOptions);
             var selected = ReadSharedSourceSelection(record);
             var snapshot = Read<SnapshotEnvelope>(headSnapshotPath);
@@ -165,7 +180,12 @@ public sealed partial class CropTeacherManagedSeedOwner
         var selected = ReadSharedSourceSelection(record);
         var selection = SharedSourceSelection(record);
         var transition = record["shared_source_transition"]!.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)!;
-        if (record["shared_source_execution_protocol"]?.GetValue<string>() != "selected_work_yield.v1" ||
+        var protocol = record["shared_source_execution_protocol"]?.GetValue<string>();
+        var preparation = record["original_transfer_preparation"]?.Deserialize<CropTeacherSharedTransferPreparationReference>(JsonOptions);
+        if (protocol is not "selected_work_yield.v1" and not "selected_work_yield.v2" ||
+            (protocol == "selected_work_yield.v2") != (preparation is not null) ||
+            preparation is not null && preparation.BackendUrl != options.BackendUrl ||
+            record["shared_source_return_protocol"] is not null || record["original_transfer_settlement"] is not null ||
             record["step"] is not null || record["prior_verified_snapshot_path"] is not null ||
             !SamePath(StoredPath(record, "before_snapshot_path"), headSnapshotPath) ||
             !SamePath(StoredPath(record, "before_ledger_path"), headLedgerPath) ||
@@ -177,8 +197,12 @@ public sealed partial class CropTeacherManagedSeedOwner
         foreach (var path in new[] { selection.DecisionSnapshotPath, selection.DecisionPlanPath, selection.DecisionRankingPath,
             selection.ModelPlanPath, selection.QueuePath, selection.EvidencePath }) pins.Pin(path);
         if (selection.DecisionReference is not null) pins.Pin(selection.DecisionReference.Path);
-        var start = CropTeacherSharedSourcePreparation.Open(plan.RequestPath, headSnapshotPath, headLedgerPath,
-            ActiveCoveredCommitments(), Text(record, "support_step_id"), selection.ModelPlanPath, transition, pins.Hashes);
+        var start = preparation is null
+            ? CropTeacherSharedSourcePreparation.Open(plan.RequestPath, headSnapshotPath, headLedgerPath,
+                ActiveCoveredCommitments(), Text(record, "support_step_id"), selection.ModelPlanPath, transition, pins.Hashes)
+            : CropTeacherSharedSourcePreparation.OpenPreparedTransfer(plan.RequestPath, headSnapshotPath, headLedgerPath,
+                ActiveCoveredCommitments(), Text(record, "support_step_id"), selection.ModelPlanPath, transition, pins.Hashes,
+                preparation, SharedTransferReferencePath(record));
         var expected = frontierHashes.TryGetValue(headSnapshotPath, out var hash) ? hash : fixedHashes[headSnapshotPath];
         if (start.InputHashes[start.SourcePath] != expected || start.InputHashes.Keys.Any(path => Within(StoredPath(record, "runtime_directory"), path)))
             throw new InvalidDataException("Shared source yield lost its accepted source or overlaps its retained inputs.");
@@ -187,8 +211,10 @@ public sealed partial class CropTeacherManagedSeedOwner
         return start;
     }
 
-    private JsonObject CreateSharedSourceYieldIntent(JsonObject record) => new()
+    private JsonObject CreateSharedSourceYieldIntent(JsonObject record)
     {
+        var result = new JsonObject
+        {
         ["schema_version"] = "crop_teacher_managed_shared_source_yield.v1", ["run_id"] = options.RunId,
         ["executor_version"] = options.ExecutorVersion, ["backend_url"] = options.BackendUrl,
         ["runtime_directory"] = StoredPath(record, "runtime_directory"), ["support_step_id"] = Text(record, "support_step_id"),
@@ -197,7 +223,17 @@ public sealed partial class CropTeacherManagedSeedOwner
         ["input_artifact_hashes"] = record["input_artifact_hashes"]!.DeepClone(),
         ["native_execution_owner"] = "global_selected_work", ["crop_production_credit_authorized"] = false,
         ["teacher_preference_label_eligible"] = false, ["formal_product_training_authorized"] = false
-    };
+        };
+        if (record["original_transfer_preparation"] is not null)
+        {
+            result["schema_version"] = "crop_teacher_managed_shared_source_yield.v2";
+            result["original_transfer_preparation"] = record["original_transfer_preparation"]!.DeepClone();
+        }
+        return result;
+    }
+
+    private static string SharedTransferReferencePath(JsonObject record) =>
+        Path.Combine(StoredPath(record, "runtime_directory"), "shared-transfer-settlement.json");
 
     private static int SnapshotInt(SnapshotEnvelope snapshot, string section, string field) =>
         snapshot.State[section].GetProperty(field).GetProperty("value").GetInt32();
