@@ -1,5 +1,43 @@
 # Current Production Snapshot Handoff
 
+## Original Pre-Preparation Source Return (192, Stock Capability Open)
+
+191 finale9df6365/quality43676962069 SUCCESS/all steps, Core2675(1m21s),
+Backend3393(7m58s), zero skipped; log SHA
+e01fbaec69d9f7af8e01a6476ad855c8cc0771683090b0f557c607d1ecb00ac6.
+Peer merge0760234f/tree9ceffd912b950bf7e6f9a9e040e4bdd62a804c8d equals accepted191.
+
+Explicit settled_material_transfer.v2 starts from the SAME owner's original
+pre-preparation source. It replays ORIGINAL preparation commit/full reply/RPC via
+ReservationPortfolioCommitEvidenceVerifier and original prepared binding, then
+191 native/settlement/marker/full GET/recovery. Parent source/ledger files NEVER
+change; no raw head swap or cleared preparation. Both RPC roles share ONE reader.
+V1/old entry points retain already-prepared semantics and reject implicit upgrade.
+The original marker-uniqueness kernel also checks identities introduced by prep.
+
+Two red cases confirmed a190adapter bug: original candidate normalization
+intentionally strips operational binding, but new stock preflight had not restored
+its VERIFIED binding to the materialized row. Fix ONLY the new protocol adapter,
+with one preflight and candidate->fresh compiler roundtrip; original provider,
+non-stock parameter format and dispatch authority stay unchanged.
+
+Final E rebuilt adjacent60/60(18s), zero skipped; overlapping21/21 and59/59 not
+additive. Log SHA00f75249ace07c1557d2f10e2176a4a68464d2bb6e6b0098df10a46bd06fa049.
+Existing owner/original files retained through preparation+settlement, both native
+transports, two modes of lost-marker recovery, full artifact/identity/binding/
+backend/alias/marker collision negatives, old shared/stock/joint adjacent tests.
+Initial binding-loss2/2 red retained. Synthetic wire/original Backend mutations,
+NOT actual game/global L3; own final-SHA CI still required.
+
+NEXT same stock capability: actually wire ORIGINAL preparation references into
+Main's retained selection/source preparation/one claim/original execution and
+settlement. Then storage/withdrawal producer attribution, explicit lifecycle/
+capacity/production consumers, other consumption and paired Main activation.
+The complete observed source-return is NOT all automatic Main transfer wiring.
+Original partial/multi-queue/global route/calendar/native replay, step6 #570,
+#569 pre-manifest handoff, frozen L1/169-172 and formal=false remain. No13day
+restart/new stage/denominator; no game/API/cleanup/deploy or raw/local-data commit.
+
 ## Original Transfer Settlement Return (191, Stock Capability Open)
 
 190 finalb2738722/quality43674402029 SUCCESS/all steps, Core2675(33s),

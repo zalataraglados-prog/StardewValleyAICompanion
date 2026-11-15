@@ -13,8 +13,17 @@ public static class CropSaleStockTransferPreflight
 {
     // Resource preflight only. The original dispatch, native receipt and settlement guards remain authoritative.
     public static string[] Evaluate(string optionId, SmallModelActionParameter[] parameters,
-        SnapshotEnvelope snapshot, StrategyCommitmentLedger? ledger)
+        SnapshotEnvelope snapshot, StrategyCommitmentLedger? ledger) =>
+        EvaluateCore(optionId, parameters, snapshot, ledger, out _);
+
+    internal static string[] EvaluateCandidate(string optionId, SmallModelActionParameter[] parameters,
+        SnapshotEnvelope snapshot, StrategyCommitmentLedger? ledger, out string? preparedBinding) =>
+        EvaluateCore(optionId, parameters, snapshot, ledger, out preparedBinding);
+
+    private static string[] EvaluateCore(string optionId, SmallModelActionParameter[] parameters,
+        SnapshotEnvelope snapshot, StrategyCommitmentLedger? ledger, out string? preparedBinding)
     {
+        preparedBinding = null;
         if (optionId is not "inventory.transfer_item" and not "executor.transfer_material" || ledger?.MaterialReservations is null)
             return Array.Empty<string>();
         var phases = parameters.Where(row => row.Name == MaterialTransferIntentBinder.PhaseParameter).ToArray();
@@ -42,7 +51,9 @@ public static class CropSaleStockTransferPreflight
             return new[] { "crop_sale_stock_transfer_preparation_drifted" };
         var projection = new MaterialTransferProjector().ProjectReservations(graph!, intent!, ledger, prepared.MaterialRelocations);
         if (projection.Status != "projected") return projection.BlockingReasons;
-        return JsonSerializer.Serialize(projection) == JsonSerializer.Serialize(prepared.ReservationProjection)
-            ? Array.Empty<string>() : new[] { "crop_sale_stock_transfer_preparation_drifted" };
+        if (JsonSerializer.Serialize(projection) != JsonSerializer.Serialize(prepared.ReservationProjection))
+            return new[] { "crop_sale_stock_transfer_preparation_drifted" };
+        preparedBinding = bindings[0].Value;
+        return Array.Empty<string>();
     }
 }

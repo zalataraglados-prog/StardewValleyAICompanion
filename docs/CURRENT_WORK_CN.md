@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-11-15 原准备前账本接续与候选绑定贯通（192，库存能力块未总闭）
+
+- 191最终 `e9df6365`／CI `43676962069` 已成功：Core2675/2675（1分21秒）、Backend3393/3393（7分58秒）、零跳过、全部步骤通过；日志SHA `e01fbaec69d9f7af8e01a6476ad855c8cc0771683090b0f557c607d1ecb00ac6`。沙箱常规merge `0760234f`／受跟踪树 `9ceffd912b950bf7e6f9a9e040e4bdd62a804c8d` 与已验191相同，本轮须另核最终SHA。
+- 新显式 `settled_material_transfer.v2` 从同owner原准备前账本重放**原准备commit请求／完整回包／RPC journal**，复用原 `ReservationPortfolioCommitEvidenceVerifier` 和prepared binding核，再走191原native／settlement／marker／完整读回与恢复；原source／ledger文件全程不改，不换owner头或清准备字段。准备与结算共用一个内容寻址RPC读取器。v1／旧入口保持已准备来源含义，遇新preparation引用不得静默升级；原marker唯一性核同时检查准备后新引入的身份，避免返回与原准备撞名。
+- 两项红测确认190新适配器的实际接线缺陷：原候选规范化有意不带运行绑定，但新协议预检成功后没有把已验binding交回物化候选，后续fresh编译会丢失准备身份。仅新v2库存适配层在同一次预检后携带已验证binding；原候选provider和非新协议参数格式不变，不授原派发权限。候选物化→fresh编译的正例与旧格式负例已补齐。
+- 新准备来源专项21/21后，修绑定相邻59/59，最终新增撞名拒绝后的当前E重建 **60/60（18秒）**、零跳过；均有重叠不累加。最终日志 `block192-final-marker-adjacent-tests.log` SHA `00f75249ace07c1557d2f10e2176a4a68464d2bb6e6b0098df10a46bd06fa049`。覆盖既存owner保持原文件→原准备／结算→marker／重开、两种native transport、两模式回包恢复、完整原件／身份／绑定／跨backend／alias／撞名拒绝及旧相邻合同；原绑定丢失2/2红测保留。均为声明的合成wire／实际原Backend变更，无真实游戏L3；本提交最终CI另核。
+- **下一处仍原库存能力块：** 将原准备引用真正接进Main保留选择的source preparation／一次claim及原执行／结算出口，再接存箱／取回的产出留存、显式生命周期／容量／生产消费者和其他实际消耗，最后Main收获／留存／终端成对启用。当前新增的是可恢复的完整来源返回，不是Main自动转移已全通；不得跳过前置直接打开新模式。随后原第5步partial／多队列、真实跨根选线／资源日历／来源对账，第3／4自动属性随全局运行核实，第6步#570与#569正式manifest前交接不变。冻结L1及169—172，不新增阶段／分母或重跑十三日；formal=false，local-data不提交。
+
 ## 2026-11-15 原转移结算回接同一owner（191，库存能力块未总闭）
 
 - 190最终 `b2738722`／CI `43674402029` 已成功：Core2675/2675（33秒）、Backend3382/3382（6分52秒）、零跳过、全部步骤通过；CI日志SHA `bd51faf6236d0f070a0b67f5ae4f8c4887362093e16d5ed7d6e5d7fb88d4c3c8`。沙箱常规merge `e7dcfe85`，受跟踪树 `34302bb4535e5513d9dbd022161e3a6fdc09ea75` 等于已验190；本轮另核最终SHA，不混称同版本。

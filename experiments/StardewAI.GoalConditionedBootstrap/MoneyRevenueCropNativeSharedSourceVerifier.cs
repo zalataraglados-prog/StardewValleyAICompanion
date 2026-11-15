@@ -10,7 +10,11 @@ public static class MoneyRevenueCropNativeSharedSourceVerifier
     public static CropTeacherSharedSourceReturn VerifyWithSettledMaterialTransfers(MoneyRevenueCropNativeLifecycleTransitionRequest transition)
         => VerifyCore(transition, allowSettledTransfer: true);
 
-    private static CropTeacherSharedSourceReturn VerifyCore(MoneyRevenueCropNativeLifecycleTransitionRequest transition, bool allowSettledTransfer)
+    public static CropTeacherSharedSourceReturn VerifyWithPreparedMaterialTransfers(MoneyRevenueCropNativeLifecycleTransitionRequest transition)
+        => VerifyCore(transition, allowSettledTransfer: true, allowPreparation: true);
+
+    private static CropTeacherSharedSourceReturn VerifyCore(MoneyRevenueCropNativeLifecycleTransitionRequest transition,
+        bool allowSettledTransfer, bool allowPreparation = false)
     {
         var reference = transition.NativeSharedSource
             ?? throw new InvalidDataException("Shared native transition lacks its original source/ledger binding.");
@@ -19,7 +23,12 @@ public static class MoneyRevenueCropNativeSharedSourceVerifier
             "Shared native transition is not an explicit separately credited source return.");
         Require(allowSettledTransfer || reference.SettledMaterialTransfer is null,
             "Settled material transfer requires its explicit joint source consumer.");
-        var scope = reference.SettledMaterialTransfer is { } transfer
+        Require(allowPreparation || reference.SettledMaterialTransfer?.Preparation is null,
+            "Transfer preparation requires its explicit original-source consumer.");
+        var scope = reference.SettledMaterialTransfer?.Preparation is not null
+            ? CropTeacherSharedSourceReturn.OpenAfterPreparedAndSettledMaterialTransfer(reference.RunRequestPath, transition.BeforeSnapshotPath,
+                reference.LedgerPath, reference.CoveredCommitmentIds, transition, reference.StepId, reference.SettledMaterialTransfer)
+            : reference.SettledMaterialTransfer is { } transfer
             ? CropTeacherSharedSourceReturn.OpenAfterSettledMaterialTransfer(reference.RunRequestPath, transition.BeforeSnapshotPath,
                 reference.LedgerPath, reference.CoveredCommitmentIds, transition, reference.StepId, transfer)
             : CropTeacherSharedSourceReturn.Open(reference.RunRequestPath, transition.BeforeSnapshotPath,

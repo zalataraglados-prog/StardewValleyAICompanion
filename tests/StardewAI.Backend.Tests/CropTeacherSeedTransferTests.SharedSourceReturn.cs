@@ -84,11 +84,13 @@ public sealed partial class CropTeacherSeedTransferTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task SettledSharedTransferReturnRecoversOnlyItsOriginalMarkerAfterLostReply(bool retained)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public async Task SettledSharedTransferReturnRecoversOnlyItsOriginalMarkerAfterLostReply(bool retained, bool prepared)
     {
-        using var f = new SharedTransferReturnFixture(); await f.Build();
+        using var f = new SharedTransferReturnFixture(); await f.Build(includePreparation: prepared);
         using var inputs = new OwnerInputs(f.Files.SourcePath, f.Files.LedgerPath, f.Files.RequestPath);
         using var files = new OwnerFiles(f.Runtime.Options, f.Runtime.Client, f.Files.SourcePath, f.Files.LedgerPath, inputs);
         var failed = false;
@@ -103,7 +105,9 @@ public sealed partial class CropTeacherSeedTransferTests
             await InvokeLive<Task>("WritePortfolioJournalFileAsync", path, json);
         });
         var scope = f.Open(); var hashes = scope.InputHashes;
-        var operation = await owner.AdmitSettledSharedTransferReturnAsync(f.Transition, files.Native, f.Reference);
+        var operation = prepared
+            ? await owner.AdmitPreparedSharedTransferReturnAsync(f.Transition, files.Native, f.Reference)
+            : await owner.AdmitSettledSharedTransferReturnAsync(f.Transition, files.Native, f.Reference);
         await Assert.ThrowsAsync<IOException>(() => owner.RunSharedSourceReturnAsync(operation, f.Runtime.Client,
             (diagnostic, request) => InvokeLive<Task<JsonObject>>("PostJournaledPortfolioCommitAsync", f.Runtime.Client, f.Runtime.Options, diagnostic, request), files.Post));
         Assert.True(failed); await owner.DisposeAsync();

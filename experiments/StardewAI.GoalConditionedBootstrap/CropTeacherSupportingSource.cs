@@ -38,9 +38,12 @@ internal sealed record CropTeacherSupportingSource(SnapshotEnvelope Snapshot, St
             locations.Add(layouts[0].LocationId);
         }
         Require(locations.Count == 1, "Crop supporting route cannot merge different crop locations.");
+        RequireNewMarker(ledger, stepId);
+        return new(source, ledger, locations.Single(), run);
+    }
+
+    internal static void RequireNewMarker(StrategyCommitmentLedger ledger, string stepId) =>
         Require(!string.IsNullOrWhiteSpace(stepId) && !ledger.History.Any(row => row.CommitmentId == stepId || row.SourceDecisionId == stepId) &&
                 !ledger.CropPlantingCommitments.Any(row => row.CommitmentId == stepId || row.SourceDecisionId == stepId),
             "Crop supporting route marker identity is not new/distinct.");
-        return new(source, ledger, locations.Single(), run);
-    }
 }

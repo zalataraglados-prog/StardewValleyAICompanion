@@ -567,7 +567,11 @@ namespace StardewAI.Core.OptionRegistry
             if (optionId == "inventory.transfer_item")
             {
                 var rows = MaterialTransferCandidates(snapshot, parameters);
-                var reasons = CropSaleStockTransferPreflight.Evaluate(optionId, parameters, snapshot, commitmentLedger);
+                var reasons = CropSaleStockTransferPreflight.EvaluateCandidate(optionId, parameters, snapshot, commitmentLedger, out var preparedBinding);
+                if (preparedBinding is not null)
+                    foreach (var row in rows)
+                        row.Parameters = row.Parameters.Where(parameter => parameter.Name != PreparedMaterialTransferContract.BindingParameter)
+                            .Append(new SmallModelActionParameter { Name = PreparedMaterialTransferContract.BindingParameter, Value = preparedBinding }).ToArray();
                 if (reasons.Length == 0) return rows;
                 foreach (var row in rows)
                 {

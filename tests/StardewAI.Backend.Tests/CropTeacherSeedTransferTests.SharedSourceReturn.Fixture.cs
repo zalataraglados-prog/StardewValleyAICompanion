@@ -37,12 +37,13 @@ public sealed partial class CropTeacherSeedTransferTests
 
         internal SharedTransferReturnFixture() => Runtime = new(Files);
 
-        internal async Task Build(bool product = false)
+        internal async Task Build(bool product = false, bool includePreparation = false)
         {
             Runtime.Options.SaveIsolationPath = "isolated-shared-transfer-fixture";
             Runtime.Options.SkipTraining = true;
             await Runtime.Prepare();
-            Files.AdoptLedger(Runtime.Repository.Get(Files.Before));
+            var preparedLedger = Runtime.Repository.Get(Files.Before);
+            if (!includePreparation) Files.AdoptLedger(preparedLedger);
             Transition = Runtime.Transition with { TransitionKind = "shared_source_return" };
             var queue = JsonSerializer.Deserialize<ActionQueueEnvelope>(File.ReadAllText(Transition.QueuePath), JsonOptions)!;
             var item = Assert.Single(queue.Items);
@@ -85,15 +86,15 @@ public sealed partial class CropTeacherSeedTransferTests
             aggregate["after_snapshot_path"] = Transition.AfterSnapshotPath;
             Fixture.Save(Transition.ExecutionReceiptPath, aggregate);
             Runtime.ObserveAfter();
-            var prepared = Files.Ledger.PreparedMaterialTransfer!;
+            var prepared = preparedLedger.PreparedMaterialTransfer!;
             var moved = prepared.ReservationProjection.ReservationTransitions.Select(row => row.ReservationId).ToHashSet(StringComparer.Ordinal);
             Request = new()
             {
-                StateHash = Files.After.StateHash, ExpectedLedgerRevision = Files.Ledger.Revision,
+                StateHash = Files.After.StateHash, ExpectedLedgerRevision = preparedLedger.Revision,
                 PortfolioId = prepared.PortfolioId, GoalId = prepared.GoalId, RouteSourceDecisionId = prepared.RouteSourceDecisionId,
                 PreparedMaterialTransferSha256 = prepared.BindingSha256, SupportingTransitionReceiptSha256 = Hash(Transition.ExecutionReceiptPath),
                 MaterialRelocations = prepared.MaterialRelocations,
-                RebindActiveReservationIds = Files.Ledger.MaterialReservations.Where(row => row.Status == StrategyCommitmentStatuses.Active &&
+                RebindActiveReservationIds = preparedLedger.MaterialReservations.Where(row => row.Status == StrategyCommitmentStatuses.Active &&
                     row.SourceDecisionId == prepared.RouteSourceDecisionId && !moved.Contains(row.ReservationId))
                     .Select(row => row.ReservationId).ToArray(),
                 Reason = "declared_original_shared_transfer"
@@ -107,9 +108,23 @@ public sealed partial class CropTeacherSeedTransferTests
             var rawJournal = JsonNode.Parse(File.ReadAllText(rpc))!;
             Reference = new(Path.Combine(Path.GetDirectoryName(rpc)!, rawJournal["request_file"]!.GetValue<string>()),
                 ReplyPath, rpc, Runtime.Options.BackendUrl);
+            if (includePreparation)
+            {
+                var preparationJournal = Directory.EnumerateFiles(Runtime.Options.SnapshotDir, "*-rpc-journal.json")
+                    .Single(path => JsonNode.Parse(File.ReadAllText(path))!["operation"]!.GetValue<string>() == "commit");
+                var preparation = JsonNode.Parse(File.ReadAllText(preparationJournal))!;
+                Reference = Reference with
+                {
+                    Preparation = new(Path.Combine(Path.GetDirectoryName(preparationJournal)!, preparation["request_file"]!.GetValue<string>()),
+                        Path.Combine(Files.RuntimePath, "marker-reply.json"), preparationJournal, Runtime.Options.BackendUrl)
+                };
+            }
         }
 
-        internal CropTeacherSharedSourceReturn Open() => CropTeacherSharedSourceReturn.OpenAfterSettledMaterialTransfer(
+        internal CropTeacherSharedSourceReturn Open() => Reference.Preparation is not null
+            ? CropTeacherSharedSourceReturn.OpenAfterPreparedAndSettledMaterialTransfer(
+                Files.RequestPath, Files.SourcePath, Files.LedgerPath, [Id], Transition, "shared.return.transfer.fixture", Reference)
+            : CropTeacherSharedSourceReturn.OpenAfterSettledMaterialTransfer(
             Files.RequestPath, Files.SourcePath, Files.LedgerPath, [Id], Transition, "shared.return.transfer.fixture", Reference);
         internal static string Hash(string path) => Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant();
         private static string HashText(string value) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value))).ToLowerInvariant();

@@ -13,6 +13,18 @@ namespace StardewAI.Backend.Tests;
 public sealed partial class ReservationPortfolioLedgerTests
 {
     [Fact]
+    public void TransferCandidateWithoutNewStockKeepsItsOriginalUnboundParameterFormat()
+    {
+        var fixture = SaleStockTransferFixture(); var ledger = fixture.PreparedLedger;
+        foreach (var claim in ledger.MaterialReservations) claim.Purpose = "declared-legacy-non-stock";
+        var snapshot = SaleStockTransferPlanningSnapshot(fixture.Before);
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(snapshot, new[] { new OptionAvailabilityCandidate
+            { OptionId = "inventory.transfer_item", Parameters = SaleStockTransferParameters(fixture) } }, commitmentLedger: ledger);
+        var candidate = Assert.Single(Assert.Single(availability.Options).EventCandidates);
+        Assert.DoesNotContain(candidate.Parameters, row => row.Name == PreparedMaterialTransferContract.BindingParameter);
+    }
+
+    [Fact]
     public void SaleStockTransferPreflightDoesNotActivateOnAMissingLegacyCollection()
     {
         var fixture = SaleStockTransferFixture(); var ledger = fixture.BaseLedger;
@@ -45,6 +57,14 @@ public sealed partial class ReservationPortfolioLedgerTests
         var dispatch = new ActionQueueDispatchReadinessService().Evaluate(queue, item, ledger, snapshot.StateHash);
         Assert.False(dispatch.Ready);
         Assert.Contains("dispatch_material_transfer_preparation_binding_drifted", dispatch.BlockingReasons);
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(snapshot, new[] { new OptionAvailabilityCandidate
+            { OptionId = "inventory.transfer_item", Parameters = parameters } }, commitmentLedger: ledger);
+        var candidate = Assert.Single(Assert.Single(availability.Options).EventCandidates);
+        Assert.Equal(ledger.PreparedMaterialTransfer!.BindingSha256,
+            Assert.Single(candidate.Parameters.Where(row => row.Name == PreparedMaterialTransferContract.BindingParameter)).Value);
+        var materialized = new ActionQueueCompiler().Compile(SaleStockTransferAction(snapshot, candidate.Parameters), snapshot, ledger);
+        Assert.DoesNotContain(Assert.Single(materialized.Items).BlockingReasons,
+            reason => reason.StartsWith("crop_sale_stock_transfer_", StringComparison.Ordinal));
         Assert.Equal(original, JsonSerializer.Serialize(ledger));
     }
 

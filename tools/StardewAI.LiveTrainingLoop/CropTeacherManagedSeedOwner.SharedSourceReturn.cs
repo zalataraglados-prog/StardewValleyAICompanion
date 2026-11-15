@@ -17,9 +17,14 @@ public sealed partial class CropTeacherManagedSeedOwner
         CropTeacherSharedTransferSettlementReference transfer) =>
         AdmitSharedSourceReturnCoreAsync(transition, runtimeDirectory, transfer ?? throw new ArgumentNullException(nameof(transfer)));
 
+    public Task<CropTeacherManagedSeedOperation> AdmitPreparedSharedTransferReturnAsync(
+        MoneyRevenueCropNativeLifecycleTransitionRequest transition, string runtimeDirectory,
+        CropTeacherSharedTransferSettlementReference transfer) =>
+        AdmitSharedSourceReturnCoreAsync(transition, runtimeDirectory, transfer ?? throw new ArgumentNullException(nameof(transfer)), includePreparation: true);
+
     private async Task<CropTeacherManagedSeedOperation> AdmitSharedSourceReturnCoreAsync(
         MoneyRevenueCropNativeLifecycleTransitionRequest transition, string runtimeDirectory,
-        CropTeacherSharedTransferSettlementReference? transfer)
+        CropTeacherSharedTransferSettlementReference? transfer, bool includePreparation = false)
     {
         await gate.WaitAsync().ConfigureAwait(false);
         try
@@ -29,7 +34,9 @@ public sealed partial class CropTeacherManagedSeedOwner
             record["shared_source_transition"] = JsonSerializer.SerializeToNode(transition, JsonOptions);
             if (transfer is not null)
             {
-                record["shared_source_return_protocol"] = "settled_material_transfer.v1";
+                if (includePreparation != (transfer.Preparation is not null))
+                    throw new InvalidDataException("Shared transfer return requires its explicitly selected preparation mode.");
+                record["shared_source_return_protocol"] = includePreparation ? "settled_material_transfer.v2" : "settled_material_transfer.v1";
                 record["original_transfer_settlement"] = JsonSerializer.SerializeToNode(transfer, JsonOptions);
             }
             var scope = OpenSharedSourceReturn(record);
@@ -75,9 +82,16 @@ public sealed partial class CropTeacherManagedSeedOwner
             return CropTeacherSharedSourceReturn.Open(plan.RequestPath, sourcePath, ledgerPath, covered,
                 transition, Text(record, "support_step_id"));
         var transfer = record["original_transfer_settlement"]?.Deserialize<CropTeacherSharedTransferSettlementReference>(JsonOptions);
-        if (protocol != "settled_material_transfer.v1" || transfer is null || transfer.BackendUrl != options.BackendUrl ||
+        var includePreparation = protocol == "settled_material_transfer.v2";
+        if (protocol is not "settled_material_transfer.v1" and not "settled_material_transfer.v2" ||
+            transfer is null || transfer.BackendUrl != options.BackendUrl ||
+            includePreparation != (transfer.Preparation is not null) ||
+            transfer.Preparation is { } preparation && preparation.BackendUrl != options.BackendUrl ||
             record["shared_source_execution_protocol"] is not null)
             throw new InvalidDataException("Shared transfer return changed its original recorded protocol or backend.");
+        if (includePreparation)
+            return CropTeacherSharedSourceReturn.OpenAfterPreparedAndSettledMaterialTransfer(plan.RequestPath, sourcePath,
+                ledgerPath, covered, transition, Text(record, "support_step_id"), transfer);
         return CropTeacherSharedSourceReturn.OpenAfterSettledMaterialTransfer(plan.RequestPath, sourcePath, ledgerPath,
             covered, transition, Text(record, "support_step_id"), transfer);
     }
@@ -118,6 +132,11 @@ public sealed partial class CropTeacherManagedSeedOwner
             accepted["native_shared_material_transfer_settlement_verified"] = true;
             accepted["shared_material_transfer_request_sha256"] = scope.InputHashes[transfer.RequestPath];
             accepted["shared_material_transfer_reply_sha256"] = scope.InputHashes[transfer.ReplyPath];
+            if (transfer.Preparation is { } preparation)
+            {
+                accepted["shared_material_transfer_preparation_request_sha256"] = scope.InputHashes[preparation.RequestPath];
+                accepted["shared_material_transfer_preparation_reply_sha256"] = scope.InputHashes[preparation.ReplyPath];
+            }
         }
     }
 
@@ -127,7 +146,8 @@ public sealed partial class CropTeacherManagedSeedOwner
             "shared_verified_native_step_count", "crop_production_credit_authorized",
             "shared-source_native_claim_sha256", "shared-source_native_result_sha256",
             "native_shared_material_transfer_settlement_verified", "shared_material_transfer_request_sha256",
-            "shared_material_transfer_reply_sha256" };
+            "shared_material_transfer_reply_sha256", "shared_material_transfer_preparation_request_sha256",
+            "shared_material_transfer_preparation_reply_sha256" };
         if (!operation.IsSharedSourceReturn)
         {
             if (fields.Any(name => accepted[name] is not null))
@@ -142,6 +162,10 @@ public sealed partial class CropTeacherManagedSeedOwner
             new[] { "native_shared_material_transfer_settlement_verified", "shared_material_transfer_request_sha256",
                 "shared_material_transfer_reply_sha256" }.Any(name => accepted[name] is not null))
             throw new InvalidDataException("A marker-only source return cannot claim a material transfer settlement.");
+        if (operation.SharedSourceReturn.TransferSettlement?.Preparation is null &&
+            new[] { "shared_material_transfer_preparation_request_sha256", "shared_material_transfer_preparation_reply_sha256" }
+                .Any(name => accepted[name] is not null))
+            throw new InvalidDataException("A source return cannot claim an unbound material transfer preparation.");
         var expected = new JsonObject(); AddSharedSourceReturnEvidence(operation, expected);
         if (expected.Any(field => !JsonNode.DeepEquals(field.Value, accepted[field.Key])) ||
             new[] { "route_target_reached", "native_watering_prefix_verified", "native_harvest_prefix_verified",
