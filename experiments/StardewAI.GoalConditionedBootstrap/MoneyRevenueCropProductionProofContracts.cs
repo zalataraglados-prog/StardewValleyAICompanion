@@ -161,7 +161,12 @@ public sealed record MoneyRevenueCropNativeSharedSourceReference(
     [property: JsonPropertyName("ledger_path")] string LedgerPath,
     [property: JsonPropertyName("covered_commitment_ids")] string[] CoveredCommitmentIds,
     [property: JsonPropertyName("step_id")] string StepId,
-    [property: JsonPropertyName("input_artifact_hashes")] IReadOnlyDictionary<string, string> InputArtifactHashes);
+    [property: JsonPropertyName("input_artifact_hashes")] IReadOnlyDictionary<string, string> InputArtifactHashes)
+{
+    [JsonPropertyName("settled_material_transfer")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public CropTeacherSharedTransferSettlementReference? SettledMaterialTransfer { get; init; }
+}
 
 // Explicit v5 only: original owner compilation inputs, never an inferred move/refill witness.
 public sealed record MoneyRevenueCropNativeRefillPreparationReference(

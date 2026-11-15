@@ -13,21 +13,26 @@ public sealed class CropTeacherSharedSourceReturn : ICropTeacherSupportingTransi
     private readonly CropTeacherSupportingRebind rebind;
 
     private CropTeacherSharedSourceReturn(string runRequestPath, string sourcePath, string ledgerPath,
-        IReadOnlyCollection<string> commitmentIds, MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId)
+        IReadOnlyCollection<string> commitmentIds, MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId,
+        CropTeacherSharedTransferSettlementReference? transfer = null)
     {
         var comparer = CropTeacherSeedTransferNativeOutcome.PathComparer;
         var paths = new[] { runRequestPath, sourcePath, ledgerPath, transition.QueuePath,
             transition.ExecutionReceiptPath, transition.AfterSnapshotPath };
+        if (transfer is not null) paths = paths.Concat(new[] { transfer.RequestPath, transfer.ReplyPath, transfer.JournalPath }).ToArray();
         Require(paths.All(path => !string.IsNullOrWhiteSpace(path) && Path.IsPathFullyQualified(path)) &&
                 !string.IsNullOrWhiteSpace(transition.BeforeSnapshotPath) && Path.IsPathFullyQualified(transition.BeforeSnapshotPath),
             "Shared source return requires absolute original artifact paths.");
         paths = paths.Select(Path.GetFullPath).ToArray();
+        if (transfer is not null) transfer = transfer with { RequestPath = paths[6], ReplyPath = paths[7], JournalPath = paths[8] };
         Require(paths.Distinct(comparer).Count() == paths.Length &&
                 comparer.Equals(paths[1], Path.GetFullPath(transition.BeforeSnapshotPath)),
             "Shared source return aliases an original role or has another source.");
         using var reads = InvocationReadSession.Start(paths);
         var original = new CropTeacherRetainedInputs(paths);
-        var source = CropTeacherSupportingSource.Read(paths[0], paths[1], paths[2], commitmentIds, stepId);
+        var source = transfer is null
+            ? CropTeacherSupportingSource.Read(paths[0], paths[1], paths[2], commitmentIds, stepId)
+            : CropTeacherSupportingSource.ReadBeforeSettledTransfer(paths[0], paths[1], paths[2], commitmentIds, stepId);
         Require(transition.ExecutorVersion == PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor &&
                 transition.TotalDay == MoneyRevenueCropSeedAcquisitionProofBuilder.ReadInt(source.Snapshot, "time", "total_days"),
             "Shared source return differs from the original executor/day boundary.");
@@ -39,8 +44,9 @@ public sealed class CropTeacherSharedSourceReturn : ICropTeacherSupportingTransi
             CropTeacherNativeStepBoundary.Verify(native.Actions[index].Before, native.Actions[index].After, source.Snapshot,
                 native.Receipt.StepResults[index], transition.TotalDay, "Shared source return");
 
-        // Unsettled reserved consumption belongs to its original owner, never to this marker-only return.
-        var projectedLedger = CropTeacherSeedSupportSource.Copy(source.Ledger);
+        // The explicit mode observes an already settled transfer; this adapter never performs that mutation.
+        var baseLedger = transfer is null ? source.Ledger : CropTeacherSharedTransferSettlement.Verify(source.Ledger, native, transfer);
+        var projectedLedger = CropTeacherSeedSupportSource.Copy(baseLedger);
         projectedLedger.SourceStateHash = native.After.StateHash;
         _ = CropTeacherOwnedSeedSupply.Read(native.After, projectedLedger, commitmentIds);
 
@@ -79,18 +85,26 @@ public sealed class CropTeacherSharedSourceReturn : ICropTeacherSupportingTransi
         AfterStateHash = native.After.StateHash;
         AfterSnapshotPath = paths[5];
         VerifiedNativeStepCount = native.Actions.Length;
+        TransferSettlement = transfer;
         ValidateInputsUnchanged();
-        rebind = new(native.After, source.Ledger, stepId, ValidateInputsUnchanged, "Shared source return");
+        rebind = new(native.After, baseLedger, stepId, ValidateInputsUnchanged, "Shared source return");
     }
 
     public static CropTeacherSharedSourceReturn Open(string runRequestPath, string sourcePath, string ledgerPath,
         IReadOnlyCollection<string> commitmentIds, MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId) =>
         new(runRequestPath, sourcePath, ledgerPath, commitmentIds, transition, stepId);
 
+    public static CropTeacherSharedSourceReturn OpenAfterSettledMaterialTransfer(string runRequestPath, string sourcePath, string ledgerPath,
+        IReadOnlyCollection<string> commitmentIds, MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId,
+        CropTeacherSharedTransferSettlementReference transfer) =>
+        new(runRequestPath, sourcePath, ledgerPath, commitmentIds, transition, stepId,
+            transfer ?? throw new ArgumentNullException(nameof(transfer)));
+
     public string SourceStateHash { get; }
     public string AfterStateHash { get; }
     public string AfterSnapshotPath { get; }
     public int VerifiedNativeStepCount { get; }
+    public CropTeacherSharedTransferSettlementReference? TransferSettlement { get; }
     public bool NativeCropLifecycleVerified => false;
     public bool CropProductionCreditAuthorized => false;
     public bool TeacherPreferenceLabelEligible => false;

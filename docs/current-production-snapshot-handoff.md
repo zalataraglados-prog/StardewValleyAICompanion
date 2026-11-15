@@ -1,5 +1,43 @@
 # Current Production Snapshot Handoff
 
+## Original Transfer Settlement Return (191, Stock Capability Open)
+
+190 finalb2738722/quality43674402029 SUCCESS/all steps, Core2675(33s),
+Backend3382(6m52s), zero skipped; final log SHA
+bd51faf6236d0f070a0b67f5ae4f8c4887362093e16d5ed7d6e5d7fb88d4c3c8.
+Peer mergee7dcfe85/tree34302bb4535e5513d9dbd022161e3a6fdc09ea75 equals accepted190.
+
+Explicit settled_material_transfer.v1 observes ORIGINAL before/prepared ledger,
+native queue/step request/receipt, complete original settlement request/reply and
+content-addressed RPC journal. It reuses original dispatch binding and
+SettleSupportingTransition replay: one matching transfer, no appended consumption,
+exact complete result. This explicit boundary binds the original native aggregate
+SHA as that RPC's receipt reference; legacy seed-transfer/proof contracts unchanged.
+Do not clear preparation on a fake ledger or relax the default unresolved guard.
+
+The SAME owner records mode/input hashes and uses its original marker/full GET/
+recovery path. Lost marker replies never redo native or settlement. Joint trace
+retains the new source reference; only the named settled-transfer source verifier
+accepts it. Old v6/global/default consumers still reject; Main remains unactivated.
+No crop/Teacher/formal credit from observed foreign transfers.
+
+New fixture first wrongly rebound another goal, then omitted nonempty observed
+facts; corrected ONLY the new fixture, failed logs retained. Final E rebuilt
+adjacent48/48(14s), zero skipped; earlier8/8 and48/48 overlap. Final log SHA
+f91897d3b610e14c1e512f9578b3c3f9f2209b48dcfe9f08a63064314babb0b8.
+Includes both native transports, exact settlement replay, same owner/full readback,
+retained/missing marker reply recovery and original-input/binding/backend rejection.
+Own final-SHA CI still required. Declared synthetic wire/original Backend mutations/
+owner tests, NOT actual game/global L3.
+
+NEXT same stock capability: storage/withdrawal producer attribution, explicit
+lifecycle/capacity/production consumers, other consumption and paired Main
+harvest/retention/terminal activation/recovery. This observes already settled work,
+not all Main transfer preparation/dispatch. Original partial/multi-queue/global
+route/calendar/native replay, step6 #570 and #569 pre-manifest handoff remain.
+Freeze L1/169-172, no13-day restart/new stage/denominator; formal=false.
+No game/API/cleanup/deploy or local-data/raw/log/binary commit.
+
 ## Transferable Sale Stock (190, Capability Still Open)
 
 189 final5f0b4b6c/CI43672175759 SUCCESS: Core2675/Backend3360, zero skipped,

@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-11-15 原转移结算回接同一owner（191，库存能力块未总闭）
+
+- 190最终 `b2738722`／CI `43674402029` 已成功：Core2675/2675（33秒）、Backend3382/3382（6分52秒）、零跳过、全部步骤通过；CI日志SHA `bd51faf6236d0f070a0b67f5ae4f8c4887362093e16d5ed7d6e5d7fb88d4c3c8`。沙箱常规merge `e7dcfe85`，受跟踪树 `34302bb4535e5513d9dbd022161e3a6fdc09ea75` 等于已验190；本轮另核最终SHA，不混称同版本。
+- 新显式 `settled_material_transfer.v1` 返回绑定原before／prepared ledger、原native队列及逐步请求／回执、原结算请求／完整回包和内容寻址RPC journal。复用原dispatch binding与 `SettleSupportingTransition` 重放核，只有单次匹配的转移、零附带消费和精确结算回包才接纳；新边界将原native aggregate SHA作为该RPC的收据引用。原seed transfer等旧证明合同及原来源“不得跨未结算准备”的默认不改，不清空准备字段伪造账本。
+- 原owner新增具名观察返回，记录模式及原件哈希，通过原marker／持有记录／完整GET／只读恢复推进；它不执行或重做已结算转移，不授作物／Teacher信用。回包丢失仍只查原marker，保留原同owner恢复链。joint trace封存新结算引用；只有新具名source verifier消费，旧v6／旧默认消费者继续拒绝，未静默升级全局生产证明。
+- 首轮新夹具误要求重绑另一目标，后续夹具缺完整changed-facts，均被原守卫拒绝；只修新夹具，失败保留。专项8/8与扩展相邻48/48后，最终格式／诊断消息的当前E重建 **48/48（14秒）**、零跳过，均有重叠不累加；最终日志 `block191-final-adjacent-return-tests.log` SHA `f91897d3b610e14c1e512f9578b3c3f9f2209b48dcfe9f08a63064314babb0b8`。包括两种native transport、原settlement精确重放、同owner原marker与完整读回、回包保留／缺失两种恢复及原件／身份／绑定／跨backend拒绝。均为声明的合成native wire／实际原Backend变更与owner测试，无真实游戏L3；本提交完整CI仍须独立核对。
+- **唯一接续仍本库存能力块：** 存箱／取回全过程的自产留存归因和显式全局生命周期／容量／生产消费者，其他实际消耗约束，随后Main收获／留存／终端成对启用与恢复。当前新返回为已结算原转移的观察／记账，不是Main准备／派发全部转移已接，也不是存箱原生闭环已验。之后原第5步partial／多队列、真实跨根选线／资源日历／来源对账，第3／4自动属性随全局运行核实；第6步#570、#569正式manifest前交接、冻结L1及169—172、formal=false不变。无新阶段／分母、无十三日重跑，local-data不提交。
+
 ## 2026-11-15 待售库存合法转移与统一资源预检（190，能力块未总闭）
 
 - 189最终 `5f0b4b6c`／CI `43672175759` 已成功：Core2675/2675、Backend3360/3360、零跳过、全部步骤通过；日志SHA `7a308aa98919036b99a24e78697da404d4f4e2d95e30f88abc6b35a1ea6b7c7c`。沙箱常规merge `34f3a94e` 的受跟踪树 `81c147b1ba5abe5dbb054dd653408b46825069fc` 与已验189一致，不与本轮未验工作目录混称相同。

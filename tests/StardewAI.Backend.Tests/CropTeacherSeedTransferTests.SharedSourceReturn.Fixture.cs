@@ -1,0 +1,118 @@
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
+using StardewAI.Contracts.Training;
+using StardewAI.GoalConditionedBootstrap;
+using StardewAI.LiveTrainingLoop;
+using static StardewAI.Backend.Tests.CropTeacherSeedPurchaseSettlementTests;
+
+namespace StardewAI.Backend.Tests;
+
+public sealed partial class CropTeacherSeedTransferTests
+{
+    // Declared wire/native observations and original Backend mutations; not actual game evidence.
+    private sealed class SharedTransferReturnFixture : IDisposable
+    {
+        internal Fixture Files { get; } = new(nativeEvidence: true, depleteSource: true, emptyChest: true, noPlayerSeed: true,
+            beforeChange: before =>
+            {
+                before.State["environment"] = JsonSerializer.SerializeToElement(new
+                {
+                    training_run_id = new { status = "available", value = "run.owned.seed.transfer" },
+                    training_mode = new { status = "available", value = "1" },
+                    save_isolation_path = new { status = "available", value = "isolated-shared-transfer-fixture" }
+                });
+            });
+        internal RuntimeFixture Runtime { get; }
+        internal MoneyRevenueCropNativeLifecycleTransitionRequest Transition { get; private set; } = null!;
+        internal CropTeacherSharedTransferSettlementReference Reference { get; private set; } = null!;
+        internal ReservationPortfolioSupportingTransitionSettlementRequest Request { get; private set; } = null!;
+        internal ReservationPortfolioSupportingTransitionSettlementResult Reply { get; private set; } = null!;
+        internal string NativeResultPath => Path.Combine(Path.GetDirectoryName(Files.SourcePath)!, "shared-transfer-native-result.json");
+        internal string ReplyPath => Path.Combine(Path.GetDirectoryName(Files.SourcePath)!, "shared-transfer-settlement-reply.json");
+
+        internal SharedTransferReturnFixture() => Runtime = new(Files);
+
+        internal async Task Build(bool product = false)
+        {
+            Runtime.Options.SaveIsolationPath = "isolated-shared-transfer-fixture";
+            Runtime.Options.SkipTraining = true;
+            await Runtime.Prepare();
+            Files.AdoptLedger(Runtime.Repository.Get(Files.Before));
+            Transition = Runtime.Transition with { TransitionKind = "shared_source_return" };
+            var queue = JsonSerializer.Deserialize<ActionQueueEnvelope>(File.ReadAllText(Transition.QueuePath), JsonOptions)!;
+            var item = Assert.Single(queue.Items);
+            var request = InvokeLive<TrainingExecutionRequest>("BuildExecutionRequest", Runtime.Options,
+                JsonSerializer.SerializeToNode(item, JsonOptions)!.AsObject(), Files.Before.StateHash, queue.QueueId, item.OptionId);
+            var journal = await RuntimeExecutionRequestJournal.WriteAsync(Runtime.Options.SnapshotDir, 400, 1,
+                JsonSerializer.Serialize(request, JsonOptions), product ? "http://test/api/v1/product/execute" :
+                    "http://test/api/v1/training/execute", Files.SourcePath);
+            var facts = new[] { new SimulatedFactChange { Path = "player.inventory.(O)745", Before = "0", After = "10" } };
+            var result = JsonSerializer.SerializeToNode(new TrainingExecutionResult
+            {
+                RunId = request.RunId, QueueId = queue.QueueId, QueueItemId = item.QueueItemId, OptionId = item.OptionId,
+                BeforeStateHash = Files.Before.StateHash, Status = "applied", FeedbackAvailable = true,
+                PrimitiveKind = "transfer_material", PrimitiveVerificationStatus = "verified", ChangedFacts = facts,
+                ProductAfterStateHash = Files.After.StateHash, ProductAfterGameTick = Files.After.GameTick
+            }, JsonOptions)!.AsObject();
+            result["execution_request_journal_path"] = journal.JournalPath;
+            result["execution_request_nonce"] = request.RequestNonce; result["execution_request_sha256"] = journal.RawRequestSha256;
+            result["mechanical_compiled_queue_path"] = Transition.QueuePath;
+            result["after_snapshot_path"] = Transition.AfterSnapshotPath; result["after_state_hash"] = Files.After.StateHash;
+            result["before_game_tick"] = Files.Before.GameTick; result["after_game_tick"] = Files.After.GameTick;
+            result["after_snapshot_fresh"] = true;
+            if (product)
+            {
+                result["source"] = "product_executor"; result["product_executor_schema_version"] = "stardewai.product_executor.v1";
+                result["product_authorization_status"] = "authorized";
+                result["product_receipt_id"] = HashText(request.RunId + "\n" + request.RequestNonce);
+                result["product_request_sha256"] = journal.ProductRequestSha256;
+                result["product_request_before_state_hash"] = Files.Before.StateHash;
+                result["product_before_state_hash"] = Files.Before.StateHash; result["product_before_game_tick"] = Files.Before.GameTick;
+                result["product_request_state_hash_drift"] = false; result["product_dispatch_guard"] = "native_action_preconditions";
+                result["product_replan_required"] = false; result["product_idempotent_replay"] = false;
+            }
+            Fixture.Save(NativeResultPath, result);
+            var aggregate = JsonNode.Parse(File.ReadAllText(Transition.ExecutionReceiptPath))!;
+            var step = aggregate["step_results"]![0]!;
+            step["execution_path"] = NativeResultPath; step["execution_request_nonce"] = request.RequestNonce;
+            step["changed_facts"] = JsonSerializer.SerializeToNode(facts, JsonOptions);
+            step["selected_queue_candidate_completed"] = true;
+            aggregate["after_snapshot_path"] = Transition.AfterSnapshotPath;
+            Fixture.Save(Transition.ExecutionReceiptPath, aggregate);
+            Runtime.ObserveAfter();
+            var prepared = Files.Ledger.PreparedMaterialTransfer!;
+            var moved = prepared.ReservationProjection.ReservationTransitions.Select(row => row.ReservationId).ToHashSet(StringComparer.Ordinal);
+            Request = new()
+            {
+                StateHash = Files.After.StateHash, ExpectedLedgerRevision = Files.Ledger.Revision,
+                PortfolioId = prepared.PortfolioId, GoalId = prepared.GoalId, RouteSourceDecisionId = prepared.RouteSourceDecisionId,
+                PreparedMaterialTransferSha256 = prepared.BindingSha256, SupportingTransitionReceiptSha256 = Hash(Transition.ExecutionReceiptPath),
+                MaterialRelocations = prepared.MaterialRelocations,
+                RebindActiveReservationIds = Files.Ledger.MaterialReservations.Where(row => row.Status == StrategyCommitmentStatuses.Active &&
+                    row.SourceDecisionId == prepared.RouteSourceDecisionId && !moved.Contains(row.ReservationId))
+                    .Select(row => row.ReservationId).ToArray(),
+                Reason = "declared_original_shared_transfer"
+            };
+            var diagnostic = new JsonObject();
+            var reply = await InvokeLive<Task<JsonObject>>("PostJournaledPortfolioSettlementAsync", Runtime.Client, Runtime.Options, diagnostic, Request);
+            Assert.True(reply["accepted"]!.GetValue<bool>(), reply.ToJsonString());
+            Fixture.Save(ReplyPath, reply);
+            Reply = reply.Deserialize<ReservationPortfolioSupportingTransitionSettlementResult>(JsonOptions)!;
+            var rpc = diagnostic["material_reservation_settlement_request_journal_path"]!.GetValue<string>();
+            var rawJournal = JsonNode.Parse(File.ReadAllText(rpc))!;
+            Reference = new(Path.Combine(Path.GetDirectoryName(rpc)!, rawJournal["request_file"]!.GetValue<string>()),
+                ReplyPath, rpc, Runtime.Options.BackendUrl);
+        }
+
+        internal CropTeacherSharedSourceReturn Open() => CropTeacherSharedSourceReturn.OpenAfterSettledMaterialTransfer(
+            Files.RequestPath, Files.SourcePath, Files.LedgerPath, [Id], Transition, "shared.return.transfer.fixture", Reference);
+        internal static string Hash(string path) => Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant();
+        private static string HashText(string value) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value))).ToLowerInvariant();
+        public void Dispose() => Runtime.Dispose();
+    }
+}

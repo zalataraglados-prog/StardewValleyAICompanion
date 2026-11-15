@@ -133,12 +133,12 @@ public sealed partial class CropTeacherManagedSeedOwner
                             row.Status == StardewAI.Contracts.Strategy.StrategyCommitmentStatuses.Active &&
                             plan.CoveredCommitmentIds.Contains(row.CommitmentId, StringComparer.Ordinal))
                         .Select(row => row.CommitmentId).OrderBy(value => value, StringComparer.Ordinal).ToArray();
-                    var scope = CropTeacherSharedSourceReturn.Open(plan.RequestPath, shared.BeforeSnapshotPath,
-                        sourceLedgerPath, covered, shared, Text(record, "support_step_id"));
+                    var scope = OpenRecordedSharedSourceScope(record, shared.BeforeSnapshotPath, sourceLedgerPath, covered, shared);
                     foreach (var (input, expected) in scope.InputHashes) Pin(input, expected);
                     sharedReturns.Add(new(sequence, Text(record, "support_step_id"), shared)
                     {
                         SourceReference = new(plan.RequestPath, sourceLedgerPath, covered, Text(record, "support_step_id"), scope.InputHashes)
+                            { SettledMaterialTransfer = scope.TransferSettlement }
                     });
                     continue;
                 }

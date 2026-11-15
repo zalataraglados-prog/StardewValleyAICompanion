@@ -5,14 +5,25 @@ namespace StardewAI.GoalConditionedBootstrap;
 public static class MoneyRevenueCropNativeSharedSourceVerifier
 {
     public static CropTeacherSharedSourceReturn Verify(MoneyRevenueCropNativeLifecycleTransitionRequest transition)
+        => VerifyCore(transition, allowSettledTransfer: false);
+
+    public static CropTeacherSharedSourceReturn VerifyWithSettledMaterialTransfers(MoneyRevenueCropNativeLifecycleTransitionRequest transition)
+        => VerifyCore(transition, allowSettledTransfer: true);
+
+    private static CropTeacherSharedSourceReturn VerifyCore(MoneyRevenueCropNativeLifecycleTransitionRequest transition, bool allowSettledTransfer)
     {
         var reference = transition.NativeSharedSource
             ?? throw new InvalidDataException("Shared native transition lacks its original source/ledger binding.");
         Require(transition.TransitionKind == "shared_source_return" && transition.NativeRefillPreparation is null &&
                 reference.InputArtifactHashes is { Count: > 0 } && reference.CoveredCommitmentIds is { Length: > 0 },
             "Shared native transition is not an explicit separately credited source return.");
-        var scope = CropTeacherSharedSourceReturn.Open(reference.RunRequestPath, transition.BeforeSnapshotPath,
-            reference.LedgerPath, reference.CoveredCommitmentIds, transition, reference.StepId);
+        Require(allowSettledTransfer || reference.SettledMaterialTransfer is null,
+            "Settled material transfer requires its explicit joint source consumer.");
+        var scope = reference.SettledMaterialTransfer is { } transfer
+            ? CropTeacherSharedSourceReturn.OpenAfterSettledMaterialTransfer(reference.RunRequestPath, transition.BeforeSnapshotPath,
+                reference.LedgerPath, reference.CoveredCommitmentIds, transition, reference.StepId, transfer)
+            : CropTeacherSharedSourceReturn.Open(reference.RunRequestPath, transition.BeforeSnapshotPath,
+                reference.LedgerPath, reference.CoveredCommitmentIds, transition, reference.StepId);
         var expected = new Dictionary<string, string>(CropTeacherSeedTransferNativeOutcome.PathComparer);
         foreach (var (path, hash) in reference.InputArtifactHashes)
         {

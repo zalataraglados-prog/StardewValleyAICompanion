@@ -7,13 +7,22 @@ internal sealed record CropTeacherSupportingSource(SnapshotEnvelope Snapshot, St
     string CropLocation, MoneyRevenueCropNativeProductionRunPlanRequest RunRequest)
 {
     internal static CropTeacherSupportingSource Read(string runRequestPath, string sourcePath, string ledgerPath,
-        IReadOnlyCollection<string> commitmentIds, string stepId)
+        IReadOnlyCollection<string> commitmentIds, string stepId) =>
+        ReadCore(runRequestPath, sourcePath, ledgerPath, commitmentIds, stepId, settledTransfer: false);
+
+    internal static CropTeacherSupportingSource ReadBeforeSettledTransfer(string runRequestPath, string sourcePath, string ledgerPath,
+        IReadOnlyCollection<string> commitmentIds, string stepId) =>
+        ReadCore(runRequestPath, sourcePath, ledgerPath, commitmentIds, stepId, settledTransfer: true);
+
+    private static CropTeacherSupportingSource ReadCore(string runRequestPath, string sourcePath, string ledgerPath,
+        IReadOnlyCollection<string> commitmentIds, string stepId, bool settledTransfer)
     {
         var source = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(sourcePath, "crop supporting route source");
         MoneyRevenueCropSeedAcquisitionProofBuilder.ValidateSnapshot(source, "crop supporting route source");
         var ledger = AcquisitionStrategyLedgerReader.Read(ledgerPath, source).Ledger;
-        Require(ledger.PreparedMaterialTransfer is null,
-            "Crop supporting route cannot cross an unresolved prepared material transfer.");
+        Require(settledTransfer ? ledger.PreparedMaterialTransfer is not null : ledger.PreparedMaterialTransfer is null,
+            settledTransfer ? "Settled transfer source requires its original preparation." :
+                "Crop supporting route cannot cross an unresolved prepared material transfer.");
         var supply = CropTeacherOwnedSeedSupply.Read(source, ledger, commitmentIds);
         var run = CurrentTeacherFrontierSupport.Read<MoneyRevenueCropNativeProductionRunPlanRequest>(runRequestPath,
             "crop supporting route original run request");
