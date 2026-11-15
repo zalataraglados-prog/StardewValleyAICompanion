@@ -1,5 +1,36 @@
 # Current Production Snapshot Handoff
 
+## Integrate PR571 In One Shared Aggregator (210)
+
+Owner confirmed finalized571/acdea0c1 and authorized integration. Preserve it as
+merge parent; adopt inventory-mode dispatch and nonempty dispatch/reserved-cook
+tests. Dedup overlaps207: retain its same-invocation out-result reuse, not scope
+fields holding native graphs. Keep actual physical frame checks. Existing six-arg
+MergeSharedSources is a compatibility wrapper over ONE MergeSharedSourcesCore;
+209 native-work and original inventory modes now use that same kernel explicitly.
+No second observer, executor, dispatch engine or weakened default.
+
+Final adjacent50/50(50.2s), zero skipped, same merged DLL;13 focused cases overlap.
+Log block210-final-merged-adjacent.log SHA
+a0f596ef171fb60352d75f218714d53d8a8e6dd04bf65f18803a582f3207f11f.
+The nonempty lifecycle test also rebuilds public capacity/lifecyclev9/unreserved
+retention-requestv7 entries; proofv6 is NOT reserved-stock proof. Initial zero-based
+wave fixture correctly failed; read the original plan's positive wave, no old guard
+change. Shared movement is BEFORE harvest in this fixture: this does NOT prove
+post-harvest consumption/sale. Dispatcher neighbor metadata likewise is NOT a full
+producer/native run. Existing OwnedCooking warning remains; all local sessions end.
+
+209 OWN43739768818 SUCCESS: Core2762(44s)/Backend3528(7m44s), zero skipped;
+log SHA bf70c057236b1d34785e37fcd4e8ed80626be59dfbb793651d8db8f6ea50c011.
+Peer merge3b79b0af/tree65ca8241f7f4e9e261d1e7bbd7c82d93e126c2f7 equals209.
+This integration requires its OWN final-SHA CI, not either parent's green.
+
+NEXT original step5 valid SAVED lineage, real joint Main/original execution/owner
+return/resources/calendar; fix actual selected gap, not forced unselected cooking.
+Do not resume unsaved87, replay frozen13days or invent another acceptance gate.
+Then #570 -> #569 PRE-MANIFEST, lab owns model/data/train/eval. ModeOFF/formalfalse,
+frozen evidence, retained stashes, no API/game/deploy/cleanup/raw commits unchanged.
+
 ## Applied Native Work Keeps The Selected Objective (209, Integration Open)
 
 208 OWN43734383687 SUCCESS: Core2762(34s)/Backend3518(7m26s), zero skipped;

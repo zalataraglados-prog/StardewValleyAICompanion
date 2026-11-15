@@ -8,7 +8,13 @@ namespace StardewAI.LiveTrainingLoop;
 internal static partial class CropTeacherProductionEvidence
 {
     private static CropTeacherManagedProductionTransition[] MergeSharedSources(CropTeacherManagedProductionTrace trace,
-        IReadOnlyList<CropTeacherManagedSharedSourceReturn> shared, string rootSourcePath, string runRequestPath)
+        IReadOnlyList<CropTeacherManagedSharedSourceReturn> shared, string rootSourcePath, string runRequestPath,
+        bool transferredStock, bool inventoryEffects) =>
+        MergeSharedSourcesCore(trace, shared, rootSourcePath, runRequestPath, transferredStock, inventoryEffects, appliedNativeWork: false);
+
+    private static CropTeacherManagedProductionTransition[] MergeSharedSourcesCore(CropTeacherManagedProductionTrace trace,
+        IReadOnlyList<CropTeacherManagedSharedSourceReturn> shared, string rootSourcePath, string runRequestPath,
+        bool transferredStock, bool inventoryEffects, bool appliedNativeWork)
     {
         if (shared.Count == 0) return trace.Transitions.ToArray();
         if (trace.Transitions.Zip(trace.Transitions.Skip(1), (left, right) => right.OwnerSequence <= left.OwnerSequence).Any(value => value))
@@ -26,7 +32,10 @@ internal static partial class CropTeacherProductionEvidence
                 row.NativeTransition.NativeSharedSource is not null)
                 throw new InvalidDataException("Joint production shared source changed its original role/marker binding.");
             var transition = row.NativeTransition with { TransitionKind = "shared_source_return", NativeSharedSource = reference };
-            var verified = MoneyRevenueCropNativeSharedSourceVerifier.Verify(transition);
+            var verified = appliedNativeWork ? MoneyRevenueCropNativeSharedSourceVerifier.VerifyWithNativeWork(transition) :
+                inventoryEffects ? MoneyRevenueCropNativeSharedSourceVerifier.VerifyWithSharedInventoryEffects(transition) :
+                transferredStock ? MoneyRevenueCropNativeSharedSourceVerifier.VerifyWithTransferredSaleStock(transition) :
+                MoneyRevenueCropNativeSharedSourceVerifier.Verify(transition);
             var before = artifacts.Read<SnapshotEnvelope>(transition.BeforeSnapshotPath);
             if (before.SaveId.Value != root.SaveId.Value || before.PlayerId.Value != root.PlayerId.Value ||
                 before.GameVersion != root.GameVersion || transition.RunId != original.RunId || transition.ExecutorVersion != original.ExecutorVersion)

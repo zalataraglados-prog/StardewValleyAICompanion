@@ -44,6 +44,8 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         internal List<MoneyRevenueCropNativeLifecycleTransitionRequest> Rows { get; } = [];
         internal object Contexts { get; private set; } = null!;
         internal int SplitDay { get; private set; }
+        internal MoneyRevenueCropNativeLifecycleProofRequest OriginalRequest { get; private set; } = null!;
+        internal string CapacityRequestPath => capacity.RequestPath;
         internal IReadOnlyDictionary<string, string> PreparationInputs { get; private set; } = new Dictionary<string, string>();
         private SnapshotEnvelope source = null!;
         private MoneyRevenueCropDailyCapacityProof capacity = null!;
@@ -57,6 +59,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             var evidence = await golden.Build();
             var proof = LifecycleRead<MoneyRevenueCropNativeLifecycleProof>(Assert.Single(evidence.NativeLifecycleProofPaths));
             var request = LifecycleRead<MoneyRevenueCropNativeLifecycleProofRequest>(proof.RequestPath);
+            OriginalRequest = request;
             var plan = LifecycleRead<MoneyRevenueCropProductionObligationPlan>(request.CropProductionPlanPath);
             source = LifecycleRead<SnapshotEnvelope>(plan.SnapshotPath);
             capacity = LifecycleRead<MoneyRevenueCropDailyCapacityProof>(request.DailyCapacityProofPath);

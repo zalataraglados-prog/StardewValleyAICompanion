@@ -100,6 +100,20 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         var transition = row.NativeTransition with { NativeSharedSource = row.SourceReference };
         Assert.True(MoneyRevenueCropNativeSharedSourceVerifier.VerifyWithNativeWork(transition).AppliedNativeWorkQueue);
         Assert.Throws<InvalidDataException>(() => MoneyRevenueCropNativeSharedSourceVerifier.VerifyWithSharedInventoryEffects(transition));
+        var original = (await owner.ReadJointProductionTraceAsync()).CropTrace;
+        // Dispatcher-only neighbor metadata, not a claimed crop action or whole producer proof.
+        var neighbor = new CropTeacherManagedProductionTransition(1, "declared_dispatch_neighbor",
+            row.NativeTransition with { AfterSnapshotPath = row.NativeTransition.BeforeSnapshotPath });
+        var trace = (CropTeacherManagedProductionTrace)typeof(CropTeacherManagedProductionTrace)
+            .GetConstructors(BindingFlags.NonPublic | BindingFlags.Instance).Single().Invoke(
+                [original.NativeRunPlanPath, original.AcceptedSnapshotPath, original.AcceptedLedgerPath, new[] { neighbor }, original.InputHashes]);
+        var merge = typeof(CropTeacherManagedSeedOwner).Assembly.GetType("StardewAI.LiveTrainingLoop.CropTeacherProductionEvidence")!
+            .GetMethod("MergeSharedSourcesCore", BindingFlags.NonPublic | BindingFlags.Static)!;
+        object?[] args = [trace, new[] { row with { OwnerSequence = 2 } }, f.Native.Files.F.Source.SourcePath,
+            row.SourceReference!.RunRequestPath, false, false, true];
+        Assert.Equal(2, Assert.IsType<CropTeacherManagedProductionTransition[]>(merge.Invoke(null, args)).Length);
+        args[^1] = false;
+        Assert.IsType<InvalidDataException>(Assert.Throws<TargetInvocationException>(() => merge.Invoke(null, args)).InnerException);
         await owner.DisposeAsync();
         await using var reopened = await f.Native.Files.F.Files.Open(options);
         await reopened.RestoreHeadAsync(f.Native.Files.F.Runtime.Client, f.Native.Files.F.Files.Recovery, f.Native.Files.F.Files.Post);

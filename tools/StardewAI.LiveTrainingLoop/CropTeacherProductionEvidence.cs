@@ -40,7 +40,8 @@ internal static partial class CropTeacherProductionEvidence
         trace.ValidateInputsUnchanged();
         var (request, plan) = CropTeacherResumeLoader.ReadVerifiedPlan(trace.NativeRunPlanPath);
         var production = Read<MoneyRevenueCropProductionObligationPlan>(plan.CropProductionPlanPath);
-        var ordered = MergeSharedSources(trace, shared, production.SnapshotPath, plan.RequestPath);
+        var ordered = MergeSharedSourcesCore(trace, shared, production.SnapshotPath, plan.RequestPath,
+            transferredStock, inventoryEffects, appliedNativeWork);
         var firstPlanting = Array.FindIndex(ordered, row => row.OperationKind == "owned_seed_planting");
         if (firstPlanting < 0) throw new InvalidDataException("Managed crop production has no accepted original planting boundary.");
         // Acquisition/site preparation precede the original lifecycle's planting denominator.
