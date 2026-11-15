@@ -15,6 +15,20 @@ public sealed partial class CropTeacherSharedSourceReturn : ICropTeacherSupporti
     private readonly Dictionary<string, string> requestBlobs = new(CropTeacherSeedTransferNativeOutcome.PathComparer);
     private readonly CropTeacherSupportingRebind rebind;
 
+    // Passed directly to a same-invocation consumer; not retained by the scope or serialized.
+    internal sealed record VerifiedInventoryObservation(VerifiedNativeExecutionQueue Native,
+        StrategyCommitmentLedger SourceLedger, StrategyCommitmentLedger PreparedLedger, StrategyCommitmentLedger SettledLedger);
+
+    internal static CropTeacherSharedSourceReturn OpenInventoryObservation(MoneyRevenueCropNativeSharedSourceReference reference,
+        MoneyRevenueCropNativeLifecycleTransitionRequest transition, bool product, bool transferredStockSource, bool inventoryLease,
+        out VerifiedInventoryObservation observation) =>
+        new(reference.RunRequestPath, transition.BeforeSnapshotPath, reference.LedgerPath, reference.CoveredCommitmentIds,
+            transition, reference.StepId, reference.SettledMaterialTransfer,
+            reference.SettledMaterialTransfer?.Preparation is not null || reference.SettledInventoryConsumption is not null,
+            reference.SettledConsumptionReferencePath ?? reference.SettledTransferReferencePath, product,
+            product && transferredStockSource && reference.SettledMaterialTransfer is null && reference.SettledInventoryConsumption is null,
+            inventoryLease, reference.SettledInventoryConsumption, out observation);
+
     private CropTeacherSharedSourceReturn(string runRequestPath, string sourcePath, string ledgerPath,
         IReadOnlyCollection<string> commitmentIds, MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId,
         CropTeacherSharedTransferSettlementReference? transfer = null, bool includePreparation = false, string? retainedReferencePath = null,
@@ -27,6 +41,15 @@ public sealed partial class CropTeacherSharedSourceReturn : ICropTeacherSupporti
         IReadOnlyCollection<string> commitmentIds, MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId,
         CropTeacherSharedTransferSettlementReference? transfer, bool includePreparation, string? retainedReferencePath,
         bool productTransfer, bool productSource, bool inventoryLease, CropTeacherSharedConsumptionSettlementReference? consumption)
+        : this(runRequestPath, sourcePath, ledgerPath, commitmentIds, transition, stepId, transfer, includePreparation,
+            retainedReferencePath, productTransfer, productSource, inventoryLease, consumption, out _)
+    { }
+
+    private CropTeacherSharedSourceReturn(string runRequestPath, string sourcePath, string ledgerPath,
+        IReadOnlyCollection<string> commitmentIds, MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId,
+        CropTeacherSharedTransferSettlementReference? transfer, bool includePreparation, string? retainedReferencePath,
+        bool productTransfer, bool productSource, bool inventoryLease, CropTeacherSharedConsumptionSettlementReference? consumption,
+        out VerifiedInventoryObservation observation)
     {
         Require((transfer is null || consumption is null) && includePreparation == (transfer?.Preparation is not null || consumption is not null) &&
                 (!includePreparation || (consumption is not null ? consumption.Preparation is not null && consumption.Preparation.BackendUrl == consumption.BackendUrl :
@@ -130,6 +153,7 @@ public sealed partial class CropTeacherSharedSourceReturn : ICropTeacherSupporti
         ReleasesTransferLease = inventoryLease;
         if (inventoryLease) rebind.ReleaseTransferLease(preparedLedger.PreparedMaterialTransfer!.MaterialRelocations
             .Select(row => row.MaterialReservationId).ToArray());
+        observation = new(native, source.Ledger, preparedLedger, baseLedger);
     }
 
     public static CropTeacherSharedSourceReturn Open(string runRequestPath, string sourcePath, string ledgerPath,

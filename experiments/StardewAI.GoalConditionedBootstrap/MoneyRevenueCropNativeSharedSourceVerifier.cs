@@ -34,6 +34,16 @@ public static class MoneyRevenueCropNativeSharedSourceVerifier
     private static CropTeacherSharedSourceReturn VerifyCore(MoneyRevenueCropNativeLifecycleTransitionRequest transition,
         bool allowSettledTransfer, bool allowPreparation = false, bool allowPreparedYield = false, bool productTransfer = false,
         bool transferredStockSource = false, bool allowConsumption = false)
+        => VerifyCore(transition, out _, allowSettledTransfer, allowPreparation, allowPreparedYield, productTransfer, transferredStockSource, allowConsumption);
+
+    internal static CropTeacherSharedSourceReturn VerifyInventoryRetentionSource(MoneyRevenueCropNativeLifecycleTransitionRequest transition,
+        bool inventoryEffects, out CropTeacherSharedSourceReturn.VerifiedInventoryObservation observation) =>
+        VerifyCore(transition, out observation, true, true, true,
+            transition.ExecutorVersion == PolicyTrajectoryVersionPins.ProductExecutor, true, inventoryEffects);
+
+    private static CropTeacherSharedSourceReturn VerifyCore(MoneyRevenueCropNativeLifecycleTransitionRequest transition,
+        out CropTeacherSharedSourceReturn.VerifiedInventoryObservation observation, bool allowSettledTransfer,
+        bool allowPreparation, bool allowPreparedYield, bool productTransfer, bool transferredStockSource, bool allowConsumption)
     {
         var reference = transition.NativeSharedSource
             ?? throw new InvalidDataException("Shared native transition lacks its original source/ledger binding.");
@@ -63,31 +73,7 @@ public static class MoneyRevenueCropNativeSharedSourceVerifier
                 (consumption is not null || transferredStockSource && reference.SettledMaterialTransfer is null ||
                  reference.SettledTransferReferencePath is not null && reference.SettledMaterialTransfer?.Preparation is not null),
             "Product shared transfer requires the explicit Product prepared-yield source.");
-        var scope = consumption is not null
-            ? CropTeacherSharedSourceReturn.OpenAfterPreparedCookingConsumption(reference.RunRequestPath, transition.BeforeSnapshotPath,
-                reference.LedgerPath, reference.CoveredCommitmentIds, transition, reference.StepId, consumption,
-                reference.SettledConsumptionReferencePath!, productTransfer)
-            : lease
-            ? CropTeacherSharedSourceReturn.OpenAfterPreparedInventoryLeaseYield(reference.RunRequestPath, transition.BeforeSnapshotPath,
-                reference.LedgerPath, reference.CoveredCommitmentIds, transition, reference.StepId, reference.SettledMaterialTransfer!,
-                reference.SettledTransferReferencePath!, productTransfer)
-            : productTransfer && reference.SettledMaterialTransfer is null && transferredStockSource
-            ? CropTeacherSharedSourceReturn.OpenProductSource(reference.RunRequestPath, transition.BeforeSnapshotPath,
-                reference.LedgerPath, reference.CoveredCommitmentIds, transition, reference.StepId)
-            : productTransfer
-            ? CropTeacherSharedSourceReturn.OpenAfterPreparedProductTransferYield(reference.RunRequestPath, transition.BeforeSnapshotPath,
-                reference.LedgerPath, reference.CoveredCommitmentIds, transition, reference.StepId, reference.SettledMaterialTransfer!, reference.SettledTransferReferencePath!)
-            : reference.SettledTransferReferencePath is { } retainedReferencePath
-            ? CropTeacherSharedSourceReturn.OpenAfterPreparedTransferYield(reference.RunRequestPath, transition.BeforeSnapshotPath,
-                reference.LedgerPath, reference.CoveredCommitmentIds, transition, reference.StepId, reference.SettledMaterialTransfer!, retainedReferencePath)
-            : reference.SettledMaterialTransfer?.Preparation is not null
-            ? CropTeacherSharedSourceReturn.OpenAfterPreparedAndSettledMaterialTransfer(reference.RunRequestPath, transition.BeforeSnapshotPath,
-                reference.LedgerPath, reference.CoveredCommitmentIds, transition, reference.StepId, reference.SettledMaterialTransfer)
-            : reference.SettledMaterialTransfer is { } transfer
-            ? CropTeacherSharedSourceReturn.OpenAfterSettledMaterialTransfer(reference.RunRequestPath, transition.BeforeSnapshotPath,
-                reference.LedgerPath, reference.CoveredCommitmentIds, transition, reference.StepId, transfer)
-            : CropTeacherSharedSourceReturn.Open(reference.RunRequestPath, transition.BeforeSnapshotPath,
-                reference.LedgerPath, reference.CoveredCommitmentIds, transition, reference.StepId);
+        var scope = CropTeacherSharedSourceReturn.OpenInventoryObservation(reference, transition, productTransfer, transferredStockSource, lease, out observation);
         if (reference.AcceptedMarker is not null) scope.BindAcceptedMarker(reference.AcceptedMarker);
         var expected = new Dictionary<string, string>(CropTeacherSeedTransferNativeOutcome.PathComparer);
         foreach (var (path, hash) in reference.InputArtifactHashes)

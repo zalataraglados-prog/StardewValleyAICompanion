@@ -1,5 +1,43 @@
 # Current Production Snapshot Handoff
 
+## Same-Invocation Reuse And Actual Route Priority (207)
+
+206 731c30a7 / OWN quality43726391719 SUCCESS: Core2762/2762(46s),
+Backend3516/3516(11m19s), zero skipped. External log SHA
+76bdef8e8a6c61f5aab24fee2c52f49952972cf1ee1b05efe7237ccde7931532.
+Peer regular merge62729a88 has the identical tracked206 tree; API remains paused.
+
+Both screenshot findings are valid. The stock consumer unnecessarily reread the
+native queue and replayed preparation/settlement after source verification. It
+now reuses typed results from THAT invocation, without retaining a native-frame
+graph on the scope or caching across runs. Input hashes, independent production
+rebuilds and meaningful physical transfer-frame checks remain unchanged.
+206's full production fixture has NO shared cooking; green CI does not prove
+reserved sale stock -> cooking compaction -> sale attribution as a combination.
+
+Fresh explicit-E single-core Backend regression59/59(46.4s), then SAME-DLL original
+lease/empty-shared production regression9/9(17.7s), zero skipped, local commands
+terminal. No C# changes after build; existing OwnedCooking.cs CS8602 remains.
+External log SHAs dd748c5d1a1250ed6357e26b08bf232fe4346b3582b30a8c86d78205ddc966fe
+and8010fa2b6d3f74e55d91a7ae11e629172fa4ffc11d85280dd228031572f6c7a8.
+No new native/combined scenario proof. This commit's OWN CI is separate from206.
+
+CURRENT NEXT, superseding historical forced-cooking next steps below: bind the
+ACTUAL cross-root selected route, sources, quantities and deadlines using the
+original DailyPlan/lease/Teacher/reservation machinery. The held84-action plan is
+crop-only; block177-selected-route-status.json still reports global selection
+unavailable. That proves neither cooking-required nor not-applicable. Only if the
+actual route needs shared-fridge cooking, run one SHORT combined scenario. If it
+explicitly does not, remove cooking from the CURRENT critical handoff path, not
+from the eventual complete capability scope. No new Planner or acceptance gate.
+
+The unfinished11-path Main cooking draft is retained in Git stash
+50ebb6be215184f724bd0e6515af5907fe0ce955, tree
+105a38ddf22dfb216d76eea57d2dbd3910353386; UNACCEPTED, not integrated, do not drop
+or automatically restore. Keep strict original native completion/Product rules.
+Original step5 -> #570 -> #569 PRE-MANIFEST/lab split, frozen L1/Root/169-172,
+modeOFF/formalfalse remain. No game/API/cleanup/deploy/raw/local-data commits.
+
 ## Cook Frame Retention And Explicit Production Consumers (206, Main Preparation Open)
 
 205 d3f0a45f/quality43724132800 SUCCESS: Core2762/Backend3513, zero skipped.

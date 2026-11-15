@@ -1,7 +1,6 @@
 using System.Text.Json;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
-using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
 using StardewAI.Core.Infrastructure;
 using StardewAI.Core.Strategy;
@@ -32,17 +31,12 @@ internal sealed class CropTeacherTransferredSaleStock(string commitmentId, strin
     private int ObserveSharedCore(MoneyRevenueCropRetentionAccount account, MoneyRevenueCropNativeLifecycleTransitionRequest request,
         bool inventoryEffects)
     {
-        var scope = inventoryEffects ? MoneyRevenueCropNativeSharedSourceVerifier.VerifyWithSharedInventoryEffects(request) :
-            MoneyRevenueCropNativeSharedSourceVerifier.VerifyWithTransferredSaleStock(request);
+        var scope = MoneyRevenueCropNativeSharedSourceVerifier.VerifyInventoryRetentionSource(request, inventoryEffects, out var verified);
         var reference = request.NativeSharedSource!;
-        var sourceLedger = CurrentTeacherFrontierSupport.Read<StrategyCommitmentLedger>(reference.LedgerPath,
-            "transferred sale-stock original ledger");
-        var before = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(request.BeforeSnapshotPath,
-            "transferred sale-stock original source");
+        var sourceLedger = verified.SourceLedger;
+        var native = verified.Native;
+        var before = native.Before;
         Require(sourceLedger.SourceStateHash == before.StateHash, "Transferred sale stock has another original source.");
-        var native = request.ExecutorVersion == PolicyTrajectoryVersionPins.ProductExecutor
-            ? CropTeacherSharedSourceReturn.ReadProductNativeTransition(before, request)
-            : CropTeacherSharedSourceReturn.ReadNativeTransition(before, request);
         if (ledger is not null) _ = Read(before, ledger);
         ledger = sourceLedger;
         var settlement = reference.SettledMaterialTransfer;
@@ -52,13 +46,13 @@ internal sealed class CropTeacherTransferredSaleStock(string commitmentId, strin
         {
             Require(settlement.Preparation is not null,
                 "Transferred sale stock requires its original preparation and settlement.");
-            prepared = CropTeacherSharedTransferPreparation.Verify(before, sourceLedger, settlement.Preparation!);
-            settled = CropTeacherSharedTransferSettlement.Verify(prepared, native, settlement);
+            prepared = verified.PreparedLedger;
+            settled = verified.SettledLedger;
         }
         if (consumption is not null)
         {
-            prepared = CropTeacherSharedConsumption.VerifyPreparation(before, sourceLedger, consumption.Preparation);
-            settled = CropTeacherSharedConsumption.Verify(prepared, native, consumption);
+            prepared = verified.PreparedLedger;
+            settled = verified.SettledLedger;
         }
         foreach (var frame in native.Actions)
         {
@@ -82,13 +76,7 @@ internal sealed class CropTeacherTransferredSaleStock(string commitmentId, strin
             {
                 Require(prepared?.PreparedInventoryConsumption is not null && settled is not null,
                     "Cooking sale-stock retention lacks its original settled consumption projection.");
-                // Only the observed cook frame may apply the original settlement's passive positions.
-                var readableBefore = MaterialInventoryGraphReader.TryRead(frame.Before, out var beforeGraph);
-                var readableAfter = MaterialInventoryGraphReader.TryRead(frame.After, out var afterGraph);
-                Require(readableBefore && readableAfter &&
-                    InventoryConsumptionProjector.VerifyBefore(prepared!.PreparedInventoryConsumption!, beforeGraph!).Length == 0 &&
-                    InventoryConsumptionProjector.VerifyAfter(prepared.PreparedInventoryConsumption!, afterGraph!).Length == 0,
-                    "Cooking sale-stock positions changed outside the original native consumption frame.");
+                // The source verifier already bound this sole cook frame and its exact physical delta.
                 ledger = settled!;
             }
             account.ObserveTransferredStock(frame.Before, frame.After, false, stockBefore, Read(frame.After, ledger));

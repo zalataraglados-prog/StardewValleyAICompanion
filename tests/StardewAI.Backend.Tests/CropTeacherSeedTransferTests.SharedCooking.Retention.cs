@@ -13,11 +13,20 @@ public sealed partial class CropTeacherSeedTransferTests
     {
         using var f = new SharedCookingFixture(); await f.Build(product);
         var scope = Assert.IsType<CropTeacherSharedSourceReturn>(f.Scope.VerifyTransition(f.Transition));
+        var flags = BindingFlags.Instance | BindingFlags.NonPublic;
         var source = new MoneyRevenueCropNativeSharedSourceReference(f.Files.RequestPath, f.Files.LedgerPath, [Id],
             "declared.shared.cooking.return", scope.InputHashes)
         { SettledInventoryConsumption = f.Settlement, SettledConsumptionReferencePath = f.ReferencePath };
         var transition = f.Transition with { NativeSharedSource = source };
-        var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+        object?[] verificationArguments = [transition, true, null];
+        var verifiedScope = Assert.IsType<CropTeacherSharedSourceReturn>(typeof(MoneyRevenueCropNativeSharedSourceVerifier)
+            .GetMethod("VerifyInventoryRetentionSource", BindingFlags.Static | BindingFlags.NonPublic)!.Invoke(null, verificationArguments));
+        var observation = verificationArguments[2]!;
+        var verifiedSource = Assert.IsType<StrategyCommitmentLedger>(observation.GetType().GetProperty("SourceLedger")!.GetValue(observation));
+        var settled = Assert.IsType<StrategyCommitmentLedger>(observation.GetType().GetProperty("SettledLedger")!.GetValue(observation));
+        Assert.Equal(f.BeforeLedger.Revision, verifiedSource.Revision);
+        Assert.Equal(f.SettlementReply.Ledger!.Revision, settled.Revision);
+        Assert.Equal(scope.AfterStateHash, verifiedScope.AfterStateHash);
         var account = Activator.CreateInstance(typeof(MoneyRevenueCropRetentionAccount), flags, null, [f.Files.Before, "(O)194"], null)!;
         var stockType = typeof(CropTeacherSaleStockInventory).Assembly.GetType("StardewAI.GoalConditionedBootstrap.CropTeacherTransferredSaleStock")!;
         object Stock() => Activator.CreateInstance(stockType, flags | BindingFlags.Public, null,
