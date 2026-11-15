@@ -14,10 +14,12 @@ public static partial class MoneyRevenueCropOutputRetentionProofBuilder
             MoneyRevenueCropOutputRetentionProofRequest>(
                 fullRequestPath,
                 "Money Revenue crop output-retention proof request");
-        var inventoryEffects = request.SchemaVersion == "money_revenue_crop_output_retention_proof_request.v6";
+        var appliedNativeWork = request.SchemaVersion is "money_revenue_crop_output_retention_proof_request.v7" or "money_revenue_crop_output_retention_proof_request.v8";
+        var nativeReservedStock = request.SchemaVersion == "money_revenue_crop_output_retention_proof_request.v8";
+        var inventoryEffects = nativeReservedStock || request.SchemaVersion == "money_revenue_crop_output_retention_proof_request.v6";
         var transferredStock = inventoryEffects || request.SchemaVersion == "money_revenue_crop_output_retention_proof_request.v5";
         var reservedStock = transferredStock || request.SchemaVersion == "money_revenue_crop_output_retention_proof_request.v4";
-        var throughBoundary = reservedStock || request.SchemaVersion == "money_revenue_crop_output_retention_proof_request.v3";
+        var throughBoundary = appliedNativeWork || reservedStock || request.SchemaVersion == "money_revenue_crop_output_retention_proof_request.v3";
         var producerAware = throughBoundary || request.SchemaVersion == "money_revenue_crop_output_retention_proof_request.v2";
         Require((producerAware || request.SchemaVersion ==
                     "money_revenue_crop_output_retention_proof_request.v1") &&
@@ -158,7 +160,11 @@ public static partial class MoneyRevenueCropOutputRetentionProofBuilder
         var quantityIncrease = receipt.QuantityIncrease ??
             throw new InvalidDataException(
                 "Money Revenue crop output-retention quantity increase is unavailable.");
-        var attribution = inventoryEffects ? BuildSharedInventoryProducerRetention(lifecycle, harvestTransitions, firstIndex, lastIndex,
+        var attribution = appliedNativeWork ? BuildProducerRetentionCore(lifecycle, harvestTransitions, firstIndex, lastIndex,
+            verifiedCommitment.HarvestItemQualifiedId, wave.MinimumUnits, verifiedCommitment.TileCount,
+            reservedStock ? verifiedCommitment.CommitmentId : null, reservedStock ? wave.OutputRetentionKey : null,
+            transferredStock: reservedStock, inventoryEffects: reservedStock, appliedNativeWork: true) :
+            inventoryEffects ? BuildSharedInventoryProducerRetention(lifecycle, harvestTransitions, firstIndex, lastIndex,
             verifiedCommitment.HarvestItemQualifiedId, wave.MinimumUnits, verifiedCommitment.TileCount,
             verifiedCommitment.CommitmentId, wave.OutputRetentionKey) : transferredStock ? BuildTransferredProducerRetention(lifecycle, harvestTransitions, firstIndex, lastIndex,
             verifiedCommitment.HarvestItemQualifiedId, wave.MinimumUnits, verifiedCommitment.TileCount,
@@ -227,7 +233,8 @@ public static partial class MoneyRevenueCropOutputRetentionProofBuilder
         };
         if (attribution is not null)
         {
-            proof.SchemaVersion = inventoryEffects ? "money_revenue_crop_output_retention_proof.v5" : transferredStock ? "money_revenue_crop_output_retention_proof.v4" :
+            proof.SchemaVersion = appliedNativeWork ? nativeReservedStock ? "money_revenue_crop_output_retention_proof.v7" : "money_revenue_crop_output_retention_proof.v6" :
+                inventoryEffects ? "money_revenue_crop_output_retention_proof.v5" : transferredStock ? "money_revenue_crop_output_retention_proof.v4" :
                 reservedStock ? "money_revenue_crop_output_retention_proof.v3" : "money_revenue_crop_output_retention_proof.v2";
             proof.ProducerRetention = attribution;
             proof.ProofPolicy = "One exact native harvest wave with an independently rebuilt lifecycle. " +
@@ -253,6 +260,8 @@ public static partial class MoneyRevenueCropOutputRetentionProofBuilder
             if (inventoryEffects)
                 proof.ProofPolicy += " Explicit prepared cooking consumption replays original settlement and applies passive claim positions only at its actual native cooking frame. " +
                     "Cooking output is foreign gain, never owned crop producer credit; original quantity, quality and source rules remain.";
+            if (appliedNativeWork)
+                proof.ProofPolicy += " Every immutable native work queue is fully applied and verified; a pending selected objective is not completed or credited by source return.";
         }
         return proof;
     }

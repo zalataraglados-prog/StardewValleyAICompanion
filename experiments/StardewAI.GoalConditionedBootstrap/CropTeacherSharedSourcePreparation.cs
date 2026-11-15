@@ -23,6 +23,7 @@ public sealed partial class CropTeacherSharedSourcePreparation : ICropTeacherSup
     private readonly bool productTransfer;
     private readonly bool inventoryLease;
     private readonly CropTeacherSharedConsumptionPreparationReference? consumptionPreparation;
+    private readonly bool appliedNativeWorkQueue;
 
     private CropTeacherSharedSourcePreparation(string runRequestPath, string sourcePath, string ledgerPath,
         IReadOnlyCollection<string> commitmentIds, string stepId, string modelPlanPath,
@@ -38,7 +39,19 @@ public sealed partial class CropTeacherSharedSourcePreparation : ICropTeacherSup
         MoneyRevenueCropNativeLifecycleTransitionRequest boundary, IReadOnlyDictionary<string, string> selectionHashes,
         CropTeacherSharedTransferPreparationReference? transferPreparation, string? settlementReferencePath,
         bool productTransfer, bool inventoryLease, CropTeacherSharedConsumptionPreparationReference? consumptionPreparation)
+        : this(runRequestPath, sourcePath, ledgerPath, commitmentIds, stepId, modelPlanPath, boundary, selectionHashes,
+            transferPreparation, settlementReferencePath, productTransfer, inventoryLease, consumptionPreparation, false)
+    { }
+
+    private CropTeacherSharedSourcePreparation(string runRequestPath, string sourcePath, string ledgerPath,
+        IReadOnlyCollection<string> commitmentIds, string stepId, string modelPlanPath,
+        MoneyRevenueCropNativeLifecycleTransitionRequest boundary, IReadOnlyDictionary<string, string> selectionHashes,
+        CropTeacherSharedTransferPreparationReference? transferPreparation, string? settlementReferencePath,
+        bool productTransfer, bool inventoryLease, CropTeacherSharedConsumptionPreparationReference? consumptionPreparation,
+        bool appliedNativeWorkQueue)
     {
+        Require(!appliedNativeWorkQueue || transferPreparation is null && consumptionPreparation is null && !inventoryLease,
+            "Applied native work cannot replace prepared inventory settlement.");
         var comparer = CropTeacherSeedTransferNativeOutcome.PathComparer;
         var paths = new[] { runRequestPath, sourcePath, ledgerPath, modelPlanPath, boundary.QueuePath };
         Require(paths.All(Path.IsPathFullyQualified) && Path.IsPathFullyQualified(boundary.BeforeSnapshotPath) &&
@@ -85,7 +98,7 @@ public sealed partial class CropTeacherSharedSourcePreparation : ICropTeacherSup
         TotalDay = MoneyRevenueCropSeedAcquisitionProofBuilder.ReadInt(source.Snapshot, "time", "total_days");
         Require(boundary.TotalDay == TotalDay && boundary.ExecutorVersion == (productTransfer
                     ? PolicyTrajectoryVersionPins.ProductExecutor : PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor) &&
-                (!productTransfer || preparationPaths.Length > 0) &&
+                (!productTransfer || preparationPaths.Length > 0 || appliedNativeWorkQueue) &&
                 !string.IsNullOrWhiteSpace(boundary.RunId) && !string.IsNullOrWhiteSpace(boundary.SelectedCandidateId),
             "Shared source preparation differs from its original day/run/executor/candidate.");
         var outputs = new[] { Path.GetFullPath(boundary.ExecutionReceiptPath), Path.GetFullPath(boundary.AfterSnapshotPath) };
@@ -99,6 +112,7 @@ public sealed partial class CropTeacherSharedSourcePreparation : ICropTeacherSup
         this.consumptionPreparation = consumptionPreparation;
         this.productTransfer = productTransfer;
         this.inventoryLease = inventoryLease;
+        this.appliedNativeWorkQueue = appliedNativeWorkQueue;
         this.settlementReferencePath = settlementReferencePath is null ? null : Path.GetFullPath(settlementReferencePath);
         ValidateInputsUnchanged();
     }
@@ -122,12 +136,19 @@ public sealed partial class CropTeacherSharedSourcePreparation : ICropTeacherSup
         new(runRequestPath, sourcePath, ledgerPath, commitmentIds, stepId, modelPlanPath, boundary, selectionHashes,
             preparation ?? throw new ArgumentNullException(nameof(preparation)), settlementReferencePath, productTransfer: true);
 
+    public static CropTeacherSharedSourcePreparation OpenNativeWork(string runRequestPath, string sourcePath, string ledgerPath,
+        IReadOnlyCollection<string> commitmentIds, string stepId, string modelPlanPath,
+        MoneyRevenueCropNativeLifecycleTransitionRequest boundary, IReadOnlyDictionary<string, string> selectionHashes) =>
+        new(runRequestPath, sourcePath, ledgerPath, commitmentIds, stepId, modelPlanPath, boundary, selectionHashes,
+            null, null, boundary.ExecutorVersion == PolicyTrajectoryVersionPins.ProductExecutor, false, null, true);
+
     public string SourcePath { get; }
     public string QueuePath { get; }
     public int TotalDay { get; }
     public string CandidateId { get; }
     public StrategyCommitmentLedger BaseLedger { get; }
     public bool RequiresTransferSettlement => transferPreparation is not null;
+    public bool AppliedNativeWorkQueue => appliedNativeWorkQueue;
     public CropTeacherSharedTransferPreparationReference? TransferPreparation => transferPreparation;
     public IReadOnlyDictionary<string, string> InputHashes => inputs.ReadHashes();
     public void ValidateInputsUnchanged() => inputs.Validate();
@@ -139,7 +160,9 @@ public sealed partial class CropTeacherSharedSourcePreparation : ICropTeacherSup
         if (consumptionPreparation is not null)
             result = VerifyConsumptionTransition(transition);
         else if (transferPreparation is null)
-            result = CropTeacherSharedSourceReturn.Open(runRequestPath, SourcePath, ledgerPath, commitmentIds, transition, stepId);
+            result = appliedNativeWorkQueue
+                ? CropTeacherSharedSourceReturn.OpenNativeWork(runRequestPath, SourcePath, ledgerPath, commitmentIds, transition, stepId)
+                : CropTeacherSharedSourceReturn.Open(runRequestPath, SourcePath, ledgerPath, commitmentIds, transition, stepId);
         else
         {
             var reference = CurrentTeacherFrontierSupport.Read<CropTeacherSharedTransferSettlementReference>(settlementReferencePath!,

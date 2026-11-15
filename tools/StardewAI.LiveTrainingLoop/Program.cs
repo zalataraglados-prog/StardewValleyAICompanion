@@ -914,7 +914,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                     Path.Combine(options.SnapshotDir, $"execution-{iteration:D4}.json"),
                     Path.Combine(options.SnapshotDir, $"after-snapshot-{iteration:D4}.json"),
                     Path.Combine(managedOwner.EvidenceDirectory, $"shared-source-{iteration:D4}"), transferPreparation)
-                : await managedOwner!.AdmitSharedSourceYieldAsync(sourceSelection,
+                : await managedOwner!.AdmitNativeSharedSourceYieldAsync(sourceSelection,
                 Path.Combine(options.SnapshotDir, $"execution-{iteration:D4}.json"),
                 Path.Combine(options.SnapshotDir, $"after-snapshot-{iteration:D4}.json"),
                 Path.Combine(managedOwner.EvidenceDirectory, $"shared-source-{iteration:D4}")));

@@ -15,7 +15,8 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
             MoneyRevenueCropNativeLifecycleProofRequest>(
                 fullRequestPath,
                 "Money Revenue crop native-lifecycle proof request");
-        var inventoryEffects = request.SchemaVersion == "money_revenue_crop_native_lifecycle_proof_request.v8";
+        var appliedNativeWork = request.SchemaVersion == "money_revenue_crop_native_lifecycle_proof_request.v9";
+        var inventoryEffects = appliedNativeWork || request.SchemaVersion == "money_revenue_crop_native_lifecycle_proof_request.v8";
         var transferredStock = inventoryEffects || request.SchemaVersion == "money_revenue_crop_native_lifecycle_proof_request.v7";
         var jointObserved = transferredStock || request.SchemaVersion == "money_revenue_crop_native_lifecycle_proof_request.v6";
         var nativeObservedCapacity = jointObserved || request.SchemaVersion == "money_revenue_crop_native_lifecycle_proof_request.v5";
@@ -114,7 +115,8 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         var nativeFrames = nativeObservedCapacity ? new NativeLifecycleFrameCache() : null;
         var transitions = request.Transitions.Select(value =>
         {
-            var loaded = inventoryEffects ? LoadSharedInventoryObservedTransition(value) :
+            var loaded = appliedNativeWork ? LoadNativeWorkObservedTransition(value) :
+                inventoryEffects ? LoadSharedInventoryObservedTransition(value) :
                 jointObserved ? transferredStock ? LoadTransferredStockObservedTransition(value) : LoadJointObservedTransition(value) :
                 nativeObservedCapacity ? LoadNativeObservedTransition(value) : LoadTransition(value);
             if (nativeFrames is not null) return loaded.WithNativeFrames(nativeFrames);

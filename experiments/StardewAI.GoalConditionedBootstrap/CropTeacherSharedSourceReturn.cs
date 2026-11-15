@@ -27,7 +27,7 @@ public sealed partial class CropTeacherSharedSourceReturn : ICropTeacherSupporti
             reference.SettledMaterialTransfer?.Preparation is not null || reference.SettledInventoryConsumption is not null,
             reference.SettledConsumptionReferencePath ?? reference.SettledTransferReferencePath, product,
             product && transferredStockSource && reference.SettledMaterialTransfer is null && reference.SettledInventoryConsumption is null,
-            inventoryLease, reference.SettledInventoryConsumption, out observation);
+            inventoryLease, reference.SettledInventoryConsumption, out observation, reference.AppliedNativeWorkQueue);
 
     private CropTeacherSharedSourceReturn(string runRequestPath, string sourcePath, string ledgerPath,
         IReadOnlyCollection<string> commitmentIds, MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId,
@@ -50,7 +50,18 @@ public sealed partial class CropTeacherSharedSourceReturn : ICropTeacherSupporti
         CropTeacherSharedTransferSettlementReference? transfer, bool includePreparation, string? retainedReferencePath,
         bool productTransfer, bool productSource, bool inventoryLease, CropTeacherSharedConsumptionSettlementReference? consumption,
         out VerifiedInventoryObservation observation)
+        : this(runRequestPath, sourcePath, ledgerPath, commitmentIds, transition, stepId, transfer, includePreparation,
+            retainedReferencePath, productTransfer, productSource, inventoryLease, consumption, out observation, false)
+    { }
+
+    private CropTeacherSharedSourceReturn(string runRequestPath, string sourcePath, string ledgerPath,
+        IReadOnlyCollection<string> commitmentIds, MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId,
+        CropTeacherSharedTransferSettlementReference? transfer, bool includePreparation, string? retainedReferencePath,
+        bool productTransfer, bool productSource, bool inventoryLease, CropTeacherSharedConsumptionSettlementReference? consumption,
+        out VerifiedInventoryObservation observation, bool appliedNativeWorkQueue)
     {
+        Require(!appliedNativeWorkQueue || transfer is null && consumption is null && !includePreparation && !inventoryLease,
+            "Applied native work cannot replace prepared inventory settlement.");
         Require((transfer is null || consumption is null) && includePreparation == (transfer?.Preparation is not null || consumption is not null) &&
                 (!includePreparation || (consumption is not null ? consumption.Preparation is not null && consumption.Preparation.BackendUrl == consumption.BackendUrl :
                     transfer!.Preparation!.BackendUrl == transfer.BackendUrl)),
@@ -93,7 +104,7 @@ public sealed partial class CropTeacherSharedSourceReturn : ICropTeacherSupporti
             : CropTeacherSupportingSource.ReadBeforeSettledTransfer(paths[0], paths[1], paths[2], commitmentIds, stepId);
         Require(!productTransfer || productSource && transfer is null || includePreparation && retainedReferencePath is not null,
             "Product shared transfer requires its explicit original prepared-yield boundary.");
-        var native = productTransfer ? ReadProductNativeTransition(source.Snapshot, transition) : ReadNativeTransition(source.Snapshot, transition);
+        var native = ReadNativeTransitionCore(source.Snapshot, transition, productTransfer, appliedNativeWorkQueue);
         Require(native.Actions.Any(row => PreparedCookingConsumptionBinding.IsPresent(row.Item.NormalizedCommand.Parameters)) == (consumption is not null),
             "Prepared cooking requires its explicit original inventory-consumption source consumer.");
 
@@ -151,6 +162,7 @@ public sealed partial class CropTeacherSharedSourceReturn : ICropTeacherSupporti
         ValidateInputsUnchanged();
         rebind = new(native.After, baseLedger, stepId, ValidateInputsUnchanged, "Shared source return");
         ReleasesTransferLease = inventoryLease;
+        AppliedNativeWorkQueue = appliedNativeWorkQueue;
         if (inventoryLease) rebind.ReleaseTransferLease(preparedLedger.PreparedMaterialTransfer!.MaterialRelocations
             .Select(row => row.MaterialReservationId).ToArray());
         observation = new(native, source.Ledger, preparedLedger, baseLedger);
@@ -164,6 +176,12 @@ public sealed partial class CropTeacherSharedSourceReturn : ICropTeacherSupporti
         IReadOnlyCollection<string> commitmentIds, MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId) =>
         new(runRequestPath, sourcePath, ledgerPath, commitmentIds, transition, stepId, productTransfer: true, productSource: true);
 
+    public static CropTeacherSharedSourceReturn OpenNativeWork(string runRequestPath, string sourcePath, string ledgerPath,
+        IReadOnlyCollection<string> commitmentIds, MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId) =>
+        new(runRequestPath, sourcePath, ledgerPath, commitmentIds, transition, stepId, null, false, null,
+            transition.ExecutorVersion == PolicyTrajectoryVersionPins.ProductExecutor,
+            transition.ExecutorVersion == PolicyTrajectoryVersionPins.ProductExecutor, false, null, out _, true);
+
     internal static VerifiedNativeExecutionQueue ReadNativeTransition(SnapshotEnvelope source,
         MoneyRevenueCropNativeLifecycleTransitionRequest transition) => ReadNativeTransitionCore(source, transition, productTransfer: false);
 
@@ -171,12 +189,15 @@ public sealed partial class CropTeacherSharedSourceReturn : ICropTeacherSupporti
         MoneyRevenueCropNativeLifecycleTransitionRequest transition) => ReadNativeTransitionCore(source, transition, productTransfer: true);
 
     private static VerifiedNativeExecutionQueue ReadNativeTransitionCore(SnapshotEnvelope source,
-        MoneyRevenueCropNativeLifecycleTransitionRequest transition, bool productTransfer)
+        MoneyRevenueCropNativeLifecycleTransitionRequest transition, bool productTransfer, bool appliedNativeWorkQueue = false)
     {
         Require(transition.ExecutorVersion == (productTransfer ? PolicyTrajectoryVersionPins.ProductExecutor : PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor) &&
                 transition.TotalDay == MoneyRevenueCropSeedAcquisitionProofBuilder.ReadInt(source, "time", "total_days"),
             "Shared source return differs from the original executor/day boundary.");
-        var native = productTransfer
+        var native = appliedNativeWorkQueue
+            ? NativeExecutionActionSourceReader.ReadAppliedNativeWorkQueue(transition.QueuePath, transition.BeforeSnapshotPath,
+                transition.ExecutionReceiptPath, transition.AfterSnapshotPath, transition.RunId, transition.SelectedCandidateId, productTransfer)
+            : productTransfer
             ? NativeExecutionActionSourceReader.ReadSelectedProductActionQueue(transition.QueuePath, transition.BeforeSnapshotPath,
                 transition.ExecutionReceiptPath, transition.AfterSnapshotPath, transition.RunId, transition.SelectedCandidateId)
             : NativeExecutionActionSourceReader.ReadSelectedNativeActionQueue(transition.QueuePath,
@@ -218,6 +239,7 @@ public sealed partial class CropTeacherSharedSourceReturn : ICropTeacherSupporti
     public int VerifiedNativeStepCount { get; }
     public CropTeacherSharedTransferSettlementReference? TransferSettlement { get; }
     public bool NativeCropLifecycleVerified => false;
+    public bool AppliedNativeWorkQueue { get; }
     public bool CropProductionCreditAuthorized => false;
     public bool TeacherPreferenceLabelEligible => false;
     public bool FormalProductTrainingAuthorized => false;

@@ -15,7 +15,7 @@ public sealed partial class CropTeacherManagedSeedOwner
                 ValidateSupportingTransition(preparing);
                 return preparing;
             }
-            var shared = record["shared_source_execution_protocol"]?.GetValue<string>() is "selected_work_yield.v1" or "selected_work_yield.v2"
+            var shared = record["shared_source_execution_protocol"]?.GetValue<string>() is "selected_work_yield.v1" or "selected_work_yield.v2" or NativeSharedWorkProtocol
                 ? new CropTeacherManagedSeedOperation(this, record, path, null, sharedSourceStart: OpenSharedSourceStart(record))
                 : new CropTeacherManagedSeedOperation(this, record, path, null, sharedSourceReturn: OpenSharedSourceReturn(record));
             ValidateSupportingTransition(shared);

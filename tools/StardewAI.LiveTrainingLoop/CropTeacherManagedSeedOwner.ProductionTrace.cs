@@ -150,6 +150,7 @@ public sealed partial class CropTeacherManagedSeedOwner
                     {
                         SourceReference = new(plan.RequestPath, sourceLedgerPath, covered, Text(record, "support_step_id"), scope.InputHashes)
                             { SettledMaterialTransfer = scope.TransferSettlement, AcceptedMarker = marker,
+                                AppliedNativeWorkQueue = scope.AppliedNativeWorkQueue,
                                 SettledInventoryConsumption = scope.ConsumptionSettlement,
                                 SettledConsumptionReferencePath = IsSharedCookingPreparation(record) ? SharedConsumptionReferencePath(record) : null,
                                 SettledTransferReferencePath = record["shared_source_execution_protocol"]?.GetValue<string>() is "selected_work_yield.v2" or "selected_work_yield.v3"

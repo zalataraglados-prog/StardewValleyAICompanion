@@ -40,7 +40,7 @@ public static partial class MoneyRevenueCropOutputRetentionProofBuilder
 
     private static MoneyRevenueCropProducerRetention BuildProducerRetentionCore(MoneyRevenueCropNativeLifecycleProof lifecycle,
         MoneyRevenueCropNativeLifecycleTransitionProof[] harvests, int first, int last, string itemId, int minimum, int tileCount,
-        string? commitmentId, string? waveKey, bool transferredStock = false, bool inventoryEffects = false)
+        string? commitmentId, string? waveKey, bool transferredStock = false, bool inventoryEffects = false, bool appliedNativeWork = false)
     {
         Require(minimum % tileCount == 0, "Crop producer retention has no exact original per-tile minimum.");
         var original = CurrentTeacherFrontierSupport.Read<MoneyRevenueCropNativeLifecycleProofRequest>(lifecycle.RequestPath,
@@ -67,10 +67,18 @@ public static partial class MoneyRevenueCropOutputRetentionProofBuilder
             {
                 Require(!owned && request.NativeSharedSource is not null,
                     "Crop producer retention cannot credit an unbound foreign transition.");
-                if (stock is not null) frameCount = inventoryEffects ? stock.ObserveSharedInventoryEffects(account, request) : stock.ObserveShared(account, request);
+                if (stock is not null) frameCount = appliedNativeWork ? stock.ObserveSharedNativeWork(account, request) :
+                    inventoryEffects ? stock.ObserveSharedInventoryEffects(account, request) : stock.ObserveShared(account, request);
                 else
                 {
-                    var source = NativeExecutionActionSourceReader.ReadSelectedNativeActionQueue(row.QueuePath, row.BeforeSnapshotPath,
+                    var source = appliedNativeWork && request.NativeSharedSource!.AppliedNativeWorkQueue
+                        ? NativeExecutionActionSourceReader.ReadAppliedNativeWorkQueue(row.QueuePath, row.BeforeSnapshotPath,
+                            row.ExecutionReceiptPath, row.AfterSnapshotPath, request.RunId, request.SelectedCandidateId,
+                            request.ExecutorVersion == StardewAI.Contracts.Training.PolicyTrajectoryVersionPins.ProductExecutor)
+                        : appliedNativeWork && request.ExecutorVersion == StardewAI.Contracts.Training.PolicyTrajectoryVersionPins.ProductExecutor
+                        ? NativeExecutionActionSourceReader.ReadSelectedProductActionQueue(row.QueuePath, row.BeforeSnapshotPath,
+                            row.ExecutionReceiptPath, row.AfterSnapshotPath, request.RunId, request.SelectedCandidateId)
+                        : NativeExecutionActionSourceReader.ReadSelectedNativeActionQueue(row.QueuePath, row.BeforeSnapshotPath,
                         row.ExecutionReceiptPath, row.AfterSnapshotPath, request.RunId, request.SelectedCandidateId);
                     frameCount = source.Actions.Length;
                     var preserve = commitmentId is null ? null : CropTeacherSaleStockInventory.BindPreserved(source.Before,
@@ -105,10 +113,10 @@ public static partial class MoneyRevenueCropOutputRetentionProofBuilder
     }
 
     public static bool HasProducerRetention(MoneyRevenueCropOutputRetentionProof proof) =>
-        (proof.SchemaVersion == "money_revenue_crop_output_retention_proof.v2" || HasReservedProducerRetention(proof)) && proof.ProducerRetention is not null;
+        (proof.SchemaVersion is "money_revenue_crop_output_retention_proof.v2" or "money_revenue_crop_output_retention_proof.v6" || HasReservedProducerRetention(proof)) && proof.ProducerRetention is not null;
 
     public static bool HasReservedProducerRetention(MoneyRevenueCropOutputRetentionProof proof) =>
-        proof.SchemaVersion is "money_revenue_crop_output_retention_proof.v3" or "money_revenue_crop_output_retention_proof.v4" or "money_revenue_crop_output_retention_proof.v5" &&
+        proof.SchemaVersion is "money_revenue_crop_output_retention_proof.v3" or "money_revenue_crop_output_retention_proof.v4" or "money_revenue_crop_output_retention_proof.v5" or "money_revenue_crop_output_retention_proof.v7" &&
         proof.ProducerRetention is not null;
 
     // The caller already binds/rebuilds the immutable certificate. This limits the selected native units,

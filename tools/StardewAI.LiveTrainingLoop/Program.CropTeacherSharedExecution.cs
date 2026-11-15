@@ -71,9 +71,15 @@ static partial class Program
         if (!SameSharedPath(selection.SourceSnapshotPath, bound.DecisionSnapshotPath) ||
             !SameSharedPath(selection.PlanPath, bound.DecisionPlanPath) || !SameSharedPath(selection.RankingPath, bound.DecisionRankingPath) ||
             !SameSharedPath(owner.CurrentSnapshotPath, returned.AfterSnapshotPath) ||
-            selection.OwnedCandidateIds.Contains(candidate.CandidateId) || !receipt.SelectedCandidateCompleted ||
+            selection.OwnedCandidateIds.Contains(candidate.CandidateId) ||
             receipt.SelectedCandidateId != operation.SharedSourceStart.CandidateId)
             throw new InvalidDataException("Shared native completion does not retire this original selected decision.");
+        if (!receipt.SelectedCandidateCompleted)
+        {
+            if (!operation.SharedSourceStart.AppliedNativeWorkQueue || candidate.ObjectiveContinuation is null)
+                throw new InvalidDataException("Only applied native work may retain its original pending objective.");
+            return selection;
+        }
         var completed = new HashSet<string>(selection.CompletedForeignCandidateIds, StringComparer.Ordinal) { candidate.CandidateId };
         return selection with { CompletedForeignCandidateIds = completed };
     }

@@ -12,7 +12,7 @@ public sealed partial class CropTeacherManagedSeedOwner
 
     private JsonObject CreateSupportingTransitionIntent(JsonObject record, ICropTeacherSupportingTransition? scope) =>
         IsSharedPortfolioPreparation(record) ? CreateSharedTransferPreparationIntent(record) :
-        record["shared_source_execution_protocol"]?.GetValue<string>() is "selected_work_yield.v1" or "selected_work_yield.v2" ? CreateSharedSourceYieldIntent(record) :
+        record["shared_source_execution_protocol"]?.GetValue<string>() is "selected_work_yield.v1" or "selected_work_yield.v2" or NativeSharedWorkProtocol ? CreateSharedSourceYieldIntent(record) :
         record["operation_kind"]?.GetValue<string>() == "shared_source_return" ? CreateSharedSourceReturnIntent(record, (CropTeacherSharedSourceReturn)scope!) :
         record["operation_kind"]?.GetValue<string>() == "site_clearance" ? CreateOriginalClearanceIntent(record) :
         record["operation_kind"]?.GetValue<string>() == "site_till" ? CreateOriginalTillingIntent(record) :

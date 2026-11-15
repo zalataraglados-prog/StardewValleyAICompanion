@@ -30,9 +30,15 @@ public sealed record CropTeacherSharedExecutionClaim(int OwnerSequence, string S
 
 public sealed partial class CropTeacherManagedSeedOwner
 {
+    private const string NativeSharedWorkProtocol = "selected_native_work_yield.v1";
+
     public Task<CropTeacherManagedSeedOperation> AdmitSharedSourceYieldAsync(CropTeacherSharedSourceSelection selection,
         string receiptPath, string afterSnapshotPath, string runtimeDirectory) =>
         AdmitSharedSourceYieldCoreAsync(selection, receiptPath, afterSnapshotPath, runtimeDirectory, null);
+
+    public Task<CropTeacherManagedSeedOperation> AdmitNativeSharedSourceYieldAsync(CropTeacherSharedSourceSelection selection,
+        string receiptPath, string afterSnapshotPath, string runtimeDirectory) =>
+        AdmitSharedSourceYieldCoreAsync(selection, receiptPath, afterSnapshotPath, runtimeDirectory, null, appliedNativeWorkQueue: true);
 
     public Task<CropTeacherManagedSeedOperation> AdmitPreparedSharedTransferYieldAsync(CropTeacherSharedSourceSelection selection,
         string receiptPath, string afterSnapshotPath, string runtimeDirectory, CropTeacherSharedTransferPreparationReference preparation) =>
@@ -40,7 +46,8 @@ public sealed partial class CropTeacherManagedSeedOwner
             preparation ?? throw new ArgumentNullException(nameof(preparation)));
 
     private async Task<CropTeacherManagedSeedOperation> AdmitSharedSourceYieldCoreAsync(CropTeacherSharedSourceSelection selection,
-        string receiptPath, string afterSnapshotPath, string runtimeDirectory, CropTeacherSharedTransferPreparationReference? preparation)
+        string receiptPath, string afterSnapshotPath, string runtimeDirectory, CropTeacherSharedTransferPreparationReference? preparation,
+        bool appliedNativeWorkQueue = false)
     {
         await gate.WaitAsync().ConfigureAwait(false);
         try
@@ -50,7 +57,8 @@ public sealed partial class CropTeacherManagedSeedOwner
                 throw new InvalidDataException("Prepared transfer selection requires its explicit matching yield mode.");
             var record = CreateAdmissionRecord(headSnapshotPath, headLedgerPath, runtimeDirectory);
             record["operation_kind"] = "shared_source_return";
-            record["shared_source_execution_protocol"] = preparation is null ? "selected_work_yield.v1" : "selected_work_yield.v2";
+            record["shared_source_execution_protocol"] = appliedNativeWorkQueue ? NativeSharedWorkProtocol :
+                preparation is null ? "selected_work_yield.v1" : "selected_work_yield.v2";
             if (preparation is not null) record["original_transfer_preparation"] = JsonSerializer.SerializeToNode(preparation, JsonOptions);
             record["shared_source_selection"] = JsonSerializer.SerializeToNode(selection, JsonOptions);
             var selected = ReadSharedSourceSelection(record);
@@ -200,7 +208,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         var preparation = record["original_transfer_preparation"]?.Deserialize<CropTeacherSharedTransferPreparationReference>(JsonOptions);
         var cooking = protocol == "selected_cooking_yield.v1";
         var consumption = record["original_consumption_preparation"]?.Deserialize<CropTeacherSharedConsumptionPreparationReference>(JsonOptions);
-        if (protocol is not "selected_work_yield.v1" and not "selected_work_yield.v2" and not "selected_cooking_yield.v1" ||
+        if (protocol is not "selected_work_yield.v1" and not "selected_work_yield.v2" and not "selected_cooking_yield.v1" and not NativeSharedWorkProtocol ||
             (protocol == "selected_work_yield.v2") != (preparation is not null) ||
             cooking != (consumption is not null) ||
             cooking && (selection.InventoryConsumptionPreparation != consumption || selection.MaterialTransferPreparation is not null) ||
@@ -226,8 +234,11 @@ public sealed partial class CropTeacherManagedSeedOwner
                 ActiveCoveredCommitments(), Text(record, "support_step_id"), selection.ModelPlanPath, transition, pins.Hashes,
                 consumption!, SharedConsumptionReferencePath(record), options.ExecutorVersion == PolicyTrajectoryVersionPins.ProductExecutor)
             : preparation is null
-            ? CropTeacherSharedSourcePreparation.Open(plan.RequestPath, headSnapshotPath, headLedgerPath,
-                ActiveCoveredCommitments(), Text(record, "support_step_id"), selection.ModelPlanPath, transition, pins.Hashes)
+            ? protocol == NativeSharedWorkProtocol
+                ? CropTeacherSharedSourcePreparation.OpenNativeWork(plan.RequestPath, headSnapshotPath, headLedgerPath,
+                    ActiveCoveredCommitments(), Text(record, "support_step_id"), selection.ModelPlanPath, transition, pins.Hashes)
+                : CropTeacherSharedSourcePreparation.Open(plan.RequestPath, headSnapshotPath, headLedgerPath,
+                    ActiveCoveredCommitments(), Text(record, "support_step_id"), selection.ModelPlanPath, transition, pins.Hashes)
             : inventoryLease
                 ? CropTeacherSharedSourcePreparation.OpenPreparedInventoryTransferLease(plan.RequestPath, headSnapshotPath, headLedgerPath,
                     ActiveCoveredCommitments(), Text(record, "support_step_id"), selection.ModelPlanPath, transition, pins.Hashes,
@@ -265,6 +276,8 @@ public sealed partial class CropTeacherManagedSeedOwner
             result["schema_version"] = "crop_teacher_managed_shared_source_yield.v2";
             result["original_transfer_preparation"] = record["original_transfer_preparation"]!.DeepClone();
         }
+        if (record["shared_source_execution_protocol"]?.GetValue<string>() == NativeSharedWorkProtocol)
+            result["schema_version"] = "crop_teacher_managed_native_work_yield.v1";
         return result;
     }
 

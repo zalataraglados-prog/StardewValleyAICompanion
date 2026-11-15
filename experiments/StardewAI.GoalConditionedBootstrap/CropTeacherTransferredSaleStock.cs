@@ -28,10 +28,16 @@ internal sealed class CropTeacherTransferredSaleStock(string commitmentId, strin
     internal int ObserveSharedInventoryEffects(MoneyRevenueCropRetentionAccount account, MoneyRevenueCropNativeLifecycleTransitionRequest request)
         => ObserveSharedCore(account, request, inventoryEffects: true);
 
+    internal int ObserveSharedNativeWork(MoneyRevenueCropRetentionAccount account, MoneyRevenueCropNativeLifecycleTransitionRequest request)
+        => ObserveSharedCore(account, request, inventoryEffects: true, appliedNativeWork: true);
+
     private int ObserveSharedCore(MoneyRevenueCropRetentionAccount account, MoneyRevenueCropNativeLifecycleTransitionRequest request,
-        bool inventoryEffects)
+        bool inventoryEffects, bool appliedNativeWork = false)
     {
-        var scope = MoneyRevenueCropNativeSharedSourceVerifier.VerifyInventoryRetentionSource(request, inventoryEffects, out var verified);
+        CropTeacherSharedSourceReturn.VerifiedInventoryObservation verified;
+        var scope = appliedNativeWork
+            ? MoneyRevenueCropNativeSharedSourceVerifier.VerifyNativeWorkRetentionSource(request, inventoryEffects, out verified)
+            : MoneyRevenueCropNativeSharedSourceVerifier.VerifyInventoryRetentionSource(request, inventoryEffects, out verified);
         var reference = request.NativeSharedSource!;
         var sourceLedger = verified.SourceLedger;
         var native = verified.Native;

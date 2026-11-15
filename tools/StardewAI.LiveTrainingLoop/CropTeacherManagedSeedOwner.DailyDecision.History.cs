@@ -19,7 +19,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         {
             var admissionPath = RecordPath(row.Sequence, "intent");
             var intent = ReadBoundPlanningRecord(admissionPath, Text(row.Certificate, "admission_sha256"));
-            if (intent["shared_source_execution_protocol"]?.GetValue<string>() is not "selected_work_yield.v1" and not "selected_work_yield.v2" and not "selected_work_yield.v3" and not "selected_cooking_consumption.v1") continue;
+            if (intent["shared_source_execution_protocol"]?.GetValue<string>() is not "selected_work_yield.v1" and not "selected_work_yield.v2" and not "selected_work_yield.v3" and not "selected_cooking_consumption.v1" and not NativeSharedWorkProtocol) continue;
             if (IsSharedPortfolioPreparation(intent))
                 _ = ReadBoundPlanningRecord(RecordPath(row.Sequence, "prepared"), Text(row.Certificate, PreparationMode(intent).AcceptedPreparationHashKey));
             intent = SharedExecutionRecord(intent);
@@ -42,9 +42,23 @@ public sealed partial class CropTeacherManagedSeedOwner
                 !hashes.TryGetValue(Path.GetFullPath(transition.ExecutionReceiptPath), out var receiptHash))
                 throw new InvalidDataException("Accepted daily completion lacks its original sealed native outcome.");
             var receipt = ReadBoundPlanningRecord(transition.ExecutionReceiptPath, receiptHash).Deserialize<QueueExecutionReceiptEnvelope>(JsonOptions)!;
-            if (receipt.SelectedCandidateId != selected.CandidateId || transition.SelectedCandidateId != selected.CandidateId ||
+            var nativeWork = intent["shared_source_execution_protocol"]?.GetValue<string>() == NativeSharedWorkProtocol;
+            var expectedCandidate = nativeWork ? transition.SelectedCandidateId : selected.CandidateId;
+            if (receipt.SelectedCandidateId != expectedCandidate || transition.SelectedCandidateId != expectedCandidate ||
                 receipt.AfterStateHash != Text(row.Certificate, "shared_after_state_hash"))
                 throw new InvalidDataException("Accepted daily completion belongs to another candidate or source.");
+            if (nativeWork)
+            {
+                var selectionHashes = intent["input_artifact_hashes"]?.Deserialize<Dictionary<string, string>>(JsonOptions);
+                if (selectionHashes is null || !selectionHashes.TryGetValue(Path.GetFullPath(selection.EvidencePath), out var evidenceHash))
+                    throw new InvalidDataException("Accepted native work lost its selected refresh binding.");
+                var evidence = ReadBoundPlanningRecord(selection.EvidencePath, evidenceHash);
+                if (Text(evidence, "selected_candidate_id") != selected.CandidateId || Text(evidence, "selected_option_id") != selected.OptionId ||
+                    evidence["selected_queue_index"]?.GetValue<int>() != selected.QueueIndex || Text(evidence, "state_hash") != receipt.SourceStateHash ||
+                    evidence["policy_model_invoked"]?.GetValue<bool>() != false || evidence["selection_locked"]?.GetValue<bool>() != true ||
+                    !receipt.SelectedCandidateCompleted && selected.ObjectiveContinuation is null)
+                    throw new InvalidDataException("Accepted native work changed its original selected objective.");
+            }
             if (receipt.SelectedCandidateCompleted && !completed.Add(selected.CandidateId))
                 throw new InvalidDataException("Accepted daily decision completes the same selected candidate twice.");
         }

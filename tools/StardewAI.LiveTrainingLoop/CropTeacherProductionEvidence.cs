@@ -28,9 +28,14 @@ internal static partial class CropTeacherProductionEvidence
         string output, Func<string, string, Task> write) => BuildCoreAsync(trace.CropTrace, trace.SharedSourceReturns, output, write,
             retainSaleStock: true, transferredStock: true, inventoryEffects: true);
 
+    internal static Task<CropTeacherManagedProductionEvidence> BuildJointNativeWorkAsync(CropTeacherManagedJointProductionTrace trace,
+        string output, Func<string, string, Task> write, bool retainSaleStock = false) =>
+        BuildCoreAsync(trace.CropTrace, trace.SharedSourceReturns, output, write,
+            retainSaleStock, transferredStock: retainSaleStock, inventoryEffects: retainSaleStock, appliedNativeWork: true);
+
     private static async Task<CropTeacherManagedProductionEvidence> BuildCoreAsync(CropTeacherManagedProductionTrace trace,
         IReadOnlyList<CropTeacherManagedSharedSourceReturn> shared, string output, Func<string, string, Task> write,
-        bool retainSaleStock = false, bool transferredStock = false, bool inventoryEffects = false)
+        bool retainSaleStock = false, bool transferredStock = false, bool inventoryEffects = false, bool appliedNativeWork = false)
     {
         trace.ValidateInputsUnchanged();
         var (request, plan) = CropTeacherResumeLoader.ReadVerifiedPlan(trace.NativeRunPlanPath);
@@ -93,7 +98,8 @@ internal static partial class CropTeacherProductionEvidence
             capacities.Add(capacity);
             var lifecycleRequest = await Emit("lifecycle-request-" + index, new MoneyRevenueCropNativeLifecycleProofRequest
             {
-                SchemaVersion = inventoryEffects ? "money_revenue_crop_native_lifecycle_proof_request.v8" :
+                SchemaVersion = appliedNativeWork ? "money_revenue_crop_native_lifecycle_proof_request.v9" :
+                    inventoryEffects ? "money_revenue_crop_native_lifecycle_proof_request.v8" :
                     shared.Count > 0 ? transferredStock ? "money_revenue_crop_native_lifecycle_proof_request.v7" :
                     "money_revenue_crop_native_lifecycle_proof_request.v6" :
                     "money_revenue_crop_native_lifecycle_proof_request.v5",
@@ -108,7 +114,9 @@ internal static partial class CropTeacherProductionEvidence
                 var retainThroughHead = (shared.Count > 0 || retainSaleStock) && wave.HarvestTotalDay == transitions[^1].TotalDay;
                 var retentionRequest = await Emit($"retention-request-{index}-{wave.WaveIndex}", new MoneyRevenueCropOutputRetentionProofRequest
                 {
-                    SchemaVersion = inventoryEffects ? "money_revenue_crop_output_retention_proof_request.v6" :
+                    SchemaVersion = appliedNativeWork ? retainSaleStock ? "money_revenue_crop_output_retention_proof_request.v8" :
+                        "money_revenue_crop_output_retention_proof_request.v7" :
+                        inventoryEffects ? "money_revenue_crop_output_retention_proof_request.v6" :
                         transferredStock ? "money_revenue_crop_output_retention_proof_request.v5" :
                         retainSaleStock ? "money_revenue_crop_output_retention_proof_request.v4" :
                         retainThroughHead ? "money_revenue_crop_output_retention_proof_request.v3" :
@@ -116,7 +124,7 @@ internal static partial class CropTeacherProductionEvidence
                         "money_revenue_crop_output_retention_proof_request.v1",
                     CropProductionPlanPath = plan.CropProductionPlanPath, NativeLifecycleProofPath = lifecycle,
                     CommitmentId = crop.CommitmentId, WaveIndex = wave.WaveIndex,
-                    RetainThroughSnapshotPath = retainThroughHead ? trace.AcceptedSnapshotPath : retainSaleStock ?
+                    RetainThroughSnapshotPath = retainThroughHead ? trace.AcceptedSnapshotPath : retainSaleStock || appliedNativeWork ?
                         lifecycleProof.Transitions.Last(row => row.TotalDay == wave.HarvestTotalDay && row.OptionId == "executor.harvest_crop" &&
                             row.ActionCommitmentId == crop.CommitmentId).AfterSnapshotPath : null
                 }).ConfigureAwait(false);

@@ -31,6 +31,14 @@ public static class MoneyRevenueCropNativeSharedSourceVerifier
             productTransfer: transition.ExecutorVersion == PolicyTrajectoryVersionPins.ProductExecutor, transferredStockSource: true,
             allowConsumption: true);
 
+    public static CropTeacherSharedSourceReturn VerifyWithNativeWork(MoneyRevenueCropNativeLifecycleTransitionRequest transition)
+        => VerifyNativeWorkRetentionSource(transition, inventoryEffects: true, out _);
+
+    internal static CropTeacherSharedSourceReturn VerifyNativeWorkRetentionSource(MoneyRevenueCropNativeLifecycleTransitionRequest transition,
+        bool inventoryEffects, out CropTeacherSharedSourceReturn.VerifiedInventoryObservation observation) =>
+        VerifyCore(transition, out observation, true, true, true,
+            transition.ExecutorVersion == PolicyTrajectoryVersionPins.ProductExecutor, true, inventoryEffects, allowNativeWork: true);
+
     private static CropTeacherSharedSourceReturn VerifyCore(MoneyRevenueCropNativeLifecycleTransitionRequest transition,
         bool allowSettledTransfer, bool allowPreparation = false, bool allowPreparedYield = false, bool productTransfer = false,
         bool transferredStockSource = false, bool allowConsumption = false)
@@ -43,10 +51,13 @@ public static class MoneyRevenueCropNativeSharedSourceVerifier
 
     private static CropTeacherSharedSourceReturn VerifyCore(MoneyRevenueCropNativeLifecycleTransitionRequest transition,
         out CropTeacherSharedSourceReturn.VerifiedInventoryObservation observation, bool allowSettledTransfer,
-        bool allowPreparation, bool allowPreparedYield, bool productTransfer, bool transferredStockSource, bool allowConsumption)
+        bool allowPreparation, bool allowPreparedYield, bool productTransfer, bool transferredStockSource, bool allowConsumption,
+        bool allowNativeWork = false)
     {
         var reference = transition.NativeSharedSource
             ?? throw new InvalidDataException("Shared native transition lacks its original source/ledger binding.");
+        Require(allowNativeWork || !reference.AppliedNativeWorkQueue,
+            "Applied native work requires its explicit source consumer.");
         Require(transition.TransitionKind == "shared_source_return" && transition.NativeRefillPreparation is null &&
                 reference.InputArtifactHashes is { Count: > 0 } && reference.CoveredCommitmentIds is { Length: > 0 },
             "Shared native transition is not an explicit separately credited source return.");

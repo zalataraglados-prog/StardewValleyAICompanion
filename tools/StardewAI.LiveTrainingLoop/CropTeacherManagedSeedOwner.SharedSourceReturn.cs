@@ -85,6 +85,14 @@ public sealed partial class CropTeacherManagedSeedOwner
             CropSaleStockTransferLeaseContract.IsLeaseRequest(request);
         record = SharedExecutionRecord(record);
         var protocol = record["shared_source_return_protocol"]?.GetValue<string>();
+        if (record["shared_source_execution_protocol"]?.GetValue<string>() == NativeSharedWorkProtocol)
+        {
+            if (protocol is not null || record["original_transfer_preparation"] is not null || record["original_transfer_settlement"] is not null ||
+                record["original_consumption_preparation"] is not null || record["original_consumption_settlement"] is not null)
+                throw new InvalidDataException("Applied native work cannot borrow inventory settlement protocols.");
+            return CropTeacherSharedSourceReturn.OpenNativeWork(plan.RequestPath, sourcePath, ledgerPath, covered,
+                transition, Text(record, "support_step_id"));
+        }
         if (record["shared_source_execution_protocol"]?.GetValue<string>() == "selected_cooking_yield.v1")
         {
             var consumptionPreparation = record["original_consumption_preparation"]?.Deserialize<CropTeacherSharedConsumptionPreparationReference>(JsonOptions);

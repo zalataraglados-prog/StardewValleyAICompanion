@@ -166,6 +166,9 @@ public sealed record MoneyRevenueCropNativeSharedSourceReference(
     [JsonPropertyName("accepted_marker")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public CropTeacherSharedSourceMarkerReference? AcceptedMarker { get; init; }
+    [JsonPropertyName("applied_native_work_queue")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool AppliedNativeWorkQueue { get; init; }
     [JsonPropertyName("settled_material_transfer")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public CropTeacherSharedTransferSettlementReference? SettledMaterialTransfer { get; init; }

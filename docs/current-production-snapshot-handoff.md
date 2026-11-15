@@ -1,5 +1,35 @@
 # Current Production Snapshot Handoff
 
+## Applied Native Work Keeps The Selected Objective (209, Integration Open)
+
+208 OWN43734383687 SUCCESS: Core2762(34s)/Backend3518(7m26s), zero skipped;
+peer99c52831 has the identical tracked tree. New explicit selected_native_work_yield.v1
+reuses the original owner/executor/typed continuation and requires EVERY immutable
+native queue item applied and verified. A pending higher-level objective keeps the
+same original decision; only terminal objective completion retires its logical ID.
+Old full-goal validators, prepared inventory modes, claim-once and no-resend stay.
+The new Product mode reuses the original all-actions Product-wire check (red first).
+
+Final adjacent36/36(46.0s), including10 new cases: real compilers/Backend with declared
+mail approach/open/close wires, original held selection and terminal reopen, failures
+without another claim, and NONEMPTY shared movement within a whole crop lifecycle
+without production credit. Log block209-native-work-adjacent.log SHA
+3c7b27164b77510ab49b74a432a96e644099dcc4425af49cebdefeac7639ac31.
+NOT game execution, full production aggregation, or reserve/cook/sale proof. Existing
+OwnedCooking CS8602 remains. All local sessions terminal; own commit CI separate.
+
+Fetched PR571/acdea0c1 (base206, CI43729573716SUCCESS), NOT merged. It overlaps207
+dedup but fixes the actual MergeSharedSources inventory-mode dispatch omission.
+NEXT coordinate its finalized repair with209 native-work mode in the SAME aggregator;
+retain207 same-invocation out-result reuse and physical frame checks, then verify a
+nonempty combined path. The current aggregator does NOT yet admit209 sources.
+Do not call this local green a complete producer/selected-route/native closure.
+Then original step5 valid saved lineage/global selection/execution/calendar,
+#570 -> #569 PRE-MANIFEST; no forced unselected cooking or frozen13day replay.
+No API/game/deploy/cleanup/raw/local-data commit. At01:07 E free6,572,875,776B was
+above6144MiB reserve (historical below-reserve statements are stale); no auto launch.
+Frozen evidence/modeOFF/formalfalse/cooking stash retention remain.
+
 ## Materialize Owned Obligations Outside Policy Pool (208)
 
 207 44301b4a / OWN43730405744 SUCCESS, Core2762(37s)/Backend3516(7m13s),
