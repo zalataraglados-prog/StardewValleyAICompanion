@@ -79,8 +79,8 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 RunId = request.RunId, QueueId = queue.QueueId, QueueItemId = item.QueueItemId, OptionId = item.OptionId,
                 BeforeStateHash = before.StateHash, Status = "applied", FeedbackAvailable = true,
                 PrimitiveKind = "clear_obstacle", PrimitiveVerificationStatus = "verified", ChangedFacts = facts,
-                ToolQualifiedItemId = "(W)47", ToolUseCount = 1, TargetLocation = "Farm",
-                TargetTileX = Preparation.Target.TileX, TargetTileY = Preparation.Target.TileY,
+                ToolQualifiedItemId = "(W)47", ToolUseCount = 1,
+                RequestedEffect = $"current_location.obstacle[{Preparation.Target.TileX},{Preparation.Target.TileY}]=clear",
                 ProductAfterStateHash = After.StateHash, ProductAfterGameTick = After.GameTick
             }, JsonOptions)!.AsObject();
             result["execution_request_journal_path"] = JournalPath; result["execution_request_nonce"] = request.RequestNonce;

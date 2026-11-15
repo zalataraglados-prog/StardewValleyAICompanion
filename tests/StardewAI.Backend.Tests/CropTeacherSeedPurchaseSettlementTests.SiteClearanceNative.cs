@@ -6,6 +6,39 @@ namespace StardewAI.Backend.Tests;
 public sealed partial class CropTeacherSeedPurchaseSettlementTests
 {
     [Theory]
+    [InlineData("explicit")]
+    [InlineData("wrong-x")]
+    [InlineData("wrong-y")]
+    [InlineData("wrong-location")]
+    [InlineData("partial")]
+    [InlineData("wrong-effect")]
+    [InlineData("missing-effect")]
+    public async Task SiteClearanceNativeBindsOriginalWireWithoutInventedResultCoordinates(string shape)
+    {
+        var f = new SiteClearanceNativeFixture(); using var host = f.Files.F.Runtime;
+        await f.Build();
+        var result = JsonNode.Parse(File.ReadAllText(f.ResultPath))!.AsObject();
+        switch (shape)
+        {
+            case "explicit":
+                result["target_location"] = "Farm";
+                result["target_tile_x"] = f.Preparation.Target.TileX;
+                result["target_tile_y"] = f.Preparation.Target.TileY;
+                break;
+            case "wrong-x": result["target_tile_x"] = 99; break;
+            case "wrong-y": result["target_tile_y"] = 99; break;
+            case "wrong-location": result["target_location"] = "Town"; break;
+            case "partial": result["target_tile_x"] = f.Preparation.Target.TileX; break;
+            case "wrong-effect": result["requested_effect"] = "current_location.obstacle[99,99]=clear"; break;
+            case "missing-effect": result["requested_effect"] = ""; break;
+        }
+        Fixture.Save(f.ResultPath, result);
+        if (shape == "explicit") Assert.True(f.Preparation.VerifyTransition(f.Transition).NativeOutcomeVerified);
+        else Assert.Throws<InvalidDataException>(() => f.Preparation.VerifyTransition(f.Transition));
+        Assert.Equal(0, f.Files.F.Runtime.Handler.Commits);
+    }
+
+    [Theory]
     [InlineData(true, "clear")]
     [InlineData(false, "clear")]
     [InlineData(true, "access")]

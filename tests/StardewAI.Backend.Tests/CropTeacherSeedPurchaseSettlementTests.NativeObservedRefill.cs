@@ -8,6 +8,34 @@ namespace StardewAI.Backend.Tests;
 
 public sealed partial class CropTeacherSeedPurchaseSettlementTests
 {
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task NativeObservedRefillAcceptsOriginalClearanceWireInBothExecutorChannels(bool product)
+    {
+        using var f = new NativeRefillProductFixture(product: product, repair: true, nativeObserved: true);
+        await f.Build();
+        for (var index = 0; index < f.Results.Count; index++)
+        {
+            var request = StardewAI.Core.Infrastructure.ExecutionRequestJournalReader.Read(f.Journals[index]).Request;
+            if (request.OptionId != "executor.clear_obstacle") continue;
+            var result = JsonNode.Parse(File.ReadAllText(f.Results[index]))!.AsObject();
+            result["target_location"] = "";
+            result["target_tile_x"] = null;
+            result["target_tile_y"] = null;
+            result["requested_effect"] = $"current_location.obstacle[{request.TargetTileX},{request.TargetTileY}]=clear";
+            Fixture.Save(f.Results[index], result);
+        }
+        var trace = CropTeacherRefillApproachNativeTrace.OpenNativeObservedEffects(f.Trace.Approach.Open(),
+            f.ReceiptPath, f.AfterPath, f.RunId, product
+                ? PolicyTrajectoryVersionPins.ProductExecutor : PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor);
+        Assert.True(trace.NativeOutcomeVerified);
+        Assert.Equal(3, trace.NativeOutcomes.Count);
+        Assert.False(trace.ResourceCreditAuthorized);
+        Assert.False(trace.FormalProductTrainingAuthorized);
+        trace.ValidateInputsUnchanged();
+    }
+
     [Fact]
     public async Task NativeObservedRefillReusesOriginalClearanceProtocolWithoutPrivateTreePredictions()
     {

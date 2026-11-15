@@ -1,5 +1,49 @@
 # Current Production Snapshot Handoff
 
+## Actual Native Clearance Wire Repair (216)
+
+215 ff8b11aa OWN43755418097 SUCCESS: Core2770(49s)/Backend3574(10m36s), zero
+skipped; peer91b6211b tracked tree equals215. No API invocation/grants.
+
+Actual original managed/joint/Product Main, episode joint-u-20261116-0400,
+slotProofFarm_454450509: original fresh-save factory -> starter gift -> saved
+spring2 prelude -> SAME live save/second artifact segment, original budget3/free4
+candidates/no fixed kind or ID -> original crop owner/84-action plan -> purchase
+six cauliflower seeds(500g->20g), return Farm, six accepted native tills. Initial
+controller basename `saves` was correctly rejected; fix only the setup name,
+retain/hash-copy rejected logs, do not relax the original fresh-save-* guard.
+
+First real blocker25: native clear Farm(71,18) weeds applied/verified/23ticks,
+but new CropTeacherSiteClearance required duplicate result coordinates that the
+ORIGINAL clear writer never filled. Original journal target + RequestedEffect
+bind the target. Check origin42131a9b/parent and matching conversation JSON, adapt
+the NEW consumer, not the valid old executor. Readable before/after Farm and
+original request coordinates remain mandatory. Accept exact original clear effect
+when ALL duplicate target fields are absent; if supplied they must be complete
+and exact. Conflicts/partial coordinates/wrong effect still fail. Same kernel
+serves native observed refill; no second verifier or resource/producer credit.
+
+Real-wire red3/3 retained; final adjacent139/139(1m7s), zero skipped, SHA
+f00a954aaf82460f05ca8497467980c83f6b7736c19969672181e22ea497849b.
+Unmodified ACTUAL25 and original preparation also pass the SAME public verifier
+offline: reportSHA ccbdcb0f3fcd90db64a46e2a5085aa596b902e982e955a80ee6841cb0194067a.
+No native resend, no owner advancement, all retained hashes unchanged. Original
+failed controller loader attempt is retained separately; not a product failure.
+C# unchanged since final build; this commit needs its OWN CI, not215's green.
+
+Actual Main stopped incomplete/crop_teacher_managed_interrupted_preserve_original_evidence.
+NO managed first-day save/plant/water/harvest/shipping/readback acceptance. Owner
+has an UNSAVED tail: do not swap its head with the earlier spring2 save or call
+offline receipt verification automatic recovery. Preserve all evidence; select
+a genuinely matching original saved owner boundary or explicitly declare an
+originally initialized new episode for the next actual Main. No frozen13day
+replay/old85 or169 source mutation. Original550 ->570 ->569,572 OPEN/formal=false.
+One till native0.623s vs much longer whole-step interval: method-level performance
+cause remains unprofiled; don't alter animation or remove checks on inference.
+All recorded matching native/services/Main identities exited. E runtime/save,
+I artifacts, hidden/silent/renderoff/oneCPU/BelowNormal, no native heap limit;
+raw/binaries/saves/controller scripts remain outsideGit. No deploy/cleanup/API.
+
 ## Actual Managed Joint Startup Mode (215)
 
 214 e9ef614f OWN43752272783 SUCCESS: Core2770(54s)/Backend3564(9m14s), zero
