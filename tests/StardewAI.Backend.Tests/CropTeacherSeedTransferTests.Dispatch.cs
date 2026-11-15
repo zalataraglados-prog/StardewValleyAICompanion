@@ -20,6 +20,7 @@ public sealed partial class CropTeacherSeedTransferTests
     [InlineData("wrong-quantity")]
     [InlineData("mixed-machine")]
     [InlineData("mixed-custody")]
+    [InlineData("mixed-sale-stock")]
     [InlineData("missing-binding")]
     [InlineData("missing-preparation")]
     [InlineData("stale-state")]
@@ -50,6 +51,7 @@ public sealed partial class CropTeacherSeedTransferTests
             case "wrong-quantity": Set("quantity", "1"); break;
             case "mixed-machine": Add("acquisition_support_transition_kind", "machine_input_material_transfer"); break;
             case "mixed-custody": Add("museum_output_custody_transfer_version", "1"); break;
+            case "mixed-sale-stock": Add("crop_sale_stock_transfer_version", "1"); break;
             case "missing-binding": item.NormalizedCommand.Parameters = item.NormalizedCommand.Parameters.Where(row => row.Name != PreparedMaterialTransferContract.BindingParameter).ToArray(); break;
             case "missing-preparation": ledger.PreparedMaterialTransfer = null; break;
             case "stale-state": item.NormalizedCommand.StateHash = "stale"; break;
@@ -58,6 +60,7 @@ public sealed partial class CropTeacherSeedTransferTests
             case "missing-namespace": item.NormalizedCommand.Parameters = item.NormalizedCommand.Parameters.Where(row => !CropSeedMaterialTransferBinding.IsControlParameter(row.Name)).ToArray(); break;
         }
         var original = JsonSerializer.Serialize(ledger);
+        if (mutation == "mixed-sale-stock") Assert.False(CropSeedMaterialTransferBinding.IsBound(item, ledger));
         var result = new ActionQueueDispatchReadinessService().Evaluate(queue, item, ledger, fixture.Before.StateHash);
         Assert.False(result.Ready);
         Assert.NotEmpty(result.BlockingReasons);

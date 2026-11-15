@@ -1,5 +1,33 @@
 # Current Production Snapshot Handoff
 
+## Explicit Sale-Stock Dispatch Binding (193, Stock Capability Open)
+
+192 final9b60d3a6/quality43678841623 SUCCESS: Core2675, Backend3405,
+zero skipped. Peer mergeb8bec368/treed4dd90aecc811c2b2615875b80d63a43886581f4
+equals accepted192, NOT this dirty successor.
+
+Typed sale-stock v2 control now binds ORIGINAL preparation/revision/source/goal,
+claims and actor-authorized player<->chest intent at ORIGINAL dispatch. One
+preflight carries only verified controls through candidate/fresh compilation.
+Mixed/leftover controls cannot downgrade to legacy dispatch. Original custody
+rule is shared; original executor, settlement and valid old defaults unchanged.
+
+Declared two-direction candidate/compiler/dispatch/original settlement cases pass;
+they are NOT native game evidence. Final adjacent105/106(14s): one original
+File.Move UnauthorizedAccess, not reproduced in same-DLL focused4/4(3s).
+Keep failure/cause unknown; do NOT relabel106 green. New fixture missing required
+Reason was corrected ONLY in test. Current commit full CI independently pending.
+Hashes and exact logs: [current work193](CURRENT_WORK_CN.md#2026-11-15-待售库存显式派发绑定193库存能力块未总闭).
+
+Latest issue check: no new external feedback; #335 adds no WIP/gates; #570 A1
+still selected_route_unavailable, return to original step5, not another planner.
+NEXT same stock capability: Main preparation reference/source yield/one claim/
+original execution+settlement, storage retention/explicit global consumers/other
+consumption, THEN paired Main activation. Main mode OFF; no empty-relocation or
+machine-label workaround. Then original partial/multi-queue/actual global route,
+calendar and source reconciliation; step6 #570 and #569 pre-manifest handoff.
+L1/169-172 frozen, formal=false, no raw/local-data commits or game launch.
+
 ## Original Pre-Preparation Source Return (192, Stock Capability Open)
 
 191 finale9df6365/quality43676962069 SUCCESS/all steps, Core2675(1m21s),

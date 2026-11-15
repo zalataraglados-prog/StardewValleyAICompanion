@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-11-15 待售库存显式派发绑定（193，库存能力块未总闭）
+
+- 192最终 `9b60d3a6`／CI `43678841623` 成功：Core2675/2675（43秒）、Backend3405/3405（8分13秒）、零跳过；日志SHA `b99c6dac24188289479029d1daa7afe9868a82a1b41f2d7270b18eb788ac2419`。沙箱常规merge `b8bec368`／树 `d4dd90aecc811c2b2615875b80d63a43886581f4` 等于已验192，不与本轮工作目录混称同版本。
+- 新 `CropSaleStockMaterialTransferBinding` 在原dispatch入口显式绑定待售purpose v2、原准备hash／修订／来源／goal／预留集合及同actor授权的背包↔箱子意图；不冒充机器、种子或博物馆操作。候选与fresh编译共用同一预检，只传递已验证的控制字段；孤立、混合、重复或漂移控制不能降级为旧无预留转移。原custody拒绝核提取复用，旧合法输入、原native执行器和结算协议不改。
+- 新双向正例贯通原候选→fresh编译→dispatch→原 `SettleSupportingTransition`，验证准备清除、原ID／purpose／数量与位置保持；这是声明的物理投影和协议测试，不是实际游戏存取。最终相邻106项为 **105通过／1失败**（14秒），唯一失败为原repository `File.Move` 访问拒绝；同DLL定向复测相关 **4/4（3秒）**、零跳过，原因未定，原失败保留，不追认106全绿。日志依次为 `block193-final-binding-settlement-tests.log`（SHA `6d51a120db7000717af4bfb1fc8888cd7bd43d2f5a61d351857b93842896dfd6`）及 `block193-final-settlement-and-source-recheck.log`（SHA `f608043487b6426775c4d004d48f936762ff24a3b1735ae4ec40b9ea103e9564`）。新增测试漏填原必需Reason造成的前两项失败仅修夹具；本提交最终CI另核。
+- 已核最新issue列表、#335最新观察及#570更新评论：无新增外部反馈；#335不新增WIP／验收门，其历史阻塞不能直接当当前状态。#570仍按A1 `selected_route_unavailable` 返回原第5步，不另造Planner或重盘点。
+- **下一处仍同一库存能力块：** Main原准备引用→source yield／一次claim→原执行／结算的接线，再存箱／取回自产留存、显式全局消费者、其他消耗与收获／留存／终端成对启用；准备合同需要真实预留移动，不能假造空移动或机器标签。Main新模式仍关闭。之后原第5步partial／多队列与真实全局选线／日历／来源对账，再第6步#570及#569正式manifest前交接；L1与169—172冻结、formal=false、local-data不提交。E余量未达原生运行保留，不启动游戏、不降低守卫、不清理。
+
 ## 2026-11-15 原准备前账本接续与候选绑定贯通（192，库存能力块未总闭）
 
 - 191最终 `e9df6365`／CI `43676962069` 已成功：Core2675/2675（1分21秒）、Backend3393/3393（7分58秒）、零跳过、全部步骤通过；日志SHA `e01fbaec69d9f7af8e01a6476ad855c8cc0771683090b0f557c607d1ecb00ac6`。沙箱常规merge `0760234f`／受跟踪树 `9ceffd912b950bf7e6f9a9e040e4bdd62a804c8d` 与已验191相同，本轮须另核最终SHA。

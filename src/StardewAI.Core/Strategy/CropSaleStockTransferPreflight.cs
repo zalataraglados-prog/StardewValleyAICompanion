@@ -17,13 +17,13 @@ public static class CropSaleStockTransferPreflight
         EvaluateCore(optionId, parameters, snapshot, ledger, out _);
 
     internal static string[] EvaluateCandidate(string optionId, SmallModelActionParameter[] parameters,
-        SnapshotEnvelope snapshot, StrategyCommitmentLedger? ledger, out string? preparedBinding) =>
-        EvaluateCore(optionId, parameters, snapshot, ledger, out preparedBinding);
+        SnapshotEnvelope snapshot, StrategyCommitmentLedger? ledger, out SmallModelActionParameter[]? bindingParameters) =>
+        EvaluateCore(optionId, parameters, snapshot, ledger, out bindingParameters);
 
     private static string[] EvaluateCore(string optionId, SmallModelActionParameter[] parameters,
-        SnapshotEnvelope snapshot, StrategyCommitmentLedger? ledger, out string? preparedBinding)
+        SnapshotEnvelope snapshot, StrategyCommitmentLedger? ledger, out SmallModelActionParameter[]? bindingParameters)
     {
-        preparedBinding = null;
+        bindingParameters = null;
         if (optionId is not "inventory.transfer_item" and not "executor.transfer_material" || ledger?.MaterialReservations is null)
             return Array.Empty<string>();
         var phases = parameters.Where(row => row.Name == MaterialTransferIntentBinder.PhaseParameter).ToArray();
@@ -53,7 +53,11 @@ public static class CropSaleStockTransferPreflight
         if (projection.Status != "projected") return projection.BlockingReasons;
         if (JsonSerializer.Serialize(projection) != JsonSerializer.Serialize(prepared.ReservationProjection))
             return new[] { "crop_sale_stock_transfer_preparation_drifted" };
-        preparedBinding = bindings[0].Value;
+        var controls = parameters.Where(row => CropSaleStockMaterialTransferBinding.IsControlParameter(row.Name)).ToArray();
+        if (controls.Length > 0 && !CropSaleStockMaterialTransferBinding.ParametersAreBound(parameters, prepared.GoalId, ledger))
+            return new[] { "crop_sale_stock_transfer_control_binding_drifted" };
+        bindingParameters = controls.Append(new SmallModelActionParameter
+            { Name = PreparedMaterialTransferContract.BindingParameter, Value = bindings[0].Value }).ToArray();
         return Array.Empty<string>();
     }
 }
