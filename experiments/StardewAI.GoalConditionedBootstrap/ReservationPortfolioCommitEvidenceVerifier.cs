@@ -152,6 +152,9 @@ internal static class ReservationPortfolioCommitEvidenceVerifier
             .Concat(request.MaterialTransferPreparation is null
                 ? Array.Empty<(string Id, string OperationSuffix)>()
                 : new[] { (Id: request.PortfolioId, OperationSuffix: "material_transfer_prepared") })
+            .Concat(request.InventoryConsumptionPreparation is null
+                ? Array.Empty<(string Id, string OperationSuffix)>()
+                : new[] { (Id: request.PortfolioId, OperationSuffix: "inventory_consumption_prepared") })
             .ToArray();
         var current = (committed.History ??
                 Array.Empty<StrategyCommitmentHistoryEntry>()).Where(row =>

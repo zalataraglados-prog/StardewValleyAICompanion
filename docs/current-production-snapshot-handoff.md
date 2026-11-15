@@ -1,5 +1,69 @@
 # Current Production Snapshot Handoff
 
+## Cooking Consumption Preparation And Passive Positions (203, Integration Open)
+
+202 4e87da0f/quality43711252103 SUCCESS: Core2724/2724(58s),
+Backend3489/3489(8m6s), zero skipped. Log SHA
+ea20973fdbcb79e1fe7221613ef7b2bfc6384d58ec0bd96854e58307c2ff754b.
+Peer regular merged4479b54/tree95addf1ef6df16740b62f9edabdd34dd94a94a55
+equals accepted202. Original local139 File.Move failure remains retained, not
+relabeled green. Provider still paused; no API or grant change.
+
+New explicit inventory_consumption_preparation.v1 / prepared_inventory_consumption.v1
+uses ORIGINAL portfolio Commit / supporting settlement, only executor.cook_recipe.
+New nullable request/ledger/hash fields are omitted in old JSON. No fake transfer,
+second ledger, executor or recipe/RNG simulator. Original source alias/access
+resolver and material supply guard derive ingredients AND seasoning, free units
+only. Retain only affected player/fridges plus original recipe, never full snapshots.
+StateStore retention remains TWO. Fridges compact iff a consumed stack becomes
+empty; partial-only consumption and player holes preserve native indices.
+
+Binding pins ledger/save/actor/goal/selection/revision/material claims/source recipe
+and physical footprint. Consumers rederive consumption and projection, including
+rehashed forgery negatives. Original fresh cooking validation remains, with explicit
+prepared source/dispatch checks; ordinary defaults do not inherit new mode. A fresh
+time hash may advance without rewriting the accepted ledger. Missing/duplicate/mixed
+or stale bindings, including the old queue after settlement, fail closed.
+
+Settlement validates observed slots, counts, quality and exact declared output
+quantity without predicting native output slot/stacking. Only changed passive
+positions get row revisions/source hash updates; goal/source/purpose/owner/quantity
+remain unchanged. Old transfer uses exactly the same extracted passive row update;
+its authority/cross-node rules remain unchanged. Fixed-position stock v1 and changed
+custody positions needing a new retained binding are explicitly unsupported, not
+silently relabeled as transfer custody evidence.
+
+Final Core adjacent349/349(17s), zero skipped, includes34 new and original cooking /
+social/recovery/machine/museum/transfer tests; focused58/347 overlap, not additive.
+Log SHA17586544c82242b57d385e0f18234a04fdc850a5e372c17d1e332ec6e6a4fefa.
+Expanded Backend1658/1658(8m50s), then scoped binding to cooking/explicit new controls
+and wired ORIGINAL Live dispatch: final explicit-E rebuild10/10(4.7s), zero skipped.
+No broad rerun after that local fix. Logs SHA
+f77aa03b936ea5658994f727cd201a87a8b48f440bb0a812c2f56ec33a64e808 and
+f885be88583637ae976f2f648f22b296c87cb5e254352c785d7957379555dc9e.
+Four new modes cover original disk/restart/two-snapshot source eviction and lost
+preparation/settlement/both replies, exact original Commit history replay/lookup,
+no second mutation or native-verification claim. Live retains prepared GoalId, so
+hash omission still reaches rejection; ordinary goal/hash-free cooking keeps its
+old no-query default. Unrelated controls/movement keep original compiler/dispatch
+semantics. New comparison initially included random queue/item/step IDs, failing2;
+fixed ONLY new test to use ORIGINAL opaque-ID comparator, no old guard relaxation.
+Own final SHA CI remains separate; all local invocations terminal/no C# after build.
+Initial new Contracts
+record failed netstandard2.1 IsExternalInit; replaced ONLY new DTO with class.
+New Backend test internal-verifier access failed; test uses existing reflection
+convention, no public product permission increase. Original failures retained.
+All after graphs are DECLARED FIXTURES, not game/native/L3 evidence.
+
+NEXT SAME original inventory block: connect explicit preparation to SAME owner /
+original native request-receipt reader / single dispatch / original reply recovery /
+retention, then actual selected-route other-use/alternative/mixed/partial/paired
+Main and global route-resource-calendar-source native reconciliation. Do not make
+unselected branches a new prerequisite. Step6 #570 then #569 PRE-MANIFEST handoff;
+lab owns models/data/formal manifest/train/eval. L1/Root/169-172 frozen, no13day replay,
+stock mode OFF/formal=false; no game/API/cleanup/deploy/raw/local-data commit.
+[Current work203](CURRENT_WORK_CN.md#2026-11-15-烹饪消耗准备与原账本被动换槽203主循环接续未闭).
+
 ## Cooking Ingredient And Seasoning Sale Stock Preflight (202, Input Only)
 
 201 a43b1c71/quality43708874837 SUCCESS: Core2693/2693(40s),

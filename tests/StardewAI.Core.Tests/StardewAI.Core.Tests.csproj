@@ -230,6 +230,7 @@
     <Compile Include="MachineTaskCapacityMainlineTests.cs" />
     <Compile Include="CookingMainlineTests.cs" />
     <Compile Include="CookingMainlineTests.SaleStock.cs" />
+    <Compile Include="CookingMainlineTests.InventoryConsumption.cs" />
     <Compile Include="MiningReachDepthAcquisitionIntentTests.cs" />
     <Compile Include="NativeShippingSourceGuardTests.cs" />
     <Compile Include="NativeShippingSourceGuardTests.SleepSettlement.cs" />

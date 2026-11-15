@@ -16,6 +16,17 @@ public static class CropSaleStockCookingPreflight
 {
     private const string InvalidSource = "crop_sale_stock_cooking_source_unavailable";
 
+    internal static JsonElement? ReadRecipe(SnapshotEnvelope snapshot, string recipeName, string sourceId)
+    {
+        var context = ReadStateFieldValue(snapshot, "player", "cooking");
+        if (context is not { ValueKind: JsonValueKind.Object } value ||
+            ReadString(value, "projection_status") != "complete_learned_cooking_recipe_and_native_source_projection" ||
+            !value.TryGetProperty("rows", out var rows) || rows.ValueKind != JsonValueKind.Array) return null;
+        var matches = rows.EnumerateArray().Where(row => row.ValueKind == JsonValueKind.Object &&
+            ReadString(row, "recipe_name") == recipeName && ReadString(row, "cooking_source_id") == sourceId).ToArray();
+        return matches.Length == 1 ? matches[0].Clone() : null;
+    }
+
     internal static bool AppliesTo(StrategyCommitmentLedger? ledger) => ledger is not null &&
         ledger.MaterialReservations.Any(row => row.Status == StrategyCommitmentStatuses.Active &&
             CropSaleStockReservationContract.TryRead(row, out _));
@@ -23,17 +34,37 @@ public static class CropSaleStockCookingPreflight
     public static string[] Evaluate(SnapshotEnvelope snapshot, StrategyCommitmentLedger? ledger, JsonElement? recipe)
     {
         if (!AppliesTo(ledger)) return Array.Empty<string>();
+        var reasons = Resolve(snapshot, ledger!, recipe, out _, out var mapped);
+        if (reasons.Length > 0 || mapped.Length == 0) return reasons;
+        var normalized = JsonSerializer.SerializeToElement(new[] { new { native_consumption_plan = mapped } });
+        var result = new MachineCraftingMaterialReservationGuard().Evaluate(snapshot, normalized, usesWorkbench: true, ledger: ledger);
+        return result.Ready ? Array.Empty<string>() : new[] { "crop_sale_stock_cooking_material_reserved" }
+            .Concat(result.BlockingReasons).Distinct(StringComparer.Ordinal).ToArray();
+    }
+
+    internal static string[] Resolve(SnapshotEnvelope snapshot, StrategyCommitmentLedger ledger, JsonElement? recipe,
+        out MaterialInventoryGraph? graph, out InventorySlotConsumption[] consumptions)
+    {
+        graph = null; consumptions = Array.Empty<InventorySlotConsumption>();
         if (snapshot.SaveId.Status != FieldStatus.Available || snapshot.PlayerId.Status != FieldStatus.Available ||
             snapshot.SaveId.Value != ledger!.SaveId || snapshot.PlayerId.Value != ledger.PlayerId || ledger.SourceStateHash != snapshot.StateHash ||
-            !MaterialInventoryGraphReader.TryRead(snapshot, out var graph) || graph!.PlayerId.ToString(CultureInfo.InvariantCulture) != ledger.PlayerId ||
-            recipe is not { ValueKind: JsonValueKind.Object } row ||
+            !MaterialInventoryGraphReader.TryRead(snapshot, out graph) || graph!.PlayerId.ToString(CultureInfo.InvariantCulture) != ledger.PlayerId ||
+            recipe is not { ValueKind: JsonValueKind.Object } row) return new[] { InvalidSource };
+        return ResolvePlan(graph, row, out consumptions);
+    }
+
+    internal static string[] ResolvePlan(MaterialInventoryGraph graph, JsonElement row, out InventorySlotConsumption[] consumptions)
+    {
+        consumptions = Array.Empty<InventorySlotConsumption>();
+        if (graph.InventoryNodes is null || graph.InventoryNodes.Any(node => node is null) || graph.AccessPoints is null ||
+            graph.AccessPoints.Any(point => point is null) || row.ValueKind != JsonValueKind.Object ||
             !row.TryGetProperty("material_container_ids", out var containers) || containers.ValueKind != JsonValueKind.Array ||
             containers.EnumerateArray().Any(value => value.ValueKind != JsonValueKind.String)) return new[] { InvalidSource };
         var aliases = containers.EnumerateArray().Select(value => value.GetString()!).ToArray();
         if (aliases.Any(string.IsNullOrWhiteSpace) || aliases.Distinct(StringComparer.Ordinal).Count() != aliases.Length)
             return new[] { InvalidSource };
         var location = ReadString(row, "location_id");
-        var mapped = new List<Consumption>();
+        var mapped = new List<InventorySlotConsumption>();
         foreach (var field in new[] { "ingredient_rows", "seasoning_rows" })
         {
             if (!row.TryGetProperty(field, out var ingredients) || ingredients.ValueKind != JsonValueKind.Array)
@@ -60,13 +91,12 @@ public static class CropSaleStockCookingPreflight
             }
         }
         if (mapped.Count == 0) return Array.Empty<string>();
-        if (mapped.GroupBy(value => (value.Node, value.Slot, value.Item)).Any(group => group.Sum(value => (long)value.Quantity) > int.MaxValue))
+        if (mapped.GroupBy(value => (value.NodeId, value.SlotIndex, value.QualifiedItemId)).Any(group => group.Sum(value => (long)value.Quantity) > int.MaxValue))
             return new[] { InvalidSource };
-        // The old reader groups ingredient AND seasoning consumption by the original physical slot.
-        var normalized = JsonSerializer.SerializeToElement(new[] { new { native_consumption_plan = mapped } });
-        var result = new MachineCraftingMaterialReservationGuard().Evaluate(snapshot, normalized, usesWorkbench: true, ledger: ledger);
-        return result.Ready ? Array.Empty<string>() : new[] { "crop_sale_stock_cooking_material_reserved" }
-            .Concat(result.BlockingReasons).Distinct(StringComparer.Ordinal).ToArray();
+        consumptions = mapped.GroupBy(value => (value.NodeId, value.SlotIndex, value.QualifiedItemId))
+            .Select(group => new InventorySlotConsumption(group.Key.NodeId, group.Key.SlotIndex, group.Key.QualifiedItemId, group.Sum(value => value.Quantity)))
+            .OrderBy(value => value.NodeId, StringComparer.Ordinal).ThenBy(value => value.SlotIndex).ToArray();
+        return Array.Empty<string>();
     }
 
     private static string? ResolveNode(MaterialInventoryGraph graph, string[] containers, string location, string source)
@@ -90,9 +120,4 @@ public static class CropSaleStockCookingPreflight
         return fridge.Length == 1 ? fridge[0].NodeId : null;
     }
 
-    private sealed record Consumption(
-        [property: System.Text.Json.Serialization.JsonPropertyName("source_node_id")] string Node,
-        [property: System.Text.Json.Serialization.JsonPropertyName("slot_index")] int Slot,
-        [property: System.Text.Json.Serialization.JsonPropertyName("qualified_item_id")] string Item,
-        [property: System.Text.Json.Serialization.JsonPropertyName("amount")] int Quantity);
 }

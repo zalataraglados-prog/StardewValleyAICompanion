@@ -18,6 +18,8 @@ public sealed partial class ReservationPortfolioLedgerService
             ReservationPortfolioSupportingTransitionSettlementRequest request,
             string updatedAt)
     {
+        if (current?.PreparedInventoryConsumption is not null || request.PreparedInventoryConsumptionSha256 is not null)
+            return SettlePreparedInventoryConsumption(current, snapshot, request, updatedAt);
         var errors = StrategyCommitmentLedgerSupport.ValidateCommon(
             current,
             snapshot,
@@ -77,12 +79,7 @@ public sealed partial class ReservationPortfolioLedgerService
         {
             if (transferByReservation is not null && transferByReservation.TryGetValue(row.ReservationId, out var change))
             {
-                var rebound = StrategyCommitmentLedgerSupport.CloneMaterial(row);
-                rebound.Revision++;
-                rebound.SourceStateHash = snapshot.StateHash;
-                rebound.NodeId = change.DestinationNodeId;
-                rebound.SlotIndex = change.DestinationSlotIndex;
-                return rebound;
+                return RebindNativePosition(row, change, snapshot.StateHash);
             }
             if (relocationByReservation.TryGetValue(
                     row.ReservationId,

@@ -17,6 +17,8 @@ public sealed partial class ActionQueueCompiler
         StrategyCommitmentLedger? ledger)
     {
         var reasons = ValidateCookRecipePlan(action, snapshot);
+        // The explicit preparation is checked against its retained source at CompileAction, including fresh slots.
+        if (ledger?.PreparedInventoryConsumption is not null) return reasons;
         if (action.OptionId != "executor.cook_recipe" || !CropSaleStockCookingPreflight.AppliesTo(ledger)) return reasons;
         return reasons.Concat(CropSaleStockCookingPreflight.Evaluate(snapshot, ledger,
             CookingRow(snapshot, ReadParameter(action, "recipe_name") ?? string.Empty,

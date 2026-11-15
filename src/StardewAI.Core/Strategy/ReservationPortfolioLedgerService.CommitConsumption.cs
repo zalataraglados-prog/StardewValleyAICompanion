@@ -19,7 +19,7 @@ public sealed partial class ReservationPortfolioLedgerService
             errors.Add("commit_material_consumption_invalid");
         if (request.MaterialClaims is not { Length: 0 } || request.CurrencyClaims is not { Length: 0 } ||
             request.ReleaseReservationIds is not { Length: 0 } || request.MachineSupportIntent is not null ||
-            request.MaterialTransferPreparation is not null)
+            request.MaterialTransferPreparation is not null || request.InventoryConsumptionPreparation is not null)
             errors.Add("commit_material_consumption_mixed_mutation");
     }
 

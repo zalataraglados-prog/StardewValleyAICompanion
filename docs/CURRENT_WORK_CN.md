@@ -1,5 +1,15 @@
 # StardewAI 当前工作
 
+## 2026-11-15 烹饪消耗准备与原账本被动换槽（203，主循环接续未闭）
+
+- 202最终 `4e87da0f`／CI `43711252103` 全部成功：Core2724/2724（58秒）、Backend3489/3489（8分6秒）、零跳过。日志 `block202-final-ci43711252103.log` SHA `ea20973fdbcb79e1fe7221613ef7b2bfc6384d58ec0bd96854e58307c2ff754b`；沙箱常规merge `d4479b54`／树 `95addf1ef6df16740b62f9edabdd34dd94a94a55` 等于已验202。202本地139项中的原文件替换失败仍保留，不追认其全绿；API仍暂停，无调用或权限变化。
+- 原生烹饪会在additional inventory某栈耗尽时整理该容器的空槽；只有部分扣量时不整理，背包不整理。新显式 `inventory_consumption_preparation.v1`／`prepared_inventory_consumption.v1` 仅接实际 `executor.cook_recipe`，复用**原portfolio Commit及supporting settlement入口**，不是伪造transfer或另建账本。准备从原snapshot配方、来源别名和访问点派生原料及调味扣量，原供给投影保护所有根的预留；仅保留相关背包／冰箱及原配方行，不增加StateStore的两个全量快照上限。
+- 原准备hash固定ledger／save／actor／目标／所选来源／修订、材料预留hash和原投影；消费者重新派生原料和被动位置，不能靠重算hash伪造少扣材料或改位置。fresh编译保留原配方／原生验证，并核相同物理库存；合法时间推进不要求账本来源hash假装更新。原派发门保留具名绑定，缺失／重复／混用／过期和结算后的旧队列拒绝。无新准备的旧默认不增加这些核验。
+- 原结算核在一个修订中核实际扣量、剩余槽位、原配方输出数量／品质，只被动更新受影响的预留位置和行修订；其他目标的GoalId、SourceDecisionId、purpose、owner和数量均不变。不预言原生输出会堆在哪一格，只接受原声明数量的同品质产物及未改变的剩余库存。原transfer和新消费共用提取前完全相同的被动位置行更新函数；旧relocation权属／跨节点规则不放宽。固定位置stock v1和需新增custody位置证明的变化仍明确拒绝，不伪造原transfer custody证明。
+- 最终Core相邻 **349/349（17秒）、零跳过**，包含34项新增与原烹饪／社交／恢复／机器／捐赠／转移回归；先前58／347有重叠不累加。日志 `block203-final-core-original-comparison-tests.log` SHA `17586544c82242b57d385e0f18234a04fdc850a5e372c17d1e332ec6e6a4fefa`。新绑定最初适用域过宽，现仅接烹饪或显式新协议；移动／关菜单用原队列比较器复核旧默认，未放宽旧核。首次比较误包含原随机queue/item/step ID导致两项新测试失败，只改新测试复用原比较器。首轮Contracts record的IsExternalInit及新Backend测试internal访问错误仅修新DTO／测试，不扩大产品可见性；原失败留存。新增物理after是声明夹具，不是游戏证据。
+- Backend扩大原source／owner／库存相邻 **1658/1658（8分50秒）**，随后限定新绑定作用域并接原Live派发出口，最终显式E重建定向 **10/10（4.7秒）**，均零跳过、不相加。原Live入口只对显式烹饪协议查询既有派发门，保留goal但丢hash仍被拒；旧无goal／hash的普通烹饪仍不启用新查询。新四模式验证落盘重启、两快照上限淘汰before、丢准备／结算／两种回包的原lookup，无第二次mutation；lookup不冒称验证native。原commit evidence消费者接新history并以原Commit独立重放。两日志SHA依次 `f77aa03b936ea5658994f727cd201a87a8b48f440bb0a812c2f56ec33a64e808`、`f885be88583637ae976f2f648f22b296c87cb5e254352c785d7957379555dc9e`。最终构建后C#未再修改、本机命令均收回；本提交完整CI另核，不借202绿。
+- **唯一接续仍原库存／第5步，不称完整烹饪或L3完成：** 将此显式消费准备接同owner原native request／receipt读取、一次执行／结算回包恢复和留存来源，然后按实际所选路线接原其他消费／替代补给／混合producer、partial队列及Main配套启用；再原全局选线／资源／日历／来源原生重放与#570，按#569在正式manifest之前交实验室。不把未选分支变成额外前置，不重采L1 19/19、Root11/11或已接受169—172十三日材料；第3／4未证自动属性随既定全局运行核实。新库存模式OFF、formal=false，无游戏／清理／部署，local-data、原日志／存档／二进制不提交。
+
 ## 2026-11-15 烹饪原料与调味料的待售预检（202，仅输入保护）
 
 - 201最终 `a43b1c71`／CI `43708874837` 全部成功：Core2693/2693（40秒）、Backend3489/3489（6分14秒）、零跳过。日志 `block201-final-ci43708874837.log` SHA `75e123a775ec076ce58a92f6ac92d7e6ea78d87683622f1d3e1b6e324cbc5cbf`；沙箱常规merge `23791a9b`／树 `d9004e431f5786ddfcda2b8703dbfe102e870f00` 等于已验201，本轮另核。API仍暂停，没有调用或权限变化。

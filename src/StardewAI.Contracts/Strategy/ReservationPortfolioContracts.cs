@@ -6,6 +6,10 @@ namespace StardewAI.Contracts.Strategy;
 
 public sealed class ReservationPortfolioCommitRequest
 {
+    [JsonPropertyName("inventory_consumption_preparation")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public InventoryConsumptionPreparationRequest? InventoryConsumptionPreparation { get; set; }
+
     [JsonPropertyName("material_consumption")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public ReservationPortfolioCommitMaterialConsumption? MaterialConsumption { get; set; }
@@ -162,6 +166,10 @@ public sealed class ReservationPortfolioRouteSettlementResult
 
 public sealed class ReservationPortfolioSupportingTransitionSettlementRequest
 {
+    [JsonPropertyName("prepared_inventory_consumption_sha256")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? PreparedInventoryConsumptionSha256 { get; set; }
+
     [JsonPropertyName("prepared_material_transfer_sha256")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? PreparedMaterialTransferSha256 { get; set; }
