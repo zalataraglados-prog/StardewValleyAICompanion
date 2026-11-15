@@ -140,6 +140,7 @@
     <Compile Include="SocialTransparentPlanningTests.MarriageHouseIntake.cs" />
     <Compile Include="CurrentFriendshipTeacherComparisonTests.cs" />
     <Compile Include="SocialTransparentPlanningTests.RemoteContinuation.cs" />
+    <Compile Include="SocialTransparentPlanningTests.SaleStock.cs" />
     <Compile Include="SocialTransparentPlanningTests.CompileChain.cs" />
     <Compile Include="SocialTransparentPlanningTests.FriendshipTeacher.cs" />
     <Compile Include="SocialTransparentPlanningTests.FriendshipRouteBudget.cs" />

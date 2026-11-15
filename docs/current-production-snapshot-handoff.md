@@ -1,5 +1,50 @@
 # Current Production Snapshot Handoff
 
+## Sale Stock Single-Unit Social And Food Consumption (201, Open)
+
+200 27ab81c4/quality43706935696 SUCCESS: Core2675/2675(45s),
+Backend3489/3489(10m12s), zero skipped. Log SHA
+d1599d6b063eb2b98e28b5d1be4e37afadd08b90d134f98b2a83f1e3f1df7845.
+Peer mergedb8a1f8a/tree4074fc25c900efa71d6d78c282034ae68447bb31
+equals accepted200. Provider remains paused;201 separate until own CI.
+
+Actual red2/2: fully reserved gift still produced an available candidate and
+pending native queue. First attempt matchedZERO due to missing new hermetic Compile
+Include; fixed project list before real red, not counted as a passing test.
+Existing machine/craft/museum reservation guards do not imply gift/food coverage.
+
+New CropSaleStockConsumptionPreflight opts in ONLY with active player sale-stock
+purpose, reuses ORIGINAL MaterialSupplyProjection across ALL root reservations,
+checks current ledger/save/player and physical/player slot identity/stack/quality.
+Social gift/relationship consumption is filtered BEFORE original routing, retained
+across connectors and checked again in fresh compilation. consume_food primitive
+candidate/compiler uses same guard. Talk and free units remain legal; full physical
+stack/parameters are not rewritten as free quantity. Old SocialCandidates signature
+is retained AND used for no-ledger calls, sharing the same original routing body.
+No native executor, authority kernel, scanning/full snapshot or production-credit
+change. Native legality remains original; this is not general reservation authority.
+
+18 new cases included in final Core284/284(16.2s), original Backend stock/seed/native/
+source/checkpoint/Main/old lifecycle329/329(about2m25s), zero skipped, overlaps not
+additive. Last no-ledger wrapper reuse followed by rebuilt Core284; no C# after.
+Logs block201-final-core-legacy-entry-recheck.log SHA
+723ff9e3d52a9abac3c72fd1fab6d3c895dded46432176da760a8cd9611e76e1
+and block201-final-original-stock-native-adjacent.log SHA
+daa1f4be6e6e924b7081b52b7a1287fd5247eff89a77c2551a1b0b451b65778c.
+Declared fixtures/compiler/original Backend protocols, NOT game or global L3.
+Own final-SHA CI remains separate. Decompiled NPC.cs2402-2403 and Farmer.cs9289-9292
+confirm original single-unit gift/eat semantics; relationship-kind cases prove
+resource preflight, not arbitrary item food/proposal legality.
+
+NEXT original other-use cooking/quest attribution, dungeon alternative supplies,
+mixed-producer/partial queue allocation and paired Main activation, then actual
+global selected-route/resource/calendar/source/native replay, step6 #570 and #569
+PRE-MANIFEST handoff. Cooking source_id differs from crafting source_node_id;
+adapt ORIGINAL native player/fridge plans, do not guess consumption or rewrite old
+reader/executor. Lab owns data/model/formal manifest/training. Ordinary stock mode
+OFF, formal=false; L1/Root/169-172 frozen, no13day replay/game/API/cleanup/deploy/raw.
+[Current work201](CURRENT_WORK_CN.md#2026-11-15-待售库存接单件社交与进食预检201其余消费仍未总闭).
+
 ## Free Inventory Transfer Leases And Accepted Marker Provenance (200, Open)
 
 199 e0dd6eda/quality43703179763 SUCCESS: Core2675/2675(1m4s),

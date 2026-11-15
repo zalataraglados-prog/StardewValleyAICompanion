@@ -5,7 +5,9 @@ using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
 using StardewAI.Core.Execution;
+using StardewAI.Core.Strategy;
 using StardewAI.Core.Verifier;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
@@ -19,7 +21,16 @@ namespace StardewAI.Core.OptionRegistry
             SnapshotEnvelope snapshot,
             string optionId,
             string[] missingStateFactors,
-            SmallModelActionParameter[] boundParameters)
+            SmallModelActionParameter[] boundParameters) =>
+            SocialCandidatesCore(snapshot, optionId, missingStateFactors, boundParameters, null);
+
+        private EventCandidate[] SocialCandidatesWithSaleStock(SnapshotEnvelope snapshot, string optionId,
+            string[] missingStateFactors, SmallModelActionParameter[] boundParameters, StrategyCommitmentLedger? ledger) =>
+            ledger is null ? SocialCandidates(snapshot, optionId, missingStateFactors, boundParameters) :
+                SocialCandidatesCore(snapshot, optionId, missingStateFactors, boundParameters, ledger);
+
+        private EventCandidate[] SocialCandidatesCore(SnapshotEnvelope snapshot, string optionId,
+            string[] missingStateFactors, SmallModelActionParameter[] boundParameters, StrategyCommitmentLedger? ledger)
         {
             var candidates = missingStateFactors.Any(factor => factor != "npcs.schedules")
                 ? Array.Empty<EventCandidate>()
@@ -37,6 +48,14 @@ namespace StardewAI.Core.OptionRegistry
                     .ToArray();
             }
             if (candidates.Length == 0) return candidates;
+
+            foreach (var candidate in candidates)
+            {
+                var reasons = CropSaleStockConsumptionPreflight.Evaluate(optionId, candidate.Parameters, snapshot, ledger);
+                if (reasons.Length == 0) continue;
+                candidate.Available = false;
+                candidate.BlockReasons = candidate.BlockReasons.Concat(reasons).Distinct(StringComparer.Ordinal).ToArray();
+            }
 
             var currentLocation = ReadStateFieldString(snapshot, "player", "location_id");
             var routeCandidates = RouteConnectorCandidates(snapshot, int.MaxValue)

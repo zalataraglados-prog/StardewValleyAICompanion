@@ -203,7 +203,7 @@ namespace StardewAI.Core.OptionRegistry
                 option.OptionId,
                 candidate.Parameters,
                 commitmentLedger);
-            var socialCandidates = SocialCandidates(snapshot, option.OptionId, safety.MissingStateFactors, candidate.Parameters);
+            var socialCandidates = SocialCandidatesWithSaleStock(snapshot, option.OptionId, safety.MissingStateFactors, candidate.Parameters, commitmentLedger);
             var valueReasons = safety.MissingStateFactors.Length == 0
                 ? ValueGateBlockingReasons(
                     snapshot,

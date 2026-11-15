@@ -1,5 +1,15 @@
 # StardewAI 当前工作
 
+## 2026-11-15 待售库存接单件社交与进食预检（201，其余消费仍未总闭）
+
+- 200最终 `27ab81c4`／CI `43706935696` 全部成功：Core2675/2675（45秒）、Backend3489/3489（10分12秒）、零跳过。日志 `block200-final-ci43706935696.log` SHA `d1599d6b063eb2b98e28b5d1be4e37afadd08b90d134f98b2a83f1e3f1df7845`。沙箱常规merge `db8a1f8a`／树 `4074fc25c900efa71d6d78c282034ae68447bb31` 等于已验200；本轮工作树另核。provider仍暂停，未调用API或改变权限。
+- 已有机器投入、制作和捐赠沿原MaterialSupplyProjection／预留guard；不能因这些存在就推断送礼和进食已消费新待售约束。两项真实红测确认：全栈预留后，原送礼候选仍Available、原日计划fresh编译仍pending。保留 `block201-single-use-red-matched.log`；首次筛选零匹配是新测试遗漏hermetic Compile Include，补项目清单后才取得实际2/2红，不算一次通过。
+- 新 `CropSaleStockConsumptionPreflight` **仅有显式active背包待售purpose时**启用，复用原材料供给投影，同时核当前账本／存档／玩家、背包与物理图同槽同物同品质／数量；扣除所有根预留后仍有自由一件才允许。覆盖原gift／关系物品／consume_food单件语义，不改原生合法性、执行器或账本，不增加游戏扫描、全快照或私有字段预测。普通无此协议路径保持原义；这不是通用授权消费其他根材料。
+- 社交候选在原路由生成之前接此预检，跨地图后仍保留阻塞；原fresh compiler复用同一核，不能拿旧候选绕过新预留。聊天不消耗，不受影响；自由余量仍按原完整物理stack及原参数编译，不把stack伪改为自由量。旧私有SocialCandidates签名保留且无账本时真实走原入口，两模式共用原路由主体，不留下未使用包装或第二套社交执行器。进食原语的候选探针／fresh编译也接同核，原恢复、菜单及食物合法性仍由原代码判定。
+- 新增18项已包含在最终Core相邻 **284/284（16.2秒）**，原库存／seed／native／来源／checkpoint／Main／旧生命周期Backend相邻 **329/329（约2分25秒）**，均零跳过、有交叉不累加。最后仅整理无账本入口复用，再重建上述Core284；其后C#未改，无本机命令待收。日志依次 `block201-final-core-legacy-entry-recheck.log` SHA `723ff9e3d52a9abac3c72fd1fab6d3c895dded46432176da760a8cd9611e76e1`、`block201-final-original-stock-native-adjacent.log` SHA `daa1f4be6e6e924b7081b52b7a1287fd5247eff89a77c2551a1b0b451b65778c`。覆盖无自由量／有自由量、其他根保护、跨图、聊天、原生种类预检及来源／参数负例；是声明夹具和原编译／Backend协议，非游戏实跑或L3。当前最终SHA完整CI另核。
+- 单件语义已现场对照原反编译 `StardewValley/NPC.cs:2402–2403` 普通receiveGift后reduceActiveItemByOne、`Farmer.cs:9289–9292` 成功进食后reduceActiveItemByOne，及原 `ModEntry.Social.cs`／native consume_food合同。关系种类矩阵只验证资源预检，不声称任意声明物品满足原求婚／食物合法性。
+- **唯一接续仍原库存／第5步：** 烹饪／任务交付等其余消费须按原透明投影核对应来源，采矿选择替代补给与混合producer／partial队列也未因本预检自动完成；再Main预览／收获留存终端配套启用、实际全局选线／资源／日历／来源对账和原生重放。原单RouteSourceDecision权属保持，不放宽旧执行器适配新模块。然后第6步#570及#569正式manifest前工程交接；模型／数据冻结／训练归实验室。L1 19/19、Root11/11、169—172冻结，新模式OFF、formal=false，无十三日重跑／游戏／API／清理／部署，local-data不提交。
+
 ## 2026-11-15 自由库存转移临时预留与原接受回执（200，库存能力块未总闭）
 
 - 199最终 `e0dd6eda`／CI `43703179763` 已成功：Core2675/2675（1分4秒）、Backend3481/3481（9分28秒）、零跳过。日志 `block199-final-ci43703179763.log` SHA `6d1e6b563ecf844497115b79698549e278171b55484b90e7b61ec4d1f407e7a8`；沙箱常规merge `c01e3626`／树 `b1d7d64e24159e70db8795179f96fb434bd47a95` 等于已验199。198失败记录保留，不重标其CI。API仍是原账户额度暂停，无调用或权限变化。
