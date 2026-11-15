@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using StardewAI.Contracts.Strategy;
 using StardewAI.Contracts.Training;
+using StardewAI.Core.Strategy;
 using StardewAI.GoalConditionedBootstrap;
 
 namespace StardewAI.LiveTrainingLoop;
@@ -79,6 +80,9 @@ public sealed partial class CropTeacherManagedSeedOwner
         string[] covered, MoneyRevenueCropNativeLifecycleTransitionRequest transition)
     {
         var productYield = IsSharedTransferPreparation(record) && transition.ExecutorVersion == PolicyTrajectoryVersionPins.ProductExecutor;
+        var inventoryLease = IsSharedTransferPreparation(record) &&
+            record["shared_transfer_request"]?.Deserialize<ReservationPortfolioCommitRequest>(JsonOptions) is { } request &&
+            CropSaleStockTransferLeaseContract.IsLeaseRequest(request);
         record = SharedExecutionRecord(record);
         var protocol = record["shared_source_return_protocol"]?.GetValue<string>();
         if (record["shared_source_execution_protocol"]?.GetValue<string>() == "selected_work_yield.v2")
@@ -89,7 +93,10 @@ public sealed partial class CropTeacherManagedSeedOwner
             if (protocol is not null || record["original_transfer_settlement"] is not null || yieldPreparation is null ||
                 yieldPreparation.BackendUrl != options.BackendUrl || reference.Preparation != yieldPreparation || reference.BackendUrl != options.BackendUrl)
                 throw new InvalidDataException("Shared transfer yield changed its original preparation or settlement protocol.");
-            return productYield
+            return inventoryLease
+                ? CropTeacherSharedSourceReturn.OpenAfterPreparedInventoryLeaseYield(plan.RequestPath, sourcePath, ledgerPath,
+                    covered, transition, Text(record, "support_step_id"), reference, path, productYield)
+                : productYield
                 ? CropTeacherSharedSourceReturn.OpenAfterPreparedProductTransferYield(plan.RequestPath, sourcePath, ledgerPath,
                     covered, transition, Text(record, "support_step_id"), reference, path)
                 : CropTeacherSharedSourceReturn.OpenAfterPreparedTransferYield(plan.RequestPath, sourcePath, ledgerPath,

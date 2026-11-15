@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using StardewAI.Contracts.Strategy;
+using StardewAI.Core.Strategy;
 using StardewAI.GoalConditionedBootstrap;
 
 namespace StardewAI.LiveTrainingLoop;
@@ -80,7 +81,10 @@ public sealed partial class CropTeacherManagedSeedOwner
                 throw new InvalidDataException("Shared selected preparation changed its original ledger source.");
             pins.Pin(decision.OriginalLedgerPath);
         }
-        var support = request.MaterialClaims is { Length: > 0 }
+        var support = CropSaleStockTransferLeaseContract.IsLeaseRequest(request)
+            ? CropTeacherSharedTransferSupport.OpenInventoryTransferLease(plan.RequestPath, headSnapshotPath, headLedgerPath,
+                ActiveCoveredCommitments(), Text(record, "support_step_id"), request, pins.Hashes)
+            : request.MaterialClaims is { Length: > 0 }
             ? CropTeacherSharedTransferSupport.OpenPartitionedSaleStock(plan.RequestPath, headSnapshotPath, headLedgerPath,
                 ActiveCoveredCommitments(), Text(record, "support_step_id"), request, pins.Hashes)
             : CropTeacherSharedTransferSupport.Open(plan.RequestPath, headSnapshotPath, headLedgerPath,

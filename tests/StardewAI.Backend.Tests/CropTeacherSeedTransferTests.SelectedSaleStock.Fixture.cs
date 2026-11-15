@@ -29,23 +29,34 @@ public sealed partial class CropTeacherSeedTransferTests
         internal CropSaleStockTransferPreparation Preview { get; }
         internal LiveTrainingOptions Options => Transfer.Runtime.Options;
 
-        internal SelectedSaleStockFixture(string fault = "", bool partitioned = false)
+        internal SelectedSaleStockFixture(string fault = "", bool partitioned = false, bool transferLease = false,
+            bool product = false, bool nearChest = false)
         {
-            Transfer = new(partitioned ? before =>
+            Transfer = new(partitioned || nearChest ? before =>
             {
-                MaterialInventoryGraphReader.TryRead(before, out var graph);
-                graph!.InventoryNodes.Single(row => row.NodeId == "player:123").Slots =
-                    [new() { SlotIndex = 0, QualifiedItemId = "(O)330", Stack = 998, Quality = 0,
-                        MaximumStackSize = 999, RuntimeType = "StardewValley.Object" }];
-                var farm = JsonNode.Parse(before.State["farm"].GetRawText())!;
-                farm["material_inventory_graph"]!["value"] = JsonSerializer.SerializeToNode(graph, JsonOptions);
-                before.State["farm"] = JsonSerializer.SerializeToElement(farm, JsonOptions);
-                var player = JsonNode.Parse(before.State["player"].GetRawText())!;
-                player["inventory"]!["value"] = JsonSerializer.SerializeToNode(new[] {
-                    new { slot_index = 0, qualified_item_id = "(O)330", stack = 998, quality = 0, is_empty = false } }, JsonOptions);
-                before.State["player"] = JsonSerializer.SerializeToElement(player, JsonOptions);
+                if (partitioned)
+                {
+                    MaterialInventoryGraphReader.TryRead(before, out var graph);
+                    graph!.InventoryNodes.Single(row => row.NodeId == "player:123").Slots =
+                        [new() { SlotIndex = 0, QualifiedItemId = "(O)330", Stack = 998, Quality = 0,
+                            MaximumStackSize = 999, RuntimeType = "StardewValley.Object" }];
+                    var farm = JsonNode.Parse(before.State["farm"].GetRawText())!;
+                    farm["material_inventory_graph"]!["value"] = JsonSerializer.SerializeToNode(graph, JsonOptions);
+                    before.State["farm"] = JsonSerializer.SerializeToElement(farm, JsonOptions);
+                    var player = JsonNode.Parse(before.State["player"].GetRawText())!;
+                    player["inventory"]!["value"] = JsonSerializer.SerializeToNode(new[] {
+                        new { slot_index = 0, qualified_item_id = "(O)330", stack = 998, quality = 0, is_empty = false } }, JsonOptions);
+                    before.State["player"] = JsonSerializer.SerializeToElement(player, JsonOptions);
+                }
+                if (nearChest)
+                {
+                    var player = JsonNode.Parse(before.State["player"].GetRawText())!;
+                    player["tile_x"]!["value"] = 8; player["tile_y"]!["value"] = 6;
+                    before.State["player"] = JsonSerializer.SerializeToElement(player, JsonOptions);
+                }
             } : null);
             var f = Transfer;
+            f.Runtime.Options.UseProductExecutor = product;
             var ledger = f.Runtime.Repository.Get(f.Files.Before);
             const string producer = "declared-stock-main-source";
             var item = JsonSerializer.SerializeToElement(new { slot_index = 0, qualified_item_id = "(O)330", stack = 7, quality = 0, is_empty = false });
@@ -65,7 +76,7 @@ public sealed partial class CropTeacherSeedTransferTests
             });
             Assert.True(stock.Accepted, string.Join(",", stock.Errors)); f.Files.AdoptLedger(stock.Ledger!);
             var intent = new MaterialTransferIntent { SourceNodeId = "chest:Farm:8,5", SourceSlotIndex = 0,
-                DestinationNodeId = "player:123", QualifiedItemId = "(O)330", Quantity = 2, ExpectedSourceStack = 7 };
+                DestinationNodeId = "player:123", QualifiedItemId = "(O)330", Quantity = transferLease ? 1 : 2, ExpectedSourceStack = 7 };
             var parameters = MaterialTransferIntentBinder.ToParameters(intent);
             Preview = CropSaleStockTransferPreparation.Create(f.Files.Before, stock.Ledger!, parameters, out var reasons)!;
             Assert.NotNull(Preview); Assert.Empty(reasons);

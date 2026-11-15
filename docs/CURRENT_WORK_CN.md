@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-11-15 自由库存转移临时预留与原接受回执（200，库存能力块未总闭）
+
+- 199最终 `e0dd6eda`／CI `43703179763` 已成功：Core2675/2675（1分4秒）、Backend3481/3481（9分28秒）、零跳过。日志 `block199-final-ci43703179763.log` SHA `6d1e6b563ecf844497115b79698549e278171b55484b90e7b61ec4d1f407e7a8`；沙箱常规merge `c01e3626`／树 `b1d7d64e24159e70db8795179f96fb434bd47a95` 等于已验199。198失败记录保留，不重标其CI。API仍是原账户额度暂停，无调用或权限变化。
+- 自由／被动-only转移以 `inventory_transfer_material_lease.v1` 临时预留**实际搬运的自由数量**，在原原子Commit中准备原非空prepared v1；不假造空移动、种子／机器或自产标签。自由量不足、身份／历史冲突拒绝；双向及多目标槽仍由原物理投影／编译派发／结算处理，原待售和其他根预留保持数量、purpose及合法被动重排。新binding control v2只接已完整核验lease；旧stock v1和默认不升级。
+- Main原owner在准备前持有同一安排，以具名lease来源入口接原native一次派发／结算／marker与回包恢复。**原marker只释放本次实际移动的临时预留**；全局新消费者必须重放原内容寻址commit journal、完整回包和完整GET，固定hash并消费实际接受后的账本，不猜测取消或沿用失效active lease。原所选意图不因机械lease ID变化重选；旧source工厂拒绝新lease，不重写旧执行器、准备／结算或权属核。外来／搬运自由量不授自产信用。
+- 最终显式E重建原stock／seed／native／source／checkpoint／Main及旧lifecycle相邻 **329/329（约2分21秒）、零跳过**，含8项新增。日志 `block200-final-lease-marker-source-adjacent-tests.log` SHA `3b12c53920f0af6f947e14262e2825dbad0c3d2a2c78bf6bcc2efe2015acd273`；此前32/32重叠不累加。覆盖原Backend＋Runtime/Product合成native、丢marker回包恢复／重开不重复执行、自由量／多槽及被动重排、保护其他预留、伪释放／伪回包／伪读回／角色别名／backend和原件篡改拒绝。不是实际游戏存取或L3总验收；最终提交自身CI另核。初次新OwnerOptions字段编译错误、两项新夹具漏原站位参数均只修新代码／夹具，原失败保留，不改旧标准。
+- **唯一接续仍原第5步：** 其他用途消费的同来源归因、混合producer正确分配及Main预览／收获留存终端配套启用；原单RouteSourceDecision权属不放宽。随后原partial／多队列、真实跨根选线／资源／日历／来源对账和原生重放，再第6步#570两项准入接线。#569交接在正式manifest前，模型／数据冻结／训练归实验室，不加回工程侧。已验L1 19/19、Root11/11及169—172冻结，不重跑十三日；常规预览／配套新库存模式仍OFF、formal=false。无游戏／API／清理／部署，local-data、原始日志／存档／二进制不提交。
+
 ## 2026-11-15 待售分堆原子准备与原生命周期兼容（199，库存能力块未总闭）
 
 - **198未接受：** `e86c9127`／CI `43700884549` 终态失败，Core2675/2675（56秒）、Backend3461/3466（9分32秒）、零跳过。5项均因198给旧私有 `LoadJointObservedTransition` 增加可选参数，旧反射入口仍按单参数调用；不是环境或原生动作失败。日志 `block198-final-ci43700884549.log` SHA `ac236b127d7d267c62e19dcfc423bda2256d9de3e045a8d83dd486259ad6ddaa`。本轮恢复原单参数签名，以具名 `LoadTransferredStockObservedTransition` 接新模式、共用同一核；只改新增测试的入口，旧SharedLifecycle断言不动。已全库查直接与反射引用，后续改入口须同时核两类调用，不能只凭局部筛选绿。沙箱仍为已验197，不合入失败198。

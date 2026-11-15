@@ -3,11 +3,12 @@ using StardewAI.Contracts.Strategy;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Infrastructure;
+using StardewAI.Core.Strategy;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
 // An observed shared-source return, not authority to execute foreign work or credit crop production.
-public sealed class CropTeacherSharedSourceReturn : ICropTeacherSupportingTransition
+public sealed partial class CropTeacherSharedSourceReturn : ICropTeacherSupportingTransition
 {
     private readonly CropTeacherRetainedInputs inputs;
     private readonly Dictionary<string, string> requestBlobs = new(CropTeacherSeedTransferNativeOutcome.PathComparer);
@@ -16,7 +17,7 @@ public sealed class CropTeacherSharedSourceReturn : ICropTeacherSupportingTransi
     private CropTeacherSharedSourceReturn(string runRequestPath, string sourcePath, string ledgerPath,
         IReadOnlyCollection<string> commitmentIds, MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId,
         CropTeacherSharedTransferSettlementReference? transfer = null, bool includePreparation = false, string? retainedReferencePath = null,
-        bool productTransfer = false, bool productSource = false)
+        bool productTransfer = false, bool productSource = false, bool inventoryLease = false)
     {
         Require(includePreparation == (transfer?.Preparation is not null) &&
                 (!includePreparation || transfer!.Preparation!.BackendUrl == transfer.BackendUrl),
@@ -54,6 +55,9 @@ public sealed class CropTeacherSharedSourceReturn : ICropTeacherSupportingTransi
         // The explicit mode observes an already settled transfer; this adapter never performs that mutation.
         var preparedLedger = includePreparation ? CropTeacherSharedTransferPreparation.Verify(source.Snapshot, source.Ledger,
             transfer!.Preparation!) : source.Ledger;
+        Require(CropSaleStockTransferLeaseContract.IsBound(preparedLedger) == inventoryLease &&
+                (!inventoryLease || includePreparation && retainedReferencePath is not null),
+            "Inventory transfer leases require their explicit original prepared-yield consumer.");
         var baseLedger = transfer is null ? source.Ledger : CropTeacherSharedTransferSettlement.Verify(preparedLedger, native, transfer);
         if (includePreparation) CropTeacherSupportingSource.RequireNewMarker(baseLedger, stepId);
         var projectedLedger = CropTeacherSeedSupportSource.Copy(baseLedger);
@@ -98,6 +102,9 @@ public sealed class CropTeacherSharedSourceReturn : ICropTeacherSupportingTransi
         TransferSettlement = transfer;
         ValidateInputsUnchanged();
         rebind = new(native.After, baseLedger, stepId, ValidateInputsUnchanged, "Shared source return");
+        ReleasesTransferLease = inventoryLease;
+        if (inventoryLease) rebind.ReleaseTransferLease(preparedLedger.PreparedMaterialTransfer!.MaterialRelocations
+            .Select(row => row.MaterialReservationId).ToArray());
     }
 
     public static CropTeacherSharedSourceReturn Open(string runRequestPath, string sourcePath, string ledgerPath,
@@ -169,11 +176,13 @@ public sealed class CropTeacherSharedSourceReturn : ICropTeacherSupportingTransi
     public ReservationPortfolioCommitRequest RebindRequest => rebind.Request;
     public StrategyCommitmentLedger VerifyRebindReply(ReservationPortfolioCommitResult reply) => rebind.VerifyReply(reply);
     public IReadOnlyDictionary<string, string> InputHashes => inputs.ReadHashes().Concat(requestBlobs)
+        .Concat(marker?.Hashes.AsEnumerable() ?? Enumerable.Empty<KeyValuePair<string, string>>())
         .ToDictionary(pair => pair.Key, pair => pair.Value, CropTeacherSeedTransferNativeOutcome.PathComparer);
 
     public void ValidateInputsUnchanged()
     {
         inputs.Validate();
+        marker?.Validate();
         foreach (var (path, hash) in requestBlobs)
             Require((File.GetAttributes(path) & FileAttributes.ReparsePoint) == 0 && CurrentTeacherFrontierSupport.HashFile(path) == hash,
                 "Shared source return original compressed request changed.");

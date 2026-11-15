@@ -1,5 +1,44 @@
 # Current Production Snapshot Handoff
 
+## Free Inventory Transfer Leases And Accepted Marker Provenance (200, Open)
+
+199 e0dd6eda/quality43703179763 SUCCESS: Core2675/2675(1m4s),
+Backend3481/3481(9m28s), zero skipped. Log SHA
+6d1e6b563ecf844497115b79698549e278171b55484b90e7b61ec4d1f407e7a8.
+Peer mergec01e3626/treeb1d7d64e24159e70db8795179f96fb434bd47a95
+equals accepted199. Failed198 is not relabeled. Provider remains paused.
+
+Explicit inventory_transfer_material_lease.v1 reserves ACTUAL free moved units
+in ORIGINAL atomic Commit/nonempty preparedv1. Original physical projection,
+compiler/dispatch/settlement preserve stock/other-root claims and passive reindex,
+including multiple destination slots. No fake seed/machine/empty preparation or
+crop credit. Binding controlv2 is explicit lease mode; old stockv1/defaults stay.
+
+SAME Main owner holds before preparation, claims native once, settles and releases
+ONLY actual moved leases through ORIGINAL marker/reply recovery. Named global
+consumer replays original content-addressed commit journal, full reply and full
+GET, pins hashes and retains the ACTUAL accepted ledger, not inferred cancellation
+or stale active leases. Old source factories reject leases; no changed executor,
+authority kernel, new ledger or RPC engine. Mechanical lease IDs do not rerank intent.
+
+Final E rebuilt stock/seed/native/source/checkpoint/Main/old lifecycle adjacent
+329/329(about2m21s), zero skipped, includes8 new. Log SHA
+3b12c53920f0af6f947e14262e2825dbad0c3d2a2c78bf6bcc2efe2015acd273.
+Earlier32/32 overlaps, not additive. Original Backend with Runtime/Product
+synthetic native, lost marker reply/reopen without duplicate native/commit,
+free/protected/multi-slot/passive claims and forged release/reply/readback/alias/
+backend/artifact rejection covered. NOT actual game storage/global L3 proof.
+Own final-SHA CI remains separate. Initial new wrong option field and missing
+fixture stand parameters fixed only in new code/fixtures; original failures kept.
+
+NEXT other-use consumption attribution, mixed-producer allocation and paired Main
+activation; preserve original single RouteSourceDecision authority. Then original
+partial/multi-queue/global selected-route/resource/calendar/source reconciliation
+and native replay, step6 #570, #569 PRE-MANIFEST engineering handoff. Lab owns
+model/data freeze/formal manifest/training. Ordinary preview/paired stock mode OFF,
+formal=false; L1/Root/169-172 frozen, no13day replay/API/game/deploy/cleanup/raw commit.
+[Current work200](CURRENT_WORK_CN.md#2026-11-15-自由库存转移临时预留与原接受回执200库存能力块未总闭).
+
 ## Atomic Sale Stock Partitions And Original Lifecycle Compatibility (199, Open)
 
 198 e86c9127/quality43700884549 FAILED: Core2675/2675(56s),

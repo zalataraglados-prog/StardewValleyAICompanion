@@ -6,6 +6,7 @@ using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Training;
+using StardewAI.Core.Strategy;
 using StardewAI.GoalConditionedBootstrap;
 
 namespace StardewAI.LiveTrainingLoop;
@@ -208,9 +209,15 @@ public sealed partial class CropTeacherManagedSeedOwner
         foreach (var path in new[] { selection.DecisionSnapshotPath, selection.DecisionPlanPath, selection.DecisionRankingPath,
             selection.ModelPlanPath, selection.QueuePath, selection.EvidencePath }) pins.Pin(path);
         if (selection.DecisionReference is not null) pins.Pin(selection.DecisionReference.Path);
+        var inventoryLease = record["shared_transfer_request"]?.Deserialize<StardewAI.Contracts.Strategy.ReservationPortfolioCommitRequest>(JsonOptions)
+            is { } request && CropSaleStockTransferLeaseContract.IsLeaseRequest(request);
         var start = preparation is null
             ? CropTeacherSharedSourcePreparation.Open(plan.RequestPath, headSnapshotPath, headLedgerPath,
                 ActiveCoveredCommitments(), Text(record, "support_step_id"), selection.ModelPlanPath, transition, pins.Hashes)
+            : inventoryLease
+                ? CropTeacherSharedSourcePreparation.OpenPreparedInventoryTransferLease(plan.RequestPath, headSnapshotPath, headLedgerPath,
+                    ActiveCoveredCommitments(), Text(record, "support_step_id"), selection.ModelPlanPath, transition, pins.Hashes,
+                    preparation, SharedTransferReferencePath(record), productTransfer)
             : productTransfer
                 ? CropTeacherSharedSourcePreparation.OpenPreparedProductTransfer(plan.RequestPath, headSnapshotPath, headLedgerPath,
                     ActiveCoveredCommitments(), Text(record, "support_step_id"), selection.ModelPlanPath, transition, pins.Hashes,

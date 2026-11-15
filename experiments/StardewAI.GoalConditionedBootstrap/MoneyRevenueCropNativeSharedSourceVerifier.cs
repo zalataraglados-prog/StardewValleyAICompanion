@@ -1,5 +1,7 @@
 using StardewAI.Core.Infrastructure;
 using StardewAI.Contracts.Training;
+using StardewAI.Contracts.Strategy;
+using StardewAI.Core.Strategy;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -22,11 +24,11 @@ public static class MoneyRevenueCropNativeSharedSourceVerifier
 
     public static CropTeacherSharedSourceReturn VerifyWithTransferredSaleStock(MoneyRevenueCropNativeLifecycleTransitionRequest transition)
         => VerifyCore(transition, allowSettledTransfer: true, allowPreparation: true, allowPreparedYield: true,
-            productTransfer: transition.ExecutorVersion == PolicyTrajectoryVersionPins.ProductExecutor, productSource: true);
+            productTransfer: transition.ExecutorVersion == PolicyTrajectoryVersionPins.ProductExecutor, transferredStockSource: true);
 
     private static CropTeacherSharedSourceReturn VerifyCore(MoneyRevenueCropNativeLifecycleTransitionRequest transition,
         bool allowSettledTransfer, bool allowPreparation = false, bool allowPreparedYield = false, bool productTransfer = false,
-        bool productSource = false)
+        bool transferredStockSource = false)
     {
         var reference = transition.NativeSharedSource
             ?? throw new InvalidDataException("Shared native transition lacks its original source/ledger binding.");
@@ -39,11 +41,22 @@ public static class MoneyRevenueCropNativeSharedSourceVerifier
             "Transfer preparation requires its explicit original-source consumer.");
         Require(reference.SettledTransferReferencePath is null || allowPreparedYield && reference.SettledMaterialTransfer?.Preparation is not null,
             "Prepared transfer yield requires its explicit retained-reference consumer.");
+        Require(transferredStockSource || reference.AcceptedMarker is null,
+            "Accepted source markers require their explicit transferred-stock consumer.");
+        var lease = reference.SettledMaterialTransfer?.Preparation is { } preparation &&
+            CurrentTeacherFrontierSupport.Read<ReservationPortfolioCommitResult>(preparation.ReplyPath,
+                "shared inventory-lease preparation hint").Ledger is { } ledger && CropSaleStockTransferLeaseContract.IsBound(ledger);
+        Require(!lease || transferredStockSource && reference.AcceptedMarker is not null && reference.SettledTransferReferencePath is not null,
+            "Inventory transfer lease requires its original accepted release marker.");
         Require(!productTransfer || transition.ExecutorVersion == PolicyTrajectoryVersionPins.ProductExecutor &&
-                (productSource && reference.SettledMaterialTransfer is null ||
+                (transferredStockSource && reference.SettledMaterialTransfer is null ||
                  reference.SettledTransferReferencePath is not null && reference.SettledMaterialTransfer?.Preparation is not null),
             "Product shared transfer requires the explicit Product prepared-yield source.");
-        var scope = productTransfer && reference.SettledMaterialTransfer is null && productSource
+        var scope = lease
+            ? CropTeacherSharedSourceReturn.OpenAfterPreparedInventoryLeaseYield(reference.RunRequestPath, transition.BeforeSnapshotPath,
+                reference.LedgerPath, reference.CoveredCommitmentIds, transition, reference.StepId, reference.SettledMaterialTransfer!,
+                reference.SettledTransferReferencePath!, productTransfer)
+            : productTransfer && reference.SettledMaterialTransfer is null && transferredStockSource
             ? CropTeacherSharedSourceReturn.OpenProductSource(reference.RunRequestPath, transition.BeforeSnapshotPath,
                 reference.LedgerPath, reference.CoveredCommitmentIds, transition, reference.StepId)
             : productTransfer
@@ -60,6 +73,7 @@ public static class MoneyRevenueCropNativeSharedSourceVerifier
                 reference.LedgerPath, reference.CoveredCommitmentIds, transition, reference.StepId, transfer)
             : CropTeacherSharedSourceReturn.Open(reference.RunRequestPath, transition.BeforeSnapshotPath,
                 reference.LedgerPath, reference.CoveredCommitmentIds, transition, reference.StepId);
+        if (reference.AcceptedMarker is not null) scope.BindAcceptedMarker(reference.AcceptedMarker);
         var expected = new Dictionary<string, string>(CropTeacherSeedTransferNativeOutcome.PathComparer);
         foreach (var (path, hash) in reference.InputArtifactHashes)
         {

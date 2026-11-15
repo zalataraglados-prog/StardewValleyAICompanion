@@ -22,7 +22,7 @@ public static class CropSaleStockMaterialTransferBinding
     public static SmallModelActionParameter[] ToParameters(StrategyCommitmentLedger ledger)
     {
         var prepared = ledger.PreparedMaterialTransfer ?? throw new InvalidOperationException("Sale-stock transfer is not prepared.");
-        var values = new[] { "1", prepared.PortfolioId, prepared.RouteSourceDecisionId,
+        var values = new[] { CropSaleStockTransferLeaseContract.IsBound(ledger) ? "2" : "1", prepared.PortfolioId, prepared.RouteSourceDecisionId,
             ledger.Revision.ToString(CultureInfo.InvariantCulture),
             JsonSerializer.Serialize(prepared.MaterialRelocations.Select(row => row.MaterialReservationId).OrderBy(id => id, StringComparer.Ordinal).ToArray()) };
         return MaterialTransferIntentBinder.ToParameters(prepared.Intent).Concat(Names.Select((name, index) =>
@@ -43,7 +43,8 @@ public static class CropSaleStockMaterialTransferBinding
             parameters.Where(row => IsControlParameter(row.Name)).Any(row => !Names.Contains(row.Name))) return false;
         string Read(string name) => parameters.SingleOrDefault(row => row.Name == name)?.Value ?? string.Empty;
         var prepared = ledger.PreparedMaterialTransfer;
-        if (Read(Names[0]) != "1" || prepared is null || goalId != prepared.GoalId ||
+        var lease = Read(Names[0]) == "2";
+        if (Read(Names[0]) is not "1" and not "2" || prepared is null || goalId != prepared.GoalId ||
             !int.TryParse(Read(Names[3]), NumberStyles.Integer, CultureInfo.InvariantCulture, out var revision) || revision != ledger.Revision ||
             !PreparedMaterialTransferContract.IsBound(ledger, Read(PreparedMaterialTransferContract.BindingParameter),
                 Read(Names[1]), goalId, Read(Names[2])) ||
@@ -63,6 +64,10 @@ public static class CropSaleStockMaterialTransferBinding
         catch (JsonException) { return false; }
         var moved = prepared.MaterialRelocations;
         if (ids is null || !ids.SequenceEqual(moved.Select(row => row.MaterialReservationId).OrderBy(id => id, StringComparer.Ordinal))) return false;
+        if (lease) return CropSaleStockTransferLeaseContract.IsBound(ledger) && moved.All(move =>
+            ledger.MaterialReservations.Count(row => row.ReservationId == move.MaterialReservationId &&
+                row.Status == StrategyCommitmentStatuses.Active && row.OwnerPlayerId == actor &&
+                row.NodeId == prepared.Intent.SourceNodeId && row.SlotIndex == prepared.Intent.SourceSlotIndex) == 1);
         return moved.All(move => ledger.MaterialReservations.Count(row => row.ReservationId == move.MaterialReservationId &&
             row.Status == StrategyCommitmentStatuses.Active && row.SourceDecisionId == prepared.RouteSourceDecisionId &&
             row.GoalId == prepared.GoalId &&

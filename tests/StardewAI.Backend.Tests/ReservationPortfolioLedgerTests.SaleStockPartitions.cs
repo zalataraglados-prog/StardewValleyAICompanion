@@ -168,7 +168,7 @@ public sealed partial class ReservationPortfolioLedgerTests
         return (before, updated.Ledger!, f);
     }
 
-    private static SnapshotEnvelope ProjectPartitionAfter(SnapshotEnvelope before, PreparedMaterialTransfer prepared)
+    internal static SnapshotEnvelope ProjectPartitionAfter(SnapshotEnvelope before, PreparedMaterialTransfer prepared)
     {
         var after = JsonSerializer.Deserialize<SnapshotEnvelope>(JsonSerializer.Serialize(before))!; after.GameTick++;
         MaterialInventoryGraphReader.TryRead(after, out var graph);

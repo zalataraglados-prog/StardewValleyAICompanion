@@ -32,7 +32,8 @@ public sealed partial class CropSaleStockTransferPreparation
             row.NodeId == intent.SourceNodeId && row.SlotIndex == intent.SourceSlotIndex &&
             row.QualifiedItemId == intent.QualifiedItemId && CropSaleStockReservationContract.TryRead(row, out var purpose) &&
             CropSaleStockReservationContract.IsTransferable(purpose!)).OrderBy(row => row.ReservationId, StringComparer.Ordinal).ToArray();
-        if (claims.Length == 0) return null;
+        if (claims.Length == 0 || claims.Sum(row => (long)row.Quantity) > intent.Quantity)
+            return CreateLease(snapshot, ledger, graph!, intent, out reasons);
         if (snapshot.SaveId.Status != FieldStatus.Available || snapshot.PlayerId.Status != FieldStatus.Available ||
             snapshot.SaveId.Value != ledger.SaveId || snapshot.PlayerId.Value != ledger.PlayerId ||
             claims.Select(row => row.SourceDecisionId).Distinct(StringComparer.Ordinal).Count() != 1 ||

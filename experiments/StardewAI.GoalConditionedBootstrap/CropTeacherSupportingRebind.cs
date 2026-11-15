@@ -24,6 +24,7 @@ internal sealed class CropTeacherSupportingRebind
     }
 
     internal StrategyCommitmentLedger BaseLedger => CropTeacherSeedSupportSource.Copy(ledger);
+    internal void ReleaseTransferLease(string[] reservationIds) => request.ReleaseReservationIds = reservationIds.ToArray();
     internal ReservationPortfolioCommitRequest Request
     {
         get { validate(); return CropTeacherSeedSupportSource.Copy(request); }

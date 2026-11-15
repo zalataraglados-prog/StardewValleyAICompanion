@@ -67,6 +67,11 @@ internal sealed class CropTeacherTransferredSaleStock(string commitmentId, strin
             account.ObserveTransferredStock(frame.Before, frame.After, false, stockBefore, Read(frame.After, ledger));
         }
         scope.ValidateInputsUnchanged();
+        if (scope.CompletedLedger is { } completed)
+        {
+            _ = Read(native.After, completed);
+            ledger = completed;
+        }
         return native.Actions.Length;
     }
 

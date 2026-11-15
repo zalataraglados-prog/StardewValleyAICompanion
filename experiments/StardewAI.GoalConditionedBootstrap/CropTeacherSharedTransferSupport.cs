@@ -16,7 +16,7 @@ public sealed class CropTeacherSharedTransferSupport
 
     private CropTeacherSharedTransferSupport(string runRequestPath, string sourcePath, string ledgerPath,
         IReadOnlyCollection<string> commitmentIds, string stepId, ReservationPortfolioCommitRequest request,
-        IReadOnlyDictionary<string, string> decisionInputs, bool partitionedSaleStock = false)
+        IReadOnlyDictionary<string, string> decisionInputs, bool partitionedSaleStock = false, bool inventoryLease = false)
     {
         var paths = new[] { runRequestPath, sourcePath, ledgerPath }.Select(Path.GetFullPath).ToArray();
         Require(paths.Distinct(CropTeacherSeedTransferNativeOutcome.PathComparer).Count() == paths.Length,
@@ -32,13 +32,14 @@ public sealed class CropTeacherSharedTransferSupport
             PortfolioId = request.PortfolioId, SourceDecisionId = request.PortfolioId, GoalId = request.GoalId,
             MaterialTransferPreparation = request.MaterialTransferPreparation
         };
-        if (partitionedSaleStock)
+        if (partitionedSaleStock || inventoryLease)
         {
             Require(request.MaterialTransferPreparation is not null && request.MaterialClaims is { Length: > 0 },
                 "Partitioned sale stock requires its explicit original allocation request.");
             var canonical = CropSaleStockTransferPreparation.Create(source.Snapshot, source.Ledger,
                 MaterialTransferIntentBinder.ToParameters(request.MaterialTransferPreparation!.Intent), out var reasons);
-            Require(canonical is not null && EqualJson(request, canonical.Request),
+            Require(canonical is not null && EqualJson(request, canonical.Request) &&
+                    CropSaleStockTransferLeaseContract.IsLeaseRequest(request) == inventoryLease,
                 "Partitioned sale stock differs from its original conserved allocation: " + string.Join(",", reasons));
         }
         else Require(request.MaterialTransferPreparation is not null && EqualJson(request, preparationOnly),
@@ -61,6 +62,11 @@ public sealed class CropTeacherSharedTransferSupport
         IReadOnlyCollection<string> commitmentIds, string stepId, ReservationPortfolioCommitRequest request,
         IReadOnlyDictionary<string, string> decisionInputs) =>
         new(runRequestPath, sourcePath, ledgerPath, commitmentIds, stepId, request, decisionInputs, partitionedSaleStock: true);
+
+    public static CropTeacherSharedTransferSupport OpenInventoryTransferLease(string runRequestPath, string sourcePath, string ledgerPath,
+        IReadOnlyCollection<string> commitmentIds, string stepId, ReservationPortfolioCommitRequest request,
+        IReadOnlyDictionary<string, string> decisionInputs) =>
+        new(runRequestPath, sourcePath, ledgerPath, commitmentIds, stepId, request, decisionInputs, inventoryLease: true);
 
     public string SnapshotPath { get; }
     public int TotalDay { get; }

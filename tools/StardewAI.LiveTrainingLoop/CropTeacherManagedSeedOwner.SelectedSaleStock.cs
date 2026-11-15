@@ -86,6 +86,9 @@ public sealed partial class CropTeacherManagedSeedOwner
     private static JsonNode SelectedTransferIdentity(ReservationPortfolioCommitRequest request, StrategyCommitmentLedger source)
     {
         var preparation = request.MaterialTransferPreparation!;
+        if (CropSaleStockTransferLeaseContract.IsLeaseRequest(request))
+            return JsonSerializer.SerializeToNode(new { Kind = CropSaleStockTransferLeaseContract.Schema,
+                request.GoalId, preparation.Intent }, JsonOptions)!;
         var originals = source.MaterialReservations.ToDictionary(row => row.ReservationId, StringComparer.Ordinal);
         string ParentId(string id) => originals.ContainsKey(id) ? id :
             JsonSerializer.Deserialize<CropSaleStockReservationPurpose>(request.MaterialClaims.Single(row => row.ReservationId == id).Purpose)!

@@ -3,6 +3,7 @@ using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
+using StardewAI.Core.Strategy;
 using StardewAI.Core.WorldModel;
 
 namespace StardewAI.GoalConditionedBootstrap;
@@ -20,12 +21,13 @@ public sealed class CropTeacherSharedSourcePreparation : ICropTeacherSupportingP
     private readonly CropTeacherSharedTransferPreparationReference? transferPreparation;
     private readonly string? settlementReferencePath;
     private readonly bool productTransfer;
+    private readonly bool inventoryLease;
 
     private CropTeacherSharedSourcePreparation(string runRequestPath, string sourcePath, string ledgerPath,
         IReadOnlyCollection<string> commitmentIds, string stepId, string modelPlanPath,
         MoneyRevenueCropNativeLifecycleTransitionRequest boundary, IReadOnlyDictionary<string, string> selectionHashes,
         CropTeacherSharedTransferPreparationReference? transferPreparation = null, string? settlementReferencePath = null,
-        bool productTransfer = false)
+        bool productTransfer = false, bool inventoryLease = false)
     {
         var comparer = CropTeacherSeedTransferNativeOutcome.PathComparer;
         var paths = new[] { runRequestPath, sourcePath, ledgerPath, modelPlanPath, boundary.QueuePath };
@@ -53,6 +55,8 @@ public sealed class CropTeacherSharedSourcePreparation : ICropTeacherSupportingP
         var source = CropTeacherSupportingSource.Read(paths[0], paths[1], paths[2], commitmentIds, stepId);
         var ledger = transferPreparation is null ? source.Ledger :
             CropTeacherSharedTransferPreparation.Verify(source.Snapshot, source.Ledger, transferPreparation);
+        Require(CropSaleStockTransferLeaseContract.IsBound(ledger) == inventoryLease && (!inventoryLease || transferPreparation is not null),
+            "Inventory transfer leases require their explicit prepared source.");
         if (transferPreparation is not null) CropTeacherSupportingSource.RequireNewMarker(ledger, stepId);
         var model = CurrentTeacherFrontierSupport.Read<SmallModelPlanEnvelope>(paths[3], "shared source selected plan");
         var queue = CurrentTeacherFrontierSupport.Read<ActionQueueEnvelope>(paths[4], "shared source selected queue");
@@ -79,6 +83,7 @@ public sealed class CropTeacherSharedSourcePreparation : ICropTeacherSupportingP
         CandidateId = boundary.SelectedCandidateId; BaseLedger = ledger; snapshot = source.Snapshot;
         this.transferPreparation = transferPreparation;
         this.productTransfer = productTransfer;
+        this.inventoryLease = inventoryLease;
         this.settlementReferencePath = settlementReferencePath is null ? null : Path.GetFullPath(settlementReferencePath);
         ValidateInputsUnchanged();
     }
@@ -124,7 +129,10 @@ public sealed class CropTeacherSharedSourcePreparation : ICropTeacherSupportingP
                 "shared prepared transfer settlement");
             Require(reference.Preparation == transferPreparation && reference.BackendUrl == transferPreparation.BackendUrl,
                 "Shared prepared transfer changed its original preparation or backend.");
-            result = productTransfer
+            result = inventoryLease
+                ? CropTeacherSharedSourceReturn.OpenAfterPreparedInventoryLeaseYield(runRequestPath, SourcePath,
+                    ledgerPath, commitmentIds, transition, stepId, reference, settlementReferencePath!, productTransfer)
+                : productTransfer
                 ? CropTeacherSharedSourceReturn.OpenAfterPreparedProductTransferYield(runRequestPath, SourcePath,
                     ledgerPath, commitmentIds, transition, stepId, reference, settlementReferencePath!)
                 : CropTeacherSharedSourceReturn.OpenAfterPreparedTransferYield(runRequestPath, SourcePath,
@@ -133,6 +141,13 @@ public sealed class CropTeacherSharedSourcePreparation : ICropTeacherSupportingP
         ValidateInputsUnchanged();
         return result;
     }
+
+    public static CropTeacherSharedSourcePreparation OpenPreparedInventoryTransferLease(string runRequestPath, string sourcePath,
+        string ledgerPath, IReadOnlyCollection<string> commitmentIds, string stepId, string modelPlanPath,
+        MoneyRevenueCropNativeLifecycleTransitionRequest boundary, IReadOnlyDictionary<string, string> selectionHashes,
+        CropTeacherSharedTransferPreparationReference preparation, string settlementReferencePath, bool product) =>
+        new(runRequestPath, sourcePath, ledgerPath, commitmentIds, stepId, modelPlanPath, boundary, selectionHashes,
+            preparation, settlementReferencePath, productTransfer: product, inventoryLease: true);
 
     public ReservationPortfolioSupportingTransitionSettlementRequest ReadTransferSettlementRequest()
     {

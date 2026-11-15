@@ -25,6 +25,7 @@ public sealed partial class CropTeacherSeedTransferTests
         internal ReservationPortfolioSupportingTransitionSettlementResult Reply { get; private set; } = null!;
         internal CropTeacherSharedTransferPreparationReference PreparationReference { get; set; } = null!;
         internal MoneyRevenueCropNativeLifecycleTransitionRequest? NativeTemplate { get; set; }
+        internal Func<SimulatedFactChange[]>? NativeFacts { get; set; }
         internal string NativeResultPath => Path.Combine(Path.GetDirectoryName(Files.SourcePath)!, "shared-transfer-native-result.json");
         internal string ReplyPath => Path.Combine(Path.GetDirectoryName(Files.SourcePath)!, "shared-transfer-settlement-reply.json");
 
@@ -69,7 +70,7 @@ public sealed partial class CropTeacherSeedTransferTests
             var journal = await RuntimeExecutionRequestJournal.WriteAsync(Runtime.Options.SnapshotDir, 400, 1,
                 JsonSerializer.Serialize(request, JsonOptions), product ? "http://test/api/v1/product/execute" :
                     "http://test/api/v1/training/execute", Files.SourcePath);
-            var facts = new[] { new SimulatedFactChange { Path = "player.inventory.(O)745", Before = "0", After = "10" } };
+            var facts = NativeFacts?.Invoke() ?? new[] { new SimulatedFactChange { Path = "player.inventory.(O)745", Before = "0", After = "10" } };
             var result = JsonSerializer.SerializeToNode(new TrainingExecutionResult
             {
                 RunId = request.RunId, QueueId = queue.QueueId, QueueItemId = item.QueueItemId, OptionId = item.OptionId,
@@ -101,6 +102,7 @@ public sealed partial class CropTeacherSeedTransferTests
                 aggregate["executor_version"] = Runtime.Options.PolicyTrajectoryExecutorVersion;
             var step = aggregate["step_results"]![0]!;
             aggregate["queue_id"] = queue.QueueId; step["effective_queue_id"] = queue.QueueId; step["queue_item_id"] = item.QueueItemId;
+            aggregate["selected_candidate_id"] = Transition.SelectedCandidateId;
             step["option_id"] = item.OptionId; step["effective_queue_item"] = JsonSerializer.SerializeToNode(item, JsonOptions);
             step["before_snapshot_path"] = Transition.BeforeSnapshotPath; step["after_snapshot_path"] = Transition.AfterSnapshotPath;
             step["execution_path"] = NativeResultPath; step["execution_request_nonce"] = request.RequestNonce;

@@ -136,11 +136,20 @@ public sealed partial class CropTeacherManagedSeedOwner
                             plan.CoveredCommitmentIds.Contains(row.CommitmentId, StringComparer.Ordinal))
                         .Select(row => row.CommitmentId).OrderBy(value => value, StringComparer.Ordinal).ToArray();
                     var scope = OpenRecordedSharedSourceScope(record, shared.BeforeSnapshotPath, sourceLedgerPath, covered, shared);
+                    CropTeacherSharedSourceMarkerReference? marker = null;
+                    if (scope.ReleasesTransferLease)
+                    {
+                        var journal = PortfolioMutationRequestJournal.Describe(options.BackendUrl, options.PortfolioJournalDirectory,
+                            "commit", scope.RebindRequest, JsonOptions);
+                        marker = new(journal.RequestPath, Path.Combine(runtime, "marker-reply.json"), journal.JournalPath,
+                            options.BackendUrl, StoredPath(accepted, "after_ledger_path"));
+                        scope.BindAcceptedMarker(marker);
+                    }
                     foreach (var (input, expected) in scope.InputHashes) Pin(input, expected);
                     sharedReturns.Add(new(sequence, Text(record, "support_step_id"), shared)
                     {
                         SourceReference = new(plan.RequestPath, sourceLedgerPath, covered, Text(record, "support_step_id"), scope.InputHashes)
-                            { SettledMaterialTransfer = scope.TransferSettlement,
+                            { SettledMaterialTransfer = scope.TransferSettlement, AcceptedMarker = marker,
                                 SettledTransferReferencePath = record["shared_source_execution_protocol"]?.GetValue<string>() is "selected_work_yield.v2" or "selected_work_yield.v3"
                                     ? SharedTransferReferencePath(record) : null }
                     });

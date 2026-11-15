@@ -163,6 +163,9 @@ public sealed record MoneyRevenueCropNativeSharedSourceReference(
     [property: JsonPropertyName("step_id")] string StepId,
     [property: JsonPropertyName("input_artifact_hashes")] IReadOnlyDictionary<string, string> InputArtifactHashes)
 {
+    [JsonPropertyName("accepted_marker")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public CropTeacherSharedSourceMarkerReference? AcceptedMarker { get; init; }
     [JsonPropertyName("settled_material_transfer")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public CropTeacherSharedTransferSettlementReference? SettledMaterialTransfer { get; init; }
