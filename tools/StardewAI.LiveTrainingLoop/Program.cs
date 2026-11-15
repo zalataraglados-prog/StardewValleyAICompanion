@@ -856,7 +856,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                     cropStep, activeCropTeacherRunPlan, activeCropTeacherRunPlanRequest!, managedOwner).ConfigureAwait(false);
             if (managedTerminalControl is null && cropTeacherManagedOwner.TerminalSelection is null)
             {
-                var productionOutput = Path.Combine(managedOwner.EvidenceDirectory, "production-terminal");
+                var productionOutput = CreateCropTeacherProductionAttemptPath(managedOwner.EvidenceDirectory);
                 var productionEvidence = options.UseJointDailyCalendar
                     ? await managedOwner.BuildJointProductionEvidenceAsync(productionOutput).ConfigureAwait(false)
                     : await managedOwner.BuildProductionEvidenceAsync(productionOutput).ConfigureAwait(false);

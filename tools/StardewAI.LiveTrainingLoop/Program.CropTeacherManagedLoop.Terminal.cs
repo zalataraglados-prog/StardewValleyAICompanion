@@ -8,6 +8,9 @@ using StardewAI.LiveTrainingLoop;
 
 static partial class Program
 {
+    private static string CreateCropTeacherProductionAttemptPath(string evidenceDirectory) =>
+        Path.Combine(Path.GetFullPath(evidenceDirectory), "production-terminal-" + Guid.NewGuid().ToString("N"));
+
     private static async Task<(string Path, CropTeacherTerminalShippingSelection Selection)> PrepareCropTeacherManagedTerminalAsync(CropTeacherManagedSeedOwner owner,
         CropTeacherManagedProductionEvidence production)
     {

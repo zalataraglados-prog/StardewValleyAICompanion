@@ -218,12 +218,12 @@ public sealed partial class CropTeacherProductionEvidenceTests
             foreach (var path in Directory.EnumerateFiles(root)) hashes[path] = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant();
         }
 
-        internal Task<CropTeacherManagedProductionEvidence> Build()
+        internal Task<CropTeacherManagedProductionEvidence> Build(string? output = null, Func<string, string, Task>? write = null)
         {
             var trace = Trace();
             var builder = typeof(CropTeacherManagedSeedOwner).Assembly.GetType("StardewAI.LiveTrainingLoop.CropTeacherProductionEvidence")!;
             return (Task<CropTeacherManagedProductionEvidence>)builder.GetMethod("BuildAsync", BindingFlags.NonPublic | BindingFlags.Static)!
-                .Invoke(null, new object[] { trace, Output, (Func<string, string, Task>)((path, json) => File.WriteAllTextAsync(path, json)) })!;
+                .Invoke(null, new object[] { trace, output ?? Output, write ?? ((path, json) => File.WriteAllTextAsync(path, json)) })!;
         }
         internal Task<CropTeacherManagedProductionEvidence> BuildJointEmpty()
         {

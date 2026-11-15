@@ -72,14 +72,16 @@ public static class CropSaleStockCookingPreflight
             foreach (var ingredient in ingredients.EnumerateArray())
             {
                 if (ingredient.ValueKind != JsonValueKind.Object || ReadBool(ingredient, "satisfied") != true ||
-                    !ingredient.TryGetProperty("required_count", out var required) || !required.TryGetInt32(out var count) || count <= 0 ||
+                    !ingredient.TryGetProperty("required_count", out var required) || required.ValueKind != JsonValueKind.Number ||
+                    !required.TryGetInt32(out var count) || count <= 0 ||
                     !ingredient.TryGetProperty("native_consumption_plan", out var plan) || plan.ValueKind != JsonValueKind.Array)
                     return new[] { InvalidSource };
                 long total = 0;
                 foreach (var entry in plan.EnumerateArray())
                 {
                     if (entry.ValueKind != JsonValueKind.Object || !entry.TryGetProperty("slot_index", out var slot) ||
-                        !slot.TryGetInt32(out var index) || index < 0 || !entry.TryGetProperty("amount", out var amount) ||
+                        slot.ValueKind != JsonValueKind.Number || !slot.TryGetInt32(out var index) || index < 0 ||
+                        !entry.TryGetProperty("amount", out var amount) || amount.ValueKind != JsonValueKind.Number ||
                         !amount.TryGetInt32(out var quantity) || quantity <= 0) return new[] { InvalidSource };
                     var node = ResolveNode(graph, aliases, location, ReadString(entry, "source_id"));
                     var item = ReadString(entry, "qualified_item_id");

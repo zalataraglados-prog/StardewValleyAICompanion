@@ -42,6 +42,31 @@ public sealed class MoneyCropSupplementalEvidenceSummaryTests
     }
 
     [Theory]
+    [InlineData("production", null)]
+    [InlineData("production", "")]
+    [InlineData("production", "invalid")]
+    [InlineData("manual_closeout", null)]
+    [InlineData("manual_closeout", "")]
+    [InlineData("manual_closeout", "invalid")]
+    [InlineData("revenue_recurrence", null)]
+    [InlineData("revenue_recurrence", "")]
+    [InlineData("revenue_recurrence", "invalid")]
+    public void AcceptedSupplementCannotDropOriginalCertificateHash(string role, string? sha256)
+    {
+        var f = new Case();
+        File.AppendAllText(f.Binding(role).Path, " ");
+        var request = JsonNode.Parse(File.ReadAllText(f.RequestPath))!;
+        var field = role == "production" ? "accepted_production_evidence" :
+            role == "manual_closeout" ? "accepted_manual_closeout" : "accepted_revenue_recurrence";
+        request[field]!["sha256"] = sha256;
+        File.WriteAllText(f.RequestPath, request.ToJsonString(Options));
+        var before = f.Files();
+        var error = Assert.Throws<InvalidDataException>(() => MoneyRevenueCropSupplementalEvidenceSummary.Build(f.RequestPath));
+        Assert.Contains("nonempty SHA256", error.Message);
+        Assert.Equal(before, f.Files());
+    }
+
+    [Theory]
     [InlineData("automatic_owner_resume_verified")]
     [InlineData("complete_managed_runtime_verified")]
     [InlineData("teacher_preference_label_eligible")]

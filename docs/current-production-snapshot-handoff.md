@@ -1,5 +1,34 @@
 # Current Production Snapshot Handoff
 
+## Publication Attempts And Existing Entry Guards (213)
+
+212 35d4087d OWN43747861374 SUCCESS: Core2762(56s)/Backend3538(7m52s), zero
+skipped; logSHA022d0a8ed8ab761a3a7152bfff6910ee9f716e43302022e7523afaf9043bd81b.
+Peer mergee34d8255/tree82a14957 equals212; no provider invocation/grants.
+572 items3/5/6/8: Main allocates a fresh production-terminal-GUID per publication;
+the original builder still rejects existing output, preserving failed/completed
+artifacts. First/third-write faults retry on a new path without source mutation.
+This is a builder test, NOT actual native single-dispatch proof. Runtime native-work
+wire now mirrors the existing Product guard, with both valid wires and both
+relabel directions tested. Accepted supplemental certificates require valid nonempty
+original SHA; non-certificate optional hashes remain unchanged. Cooking numeric
+types return the original structured unavailable reason through preflight/candidates.
+
+Final Core cooking72/72(5.1s), SHA
+582c10f74cb828ab604aec910b08965ce9e0dc8dfbf981ce4f224d977a43a225;
+Backend publication/wire/supplement32/32(15.8s), SHA
+c716123ccd0477e8332f8d1b2e58894b32cade81f2965447291593591cbea08e.
+Zero skipped; earlier2 publication cases overlap. Initial Core command used wrong
+normal/stale assets: retained failure, fixed invocation to original hermetic lane,
+then restored explicit-E normal Backend. No product/old-fixture changes for that.
+No C# after final build/all local handles terminal; own213 CI still required.
+
+NEXT572 items4/7 measured-prefix coverage and accumulated-clock waiting, preserving
+water/tile/full-prefix/fresh-replan guards. Then original550 actual chosen joint
+owner production/shipping/save-load,570 ->569 PRE-MANIFEST.572 remains OPEN.
+No old executor rewrite/new gates/13day replay/game/API/cleanup/raw commits.
+ModeOFF/formalfalse. Public339/567 guard baseline still210 until publication.
+
 ## Accepted Saved Readback Lifecycle Connection (212)
 
 211 fb8681ab OWN43743947459 SUCCESS: Core2762/Backend3531, zero skipped.

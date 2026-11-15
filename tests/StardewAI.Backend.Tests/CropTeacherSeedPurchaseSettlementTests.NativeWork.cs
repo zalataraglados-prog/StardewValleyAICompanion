@@ -156,14 +156,17 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         await Assert.ThrowsAsync<InvalidOperationException>(() => owner.ClaimSharedSourceExecutionAsync(operation, f.Runtime.Client));
     }
 
-    [Fact]
-    public async Task NativeSharedProductWorkCannotRelabelARuntimeRequestWire()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task NativeSharedWorkCannotRelabelEitherOriginalRequestWire(bool product)
     {
-        var f = new SiteTillNativeFixture(); using var host = f.Files.F.Runtime;
+        var f = new SiteTillNativeFixture(productTransport: !product); using var host = f.Files.F.Runtime;
         await f.Build();
+        var executor = product ? PolicyTrajectoryVersionPins.ProductExecutor : PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor;
         var raw = JsonNode.Parse(File.ReadAllText(f.ReceiptPath))!;
-        raw["executor_version"] = PolicyTrajectoryVersionPins.ProductExecutor; Fixture.Save(f.ReceiptPath, raw);
-        var transition = f.Transition with { TransitionKind = "shared_source_return", ExecutorVersion = PolicyTrajectoryVersionPins.ProductExecutor };
+        raw["executor_version"] = executor; Fixture.Save(f.ReceiptPath, raw);
+        var transition = f.Transition with { TransitionKind = "shared_source_return", ExecutorVersion = executor };
         Assert.Throws<InvalidDataException>(() => CropTeacherSharedSourceReturn.OpenNativeWork(f.Files.F.Inputs.Plan.RequestPath,
             f.Files.F.Source.SourcePath, f.Files.F.Source.LedgerPath, f.Files.F.Inputs.Plan.CoveredCommitmentIds,
             transition, "declared.native-work.wrong-wire"));

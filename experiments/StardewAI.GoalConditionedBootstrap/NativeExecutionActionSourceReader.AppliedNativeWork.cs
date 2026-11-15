@@ -15,6 +15,9 @@ internal static partial class NativeExecutionActionSourceReader
             product ? PolicyTrajectoryVersionPins.ProductExecutor : PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor,
             appliedNativeWork: true);
         if (product) RequireOriginalProductWire(native);
+        else Require(native.Actions.All(frame => Uri.TryCreate(frame.Endpoint, UriKind.Absolute, out var endpoint) &&
+                endpoint.AbsolutePath == "/api/v1/training/execute"),
+            "Runtime native work requires the original Runtime wire for every action.");
         return native;
     }
 

@@ -13,6 +13,28 @@ namespace StardewAI.Core.Tests;
 public sealed partial class CookingMainlineTests
 {
     [Theory]
+    [InlineData("required_count")]
+    [InlineData("slot_index")]
+    [InlineData("amount")]
+    public void SaleStockCookingMalformedNumbersKeepTheStructuredUnavailableResult(string field)
+    {
+        var (snapshot, ledger) = CookingSaleStockSource("built", stack: 2);
+        var player = JsonNode.Parse(snapshot.State["player"].GetRawText())!;
+        var row = player["cooking"]!["value"]!["rows"]![0]!;
+        var ingredient = row["ingredient_rows"]![0]!;
+        if (field == "required_count") ingredient[field] = "1";
+        else ingredient["native_consumption_plan"]![0]![field] = field == "slot_index" ? null : JsonValue.Create(true);
+        row["ingredient_rows_json"] = row["ingredient_rows"]!.ToJsonString();
+        snapshot.State["player"] = JsonSerializer.SerializeToElement(player);
+        ReanchorCooking(snapshot, ledger);
+        Assert.Contains("crop_sale_stock_cooking_source_unavailable", CropSaleStockCookingPreflight.Evaluate(snapshot, ledger, CookingRow(snapshot)));
+        var candidate = Assert.Single(Assert.Single(new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, [Intent()], true, ledger).Options).EventCandidates);
+        Assert.False(candidate.Available);
+        Assert.Contains("crop_sale_stock_cooking_source_unavailable", candidate.BlockReasons);
+    }
+
+    [Theory]
     [InlineData("player")]
     [InlineData("built")]
     [InlineData("mini")]

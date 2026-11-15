@@ -42,7 +42,8 @@ public static class MoneyRevenueCropSupplementalEvidenceSummary
             EqualJson(Read<JsonElement>(fullRequest), request), "Supplemental evidence request shape differs.");
         JsonObject Accepted(MoneyRevenueArtifactBinding binding, string role)
         {
-            Require(binding is not null && binding.Role == role, "Supplemental accepted evidence role differs.");
+            Require(binding is not null && binding.Role == role && binding.Sha256 is not null && IsLowerSha256(binding.Sha256),
+                "Supplemental accepted evidence requires its original role and nonempty SHA256.");
             return Read<JsonObject>(Pin(binding!.Path, binding.Sha256));
         }
         var dispatchPath = Pin(request.TeacherDispatchManifestPath);
