@@ -19,18 +19,9 @@ public sealed partial class CropTeacherManagedSeedOwner
                 throw new InvalidOperationException("Recover the original owner before reading accepted planning progress.");
             var harvest = new HashSet<string>(StringComparer.Ordinal);
             var nights = new HashSet<string>(StringComparer.Ordinal);
-            var previous = headerHash;
-            var expectedSequence = 1;
             // Consume the original index's small acceptance certificates, not historical snapshot graphs.
-            foreach (var (sequence, path, hash) in acceptedHistory)
+            foreach (var (sequence, _, _, accepted) in ReadAcceptedPlanningCertificates())
             {
-                if (HashFile(path) != hash) throw new InvalidDataException("Accepted planning certificate changed.");
-                var accepted = Read<JsonObject>(path);
-                if (HashFile(path) != hash || sequence != expectedSequence++ || Sequence(accepted) != sequence ||
-                    Text(accepted, "run_id") != options.RunId || Text(accepted, "previous_accepted_sha256") != previous ||
-                    accepted["original_boundary_verified"]?.GetValue<bool>() != true)
-                    throw new InvalidDataException("Accepted planning progress lost its original owner chain.");
-                previous = hash;
                 var kind = accepted["operation_kind"]?.GetValue<string>();
                 if (kind == "overnight_control")
                 {
@@ -58,11 +49,26 @@ public sealed partial class CropTeacherManagedSeedOwner
                         harvest.Add(CropTeacherTransitionLedger.HarvestTileKey(step.CommitmentId, step.TotalDay, tile.TileX, tile.TileY));
                 }
             }
-            if (previous != lastAcceptedHash)
-                throw new InvalidDataException("Accepted planning progress does not reach the current owner head.");
             ValidateState();
             return new(harvest, nights);
         }
         finally { gate.Release(); }
+    }
+
+    private IEnumerable<(int Sequence, string Path, string Hash, JsonObject Certificate)> ReadAcceptedPlanningCertificates()
+    {
+        var previous = headerHash; var expectedSequence = 1;
+        foreach (var (sequence, path, hash) in acceptedHistory)
+        {
+            if (HashFile(path) != hash) throw new InvalidDataException("Accepted planning certificate changed.");
+            var accepted = Read<JsonObject>(path);
+            if (HashFile(path) != hash || sequence != expectedSequence++ || Sequence(accepted) != sequence ||
+                Text(accepted, "run_id") != options.RunId || Text(accepted, "previous_accepted_sha256") != previous ||
+                accepted["original_boundary_verified"]?.GetValue<bool>() != true)
+                throw new InvalidDataException("Accepted planning progress lost its original owner chain.");
+            previous = hash; yield return (sequence, path, hash, accepted);
+        }
+        if (previous != lastAcceptedHash)
+            throw new InvalidDataException("Accepted planning progress does not reach the current owner head.");
     }
 }

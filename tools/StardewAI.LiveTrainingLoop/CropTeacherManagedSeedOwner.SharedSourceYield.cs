@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
@@ -11,7 +12,11 @@ namespace StardewAI.LiveTrainingLoop;
 
 public sealed record CropTeacherSharedSourceSelection(string DecisionSnapshotPath, string DecisionPlanPath,
     string DecisionRankingPath, string ModelPlanPath, string QueuePath, string EvidencePath, int SelectedQueueIndex,
-    string[] OwnedCandidateIds);
+    string[] OwnedCandidateIds)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public CropTeacherDailyDecisionReference? DecisionReference { get; init; }
+}
 
 public sealed record CropTeacherSharedExecutionClaim(int OwnerSequence, string SupportStepId,
     CropTeacherSharedSourceSelection Selection, MoneyRevenueCropNativeLifecycleTransitionRequest Transition);
@@ -118,9 +123,11 @@ public sealed partial class CropTeacherManagedSeedOwner
         var decision = artifacts.Read<SmallModelPlanEnvelope>(selection.DecisionPlanPath);
         var ranking = artifacts.Read<JsonObject>(selection.DecisionRankingPath);
         var selected = SelectedQueueDecisionLease.CreateFromPlan(decision, ranking).CandidateAt(selection.SelectedQueueIndex);
+        var nativeReadbackClock = selection.DecisionReference is not null && ValidateRetainedDailySelection(selection, original, current, selected.CandidateId);
         if (selection.OwnedCandidateIds is null || selection.OwnedCandidateIds.Contains(selected.CandidateId, StringComparer.Ordinal) ||
             decision.StateHash != original.StateHash || decision.ExecutionMode != "training_singleplayer" ||
-            original.SaveId.Value != current.SaveId.Value || original.PlayerId.Value != current.PlayerId.Value || original.GameTick > current.GameTick ||
+            original.SaveId.Value != current.SaveId.Value || original.PlayerId.Value != current.PlayerId.Value ||
+            original.GameTick > current.GameTick && !nativeReadbackClock ||
             SnapshotInt(original, "time", "total_days") != SnapshotInt(current, "time", "total_days"))
             throw new InvalidDataException("Shared source yield lost its original decision source or selected foreign ownership.");
         var evidence = artifacts.Read<JsonObject>(selection.EvidencePath);
@@ -169,6 +176,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         var pins = new CropSeedRuntimeArtifacts(new Dictionary<string, string>());
         foreach (var path in new[] { selection.DecisionSnapshotPath, selection.DecisionPlanPath, selection.DecisionRankingPath,
             selection.ModelPlanPath, selection.QueuePath, selection.EvidencePath }) pins.Pin(path);
+        if (selection.DecisionReference is not null) pins.Pin(selection.DecisionReference.Path);
         var start = CropTeacherSharedSourcePreparation.Open(plan.RequestPath, headSnapshotPath, headLedgerPath,
             ActiveCoveredCommitments(), Text(record, "support_step_id"), selection.ModelPlanPath, transition, pins.Hashes);
         var expected = frontierHashes.TryGetValue(headSnapshotPath, out var hash) ? hash : fixedHashes[headSnapshotPath];

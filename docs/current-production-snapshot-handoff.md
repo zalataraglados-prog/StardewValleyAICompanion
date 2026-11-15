@@ -1,5 +1,43 @@
 # Current Production Snapshot Handoff
 
+## Durable Original Daily Selection (185)
+
+184 final63014104/CI43657773140 passed Core2675/Backend3281,zero skipped.
+Peer464f1f97 tracked tree6137f8cdaae6226dc8091c20d5323d54c88ec496 equals that accepted
+baseline; Main185 successor must pass its OWN CI before later synchronization.
+
+Same owner stores immutable content-addressed joint-daily-decision metadata:
+original source/plan/ranking, owned annotations, owner header and accepted anchor.
+No native operation/ledger revision/Teacher label is created. Main joint mode
+restores the SAME lease; completion derives ONLY from original accepted yield,
+sealed native result/receipt and completed-candidate flag. Prepared/unknown claimed
+work remains pending; completed selections cannot be dispatched again.
+Old planning-progress and new metadata consumers reuse the original small hashed
+acceptance-chain reader; old progress remains streaming. Expired decisions read
+metadata, not historical snapshot graphs. Same-ordinal replacement is rejected.
+
+Old unmarked source/day/tick contract stays strict. An EXPLICIT persisted reference
+can bridge reset ticks only through this owner's accepted native saved-content
+readback following its selection anchor, same day/actor/version and current load
+epoch. It does NOT replace fresh compile/budget/pending/claim guards, mutate ordinary
+readonly resume, resend unknown native work or revive lost unsaved state.
+
+Final current-code E build/adjacent68/68(55s),zero skipped; eleven new cases include
+two native transports/reopen/accepted-completion/hash changes/unknown claims,
+original saved readback clock bridge and next-day expiry. Initial9/11 failed only
+because NEW repeat-dispatch tests reused an existing runtime; original overwrite
+guard preserved, test paths fixed, reopen2/2 then final combination passed.
+Logblock185-final-adjacent-tests.log SHA5bea05d9f9c04ec667b99690a370af4b0aa1306ef3940a7e97012ade37cc1d20.
+Synthetic protocol/real compiler+Backend fixtures, NOT actual global game proof.
+Final-head remote CI pending. No game/API/cleanup/raw/local-data commit.
+
+NEXT originalstep5 couples root-complete/global-work/control priority with retained
+producer output across LATE shared work and original Farm/terminal consumption.
+Do not merely keep Main executing then drop its late source rows at retention,
+or relax old neutral-route/control-tail/default contracts. General partial/multi-
+queue and actual mixed route/calendar reconciliation remain, thenstep6/#569.
+L1/169-172 frozen, no13-day restart, formal=false and original handoff split retained.
+
 ## Original Native Checkpoint Consumes Producer Retention (184)
 
 183 final1526a11d/CI43656316255 passed Core2675/Backend3275, zero skipped, all steps.

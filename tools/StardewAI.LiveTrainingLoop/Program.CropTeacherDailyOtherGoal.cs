@@ -37,6 +37,7 @@ static partial class Program
                 SourceSelection = new(selection.SourceSnapshotPath, selection.PlanPath, selection.RankingPath,
                     planPath, queuePath, evidencePath, candidate.QueueIndex,
                     selection.OwnedCandidateIds.OrderBy(id => id, StringComparer.Ordinal).ToArray())
+                    { DecisionReference = selection.DecisionReference }
             });
     }
 }

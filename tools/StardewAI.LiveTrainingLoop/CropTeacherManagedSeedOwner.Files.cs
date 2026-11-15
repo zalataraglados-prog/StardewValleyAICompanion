@@ -28,6 +28,7 @@ public sealed partial class CropTeacherManagedSeedOwner
     {
         var first = Path.GetRelativePath(options.EvidenceDirectory, path).Split(Path.DirectorySeparatorChar)[0];
         return first.StartsWith("operation-", OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) ||
+            first.StartsWith("joint-daily-decision-", OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) ||
             PathComparer.Equals(first, "owner-intent.json") || PathComparer.Equals(first, "owner.lock");
     }
     private static string HashFile(string path) { Regular(path); return PortfolioMutationRequestJournal.HashFile(path); }

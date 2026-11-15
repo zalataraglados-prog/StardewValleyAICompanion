@@ -14,6 +14,7 @@ static partial class Program
         IReadOnlySet<string> OwnedCandidateIds, string PlanPath, string RankingPath)
     {
         public string SourceSnapshotPath { get; init; } = string.Empty;
+        public CropTeacherDailyDecisionReference? DecisionReference { get; init; }
         public IReadOnlySet<string> CompletedForeignCandidateIds { get; init; } = new HashSet<string>(StringComparer.Ordinal);
     }
     private sealed record CropTeacherOtherGoalPreparation(SelectedQueueCandidateLock Candidate,
@@ -48,6 +49,18 @@ static partial class Program
             progress.CompletedHarvestTileKeys, progress.CompletedDayBoundaryKeys, ledger);
         if (OriginalWateringRefillApproachPreemptsComposition(next, request, snapshot)) return new(null, true, selection);
         await IngestCropTeacherManagedSnapshotAsync(http, options, owner.CurrentSnapshotPath, artifacts, snapshot).ConfigureAwait(false);
+        if (selection?.TotalDay != next.TotalDay)
+        {
+            var retained = await owner.ReadDailyDecisionAsync().ConfigureAwait(false);
+            selection = retained is null ? null : new CropTeacherDailySelection(retained.TotalDay, retained.GoalId,
+                SelectedQueueDecisionLease.CreateFromPlan(artifacts.Read<SmallModelPlanEnvelope>(retained.PlanPath),
+                    artifacts.Read<JsonObject>(retained.RankingPath)), retained.OwnedCandidateIds.ToHashSet(StringComparer.Ordinal),
+                retained.PlanPath, retained.RankingPath)
+            {
+                SourceSnapshotPath = retained.SourceSnapshotPath, DecisionReference = retained.Reference,
+                CompletedForeignCandidateIds = retained.CompletedForeignCandidateIds
+            };
+        }
         if (selection?.TotalDay == next.TotalDay)
         {
             var refreshed = await RefreshCropTeacherDailySelectionAsync(http, options, iteration, plan, request,
@@ -78,6 +91,9 @@ static partial class Program
             SelectedQueueDecisionLease.CreateFromPlan(typedPlan, built.Ranking),
             binding.OwnedCandidateIds.ToHashSet(StringComparer.Ordinal), prefix + "-plan.json", prefix + "-ranking.json")
             { SourceSnapshotPath = owner.CurrentSnapshotPath };
+        if (decision is not null)
+            decision = decision with { DecisionReference = await owner.SaveDailyDecisionAsync(iteration,
+                decision.SourceSnapshotPath, decision.PlanPath, decision.RankingPath, decision.OwnedCandidateIds).ConfigureAwait(false) };
         var selectedStep = CropTeacherRunPlanner.SelectOriginalDailyBatch(binding, typedPlan, plan);
         if (selectedStep is null && decision is not null &&
             !decision.OwnedCandidateIds.Contains(decision.Lease.Candidates[0].CandidateId))

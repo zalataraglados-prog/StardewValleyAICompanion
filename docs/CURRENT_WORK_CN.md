@@ -1,5 +1,14 @@
 # StardewAI 当前工作
 
+## 2026-11-15 同一owner持久日选择与读回接续（185）
+
+- 184最终 `63014104`／CI `43657773140` 已成功：Core2675/2675、Backend3281/3281、零跳过；日志SHA `877aa3e43bd7d377b2b6839c0add2e7e9039ff9130901b522721b3261cc8a070`。沙箱merge `464f1f97` 与此已验提交的受跟踪树同为 `6137f8cdaae6226dc8091c20d5323d54c88ec496`；Main本轮185为独立未验新提交，不混称树已一致。
+- 原第5步日选择从仅内存改为同owner下内容寻址的小型 `joint-daily-decision-<iteration>-<sha>.json`：固定原来源／计划／排名、作物所有权注解、owner header和已接受链锚点。创建不增加native操作、账本修订或Teacher标签；记录不可覆盖，同序不同计划拒绝。Main显式joint路径先读回原选择，再走原lease／fresh availability／编译；新选择在首次执行前落盘，不重调模型或重写原计划。
+- 外目标完成只从同owner原接受链、原yield intent、原native result／receipt的固定hash和SelectedCandidateCompleted派生；仅准备／已claim未知结果不退休，已完成候选的新派发被拒。旧作物进度读取与新读取共用原小证书hash链检查，原路径仍流式读取，不保留历史快照图。过期选择只读小型元数据，不加载其历史快照。
+- 恢复计划不等于恢复native权限。旧无引用选择的同日／tick规则不变；只有显式持久选择引用，且此owner从该选择锚点首先接受原生保存内容读回，才能以已核的新load epoch接续重置的tick。原源／actor／day／版本、fresh选择编译、预算、owner唯一pending和一次claim保护保留；普通readonly resume不创建新mutation，不伪续丢失的未保存尾部。
+- 新增11项和相邻原规划进度／保存读回／yield／Main守卫最终 **68/68（55秒）**、零跳过。首次9/11两项新重复派发测试误复用旧runtime目录，被原防覆盖规则正确拒绝；仅改新测试路径后重开2/2及最终组合通过，初败保留。日志 `block185-final-adjacent-tests.log` SHA `5bea05d9f9c04ec667b99690a370af4b0aa1306ef3940a7e97012ade37cc1d20`。均为声明的合成协议／真实原编译器与Backend调用，不是实际游戏全局验收；当前提交远端CI另核。
+- 下一处仍原第5步：必须把“收获root完成不等于全局所选工作完成”的调用优先级，与最后收获之后的共享来源留存／回农场终端消费一并接齐，再处理一般partial／multi-queue和真实混合来源／日历／选线对账。不能只让Main继续外动作而漏掉后面的生产留存边界，也不为接新消费者放宽旧route／控制尾部或旧纯作物默认。第6步及#569移交范围、L1／169—172冻结、formal=false和local-data不提交均不变。
+
 ## 2026-11-15 同一原生生产汇总消费留存v2（184）
 
 - 183最终 `1526a11d`／CI `43656316255` 已成功：Core2675/2675、Backend3275/3275、零跳过；最终日志SHA `22879b0c47c9cf822fe231d856983ba17583676e394c33ee21d15ce417ee8f2d`，覆盖下方183待远端验证的描述。
