@@ -4,6 +4,19 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public static partial class MoneyRevenueCropOutputRetentionProofBuilder
 {
+    private static int ResolveProducerRetentionBoundary(MoneyRevenueCropNativeLifecycleProof lifecycle,
+        string boundaryPath, int lastHarvestIndex, int harvestDay)
+    {
+        var matches = Enumerable.Range(0, lifecycle.Transitions.Length)
+            .Where(index => SamePath(lifecycle.Transitions[index].AfterSnapshotPath, boundaryPath)).ToArray();
+        Require(matches.Length == 1 && matches[0] >= lastHarvestIndex,
+            "Crop producer retention boundary must uniquely follow the complete owned harvest wave in the original lifecycle.");
+        var last = matches[0];
+        Require(lifecycle.Transitions[lastHarvestIndex..(last + 1)].All(row => row.TotalDay == harvestDay),
+            "Crop producer retention boundary crosses the original harvest day.");
+        return last;
+    }
+
     private static MoneyRevenueCropProducerRetention BuildProducerRetention(MoneyRevenueCropNativeLifecycleProof lifecycle,
         MoneyRevenueCropNativeLifecycleTransitionProof[] harvests, int first, int last, string itemId, int minimum, int tileCount)
     {

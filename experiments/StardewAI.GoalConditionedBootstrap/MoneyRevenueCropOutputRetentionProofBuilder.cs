@@ -14,13 +14,18 @@ public static partial class MoneyRevenueCropOutputRetentionProofBuilder
             MoneyRevenueCropOutputRetentionProofRequest>(
                 fullRequestPath,
                 "Money Revenue crop output-retention proof request");
-        var producerAware = request.SchemaVersion == "money_revenue_crop_output_retention_proof_request.v2";
+        var throughBoundary = request.SchemaVersion == "money_revenue_crop_output_retention_proof_request.v3";
+        var producerAware = throughBoundary || request.SchemaVersion == "money_revenue_crop_output_retention_proof_request.v2";
         Require((producerAware || request.SchemaVersion ==
                     "money_revenue_crop_output_retention_proof_request.v1") &&
                 !string.IsNullOrWhiteSpace(request.CommitmentId) &&
                 request.WaveIndex > 0 &&
                 !request.FormalProductTrainingAuthorized,
             "Money Revenue crop output-retention proof request is invalid.");
+        Require(throughBoundary
+                ? !string.IsNullOrWhiteSpace(request.RetainThroughSnapshotPath) && Path.IsPathFullyQualified(request.RetainThroughSnapshotPath)
+                : request.RetainThroughSnapshotPath is null,
+            "An explicit retention boundary requires output-retention request v3 and an absolute snapshot path.");
 
         var planPath = RequiredFile(
             request.CropProductionPlanPath,
@@ -108,14 +113,17 @@ public static partial class MoneyRevenueCropOutputRetentionProofBuilder
                 lifecycle.Transitions[firstIndex..(lastIndex + 1)]
                     .SequenceEqual(harvestTransitions)),
             "Money Revenue crop output-retention harvest queues are not contiguous.");
+        if (throughBoundary)
+            lastIndex = ResolveProducerRetentionBoundary(lifecycle, request.RetainThroughSnapshotPath!, lastIndex, wave.HarvestTotalDay);
+        var terminal = lifecycle.Transitions[lastIndex];
 
         var beforePath = RequiredBoundFile(
             harvestTransitions[0].BeforeSnapshotPath,
             harvestTransitions[0].BeforeSnapshotSha256,
             "Money Revenue crop output-retention before snapshot");
         var afterPath = RequiredBoundFile(
-            harvestTransitions[^1].AfterSnapshotPath,
-            harvestTransitions[^1].AfterSnapshotSha256,
+            terminal.AfterSnapshotPath,
+            terminal.AfterSnapshotSha256,
             "Money Revenue crop output-retention after snapshot");
         var before = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
             beforePath,
@@ -124,7 +132,7 @@ public static partial class MoneyRevenueCropOutputRetentionProofBuilder
             afterPath,
             "Money Revenue crop output-retention after snapshot");
         Require(before.StateHash == harvestTransitions[0].BeforeStateHash &&
-                after.StateHash == harvestTransitions[^1].AfterStateHash,
+                after.StateHash == terminal.AfterStateHash,
             "Money Revenue crop output-retention snapshot hashes drifted.");
         var receipt = ExactInventoryReceiptVerifier.Verify(
             before,
@@ -196,7 +204,7 @@ public static partial class MoneyRevenueCropOutputRetentionProofBuilder
             BeforeSnapshotSha256 = harvestTransitions[0].BeforeSnapshotSha256,
             BeforeStateHash = before.StateHash,
             AfterSnapshotPath = afterPath,
-            AfterSnapshotSha256 = harvestTransitions[^1].AfterSnapshotSha256,
+            AfterSnapshotSha256 = terminal.AfterSnapshotSha256,
             AfterStateHash = after.StateHash,
             InventoryQuantityBefore = beforeQuantity,
             InventoryQuantityAfter = afterQuantity,
@@ -217,6 +225,8 @@ public static partial class MoneyRevenueCropOutputRetentionProofBuilder
                 "Every intervening original native action frame deducts observed variant losses conservatively. " +
                 "Inventory before/after/increase remain the actual aggregate quantities, not producer credit. " +
                 "Retained variant credit limits the explicit native terminal plan; reservations and settlement remain separate.";
+            if (throughBoundary)
+                proof.ProofPolicy += " Retention continues through the explicitly bound same-day lifecycle boundary, including work after the final owned harvest.";
         }
         return proof;
     }

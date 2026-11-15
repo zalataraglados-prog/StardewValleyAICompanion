@@ -289,14 +289,28 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
             int Y)>();
         var previousRank = -1;
         var locationId = contexts[0].Layout.LocationId;
+        var jointIngress = new List<LoadedTransition>();
+        void CompleteJointIngress()
+        {
+            if (jointIngress.Count == 0) return;
+            ValidateSupportingRoutes(totalDay, jointIngress, locationId);
+            jointIngress.Clear();
+        }
         foreach (var transition in transitions)
         {
-            if (transition.NativeNonProduction || transition.NativeSharedSource) continue;
-            if (transition.JointObserved && transition.Request.TransitionKind == CropIngressRouteKind)
+            if (transition.NativeSharedSource)
             {
-                ValidateSupportingRoutes(totalDay, new() { transition }, locationId);
+                CompleteJointIngress();
                 continue;
             }
+            if (transition.NativeNonProduction) continue;
+            if (transition.JointObserved && transition.Request.TransitionKind == CropIngressRouteKind)
+            {
+                // Original ingress may span several connectors; only its final hop must reach the crop location.
+                jointIngress.Add(transition);
+                continue;
+            }
+            CompleteJointIngress();
             var beforeCalendar = ReadCalendar(transition.Before);
             var afterCalendar = ReadCalendar(transition.After);
             Require(beforeCalendar.TotalDay == totalDay &&
@@ -356,6 +370,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
                     tile.Y));
             }
         }
+        CompleteJointIngress();
 
         Require(actual.Distinct().Count() == actual.Count,
             "Money Revenue crop lifecycle repeats an action on the same tile and day.");

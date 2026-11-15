@@ -49,18 +49,7 @@ static partial class Program
             progress.CompletedHarvestTileKeys, progress.CompletedDayBoundaryKeys, ledger);
         if (OriginalWateringRefillApproachPreemptsComposition(next, request, snapshot)) return new(null, true, selection);
         await IngestCropTeacherManagedSnapshotAsync(http, options, owner.CurrentSnapshotPath, artifacts, snapshot).ConfigureAwait(false);
-        if (selection?.TotalDay != next.TotalDay)
-        {
-            var retained = await owner.ReadDailyDecisionAsync().ConfigureAwait(false);
-            selection = retained is null ? null : new CropTeacherDailySelection(retained.TotalDay, retained.GoalId,
-                SelectedQueueDecisionLease.CreateFromPlan(artifacts.Read<SmallModelPlanEnvelope>(retained.PlanPath),
-                    artifacts.Read<JsonObject>(retained.RankingPath)), retained.OwnedCandidateIds.ToHashSet(StringComparer.Ordinal),
-                retained.PlanPath, retained.RankingPath)
-            {
-                SourceSnapshotPath = retained.SourceSnapshotPath, DecisionReference = retained.Reference,
-                CompletedForeignCandidateIds = retained.CompletedForeignCandidateIds
-            };
-        }
+        selection = await RestoreCropTeacherDailySelectionAsync(owner, next.TotalDay, selection).ConfigureAwait(false);
         if (selection?.TotalDay == next.TotalDay)
         {
             var refreshed = await RefreshCropTeacherDailySelectionAsync(http, options, iteration, plan, request,
@@ -70,6 +59,8 @@ static partial class Program
             if (next.Stage != CropTeacherRunStageKinds.ExecuteCropBatch)
                 return new(null, true); // The retained decision is exhausted; continue the original owner control.
         }
+        // Root completion consumes only a retained decision; it must not select another optional day plan.
+        if (next.Stage == CropTeacherRunStageKinds.Complete) return new(null, true);
         CropTeacherDailyCompositionBinding? binding = null;
         var built = await BuildQueueFromDailyPlanAsync(http, options, snapshot.StateHash, Array.Empty<JsonObject>(),
             candidateKindOverride: string.Empty, candidateIdOverride: string.Empty,
@@ -104,6 +95,25 @@ static partial class Program
             return other;
         }
         return new(selectedStep, false, decision);
+    }
+
+    private static async Task<CropTeacherDailySelection?> RestoreCropTeacherDailySelectionAsync(
+        CropTeacherManagedSeedOwner owner, int totalDay, CropTeacherDailySelection? selection)
+    {
+        if (selection?.TotalDay == totalDay) return selection;
+        var retained = await owner.ReadDailyDecisionAsync().ConfigureAwait(false);
+        if (retained is null || retained.TotalDay != totalDay) return null;
+        var artifacts = new CropSeedRuntimeArtifacts(new Dictionary<string, string>());
+        var restored = new CropTeacherDailySelection(retained.TotalDay, retained.GoalId,
+            SelectedQueueDecisionLease.CreateFromPlan(artifacts.Read<SmallModelPlanEnvelope>(retained.PlanPath),
+                artifacts.Read<JsonObject>(retained.RankingPath)), retained.OwnedCandidateIds.ToHashSet(StringComparer.Ordinal),
+            retained.PlanPath, retained.RankingPath)
+        {
+            SourceSnapshotPath = retained.SourceSnapshotPath, DecisionReference = retained.Reference,
+            CompletedForeignCandidateIds = retained.CompletedForeignCandidateIds
+        };
+        artifacts.Validate();
+        return restored;
     }
 
     private static bool OriginalWateringRefillApproachPreemptsComposition(CropTeacherRunStep next,

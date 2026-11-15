@@ -799,10 +799,48 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 " total_day=" + cropStep.TotalDay);
             break;
         }
-        ManagedCropControl? managedTerminalControl = null;
-        if (cropStep.Stage == CropTeacherRunStageKinds.Complete && managedOwner is not null)
+        CropTeacherOtherGoalPreparation? selectedOtherForExecution = null;
+        if (options.UseJointDailyCalendar && managedOwner is not null && cropTeacherManagedOwner.TerminalSelection is null)
         {
-            if (cropTeacherManagedOwner.TerminalSelection is null)
+            if (cropStep.Stage == CropTeacherRunStageKinds.Complete)
+                cropTeacherManagedOwner.DailySelection = await RestoreCropTeacherDailySelectionAsync(managedOwner,
+                    cropStep.TotalDay, cropTeacherManagedOwner.DailySelection).ConfigureAwait(false);
+            if (CropTeacherRunPlanner.ShouldComposeDailyDispatch(cropStep,
+                cropTeacherManagedOwner.DailySelection?.TotalDay == cropStep.TotalDay))
+            {
+                var composed = await ComposeCropTeacherDailyDispatchAsync(http, options, iteration, activeCropTeacherRunPlan,
+                    activeCropTeacherRunPlanRequest!, managedOwner, cropTeacherPreparedCommitmentIds, typedSnapshot,
+                    cropTeacherManagedOwner.DailySelection);
+                cropTeacherManagedOwner.DailySelection = composed.Selection;
+                if (!composed.ControlPreempted)
+                {
+                    if (composed.Step is null)
+                    {
+                        if (composed.OtherGoalPreparation is { } preparedOther)
+                        {
+                            AppendProgress(options, "crop_teacher_joint_daily_other_goal_prepared", iteration, lastStateHash, string.Empty,
+                                "candidate_id=" + preparedOther.Candidate.CandidateId + " option_id=" + preparedOther.Candidate.OptionId +
+                                " queue=" + preparedOther.QueuePath + " queue_status=" + preparedOther.QueueStatus +
+                                " shared_source_return_required=true native_dispatch_performed=false");
+                            if (preparedOther.QueueStatus == "pending") selectedOtherForExecution = preparedOther;
+                        }
+                        if (selectedOtherForExecution is null)
+                        {
+                            stopReason = composed.BlockReason;
+                            break;
+                        }
+                    }
+                    else cropStep = composed.Step;
+                }
+            }
+        }
+        ManagedCropControl? managedTerminalControl = null;
+        if (cropStep.Stage == CropTeacherRunStageKinds.Complete && managedOwner is not null && selectedOtherForExecution is null)
+        {
+            if (options.UseJointDailyCalendar && cropTeacherManagedOwner.TerminalSelection is null)
+                managedTerminalControl = await BuildCropTeacherOwnedJointTerminalApproachAsync(http, options, iteration,
+                    cropStep, activeCropTeacherRunPlan, activeCropTeacherRunPlanRequest!, managedOwner).ConfigureAwait(false);
+            if (managedTerminalControl is null && cropTeacherManagedOwner.TerminalSelection is null)
             {
                 var productionOutput = Path.Combine(managedOwner.EvidenceDirectory, "production-terminal");
                 var productionEvidence = options.UseJointDailyCalendar
@@ -815,7 +853,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 AppendProgress(options, "crop_teacher_managed_terminal_selected", iteration, lastStateHash, string.Empty,
                     "selection=" + terminalSelection.Path + " native_dispatch_performed=false");
             }
-            managedTerminalControl = await BuildCropTeacherOwnedTerminalContinuationAsync(http, options, iteration,
+            managedTerminalControl ??= await BuildCropTeacherOwnedTerminalContinuationAsync(http, options, iteration,
                 activeCropTeacherRunPlan, activeCropTeacherRunPlanRequest!, cropTeacherManagedOwner).ConfigureAwait(false);
             if (managedTerminalControl is null)
             {
@@ -853,36 +891,6 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 options,
                 attemptOrdinal);
             continue;
-        }
-        CropTeacherOtherGoalPreparation? selectedOtherForExecution = null;
-        if (options.UseJointDailyCalendar && managedOwner is not null &&
-            CropTeacherRunPlanner.ShouldComposeDailyDispatch(cropStep,
-                cropTeacherManagedOwner.DailySelection?.TotalDay == cropStep.TotalDay))
-        {
-            var composed = await ComposeCropTeacherDailyDispatchAsync(http, options, iteration, activeCropTeacherRunPlan,
-                activeCropTeacherRunPlanRequest!, managedOwner, cropTeacherPreparedCommitmentIds, typedSnapshot,
-                cropTeacherManagedOwner.DailySelection);
-            cropTeacherManagedOwner.DailySelection = composed.Selection;
-            if (!composed.ControlPreempted)
-            {
-                if (composed.Step is null)
-                {
-                    if (composed.OtherGoalPreparation is { } preparedOther)
-                    {
-                        AppendProgress(options, "crop_teacher_joint_daily_other_goal_prepared", iteration, lastStateHash, string.Empty,
-                            "candidate_id=" + preparedOther.Candidate.CandidateId + " option_id=" + preparedOther.Candidate.OptionId +
-                            " queue=" + preparedOther.QueuePath + " queue_status=" + preparedOther.QueueStatus +
-                            " shared_source_return_required=true native_dispatch_performed=false");
-                        if (preparedOther.QueueStatus == "pending") selectedOtherForExecution = preparedOther;
-                    }
-                    if (selectedOtherForExecution is null)
-                    {
-                        stopReason = composed.BlockReason;
-                        break;
-                    }
-                }
-                else cropStep = composed.Step;
-            }
         }
         if (selectedOtherForExecution is { } other)
         {

@@ -19,7 +19,8 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
     [InlineData(CropTeacherRunStageKinds.NativeSleep, false, false)]
     [InlineData(CropTeacherRunStageKinds.NativeSleep, true, true)]
     [InlineData(CropTeacherRunStageKinds.PrepareSite, true, false)]
-    [InlineData(CropTeacherRunStageKinds.Complete, true, false)]
+    [InlineData(CropTeacherRunStageKinds.Complete, false, false)]
+    [InlineData(CropTeacherRunStageKinds.Complete, true, true)]
     public void LiveDailyCompositionExitKeepsTheCurrentSelectionWithoutTakingOverOriginalPrefixes(string stage,
         bool currentSelection, bool expected)
     {

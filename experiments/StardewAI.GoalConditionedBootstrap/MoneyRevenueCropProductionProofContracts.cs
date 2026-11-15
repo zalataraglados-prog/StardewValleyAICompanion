@@ -348,6 +348,10 @@ public sealed class MoneyRevenueCropOutputRetentionProofRequest
     [JsonPropertyName("wave_index")]
     public int WaveIndex { get; set; }
 
+    [JsonPropertyName("retain_through_snapshot_path")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? RetainThroughSnapshotPath { get; set; }
+
     [JsonPropertyName("formal_product_training_authorized")]
     public bool FormalProductTrainingAuthorized { get; set; }
 }

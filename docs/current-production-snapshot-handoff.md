@@ -1,5 +1,47 @@
 # Current Production Snapshot Handoff
 
+## Root Completion And Retained Terminal Boundary (186)
+
+185 b7b86f08 / CI43660053003 passed Core2675/Backend3292, zero skipped;
+log SHA0c7e9a73c825915b8e246e3a6cfa74d0d699be6d2978e610483981948c13ecb1.
+This successor still needs its own final CI; peer remains accepted184.
+
+Main joint mode restores/consumes the held decision BEFORE terminal selection,
+including root Complete. No held choice/exhaustion does not invoke policy again;
+an existing terminal selection is not interrupted by optional work. Original
+control/recovery preemption remains; unexecuted work is not marked completed.
+Before shipping selection, the new joint caller returns through the ORIGINAL Farm
+route/native/owner/marker path. This explicit terminal route is not replaced by
+ordinary evening sleep; old callers and neutral-resource verifier stay unchanged.
+The v6 consumer checks the final Farm boundary of a whole multi-hop ingress,
+instead of requiring every intermediate connector to terminate there.
+
+Explicit retention request v3 binds a unique same-day original lifecycle after
+snapshot at/after the last owned harvest. Original producer accounting replays
+through it, including late foreign native frames; foreign gains never create crop
+credit. Joint production uses the accepted head for its current harvest wave.
+Earlier waves/default v1/v2 are unchanged. The proof remains producer v2 consumed
+by the existing native checkpoint v14/variant terminal path; aggregate inventory
+fields and the strict old control-tail reader retain their original meanings.
+
+Final local adjacent196/196(2m5s), zero skipped, includes focused56/56 and new
+original-owner synthetic root-completion/reopen2/2; do not add counts.
+Logblock186-final-adjacent-tests.log SHAe84bcced4878b95c013e61ceb36b7c9583c1d584fc346db2cb547bfd819ee4ba.
+The old overnight fixture REGROWS:
+its first harvest is not root completion. New tests explicitly use a synthetic
+one-shot catalog and assert original planner Complete; old defaults are untouched.
+New fixture enum/count/internal-helper failures are retained, not executor bugs.
+Final-head remote CI remains separate and required.
+No actual mixed-game/Teacher/formal claim or API/game/cleanup/raw-data commit.
+
+Continue original step5: upstream reservation and terminal consumption of required
+sale stock, general partial/multi-queue outcomes, actual mixed route/source/calendar
+replay (including unproven step3/4 automatic properties). Existing output custody
+is museum-specific, NOT an already-general crop contract. Reuse original resource
+APIs; do not silently widen old defaults. Then step6 #570's two gates and #569
+engineering handoff BEFORE formal manifest; lab owns model/freeze/train/evaluation.
+L1/169-172 stay frozen; no separate thirteen-day replay; formal=false.
+
 ## Durable Original Daily Selection (185)
 
 184 final63014104/CI43657773140 passed Core2675/Backend3281,zero skipped.

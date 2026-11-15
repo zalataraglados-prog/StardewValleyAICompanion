@@ -91,12 +91,15 @@ internal static partial class CropTeacherProductionEvidence
             lifecycles.Add(lifecycle);
             foreach (var wave in crop.HarvestWaves)
             {
+                var retainThroughHead = shared.Count > 0 && wave.HarvestTotalDay == transitions[^1].TotalDay;
                 var retentionRequest = await Emit($"retention-request-{index}-{wave.WaveIndex}", new MoneyRevenueCropOutputRetentionProofRequest
                 {
-                    SchemaVersion = shared.Count > 0 ? "money_revenue_crop_output_retention_proof_request.v2" :
+                    SchemaVersion = retainThroughHead ? "money_revenue_crop_output_retention_proof_request.v3" :
+                        shared.Count > 0 ? "money_revenue_crop_output_retention_proof_request.v2" :
                         "money_revenue_crop_output_retention_proof_request.v1",
                     CropProductionPlanPath = plan.CropProductionPlanPath, NativeLifecycleProofPath = lifecycle,
-                    CommitmentId = crop.CommitmentId, WaveIndex = wave.WaveIndex
+                    CommitmentId = crop.CommitmentId, WaveIndex = wave.WaveIndex,
+                    RetainThroughSnapshotPath = retainThroughHead ? trace.AcceptedSnapshotPath : null
                 }).ConfigureAwait(false);
                 retentions.Add(await Emit($"retention-proof-{index}-{wave.WaveIndex}",
                     MoneyRevenueCropOutputRetentionProofBuilder.Build(retentionRequest)).ConfigureAwait(false));

@@ -15,7 +15,7 @@ static partial class Program
     private static async Task<CropTeacherManagedSeedOperation> PrepareCropTeacherOwnedRouteCoreAsync(HttpClient http,
         LiveTrainingOptions options, int iteration, CropTeacherRunStep step, MoneyRevenueCropNativeProductionRunPlan runPlan,
         MoneyRevenueCropNativeProductionRunPlanRequest runRequest, CropTeacherManagedSeedOwner owner, string runtimeDirectory,
-        bool lateDayRecovery)
+        bool lateDayRecovery, bool terminalIngress = false)
     {
         owner.ValidateOriginalRouteExecutor(options);
         var kind = step.Stage switch
@@ -41,7 +41,11 @@ static partial class Program
                 !GameClockBudgetPolicy.RecoveryWindowStarted(ReadInGameTime(source)) || HasPriorityStoryEventInterrupt(source) ||
                 CropTeacherControlInterruptClassifier.HasSafeSpeakerlessDialogue(source)))
                 throw new InvalidDataException("Owned late-day ingress requires the original recovery window without a higher-priority interrupt.");
-            var compiled = lateDayRecovery
+            if (terminalIngress && (lateDayRecovery || step.Stage != CropTeacherRunStageKinds.RouteToFarm ||
+                step.TargetLocationId != "Farm" || step.ActionBatch is not null || HasPriorityStoryEventInterrupt(source) ||
+                CropTeacherControlInterruptClassifier.HasSafeSpeakerlessDialogue(source)))
+                throw new InvalidDataException("Owned terminal ingress requires an uninterrupted original Farm route before required deposits.");
+            var compiled = lateDayRecovery || terminalIngress
                 ? await BuildCropTeacherRouteQueueAsync(http, options, iteration, step, sourcePath, source, stateHash).ConfigureAwait(false)
                 : await BuildCropTeacherControlQueueCoreAsync(http, options, iteration, step, runPlan, runRequest,
                     sourcePath, source, stateHash).ConfigureAwait(false);

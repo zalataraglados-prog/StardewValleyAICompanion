@@ -6,6 +6,18 @@ namespace StardewAI.Core.Tests;
 public sealed partial class CropTeacherControlIntegrationSourceGuardTests
 {
     [Fact]
+    public void JointRootCompletionConsumesRetainedWorkBeforePreparingItsTerminal()
+    {
+        var program = Read("tools", "StardewAI.LiveTrainingLoop", "Program.cs");
+        var restore = program.IndexOf("await RestoreCropTeacherDailySelectionAsync(managedOwner,", StringComparison.Ordinal);
+        var compose = program.IndexOf("await ComposeCropTeacherDailyDispatchAsync(", StringComparison.Ordinal);
+        var terminal = program.IndexOf("await BuildCropTeacherOwnedJointTerminalApproachAsync(", StringComparison.Ordinal);
+        Assert.True(restore >= 0 && restore < compose && compose < terminal);
+        Assert.Contains("managedOwner is not null && selectedOtherForExecution is null", program, StringComparison.Ordinal);
+        Assert.Contains("managedTerminalControl ??= await BuildCropTeacherOwnedTerminalContinuationAsync", program, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void TeacherDispatchContinuesIntoTheFreshSnapshotControlLoop()
     {
         var program = Read("tools", "StardewAI.LiveTrainingLoop", "Program.cs");
