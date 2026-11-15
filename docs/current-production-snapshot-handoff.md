@@ -1,5 +1,46 @@
 # Current Production Snapshot Handoff
 
+## Materialize Owned Obligations Outside Policy Pool (208)
+
+207 44301b4a / OWN43730405744 SUCCESS, Core2762(37s)/Backend3516(7m13s),
+zero skipped; peer merge7b0a49b4 has identical tracked tree. External CI log SHA
+84800f938a320daefa67827758ad0060b663367bd7cd0dabf76f53dedb4b670a.
+
+Actual Backend/historical-source preflight exposed a NEW initial joint-caller
+omission: the autonomous pool correctly excludes mechanical farm.maintain_crops
+(original601e031c), but binding still requires its owned water/harvest targets.
+Keep that classification, original ranker/executor/defaults. Only the composition
+callback uses the SAME snapshot/ledger/evaluator/EventCandidateRanker/binder to
+materialize owned obligations. Drop newly materialized UNOWNED mechanical work;
+preserve policy rows, existing target identities, ambiguity rejection and recovery
+preemption. No mixed-owner native queue or second Planner.
+
+The SAME ranking artifact retains policy_ranked_candidate_ids and source/ledger
+bound joint_daily_owned_materialization(policy_model_selected=false); its combined
+ranked_event_candidates supports original lease persistence/readback. No copied
+ranking/snapshot graph or mechanical model-choice/training authorization.
+
+Two real-Backend cases reproduced missing candidates before the fix; final
+adjacent63/63(22.3s), zero skipped, includes new cases and original restore/foreign/
+completion/control/default paths. Log SHA
+91de25926ec11847c18005f05d689f6672cf662f581468214f6104904bf4f32d.
+All local invocations terminal/no product C# after build; OWN commit CI separate.
+Historical acceptance87 control-settled UNSAVED source, read-only isolated Backend:
+25policy+6owned harvest inputs ->16accepted(6harvest+10other), original lease reads,
+95inputs unchanged. Report SHA
+ada0fc72c4680eb69ada5bcf29a39441fd1ae07cae62faae4c8c0dd1b26713e4;
+plan SHA510c92317519477b8ab8aa1eeecb24b8abee27d00406032317cd4be75c13985b.
+NOT a current executed/global selected route, native dispatch, owner resume, L3 or
+#570 admission evidence. Probe-only fixture/parameter/options/progress/formatting
+failures retained and NOT misclassified as product defects.
+
+NEXT original step5 CURRENT valid selection/foreign execution/shared return and
+resource/calendar reconciliation; old native caller had jointOFF/max1. Never
+resume historical unsaved frames, replay frozen13days, force unselected cooking,
+add recovery infrastructure or lower native space gate. Cooking stash retained.
+E below original6144MiB reserve; no game/cleanup/API/deploy/raw/local-data commits.
+Frozen L1/Root/169-172, modeOFF/formalfalse, #570 -> #569 PRE-MANIFEST remain.
+
 ## Same-Invocation Reuse And Actual Route Priority (207)
 
 206 731c30a7 / OWN quality43726391719 SUCCESS: Core2762/2762(46s),

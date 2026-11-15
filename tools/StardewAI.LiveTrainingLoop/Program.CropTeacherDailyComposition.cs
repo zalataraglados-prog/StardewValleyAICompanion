@@ -67,12 +67,12 @@ static partial class Program
             candidateKindOverride: string.Empty, candidateIdOverride: string.Empty,
             prepareCompositionRequest: input =>
             {
-                binding = CropTeacherRunPlanner.BindDailyComposition(plan, request, snapshot, ledger, input, preparedCommitmentIds,
-                    progress.CompletedHarvestTileKeys, progress.CompletedDayBoundaryKeys);
+                binding = BindCropTeacherDailyOwnedMaintenance(plan, request, snapshot, ledger, input, preparedCommitmentIds, progress);
                 return binding.CompileRequest ?? throw new InvalidDataException("Original crop prefix must complete before daily composition: " +
                     string.Join(",", binding.BlockingReasons));
             }).ConfigureAwait(false);
         artifacts.Validate();
+        if (binding is not null) RecordCropTeacherDailyOwnedMaintenance(built.Ranking, binding);
         var prefix = Path.Combine(options.SnapshotDir, "crop-joint-daily-" + iteration.ToString("D4"));
         await WritePortfolioJournalFileAsync(prefix + "-plan.json", built.Plan.ToJsonString(JsonOptions)).ConfigureAwait(false);
         await WritePortfolioJournalFileAsync(prefix + "-ranking.json", built.Ranking.ToJsonString(JsonOptions)).ConfigureAwait(false);
