@@ -1,5 +1,19 @@
 # Original Refill Approach Compilation Boundary
 
+## Current Time And Source Boundary: 2026-11-16
+
+The explicit daily-capacity adapter uses the original recorded executor version,
+original Runtime/Product reader and endpoint guard. Timing/water are in original
+per-step execution_path results, not flat aggregate fields. The complete measured
+prefix replaces estimates of the same full crop-work denominator; approach-only
+work still has NO watering or crop credit. Original source/frame/day/quantity and
+resource guards remain; no shared reader/executor default was rewritten.
+
+The dated thirteen-day restart instruction below is historical, superseded by
+frozen169-172 manual business closeout. Do not rerun it to establish new automatic
+properties or resume the lost unsaved tail. Continue original550 actual joint
+Main/owner/resource/calendar and then570 ->569; formal=false remains unchanged.
+
 ## Current Integration: 2026-11-14
 
 The original compilation below is now consumed by the existing managed owner and

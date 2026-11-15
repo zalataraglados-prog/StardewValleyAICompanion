@@ -81,11 +81,11 @@ namespace StardewAI.Core.Training
                 row.Kind == "interact_endpoint" && requiredShops.Contains(row.ShopId);
             foreach (var candidate in orderedCandidates.OrderBy(row => RequiredOrPrerequisite(row) ? 0 : 1))
             {
-                var rollingDeferred = string.Equals(candidate.TimelineStatus, "deferred", StringComparison.Ordinal) &&
-                    (candidate.ScheduledWaitCost ?? 0) > 0;
+                var waitTicks = calendar?.RemainingWaitTicks(candidate) ?? candidate.ScheduledWaitCost ?? 0;
+                var rollingDeferred = string.Equals(candidate.TimelineStatus, "deferred", StringComparison.Ordinal) && waitTicks > 0;
                 var waitSteps = rollingDeferred
-                    ? WaitSteps(candidate).Take(1).ToArray()
-                    : WaitSteps(candidate).ToArray();
+                    ? WaitSteps(candidate, waitTicks).Take(1).ToArray()
+                    : WaitSteps(candidate, waitTicks).ToArray();
                 var candidateSteps = rollingDeferred
                     ? Array.Empty<SmallModelPlanStep>()
                     : CandidateSteps(candidate).ToArray();
@@ -727,9 +727,9 @@ namespace StardewAI.Core.Training
             }
         }
 
-        private static IEnumerable<SmallModelPlanStep> WaitSteps(PolicyEventCandidatePrediction candidate)
+        private static IEnumerable<SmallModelPlanStep> WaitSteps(PolicyEventCandidatePrediction candidate, int? scheduledTicks = null)
         {
-            var remaining = candidate.ScheduledWaitCost ?? 0;
+            var remaining = scheduledTicks ?? candidate.ScheduledWaitCost ?? 0;
             var index = 0;
             while (remaining > 0)
             {

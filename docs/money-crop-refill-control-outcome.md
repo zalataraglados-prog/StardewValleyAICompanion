@@ -1,5 +1,21 @@
 # Original Native Refill Control Outcome
 
+## Current Capacity Consumer: 2026-11-16
+
+Explicit native-observed capacity reads water/actual_ticks from each original
+execution_path result, verifies the original Runtime/Product prefix, and replaces
+the estimate over the SAME complete crop-work denominator. It does not add the
+whole prefix to estimated watering/movement or retain a stale estimate's time-fits
+flag. Independent crop/water/source/energy/reachability checks remain. Refill-bearing
+call time can include watering and is already part of TotalTicks, never an extra sum.
+Legacy v1 refill declarations, blocked-control semantics and executors are unchanged.
+
+Frozen169-172 manual business closeout supersedes the dated restart instruction
+below: do NOT replay thirteen days merely to acquire new automatic properties.
+T's unsaved tail is not resumable; manual acceptance is not automatic-owner recovery.
+Current work is original550 actual joint planning/execution and original570/569
+handoff, not another refill executor or a new deep-observation gate. See CURRENT_WORK.
+
 ## Current Main Continuation: 2026-11-14
 
 Actual isolated run T reached the original13day harvest: owner68 accepted the

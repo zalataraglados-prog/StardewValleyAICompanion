@@ -54,17 +54,32 @@ namespace StardewAI.Core.Training
                 this.sourceTime = sourceTime;
             }
 
+            internal int RemainingWaitTicks(PolicyEventCandidatePrediction candidate)
+            {
+                var original = candidate.ScheduledWaitCost ?? 0;
+                var opens = candidate.ScheduledStartTime ?? candidate.NextOpenTime ?? candidate.EffectiveOpenTime;
+                if (candidate.TimelineStatus != "deferred" || !opens.HasValue || !ValidClock(opens.Value))
+                    return original;
+                var start = GameClockBudgetPolicy.AddClockMinutes(sourceTime, elapsedMinutes);
+                var remaining = Math.Max(0, GameClockBudgetPolicy.ClockMinutesBetween(start, opens.Value));
+                // Scheduler wait cost uses legacy units; this explicit calendar emits native runtime updates.
+                return checked(remaining * GameClockBudgetPolicy.RuntimeUpdatesPerSecond *
+                    GameClockBudgetPolicy.RealMillisecondsPerGameMinute / 1000);
+            }
+
             internal string? BlockReason(PolicyEventCandidatePrediction candidate, int minutes, bool rollingWait)
             {
                 var start = GameClockBudgetPolicy.AddClockMinutes(sourceTime, elapsedMinutes);
                 var finish = GameClockBudgetPolicy.AddClockMinutes(start, minutes);
                 if (finish > GameClockBudgetPolicy.DayEndTime) return "aggregate_calendar_day_end_exceeded";
-                // A bounded wait observes a new source; it does not execute the deferred interaction.
-                if (rollingWait) return null;
-                if (candidate.EffectiveOpenTime.HasValue && !ValidClock(candidate.EffectiveOpenTime.Value) ||
+                var opens = candidate.TimelineStatus == "deferred"
+                    ? candidate.ScheduledStartTime ?? candidate.NextOpenTime ?? candidate.EffectiveOpenTime : candidate.EffectiveOpenTime;
+                if (opens.HasValue && !ValidClock(opens.Value) ||
                     candidate.ClosesAt.HasValue && !ValidClock(candidate.ClosesAt.Value))
                     return "aggregate_calendar_window_invalid";
-                if (candidate.EffectiveOpenTime.HasValue && start < candidate.EffectiveOpenTime.Value)
+                // A bounded wait observes a new source; it does not execute the deferred interaction.
+                if (rollingWait) return null;
+                if (opens.HasValue && start < opens.Value)
                     return "aggregate_calendar_window_not_open";
                 return candidate.ClosesAt.HasValue && finish > candidate.ClosesAt.Value
                     ? "aggregate_calendar_window_missed" : null;

@@ -1,5 +1,40 @@
 # Current Production Snapshot Handoff
 
+## Same-Coverage Native Time And Remaining Wait (214)
+
+213 d62de68a OWN43749482329 SUCCESS: Core2765(1m11s)/Backend3550(8m8s), zero skipped;
+logSHA960ce96e4c2c487fc63aaa2a459fc376ff22df33df0be472155bd696b27e8fec.
+Peer merge11664ce6/tree5f2ac06f equals213; no provider invocation/grants.
+
+572 item4: verified complete observed prefix REPLACES estimates over identical
+crop-work coverage, not estimate+prefix. Read water/actual_ticks from each original
+execution_path result, not invented flattened aggregate fields. Use original
+Runtime/Product readers and the original endpoint guard once at that adapter.
+420ticks fits10game minutes even when the old estimate failed;421 does not.
+Require the complete planting/watering/harvest denominator and original final
+water/crop/source guards; keep independent energy/reachability blocks. The refill
+field describes refill-bearing native-call time (may include watering), ALREADY
+inside TotalTicks, not an extra cost to add. Legacy v1 declarations/defaults stay.
+
+572 item7: explicit joint mode derives remaining opening wait from accumulated
+clock; already-open work has no stale wait,5minutes emits210native ticks and a
+fresh-source barrier, missed windows are excluded. Known future opening is not
+ignored because legacy wait-cost was0. Inputs and old Compile/wait units unchanged.
+Missing opening evidence retains legacy bounded waiting; malformed clocks rejected.
+
+Final Core74/74(1.8s), SHA023a85ff4d06f4d8e4aae9c02bb39125552c7fd18bfd767736ce49f54c253304;
+Backend44/44(30.3s), SHA661bb94430b655e4ea5ee0564b4d48461fc62edcc64d1b7f3cfdefcfbc673fa68,
+zero skipped. Timing-kernel units and original protocol fixtures are separate;
+NOT a whole public/native production-prefix certificate. New test-kind/scope
+errors retained and corrected without weakening old contracts. No C# after final
+build/all local calls terminal; own214 CI still required.
+
+All eight572 findings now have code/local regressions, NOT whole actual joint
+business acceptance. NEXT original550 actual chosen route/Main/original executors/
+same-episode owner/resource/calendar, preserving first real blocker. No unsaved87/89
+resume or automatic-owner credit from169 manual evidence; no13day frozen replay.
+Then570 ->569 PRE-MANIFEST.572 OPEN/ModeOFF/formalfalse. Public baseline213 payloads.
+
 ## Publication Attempts And Existing Entry Guards (213)
 
 212 35d4087d OWN43747861374 SUCCESS: Core2762(56s)/Backend3538(7m52s), zero

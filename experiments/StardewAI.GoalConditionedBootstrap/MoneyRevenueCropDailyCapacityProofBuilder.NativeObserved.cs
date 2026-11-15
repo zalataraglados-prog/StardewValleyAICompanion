@@ -8,7 +8,8 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public static partial class MoneyRevenueCropDailyCapacityProofBuilder
 {
-    private sealed record NativeRefillFlow(RefillReceiptState Receipt, string AfterPath, string AfterSha256, string AfterStateHash);
+    private sealed record NativeRefillFlow(RefillReceiptState Receipt, string AfterPath, string AfterSha256, string AfterStateHash,
+        int MovementTicks, int RefillTicks, HashSet<(string OptionId, string LocationId, int X, int Y)> CropWork);
 
     private static CropMaintenanceCapacityEvaluation EvaluateNativeSatisfiedDay(SnapshotEnvelope snapshot,
         LayoutState[] layouts, int day)
@@ -71,29 +72,31 @@ public static partial class MoneyRevenueCropDailyCapacityProofBuilder
                 "Native refill does not continue the original complete day prefix.");
             var previous = day.Snapshot;
             var ticks = 0;
+            var movementTicks = 0; var refillTicks = 0;
+            var cropWork = new HashSet<(string OptionId, string LocationId, int X, int Y)>();
             SnapshotEnvelope? final = null;
             foreach (var row in rows.Skip(first).Take(last - first + 1))
             {
                 Require(row.ExecutorVersion is PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor or PolicyTrajectoryVersionPins.ProductExecutor,
                     "Native refill prefix changed its declared executor.");
-                var native = NativeExecutionActionSourceReader.ReadSelectedNativeActionQueue(row.QueuePath,
-                    row.BeforeSnapshotPath, row.ExecutionReceiptPath, row.AfterSnapshotPath, row.RunId, row.SelectedCandidateId);
+                var native = ReadObservedPrefixQueue(row);
                 Require(previous.StateHash == native.Before.StateHash && previous.GameTick == native.Before.GameTick,
                     "Native refill prefix changed its preceding frame.");
-                var raw = CurrentTeacherFrontierSupport.Read<JsonElement>(row.ExecutionReceiptPath, "native refill prefix receipt");
-                var steps = raw.GetProperty("step_results").EnumerateArray().ToArray();
                 for (var index = 0; index < native.Actions.Length; index++)
                 {
                     var frame = native.Actions[index];
-                    Require(new Uri(frame.Endpoint, UriKind.Absolute).AbsolutePath ==
-                            (row.ExecutorVersion == PolicyTrajectoryVersionPins.ProductExecutor
-                                ? "/api/v1/product/execute" : "/api/v1/training/execute"),
-                        "Native refill prefix executor differs from its verified endpoint.");
                     CropTeacherNativeStepBoundary.Verify(frame.Before, frame.After, day.Snapshot,
                         native.Receipt.StepResults[index], day.TotalDay, "Native observed refill prefix");
-                    Require(TryReadInt(steps[index], "actual_ticks", out var actual) && actual > 0,
+                    var actual = frame.Result.ActualTicks ?? 0;
+                    Require(actual > 0,
                         "Native refill prefix has no observed action ticks.");
                     ticks = checked(ticks + actual);
+                    if (frame.Item.OptionId is "executor.move_to_tile" or "executor.traverse_connector")
+                        movementTicks = checked(movementTicks + actual);
+                    if (IsObservedRefill(frame.Result)) refillTicks = checked(refillTicks + actual);
+                    if (frame.Item.OptionId is "executor.plant_seed" or "executor.water_crop" or "executor.harvest_crop" &&
+                             frame.Result.TargetTileX is { } x && frame.Result.TargetTileY is { } y)
+                        cropWork.Add((frame.Item.OptionId, frame.Result.TargetLocation, x, y));
                 }
                 previous = native.After;
                 final = native.After;
@@ -102,18 +105,37 @@ public static partial class MoneyRevenueCropDailyCapacityProofBuilder
             var receipt = refillRows[0].ExecutionReceiptPath;
             var afterPath = rows[last].AfterSnapshotPath;
             result.Add(day.TotalDay, new(new(receipt, CurrentTeacherFrontierSupport.HashFile(receipt), ticks),
-                afterPath, CurrentTeacherFrontierSupport.HashFile(afterPath), final!.StateHash));
+                afterPath, CurrentTeacherFrontierSupport.HashFile(afterPath), final!.StateHash, movementTicks, refillTicks, cropWork));
         }
         return result;
+    }
+
+    private static VerifiedNativeExecutionQueue ReadObservedPrefixQueue(MoneyRevenueCropNativeLifecycleTransitionRequest row)
+    {
+        var product = row.ExecutorVersion == PolicyTrajectoryVersionPins.ProductExecutor;
+        var native = product
+            ? NativeExecutionActionSourceReader.ReadSelectedProductActionQueue(row.QueuePath, row.BeforeSnapshotPath,
+                row.ExecutionReceiptPath, row.AfterSnapshotPath, row.RunId, row.SelectedCandidateId)
+            : NativeExecutionActionSourceReader.ReadSelectedNativeActionQueue(row.QueuePath, row.BeforeSnapshotPath,
+                row.ExecutionReceiptPath, row.AfterSnapshotPath, row.RunId, row.SelectedCandidateId);
+        Require(native.Actions.All(frame => new Uri(frame.Endpoint, UriKind.Absolute).AbsolutePath ==
+                (product ? "/api/v1/product/execute" : "/api/v1/training/execute")),
+            "Native refill prefix executor differs from its verified endpoint.");
+        return native;
     }
 
     private static bool HasObservedRefill(string path)
     {
         var receipt = CurrentTeacherFrontierSupport.Read<JsonElement>(path, "native observed refill discovery");
-        return receipt.GetProperty("step_results").EnumerateArray().Any(step => ReadString(step, "option_id") == "executor.water_crop" &&
-            TryReadInt(step, "water_before", out var before) && before == 0 &&
-            TryReadInt(step, "water_after", out var after) && after > 0);
+        return receipt.GetProperty("step_results").EnumerateArray().Any(step =>
+            ReadString(step, "option_id") == "executor.water_crop" &&
+            step.TryGetProperty("execution_path", out var execution) && execution.ValueKind == JsonValueKind.String &&
+            !string.IsNullOrWhiteSpace(execution.GetString()) &&
+            IsObservedRefill(CurrentTeacherFrontierSupport.Read<TrainingExecutionResult>(execution.GetString()!, "native refill execution result")));
     }
+
+    private static bool IsObservedRefill(TrainingExecutionResult result) => result.OptionId == "executor.water_crop" &&
+        result.WaterBefore == 0 && result.WaterAfter > 0;
 
     private static CropMaintenanceCapacityEvaluation ApplyObservedRefillFlow(SnapshotState day, LayoutState[] layouts,
         CropMaintenanceTileTarget[] targets, CropMaintenanceCapacityEvaluation evaluation, NativeRefillFlow flow)
@@ -130,15 +152,25 @@ public static partial class MoneyRevenueCropDailyCapacityProofBuilder
             var owner = layouts.Single(layout => layout.Proof.Tiles.Any(row => row.TileX == tile.TileX && row.TileY == tile.TileY));
             RequireSatisfiedCrop(after, owner, tile.TileX, tile.TileY);
         }
-        var actionTicks = checked(evaluation.ActionTicks + flow.Receipt.ActualTicks);
-        var totalTicks = checked(evaluation.MovementTicks + actionTicks);
+        foreach (var target in targets)
+        {
+            var location = layouts.Single(layout => layout.Proof.Tiles.Any(tile =>
+                tile.TileX == target.TileX && tile.TileY == target.TileY)).Proof.LocationId;
+            Require((!target.Plant || flow.CropWork.Contains(("executor.plant_seed", location, target.TileX, target.TileY))) &&
+                    (!target.Water || flow.CropWork.Contains(("executor.water_crop", location, target.TileX, target.TileY))) &&
+                    (!target.Harvest || flow.CropWork.Contains(("executor.harvest_crop", location, target.TileX, target.TileY))),
+                "Native refill measured prefix does not cover the complete original crop-work denominator.");
+        }
+        // The verified complete prefix replaces estimates over the SAME work, rather than being added to them.
+        var totalTicks = flow.Receipt.ActualTicks;
+        var actionTicks = checked(totalTicks - flow.MovementTicks);
         var minutes = GameClockBudgetPolicy.TicksToGameMinutes(totalTicks);
-        var timeFits = evaluation.TimeBudgetFits && minutes <= evaluation.AvailableGameMinutes;
+        var timeFits = minutes <= evaluation.AvailableGameMinutes;
         var reasons = evaluation.BlockingReasons.Where(reason =>
-            reason != "crop_capacity_watering_can_requires_unmodeled_refill_route").ToList();
+            reason != "crop_capacity_watering_can_requires_unmodeled_refill_route" && reason != "crop_capacity_time_budget_exceeded").ToList();
         if (!timeFits && !reasons.Contains("crop_capacity_time_budget_exceeded")) reasons.Add("crop_capacity_time_budget_exceeded");
-        return evaluation with { ActionTicks = actionTicks, TotalTicks = totalTicks, RequiredGameMinutes = minutes,
-            WateringCanRefillRouteVerified = true, WateringCanRefillTicks = flow.Receipt.ActualTicks,
+        return evaluation with { MovementTicks = flow.MovementTicks, ActionTicks = actionTicks, TotalTicks = totalTicks, RequiredGameMinutes = minutes,
+            WateringCanRefillRouteVerified = true, WateringCanRefillTicks = flow.RefillTicks,
             WaterBudgetFits = true, TimeBudgetFits = timeFits, BlockingReasons = reasons.OrderBy(reason => reason, StringComparer.Ordinal).ToArray() };
     }
 }

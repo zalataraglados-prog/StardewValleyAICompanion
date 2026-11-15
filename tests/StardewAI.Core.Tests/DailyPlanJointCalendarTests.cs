@@ -6,6 +6,60 @@ namespace StardewAI.Core.Tests;
 
 public sealed class DailyPlanJointCalendarTests
 {
+    [Theory]
+    [InlineData(10, 0, 600)]
+    [InlineData(5, 210, 600)]
+    [InlineData(5, 210, 0)]
+    public void JointDayConsumesOnlyTheRemainingOpeningWaitAfterEarlierWork(int priorMinutes, int expectedWaitTicks, int originalWaitCost)
+    {
+        var window = Work("window", 2, 5, closes: 920);
+        window.AllowedNow = false; window.NextOpenTime = 910; window.WaitCost = originalWaitCost;
+        var scheduled = new EventCandidateTimelineScheduler().Schedule([Work("prior", 1, priorMinutes), window], 900);
+        var joint = new DailyPlanCompiler().CompileWithJointCalendar(scheduled, "clock", 900);
+        Assert.Equal(originalWaitCost, window.ScheduledWaitCost);
+        Assert.Equal("deferred", window.TimelineStatus);
+        var waits = joint.Steps.Where(step => step.Kind == "wait_ticks").ToArray();
+        if (expectedWaitTicks == 0)
+        {
+            Assert.Empty(waits);
+            var work = joint.Steps[^1]; Assert.Equal("water_crop", work.Kind);
+            Assert.Contains(work.Parameters, p => p.Name == "budget.candidate_start_time" && p.Value == "910");
+            Assert.Contains(work.Parameters, p => p.Name == "budget.candidate_end_time" && p.Value == "915");
+        }
+        else
+        {
+            var wait = Assert.Single(waits); Assert.Equal(expectedWaitTicks, wait.WaitTicks);
+            Assert.Contains(wait.ExpectedEffects, effect => effect == "fresh_snapshot_replan_required=true");
+            Assert.Contains(wait.Parameters, p => p.Name == "budget.candidate_end_time" && p.Value == "910");
+        }
+        Assert.Equal(2, joint.CandidateAudit.Count(row => row.Decision == "accepted"));
+        var legacyWaits = new DailyPlanCompiler().Compile(scheduled, "legacy").Steps.Where(step => step.Kind == "wait_ticks");
+        if (originalWaitCost > 0) Assert.Equal(originalWaitCost, Assert.Single(legacyWaits).WaitTicks);
+        else Assert.Empty(legacyWaits);
+    }
+
+    [Fact]
+    public void JointDayRejectsMalformedDeferredOpeningBeforeSchedulingAWait()
+    {
+        var window = Work("window", 1, 1, closes: 1700);
+        window.TimelineStatus = "deferred"; window.NextOpenTime = 999; window.ScheduledWaitCost = 600;
+        var plan = new DailyPlanCompiler().CompileWithJointCalendar([window], "clock", 900);
+        Assert.Contains("aggregate_calendar_window_invalid", Assert.Single(plan.CandidateAudit).Reasons);
+        Assert.Empty(plan.Steps);
+    }
+
+    [Fact]
+    public void JointDayDoesNotTurnAnAlreadyMissedDeferredWindowIntoAnotherWaitBarrier()
+    {
+        var window = Work("window", 2, 5, closes: 920);
+        window.AllowedNow = false; window.NextOpenTime = 910; window.WaitCost = 600;
+        var scheduled = new EventCandidateTimelineScheduler().Schedule(
+            [Work("prior", 1, 25), window], 900);
+        var joint = new DailyPlanCompiler().CompileWithJointCalendar(scheduled, "clock", 900);
+        Assert.Contains("aggregate_calendar_window_missed", joint.CandidateAudit[1].Reasons);
+        Assert.DoesNotContain(joint.Steps, step => step.Kind == "wait_ticks");
+    }
+
     [Fact]
     public void JointDayRejectsIndividuallyOpenCandidateThatFinishesAfterCloseFollowingOtherWork()
     {

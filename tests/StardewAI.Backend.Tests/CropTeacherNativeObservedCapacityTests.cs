@@ -6,7 +6,7 @@ using StardewAI.GoalConditionedBootstrap;
 
 namespace StardewAI.Backend.Tests;
 
-public sealed class CropTeacherNativeObservedCapacityTests
+public sealed partial class CropTeacherNativeObservedCapacityTests
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private static readonly Lazy<Task<Baseline>> Golden = new(CreateBaseline);
