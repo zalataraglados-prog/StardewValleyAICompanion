@@ -232,11 +232,13 @@ public sealed partial class CropTeacherProductionEvidenceTests
                 .Invoke(null, new object[] { new CropTeacherManagedJointProductionTrace(Trace(), []), Path.Combine(Output, "joint"),
                     (Func<string, string, Task>)((path, json) => File.WriteAllTextAsync(path, json)) })!;
         }
-        internal Task<CropTeacherManagedProductionEvidence> BuildJointSaleStock()
+        internal Task<CropTeacherManagedProductionEvidence> BuildJointSaleStock(bool transferred = false)
         {
             var builder = typeof(CropTeacherManagedSeedOwner).Assembly.GetType("StardewAI.LiveTrainingLoop.CropTeacherProductionEvidence")!;
-            return (Task<CropTeacherManagedProductionEvidence>)builder.GetMethod("BuildJointRetainingSaleStockAsync", BindingFlags.NonPublic | BindingFlags.Static)!
-                .Invoke(null, new object[] { new CropTeacherManagedJointProductionTrace(Trace(), []), Path.Combine(Output, "joint-sale-stock"),
+            return (Task<CropTeacherManagedProductionEvidence>)builder.GetMethod(transferred ? "BuildJointRetainingTransferredSaleStockAsync" :
+                    "BuildJointRetainingSaleStockAsync", BindingFlags.NonPublic | BindingFlags.Static)!
+                .Invoke(null, new object[] { new CropTeacherManagedJointProductionTrace(Trace(), []), Path.Combine(Output,
+                    transferred ? "joint-transferred-sale-stock" : "joint-sale-stock"),
                     (Func<string, string, Task>)((path, json) => File.WriteAllTextAsync(path, json)) })!;
         }
         private CropTeacherManagedProductionTrace Trace() => (CropTeacherManagedProductionTrace)typeof(CropTeacherManagedProductionTrace).GetConstructors(

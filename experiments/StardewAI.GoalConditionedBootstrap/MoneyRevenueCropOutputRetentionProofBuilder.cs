@@ -14,7 +14,8 @@ public static partial class MoneyRevenueCropOutputRetentionProofBuilder
             MoneyRevenueCropOutputRetentionProofRequest>(
                 fullRequestPath,
                 "Money Revenue crop output-retention proof request");
-        var reservedStock = request.SchemaVersion == "money_revenue_crop_output_retention_proof_request.v4";
+        var transferredStock = request.SchemaVersion == "money_revenue_crop_output_retention_proof_request.v5";
+        var reservedStock = transferredStock || request.SchemaVersion == "money_revenue_crop_output_retention_proof_request.v4";
         var throughBoundary = reservedStock || request.SchemaVersion == "money_revenue_crop_output_retention_proof_request.v3";
         var producerAware = throughBoundary || request.SchemaVersion == "money_revenue_crop_output_retention_proof_request.v2";
         Require((producerAware || request.SchemaVersion ==
@@ -26,7 +27,7 @@ public static partial class MoneyRevenueCropOutputRetentionProofBuilder
         Require(throughBoundary
                 ? !string.IsNullOrWhiteSpace(request.RetainThroughSnapshotPath) && Path.IsPathFullyQualified(request.RetainThroughSnapshotPath)
                 : request.RetainThroughSnapshotPath is null,
-            "An explicit retention boundary requires output-retention request v3/v4 and an absolute snapshot path.");
+            "An explicit retention boundary requires output-retention request v3/v4/v5 and an absolute snapshot path.");
 
         var planPath = RequiredFile(
             request.CropProductionPlanPath,
@@ -156,7 +157,9 @@ public static partial class MoneyRevenueCropOutputRetentionProofBuilder
         var quantityIncrease = receipt.QuantityIncrease ??
             throw new InvalidDataException(
                 "Money Revenue crop output-retention quantity increase is unavailable.");
-        var attribution = reservedStock ? BuildReservedProducerRetention(lifecycle, harvestTransitions, firstIndex, lastIndex,
+        var attribution = transferredStock ? BuildTransferredProducerRetention(lifecycle, harvestTransitions, firstIndex, lastIndex,
+            verifiedCommitment.HarvestItemQualifiedId, wave.MinimumUnits, verifiedCommitment.TileCount,
+            verifiedCommitment.CommitmentId, wave.OutputRetentionKey) : reservedStock ? BuildReservedProducerRetention(lifecycle, harvestTransitions, firstIndex, lastIndex,
             verifiedCommitment.HarvestItemQualifiedId, wave.MinimumUnits, verifiedCommitment.TileCount,
             verifiedCommitment.CommitmentId, wave.OutputRetentionKey) : producerAware ? BuildProducerRetention(lifecycle, harvestTransitions, firstIndex, lastIndex,
             verifiedCommitment.HarvestItemQualifiedId, wave.MinimumUnits, verifiedCommitment.TileCount) : null;
@@ -221,7 +224,8 @@ public static partial class MoneyRevenueCropOutputRetentionProofBuilder
         };
         if (attribution is not null)
         {
-            proof.SchemaVersion = reservedStock ? "money_revenue_crop_output_retention_proof.v3" : "money_revenue_crop_output_retention_proof.v2";
+            proof.SchemaVersion = transferredStock ? "money_revenue_crop_output_retention_proof.v4" :
+                reservedStock ? "money_revenue_crop_output_retention_proof.v3" : "money_revenue_crop_output_retention_proof.v2";
             proof.ProducerRetention = attribution;
             proof.ProofPolicy = "One exact native harvest wave with an independently rebuilt lifecycle. " +
                 "Only owned harvest inventory deltas create fungible variant credit; foreign increases do not. " +
@@ -236,6 +240,11 @@ public static partial class MoneyRevenueCropOutputRetentionProofBuilder
                     "Explicit reserved-stock mode preserves only existing owned credit covered by original wave reservations " +
                     "and still present in every original native frame; other losses debit owned credit conservatively. " +
                     "Aggregate inventory fields keep their original meaning. Native terminal consumption requires the explicit sale-stock consumer.";
+            if (transferredStock)
+                proof.ProofPolicy += " Original prepared and settled native transfers preserve credited stock in actor-authorized chests. " +
+                    "Claim positions change only at the actual native transfer frame; passive reindexing comes from the original settlement. " +
+                    "Stored claims require a previously observed player variant and matching physical quality. Withdrawal and terminal sale recheck full player metadata. " +
+                    "Foreign gains and unobserved stored stock cannot create or restore producer credit.";
         }
         return proof;
     }

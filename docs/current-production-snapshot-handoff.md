@@ -1,5 +1,53 @@
 # Current Production Snapshot Handoff
 
+## Transferred Owned Stock And Explicit Global Source (198, Stock Capability Open)
+
+197 31e3be32/quality43698060074 SUCCESS: Core2675/2675(44s),
+Backend3457/3457(6m42s), zero skipped. Log SHA
+1d5c1bbbb3be4027c20fcaaac329a7115283b148533cf1afc2e3e4e7bc888b7f.
+Peer merge2b5223bf/tree93d49543255e597911311a8f8331318e223d3e5c
+equals accepted197, not this successor. Provider paused; no API/grant changes.
+
+NAMED BuildJointRetainingTransferredSaleStockAsync uses the SAME production
+builder with lifecycle requestv7, retention requestv5/proofv4. Old entries,
+shared lifecyclev6 and player-only retention keep their defaults/meaning.
+CropTeacherTransferredSaleStock reads ORIGINAL preparation/settlement/native
+inputs and installs original settled moved/passive claim positions ONLY at the
+actual executor.transfer_material frame. No new ledger head/revision/mutation.
+The SAME retention account combines real player inventory and protected stored
+units: only owned harvests create credit, deposits do not destroy it, foreign
+gains cannot create/restore it, and free-stock spending cannot debit a physically
+protected floor. Storage requires a previously observed FULL player variant and
+matching material quality; storage cannot bootstrap credit. Withdrawal/terminal
+recheck FULL player metadata. Aggregate inventory fields remain player counts.
+
+Explicit global source handles actual Product prepared yields. NAMED
+OpenProductSource handles ordinary Product shared work without pretending it is
+a prepared transfer; SAME native/source reader requires Product aggregate AND
+all Product wire. Old Runtime/default consumers do not silently upgrade.
+Final E rebuilt adjacent169/169(1m57s), zero skipped, includes nine new tests.
+Logblock198-final-physical-frame-and-source-tests.log SHA
+6147b12c620a5c3f3d767e1fd76d0c47ce7f911fbdd327c3ed84c4d744f52e5d.
+Earlier34/34 and169/169(1m48s) overlap, not additive; own final-SHA CI separate.
+Actual transfer-frame before AND after slots use original projection checks;
+legacy no-storage account avoids stored dictionaries/combined copies. No new
+game scans/snapshots/native changes; C# unchanged after final build.
+New fixture non-existent commit field/missing RuntimeType and old reflection
+signature regression were corrected in the responsible new code/fixtures; original
+private signature restored via named new entry, failures retained. Tests cover
+original-service storage/free-spend/foreign-gain/withdrawal projections, bad
+quality/quantity/auth/metadata/unobserved storage, production entry/version and
+ordinary/prepared Product native sources. Synthetic observations/original service
+and Backend, NOT actual game storage or global L3 acceptance.
+
+NEXT original stock partitions/free-passive/other-consumption source adaptation
+and paired Main activation; ordinary preview generation/paired mode still OFF.
+Then original partial/multi-queue/global route-calendar-source reconciliation,
+step6 #570 and #569 PRE-MANIFEST engineering handoff. Lab owns models/training;
+no extra gate, L1/Root/169-172 frozen/no13day restart, formal=false.
+No game/API/cleanup/deploy/raw/local-data commit.
+[Current work198](CURRENT_WORK_CN.md#2026-11-15-存取自产留存与显式全局来源198库存能力块未总闭).
+
 ## Main Selected Preparation And Product Source (197, Stock Capability Open)
 
 196 0df28e73/quality43694186124 SUCCESS: Core2675/2675(39s),

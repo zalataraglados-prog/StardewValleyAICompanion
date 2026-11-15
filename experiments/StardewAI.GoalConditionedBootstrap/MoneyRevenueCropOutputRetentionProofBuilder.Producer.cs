@@ -27,9 +27,14 @@ public static partial class MoneyRevenueCropOutputRetentionProofBuilder
         string commitmentId, string waveKey) =>
         BuildProducerRetentionCore(lifecycle, harvests, first, last, itemId, minimum, tileCount, commitmentId, waveKey);
 
+    private static MoneyRevenueCropProducerRetention BuildTransferredProducerRetention(MoneyRevenueCropNativeLifecycleProof lifecycle,
+        MoneyRevenueCropNativeLifecycleTransitionProof[] harvests, int first, int last, string itemId, int minimum, int tileCount,
+        string commitmentId, string waveKey) =>
+        BuildProducerRetentionCore(lifecycle, harvests, first, last, itemId, minimum, tileCount, commitmentId, waveKey, transferredStock: true);
+
     private static MoneyRevenueCropProducerRetention BuildProducerRetentionCore(MoneyRevenueCropNativeLifecycleProof lifecycle,
         MoneyRevenueCropNativeLifecycleTransitionProof[] harvests, int first, int last, string itemId, int minimum, int tileCount,
-        string? commitmentId, string? waveKey)
+        string? commitmentId, string? waveKey, bool transferredStock = false)
     {
         Require(minimum % tileCount == 0, "Crop producer retention has no exact original per-tile minimum.");
         var original = CurrentTeacherFrontierSupport.Read<MoneyRevenueCropNativeLifecycleProofRequest>(lifecycle.RequestPath,
@@ -37,6 +42,7 @@ public static partial class MoneyRevenueCropOutputRetentionProofBuilder
         Require(original.Transitions.Length == lifecycle.Transitions.Length,
             "Crop producer retention lifecycle request denominator changed.");
         var account = new MoneyRevenueCropRetentionAccount(Read(lifecycle.Transitions[first].BeforeSnapshotPath), itemId);
+        var stock = transferredStock ? new CropTeacherTransferredSaleStock(commitmentId!, waveKey!, itemId) : null;
         var segments = new List<MoneyRevenueCropRetentionSegment>();
         var guards = new List<Action>();
         for (var index = first; index <= last; index++)
@@ -55,16 +61,20 @@ public static partial class MoneyRevenueCropOutputRetentionProofBuilder
             {
                 Require(!owned && request.NativeSharedSource is not null,
                     "Crop producer retention cannot credit an unbound foreign transition.");
-                var source = NativeExecutionActionSourceReader.ReadSelectedNativeActionQueue(row.QueuePath, row.BeforeSnapshotPath,
-                    row.ExecutionReceiptPath, row.AfterSnapshotPath, request.RunId, request.SelectedCandidateId);
-                frameCount = source.Actions.Length;
+                if (stock is not null) frameCount = stock.ObserveShared(account, request);
+                else
+                {
+                    var source = NativeExecutionActionSourceReader.ReadSelectedNativeActionQueue(row.QueuePath, row.BeforeSnapshotPath,
+                        row.ExecutionReceiptPath, row.AfterSnapshotPath, request.RunId, request.SelectedCandidateId);
+                    frameCount = source.Actions.Length;
+                    var preserve = commitmentId is null ? null : CropTeacherSaleStockInventory.BindPreserved(source.Before,
+                        CurrentTeacherFrontierSupport.Read<StrategyCommitmentLedger>(request.NativeSharedSource!.LedgerPath,
+                            "reserved producer-retention original source ledger"), commitmentId, waveKey!, itemId);
+                    foreach (var frame in source.Actions)
+                        if (preserve is null) account.Observe(frame.Before, frame.After, ownedHarvest: false);
+                        else account.ObserveReservedForeign(frame.Before, frame.After, preserve(frame.After));
+                }
                 guards.Add(MoneyRevenueCropNativeSharedSourceVerifier.RetainInputs(request.NativeSharedSource!));
-                var preserve = commitmentId is null ? null : CropTeacherSaleStockInventory.BindPreserved(source.Before,
-                    CurrentTeacherFrontierSupport.Read<StrategyCommitmentLedger>(request.NativeSharedSource!.LedgerPath,
-                        "reserved producer-retention original source ledger"), commitmentId, waveKey!, itemId);
-                foreach (var frame in source.Actions)
-                    if (preserve is null) account.Observe(frame.Before, frame.After, ownedHarvest: false);
-                    else account.ObserveReservedForeign(frame.Before, frame.After, preserve(frame.After));
             }
             else
             {
@@ -73,7 +83,8 @@ public static partial class MoneyRevenueCropOutputRetentionProofBuilder
                     "Crop producer retention crosses an unsupported or day-rollover boundary.");
                 if (owned) Require(delta >= checked(row.ItemCount * (minimum / tileCount)),
                     "Crop producer retention owned harvest batch did not retain its original minimum yield.");
-                account.Observe(before, after, owned);
+                if (stock is null) account.Observe(before, after, owned);
+                else stock.Observe(account, before, after, owned);
             }
             segments.Add(new(row.QueueId, owned, frameCount, delta, account.Quantity));
         }
@@ -91,7 +102,8 @@ public static partial class MoneyRevenueCropOutputRetentionProofBuilder
         (proof.SchemaVersion == "money_revenue_crop_output_retention_proof.v2" || HasReservedProducerRetention(proof)) && proof.ProducerRetention is not null;
 
     public static bool HasReservedProducerRetention(MoneyRevenueCropOutputRetentionProof proof) =>
-        proof.SchemaVersion == "money_revenue_crop_output_retention_proof.v3" && proof.ProducerRetention is not null;
+        proof.SchemaVersion is "money_revenue_crop_output_retention_proof.v3" or "money_revenue_crop_output_retention_proof.v4" &&
+        proof.ProducerRetention is not null;
 
     // The caller already binds/rebuilds the immutable certificate. This limits the selected native units,
     // including partial-stack plans, rather than reinterpreting the legacy aggregate inventory delta.

@@ -49,6 +49,7 @@ public sealed partial class CropTeacherSeedTransferTests
         var transition = f.Transition with { NativeSharedSource = sourceReference };
         Assert.Throws<InvalidDataException>(() => MoneyRevenueCropNativeSharedSourceVerifier.VerifyWithPreparedMaterialTransfers(transition));
         Assert.Equal(f.Files.After.StateHash, MoneyRevenueCropNativeSharedSourceVerifier.VerifyWithPreparedTransferYields(transition).AfterStateHash);
+        AssertTransferredSourceDoesNotCreditSeedSupply(f, transition);
         Assert.Empty(trace.CropTrace.Transitions);
         Assert.Equal(2, f.Runtime.Handler.Commits); Assert.Equal(1, f.Runtime.Handler.Settlements);
         Assert.All(hashes, pair => Assert.Equal(pair.Value, SharedTransferReturnFixture.Hash(pair.Key)));

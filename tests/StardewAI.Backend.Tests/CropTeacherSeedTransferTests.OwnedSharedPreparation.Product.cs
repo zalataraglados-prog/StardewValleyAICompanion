@@ -46,9 +46,27 @@ public sealed partial class CropTeacherSeedTransferTests
         var transition = shared.NativeTransition with { NativeSharedSource = shared.SourceReference };
         Assert.Throws<InvalidDataException>(() => MoneyRevenueCropNativeSharedSourceVerifier.VerifyWithPreparedTransferYields(transition));
         Assert.Equal(f.Files.After.StateHash, MoneyRevenueCropNativeSharedSourceVerifier.VerifyWithPreparedProductTransferYields(transition).AfterStateHash);
+        Assert.Equal(f.Files.After.StateHash, MoneyRevenueCropNativeSharedSourceVerifier.VerifyWithTransferredSaleStock(transition).AfterStateHash);
+        var load = typeof(MoneyRevenueCropNativeLifecycleProofBuilder).GetMethod("LoadJointObservedTransition",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!;
+        Assert.NotNull(load.Invoke(null, [transition, true]));
+        AssertTransferredSourceDoesNotCreditSeedSupply(f, transition);
         await owner.DisposeAsync();
         await using var reopened = await files.Open();
         await reopened.RestoreHeadAsync(f.Runtime.Client, files.Recovery, files.Post);
         Assert.Equal(after, reopened.CurrentSnapshotPath); Assert.Equal(2, f.Runtime.Handler.Commits);
+    }
+
+    private static void AssertTransferredSourceDoesNotCreditSeedSupply(SharedTransferReturnFixture f,
+        MoneyRevenueCropNativeLifecycleTransitionRequest transition)
+    {
+        var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+        var account = Activator.CreateInstance(typeof(MoneyRevenueCropRetentionAccount), flags, null,
+            [f.Files.Before, "(O)745"], null)!;
+        var stockType = typeof(CropTeacherSaleStockInventory).Assembly.GetType("StardewAI.GoalConditionedBootstrap.CropTeacherTransferredSaleStock")!;
+        var stock = Activator.CreateInstance(stockType, flags | System.Reflection.BindingFlags.Public, null,
+            [Id, "declared-no-owned-harvest", "(O)745"], null)!;
+        Assert.Equal(1, stockType.GetMethod("ObserveShared", flags)!.Invoke(stock, [account, transition]));
+        Assert.Equal(0, typeof(MoneyRevenueCropRetentionAccount).GetProperty("Quantity", flags)!.GetValue(account));
     }
 }

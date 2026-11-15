@@ -16,7 +16,7 @@ public sealed class CropTeacherSharedSourceReturn : ICropTeacherSupportingTransi
     private CropTeacherSharedSourceReturn(string runRequestPath, string sourcePath, string ledgerPath,
         IReadOnlyCollection<string> commitmentIds, MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId,
         CropTeacherSharedTransferSettlementReference? transfer = null, bool includePreparation = false, string? retainedReferencePath = null,
-        bool productTransfer = false)
+        bool productTransfer = false, bool productSource = false)
     {
         Require(includePreparation == (transfer?.Preparation is not null) &&
                 (!includePreparation || transfer!.Preparation!.BackendUrl == transfer.BackendUrl),
@@ -47,7 +47,7 @@ public sealed class CropTeacherSharedSourceReturn : ICropTeacherSupportingTransi
         var source = transfer is null || includePreparation
             ? CropTeacherSupportingSource.Read(paths[0], paths[1], paths[2], commitmentIds, stepId)
             : CropTeacherSupportingSource.ReadBeforeSettledTransfer(paths[0], paths[1], paths[2], commitmentIds, stepId);
-        Require(!productTransfer || includePreparation && retainedReferencePath is not null,
+        Require(!productTransfer || productSource && transfer is null || includePreparation && retainedReferencePath is not null,
             "Product shared transfer requires its explicit original prepared-yield boundary.");
         var native = productTransfer ? ReadProductNativeTransition(source.Snapshot, transition) : ReadNativeTransition(source.Snapshot, transition);
 
@@ -103,6 +103,10 @@ public sealed class CropTeacherSharedSourceReturn : ICropTeacherSupportingTransi
     public static CropTeacherSharedSourceReturn Open(string runRequestPath, string sourcePath, string ledgerPath,
         IReadOnlyCollection<string> commitmentIds, MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId) =>
         new(runRequestPath, sourcePath, ledgerPath, commitmentIds, transition, stepId);
+
+    public static CropTeacherSharedSourceReturn OpenProductSource(string runRequestPath, string sourcePath, string ledgerPath,
+        IReadOnlyCollection<string> commitmentIds, MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId) =>
+        new(runRequestPath, sourcePath, ledgerPath, commitmentIds, transition, stepId, productTransfer: true, productSource: true);
 
     internal static VerifiedNativeExecutionQueue ReadNativeTransition(SnapshotEnvelope source,
         MoneyRevenueCropNativeLifecycleTransitionRequest transition) => ReadNativeTransitionCore(source, transition, productTransfer: false);

@@ -26,8 +26,10 @@ public sealed record MoneyRevenueCropProducerRetention(
 // Fungible stock accounting, not a second native simulator or authority to consume reservations.
 public sealed class MoneyRevenueCropRetentionAccount
 {
+    private static readonly Dictionary<string, int> EmptyStorage = new(StringComparer.Ordinal);
     private readonly string itemId;
     private Dictionary<string, int> previous;
+    private Dictionary<string, int> stored = EmptyStorage;
     private readonly Dictionary<string, int> credit = new(StringComparer.Ordinal);
     private string stateHash;
     private readonly string saveId, playerId, gameVersion;
@@ -47,8 +49,14 @@ public sealed class MoneyRevenueCropRetentionAccount
     internal void ObserveReservedForeign(SnapshotEnvelope before, SnapshotEnvelope after,
         MoneyRevenueCropRetainedVariant[] preserved) => ObserveCore(before, after, false, preserved);
 
+    internal void ObserveTransferredStock(SnapshotEnvelope before, SnapshotEnvelope after, bool ownedHarvest,
+        CropTeacherSaleStockObservation stockBefore, CropTeacherSaleStockObservation stockAfter) =>
+        ObserveCore(before, after, ownedHarvest, ownedHarvest ? null : stockAfter.Preserved,
+            stockBefore.Stored, stockAfter.Stored);
+
     private void ObserveCore(SnapshotEnvelope before, SnapshotEnvelope after, bool ownedHarvest,
-        MoneyRevenueCropRetainedVariant[]? preserved)
+        MoneyRevenueCropRetainedVariant[]? preserved, MoneyRevenueCropRetainedVariant[]? storedBefore = null,
+        MoneyRevenueCropRetainedVariant[]? storedAfter = null)
     {
         Require(before.StateHash == stateHash && before.GameTick == tick &&
             before.StateHash == SnapshotHash.ComputeStateHash(before.State) &&
@@ -59,16 +67,22 @@ public sealed class MoneyRevenueCropRetentionAccount
         Require(current.Count == previous.Count && current.All(pair => previous.GetValueOrDefault(pair.Key) == pair.Value),
             "source inventory is discontinuous.");
         var next = ReadInventory(after, itemId);
+        var beforeStorage = ReadStored(storedBefore); var nextStorage = ReadStored(storedAfter);
+        Require(beforeStorage.Count == stored.Count && beforeStorage.All(row => stored.GetValueOrDefault(row.Key) == row.Value),
+            "stored stock is discontinuous; an unobserved transfer cannot create owned credit.");
+        var currentStock = Combine(current, beforeStorage); var nextStock = Combine(next, nextStorage);
         Require(preserved is null || preserved.All(row => row is not null && !string.IsNullOrWhiteSpace(row.InventoryIdentitySha256)) &&
             preserved.Select(row => row.InventoryIdentitySha256).Distinct(StringComparer.Ordinal).Count() == preserved.Length,
             "reserved stock floors are missing or duplicated.");
         var floors = preserved?.ToDictionary(row => row.InventoryIdentitySha256, row => row.RetainedQuantity, StringComparer.Ordinal);
         Require(floors is null || floors.All(row => row.Value > 0 && row.Value <= credit.GetValueOrDefault(row.Key) &&
-            row.Value <= current.GetValueOrDefault(row.Key) && row.Value <= next.GetValueOrDefault(row.Key)),
+            row.Value <= currentStock.GetValueOrDefault(row.Key) && row.Value <= nextStock.GetValueOrDefault(row.Key)),
             "reserved stock cannot create credit or replace missing owned variants.");
-        foreach (var key in previous.Keys.Concat(next.Keys).Distinct(StringComparer.Ordinal))
+        Require(nextStorage.All(row => row.Value <= credit.GetValueOrDefault(row.Key)),
+            "stored stock cannot introduce an uncredited owned variant.");
+        foreach (var key in currentStock.Keys.Concat(nextStock.Keys).Distinct(StringComparer.Ordinal))
         {
-            var delta = checked(next.GetValueOrDefault(key) - previous.GetValueOrDefault(key));
+            var delta = checked(nextStock.GetValueOrDefault(key) - currentStock.GetValueOrDefault(key));
             if (ownedHarvest)
             {
                 Require(delta >= 0, "owned harvest removed or replaced existing item variants.");
@@ -77,7 +91,26 @@ public sealed class MoneyRevenueCropRetentionAccount
             else if (delta < 0) credit[key] = Math.Max(floors?.GetValueOrDefault(key) ?? 0,
                 Math.Max(0, checked(credit.GetValueOrDefault(key) + delta)));
         }
-        previous = next; stateHash = after.StateHash; tick = after.GameTick;
+        previous = next; stored = nextStorage; stateHash = after.StateHash; tick = after.GameTick;
+    }
+
+    private static Dictionary<string, int> ReadStored(MoneyRevenueCropRetainedVariant[]? rows)
+    {
+        Require(rows is null || rows.All(row => row is not null && row.RetainedQuantity > 0 &&
+            !string.IsNullOrWhiteSpace(row.InventoryIdentitySha256)) &&
+            rows.Select(row => row.InventoryIdentitySha256).Distinct(StringComparer.Ordinal).Count() == rows.Length,
+            "stored stock variants are missing or duplicated.");
+        return rows is { Length: > 0 }
+            ? rows.ToDictionary(row => row.InventoryIdentitySha256, row => row.RetainedQuantity, StringComparer.Ordinal)
+            : EmptyStorage;
+    }
+
+    private static Dictionary<string, int> Combine(Dictionary<string, int> inventory, Dictionary<string, int> storage)
+    {
+        if (storage.Count == 0) return inventory;
+        var result = new Dictionary<string, int>(inventory, StringComparer.Ordinal);
+        foreach (var row in storage) result[row.Key] = checked(result.GetValueOrDefault(row.Key) + row.Value);
+        return result;
     }
 
     internal int Quantity => checked(credit.Values.Sum());

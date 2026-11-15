@@ -4,11 +4,13 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
 {
     private const string SharedSourceReturnKind = "shared_source_return";
 
-    private static LoadedTransition LoadJointObservedTransition(MoneyRevenueCropNativeLifecycleTransitionRequest request)
+    private static LoadedTransition LoadJointObservedTransition(MoneyRevenueCropNativeLifecycleTransitionRequest request,
+        bool transferredStock = false)
     {
         if (request.NativeSharedSource is null && request.TransitionKind != SharedSourceReturnKind)
             return LoadNativeObservedTransition(request) with { JointObserved = true };
-        var scope = MoneyRevenueCropNativeSharedSourceVerifier.Verify(request);
+        var scope = transferredStock ? MoneyRevenueCropNativeSharedSourceVerifier.VerifyWithTransferredSaleStock(request) :
+            MoneyRevenueCropNativeSharedSourceVerifier.Verify(request);
         var loaded = LoadTransitionCore(request, allowSharedSource: true);
         Require(loaded.Before.StateHash == scope.SourceStateHash && loaded.After.StateHash == scope.AfterStateHash,
             "Joint crop lifecycle changed the verified foreign source boundary.");
