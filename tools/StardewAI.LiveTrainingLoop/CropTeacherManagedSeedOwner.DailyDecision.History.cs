@@ -19,7 +19,10 @@ public sealed partial class CropTeacherManagedSeedOwner
         {
             var admissionPath = RecordPath(row.Sequence, "intent");
             var intent = ReadBoundPlanningRecord(admissionPath, Text(row.Certificate, "admission_sha256"));
-            if (intent["shared_source_execution_protocol"]?.GetValue<string>() is not "selected_work_yield.v1" and not "selected_work_yield.v2") continue;
+            if (intent["shared_source_execution_protocol"]?.GetValue<string>() is not "selected_work_yield.v1" and not "selected_work_yield.v2" and not "selected_work_yield.v3") continue;
+            if (IsSharedTransferPreparation(intent))
+                _ = ReadBoundPlanningRecord(RecordPath(row.Sequence, "prepared"), Text(row.Certificate, "shared_transfer_prepared_sha256"));
+            intent = SharedExecutionRecord(intent);
             var selection = SharedSourceSelection(intent);
             if (!SamePath(selection.DecisionSnapshotPath, sourcePath) || !SamePath(selection.DecisionPlanPath, planPath) ||
                 !SamePath(selection.DecisionRankingPath, rankingPath)) continue;

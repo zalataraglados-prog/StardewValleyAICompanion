@@ -72,49 +72,13 @@ internal sealed partial class CropTeacherSeedRuntimeTransaction
         Directory.CreateDirectory(output);
         var request = scope.ReadPreparationRequest();
         var diagnostic = CreateIntent(options, scope, request);
-        Exception? failure = null;
-        try
-        {
-            AddPreparationDetails(diagnostic, scope);
-            var rawIntent = diagnostic.ToJsonString(JsonOptions);
-            await write(Path.Combine(output, "support-intent.json"), rawIntent);
-            var intentHash = PortfolioMutationRequestJournal.Hash(Encoding.UTF8.GetBytes(rawIntent));
-            var before = await ReadLedgerAsync(http, options, request.StateHash, "Crop seed support base");
-            RequireLedger(scope.ReadBaseLedger(), before.Ledger, "base");
-            diagnostic["base_ledger_path"] = before.Path;
-            var markerDiagnostic = new JsonObject();
-            diagnostic["marker"] = markerDiagnostic;
-            var reply = await commit(markerDiagnostic, request);
-            await write(Path.Combine(output, "marker-reply.json"), reply.ToJsonString(JsonOptions));
-            var result = reply.Deserialize<ReservationPortfolioCommitResult>(JsonOptions)
-                ?? throw new InvalidDataException("Crop seed runtime marker reply is empty.");
-            var verified = scope.VerifyPreparationReply(result);
-            var readback = await ReadLedgerAsync(http, options, request.StateHash, "Crop seed support marker readback");
-            RequireLedger(verified.Ledger, readback.Ledger, "marker readback");
-            diagnostic["marker_ledger_path"] = readback.Path;
-            scope.ValidateInputsUnchanged();
-            var queuePath = Path.GetFullPath(await compileQueue());
-            var queueHash = verified.ValidateQueue(queuePath);
-            var preparedQueue = JsonNode.Parse(await File.ReadAllTextAsync(queuePath))
-                ?? throw new InvalidDataException("Crop seed runtime prepared queue is empty.");
-            if (verified.ValidateQueue(queuePath) != queueHash)
-                throw new InvalidDataException("Crop seed runtime prepared queue changed while reading.");
-            diagnostic["compiled_queue_path"] = queuePath;
-            diagnostic["compiled_queue_sha256"] = queueHash;
-            diagnostic["status"] = "crop_seed_support_prepared";
-            return new(http, options, scope, verified, queuePath, queueHash, preparedQueue, intentHash, diagnostic, commit, settle, write);
-        }
-        catch (Exception error)
-        {
-            failure = error;
-            diagnostic["status"] = "crop_seed_support_preparation_incomplete";
-            diagnostic["error"] = error.Message;
-            throw;
-        }
-        finally
-        {
-            await WriteSummaryAsync(write, Path.Combine(output, "preparation-summary.json"), diagnostic, failure);
-        }
+        CropSeedRuntimeMarkerBinding verified = null!;
+        var prepared = await PortfolioPreparationRuntime.RunAsync(http, options, request, diagnostic,
+            () => AddPreparationDetails(diagnostic, scope), scope.ReadBaseLedger,
+            result => { verified = scope.VerifyPreparationReply(result); return verified.Ledger; }, scope.ValidateInputsUnchanged,
+            compileQueue, path => verified.ValidateQueue(path), commit, write);
+        return new(http, options, scope, verified, prepared.QueuePath, prepared.QueueSha256, prepared.Queue,
+            prepared.IntentSha256, diagnostic, commit, settle, write);
     }
 
     public void ValidateDispatchQueue(string path)

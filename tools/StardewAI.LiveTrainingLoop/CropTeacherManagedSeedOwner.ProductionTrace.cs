@@ -119,7 +119,9 @@ public sealed partial class CropTeacherManagedSeedOwner
                     if (accepted["shared-source_native_result_sha256"] is not null)
                         foreach (var (input, expected) in Read<JsonObject>(sharedResult)["input_artifact_hashes"]!
                                      .Deserialize<Dictionary<string, string>>(JsonOptions)!) Pin(input, expected);
-                    var shared = record["shared_source_transition"]!.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)!;
+                    if (IsSharedTransferPreparation(record))
+                        Reference("shared_transfer_prepared_sha256", RecordPath(sequence, "prepared"));
+                    var shared = SharedExecutionRecord(record)["shared_source_transition"]!.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)!;
                     if (!SamePath(shared.BeforeSnapshotPath, StoredPath(record, "before_snapshot_path")) ||
                         !SamePath(shared.AfterSnapshotPath, StoredPath(accepted, "after_snapshot_path")) ||
                         shared.RunId != options.RunId || shared.ExecutorVersion != options.ExecutorVersion ||
@@ -139,7 +141,7 @@ public sealed partial class CropTeacherManagedSeedOwner
                     {
                         SourceReference = new(plan.RequestPath, sourceLedgerPath, covered, Text(record, "support_step_id"), scope.InputHashes)
                             { SettledMaterialTransfer = scope.TransferSettlement,
-                                SettledTransferReferencePath = record["shared_source_execution_protocol"]?.GetValue<string>() == "selected_work_yield.v2"
+                                SettledTransferReferencePath = record["shared_source_execution_protocol"]?.GetValue<string>() is "selected_work_yield.v2" or "selected_work_yield.v3"
                                     ? SharedTransferReferencePath(record) : null }
                     });
                     continue;

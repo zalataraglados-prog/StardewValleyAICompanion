@@ -18,6 +18,12 @@ internal static class CropTeacherSharedTransferPreparation
     {
         var (request, reply) = CropTeacherSharedPortfolioMutation.Read<ReservationPortfolioCommitRequest, ReservationPortfolioCommitResult>(
             reference.RequestPath, reference.ReplyPath, reference.JournalPath, reference.BackendUrl, "commit");
+        return VerifyReply(source, before, request, reply);
+    }
+
+    internal static StrategyCommitmentLedger VerifyReply(SnapshotEnvelope source, StrategyCommitmentLedger before,
+        ReservationPortfolioCommitRequest request, ReservationPortfolioCommitResult reply)
+    {
         Require(before.PreparedMaterialTransfer is null && request.MaterialTransferPreparation is not null && request.MaterialConsumption is null,
             "Shared transfer return requires the original non-consuming preparation from its owner source.");
         var reasons = new List<string>();

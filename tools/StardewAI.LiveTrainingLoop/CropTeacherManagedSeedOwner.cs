@@ -28,7 +28,7 @@ public sealed class CropTeacherManagedSeedOperation
         CropTeacherControlRecovery.Preparation? controlStart = null, CropTeacherTerminalShipping.Preparation? terminalStart = null,
         CropTeacherNativeSavedContentReadback? savedReadback = null, CropTeacherSiteTillCompilation? tillingStart = null,
         CropTeacherSiteClearanceCompilation? clearanceStart = null, CropTeacherSharedSourceReturn? sharedSourceReturn = null,
-        CropTeacherSharedSourcePreparation? sharedSourceStart = null)
+        CropTeacherSharedSourcePreparation? sharedSourceStart = null, CropTeacherSharedTransferSupport? sharedTransferSupport = null)
     {
         Owner = owner; Record = record; RecordPath = recordPath; seedScopes = scopes; Lifecycle = lifecycle;
         SupportingRoute = supportingRoute; RouteStart = routeStart; Watering = watering; WateringStart = wateringStart;
@@ -38,6 +38,7 @@ public sealed class CropTeacherManagedSeedOperation
         ClearanceStart = clearanceStart;
         SharedSourceReturn = sharedSourceReturn;
         SharedSourceStart = sharedSourceStart;
+        SharedTransferSupport = sharedTransferSupport;
     }
     private readonly CropTeacherManagedSeedScopes? seedScopes;
     internal CropTeacherSeedLifecycleSupport? Lifecycle { get; }
@@ -59,7 +60,8 @@ public sealed class CropTeacherManagedSeedOperation
     internal CropTeacherSiteClearanceCompilation? ClearanceStart { get; }
     internal CropTeacherSiteClearance? Clearance { get; set; }
     internal CropTeacherSharedSourceReturn? SharedSourceReturn { get; set; }
-    internal CropTeacherSharedSourcePreparation? SharedSourceStart { get; }
+    internal CropTeacherSharedSourcePreparation? SharedSourceStart { get; set; }
+    internal CropTeacherSharedTransferSupport? SharedTransferSupport { get; }
     internal ICropTeacherSupportingPreparation? OriginalStart => (ICropTeacherSupportingPreparation?)RouteStart ??
         (ICropTeacherSupportingPreparation?)WateringStart ?? (ICropTeacherSupportingPreparation?)HarvestStart ??
         (ICropTeacherSupportingPreparation?)OvernightStart ?? (ICropTeacherSupportingPreparation?)ControlStart ??
@@ -95,7 +97,7 @@ public sealed class CropTeacherManagedSeedOperation
     public bool IsSavedContentReadback => SavedReadback is not null;
     public bool IsSiteTilling => TillingStart is not null || Tilling is not null;
     public bool IsSiteClearance => ClearanceStart is not null || Clearance is not null;
-    public bool IsSharedSourceReturn => SharedSourceReturn is not null || SharedSourceStart is not null;
+    public bool IsSharedSourceReturn => SharedSourceReturn is not null || SharedSourceStart is not null || SharedTransferSupport is not null;
     public bool IsSupportingTransition => IsSupportingRoute || IsWateringMaintenance || IsHarvest || IsOvernight || IsControlRecovery || IsTerminalShipping || IsSavedContentReadback || IsSiteTilling || IsSiteClearance || IsSharedSourceReturn;
     public CropTeacherManagedSeedScopes Scopes => seedScopes ?? throw new InvalidOperationException("Lifecycle operations have no native seed scope.");
     public CropTeacherRunStep ReadStep() => IsLifecycle || IsSupportingTransition ? throw new InvalidOperationException("Non-seed operations have no native seed step.") :

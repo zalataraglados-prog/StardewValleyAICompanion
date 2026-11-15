@@ -149,7 +149,9 @@ public sealed partial class CropTeacherSeedTransferTests
         Assert.Equal(2, f.Runtime.Handler.Commits); Assert.Equal(1, f.Runtime.Handler.Settlements);
     }
 
-    private static CropTeacherSharedSourceSelection PrepareSharedTransferSelection(SharedTransferReturnFixture f)
+    private static CropTeacherSharedSourceSelection PrepareSharedTransferSelection(SharedTransferReturnFixture f,
+        StrategyCommitmentLedger? ledger = null, string? output = null, CropTeacherSharedTransferDecision? decision = null,
+        bool updateTransition = true)
     {
         // Real ranker/compiler, declared availability and native observations; never game/Teacher credit.
         var old = JsonSerializer.Deserialize<ActionQueueEnvelope>(File.ReadAllText(f.Transition.QueuePath), JsonOptions)!;
@@ -170,7 +172,7 @@ public sealed partial class CropTeacherSeedTransferTests
             CropSeedMaterialTransferBinding.IsControlParameter(row.Name) || row.Name == "prepared_material_transfer_sha256")).ToArray();
         var ranking = new JsonObject { ["ranked_event_candidates"] = JsonSerializer.SerializeToNode(rows, JsonOptions) };
         var selected = Assert.Single(SelectedQueueDecisionLease.CreateFromPlan(plan, ranking).Candidates);
-        var queue = new ActionQueueCompiler().Compile(plan, f.Files.Before, f.Runtime.Repository.Get(f.Files.Before));
+        var queue = new ActionQueueCompiler().Compile(plan, f.Files.Before, ledger ?? f.Runtime.Repository.Get(f.Files.Before));
         Assert.True(queue.Status == "pending", string.Join(",", queue.Items.SelectMany(item => item.BlockingReasons))); Assert.Single(queue.Items);
         var evidence = new JsonObject
         {
@@ -179,13 +181,19 @@ public sealed partial class CropTeacherSeedTransferTests
             ["selected_queue_index"] = selected.QueueIndex, ["selected_candidate_id"] = selected.CandidateId,
             ["selected_option_id"] = selected.OptionId, ["availability"] = JsonSerializer.SerializeToNode(availability, JsonOptions)
         };
-        string Save<T>(string name, T value) { var path = Path.Combine(f.Files.RuntimePath, name); Fixture.Save(path, value); return path; }
+        Directory.CreateDirectory(output ?? f.Files.RuntimePath);
+        string Save<T>(string name, T value) { var path = Path.Combine(output ?? f.Files.RuntimePath, name); Fixture.Save(path, value); return path; }
         var queuePath = Save("shared-prepared-yield-queue.json", queue);
-        f.Transition = f.Transition with { QueuePath = queuePath, SelectedCandidateId = selected.CandidateId,
+        if (updateTransition) f.Transition = f.Transition with { QueuePath = queuePath, SelectedCandidateId = selected.CandidateId,
             ExecutionReceiptPath = Path.Combine(f.Files.RuntimePath, "shared-prepared-native-receipt.json"),
             AfterSnapshotPath = Path.Combine(f.Files.RuntimePath, "shared-prepared-after.json") };
+        var modelPath = Save("shared-prepared-fresh.json", plan);
+        var evidencePath = Save("shared-prepared-refresh.json", evidence);
+        if (decision is not null) return new(decision.SnapshotPath, decision.PlanPath, decision.RankingPath,
+            modelPath, queuePath, evidencePath, decision.SelectedQueueIndex, decision.OwnedCandidateIds)
+                { DecisionReference = decision.DecisionReference };
         return new(f.Files.SourcePath, Save("shared-prepared-decision.json", plan), Save("shared-prepared-ranking.json", ranking),
-            Save("shared-prepared-fresh.json", plan), queuePath, Save("shared-prepared-refresh.json", evidence), selected.QueueIndex, [])
+            modelPath, queuePath, evidencePath, selected.QueueIndex, [])
             { MaterialTransferPreparation = f.PreparationReference };
     }
 }

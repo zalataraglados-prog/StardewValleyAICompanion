@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-11-15 同一owner从准备前持有转移事务（196，库存能力块未总闭）
+
+- 195最终 `a8cdf518`／CI `43690007147` 成功：Core2675/2675（32秒）、Backend3438/3438（5分48秒）、零跳过；日志 `block195-final-ci43690007147.log` SHA `fb100fea37e72e80d1284baf2ef1767fa0c2d6da07fed806cdca66ef29b9205f`。沙箱常规merge `69a8a474`／树 `80cd35fb0c37033a208c74eb674033b571c9239f` 等于已验195，不与本轮新工作目录混称一致。
+- 新显式 `selected_work_yield.v3` 在原准备RPC之前占用同一owner的pending槽，固定原选择／请求／输入及原生输出路径；原admission不改写，原prepared记录另行固定实际回包、fresh选择与队列哈希。准备和原生运行目录分离，编译中断保留旧输出，在同一持有命名空间写新编译结果，不覆盖历史。原生claim、结果、接受链及联合来源汇总绑定这份prepared记录，不能用换头或事后admission补救悬空准备。
+- 复用原commit／完整GET／编译事务，提取为内部 `PortfolioPreparationRuntime`，旧购种／取种／播种调用的前置次序、诊断与默认不变。准备回包或编译、prepared落盘失败后，显式恢复只走原journal／本地回包或lookup及完整GET，不补发准备或native。随后复用194原Main执行／结算／marker／恢复核。父日计划目标保持，只有这个新模式的子执行目标取自已验原准备；不改旧claims／compiler标准。准备后的常用读取直接消费已固定边界，不重新投影整个来源。
+- 最终显式E重建原事务相邻 **1405/1406（8分46秒）**：新增7项均通过，唯一失败为旧购种lost_acceptance在原repository `File.Move`遇访问拒绝，原因未定、未改原存储／权限。随后同DLL定向复查旧购种全部5模式、购种／转移／播种原事务与新prepared／Main链 **28/28（23秒）**、零跳过，不能追认1406全绿；早前12项重叠不累加。两日志分别为 `block196-original-runtime-adjacent-tests.log` SHA `add999d3993b6e4f839d4bab6816eb59dacd8b137a73cc20e03a43b319918b51`、`block196-original-transaction-directed-recheck.log` SHA `99d395c068e465d454f83883c52182a02eca625b5be1711722b96268b28a03f5`；本提交最终CI另核。用例为声明的种子支持转移／原Backend和原Main方法调用，不是待售存箱或真实游戏L3证明。首次新测试误用内部API、漏建输出目录仅修夹具；旧浅层清理夹具不容纳新目录，新用例显式保留小型工件、不扩写递归删除。初败均保留。
+- **下一处仍同一库存能力块：** 将195所选预览在Main原支持阶段转换为上述准备前admission，复用这一个事务固定实际准备引用／fresh SourceSelection，并接明确恢复分支；当前生产入口尚不自动生成该操作，预览flag及新库存模式仍OFF。再存箱／取回归因、分区／自由及被动重排、其他消耗、显式全局消费者及收获／留存／终端成对启用；随后原partial／多队列与真实跨根选线／日历／来源对账，第6步#570两门及#569正式manifest前交接。无新验收门或阶段，L1及169—172冻结、formal=false，无游戏／API／清理／部署，local-data不提交。
+
 ## 2026-11-15 待售转移支持预览与原日计划探针（195，自动准备仍未启用）
 
 - 194最终 `db2a1f15`／CI `43686565830` 成功：Core2675/2675（37秒）、Backend3433/3433（7分30秒）、零跳过；日志SHA `75f53aed4529855fb91fab9391bbd7b68d059b18e9294070fecc9e2915e6843c`。沙箱常规merge `2f49ba41`／树 `91cecb616884be96a00f9f192324fdf034cc24cc` 等于已验194，不与本轮新工作目录混称一致。

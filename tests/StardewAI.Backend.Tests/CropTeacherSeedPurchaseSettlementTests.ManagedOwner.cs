@@ -148,6 +148,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         internal string Native => Path.Combine(OwnerRoot, "native-000001");
         internal string Recovery => Path.Combine(root, "recovery");
         internal CropTeacherManagedSeedOwnerOptions Options { get; }
+        internal bool RetainArtifacts { get; init; }
 
         internal OwnerFiles(Fixture files, RuntimeFixture runtime, OwnerInputs inputs)
             : this(runtime.LiveOptions, runtime.Client, files.SourcePath, files.LedgerPath, inputs) { }
@@ -166,6 +167,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
 
         public void Dispose()
         {
+            if (RetainArtifacts) return;
             if (Directory.Exists(OwnerRoot))
                 foreach (var native in Directory.EnumerateDirectories(OwnerRoot))
                 {

@@ -59,7 +59,7 @@ static partial class Program
         if (owner.Pending is not null || operation.SharedSourceStart is null || operation.SharedSourceReturn is not { } returned)
             throw new InvalidOperationException("Retain selected work until its original source return is accepted.");
         returned.ValidateInputsUnchanged();
-        var bound = operation.Record["shared_source_selection"]!.Deserialize<CropTeacherSharedSourceSelection>(JsonOptions)!;
+        var bound = owner.ReadSharedSourceExecutionSelection(operation);
         var candidate = selection.Lease.CandidateAt(bound.SelectedQueueIndex);
         var receipt = JsonSerializer.Deserialize<QueueExecutionReceiptEnvelope>(ContentAddressedJsonArtifactReader.ReadAllText(
             CropTeacherManagedSeedOwner.OriginalSupportingTransition(operation).ExecutionReceiptPath), JsonOptions)!;

@@ -1,5 +1,43 @@
 # Current Production Snapshot Handoff
 
+## Owner Held Before Original Preparation (196, Stock Capability Open)
+
+195 a8cdf518 / quality43690007147 SUCCESS: Core2675/2675(32s),
+Backend3438/3438(5m48s), zero skipped; log SHA
+fb100fea37e72e80d1284baf2ef1767fa0c2d6da07fed806cdca66ef29b9205f.
+Peer merge69a8a474/tree80cd35fb0c37033a208c74eb674033b571c9239f equals
+accepted195, NOT this successor.
+
+Explicit selected_work_yield.v3 retains SAME owner admission BEFORE original
+preparation commit. Immutable admission keeps original decision/request/inputs
+and native output paths; original prepared record pins actual reply/fresh selected
+queue. Separate owned preparation/native namespaces preserve interrupted compiler
+outputs. Original commit/readback/compile kernel is shared with seed callers;
+old preconditions/default diagnostics/semantics are retained. Recovery uses
+original journal/local reply or lookup/full GET, never another commit/native call.
+Prepared record is bound into native claim/result/acceptance/joint trace. Parent
+decision goal remains; only this mode adapts child goal to verified preparation.
+Hot consumers use pinned boundary without re-projecting the source.
+
+Final E rebuilt original transaction adjacent1405/1406(8m46s), all7 new pass;
+one old purchase lost_acceptance failed original repository File.Move with access
+denied, cause unproven/storage unchanged. Same-DLL directed28/28(23s), zero
+skipped; do NOT relabel1406 green or add overlapping12. Logs SHA respectively
+add999d3993b6e4f839d4bab6816eb59dacd8b137a73cc20e03a43b319918b51 and
+99d395c068e465d454f83883c52182a02eca625b5be1711722b96268b28a03f5.
+Own final-SHA CI pending. Declared seed transfer and actual original Backend/Main
+method fixtures, NOT stock storage or game L3.
+Initial internal API/fixture output and shallow cleanup errors retained; only new
+tests corrected, nested artifacts explicitly retained without recursive cleanup.
+
+NEXT Main selected-preview -> pre-mutation owner admission -> this ORIGINAL
+transaction -> fresh SourceSelection, including explicit recovery, then remaining
+stock attribution/partition/consumption/global consumers/paired activation,
+original partial/global reconciliation, #570 and #569 PRE-MANIFEST lab handoff.
+Main automatic producer/preview flag/stock mode still OFF. Frozen L1/169-172,
+formal=false, no new gate/phase, no game/API/cleanup/deploy/raw/local-data commit.
+[Current work196](CURRENT_WORK_CN.md#2026-11-15-同一owner从准备前持有转移事务196库存能力块未总闭).
+
 ## Prospective Preparation And Original Daily Probe (195, Automatic Mutation OFF)
 
 194 finaldb2a1f15/quality43686565830 SUCCESS: Core2675(37s), Backend3433(7m30s),

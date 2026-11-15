@@ -77,6 +77,7 @@ public sealed partial class CropTeacherManagedSeedOwner
     private CropTeacherSharedSourceReturn OpenRecordedSharedSourceScope(JsonObject record, string sourcePath, string ledgerPath,
         string[] covered, MoneyRevenueCropNativeLifecycleTransitionRequest transition)
     {
+        record = SharedExecutionRecord(record);
         var protocol = record["shared_source_return_protocol"]?.GetValue<string>();
         if (record["shared_source_execution_protocol"]?.GetValue<string>() == "selected_work_yield.v2")
         {

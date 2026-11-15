@@ -41,7 +41,7 @@ public sealed partial class CropTeacherManagedSeedOwner
     private static string NativeSupportingPath(CropTeacherManagedSeedOperation operation, string suffix) =>
         Path.Combine(operation.RuntimeDirectory, NativeSupportingRole(operation) + "-native-" + suffix + ".json");
     internal static MoneyRevenueCropNativeLifecycleTransitionRequest OriginalSupportingTransition(CropTeacherManagedSeedOperation operation) =>
-        operation.IsSharedSourceReturn ? operation.Record["shared_source_transition"]!.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)! :
+        operation.IsSharedSourceReturn ? operation.Owner.SharedExecutionRecord(operation.Record)["shared_source_transition"]!.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)! :
         operation.IsSiteClearance ? operation.Record["clearance_transition"]!.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)! :
         operation.IsSiteTilling ? operation.Record["till_transition"]!.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)! :
         operation.IsTerminalShipping ? operation.Record["terminal_transition"]!.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)! :
@@ -100,10 +100,16 @@ public sealed partial class CropTeacherManagedSeedOwner
         finally { operation.ExecutionActive = false; gate.Release(); }
     }
 
-    private JsonObject CreateOriginalSupportingNativeClaim(CropTeacherManagedSeedOperation operation) => new()
+    private JsonObject CreateOriginalSupportingNativeClaim(CropTeacherManagedSeedOperation operation)
     {
-        ["schema_version"] = "crop_teacher_owned_" + NativeSupportingRole(operation) + "_native_claim.v1", ["admission_sha256"] = HashFile(operation.RecordPath),
-        ["original_intent_sha256"] = Text(operation.Record, "original_intent_sha256"), ["native_invocation_claimed"] = true,
-        ["native_request_performed"] = null, ["formal_product_training_authorized"] = false
-    };
+        var claim = new JsonObject
+        {
+            ["schema_version"] = "crop_teacher_owned_" + NativeSupportingRole(operation) + "_native_claim.v1", ["admission_sha256"] = HashFile(operation.RecordPath),
+            ["original_intent_sha256"] = Text(operation.Record, "original_intent_sha256"), ["native_invocation_claimed"] = true,
+            ["native_request_performed"] = null, ["formal_product_training_authorized"] = false
+        };
+        if (operation.SharedTransferSupport is not null)
+            claim["shared_transfer_prepared_sha256"] = HashFile(RecordPath(operation.Sequence, "prepared"));
+        return claim;
+    }
 }

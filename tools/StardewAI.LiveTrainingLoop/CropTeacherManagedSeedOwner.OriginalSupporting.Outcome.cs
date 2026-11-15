@@ -41,8 +41,9 @@ public sealed partial class CropTeacherManagedSeedOwner
         {
             ["schema_version"] = "crop_teacher_owned_" + NativeSupportingRole(operation) + "_native_result.v1", ["original_intent_sha256"] = Text(operation.Record, "original_intent_sha256"),
             [NativeSupportingRole(operation) + "_native_claim_sha256"] = artifacts.Hashes[claimPath],
-            [NativeSupportingRole(operation) + "_transition"] = operation.Record[operation.IsSharedSourceReturn
-                ? "shared_source_transition" : NativeSupportingRole(operation) + "_transition"]!.DeepClone(),
+            [NativeSupportingRole(operation) + "_transition"] = operation.IsSharedSourceReturn
+                ? JsonSerializer.SerializeToNode(OriginalSupportingTransition(operation), JsonOptions)
+                : operation.Record[NativeSupportingRole(operation) + "_transition"]!.DeepClone(),
             ["input_artifact_hashes"] = JsonSerializer.SerializeToNode(artifacts.Hashes, JsonOptions),
             ["native_outcome_verified"] = true
         };
@@ -69,6 +70,7 @@ public sealed partial class CropTeacherManagedSeedOwner
     {
         operation.OriginalStart!.ValidateInputsUnchanged();
         var artifacts = new CropSeedRuntimeArtifacts(operation.OriginalStart.InputHashes);
+        if (operation.SharedTransferSupport is not null) artifacts.Pin(RecordPath(operation.Sequence, "prepared"));
         var intentPath = SupportingIntentPath(operation);
         if (!JsonNode.DeepEquals(CreateSupportingTransitionIntent(operation.Record, operation.SupportingTransition), artifacts.Read<JsonObject>(intentPath)) ||
             artifacts.Hashes[intentPath] != Text(operation.Record, "original_intent_sha256"))

@@ -64,6 +64,8 @@ public sealed partial class CropTeacherManagedSeedOwner
         accepted["native_outcome_verified"] = true;
         accepted["native_crop_lifecycle_verified"] = false;
         accepted["teacher_preference_label_eligible"] = false;
+        if (operation.SharedTransferSupport is not null)
+            accepted["shared_transfer_prepared_sha256"] = HashFile(RecordPath(operation.Sequence, "prepared"));
         AddSharedSourceReturnEvidence(operation, accepted);
         AddSavedReadbackEvidence(operation, accepted);
         if (operation.Tilling is { } tilling) AddTillingOutcomeEvidence(tilling, operation.TillingStart!, accepted);
@@ -92,6 +94,9 @@ public sealed partial class CropTeacherManagedSeedOwner
 
     private void ValidateSupportingTransitionAcceptance(CropTeacherManagedSeedOperation operation, JsonObject accepted)
     {
+        if (operation.SharedTransferSupport is null ? accepted["shared_transfer_prepared_sha256"] is not null :
+            Text(accepted, "shared_transfer_prepared_sha256") != HashFile(RecordPath(operation.Sequence, "prepared")))
+            throw new InvalidDataException("Supporting acceptance changed its original shared preparation record.");
         if (operation.OriginalStart is not null) LoadOriginalSupportingOutcome(operation);
         ValidateSiteApproachAcceptance(operation, accepted);
         if (operation.Terminal is { } terminal)

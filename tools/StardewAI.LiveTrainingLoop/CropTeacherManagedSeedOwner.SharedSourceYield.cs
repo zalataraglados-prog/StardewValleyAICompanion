@@ -103,7 +103,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             {
                 if (HashFile(claimPath) != claimHash) throw new InvalidDataException("Selected foreign execution claim changed.");
             };
-            return new(operation.Sequence, operation.SupportStepId, SharedSourceSelection(operation.Record), OriginalSupportingTransition(operation));
+            return new(operation.Sequence, operation.SupportStepId, SharedSourceSelection(SharedExecutionRecord(operation.Record)), OriginalSupportingTransition(operation));
         }
         finally { gate.Release(); }
     }
@@ -125,12 +125,9 @@ public sealed partial class CropTeacherManagedSeedOwner
         record["shared_source_selection"]?.Deserialize<CropTeacherSharedSourceSelection>(JsonOptions)
         ?? throw new InvalidDataException("Shared source yield lacks its original selected decision.");
 
-    private SelectedQueueCandidateLock ReadSharedSourceSelection(JsonObject record)
+    private SelectedQueueCandidateLock ReadSharedSourceDecision(CropTeacherSharedSourceSelection selection, CropSeedRuntimeArtifacts artifacts)
     {
-        var selection = SharedSourceSelection(record);
-        var artifacts = new CropSeedRuntimeArtifacts(new Dictionary<string, string>());
-        var paths = new[] { selection.DecisionSnapshotPath, selection.DecisionPlanPath, selection.DecisionRankingPath,
-            selection.ModelPlanPath, selection.QueuePath, selection.EvidencePath };
+        var paths = new[] { selection.DecisionSnapshotPath, selection.DecisionPlanPath, selection.DecisionRankingPath };
         if (paths.Any(path => string.IsNullOrWhiteSpace(path) || !Path.IsPathFullyQualified(path)))
             throw new InvalidDataException("Shared source selected decision requires absolute original paths.");
         var original = artifacts.Read<SnapshotEnvelope>(selection.DecisionSnapshotPath);
@@ -145,23 +142,37 @@ public sealed partial class CropTeacherManagedSeedOwner
             original.GameTick > current.GameTick && !nativeReadbackClock ||
             SnapshotInt(original, "time", "total_days") != SnapshotInt(current, "time", "total_days"))
             throw new InvalidDataException("Shared source yield lost its original decision source or selected foreign ownership.");
+        return selected;
+    }
+
+    private SelectedQueueCandidateLock ReadSharedSourceSelection(JsonObject record, string? executionGoal = null)
+    {
+        var selection = SharedSourceSelection(record);
+        var artifacts = new CropSeedRuntimeArtifacts(new Dictionary<string, string>());
+        var selected = ReadSharedSourceDecision(selection, artifacts);
+        if (new[] { selection.ModelPlanPath, selection.QueuePath, selection.EvidencePath }.Any(path =>
+            string.IsNullOrWhiteSpace(path) || !Path.IsPathFullyQualified(path)))
+            throw new InvalidDataException("Shared source selected decision requires absolute original paths.");
+        var current = artifacts.Read<SnapshotEnvelope>(headSnapshotPath);
+        var decision = artifacts.Read<SmallModelPlanEnvelope>(selection.DecisionPlanPath);
+        var goal = executionGoal ?? decision.GoalId;
         var evidence = artifacts.Read<JsonObject>(selection.EvidencePath);
         var model = artifacts.Read<SmallModelPlanEnvelope>(selection.ModelPlanPath);
         var queue = artifacts.Read<JsonObject>(selection.QueuePath);
         if (evidence["schema_version"]?.GetValue<string>() != "selected_queue_candidate_refresh.v1" ||
             evidence["state_hash"]?.GetValue<string>() != current.StateHash ||
-            evidence["goal_id"]?.GetValue<string>() != decision.GoalId ||
+            evidence["goal_id"]?.GetValue<string>() != goal ||
             evidence["policy_model_invoked"]?.GetValue<bool>() != false || evidence["selection_locked"]?.GetValue<bool>() != true ||
             evidence["selected_queue_index"]?.GetValue<int>() != selected.QueueIndex ||
             evidence["selected_candidate_id"]?.GetValue<string>() != selected.CandidateId ||
             evidence["selected_option_id"]?.GetValue<string>() != selected.OptionId ||
-            model.StateHash != current.StateHash || model.GoalId != decision.GoalId || model.ExecutionMode != decision.ExecutionMode)
+            model.StateHash != current.StateHash || model.GoalId != goal || model.ExecutionMode != decision.ExecutionMode)
             throw new InvalidDataException("Shared source yield differs from its original selected-candidate refresh.");
         var availability = evidence["availability"]?.Deserialize<OptionAvailabilityEnvelope>(JsonOptions)
             ?? throw new InvalidDataException("Shared source yield lacks original fresh availability.");
         if (availability.StateHash != current.StateHash)
             throw new InvalidDataException("Shared source yield availability belongs to another source.");
-        var rows = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability, decision.GoalId);
+        var rows = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability, goal);
         var materialized = JsonSerializer.SerializeToNode(rows, JsonOptions)!.AsArray();
         var matches = SelectedQueueCandidateMatcher.FilterMaterializedCandidates(materialized, selected);
         var freshRanking = new JsonObject { ["ranked_event_candidates"] = matches };
@@ -175,9 +186,9 @@ public sealed partial class CropTeacherManagedSeedOwner
         return mechanical.Candidates[0];
     }
 
-    private CropTeacherSharedSourcePreparation OpenSharedSourceStart(JsonObject record)
+    private CropTeacherSharedSourcePreparation OpenSharedSourceStart(JsonObject record, string? executionGoal = null)
     {
-        var selected = ReadSharedSourceSelection(record);
+        var selected = ReadSharedSourceSelection(record, executionGoal);
         var selection = SharedSourceSelection(record);
         var transition = record["shared_source_transition"]!.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)!;
         var protocol = record["shared_source_execution_protocol"]?.GetValue<string>();

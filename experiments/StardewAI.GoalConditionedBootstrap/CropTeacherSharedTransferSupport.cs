@@ -1,0 +1,73 @@
+using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
+using StardewAI.Core.Strategy;
+
+namespace StardewAI.GoalConditionedBootstrap;
+
+// Retains the unprepared source while the SAME owner holds the original preparation RPC.
+public sealed class CropTeacherSharedTransferSupport
+{
+    private readonly CropTeacherRetainedInputs inputs;
+    private readonly SnapshotEnvelope before;
+    private readonly StrategyCommitmentLedger ledger;
+    private readonly ReservationPortfolioCommitRequest request;
+    private readonly string stepId;
+
+    private CropTeacherSharedTransferSupport(string runRequestPath, string sourcePath, string ledgerPath,
+        IReadOnlyCollection<string> commitmentIds, string stepId, ReservationPortfolioCommitRequest request,
+        IReadOnlyDictionary<string, string> decisionInputs)
+    {
+        var paths = new[] { runRequestPath, sourcePath, ledgerPath }.Select(Path.GetFullPath).ToArray();
+        Require(paths.Distinct(CropTeacherSeedTransferNativeOutcome.PathComparer).Count() == paths.Length,
+            "Shared preparation aliases an original source role.");
+        inputs = new(paths.Concat(decisionInputs.Keys).Distinct(CropTeacherSeedTransferNativeOutcome.PathComparer).ToArray());
+        var hashes = inputs.ReadHashes();
+        Require(decisionInputs.All(pair => hashes.TryGetValue(Path.GetFullPath(pair.Key), out var actual) && actual == pair.Value),
+            "Shared preparation changed its original selected decision.");
+        var source = CropTeacherSupportingSource.Read(paths[0], paths[1], paths[2], commitmentIds, stepId);
+        var preparationOnly = new ReservationPortfolioCommitRequest
+        {
+            StateHash = source.Snapshot.StateHash, ExpectedLedgerRevision = source.Ledger.Revision,
+            PortfolioId = request.PortfolioId, SourceDecisionId = request.PortfolioId, GoalId = request.GoalId,
+            MaterialTransferPreparation = request.MaterialTransferPreparation
+        };
+        Require(request.MaterialTransferPreparation is not null && EqualJson(request, preparationOnly),
+            "Shared preparation must be the exact non-consuming original transfer request.");
+        before = source.Snapshot; ledger = source.Ledger; this.stepId = stepId;
+        this.request = CropTeacherSeedSupportSource.Copy(request);
+        var preview = new ReservationPortfolioLedgerService().Commit(ledger, before, this.request, ledger.UpdatedAt);
+        _ = VerifyPreparationReply(preview);
+        SnapshotPath = paths[1];
+        TotalDay = MoneyRevenueCropSeedAcquisitionProofBuilder.ReadInt(before, "time", "total_days");
+        ValidateInputsUnchanged();
+    }
+
+    public static CropTeacherSharedTransferSupport Open(string runRequestPath, string sourcePath, string ledgerPath,
+        IReadOnlyCollection<string> commitmentIds, string stepId, ReservationPortfolioCommitRequest request,
+        IReadOnlyDictionary<string, string> decisionInputs) =>
+        new(runRequestPath, sourcePath, ledgerPath, commitmentIds, stepId, request, decisionInputs);
+
+    public string SnapshotPath { get; }
+    public int TotalDay { get; }
+    public IReadOnlyDictionary<string, string> InputHashes => inputs.ReadHashes();
+    public StrategyCommitmentLedger BaseLedger => CropTeacherSeedSupportSource.Copy(ledger);
+    public ReservationPortfolioCommitRequest PreparationRequest { get { ValidateInputsUnchanged(); return CropTeacherSeedSupportSource.Copy(request); } }
+    public void ValidateInputsUnchanged() => inputs.Validate();
+
+    public StrategyCommitmentLedger VerifyPreparationReply(ReservationPortfolioCommitResult reply)
+    {
+        ValidateInputsUnchanged();
+        var prepared = CropTeacherSharedTransferPreparation.VerifyReply(before, ledger, request, reply);
+        CropTeacherSupportingSource.RequireNewMarker(prepared, stepId);
+        return prepared;
+    }
+
+    public StrategyCommitmentLedger VerifyPreparationReference(CropTeacherSharedTransferPreparationReference reference)
+    {
+        ValidateInputsUnchanged();
+        var (actual, reply) = CropTeacherSharedPortfolioMutation.Read<ReservationPortfolioCommitRequest, ReservationPortfolioCommitResult>(
+            reference.RequestPath, reference.ReplyPath, reference.JournalPath, reference.BackendUrl, "commit");
+        Require(EqualJson(actual, request), "Shared preparation changed its admitted original request.");
+        return VerifyPreparationReply(reply);
+    }
+}
