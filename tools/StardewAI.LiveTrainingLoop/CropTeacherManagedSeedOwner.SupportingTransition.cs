@@ -11,7 +11,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         Path.Combine(operation.RuntimeDirectory, NativeSupportingRole(operation) + "-intent.json");
 
     private JsonObject CreateSupportingTransitionIntent(JsonObject record, ICropTeacherSupportingTransition? scope) =>
-        IsSharedTransferPreparation(record) ? CreateSharedTransferPreparationIntent(record) :
+        IsSharedPortfolioPreparation(record) ? CreateSharedTransferPreparationIntent(record) :
         record["shared_source_execution_protocol"]?.GetValue<string>() is "selected_work_yield.v1" or "selected_work_yield.v2" ? CreateSharedSourceYieldIntent(record) :
         record["operation_kind"]?.GetValue<string>() == "shared_source_return" ? CreateSharedSourceReturnIntent(record, (CropTeacherSharedSourceReturn)scope!) :
         record["operation_kind"]?.GetValue<string>() == "site_clearance" ? CreateOriginalClearanceIntent(record) :
@@ -35,7 +35,7 @@ public sealed partial class CropTeacherManagedSeedOwner
 
     private void ValidateSupportingTransition(CropTeacherManagedSeedOperation operation)
     {
-        if (operation.SharedTransferSupport is { } preparing)
+        if (operation.SharedPortfolioSupport is { } preparing)
         {
             preparing.ValidateInputsUnchanged();
             if (SupportingTransitionIntentHash(operation.Record, null) != Text(operation.Record, "original_intent_sha256"))
@@ -137,7 +137,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             RequireOperation(operation);
             if (!IsSupportingKind(operation, kind))
                 throw new InvalidOperationException("Managed crop operation does not match the selected supporting phase.");
-            if (operation.SharedTransferSupport is not null && operation.SharedSourceStart is null)
+            if (operation.SharedPortfolioSupport is not null && operation.SharedSourceStart is null)
                 throw new InvalidOperationException("Shared transfer requires its original preparation before native execution or return.");
             var watering = kind == CropTeacherSupportingOperationKind.Watering;
             if (operation.OriginalStart is not null)

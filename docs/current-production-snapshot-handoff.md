@@ -1,5 +1,50 @@
 # Current Production Snapshot Handoff
 
+## Same Owner Cooking Preparation And Once Execution (205, Production Consumers Open)
+
+204 98e73bb4/quality43721397815 SUCCESS: Core2762/Backend3501, zero skipped.
+CI log SHA9f86ea71e90ab109848d81d765e33320a51c912e81fc8df1deb165304cee4090.
+Peer regular mergede56fc0d/tree8b86fccd1caace8a60922f1d69e519f04fd9a5c8
+equals accepted204. Provider paused/no API/grant change;205 separate until own CI.
+
+Explicit selected_cooking_consumption.v1 owns the original request BEFORE RPC in
+the SAME owner pending slot. Original Commit/readback/fresh compile/prepared record
+transaction is shared, NOT copied or reinterpreted as transfer v3. Cooking has its
+own typed preparation and selected_cooking_yield.v1; old transfer schemas, fields,
+constructor signatures and defaults retain their meaning. The cooking request is
+non-consuming. Original recipe/portfolio replay validates its exact intent.
+
+Original Main execution exit reuses the once claim/native callback, actual source
+ingest, original supporting settlement/source marker/owner acceptance and reopen.
+Lost preparation reply/compiler/prepared-record publication and lost settlement
+reply/reference recover through original journals/lookup/full GET, no second
+mutation or native invocation. Claim and acceptance use consumption hash fields,
+not transfer labels. Original source/ledger files and foreign claims are preserved.
+The joint trace retains optional typed consumption/reference fields; old JSON omits
+them. VerifyWithSharedInventoryEffects reuses the original source/native/portfolio
+kernels and complete input-hash denominator. Old transfer consumers reject them.
+
+Final explicit-E Backend80/80(~63s), Core adjacent126/126(2.75s), zero skipped;
+12 new cases included, earlier4/72 overlap NOT additive. No Core implementation
+changed. Logs SHA f08769665ce8d768fa34218d3930314fdeb7e90a157ca24e79aac460f75635f3
+and e82044fe33490eadfcda07eeca3560a418a18889e8f9a978af9a1ebb515043ff.
+DECLARED Runtime/Product wire/observations through actual original Main methods
+and Backend, NOT a running game or L3 acceptance. Initial new-variable shadow and
+high-level crafting.cook_recipe/native executor.cook_recipe mismatch repaired only
+in new adapters; failures retained. No C# after final Backend build/local sessions
+terminal; own final-SHA CI still required.
+
+NEXT SAME inventory block: original retention applies settled passive positions
+at the actual cook frame, and explicit original lifecycle/retention/production
+consumers admit this source. Then original Main PREPARATION selection must call
+the owner, including original approach/partial queues; do not mistake the tested
+single terminal cook at the reached kitchen for every multi-action cooking plan.
+Do not re-prove accepted owner recovery. Actual selected-route other-use/mixed/
+alternative/partial/paired Main/global native reconciliation, #570 and #569
+PRE-MANIFEST handoff remain. Frozen L1/Root/169-172, modeOFF/formalfalse; lab owns
+model/data/formal manifest/train/eval. E below original6144MiB reserve: no game,
+gate reduction or unapproved cleanup. No API/deploy/raw/local-data commit.
+
 ## Cooking Native Source And Original Daily Plan (204, Owner Integration Open)
 
 203 11f95246/quality43716365696 SUCCESS: Core2758/2758(45s),

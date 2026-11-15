@@ -29,15 +29,20 @@ static partial class Program
         if (!SameSharedPath(ReadString(execution, "execution_path"), claim.Transition.ExecutionReceiptPath) ||
             !SameSharedPath(ReadString(execution, "after_snapshot_path"), claim.Transition.AfterSnapshotPath))
             throw new InvalidDataException("Selected global executor returned different original output paths.");
-        var transferSettlement = operation.SharedSourceStart!.RequiresTransferSettlement;
+        var cookingSettlement = operation.SharedSourceStart!.RequiresConsumptionSettlement;
+        var transferSettlement = operation.SharedSourceStart.RequiresTransferSettlement || cookingSettlement;
         if (transferSettlement)
         {
-            _ = operation.SharedSourceStart.ReadTransferSettlementRequest();
+            _ = cookingSettlement ? operation.SharedSourceStart.ReadConsumptionSettlementRequest() : operation.SharedSourceStart.ReadTransferSettlementRequest();
             var transferInputs = new CropSeedRuntimeArtifacts(operation.SharedSourceStart.InputHashes);
             await IngestCropTeacherManagedSnapshotAsync(http, options, claim.Transition.BeforeSnapshotPath, transferInputs).ConfigureAwait(false);
             await IngestCropTeacherManagedSnapshotAsync(http, options, claim.Transition.AfterSnapshotPath, transferInputs).ConfigureAwait(false);
-            await owner.SettleSharedTransferExecutionAsync(operation, http,
-                (diagnostic, request) => PostJournaledPortfolioSettlementAsync(http, options, diagnostic, request)).ConfigureAwait(false);
+            if (cookingSettlement)
+                await owner.SettleSharedCookingExecutionAsync(operation, http,
+                    (diagnostic, request) => PostJournaledPortfolioSettlementAsync(http, options, diagnostic, request)).ConfigureAwait(false);
+            else
+                await owner.SettleSharedTransferExecutionAsync(operation, http,
+                    (diagnostic, request) => PostJournaledPortfolioSettlementAsync(http, options, diagnostic, request)).ConfigureAwait(false);
         }
         await owner.VerifySharedSourceExecutionAsync(operation).ConfigureAwait(false);
         // Reuse the original source ingest after bounded native polling may have evicted the old head.

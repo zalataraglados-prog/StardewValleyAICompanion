@@ -8,6 +8,31 @@ namespace StardewAI.Backend.Tests;
 public sealed partial class CropTeacherSeedTransferTests
 {
     [Theory]
+    [InlineData("reference")]
+    [InlineData("settlement")]
+    [InlineData("input_denominator")]
+    [InlineData("transfer_protocol")]
+    public async Task SharedCookingGlobalSourceRequiresTheExplicitCompleteConsumptionReference(string fault)
+    {
+        using var f = new SharedCookingFixture(); await f.Build(product: true);
+        var returned = Assert.IsType<CropTeacherSharedSourceReturn>(f.Scope.VerifyTransition(f.Transition));
+        var reference = new MoneyRevenueCropNativeSharedSourceReference(f.Files.RequestPath, f.Files.LedgerPath, [Id],
+            "declared.shared.cooking.return", returned.InputHashes)
+        { SettledInventoryConsumption = f.Settlement, SettledConsumptionReferencePath = f.ReferencePath };
+        var transition = f.Transition with { NativeSharedSource = reference };
+        Assert.Equal(f.After.StateHash, MoneyRevenueCropNativeSharedSourceVerifier.VerifyWithSharedInventoryEffects(transition).AfterStateHash);
+        reference = fault switch
+        {
+            "reference" => reference with { SettledConsumptionReferencePath = null },
+            "settlement" => reference with { SettledInventoryConsumption = null },
+            "input_denominator" => reference with { InputArtifactHashes = reference.InputArtifactHashes.Skip(1).ToDictionary(row => row.Key, row => row.Value) },
+            _ => reference with { SettledTransferReferencePath = f.ReferencePath }
+        };
+        Assert.Throws<InvalidDataException>(() => MoneyRevenueCropNativeSharedSourceVerifier.VerifyWithSharedInventoryEffects(
+            transition with { NativeSharedSource = reference }));
+    }
+
+    [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public async Task SharedCookingReplaysOriginalNativeWireAndReturnsProtectedForeignPositionsWithoutTransferCredit(bool product)

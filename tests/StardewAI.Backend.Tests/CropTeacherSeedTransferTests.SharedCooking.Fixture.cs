@@ -44,7 +44,7 @@ public sealed partial class CropTeacherSeedTransferTests
             Runtime = new(Files);
         }
 
-        internal async Task Build(bool product, bool settle = true)
+        internal void PrepareSource(bool product)
         {
             Runtime.Options.UseProductExecutor = product; Runtime.Options.SkipTraining = true;
             Runtime.Options.SaveIsolationPath = "isolated-declared-shared-cooking";
@@ -61,7 +61,9 @@ public sealed partial class CropTeacherSeedTransferTests
                 Assert.True(result.Accepted, string.Join(",", result.Errors));
             }
             Files.AdoptLedger(Runtime.Repository.Get(Files.Before));
-            var request = new ReservationPortfolioCommitRequest
+        }
+
+        internal ReservationPortfolioCommitRequest PreparationRequest() => new()
             {
                 StateHash = Files.Before.StateHash, ExpectedLedgerRevision = Files.Ledger.Revision,
                 PortfolioId = "declared.shared.cooking.preparation", SourceDecisionId = "declared.shared.cooking.preparation", GoalId = "earn_money",
@@ -69,6 +71,11 @@ public sealed partial class CropTeacherSeedTransferTests
                     ConsumerOptionId = PreparedInventoryConsumptionContract.Consumer, RouteSourceDecisionId = "declared.cooking.selection",
                     RecipeName = "Fried Egg", CookingSourceId = "kitchen:FarmHouse:5,5" }
             };
+
+        internal async Task Build(bool product, bool settle = true)
+        {
+            PrepareSource(product);
+            var request = PreparationRequest();
             var diagnostic = new JsonObject();
             var reply = await InvokeLive<Task<JsonObject>>("PostJournaledPortfolioCommitAsync", Runtime.Client, Runtime.Options, diagnostic, request);
             Assert.True(reply["accepted"]!.GetValue<bool>(), reply.ToJsonString());
@@ -78,9 +85,7 @@ public sealed partial class CropTeacherSeedTransferTests
             var preparationJournal = JsonNode.Parse(File.ReadAllText(preparationJournalPath))!;
             Preparation = new(Path.Combine(Path.GetDirectoryName(preparationJournalPath)!, preparationJournal["request_file"]!.GetValue<string>()),
                 replyPath, preparationJournalPath, Runtime.Options.BackendUrl);
-            var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(Files.Before, [new OptionAvailabilityCandidate
-            { OptionId = "crafting.cook_recipe", ExplicitConfirmationGranted = true, Parameters = [new() { Name = "recipe_name", Value = "Fried Egg" },
-                new() { Name = "craft_count", Value = "1" }, new() { Name = "cooking_reason", Value = "declared_shared_meal" }] }], true);
+            var availability = CookingAvailability();
             Assert.True(availability.Options.Length == 1 && availability.Options[0].EventCandidates.Length == 1,
                 JsonSerializer.Serialize(availability, JsonOptions));
             var eventCandidate = Assert.Single(Assert.Single(availability.Options).EventCandidates);
@@ -116,6 +121,23 @@ public sealed partial class CropTeacherSeedTransferTests
             Settlement = new(Path.Combine(Path.GetDirectoryName(settlementJournalPath)!, settlementJournal["request_file"]!.GetValue<string>()),
                 settlementReplyPath, settlementJournalPath, Runtime.Options.BackendUrl, Preparation);
             Fixture.Save(ReferencePath, Settlement);
+        }
+
+        internal OptionAvailabilityEnvelope CookingAvailability() => new CandidateOptionAvailabilityEvaluator().Evaluate(Files.Before,
+            [new OptionAvailabilityCandidate { OptionId = "crafting.cook_recipe", ExplicitConfirmationGranted = true,
+                Parameters = [new() { Name = "recipe_name", Value = "Fried Egg" }, new() { Name = "craft_count", Value = "1" },
+                    new() { Name = "cooking_reason", Value = "declared_shared_meal" }] }], true);
+
+        internal async Task WriteOwnedNative(CropTeacherSharedSourceSelection selection, string receiptPath, string afterPath, bool product)
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(afterPath)!);
+            var model = JsonSerializer.Deserialize<SmallModelPlanEnvelope>(File.ReadAllText(selection.DecisionPlanPath), JsonOptions)!;
+            var ranking = JsonNode.Parse(File.ReadAllText(selection.DecisionRankingPath))!.AsObject();
+            var candidate = SelectedQueueDecisionLease.CreateFromPlan(model, ranking).CandidateAt(selection.SelectedQueueIndex);
+            Transition = new("shared_source_return", Files.Before.State["time"].GetProperty("total_days").GetProperty("value").GetInt32(),
+                selection.QueuePath, Files.SourcePath, receiptPath, afterPath, Runtime.Options.RunId,
+                Runtime.Options.PolicyTrajectoryExecutorVersion, candidate.CandidateId);
+            await WriteNative(JsonSerializer.Deserialize<ActionQueueEnvelope>(File.ReadAllText(selection.QueuePath), JsonOptions)!, product);
         }
 
         private async Task WriteNative(ActionQueueEnvelope queue, bool product)

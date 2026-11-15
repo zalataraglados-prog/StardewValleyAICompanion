@@ -62,6 +62,9 @@ public sealed class CropTeacherManagedSeedOperation
     internal CropTeacherSharedSourceReturn? SharedSourceReturn { get; set; }
     internal CropTeacherSharedSourcePreparation? SharedSourceStart { get; set; }
     internal CropTeacherSharedTransferSupport? SharedTransferSupport { get; }
+    internal CropTeacherSharedCookingSupport? SharedCookingSupport { get; init; }
+    internal ICropTeacherSharedPortfolioPreparation? SharedPortfolioSupport =>
+        (ICropTeacherSharedPortfolioPreparation?)SharedTransferSupport ?? SharedCookingSupport;
     internal ICropTeacherSupportingPreparation? OriginalStart => (ICropTeacherSupportingPreparation?)RouteStart ??
         (ICropTeacherSupportingPreparation?)WateringStart ?? (ICropTeacherSupportingPreparation?)HarvestStart ??
         (ICropTeacherSupportingPreparation?)OvernightStart ?? (ICropTeacherSupportingPreparation?)ControlStart ??
@@ -97,7 +100,7 @@ public sealed class CropTeacherManagedSeedOperation
     public bool IsSavedContentReadback => SavedReadback is not null;
     public bool IsSiteTilling => TillingStart is not null || Tilling is not null;
     public bool IsSiteClearance => ClearanceStart is not null || Clearance is not null;
-    public bool IsSharedSourceReturn => SharedSourceReturn is not null || SharedSourceStart is not null || SharedTransferSupport is not null;
+    public bool IsSharedSourceReturn => SharedSourceReturn is not null || SharedSourceStart is not null || SharedPortfolioSupport is not null;
     public bool IsSupportingTransition => IsSupportingRoute || IsWateringMaintenance || IsHarvest || IsOvernight || IsControlRecovery || IsTerminalShipping || IsSavedContentReadback || IsSiteTilling || IsSiteClearance || IsSharedSourceReturn;
     public CropTeacherManagedSeedScopes Scopes => seedScopes ?? throw new InvalidOperationException("Lifecycle operations have no native seed scope.");
     public CropTeacherRunStep ReadStep() => IsLifecycle || IsSupportingTransition ? throw new InvalidOperationException("Non-seed operations have no native seed step.") :

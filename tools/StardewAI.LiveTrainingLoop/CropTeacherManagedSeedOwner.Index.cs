@@ -42,7 +42,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             if (File.Exists(preparedPath))
             {
                 var prepared = Read<JsonObject>(preparedPath);
-                if (operation.SharedTransferSupport is not null)
+                if (operation.SharedPortfolioSupport is not null)
                     LoadSharedTransferPrepared(operation, prepared);
                 else
                 {

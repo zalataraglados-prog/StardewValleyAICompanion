@@ -70,7 +70,7 @@ public sealed partial class CropTeacherManagedSeedOwner
     {
         operation.OriginalStart!.ValidateInputsUnchanged();
         var artifacts = new CropSeedRuntimeArtifacts(operation.OriginalStart.InputHashes);
-        if (operation.SharedTransferSupport is not null) artifacts.Pin(RecordPath(operation.Sequence, "prepared"));
+        if (operation.SharedPortfolioSupport is not null) artifacts.Pin(RecordPath(operation.Sequence, "prepared"));
         var intentPath = SupportingIntentPath(operation);
         if (!JsonNode.DeepEquals(CreateSupportingTransitionIntent(operation.Record, operation.SupportingTransition), artifacts.Read<JsonObject>(intentPath)) ||
             artifacts.Hashes[intentPath] != Text(operation.Record, "original_intent_sha256"))

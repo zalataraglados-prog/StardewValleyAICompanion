@@ -1,5 +1,15 @@
 # StardewAI 当前工作
 
+## 2026-11-15 同owner烹饪准备与一次执行恢复（205，全局生产消费者待接）
+
+- 204 `98e73bb4`／CI43721397815成功：Core2762/2762（42秒）、Backend3501/3501（6分4秒），零跳过。日志 `block204-final-ci43721397815.log` SHA `9f86ea71e90ab109848d81d765e33320a51c912e81fc8df1deb165304cee4090`。沙箱常规merge `de56fc0d`／树 `8b86fccd1caace8a60922f1d69e519f04fd9a5c8` 等于已验204；205工作树另核，API仍暂停，无调用／授权变化。
+- 显式 `selected_cooking_consumption.v1` 在原准备RPC之前占用**同一个原owner pending槽**，保留选择／来源／请求／输出路径和原intent hash；实际准备后以独立 `selected_cooking_yield.v1` 接原source及一次native claim，不冒用transfer v3。原owner构造签名保留；新准备接口只抽取共有Commit／完整GET／fresh编译／prepared持久化流程，原转移的请求、schema、JSON字段及默认不改义，不复制事务或执行器。
+- 新烹饪支持沿原Commit重放核校验原snapshot配方和精确准备请求，准备本身不扣料。fresh选择必须仍为原候选；准备回包丢失、编译中断或prepared记录写入失败后，只复用原journal／lookup和完整GET恢复，不重发Commit或native。领取后再次调用以及重开后的再次领取均拒绝。高层 `crafting.cook_recipe` 与原生 `executor.cook_recipe` 分层保持，不混为一个注册名。
+- 原Main执行出口复用同一claim／原执行回调，在实际before/after导入后调用原supporting settlement，再接原source marker／owner接受与重开。新消费结算具名引用、原生claim和接受记录都用consumption字段，不标成transfer；结算回包或引用写入中断复用原lookup恢复，不补发扣料或第二次原生动作。其他根的预留数量、goal、purpose、owner保持，原source／ledger文件不替换，仍无作物或Teacher信用。
+- 原联合trace保留新可选类型化消费引用及其文件路径；旧JSON默认省略。新 `VerifyWithSharedInventoryEffects` 只组合原source／native／portfolio核及原完整输入哈希比较；旧转移消费者明确拒绝消费引用。缺引用／缺结算、遗漏输入分母、混入转移协议均拒绝。**这只接齐联合来源读回，不等于已有生命周期／留存生产消费者接受这项新能力。**
+- 最终显式E重建Backend相邻 **80/80（约1分3秒）**，含12项新增及原来源／准备转移／所选库存／HTTP持久化恢复，零跳过；前轮4／72重叠不累加。原Core烹饪／物理转移／控制接线相邻 **126/126（2.75秒）**，本块未改Core实现。日志SHA依次 `f08769665ce8d768fa34218d3930314fdeb7e90a157ca24e79aac460f75635f3`、`e82044fe33490eadfcda07eeca3560a418a18889e8f9a978af9a1ebb515043ff`。这是声明的Runtime／Product wire、物理after和真实Backend协议，通过原Main方法调用验证，**不是启动游戏或L3验收**。最终Backend构建后C#未再改，本机命令均收回；当前提交自身CI另核。初次新变量遮蔽编译错误和高层／原生命名混淆的2项红测保留，仅修新适配，不改旧执行器。
+- **接续仍原第5步：** 将已具名的消费来源接原库存留存器，在实际烹饪帧应用原结算的被动位置，并为原生命周期／留存／生产汇总提供对应显式入口；接原Main准备阶段的真实所选烹饪（不能只调用执行出口），复用原approach／partial队列，不把所有含移动前缀的烹饪误当单动作。本块验证的是已到厨房后的单个终端烹饪。随后仅按实际所选路线接其他消费／替代补给／混合producer、partial及成对Main启用，再全局资源／日历／来源原生对账、#570、#569正式manifest前交实验室。不再证明已验owner恢复，不重采L1 19/19、Root11/11或169—172，不重跑十三日。新模式OFF、formal=false；E仍低于原6144MiB运行保留，不启动游戏／降门／擅自清理。无API／部署／local-data及原日志／存档／二进制提交。最新issue无新增外部反馈。
+
 ## 2026-11-15 烹饪原生来源与原日计划接续（204，同owner执行接线未闭）
 
 - 203最终 `11f95246`／CI `43716365696` 全部成功：Core2758/2758（45秒）、Backend3493/3493（8分50秒）、零跳过。日志 `block203-final-ci43716365696.log` SHA `9b955cf4b502bcd0e4de54a71a26937ff284327128f0c8dfe2564de6b9552838`；沙箱常规merge `f7b4f9f3`／树 `c74eed7c37ee11d81886c1410887c616168d70ab` 等于已验203。本轮独立验证，API仍暂停，无调用或权限变化。

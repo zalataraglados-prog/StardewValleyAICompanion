@@ -26,15 +26,26 @@ public static class MoneyRevenueCropNativeSharedSourceVerifier
         => VerifyCore(transition, allowSettledTransfer: true, allowPreparation: true, allowPreparedYield: true,
             productTransfer: transition.ExecutorVersion == PolicyTrajectoryVersionPins.ProductExecutor, transferredStockSource: true);
 
+    public static CropTeacherSharedSourceReturn VerifyWithSharedInventoryEffects(MoneyRevenueCropNativeLifecycleTransitionRequest transition)
+        => VerifyCore(transition, allowSettledTransfer: true, allowPreparation: true, allowPreparedYield: true,
+            productTransfer: transition.ExecutorVersion == PolicyTrajectoryVersionPins.ProductExecutor, transferredStockSource: true,
+            allowConsumption: true);
+
     private static CropTeacherSharedSourceReturn VerifyCore(MoneyRevenueCropNativeLifecycleTransitionRequest transition,
         bool allowSettledTransfer, bool allowPreparation = false, bool allowPreparedYield = false, bool productTransfer = false,
-        bool transferredStockSource = false)
+        bool transferredStockSource = false, bool allowConsumption = false)
     {
         var reference = transition.NativeSharedSource
             ?? throw new InvalidDataException("Shared native transition lacks its original source/ledger binding.");
         Require(transition.TransitionKind == "shared_source_return" && transition.NativeRefillPreparation is null &&
                 reference.InputArtifactHashes is { Count: > 0 } && reference.CoveredCommitmentIds is { Length: > 0 },
             "Shared native transition is not an explicit separately credited source return.");
+        var consumption = reference.SettledInventoryConsumption;
+        Require(allowConsumption || consumption is null && reference.SettledConsumptionReferencePath is null,
+            "Inventory consumption requires its explicit shared inventory-effects consumer.");
+        Require((consumption is not null) == (reference.SettledConsumptionReferencePath is not null) &&
+                (consumption is null || reference.SettledMaterialTransfer is null && reference.SettledTransferReferencePath is null && reference.AcceptedMarker is null),
+            "Shared inventory source mixes or loses its typed original settlement reference.");
         Require(allowSettledTransfer || reference.SettledMaterialTransfer is null,
             "Settled material transfer requires its explicit joint source consumer.");
         Require(allowPreparation || reference.SettledMaterialTransfer?.Preparation is null,
@@ -49,10 +60,14 @@ public static class MoneyRevenueCropNativeSharedSourceVerifier
         Require(!lease || transferredStockSource && reference.AcceptedMarker is not null && reference.SettledTransferReferencePath is not null,
             "Inventory transfer lease requires its original accepted release marker.");
         Require(!productTransfer || transition.ExecutorVersion == PolicyTrajectoryVersionPins.ProductExecutor &&
-                (transferredStockSource && reference.SettledMaterialTransfer is null ||
+                (consumption is not null || transferredStockSource && reference.SettledMaterialTransfer is null ||
                  reference.SettledTransferReferencePath is not null && reference.SettledMaterialTransfer?.Preparation is not null),
             "Product shared transfer requires the explicit Product prepared-yield source.");
-        var scope = lease
+        var scope = consumption is not null
+            ? CropTeacherSharedSourceReturn.OpenAfterPreparedCookingConsumption(reference.RunRequestPath, transition.BeforeSnapshotPath,
+                reference.LedgerPath, reference.CoveredCommitmentIds, transition, reference.StepId, consumption,
+                reference.SettledConsumptionReferencePath!, productTransfer)
+            : lease
             ? CropTeacherSharedSourceReturn.OpenAfterPreparedInventoryLeaseYield(reference.RunRequestPath, transition.BeforeSnapshotPath,
                 reference.LedgerPath, reference.CoveredCommitmentIds, transition, reference.StepId, reference.SettledMaterialTransfer!,
                 reference.SettledTransferReferencePath!, productTransfer)

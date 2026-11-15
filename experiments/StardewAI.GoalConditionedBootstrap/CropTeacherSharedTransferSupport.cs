@@ -6,7 +6,7 @@ using StardewAI.Core.Strategy;
 namespace StardewAI.GoalConditionedBootstrap;
 
 // Retains the unprepared source while the SAME owner holds the original preparation RPC.
-public sealed class CropTeacherSharedTransferSupport
+public sealed class CropTeacherSharedTransferSupport : ICropTeacherSharedPortfolioPreparation
 {
     private readonly CropTeacherRetainedInputs inputs;
     private readonly SnapshotEnvelope before;
@@ -91,4 +91,8 @@ public sealed class CropTeacherSharedTransferSupport
         Require(EqualJson(actual, request), "Shared preparation changed its admitted original request.");
         return VerifyPreparationReply(reply);
     }
+
+    StrategyCommitmentLedger ICropTeacherSharedPortfolioPreparation.VerifyPreparationReference(
+        string requestPath, string replyPath, string journalPath, string backendUrl) =>
+        VerifyPreparationReference(new(requestPath, replyPath, journalPath, backendUrl));
 }

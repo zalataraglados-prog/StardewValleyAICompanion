@@ -98,7 +98,7 @@ public sealed partial class CropTeacherManagedSeedOwner
     private static IReadOnlyDictionary<string, string> Inputs(CropTeacherManagedSeedScopes scopes) =>
         scopes.Purchase?.InputHashes ?? scopes.Transfer?.InputHashes ?? scopes.Planting!.InputHashes;
     private static IReadOnlyDictionary<string, string> OperationInputs(CropTeacherManagedSeedOperation operation) =>
-        operation.SharedTransferSupport is not null ? operation.SharedTransferSupport.InputHashes :
+        operation.SharedPortfolioSupport is not null ? operation.SharedPortfolioSupport.InputHashes :
         operation.OriginalStart is not null ? operation.OriginalStart.InputHashes : operation.IsSupportingTransition ? operation.SupportingTransition!.InputHashes :
         operation.IsLifecycle ? operation.Lifecycle!.InputHashes : Inputs(operation.Scopes);
 }

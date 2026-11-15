@@ -9,10 +9,9 @@ public sealed partial class CropTeacherManagedSeedOwner
         var kind = record["operation_kind"]?.GetValue<string>();
         if (kind == "shared_source_return")
         {
-            if (IsSharedTransferPreparation(record))
+            if (IsSharedPortfolioPreparation(record))
             {
-                var preparing = new CropTeacherManagedSeedOperation(this, record, path, null,
-                    sharedTransferSupport: OpenSharedTransferSupport(record));
+                var preparing = CreateSharedPreparationOperation(record, path, OpenSharedPortfolioSupport(record));
                 ValidateSupportingTransition(preparing);
                 return preparing;
             }

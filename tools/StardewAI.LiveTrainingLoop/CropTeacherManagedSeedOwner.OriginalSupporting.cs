@@ -108,8 +108,8 @@ public sealed partial class CropTeacherManagedSeedOwner
             ["original_intent_sha256"] = Text(operation.Record, "original_intent_sha256"), ["native_invocation_claimed"] = true,
             ["native_request_performed"] = null, ["formal_product_training_authorized"] = false
         };
-        if (operation.SharedTransferSupport is not null)
-            claim["shared_transfer_prepared_sha256"] = HashFile(RecordPath(operation.Sequence, "prepared"));
+        if (operation.SharedPortfolioSupport is not null)
+            claim[PreparationMode(operation.Record).AcceptedPreparationHashKey] = HashFile(RecordPath(operation.Sequence, "prepared"));
         return claim;
     }
 }

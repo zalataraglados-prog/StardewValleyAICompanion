@@ -8,13 +8,14 @@ namespace StardewAI.LiveTrainingLoop;
 public sealed partial class CropTeacherManagedSeedOwner
 {
     private async Task PersistSharedTransferPreparedAsync(CropTeacherManagedSeedOperation operation,
-        CropTeacherSharedSourceSelection selection, CropTeacherSharedTransferPreparationReference reference, string intentHash)
+        CropTeacherSharedSourceSelection selection, SharedPreparationReference reference, string intentHash)
     {
+        var mode = PreparationMode(operation.Record);
         var record = new JsonObject
         {
-            ["schema_version"] = "crop_teacher_managed_shared_transfer_preparation.v1", ["sequence"] = operation.Sequence,
+            ["schema_version"] = mode.PreparedSchema, ["sequence"] = operation.Sequence,
             ["run_id"] = options.RunId, ["support_step_id"] = operation.SupportStepId, ["admission_sha256"] = HashFile(operation.RecordPath),
-            ["original_intent_sha256"] = intentHash, ["original_transfer_preparation"] = JsonSerializer.SerializeToNode(reference, JsonOptions),
+            ["original_intent_sha256"] = intentHash, [mode.ReferenceKey] = mode.ReferenceNode(reference),
             ["shared_source_selection"] = JsonSerializer.SerializeToNode(selection, JsonOptions),
             ["native_dispatch_performed"] = false, ["formal_product_training_authorized"] = false
         };
@@ -30,14 +31,16 @@ public sealed partial class CropTeacherManagedSeedOwner
 
     private void ValidateSharedTransferPrepared(CropTeacherManagedSeedOperation operation, JsonObject prepared)
     {
-        var support = operation.SharedTransferSupport ?? throw new InvalidOperationException("Shared preparation has no original admission.");
-        var reference = prepared["original_transfer_preparation"]?.Deserialize<CropTeacherSharedTransferPreparationReference>(JsonOptions)
-            ?? throw new InvalidDataException("Shared prepared record lacks its original RPC reference.");
+        var support = operation.SharedPortfolioSupport ?? throw new InvalidOperationException("Shared preparation has no original admission.");
+        var mode = PreparationMode(operation.Record);
+        var reference = mode.ReadReference(prepared[mode.ReferenceKey]);
+        if (prepared[mode.Cooking ? "original_transfer_preparation" : "original_consumption_preparation"] is not null)
+            throw new InvalidDataException("Shared prepared record mixes preparation protocols.");
         var selection = SharedSourceSelection(prepared);
         var root = StoredPath(operation.Record, "preparation_runtime_directory");
         var journal = PortfolioMutationRequestJournal.Describe(options.BackendUrl, options.PortfolioJournalDirectory,
             "commit", support.PreparationRequest, JsonOptions);
-        if (Text(prepared, "schema_version") != "crop_teacher_managed_shared_transfer_preparation.v1" ||
+        if (Text(prepared, "schema_version") != mode.PreparedSchema ||
             prepared["sequence"]?.GetValue<int>() != operation.Sequence || Text(prepared, "run_id") != options.RunId ||
             Text(prepared, "support_step_id") != operation.SupportStepId || Text(prepared, "admission_sha256") != HashFile(operation.RecordPath) ||
             prepared["native_dispatch_performed"]?.GetValue<bool>() != false || prepared["formal_product_training_authorized"]?.GetValue<bool>() != false ||
@@ -47,7 +50,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             !SamePath(reference.JournalPath, journal.JournalPath) || !SamePath(reference.ReplyPath, Path.Combine(root, "marker-reply.json")) ||
             new[] { selection.ModelPlanPath, selection.QueuePath, selection.EvidencePath }.Any(path => !Within(root, path)))
             throw new InvalidDataException("Shared prepared record changed its original owner/preparation boundary.");
-        _ = support.VerifyPreparationReference(reference);
+        _ = support.VerifyPreparationReference(reference.RequestPath, reference.ReplyPath, reference.JournalPath, reference.BackendUrl);
         _ = ValidateSharedTransferSelection(operation, selection, reference, selection.QueuePath);
         var execution = SharedPreparedExecutionRecord(operation.Record, selection, reference);
         if (!JsonNode.DeepEquals(prepared["shared_source_transition"], execution["shared_source_transition"]))
@@ -64,28 +67,30 @@ public sealed partial class CropTeacherManagedSeedOwner
         ValidateSharedTransferPrepared(operation, prepared);
         operation.Prepared = prepared;
         operation.SharedSourceStart = OpenSharedTransferStart(operation, SharedPreparedExecutionRecord(operation.Record, SharedSourceSelection(prepared),
-            prepared["original_transfer_preparation"]!.Deserialize<CropTeacherSharedTransferPreparationReference>(JsonOptions)!));
+            PreparationMode(operation.Record).ReadReference(prepared[PreparationMode(operation.Record).ReferenceKey])));
     }
 
     private JsonObject SharedExecutionRecord(JsonObject record)
     {
-        if (!IsSharedTransferPreparation(record)) return record;
+        if (!IsSharedPortfolioPreparation(record)) return record;
+        var mode = PreparationMode(record);
         var prepared = Read<JsonObject>(RecordPath(Sequence(record), "prepared"));
         // Replay built this boundary when loading/publishing prepared; hot consumers need no world re-projection.
         var execution = (JsonObject)record.DeepClone();
-        execution["shared_source_execution_protocol"] = "selected_work_yield.v2";
-        foreach (var name in new[] { "shared_source_selection", "original_transfer_preparation", "shared_source_transition" })
+        execution["shared_source_execution_protocol"] = mode.ExecutionProtocol;
+        foreach (var name in new[] { "shared_source_selection", mode.ReferenceKey, "shared_source_transition" })
             execution[name] = prepared[name]!.DeepClone();
         return execution;
     }
 
     private JsonObject SharedPreparedExecutionRecord(JsonObject admission, CropTeacherSharedSourceSelection selection,
-        CropTeacherSharedTransferPreparationReference reference)
+        SharedPreparationReference reference)
     {
         var record = (JsonObject)admission.DeepClone();
-        record["shared_source_execution_protocol"] = "selected_work_yield.v2";
+        var mode = PreparationMode(admission);
+        record["shared_source_execution_protocol"] = mode.ExecutionProtocol;
         record["shared_source_selection"] = JsonSerializer.SerializeToNode(selection, JsonOptions);
-        record["original_transfer_preparation"] = JsonSerializer.SerializeToNode(reference, JsonOptions);
+        record[mode.ReferenceKey] = mode.ReferenceNode(reference);
         var snapshot = Read<StardewAI.Contracts.State.SnapshotEnvelope>(StoredPath(admission, "before_snapshot_path"));
         var ranking = Read<JsonObject>(selection.DecisionRankingPath);
         var decision = Read<StardewAI.Contracts.Execution.SmallModelPlanEnvelope>(selection.DecisionPlanPath);
@@ -103,6 +108,6 @@ public sealed partial class CropTeacherManagedSeedOwner
         SharedSourceSelection(SharedExecutionRecord(operation.Record));
 
     private CropTeacherSharedSourcePreparation OpenSharedTransferStart(CropTeacherManagedSeedOperation operation, JsonObject execution) =>
-        OpenSharedSourceStart(execution, operation.SharedTransferSupport!.PreparationRequest.GoalId,
+        OpenSharedSourceStart(execution, operation.SharedPortfolioSupport!.PreparationRequest.GoalId,
             productTransfer: options.ExecutorVersion == PolicyTrajectoryVersionPins.ProductExecutor);
 }

@@ -85,6 +85,21 @@ public sealed partial class CropTeacherManagedSeedOwner
             CropSaleStockTransferLeaseContract.IsLeaseRequest(request);
         record = SharedExecutionRecord(record);
         var protocol = record["shared_source_return_protocol"]?.GetValue<string>();
+        if (record["shared_source_execution_protocol"]?.GetValue<string>() == "selected_cooking_yield.v1")
+        {
+            var consumptionPreparation = record["original_consumption_preparation"]?.Deserialize<CropTeacherSharedConsumptionPreparationReference>(JsonOptions);
+            var path = SharedConsumptionReferencePath(record);
+            var reference = Read<CropTeacherSharedConsumptionSettlementReference>(path);
+            if (protocol is not null || record["original_transfer_preparation"] is not null || record["original_transfer_settlement"] is not null ||
+                record["original_consumption_settlement"] is not null || consumptionPreparation is null || consumptionPreparation.BackendUrl != options.BackendUrl ||
+                reference.Preparation != consumptionPreparation || reference.BackendUrl != options.BackendUrl)
+                throw new InvalidDataException("Shared cooking yield changed its original consumption preparation or settlement protocol.");
+            return CropTeacherSharedSourceReturn.OpenAfterPreparedCookingConsumption(plan.RequestPath, sourcePath, ledgerPath,
+                covered, transition, Text(record, "support_step_id"), reference, path,
+                transition.ExecutorVersion == PolicyTrajectoryVersionPins.ProductExecutor);
+        }
+        if (record["original_consumption_preparation"] is not null || record["original_consumption_settlement"] is not null)
+            throw new InvalidDataException("Shared consumption reference requires its explicit original protocol.");
         if (record["shared_source_execution_protocol"]?.GetValue<string>() == "selected_work_yield.v2")
         {
             var yieldPreparation = record["original_transfer_preparation"]?.Deserialize<CropTeacherSharedTransferPreparationReference>(JsonOptions);
@@ -162,6 +177,14 @@ public sealed partial class CropTeacherManagedSeedOwner
                 accepted["shared_material_transfer_preparation_reply_sha256"] = scope.InputHashes[preparation.ReplyPath];
             }
         }
+        if (scope.ConsumptionSettlement is { } consumption)
+        {
+            accepted["native_shared_inventory_consumption_settlement_verified"] = true;
+            accepted["shared_inventory_consumption_request_sha256"] = scope.InputHashes[consumption.RequestPath];
+            accepted["shared_inventory_consumption_reply_sha256"] = scope.InputHashes[consumption.ReplyPath];
+            accepted["shared_inventory_consumption_preparation_request_sha256"] = scope.InputHashes[consumption.Preparation.RequestPath];
+            accepted["shared_inventory_consumption_preparation_reply_sha256"] = scope.InputHashes[consumption.Preparation.ReplyPath];
+        }
     }
 
     private void ValidateSharedSourceReturnEvidence(CropTeacherManagedSeedOperation operation, JsonObject accepted)
@@ -171,7 +194,9 @@ public sealed partial class CropTeacherManagedSeedOwner
             "shared-source_native_claim_sha256", "shared-source_native_result_sha256",
             "native_shared_material_transfer_settlement_verified", "shared_material_transfer_request_sha256",
             "shared_material_transfer_reply_sha256", "shared_material_transfer_preparation_request_sha256",
-            "shared_material_transfer_preparation_reply_sha256" };
+            "shared_material_transfer_preparation_reply_sha256", "native_shared_inventory_consumption_settlement_verified",
+            "shared_inventory_consumption_request_sha256", "shared_inventory_consumption_reply_sha256",
+            "shared_inventory_consumption_preparation_request_sha256", "shared_inventory_consumption_preparation_reply_sha256" };
         if (!operation.IsSharedSourceReturn)
         {
             if (fields.Any(name => accepted[name] is not null))
@@ -190,6 +215,11 @@ public sealed partial class CropTeacherManagedSeedOwner
             new[] { "shared_material_transfer_preparation_request_sha256", "shared_material_transfer_preparation_reply_sha256" }
                 .Any(name => accepted[name] is not null))
             throw new InvalidDataException("A source return cannot claim an unbound material transfer preparation.");
+        if (operation.SharedSourceReturn.ConsumptionSettlement is null &&
+            new[] { "native_shared_inventory_consumption_settlement_verified", "shared_inventory_consumption_request_sha256",
+                "shared_inventory_consumption_reply_sha256", "shared_inventory_consumption_preparation_request_sha256",
+                "shared_inventory_consumption_preparation_reply_sha256" }.Any(name => accepted[name] is not null))
+            throw new InvalidDataException("A source return cannot claim an unbound inventory consumption settlement.");
         var expected = new JsonObject(); AddSharedSourceReturnEvidence(operation, expected);
         if (expected.Any(field => !JsonNode.DeepEquals(field.Value, accepted[field.Key])) ||
             new[] { "route_target_reached", "native_watering_prefix_verified", "native_harvest_prefix_verified",

@@ -20,6 +20,9 @@ public sealed record CropTeacherSharedSourceSelection(string DecisionSnapshotPat
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public CropTeacherSharedTransferPreparationReference? MaterialTransferPreparation { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public CropTeacherSharedConsumptionPreparationReference? InventoryConsumptionPreparation { get; init; }
 }
 
 public sealed record CropTeacherSharedExecutionClaim(int OwnerSequence, string SupportStepId,
@@ -42,7 +45,8 @@ public sealed partial class CropTeacherManagedSeedOwner
         await gate.WaitAsync().ConfigureAwait(false);
         try
         {
-            if (selection.MaterialTransferPreparation is not null && selection.MaterialTransferPreparation != preparation)
+            if (selection.InventoryConsumptionPreparation is not null ||
+                selection.MaterialTransferPreparation is not null && selection.MaterialTransferPreparation != preparation)
                 throw new InvalidDataException("Prepared transfer selection requires its explicit matching yield mode.");
             var record = CreateAdmissionRecord(headSnapshotPath, headLedgerPath, runtimeDirectory);
             record["operation_kind"] = "shared_source_return";
@@ -194,9 +198,15 @@ public sealed partial class CropTeacherManagedSeedOwner
         var transition = record["shared_source_transition"]!.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)!;
         var protocol = record["shared_source_execution_protocol"]?.GetValue<string>();
         var preparation = record["original_transfer_preparation"]?.Deserialize<CropTeacherSharedTransferPreparationReference>(JsonOptions);
-        if (protocol is not "selected_work_yield.v1" and not "selected_work_yield.v2" ||
+        var cooking = protocol == "selected_cooking_yield.v1";
+        var consumption = record["original_consumption_preparation"]?.Deserialize<CropTeacherSharedConsumptionPreparationReference>(JsonOptions);
+        if (protocol is not "selected_work_yield.v1" and not "selected_work_yield.v2" and not "selected_cooking_yield.v1" ||
             (protocol == "selected_work_yield.v2") != (preparation is not null) ||
+            cooking != (consumption is not null) ||
+            cooking && (selection.InventoryConsumptionPreparation != consumption || selection.MaterialTransferPreparation is not null) ||
+            !cooking && selection.InventoryConsumptionPreparation is not null ||
             preparation is not null && preparation.BackendUrl != options.BackendUrl ||
+            consumption is not null && consumption.BackendUrl != options.BackendUrl || record["original_consumption_settlement"] is not null ||
             record["shared_source_return_protocol"] is not null || record["original_transfer_settlement"] is not null ||
             record["step"] is not null || record["prior_verified_snapshot_path"] is not null ||
             !SamePath(StoredPath(record, "before_snapshot_path"), headSnapshotPath) ||
@@ -211,7 +221,11 @@ public sealed partial class CropTeacherManagedSeedOwner
         if (selection.DecisionReference is not null) pins.Pin(selection.DecisionReference.Path);
         var inventoryLease = record["shared_transfer_request"]?.Deserialize<StardewAI.Contracts.Strategy.ReservationPortfolioCommitRequest>(JsonOptions)
             is { } request && CropSaleStockTransferLeaseContract.IsLeaseRequest(request);
-        var start = preparation is null
+        var start = cooking
+            ? CropTeacherSharedSourcePreparation.OpenPreparedCookingConsumption(plan.RequestPath, headSnapshotPath, headLedgerPath,
+                ActiveCoveredCommitments(), Text(record, "support_step_id"), selection.ModelPlanPath, transition, pins.Hashes,
+                consumption!, SharedConsumptionReferencePath(record), options.ExecutorVersion == PolicyTrajectoryVersionPins.ProductExecutor)
+            : preparation is null
             ? CropTeacherSharedSourcePreparation.Open(plan.RequestPath, headSnapshotPath, headLedgerPath,
                 ActiveCoveredCommitments(), Text(record, "support_step_id"), selection.ModelPlanPath, transition, pins.Hashes)
             : inventoryLease
@@ -256,6 +270,9 @@ public sealed partial class CropTeacherManagedSeedOwner
 
     private static string SharedTransferReferencePath(JsonObject record) =>
         Path.Combine(StoredPath(record, "runtime_directory"), "shared-transfer-settlement.json");
+
+    private static string SharedConsumptionReferencePath(JsonObject record) =>
+        Path.Combine(StoredPath(record, "runtime_directory"), "shared-consumption-settlement.json");
 
     private static int SnapshotInt(SnapshotEnvelope snapshot, string section, string field) =>
         snapshot.State[section].GetProperty(field).GetProperty("value").GetInt32();

@@ -27,6 +27,12 @@ internal static class CropTeacherSharedConsumption
     {
         var (request, reply) = CropTeacherSharedPortfolioMutation.Read<ReservationPortfolioCommitRequest, ReservationPortfolioCommitResult>(
             reference.RequestPath, reference.ReplyPath, reference.JournalPath, reference.BackendUrl, "commit");
+        return VerifyPreparationReply(source, before, request, reply);
+    }
+
+    internal static StrategyCommitmentLedger VerifyPreparationReply(SnapshotEnvelope source, StrategyCommitmentLedger before,
+        ReservationPortfolioCommitRequest request, ReservationPortfolioCommitResult reply)
+    {
         Require(before.PreparedMaterialTransfer is null && before.PreparedInventoryConsumption is null &&
                 request.InventoryConsumptionPreparation is not null && reply.Ledger is not null,
             "Shared cooking requires its original explicit consumption preparation.");
