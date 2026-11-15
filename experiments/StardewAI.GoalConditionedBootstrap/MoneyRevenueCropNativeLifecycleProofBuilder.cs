@@ -15,7 +15,8 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
             MoneyRevenueCropNativeLifecycleProofRequest>(
                 fullRequestPath,
                 "Money Revenue crop native-lifecycle proof request");
-        var appliedNativeWork = request.SchemaVersion == "money_revenue_crop_native_lifecycle_proof_request.v9";
+        var savedReadbacks = request.SchemaVersion == "money_revenue_crop_native_lifecycle_proof_request.v10";
+        var appliedNativeWork = savedReadbacks || request.SchemaVersion == "money_revenue_crop_native_lifecycle_proof_request.v9";
         var inventoryEffects = appliedNativeWork || request.SchemaVersion == "money_revenue_crop_native_lifecycle_proof_request.v8";
         var transferredStock = inventoryEffects || request.SchemaVersion == "money_revenue_crop_native_lifecycle_proof_request.v7";
         var jointObserved = transferredStock || request.SchemaVersion == "money_revenue_crop_native_lifecycle_proof_request.v6";
@@ -28,6 +29,8 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
                 !request.FormalProductTrainingAuthorized,
             "Money Revenue crop native-lifecycle proof request is invalid.");
         var checkpointResumes = request.CheckpointResumes!;
+        Require(savedReadbacks || checkpointResumes.All(value => value.AcceptedSavedReadbacks is null),
+            "Accepted saved readbacks require explicit lifecycle v10.");
         Require(nativeObservedCapacity || request.Transitions.All(value => value.NativeRefillPreparation is null),
             "Native refill preparation references require explicit lifecycle v5.");
         Require(jointObserved || request.Transitions.All(value => value.NativeSharedSource is null && value.TransitionKind != SharedSourceReturnKind),
@@ -131,12 +134,12 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
                     contexts.Any(value => value.Commitment.CommitmentId == transition.Request.NativeRefillPreparation!.CommitmentId &&
                         value.Commitment.RequiredWateringTotalDays.Contains(transition.Request.TotalDay)),
                 "Native refill preparation changed its original crop-production obligation/day.");
-        var checkpointResumeProofs = ValidateTransitionChain(
+        var checkpointResumeProofs = ValidateTransitionChainCore(
             transitions,
             sourceSnapshot,
             contexts,
             capacity,
-            checkpointResumes);
+            checkpointResumes, savedReadbacks);
 
         var transitionProofs = transitions.Select(value =>
             new MoneyRevenueCropNativeLifecycleTransitionProof(

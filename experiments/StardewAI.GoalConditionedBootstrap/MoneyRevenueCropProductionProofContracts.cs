@@ -197,7 +197,12 @@ public sealed record MoneyRevenueCropNativeRefillPreparationReference(
     [property: JsonPropertyName("resource_mode")] string ResourceMode);
 
 public sealed record MoneyRevenueCropNativeLifecycleCheckpointResumeRequest(
-    [property: JsonPropertyName("transition_index")] int TransitionIndex);
+    [property: JsonPropertyName("transition_index")] int TransitionIndex)
+{
+    [JsonPropertyName("accepted_saved_readbacks")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public MoneyRevenueCropAcceptedSavedReadbackReference[]? AcceptedSavedReadbacks { get; init; }
+}
 
 public sealed record MoneyRevenueCropNativeLifecycleCheckpointResumeProof(
     [property: JsonPropertyName("transition_index")] int TransitionIndex,
@@ -207,7 +212,16 @@ public sealed record MoneyRevenueCropNativeLifecycleCheckpointResumeProof(
     [property: JsonPropertyName("normalized_state_sha256")] string NormalizedStateSha256,
     [property: JsonPropertyName("prior_run_id")] string PriorRunId,
     [property: JsonPropertyName("resumed_run_id")] string ResumedRunId,
-    [property: JsonPropertyName("verified")] bool Verified);
+    [property: JsonPropertyName("verified")] bool Verified)
+{
+    [JsonPropertyName("boundary_kind")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? BoundaryKind { get; init; }
+
+    [JsonPropertyName("saved_readback_acceptance_sha256s")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string[]? SavedReadbackAcceptanceSha256s { get; init; }
+}
 
 public sealed record MoneyRevenueCropNativeLifecycleTransitionProof(
     [property: JsonPropertyName("transition_kind")] string TransitionKind,

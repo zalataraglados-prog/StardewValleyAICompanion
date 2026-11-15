@@ -23,7 +23,15 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         MoneyRevenueCropDailyCapacityProof capacity,
         MoneyRevenueCropNativeLifecycleCheckpointResumeRequest[]
             checkpointResumes)
+        => ValidateTransitionChainCore(transitions, source, contexts, capacity, checkpointResumes, acceptedSavedReadbacks: false);
+
+    private static MoneyRevenueCropNativeLifecycleCheckpointResumeProof[] ValidateTransitionChainCore(
+        LoadedTransition[] transitions, SnapshotEnvelope source, LifecycleCommitmentContext[] contexts,
+        MoneyRevenueCropDailyCapacityProof capacity, MoneyRevenueCropNativeLifecycleCheckpointResumeRequest[] checkpointResumes,
+        bool acceptedSavedReadbacks)
     {
+        Require(acceptedSavedReadbacks || checkpointResumes.All(value => value.AcceptedSavedReadbacks is null),
+            "Accepted saved readbacks require the explicit lifecycle consumer.");
         var sourceCalendar = ReadCalendar(source);
         var firstDay = contexts.Min(value =>
             value.Commitment.PlantingTotalDay);
@@ -67,10 +75,9 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
                     Require(!exactChain,
                         "Money Revenue crop lifecycle checkpoint resume did not cross a runtime boundary at transition " +
                         index + ".");
-                    resumeProofs.Add(ValidateCheckpointResume(
-                        index,
-                        previous,
-                        transition));
+                    var accepted = resumesByIndex[index].AcceptedSavedReadbacks;
+                    if (accepted is null) resumeProofs.Add(ValidateCheckpointResume(index, previous, transition));
+                    else resumeProofs.Add(ValidateAcceptedSavedReadbackResume(index, previous, transition, accepted));
                 }
                 else
                 {
@@ -178,6 +185,26 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         Require(resumeProofs.Count == checkpointResumes.Length,
             "Money Revenue crop lifecycle checkpoint resume was not consumed.");
         return resumeProofs.ToArray();
+    }
+
+    private static MoneyRevenueCropNativeLifecycleCheckpointResumeProof ValidateAcceptedSavedReadbackResume(
+        int index, LoadedTransition previous, LoadedTransition resumed,
+        MoneyRevenueCropAcceptedSavedReadbackReference[] accepted)
+    {
+        var home = ReadHomeLocation(previous.After);
+        Require(previous.Request.TransitionKind == DayRolloverKind &&
+                resumed.Request.TotalDay == previous.Request.TotalDay + 1 &&
+                previous.Request.RunId == resumed.Request.RunId &&
+                ReadCalendar(previous.After).TotalDay == resumed.Request.TotalDay &&
+                ReadCalendar(resumed.Before).TotalDay == resumed.Request.TotalDay &&
+                ReadHomeLocation(resumed.Before) == home && ReadPlayerLocation(previous.After) == home &&
+                ReadPlayerLocation(resumed.Before) == home,
+            "Accepted saved readback is not the original owner's same-day home continuation after native rollover.");
+        var boundary = CropTeacherAcceptedSavedReadbackVerifier.Verify(previous.AfterPath, resumed.BeforePath,
+            resumed.Request.RunId, accepted);
+        return new(index, resumed.Request.TotalDay, previous.After.StateHash, resumed.Before.StateHash,
+            boundary.PersistentStateSha256, previous.Request.RunId, resumed.Request.RunId, true)
+        { BoundaryKind = "accepted_native_saved_content_readback", SavedReadbackAcceptanceSha256s = boundary.AcceptanceSha256s };
     }
 
     private static MoneyRevenueCropNativeLifecycleCheckpointResumeProof

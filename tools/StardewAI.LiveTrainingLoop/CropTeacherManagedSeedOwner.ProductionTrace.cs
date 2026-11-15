@@ -14,6 +14,8 @@ public sealed record CropTeacherManagedSharedSourceReturn(int OwnerSequence, str
     public MoneyRevenueCropNativeSharedSourceReference? SourceReference { get; init; }
 }
 
+public sealed record CropTeacherManagedSavedReadback(int OwnerSequence, MoneyRevenueCropAcceptedSavedReadbackReference Reference);
+
 public sealed record CropTeacherManagedJointProductionTrace(CropTeacherManagedProductionTrace CropTrace,
     IReadOnlyList<CropTeacherManagedSharedSourceReturn> SharedSourceReturns)
 {
@@ -36,6 +38,7 @@ public sealed class CropTeacherManagedProductionTrace
     public IReadOnlyDictionary<string, string> InputHashes { get; }
     public bool RetainedReplayOnly { get; internal init; }
     internal IReadOnlyList<CropTeacherManagedSharedSourceReturn> SharedSourceReturnReferences { get; init; } = [];
+    public IReadOnlyList<CropTeacherManagedSavedReadback> SavedContentReadbacks { get; internal init; } = [];
     public void ValidateInputsUnchanged() => new CropSeedRuntimeArtifacts(InputHashes).Validate();
 }
 
@@ -71,6 +74,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             }
             var transitions = new List<CropTeacherManagedProductionTransition>();
             var sharedReturns = new List<CropTeacherManagedSharedSourceReturn>();
+            var readbacks = new List<CropTeacherManagedSavedReadback>();
             var previous = headerHash;
             foreach (var (sequence, path, hash) in acceptedHistory)
             {
@@ -161,7 +165,14 @@ public sealed partial class CropTeacherManagedSeedOwner
                 if (kind == "saved_content_readback")
                 {
                     Reference("original_intent_sha256", Path.Combine(runtime, "saved-readback-intent.json"));
-                    Reference("reload_observation_sha256", StoredPath(record, "reload_observation_path"));
+                    var observationPath = StoredPath(record, "reload_observation_path");
+                    Reference("reload_observation_sha256", observationPath);
+                    var retained = new Dictionary<string, string>(inputs, PathComparer);
+                    foreach (var (input, expected) in Read<CropTeacherNativeReloadObservation>(observationPath).InputArtifactHashes)
+                    { Pin(input, expected); retained[Path.GetFullPath(input)] = expected; }
+                    foreach (var input in new[] { path, admission, observationPath, StoredPath(accepted, "after_snapshot_path") })
+                    { Pin(input); retained[Path.GetFullPath(input)] = hashes[Path.GetFullPath(input)]; }
+                    readbacks.Add(new(sequence, new(sequence, admission, path, observationPath, retained)));
                     // An observed load is not a native production action or a fabricated queue.
                     continue;
                 }
@@ -198,7 +209,8 @@ public sealed partial class CropTeacherManagedSeedOwner
             ValidateState();
             var result = new CropTeacherManagedProductionTrace(options.NativeRunPlanPath, headSnapshotPath, headLedgerPath,
                 transitions.ToArray(), new System.Collections.ObjectModel.ReadOnlyDictionary<string, string>(hashes))
-                { RetainedReplayOnly = retainedReplay, SharedSourceReturnReferences = Array.AsReadOnly(sharedReturns.ToArray()) };
+                { RetainedReplayOnly = retainedReplay, SharedSourceReturnReferences = Array.AsReadOnly(sharedReturns.ToArray()),
+                    SavedContentReadbacks = Array.AsReadOnly(readbacks.ToArray()) };
             result.ValidateInputsUnchanged();
             return result;
         }

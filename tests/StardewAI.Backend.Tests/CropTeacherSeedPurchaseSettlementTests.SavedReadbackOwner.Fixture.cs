@@ -26,21 +26,22 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             }));
         }
 
-        internal async Task CompleteNight(CropTeacherManagedSeedOwner owner)
+        internal async Task CompleteNight(CropTeacherManagedSeedOwner owner, Action<SnapshotEnvelope>? prepareLoaded = null)
         {
             await Night.Home(owner);
             var night = await Night.PrepareNight(owner);
             await owner.ExecuteOriginalOvernightAsync(night, Night.Shared.Runtime.Client, () => Night.EmitNight(owner));
             await Night.RebindNight(owner, night);
-            BindObservation(owner);
+            BindObservation(owner, prepareLoaded);
         }
 
-        internal void BindObservation(CropTeacherManagedSeedOwner owner)
+        internal void BindObservation(CropTeacherManagedSeedOwner owner, Action<SnapshotEnvelope>? prepareLoaded = null)
         {
             var loaded = JsonSerializer.Deserialize<SnapshotEnvelope>(File.ReadAllText(owner.CurrentSnapshotPath), JsonOptions)!;
             var sourceTime = DateTimeOffset.Parse(loaded.RealTimestamp);
             loaded.GameTick = 10; loaded.RealTimestamp = sourceTime.AddSeconds(65).ToString("O");
             ChangeState(loaded, "player", player => player["tile_x"]!["value"] = player["tile_x"]!["value"]!.GetValue<int>() + 1);
+            prepareLoaded?.Invoke(loaded);
             Fixture.Save(LoadedPath, loaded);
             Night.Shared.Runtime.Store.Snapshots[loaded.StateHash] = loaded;
             var savedPath = Path.Combine(Night.NightRuntime, "overnight-save-boundary.json");

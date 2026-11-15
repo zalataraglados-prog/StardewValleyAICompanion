@@ -47,6 +47,7 @@ internal static partial class CropTeacherProductionEvidence
         // Acquisition/site preparation precede the original lifecycle's planting denominator.
         // Nothing inside that lifecycle is filtered out or relabelled as resource-neutral.
         var transitions = ordered.Skip(firstPlanting).Select(row => BindNativePreparation(trace, plan, row)).ToArray();
+        var checkpointResumes = SavedReadbackResumes(trace, ordered.Skip(firstPlanting).ToArray());
         if (!SamePath(transitions[^1].AfterSnapshotPath, trace.AcceptedSnapshotPath))
             throw new InvalidDataException("Managed crop production does not reach its accepted terminal source.");
         var dayStarts = transitions.GroupBy(row => row.TotalDay).ToDictionary(group => group.Key, group =>
@@ -99,13 +100,15 @@ internal static partial class CropTeacherProductionEvidence
             capacities.Add(capacity);
             var lifecycleRequest = await Emit("lifecycle-request-" + index, new MoneyRevenueCropNativeLifecycleProofRequest
             {
-                SchemaVersion = appliedNativeWork ? "money_revenue_crop_native_lifecycle_proof_request.v9" :
+                SchemaVersion = checkpointResumes.Length > 0 ? "money_revenue_crop_native_lifecycle_proof_request.v10" :
+                    appliedNativeWork ? "money_revenue_crop_native_lifecycle_proof_request.v9" :
                     inventoryEffects ? "money_revenue_crop_native_lifecycle_proof_request.v8" :
                     shared.Count > 0 ? transferredStock ? "money_revenue_crop_native_lifecycle_proof_request.v7" :
                     "money_revenue_crop_native_lifecycle_proof_request.v6" :
                     "money_revenue_crop_native_lifecycle_proof_request.v5",
                 CropProductionPlanPath = plan.CropProductionPlanPath, CommitmentId = crop.CommitmentId,
-                PlantingLayoutProofPath = layouts[crop.CommitmentId], DailyCapacityProofPath = capacity, Transitions = transitions
+                PlantingLayoutProofPath = layouts[crop.CommitmentId], DailyCapacityProofPath = capacity, Transitions = transitions,
+                CheckpointResumes = checkpointResumes
             }).ConfigureAwait(false);
             var lifecycleProof = MoneyRevenueCropNativeLifecycleProofBuilder.Build(lifecycleRequest);
             var lifecycle = await Emit("lifecycle-proof-" + index, lifecycleProof).ConfigureAwait(false);

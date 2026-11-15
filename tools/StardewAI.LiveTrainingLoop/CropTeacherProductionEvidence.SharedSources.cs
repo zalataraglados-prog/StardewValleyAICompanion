@@ -54,7 +54,12 @@ internal static partial class CropTeacherProductionEvidence
             var after = artifacts.Read<SnapshotEnvelope>(all[index - 1].NativeTransition.AfterSnapshotPath);
             var before = artifacts.Read<SnapshotEnvelope>(all[index].NativeTransition.BeforeSnapshotPath);
             if (after.StateHash != before.StateHash || after.GameTick != before.GameTick)
-                throw new InvalidDataException("Joint production shared source is not contiguous with its original neighboring action.");
+            {
+                var readbacks = ReadbacksBetween(trace, all[index - 1], all[index]);
+                if (readbacks.Length == 0)
+                    throw new InvalidDataException("Joint production shared source is not contiguous with its original neighboring action.");
+                // This is only ordering, not acceptance: explicit lifecycle v10 verifies the bound readback.
+            }
         }
         artifacts.Validate();
         return all;

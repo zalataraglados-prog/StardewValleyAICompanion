@@ -1,5 +1,34 @@
 # Current Production Snapshot Handoff
 
+## Accepted Saved Readback Lifecycle Connection (212)
+
+211 fb8681ab OWN43743947459 SUCCESS: Core2762/Backend3531, zero skipped.
+Peer a1db8f48 tracked tree753f1f6b equals211; finalized571 is integrated.
+The original owner trace now retains sealed saved-readback references, NOT an
+invented game action. Resume indices use final merged owner ordering. Explicit
+lifecycle requestv10 checks accepted admission/observation hashes, original saved
+fingerprint, same-day home boundary and exact next native source via the ORIGINAL
+saved-resource comparator. The proof tags its persistent-resource hash scope;
+old strict normalization and requestv4-v9 defaults remain unchanged.
+Ordering only carries references; lifecycle verifies them, avoiding duplicate
+new-layer replay. JSON/CAS and raw log/executable inputs keep their proper guards.
+
+Runtime/Product owner fixtures complete original night -> accepted readback ->
+original Farm route, with one night/five ledger commits each; both exercise the
+actual new boundary consumer. Final explicit-E one-CPU adjacent57/57(~95.5s), zero
+skipped, includes7 new cases; earlier focused cases overlap. Log SHA
+8012ed3af48fbcf1bc895227af49f84fe243556a2dda82c34f56405fb1adad5a.
+All local test handles terminal/no C# after final build, own CI still required.
+NOT whole public joint production/shipping/native acceptance.
+Fixture fresh-tick/type/value-equality mistakes were fixed only in new test setup;
+old executors and default fixture behavior were not rewritten to satisfy it.
+
+572 expanded to EIGHT findings. NEXT:3 independent retained publication attempts;
+4/7 measured prefix and accumulated-calendar timing; verify/repair5 wire identity,
+6 required accepted SHA and8 structured numeric rejection. Original550 ->570 ->569
+PRE-MANIFEST, frozen evidence/no13day replay, ModeOFF/formalfalse stay unchanged.
+Public rolling339/draft567 guard baseline remains210 payloads until updated.
+
 ## Issue572 Terminal Consumers And Remaining Repairs (211)
 
 210 OWN43741315779 SUCCESS, Core2762(1m13s)/Backend3531(7m27s), zero skipped;
