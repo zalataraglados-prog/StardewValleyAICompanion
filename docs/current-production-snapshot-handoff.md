@@ -1,5 +1,37 @@
 # Current Production Snapshot Handoff
 
+## Transferable Sale Stock (190, Capability Still Open)
+
+189 final5f0b4b6c/CI43672175759 SUCCESS: Core2675/Backend3360, zero skipped,
+all steps; log SHA7a308aa98919036b99a24e78697da404d4f4e2d95e30f88abc6b35a1ea6b7c7c.
+Peer merge34f3a94e/tree81c147b1ba5abe5dbb054dd653408b46825069fc equals accepted189.
+
+Explicit purpose v2 separates immutable creation slot from current storage position.
+Original prepared-transfer settlement retains reservation ID/source/purpose; the
+original harvest owner persists native_sale_stock.v2 and restores that recorded
+mode only. Legacy v1/defaults remain unchanged. Existing sale-stock readers,
+economic candidates and original terminal consume the same current-position claims.
+
+One resource preflight at candidate and fresh compilation reuses ORIGINAL prepared
+binding and MaterialTransferProjector. Missing/wrong preparation, identity,
+revision, intent and projection fail before native dispatch. Ordinary movement
+does not invalidate preparation solely by full snapshot hash. Resource readiness
+does NOT grant original dispatch/runtime/native/settlement authority.
+
+Final E rebuilt targeted63/63(28s), zero skipped; log SHA
+62ed003a549ad0a13b90f3979c48f84d81177c3ba972d5972aae6ad386eb0336.
+Earlier21/21 and62/62 overlap. Declared synthetic/protocol and original compiler/
+Backend tests, NOT actual global L3. Own final-SHA full CI still required.
+
+NEXT: return the original transfer-settled ledger through real source/journals to
+the SAME managed owner; preserve producer credit during storage/withdrawal from
+verified transitions, cover other consumption, then enable harvest/retention/
+terminal together in Main with recorded-mode recovery. Main remains unactivated;
+position classification alone is not storage continuity or cross-owner proof.
+Original step5 partial/multi-queue/global route/calendar/native replay, step6 #570,
+and #569 pre-manifest handoff remain. Freeze L1 and169-172; no13-day restart,
+new stage or denominator. formal=false; no local-data/raw/log/binary commits.
+
 ## Reserved Producer Retention (189, Capability Still Open)
 
 188 finalf086ae30/CI43670276654 SUCCESS: Core2675/Backend3347, zero skipped,

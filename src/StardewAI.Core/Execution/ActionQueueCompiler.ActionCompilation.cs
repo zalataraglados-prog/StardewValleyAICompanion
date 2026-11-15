@@ -284,6 +284,7 @@ namespace StardewAI.Core.Execution
             blocking.AddRange(ValidateNativeMiningPrimitivePlan(action, snapshot));
             blocking.AddRange(ValidateShippingBinPrimitivePlan(action));
             blocking.AddRange(ValidateMaterialTransferPlan(action, snapshot));
+            blocking.AddRange(CropSaleStockTransferPreflight.Evaluate(action.OptionId, action.Parameters, snapshot, commitmentLedger));
             blocking.AddRange(ValidateSelectSafeItemSlotPlan(action, snapshot));
             blocking.AddRange(ValidateCloseMenuPlan(action, snapshot));
             blocking.AddRange(ValidateBuyShopItemPlan(action, snapshot));

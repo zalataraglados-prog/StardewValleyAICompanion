@@ -11,6 +11,8 @@ public sealed record CropTeacherOriginalHarvestCompilation(CropTeacherRunStep St
 {
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public bool RetainSaleStock { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool TransferableSaleStock { get; init; }
 }
 
 public sealed partial class CropTeacherManagedSeedOwner
@@ -24,10 +26,13 @@ public sealed partial class CropTeacherManagedSeedOwner
             if (Pending is not null || HeadRecoveryRequired)
                 throw new InvalidOperationException("Recover the existing crop phase before original harvest compilation.");
             var value = await compileOriginal().ConfigureAwait(false);
+            if (value.TransferableSaleStock && !value.RetainSaleStock)
+                throw new InvalidDataException("Transferable harvest stock requires the explicit retained-stock mode.");
             var record = CreateAdmissionRecord(headSnapshotPath, headLedgerPath, value.RuntimeDirectory);
             record["operation_kind"] = "crop_harvest";
             record["harvest_execution_protocol"] = "original_loop.v1";
-            if (value.RetainSaleStock) record["harvest_output_reservation_protocol"] = "native_sale_stock.v1";
+            if (value.RetainSaleStock) record["harvest_output_reservation_protocol"] = value.TransferableSaleStock ?
+                "native_sale_stock.v2" : "native_sale_stock.v1";
             record["commitment_id"] = value.Step.CommitmentId;
             record["harvest_step"] = JsonSerializer.SerializeToNode(value.Step, JsonOptions);
             record["original_model_action_path"] = Path.GetFullPath(value.ModelActionPath);
@@ -72,10 +77,14 @@ public sealed partial class CropTeacherManagedSeedOwner
             active is null || !active.SequenceEqual(ActiveCoveredCommitments(), StringComparer.Ordinal))
             throw new InvalidDataException("Original harvest changed its owner/run/executor/source or original due batch.");
         var outputProtocol = record["harvest_output_reservation_protocol"]?.GetValue<string>();
-        if (outputProtocol is not null and not "native_sale_stock.v1")
+        if (outputProtocol is not null and not "native_sale_stock.v1" and not "native_sale_stock.v2")
             throw new InvalidDataException("Original harvest output reservation protocol is unknown.");
         var start = outputProtocol is null
             ? CropTeacherHarvest.Preparation.Open(options.NativeRunPlanPath, StoredPath(record, "before_snapshot_path"), headLedgerPath,
+                active, step.CommitmentId, Text(record, "support_step_id"), step.TotalDay, step.ActionBatch!.BatchIndex,
+                StoredPath(record, "original_model_action_path"), transition.QueuePath)
+            : outputProtocol == "native_sale_stock.v2" ? CropTeacherHarvest.Preparation.OpenRetainingTransferableSaleStock(
+                options.NativeRunPlanPath, StoredPath(record, "before_snapshot_path"), headLedgerPath,
                 active, step.CommitmentId, Text(record, "support_step_id"), step.TotalDay, step.ActionBatch!.BatchIndex,
                 StoredPath(record, "original_model_action_path"), transition.QueuePath)
             : CropTeacherHarvest.Preparation.OpenRetainingSaleStock(options.NativeRunPlanPath, StoredPath(record, "before_snapshot_path"), headLedgerPath,

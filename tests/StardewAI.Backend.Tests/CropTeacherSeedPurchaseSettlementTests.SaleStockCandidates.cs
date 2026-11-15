@@ -14,12 +14,14 @@ namespace StardewAI.Backend.Tests;
 public sealed partial class CropTeacherSeedPurchaseSettlementTests
 {
     [Theory]
-    [InlineData(5, 0)]
-    [InlineData(3, 2)]
-    public void SaleStockIsExcludedUpstreamWhileUnreservedUnitsRemainAvailable(int reserved, int free)
+    [InlineData(5, 0, false)]
+    [InlineData(3, 2, false)]
+    [InlineData(5, 0, true)]
+    [InlineData(3, 2, true)]
+    public void SaleStockIsExcludedUpstreamWhileUnreservedUnitsRemainAvailable(int reserved, int free, bool transferable)
     {
         using var f = new NativeVariantTerminalFixture();
-        var (snapshot, ledger) = SaleStockCandidateSource(f, reserved);
+        var (snapshot, ledger) = SaleStockCandidateSource(f, reserved, transferable);
         var sourceBytes = JsonSerializer.Serialize(snapshot, JsonOptions);
         var ledgerBytes = JsonSerializer.Serialize(ledger, JsonOptions);
         var evaluator = new CandidateOptionAvailabilityEvaluator();
@@ -87,7 +89,8 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         Assert.Equal(2, normal.Quantity); Assert.Equal(normal.UnitPrice * 2, normal.TotalValue);
     }
 
-    private static (SnapshotEnvelope, StrategyCommitmentLedger) SaleStockCandidateSource(NativeVariantTerminalFixture f, int reserved)
+    private static (SnapshotEnvelope, StrategyCommitmentLedger) SaleStockCandidateSource(NativeVariantTerminalFixture f, int reserved,
+        bool transferable = false)
     {
         // Declared candidate-budget fixture; no native outcome or whole-production claim.
         var snapshot = NativeVariantTerminalFixture.Copy(f.Shared.Source.Before);
@@ -119,13 +122,16 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         var item = snapshot.State["player"].GetProperty("inventory").GetProperty("value").EnumerateArray()
             .Single(row => row.GetProperty("slot_index").GetInt32() == f.NormalSlot);
         const string producer = "declared.candidate-stock";
+        var originSlot = transferable ? f.NormalSlot + 7 : f.NormalSlot;
         ledger.MaterialReservations = [new()
         {
-            ReservationId = CropSaleStockReservationContract.ReservationId(producer, f.NormalSlot), SourceDecisionId = producer,
+            ReservationId = CropSaleStockReservationContract.ReservationId(producer, originSlot), SourceDecisionId = producer,
             GoalId = "earn_money", NodeId = "player:" + ledger.PlayerId, OwnerPlayerId = long.Parse(ledger.PlayerId),
             SlotIndex = f.NormalSlot, QualifiedItemId = f.Target.QualifiedItemId, Quantity = reserved,
             Status = StrategyCommitmentStatuses.Active,
-            Purpose = CropSaleStockReservationContract.Purpose(Id, "declared.candidate-wave", MoneyRevenueCropRetentionAccount.InventoryIdentity(item))
+            Purpose = transferable ? CropSaleStockReservationContract.TransferablePurpose(Id, "declared.candidate-wave",
+                MoneyRevenueCropRetentionAccount.InventoryIdentity(item), originSlot) :
+                CropSaleStockReservationContract.Purpose(Id, "declared.candidate-wave", MoneyRevenueCropRetentionAccount.InventoryIdentity(item))
         }];
         return (snapshot, ledger);
     }

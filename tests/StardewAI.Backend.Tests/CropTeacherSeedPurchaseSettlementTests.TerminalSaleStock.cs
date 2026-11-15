@@ -31,9 +31,11 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task ReservedSaleStockConsumesSixNativeVariantUnitsAtomicallyAndRestoresTheOriginalOwner(bool reservedProof)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public async Task ReservedSaleStockConsumesSixNativeVariantUnitsAtomicallyAndRestoresTheOriginalOwner(bool reservedProof, bool transferable)
     {
         static string Hash(string path) => Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant();
         using var f = new NativeVariantTerminalFixture();
@@ -60,10 +62,12 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             MaterialClaims = target.ReadNativeVariants().Select(variant => new MaterialReservationUpsertRequest
             {
                 StateHash = initial.StateHash, ExpectedLedgerRevision = f.Shared.Source.Ledger.Revision,
-                ReservationId = CropSaleStockReservationContract.ReservationId(producer, variant.SlotIndex),
+                ReservationId = CropSaleStockReservationContract.ReservationId(producer, transferable ? variant.SlotIndex + 9 : variant.SlotIndex),
                 SourceDecisionId = producer, GoalId = "earn_money", NodeId = "player:" + target.PlayerId,
                 SlotIndex = variant.SlotIndex, QualifiedItemId = target.QualifiedItemId, Quantity = variant.PlannedQuantity,
-                Purpose = CropSaleStockReservationContract.Purpose(Id, proof.OutputRetentionKey,
+                Purpose = transferable ? CropSaleStockReservationContract.TransferablePurpose(Id, proof.OutputRetentionKey,
+                    MoneyRevenueCropRetentionAccount.InventoryIdentity(rows.Single(row => row.GetProperty("slot_index").GetInt32() == variant.SlotIndex)),
+                    variant.SlotIndex + 9) : CropSaleStockReservationContract.Purpose(Id, proof.OutputRetentionKey,
                     MoneyRevenueCropRetentionAccount.InventoryIdentity(rows.Single(row => row.GetProperty("slot_index").GetInt32() == variant.SlotIndex)))
             }).ToArray()
         };

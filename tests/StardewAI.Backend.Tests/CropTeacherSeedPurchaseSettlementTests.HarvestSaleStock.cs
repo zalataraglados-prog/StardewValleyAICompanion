@@ -9,8 +9,10 @@ namespace StardewAI.Backend.Tests;
 
 public sealed partial class CropTeacherSeedPurchaseSettlementTests
 {
-    [Fact]
-    public async Task ExplicitSaleStockHarvestPersistsItsOriginalOwnerModeAndClaimsAcrossReopen()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ExplicitSaleStockHarvestPersistsItsOriginalOwnerModeAndClaimsAcrossReopen(bool transferable)
     {
         using var f = new OvernightFixture();
         await using var owner = await f.Open();
@@ -19,7 +21,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         await owner.ExecuteOriginalOvernightAsync(night, f.Shared.Runtime.Client, () => f.EmitNight(owner));
         await f.RebindNight(owner, night);
         await f.Farm(owner);
-        var operation = await f.PrepareHarvest(owner, retainSaleStock: true);
+        var operation = await f.PrepareHarvest(owner, retainSaleStock: true, transferableSaleStock: transferable);
         await owner.ExecuteOriginalHarvestAsync(operation, f.Shared.Runtime.Client, () => f.EmitHarvest(owner));
         await f.RebindHarvest(owner, operation);
         Assert.Equal(1, f.NativeHarvestCalls); Assert.Equal(5, f.Shared.Runtime.Handler.Commits);
@@ -27,7 +29,14 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         Assert.Equal(2, before.MaterialReservations.Where(row => row.Status == StrategyCommitmentStatuses.Active &&
             CropSaleStockReservationContract.TryRead(row, out _)).Sum(row => row.Quantity));
         var intent = JsonNode.Parse(File.ReadAllText(Path.Combine(f.Shared.Files.OwnerRoot, "operation-000005-intent.json")))!;
-        Assert.Equal("native_sale_stock.v1", intent["harvest_output_reservation_protocol"]!.GetValue<string>());
+        Assert.Equal(transferable ? "native_sale_stock.v2" : "native_sale_stock.v1", intent["harvest_output_reservation_protocol"]!.GetValue<string>());
+        Assert.All(before.MaterialReservations.Where(row => CropSaleStockReservationContract.TryRead(row, out _)), row =>
+        {
+            CropSaleStockReservationContract.TryRead(row, out var purpose);
+            Assert.Equal(transferable ? CropSaleStockReservationContract.TransferableSchema : CropSaleStockReservationContract.Schema, purpose!.SchemaVersion);
+            if (transferable) Assert.Equal(row.SlotIndex, purpose.OriginSlotIndex);
+            else Assert.Null(purpose.OriginSlotIndex);
+        });
         await owner.DisposeAsync();
         await using var reopened = await f.Open();
         await reopened.RestoreHeadAsync(f.Shared.Runtime.Client, f.Shared.Files.Recovery, f.Shared.Files.Post);

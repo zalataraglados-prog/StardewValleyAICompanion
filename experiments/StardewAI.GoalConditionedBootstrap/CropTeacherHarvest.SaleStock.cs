@@ -32,7 +32,9 @@ public sealed partial class CropTeacherHarvest
                 ReservationId = CropSaleStockReservationContract.ReservationId(stepId, slot), SourceDecisionId = stepId,
                 GoalId = "earn_money", NodeId = "player:" + ledger.PlayerId, SlotIndex = slot,
                 QualifiedItemId = preparation.HarvestItemQualifiedId, Quantity = quantity,
-                Purpose = CropSaleStockReservationContract.Purpose(preparation.CommitmentId, preparation.OutputRetentionKey, key)
+                Purpose = preparation.TransferableSaleStock ?
+                    CropSaleStockReservationContract.TransferablePurpose(preparation.CommitmentId, preparation.OutputRetentionKey, key, slot) :
+                    CropSaleStockReservationContract.Purpose(preparation.CommitmentId, preparation.OutputRetentionKey, key)
             });
             remaining -= quantity; credit[key] -= quantity;
         }

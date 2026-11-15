@@ -17,7 +17,7 @@ public sealed partial class CropTeacherHarvest : ICropTeacherSupportingTransitio
 
         private Preparation(string nativePlanPath, string sourcePath, string ledgerPath, IReadOnlyCollection<string> commitmentIds,
             string commitmentId, string stepId, int totalDay, int batchIndex, string modelActionPath, string queuePath,
-            bool retainSaleStock = false)
+            bool retainSaleStock = false, bool transferableSaleStock = false)
         {
             var plan = CurrentTeacherFrontierSupport.Read<MoneyRevenueCropNativeProductionRunPlan>(nativePlanPath, "original harvest run plan");
             var production = CurrentTeacherFrontierSupport.Read<MoneyRevenueCropProductionObligationPlan>(plan.CropProductionPlanPath, "original harvest obligations");
@@ -39,6 +39,7 @@ public sealed partial class CropTeacherHarvest : ICropTeacherSupportingTransitio
             var originalOwner = originalLedger.CropPlantingCommitments.SingleOrDefault(row => row.CommitmentId == commitmentId);
             this.stepId = stepId;
             RetainSaleStock = retainSaleStock;
+            TransferableSaleStock = transferableSaleStock;
             SourcePath = Path.GetFullPath(sourcePath); QueuePath = Path.GetFullPath(queuePath);
             TotalDay = totalDay; BatchIndex = batchIndex; CommitmentId = commitmentId;
             var commitment = production.Commitments.SingleOrDefault(row => row.CommitmentId == commitmentId);
@@ -96,6 +97,12 @@ public sealed partial class CropTeacherHarvest : ICropTeacherSupportingTransitio
             new(nativePlanPath, sourcePath, ledgerPath, commitmentIds, commitmentId, stepId, totalDay, batchIndex,
                 modelActionPath, queuePath, retainSaleStock: true);
         public bool RetainSaleStock { get; }
+        public static Preparation OpenRetainingTransferableSaleStock(string nativePlanPath, string sourcePath, string ledgerPath,
+            IReadOnlyCollection<string> commitmentIds, string commitmentId, string stepId, int totalDay, int batchIndex,
+            string modelActionPath, string queuePath) =>
+            new(nativePlanPath, sourcePath, ledgerPath, commitmentIds, commitmentId, stepId, totalDay, batchIndex,
+                modelActionPath, queuePath, retainSaleStock: true, transferableSaleStock: true);
+        internal bool TransferableSaleStock { get; }
         public string SourcePath { get; }
         public string QueuePath { get; }
         public int TotalDay { get; }

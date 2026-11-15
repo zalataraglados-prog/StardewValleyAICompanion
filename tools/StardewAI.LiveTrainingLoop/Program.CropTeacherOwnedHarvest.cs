@@ -20,7 +20,7 @@ static partial class Program
     private static async Task<CropTeacherManagedSeedOperation> PrepareCropTeacherOwnedHarvestCoreAsync(HttpClient http,
         LiveTrainingOptions options, int iteration, CropTeacherRunStep step, MoneyRevenueCropNativeProductionRunPlan runPlan,
         MoneyRevenueCropNativeProductionRunPlanRequest runRequest, CropTeacherManagedSeedOwner owner, string runtimeDirectory,
-        bool retainSaleStock)
+        bool retainSaleStock, bool transferableSaleStock = false)
     {
         owner.ValidateOriginalSupportingExecutor(options, watering: false);
         if (step.Stage != CropTeacherRunStageKinds.ExecuteCropBatch || step.ActionBatch?.OptionId != "executor.harvest_crop")
@@ -44,9 +44,15 @@ static partial class Program
                 throw new InvalidDataException("Original crop control selected an interrupt, not the admitted harvest batch.");
             await WriteJsonAsync(prefix + "-compiled-queue.json", compiled.Queue).ConfigureAwait(false);
             return new(step, compiled.ModelPlanPath, prefix + "-compiled-queue.json", receiptPath, afterPath, runtimeDirectory)
-                { RetainSaleStock = retainSaleStock };
+                { RetainSaleStock = retainSaleStock, TransferableSaleStock = transferableSaleStock };
         }).ConfigureAwait(false);
     }
+
+    private static Task<CropTeacherManagedSeedOperation> PrepareCropTeacherOwnedHarvestRetainingTransferableSaleStockAsync(HttpClient http,
+        LiveTrainingOptions options, int iteration, CropTeacherRunStep step, MoneyRevenueCropNativeProductionRunPlan runPlan,
+        MoneyRevenueCropNativeProductionRunPlanRequest runRequest, CropTeacherManagedSeedOwner owner, string runtimeDirectory) =>
+        PrepareCropTeacherOwnedHarvestCoreAsync(http, options, iteration, step, runPlan, runRequest, owner,
+            runtimeDirectory, retainSaleStock: true, transferableSaleStock: true);
 
     private static Task ExecuteCropTeacherOwnedHarvestAsync(HttpClient http, HttpClient executorHttp,
         LiveTrainingOptions options, int iteration, CropTeacherManagedSeedOwner owner, CropTeacherManagedSeedOperation operation) =>

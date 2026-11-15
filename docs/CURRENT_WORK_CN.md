@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-11-15 待售库存合法转移与统一资源预检（190，能力块未总闭）
+
+- 189最终 `5f0b4b6c`／CI `43672175759` 已成功：Core2675/2675、Backend3360/3360、零跳过、全部步骤通过；日志SHA `7a308aa98919036b99a24e78697da404d4f4e2d95e30f88abc6b35a1ea6b7c7c`。沙箱常规merge `34f3a94e` 的受跟踪树 `81c147b1ba5abe5dbb054dd653408b46825069fc` 与已验189一致，不与本轮未验工作目录混称相同。
+- 新显式待售purpose v2分别固定创建slot和当前存放位置，复用原transfer保留的reservation ID／source／purpose；合法变位后仍识别同一预留。旧v1创建slot规则和默认不改。原收获owner以 `native_sale_stock.v2` 持久化新模式，重开只读原intent，不按当前CLI升级旧owner；原terminal／经济候选共用原读取核消费当前位置。
+- 新资源预检只对涉及v2待售预留的转移生效，候选与fresh动作编译调用同一核，复用原PreparedMaterialTransferContract／MaterialTransferProjector验证预备绑定、意图、当前库存和预留投影；普通移动改变全快照hash不误判原准备失效。它不授派发权限，原dispatch／native／settlement门不改；缺准备、错绑定／身份／修订／意图在原生派发前拒绝，无新账本或执行器。
+- 显式E重建最终针对性 **63/63（28秒）**、零跳过，日志 `block190-final-transfer-stock-tests.log` SHA `62ed003a549ad0a13b90f3979c48f84d81177c3ba972d5972aae6ad386eb0336`，位于原私有协作目录。包含原转移结算保持ID、收获模式重开、合法变位的经济余量／六件原终端消费、预检正负例及旧转移派发保护。此前21/21和62/62有重叠，不累加。均为声明的合成协议／原编译与Backend测试，无新游戏L3；本提交最终SHA完整CI另核。
+- **下一处仍本能力块：** 将原transfer结算后的账本通过真实来源／原journal回接同一owner，并接齐入箱／取回期间的自产留存归因及其他实际消耗路径，随后在同一Main成对启用收获／留存／终端与恢复。当前Main新模式仍未启用；位置分类正确不等于跨owner或存箱闭环已验收。之后仍原第5步partial／多队列、真实跨目标选线／资源日历／来源对账，第3／4自动属性随全局运行核实，第6步#570及#569正式manifest前交接；不新增阶段／分母，不重采L1或已验十三日，formal=false，local-data不提交。
+
 ## 2026-11-15 自由余量与受保护自产的留存归因（189，能力块未总闭）
 
 - 188最终 `f086ae30`／CI `43670276654` 已成功：Core2675/2675、Backend3347/3347、零跳过、全部步骤通过；日志SHA `0132a04911ea8e96a6f7dfcf0a784b685a35d1598b101d2550db52636a04e885`。沙箱常规merge `8ad8f91b` 的受跟踪树 `a244e3bb778f231ddbbe6cc3189602f4afb04db0` 与已验188相同；本轮189须另核最终提交CI，不与整个工作目录混称一致。
