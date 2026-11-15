@@ -25,6 +25,7 @@ public sealed partial class ReservationPortfolioLedgerService
             request.StateHash,
             request.ExpectedLedgerRevision);
         ValidateRequest(current, request, errors);
+        ValidateCommitMaterialConsumption(request, errors);
         if (errors.Count > 0)
             return Rejected(current, request, errors);
 
@@ -109,6 +110,17 @@ public sealed partial class ReservationPortfolioLedgerService
             "reservation_portfolio_commit",
             updatedAt,
             string.Empty);
+
+        if (request.MaterialConsumption is not null)
+        {
+            var consumed = SettleCommitMaterialConsumption(committed, snapshot, request, updatedAt);
+            if (!consumed.Accepted || consumed.Ledger is null)
+                return Rejected(current, request, consumed.Errors);
+            committed = consumed.Ledger;
+            committed.Revision = originalRevision + 1;
+            foreach (var history in committed.History.Skip(originalHistoryCount))
+                history.LedgerRevision = committed.Revision;
+        }
 
         if (request.MaterialTransferPreparation is not null)
         {

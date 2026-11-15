@@ -14,7 +14,8 @@ public sealed partial class CropTeacherTerminalShipping : ICropTeacherSupporting
     private readonly CropTeacherSupportingRebind rebind;
 
     private CropTeacherTerminalShipping(CropTeacherSupportingSource source, string stepId, CropTeacherTerminalShippingTarget target,
-        string kind, IEnumerable<string> preparationPaths, MoneyRevenueCropNativeLifecycleTransitionRequest transition)
+        string kind, IEnumerable<string> preparationPaths, MoneyRevenueCropNativeLifecycleTransitionRequest transition,
+        MaterialReservation? saleReservation = null)
     {
         Target = target; Kind = kind;
         var paths = preparationPaths.Concat(new[] { transition.QueuePath, transition.BeforeSnapshotPath,
@@ -58,7 +59,16 @@ public sealed partial class CropTeacherTerminalShipping : ICropTeacherSupporting
             if (target.NativeVariants is not null) target.VerifyNativeVariantSource(after, AcceptedDepositCountAfter);
         }
         AfterSnapshotPath = Path.GetFullPath(transition.AfterSnapshotPath);
-        rebind = new(after, source.Ledger, stepId, inputs.Validate, "Terminal shipping");
+        var consumption = kind == "shipping_deposit" && saleReservation is not null
+            ? new ReservationPortfolioCommitMaterialConsumption
+            {
+                RouteSourceDecisionId = saleReservation.SourceDecisionId, ConsumerOptionId = "executor.ship_inventory_item_to_bin",
+                SupportingTransitionReceiptSha256 = inputs.ReadHashes()[Path.GetFullPath(transition.ExecutionReceiptPath)],
+                Consumption = new() { MaterialReservationId = saleReservation.ReservationId, NodeId = saleReservation.NodeId,
+                    SlotIndex = saleReservation.SlotIndex, QualifiedItemId = saleReservation.QualifiedItemId, ConsumedQuantity = 1 },
+                Reason = "verified_crop_sale_stock_deposit"
+            } : null;
+        rebind = new(after, source.Ledger, stepId, inputs.Validate, "Terminal shipping", materialConsumption: consumption);
         inputs.Validate();
     }
 

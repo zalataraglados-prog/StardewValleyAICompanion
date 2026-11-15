@@ -11,13 +11,15 @@ internal sealed class CropTeacherSupportingRebind
     private readonly Action validate;
     private readonly string label;
 
-    internal CropTeacherSupportingRebind(SnapshotEnvelope after, StrategyCommitmentLedger ledger, string stepId, Action validate, string label)
+    internal CropTeacherSupportingRebind(SnapshotEnvelope after, StrategyCommitmentLedger ledger, string stepId, Action validate, string label,
+        MaterialReservationUpsertRequest[]? materialClaims = null, ReservationPortfolioCommitMaterialConsumption? materialConsumption = null)
     {
         this.after = after; this.ledger = ledger; this.validate = validate; this.label = label;
         request = new()
         {
             StateHash = after.StateHash, ExpectedLedgerRevision = ledger.Revision,
-            PortfolioId = stepId, SourceDecisionId = stepId, GoalId = "earn_money"
+            PortfolioId = stepId, SourceDecisionId = stepId, GoalId = "earn_money",
+            MaterialClaims = materialClaims ?? Array.Empty<MaterialReservationUpsertRequest>(), MaterialConsumption = materialConsumption
         };
     }
 

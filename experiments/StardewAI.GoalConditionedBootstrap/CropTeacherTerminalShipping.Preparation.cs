@@ -14,12 +14,15 @@ public sealed partial class CropTeacherTerminalShipping
         private readonly CropTeacherRetainedInputs inputs;
         private readonly CropTeacherSupportingSource source;
         private readonly string stepId;
+        private readonly MaterialReservation? saleReservation;
 
         private Preparation(string runRequestPath, string sourcePath, string ledgerPath,
             IReadOnlyCollection<string> commitmentIds, string stepId, CropTeacherTerminalShippingTarget target,
-            string modelActionPath, string queuePath, bool nativeVariants = false)
+            string modelActionPath, string queuePath, bool nativeVariants = false, bool consumeSaleStock = false)
         {
             Require(nativeVariants == (target.NativeVariants is not null), "Terminal variant mode must be explicitly selected.");
+            Require(consumeSaleStock == target.RequireSaleStockReservations && (!consumeSaleStock || nativeVariants),
+                "Terminal sale stock requires its explicit reserved native variant consumer.");
             Target = target;
             this.stepId = stepId;
             SourcePath = Path.GetFullPath(sourcePath); QueuePath = Path.GetFullPath(queuePath);
@@ -57,6 +60,9 @@ public sealed partial class CropTeacherTerminalShipping
             MoneyRevenueCropOutputRetentionProofBuilder.VerifyProducerTerminalTarget(proof, target, initial);
             VerifySource(initial, target, 0);
             VerifySource(source.Snapshot, target, target.AcceptedDepositCount);
+            Require(consumeSaleStock || ReadSaleStockReservations(source.Ledger, proof).Length == 0,
+                "Retained sale stock requires the explicit reserved terminal consumer; clearing the target flag cannot downgrade it.");
+            if (consumeSaleStock) saleReservation = SelectSaleStockReservation(source.Snapshot, source.Ledger, proof, target);
             var initialBin = ReadBin(initial, target);
             var currentBin = ReadBin(source.Snapshot, target);
             Require(Text(initialBin, "bin_scope") == Text(currentBin, "bin_scope"), "Terminal bin custody scope changed.");
@@ -87,6 +93,11 @@ public sealed partial class CropTeacherTerminalShipping
             IReadOnlyCollection<string> commitmentIds, string stepId, CropTeacherTerminalShippingTarget target,
             string modelActionPath, string queuePath) =>
             new(runRequestPath, sourcePath, ledgerPath, commitmentIds, stepId, target, modelActionPath, queuePath, nativeVariants: true);
+        public static Preparation OpenNativeVariantsConsumingSaleStock(string runRequestPath, string sourcePath, string ledgerPath,
+            IReadOnlyCollection<string> commitmentIds, string stepId, CropTeacherTerminalShippingTarget target,
+            string modelActionPath, string queuePath) =>
+            new(runRequestPath, sourcePath, ledgerPath, commitmentIds, stepId, target, modelActionPath, queuePath,
+                nativeVariants: true, consumeSaleStock: true);
         public string Kind { get; }
         public string SourcePath { get; }
         public string QueuePath { get; }
@@ -102,7 +113,7 @@ public sealed partial class CropTeacherTerminalShipping
             Require(transition.TransitionKind == Kind && transition.TotalDay == TotalDay && transition.SelectedCandidateId == CandidateId &&
                     SamePath(transition.QueuePath, QueuePath) && SamePath(transition.BeforeSnapshotPath, SourcePath),
                 "Terminal transition differs from the pinned original kind/day/candidate/queue/source.");
-            var result = new CropTeacherTerminalShipping(source, stepId, Target, Kind, inputs.ReadHashes().Keys, transition);
+            var result = new CropTeacherTerminalShipping(source, stepId, Target, Kind, inputs.ReadHashes().Keys, transition, saleReservation);
             inputs.Validate();
             return result;
         }

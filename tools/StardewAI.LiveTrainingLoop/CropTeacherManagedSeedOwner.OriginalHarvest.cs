@@ -1,12 +1,17 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using StardewAI.Contracts.Strategy;
 using StardewAI.GoalConditionedBootstrap;
 
 namespace StardewAI.LiveTrainingLoop;
 
 public sealed record CropTeacherOriginalHarvestCompilation(CropTeacherRunStep Step, string ModelActionPath,
-    string QueuePath, string ReceiptPath, string AfterSnapshotPath, string RuntimeDirectory);
+    string QueuePath, string ReceiptPath, string AfterSnapshotPath, string RuntimeDirectory)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool RetainSaleStock { get; init; }
+}
 
 public sealed partial class CropTeacherManagedSeedOwner
 {
@@ -22,6 +27,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             var record = CreateAdmissionRecord(headSnapshotPath, headLedgerPath, value.RuntimeDirectory);
             record["operation_kind"] = "crop_harvest";
             record["harvest_execution_protocol"] = "original_loop.v1";
+            if (value.RetainSaleStock) record["harvest_output_reservation_protocol"] = "native_sale_stock.v1";
             record["commitment_id"] = value.Step.CommitmentId;
             record["harvest_step"] = JsonSerializer.SerializeToNode(value.Step, JsonOptions);
             record["original_model_action_path"] = Path.GetFullPath(value.ModelActionPath);
@@ -65,9 +71,16 @@ public sealed partial class CropTeacherManagedSeedOwner
             step.CommitmentId != Text(record, "commitment_id") || !OriginalCropBatchMatches(step, "executor.harvest_crop") ||
             active is null || !active.SequenceEqual(ActiveCoveredCommitments(), StringComparer.Ordinal))
             throw new InvalidDataException("Original harvest changed its owner/run/executor/source or original due batch.");
-        var start = CropTeacherHarvest.Preparation.Open(options.NativeRunPlanPath, StoredPath(record, "before_snapshot_path"), headLedgerPath,
-            active, step.CommitmentId, Text(record, "support_step_id"), step.TotalDay, step.ActionBatch!.BatchIndex,
-            StoredPath(record, "original_model_action_path"), transition.QueuePath);
+        var outputProtocol = record["harvest_output_reservation_protocol"]?.GetValue<string>();
+        if (outputProtocol is not null and not "native_sale_stock.v1")
+            throw new InvalidDataException("Original harvest output reservation protocol is unknown.");
+        var start = outputProtocol is null
+            ? CropTeacherHarvest.Preparation.Open(options.NativeRunPlanPath, StoredPath(record, "before_snapshot_path"), headLedgerPath,
+                active, step.CommitmentId, Text(record, "support_step_id"), step.TotalDay, step.ActionBatch!.BatchIndex,
+                StoredPath(record, "original_model_action_path"), transition.QueuePath)
+            : CropTeacherHarvest.Preparation.OpenRetainingSaleStock(options.NativeRunPlanPath, StoredPath(record, "before_snapshot_path"), headLedgerPath,
+                active, step.CommitmentId, Text(record, "support_step_id"), step.TotalDay, step.ActionBatch!.BatchIndex,
+                StoredPath(record, "original_model_action_path"), transition.QueuePath);
         var expected = frontierHashes.TryGetValue(headSnapshotPath, out var hash) ? hash : fixedHashes[headSnapshotPath];
         if (start.InputHashes[start.SourcePath] != expected || transition.TotalDay != step.TotalDay || !start.Tiles.SequenceEqual(step.ActionBatch.Tiles) ||
             requireNativeIdentity && transition.SelectedCandidateId != start.CandidateId)
@@ -78,19 +91,25 @@ public sealed partial class CropTeacherManagedSeedOwner
         return start;
     }
 
-    private JsonObject CreateOriginalHarvestIntent(JsonObject record) => new()
+    private JsonObject CreateOriginalHarvestIntent(JsonObject record)
     {
-        ["schema_version"] = "crop_teacher_owned_harvest_execution.v1", ["run_id"] = options.RunId,
-        ["executor_version"] = options.ExecutorVersion, ["backend_url"] = options.BackendUrl,
-        ["runtime_directory"] = StoredPath(record, "runtime_directory"), ["support_step_id"] = Text(record, "support_step_id"),
-        ["commitment_id"] = Text(record, "commitment_id"), ["harvest_step"] = record["harvest_step"]!.DeepClone(),
-        ["original_model_action_path"] = StoredPath(record, "original_model_action_path"),
-        ["active_commitment_ids"] = record["active_commitment_ids"]!.DeepClone(),
-        ["harvest_transition"] = record["harvest_transition"]!.DeepClone(),
-        ["input_artifact_hashes"] = record["input_artifact_hashes"]!.DeepClone(),
-        ["native_crop_lifecycle_verified"] = false, ["teacher_preference_label_eligible"] = false,
-        ["formal_product_training_authorized"] = false
-    };
+        var intent = new JsonObject
+        {
+            ["schema_version"] = "crop_teacher_owned_harvest_execution.v1", ["run_id"] = options.RunId,
+            ["executor_version"] = options.ExecutorVersion, ["backend_url"] = options.BackendUrl,
+            ["runtime_directory"] = StoredPath(record, "runtime_directory"), ["support_step_id"] = Text(record, "support_step_id"),
+            ["commitment_id"] = Text(record, "commitment_id"), ["harvest_step"] = record["harvest_step"]!.DeepClone(),
+            ["original_model_action_path"] = StoredPath(record, "original_model_action_path"),
+            ["active_commitment_ids"] = record["active_commitment_ids"]!.DeepClone(),
+            ["harvest_transition"] = record["harvest_transition"]!.DeepClone(),
+            ["input_artifact_hashes"] = record["input_artifact_hashes"]!.DeepClone(),
+            ["native_crop_lifecycle_verified"] = false, ["teacher_preference_label_eligible"] = false,
+            ["formal_product_training_authorized"] = false
+        };
+        if (record["harvest_output_reservation_protocol"] is { } protocol)
+            intent["harvest_output_reservation_protocol"] = protocol.DeepClone();
+        return intent;
+    }
 
     private static void AddHarvestOutcomeEvidence(CropTeacherHarvest scope, JsonObject document)
     {
@@ -102,5 +121,8 @@ public sealed partial class CropTeacherManagedSeedOwner
         document["output_retention_key"] = scope.OutputRetentionKey;
         document["observed_retained_quantity_increase"] = scope.RetainedQuantityIncrease;
         document["whole_wave_output_retention_verified"] = false;
+        var saleClaims = scope.RebindRequest.MaterialClaims;
+        if (saleClaims.Length > 0)
+            document["sale_stock_reservation_ids"] = JsonSerializer.SerializeToNode(saleClaims.Select(row => row.ReservationId).ToArray(), JsonOptions);
     }
 }

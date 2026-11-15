@@ -1,5 +1,49 @@
 # Current Production Snapshot Handoff
 
+## Reserved Native Sale Stock (187, Capability Still Open)
+
+186 final0c4b01c1/CI43663963944 SUCCESS: Core2675/Backend3309, zero skipped;
+log SHAc40d15b1c7e37bd9adc655fbb8e21344c233521a01ba7a8eda22ce16202e18cb.
+Peer merge15eef630 tracked tree5a700cb4179278724cae9fc58018c6a2287c156a
+equals that accepted commit, NOT this successor's dirty working tree.
+
+Explicit original harvest preparation reserves only the verified applied prefix's
+original minimum owned variant output through SAME MaterialReservations/marker.
+No foreign/pre-existing stock or random surplus is claimed. The old default keeps
+its claimless marker. Same owner pins native_sale_stock.v1 in its original intent
+and restores it through the original native/marker path. No second executor/ledger.
+
+Optional versioned material_consumption on the EXISTING atomic commit stages the
+original marker plus ORIGINAL SettleSupportingTransition kernel, publishes ONE
+revision or neither, and retains exact replay/history checks. No cancel-as-consume,
+no old default JSON change, no relaxation of the separate settlement endpoint.
+Explicit native-variant terminal target/preparation requires same-actor/wave/key/
+slot/variant remaining stock reservations. Only a verified actual deposit receipt
+SHA creates a one-unit consumption; approaches consume nothing. Existing consumer
+cannot clear the target flag and bypass these new-mode reservations.
+
+Local21 focused plus6 owner/HTTP/six-unit native-wire/reopen/negative cases passed,
+DECLARED SYNTHETIC, no game. Wider1433 ran before final downgrade/actor refinements:
+1432 passed, one OLD purchase lost_acceptance hit UnauthorizedAccess at original
+File.Move atomic replacement. Storage/permission/timeout rules untouched; retain
+block187-final-adjacent-tests.log SHA
+c09ae2fad725abfec39e66c9e7ff080aed3efc9396312aee2f48d483016eac3b.
+Affected-case/source regression83/83(61s), including all FIVE original purchase
+modes, passed; final same-actor refinement rebuild12/12(13s), zero skipped.
+83log SHAd351f3de90ef4f170a9fc4b047145d0b99e86215164a6cb256796d427084b4ca;
+final12 SHA b6319c57fe5bd31f20e02bb262dfbbe63c0d2d0e881c59a18f1c50baf6ceec9e.
+I/O failure was not reproduced; cause remains unproven. Do not relabel1433 green
+or add overlapping test counts. Final commit must pass its OWN full remote CI.
+
+NOT ENABLED in automatic Main and NOT a completed stock capability: next original
+step5 work is upstream candidate/fresh resource constraints and original terminal
+selection/lifetime restore, then SAME Main's explicit producer/consumer mode.
+Do not enable harvest alone, silently upgrade old accepted owners or call leaf
+fixtures full production. General partial/multi-queue and actual mixed route/
+calendar/source replay still follow; step3/4 automatic properties observed there.
+Then step6 #570 and #569 engineering handoff BEFORE formal manifest; lab owns
+freeze/model/manifest/train/evaluation. L1/169-172 frozen, formal=false.
+
 ## Root Completion And Retained Terminal Boundary (186)
 
 185 b7b86f08 / CI43660053003 passed Core2675/Backend3292, zero skipped;

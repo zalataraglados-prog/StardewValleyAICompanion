@@ -28,12 +28,13 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             await Shared.Rebind(owner, route);
         }
 
-        internal Task<CropTeacherManagedSeedOperation> PrepareHarvest(CropTeacherManagedSeedOwner owner)
+        internal Task<CropTeacherManagedSeedOperation> PrepareHarvest(CropTeacherManagedSeedOwner owner, bool retainSaleStock = false)
         {
             var day = Read(owner.CurrentSnapshotPath).State["time"].GetProperty("total_days").GetProperty("value").GetInt32();
             var batch = Shared.Inputs.Plan.Days.Single(row => row.TotalDay == day).ActionBatches.Single(row => row.OptionId == "executor.harvest_crop");
             var step = new CropTeacherRunStep(CropTeacherRunStageKinds.ExecuteCropBatch, day, Id, "Farm", "FarmHouse", "", "", 0, 0, batch, "declared_owned_harvest");
-            return InvokeLive<Task<CropTeacherManagedSeedOperation>>("PrepareCropTeacherOwnedHarvestAsync", Shared.Runtime.Client, Shared.Runtime.LiveOptions,
+            return InvokeLive<Task<CropTeacherManagedSeedOperation>>(retainSaleStock
+                ? "PrepareCropTeacherOwnedHarvestRetainingSaleStockAsync" : "PrepareCropTeacherOwnedHarvestAsync", Shared.Runtime.Client, Shared.Runtime.LiveOptions,
                 5, step, Shared.Inputs.Plan, Shared.Inputs.Request, owner, HarvestRuntime);
         }
 

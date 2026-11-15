@@ -8,6 +8,19 @@ static partial class Program
     private static async Task<CropTeacherManagedSeedOperation> PrepareCropTeacherOwnedHarvestAsync(HttpClient http,
         LiveTrainingOptions options, int iteration, CropTeacherRunStep step, MoneyRevenueCropNativeProductionRunPlan runPlan,
         MoneyRevenueCropNativeProductionRunPlanRequest runRequest, CropTeacherManagedSeedOwner owner, string runtimeDirectory)
+        => await PrepareCropTeacherOwnedHarvestCoreAsync(http, options, iteration, step, runPlan, runRequest, owner,
+            runtimeDirectory, retainSaleStock: false).ConfigureAwait(false);
+
+    private static Task<CropTeacherManagedSeedOperation> PrepareCropTeacherOwnedHarvestRetainingSaleStockAsync(HttpClient http,
+        LiveTrainingOptions options, int iteration, CropTeacherRunStep step, MoneyRevenueCropNativeProductionRunPlan runPlan,
+        MoneyRevenueCropNativeProductionRunPlanRequest runRequest, CropTeacherManagedSeedOwner owner, string runtimeDirectory) =>
+        PrepareCropTeacherOwnedHarvestCoreAsync(http, options, iteration, step, runPlan, runRequest, owner,
+            runtimeDirectory, retainSaleStock: true);
+
+    private static async Task<CropTeacherManagedSeedOperation> PrepareCropTeacherOwnedHarvestCoreAsync(HttpClient http,
+        LiveTrainingOptions options, int iteration, CropTeacherRunStep step, MoneyRevenueCropNativeProductionRunPlan runPlan,
+        MoneyRevenueCropNativeProductionRunPlanRequest runRequest, CropTeacherManagedSeedOwner owner, string runtimeDirectory,
+        bool retainSaleStock)
     {
         owner.ValidateOriginalSupportingExecutor(options, watering: false);
         if (step.Stage != CropTeacherRunStageKinds.ExecuteCropBatch || step.ActionBatch?.OptionId != "executor.harvest_crop")
@@ -30,7 +43,8 @@ static partial class Program
                     OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
                 throw new InvalidDataException("Original crop control selected an interrupt, not the admitted harvest batch.");
             await WriteJsonAsync(prefix + "-compiled-queue.json", compiled.Queue).ConfigureAwait(false);
-            return new(step, compiled.ModelPlanPath, prefix + "-compiled-queue.json", receiptPath, afterPath, runtimeDirectory);
+            return new(step, compiled.ModelPlanPath, prefix + "-compiled-queue.json", receiptPath, afterPath, runtimeDirectory)
+                { RetainSaleStock = retainSaleStock };
         }).ConfigureAwait(false);
     }
 

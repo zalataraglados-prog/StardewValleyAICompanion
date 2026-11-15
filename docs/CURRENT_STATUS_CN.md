@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **187接续：** 186最终0c4b01c1／CI43663963944已SUCCESS（Core2675、Backend3309、零跳过），沙箱15eef630受跟踪树与该已验提交一致。本轮显式收获前缀通过原marker建立原MaterialReservations；新可选material_consumption复用原消耗核，原子发布一次修订；原native变体终端按实际receipt逐件消费并拒绝降级，原owner保留模式／恢复。扩大1433有1项旧文件替换访问拒绝，随后相关83/83及最后actor修改后的12/12通过，零跳过；失败未复现、原因未定，不重标1433或借186CI。均合成协议、无游戏，当前提交CI另核。自动Main尚未启用新模式，接续上游预留约束与原选择／恢复／Main双方接线，再继续原第5／6步和#569交接，不能称库存能力块或L3总完成。
+
 > **186接续覆盖185pending：** 185最终b7b86f08／CI43660053003成功（Core2675、Backend3292，零跳过）。本轮Main在终端前消费保留选择，根Complete可接原外目标，恢复不重调policy；显式留存request v3核到实际同日head，joint生产与原producer v2／native checkpoint v14对接。回Farm使用原路线／owner，新终端入口不在晚间先睡；新联合v6按完整多跳路线核Farm，旧资源核／默认不改。最终相邻196/196（2分5秒）、零跳过，含原owner合成根完成／恢复；当前提交CI另核，非实际游戏。下一处仍第5步共享产物预留／终端消费、一般partial／多队列与实际混合选线／日历，随后第6步及#569交接，不新加阶段或重采L1。
 
 > **185当前覆盖下方184pending：** 184最终63014104／CI43657773140成功，Core2675／Backend3281、零跳过。本次原第5步将原日选择固定在同owner内容寻址记录中，重开从原接受native结果派生完成；仅准备／未知claim不退休。新显式引用可消费原accepted saved-readback的load epoch，旧tick／readonly／pending／一次派发／fresh编译规则不放宽。最终相邻68/68（55秒），初败仅新测试旧目录复用、修新路径；当前最终SHA远端CI待核，不是游戏或全局Teacher通过。下一处为root结束／全局工作／晚共享尾部留存与终端调用一并接续，原第5／6步和#569边界不变。

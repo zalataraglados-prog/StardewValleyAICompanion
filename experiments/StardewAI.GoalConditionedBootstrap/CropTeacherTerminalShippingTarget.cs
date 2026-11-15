@@ -24,6 +24,10 @@ public sealed record CropTeacherTerminalShippingTarget(
     int UnitPrice, int BinTileX, int BinTileY, int StandTileX, int StandTileY,
     int InitialQuantity, int RequiredQuantity, int AcceptedDepositCount)
 {
+    [JsonPropertyName("require_sale_stock_reservations")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool RequireSaleStockReservations { get; init; }
+
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public CropTeacherTerminalVariantPlan? NativeVariants { get; init; }
 

@@ -1,5 +1,14 @@
 # StardewAI 当前工作
 
+## 2026-11-15 同账本待售库存与逐件原生消耗（187，能力块未总闭）
+
+- 186最终 `0c4b01c1`／CI `43663963944` 已成功：Core2675/2675、Backend3309/3309、零跳过；日志SHA `c40d15b1c7e37bd9adc655fbb8e21344c233521a01ba7a8eda22ce16202e18cb`。沙箱常规merge `15eef630` 的受跟踪树 `5a700cb4179278724cae9fc58018c6a2287c156a` 与此已验提交一致；主仓库本轮187为独立后继，不能混称整个工作目录相同。
+- 原第5步新增显式 `OpenRetainingSaleStock`，只把原收获回执已验证的实际执行前缀、原最低产量中的物资预留在**既有**MaterialReservations里；按原变体归因额度分配，不圈占既有外来库存或额外产量，不授整波／Teacher信用。原harvest默认仍是原无claims marker。新模式以 `native_sale_stock.v1` 固定在同owner的原intent，重开走原编译／native／marker恢复，不新增执行器或账本。
+- 既有portfolio commit新增可选、带版本的 `material_consumption`。仅显式新请求在同一原子提交内组合原marker和原 `SettleSupportingTransition` 核，对外仍一次账本修订；消费失败不发布marker，不用cancel假装消耗。旧null字段不序列化、旧请求与原单独settlement行为不变。独立commit replay/history消费者同时适配新显式形状。
+- 原native变体终端新增显式 `RequireSaleStockReservations`／对应Preparation入口，核同actor、原commitment／retention key、当前slot和变体以及剩余预留。原生逐件出货已核实后才绑定该原receipt SHA扣减1；接近不扣减，数量归零由原消耗核完成预留。旧consumer遇到这批新模式预留不得靠清掉目标标志降级使用；旧无此预留的数据保持原合同。
+- 验证均为声明的合成校准／协议，**无游戏实跑**。扩大相邻1433项中1432通过，1项旧购种 `lost_acceptance` 在原File.Move替换账本处遇UnauthorizedAccess；未改原存储／权限／超时。随后相关旧购种全部5模式与新路径／相邻 **83/83（1分1秒）**，最后actor过滤后的当前重建 **12/12（13秒）**，均零跳过；不把这些与此前21／6累加，也不把1433改写成全绿。该文件失败未复现、原因未定，原失败日志 `block187-final-adjacent-tests.log` 保留，SHA `c09ae2fad725abfec39e66c9e7ff080aed3efc9396312aee2f48d483016eac3b`；83日志SHA `d351f3de90ef4f170a9fc4b047145d0b99e86215164a6cb256796d427084b4ca`，最终12日志SHA `b6319c57fe5bd31f20e02bb262dfbbe63c0d2d0e881c59a18f1c50baf6ceec9e`。最终提交仍须独立完整CI。
+- **尚未启用自动Main的新预留模式，也未完成本能力块。** 下一处仍第5步：把新预留量接上游候选／fresh编译约束、原终端选择／生命周期恢复，然后同一Main显式模式接双方；不能只开harvest就让旧终端消耗新预留，不能默升旧已接受owner。随后继续一般partial／multi-queue和真实混合选线／资源日历／来源重放。第3／4自动属性随既定全局原生运行核实；第6步#570／#569正式manifest前交接、L1和169—172冻结及formal=false不变。不提交local-data／原档／原日志／二进制，不重跑已验十三日。
+
 ## 2026-11-15 收获后所选工作、晚来源留存与回农场（186）
 
 - 185最终 `b7b86f08`／CI `43660053003` 已成功：Core2675/2675、Backend3292/3292、零跳过，全部工作流步骤通过；日志SHA `0c7e9a73c825915b8e246e3a6cfa74d0d699be6d2978e610483981948c13ecb1`。本轮是其后继改动，须另核最终SHA，沙箱仍为已验184，不混称同版本。
