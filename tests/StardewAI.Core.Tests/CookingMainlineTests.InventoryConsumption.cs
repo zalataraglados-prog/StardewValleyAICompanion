@@ -191,6 +191,44 @@ public sealed partial class CookingMainlineTests
 
     private static T CookingClone<T>(T value) => JsonSerializer.Deserialize<T>(JsonSerializer.Serialize(value))!;
 
+    [Fact]
+    public void PreparedCookingKeepsOriginalDailyPlanRepeatedAnnotationsThroughCompilationAndDispatch()
+    {
+        var (snapshot, ledger, request) = ConsumptionSource("built", 1);
+        var prepared = new ReservationPortfolioLedgerService().Commit(ledger, snapshot, request, "before"); Assert.True(prepared.Accepted);
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(snapshot, [Intent()], true);
+        var ranked = new EventCandidateRanker().Rank(new(), availability);
+        var candidate = Assert.Single(ranked);
+        candidate.Parameters = candidate.Parameters.Concat(PreparedCookingConsumptionBinding.ToParameters(prepared.Ledger!)).ToArray();
+        var plan = new DailyPlanCompiler().Compile(ranked, snapshot.StateHash, "test");
+        Assert.Contains(Assert.Single(plan.Steps).Parameters, row => row.Name == PreparedInventoryConsumptionContract.BindingParameter);
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot, prepared.Ledger);
+        var item = Assert.Single(queue.Items);
+        Assert.Equal("pending", item.Status);
+        Assert.Contains(item.NormalizedCommand.Parameters.GroupBy(row => row.Name), group => group.Key == "safety_constraint" && group.Count() > 1);
+        Assert.True(new ActionQueueDispatchReadinessService().Evaluate(queue, item, prepared.Ledger!, snapshot.StateHash).Ready);
+    }
+
+    [Theory]
+    [InlineData("duplicate")]
+    [InlineData("unknown")]
+    [InlineData("foreign")]
+    public void PreparedCookingDailyPlanCarriesConflictsInsteadOfSilentlySanitizingThem(string fault)
+    {
+        var (snapshot, ledger, request) = ConsumptionSource("built", 1);
+        var prepared = new ReservationPortfolioLedgerService().Commit(ledger, snapshot, request, "before"); Assert.True(prepared.Accepted);
+        var ranked = new EventCandidateRanker().Rank(new(), new CandidateOptionAvailabilityEvaluator().Evaluate(snapshot, [Intent()], true));
+        var candidate = Assert.Single(ranked);
+        var binding = PreparedCookingConsumptionBinding.ToParameters(prepared.Ledger!);
+        var conflict = fault == "duplicate" ? binding[0] : fault == "unknown" ? P("prepared_inventory_consumption_unknown", "1") :
+            P(PreparedMaterialTransferContract.BindingParameter, new string('b', 64));
+        candidate.Parameters = candidate.Parameters.Concat(binding).Append(conflict).ToArray();
+        var plan = new DailyPlanCompiler().Compile(ranked, snapshot.StateHash, "test");
+        Assert.Contains(Assert.Single(plan.Steps).Parameters, row => row.Name == conflict.Name);
+        var item = Assert.Single(new ActionQueueCompiler().Compile(plan, snapshot, prepared.Ledger).Items);
+        Assert.Equal("blocked", item.Status);
+    }
+
     [Theory]
     [InlineData("executor.close_menu")]
     [InlineData("executor.move_to")]
@@ -233,7 +271,7 @@ public sealed partial class CookingMainlineTests
         graph!.InventoryNodes[0].Slots = [new() { SlotIndex = 7, QualifiedItemId = "(O)388", Stack = 3, RuntimeType = "StardewValley.Object" },
             new() { SlotIndex = 10, QualifiedItemId = "(O)194", Stack = 3, Quality = 2, RuntimeType = "StardewValley.Object" }];
         SetConsumptionGraph(after, graph); after.StateHash = SnapshotHash.ComputeStateHash(after.State);
-        var settled = service.SettleSupportingTransition(prepared.Ledger, after, ConsumptionSettlement(after, prepared.Ledger), "after");
+        var settled = service.SettleSupportingTransition(prepared.Ledger, after, ConsumptionSettlement(after, prepared.Ledger!), "after");
         Assert.True(settled.Accepted, string.Join(",", settled.Errors));
     }
 

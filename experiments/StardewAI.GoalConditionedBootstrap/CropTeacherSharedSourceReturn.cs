@@ -3,6 +3,7 @@ using StardewAI.Contracts.Strategy;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Infrastructure;
+using StardewAI.Core.Execution;
 using StardewAI.Core.Strategy;
 
 namespace StardewAI.GoalConditionedBootstrap;
@@ -18,15 +19,27 @@ public sealed partial class CropTeacherSharedSourceReturn : ICropTeacherSupporti
         IReadOnlyCollection<string> commitmentIds, MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId,
         CropTeacherSharedTransferSettlementReference? transfer = null, bool includePreparation = false, string? retainedReferencePath = null,
         bool productTransfer = false, bool productSource = false, bool inventoryLease = false)
+        : this(runRequestPath, sourcePath, ledgerPath, commitmentIds, transition, stepId, transfer, includePreparation,
+            retainedReferencePath, productTransfer, productSource, inventoryLease, null)
+    { }
+
+    private CropTeacherSharedSourceReturn(string runRequestPath, string sourcePath, string ledgerPath,
+        IReadOnlyCollection<string> commitmentIds, MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId,
+        CropTeacherSharedTransferSettlementReference? transfer, bool includePreparation, string? retainedReferencePath,
+        bool productTransfer, bool productSource, bool inventoryLease, CropTeacherSharedConsumptionSettlementReference? consumption)
     {
-        Require(includePreparation == (transfer?.Preparation is not null) &&
-                (!includePreparation || transfer!.Preparation!.BackendUrl == transfer.BackendUrl),
+        Require((transfer is null || consumption is null) && includePreparation == (transfer?.Preparation is not null || consumption is not null) &&
+                (!includePreparation || (consumption is not null ? consumption.Preparation is not null && consumption.Preparation.BackendUrl == consumption.BackendUrl :
+                    transfer!.Preparation!.BackendUrl == transfer.BackendUrl)),
             "Shared transfer return changed its explicit preparation mode or original backend.");
         var comparer = CropTeacherSeedTransferNativeOutcome.PathComparer;
         var paths = new[] { runRequestPath, sourcePath, ledgerPath, transition.QueuePath,
             transition.ExecutionReceiptPath, transition.AfterSnapshotPath };
         if (transfer is not null) paths = paths.Concat(new[] { transfer.RequestPath, transfer.ReplyPath, transfer.JournalPath }).ToArray();
-        if (includePreparation) paths = paths.Concat(new[] { transfer!.Preparation!.RequestPath, transfer.Preparation.ReplyPath,
+        if (consumption is not null) paths = paths.Concat(new[] { consumption.RequestPath, consumption.ReplyPath, consumption.JournalPath }).ToArray();
+        if (consumption is not null) paths = paths.Concat(new[] { consumption.Preparation!.RequestPath, consumption.Preparation.ReplyPath,
+            consumption.Preparation.JournalPath }).ToArray();
+        else if (includePreparation) paths = paths.Concat(new[] { transfer!.Preparation!.RequestPath, transfer.Preparation.ReplyPath,
             transfer.Preparation.JournalPath }).ToArray();
         if (retainedReferencePath is not null) paths = paths.Append(retainedReferencePath).ToArray();
         Require(paths.All(path => !string.IsNullOrWhiteSpace(path) && Path.IsPathFullyQualified(path)) &&
@@ -34,7 +47,12 @@ public sealed partial class CropTeacherSharedSourceReturn : ICropTeacherSupporti
             "Shared source return requires absolute original artifact paths.");
         paths = paths.Select(Path.GetFullPath).ToArray();
         if (transfer is not null) transfer = transfer with { RequestPath = paths[6], ReplyPath = paths[7], JournalPath = paths[8] };
-        if (includePreparation) transfer = transfer! with
+        if (consumption is not null) consumption = consumption with
+        {
+            RequestPath = paths[6], ReplyPath = paths[7], JournalPath = paths[8],
+            Preparation = consumption.Preparation with { RequestPath = paths[9], ReplyPath = paths[10], JournalPath = paths[11] }
+        };
+        else if (includePreparation) transfer = transfer! with
             { Preparation = transfer!.Preparation! with { RequestPath = paths[9], ReplyPath = paths[10], JournalPath = paths[11] } };
         Require(paths.Distinct(comparer).Count() == paths.Length &&
                 comparer.Equals(paths[1], Path.GetFullPath(transition.BeforeSnapshotPath)),
@@ -42,7 +60,9 @@ public sealed partial class CropTeacherSharedSourceReturn : ICropTeacherSupporti
         using var reads = InvocationReadSession.Start(paths);
         var original = new CropTeacherRetainedInputs(paths);
         if (retainedReferencePath is not null)
-            Require(transfer?.Preparation is not null && EqualJson(transfer,
+            Require(consumption is not null ? EqualJson(consumption,
+                    CurrentTeacherFrontierSupport.Read<CropTeacherSharedConsumptionSettlementReference>(retainedReferencePath, "shared cooking retained reference")) :
+                transfer?.Preparation is not null && EqualJson(transfer,
                     CurrentTeacherFrontierSupport.Read<CropTeacherSharedTransferSettlementReference>(retainedReferencePath, "shared transfer retained reference")),
                 "Shared transfer retained reference differs from its original protocol.");
         var source = transfer is null || includePreparation
@@ -51,14 +71,18 @@ public sealed partial class CropTeacherSharedSourceReturn : ICropTeacherSupporti
         Require(!productTransfer || productSource && transfer is null || includePreparation && retainedReferencePath is not null,
             "Product shared transfer requires its explicit original prepared-yield boundary.");
         var native = productTransfer ? ReadProductNativeTransition(source.Snapshot, transition) : ReadNativeTransition(source.Snapshot, transition);
+        Require(native.Actions.Any(row => PreparedCookingConsumptionBinding.IsPresent(row.Item.NormalizedCommand.Parameters)) == (consumption is not null),
+            "Prepared cooking requires its explicit original inventory-consumption source consumer.");
 
         // The explicit mode observes an already settled transfer; this adapter never performs that mutation.
-        var preparedLedger = includePreparation ? CropTeacherSharedTransferPreparation.Verify(source.Snapshot, source.Ledger,
+        var preparedLedger = consumption is not null ? CropTeacherSharedConsumption.VerifyPreparation(source.Snapshot, source.Ledger, consumption.Preparation) :
+            includePreparation ? CropTeacherSharedTransferPreparation.Verify(source.Snapshot, source.Ledger,
             transfer!.Preparation!) : source.Ledger;
         Require(CropSaleStockTransferLeaseContract.IsBound(preparedLedger) == inventoryLease &&
                 (!inventoryLease || includePreparation && retainedReferencePath is not null),
             "Inventory transfer leases require their explicit original prepared-yield consumer.");
-        var baseLedger = transfer is null ? source.Ledger : CropTeacherSharedTransferSettlement.Verify(preparedLedger, native, transfer);
+        var baseLedger = consumption is not null ? CropTeacherSharedConsumption.Verify(preparedLedger, native, consumption) :
+            transfer is null ? source.Ledger : CropTeacherSharedTransferSettlement.Verify(preparedLedger, native, transfer);
         if (includePreparation) CropTeacherSupportingSource.RequireNewMarker(baseLedger, stepId);
         var projectedLedger = CropTeacherSeedSupportSource.Copy(baseLedger);
         projectedLedger.SourceStateHash = native.After.StateHash;
@@ -100,6 +124,7 @@ public sealed partial class CropTeacherSharedSourceReturn : ICropTeacherSupporti
         AfterSnapshotPath = paths[5];
         VerifiedNativeStepCount = native.Actions.Length;
         TransferSettlement = transfer;
+        ConsumptionSettlement = consumption;
         ValidateInputsUnchanged();
         rebind = new(native.After, baseLedger, stepId, ValidateInputsUnchanged, "Shared source return");
         ReleasesTransferLease = inventoryLease;

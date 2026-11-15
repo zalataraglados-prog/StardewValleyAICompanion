@@ -1,5 +1,15 @@
 # StardewAI 当前工作
 
+## 2026-11-15 烹饪原生来源与原日计划接续（204，同owner执行接线未闭）
+
+- 203最终 `11f95246`／CI `43716365696` 全部成功：Core2758/2758（45秒）、Backend3493/3493（8分50秒）、零跳过。日志 `block203-final-ci43716365696.log` SHA `9b955cf4b502bcd0e4de54a71a26937ff284327128f0c8dfe2564de6b9552838`；沙箱常规merge `f7b4f9f3`／树 `c74eed7c37ee11d81886c1410887c616168d70ab` 等于已验203。本轮独立验证，API仍暂停，无调用或权限变化。
+- 同一 `CropTeacherSharedSourcePreparation`／`CropTeacherSharedSourceReturn` 新增显式烹饪消费入口与准备／结算引用，旧构造签名保留为真实委托入口，共用原来源保留、编译对照、预算、原native reader及返回marker，不新增执行器／来源引擎。准备仍以原Commit完整回包重放；消费请求由原请求日志、gzip载荷、nonce、wire参数、逐步原生回执、真实before/after和聚合SHA派生，不能拿任意hash或转移结算代替。Product入口绑定真实Product版本和原wire，不重标Runtime原件。
+- 原Core结算重放后才返回更新位置的账本，仍由原作物source marker接受；原种子及其他根的归属／预留数量不改，烹饪产物不授作物生产或Teacher信用。普通来源入口明确拒绝未解决的新准备，也拒绝带新烹饪绑定却省略消费引用的原生来源，不能静默降级后沿用旧槽位。原转移引用、lease和非消费默认保持原义。
+- 真正经过原日计划时发现**新绑定适配器**错误拒绝重复的合法precondition／expected_effect／safety_constraint／failure_policy。现仅排除这四类原有多值注解的重复检查，执行参数／控制绑定仍唯一。原 `CookingSteps` 仅在显式新协议存在时带出绑定及冲突，不新增空hash到旧计划，也不清洗未知、重复或混用控制；完整候选→rank→原日计划→fresh编译／派发已覆盖。未改旧日计划注解、原native动作或旧测试预期来迁就新模块。
+- 最终原source／Product／旧准备转移／原HTTP相邻 **43/43（19秒）**，Core烹饪／物理转移／控制接线定向 **126/126（2.3秒）**，均零跳过；8项新native-wire夹具、4项新Core用例包含其中，先前2／27／43重叠不累加。日志SHA依次 `0c86d760a159619a177474f5c17043e6127c81a4a13256819d0abd3bfd27dc44`、`b241faef94092af47b6d013e5c49386c2c46492b959dc72d3e849bf4b0a8b7be`。新after、回执和wire均是明确声明的测试夹具，经原读取器／真实Backend协议验证，**不是游戏实跑或L3验收**。最终构建后C#未再修改、本机命令均收回；当前提交自身完整CI另核。
+- 初次新夹具错误引用internal journal／不存在的Live选项和receipt属性，只改为读取原Live实际生成的journal及实际类型；新夹具漏route_graph、扩容后graph计数未更新亦只修夹具。gzip尾随空白可能不改变解压后的原payload，而已保留scope仍按容器字节hash拒绝变化；不为新测试改旧journal读取含义，新鲜解析负例改成真实损坏gzip头。原失败保留，不当成旧执行器缺陷。源码与issue未见新外部反馈；不扩大验证为旧十三日重跑。
+- **唯一接续仍原库存／第5步：** 原生来源和返回消费者现已接齐，但尚须由同一owner在准备RPC之前持有这项消费安排，接原一次派发／结算／lookup恢复、持久owner及全局留存消费者在实际烹饪帧的被动位置；不能冒用transfer v3、复制第二套owner或私改头。之后按实际所选路线接原其他消费／替代补给／混合producer、partial与Main配套启用，再全局选线／资源／日历／来源原生对账、#570及#569正式manifest前交接。L1 19/19、Root11/11及169—172冻结，模型／训练归实验室；新模式OFF、formal=false。E盘当前约6022MiB可用，低于原6144MiB原生运行保留门，先不启动游戏、不下调门或擅自清理；代码／有界协议验证可继续。无游戏／API／清理／部署，local-data及原日志／存档／二进制不提交。
+
 ## 2026-11-15 烹饪消耗准备与原账本被动换槽（203，主循环接续未闭）
 
 - 202最终 `4e87da0f`／CI `43711252103` 全部成功：Core2724/2724（58秒）、Backend3489/3489（8分6秒）、零跳过。日志 `block202-final-ci43711252103.log` SHA `ea20973fdbcb79e1fe7221613ef7b2bfc6384d58ec0bd96854e58307c2ff754b`；沙箱常规merge `d4479b54`／树 `95addf1ef6df16740b62f9edabdd34dd94a94a55` 等于已验202。202本地139项中的原文件替换失败仍保留，不追认其全绿；API仍暂停，无调用或权限变化。

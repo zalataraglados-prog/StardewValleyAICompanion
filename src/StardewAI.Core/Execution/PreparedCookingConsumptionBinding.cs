@@ -31,7 +31,8 @@ public static class PreparedCookingConsumptionBinding
     {
         var prepared = ledger.PreparedInventoryConsumption;
         if (prepared is null || goalId != prepared.GoalId || parameters is null || parameters.Any(row => row is null) ||
-            parameters.GroupBy(row => row.Name, StringComparer.Ordinal).Any(group => group.Count() != 1) ||
+            parameters.Where(row => row.Name is not "precondition" and not "expected_effect" and not "safety_constraint" and not "failure_policy")
+                .GroupBy(row => row.Name, StringComparer.Ordinal).Any(group => group.Count() != 1) ||
             parameters.Any(row => (IsControlParameter(row.Name) && row.Name != PreparedInventoryConsumptionContract.BindingParameter) ||
                 row.Name == PreparedMaterialTransferContract.BindingParameter || CropSaleStockMaterialTransferBinding.IsForeignControlParameter(row.Name) ||
                 CropSaleStockMaterialTransferBinding.IsControlParameter(row.Name))) return false;

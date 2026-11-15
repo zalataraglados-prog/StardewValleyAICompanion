@@ -1,5 +1,56 @@
 # Current Production Snapshot Handoff
 
+## Cooking Native Source And Original Daily Plan (204, Owner Integration Open)
+
+203 11f95246/quality43716365696 SUCCESS: Core2758/2758(45s),
+Backend3493/3493(8m50s), zero skipped. Log SHA
+9b955cf4b502bcd0e4de54a71a26937ff284327128f0c8dfe2564de6b9552838.
+Peer regular mergef7b4f9f3/treec74eed7c37ee11d81886c1410887c616168d70ab
+equals accepted203. Provider paused/no API/grant change;204 separate until own CI.
+
+Explicit cooking preparation/settlement references extend ORIGINAL
+SharedSourcePreparation/Return, not a fake transfer or second source/executor.
+Old constructor signatures remain live delegating overloads. Original retained
+inputs, compiler comparison, time budget, native journal/gzip/nonce/wire/frame/
+receipt readers and source marker are reused. Product mode binds actual Product
+version and wire. Original Commit and supporting settlement replay full replies;
+aggregate SHA derives from the original receipt, not caller assertion. Protected
+foreign goal/source/purpose/quantity survive passive reindex; cooking output gains
+no crop/Teacher/formal credit.
+
+Ordinary source readers reject unresolved consumption and native cooking bindings
+without the explicit consumption consumer, so they cannot downgrade to stale
+foreign positions. Original transfer/lease/plain source defaults remain intact.
+The NEW binding rejected legitimate repeated old plan annotations; exempt ONLY
+precondition/expected_effect/safety_constraint/failure_policy. Execution/control
+parameters stay unique. Original CookingSteps carries bindings AND conflicts only
+with explicit new protocol, with no empty hash added to old defaults. Complete
+candidate/rank/daily plan/fresh compiler/dispatch is exercised, no old annotation
+or native rule rewrite.
+
+Final Backend source/Product/old prepared transfer/HTTP43/43(19s), final Core
+cooking/physical transfer/control integration126/126(2.3s), zero skipped. Eight new
+native-wire fixtures and four new Core cases included; prior2/27/43 overlap, NOT
+additive. Logs SHA0c86d760a159619a177474f5c17043e6127c81a4a13256819d0abd3bfd27dc44
+andb241faef94092af47b6d013e5c49386c2c46492b959dc72d3e849bf4b0a8b7be.
+DECLARED observations/wire/receipts via original reader and real Backend, NOT
+game/native/L3 acceptance. New fixture API/required-route/graph-count errors were
+fixed only in the new fixture. Gzip trailing whitespace may leave decoded payload
+unchanged while a retained scope still rejects physical hash drift; fresh parser
+negative now corrupts header, no original journal contract rewrite. Failures kept.
+No C# after final build/all local sessions terminal; own final-SHA CI separate.
+
+NEXT SAME original inventory block: SAME owner must hold consumption BEFORE RPC,
+reuse original once-dispatch/settlement/lookup recovery/persistent head, then global
+retention must apply original passive positions at the actual cooking frame.
+Do not reinterpret transfer v3, create a second owner or rewrite heads. Then actual
+selected-route other-use/alternative/mixed/partial/paired Main/global native
+route-resource-calendar-source reconciliation, step6 #570 and #569 PRE-MANIFEST
+handoff. Lab owns model/data/formal manifest/train/eval; L1/Root/169-172 frozen,
+no13day replay, modeOFF/formalfalse. E~6022MiB free is below original6144MiB native
+reserve: no game, gate reduction or unapproved cleanup. No API/deploy/raw/local-data
+commit. [Current work204](CURRENT_WORK_CN.md#2026-11-15-烹饪原生来源与原日计划接续204同owner执行接线未闭).
+
 ## Cooking Consumption Preparation And Passive Positions (203, Integration Open)
 
 202 4e87da0f/quality43711252103 SUCCESS: Core2724/2724(58s),

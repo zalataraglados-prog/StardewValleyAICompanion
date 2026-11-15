@@ -45,7 +45,8 @@ public sealed partial class CropTeacherSharedSourceReturn
             var (request, reply) = CropTeacherSharedPortfolioMutation.Read<ReservationPortfolioCommitRequest, ReservationPortfolioCommitResult>(
                 reference.RequestPath, reference.ReplyPath, reference.JournalPath, reference.BackendUrl, "commit");
             Require(EqualJson(request, scope.RebindRequest) &&
-                (scope.TransferSettlement is null || reference.BackendUrl == scope.TransferSettlement.BackendUrl),
+                (scope.TransferSettlement is null || reference.BackendUrl == scope.TransferSettlement.BackendUrl) &&
+                (scope.ConsumptionSettlement is null || reference.BackendUrl == scope.ConsumptionSettlement.BackendUrl),
                 "Shared source marker differs from its original native-bound rebind/release.");
             ledger = scope.VerifyRebindReply(reply);
             Require(EqualJson(ledger, CurrentTeacherFrontierSupport.Read<StrategyCommitmentLedger>(reference.AfterLedgerPath,

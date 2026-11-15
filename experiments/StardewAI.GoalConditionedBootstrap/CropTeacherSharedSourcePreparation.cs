@@ -9,7 +9,7 @@ using StardewAI.Core.WorldModel;
 namespace StardewAI.GoalConditionedBootstrap;
 
 // Holds the crop source while the global caller, not the crop executor, owns selected foreign work.
-public sealed class CropTeacherSharedSourcePreparation : ICropTeacherSupportingPreparation
+public sealed partial class CropTeacherSharedSourcePreparation : ICropTeacherSupportingPreparation
 {
     private readonly CropTeacherRetainedInputs inputs;
     private readonly string runRequestPath;
@@ -22,12 +22,22 @@ public sealed class CropTeacherSharedSourcePreparation : ICropTeacherSupportingP
     private readonly string? settlementReferencePath;
     private readonly bool productTransfer;
     private readonly bool inventoryLease;
+    private readonly CropTeacherSharedConsumptionPreparationReference? consumptionPreparation;
 
     private CropTeacherSharedSourcePreparation(string runRequestPath, string sourcePath, string ledgerPath,
         IReadOnlyCollection<string> commitmentIds, string stepId, string modelPlanPath,
         MoneyRevenueCropNativeLifecycleTransitionRequest boundary, IReadOnlyDictionary<string, string> selectionHashes,
         CropTeacherSharedTransferPreparationReference? transferPreparation = null, string? settlementReferencePath = null,
         bool productTransfer = false, bool inventoryLease = false)
+        : this(runRequestPath, sourcePath, ledgerPath, commitmentIds, stepId, modelPlanPath, boundary, selectionHashes,
+            transferPreparation, settlementReferencePath, productTransfer, inventoryLease, null)
+    { }
+
+    private CropTeacherSharedSourcePreparation(string runRequestPath, string sourcePath, string ledgerPath,
+        IReadOnlyCollection<string> commitmentIds, string stepId, string modelPlanPath,
+        MoneyRevenueCropNativeLifecycleTransitionRequest boundary, IReadOnlyDictionary<string, string> selectionHashes,
+        CropTeacherSharedTransferPreparationReference? transferPreparation, string? settlementReferencePath,
+        bool productTransfer, bool inventoryLease, CropTeacherSharedConsumptionPreparationReference? consumptionPreparation)
     {
         var comparer = CropTeacherSeedTransferNativeOutcome.PathComparer;
         var paths = new[] { runRequestPath, sourcePath, ledgerPath, modelPlanPath, boundary.QueuePath };
@@ -38,26 +48,30 @@ public sealed class CropTeacherSharedSourcePreparation : ICropTeacherSupportingP
         Require(paths.Distinct(comparer).Count() == paths.Length && comparer.Equals(paths[1], Path.GetFullPath(boundary.BeforeSnapshotPath)),
             "Shared source preparation aliases an input role or uses another source.");
         var retained = paths.Concat(selectionHashes.Keys);
-        if (transferPreparation is not null)
+        Require(transferPreparation is null || consumptionPreparation is null, "Shared preparation cannot mix transfer and consumption.");
+        var preparationPaths = transferPreparation is not null
+            ? new[] { transferPreparation.RequestPath, transferPreparation.ReplyPath, transferPreparation.JournalPath }
+            : consumptionPreparation is not null ? new[] { consumptionPreparation.RequestPath, consumptionPreparation.ReplyPath, consumptionPreparation.JournalPath }
+            : Array.Empty<string>();
+        if (preparationPaths.Length > 0)
         {
-            var preparationPaths = new[] { transferPreparation.RequestPath, transferPreparation.ReplyPath, transferPreparation.JournalPath };
             Require(preparationPaths.All(Path.IsPathFullyQualified) && Path.IsPathFullyQualified(settlementReferencePath!) &&
                     preparationPaths.Select(Path.GetFullPath).Distinct(comparer).Count() == preparationPaths.Length &&
                     preparationPaths.All(path => !retained.Contains(Path.GetFullPath(path), comparer)),
                 "Shared prepared transfer aliases an input role or lacks its retained settlement output.");
             retained = retained.Concat(preparationPaths);
         }
-        Require((transferPreparation is null) == (settlementReferencePath is null), "Shared transfer preparation mode is incomplete.");
+        Require((preparationPaths.Length == 0) == (settlementReferencePath is null), "Shared preparation mode is incomplete.");
         inputs = new(retained.Distinct(comparer).ToArray());
         var hashes = inputs.ReadHashes();
         Require(selectionHashes.All(pair => hashes.TryGetValue(Path.GetFullPath(pair.Key), out var hash) && hash == pair.Value),
             "Shared source preparation changed its selected decision inputs.");
         var source = CropTeacherSupportingSource.Read(paths[0], paths[1], paths[2], commitmentIds, stepId);
-        var ledger = transferPreparation is null ? source.Ledger :
-            CropTeacherSharedTransferPreparation.Verify(source.Snapshot, source.Ledger, transferPreparation);
+        var ledger = consumptionPreparation is not null ? CropTeacherSharedConsumption.VerifyPreparation(source.Snapshot, source.Ledger, consumptionPreparation) :
+            transferPreparation is null ? source.Ledger : CropTeacherSharedTransferPreparation.Verify(source.Snapshot, source.Ledger, transferPreparation);
         Require(CropSaleStockTransferLeaseContract.IsBound(ledger) == inventoryLease && (!inventoryLease || transferPreparation is not null),
             "Inventory transfer leases require their explicit prepared source.");
-        if (transferPreparation is not null) CropTeacherSupportingSource.RequireNewMarker(ledger, stepId);
+        if (preparationPaths.Length > 0) CropTeacherSupportingSource.RequireNewMarker(ledger, stepId);
         var model = CurrentTeacherFrontierSupport.Read<SmallModelPlanEnvelope>(paths[3], "shared source selected plan");
         var queue = CurrentTeacherFrontierSupport.Read<ActionQueueEnvelope>(paths[4], "shared source selected queue");
         Require(model.StateHash == source.Snapshot.StateHash && queue.StateHash == source.Snapshot.StateHash &&
@@ -71,7 +85,7 @@ public sealed class CropTeacherSharedSourcePreparation : ICropTeacherSupportingP
         TotalDay = MoneyRevenueCropSeedAcquisitionProofBuilder.ReadInt(source.Snapshot, "time", "total_days");
         Require(boundary.TotalDay == TotalDay && boundary.ExecutorVersion == (productTransfer
                     ? PolicyTrajectoryVersionPins.ProductExecutor : PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor) &&
-                (!productTransfer || transferPreparation is not null) &&
+                (!productTransfer || preparationPaths.Length > 0) &&
                 !string.IsNullOrWhiteSpace(boundary.RunId) && !string.IsNullOrWhiteSpace(boundary.SelectedCandidateId),
             "Shared source preparation differs from its original day/run/executor/candidate.");
         var outputs = new[] { Path.GetFullPath(boundary.ExecutionReceiptPath), Path.GetFullPath(boundary.AfterSnapshotPath) };
@@ -82,6 +96,7 @@ public sealed class CropTeacherSharedSourcePreparation : ICropTeacherSupportingP
         this.commitmentIds = commitmentIds.ToArray(); this.stepId = stepId; this.boundary = boundary;
         CandidateId = boundary.SelectedCandidateId; BaseLedger = ledger; snapshot = source.Snapshot;
         this.transferPreparation = transferPreparation;
+        this.consumptionPreparation = consumptionPreparation;
         this.productTransfer = productTransfer;
         this.inventoryLease = inventoryLease;
         this.settlementReferencePath = settlementReferencePath is null ? null : Path.GetFullPath(settlementReferencePath);
@@ -121,7 +136,9 @@ public sealed class CropTeacherSharedSourcePreparation : ICropTeacherSupportingP
         ValidateInputsUnchanged();
         Require(transition == boundary, "Shared source outcome differs from its pre-native selected boundary.");
         CropTeacherSharedSourceReturn result;
-        if (transferPreparation is null)
+        if (consumptionPreparation is not null)
+            result = VerifyConsumptionTransition(transition);
+        else if (transferPreparation is null)
             result = CropTeacherSharedSourceReturn.Open(runRequestPath, SourcePath, ledgerPath, commitmentIds, transition, stepId);
         else
         {

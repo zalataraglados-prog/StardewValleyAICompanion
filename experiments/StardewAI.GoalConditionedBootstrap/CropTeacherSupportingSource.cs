@@ -20,6 +20,8 @@ internal sealed record CropTeacherSupportingSource(SnapshotEnvelope Snapshot, St
         var source = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(sourcePath, "crop supporting route source");
         MoneyRevenueCropSeedAcquisitionProofBuilder.ValidateSnapshot(source, "crop supporting route source");
         var ledger = AcquisitionStrategyLedgerReader.Read(ledgerPath, source).Ledger;
+        Require(ledger.PreparedInventoryConsumption is null,
+            "Crop supporting source cannot implicitly cross a prepared inventory consumption.");
         Require(settledTransfer ? ledger.PreparedMaterialTransfer is not null : ledger.PreparedMaterialTransfer is null,
             settledTransfer ? "Settled transfer source requires its original preparation." :
                 "Crop supporting route cannot cross an unresolved prepared material transfer.");
