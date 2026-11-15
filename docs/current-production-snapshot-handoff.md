@@ -1,5 +1,54 @@
 # Current Production Snapshot Handoff
 
+## Cooking Ingredient And Seasoning Sale Stock Preflight (202, Input Only)
+
+201 a43b1c71/quality43708874837 SUCCESS: Core2693/2693(40s),
+Backend3489/3489(6m14s), zero skipped. Log SHA
+75e123a775ec076ce58a92f6ac92d7e6ea78d87683622f1d3e1b6e324cbc5cbf.
+Peer merge23791a9b/treed9004e431f5786ddfcda2b8703dbfe102e870f00
+equals accepted201. Provider remains paused;202 separate until own CI.
+
+Named cooking preflight opts in only with VALID active sale-stock purpose. It
+reads ORIGINAL snapshot native_consumption_plan.source_id and real material
+access points for player/main fridge/mini fridge, not guessed node aliases.
+Ingredients+seasoning map into ORIGINAL MachineCraftingMaterialReservationGuard/
+ExactCraftingMaterialConsumptionReader/MaterialSupplyProjection together. All-root
+reservations stay protected; source/identity/permission/lock/ambiguity/count fail
+closed. No new subtraction engine, recipe simulator, bridge field or native change.
+
+Candidate checks precede cross-map route composition; route rows retain resource
+blocks. Fresh compiler uses original snapshot recipe, not supplied ingredient JSON.
+Old recipe/seasoning/output/native validation and original two-arg entries remain
+AND are reused; no new deep reads without this protocol. Decompiled CraftingRecipe
+273+ and CraftingPage433+ checked; Wiki Cooking only secondary, not slot/order proof.
+
+Final Core adjacent315/315(18s), zero skipped, includes25 new+6 original cooking.
+Logblock202-final-cooking-core-adjacent.log SHA
+4a1f2e2df8f70016ccda0d31f8fe0602a39e32a0bd2a4043a93b74d8d9bab14d.
+Focused31 overlaps, not additive. Initial6red and10/31 INVALID new fixture purpose/
+global position are NOT legal-stock bug evidence; corrected ONLY fixture and
+assert original TryRead. Then30/31 sole new remote missing original route facts;
+fixed only fixture energy/time/coverage. Original failures retained.
+
+Backend targeted138/139(59s): old harvest test fails in Home, BEFORE cooking,
+original repository File.Move UnauthorizedAccess, cause UNKNOWN. No storage/ACL/
+retry change. SAME DLL directed original two modes2/2(11s), not139 green relabel.
+Logs SHA7c68e483cfff0c2ce97e6b1f890d14ea20314ac9d96f60e54961053715041d89
+and9ef5d3a5403e2851017fa1df1c904229f84980f6883765b499f14aee0f108e65.
+Own final-SHA CI separate. No C# after final build/all local invocations terminal.
+
+NEXT SAME original other-consumption block: actual native consumption can compact
+fridge slots (RemoveEmptySlots), requiring original-owner ledger/recovery/retention
+integration for passive foreign claims. Original Commit rejects foreign GoalId;
+supporting relocations require same RouteSourceDecision. Do NOT fake a transfer,
+rewrite owner heads or relax those guards. INPUT preflight is not whole cooking,
+inventory, native or L3 completion. Then quest/alternative supply/mixed-producer/
+partial/paired Main/global selected-route-resource-calendar-source/native replay,
+step6 #570, #569 PRE-MANIFEST handoff. Lab owns models/data/formal manifest/train.
+Stock mode OFF/formal=false, L1/Root/169-172 frozen, no13day replay/game/API/cleanup/
+deploy/raw/local-data commit.
+[Current work202](CURRENT_WORK_CN.md#2026-11-15-烹饪原料与调味料的待售预检202仅输入保护).
+
 ## Sale Stock Single-Unit Social And Food Consumption (201, Open)
 
 200 27ab81c4/quality43706935696 SUCCESS: Core2675/2675(45s),

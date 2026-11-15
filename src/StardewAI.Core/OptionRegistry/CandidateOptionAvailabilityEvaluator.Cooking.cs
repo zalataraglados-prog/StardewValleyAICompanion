@@ -6,6 +6,8 @@ using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
+using StardewAI.Core.Strategy;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.OptionRegistry;
@@ -14,7 +16,14 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
 {
     private EventCandidate[] CookingCandidates(
         SnapshotEnvelope snapshot,
-        SmallModelActionParameter[] intent)
+        SmallModelActionParameter[] intent) => CookingCandidatesCore(snapshot, intent, null);
+
+    private EventCandidate[] CookingCandidatesWithSaleStock(SnapshotEnvelope snapshot,
+        SmallModelActionParameter[] intent, StrategyCommitmentLedger? ledger) => ledger is null
+        ? CookingCandidates(snapshot, intent) : CookingCandidatesCore(snapshot, intent, ledger);
+
+    private EventCandidate[] CookingCandidatesCore(SnapshotEnvelope snapshot,
+        SmallModelActionParameter[] intent, StrategyCommitmentLedger? ledger)
     {
         var recipeName = CookingIntentParameter(intent, "recipe_name");
         var reason = CookingIntentParameter(intent, "cooking_reason");
@@ -61,6 +70,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
         {
             var locationId = ReadString(row, "location_id");
             var selectedSourceId = ReadString(row, "cooking_source_id");
+            var stockReasons = CropSaleStockCookingPreflight.Evaluate(snapshot, ledger, row);
             if (!string.Equals(currentLocation, locationId, StringComparison.OrdinalIgnoreCase))
             {
                 var plan = FindResolvedRoutePlan(
@@ -72,7 +82,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                         .ToArray());
                 if (plan?.FirstActionCandidate is not null)
                 {
-                    result.Add(CloneCandidate(
+                    var routed = CloneCandidate(
                         plan.FirstActionCandidate,
                         candidateId: "cook-route:" + recipeName + ":" + selectedSourceId + ":" + currentLocation,
                         expectedEffect: plan.FirstActionCandidate.ExpectedEffect + ";cooking_target=" + recipeName,
@@ -84,7 +94,13 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                             Parameter("continuation.cooking_reason", reason),
                             Parameter("continuation.cooking_source_id", selectedSourceId)
                         }).ToArray(),
-                        availabilityClass: "cooking_rolling_route"));
+                        availabilityClass: "cooking_rolling_route");
+                    if (stockReasons.Length > 0)
+                    {
+                        routed.Available = false; routed.AllowedNow = false;
+                        routed.BlockReasons = routed.BlockReasons.Concat(stockReasons).Distinct(StringComparer.Ordinal).ToArray();
+                    }
+                    result.Add(routed);
                 }
                 continue;
             }
@@ -97,7 +113,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 continue;
             }
             var parameters = CookingExecutionParameters(row, recipeName, reason, stand.X, stand.Y);
-            var reasons = new List<string>();
+            var reasons = new List<string>(stockReasons);
             if (!string.Equals(ReadString(row, "craft_candidate_status"), "ready_for_native_cooking_page", StringComparison.Ordinal))
             {
                 reasons.Add("cooking_recipe_or_source_not_ready");

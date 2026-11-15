@@ -1,5 +1,15 @@
 # StardewAI 当前工作
 
+## 2026-11-15 烹饪原料与调味料的待售预检（202，仅输入保护）
+
+- 201最终 `a43b1c71`／CI `43708874837` 全部成功：Core2693/2693（40秒）、Backend3489/3489（6分14秒）、零跳过。日志 `block201-final-ci43708874837.log` SHA `75e123a775ec076ce58a92f6ac92d7e6ea78d87683622f1d3e1b6e324cbc5cbf`；沙箱常规merge `23791a9b`／树 `d9004e431f5786ddfcda2b8703dbfe102e870f00` 等于已验201，本轮另核。API仍暂停，没有调用或权限变化。
+- 原烹饪消费者没有把新待售账本接入，并非原生烹饪规则错误。新 `CropSaleStockCookingPreflight` 仅对原有效active待售purpose启用，从**原snapshot烹饪行**消费 `native_consumption_plan.source_id`，以原材料图访问点解析背包／主冰箱／迷你冰箱，不猜node ID。原料与调味料一起映射到原物理槽，再复用 `MachineCraftingMaterialReservationGuard`／`ExactCraftingMaterialConsumptionReader`／`MaterialSupplyProjection` 合并扣自由量；其他根预留也保护，不另写材料扣量器或配方模拟器。身份、容器、访问权限、锁、缺失／重复来源、数量不守恒明确拒绝。
+- 原候选在跨图路线组成前核资源，路线候选保留原阻塞，不能先走到厨房再发现要消耗待售库存。原fresh compiler通过具名消费者再次读取原snapshot行，用户参数删改原料不能替代它；原配方／调味／输出／原生合法性验证、两参数旧入口及默认都保留并真实复用。无有效待售协议时不增加原料深读。旧制作读取器的 `source_node_id` 语义不改，桥字段、native执行器和扫描频率未改。
+- 原反编译现场核对 `CraftingRecipe.cs:273+` 背包逆序及additional materials消耗、空槽整理，`CraftingPage.cs:433+` 原配方和调味消耗；原桥／harness的source别名与逐材料投影亦已核。[Wiki Cooking](https://stardewvalleywiki.com/Cooking)二次对照背包／冰箱／迷你冰箱来源及自动调味，不以Wiki替代原生顺序／位置事实。没有新增透明字段或重新注册动作。
+- 合法夹具烹饪 **31/31（2秒）**，最终Core相邻 **315/315（18秒）、零跳过**，含25项新增及原6项烹饪测试；前后重叠不累加。日志 `block202-final-cooking-core-adjacent.log` SHA `4a1f2e2df8f70016ccda0d31f8fe0602a39e32a0bd2a4043a93b74d8d9bab14d`。覆盖三来源保护／自由余量、调味与原料合并、原参数篡改、跨图及来源负例；是声明投影／原编译器，不是游戏烹饪或L3证明。最初6红及后续10/31因**新夹具**purpose非合法hash／global位置不符合既有stock合同，不能当合法预留场景证据；只修新夹具并断言原TryRead，随后30/31的唯一失败为新跨图夹具缺原energy／time／route-coverage字段，只补夹具，不改旧门。
+- Backend针对原库存／source／留存相邻 **138/139（59秒）**，唯一旧收获模式在 `OvernightFixture.Home`、尚未走到烹饪时由原repository `File.Move` 报访问拒绝；原因未定，未修改存储／权限／重试规则。同DLL仅复查该旧收获两模式 **2/2（11秒）**，不能追认139全绿。两日志分别 `block202-final-stock-source-backend-adjacent.log` SHA `7c68e483cfff0c2ce97e6b1f890d14ea20314ac9d96f60e54961053715041d89`、`block202-original-harvest-store-directed-recheck.log` SHA `9ef5d3a5403e2851017fa1df1c904229f84980f6883765b499f14aee0f108e65`。最终提交自身完整CI另核；最终构建后C#未改，本机命令均收回。
+- **唯一接续仍原库存／第5步，不能称烹饪完成：** 原生消耗可能经RemoveEmptySlots移动其他预留的槽位，须接真实消耗／被动位置与同owner原账本／恢复／留存。已核原Commit拒绝foreign GoalId，原supporting relocation要求同RouteSourceDecision；不能伪造transfer、私改owner头或放宽这些规则。随后原任务交付、替代补给、混合producer／partial队列与Main配套启用、真实全局选线／资源／日历／来源／native重放，再#570及#569正式manifest前交接。此为原其他消费责任，不新加验收门或重做L1。模型／数据冻结／训练属实验室；L1 19/19、Root11/11及169—172冻结，新模式OFF、formal=false，无游戏／API／清理／部署，local-data不提交。
+
 ## 2026-11-15 待售库存接单件社交与进食预检（201，其余消费仍未总闭）
 
 - 200最终 `27ab81c4`／CI `43706935696` 全部成功：Core2675/2675（45秒）、Backend3489/3489（10分12秒）、零跳过。日志 `block200-final-ci43706935696.log` SHA `d1599d6b063eb2b98e28b5d1be4e37afadd08b90d134f98b2a83f1e3f1df7845`。沙箱常规merge `db8a1f8a`／树 `4074fc25c900efa71d6d78c282034ae68447bb31` 等于已验200；本轮工作树另核。provider仍暂停，未调用API或改变权限。

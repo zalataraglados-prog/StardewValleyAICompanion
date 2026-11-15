@@ -5,12 +5,24 @@ using System.Linq;
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
+using StardewAI.Core.Strategy;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.Execution;
 
 public sealed partial class ActionQueueCompiler
 {
+    private static string[] ValidateCookRecipeWithSaleStock(SmallModelAction action, SnapshotEnvelope snapshot,
+        StrategyCommitmentLedger? ledger)
+    {
+        var reasons = ValidateCookRecipePlan(action, snapshot);
+        if (action.OptionId != "executor.cook_recipe" || !CropSaleStockCookingPreflight.AppliesTo(ledger)) return reasons;
+        return reasons.Concat(CropSaleStockCookingPreflight.Evaluate(snapshot, ledger,
+            CookingRow(snapshot, ReadParameter(action, "recipe_name") ?? string.Empty,
+                ReadParameter(action, "cooking_source_id") ?? string.Empty))).Distinct(StringComparer.Ordinal).ToArray();
+    }
+
     private static CompiledActionStep[] CompileCookRecipeStep(SmallModelAction action)
     {
         var recipeName = ReadParameter(action, "recipe_name");
