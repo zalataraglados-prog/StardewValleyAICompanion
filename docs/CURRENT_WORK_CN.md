@@ -1,5 +1,15 @@
 # StardewAI 当前工作
 
+## 2026-11-16 留存边界逻辑哈希减分配（217）
+
+- 216 `84b6d4de` 自身CI43760645962成功：Core2770/2770（45秒）、Backend3583/3583（8分48秒），零跳过，日志SHA `ed59679ac0262f3796723df88e7a955fc05db161cf0325bda022d12d124afdbd`；沙箱merge `dcc0ffec` 跟踪树与216一致。原清障回执适配已验收，完整联合业务仍未完成，API仍暂停且没有调用。
+- 用现成 `ValidationTraceSession` 对未经修改的实际25及原准备文件做一次有界离线测量：17.913秒、累计临时分配8,818,245,664字节，原after24大快照读取24次。这里是**累计分配而非同时占用8.8GB**，也不是游戏帧率。核对 `a7d55248` 的原逻辑后保留其必要目的：每个持久边界必须实读并复核CAS内容，不能用上层热缓存绕开磁盘变化。
+- 新增具名 `ContentAddressedJsonArtifactReader.ComputeLogicalSha256`，与原读取共用同一manifest／blob／有序JSON writer／长度及SHA校验；哈希专用通道只流式写入标准IncrementalHash，每块刷新，避免构造最终JSON字符串及大输出副本。它显式实读磁盘；`CropTeacherRetainedInputs` 的原重解析路径／前后物理哈希夹验／逻辑摘要比较全部保留，只复用已计算的摘要。原 `ReadAllText` 默认／普通读取／执行器不改变，不新增缓存可信期或第二套CAS协议。
+- 原始输入19项哈希逐项相等、验证调用数均673；同一回执仍native outcome=true、资源／生命周期／formal=false，owner不推进、新native派发0。单样本累计分配降至6,903,073,048字节（**21.7%**），Gen2由40次降至30次，耗时17.077秒（约**4.7%**）；不宣称已解决全部耗时或全Main达到相同比例。首轮CryptoStream方案仅改善17.3%分配／3.6%时间，留存为中间结果，未重复跑游戏。成本对比仅对留存样本负责。
+- 显式E、单核低优先级，最终Backend相邻 **152/152（1分10秒）**，零跳过，含12个新增逻辑摘要用例及原清障／补水／耕地／热缓存反例，日志SHA `8739444186dbb057d9d26bdfdb00ee384d2c3e6a5ce08a62fabd5284edd79b5d`；Core原缓存／trace相邻 **16/16（277毫秒）**，SHA `3aaf119d29362ab2e2d01c8eb219ff8762a9bf93221a20da15ccf8c0e04d2f8d`。覆盖plain／CAS／BOM／多块／格式和blob篡改、同mtime替换及热缓存不能隐藏磁盘变化。最后Backend构建后C#未改，Core hermetic后已恢复normal Backend assets；已有OwnedCooking CS8602不在本块改动范围，本提交自身CI另核。
+- 实际原件再验证报告SHA `6734957e0bd524c9fc468fd294d19d15d99f0dad2733892d92a2f12cf0599983`、trace SHA `94e20abd3f63055a2aa0e03960763a276d301e2a5182428909103d204dbcb92e`，原216报告未覆盖。首个profile控制调用的PowerShell反射包装类型不匹配仅修调用参数并单独保留失败，不当产品故障。所有测量／raw／运行脚本在Git外，无游戏／API／部署／清理。
+- **接续仍是原生实际闭环，不继续扩张性能分支：** U的owner24仍有未保存尾部，不能复活到旧春2保存或伪造接受；选择原合同下对等保存／owner，或原factory明确声明一个新episode。启动须使用包含本块的新Release与managed+joint/Product原Main，允许开局准备后再接Teacher，不用“已做一项动作”代替首个托管保存边界。原#550→#570→#569、#572开放、冻结L1／Root／169–172、formal=false及不重验冻结十三日不变。
+
 ## 2026-11-16 实机首阻塞与原清障回执适配（216）
 
 - 215 `ff8b11aa` 自身CI43755418097成功：Core2770/2770（49秒）、Backend3574/3574（10分36秒），零跳过；日志SHA `efc443b1ee2d4a01485c2b358b704b828e04d229e74dc3f96e893934d7ebda42`。沙箱merge `91b6211b` 跟踪树与215一致，API仍因原账户额度暂停，没有调用或扩大权限。

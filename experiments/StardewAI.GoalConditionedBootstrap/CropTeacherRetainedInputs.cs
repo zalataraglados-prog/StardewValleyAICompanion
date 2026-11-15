@@ -1,5 +1,3 @@
-using System.Security.Cryptography;
-using System.Text;
 using StardewAI.Core.Infrastructure;
 
 namespace StardewAI.GoalConditionedBootstrap;
@@ -31,8 +29,7 @@ internal sealed class CropTeacherRetainedInputs
         }
     }
 
-    private static string LogicalHash(string path) => Convert.ToHexString(SHA256.HashData(
-        Encoding.UTF8.GetBytes(CurrentTeacherFrontierSupport.ReadArtifactText(path)))).ToLowerInvariant();
+    private static string LogicalHash(string path) => ContentAddressedJsonArtifactReader.ComputeLogicalSha256(path);
 
     private static void RequireRegularInput(string path)
     {

@@ -1,5 +1,48 @@
 # Current Production Snapshot Handoff
 
+## Fresh Logical Hash Allocation Reduction (217)
+
+216 84b6d4de OWN43760645962 SUCCESS: Core2770(45s)/Backend3583(8m48s), zero
+skipped, logSHAed59679ac0262f3796723df88e7a955fc05db161cf0325bda022d12d124afdbd.
+Peer dcc0ffec tracked tree equals216; no API invocation/grants.
+
+Bounded original ValidationTraceSession replay of ACTUAL25/preparation: baseline
+17.913s/8,818,245,664 cumulative allocated bytes, after24 snapshot read24times.
+This is cumulative allocation, NOT8.8GB simultaneous resident memory or game FPS.
+Original a7d55248 fresh CAS checks are intentional. Preserve physical hash
+brackets/reparse checks and logical/blob verification; never trust a caller's
+warm materialization across a durable boundary.
+
+Explicit ComputeLogicalSha256 reuses the SAME manifest/blob/ordered JSON writer,
+length and SHA kernel. Only the hash path writes to an IncrementalHash stream,
+flushing each chunk, without final text/output copies. Original ReadAllText and
+executor/default behavior remain. Retained-input validation calls this fresh-read
+path; no second CAS grammar or trusted-cache lifetime.
+
+Final Backend152/152(1m10s), Core original cache/trace16/16(277ms), zero skipped;
+SHA8739444186dbb057d9d26bdfdb00ee384d2c3e6a5ce08a62fabd5284edd79b5d and
+3aaf119d29362ab2e2d01c8eb219ff8762a9bf93221a20da15ccf8c0e04d2f8d.
+Includes12 new equivalence/plain/CAS/BOM/multiple-chunk/tamper/warm-cache cases
+plus original owner/site/refill/till. No C# after final build. Normal Backend
+assets restored after hermetic Core mode; old OwnedCooking CS8602 unchanged.
+
+Same ACTUAL25 pins19/19 equal, operation count673 unchanged, native outcome true,
+resource/lifecycle/formal false, owner unchanged/new native dispatch0. Final
+single sample17.077s/6,903,073,048 cumulative bytes, allocation-21.7%/wall-4.7%,
+Gen2 40->30. Intermediate CryptoStream result retained, NOT a whole-loop speedup
+or complete performance fix. Final reportSHA6734957e0bd524c9fc468fd294d19d15d99f0dad2733892d92a2f12cf0599983;
+traceSHA94e20abd3f63055a2aa0e03960763a276d301e2a5182428909103d204dbcb92e.
+The first profile binding failure was controller-only and retained separately.
+
+NEXT actual original550 Main, not more profiling branches. U owner24 UNSAVED tail
+must not be restored by substituting the spring2 save. Use a genuinely matching
+original saved owner or explicitly declare a new original factory episode. New
+Release must contain217; managed+joint/Product, no fixed candidates or fabricated
+history. Allow bootstrap preparation before requiring the first managed SAVE;
+one ordinary verified action is not that target. Then original570 ->569,572
+business exit OPEN/formalfalse. No frozen13day replay. No game/API/deploy/cleanup
+this block; raw, measurements, saves and controller scripts remain outsideGit.
+
 ## Actual Native Clearance Wire Repair (216)
 
 215 ff8b11aa OWN43755418097 SUCCESS: Core2770(49s)/Backend3574(10m36s), zero
