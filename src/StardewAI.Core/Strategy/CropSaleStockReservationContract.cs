@@ -1,4 +1,6 @@
 using System;
+using System.Globalization;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using StardewAI.Contracts.Strategy;
@@ -9,6 +11,7 @@ public static class CropSaleStockReservationContract
 {
     public const string Schema = "crop_sale_stock_reservation.v1";
     public const string TransferableSchema = "crop_sale_stock_reservation.v2";
+    public const string PartitionedSchema = "crop_sale_stock_reservation.v3";
 
     public static string Purpose(string commitmentId, string outputRetentionKey, string inventoryIdentitySha256) =>
         JsonSerializer.Serialize(new CropSaleStockReservationPurpose
@@ -22,6 +25,26 @@ public static class CropSaleStockReservationContract
             SchemaVersion = TransferableSchema, CommitmentId = commitmentId, OutputRetentionKey = outputRetentionKey,
             InventoryIdentitySha256 = inventoryIdentitySha256, OriginSlotIndex = originSlotIndex
         });
+
+    public static bool IsTransferable(CropSaleStockReservationPurpose purpose) =>
+        purpose.SchemaVersion is TransferableSchema or PartitionedSchema;
+
+    public static string PartitionReservationId(string parentId, string stepSha256, int index) =>
+        parentId + ":transfer-split:" + stepSha256 + ":" + index.ToString(CultureInfo.InvariantCulture);
+
+    public static string PartitionedPurpose(MaterialReservation parent, string stepSha256, int index)
+    {
+        if (!TryRead(parent, out var original) || !IsTransferable(original!) ||
+            !MaterialOutputCustodyContract.IsLowerSha256(stepSha256) || index <= 0)
+            throw new ArgumentException("Sale-stock partition requires an original transferable parent and explicit partition identity.");
+        return JsonSerializer.Serialize(new CropSaleStockReservationPurpose
+        {
+            SchemaVersion = PartitionedSchema, CommitmentId = original!.CommitmentId,
+            OutputRetentionKey = original.OutputRetentionKey, InventoryIdentitySha256 = original.InventoryIdentitySha256,
+            OriginSlotIndex = original.OriginSlotIndex, PartitionParentId = parent.ReservationId,
+            PartitionStepSha256 = stepSha256, PartitionIndex = index
+        });
+    }
 
     public static bool TryRead(MaterialReservation claim, out CropSaleStockReservationPurpose? purpose)
     {
@@ -45,8 +68,26 @@ public static class CropSaleStockReservationContract
             TransferableSchema => purpose.OriginSlotIndex is >= 0 &&
                 claim.ReservationId == ReservationId(claim.SourceDecisionId, purpose.OriginSlotIndex.Value) &&
                 (claim.NodeId == playerNode || claim.NodeId?.StartsWith("chest:", StringComparison.Ordinal) == true),
+            PartitionedSchema => purpose.OriginSlotIndex is >= 0 && purpose.PartitionIndex is > 0 &&
+                MaterialOutputCustodyContract.IsLowerSha256(purpose.PartitionStepSha256 ?? string.Empty) &&
+                HasPartitionRoot(purpose.PartitionParentId, ReservationId(claim.SourceDecisionId, purpose.OriginSlotIndex.Value)) &&
+                claim.ReservationId == PartitionReservationId(purpose.PartitionParentId!, purpose.PartitionStepSha256!, purpose.PartitionIndex.Value) &&
+                (claim.NodeId == playerNode || claim.NodeId?.StartsWith("chest:", StringComparison.Ordinal) == true),
             _ => false
         };
+    }
+
+    private static bool HasPartitionRoot(string? id, string root)
+    {
+        if (id == root) return true;
+        if (id is null || !id.StartsWith(root + ":transfer-split:", StringComparison.Ordinal)) return false;
+        return id.Substring(root.Length).Split(new[] { ":transfer-split:" }, StringSplitOptions.None).Skip(1).All(part =>
+        {
+            var fields = part.Split(':');
+            return fields.Length == 2 && MaterialOutputCustodyContract.IsLowerSha256(fields[0]) &&
+                int.TryParse(fields[1], NumberStyles.None, CultureInfo.InvariantCulture, out var index) && index > 0 &&
+                fields[1] == index.ToString(CultureInfo.InvariantCulture);
+        });
     }
 
     public static string ReservationId(string producerStepId, int slotIndex) => producerStepId + ":crop-sale-stock:" +
@@ -66,4 +107,11 @@ public sealed class CropSaleStockReservationPurpose
     [JsonPropertyName("origin_slot_index")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? OriginSlotIndex { get; set; }
+
+    [JsonPropertyName("partition_parent_id"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? PartitionParentId { get; set; }
+    [JsonPropertyName("partition_step_sha256"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? PartitionStepSha256 { get; set; }
+    [JsonPropertyName("partition_index"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? PartitionIndex { get; set; }
 }

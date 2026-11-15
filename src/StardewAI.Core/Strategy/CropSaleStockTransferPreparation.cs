@@ -11,7 +11,7 @@ using StardewAI.Core.Execution;
 namespace StardewAI.Core.Strategy;
 
 // Prospective support only: the original commit must be submitted and verified before fresh compilation.
-public sealed class CropSaleStockTransferPreparation
+public sealed partial class CropSaleStockTransferPreparation
 {
     public const string RequestParameter = "crop_sale_stock_transfer_prepare_request_json";
     public ReservationPortfolioCommitRequest Request { get; }
@@ -31,7 +31,7 @@ public sealed class CropSaleStockTransferPreparation
         var claims = ledger.MaterialReservations.Where(row => row.Status == StrategyCommitmentStatuses.Active &&
             row.NodeId == intent.SourceNodeId && row.SlotIndex == intent.SourceSlotIndex &&
             row.QualifiedItemId == intent.QualifiedItemId && CropSaleStockReservationContract.TryRead(row, out var purpose) &&
-            purpose!.SchemaVersion == CropSaleStockReservationContract.TransferableSchema).OrderBy(row => row.ReservationId, StringComparer.Ordinal).ToArray();
+            CropSaleStockReservationContract.IsTransferable(purpose!)).OrderBy(row => row.ReservationId, StringComparer.Ordinal).ToArray();
         if (claims.Length == 0) return null;
         if (snapshot.SaveId.Status != FieldStatus.Available || snapshot.PlayerId.Status != FieldStatus.Available ||
             snapshot.SaveId.Value != ledger.SaveId || snapshot.PlayerId.Value != ledger.PlayerId ||
@@ -41,8 +41,8 @@ public sealed class CropSaleStockTransferPreparation
         var physical = new MaterialTransferProjector().Project(graph!, intent);
         if (physical.Status != "projected") { reasons = physical.BlockingReasons; return null; }
         var destinations = physical.DestinationSlotChanges.Where(row => row.StackAfter > row.StackBefore).ToArray();
-        if (destinations.Length != 1)
-        { reasons = new[] { "crop_sale_stock_prepare_partition_required" }; return null; }
+        if (destinations.Length == 0)
+        { reasons = new[] { "crop_sale_stock_prepare_destination_unavailable" }; return null; }
         var portfolio = "crop-sale-transfer:" + Hash(JsonSerializer.Serialize(new
         { snapshot.StateHash, ledger.LedgerId, ledger.Revision, Intent = intent, Claims = claims.Select(row => row.ReservationId).ToArray() }));
         var request = new ReservationPortfolioCommitRequest
@@ -60,6 +60,7 @@ public sealed class CropSaleStockTransferPreparation
                 }).ToArray()
             }
         };
+        if (destinations.Length > 1 && !AllocatePartitions(request, ledger, claims, destinations, out reasons)) return null;
         var preview = new ReservationPortfolioLedgerService().Commit(ledger, snapshot, request, ledger.UpdatedAt);
         if (!preview.Accepted || preview.Ledger?.PreparedMaterialTransfer is null)
         { reasons = preview.Errors; return null; }

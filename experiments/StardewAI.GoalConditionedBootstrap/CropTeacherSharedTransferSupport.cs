@@ -1,5 +1,6 @@
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
+using StardewAI.Core.Execution;
 using StardewAI.Core.Strategy;
 
 namespace StardewAI.GoalConditionedBootstrap;
@@ -15,7 +16,7 @@ public sealed class CropTeacherSharedTransferSupport
 
     private CropTeacherSharedTransferSupport(string runRequestPath, string sourcePath, string ledgerPath,
         IReadOnlyCollection<string> commitmentIds, string stepId, ReservationPortfolioCommitRequest request,
-        IReadOnlyDictionary<string, string> decisionInputs)
+        IReadOnlyDictionary<string, string> decisionInputs, bool partitionedSaleStock = false)
     {
         var paths = new[] { runRequestPath, sourcePath, ledgerPath }.Select(Path.GetFullPath).ToArray();
         Require(paths.Distinct(CropTeacherSeedTransferNativeOutcome.PathComparer).Count() == paths.Length,
@@ -31,8 +32,17 @@ public sealed class CropTeacherSharedTransferSupport
             PortfolioId = request.PortfolioId, SourceDecisionId = request.PortfolioId, GoalId = request.GoalId,
             MaterialTransferPreparation = request.MaterialTransferPreparation
         };
-        Require(request.MaterialTransferPreparation is not null && EqualJson(request, preparationOnly),
-            "Shared preparation must be the exact non-consuming original transfer request.");
+        if (partitionedSaleStock)
+        {
+            Require(request.MaterialTransferPreparation is not null && request.MaterialClaims is { Length: > 0 },
+                "Partitioned sale stock requires its explicit original allocation request.");
+            var canonical = CropSaleStockTransferPreparation.Create(source.Snapshot, source.Ledger,
+                MaterialTransferIntentBinder.ToParameters(request.MaterialTransferPreparation!.Intent), out var reasons);
+            Require(canonical is not null && EqualJson(request, canonical.Request),
+                "Partitioned sale stock differs from its original conserved allocation: " + string.Join(",", reasons));
+        }
+        else Require(request.MaterialTransferPreparation is not null && EqualJson(request, preparationOnly),
+                "Shared preparation must be the exact non-consuming original transfer request.");
         before = source.Snapshot; ledger = source.Ledger; this.stepId = stepId;
         this.request = CropTeacherSeedSupportSource.Copy(request);
         var preview = new ReservationPortfolioLedgerService().Commit(ledger, before, this.request, ledger.UpdatedAt);
@@ -46,6 +56,11 @@ public sealed class CropTeacherSharedTransferSupport
         IReadOnlyCollection<string> commitmentIds, string stepId, ReservationPortfolioCommitRequest request,
         IReadOnlyDictionary<string, string> decisionInputs) =>
         new(runRequestPath, sourcePath, ledgerPath, commitmentIds, stepId, request, decisionInputs);
+
+    public static CropTeacherSharedTransferSupport OpenPartitionedSaleStock(string runRequestPath, string sourcePath, string ledgerPath,
+        IReadOnlyCollection<string> commitmentIds, string stepId, ReservationPortfolioCommitRequest request,
+        IReadOnlyDictionary<string, string> decisionInputs) =>
+        new(runRequestPath, sourcePath, ledgerPath, commitmentIds, stepId, request, decisionInputs, partitionedSaleStock: true);
 
     public string SnapshotPath { get; }
     public int TotalDay { get; }

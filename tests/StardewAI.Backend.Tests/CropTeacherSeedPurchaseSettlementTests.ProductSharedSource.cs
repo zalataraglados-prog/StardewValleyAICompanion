@@ -34,9 +34,10 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         Assert.Throws<InvalidDataException>(() => MoneyRevenueCropNativeSharedSourceVerifier.VerifyWithPreparedProductTransferYields(transition));
         var verified = MoneyRevenueCropNativeSharedSourceVerifier.VerifyWithTransferredSaleStock(transition);
         Assert.Equal(f.After.StateHash, verified.AfterStateHash); Assert.Null(verified.TransferSettlement);
-        var load = typeof(MoneyRevenueCropNativeLifecycleProofBuilder).GetMethod("LoadJointObservedTransition", BindingFlags.NonPublic | BindingFlags.Static)!;
-        Assert.NotNull(load.Invoke(null, [transition, true]));
-        Assert.IsType<InvalidDataException>(Assert.Throws<TargetInvocationException>(() => load.Invoke(null, [transition, false])).InnerException);
+        var load = typeof(MoneyRevenueCropNativeLifecycleProofBuilder).GetMethod("LoadTransferredStockObservedTransition", BindingFlags.NonPublic | BindingFlags.Static)!;
+        Assert.NotNull(load.Invoke(null, [transition]));
+        var old = typeof(MoneyRevenueCropNativeLifecycleProofBuilder).GetMethod("LoadJointObservedTransition", BindingFlags.NonPublic | BindingFlags.Static)!;
+        Assert.IsType<InvalidDataException>(Assert.Throws<TargetInvocationException>(() => old.Invoke(null, [transition])).InnerException);
         Assert.False(verified.CropProductionCreditAuthorized); Assert.Equal(0, f.Files.F.Runtime.Handler.Commits);
     }
 }

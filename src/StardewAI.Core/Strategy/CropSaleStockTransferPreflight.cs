@@ -31,7 +31,7 @@ public static class CropSaleStockTransferPreflight
             return Array.Empty<string>();
         var stock = ledger.MaterialReservations.Where(row => row is not null && row.Status == StrategyCommitmentStatuses.Active &&
             CropSaleStockReservationContract.TryRead(row, out var purpose) &&
-            purpose!.SchemaVersion == CropSaleStockReservationContract.TransferableSchema).ToArray();
+            CropSaleStockReservationContract.IsTransferable(purpose!)).ToArray();
         if (stock.Length == 0) return Array.Empty<string>();
         if (!MaterialTransferIntentBinder.TryBuildIntent(parameters, out var intent))
             return new[] { "crop_sale_stock_transfer_intent_unavailable" };

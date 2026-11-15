@@ -113,7 +113,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         var nativeFrames = nativeObservedCapacity ? new NativeLifecycleFrameCache() : null;
         var transitions = request.Transitions.Select(value =>
         {
-            var loaded = jointObserved ? LoadJointObservedTransition(value, transferredStock) :
+            var loaded = jointObserved ? transferredStock ? LoadTransferredStockObservedTransition(value) : LoadJointObservedTransition(value) :
                 nativeObservedCapacity ? LoadNativeObservedTransition(value) : LoadTransition(value);
             if (nativeFrames is not null) return loaded.WithNativeFrames(nativeFrames);
             return loaded with

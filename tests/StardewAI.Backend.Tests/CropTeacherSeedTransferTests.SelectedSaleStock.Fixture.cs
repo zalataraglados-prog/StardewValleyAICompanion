@@ -7,6 +7,7 @@ using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
+using StardewAI.Core.Infrastructure;
 using StardewAI.Core.OptionRegistry;
 using StardewAI.Core.Strategy;
 using StardewAI.Core.Training;
@@ -20,7 +21,7 @@ public sealed partial class CropTeacherSeedTransferTests
 {
     private sealed class SelectedSaleStockFixture : IDisposable
     {
-        internal SharedTransferReturnFixture Transfer { get; } = new();
+        internal SharedTransferReturnFixture Transfer { get; }
         internal OwnerInputs Inputs { get; }
         internal OwnerFiles OwnerFiles { get; }
         internal CropTeacherSharedTransferDecision Decision { get; private set; }
@@ -28,8 +29,22 @@ public sealed partial class CropTeacherSeedTransferTests
         internal CropSaleStockTransferPreparation Preview { get; }
         internal LiveTrainingOptions Options => Transfer.Runtime.Options;
 
-        internal SelectedSaleStockFixture(string fault = "")
+        internal SelectedSaleStockFixture(string fault = "", bool partitioned = false)
         {
+            Transfer = new(partitioned ? before =>
+            {
+                MaterialInventoryGraphReader.TryRead(before, out var graph);
+                graph!.InventoryNodes.Single(row => row.NodeId == "player:123").Slots =
+                    [new() { SlotIndex = 0, QualifiedItemId = "(O)330", Stack = 998, Quality = 0,
+                        MaximumStackSize = 999, RuntimeType = "StardewValley.Object" }];
+                var farm = JsonNode.Parse(before.State["farm"].GetRawText())!;
+                farm["material_inventory_graph"]!["value"] = JsonSerializer.SerializeToNode(graph, JsonOptions);
+                before.State["farm"] = JsonSerializer.SerializeToElement(farm, JsonOptions);
+                var player = JsonNode.Parse(before.State["player"].GetRawText())!;
+                player["inventory"]!["value"] = JsonSerializer.SerializeToNode(new[] {
+                    new { slot_index = 0, qualified_item_id = "(O)330", stack = 998, quality = 0, is_empty = false } }, JsonOptions);
+                before.State["player"] = JsonSerializer.SerializeToElement(player, JsonOptions);
+            } : null);
             var f = Transfer;
             var ledger = f.Runtime.Repository.Get(f.Files.Before);
             const string producer = "declared-stock-main-source";

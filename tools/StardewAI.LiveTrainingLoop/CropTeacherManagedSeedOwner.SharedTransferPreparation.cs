@@ -80,8 +80,11 @@ public sealed partial class CropTeacherManagedSeedOwner
                 throw new InvalidDataException("Shared selected preparation changed its original ledger source.");
             pins.Pin(decision.OriginalLedgerPath);
         }
-        var support = CropTeacherSharedTransferSupport.Open(plan.RequestPath, headSnapshotPath, headLedgerPath,
-            ActiveCoveredCommitments(), Text(record, "support_step_id"), request, pins.Hashes);
+        var support = request.MaterialClaims is { Length: > 0 }
+            ? CropTeacherSharedTransferSupport.OpenPartitionedSaleStock(plan.RequestPath, headSnapshotPath, headLedgerPath,
+                ActiveCoveredCommitments(), Text(record, "support_step_id"), request, pins.Hashes)
+            : CropTeacherSharedTransferSupport.Open(plan.RequestPath, headSnapshotPath, headLedgerPath,
+                ActiveCoveredCommitments(), Text(record, "support_step_id"), request, pins.Hashes);
         var runtime = StoredPath(record, "runtime_directory");
         var preparation = StoredPath(record, "preparation_runtime_directory");
         var outputs = new[] { runtime, preparation, StoredPath(record, "native_receipt_path"), StoredPath(record, "native_after_snapshot_path") };

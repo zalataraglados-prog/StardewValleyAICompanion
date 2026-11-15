@@ -17,17 +17,7 @@ public sealed partial class CropTeacherSeedTransferTests
     // Declared wire/native observations and original Backend mutations; not actual game evidence.
     private sealed class SharedTransferReturnFixture : IDisposable
     {
-        internal Fixture Files { get; } = new(nativeEvidence: true, depleteSource: true, emptyChest: true, noPlayerSeed: true,
-            beforeChange: before =>
-            {
-                before.State["environment"] = JsonSerializer.SerializeToElement(new
-                {
-                    training_run_id = new { status = "available", value = "run.owned.seed.transfer" },
-                    training_mode = new { status = "available", value = "1" },
-                    save_isolation_path = new { status = "available", value = "isolated-shared-transfer-fixture" }
-                });
-                CropTeacherNativeSupportFixture.CompleteEnvelopeMetadata(before, "declared-shared-transfer-fixture", "2026-11-15T00:00:00Z");
-            });
+        internal Fixture Files { get; }
         internal RuntimeFixture Runtime { get; }
         internal MoneyRevenueCropNativeLifecycleTransitionRequest Transition { get; set; } = null!;
         internal CropTeacherSharedTransferSettlementReference Reference { get; private set; } = null!;
@@ -38,7 +28,21 @@ public sealed partial class CropTeacherSeedTransferTests
         internal string NativeResultPath => Path.Combine(Path.GetDirectoryName(Files.SourcePath)!, "shared-transfer-native-result.json");
         internal string ReplyPath => Path.Combine(Path.GetDirectoryName(Files.SourcePath)!, "shared-transfer-settlement-reply.json");
 
-        internal SharedTransferReturnFixture() => Runtime = new(Files);
+        internal SharedTransferReturnFixture(Action<SnapshotEnvelope>? configureBefore = null)
+        {
+            Files = new(nativeEvidence: true, depleteSource: true, emptyChest: true, noPlayerSeed: true, beforeChange: before =>
+            {
+                before.State["environment"] = JsonSerializer.SerializeToElement(new
+                {
+                    training_run_id = new { status = "available", value = "run.owned.seed.transfer" },
+                    training_mode = new { status = "available", value = "1" },
+                    save_isolation_path = new { status = "available", value = "isolated-shared-transfer-fixture" }
+                });
+                CropTeacherNativeSupportFixture.CompleteEnvelopeMetadata(before, "declared-shared-transfer-fixture", "2026-11-15T00:00:00Z");
+                configureBefore?.Invoke(before);
+            });
+            Runtime = new(Files);
+        }
 
         internal async Task Build(bool product = false, bool includePreparation = false,
             Func<SharedTransferReturnFixture, Task>? beforeNative = null, bool settle = true, bool alreadyPrepared = false)

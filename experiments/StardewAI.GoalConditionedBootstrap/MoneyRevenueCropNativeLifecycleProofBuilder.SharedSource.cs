@@ -4,8 +4,14 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
 {
     private const string SharedSourceReturnKind = "shared_source_return";
 
-    private static LoadedTransition LoadJointObservedTransition(MoneyRevenueCropNativeLifecycleTransitionRequest request,
-        bool transferredStock = false)
+    private static LoadedTransition LoadJointObservedTransition(MoneyRevenueCropNativeLifecycleTransitionRequest request) =>
+        LoadJointObservedTransitionCore(request, transferredStock: false);
+
+    private static LoadedTransition LoadTransferredStockObservedTransition(MoneyRevenueCropNativeLifecycleTransitionRequest request) =>
+        LoadJointObservedTransitionCore(request, transferredStock: true);
+
+    private static LoadedTransition LoadJointObservedTransitionCore(MoneyRevenueCropNativeLifecycleTransitionRequest request,
+        bool transferredStock)
     {
         if (request.NativeSharedSource is null && request.TransitionKind != SharedSourceReturnKind)
             return LoadNativeObservedTransition(request) with { JointObserved = true };

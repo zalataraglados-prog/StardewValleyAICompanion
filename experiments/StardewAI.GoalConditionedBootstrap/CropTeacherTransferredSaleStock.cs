@@ -102,7 +102,7 @@ internal sealed class CropTeacherTransferredSaleStock(string commitmentId, strin
                     "Transferred sale stock changed its original variant quality.");
                 qualities[key] = slot.Quality;
             }
-            else Require(purpose.SchemaVersion == CropSaleStockReservationContract.TransferableSchema &&
+            else Require(CropSaleStockReservationContract.IsTransferable(purpose) &&
                 claim.NodeId.StartsWith("chest:", StringComparison.Ordinal) &&
                 qualities.TryGetValue(key, out var quality) && quality == slot.Quality,
                 "Stored sale stock lacks its observed original player variant/quality.");

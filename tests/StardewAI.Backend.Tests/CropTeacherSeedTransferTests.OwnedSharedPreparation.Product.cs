@@ -47,9 +47,9 @@ public sealed partial class CropTeacherSeedTransferTests
         Assert.Throws<InvalidDataException>(() => MoneyRevenueCropNativeSharedSourceVerifier.VerifyWithPreparedTransferYields(transition));
         Assert.Equal(f.Files.After.StateHash, MoneyRevenueCropNativeSharedSourceVerifier.VerifyWithPreparedProductTransferYields(transition).AfterStateHash);
         Assert.Equal(f.Files.After.StateHash, MoneyRevenueCropNativeSharedSourceVerifier.VerifyWithTransferredSaleStock(transition).AfterStateHash);
-        var load = typeof(MoneyRevenueCropNativeLifecycleProofBuilder).GetMethod("LoadJointObservedTransition",
+        var load = typeof(MoneyRevenueCropNativeLifecycleProofBuilder).GetMethod("LoadTransferredStockObservedTransition",
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!;
-        Assert.NotNull(load.Invoke(null, [transition, true]));
+        Assert.NotNull(load.Invoke(null, [transition]));
         AssertTransferredSourceDoesNotCreditSeedSupply(f, transition);
         await owner.DisposeAsync();
         await using var reopened = await files.Open();

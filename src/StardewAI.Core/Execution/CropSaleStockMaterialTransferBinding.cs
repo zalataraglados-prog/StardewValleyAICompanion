@@ -69,6 +69,6 @@ public static class CropSaleStockMaterialTransferBinding
             row.Quantity == move.Quantity && row.NodeId == prepared.Intent.SourceNodeId && row.SlotIndex == prepared.Intent.SourceSlotIndex &&
             row.QualifiedItemId == prepared.Intent.QualifiedItemId && row.OwnerPlayerId == actor &&
             CropSaleStockReservationContract.TryRead(row, out var purpose) &&
-            purpose!.SchemaVersion == CropSaleStockReservationContract.TransferableSchema) == 1);
+            CropSaleStockReservationContract.IsTransferable(purpose!)) == 1);
     }
 }

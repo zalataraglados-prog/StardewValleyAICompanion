@@ -45,8 +45,8 @@ public sealed partial class CropTeacherManagedSeedOwner
             var ledger = pins.Read<StrategyCommitmentLedger>(headLedgerPath);
             var actual = CropSaleStockTransferPreparation.Create(source, ledger, MaterialTransferIntentBinder.ToParameters(intent), out var reasons);
             if (actual is null || actual.Request.GoalId != originalRequest.GoalId ||
-                !JsonNode.DeepEquals(SelectedTransferIdentity(originalRequest.MaterialTransferPreparation!),
-                    SelectedTransferIdentity(actual.Request.MaterialTransferPreparation!)))
+                !JsonNode.DeepEquals(SelectedTransferIdentity(originalRequest, originalLedger),
+                    SelectedTransferIdentity(actual.Request, ledger)))
                 throw new InvalidDataException("Selected sale stock transfer changed its semantic intent/claims on the current source: " + string.Join(",", reasons));
             pins.Validate();
             return await AdmitSharedTransferPreparationCoreAsync(decision with { OriginalLedgerPath = originalLedgerPath }, actual.Request,
@@ -83,13 +83,23 @@ public sealed partial class CropTeacherManagedSeedOwner
         left.OrderBy(row => row.Name, StringComparer.Ordinal).Select(row => (row.Name, row.Value)).SequenceEqual(
             right.OrderBy(row => row.Name, StringComparer.Ordinal).Select(row => (row.Name, row.Value)));
 
-    private static JsonNode SelectedTransferIdentity(MaterialTransferPreparationRequest preparation) =>
-        JsonSerializer.SerializeToNode(new
+    private static JsonNode SelectedTransferIdentity(ReservationPortfolioCommitRequest request, StrategyCommitmentLedger source)
+    {
+        var preparation = request.MaterialTransferPreparation!;
+        var originals = source.MaterialReservations.ToDictionary(row => row.ReservationId, StringComparer.Ordinal);
+        string ParentId(string id) => originals.ContainsKey(id) ? id :
+            JsonSerializer.Deserialize<CropSaleStockReservationPurpose>(request.MaterialClaims.Single(row => row.ReservationId == id).Purpose)!
+                .PartitionParentId ?? throw new InvalidDataException("Selected sale-stock partition has no original parent.");
+        return JsonSerializer.SerializeToNode(new
         {
             preparation.RouteSourceDecisionId, preparation.Intent,
-            Claims = preparation.MaterialRelocations.OrderBy(row => row.MaterialReservationId, StringComparer.Ordinal).Select(row => new
+            Claims = preparation.MaterialRelocations.GroupBy(row => ParentId(row.MaterialReservationId), StringComparer.Ordinal)
+                .OrderBy(group => group.Key, StringComparer.Ordinal).Select(group =>
             {
-                row.MaterialReservationId, row.SourceNodeId, row.SourceSlotIndex, row.DestinationNodeId, row.QualifiedItemId, row.Quantity
+                var claim = originals[group.Key];
+                return new { claim.ReservationId, claim.SourceDecisionId, claim.GoalId, claim.NodeId, claim.SlotIndex,
+                    claim.QualifiedItemId, claim.Purpose, Quantity = checked(group.Sum(row => row.Quantity)) };
             })
-        }, JsonOptions)!; // Destination slot allocation is mechanical; selected source/intent/claims are not.
+        }, JsonOptions)!; // Child IDs and destination allocation are mechanical; original ownership/quantity are not.
+    }
 }

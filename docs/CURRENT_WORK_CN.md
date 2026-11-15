@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-11-15 待售分堆原子准备与原生命周期兼容（199，库存能力块未总闭）
+
+- **198未接受：** `e86c9127`／CI `43700884549` 终态失败，Core2675/2675（56秒）、Backend3461/3466（9分32秒）、零跳过。5项均因198给旧私有 `LoadJointObservedTransition` 增加可选参数，旧反射入口仍按单参数调用；不是环境或原生动作失败。日志 `block198-final-ci43700884549.log` SHA `ac236b127d7d267c62e19dcfc423bda2256d9de3e045a8d83dd486259ad6ddaa`。本轮恢复原单参数签名，以具名 `LoadTransferredStockObservedTransition` 接新模式、共用同一核；只改新增测试的入口，旧SharedLifecycle断言不动。已全库查直接与反射引用，后续改入口须同时核两类调用，不能只凭局部筛选绿。沙箱仍为已验197，不合入失败198。
+- 新待售purpose v3只表达分堆子预留的原父ID／准备步骤hash／序号及原wave／variant；v1／v2身份规则和原JSON不变。原 `ReservationPortfolioLedgerService.Commit` 在同一次原子提交中先缩小父预留再补子预留，随后用原 `MaterialTransferProjector` 准备多目标槽，不新增账本／分堆执行器。父ID按前缀先于子ID排序，重复／历史子ID拒绝；数量按原目标增量守恒，其他根和被动重排仍由原投影／结算负责。
+- 原候选→日计划→fresh动作编译／dispatch／双向结算已消费这些真实预留；新 `OpenPartitionedSaleStock` 必须在原来源重新生成并完整匹配canonical请求，不能夹带额外claim／release／其他操作。旧 `CropTeacherSharedTransferSupport.Open` 仍拒绝额外MaterialClaims。Main同owner准备前持有、回包恢复和完整机械队列复用原链；所选身份按源账本把子ID归并回原父预留的归属／purpose／数量，不把机械槽数或新子ID当一次新选择。目标从两槽变为一槽时仍保留同一高层安排。
+- 最终显式E重建原种子／库存／来源／checkpoint／Main及旧JointLifecycle相邻 **321/321（2分13秒）、零跳过**，含15项新增与198原5项失败。日志 `block199-final-original-lifecycle-and-partition-tests.log` SHA `ea2357eadf003b23d65cf89edeb5569f7692881a49b76de92907b35ceb880dd9`；此前29/29及312/312重叠不累加，不追认198全绿。新增用例覆盖双向原子分堆、原编译派发和结算、自产存箱信用／取回完整variant、机械分配重绑、v2仍拒伪子ID、嵌套及历史ID、Main丢回包／重开／原lookup与canonical篡改拒绝。是声明物理投影／原服务及Backend／合成native协议，不是实际游戏分堆或L3总验收。本提交最终CI另核；最终构建后C#未再修改，四份文档／318项目录／原checkpoint与差异检查通过。
+- **唯一接续仍原库存块：** 完成原自由／被动-only转移、其他用途消费的同来源归因及Main成对启用；原单RouteSourceDecision合同仍保留，混合producer必须在本块／既定多队列接续中正确分配，不能靠放宽底层权属吞掉。随后原partial／多队列、真实跨根选线／日历／来源对账，第6步#570及#569正式manifest前交接。常规预览生成／成对新库存模式仍OFF，formal=false；L1／Root及169—172冻结，不重跑十三日，不接管实验室模型／训练。最新issue无新增外部反馈，无游戏／API／清理／部署，local-data不提交。
+
 ## 2026-11-15 存取自产留存与显式全局来源（198，库存能力块未总闭）
 
 - 197最终 `31e3be32`／CI `43698060074` 全部成功：Core2675/2675（44秒）、Backend3457/3457（6分42秒）、零跳过；日志 `block197-final-ci43698060074.log` SHA `1d5c1bbbb3be4027c20fcaaac329a7115283b148533cf1afc2e3e4e7bc888b7f`。沙箱常规merge `2b5223bf`／树 `93d49543255e597911311a8f8331318e223d3e5c` 等于已验197，不与本轮工作树混称一致。API仍为原账户额度暂停，没有调用或权限变化。

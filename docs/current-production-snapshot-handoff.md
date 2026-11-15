@@ -1,5 +1,47 @@
 # Current Production Snapshot Handoff
 
+## Atomic Sale Stock Partitions And Original Lifecycle Compatibility (199, Open)
+
+198 e86c9127/quality43700884549 FAILED: Core2675/2675(56s),
+Backend3461/3466(9m32s), zero skipped. All five are OLD SharedLifecycle
+reflection calls after198 added an optional parameter to an original ONE-argument
+private entry. Not environment/native failure. Log SHA
+ac236b127d7d267c62e19dcfc423bda2256d9de3e045a8d83dd486259ad6ddaa.
+199 restores EXACT old signature, adds NAMED LoadTransferredStockObservedTransition
+over SAME core, changes only NEW tests; old assertions unchanged. Whole-repo
+direct/reflection call inventory checked. Peer stays accepted197; failed198 not merged.
+
+Explicit sale-stock purposev3 binds parent/step-hash/index lineage and original
+wave/variant. Oldv1/v2 IDs and JSON unchanged. ORIGINAL atomic Commit shrinks
+parents before children (prefix ordering), then prepares conserved multi-slot
+moves through ORIGINAL projector. No second ledger/split executor; original
+candidate/daily-plan/fresh compiler/dispatch/settlement handle both directions,
+other roots and passive reindex. Old/history child collisions rejected.
+
+NAMED OpenPartitionedSaleStock re-materializes the COMPLETE canonical request
+from original source, rejects added claims/releases/other mutations. Old shared
+support still refuses MaterialClaims. SAME Main owner holds before preparation,
+reuses original reply-only recovery, full mechanical queue and reopen. Selected
+identity groups mechanical child IDs back to original source claims/ownership/
+purpose/quantity; allocation may change two slots to one without a policy rerank.
+
+Final E rebuilt adjacent321/321(2m13s), zero skipped, includes15 new AND198's
+five original failures. Logblock199-final-original-lifecycle-and-partition-tests.log
+SHAea2357eadf003b23d65cf89edeb5569f7692881a49b76de92907b35ceb880dd9.
+Earlier29/29 and312/312 overlap, not additive;198 NOT relabeled green.
+C# unchanged after final build; four docs/inventory318/checkpoint/diff checks pass.
+Original-service projections/Backend/synthetic native protocols, NOT actual
+game partition/storage or global L3 acceptance. Own final-SHA CI separate.
+
+NEXT original free/passive-only transfers, other-use consumption attribution and
+paired Main activation. Original single RouteSourceDecision contract preserved;
+mixed producers require correct allocation in this block/original multi-queue
+continuation, not silently relaxed shared authority. Then original partial/global
+route-calendar-source reconciliation, step6 #570 and #569 PRE-MANIFEST handoff.
+Ordinary preview/paired stock mode OFF, formal=false, L1/Root/169-172 frozen,
+no13day restart/game/API/cleanup/deploy/raw/local-data commit or lab training.
+[Current work199](CURRENT_WORK_CN.md#2026-11-15-待售分堆原子准备与原生命周期兼容199库存能力块未总闭).
+
 ## Transferred Owned Stock And Explicit Global Source (198, Stock Capability Open)
 
 197 31e3be32/quality43698060074 SUCCESS: Core2675/2675(44s),
