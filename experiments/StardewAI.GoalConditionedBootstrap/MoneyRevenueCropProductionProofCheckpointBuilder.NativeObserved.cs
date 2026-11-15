@@ -6,6 +6,8 @@ public static partial class MoneyRevenueCropProductionProofCheckpointBuilder
     private const string NativeCheckpointSchema = "money_revenue_crop_production_proof_checkpoint.v13";
     private const string ProducerCheckpointRequestSchema = "money_revenue_crop_production_proof_checkpoint_request.v14";
     private const string ProducerCheckpointSchema = "money_revenue_crop_production_proof_checkpoint.v14";
+    private const string ReservedCheckpointRequestSchema = "money_revenue_crop_production_proof_checkpoint_request.v15";
+    private const string ReservedCheckpointSchema = "money_revenue_crop_production_proof_checkpoint.v15";
     private const string NativeCapacitySchema = "money_revenue_crop_daily_capacity_proof.v2";
     private const string NativeTerminalSchema = "crop_teacher_native_variant_terminal_proof.v1";
 

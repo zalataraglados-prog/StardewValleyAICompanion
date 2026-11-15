@@ -30,14 +30,24 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 f.Shared.Source.SourcePath, f.Shared.Source.LedgerPath, [Id], "reserved-leaf", target, f.ModelPath, f.QueuePath));
     }
 
-    [Fact]
-    public async Task ReservedSaleStockConsumesSixNativeVariantUnitsAtomicallyAndRestoresTheOriginalOwner()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ReservedSaleStockConsumesSixNativeVariantUnitsAtomicallyAndRestoresTheOriginalOwner(bool reservedProof)
     {
         static string Hash(string path) => Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant();
         using var f = new NativeVariantTerminalFixture();
         var target = f.Target with { RequireSaleStockReservations = true };
         var proof = JsonSerializer.Deserialize<MoneyRevenueCropOutputRetentionProof>(File.ReadAllText(target.RetentionProofPath), JsonOptions)!;
         proof.OutputRetentionKey = "declared-native-leaf-sale-wave";
+        if (reservedProof)
+        {
+            proof.SchemaVersion = "money_revenue_crop_output_retention_proof.v3";
+            var items = f.Shared.Source.Before.State["player"].GetProperty("inventory").GetProperty("value").EnumerateArray().ToArray();
+            proof.ProducerRetention = new(target.RequiredQuantity, target.ReadNativeVariants().Select(variant =>
+                new MoneyRevenueCropRetainedVariant(MoneyRevenueCropRetentionAccount.InventoryIdentity(items.Single(row =>
+                    row.GetProperty("slot_index").GetInt32() == variant.SlotIndex)), variant.PlannedQuantity)).ToArray(), []);
+        }
         Fixture.Save(target.RetentionProofPath, proof);
         target = target with { RetentionProofSha256 = Hash(target.RetentionProofPath) };
         const string producer = "declared-native-leaf-producer";
@@ -68,7 +78,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         var oldQueue = new ActionQueueCompiler().Compile(oldModel, initial, reserved.Ledger);
         var oldModelPath = Path.Combine(f.Root, "downgrade-model.json"); var oldQueuePath = Path.Combine(f.Root, "downgrade-queue.json");
         Fixture.Save(oldModelPath, oldModel); Fixture.Save(oldQueuePath, oldQueue);
-        Assert.Contains("cannot downgrade", Assert.Throws<InvalidDataException>(() =>
+        Assert.Contains(reservedProof ? "explicit sale-stock" : "cannot downgrade", Assert.Throws<InvalidDataException>(() =>
             CropTeacherTerminalShipping.Preparation.OpenNativeVariants(f.Shared.Inputs.Plan.RequestPath, f.Shared.Source.SourcePath,
                 ledgerPath, [Id], "downgrade-leaf", oldTarget, oldModelPath, oldQueuePath)).Message);
         using var files = new OwnerFiles(f.Shared.Runtime.LiveOptions, f.Shared.Runtime.Client,

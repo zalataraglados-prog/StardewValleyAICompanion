@@ -1,4 +1,5 @@
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -19,6 +20,16 @@ public static partial class MoneyRevenueCropOutputRetentionProofBuilder
 
     private static MoneyRevenueCropProducerRetention BuildProducerRetention(MoneyRevenueCropNativeLifecycleProof lifecycle,
         MoneyRevenueCropNativeLifecycleTransitionProof[] harvests, int first, int last, string itemId, int minimum, int tileCount)
+        => BuildProducerRetentionCore(lifecycle, harvests, first, last, itemId, minimum, tileCount, null, null);
+
+    private static MoneyRevenueCropProducerRetention BuildReservedProducerRetention(MoneyRevenueCropNativeLifecycleProof lifecycle,
+        MoneyRevenueCropNativeLifecycleTransitionProof[] harvests, int first, int last, string itemId, int minimum, int tileCount,
+        string commitmentId, string waveKey) =>
+        BuildProducerRetentionCore(lifecycle, harvests, first, last, itemId, minimum, tileCount, commitmentId, waveKey);
+
+    private static MoneyRevenueCropProducerRetention BuildProducerRetentionCore(MoneyRevenueCropNativeLifecycleProof lifecycle,
+        MoneyRevenueCropNativeLifecycleTransitionProof[] harvests, int first, int last, string itemId, int minimum, int tileCount,
+        string? commitmentId, string? waveKey)
     {
         Require(minimum % tileCount == 0, "Crop producer retention has no exact original per-tile minimum.");
         var original = CurrentTeacherFrontierSupport.Read<MoneyRevenueCropNativeLifecycleProofRequest>(lifecycle.RequestPath,
@@ -48,8 +59,12 @@ public static partial class MoneyRevenueCropOutputRetentionProofBuilder
                     row.ExecutionReceiptPath, row.AfterSnapshotPath, request.RunId, request.SelectedCandidateId);
                 frameCount = source.Actions.Length;
                 guards.Add(MoneyRevenueCropNativeSharedSourceVerifier.RetainInputs(request.NativeSharedSource!));
+                var preserve = commitmentId is null ? null : CropTeacherSaleStockInventory.BindPreserved(source.Before,
+                    CurrentTeacherFrontierSupport.Read<StrategyCommitmentLedger>(request.NativeSharedSource!.LedgerPath,
+                        "reserved producer-retention original source ledger"), commitmentId, waveKey!, itemId);
                 foreach (var frame in source.Actions)
-                    account.Observe(frame.Before, frame.After, ownedHarvest: false);
+                    if (preserve is null) account.Observe(frame.Before, frame.After, ownedHarvest: false);
+                    else account.ObserveReservedForeign(frame.Before, frame.After, preserve(frame.After));
             }
             else
             {
@@ -73,7 +88,10 @@ public static partial class MoneyRevenueCropOutputRetentionProofBuilder
     }
 
     public static bool HasProducerRetention(MoneyRevenueCropOutputRetentionProof proof) =>
-        proof.SchemaVersion == "money_revenue_crop_output_retention_proof.v2" && proof.ProducerRetention is not null;
+        (proof.SchemaVersion == "money_revenue_crop_output_retention_proof.v2" || HasReservedProducerRetention(proof)) && proof.ProducerRetention is not null;
+
+    public static bool HasReservedProducerRetention(MoneyRevenueCropOutputRetentionProof proof) =>
+        proof.SchemaVersion == "money_revenue_crop_output_retention_proof.v3" && proof.ProducerRetention is not null;
 
     // The caller already binds/rebuilds the immutable certificate. This limits the selected native units,
     // including partial-stack plans, rather than reinterpreting the legacy aggregate inventory delta.
@@ -81,6 +99,8 @@ public static partial class MoneyRevenueCropOutputRetentionProofBuilder
         CropTeacherTerminalShippingTarget target, SnapshotEnvelope initial)
     {
         if (proof.SchemaVersion == "money_revenue_crop_output_retention_proof.v1" && proof.ProducerRetention is null) return;
+        Require(!HasReservedProducerRetention(proof) || target.RequireSaleStockReservations,
+            "Reserved producer retention requires the explicit sale-stock terminal consumer.");
         Require(HasProducerRetention(proof) && target.NativeVariants is not null && proof.MinimumUnits > 0 &&
             target.RequiredQuantity == proof.MinimumUnits && target.QualifiedItemId == proof.HarvestItemQualifiedId,
             "Producer retention requires the explicit native variant terminal consumer.");

@@ -13,7 +13,8 @@ public static partial class MoneyRevenueCropProductionProofCheckpointBuilder
             MoneyRevenueCropProductionProofCheckpointRequest>(
                 fullRequestPath,
                 "Money Revenue crop-production proof checkpoint request");
-        var producerAware = nativeObserved && request.SchemaVersion == ProducerCheckpointRequestSchema;
+        var reservedStock = nativeObserved && request.SchemaVersion == ReservedCheckpointRequestSchema;
+        var producerAware = reservedStock || nativeObserved && request.SchemaVersion == ProducerCheckpointRequestSchema;
         Require((producerAware || request.SchemaVersion == (nativeObserved ? NativeCheckpointRequestSchema :
                     "money_revenue_crop_production_proof_checkpoint_request.v12")) &&
                 !request.FormalProductTrainingAuthorized,
@@ -140,7 +141,7 @@ public static partial class MoneyRevenueCropProductionProofCheckpointBuilder
                     outputRetentionProofPaths.Length,
             "Money Revenue crop output-retention proof paths are duplicated.");
         var outputRetentionProofs = outputRetentionProofPaths.Select(path =>
-            producerAware ? VerifyCollectedOutputRetentionProof(path, planPath, planSha256, plan, producerAware: true) :
+            producerAware ? VerifyCollectedOutputRetentionProof(path, planPath, planSha256, plan, producerAware: true, reservedStock) :
                 VerifyOutputRetentionProof(path, planPath, planSha256, plan)).ToArray();
         Require(outputRetentionProofs.Select(proof => proof.EvidenceRequestId)
                     .Distinct(StringComparer.Ordinal).Count() ==
@@ -261,7 +262,7 @@ public static partial class MoneyRevenueCropProductionProofCheckpointBuilder
             .ToArray();
         return new MoneyRevenueCropProductionProofCheckpoint
         {
-            SchemaVersion = producerAware ? ProducerCheckpointSchema :
+            SchemaVersion = reservedStock ? ReservedCheckpointSchema : producerAware ? ProducerCheckpointSchema :
                 nativeObserved ? NativeCheckpointSchema : "money_revenue_crop_production_proof_checkpoint.v12",
             Status = "crop_production_proof_collection_in_progress",
             RequestPath = fullRequestPath,
@@ -389,7 +390,7 @@ public static partial class MoneyRevenueCropProductionProofCheckpointBuilder
         VerifyCollectedOutputRetentionProof(proofPath, planPath, planSha256, plan, producerAware: false);
 
     private static MoneyRevenueCropOutputRetentionProof VerifyCollectedOutputRetentionProof(string proofPath,
-        string planPath, string planSha256, MoneyRevenueCropProductionObligationPlan plan, bool producerAware)
+        string planPath, string planSha256, MoneyRevenueCropProductionObligationPlan plan, bool producerAware, bool reservedStock = false)
     {
         var proof = CurrentTeacherFrontierSupport.Read<
             MoneyRevenueCropOutputRetentionProof>(
@@ -398,7 +399,8 @@ public static partial class MoneyRevenueCropProductionProofCheckpointBuilder
         var rebuilt = MoneyRevenueCropOutputRetentionProofBuilder.Build(
             proof.RequestPath);
         Require((proof.SchemaVersion == "money_revenue_crop_output_retention_proof.v1" ||
-                 producerAware && MoneyRevenueCropOutputRetentionProofBuilder.HasProducerRetention(proof)) &&
+                 producerAware && MoneyRevenueCropOutputRetentionProofBuilder.HasProducerRetention(proof) &&
+                 (reservedStock || !MoneyRevenueCropOutputRetentionProofBuilder.HasReservedProducerRetention(proof))) &&
                 BootstrapArtifactGuard.EqualJson(proof, rebuilt) &&
                 string.Equals(
                     Path.GetFullPath(proof.CropProductionPlanPath),

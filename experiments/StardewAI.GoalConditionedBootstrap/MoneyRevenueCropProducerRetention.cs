@@ -42,6 +42,13 @@ public sealed class MoneyRevenueCropRetentionAccount
     }
 
     internal void Observe(SnapshotEnvelope before, SnapshotEnvelope after, bool ownedHarvest)
+        => ObserveCore(before, after, ownedHarvest, null);
+
+    internal void ObserveReservedForeign(SnapshotEnvelope before, SnapshotEnvelope after,
+        MoneyRevenueCropRetainedVariant[] preserved) => ObserveCore(before, after, false, preserved);
+
+    private void ObserveCore(SnapshotEnvelope before, SnapshotEnvelope after, bool ownedHarvest,
+        MoneyRevenueCropRetainedVariant[]? preserved)
     {
         Require(before.StateHash == stateHash && before.GameTick == tick &&
             before.StateHash == SnapshotHash.ComputeStateHash(before.State) &&
@@ -52,6 +59,13 @@ public sealed class MoneyRevenueCropRetentionAccount
         Require(current.Count == previous.Count && current.All(pair => previous.GetValueOrDefault(pair.Key) == pair.Value),
             "source inventory is discontinuous.");
         var next = ReadInventory(after, itemId);
+        Require(preserved is null || preserved.All(row => row is not null && !string.IsNullOrWhiteSpace(row.InventoryIdentitySha256)) &&
+            preserved.Select(row => row.InventoryIdentitySha256).Distinct(StringComparer.Ordinal).Count() == preserved.Length,
+            "reserved stock floors are missing or duplicated.");
+        var floors = preserved?.ToDictionary(row => row.InventoryIdentitySha256, row => row.RetainedQuantity, StringComparer.Ordinal);
+        Require(floors is null || floors.All(row => row.Value > 0 && row.Value <= credit.GetValueOrDefault(row.Key) &&
+            row.Value <= current.GetValueOrDefault(row.Key) && row.Value <= next.GetValueOrDefault(row.Key)),
+            "reserved stock cannot create credit or replace missing owned variants.");
         foreach (var key in previous.Keys.Concat(next.Keys).Distinct(StringComparer.Ordinal))
         {
             var delta = checked(next.GetValueOrDefault(key) - previous.GetValueOrDefault(key));
@@ -60,7 +74,8 @@ public sealed class MoneyRevenueCropRetentionAccount
                 Require(delta >= 0, "owned harvest removed or replaced existing item variants.");
                 credit[key] = checked(credit.GetValueOrDefault(key) + delta);
             }
-            else if (delta < 0) credit[key] = Math.Max(0, checked(credit.GetValueOrDefault(key) + delta));
+            else if (delta < 0) credit[key] = Math.Max(floors?.GetValueOrDefault(key) ?? 0,
+                Math.Max(0, checked(credit.GetValueOrDefault(key) + delta)));
         }
         previous = next; stateHash = after.StateHash; tick = after.GameTick;
     }

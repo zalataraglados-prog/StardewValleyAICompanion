@@ -1,6 +1,8 @@
 using System.Text.Json;
 using System.Reflection;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
+using StardewAI.Core.Strategy;
 using StardewAI.GoalConditionedBootstrap;
 
 namespace StardewAI.Backend.Tests;
@@ -30,11 +32,27 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task ProducerRetentionConsumesSealedNativeFramesBetweenDeclaredHarvestBatches(bool product)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public async Task ProducerRetentionConsumesSealedNativeFramesBetweenDeclaredHarvestBatches(bool product, bool reserved)
     {
-        var f = new SiteTillNativeFixture(productTransport: product);
+        const string waveKey = "declared-reserved-native-wave";
+        var f = new SiteTillNativeFixture(productTransport: product, prepareSource: reserved ? source =>
+        {
+            source.OtherRequest.MaterialClaims[0].Quantity = 37;
+            var item = source.Before.State["player"].GetProperty("inventory").GetProperty("value").EnumerateArray()
+                .Single(row => row.GetProperty("slot_index").GetInt32() == 0);
+            source.OwnRequest.MaterialClaims = source.OwnRequest.MaterialClaims.Concat(new[] { new MaterialReservationUpsertRequest
+            {
+                StateHash = source.Before.StateHash, ExpectedLedgerRevision = source.OwnRequest.ExpectedLedgerRevision,
+                SourceDecisionId = source.OwnRequest.SourceDecisionId, GoalId = "earn_money",
+                ReservationId = CropSaleStockReservationContract.ReservationId(source.OwnRequest.SourceDecisionId, 0),
+                NodeId = "player:" + source.Before.PlayerId.Value, SlotIndex = 0, QualifiedItemId = "(O)745", Quantity = 2,
+                Purpose = CropSaleStockReservationContract.Purpose(Id, waveKey, MoneyRevenueCropRetentionAccount.InventoryIdentity(item))
+            } }).ToArray();
+        } : null);
         using var host = f.Files.F.Runtime;
         var shared = await SharedLifecycleTransition(f);
         var before = LifecycleRead<SnapshotEnvelope>(shared.BeforeSnapshotPath);
@@ -70,15 +88,17 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         var lifecycle = new MoneyRevenueCropNativeLifecycleProof { RequestPath = requestPath, Transitions = rows };
         // Tests the attribution consumer with declared harvest boundaries and an original sealed native middle.
         // It deliberately does NOT claim these synthetic outer rows are a complete native lifecycle proof.
-        var method = typeof(MoneyRevenueCropOutputRetentionProofBuilder).GetMethod("BuildProducerRetention", BindingFlags.NonPublic | BindingFlags.Static)!;
-        var result = (MoneyRevenueCropProducerRetention)method.Invoke(null, [lifecycle, new[] { rows[0], rows[2] }, 0, 2, "(O)745", 4, 4])!;
+        var method = typeof(MoneyRevenueCropOutputRetentionProofBuilder).GetMethod(reserved ? "BuildReservedProducerRetention" : "BuildProducerRetention",
+            BindingFlags.NonPublic | BindingFlags.Static)!;
+        object[] arguments = [lifecycle, new[] { rows[0], rows[2] }, 0, 2, "(O)745", 4, 4];
+        if (reserved) arguments = arguments.Concat(new object[] { Id, waveKey }).ToArray();
+        var result = (MoneyRevenueCropProducerRetention)method.Invoke(null, arguments)!;
         Assert.Equal(4, result.RetainedQuantity);
         Assert.Equal(new[] { true, false, true }, result.Segments.Select(row => row.OwnedHarvest));
         Assert.Equal(1, result.Segments[1].ObservedBoundaryCount);
         Assert.Equal(0, result.Segments[1].InventoryIncrease);
         File.AppendAllText(f.JournalPath, "\n");
-        var error = Assert.Throws<TargetInvocationException>(() => method.Invoke(null,
-            [lifecycle, new[] { rows[0], rows[2] }, 0, 2, "(O)745", 4, 4]));
+        var error = Assert.Throws<TargetInvocationException>(() => method.Invoke(null, arguments));
         Assert.IsType<InvalidDataException>(error.InnerException);
     }
 }

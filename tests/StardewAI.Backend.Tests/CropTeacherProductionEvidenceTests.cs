@@ -232,6 +232,13 @@ public sealed partial class CropTeacherProductionEvidenceTests
                 .Invoke(null, new object[] { new CropTeacherManagedJointProductionTrace(Trace(), []), Path.Combine(Output, "joint"),
                     (Func<string, string, Task>)((path, json) => File.WriteAllTextAsync(path, json)) })!;
         }
+        internal Task<CropTeacherManagedProductionEvidence> BuildJointSaleStock()
+        {
+            var builder = typeof(CropTeacherManagedSeedOwner).Assembly.GetType("StardewAI.LiveTrainingLoop.CropTeacherProductionEvidence")!;
+            return (Task<CropTeacherManagedProductionEvidence>)builder.GetMethod("BuildJointRetainingSaleStockAsync", BindingFlags.NonPublic | BindingFlags.Static)!
+                .Invoke(null, new object[] { new CropTeacherManagedJointProductionTrace(Trace(), []), Path.Combine(Output, "joint-sale-stock"),
+                    (Func<string, string, Task>)((path, json) => File.WriteAllTextAsync(path, json)) })!;
+        }
         private CropTeacherManagedProductionTrace Trace() => (CropTeacherManagedProductionTrace)typeof(CropTeacherManagedProductionTrace).GetConstructors(
             BindingFlags.NonPublic | BindingFlags.Instance).Single().Invoke(new object[]
                 { nativePlanPath, finalSnapshotPath, ledgerPath, Transitions.ToArray(), hashes });

@@ -17,8 +17,11 @@ internal static partial class CropTeacherProductionEvidence
     internal static Task<CropTeacherManagedProductionEvidence> BuildJointAsync(CropTeacherManagedJointProductionTrace trace,
         string output, Func<string, string, Task> write) => BuildCoreAsync(trace.CropTrace, trace.SharedSourceReturns, output, write);
 
+    internal static Task<CropTeacherManagedProductionEvidence> BuildJointRetainingSaleStockAsync(CropTeacherManagedJointProductionTrace trace,
+        string output, Func<string, string, Task> write) => BuildCoreAsync(trace.CropTrace, trace.SharedSourceReturns, output, write, retainSaleStock: true);
+
     private static async Task<CropTeacherManagedProductionEvidence> BuildCoreAsync(CropTeacherManagedProductionTrace trace,
-        IReadOnlyList<CropTeacherManagedSharedSourceReturn> shared, string output, Func<string, string, Task> write)
+        IReadOnlyList<CropTeacherManagedSharedSourceReturn> shared, string output, Func<string, string, Task> write, bool retainSaleStock = false)
     {
         trace.ValidateInputsUnchanged();
         var (request, plan) = CropTeacherResumeLoader.ReadVerifiedPlan(trace.NativeRunPlanPath);
@@ -86,20 +89,23 @@ internal static partial class CropTeacherProductionEvidence
                 CropProductionPlanPath = plan.CropProductionPlanPath, CommitmentId = crop.CommitmentId,
                 PlantingLayoutProofPath = layouts[crop.CommitmentId], DailyCapacityProofPath = capacity, Transitions = transitions
             }).ConfigureAwait(false);
-            var lifecycle = await Emit("lifecycle-proof-" + index,
-                MoneyRevenueCropNativeLifecycleProofBuilder.Build(lifecycleRequest)).ConfigureAwait(false);
+            var lifecycleProof = MoneyRevenueCropNativeLifecycleProofBuilder.Build(lifecycleRequest);
+            var lifecycle = await Emit("lifecycle-proof-" + index, lifecycleProof).ConfigureAwait(false);
             lifecycles.Add(lifecycle);
             foreach (var wave in crop.HarvestWaves)
             {
-                var retainThroughHead = shared.Count > 0 && wave.HarvestTotalDay == transitions[^1].TotalDay;
+                var retainThroughHead = (shared.Count > 0 || retainSaleStock) && wave.HarvestTotalDay == transitions[^1].TotalDay;
                 var retentionRequest = await Emit($"retention-request-{index}-{wave.WaveIndex}", new MoneyRevenueCropOutputRetentionProofRequest
                 {
-                    SchemaVersion = retainThroughHead ? "money_revenue_crop_output_retention_proof_request.v3" :
+                    SchemaVersion = retainSaleStock ? "money_revenue_crop_output_retention_proof_request.v4" :
+                        retainThroughHead ? "money_revenue_crop_output_retention_proof_request.v3" :
                         shared.Count > 0 ? "money_revenue_crop_output_retention_proof_request.v2" :
                         "money_revenue_crop_output_retention_proof_request.v1",
                     CropProductionPlanPath = plan.CropProductionPlanPath, NativeLifecycleProofPath = lifecycle,
                     CommitmentId = crop.CommitmentId, WaveIndex = wave.WaveIndex,
-                    RetainThroughSnapshotPath = retainThroughHead ? trace.AcceptedSnapshotPath : null
+                    RetainThroughSnapshotPath = retainThroughHead ? trace.AcceptedSnapshotPath : retainSaleStock ?
+                        lifecycleProof.Transitions.Last(row => row.TotalDay == wave.HarvestTotalDay && row.OptionId == "executor.harvest_crop" &&
+                            row.ActionCommitmentId == crop.CommitmentId).AfterSnapshotPath : null
                 }).ConfigureAwait(false);
                 retentions.Add(await Emit($"retention-proof-{index}-{wave.WaveIndex}",
                     MoneyRevenueCropOutputRetentionProofBuilder.Build(retentionRequest)).ConfigureAwait(false));

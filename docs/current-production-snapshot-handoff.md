@@ -1,5 +1,46 @@
 # Current Production Snapshot Handoff
 
+## Reserved Producer Retention (189, Capability Still Open)
+
+188 finalf086ae30/CI43670276654 SUCCESS: Core2675/Backend3347, zero skipped,
+all steps; log SHA0132a04911ea8e96a6f7dfcf0a784b685a35d1598b101d2550db52636a04e885.
+Peer merge8ad8f91b/treea244e3bb778f231ddbbe6cc3189602f4afb04db0 equals
+accepted188, NOT the successor's working tree.
+
+Explicit retention requestv4/proofv3 reuses the original shared-source ledger,
+immutable input hashes and native action frames. A protected variant floor must
+already be owned credit AND remain physically reserved in every original frame.
+Unprotected losses stay conservative; foreign gains never create or restore credit.
+No second ledger, UUID/simulator/planner/executor or new source capture.
+Original requestv1/v2/v3, proofv2 and Observe semantics remain unchanged.
+
+Original production builder/owner provide named opt-ins. Native terminal requires
+the explicit sale-stock target for proofv3, and only explicit native checkpointv15
+collects it; v13/v14/default/scalar/downgraded consumers still reject. This is an
+evidence aggregate version, not Student weights or formal permission. Shared
+CropTeacherSaleStockInventory is read-only, independent of execution classes;
+old public terminal reader delegates to it. Later native frames project the
+original source ledger, never fabricate accepted heads.
+
+Current E rebuilt adjacent51/51(1m20s), zero skipped; final log SHA
+5b8187bf38dbf7b76627d8558f9e641d83666b48c612fe2d104d7da3316768f8.
+Includes preserved/forbidden credit, first reserved shortfall/variant substitution,
+both original native transports, old defaults, explicit aggregate and six original
+terminal deposits/reopen using v3. Initial expanded compile failed only in NEW
+test JsonObject helper versus existing JsonNode callback; fixed only the helper,
+failure retained. Earlier20/20 and pre-extraction47/47 overlap, NOT additive.
+Outer harvest/stock fixtures are declared synthetic; native middle tests are NOT
+whole-game L3. Own final-SHA full CI still required.
+
+Capability OPEN/Main stock mode NOTenabled. Next: other actual inventory consumers,
+original transfer and fresh compilation constraints. New stock classification
+currently ties creation ID to current slot; adapt it to original transfer's stable
+reservation IDs before enabling, never rewrite the old transfer to fit it. THEN
+enable original harvest/retention/terminal together on SAME Main with original-mode
+restoration. Original partial/multi-queue/global selected-route/calendar/replay,
+step3/4 automatic properties, #570 gates and #569 pre-manifest handoff remain.
+Frozen L1/169-172, formal=false; no local-data/saves/raw logs/binaries in Git.
+
 ## Reserved Selection And Economic Candidates (188, Still Open)
 
 187 final5164d145/CI43668444996 SUCCESS: Core2675/Backend3336, zero skipped,
