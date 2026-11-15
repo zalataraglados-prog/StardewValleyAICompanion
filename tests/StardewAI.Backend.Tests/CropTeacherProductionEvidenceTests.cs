@@ -84,8 +84,11 @@ public sealed partial class CropTeacherProductionEvidenceTests
 
         internal Fixture() : this(Golden.Value) { }
         internal Fixture(int tileCount, string commitmentId) : this(null, tileCount, commitmentId) { }
+        internal Fixture(int tileCount, string commitmentId, bool reserveSaleStock, int unreservedSurplus = 0) :
+            this(null, tileCount, commitmentId, reserveSaleStock, unreservedSurplus) { }
 
-        private Fixture(Fixture? template, int tileCount = 2, string commitmentId = "declared.managed.production")
+        private Fixture(Fixture? template, int tileCount = 2, string commitmentId = "declared.managed.production",
+            bool reserveSaleStock = false, int unreservedSurplus = 0)
         {
             if (template is not null)
             {
@@ -152,7 +155,23 @@ public sealed partial class CropTeacherProductionEvidenceTests
                     var playerState = JsonNode.Parse(current.State["player"].GetRawText())!;
                     foreach (var row in playerState["inventory"]!["value"]!.AsArray().OfType<JsonObject>())
                         if (row["qualified_item_id"]?.GetValue<string>() == "(O)400") row["can_be_shipped"] = true;
+                    if (reserveSaleStock && unreservedSurplus > 0)
+                    {
+                        var surplus = playerState["inventory"]!["value"]!.AsArray().OfType<JsonObject>()
+                            .Single(row => row["qualified_item_id"]?.GetValue<string>() == "(O)400").DeepClone().AsObject();
+                        surplus["slot_index"] = 3; surplus["quality"] = 4;
+                        surplus["stack"] = unreservedSurplus; surplus["sell_to_store_price"] = 480;
+                        playerState["inventory"]!["value"]!.AsArray().Add(surplus);
+                    }
                     current.State["player"] = JsonSerializer.SerializeToElement(playerState);
+                    if (reserveSaleStock)
+                    {
+                        var graphState = JsonNode.Parse(current.State["farm"].GetRawText())!;
+                        graphState["material_inventory_graph"]!["value"]!["inventory_nodes"]![0]!["slots"] =
+                            playerState["inventory"]!["value"]!.DeepClone();
+                        graphState["shipping_bins"]!["value"]![0]!["interaction_stand_tile_blocked_reason"] = null;
+                        current.State["farm"] = JsonSerializer.SerializeToElement(graphState);
+                    }
                     current.StateHash = SnapshotHash.ComputeStateHash(current.State);
                     var native = nativeTransitions[^1];
                     File.WriteAllText(native.AfterSnapshotPath, JsonSerializer.Serialize(current, JsonOptions));
@@ -171,6 +190,29 @@ public sealed partial class CropTeacherProductionEvidenceTests
                 else { Add(day, "executor.traverse_connector", "FarmHouse"); Add(day, "executor.sleep"); }
             }
             finalSnapshotPath = nativeTransitions[^1].AfterSnapshotPath;
+            if (reserveSaleStock)
+            {
+                // Declared fixture setup on the original ledger kernel; not a native harvest acceptance.
+                var item = current.State["player"].GetProperty("inventory").GetProperty("value").EnumerateArray()
+                    .Single(row => row.GetProperty("slot_index").GetInt32() == 1);
+                const string producer = "declared.sale-stock-setup";
+                var reserved = new ReservationPortfolioLedgerService().Commit(result.Ledger!, current, new()
+                {
+                    StateHash = current.StateHash, ExpectedLedgerRevision = result.Ledger!.Revision,
+                    PortfolioId = producer, SourceDecisionId = producer, GoalId = "earn_money",
+                    MaterialClaims = [new()
+                    {
+                        StateHash = current.StateHash, ExpectedLedgerRevision = result.Ledger.Revision,
+                        ReservationId = CropSaleStockReservationContract.ReservationId(producer, 1), SourceDecisionId = producer,
+                        GoalId = "earn_money", NodeId = "player:" + current.PlayerId.Value, SlotIndex = 1,
+                        QualifiedItemId = "(O)400", Quantity = tileCount,
+                        Purpose = CropSaleStockReservationContract.Purpose(crop.CommitmentId, crop.HarvestWaves.Single().OutputRetentionKey,
+                            MoneyRevenueCropRetentionAccount.InventoryIdentity(item))
+                    }]
+                }, "2026-11-15T00:00:00Z");
+                Assert.True(reserved.Accepted, string.Join(",", reserved.Errors));
+                ledgerPath = Save("reserved-ledger", reserved.Ledger!);
+            }
             for (var index = 0; index < nativeTransitions.Count; index++)
                 Transitions.Add(new(index + 1, index == 0 ? "owned_seed_planting" : "declared_original_transition", nativeTransitions[index]));
             foreach (var path in Directory.EnumerateFiles(root)) hashes[path] = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant();

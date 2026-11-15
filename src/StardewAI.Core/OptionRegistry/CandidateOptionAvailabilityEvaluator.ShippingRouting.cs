@@ -13,9 +13,10 @@ namespace StardewAI.Core.OptionRegistry
     {
         private EventCandidate[] ShipItemStageCandidates(
             SnapshotEnvelope snapshot,
-            SmallModelActionParameter[] boundParameters)
+            SmallModelActionParameter[] boundParameters,
+            SaleStockBudget? saleStock = null)
         {
-            var physicalCandidates = ShipCandidates(snapshot)
+            var physicalCandidates = ShipCandidates(snapshot, saleStock)
                 .Where(candidate => ShippingIdentityMatches(candidate, boundParameters))
                 .ToArray();
             if (physicalCandidates.Length == 0)

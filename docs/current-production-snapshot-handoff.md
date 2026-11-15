@@ -1,5 +1,45 @@
 # Current Production Snapshot Handoff
 
+## Reserved Selection And Economic Candidates (188, Still Open)
+
+187 final5164d145/CI43668444996 SUCCESS: Core2675/Backend3336, zero skipped,
+all steps; log SHA4842684e3c72e82eda6968c3a5199bfe36bcb7a55dc45406e51f9b3bfc01873f.
+Peer merge75f7df56/treec32ce919beabc4b679b2943c3fc3c8526f4aaace equals
+accepted187, not this successor's working tree. Original local File.Move failure
+remains retained/unreproduced, not retroactively green.
+
+Original terminal selector adds an explicit reserved-stock entry; allocation is
+bounded by producer credit, actual slot quantity AND matching reservation quota.
+Selector and existing terminal preparation share one verified stock reader and
+the original material projection. Target mode is immutable through original owner
+and saved-closeout selection reconstruction; old factories/JSON/defaults remain.
+
+Only new typed sale-stock ledgers opt into the economic-candidate adapter. Actual
+shop sale, pre-menu sale preview and shipping use SAME MaterialSupplyProjection:
+fully reserved rows remain blocked; free quantities/values are retained. Locked
+full-stack continuations cannot bypass fresh reduced quantities. No snapshot or
+ledger mutation, manual goal pool pruning, full-state rehash or extra game scan;
+menu path avoids duplicate projection. This is NOT all inventory consumers.
+
+Current E rebuilt combined49/49(50s), zero skipped; later added preview-only test
+and declared fixture tags, final economic4/4(891ms). Counts overlap, not additive.
+Logs SHA a6cb156a57a8ae9752d6e08a63903fa05d49e6fd81742dd56fb1642343be8e4b
+and c2e25bfbf65e0857610cf59cad18a510580f609ae72420abbfa5d18c09d6fa7e.
+Own final-SHA full CI still required, never inherited from187.
+Initial failures are retained: new fixture missing native bin accessibility, then
+new public route/shipping fields missing tick/provenance. Only declared fixtures
+were repaired, not original RequiredFactGate/native executor. No game L3 claim.
+
+Capability OPEN/Main stock mode NOTenabled. Next: other actual consumption paths,
+fresh compiler resource constraints, and explicit reserved/free-stock attribution
+in retained production evidence. Old v2 still debits owned credit first on losses;
+do not silently redefine it just because the new candidate can use free same-variant
+stock. Bind original reservation/native receipts in the new consumer, THEN enable producer/consumer
+together on SAME Main without silently upgrading old owners. Original partial/
+multi-queue, real mixed route/calendar/source replay, step3/4 automatic properties,
+step6 #570 and #569 pre-manifest handoff remain. Frozen L1/169-172, formal=false,
+no local-data/saves/raw logs/binaries in Git. No game/API/cleanup/deploy.
+
 ## Reserved Native Sale Stock (187, Capability Still Open)
 
 186 final0c4b01c1/CI43663963944 SUCCESS: Core2675/Backend3309, zero skipped;

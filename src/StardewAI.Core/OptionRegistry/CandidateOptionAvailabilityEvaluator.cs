@@ -194,7 +194,8 @@ namespace StardewAI.Core.OptionRegistry
             var economicCandidates = EconomicCandidates(
                 snapshot,
                 option.OptionId,
-                candidate.Parameters);
+                candidate.Parameters,
+                commitmentLedger);
             var socialCandidates = SocialCandidates(snapshot, option.OptionId, safety.MissingStateFactors, candidate.Parameters);
             var valueReasons = safety.MissingStateFactors.Length == 0
                 ? ValueGateBlockingReasons(

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
 using StardewAI.Core.Infrastructure;
 using StardewAI.GoalConditionedBootstrap;
 
@@ -18,6 +19,7 @@ internal sealed partial class CropTeacherTerminalShippingSelection
     private readonly string binScope;
     private readonly string binPlayer;
     private readonly CropTeacherTerminalVariantPlan? nativeVariants;
+    private readonly bool requireSaleStockReservations;
     internal string RetentionProofPath { get; }
     internal string QualifiedItemId { get; }
     internal int MinimumUnits { get; }
@@ -35,7 +37,7 @@ internal sealed partial class CropTeacherTerminalShippingSelection
     internal CropTeacherTerminalShippingTarget CreateTarget(int acceptedDepositCount) => new(
         RetentionProofPath, inputs.Hashes[RetentionProofPath], saveId, playerId, gameVersion, totalDay,
         QualifiedItemId, SlotIndex, Quality, UnitPrice, BinX, BinY, StandX, StandY, initialQuantity,
-        MinimumUnits, acceptedDepositCount) { NativeVariants = nativeVariants };
+        MinimumUnits, acceptedDepositCount) { NativeVariants = nativeVariants, RequireSaleStockReservations = requireSaleStockReservations };
 
     internal CropTeacherTerminalShippingSelection(CropTeacherManagedProductionEvidence evidence,
         string nativePlanPath, string snapshotPath, string ledgerPath) : this(evidence, nativePlanPath, snapshotPath, ledgerPath, false) { }
@@ -43,9 +45,13 @@ internal sealed partial class CropTeacherTerminalShippingSelection
     internal static CropTeacherTerminalShippingSelection OpenNativeVariants(CropTeacherManagedProductionEvidence evidence,
         string nativePlanPath, string snapshotPath, string ledgerPath) => new(evidence, nativePlanPath, snapshotPath, ledgerPath, true);
 
+    internal static CropTeacherTerminalShippingSelection OpenNativeVariantsConsumingSaleStock(CropTeacherManagedProductionEvidence evidence,
+        string nativePlanPath, string snapshotPath, string ledgerPath) => new(evidence, nativePlanPath, snapshotPath, ledgerPath, true, true);
+
     private CropTeacherTerminalShippingSelection(CropTeacherManagedProductionEvidence evidence,
-        string nativePlanPath, string snapshotPath, string ledgerPath, bool useNativeVariants)
+        string nativePlanPath, string snapshotPath, string ledgerPath, bool useNativeVariants, bool consumeSaleStock = false)
     {
+        requireSaleStockReservations = consumeSaleStock;
         if (string.IsNullOrWhiteSpace(evidence.ManifestSha256))
             throw new InvalidDataException("Selected crop terminal requires its just-built production manifest hash.");
         inputs = new(new Dictionary<string, string> { [Path.GetFullPath(evidence.ManifestPath)] = evidence.ManifestSha256 });
@@ -100,6 +106,9 @@ internal sealed partial class CropTeacherTerminalShippingSelection
         if (useNativeVariants)
         {
             var remaining = MinimumUnits;
+            var stockLimits = consumeSaleStock ? CropTeacherTerminalShipping.ReadVerifiedSaleStock(source,
+                inputs.Read<StrategyCommitmentLedger>(ledgerPath), selected.Proof)
+                .GroupBy(row => row.SlotIndex).ToDictionary(group => group.Key, group => checked(group.Sum(row => row.Quantity))) : null;
             var producerLimits = MoneyRevenueCropOutputRetentionProofBuilder.HasProducerRetention(selected.Proof) ?
                 selected.Proof.ProducerRetention!.Variants.ToDictionary(row => row.InventoryIdentitySha256, row => row.RetainedQuantity) : null;
             foreach (var row in stacks.OrderByDescending(row => Integer(row, "sell_to_store_price")).ThenBy(row => Integer(row, "slot_index")))
@@ -107,6 +116,7 @@ internal sealed partial class CropTeacherTerminalShippingSelection
                 var quantity = Integer(row, "stack");
                 var key = producerLimits is null ? "" : MoneyRevenueCropRetentionAccount.InventoryIdentity(row);
                 var deposit = Math.Min(Math.Min(remaining, quantity), producerLimits?.GetValueOrDefault(key) ?? (producerLimits is null ? quantity : 0));
+                if (stockLimits is not null) deposit = Math.Min(deposit, stockLimits.GetValueOrDefault(Integer(row, "slot_index")));
                 if (deposit == 0) continue;
                 if (producerLimits is not null) producerLimits[key] -= deposit;
                 selectedVariants.Add(new(Integer(row, "slot_index"), Integer(row, "quality"),

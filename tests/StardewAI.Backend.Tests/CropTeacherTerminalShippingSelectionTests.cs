@@ -9,7 +9,7 @@ using StardewAI.LiveTrainingLoop;
 
 namespace StardewAI.Backend.Tests;
 
-public sealed class CropTeacherTerminalShippingSelectionTests
+public sealed partial class CropTeacherTerminalShippingSelectionTests
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private static readonly Type Selection = typeof(CropTeacherManagedSeedOwner).Assembly.GetType("StardewAI.LiveTrainingLoop.CropTeacherTerminalShippingSelection")!;

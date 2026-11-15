@@ -5,6 +5,7 @@ using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
 using StardewAI.Core.Execution;
 using StardewAI.Core.Infrastructure;
 using StardewAI.Core.Verifier;
@@ -17,7 +18,8 @@ namespace StardewAI.Core.OptionRegistry
         private static EconomicCandidate[] EconomicCandidates(
             SnapshotEnvelope snapshot,
             string optionId,
-            SmallModelActionParameter[] boundParameters)
+            SmallModelActionParameter[] boundParameters,
+            StrategyCommitmentLedger? commitmentLedger = null)
         {
             if (optionId == "economy.buy_supplies")
             {
@@ -27,7 +29,7 @@ namespace StardewAI.Core.OptionRegistry
             if (optionId == "economy.sell_items")
             {
                 return ActiveShopMenuOpen(snapshot)
-                    ? SellCandidates(snapshot, boundParameters)
+                    ? SellCandidates(snapshot, boundParameters, ReadSaleStockBudget(snapshot, commitmentLedger))
                     : Array.Empty<EconomicCandidate>();
             }
 
@@ -401,7 +403,8 @@ namespace StardewAI.Core.OptionRegistry
 
         private static EconomicCandidate[] SellCandidates(
             SnapshotEnvelope snapshot,
-            SmallModelActionParameter[] boundParameters)
+            SmallModelActionParameter[] boundParameters,
+            SaleStockBudget? saleStock = null)
         {
             var inventory = ReadStateFieldValue(snapshot, "player", "inventory");
             if (!inventory.HasValue || inventory.Value.ValueKind != JsonValueKind.Array)
@@ -440,7 +443,7 @@ namespace StardewAI.Core.OptionRegistry
                     var stack = Math.Max(1, ReadInt(item, "stack"));
                     var sellToStorePrice = (int)(ReadInt(item, "sell_to_store_price") * sellPercentage);
                     var canShopSell = shopSellAvailable && sellToStorePrice > 0 && acceptedByShop;
-                    return new EconomicCandidate
+                    var candidate = new EconomicCandidate
                     {
                         CandidateId = "sell:" + ReadInt(item, "slot_index"),
                         Kind = "sell_shop_item",
@@ -457,6 +460,8 @@ namespace StardewAI.Core.OptionRegistry
                         BlockReasons = blockReasons,
                         Parameters = continuationParameters
                     };
+                    saleStock?.LimitSale(candidate);
+                    return candidate;
                 })
                 .Where(candidate => SaleIdentityMatches(
                     candidate,
@@ -464,7 +469,7 @@ namespace StardewAI.Core.OptionRegistry
                 .ToArray();
         }
 
-        private EventCandidate[] ShipCandidates(SnapshotEnvelope snapshot)
+        private EventCandidate[] ShipCandidates(SnapshotEnvelope snapshot, SaleStockBudget? saleStock = null)
         {
             var shippingBins = ReadStateFieldValue(snapshot, "farm", "shipping_bins");
             if (!HasCompletedShippingBin(shippingBins))
@@ -491,7 +496,7 @@ namespace StardewAI.Core.OptionRegistry
             return inventory.Value.EnumerateArray()
                 .Where(item => ReadBool(item, "is_empty") != true)
                 .Where(item => ReadBool(item, "can_be_shipped") == true && ReadInt(item, "sell_to_store_price") > 0 && ReadInt(item, "stack") > 0)
-                .Select(item => ShipCandidateForItem(snapshot, item, fullShipmentIndex, binBounds, binContents)!)
+                .Select(item => ShipCandidateForItem(snapshot, item, fullShipmentIndex, binBounds, binContents, saleStock)!)
                 .ToArray();
         }
 
@@ -500,7 +505,8 @@ namespace StardewAI.Core.OptionRegistry
             JsonElement item,
             IReadOnlyDictionary<string, FullShipmentItemIndexEntry>? fullShipmentIndex,
             ShippingBinRouteProjection binBounds,
-            IReadOnlyDictionary<string, int> binContents)
+            IReadOnlyDictionary<string, int> binContents,
+            SaleStockBudget? saleStock = null)
         {
             var blockReasons = new List<string>();
             var locationId = "Farm";
@@ -522,6 +528,9 @@ namespace StardewAI.Core.OptionRegistry
             var stack = Math.Max(1, ReadInt(item, "stack"));
             var salePrice = ReadInt(item, "sale_price");
             var shippingUnitPrice = ReadInt(item, "sell_to_store_price");
+            var availableStack = saleStock?.AvailableQuantity(slotIndex, qualifiedItemId, stack) ?? stack;
+            if (availableStack < 1)
+                blockReasons.Add(saleStock!.BlockingReason);
 
             var fullShipmentContributes = false;
             var fullShipmentKnown = false;
@@ -550,7 +559,6 @@ namespace StardewAI.Core.OptionRegistry
             // transfers exactly one item. Remaining stack items are reconsidered from
             // the next transparent snapshot instead of widening executor semantics.
             const int quantity = 1;
-            var availableStack = stack;
 
             var standTile = ReadBinStandTile(snapshot, binBounds);
             CandidateTile? routeTarget = standTile;

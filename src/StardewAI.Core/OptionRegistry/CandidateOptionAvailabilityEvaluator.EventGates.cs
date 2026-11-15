@@ -558,6 +558,12 @@ namespace StardewAI.Core.OptionRegistry
                     commitmentLedger);
             }
 
+            if (optionId == "economy.ship_items")
+                return ShipItemStageCandidates(snapshot, parameters, ReadSaleStockBudget(snapshot, commitmentLedger));
+            if (optionId == "economy.sell_items")
+                return ActiveShopMenuOpen(snapshot) ? Array.Empty<EventCandidate>() :
+                    SellItemStageCandidates(snapshot, parameters, ReadSaleStockBudget(snapshot, commitmentLedger));
+
             return eventCandidateProviders.TryGetValue(optionId, out var provider)
                 ? provider(snapshot, parameters)
                 : Array.Empty<EventCandidate>();
