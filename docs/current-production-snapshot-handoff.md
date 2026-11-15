@@ -1,5 +1,24 @@
 # Current Production Snapshot Handoff
 
+## Original Native Checkpoint Consumes Producer Retention (184)
+
+183 final1526a11d/CI43656316255 passed Core2675/Backend3275, zero skipped, all steps.
+184 reuses the ORIGINAL BuildNativeObserved/index/collection loop. Explicit native
+request/proof v14 admits independently rebuilt retentionv2 (and original v1);
+legacy v12/native v13 and the old four-argument retention verifier remain strict.
+Capacity/lifecycle/terminal/denominator/remaining conditions are unchanged, formal=false.
+This is a production EVIDENCE checkpoint, not a Student weight checkpoint.
+
+CLI: `build-money-revenue-crop-native-production-proof-checkpoint --request <v13-or-v14-request> --output <new-report>`
+delegates to that SAME original native builder; old nonnative CLI unchanged.
+Current-code E build/focus41/41(49s),zero skipped, includes six new v14 positive/
+tamper cases and original native checkpoint/retention/shipping. Actual new-DLL CLI
+returned v14, one retainedv2, pending2,formalfalse on a declared synthetic original
+whole-crop fixture, NOT game/training evidence. Logs/reports retained outside Git:
+block184-checkpoint-tests.log SHAa574084808299c05b6767e2c5b2a6c415a07160a49ce8616390a881383077f49,
+block184-native-checkpoint-cli.json. Final-head remote CI pending.
+Remaining originalstep5/6 and #569 handoff unchanged; no raw/local-data commit.
+
 ## Producer-Aware Interleaved Harvest Retention (183)
 
 182 final f840308a / CI43652352863 passed Core2675 and Backend3261, zero skipped.

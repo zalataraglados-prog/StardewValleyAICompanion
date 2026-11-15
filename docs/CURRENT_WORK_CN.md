@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-11-15 同一原生生产汇总消费留存v2（184）
+
+- 183最终 `1526a11d`／CI `43656316255` 已成功：Core2675/2675、Backend3275/3275、零跳过；最终日志SHA `22879b0c47c9cf822fe231d856983ba17583676e394c33ee21d15ce417ee8f2d`，覆盖下方183待远端验证的描述。
+- 下游接续复用 `ace38e2a` 原 `BuildNativeObserved`／同一 fragment index 和汇总循环。只有显式 request v14 可消费独立重建一致的 output-retention v2，产出生产证据汇总v14；原 v12默认、native v13及旧四参数留存校验入口不默收v2。v14仍可组合原v1证书，原容量／生命周期／终端／缺项检查和formal=false不变。这里的checkpoint是**生产证据汇总**，不是Student模型权重。
+- 新CLI `build-money-revenue-crop-native-production-proof-checkpoint --request <v13或v14请求> --output <新报告>` 仅委托原native builder；旧同名非native命令和默认不变，不新造生产或验证算法。
+- 当前正常E环境重建后聚焦 **41/41（49秒）**、零跳过，包括新增6项v14新旧留存正例／伪造额度、变体、聚合数量、formal负例及原native汇总／留存／变体出货。日志 `block184-checkpoint-tests.log` SHA `a574084808299c05b6767e2c5b2a6c415a07160a49ce8616390a881383077f49`。本次新DLL的CLI实际执行通过：v14汇总持有1份v2留存、仍缺2项、formal=false；输入是声明的合成原完整作物夹具，不是游戏或开训。报告 `block184-native-checkpoint-cli.json` 留在协作目录。
+- 提交后须核最终SHA完整远端CI，不借183绿。剩余仍为原第5步的日选择恢复／一般partial、多队列／根结束与全局工作优先级及真实混合来源日历选线对账，随后第6步和#569交接；不增加验收阶段、重采L1或重跑已接受十三日证据，不提交local-data。
+
 ## 2026-11-15 联合收获留存接续（183）
 
 - 182 最终 `f840308a`／CI `43652352863` 已成功：Core 2675/2675、Backend 3261/3261、零跳过，覆盖下方该提交的 pending 描述。

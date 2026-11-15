@@ -5,7 +5,7 @@ using StardewAI.GoalConditionedBootstrap;
 
 namespace StardewAI.Backend.Tests;
 
-public sealed class CropTeacherNativeProductionCheckpointTests
+public sealed partial class CropTeacherNativeProductionCheckpointTests
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 

@@ -151,6 +151,8 @@ var commandDefinitions = new CommandDefinition[]
     new("build-money-revenue-crop-terminal-settlement-proof", BuildMoneyRevenueCropTerminalSettlementProof),
     new("build-money-revenue-crop-shared-shipping-settlement-proof", BuildMoneyRevenueCropSharedShippingSettlementProof),
     new("build-money-revenue-crop-production-proof-checkpoint", BuildMoneyRevenueCropProductionProofCheckpoint),
+    new("build-money-revenue-crop-native-production-proof-checkpoint", options =>
+        Write(options.Required("output"), MoneyRevenueCropProductionProofCheckpointBuilder.BuildNativeObserved(options.Required("request")))),
     new("build-money-revenue-crop-native-production-segment", BuildMoneyRevenueCropNativeProductionSegment),
     new("build-money-revenue-crop-production-teacher-comparison", BuildMoneyRevenueCropProductionTeacherComparison),
     new("build-money-revenue-terminal-proof-collection-checkpoint", BuildMoneyRevenueTerminalProofCollectionCheckpoint),
