@@ -10,12 +10,16 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
     private static LoadedTransition LoadTransferredStockObservedTransition(MoneyRevenueCropNativeLifecycleTransitionRequest request) =>
         LoadJointObservedTransitionCore(request, transferredStock: true);
 
+    private static LoadedTransition LoadSharedInventoryObservedTransition(MoneyRevenueCropNativeLifecycleTransitionRequest request) =>
+        LoadJointObservedTransitionCore(request, transferredStock: true, inventoryEffects: true);
+
     private static LoadedTransition LoadJointObservedTransitionCore(MoneyRevenueCropNativeLifecycleTransitionRequest request,
-        bool transferredStock)
+        bool transferredStock, bool inventoryEffects = false)
     {
         if (request.NativeSharedSource is null && request.TransitionKind != SharedSourceReturnKind)
             return LoadNativeObservedTransition(request) with { JointObserved = true };
-        var scope = transferredStock ? MoneyRevenueCropNativeSharedSourceVerifier.VerifyWithTransferredSaleStock(request) :
+        var scope = inventoryEffects ? MoneyRevenueCropNativeSharedSourceVerifier.VerifyWithSharedInventoryEffects(request) :
+            transferredStock ? MoneyRevenueCropNativeSharedSourceVerifier.VerifyWithTransferredSaleStock(request) :
             MoneyRevenueCropNativeSharedSourceVerifier.Verify(request);
         var loaded = LoadTransitionCore(request, allowSharedSource: true);
         Require(loaded.Before.StateHash == scope.SourceStateHash && loaded.After.StateHash == scope.AfterStateHash,

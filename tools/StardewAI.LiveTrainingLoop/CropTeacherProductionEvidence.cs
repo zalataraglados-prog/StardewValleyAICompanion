@@ -24,9 +24,13 @@ internal static partial class CropTeacherProductionEvidence
         string output, Func<string, string, Task> write) => BuildCoreAsync(trace.CropTrace, trace.SharedSourceReturns, output, write,
             retainSaleStock: true, transferredStock: true);
 
+    internal static Task<CropTeacherManagedProductionEvidence> BuildJointRetainingSharedInventoryEffectsAsync(CropTeacherManagedJointProductionTrace trace,
+        string output, Func<string, string, Task> write) => BuildCoreAsync(trace.CropTrace, trace.SharedSourceReturns, output, write,
+            retainSaleStock: true, transferredStock: true, inventoryEffects: true);
+
     private static async Task<CropTeacherManagedProductionEvidence> BuildCoreAsync(CropTeacherManagedProductionTrace trace,
         IReadOnlyList<CropTeacherManagedSharedSourceReturn> shared, string output, Func<string, string, Task> write,
-        bool retainSaleStock = false, bool transferredStock = false)
+        bool retainSaleStock = false, bool transferredStock = false, bool inventoryEffects = false)
     {
         trace.ValidateInputsUnchanged();
         var (request, plan) = CropTeacherResumeLoader.ReadVerifiedPlan(trace.NativeRunPlanPath);
@@ -89,7 +93,8 @@ internal static partial class CropTeacherProductionEvidence
             capacities.Add(capacity);
             var lifecycleRequest = await Emit("lifecycle-request-" + index, new MoneyRevenueCropNativeLifecycleProofRequest
             {
-                SchemaVersion = shared.Count > 0 ? transferredStock ? "money_revenue_crop_native_lifecycle_proof_request.v7" :
+                SchemaVersion = inventoryEffects ? "money_revenue_crop_native_lifecycle_proof_request.v8" :
+                    shared.Count > 0 ? transferredStock ? "money_revenue_crop_native_lifecycle_proof_request.v7" :
                     "money_revenue_crop_native_lifecycle_proof_request.v6" :
                     "money_revenue_crop_native_lifecycle_proof_request.v5",
                 CropProductionPlanPath = plan.CropProductionPlanPath, CommitmentId = crop.CommitmentId,
@@ -103,7 +108,8 @@ internal static partial class CropTeacherProductionEvidence
                 var retainThroughHead = (shared.Count > 0 || retainSaleStock) && wave.HarvestTotalDay == transitions[^1].TotalDay;
                 var retentionRequest = await Emit($"retention-request-{index}-{wave.WaveIndex}", new MoneyRevenueCropOutputRetentionProofRequest
                 {
-                    SchemaVersion = transferredStock ? "money_revenue_crop_output_retention_proof_request.v5" :
+                    SchemaVersion = inventoryEffects ? "money_revenue_crop_output_retention_proof_request.v6" :
+                        transferredStock ? "money_revenue_crop_output_retention_proof_request.v5" :
                         retainSaleStock ? "money_revenue_crop_output_retention_proof_request.v4" :
                         retainThroughHead ? "money_revenue_crop_output_retention_proof_request.v3" :
                         shared.Count > 0 ? "money_revenue_crop_output_retention_proof_request.v2" :

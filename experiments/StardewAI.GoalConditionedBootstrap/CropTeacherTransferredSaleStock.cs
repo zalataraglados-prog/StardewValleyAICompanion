@@ -24,8 +24,16 @@ internal sealed class CropTeacherTransferredSaleStock(string commitmentId, strin
     }
 
     internal int ObserveShared(MoneyRevenueCropRetentionAccount account, MoneyRevenueCropNativeLifecycleTransitionRequest request)
+        => ObserveSharedCore(account, request, inventoryEffects: false);
+
+    internal int ObserveSharedInventoryEffects(MoneyRevenueCropRetentionAccount account, MoneyRevenueCropNativeLifecycleTransitionRequest request)
+        => ObserveSharedCore(account, request, inventoryEffects: true);
+
+    private int ObserveSharedCore(MoneyRevenueCropRetentionAccount account, MoneyRevenueCropNativeLifecycleTransitionRequest request,
+        bool inventoryEffects)
     {
-        var scope = MoneyRevenueCropNativeSharedSourceVerifier.VerifyWithTransferredSaleStock(request);
+        var scope = inventoryEffects ? MoneyRevenueCropNativeSharedSourceVerifier.VerifyWithSharedInventoryEffects(request) :
+            MoneyRevenueCropNativeSharedSourceVerifier.VerifyWithTransferredSaleStock(request);
         var reference = request.NativeSharedSource!;
         var sourceLedger = CurrentTeacherFrontierSupport.Read<StrategyCommitmentLedger>(reference.LedgerPath,
             "transferred sale-stock original ledger");
@@ -38,6 +46,7 @@ internal sealed class CropTeacherTransferredSaleStock(string commitmentId, strin
         if (ledger is not null) _ = Read(before, ledger);
         ledger = sourceLedger;
         var settlement = reference.SettledMaterialTransfer;
+        var consumption = reference.SettledInventoryConsumption;
         StrategyCommitmentLedger? prepared = null, settled = null;
         if (settlement is not null)
         {
@@ -45,6 +54,11 @@ internal sealed class CropTeacherTransferredSaleStock(string commitmentId, strin
                 "Transferred sale stock requires its original preparation and settlement.");
             prepared = CropTeacherSharedTransferPreparation.Verify(before, sourceLedger, settlement.Preparation!);
             settled = CropTeacherSharedTransferSettlement.Verify(prepared, native, settlement);
+        }
+        if (consumption is not null)
+        {
+            prepared = CropTeacherSharedConsumption.VerifyPreparation(before, sourceLedger, consumption.Preparation);
+            settled = CropTeacherSharedConsumption.Verify(prepared, native, consumption);
         }
         foreach (var frame in native.Actions)
         {
@@ -62,6 +76,19 @@ internal sealed class CropTeacherTransferredSaleStock(string commitmentId, strin
                     MaterialTransferProjector.VerifyNativeSlots(transfer.BeforeInventoryGraph, graph!, physical).Length == 0,
                     "Transferred sale stock positions changed outside their original native transfer frame.");
                 // The original service already replays moved AND passive claim reindexing.
+                ledger = settled!;
+            }
+            else if (frame.Item.OptionId == "executor.cook_recipe" && consumption is not null)
+            {
+                Require(prepared?.PreparedInventoryConsumption is not null && settled is not null,
+                    "Cooking sale-stock retention lacks its original settled consumption projection.");
+                // Only the observed cook frame may apply the original settlement's passive positions.
+                var readableBefore = MaterialInventoryGraphReader.TryRead(frame.Before, out var beforeGraph);
+                var readableAfter = MaterialInventoryGraphReader.TryRead(frame.After, out var afterGraph);
+                Require(readableBefore && readableAfter &&
+                    InventoryConsumptionProjector.VerifyBefore(prepared!.PreparedInventoryConsumption!, beforeGraph!).Length == 0 &&
+                    InventoryConsumptionProjector.VerifyAfter(prepared.PreparedInventoryConsumption!, afterGraph!).Length == 0,
+                    "Cooking sale-stock positions changed outside the original native consumption frame.");
                 ledger = settled!;
             }
             account.ObserveTransferredStock(frame.Before, frame.After, false, stockBefore, Read(frame.After, ledger));

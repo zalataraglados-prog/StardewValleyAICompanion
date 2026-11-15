@@ -1,5 +1,46 @@
 # Current Production Snapshot Handoff
 
+## Cook Frame Retention And Explicit Production Consumers (206, Main Preparation Open)
+
+205 d3f0a45f/quality43724132800 SUCCESS: Core2762/Backend3513, zero skipped.
+CI log SHA44d242274856a14e447066cf3d610d554d5c3568cacb1951851a1c6dac5c9e7a.
+Peer regular merge4ef36967/tree884a530cebe1c3c18e85ec5f6e37bced55cd34f4
+equals accepted205.206 separate until OWN CI/provider-paused/no API/grants.
+
+ORIGINAL stock observer has a named inventory-effects entry: replay original
+preparation/settlement, apply passive positions ONLY at actual cook frame after
+original physical before/after checks. Original transfer entry still rejects it.
+No second attribution engine; foreign cooking output never creates/restores owned
+crop credit. Explicit lifecycle-request v8 / retention-request v6 / proof v5 and
+named production entry reuse original loops/readers/rebuilds and reserved-stock
+terminal requirements. Old versions/defaults/quantity fields/native rules unchanged.
+
+New3/3(12s) DECLARED Runtime/Product cook-frame inputs plus a FULL synthetic
+production fixture WITHOUT shared cooking verify separate interfaces. NOT a mixed
+game trajectory or L3. Expanded68/69(~76s): sole OLD repository File.Move access
+denial during205 preparation BEFORE native/206 retention, cause UNKNOWN.
+Log SHAace44ecc28bfaac9b85b751df5a7fd03e54535ac37fdd12d40889f5bfdf1d56f.
+Same-DLL directed6/6(20s), then ONLY new proof-policy wording clarified and final
+explicit-E rebuild6/6(21s); SHAs29dd46569ebdeede9f3607b93b31a140fd6b259b16e095384297da0df1fc6a43
+andf7b82a54e265b8487a343b220086a67d1daa2713fdd43b32ec19783ecb9231bf.
+Overlaps NOT additive; neither makes69green. No C# after final build/local terminal.
+Read-only failure observation found retained revision5 proposal versus published
+revision4, no consumption preparation published/native action. Original files NOT
+moved/published/deleted. Target readable now/not ReadOnly does NOT identify cause.
+Exact paths/hashes in external block206-original-store-failure-observation.md.
+
+NEXT SAME Main preparation/approach/partial: actual selected cooking must call the
+owner at reached kitchen, preserving original selected lease. Current full native
+reader uses strict QueueExecutionReceiptValidator.Validate; original Product source
+preparation has an explicit version boundary. Preserve those defaults. Original
+ValidateContinuationSlice(...allowAppliedVerifiedProgress) supports only an ACTUAL
+active-objective continuation, NOT arbitrary walking prefixes. No fabricated
+ValidateAppliedProgress API/continuation/candidate completion; compose a named
+prefix consumer using existing kernels. Then actual selected-route other-use/
+alternative/mixed/paired Main/global native reconciliation, #570, #569 PRE-MANIFEST
+handoff. Frozen L1/Root/169-172, modeOFF/formalfalse; lab owns model/train/eval.
+No game/API/cleanup/deploy/raw/local-data commit, E below original native reserve.
+
 ## Same Owner Cooking Preparation And Once Execution (205, Production Consumers Open)
 
 204 98e73bb4/quality43721397815 SUCCESS: Core2762/Backend3501, zero skipped.

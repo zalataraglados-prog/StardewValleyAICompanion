@@ -14,7 +14,8 @@ public static partial class MoneyRevenueCropOutputRetentionProofBuilder
             MoneyRevenueCropOutputRetentionProofRequest>(
                 fullRequestPath,
                 "Money Revenue crop output-retention proof request");
-        var transferredStock = request.SchemaVersion == "money_revenue_crop_output_retention_proof_request.v5";
+        var inventoryEffects = request.SchemaVersion == "money_revenue_crop_output_retention_proof_request.v6";
+        var transferredStock = inventoryEffects || request.SchemaVersion == "money_revenue_crop_output_retention_proof_request.v5";
         var reservedStock = transferredStock || request.SchemaVersion == "money_revenue_crop_output_retention_proof_request.v4";
         var throughBoundary = reservedStock || request.SchemaVersion == "money_revenue_crop_output_retention_proof_request.v3";
         var producerAware = throughBoundary || request.SchemaVersion == "money_revenue_crop_output_retention_proof_request.v2";
@@ -27,7 +28,7 @@ public static partial class MoneyRevenueCropOutputRetentionProofBuilder
         Require(throughBoundary
                 ? !string.IsNullOrWhiteSpace(request.RetainThroughSnapshotPath) && Path.IsPathFullyQualified(request.RetainThroughSnapshotPath)
                 : request.RetainThroughSnapshotPath is null,
-            "An explicit retention boundary requires output-retention request v3/v4/v5 and an absolute snapshot path.");
+            "An explicit retention boundary requires output-retention request v3/v4/v5/v6 and an absolute snapshot path.");
 
         var planPath = RequiredFile(
             request.CropProductionPlanPath,
@@ -157,7 +158,9 @@ public static partial class MoneyRevenueCropOutputRetentionProofBuilder
         var quantityIncrease = receipt.QuantityIncrease ??
             throw new InvalidDataException(
                 "Money Revenue crop output-retention quantity increase is unavailable.");
-        var attribution = transferredStock ? BuildTransferredProducerRetention(lifecycle, harvestTransitions, firstIndex, lastIndex,
+        var attribution = inventoryEffects ? BuildSharedInventoryProducerRetention(lifecycle, harvestTransitions, firstIndex, lastIndex,
+            verifiedCommitment.HarvestItemQualifiedId, wave.MinimumUnits, verifiedCommitment.TileCount,
+            verifiedCommitment.CommitmentId, wave.OutputRetentionKey) : transferredStock ? BuildTransferredProducerRetention(lifecycle, harvestTransitions, firstIndex, lastIndex,
             verifiedCommitment.HarvestItemQualifiedId, wave.MinimumUnits, verifiedCommitment.TileCount,
             verifiedCommitment.CommitmentId, wave.OutputRetentionKey) : reservedStock ? BuildReservedProducerRetention(lifecycle, harvestTransitions, firstIndex, lastIndex,
             verifiedCommitment.HarvestItemQualifiedId, wave.MinimumUnits, verifiedCommitment.TileCount,
@@ -224,7 +227,7 @@ public static partial class MoneyRevenueCropOutputRetentionProofBuilder
         };
         if (attribution is not null)
         {
-            proof.SchemaVersion = transferredStock ? "money_revenue_crop_output_retention_proof.v4" :
+            proof.SchemaVersion = inventoryEffects ? "money_revenue_crop_output_retention_proof.v5" : transferredStock ? "money_revenue_crop_output_retention_proof.v4" :
                 reservedStock ? "money_revenue_crop_output_retention_proof.v3" : "money_revenue_crop_output_retention_proof.v2";
             proof.ProducerRetention = attribution;
             proof.ProofPolicy = "One exact native harvest wave with an independently rebuilt lifecycle. " +
@@ -242,9 +245,14 @@ public static partial class MoneyRevenueCropOutputRetentionProofBuilder
                     "Aggregate inventory fields keep their original meaning. Native terminal consumption requires the explicit sale-stock consumer.";
             if (transferredStock)
                 proof.ProofPolicy += " Original prepared and settled native transfers preserve credited stock in actor-authorized chests. " +
-                    "Claim positions change only at the actual native transfer frame; passive reindexing comes from the original settlement. " +
+                    (inventoryEffects
+                        ? "Transfer positions change at the actual native transfer frame; separately bound cooking uses its actual native consumption frame. "
+                        : "Claim positions change only at the actual native transfer frame; passive reindexing comes from the original settlement. ") +
                     "Stored claims require a previously observed player variant and matching physical quality. Withdrawal and terminal sale recheck full player metadata. " +
                     "Foreign gains and unobserved stored stock cannot create or restore producer credit.";
+            if (inventoryEffects)
+                proof.ProofPolicy += " Explicit prepared cooking consumption replays original settlement and applies passive claim positions only at its actual native cooking frame. " +
+                    "Cooking output is foreign gain, never owned crop producer credit; original quantity, quality and source rules remain.";
         }
         return proof;
     }

@@ -1,5 +1,15 @@
 # StardewAI 当前工作
 
+## 2026-11-15 烹饪帧留存与显式生产消费者（206，Main准备接续待闭）
+
+- 205 `d3f0a45f`／CI43724132800成功：Core2762/2762（44秒）、Backend3513/3513（8分41秒），零跳过。日志 `block205-final-ci43724132800.log` SHA `44d242274856a14e447066cf3d610d554d5c3568cacb1951851a1c6dac5c9e7a`；沙箱常规merge `4ef36967`／树 `884a530cebe1c3c18e85ec5f6e37bced55cd34f4` 等于已验205，206另核。API仍暂停，无调用／授权变化。
+- 原 `CropTeacherTransferredSaleStock` 增加具名库存消费入口，复用原逐帧观察／variant归因／物理预留投影；先从原引用重放准备与结算，**只在实际 `executor.cook_recipe` 帧**校验原before/after并应用结算给出的被动槽位。其他帧不提前换槽，不新增收益归因引擎。原transfer入口继续拒绝消费引用，旧转移帧规则、原料规则、预留数量与权属不改。
+- 原生命周期新增显式request v8，原留存新增request v6／proof v5，原生产汇总新增具名共享库存入口，沿原循环／来源验证／预算／完整重建接前述消费者；普通入口及原v7／v5不自动升级。新proof依旧要求原reserved-stock终端消费者，烹饪产物是foreign gain，不能生成或恢复自产作物信用。旧库存before/after/increase字段含义、正式授权和快照频率不变，无新执行器／Planner／账本。
+- 新专项 **3/3（12秒）**：声明的Runtime／Product原始wire经过原reader，核冰箱槽整理后其他根预留位置且烹饪输出自产信用仍为0；原生命周期读取器拒新模式，新入口接受。另用**不含共享烹饪的完整合成生产夹具**验证新旧版本配对、收益字段／自产归因一致与独立重建。两部分不是已取得整条混合原生轨迹，不升L3或formal。
+- 扩大原生产／留存／source相邻 **68/69（约76秒）**，唯一失败为205恢复用例在准备Commit、尚未走到native／本块留存时，原repository `File.Move`访问拒绝，原因未定。保留日志SHA `ace44ecc28bfaac9b85b751df5a7fd03e54535ac37fdd12d40889f5bfdf1d56f`；同DLL定向两种恢复＋新三项＋旧转移配对 **6/6（20秒）**，SHA `29dd46569ebdeede9f3607b93b31a140fd6b259b16e095384297da0df1fc6a43`，不能追认69全绿。之后只澄清新proof策略文字、不改旧文字，最终显式E重建同定向 **6/6（21秒）**，SHA `f7b82a54e265b8487a343b220086a67d1daa2713fdd43b32ec19783ecb9231bf`。重叠不累加；最终构建后C#未再改、本机命令均收回，当前提交自身CI另核。
+- 对上述旧I/O失败只读复核，找到测试时间内唯一遗留临时文件：原repo目标仍修订4／无消费准备，完整临时提案为修订5／有准备，均Archive/Compressed、目标当前非只读且可读；**提案尚未发布，不当成已接受或native进展**。精确路径／SHA在外部 `block206-original-store-failure-observation.md`，未搬动／改写／清理原件，未加存储／ACL／重试补丁，也不能由现在可读推断当时是杀软或环境原因。
+- **下一处仍原第5步Main准备／approach／partial：** 原 `PrepareCropTeacherSelectedOtherGoalAsync` 应消费真正所选烹饪，沿同一lease和owner到达厨房后再持有准备、fresh编译和一次执行；不能只调用已接的执行出口。现有native整队列reader调用严格 `QueueExecutionReceiptValidator.Validate`，原普通Product准备也有明确版本边界；新前缀须具名组合原核，不能放宽旧整队列完成条件或把前缀伪记为候选完成。已核原 `ValidateContinuationSlice(...allowAppliedVerifiedProgress)` 仅对实际active-objective continuation有条件支持，不是任意移动前缀许可，不臆造ValidateAppliedProgress接口或给普通走路伪造continuation。此为原有partial责任，不新增验收门。再按实际路线接其他消费／替代／混合／成对Main启用、真实全局原生对账、#570、#569正式manifest前交实验室。L1／Root／169—172冻结，新模式OFF、formal=false，无十三日重跑／游戏／API／清理／部署，local-data／原日志／存档／二进制不提交。
+
 ## 2026-11-15 同owner烹饪准备与一次执行恢复（205，全局生产消费者待接）
 
 - 204 `98e73bb4`／CI43721397815成功：Core2762/2762（42秒）、Backend3501/3501（6分4秒），零跳过。日志 `block204-final-ci43721397815.log` SHA `9f86ea71e90ab109848d81d765e33320a51c912e81fc8df1deb165304cee4090`。沙箱常规merge `de56fc0d`／树 `8b86fccd1caace8a60922f1d69e519f04fd9a5c8` 等于已验204；205工作树另核，API仍暂停，无调用／授权变化。
