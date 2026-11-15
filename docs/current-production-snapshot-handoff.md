@@ -1,5 +1,46 @@
 # Current Production Snapshot Handoff
 
+## Prospective Preparation And Original Daily Probe (195, Automatic Mutation OFF)
+
+194 finaldb2a1f15/quality43686565830 SUCCESS: Core2675(37s), Backend3433(7m30s),
+zero skipped, log SHA75f53aed4529855fb91fab9391bbd7b68d059b18e9294070fecc9e2915e6843c.
+Peer merge2f49ba41/tree91cecb616884be96a00f9f192324fdf034cc24cc equals accepted194,
+NOT this successor.
+
+Explicit false/omitted candidate flag enables READONLY original preparation
+preview using original projector/ledger service/stock binder. Actual snapshot and
+ledger remain unchanged. Preview request marker survives daily compilation and
+fails original dispatch even with preview ledger. Status explicitly pending
+original commit, execution authorization denied; old defaults/mixed-control guards
+remain. After actual commit use actual reply ledger and FRESH binding/compilation.
+
+Only new typed stock availability uses materialized candidates and ORIGINAL
+EventCandidateRanker/DailyPlanCompiler/ActionQueueCompiler for its actual expanded
+queue. Generic direct probe goal/default/native semantics unchanged. No second
+executor/planner. Multi-destination partitions and passive/free stock transitions
+remain OPEN, not faked as empty prepared moves.
+
+Final Core HERMETIC adjacent127/127(786ms), Backend E normal adjacent89/89(35s),
+zero skipped; five new cases included, not additive. Log hashes respectively
+fbe65391599be0955444a372f358f2c6336cd150287fdf1d61ff6f9462cc0cd8 and
+59f276c3bf0e295568a587e3c98d07a3a5547576d54aea48d8b004178407e2e5.
+Initial new missing/imported-internal API mistakes fixed only new test/code;
+wrong Core host profile required native game assemblies: restore locked hermetic
+GameFreeGovernance=true rather than changing production. Failures retained.
+Pure declared protocol/projection, NOT game L3; own final-SHA CI pending.
+
+NEXT complete OWNER-HELD preparation: durable admission BEFORE original commit,
+original prepared record/transaction/reply recovery, fresh selected queue pinned,
+then194 once-native/settlement/marker. Never post a loose Main prep RPC and admit
+afterward: crash would strand backend prepared while old head cannot restore.
+Keep immutable admission; planned paths first, prepared hashes afterward. Preserve
+parent daily goal; explicit child goal comes from verified prep, not rewritten
+claims/compiler defaults. Preview flag NOT wired to Main; automatic mutation/
+stock mode OFF. Then remaining stock attribution/partitions/consumption/global
+consumers/paired activation, original partial/global reconciliation, #570 and
+#569 pre-manifest lab handoff. No new phase/gate, no L1/169-172 replay, formal=false.
+No game/API/cleanup/deploy/raw/local-data commit. [Current work195](CURRENT_WORK_CN.md#2026-11-15-待售转移支持预览与原日计划探针195自动准备仍未启用).
+
 ## Prepared Yield Execution And Settlement (194, Stock Capability Open)
 
 193 finalb4fa75ca/quality43682799377 SUCCESS: Core2675(55s), Backend3422(7m14s),

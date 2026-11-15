@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-11-15 待售转移支持预览与原日计划探针（195，自动准备仍未启用）
+
+- 194最终 `db2a1f15`／CI `43686565830` 成功：Core2675/2675（37秒）、Backend3433/3433（7分30秒）、零跳过；日志SHA `75f53aed4529855fb91fab9391bbd7b68d059b18e9294070fecc9e2915e6843c`。沙箱常规merge `2f49ba41`／树 `91cecb616884be96a00f9f192324fdf034cc24cc` 等于已验194，不与本轮新工作目录混称一致。
+- 新候选可显式请求只读准备预览，标志默认false且默认JSON省略。复用原MaterialTransferProjector／ReservationPortfolioLedgerService和待售绑定核生成prospective请求与账本，不发布真实修订、不改snapshot或原ledger。预览参数带专用请求标记，保留到日计划／动作编译时仍被原派发核拒绝，即使误传preview ledger也不授派发。候选明确标为preparation preview、等待原commit、ExecutionAuthorization=denied；原默认缺准备仍阻塞，混用控制不被清洗。原commit真正接受后，才用实际回包账本重新生成绑定并fresh编译。
+- 实际探针原先只编译高层直接命令，不能代替新待售高层经日计划展开的检查。仅新已准备待售路径复用一次物化候选、原EventCandidateRanker／DailyPlanCompiler／ActionQueueCompiler核整段队列；通用探针的旧goal、默认和原native派发规则不改，没有新执行器／Planner。当前预览只覆盖原合同可表达的同来源完整预留移动；多目的槽分区、自由与被动重排仍留在本能力块，不用空移动绕过旧准备合同。
+- 最终Core无游戏配置相邻 **127/127（786ms）**、Backend显式E正常配置相邻 **89/89（35秒）**，零跳过；新增5项已包含，不另加。日志SHA分别为 `fbe65391599be0955444a372f358f2c6336cd150287fdf1d61ff6f9462cc0cd8`、`59f276c3bf0e295568a587e3c98d07a3a5547576d54aea48d8b004178407e2e5`，原目录内为 `block195-core-hermetic-adjacent-tests.log`、`block195-final-backend-adjacent-tests.log`。早期新测试误引用内部verifier，仅改测试使用公开合同；错误Core宿主配置需要游戏程序集，改回既有GameFreeGovernance=true／locked restore，不改生产代码或重标失败。初败保留。均为声明的协议／纯投影测试，非实际游戏L3；本提交最终CI另核。
+- **下一处必须连贯完成owner持有的准备阶段，不是直接在Main松散提交RPC：** 先在同owner持久化原选择、源／请求身份和待产出路径，复用原admission／prepared记录及事务／回包恢复机制；原准备RPC成功、fresh选择与队列固定后，接194一次native／结算／marker。不可在owner入账前提交准备，否则中断会留下backend prepared而原head无法恢复。父日计划目标保留，子执行目标来自已验原准备；新调用方适配旧合同，不能改旧claims／compiler。当前Core预览未接Main，自动准备与新库存模式仍OFF。接续存取留存／分区／其他消耗／显式全局消费者／成对启用，再原partial／多队列及全局对账、第6步#570两门与#569正式manifest前交接；无新增验收门或阶段。L1及169—172冻结、formal=false，无游戏／API／清理／部署，local-data不提交。
+
 ## 2026-11-15 同一owner准备态转移执行与结算（194，库存能力块未总闭）
 
 - 193最终 `b4fa75ca`／CI `43682799377` 成功：Core2675/2675（55秒）、Backend3422/3422（7分14秒）、零跳过；日志SHA `46360a2a42b46f3040039052a95742a8da4956e277f38fc344b31987ec1e987a`。193本地105/106的访问拒绝仍保留，不倒改该次结果。沙箱常规merge `7a663df8`／树 `a0a9489dca565cc7741ed5f55a5cd6f23d0893bc` 等于已验193，不与本轮新工作目录混称一致。
