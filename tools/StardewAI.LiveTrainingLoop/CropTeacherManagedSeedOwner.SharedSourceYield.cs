@@ -187,15 +187,23 @@ public sealed partial class CropTeacherManagedSeedOwner
             throw new InvalidDataException("Shared source yield availability belongs to another source.");
         var rows = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability, goal);
         var materialized = JsonSerializer.SerializeToNode(rows, JsonOptions)!.AsArray();
+        var compiled = SelectCompiledSharedSourceObjective(model, queue, materialized, selected);
+        artifacts.Validate();
+        return compiled;
+    }
+
+    private static SelectedQueueCandidateLock SelectCompiledSharedSourceObjective(SmallModelPlanEnvelope model,
+        JsonObject queue, JsonArray materialized, SelectedQueueCandidateLock selected)
+    {
         var matches = SelectedQueueCandidateMatcher.FilterMaterializedCandidates(materialized, selected);
         var freshRanking = new JsonObject { ["ranked_event_candidates"] = matches };
         var fresh = SelectedQueueDecisionLease.CreateFromPlan(model, freshRanking);
         var mechanical = SelectedQueueDecisionLease.Create(queue, freshRanking);
-        if (matches.Count != 1 || fresh.Candidates.Count != 1 || mechanical.Candidates.Count != 1 ||
+        // One locked objective may have several legal endpoints; the compiler must select exactly one.
+        if (fresh.Candidates.Count != 1 || mechanical.Candidates.Count != 1 ||
             fresh.Candidates[0].CandidateId != mechanical.Candidates[0].CandidateId ||
             fresh.Candidates[0].OptionId != selected.OptionId)
             throw new InvalidDataException("Shared source yield does not contain exactly the original selected objective.");
-        artifacts.Validate();
         return mechanical.Candidates[0];
     }
 

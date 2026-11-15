@@ -1,5 +1,32 @@
 # Current Production Snapshot Handoff
 
+## Shared Counter Alternative Selection (218)
+
+Finalized571 merged26ccc58d;217 OWN43763695136 SUCCESS Core2770/Backend3595,
+zero skipped; peer0f414e24 tracked tree equals217. No API invocation.
+Actual isolated V/Release217 passed native+owner clear26, sixth till28,
+plant/water, shared shipping35 and selected social-goal purchase route36/38/40.
+42 at SeedShop(6,29) failed BEFORE owner admission/native dispatch: two valid
+counter endpoints, original compiler correctly selected one, new consumer
+incorrectly required exactly one materialized match. Only fix that consumer;
+model/queue must still each select exactly one matching original objective.
+Original executor/matcher/budget/saved-readback defaults unchanged. Extract the
+same private pure selection kernel, not a second verifier. Final adjacent35/35
+(38s), logSHAfd9b539fae25468a97a23b7073e875c6e0eb904e9d4393511e70990790a58b6f.
+Unmodified actual42 inputs pass that kernel in~3.5s, reportSHA
+89eedbf28bc5e43e7a6f01dd899b4c9e88e19ae279818c75e4f928383c062b7e;
+no native dispatch/owner advance/whole-owner or first-day acceptance.
+An unnecessary old-owner reopen was canceled; original Main42 error remains
+the before-fix evidence. Fixture-only prefix/shared-reference faults fixed.
+V Main9644 EXITED; game14808/backend20540/product3620 retained in isolated live
+scene, session marks blocked Main, not running. Presence of live processes is
+NOT continuation authority. Do not swap its unsaved head to an old save or
+relax saved-readback continuation for a test. Next original entry must reach
+first managed saved day; if no valid existing continuation, explicitly declare
+a fresh isolated episode. Original550->570->569/572OPEN/formalfalse/frozen
+19/19,11/11,169-172 remain. U correction: FIVE tills, not six; U23 was move.
+Retain original evidence/hashes. Own218 CI still required.
+
 ## Fresh Logical Hash Allocation Reduction (217)
 
 216 84b6d4de OWN43760645962 SUCCESS: Core2770(45s)/Backend3583(8m48s), zero
@@ -52,7 +79,9 @@ Actual original managed/joint/Product Main, episode joint-u-20261116-0400,
 slotProofFarm_454450509: original fresh-save factory -> starter gift -> saved
 spring2 prelude -> SAME live save/second artifact segment, original budget3/free4
 candidates/no fixed kind or ID -> original crop owner/84-action plan -> purchase
-six cauliflower seeds(500g->20g), return Farm, six accepted native tills. Initial
+six cauliflower seeds(500g->20g), return Farm, FIVE accepted native tills. 218
+receipt correction: U19/20/21/22/24 are till; U23 is move. Earlier prose counted
+that move as a sixth till; retain original artifacts/hashes, correct prose only. Initial
 controller basename `saves` was correctly rejected; fix only the setup name,
 retain/hash-copy rejected logs, do not relax the original fresh-save-* guard.
 
