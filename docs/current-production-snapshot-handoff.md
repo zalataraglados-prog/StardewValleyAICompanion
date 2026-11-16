@@ -1,5 +1,31 @@
 # Current Production Snapshot Handoff
 
+## Original Bounded Social Retry Wait (225)
+
+224final9be7acbe OWN43807326309 SUCCESS2770(34s)/3682(7m47s),zero skipped;
+peer545351ae samee13fdc6dtree. SAME4036 proceeded spring7/9:00/136connector/137control,
+then EXIT2 at138 admission BEFORE dispatch. Accepted134,no135intent/no138native result.
+Original8c153c85/7decfcdc social_continuation_retry_wait is ONE600tick bounded wait,
+typed Abigail/SeedShop/retry1,audit+budgetindex present,no ordinary candidate_id.
+NEW explicit native shared reader reuses original ranker/two compilers/lease, binds
+audit/objective/model/complete command, adds annotation ONLY in comparison views.
+Old compiler/executor/default/legacy modes/retry policy and all real artifacts unchanged.
+Only optional social_plan/quest_plan omitted/null normalize; nonnull/unknown fields reject.
+Native generated primitive IDs normalize only in command comparison, no wire mutation.
+Red1/10 at original gate;first20pass; scoped adjacent215/215(3m5s) pass. Actual legacy
+wire exposed omitted-null difference; final19/19(5s),15overlap,not234sum or final215rerun.
+LogsSHAc272bb1edf7cb72520ac3035f79ede7189b551596f0f4f62b52014c9e088b4e0/
+50d2de1c748de7d227516bfa95cbc1d0cfefccfbc7b11354736541c8434a924a.
+UNMODIFIED actual138 SAME selection kernel PASS/reportSHA
+eefceba4c2a93fef18eaaec4894fb8d47a9c97c71f43b34f89dbef685b9f18c9,
+input SHAs unchanged,0dispatch/owneradvance; not native wait completion/full business.
+NEXT commit, original parameterized SAME134/21848/7644/3356/84plan Main,new artifact
+index after retained138. No137replay/134recommit/coldload unsaved spring7.
+Source225 ownCI required;peer remains accepted9be until green. Whole550/572 terminal
+and original stage5 global composition OPEN;570A1 already177 selected_route_unavailable,
+no repeat inventory/newPlanner;then570->569/frozen/formalfalse. NoAPI/grants/cleanup/
+deploy/rawGit. Native3 oldRelease218 retained, Debug build ended/no further C# edits.
+
 ## Reuse Original Executor-Owned Pause Witness (224)
 
 223f1894d2b OWN43801742136 SUCCESS2770(58s)/3669(9m54s),zero skipped;

@@ -187,7 +187,9 @@ public sealed partial class CropTeacherManagedSeedOwner
             throw new InvalidDataException("Shared source yield availability belongs to another source.");
         var rows = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability, goal);
         var materialized = JsonSerializer.SerializeToNode(rows, JsonOptions)!.AsArray();
-        var compiled = SelectCompiledSharedSourceObjective(model, queue, materialized, selected);
+        var views = record["shared_source_execution_protocol"]?.GetValue<string>() == NativeSharedWorkProtocol
+            ? SharedRetryWaitSelectionViews(model, queue, materialized, selected, current) : (Plan: model, Queue: queue);
+        var compiled = SelectCompiledSharedSourceObjective(views.Plan, views.Queue, materialized, selected);
         artifacts.Validate();
         return compiled;
     }
