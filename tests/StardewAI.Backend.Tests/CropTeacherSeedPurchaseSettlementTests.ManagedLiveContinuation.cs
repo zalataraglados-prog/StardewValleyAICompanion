@@ -10,6 +10,34 @@ namespace StardewAI.Backend.Tests;
 
 public sealed partial class CropTeacherSeedPurchaseSettlementTests
 {
+    [Fact]
+    public async Task SameLiveEntryReusesOriginalResumeAllocatedDirectoryWithoutSavedReloadOrNativeReplay()
+    {
+        using var f = new SavedReadbackOwnerFixture(productExecutor: true);
+        await using (var owner = await OpenManagedResumeMainOwner(f)) await f.CompleteNight(owner);
+        var options = ManagedResumeMainOptions(f, observation: false);
+        var commits = f.Night.Shared.Runtime.Handler.Commits;
+        var header = Path.Combine(f.Night.Options.EvidenceDirectory, "owner-intent.json");
+        var original = File.ReadAllBytes(header);
+        var first = await InvokeLive<Task<string>>("ResumeCropTeacherManagedOwnerAsync", f.Night.Shared.Runtime.Client, options, string.Empty);
+        var repeated = await InvokeLive<Task<string>>("ResumeCropTeacherManagedOwnerAsync", f.Night.Shared.Runtime.Client, options, string.Empty);
+        Assert.NotEqual(first, repeated);
+        foreach (var path in new[] { first, repeated })
+        {
+            var output = Path.GetDirectoryName(path)!;
+            Assert.Equal(f.Night.Options.EvidenceDirectory, Path.GetDirectoryName(output));
+            var report = JsonNode.Parse(File.ReadAllText(path))!;
+            Assert.False(report["native_dispatch_performed"]!.GetValue<bool>());
+            Assert.False(report["fresh_accepted_head_verified"]!.GetValue<bool>());
+            Assert.False(report["native_saved_content_readback_verified"]!.GetValue<bool>());
+            Assert.False(report["complete_managed_runtime_verified"]!.GetValue<bool>());
+            Assert.False(report["formal_product_training_authorized"]!.GetValue<bool>());
+        }
+        Assert.Equal(commits, f.Night.Shared.Runtime.Handler.Commits);
+        Assert.Equal(1, f.Night.NativeNightCalls);
+        Assert.Equal(original, File.ReadAllBytes(header));
+    }
+
     [Theory]
     [InlineData("valid")]
     [InlineData("hash")]

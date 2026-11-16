@@ -52,11 +52,9 @@ static partial class Program
                 binding, WritePortfolioJournalFileAsync).ConfigureAwait(false);
             if (owner.Pending is not null)
                 throw new InvalidOperationException("Finish the original pending operation explicitly before same-live Main continuation.");
-            var output = Path.Combine(owner.EvidenceDirectory, "live-continue-entry-" + Guid.NewGuid().ToString("N"));
-            owner.ValidateResumeOutputDirectory(output);
-            Directory.CreateDirectory(output);
             var restored = await RestoreCropTeacherManagedOwnerWithReportAsync(http, options, owner, binding,
-                Path.Combine(output, "restore")).ConfigureAwait(false);
+                string.Empty).ConfigureAwait(false);
+            var output = Path.GetDirectoryName(restored.ReportPath)!;
             var endpoint = new UriBuilder(options.BridgeSnapshotUrl) { Query = "profile=full&fresh=1" };
             var text = await http.GetStringAsync(endpoint.Uri).ConfigureAwait(false);
             var snapshotPath = Path.Combine(output, "same-live-snapshot.json");

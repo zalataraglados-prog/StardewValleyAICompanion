@@ -13,6 +13,15 @@ Recompute state hash, not only its declaration. Reuse ORIGINAL Main/immutable
 plan; readonly resume and saved-load continuation guards remain unchanged.
 Focused new/old entry and metadata adjacent52/52(36s), zero skipped, logSHA
 dbb263be1a7ec5f7e861518a83d5615a119ae0cdba3bbd906e4506922365e2c2.
+ActualMain20820 EXITED before new native dispatch: NEW caller created nested
+output/restore, violating the valid OLD new-direct-owner-child contract. Keep
+that failure/session. Caller now delegates empty output to ORIGINAL restore's
+allocator and uses its returned report directory. No old guard change. Added
+original allocation/repeated readonly/no-overwrite/no-replay/no-saved-readback
+combination; FINAL adjacent63/63(1m6s), zero skipped, logSHA
+4db174844d50b47e5485c313af2273c083ed4bdeb6bee2ddc420bd5c39d09820.
+Includes earlier52, not additive. First commit CI cannot erase actual failure;
+fix commit needs its OWN CI. Same W world/accepted38 preserved for continuation.
 Before actual continuation, copy/hash original mutable Main report; retain the
 original session and record the new Main separately. Same W game2396/backend7644/
 product3356 stay Release218; new consumer Debug only. Never replay purchase41,
