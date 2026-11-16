@@ -22,8 +22,17 @@ from actual acceptedhead234, and observed_shipping_prefixes retains the complete
 Final production-adjacent44/44,0skip,50s (initial13overlap), logSHA078742b0af1c5ead92a5a7e8174fe234a17f04da2661f54f17b0d86c2b712bfc.
 Actual original request selected232/owned6 and full233/234 to234/owned4 without input changes or dispatch;
 classification-only reportSHA718b6f8f6eff5f9e225babb9bb5a65e6be0a7ba19718fd32806621b6c3d455f9.
-NO full lifecycle/retention certificate has yet been produced; ownCI for the cut patch is separate.
-Original shared-source prefix verification, terminal selection/initial owner cursor and final
+NO full lifecycle/retention certificate has yet been produced. Cut sourcea698 own43877423238 SUCCESS
+2770/56s+3762/9m36s/0skip; CIlogSHA8625427e6bfb50329698d78c3d46c65e6aff928c7b63874f93e081adf32fc779.
+Peer normalmergee5d89feb same525a74a7 trackedtree, noAPI. Subsequent prefix verifier uses the original
+same-invocation VerifiedInventoryObservation and original per-frame shipping/resource kernels, no receipt splitting
+or second native queue verification. Final49/49/49s/0skip (includes39), logSHA3c25bfe2993a16ae3524a1b92577a74739fc813c64ba6b558192bbdd0cf9512e.
+Actual233/234 passed new public prefix consumer;29inputs unchanged/0dispatch-owneradvance-reload,
+reportSHA5cdf8be94e6b7a73af9a174dd82d81f65fc3e9c27a35af47d6f5d20fae0095a4. This proves only native prefix/resources,
+NOT retention/owner acceptance/terminal. New prefix source ownCI is separate. Next bind original owner history,
+select from original cut+initial ledger (not current remaining claims), persist derived selection with the first
+following REAL admission, including all-already-deposited reopen. No fake native step to persist a cursor.
+Terminal selection/initial owner cursor and final
 settlement/checkpoint/saved readback still require coherent integration. See the233 responsibility
 table in JOINT_CONSUMER_STATIC_CONTRACT_AUDIT_CN.md. Do not restart Main on the cursor-only result,
 split/rewrite sealed233 mixed move+ship queue, fake owner operations, shrink6 to4 or change old executors.
