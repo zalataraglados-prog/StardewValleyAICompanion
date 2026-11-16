@@ -15,10 +15,14 @@ public sealed record CropTeacherTerminalVariant(int SlotIndex, int Quality, int 
     public int PlannedQuantity => DepositQuantity ?? Quantity;
 }
 public sealed record CropTeacherTerminalVariantPlan(string SchemaVersion, string BinScope,
-    CropTeacherTerminalVariant First);
+    CropTeacherTerminalVariant First)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public CropTeacherTerminalDepositOrder? DepositOrder { get; init; }
+}
 
 // Selected once from an already verified retained wave; the owner supplies the accepted cursor.
-public sealed record CropTeacherTerminalShippingTarget(
+public sealed partial record CropTeacherTerminalShippingTarget(
     string RetentionProofPath, string RetentionProofSha256, string SaveId, string PlayerId,
     string GameVersion, int TotalDay, string QualifiedItemId, int SlotIndex, int Quality,
     int UnitPrice, int BinTileX, int BinTileY, int StandTileX, int StandTileY,
@@ -33,7 +37,9 @@ public sealed record CropTeacherTerminalShippingTarget(
 
     public IEnumerable<CropTeacherTerminalVariant> ReadNativeVariants()
     {
-        if (NativeVariants is null || NativeVariants.SchemaVersion != "crop_teacher_native_terminal_variants.v1" ||
+        if (NativeVariants is null || NativeVariants.SchemaVersion is not
+                ("crop_teacher_native_terminal_variants.v1" or "crop_teacher_native_terminal_variants.v2") ||
+            (NativeVariants.SchemaVersion == "crop_teacher_native_terminal_variants.v2") != (NativeVariants.DepositOrder is not null) ||
             string.IsNullOrWhiteSpace(NativeVariants.BinScope))
             throw new InvalidDataException("Missing/unknown native terminal variant plan.");
         var previous = -1; var quantity = 0;
@@ -50,12 +56,15 @@ public sealed record CropTeacherTerminalShippingTarget(
         if (quantity != RequiredQuantity || quantity <= 0 || first is null || first.SlotIndex != SlotIndex ||
             first.Quality != Quality || first.UnitPrice != UnitPrice || first.Quantity != InitialQuantity)
             throw new InvalidDataException("Native terminal variants differ from selected target/whole obligation.");
+        if (NativeVariants.DepositOrder is not null) ValidateNativeDepositOrder();
     }
 
     public CropTeacherTerminalVariant VariantAt(int count)
     {
         var rows = ReadNativeVariants().ToArray();
         if (count < 0 || count >= RequiredQuantity) throw new InvalidDataException("Native terminal cursor is outside obligation.");
+        if (NativeVariants!.DepositOrder is not null)
+            return rows.Single(row => row.SlotIndex == DepositOrderAt(count).SlotIndex);
         foreach (var row in rows) { if (count < row.PlannedQuantity) return row; count -= row.PlannedQuantity; }
         throw new InvalidDataException("Native terminal cursor has no selected slot.");
     }
@@ -64,6 +73,14 @@ public sealed record CropTeacherTerminalShippingTarget(
     {
         if (count < 0 || count > RequiredQuantity) throw new InvalidDataException("Terminal cursor is outside obligation.");
         if (NativeVariants is null) return checked((long)count * UnitPrice);
+        if (NativeVariants.DepositOrder is not null)
+        {
+            var rows = ReadNativeVariants().ToDictionary(row => row.SlotIndex);
+            long orderedValue = 0;
+            for (var order = NativeVariants.DepositOrder; count > 0; count--, order = order!.Next)
+                orderedValue = checked(orderedValue + rows[order!.SlotIndex].UnitPrice);
+            return orderedValue;
+        }
         long value = 0;
         foreach (var row in ReadNativeVariants())
         {
@@ -94,7 +111,9 @@ public sealed record CropTeacherTerminalShippingTarget(
         var remainingCursor = count;
         foreach (var row in rows)
         {
-            var consumed = Math.Min(remainingCursor, row.PlannedQuantity); remainingCursor -= consumed;
+            var consumed = NativeVariants!.DepositOrder is null ? Math.Min(remainingCursor, row.PlannedQuantity) :
+                CountOrderedDeposits(row.SlotIndex, count);
+            if (NativeVariants.DepositOrder is null) remainingCursor -= consumed;
             var slots = Field("player", "inventory").EnumerateArray().Where(slot => slot.GetProperty("slot_index").GetInt32() == row.SlotIndex).ToArray();
             if (slots.Length != 1) throw new InvalidDataException("Native terminal slot is missing or duplicated.");
             var slot = slots[0]; var remaining = row.Quantity - consumed;

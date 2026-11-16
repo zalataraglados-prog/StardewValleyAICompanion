@@ -17,17 +17,20 @@ public sealed partial class CropTeacherTerminalShipping
     {
         var claims = ReadVerifiedSaleStock(source, ledger, proof);
         var count = target.AcceptedDepositCount;
+        var ordered = target.NativeVariants?.DepositOrder is not null;
+        var nextSlot = ordered ? target.VariantAt(count).SlotIndex : -1;
         MaterialReservation? selected = null;
         foreach (var variant in target.ReadNativeVariants())
         {
-            var consumed = Math.Min(count, variant.PlannedQuantity); count -= consumed;
+            var consumed = ordered ? target.CountOrderedDeposits(variant.SlotIndex, count) : Math.Min(count, variant.PlannedQuantity);
+            if (!ordered) count -= consumed;
             var required = variant.PlannedQuantity - consumed;
             if (required == 0) continue;
             var matching = claims.Where(claim => claim.SlotIndex == variant.SlotIndex)
                 .OrderBy(claim => claim.ReservationId, StringComparer.Ordinal).ToArray();
             Require(matching.Sum(claim => (long)claim.Quantity) >= required,
                 "Reserved terminal sale stock cannot replace missing owned variant reservations with foreign inventory.");
-            selected ??= matching.First();
+            if (!ordered || variant.SlotIndex == nextSlot) selected ??= matching.First();
         }
         return selected ?? throw new InvalidDataException("Reserved terminal sale stock has no pending original unit.");
     }

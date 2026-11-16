@@ -1,5 +1,26 @@
 # Current Production Snapshot Handoff
 
+## Current: Accepted Ordinary Shipping Prefix (233, Main Stopped)
+
+This section supersedes the historical live-process descriptions below. Controller stopped
+ONLY Main21404 during read-only production aggregation. Original game21848/backend7644/product3356
+and the UNSAVED six-harvest/two-shipment tail remain. Owner227 accepted234; no228intent.
+Whole obligation6 remains; inventory4 ordinary, bin1 ordinary+1 GOLD (quality2), pending437.
+1137 is only the whole possible value, NOT settled revenue. Never reload Spring13's pre-harvest save.
+
+New consumer assumed post-shipping head still held6 and an empty bin. Original producer retention
+correctly counts6->5->4. Explicit ordered-variant support is being tested through the original
+compiler/owner: final39/39,zero skipped,48s,logSHAa0f3bdfa78f8bc80e1c3b9990ac2519ee09724cfcb587686a48fc2dbceec01e6.
+Readonly actual233/234 passed original Product/native shipping kernels; new ordered cursor accepted
+original232/233/234 captures,26inputs unchanged,0dispatch/owneradvance,
+reportSHAacf4d960448c68025ad3e9351c22a5facc80919c363248e4fff5b3e25430465f.
+This probe deliberately has no retention certificate/full-terminal claim. Production cutoff, original shared-source prefix, initial owner cursor and final
+settlement/checkpoint/saved readback still require coherent integration. See the233 responsibility
+table in JOINT_CONSUMER_STATIC_CONTRACT_AUDIT_CN.md. Do not restart Main on the cursor-only result,
+split/rewrite sealed233 mixed move+ship queue, fake owner operations, shrink6 to4 or change old executors.
+Retain interrupted production-terminal-6412efe88e38444baa2e110f24e0332a. No raw/local-data in Git;
+formal=false, original full-business -> stage5 -> #570 -> #569 order unchanged. No provider invocation.
+
 ## Same-World Entry And Next Save Accepted (232, Main Live)
 
 Behavioralbebdb8b2 OWN43854836490 SUCCESS2770/48s and3741/11m49s/zero skipped;

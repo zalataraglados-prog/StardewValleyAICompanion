@@ -15,10 +15,12 @@ namespace StardewAI.Backend.Tests;
 public sealed partial class CropTeacherSeedPurchaseSettlementTests
 {
     // Declared synthetic native protocol fixtures, never a live shipping or whole-cycle claim.
-    [Fact]
-    public async Task NativeVariantTerminalShipsFiveNormalAndOneSilverThroughOriginalCompilerAndOwner()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task NativeVariantTerminalShipsFiveNormalAndOneSilverThroughOriginalCompilerAndOwner(bool interleaved)
     {
-        using var f = new NativeVariantTerminalFixture();
+        using var f = new NativeVariantTerminalFixture(interleaved);
         await using var owner = await f.Shared.Files.Open();
         using var document = JsonDocument.Parse(JsonSerializer.Serialize(f.Target, JsonOptions));
         Assert.Equal(JsonValueKind.Object, document.RootElement.GetProperty("nativeVariants").ValueKind);
@@ -29,8 +31,9 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             var target = f.Target with { AcceptedDepositCount = index };
             var model = CropTeacherTerminalShipping.Preparation.BuildOriginalAction(source, target);
             var action = Assert.Single(model.Actions);
-            Assert.Contains(action.Parameters, row => row.Name == "slot_index" && row.Value == (index == 5 ? f.SilverSlot : f.NormalSlot).ToString());
-            Assert.Contains(action.Parameters, row => row.Name == "expected_unit_price" && row.Value == (index == 5 ? "218" : "175"));
+            var silver = index == (interleaved ? 1 : 5);
+            Assert.Contains(action.Parameters, row => row.Name == "slot_index" && row.Value == (silver ? f.SilverSlot : f.NormalSlot).ToString());
+            Assert.Contains(action.Parameters, row => row.Name == "expected_unit_price" && row.Value == (silver ? "218" : "175"));
             var queue = new ActionQueueCompiler().Compile(model, source, ReadLedger(owner.CurrentLedgerPath));
             var prefix = Path.Combine(f.Root, "variant-unit-" + index);
             var modelPath = prefix + "-model.json"; var queuePath = prefix + "-queue.json";
@@ -223,7 +226,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         internal string Root => Shared.Runtime.LiveOptions.SnapshotDir;
         internal CropTeacherTerminalShippingTarget Target { get; }
 
-        internal NativeVariantTerminalFixture()
+        internal NativeVariantTerminalFixture(bool interleaved = false)
         {
             var inventoryRows = resources.Before.State["player"].GetProperty("inventory").GetProperty("value").EnumerateArray().ToArray();
             SilverSlot = inventoryRows.Where(row => row.TryGetProperty("is_empty", out var empty) && empty.ValueKind == JsonValueKind.True)
@@ -278,6 +281,11 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             Target = new(proofPath, Hash(proofPath), sourceSnapshot.SaveId.Value!, sourceSnapshot.PlayerId.Value!, sourceSnapshot.GameVersion,
                 day, resources.Item, NormalSlot, 0, 175, 71, 14, 4, 4, 5, 6, 0)
             { NativeVariants = new("crop_teacher_native_terminal_variants.v1", "shared", new(NormalSlot, 0, 175, 5, new(SilverSlot, 1, 218, 1))) };
+            if (interleaved) Target = Target with { NativeVariants = Target.NativeVariants! with
+            {
+                SchemaVersion = "crop_teacher_native_terminal_variants.v2",
+                DepositOrder = new(NormalSlot, new(SilverSlot, new(NormalSlot, new(NormalSlot, new(NormalSlot, new(NormalSlot))))))
+            } };
         }
 
         internal SnapshotEnvelope Deposit(SnapshotEnvelope source, int index)
@@ -318,7 +326,8 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 if (remaining == 0) quantities.Remove(quantity); else quantity["available_quantity"] = remaining;
                 foreach (var bin in node["shipping_bins"]!["value"]!.AsArray())
                 {
-                    var count = Math.Min(index + 1, 5); var silver = index == 5;
+                    var silver = index >= (Target.NativeVariants!.DepositOrder is null ? 5 : 1);
+                    var count = index + 1 - (silver ? 1 : 0);
                     var contents = new JsonArray(new JsonObject { ["item_id"] = resources.Item[3..], ["qualified_item_id"] = resources.Item,
                         ["quality"] = 0, ["count"] = count, ["unit_sell_to_store_price"] = 175, ["total_sell_to_store_price"] = count * 175 });
                     if (silver) contents.Add(new JsonObject { ["item_id"] = resources.Item[3..], ["qualified_item_id"] = resources.Item,

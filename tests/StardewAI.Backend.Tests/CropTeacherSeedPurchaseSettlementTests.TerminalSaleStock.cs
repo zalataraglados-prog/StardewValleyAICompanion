@@ -31,14 +31,15 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
     }
 
     [Theory]
-    [InlineData(false, false)]
-    [InlineData(true, false)]
-    [InlineData(false, true)]
-    [InlineData(true, true)]
-    public async Task ReservedSaleStockConsumesSixNativeVariantUnitsAtomicallyAndRestoresTheOriginalOwner(bool reservedProof, bool transferable)
+    [InlineData(false, false, false)]
+    [InlineData(true, false, false)]
+    [InlineData(false, true, false)]
+    [InlineData(true, true, false)]
+    [InlineData(true, true, true)]
+    public async Task ReservedSaleStockConsumesSixNativeVariantUnitsAtomicallyAndRestoresTheOriginalOwner(bool reservedProof, bool transferable, bool interleaved)
     {
         static string Hash(string path) => Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant();
-        using var f = new NativeVariantTerminalFixture();
+        using var f = new NativeVariantTerminalFixture(interleaved);
         var target = f.Target with { RequireSaleStockReservations = true };
         var proof = JsonSerializer.Deserialize<MoneyRevenueCropOutputRetentionProof>(File.ReadAllText(target.RetentionProofPath), JsonOptions)!;
         proof.OutputRetentionKey = "declared-native-leaf-sale-wave";

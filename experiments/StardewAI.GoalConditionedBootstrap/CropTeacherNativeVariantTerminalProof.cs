@@ -24,7 +24,9 @@ public static class CropTeacherNativeVariantTerminalProof
         var target = wrapper.Target; var request = wrapper.Settlement;
         var interleaved = wrapper.SchemaVersion == "crop_teacher_native_variant_terminal_request.v2";
         Require((interleaved ? wrapper.NativeControlCheckpoints is { Length: > 0 } :
-                wrapper.SchemaVersion == "crop_teacher_native_variant_terminal_request.v1" && wrapper.NativeControlCheckpoints is null) && target.NativeVariants is not null &&
+                wrapper.SchemaVersion == "crop_teacher_native_variant_terminal_request.v1" && wrapper.NativeControlCheckpoints is null) &&
+            target.NativeVariants?.SchemaVersion == "crop_teacher_native_terminal_variants.v1" &&
+            target.NativeVariants.DepositOrder is null &&
             target.AcceptedDepositCount == target.RequiredQuantity && !request.FormalProductTrainingAuthorized &&
             request.SchemaVersion == "money_revenue_crop_terminal_settlement_proof_request.v3" &&
             string.IsNullOrWhiteSpace(request.ShopSaleEpisodePath), "invalid explicit variant request.");
