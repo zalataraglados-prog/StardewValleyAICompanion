@@ -39,8 +39,8 @@ internal static partial class NativeExecutionActionSourceReader
             Flag("product_request_state_hash_drift", requestStateHashDrift) &&
             Text(result, "product_after_state_hash") == after.StateHash && Tick("product_after_game_tick", out var lastTick) &&
             lastTick == after.GameTick && Text(result, "product_dispatch_guard") == "native_action_preconditions" &&
-            // ReadFrame already requires applied/verified; Product then replans only for live-before drift.
-            Flag("product_replan_required", requestStateHashDrift) && Flag("product_idempotent_replay", false),
+            Flag("product_replan_required", TrainingExecutionVerification.RequiresProductReplan(
+                requestStateHashDrift, nativeResult.Status, nativeResult.PrimitiveVerificationStatus)) && Flag("product_idempotent_replay", false),
             "Selected Product receipt does not bind its original request and native frame.");
     }
 }

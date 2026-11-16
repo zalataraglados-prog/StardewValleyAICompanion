@@ -25,12 +25,12 @@ internal static partial class QueueExecutionReceiptValidator
         QueueExecutionReceiptEnvelope receipt, SnapshotEnvelope after, string runId, string executorVersion,
         string candidateId, string compiledStateHash) =>
         ValidateCore(queue, before, receipt, after, runId, executorVersion, candidateId, compiledStateHash,
-            requireTeacherPreferenceStateRebound: false, requireCandidateCompletion: false);
+            requireTeacherPreferenceStateRebound: false, requireCandidateCompletion: false, allowTrainingEquivalent: true);
 
     private static string[] ValidateCore(ActionQueueEnvelope queue, SnapshotEnvelope before,
         QueueExecutionReceiptEnvelope receipt, SnapshotEnvelope after, string expectedRunId, string expectedExecutorVersion,
         string expectedSelectedCandidateId, string compiledCommandStateHash, bool requireTeacherPreferenceStateRebound,
-        bool requireCandidateCompletion)
+        bool requireCandidateCompletion, bool allowTrainingEquivalent = false)
     {
         var reasons = new List<string>();
         var queueItems = queue.Items ?? Array.Empty<ActionQueueItem>();
@@ -161,10 +161,9 @@ internal static partial class QueueExecutionReceiptValidator
                 !step.AfterSnapshotFresh ||
                 step.SelectedQueueCandidateCompleted !=
                     (index == queueItems.Length - 1 && (requireCandidateCompletion || receipt.SelectedCandidateCompleted)) ||
-                !string.Equals(
-                    step.PrimitiveVerificationStatus,
-                    "verified",
-                    StringComparison.Ordinal) ||
+                !(allowTrainingEquivalent
+                    ? TrainingExecutionVerification.IsAcceptedProgress(step.Status, step.PrimitiveVerificationStatus, step.OptionId)
+                    : string.Equals(step.PrimitiveVerificationStatus, "verified", StringComparison.Ordinal)) ||
                 (step.PrimitiveVerificationReasons?.Length ?? 0) == 0 ||
                 (step.BlockReasons?.Length ?? 0) > 0 ||
                 !string.IsNullOrWhiteSpace(step.FailureAttribution) ||

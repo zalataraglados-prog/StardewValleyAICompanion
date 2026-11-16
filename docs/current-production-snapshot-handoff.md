@@ -1,5 +1,32 @@
 # Current Production Snapshot Handoff
 
+## Original Equivalent Work Contract (223)
+
+222final1df1e4a9 OWN43797299601 SUCCESS Core2770/Backend3656,zero skipped;
+peer cdd0142d same tree2c54183f. Same Main17224 entered Saloon at12:10 (81).
+83 Prairie King physically completed under ORIGINAL timed-equivalent contract:
+completed/noDeath0->1,Beat_PKtrue,108000equivalent/2372wallticks/accel60,
+status simulated_equivalent. Main EXITED11:26:58 because NEW consumer required
+verified-only. Accepted79/pending80 original claim, NOT an unknown native outcome;
+NEVER replay83/reload saved spring4/change original status.
+Reuse d605234a/76bd4563/12e9e943 intent: original Loop exact two-option progress
+policy and original Product replan formula extracted unchanged to Contracts.
+Product stays Contracts-only; old defaults/native proof remain strict. Only NEW
+applied-native-work opts in. Exact frame/aggregate status binding, separate native
+verified/equivalent counters, native_perfect_play_verified=false; no crop/formal credit.
+Local140 first135pass/5NEW setupfail; fixture-only correction then13/13(3s),8overlap,
+not a relabeled140green or148sum. LogsSHAf3d1c50a13e40978f059610c2535840381686f8987b05e93da7da1438d90abcd
+andb9ca8a2d788ff762cfaac862f7e3b0d90a5fdb8431b22fbed627e5fe656da75d.
+Actual UNMODIFIED83 SAME public source kernel PASS10.256s, reportSHA
+d3408fcdd2d06f66198c836fb522c215a3d2d66311b2f9f18bee413730a36ba8:
+0native-verified/1equivalent/candidatetrue,0redispatch/owneradvance/nativeperfect/
+cropcredit/formal. Live/Bootstrap binaries unchanged after final fixture-only build.
+NEW namespace/DTO/Core-dependency/fixture mistakes retained; no old executor change.
+NEXT original known-outcome suffix accepts80 once, then SAME21848/7644/3356 and
+immutable84plan Main; no coldreload/newfactory. Full550/572shipping/terminal/readback
+stillOPEN then570->569/frozen19/19,11/11,169-172/formalfalse. Own223 CI required;
+noAPI/rawGit/cleanup/deploy. Provider remains paused, not silently re-enabled.
+
 ## Finalized Integration And Native Terrain Refresh (222)
 
 User confirms finalized571/controller integration; merge26ccc58d already ancestor,

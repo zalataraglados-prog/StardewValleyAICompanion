@@ -160,10 +160,8 @@ public sealed partial class ProductExecutionService
             {
                 nativeResult = Blocked(request, nativeContractReasons, "product_native_receipt_rejected");
             }
-            var replanRequired =
-                requestStateHashDrift ||
-                ReadString(nativeResult, "status") != "applied" ||
-                ReadString(nativeResult, "primitive_verification_status") != "verified";
+            var replanRequired = StardewAI.Contracts.Training.TrainingExecutionVerification.RequiresProductReplan(
+                requestStateHashDrift, ReadString(nativeResult, "status"), ReadString(nativeResult, "primitive_verification_status"));
             StampProduct(
                 nativeResult,
                 lookup.ReceiptId,

@@ -58,6 +58,11 @@ public sealed partial class CropTeacherManagedSeedOwner
         if (scope is CropTeacherSharedSourceReturn shared)
         {
             result["crop_production_credit_authorized"] = false;
+            if (shared.SimulatedEquivalentStepCount > 0)
+            {
+                result["shared_simulated_equivalent_step_count"] = shared.SimulatedEquivalentStepCount;
+                result["native_perfect_play_verified"] = false;
+            }
             if (shared.AppliedNativeWorkQueue && VerifyCompletedSharedNativeObjective(operation, artifacts))
                 result["native_shared_objective_completed"] = true;
         }

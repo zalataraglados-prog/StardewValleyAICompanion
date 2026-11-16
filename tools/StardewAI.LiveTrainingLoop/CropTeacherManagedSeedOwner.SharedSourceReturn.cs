@@ -173,6 +173,11 @@ public sealed partial class CropTeacherManagedSeedOwner
         accepted["shared_source_state_hash"] = scope.SourceStateHash;
         accepted["shared_after_state_hash"] = scope.AfterStateHash;
         accepted["shared_verified_native_step_count"] = scope.VerifiedNativeStepCount;
+        if (scope.SimulatedEquivalentStepCount > 0)
+        {
+            accepted["shared_simulated_equivalent_step_count"] = scope.SimulatedEquivalentStepCount;
+            accepted["native_perfect_play_verified"] = false;
+        }
         accepted["crop_production_credit_authorized"] = false;
         if (scope.TransferSettlement is { } transfer)
         {
@@ -198,7 +203,7 @@ public sealed partial class CropTeacherManagedSeedOwner
     private void ValidateSharedSourceReturnEvidence(CropTeacherManagedSeedOperation operation, JsonObject accepted)
     {
         var fields = new[] { "native_shared_source_return_verified", "shared_source_state_hash", "shared_after_state_hash",
-            "shared_verified_native_step_count", "crop_production_credit_authorized",
+            "shared_verified_native_step_count", "shared_simulated_equivalent_step_count", "native_perfect_play_verified", "crop_production_credit_authorized",
             "shared-source_native_claim_sha256", "shared-source_native_result_sha256",
             "native_shared_material_transfer_settlement_verified", "shared_material_transfer_request_sha256",
             "shared_material_transfer_reply_sha256", "shared_material_transfer_preparation_request_sha256",
@@ -215,6 +220,9 @@ public sealed partial class CropTeacherManagedSeedOwner
             new[] { "shared-source_native_claim_sha256", "shared-source_native_result_sha256" }.Any(name => accepted[name] is not null))
             throw new InvalidDataException("Observed-only source return cannot claim ownership of a native invocation.");
         if (operation.SharedSourceStart is not null) LoadOriginalSupportingOutcome(operation);
+        if (operation.SharedSourceReturn!.SimulatedEquivalentStepCount == 0 &&
+            new[] { "shared_simulated_equivalent_step_count", "native_perfect_play_verified" }.Any(name => accepted[name] is not null))
+            throw new InvalidDataException("A native-only source return cannot claim equivalent-play evidence.");
         if (operation.SharedSourceReturn!.TransferSettlement is null &&
             new[] { "native_shared_material_transfer_settlement_verified", "shared_material_transfer_request_sha256",
                 "shared_material_transfer_reply_sha256" }.Any(name => accepted[name] is not null))

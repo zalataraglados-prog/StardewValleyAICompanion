@@ -63,6 +63,7 @@ internal static partial class NativeExecutionActionSourceReader
                 frame.Before.StateHash == step.SourceStateHash && frame.After.StateHash == step.AfterStateHash &&
                 frame.Before.GameTick == step.BeforeGameTick && frame.After.GameTick == step.AfterGameTick &&
                 frame.Result.PrimitiveKind == step.PrimitiveKind &&
+                frame.Result.PrimitiveVerificationStatus == step.PrimitiveVerificationStatus &&
                 Text(rows[index], "execution_request_nonce") == frame.Request.RequestNonce &&
                 nonces.Add(frame.Request.RequestNonce) &&
                 EqualJson(JsonSerializer.SerializeToElement(frame.Result.ChangedFacts, JsonDefaults.Options), step.ChangedFacts),

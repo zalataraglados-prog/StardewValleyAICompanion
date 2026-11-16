@@ -94,7 +94,10 @@ internal static partial class NativeExecutionActionSourceReader
             Text(requestRaw, "schema_version") == "training_execution_request.v1" &&
             Text(requestRaw, "execution_mode") == queue.ExecutionMode && Text(requestRaw, "actor") == actor.ActorId &&
             Text(requestRaw, "save_isolation_path") == native.SaveIsolationPath && !string.IsNullOrWhiteSpace(native.SaveIsolationPath) &&
-            result.Status == "applied" && result.FeedbackAvailable && result.PrimitiveVerificationStatus == "verified" &&
+            result.Status == "applied" && result.FeedbackAvailable &&
+            (appliedNativeWork
+                ? TrainingExecutionVerification.IsAcceptedProgress(result.Status, result.PrimitiveVerificationStatus, result.OptionId)
+                : result.PrimitiveVerificationStatus == "verified") &&
             (appliedNativeWork
                 ? QueueExecutionReceiptValidator.ReceiptPrimitiveIdentityMatches(item, command!.Steps, result.PrimitiveKind)
                 : result.PrimitiveKind == result.OptionId["executor.".Length..]) && result.BlockReasons is { Length: 0 } &&

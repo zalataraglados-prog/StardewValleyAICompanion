@@ -1,5 +1,15 @@
 # StardewAI 当前工作
 
+## 2026-11-16 等价动作按原协议续行（223）
+
+- 222收尾 `1df1e4a9` 自身CI `43797299601` 成功：Core2770（59秒）／Backend3656（9分58秒），零跳过，日志SHA `5bbe989bfae584f469f1d02dc1c0eb0f32b87df8e40dcc9ba708145b1550aede`。沙箱正常merge `cdd0142d` 与其跟踪树 `2c54183f` 一致；未调用API。
+- 同一Main17224继续作物维护及原联合工作，81在12:10合法进入Saloon；保留候选ID与营业前等待均不是卡死。83草原大王按既定定时等价模式完成，统计0→1／无伤0→1／Beat_PK=true，108000等价ticks、2372实际ticks、加速60，原标签正确为`simulated_equivalent`。11:26:58 Main明确退出：新共享消费者仍只收`verified`；owner79已接受、80原claim待后半段记账。不得重打83、重载旧保存或改写原标签。
+- 核对 `d605234a` 原生等价实现、`76bd4563` 原Loop仅允许两项等价动作及 `12e9e943` 原Product重规划公式：将**原样的纯协议判定**移至Contracts共享，旧Loop／Product委托它且行为不变，Product仍只依赖Contracts。仅新applied-native-work消费者接受原两项等价动作，旧原生证明默认仍严格拒绝；逐帧／汇总状态必须一致。等价完成要求的Product replan=true继续保留，不视为失败，也不放宽nonce／wire／身份／资源门。
+- `shared_verified_native_step_count`不包含等价步，另封存`shared_simulated_equivalent_step_count`及`native_perfect_play_verified=false`；原始回执永久保留`simulated_equivalent`，不升级为原生完美操作／作物credit／正式训练权限。原生-only旧证据不增加这些可选字段。
+- 相邻首轮140项中135通过，5项在新增夹具进入待测路径前因场景初始化失败；仅修其玩家／物料图位置和关闭菜单，最终新增定向 **13/13（3秒）**、零跳过，含8项重叠，不能把首轮报成全绿或相加为148。两日志SHA分别 `f3d1c50a13e40978f059610c2535840381686f8987b05e93da7da1438d90abcd`／`b9ca8a2d788ff762cfaac862f7e3b0d90a5fdb8431b22fbed627e5fe656da75d`。首轮新夹具using／DTO属性错误、helper误放Core的依赖错误及原Product replan假设错误均保留；没有为这些问题改旧执行语义或添加项目引用。
+- 未改写的实际83经**同一公开准备／转移入口**通过，约10.256秒，报告SHA `d3408fcdd2d06f66198c836fb522c215a3d2d66311b2f9f18bee413730a36ba8`：0原生verified步／1等价步、候选完成、0重发／owner推进、native-perfect／crop-credit／formal均false。最终仅夹具再改后核对生产Live／Bootstrap二进制与该实机原件校验时一致。
+- **下一步：** 提交后只调用原known-outcome后半段接受80，再从同game21848／backend7644／product3356、原不可变84计划接回Main。完整#550／#572生产、出货、终局保存读回仍开放，再#570→#569；冻结19/19／11/11／169–172与formal=false不变。本提交自身CI另核；原始运行／存档／local-data／二进制不入Git。
+
 ## 2026-11-16 定稿整合与同现场地形速度刷新（222）
 
 - 用户确认定稿 #571 由控制端整合；其 merge `26ccc58d` 已在当前分支祖先中，库存观察复用及生产汇总的显式模式接线均保留，不重复合并或另写实现。221提交 `7265a4b6` 自身CI `43790852883` 成功：Core2770（34秒）／Backend3645（7分23秒），零跳过，日志SHA `edda4f2f574befa53fc4d4691a301ab57176a92c0ccd11606f2f8019ce66222f`；沙箱正常merge `fdbbe61d` 与其跟踪树一致。无API调用。

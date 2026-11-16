@@ -156,7 +156,8 @@ public sealed partial class CropTeacherSharedSourceReturn : ICropTeacherSupporti
         SourceStateHash = source.Snapshot.StateHash;
         AfterStateHash = native.After.StateHash;
         AfterSnapshotPath = paths[5];
-        VerifiedNativeStepCount = native.Actions.Length;
+        VerifiedNativeStepCount = native.Actions.Count(frame => frame.Result.PrimitiveVerificationStatus == "verified");
+        SimulatedEquivalentStepCount = native.Actions.Count(frame => frame.Result.PrimitiveVerificationStatus == "simulated_equivalent");
         TransferSettlement = transfer;
         ConsumptionSettlement = consumption;
         ValidateInputsUnchanged();
@@ -237,6 +238,7 @@ public sealed partial class CropTeacherSharedSourceReturn : ICropTeacherSupporti
     public string AfterStateHash { get; }
     public string AfterSnapshotPath { get; }
     public int VerifiedNativeStepCount { get; }
+    public int SimulatedEquivalentStepCount { get; }
     public CropTeacherSharedTransferSettlementReference? TransferSettlement { get; }
     public bool NativeCropLifecycleVerified => false;
     public bool AppliedNativeWorkQueue { get; }
