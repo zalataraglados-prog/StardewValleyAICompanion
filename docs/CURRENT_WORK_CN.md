@@ -1,5 +1,15 @@
 # StardewAI 当前工作
 
+## 2026-11-17 原第5步接续与校准入口转发（236）
+
+- #567已合并至main `2498c502`，#572已关闭；合并树与已测试树一致。合并后的自身CI `43973941123` 全部成功：Core2770（33秒）/Backend3799（8分55秒）、零失败/跳过，日志SHA `4e83b1df9850b5ded9a772a78c2dcd8bdf76c0eb1cdba0732fadcd48217f9019`。#339的旧v22义务不被关闭，235完整作物闭环不重跑。
+- 从原春14存档的新鲜观测调用原入口：135个当前候选，经济resolver提出作物Teacher交接；现有集合Teacher独立选中领取竹钓竿的原生任务13前置。不是手工指定鱼种、重写旧执行器或一份已经选定的全局核桃日程。
+- 原 `--standalone-collection-teacher` 有界接续实际完成8轮、7条applied/verified聚合回执：原路线/剧情链到海滩领取竹钓竿、MAX抛竿并钓获真实分布中的708、库存恢复返农场出货，再继续原131目标。131尚未钓到，不能假报目标完成；6轮的合法候选刷新没有派发。原聚合可能包含多个物理步骤，不把7条回执称为7次按键或完整Teacher验收。
+- 首次独立诊断run_id被原授权门拒绝，tick/state未变。改用原已授权W run_id与已有 `--artifact-run-id` 隔离工件后通过，未扩大Product权限。Main24212已结束，stderr为空，原输出status=ok仅表示这次有界运行结束。独立观察SHA `f67032fc52ef5661ca7cea072dae9ecb5e777e4ca6447449f947bb3ffdf512ec`；修正首份诊断摘要两个字段路径，不重跑数据。原owner235没有重开，原证明未重放。
+- **当前实景是新产生、未保存的春14尾部：BusStop，08:20，有竹钓竿。** 原保存07de与闭环原件保留；不要按历史说明重载07de丢掉这段现场。只保留game12688/backend7644/product3356，没有运行中的Main。此局部接续不是全局Day-0来源证明或正式训练。
+- 静态定位到原全局新档校准入口未转发已验managed/联合日历开关，现仅补显式 `-UseManagedCropTeacher -JointDailyCalendar`，沿原fresh-save→Product校准→Main调用。默认不变，旧位置参数顺序不变；managed保留原隔离保存/收据及12项队列门，不允许把旧unmanaged resume当新owner。**不额外要求所有managed校准都开启Golden Walnut capture**；有/无capture均由原parser接纳。显式managed校准的机械回执不强求存在策略标签，旧普通模式仍要求原Product策略轨迹，不把机械记录晋升为训练标签。无第二个Planner、Executor或全局验证器。
+- 先红复现入口无managed参数，再最终41项参数/原parser检查通过；既有日目标转发相邻10项通过，均无游戏、无C#重建。新增入口尚无新档长跑证明，自身CI另记。下一步固定实际跨根路线的来源、数量、期限与资源/日历，按原第5步消费连续证据，再#570→#569；L1/Root冻结、formal=false、local-data不入Git不变。
+
 ## 2026-11-17 睡眠后原账本读回重算（234续修）
 
 - 同一Main11884已生成真实完整生命周期、留存和生产清单：生命周期SHA `d9f6350dd40e73aa0c1ca21e26f7a16e469ae3fa1d974afee7c9b889debf273e`（201转换，6播种/66实际浇水/6收获，12日界/1接续）；留存SHA `b7595d5ce52ba84a73bec5a29868a5e91ade31ff13ed9925b459845f1bfb7967`，原232截点整批6；生产清单SHA `0b0e1cdfef7e8e238f61ea140fb3ec8f401b84229af3665f6b70e423a1d15fde`，完整保留原普通前缀。

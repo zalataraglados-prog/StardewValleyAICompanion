@@ -1,5 +1,47 @@
 # Current Production Snapshot Handoff
 
+## Current: Original Stage5 Continuation And Opt-In Launcher Wiring (236)
+
+PR567 merged as main2498c502;572closed. Own merge CI43973941123 SUCCESS:
+Core2770/33s,Backend3799/8m55s,zero failed/skipped/all steps accepted;
+logSHA4e83b1df9850b5ded9a772a78c2dcd8bdf76c0eb1cdba0732fadcd48217f9019.
+Closed235/native crop proofs remain accepted; no replay or reopening.
+
+Fresh Spring14/600 source f168c42b... produced135current candidates. Original economic
+resolver requests crop handoff, while the EXISTING collection Teacher selected native
+quest13/free-rod prerequisite. Original standalone collection mode then completed8bounded
+iterations/7applied+verified aggregate receipts: route/story to Beach, BambooPole, native
+MAX cast/catch708, full-inventory shipping recovery, then continuation toward131.
+The target131 is NOT completed. Iteration6 invalidated an unavailable fresh candidate
+without dispatch. Aggregate receipts are not physical-action or policy-call counts.
+
+First attempt was blocked BEFORE native work by run_id_not_authorized, same tick/hash.
+Second uses ORIGINAL authorized W run_id and EXISTING artifact-run-id for separate storage;
+no Product permissions changed. Main24212 is TERMINAL/absent,stderr empty,loopstatus=ok
+only for this bounded run. ObservationSHAf67032fc52ef5661ca7cea072dae9ecb5e777e4ca6447449f947bb3ffdf512ec.
+This derived observation corrects two null field-path mistakes in the first diagnostic
+summary; original source files are unchanged, no repeated native/proof validation.
+
+LIVE UNSAVED TAIL: SAMEgame12688/backend7644/product3356,Spring14/08:20/BusStop,
+BambooPole in slot8. Preserve it; do NOT reload07de or follow old21848/2652 instructions.
+Closed owner235 and original07de saved bytes are retained independently. This local
+continuation is NOT global Day-0/source-schedule evidence or formal training.
+
+Confirmed Stage5 entry gap: existing full fresh-save calibration could not forward the
+already implemented managed owner/joint calendar. It now exposes opt-in
+-UseManagedCropTeacher -JointDailyCalendar through the SAME wrapper/Product/Main.
+Old defaults/positional parameter order stay unchanged; managed mode rejects legacy
+unmanaged resume and preserves original receipts, isolated save boundary and queue limits.
+Do NOT require Golden Walnut capture for every legal managed calibration; both capture
+states pass the ORIGINAL parser. Explicit managed mechanical calibration need not emit
+policy labels; ordinary default mode still requires its original Product policy trajectories.
+No mechanical records are promoted to labels. No new Planner/Executor/verifier or C# change.
+New regression RED then41checks passed through ORIGINAL LiveTrainingOptions.Parse;
+adjacent original goal forwarding10checks passed. No new native global-run claim;
+this commit's own CI is separate. Next: original actual cross-root selection/source/
+quantity/deadline/resource/calendar integration, then570 then569. Frozen L1/Root,
+formal=false,noAPI,no raw/local-data Git remain unchanged.
+
 ## Current: Complete Managed Native Cycle Passed (234/235); Resume Original Stage5
 
 SAME11884 produced actual lifecycle/retention/production (201transitions,6plant/66water/6harvest,

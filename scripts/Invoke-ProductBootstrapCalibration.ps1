@@ -67,10 +67,18 @@ param(
     [string] $MasterAnglerDependencyExpansions = (Join-Path `
         $ProjectRoot `
         "experiments\goal-method-dependency-expansions.v1.json"),
-    [string] $MasterAnglerAuditOutputPath = ""
+    [string] $MasterAnglerAuditOutputPath = "",
+    [Parameter(ParameterSetName = "Runtime")]
+    [switch] $UseManagedCropTeacher,
+    [Parameter(ParameterSetName = "Runtime")]
+    [switch] $JointDailyCalendar
 )
 
 $ErrorActionPreference = "Stop"
+. (Join-Path $PSScriptRoot 'lib/ProductBootstrapManagedArguments.ps1')
+$managedLoopArguments = @(Get-ProductBootstrapManagedLoopArguments `
+    -UseManagedCropTeacher:$UseManagedCropTeacher -JointDailyCalendar:$JointDailyCalendar `
+    -LegacyCropResume:(![string]::IsNullOrWhiteSpace($ResumeCropTeacherTransitionLedger)))
 
 if ($RequiredVerifiedActions -gt $MaxAttempts) {
     throw "RequiredVerifiedActions must not exceed MaxAttempts."
@@ -676,7 +684,7 @@ try {
         "--sleep-ms", 1000,
         "--after-snapshot-wait-ms", 500
     )
-    if ($CaptureGoldenWalnutFreshSaveEvidence -or $resumeCropTeacher) {
+    if ($CaptureGoldenWalnutFreshSaveEvidence -or $resumeCropTeacher -or $UseManagedCropTeacher) {
         $arguments += @(
             "--snapshot-artifact-mode", "content_addressed_gzip"
         )
@@ -684,7 +692,7 @@ try {
     if ($CaptureGoldenWalnutFreshSaveEvidence) {
         $arguments += "--capture-golden-walnut-fresh-save-evidence"
     }
-    if ($CaptureGoldenWalnutFreshSaveEvidence -or $resumeCropTeacher) {
+    if ($CaptureGoldenWalnutFreshSaveEvidence -or $resumeCropTeacher -or $UseManagedCropTeacher) {
         $arguments += @(
             "--require-native-save-boundary",
             "--save-slot", $SaveSlot,
@@ -719,6 +727,7 @@ try {
     if ($ContinueAfterCropTeacherRun) {
         $arguments += "--continue-after-crop-teacher-run"
     }
+    $arguments += $managedLoopArguments
     $loopOutput = & dotnet $arguments
     $loopOutput | Set-Content -LiteralPath (Join-Path $artifactDirectory "loop.stdout.log") -Encoding utf8
     if ($LASTEXITCODE -ne 0) {
@@ -729,7 +738,7 @@ try {
     $trajectoryExists = Test-Path -LiteralPath $trajectoryPath -PathType Leaf
     if (-not $trajectoryExists -and
         -not $CaptureGoldenWalnutFreshSaveEvidence -and
-        -not $resumeCropTeacher) {
+        -not $resumeCropTeacher -and -not $UseManagedCropTeacher) {
         throw "Bootstrap calibration produced no policy trajectory file."
     }
     $trajectories = if ($trajectoryExists) {
@@ -750,7 +759,7 @@ try {
     })
     if ($accepted.Count -lt 1 -and
         -not $CaptureGoldenWalnutFreshSaveEvidence -and
-        -not $resumeCropTeacher) {
+        -not $resumeCropTeacher -and -not $UseManagedCropTeacher) {
         throw "Bootstrap calibration produced no Product trajectory with at least two admitted candidates."
     }
 
@@ -947,6 +956,10 @@ try {
         binary_root = $binaryRoot
         prebuilt_binaries_reused = $reusePrebuiltBinaries
         formal_training_started = $false
+    }
+    if ($UseManagedCropTeacher -or $JointDailyCalendar) {
+        $summary.managed_crop_teacher_enabled = [bool]$UseManagedCropTeacher
+        $summary.joint_daily_calendar_enabled = [bool]$JointDailyCalendar
     }
     Write-Json (Join-Path $artifactDirectory "summary.json") $summary
     $summary | ConvertTo-Json -Depth 16
