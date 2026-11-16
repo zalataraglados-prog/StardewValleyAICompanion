@@ -10,6 +10,9 @@ public sealed record CropTeacherNativeVariantTerminalRequest(string SchemaVersio
 {
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public MoneyRevenueCropNativeLifecycleTransitionRequest[]? NativeControlTail { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public CropTeacherTerminalControlCheckpoint[]? NativeControlCheckpoints { get; init; }
 }
 
 // Explicit aggregate adapter; old scalar builders/readers never admit this request/version.
@@ -19,7 +22,9 @@ public static class CropTeacherNativeVariantTerminalProof
     {
         var wrapper = Read<CropTeacherNativeVariantTerminalRequest>(requestPath);
         var target = wrapper.Target; var request = wrapper.Settlement;
-        Require(wrapper.SchemaVersion == "crop_teacher_native_variant_terminal_request.v1" && target.NativeVariants is not null &&
+        var interleaved = wrapper.SchemaVersion == "crop_teacher_native_variant_terminal_request.v2";
+        Require((interleaved ? wrapper.NativeControlCheckpoints is { Length: > 0 } :
+                wrapper.SchemaVersion == "crop_teacher_native_variant_terminal_request.v1" && wrapper.NativeControlCheckpoints is null) && target.NativeVariants is not null &&
             target.AcceptedDepositCount == target.RequiredQuantity && !request.FormalProductTrainingAuthorized &&
             request.SchemaVersion == "money_revenue_crop_terminal_settlement_proof_request.v3" &&
             string.IsNullOrWhiteSpace(request.ShopSaleEpisodePath), "invalid explicit variant request.");
@@ -61,14 +66,31 @@ public static class CropTeacherNativeVariantTerminalProof
         }
         var deposits = new List<MoneyRevenueCropShippingDepositEvidence>();
         MoneyRevenueTerminalQueueTransitionEvidence[] route = [];
+        var sequence = interleaved ? new CropTeacherTerminalControlSequence(wrapper, transitions![0], target.TotalDay,
+            wrapper.NativeControlTail is { Length: > 0 } tail ? tail[^1].AfterSnapshotPath : retention.AfterSnapshotPath) : null;
+        if (sequence is not null)
+        {
+            var identity = new MoneyRevenueTerminalContinuationIdentity("executor.ship_inventory_item_to_bin",
+                target.QualifiedItemId, target.VariantAt(0).SlotIndex, 1, target.VariantAt(0).UnitPrice, string.Empty);
+            var routing = new List<MoneyRevenueTerminalQueueTransitionEvidence>();
+            foreach (var transition in request.RouteTransitions)
+            {
+                expected = sequence.ObserveControls(expected);
+                var leg = MoneyRevenueResourceNeutralTerminalRouteVerifier.Verify(expected, [transition], identity);
+                routing.AddRange(leg.Evidence.Select(row => row with { TransitionIndex = routing.Count + row.TransitionIndex }));
+                expected = leg.TerminalActionBefore; sequence.Advance(transition.AfterSnapshotPath);
+            }
+            route = routing.ToArray();
+        }
         var beforeHash = string.Empty;
         for (var index = 0; index < transitions!.Length; index++)
         {
+            if (sequence is not null) expected = sequence.ObserveControls(expected);
             var selected = target.VariantAt(index); var transition = transitions[index];
             var batch = MoneyRevenueCropTerminalSettlementModeVerifier.VerifyShippingDepositBatch(expected,
-                index == 0 ? request.RouteTransitions : [], [transition], target.QualifiedItemId,
+                index == 0 && sequence is null ? request.RouteTransitions : [], [transition], target.QualifiedItemId,
                 1, selected.UnitPrice, target.PendingValueAt(index), index);
-            if (index == 0) { route = batch.RouteTransitions; beforeHash = batch.TerminalActionBefore.StateHash; }
+            if (index == 0) { if (sequence is null) route = batch.RouteTransitions; beforeHash = batch.TerminalActionBefore.StateHash; }
             var before = Read<SnapshotEnvelope>(transition.BeforeSnapshotPath);
             target.VerifyNativeVariantSource(before, index);
             var effect = CropTeacherShippingDepositResources.Verify(before, batch.After,
@@ -82,15 +104,30 @@ public static class CropTeacherNativeVariantTerminalProof
                 "native deposit differs from chosen variant/prefix/bin.");
             target.VerifyNativeVariantSource(batch.After, index + 1);
             deposits.AddRange(batch.Deposits); expected = batch.After;
+            sequence?.Advance(transition.AfterSnapshotPath);
         }
-        var ingress = MoneyRevenueResourceNeutralTerminalRouteVerifier.VerifyHomeIngress(expected, request.SettlementRouteTransitions);
+        var homeEvidence = new List<MoneyRevenueTerminalQueueTransitionEvidence>();
+        if (sequence is not null)
+        {
+            foreach (var transition in request.SettlementRouteTransitions)
+            {
+                expected = sequence.ObserveControls(expected);
+                var leg = MoneyRevenueResourceNeutralTerminalRouteVerifier.VerifyHomeIngressSegment(expected, [transition]);
+                homeEvidence.AddRange(leg.Evidence.Select(row => row with { TransitionIndex = homeEvidence.Count + row.TransitionIndex }));
+                expected = leg.TerminalActionBefore; sequence.Advance(transition.AfterSnapshotPath);
+            }
+            expected = sequence.ObserveControls(expected);
+            sequence.RequireConsumed();
+        }
+        var ingress = MoneyRevenueResourceNeutralTerminalRouteVerifier.VerifyHomeIngress(expected,
+            sequence is null ? request.SettlementRouteTransitions : []);
         var recurrence = MoneyRevenueCropTerminalSettlementModeVerifier.VerifyShippingRecurrence(request.RevenueRecurrenceManifestPath,
-            request.RevenueRecurrenceReceiptPath, request.SettlementRouteTransitions.Length == 0 ? transitions[^1].AfterSnapshotPath :
-                request.SettlementRouteTransitions[^1].AfterSnapshotPath, ingress.TerminalActionBefore.StateHash,
+            request.RevenueRecurrenceReceiptPath, sequence?.CurrentPath ?? (request.SettlementRouteTransitions.Length == 0 ? transitions[^1].AfterSnapshotPath :
+                request.SettlementRouteTransitions[^1].AfterSnapshotPath), ingress.TerminalActionBefore.StateHash,
             target.PendingValueAt(target.RequiredQuantity));
         return new()
         {
-            SchemaVersion = "crop_teacher_native_variant_terminal_proof.v1", Status = "verified_native_crop_terminal_settlement",
+            SchemaVersion = interleaved ? "crop_teacher_native_variant_terminal_proof.v2" : "crop_teacher_native_variant_terminal_proof.v1", Status = "verified_native_crop_terminal_settlement",
             RequestPath = Path.GetFullPath(requestPath), RequestSha256 = Hash(requestPath),
             CropProductionPlanPath = Path.GetFullPath(request.CropProductionPlanPath), CropProductionPlanSha256 = Hash(request.CropProductionPlanPath),
             OutputRetentionProofPath = Path.GetFullPath(target.RetentionProofPath), OutputRetentionProofSha256 = target.RetentionProofSha256,
@@ -99,7 +136,8 @@ public static class CropTeacherNativeVariantTerminalProof
             TerminalKind = MoneyRevenueRecurrenceProofKinds.NativeShippingSettlement, TerminalStartStateHash = start.StateHash,
             TerminalActionBeforeStateHash = beforeHash, TerminalActionAfterStateHash = recurrence.FinalStateHash,
             RouteTransitions = controls.Concat(route.Select(row => row with { TransitionIndex = row.TransitionIndex + controls.Length })).ToArray(),
-            ShippingDeposits = deposits.ToArray(), SettlementRouteTransitions = ingress.Evidence,
+            ShippingDeposits = deposits.ToArray(), SettlementRouteTransitions = sequence is null ? ingress.Evidence : homeEvidence.ToArray(),
+            NativeControlCheckpoints = sequence?.Evidence.ToArray(),
             // There is no scalar slot/price for this version. Each verified unit carries its own exact fields.
             SlotIndex = -1, UnitPrice = 0, SettledQuantity = deposits.Count,
             SettledRevenue = checked((int)target.PendingValueAt(target.RequiredQuantity)),

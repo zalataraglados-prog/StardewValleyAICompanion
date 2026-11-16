@@ -364,8 +364,7 @@ public static partial class MoneyRevenueCropProductionProofCheckpointBuilder
                 proofPath,
                 "Money Revenue crop terminal-settlement proof");
         var rebuilt = RebuildCollectedTerminal(proof, nativeObserved);
-        Require(proof.SchemaVersion == (nativeObserved && proof.SchemaVersion == NativeTerminalSchema
-                    ? NativeTerminalSchema : "money_revenue_crop_terminal_settlement_proof.v3") &&
+        Require((nativeObserved && IsNativeTerminal(proof.SchemaVersion) || proof.SchemaVersion == "money_revenue_crop_terminal_settlement_proof.v3") &&
                 BootstrapArtifactGuard.EqualJson(proof, rebuilt) &&
                 string.Equals(
                     Path.GetFullPath(proof.CropProductionPlanPath),

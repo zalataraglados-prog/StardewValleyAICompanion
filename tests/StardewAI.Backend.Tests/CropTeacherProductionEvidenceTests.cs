@@ -83,12 +83,14 @@ public sealed partial class CropTeacherProductionEvidenceTests
         internal List<CropTeacherManagedProductionTransition> Transitions { get; } = [];
 
         internal Fixture() : this(Golden.Value) { }
+        internal Fixture(bool nativeTerminalSurface, bool initialSafeMenu = false) :
+            this(null, nativeTerminalSurface: nativeTerminalSurface, initialSafeMenu: initialSafeMenu) { }
         internal Fixture(int tileCount, string commitmentId) : this(null, tileCount, commitmentId) { }
         internal Fixture(int tileCount, string commitmentId, bool reserveSaleStock, int unreservedSurplus = 0) :
             this(null, tileCount, commitmentId, reserveSaleStock, unreservedSurplus) { }
 
         private Fixture(Fixture? template, int tileCount = 2, string commitmentId = "declared.managed.production",
-            bool reserveSaleStock = false, int unreservedSurplus = 0)
+            bool reserveSaleStock = false, int unreservedSurplus = 0, bool nativeTerminalSurface = false, bool initialSafeMenu = false)
         {
             if (template is not null)
             {
@@ -164,6 +166,7 @@ public sealed partial class CropTeacherProductionEvidenceTests
                         playerState["inventory"]!["value"]!.AsArray().Add(surplus);
                     }
                     current.State["player"] = JsonSerializer.SerializeToElement(playerState);
+                    if (nativeTerminalSurface) AddTerminalControlSurface(current, initialSafeMenu);
                     if (reserveSaleStock)
                     {
                         var graphState = JsonNode.Parse(current.State["farm"].GetRawText())!;

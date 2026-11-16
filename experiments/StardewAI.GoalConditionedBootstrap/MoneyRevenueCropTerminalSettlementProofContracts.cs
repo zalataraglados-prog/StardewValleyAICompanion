@@ -123,6 +123,10 @@ public sealed class MoneyRevenueCropTerminalSettlementProof
         SettlementRouteTransitions { get; set; } =
             Array.Empty<MoneyRevenueTerminalQueueTransitionEvidence>();
 
+    [JsonPropertyName("native_control_checkpoints")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public CropTeacherTerminalControlCheckpointEvidence[]? NativeControlCheckpoints { get; set; }
+
     [JsonPropertyName("slot_index")]
     public int SlotIndex { get; set; }
 

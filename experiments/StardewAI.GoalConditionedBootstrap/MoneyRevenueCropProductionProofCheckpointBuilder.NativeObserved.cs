@@ -10,6 +10,7 @@ public static partial class MoneyRevenueCropProductionProofCheckpointBuilder
     private const string ReservedCheckpointSchema = "money_revenue_crop_production_proof_checkpoint.v15";
     private const string NativeCapacitySchema = "money_revenue_crop_daily_capacity_proof.v2";
     private const string NativeTerminalSchema = "crop_teacher_native_variant_terminal_proof.v1";
+    private static bool IsNativeTerminal(string schema) => schema is NativeTerminalSchema or "crop_teacher_native_variant_terminal_proof.v2";
 
     public static MoneyRevenueCropProductionProofCheckpoint BuildNativeObserved(string requestPath) =>
         BuildCore(requestPath, nativeObserved: true);
@@ -20,7 +21,7 @@ public static partial class MoneyRevenueCropProductionProofCheckpointBuilder
         : MoneyRevenueCropDailyCapacityProofBuilder.Build(proof.RequestPath);
 
     private static MoneyRevenueCropTerminalSettlementProof RebuildCollectedTerminal(MoneyRevenueCropTerminalSettlementProof proof,
-        bool nativeObserved) => nativeObserved && proof.SchemaVersion == NativeTerminalSchema
+        bool nativeObserved) => nativeObserved && IsNativeTerminal(proof.SchemaVersion)
         ? CropTeacherNativeVariantTerminalProof.Build(proof.RequestPath)
         : MoneyRevenueCropTerminalSettlementProofBuilder.Build(proof.RequestPath);
 }

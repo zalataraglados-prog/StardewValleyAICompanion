@@ -60,6 +60,11 @@ internal static class MoneyRevenueResourceNeutralTerminalRouteVerifier
             new HashSet<string>(new[] { "executor.close_menu" }, StringComparer.Ordinal),
             targetLocation: ReadPlayerLocation(start), requireMovement: false);
 
+    // Explicit segmented consumer only; VerifyHomeIngress still owns final arrival.
+    internal static MoneyRevenueResourceNeutralTerminalRouteVerification VerifyHomeIngressSegment(
+        SnapshotEnvelope start, MoneyRevenueTerminalQueueTransitionProof[] transitions) => VerifyCore(
+            start, transitions, identity: null, HomeIngressOptions, targetLocation: string.Empty, requireMovement: true);
+
     private static MoneyRevenueResourceNeutralTerminalRouteVerification
         VerifyCore(
             SnapshotEnvelope start,

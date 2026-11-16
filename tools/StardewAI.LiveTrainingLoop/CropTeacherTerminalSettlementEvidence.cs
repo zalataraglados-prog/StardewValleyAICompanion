@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
 using StardewAI.GoalConditionedBootstrap;
@@ -89,6 +90,7 @@ internal static partial class CropTeacherTerminalSettlementEvidence
         var routes = new List<MoneyRevenueTerminalQueueTransitionProof>();
         var deposits = new List<MoneyRevenueTerminalQueueTransitionProof>();
         var home = new List<MoneyRevenueTerminalQueueTransitionProof>();
+        var checkpoints = new List<CropTeacherTerminalControlCheckpoint>();
         var previous = productionHead;
         var sequence = starts[0].index == 0 ? 0 : trace.Transitions[starts[0].index - 1].OwnerSequence;
         var run = suffix[0].NativeTransition.RunId;
@@ -109,7 +111,21 @@ internal static partial class CropTeacherTerminalSettlementEvidence
                 AfterSnapshotPath = native.AfterSnapshotPath, RunId = native.RunId, ExecutorVersion = native.ExecutorVersion,
                 SelectedCandidateId = native.SelectedCandidateId
             };
-            if (row.OperationKind == "terminal_shipping" && native.TransitionKind == "shipping_approach" && i == 0) routes.Add(transition);
+            var queue = artifacts.Read<ActionQueueEnvelope>(native.QueuePath);
+            var control = target.NativeVariants is not null &&
+                (row.OperationKind == "supporting_route" && native.TransitionKind == "supporting_route_to_sleep" &&
+                    queue.Items is [var item] && item.OptionId is "executor.wait_ticks" or "executor.close_menu" ||
+                 row.OperationKind == "control_recovery" && native.TransitionKind == "control_recovery" &&
+                    queue.Items is [var recovery] && recovery.OptionId == "executor.close_menu");
+            if (control)
+            {
+                var index = routes.Count + deposits.Count + home.Count;
+                if (checkpoints.Count > 0 && checkpoints[^1].BeforeTransitionIndex == index)
+                    checkpoints[^1] = checkpoints[^1] with { Transitions = checkpoints[^1].Transitions.Append(native).ToArray() };
+                else checkpoints.Add(new(index, [native]));
+            }
+            else if (row.OperationKind == "terminal_shipping" && native.TransitionKind == "shipping_approach" &&
+                (target.NativeVariants is null ? i == 0 : deposits.Count == 0 && home.Count == 0)) routes.Add(transition);
             else if (row.OperationKind == "terminal_shipping" && native.TransitionKind == "shipping_deposit" && home.Count == 0 && deposits.Count < target.RequiredQuantity) deposits.Add(transition);
             else if (row.OperationKind == "supporting_route" && native.TransitionKind == "supporting_route_to_sleep" && deposits.Count == target.RequiredQuantity) home.Add(transition);
             else Require(i == suffix.Length - 1 && row.OperationKind == "overnight_control" && native.TransitionKind == "native_day_rollover" &&
@@ -161,14 +177,19 @@ internal static partial class CropTeacherTerminalSettlementEvidence
             RevenueRecurrenceManifestPath = recurrenceManifest, RevenueRecurrenceReceiptPath = recurrencePath
         };
         var requestPath = target.NativeVariants is null ? await Emit("terminal-request", request).ConfigureAwait(false) :
-            await Emit("terminal-request", new CropTeacherNativeVariantTerminalRequest("crop_teacher_native_variant_terminal_request.v1", target, request)
-                { NativeControlTail = controlTail is { Length: > 0 } ? controlTail.Select(row => row.NativeTransition).ToArray() : null }).ConfigureAwait(false);
+            await Emit("terminal-request", new CropTeacherNativeVariantTerminalRequest(checkpoints.Count == 0 ?
+                "crop_teacher_native_variant_terminal_request.v1" : "crop_teacher_native_variant_terminal_request.v2", target, request)
+                {
+                    NativeControlTail = controlTail is { Length: > 0 } ? controlTail.Select(row => row.NativeTransition).ToArray() : null,
+                    NativeControlCheckpoints = checkpoints.Count == 0 ? null : checkpoints.ToArray()
+                }).ConfigureAwait(false);
         // The original builder owns all settlement math and its mandatory support verification.
         var proof = target.NativeVariants is null ? MoneyRevenueCropTerminalSettlementProofBuilder.Build(requestPath) :
             CropTeacherNativeVariantTerminalProof.Build(requestPath);
         Require(proof.Status == "verified_native_crop_terminal_settlement" && proof.NativeTerminalSettlementVerified &&
             !proof.FormalProductTrainingAuthorized && proof.SettledQuantity == target.RequiredQuantity &&
-            (target.NativeVariants is not null ? proof.SchemaVersion == "crop_teacher_native_variant_terminal_proof.v1" &&
+            (target.NativeVariants is not null ? proof.SchemaVersion == (checkpoints.Count == 0 ?
+                "crop_teacher_native_variant_terminal_proof.v1" : "crop_teacher_native_variant_terminal_proof.v2") &&
                 proof.SettledRevenue == target.PendingValueAt(target.RequiredQuantity) : proof.UnitPrice == target.UnitPrice && proof.SlotIndex == target.SlotIndex) &&
             proof.HarvestItemQualifiedId == target.QualifiedItemId &&
             proof.SettledRevenue >= retention.MinimumGrossRevenue && proof.TerminalActionAfterStateHash == final.StateHash,

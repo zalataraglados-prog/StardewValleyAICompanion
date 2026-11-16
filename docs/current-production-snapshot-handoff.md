@@ -1,5 +1,28 @@
 # Current Production Snapshot Handoff
 
+## Terminal Control Compatibility (228)
+
+Explicit native-variant v2 checkpoints retain the original control rows between
+approach/deposits/home/sleep. Reuse the old exact native-control kernel, including
+safe close-only independent recovery; normalize its role only in comparison.
+Waits are not home movement. The named segmented route entry reuses VerifyCore;
+final VerifyHomeIngress still requires arrival. Old v1/scalar/default behavior stays.
+Final scoped adjacent50/50(1m43s),zero skipped/logSHA
+b20247389c482cf4a50f2eba34f4c87eba226438e50899d60bf0cb2fc5293d5c.
+Includes complete declared v1/v2 terminal, interleaved waits/safe close, opt-in checkpoint
+rebuild, no-write replay and10 negative checkpoint cases; old default still rejects new types.
+Earlier native3 overlap50; no sum. First14 failed on NEW missing in_game_time;
+next36/50 passed,14 failed on NEW graph mirrors; then1/3 passed,2 failed on NEW stale time
+read ticks. Only fixture surfaces fixed; old stock/freshness/native guards unchanged.
+Declared fixtures are not native or whole-Teacher acceptance. Main remains terminal;
+owner150 and the same unsaved world/native3 are retained, no restart/redispatch.
+227 final6bbc15e4 OWN43832221624 SUCCESS2770(59s)/3714(9m16s),zero skipped;
+logSHA3e52946c3c064d199c8901c2336dd07e2949b41e1b183bf9e589cda73502b295.
+Peer normalmerge92336b4a same1156384f tracked tree, no provider invocation.
+Next: commit/own CI, then check the original owner and same-live
+entry before native continuation; original business/global composition/570/569 remain.
+No frozen replay/new Teacher gate/local-data commit/cleanup/deploy; formalfalse.
+
 ## Accepted Production Source Modes (227)
 
 FINAL refinement: consuming/transferring inventory does NOT imply sale-stock claims.
