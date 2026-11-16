@@ -28,11 +28,8 @@ public sealed partial class CropTeacherManagedSeedOwner
                 throw new IOException("Managed crop production evidence requires a separate owned output directory.");
             RequireDirectoryPath(output);
             RequireOutsideNativeSaveSlot(new[] { output }, options.NativeSaveBinding);
-            var nativeWork = combined?.SharedSourceReturns.Any(row => row.SourceReference?.AppliedNativeWorkQueue == true) == true;
-            var result = nativeWork ? await CropTeacherProductionEvidence.BuildJointNativeWorkAsync(combined!, output, write, retainSaleStock).ConfigureAwait(false) :
-                retainSaleStock ? await CropTeacherProductionEvidence.BuildJointRetainingSaleStockAsync(combined!, output, write).ConfigureAwait(false) :
-                combined is null ? await CropTeacherProductionEvidence.BuildAsync(trace, output, write).ConfigureAwait(false) :
-                await CropTeacherProductionEvidence.BuildJointAsync(combined, output, write).ConfigureAwait(false);
+            var result = combined is null ? await CropTeacherProductionEvidence.BuildAsync(trace, output, write).ConfigureAwait(false) :
+                await CropTeacherProductionEvidence.BuildAcceptedJointAsync(combined, output, write, retainSaleStock).ConfigureAwait(false);
             ValidateState(); trace.ValidateInputsUnchanged();
             return result;
         }

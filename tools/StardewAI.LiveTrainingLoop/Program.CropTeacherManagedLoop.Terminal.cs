@@ -12,9 +12,10 @@ static partial class Program
         Path.Combine(Path.GetFullPath(evidenceDirectory), "production-terminal-" + Guid.NewGuid().ToString("N"));
 
     private static async Task<(string Path, CropTeacherTerminalShippingSelection Selection)> PrepareCropTeacherManagedTerminalAsync(CropTeacherManagedSeedOwner owner,
-        CropTeacherManagedProductionEvidence production)
+        CropTeacherManagedProductionEvidence production, bool joint = false)
     {
-        var selection = await owner.SelectTerminalShippingAsync(production, nativeVariants: true).ConfigureAwait(false);
+        var selection = joint ? await owner.SelectJointTerminalShippingAsync(production).ConfigureAwait(false) :
+            await owner.SelectTerminalShippingAsync(production, nativeVariants: true).ConfigureAwait(false);
         var output = Path.GetDirectoryName(production.ManifestPath)!;
         selection.ValidateInputsUnchanged();
         var result = Path.Combine(output, "shipping-selection.json");

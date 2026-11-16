@@ -17,6 +17,19 @@ internal static partial class CropTeacherProductionEvidence
     internal static Task<CropTeacherManagedProductionEvidence> BuildJointAsync(CropTeacherManagedJointProductionTrace trace,
         string output, Func<string, string, Task> write) => BuildCoreAsync(trace.CropTrace, trace.SharedSourceReturns, output, write);
 
+    internal static Task<CropTeacherManagedProductionEvidence> BuildAcceptedJointAsync(CropTeacherManagedJointProductionTrace trace,
+        string output, Func<string, string, Task> write, bool retainSaleStock = false)
+    {
+        var references = trace.SharedSourceReturns.Select(row => row.SourceReference).ToArray();
+        var nativeWork = references.Any(row => row?.AppliedNativeWorkQueue == true);
+        var consumption = references.Any(row => row?.SettledInventoryConsumption is not null);
+        var transferred = references.Any(row => row?.SettledMaterialTransfer is not null || row?.AcceptedMarker is not null);
+        return nativeWork ? BuildJointNativeWorkAsync(trace, output, write, retainSaleStock || consumption || transferred) :
+            consumption ? BuildJointRetainingSharedInventoryEffectsAsync(trace, output, write) :
+            transferred ? BuildJointRetainingTransferredSaleStockAsync(trace, output, write) :
+            retainSaleStock ? BuildJointRetainingSaleStockAsync(trace, output, write) : BuildJointAsync(trace, output, write);
+    }
+
     internal static Task<CropTeacherManagedProductionEvidence> BuildJointRetainingSaleStockAsync(CropTeacherManagedJointProductionTrace trace,
         string output, Func<string, string, Task> write) => BuildCoreAsync(trace.CropTrace, trace.SharedSourceReturns, output, write, retainSaleStock: true);
 

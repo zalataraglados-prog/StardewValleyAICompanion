@@ -1,5 +1,21 @@
 # Current Production Snapshot Handoff
 
+## Accepted Production Source Modes (227)
+
+Public joint owner now uses the common typed source-mode selector for existing native-work,
+transfer and cooking/inventory consumers. Joint terminal selection consumes existing active
+sale-stock claims only when bound to this plan; ordinary legacy/default consumers unchanged.
+Focused68/68(1m14s),zero skipped/logSHAdd5aa65bd2ad40401c2c3c421c99d7e49f4f3a693b1f981dbcd96e5c1148ac2a.
+The nonempty cooking fixture passes original compile/settlement/owner acceptance and the same
+production-mode entry consumes it, then still rejects unrun planting. This is NOT a whole mixed
+production/native settlement proof. Next JC-05 retains original control observations between
+approach/deposits; reuse original control verification, do not relabel waits as home movement
+or discard them. Main still terminal, original accepted150/world preserved. Own226CI43827385792
+SUCCESS2770(55s)/3712(10m41s),zero skipped/logSHA7ea4f9978bf05cc759a4a9e2e3221a99e52ca702a2b5c355f8fef6fb7707ce7b;
+peer normalmerge20c37002 samee51d539etree. Existing339/PR567/572 guarded publication now baseline226,
+UTF8/LF readback exact, corrected actual terminal Main/social-cap prose. Own227CI separate.
+Full goal/frozen evidence/formalfalse unchanged.
+
 ## Joint Selection And Continuation Alignment (226)
 
 Static audit preceded code. NEW joint selection restores before the composition gate,

@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using StardewAI.Contracts.Strategy;
@@ -55,17 +56,45 @@ public sealed partial class CropTeacherSeedTransferTests
         Assert.Null(final.PreparedInventoryConsumption);
         Assert.Equal(0, final.MaterialReservations.Single(row => row.ReservationId == "cooking-wood").SlotIndex);
         Assert.Equal(1, final.MaterialReservations.Single(row => row.ReservationId == "cooking-stone").SlotIndex);
-        var shared = Assert.Single((await owner.ReadJointProductionTraceAsync()).SharedSourceReturns);
+        var joint = await owner.ReadJointProductionTraceAsync();
+        var shared = Assert.Single(joint.SharedSourceReturns);
         var transition = shared.NativeTransition with { NativeSharedSource = shared.SourceReference };
         Assert.NotNull(shared.SourceReference.SettledInventoryConsumption); Assert.Null(shared.SourceReference.SettledMaterialTransfer);
         Assert.NotNull(shared.SourceReference.SettledConsumptionReferencePath); Assert.Null(shared.SourceReference.SettledTransferReferencePath);
         Assert.Throws<InvalidDataException>(() => MoneyRevenueCropNativeSharedSourceVerifier.VerifyWithTransferredSaleStock(transition));
         Assert.Equal(f.After.StateHash, MoneyRevenueCropNativeSharedSourceVerifier.VerifyWithSharedInventoryEffects(transition).AfterStateHash);
+        await VerifyAcceptedCookingProductionMode(joint);
         await owner.DisposeAsync();
         await using var reopened = await files.Open();
         await reopened.RestoreHeadAsync(f.Runtime.Client, files.Recovery, files.Post);
         Assert.Null(reopened.Pending); Assert.Equal(after, reopened.CurrentSnapshotPath);
         Assert.Single((await reopened.ReadJointProductionTraceAsync()).SharedSourceReturns);
         Assert.Equal(2, f.Runtime.Handler.Commits); Assert.Equal(1, f.Runtime.Handler.Settlements);
+    }
+
+    private static async Task VerifyAcceptedCookingProductionMode(CropTeacherManagedJointProductionTrace original)
+    {
+        var shared = Assert.Single(original.SharedSourceReturns);
+        // Only the foreign cooking source is an actual accepted fixture operation. A declared neighbor
+        // lets the common production entry check that source, then it MUST reject missing planting.
+        var neighbor = new CropTeacherManagedProductionTransition(1, "declared_original_neighbor",
+            shared.NativeTransition with { AfterSnapshotPath = shared.NativeTransition.BeforeSnapshotPath });
+        var trace = (CropTeacherManagedProductionTrace)typeof(CropTeacherManagedProductionTrace)
+            .GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic).Single().Invoke(
+                [original.CropTrace.NativeRunPlanPath, original.CropTrace.AcceptedSnapshotPath,
+                    original.CropTrace.AcceptedLedgerPath, new[] { neighbor }, original.CropTrace.InputHashes]);
+        var combined = new CropTeacherManagedJointProductionTrace(trace, [shared with { OwnerSequence = 2 }]);
+        var type = typeof(CropTeacherManagedSeedOwner).Assembly.GetType("StardewAI.LiveTrainingLoop.CropTeacherProductionEvidence")!;
+        var output = Path.Combine(Path.GetDirectoryName(trace.AcceptedSnapshotPath)!, "unrun-production-proof");
+        Func<string, string, Task> noWrite = (_, _) => throw new InvalidOperationException("Unrun crop production must not publish evidence.");
+        var old = (Task<CropTeacherManagedProductionEvidence>)type.GetMethod("BuildJointAsync", BindingFlags.Static | BindingFlags.NonPublic)!
+            .Invoke(null, [combined, output, noWrite])!;
+        Assert.Contains("Inventory consumption", (await Assert.ThrowsAsync<InvalidDataException>(() => old)).Message);
+        var current = (Task<CropTeacherManagedProductionEvidence>)type.GetMethod("BuildAcceptedJointAsync", BindingFlags.Static | BindingFlags.NonPublic)!
+            .Invoke(null, [combined, output, noWrite, false])!;
+        var missingProduction = await Assert.ThrowsAsync<InvalidDataException>(() => current);
+        Assert.Contains("no accepted original planting boundary", missingProduction.Message);
+        Assert.False(Directory.Exists(output));
+        trace.ValidateInputsUnchanged();
     }
 }
