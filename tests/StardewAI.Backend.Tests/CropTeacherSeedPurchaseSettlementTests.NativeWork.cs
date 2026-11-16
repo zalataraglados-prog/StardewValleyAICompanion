@@ -11,10 +11,12 @@ namespace StardewAI.Backend.Tests;
 
 public sealed partial class CropTeacherSeedPurchaseSettlementTests
 {
-    [Fact]
-    public async Task NativeSharedMailWorkRetainsOneDailyChoiceThroughApproachOpenCloseAndReopen()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task NativeSharedMailWorkRetainsOneDailyChoiceThroughApproachOpenCloseAndReopen(bool pendingCandidateOnTypedCompletion)
     {
-        var f = new NativeMailWorkFixture(); using var host = f.Runtime;
+        var f = new NativeMailWorkFixture { PendingCandidateOnTypedCompletion = pendingCandidateOnTypedCompletion }; using var host = f.Runtime;
         await using var owner = await f.Files.Open();
         f.Compile(owner.CurrentSnapshotPath);
         f.BindDecision(await SaveDaily(owner, f.Selection));
@@ -78,6 +80,42 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
     }
 
     [Theory]
+    [InlineData("mail_id")]
+    [InlineData("unexpected_field")]
+    public async Task NativeSharedTypedCompletionRejectsChangedIdentityBeforeSealing(string field)
+    {
+        var f = new NativeMailWorkFixture { PendingCandidateOnTypedCompletion = true }; using var host = f.Runtime;
+        await using var owner = await f.Files.Open(); f.Compile(owner.CurrentSnapshotPath);
+        for (var stage = 1; stage <= 3; stage++)
+        {
+            var before = LifecycleRead<SnapshotEnvelope>(owner.CurrentSnapshotPath);
+            var operation = await owner.AdmitNativeSharedSourceYieldAsync(f.Selection, f.ReceiptPath, f.AfterPath, f.RuntimePath);
+            async Task<JsonObject> Emit()
+            {
+                var output = await f.Emit(before);
+                if (stage == 3)
+                {
+                    var raw = JsonNode.Parse(File.ReadAllText(f.ReceiptPath))!;
+                    raw["objective_continuation"]![field] = "different-original-identity";
+                    raw["completed_objective_continuations"] = new JsonArray(raw["objective_continuation"]!.DeepClone());
+                    Fixture.Save(f.ReceiptPath, raw);
+                }
+                return output;
+            }
+            Task<JsonObject> Execute() => InvokeLive<Task<JsonObject>>("ExecuteCropTeacherSharedOperationAsync", f.Runtime.Client,
+                f.Runtime.LiveOptions, owner, operation, f.Selection.QueuePath, (Func<Task<JsonObject>>)Emit);
+            if (stage == 3)
+            {
+                await Assert.ThrowsAsync<InvalidDataException>(Execute);
+                Assert.Same(operation, owner.Pending);
+                Assert.False(File.Exists(Path.Combine(f.RuntimePath, "shared-source-native-result.json")));
+                await Assert.ThrowsAsync<InvalidOperationException>(() => owner.ClaimSharedSourceExecutionAsync(operation, f.Runtime.Client));
+            }
+            else { await Execute(); f.Compile(owner.CurrentSnapshotPath); }
+        }
+    }
+
+    [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public async Task NativeSharedWorkUsesOriginalRuntimeOrProductWireAndCannotDowngradeItsSourceConsumer(bool product)
@@ -137,6 +175,9 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
     [InlineData("incomplete_queue")]
     [InlineData("failed_step")]
     [InlineData("inconsistent_success")]
+    [InlineData("false_completed_move")]
+    [InlineData("completed_wrong_objective")]
+    [InlineData("completed_wrong_binding")]
     public async Task NativeSharedPendingWorkRejectsUnverifiedOrUnboundOutcomesWithoutReclaim(string fault)
     {
         var f = new NativeMailWorkFixture(); using var host = f.Runtime;
@@ -150,6 +191,14 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         if (fault == "incomplete_queue") raw["executed_item_count"] = 0;
         if (fault == "failed_step") raw["step_results"]![0]!["primitive_verification_status"] = "failed";
         if (fault == "inconsistent_success") raw["success"] = true;
+        if (fault is "false_completed_move" or "completed_wrong_objective" or "completed_wrong_binding")
+        {
+            raw["objective_continuation_completed"] = true;
+            if (fault == "completed_wrong_binding") raw["objective_continuation"]!["option_id"] = "another.option";
+            var completed = raw["objective_continuation"]!.DeepClone();
+            if (fault == "completed_wrong_objective") completed["kind"] = "another-kind";
+            raw["completed_objective_continuations"] = new JsonArray(completed);
+        }
         Fixture.Save(f.ReceiptPath, raw);
         await Assert.ThrowsAsync<InvalidDataException>(() => owner.VerifySharedSourceExecutionAsync(operation));
         Assert.Same(operation, owner.Pending); Assert.Equal(0, f.Runtime.Handler.Commits);

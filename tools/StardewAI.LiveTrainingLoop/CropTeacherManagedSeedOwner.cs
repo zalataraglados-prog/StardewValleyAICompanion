@@ -60,6 +60,7 @@ public sealed class CropTeacherManagedSeedOperation
     internal CropTeacherSiteClearanceCompilation? ClearanceStart { get; }
     internal CropTeacherSiteClearance? Clearance { get; set; }
     internal CropTeacherSharedSourceReturn? SharedSourceReturn { get; set; }
+    internal bool NativeSharedObjectiveCompleted { get; set; }
     internal CropTeacherSharedSourcePreparation? SharedSourceStart { get; set; }
     internal CropTeacherSharedTransferSupport? SharedTransferSupport { get; }
     internal CropTeacherSharedCookingSupport? SharedCookingSupport { get; init; }

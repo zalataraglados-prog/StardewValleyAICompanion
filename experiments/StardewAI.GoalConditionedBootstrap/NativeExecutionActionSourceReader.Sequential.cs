@@ -44,7 +44,7 @@ internal static partial class NativeExecutionActionSourceReader
             expectedExecutorVersion, candidateId, queue.StateHash,
             requireTeacherPreferenceStateRebound: false);
         Require(reasons.Length == 0, "Native sequential queue proof rejected: " + string.Join(",", reasons));
-        if (appliedNativeWork && !receipt.SelectedCandidateCompleted) VerifyPendingNativeWorkObjective(queue, raw);
+        if (appliedNativeWork && !receipt.SelectedCandidateCompleted) VerifyNativeWorkObjectiveContinuation(queue, raw);
         Require(SamePath(afterPath, RequiredFile(Text(raw, "after_snapshot_path"))) &&
             receipt.StepResults.All(step => !step.TeacherPreferenceStateRebound),
             "Native sequential source requires the original immutable precompiled queue and recorded final capture.");

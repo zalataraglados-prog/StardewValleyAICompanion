@@ -1,5 +1,15 @@
 # StardewAI 当前工作
 
+## 2026-11-16 原生已完成目标与记账接续（219）
+
+- 218自身CI43769809723成功（Core2770／Backend3601、零跳过），沙箱merge `826049f3` 同树。W原Release218／`9957c18b`／`ProofFarm_454459038` 实际接受6格耕地、播种和浇水；该W前缀没有清障。40的两个柜台候选经原编译器只选一个，move+interact已接受为owner37，实机越过218旧阻塞。41原wait／buy／close三帧全部applied/verified，20g→0，但新消费者把 `SelectedCandidateCompleted=false` 误当作typed购买目标也必须未完成，主循环退出；首日保存仍未完成。
+- 核对 `f3c9e6a7` 和原 `Program.RuntimeExecution`／classifier 后，仅适配新消费者：原完整执行回执允许typed目标已完成而较大候选标记仍pending。Native reader核原完成日志的一致性；owner复用**原** `ReadObjectiveContinuation`／`CompletesObjectiveContinuation` 核对真实已执行的终结动作，不复制各动作规则或改旧writer／flags。新情况才写入可选、受原native-result SHA封存的 `native_shared_objective_completed=true`，供实时退役和日计划历史重读共用；旧结果默认字节／判定不改，仍无作物生产／训练credit。
+- 新显式 `continue-crop-native-source-return` 仅接续原pending native-work、原claim和完整原生回执，复用Main的同一post-native后半段：验证、原source ingest、原journaled记账。无执行callback／reclaim／reload；缺原回执拒绝。记账已started时拒绝并交回**原只读resume/lookup**，旧保存读回和未认领mutation保护不放宽。不是第二执行器、planner或隐式live Main入口。
+- 最终单核低优先级相邻 **89/89（1分21秒）**，零跳过，含原烹饪／转移共享后半段、typed完成但候选pending、邮箱重开、伪完成移动／错身份／未知字段、已认领结果接续与报告目录回归；SHA `269b520017c5b4c66b7f37923608e257f969ab1e372138a9c5cfcef56fc300c9`。实际未改写41原件通过原三帧验证及同一完成核约14.279秒，报告SHA `4c04619615748af28586a59f694fd99b7df4a747a39e892f49c8022c565f645f`；该离线检查不推进owner。首轮helper静态调用编译错误、过严mail字段绑定已按原alias合同修正，失败留存，不作为游戏故障。
+- **实际接续已接受owner38**，source为原after41 `92b69cca...`，原native-result SHA `cb2f0b812e1a8ed3e084cf5149d016c61d01c0490913977dbef3a982a0e13f4f`；73份原执行请求哈希及全部execution文件名不变。命令随后因漏建最终报告父目录退出2，不能把整个命令报PASS，也**不得重跑已成功记账**；目录创建及测试已修。独立观察报告SHA `84d89a4e1c2594fa5aabb0f22cbed04f200cca28131101ec94aea1bac7f371cc`，原错误／回执不改写。现走原只读resume核接受head，不重买、不重开档。无新的日界、保存读回、21分或formal成功。
+- 原只读 `resume-crop-managed-owner` 已退出0，接受head／账本一致，报告SHA `d61314d5bff644a1876493ec5f5916bc0f2cb0fef31d9329922563b7fb3ba52b`；fresh/saved readback／完整runtime／formal仍false。单次实时full+fresh读取与接受38的完整state hash及tick14433一致，probe SHA `35bff27850681395c8b25282069924bf02f7490e88ad431148c02ed454b238cd`，不是轮询或保存读回证明。下一步显式接回**同一W现场／原不可变计划／原Main**，不重新开局，不伪造reload或改旧saved-readback默认；原只读恢复也不取得live派发权。
+- #550→#570→#569、#572开放、冻结19/19／11/11／169–172不变。07:01后按既定时间解除四归属进程的单核绑定，BelowNormal／隐藏／静音保留，无重启／改游戏速度；不是性能对比。新消费者在Debug验证，原game2396／backend7644／product3356仍Release218，Main16700已退出；不覆盖活Release。无API／部署／清理／raw提交；本提交自身CI另核。
+
 ## 2026-11-16 共享商店多端点续行修正（218）
 
 - 定稿PR #571已合入（`26ccc58d`）。217自身CI43763695136成功：Core2770（48秒）／Backend3595（8分15秒），零跳过，日志SHA `826cedf6f4b02b0e2631bb23fdf979cc166c4633c121ba3cca9c219ac6e8c497`；沙箱merge `0f414e24` 跟踪树与217一致。API额度暂停范围未变，无调用。

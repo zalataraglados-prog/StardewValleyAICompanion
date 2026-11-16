@@ -29,14 +29,22 @@ static partial class Program
         if (!SameSharedPath(ReadString(execution, "execution_path"), claim.Transition.ExecutionReceiptPath) ||
             !SameSharedPath(ReadString(execution, "after_snapshot_path"), claim.Transition.AfterSnapshotPath))
             throw new InvalidDataException("Selected global executor returned different original output paths.");
+        await CompleteCropTeacherSharedSourceReturnAsync(http, options, owner, operation).ConfigureAwait(false);
+        return execution;
+    }
+
+    private static async Task CompleteCropTeacherSharedSourceReturnAsync(HttpClient http, LiveTrainingOptions options,
+        CropTeacherManagedSeedOwner owner, CropTeacherManagedSeedOperation operation)
+    {
+        var transition = CropTeacherManagedSeedOwner.OriginalSupportingTransition(operation);
         var cookingSettlement = operation.SharedSourceStart!.RequiresConsumptionSettlement;
         var transferSettlement = operation.SharedSourceStart.RequiresTransferSettlement || cookingSettlement;
         if (transferSettlement)
         {
             _ = cookingSettlement ? operation.SharedSourceStart.ReadConsumptionSettlementRequest() : operation.SharedSourceStart.ReadTransferSettlementRequest();
             var transferInputs = new CropSeedRuntimeArtifacts(operation.SharedSourceStart.InputHashes);
-            await IngestCropTeacherManagedSnapshotAsync(http, options, claim.Transition.BeforeSnapshotPath, transferInputs).ConfigureAwait(false);
-            await IngestCropTeacherManagedSnapshotAsync(http, options, claim.Transition.AfterSnapshotPath, transferInputs).ConfigureAwait(false);
+            await IngestCropTeacherManagedSnapshotAsync(http, options, transition.BeforeSnapshotPath, transferInputs).ConfigureAwait(false);
+            await IngestCropTeacherManagedSnapshotAsync(http, options, transition.AfterSnapshotPath, transferInputs).ConfigureAwait(false);
             if (cookingSettlement)
                 await owner.SettleSharedCookingExecutionAsync(operation, http,
                     (diagnostic, request) => PostJournaledPortfolioSettlementAsync(http, options, diagnostic, request)).ConfigureAwait(false);
@@ -49,13 +57,12 @@ static partial class Program
         if (!transferSettlement)
         {
             var retained = new CropSeedRuntimeArtifacts(operation.SupportingTransition!.InputHashes);
-            await IngestCropTeacherManagedSnapshotAsync(http, options, claim.Transition.BeforeSnapshotPath, retained).ConfigureAwait(false);
-            await IngestCropTeacherManagedSnapshotAsync(http, options, claim.Transition.AfterSnapshotPath, retained).ConfigureAwait(false);
+            await IngestCropTeacherManagedSnapshotAsync(http, options, transition.BeforeSnapshotPath, retained).ConfigureAwait(false);
+            await IngestCropTeacherManagedSnapshotAsync(http, options, transition.AfterSnapshotPath, retained).ConfigureAwait(false);
         }
         await owner.RunSharedSourceReturnAsync(operation, http,
             (diagnostic, request) => PostJournaledPortfolioCommitAsync(http, options, diagnostic, request),
             (endpoint, raw) => PostJsonStringAsync(http, endpoint, raw, CancellationToken.None)).ConfigureAwait(false);
-        return execution;
     }
 
     private static CropTeacherDailySelection CompleteCropTeacherSharedSelection(CropTeacherManagedSeedOwner owner,
@@ -74,7 +81,7 @@ static partial class Program
             selection.OwnedCandidateIds.Contains(candidate.CandidateId) ||
             receipt.SelectedCandidateId != operation.SharedSourceStart.CandidateId)
             throw new InvalidDataException("Shared native completion does not retire this original selected decision.");
-        if (!receipt.SelectedCandidateCompleted)
+        if (!receipt.SelectedCandidateCompleted && !operation.NativeSharedObjectiveCompleted)
         {
             if (!operation.SharedSourceStart.AppliedNativeWorkQueue || candidate.ObjectiveContinuation is null)
                 throw new InvalidDataException("Only applied native work may retain its original pending objective.");

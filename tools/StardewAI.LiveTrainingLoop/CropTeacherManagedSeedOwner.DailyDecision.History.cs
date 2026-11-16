@@ -59,7 +59,9 @@ public sealed partial class CropTeacherManagedSeedOwner
                     !receipt.SelectedCandidateCompleted && selected.ObjectiveContinuation is null)
                     throw new InvalidDataException("Accepted native work changed its original selected objective.");
             }
-            if (receipt.SelectedCandidateCompleted && !completed.Add(selected.CandidateId))
+            var objectiveCompleted = receipt.SelectedCandidateCompleted || nativeWork &&
+                result["native_shared_objective_completed"]?.GetValue<bool>() == true;
+            if (objectiveCompleted && !completed.Add(selected.CandidateId))
                 throw new InvalidDataException("Accepted daily decision completes the same selected candidate twice.");
         }
         return completed;

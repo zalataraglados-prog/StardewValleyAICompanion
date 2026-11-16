@@ -55,7 +55,12 @@ public sealed partial class CropTeacherManagedSeedOwner
         if (scope is CropTeacherTerminalShipping terminal) AddTerminalOutcomeEvidence(terminal, result);
         if (scope is CropTeacherSiteTilling tilling) AddTillingOutcomeEvidence(tilling, operation.TillingStart!, result);
         if (scope is CropTeacherSiteClearance clearance) AddClearanceOutcomeEvidence(clearance, operation.ClearanceStart!, result);
-        if (scope is CropTeacherSharedSourceReturn) result["crop_production_credit_authorized"] = false;
+        if (scope is CropTeacherSharedSourceReturn shared)
+        {
+            result["crop_production_credit_authorized"] = false;
+            if (shared.AppliedNativeWorkQueue && VerifyCompletedSharedNativeObjective(operation, artifacts))
+                result["native_shared_objective_completed"] = true;
+        }
         result["native_crop_lifecycle_verified"] = false;
         result["teacher_preference_label_eligible"] = false;
         result["formal_product_training_authorized"] = false;
@@ -95,7 +100,11 @@ public sealed partial class CropTeacherManagedSeedOwner
         else if (outcome.Scope is CropTeacherTerminalShipping terminal) operation.Terminal = terminal;
         else if (outcome.Scope is CropTeacherSiteTilling tilling) operation.Tilling = tilling;
         else if (outcome.Scope is CropTeacherSiteClearance clearance) operation.Clearance = clearance;
-        else if (outcome.Scope is CropTeacherSharedSourceReturn shared) operation.SharedSourceReturn = shared;
+        else if (outcome.Scope is CropTeacherSharedSourceReturn shared)
+        {
+            operation.SharedSourceReturn = shared;
+            operation.NativeSharedObjectiveCompleted = outcome.Result["native_shared_objective_completed"]?.GetValue<bool>() == true;
+        }
         else throw new InvalidDataException("Owned crop outcome has an unsupported supporting type.");
         operation.RuntimeArtifactGuard = () =>
         { operation.OriginalStart!.ValidateInputsUnchanged(); outcome.Scope.ValidateInputsUnchanged(); outcome.Artifacts.Validate(); };

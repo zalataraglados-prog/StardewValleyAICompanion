@@ -35,6 +35,18 @@ if (args.Length > 0 && args[0] == "close-crop-seed-reservations")
     return;
 }
 
+if (args.Length > 0 && args[0] == "continue-crop-native-source-return")
+{
+    using var continuationHttp = new HttpClient { Timeout = TimeSpan.FromSeconds(180) };
+    try
+    {
+        var continuationOptions = LiveTrainingOptions.Parse(args.Skip(1).ToArray());
+        Console.WriteLine(await ContinueCropTeacherNativeSourceReturnAsync(continuationHttp, continuationOptions));
+    }
+    catch (Exception exception) { Console.Error.WriteLine(exception.Message); Environment.ExitCode = 2; }
+    return;
+}
+
 if (args.Length > 0 && args[0] == "resume-crop-managed-owner")
 {
     using var resumeHttp = new HttpClient { Timeout = TimeSpan.FromSeconds(180) };

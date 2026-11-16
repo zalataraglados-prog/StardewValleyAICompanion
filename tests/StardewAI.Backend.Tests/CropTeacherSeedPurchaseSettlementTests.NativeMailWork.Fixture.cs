@@ -27,6 +27,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         internal string RuntimePath { get; private set; } = "";
         internal ActionQueueEnvelope Queue { get; private set; } = null!;
         internal int Stage { get; private set; }
+        internal bool PendingCandidateOnTypedCompletion { get; set; }
 
         internal void Compile(string sourcePath)
         {
@@ -115,13 +116,14 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 request.RunId, candidate, item.OptionId["executor.".Length..]);
             var objective = QueueReplanFilter.ReadObjectiveContinuation(JsonSerializer.SerializeToNode(item, JsonOptions)!.AsObject())!;
             var completed = QueueReplanFilter.CompletesObjectiveContinuation(JsonSerializer.SerializeToNode(item, JsonOptions)!.AsObject(), objective, "applied");
-            receipt.Success = receipt.SelectedCandidateCompleted = receipt.StepResults[0].SelectedQueueCandidateCompleted = completed;
+            receipt.Success = receipt.SelectedCandidateCompleted = receipt.StepResults[0].SelectedQueueCandidateCompleted =
+                completed && !PendingCandidateOnTypedCompletion;
             receipt.StepResults[0].AfterGameTick = after.GameTick; receipt.StepResults[0].AfterSnapshotPath = AfterPath;
             receipt.StepResults[0].ChangedFacts = JsonSerializer.SerializeToElement(facts, JsonOptions);
             var aggregate = JsonSerializer.SerializeToNode(receipt, JsonOptions)!.AsObject();
             aggregate["after_snapshot_path"] = AfterPath; aggregate["queue_progress_verified"] = true;
             aggregate["objective_continuation_completed"] = completed;
-            aggregate["objective_continuation"] = completed ? null : objective.DeepClone();
+            aggregate["objective_continuation"] = completed && !PendingCandidateOnTypedCompletion ? null : objective.DeepClone();
             aggregate["completed_objective_continuations"] = completed ? new JsonArray(objective.DeepClone()) : new JsonArray();
             aggregate["step_results"]![0]!["execution_path"] = resultPath;
             aggregate["step_results"]![0]!["execution_request_nonce"] = request.RequestNonce;

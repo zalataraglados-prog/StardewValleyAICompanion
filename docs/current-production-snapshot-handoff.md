@@ -1,5 +1,41 @@
 # Current Production Snapshot Handoff
 
+## Typed Objective Completion And Known Native Continuation (219)
+
+218 OWN43769809723 SUCCESS2770/3601; peer826049f3 same tree. W original
+Release218/9957c18b/ProofFarm_454459038 passed6tills/plant/water (no clearance).
+Actual40 matched2counter endpoints, selected1, move/interact accepted owner37.
+41 original wait/buy/close all applied+verified,20g->0; new f3c9e6a7 consumer
+wrongly rejected typed-complete=true while candidate-complete=false. Main exited.
+Keep old writer/classifier/executor intact. New consumer validates completion
+journal; owner uses ORIGINAL ReadObjectiveContinuation/CompletesObjectiveContinuation
+and seals optional native_shared_objective_completed=true ONLY for this formerly
+rejected shape. Same result feeds live retirement and hashed daily history.
+Explicit continue-crop-native-source-return reuses original Main's post-native
+suffix, no claim/execute/reload callback. Requires original pending native work;
+started bookkeeping still uses original readonly resume/lookup. No second engine.
+Final adjacent89/89(1m21s), SHA269b520017c5b4c66b7f37923608e257f969ab1e372138a9c5cfcef56fc300c9.
+Unchanged actual41 native3frames/canonical completion pass14.279s, reportSHA
+4c04619615748af28586a59f694fd99b7df4a747a39e892f49c8022c565f645f.
+Actual explicit continuation DID accept owner38/sourceafter41/native-resultSHA
+cb2f0b812e1a8ed3e084cf5149d016c61d01c0490913977dbef3a982a0e13f4f,
+then EXITED2 on missing FINAL REPORT parent directory. Directory creation/test
+fixed. NEVER retry the accepted mutation or label the original command PASS.
+ObservationSHA84d89a4e1c2594fa5aabb0f22cbed04f200cca28131101ec94aea1bac7f371cc
+proves73request hashes/all execution filenames unchanged, no native reissue.
+Original readonly resume TERMINAL0, head/ledger agree, reportSHA
+d61314d5bff644a1876493ec5f5916bc0f2cb0fef31d9329922563b7fb3ba52b.
+No fresh/saved readback/complete-runtime authority. ONE live full+fresh probe
+matches accepted38 FULL state hash/tick14433, SHA
+35bff27850681395c8b25282069924bf02f7490e88ad431148c02ed454b238cd.
+Next explicitly reattach original Main to SAME W scene/immutable plan, no new
+factory replay. First saved day/business still OPEN, no old-head swap/fake reload,
+no frozen13day replay, no weakening saved-readback defaults. Native3 processes
+2396/7644/3356 remain old Release218, Main16700 exited. Debug consumer only;
+own219 CI still required. Existing OwnedCooking warning unchanged. Quiet CPU
+affinity restriction released after07:01 without speed/restart changes.
+Original550->570->569/572OPEN/formalfalse/frozen acceptance unchanged.
+
 ## Shared Counter Alternative Selection (218)
 
 Finalized571 merged26ccc58d;217 OWN43763695136 SUCCESS Core2770/Backend3595,
