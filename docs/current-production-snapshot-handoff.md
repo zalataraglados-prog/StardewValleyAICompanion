@@ -1,5 +1,26 @@
 # Current Production Snapshot Handoff
 
+## Actual Same-World Continuation (229, Main Live)
+
+Behavioral source694a2e6c OWN43837670343 SUCCESS2770(37s)/3728(7m24s),zero skipped;
+logSHA89d605ec1a2425ddb81708284ab4326cd3711f874dc5e34374bdcb586f799f46.
+Peer4711fe20 sameef717c53 trackedtree. Subsequent progress notes are docs-only, not a runtime rebuild.
+SAME Main24288/start17:26:33 from originalowner150/84plan/native21848-7644-3356.
+Original history reopen took~18m24s. Entry report owner/reload-entry-1dd1ca72e6ff4345a08f19d87c6290dd/
+same-live-continuation.json SHAa25ac8bebad46b030ce3160819bee24d54dfaf475174ec885f15087ffb544947:
+12hashes unchanged/exact_state/tick42215,accepted+livefa310d12...,entrydispatch/reloadfalse.
+Real156 BusStop->Town quest13 route accepted151/shared_native_step1/cropcredit-preferencefalse.
+164sleep accepted159 day7->8(spring8->9),6verified/0unverified tiles/native_save_boundarytrue,
+boundarySHAaa330898a82fd90730bd6268566b1d8b7bd54a4b8d42771cc7ca5650f54fe808.
+Then167/168watering and169daily quest route passed; by17:55 accepted166/Main still advancing.
+No225socialwait execution proof. Continue SAME Main to original full550/572 production/shipping/
+terminal/saved readback, originalstage5global composition,570->569; no wholeTeacher/train claim.
+Debug owned by Main: NO C# writes/builds/liveRelease overwrite/restart/coldload/frozen replay.
+Observe W/training/logs/live-training-progress.log + owner certificates, not stdout emptiness.
+After snapshots may be logical chunk manifests: use original ContentAddressedJsonArtifactReader,
+never mistake physical manifest fields for missing game state. Restore cost is a later targeted
+performance concern, not a new gate/stop condition. Formalfalse/noAPI/grants/cleanup/deploy/local-data.
+
 ## Terminal Control Compatibility (228)
 
 Explicit native-variant v2 checkpoints retain the original control rows between
