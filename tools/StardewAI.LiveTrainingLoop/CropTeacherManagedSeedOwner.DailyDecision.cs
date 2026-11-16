@@ -13,7 +13,11 @@ public sealed record CropTeacherDailyDecisionReference(string Path, string Sha25
 
 internal sealed record CropTeacherManagedDailyDecision(int Iteration, int TotalDay, string GoalId,
     string SourceSnapshotPath, string PlanPath, string RankingPath, string[] OwnedCandidateIds,
-    CropTeacherDailyDecisionReference Reference, IReadOnlySet<string> CompletedForeignCandidateIds);
+    CropTeacherDailyDecisionReference Reference, IReadOnlySet<string> CompletedForeignCandidateIds)
+{
+    public IReadOnlyDictionary<string, JsonObject> ForeignObjectiveContinuations { get; init; } =
+        new Dictionary<string, JsonObject>(StringComparer.Ordinal);
+}
 
 public sealed partial class CropTeacherManagedSeedOwner
 {
@@ -140,8 +144,9 @@ public sealed partial class CropTeacherManagedSeedOwner
             value["total_day"]?.GetValue<int>() != SnapshotInt(source, "time", "total_days") ||
             owned.Any(string.IsNullOrWhiteSpace) || owned.Distinct(StringComparer.Ordinal).Count() != owned.Length || lease.Candidates.Count == 0)
             throw new InvalidDataException("Daily decision source/actor/plan/ownership is invalid.");
-        var completed = ReadAcceptedDailyCompletions(history, anchor, sourcePath, planPath, rankingPath, owned, lease);
+        var progress = ReadAcceptedDailyProgress(history, anchor, sourcePath, planPath, rankingPath, owned, lease);
         inputs.Validate();
-        return new(iteration, SnapshotInt(source, "time", "total_days"), decision.GoalId, sourcePath, planPath, rankingPath, owned, reference, completed);
+        return new(iteration, SnapshotInt(source, "time", "total_days"), decision.GoalId, sourcePath, planPath, rankingPath, owned, reference,
+            progress.Completed) { ForeignObjectiveContinuations = progress.Continuations };
     }
 }

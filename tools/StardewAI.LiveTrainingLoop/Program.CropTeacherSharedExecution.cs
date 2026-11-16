@@ -73,8 +73,9 @@ static partial class Program
         returned.ValidateInputsUnchanged();
         var bound = owner.ReadSharedSourceExecutionSelection(operation);
         var candidate = selection.Lease.CandidateAt(bound.SelectedQueueIndex);
-        var receipt = JsonSerializer.Deserialize<QueueExecutionReceiptEnvelope>(ContentAddressedJsonArtifactReader.ReadAllText(
-            CropTeacherManagedSeedOwner.OriginalSupportingTransition(operation).ExecutionReceiptPath), JsonOptions)!;
+        var rawReceipt = JsonNode.Parse(ContentAddressedJsonArtifactReader.ReadAllText(
+            CropTeacherManagedSeedOwner.OriginalSupportingTransition(operation).ExecutionReceiptPath))!.AsObject();
+        var receipt = rawReceipt.Deserialize<QueueExecutionReceiptEnvelope>(JsonOptions)!;
         if (!SameSharedPath(selection.SourceSnapshotPath, bound.DecisionSnapshotPath) ||
             !SameSharedPath(selection.PlanPath, bound.DecisionPlanPath) || !SameSharedPath(selection.RankingPath, bound.DecisionRankingPath) ||
             !SameSharedPath(owner.CurrentSnapshotPath, returned.AfterSnapshotPath) ||
@@ -85,10 +86,16 @@ static partial class Program
         {
             if (!operation.SharedSourceStart.AppliedNativeWorkQueue || candidate.ObjectiveContinuation is null)
                 throw new InvalidDataException("Only applied native work may retain its original pending objective.");
-            return selection;
+            var continuations = selection.ForeignObjectiveContinuations.ToDictionary(row => row.Key, row => row.Value, StringComparer.Ordinal);
+            continuations[candidate.CandidateId] = CropTeacherSharedCandidateSelection.ValidateContinuation(candidate,
+                rawReceipt["objective_continuation"] as JsonObject ??
+                throw new InvalidDataException("Accepted shared native progress lost its original continuation."));
+            return selection with { ForeignObjectiveContinuations = continuations };
         }
         var completed = new HashSet<string>(selection.CompletedForeignCandidateIds, StringComparer.Ordinal) { candidate.CandidateId };
-        return selection with { CompletedForeignCandidateIds = completed };
+        var remainingContinuations = selection.ForeignObjectiveContinuations.Where(row => row.Key != candidate.CandidateId)
+            .ToDictionary(row => row.Key, row => row.Value, StringComparer.Ordinal);
+        return selection with { CompletedForeignCandidateIds = completed, ForeignObjectiveContinuations = remainingContinuations };
     }
 
     private static bool SameSharedPath(string left, string right) =>

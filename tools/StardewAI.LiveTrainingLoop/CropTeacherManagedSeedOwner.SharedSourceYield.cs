@@ -138,7 +138,8 @@ public sealed partial class CropTeacherManagedSeedOwner
         record["shared_source_selection"]?.Deserialize<CropTeacherSharedSourceSelection>(JsonOptions)
         ?? throw new InvalidDataException("Shared source yield lacks its original selected decision.");
 
-    private SelectedQueueCandidateLock ReadSharedSourceDecision(CropTeacherSharedSourceSelection selection, CropSeedRuntimeArtifacts artifacts)
+    private SelectedQueueCandidateLock ReadSharedSourceDecision(CropTeacherSharedSourceSelection selection, CropSeedRuntimeArtifacts artifacts,
+        bool acceptedContinuation = false)
     {
         var paths = new[] { selection.DecisionSnapshotPath, selection.DecisionPlanPath, selection.DecisionRankingPath };
         if (paths.Any(path => string.IsNullOrWhiteSpace(path) || !Path.IsPathFullyQualified(path)))
@@ -148,7 +149,14 @@ public sealed partial class CropTeacherManagedSeedOwner
         var decision = artifacts.Read<SmallModelPlanEnvelope>(selection.DecisionPlanPath);
         var ranking = artifacts.Read<JsonObject>(selection.DecisionRankingPath);
         var selected = SelectedQueueDecisionLease.CreateFromPlan(decision, ranking).CandidateAt(selection.SelectedQueueIndex);
-        var nativeReadbackClock = selection.DecisionReference is not null && ValidateRetainedDailySelection(selection, original, current, selected.CandidateId);
+        var nativeReadbackClock = false;
+        if (selection.DecisionReference is not null)
+        {
+            var retained = ReadRetainedDailySelection(selection, original, current, selected.CandidateId);
+            nativeReadbackClock = retained.ClockReset;
+            if (acceptedContinuation)
+                selected = CropTeacherSharedCandidateSelection.WithAcceptedContinuation(selected, retained.Decision.ForeignObjectiveContinuations);
+        }
         if (selection.OwnedCandidateIds is null || selection.OwnedCandidateIds.Contains(selected.CandidateId, StringComparer.Ordinal) ||
             decision.StateHash != original.StateHash || decision.ExecutionMode != "training_singleplayer" ||
             original.SaveId.Value != current.SaveId.Value || original.PlayerId.Value != current.PlayerId.Value ||
@@ -162,7 +170,8 @@ public sealed partial class CropTeacherManagedSeedOwner
     {
         var selection = SharedSourceSelection(record);
         var artifacts = new CropSeedRuntimeArtifacts(new Dictionary<string, string>());
-        var selected = ReadSharedSourceDecision(selection, artifacts);
+        var nativeWork = record["shared_source_execution_protocol"]?.GetValue<string>() == NativeSharedWorkProtocol;
+        var selected = ReadSharedSourceDecision(selection, artifacts, nativeWork);
         if (new[] { selection.ModelPlanPath, selection.QueuePath, selection.EvidencePath }.Any(path =>
             string.IsNullOrWhiteSpace(path) || !Path.IsPathFullyQualified(path)))
             throw new InvalidDataException("Shared source selected decision requires absolute original paths.");
@@ -187,17 +196,22 @@ public sealed partial class CropTeacherManagedSeedOwner
             throw new InvalidDataException("Shared source yield availability belongs to another source.");
         var rows = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability, goal);
         var materialized = JsonSerializer.SerializeToNode(rows, JsonOptions)!.AsArray();
-        var views = record["shared_source_execution_protocol"]?.GetValue<string>() == NativeSharedWorkProtocol
+        var views = nativeWork
             ? SharedRetryWaitSelectionViews(model, queue, materialized, selected, current) : (Plan: model, Queue: queue);
-        var compiled = SelectCompiledSharedSourceObjective(views.Plan, views.Queue, materialized, selected);
+        var compiled = SelectCompiledSharedSourceObjectiveCore(views.Plan, views.Queue, materialized, selected, nativeWork);
         artifacts.Validate();
         return compiled;
     }
 
     private static SelectedQueueCandidateLock SelectCompiledSharedSourceObjective(SmallModelPlanEnvelope model,
-        JsonObject queue, JsonArray materialized, SelectedQueueCandidateLock selected)
+        JsonObject queue, JsonArray materialized, SelectedQueueCandidateLock selected) =>
+        SelectCompiledSharedSourceObjectiveCore(model, queue, materialized, selected, nativeWork: false);
+
+    private static SelectedQueueCandidateLock SelectCompiledSharedSourceObjectiveCore(SmallModelPlanEnvelope model,
+        JsonObject queue, JsonArray materialized, SelectedQueueCandidateLock selected, bool nativeWork)
     {
-        var matches = SelectedQueueCandidateMatcher.FilterMaterializedCandidates(materialized, selected);
+        var matches = nativeWork ? CropTeacherSharedCandidateSelection.FilterMaterializedCandidates(materialized, selected) :
+            SelectedQueueCandidateMatcher.FilterMaterializedCandidates(materialized, selected);
         var freshRanking = new JsonObject { ["ranked_event_candidates"] = matches };
         var fresh = SelectedQueueDecisionLease.CreateFromPlan(model, freshRanking);
         var mechanical = SelectedQueueDecisionLease.Create(queue, freshRanking);

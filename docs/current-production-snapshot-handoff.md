@@ -1,5 +1,23 @@
 # Current Production Snapshot Handoff
 
+## Joint Selection And Continuation Alignment (226)
+
+Static audit preceded code. NEW joint selection restores before the composition gate,
+reuses canonical quest identity for fresh untyped route endpoints, and carries accepted
+receipt cursors through in-memory state, owner replay, queue compilation and admission.
+Legacy exact matching, old compilers/executors and retry policy remain unchanged.
+Retain original macro decision / mechanical refresh / accepted outcome links separately;
+sealed native receipts are unchanged and deterministic continuations emit no new preference label.
+Full decision aggregation remains the existing #569 work, not claimed finished here.
+Final adjacent1309/1309(12m55s),zero skipped; first33/34 overlaps and its only failure was
+the NEW test's unsupported open-mail cursor-fingerprint assumption, corrected without old-code changes.
+Actual retained155 passes new selector + original compilers/budget, reportSHA
+9afd7f3916d4b3767d9995c7b48285dd20b061b6933c07464a35dc7fcbfb59a5;
+all original hashes unchanged, zero dispatch/owner advancement. Own source CI pending.
+Main remains terminal, accepted150/same native world retained. Next JC-04 aggregation modes
+and JC-05 control insertions; correct JC-05 native settle type is marked supporting_route_to_sleep,
+not the separate control_recovery operation. No frozen replay/new gate/provider/cleanup/deploy.
+
 ## Static Contract Audit Takes Precedence
 
 Latest owner instruction: audit the complete new joint-consumer contract chain before coding.

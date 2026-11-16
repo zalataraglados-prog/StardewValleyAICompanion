@@ -36,7 +36,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             var operation = await owner.AdmitNativeSharedSourceYieldAsync(f.Selection, f.ReceiptPath, f.AfterPath, f.RuntimePath);
             Assert.True(operation.IsSharedSourceReturn);
             var claimCalls = 0;
-            await InvokeLive<Task<JsonObject>>("ExecuteCropTeacherSharedOperationAsync", f.Runtime.Client,
+            var execution = await InvokeLive<Task<JsonObject>>("ExecuteCropTeacherSharedOperationAsync", f.Runtime.Client,
                 f.Runtime.LiveOptions, owner, operation, f.Selection.QueuePath, (Func<Task<JsonObject>>)(async () =>
                 { claimCalls++; return await f.Emit(before); }));
             Assert.Equal(1, claimCalls); Assert.Null(owner.Pending);
@@ -62,11 +62,29 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             }
             else
             {
-                Assert.Same(liveSelection, completedSelection);
+                Assert.NotSame(liveSelection, completedSelection);
+                var cursors = SelectionProperty<IReadOnlyDictionary<string, JsonObject>>(completedSelection, "ForeignObjectiveContinuations")!;
+                Assert.Single(cursors);
+                var raw = JsonNode.Parse(File.ReadAllText(f.ReceiptPath))!;
+                Assert.True(JsonNode.DeepEquals(raw["objective_continuation"], Assert.Single(cursors).Value));
                 Assert.Throws<InvalidDataException>(() => MoneyRevenueCropNativeSharedSourceVerifier.Verify(transition with
                     { NativeSharedSource = returned.SourceReference with { AppliedNativeWorkQueue = false } }));
             }
             liveSelection = completedSelection;
+            var receiptBeforeRecording = File.ReadAllBytes(f.ReceiptPath);
+            var outcomePath = await InvokeLive<Task<string>>("RecordCropTeacherSharedOutcomeAsync", f.Runtime.LiveOptions,
+                choices.Count + 1, owner, operation, liveSelection, execution);
+            Assert.Equal(receiptBeforeRecording, File.ReadAllBytes(f.ReceiptPath));
+            var outcome = JsonNode.Parse(File.ReadAllText(outcomePath))!;
+            Assert.Equal(original.DecisionRankingPath, outcome["decision_ranking_path"]!.GetValue<string>());
+            Assert.Equal(f.Selection.EvidencePath, outcome["mechanical_refresh_path"]!.GetValue<string>());
+            Assert.False(outcome["new_policy_preference_label_eligible"]!.GetValue<bool>());
+            Assert.True(outcome["decision_aggregation_required"]!.GetValue<bool>());
+            Assert.Equal(outcomePath, execution["joint_selection_outcome_path"]!.GetValue<string>());
+            var recording = InvokeLive<PolicyTrajectoryAppendBatchResult>("AppendPolicyDecisionTrajectories",
+                f.Runtime.LiveOptions, choices.Count + 1, execution, new TrainingDatasetAppendResult());
+            Assert.Equal(0, recording.AppendedCount);
+            Assert.Equal("joint_selection_outcome_retained_for_original_decision_aggregation", recording.FirstSkipReason);
             choices.Add(transition.SelectedCandidateId);
             var daily = (await ReadDaily(owner))!;
             Assert.Equal(original.DecisionReference, daily.GetType().GetProperty("Reference")!.GetValue(daily));
@@ -74,6 +92,10 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             else
             {
                 Assert.Empty(DailyCompleted(daily));
+                var restoredCursors = (IReadOnlyDictionary<string, JsonObject>)daily.GetType()
+                    .GetProperty("ForeignObjectiveContinuations")!.GetValue(daily)!;
+                Assert.True(JsonNode.DeepEquals(Assert.Single(restoredCursors).Value,
+                    Assert.Single(SelectionProperty<IReadOnlyDictionary<string, JsonObject>>(liveSelection, "ForeignObjectiveContinuations")!).Value));
                 f.Compile(owner.CurrentSnapshotPath);
             }
         }

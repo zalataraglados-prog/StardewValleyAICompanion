@@ -835,9 +835,8 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         CropTeacherOtherGoalPreparation? selectedOtherForExecution = null;
         if (options.UseJointDailyCalendar && managedOwner is not null && cropTeacherManagedOwner.TerminalSelection is null)
         {
-            if (cropStep.Stage == CropTeacherRunStageKinds.Complete)
-                cropTeacherManagedOwner.DailySelection = await RestoreCropTeacherDailySelectionAsync(managedOwner,
-                    cropStep.TotalDay, cropTeacherManagedOwner.DailySelection).ConfigureAwait(false);
+            cropTeacherManagedOwner.DailySelection = await RestoreCropTeacherDailySelectionAsync(managedOwner,
+                cropStep.TotalDay, cropTeacherManagedOwner.DailySelection).ConfigureAwait(false);
             if (CropTeacherRunPlanner.ShouldComposeDailyDispatch(cropStep,
                 cropTeacherManagedOwner.DailySelection?.TotalDay == cropStep.TotalDay))
             {
@@ -1708,6 +1707,8 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             cropTeacherManagedOwner.DailySelection = CompleteCropTeacherSharedSelection(cropTeacherManagedOwner.Current!,
                 sharedSourceOperationForExecution, cropTeacherManagedOwner.DailySelection ??
                     throw new InvalidDataException("Shared execution lost its original daily selection."));
+            await RecordCropTeacherSharedOutcomeAsync(options, iteration, cropTeacherManagedOwner.Current!,
+                sharedSourceOperationForExecution, cropTeacherManagedOwner.DailySelection, execution).ConfigureAwait(false);
             AppendProgress(options, "crop_teacher_joint_daily_other_goal_returned", iteration, lastStateHash, lastQueueId,
                 "shared_source_return_verified=true crop_production_credit=false policy_reranked=false");
         }

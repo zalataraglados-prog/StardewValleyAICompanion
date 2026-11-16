@@ -316,7 +316,8 @@ static partial class Program
         string stateHash,
         string effectiveGoalId,
         SelectedQueueCandidateLock selectedCandidate,
-        JsonObject? objectiveContinuation = null)
+        JsonObject? objectiveContinuation = null,
+        Func<JsonArray, SelectedQueueCandidateLock, JsonArray>? materializedFilter = null)
     {
         var effectiveContinuation = objectiveContinuation ??
             selectedCandidate.ObjectiveContinuation;
@@ -360,9 +361,8 @@ static partial class Program
         {
             ObjectiveContinuation = effectiveContinuation
         };
-        var selectedCandidates = SelectedQueueCandidateMatcher.FilterMaterializedCandidates(
-            materializedNodes,
-            effectiveLock);
+        var selectedCandidates = (materializedFilter ?? SelectedQueueCandidateMatcher.FilterMaterializedCandidates)(
+            materializedNodes, effectiveLock);
         var evidence = new JsonObject
         {
             ["schema_version"] = "selected_queue_candidate_refresh.v1",

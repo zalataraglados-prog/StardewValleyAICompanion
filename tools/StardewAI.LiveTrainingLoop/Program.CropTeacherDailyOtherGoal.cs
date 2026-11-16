@@ -17,8 +17,9 @@ static partial class Program
             return await PrepareCropTeacherSelectedSaleStockAsync(http, options, iteration, snapshot, selection, candidate,
                 owner ?? throw new InvalidOperationException("Selected sale stock preparation requires its current owner before mutation.")).ConfigureAwait(false);
         // Compile through the existing selected-candidate path, never through the crop executor.
+        candidate = CropTeacherSharedCandidateSelection.WithAcceptedContinuation(candidate, selection.ForeignObjectiveContinuations);
         var prepared = await BuildQueueFromSelectedCandidateAsync(http, options, snapshot.StateHash, selection.GoalId,
-            candidate).ConfigureAwait(false);
+            candidate, materializedFilter: CropTeacherSharedCandidateSelection.FilterMaterializedCandidates).ConfigureAwait(false);
         if (ReadString(prepared.Evidence["availability"]?.AsObject(), "state_hash") != snapshot.StateHash ||
             ReadString(prepared.Plan, "state_hash") != snapshot.StateHash ||
             ReadString(prepared.Queue, "state_hash") != snapshot.StateHash)

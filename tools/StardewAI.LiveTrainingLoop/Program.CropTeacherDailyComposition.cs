@@ -16,6 +16,8 @@ static partial class Program
         public string SourceSnapshotPath { get; init; } = string.Empty;
         public CropTeacherDailyDecisionReference? DecisionReference { get; init; }
         public IReadOnlySet<string> CompletedForeignCandidateIds { get; init; } = new HashSet<string>(StringComparer.Ordinal);
+        public IReadOnlyDictionary<string, JsonObject> ForeignObjectiveContinuations { get; init; } =
+            new Dictionary<string, JsonObject>(StringComparer.Ordinal);
     }
     private sealed record CropTeacherOtherGoalPreparation(SelectedQueueCandidateLock Candidate,
         string PlanPath, string QueuePath, string EvidencePath, string QueueStatus)
@@ -111,7 +113,8 @@ static partial class Program
             retained.PlanPath, retained.RankingPath)
         {
             SourceSnapshotPath = retained.SourceSnapshotPath, DecisionReference = retained.Reference,
-            CompletedForeignCandidateIds = retained.CompletedForeignCandidateIds
+            CompletedForeignCandidateIds = retained.CompletedForeignCandidateIds,
+            ForeignObjectiveContinuations = retained.ForeignObjectiveContinuations
         };
         artifacts.Validate();
         return restored;

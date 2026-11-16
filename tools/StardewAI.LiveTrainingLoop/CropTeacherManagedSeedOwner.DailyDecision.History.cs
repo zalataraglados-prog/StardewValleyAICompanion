@@ -9,11 +9,12 @@ namespace StardewAI.LiveTrainingLoop;
 
 public sealed partial class CropTeacherManagedSeedOwner
 {
-    private IReadOnlySet<string> ReadAcceptedDailyCompletions(
+    private (IReadOnlySet<string> Completed, IReadOnlyDictionary<string, JsonObject> Continuations) ReadAcceptedDailyProgress(
         (int Sequence, string Path, string Hash, JsonObject Certificate)[] history, int anchor,
         string sourcePath, string planPath, string rankingPath, string[] owned, SelectedQueueDecisionLease lease)
     {
         var completed = new HashSet<string>(StringComparer.Ordinal);
+        var continuations = new Dictionary<string, JsonObject>(StringComparer.Ordinal);
         foreach (var row in history.Where(row => row.Sequence > anchor &&
             row.Certificate["operation_kind"]?.GetValue<string>() == "shared_source_return"))
         {
@@ -41,7 +42,8 @@ public sealed partial class CropTeacherManagedSeedOwner
                 result["formal_product_training_authorized"]?.GetValue<bool>() != false ||
                 !hashes.TryGetValue(Path.GetFullPath(transition.ExecutionReceiptPath), out var receiptHash))
                 throw new InvalidDataException("Accepted daily completion lacks its original sealed native outcome.");
-            var receipt = ReadBoundPlanningRecord(transition.ExecutionReceiptPath, receiptHash).Deserialize<QueueExecutionReceiptEnvelope>(JsonOptions)!;
+            var rawReceipt = ReadBoundPlanningRecord(transition.ExecutionReceiptPath, receiptHash);
+            var receipt = rawReceipt.Deserialize<QueueExecutionReceiptEnvelope>(JsonOptions)!;
             var nativeWork = intent["shared_source_execution_protocol"]?.GetValue<string>() == NativeSharedWorkProtocol;
             var expectedCandidate = nativeWork ? transition.SelectedCandidateId : selected.CandidateId;
             if (receipt.SelectedCandidateId != expectedCandidate || transition.SelectedCandidateId != expectedCandidate ||
@@ -63,8 +65,13 @@ public sealed partial class CropTeacherManagedSeedOwner
                 result["native_shared_objective_completed"]?.GetValue<bool>() == true;
             if (objectiveCompleted && !completed.Add(selected.CandidateId))
                 throw new InvalidDataException("Accepted daily decision completes the same selected candidate twice.");
+            if (objectiveCompleted) continuations.Remove(selected.CandidateId);
+            else if (nativeWork)
+                continuations[selected.CandidateId] = CropTeacherSharedCandidateSelection.ValidateContinuation(selected,
+                    rawReceipt["objective_continuation"] as JsonObject ??
+                    throw new InvalidDataException("Accepted shared native progress lost its original continuation."));
         }
-        return completed;
+        return (completed, continuations);
     }
 
     private static JsonObject ReadBoundPlanningRecord(string path, string hash)
@@ -78,7 +85,10 @@ public sealed partial class CropTeacherManagedSeedOwner
     // An explicit persisted-decision reference may bridge a reset game clock ONLY through this
     // owner's already accepted saved-content readback. It grants no dispatch/retry permission.
     private bool ValidateRetainedDailySelection(CropTeacherSharedSourceSelection selection, SnapshotEnvelope original, SnapshotEnvelope current,
-        string candidateId)
+        string candidateId) => ReadRetainedDailySelection(selection, original, current, candidateId).ClockReset;
+
+    private (bool ClockReset, CropTeacherManagedDailyDecision Decision) ReadRetainedDailySelection(
+        CropTeacherSharedSourceSelection selection, SnapshotEnvelope original, SnapshotEnvelope current, string candidateId)
     {
         var history = ReadAcceptedPlanningCertificates().ToArray();
         var retained = ReadDailyDecisionReference(selection.DecisionReference!, history);
@@ -92,7 +102,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         var value = ReadBoundPlanningRecord(retained.Reference.Path, retained.Reference.Sha256);
         var anchor = value["owner_anchor_sequence"]!.GetValue<int>();
         var suffix = history.Where(row => row.Sequence > anchor).ToArray();
-        if (suffix.Length == 0 || suffix[0].Certificate["operation_kind"]?.GetValue<string>() != "saved_content_readback") return false;
+        if (suffix.Length == 0 || suffix[0].Certificate["operation_kind"]?.GetValue<string>() != "saved_content_readback") return (false, retained);
         var reloads = suffix.Where(row => row.Certificate["operation_kind"]?.GetValue<string>() == "saved_content_readback").ToArray();
         foreach (var row in reloads)
             if (row.Certificate["native_reload_verified"]?.GetValue<bool>() != true ||
@@ -104,6 +114,6 @@ public sealed partial class CropTeacherManagedSeedOwner
             loaded.SaveId.Value != current.SaveId.Value || loaded.PlayerId.Value != current.PlayerId.Value ||
             loaded.GameVersion != current.GameVersion || SnapshotInt(loaded, "time", "total_days") != retained.TotalDay || current.GameTick < loaded.GameTick)
             throw new InvalidDataException("Daily decision does not continue its accepted native load epoch.");
-        return true;
+        return (true, retained);
     }
 }
