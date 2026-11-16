@@ -1,6 +1,6 @@
 # Current Production Snapshot Handoff
 
-## Current: Full Native Terminal Proof Passed, Saved-Content Readback Running (234)
+## Current: Complete Managed Native Cycle Passed (234/235); Resume Original Stage5
 
 SAME11884 produced actual lifecycle/retention/production (201transitions,6plant/66water/6harvest,
 12rollovers/1resume). Manifest SHA0b0e1cdfef7e8e238f61ea140fb3ec8f401b84229af3665f6b70e423a1d15fde.
@@ -23,18 +23,38 @@ manifestSHAf9997d555e1836a21420480f9804eb219630b03e0d2de582c5dab565e6dda0c1.
 RecurrenceSHA80e016913a053c4335c1339f9bd4cacaa9ace02457f837954726eaf6bdb46b87
 verified money/total-earned0->1137 and ONE native shipping settlement.
 Original prefix2+remaining4, home/sleep, accepted head, inputs and saved bytes retained exactly.
-Proof process exited0; this is not yet saved-content acceptance or complete managed runtime.
+Proof process exited0. The subsequent original saved-content and full managed closeout also PASSED.
 
-NEXT LIVE PROCESS: original221 launcher -TerminalCloseout preflight passed, stopped ONLY
+Original221 launcher -TerminalCloseout preflight passed, stopped ONLY
 owned21848 and loaded SAME Spring14/07de save as game12688/start2026-11-16T21:14:05.1866924Z.
 SaveLoaded observed and save hash unchanged. Readback2652/start2026-11-16T21:14:45.0886560Z
-runs ORIGINAL resume-crop-managed-owner ONLY, rebuilding owner index, not a new day loop.
+runs ORIGINAL resume-crop-managed-owner ONLY, not a new day loop; it has now ENDED.
 Follow W/native-terminal-saved-readback-234/session.json and exact2652; its recorded exe=null
 is a launcher Process.Path observation gap, not proof that the live dotnet identity changed.
-No C# edits/builds or second Main while it holds Debug/owner; keep7644/3356 and all artifacts.
-Wait for real complete_managed_runtime_verified before claiming this business exit.
-Then original Stage5 actual global selection/resource/calendar composition ->570 ->569,
-formal=false; frozen evidence is not replayed, raw/local-data stay out of Git.
+Accepted235 saved-content/readload flags TRUE, SHAe3a1ad563d39e4d4435d40d6346da7cf819b7a75af3e8e41b705962bf8a948ef,
+linked to original234 and SAME native243 save report. Final managed-owner-resume.json in
+owner/reload-entry-19c5a1ab2c944ee681ce446ba8a3621b has SHA
+e72c5b17aeb087de042738fe8193de13d704b7dca6a249bdfcfc7c5f6d15d942;
+complete_managed_runtime_verified/native_saved_content_readback_verified/fresh_accepted_head_verified/
+terminal_settlement_verified TRUE; native_dispatch/preference/formal FALSE. stdout names this report,
+stderr empty,2652 absent. Its exact OS exit code was not independently captured; no rerun is needed.
+Original native state3e82... and loaded7c21... are separately retained, not falsely equated.
+Controller observation41160778f008124b34d07e0ec93ca80051b7e9409e4f0a78e1bc570a7d8590e2
+checked3353unchanged references/193,114,023bytes and actual4-file7,722,860byte07de save;
+same actor/day13/money1137/totalearned1137. No gameplay or original proof-kernel replay.
+Doc baselinedde06337 ownCI43958835010 SUCCESS2770/3799/0skip; behavior sourcebf0 unchanged.
+
+NEXT: close out/merge the stable managed branch, then ORIGINAL Stage5 actual global
+selection/resource/calendar composition ->570 ->569. Do not restart2652, old21848, or replay
+the13days/frozen roots. Keep game12688/backend7644/product3356 and original artifacts; Debug lease
+has been released. Fresh future decisions must use original fresh-source binding, not ignore
+offer-fingerprint drift or relabel this completed crop owner as a global route.
+W58accepted shared queues all declare social goal context; compiled model-output IDs are NOT
+policy invocation counts or goal completions, and the metadata inventory is NOT a global
+walnut/fishing source schedule. See existing Stage5 source selection, no second planner.
+Issue572eight fixes are reconciled in JOINT_CONSUMER_STATIC_CONTRACT_AUDIT_CN.md;
+issue339's exact oldv22 obligation is not satisfied merely by this newer W.
+Teacher21/formal training remain unproven/formal=false; raw/local-data stay out of Git.
 
 ## Current: Reuse Verified Shared Equivalent Result (234, Main Terminal)
 
