@@ -1,5 +1,17 @@
 # Current Production Snapshot Handoff
 
+## Current Boundary (231, Main Terminal)
+
+Main24288 ended before native dispatch188; original accepted owner182/native3/unsaved tail retained.
+Do NOT reuse owner150's entry proof or replay the thirteen-day history.
+See JOINT_CONSUMER_COMPATIBILITY_MATRIX_CN.md for original producer modes, conditional fields,
+219 retained queue checks (50 actual native-work consumer,153 common contract,16 original dynamic/prefix kernels),
+2 real no-action outcomes and1 inapplicable saved-readback record. No original artifact mutation or new dispatch.
+New joint layer reuses old unavailable-release/suppression rules; same-day reselection retains suppression,
+day change drops it, completion stays separate. Adjacent22/22 passed/zero skipped/19s; no long game restarted.
+21b ownCI43844533969 SUCCESS. New source ownCI must be checked separately.
+Original full production/terminal/global-composition/570/569 order and formal=false remain unchanged.
+
 ## Actual Same-World Continuation (229, Main Live)
 
 Behavioral source694a2e6c OWN43837670343 SUCCESS2770(37s)/3728(7m24s),zero skipped;

@@ -844,6 +844,14 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                     activeCropTeacherRunPlanRequest!, managedOwner, cropTeacherPreparedCommitmentIds, typedSnapshot,
                     cropTeacherManagedOwner.DailySelection);
                 cropTeacherManagedOwner.DailySelection = composed.Selection;
+                if (composed.ReplanWithoutDispatch)
+                {
+                    noProgressBackoff.Reset();
+                    AppendProgress(options, "crop_teacher_joint_daily_continuation_released", iteration, lastStateHash, string.Empty,
+                        "reason=no_available_continuation_candidate suppressed_until_day_change=true candidate_completed=false native_dispatch_performed=false policy_model_invoked=false");
+                    await DelayBeforeNextAttemptAsync(options, attemptOrdinal);
+                    continue;
+                }
                 if (!composed.ControlPreempted)
                 {
                     if (composed.Step is null)

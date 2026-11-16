@@ -18,6 +18,7 @@ static partial class Program
         public IReadOnlySet<string> CompletedForeignCandidateIds { get; init; } = new HashSet<string>(StringComparer.Ordinal);
         public IReadOnlyDictionary<string, JsonObject> ForeignObjectiveContinuations { get; init; } =
             new Dictionary<string, JsonObject>(StringComparer.Ordinal);
+        public IReadOnlyCollection<JsonObject> SuppressedForeignContinuations { get; init; } = Array.Empty<JsonObject>();
     }
     private sealed record CropTeacherOtherGoalPreparation(SelectedQueueCandidateLock Candidate,
         string PlanPath, string QueuePath, string EvidencePath, string QueueStatus)
@@ -27,7 +28,10 @@ static partial class Program
     }
     private sealed record ComposedCropDispatch(CropTeacherRunStep? Step, bool ControlPreempted,
         CropTeacherDailySelection? Selection = null, string BlockReason = "crop_teacher_joint_daily_required_batch_not_scheduled",
-        CropTeacherOtherGoalPreparation? OtherGoalPreparation = null);
+        CropTeacherOtherGoalPreparation? OtherGoalPreparation = null)
+    {
+        public bool ReplanWithoutDispatch { get; init; }
+    }
 
     private static async Task<ComposedCropDispatch> ComposeCropTeacherDailyDispatchAsync(HttpClient http, LiveTrainingOptions options,
         int iteration, MoneyRevenueCropNativeProductionRunPlan plan, MoneyRevenueCropNativeProductionRunPlanRequest request,
@@ -60,12 +64,13 @@ static partial class Program
             artifacts.Validate();
             if (refreshed is not null) return refreshed;
             if (next.Stage != CropTeacherRunStageKinds.ExecuteCropBatch)
-                return new(null, true); // The retained decision is exhausted; continue the original owner control.
+                return new(null, true, selection.SuppressedForeignContinuations.Count > 0 ? selection : null);
         }
         // Root completion consumes only a retained decision; it must not select another optional day plan.
         if (next.Stage == CropTeacherRunStageKinds.Complete) return new(null, true);
         CropTeacherDailyCompositionBinding? binding = null;
-        var built = await BuildQueueFromDailyPlanAsync(http, options, snapshot.StateHash, Array.Empty<JsonObject>(),
+        var suppressed = selection?.SuppressedForeignContinuations ?? Array.Empty<JsonObject>();
+        var built = await BuildQueueFromDailyPlanAsync(http, options, snapshot.StateHash, suppressed,
             candidateKindOverride: string.Empty, candidateIdOverride: string.Empty,
             prepareCompositionRequest: input =>
             {
@@ -84,7 +89,7 @@ static partial class Program
         var decision = typedPlan.Steps.Length == 0 ? null : new CropTeacherDailySelection(next.TotalDay, typedPlan.GoalId,
             SelectedQueueDecisionLease.CreateFromPlan(typedPlan, built.Ranking),
             binding.OwnedCandidateIds.ToHashSet(StringComparer.Ordinal), prefix + "-plan.json", prefix + "-ranking.json")
-            { SourceSnapshotPath = owner.CurrentSnapshotPath };
+            { SourceSnapshotPath = owner.CurrentSnapshotPath, SuppressedForeignContinuations = suppressed };
         if (decision is not null)
             decision = decision with { DecisionReference = await owner.SaveDailyDecisionAsync(iteration,
                 decision.SourceSnapshotPath, decision.PlanPath, decision.RankingPath, decision.OwnedCandidateIds).ConfigureAwait(false) };

@@ -35,9 +35,12 @@ static partial class Program
         prepared.Evidence["shared_source_return_required"] = true;
         prepared.Evidence["native_owner_interleaving_authorized"] = false;
         prepared.Evidence["formal_product_training_authorized"] = false;
+        var released = ReleaseUnavailableCropTeacherSelection(selection, candidate, prepared.Evidence, prepared.Queue);
         await WritePortfolioJournalFileAsync(planPath, prepared.Plan.ToJsonString(JsonOptions)).ConfigureAwait(false);
         await WritePortfolioJournalFileAsync(queuePath, prepared.Queue.ToJsonString(JsonOptions)).ConfigureAwait(false);
         await WritePortfolioJournalFileAsync(evidencePath, prepared.Evidence.ToJsonString(JsonOptions)).ConfigureAwait(false);
+        if (released is not null)
+            return new(null, false, released, "crop_teacher_joint_daily_continuation_released") { ReplanWithoutDispatch = true };
         return new(null, false, selection, "crop_teacher_joint_daily_selected_other_owner_required",
             new(candidate, planPath, queuePath, evidencePath, ReadString(prepared.Queue, "status"))
             {

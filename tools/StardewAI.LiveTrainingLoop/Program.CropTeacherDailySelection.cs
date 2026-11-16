@@ -44,7 +44,9 @@ static partial class Program
         foreach (var selected in selection.Lease.Candidates)
         {
             if (!selection.OwnedCandidateIds.Contains(selected.CandidateId) &&
-                selection.CompletedForeignCandidateIds.Contains(selected.CandidateId)) continue;
+                (selection.CompletedForeignCandidateIds.Contains(selected.CandidateId) ||
+                 QueueReplanFilter.FilterSuppressedContinuations(new JsonArray(selected.RankedCandidate.DeepClone()),
+                     selection.SuppressedForeignContinuations).Count == 0)) continue;
             if (selection.OwnedCandidateIds.Contains(selected.CandidateId))
             {
                 var original = selected.RankedCandidate.Deserialize<PolicyEventCandidatePrediction>(JsonOptions)!;
