@@ -7,7 +7,9 @@
 - 实际接受与现场同tick22521／save／actor／版本。排除原哈希本已忽略的机器缓存tick后，只有执行器空闲暂停见证null→合法v1（owner Harness／正确actor与game／epoch41）、game_paused false→true、native_control_gate_open及route_timing_ready true→false，其他世界／资源／位置／时间完全一致。新入口要求控制状态字面不变错位，不是旧执行器需要修改。
 - 复用 `84b866ba` 原 `HasVerifiedExecutorOwnedIdlePause`，验证owner／释放策略／epoch／身份／控制条件，再只在比较副本归一化对应四项。将原地形比较收在同一个`LiveObservationBoundary`，不保留旧私有别名或复制暂停判断；旧两参／只读／saved-load默认不变，原快照、hash、账本源不改。任一资源／位置／时间／其他控制字段变化、手动暂停或错见证仍拒绝，报告分别记录两hash与匹配方式。
 - 定向72项中71通过，1项在新增测试抵达入口前因旧文件库`File.Move UnauthorizedAccess`导致HTTP500；同二进制仅重测该`valid_epoch_refresh`项1/1通过，未改存储代码／重试策略，根因未据此虚构。两日志SHA为`4afd60eb2c81a230f6452bd0ae08d6c8cd25a8010a75794851b2e170c3a56897`／`c8cb9951b016893ed7ab7db89daafdbb643d4b41f5249eb9de3ff9d3272cfdde`。未经修改的实际80／22521快照通过同一比较核，报告SHA `c57bfc14f6d43bcfc9de381fdb6561bcaf43de01ad8f4626aef7bfe61b5190ae`，0派发／重载／owner推进；不把首轮标成72全绿。
-- **下一步：** 提交后复用同一个参数化现场启动脚本，从已接受80与同game21848／backend7644／product3356、原84计划接回Main；不要再记账80、重打83或load旧春4。完整#550／#572终局仍开放，再#570→#569；冻结19/19／11/11／169–172及formal=false不变。本提交自身CI另核，无API／清理／部署／raw入Git。
+- **原Main已实际接回：** 代码`450d7d6d`提交后，复用同一个参数化启动脚本，从原80／84计划与同game21848／backend7644／product3356恢复Main4036（04:40:36.6695047Z）。12:49:54真实入口报告SHA `6c9d357ce451c8069953d46b84f6cba0130f83b7cba57f402e83d06dc0eedf14`，匹配方式`executor_owned_idle_pause_refresh`，接受hash与现场hash分别保留，无入口派发／重载。84／86／88／90返家与原控制等待通过，92原生睡觉后owner89接受春4→春5保存，6格均验证；用原`NativeSaveBoundaryVerifier.Capture`实读4文件／7,136,397字节，SHA `12fd11371573fb29a76d491088ef48ac41461fab87a437d4f420a5b6f6e0ebb0`与接受边界一致。未重打83／再记账80或回旧保存；同一Main已继续次日返农场和95／96作物维护。
+- **代码自身CI已接受：** `450d7d6d`／`43805526173`成功，Core2770（56秒）／Backend3682（8分21秒）、零跳过，日志SHA `fb77124fdd353efef6c531faaa87a88a2aea39c67d69d10a241d0a77eba25064`；沙箱正常merge `cb13513b`与其跟踪树`4ecdfd29`一致。之后仅四份文档补记实际续行、保存与CI，不改C#／重跑冻结证据。
+- **下一步：** 沿同一Main4036完成原#550／#572生产、出货、终局保存读回，再#570→#569；这次日界通过不代替完整联合终局。冻结19/19／11/11／169–172及formal=false不变。活Main拥有Debug，不并发改C#／构建，不覆盖活Release。无API／清理／部署，raw、存档、local-data及二进制不入Git。
 
 ## 2026-11-16 等价动作按原协议续行（223）
 
