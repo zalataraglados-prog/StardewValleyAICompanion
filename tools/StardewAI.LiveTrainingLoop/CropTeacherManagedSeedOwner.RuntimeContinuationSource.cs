@@ -12,6 +12,8 @@ internal sealed record CropTeacherManagedContinuationSource(
     string LedgerPath)
 {
     public MoneyRevenueCropAcceptedSavedReadbackReference? ProcessReadback { get; init; }
+    public string AcceptedStateHash { get; init; } = string.Empty;
+    public string LiveWorldMatchKind { get; init; } = "exact_state";
 }
 
 public sealed partial class CropTeacherManagedSeedOwner
@@ -56,16 +58,22 @@ public sealed partial class CropTeacherManagedSeedOwner
                 throw new InvalidOperationException("Same-live metadata requires the recovered original head without a pending operation.");
             var accepted = Read<SnapshotEnvelope>(headSnapshotPath);
             var initial = Read<SnapshotEnvelope>(options.InitialSnapshotPath);
+            var exactState = live.StateHash == accepted.StateHash;
             if (!DateTimeOffset.TryParse(initial.RealTimestamp, out var originalCapturedAt) ||
-                live.SchemaVersion != "snapshot.v1" || live.StateHash != accepted.StateHash || live.GameTick != accepted.GameTick ||
+                live.SchemaVersion != "snapshot.v1" || live.GameTick != accepted.GameTick ||
                 live.SaveId.Value != saveId || live.PlayerId.Value != playerId || live.GameVersion != accepted.GameVersion ||
-                SnapshotHash.ComputeStateHash(live.State) != accepted.StateHash)
+                SnapshotHash.ComputeStateHash(live.State) != live.StateHash ||
+                !exactState && (processId is null || !SameLiveTerrainSpeedBoundary(accepted, live)))
                 throw new InvalidDataException("Same-live source differs from the original accepted world/actor/process lifetime.");
             var readback = processId is { } id && id > 0 && executablePath is { } path && Path.IsPathFullyQualified(path)
                 ? ReadAcceptedLiveProcessReadback(id, path, processStartedAt) : null;
             if (readback is null && processStartedAt > originalCapturedAt)
                 throw new InvalidDataException("Same-live process has no original initial lifetime or accepted native reload.");
-            var source = ReadOriginalContinuationMetadata() with { ProcessReadback = readback };
+            var source = ReadOriginalContinuationMetadata() with
+            {
+                ProcessReadback = readback, AcceptedStateHash = accepted.StateHash,
+                LiveWorldMatchKind = exactState ? "exact_state" : "native_terrain_speed_refresh"
+            };
             ValidateState();
             return source;
         }

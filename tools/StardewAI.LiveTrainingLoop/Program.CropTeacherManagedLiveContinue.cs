@@ -77,6 +77,7 @@ static partial class Program
                 ["executable_path"] = expected.ExecutablePath,
                 ["input_artifact_hashes"] = JsonSerializer.SerializeToNode(artifacts.Hashes, JsonOptions),
                 ["live_process_bound"] = true, ["accepted_world_matched"] = true,
+                ["accepted_state_hash"] = source.AcceptedStateHash, ["accepted_world_match_kind"] = source.LiveWorldMatchKind,
                 ["entry_native_dispatch_performed"] = false, ["native_reload_performed"] = false,
                 ["saved_content_readback_verified"] = false, ["formal_product_training_authorized"] = false
             };

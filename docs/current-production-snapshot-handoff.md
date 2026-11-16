@@ -1,5 +1,28 @@
 # Current Production Snapshot Handoff
 
+## Finalized Integration And Native Terrain Refresh (222)
+
+User confirms finalized571/controller integration; merge26ccc58d already ancestor,
+retain source-once inventory observation and explicit production modes, no duplicate merge.
+221 OWN43790852883 SUCCESS Core2770/Backend3645, zero skipped; peerfdbbe61d same221tree.
+Original source-return accepted56 without redispatch59/reload. Main24048 then EXITED
+before dispatch: same tick893/actor, native temporary terrain speed0->-1/scalar5->4;
+machine cache885->893 already excluded by ORIGINAL SnapshotHash. Decompiled Grass/
+HoeDirt collision and Farmer temporary reset confirm the narrow transient source.
+NEW named process entry validates native on-foot projection/finite nonpositive
+terrain speed/formula, compares ONLY those two derived values in a copy; every other
+state/control field, self hash, tick, identity and original accepted process lineage
+remain exact. Old2arg/default/executor/global hash unchanged; never rewrite snapshots/head.
+Report records both hashes and exact comparison kind. Final87/87(2m14s), zero skipped,
+includes571 cooking compaction/reserved sale stock/production modes and old/new entry;
+logSHA14390915bf36ef42786395d284f58c8366184e51cb65685997af65825b458fd9.
+Actual retained893 SAME comparison kernel PASS, reportSHA
+cce436fd1cb8b6605ef56b4718da183f11a547b4f43b09c8a6aa9a84b5ea4e75;
+0dispatch/owner advance, not process-lineage or whole-Main acceptance.
+NEXT SAME21848/7644/3356, owner56, immutable84plan, no cold reload of unsaved day1.
+Full550/572 production/shipping/terminal/saved readback stillOPEN then570->569,
+frozen19/19,11/11,169-172/formalfalse. Source222 ownCI required. NoAPI/rawGit/cleanup/deploy.
+
 ## Actual Saved Reload And Canonical Native Mail (221)
 
 220 final7d59a936 OWN43784145267 SUCCESS2770(35s)/3636(6m55s),zero skipped;
