@@ -59,11 +59,12 @@ public sealed partial class CropTeacherManagedSeedOwner
             var accepted = Read<SnapshotEnvelope>(headSnapshotPath);
             var initial = Read<SnapshotEnvelope>(options.InitialSnapshotPath);
             var exactState = live.StateHash == accepted.StateHash;
+            var matchKind = "exact_state";
             if (!DateTimeOffset.TryParse(initial.RealTimestamp, out var originalCapturedAt) ||
                 live.SchemaVersion != "snapshot.v1" || live.GameTick != accepted.GameTick ||
                 live.SaveId.Value != saveId || live.PlayerId.Value != playerId || live.GameVersion != accepted.GameVersion ||
                 SnapshotHash.ComputeStateHash(live.State) != live.StateHash ||
-                !exactState && (processId is null || !SameLiveTerrainSpeedBoundary(accepted, live)))
+                !exactState && (processId is null || !SameLiveObservationBoundary(accepted, live, out matchKind)))
                 throw new InvalidDataException("Same-live source differs from the original accepted world/actor/process lifetime.");
             var readback = processId is { } id && id > 0 && executablePath is { } path && Path.IsPathFullyQualified(path)
                 ? ReadAcceptedLiveProcessReadback(id, path, processStartedAt) : null;
@@ -72,7 +73,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             var source = ReadOriginalContinuationMetadata() with
             {
                 ProcessReadback = readback, AcceptedStateHash = accepted.StateHash,
-                LiveWorldMatchKind = exactState ? "exact_state" : "native_terrain_speed_refresh"
+                LiveWorldMatchKind = matchKind
             };
             ValidateState();
             return source;

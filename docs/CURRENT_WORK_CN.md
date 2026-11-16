@@ -1,5 +1,14 @@
 # StardewAI 当前工作
 
+## 2026-11-16 同现场入口复用原执行器暂停见证（224）
+
+- 223代码 `f1894d2b` 自身CI `43801742136` 成功：Core2770（58秒）／Backend3669（9分54秒），零跳过，日志SHA `f126afc3e68d127e5814b4116ae4682b27a7c1544a3acf139ba80f6d5848c653`；沙箱 `b8e9cc95` 与代码树 `02f5ad20` 一致。
+- 原known-outcome后半段23108已退出0，owner80接受：0原生verified步／1等价步、native-perfect／crop-credit／formal均false；原83与全部原请求SHA、执行文件名未变，无重打／重载。独立观察SHA `bd353e9296d96631f3e1decc3a4bf652a073e184218ffcefe9c0d3fc4b44150e`。之后Main4596在新派发前明确退出，80接受仍有效。
+- 实际接受与现场同tick22521／save／actor／版本。排除原哈希本已忽略的机器缓存tick后，只有执行器空闲暂停见证null→合法v1（owner Harness／正确actor与game／epoch41）、game_paused false→true、native_control_gate_open及route_timing_ready true→false，其他世界／资源／位置／时间完全一致。新入口要求控制状态字面不变错位，不是旧执行器需要修改。
+- 复用 `84b866ba` 原 `HasVerifiedExecutorOwnedIdlePause`，验证owner／释放策略／epoch／身份／控制条件，再只在比较副本归一化对应四项。将原地形比较收在同一个`LiveObservationBoundary`，不保留旧私有别名或复制暂停判断；旧两参／只读／saved-load默认不变，原快照、hash、账本源不改。任一资源／位置／时间／其他控制字段变化、手动暂停或错见证仍拒绝，报告分别记录两hash与匹配方式。
+- 定向72项中71通过，1项在新增测试抵达入口前因旧文件库`File.Move UnauthorizedAccess`导致HTTP500；同二进制仅重测该`valid_epoch_refresh`项1/1通过，未改存储代码／重试策略，根因未据此虚构。两日志SHA为`4afd60eb2c81a230f6452bd0ae08d6c8cd25a8010a75794851b2e170c3a56897`／`c8cb9951b016893ed7ab7db89daafdbb643d4b41f5249eb9de3ff9d3272cfdde`。未经修改的实际80／22521快照通过同一比较核，报告SHA `c57bfc14f6d43bcfc9de381fdb6561bcaf43de01ad8f4626aef7bfe61b5190ae`，0派发／重载／owner推进；不把首轮标成72全绿。
+- **下一步：** 提交后复用同一个参数化现场启动脚本，从已接受80与同game21848／backend7644／product3356、原84计划接回Main；不要再记账80、重打83或load旧春4。完整#550／#572终局仍开放，再#570→#569；冻结19/19／11/11／169–172及formal=false不变。本提交自身CI另核，无API／清理／部署／raw入Git。
+
 ## 2026-11-16 等价动作按原协议续行（223）
 
 - 222收尾 `1df1e4a9` 自身CI `43797299601` 成功：Core2770（59秒）／Backend3656（9分58秒），零跳过，日志SHA `5bbe989bfae584f469f1d02dc1c0eb0f32b87df8e40dcc9ba708145b1550aede`。沙箱正常merge `cdd0142d` 与其跟踪树 `2c54183f` 一致；未调用API。
