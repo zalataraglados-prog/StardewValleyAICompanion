@@ -41,6 +41,12 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         Assert.False(scope.CropProductionCreditAuthorized); Assert.False(scope.NativeCropLifecycleVerified);
         Assert.False(scope.TeacherPreferenceLabelEligible); Assert.False(scope.FormalProductTrainingAuthorized);
         Assert.Throws<InvalidDataException>(() => MoneyRevenueCropNativeSharedSourceVerifier.Verify(transition));
+        var lifecycle = LifecycleInvoke("LoadNativeWorkObservedTransition", transition);
+        LifecycleInvoke("ValidateQueueReceipt", lifecycle);
+        var ordinary = LifecycleInvoke("LoadTransition", transition with
+            { TransitionKind = "crop_actions", NativeSharedSource = null });
+        Assert.IsType<InvalidDataException>(Assert.Throws<TargetInvocationException>(() =>
+            LifecycleInvoke("ValidateQueueReceipt", ordinary)).InnerException);
         var acceptedPath = Path.Combine(f.Options.EvidenceDirectory, "operation-000001-accepted.json");
         var accepted = JsonNode.Parse(File.ReadAllText(acceptedPath))!;
         Assert.Equal(0, accepted["shared_verified_native_step_count"]!.GetValue<int>());
@@ -57,6 +63,10 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         await reopened.RestoreHeadAsync(f.Runtime.Client, f.Files.Recovery, f.Files.Post);
         Assert.Single((await reopened.ReadJointProductionTraceAsync()).SharedSourceReturns);
         Assert.Equal(commits, f.Runtime.Handler.Commits);
+        var inputGuard = Assert.IsType<Action>(lifecycle.GetType().GetProperty("SharedInputGuard")!.GetValue(lifecycle));
+        var changed = JsonNode.Parse(File.ReadAllText(f.ReceiptPath))!;
+        changed["queue_id"] = "changed-after-original-verification"; Fixture.Save(f.ReceiptPath, changed);
+        Assert.Throws<InvalidDataException>(inputGuard);
     }
 
     [Theory]

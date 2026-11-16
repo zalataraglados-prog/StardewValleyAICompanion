@@ -30,6 +30,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
             "Joint crop lifecycle changed the verified foreign source boundary.");
         scope.ValidateInputsUnchanged();
         return loaded with { NativeObserved = true, NativeSharedSource = true, JointObserved = true,
+            NativeWorkReceiptVerified = appliedNativeWork && request.NativeSharedSource!.AppliedNativeWorkQueue,
             SharedInputGuard = MoneyRevenueCropNativeSharedSourceVerifier.RetainInputs(request.NativeSharedSource!) };
     }
 

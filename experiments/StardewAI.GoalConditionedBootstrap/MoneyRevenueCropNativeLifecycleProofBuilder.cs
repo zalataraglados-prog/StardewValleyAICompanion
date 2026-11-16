@@ -304,6 +304,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         public bool NativeObserved { get; init; }
         public bool NativeNonProduction { get; init; }
         public bool NativeSharedSource { get; init; }
+        public bool NativeWorkReceiptVerified { get; init; }
         public bool JointObserved { get; init; }
         public Action? SharedInputGuard { get; init; }
         public string? NativePreparationPlanPath { get; init; }

@@ -1,5 +1,25 @@
 # Current Production Snapshot Handoff
 
+## Current: Reuse Verified Shared Equivalent Result (234, Main Terminal)
+
+Main1408 exited2 at2026-11-17T00:55:53+08 after real same-world entry and layout/capacity,
+before new dispatch. Of201 original lifecycle receipts, only index53/execution0083 is
+simulated_equivalent (original Prairie King policy). The shared-source kernel accepted
+it; lifecycle redundantly applied the ordinary native-only validator.
+
+Explicit v9/v10 applied-native shared loading now retains an in-memory-only verified-result
+marker. Reuse it while preserving original input guards/crop attribution and strict ordinary
+loaders; no wire field or retained whole-history snapshot graph. Red2failed/3negative-passed,
+then green5 and SAME-BINARY adjacent32/32,33seconds/zero skipped, overlapping scopes.
+LogSHA d6ae3fd6317f268171bdbcb288e14aaeaf6e2f95fca1b8172cc78baf40f6fe4d.
+This source's own CI and readonly original0083 seam check are next, not already accepted.
+
+Keep original21848/7644/3356, owner227/head234, UNSAVED6harvest/2ship, remaining4/pending437.
+Preserve partial production-terminal-87453aed51da4cdb8e3d4b5aaa536d31. Then current-head/DLL
+check and same-world original Main continuation: no coldload/redeposit/13-day replay/frozen
+rerun. Actual production/terminal/save pending, then original Stage5 global selection and
+resource/calendar composition ->570 ->569. No provider calls, raw/local-data commits or formal authority.
+
 ## Current: Accepted Ordinary Shipping Prefix (233, Main Stopped)
 
 This section supersedes the historical live-process descriptions below. Controller stopped
