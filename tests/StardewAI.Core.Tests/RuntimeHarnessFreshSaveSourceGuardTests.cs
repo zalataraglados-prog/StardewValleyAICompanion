@@ -335,10 +335,11 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             "--snapshot-artifact-mode\", \"content_addressed_gzip",
             calibration,
             StringComparison.Ordinal);
-        Assert.Contains(
-            "if ($CaptureGoldenWalnutFreshSaveEvidence -or $resumeCropTeacher)",
-            calibration,
-            StringComparison.Ordinal);
+        Assert.Equal(
+            2,
+            CountOccurrences(
+                calibration,
+                "if ($CaptureGoldenWalnutFreshSaveEvidence -or $resumeCropTeacher -or $UseManagedCropTeacher)"));
         Assert.Contains(
             "snapshot_artifact_mode =",
             calibration,
@@ -444,7 +445,7 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             calibration,
             StringComparison.Ordinal);
         Assert.Contains(
-            "if ($CaptureGoldenWalnutFreshSaveEvidence -or $resumeCropTeacher)",
+            "$arguments += $managedLoopArguments",
             calibration,
             StringComparison.Ordinal);
         Assert.Contains(

@@ -9,6 +9,7 @@
 - **当前实景是新产生、未保存的春14尾部：BusStop，08:20，有竹钓竿。** 原保存07de与闭环原件保留；不要按历史说明重载07de丢掉这段现场。只保留game12688/backend7644/product3356，没有运行中的Main。此局部接续不是全局Day-0来源证明或正式训练。
 - 静态定位到原全局新档校准入口未转发已验managed/联合日历开关，现仅补显式 `-UseManagedCropTeacher -JointDailyCalendar`，沿原fresh-save→Product校准→Main调用。默认不变，旧位置参数顺序不变；managed保留原隔离保存/收据及12项队列门，不允许把旧unmanaged resume当新owner。**不额外要求所有managed校准都开启Golden Walnut capture**；有/无capture均由原parser接纳。显式managed校准的机械回执不强求存在策略标签，旧普通模式仍要求原Product策略轨迹，不把机械记录晋升为训练标签。无第二个Planner、Executor或全局验证器。
 - 先红复现入口无managed参数，再最终41项参数/原parser检查通过；既有日目标转发相邻10项通过，均无游戏、无C#重建。新增入口尚无新档长跑证明，自身CI另记。下一步固定实际跨根路线的来源、数量、期限与资源/日历，按原第5步消费连续证据，再#570→#569；L1/Root冻结、formal=false、local-data不入Git不变。
+- 首次自身CI43981059477已通过上述转发检查，但Core源码守卫仍逐字匹配旧二条件，1失败/2769通过。仅更新该测试为核实两处三分支绑定及原参数转发，未修改旧执行器或删除保存门；定向同类9/9通过（201毫秒）。单独产物放在已忽略的 `artifacts/block237-core-guard`、TEMP/TMP显式E、2核，未覆盖原native Debug二进制。新提交CI另核，不把首次失败称为环境问题或已通过。
 
 ## 2026-11-17 睡眠后原账本读回重算（234续修）
 
