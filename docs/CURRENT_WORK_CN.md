@@ -4,9 +4,11 @@
 
 - 同一Main11884已生成真实完整生命周期、留存和生产清单：生命周期SHA `d9f6350dd40e73aa0c1ca21e26f7a16e469ae3fa1d974afee7c9b889debf273e`（201转换，6播种/66实际浇水/6收获，12日界/1接续）；留存SHA `b7595d5ce52ba84a73bec5a29868a5e91ade31ff13ed9925b459845f1bfb7967`，原232截点整批6；生产清单SHA `0b0e1cdfef7e8e238f61ea140fb3ec8f401b84229af3665f6b70e423a1d15fde`，完整保留原普通前缀。
 - 选择初始已出货2，owner228—231真实完成余4件，累计2→6、箱内1137。原生243随后睡眠，春13→14，玩家余额与累计收入均1137；保存4文件/7,722,860字节，SHA `07de1d18b23d5b5a2686f31bad292e99790608cc18d8e821713b577f76d8a123`，控制器用原Capture独立读盘一致。不是重打前缀、改分母或伪造结算。
-- Main02:50退出2，最新接受owner233、pending234为已执行的overnight_control。通用错误称supporting route，但不是返家/睡眠执行失败：原marker账本256仍active；后台GET按既有 `StrategyCommitmentReadReconciler` 正常将到期作物标completed，变成257并追加原完成历史。离线用原核对实际243重放，全部字段精确等于保留GET结果，原输入未改。
-- 新支持步骤执行/恢复及共享转移/烹饪的两个读后入口共用显式适配：绑定原快照state/save/player，再调用原读重算核，最后仍全量严格比较。旧RequireLedger、派发前权限、旧种子事务及后台/执行器不改，不忽略状态、历史、其他根或金额。先红1失败/6通过，再绿10/10，最终同二进制相邻98/98（1分12秒）、零跳过，范围重叠；日志SHA `7e65fe4ad7b4b2fb8760366d3dbce35754aed016f232645af606952ea085eb86`。本提交自身CI另核。
-- **唯一接续：** 先真实原件只读适配检查，再本提交CI和原 `RecoverPendingAsync` 的234后半段（durable lookup/Get/原核接受，不再sleep/ship/claim），然后原同现场Main的终局证明与保存内容读回。不得按旧owner227预检或从旧春13回档；现在已有春14原生保存。当前原game21848/backend7644/product3356保留，不能把实际保存等同于owner接受或完整终局通过。
+- 原243睡眠的owner234现已由原 `RecoverPendingAsync` 仅durable lookup/Get恢复接受，无重睡或新派发；接受SHA `cc6d0d6ce168d937fdcd5fa255e7420f9cd1b782062a1e5acf1ecf1b64237f06`。原marker256active与GET257completed由既有 `StrategyCommitmentReadReconciler` 全字段精确解释，原输入未改。新两个读后入口复用原核后仍全量严格比较，旧RequireLedger、派发前权限、事务、后台/执行器不改。
+- 行为源码 `bf0ea2f5` 自身CI `43939414863` 已成功：Core2770（1分5秒）/Backend3799（10分4秒）、零失败/跳过，日志SHA `907ef81bc8c2d542ce305658afaeebcde39c96f2e415a3e79631316c931036ae`。最终相邻98/98（1分12秒），与先红后绿范围重叠。保留协作树普通合并后与主仓库同跟踪树 `36b634643b46ad117e47bf6b685aa624136f9809`，未调用模型API。
+- Main14408在新动作前因同tick54855下的每日任务文案/派生指纹刷新退出。真实全状态对照及实时反编译原游戏getter确认延迟填充；原桥及原提交39e03c87先映射原字段、后读getter，任务身份守卫有用途。**不扩大忽略字段或改旧执行器/桥/全局哈希。** 全部动作已接受，终局只需要原历史证明，不必再接一个决策Main。
+- **真实完整终局证书已通过：** 原 `BuildTerminalSettlementEvidenceAsync` 完整核验原生产、2件普通前缀+4件余项、返家与原睡眠。证明v3状态 `verified_native_crop_terminal_settlement`，6次出货、数量6、收入1137、原生结算true/formal=false；证明SHA `051302372cd8c809d7baea51b538745e148b34371c8705ae29eafa30b39c6ab5`，清单SHA `f9997d555e1836a21420480f9804eb219630b03e0d2de582c5dab565e6dda0c1`。递推收入证明SHA `80e016913a053c4335c1339f9bd4cacaa9ace02457f837954726eaf6bdb46b87`，原收入/累计收入0→1137、1次原生结算。原接受头、输入及保存07de均未变，证明进程已退出0；不是重玩十三天或手写证明。
+- **唯一接续：保存内容读回。** 原启动器显式终局模式预检通过，才停止隔离game21848并从同一春14/07de存档加载game12688；SaveLoaded已观察、读盘哈希未变。后台2652（2026-11-16T21:14:45.0886560Z）只运行既有 `resume-crop-managed-owner`，不继续新一天；当前重开原owner索引，最终 `complete_managed_runtime_verified` 尚未产生。会话在协作目录W的 `native-terminal-saved-readback-234/session.json`；跟踪同一进程，不因观察超时重启。期间不改C#/构建或覆盖Debug，backend7644/product3356及全部原件保留。不得按旧owner227、旧春13或已退出21848预检；不能把终局结算证明等同于保存内容验收/Teacher21/开训。
 - 原第5步实际全局选线/资源日历→#570→#569不变，formal=false；冻结证据不重跑。诊断仅本地保留，无API调用，原回执/存档/日志/local-data不入Git；游戏与测试临时目录均显式E盘。
 
 ## 2026-11-17 联合生命周期复用原等价回执验证（234）
