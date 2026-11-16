@@ -1,5 +1,21 @@
 # Current Production Snapshot Handoff
 
+## Static Contract Audit Takes Precedence
+
+Latest owner instruction: audit the complete new joint-consumer contract chain before coding.
+Audit baseline e80bef81; no C# edits, builds, new tests, Main restart or redispatch in this audit.
+144 tracked files / 1553 syntax-gate inventory is not a semantic pass for every gate.
+See [findings, old-contract constraints and repair order](JOINT_CONSUMER_STATIC_CONTRACT_AUDIT_CN.md).
+Six confirmed integration findings: daily selection restore ordering, physical-route vs objective
+identity, dynamic continuation loss, production mode routing, terminal control recovery,
+and deterministic refresh vs original policy ranking provenance. Adapt NEW consumers only.
+Main19088 entered accepted134/exact_state, but actual139 was route_home, NOT social retry wait;
+147 slept, 153 crossed Farm->BusStop, 155 filtered the valid next quest route to an empty queue
+and exited. Preserve the same native processes/unsaved world and all retained artifacts;
+do not automatically relaunch or coldload. Own e80 CI43814275017 SUCCESS2770/3701, zero skips;
+peer0e5f880c same tracked tree. This is NOT full joint/Teacher21/training success.
+Original frozen evidence and stage5 / #570 -> #569 sequence remain unchanged, formal=false.
+
 ## Original Bounded Social Retry Wait (225)
 
 224final9be7acbe OWN43807326309 SUCCESS2770(34s)/3682(7m47s),zero skipped;
