@@ -19,9 +19,10 @@ public sealed partial class CropTeacherManagedTerminalEvidenceTests
     private static readonly Lazy<Task<Golden>> CloseControlGolden = new(() => CreateControlGolden(true));
     private static readonly Lazy<Task<Golden>> PlainNativeGolden = new(() => CreateControlGolden(false, includeControls: false));
 
-    private static async Task<Golden> CreateControlGolden(bool closeFirst, bool includeControls = true)
+    private static async Task<Golden> CreateControlGolden(bool closeFirst, bool includeControls = true, bool nativeWireSurface = false)
     {
-        var f = new CropTeacherProductionEvidenceTests.Fixture(nativeTerminalSurface: true, initialSafeMenu: closeFirst);
+        var f = new CropTeacherProductionEvidenceTests.Fixture(nativeTerminalSurface: true, initialSafeMenu: closeFirst,
+            nativeWireSurface: nativeWireSurface);
         var production = await f.Build();
         var retentionPath = Assert.Single(production.OutputRetentionProofPaths);
         var retention = Read<MoneyRevenueCropOutputRetentionProof>(retentionPath);
@@ -42,13 +43,25 @@ public sealed partial class CropTeacherManagedTerminalEvidenceTests
         Directory.CreateDirectory(root);
         var transitions = f.Transitions.ToList();
         var previous = retention.AfterSnapshotPath;
-        const string run = "declared-managed-terminal-controls";
+        var run = nativeWireSurface ? "declared-observed-terminal" : "declared-managed-terminal-controls";
         void Add(ActionQueueEnvelope queue, SnapshotEnvelope after, string candidate, string operation, string kind, string primitive)
         {
             Assert.True(queue.Status == "pending" && queue.Items.All(row => row.Status == "pending"), JsonSerializer.Serialize(queue, JsonOptions));
             var time = JsonNode.Parse(after.State["time"].GetRawText())!;
             time["time"]!["read_at_tick"] = after.GameTick;
             after.State["time"] = JsonSerializer.SerializeToElement(time);
+            if (nativeWireSurface)
+            {
+                CropTeacherNativeSupportFixture.CompleteEnvelopeMetadata(after, "declared.observed.terminal");
+                foreach (var domain in after.State.Keys.ToArray())
+                {
+                    var fields = JsonNode.Parse(after.State[domain].GetRawText())!.AsObject();
+                    foreach (var field in fields)
+                        if (field.Value is JsonObject envelope && envelope.ContainsKey("status"))
+                            envelope["read_at_tick"] = after.GameTick;
+                    after.State[domain] = JsonSerializer.SerializeToElement(fields);
+                }
+            }
             after.StateHash = SnapshotHash.ComputeStateHash(after.State);
             var prefix = Path.Combine(root, "native-" + transitions.Count);
             var queuePath = prefix + "-queue.json"; var receiptPath = prefix + "-receipt.json"; var afterPath = prefix + "-after.json";
@@ -127,9 +140,12 @@ public sealed partial class CropTeacherManagedTerminalEvidenceTests
             after.State["player"] = JsonSerializer.SerializeToElement(player);
             CropTeacherProductionEvidenceTests.SynchronizeDeclaredTerminalStock(after);
             after.StateHash = SnapshotHash.ComputeStateHash(after.State);
-            var queue = MoneyCropTeacherFixture.Create<ActionQueueEnvelope>("MoneyCropShippingDepositQueue", current, target.QualifiedItemId,
-                target.UnitPrice, "deposit-" + index);
-            Add(queue, after, "candidate.deposit-" + index, "terminal_shipping", "shipping_deposit", "ship_inventory_item_to_bin");
+            var model = nativeWireSurface ? CropTeacherTerminalShipping.Preparation.BuildOriginalAction(current,
+                target with { AcceptedDepositCount = index }) : null;
+            var queue = model is null ? MoneyCropTeacherFixture.Create<ActionQueueEnvelope>("MoneyCropShippingDepositQueue", current, target.QualifiedItemId,
+                target.UnitPrice, "deposit-" + index) : new ActionQueueCompiler().Compile(model, current);
+            Add(queue, after, model is null ? "candidate.deposit-" + index : model.ModelOutputId["model-output:".Length..],
+                "terminal_shipping", "shipping_deposit", "ship_inventory_item_to_bin");
             if (includeControls) Control();
         }
         var ingress = MoneyCropTeacherFixture.Create<object>("BuildMoneyCropHomeIngressTransition", root, "home", current);

@@ -8,7 +8,7 @@ namespace StardewAI.LiveTrainingLoop;
 
 internal sealed partial class CropTeacherTerminalShippingSelection
 {
-    private static CropTeacherObservedShippingPrefix? ReadObservedPrefix(JsonObject manifest, string[] proofs, string head)
+    internal static CropTeacherObservedShippingPrefix? ReadObservedPrefix(JsonObject manifest, string[] proofs, string head)
     {
         if (manifest["observed_shipping_prefixes"] is null) return null;
         var all = manifest["observed_shipping_prefixes"]!.Deserialize<CropTeacherObservedShippingPrefix[]>(CropTeacherManagedSeedOwner.JsonOptions);

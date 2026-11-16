@@ -83,14 +83,15 @@ public sealed partial class CropTeacherProductionEvidenceTests
         internal List<CropTeacherManagedProductionTransition> Transitions { get; } = [];
 
         internal Fixture() : this(Golden.Value) { }
-        internal Fixture(bool nativeTerminalSurface, bool initialSafeMenu = false) :
-            this(null, nativeTerminalSurface: nativeTerminalSurface, initialSafeMenu: initialSafeMenu) { }
+        internal Fixture(bool nativeTerminalSurface, bool initialSafeMenu = false, bool nativeWireSurface = false) :
+            this(null, nativeTerminalSurface: nativeTerminalSurface, initialSafeMenu: initialSafeMenu, nativeWireSurface: nativeWireSurface) { }
         internal Fixture(int tileCount, string commitmentId) : this(null, tileCount, commitmentId) { }
         internal Fixture(int tileCount, string commitmentId, bool reserveSaleStock, int unreservedSurplus = 0) :
             this(null, tileCount, commitmentId, reserveSaleStock, unreservedSurplus) { }
 
         private Fixture(Fixture? template, int tileCount = 2, string commitmentId = "declared.managed.production",
-            bool reserveSaleStock = false, int unreservedSurplus = 0, bool nativeTerminalSurface = false, bool initialSafeMenu = false)
+            bool reserveSaleStock = false, int unreservedSurplus = 0, bool nativeTerminalSurface = false, bool initialSafeMenu = false,
+            bool nativeWireSurface = false)
         {
             if (template is not null)
             {
@@ -133,6 +134,17 @@ public sealed partial class CropTeacherProductionEvidenceTests
             var player = JsonNode.Parse(current.State["player"].GetRawText())!.AsObject();
             foreach (var field in JsonNode.Parse(daily.State["player"].GetRawText())!.AsObject()) player[field.Key] = field.Value!.DeepClone();
             current.State["player"] = JsonSerializer.SerializeToElement(player);
+            if (nativeWireSurface)
+            {
+                CropTeacherNativeSupportFixture.CompleteResources(current,
+                    current.State["player"].GetProperty("money").GetProperty("value").GetInt32());
+                current.State["environment"] = JsonSerializer.SerializeToElement(new
+                {
+                    training_run_id = new { status = "available", value = "declared-observed-terminal" },
+                    training_mode = new { status = "available", value = "1" },
+                    save_isolation_path = new { status = "available", value = "isolated-observed-terminal-fixture" }
+                });
+            }
             if (tileCount != 2)
             {
                 // Opt-in original refill-reader inputs. The two-tile shared golden is unchanged.
@@ -152,6 +164,14 @@ public sealed partial class CropTeacherProductionEvidenceTests
             {
                 object[] args = { root, nativeTransitions, current, day, sequence, option, xs, target, false };
                 current = MoneyCropTeacherFixture.CreateSnapshot("AddLifecycleTransition", args); sequence = (int)args[4];
+                if (nativeWireSurface)
+                {
+                    var native = nativeTransitions[^1] with { RunId = "declared-observed-terminal" };
+                    nativeTransitions[^1] = native;
+                    var receipt = Read<QueueExecutionReceiptEnvelope>(native.ExecutionReceiptPath);
+                    receipt.RunId = native.RunId;
+                    File.WriteAllText(native.ExecutionReceiptPath, JsonSerializer.Serialize(receipt, JsonOptions));
+                }
                 if (option == "executor.harvest_crop")
                 {
                     var playerState = JsonNode.Parse(current.State["player"].GetRawText())!;
@@ -167,6 +187,15 @@ public sealed partial class CropTeacherProductionEvidenceTests
                     }
                     current.State["player"] = JsonSerializer.SerializeToElement(playerState);
                     if (nativeTerminalSurface) AddTerminalControlSurface(current, initialSafeMenu);
+                    if (nativeWireSurface)
+                    {
+                        var terminalActor = JsonNode.Parse(current.State["player"].GetRawText())!;
+                        var bin = current.State["farm"].GetProperty("shipping_bins").GetProperty("value")[0];
+                        terminalActor["tile_x"]!["value"] = bin.GetProperty("interaction_stand_tile_x").GetInt32();
+                        terminalActor["tile_y"]!["value"] = bin.GetProperty("interaction_stand_tile_y").GetInt32();
+                        current.State["player"] = JsonSerializer.SerializeToElement(terminalActor);
+                        CropTeacherNativeSupportFixture.CompleteEnvelopeMetadata(current, "declared.observed.terminal");
+                    }
                     if (reserveSaleStock)
                     {
                         var graphState = JsonNode.Parse(current.State["farm"].GetRawText())!;
@@ -245,7 +274,7 @@ public sealed partial class CropTeacherProductionEvidenceTests
                     inventoryEffects ? "joint-shared-inventory-effects" : transferred ? "joint-transferred-sale-stock" : "joint-sale-stock"),
                     (Func<string, string, Task>)((path, json) => File.WriteAllTextAsync(path, json)) })!;
         }
-        private CropTeacherManagedProductionTrace Trace() => (CropTeacherManagedProductionTrace)typeof(CropTeacherManagedProductionTrace).GetConstructors(
+        internal CropTeacherManagedProductionTrace Trace() => (CropTeacherManagedProductionTrace)typeof(CropTeacherManagedProductionTrace).GetConstructors(
             BindingFlags.NonPublic | BindingFlags.Instance).Single().Invoke(new object[]
                 { nativePlanPath, finalSnapshotPath, ledgerPath, Transitions.ToArray(), hashes });
         internal void ChangeInput()

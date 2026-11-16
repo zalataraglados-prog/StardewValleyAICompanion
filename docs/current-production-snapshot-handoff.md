@@ -38,9 +38,21 @@ Reopen reuses the original production reference and does not reset later accepte
 Old mode omits the new metadata and keeps the old descriptor behavior. New9 passed; adjacent88/1m52s passed;
 after descriptor-only isolation final82/82/1m23s/0skip, logSHA07dc70c885c5eb8c54d5dfba277f77819ce7ee3e5d570339073fb56130e64345.
 The scopes overlap; declared calibration fixtures are NOT actual W lifecycle/retention certificates.
-Next connect explicit final settlement/checkpoint/saved readback to this SAME prefix and remaining original
-deposits. The full certificate has NOT yet been generated in W. See the233 responsibility
-table in JOINT_CONSUMER_STATIC_CONTRACT_AUDIT_CN.md. Do not restart Main on the cursor-only result,
+Owner52e own automatic43894569388 SUCCESS2770/36s+3781/10m52s/0skip;
+peer normalmergee4cd66a6 has the SAMEfbe061bc tracked tree; no model/API call.
+Explicit final request/proofv3 now composes the SAME original prefix, remaining original unit deposits,
+controls/home/sleep; all-already-deposited does not require a fabricated deposit. Oldv1/v2 remain isolated.
+Only existing native-observed checkpoint admitsv3. SavedCloseout reuses its existing selection/ReadAsync chain.
+Final changed/adjacent147/147/2m45s/0skip,
+logSHA89972547d2faf6d3e693b2fcbe89aa0d4c04509320a207cb3e24a8fafc684d02.
+Both declared full production/terminal/checkpoint/read-only replay scenarios passed; scopes overlap, not additive.
+Actual mixed233 first-shipping-state probe selected original step SourceStateHash, NOT aggregate-before;
+SHA121283513a0c28c0f23570717bdc8fc78b7b42cfc01ce9647963ade2e88adcc1, original inputs unchanged/0dispatch-owneradvance.
+This is FRAME SELECTION ONLY, not a full W terminal/save proof. Current v3 source ownCI is separate.
+Next inspect original owner227/head234/current DLL, then use the original same-world Main to generate the full
+production certificate and execute the remaining4, native settlement and saved readback. No coldload/redeposit.
+The full certificate has NOT yet been generated in W. See the233 responsibility
+table in JOINT_CONSUMER_STATIC_CONTRACT_AUDIT_CN.md. Do not restart Main on a stale/cursor-only result,
 split/rewrite sealed233 mixed move+ship queue, fake owner operations, shrink6 to4 or change old executors.
 Retain interrupted production-terminal-6412efe88e38444baa2e110f24e0332a. No raw/local-data in Git;
 formal=false, original full-business -> stage5 -> #570 -> #569 order unchanged. No provider invocation.

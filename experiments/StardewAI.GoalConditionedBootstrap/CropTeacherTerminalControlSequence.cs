@@ -24,7 +24,7 @@ internal sealed class CropTeacherTerminalControlSequence
         MoneyRevenueTerminalQueueTransitionProof identity, int totalDay, string sourcePath)
     {
         this.identity = identity; this.totalDay = totalDay; CurrentPath = sourcePath;
-        checkpoints = request.NativeControlCheckpoints!;
+        checkpoints = request.NativeControlCheckpoints ?? [];
         var last = request.Settlement.RouteTransitions.Length + request.Settlement.ShippingDepositTransitions.Length +
             request.Settlement.SettlementRouteTransitions.Length;
         Require(checkpoints.All(row => row is not null && row.BeforeTransitionIndex >= 0 && row.BeforeTransitionIndex <= last &&

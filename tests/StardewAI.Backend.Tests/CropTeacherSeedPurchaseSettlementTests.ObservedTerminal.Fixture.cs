@@ -113,33 +113,19 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             var stem = paths.ReceiptPath[..^"-receipt.json".Length];
             var after = F.Deposit(before, ordinal, target); Fixture.Save(paths.AfterSnapshotPath, after);
             F.Shared.Runtime.Store.Snapshots[after.StateHash] = after;
-            var request = InvokeLive<TrainingExecutionRequest>("BuildExecutionRequest", F.Shared.Runtime.LiveOptions,
-                JsonSerializer.SerializeToNode(item, JsonOptions)!.AsObject(), before.StateHash, queue.QueueId, item.OptionId);
-            var journal = await RuntimeExecutionRequestJournal.WriteAsync(F.Shared.Runtime.LiveOptions.SnapshotDir, 810 + ordinal, 1,
-                JsonSerializer.Serialize(request, JsonOptions), "http://test/api/v1/training/execute", beforePath);
             SimulatedFactChange[] facts =
             [
                 new() { Path = "player.inventory." + target.QualifiedItemId + ".count", Before = (6 - ordinal).ToString(), After = (5 - ordinal).ToString() },
                 new() { Path = "farm.shipping_bin." + target.QualifiedItemId + ".count", Before = ordinal.ToString(), After = (ordinal + 1).ToString() }
             ];
-            var result = JsonSerializer.SerializeToNode(new TrainingExecutionResult
-            {
-                RunId = request.RunId, QueueId = queue.QueueId, QueueItemId = item.QueueItemId, OptionId = item.OptionId,
-                BeforeStateHash = before.StateHash, Status = "applied", FeedbackAvailable = true,
-                PrimitiveKind = "ship_inventory_item_to_bin", PrimitiveVerificationStatus = "verified", ChangedFacts = facts
-            }, JsonOptions)!.AsObject();
-            result["execution_request_journal_path"] = journal.JournalPath; result["execution_request_nonce"] = request.RequestNonce;
-            result["execution_request_sha256"] = journal.RawRequestSha256; result["mechanical_compiled_queue_path"] = paths.QueuePath;
-            result["after_snapshot_path"] = paths.AfterSnapshotPath; result["after_state_hash"] = after.StateHash;
-            result["before_game_tick"] = before.GameTick; result["after_game_tick"] = after.GameTick; result["after_snapshot_fresh"] = true;
-            var resultPath = stem + "-result.json"; Fixture.Save(resultPath, result);
+            var wire = await NativeQueueWireFixture.WriteAsync(F.Shared.Runtime.LiveOptions, paths.QueuePath, beforePath,
+                paths.AfterSnapshotPath, 0, "ship_inventory_item_to_bin", facts, stem + "-result.json", 810 + ordinal);
             var receipt = F.Receipt(queue, before, after, paths.CandidateId, ordinal);
             receipt.StepResults[0].AfterSnapshotPath = paths.AfterSnapshotPath;
             receipt.StepResults[0].ChangedFacts = JsonSerializer.SerializeToElement(facts, JsonOptions);
             var aggregate = JsonSerializer.SerializeToNode(receipt, JsonOptions)!.AsObject();
             aggregate["after_snapshot_path"] = paths.AfterSnapshotPath;
-            aggregate["step_results"]![0]!["execution_path"] = resultPath;
-            aggregate["step_results"]![0]!["execution_request_nonce"] = request.RequestNonce;
+            NativeQueueWireFixture.Bind(aggregate, 0, paths.AfterSnapshotPath, facts, wire);
             Fixture.Save(paths.ReceiptPath, aggregate);
             return paths;
         }
