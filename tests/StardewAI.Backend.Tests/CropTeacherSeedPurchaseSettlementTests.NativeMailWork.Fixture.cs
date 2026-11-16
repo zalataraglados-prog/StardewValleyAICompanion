@@ -102,9 +102,10 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 JsonSerializer.Serialize(request, JsonOptions), "http://test/api/v1/training/execute", sourcePath);
             var facts = new[] { new SimulatedFactChange { Path = item.OptionId == "executor.move_to_tile" ? "player.tile" : "menus.active_menu",
                 Before = "declared-before", After = "declared-after" } };
+            var primitiveKind = item.OptionId == "executor.close_menu" ? "process_mail_letter" : item.OptionId["executor.".Length..];
             var result = JsonSerializer.SerializeToNode(new TrainingExecutionResult { RunId = request.RunId, QueueId = Queue.QueueId,
                 QueueItemId = item.QueueItemId, OptionId = item.OptionId, BeforeStateHash = before.StateHash, Status = "applied",
-                FeedbackAvailable = true, PrimitiveKind = item.OptionId["executor.".Length..], PrimitiveVerificationStatus = "verified",
+                FeedbackAvailable = true, PrimitiveKind = primitiveKind, PrimitiveVerificationStatus = "verified",
                 ChangedFacts = facts }, JsonOptions)!.AsObject();
             result["execution_request_journal_path"] = journal.JournalPath; result["execution_request_nonce"] = request.RequestNonce;
             result["execution_request_sha256"] = journal.RawRequestSha256; result["mechanical_compiled_queue_path"] = Selection.QueuePath;
@@ -113,7 +114,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             var resultPath = ReceiptPath + "-result.json"; Fixture.Save(resultPath, result);
             var candidate = item.NormalizedCommand.Parameters.Single(row => row.Name == "precondition" && row.Value.StartsWith("candidate_id:")).Value["candidate_id:".Length..];
             var receipt = MoneyCropTeacherFixture.Create<QueueExecutionReceiptEnvelope>("LifecycleReceipt", Queue, before, after,
-                request.RunId, candidate, item.OptionId["executor.".Length..]);
+                request.RunId, candidate, primitiveKind);
             var objective = QueueReplanFilter.ReadObjectiveContinuation(JsonSerializer.SerializeToNode(item, JsonOptions)!.AsObject())!;
             var completed = QueueReplanFilter.CompletesObjectiveContinuation(JsonSerializer.SerializeToNode(item, JsonOptions)!.AsObject(), objective, "applied");
             receipt.Success = receipt.SelectedCandidateCompleted = receipt.StepResults[0].SelectedQueueCandidateCompleted =

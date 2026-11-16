@@ -1,5 +1,46 @@
 # Current Production Snapshot Handoff
 
+## Actual Saved Reload And Canonical Native Mail (221)
+
+220 final7d59a936 OWN43784145267 SUCCESS2770(35s)/3636(6m55s),zero skipped;
+logSHA3658522de73a43ca2eaaa982e6e1e159debb5b01088453e073d7ac1534ad90a5.
+Peerba7e0643 same tree,noAPI. SAME original47 save loaded CreateFreshSave=false:
+only exactoldgame2396 stopped, new21848/start2026-11-16T01:17:45.0134239Z.
+Original backend7644/product3356 retained Release218. Controller log-sharing
+preflight failures kept; continued SAME loaded21848, no second restart.
+Original continue-crop-managed-owner Main11268/start01:20:15.0601295Z accepted48
+saved_content_readback/freshhead/nativeReloadtrue, no entrynativeDispatch;
+reportSHAddefc654e1457f4d17234c7bd8775fd17840ea8dc441feb09e52b0a7090aad59,
+nativeObservationSHA32e53a1dbd0e9762994486ac343eb4a7ca4d1a768cae5791a838da1986e0fcbb,
+observationSHAb06d14ea9506b9b0150c9dedd6027ad2fc4bf709da2366819091a054d78e08e5.
+Original84plan/day0 retained, only completed firstday-stop parameter removed.
+52route/54+55day1watering/57mail approach/58open passed;59close physicallyapplied/
+verified but NEW consumer required kindclose_menu instead of nativeprocess_mail_letter.
+Main11268 EXIT2, accepted55/pending56 claimed/unstarted bookkeeping. NEVER reissue59
+or reload saved spring2 and discard unsaved day1 care/mail.
+3bde2048 old MasterAngler reader strict suffix has valid scope; a5f0836a original
+mail writer/exact queue matcher already support this specialization. Only NEW
+applied-native-work frame reuses SAME ReceiptPrimitiveIdentityMatches(internal
+visibility only); old Read/ReadFrame signatures/defaults and all nonce/wire/Product/
+state checks unchanged. Correct synthetic fixture kind; old default still rejects.
+NEW live metadata additionally binds latest ORIGINAL accepted reload PID/exe/start
+using existing AcceptedSavedReadbackReference/verifier, pins original inputs and
+acceptance hashes. Old2arg initial-lifetime metadata/readonly/saved-load unchanged,
+no fresh readback fabricated. Reject wrong/unaccepted/older/tampered lineage.
+Final adjacent167/167(2m48s),zero skipped, logSHA
+ec15e498f7e1157c14d52358ee4d85dbae02e443ef0b7110036328eb15055d26.
+Initial6NEW fixture failures omitted existing loaded-field read_at_tick refresh;
+reused EXACT original positive callback, no old route change. One OLD File.Move
+AccessDenied kept, same-binary1/1 and final167 passed; no invented root cause.
+Unmodified actual59 SAME public scope/completion kernel:1frame/pass15.75s,
+reportSHAc16e016f8dbe453c211fefe7edaae6952a26a2e3bc68f50fd964be9378596b93.
+candidate/typed complete=true;0native redispatch/owner advance/no crop credit.
+NEXT original claimed-outcome post-native suffix accepts56, then SAME21848 live
+Main with accepted48 process lineage/original owner+plan. Full550/572production/
+shipping/terminal/readback stillOPEN, then570->569; frozen19/19,11/11,169-172,
+formalfalse unchanged. Source221 ownCI required. No raw/local-data/saves/binaries
+in Git; noAPI/deploy/cleanup/liveRelease overwrite. All test/proof handles terminal.
+
 ## Explicit Same-Live Original Main Continuation (220)
 
 Finalized571 merge26ccc58d is already an ancestor; retain its production wiring

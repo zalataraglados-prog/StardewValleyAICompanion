@@ -190,7 +190,7 @@ internal static partial class QueueExecutionReceiptValidator
         return reasons.Distinct(StringComparer.Ordinal).ToArray();
     }
 
-    private static bool ReceiptPrimitiveIdentityMatches(
+    internal static bool ReceiptPrimitiveIdentityMatches(
         ActionQueueItem item,
         CompiledActionStep[] steps,
         string primitiveKind)

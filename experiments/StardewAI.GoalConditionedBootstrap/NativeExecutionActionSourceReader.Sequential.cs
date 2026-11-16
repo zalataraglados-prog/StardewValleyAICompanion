@@ -56,7 +56,9 @@ internal static partial class NativeExecutionActionSourceReader
         {
             var step = receipt.StepResults[index];
             var resultPath = RequiredFile(Text(rows[index], "execution_path"));
-            var frame = ReadFrame(queuePath, resultPath, RequiredFile(step.AfterSnapshotPath), queue.StateHash, productBoundary);
+            var frame = appliedNativeWork
+                ? ReadAppliedNativeWorkFrame(queuePath, resultPath, RequiredFile(step.AfterSnapshotPath), queue.StateHash, productBoundary)
+                : ReadFrame(queuePath, resultPath, RequiredFile(step.AfterSnapshotPath), queue.StateHash, productBoundary);
             Require(frame.Result.RunId == runId && frame.Item.QueueItemId == queue.Items[index].QueueItemId &&
                 frame.Before.StateHash == step.SourceStateHash && frame.After.StateHash == step.AfterStateHash &&
                 frame.Before.GameTick == step.BeforeGameTick && frame.After.GameTick == step.AfterGameTick &&

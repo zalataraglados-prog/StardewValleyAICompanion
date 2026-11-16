@@ -28,6 +28,14 @@ internal static partial class NativeExecutionActionSourceReader
     // Only ReadQueue supplies an origin hash, after validating the complete immutable queue chain.
     private static NativeExecutionActionFrame ReadFrame(string actionQueuePath, string executionReceiptPath,
         string afterSnapshotPath, string? compiledStateHash, NativeProductBoundary productBoundary = NativeProductBoundary.None)
+        => ReadFrameCore(actionQueuePath, executionReceiptPath, afterSnapshotPath, compiledStateHash, productBoundary, appliedNativeWork: false);
+
+    private static NativeExecutionActionFrame ReadAppliedNativeWorkFrame(string actionQueuePath, string executionReceiptPath,
+        string afterSnapshotPath, string compiledStateHash, NativeProductBoundary productBoundary)
+        => ReadFrameCore(actionQueuePath, executionReceiptPath, afterSnapshotPath, compiledStateHash, productBoundary, appliedNativeWork: true);
+
+    private static NativeExecutionActionFrame ReadFrameCore(string actionQueuePath, string executionReceiptPath,
+        string afterSnapshotPath, string? compiledStateHash, NativeProductBoundary productBoundary, bool appliedNativeWork)
     {
         var resultPath = RequiredFile(executionReceiptPath);
         var raw = CurrentTeacherFrontierSupport.Read<JsonElement>(resultPath, "Native action");
@@ -87,7 +95,9 @@ internal static partial class NativeExecutionActionSourceReader
             Text(requestRaw, "execution_mode") == queue.ExecutionMode && Text(requestRaw, "actor") == actor.ActorId &&
             Text(requestRaw, "save_isolation_path") == native.SaveIsolationPath && !string.IsNullOrWhiteSpace(native.SaveIsolationPath) &&
             result.Status == "applied" && result.FeedbackAvailable && result.PrimitiveVerificationStatus == "verified" &&
-            result.PrimitiveKind == result.OptionId["executor.".Length..] && result.BlockReasons is { Length: 0 } &&
+            (appliedNativeWork
+                ? QueueExecutionReceiptValidator.ReceiptPrimitiveIdentityMatches(item, command!.Steps, result.PrimitiveKind)
+                : result.PrimitiveKind == result.OptionId["executor.".Length..]) && result.BlockReasons is { Length: 0 } &&
             Text(raw, "execution_request_sha256") == Text(journal.Metadata, "raw_request_sha256") &&
             Text(raw, "execution_request_nonce") == native.RequestNonce,
             "Native request/result identity or verification drifted.");

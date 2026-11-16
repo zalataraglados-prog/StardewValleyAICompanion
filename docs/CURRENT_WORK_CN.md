@@ -1,5 +1,16 @@
 # StardewAI 当前工作
 
+## 2026-11-16 保存读回与原生信件续行（221）
+
+- 220收尾`7d59a936`自身CI `43784145267` 成功：Core2770（35秒）／Backend3636（6分55秒），零跳过；日志SHA `3658522de73a43ca2eaaa982e6e1e159debb5b01088453e073d7ac1534ad90a5`。沙箱`ba7e0643`同树；没有API调用。
+- 实际校验原owner47四文件存档后，仅按PID／exe／UTC启动身份停止旧测试游戏2396，保留backend7644／product3356。以`CreateFreshSave=false`加载**同一**`ProofFarm_454459038`，新game21848／01:17:45.0134239Z，存档字节未变。控制脚本两次日志独占读取错误分别留存，改共享哈希并移除重复预读；原C#capture已支持共享读取，不改执行器，也未第二次重启已加载游戏。
+- 原`continue-crop-managed-owner` Main11268／01:20:15.0601295Z接受真实重载为owner48，native_reload／saved_content_readback／fresh head均true；报告SHA `ddefc654e1457f4d17234c7bd8775fd17840ea8dc441feb09e52b0a7090aad59`，原native observation SHA `32e53a1dbd0e9762994486ac343eb4a7ca4d1a768cae5791a838da1986e0fcbb`，独立观察SHA `b06d14ea9506b9b0150c9dedd6027ad2fc4bf709da2366819091a054d78e08e5`。保持原84动作计划／day0基准，仅撤已完成的首日停止参数。52返农场、54／55第二天浇水及57取信路线／58开信实际推进；59已原生完成关页，却在新共享消费者的原语名假设处退出2。owner55已接受，56仅原claim／待记账，不得重发59或重载旧保存丢弃第二天未保存进度。
+- **只修新消费者：** `3bde2048`原MasterAngler读取器要求普通原语名等于option后缀有正当范围；`a5f0836a`原原生信件明确将`executor.close_menu`返回为`process_mail_letter`，原队列校验器已有精确匹配。新applied-native-work帧改复用**同一个**`ReceiptPrimitiveIdentityMatches`（仅internal可见性变化，规则体不改）；旧Read／ReadFrame签名与默认后缀检查保持。nonce／请求、队列、状态、逐帧事实及Product原凭证校验不删，不改原native writer／动作逻辑，不复制一套mail规则。夹具改为实际原生kind，并验证旧默认仍拒绝、伪kind不封存。
+- **续行进程谱系：** 新现场入口仍精确匹配完整state hash／tick／actor及实际PID／exe／启动时间。初始进程之外，仅最新**已接受**的原native重载凭证可绑定同一owner后续工作；复用原`MoneyRevenueCropAcceptedSavedReadbackReference`和`CropTeacherAcceptedSavedReadbackVerifier`，校验接受历史哈希并把原输入固定到报告。旧两参metadata仍仅初始生命周期，旧只读／saved-load保护不改；不把这次live续行报成新saved readback，不接受未验收／错身份／旧进程／篡改凭证。
+- 最终原来源／新旧续行／Product／烹饪转移相邻 **167/167（2分48秒）**、零跳过，SHA `ec15e498f7e1157c14d52358ee4d85dbae02e443ef0b7110036328eb15055d26`；前88项重叠不累加。首轮六个新增夹具缺重载字段read_at_tick刷新，在待测入口前即被正确路由门拒绝，已复用原正例的同一刷新函数，未改旧路由；一次既有File.Move AccessDenied原错误保留，同二进制单例1/1及最终全相邻通过，根因未据此虚构。最后构建后C#不再改。
+- 未改写的实际59，经**同一公开准备／转移校验入口**通过1原生帧及原完成核约15.75秒；报告SHA `c16e016f8dbe453c211fefe7edaae6952a26a2e3bc68f50fd964be9378596b93`，candidate／typed完成均true，无作物credit，native重发0、owner不推进。该离线核对不冒充已接受56或整体联合业务成功。
+- **下一步：** 仅调用原已认领结果的post-native后半段接受56，然后以同一game21848、原owner／不可变计划和最新接受48的进程谱系接回原Main；不得再load旧春2保存／重开档。当前native3保留、Main11268已退出，Debug修复可运行，不覆盖活Release。原#550／#572整体生产、出货、终局保存读回仍开放，再#570→#569；冻结19/19／11/11／169–172及formal=false不变。raw／存档／local-data／二进制不入Git，本提交自身CI另核。
+
 ## 2026-11-16 同一现场显式续行（220）
 
 - 用户确认定稿 #571 由控制端整合；其 merge `26ccc58d` 已在当前分支祖先中，生产汇总／库存去重修复保留，不另写一套。219自身CI `43779185157` 成功：Core2770（56秒）／Backend3609（9分43秒），零跳过；日志SHA `fd3214493461bd65a16cf1332133e973b553c5af83ec34bd0ffd84f1f260b185`。沙箱merge `bff78e41` 与219跟踪树一致，没有API调用。

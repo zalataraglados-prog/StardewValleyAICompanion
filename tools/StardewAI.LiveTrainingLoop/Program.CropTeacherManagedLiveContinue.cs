@@ -61,10 +61,13 @@ static partial class Program
             await WritePortfolioJournalFileAsync(snapshotPath, text).ConfigureAwait(false);
             var live = artifacts.Read<SnapshotEnvelope>(snapshotPath);
             RequireManagedLiveProcess(process, expected);
-            var source = owner.ReadLiveContinuationSource(live, expected.StartedAt);
+            var source = owner.ReadLiveProcessContinuationSource(live, expected.ProcessId, expected.ExecutablePath, expected.StartedAt);
+            if (source.ProcessReadback is { } lineage)
+                foreach (var (path, hash) in lineage.InputArtifactHashes)
+                    if (artifacts.Pin(path) != hash) throw new InvalidDataException("Same-live accepted process lineage changed.");
             artifacts.Validate();
             var reportPath = Path.Combine(output, "same-live-continuation.json");
-            await WritePortfolioJournalFileAsync(reportPath, new JsonObject
+            var report = new JsonObject
             {
                 ["schema_version"] = "same_live_crop_owner_continuation.v1", ["run_id"] = options.RunId,
                 ["owner_directory"] = owner.EvidenceDirectory, ["state_hash"] = live.StateHash,
@@ -76,7 +79,10 @@ static partial class Program
                 ["live_process_bound"] = true, ["accepted_world_matched"] = true,
                 ["entry_native_dispatch_performed"] = false, ["native_reload_performed"] = false,
                 ["saved_content_readback_verified"] = false, ["formal_product_training_authorized"] = false
-            }.ToJsonString(JsonOptions)).ConfigureAwait(false);
+            };
+            if (source.ProcessReadback is not null)
+                report["accepted_process_readback"] = JsonSerializer.SerializeToNode(source.ProcessReadback, JsonOptions);
+            await WritePortfolioJournalFileAsync(reportPath, report.ToJsonString(JsonOptions)).ConfigureAwait(false);
             RequireManagedLiveProcess(process, expected);
             artifacts.Validate();
             return new(owner, source, process, restored with { ReportPath = reportPath });

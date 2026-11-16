@@ -72,6 +72,17 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             Witness.SaveObservation();
         }
 
+        internal static void RefreshDeclaredLoadedFieldTicks(SnapshotEnvelope loaded)
+        {
+            foreach (var domain in loaded.State.Keys.ToArray())
+                ChangeState(loaded, domain, fields =>
+                {
+                    foreach (var field in fields.AsObject())
+                        if (field.Value is JsonObject envelope && envelope.ContainsKey("status"))
+                            envelope["read_at_tick"] = loaded.GameTick;
+                });
+        }
+
         internal Task<CropTeacherManagedSeedOperation> Admit(CropTeacherManagedSeedOwner owner) =>
             owner.AdmitSavedContentReadbackAsync(Witness.ObservationPath, Runtime);
         internal Task Run(CropTeacherManagedSeedOwner owner, CropTeacherManagedSeedOperation operation) =>

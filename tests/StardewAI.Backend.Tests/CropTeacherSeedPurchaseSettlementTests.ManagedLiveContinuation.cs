@@ -10,6 +10,75 @@ namespace StardewAI.Backend.Tests;
 
 public sealed partial class CropTeacherSeedPurchaseSettlementTests
 {
+    [Theory]
+    [InlineData("valid")]
+    [InlineData("process")]
+    [InlineData("executable")]
+    [InlineData("started")]
+    [InlineData("initial_lifetime")]
+    [InlineData("observation")]
+    [InlineData("acceptance")]
+    public async Task SameLiveProcessUsesLatestAcceptedReloadAfterLaterOriginalWorkWithoutPromotingOldModes(string fault)
+    {
+        using var f = new SavedReadbackOwnerFixture();
+        await using var owner = await f.Night.Open();
+        await f.CompleteNight(owner, SavedReadbackOwnerFixture.RefreshDeclaredLoadedFieldTicks);
+        await f.Run(owner, await f.Admit(owner));
+        await f.Night.Farm(owner);
+        var live = LifecycleRead<SnapshotEnvelope>(owner.CurrentSnapshotPath);
+        var process = f.Witness.Observation.Process;
+        var id = process.ProcessId;
+        var executable = process.ExecutablePath;
+        var started = DateTimeOffset.Parse(process.StartedAtUtc);
+        Assert.Throws<InvalidOperationException>(() => ReadManagedContinuationSource(owner));
+        Assert.Throws<InvalidDataException>(() => ReadLiveMetadata(owner, live, started));
+        if (fault == "process") id++;
+        if (fault == "executable") executable = Path.Combine(f.Witness.Root, "another", "StardewModdingAPI.exe");
+        if (fault == "started") started = started.AddTicks(1);
+        if (fault == "initial_lifetime") started = DateTimeOffset.Parse(LifecycleRead<SnapshotEnvelope>(f.Night.Options.InitialSnapshotPath).RealTimestamp).AddSeconds(-1);
+        if (fault == "observation")
+        {
+            var observation = JsonNode.Parse(File.ReadAllText(f.Witness.ObservationPath))!;
+            observation["process"]!["observedAtUtc"] = started.AddYears(1).ToString("O");
+            Fixture.Save(f.Witness.ObservationPath, observation);
+        }
+        if (fault == "acceptance")
+        {
+            var path = Path.Combine(f.Night.Options.EvidenceDirectory, "operation-000004-accepted.json");
+            var accepted = JsonNode.Parse(File.ReadAllText(path))!;
+            accepted["operation_kind"] = "supporting_route";
+            Fixture.Save(path, accepted);
+            started = DateTimeOffset.Parse(LifecycleRead<SnapshotEnvelope>(f.Night.Options.InitialSnapshotPath).RealTimestamp).AddSeconds(-1);
+        }
+        var commits = f.Night.Shared.Runtime.Handler.Commits;
+        if (fault == "valid")
+        {
+            var source = ReadLiveProcessMetadata(owner, live, id, executable, started);
+            var reference = ContinuationProperty<MoneyRevenueCropAcceptedSavedReadbackReference>(source, "ProcessReadback");
+            Assert.Equal(4, reference.OwnerSequence);
+            Assert.Equal(f.Witness.ObservationPath, reference.ObservationPath);
+            Assert.Equal(owner.CurrentSnapshotPath, ContinuationProperty<string>(source, "SnapshotPath"));
+        }
+        else Assert.Throws<InvalidDataException>(() => ReadLiveProcessMetadata(owner, live, id, executable, started));
+        Assert.Equal(commits, f.Night.Shared.Runtime.Handler.Commits);
+        Assert.Equal(1, f.Night.NativeNightCalls);
+        Assert.Null(owner.Pending);
+    }
+
+    [Fact]
+    public async Task SameLiveProcessDoesNotTrustAnUnacceptedReloadObservation()
+    {
+        using var f = new SavedReadbackOwnerFixture();
+        await using var owner = await f.Night.Open();
+        await f.CompleteNight(owner);
+        var live = LifecycleRead<SnapshotEnvelope>(owner.CurrentSnapshotPath);
+        var process = f.Witness.Observation.Process;
+        Assert.Throws<InvalidDataException>(() => ReadLiveProcessMetadata(owner, live, process.ProcessId,
+            process.ExecutablePath, DateTimeOffset.Parse(process.StartedAtUtc)));
+        Assert.Equal(3, f.Night.Shared.Runtime.Handler.Commits);
+        Assert.Equal(1, f.Night.NativeNightCalls);
+    }
+
     [Fact]
     public async Task SameLiveEntryReusesOriginalResumeAllocatedDirectoryWithoutSavedReloadOrNativeReplay()
     {
@@ -100,6 +169,15 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
     {
         var method = typeof(CropTeacherManagedSeedOwner).GetMethod("ReadLiveContinuationSource", BindingFlags.Instance | BindingFlags.NonPublic)!;
         try { return method.Invoke(owner, [snapshot, started])!; }
+        catch (TargetInvocationException error) when (error.InnerException is not null)
+        { ExceptionDispatchInfo.Capture(error.InnerException).Throw(); throw; }
+    }
+
+    private static object ReadLiveProcessMetadata(CropTeacherManagedSeedOwner owner, SnapshotEnvelope snapshot,
+        int processId, string executable, DateTimeOffset started)
+    {
+        var method = typeof(CropTeacherManagedSeedOwner).GetMethod("ReadLiveProcessContinuationSource", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        try { return method.Invoke(owner, [snapshot, processId, executable, started])!; }
         catch (TargetInvocationException error) when (error.InnerException is not null)
         { ExceptionDispatchInfo.Capture(error.InnerException).Throw(); throw; }
     }

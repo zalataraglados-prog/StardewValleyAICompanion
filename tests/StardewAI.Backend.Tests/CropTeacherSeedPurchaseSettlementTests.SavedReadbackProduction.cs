@@ -15,16 +15,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
     {
         using var f = new SavedReadbackOwnerFixture(productExecutor: product);
         await using var owner = await f.Night.Open();
-        await f.CompleteNight(owner, loaded =>
-        {
-            foreach (var domain in loaded.State.Keys.ToArray())
-                ChangeState(loaded, domain, fields =>
-                {
-                    foreach (var field in fields.AsObject())
-                        if (field.Value is JsonObject envelope && envelope.ContainsKey("status"))
-                            envelope["read_at_tick"] = loaded.GameTick;
-                });
-        });
+        await f.CompleteNight(owner, SavedReadbackOwnerFixture.RefreshDeclaredLoadedFieldTicks);
         await f.Run(owner, await f.Admit(owner));
         var loadedTrace = await owner.ReadProductionTraceAsync();
         var readback = Assert.Single(loadedTrace.SavedContentReadbacks);

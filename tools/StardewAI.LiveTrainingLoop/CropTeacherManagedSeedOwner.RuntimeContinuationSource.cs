@@ -9,7 +9,10 @@ internal sealed record CropTeacherManagedContinuationSource(
     MoneyRevenueCropNativeProductionRunPlan RunPlan,
     string NativeRunPlanPath,
     string SnapshotPath,
-    string LedgerPath);
+    string LedgerPath)
+{
+    public MoneyRevenueCropAcceptedSavedReadbackReference? ProcessReadback { get; init; }
+}
 
 public sealed partial class CropTeacherManagedSeedOwner
 {
@@ -32,6 +35,18 @@ public sealed partial class CropTeacherManagedSeedOwner
 
     // Metadata only. The explicit live entry must separately bind its actual process and bridge read.
     internal CropTeacherManagedContinuationSource ReadLiveContinuationSource(SnapshotEnvelope live, DateTimeOffset processStartedAt)
+        => ReadLiveContinuationSourceCore(live, processStartedAt, null, null);
+
+    internal CropTeacherManagedContinuationSource ReadLiveProcessContinuationSource(SnapshotEnvelope live,
+        int processId, string executablePath, DateTimeOffset processStartedAt)
+    {
+        if (processId <= 0 || !Path.IsPathFullyQualified(executablePath))
+            throw new InvalidDataException("Same-live continuation requires an exact positive process ID and absolute executable.");
+        return ReadLiveContinuationSourceCore(live, processStartedAt, processId, executablePath);
+    }
+
+    private CropTeacherManagedContinuationSource ReadLiveContinuationSourceCore(SnapshotEnvelope live,
+        DateTimeOffset processStartedAt, int? processId, string? executablePath)
     {
         gate.Wait();
         try
@@ -41,12 +56,16 @@ public sealed partial class CropTeacherManagedSeedOwner
                 throw new InvalidOperationException("Same-live metadata requires the recovered original head without a pending operation.");
             var accepted = Read<SnapshotEnvelope>(headSnapshotPath);
             var initial = Read<SnapshotEnvelope>(options.InitialSnapshotPath);
-            if (!DateTimeOffset.TryParse(initial.RealTimestamp, out var originalCapturedAt) || processStartedAt > originalCapturedAt ||
+            if (!DateTimeOffset.TryParse(initial.RealTimestamp, out var originalCapturedAt) ||
                 live.SchemaVersion != "snapshot.v1" || live.StateHash != accepted.StateHash || live.GameTick != accepted.GameTick ||
                 live.SaveId.Value != saveId || live.PlayerId.Value != playerId || live.GameVersion != accepted.GameVersion ||
                 SnapshotHash.ComputeStateHash(live.State) != accepted.StateHash)
                 throw new InvalidDataException("Same-live source differs from the original accepted world/actor/process lifetime.");
-            var source = ReadOriginalContinuationMetadata();
+            var readback = processId is { } id && id > 0 && executablePath is { } path && Path.IsPathFullyQualified(path)
+                ? ReadAcceptedLiveProcessReadback(id, path, processStartedAt) : null;
+            if (readback is null && processStartedAt > originalCapturedAt)
+                throw new InvalidDataException("Same-live process has no original initial lifetime or accepted native reload.");
+            var source = ReadOriginalContinuationMetadata() with { ProcessReadback = readback };
             ValidateState();
             return source;
         }

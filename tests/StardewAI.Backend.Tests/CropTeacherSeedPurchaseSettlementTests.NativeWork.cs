@@ -50,7 +50,16 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             Assert.False(scope.CropProductionCreditAuthorized); Assert.Equal(1, scope.VerifiedNativeStepCount);
             var completedSelection = InvokeLive<object>("CompleteCropTeacherSharedSelection", owner, operation, liveSelection);
             if (option == "executor.close_menu")
+            {
                 Assert.Single(SelectionProperty<IReadOnlySet<string>>(completedSelection, "CompletedForeignCandidateIds")!);
+                var resultPath = JsonNode.Parse(File.ReadAllText(f.ReceiptPath))!["step_results"]![0]!["execution_path"]!.GetValue<string>();
+                Assert.Equal("process_mail_letter", LifecycleRead<TrainingExecutionResult>(resultPath).PrimitiveKind);
+                var oldRead = typeof(CropTeacherSharedSourceReturn).Assembly
+                    .GetType("StardewAI.GoalConditionedBootstrap.NativeExecutionActionSourceReader")!
+                    .GetMethod("Read", BindingFlags.Static | BindingFlags.NonPublic)!;
+                var oldError = Assert.Throws<TargetInvocationException>(() => oldRead.Invoke(null, [f.Selection.QueuePath, resultPath, f.AfterPath]));
+                Assert.Contains("identity or verification", Assert.IsType<InvalidDataException>(oldError.InnerException).Message);
+            }
             else
             {
                 Assert.Same(liveSelection, completedSelection);
@@ -82,6 +91,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
     [Theory]
     [InlineData("mail_id")]
     [InlineData("unexpected_field")]
+    [InlineData("native_primitive")]
     public async Task NativeSharedTypedCompletionRejectsChangedIdentityBeforeSealing(string field)
     {
         var f = new NativeMailWorkFixture { PendingCandidateOnTypedCompletion = true }; using var host = f.Runtime;
@@ -96,8 +106,18 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 if (stage == 3)
                 {
                     var raw = JsonNode.Parse(File.ReadAllText(f.ReceiptPath))!;
-                    raw["objective_continuation"]![field] = "different-original-identity";
-                    raw["completed_objective_continuations"] = new JsonArray(raw["objective_continuation"]!.DeepClone());
+                    if (field == "native_primitive")
+                    {
+                        var resultPath = raw["step_results"]![0]!["execution_path"]!.GetValue<string>();
+                        var result = JsonNode.Parse(File.ReadAllText(resultPath))!;
+                        result["primitive_kind"] = "unrelated_native_mail_primitive";
+                        Fixture.Save(resultPath, result);
+                    }
+                    else
+                    {
+                        raw["objective_continuation"]![field] = "different-original-identity";
+                        raw["completed_objective_continuations"] = new JsonArray(raw["objective_continuation"]!.DeepClone());
+                    }
                     Fixture.Save(f.ReceiptPath, raw);
                 }
                 return output;
