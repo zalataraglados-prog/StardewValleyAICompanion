@@ -101,6 +101,7 @@ internal static partial class CropTeacherProductionEvidence
                 MoneyRevenueCropPlantingLayoutProofBuilder.Build(path)).ConfigureAwait(false);
         }
         var capacities = new List<string>(); var lifecycles = new List<string>(); var retentions = new List<string>();
+        var shippingPrefixes = new List<CropTeacherObservedShippingPrefix>();
         for (var index = 0; index < production.Commitments.Length; index++)
         {
             var crop = production.Commitments[index];
@@ -132,6 +133,14 @@ internal static partial class CropTeacherProductionEvidence
             foreach (var wave in crop.HarvestWaves)
             {
                 var retainThroughHead = (shared.Count > 0 || retainSaleStock) && wave.HarvestTotalDay == transitions[^1].TotalDay;
+                var lastHarvestIndex = Array.FindLastIndex(lifecycleProof.Transitions, row => row.TotalDay == wave.HarvestTotalDay &&
+                    row.OptionId == "executor.harvest_crop" && row.ActionCommitmentId == crop.CommitmentId);
+                var shippingTail = appliedNativeWork && retainThroughHead ?
+                    ReadObservedShippingTail(transitions, lastHarvestIndex, crop.HarvestItemQualifiedId, wave.HarvestTotalDay) : null;
+                var retainedSource = shippingTail is { Length: > 0 } ? shippingTail[0].BeforeSnapshotPath :
+                    retainThroughHead ? trace.AcceptedSnapshotPath : retainSaleStock || appliedNativeWork ?
+                        lifecycleProof.Transitions.Last(row => row.TotalDay == wave.HarvestTotalDay && row.OptionId == "executor.harvest_crop" &&
+                            row.ActionCommitmentId == crop.CommitmentId).AfterSnapshotPath : null;
                 var retentionRequest = await Emit($"retention-request-{index}-{wave.WaveIndex}", new MoneyRevenueCropOutputRetentionProofRequest
                 {
                     SchemaVersion = appliedNativeWork ? retainSaleStock ? "money_revenue_crop_output_retention_proof_request.v8" :
@@ -144,12 +153,13 @@ internal static partial class CropTeacherProductionEvidence
                         "money_revenue_crop_output_retention_proof_request.v1",
                     CropProductionPlanPath = plan.CropProductionPlanPath, NativeLifecycleProofPath = lifecycle,
                     CommitmentId = crop.CommitmentId, WaveIndex = wave.WaveIndex,
-                    RetainThroughSnapshotPath = retainThroughHead ? trace.AcceptedSnapshotPath : retainSaleStock || appliedNativeWork ?
-                        lifecycleProof.Transitions.Last(row => row.TotalDay == wave.HarvestTotalDay && row.OptionId == "executor.harvest_crop" &&
-                            row.ActionCommitmentId == crop.CommitmentId).AfterSnapshotPath : null
+                    RetainThroughSnapshotPath = retainedSource
                 }).ConfigureAwait(false);
-                retentions.Add(await Emit($"retention-proof-{index}-{wave.WaveIndex}",
-                    MoneyRevenueCropOutputRetentionProofBuilder.Build(retentionRequest)).ConfigureAwait(false));
+                var retention = await Emit($"retention-proof-{index}-{wave.WaveIndex}",
+                    MoneyRevenueCropOutputRetentionProofBuilder.Build(retentionRequest)).ConfigureAwait(false);
+                retentions.Add(retention);
+                if (shippingTail is not null)
+                    shippingPrefixes.Add(new("crop_teacher_observed_shipping_prefix.v1", retention, retainedSource!, shippingTail));
             }
         }
         artifacts.Validate();
@@ -164,8 +174,11 @@ internal static partial class CropTeacherProductionEvidence
             terminal_settlement_verified = false, native_save_content_readback_verified = false,
             formal_product_training_authorized = false
         };
-        var manifest = shared.Count == 0 ? await Emit("production-evidence", manifestValue).ConfigureAwait(false) :
-            await Emit("production-evidence", AddJointSourceManifest(manifestValue, shared, ordered)).ConfigureAwait(false);
+        var document = shared.Count == 0 ? JsonSerializer.SerializeToNode(manifestValue, CropTeacherManagedSeedOwner.JsonOptions)!.AsObject() :
+            AddJointSourceManifest(manifestValue, shared, ordered);
+        if (shippingPrefixes.Count > 0)
+            document["observed_shipping_prefixes"] = JsonSerializer.SerializeToNode(shippingPrefixes, CropTeacherManagedSeedOwner.JsonOptions);
+        var manifest = await Emit("production-evidence", document).ConfigureAwait(false);
         artifacts.Validate();
         return new(manifest, layouts.Values.ToArray(), capacities.ToArray(), lifecycles.ToArray(), retentions.ToArray(), artifacts.Hashes[manifest]);
     }

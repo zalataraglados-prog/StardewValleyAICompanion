@@ -14,7 +14,16 @@ compiler/owner: final39/39,zero skipped,48s,logSHAa0f3bdfa78f8bc80e1c3b9990ac251
 Readonly actual233/234 passed original Product/native shipping kernels; new ordered cursor accepted
 original232/233/234 captures,26inputs unchanged,0dispatch/owneradvance,
 reportSHAacf4d960448c68025ad3e9351c22a5facc80919c363248e4fff5b3e25430465f.
-This probe deliberately has no retention certificate/full-terminal claim. Production cutoff, original shared-source prefix, initial owner cursor and final
+This probe deliberately has no retention certificate/full-terminal claim. Cursor sourcea3fb own43873037457
+SUCCESS2770/46s+3754/9m13s/zero skipped; CIlogSHA25021ccbbc1f8af2dbef37b4dc8e44e634b0d84e930e21d2f5d2c02415dae8e1.
+Peer ordinarymerge20e6467b same d7870054 trackedtree, noAPI. Subsequent production-cut patch uses the
+EXISTING producer boundary support; full lifecycle remains intact, retention cut232 differs explicitly
+from actual acceptedhead234, and observed_shipping_prefixes retains the complete original233/234 tail.
+Final production-adjacent44/44,0skip,50s (initial13overlap), logSHA078742b0af1c5ead92a5a7e8174fe234a17f04da2661f54f17b0d86c2b712bfc.
+Actual original request selected232/owned6 and full233/234 to234/owned4 without input changes or dispatch;
+classification-only reportSHA718b6f8f6eff5f9e225babb9bb5a65e6be0a7ba19718fd32806621b6c3d455f9.
+NO full lifecycle/retention certificate has yet been produced; ownCI for the cut patch is separate.
+Original shared-source prefix verification, terminal selection/initial owner cursor and final
 settlement/checkpoint/saved readback still require coherent integration. See the233 responsibility
 table in JOINT_CONSUMER_STATIC_CONTRACT_AUDIT_CN.md. Do not restart Main on the cursor-only result,
 split/rewrite sealed233 mixed move+ship queue, fake owner operations, shrink6 to4 or change old executors.
