@@ -19,9 +19,19 @@ logSHA14390915bf36ef42786395d284f58c8366184e51cb65685997af65825b458fd9.
 Actual retained893 SAME comparison kernel PASS, reportSHA
 cce436fd1cb8b6605ef56b4718da183f11a547b4f43b09c8a6aa9a84b5ea4e75;
 0dispatch/owner advance, not process-lineage or whole-Main acceptance.
-NEXT SAME21848/7644/3356, owner56, immutable84plan, no cold reload of unsaved day1.
+ACTUAL Main17224/start02:58:25.5628884Z resumed SAME21848/7644/3356 and immutable84plan;
+11:04:46 actual entry reportSHAa1fed134bf779a26f0626e3869c812c0b380ed498d565320f575507018f4e338,
+both hashes/matchkind preserved, no entry dispatch/reload/fake savedreadback.
+60home/61controlwait/62sleep passed; accepted59 saved spring2->3,
+4files/6620433bytes/saveSHA4ec0761513ddbf0a3f59ccb5beeed5ecd2f848df6704b1d7832ae6b4e294b090.
+SAME Main continues later daily maintenance; do not restart on observer expiry or
+cold reload unsaved work. Main owns Debug, no concurrent C# edits/builds.
 Full550/572 production/shipping/terminal/saved readback stillOPEN then570->569,
-frozen19/19,11/11,169-172/formalfalse. Source222 ownCI required. NoAPI/rawGit/cleanup/deploy.
+frozen19/19,11/11,169-172/formalfalse. Sourceb36e6d08 OWN43795308769 SUCCESS
+Core2770(53s)/Backend3656(9m28s),zero skipped; logSHA
+a4e80d938d463a0e4733ec22d9333c6a31b9b6586a23c77f10ac6645a69c801e.
+Peer4bf2cde4 same source treefe326990; subsequent closeout changes ONLY4docs,
+no C#/local revalidation. NoAPI/rawGit/cleanup/deploy.
 
 ## Actual Saved Reload And Canonical Native Mail (221)
 
