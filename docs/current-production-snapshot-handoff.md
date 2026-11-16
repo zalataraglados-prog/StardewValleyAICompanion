@@ -1,5 +1,23 @@
 # Current Production Snapshot Handoff
 
+## Same-World Entry And Next Save Accepted (232, Main Live)
+
+Behavioralbebdb8b2 OWN43854836490 SUCCESS2770/48s and3741/11m49s/zero skipped;
+logSHA4715e59cd9c17e0dd1db92a4f81af3067b3f77d40555531497666b8b76d63ec9.
+Retainedpeer212b4040 same56411e7f trackedtree, ordinary controller Git merge/no modelAPI.
+After231staticmatrix/realbatch/22targeted checks, current182/188 readonly proofSHA
+1b08c2c9d5d605b3abe17723964600a4e3115ee1595c02d25ecb9fe509d60390 bound original inputs/currentDLL.
+SAME Main21404 started19:23:18 originalowner182/84plan/native21848-7644-3356; history restore~22min,
+not13days of replay. Entry reload-entry-6f908bb6c3934f98a18d1d54e02d7793/same-live-continuation.json
+SHA1d6eee4fab055574c4907aa0b9b44a641f6f6655a56865cc821520b27c1ad4ce:
+12inputs unchanged,exact_state/tick48105/accepted+liveed1be56b...,entrydispatch-reloadfalse.
+Actual189 released legitimate Wednesday-unavailableAbigail without completion/dispatch;
+190/192/194 original home routes accepted.196sleep acceptedowner189,total_day9->10/spring10->11,
+6verified/0unverified tiles/native_save_boundarytrue/SHA2938057ccce9299d188586eb2e444de6ad4e2e038eb2d9b6546e43a226deeb11.
+CONTINUE SAME Main: it owns Debug; no C# edits/build/copy-over/restart/coldload/newfactory.
+Wholeproduction/terminal/savedreadback/originalstage5/570/569 stillOPEN;formalfalse/frozen/no local-data Git.
+225socialwait is not proved by these unrelated accepted actions. Following terminal/restoring notes are historical.
+
 ## Current Boundary (231, Main Terminal)
 
 Main24288 ended before native dispatch188; original accepted owner182/native3/unsaved tail retained.
