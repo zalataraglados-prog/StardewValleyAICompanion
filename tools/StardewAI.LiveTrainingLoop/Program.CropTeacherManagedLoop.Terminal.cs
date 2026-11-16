@@ -19,7 +19,10 @@ static partial class Program
         var output = Path.GetDirectoryName(production.ManifestPath)!;
         selection.ValidateInputsUnchanged();
         var result = Path.Combine(output, "shipping-selection.json");
-        await WritePortfolioJournalFileAsync(result, new JsonObject
+        if (selection.ObservedPrefix is not null && File.Exists(result))
+            result = Path.Combine(output, "shipping-selection-reopen-" + Guid.NewGuid().ToString("N") + ".json");
+        var acceptedCount = selection.ObservedPrefix is null ? 0 : owner.AcceptedTerminalDepositCount;
+        var document = new JsonObject
         {
             ["schema_version"] = "crop_teacher_managed_shipping_selection.v1", ["production_manifest_path"] = production.ManifestPath,
             ["production_manifest_sha256"] = production.ManifestSha256, ["retention_proof_path"] = selection.RetentionProofPath,
@@ -27,11 +30,13 @@ static partial class Program
             ["qualified_item_id"] = selection.QualifiedItemId, ["minimum_units"] = selection.MinimumUnits,
             ["minimum_gross_revenue"] = selection.MinimumGrossRevenue, ["slot_index"] = selection.SlotIndex,
             ["quality"] = selection.Quality, ["unit_price"] = selection.UnitPrice, ["bin_tile_x"] = selection.BinX,
-            ["native_variant_target"] = JsonSerializer.SerializeToNode(selection.CreateTarget(0), JsonOptions),
+            ["native_variant_target"] = JsonSerializer.SerializeToNode(selection.CreateTarget(acceptedCount), JsonOptions),
             ["bin_tile_y"] = selection.BinY, ["stand_tile_x"] = selection.StandX, ["stand_tile_y"] = selection.StandY,
-            ["accepted_deposit_count"] = 0, ["native_dispatch_performed"] = false, ["terminal_settlement_verified"] = false,
+            ["accepted_deposit_count"] = acceptedCount, ["native_dispatch_performed"] = false, ["terminal_settlement_verified"] = false,
             ["execution_authorized"] = false, ["formal_product_training_authorized"] = false
-        }.ToJsonString(JsonOptions)).ConfigureAwait(false);
+        };
+        if (selection.ObservedPrefix is not null) document["initial_observed_deposit_count"] = selection.InitialDepositCount;
+        await WritePortfolioJournalFileAsync(result, document.ToJsonString(JsonOptions)).ConfigureAwait(false);
         selection.ValidateInputsUnchanged();
         return (result, selection);
     }

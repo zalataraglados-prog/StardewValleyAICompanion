@@ -832,6 +832,17 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 " total_day=" + cropStep.TotalDay);
             break;
         }
+        if (cropStep.Stage == CropTeacherRunStageKinds.Complete && managedOwner is not null &&
+            cropTeacherManagedOwner.TerminalSelection is null &&
+            await managedOwner.ReadObservedTerminalProductionAsync().ConfigureAwait(false) is { } retainedTerminalProduction)
+        {
+            var retainedSelection = await PrepareCropTeacherManagedTerminalAsync(managedOwner, retainedTerminalProduction,
+                options.UseJointDailyCalendar).ConfigureAwait(false);
+            cropTeacherManagedOwner.AttachTerminal(retainedTerminalProduction, retainedSelection.Selection);
+            AppendProgress(options, "crop_teacher_managed_observed_terminal_reopened", iteration, lastStateHash, string.Empty,
+                "manifest=" + retainedTerminalProduction.ManifestPath + " selection=" + retainedSelection.Path +
+                " accepted_deposit_count=" + managedOwner.AcceptedTerminalDepositCount + " native_dispatch_performed=false");
+        }
         CropTeacherOtherGoalPreparation? selectedOtherForExecution = null;
         if (options.UseJointDailyCalendar && managedOwner is not null && cropTeacherManagedOwner.TerminalSelection is null)
         {

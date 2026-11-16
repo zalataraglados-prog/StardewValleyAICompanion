@@ -111,6 +111,9 @@ public sealed partial class CropTeacherManagedSeedOwner
                 Pin(StoredPath(accepted, "after_ledger_path"), Text(accepted, "after_ledger_sha256"));
                 var inputs = record["input_artifact_hashes"]!.Deserialize<Dictionary<string, string>>(JsonOptions)!;
                 foreach (var (input, expected) in inputs) Pin(input, expected);
+                if (record["observed_terminal_selection"] is JsonObject observed &&
+                    observed["production_reference"]?.Deserialize<CropTeacherTerminalProductionReference>(JsonOptions) is { } productionReference)
+                    Pin(productionReference.ManifestPath, productionReference.ManifestSha256);
                 previous = hash;
                 if (kind == "shared_source_return")
                 {

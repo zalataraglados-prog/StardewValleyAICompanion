@@ -24,11 +24,21 @@ public sealed partial class CropTeacherManagedSeedOwner
             if (Pending is not null || HeadRecoveryRequired)
                 throw new InvalidOperationException("Recover the original crop phase before selecting terminal shipping.");
             if (useAcceptedSaleStock)
-                consumeSaleStock = HasCurrentSaleStockForPlan();
+                consumeSaleStock = hasObservedTerminalSelection ? terminalTarget!.RequireSaleStockReservations : HasCurrentSaleStockForPlan();
+            var sourcePath = headSnapshotPath; var ledgerPath = headLedgerPath;
+            if (hasObservedTerminalSelection)
+            {
+                if (terminalProductionReference is not { } reference || !SamePath(reference.ManifestPath, evidence.ManifestPath) ||
+                    reference.ManifestSha256 != evidence.ManifestSha256)
+                    throw new InvalidDataException("Observed terminal reopen must reuse its original production certificate.");
+                var retained = Read<System.Text.Json.Nodes.JsonObject>(reference.ManifestPath);
+                sourcePath = StoredPath(retained, "accepted_snapshot_path"); ledgerPath = StoredPath(retained, "accepted_ledger_path");
+            }
             var result = consumeSaleStock ? CropTeacherTerminalShippingSelection.OpenNativeVariantsConsumingSaleStock(
-                evidence, options.NativeRunPlanPath, headSnapshotPath, headLedgerPath) :
-                nativeVariants ? CropTeacherTerminalShippingSelection.OpenNativeVariants(evidence, options.NativeRunPlanPath, headSnapshotPath, headLedgerPath) :
-                new CropTeacherTerminalShippingSelection(evidence, options.NativeRunPlanPath, headSnapshotPath, headLedgerPath);
+                evidence, options.NativeRunPlanPath, sourcePath, ledgerPath) :
+                nativeVariants ? CropTeacherTerminalShippingSelection.OpenNativeVariants(evidence, options.NativeRunPlanPath, sourcePath, ledgerPath) :
+                new CropTeacherTerminalShippingSelection(evidence, options.NativeRunPlanPath, sourcePath, ledgerPath);
+            AdoptObservedTerminalSelection(result);
             ValidateState(); result.ValidateInputsUnchanged();
             return result;
         }

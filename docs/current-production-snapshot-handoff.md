@@ -29,11 +29,17 @@ same-invocation VerifiedInventoryObservation and original per-frame shipping/res
 or second native queue verification. Final49/49/49s/0skip (includes39), logSHA3c25bfe2993a16ae3524a1b92577a74739fc813c64ba6b558192bbdd0cf9512e.
 Actual233/234 passed new public prefix consumer;29inputs unchanged/0dispatch-owneradvance-reload,
 reportSHA5cdf8be94e6b7a73af9a174dd82d81f65fc3e9c27a35af47d6f5d20fae0095a4. This proves only native prefix/resources,
-NOT retention/owner acceptance/terminal. New prefix source ownCI is separate. Next bind original owner history,
-select from original cut+initial ledger (not current remaining claims), persist derived selection with the first
-following REAL admission, including all-already-deposited reopen. No fake native step to persist a cursor.
-Terminal selection/initial owner cursor and final
-settlement/checkpoint/saved readback still require coherent integration. See the233 responsibility
+NOT retention/owner acceptance/terminal. Prefix source12eb own43882588823 SUCCESS2770/35s+3772/7m46s/0skip;
+peer normalmerge7f3c5212 has the SAME1a8e217c tracked tree, no API invocation.
+Selection/owner continuation is now implemented: derive the initial cursor from the original full-stock cut,
+original native prefix and accepted owner/admission history. Persist optional derived metadata through the first
+following REAL admission; all-already-deposited persists through the real home route, never a fake deposit.
+Reopen reuses the original production reference and does not reset later accepted counts to the initial cursor.
+Old mode omits the new metadata and keeps the old descriptor behavior. New9 passed; adjacent88/1m52s passed;
+after descriptor-only isolation final82/82/1m23s/0skip, logSHA07dc70c885c5eb8c54d5dfba277f77819ce7ee3e5d570339073fb56130e64345.
+The scopes overlap; declared calibration fixtures are NOT actual W lifecycle/retention certificates.
+Next connect explicit final settlement/checkpoint/saved readback to this SAME prefix and remaining original
+deposits. The full certificate has NOT yet been generated in W. See the233 responsibility
 table in JOINT_CONSUMER_STATIC_CONTRACT_AUDIT_CN.md. Do not restart Main on the cursor-only result,
 split/rewrite sealed233 mixed move+ship queue, fake owner operations, shrink6 to4 or change old executors.
 Retain interrupted production-terminal-6412efe88e38444baa2e110f24e0332a. No raw/local-data in Git;

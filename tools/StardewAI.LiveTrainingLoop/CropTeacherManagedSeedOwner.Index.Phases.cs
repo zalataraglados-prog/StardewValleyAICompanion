@@ -6,6 +6,7 @@ public sealed partial class CropTeacherManagedSeedOwner
 {
     private CropTeacherManagedSeedOperation OpenIndexedOperation(JsonObject record, string path)
     {
+        RestoreObservedTerminalSelection(record);
         var kind = record["operation_kind"]?.GetValue<string>();
         if (kind == "shared_source_return")
         {

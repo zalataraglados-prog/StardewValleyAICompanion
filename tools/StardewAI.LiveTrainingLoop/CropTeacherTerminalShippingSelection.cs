@@ -33,6 +33,8 @@ internal sealed partial class CropTeacherTerminalShippingSelection
     internal int StandY { get; }
     internal IReadOnlyDictionary<string, string> InputHashes => inputs.Hashes;
     internal CropTeacherTerminalProductionReference ProductionReference { get; }
+    internal CropTeacherObservedShippingPrefix? ObservedPrefix { get; }
+    internal int InitialDepositCount { get; }
     internal void ValidateInputsUnchanged() => inputs.Validate();
     internal CropTeacherTerminalShippingTarget CreateTarget(int acceptedDepositCount) => new(
         RetentionProofPath, inputs.Hashes[RetentionProofPath], saveId, playerId, gameVersion, totalDay,
@@ -76,9 +78,15 @@ internal sealed partial class CropTeacherTerminalShippingSelection
             proofPaths.Any(path => !retained.Keys.Any(key => SamePath(key, path))))
             throw new InvalidDataException("Selected crop terminal retention proof set changed.");
         var plan = inputs.Read<MoneyRevenueCropNativeProductionRunPlan>(nativePlanPath);
-        var source = inputs.Read<SnapshotEnvelope>(snapshotPath);
+        ObservedPrefix = useNativeVariants ? ReadObservedPrefix(manifest, proofPaths, snapshotPath) : null;
+        var sourcePath = ObservedPrefix?.RetentionSnapshotPath ?? snapshotPath;
+        if (!retained.Keys.Any(path => SamePath(path, sourcePath)))
+            throw new InvalidDataException("Selected crop terminal retained source is outside the production proof.");
+        var source = inputs.Read<SnapshotEnvelope>(sourcePath);
         var matches = proofPaths.Select(path => (Path: path, Proof: inputs.Read<MoneyRevenueCropOutputRetentionProof>(path)))
-            .Where(row => SamePath(row.Proof.AfterSnapshotPath, snapshotPath) && row.Proof.AfterStateHash == source.StateHash ||
+            .Where(row => ObservedPrefix is not null ? SamePath(row.Path, ObservedPrefix.OutputRetentionProofPath) &&
+                SamePath(row.Proof.AfterSnapshotPath, sourcePath) && row.Proof.AfterStateHash == source.StateHash :
+                SamePath(row.Proof.AfterSnapshotPath, snapshotPath) && row.Proof.AfterStateHash == source.StateHash ||
                 useNativeVariants && !SamePath(row.Proof.AfterSnapshotPath, snapshotPath) &&
                     ReadNativeRetentionControlTail(inputs, row.Proof, manifest, snapshotPath) is not null).ToArray();
         if (matches is not [var selected] || !selected.Proof.NativeOutputRetentionVerified ||
@@ -106,8 +114,9 @@ internal sealed partial class CropTeacherTerminalShippingSelection
         if (useNativeVariants)
         {
             var remaining = MinimumUnits;
+            var stockLedger = ObservedPrefix?.Transitions[0].NativeSharedSource?.LedgerPath ?? ledgerPath;
             var stockLimits = consumeSaleStock ? CropTeacherTerminalShipping.ReadVerifiedSaleStock(source,
-                inputs.Read<StrategyCommitmentLedger>(ledgerPath), selected.Proof)
+                inputs.Read<StrategyCommitmentLedger>(stockLedger), selected.Proof)
                 .GroupBy(row => row.SlotIndex).ToDictionary(group => group.Key, group => checked(group.Sum(row => row.Quantity))) : null;
             var producerLimits = MoneyRevenueCropOutputRetentionProofBuilder.HasProducerRetention(selected.Proof) ?
                 selected.Proof.ProducerRetention!.Variants.ToDictionary(row => row.InventoryIdentitySha256, row => row.RetainedQuantity) : null;
@@ -149,13 +158,25 @@ internal sealed partial class CropTeacherTerminalShippingSelection
             CropTeacherTerminalVariant? next = null;
             foreach (var row in selectedVariants.OrderByDescending(row => row.SlotIndex)) next = row with { Next = next };
             nativeVariants = new("crop_teacher_native_terminal_variants.v1", binScope, next!);
+            if (ObservedPrefix is not null) nativeVariants = ReadObservedOrder(ObservedPrefix, CreateTarget(0));
             CreateTarget(0).VerifyNativeVariantSource(source, 0, MinimumGrossRevenue);
         }
         MoneyRevenueCropOutputRetentionProofBuilder.VerifyProducerTerminalTarget(selected.Proof, CreateTarget(0), source);
+        var prefixInputs = Array.Empty<string>();
+        if (ObservedPrefix is not null)
+        {
+            var verified = CropTeacherObservedShippingPrefixVerifier.Verify(ObservedPrefix, CreateTarget(0), snapshotPath);
+            foreach (var (path, hash) in verified.InputHashes)
+                if (!retained.Any(row => SamePath(row.Key, path) && row.Value == hash))
+                    throw new InvalidDataException("Observed shipping escaped the accepted production inputs.");
+            InitialDepositCount = verified.DepositedQuantity;
+            prefixInputs = verified.InputHashes.Keys.ToArray();
+        }
         inputs.Validate();
         // The full trajectory was checked once above. Per-action binding keeps only its terminal certificate and source.
         var terminalPaths = new[] { evidence.ManifestPath, nativePlanPath, snapshotPath, ledgerPath, RetentionProofPath }
             .Select(Path.GetFullPath).ToHashSet(PathComparer);
+        terminalPaths.UnionWith(prefixInputs.Select(Path.GetFullPath));
         inputs = new(inputs.Hashes.Where(row => terminalPaths.Contains(row.Key)).ToDictionary(row => row.Key, row => row.Value, PathComparer));
         ProductionReference = new(Path.GetFullPath(evidence.ManifestPath), evidence.ManifestSha256);
     }

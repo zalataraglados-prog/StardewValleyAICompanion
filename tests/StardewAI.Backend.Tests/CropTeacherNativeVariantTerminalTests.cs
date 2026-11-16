@@ -226,7 +226,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         internal string Root => Shared.Runtime.LiveOptions.SnapshotDir;
         internal CropTeacherTerminalShippingTarget Target { get; }
 
-        internal NativeVariantTerminalFixture(bool interleaved = false)
+        internal NativeVariantTerminalFixture(bool interleaved = false, bool nativeWire = false)
         {
             var inventoryRows = resources.Before.State["player"].GetProperty("inventory").GetProperty("value").EnumerateArray().ToArray();
             SilverSlot = inventoryRows.Where(row => row.TryGetProperty("is_empty", out var empty) && empty.ValueKind == JsonValueKind.True)
@@ -234,6 +234,8 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 inventoryRows.Max(row => row.GetProperty("slot_index").GetInt32()) + 1;
             Shared = new(prepareSource: source =>
             {
+                var routeLocations = source.Before.State["locations"].Clone();
+                var routeLocation = source.Before.State["current_location"].Clone();
                 foreach (var field in resources.Before.State) source.Before.State[field.Key] = field.Value.Clone();
                 ChangeState(source.Before, "player", node =>
                 {
@@ -265,6 +267,27 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                     foreach (var bin in node["shipping_bins"]!["value"]!.AsArray())
                     { bin!["interaction_stand_tile_x"] = 4; bin["interaction_stand_tile_y"] = 4; bin["interaction_stand_tile_blocked_reason"] = ""; }
                 });
+                if (nativeWire)
+                {
+                    ChangeState(source.Before, "farm", node =>
+                        node["shipping_bins"]!["value"]![1]!["interaction_stand_tile_blocked_reason"] = "fixture_foreign_stand_unavailable");
+                    source.Before.GameVersion = "1.6.15";
+                    source.Before.State["locations"] = routeLocations;
+                    source.Before.State["current_location"] = routeLocation;
+                    ChangeState(source.Before, "locations", node =>
+                    {
+                        var connector = node["route_connectors"]!["value"]!["connectors"]![0]!;
+                        connector["tile_x"] = 5; connector["tile_y"] = 4;
+                        var edge = node["route_graph"]!["value"]!["edges"]![0]!;
+                        edge["from_x"] = 5; edge["from_y"] = 4;
+                    });
+                    source.Before.State["environment"] = JsonSerializer.SerializeToElement(new
+                    {
+                        training_run_id = new { status = "available", value = "run.seed-acquisition.fixture" },
+                        training_mode = new { status = "available", value = "1" },
+                        save_isolation_path = new { status = "available", value = "isolated-single-till-fixture" }
+                    });
+                }
             });
             var initialPath = Path.Combine(Root, "mixed-retained-source.json"); Fixture.Save(initialPath, Shared.Source.Before);
             var proofPath = Path.Combine(Root, "mixed-retention.json");
@@ -288,10 +311,11 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             } };
         }
 
-        internal SnapshotEnvelope Deposit(SnapshotEnvelope source, int index)
+        internal SnapshotEnvelope Deposit(SnapshotEnvelope source, int index, CropTeacherTerminalShippingTarget? plannedTarget = null)
         {
             var after = Copy(source); after.GameTick++;
-            var selected = Target.VariantAt(index);
+            var target = plannedTarget ?? Target;
+            var selected = target.VariantAt(index);
             ChangeState(after, "player", node =>
             {
                 var row = node["inventory"]!["value"]!.AsArray().Single(row => row!["slot_index"]!.GetValue<int>() == selected.SlotIndex)!.AsObject();
@@ -326,16 +350,18 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 if (remaining == 0) quantities.Remove(quantity); else quantity["available_quantity"] = remaining;
                 foreach (var bin in node["shipping_bins"]!["value"]!.AsArray())
                 {
-                    var silver = index >= (Target.NativeVariants!.DepositOrder is null ? 5 : 1);
-                    var count = index + 1 - (silver ? 1 : 0);
-                    var contents = new JsonArray(new JsonObject { ["item_id"] = resources.Item[3..], ["qualified_item_id"] = resources.Item,
+                    var deposited = Enumerable.Range(0, index + 1).Select(target.VariantAt).ToArray();
+                    var silver = deposited.Any(row => row.SlotIndex == SilverSlot);
+                    var count = deposited.Count(row => row.SlotIndex == NormalSlot);
+                    var contents = new JsonArray();
+                    if (count > 0) contents.Add(new JsonObject { ["item_id"] = resources.Item[3..], ["qualified_item_id"] = resources.Item,
                         ["quality"] = 0, ["count"] = count, ["unit_sell_to_store_price"] = 175, ["total_sell_to_store_price"] = count * 175 });
                     if (silver) contents.Add(new JsonObject { ["item_id"] = resources.Item[3..], ["qualified_item_id"] = resources.Item,
                         ["quality"] = 1, ["count"] = 1, ["unit_sell_to_store_price"] = 218, ["total_sell_to_store_price"] = 218 });
                     bin!["contents"] = contents; bin["contents_total_count"] = index + 1; bin["contents_distinct_item_count"] = 1;
-                    bin["contents_distinct_settlement_variant_count"] = silver ? 2 : 1; bin["pending_settlement_value"] = Target.PendingValueAt(index + 1);
+                    bin["contents_distinct_settlement_variant_count"] = contents.Count; bin["pending_settlement_value"] = target.PendingValueAt(index + 1);
                     bin["contents_signature"] = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(
-                        $"{resources.Item}|0|175|{count}\n" + (silver ? $"{resources.Item}|1|218|1\n" : "")))).ToLowerInvariant();
+                        (count > 0 ? $"{resources.Item}|0|175|{count}\n" : "") + (silver ? $"{resources.Item}|1|218|1\n" : "")))).ToLowerInvariant();
                 }
             });
             after.StateHash = SnapshotHash.ComputeStateHash(after.State); return after;
