@@ -1,5 +1,25 @@
 # Current Production Snapshot Handoff
 
+## Explicit Same-Live Original Main Continuation (220)
+
+Finalized571 merge26ccc58d is already an ancestor; retain its production wiring
+and deduplication.219 OWN43779185157 SUCCESS: Core2770(56s),Backend3609(9m43s),
+zero skipped; logSHAfd3214493461bd65a16cf1332133e973b553c5af83ec34bd0ffd84f1f260b185.
+Peer regular mergebff78e41 has the same219 tracked tree; no provider invocation.
+New explicit continue-live-crop-managed-owner binds original run/save/session,
+one original SMAPI PID/exe/UTC start, restored original owner without pending,
+and a full+fresh actual bridge state matching accepted hash/tick/actor/version.
+Recompute state hash, not only its declaration. Reuse ORIGINAL Main/immutable
+plan; readonly resume and saved-load continuation guards remain unchanged.
+Focused new/old entry and metadata adjacent52/52(36s), zero skipped, logSHA
+dbb263be1a7ec5f7e861518a83d5615a119ae0cdba3bbd906e4506922365e2c2.
+Before actual continuation, copy/hash original mutable Main report; retain the
+original session and record the new Main separately. Same W game2396/backend7644/
+product3356 stay Release218; new consumer Debug only. Never replay purchase41,
+restart factory, swap saved head or claim live matching as saved readback.
+Next actual first managed saved day OR first real blocker. Business572 remains
+OPEN, original550->570->569 and frozen19/19,11/11,169-172/formalfalse unchanged.
+
 ## Typed Objective Completion And Known Native Continuation (219)
 
 218 OWN43769809723 SUCCESS2770/3601; peer826049f3 same tree. W original

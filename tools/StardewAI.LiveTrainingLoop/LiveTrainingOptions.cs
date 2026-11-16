@@ -509,6 +509,10 @@ public sealed partial class LiveTrainingOptions
             {
                 options.UseManagedCropTeacher = true;
             }
+            else if (current == "--managed-crop-live-session")
+            {
+                options.ManagedCropLiveSessionPath = ReadManagedCropResumeArgument(args, ref i);
+            }
             else if (current == "--resume-managed-crop-owner")
             {
                 options.ResumeManagedCropOwnerDirectory = ReadManagedCropResumeArgument(args, ref i);

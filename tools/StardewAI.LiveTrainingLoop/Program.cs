@@ -73,12 +73,16 @@ if (args.Length > 0 && args[0] is "recover-crop-shared-preparation" or "continue
     return;
 }
 
-var continueManagedOwner = args.Length > 0 && args[0] == "continue-crop-managed-owner";
+var continueLiveManagedOwner = args.Length > 0 && args[0] == "continue-live-crop-managed-owner";
+var continueManagedOwner = continueLiveManagedOwner || args.Length > 0 && args[0] == "continue-crop-managed-owner";
 if (continueManagedOwner) args = args.Skip(1).ToArray();
 var options = LiveTrainingOptions.Parse(args);
-if (continueManagedOwner) options.ValidateManagedCropTeacherContinueMode();
+if (continueLiveManagedOwner) options.ValidateManagedCropTeacherLiveContinueMode();
+else if (continueManagedOwner) options.ValidateManagedCropTeacherContinueMode();
 else if (!string.IsNullOrWhiteSpace(options.ResumeManagedCropOwnerDirectory))
     throw new ArgumentException("Use the explicit resume-crop-managed-owner command to reopen retained managed evidence.");
+if (!continueLiveManagedOwner && !string.IsNullOrEmpty(options.ManagedCropLiveSessionPath))
+    throw new ArgumentException("A live session is usable only through continue-live-crop-managed-owner.");
 options.ValidateFormalExecutionBoundary();
 Directory.CreateDirectory(options.Root);
 Directory.CreateDirectory(options.RunDir);
@@ -232,14 +236,17 @@ var routeOscillationGuard = new RouteOscillationGuard();
 
 if (continueManagedOwner)
 {
-    var continued = await ContinueCropTeacherManagedOwnerAsync(http, options);
+    var continued = continueLiveManagedOwner
+        ? await ContinueLiveCropTeacherManagedOwnerAsync(http, options)
+        : await ContinueCropTeacherManagedOwnerAsync(http, options);
     cropTeacherManagedOwner.Attach(continued.Owner, continued.GameProcess);
     activeCropTeacherRunPlanRequest = continued.Source.RunPlanRequest;
     activeCropTeacherRunPlan = continued.Source.RunPlan;
     lastPlanningHandoffNativeRunPlanPath = continued.Source.NativeRunPlanPath;
-    AppendProgress(options, "crop_teacher_managed_run_continued", 0, continued.Restore.StateHash, string.Empty,
+    AppendProgress(options, continueLiveManagedOwner ? "crop_teacher_managed_live_run_continued" : "crop_teacher_managed_run_continued", 0, continued.Restore.StateHash, string.Empty,
         "owner=" + options.ResumeManagedCropOwnerDirectory + " original_plan=" + continued.Source.NativeRunPlanPath +
-        " next_artifact_iteration=" + nextArtifactIteration + " reload_report=" + continued.Restore.ReportPath);
+        " next_artifact_iteration=" + nextArtifactIteration +
+        (continueLiveManagedOwner ? " live_report=" : " reload_report=") + continued.Restore.ReportPath);
 }
 
 for (var attemptOrdinal = 1; ; attemptOrdinal++)

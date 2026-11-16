@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-11-16 同一现场显式续行（220）
+
+- 用户确认定稿 #571 由控制端整合；其 merge `26ccc58d` 已在当前分支祖先中，生产汇总／库存去重修复保留，不另写一套。219自身CI `43779185157` 成功：Core2770（56秒）／Backend3609（9分43秒），零跳过；日志SHA `fd3214493461bd65a16cf1332133e973b553c5af83ec34bd0ffd84f1f260b185`。沙箱merge `bff78e41` 与219跟踪树一致，没有API调用。
+- 新显式 `continue-live-crop-managed-owner` 只把原Main接回同一现场：原run／存档目录／slot、唯一原SMAPI的PID／exe／UTC启动时间、原owner无pending且已按原入口恢复、实时full+fresh快照完整state hash／tick／actor／版本一致，并重算state hash。缺一拒绝，不因进程存在就授予派发权。原不可变计划不重基日期，后续仍由同一Main和owner执行；原只读resume及saved-load续行默认不放宽。
+- 定向 **52/52（36秒）**、零跳过，SHA `dbb263be1a7ec5f7e861518a83d5615a119ae0cdba3bbd906e4506922365e2c2`。覆盖新旧模式隔离、错现场／进程元数据、伪造自报hash、错actor／tick／版本、未恢复head及pending；这是入口／相邻合同验证，不是实机日界成功。
+- 实际续行前复制并核哈希保留原Main报告，原session不覆盖，另记新Main生命周期。保持W原game2396／backend7644／product3356、Release218原执行器、Debug新消费者；不重买、不重开档、不伪造保存读回。下一退出点是原首次托管保存或首个真实阻塞；目前该日界和完整联合业务仍开放。#550→#570→#569／#572、冻结19/19／11/11／169–172及formal=false不变。
+
 ## 2026-11-16 原生已完成目标与记账接续（219）
 
 - 218自身CI43769809723成功（Core2770／Backend3601、零跳过），沙箱merge `826049f3` 同树。W原Release218／`9957c18b`／`ProofFarm_454459038` 实际接受6格耕地、播种和浇水；该W前缀没有清障。40的两个柜台候选经原编译器只选一个，move+interact已接受为owner37，实机越过218旧阻塞。41原wait／buy／close三帧全部applied/verified，20g→0，但新消费者把 `SelectedCandidateCompleted=false` 误当作typed购买目标也必须未完成，主循环退出；首日保存仍未完成。

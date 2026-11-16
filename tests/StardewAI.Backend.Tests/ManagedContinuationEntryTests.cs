@@ -3,7 +3,7 @@ using System.Reflection;
 
 namespace StardewAI.Backend.Tests;
 
-public sealed class ManagedContinuationEntryTests
+public sealed partial class ManagedContinuationEntryTests
 {
     [Fact]
     public void ExplicitContinuationRequiresCurrentProcessMetadataWithoutChangingReadonlyResume()
