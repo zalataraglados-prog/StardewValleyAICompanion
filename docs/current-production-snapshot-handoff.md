@@ -22,12 +22,33 @@ combination; FINAL adjacent63/63(1m6s), zero skipped, logSHA
 4db174844d50b47e5485c313af2273c083ed4bdeb6bee2ddc420bd5c39d09820.
 Includes earlier52, not additive. First commit CI cannot erase actual failure;
 fix commit needs its OWN CI. Same W world/accepted38 preserved for continuation.
-Before actual continuation, copy/hash original mutable Main report; retain the
-original session and record the new Main separately. Same W game2396/backend7644/
-product3356 stay Release218; new consumer Debug only. Never replay purchase41,
-restart factory, swap saved head or claim live matching as saved readback.
-Next actual first managed saved day OR first real blocker. Business572 remains
-OPEN, original550->570->569 and frozen19/19,11/11,169-172/formalfalse unchanged.
+Actual fixedfd04e88a/Main23052 bound original accepted38 at08:50:53; entry reportSHA
+7d9f8cd3e2f461fec6a05bbc695abe4db360eef2e4c1e9d2bc2e5b12ab4c7e07,
+NO native reload. Original routes42/44/46/48 and control waits, then native sleep50.
+Owner47 accepts overnight_control,totalday0->1/spring1->2,6verified crop tiles,
+0unverified. Save boundarySHAa5a01b6814bcba57365fdce14a31e4b328cbb0d5e31e5bcb0affa469474809c8.
+ORIGINAL fingerprint function reread actual E save:4files/6165355bytes/SHA
+79d9ec93960ef2e2d8ba7dd68e6d9e6c579a5ff84b43048072f2d1b03baf095e,
+EXACT accepted save. Accepted certificate chain38->47 verified. ObservationSHA
+e17653ee9c2f4d2a4123dc252a410cd6c3dba69e8679aff5887bfc61d7e4a301.
+Main23052 STOPPED08:55:12 with crop_teacher_managed_first_day_saved_owner_retained;
+managed first_day_completed=true but whole crop run=false, no load/readback or
+joint terminal/business/train claim. Generic standalone save flag=false/count0
+is a DIFFERENT unused path; do not overwrite it or deny actual managed47 proof.
+Original Main41 report copied/hash-verified; original session and both new process
+logs retained separately. Same game2396/backend7644/product3356 stay Release218,
+Main23052 exited. No active C# writes/builds, API, deployment or cleanup.
+NEXT: original saved-content-readback/saved-load continuation of SAME owner47,
+immutable84-action plan, then remaining original550 joint/production/shipping/
+settlement business,570->569. Accepted head5c4b0254... differs from last fresh
+loop51 sourcea9beff5f... (not owner accepted); never pass latest as accepted head,
+relax exact live matching, replay initial day or fake load. Business572 staysOPEN,
+frozen19/19,11/11,169-172/formalfalse unchanged. OWNfd04e88a CI43782363409 SUCCESS:
+Core2770(about1m)/Backend3636(9m50s),zero skipped; logSHA
+8226b7bfd1fdc852599ed45cea9fa77306379499e1d2af1576a1b68490079f82.
+42f6b547 CI was superseded/cancelled, not accepted. Final closeout changes ONLY
+these4documentation files; C#/tests/build configuration unchanged after tested
+fd04e88a. No additional local native run. All raw/saves/binaries outside Git.
 
 ## Typed Objective Completion And Known Native Continuation (219)
 
