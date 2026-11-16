@@ -24,7 +24,10 @@ internal static partial class CropTeacherProductionEvidence
         var nativeWork = references.Any(row => row?.AppliedNativeWorkQueue == true);
         var consumption = references.Any(row => row?.SettledInventoryConsumption is not null);
         var transferred = references.Any(row => row?.SettledMaterialTransfer is not null || row?.AcceptedMarker is not null);
-        return nativeWork ? BuildJointNativeWorkAsync(trace, output, write, retainSaleStock || consumption || transferred) :
+        // The v9 consumer also verifies completed prepared effects. Its unreserved retention mode
+        // must not invent sale-stock claims merely because some unrelated material was consumed.
+        return nativeWork || !retainSaleStock && (consumption || transferred)
+            ? BuildJointNativeWorkAsync(trace, output, write, retainSaleStock) :
             consumption ? BuildJointRetainingSharedInventoryEffectsAsync(trace, output, write) :
             transferred ? BuildJointRetainingTransferredSaleStockAsync(trace, output, write) :
             retainSaleStock ? BuildJointRetainingSaleStockAsync(trace, output, write) : BuildJointAsync(trace, output, write);

@@ -2,6 +2,14 @@
 
 ## Accepted Production Source Modes (227)
 
+FINAL refinement: consuming/transferring inventory does NOT imply sale-stock claims.
+Production and joint shipping share the current accepted-ledger/covered-plan claim check.
+Unreserved prepared effects reuse the existing v9 superset with unreserved retention,
+without inventing claims or rewriting per-source AppliedNativeWorkQueue flags.
+Final70/70(1m14s),zero skipped,Runtime/Product x claims/no-claims; logSHA
+2b93bc8bdcb17091ef2ae123a30c73af6ea715e6f430df60c4d8a34cc3b90bf1.
+Overlaps first68,do not sum; initial3ff9058bCI is NOT final-source acceptance.
+
 Public joint owner now uses the common typed source-mode selector for existing native-work,
 transfer and cooking/inventory consumers. Joint terminal selection consumes existing active
 sale-stock claims only when bound to this plan; ordinary legacy/default consumers unchanged.

@@ -29,7 +29,8 @@ public sealed partial class CropTeacherManagedSeedOwner
             RequireDirectoryPath(output);
             RequireOutsideNativeSaveSlot(new[] { output }, options.NativeSaveBinding);
             var result = combined is null ? await CropTeacherProductionEvidence.BuildAsync(trace, output, write).ConfigureAwait(false) :
-                await CropTeacherProductionEvidence.BuildAcceptedJointAsync(combined, output, write, retainSaleStock).ConfigureAwait(false);
+                await CropTeacherProductionEvidence.BuildAcceptedJointAsync(combined, output, write,
+                    retainSaleStock || HasCurrentSaleStockForPlan()).ConfigureAwait(false);
             ValidateState(); trace.ValidateInputsUnchanged();
             return result;
         }

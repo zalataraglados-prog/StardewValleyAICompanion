@@ -11,11 +11,13 @@ namespace StardewAI.Backend.Tests;
 public sealed partial class CropTeacherSeedTransferTests
 {
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task SharedCookingOwnsPreparationBeforeRpcAndCompletesOriginalMainOnce(bool product)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public async Task SharedCookingOwnsPreparationBeforeRpcAndCompletesOriginalMainOnce(bool product, bool saleStock)
     {
-        using var f = new SharedCookingFixture(); f.PrepareSource(product);
+        using var f = new SharedCookingFixture(includesReservedSaleStock: saleStock); f.PrepareSource(product);
         var decision = CookingDecision(f);
         using var inputs = new OwnerInputs(f.Files.SourcePath, f.Files.LedgerPath, f.Files.RequestPath);
         using var files = new OwnerFiles(f.Runtime.Options, f.Runtime.Client, f.Files.SourcePath, f.Files.LedgerPath, inputs) { RetainArtifacts = true };
@@ -63,7 +65,9 @@ public sealed partial class CropTeacherSeedTransferTests
         Assert.NotNull(shared.SourceReference.SettledConsumptionReferencePath); Assert.Null(shared.SourceReference.SettledTransferReferencePath);
         Assert.Throws<InvalidDataException>(() => MoneyRevenueCropNativeSharedSourceVerifier.VerifyWithTransferredSaleStock(transition));
         Assert.Equal(f.After.StateHash, MoneyRevenueCropNativeSharedSourceVerifier.VerifyWithSharedInventoryEffects(transition).AfterStateHash);
-        await VerifyAcceptedCookingProductionMode(joint);
+        Assert.Equal(saleStock, typeof(CropTeacherManagedSeedOwner).GetMethod("HasCurrentSaleStockForPlan",
+            BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(owner, []));
+        await VerifyAcceptedCookingProductionMode(joint, saleStock);
         await owner.DisposeAsync();
         await using var reopened = await files.Open();
         await reopened.RestoreHeadAsync(f.Runtime.Client, files.Recovery, files.Post);
@@ -72,7 +76,7 @@ public sealed partial class CropTeacherSeedTransferTests
         Assert.Equal(2, f.Runtime.Handler.Commits); Assert.Equal(1, f.Runtime.Handler.Settlements);
     }
 
-    private static async Task VerifyAcceptedCookingProductionMode(CropTeacherManagedJointProductionTrace original)
+    private static async Task VerifyAcceptedCookingProductionMode(CropTeacherManagedJointProductionTrace original, bool saleStock)
     {
         var shared = Assert.Single(original.SharedSourceReturns);
         // Only the foreign cooking source is an actual accepted fixture operation. A declared neighbor
@@ -91,7 +95,7 @@ public sealed partial class CropTeacherSeedTransferTests
             .Invoke(null, [combined, output, noWrite])!;
         Assert.Contains("Inventory consumption", (await Assert.ThrowsAsync<InvalidDataException>(() => old)).Message);
         var current = (Task<CropTeacherManagedProductionEvidence>)type.GetMethod("BuildAcceptedJointAsync", BindingFlags.Static | BindingFlags.NonPublic)!
-            .Invoke(null, [combined, output, noWrite, false])!;
+            .Invoke(null, [combined, output, noWrite, saleStock])!;
         var missingProduction = await Assert.ThrowsAsync<InvalidDataException>(() => current);
         Assert.Contains("no accepted original planting boundary", missingProduction.Message);
         Assert.False(Directory.Exists(output));

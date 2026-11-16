@@ -24,9 +24,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             if (Pending is not null || HeadRecoveryRequired)
                 throw new InvalidOperationException("Recover the original crop phase before selecting terminal shipping.");
             if (useAcceptedSaleStock)
-                consumeSaleStock = Read<StrategyCommitmentLedger>(headLedgerPath).MaterialReservations.Any(row =>
-                    row.Status == StrategyCommitmentStatuses.Active && CropSaleStockReservationContract.TryRead(row, out var purpose) &&
-                    plan.CoveredCommitmentIds.Contains(purpose!.CommitmentId, StringComparer.Ordinal));
+                consumeSaleStock = HasCurrentSaleStockForPlan();
             var result = consumeSaleStock ? CropTeacherTerminalShippingSelection.OpenNativeVariantsConsumingSaleStock(
                 evidence, options.NativeRunPlanPath, headSnapshotPath, headLedgerPath) :
                 nativeVariants ? CropTeacherTerminalShippingSelection.OpenNativeVariants(evidence, options.NativeRunPlanPath, headSnapshotPath, headLedgerPath) :
@@ -36,4 +34,8 @@ public sealed partial class CropTeacherManagedSeedOwner
         }
         finally { gate.Release(); }
     }
+
+    private bool HasCurrentSaleStockForPlan() => Read<StrategyCommitmentLedger>(headLedgerPath).MaterialReservations.Any(row =>
+        row.Status == StrategyCommitmentStatuses.Active && CropSaleStockReservationContract.TryRead(row, out var purpose) &&
+        plan.CoveredCommitmentIds.Contains(purpose!.CommitmentId, StringComparer.Ordinal));
 }
