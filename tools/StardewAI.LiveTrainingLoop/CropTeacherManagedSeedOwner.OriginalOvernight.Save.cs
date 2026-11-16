@@ -14,7 +14,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             throw new InvalidDataException("Original overnight requires this owner's native save root/slot and save-boundary mode.");
     }
 
-    private static CropTeacherNativeSaveBinding? NormalizeNativeSaveBinding(CropTeacherNativeSaveBinding? value)
+    internal static CropTeacherNativeSaveBinding? NormalizeNativeSaveBinding(CropTeacherNativeSaveBinding? value)
     {
         if (value is null) return null;
         if (string.IsNullOrWhiteSpace(value.SaveIsolationPath) || string.IsNullOrWhiteSpace(value.SaveSlot) ||
@@ -25,7 +25,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         return result;
     }
 
-    private static void RequireOutsideNativeSaveSlot(IEnumerable<string> outputs, CropTeacherNativeSaveBinding? binding)
+    internal static void RequireOutsideNativeSaveSlot(IEnumerable<string> outputs, CropTeacherNativeSaveBinding? binding)
     {
         if (binding is null) return;
         var slot = Path.Combine(binding.SaveIsolationPath, binding.SaveSlot);

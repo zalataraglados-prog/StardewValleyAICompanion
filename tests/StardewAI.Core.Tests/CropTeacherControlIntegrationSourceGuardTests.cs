@@ -6,6 +6,18 @@ namespace StardewAI.Core.Tests;
 public sealed partial class CropTeacherControlIntegrationSourceGuardTests
 {
     [Fact]
+    public void JointRootCompletionConsumesRetainedWorkBeforePreparingItsTerminal()
+    {
+        var program = Read("tools", "StardewAI.LiveTrainingLoop", "Program.cs");
+        var restore = program.IndexOf("await RestoreCropTeacherDailySelectionAsync(managedOwner,", StringComparison.Ordinal);
+        var compose = program.IndexOf("await ComposeCropTeacherDailyDispatchAsync(", StringComparison.Ordinal);
+        var terminal = program.IndexOf("await BuildCropTeacherOwnedJointTerminalApproachAsync(", StringComparison.Ordinal);
+        Assert.True(restore >= 0 && restore < compose && compose < terminal);
+        Assert.Contains("managedOwner is not null && selectedOtherForExecution is null", program, StringComparison.Ordinal);
+        Assert.Contains("managedTerminalControl ??= await BuildCropTeacherOwnedTerminalContinuationAsync", program, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void TeacherDispatchContinuesIntoTheFreshSnapshotControlLoop()
     {
         var program = Read("tools", "StardewAI.LiveTrainingLoop", "Program.cs");
@@ -202,10 +214,10 @@ public sealed partial class CropTeacherControlIntegrationSourceGuardTests
             "crop_teacher_watering_refill_approach",
             source,
             StringComparison.Ordinal);
-        Assert.Contains(
-            "\"max_route_repair_clears\"",
-            source,
-            StringComparison.Ordinal);
+        Assert.Contains("CropBoundedApproachPlanBuilder.Build(", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("\"max_route_repair_clears\"", source, StringComparison.Ordinal);
+        var approach = Read("src", "StardewAI.Core", "Training", "CropBoundedApproachPlanBuilder.cs");
+        Assert.Contains("name = \"max_route_repair_clears\", value = \"4\"", approach, StringComparison.Ordinal);
         Assert.Contains(
             "\"executor.move_to_tile\"",
             source,
@@ -319,11 +331,8 @@ public sealed partial class CropTeacherControlIntegrationSourceGuardTests
         var program = Read("tools", "StardewAI.LiveTrainingLoop", "Program.cs");
 
         Assert.Contains(
-            "cropQueue.ExecutionStepOverride ??\n" +
-            "            (!string.IsNullOrWhiteSpace(cropQueue.InterruptKind)\n" +
-            "                ? null\n" +
-            "                : cropStep);",
-            program.Replace("\r\n", "\n"),
+            "cropQueue.ExecutionStepOverride ?? (!string.IsNullOrWhiteSpace(cropQueue.InterruptKind) ? null : cropStep);",
+            System.Text.RegularExpressions.Regex.Replace(program, @"\s+", " "),
             StringComparison.Ordinal);
         Assert.Contains(
             "cropQueue.InterruptKind",
@@ -371,9 +380,14 @@ public sealed partial class CropTeacherControlIntegrationSourceGuardTests
             program,
             StringComparison.Ordinal);
         Assert.Contains(
-            "CaptureCropTeacherDayBoundaryStartAsync(",
+            "CaptureCropTeacherLoopDayBoundaryStartAsync(",
             program,
             StringComparison.Ordinal);
+        Assert.Contains("cropTeacherManagedOwner.Current,", program, StringComparison.Ordinal);
+        var boundaryOwner = Read("tools", "StardewAI.LiveTrainingLoop", "Program.CropTeacherManagedLoop.DayBoundary.cs");
+        Assert.Contains("owner is not null ? Task.FromResult<CropTeacherDayBoundaryStart?>(null)", boundaryOwner, StringComparison.Ordinal);
+        Assert.Contains("CaptureCropTeacherDayBoundaryStartAsync(options, step, beforeSnapshot, beforeStateHash)",
+            boundaryOwner, StringComparison.Ordinal);
     }
 
     [Fact]

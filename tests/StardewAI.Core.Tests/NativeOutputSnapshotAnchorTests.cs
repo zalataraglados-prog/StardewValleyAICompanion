@@ -101,6 +101,43 @@ public sealed class NativeOutputSnapshotAnchorTests
         Assert.True(restored.ActionOriginSnapshotAnchor);
     }
 
+    [Fact]
+    public void TillingAnchorRequiresExplicitCompleteContractWithoutExpandingLegacyScope()
+    {
+        var request = Request(); request.OptionId = request.SourcePlanningOptionId = "executor.till_soil";
+        Assert.Throws<InvalidDataException>(() => NativeOutputSnapshotAnchor.Read(Anchor().ToJsonString(), request, 100, "farm", "actor"));
+        request.ActionOriginTillingResources = request.ActionOriginToolInputs = request.ActionOriginInventoryPayload =
+            request.ActionOriginInventoryTransients = request.ActionOriginInventoryGraph = request.ActionOriginDebrisState = true;
+        var anchor = NativeOutputSnapshotAnchor.Read(Anchor().ToJsonString(), request, 100, "farm", "actor");
+        Assert.Equal(100, anchor.GameTick); Assert.Equal(new string('a', 64), anchor.StateHash);
+    }
+
+    [Theory]
+    [InlineData("tools")]
+    [InlineData("payload")]
+    [InlineData("transients")]
+    [InlineData("graph")]
+    [InlineData("debris")]
+    [InlineData("source")]
+    [InlineData("foreign_option")]
+    public void TillingAnchorRejectsMissingWitnessTiersOrBorrowedAction(string fault)
+    {
+        var request = Request(); request.OptionId = request.SourcePlanningOptionId = "executor.till_soil";
+        request.ActionOriginTillingResources = request.ActionOriginToolInputs = request.ActionOriginInventoryPayload =
+            request.ActionOriginInventoryTransients = request.ActionOriginInventoryGraph = request.ActionOriginDebrisState = true;
+        switch (fault)
+        {
+            case "tools": request.ActionOriginToolInputs = false; break;
+            case "payload": request.ActionOriginInventoryPayload = false; break;
+            case "transients": request.ActionOriginInventoryTransients = false; break;
+            case "graph": request.ActionOriginInventoryGraph = false; break;
+            case "debris": request.ActionOriginDebrisState = false; break;
+            case "source": request.SourcePlanningOptionId = "executor.move_to_tile"; break;
+            case "foreign_option": request.OptionId = "executor.clear_obstacle"; break;
+        }
+        Assert.Throws<InvalidDataException>(() => NativeOutputSnapshotAnchor.Read(Anchor().ToJsonString(), request, 100, "farm", "actor"));
+    }
+
     private static NativeOutputSnapshotAnchor Read(JsonObject json) => NativeOutputSnapshotAnchor.Read(json.ToJsonString(), Request(), 100, "farm", "actor");
     private static TrainingExecutionRequest Request() => new()
     {

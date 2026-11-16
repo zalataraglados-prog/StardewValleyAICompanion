@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
 
 namespace StardewAI.LiveTrainingLoop;
@@ -47,7 +48,8 @@ public sealed partial class CropTeacherManagedSeedOwner
         // Lookup and independent replay precede the original full Get/reconciliation.
         var final = await StrategyLedgerEvidenceStore.ReadAsync(http, options.BackendUrl, output,
             verified.SourceStateHash, JsonOptions, operation.IsWateringMaintenance ? "Original watering maintenance readback" : "Original supporting route readback").ConfigureAwait(false);
-        CropTeacherSeedRuntimeTransaction.RequireLedger(verified, final.Ledger, "supporting route full readback");
+        StrategyLedgerEvidenceStore.RequireReconciledReadback(verified, final.Ledger,
+            artifacts.Read<SnapshotEnvelope>(scope.AfterSnapshotPath), SupportingOperationTag(operation) + " full readback");
         artifacts.Pin(final.Path);
         void Validate() { ValidateSupportingTransition(operation); artifacts.Validate(); }
         Validate();
@@ -64,6 +66,18 @@ public sealed partial class CropTeacherManagedSeedOwner
         accepted["native_outcome_verified"] = true;
         accepted["native_crop_lifecycle_verified"] = false;
         accepted["teacher_preference_label_eligible"] = false;
+        if (operation.SharedPortfolioSupport is not null)
+            accepted[PreparationMode(operation.Record).AcceptedPreparationHashKey] = HashFile(RecordPath(operation.Sequence, "prepared"));
+        AddSharedSourceReturnEvidence(operation, accepted);
+        AddSavedReadbackEvidence(operation, accepted);
+        if (operation.Tilling is { } tilling) AddTillingOutcomeEvidence(tilling, operation.TillingStart!, accepted);
+        if (operation.Clearance is { } clearance) AddClearanceOutcomeEvidence(clearance, operation.ClearanceStart!, accepted);
+        if (operation.Terminal is { } terminal)
+        {
+            AddTerminalOutcomeEvidence(terminal, accepted);
+            AddTerminalProductionReference(operation, accepted);
+        }
+        if (operation.Control is { } control) AddControlOutcomeEvidence(control, accepted);
         if (operation.Watering is { } watering) AddWateringOutcomeEvidence(watering, accepted);
         if (operation.Harvest is { } harvest) AddHarvestOutcomeEvidence(harvest, accepted);
         if (operation.Overnight is { } overnight)
@@ -76,13 +90,47 @@ public sealed partial class CropTeacherManagedSeedOwner
         {
             accepted[NativeSupportingRole(operation) + "_native_claim_sha256"] = HashFile(NativeSupportingPath(operation, "claim"));
             accepted[NativeSupportingRole(operation) + "_native_result_sha256"] = HashFile(NativeSupportingPath(operation, "result"));
-            if (operation.SupportingRoute is { } route) accepted["route_target_reached"] = route.RouteTargetReached;
+            if (operation.SupportingRoute is { } route) AddRouteOutcomeEvidence(route, accepted);
         }
     }
 
     private void ValidateSupportingTransitionAcceptance(CropTeacherManagedSeedOperation operation, JsonObject accepted)
     {
+        var preparationHashKey = operation.SharedPortfolioSupport is null ? null : PreparationMode(operation.Record).AcceptedPreparationHashKey;
+        if (new[] { "shared_transfer_prepared_sha256", "shared_consumption_prepared_sha256" }
+                .Any(key => key != preparationHashKey && accepted[key] is not null) ||
+            preparationHashKey is not null && Text(accepted, preparationHashKey) != HashFile(RecordPath(operation.Sequence, "prepared")))
+            throw new InvalidDataException("Supporting acceptance changed its original shared preparation record.");
         if (operation.OriginalStart is not null) LoadOriginalSupportingOutcome(operation);
+        ValidateSiteApproachAcceptance(operation, accepted);
+        if (operation.Terminal is { } terminal)
+        {
+            var expected = new JsonObject(); AddTerminalOutcomeEvidence(terminal, expected);
+            if (expected.Any(field => !JsonNode.DeepEquals(field.Value, accepted[field.Key])) ||
+                accepted["route_target_reached"] is not null || accepted["native_control_recovery_verified"] is not null ||
+                accepted["native_watering_prefix_verified"] is not null || accepted["native_harvest_prefix_verified"] is not null ||
+                accepted["native_overnight_control_verified"] is not null)
+                throw new InvalidDataException("Managed terminal acceptance changed or claimed unrelated progress.");
+        }
+        else if (new[] { "native_terminal_shipping_step_verified", "terminal_kind", "accepted_deposit_count_before",
+            "accepted_deposit_count_after", "terminal_pending_value_after", "terminal_settlement_verified",
+            "terminal_native_claim_sha256", "terminal_native_result_sha256" }.Any(name => accepted[name] is not null))
+            throw new InvalidDataException("A different phase cannot claim terminal shipping evidence.");
+        if (operation.Control is { } control)
+        {
+            var expected = new JsonObject();
+            AddControlOutcomeEvidence(control, expected);
+            if (expected.Any(field => !JsonNode.DeepEquals(field.Value, accepted[field.Key])) ||
+                accepted["route_target_reached"] is not null || accepted["route_native_claim_sha256"] is not null ||
+                accepted["route_native_result_sha256"] is not null || accepted["maintenance_native_claim_sha256"] is not null ||
+                accepted["maintenance_native_result_sha256"] is not null || accepted["native_watering_prefix_verified"] is not null ||
+                accepted["native_refill_control_verified"] is not null || accepted["native_refill_approach_verified"] is not null ||
+                accepted["native_refill_resource_effects_verified"] is not null)
+                throw new InvalidDataException("Managed control recovery acceptance changed or claimed unrelated progress.");
+        }
+        else if (accepted["native_control_recovery_verified"] is not null || accepted["control_kind"] is not null ||
+            accepted["control_native_claim_sha256"] is not null || accepted["control_native_result_sha256"] is not null)
+            throw new InvalidDataException("A different supporting phase cannot claim control recovery evidence.");
         if (operation.Overnight is { } overnight)
         {
             var expected = new JsonObject();
@@ -123,9 +171,12 @@ public sealed partial class CropTeacherManagedSeedOwner
                 !watering.RefillControlVerified && accepted["native_refill_control_verified"] is not null ||
                 !watering.RefillApproachVerified && accepted["native_refill_approach_verified"] is not null ||
                 !watering.RefillResourceEffectsVerified && accepted["native_refill_resource_effects_verified"] is not null ||
+                !watering.RefillNativeEffectsObserved && accepted["native_refill_observed_outcome_verified"] is not null ||
                 accepted["route_native_claim_sha256"] is not null || accepted["route_native_result_sha256"] is not null || accepted["route_target_reached"] is not null)
                 throw new InvalidDataException("Managed crop watering prefix acceptance changed.");
         }
+        if (operation.Watering is null && accepted["native_refill_observed_outcome_verified"] is not null)
+            throw new InvalidDataException("A different supporting phase cannot claim native refill evidence.");
         if (operation.OriginalStart is not null)
         {
             if (Text(accepted, NativeSupportingRole(operation) + "_native_claim_sha256") != HashFile(NativeSupportingPath(operation, "claim")) ||

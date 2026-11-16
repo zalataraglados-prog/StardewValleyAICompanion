@@ -9,7 +9,7 @@ using StardewAI.Core.Training;
 
 namespace StardewAI.Core.Tests;
 
-public sealed class CookingMainlineTests
+public sealed partial class CookingMainlineTests
 {
     [Fact]
     public void ExplicitRecipeFlowsThroughOneNativeCookingPrimitive()

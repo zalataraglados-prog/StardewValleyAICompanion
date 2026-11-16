@@ -18,6 +18,11 @@ static partial class Program
         TrainingDatasetAppendResult appendResult)
     {
         var result = new PolicyTrajectoryAppendBatchResult();
+        if (!string.IsNullOrWhiteSpace(ReadString(aggregateExecution, "joint_selection_outcome_path")))
+        {
+            result.Skip("joint_selection_outcome_retained_for_original_decision_aggregation");
+            return result;
+        }
         var policyRunId = !string.IsNullOrWhiteSpace(options.RunId)
             ? options.RunId
             : !string.IsNullOrWhiteSpace(options.ArtifactRunId)

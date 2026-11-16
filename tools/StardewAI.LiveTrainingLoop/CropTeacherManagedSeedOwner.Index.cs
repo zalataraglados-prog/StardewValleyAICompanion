@@ -42,18 +42,23 @@ public sealed partial class CropTeacherManagedSeedOwner
             if (File.Exists(preparedPath))
             {
                 var prepared = Read<JsonObject>(preparedPath);
-                if (operation.IsLifecycle || operation.IsSupportingTransition || Text(prepared, "schema_version") != "crop_teacher_managed_seed_preparation.v1" ||
-                    prepared["sequence"]?.GetValue<int>() != sequence || Text(prepared, "run_id") != options.RunId ||
-                    Text(prepared, "support_step_id") != operation.SupportStepId || Text(prepared, "admission_sha256") != HashFile(path) ||
-                    prepared["native_dispatch_performed"]?.GetValue<bool>() != false || prepared["formal_product_training_authorized"]?.GetValue<bool>() != false ||
-                    Text(prepared, "original_intent_sha256") != HashFile(Path.Combine(operation.RuntimeDirectory, "support-intent.json")) ||
-                    Text(prepared, "queue_sha256") != HashFile(StoredPath(prepared, "queue_path")))
-                    throw new InvalidDataException("Managed crop preparation index changed.");
-                operation.Prepared = prepared;
-                RequireAdmittedSeedIntent(operation, Text(prepared, "original_intent_sha256"));
-                if (HasOwnedDispatchProtocol(operation) != (prepared["dispatch_protocol"]?.GetValue<string>() == "owner_loop.v1"))
-                    throw new InvalidDataException("Managed crop preparation dispatch protocol changed.");
-                _ = ReadPreparationReference(operation);
+                if (operation.SharedPortfolioSupport is not null)
+                    LoadSharedTransferPrepared(operation, prepared);
+                else
+                {
+                    if (operation.IsLifecycle || operation.IsSupportingTransition || Text(prepared, "schema_version") != "crop_teacher_managed_seed_preparation.v1" ||
+                        prepared["sequence"]?.GetValue<int>() != sequence || Text(prepared, "run_id") != options.RunId ||
+                        Text(prepared, "support_step_id") != operation.SupportStepId || Text(prepared, "admission_sha256") != HashFile(path) ||
+                        prepared["native_dispatch_performed"]?.GetValue<bool>() != false || prepared["formal_product_training_authorized"]?.GetValue<bool>() != false ||
+                        Text(prepared, "original_intent_sha256") != HashFile(Path.Combine(operation.RuntimeDirectory, "support-intent.json")) ||
+                        Text(prepared, "queue_sha256") != HashFile(StoredPath(prepared, "queue_path")))
+                        throw new InvalidDataException("Managed crop preparation index changed.");
+                    operation.Prepared = prepared;
+                    RequireAdmittedSeedIntent(operation, Text(prepared, "original_intent_sha256"));
+                    if (HasOwnedDispatchProtocol(operation) != (prepared["dispatch_protocol"]?.GetValue<string>() == "owner_loop.v1"))
+                        throw new InvalidDataException("Managed crop preparation dispatch protocol changed.");
+                    _ = ReadPreparationReference(operation);
+                }
                 recognized.Add(preparedPath);
             }
             var dispatchPath = RecordPath(sequence, "dispatch");
@@ -96,6 +101,12 @@ public sealed partial class CropTeacherManagedSeedOwner
         lastAcceptedOperation = operation;
         lastAcceptedPath = path;
         lastAcceptedHash = HashFile(path);
+        acceptedHistory.Add((operation.Sequence, path, lastAcceptedHash));
+        if (operation.Terminal is { } terminal)
+        {
+            terminalTarget = terminal.Target with { AcceptedDepositCount = terminal.AcceptedDepositCountAfter };
+            terminalProductionReference = ReadTerminalProductionReference(operation.Record);
+        }
         frontierHashes.Clear();
         frontierHashes[Path.Combine(options.EvidenceDirectory, "owner-intent.json")] = headerHash;
         frontierHashes[headSnapshotPath] = Text(accepted, "after_snapshot_sha256");

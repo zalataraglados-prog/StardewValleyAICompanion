@@ -8,6 +8,7 @@ using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
 using StardewAI.Core.Execution;
 using StardewAI.Core.Infrastructure;
+using StardewAI.Core.Strategy;
 using StardewAI.Core.Verifier;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
@@ -556,6 +557,30 @@ namespace StardewAI.Core.OptionRegistry
                     snapshot,
                     parameters,
                     commitmentLedger);
+            }
+
+            if (optionId == "economy.ship_items")
+                return ShipItemStageCandidates(snapshot, parameters, ReadSaleStockBudget(snapshot, commitmentLedger));
+            if (optionId == "crafting.cook_recipe")
+                return CookingCandidatesWithSaleStock(snapshot, parameters, commitmentLedger);
+            if (optionId == "economy.sell_items")
+                return ActiveShopMenuOpen(snapshot) ? Array.Empty<EventCandidate>() :
+                    SellItemStageCandidates(snapshot, parameters, ReadSaleStockBudget(snapshot, commitmentLedger));
+            if (optionId == "inventory.transfer_item")
+            {
+                var rows = MaterialTransferCandidates(snapshot, parameters);
+                var reasons = CropSaleStockTransferPreflight.EvaluateCandidate(optionId, parameters, snapshot, commitmentLedger, out var bindings);
+                if (bindings is not null)
+                    foreach (var row in rows)
+                        row.Parameters = row.Parameters.Where(parameter => !bindings.Any(binding => binding.Name == parameter.Name))
+                            .Concat(bindings).ToArray();
+                if (reasons.Length == 0) return rows;
+                foreach (var row in rows)
+                {
+                    row.Available = false; row.AllowedNow = false;
+                    row.BlockReasons = row.BlockReasons.Concat(reasons).Distinct(StringComparer.Ordinal).ToArray();
+                }
+                return rows;
             }
 
             return eventCandidateProviders.TryGetValue(optionId, out var provider)

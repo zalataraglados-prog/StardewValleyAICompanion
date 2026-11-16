@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
+using StardewAI.Core.Strategy;
 
 namespace StardewAI.Core.Training;
 
@@ -43,6 +45,12 @@ public sealed partial class DailyPlanCompiler
         }
         transferParameters.Add(Parameter("stand_tile_x", standX.Value.ToString()));
         transferParameters.Add(Parameter("stand_tile_y", standY.Value.ToString()));
+        // Carry conflicts too: fresh compilation must reject them rather than sanitize the request.
+        if (candidate.Parameters.Any(row => CropSaleStockMaterialTransferBinding.IsControlParameter(row.Name)))
+            transferParameters.AddRange(candidate.Parameters.Where(row =>
+                CropSaleStockMaterialTransferBinding.IsControlParameter(row.Name) ||
+                CropSaleStockMaterialTransferBinding.IsForeignControlParameter(row.Name) ||
+                row.Name == PreparedMaterialTransferContract.BindingParameter).Select(row => Parameter(row.Name, row.Value)));
         var quantity = CandidateInt(candidate, "quantity");
         if (quantity is null or <= 0) return Array.Empty<SmallModelPlanStep>();
         var interactionTicks = MaterialTransferBudgetPolicy.InteractionTicks(quantity.Value);

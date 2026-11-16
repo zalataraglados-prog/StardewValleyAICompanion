@@ -25,6 +25,15 @@ public sealed partial class ActionQueueDispatchReadinessService
             CurrentLedgerId = currentLedger.LedgerId,
             CurrentLedgerRevision = currentLedger.Revision
         };
+        if (item.OptionId == PreparedInventoryConsumptionContract.Consumer && currentLedger.PreparedInventoryConsumption is not null ||
+            PreparedCookingConsumptionBinding.IsPresent(item.NormalizedCommand.Parameters))
+        {
+            result.Ready = item.Status == "pending" && item.NormalizedCommand.StateHash == currentStateHash &&
+                PreparedCookingConsumptionBinding.IsBound(item, currentLedger);
+            result.Status = result.Ready ? "ready" : "blocked";
+            result.BlockingReasons = result.Ready ? Array.Empty<string>() : new[] { "dispatch_inventory_consumption_binding_drifted" };
+            return result;
+        }
         if (item.OptionId is "executor.transfer_material" or "inventory.transfer_item")
             return EvaluateMaterialTransfer(item, currentLedger, currentStateHash, result);
         if (CropSeedPlantingBinding.IsPresent(item.NormalizedCommand.Parameters))

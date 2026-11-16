@@ -2,7 +2,7 @@ using StardewAI.Contracts.State;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
-public static class MoneyRevenueCropOutputRetentionProofBuilder
+public static partial class MoneyRevenueCropOutputRetentionProofBuilder
 {
     public static MoneyRevenueCropOutputRetentionProof Build(
         string requestPath)
@@ -14,12 +14,23 @@ public static class MoneyRevenueCropOutputRetentionProofBuilder
             MoneyRevenueCropOutputRetentionProofRequest>(
                 fullRequestPath,
                 "Money Revenue crop output-retention proof request");
-        Require(request.SchemaVersion ==
-                    "money_revenue_crop_output_retention_proof_request.v1" &&
+        var appliedNativeWork = request.SchemaVersion is "money_revenue_crop_output_retention_proof_request.v7" or "money_revenue_crop_output_retention_proof_request.v8";
+        var nativeReservedStock = request.SchemaVersion == "money_revenue_crop_output_retention_proof_request.v8";
+        var inventoryEffects = nativeReservedStock || request.SchemaVersion == "money_revenue_crop_output_retention_proof_request.v6";
+        var transferredStock = inventoryEffects || request.SchemaVersion == "money_revenue_crop_output_retention_proof_request.v5";
+        var reservedStock = transferredStock || request.SchemaVersion == "money_revenue_crop_output_retention_proof_request.v4";
+        var throughBoundary = appliedNativeWork || reservedStock || request.SchemaVersion == "money_revenue_crop_output_retention_proof_request.v3";
+        var producerAware = throughBoundary || request.SchemaVersion == "money_revenue_crop_output_retention_proof_request.v2";
+        Require((producerAware || request.SchemaVersion ==
+                    "money_revenue_crop_output_retention_proof_request.v1") &&
                 !string.IsNullOrWhiteSpace(request.CommitmentId) &&
                 request.WaveIndex > 0 &&
                 !request.FormalProductTrainingAuthorized,
             "Money Revenue crop output-retention proof request is invalid.");
+        Require(throughBoundary
+                ? !string.IsNullOrWhiteSpace(request.RetainThroughSnapshotPath) && Path.IsPathFullyQualified(request.RetainThroughSnapshotPath)
+                : request.RetainThroughSnapshotPath is null,
+            "An explicit retention boundary requires output-retention request v3/v4/v5/v6 and an absolute snapshot path.");
 
         var planPath = RequiredFile(
             request.CropProductionPlanPath,
@@ -103,18 +114,21 @@ public static class MoneyRevenueCropOutputRetentionProofBuilder
         var lastIndex = Array.IndexOf(
             lifecycle.Transitions,
             harvestTransitions[^1]);
-        Require(firstIndex >= 0 && lastIndex >= firstIndex &&
+        Require(firstIndex >= 0 && lastIndex >= firstIndex && (producerAware ||
                 lifecycle.Transitions[firstIndex..(lastIndex + 1)]
-                    .SequenceEqual(harvestTransitions),
+                    .SequenceEqual(harvestTransitions)),
             "Money Revenue crop output-retention harvest queues are not contiguous.");
+        if (throughBoundary)
+            lastIndex = ResolveProducerRetentionBoundary(lifecycle, request.RetainThroughSnapshotPath!, lastIndex, wave.HarvestTotalDay);
+        var terminal = lifecycle.Transitions[lastIndex];
 
         var beforePath = RequiredBoundFile(
             harvestTransitions[0].BeforeSnapshotPath,
             harvestTransitions[0].BeforeSnapshotSha256,
             "Money Revenue crop output-retention before snapshot");
         var afterPath = RequiredBoundFile(
-            harvestTransitions[^1].AfterSnapshotPath,
-            harvestTransitions[^1].AfterSnapshotSha256,
+            terminal.AfterSnapshotPath,
+            terminal.AfterSnapshotSha256,
             "Money Revenue crop output-retention after snapshot");
         var before = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
             beforePath,
@@ -123,7 +137,7 @@ public static class MoneyRevenueCropOutputRetentionProofBuilder
             afterPath,
             "Money Revenue crop output-retention after snapshot");
         Require(before.StateHash == harvestTransitions[0].BeforeStateHash &&
-                after.StateHash == harvestTransitions[^1].AfterStateHash,
+                after.StateHash == terminal.AfterStateHash,
             "Money Revenue crop output-retention snapshot hashes drifted.");
         var receipt = ExactInventoryReceiptVerifier.Verify(
             before,
@@ -131,7 +145,7 @@ public static class MoneyRevenueCropOutputRetentionProofBuilder
             verifiedCommitment.HarvestItemQualifiedId,
             wave.MinimumUnits,
             minimumQuality: 0);
-        Require(receipt.Resolved && receipt.Verified &&
+        Require(receipt.Resolved && (producerAware || receipt.Verified) &&
                 receipt.BeforeQuantity.HasValue &&
                 receipt.AfterQuantity.HasValue &&
                 receipt.QuantityIncrease.HasValue,
@@ -146,6 +160,18 @@ public static class MoneyRevenueCropOutputRetentionProofBuilder
         var quantityIncrease = receipt.QuantityIncrease ??
             throw new InvalidDataException(
                 "Money Revenue crop output-retention quantity increase is unavailable.");
+        var attribution = appliedNativeWork ? BuildProducerRetentionCore(lifecycle, harvestTransitions, firstIndex, lastIndex,
+            verifiedCommitment.HarvestItemQualifiedId, wave.MinimumUnits, verifiedCommitment.TileCount,
+            reservedStock ? verifiedCommitment.CommitmentId : null, reservedStock ? wave.OutputRetentionKey : null,
+            transferredStock: reservedStock, inventoryEffects: reservedStock, appliedNativeWork: true) :
+            inventoryEffects ? BuildSharedInventoryProducerRetention(lifecycle, harvestTransitions, firstIndex, lastIndex,
+            verifiedCommitment.HarvestItemQualifiedId, wave.MinimumUnits, verifiedCommitment.TileCount,
+            verifiedCommitment.CommitmentId, wave.OutputRetentionKey) : transferredStock ? BuildTransferredProducerRetention(lifecycle, harvestTransitions, firstIndex, lastIndex,
+            verifiedCommitment.HarvestItemQualifiedId, wave.MinimumUnits, verifiedCommitment.TileCount,
+            verifiedCommitment.CommitmentId, wave.OutputRetentionKey) : reservedStock ? BuildReservedProducerRetention(lifecycle, harvestTransitions, firstIndex, lastIndex,
+            verifiedCommitment.HarvestItemQualifiedId, wave.MinimumUnits, verifiedCommitment.TileCount,
+            verifiedCommitment.CommitmentId, wave.OutputRetentionKey) : producerAware ? BuildProducerRetention(lifecycle, harvestTransitions, firstIndex, lastIndex,
+            verifiedCommitment.HarvestItemQualifiedId, wave.MinimumUnits, verifiedCommitment.TileCount) : null;
 
         var queueEvidence = harvestTransitions.Select(value =>
         {
@@ -168,7 +194,7 @@ public static class MoneyRevenueCropOutputRetentionProofBuilder
                 value.ItemCount);
         }).ToArray();
 
-        return new MoneyRevenueCropOutputRetentionProof
+        var proof = new MoneyRevenueCropOutputRetentionProof
         {
             Status = "verified_native_crop_output_retention",
             RequestPath = fullRequestPath,
@@ -193,7 +219,7 @@ public static class MoneyRevenueCropOutputRetentionProofBuilder
             BeforeSnapshotSha256 = harvestTransitions[0].BeforeSnapshotSha256,
             BeforeStateHash = before.StateHash,
             AfterSnapshotPath = afterPath,
-            AfterSnapshotSha256 = harvestTransitions[^1].AfterSnapshotSha256,
+            AfterSnapshotSha256 = terminal.AfterSnapshotSha256,
             AfterStateHash = after.StateHash,
             InventoryQuantityBefore = beforeQuantity,
             InventoryQuantityAfter = afterQuantity,
@@ -205,6 +231,39 @@ public static class MoneyRevenueCropOutputRetentionProofBuilder
             NativeOutputRetentionVerified = true,
             FormalProductTrainingAuthorized = false
         };
+        if (attribution is not null)
+        {
+            proof.SchemaVersion = appliedNativeWork ? nativeReservedStock ? "money_revenue_crop_output_retention_proof.v7" : "money_revenue_crop_output_retention_proof.v6" :
+                inventoryEffects ? "money_revenue_crop_output_retention_proof.v5" : transferredStock ? "money_revenue_crop_output_retention_proof.v4" :
+                reservedStock ? "money_revenue_crop_output_retention_proof.v3" : "money_revenue_crop_output_retention_proof.v2";
+            proof.ProducerRetention = attribution;
+            proof.ProofPolicy = "One exact native harvest wave with an independently rebuilt lifecycle. " +
+                "Only owned harvest inventory deltas create fungible variant credit; foreign increases do not. " +
+                "Every intervening original native action frame deducts observed variant losses conservatively. " +
+                "Inventory before/after/increase remain the actual aggregate quantities, not producer credit. " +
+                "Retained variant credit limits the explicit native terminal plan; reservations and settlement remain separate.";
+            if (throughBoundary)
+                proof.ProofPolicy += " Retention continues through the explicitly bound same-day lifecycle boundary, including work after the final owned harvest.";
+            if (reservedStock)
+                proof.ProofPolicy = "One exact native harvest wave and its explicitly bound same-day lifecycle boundary, independently rebuilt. " +
+                    "Only owned harvest deltas create fungible variant credit; foreign increases never do. " +
+                    "Explicit reserved-stock mode preserves only existing owned credit covered by original wave reservations " +
+                    "and still present in every original native frame; other losses debit owned credit conservatively. " +
+                    "Aggregate inventory fields keep their original meaning. Native terminal consumption requires the explicit sale-stock consumer.";
+            if (transferredStock)
+                proof.ProofPolicy += " Original prepared and settled native transfers preserve credited stock in actor-authorized chests. " +
+                    (inventoryEffects
+                        ? "Transfer positions change at the actual native transfer frame; separately bound cooking uses its actual native consumption frame. "
+                        : "Claim positions change only at the actual native transfer frame; passive reindexing comes from the original settlement. ") +
+                    "Stored claims require a previously observed player variant and matching physical quality. Withdrawal and terminal sale recheck full player metadata. " +
+                    "Foreign gains and unobserved stored stock cannot create or restore producer credit.";
+            if (inventoryEffects)
+                proof.ProofPolicy += " Explicit prepared cooking consumption replays original settlement and applies passive claim positions only at its actual native cooking frame. " +
+                    "Cooking output is foreign gain, never owned crop producer credit; original quantity, quality and source rules remain.";
+            if (appliedNativeWork)
+                proof.ProofPolicy += " Every immutable native work queue is fully applied and verified; a pending selected objective is not completed or credited by source return.";
+        }
+        return proof;
     }
 
     private static string RequiredBoundFile(

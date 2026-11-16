@@ -6,6 +6,7 @@ using StardewValley.Buildings;
 using StardewValley.GameData.Shops;
 using StardewValley.Internal;
 using StardewValley.Locations;
+using StardewAI.TransparentBridge.State;
 
 namespace StardewAI.TransparentBridge.Adapters;
 
@@ -645,6 +646,9 @@ public sealed partial class ShopAccessReadAdapter : ReadAdapterBase
     private sealed record MapActionRow(int tile_x, int tile_y, string source_property, string raw_action, string? branch);
 
     private static MapActionRow[] ReadMapActions(GameLocation location)
+        => MapActionCapture<MapActionRow>.Read(location, location.map, () => ReadMapActionsUncached(location));
+
+    private static MapActionRow[] ReadMapActionsUncached(GameLocation location)
     {
         var map = location.map;
         if (map?.Layers is null || map.Layers.Count == 0)

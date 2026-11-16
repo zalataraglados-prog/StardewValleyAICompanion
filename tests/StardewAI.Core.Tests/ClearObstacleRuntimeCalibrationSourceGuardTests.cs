@@ -14,8 +14,11 @@ public sealed class ClearObstacleRuntimeCalibrationSourceGuardTests
             "private TrainingExecutionResult ExecuteSetupClearObstacle(",
             "private static void EnsureClearObstacleFixtureTool(");
 
-        Assert.Contains("\"grass\" or \"twig\" or \"seed_spot\" or \"artifact_spot\" or \"tree_moss\"", fixture, StringComparison.Ordinal);
+        Assert.Contains("\"grass\" or \"weeds\" or \"twig\" or \"seed_spot\" or \"artifact_spot\" or \"tree_moss\"", fixture, StringComparison.Ordinal);
         Assert.Contains("ItemRegistry.Create<StardewValley.Object>", fixture, StringComparison.Ordinal);
+        Assert.Contains("\"weeds\" => \"(O)784\"", fixture, StringComparison.Ordinal);
+        Assert.Contains("fixtureKind == \"weeds\" ? \"scythe\"", fixture, StringComparison.Ordinal);
+        Assert.Contains("\"weeds\" => observedObstacle.IsWeeds() && observedObstacle.QualifiedItemId == \"(O)784\"", fixture, StringComparison.Ordinal);
         Assert.Contains("\"twig\" => \"(O)294\"", fixture, StringComparison.Ordinal);
         Assert.Contains("\"stone\" => \"(O)343\"", fixture, StringComparison.Ordinal);
         Assert.Contains("!createdObstacle.IsBreakableStone()", fixture, StringComparison.Ordinal);
@@ -59,7 +62,10 @@ public sealed class ClearObstacleRuntimeCalibrationSourceGuardTests
             "scripts",
             "Invoke-RuntimeClearObstacleSmoke.ps1");
 
-        Assert.Contains("ValidateSet(\"grass\", \"twig\", \"seed_spot\", \"artifact_spot\", \"tree_moss\", \"tree_chop\")", smoke, StringComparison.Ordinal);
+        Assert.Contains("ValidateSet(\"grass\", \"weeds\", \"twig\", \"seed_spot\", \"artifact_spot\", \"tree_moss\", \"tree_chop\")", smoke, StringComparison.Ordinal);
+        Assert.Contains("if ($FixtureKind -eq \"weeds\" -and", smoke, StringComparison.Ordinal);
+        Assert.Contains("$targetObject.qualified_item_id -ne \"(O)784\"", smoke, StringComparison.Ordinal);
+        Assert.Contains("$FixtureKind -notin @(\"grass\", \"weeds\")", smoke, StringComparison.Ordinal);
         Assert.Contains("clear_obstacle_executor_status", smoke, StringComparison.Ordinal);
         Assert.Contains("clear_output_items_json", smoke, StringComparison.Ordinal);
         Assert.Contains("tool_slot_index", smoke, StringComparison.Ordinal);

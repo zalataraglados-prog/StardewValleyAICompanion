@@ -151,6 +151,8 @@ var commandDefinitions = new CommandDefinition[]
     new("build-money-revenue-crop-terminal-settlement-proof", BuildMoneyRevenueCropTerminalSettlementProof),
     new("build-money-revenue-crop-shared-shipping-settlement-proof", BuildMoneyRevenueCropSharedShippingSettlementProof),
     new("build-money-revenue-crop-production-proof-checkpoint", BuildMoneyRevenueCropProductionProofCheckpoint),
+    new("build-money-revenue-crop-native-production-proof-checkpoint", options =>
+        Write(options.Required("output"), MoneyRevenueCropProductionProofCheckpointBuilder.BuildNativeObserved(options.Required("request")))),
     new("build-money-revenue-crop-native-production-segment", BuildMoneyRevenueCropNativeProductionSegment),
     new("build-money-revenue-crop-production-teacher-comparison", BuildMoneyRevenueCropProductionTeacherComparison),
     new("build-money-revenue-terminal-proof-collection-checkpoint", BuildMoneyRevenueTerminalProofCollectionCheckpoint),
@@ -344,6 +346,25 @@ var commandDefinitions = new CommandDefinition[]
     new("self-test-money-direct-concrete", options => BootstrapSelfTest.VerifyMoneyDirectConcrete(options.Optional("output-root"))),
     new("self-test-money-revenue-crop-teacher-dispatch", options =>
         BootstrapSelfTest.VerifyMoneyRevenueCropTeacherDispatch(options.Optional("output-root"))),
+    new("summarize-money-revenue-crop-supplement", options =>
+    {
+        var output = Path.GetFullPath(options.Required("output"));
+        if (File.Exists(output) || Directory.Exists(output)) throw new IOException("Supplement summary output already exists.");
+        Write(output, MoneyRevenueCropSupplementalEvidenceSummary.Build(options.Required("request")));
+    }),
+    new("verify-money-revenue-crop-teacher-dispatch", options =>
+    {
+        var path = Path.GetFullPath(options.Required("manifest"));
+        var dispatch = MoneyRevenueCropTeacherDispatchBuilder.ReadVerified(path);
+        Write(options.Required("output"), new
+        {
+            status = "verified_existing_crop_teacher_dispatch", manifest_path = path,
+            manifest_sha256 = CurrentTeacherFrontierSupport.HashFile(path), decision_id = dispatch.DecisionId,
+            source_state_hash = dispatch.SourceStateHash, covered_commitment_ids = dispatch.CoveredCommitmentIds,
+            action_count = dispatch.ActionCount,
+            native_execution_verified = false, teacher_comparison_verified = false, formal_product_training_authorized = false
+        });
+    }),
     new("self-test-goal-method-incomparable-live-shadow", SelfTestGoalMethodIncomparableLiveShadow),
     new("self-test-goal-method-teacher-coverage", SelfTestGoalMethodTeacherCoverage),
 };

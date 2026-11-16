@@ -25,6 +25,8 @@ public sealed partial class ReservationPortfolioLedgerService
             request.StateHash,
             request.ExpectedLedgerRevision);
         ValidateRequest(current, request, errors);
+        ValidateCommitMaterialConsumption(request, errors);
+        ValidateInventoryConsumptionPreparation(current, request, errors);
         if (errors.Count > 0)
             return Rejected(current, request, errors);
 
@@ -99,6 +101,7 @@ public sealed partial class ReservationPortfolioLedgerService
         foreach (var history in committed.History.Skip(originalHistoryCount))
             history.LedgerRevision = committed.Revision;
         PrepareMaterialTransfer(committed, snapshot, request, errors);
+        PrepareInventoryConsumption(committed, snapshot, request, errors);
         if (errors.Count > 0)
             return Rejected(current, request, errors);
         StrategyCommitmentLedgerSupport.AppendHistory(
@@ -110,11 +113,28 @@ public sealed partial class ReservationPortfolioLedgerService
             updatedAt,
             string.Empty);
 
+        if (request.MaterialConsumption is not null)
+        {
+            var consumed = SettleCommitMaterialConsumption(committed, snapshot, request, updatedAt);
+            if (!consumed.Accepted || consumed.Ledger is null)
+                return Rejected(current, request, consumed.Errors);
+            committed = consumed.Ledger;
+            committed.Revision = originalRevision + 1;
+            foreach (var history in committed.History.Skip(originalHistoryCount))
+                history.LedgerRevision = committed.Revision;
+        }
+
         if (request.MaterialTransferPreparation is not null)
         {
             var prepared = committed.PreparedMaterialTransfer!;
             StrategyCommitmentLedgerSupport.AppendHistory(committed, prepared.PortfolioId, committed.Revision,
                 prepared.RouteSourceDecisionId, "material_transfer_prepared", updatedAt, prepared.BindingSha256);
+        }
+        if (request.InventoryConsumptionPreparation is not null)
+        {
+            var prepared = committed.PreparedInventoryConsumption!;
+            StrategyCommitmentLedgerSupport.AppendHistory(committed, prepared.PortfolioId, committed.Revision,
+                prepared.RouteSourceDecisionId, "inventory_consumption_prepared", updatedAt, prepared.BindingSha256);
         }
 
         return new ReservationPortfolioCommitResult

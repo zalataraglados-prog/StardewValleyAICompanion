@@ -58,7 +58,8 @@ public sealed partial class CropTeacherHarvest
         RetainedQuantityIncrease = quantity;
         AppliedTiles = Array.AsReadOnly(preparation.Tiles.Take(AppliedTileCount).ToArray());
         AfterSnapshotPath = Path.GetFullPath(transition.AfterSnapshotPath);
-        rebind = new(after, preparation.BaseLedger, stepId, ValidateInputsUnchanged, "Crop harvest");
+        rebind = new(after, preparation.BaseLedger, stepId, ValidateInputsUnchanged, "Crop harvest",
+            preparation.RetainSaleStock ? BuildSaleStockClaims(preparation, before, after, AppliedTileCount, stepId) : null);
         originalInputs.Validate();
         ValidateInputsUnchanged();
     }

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using StardewAI.Contracts.Training;
 using StardewAI.GoalConditionedBootstrap;
 
 namespace StardewAI.LiveTrainingLoop;
@@ -9,6 +10,7 @@ public sealed record CropTeacherOriginalWateringCompilation(CropTeacherRunStep S
 {
     public bool IsRefillApproach { get; init; }
     public bool UseSelectedRefillResourceEffects { get; init; }
+    public bool UseNativeRefillOutcomeAuthority { get; init; }
 }
 
 public sealed partial class CropTeacherManagedSeedOwner
@@ -25,11 +27,13 @@ public sealed partial class CropTeacherManagedSeedOwner
             var value = await compileOriginal().ConfigureAwait(false);
             if (value.UseSelectedRefillResourceEffects && !value.IsRefillApproach)
                 throw new InvalidDataException("Selected refill resource effects require the original refill approach phase.");
+            if (value.UseNativeRefillOutcomeAuthority && (!value.IsRefillApproach || !value.UseSelectedRefillResourceEffects || !options.UseNativeRefillOutcomeAuthority))
+                throw new InvalidDataException("Native refill authority was not selected by this original owner.");
             var record = CreateAdmissionRecord(headSnapshotPath, headLedgerPath, value.RuntimeDirectory);
             record["operation_kind"] = "watering_maintenance";
             record["maintenance_execution_protocol"] = "original_loop.v1";
-            if (value.IsRefillApproach) record["maintenance_control_kind"] = value.UseSelectedRefillResourceEffects
-                ? "refill_approach_resources" : "refill_approach";
+            if (value.IsRefillApproach) record["maintenance_control_kind"] = value.UseNativeRefillOutcomeAuthority
+                ? "refill_approach_native" : value.UseSelectedRefillResourceEffects ? "refill_approach_resources" : "refill_approach";
             record["commitment_id"] = value.Step.CommitmentId;
             record["maintenance_step"] = JsonSerializer.SerializeToNode(value.Step, JsonOptions);
             record["original_model_action_path"] = Path.GetFullPath(value.ModelActionPath);
@@ -62,9 +66,11 @@ public sealed partial class CropTeacherManagedSeedOwner
         var active = record["active_commitment_ids"]?.Deserialize<string[]>(JsonOptions);
         var control = record["maintenance_control_kind"]?.GetValue<string>();
         var resources = control == "refill_approach_resources";
-        var refill = control == "refill_approach" || resources;
+        var native = control == "refill_approach_native";
+        var refill = control == "refill_approach" || resources || native;
         if (record["step"] is not null || record["prior_verified_snapshot_path"] is not null || record["route_transition"] is not null ||
-            control is not (null or "refill_approach" or "refill_approach_resources") ||
+            control is not (null or "refill_approach" or "refill_approach_resources" or "refill_approach_native") ||
+            native && !options.UseNativeRefillOutcomeAuthority ||
             record["route_execution_protocol"] is not null || record["maintenance_execution_protocol"]?.GetValue<string>() != "original_loop.v1" ||
             !SamePath(StoredPath(record, "before_ledger_path"), headLedgerPath) ||
             new[] { transition.QueuePath, transition.BeforeSnapshotPath, transition.ExecutionReceiptPath, transition.AfterSnapshotPath }.Any(path => !Path.IsPathFullyQualified(path)) ||
@@ -76,6 +82,18 @@ public sealed partial class CropTeacherManagedSeedOwner
         var start = !refill
             ? CropTeacherWateringMaintenance.Preparation.Open(plan.RequestPath, StoredPath(record, "before_snapshot_path"), headLedgerPath,
                 active, step.CommitmentId, Text(record, "support_step_id"), StoredPath(record, "original_model_action_path"), transition.QueuePath)
+            : native
+                ? CropTeacherWateringMaintenance.Preparation.OpenNativeObservedRefillApproach(plan.RequestPath,
+                    StoredPath(record, "before_snapshot_path"), headLedgerPath, active, step.CommitmentId,
+                    Text(record, "support_step_id"), StoredPath(record, "original_model_action_path"), transition.QueuePath)
+            : transition.ExecutorVersion == PolicyTrajectoryVersionPins.ProductExecutor
+                ? resources
+                    ? CropTeacherWateringMaintenance.Preparation.OpenNativeRefillApproachWithSelectedResourceEffects(plan.RequestPath,
+                        StoredPath(record, "before_snapshot_path"), headLedgerPath, active, step.CommitmentId,
+                        Text(record, "support_step_id"), StoredPath(record, "original_model_action_path"), transition.QueuePath)
+                    : CropTeacherWateringMaintenance.Preparation.OpenNativeRefillApproach(plan.RequestPath,
+                        StoredPath(record, "before_snapshot_path"), headLedgerPath, active, step.CommitmentId,
+                        Text(record, "support_step_id"), StoredPath(record, "original_model_action_path"), transition.QueuePath)
             : resources
                 ? CropTeacherWateringMaintenance.Preparation.OpenRefillApproachWithSelectedResourceEffects(plan.RequestPath,
                     StoredPath(record, "before_snapshot_path"), headLedgerPath, active, step.CommitmentId,

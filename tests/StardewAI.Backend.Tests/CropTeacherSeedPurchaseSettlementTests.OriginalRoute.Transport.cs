@@ -34,12 +34,13 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         private SnapshotEnvelope current;
         internal int NativeRequests { get; private set; }
         internal int FullSnapshotReads { get; private set; }
-        internal OriginalRouteTransport(OwnedRouteFixture fixture)
+        internal OriginalRouteTransport(OwnedRouteFixture fixture,
+            (SnapshotEnvelope After, QueueExecutionReceiptEnvelope Receipt)? nativeResult = null)
         {
             this.fixture = fixture;
             backend = new(fixture.Runtime.Handler, disposeHandler: false);
             current = fixture.Source.Before;
-            (after, receipt) = fixture.BuildNativeResult();
+            (after, receipt) = nativeResult ?? fixture.BuildNativeResult();
         }
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token)
         {

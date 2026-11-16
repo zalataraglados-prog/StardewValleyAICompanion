@@ -11,6 +11,14 @@ public sealed partial class CropTeacherManagedSeedOwner
         Path.Combine(operation.RuntimeDirectory, NativeSupportingRole(operation) + "-intent.json");
 
     private JsonObject CreateSupportingTransitionIntent(JsonObject record, ICropTeacherSupportingTransition? scope) =>
+        IsSharedPortfolioPreparation(record) ? CreateSharedTransferPreparationIntent(record) :
+        record["shared_source_execution_protocol"]?.GetValue<string>() is "selected_work_yield.v1" or "selected_work_yield.v2" or NativeSharedWorkProtocol ? CreateSharedSourceYieldIntent(record) :
+        record["operation_kind"]?.GetValue<string>() == "shared_source_return" ? CreateSharedSourceReturnIntent(record, (CropTeacherSharedSourceReturn)scope!) :
+        record["operation_kind"]?.GetValue<string>() == "site_clearance" ? CreateOriginalClearanceIntent(record) :
+        record["operation_kind"]?.GetValue<string>() == "site_till" ? CreateOriginalTillingIntent(record) :
+        record["operation_kind"]?.GetValue<string>() == "saved_content_readback" ? CreateSavedReadbackIntent(record, (CropTeacherNativeSavedContentReadback)scope!) :
+        record["operation_kind"]?.GetValue<string>() == "terminal_shipping" ? CreateOriginalTerminalIntent(record) :
+        record["operation_kind"]?.GetValue<string>() == "control_recovery" ? CreateOriginalControlIntent(record) :
         record["operation_kind"]?.GetValue<string>() == "overnight_control" ? CreateOriginalOvernightIntent(record) :
         record["operation_kind"]?.GetValue<string>() == "crop_harvest" ? CreateOriginalHarvestIntent(record) :
         record["maintenance_execution_protocol"]?.GetValue<string>() == "original_loop.v1" ? CreateOriginalWateringIntent(record) :
@@ -27,7 +35,69 @@ public sealed partial class CropTeacherManagedSeedOwner
 
     private void ValidateSupportingTransition(CropTeacherManagedSeedOperation operation)
     {
-        if (operation.IsSupportingRoute) ValidateSupportingRoute(operation);
+        if (operation.SharedPortfolioSupport is { } preparing)
+        {
+            preparing.ValidateInputsUnchanged();
+            if (SupportingTransitionIntentHash(operation.Record, null) != Text(operation.Record, "original_intent_sha256"))
+                throw new InvalidDataException("Shared transfer preparation changed its original admitted intent.");
+            if (operation.Prepared is not null && operation.SharedSourceStart is null)
+                throw new InvalidDataException("Shared preparation lost its validated native start.");
+            if (operation.SharedSourceStart is null) return;
+        }
+        if (operation.SharedSourceStart is { } yielded)
+        {
+            yielded.ValidateInputsUnchanged();
+            operation.SharedSourceReturn?.ValidateInputsUnchanged();
+            operation.RuntimeArtifactGuard?.Invoke();
+            if (SupportingTransitionIntentHash(operation.Record, operation.SharedSourceReturn) != Text(operation.Record, "original_intent_sha256"))
+                throw new InvalidDataException("Managed shared source yield changed its admitted selected intent.");
+        }
+        else if (operation.SharedSourceReturn is { } shared)
+        {
+            shared.ValidateInputsUnchanged();
+            if (SupportingTransitionIntentHash(operation.Record, shared) != Text(operation.Record, "original_intent_sha256"))
+                throw new InvalidDataException("Managed shared source return changed its admitted original intent.");
+        }
+        else if (operation.IsSavedContentReadback)
+        {
+            operation.SavedReadback!.ValidateInputsUnchanged();
+            if (SupportingTransitionIntentHash(operation.Record, operation.SavedReadback) != Text(operation.Record, "original_intent_sha256"))
+                throw new InvalidDataException("Managed saved readback changed its admitted original intent.");
+        }
+        else if (operation.IsTerminalShipping)
+        {
+            ValidateTerminalProductionReference(operation.Record);
+            operation.TerminalStart!.ValidateInputsUnchanged();
+            operation.Terminal?.ValidateInputsUnchanged();
+            if (operation.Terminal is not null) operation.RuntimeArtifactGuard?.Invoke();
+            if (SupportingTransitionIntentHash(operation.Record, operation.Terminal) != Text(operation.Record, "original_intent_sha256"))
+                throw new InvalidDataException("Managed terminal shipping changed its admitted original intent.");
+        }
+        else if (operation.IsControlRecovery)
+        {
+            operation.ControlStart!.ValidateInputsUnchanged();
+            operation.Control?.ValidateInputsUnchanged();
+            if (operation.Control is not null) operation.RuntimeArtifactGuard?.Invoke();
+            if (SupportingTransitionIntentHash(operation.Record, operation.Control) != Text(operation.Record, "original_intent_sha256"))
+                throw new InvalidDataException("Managed crop control changed its admitted original intent.");
+        }
+        else if (operation.IsSiteClearance)
+        {
+            operation.ClearanceStart!.ValidateInputsUnchanged();
+            operation.Clearance?.ValidateInputsUnchanged();
+            if (operation.Clearance is not null) operation.RuntimeArtifactGuard?.Invoke();
+            if (SupportingTransitionIntentHash(operation.Record, operation.Clearance) != Text(operation.Record, "original_intent_sha256"))
+                throw new InvalidDataException("Managed site clearance changed its admitted original intent.");
+        }
+        else if (operation.IsSiteTilling)
+        {
+            operation.TillingStart!.ValidateInputsUnchanged();
+            operation.Tilling?.ValidateInputsUnchanged();
+            if (operation.Tilling is not null) operation.RuntimeArtifactGuard?.Invoke();
+            if (SupportingTransitionIntentHash(operation.Record, operation.Tilling) != Text(operation.Record, "original_intent_sha256"))
+                throw new InvalidDataException("Managed site till changed its admitted original intent.");
+        }
+        else if (operation.IsSupportingRoute) ValidateSupportingRoute(operation);
         else if (operation.IsOvernight)
         {
             operation.OvernightStart!.ValidateInputsUnchanged();
@@ -67,6 +137,8 @@ public sealed partial class CropTeacherManagedSeedOwner
             RequireOperation(operation);
             if (!IsSupportingKind(operation, kind))
                 throw new InvalidOperationException("Managed crop operation does not match the selected supporting phase.");
+            if (operation.SharedPortfolioSupport is not null && operation.SharedSourceStart is null)
+                throw new InvalidOperationException("Shared transfer requires its original preparation before native execution or return.");
             var watering = kind == CropTeacherSupportingOperationKind.Watering;
             if (operation.OriginalStart is not null)
                 await EnsureOriginalSupportingOutcomeAsync(operation).ConfigureAwait(false);
@@ -91,7 +163,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             // Local success still requires the original durable journal and full replay.
             var recovered = await ReadSupportingTransitionBoundaryAsync(http, operation, root, post).ConfigureAwait(false);
             await AdvanceAsync(operation, recovered.Evidence, recovered.SnapshotPath, recovered.Validate,
-                operation.IsOvernight ? "live_overnight_control" : operation.IsHarvest ? "live_crop_harvest" : watering ? "live_watering_maintenance" : "live_supporting_route").ConfigureAwait(false);
+                operation.IsSharedSourceReturn ? "live_shared_source_return" : operation.IsSiteClearance ? "live_site_clearance" : operation.IsSiteTilling ? "live_site_till" : operation.IsSavedContentReadback ? "live_saved_content_readback" : operation.IsTerminalShipping ? "live_terminal_shipping" : operation.IsControlRecovery ? "live_control_recovery" : operation.IsOvernight ? "live_overnight_control" : operation.IsHarvest ? "live_crop_harvest" : watering ? "live_watering_maintenance" : "live_supporting_route").ConfigureAwait(false);
         }
         finally { gate.Release(); }
     }

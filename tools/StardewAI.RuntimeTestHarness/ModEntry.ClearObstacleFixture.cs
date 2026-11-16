@@ -31,7 +31,7 @@ public sealed partial class ModEntry
             ? "grass"
             : request.RuleKey;
         if (fixtureKind is not (
-            "grass" or "twig" or "seed_spot" or "artifact_spot" or "tree_moss" or "tree_chop" or "stone"))
+            "grass" or "weeds" or "twig" or "seed_spot" or "artifact_spot" or "tree_moss" or "tree_chop" or "stone"))
         {
             return BlockedWithPrimitive(
                 request,
@@ -138,6 +138,7 @@ public sealed partial class ModEntry
             var qualifiedItemId = fixtureKind switch
             {
                 "twig" => "(O)294",
+                "weeds" => "(O)784",
                 "stone" => "(O)343",
                 "seed_spot" => "(O)SeedSpot",
                 _ => "(O)590"
@@ -151,7 +152,7 @@ public sealed partial class ModEntry
             createdObstacle.Location = location;
             location.objects[tile] = createdObstacle;
             EnsureClearObstacleFixtureTool(
-                fixtureKind == "stone" ? "pickaxe" : fixtureKind == "twig" ? "axe" : "hoe");
+                fixtureKind == "stone" ? "pickaxe" : fixtureKind == "weeds" ? "scythe" : fixtureKind == "twig" ? "axe" : "hoe");
             if (fixtureKind == "artifact_spot")
             {
                 var activeHoe = Game1.player.Items
@@ -180,6 +181,7 @@ public sealed partial class ModEntry
                 fixtureKind switch
                 {
                     "twig" => observedObstacle.IsTwig(),
+                    "weeds" => observedObstacle.IsWeeds() && observedObstacle.QualifiedItemId == "(O)784",
                     "stone" => observedObstacle.IsBreakableStone() && observedObstacle.QualifiedItemId == "(O)343",
                     "seed_spot" =>
                         observedObstacle.QualifiedItemId ==

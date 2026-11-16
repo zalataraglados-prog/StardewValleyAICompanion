@@ -12,6 +12,7 @@ public sealed class CropTeacherRuntimeInstallation
     private readonly StrategyCommitmentLedger baseLedger;
     private readonly CropPlantingCommitmentUpsertRequest cropRequest;
     private readonly ReservationPortfolioCommitRequest resourceRequest;
+    private readonly StrategyCommitmentLedger? projectedResourceLedger;
 
     private CropTeacherRuntimeInstallation(string decisionPath,
         MoneyRevenueCropProductionDecisionReceipt decision,
@@ -26,6 +27,7 @@ public sealed class CropTeacherRuntimeInstallation
         baseLedger = AcquisitionStrategyLedgerReader.Read(decision.BaseStrategyLedgerPath, snapshot).Ledger;
         cropRequest = decision.Mutations[0].Request;
         resourceRequest = resources.ReservationRequest;
+        projectedResourceLedger = resources.ReservationResult.Ledger;
         Require(cropRequest.ExpectedLedgerRevision == baseLedger.Revision &&
                 resourceRequest.ExpectedLedgerRevision == checked(baseLedger.Revision + 1),
             "Runtime crop installation requests do not advance the original ledger in order.");
@@ -54,6 +56,13 @@ public sealed class CropTeacherRuntimeInstallation
         foreach (var (path, hash) in inputHashes)
             Require(CurrentTeacherFrontierSupport.HashFile(path) == hash,
                 "Runtime crop installation input changed: " + path);
+    }
+
+    public void ValidateManagedOwnerSource(IReadOnlyCollection<string> commitmentIds)
+    {
+        ValidateInputsUnchanged();
+        Require(projectedResourceLedger is not null, "Managed crop installation has no original resource projection.");
+        _ = CropTeacherOwnedSeedSupply.Read(snapshot, projectedResourceLedger!, commitmentIds);
     }
 
     public void VerifyBaseLedger(StrategyCommitmentLedger current)

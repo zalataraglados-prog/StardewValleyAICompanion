@@ -32,7 +32,8 @@ public static class CropSeedMaterialTransferBinding
         var parameters = item.NormalizedCommand.Parameters ?? Array.Empty<SmallModelActionParameter>();
         if (item.OptionId != "executor.transfer_material" || item.NormalizedCommand.OptionId != item.OptionId ||
             parameters.Count(row => row.Name == PreparedMaterialTransferContract.BindingParameter) != 1 ||
-            parameters.Any(row => MuseumOutputCustodyTransferBinding.IsControlParameter(row.Name) ||
+            parameters.Any(row => CropSaleStockMaterialTransferBinding.IsControlParameter(row.Name) ||
+                MuseumOutputCustodyTransferBinding.IsControlParameter(row.Name) ||
                 row.Name.StartsWith("acquisition_", StringComparison.OrdinalIgnoreCase)) ||
             Names.Any(name => parameters.Count(row => row.Name == name) != 1) ||
             parameters.Where(row => IsControlParameter(row.Name)).Any(row => !Names.Contains(row.Name))) return false;

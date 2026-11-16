@@ -52,6 +52,8 @@ internal static class StrategyCommitmentLedgerSupport
             Revision = current?.Revision ?? 0,
             UpdatedAt = updatedAt,
             SourceStateHash = snapshot.StateHash,
+            PreparedInventoryConsumption = current?.PreparedInventoryConsumption is null ? null :
+                JsonSerializer.Deserialize<PreparedInventoryConsumption>(JsonSerializer.Serialize(current.PreparedInventoryConsumption)),
             PreparedMaterialTransfer = current?.PreparedMaterialTransfer is null ? null :
                 JsonSerializer.Deserialize<PreparedMaterialTransfer>(
                     JsonSerializer.Serialize(current.PreparedMaterialTransfer)),

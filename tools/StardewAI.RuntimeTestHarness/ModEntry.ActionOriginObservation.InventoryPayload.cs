@@ -10,7 +10,11 @@ public sealed partial class ModEntry
     {
         private ActionOriginInventoryPayload? inventoryPayloadBefore;
 
-        internal void BeginInventoryPayload() => inventoryPayloadBefore = CaptureInventoryPayload();
+        internal void BeginInventoryPayload()
+        {
+            inventoryPayloadBefore = CaptureInventoryPayload();
+            if (request.ActionOriginTillingResources) tillingMetadataBefore = CaptureTillingToolMetadata();
+        }
 
         private ActionOriginInventoryPayload? CaptureInventoryPayload()
         {

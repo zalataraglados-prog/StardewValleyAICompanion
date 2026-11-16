@@ -73,6 +73,7 @@ public sealed partial class ModEntry
                 Environment.CurrentManagedThreadId != threadId || collection is not null)
                 Reject("observation_context_incomplete");
             var inventoryPayloadAfter = request.ActionOriginInventoryPayload ? CaptureInventoryPayload() : null;
+            var tillingMetadataAfter = request.ActionOriginTillingResources ? CaptureTillingToolMetadata() : null;
             Stop();
             if (collections.Snapshot().Any(row => row.NativeReturn is null || row.InventoryAdmissions.Any(admission => admission.NativeReturn is null)))
                 Reject("observation_native_return_missing");
@@ -94,6 +95,7 @@ public sealed partial class ModEntry
                 InventoryAfter = boundedInventory ? InventoryRows(CaptureInventoryItemCounts()) : Array.Empty<ActionOriginInventoryCount>(),
                 Collections = collections.Snapshot().OrderBy(row => row.Ordinal).ToArray(),
                 InventoryPayloadBefore = inventoryPayloadBefore, InventoryPayloadAfter = inventoryPayloadAfter,
+                TillingToolMetadataBefore = tillingMetadataBefore, TillingToolMetadataAfter = tillingMetadataAfter,
                 ClearanceToolCalls = request.ActionOriginToolInputs ? toolCalls.Snapshot() : null
             };
         }

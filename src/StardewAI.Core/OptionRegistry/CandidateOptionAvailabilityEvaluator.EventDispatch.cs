@@ -102,8 +102,8 @@ namespace StardewAI.Core.OptionRegistry
                 ["movement.use_mini_obelisk"] = (snapshot, _) => MiniObeliskCandidates(snapshot),
                 ["volcano.reach_caldera"] = VolcanoReachCalderaCandidateBuilder.Build,
                 ["economy.buy_supplies"] = BuySupplyStageCandidates,
-                ["economy.sell_items"] = SellItemStageCandidates,
-                ["economy.ship_items"] = ShipItemStageCandidates,
+                ["economy.sell_items"] = (snapshot, parameters) => SellItemStageCandidates(snapshot, parameters),
+                ["economy.ship_items"] = (snapshot, parameters) => ShipItemStageCandidates(snapshot, parameters),
                 ["inventory.transfer_item"] = MaterialTransferCandidates
             };
         }

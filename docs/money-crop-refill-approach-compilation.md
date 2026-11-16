@@ -1,5 +1,47 @@
 # Original Refill Approach Compilation Boundary
 
+## Current Time And Source Boundary: 2026-11-16
+
+The explicit daily-capacity adapter uses the original recorded executor version,
+original Runtime/Product reader and endpoint guard. Timing/water are in original
+per-step execution_path results, not flat aggregate fields. The complete measured
+prefix replaces estimates of the same full crop-work denominator; approach-only
+work still has NO watering or crop credit. Original source/frame/day/quantity and
+resource guards remain; no shared reader/executor default was rewritten.
+
+The dated thirteen-day restart instruction below is historical, superseded by
+frozen169-172 manual business closeout. Do not rerun it to establish new automatic
+properties or resume the lost unsaved tail. Continue original550 actual joint
+Main/owner/resource/calendar and then570 ->569; formal=false remains unchanged.
+
+## Current Integration: 2026-11-14
+
+The original compilation below is now consumed by the existing managed owner and
+Main loop. The explicit Product path uses
+`Preparation.OpenNativeRefillApproach` or
+`Preparation.OpenNativeRefillApproachWithSelectedResourceEffects`, which select
+`CropTeacherRefillApproachNativeTrace.OpenNativeResourceNeutral` or
+`OpenNativeWithSelectedResourceEffects`. These reuse
+`ReadSelectedNativeActionQueue` and compare each verified request endpoint with
+the declared executor version. The aggregate receipt has no ExecutorVersion
+property. Existing Runtime defaults and the shared reader/executor are unchanged.
+
+Owner selection comes from the persisted transition version, not the current
+live executor switch. Source/run/actor/queue/nonces/frames and selected resource
+mode remain bound through the original trace/rebind and recovery. Approach is
+still not a refill or watering completion and grants no crop/Teacher credit.
+Normal native tool effects follow the current native-trust correction in
+[CURRENT_WORK](CURRENT_WORK_CN.md#2026-11-14-r2-原生动作信任边界修正), not an
+independent prediction of every private XML/random side effect.
+
+Controller protocol/owner regression passed73/73; subsequent Main control
+continuation regression passed61/61 independently. The retained actual S112
+complete refill scope replay passed with11retained inputs/8physical originals
+unchanged, but did not retroactively accept pending72. S's unsaved tail is gone.
+A new isolated original13day84action managed/Product cycle is required; complete
+harvest/sale/native-save/fresh-load acceptance remains unproven. The dated
+successor descriptions below are historical, not new work orders.
+
 ## Accepted Parent
 
 PR533 accepted the shared producer-time required-output completion fix. Tested

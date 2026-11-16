@@ -26,11 +26,13 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             Source.Before.State["time"].GetProperty("total_days").GetProperty("value").GetInt32(),
             string.Empty, "FarmHouse", "FarmHouse", string.Empty, string.Empty, 0, 0, null, "original_route_fixture");
 
-        internal OwnedRouteFixture(bool multiHop = false, string connectorKind = "warp", Action<Fixture>? prepareSource = null)
+        internal OwnedRouteFixture(bool multiHop = false, string connectorKind = "warp", Action<Fixture>? prepareSource = null,
+            bool productExecutor = false)
         {
             Source = new(otherSeeds: 39);
             SetInitialRouteSource(Source, multiHop, connectorKind, prepareSource);
             Runtime = new(Source);
+            Runtime.LiveOptions.UseProductExecutor = productExecutor;
             Inputs = new(Source);
             Files = new(Source, Runtime, Inputs);
             Runtime.LiveOptions.RunId = Files.Options.RunId;
@@ -162,21 +164,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         });
         prepareSource?.Invoke(f);
         f.Before.RealTimestamp = "2026-11-08T12:00:00Z";
-        foreach (var domain in new[] { "mods", "npcs", "quests", "menus", "modded_state" })
-            if (!f.Before.State.ContainsKey(domain)) f.Before.State[domain] = JsonSerializer.SerializeToElement(new JsonObject());
-        foreach (var domain in f.Before.State.Keys.ToArray())
-        {
-            var fields = JsonNode.Parse(f.Before.State[domain].GetRawText())!.AsObject();
-            foreach (var field in fields)
-                if (field.Value is JsonObject envelope && envelope.ContainsKey("status"))
-                {
-                    envelope["source"] ??= new JsonObject { ["kind"] = "test", ["path"] = "route-fixture." + domain + "." + field.Key };
-                    envelope["adapter"] ??= "test";
-                    envelope["read_at_tick"] ??= f.Before.GameTick;
-                    envelope["confidence"] ??= 1d;
-                }
-            f.Before.State[domain] = JsonSerializer.SerializeToElement(fields);
-        }
+        CropTeacherNativeSupportFixture.CompleteEnvelopeMetadata(f.Before, "route-fixture");
         f.Before.StateHash = SnapshotHash.ComputeStateHash(f.Before.State);
         f.CropRequest.StateHash = f.Before.StateHash;
         foreach (var request in new[] { f.OtherRequest, f.OwnRequest })

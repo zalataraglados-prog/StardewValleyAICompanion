@@ -14,14 +14,15 @@ namespace StardewAI.Core.OptionRegistry
     {
         private EventCandidate[] SellItemStageCandidates(
             SnapshotEnvelope snapshot,
-            SmallModelActionParameter[] boundParameters)
+            SmallModelActionParameter[] boundParameters,
+            SaleStockBudget? saleStock = null)
         {
             if (ActiveShopMenuOpen(snapshot))
             {
                 return Array.Empty<EventCandidate>();
             }
 
-            var previews = SellCandidatesFromShopPreview(snapshot)
+            var previews = SellCandidatesFromShopPreview(snapshot, saleStock)
                 .Where(candidate => SaleIdentityMatches(candidate, boundParameters))
                 .ToArray();
             return ShopObjectiveStageCandidates(
@@ -32,7 +33,8 @@ namespace StardewAI.Core.OptionRegistry
         }
 
         private static EconomicCandidate[] SellCandidatesFromShopPreview(
-            SnapshotEnvelope snapshot)
+            SnapshotEnvelope snapshot,
+            SaleStockBudget? saleStock = null)
         {
             var inventory = ReadStateFieldValue(snapshot, "player", "inventory");
             var shops = ReadStateFieldValue(snapshot, "locations", "shops");
@@ -107,7 +109,7 @@ namespace StardewAI.Core.OptionRegistry
                         reasons.Add("non_positive_sell_price");
                     }
 
-                    results.Add(new EconomicCandidate
+                    var candidate = new EconomicCandidate
                     {
                         CandidateId = "sell-preview:" + shopId + ":" +
                             ReadInt(item, "slot_index").ToString(
@@ -128,7 +130,9 @@ namespace StardewAI.Core.OptionRegistry
                         BlockReasons = reasons
                             .Distinct(StringComparer.Ordinal)
                             .ToArray()
-                    });
+                    };
+                    saleStock?.LimitSale(candidate);
+                    results.Add(candidate);
                 }
             }
 

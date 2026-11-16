@@ -10,6 +10,13 @@ static partial class Program
         string queueId)
     {
         var optionId = ReadStringOrEmpty(item, "option_id");
+        var command = item["normalized_command"] as JsonObject;
+        var parameters = command?["parameters"] as JsonArray;
+        // Prepared cooking retains GoalId as well as its hash, so losing only the hash must still reach the guard.
+        var preparedCooking = parameters?.OfType<JsonObject>().Any(parameter =>
+            StardewAI.Core.Execution.PreparedCookingConsumptionBinding.IsControlParameter(ReadStringOrEmpty(parameter, "name"))) == true ||
+            optionId == StardewAI.Core.Strategy.PreparedInventoryConsumptionContract.Consumer &&
+            !string.IsNullOrWhiteSpace(ReadStringOrEmpty(command, "goal_id"));
         if (!string.Equals(
                 optionId,
                 "executor.transfer_material",
@@ -53,7 +60,7 @@ static partial class Program
             !string.Equals(
                 optionId,
                 "executor.remove_machine",
-                StringComparison.Ordinal))
+                StringComparison.Ordinal) && !preparedCooking)
         {
             return null;
         }

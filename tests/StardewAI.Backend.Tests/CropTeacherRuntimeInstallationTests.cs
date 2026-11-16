@@ -166,7 +166,11 @@ public sealed partial class CropTeacherRuntimeInstallationTests
 
         public void Dispose()
         {
-            foreach (var path in new[] { Path.Combine(Output, "live-snapshots"), Path.Combine(Output, "teacher-ledgers"),
+            var managed = Path.Combine(Root, "live-snapshots", "crop-teacher-managed-0001");
+            foreach (var path in new[] { Path.Combine(managed, "owner"), Path.Combine(managed, "installation", "live-snapshots"),
+                         Path.Combine(managed, "installation", "teacher-ledgers"), Path.Combine(managed, "installation"), managed,
+                         Path.Combine(Root, "live-snapshots"), Path.Combine(Root, "dispatch"),
+                         Path.Combine(Output, "live-snapshots"), Path.Combine(Output, "teacher-ledgers"),
                          Output, Repository, Root })
             {
                 if (!Directory.Exists(path)) continue;

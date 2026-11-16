@@ -1,9 +1,10 @@
 namespace StardewAI.GoalConditionedBootstrap;
 
-public static class MoneyRevenueCropProductionProofCheckpointBuilder
+public static partial class MoneyRevenueCropProductionProofCheckpointBuilder
 {
-    public static MoneyRevenueCropProductionProofCheckpoint Build(
-        string requestPath)
+    public static MoneyRevenueCropProductionProofCheckpoint Build(string requestPath) => BuildCore(requestPath, nativeObserved: false);
+
+    private static MoneyRevenueCropProductionProofCheckpoint BuildCore(string requestPath, bool nativeObserved)
     {
         var fullRequestPath = RequiredFile(
             requestPath,
@@ -12,8 +13,10 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
             MoneyRevenueCropProductionProofCheckpointRequest>(
                 fullRequestPath,
                 "Money Revenue crop-production proof checkpoint request");
-        Require(request.SchemaVersion ==
-                    "money_revenue_crop_production_proof_checkpoint_request.v12" &&
+        var reservedStock = nativeObserved && request.SchemaVersion == ReservedCheckpointRequestSchema;
+        var producerAware = reservedStock || nativeObserved && request.SchemaVersion == ProducerCheckpointRequestSchema;
+        Require((producerAware || request.SchemaVersion == (nativeObserved ? NativeCheckpointRequestSchema :
+                    "money_revenue_crop_production_proof_checkpoint_request.v12")) &&
                 !request.FormalProductTrainingAuthorized,
             "Money Revenue crop-production proof checkpoint request is invalid.");
 
@@ -112,7 +115,7 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
                     dailyCapacityProofPaths.Length,
             "Money Revenue crop daily-capacity proof paths are duplicated.");
         var dailyCapacityProofs = dailyCapacityProofPaths.Select(path =>
-            VerifyDailyCapacityProof(path, planPath, planSha256, plan)).ToArray();
+            VerifyDailyCapacityProof(path, planPath, planSha256, plan, nativeObserved)).ToArray();
         var nativeLifecycleProofPaths =
             (fragmentIndex.NativeLifecycleProofPaths ??
                 throw new InvalidDataException(
@@ -138,7 +141,8 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
                     outputRetentionProofPaths.Length,
             "Money Revenue crop output-retention proof paths are duplicated.");
         var outputRetentionProofs = outputRetentionProofPaths.Select(path =>
-            VerifyOutputRetentionProof(path, planPath, planSha256, plan)).ToArray();
+            producerAware ? VerifyCollectedOutputRetentionProof(path, planPath, planSha256, plan, producerAware: true, reservedStock) :
+                VerifyOutputRetentionProof(path, planPath, planSha256, plan)).ToArray();
         Require(outputRetentionProofs.Select(proof => proof.EvidenceRequestId)
                     .Distinct(StringComparer.Ordinal).Count() ==
                     outputRetentionProofs.Length,
@@ -155,7 +159,7 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
                     terminalSettlementProofPaths.Length,
             "Money Revenue crop terminal-settlement proof paths are duplicated.");
         var terminalSettlementProofs = terminalSettlementProofPaths.Select(path =>
-            VerifyTerminalSettlementProof(path, planPath, planSha256, plan)).ToArray();
+            VerifyTerminalSettlementProof(path, planPath, planSha256, plan, nativeObserved)).ToArray();
         Require(terminalSettlementProofs.All(proof =>
                 outputRetentionProofPaths.Contains(
                     Path.GetFullPath(proof.OutputRetentionProofPath),
@@ -258,6 +262,8 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
             .ToArray();
         return new MoneyRevenueCropProductionProofCheckpoint
         {
+            SchemaVersion = reservedStock ? ReservedCheckpointSchema : producerAware ? ProducerCheckpointSchema :
+                nativeObserved ? NativeCheckpointSchema : "money_revenue_crop_production_proof_checkpoint.v12",
             Status = "crop_production_proof_collection_in_progress",
             RequestPath = fullRequestPath,
             RequestSha256 = CurrentTeacherFrontierSupport.HashFile(
@@ -351,16 +357,14 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
             string proofPath,
             string planPath,
             string planSha256,
-            MoneyRevenueCropProductionObligationPlan plan)
+            MoneyRevenueCropProductionObligationPlan plan, bool nativeObserved)
     {
         var proof = CurrentTeacherFrontierSupport.Read<
             MoneyRevenueCropTerminalSettlementProof>(
                 proofPath,
                 "Money Revenue crop terminal-settlement proof");
-        var rebuilt = MoneyRevenueCropTerminalSettlementProofBuilder.Build(
-            proof.RequestPath);
-        Require(proof.SchemaVersion ==
-                    "money_revenue_crop_terminal_settlement_proof.v3" &&
+        var rebuilt = RebuildCollectedTerminal(proof, nativeObserved);
+        Require((nativeObserved && IsNativeTerminal(proof.SchemaVersion) || proof.SchemaVersion == "money_revenue_crop_terminal_settlement_proof.v3") &&
                 BootstrapArtifactGuard.EqualJson(proof, rebuilt) &&
                 string.Equals(
                     Path.GetFullPath(proof.CropProductionPlanPath),
@@ -381,7 +385,11 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
             string proofPath,
             string planPath,
             string planSha256,
-            MoneyRevenueCropProductionObligationPlan plan)
+            MoneyRevenueCropProductionObligationPlan plan) =>
+        VerifyCollectedOutputRetentionProof(proofPath, planPath, planSha256, plan, producerAware: false);
+
+    private static MoneyRevenueCropOutputRetentionProof VerifyCollectedOutputRetentionProof(string proofPath,
+        string planPath, string planSha256, MoneyRevenueCropProductionObligationPlan plan, bool producerAware, bool reservedStock = false)
     {
         var proof = CurrentTeacherFrontierSupport.Read<
             MoneyRevenueCropOutputRetentionProof>(
@@ -389,8 +397,9 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
                 "Money Revenue crop output-retention proof");
         var rebuilt = MoneyRevenueCropOutputRetentionProofBuilder.Build(
             proof.RequestPath);
-        Require(proof.SchemaVersion ==
-                    "money_revenue_crop_output_retention_proof.v1" &&
+        Require((proof.SchemaVersion == "money_revenue_crop_output_retention_proof.v1" ||
+                 producerAware && MoneyRevenueCropOutputRetentionProofBuilder.HasProducerRetention(proof) &&
+                 (reservedStock || !MoneyRevenueCropOutputRetentionProofBuilder.HasReservedProducerRetention(proof))) &&
                 BootstrapArtifactGuard.EqualJson(proof, rebuilt) &&
                 string.Equals(
                     Path.GetFullPath(proof.CropProductionPlanPath),
@@ -452,16 +461,15 @@ public static class MoneyRevenueCropProductionProofCheckpointBuilder
             string proofPath,
             string planPath,
             string planSha256,
-            MoneyRevenueCropProductionObligationPlan plan)
+            MoneyRevenueCropProductionObligationPlan plan, bool nativeObserved)
     {
         var proof = CurrentTeacherFrontierSupport.Read<
             MoneyRevenueCropDailyCapacityProof>(
                 proofPath,
                 "Money Revenue crop daily-capacity proof");
-        var rebuilt = MoneyRevenueCropDailyCapacityProofBuilder.Build(
-            proof.RequestPath);
-        Require(proof.SchemaVersion ==
-                    "money_revenue_crop_daily_capacity_proof.v1" &&
+        var rebuilt = RebuildCollectedCapacity(proof, nativeObserved);
+        Require(proof.SchemaVersion == (nativeObserved && proof.SchemaVersion == NativeCapacitySchema
+                    ? NativeCapacitySchema : "money_revenue_crop_daily_capacity_proof.v1") &&
                 BootstrapArtifactGuard.EqualJson(proof, rebuilt) &&
                 string.Equals(
                     Path.GetFullPath(proof.CropProductionPlanPath),

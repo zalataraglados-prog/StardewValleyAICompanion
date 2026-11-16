@@ -158,7 +158,8 @@ public static partial class MoneyRevenueCropSeedAcquisitionProofBuilder
                             .TryProject(expected, out var beforeBoundary) &&
                         FullShipmentRecoverySettlementBoundaryProjector
                             .TryProject(after, out var afterBoundary) &&
-                        beforeBoundary == afterBoundary,
+                        beforeBoundary == afterBoundary ||
+                        IsVerifiedNativeFarmTutorialStep(expected, after, step, effectiveItem),
                     "Money Revenue crop seed supporting step changed persistent resources at transition " +
                     transitionIndex + ", step " + index + ": " +
                     string.Join(",", FullShipmentRecoverySettlementBoundaryProjector

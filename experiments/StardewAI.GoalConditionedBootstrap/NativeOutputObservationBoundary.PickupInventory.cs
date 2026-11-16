@@ -32,6 +32,13 @@ public static partial class NativeOutputObservationBoundary
     {
         var payload = ReadInventoryPayload(request, receipt, before.GameTick, after.GameTick, locationId,
             before.PlayerId.Value ?? throw new InvalidDataException("Pickup inventory actor is unavailable."));
+        return ReadPickupInventoryCore(request, receipt, before, after, locationId, evidence, payload, null);
+    }
+
+    private static NativePickupInventorySummary ReadPickupInventoryCore(TrainingExecutionRequest request,
+        ActionOriginObservationReceipt receipt, SnapshotEnvelope before, SnapshotEnvelope after, string locationId,
+        NativeOutputResourceEvidence evidence, NativeInventoryPayloadSummary payload, VerifiedTillingToolMetadata? tilling)
+    {
         Require(payload.After.GameTick == after.GameTick,
             "pickup persisted endpoint is not anchored to the actual after-snapshot tick");
         Require(payload.Before.Slots.Count == payload.After.Slots.Count,
@@ -107,7 +114,8 @@ public static partial class NativeOutputObservationBoundary
                 "pickup changed the allocated physical slot, identity or exact native stack");
             SetPickupXmlStack(state.Xml, state.Count);
             var actual = ReadItemXml(next.Xml, next.Sha256, ref characters);
-            Require(XNode.DeepEquals(state.Xml, actual), "pickup changed unexplained persisted inventory metadata");
+            var expectedXml = tilling?.ProjectExpected(state.Header, state.Xml) ?? state.Xml;
+            Require(XNode.DeepEquals(expectedXml, actual), "pickup changed unexplained persisted inventory metadata");
             if (!first.IsEmpty) VerifyPickupRawRow(firstRows[index], nextRows[index], state.Count);
             var initial = first.Stack ?? 0;
             if (state.Count != initial)

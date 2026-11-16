@@ -161,14 +161,15 @@ public sealed partial class CropTeacherSeedPlantingRuntimeTests
             return (CropTeacherSeedPlantingRuntime)result.GetType().GetProperty("SeedPlantingSupport")!.GetValue(result)!;
         }
 
-        internal async Task<JsonObject> Execute(CropTeacherSeedPlantingRuntime runtime, bool attachOwner = true)
+        internal async Task<JsonObject> Execute(CropTeacherSeedPlantingRuntime runtime, bool attachOwner = true,
+            string? selectedCandidateId = null)
         {
             using var transport = new NativeTransport(this);
             using var loopClient = new HttpClient(transport);
             return await InvokeLive<Task<JsonObject>>("ExecuteRuntimeTestHarnessCoreAsync", loopClient, loopClient, Options, 1,
                 Files.SourcePath, JsonSerializer.SerializeToNode(Files.Before, JsonOptions)!.AsObject(),
                 JsonSerializer.SerializeToNode(Queue, JsonOptions)!.AsObject(), Files.Before.StateHash, Queue.QueueId,
-                "", "", Files.QueuePath, Files.SourcePath, Files.Before.StateHash, Transition.SelectedCandidateId, -1,
+                "", "", Files.QueuePath, Files.SourcePath, Files.Before.StateHash, selectedCandidateId ?? Transition.SelectedCandidateId, -1,
                 Files.QueuePath, null!, new List<JsonObject>(), false, null!, null!,
                 attachOwner ? runtime : null!);
         }

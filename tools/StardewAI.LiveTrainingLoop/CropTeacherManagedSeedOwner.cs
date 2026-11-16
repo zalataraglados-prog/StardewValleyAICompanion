@@ -12,6 +12,7 @@ public sealed record CropTeacherManagedSeedOwnerOptions(string EvidenceDirectory
     string PortfolioJournalDirectory) : ICropSeedPortfolioRecoveryOptions
 {
     public bool UseSelectedRefillResourceEffects { get; init; }
+    public bool UseNativeRefillOutcomeAuthority { get; init; }
     public CropTeacherNativeSaveBinding? NativeSaveBinding { get; init; }
 }
 
@@ -23,11 +24,21 @@ public sealed class CropTeacherManagedSeedOperation
         string recordPath, CropTeacherManagedSeedScopes? scopes, CropTeacherSeedLifecycleSupport? lifecycle = null,
         CropTeacherSupportingRoute? supportingRoute = null, CropTeacherSupportingRoute.Preparation? routeStart = null,
         CropTeacherWateringMaintenance? watering = null, CropTeacherWateringMaintenance.Preparation? wateringStart = null,
-        CropTeacherHarvest.Preparation? harvestStart = null, CropTeacherOvernight.Preparation? overnightStart = null)
+        CropTeacherHarvest.Preparation? harvestStart = null, CropTeacherOvernight.Preparation? overnightStart = null,
+        CropTeacherControlRecovery.Preparation? controlStart = null, CropTeacherTerminalShipping.Preparation? terminalStart = null,
+        CropTeacherNativeSavedContentReadback? savedReadback = null, CropTeacherSiteTillCompilation? tillingStart = null,
+        CropTeacherSiteClearanceCompilation? clearanceStart = null, CropTeacherSharedSourceReturn? sharedSourceReturn = null,
+        CropTeacherSharedSourcePreparation? sharedSourceStart = null, CropTeacherSharedTransferSupport? sharedTransferSupport = null)
     {
         Owner = owner; Record = record; RecordPath = recordPath; seedScopes = scopes; Lifecycle = lifecycle;
         SupportingRoute = supportingRoute; RouteStart = routeStart; Watering = watering; WateringStart = wateringStart;
-        HarvestStart = harvestStart; OvernightStart = overnightStart;
+        HarvestStart = harvestStart; OvernightStart = overnightStart; ControlStart = controlStart; TerminalStart = terminalStart;
+        SavedReadback = savedReadback;
+        TillingStart = tillingStart;
+        ClearanceStart = clearanceStart;
+        SharedSourceReturn = sharedSourceReturn;
+        SharedSourceStart = sharedSourceStart;
+        SharedTransferSupport = sharedTransferSupport;
     }
     private readonly CropTeacherManagedSeedScopes? seedScopes;
     internal CropTeacherSeedLifecycleSupport? Lifecycle { get; }
@@ -39,10 +50,32 @@ public sealed class CropTeacherManagedSeedOperation
     internal CropTeacherHarvest? Harvest { get; set; }
     internal CropTeacherOvernight.Preparation? OvernightStart { get; }
     internal CropTeacherOvernight? Overnight { get; set; }
+    internal CropTeacherControlRecovery.Preparation? ControlStart { get; }
+    internal CropTeacherControlRecovery? Control { get; set; }
+    internal CropTeacherTerminalShipping.Preparation? TerminalStart { get; }
+    internal CropTeacherTerminalShipping? Terminal { get; set; }
+    internal CropTeacherNativeSavedContentReadback? SavedReadback { get; }
+    internal CropTeacherSiteTillCompilation? TillingStart { get; }
+    internal CropTeacherSiteTilling? Tilling { get; set; }
+    internal CropTeacherSiteClearanceCompilation? ClearanceStart { get; }
+    internal CropTeacherSiteClearance? Clearance { get; set; }
+    internal CropTeacherSharedSourceReturn? SharedSourceReturn { get; set; }
+    internal bool NativeSharedObjectiveCompleted { get; set; }
+    internal CropTeacherSharedSourcePreparation? SharedSourceStart { get; set; }
+    internal CropTeacherSharedTransferSupport? SharedTransferSupport { get; }
+    internal CropTeacherSharedCookingSupport? SharedCookingSupport { get; init; }
+    internal ICropTeacherSharedPortfolioPreparation? SharedPortfolioSupport =>
+        (ICropTeacherSharedPortfolioPreparation?)SharedTransferSupport ?? SharedCookingSupport;
     internal ICropTeacherSupportingPreparation? OriginalStart => (ICropTeacherSupportingPreparation?)RouteStart ??
-        (ICropTeacherSupportingPreparation?)WateringStart ?? (ICropTeacherSupportingPreparation?)HarvestStart ?? OvernightStart;
+        (ICropTeacherSupportingPreparation?)WateringStart ?? (ICropTeacherSupportingPreparation?)HarvestStart ??
+        (ICropTeacherSupportingPreparation?)OvernightStart ?? (ICropTeacherSupportingPreparation?)ControlStart ??
+        (ICropTeacherSupportingPreparation?)TerminalStart ?? (ICropTeacherSupportingPreparation?)TillingStart ??
+        (ICropTeacherSupportingPreparation?)ClearanceStart ?? SharedSourceStart;
     internal ICropTeacherSupportingTransition? SupportingTransition => (ICropTeacherSupportingTransition?)SupportingRoute ??
-        (ICropTeacherSupportingTransition?)Watering ?? (ICropTeacherSupportingTransition?)Harvest ?? Overnight;
+        (ICropTeacherSupportingTransition?)Watering ?? (ICropTeacherSupportingTransition?)Harvest ??
+        (ICropTeacherSupportingTransition?)Overnight ?? (ICropTeacherSupportingTransition?)Control ??
+        (ICropTeacherSupportingTransition?)Terminal ?? (ICropTeacherSupportingTransition?)SavedReadback ??
+        (ICropTeacherSupportingTransition?)Tilling ?? (ICropTeacherSupportingTransition?)Clearance ?? SharedSourceReturn;
     internal CropTeacherManagedSeedOwner Owner { get; }
     internal JsonObject Record { get; }
     internal string RecordPath { get; }
@@ -63,7 +96,13 @@ public sealed class CropTeacherManagedSeedOperation
     public bool IsWateringMaintenance => Watering is not null || WateringStart is not null;
     public bool IsHarvest => HarvestStart is not null || Harvest is not null;
     public bool IsOvernight => OvernightStart is not null || Overnight is not null;
-    public bool IsSupportingTransition => IsSupportingRoute || IsWateringMaintenance || IsHarvest || IsOvernight;
+    public bool IsControlRecovery => ControlStart is not null || Control is not null;
+    public bool IsTerminalShipping => TerminalStart is not null || Terminal is not null;
+    public bool IsSavedContentReadback => SavedReadback is not null;
+    public bool IsSiteTilling => TillingStart is not null || Tilling is not null;
+    public bool IsSiteClearance => ClearanceStart is not null || Clearance is not null;
+    public bool IsSharedSourceReturn => SharedSourceReturn is not null || SharedSourceStart is not null || SharedPortfolioSupport is not null;
+    public bool IsSupportingTransition => IsSupportingRoute || IsWateringMaintenance || IsHarvest || IsOvernight || IsControlRecovery || IsTerminalShipping || IsSavedContentReadback || IsSiteTilling || IsSiteClearance || IsSharedSourceReturn;
     public CropTeacherManagedSeedScopes Scopes => seedScopes ?? throw new InvalidOperationException("Lifecycle operations have no native seed scope.");
     public CropTeacherRunStep ReadStep() => IsLifecycle || IsSupportingTransition ? throw new InvalidOperationException("Non-seed operations have no native seed step.") :
         Record["step"]!.Deserialize<CropTeacherRunStep>(CropTeacherManagedSeedOwner.JsonOptions)!;
@@ -87,6 +126,9 @@ public sealed partial class CropTeacherManagedSeedOwner : IAsyncDisposable
     private string lastAcceptedHash;
     private string? lastAcceptedPath;
     private CropTeacherManagedSeedOperation? lastAcceptedOperation;
+    private readonly List<(int Sequence, string Path, string Hash)> acceptedHistory = [];
+    private CropTeacherTerminalShippingTarget? terminalTarget;
+    public int AcceptedTerminalDepositCount => terminalTarget?.AcceptedDepositCount ?? 0;
     private Action? liveHeadGuard;
     private bool disposed;
     private bool faulted;
@@ -94,7 +136,9 @@ public sealed partial class CropTeacherManagedSeedOwner : IAsyncDisposable
     public bool HeadRecoveryRequired { get; private set; }
     public string CurrentSnapshotPath => headSnapshotPath;
     public string CurrentLedgerPath => headLedgerPath;
+    internal string EvidenceDirectory => options.EvidenceDirectory;
     internal bool UsesSelectedRefillResourceEffects => options.UseSelectedRefillResourceEffects;
+    internal bool UsesNativeRefillOutcomeAuthority => options.UseNativeRefillOutcomeAuthority;
 
     private CropTeacherManagedSeedOwner(CropTeacherManagedSeedOwnerOptions options, MoneyRevenueCropNativeProductionRunPlan plan,
         FileStream lease, Func<string, string, Task> write, Dictionary<string, string> fixedHashes, string headerHash,
@@ -111,6 +155,8 @@ public sealed partial class CropTeacherManagedSeedOwner : IAsyncDisposable
     {
         if (string.IsNullOrWhiteSpace(value.RunId) || string.IsNullOrWhiteSpace(value.ExecutorVersion))
             throw new ArgumentException("Managed crop owner requires original run and executor identity.");
+        if (value.UseNativeRefillOutcomeAuthority && !value.UseSelectedRefillResourceEffects)
+            throw new InvalidDataException("Native refill authority requires an explicitly selected refill owner.");
         var options = value with
         {
             EvidenceDirectory = Path.GetFullPath(value.EvidenceDirectory), BackendUrl = CropTeacherSeedLifecycleRuntime.NormalizeBackendOrigin(value.BackendUrl),
@@ -151,6 +197,8 @@ public sealed partial class CropTeacherManagedSeedOwner : IAsyncDisposable
         };
         if (options.UseSelectedRefillResourceEffects)
             header["selected_refill_resource_effects"] = true;
+        if (options.UseNativeRefillOutcomeAuthority)
+            header["native_refill_outcome_authority"] = true;
         if (options.NativeSaveBinding is { } binding)
             header["native_save_binding"] = JsonSerializer.SerializeToNode(binding, JsonOptions);
         var headerPath = Path.Combine(options.EvidenceDirectory, "owner-intent.json");

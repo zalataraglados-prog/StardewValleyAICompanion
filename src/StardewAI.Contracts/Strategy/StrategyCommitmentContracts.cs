@@ -12,6 +12,10 @@ namespace StardewAI.Contracts.Strategy
 
     public sealed class StrategyCommitmentLedger
     {
+        [JsonPropertyName("prepared_inventory_consumption")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public PreparedInventoryConsumption? PreparedInventoryConsumption { get; set; }
+
         [JsonPropertyName("prepared_material_transfer")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public PreparedMaterialTransfer? PreparedMaterialTransfer { get; set; }

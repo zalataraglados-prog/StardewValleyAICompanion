@@ -152,11 +152,30 @@ internal static class ReservationPortfolioCommitEvidenceVerifier
             .Concat(request.MaterialTransferPreparation is null
                 ? Array.Empty<(string Id, string OperationSuffix)>()
                 : new[] { (Id: request.PortfolioId, OperationSuffix: "material_transfer_prepared") })
+            .Concat(request.InventoryConsumptionPreparation is null
+                ? Array.Empty<(string Id, string OperationSuffix)>()
+                : new[] { (Id: request.PortfolioId, OperationSuffix: "inventory_consumption_prepared") })
             .ToArray();
         var current = (committed.History ??
                 Array.Empty<StrategyCommitmentHistoryEntry>()).Where(row =>
                 row.LedgerRevision == committed.Revision)
             .ToArray();
+        if (request.MaterialConsumption is { } consumption)
+        {
+            var claims = committed.MaterialReservations.Where(row => row.ReservationId == consumption.Consumption.MaterialReservationId).ToArray();
+            if (claims.Length != 1)
+            {
+                reasons.Add("atomic_commit_consumed_reservation_missing_or_ambiguous");
+                return;
+            }
+            var claim = claims[0];
+            expected = expected.Concat(new[]
+            {
+                (Id: claim.ReservationId, OperationSuffix: claim.Status == StrategyCommitmentStatuses.Completed
+                    ? "material_reservation_consumed" : "material_reservation_partially_consumed"),
+                (Id: request.PortfolioId, OperationSuffix: "reservation_portfolio_supporting_transition_complete")
+            }).ToArray();
+        }
         if (current.Length != expected.Length + 1)
         {
             reasons.Add("atomic_commit_history_count_mismatch");

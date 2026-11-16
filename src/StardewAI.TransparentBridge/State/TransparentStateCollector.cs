@@ -30,6 +30,8 @@ public sealed class TransparentStateCollector
 
     public SnapshotEnvelope BuildSnapshot(ISet<string>? allowedDomains = null)
     {
+        // Native actions may change inventory without advancing Game1.ticks.
+        using var inventoryCapture = MaterialInventoryGraphCapture.Begin();
         var tick = unchecked((long)Game1.ticks);
         var player = Context.IsWorldReady ? Game1.player : null;
         var sections = new Dictionary<string, object>();

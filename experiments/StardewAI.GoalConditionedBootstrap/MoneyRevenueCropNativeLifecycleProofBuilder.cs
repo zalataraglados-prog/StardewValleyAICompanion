@@ -15,14 +15,26 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
             MoneyRevenueCropNativeLifecycleProofRequest>(
                 fullRequestPath,
                 "Money Revenue crop native-lifecycle proof request");
-        Require(request.SchemaVersion ==
-                    "money_revenue_crop_native_lifecycle_proof_request.v4" &&
+        var savedReadbacks = request.SchemaVersion == "money_revenue_crop_native_lifecycle_proof_request.v10";
+        var appliedNativeWork = savedReadbacks || request.SchemaVersion == "money_revenue_crop_native_lifecycle_proof_request.v9";
+        var inventoryEffects = appliedNativeWork || request.SchemaVersion == "money_revenue_crop_native_lifecycle_proof_request.v8";
+        var transferredStock = inventoryEffects || request.SchemaVersion == "money_revenue_crop_native_lifecycle_proof_request.v7";
+        var jointObserved = transferredStock || request.SchemaVersion == "money_revenue_crop_native_lifecycle_proof_request.v6";
+        var nativeObservedCapacity = jointObserved || request.SchemaVersion == "money_revenue_crop_native_lifecycle_proof_request.v5";
+        Require((nativeObservedCapacity || request.SchemaVersion ==
+                    "money_revenue_crop_native_lifecycle_proof_request.v4") &&
                 !string.IsNullOrWhiteSpace(request.CommitmentId) &&
                 request.Transitions is { Length: > 0 } &&
                 request.CheckpointResumes is not null &&
                 !request.FormalProductTrainingAuthorized,
             "Money Revenue crop native-lifecycle proof request is invalid.");
         var checkpointResumes = request.CheckpointResumes!;
+        Require(savedReadbacks || checkpointResumes.All(value => value.AcceptedSavedReadbacks is null),
+            "Accepted saved readbacks require explicit lifecycle v10.");
+        Require(nativeObservedCapacity || request.Transitions.All(value => value.NativeRefillPreparation is null),
+            "Native refill preparation references require explicit lifecycle v5.");
+        Require(jointObserved || request.Transitions.All(value => value.NativeSharedSource is null && value.TransitionKind != SharedSourceReturnKind),
+            "Shared native source references require explicit lifecycle v6.");
 
         var planPath = RequiredFile(
             request.CropProductionPlanPath,
@@ -74,10 +86,12 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
             MoneyRevenueCropDailyCapacityProof>(
                 capacityPath,
                 "Money Revenue crop daily-capacity proof");
-        var rebuiltCapacity = MoneyRevenueCropDailyCapacityProofBuilder.Build(
-            capacity.RequestPath);
-        Require(capacity.SchemaVersion ==
-                    "money_revenue_crop_daily_capacity_proof.v1" &&
+        var rebuiltCapacity = nativeObservedCapacity
+            ? MoneyRevenueCropDailyCapacityProofBuilder.BuildNativeObserved(capacity.RequestPath)
+            : MoneyRevenueCropDailyCapacityProofBuilder.Build(capacity.RequestPath);
+        Require(capacity.SchemaVersion == (nativeObservedCapacity
+                    ? "money_revenue_crop_daily_capacity_proof.v2"
+                    : "money_revenue_crop_daily_capacity_proof.v1") &&
                 BootstrapArtifactGuard.EqualJson(capacity, rebuiltCapacity) &&
                 SamePath(capacity.CropProductionPlanPath, planPath) &&
                 capacity.CropProductionPlanSha256 == planSha256 &&
@@ -101,21 +115,31 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         Require(SamePath(primaryContext.LayoutPath, layoutPath),
             "Money Revenue crop lifecycle primary layout drifted from aggregate capacity support.");
         var frames = new LifecycleFramePool();
+        var nativeFrames = nativeObservedCapacity ? new NativeLifecycleFrameCache() : null;
         var transitions = request.Transitions.Select(value =>
         {
-            var loaded = LoadTransition(value);
+            var loaded = appliedNativeWork ? LoadNativeWorkObservedTransition(value) :
+                inventoryEffects ? LoadSharedInventoryObservedTransition(value) :
+                jointObserved ? transferredStock ? LoadTransferredStockObservedTransition(value) : LoadJointObservedTransition(value) :
+                nativeObservedCapacity ? LoadNativeObservedTransition(value) : LoadTransition(value);
+            if (nativeFrames is not null) return loaded.WithNativeFrames(nativeFrames);
             return loaded with
             {
                 Before = frames.Share(loaded.Before),
                 After = frames.Share(loaded.After)
             };
         }).ToArray();
-        var checkpointResumeProofs = ValidateTransitionChain(
+        foreach (var transition in transitions.Where(value => value.NativePreparationPlanPath is not null))
+            Require(SamePath(transition.NativePreparationPlanPath!, planPath) &&
+                    contexts.Any(value => value.Commitment.CommitmentId == transition.Request.NativeRefillPreparation!.CommitmentId &&
+                        value.Commitment.RequiredWateringTotalDays.Contains(transition.Request.TotalDay)),
+                "Native refill preparation changed its original crop-production obligation/day.");
+        var checkpointResumeProofs = ValidateTransitionChainCore(
             transitions,
             sourceSnapshot,
             contexts,
             capacity,
-            checkpointResumes);
+            checkpointResumes, savedReadbacks);
 
         var transitionProofs = transitions.Select(value =>
             new MoneyRevenueCropNativeLifecycleTransitionProof(
@@ -132,12 +156,14 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
                 value.Queue.QueueId,
                 value.Before.StateHash,
                 value.After.StateHash,
-                value.Queue.Items.Length,
+                value.NativeAppliedItemCount ?? value.Queue.Items.Length,
                 value.Request.TransitionKind == DayRolloverKind
                     ? "executor.sleep"
                     : value.Queue.Items[0].OptionId,
-                ResolveActionCommitmentId(value, contexts),
+                value.NativeNonProduction || value.NativeSharedSource ? string.Empty : ResolveActionCommitmentId(value, contexts),
                 true)).ToArray();
+        nativeFrames?.ValidateInputsUnchanged();
+        foreach (var transition in transitions) transition.SharedInputGuard?.Invoke();
         return new MoneyRevenueCropNativeLifecycleProof
         {
             Status = "verified_native_crop_lifecycle",
@@ -162,7 +188,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
             SharedNativeTrajectoryVerified = true,
             TransitionCount = transitions.Length,
             CropActionQueueCount = transitions.Count(value =>
-                value.Request.TransitionKind == CropActionsKind),
+                value.Request.TransitionKind == CropActionsKind && !value.NativeNonProduction && !value.NativeSharedSource),
             SupportingRouteQueueCount = transitions.Count(value =>
                 value.Request.TransitionKind is CropIngressRouteKind or
                     SleepIngressRouteKind),
@@ -190,11 +216,14 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
     }
 
     private static LoadedTransition LoadTransition(
-        MoneyRevenueCropNativeLifecycleTransitionRequest request)
+        MoneyRevenueCropNativeLifecycleTransitionRequest request) => LoadTransitionCore(request, allowSharedSource: false);
+
+    private static LoadedTransition LoadTransitionCore(
+        MoneyRevenueCropNativeLifecycleTransitionRequest request, bool allowSharedSource)
     {
-        Require(request.TransitionKind is CropActionsKind or
+        Require((request.TransitionKind is CropActionsKind or
                     CropIngressRouteKind or SleepIngressRouteKind or
-                    DayRolloverKind &&
+                    DayRolloverKind || allowSharedSource && request.TransitionKind == SharedSourceReturnKind) &&
                 request.TotalDay >= 0 &&
                 !string.IsNullOrWhiteSpace(request.RunId) &&
                 !string.IsNullOrWhiteSpace(request.ExecutorVersion) &&
@@ -234,8 +263,8 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
 
     private static int CountOption(
         IEnumerable<LoadedTransition> transitions,
-        string optionId) => transitions.Sum(value =>
-            value.Queue.Items.Count(item => item.OptionId == optionId));
+        string optionId) => transitions.Where(value => !value.NativeNonProduction && !value.NativeSharedSource).Sum(value =>
+            value.Queue.Items.Take(value.NativeAppliedItemCount ?? value.Queue.Items.Length).Count(item => item.OptionId == optionId));
 
     private const string CropActionsKind = "crop_actions";
     private const string CropIngressRouteKind =
@@ -256,7 +285,30 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         ActionQueueEnvelope Queue,
         SnapshotEnvelope Before,
         QueueExecutionReceiptEnvelope Receipt,
-        SnapshotEnvelope After);
+        SnapshotEnvelope After)
+    {
+        private SnapshotEnvelope before = Before;
+        private SnapshotEnvelope after = After;
+        private NativeLifecycleFrameCache? nativeFrames;
+        public SnapshotEnvelope Before { get => nativeFrames?.Read(BeforePath) ?? before; init => before = value; }
+        public SnapshotEnvelope After { get => nativeFrames?.Read(AfterPath) ?? after; init => after = value; }
+
+        internal LoadedTransition WithNativeFrames(NativeLifecycleFrameCache cache)
+        {
+            cache.Bind(BeforePath, Before); cache.Bind(AfterPath, After);
+            // Keep every original field on disk, not every decoded historical graph in memory.
+            return this with { nativeFrames = cache, before = null!, after = null! };
+        }
+
+        public int? NativeAppliedItemCount { get; init; }
+        public bool NativeObserved { get; init; }
+        public bool NativeNonProduction { get; init; }
+        public bool NativeSharedSource { get; init; }
+        public bool NativeWorkReceiptVerified { get; init; }
+        public bool JointObserved { get; init; }
+        public Action? SharedInputGuard { get; init; }
+        public string? NativePreparationPlanPath { get; init; }
+    }
 
     private sealed record CropCatalogRow(
         bool NeedsWatering,

@@ -35,6 +35,11 @@ public static class NativeOutputObservationMode
         Validate(options);
         if (!options.ObserveNativeOutputs || request.OptionId is not ("executor.move_to_tile" or "executor.clear_obstacle"))
             return null;
+        return CreateIdentityScope(options, request);
+    }
+
+    internal static string CreateIdentityScope(LiveTrainingOptions options, TrainingExecutionRequest request)
+    {
         var identity = new[] { request.RunId, request.QueueId, request.QueueItemId, request.RequestNonce,
             request.BeforeStateHash, request.SourcePlanningOptionId, request.SaveIsolationPath, request.OptionId };
         if (identity.Any(string.IsNullOrWhiteSpace) || request.RunId != options.RunId ||

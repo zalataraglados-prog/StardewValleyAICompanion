@@ -10,12 +10,6 @@ public static partial class QueueReplanFilter
         return Math.Max(0, queueItemCount - attemptedCount);
     }
 
-    private static readonly HashSet<string> TrainingEquivalentOptionIds = new(StringComparer.Ordinal)
-    {
-        "executor.play_junimo_kart",
-        "executor.play_prairie_king"
-    };
-
     private static readonly HashSet<string> NonSemanticParameterNames = new(StringComparer.Ordinal)
     {
         "precondition",
@@ -173,30 +167,10 @@ public static partial class QueueReplanFilter
             StringComparer.Ordinal);
     }
 
-    public static bool IsTrainingVerifiedExecution(JsonObject? execution)
-    {
-        if (!string.Equals(
-                ReadString(execution, "status"),
-                "applied",
-                StringComparison.Ordinal))
-        {
-            return false;
-        }
-
-        var verificationStatus = ReadString(
-            execution,
-            "primitive_verification_status");
-        return string.Equals(
-                verificationStatus,
-                "verified",
-                StringComparison.Ordinal) ||
-            string.Equals(
-                verificationStatus,
-                "simulated_equivalent",
-                StringComparison.Ordinal) &&
-            TrainingEquivalentOptionIds.Contains(
-                ReadString(execution, "option_id"));
-    }
+    public static bool IsTrainingVerifiedExecution(JsonObject? execution) =>
+        StardewAI.Contracts.Training.TrainingExecutionVerification.IsAcceptedProgress(
+            ReadString(execution, "status"), ReadString(execution, "primitive_verification_status"),
+            ReadString(execution, "option_id"));
 
     public static JsonObject? LastTrainingVerifiedCompletedSelectedCandidateStep(
         JsonObject? aggregateExecution)

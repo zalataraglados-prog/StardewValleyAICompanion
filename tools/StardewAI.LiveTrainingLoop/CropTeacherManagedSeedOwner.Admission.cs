@@ -31,7 +31,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             Directory.Exists(runtime) || File.Exists(runtime) || ReservedRuntimePath(runtime))
             throw new IOException("Managed crop operation requires a new runtime directory inside its owner.");
         RequireDirectoryPath(runtime);
-        return new JsonObject
+        return AddObservedTerminalSelection(new JsonObject
         {
             ["schema_version"] = "crop_teacher_managed_seed_admission.v1", ["sequence"] = sequence,
             ["run_id"] = options.RunId, ["support_step_id"] = StepId(sequence),
@@ -39,7 +39,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             ["before_snapshot_path"] = Path.GetFullPath(before), ["before_ledger_path"] = Path.GetFullPath(ledger),
             ["prior_verified_snapshot_path"] = prior is null ? null : Path.GetFullPath(prior),
             ["native_dispatch_performed"] = false, ["formal_product_training_authorized"] = false
-        };
+        });
     }
 
     private async Task<CropTeacherManagedSeedOperation> PersistAdmissionAsync(JsonObject record, CropTeacherManagedSeedOperation operation)

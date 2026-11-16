@@ -23,7 +23,15 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         MoneyRevenueCropDailyCapacityProof capacity,
         MoneyRevenueCropNativeLifecycleCheckpointResumeRequest[]
             checkpointResumes)
+        => ValidateTransitionChainCore(transitions, source, contexts, capacity, checkpointResumes, acceptedSavedReadbacks: false);
+
+    private static MoneyRevenueCropNativeLifecycleCheckpointResumeProof[] ValidateTransitionChainCore(
+        LoadedTransition[] transitions, SnapshotEnvelope source, LifecycleCommitmentContext[] contexts,
+        MoneyRevenueCropDailyCapacityProof capacity, MoneyRevenueCropNativeLifecycleCheckpointResumeRequest[] checkpointResumes,
+        bool acceptedSavedReadbacks)
     {
+        Require(acceptedSavedReadbacks || checkpointResumes.All(value => value.AcceptedSavedReadbacks is null),
+            "Accepted saved readbacks require the explicit lifecycle consumer.");
         var sourceCalendar = ReadCalendar(source);
         var firstDay = contexts.Min(value =>
             value.Commitment.PlantingTotalDay);
@@ -67,10 +75,9 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
                     Require(!exactChain,
                         "Money Revenue crop lifecycle checkpoint resume did not cross a runtime boundary at transition " +
                         index + ".");
-                    resumeProofs.Add(ValidateCheckpointResume(
-                        index,
-                        previous,
-                        transition));
+                    var accepted = resumesByIndex[index].AcceptedSavedReadbacks;
+                    if (accepted is null) resumeProofs.Add(ValidateCheckpointResume(index, previous, transition));
+                    else resumeProofs.Add(ValidateAcceptedSavedReadbackResume(index, previous, transition, accepted));
                 }
                 else
                 {
@@ -80,6 +87,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
                 }
             }
             ValidateQueueReceipt(transition);
+            if (transition.NativeSharedSource) ValidateSharedCropBoundary(transition, contexts);
         }
 
         var cursor = 0;
@@ -116,11 +124,13 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
             var dayActions = new List<LoadedTransition>();
             while (cursor < transitions.Length &&
                 transitions[cursor].Request.TotalDay == day &&
-                transitions[cursor].Request.TransitionKind == CropActionsKind)
+                (transitions[cursor].Request.TransitionKind == CropActionsKind ||
+                    transitions[cursor].NativeNonProduction || transitions[cursor].NativeSharedSource ||
+                    transitions[cursor].JointObserved && transitions[cursor].Request.TransitionKind == CropIngressRouteKind))
             {
                 dayActions.Add(transitions[cursor++]);
             }
-            Require(dayActions.Count == 0 ||
+            Require(!dayActions.Any(value => !value.NativeNonProduction && !value.NativeSharedSource) ||
                     ReadPlayerLocation(dayStart) ==
                         contexts[0].Layout.LocationId,
                 "Money Revenue crop lifecycle day actions did not start at the shared crop location on day " +
@@ -135,6 +145,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
                 dayActions,
                 dayStart,
                 contexts);
+            ValidateNativePreparationContinuations(dayActions, contexts);
 
             if (day < lastDay)
             {
@@ -174,6 +185,26 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         Require(resumeProofs.Count == checkpointResumes.Length,
             "Money Revenue crop lifecycle checkpoint resume was not consumed.");
         return resumeProofs.ToArray();
+    }
+
+    private static MoneyRevenueCropNativeLifecycleCheckpointResumeProof ValidateAcceptedSavedReadbackResume(
+        int index, LoadedTransition previous, LoadedTransition resumed,
+        MoneyRevenueCropAcceptedSavedReadbackReference[] accepted)
+    {
+        var home = ReadHomeLocation(previous.After);
+        Require(previous.Request.TransitionKind == DayRolloverKind &&
+                resumed.Request.TotalDay == previous.Request.TotalDay + 1 &&
+                previous.Request.RunId == resumed.Request.RunId &&
+                ReadCalendar(previous.After).TotalDay == resumed.Request.TotalDay &&
+                ReadCalendar(resumed.Before).TotalDay == resumed.Request.TotalDay &&
+                ReadHomeLocation(resumed.Before) == home && ReadPlayerLocation(previous.After) == home &&
+                ReadPlayerLocation(resumed.Before) == home,
+            "Accepted saved readback is not the original owner's same-day home continuation after native rollover.");
+        var boundary = CropTeacherAcceptedSavedReadbackVerifier.Verify(previous.AfterPath, resumed.BeforePath,
+            resumed.Request.RunId, accepted);
+        return new(index, resumed.Request.TotalDay, previous.After.StateHash, resumed.Before.StateHash,
+            boundary.PersistentStateSha256, previous.Request.RunId, resumed.Request.RunId, true)
+        { BoundaryKind = "accepted_native_saved_content_readback", SavedReadbackAcceptanceSha256s = boundary.AcceptanceSha256s };
     }
 
     private static MoneyRevenueCropNativeLifecycleCheckpointResumeProof
@@ -218,6 +249,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
     {
         foreach (var transition in transitions)
         {
+            if (transition.NativeNonProduction) continue; // Already verified against its original native control kernel.
             var beforeCalendar = ReadCalendar(transition.Before);
             var afterCalendar = ReadCalendar(transition.After);
             var optionIds = (transition.Queue.Items ??
@@ -284,14 +316,36 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
             int Y)>();
         var previousRank = -1;
         var locationId = contexts[0].Layout.LocationId;
+        var jointIngress = new List<LoadedTransition>();
+        void CompleteJointIngress()
+        {
+            if (jointIngress.Count == 0) return;
+            ValidateSupportingRoutes(totalDay, jointIngress, locationId);
+            jointIngress.Clear();
+        }
         foreach (var transition in transitions)
         {
+            if (transition.NativeSharedSource)
+            {
+                CompleteJointIngress();
+                continue;
+            }
+            if (transition.NativeNonProduction) continue;
+            if (transition.JointObserved && transition.Request.TransitionKind == CropIngressRouteKind)
+            {
+                // Original ingress may span several connectors; only its final hop must reach the crop location.
+                jointIngress.Add(transition);
+                continue;
+            }
+            CompleteJointIngress();
             var beforeCalendar = ReadCalendar(transition.Before);
             var afterCalendar = ReadCalendar(transition.After);
             Require(beforeCalendar.TotalDay == totalDay &&
                     afterCalendar.TotalDay == totalDay,
                 "Money Revenue crop action crossed a day boundary.");
-            var items = transition.Queue.Items ?? Array.Empty<ActionQueueItem>();
+            var originalItems = transition.Queue.Items ?? Array.Empty<ActionQueueItem>();
+            var items = transition.NativeAppliedItemCount is { } applied
+                ? originalItems.Take(applied).ToArray() : originalItems;
             var optionIds = items.Select(value => value.OptionId)
                 .Distinct(StringComparer.Ordinal).ToArray();
             Require(optionIds.Length == 1 &&
@@ -343,6 +397,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
                     tile.Y));
             }
         }
+        CompleteJointIngress();
 
         Require(actual.Distinct().Count() == actual.Count,
             "Money Revenue crop lifecycle repeats an action on the same tile and day.");

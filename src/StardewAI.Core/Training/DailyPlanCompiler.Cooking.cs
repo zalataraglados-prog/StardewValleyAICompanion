@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Training;
+using StardewAI.Core.Execution;
+using StardewAI.Core.Strategy;
 
 namespace StardewAI.Core.Training;
 
@@ -18,6 +20,11 @@ public sealed partial class DailyPlanCompiler
             "expected_output_order_data", "recipes_cooked_before", "ingredient_rows_json",
             "seasoning_rows_json", "material_container_ids_json", "max_movement_tiles"
         };
+        var parameters = names.Select(name => Parameter(name, CandidateParameter(candidate, name))).ToList();
+        if (candidate.Parameters.Any(row => PreparedCookingConsumptionBinding.IsControlParameter(row.Name)))
+            parameters.AddRange(candidate.Parameters.Where(row => PreparedCookingConsumptionBinding.IsControlParameter(row.Name) ||
+                CropSaleStockMaterialTransferBinding.IsControlParameter(row.Name) || CropSaleStockMaterialTransferBinding.IsForeignControlParameter(row.Name) ||
+                row.Name == PreparedMaterialTransferContract.BindingParameter).Select(row => Parameter(row.Name, row.Value)));
         return new[]
         {
             new SmallModelPlanStep
@@ -41,7 +48,7 @@ public sealed partial class DailyPlanCompiler
                     "runtime_verify_exact_material_seasoning_output_and_recipe_count_delta"
                 },
                 FailurePolicy = new[] { "refresh_snapshot_and_replan" },
-                Parameters = names.Select(name => Parameter(name, CandidateParameter(candidate, name))).ToArray()
+                Parameters = parameters.ToArray()
             }
         };
     }

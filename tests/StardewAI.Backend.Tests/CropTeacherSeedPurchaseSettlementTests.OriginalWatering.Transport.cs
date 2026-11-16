@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
@@ -39,6 +40,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         private readonly HttpMessageInvoker backend;
         private readonly QueueExecutionReceiptEnvelope receipt;
         private readonly bool fullExecutionResult;
+        private readonly Func<TrainingExecutionRequest, int, JsonObject>? resultFactory;
         private SnapshotEnvelope current;
         internal int NativeRequests { get; private set; }
         internal int FullSnapshotReads { get; private set; }
@@ -46,9 +48,11 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             JsonSerializer.Deserialize<QueueExecutionReceiptEnvelope>(File.ReadAllText(fixture.Basis.Transition.ExecutionReceiptPath), JsonOptions)!) { }
 
         internal OriginalWateringTransport(RuntimeFixture runtime, SnapshotEnvelope before,
-            QueueExecutionReceiptEnvelope receipt, bool fullExecutionResult = false)
+            QueueExecutionReceiptEnvelope receipt, bool fullExecutionResult = false,
+            Func<TrainingExecutionRequest, int, JsonObject>? resultFactory = null)
         {
             this.runtime = runtime; this.receipt = receipt; this.fullExecutionResult = fullExecutionResult;
+            this.resultFactory = resultFactory;
             backend = new(runtime.Handler, disposeHandler: false);
             current = before;
         }
@@ -68,6 +72,8 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 NativeRequests++;
                 current = JsonSerializer.Deserialize<SnapshotEnvelope>(File.ReadAllText(next.AfterSnapshotPath!), JsonOptions)!;
                 runtime.Store.Snapshots[current.StateHash] = current;
+                if (resultFactory is not null)
+                    return new(HttpStatusCode.OK) { Content = JsonContent.Create(resultFactory(bound, NativeRequests), options: JsonOptions) };
                 if (fullExecutionResult)
                     return new(HttpStatusCode.OK) { Content = JsonContent.Create(new TrainingExecutionResult
                     {

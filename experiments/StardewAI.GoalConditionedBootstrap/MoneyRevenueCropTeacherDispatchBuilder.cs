@@ -5,7 +5,7 @@ using StardewAI.Contracts.State;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
-public static class MoneyRevenueCropTeacherDispatchBuilder
+public static partial class MoneyRevenueCropTeacherDispatchBuilder
 {
     private static readonly JsonSerializerOptions JsonOptions =
         new(JsonSerializerDefaults.Web) { WriteIndented = true };

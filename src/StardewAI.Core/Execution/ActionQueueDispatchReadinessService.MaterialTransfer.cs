@@ -22,6 +22,7 @@ public sealed partial class ActionQueueDispatchReadinessService
                 row.Name == PreparedMaterialTransferContract.BindingParameter ||
                 row.Name is "material_transfer_intent_json" or "material_transfer_projection_json" ||
                 row.Name.StartsWith("acquisition_", StringComparison.Ordinal) ||
+                CropSaleStockMaterialTransferBinding.IsControlParameter(row.Name) ||
                 CropSeedMaterialTransferBinding.IsControlParameter(row.Name) ||
                 MuseumOutputCustodyTransferBinding.IsControlParameter(row.Name))
             .GroupBy(row => row.Name, StringComparer.Ordinal).Any(group => group.Count() != 1))
@@ -35,6 +36,7 @@ public sealed partial class ActionQueueDispatchReadinessService
         var bound = ledger.PreparedMaterialTransfer is not null ||
             parameters.Any(row => row.Name == PreparedMaterialTransferContract.BindingParameter) ||
             !string.IsNullOrWhiteSpace(item.NormalizedCommand.GoalId) ||
+            parameters.Any(row => CropSaleStockMaterialTransferBinding.IsControlParameter(row.Name)) ||
             parameters.Any(row => CropSeedMaterialTransferBinding.IsControlParameter(row.Name)) ||
             parameters.Any(row => MuseumOutputCustodyTransferBinding.IsControlParameter(row.Name)) ||
             parameters.Any(row => row.Name.StartsWith("acquisition_", StringComparison.Ordinal)) ||
@@ -46,7 +48,15 @@ public sealed partial class ActionQueueDispatchReadinessService
             var prepared = ledger.PreparedMaterialTransfer;
             result.RequiredLedgerId = ledger.LedgerId;
             result.RequiredLedgerRevision = prepared?.ExpectedLedgerRevision;
-            if (parameters.Any(row => CropSeedMaterialTransferBinding.IsControlParameter(row.Name)))
+            if (parameters.Any(row => CropSaleStockMaterialTransferBinding.IsControlParameter(row.Name)))
+            {
+                if (!CropSaleStockMaterialTransferBinding.IsBound(item, ledger))
+                    reasons.Add("dispatch_crop_sale_stock_transfer_binding_drifted");
+                else if (ForbiddenCustodyTransfer(ledger, prepared!))
+                    reasons.Add("output_custody_relocation_requires_retained_terminal_lifecycle");
+                else validatedPreparation = prepared;
+            }
+            else if (parameters.Any(row => CropSeedMaterialTransferBinding.IsControlParameter(row.Name)))
             {
                 if (!CropSeedMaterialTransferBinding.IsBound(item, ledger))
                     reasons.Add("dispatch_crop_seed_transfer_binding_drifted");
@@ -67,10 +77,7 @@ public sealed partial class ActionQueueDispatchReadinessService
                 Parameter(item, "acquisition_support_transition_kind") != "machine_input_material_transfer" ||
                 JsonSerializer.Serialize(intent) != JsonSerializer.Serialize(prepared.Intent))
                 reasons.Add("dispatch_material_transfer_preparation_binding_drifted");
-            else if (PreparedMaterialTransferContract.ContainsCustody(ledger, prepared.ReservationProjection) &&
-                (!PreparedMaterialTransferContract.CustodyPositionsBound(ledger, prepared.ReservationProjection) ||
-                 ledger.MaterialReservations.Any(row => row.OutputCustody is not null &&
-                     prepared.MaterialRelocations.Any(move => move.MaterialReservationId == row.ReservationId))))
+            else if (ForbiddenCustodyTransfer(ledger, prepared))
                 reasons.Add("output_custody_relocation_requires_retained_terminal_lifecycle");
             else validatedPreparation = prepared;
         }
@@ -80,6 +87,12 @@ public sealed partial class ActionQueueDispatchReadinessService
         result.Status = result.Ready ? bound ? "ready" : "not_applicable" : "blocked";
         return result;
     }
+
+    private static bool ForbiddenCustodyTransfer(StrategyCommitmentLedger ledger, PreparedMaterialTransfer prepared) =>
+        PreparedMaterialTransferContract.ContainsCustody(ledger, prepared.ReservationProjection) &&
+        (!PreparedMaterialTransferContract.CustodyPositionsBound(ledger, prepared.ReservationProjection) ||
+         ledger.MaterialReservations.Any(row => row.OutputCustody is not null &&
+             prepared.MaterialRelocations.Any(move => move.MaterialReservationId == row.ReservationId)));
 
     private static void ValidateMaterialTransferExecutionPayload(ActionQueueItem item, MaterialTransferIntent? intent,
         PreparedMaterialTransfer? prepared, ICollection<string> reasons)

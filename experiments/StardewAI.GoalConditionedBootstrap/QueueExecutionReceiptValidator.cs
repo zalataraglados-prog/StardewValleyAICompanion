@@ -18,6 +18,19 @@ internal static partial class QueueExecutionReceiptValidator
         string expectedSelectedCandidateId,
         string compiledCommandStateHash,
         bool requireTeacherPreferenceStateRebound)
+        => ValidateCore(queue, before, receipt, after, expectedRunId, expectedExecutorVersion,
+            expectedSelectedCandidateId, compiledCommandStateHash, requireTeacherPreferenceStateRebound, requireCandidateCompletion: true);
+
+    internal static string[] ValidateAppliedNativeWork(ActionQueueEnvelope queue, SnapshotEnvelope before,
+        QueueExecutionReceiptEnvelope receipt, SnapshotEnvelope after, string runId, string executorVersion,
+        string candidateId, string compiledStateHash) =>
+        ValidateCore(queue, before, receipt, after, runId, executorVersion, candidateId, compiledStateHash,
+            requireTeacherPreferenceStateRebound: false, requireCandidateCompletion: false, allowTrainingEquivalent: true);
+
+    private static string[] ValidateCore(ActionQueueEnvelope queue, SnapshotEnvelope before,
+        QueueExecutionReceiptEnvelope receipt, SnapshotEnvelope after, string expectedRunId, string expectedExecutorVersion,
+        string expectedSelectedCandidateId, string compiledCommandStateHash, bool requireTeacherPreferenceStateRebound,
+        bool requireCandidateCompletion, bool allowTrainingEquivalent = false)
     {
         var reasons = new List<string>();
         var queueItems = queue.Items ?? Array.Empty<ActionQueueItem>();
@@ -88,9 +101,9 @@ internal static partial class QueueExecutionReceiptValidator
             receipt.AfterGameTick <= receipt.BeforeGameTick)
             reasons.Add("execution_receipt_tick_boundary_mismatch");
         if (!string.Equals(receipt.Status, "applied", StringComparison.Ordinal) ||
-            !receipt.Success ||
             !receipt.AfterSnapshotFresh ||
-            !receipt.SelectedCandidateCompleted)
+            (requireCandidateCompletion ? !receipt.Success || !receipt.SelectedCandidateCompleted :
+                receipt.Success != receipt.SelectedCandidateCompleted))
             reasons.Add("queue_execution_receipt_not_completed_verified_fresh");
         if ((receipt.BlockReasons?.Length ?? 0) > 0)
             reasons.Add("execution_receipt_contains_block_or_failure_reasons");
@@ -147,11 +160,10 @@ internal static partial class QueueExecutionReceiptValidator
             if (!string.Equals(step.Status, "applied", StringComparison.Ordinal) ||
                 !step.AfterSnapshotFresh ||
                 step.SelectedQueueCandidateCompleted !=
-                    (index == queueItems.Length - 1) ||
-                !string.Equals(
-                    step.PrimitiveVerificationStatus,
-                    "verified",
-                    StringComparison.Ordinal) ||
+                    (index == queueItems.Length - 1 && (requireCandidateCompletion || receipt.SelectedCandidateCompleted)) ||
+                !(allowTrainingEquivalent
+                    ? TrainingExecutionVerification.IsAcceptedProgress(step.Status, step.PrimitiveVerificationStatus, step.OptionId)
+                    : string.Equals(step.PrimitiveVerificationStatus, "verified", StringComparison.Ordinal)) ||
                 (step.PrimitiveVerificationReasons?.Length ?? 0) == 0 ||
                 (step.BlockReasons?.Length ?? 0) > 0 ||
                 !string.IsNullOrWhiteSpace(step.FailureAttribution) ||
@@ -177,7 +189,7 @@ internal static partial class QueueExecutionReceiptValidator
         return reasons.Distinct(StringComparer.Ordinal).ToArray();
     }
 
-    private static bool ReceiptPrimitiveIdentityMatches(
+    internal static bool ReceiptPrimitiveIdentityMatches(
         ActionQueueItem item,
         CompiledActionStep[] steps,
         string primitiveKind)

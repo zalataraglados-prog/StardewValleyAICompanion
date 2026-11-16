@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using StardewAI.Contracts.Execution;
 
 namespace StardewAI.LiveTrainingLoop;
 
@@ -138,6 +139,27 @@ public sealed class SelectedQueueDecisionLease
         }
 
         return new SelectedQueueDecisionLease(selected);
+    }
+
+    public static SelectedQueueDecisionLease CreateFromPlan(SmallModelPlanEnvelope plan, JsonObject ranking)
+    {
+        if (plan.SourceModel != "StardewAI.Core.Training.DailyPlanCompiler" || plan.PlanType != "daily_candidate_plan")
+            throw new InvalidDataException("A selected daily decision requires the original compiler plan.");
+        // Adapt only selection annotations to the existing readers; this is not an executable queue.
+        var items = new JsonArray(plan.Steps.Select(step => (JsonNode)new JsonObject
+        {
+            ["normalized_command"] = new JsonObject
+            {
+                ["parameters"] = new JsonArray(step.Parameters.Select(parameter => (JsonNode)new JsonObject
+                    { ["name"] = parameter.Name, ["value"] = parameter.Value })
+                    .Concat(step.Preconditions.Select(value => (JsonNode)new JsonObject
+                        { ["name"] = "precondition", ["value"] = value })).ToArray())
+            }
+        }).ToArray());
+        if (items.OfType<JsonObject>().Any(item => QueueReplanFilter.ReadAcceptedCandidateIndex(item) < 0 ||
+            string.IsNullOrWhiteSpace(EffectiveDecisionArtifactTracker.ReadRawQueueItemCandidateId(item))))
+            throw new InvalidDataException("Daily decision steps lost their selected candidate annotations.");
+        return Create(new JsonObject { ["items"] = items }, ranking);
     }
 
     private static JsonObject Clone(JsonObject value) =>

@@ -144,10 +144,65 @@ public sealed record MoneyRevenueCropNativeLifecycleTransitionRequest(
     [property: JsonPropertyName("after_snapshot_path")] string AfterSnapshotPath,
     [property: JsonPropertyName("run_id")] string RunId,
     [property: JsonPropertyName("executor_version")] string ExecutorVersion,
-    [property: JsonPropertyName("selected_candidate_id")] string SelectedCandidateId);
+    [property: JsonPropertyName("selected_candidate_id")] string SelectedCandidateId)
+{
+    [JsonPropertyName("native_refill_preparation")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public MoneyRevenueCropNativeRefillPreparationReference? NativeRefillPreparation { get; init; }
+
+    [JsonPropertyName("native_shared_source")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public MoneyRevenueCropNativeSharedSourceReference? NativeSharedSource { get; init; }
+}
+
+// Explicit lifecycle v6: immutable original source/ledger/native inputs, not a claim of crop output.
+public sealed record MoneyRevenueCropNativeSharedSourceReference(
+    [property: JsonPropertyName("run_request_path")] string RunRequestPath,
+    [property: JsonPropertyName("ledger_path")] string LedgerPath,
+    [property: JsonPropertyName("covered_commitment_ids")] string[] CoveredCommitmentIds,
+    [property: JsonPropertyName("step_id")] string StepId,
+    [property: JsonPropertyName("input_artifact_hashes")] IReadOnlyDictionary<string, string> InputArtifactHashes)
+{
+    [JsonPropertyName("accepted_marker")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public CropTeacherSharedSourceMarkerReference? AcceptedMarker { get; init; }
+    [JsonPropertyName("applied_native_work_queue")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool AppliedNativeWorkQueue { get; init; }
+    [JsonPropertyName("settled_material_transfer")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public CropTeacherSharedTransferSettlementReference? SettledMaterialTransfer { get; init; }
+
+    [JsonPropertyName("settled_transfer_reference_path")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? SettledTransferReferencePath { get; init; }
+
+    [JsonPropertyName("settled_inventory_consumption")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public CropTeacherSharedConsumptionSettlementReference? SettledInventoryConsumption { get; init; }
+
+    [JsonPropertyName("settled_consumption_reference_path")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? SettledConsumptionReferencePath { get; init; }
+}
+
+// Explicit v5 only: original owner compilation inputs, never an inferred move/refill witness.
+public sealed record MoneyRevenueCropNativeRefillPreparationReference(
+    [property: JsonPropertyName("run_request_path")] string RunRequestPath,
+    [property: JsonPropertyName("ledger_path")] string LedgerPath,
+    [property: JsonPropertyName("covered_commitment_ids")] string[] CoveredCommitmentIds,
+    [property: JsonPropertyName("commitment_id")] string CommitmentId,
+    [property: JsonPropertyName("step_id")] string StepId,
+    [property: JsonPropertyName("model_plan_path")] string ModelPlanPath,
+    [property: JsonPropertyName("resource_mode")] string ResourceMode);
 
 public sealed record MoneyRevenueCropNativeLifecycleCheckpointResumeRequest(
-    [property: JsonPropertyName("transition_index")] int TransitionIndex);
+    [property: JsonPropertyName("transition_index")] int TransitionIndex)
+{
+    [JsonPropertyName("accepted_saved_readbacks")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public MoneyRevenueCropAcceptedSavedReadbackReference[]? AcceptedSavedReadbacks { get; init; }
+}
 
 public sealed record MoneyRevenueCropNativeLifecycleCheckpointResumeProof(
     [property: JsonPropertyName("transition_index")] int TransitionIndex,
@@ -157,7 +212,16 @@ public sealed record MoneyRevenueCropNativeLifecycleCheckpointResumeProof(
     [property: JsonPropertyName("normalized_state_sha256")] string NormalizedStateSha256,
     [property: JsonPropertyName("prior_run_id")] string PriorRunId,
     [property: JsonPropertyName("resumed_run_id")] string ResumedRunId,
-    [property: JsonPropertyName("verified")] bool Verified);
+    [property: JsonPropertyName("verified")] bool Verified)
+{
+    [JsonPropertyName("boundary_kind")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? BoundaryKind { get; init; }
+
+    [JsonPropertyName("saved_readback_acceptance_sha256s")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string[]? SavedReadbackAcceptanceSha256s { get; init; }
+}
 
 public sealed record MoneyRevenueCropNativeLifecycleTransitionProof(
     [property: JsonPropertyName("transition_kind")] string TransitionKind,
@@ -321,6 +385,10 @@ public sealed class MoneyRevenueCropOutputRetentionProofRequest
     [JsonPropertyName("wave_index")]
     public int WaveIndex { get; set; }
 
+    [JsonPropertyName("retain_through_snapshot_path")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? RetainThroughSnapshotPath { get; set; }
+
     [JsonPropertyName("formal_product_training_authorized")]
     public bool FormalProductTrainingAuthorized { get; set; }
 }
@@ -339,6 +407,10 @@ public sealed record MoneyRevenueCropOutputRetentionHarvestQueueEvidence(
 
 public sealed class MoneyRevenueCropOutputRetentionProof
 {
+    [JsonPropertyName("producer_retention")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public MoneyRevenueCropProducerRetention? ProducerRetention { get; set; }
+
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } =
         "money_revenue_crop_output_retention_proof.v1";

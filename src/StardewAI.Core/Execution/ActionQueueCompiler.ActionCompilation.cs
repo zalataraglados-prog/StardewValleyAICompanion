@@ -160,6 +160,10 @@ namespace StardewAI.Core.Execution
             if (CropSeedPlantingBinding.IsPresent(action.Parameters) &&
                 !CropSeedPlantingBinding.SourceMatches(action, snapshot, commitmentLedger, goalId))
                 blocking.Add("crop_seed_planting_source_binding_invalid");
+            if ((action.OptionId == PreparedInventoryConsumptionContract.Consumer && commitmentLedger?.PreparedInventoryConsumption is not null ||
+                 PreparedCookingConsumptionBinding.IsPresent(action.Parameters)) &&
+                !PreparedCookingConsumptionBinding.SourceMatches(action, snapshot, commitmentLedger, goalId))
+                blocking.Add("prepared_inventory_consumption_source_binding_invalid");
             blocking.AddRange(ValidateHarvestCropPlan(action, snapshot));
             blocking.AddRange(ValidateAttachedItemHarvestQuestPlan(action, snapshot));
             blocking.AddRange(ValidateAttachedResourceCollectionQuestPlan(action, snapshot));
@@ -284,6 +288,8 @@ namespace StardewAI.Core.Execution
             blocking.AddRange(ValidateNativeMiningPrimitivePlan(action, snapshot));
             blocking.AddRange(ValidateShippingBinPrimitivePlan(action));
             blocking.AddRange(ValidateMaterialTransferPlan(action, snapshot));
+            blocking.AddRange(CropSaleStockTransferPreflight.Evaluate(action.OptionId, action.Parameters, snapshot, commitmentLedger));
+            blocking.AddRange(CropSaleStockConsumptionPreflight.Evaluate(action.OptionId, action.Parameters, snapshot, commitmentLedger));
             blocking.AddRange(ValidateSelectSafeItemSlotPlan(action, snapshot));
             blocking.AddRange(ValidateCloseMenuPlan(action, snapshot));
             blocking.AddRange(ValidateBuyShopItemPlan(action, snapshot));
@@ -291,7 +297,7 @@ namespace StardewAI.Core.Execution
             blocking.AddRange(ValidateChooseDialogueResponsePlan(action, snapshot));
             blocking.AddRange(ValidateAnimalPurchasePlan(action, snapshot));
             blocking.AddRange(ValidateAnimalManagementPlan(action, snapshot));
-            blocking.AddRange(ValidateCookRecipePlan(action, snapshot));
+            blocking.AddRange(ValidateCookRecipeWithSaleStock(action, snapshot, commitmentLedger));
             blocking.AddRange(ValidateForgeItemPlan(action, snapshot));
             blocking.AddRange(ValidateTailorItemPlan(action, snapshot));
             blocking.AddRange(ValidateQuestAdvancePlan(action, snapshot));
@@ -343,6 +349,7 @@ namespace StardewAI.Core.Execution
                     GoalId = (action.OptionId == "executor.donate_museum_item" &&
                         action.Parameters.Any(parameter => parameter.Name == "museum_output_custody_reservation_id") ||
                         action.OptionId == "executor.plant_seed" && CropSeedPlantingBinding.IsPresent(action.Parameters) ||
+                        action.OptionId == "executor.cook_recipe" && PreparedCookingConsumptionBinding.IsPresent(action.Parameters) ||
                         (action.OptionId is "executor.transfer_material" or "inventory.transfer_item") &&
                         action.Parameters.Any(parameter => parameter.Name == PreparedMaterialTransferContract.BindingParameter))
                             ? goalId : null,
@@ -360,7 +367,7 @@ namespace StardewAI.Core.Execution
                 }
             };
             if (action.OptionId is "executor.transfer_material" or "inventory.transfer_item" ||
-                CropSeedPlantingBinding.IsPresent(action.Parameters))
+                CropSeedPlantingBinding.IsPresent(action.Parameters) || PreparedCookingConsumptionBinding.IsPresent(action.Parameters))
             {
                 var readiness = new ActionQueueDispatchReadinessService().Evaluate(new ActionQueueEnvelope(), item,
                     commitmentLedger ?? new StrategyCommitmentLedger(), snapshot.StateHash);

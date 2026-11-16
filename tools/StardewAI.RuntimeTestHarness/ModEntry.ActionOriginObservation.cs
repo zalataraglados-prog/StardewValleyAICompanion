@@ -11,14 +11,19 @@ public sealed partial class ModEntry
     private bool nativeObservationPatchesFailed;
 
     private static string? ObservationRequestRejection(TrainingExecutionRequest request) =>
+        request.ActionOriginTillingResources && !NativeTillingObservationContract.IsCompleteRequest(request)
+            ? "tilling_observation_requires_original_till_and_complete_witness_tiers" :
         request.ActionOriginDebrisState && !request.ActionOriginInventoryGraph ? "debris_state_requires_inventory_graph" :
         request.ActionOriginInventoryGraph && !request.ActionOriginInventoryTransients ? "inventory_graph_requires_transients" :
         request.ActionOriginInventoryTransients && !request.ActionOriginInventoryPayload ? "inventory_transients_require_payload" :
         request.ActionOriginInventoryPayload && !request.ActionOriginToolInputs ? "inventory_payload_requires_tool_inputs" :
         request.ActionOriginToolInputs && !request.ActionOriginSnapshotAnchor ? "tool_inputs_require_snapshot_anchor" :
         request.ActionOriginSnapshotAnchor && request.ActionOriginObservationScopeId is null ? "snapshot_anchor_requires_native_observation" :
-        request.ActionOriginObservationScopeId is null ? null : NativeObservationScopePolicy.Rejection(request.ActionOriginObservationScopeId, request.ExecutionMode, request.OptionId,
-            new[] { request.RunId, request.QueueId, request.QueueItemId, request.RequestNonce, request.BeforeStateHash, request.SaveIsolationPath });
+        request.ActionOriginObservationScopeId is null ? null : request.ActionOriginTillingResources
+            ? NativeObservationScopePolicy.TillingRejection(request.ActionOriginObservationScopeId, request.ExecutionMode, request.OptionId,
+                new[] { request.RunId, request.QueueId, request.QueueItemId, request.RequestNonce, request.BeforeStateHash, request.SaveIsolationPath })
+            : NativeObservationScopePolicy.Rejection(request.ActionOriginObservationScopeId, request.ExecutionMode, request.OptionId,
+                new[] { request.RunId, request.QueueId, request.QueueItemId, request.RequestNonce, request.BeforeStateHash, request.SaveIsolationPath });
 
     private void BeginOutputObservation(PendingExecution pending, ActionOriginOutputCapture capture)
     {

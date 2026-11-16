@@ -480,6 +480,14 @@ public static partial class CropTeacherRunPlanner
         IReadOnlyDictionary<(int X, int Y), JsonElement> crops,
         int totalDay,
         IReadOnlySet<string> completedHarvestTileKeys)
+        => EvaluatePendingBatches(plan, runDay, crops, totalDay, completedHarvestTileKeys).FirstOrDefault();
+
+    private static IEnumerable<EvaluatedBatch> EvaluatePendingBatches(
+        MoneyRevenueCropNativeProductionRunPlan plan,
+        MoneyRevenueCropNativeProductionRunDay runDay,
+        IReadOnlyDictionary<(int X, int Y), JsonElement> crops,
+        int totalDay,
+        IReadOnlySet<string> completedHarvestTileKeys)
     {
         foreach (var batch in runDay.ActionBatches.OrderBy(value =>
                      value.BatchIndex))
@@ -506,10 +514,9 @@ public static partial class CropTeacherRunPlanner
             if (result.ReplanReason.Length > 0 ||
                 result.Batch.Tiles.Length > 0)
             {
-                return new EvaluatedBatch(batch, result);
+                yield return new EvaluatedBatch(batch, result);
             }
         }
-        return null;
     }
 
     private static string ExpectedSeedId(

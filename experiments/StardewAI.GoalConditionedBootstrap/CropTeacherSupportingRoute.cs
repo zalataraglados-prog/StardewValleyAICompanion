@@ -6,15 +6,16 @@ namespace StardewAI.GoalConditionedBootstrap;
 // Consumes original route evidence; it neither plans nor executes another action.
 public sealed partial class CropTeacherSupportingRoute : ICropTeacherSupportingTransition
 {
-    private readonly CropTeacherSupportingRebind rebind;
-    private readonly CropTeacherRetainedInputs inputs;
+    private readonly CropTeacherSupportingRebind? rebind;
+    private readonly CropTeacherRetainedInputs? inputs;
+    private readonly CropTeacherSiteNativeTransition? nativeSiteApproach;
 
     private CropTeacherSupportingRoute(string runRequestPath, string sourcePath, string ledgerPath,
         IReadOnlyCollection<string> commitmentIds, MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId,
-        string? verifiedHopTarget = null)
+        string? verifiedHopTarget = null, MoneyRevenueCropPlantingTile? siteApproachTarget = null, string? siteObservationPath = null)
     {
         var paths = new[] { runRequestPath, sourcePath, ledgerPath, transition.QueuePath, transition.BeforeSnapshotPath,
-            transition.ExecutionReceiptPath, transition.AfterSnapshotPath }.Select(Path.GetFullPath)
+            transition.ExecutionReceiptPath, transition.AfterSnapshotPath }.Concat(siteObservationPath is null ? Array.Empty<string>() : new[] { siteObservationPath }).Select(Path.GetFullPath)
             .Distinct(CropTeacherSeedTransferNativeOutcome.PathComparer).ToArray();
         // Retain only these explicit phase inputs. A fresh validation below also checks CAS blob content.
         using var reads = InvocationReadSession.Start(paths);
@@ -22,7 +23,12 @@ public sealed partial class CropTeacherSupportingRoute : ICropTeacherSupportingT
         var data = CropTeacherSupportingSource.Read(runRequestPath, sourcePath, ledgerPath, commitmentIds, stepId);
         var finalTarget = MoneyRevenueCropNativeLifecycleProofBuilder.SupportingRouteTarget(data.Snapshot, transition.TransitionKind, data.CropLocation);
         var after = MoneyRevenueCropNativeLifecycleProofBuilder.VerifySupportingRoute(data.Snapshot, transition, data.CropLocation, verifiedHopTarget);
-        RouteTargetReached = verifiedHopTarget is null || verifiedHopTarget == finalTarget;
+        SiteApproachTarget = siteApproachTarget;
+        if (IsSiteApproach)
+            Require(MoneyRevenueCropSeedAcquisitionProofBuilder.ReadInt(after, "player", "tile_x") == siteApproachTarget!.TileX &&
+                    MoneyRevenueCropSeedAcquisitionProofBuilder.ReadInt(after, "player", "tile_y") == siteApproachTarget.TileY,
+                "Owned site approach did not reach its exact selected stand.");
+        RouteTargetReached = !IsSiteApproach && (verifiedHopTarget is null || verifiedHopTarget == finalTarget);
         rebind = new(after, data.Ledger, stepId, inputs.Validate, "Crop supporting route");
         AfterSnapshotPath = Path.GetFullPath(transition.AfterSnapshotPath);
         ValidateInputsUnchanged();
@@ -34,11 +40,19 @@ public sealed partial class CropTeacherSupportingRoute : ICropTeacherSupportingT
 
     public string AfterSnapshotPath { get; }
     public bool RouteTargetReached { get; }
-    public StrategyCommitmentLedger BaseLedger => rebind.BaseLedger;
+    public bool IsSiteApproach => SiteApproachTarget is not null;
+    public bool UsesNativeActionEffects => nativeSiteApproach is not null;
+    public MoneyRevenueCropPlantingTile? SiteApproachTarget { get; }
+    public StrategyCommitmentLedger BaseLedger => nativeSiteApproach?.BaseLedger ?? rebind!.BaseLedger;
     public bool NativeCropLifecycleVerified => false;
     public bool FormalProductTrainingAuthorized => false;
-    public IReadOnlyDictionary<string, string> InputHashes => inputs.ReadHashes();
-    public void ValidateInputsUnchanged() => inputs.Validate();
-    public ReservationPortfolioCommitRequest RebindRequest => rebind.Request;
-    public StrategyCommitmentLedger VerifyRebindReply(ReservationPortfolioCommitResult reply) => rebind.VerifyReply(reply);
+    public IReadOnlyDictionary<string, string> InputHashes => nativeSiteApproach?.InputHashes ?? inputs!.ReadHashes();
+    public void ValidateInputsUnchanged()
+    {
+        if (nativeSiteApproach is not null) nativeSiteApproach.ValidateInputsUnchanged();
+        else inputs!.Validate();
+    }
+    public ReservationPortfolioCommitRequest RebindRequest => nativeSiteApproach?.RebindRequest ?? rebind!.Request;
+    public StrategyCommitmentLedger VerifyRebindReply(ReservationPortfolioCommitResult reply) => nativeSiteApproach is not null
+        ? nativeSiteApproach.VerifyRebindReply(reply) : rebind!.VerifyReply(reply);
 }

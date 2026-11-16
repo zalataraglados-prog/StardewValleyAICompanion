@@ -8,6 +8,7 @@ namespace StardewAI.GoalConditionedBootstrap;
 public sealed class CropTeacherSeedPlantingSupport
 {
     internal CropTeacherSeedSupportSource Source { get; }
+    private readonly ReservationPortfolioCommitRequest marker;
 
     private CropTeacherSeedPlantingSupport(string requestPath, string snapshotPath, string ledgerPath,
         string commitmentId, string stepId)
@@ -18,6 +19,7 @@ public sealed class CropTeacherSeedPlantingSupport
         Require(Source.Ledger.PreparedMaterialTransfer is null && Source.TotalDay == crop.PlantingTotalDay &&
                 crop.PlayerQuantity > 0 && layout.Tiles.Distinct().Count() == layout.Tiles.Length,
             "Owned seed planting requires settled player custody, its original planting day and unique layout.");
+        marker = BuildPlantingMarker();
     }
 
     public static CropTeacherSeedPlantingSupport Open(string requestPath, string snapshotPath, string ledgerPath,
@@ -28,11 +30,36 @@ public sealed class CropTeacherSeedPlantingSupport
     public string SnapshotPath => Source.SnapshotPath;
     public StrategyCommitmentLedger BaseLedger => CropTeacherSeedSupportSource.Copy(Source.Ledger);
     public IReadOnlyDictionary<string, string> InputHashes => Source.InputHashes;
-    public ReservationPortfolioCommitRequest MarkerRequest => Source.MarkerRequest;
+    public ReservationPortfolioCommitRequest MarkerRequest
+    {
+        get { ValidateInputsUnchanged(); return CropTeacherSeedSupportSource.Copy(marker); }
+    }
     public void ValidateInputsUnchanged() => Source.ValidateInputsUnchanged();
 
     public CropTeacherSeedPlantingMarker VerifyMarkerReply(ReservationPortfolioCommitResult reply) =>
         new(this, Source.VerifyCommit(MarkerRequest, reply));
+
+    private ReservationPortfolioCommitRequest BuildPlantingMarker()
+    {
+        var request = Source.MarkerRequest;
+        var playerClaims = Source.Supply.Commitments.Single().Slots
+            .Where(row => row.InventoryKind == "player_inventory" && row.Quantity > 0)
+            .Select(row => row.ReservationId).ToHashSet(StringComparer.Ordinal);
+        // Neutral site actions advance the ledger head, not each reservation's source.
+        // Refresh only already-owned, physically checked seed claims through the existing service.
+        request.MaterialClaims = Source.Ledger.MaterialReservations.Where(row =>
+                playerClaims.Contains(row.ReservationId) && row.Status == StrategyCommitmentStatuses.Active &&
+                row.SourceStateHash != Source.Before.StateHash)
+            .OrderBy(row => row.ReservationId, StringComparer.Ordinal)
+            .Select(row => new MaterialReservationUpsertRequest
+            {
+                StateHash = Source.Before.StateHash, ExpectedLedgerRevision = Source.Ledger.Revision,
+                ReservationId = row.ReservationId, SourceDecisionId = row.SourceDecisionId, GoalId = row.GoalId,
+                NodeId = row.NodeId, SlotIndex = row.SlotIndex, QualifiedItemId = row.QualifiedItemId,
+                Quantity = row.Quantity, Purpose = row.Purpose
+            }).ToArray();
+        return request;
+    }
 
     public MoneyRevenueCropNativeProductionActionBatch ValidateExecutionPreflight(
         MoneyRevenueCropNativeProductionActionBatch requested, string? reservationId = null)

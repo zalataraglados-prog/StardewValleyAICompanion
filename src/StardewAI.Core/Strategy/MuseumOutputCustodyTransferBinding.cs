@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Linq;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Strategy;
+using StardewAI.Core.Execution;
 
 namespace StardewAI.Core.Strategy;
 
@@ -25,7 +26,8 @@ public static class MuseumOutputCustodyTransferBinding
         var prepared = ledger.PreparedMaterialTransfer;
         var parameters = item.NormalizedCommand.Parameters;
         if (item.OptionId != "executor.transfer_material" || item.NormalizedCommand.OptionId != item.OptionId ||
-            prepared is null || parameters.Any(row => row.Name.StartsWith("acquisition_", StringComparison.Ordinal)) ||
+            prepared is null || parameters.Any(row => CropSaleStockMaterialTransferBinding.IsControlParameter(row.Name) ||
+                row.Name.StartsWith("acquisition_", StringComparison.Ordinal)) ||
             parameters.Where(row => IsControlParameter(row.Name)).GroupBy(row => row.Name, StringComparer.Ordinal)
                 .Any(group => group.Count() != 1) ||
             Read(parameters, KindParameter) != Kind ||

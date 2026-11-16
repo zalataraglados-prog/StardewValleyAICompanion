@@ -1,0 +1,265 @@
+using System.Reflection;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.State;
+using StardewAI.Contracts.Training;
+using StardewAI.GoalConditionedBootstrap;
+using StardewAI.LiveTrainingLoop;
+
+namespace StardewAI.Backend.Tests;
+
+public sealed partial class CropTeacherSeedPurchaseSettlementTests
+{
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task NativeSharedMailWorkRetainsOneDailyChoiceThroughApproachOpenCloseAndReopen(bool pendingCandidateOnTypedCompletion)
+    {
+        var f = new NativeMailWorkFixture { PendingCandidateOnTypedCompletion = pendingCandidateOnTypedCompletion }; using var host = f.Runtime;
+        await using var owner = await f.Files.Open();
+        f.Compile(owner.CurrentSnapshotPath);
+        f.BindDecision(await SaveDaily(owner, f.Selection));
+        var original = f.Selection;
+        var plan = LifecycleRead<SmallModelPlanEnvelope>(original.DecisionPlanPath);
+        var selectionType = typeof(LiveTrainingOptions).Assembly.GetType("Program")!.GetNestedType("CropTeacherDailySelection", BindingFlags.NonPublic)!;
+        var liveSelection = Activator.CreateInstance(selectionType, LifecycleRead<SnapshotEnvelope>(original.DecisionSnapshotPath)
+            .State["time"].GetProperty("total_days").GetProperty("value").GetInt32(), plan.GoalId,
+            SelectedQueueDecisionLease.CreateFromPlan(plan, JsonNode.Parse(File.ReadAllText(original.DecisionRankingPath))!.AsObject()),
+            new HashSet<string>(StringComparer.Ordinal), original.DecisionPlanPath, original.DecisionRankingPath)!;
+        selectionType.GetProperty("SourceSnapshotPath")!.SetValue(liveSelection, original.DecisionSnapshotPath);
+        var choices = new List<string>();
+        foreach (var option in new[] { "executor.move_to_tile", "executor.interact", "executor.close_menu" })
+        {
+            Assert.Equal(option, Assert.Single(f.Queue.Items).OptionId);
+            var before = LifecycleRead<SnapshotEnvelope>(owner.CurrentSnapshotPath);
+            var operation = await owner.AdmitNativeSharedSourceYieldAsync(f.Selection, f.ReceiptPath, f.AfterPath, f.RuntimePath);
+            Assert.True(operation.IsSharedSourceReturn);
+            var claimCalls = 0;
+            var execution = await InvokeLive<Task<JsonObject>>("ExecuteCropTeacherSharedOperationAsync", f.Runtime.Client,
+                f.Runtime.LiveOptions, owner, operation, f.Selection.QueuePath, (Func<Task<JsonObject>>)(async () =>
+                { claimCalls++; return await f.Emit(before); }));
+            Assert.Equal(1, claimCalls); Assert.Null(owner.Pending);
+            var trace = await owner.ReadJointProductionTraceAsync();
+            Assert.Empty(trace.CropTrace.Transitions);
+            var returned = trace.SharedSourceReturns.Last();
+            Assert.True(returned.SourceReference!.AppliedNativeWorkQueue);
+            var transition = returned.NativeTransition with { NativeSharedSource = returned.SourceReference };
+            Assert.Throws<InvalidDataException>(() => MoneyRevenueCropNativeSharedSourceVerifier.Verify(transition));
+            var scope = MoneyRevenueCropNativeSharedSourceVerifier.VerifyWithNativeWork(transition);
+            Assert.False(scope.CropProductionCreditAuthorized); Assert.Equal(1, scope.VerifiedNativeStepCount);
+            var completedSelection = InvokeLive<object>("CompleteCropTeacherSharedSelection", owner, operation, liveSelection);
+            if (option == "executor.close_menu")
+            {
+                Assert.Single(SelectionProperty<IReadOnlySet<string>>(completedSelection, "CompletedForeignCandidateIds")!);
+                var resultPath = JsonNode.Parse(File.ReadAllText(f.ReceiptPath))!["step_results"]![0]!["execution_path"]!.GetValue<string>();
+                Assert.Equal("process_mail_letter", LifecycleRead<TrainingExecutionResult>(resultPath).PrimitiveKind);
+                var oldRead = typeof(CropTeacherSharedSourceReturn).Assembly
+                    .GetType("StardewAI.GoalConditionedBootstrap.NativeExecutionActionSourceReader")!
+                    .GetMethod("Read", BindingFlags.Static | BindingFlags.NonPublic)!;
+                var oldError = Assert.Throws<TargetInvocationException>(() => oldRead.Invoke(null, [f.Selection.QueuePath, resultPath, f.AfterPath]));
+                Assert.Contains("identity or verification", Assert.IsType<InvalidDataException>(oldError.InnerException).Message);
+            }
+            else
+            {
+                Assert.NotSame(liveSelection, completedSelection);
+                var cursors = SelectionProperty<IReadOnlyDictionary<string, JsonObject>>(completedSelection, "ForeignObjectiveContinuations")!;
+                Assert.Single(cursors);
+                var raw = JsonNode.Parse(File.ReadAllText(f.ReceiptPath))!;
+                Assert.True(JsonNode.DeepEquals(raw["objective_continuation"], Assert.Single(cursors).Value));
+                Assert.Throws<InvalidDataException>(() => MoneyRevenueCropNativeSharedSourceVerifier.Verify(transition with
+                    { NativeSharedSource = returned.SourceReference with { AppliedNativeWorkQueue = false } }));
+            }
+            liveSelection = completedSelection;
+            var receiptBeforeRecording = File.ReadAllBytes(f.ReceiptPath);
+            var outcomePath = await InvokeLive<Task<string>>("RecordCropTeacherSharedOutcomeAsync", f.Runtime.LiveOptions,
+                choices.Count + 1, owner, operation, liveSelection, execution);
+            Assert.Equal(receiptBeforeRecording, File.ReadAllBytes(f.ReceiptPath));
+            var outcome = JsonNode.Parse(File.ReadAllText(outcomePath))!;
+            Assert.Equal(original.DecisionRankingPath, outcome["decision_ranking_path"]!.GetValue<string>());
+            Assert.Equal(f.Selection.EvidencePath, outcome["mechanical_refresh_path"]!.GetValue<string>());
+            Assert.False(outcome["new_policy_preference_label_eligible"]!.GetValue<bool>());
+            Assert.True(outcome["decision_aggregation_required"]!.GetValue<bool>());
+            Assert.Equal(outcomePath, execution["joint_selection_outcome_path"]!.GetValue<string>());
+            var recording = InvokeLive<PolicyTrajectoryAppendBatchResult>("AppendPolicyDecisionTrajectories",
+                f.Runtime.LiveOptions, choices.Count + 1, execution, new TrainingDatasetAppendResult());
+            Assert.Equal(0, recording.AppendedCount);
+            Assert.Equal("joint_selection_outcome_retained_for_original_decision_aggregation", recording.FirstSkipReason);
+            choices.Add(transition.SelectedCandidateId);
+            var daily = (await ReadDaily(owner))!;
+            Assert.Equal(original.DecisionReference, daily.GetType().GetProperty("Reference")!.GetValue(daily));
+            if (option == "executor.close_menu") Assert.Single(DailyCompleted(daily));
+            else
+            {
+                Assert.Empty(DailyCompleted(daily));
+                var restoredCursors = (IReadOnlyDictionary<string, JsonObject>)daily.GetType()
+                    .GetProperty("ForeignObjectiveContinuations")!.GetValue(daily)!;
+                Assert.True(JsonNode.DeepEquals(Assert.Single(restoredCursors).Value,
+                    Assert.Single(SelectionProperty<IReadOnlyDictionary<string, JsonObject>>(liveSelection, "ForeignObjectiveContinuations")!).Value));
+                f.Compile(owner.CurrentSnapshotPath);
+            }
+        }
+        Assert.Equal(3, choices.Distinct(StringComparer.Ordinal).Count());
+        var accepted = Assert.Single(DailyCompleted((await ReadDaily(owner))!));
+        Assert.Contains("approach", accepted);
+        await owner.DisposeAsync();
+        await using var reopened = await f.Files.Open();
+        await reopened.RestoreHeadAsync(f.Runtime.Client, f.Files.Recovery, f.Files.Post);
+        Assert.Equal(accepted, Assert.Single(DailyCompleted((await ReadDaily(reopened))!)));
+        Assert.Equal(3, (await reopened.ReadJointProductionTraceAsync()).SharedSourceReturns.Count);
+        Assert.Equal(3, f.Runtime.Handler.Commits);
+    }
+
+    [Theory]
+    [InlineData("mail_id")]
+    [InlineData("unexpected_field")]
+    [InlineData("native_primitive")]
+    public async Task NativeSharedTypedCompletionRejectsChangedIdentityBeforeSealing(string field)
+    {
+        var f = new NativeMailWorkFixture { PendingCandidateOnTypedCompletion = true }; using var host = f.Runtime;
+        await using var owner = await f.Files.Open(); f.Compile(owner.CurrentSnapshotPath);
+        for (var stage = 1; stage <= 3; stage++)
+        {
+            var before = LifecycleRead<SnapshotEnvelope>(owner.CurrentSnapshotPath);
+            var operation = await owner.AdmitNativeSharedSourceYieldAsync(f.Selection, f.ReceiptPath, f.AfterPath, f.RuntimePath);
+            async Task<JsonObject> Emit()
+            {
+                var output = await f.Emit(before);
+                if (stage == 3)
+                {
+                    var raw = JsonNode.Parse(File.ReadAllText(f.ReceiptPath))!;
+                    if (field == "native_primitive")
+                    {
+                        var resultPath = raw["step_results"]![0]!["execution_path"]!.GetValue<string>();
+                        var result = JsonNode.Parse(File.ReadAllText(resultPath))!;
+                        result["primitive_kind"] = "unrelated_native_mail_primitive";
+                        Fixture.Save(resultPath, result);
+                    }
+                    else
+                    {
+                        raw["objective_continuation"]![field] = "different-original-identity";
+                        raw["completed_objective_continuations"] = new JsonArray(raw["objective_continuation"]!.DeepClone());
+                    }
+                    Fixture.Save(f.ReceiptPath, raw);
+                }
+                return output;
+            }
+            Task<JsonObject> Execute() => InvokeLive<Task<JsonObject>>("ExecuteCropTeacherSharedOperationAsync", f.Runtime.Client,
+                f.Runtime.LiveOptions, owner, operation, f.Selection.QueuePath, (Func<Task<JsonObject>>)Emit);
+            if (stage == 3)
+            {
+                await Assert.ThrowsAsync<InvalidDataException>(Execute);
+                Assert.Same(operation, owner.Pending);
+                Assert.False(File.Exists(Path.Combine(f.RuntimePath, "shared-source-native-result.json")));
+                await Assert.ThrowsAsync<InvalidOperationException>(() => owner.ClaimSharedSourceExecutionAsync(operation, f.Runtime.Client));
+            }
+            else { await Execute(); f.Compile(owner.CurrentSnapshotPath); }
+        }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task NativeSharedWorkUsesOriginalRuntimeOrProductWireAndCannotDowngradeItsSourceConsumer(bool product)
+    {
+        var f = new SharedYieldFixture(product); using var host = f.Native.Files.F.Runtime;
+        f.Native.Files.F.Runtime.LiveOptions.UseProductExecutor = product;
+        var options = f.Native.Files.F.Files.Options with { ExecutorVersion = product ?
+            PolicyTrajectoryVersionPins.ProductExecutor : PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor };
+        await using var owner = await f.Native.Files.F.Files.Open(options);
+        var operation = await owner.AdmitNativeSharedSourceYieldAsync(f.Selection, f.Native.ReceiptPath,
+            f.Native.AfterPath, f.Native.Files.F.Files.Native);
+        await DispatchShared(f, owner, operation, async () =>
+        {
+            await f.Native.Build();
+            var receipt = JsonNode.Parse(File.ReadAllText(f.Native.ReceiptPath))!;
+            receipt["executor_version"] = options.ExecutorVersion; Fixture.Save(f.Native.ReceiptPath, receipt);
+            return new JsonObject { ["execution_path"] = f.Native.ReceiptPath, ["after_snapshot_path"] = f.Native.AfterPath };
+        });
+        var row = Assert.Single((await owner.ReadJointProductionTraceAsync()).SharedSourceReturns);
+        var transition = row.NativeTransition with { NativeSharedSource = row.SourceReference };
+        Assert.True(MoneyRevenueCropNativeSharedSourceVerifier.VerifyWithNativeWork(transition).AppliedNativeWorkQueue);
+        Assert.Throws<InvalidDataException>(() => MoneyRevenueCropNativeSharedSourceVerifier.VerifyWithSharedInventoryEffects(transition));
+        var original = (await owner.ReadJointProductionTraceAsync()).CropTrace;
+        // Dispatcher-only neighbor metadata, not a claimed crop action or whole producer proof.
+        var neighbor = new CropTeacherManagedProductionTransition(1, "declared_dispatch_neighbor",
+            row.NativeTransition with { AfterSnapshotPath = row.NativeTransition.BeforeSnapshotPath });
+        var trace = (CropTeacherManagedProductionTrace)typeof(CropTeacherManagedProductionTrace)
+            .GetConstructors(BindingFlags.NonPublic | BindingFlags.Instance).Single().Invoke(
+                [original.NativeRunPlanPath, original.AcceptedSnapshotPath, original.AcceptedLedgerPath, new[] { neighbor }, original.InputHashes]);
+        var merge = typeof(CropTeacherManagedSeedOwner).Assembly.GetType("StardewAI.LiveTrainingLoop.CropTeacherProductionEvidence")!
+            .GetMethod("MergeSharedSourcesCore", BindingFlags.NonPublic | BindingFlags.Static)!;
+        object?[] args = [trace, new[] { row with { OwnerSequence = 2 } }, f.Native.Files.F.Source.SourcePath,
+            row.SourceReference!.RunRequestPath, false, false, true];
+        Assert.Equal(2, Assert.IsType<CropTeacherManagedProductionTransition[]>(merge.Invoke(null, args)).Length);
+        args[^1] = false;
+        Assert.IsType<InvalidDataException>(Assert.Throws<TargetInvocationException>(() => merge.Invoke(null, args)).InnerException);
+        var legacy = await Assert.ThrowsAsync<InvalidDataException>(() => owner.ReadProductionTraceAsync());
+        Assert.Contains("explicit joint trace", legacy.Message);
+        var source = f.Native.Files.F.Source.Before;
+        var unrelatedTarget = new CropTeacherTerminalShippingTarget("", "", source.SaveId.Value!, source.PlayerId.Value!,
+            source.GameVersion, f.Native.Preparation.TotalDay, "(O)400", 0, 0, 175, 0, 0, 0, 1, 1, 1, 0);
+        var terminalError = await Assert.ThrowsAsync<InvalidOperationException>(() => owner.BuildTerminalSettlementEvidenceAsync(
+            null!, unrelatedTarget, Path.Combine(f.Native.Files.F.Files.OwnerRoot, "not-terminal-evidence")));
+        Assert.Contains("completed deposits/native sleep", terminalError.Message);
+        var savedError = await Assert.ThrowsAsync<InvalidOperationException>(() => ReadSavedCloseout(owner,
+            Path.Combine(f.Native.Files.F.Files.OwnerRoot, "not-terminal-evidence", "terminal-evidence.json")));
+        Assert.Contains("accepted load", savedError.Message);
+        await owner.DisposeAsync();
+        await using var reopened = await f.Native.Files.F.Files.Open(options);
+        await reopened.RestoreHeadAsync(f.Native.Files.F.Runtime.Client, f.Native.Files.F.Files.Recovery, f.Native.Files.F.Files.Post);
+        Assert.Single((await reopened.ReadJointProductionTraceAsync()).SharedSourceReturns);
+    }
+
+    [Theory]
+    [InlineData("missing_objective")]
+    [InlineData("wrong_option")]
+    [InlineData("incomplete_queue")]
+    [InlineData("failed_step")]
+    [InlineData("inconsistent_success")]
+    [InlineData("false_completed_move")]
+    [InlineData("completed_wrong_objective")]
+    [InlineData("completed_wrong_binding")]
+    public async Task NativeSharedPendingWorkRejectsUnverifiedOrUnboundOutcomesWithoutReclaim(string fault)
+    {
+        var f = new NativeMailWorkFixture(); using var host = f.Runtime;
+        await using var owner = await f.Files.Open(); f.Compile(owner.CurrentSnapshotPath);
+        var operation = await owner.AdmitNativeSharedSourceYieldAsync(f.Selection, f.ReceiptPath, f.AfterPath, f.RuntimePath);
+        await owner.ClaimSharedSourceExecutionAsync(operation, f.Runtime.Client);
+        await f.Emit(LifecycleRead<SnapshotEnvelope>(owner.CurrentSnapshotPath));
+        var raw = JsonNode.Parse(File.ReadAllText(f.ReceiptPath))!;
+        if (fault == "missing_objective") raw["objective_continuation"] = null;
+        if (fault == "wrong_option") raw["objective_continuation"]!["option_id"] = "another.option";
+        if (fault == "incomplete_queue") raw["executed_item_count"] = 0;
+        if (fault == "failed_step") raw["step_results"]![0]!["primitive_verification_status"] = "failed";
+        if (fault == "inconsistent_success") raw["success"] = true;
+        if (fault is "false_completed_move" or "completed_wrong_objective" or "completed_wrong_binding")
+        {
+            raw["objective_continuation_completed"] = true;
+            if (fault == "completed_wrong_binding") raw["objective_continuation"]!["option_id"] = "another.option";
+            var completed = raw["objective_continuation"]!.DeepClone();
+            if (fault == "completed_wrong_objective") completed["kind"] = "another-kind";
+            raw["completed_objective_continuations"] = new JsonArray(completed);
+        }
+        Fixture.Save(f.ReceiptPath, raw);
+        await Assert.ThrowsAsync<InvalidDataException>(() => owner.VerifySharedSourceExecutionAsync(operation));
+        Assert.Same(operation, owner.Pending); Assert.Equal(0, f.Runtime.Handler.Commits);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => owner.ClaimSharedSourceExecutionAsync(operation, f.Runtime.Client));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task NativeSharedWorkCannotRelabelEitherOriginalRequestWire(bool product)
+    {
+        var f = new SiteTillNativeFixture(productTransport: !product); using var host = f.Files.F.Runtime;
+        await f.Build();
+        var executor = product ? PolicyTrajectoryVersionPins.ProductExecutor : PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor;
+        var raw = JsonNode.Parse(File.ReadAllText(f.ReceiptPath))!;
+        raw["executor_version"] = executor; Fixture.Save(f.ReceiptPath, raw);
+        var transition = f.Transition with { TransitionKind = "shared_source_return", ExecutorVersion = executor };
+        Assert.Throws<InvalidDataException>(() => CropTeacherSharedSourceReturn.OpenNativeWork(f.Files.F.Inputs.Plan.RequestPath,
+            f.Files.F.Source.SourcePath, f.Files.F.Source.LedgerPath, f.Files.F.Inputs.Plan.CoveredCommitmentIds,
+            transition, "declared.native-work.wrong-wire"));
+    }
+}

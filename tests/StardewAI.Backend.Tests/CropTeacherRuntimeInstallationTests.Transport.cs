@@ -15,6 +15,7 @@ public sealed partial class CropTeacherRuntimeInstallationTests
         public bool LoseCropReply { get; init; }
         public bool LoseResourceReply { get; init; }
         public string Failure { get; init; } = string.Empty;
+        public string? EvidenceRoot { get; init; }
         public int CropPosts { get; private set; }
         public int ResourcePosts { get; private set; }
         public int Lookups { get; private set; }
@@ -35,10 +36,11 @@ public sealed partial class CropTeacherRuntimeInstallationTests
             }
             var body = JsonNode.Parse(await request.Content!.ReadAsStringAsync(token))!.AsObject();
             var endpoint = request.RequestUri!.AbsolutePath;
+            var evidence = EvidenceRoot ?? Path.Combine(Path.GetDirectoryName(repositoryPath)!, "output");
             if (endpoint.EndsWith("/crops/upsert", StringComparison.Ordinal))
             {
                 CropPosts++;
-                Assert.True(File.Exists(Path.Combine(Path.GetDirectoryName(repositoryPath)!, "output", "crop-upsert-journal.json")));
+                Assert.True(File.Exists(Path.Combine(evidence, "crop-upsert-journal.json")));
                 if (Failure == "crop_rejected") return Rejected();
                 if (Failure == "crop_missing") throw new HttpRequestException("Crop not persisted.");
                 var result = repository.Upsert(source, body.Deserialize<CropPlantingCommitmentUpsertRequest>(JsonOptions)!);
@@ -56,7 +58,7 @@ public sealed partial class CropTeacherRuntimeInstallationTests
                 if (Failure == "crop_history_tamper") result.Ledger!.History = Array.Empty<StrategyCommitmentHistoryEntry>();
                 if (Failure == "crop_journal_tamper")
                 {
-                    File.AppendAllText(Path.Combine(Path.GetDirectoryName(repositoryPath)!, "output", "crop-upsert-request.json"), " ");
+                    File.AppendAllText(Path.Combine(evidence, "crop-upsert-request.json"), " ");
                     throw new HttpRequestException("Reply lost after journal tampering.");
                 }
                 if (LoseCropReply) throw new HttpRequestException("Crop persisted, reply lost.");

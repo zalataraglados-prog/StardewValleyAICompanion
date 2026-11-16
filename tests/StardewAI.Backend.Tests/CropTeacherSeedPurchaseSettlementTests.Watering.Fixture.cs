@@ -24,9 +24,9 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
 
         internal WateringFixture(int water = 20, bool bottomless = false, bool enchanted = false, bool efficient = false,
             int farmingLevel = 0, bool bowlMirrors = false, float energy = 100f, bool inconsistentBeforeMirror = false,
-            bool atRefillApproach = false, Action<Fixture>? prepareSource = null)
+            bool atRefillApproach = false, Action<Fixture>? prepareSource = null, bool productExecutor = false)
         {
-            Shared = new(prepareSource: source =>
+            Shared = new(productExecutor: productExecutor, prepareSource: source =>
             {
                 var crop = source.Ledger.CropPlantingCommitments.Single();
                 source.Before.State["menus"] = JsonSerializer.SerializeToElement(new

@@ -11,7 +11,20 @@ namespace StardewAI.GoalConditionedBootstrap;
 internal static partial class NativeExecutionActionSourceReader
 {
     internal static VerifiedNativeExecutionQueue ReadQueue(string queuePath, string beforePath, string receiptPath,
-        string afterPath, string runId, string candidateId)
+        string afterPath, string runId, string candidateId) =>
+        ReadQueueCore(queuePath, beforePath, receiptPath, afterPath, runId, candidateId, NativeProductBoundary.None);
+
+    internal static VerifiedNativeExecutionQueue ReadSelectedTillingQueue(string queuePath, string beforePath, string receiptPath,
+        string afterPath, string runId, string candidateId) =>
+        ReadQueueCore(queuePath, beforePath, receiptPath, afterPath, runId, candidateId, NativeProductBoundary.Tilling);
+
+    internal static VerifiedNativeExecutionQueue ReadSelectedNativeActionQueue(string queuePath, string beforePath, string receiptPath,
+        string afterPath, string runId, string candidateId) =>
+        ReadQueueCore(queuePath, beforePath, receiptPath, afterPath, runId, candidateId, NativeProductBoundary.NativeAction);
+
+    private static VerifiedNativeExecutionQueue ReadQueueCore(string queuePath, string beforePath, string receiptPath,
+        string afterPath, string runId, string candidateId, NativeProductBoundary productBoundary,
+        string expectedExecutorVersion = PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor, bool appliedNativeWork = false)
     {
         queuePath = RequiredFile(queuePath);
         beforePath = RequiredFile(beforePath);
@@ -24,10 +37,14 @@ internal static partial class NativeExecutionActionSourceReader
         ValidateSnapshot(after);
         var receipt = ReadTyped<QueueExecutionReceiptEnvelope>(receiptPath, "queue_execution_receipt.v1");
         var raw = CurrentTeacherFrontierSupport.Read<JsonElement>(receiptPath, "Native sequential receipt");
-        var reasons = QueueExecutionReceiptValidator.Validate(queue, before, receipt, after, runId,
-            PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor, candidateId, queue.StateHash,
+        var reasons = appliedNativeWork
+            ? QueueExecutionReceiptValidator.ValidateAppliedNativeWork(queue, before, receipt, after, runId,
+                expectedExecutorVersion, candidateId, queue.StateHash)
+            : QueueExecutionReceiptValidator.Validate(queue, before, receipt, after, runId,
+            expectedExecutorVersion, candidateId, queue.StateHash,
             requireTeacherPreferenceStateRebound: false);
         Require(reasons.Length == 0, "Native sequential queue proof rejected: " + string.Join(",", reasons));
+        if (appliedNativeWork && !receipt.SelectedCandidateCompleted) VerifyNativeWorkObjectiveContinuation(queue, raw);
         Require(SamePath(afterPath, RequiredFile(Text(raw, "after_snapshot_path"))) &&
             receipt.StepResults.All(step => !step.TeacherPreferenceStateRebound),
             "Native sequential source requires the original immutable precompiled queue and recorded final capture.");
@@ -39,11 +56,14 @@ internal static partial class NativeExecutionActionSourceReader
         {
             var step = receipt.StepResults[index];
             var resultPath = RequiredFile(Text(rows[index], "execution_path"));
-            var frame = ReadFrame(queuePath, resultPath, RequiredFile(step.AfterSnapshotPath), queue.StateHash);
+            var frame = appliedNativeWork
+                ? ReadAppliedNativeWorkFrame(queuePath, resultPath, RequiredFile(step.AfterSnapshotPath), queue.StateHash, productBoundary)
+                : ReadFrame(queuePath, resultPath, RequiredFile(step.AfterSnapshotPath), queue.StateHash, productBoundary);
             Require(frame.Result.RunId == runId && frame.Item.QueueItemId == queue.Items[index].QueueItemId &&
                 frame.Before.StateHash == step.SourceStateHash && frame.After.StateHash == step.AfterStateHash &&
                 frame.Before.GameTick == step.BeforeGameTick && frame.After.GameTick == step.AfterGameTick &&
                 frame.Result.PrimitiveKind == step.PrimitiveKind &&
+                frame.Result.PrimitiveVerificationStatus == step.PrimitiveVerificationStatus &&
                 Text(rows[index], "execution_request_nonce") == frame.Request.RequestNonce &&
                 nonces.Add(frame.Request.RequestNonce) &&
                 EqualJson(JsonSerializer.SerializeToElement(frame.Result.ChangedFacts, JsonDefaults.Options), step.ChangedFacts),

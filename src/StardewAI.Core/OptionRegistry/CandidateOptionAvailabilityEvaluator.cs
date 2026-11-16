@@ -158,6 +158,8 @@ namespace StardewAI.Core.OptionRegistry
             OptionAvailabilityCandidate candidate,
             StrategyCommitmentLedger? commitmentLedger)
         {
+            if (candidate.AllowCropSaleStockPreparationPreview)
+                return EvaluateSaleStockPreparationPreview(snapshot, candidate, commitmentLedger);
             OptionSpec option;
             try
             {
@@ -180,7 +182,12 @@ namespace StardewAI.Core.OptionRegistry
             var safety = verifier.Verify(snapshot, option);
             var reasons = new List<string>(safety.BlockingReasons);
             var notes = new List<string>();
-            var compilerProbe = IsUnboundSocialCandidate(candidate) ||
+            var stockCandidates = candidate.OptionId == "inventory.transfer_item" && commitmentLedger?.PreparedMaterialTransfer is not null &&
+                candidate.Parameters.Any(row => CropSaleStockMaterialTransferBinding.IsControlParameter(row.Name))
+                    ? EventCandidates(snapshot, option.OptionId, safety.MissingStateFactors, candidate.Parameters, commitmentLedger) : null;
+            var compilerProbe = stockCandidates is not null
+                ? ProbeSaleStockDailyPlan(snapshot, commitmentLedger!, stockCandidates)
+                : IsUnboundSocialCandidate(candidate) ||
                 IsSocialContinuationCandidate(candidate) ||
                 IsMasterAnglerIntentCandidate(candidate) ||
                 IsMaterialTransferApproachCandidate(candidate) ||
@@ -190,12 +197,13 @@ namespace StardewAI.Core.OptionRegistry
                 : ProbeCompiler(snapshot, candidate, commitmentLedger);
             var compilerReasons = compilerProbe.BlockingReasons;
             var safetyPolicy = SafetyPolicyGate.Evaluate(option, candidate);
-            var eventCandidates = EventCandidates(snapshot, option.OptionId, safety.MissingStateFactors, candidate.Parameters, commitmentLedger);
+            var eventCandidates = stockCandidates ?? EventCandidates(snapshot, option.OptionId, safety.MissingStateFactors, candidate.Parameters, commitmentLedger);
             var economicCandidates = EconomicCandidates(
                 snapshot,
                 option.OptionId,
-                candidate.Parameters);
-            var socialCandidates = SocialCandidates(snapshot, option.OptionId, safety.MissingStateFactors, candidate.Parameters);
+                candidate.Parameters,
+                commitmentLedger);
+            var socialCandidates = SocialCandidatesWithSaleStock(snapshot, option.OptionId, safety.MissingStateFactors, candidate.Parameters, commitmentLedger);
             var valueReasons = safety.MissingStateFactors.Length == 0
                 ? ValueGateBlockingReasons(
                     snapshot,

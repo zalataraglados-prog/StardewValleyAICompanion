@@ -4,9 +4,13 @@ using StardewAI.Core.Infrastructure;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
-public static class MoneyRevenueCropDailyCapacityProofBuilder
+public static partial class MoneyRevenueCropDailyCapacityProofBuilder
 {
-    public static MoneyRevenueCropDailyCapacityProof Build(string requestPath)
+    public static MoneyRevenueCropDailyCapacityProof Build(string requestPath) => BuildCore(requestPath, nativeObserved: false);
+
+    public static MoneyRevenueCropDailyCapacityProof BuildNativeObserved(string requestPath) => BuildCore(requestPath, nativeObserved: true);
+
+    private static MoneyRevenueCropDailyCapacityProof BuildCore(string requestPath, bool nativeObserved)
     {
         var fullRequestPath = RequiredFile(
             requestPath,
@@ -15,8 +19,9 @@ public static class MoneyRevenueCropDailyCapacityProofBuilder
             MoneyRevenueCropDailyCapacityProofRequest>(
                 fullRequestPath,
                 "Money Revenue crop daily-capacity proof request");
-        Require(request.SchemaVersion ==
-                    "money_revenue_crop_daily_capacity_proof_request.v1" &&
+        Require(request.SchemaVersion == (nativeObserved
+                    ? "money_revenue_crop_daily_capacity_proof_request.v2"
+                    : "money_revenue_crop_daily_capacity_proof_request.v1") &&
                 !string.IsNullOrWhiteSpace(request.CommitmentId) &&
                 request.PlantingLayoutProofPaths is not null &&
                 request.DailySnapshotPaths is not null &&
@@ -133,7 +138,7 @@ public static class MoneyRevenueCropDailyCapacityProofBuilder
                 snapshotPaths.Distinct(PathComparer).Count() ==
                     snapshotPaths.Length,
             "Money Revenue crop daily-capacity snapshot set is incomplete or duplicated.");
-        var snapshots = snapshotPaths.Select(path =>
+        SnapshotState ReadDailySnapshot(string path)
         {
             var snapshot = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(
                 path,
@@ -149,8 +154,17 @@ public static class MoneyRevenueCropDailyCapacityProofBuilder
                     calendar.WorldDateOffset == sourceCalendar.WorldDateOffset,
                 "Money Revenue crop daily-capacity snapshot identity drifted.");
             return new SnapshotState(path, snapshot, calendar.TotalDay);
-        }).OrderBy(value => value.TotalDay).ToArray();
-        Require(snapshots.Select(value => value.TotalDay)
+        }
+        var retainedSnapshots = nativeObserved ? null : snapshotPaths.Select(ReadDailySnapshot)
+            .OrderBy(value => value.TotalDay).ToArray();
+        var snapshotIndex = retainedSnapshots is not null
+            ? retainedSnapshots.Select(value => (value.TotalDay, value.Path)).ToArray()
+            : snapshotPaths.Select(path => { var value = ReadDailySnapshot(path); return (value.TotalDay, value.Path); })
+                .OrderBy(value => value.TotalDay).ToArray();
+        // Native full captures are large. Keep the complete denominator, not every decoded day at once.
+        IEnumerable<SnapshotState> snapshots = retainedSnapshots is not null
+            ? retainedSnapshots : snapshotIndex.Select(value => ReadDailySnapshot(value.Path));
+        Require(snapshotIndex.Select(value => value.TotalDay)
                     .SequenceEqual(requiredDays),
             "Money Revenue crop daily-capacity snapshot dates drifted from the obligation plan.");
 
@@ -161,7 +175,14 @@ public static class MoneyRevenueCropDailyCapacityProofBuilder
                     refillRequests.Length &&
                 refillRequests.All(value => requiredDays.Contains(value.TotalDay)),
             "Money Revenue crop watering-can refill receipt days are duplicated or outside the denominator.");
-        var refillByDay = refillRequests.ToDictionary(
+        var nativeFlows = nativeObserved
+            ? ReadObservedRefillFlows(request.NativeDayTransitions ?? throw new InvalidDataException("Native day transitions are missing."),
+                snapshotIndex.ToDictionary(value => value.TotalDay, value => value.Path), ReadDailySnapshot)
+            : null;
+        Require(!nativeObserved || refillRequests.Length == 0, "Native observed capacity cannot mix legacy refill declarations.");
+        var refillByDay = nativeFlows is not null
+            ? nativeFlows.ToDictionary(row => row.Key, row => row.Value.Receipt)
+            : refillRequests.ToDictionary(
             value => value.TotalDay,
             value => ReadRefillReceipt(
                 value,
@@ -195,11 +216,12 @@ public static class MoneyRevenueCropDailyCapacityProofBuilder
                     : Array.Empty<CropMaintenanceTileTarget>();
             }).ToArray();
             refillByDay.TryGetValue(day.TotalDay, out var refill);
-            var evaluation = CropMaintenanceCapacityEvaluator.Evaluate(
-                day.Snapshot,
-                locationId,
-                targets,
-                refill?.ActualTicks ?? 0);
+            var evaluation = nativeObserved && targets.Length == 0
+                ? EvaluateNativeSatisfiedDay(day.Snapshot, layouts, day.TotalDay)
+                : CropMaintenanceCapacityEvaluator.Evaluate(day.Snapshot, locationId, targets,
+                    nativeObserved ? 0 : refill?.ActualTicks ?? 0);
+            if (nativeFlows?.TryGetValue(day.TotalDay, out var flow) == true)
+                evaluation = ApplyObservedRefillFlow(day, layouts, targets, evaluation, flow);
             Require(evaluation.BlockingReasons.Length == 0 &&
                     evaluation.AllTargetsReachable &&
                     evaluation.TimeBudgetFits &&
@@ -246,7 +268,7 @@ public static class MoneyRevenueCropDailyCapacityProofBuilder
                 refillByDay.Keys.OrderBy(value => value)),
             "Money Revenue crop watering-can refill evidence was not required by the exact day budget.");
 
-        return new MoneyRevenueCropDailyCapacityProof
+        var proof = new MoneyRevenueCropDailyCapacityProof
         {
             Status = "verified_aggregate_crop_daily_capacity",
             RequestPath = fullRequestPath,
@@ -281,6 +303,16 @@ public static class MoneyRevenueCropDailyCapacityProofBuilder
             DailyCapacityVerified = true,
             FormalProductTrainingAuthorized = false
         };
+        if (nativeObserved)
+        {
+            proof.SchemaVersion = "money_revenue_crop_daily_capacity_proof.v2";
+            proof.ProofPolicy = "Explicit native observed capacity preserves the full original day/layout denominator. " +
+                "Already-satisfied live crop days require no fabricated Farm visit or route. Active-day budgets reuse " +
+                "the original evaluator; a later native refill is bound through the complete immutable day prefix, " +
+                "actual requests/receipts and observed satisfied crop targets. Refill-prefix ticks are added conservatively. " +
+                "Legacy v1 defaults remain strict; this is not settlement or formal training authorization.";
+        }
+        return proof;
     }
 
     private static IEnumerable<int> RequiredDays(

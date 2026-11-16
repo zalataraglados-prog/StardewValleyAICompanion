@@ -6,6 +6,14 @@ namespace StardewAI.Contracts.Strategy;
 
 public sealed class ReservationPortfolioCommitRequest
 {
+    [JsonPropertyName("inventory_consumption_preparation")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public InventoryConsumptionPreparationRequest? InventoryConsumptionPreparation { get; set; }
+
+    [JsonPropertyName("material_consumption")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public ReservationPortfolioCommitMaterialConsumption? MaterialConsumption { get; set; }
+
     [JsonPropertyName("material_transfer_preparation")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public MaterialTransferPreparationRequest? MaterialTransferPreparation { get; set; }
@@ -40,6 +48,27 @@ public sealed class ReservationPortfolioCommitRequest
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public MachineSupportIntentUpsertRequest? MachineSupportIntent
     { get; set; }
+}
+
+public sealed class ReservationPortfolioCommitMaterialConsumption
+{
+    [JsonPropertyName("schema_version")]
+    public string SchemaVersion { get; set; } = "reservation_portfolio_commit_material_consumption.v1";
+
+    [JsonPropertyName("route_source_decision_id")]
+    public string RouteSourceDecisionId { get; set; } = string.Empty;
+
+    [JsonPropertyName("consumer_option_id")]
+    public string ConsumerOptionId { get; set; } = string.Empty;
+
+    [JsonPropertyName("supporting_transition_receipt_sha256")]
+    public string SupportingTransitionReceiptSha256 { get; set; } = string.Empty;
+
+    [JsonPropertyName("consumption")]
+    public ReservationPortfolioMaterialConsumption Consumption { get; set; } = new();
+
+    [JsonPropertyName("reason")]
+    public string Reason { get; set; } = string.Empty;
 }
 
 public sealed class ReservationPortfolioCommitResult
@@ -137,6 +166,10 @@ public sealed class ReservationPortfolioRouteSettlementResult
 
 public sealed class ReservationPortfolioSupportingTransitionSettlementRequest
 {
+    [JsonPropertyName("prepared_inventory_consumption_sha256")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? PreparedInventoryConsumptionSha256 { get; set; }
+
     [JsonPropertyName("prepared_material_transfer_sha256")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? PreparedMaterialTransferSha256 { get; set; }

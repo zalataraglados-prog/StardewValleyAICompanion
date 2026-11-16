@@ -10,7 +10,7 @@ param(
     [int] $MaxToolSwings = 8,
     [ValidateSet("clearance", "daily", "full")]
     [string] $SnapshotProfile = "clearance",
-    [ValidateSet("grass", "twig", "seed_spot", "artifact_spot", "tree_moss", "tree_chop")]
+    [ValidateSet("grass", "weeds", "twig", "seed_spot", "artifact_spot", "tree_moss", "tree_chop")]
     [string] $FixtureKind = "grass",
     [ValidateSet("ordinary", "pine_professions", "mushroom", "mahogany", "fern", "mystic")]
     [string] $WildTreeChopProfile = "ordinary",
@@ -215,7 +215,12 @@ try {
     else {
         Find-TargetObject -Snapshot $readySnapshot
     }
-    if ($FixtureKind -ne "grass") {
+    if ($FixtureKind -eq "weeds" -and
+        ($null -eq $targetObject -or $targetObject.qualified_item_id -ne "(O)784")) {
+        Write-JsonFile (Join-Path $runDirectory "bridge-snapshot-ready-rejected.json") $readySnapshot
+        throw "Fixture did not expose the expected weed object at $TargetTileX,$TargetTileY."
+    }
+    if ($FixtureKind -notin @("grass", "weeds")) {
         if ($null -eq $targetObject) {
             Write-JsonFile (Join-Path $runDirectory "bridge-snapshot-ready-rejected.json") $readySnapshot
             throw "Fixture did not expose a transparent $FixtureKind object at $TargetTileX,$TargetTileY."
@@ -242,7 +247,7 @@ try {
     $clearRequest.request_nonce = [guid]::NewGuid().ToString("N")
     $clearRequest.created_at = [DateTimeOffset]::UtcNow.ToString("O")
     $clearRequest.target_location = [string]$readySnapshot.state.player.location_id.value
-    if ($FixtureKind -ne "grass") {
+    if ($FixtureKind -notin @("grass", "weeds")) {
         if ($FixtureKind -eq "tree_moss") {
             $clearRequest.max_crops = 1
             $clearRequest.clear_completion_mode = [string]$targetObject.moss_harvest_completion_mode

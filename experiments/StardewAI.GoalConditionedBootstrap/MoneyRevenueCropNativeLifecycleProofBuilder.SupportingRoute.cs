@@ -32,6 +32,21 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
 
     private static void ValidateQueueReceipt(LoadedTransition transition)
     {
+        if (transition.NativeWorkReceiptVerified)
+        {
+            // The explicit shared-source kernel already verified the original queue and progress policy.
+            Require(transition.NativeSharedSource && transition.SharedInputGuard is not null &&
+                    transition.Request.NativeSharedSource?.AppliedNativeWorkQueue == true,
+                "Native crop lifecycle lost its verified shared queue binding.");
+            return;
+        }
+        if (transition.NativeAppliedItemCount is { } applied)
+        {
+            Require(CropTeacherSeedPlantingReceipt.Validate(transition.Queue, transition.Before, transition.Receipt,
+                    transition.After, transition.Request) == applied,
+                "Native crop lifecycle planting prefix differs from its original receipt.");
+            return;
+        }
         var reasons = QueueExecutionReceiptValidator.Validate(transition.Queue, transition.Before, transition.Receipt,
             transition.After, transition.Request.RunId, transition.Request.ExecutorVersion,
             transition.Request.SelectedCandidateId, transition.Before.StateHash, requireTeacherPreferenceStateRebound: false);

@@ -28,6 +28,7 @@ public sealed partial class CropTeacherManagedSeedOwner
     {
         var first = Path.GetRelativePath(options.EvidenceDirectory, path).Split(Path.DirectorySeparatorChar)[0];
         return first.StartsWith("operation-", OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) ||
+            first.StartsWith("joint-daily-decision-", OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) ||
             PathComparer.Equals(first, "owner-intent.json") || PathComparer.Equals(first, "owner.lock");
     }
     private static string HashFile(string path) { Regular(path); return PortfolioMutationRequestJournal.HashFile(path); }
@@ -97,6 +98,7 @@ public sealed partial class CropTeacherManagedSeedOwner
     private static IReadOnlyDictionary<string, string> Inputs(CropTeacherManagedSeedScopes scopes) =>
         scopes.Purchase?.InputHashes ?? scopes.Transfer?.InputHashes ?? scopes.Planting!.InputHashes;
     private static IReadOnlyDictionary<string, string> OperationInputs(CropTeacherManagedSeedOperation operation) =>
+        operation.SharedPortfolioSupport is not null ? operation.SharedPortfolioSupport.InputHashes :
         operation.OriginalStart is not null ? operation.OriginalStart.InputHashes : operation.IsSupportingTransition ? operation.SupportingTransition!.InputHashes :
         operation.IsLifecycle ? operation.Lifecycle!.InputHashes : Inputs(operation.Scopes);
 }

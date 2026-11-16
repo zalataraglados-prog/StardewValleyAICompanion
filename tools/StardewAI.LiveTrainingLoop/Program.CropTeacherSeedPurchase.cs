@@ -7,7 +7,7 @@ static partial class Program
     private static async Task<CropTeacherControlQueueBuildResult> BuildCropTeacherSeedQueueAsync(
         HttpClient http, LiveTrainingOptions options, int iteration, CropTeacherRunStep step,
         string beforeSnapshotPath, JsonObject beforeSnapshot, string stateHash,
-        CropTeacherSeedPurchaseSupport? resourceSupport = null)
+        CropTeacherSeedPurchaseSupport? resourceSupport = null, string? runtimeDirectory = null)
     {
         if (resourceSupport is null)
             return await CompileCropTeacherSeedQueueAsync(http, options, iteration, step,
@@ -18,7 +18,7 @@ static partial class Program
             Path.GetFullPath(beforeSnapshotPath) != resourceSupport.SnapshotPath)
             throw new InvalidDataException("Managed crop seed support is not bound to the original native control step.");
         CropTeacherControlQueueBuildResult? compiled = null;
-        var output = CropTeacherArtifactPrefix(options, iteration, "seed-support");
+        var output = runtimeDirectory ?? CropTeacherArtifactPrefix(options, iteration, "seed-support");
         var runtimeOptions = new CropTeacherSeedPurchaseRuntimeOptions(options.BackendUrl, output,
             options.RunId, options.PolicyTrajectoryExecutorVersion);
         var prepared = await CropTeacherSeedPurchaseRuntime.PrepareAsync(http, runtimeOptions, resourceSupport,

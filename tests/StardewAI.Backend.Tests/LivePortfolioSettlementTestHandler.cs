@@ -10,6 +10,8 @@ internal sealed class LivePortfolioSettlementTestHandler(HttpMessageHandler inne
 {
     public int MutationCalls { get; private set; }
     public int LookupCalls { get; private set; }
+    public int LedgerReads { get; private set; }
+    public string LastStage { get; private set; } = "not_started";
     private JsonNode? originalRequest;
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token)
@@ -17,18 +19,24 @@ internal sealed class LivePortfolioSettlementTestHandler(HttpMessageHandler inne
         var path = request.RequestUri!.AbsolutePath;
         if (request.Method == HttpMethod.Get)
         {
+            LedgerReads++;
+            LastStage = "ledger_get_started";
             Assert.EndsWith("/strategy/commitments/latest", path);
-            return await base.SendAsync(request, token);
+            var ledger = await base.SendAsync(request, token);
+            LastStage = "ledger_get_returned";
+            return ledger;
         }
         if (path.EndsWith("/lookup-mutation", StringComparison.Ordinal))
         {
             LookupCalls++;
+            LastStage = "lookup_started";
             var lookup = JsonNode.Parse(await request.Content!.ReadAsStringAsync(token))!;
             Assert.True(JsonNode.DeepEquals(originalRequest, lookup["request"]));
             Assert.Equal("settle-supporting-transition", lookup["operation"]!.GetValue<string>());
             if (mode == "unavailable") return Reply(HttpStatusCode.ServiceUnavailable, "{}");
             if (mode == "cancelled") throw new TaskCanceledException("test lookup cancelled");
             var response = await base.SendAsync(request, token);
+            LastStage = "lookup_returned";
             if (mode is not ("not-found" or "wrong-reply" or "claims-write")) return response;
             var value = JsonNode.Parse(await response.Content.ReadAsStringAsync(token))!;
             response.Dispose();
@@ -39,6 +47,7 @@ internal sealed class LivePortfolioSettlementTestHandler(HttpMessageHandler inne
         }
         Assert.EndsWith("/reservation-portfolios/settle-supporting-transition", path);
         MutationCalls++;
+        LastStage = "mutation_received";
         var raw = await request.Content!.ReadAsStringAsync(token);
         originalRequest = JsonNode.Parse(raw);
         var journalPath = Assert.Single(Directory.GetFiles(journalDirectory, "*-rpc-journal.json"));
@@ -50,7 +59,9 @@ internal sealed class LivePortfolioSettlementTestHandler(HttpMessageHandler inne
             journal["request_sha256"]!.GetValue<string>());
         if (mode == "http-rejected") return Reply(HttpStatusCode.Conflict, "{\"errors\":[\"ledger_revision_conflict\"]}");
         if (mode == "http-rejected-bad-body") return new(HttpStatusCode.Conflict) { Content = new BrokenBody() };
+        LastStage = "mutation_started";
         var result = await base.SendAsync(request, token);
+        LastStage = "mutation_returned";
         Assert.Equal(HttpStatusCode.OK, result.StatusCode);
         if (mode == "normal") return result;
         result.Dispose();

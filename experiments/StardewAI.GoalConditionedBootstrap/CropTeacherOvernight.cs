@@ -26,12 +26,17 @@ public sealed partial class CropTeacherOvernight
         var paths = preparation.InputHashes.Keys.Concat(new[] { transition.ExecutionReceiptPath, transition.AfterSnapshotPath })
             .Select(Path.GetFullPath).Distinct(comparer).ToArray();
         using var reads = InvocationReadSession.Start(paths);
-        inputs = new(paths);
+        var originalInputs = new CropTeacherRetainedInputs(paths);
         var after = MoneyRevenueCropNativeLifecycleProofBuilder.VerifyOwnedSleepBoundary(source.Snapshot, transition);
         var receipt = CurrentTeacherFrontierSupport.Read<QueueExecutionReceiptEnvelope>(transition.ExecutionReceiptPath, "original crop sleep receipt");
         var steps = CropTeacherNativeStepPaths.Read(transition, receipt, paths, "Crop sleep");
-        Require(steps.Length == 1 && comparer.Equals(steps[0], Path.GetFullPath(transition.AfterSnapshotPath)),
+        Require(steps.Length == 1,
             "Owned crop sleep lost its single terminal snapshot path.");
+        inputs = new(paths.Concat(steps).Distinct(comparer).ToArray());
+        originalInputs.Validate();
+        var terminal = comparer.Equals(steps[0], Path.GetFullPath(transition.AfterSnapshotPath)) ? after :
+            CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(steps[0], "original crop sleep step after");
+        Require(EqualJson(terminal, after), "Owned crop sleep terminal snapshot differs from its last native step.");
         Require(source.Snapshot.State.TryGetValue("farm", out var farm) && farm.ValueKind == JsonValueKind.Object &&
                 farm.TryGetProperty("crops", out var envelope) && envelope.ValueKind == JsonValueKind.Object,
             "Owned crop sleep lacks its original farm crop observation.");
@@ -58,6 +63,7 @@ public sealed partial class CropTeacherOvernight
         FromTotalDay = preparation.TotalDay;
         ToTotalDay = MoneyRevenueCropSeedAcquisitionProofBuilder.ReadInt(after, "time", "total_days");
         rebind = new(after, source.Ledger, stepId, ValidateInputsUnchanged, "Crop overnight control");
+        originalInputs.Validate();
         ValidateInputsUnchanged();
     }
 

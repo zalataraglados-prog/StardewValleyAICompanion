@@ -1590,6 +1590,11 @@ static partial class Program
         ApplyTextSignEditingRequestFields(
             executionRequest,
             item);
+        if (options.ObserveSelectedTillingResources)
+        {
+            NativeTillingExecutionObservation.Apply(options, executionRequest);
+            return executionRequest;
+        }
         executionRequest.ActionOriginObservationScopeId = NativeOutputObservationMode.CreateScopeId(options, executionRequest);
         executionRequest.ActionOriginSnapshotAnchor = options.ObserveNativeOutputSnapshotAnchor &&
             executionRequest.ActionOriginObservationScopeId is not null;

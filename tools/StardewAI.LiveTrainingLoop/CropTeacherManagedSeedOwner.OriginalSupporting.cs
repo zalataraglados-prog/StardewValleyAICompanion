@@ -21,8 +21,8 @@ public sealed partial class CropTeacherManagedSeedOwner
             throw new IOException((watering ? "Original watering" : "Original route") + " requires new native receipt/snapshot paths before dispatch.");
     }
 
-    private static string NativeSupportingRole(CropTeacherManagedSeedOperation operation) => operation.IsOvernight ? "overnight" : operation.IsHarvest ? "harvest" : operation.IsWateringMaintenance ? "maintenance" : "route";
-    private static string SupportingOperationTag(CropTeacherManagedSeedOperation operation) => operation.IsOvernight ? "overnight_control" : operation.IsHarvest ? "crop_harvest" :
+    private static string NativeSupportingRole(CropTeacherManagedSeedOperation operation) => operation.IsSharedSourceReturn ? "shared-source" : operation.IsSiteClearance ? "clearance" : operation.IsSiteTilling ? "till" : operation.IsSavedContentReadback ? "saved-readback" : operation.IsTerminalShipping ? "terminal" : operation.IsControlRecovery ? "control" : operation.IsOvernight ? "overnight" : operation.IsHarvest ? "harvest" : operation.IsWateringMaintenance ? "maintenance" : "route";
+    private static string SupportingOperationTag(CropTeacherManagedSeedOperation operation) => operation.IsSharedSourceReturn ? "shared_source_return" : operation.IsSiteClearance ? "site_clearance" : operation.IsSiteTilling ? "site_till" : operation.IsSavedContentReadback ? "saved_content_readback" : operation.IsTerminalShipping ? "terminal_shipping" : operation.IsControlRecovery ? "control_recovery" : operation.IsOvernight ? "overnight_control" : operation.IsHarvest ? "crop_harvest" :
         operation.IsWateringMaintenance ? "watering_maintenance" : "supporting_route";
     private static bool IsSupportingKind(CropTeacherManagedSeedOperation operation, CropTeacherSupportingOperationKind kind) => kind switch
     {
@@ -30,11 +30,22 @@ public sealed partial class CropTeacherManagedSeedOwner
         CropTeacherSupportingOperationKind.Watering => operation.IsWateringMaintenance,
         CropTeacherSupportingOperationKind.Harvest => operation.IsHarvest,
         CropTeacherSupportingOperationKind.Overnight => operation.IsOvernight,
+        CropTeacherSupportingOperationKind.Control => operation.IsControlRecovery,
+        CropTeacherSupportingOperationKind.Terminal => operation.IsTerminalShipping,
+        CropTeacherSupportingOperationKind.SavedReadback => operation.IsSavedContentReadback,
+        CropTeacherSupportingOperationKind.Tilling => operation.IsSiteTilling,
+        CropTeacherSupportingOperationKind.Clearance => operation.IsSiteClearance,
+        CropTeacherSupportingOperationKind.SharedSourceReturn => operation.IsSharedSourceReturn,
         _ => false
     };
     private static string NativeSupportingPath(CropTeacherManagedSeedOperation operation, string suffix) =>
         Path.Combine(operation.RuntimeDirectory, NativeSupportingRole(operation) + "-native-" + suffix + ".json");
-    private static MoneyRevenueCropNativeLifecycleTransitionRequest OriginalSupportingTransition(CropTeacherManagedSeedOperation operation) =>
+    internal static MoneyRevenueCropNativeLifecycleTransitionRequest OriginalSupportingTransition(CropTeacherManagedSeedOperation operation) =>
+        operation.IsSharedSourceReturn ? operation.Owner.SharedExecutionRecord(operation.Record)["shared_source_transition"]!.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)! :
+        operation.IsSiteClearance ? operation.Record["clearance_transition"]!.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)! :
+        operation.IsSiteTilling ? operation.Record["till_transition"]!.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)! :
+        operation.IsTerminalShipping ? operation.Record["terminal_transition"]!.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)! :
+        operation.IsControlRecovery ? operation.Record["control_transition"]!.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)! :
         operation.IsOvernight ? operation.Record["overnight_transition"]!.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)! :
         operation.IsHarvest ? operation.Record["harvest_transition"]!.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)! :
         operation.IsWateringMaintenance ? operation.Record["maintenance_transition"]!.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)! : RouteTransition(operation.Record);
@@ -52,7 +63,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             var start = operation.OriginalStart!;
             var root = operation.RuntimeDirectory;
             var claimPath = NativeSupportingPath(operation, "claim");
-            var label = operation.IsOvernight ? "Original overnight" : operation.IsHarvest ? "Original harvest" : watering ? "Original watering" : "Original route";
+            var label = operation.IsTerminalShipping ? "Original terminal shipping" : operation.IsControlRecovery ? "Original control recovery" : operation.IsOvernight ? "Original overnight" : operation.IsHarvest ? "Original harvest" : watering ? "Original watering" : "Original route";
             if (operation.Started is not null || File.Exists(claimPath))
                 throw new InvalidOperationException(label + " native invocation is already claimed; verify retained outcome, never redispatch.");
             var transition = OriginalSupportingTransition(operation);
@@ -89,10 +100,16 @@ public sealed partial class CropTeacherManagedSeedOwner
         finally { operation.ExecutionActive = false; gate.Release(); }
     }
 
-    private JsonObject CreateOriginalSupportingNativeClaim(CropTeacherManagedSeedOperation operation) => new()
+    private JsonObject CreateOriginalSupportingNativeClaim(CropTeacherManagedSeedOperation operation)
     {
-        ["schema_version"] = "crop_teacher_owned_" + NativeSupportingRole(operation) + "_native_claim.v1", ["admission_sha256"] = HashFile(operation.RecordPath),
-        ["original_intent_sha256"] = Text(operation.Record, "original_intent_sha256"), ["native_invocation_claimed"] = true,
-        ["native_request_performed"] = null, ["formal_product_training_authorized"] = false
-    };
+        var claim = new JsonObject
+        {
+            ["schema_version"] = "crop_teacher_owned_" + NativeSupportingRole(operation) + "_native_claim.v1", ["admission_sha256"] = HashFile(operation.RecordPath),
+            ["original_intent_sha256"] = Text(operation.Record, "original_intent_sha256"), ["native_invocation_claimed"] = true,
+            ["native_request_performed"] = null, ["formal_product_training_authorized"] = false
+        };
+        if (operation.SharedPortfolioSupport is not null)
+            claim[PreparationMode(operation.Record).AcceptedPreparationHashKey] = HashFile(RecordPath(operation.Sequence, "prepared"));
+        return claim;
+    }
 }

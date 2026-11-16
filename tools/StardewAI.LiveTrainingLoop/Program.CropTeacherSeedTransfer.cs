@@ -8,7 +8,7 @@ static partial class Program
 {
     private static async Task<CropTeacherControlQueueBuildResult> BuildCropTeacherSeedTransferQueueAsync(HttpClient http,
         LiveTrainingOptions options, int iteration, CropTeacherRunStep step, string beforeSnapshotPath,
-        JsonObject beforeSnapshot, string stateHash, CropTeacherSeedTransferSupport support)
+        JsonObject beforeSnapshot, string stateHash, CropTeacherSeedTransferSupport support, string? runtimeDirectory = null)
     {
         var request = support.PreparationRequest;
         if (!options.UseRuntimeTestHarnessExecutor || !options.EmitQueueExecutionReceipt ||
@@ -21,7 +21,7 @@ static partial class Program
             request.StateHash != stateHash || !string.Equals(Path.GetFullPath(beforeSnapshotPath), support.SnapshotPath,
                 OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
             throw new InvalidDataException("Managed crop seed transfer is not bound to the original native control step.");
-        var output = CropTeacherArtifactPrefix(options, iteration, "seed-transfer");
+        var output = runtimeDirectory ?? CropTeacherArtifactPrefix(options, iteration, "seed-transfer");
         CropTeacherControlQueueBuildResult? compiled = null;
         var prepared = await CropTeacherSeedTransferRuntime.PrepareAsync(http,
             new(options.BackendUrl, output, options.RunId, options.PolicyTrajectoryExecutorVersion), support,

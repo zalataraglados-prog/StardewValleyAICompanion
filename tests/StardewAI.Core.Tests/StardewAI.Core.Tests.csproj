@@ -140,6 +140,7 @@
     <Compile Include="SocialTransparentPlanningTests.MarriageHouseIntake.cs" />
     <Compile Include="CurrentFriendshipTeacherComparisonTests.cs" />
     <Compile Include="SocialTransparentPlanningTests.RemoteContinuation.cs" />
+    <Compile Include="SocialTransparentPlanningTests.SaleStock.cs" />
     <Compile Include="SocialTransparentPlanningTests.CompileChain.cs" />
     <Compile Include="SocialTransparentPlanningTests.FriendshipTeacher.cs" />
     <Compile Include="SocialTransparentPlanningTests.FriendshipRouteBudget.cs" />
@@ -175,6 +176,9 @@
     <Compile Include="IslandGourmandSupplyScheduleProofTests.cs" />
     <Compile Include="WildTreeProductMainlineTests.cs" />
     <Compile Include="DailyPlanCompilerSources.cs" />
+    <Compile Include="DailyPlanCompilerTests.cs" />
+    <Compile Include="DailyPlanJointCalendarTests.cs" />
+    <Compile Include="DailyPlanRequiredWorkTests.cs" />
     <Compile Include="DeployScriptSourceGuardTests.cs" />
     <Compile Include="FullShipmentAcquisitionSampleSourceGuardTests.cs" />
     <Compile Include="ShopPurchaseBudgetPolicyTests.cs" />
@@ -224,6 +228,9 @@
     <Compile Include="MuseumDonationMainlineTests.Reservations.cs" />
     <Compile Include="MuseumDonationMainlineTests.RustyKeyTeacher.cs" />
     <Compile Include="MachineTaskCapacityMainlineTests.cs" />
+    <Compile Include="CookingMainlineTests.cs" />
+    <Compile Include="CookingMainlineTests.SaleStock.cs" />
+    <Compile Include="CookingMainlineTests.InventoryConsumption.cs" />
     <Compile Include="MiningReachDepthAcquisitionIntentTests.cs" />
     <Compile Include="NativeShippingSourceGuardTests.cs" />
     <Compile Include="NativeShippingSourceGuardTests.SleepSettlement.cs" />

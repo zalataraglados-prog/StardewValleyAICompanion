@@ -9,7 +9,7 @@ using System.Text.Json;
 
 namespace StardewAI.Core.Infrastructure;
 
-public static class ContentAddressedJsonArtifactReader
+public static partial class ContentAddressedJsonArtifactReader
 {
     public const string ManifestSchemaVersion =
         "stardewai.content_addressed_json.v1";
@@ -77,7 +77,8 @@ public static class ContentAddressedJsonArtifactReader
         string logicalPath,
         string stored,
         ValidationTraceOperation operation,
-        out string? logicalSha256)
+        out string? logicalSha256,
+        bool hashOnly = false)
     {
         logicalSha256 = null;
         var parseClock = operation.IsEnabled ? Stopwatch.StartNew() : null;
@@ -122,7 +123,10 @@ public static class ContentAddressedJsonArtifactReader
                     Path.GetFullPath(logicalPath)) ?? throw new InvalidDataException(
                         "Content-addressed JSON directory is unavailable.");
                 var blobRoot = Path.Combine(logicalDirectory, BlobDirectoryName);
-                using var output = new MemoryStream();
+                using Stream output = hashOnly
+                    ? new LogicalHashStream()
+                    : new MemoryStream();
+                long writtenBytes;
                 using (var writer = new Utf8JsonWriter(output))
                 {
                     writer.WriteStartObject();
@@ -138,6 +142,7 @@ public static class ContentAddressedJsonArtifactReader
                                 blobRoot,
                                 property,
                                 operation));
+                            if (hashOnly) writer.Flush();
                             continue;
                         }
 
@@ -155,20 +160,32 @@ public static class ContentAddressedJsonArtifactReader
                                 blobRoot,
                                 child,
                                 operation));
+                            if (hashOnly) writer.Flush();
                         }
                         writer.WriteEndObject();
                     }
                     writer.WriteEndObject();
+                    writer.Flush();
+                    writtenBytes = writer.BytesCommitted;
                 }
 
-                var materialized = output.ToArray();
+                byte[]? materialized = null;
+                string actualSha256;
+                if (hashOnly)
+                {
+                    actualSha256 = ((LogicalHashStream)output).Finish();
+                }
+                else
+                {
+                    materialized = ((MemoryStream)output).ToArray();
+                    actualSha256 = Sha256(materialized);
+                }
                 var expectedBytes = root.GetProperty("logical_bytes").GetInt64();
                 var expectedSha256 = RequiredString(root, "logical_sha256");
-                var actualSha256 = Sha256(materialized);
                 logicalSha256 = actualSha256;
-                operation.AddHashBytes(materialized.LongLength);
+                operation.AddHashBytes(writtenBytes);
                 operation.AddArtifactId(expectedSha256);
-                if (materialized.LongLength != expectedBytes ||
+                if (writtenBytes != expectedBytes ||
                     !string.Equals(
                         actualSha256,
                         expectedSha256,
@@ -178,7 +195,7 @@ public static class ContentAddressedJsonArtifactReader
                         "Content-addressed JSON materialization does not match its manifest.");
                 }
 
-                return Utf8WithoutBom.GetString(materialized);
+                return hashOnly ? string.Empty : Utf8WithoutBom.GetString(materialized!);
             }
             finally
             {
@@ -251,8 +268,9 @@ public static class ContentAddressedJsonArtifactReader
     private static string Sha256(byte[] bytes)
     {
         using var sha256 = SHA256.Create();
-        return BitConverter.ToString(sha256.ComputeHash(bytes))
-            .Replace("-", string.Empty)
-            .ToLowerInvariant();
+        return FormatHash(sha256.ComputeHash(bytes));
     }
+
+    private static string FormatHash(byte[] hash) => BitConverter.ToString(hash)
+        .Replace("-", string.Empty).ToLowerInvariant();
 }

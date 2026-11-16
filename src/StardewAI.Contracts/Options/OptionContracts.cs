@@ -438,6 +438,10 @@ namespace StardewAI.Contracts.Options
 
         [JsonPropertyName("adapter_id")]
         public string AdapterId { get; set; } = "vanilla_native";
+
+        [JsonPropertyName("allow_crop_sale_stock_preparation_preview")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public bool AllowCropSaleStockPreparationPreview { get; set; }
     }
 
     public sealed class OptionAvailabilityEnvelope
