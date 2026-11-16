@@ -1,5 +1,29 @@
 # Current Production Snapshot Handoff
 
+## Current: Native Payout Saved, Pending234 GET Reconciliation (234 Continued)
+
+SAME11884 produced actual lifecycle/retention/production (201transitions,6plant/66water/6harvest,
+12rollovers/1resume). Manifest SHA0b0e1cdfef7e8e238f61ea140fb3ec8f401b84229af3665f6b70e423a1d15fde.
+Owner228-231/native237-240 deposited the remaining4, total2->6/pending1137 without replaying prefix.
+Native243 then slept Spring13->14: player money/total earned1137,4saved files/7,722,860bytes,
+SHA07de1d18b23d5b5a2686f31bad292e99790608cc18d8e821713b577f76d8a123 independently recaptured EXACT.
+
+Main exited2 at02:50; latest accepted233, pending234 overnight_control ALREADY EXECUTED.
+Generic supporting-route error was post-GET comparison: marker256active vs GET257completed,
+one original last_committed_harvest_window_elapsed history entry. Original Core read reconciler
+reproduced FULL actual ledger exactly offline, input unchanged. New post-GET supporting/recovery
+and shared transfer/cooking consumers now replay SAME original kernel and strict comparison;
+old authority/RequireLedger/seed transactions/backend/executors stay unchanged.
+Red1failed/6passed, green10, SAME-BINARY adjacent98/98/1m12s/0skip, overlapping scopes;
+SHA7e65fe4ad7b4b2fb8760366d3dbce35754aed016f232645af606952ea085eb86. Own CI still to check.
+
+Next: actual readonly adapter check, own CI and ORIGINAL RecoverPendingAsync back-half234
+(durable lookup/Get only, no new sleep/ship/claim), then same-world Main terminal proof and
+saved-content readback. Keep original21848/7644/3356 and all artifacts. Saved boundary is NOW
+Spring14, not old pre-harvest Spring13. No old227 preflight/replay/coldload. Physical save alone
+does not imply owner acceptance/final closeout/Teacher21/formal training. Original Stage5 actual
+global selection/resource/calendar composition ->570 ->569, formal=false; raw/local-data stay out of Git.
+
 ## Current: Reuse Verified Shared Equivalent Result (234, Main Terminal)
 
 Main1408 exited2 at2026-11-17T00:55:53+08 after real same-world entry and layout/capacity,

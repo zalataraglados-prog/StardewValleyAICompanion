@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
 using StardewAI.GoalConditionedBootstrap;
 
@@ -109,7 +110,9 @@ public sealed partial class CropTeacherManagedSeedOwner
             throw new InvalidDataException("Shared transfer settlement retained reply changed.");
         var final = await StrategyLedgerEvidenceStore.ReadAsync(http, options.BackendUrl, output,
             expected.SourceStateHash, JsonOptions, "Shared transfer settlement full readback").ConfigureAwait(false);
-        CropTeacherSeedRuntimeTransaction.RequireLedger(expected, final.Ledger, "shared transfer settlement full readback");
+        StrategyLedgerEvidenceStore.RequireReconciledReadback(expected, final.Ledger,
+            Read<SnapshotEnvelope>(OriginalSupportingTransition(operation).AfterSnapshotPath),
+            "shared transfer settlement full readback");
         var reference = cooking
             ? JsonSerializer.Serialize(new CropTeacherSharedConsumptionSettlementReference(journal.RequestPath, replyPath,
                 journal.JournalPath, options.BackendUrl, scope.ConsumptionPreparation!), JsonOptions)

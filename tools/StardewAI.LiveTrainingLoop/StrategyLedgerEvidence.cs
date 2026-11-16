@@ -3,7 +3,9 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
+using StardewAI.Core.Strategy;
 
 namespace StardewAI.LiveTrainingLoop;
 
@@ -11,6 +13,17 @@ public sealed record StrategyLedgerEvidence(string Path, StrategyCommitmentLedge
 
 public static class StrategyLedgerEvidenceStore
 {
+    internal static void RequireReconciledReadback(StrategyCommitmentLedger committed, StrategyCommitmentLedger observed,
+        SnapshotEnvelope snapshot, string label)
+    {
+        if (committed.SourceStateHash != snapshot.StateHash || committed.SaveId != snapshot.SaveId.Value ||
+            committed.PlayerId != snapshot.PlayerId.Value)
+            throw new InvalidDataException(label + " readback snapshot differs from its committed source.");
+        // GET applies this original reconciliation after the immutable mutation reply was recorded.
+        var canonical = StrategyCommitmentReadReconciler.Reconcile(committed, snapshot, observed.UpdatedAt);
+        CropTeacherSeedRuntimeTransaction.RequireLedger(canonical, observed, label);
+    }
+
     public static async Task<StrategyLedgerEvidence> ReadAsync(HttpClient http, string backendUrl,
         string evidenceRoot, string stateHash, JsonSerializerOptions options, string label)
     {

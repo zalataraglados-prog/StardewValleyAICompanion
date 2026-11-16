@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
 
 namespace StardewAI.LiveTrainingLoop;
@@ -47,7 +48,8 @@ public sealed partial class CropTeacherManagedSeedOwner
         // Lookup and independent replay precede the original full Get/reconciliation.
         var final = await StrategyLedgerEvidenceStore.ReadAsync(http, options.BackendUrl, output,
             verified.SourceStateHash, JsonOptions, operation.IsWateringMaintenance ? "Original watering maintenance readback" : "Original supporting route readback").ConfigureAwait(false);
-        CropTeacherSeedRuntimeTransaction.RequireLedger(verified, final.Ledger, "supporting route full readback");
+        StrategyLedgerEvidenceStore.RequireReconciledReadback(verified, final.Ledger,
+            artifacts.Read<SnapshotEnvelope>(scope.AfterSnapshotPath), SupportingOperationTag(operation) + " full readback");
         artifacts.Pin(final.Path);
         void Validate() { ValidateSupportingTransition(operation); artifacts.Validate(); }
         Validate();
