@@ -199,6 +199,7 @@ var primaryAttemptsStarted = 0;
 var nativeSaveBoundaryAttemptsStarted = 0;
 var nativeSaveBoundaryPhaseStarted = false;
 var nativeSaveBoundaryVerified = false;
+ManagedCropGlobalContinuation? pendingManagedGlobalSave = null;
 var nativeSaveBoundaryInitialDayKey = string.Empty;
 var nativeSaveBoundaryCurrentDayKey = string.Empty;
 var goldenWalnutSourceMilestone =
@@ -282,6 +283,23 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 LiveTrainingPhase.Incomplete,
                 "crop_teacher_run_attempt_limit_reached")
             : new LiveTrainingPhaseDecision(LiveTrainingPhase.Primary);
+    if (activeCropTeacherRunPlan is null && pendingManagedGlobalSave is { } acceptedGlobalSave)
+    {
+        var savedPhase = TrainingCompletionPolicy.Decide(effectivePrimaryAttempts, options.MaxAttempts,
+            nativeSaveBoundaryAttemptsStarted, options.SaveBoundaryMaxAttempts, hasExplicitPrimaryTarget,
+            explicitPrimaryTargetMet, options.RequireNativeSaveBoundary, acceptedGlobalSave.SaveBoundary.Verified);
+        if (savedPhase.Phase == LiveTrainingPhase.Complete)
+        {
+            nativeSaveBoundaryVerified = acceptedGlobalSave.SaveBoundary.Verified;
+            nativeSaveBoundaryInitialDayKey = acceptedGlobalSave.SaveBoundary.InitialDayKey;
+            nativeSaveBoundaryCurrentDayKey = acceptedGlobalSave.SaveBoundary.CurrentDayKey;
+            initialSaveFingerprint = acceptedGlobalSave.BeforeSave;
+            currentSaveFingerprint = acceptedGlobalSave.AfterSave;
+            phaseDecision = savedPhase;
+        }
+        // A later primary action needs its own closing save; never carry an earlier save across that work.
+        pendingManagedGlobalSave = null;
+    }
     if (phaseDecision.Phase is LiveTrainingPhase.Complete or LiveTrainingPhase.Incomplete)
     {
         if (phaseDecision.Phase == LiveTrainingPhase.Incomplete &&
@@ -2210,8 +2228,10 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
 
             // Finish the original iteration/episode before releasing the crop-specific owner.
             if (await ContinueAfterManagedCropRunAsync(options, iteration, cropTeacherManagedOwner,
-                    cropManagedOperationForExecution).ConfigureAwait(false) is not null)
+                    cropManagedOperationForExecution).ConfigureAwait(false) is { } managedGlobalContinuation)
             {
+                pendingManagedGlobalSave = managedGlobalContinuation;
+                lastStateHash = managedGlobalContinuation.AfterStateHash;
                 cropTeacherRunCompleted = true;
                 activeCropTeacherRunPlan = null;
                 activeCropTeacherRunPlanRequest = null;

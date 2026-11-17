@@ -17,10 +17,19 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         f.Options.ContinueGlobalDailyPlanAfterCropTeacherRun = globalDailyPlan;
         var source = f.Owner.CurrentSnapshotPath; var ledger = f.Owner.CurrentLedgerPath;
         var commits = f.F.Shared.Runtime.Handler.Commits;
-        var reportPath = await f.Continue();
+        var continuation = await f.ContinueResult();
+        Assert.NotNull(continuation);
+        var reportPath = (string)continuation.GetType().GetProperty("BoundaryPath")!.GetValue(continuation)!;
+        var observation = Assert.IsType<NativeSaveBoundaryObservation>(continuation.GetType().GetProperty("SaveBoundary")!.GetValue(continuation));
+        Assert.True(observation.Verified);
+        Assert.Equal(LiveTrainingPhase.NativeSaveBoundary, TrainingCompletionPolicy.Decide(12, 8, 0, 32, false, false, true, false).Phase);
+        Assert.Equal(LiveTrainingPhase.Complete, TrainingCompletionPolicy.Decide(12, 8, 0, 32, false, false, true, observation.Verified).Phase);
+        Assert.Equal(LiveTrainingPhase.Primary, TrainingCompletionPolicy.Decide(7, 8, 0, 32, false, false, true, observation.Verified).Phase);
+        Assert.Equal(LiveTrainingPhase.Incomplete, TrainingCompletionPolicy.Decide(12, 8, 0, 32, true, false, true, observation.Verified).Phase);
         Assert.NotNull(reportPath);
         var report = JsonNode.Parse(File.ReadAllText(reportPath))!;
         Assert.Equal(source, report["accepted_snapshot_path"]!.GetValue<string>());
+        Assert.Equal(report["after_state_hash"]!.GetValue<string>(), continuation.GetType().GetProperty("AfterStateHash")!.GetValue(continuation));
         Assert.Equal(ledger, report["accepted_ledger_path"]!.GetValue<string>());
         Assert.True(report["operational_handoff_ready"]!.GetValue<bool>());
         Assert.True(report["native_save_boundary_verified"]!.GetValue<bool>());
@@ -61,7 +70,9 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         var type = typeof(LiveTrainingOptions).Assembly.GetType("Program+CropTeacherOwnerLifetime", true)!;
         await using var lifetime = (IAsyncDisposable)Activator.CreateInstance(type, nonPublic: true)!;
         type.GetMethod("Attach", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(lifetime, [owner, null]);
-        Assert.Null(await InvokeLive<Task<string?>>("ContinueAfterManagedCropRunAsync", options, 3, lifetime, night));
+        var continuation = InvokeLive<Task>("ContinueAfterManagedCropRunAsync", options, 3, lifetime, night);
+        await continuation;
+        Assert.Null(continuation.GetType().GetProperty("Result")!.GetValue(continuation));
         Assert.Same(owner, type.GetProperty("Current", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(lifetime));
         Assert.False(File.Exists(Path.Combine(f.Options.EvidenceDirectory, "global-continuation-0003.json")));
     }

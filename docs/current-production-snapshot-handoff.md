@@ -1,5 +1,38 @@
 # Current Production Snapshot Handoff
 
+## Latest255: Main Consumes Accepted Closing Save; Offline Verified
+
+New Main consumer keeps original producer/executors/defaults. Return typed save
+observation plus original fingerprints and accepted after-state. Pin only the
+original save/acceptance/snapshot inputs, reuse original Evaluate; normalized
+Windows paths retain SHA checks. Adopt this save ONLY if original completion
+policy also says primary work is complete; otherwise discard it before further work.
+Final38/38/32s,TRXa97d9a8f. Actual126/132/133 read-only replay PASS: original
+Spring27->28,4files,aftera7f4cdc4,new policyComplete/oldNativeSaveBoundary,
+no second sleep/native dispatch. Old incomplete report/blocked133 preserved;
+this is NOT a fabricated real Main exit0 or terminal/semantic/formal acceptance.
+NEXT own-source CI, then original Spring28 global handoff/next daily plan;
+do not reopen old crop owner or sleep again merely to repair the old report.
+
+## Latest254 Terminal: Native Shipping/Save Accepted; Generic Main Probe Mismatch
+
+PR586 mergedmain58d9b2b5, same tested def1abc0/tree24f7c187. OwnCI44152790299
+SUCCESS/Core2810/59s/Backend3996/12m24s/zero failures-skips. Exact-head automated
+review no findings. Completed branch removed only under exact def1abc0 lease.
+Main25648/wrapper51223 TERMINAL/OS2. Accepted115approach,116-123 eight deposits,
+123 physical pending1605=205 prior+1400 crops. Original overnight126/native132
+ACCEPTED/SHA3648e435,sourcea7f4cdc4,ledger412,Spring27->28,cash802->2407,
+earned3047,bin0complete,slot9empty. Save boundary46a618a2;4files8517069bytes,
+fingerprint0301594d rechecked with original Capture. NO127intent. Keep runtime.
+Original global-continuation-0132 says operational/save true; terminal aggregate,
+semantic readback, complete-managed and formal remain false. Do not conflate them.
+Main then captured generic save baseline AFTER rollover, attempted a second sleep
+at133 and stopped sleep_bed_step_stuck_or_collision_blocked. Its generic false
+does NOT negate accepted126. NEXT fit new Main consumer to original pinned global
+save contract; offline original126/132/133 first, no repeat sleep/reload/reharvest.
+Primary feat/r2-global-save-handoff-20261118. Frozen254 prepared binaries unchanged.
+No new worker/provider call or cleanup; AGY tool laneHOLD. WeeklyUSED50/stop60.
+
 ## Current254: Explicit Existing-Bin Attribution; Native Suffix Not Yet Run
 
 Explicit joint baseline binds the original retention snapshot/SHA and complete bin contents.
