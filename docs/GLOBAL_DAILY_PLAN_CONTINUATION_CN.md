@@ -38,7 +38,32 @@ require完成或正式权限。初始化候选option/参数/kind/ID覆盖不允�
 `continue_global_daily_plan_after_crop_teacher_run=true`，默认不增加false字段。
 原run身份、独立artifact-run身份、保存槽与来源请求绑定规则保持。
 
-## 验证及尚未完成的事
+## 全局主目标与顺手工作共享预算（247）
+
+只有新global续行模式、joint calendar、原GoalResolver返回`resolved`且无owned composition、
+恢复/剧情中断、active continuation或内部定向覆盖时，才启用本节。旧集合模式及默认入口不变。
+原日计划子入口以前先按goal过滤候选，其他目标的顺手工作因此无法参加联合预算；现在保留
+同一次排名的候选池，并把原`bound_candidate_ids`作为`primary_candidate_ids`传给同一个Core编译器。
+不增加第二个Planner、模型请求、快照扫描或执行器。
+
+- 主目标ID是一组**备选**，不是每项都必须完成。ID须唯一且来自本次候选；一个备选blocked
+  不否决另一个合法备选。原`required_candidate_ids`仍是必须前置的工作，原验证和优先级不变。
+- 顺序为原required/其商店前置、主目标/其商店前置、其余候选；后两类仍保留原排名。
+  至少一项主目标被原编译器排入前，不允许无关工作代替主目标；空组也不退化为摸宠物。
+  商店前置本身不算主目标已排入。原deferred等待后的fresh-source barrier继续阻止余项。
+- 所有排入项共用原日历、体力和库存/消耗预留；主目标占用的时间、体力和物品不能再次花。
+  不改原时间估计、跨图/动作展开、恢复或源回执规则，不把局部日程视为三年全局最优。
+- 新请求字段与plan回显默认均为null且不写出，旧joint公开重载签名不变。新模式要求
+  **匹配的新Backend/Core与Main一起部署**；Main在拿到相同主目标ID回显后才交出计划。
+  旧Backend忽略未知字段会明确报`daily_plan_primary_goal_constraint_not_applied`，不会静默派发全池。
+  这个兼容检查不是新增原生证据或正式训练授权门。
+- 定向最终Core76项、Backend/实际私有Main接线108项通过，零失败/跳过；覆盖默认、旧模式、
+  owned hook、handoff、空绑定、旧Backend、错误回显和重复回显。后端接线夹具的空queue不冒充原生。
+  另以保留244的0001/0004/0008三组真实候选（196/101/1）及快照做新旧默认编译对比：
+  计划一致；队列除原随机ID外逐字段相同。新主目标排序也交原ActionQueueCompiler得到pending。
+  这是只读候选向量兼容检查，不是原过滤请求的精确重放或游戏执行；原件/hash保持。
+
+## 246验证及尚未完成的事
 
 - 最终定向81项（26秒）及标准启动器64项AST/真实parser检查通过，零失败/跳过。
   原owner夹具覆盖新旧模式下接受终局释放、维护夜拒绝、未接受日界拒绝、证据变化、

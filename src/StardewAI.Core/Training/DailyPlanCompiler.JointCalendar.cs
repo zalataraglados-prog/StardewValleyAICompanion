@@ -33,13 +33,20 @@ namespace StardewAI.Core.Training
             int? energyBudget = null)
         {
             var rows = candidates.ToArray();
+            var required = RequiredCandidateSet(rows, requiredCandidateIds);
+            return CompileCore(rows, stateHash, goalId, executionMode, maxCandidates, availableMinutes, energyBudget,
+                new JointCalendarBudget(currentTime), required);
+        }
+
+        private static HashSet<string> RequiredCandidateSet(PolicyEventCandidatePrediction[] rows,
+            IReadOnlyCollection<string> requiredCandidateIds)
+        {
             var required = new HashSet<string>(requiredCandidateIds, StringComparer.Ordinal);
             if (required.Count != requiredCandidateIds.Count || required.Any(string.IsNullOrWhiteSpace) ||
                 required.Any(id => rows.Count(row => row.CandidateId == id) != 1 ||
                     rows.Single(row => row.CandidateId == id).TimelineStatus == "blocked"))
                 throw new ArgumentException("Required candidate IDs must name distinct, uniquely materialized unblocked candidates.");
-            return CompileCore(rows, stateHash, goalId, executionMode, maxCandidates, availableMinutes, energyBudget,
-                new JointCalendarBudget(currentTime), required);
+            return required;
         }
 
         private sealed class JointCalendarBudget

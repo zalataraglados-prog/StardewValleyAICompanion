@@ -307,6 +307,10 @@ namespace StardewAI.Contracts.Training
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string[]? RequiredCandidateIds { get; set; }
 
+        [JsonPropertyName("primary_candidate_ids")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string[]? PrimaryCandidateIds { get; set; }
+
         [JsonPropertyName("ranked_event_candidates")]
         public PolicyEventCandidatePrediction[] RankedEventCandidates { get; set; } = Array.Empty<PolicyEventCandidatePrediction>();
     }

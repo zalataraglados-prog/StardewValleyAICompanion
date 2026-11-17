@@ -11,7 +11,7 @@ using StardewAI.Contracts.Training;
 
 namespace StardewAI.Backend.Tests;
 
-public sealed class JointDailyCalendarIntegrationTests
+public sealed partial class JointDailyCalendarIntegrationTests
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 

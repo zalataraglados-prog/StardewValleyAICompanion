@@ -1,5 +1,7 @@
 # StardewAI 当前状态与施工顺序（Canonical）
 
+> **247：同一日计划编译器支持主目标后顺手工作。** 新global+joint/resolved入口保留原全候选池，以原bound IDs为备选组先排主目标，再按同一日历/体力/资源预算接顺手项；默认/旧模式及原required/owned/recovery语义不变。最终Core76、Backend108项通过，3组真实候选离线新旧默认兼容；不是游戏验收。新模式需匹配Backend/Core/Main，旧Backend忽略字段会在派发前被拒。实际全局来源/数量/期限/Day-0仍开放→#570→#569，formal=false。[实现及边界](CURRENT_WORK_CN.md#2026-11-17-全局主目标与顺手工作共享预算247)。
+
 > **246：普通全局日计划与旧集合续跑显式分开。** 旧continue-after-crop语义有原提交依据，保留不改；新opt-in复用原Main/DailyPlan/owner释放，不自动开启集合Teacher。81项owner/模式回归和64项标准入口转发通过，未跑新游戏；实际跨目标数量、期限、共享资源/日历及Day-0仍未闭，不将接线当作21分Teacher或开训成功。先实际预算→#570→#569，formal=false。[当前实现](CURRENT_WORK_CN.md#2026-11-17-显式回到原全局日计划246)、[模式对照](GLOBAL_DAILY_PLAN_CONTINUATION_CN.md)。
 
 > **245：预备共享原生源读取，不是准入完成。** #578自身及合并CI已绿；旧钓鱼审计私有读取移入Core、原副本删除，复用原schedule/Gourmand重放核；新增Contracts版本化路径/SHA/来源身份绑定。原两个正式阻塞与九类gate、旧执行器/默认不改，缺continuation不推断不适用。第5步实际全局选线/收支/期限/日历仍开放，再#570完整接线→#569，formal=false。[实现边界](CURRENT_WORK_CN.md#2026-11-17-共享原生来源读取预备接线245)。

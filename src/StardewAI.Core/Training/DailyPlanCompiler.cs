@@ -56,7 +56,8 @@ namespace StardewAI.Core.Training
             int? availableMinutes,
             int? energyBudget,
             JointCalendarBudget? calendar,
-            ISet<string>? requiredCandidates = null)
+            ISet<string>? requiredCandidates = null,
+            ISet<string>? primaryCandidates = null)
         {
             var steps = new List<SmallModelPlanStep>();
             var audit = new List<SmallModelPlanCandidateAudit>();
@@ -75,11 +76,19 @@ namespace StardewAI.Core.Training
             var reservedDecisionGroups = new HashSet<string>(StringComparer.Ordinal);
             var orderedCandidates = OrderedCandidates(candidates).ToArray();
             var pendingRequired = new HashSet<string>(requiredCandidates ?? new HashSet<string>(), StringComparer.Ordinal);
+            var primaryScheduled = primaryCandidates is null;
             var requiredShops = new HashSet<string>(orderedCandidates.Where(row => pendingRequired.Contains(row.CandidateId) &&
+                row.Kind == "buy_shop_item" && !string.IsNullOrWhiteSpace(row.ShopId)).Select(row => row.ShopId), StringComparer.OrdinalIgnoreCase);
+            var primaryShops = primaryCandidates is null ? null : new HashSet<string>(orderedCandidates.Where(row => primaryCandidates.Contains(row.CandidateId) &&
                 row.Kind == "buy_shop_item" && !string.IsNullOrWhiteSpace(row.ShopId)).Select(row => row.ShopId), StringComparer.OrdinalIgnoreCase);
             bool RequiredOrPrerequisite(PolicyEventCandidatePrediction row) => requiredCandidates?.Contains(row.CandidateId) == true ||
                 row.Kind == "interact_endpoint" && requiredShops.Contains(row.ShopId);
-            foreach (var candidate in orderedCandidates.OrderBy(row => RequiredOrPrerequisite(row) ? 0 : 1))
+            bool PrimaryOrPrerequisite(PolicyEventCandidatePrediction row) => primaryCandidates?.Contains(row.CandidateId) == true ||
+                row.Kind == "interact_endpoint" && primaryShops?.Contains(row.ShopId) == true;
+            var prioritizedCandidates = primaryCandidates is null
+                ? orderedCandidates.OrderBy(row => RequiredOrPrerequisite(row) ? 0 : 1)
+                : orderedCandidates.OrderBy(row => RequiredOrPrerequisite(row) ? 0 : PrimaryOrPrerequisite(row) ? 1 : 2);
+            foreach (var candidate in prioritizedCandidates)
             {
                 var waitTicks = calendar?.RemainingWaitTicks(candidate) ?? candidate.ScheduledWaitCost ?? 0;
                 var rollingDeferred = string.Equals(candidate.TimelineStatus, "deferred", StringComparison.Ordinal) && waitTicks > 0;
@@ -109,6 +118,12 @@ namespace StardewAI.Core.Training
                 if (pendingRequired.Count > 0 && !RequiredOrPrerequisite(candidate))
                 {
                     audit.Add(CandidateAudit(candidate, "skipped", new[] { "required_work_not_fully_scheduled" }, candidateMinutes,
+                        remainingMinutes, remainingMinutes, remainingEnergy, remainingEnergy));
+                    continue;
+                }
+                if (!primaryScheduled && !RequiredOrPrerequisite(candidate) && !PrimaryOrPrerequisite(candidate))
+                {
+                    audit.Add(CandidateAudit(candidate, "skipped", new[] { "primary_goal_work_not_scheduled" }, candidateMinutes,
                         remainingMinutes, remainingMinutes, remainingEnergy, remainingEnergy));
                     continue;
                 }
@@ -251,6 +266,7 @@ namespace StardewAI.Core.Training
                     rollingHorizonReplanBarrierAccepted = true;
                 }
                 calendar?.Accept(candidateMinutes);
+                if (primaryCandidates?.Contains(candidate.CandidateId) == true) primaryScheduled = true;
                 if (!rollingDeferred) pendingRequired.Remove(candidate.CandidateId);
                 selected++;
             }
@@ -265,7 +281,8 @@ namespace StardewAI.Core.Training
                 Actor = ExecutionTargetProfiles.CreateActor(executionMode),
                 PlanType = "daily_candidate_plan",
                 Steps = steps.ToArray(),
-                CandidateAudit = audit.ToArray()
+                CandidateAudit = audit.ToArray(),
+                PrimaryCandidateIds = primaryCandidates?.OrderBy(id => id, StringComparer.Ordinal).ToArray()
             };
         }
 
