@@ -8,6 +8,7 @@ using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Goals;
 using StardewAI.Core.Infrastructure;
+using StardewAI.Core.Strategy;
 using StardewAI.Core.WorldModel;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
@@ -279,7 +280,51 @@ namespace StardewAI.Core.Training
                 ReadInt(seed, "stack") > 0 &&
                 ReadBool(seed, "crop_catalog_match") &&
                 !string.IsNullOrWhiteSpace(
-                    ReadString(seed, "qualified_item_id")));
+                    ReadString(seed, "qualified_item_id"))) &&
+                !CurrentCropWindowIsProvenInfeasible(snapshot);
+        }
+
+        private static bool CurrentCropWindowIsProvenInfeasible(
+            SnapshotEnvelope snapshot)
+        {
+            foreach (var field in new[] { "season", "day", "total_days" })
+            {
+                if (!ReadableStatus(ReadStateFieldStatus(snapshot, "time", field)))
+                    return false;
+            }
+            if (!ReadableStatus(ReadStateFieldStatus(snapshot, "farm", "crop_catalog")))
+                return false;
+
+            var season = ReadStateFieldString(snapshot, "time", "season");
+            var day = ReadStateFieldIntOptional(snapshot, "time", "day");
+            var totalDay = ReadStateFieldIntOptional(snapshot, "time", "total_days");
+            var catalog = ReadStateFieldValue(snapshot, "farm", "crop_catalog");
+            if (string.IsNullOrWhiteSpace(season) || day is null or < 1 or > 28 ||
+                totalDay is null or < 0 || totalDay > int.MaxValue - 28 ||
+                !catalog.HasValue || catalog.Value.ValueKind != JsonValueKind.Array ||
+                catalog.Value.GetArrayLength() == 0)
+                return false;
+
+            var seasonEnd = checked(totalDay.Value + 28 - day.Value);
+            // Unknown metadata still belongs to the original Teacher. Only a
+            // fully known impossible window may defer this immediate handoff.
+            foreach (var crop in catalog.Value.EnumerateArray())
+            {
+                if (crop.ValueKind != JsonValueKind.Object ||
+                    !crop.TryGetProperty("seasons", out var seasons) ||
+                    seasons.ValueKind != JsonValueKind.Array ||
+                    seasons.EnumerateArray().Any(value => value.ValueKind != JsonValueKind.String))
+                    return false;
+                if (!seasons.EnumerateArray().Any(value => string.Equals(
+                        value.GetString(), season, StringComparison.OrdinalIgnoreCase)))
+                    continue;
+                var growDays = ReadIntOptional(crop, "grow_days");
+                if (!growDays.HasValue ||
+                    CropProductionObligationProjector.FirstHarvestFitsWindow(
+                        totalDay.Value, growDays.Value, seasonEnd))
+                    return false;
+            }
+            return true;
         }
 
         private static GrandpaDailySubgoalResolution CropProductionTeacherHandoff(

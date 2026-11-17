@@ -56,8 +56,8 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
                 if (!seasons.Contains(currentSeason,
                         StringComparer.OrdinalIgnoreCase))
                     reasons.Add("not_current_season");
-                if (growDays <= 0 || checked(currentTotalDay + growDays) >
-                    seasonEnd)
+                if (!CropProductionObligationProjector.FirstHarvestFitsWindow(
+                        currentTotalDay, growDays, seasonEnd))
                     reasons.Add("cannot_mature_in_current_season");
                 if (minStack <= 0 || unitPrice <= 0)
                     reasons.Add("non_positive_conservative_output");

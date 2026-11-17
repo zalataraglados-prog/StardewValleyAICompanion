@@ -208,6 +208,8 @@
     <Compile Include="GrandpaDirectionCatalogGovernanceTests.cs" />
     <Compile Include="GrandpaDirectionDailyCandidateBindingTests.cs" />
     <Compile Include="GrandpaDirectionDailyCandidateBindingTests.CatalogValidation.cs" />
+    <Compile Include="GrandpaDailySubgoalResolverTests.cs" />
+    <Compile Include="GrandpaDailySubgoalResolverTests.CropWindow.cs" />
     <Compile Include="GrandpaDirectionDailyCandidateBindingTests.RustyKey.cs" />
     <Compile Include="GrandpaDirectionDailyCandidateBindingTests.RustyKeyNativeReceipt.cs" />
     <Compile Include="GrandpaDirectionDailyCandidateBindingTests.RustyKeyJoin.cs" />

@@ -1,13 +1,24 @@
 # StardewAI 当前工作
 
+## 2026-11-18 季末种植交接先做原成熟窗口排除（256）
+
+- 普通全局Main6776实际运行14秒后退出2：第134轮在原生派发前停止，春28的50项作物评估全部无法在本季成熟。原Teacher拒绝正确，缺口在上游仍因持有种子而请求即时生产；没有新动作、回档或旧owner重开。准备阶段合法刷新账本412→413，必须保留原journal与新账本，不退回412。
+- 核对原`417d8e33`及其历史记录：设计目的是保护开局种子并优先建立生产，而不是绕过日期约束。现在入口仅在可读时钟/作物目录证明当前窗口无可行作物时，继续原方向绑定循环；检查整个目录，不只检查自有种子，允许Teacher购买其他可行作物。未知/缺失资料保持原交接。这里只排除已知不可行，不冒称已证明布局/供给完整可行。
+- 原Teacher的`growDays > 0 && plantingTotalDay + growDays <= seasonEnd`等价提取到已有`CropProductionObligationProjector.FirstHarvestFitsWindow`，入口和Teacher复用；成熟规则、候选评分、种子保护与旧执行器不改。14个新案例先红4项，最终定向/相邻316/316、42秒、零失败/跳过；TRX SHA`958912278e9d0f645a22f6dfb9101a9fe52aadaf09ab5e15d345f48494a6d8c1`。
+- 原第134轮快照及149候选只读重放通过：原Teacher仍拒绝50项季末种植；原resolver自然转到`raise_friendships`的精确绑定，不注入替代候选、不修改原件。这是离线兼容，不是新的原生验收。
+- 补齐CI的显式Compile清单，纳入原resolver与新窗口回归；独立game-free构建及该类237/237通过、40秒，和316项有重叠，不能相加。此后只改测试清单，已启动257所用源码仍为`8aa77144`，匹配二进制保持冻结；最终提交自身CI另记，不借旧head绿。
+- **下一步：匹配新Backend/Core/Main并保留revision413，沿同一春28现场继续原普通全局计划。** 新构建使用`artifacts/block256-crop-window`；已接受255二进制不覆盖，旧256输出不重跑。真实第5步→#570→#569及formal=false不变；#587合并push CI44165624748已成功。
+
 ## 2026-11-18 Main消费已接受保存，不重复探针睡觉（255）
 
+- #587已合并main`07eda3b5`，源码`037b92e8`自身CI44161991529成功：Core2810/1分03秒、Backend4009/12分05秒，零失败/跳过；精确head自动审查无发现。合并push自身CI另查，不借源CI冒领。完成分支按精确head清理。
 - 先核对`55818aa9`/`0cc1f69a`的原global返回意图：完成显式managed周期后释放owner并回原全局规划，不授予终局聚合/语义读回/formal权限。此次只改新Main消费者；原owner交接、睡觉/出货执行器和保存核不改。
 - 原交接helper返回结构化保存观察而非丢掉保存信息的路径。只钉住并读取原保存证书、接受记录和接受快照三项，核对同run/actor/day/slot及哈希，复用原`NativeSaveBoundaryVerifier.Evaluate`。不再重复整段生产/owner深验。路径按原Windows语义归一，归一后仍绑定原SHA，不能因斜杠/大小写丢失哈希校验。
 - Main仅在下一轮原`TrainingCompletionPolicy`确认主任务也已完成时消费这次保存；若还有主任务则丢弃待消费记录，后续工作仍须自己的收尾保存。最终状态引用原接受后的state，不留在睡前state。普通维护夜、未接受夜、校准默认及两种显式global模式保持原边界。
 - 最终定向/相邻38/38、32秒、零失败/跳过，TRX SHA`a97d9a8fb085242515df9e61ab8cc6bbeaff35be337a56b606d615ddc3b42f65`。原126/132/133离线重放通过：同原4文件保存、春27→28、after`a7f4cdc4`，原策略false走NativeSaveBoundary，新消费事实后走Complete，不需要第二次睡觉；native执行=false。旧不完整报告和阻塞133原样保留；这是新接线离线验证，不伪造一次实际Main退出0。
 - 首轮11反例都是测试未拆反射异常外壳，内部已按预期拒绝，已修测试；本轮新增空引用警告已消除，剩原OwnedCooking既有警告。没有新游戏运行、保存重载、worker/API调用或local-data提交。
-- 下一步提交并核对精确head CI；再沿原`global-continuation-0132`的春28现场确认后继global入口并推进第5步原全局选线/来源/数量/期限/资源日历与适用Day-0，不为修报告复活旧作物owner或重睡。完整聚合/语义读回、Stage5/#570/#569/formal仍按原计划，不能用本地38项或Complete策略枚举替代。
+- 后继入口只读预检通过：复用原普通全局Main，移除仅属于已完成owner的resume/live-session/prepared-production四组参数，其余原候选、游戏、单人反馈、保存和256/stop预算不动。原132→133虽state由`a7f4cdc4`变为`c095a719`，原持久比较核相等且零持久变化；实际新鲜全量桥快照也同持久世界，原4文件指纹一致。仓库外`block256-global-daily-package.json`及原reviewed launcher的显式global模式已ValidateOnly通过，无新动作/重载/旧owner重开。
+- **唯一下一步：从该普通全局入口真实续春28日计划，推进第5步原所选来源/数量/期限/资源日历与适用Day-0。** 不能再用旧254恢复包，不为改报告复活旧owner、重睡或回档。完整聚合/语义读回、Stage5/#570/#569/formal仍按原计划，不能用本地38项或Complete策略枚举替代。
 
 ## 2026-11-18 联合出货及原生保存已接受；Main保存交接待修（254收口）
 

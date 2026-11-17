@@ -14,6 +14,13 @@ public sealed record CropProductionObligationProjection(
 
 public static class CropProductionObligationProjector
 {
+    public static bool FirstHarvestFitsWindow(
+        int plantingTotalDay, int growDays, int lastHarvestTotalDay)
+    {
+        return growDays > 0 &&
+            checked(plantingTotalDay + growDays) <= lastHarvestTotalDay;
+    }
+
     public static CropProductionObligationProjection Project(
         int plantingTotalDay,
         int firstHarvestTotalDay,
