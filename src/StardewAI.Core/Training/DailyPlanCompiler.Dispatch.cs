@@ -73,7 +73,7 @@ namespace StardewAI.Core.Training
                 ["farm.establish_supported_machine_capacity"] = new[] { "craft_machine_item", "place_machine_item", "load_machine_input_tile" },
                 ["farm.fulfill_machine_task_demand"] = new[] { "load_machine_input_tile", "collect_machine_output_tile" },
                 ["economy.buy_supplies"] = new[] { "route_connector_tile", "interact_endpoint", "buy_shop_item" },
-                ["economy.sell_items"] = new[] { "route_connector_tile", "interact_endpoint", "sell_shop_item" },
+                ["economy.sell_items"] = new[] { "route_connector_tile", "interact_endpoint", "wait_for_shop_sale", "sell_shop_item" },
                 ["economy.ship_items"] = new[] { "route_connector_tile", "ship_inventory_item_to_bin" },
                 ["social.talk_npc"] = new[] { "route_connector_tile", "recovery_close_menu", "social_continuation_retry_wait", "social_talk_current" },
                 ["social.gift_npc"] = new[] { "route_connector_tile", "recovery_close_menu", "social_continuation_retry_wait", "social_gift_current" },
@@ -229,6 +229,11 @@ namespace StardewAI.Core.Training
             if (candidate.Kind == "sell_shop_item")
             {
                 return SellShopItemSteps(candidate);
+            }
+
+            if (candidate.Kind == "wait_for_shop_sale")
+            {
+                return WaitForShopSaleSteps(candidate);
             }
 
             if (candidate.Kind == "recovery_refresh_plan" ||

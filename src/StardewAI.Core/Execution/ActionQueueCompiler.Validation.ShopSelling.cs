@@ -10,6 +10,34 @@ namespace StardewAI.Core.Execution
 {
     public sealed partial class ActionQueueCompiler
     {
+        private static bool IsBoundedShopSaleReadinessWait(SmallModelAction action, SnapshotEnvelope snapshot)
+        {
+            if (action.OptionId != "executor.wait_ticks" ||
+                ReadIntParameter(action, "wait_ticks") is not (>= 1 and <= 60) ||
+                ActiveMenuType(snapshot) != "ShopMenu" ||
+                ReadParameter(action, "continuation.option_id") != "economy.sell_items" ||
+                !HasExactActionParameter(action, "safety_constraint", "sale_continuation_identity_preserved"))
+            {
+                return false;
+            }
+
+            var sale = new SmallModelAction
+            {
+                OptionId = "executor.sell_shop_item",
+                Parameters = new[]
+                {
+                    Parameter("expected_shop_id", ReadParameter(action, "continuation.shop_id")),
+                    Parameter("slot_index", ReadParameter(action, "continuation.slot_index")),
+                    Parameter("item_id", ReadParameter(action, "continuation.item_id")),
+                    Parameter("qualified_item_id", ReadParameter(action, "continuation.qualified_item_id")),
+                    Parameter("quantity", ReadParameter(action, "continuation.quantity")),
+                    Parameter("expected_unit_price", ReadParameter(action, "continuation.expected_unit_price"))
+                }
+            };
+            // A wait can clear the native timer. The next snapshot must still authorize the actual sale.
+            return ValidateSellShopItemPlan(sale, snapshot).SequenceEqual(new[] { "shop_menu_safety_timer_active" });
+        }
+
         private static string[] ValidateSellShopItemPlan(SmallModelAction action, SnapshotEnvelope snapshot)
         {
             if (action.OptionId != "executor.sell_shop_item")

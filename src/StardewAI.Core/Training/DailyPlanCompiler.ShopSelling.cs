@@ -8,6 +8,30 @@ namespace StardewAI.Core.Training
 {
     public sealed partial class DailyPlanCompiler
     {
+        private static IEnumerable<SmallModelPlanStep> WaitForShopSaleSteps(PolicyEventCandidatePrediction candidate)
+        {
+            var ticks = CandidateInt(candidate, "sale_wait_ticks");
+            if (ticks is not (>= 1 and <= 60))
+                return Array.Empty<SmallModelPlanStep>();
+
+            return new[]
+            {
+                new SmallModelPlanStep
+                {
+                    StepId = StepId(candidate, "wait_for_shop_sale", 0),
+                    Kind = "wait_ticks",
+                    WaitTicks = ticks,
+                    EstimatedMinutes = TicksToMinutes(ticks.Value),
+                    Preconditions = new[] { "shop_menu_open=true", "shop_menu_safety_timer_active=true" },
+                    ExpectedEffects = new[] { "shop_menu_safety_timer_elapsed=true", "fresh_snapshot_replan_required=true" },
+                    SafetyConstraints = new[] { "bounded_native_shop_menu_readiness_wait", "sale_continuation_identity_preserved" },
+                    FailurePolicy = new[] { "refresh_snapshot_and_replan_same_sale" },
+                    Parameters = candidate.Parameters.Where(parameter =>
+                        parameter.Name.StartsWith("continuation.", StringComparison.Ordinal)).ToArray()
+                }
+            };
+        }
+
         private static IEnumerable<SmallModelPlanStep> SellShopItemSteps(PolicyEventCandidatePrediction candidate)
         {
             if (!candidate.SlotIndex.HasValue ||
