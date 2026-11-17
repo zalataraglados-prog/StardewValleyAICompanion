@@ -10,6 +10,9 @@ using StardewAI.LiveTrainingLoop;
 
 public sealed class LiveTrainingLoopReport
 {
+    [JsonPropertyName("continue_global_daily_plan_after_crop_teacher_run"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool ContinueGlobalDailyPlanAfterCropTeacherRun { get; set; }
+
     [JsonPropertyName("managed_crop_source_provenance_path"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? ManagedCropSourceProvenancePath { get; set; }
 

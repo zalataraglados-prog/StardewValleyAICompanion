@@ -1,5 +1,29 @@
 # Current Production Snapshot Handoff
 
+## Current: Explicit Original Daily-Plan Continuation (246)
+
+Legacy --continue-after-crop-teacher-run means collection CONTROL after crops
+(original cfcac467 and its docs), not ordinary global DailyPlan selection.244's
+native catches/save remain real but do not prove cross-goal global planning.
+New --continue-global-daily-plan-after-crop-teacher-run reuses the existing Main,
+DailyPlanCompiler/GoalResolver and managed owner release. It does not enable the
+collection Teacher, cannot mix collection-only modes or candidate overrides, and
+preserves original native receipts/save/stop-retention guards. Old defaults and
+legacy collection continuation are unchanged. No second planner or executor.
+
+Final81/81/26s mode/actual private owner-call regressions plus64 original launcher
+AST/parser forwarding checks passed; earlier66overlap. Pending/unaccepted nights,
+changed evidence and write collisions still retain the owner. New report/summary
+marker is omitted by default. Builds isolated under artifacts/block246-global-daily-continuation,
+Etemp/2cores/BelowNormal; original Debug pins unchanged, no game/multi-day run.
+Own source CI is tracked separately. Parent579 merge-push44036582880 succeeded.
+
+NEXT still Stage5 actual selected source/quantity/deadline/shared resources/calendar
+and Day0 from244's Spring15 save/request (includes236+244), then570 ->569lab.
+Do not silently change calibration8to64, reopen235 or claim1m income/full Teacher21
+from one bounded production. See GLOBAL_DAILY_PLAN_CONTINUATION_CN.md. Formal=false;
+no raw/local-dataGit, API/worker or cleanup; upstream D receive-only.
+
 ## Current: Shared Native Source Reader Prepared; Global Route Still Open (245)
 
 PR578 own44027255939 and merge44029420704 succeeded on the accepted source/tree.

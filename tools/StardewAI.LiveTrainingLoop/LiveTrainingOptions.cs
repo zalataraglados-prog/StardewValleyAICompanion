@@ -703,6 +703,10 @@ public sealed partial class LiveTrainingOptions
             {
                 options.ContinueAfterCropTeacherRun = true;
             }
+            else if (current == "--continue-global-daily-plan-after-crop-teacher-run")
+            {
+                options.ContinueGlobalDailyPlanAfterCropTeacherRun = true;
+            }
         }
 
         if (string.IsNullOrWhiteSpace(options.RunId))
@@ -749,6 +753,7 @@ public sealed partial class LiveTrainingOptions
         options.ValidateCropTeacherResumeMode();
         options.ValidateManagedCropTeacherMode();
         options.ValidateManagedCropTeacherResumeMode();
+        options.ValidateGlobalDailyPlanContinuationMode();
 
         return options;
     }

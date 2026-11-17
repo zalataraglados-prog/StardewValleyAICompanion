@@ -264,7 +264,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
          gourmandContinuationMilestone.Ready);
     var effectivePrimaryAttempts = cropTeacherFirstDayCompleted &&
         !options.RequireGoldenWalnutSourceScheduleReady &&
-        !options.ContinueAfterCropTeacherRun
+        !options.ShouldContinueAfterCropTeacherRun
         ? Math.Max(primaryAttemptsStarted, options.MaxAttempts)
         : primaryAttemptsStarted;
     var phaseDecision = activeCropTeacherRunPlan is null
@@ -2443,6 +2443,7 @@ var report = new LiveTrainingLoopReport
     ProgressLogPath = options.ProgressLogPath,
     SnapshotDir = options.SnapshotDir,
     ManagedCropSourceProvenancePath = managedSourceProvenancePath,
+    ContinueGlobalDailyPlanAfterCropTeacherRun = options.ContinueGlobalDailyPlanAfterCropTeacherRun,
     GoldenWalnutFreshSaveEvidenceCaptureEnabled =
         options.CaptureGoldenWalnutFreshSaveEvidence,
     GoldenWalnutFreshSaveEpisodeManifestPath =

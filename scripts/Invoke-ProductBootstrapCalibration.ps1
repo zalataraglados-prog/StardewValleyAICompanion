@@ -71,14 +71,24 @@ param(
     [Parameter(ParameterSetName = "Runtime")]
     [switch] $UseManagedCropTeacher,
     [Parameter(ParameterSetName = "Runtime")]
-    [switch] $JointDailyCalendar
+    [switch] $JointDailyCalendar,
+    [Parameter(ParameterSetName = "Runtime")]
+    [switch] $ContinueGlobalDailyPlanAfterCropTeacherRun
 )
 
 $ErrorActionPreference = "Stop"
+if ($ContinueGlobalDailyPlanAfterCropTeacherRun -and
+    ($ContinueAfterCropTeacherRun -or $RequireGoldenWalnutSourceScheduleReady -or $RequireGourmandContinuationReady)) {
+    throw 'ContinueGlobalDailyPlanAfterCropTeacherRun cannot be combined with collection-control continuation or collection-only admission modes.'
+}
+if ($ContinueGlobalDailyPlanAfterCropTeacherRun -and $ArtifactRetentionMode -ne 'stop') {
+    throw 'ContinueGlobalDailyPlanAfterCropTeacherRun requires ArtifactRetentionMode stop to retain the original owner inputs.'
+}
 . (Join-Path $PSScriptRoot 'lib/ProductBootstrapManagedArguments.ps1')
 $managedLoopArguments = @(Get-ProductBootstrapManagedLoopArguments `
     -UseManagedCropTeacher:$UseManagedCropTeacher -JointDailyCalendar:$JointDailyCalendar `
-    -LegacyCropResume:(![string]::IsNullOrWhiteSpace($ResumeCropTeacherTransitionLedger)))
+    -LegacyCropResume:(![string]::IsNullOrWhiteSpace($ResumeCropTeacherTransitionLedger)) `
+    -ContinueGlobalDailyPlanAfterCropTeacherRun:$ContinueGlobalDailyPlanAfterCropTeacherRun)
 
 if ($RequiredVerifiedActions -gt $MaxAttempts) {
     throw "RequiredVerifiedActions must not exceed MaxAttempts."
@@ -963,6 +973,9 @@ try {
     if ($UseManagedCropTeacher -or $JointDailyCalendar) {
         $summary.managed_crop_teacher_enabled = [bool]$UseManagedCropTeacher
         $summary.joint_daily_calendar_enabled = [bool]$JointDailyCalendar
+    }
+    if ($ContinueGlobalDailyPlanAfterCropTeacherRun) {
+        $summary.continue_global_daily_plan_after_crop_teacher_run = $true
     }
     Write-Json (Join-Path $artifactDirectory "summary.json") $summary
     $summary | ConvertTo-Json -Depth 16

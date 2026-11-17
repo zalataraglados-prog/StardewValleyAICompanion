@@ -6,6 +6,19 @@ namespace StardewAI.Core.Tests;
 public sealed partial class CropTeacherControlIntegrationSourceGuardTests
 {
     [Fact]
+    public void ExplicitGlobalDailyContinuationReusesTheOriginalOwnerReleaseAndDailyPlanner()
+    {
+        var source = Read("tools", "StardewAI.LiveTrainingLoop", "Program.cs");
+        var release = Read("tools", "StardewAI.LiveTrainingLoop", "Program.CropTeacherManagedLoop.GlobalContinuation.cs");
+        Assert.Contains("!options.ShouldContinueAfterCropTeacherRun", source, StringComparison.Ordinal);
+        Assert.Contains("!options.ShouldContinueAfterCropTeacherRun", release, StringComparison.Ordinal);
+        Assert.Contains("await lifetime.ReleaseForGlobalContinuationAsync(owner)", release, StringComparison.Ordinal);
+        Assert.Contains("await BuildQueueFromDailyPlanAsync(", source, StringComparison.Ordinal);
+        Assert.Contains("cropTeacherControlAttemptsStarted = 0", source, StringComparison.Ordinal);
+        Assert.Contains("ContinueGlobalDailyPlanAfterCropTeacherRun = options.ContinueGlobalDailyPlanAfterCropTeacherRun", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void ManagedGlobalHandoffRunsAfterOriginalEpisodeAndClearsTheCropLeaseBeforeTheNextAttempt()
     {
         var source = Read("tools", "StardewAI.LiveTrainingLoop", "Program.cs");
