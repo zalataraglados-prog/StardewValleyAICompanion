@@ -2,6 +2,23 @@
 
 ## Current: Original Managed Episode Archive Compatibility (240)
 
+Source3d8158f7 ownCI44005104545 succeeded ALL steps (Core2770/Backend3831,
+zero failed/skipped), but the subsequent focused red test exposed a warm
+materialization hiding a changed CAS blob in the NEW adapter. Only its final
+check now uses the existing forced-disk streaming logical hash; old cache,
+archive and executors are untouched. Final15/15 (605ms), including valid/corrupt
+warm sessions, and the SAME original3sample output pass. Latest replaySHA
+3194cf82a8d24d32da8fe6cbd6c327c8d5e7dd6bb994b156e7b1fd372ae5ee17.
+This corrective commit requires its OWN CI before merge; do not borrow3d8158's.
+
+Cross-artifact producer alignment also confirmed tick reset: W last53954->54026,
+original236 first124->268, SAME authorizedrun but different artifact directory.
+Keep original ticks/Day0 and the old single-clock manifest/schedule contracts.
+Reuse the ALREADY implemented CropTeacherAcceptedSavedReadbackVerifier for
+original accepted native save/load boundaries, not a second reload checker.
+Unified provenance may reference retained originals rather than copying every
+full snapshot. This inspection is not global route/schedule completion.
+
 PR574 merged as main87164d08, same tested tree as575ae41d. OwnCI43996361733 and
 mergeCI43998789317 succeeded in ALL steps, Core2770/Backend3818/zero skips.
 Keep235 frozen and the live unsaved Spring14 tail intact; no new native run.

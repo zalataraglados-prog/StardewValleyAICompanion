@@ -94,6 +94,30 @@ public sealed partial class ManagedEpisodeArchiveTests
         Assert.Equal(f.OriginalEpisode, File.ReadAllText(f.EpisodePath));
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CaptureChecksDiskBlobClosureEvenWithWarmMaterialization(bool corrupt)
+    {
+        var f = new Fixture(mode: "content_addressed_gzip");
+        var manifestHash = f.Hash(f.BeforePath);
+        using var session = InvocationReadSession.Start(new[] { f.BeforePath });
+        Assert.Equal(f.OriginalBefore, ContentAddressedJsonArtifactReader.ReadAllText(f.BeforePath));
+        if (!corrupt)
+        {
+            Assert.True(f.Capture().Captured);
+            return;
+        }
+        var blob = Directory.GetFiles(Path.Combine(Path.GetDirectoryName(f.BeforePath)!, "_snapshot-blobs"),
+            "*.json.gz", SearchOption.AllDirectories)[0];
+        File.WriteAllBytes(blob, [1, 2, 3]);
+        Assert.Equal(manifestHash, f.Hash(f.BeforePath));
+        var error = Assert.Throws<TargetInvocationException>(() => f.Capture());
+        Assert.IsType<InvalidDataException>(error.InnerException);
+        Assert.Empty(Directory.GetFiles(f.Root, GoldenWalnutFreshSaveEpisodeArchive.EpisodeSearchPattern));
+        Assert.Equal(f.OriginalEpisode, File.ReadAllText(f.EpisodePath));
+    }
+
     [Fact]
     public void UnmanagedNestedSourceRetainsTheOriginalSameDirectoryRefusal()
     {

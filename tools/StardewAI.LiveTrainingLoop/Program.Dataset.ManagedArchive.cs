@@ -56,7 +56,7 @@ static partial class Program
         WriteManagedArchiveInputImmutable(inputPath, input.ToJsonString(JsonOptions));
         if (File.ReadAllText(episodePath) != original || PortfolioWireHash(File.ReadAllBytes(episodePath)) != episodeHash ||
             PortfolioWireHash(File.ReadAllBytes(before)) != sourceHash ||
-            ContentAddressedJsonArtifactReader.ReadAllText(before) != text)
+            ContentAddressedJsonArtifactReader.ComputeLogicalSha256(before) != logicalHash)
             throw new InvalidDataException("Managed archive original input changed during alias capture.");
         return GoldenWalnutFreshSaveEpisodeArchive.Capture(inputPath, iteration, options.RunId);
     }
