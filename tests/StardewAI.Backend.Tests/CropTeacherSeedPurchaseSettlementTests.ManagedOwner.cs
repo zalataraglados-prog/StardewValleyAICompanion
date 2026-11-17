@@ -24,14 +24,22 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
     [InlineData("recover")]
     [InlineData("lost_reply")]
     [InlineData("lost_acceptance")]
+    [InlineData("live_scoped")]
+    [InlineData("recover_scoped")]
+    [InlineData("lost_reply_scoped")]
     public async Task ManagedOwnerOwnsOriginalPurchaseAndAcceptsLiveOrRestartedBoundaryWithoutResend(string mode)
     {
         using var f = new Fixture(otherSeeds: 39);
         using var runtime = new RuntimeFixture(f);
-        using var inputs = new OwnerInputs(f);
-        using var files = new OwnerFiles(f, runtime, inputs);
         var transition = f.Transition();
         runtime.LiveOptions.RunId = transition.RunId;
+        if (mode.EndsWith("_scoped", StringComparison.Ordinal))
+        {
+            AddEarlierOwnerMarker(f, transition.RunId, runtime.Repository);
+            mode = mode[..^7];
+        }
+        using var inputs = new OwnerInputs(f);
+        using var files = new OwnerFiles(f, runtime, inputs);
         await using var owner = await files.Open(writer: async (path, json) =>
         {
             await InvokeLive<Task>("WritePortfolioJournalFileAsync", path, json);

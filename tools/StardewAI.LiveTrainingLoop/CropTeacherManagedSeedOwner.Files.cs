@@ -39,7 +39,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             ?? throw new InvalidDataException("Managed crop owner artifact is empty: " + path);
     }
     private string RecordPath(int sequence, string kind) => Path.Combine(options.EvidenceDirectory, $"operation-{sequence:D6}-{kind}.json");
-    private string StepId(int sequence) => options.RunId + ":owned-seed:" + sequence.ToString("D6", System.Globalization.CultureInfo.InvariantCulture);
+    private string StepId(int sequence) => supportStepPrefix + sequence.ToString("D6", System.Globalization.CultureInfo.InvariantCulture);
     private void ValidateState()
     {
         ObjectDisposedException.ThrowIf(disposed, this);
