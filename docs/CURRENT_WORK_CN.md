@@ -1,5 +1,14 @@
 # StardewAI 当前工作
 
+## 2026-11-17 显式回到原全局日计划（246）
+
+- #579已合并为main `9aba3dc9`，自身44033983102与合并44036582880均成功；同测试树59f435d4，Core2795（47秒）/Backend3868（13分22秒），零失败/跳过。主仓库与保留协作树同树，未恢复worker/API。
+- **调用含义更正：** 原 `cfcac467` 提交及当时文档明确 `--continue-after-crop-teacher-run` 是“作物后继续Stage One集合控制”。244中的131/145等原生工作真实，但这条优先集合、再fallback的路径不是普通全局日计划已做出跨根选择的证明。旧逻辑和用途保留；不因当前集成需要重写它。
+- 新显式 `--continue-global-daily-plan-after-crop-teacher-run`（标准入口 `-ContinueGlobalDailyPlanAfterCropTeacherRun`）复用原Main、原DailyPlanCompiler/GoalResolver与原managed owner释放过程。它不启用集合Teacher，和旧集合续跑/standalone/require-source-schedule/Gourmand模式互斥；仍要求原managed单人执行、回执、隔离保存及stop留存，不能用固定候选池/ID覆盖全局选择。普通未启用、旧集合控制及旧非managed恢复语义不变。
+- 两种续行共用原“完成原episode→核原终局/睡眠→落原handoff→释放owner/租约→下次选择”过程；未接受的日界、证据改动及写入冲突仍拒绝且保留owner。新模式只解除作物首日的校准快捷退出，不跳过原业务完成/保存边界；新owner的控制次数原本已在dispatch重置，未重复加一套。没有第二个Planner/Executor或按每个机械动作调用上游策略。
+- 参数/真实私有owner调用的最终81项（26秒）、原启动脚本64项AST+真实parser转发检查通过，零失败/跳过，范围与首轮66项重叠。新report/launcher summary只在显式新模式时记录标记，默认不增加false字段。构建仅artifacts/block246-global-daily-continuation、E临时目录/2核/低优先级，原Debug三DLL hash不变；未启动游戏或新多日长跑。本提交自身CI另核，夹具与接线通过不等于完整原生全局路线。
+- **下一步仍是第5步实际选择的数量/期限/共享资源与日历/Day-0。** 从244春15保存和包含236/244的来源请求，使用[新模式及剩余约束](GLOBAL_DAILY_PLAN_CONTINUATION_CN.md)接原普通全局选择；先固定实际预算，不把旧默认8格改成64或把单周期推成100万收入证明。随后才做#570同核正式准入→#569实验室，formal=false，原件/local-data不入Git。
+
 ## 2026-11-17 共享原生来源读取预备接线（245）
 
 - #578已按8874e0ba自身CI44027255939全绿合并为main `a4dded3d`，同测试树4e465d10；Core2770（37秒）/Backend3868（10分33秒），零失败/跳过，合并推送44029420704亦成功。原244春15保存、235完整托管闭环和现场保持，不为迁移读取入口重开游戏。
@@ -10,6 +19,8 @@
 - **主线下一步仍是第5步实际选线的来源、数量、期限、共享资源和日历/Day-0闭合，然后完成#570报告/prepare/launch的同核准入接线，再#569实验室。** 本块只为共享读取打基础，不计第5/6步完成；Gourmand 的合法替代来源仍需真实钱包、付款、目标鱼区与期限证据，不能由 null 或静态51枚推得。formal=false，local-data/存档/回执不入Git，上游对话只接收、不发送。
 
 ## 2026-11-17 全局原生接续与选择工件封存（244）
+
+> **246语义澄清：** 下文“原全局优先链”指当时旧集合续跑模式的真实Main链（集合Teacher优先、普通日计划fallback）。原生事实/保存及引用仍有效，不据此认定普通全局跨目标选线已成立；普通日计划续行现有独立显式入口，见上方246。
 
 - #577已按c00d4b82自身CI44019964146全绿合并为main `b38c3cca`，同测试树7afd54a3；Core2770（53秒）/Backend3861（7分48秒）、零失败/跳过，合并推送44021624442亦成功，保留沙箱普通合并a87695bf同树。没有恢复模型API/worker。
 - 先纠正观察范围：243调用的是原 `BuildQueueFromDailyPlanAsync` **日计划子入口**，其经济/作物交接不是完整Main选线。显式managed+continue先走原控制、维护和集合Teacher，再退回日计划；本次不据子结果强制新作物周期，也不改旧执行器/排名。原Main23804在同12688现场、原授权run及独立工件目录真实接续，不用standalone或候选覆盖。

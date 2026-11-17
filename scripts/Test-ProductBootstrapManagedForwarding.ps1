@@ -4,6 +4,7 @@ param(
     [string] $OutputRoot = (Join-Path ([IO.Path]::GetTempPath()) ('bootstrap-managed-' + [guid]::NewGuid().ToString('N')))
 )
 $ErrorActionPreference = 'Stop'
+$ContinueGlobalDailyPlanAfterCropTeacherRun = $false
 $checks = [Collections.Generic.List[string]]::new()
 function Check([bool] $Value, [string] $Name) {
     if (!$Value) { throw "Managed bootstrap forwarding assertion failed: $Name" }
@@ -19,8 +20,8 @@ $primary = ParseScript (Join-Path $PSScriptRoot 'Invoke-ProductBootstrapCalibrat
 $wrapper = ParseScript (Join-Path $PSScriptRoot 'Invoke-GoldenWalnutFreshSaveCalibration.ps1')
 foreach ($entry in @($primary, $wrapper)) {
     $names = @($entry.ParamBlock.Parameters | ForEach-Object { $_.Name.VariablePath.UserPath })
-    $tail = if ($entry -eq $wrapper) { $names[-3..-1] -join '|' } else { $names[-2..-1] -join '|' }
-    $expected = 'UseManagedCropTeacher|JointDailyCalendar' + $(if ($entry -eq $wrapper) { '|ContinueAfterCropTeacherRun' })
+    $tail = $names[-3..-1] -join '|'
+    $expected = 'UseManagedCropTeacher|JointDailyCalendar' + $(if ($entry -eq $wrapper) { '|ContinueAfterCropTeacherRun' } else { '|ContinueGlobalDailyPlanAfterCropTeacherRun' })
     Check ($tail -ceq $expected) 'old_positional_parameters_preserved'
     foreach ($name in @('UseManagedCropTeacher', 'JointDailyCalendar')) {
         Check ($names -contains $name) ('original_launcher_exposes:' + $name)
@@ -46,6 +47,22 @@ $base = @('--root', (Join-Path $OutputRoot 'artifacts'), '--run-id', 'forwarding
     '--skip-training', '--use-daily-plan', '--use-product-executor', '--max-attempts', '8', '--required-verified-actions', '1')
 $old = [LiveTrainingOptions]::Parse([string[]]($base + $default))
 Check (!$old.UseManagedCropTeacher -and !$old.UseJointDailyCalendar -and !$old.RequireNativeSaveBoundary) 'original_parser_keeps_old_mode'
+try {
+    Get-ProductBootstrapManagedLoopArguments -ContinueGlobalDailyPlanAfterCropTeacherRun | Out-Null
+    throw 'Global daily continuation without a managed owner was accepted.'
+} catch { Check ($_.Exception.Message.Contains('requires UseManagedCropTeacher')) 'global_daily_requires_original_managed_owner' }
+$UseManagedCropTeacher = $true
+$JointDailyCalendar = $true
+$ResumeCropTeacherTransitionLedger = ''
+$ContinueGlobalDailyPlanAfterCropTeacherRun = $true
+$globalExtra = @(& $originalCall)
+$globalOptions = [LiveTrainingOptions]::Parse([string[]]($base + $globalExtra + @(
+    '--artifact-retention-mode', 'stop', '--require-native-save-boundary', '--save-slot', 'declared-global-slot',
+    '--save-isolation-path', (Join-Path $OutputRoot 'saves'))))
+Check ($globalOptions.ContinueGlobalDailyPlanAfterCropTeacherRun -and $globalOptions.ShouldContinueAfterCropTeacherRun) 'actual_launcher_continues_original_daily_planning'
+Check (!$globalOptions.UseStageOneCollectionTeacher -and !$globalOptions.ContinueAfterCropTeacherRun) 'global_daily_does_not_alias_collection_control'
+Check (@($globalExtra | Where-Object { $_ -ceq '--continue-global-daily-plan-after-crop-teacher-run' }).Count -eq 1) 'global_daily_flag_forwarded_once'
+$ContinueGlobalDailyPlanAfterCropTeacherRun = $false
 $authority = [IO.Path]::GetFullPath($LiveLoopDll)
 $legacyArgs = @('--continue-after-crop-teacher-run', '--resume-crop-teacher-transition-ledger', $authority,
     '--stage-one-collection-requirement-inventory', $authority, '--stage-one-collection-acquisition-lowering', $authority,
@@ -116,6 +133,24 @@ $continuationGuards = @($primary.FindAll({ param($node) $node -is [Management.Au
     ($node.Clauses[0].Item1.Extent.Text -ceq '$ContinueAfterCropTeacherRun -and -not $resumeCropTeacher -and -not $UseManagedCropTeacher' -or
      $node.Clauses[0].Item1.Extent.Text -ceq '$UseManagedCropTeacher -and $ContinueAfterCropTeacherRun -and $ArtifactRetentionMode -ne ''stop''') }, $true))
 Check ($continuationGuards.Count -eq 2) 'original_preflight_checks_explicit_source_and_retention'
+$globalGuards = @($primary.FindAll({ param($node) $node -is [Management.Automation.Language.IfStatementAst] -and
+    $node.Clauses[0].Item1.Extent.Text.StartsWith('$ContinueGlobalDailyPlanAfterCropTeacherRun -and') }, $true))
+Check ($globalGuards.Count -eq 2) 'global_daily_preflight_runs_before_launcher_adapter'
+foreach ($mode in @('valid', 'collection', 'schedule', 'gourmand', 'rolling')) {
+    $ContinueGlobalDailyPlanAfterCropTeacherRun = $true
+    $ContinueAfterCropTeacherRun = $mode -ceq 'collection'
+    $RequireGoldenWalnutSourceScheduleReady = $mode -ceq 'schedule'
+    $RequireGourmandContinuationReady = $mode -ceq 'gourmand'
+    $ArtifactRetentionMode = if ($mode -ceq 'rolling') { 'rolling' } else { 'stop' }
+    $errorText = ''
+    try { foreach ($guard in $globalGuards) { . ([scriptblock]::Create($guard.Extent.Text)) } }
+    catch { $errorText = $_.Exception.Message }
+    Check (($mode -ceq 'valid' -and $errorText -eq '') -or
+        ($mode -cne 'valid' -and $errorText.StartsWith('ContinueGlobalDailyPlanAfterCropTeacherRun'))) ('actual_global_daily_preflight:' + $mode)
+}
+$ContinueGlobalDailyPlanAfterCropTeacherRun = $false
+$RequireGoldenWalnutSourceScheduleReady = $false
+$RequireGourmandContinuationReady = $false
 $ContinueAfterCropTeacherRun = $true
 foreach ($mode in @('managed', 'legacy', 'missing_source', 'unsafe_rolling')) {
     $UseManagedCropTeacher = $mode -in @('managed', 'unsafe_rolling')

@@ -2,7 +2,7 @@ using StardewAI.LiveTrainingLoop;
 
 namespace StardewAI.Backend.Tests;
 
-public sealed class CropTeacherManagedModeTests
+public sealed partial class CropTeacherManagedModeTests
 {
     [Fact]
     public void ActualManagedJointArgumentsDoNotRequireAHardcodedCandidatePool()
