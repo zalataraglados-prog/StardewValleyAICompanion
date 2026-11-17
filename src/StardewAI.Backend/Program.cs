@@ -891,6 +891,8 @@ app.MapPost("/api/v1/planner/daily-plan/compile", (DailyPlanCompileRequest reque
         return Results.UnprocessableEntity(new { detail = "joint calendar requires a matching snapshot with a readable native game clock" });
     if (request.RequiredCandidateIds is { Length: > 0 } && !request.UseJointCalendar)
         return Results.UnprocessableEntity(new { detail = "required candidates require explicit joint calendar mode" });
+    if (request.PrimaryCandidateIds is not null && !request.UseJointCalendar)
+        return Results.UnprocessableEntity(new { detail = "primary candidates require explicit joint calendar mode" });
     var availableMinutes = jointTime.HasValue
         ? DailyPlanBudgetReader.AvailablePlanMinutes(jointTime.Value, request.RankedEventCandidates)
         : DailyPlanBudgetReader.AvailablePlanMinutes(snapshot, request.RankedEventCandidates);
@@ -901,7 +903,13 @@ app.MapPost("/api/v1/planner/daily-plan/compile", (DailyPlanCompileRequest reque
     SmallModelPlanEnvelope plan;
     try
     {
-        plan = request.UseJointCalendar ? dailyPlanCompiler.CompileWithJointCalendar(
+        if (request.PrimaryCandidateIds is not null)
+            plan = dailyPlanCompiler.CompileWithPrimaryGoal(request.RankedEventCandidates, request.StateHash, jointTime!.Value,
+                request.RequiredCandidateIds ?? Array.Empty<string>(), request.PrimaryCandidateIds,
+                string.IsNullOrWhiteSpace(request.GoalId) ? "daily.closed_loop" : request.GoalId,
+                string.IsNullOrWhiteSpace(request.ExecutionMode) ? "training_singleplayer" : request.ExecutionMode,
+                request.MaxCandidates <= 0 ? 4 : request.MaxCandidates, availableMinutes, energyBudget);
+        else plan = request.UseJointCalendar ? dailyPlanCompiler.CompileWithJointCalendar(
             request.RankedEventCandidates, request.StateHash, jointTime!.Value,
             request.RequiredCandidateIds ?? Array.Empty<string>(),
             string.IsNullOrWhiteSpace(request.GoalId) ? "daily.closed_loop" : request.GoalId,

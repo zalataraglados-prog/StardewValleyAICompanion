@@ -131,7 +131,12 @@ static partial class Program
                     "recovery_",
                     StringComparison.Ordinal);
         });
-        var goalBoundCandidates = prepareCompositionRequest is not null && !exclusiveRecovery && !priorityStoryEventInterrupt
+        var primaryCandidateIds = GlobalDailyPrimaryCandidates(options, goalResolution,
+            prepareCompositionRequest is not null, exclusiveRecovery, priorityStoryEventInterrupt,
+            activeObjectiveContinuation is not null,
+            candidateOptionIdsOverride is not null || candidateParametersOverride is not null ||
+            candidateKindOverride is not null || candidateIdOverride is not null || maxCandidatesOverride.HasValue || goalIdOverride is not null);
+        var goalBoundCandidates = (prepareCompositionRequest is not null || primaryCandidateIds is not null) && !exclusiveRecovery && !priorityStoryEventInterrupt
             ? JsonNode.Parse(rankedCandidates.ToJsonString())!.AsArray()
             : priorityStoryEventInterrupt &&
             !exclusiveRecovery
@@ -168,6 +173,11 @@ static partial class Program
             QueueReplanFilter.FilterCandidateId(
                 selectedCandidates,
                 effectiveCandidateId);
+        if (primaryCandidateIds is not null)
+        {
+            var present = selectedCandidates.Select(node => ReadString(node?.AsObject(), "candidate_id")).ToHashSet(StringComparer.Ordinal);
+            primaryCandidateIds = primaryCandidateIds.Where(present.Contains).ToArray();
+        }
         var objectiveContinuationFilter = new JsonObject
         {
             ["active"] = continuationFilterActive,
@@ -211,6 +221,11 @@ static partial class Program
         };
         ranking["social_continuation_filter"] = JsonNode.Parse(
             objectiveContinuationFilter.ToJsonString(JsonOptions));
+        if (primaryCandidateIds is not null)
+        {
+            ranking["goal_resolution_binding_filter"]!["policy"] = "global_joint_primary_goal_before_optional_work;shared_calendar_energy_and_resources";
+            ranking["goal_resolution_binding_filter"]!["primary_candidate_ids"] = JsonSerializer.SerializeToNode(primaryCandidateIds, JsonOptions);
+        }
         ranking["released_objective_suppression"] = new JsonObject
         {
             ["active"] = suppressedObjectiveContinuations.Count > 0,
@@ -263,8 +278,10 @@ static partial class Program
             ranking["goal_resolution_binding_filter"]!["policy"] = "joint_daily_composition_preserves_other_goal_candidates";
         }
         var response = await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/planner/daily-plan/compile",
-            WithJointDailyCalendar(compileRequest, options));
+            primaryCandidateIds is null ? WithJointDailyCalendar(compileRequest, options)
+                : WithGlobalDailyPrimaryCandidates(compileRequest, primaryCandidateIds));
         var plan = response["plan"]?.AsObject() ?? throw new InvalidOperationException("daily plan response did not include plan");
+        VerifyGlobalDailyPrimaryResponse(plan, primaryCandidateIds);
         var queue = compileActionQueue
             ? response["action_queue"]?.AsObject() ?? throw new InvalidOperationException("daily plan response did not include action_queue")
             : new JsonObject();

@@ -142,6 +142,10 @@ namespace StardewAI.Contracts.Execution
 
         [JsonPropertyName("candidate_audit")]
         public SmallModelPlanCandidateAudit[] CandidateAudit { get; set; } = Array.Empty<SmallModelPlanCandidateAudit>();
+
+        [JsonPropertyName("primary_candidate_ids")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string[]? PrimaryCandidateIds { get; set; }
     }
 
     public sealed class SmallModelPlanCandidateAudit
