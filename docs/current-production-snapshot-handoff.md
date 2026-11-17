@@ -1,6 +1,38 @@
 # Current Production Snapshot Handoff
 
-## Latest259: Retained Watering/Pickup Diagnosis, No Product Patch Yet
+## Latest260: Watering/Pickup Resource Leaf Tested, Wire Still Pending
+
+The original pure watering guard is unchanged. Its independently verified crop,
+can, native-float energy and pet-bowl comparison view is shared with a NEW internal
+composition leaf using the existing pickup slots/material graph/capacity/house
+kernel. The new leaf keeps the original full-boundary availability requirement.
+No executor, shared persistent projector or refill variant changed.
+
+Final focused/adjacent96/96 in8s, zero failures/skips;34new cases/62existing,
+not additive with prior90/91 runs. FinalTRX SHA676e40051136f5344d607ed0de8ed3a0d246b6f71b960656840e91174a584d23.
+Initial fixture float/double and missing full-boundary fields corrected; no
+product weakening. Zero-pickup proves the original pure entry still accepts.
+Final real195/196 offline report block260-retained-water-comparison-final.json,
+SHAe6c05a120daf11668c4f3c5a4b1f79d63bf8706f3ea9141db996035f5a93d9ac:
+verified watering primary effects leave ONLY inventory/material graph changes;
+legacy first rejects/second accepts. This is NOT pickup-source verification or
+acceptance47. Final260 build frozen; future builds need a new artifact directory.
+
+NEXT same capability: purpose-scoped native WateringCan metadata witness and
+existing pickup-XML adapter, then original maintenance/owner integration. Hoe
+single-cycle rules are not a water contract; verify actual native calls and XML
+names, including refill/blocked/enchanted variants. Never copy observed after
+metadata into an independently predicted result. Historical47 has no observation;
+await valid retained proof or explicitly approved developer-only supplement.
+No re-water/reload/replay of13days. Accepted46/pending47/E ledger486 hashes unchanged.
+No game invocation, deployment or formal training. Stage5->570->569 stays OPEN.
+
+AGY supplied-context metadata review terminal/nonempty/117.28s/one turn/27676
+telemetry tokens, accepted diagnosis8/10 ONLY. Raw input/output/assessment outsideGit
+agy-20261118/water260; no tools/writes and file-tool lane still HOLD. Other providers
+unchanged. All local test/build/AGY handles terminal; goalACTIVE, weeklyUSED55%/stop60.
+
+## Historical259: Retained Watering/Pickup Diagnosis, No Product Patch Yet
 
 Quiet read-only/one-core existing-binary replay, no build/game/provider call.
 Accepted195->freshBefore196 has ZERO original persistent-field changes.

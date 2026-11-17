@@ -249,16 +249,16 @@ public sealed partial class NativePickupInventoryBoundaryTests
     private static string TillingResourceRaw(TillingResourceLeaf f) =>
         JsonSerializer.Serialize(new { f.Raw.Request, f.Raw.Receipt, f.Raw.Before, f.Raw.After, f.Observation });
 
-    private static void TillingResourceVerifyLeaf(TillingResourceLeaf f) => TillingResourceInvoke("VerifyObservedTillingResources",
+    private static void TillingResourceVerifyLeaf(TillingResourceLeaf f) => ResourceBoundaryInvoke("VerifyObservedTillingResources",
         f.Raw.Before, f.Raw.After, f.Observation, "Farm", new MoneyRevenueCropPlantingTile(71, 16), 1, "(T)Hoe", f.Pickup);
 
     private static SnapshotEnvelope TillingResourceComparison(TillingResourceLeaf f)
     {
-        var energy = (SnapshotEnvelope)TillingResourceInvoke("ProjectVerifiedTillingEnergy", f.Raw.Before, f.Raw.After, f.Observation, 1, "(T)Hoe")!;
-        return (SnapshotEnvelope)TillingResourceInvoke("ProjectVerifiedTillingTerrainAndStatistic", f.Raw.Before, energy, "Farm", new MoneyRevenueCropPlantingTile(71, 16))!;
+        var energy = (SnapshotEnvelope)ResourceBoundaryInvoke("ProjectVerifiedTillingEnergy", f.Raw.Before, f.Raw.After, f.Observation, 1, "(T)Hoe")!;
+        return (SnapshotEnvelope)ResourceBoundaryInvoke("ProjectVerifiedTillingTerrainAndStatistic", f.Raw.Before, energy, "Farm", new MoneyRevenueCropPlantingTile(71, 16))!;
     }
 
-    private static object? TillingResourceInvoke(string name, params object[] arguments)
+    private static object? ResourceBoundaryInvoke(string name, params object[] arguments)
     {
         var method = typeof(CropTeacherSupportingRoute).Assembly.GetType("StardewAI.GoalConditionedBootstrap.CropSeedResourceBoundary")!
             .GetMethod(name, BindingFlags.NonPublic | BindingFlags.Static)!;

@@ -1,5 +1,31 @@
 # Original Crop Watering Maintenance Boundary
 
+## Selected Watering/Pickup Composition Leaf (260)
+
+The pure default below is preserved. `ProjectVerifiedWatering` extracts its
+existing crop/can/native-float-energy/pet-bowl checks without changing them.
+`VerifyObservedWateringResources` keeps original persistent-boundary readability
+and combines that view with `VerifyObservedPickupCore`. Raw stock/slots/capacity/
+house mirrors remain checked against raw frames; only the final unrelated-state
+comparison sees the independently verified primary-water view. No second stock
+engine, executor, shared-projector exception or implicit refill-mode expansion.
+
+This is currently an INTERNAL resource leaf, not automatic activation or a
+completed native observation/maintenance wire. Tests obtain the pickup summary
+from the existing strict pickup reader; synthetic primary-water fields isolate
+this leaf and do not prove WateringCan XML/native call metadata. Final96/96
+focused/adjacent tests include34new cases, zero pickup, old default acceptance/
+rejection, refill/blocked/bottomless/enchanted/efficient/float cases and rejection
+of unrelated graph/stock/mirror/funds/availability changes. Not native training.
+
+Real195/196 offline primary projection passes and leaves exactly inventory plus
+material graph. Missing historical observation is NOT reconstructed or accepted;
+operation47 remains pending. Next add purpose-scoped current-DLL WateringCan
+metadata/input observation and reuse the existing pickup XML kernel, then wire
+the SAME maintenance consumer. Keep pure default/refill dispatch unchanged and
+handle multi-cycle/partial blocks explicitly. Observed after metadata is not an
+independent prediction. No always-on XML/full snapshot capture or old-day replay.
+
 ## Scope And Existing Implementation
 
 PR528 accepted original route compilation/execution ownership on the existing
