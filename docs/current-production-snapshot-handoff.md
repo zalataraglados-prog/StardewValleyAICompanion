@@ -1,5 +1,28 @@
 # Current Production Snapshot Handoff
 
+## Latest258 TERMINAL: Applied Watering Tail Not Yet Accepted
+
+Main26432/held68289 TERMINAL exit2 at2026-11-17T21:53:45.1541177Z.
+49iterations/39verified/firstDay=true/fullProduction=false, NO harvest claim.
+Iteration196 stopped in original VerifyWatering: unrelated persistent state.
+Cause unclassified; do NOT rewrite old executor or repeat the native action.
+Owner0148 accepted46/after195/source6cfd73ca/ledger486, acceptanceSHA0bf0ebf134749f13e21fadd37733556bb3e264958172d55ee4089ea2b948f5b4.
+Pending47/watering intentSHA9be26d4e1d2d8bd2e880078cefc7d8b6e2dab7174ab85f4c62e1c473258b79ce;
+receipt196 applied and matches actual AFTER34852831d5c1fb1e2d6514f23088f6969c885a6a488d125e2488c48101af3702, no47 acceptance.
+Before1968e4db60a differs from accepted46; explain through original fresh-source
+and persistent kernels before assuming corruption/normalizing anything.
+Current Summer3/600/Farm/1767g/8crops. Original4-file save8881378bytes fingerprint
+f1174f975b870d352739c0b6a4e71e9f6182f5f142f3a1d95f7693a5d45ea4e4;
+this does not accept the unsaved native tail. Retain game12688/Backend26020/Product3356.
+OutsideGit block258-summer-global-continuation/terminal-observation.json plus
+completed-main-report.json/SHA7f231899a6e2e66a144825f2aa52d576c1c66469f5cf2f2d231cd1e72dad3820.
+After196 manifestSHAd7c29b514412471513ef3f4e66cefb679ce1df3b3668d20cd81e472018c21d8b.
+588 ownCI and merge-push44179243713 SUCCESS; native failure remains separate.
+NEXT static original watering contract/actual195-196 offline compatibility,
+repair only responsible layer then resume47, NOT fresh replay/rollback/re-watering.
+This overnight block ONLY closes out now: no new Main/build/provider experiment.
+Stage5/570/569/formal remain OPEN; no changed metrics or completion claim.
+
 ## Latest257 Exit0 / 258 Running From Actual Summer1
 
 Main25612 TERMINAL exit0,13 iterations135-147/8primary+5save/6verified/274rows.

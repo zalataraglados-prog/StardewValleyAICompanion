@@ -1,5 +1,12 @@
 # StardewAI 当前工作
 
+## 2026-11-18 夏3浇水校验中断，保留已执行尾部（258收尾）
+
+- Main26432/held68289已终止，2026-11-17T21:53:45.1541177Z退出2；49轮、39次verified、首日完成=true、完整生产/收获=false。第196轮报`Crop watering changed unrelated persistent resources or state`，校验栈在原`CropSeedResourceBoundary.VerifyWatering`及维护消费者；尚未判定是旧规则正确拒绝、合法输出兼容缺口还是实际副作用，不先改旧执行器。
+- 新0148 owner最后接受46，SHA`0bf0ebf134749f13e21fadd37733556bb3e264958172d55ee4089ea2b948f5b4`；对应after195/source`6cfd73ca`、ledger486。未接受47为watering_maintenance，intent SHA`9be26d4e1d2d8bd2e880078cefc7d8b6e2dab7174ab85f4c62e1c473258b79ce`。原196回执已经`applied`，after与实际快照同为`34852831d5c1fb1e2d6514f23088f6969c885a6a488d125e2488c48101af3702`，没有47接受记录。**不得重复浇水、回档或把接受46当作当前现场。** before196为`8e4db60a`，与接受46不同，先依据原fresh来源/持久核解释，不擅自归一原件。
+- 实际当前为夏3/600/Farm、现金1767、8株作物；原4文件保存8881378字节，指纹`f1174f975b870d352739c0b6a4e71e9f6182f5f142f3a1d95f7693a5d45ea4e4`。它不证明未保存尾部已获接受。仓库外本轮`terminal-observation.json`及`completed-main-report.json`已保留；报告SHA`7f231899a6e2e66a144825f2aa52d576c1c66469f5cf2f2d231cd1e72dad3820`，after196清单SHA`d7c29b514412471513ef3f4e66cefb679ce1df3b3668d20cd81e472018c21d8b`。原游戏12688/Backend26020/Product3356保留，不重启、无新Main。
+- #588源码及合并push CI44179243713均成功；本次实际中断另记，不能由CI绿判原生通过。**下一次只静态对照原浇水合同与195/196真实回执，再离线证明受影响边界并接续47，修哪里证哪里；不重跑首日或旧13天。** 本轮仅封存/交接，不继续修复、构建、游戏试验或provider调用；完整第5步→#570→#569、19/19、11/11及formal=false不变。
+
 ## 2026-11-18 普通全局日计划保存至夏1，接续原生产（257/258）
 
 - 257的Main25612已正常退出0；原参数/预算不改，13轮135–147含8个主阶段和5个保存阶段，6次验证通过执行、274条累计特征。完成跨图移动、原生剧情输入及有界等待/接近，再按原收尾回家睡觉；`objective_completed/social_objective_completed=false`，不能把正常退出当作社交目标或完整Teacher成功。仍是skip-training，未更新正式训练工件。
