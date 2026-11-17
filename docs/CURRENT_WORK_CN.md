@@ -1,5 +1,14 @@
 # StardewAI 当前工作
 
+## 2026-11-17 共享原生来源读取预备接线（245）
+
+- #578已按8874e0ba自身CI44027255939全绿合并为main `a4dded3d`，同测试树4e465d10；Core2770（37秒）/Backend3868（10分33秒），零失败/跳过，合并推送44029420704亦成功。原244春15保存、235完整托管闭环和现场保持，不为迁移读取入口重开游戏。
+- #570允许在实际全局选线未齐时预备消费者。原 `MasterAnglerFreshSavePrerequisiteAuditBuilder` 的两段私有源读取移到 Core 的 `GoldenWalnutNativeEvidenceReader`，旧审计直接复用并删除原副本；仍调用原完整 schedule 与 Gourmand verifier，不放宽 House/Parrot、身份、原件精确比较或旧局部/全局范围。
+- 新 `golden_walnut_native_evidence_binding.v1` 位于 Contracts：显式固定**来源** run/save/player/游戏版本及原 schedule、独立验证回执、可选 continuation 的绝对路径/SHA。Core `Verify` 在原重放前后核这些引用；更新伪造回执的 SHA 也不能代替原核重放。缺 continuation 保持 null，不推断替代路线已成立；原生只完成1/2单时保留原未完成结论。绑定只读来源，不是新正式运行的 run_id、钱包/选线证明或训练授权。
+- 本次仅源读取/绑定与复用夹具回归；未更改 `TrainingLaunchRequest/TrainingRunManifest`、报告九类 gate、Launcher 两个固定阻塞、执行器/默认/桥或原运行二进制。最初编译发现新哈希 API 与 netstandard 不兼容、Contracts 缺 record 编译标记，分别改用原兼容哈希写法和 Core 同款内部编译标记；不是游戏/旧执行器 bug。最终测试及本提交自身CI在收口记录，不借父提交绿灯。
+- 最终源码定向相邻287/287、零跳过（约1分钟），包含新增25项绑定反例/正例、原审计/CLI、原Gourmand重放和原正式阻塞。此前22项、284项结果与最终范围重叠，不相加。新增重算hash后伪造回执仍被拒、绑定序列化读回、跨manifest混接；未运行新原生场景或宣称真实完整岛屿来源已齐。原Debug三DLL哈希保持bd13047f/ac2c565d/6488dd4d，测试仅隔离artifacts/block245-native-evidence，E临时目录/2核/低优先级；本提交自身CI另核。
+- **主线下一步仍是第5步实际选线的来源、数量、期限、共享资源和日历/Day-0闭合，然后完成#570报告/prepare/launch的同核准入接线，再#569实验室。** 本块只为共享读取打基础，不计第5/6步完成；Gourmand 的合法替代来源仍需真实钱包、付款、目标鱼区与期限证据，不能由 null 或静态51枚推得。formal=false，local-data/存档/回执不入Git，上游对话只接收、不发送。
+
 ## 2026-11-17 全局原生接续与选择工件封存（244）
 
 - #577已按c00d4b82自身CI44019964146全绿合并为main `b38c3cca`，同测试树7afd54a3；Core2770（53秒）/Backend3861（7分48秒）、零失败/跳过，合并推送44021624442亦成功，保留沙箱普通合并a87695bf同树。没有恢复模型API/worker。

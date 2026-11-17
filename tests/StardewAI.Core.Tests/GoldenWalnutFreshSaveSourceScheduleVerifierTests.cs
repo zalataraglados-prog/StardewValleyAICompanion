@@ -8,7 +8,7 @@ using StardewAI.GoalConditionedBootstrap;
 
 namespace StardewAI.Core.Tests;
 
-public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
+public sealed partial class GoldenWalnutFreshSaveSourceScheduleVerifierTests
 {
     private static string BootstrapAssemblyPath => typeof(MoneyRevenueCropNativeProductionRunPlanBuilder).Assembly.Location;
 

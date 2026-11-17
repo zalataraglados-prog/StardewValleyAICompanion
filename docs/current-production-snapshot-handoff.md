@@ -1,5 +1,29 @@
 # Current Production Snapshot Handoff
 
+## Current: Shared Native Source Reader Prepared; Global Route Still Open (245)
+
+PR578 own44027255939 and merge44029420704 succeeded on the accepted source/tree.
+The original MasterAngler audit source readers now live in Core's
+GoldenWalnutNativeEvidenceReader; the old private copies were removed. Both
+still call the original full schedule/Gourmand verifiers with unchanged predicates.
+The optional source binding contract pins source run/save/player/version and the
+original source schedule, verification receipt and optional continuation paths/SHA.
+Verify rechecks these hashes before and after replay; a rehashed fabricated claim
+still has to match original replay. Missing continuation remains null, not an
+alternative-funding proof. Partial native continuations retain their actual counts.
+
+This is570's allowed consumer preparation ONLY: no Launcher/manifest/report-gate
+change, no native replay of244/235, no formal authorization or Stage5/6 completion.
+Final-source focused/adjacent regression passed287/287 in about1minute, zero skips,
+including25new binding cases; earlier22/284overlap. Builds used a new ignored
+artifacts/block245-native-evidence root, explicit EGamePath/temp,2cores/BelowNormal;
+the original Debug DLL hashes remain bd13047f/ac2c565d/6488dd4d. Own source CI is
+tracked separately and must not be inferred from parent578's green result.
+Actual selected cross-goal quantities, deadlines, shared resources, walnut wallet
+and access/calendar/Day0 remain the next obligation before570's shared admission
+and569lab. Original Spring15 save and runtime binaries remain untouched. Upstream
+D is receive-only; no further sends, worker/API or cleanup. Never commit local-data.
+
 ## Current: Actual Global Continuation Saved; Decision References Retained (244)
 
 PR577 merged as mainb38c3cca, EXACT tested7afd54a3tree. Own44019964146 passed
