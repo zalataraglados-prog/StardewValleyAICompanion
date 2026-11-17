@@ -1,5 +1,39 @@
 # Durable Owner For Original Crop Seed Phases
 
+## Subsequent Owners In The Same Authorized Run (248)
+
+The actual global248 continuation selected a second crop plan under the SAME
+authorized run. Its first seed operation collided with an earlier owner's
+`<run>:owned-seed:000001` in the original ledger history. The original
+`CropTeacherSeedSupportSource` rejection is correct: a support marker must be new
+and distinct. It was NOT relaxed and no native executor or authorization changed.
+Original7602281a3/#520 and its retained conversation were checked before editing.
+
+The managed caller now chooses its operation prefix once when opening:
+
+- An already recorded legacy first operation keeps its exact legacy format;
+  original index, intent, hash, source, receipt and restart validation still apply.
+- A new/empty owner whose pinned INITIAL ledger contains this run's prior owned
+  markers uses `<run>:owned-seed:plan:<full pinned native-plan SHA>:<sequence>`.
+  The plan and initial ledger are already immutable owner inputs. Reopening the
+  same owner therefore retains its IDs; another pinned plan has another scope.
+- No prior marker for this run means the original format, including when the
+  ledger contains another run's history. A retained scoped record must match this
+  exact plan; arbitrary new namespaces are rejected. Run ID itself is unchanged.
+
+No new public option, owner header schema, receipt rewrite, identity side store,
+planner, executor or per-action source scan was added. An empty retained owner
+can continue without replacing its original header/installed plan. Existing
+original inputs and accepted legacy evidence are not renamed or regenerated.
+
+Four red cases first reproduced the actual freshness rejection; the final
+adjacent63 cases pass, including live/recovered/lost-reply scoped purchase through
+the original commit/settlement/acceptance path. A read-only check of the actual248
+owner also opens the original purchase source with its scoped marker, without
+writing an operation or dispatching. These are local repair/compatibility results,
+not a successful native crop cycle or completed global R2. Continue the same owner
+after the matching source is accepted; do not reinstall or reselect it.
+
 Current successor: [original lifecycle recovery](money-crop-lifecycle-recovery.md)
 for this same owner. Its presence does not claim lifecycle admission/acceptance
 or the remaining dispatch/native continuity paths are already connected here.

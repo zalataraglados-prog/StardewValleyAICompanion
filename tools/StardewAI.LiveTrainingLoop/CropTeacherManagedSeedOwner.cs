@@ -121,6 +121,7 @@ public sealed partial class CropTeacherManagedSeedOwner : IAsyncDisposable
     private readonly string headerHash;
     private readonly string saveId;
     private readonly string playerId;
+    private readonly string supportStepPrefix;
     private string headSnapshotPath;
     private string headLedgerPath;
     private string lastAcceptedHash;
@@ -142,11 +143,12 @@ public sealed partial class CropTeacherManagedSeedOwner : IAsyncDisposable
 
     private CropTeacherManagedSeedOwner(CropTeacherManagedSeedOwnerOptions options, MoneyRevenueCropNativeProductionRunPlan plan,
         FileStream lease, Func<string, string, Task> write, Dictionary<string, string> fixedHashes, string headerHash,
-        string saveId, string playerId)
+        string saveId, string playerId, string supportStepPrefix)
     {
         this.options = options; this.plan = plan; this.lease = lease; this.write = write;
         this.fixedHashes = fixedHashes; this.headerHash = headerHash;
         this.saveId = saveId; this.playerId = playerId;
+        this.supportStepPrefix = supportStepPrefix;
         headSnapshotPath = options.InitialSnapshotPath; headLedgerPath = options.InitialLedgerPath; lastAcceptedHash = headerHash;
     }
 
@@ -219,7 +221,8 @@ public sealed partial class CropTeacherManagedSeedOwner : IAsyncDisposable
                     throw new InvalidDataException("Managed crop owner does not match its retained original identity.");
             }
             else await write(headerPath, header.ToJsonString(JsonOptions)).ConfigureAwait(false);
-            var owner = new CropTeacherManagedSeedOwner(options, plan, lease, write, hashes, HashFile(headerPath), ledger.SaveId, ledger.PlayerId);
+            var prefix = SupportStepPrefix(options, ledger, hashes[options.NativeRunPlanPath]);
+            var owner = new CropTeacherManagedSeedOwner(options, plan, lease, write, hashes, HashFile(headerPath), ledger.SaveId, ledger.PlayerId, prefix);
             owner.LoadIndex();
             return owner;
         }
