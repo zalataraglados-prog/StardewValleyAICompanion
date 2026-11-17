@@ -1,5 +1,29 @@
 # Current Production Snapshot Handoff
 
+## Latest257 Exit0 / 258 Running From Actual Summer1
+
+Main25612 TERMINAL exit0,13 iterations135-147/8primary+5save/6verified/274rows.
+Native save Spring28->Summer1, actual4files8649500bytes fingerprint93b008dc0a3e9935f9cc5078ce7967a606d01084466460dcae53f92fc89c3d5c independently Capture-checked.
+Actual AFTER147 source9788cf69dd26918adbd1a98e829ab8fefff121bbc0541cb272b2db3f63c6d9c6,
+tick83853/Summer1/600/FarmHouse/2407g. Report last_state5b626125 is BEFORE147.
+Social/objective complete=false; normal exit is NOT completeTeacher/formal.
+Original report preserved outsideGit block257-global-daily-continuation/completed-main-report.json,
+SHA477ac418fa58c9660989ffad3ecca02b3888c0ae8c9a92de4cfde85526c73c22.
+Ledger remains413/sourcec095; no forced source rewrite or revision rollback.
+
+258 Main26432/start2026-11-17T21:13:44.5905774Z now RUNNING, held68289.
+External saved-entry launcher pins original257 session/exit/report/AFTER147/save,
+clones ALL original regularMain arguments unchanged; no new planner/executor.
+Same game12688/Backend26020/Product3356, no reload. Runtime8aa/frozen256 bins.
+Actual148 Teacher chose481/8tiles/4waves/minGross4800/cost640/minNet4160/lastDay53;
+NEW owner crop-teacher-managed-0148/owner. Plan != verified harvest/revenue.
+Original256/stop retention unchanged. Observe THIS Main, no old257 relaunch.
+PR588 MERGEDmain2ed7306b, final40d39b9f ownCI44175642214 SUCCESS:
+Core2835/1m01s,Backend4009/11m47s,zero failed-skipped. Source unchanged from8aa;
+316 scoped/237 governance overlap. Automated source review8aa nofindings,
+not an independent human review. Current258 accepted15, production unfinished.
+FullStage5 source/quantity/deadline/sharedcalendar/applicableDay0,570/569/formal OPEN.
+
 ## Latest256: Known Impossible Crop Window Deferred Upstream
 
 Ordinary Main6776 TERMINAL/exit2 after14s at iteration134, BEFORE native dispatch.
