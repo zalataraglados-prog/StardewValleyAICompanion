@@ -142,15 +142,22 @@ internal static partial class FullShipmentRecoverySettlementBoundaryProjector
     {
         if (value["bundle_rows"] is not JsonArray rows)
             return;
-        foreach (var payment in rows.OfType<JsonObject>()
-                     .Select(row => row["money_payment"])
-                     .OfType<JsonObject>())
+        foreach (var row in rows.OfType<JsonObject>())
         {
-            RemoveFields(payment,
-                "money_before",
-                "money_after",
-                "affordable",
-                "action_status");
+            if (row["money_payment"] is JsonObject payment)
+                RemoveFields(payment,
+                    "money_before",
+                    "money_after",
+                    "affordable",
+                    "action_status");
+            // Exact resource callers prove inventory changes separately. These
+            // reward fields only mirror current inventory or its derived readiness.
+            if (row["reward"] is JsonObject reward)
+                RemoveFields(reward,
+                    "inventory_item_total_before",
+                    "inventory_item_total_after",
+                    "inventory_accepts_reward",
+                    "action_status");
         }
     }
 

@@ -1,5 +1,35 @@
 # Current Production Snapshot Handoff
 
+## Current: Derived Reward Capacity And Retained Purchase Recovery (249)
+
+Parent #582 and its merge CI succeeded at main c42508c1. Its original same-owner
+continuation accepted four waits and bought one cauliflower seed for80g. Filling
+the last inventory slot changed30 CommunityCenter reward capacity mirrors, not
+bundle progress. Original commits5cc3b42c/c31dfa72 and retained chat confirm the
+strict versus exact-resource distinction. Only the existing expected-resource
+normalizer omits reward inventory totals, inventory_accepts_reward and derived
+action_status. Strict/default, real rewards/progress/routes and unknowns remain.
+The original caller still proves exact cash/inventory; no executor/bridge change.
+
+New16 cases first produced4 failures and12 passes. Final adjacent purchase tests
+plus these cases passed1406/1406 in14m05s, zero skipped. This was an overbroad
+local class filter including heavy original replay, not1406 new tests; future
+small increments should select affected methods. This commit's CI is separate.
+
+Original public VerifyTransition rebuilt the missing proof from unchanged native
+iteration7. Operator-assisted recovery used original journal/settlement/custody
+functions to finish previously unissued financial phases. A reply-write harness
+failure after settlement was resolved by original mutation lookup, NOT resending.
+Original owner-only resume then exited0 and accepted operation5, ledger272,
+one seed/80g. No native redispatch, reload, save or weakened recovery guards.
+This is not an automatic complete cycle or formal training success.
+
+NEXT continue the SAME owner and current UNSAVED source25043ecf, Spring15/910/
+SeedShop/1362g. Never restore the older f419 save or repurchase the accepted seed.
+Then actual selected quantities/deadlines/shared resources/calendar/Day0 ->570
+->569. FullStage5/formal remain false;235/19criteria/11roots stay frozen. Runtime
+evidence lives outsideGit; upstream remains receive-only and provider paused.
+
 ## Current: Explicit Original Daily-Plan Continuation (246)
 
 Legacy --continue-after-crop-teacher-run means collection CONTROL after crops
