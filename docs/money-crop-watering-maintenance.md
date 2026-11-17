@@ -78,6 +78,25 @@ re-decompiled for this work; no wiki/example constants substitute for them.
 
 ## Validation And Remaining Integration
 
+### Retained Compound-Effect Gap (2026-11-18, Block259)
+
+Actual196 first-step watering also collected one existing ground fiber: raw
+slot11 stack3->4, ground fiber1->0 and the exact material graph echo changed.
+The original pure guard rejects that extra transfer; its second step passes.
+Seven previous accepted maintenance operations replay through their ORIGINAL
+Preparation variants, including native-refill46 (zero applied watering tiles).
+Do not generalize the pure-batch assumption to that refill branch.
+
+This is a composition gap, not permission to suppress native pickup or weaken
+the old persistent projector. Reuse existing pickup/stock settlement and scoped
+observation in the current consumer. Preserve old pure/default semantics and
+distinguish native-effects-observed from independent resource verification.
+Actual47 did not capture ActionOriginObservation; diagnostic comparison views
+are NOT a replacement receipt or acceptance. Any developer-only supplemental
+recovery must remain separate from formal training evidence and requires the
+explicit decision currently requested from the owner. See CURRENT_WORK259 for
+retained hashes, the offline script and the precise continuation boundary.
+
 Tests invoke the actual original batch compiler and real backend/file-ledger
 services, with explicitly declared native-format outcome fixtures. Fixture-only
 calendar/menu/current-crop omissions were fixed in the test source, not by

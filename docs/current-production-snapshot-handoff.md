@@ -1,5 +1,32 @@
 # Current Production Snapshot Handoff
 
+## Latest259: Retained Watering/Pickup Diagnosis, No Product Patch Yet
+
+Quiet read-only/one-core existing-binary replay, no build/game/provider call.
+Accepted195->freshBefore196 has ZERO original persistent-field changes.
+First watering(77,18): slot11 fiber(O)771 3->4, ground fiber1->0; extra inventory/
+material graph changes cause original pure guard rejection. Second(75,19) passes.
+Restoring those2 fields ONLY in a diagnostic view makes first pass; not settlement,
+acceptance or fabricated native evidence. Original artifacts/E ledger486 unchanged.
+
+Original consumer bulk replay PASS for accepted30/31/37/38/44/45 (pure watering)
+and46(refill_approach_native/appliedTiles0). Pending47 still fails as expected.
+Use original Preparation factory dispatch, not a new assumption that every
+watering_maintenance operation is a homogeneous watering batch.
+Report outsideGit block259-watering-pickup-batch-v3.json/SHA779f61f92160f70f4c496a66d62c36000ef348f813f6034e3953e5cf75470628.
+Initial PowerShell overload/namespace/dispatch errors were controller tooling,
+not product regressions; corrected in the same script, failed outputs preserved.
+
+Originala7d55248 explicitly keeps pure watering strict; refill-observed authority
+has separate semantics. NEXT compose existing pickup/stock kernels and scoped
+observation at this ONE consumer, preserve old executor/default/full projector.
+No always-on full capture, ignored stock delta or second execution system.
+47 has no ActionOriginObservation: never fabricate it. First inspect retained46
+source coverage; conditional developer-only supplemental recovery (excluded from
+formal training evidence) was asked asynchronously, NO answer/override assumed.
+Keep actual3485 tail/owner46/ledger486, no re-water/reload/native retry.
+Full Stage5/570/569/formal remain open; this is diagnosis, not fixed native success.
+
 ## Latest258 TERMINAL: Applied Watering Tail Not Yet Accepted
 
 Main26432/held68289 TERMINAL exit2 at2026-11-17T21:53:45.1541177Z.
