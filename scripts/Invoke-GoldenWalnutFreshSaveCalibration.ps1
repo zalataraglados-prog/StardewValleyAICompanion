@@ -50,7 +50,9 @@ param(
         "experiments\goal-method-dependency-expansions.v1.json"),
     [string] $RouteTimingCalibration = `
         "I:\StardewAITrainingLab\goal-conditioned-bootstrap-v1\artifacts\runtime-movement-timing-calibration\runtime-movement-timing-calibration-20260906-043908\summary.json",
-    [int] $StartupTimeoutSeconds = 180
+    [int] $StartupTimeoutSeconds = 180,
+    [switch] $UseManagedCropTeacher,
+    [switch] $JointDailyCalendar
 )
 
 $ErrorActionPreference = "Stop"
@@ -178,6 +180,8 @@ $calibrationOutput = & (Join-Path $PSScriptRoot `
     -CaptureGoldenWalnutFreshSaveEvidence `
     -RequireGoldenWalnutSourceScheduleReady:$RequireSourceScheduleReady `
     -RequireGourmandContinuationReady:$RequireGourmandContinuationReady `
+    -UseManagedCropTeacher:$UseManagedCropTeacher `
+    -JointDailyCalendar:$JointDailyCalendar `
     -StageOneCollectionRequirementInventory `
         $StageOneCollectionRequirementInventory `
     -StageOneCollectionAcquisitionLowering `
@@ -304,6 +308,10 @@ $summary = [ordered]@{
     snapshot_artifact_mode = "content_addressed_gzip"
     execution_snapshot_profile = "full"
     formal_training_started = $false
+}
+if ($UseManagedCropTeacher -or $JointDailyCalendar) {
+    $summary.managed_crop_teacher_enabled = [bool]$UseManagedCropTeacher
+    $summary.joint_daily_calendar_enabled = [bool]$JointDailyCalendar
 }
 Write-Utf8Json $summaryPath $summary
 $summary | ConvertTo-Json -Depth 32
