@@ -138,6 +138,39 @@ public sealed class NativeOutputSnapshotAnchorTests
         Assert.Throws<InvalidDataException>(() => NativeOutputSnapshotAnchor.Read(Anchor().ToJsonString(), request, 100, "farm", "actor"));
     }
 
+    [Theory]
+    [InlineData("valid")]
+    [InlineData("disabled")]
+    [InlineData("mixed")]
+    [InlineData("tools")]
+    [InlineData("payload")]
+    [InlineData("transients")]
+    [InlineData("graph")]
+    [InlineData("debris")]
+    [InlineData("source")]
+    public void WateringAnchorRequiresItsOwnCompleteNonMixedProfile(string variant)
+    {
+        var request = Request();
+        request.OptionId = request.SourcePlanningOptionId = "executor.water_crop";
+        request.ActionOriginWateringResources = request.ActionOriginToolInputs = request.ActionOriginInventoryPayload =
+            request.ActionOriginInventoryTransients = request.ActionOriginInventoryGraph = request.ActionOriginDebrisState = true;
+        switch (variant)
+        {
+            case "disabled": request.ActionOriginWateringResources = false; break;
+            case "mixed": request.ActionOriginTillingResources = true; break;
+            case "tools": request.ActionOriginToolInputs = false; break;
+            case "payload": request.ActionOriginInventoryPayload = false; break;
+            case "transients": request.ActionOriginInventoryTransients = false; break;
+            case "graph": request.ActionOriginInventoryGraph = false; break;
+            case "debris": request.ActionOriginDebrisState = false; break;
+            case "source": request.SourcePlanningOptionId = "executor.till_soil"; break;
+        }
+        if (variant == "valid")
+            Assert.Equal(100, NativeOutputSnapshotAnchor.Read(Anchor().ToJsonString(), request, 100, "farm", "actor").GameTick);
+        else
+            Assert.Throws<InvalidDataException>(() => NativeOutputSnapshotAnchor.Read(Anchor().ToJsonString(), request, 100, "farm", "actor"));
+    }
+
     private static NativeOutputSnapshotAnchor Read(JsonObject json) => NativeOutputSnapshotAnchor.Read(json.ToJsonString(), Request(), 100, "farm", "actor");
     private static TrainingExecutionRequest Request() => new()
     {

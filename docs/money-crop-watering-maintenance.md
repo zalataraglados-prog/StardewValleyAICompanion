@@ -26,6 +26,11 @@ the SAME maintenance consumer. Keep pure default/refill dispatch unchanged and
 handle multi-cycle/partial blocks explicitly. Observed after metadata is not an
 independent prediction. No always-on XML/full snapshot capture or old-day replay.
 
+The261 producer/wire now exists, default-off; see
+[native metadata observation](native-watering-tool-metadata-observation.md).
+Independent metadata replay/XML adaptation and the maintenance/owner consumer
+remain the actual next work. A built producer is not a native outcome proof.
+
 ## Scope And Existing Implementation
 
 PR528 accepted original route compilation/execution ownership on the existing

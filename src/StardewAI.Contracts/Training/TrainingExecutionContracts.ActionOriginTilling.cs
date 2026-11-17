@@ -12,7 +12,7 @@ public sealed partial class TrainingExecutionRequest
 // Admission of the requested witness tiers, not verification of their eventual payloads.
 public static class NativeTillingObservationContract
 {
-    public static bool IsCompleteRequest(TrainingExecutionRequest request) => request.ActionOriginTillingResources &&
+    public static bool IsCompleteRequest(TrainingExecutionRequest request) => request.ActionOriginTillingResources && !request.ActionOriginWateringResources &&
         request.ExecutionMode == "training_singleplayer" && request.OptionId == "executor.till_soil" &&
         request.SourcePlanningOptionId == "executor.till_soil" && !string.IsNullOrWhiteSpace(request.ActionOriginObservationScopeId) &&
         request.ActionOriginSnapshotAnchor && request.ActionOriginToolInputs && request.ActionOriginInventoryPayload &&

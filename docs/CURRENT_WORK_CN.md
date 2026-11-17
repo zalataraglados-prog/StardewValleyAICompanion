@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-11-18 水壶按需观察生产端及协议完成，元数据消费待接（261）
+
+- 为显式selected-water新增默认关闭且单人/原water选项/完整观察层限定的协议；与原till互斥，默认Move/Clear/Till不放宽。按需记录所有持有工具的原始元数据前后端点，以及有界`Tool.Update`、`Tool.endUsing`、库存历史setter实际输入/顺序/正常返回；不预测结果、不跳过原方法、不改执行器动作、无持续全量XML扫描。
+- 当前E DLL逐方法核对及原保存XML确认水量节点是`WaterLeft`。静态发现泛型Equip草稿有共享方法体风险，未部署/未安装即改为非泛型`Item.HasBeenInInventory` setter；只观察本actor库存Tool，另有安装防泛型及独立失败/回滚范围。原生异常保留同一引用传播，缺返回/捕获失败不报成功。详见[协议、反编译依据与接续](native-watering-tool-metadata-observation.md)。
+- 最终Harness构建0警告/0错误；Core54/54、Backend139/139，零失败/跳过，新增29例。Core通过后其scope/anchor逻辑未变，后续DTO可空元数据字段由Backend覆盖；最终Backend通过后只改Harness返回完整性检查并单独构建。Core TRX SHA`80e20b3623ea7fbf5a67e4d50b4769454d96022171848103df1613e5f3d1afc1`，Backend SHA`674ae421034dbcd1166ede79fe0632fd7456ffd2add1022ce086f4a0a1178880`。早期同范围运行不相加。
+- 独立加载最终库、不启动游戏、不安装Harmony、不调用原生游戏方法的回调探针通过：正常完成、异常引用保留/失败标记、无scope空操作。报告SHA`a36cddbb6b0f10fbf664bf44ddacfb7f828e320b2081c639bb12ae8e5f4ce5b9`，Harness SHA`4ba265f46f9f0746e8b563634e6cef18f1f82917f922a46b54260fb8c65180c3`。这不是原生安装/时序通过；最终261产物冻结，后续构建新目录。
+- **下一步：依据这些原生输入做元数据独立重放，适配原拾取XML核，再显式接原maintenance/owner；不是换模块。** 原pure默认/补水分派、47待处理现场、账本486不变；没有部署或新游戏/API调用、未接受47、未形成正式训练证据。旧缺失观察不能补造，开发补证许可仍未获答。第5步→#570→#569及冻结指标不变，周USED55%/到60%安全收尾。
+
 ## 2026-11-18 浇水和拾取复合资源内核通过，现场尚未接续（260）
 
 - 仅提取原`VerifyWatering`中逐格作物、水壶、原生float体力及宠物碗回显验证为同一私有比较视图；原入口仍执行原完整持久核，不允许额外拾取。新内部组合入口先保留原边界可读性，再复用既有`VerifyObservedPickupCore`的物理槽位、材料图、容量、外部库存及房屋材料镜像检查。没有复制执行器、改变共享投影、放宽纯浇水或原补水分派。

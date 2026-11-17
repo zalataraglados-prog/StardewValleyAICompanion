@@ -1,6 +1,32 @@
 # Current Production Snapshot Handoff
 
-## Latest260: Watering/Pickup Resource Leaf Tested, Wire Still Pending
+## Latest261: Opt-In Water Metadata Producer, Not Consumer Acceptance
+
+Default-off complete selected-water scope, separate from old Move/Clear/Till;
+all held Tool endpoints and bounded actual Update/endUsing/inventory-history
+inputs/return status. No executor/action rewrite or per-frame full XML. Native
+DLL and save XML pinned; actual node WaterLeft. GenericEquip draft was NEVER
+deployed: replaced by the non-generic Item history setter to avoid generic body
+sharing. Original exception reference preserved; incomplete returns unavailable.
+
+Final Harness zero warnings/errors. Core54/54/TRX80e20b3623ea7fbf5a67e4d50b4769454d96022171848103df1613e5f3d1afc1;
+Backend139/139/TRX674ae421034dbcd1166ede79fe0632fd7456ffd2add1022ce086f4a0a1178880;
+29new cases, earlier runs overlap. Only Harness return-integrity check changed
+after that test result, then rebuilt. Isolated callback probea36cddbb6b0f10fbf664bf44ddacfb7f828e320b2081c639bb12ae8e5f4ce5b9
+pins final Harness4ba265f46f9f0746e8b563634e6cef18f1f82917f922a46b54260fb8c65180c3:
+normal/failed returns and no-scope noop only; NO game/native method/Harmony install.
+Final261 artifacts frozen, next source build262/new directory. No current worker,
+native Main, test or build. Original game12688/Backend26020/Product3356 retained.
+
+NEXT same gap: independently replay raw metadata inputs, adapt original pickup
+XML kernel, then original selected maintenance/owner wire and focused actual hook
+installation/timing. Do NOT infer native success from the callback probe or
+retroactively manufacture missing observation47. Original46/pending47/ledger486
+unchanged. Developer supplement question still unanswered; no reload/re-watering.
+Stage5->570->569/formal OPEN,55%weeklyUSED/stop60. See
+[native observer contract](native-watering-tool-metadata-observation.md).
+
+## Historical260: Watering/Pickup Resource Leaf Tested, Wire Still Pending
 
 The original pure watering guard is unchanged. Its independently verified crop,
 can, native-float energy and pet-bowl comparison view is shared with a NEW internal
