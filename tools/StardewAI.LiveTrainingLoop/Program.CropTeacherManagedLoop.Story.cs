@@ -22,6 +22,8 @@ static partial class Program
             sourcePath, before, snapshot.StateHash).ConfigureAwait(false);
         var plan = artifacts.Read<SmallModelPlanEnvelope>(original.ModelPlanPath);
         var ranking = artifacts.Read<JsonObject>(original.RankingPath);
+        if (plan.Steps.Length == 0)
+            throw new InvalidDataException("Managed crop control interrupt has no original dispatchable story choice.");
         var lease = SelectedQueueDecisionLease.CreateFromPlan(plan, ranking);
         var selected = lease.CandidateAt(0);
         if (selected.OptionId != "story.advance_event")

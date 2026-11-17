@@ -2,6 +2,27 @@
 
 ## Current: Original Managed Story Interrupt Integration (250)
 
+Native closeout: sourcec9a0cecd actually ran the SAME owner/game. Original event49
+reached a fresh dialogue decision;50 selectedYes through the existing policy and
+completed event1590166, including one bound naming-menu action. Owner45/46 accepted
+the original shared returns with NO crop credit. Maintenance continued;53/60
+accepted two further native saves. Final accepted60/native64 is Spring19/600/
+FarmHouse/802g, source69364e81, ledger345.16iterations/13verified; original stop64
+retention limit caused exit2 with empty stderr, not a story execution failure.
+The old same-live comparison also passed on retained47/48; do NOT change it based
+on speculation. Never restore the older Spring15/Spring17 heads over this state.
+
+c9CI had one failure: the old incomplete-story negative expected InvalidDataException,
+but an empty original plan reached the lease constructor. Add only an explicit
+empty-plan rejection in the new adapter, keeping the old test/guard semantics.
+Final adjacent39/39/38s passed, zero skips; own final-head CI is separate. Keep
+the actualc9 binaries immutable; final build uses block250-managed-story-final.
+No repeat native run for this negative-only guard. Next review measured cold
+restore cost (about4m38s until the new reload directory), then continue SAME owner60
+production/selected terminal under a storage-budgeted bound. FullStage5/#570/#569
+handoff/formal remain open. The paragraphs below retain implementation context;
+their earlier pending-native statements are superseded by this closeout.
+
 Parent #583 merged as mainb32d5da5 on the exact tested30751d70 tree; own42-step CI
 and merge CI succeeded. Original same-world run21960 exited2 at dispatch48 after
 33verified aggregates. It DID accept two native overnight saves (owner36/native39
