@@ -171,6 +171,7 @@
     <Compile Include="GoldenWalnutScheduleIdentitySourceGuardTests.cs" />
     <Compile Include="GoldenWalnutSaveIdentityTests.cs" />
     <Compile Include="GoldenWalnutFreshSaveSourceScheduleVerifierTests.cs" />
+    <Compile Include="GoldenWalnutFreshSaveSourceScheduleVerifierTests.NativeBinding.cs" />
     <Compile Include="GoldenWalnutGourmandContinuationMilestoneEvaluatorTests.cs" />
     <Compile Include="GoldenWalnutGourmandContinuationReceiptVerifierTests.cs" />
     <Compile Include="IslandGourmandSupplyScheduleProofTests.cs" />

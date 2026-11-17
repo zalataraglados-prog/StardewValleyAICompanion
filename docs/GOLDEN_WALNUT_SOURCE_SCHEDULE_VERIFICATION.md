@@ -22,6 +22,37 @@ original manifest or schedule before comparison: their original bindings are evi
 
 ## Entry point and inputs
 
+### Shared source reader (2026-11-17; admission preparation only)
+
+`GoldenWalnutNativeEvidenceReader` in Core owns the original Master Angler audit's
+source-receipt and continuation readers. The audit calls it directly; its old
+private implementations were removed. The underlying schedule derivation,
+membership/Day0 checks and native Gourmand verifier are unchanged.
+
+For a caller that must pin its inputs, `Verify(GoldenWalnutNativeEvidenceBinding)`
+accepts `golden_walnut_native_evidence_binding.v1` from Contracts. It requires
+explicit **source** run/save/player/version, absolute paths and SHA-256 values for
+the original source schedule and independent verification receipt. A declared
+Gourmand continuation requires both path and hash. All declared hashes are checked
+before and after the original source replay; neither a pass flag nor refreshing
+a fabricated receipt's hash replaces replay of its frozen native evidence.
+
+The returned schedule and optional continuation retain their original contracts.
+Absent continuation is null, not `not_applicable`; partial0->1/2 remains partial.
+This result always has `training_label_eligible=false` and
+`formal_product_training_authorized=false`. It does not prove selected route,
+wallet/payments, fish-area access or a global deadline. Existing formal admission
+blockers remain unchanged until the actual route and shared report/prepare/launch
+consumer are implemented under#570. A later formal session may have another run
+identity; no source identity is compared with a newly requested training run here.
+
+Focused regression (287 passed, including25 new binding cases; fixtures prove
+wiring, not an actual complete native route):
+
+```powershell
+dotnet test tests/StardewAI.Core.Tests/StardewAI.Core.Tests.csproj --artifacts-path artifacts/block245-native-evidence -p:GameFreeGovernance=true '-p:GamePath=E:\StardewValleyAICompanion-runtime\Stardew Valley' -p:RestoreLockedMode=true -p:UseSharedCompilation=false -m:1 --filter 'FullyQualifiedName~GoldenWalnutFreshSaveSourceScheduleVerifierTests|FullyQualifiedName~GoldenWalnutGourmandContinuationReceiptVerifierTests|FullyQualifiedName~FormalTrainingNativeAdmissionTests'
+```
+
 `verify-golden-walnut-fresh-save-source-schedule` in GoalConditionedBootstrap calls
 `GoldenWalnutFreshSaveSourceScheduleVerifier.Verify` in Core. The verifier:
 

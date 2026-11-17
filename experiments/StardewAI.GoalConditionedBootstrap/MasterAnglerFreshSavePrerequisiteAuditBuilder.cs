@@ -188,7 +188,7 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
             "Golden Walnut schedule consumption requires its independent verification receipt.");
         var verifiedSourceSchedule = string.IsNullOrEmpty(sourceScheduleFullPath)
             ? null
-            : ReadVerifiedSourceSchedule(sourceScheduleFullPath, sourceScheduleSha256,
+            : GoldenWalnutNativeEvidenceReader.ReadVerifiedSourceSchedule(sourceScheduleFullPath, sourceScheduleSha256,
                 goldenWalnutVerificationReceiptPath!, expectedRunId, expectedSaveId, expectedPlayerId);
         var unlockTimeline = verifiedSourceSchedule is null ? null :
             GoldenWalnutFreshSaveUnlockTimelineProofBuilder.Build(verifiedSourceSchedule, sourceScheduleSha256);
@@ -196,7 +196,7 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
             ? string.Empty : Path.GetFullPath(goldenWalnutGourmandContinuationReceiptPath);
         Require(continuationPath.Length == 0 || verifiedSourceSchedule is not null,
             "Gourmand continuation requires an independently verified source schedule.");
-        var continuation = continuationPath.Length == 0 ? null : ReadVerifiedContinuation(
+        var continuation = continuationPath.Length == 0 ? null : GoldenWalnutNativeEvidenceReader.ReadVerifiedContinuation(
             continuationPath, goldenWalnutVerificationReceiptPath!, verifiedSourceSchedule!,
             expectedRunId!, expectedSaveId!, expectedPlayerId!, catalog.GameVersion);
         var capabilityCertificatePath = string.IsNullOrWhiteSpace(
@@ -274,107 +274,6 @@ public static class MasterAnglerFreshSavePrerequisiteAuditBuilder
             MissingOrUnboundProducerFamilies = missing,
             UnknownLocationIds = unknownLocations
         };
-    }
-
-    private static GoldenWalnutFreshSaveSourceSchedule ReadVerifiedSourceSchedule(
-        string schedulePath, string scheduleSha256, string receiptPath,
-        string? expectedRunId, string? expectedSaveId, string? expectedPlayerId)
-    {
-        Require(!string.IsNullOrWhiteSpace(expectedRunId) &&
-                !string.IsNullOrWhiteSpace(expectedSaveId) && !string.IsNullOrWhiteSpace(expectedPlayerId),
-            "Golden Walnut audit requires explicit expected run/save/player identities.");
-        using var document = JsonDocument.Parse(File.ReadAllText(receiptPath));
-        var receipt = document.RootElement;
-        RequireUniqueProperties(receipt);
-        string RequiredString(string name)
-        {
-            Require(receipt.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String &&
-                    !string.IsNullOrWhiteSpace(value.GetString()),
-                "Golden Walnut verification receipt is missing " + name + ".");
-            return value.GetString()!;
-        }
-        Require(RequiredString("status") == "pass" &&
-                receipt.TryGetProperty("training_label_eligible", out var eligible) &&
-                eligible.ValueKind == JsonValueKind.False &&
-                RequiredString("expected_player_id") == expectedPlayerId &&
-                RequiredString("source_schedule_sha256") == scheduleSha256 &&
-                Path.GetFullPath(RequiredString("source_schedule_path")) == schedulePath,
-            "Golden Walnut verification receipt does not bind this schedule and player.");
-
-        // A saved pass flag is not authority: replay the same frozen evidence via
-        // the sole verifier before the timeline or prerequisite audit consumes it.
-        var schedule = GoldenWalnutFreshSaveSourceScheduleVerifier.Verify(
-            RequiredString("episode_directory"), RequiredString("episode_manifest_path"), schedulePath,
-            "golden-walnut-fresh-save:" + expectedRunId, expectedRunId!, expectedSaveId!, expectedPlayerId!);
-        Require(receipt.TryGetProperty("schedule", out var claimed),
-            "Golden Walnut verification receipt schedule missing.");
-        RequireExactEvidence(JsonSerializer.SerializeToElement(schedule, JsonDefaults.Options), claimed);
-        return schedule;
-    }
-
-    private static GoldenWalnutGourmandContinuationReceipt ReadVerifiedContinuation(
-        string path, string sourceReceiptPath, GoldenWalnutFreshSaveSourceSchedule schedule,
-        string runId, string saveId, string playerId, string gameVersion)
-    {
-        using var sourceDocument = JsonDocument.Parse(File.ReadAllText(sourceReceiptPath));
-        var source = sourceDocument.RootElement;
-        RequireUniqueProperties(source);
-        using var claimedDocument = JsonDocument.Parse(File.ReadAllText(path));
-        var claimed = claimedDocument.RootElement;
-        RequireUniqueProperties(claimed);
-        // The independent receipt selects the frozen artifacts, never the claimed continuation.
-        var manifestPath = source.GetProperty("episode_manifest_path").GetString()!;
-        var rebuilt = GoldenWalnutGourmandContinuationReceiptVerifier.Verify(
-            source.GetProperty("episode_directory").GetString()!, manifestPath,
-            schedule.SourceEpisodeManifestSha256, schedule.SourceEpisodeEvidenceRootSha256);
-        RequireExactEvidence(JsonSerializer.SerializeToElement(rebuilt, JsonDefaults.Options), claimed);
-        Require(rebuilt.SchemaVersion == GoldenWalnutGourmandContinuationReceiptVerifier.SchemaVersion &&
-                rebuilt.SourceRunId == runId && rebuilt.SourceRunId == schedule.SourceRunId &&
-                rebuilt.SaveId == saveId && rebuilt.SaveId == schedule.SourceSaveId &&
-                rebuilt.PlayerId == playerId && rebuilt.GameVersion == gameVersion &&
-                rebuilt.GameVersion == schedule.GameVersion &&
-                rebuilt.SourceEpisodeManifestPath == Path.GetFullPath(manifestPath) &&
-                rebuilt.SourceEpisodeManifestSha256 == schedule.SourceEpisodeManifestSha256 &&
-                rebuilt.SourceEpisodeEvidenceRootSha256 == schedule.SourceEpisodeEvidenceRootSha256,
-            "Gourmand continuation identity or frozen evidence disagrees with the verified source schedule.");
-        return rebuilt;
-    }
-
-    private static void RequireUniqueProperties(JsonElement value)
-    {
-        if (value.ValueKind == JsonValueKind.Object)
-        {
-            var properties = value.EnumerateObject().ToArray();
-            Require(properties.Select(property => property.Name).Distinct(StringComparer.Ordinal).Count() == properties.Length,
-                "Evidence contains duplicate properties.");
-            foreach (var property in properties) RequireUniqueProperties(property.Value);
-        }
-        else if (value.ValueKind == JsonValueKind.Array)
-            foreach (var item in value.EnumerateArray()) RequireUniqueProperties(item);
-    }
-
-    private static void RequireExactEvidence(JsonElement expected, JsonElement claimed)
-    {
-        Require(expected.ValueKind == claimed.ValueKind, "Evidence content changed.");
-        if (expected.ValueKind == JsonValueKind.Object)
-        {
-            Require(expected.EnumerateObject().Count() == claimed.EnumerateObject().Count(),
-                "Evidence properties changed.");
-            foreach (var property in expected.EnumerateObject())
-            {
-                Require(claimed.TryGetProperty(property.Name, out var value), "Evidence missing " + property.Name + ".");
-                RequireExactEvidence(property.Value, value);
-            }
-        }
-        else if (expected.ValueKind == JsonValueKind.Array)
-        {
-            Require(expected.GetArrayLength() == claimed.GetArrayLength(), "Evidence array changed.");
-            for (var index = 0; index < expected.GetArrayLength(); index++)
-                RequireExactEvidence(expected[index], claimed[index]);
-        }
-        else
-            Require(expected.ValueKind == JsonValueKind.String ? expected.GetString() == claimed.GetString() :
-                expected.GetRawText() == claimed.GetRawText(), "Evidence value changed.");
     }
 
     private static MasterAnglerFreshSaveSpeciesPrerequisite BuildSpecies(
