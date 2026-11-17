@@ -1,5 +1,35 @@
 # Current Production Snapshot Handoff
 
+## Current: Harvest Capacity Interrupt Boundary (251)
+
+PR584 merged as mainf9805f38 with the SAME tested tree9814bd55. Own CI44092666759
+and merge CI44095765450 both passed Core2810/Backend3933 without failures/skips.
+Peer Git synchronization ead00cc2 preserves untracked files; no API cooperation
+resumption or parallel implementation delivery is claimed.
+
+Original Main23220 is TERMINAL (OSexit2,2026-11-17T14:14:38Z). From accepted60 it
+completed49iterations/35verified aggregates/249feature rows through Spring27/600/
+Farm/802g. Current accepted108/native112 source7869dcc20d6c866051360e5d7812058dbc7315aa37cc4aade3806f9238da388f,
+ledger393; acceptance SHA361e30c060a1af460485023081b3722257ce819de65f77bc0e9438a091e87571.
+No109intent.106 is the last native overnight save;107/108 are retained movement
+tail, NOT permission to restore an older save. Original game/backend/Product stay
+available; do not resend an executed package or restart the completed days.
+
+Before dispatch113 the ORIGINAL capacity policy correctly selected
+crop_teacher_harvest_inventory_capacity_recovery: economy.ship_items, moving to
+the bin and depositing ONE unprotected item. New owned harvest rejects that
+interrupt as non-harvest. No harvest/shipping was dispatched. Keep that original
+guard and the selected original queue; repair the managed caller's ownership.
+
+NEXT: finish static compatibility for original singleton/stack-drain, movement,
+deferred transit and pending continuation; reuse original selection/refresh/native
+shared-source yield/return rather than making another executor or masking effects
+as crop work. Keep crop daily selection separate. Test the affected consumer and
+adjacent contracts, then continue SAME owner108/live scene. FullStage5/#570/#569
+handoff/formal remain incomplete, L1/roots frozen. Source code has not yet been
+changed for this capacity boundary. Earlier250 next-head statements below are
+historical and superseded by this section.
+
 ## Current: Original Managed Story Interrupt Integration (250)
 
 Native closeout: sourcec9a0cecd actually ran the SAME owner/game. Original event49
