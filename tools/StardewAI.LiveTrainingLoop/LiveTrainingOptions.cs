@@ -19,6 +19,7 @@ public sealed partial class LiveTrainingOptions
     public string SnapshotArtifactMode { get; set; } =
         ContentAddressedJsonArtifactStore.ContentAddressedGzipMode;
     public bool CaptureGoldenWalnutFreshSaveEvidence { get; set; }
+    public string ManagedCropSourceProvenanceRequestPath { get; set; } = string.Empty;
     public bool RequireGoldenWalnutSourceScheduleReady { get; set; }
     public bool RequireGourmandContinuationReady { get; set; }
     public string StageOneCollectionRequirementInventoryPath { get; set; } =
@@ -139,6 +140,7 @@ public sealed partial class LiveTrainingOptions
                 ? string.IsNullOrWhiteSpace(RunId) ? "live-training" : RunId
                 : ArtifactRunId);
     public string SnapshotDir => Path.Combine(RunDir, "live-snapshots");
+    public string ManagedCropSourceProvenancePath => Path.Combine(RunDir, "managed-crop-source-provenance.json");
     public string GoldenWalnutFreshSaveEpisodeManifestPath => Path.Combine(
         RunDir,
         "golden-walnut-fresh-save-episode-manifest.json");
@@ -259,6 +261,10 @@ public sealed partial class LiveTrainingOptions
                         "content_addressed_gzip, not '" + value + "'.");
                 }
                 options.SnapshotArtifactMode = value;
+            }
+            else if (current == "--managed-crop-source-provenance-request" && i + 1 < args.Length)
+            {
+                options.ManagedCropSourceProvenanceRequestPath = args[++i];
             }
             else if (current == "--capture-golden-walnut-fresh-save-evidence")
             {

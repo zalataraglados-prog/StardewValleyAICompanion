@@ -1,5 +1,17 @@
 # StardewAI 当前工作
 
+## 2026-11-17 原托管证据与后续目录统一引用（242）
+
+- #576已按最终368925aa自身CI全绿合并为main `4d9db590`，同测试树0ef5aa76：Core2770（56秒）/Backend3845（11分54秒）、零失败/跳过。合并推送44014662680成功，保留沙箱普通Git合并76300657同树，未恢复worker/API。
+- 新 `MoneyRevenueCropManagedProvenance` 复用冻结235完整报告的原路径/hash闭包、原Day-0边界和开局episode、原owner入口及241读回绑定；不把230行raw重排成单时钟，不重打十三天，不复制全量快照或把3353个旧引用在每轮重复展开落盘。原始聚合/子项payload均保留hash引用，观察序列只选原ordinal子项以免重复计数；非fresh及不明接缝保留为未验证，不冒充进展。
+- 原CLI `summarize-money-revenue-crop-supplement --evidence-mode managed_saved_closeout --request <请求> --output <新报告>` 显式走新模式，旧人工补证默认不改。Main显式 `--managed-crop-source-provenance-request <请求>` 在原生工作前准备一次、结束后用原durable writer汇总本目录；要求原stop留存，先拒绝错run和覆盖既有目录。后续集合运行不必冒充仍有active作物owner，不强制开启旧GoldenWalnut capture。未启用时无文件/网络操作，原report不增加null字段。
+- 历史闭包按冻结报告的物理hash核对（包括原gzip blobs）；只对实际直接消费的snapshot另用原逻辑hash和CAS闭包校验。不逐帧/逐动作重算整个已验周期。真实235→236汇总保留3353历史引用、7条后续payload/观察，首个报告仅29705字节、40直接引用；原件未复制。原CLI输出为新文件，不覆盖旧报告。
+- 真实批量对照发现3个超过旧短窗口的执行器暂停接缝。新消费者只在原暂停见证、同存档/玩家/版本、同时间/格子、原岛屿进展比较和原持久资源核均满足时单独绑定；不改旧24-tick规则、不伪造tick。Core唯一共享变更是把原进展比较器公开供复用，其算法不改；旧live/执行器/桥/概率核不改。单测同时保持旧短窗口对该长暂停的拒绝。
+- 仍有1处**裁剪→全量读取的知识差异**（10344→10344）：钓鱼after的hay_storage不可读、crab_pot/rain_totem配方投影为blocked_requires_full_profile，下一before全量恢复。原数据和未绑定边完整保留，不把未知当0，也不改旧全持久状态核来凑通过。此报告不是完整原生日程/全局路线证明；后续先固定实际选线，再按其真实依赖判断该边需要何种补证，未用干草/配方不作所有路线共同阻塞。
+- 首轮编译仅新target-typed-new重载歧义，显式类型已修；新夹具误访问internal owner路径只改用既有Options路径。13项定向通过（22秒），随后含旧补证/归档/241绑定和暂停分类的68项通过（56秒）；最终源码回归/真实最终再观察及自身CI另记。构建隔离在artifacts/block242-managed-provenance、TEMP显式E/2核/低优先级，未启动游戏或覆盖活Debug DLL。新Day-0元数据工厂从原240夹具原样提取复用，不新增第二套native夹具。
+- 最终69项中68通过，1项在旧后端fixture原子File.Move时访问拒绝；磁盘余量和隔离路径已核对，原因未证实，未改仓储/旧回执逻辑。同二进制定向10/10（19秒）复跑通过，原失败TRX保留，不冒充69项一次全绿。真实最终再观察26.7秒完成，原3353闭包/40直接引用、7行、3暂停边与1知识差异边保持；末端仍为44ae478e/tick13147，报告30282字节、SHA `d5f33643b7fe3dddc04cde666f17a42fa36aa9482855fd225c0f3e33b6386ee1`，原输入及活Debug三DLL hash不变。新源码自身CI另核。
+- **下一步：** 先收口本提交自身CI/原件观察，然后推进第5步**实际全局选线的来源、数量、期限和共享资源/日历**，消费本统一引用与已有DailyPlan/Teacher/lease/账本；不要继续为未选字段扩大全域深验，也不另造Planner/Executor。选择依赖的Day-0/原生来源及缺证仍须闭合，随后#570→#569；L1/235冻结、formal=false、local-data不入Git。
+
 ## 2026-11-17 原接受读回接到后续观测来源（241）
 
 - #575已按最终ccde051d的自身CI全绿合并为main `871f416d`，跟踪树 `7264f41e` 与测试源码一致：Core2770（47秒）/Backend3833（13分21秒）、零失败/跳过。保留沙箱普通Git合并ba5e47cd同树，未恢复API或worker权限；合并推送CI另核。

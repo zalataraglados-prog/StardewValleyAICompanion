@@ -84,6 +84,7 @@ else if (!string.IsNullOrWhiteSpace(options.ResumeManagedCropOwnerDirectory))
 if (!continueLiveManagedOwner && !string.IsNullOrEmpty(options.ManagedCropLiveSessionPath))
     throw new ArgumentException("A live session is usable only through continue-live-crop-managed-owner.");
 options.ValidateFormalExecutionBoundary();
+var managedSourceProvenance = PrepareManagedCropSourceProvenance(options);
 Directory.CreateDirectory(options.Root);
 Directory.CreateDirectory(options.RunDir);
 Directory.CreateDirectory(options.SnapshotDir);
@@ -2368,6 +2369,16 @@ else if (options.RequireGoldenWalnutSourceScheduleReady &&
         "fresh_save_episode_manifest_missing";
 }
 
+string? managedSourceProvenancePath = null;
+try
+{
+    managedSourceProvenancePath = await WriteManagedCropSourceProvenanceAsync(options, managedSourceProvenance);
+}
+catch (Exception ex) when (ex is IOException or InvalidDataException or InvalidOperationException or JsonException or ArgumentException)
+{
+    stopReason = "managed_crop_source_provenance_invalid message=" + SanitizeProgressValue(ex.Message);
+}
+
 var ordinaryTargetMet =
     (options.RequiredVerifiedActions <= 0 ||
         verifiedActions >= options.RequiredVerifiedActions) &&
@@ -2431,6 +2442,7 @@ var report = new LiveTrainingLoopReport
     DatasetPath = options.DatasetPath,
     ProgressLogPath = options.ProgressLogPath,
     SnapshotDir = options.SnapshotDir,
+    ManagedCropSourceProvenancePath = managedSourceProvenancePath,
     GoldenWalnutFreshSaveEvidenceCaptureEnabled =
         options.CaptureGoldenWalnutFreshSaveEvidence,
     GoldenWalnutFreshSaveEpisodeManifestPath =

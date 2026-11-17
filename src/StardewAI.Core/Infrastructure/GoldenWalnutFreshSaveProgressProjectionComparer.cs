@@ -5,7 +5,7 @@ using System.Text.Json;
 
 namespace StardewAI.Core.Infrastructure;
 
-internal static class GoldenWalnutFreshSaveProgressProjectionComparer
+public static class GoldenWalnutFreshSaveProgressProjectionComparer
 {
     public static bool SameGingerIslandProgress(
         JsonElement left,
