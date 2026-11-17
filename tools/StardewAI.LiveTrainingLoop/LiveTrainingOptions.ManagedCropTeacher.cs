@@ -15,6 +15,7 @@ public sealed partial class LiveTrainingOptions
 
     public void ValidateManagedCropTeacherMode()
     {
+        ValidatePreparedCropTerminalProduction();
         if (!UseManagedCropTeacher) return;
         if (!SkipTraining || !UseDailyPlan || !UseRuntimeTestHarnessExecutor || !UseProductExecutor || !RequireExecutorFeedback ||
             !EmitQueueExecutionReceipt || !RequireNativeSaveBoundary || string.IsNullOrWhiteSpace(SaveIsolationPath) ||
