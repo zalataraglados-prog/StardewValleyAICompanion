@@ -2,6 +2,8 @@
 
 ## Latest255: Main Consumes Accepted Closing Save; Offline Verified
 
+PR587 MERGEDmain07eda3b5, source037b92e8 ownCI44161991529 SUCCESS:
+Core2810/1m03s,Backend4009/12m05s,zero failures-skips; exact-head autoreview clean.
 New Main consumer keeps original producer/executors/defaults. Return typed save
 observation plus original fingerprints and accepted after-state. Pin only the
 original save/acceptance/snapshot inputs, reuse original Evaluate; normalized
@@ -13,6 +15,12 @@ no second sleep/native dispatch. Old incomplete report/blocked133 preserved;
 this is NOT a fabricated real Main exit0 or terminal/semantic/formal acceptance.
 NEXT own-source CI, then original Spring28 global handoff/next daily plan;
 do not reopen old crop owner or sleep again merely to repair the old report.
+Own-source CI now complete. Next ordinary global entry preflight PASS: keep
+original options except four completed-owner resume/live/prepared pairs. Original
+132/a7f4cdc4 and blocked133/c095a719 have equal original persistent boundaries;
+fresh full live world and original4-file save fingerprint match. No new native run.
+External block256-global-daily-package.json pins source037/frozen255 binaries;
+Invoke-ReviewedManagedContinuation.ps1 explicit global mode, not old254 package.
 
 ## Latest254 Terminal: Native Shipping/Save Accepted; Generic Main Probe Mismatch
 
