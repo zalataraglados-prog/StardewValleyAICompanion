@@ -1,5 +1,23 @@
 # Current Production Snapshot Handoff
 
+## Latest256: Known Impossible Crop Window Deferred Upstream
+
+Ordinary Main6776 TERMINAL/exit2 after14s at iteration134, BEFORE native dispatch.
+On Spring28 original Teacher correctly rejects all50 crops as unable to mature.
+Original417d8e33 intended fresh-save seed protection/production priority, not
+calendar bypass. Resolver now skips only a PROVEN impossible current window,
+checking all catalog crops (not only owned seed); unknown metadata keeps the
+old handoff. Share the exact old maturity predicate in existing Core projector;
+no executor/default protection change, no forced successor or altered season.
+Final316/316/42s,zero failures-skips,TRX958912278e9d0f645a22f6dfb9101a9fe52aadaf09ab5e15d345f48494a6d8c1.
+Original134/149-candidate offline replay PASS: strict Teacher still rejects50,
+original binding naturally selects raise_friendships. NOT new native acceptance.
+Preparation legitimately refreshed ledger412->413; preserve original134 journal
+and d6fccec9 ledger. Old game12688/backend2856/product3356 retained. NEXT matched
+Backend/Core/Main upgrade, same Spring28 ordinary global planning. Use new
+artifacts/block256-crop-window; frozen255 binaries and old256 attempt unchanged.
+FullStage5/570/569/formal stillOPEN. PR587 merge-push44165624748 SUCCESS.
+
 ## Latest255: Main Consumes Accepted Closing Save; Offline Verified
 
 PR587 MERGEDmain07eda3b5, source037b92e8 ownCI44161991529 SUCCESS:
