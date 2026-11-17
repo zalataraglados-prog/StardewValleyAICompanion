@@ -63,7 +63,7 @@ public sealed partial class CropTeacherManagedSeedOwner
                 result["shared_simulated_equivalent_step_count"] = shared.SimulatedEquivalentStepCount;
                 result["native_perfect_play_verified"] = false;
             }
-            if (shared.AppliedNativeWorkQueue && VerifyCompletedSharedNativeObjective(operation, artifacts))
+            if (shared.AppliedNativeWorkQueue && VerifyCompletedSharedNativeObjective(operation, shared, artifacts))
                 result["native_shared_objective_completed"] = true;
         }
         result["native_crop_lifecycle_verified"] = false;

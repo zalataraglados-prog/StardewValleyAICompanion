@@ -1,5 +1,38 @@
 # Current Production Snapshot Handoff
 
+## Current: Actual114 Mechanical Source Compatibility (252 Continued)
+
+Native114 REALLY moved and shipped original147/slot9/one unit45; bin0->1,
+slot9empty,802g cash, no harvest. Main25236 terminal2. Owner108/revision393,
+pending109 and original claim/results retained; actual UNSAVED sourcea8ec91d6.
+DO NOT reexecute shipping, reset109, reload an older save or kill its game.
+
+New explicit applied-native continuation reads each actual mechanical queue via
+the preceding original queue_replan lineage, same selected decision/fresh compile
+artifacts, and original exact native frame/Product wire proof. It retains all
+fresh artifacts. Immutable defaults/executors/bridge remain unchanged. The owner
+uses VERIFIED executed items and the old canonical goal completion rule, not an
+unexecuted original terminal item. A completed cursor is normally cleared and
+moved to the sole completed journal entry; the shared Core reader is a view of
+that original format, not rewritten evidence or a new action rule.
+
+Final45/45/20s/zero failures-skips; TRXSHA7231f5abbbc36261244cc4dae73bc14108f1b916b3ef1bbb8645b8a07e2fa1d1.
+Actual unchanged114 offline proof passed both7f94/fresh7c03 frames, seven pinned
+continuation inputs and original typed-objective completion, about11s. This did
+NOT mutate owner/ledger or perform native work. Earlier26/44 overlap. Initial
+controller harness string conversion/Core missing-System.IO fixes are recorded,
+not legacy executor failures. Original CI's two Museum timeouts remain failures;
+targeted old252 DLL14/14/7s did not reproduce and no timeout was inflated.
+
+NEXT: exact original source-return-only entry accepts already executed pending109
+with no claim/actor/reload callback. Only THEN continue the same live scene to
+harvest/selected terminal. Own new-head CI must be verified. Never replay13days,
+reprove235 or promote local compatibility to full Stage5/#570/#569/formal training.
+Gemini same-session bounded patch cooperation is authorized; it drafted Tools
+completion wiring/tests while Codex owned Bootstrap/runtime/integration. Draft
+needed controller simplification and cleared-cursor compatibility; no broad
+permission promotion. OpenAI provider pause and other-provider disables remain.
+
 ## Current: Reused Owned Capacity Interrupt Preparation (252)
 
 Managed harvest now routes FULL-inventory recovery before harvest admission. The

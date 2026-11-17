@@ -37,14 +37,16 @@ internal static partial class NativeExecutionActionSourceReader
         ValidateSnapshot(after);
         var receipt = ReadTyped<QueueExecutionReceiptEnvelope>(receiptPath, "queue_execution_receipt.v1");
         var raw = CurrentTeacherFrontierSupport.Read<JsonElement>(receiptPath, "Native sequential receipt");
+        var mechanical = appliedNativeWork ? ReadMechanicalContinuation(queuePath, queue, receipt, raw, candidateId) : null;
         var reasons = appliedNativeWork
             ? QueueExecutionReceiptValidator.ValidateAppliedNativeWork(queue, before, receipt, after, runId,
-                expectedExecutorVersion, candidateId, queue.StateHash)
+                expectedExecutorVersion, candidateId, queue.StateHash, mechanical?.Queues)
             : QueueExecutionReceiptValidator.Validate(queue, before, receipt, after, runId,
             expectedExecutorVersion, candidateId, queue.StateHash,
             requireTeacherPreferenceStateRebound: false);
         Require(reasons.Length == 0, "Native sequential queue proof rejected: " + string.Join(",", reasons));
-        if (appliedNativeWork && !receipt.SelectedCandidateCompleted) VerifyNativeWorkObjectiveContinuation(queue, raw);
+        if (appliedNativeWork && (!receipt.SelectedCandidateCompleted || mechanical is not null))
+            VerifyNativeWorkObjectiveContinuation(queue, raw, allowCompletedDecision: receipt.SelectedCandidateCompleted);
         Require(SamePath(afterPath, RequiredFile(Text(raw, "after_snapshot_path"))) &&
             receipt.StepResults.All(step => !step.TeacherPreferenceStateRebound),
             "Native sequential source requires the original immutable precompiled queue and recorded final capture.");
@@ -57,9 +59,11 @@ internal static partial class NativeExecutionActionSourceReader
             var step = receipt.StepResults[index];
             var resultPath = RequiredFile(Text(rows[index], "execution_path"));
             var frame = appliedNativeWork
-                ? ReadAppliedNativeWorkFrame(queuePath, resultPath, RequiredFile(step.AfterSnapshotPath), queue.StateHash, productBoundary)
+                ? ReadAppliedNativeWorkFrame(mechanical?.QueuePaths[index] ?? queuePath, resultPath,
+                    RequiredFile(step.AfterSnapshotPath), mechanical?.Queues[index].StateHash ?? queue.StateHash, productBoundary)
                 : ReadFrame(queuePath, resultPath, RequiredFile(step.AfterSnapshotPath), queue.StateHash, productBoundary);
-            Require(frame.Result.RunId == runId && frame.Item.QueueItemId == queue.Items[index].QueueItemId &&
+            Require(frame.Result.RunId == runId && frame.Result.QueueId == step.QueueId &&
+                frame.Item.QueueItemId == (mechanical is null ? queue.Items[index].QueueItemId : step.QueueItemId) &&
                 frame.Before.StateHash == step.SourceStateHash && frame.After.StateHash == step.AfterStateHash &&
                 frame.Before.GameTick == step.BeforeGameTick && frame.After.GameTick == step.AfterGameTick &&
                 frame.Result.PrimitiveKind == step.PrimitiveKind &&
@@ -81,7 +85,12 @@ internal static partial class NativeExecutionActionSourceReader
         Require(SameFrame(actions[^1].AfterSnapshotPath, afterPath), "Native sequential final frame differs from the aggregate capture.");
         foreach (var file in new[] { ("queue", queuePath), ("before", beforePath), ("after", afterPath), ("aggregate", receiptPath) })
             hashes[file.Item1] = CurrentTeacherFrontierSupport.HashFile(file.Item2);
-        return new(queue, before, after, receipt, actions.ToArray(), hashes);
+        if (mechanical is not null)
+            foreach (var (path, hash) in mechanical.Inputs) hashes["mechanical." + path] = hash;
+        return new(queue, before, after, receipt, actions.ToArray(), hashes)
+        {
+            MechanicalContinuationInputs = mechanical?.Inputs ?? new Dictionary<string, string>(StringComparer.Ordinal)
+        };
     }
 
     private static bool SameFrame(string left, string right) =>
@@ -91,4 +100,8 @@ internal static partial class NativeExecutionActionSourceReader
 
 internal sealed record VerifiedNativeExecutionQueue(ActionQueueEnvelope Queue, SnapshotEnvelope Before,
     SnapshotEnvelope After, QueueExecutionReceiptEnvelope Receipt, NativeExecutionActionFrame[] Actions,
-    IReadOnlyDictionary<string, string> SourceSha256);
+    IReadOnlyDictionary<string, string> SourceSha256)
+{
+    internal IReadOnlyDictionary<string, string> MechanicalContinuationInputs { get; init; } =
+        new Dictionary<string, string>(StringComparer.Ordinal);
+}
