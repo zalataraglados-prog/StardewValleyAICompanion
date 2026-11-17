@@ -23,14 +23,16 @@ internal static partial class QueueExecutionReceiptValidator
 
     internal static string[] ValidateAppliedNativeWork(ActionQueueEnvelope queue, SnapshotEnvelope before,
         QueueExecutionReceiptEnvelope receipt, SnapshotEnvelope after, string runId, string executorVersion,
-        string candidateId, string compiledStateHash) =>
+        string candidateId, string compiledStateHash, IReadOnlyList<ActionQueueEnvelope>? mechanicalQueues = null) =>
         ValidateCore(queue, before, receipt, after, runId, executorVersion, candidateId, compiledStateHash,
-            requireTeacherPreferenceStateRebound: false, requireCandidateCompletion: false, allowTrainingEquivalent: true);
+            requireTeacherPreferenceStateRebound: false, requireCandidateCompletion: false, allowTrainingEquivalent: true,
+            mechanicalQueues: mechanicalQueues);
 
     private static string[] ValidateCore(ActionQueueEnvelope queue, SnapshotEnvelope before,
         QueueExecutionReceiptEnvelope receipt, SnapshotEnvelope after, string expectedRunId, string expectedExecutorVersion,
         string expectedSelectedCandidateId, string compiledCommandStateHash, bool requireTeacherPreferenceStateRebound,
-        bool requireCandidateCompletion, bool allowTrainingEquivalent = false)
+        bool requireCandidateCompletion, bool allowTrainingEquivalent = false,
+        IReadOnlyList<ActionQueueEnvelope>? mechanicalQueues = null)
     {
         var reasons = new List<string>();
         var queueItems = queue.Items ?? Array.Empty<ActionQueueItem>();
@@ -107,30 +109,40 @@ internal static partial class QueueExecutionReceiptValidator
             reasons.Add("queue_execution_receipt_not_completed_verified_fresh");
         if ((receipt.BlockReasons?.Length ?? 0) > 0)
             reasons.Add("execution_receipt_contains_block_or_failure_reasons");
+        var executedCount = mechanicalQueues?.Count ?? queueItems.Length;
         if (receipt.PlannedItemCount != queueItems.Length ||
-            receipt.ExecutedItemCount != queueItems.Length ||
+            receipt.ExecutedItemCount != executedCount ||
             receipt.FinalPendingItemCount != 0 ||
-            receipt.MaxQueueItemAttempts < queueItems.Length ||
+            receipt.MaxQueueItemAttempts < executedCount ||
             receipt.MaxQueueItemAttempts >
                 TeacherEvidenceRolloutLimits.MaxQueueItems ||
-            receiptSteps.Length != queueItems.Length)
+            receiptSteps.Length != executedCount)
             reasons.Add("queue_execution_receipt_item_count_mismatch");
 
         var expectedStateHash = before.StateHash;
         var expectedTick = before.GameTick;
         for (var index = 0;
-             index < Math.Min(receiptSteps.Length, queueItems.Length);
+             index < Math.Min(receiptSteps.Length, executedCount);
              index++)
         {
             var step = receiptSteps[index];
-            var expectedItem = queueItems[index];
+            var activeQueue = mechanicalQueues?[index] ?? queue;
+            var matches = mechanicalQueues is null ? new[] { queueItems[index] } :
+                activeQueue.Items.Where(item => item.QueueItemId == step.QueueItemId).ToArray();
+            if (matches.Length != 1)
+            {
+                reasons.Add("queue_execution_receipt_step_identity_mismatch:" + index);
+                continue;
+            }
+            var expectedItem = matches[0];
             var expectedSteps = expectedItem.NormalizedCommand?.Steps ??
                 Array.Empty<CompiledActionStep>();
             if (step.QueueItemIndex != index ||
-                step.QueueItemCount != queueItems.Length ||
+                (mechanicalQueues is null ? step.QueueItemCount != queueItems.Length :
+                    step.QueueItemCount <= index || step.QueueItemCount > receipt.MaxQueueItemAttempts) ||
                 step.OriginalPlannedItemCount != queueItems.Length)
                 reasons.Add("queue_execution_receipt_step_order_mismatch:" + index);
-            if (!string.Equals(step.QueueId, queue.QueueId,
+            if (!string.Equals(step.QueueId, activeQueue.QueueId,
                     StringComparison.Ordinal) ||
                 !string.Equals(step.QueueItemId, expectedItem.QueueItemId,
                     StringComparison.Ordinal) ||
@@ -143,7 +155,7 @@ internal static partial class QueueExecutionReceiptValidator
                 reasons.Add("queue_execution_receipt_step_identity_mismatch:" + index);
             if (!string.Equals(
                     step.CompiledCommandStateHash,
-                    compiledCommandStateHash,
+                    mechanicalQueues is null ? compiledCommandStateHash : activeQueue.StateHash,
                     StringComparison.Ordinal) ||
                 requireTeacherPreferenceStateRebound &&
                     !step.TeacherPreferenceStateRebound ||
@@ -160,7 +172,7 @@ internal static partial class QueueExecutionReceiptValidator
             if (!string.Equals(step.Status, "applied", StringComparison.Ordinal) ||
                 !step.AfterSnapshotFresh ||
                 step.SelectedQueueCandidateCompleted !=
-                    (index == queueItems.Length - 1 && (requireCandidateCompletion || receipt.SelectedCandidateCompleted)) ||
+                    (index == executedCount - 1 && (requireCandidateCompletion || receipt.SelectedCandidateCompleted)) ||
                 !(allowTrainingEquivalent
                     ? TrainingExecutionVerification.IsAcceptedProgress(step.Status, step.PrimitiveVerificationStatus, step.OptionId)
                     : string.Equals(step.PrimitiveVerificationStatus, "verified", StringComparison.Ordinal)) ||

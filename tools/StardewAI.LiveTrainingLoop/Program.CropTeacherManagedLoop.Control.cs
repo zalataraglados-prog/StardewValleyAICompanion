@@ -30,6 +30,10 @@ static partial class Program
         if (step.Stage == CropTeacherRunStageKinds.PrepareSite)
             return await BuildCropTeacherOwnedSiteQueueAsync(http, options, iteration, step, plan, request,
                 owner, beforePath, before, hash).ConfigureAwait(false);
+        if (step.Stage == CropTeacherRunStageKinds.ExecuteCropBatch && step.ActionBatch?.OptionId == "executor.harvest_crop" &&
+            StageOneInventoryCapacityRecovery.HasFullInventory(before))
+            return await BuildCropTeacherOwnedCapacityQueueAsync(http, options, iteration, step, plan, request,
+                owner, beforePath, before).ConfigureAwait(false);
         var runtime = Path.Combine(owner.EvidenceDirectory, "native-" + iteration.ToString("D4"));
         var seed = step.Stage is CropTeacherRunStageKinds.AcquireSeed or CropTeacherRunStageKinds.TransferSeedSupply ||
             step.Stage == CropTeacherRunStageKinds.ExecuteCropBatch && step.ActionBatch?.OptionId == "executor.plant_seed";
@@ -79,5 +83,21 @@ static partial class Program
         var model = supporting.Record[supporting.IsWateringMaintenance || supporting.IsHarvest
             ? "original_model_action_path" : "original_model_plan_path"]!.GetValue<string>();
         return new(StandardResult(queue, model, string.Empty, beforePath, before, hash, options), supporting);
+    }
+
+    private static async Task<ManagedCropControl> BuildCropTeacherOwnedCapacityQueueAsync(HttpClient http,
+        LiveTrainingOptions options, int iteration, CropTeacherRunStep step, MoneyRevenueCropNativeProductionRunPlan plan,
+        MoneyRevenueCropNativeProductionRunPlanRequest request, CropTeacherManagedSeedOwner owner, string sourcePath, JsonObject before)
+    {
+        var artifacts = new CropSeedRuntimeArtifacts(new Dictionary<string, string>());
+        var snapshot = artifacts.Read<StardewAI.Contracts.State.SnapshotEnvelope>(sourcePath);
+        artifacts.Pin(owner.CurrentLedgerPath);
+        await IngestCropTeacherManagedSnapshotAsync(http, options, sourcePath, artifacts, snapshot).ConfigureAwait(false);
+        var original = await BuildCropTeacherControlQueueCoreAsync(http, options, iteration, step, plan, request,
+            sourcePath, before, snapshot.StateHash).ConfigureAwait(false);
+        if (original.InterruptKind != "crop_teacher_harvest_inventory_capacity_recovery")
+            throw new InvalidDataException("Original capacity control did not select its harvest interrupt.");
+        return await PrepareCropTeacherOwnedSelectedInterruptAsync(http, options, iteration, owner, artifacts,
+            snapshot, sourcePath, before, original, "economy.ship_items", "capacity-source").ConfigureAwait(false);
     }
 }

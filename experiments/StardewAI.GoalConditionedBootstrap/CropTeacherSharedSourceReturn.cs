@@ -1,4 +1,5 @@
 using System.Text.Json;
+using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Strategy;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
@@ -147,6 +148,7 @@ public sealed partial class CropTeacherSharedSourceReturn : ICropTeacherSupporti
                 "Shared source return reused an original request path with another hash.");
             requestBlobs[blob] = frame.SourceSha256["request_gzip"];
         }
+        foreach (var (path, hash) in native.MechanicalContinuationInputs) Retain(path, hash);
         Require(requestBlobs.Keys.All(path => !retained.ContainsKey(path)),
             "Shared source return request blob aliases a JSON artifact.");
         inputs = new(retained.Keys.ToArray());
@@ -164,6 +166,8 @@ public sealed partial class CropTeacherSharedSourceReturn : ICropTeacherSupporti
         rebind = new(native.After, baseLedger, stepId, ValidateInputsUnchanged, "Shared source return");
         ReleasesTransferLease = inventoryLease;
         AppliedNativeWorkQueue = appliedNativeWorkQueue;
+        HasMechanicalContinuation = native.MechanicalContinuationInputs.Count > 0;
+        VerifiedNativeWorkItems = Array.AsReadOnly(native.Actions.Select(frame => frame.Item).ToArray());
         if (inventoryLease) rebind.ReleaseTransferLease(preparedLedger.PreparedMaterialTransfer!.MaterialRelocations
             .Select(row => row.MaterialReservationId).ToArray());
         observation = new(native, source.Ledger, preparedLedger, baseLedger);
@@ -242,6 +246,8 @@ public sealed partial class CropTeacherSharedSourceReturn : ICropTeacherSupporti
     public CropTeacherSharedTransferSettlementReference? TransferSettlement { get; }
     public bool NativeCropLifecycleVerified => false;
     public bool AppliedNativeWorkQueue { get; }
+    public bool HasMechanicalContinuation { get; }
+    public IReadOnlyList<ActionQueueItem> VerifiedNativeWorkItems { get; }
     public bool CropProductionCreditAuthorized => false;
     public bool TeacherPreferenceLabelEligible => false;
     public bool FormalProductTrainingAuthorized => false;
