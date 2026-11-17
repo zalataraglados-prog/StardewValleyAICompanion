@@ -6,7 +6,10 @@ using StardewAI.LiveTrainingLoop;
 
 static partial class Program
 {
-    private sealed record ManagedCropControl(CropTeacherControlQueueBuildResult Build, CropTeacherManagedSeedOperation? Operation);
+    private sealed record ManagedCropControl(CropTeacherControlQueueBuildResult Build, CropTeacherManagedSeedOperation? Operation)
+    {
+        public CropTeacherDailySelection? SharedSelection { get; init; }
+    }
 
     private static async Task<ManagedCropControl> BuildCropTeacherOwnedControlQueueAsync(HttpClient http,
         LiveTrainingOptions options, int iteration, CropTeacherRunStep step, MoneyRevenueCropNativeProductionRunPlan plan,
@@ -19,7 +22,7 @@ static partial class Program
         var before = JsonNode.Parse(ContentAddressedJsonArtifactReader.ReadAllText(beforePath))!.AsObject();
         var hash = ReadString(before, "state_hash");
         if (HasPriorityStoryEventInterrupt(before))
-            throw new InvalidDataException("Managed crop control interrupt requires its original verified owner boundary before another crop dispatch.");
+            return await BuildCropTeacherOwnedStoryEventQueueAsync(http, options, iteration, owner).ConfigureAwait(false);
         if (CropTeacherControlInterruptClassifier.HasSafeSpeakerlessDialogue(before))
             return await BuildCropTeacherOwnedDialogueRecoveryQueueAsync(http, options, iteration, owner).ConfigureAwait(false);
         if (step.Stage != CropTeacherRunStageKinds.NativeSleep && GameClockBudgetPolicy.RecoveryWindowStarted(ReadInGameTime(before)))

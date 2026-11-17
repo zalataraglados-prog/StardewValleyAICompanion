@@ -1,5 +1,57 @@
 # Current Production Snapshot Handoff
 
+## Current: Original Managed Story Interrupt Integration (250)
+
+Native closeout: sourcec9a0cecd actually ran the SAME owner/game. Original event49
+reached a fresh dialogue decision;50 selectedYes through the existing policy and
+completed event1590166, including one bound naming-menu action. Owner45/46 accepted
+the original shared returns with NO crop credit. Maintenance continued;53/60
+accepted two further native saves. Final accepted60/native64 is Spring19/600/
+FarmHouse/802g, source69364e81, ledger345.16iterations/13verified; original stop64
+retention limit caused exit2 with empty stderr, not a story execution failure.
+The old same-live comparison also passed on retained47/48; do NOT change it based
+on speculation. Never restore the older Spring15/Spring17 heads over this state.
+
+c9CI had one failure: the old incomplete-story negative expected InvalidDataException,
+but an empty original plan reached the lease constructor. Add only an explicit
+empty-plan rejection in the new adapter, keeping the old test/guard semantics.
+Final adjacent39/39/38s passed, zero skips; own final-head CI is separate. Keep
+the actualc9 binaries immutable; final build uses block250-managed-story-final.
+No repeat native run for this negative-only guard. Next review measured cold
+restore cost (about4m38s until the new reload directory), then continue SAME owner60
+production/selected terminal under a storage-budgeted bound. FullStage5/#570/#569
+handoff/formal remain open. The paragraphs below retain implementation context;
+their earlier pending-native statements are superseded by this closeout.
+
+Parent #583 merged as mainb32d5da5 on the exact tested30751d70 tree; own42-step CI
+and merge CI succeeded. Original same-world run21960 exited2 at dispatch48 after
+33verified aggregates. It DID accept two native overnight saves (owner36/native39
+and43/native46). The standalone report's false save flag is not that managed
+result. Current accepted head44/native47 is Spring17/600/Farm/802g, state0648cbb8.
+Never restore the older Spring15/f419 save or replay accepted production.
+
+Real event1590166 (Marnie pet introduction) reached the intentionally unbound
+managed story guard. Original c27788026/8d9baaa3d and retained chat confirm its
+intent. Story execution, live response input and bound pet naming already exist.
+The adapter reuses that builder/selected-candidate refresh and the existing
+selected_native_work_yield.v1 claim, native return, marker and recovery. Story
+uses an independent temporary choice, not the crop daily selection or crop credit.
+No second executor, forced answer, resource-neutral masking or Product gate change.
+
+Retained frame-only sampling passed six current ordinary primitives. The old244
+story sample uses fishing-profile capture43ticks after Product's full capture;
+its strict rejection is a distinct partial/full provenance gap, not evidence
+current full/full mode needs relaxed binding. Preserve both frames and that scope.
+New2 cases reproduce the original guard; final focused/adjacent37/37 passed in39s,
+zero skips. Own final-source CI and actual native story continuation remain to be
+observed, not inferred from these fixtures. Tests' early visibility/fact/wire-name
+errors are retained separately, not classified as executor failures.
+
+NEXT original same-owner/current live scene -> selected story return -> production
+and actual source/quantity/deadline/shared resource/calendar/Day0 ->570 ->569.
+FullStage5/Teacher21/formal remain false.19criteria/11roots/235 stay frozen.
+Upstream receive-only; no API worker, cleanup or raw/local-data inGit.
+
 ## Current: Derived Reward Capacity And Retained Purchase Recovery (249)
 
 Parent #582 and its merge CI succeeded at main c42508c1. Its original same-owner
