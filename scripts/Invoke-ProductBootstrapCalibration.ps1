@@ -106,8 +106,11 @@ if ($resumeCropTeacher) {
     $ResumeCropTeacherTransitionLedger =
         [IO.Path]::GetFullPath($ResumeCropTeacherTransitionLedger)
 }
-if ($ContinueAfterCropTeacherRun -and -not $resumeCropTeacher) {
-    throw "ContinueAfterCropTeacherRun requires ResumeCropTeacherTransitionLedger."
+if ($ContinueAfterCropTeacherRun -and -not $resumeCropTeacher -and -not $UseManagedCropTeacher) {
+    throw "ContinueAfterCropTeacherRun requires ResumeCropTeacherTransitionLedger or UseManagedCropTeacher."
+}
+if ($UseManagedCropTeacher -and $ContinueAfterCropTeacherRun -and $ArtifactRetentionMode -ne 'stop') {
+    throw 'Managed global continuation requires ArtifactRetentionMode stop; rolling retention does not preserve the original owner inputs.'
 }
 if ($RequireGoldenWalnutSourceScheduleReady -or
     $ContinueAfterCropTeacherRun) {

@@ -751,15 +751,22 @@ public sealed partial class LiveTrainingOptions
     {
         if (ContinueAfterCropTeacherRun &&
             string.IsNullOrWhiteSpace(
-                ResumeCropTeacherTransitionLedgerPath))
+                ResumeCropTeacherTransitionLedgerPath) && !UseManagedCropTeacher)
         {
             throw new ArgumentException(
                 "--continue-after-crop-teacher-run requires " +
-                "--resume-crop-teacher-transition-ledger.");
+                "--resume-crop-teacher-transition-ledger or --use-managed-crop-teacher.");
         }
         if (string.IsNullOrWhiteSpace(
                 ResumeCropTeacherTransitionLedgerPath))
         {
+            if (ContinueAfterCropTeacherRun)
+            {
+                ValidateManagedCropTeacherMode();
+                ValidateCropTeacherContinuationAuthority();
+                if (ArtifactRetentionMode != "stop")
+                    throw new ArgumentException("Managed global continuation requires --artifact-retention-mode stop to retain the original owner evidence within the configured budget.");
+            }
             return;
         }
 
@@ -783,18 +790,7 @@ public sealed partial class LiveTrainingOptions
         }
         if (ContinueAfterCropTeacherRun)
         {
-            ValidateAuthorityArtifact(
-                StageOneCollectionRequirementInventoryPath,
-                "--stage-one-collection-requirement-inventory");
-            ValidateAuthorityArtifact(
-                StageOneCollectionAcquisitionLoweringPath,
-                "--stage-one-collection-acquisition-lowering");
-            ValidateAuthorityArtifact(
-                MasterAnglerStageOneWindowIndexPath,
-                "--master-angler-stage-one-window-index");
-            ValidateAuthorityArtifact(
-                RouteTimingCalibrationPath,
-                "--route-timing-calibration");
+            ValidateCropTeacherContinuationAuthority();
         }
 
         var fullPath = Path.GetFullPath(
@@ -805,6 +801,17 @@ public sealed partial class LiveTrainingOptions
                 "Crop Teacher transition ledger was not found: " + fullPath);
         }
         ResumeCropTeacherTransitionLedgerPath = fullPath;
+    }
+
+    private void ValidateCropTeacherContinuationAuthority()
+    {
+        ValidateAuthorityArtifact(StageOneCollectionRequirementInventoryPath,
+            "--stage-one-collection-requirement-inventory");
+        ValidateAuthorityArtifact(StageOneCollectionAcquisitionLoweringPath,
+            "--stage-one-collection-acquisition-lowering");
+        ValidateAuthorityArtifact(MasterAnglerStageOneWindowIndexPath,
+            "--master-angler-stage-one-window-index");
+        ValidateAuthorityArtifact(RouteTimingCalibrationPath, "--route-timing-calibration");
     }
 
     public void ValidateGoldenWalnutFreshSaveEvidenceMode()

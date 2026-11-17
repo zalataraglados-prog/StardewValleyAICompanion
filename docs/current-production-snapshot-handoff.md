@@ -1,5 +1,34 @@
 # Current Production Snapshot Handoff
 
+## Current: Managed Cycle Returns To The Original Global Loop (239)
+
+PR573 merged as main5677a560; source CI43983382275 and merge CI43986243756 succeeded
+(Core2770/Backend3799, zero failed/skipped). Keep the accepted235 native proof frozen
+and the newer Spring14/08:20 BusStop unsaved tail intact. No new game run in this slice.
+
+The old terminal stop was intentional stage3 calibration (87935184), not an executor bug.
+Reuse the explicit --continue-after-crop-teacher-run switch with managed mode, preserving
+the old default and all managed/native-save/receipt/four authority-input guards. After
+the final owned overnight is accepted AND its original iteration/episode is recorded,
+write one reference/hash handoff under the original owner, release that owner and crop
+lease, and return to the existing global DailyPlan/collection Teacher/resource ledger.
+Pending phases, wrong target/head, changed evidence or failed journal writes retain the
+owner. This is operational continuity, NOT an independent settlement/reload/full-managed
+proof, preference label or formal authorization; all such report flags remain false.
+
+Use existing retention mode stop, not rolling: rolling does not preserve the owner's
+historical input closure. The existing iteration/disk budgets still stop the run without
+deleting its evidence. Reference-aware archival remains open before long global runs.
+Adjacent138/138 (81s), final19/19 (17s, overlapping),54 original launcher/parser checks
+passed without a game. Original native Debug Live/Core/Bootstrap hashes are unchanged.
+Initial compile/declared-fixture failures are retained locally; original executor/guard
+contracts were not changed to fit them. The54 include original legacy-resume positive/
+negative parsing; original fresh-save source guards passed9/9. Own CI checked separately.
+Stage5 actual selected long-route/source/quantity/
+deadline/resource/calendar and same-save Day0 proof remain OPEN, then570, then569.
+Never convert an unproved conservative fishing lower bound into positive supervision
+or a universal runtime admission gate. No new planner/executor or frozen evidence rerun.
+
 ## Current: Original Stage5 Continuation And Opt-In Launcher Wiring (236)
 
 PR567 merged as main2498c502;572closed. Own merge CI43973941123 SUCCESS:

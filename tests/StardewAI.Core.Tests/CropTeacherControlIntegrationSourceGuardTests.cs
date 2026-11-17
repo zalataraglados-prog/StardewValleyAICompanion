@@ -6,6 +6,22 @@ namespace StardewAI.Core.Tests;
 public sealed partial class CropTeacherControlIntegrationSourceGuardTests
 {
     [Fact]
+    public void ManagedGlobalHandoffRunsAfterOriginalEpisodeAndClearsTheCropLeaseBeforeTheNextAttempt()
+    {
+        var source = Read("tools", "StardewAI.LiveTrainingLoop", "Program.cs");
+        var episode = source.IndexOf("WritePlanExecutionEpisode(options, iteration,", StringComparison.Ordinal);
+        var handoff = source.IndexOf("await ContinueAfterManagedCropRunAsync(", StringComparison.Ordinal);
+        var nextAttempt = source.IndexOf("await DelayBeforeNextAttemptAsync(", handoff, StringComparison.Ordinal);
+        Assert.True(episode >= 0 && handoff > episode && nextAttempt > handoff);
+        var reset = source[handoff..nextAttempt];
+        Assert.Contains("activeCropTeacherRunPlan = null", reset, StringComparison.Ordinal);
+        Assert.Contains("activeCropTeacherTransitionLedger = null", reset, StringComparison.Ordinal);
+        Assert.Contains("leasedDecisionCompiledQueuePath = string.Empty", reset, StringComparison.Ordinal);
+        Assert.Contains("leasedSelectedQueueIndex = -1", reset, StringComparison.Ordinal);
+        Assert.Contains("crop_teacher_managed_terminal_settlement_requires_semantic_save_fresh_head_closeout", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void JointRootCompletionConsumesRetainedWorkBeforePreparingItsTerminal()
     {
         var program = Read("tools", "StardewAI.LiveTrainingLoop", "Program.cs");

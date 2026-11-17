@@ -2192,6 +2192,32 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                     NoProgressDetail(executionNoProgress));
             }
 
+            // Finish the original iteration/episode before releasing the crop-specific owner.
+            if (await ContinueAfterManagedCropRunAsync(options, iteration, cropTeacherManagedOwner,
+                    cropManagedOperationForExecution).ConfigureAwait(false) is not null)
+            {
+                cropTeacherRunCompleted = true;
+                activeCropTeacherRunPlan = null;
+                activeCropTeacherRunPlanRequest = null;
+                activeCropTeacherTransitionLedger = null;
+                pendingCropTeacherDayBoundary = null;
+                pendingCropTeacherDayBoundaryLedger = null;
+                completedCropTeacherBoundaryStart = null;
+                completedCropTeacherBoundaryLedger = null;
+                cropTeacherPreparedCommitmentIds.Clear();
+                activeObjectiveContinuation = null;
+                deferredObjectiveContinuationForCapacityRecovery = null;
+                leasedDecisionModelPlanPath = string.Empty;
+                leasedDecisionRankingPath = string.Empty;
+                leasedDecisionCompiledQueuePath = string.Empty;
+                leasedDecisionSnapshotPath = string.Empty;
+                leasedDecisionSourceStateHash = string.Empty;
+                leasedDecisionGoalId = string.Empty;
+                leasedSelectedCandidateId = string.Empty;
+                leasedSelectedQueueIndex = -1;
+                leasedDecisionIsInventoryCapacityRecovery = false;
+            }
+
             if (NoProgressBackoffPolicy.ReachedLimit(
                     executionNoProgress,
                     options.MaxQueueNoProgressStreak))
