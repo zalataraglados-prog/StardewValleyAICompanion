@@ -16,11 +16,15 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
 {
     // Declared synthetic native protocol fixtures, never a live shipping or whole-cycle claim.
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task NativeVariantTerminalShipsFiveNormalAndOneSilverThroughOriginalCompilerAndOwner(bool interleaved)
+    [InlineData(false, false, false)]
+    [InlineData(true, false, false)]
+    [InlineData(false, true, false)]
+    [InlineData(true, true, false)]
+    [InlineData(false, true, true)]
+    public async Task NativeVariantTerminalShipsFiveNormalAndOneSilverThroughOriginalCompilerAndOwner(bool interleaved,
+        bool existingShipping, bool sameItemShipping)
     {
-        using var f = new NativeVariantTerminalFixture(interleaved);
+        using var f = new NativeVariantTerminalFixture(interleaved, existingShipping: existingShipping, sameItemShipping: sameItemShipping);
         await using var owner = await f.Shared.Files.Open();
         using var document = JsonDocument.Parse(JsonSerializer.Serialize(f.Target, JsonOptions));
         Assert.Equal(JsonValueKind.Object, document.RootElement.GetProperty("nativeVariants").ValueKind);
@@ -57,7 +61,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             Assert.Equal(index + 1, owner.AcceptedTerminalDepositCount);
             Assert.Equal(index + 1, f.Shared.Runtime.Handler.Commits);
             var accepted = OwnedControlAccepted(f.Shared, operation);
-            Assert.Equal(target.PendingValueAt(index + 1), accepted["terminal_pending_value_after"]!.GetValue<long>());
+            Assert.Equal(target.PhysicalPendingValueAt(index + 1), accepted["terminal_pending_value_after"]!.GetValue<long>());
             Assert.False(accepted["terminal_settlement_verified"]!.GetValue<bool>());
             Assert.False(accepted["formal_product_training_authorized"]!.GetValue<bool>());
             source = after;
@@ -226,7 +230,8 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         internal string Root => Shared.Runtime.LiveOptions.SnapshotDir;
         internal CropTeacherTerminalShippingTarget Target { get; }
 
-        internal NativeVariantTerminalFixture(bool interleaved = false, bool nativeWire = false)
+        internal NativeVariantTerminalFixture(bool interleaved = false, bool nativeWire = false, bool existingShipping = false,
+            bool sameItemShipping = false)
         {
             var inventoryRows = resources.Before.State["player"].GetProperty("inventory").GetProperty("value").EnumerateArray().ToArray();
             SilverSlot = inventoryRows.Where(row => row.TryGetProperty("is_empty", out var empty) && empty.ValueKind == JsonValueKind.True)
@@ -265,7 +270,10 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                     var silverQuantity = quantity.DeepClone(); silverQuantity["quality"] = 1; silverQuantity["available_quantity"] = 1;
                     quantities.Add(silverQuantity);
                     foreach (var bin in node["shipping_bins"]!["value"]!.AsArray())
-                    { bin!["interaction_stand_tile_x"] = 4; bin["interaction_stand_tile_y"] = 4; bin["interaction_stand_tile_blocked_reason"] = ""; }
+                    {
+                        bin!["interaction_stand_tile_x"] = 4; bin["interaction_stand_tile_y"] = 4; bin["interaction_stand_tile_blocked_reason"] = "";
+                        if (existingShipping) SetDeclaredExistingShipping(bin.AsObject(), resources.Item, sameItemShipping);
+                    }
                 });
                 if (nativeWire)
                 {
@@ -309,6 +317,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 SchemaVersion = "crop_teacher_native_terminal_variants.v2",
                 DepositOrder = new(NormalSlot, new(SilverSlot, new(NormalSlot, new(NormalSlot, new(NormalSlot, new(NormalSlot))))))
             } };
+            if (existingShipping) Target = Target with { ExistingShipping = CropTeacherExistingShippingBaseline.Capture(Target) };
         }
 
         internal SnapshotEnvelope Deposit(SnapshotEnvelope source, int index, CropTeacherTerminalShippingTarget? plannedTarget = null)
@@ -358,10 +367,13 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                         ["quality"] = 0, ["count"] = count, ["unit_sell_to_store_price"] = 175, ["total_sell_to_store_price"] = count * 175 });
                     if (silver) contents.Add(new JsonObject { ["item_id"] = resources.Item[3..], ["qualified_item_id"] = resources.Item,
                         ["quality"] = 1, ["count"] = 1, ["unit_sell_to_store_price"] = 218, ["total_sell_to_store_price"] = 218 });
+                    if (target.ExistingShipping is not null)
+                        MergeDeclaredExistingShipping(contents, Shared.Source.Before.State["farm"].GetProperty("shipping_bins").GetProperty("value")[0].GetProperty("contents"));
                     bin!["contents"] = contents; bin["contents_total_count"] = index + 1; bin["contents_distinct_item_count"] = 1;
                     bin["contents_distinct_settlement_variant_count"] = contents.Count; bin["pending_settlement_value"] = target.PendingValueAt(index + 1);
                     bin["contents_signature"] = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(
                         (count > 0 ? $"{resources.Item}|0|175|{count}\n" : "") + (silver ? $"{resources.Item}|1|218|1\n" : "")))).ToLowerInvariant();
+                    if (target.ExistingShipping is not null) RefreshDeclaredShippingTotals(bin.AsObject());
                 }
             });
             after.StateHash = SnapshotHash.ComputeStateHash(after.State); return after;
@@ -372,7 +384,8 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             var receipt = MoneyCropTeacherFixture.Create<QueueExecutionReceiptEnvelope>("MoneyCropQueueReceipt", queue, before, after,
                 candidate, "ship_inventory_item_to_bin", new[] {
                     new { path = "player.inventory." + resources.Item + ".count", before = 6 - index, after = 5 - index },
-                    new { path = "farm.shipping_bin." + resources.Item + ".count", before = index, after = index + 1 } });
+                    new { path = "farm.shipping_bin." + resources.Item + ".count",
+                        before = ShippingItemCount(before, resources.Item), after = ShippingItemCount(after, resources.Item) } });
             receipt.RunId = Shared.Files.Options.RunId; return receipt;
         }
         internal static SnapshotEnvelope Copy(SnapshotEnvelope value) => JsonSerializer.Deserialize<SnapshotEnvelope>(JsonSerializer.Serialize(value, JsonOptions), JsonOptions)!;

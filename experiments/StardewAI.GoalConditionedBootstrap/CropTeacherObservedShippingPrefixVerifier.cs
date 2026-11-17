@@ -74,8 +74,8 @@ public static class CropTeacherObservedShippingPrefixVerifier
                 var chosen = target.VariantAt(deposits.Count);
                 Require(deposit.SlotIndex == chosen.SlotIndex && deposit.Quality == chosen.Quality && deposit.UnitPrice == chosen.UnitPrice &&
                     deposit.BinTileX == target.BinTileX && deposit.BinTileY == target.BinTileY &&
-                    deposit.BeforePendingSettlementValue == target.PendingValueAt(deposits.Count) &&
-                    deposit.AfterPendingSettlementValue == target.PendingValueAt(deposits.Count + 1),
+                    deposit.BeforePendingSettlementValue == target.PhysicalPendingValueAt(deposits.Count) &&
+                    deposit.AfterPendingSettlementValue == target.PhysicalPendingValueAt(deposits.Count + 1),
                     "Observed shipping differs from the retained variant/order/bin.");
                 // Only the shipping frame is shipping-neutral; preceding movement may have legitimate effects.
                 CropSeedResourceBoundary.VerifyShippingStock(frame.Before, frame.After, deposit);

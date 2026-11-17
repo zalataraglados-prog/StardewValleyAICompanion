@@ -547,6 +547,14 @@ public sealed partial class LiveTrainingOptions
             {
                 options.ResumeCropTeacherTransitionLedgerPath = args[++i];
             }
+            else if (current == "--prepared-crop-terminal-production")
+            {
+                options.PreparedCropTerminalProductionPath = ReadManagedCropResumeArgument(args, ref i);
+            }
+            else if (current == "--prepared-crop-terminal-production-sha256")
+            {
+                options.PreparedCropTerminalProductionSha256 = ReadManagedCropResumeArgument(args, ref i);
+            }
             else if (current == "--use-parameterized-action")
             {
                 options.UseParameterizedAction = true;

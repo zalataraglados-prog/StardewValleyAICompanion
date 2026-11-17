@@ -43,7 +43,7 @@ public sealed partial class CropTeacherTerminalShipping : ICropTeacherSupporting
             CropTeacherNativeStepBoundary.Verify(before, after, before, receipt.StepResults.Single(), target.TotalDay, "Terminal approach");
             AcceptedDepositCountAfter = target.AcceptedDepositCount;
             VerifySource(after, target, AcceptedDepositCountAfter);
-            PendingValueAfter = target.PendingValueAt(AcceptedDepositCountAfter);
+            PendingValueAfter = target.PhysicalPendingValueAt(AcceptedDepositCountAfter);
         }
         else
         {
@@ -51,11 +51,11 @@ public sealed partial class CropTeacherTerminalShipping : ICropTeacherSupporting
             var deposit = CropTeacherShippingDepositResources.Verify(before, after, queue, receipt, transition, target.QualifiedItemId);
             Require(deposit.SlotIndex == selected.SlotIndex && deposit.Quality == selected.Quality && deposit.UnitPrice == selected.UnitPrice &&
                     deposit.BinTileX == target.BinTileX && deposit.BinTileY == target.BinTileY &&
-                    deposit.PendingValueBefore == target.PendingValueAt(target.AcceptedDepositCount),
+                    deposit.PendingValueBefore == target.PhysicalPendingValueAt(target.AcceptedDepositCount),
                 "Terminal native deposit differs from its selected variant/bin/accepted cursor.");
             AcceptedDepositCountAfter = checked(target.AcceptedDepositCount + 1);
             PendingValueAfter = deposit.PendingValueAfter;
-            Require(PendingValueAfter == target.PendingValueAt(AcceptedDepositCountAfter), "Terminal actual pending value differs from its verified deposit cursor.");
+            Require(PendingValueAfter == target.PhysicalPendingValueAt(AcceptedDepositCountAfter), "Terminal actual pending value differs from its verified deposit cursor.");
             if (target.NativeVariants is not null) target.VerifyNativeVariantSource(after, AcceptedDepositCountAfter);
         }
         AfterSnapshotPath = Path.GetFullPath(transition.AfterSnapshotPath);

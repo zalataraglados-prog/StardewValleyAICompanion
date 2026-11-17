@@ -20,6 +20,7 @@ internal sealed partial class CropTeacherTerminalShippingSelection
     private readonly string binPlayer;
     private readonly CropTeacherTerminalVariantPlan? nativeVariants;
     private readonly bool requireSaleStockReservations;
+    private readonly CropTeacherExistingShippingBaseline? existingShipping;
     internal string RetentionProofPath { get; }
     internal string QualifiedItemId { get; }
     internal int MinimumUnits { get; }
@@ -39,7 +40,8 @@ internal sealed partial class CropTeacherTerminalShippingSelection
     internal CropTeacherTerminalShippingTarget CreateTarget(int acceptedDepositCount) => new(
         RetentionProofPath, inputs.Hashes[RetentionProofPath], saveId, playerId, gameVersion, totalDay,
         QualifiedItemId, SlotIndex, Quality, UnitPrice, BinX, BinY, StandX, StandY, initialQuantity,
-        MinimumUnits, acceptedDepositCount) { NativeVariants = nativeVariants, RequireSaleStockReservations = requireSaleStockReservations };
+        MinimumUnits, acceptedDepositCount) { NativeVariants = nativeVariants, RequireSaleStockReservations = requireSaleStockReservations,
+            ExistingShipping = existingShipping };
 
     internal CropTeacherTerminalShippingSelection(CropTeacherManagedProductionEvidence evidence,
         string nativePlanPath, string snapshotPath, string ledgerPath) : this(evidence, nativePlanPath, snapshotPath, ledgerPath, false) { }
@@ -50,8 +52,13 @@ internal sealed partial class CropTeacherTerminalShippingSelection
     internal static CropTeacherTerminalShippingSelection OpenNativeVariantsConsumingSaleStock(CropTeacherManagedProductionEvidence evidence,
         string nativePlanPath, string snapshotPath, string ledgerPath) => new(evidence, nativePlanPath, snapshotPath, ledgerPath, true, true);
 
+    internal static CropTeacherTerminalShippingSelection OpenJointNativeVariants(CropTeacherManagedProductionEvidence evidence,
+        string nativePlanPath, string snapshotPath, string ledgerPath, bool consumeSaleStock) =>
+        new(evidence, nativePlanPath, snapshotPath, ledgerPath, true, consumeSaleStock, allowExistingShipping: true);
+
     private CropTeacherTerminalShippingSelection(CropTeacherManagedProductionEvidence evidence,
-        string nativePlanPath, string snapshotPath, string ledgerPath, bool useNativeVariants, bool consumeSaleStock = false)
+        string nativePlanPath, string snapshotPath, string ledgerPath, bool useNativeVariants, bool consumeSaleStock = false,
+        bool allowExistingShipping = false)
     {
         requireSaleStockReservations = consumeSaleStock;
         if (string.IsNullOrWhiteSpace(evidence.ManifestSha256))
@@ -143,7 +150,8 @@ internal sealed partial class CropTeacherTerminalShippingSelection
         if (SlotIndex < 0 || Quality < 0 || (!useNativeVariants && checked((long)MinimumUnits * UnitPrice) < MinimumGrossRevenue))
             throw new InvalidDataException("Selected crop terminal quantity/price does not meet its original wave.");
         var bins = Field(source, "farm", "shipping_bins").EnumerateArray().Where(row => Boolean(row, "completed") &&
-            Boolean(row, "pending_settlement_value_complete") && Long(row, "pending_settlement_value") == 0 &&
+            Boolean(row, "pending_settlement_value_complete") &&
+            (Long(row, "pending_settlement_value") == 0 || allowExistingShipping && Long(row, "pending_settlement_value") > 0) &&
             row.TryGetProperty("interaction_stand_tile_x", out var x) && x.TryGetInt32(out _) &&
             row.TryGetProperty("interaction_stand_tile_y", out var y) && y.TryGetInt32(out _) &&
             string.IsNullOrWhiteSpace(String(row, "interaction_stand_tile_blocked_reason"))).ToArray();
@@ -158,6 +166,8 @@ internal sealed partial class CropTeacherTerminalShippingSelection
             CropTeacherTerminalVariant? next = null;
             foreach (var row in selectedVariants.OrderByDescending(row => row.SlotIndex)) next = row with { Next = next };
             nativeVariants = new("crop_teacher_native_terminal_variants.v1", binScope, next!);
+            if (allowExistingShipping && Long(bin, "pending_settlement_value") > 0)
+                existingShipping = CropTeacherExistingShippingBaseline.Capture(CreateTarget(0));
             if (ObservedPrefix is not null) nativeVariants = ReadObservedOrder(ObservedPrefix, CreateTarget(0));
             CreateTarget(0).VerifyNativeVariantSource(source, 0, MinimumGrossRevenue);
         }
@@ -177,6 +187,7 @@ internal sealed partial class CropTeacherTerminalShippingSelection
         var terminalPaths = new[] { evidence.ManifestPath, nativePlanPath, snapshotPath, ledgerPath, RetentionProofPath }
             .Select(Path.GetFullPath).ToHashSet(PathComparer);
         terminalPaths.UnionWith(prefixInputs.Select(Path.GetFullPath));
+        if (existingShipping is not null) terminalPaths.Add(existingShipping.SnapshotPath);
         inputs = new(inputs.Hashes.Where(row => terminalPaths.Contains(row.Key)).ToDictionary(row => row.Key, row => row.Value, PathComparer));
         ProductionReference = new(Path.GetFullPath(evidence.ManifestPath), evidence.ManifestSha256);
     }

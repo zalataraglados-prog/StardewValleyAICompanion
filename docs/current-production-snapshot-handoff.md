@@ -1,5 +1,73 @@
 # Current Production Snapshot Handoff
 
+## Current254: Explicit Existing-Bin Attribution; Native Suffix Not Yet Run
+
+Explicit joint baseline binds the original retention snapshot/SHA and complete bin contents.
+Crop-only PendingValueAt remains unchanged; physical total adds excluded prior income.
+Original shipping/resources/recurrence kernels and legacy empty-bin defaults remain.
+Focused/adjacent75/75 PASS/59s; retained actual114 selection PASS/8s:205 existing,
+8 crops/1400 attributed,1605 physical. No new native/ledger operation or complete-run claim.
+NEXT reuse published production c3a02861, then same UNSAVED114 shipping/sleep/readback.
+Do not reload106, harvest again or rebuild13days merely to select terminal shipping.
+Original runtime12688/2856/3356 remains. Gemini file-tool lane HOLD; no active peer.
+
+## Current: Source109 Accepted, Same-Live Harvest Continuation (253)
+
+Source43cd5783 ownCI44133697261 SUCCESS/Core2810/55s/Backend3966/9m45s,
+zero failures-skips. PR585 mergedmain aef8a311, SAME testedtreec7587eef.
+Completed remote branch deleted after exact head check; primary work continues
+on feat/r2-harvest-terminal-continuation-20261118. Merge-push44137404581 SUCCESS.
+
+Original source-return-only process exited0, accepted109/revision394/sourcea8ec91d6.
+AcceptedSHA372f8a4e07e65bab89466b3d57cc71c50952ebea15de94fadd9f6f7c0cb2e57a;
+reportSHA9230b2c086f589fd5aba35a1beaf56d2458acfbddbe618c60d2f210eee451803:
+typed objective complete, pendingfalse, native_execution/reload/formalfalse.
+The original singleton147 was NOT shipped twice.802g cash, no harvest proved yet.
+
+NEW original Main17220/start2026-11-17T17:29:47.8521578Z, held wrapper32849,
+block252-harvest-terminal-package.json / block252-harvest-terminal-continuation.
+Same game/owner/plan/global mode, no reload/reselection. Frozen tested effective
+source binaries MUST NOT be rebuilt. Reviewed artifact bound128->256/stop:
+only14 remain at114, less than8 harvest+8 deposit+sleep/route; prior128 and free
+I>5GiB/E>2GiB verified. No plan/quantity/deadline/executor change or cleanup.
+This invocation is now TERMINAL/exit2. Original115/118 harvested two batches,
+total8 cauliflowers;117 automatically shipped another safe singleton and accepted
+its source return without manual repair. Final owner114/revision399/source
+e1148b28c8349da4c97ddf5c9634df7bce4a8e3043ffe866b3b77ac31231b892,
+acceptedSHA609423ee1361a71863580cd31fda144e0da32566a5201bc869be96fc2673e378.
+Slot9 has8(O)190/quality0/unit175; cash802. Shared bin71,14 contains original
+147qty1/unit45 and708qty1/unit160, complete pending205. NO115intent/native120.
+Iteration120 failed BEFORE dispatch: old pure-crop terminal selection requires an
+empty bin. Do NOT clear/alter bin, reharvest, reload106 or kill the unsaved game.
+
+Source-proof reopen took about11-14min with advancing CPU; a stack sampled CAS
+blob decompression/hash in retained-input validation. Gemini's same-session
+read-only performance review got a complete6-file/53KB mirror, but both scoped
+read admissions were denied/empty SUCCESS; no assessment was delivered and the
+task is stopped/blocked-idle, not silently retried or escalated. No saves/secrets/
+build/write/runtime rights. Codex handles further static analysis. Do not remove
+old fresh-disk guarantees or trust mtime. No optimization deployed to this live run.
+
+NEXT: statically map ALL terminal selection/action/target/deposit/overnight/save
+assumptions, then bind a proved preexisting-shipment context for the JOINT entry.
+Keep pure-crop empty-bin defaults. Reuse old exact native shipping/money proof;
+separate205 existing revenue from1400 crop revenue, reject unknown/changed items,
+prices, bins and day drift. Do not normalize raw snapshot/evidence or repair only
+selection while leaving downstream zero-baseline assumptions. First original
+artifact offline compatibility and focused negatives, then same-owner114 terminal.
+The expensive original production proof ALREADY exists at owner/
+production-terminal-22dfe03564ec41418bf21f911bb5efba/production-evidence.json,
+SHAc3a028618201585824689eb2f449702dc41de5f936882d72fb238bed9d09288f;
+native lifecycle/whole-wave retentiontrue, terminal/formalfalse, bound to119/399.
+External block253-retained-terminal-production.json is a reference only. Reuse
+the ORIGINAL reader/hash checks; do not rebuild13days or fabricate observed
+selection/owner acceptance just to get a reuse path.
+Untested performance identity code/tests were SHA-preserved OUTSIDE the repo at
+resident-refill-20261108/drafts/block253-logical-identity; production retained-input
+code restored to HEAD. No optimization is compiled/deployed or speedup claimed.
+Full Stage5 selected source/quantity/deadline/shared calendar/applicableDay0,
+570/569 and formal training remain incomplete. Frozen19/19/11/11/235 stay frozen.
+
 ## Current: Actual114 Mechanical Source Compatibility (252 Continued)
 
 Native114 REALLY moved and shipped original147/slot9/one unit45; bin0->1,

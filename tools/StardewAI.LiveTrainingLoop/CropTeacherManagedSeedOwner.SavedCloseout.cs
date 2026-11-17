@@ -63,7 +63,10 @@ public sealed partial class CropTeacherManagedSeedOwner
             var production = new CropTeacherManagedProductionEvidence(productionPath,
                 ProofPaths("planting_layout_proof_paths"), ProofPaths("daily_capacity_proof_paths"),
                 ProofPaths("native_lifecycle_proof_paths"), ProofPaths("output_retention_proof_paths"), artifacts.Hashes[productionPath]);
-            var selection = terminalTarget?.RequireSaleStockReservations == true ?
+            var selection = terminalTarget?.ExistingShipping is not null ?
+                CropTeacherTerminalShippingSelection.OpenJointNativeVariants(production, options.NativeRunPlanPath,
+                    StoredPath(productionManifest, "accepted_snapshot_path"), StoredPath(productionManifest, "accepted_ledger_path"),
+                    terminalTarget.RequireSaleStockReservations) : terminalTarget?.RequireSaleStockReservations == true ?
                 CropTeacherTerminalShippingSelection.OpenNativeVariantsConsumingSaleStock(production, options.NativeRunPlanPath,
                     StoredPath(productionManifest, "accepted_snapshot_path"), StoredPath(productionManifest, "accepted_ledger_path")) :
                 terminalTarget?.NativeVariants is null ? new CropTeacherTerminalShippingSelection(production, options.NativeRunPlanPath,

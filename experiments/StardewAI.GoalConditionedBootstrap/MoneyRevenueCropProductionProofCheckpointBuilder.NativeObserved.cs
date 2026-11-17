@@ -11,7 +11,8 @@ public static partial class MoneyRevenueCropProductionProofCheckpointBuilder
     private const string NativeCapacitySchema = "money_revenue_crop_daily_capacity_proof.v2";
     private const string NativeTerminalSchema = "crop_teacher_native_variant_terminal_proof.v1";
     private static bool IsNativeTerminal(string schema) => schema is NativeTerminalSchema or
-        "crop_teacher_native_variant_terminal_proof.v2" or "crop_teacher_native_variant_terminal_proof.v3";
+        "crop_teacher_native_variant_terminal_proof.v2" or "crop_teacher_native_variant_terminal_proof.v3" or
+        "crop_teacher_native_variant_terminal_proof.v4";
 
     public static MoneyRevenueCropProductionProofCheckpoint BuildNativeObserved(string requestPath) =>
         BuildCore(requestPath, nativeObserved: true);

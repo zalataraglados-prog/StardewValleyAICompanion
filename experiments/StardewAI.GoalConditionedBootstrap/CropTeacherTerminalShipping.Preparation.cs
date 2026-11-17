@@ -18,9 +18,12 @@ public sealed partial class CropTeacherTerminalShipping
 
         private Preparation(string runRequestPath, string sourcePath, string ledgerPath,
             IReadOnlyCollection<string> commitmentIds, string stepId, CropTeacherTerminalShippingTarget target,
-            string modelActionPath, string queuePath, bool nativeVariants = false, bool consumeSaleStock = false)
+            string modelActionPath, string queuePath, bool nativeVariants = false, bool consumeSaleStock = false,
+            bool existingShipping = false)
         {
             Require(nativeVariants == (target.NativeVariants is not null), "Terminal variant mode must be explicitly selected.");
+            Require(existingShipping == (target.ExistingShipping is not null) && (!existingShipping || nativeVariants),
+                "Existing shipping requires the explicit joint terminal consumer.");
             Require(consumeSaleStock == target.RequireSaleStockReservations && (!consumeSaleStock || nativeVariants),
                 "Terminal sale stock requires its explicit reserved native variant consumer.");
             Target = target;
@@ -98,6 +101,11 @@ public sealed partial class CropTeacherTerminalShipping
             string modelActionPath, string queuePath) =>
             new(runRequestPath, sourcePath, ledgerPath, commitmentIds, stepId, target, modelActionPath, queuePath,
                 nativeVariants: true, consumeSaleStock: true);
+        public static Preparation OpenJointNativeVariants(string runRequestPath, string sourcePath, string ledgerPath,
+            IReadOnlyCollection<string> commitmentIds, string stepId, CropTeacherTerminalShippingTarget target,
+            string modelActionPath, string queuePath) =>
+            new(runRequestPath, sourcePath, ledgerPath, commitmentIds, stepId, target, modelActionPath, queuePath,
+                nativeVariants: true, consumeSaleStock: target.RequireSaleStockReservations, existingShipping: true);
         public string Kind { get; }
         public string SourcePath { get; }
         public string QueuePath { get; }
