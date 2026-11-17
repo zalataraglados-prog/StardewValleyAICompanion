@@ -1,5 +1,16 @@
 # StardewAI 当前工作
 
+## 2026-11-17 全局原生接续与选择工件封存（244）
+
+- #577已按c00d4b82自身CI44019964146全绿合并为main `b38c3cca`，同测试树7afd54a3；Core2770（53秒）/Backend3861（7分48秒）、零失败/跳过，合并推送44021624442亦成功，保留沙箱普通合并a87695bf同树。没有恢复模型API/worker。
+- 先纠正观察范围：243调用的是原 `BuildQueueFromDailyPlanAsync` **日计划子入口**，其经济/作物交接不是完整Main选线。显式managed+continue先走原控制、维护和集合Teacher，再退回日计划；本次不据子结果强制新作物周期，也不改旧执行器/排名。原Main23804在同12688现场、原授权run及独立工件目录真实接续，不用standalone或候选覆盖。
+- 实际8个主迭代中7个原生聚合通过，另1轮合法不可用无派发；原131/Beach选择经穿图及剧情611439控制后，真实MAX抛竿、BobberBar成功钓到 `(O)131`。库存恢复出货后自主选择145/Town，随后真实得到RiverJelly的无小游戏特殊结果，**没有把它记成145完成**；再按原恢复/续行处理。原policy记录保留未完成/控制和独立比较边界，不把成功动作直接授予训练标签。
+- 原3个保存收尾迭代完成春14→15，stdout `status=ok`、stop为空，Main已退出。最终after为 `1b543660…/tick30762`、春15 06:00/FarmHouse，余额及累计收入1442；report.last_state_hash的3c4899bb是末次**before**，不可误作新头。实际4文件/7,796,631字节保存SHA `f419d41cfdad315b0ab0b7b8a5d95876f5d4cf28ac27fe75f7ebe3ca277c9a5d`，另存消费副本并用原Capture核同hash。未重载、重开235或重跑十三天；不要恢复07de覆盖新进度。OS退出码未从观察句柄读到，不伪报exit0。
+- 新汇总层补齐原episode声明的plan/queue/result及原 `EffectiveDecisionArtifactTracker` 的plan/ranking/queue/snapshot引用，聚合和子项都保留、不重复计观察；只固定路径/hash和原元数据，不重做选择/编译/Teacher，不宣称decision replay。复用原snapshot逻辑hash/CAS核保护新增源引用；缺少旧可选字段仍可保留，声明非空引用失效则明确拒绝。原tracker可保留最初snapshot而记录fresh重绑来源，两种身份分别留存，不新增字面相等门或改旧tracker。
+- 真实236+244原件经同CLI离线读回：17份payload/观察、119项角色引用、141直接引用，3353历史闭包仍引用原报告；新增报告112750字节、SHA `6b667ac16957a896f48311b4e4103c65c0f70100c7db80af8a8a8a7473d32ff4`，不覆盖Main原汇总 `21ed99a5…`。5个原暂停边和7个裁剪/full知识差异边如实保留，linkage/global/source_schedule/formal均false；未知干草/配方不当0，未选字段不作通用硬门。本次原集合ledger读取器无museum候选时合法返回空引用，不伪造共享账本证明。
+- 前6项先红复现漏引用；首轮22项中21通过，1项在旧fixture提交的File.Move访问拒绝、尚未进入新消费者，原因未证实，未改仓储。同二进制定向6/6后补独立decision-only CAS blob篡改/manifest不变反例，最终7/7（12秒）、相邻55/55（1分8秒）、零跳过；范围重叠，不相加或冒充22项一次全绿。本提交自身CI另核。构建仅隔离 `artifacts/block244-decision-bindings`，E临时目录/2核/低优先级，原Debug及244运行二进制未覆盖；存档、回执/日志/local-data均不入Git。
+- **下一步不改目标：** 从当前春15新鲜观测沿原Main实际优先链继续选线，使用包含236/244的来源请求保留实际source/quantity/deadline及共享资源/日历，再按所选依赖补原生缺口→#570→#569。完整跨目标/Day-0路线、姜岛来源/花费日程仍未闭；本次有界循环与引用封存不代替这些退出条件，不重采冻结19/19、11/11、235。上级D盘对话按用户最新要求只接收信息，不再回发或扩展权限。
+
 ## 2026-11-17 原托管证据与后续目录统一引用（242）
 
 - #576已按最终368925aa自身CI全绿合并为main `4d9db590`，同测试树0ef5aa76：Core2770（56秒）/Backend3845（11分54秒）、零失败/跳过。合并推送44014662680成功，保留沙箱普通Git合并76300657同树，未恢复worker/API。
