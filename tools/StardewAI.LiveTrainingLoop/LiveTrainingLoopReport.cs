@@ -10,6 +10,9 @@ using StardewAI.LiveTrainingLoop;
 
 public sealed class LiveTrainingLoopReport
 {
+    [JsonPropertyName("managed_crop_source_provenance_path"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? ManagedCropSourceProvenancePath { get; set; }
+
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; set; } = "live_training_loop_report.v1";
 

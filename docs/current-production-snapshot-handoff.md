@@ -1,5 +1,55 @@
 # Current Production Snapshot Handoff
 
+## Current: Unified Original Managed Provenance (242)
+
+PR576 merged as main4d9db590, same0ef5aa76 tested tree. Own44011798699 passed ALL
+steps: Core2770/56s, Backend3845/11m54s, zero failed/skipped; merge44014662680 also
+succeeded. Peer ordinary merge76300657 has the accepted tree, not resumed API rights.
+
+MoneyRevenueCropManagedProvenance composes frozen235 report/hash closure, ORIGINAL
+Day0/opening witness/owner entry and241 readback binding with retained later episode
+directories. It does not replay/re-sort230old rows across reset clocks, copy full
+snapshots or duplicate3353inherited refs into every run. All raw aggregate/child
+payloads remain pinned; only original child ordinals enter the observation sequence.
+Nonfresh and unbound edges stay explicit, not promoted to action/progress proof.
+
+Existing supplement CLI: --evidence-mode managed_saved_closeout --request <request>
+--output <new-report>. Old manual mode unchanged. Main opt-in:
+--managed-crop-source-provenance-request <request> with existing stop retention.
+Prepare once BEFORE native work, aggregate once at end through the existing durable
+writer. Wrong run/retained directory overwrite refused upstream. A later collection
+run need not invent an active crop owner or enable old GoldenWalnut capture. Default
+does nothing; its nullable report path is omitted. No new logger/planner/executor.
+
+Inherited accepted closure uses physical hashes including original gzip blobs;
+directly consumed snapshots also get original logical/CAS checks. No repeated deep
+reproof of the frozen cycle per action. Actual first output references3353historical
+inputs and7later rows with40direct refs in29705bytes. Three old executor-owned pause
+edges use the original witness plus actor/time/tile/progress/resource kernels.
+Core progress comparer is public for reuse, unchanged algorithms; the old24-tick
+rule still rejects those long pauses and is NOT relaxed.
+
+ONE retained10344->10344 edge is partial fishing profile -> full knowledge refresh:
+hay_storage unreadable becomes available; crab_pot/rain_totem crafting projections
+were blocked_requires_full_profile. Do not invent zero values or loosen the old
+all-persistent checker to pretend full equality. Preserve raw evidence and held edge.
+Next ACTUAL selected route determines which dependencies need proof; unused hay or
+recipes are not universal blockers. Source/global/native/preference/formal claims
+remainfalse. This inventory is not the final Day0/native route proof.
+
+Focused13/13 then adjacent68/68 passed (overlap). Final69 had68pass/1old fixture
+atomic File.Move access denial; no storage logic changed, cause not confirmed.
+SAME-binary targeted10/10 passed19s; original failed TRX retained, not69once-green.
+Final real recheck26.7s retained3353inherited/40direct refs,7rows,3pause/1heldedge,
+same44ae478e/tick13147 end.30282bytes/reportSHA
+d5f33643b7fe3dddc04cde666f17a42fa36aa9482855fd225c0f3e33b6386ee1.
+OWNCI tracked separately. Initial new overload/fixture errors retained and corrected
+at their own layers. Isolated artifacts/block242-managed-provenance, Etemp/2cores/
+BelowNormal. No gameplay/reload, old shared executor/bridge/math edits or local-data
+Git. Keep235/L1 frozen and current live unsaved tail. Next remains Stage5 actual
+selected source/quantity/deadline/resource/calendar ->570 ->569, not more universal
+field acceptance requirements or another planner.
+
 ## Current: Original Accepted Readback To Later Observation (241)
 
 PR575 merged as main871f416d, EXACT tested tree7264f41e. Final sourceccde051d

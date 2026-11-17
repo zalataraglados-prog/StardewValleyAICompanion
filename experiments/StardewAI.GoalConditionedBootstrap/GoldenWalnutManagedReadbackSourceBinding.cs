@@ -27,6 +27,8 @@ public sealed record GoldenWalnutManagedReadbackSourceBinding(
     [property: JsonPropertyName("readback_acceptance_sha256s")] string[] ReadbackAcceptanceSha256s,
     [property: JsonPropertyName("input_artifact_hashes")] ReadOnlyDictionary<string, string> InputArtifactHashes)
 {
+    [JsonPropertyName("embedded_request"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public GoldenWalnutManagedReadbackSourceBindingRequest? EmbeddedRequest { get; init; }
     [JsonPropertyName("schema_version")] public string SchemaVersion => "golden_walnut_managed_readback_source_binding.v1";
     [JsonPropertyName("source_binding_verified")] public bool SourceBindingVerified => true;
     [JsonPropertyName("source_schedule_verified")] public bool SourceScheduleVerified => false;

@@ -13,10 +13,23 @@ public static class GoldenWalnutManagedReadbackSourceBindingBuilder
         using var fresh = InvocationReadSession.Start(Array.Empty<string>(), enabled: false);
         requestPath = Path.GetFullPath(requestPath);
         var request = Read<GoldenWalnutManagedReadbackSourceBindingRequest>(requestPath);
+        return BuildCore(request, requestPath);
+    }
+
+    public static GoldenWalnutManagedReadbackSourceBinding Build(GoldenWalnutManagedReadbackSourceBindingRequest request)
+    {
+        using var fresh = InvocationReadSession.Start(Array.Empty<string>(), enabled: false);
+        Require(Path.IsPathFullyQualified(request.NativeAfterSnapshotPath) && Path.IsPathFullyQualified(request.ContinuationEpisodePath),
+            "Embedded source bindings require absolute artifact paths.");
+        return BuildCore(request, null);
+    }
+
+    private static GoldenWalnutManagedReadbackSourceBinding BuildCore(GoldenWalnutManagedReadbackSourceBindingRequest request, string? requestPath)
+    {
         Require(request.SchemaVersion == "golden_walnut_managed_readback_source_binding_request.v1" &&
             !string.IsNullOrWhiteSpace(request.RunId) && request.AcceptedSavedReadbacks is { Length: > 0 },
             "Request requires the original run and accepted saved readback references.");
-        var root = Path.GetDirectoryName(requestPath)!;
+        var root = requestPath is null ? Path.GetPathRoot(request.NativeAfterSnapshotPath)! : Path.GetDirectoryName(requestPath)!;
         var nativePath = Resolve(root, request.NativeAfterSnapshotPath);
         var episodePath = Resolve(root, request.ContinuationEpisodePath);
         var episode = Read<PlanExecutionEpisodeEnvelope>(episodePath);
@@ -27,7 +40,8 @@ public static class GoldenWalnutManagedReadbackSourceBindingBuilder
         var loadedPath = accepted.GetProperty("after_snapshot_path").GetString() ??
             throw new InvalidDataException("Accepted readback has no original loaded snapshot.");
         Require(Path.IsPathFullyQualified(loadedPath), "Accepted loaded snapshot path is not absolute.");
-        var retained = new CropTeacherRetainedInputs(new[] { requestPath, nativePath, episodePath, sourcePath, loadedPath }
+        var retained = new CropTeacherRetainedInputs(new[] { nativePath, episodePath, sourcePath, loadedPath }
+            .Concat(requestPath is null ? [] : new[] { requestPath })
             .Distinct(CropTeacherSeedTransferNativeOutcome.PathComparer).ToArray());
 
         // Verify the exact original load first; a later observation is not that native load.
@@ -54,9 +68,10 @@ public static class GoldenWalnutManagedReadbackSourceBindingBuilder
                 hashes[full] = hash;
             }
         retained.Validate();
-        return new(requestPath, request.RunId, episode.EpisodeId, source.SaveId.Value!, source.PlayerId.Value!, source.GameVersion,
+        return new(requestPath ?? string.Empty, request.RunId, episode.EpisodeId, source.SaveId.Value!, source.PlayerId.Value!, source.GameVersion,
             loadedPath, sourcePath, loaded.StateHash, source.StateHash, loaded.GameTick, source.GameTick,
-            boundary.PersistentStateSha256, boundary.AcceptanceSha256s, new ReadOnlyDictionary<string, string>(hashes));
+            boundary.PersistentStateSha256, boundary.AcceptanceSha256s, new ReadOnlyDictionary<string, string>(hashes))
+        { EmbeddedRequest = requestPath is null ? request : null };
     }
 
     private static T Read<T>(string path) => CurrentTeacherFrontierSupport.Read<T>(path, "Managed readback source binding");
