@@ -97,10 +97,10 @@ static partial class Program
         var stepResults = execution["step_results"] as JsonArray;
         if (stepResults is null || stepResults.Count <= 1)
         {
-            GoldenWalnutFreshSaveEpisodeArchive.Capture(
+            CaptureGoldenWalnutPlanExecutionEpisode(
+                options,
                 episodePath,
-                iteration,
-                options.RunId);
+                iteration);
             return;
         }
 
@@ -126,10 +126,10 @@ static partial class Program
                 "plan-execution-episode-" + iteration.ToString("D4") +
                 "-item-" + ordinal.ToString("D4") + ".json");
             WritePlanExecutionEpisodeFile(stepEpisodePath, stepEpisode);
-            GoldenWalnutFreshSaveEpisodeArchive.Capture(
+            CaptureGoldenWalnutPlanExecutionEpisode(
+                options,
                 stepEpisodePath,
-                iteration,
-                options.RunId);
+                iteration);
         }
     }
 

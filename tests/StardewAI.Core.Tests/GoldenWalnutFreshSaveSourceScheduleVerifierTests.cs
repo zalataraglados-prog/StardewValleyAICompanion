@@ -10,6 +10,8 @@ namespace StardewAI.Core.Tests;
 
 public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
 {
+    private static string BootstrapAssemblyPath => typeof(MoneyRevenueCropNativeProductionRunPlanBuilder).Assembly.Location;
+
     [Fact]
     public void GlobalGourmandEvidenceDoesNotPromoteTheMasterAnglerLocalGingerFamily()
     {
@@ -82,7 +84,6 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
         var certificatePath = WriteGingerIslandAccessCertificate(fixture.Root);
         var auditPath = Path.Combine(fixture.Root, "local-audit.json");
         var proofPath = Path.Combine(fixture.Root, "local-completion-proof.json");
-        var configuration = new DirectoryInfo(AppContext.BaseDirectory).Parent!.Name;
         var start = new ProcessStartInfo("dotnet")
         {
             RedirectStandardOutput = true,
@@ -92,9 +93,7 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
         };
         foreach (var argument in new[]
         {
-            Path.Combine(FindRepositoryRoot(), "experiments",
-                "StardewAI.GoalConditionedBootstrap", "bin", configuration,
-                "net8.0", "StardewAI.GoalConditionedBootstrap.dll"),
+            BootstrapAssemblyPath,
             "build-master-angler-fresh-save-prerequisite-completion-proof",
             "--catalog", inputs.Catalog,
             "--windows", inputs.Windows,
@@ -128,7 +127,6 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
         var receipts = WriteContinuationAuditReceipts(fixture);
         var auditPath = Path.Combine(fixture.Root, "complete-audit.json");
         var proofPath = Path.Combine(fixture.Root, "completion-proof.json");
-        var configuration = new DirectoryInfo(AppContext.BaseDirectory).Parent!.Name;
         var start = new ProcessStartInfo("dotnet")
         {
             RedirectStandardOutput = true,
@@ -138,8 +136,7 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
         };
         foreach (var argument in new[]
         {
-            Path.Combine(FindRepositoryRoot(), "experiments", "StardewAI.GoalConditionedBootstrap", "bin",
-                configuration, "net8.0", "StardewAI.GoalConditionedBootstrap.dll"),
+            BootstrapAssemblyPath,
             "build-master-angler-fresh-save-prerequisite-completion-proof",
             "--catalog", inputs.Catalog,
             "--windows", inputs.Windows,
@@ -429,15 +426,13 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
 
         // Exercise the authoritative CLI wiring as well as the direct audit API.
         var outputPath = Path.Combine(fixture.Root, "audit-output.json");
-        var configuration = new DirectoryInfo(AppContext.BaseDirectory).Parent!.Name;
         var start = new ProcessStartInfo("dotnet")
         {
             RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false, CreateNoWindow = true
         };
         foreach (var argument in new[]
         {
-            Path.Combine(FindRepositoryRoot(), "experiments", "StardewAI.GoalConditionedBootstrap", "bin",
-                configuration, "net8.0", "StardewAI.GoalConditionedBootstrap.dll"),
+            BootstrapAssemblyPath,
             "audit-master-angler-fresh-save-prerequisites", "--catalog", inputs.Catalog,
             "--windows", inputs.Windows, "--dependency-expansions", inputs.Dependencies,
             "--golden-walnut-source-schedule", fixture.SchedulePath,
@@ -804,11 +799,6 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
         using var fixture = new Fixture();
         if (mismatch)
             fixture.Change(fixture.SchedulePath, root => root["source_save_id"] = "wrong");
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        var configuration = directory.Parent!.Name;
-        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "StardewValleyAICompanion.sln")))
-            directory = directory.Parent;
-        Assert.NotNull(directory);
         var start = new ProcessStartInfo("dotnet")
         {
             RedirectStandardOutput = true,
@@ -818,8 +808,7 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
         };
         foreach (var argument in new[]
         {
-            Path.Combine(directory!.FullName, "experiments", "StardewAI.GoalConditionedBootstrap", "bin", configuration,
-                "net8.0", "StardewAI.GoalConditionedBootstrap.dll"),
+            BootstrapAssemblyPath,
             "verify-golden-walnut-fresh-save-source-schedule",
             "--episode-directory", fixture.Root, "--episode-manifest", fixture.ManifestPath,
             "--source-schedule", fixture.SchedulePath, "--schedule-id", "schedule",
@@ -1112,15 +1101,6 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
         string? gourmandContinuationReceiptPath = null)
     {
         var repositoryRoot = FindRepositoryRoot();
-        var configuration = new DirectoryInfo(AppContext.BaseDirectory).Parent!.Name;
-        var bootstrapDll = Path.Combine(
-            repositoryRoot,
-            "experiments",
-            "StardewAI.GoalConditionedBootstrap",
-            "bin",
-            configuration,
-            "net8.0",
-            "StardewAI.GoalConditionedBootstrap.dll");
         var script = Path.Combine(
             repositoryRoot,
             "scripts",
@@ -1140,7 +1120,7 @@ public sealed class GoldenWalnutFreshSaveSourceScheduleVerifierTests
             "-VerificationEpisodeDirectory", fixture.Root,
             "-VerificationEpisodeManifestPath", fixture.ManifestPath,
             "-VerificationSourceSchedulePath", fixture.SchedulePath,
-            "-VerificationBootstrapDllPath", bootstrapDll,
+            "-VerificationBootstrapDllPath", BootstrapAssemblyPath,
             "-VerificationOutputDirectory", fixture.VerificationOutputDirectory,
             "-RunId", "run"
         })
