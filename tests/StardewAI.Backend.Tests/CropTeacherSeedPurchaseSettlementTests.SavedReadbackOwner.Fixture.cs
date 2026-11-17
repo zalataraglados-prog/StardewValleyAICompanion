@@ -16,14 +16,18 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         internal string Runtime => Path.Combine(Night.Options.EvidenceDirectory, "saved-readback");
         internal string LoadedPath => Path.Combine(Witness.Root, "owner-loaded.json");
 
-        internal SavedReadbackOwnerFixture(bool productExecutor = false)
+        internal SavedReadbackOwnerFixture(bool productExecutor = false, Action<SnapshotEnvelope>? prepareSource = null)
         {
             preserveArtifacts = productExecutor;
-            Night = new(productExecutor: productExecutor, prepareSource: source => ChangeState(source.Before, "time", time =>
+            Night = new(productExecutor: productExecutor, prepareSource: source =>
             {
-                time["year"] ??= JsonSerializer.SerializeToNode(new { status = "available", value = 2 });
-                time["season"] ??= JsonSerializer.SerializeToNode(new { status = "available", value = "spring" });
-            }));
+                ChangeState(source.Before, "time", time =>
+                {
+                    time["year"] ??= JsonSerializer.SerializeToNode(new { status = "available", value = 2 });
+                    time["season"] ??= JsonSerializer.SerializeToNode(new { status = "available", value = "spring" });
+                });
+                prepareSource?.Invoke(source.Before);
+            });
         }
 
         internal async Task CompleteNight(CropTeacherManagedSeedOwner owner, Action<SnapshotEnvelope>? prepareLoaded = null)

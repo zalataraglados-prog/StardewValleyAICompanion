@@ -352,6 +352,7 @@ var commandDefinitions = new CommandDefinition[]
         if (File.Exists(output) || Directory.Exists(output)) throw new IOException("Supplement summary output already exists.");
         Write(output, MoneyRevenueCropSupplementalEvidenceSummary.Build(options.Required("request")));
     }),
+    new("bind-golden-walnut-managed-readback-source", options => GoldenWalnutManagedReadbackSourceBindingCommands.Run(options, Write)),
     new("verify-money-revenue-crop-teacher-dispatch", options =>
     {
         var path = Path.GetFullPath(options.Required("manifest"));

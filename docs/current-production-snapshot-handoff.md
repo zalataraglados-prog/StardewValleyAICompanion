@@ -1,5 +1,45 @@
 # Current Production Snapshot Handoff
 
+## Current: Original Accepted Readback To Later Observation (241)
+
+PR575 merged as main871f416d, EXACT tested tree7264f41e. Final sourceccde051d
+ownCI44007529590 succeeded ALL steps (Core2770/47s, Backend3833/13m21s, zero
+failed/skipped). Controller ordinary peer mergeba5e47cd has the same tree and
+preserves untracked instructions/task files; this does not resume worker/API rights.
+
+Producer alignment found two nonlocal gaps in230rawWepisodes:0050->0052 maps to
+original accepted readback48;0082->0084 maps to original shared-source80. Native
+overnight243 and accepted reload235 are outside the raw0242tail. Retain their
+original owner references; do not sort reset clocks together or fabricate episodes.
+
+New read-only CLI bind-golden-walnut-managed-readback-source --request <request>
+--output <new-report> verifies the EXACT original loaded head using the original
+AcceptedSavedReadbackVerifier, then the later episode's before using original
+persistent-resource and bounded observation kernels. Both hashes/ticks stay real;
+no old live entry, single-clock manifest/archive, executor or common runtime gate
+is changed. This is GoldenWalnut archival-source adaptation, not whole-route proof.
+
+Actual235loaded7c21f2f1 and236firstsourcef168c42b share tick124/day13/600/actor and
+FarmHouse9,9; only daily quest display materialization differs. Existing persistent
+normalization already covers it. CLI PASS,13original inputs unchanged, reportSHA
+ec4af5f2550bb3ccea7b060d8ce2f0b04e9c025c75f69b68704c0fab01f993f0.
+Existing report overwrite is rejected. Focused12/12 (21s) passed; initial fixture
+Undefined ChangedFacts serialization failures retained and fixed only in fixture.
+Adjacent old readback/production/live/day-decision tests passed88/88 (2m20s,
+overlapping scope), zero skips. SAME CLI also accepts original48->0052 exact
+loaded source,12original inputs unchanged, reportSHA
+486ec1294287d852e804c0bfb8fbccaedda5d1dad5e8bb40c679d133867395c8.
+These TWO real source bindings are not a full lineage. This source's OWN CI is
+tracked separately; do not borrow the accepted240 source's CI.
+Isolated artifacts/block241-readback-source, Etemp/2cores/BelowNormal; original
+native Debug DLL pins unchanged. No gameplay/load, owner-history replay or raw Git.
+
+NEXT wire original episodes plus these readback bindings and existing owner shared/
+overnight references into unified provenance, then actual selected source/quantity/
+deadline/resource/calendar/Day0. Do not weaken old full island verifier or re-prove235.
+This report leaves source_schedule/global_route/native_dispatch/preference/formal
+FALSE. Stage5 remains OPEN ->570 ->569; preserve the live unsaved tail and local-data.
+
 ## Current: Original Managed Episode Archive Compatibility (240)
 
 Source3d8158f7 ownCI44005104545 succeeded ALL steps (Core2770/Backend3831,
