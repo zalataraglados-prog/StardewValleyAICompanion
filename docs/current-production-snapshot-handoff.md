@@ -1,5 +1,31 @@
 # Current Production Snapshot Handoff
 
+## Current: Reused Owned Capacity Interrupt Preparation (252)
+
+Managed harvest now routes FULL-inventory recovery before harvest admission. The
+original capacity selector and safe singleton shipping remain unchanged. Story
+and capacity use ONE extracted selection/refresh/native shared-source adapter;
+original harvest guard/executors/Core/defaults stay intact. Control choice does
+not replace the crop day plan or grant crop credit. Native partial work retains
+its original outcome/continuation, not false objective completion; the original
+capacity policy rechecks the next fresh boundary, including stack drain/transit.
+
+Accurate two-case RED follows correction of a missing old fixture shipping field.
+Final adjacent44/44/40s passed, zero failures/skips, TRX SHAbf57ca9dab6868ed46be85a9aa957059e1a074ecf08bf221f04548b49d77ce51.
+Retained REAL113 selected preparation also passed offline with the original move
+and shipping primitives and unchanged item/slot/quantity/price. No owner admission,
+native dispatch, ledger mutation or source rewrite; accepted108 has no109intent.
+External replay assembly/argument/directory fixes were not product failures.
+Original report's null source-hash metadata is retained; corrected report binds
+unchanged108, SHA1d9feaf2675b843f64684d0d918b017f05ff3b4ca3bfd0a4be41f66fff6931dc,
+without repeating planner/native work. This is preparation compatibility ONLY.
+
+NEXT: observe this source's CI and continue SAME owner108/Spring27 LIVE scene
+once using immutable252 binaries and a NEW reviewed package; independent CI and
+native may overlap after the above checks. No old-package relaunch or replay of
+the successful days. Real capacity return/harvest/terminal is not yet accepted.
+FullStage5/#570/#569/formal remain open.251 below retains exact original inputs.
+
 ## Current: Harvest Capacity Interrupt Boundary (251)
 
 PR584 merged as mainf9805f38 with the SAME tested tree9814bd55. Own CI44092666759

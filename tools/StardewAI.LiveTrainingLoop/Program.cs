@@ -620,7 +620,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
     ICropTeacherSeedRuntime? cropSeedSupportForExecution = null;
     CropTeacherManagedSeedOperation? cropManagedOperationForExecution = null;
     CropTeacherManagedSeedOperation? sharedSourceOperationForExecution = null;
-    CropTeacherDailySelection? priorityStorySelectionForExecution = null;
+    CropTeacherDailySelection? ownedInterruptSelectionForExecution = null;
     JsonObject? dailyPlanRanking = null;
     StageOneCollectionTeacherQueueBuildResult? nativeControlSettle = null;
     JsonObject? deferredObjectiveContinuationForDailyMaintenance = null;
@@ -993,14 +993,14 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 beforeSnapshot,
                 lastStateHash);
             cropManagedOperationForExecution = managedControl?.Operation;
-            if (managedControl?.SharedSelection is { } storySelection)
+            if (managedControl?.SharedSelection is { } interruptSelection)
             {
                 sharedSourceOperationForExecution = cropManagedOperationForExecution
-                    ?? throw new InvalidDataException("Owned story selection lost its prepared native source yield.");
+                    ?? throw new InvalidDataException("Owned interrupt selection lost its prepared native source yield.");
                 cropManagedOperationForExecution = null;
-                priorityStorySelectionForExecution = storySelection;
+                ownedInterruptSelectionForExecution = interruptSelection;
                 selectedCandidateId = sharedSourceOperationForExecution.SharedSourceStart!.CandidateId;
-                selectedQueueIndex = storySelection.Lease.CandidateAt(0).QueueIndex;
+                selectedQueueIndex = interruptSelection.Lease.CandidateAt(0).QueueIndex;
             }
             cropTeacherStepForExecution =
                 cropQueue.ExecutionStepOverride ??
@@ -1039,8 +1039,8 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             decisionSourceStateHash = lastStateHash;
             executionSnapshotProfile = cropQueue.SnapshotProfile;
             executionSnapshotUrl = cropQueue.SnapshotUrl;
-            useDailyPlanDecisionLease = priorityStorySelectionForExecution is not null;
-            activeObjectiveContinuation = priorityStorySelectionForExecution?.Lease.CandidateAt(0).ObjectiveContinuation;
+            useDailyPlanDecisionLease = ownedInterruptSelectionForExecution is not null;
+            activeObjectiveContinuation = ownedInterruptSelectionForExecution?.Lease.CandidateAt(0).ObjectiveContinuation;
             inventoryCapacityRecoveryControlActive = string.Equals(
                 cropQueue.InterruptKind,
                 "crop_teacher_harvest_inventory_capacity_recovery",
@@ -1736,13 +1736,14 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         if (sharedSourceOperationForExecution is not null)
         {
             var completedSelection = CompleteCropTeacherSharedSelection(cropTeacherManagedOwner.Current!,
-                sharedSourceOperationForExecution, priorityStorySelectionForExecution ?? cropTeacherManagedOwner.DailySelection ??
+                sharedSourceOperationForExecution, ownedInterruptSelectionForExecution ?? cropTeacherManagedOwner.DailySelection ??
                     throw new InvalidDataException("Shared execution lost its original daily selection."));
-            if (priorityStorySelectionForExecution is null) cropTeacherManagedOwner.DailySelection = completedSelection;
+            if (ownedInterruptSelectionForExecution is null) cropTeacherManagedOwner.DailySelection = completedSelection;
             await RecordCropTeacherSharedOutcomeAsync(options, iteration, cropTeacherManagedOwner.Current!,
                 sharedSourceOperationForExecution, completedSelection, execution).ConfigureAwait(false);
-            AppendProgress(options, priorityStorySelectionForExecution is null ? "crop_teacher_joint_daily_other_goal_returned" :
-                "crop_teacher_owned_story_interrupt_returned", iteration, lastStateHash, lastQueueId,
+            AppendProgress(options, ownedInterruptSelectionForExecution is null ? "crop_teacher_joint_daily_other_goal_returned" :
+                ownedInterruptSelectionForExecution.Lease.CandidateAt(0).OptionId == "story.advance_event"
+                    ? "crop_teacher_owned_story_interrupt_returned" : "crop_teacher_owned_capacity_interrupt_returned", iteration, lastStateHash, lastQueueId,
                 "shared_source_return_verified=true crop_production_credit=false policy_reranked=false");
         }
         if (cropSeedSupportForExecution is not null && cropManagedOperationForExecution is null)
