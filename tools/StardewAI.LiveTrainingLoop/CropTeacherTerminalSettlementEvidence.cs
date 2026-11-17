@@ -85,7 +85,7 @@ internal static partial class CropTeacherTerminalSettlementEvidence
             row.GetProperty("tile_y").GetInt32() == target.BinTileY).ToArray();
         Require(bins.Length == 1 && bins[0].GetProperty("interaction_stand_tile_x").GetInt32() == target.StandTileX &&
             bins[0].GetProperty("interaction_stand_tile_y").GetInt32() == target.StandTileY &&
-            bins[0].GetProperty("pending_settlement_value").GetInt64() == 0, "selected bin/stand differs.");
+            bins[0].GetProperty("pending_settlement_value").GetInt64() == target.PhysicalPendingValueAt(0), "selected bin/stand differs.");
 
         var starts = trace.Transitions.Select((row, index) => (row, index))
             .Where(pair => Same(pair.row.NativeTransition.BeforeSnapshotPath, productionHead)).ToArray();
@@ -185,7 +185,8 @@ internal static partial class CropTeacherTerminalSettlementEvidence
             RevenueRecurrenceManifestPath = recurrenceManifest, RevenueRecurrenceReceiptPath = recurrencePath
         };
         var requestPath = target.NativeVariants is null ? await Emit("terminal-request", request).ConfigureAwait(false) :
-            await Emit("terminal-request", new CropTeacherNativeVariantTerminalRequest(observedPrefix is not null ?
+            await Emit("terminal-request", new CropTeacherNativeVariantTerminalRequest(target.ExistingShipping is not null ?
+                "crop_teacher_native_variant_terminal_request.v4" : observedPrefix is not null ?
                 "crop_teacher_native_variant_terminal_request.v3" : checkpoints.Count == 0 ?
                 "crop_teacher_native_variant_terminal_request.v1" : "crop_teacher_native_variant_terminal_request.v2", target, request)
                 {
@@ -198,7 +199,8 @@ internal static partial class CropTeacherTerminalSettlementEvidence
             CropTeacherNativeVariantTerminalProof.Build(requestPath);
         Require(proof.Status == "verified_native_crop_terminal_settlement" && proof.NativeTerminalSettlementVerified &&
             !proof.FormalProductTrainingAuthorized && proof.SettledQuantity == target.RequiredQuantity &&
-            (target.NativeVariants is not null ? proof.SchemaVersion == (observedPrefix is not null ?
+            (target.NativeVariants is not null ? proof.SchemaVersion == (target.ExistingShipping is not null ?
+                "crop_teacher_native_variant_terminal_proof.v4" : observedPrefix is not null ?
                 "crop_teacher_native_variant_terminal_proof.v3" : checkpoints.Count == 0 ?
                 "crop_teacher_native_variant_terminal_proof.v1" : "crop_teacher_native_variant_terminal_proof.v2") &&
                 proof.SettledRevenue == target.PendingValueAt(target.RequiredQuantity) : proof.UnitPrice == target.UnitPrice && proof.SlotIndex == target.SlotIndex) &&

@@ -121,7 +121,9 @@ public sealed partial class CropTeacherManagedSeedOwner
             return;
         }
         var production = ReadObservedProductionEvidence(reference);
-        var selection = target.RequireSaleStockReservations ? CropTeacherTerminalShippingSelection.OpenNativeVariantsConsumingSaleStock(
+        var selection = target.ExistingShipping is not null ? CropTeacherTerminalShippingSelection.OpenJointNativeVariants(
+            production, options.NativeRunPlanPath, headSnapshotPath, headLedgerPath, target.RequireSaleStockReservations) :
+            target.RequireSaleStockReservations ? CropTeacherTerminalShippingSelection.OpenNativeVariantsConsumingSaleStock(
             production, options.NativeRunPlanPath, headSnapshotPath, headLedgerPath) :
             CropTeacherTerminalShippingSelection.OpenNativeVariants(production, options.NativeRunPlanPath, headSnapshotPath, headLedgerPath);
         if (selection.ObservedPrefix is null || selection.CreateTarget(selection.InitialDepositCount) != target)

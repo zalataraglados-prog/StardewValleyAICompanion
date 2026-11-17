@@ -34,7 +34,9 @@ public sealed partial class CropTeacherManagedSeedOwner
                 var retained = Read<System.Text.Json.Nodes.JsonObject>(reference.ManifestPath);
                 sourcePath = StoredPath(retained, "accepted_snapshot_path"); ledgerPath = StoredPath(retained, "accepted_ledger_path");
             }
-            var result = consumeSaleStock ? CropTeacherTerminalShippingSelection.OpenNativeVariantsConsumingSaleStock(
+            var result = useAcceptedSaleStock ? CropTeacherTerminalShippingSelection.OpenJointNativeVariants(
+                evidence, options.NativeRunPlanPath, sourcePath, ledgerPath, consumeSaleStock) :
+                consumeSaleStock ? CropTeacherTerminalShippingSelection.OpenNativeVariantsConsumingSaleStock(
                 evidence, options.NativeRunPlanPath, sourcePath, ledgerPath) :
                 nativeVariants ? CropTeacherTerminalShippingSelection.OpenNativeVariants(evidence, options.NativeRunPlanPath, sourcePath, ledgerPath) :
                 new CropTeacherTerminalShippingSelection(evidence, options.NativeRunPlanPath, sourcePath, ledgerPath);

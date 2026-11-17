@@ -25,12 +25,14 @@ public static partial class CropTeacherNativeVariantTerminalProof
     {
         var wrapper = Read<CropTeacherNativeVariantTerminalRequest>(requestPath);
         var target = wrapper.Target; var request = wrapper.Settlement;
-        var observed = wrapper.SchemaVersion == "crop_teacher_native_variant_terminal_request.v3";
-        var interleaved = wrapper.SchemaVersion == "crop_teacher_native_variant_terminal_request.v2";
+        var joint = wrapper.SchemaVersion == "crop_teacher_native_variant_terminal_request.v4";
+        var observed = wrapper.SchemaVersion == "crop_teacher_native_variant_terminal_request.v3" || joint && wrapper.ObservedShippingPrefix is not null;
+        var interleaved = wrapper.SchemaVersion == "crop_teacher_native_variant_terminal_request.v2" || joint && !observed && wrapper.NativeControlCheckpoints is not null;
+        Require(joint == (target.ExistingShipping is not null), "existing shipping requires its explicit joint aggregate version.");
         Require((observed ? wrapper.ObservedShippingPrefix is not null && wrapper.NativeControlTail is null &&
                 (wrapper.NativeControlCheckpoints is null or { Length: > 0 }) :
                 wrapper.ObservedShippingPrefix is null && (interleaved ? wrapper.NativeControlCheckpoints is { Length: > 0 } :
-                wrapper.SchemaVersion == "crop_teacher_native_variant_terminal_request.v1" && wrapper.NativeControlCheckpoints is null) &&
+                (joint || wrapper.SchemaVersion == "crop_teacher_native_variant_terminal_request.v1") && wrapper.NativeControlCheckpoints is null) &&
                 target.NativeVariants?.SchemaVersion == "crop_teacher_native_terminal_variants.v1" && target.NativeVariants.DepositOrder is null) &&
             (!observed || target.NativeVariants?.SchemaVersion == "crop_teacher_native_terminal_variants.v2") &&
             target.AcceptedDepositCount == target.RequiredQuantity && !request.FormalProductTrainingAuthorized &&
@@ -102,7 +104,7 @@ public static partial class CropTeacherNativeVariantTerminalProof
             var selected = target.VariantAt(count); var transition = transitions[index];
             var batch = MoneyRevenueCropTerminalSettlementModeVerifier.VerifyShippingDepositBatch(expected,
                 index == 0 && sequence is null ? request.RouteTransitions : [], [transition], target.QualifiedItemId,
-                1, selected.UnitPrice, target.PendingValueAt(count), count);
+                1, selected.UnitPrice, target.PhysicalPendingValueAt(count), count);
             if (index == 0) { if (sequence is null) route = batch.RouteTransitions; if (!observed) beforeHash = batch.TerminalActionBefore.StateHash; }
             var before = Read<SnapshotEnvelope>(transition.BeforeSnapshotPath);
             target.VerifyNativeVariantSource(before, count);
@@ -113,7 +115,7 @@ public static partial class CropTeacherNativeVariantTerminalProof
                 target.QualifiedItemId);
             Require(effect.SlotIndex == selected.SlotIndex && effect.Quality == selected.Quality && effect.UnitPrice == selected.UnitPrice &&
                 effect.BinTileX == target.BinTileX && effect.BinTileY == target.BinTileY &&
-                effect.PendingValueBefore == target.PendingValueAt(count) && effect.PendingValueAfter == target.PendingValueAt(count + 1),
+                effect.PendingValueBefore == target.PhysicalPendingValueAt(count) && effect.PendingValueAfter == target.PhysicalPendingValueAt(count + 1),
                 "native deposit differs from chosen variant/prefix/bin.");
             target.VerifyNativeVariantSource(batch.After, count + 1);
             deposits.AddRange(batch.Deposits); expected = batch.After;
@@ -137,10 +139,10 @@ public static partial class CropTeacherNativeVariantTerminalProof
         var recurrence = MoneyRevenueCropTerminalSettlementModeVerifier.VerifyShippingRecurrence(request.RevenueRecurrenceManifestPath,
             request.RevenueRecurrenceReceiptPath, sequence?.CurrentPath ?? (request.SettlementRouteTransitions.Length == 0 ? transitions[^1].AfterSnapshotPath :
                 request.SettlementRouteTransitions[^1].AfterSnapshotPath), ingress.TerminalActionBefore.StateHash,
-            target.PendingValueAt(target.RequiredQuantity));
+            target.PhysicalPendingValueAt(target.RequiredQuantity));
         return new()
         {
-            SchemaVersion = observed ? "crop_teacher_native_variant_terminal_proof.v3" :
+            SchemaVersion = joint ? "crop_teacher_native_variant_terminal_proof.v4" : observed ? "crop_teacher_native_variant_terminal_proof.v3" :
                 interleaved ? "crop_teacher_native_variant_terminal_proof.v2" : "crop_teacher_native_variant_terminal_proof.v1", Status = "verified_native_crop_terminal_settlement",
             RequestPath = Path.GetFullPath(requestPath), RequestSha256 = Hash(requestPath),
             CropProductionPlanPath = Path.GetFullPath(request.CropProductionPlanPath), CropProductionPlanSha256 = Hash(request.CropProductionPlanPath),

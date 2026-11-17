@@ -35,6 +35,12 @@ public sealed partial record CropTeacherTerminalShippingTarget(
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public CropTeacherTerminalVariantPlan? NativeVariants { get; init; }
 
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public CropTeacherExistingShippingBaseline? ExistingShipping { get; init; }
+
+    // Crop attribution stays in PendingValueAt; the physical bank also contains excluded prior income.
+    public long PhysicalPendingValueAt(int count) => checked((ExistingShipping?.PendingValue ?? 0) + PendingValueAt(count));
+
     public IEnumerable<CropTeacherTerminalVariant> ReadNativeVariants()
     {
         if (NativeVariants is null || NativeVariants.SchemaVersion is not
@@ -135,7 +141,8 @@ public sealed partial record CropTeacherTerminalShippingTarget(
             selected.GetProperty("interaction_stand_tile_y").GetInt32() != StandTileY ||
             !string.IsNullOrWhiteSpace(standReason.GetString()) ||
             !selected.GetProperty("pending_settlement_value_complete").GetBoolean() ||
-            selected.GetProperty("pending_settlement_value").GetInt64() != PendingValueAt(count))
+            selected.GetProperty("pending_settlement_value").GetInt64() != PhysicalPendingValueAt(count))
             throw new InvalidDataException("Native terminal bin/custody/pending value differs from accepted prefix.");
+        ExistingShipping?.Verify(this, source, count);
     }
 }

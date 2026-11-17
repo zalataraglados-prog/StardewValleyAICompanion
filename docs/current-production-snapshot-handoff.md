@@ -1,5 +1,16 @@
 # Current Production Snapshot Handoff
 
+## Current254: Explicit Existing-Bin Attribution; Native Suffix Not Yet Run
+
+Explicit joint baseline binds the original retention snapshot/SHA and complete bin contents.
+Crop-only PendingValueAt remains unchanged; physical total adds excluded prior income.
+Original shipping/resources/recurrence kernels and legacy empty-bin defaults remain.
+Focused/adjacent75/75 PASS/59s; retained actual114 selection PASS/8s:205 existing,
+8 crops/1400 attributed,1605 physical. No new native/ledger operation or complete-run claim.
+NEXT reuse published production c3a02861, then same UNSAVED114 shipping/sleep/readback.
+Do not reload106, harvest again or rebuild13days merely to select terminal shipping.
+Original runtime12688/2856/3356 remains. Gemini file-tool lane HOLD; no active peer.
+
 ## Current: Source109 Accepted, Same-Live Harvest Continuation (253)
 
 Source43cd5783 ownCI44133697261 SUCCESS/Core2810/55s/Backend3966/9m45s,
