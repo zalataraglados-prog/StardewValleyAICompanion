@@ -129,14 +129,20 @@ public sealed partial class MoneyRevenueCropManagedProvenance
     }
     private SnapshotEnvelope Snapshot(string episodePath, string path, string hash, long tick)
     {
-        path = Pin(Resolve(episodePath, path));
+        var value = ReadSnapshot(Resolve(episodePath, path));
+        Require(value.StateHash == hash && value.GameTick == tick, "Original episode snapshot identity differs.");
+        return value;
+    }
+    private SnapshotEnvelope ReadSnapshot(string path)
+    {
+        path = Pin(path);
         var text = ContentAddressedJsonArtifactReader.ReadAllText(path);
         var logicalHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(text))).ToLowerInvariant();
         Require(!snapshotLogicalHashes.TryGetValue(path, out var prior) || prior == logicalHash, "Snapshot logical content changed.");
         snapshotLogicalHashes[path] = logicalHash;
         var value = JsonSerializer.Deserialize<SnapshotEnvelope>(text, JsonDefaults.Options) ?? throw new InvalidDataException("Empty provenance snapshot.");
         ValidateActor(value);
-        Require(value.StateHash == hash && value.GameTick == tick, "Original episode snapshot identity differs."); return value;
+        return value;
     }
     private PlanExecutionEpisodeEnvelope ReadEpisode(string path)
     {

@@ -1,5 +1,55 @@
 # Current Production Snapshot Handoff
 
+## Current: Actual Global Continuation Saved; Decision References Retained (244)
+
+PR577 merged as mainb38c3cca, EXACT tested7afd54a3tree. Own44019964146 passed
+ALLsteps/Core2770/53s/Backend3861/7m48s/zero failed or skipped; merge44021624442
+also succeeded. Peer ordinary mergea87695bf same tree, no API/grant resumption.
+
+243 observed ONLY the daily fallback helper. Actual managed+continue Main gives
+priority to original control/maintenance/collection before that helper. Do not force
+a crop cycle from its economic handoff or substitute a prescribed island route.
+Same-world original Main23804 completed8primary+3native-save iterations, then exited;
+stdout status=ok and empty stop. Original131/Beach choice survived story611439,
+MAXcast/BobberBar caught131, capacity recovery shipped it. Later145/Town attempt
+caught RiverJelly through vanilla special/junk handling, NOT a completed145target.
+Seven primary native aggregates were verified; one legal unavailable iteration did
+not dispatch. Original incomplete/control/independent comparison semantics remain.
+
+Native Spring14->15 save verified. AFTER head1b543660/tick30762 is Spring15/600/
+FarmHouse/money-and-total-earned1442. Report last_state_hash3c4899bb is the last
+BEFORE, not final head. Four files/7,796,631bytes/newSHAf419d41cfdad315b0ab0b7b8a5d95876f5d4cf28ac27fe75f7ebe3ca277c9a5d.
+An independent copy under244/saved-boundary matched original Capture. No reload,
+owner235reopen or13day replay; never restore07de over this new tail. OS exit code
+was unavailable from observer, not claimed0. Semantic new-save reload remainsfalse.
+
+New provenance partial retains all declared episode plan/queue/result and original
+tracker effective plan/ranking/queue/snapshot paths+hashes. Aggregate/child artifacts
+both retained without double observation credit. Original decision snapshot and
+fresh-rebind source remain distinct roles, no literal hash-equality gate/old tracker
+change. Missing optional legacy paths remain absent. Declared broken references
+reject; snapshot references reuse original logical/CAS closure checks, not another
+source verifier/planner/executor. decision_lineage_replayed=false explicitly.
+
+New original236+244 CLI report6b667ac1 has17payloads/observations,119role bindings,
+141direct refs/112750bytes and references original3353closure, without overwriting
+actual Main report21ed99a5. Five owned pauses/seven partial-to-full knowledge edges
+retained, linkage/global/source_schedule/formal FALSE. Unused hay/recipes are not
+universal gates; unknown is not zero. Original collection ledger reader legitimately
+returns null without a museum candidate; no global resource proof is invented.
+
+Six new regressions RED first. First22:21pass/one old fixture File.Move access denial
+BEFORE the new consumer, cause unconfirmed, no storage patch. Same-binary6/6 passed;
+added distinct decision-only CAS blob corruption with unchanged manifest. Final7/7/
+12s and adjacent55/55/68s/zero skips passed; scopes overlap, not22once-green.
+This commit's OWN CI remains to be observed. Isolated block244-decision-bindings,
+Etemp/2cores/BelowNormal; original Debug/244binaries unchanged. No raw data/logs/
+saves/local-data in Git, no model training/API/worker. Upstream D thread is receive-only.
+
+NEXT actual Spring15 fresh Main choice/source/quantity/deadline/resource/calendar
+and required native/Day0 gaps ->570 ->569. This bounded cycle/reference inventory
+is NOT complete Stage5/Teacher21/admission. Frozen19/19,11/11,235 stay accepted.
+
 ## Current: Unified Original Managed Provenance (242)
 
 PR576 merged as main4d9db590, same0ef5aa76 tested tree. Own44011798699 passed ALL

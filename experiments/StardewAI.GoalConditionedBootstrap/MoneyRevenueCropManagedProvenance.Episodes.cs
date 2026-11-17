@@ -80,6 +80,7 @@ public sealed partial class MoneyRevenueCropManagedProvenance
             segments.Add(new JsonObject
             {
                 ["episode_directory"] = directory,
+                ["decision_artifact_bindings"] = RetainDecisionArtifacts(records),
                 ["retained_episode_payloads"] = JsonSerializer.SerializeToNode(records.OrderBy(row => row.Path, StringComparer.Ordinal)
                     .Select(row => new MoneyRevenueArtifactBinding("original_episode", row.Path, direct[row.Path])), JsonDefaults.Options),
                 ["observation_episode_paths"] = JsonSerializer.SerializeToNode(selected.Select(row => row.Path), JsonDefaults.Options),
@@ -105,6 +106,7 @@ public sealed partial class MoneyRevenueCropManagedProvenance
         result["last_observed_state_hash"] = previousAfter?.StateHash;
         result["last_observed_game_tick"] = previousAfter?.GameTick;
         result["post_closeout_native_execution_replayed"] = false;
+        result["decision_lineage_replayed"] = false;
         // The inherited closure stays in its original frozen report, not copied into every new run.
         result["input_artifact_hashes"] = JsonSerializer.SerializeToNode(direct, JsonDefaults.Options);
         return result;
