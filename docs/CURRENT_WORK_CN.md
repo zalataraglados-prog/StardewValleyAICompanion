@@ -1,5 +1,14 @@
 # StardewAI 当前工作
 
+## 2026-11-18 Main消费已接受保存，不重复探针睡觉（255）
+
+- 先核对`55818aa9`/`0cc1f69a`的原global返回意图：完成显式managed周期后释放owner并回原全局规划，不授予终局聚合/语义读回/formal权限。此次只改新Main消费者；原owner交接、睡觉/出货执行器和保存核不改。
+- 原交接helper返回结构化保存观察而非丢掉保存信息的路径。只钉住并读取原保存证书、接受记录和接受快照三项，核对同run/actor/day/slot及哈希，复用原`NativeSaveBoundaryVerifier.Evaluate`。不再重复整段生产/owner深验。路径按原Windows语义归一，归一后仍绑定原SHA，不能因斜杠/大小写丢失哈希校验。
+- Main仅在下一轮原`TrainingCompletionPolicy`确认主任务也已完成时消费这次保存；若还有主任务则丢弃待消费记录，后续工作仍须自己的收尾保存。最终状态引用原接受后的state，不留在睡前state。普通维护夜、未接受夜、校准默认及两种显式global模式保持原边界。
+- 最终定向/相邻38/38、32秒、零失败/跳过，TRX SHA`a97d9a8fb085242515df9e61ab8cc6bbeaff35be337a56b606d615ddc3b42f65`。原126/132/133离线重放通过：同原4文件保存、春27→28、after`a7f4cdc4`，原策略false走NativeSaveBoundary，新消费事实后走Complete，不需要第二次睡觉；native执行=false。旧不完整报告和阻塞133原样保留；这是新接线离线验证，不伪造一次实际Main退出0。
+- 首轮11反例都是测试未拆反射异常外壳，内部已按预期拒绝，已修测试；本轮新增空引用警告已消除，剩原OwnedCooking既有警告。没有新游戏运行、保存重载、worker/API调用或local-data提交。
+- 下一步提交并核对精确head CI；再沿原`global-continuation-0132`的春28现场确认后继global入口并推进第5步原全局选线/来源/数量/期限/资源日历与适用Day-0，不为修报告复活旧作物owner或重睡。完整聚合/语义读回、Stage5/#570/#569/formal仍按原计划，不能用本地38项或Complete策略枚举替代。
+
 ## 2026-11-18 联合出货及原生保存已接受；Main保存交接待修（254收口）
 
 - #586已合并main `58d9b2b5`，与源码`def1abc0`同树`24f7c187`。自身CI44152790299成功：Core2810/59秒、Backend3996/12分24秒，零失败/跳过；精确head自动代码审查无发现，不冒称独立人工审计。原75项及后续78项定向有重叠。

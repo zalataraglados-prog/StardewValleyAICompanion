@@ -137,7 +137,17 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         internal Task<JsonObject> ReadBoundary(CropTeacherTerminalShippingTarget? target = null) =>
             (Task<JsonObject>)typeof(CropTeacherManagedSeedOwner).GetMethod("ReadTerminalGlobalContinuationAsync",
                 BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(Owner, [Night, target ?? Target, Production])!;
-        internal Task<string?> Continue() => InvokeLive<Task<string?>>("ContinueAfterManagedCropRunAsync", Options, 3, Lifetime, Night);
+        internal async Task<object?> ContinueResult()
+        {
+            var task = InvokeLive<Task>("ContinueAfterManagedCropRunAsync", Options, 3, Lifetime, Night);
+            await task;
+            return task.GetType().GetProperty("Result")!.GetValue(task);
+        }
+        internal async Task<string?> Continue()
+        {
+            var result = await ContinueResult();
+            return (string?)result?.GetType().GetProperty("BoundaryPath")!.GetValue(result);
+        }
         public async ValueTask DisposeAsync()
         {
             if (Lifetime is IAsyncDisposable lifetime) await lifetime.DisposeAsync();

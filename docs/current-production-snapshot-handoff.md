@@ -1,5 +1,19 @@
 # Current Production Snapshot Handoff
 
+## Latest255: Main Consumes Accepted Closing Save; Offline Verified
+
+New Main consumer keeps original producer/executors/defaults. Return typed save
+observation plus original fingerprints and accepted after-state. Pin only the
+original save/acceptance/snapshot inputs, reuse original Evaluate; normalized
+Windows paths retain SHA checks. Adopt this save ONLY if original completion
+policy also says primary work is complete; otherwise discard it before further work.
+Final38/38/32s,TRXa97d9a8f. Actual126/132/133 read-only replay PASS: original
+Spring27->28,4files,aftera7f4cdc4,new policyComplete/oldNativeSaveBoundary,
+no second sleep/native dispatch. Old incomplete report/blocked133 preserved;
+this is NOT a fabricated real Main exit0 or terminal/semantic/formal acceptance.
+NEXT own-source CI, then original Spring28 global handoff/next daily plan;
+do not reopen old crop owner or sleep again merely to repair the old report.
+
 ## Latest254 Terminal: Native Shipping/Save Accepted; Generic Main Probe Mismatch
 
 PR586 mergedmain58d9b2b5, same tested def1abc0/tree24f7c187. OwnCI44152790299
