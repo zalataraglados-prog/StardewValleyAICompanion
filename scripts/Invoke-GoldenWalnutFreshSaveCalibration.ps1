@@ -52,7 +52,8 @@ param(
         "I:\StardewAITrainingLab\goal-conditioned-bootstrap-v1\artifacts\runtime-movement-timing-calibration\runtime-movement-timing-calibration-20260906-043908\summary.json",
     [int] $StartupTimeoutSeconds = 180,
     [switch] $UseManagedCropTeacher,
-    [switch] $JointDailyCalendar
+    [switch] $JointDailyCalendar,
+    [switch] $ContinueAfterCropTeacherRun
 )
 
 $ErrorActionPreference = "Stop"
@@ -172,7 +173,7 @@ $calibrationOutput = & (Join-Path $PSScriptRoot `
     -MaxAttempts $effectiveMaxAttempts `
     -RequiredVerifiedActions $RequiredVerifiedActions `
     -SaveBoundaryMaxAttempts $SaveBoundaryMaxAttempts `
-    -ArtifactRetentionMode rolling `
+    -ArtifactRetentionMode $(if ($UseManagedCropTeacher -and $ContinueAfterCropTeacherRun) { 'stop' } else { 'rolling' }) `
     -MaxPersistedIterations $MaxPersistedIterations `
     -MaxUnverifiedExecutionStreak $MaxUnverifiedExecutionStreak `
     -MaxQueueNoProgressStreak $MaxQueueNoProgressStreak `
@@ -182,6 +183,7 @@ $calibrationOutput = & (Join-Path $PSScriptRoot `
     -RequireGourmandContinuationReady:$RequireGourmandContinuationReady `
     -UseManagedCropTeacher:$UseManagedCropTeacher `
     -JointDailyCalendar:$JointDailyCalendar `
+    -ContinueAfterCropTeacherRun:$ContinueAfterCropTeacherRun `
     -StageOneCollectionRequirementInventory `
         $StageOneCollectionRequirementInventory `
     -StageOneCollectionAcquisitionLowering `

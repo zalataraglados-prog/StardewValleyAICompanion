@@ -19,7 +19,9 @@ $primary = ParseScript (Join-Path $PSScriptRoot 'Invoke-ProductBootstrapCalibrat
 $wrapper = ParseScript (Join-Path $PSScriptRoot 'Invoke-GoldenWalnutFreshSaveCalibration.ps1')
 foreach ($entry in @($primary, $wrapper)) {
     $names = @($entry.ParamBlock.Parameters | ForEach-Object { $_.Name.VariablePath.UserPath })
-    Check (($names[-2..-1] -join '|') -ceq 'UseManagedCropTeacher|JointDailyCalendar') 'old_positional_parameters_preserved'
+    $tail = if ($entry -eq $wrapper) { $names[-3..-1] -join '|' } else { $names[-2..-1] -join '|' }
+    $expected = 'UseManagedCropTeacher|JointDailyCalendar' + $(if ($entry -eq $wrapper) { '|ContinueAfterCropTeacherRun' })
+    Check ($tail -ceq $expected) 'old_positional_parameters_preserved'
     foreach ($name in @('UseManagedCropTeacher', 'JointDailyCalendar')) {
         Check ($names -contains $name) ('original_launcher_exposes:' + $name)
     }
@@ -44,6 +46,21 @@ $base = @('--root', (Join-Path $OutputRoot 'artifacts'), '--run-id', 'forwarding
     '--skip-training', '--use-daily-plan', '--use-product-executor', '--max-attempts', '8', '--required-verified-actions', '1')
 $old = [LiveTrainingOptions]::Parse([string[]]($base + $default))
 Check (!$old.UseManagedCropTeacher -and !$old.UseJointDailyCalendar -and !$old.RequireNativeSaveBoundary) 'original_parser_keeps_old_mode'
+$authority = [IO.Path]::GetFullPath($LiveLoopDll)
+$legacyArgs = @('--continue-after-crop-teacher-run', '--resume-crop-teacher-transition-ledger', $authority,
+    '--stage-one-collection-requirement-inventory', $authority, '--stage-one-collection-acquisition-lowering', $authority,
+    '--master-angler-stage-one-window-index', $authority, '--route-timing-calibration', $authority)
+$legacy = [LiveTrainingOptions]::Parse([string[]]($base + $legacyArgs))
+Check ($legacy.ContinueAfterCropTeacherRun -and $legacy.UseStageOneCollectionTeacher -and !$legacy.UseManagedCropTeacher -and
+    $legacy.ResumeCropTeacherTransitionLedgerPath -ceq $authority) 'actual_parser_keeps_original_legacy_resume'
+try {
+    [LiveTrainingOptions]::Parse([string[]]($base + @('--continue-after-crop-teacher-run'))) | Out-Null
+    throw 'Continuation without an original source was accepted.'
+} catch { Check ($_.Exception.ToString().Contains('--resume-crop-teacher-transition-ledger')) 'actual_parser_rejects_continuation_without_source' }
+try {
+    [LiveTrainingOptions]::Parse([string[]](@($base | Where-Object { $_ -cne '--use-product-executor' }) + $legacyArgs)) | Out-Null
+    throw 'Legacy resume without its original product boundary was accepted.'
+} catch { Check ($_.Exception.ToString().Contains('requires --use-daily-plan, --use-product-executor')) 'actual_parser_retains_legacy_product_guard' }
 foreach ($withCapture in @($false, $true)) {
 foreach ($withJoint in @($false, $true)) {
     $UseManagedCropTeacher = $true
@@ -95,7 +112,41 @@ foreach ($guard in $trajectoryGuards) {
     } catch { Check ($_.Exception.Message.StartsWith('Bootstrap calibration produced no ')) 'ordinary_mode_still_requires_original_policy_trajectory' }
 }
 Check ($primary.Extent.Text.Contains('$arguments += $managedLoopArguments')) 'original_dotnet_arguments_consume_adapter'
-foreach ($name in @('UseManagedCropTeacher', 'JointDailyCalendar')) {
+$continuationGuards = @($primary.FindAll({ param($node) $node -is [Management.Automation.Language.IfStatementAst] -and
+    ($node.Clauses[0].Item1.Extent.Text -ceq '$ContinueAfterCropTeacherRun -and -not $resumeCropTeacher -and -not $UseManagedCropTeacher' -or
+     $node.Clauses[0].Item1.Extent.Text -ceq '$UseManagedCropTeacher -and $ContinueAfterCropTeacherRun -and $ArtifactRetentionMode -ne ''stop''') }, $true))
+Check ($continuationGuards.Count -eq 2) 'original_preflight_checks_explicit_source_and_retention'
+$ContinueAfterCropTeacherRun = $true
+foreach ($mode in @('managed', 'legacy', 'missing_source', 'unsafe_rolling')) {
+    $UseManagedCropTeacher = $mode -in @('managed', 'unsafe_rolling')
+    $resumeCropTeacher = $mode -ceq 'legacy'
+    $ArtifactRetentionMode = if ($mode -ceq 'managed') { 'stop' } else { 'rolling' }
+    $errorText = ''
+    try { foreach ($guard in $continuationGuards) { . ([scriptblock]::Create($guard.Extent.Text)) } }
+    catch { $errorText = $_.Exception.Message }
+    $expected = switch ($mode) {
+        'missing_source' { 'requires ResumeCropTeacherTransitionLedger or UseManagedCropTeacher' }
+        'unsafe_rolling' { 'requires ArtifactRetentionMode stop' }
+        default { '' }
+    }
+    Check ($errorText.Contains($expected) -and (($expected -ne '') -or $errorText -eq '')) ('actual_product_continuation_preflight:' + $mode)
+}
+$retentionArgument = @($wrapper.FindAll({ param($node) $node -is [Management.Automation.Language.CommandParameterAst] -and
+    $node.ParameterName -ceq 'ArtifactRetentionMode' }, $true))
+Check ($retentionArgument.Count -eq 1) 'wrapper_keeps_single_retention_owner'
+$retentionValue = $retentionArgument[0].Argument
+if ($null -eq $retentionValue) {
+    $elements = @($retentionArgument[0].Parent.CommandElements)
+    $retentionValue = $elements[[Array]::IndexOf($elements, $retentionArgument[0]) + 1]
+}
+foreach ($mode in @('default', 'managed_calibration', 'managed_continue')) {
+    $UseManagedCropTeacher = $mode -ne 'default'
+    $ContinueAfterCropTeacherRun = $mode -ceq 'managed_continue'
+    $value = & ([scriptblock]::Create($retentionValue.Extent.Text))
+    $expected = if ($mode -ceq 'managed_continue') { 'stop' } else { 'rolling' }
+    Check ($value -ceq $expected) ('actual_wrapper_retention:' + $mode)
+}
+foreach ($name in @('UseManagedCropTeacher', 'JointDailyCalendar', 'ContinueAfterCropTeacherRun')) {
     $parameters = @($wrapper.FindAll({ param($node) $node -is [Management.Automation.Language.CommandParameterAst] -and
         $node.ParameterName -ceq $name }, $true))
     Check ($parameters.Count -eq 1 -and $parameters[0].Argument.Extent.Text -ceq ('$' + $name)) ('wrapper_forwards_original_switch:' + $name)

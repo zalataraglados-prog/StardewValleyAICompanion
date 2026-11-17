@@ -39,6 +39,19 @@ static partial class Program
             if (continuationProcess is { HasExited: true })
                 throw new InvalidOperationException("Managed production continuation game exited; retain the owner and recover it, never dispatch against its old frame.");
         }
+        internal async Task ReleaseForGlobalContinuationAsync(CropTeacherManagedSeedOwner owner)
+        {
+            if (!ReferenceEquals(Current, owner))
+                throw new InvalidOperationException("Only the current managed owner can finish its global handoff.");
+            await owner.DisposeAsync().ConfigureAwait(false);
+            Current = null;
+            DailySelection = null;
+            TerminalProduction = null;
+            TerminalSelection = null;
+            TerminalSettlement = null;
+            continuationProcess?.Dispose();
+            continuationProcess = null;
+        }
         public async ValueTask DisposeAsync()
         {
             try { if (Current is not null) await Current.DisposeAsync().ConfigureAwait(false); }

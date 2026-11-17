@@ -1656,6 +1656,8 @@ v71 继续携带 `--skip-training`，没有 Student 更新、checkpoint 或 GPU 
 
 ### 5. 做 L3 跨目标组合与新档原生重放
 
+- **2026-11-17托管周期接续（239）：** #573/合并main5677自身CI成功。现复用显式 `--continue-after-crop-teacher-run`，在原末次睡眠接受与当轮归档后释放作物owner，交回原全局DailyPlan/集合Teacher/账本；旧校准默认停机、原执行/保存/收据和四份权威输入合同不变。接续只写原接受/生产/保存/来源的hash引用，不把运行控制交接晋升为独立结算/语义保存/完整managed/偏好或formal证明。原rolling不理解owner历史引用，新接续先用既有stop留存与预算，引用感知归档在长跑前补齐。相邻138/138、最终19/19（范围重叠）、入口/旧resume54项及新档守卫9/9通过，自身CI另核、无新游戏；本节实际长期选线/资源日历/同档Day-0退出条件不变。[当前范围](CURRENT_WORK_CN.md#2026-11-17-托管周期交回原全局循环239)。
+
 - **2026-11-17入口接续（236）：** 已稳定的managed闭环随#567合并，主仓库自身CI通过。现有fresh-save校准链补显式 `-UseManagedCropTeacher -JointDailyCalendar`，把既有owner、收据与联合日历开关转交原Main；默认行为不变，不允许借此恢复旧unmanaged账本或跳过原native save/收据门，也不把Golden Walnut capture加作所有managed校准的共同条件。最终41项原parser/转发检查与相邻10项无游戏检查通过，自身CI另记。春14局部接续已有原集合Teacher选择→领竿→真实钓鱼→容量恢复出货→继续目标的7条原生聚合回执；不是本节完整Day-0/全局选线退出。仍须先固定实际长期来源、数量、期限与资源日历，再沿这条原链采集所缺的全局连续证据，不重跑已冻结L1或已关闭作物周期。[当前证据与现场](CURRENT_WORK_CN.md#2026-11-17-原第5步接续与校准入口转发236)。
 
 - **2026-11-15联合日历与维护组合已接：** `CompileWithJointCalendar`调用原编译循环；后端`use_joint_calendar`和Live`--joint-daily-calendar`默认关闭。174新增`required_candidate_ids`及`BindDailyComposition`，从同来源账本／原进度绑定已有当日浇水／收获候选，保留其他目标候选及必做项；必做和原商店前置优先共享原预算／预留，尚未满足的必做不让可选挤占。原播种等前缀由原owner先做，联合预算保守读取原生小数体力；旧默认不改。核心92/92、后端及相邻89/89仅证明此层及相邻合同，无游戏。组合请求不授权混排原生派发；下一块全局调用复用原控制／恢复优先级、各既有owner及fresh账本回接。全局source schedule、连续性、原生运行与准入仍为本节原责任，不新增验收步骤。[接线合同](current-production-snapshot-handoff.md#joint-current-day-calendar-2026-11-15)。

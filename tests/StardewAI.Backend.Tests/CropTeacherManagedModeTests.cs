@@ -14,6 +14,53 @@ public sealed class CropTeacherManagedModeTests
         Assert.True(string.IsNullOrWhiteSpace(options.DailyPlanCandidateKind));
         Assert.True(string.IsNullOrWhiteSpace(options.DailyPlanCandidateId));
         Assert.Equal(12, options.MaxQueueItemAttempts);
+        Assert.False(options.ContinueAfterCropTeacherRun);
+    }
+
+    [Theory]
+    [InlineData("valid")]
+    [InlineData("no_requirement_inventory")]
+    [InlineData("no_acquisition_lowering")]
+    [InlineData("no_window_index")]
+    [InlineData("no_route_timing")]
+    [InlineData("no_receipt")]
+    [InlineData("no_save")]
+    [InlineData("no_managed")]
+    [InlineData("rolling")]
+    public void ManagedGlobalContinuationIsExplicitAndPreservesOriginalAuthorities(string mode)
+    {
+        var root = Path.Combine(Path.GetTempPath(), "managed-global-options-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        var authority = Path.Combine(root, "declared-authority.json");
+        File.WriteAllText(authority, "{}");
+        var extra = new[]
+        {
+            "--continue-after-crop-teacher-run",
+            "--artifact-retention-mode", "stop",
+            "--stage-one-collection-requirement-inventory", authority,
+            "--stage-one-collection-acquisition-lowering", authority,
+            "--master-angler-stage-one-window-index", authority,
+            "--route-timing-calibration", authority
+        };
+        var args = JointArgs().Concat(extra).ToList();
+        var missing = mode switch
+        {
+            "no_requirement_inventory" => "--stage-one-collection-requirement-inventory",
+            "no_acquisition_lowering" => "--stage-one-collection-acquisition-lowering",
+            "no_window_index" => "--master-angler-stage-one-window-index",
+            "no_route_timing" => "--route-timing-calibration",
+            _ => string.Empty
+        };
+        if (missing.Length > 0) args[args.IndexOf(missing) + 1] = authority + ".missing";
+        if (mode == "no_receipt") args.Remove("--emit-queue-execution-receipt");
+        if (mode == "no_save") args.Remove("--require-native-save-boundary");
+        if (mode == "no_managed") args.Remove("--use-managed-crop-teacher");
+        if (mode == "rolling") args[args.IndexOf("--artifact-retention-mode") + 1] = "rolling";
+        if (mode != "valid") { Assert.ThrowsAny<Exception>(() => LiveTrainingOptions.Parse(args.ToArray())); return; }
+        var options = LiveTrainingOptions.Parse(args.ToArray());
+        Assert.True(options.UseManagedCropTeacher && options.ContinueAfterCropTeacherRun && options.UseStageOneCollectionTeacher);
+        Assert.True(options.SkipTraining && options.RequireNativeSaveBoundary && options.EmitQueueExecutionReceipt);
+        Assert.Empty(options.ResumeCropTeacherTransitionLedgerPath);
     }
 
     [Theory]

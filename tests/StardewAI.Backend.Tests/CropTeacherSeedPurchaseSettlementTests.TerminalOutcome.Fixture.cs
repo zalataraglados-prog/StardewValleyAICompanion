@@ -37,7 +37,8 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         internal string Candidate => FormattableString.Invariant($"ship:Farm:5,4:{resources.Index}:{resources.Item}") +
             (approach ? ":approach" : ":deposit:" + (cursor + 1).ToString(CultureInfo.InvariantCulture));
 
-        internal TerminalOutcomeFixture(bool approach = false, int cursor = 0, int quantity = 2)
+        internal TerminalOutcomeFixture(bool approach = false, int cursor = 0, int quantity = 2,
+            Action<SnapshotEnvelope>? prepareSnapshot = null)
         {
             this.approach = approach; this.cursor = cursor; this.quantity = quantity;
             resources = new(stack: quantity, bankCount: cursor);
@@ -45,9 +46,10 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             {
                 foreach (var field in resources.Before.State) source.Before.State[field.Key] = field.Value.Clone();
                 Geometry(source.Before, approach, resources.Index);
+                prepareSnapshot?.Invoke(source.Before);
             });
             After = approach ? Copy(Before) : Copy(resources.After);
-            Geometry(After, false, resources.Index); After.GameTick = Before.GameTick + 1;
+            Geometry(After, false, resources.Index); prepareSnapshot?.Invoke(After); After.GameTick = Before.GameTick + 1;
             After.StateHash = SnapshotHash.ComputeStateHash(After.State);
             var initial = Copy(Before);
             ChangeState(initial, "player", node => node["inventory"]!["value"]!.AsArray()
