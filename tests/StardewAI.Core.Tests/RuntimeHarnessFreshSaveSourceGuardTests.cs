@@ -638,9 +638,13 @@ public sealed class RuntimeHarnessFreshSaveSourceGuardTests
             source,
             StringComparison.Ordinal);
         Assert.Contains(
-            "GoldenWalnutFreshSaveEpisodeArchive.Capture(",
+            "CaptureGoldenWalnutPlanExecutionEpisode(",
             source,
             StringComparison.Ordinal);
+        Assert.Equal(2, CountOccurrences(source, "CaptureGoldenWalnutPlanExecutionEpisode("));
+        var adapter = File.ReadAllText(Path.Combine(root, "tools", "StardewAI.LiveTrainingLoop", "Program.Dataset.ManagedArchive.cs"));
+        Assert.Contains("if (!options.UseManagedCropTeacher || iteration < 1)", adapter, StringComparison.Ordinal);
+        Assert.Contains("return GoldenWalnutFreshSaveEpisodeArchive.Capture(episodePath, iteration, options.RunId)", adapter, StringComparison.Ordinal);
         Assert.Contains(
             "stepEpisodePath,",
             source,

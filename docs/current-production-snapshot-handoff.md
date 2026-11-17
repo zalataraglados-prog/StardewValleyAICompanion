@@ -1,5 +1,36 @@
 # Current Production Snapshot Handoff
 
+## Current: Original Managed Episode Archive Compatibility (240)
+
+PR574 merged as main87164d08, same tested tree as575ae41d. OwnCI43996361733 and
+mergeCI43998789317 succeeded in ALL steps, Core2770/Backend3818/zero skips.
+Keep235 frozen and the live unsaved Spring14 tail intact; no new native run.
+
+Actual230Wepisodes have readable original identities/files;228before paths are
+top-level, while0003(planning handoff) and0052(native load) are valid nested
+sources. The old archive intentionally refuses them before writes. The managed
+Dataset wrapper now creates owned immutable exact-logical aliases plus a small
+original path/hash descriptor, then invokes the SAME old archive. Raw inputs and
+native statuses/labels are unchanged. Aggregate/per-step paths share this adapter;
+unmanaged/top-level defaults keep the old path. Gzip writing normalizes JSON, so
+the alias uses exact UTF8 text rather than falsely preserving a normalized hash.
+
+Focused13/13 includes an ACTUAL Dataset writer with a nonempty2step queue, one
+nested and one top-level source. Three real staged samples (Day0,0003,0052) pass
+without changing W/native receipt bytes. They are NOT a contiguous schedule or
+global completion proof. Initial local inspector failure retained/same-output
+resume. Original CLI tests used a brittle guessed configuration path: only their
+5locations now use the actual referenced Bootstrap assembly;137/137 passed.
+Latest-source13/13 (422ms) and same-output real3sample recheck passed; recheckSHA
+f45da8d3d380bee2d9b15ac8f65f1fd54758dc9c8e0e7486848aaffdc40eb3e1.
+Old observations/failure preserved. Own CI recorded separately. Native Debug binaries unchanged.
+
+NEXT remains Stage5 same-save/authorized-run continuous archival across artifact
+runs, then actual selected source/quantity/deadline/resource/calendar and Day0
+lineage. Reuse this adapter and the original manifest/source kernels, not another
+logger or planner. Do not re-run235/13days/frozenL1 or claim local packaging admits
+training. Then570, then569; formalfalse and no local-data in Git.
+
 ## Current: Managed Cycle Returns To The Original Global Loop (239)
 
 PR573 merged as main5677a560; source CI43983382275 and merge CI43986243756 succeeded
