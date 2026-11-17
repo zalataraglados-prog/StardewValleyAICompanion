@@ -31,6 +31,8 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             Options.UseManagedCropTeacher = true; Options.ContinueAfterCropTeacherRun = true;
             Options.UseDailyPlan = true; Options.RequireNativeSaveBoundary = true;
             Options.ArtifactRetentionMode = "stop";
+            Options.Root = F.Shared.Source.RuntimePath;
+            Directory.CreateDirectory(Path.GetDirectoryName(Options.ProgressLogPath)!);
             Options.SaveIsolationPath = Path.Combine(F.Shared.Source.RuntimePath, "declared-native-saves"); Options.SaveSlot = "DeclaredSlot";
             Directory.CreateDirectory(Path.GetDirectoryName(SaveFile)!); File.WriteAllText(SaveFile, "before-night");
             Owner = await F.Shared.Files.Open(F.Shared.Files.Options with

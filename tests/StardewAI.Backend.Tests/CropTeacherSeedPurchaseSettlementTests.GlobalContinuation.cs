@@ -29,6 +29,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             Assert.Null(f.Lifetime.GetType().GetProperty(name, BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(f.Lifetime));
         Assert.Equal(commits, f.F.Shared.Runtime.Handler.Commits);
         Assert.Null(await f.Continue());
+        Assert.Single(File.ReadAllLines(f.Options.ProgressLogPath));
         await using var reopened = await f.F.Shared.Files.Open(f.F.Shared.Files.Options with
         { NativeSaveBinding = new(f.Options.SaveIsolationPath, f.Options.SaveSlot) });
         Assert.True(reopened.HeadRecoveryRequired);
