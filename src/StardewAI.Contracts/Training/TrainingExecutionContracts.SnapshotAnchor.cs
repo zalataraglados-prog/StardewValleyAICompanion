@@ -38,7 +38,8 @@ public sealed class NativeOutputSnapshotAnchor
     {
         Require(request.ActionOriginSnapshotAnchor && request.ActionOriginObservationScopeId is not null &&
                 request.ExecutionMode == "training_singleplayer" &&
-                (request.ActionOriginTillingResources ? NativeTillingObservationContract.IsCompleteRequest(request) :
+                (request.ActionOriginWateringResources ? NativeWateringObservationContract.IsCompleteRequest(request) :
+                    request.ActionOriginTillingResources ? NativeTillingObservationContract.IsCompleteRequest(request) :
                     request.OptionId is "executor.move_to_tile" or "executor.clear_obstacle") &&
                 new[] { request.ActionOriginObservationScopeId, request.RunId, request.QueueId, request.QueueItemId,
                         request.RequestNonce, request.BeforeStateHash, request.SourcePlanningOptionId, request.SaveIsolationPath, saveId, playerId }

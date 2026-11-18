@@ -18,6 +18,15 @@ internal static partial class CropSeedResourceBoundary
     internal static void VerifyWatering(SnapshotEnvelope before, SnapshotEnvelope after, string location,
         MoneyRevenueCropPlantingTile tile, bool applied)
     {
+        var view = ProjectVerifiedWatering(before, after, location, tile, applied);
+        Require(FullShipmentRecoverySettlementBoundaryProjector.TryProject(before, out var first) &&
+                FullShipmentRecoverySettlementBoundaryProjector.TryProject(view, out var next) && first == next,
+            "Crop watering changed unrelated persistent resources or state.");
+    }
+
+    private static SnapshotEnvelope ProjectVerifiedWatering(SnapshotEnvelope before, SnapshotEnvelope after, string location,
+        MoneyRevenueCropPlantingTile tile, bool applied)
+    {
         var expectedCrops = Field(before, "farm", "crops")!;
         var actualCrops = Field(after, "farm", "crops")!;
         var rows = Array(Value(expectedCrops), "watering crops");
@@ -86,9 +95,6 @@ internal static partial class CropSeedResourceBoundary
             foreach (var name in names) fields[name]!["value"] = Value(Field(before, domain, name)!).DeepClone();
             state[domain] = JsonSerializer.SerializeToElement(fields, JsonDefaults.Options);
         }
-        var view = new SnapshotEnvelope { SaveId = after.SaveId, PlayerId = after.PlayerId, GameVersion = after.GameVersion, State = state };
-        Require(FullShipmentRecoverySettlementBoundaryProjector.TryProject(before, out var first) &&
-                FullShipmentRecoverySettlementBoundaryProjector.TryProject(view, out var next) && first == next,
-            "Crop watering changed unrelated persistent resources or state.");
+        return new SnapshotEnvelope { SaveId = after.SaveId, PlayerId = after.PlayerId, GameVersion = after.GameVersion, State = state };
     }
 }

@@ -88,6 +88,8 @@
     <Compile Include="NativeHayStorageSourceGuardTests.cs" />
     <Compile Include="NativeClearanceToolCostProjectorTests.cs" />
     <Compile Include="NativeOutputSnapshotAnchorTests.cs" />
+    <Compile Include="NativeWateringObservationScopePolicyTests.cs" />
+    <Compile Include="NativeToolUpdateMetadataTests.cs" />
     <Compile Include="NativeOutputSnapshotReadApiTests.cs" />
     <Compile Include="NativeOutputObservationSourceGuardTests.cs" />
     <Compile Include="NativeTransientFieldCodecTests.cs" />

@@ -74,7 +74,11 @@ public sealed partial class ModEntry
                 Reject("observation_context_incomplete");
             var inventoryPayloadAfter = request.ActionOriginInventoryPayload ? CaptureInventoryPayload() : null;
             var tillingMetadataAfter = request.ActionOriginTillingResources ? CaptureTillingToolMetadata() : null;
+            var wateringMetadataAfter = request.ActionOriginWateringResources ? CaptureWateringToolMetadata() : null;
+            var wateringCalls = request.ActionOriginWateringResources ? wateringMetadataCalls.Snapshot() : null;
             Stop();
+            if (wateringCalls is not null && wateringCalls.Any(row => row.Completed != true))
+                Reject("watering_metadata_native_return_missing");
             if (collections.Snapshot().Any(row => row.NativeReturn is null || row.InventoryAdmissions.Any(admission => admission.NativeReturn is null)))
                 Reject("observation_native_return_missing");
             var sameLocation = Context.IsWorldReady && ReferenceEquals(Game1.currentLocation, capture.Location) &&
@@ -96,6 +100,8 @@ public sealed partial class ModEntry
                 Collections = collections.Snapshot().OrderBy(row => row.Ordinal).ToArray(),
                 InventoryPayloadBefore = inventoryPayloadBefore, InventoryPayloadAfter = inventoryPayloadAfter,
                 TillingToolMetadataBefore = tillingMetadataBefore, TillingToolMetadataAfter = tillingMetadataAfter,
+                WateringToolMetadataBefore = wateringMetadataBefore, WateringToolMetadataAfter = wateringMetadataAfter,
+                WateringToolMetadataCalls = wateringCalls,
                 ClearanceToolCalls = request.ActionOriginToolInputs ? toolCalls.Snapshot() : null
             };
         }

@@ -1,5 +1,164 @@
 # Current Production Snapshot Handoff
 
+## Latest262: Metadata Replay And Public Water Resource Entry Tested
+
+Original request/native/anchor + existing observation/graph + ONE primary-water
+projection + ONE actual metadata replay/tool + original pickup XML/stock kernel.
+Before XML water binds original can source, after independently predicted; no
+fixed cycle count, after-sprite shortcut, old pure/till/executor rewrite. Blocked
+refill may report source tile; only applied must hit crop, blocked gets0crop credit.
+
+Core72/TRX3658b67ce33beece3fcd222b47211f19e984ff07f127b2c38bd172aaa7edf579;
+Backend138/TRX0cd35b5d36ada7d0c2ef63335fd5b9d50b94ae276f46262f42a423e9de9bb2f2,
+zero failures/skips; new18math+38public/guard cases, native-format6unit admissions
+old stack/new slot + tools + graph (not zero-only). Initial1fixture10vs0baseline
+fixed; new warnings removed, old OwnedCooking retained. Harness0warnings/errors.
+Final262 artifacts FROZEN; next263/newdir. Not an actual native game test.
+
+AGY same6515session313s/331line3path draft accepted with controller corrections,
+coding7/10, not independent build. Bad hunk counts omitted27lines despite git
+--check; complete original bodies recovered first. Schema/repeated replay/
+baseline/nullability corrected.86645cumulative2turn/delta58969telemetry, not money;
+raw outsideGit agy-20261118/water262. Tool laneHOLD/other providers unchanged.
+
+NEXT original maintenance/owner opt-in, actual native-frame lineage and recovery.
+No automatic activation/deployment/native invocation or47acceptance; supplement
+question unanswered, do not fabricate missing old witness, reload or re-water.
+Same game12688/Backend26020/Product3356/ledger486 retained. Stage5->570->569/formal
+OPEN, weeklyUSED56%/stop60; all local exec/AGY/build/test handles terminal.
+
+## Historical261: Opt-In Water Metadata Producer, Not Consumer Acceptance
+
+Default-off complete selected-water scope, separate from old Move/Clear/Till;
+all held Tool endpoints and bounded actual Update/endUsing/inventory-history
+inputs/return status. No executor/action rewrite or per-frame full XML. Native
+DLL and save XML pinned; actual node WaterLeft. GenericEquip draft was NEVER
+deployed: replaced by the non-generic Item history setter to avoid generic body
+sharing. Original exception reference preserved; incomplete returns unavailable.
+
+Final Harness zero warnings/errors. Core54/54/TRX80e20b3623ea7fbf5a67e4d50b4769454d96022171848103df1613e5f3d1afc1;
+Backend139/139/TRX674ae421034dbcd1166ede79fe0632fd7456ffd2add1022ce086f4a0a1178880;
+29new cases, earlier runs overlap. Only Harness return-integrity check changed
+after that test result, then rebuilt. Isolated callback probea36cddbb6b0f10fbf664bf44ddacfb7f828e320b2081c639bb12ae8e5f4ce5b9
+pins final Harness4ba265f46f9f0746e8b563634e6cef18f1f82917f922a46b54260fb8c65180c3:
+normal/failed returns and no-scope noop only; NO game/native method/Harmony install.
+Final261 artifacts frozen, next source build262/new directory. No current worker,
+native Main, test or build. Original game12688/Backend26020/Product3356 retained.
+
+NEXT same gap: independently replay raw metadata inputs, adapt original pickup
+XML kernel, then original selected maintenance/owner wire and focused actual hook
+installation/timing. Do NOT infer native success from the callback probe or
+retroactively manufacture missing observation47. Original46/pending47/ledger486
+unchanged. Developer supplement question still unanswered; no reload/re-watering.
+Stage5->570->569/formal OPEN,55%weeklyUSED/stop60. See
+[native observer contract](native-watering-tool-metadata-observation.md).
+
+## Historical260: Watering/Pickup Resource Leaf Tested, Wire Still Pending
+
+The original pure watering guard is unchanged. Its independently verified crop,
+can, native-float energy and pet-bowl comparison view is shared with a NEW internal
+composition leaf using the existing pickup slots/material graph/capacity/house
+kernel. The new leaf keeps the original full-boundary availability requirement.
+No executor, shared persistent projector or refill variant changed.
+
+Final focused/adjacent96/96 in8s, zero failures/skips;34new cases/62existing,
+not additive with prior90/91 runs. FinalTRX SHA676e40051136f5344d607ed0de8ed3a0d246b6f71b960656840e91174a584d23.
+Initial fixture float/double and missing full-boundary fields corrected; no
+product weakening. Zero-pickup proves the original pure entry still accepts.
+Final real195/196 offline report block260-retained-water-comparison-final.json,
+SHAe6c05a120daf11668c4f3c5a4b1f79d63bf8706f3ea9141db996035f5a93d9ac:
+verified watering primary effects leave ONLY inventory/material graph changes;
+legacy first rejects/second accepts. This is NOT pickup-source verification or
+acceptance47. Final260 build frozen; future builds need a new artifact directory.
+
+NEXT same capability: purpose-scoped native WateringCan metadata witness and
+existing pickup-XML adapter, then original maintenance/owner integration. Hoe
+single-cycle rules are not a water contract; verify actual native calls and XML
+names, including refill/blocked/enchanted variants. Never copy observed after
+metadata into an independently predicted result. Historical47 has no observation;
+await valid retained proof or explicitly approved developer-only supplement.
+No re-water/reload/replay of13days. Accepted46/pending47/E ledger486 hashes unchanged.
+No game invocation, deployment or formal training. Stage5->570->569 stays OPEN.
+
+AGY supplied-context metadata review terminal/nonempty/117.28s/one turn/27676
+telemetry tokens, accepted diagnosis8/10 ONLY. Raw input/output/assessment outsideGit
+agy-20261118/water260; no tools/writes and file-tool lane still HOLD. Other providers
+unchanged. All local test/build/AGY handles terminal; goalACTIVE, weeklyUSED55%/stop60.
+
+## Historical259: Retained Watering/Pickup Diagnosis, No Product Patch Yet
+
+Quiet read-only/one-core existing-binary replay, no build/game/provider call.
+Accepted195->freshBefore196 has ZERO original persistent-field changes.
+First watering(77,18): slot11 fiber(O)771 3->4, ground fiber1->0; extra inventory/
+material graph changes cause original pure guard rejection. Second(75,19) passes.
+Restoring those2 fields ONLY in a diagnostic view makes first pass; not settlement,
+acceptance or fabricated native evidence. Original artifacts/E ledger486 unchanged.
+
+Original consumer bulk replay PASS for accepted30/31/37/38/44/45 (pure watering)
+and46(refill_approach_native/appliedTiles0). Pending47 still fails as expected.
+Use original Preparation factory dispatch, not a new assumption that every
+watering_maintenance operation is a homogeneous watering batch.
+Report outsideGit block259-watering-pickup-batch-v3.json/SHA779f61f92160f70f4c496a66d62c36000ef348f813f6034e3953e5cf75470628.
+Initial PowerShell overload/namespace/dispatch errors were controller tooling,
+not product regressions; corrected in the same script, failed outputs preserved.
+
+Originala7d55248 explicitly keeps pure watering strict; refill-observed authority
+has separate semantics. NEXT compose existing pickup/stock kernels and scoped
+observation at this ONE consumer, preserve old executor/default/full projector.
+No always-on full capture, ignored stock delta or second execution system.
+47 has no ActionOriginObservation: never fabricate it. First inspect retained46
+source coverage; conditional developer-only supplemental recovery (excluded from
+formal training evidence) was asked asynchronously, NO answer/override assumed.
+Keep actual3485 tail/owner46/ledger486, no re-water/reload/native retry.
+Full Stage5/570/569/formal remain open; this is diagnosis, not fixed native success.
+
+## Latest258 TERMINAL: Applied Watering Tail Not Yet Accepted
+
+Main26432/held68289 TERMINAL exit2 at2026-11-17T21:53:45.1541177Z.
+49iterations/39verified/firstDay=true/fullProduction=false, NO harvest claim.
+Iteration196 stopped in original VerifyWatering: unrelated persistent state.
+Cause unclassified; do NOT rewrite old executor or repeat the native action.
+Owner0148 accepted46/after195/source6cfd73ca/ledger486, acceptanceSHA0bf0ebf134749f13e21fadd37733556bb3e264958172d55ee4089ea2b948f5b4.
+Pending47/watering intentSHA9be26d4e1d2d8bd2e880078cefc7d8b6e2dab7174ab85f4c62e1c473258b79ce;
+receipt196 applied and matches actual AFTER34852831d5c1fb1e2d6514f23088f6969c885a6a488d125e2488c48101af3702, no47 acceptance.
+Before1968e4db60a differs from accepted46; explain through original fresh-source
+and persistent kernels before assuming corruption/normalizing anything.
+Current Summer3/600/Farm/1767g/8crops. Original4-file save8881378bytes fingerprint
+f1174f975b870d352739c0b6a4e71e9f6182f5f142f3a1d95f7693a5d45ea4e4;
+this does not accept the unsaved native tail. Retain game12688/Backend26020/Product3356.
+OutsideGit block258-summer-global-continuation/terminal-observation.json plus
+completed-main-report.json/SHA7f231899a6e2e66a144825f2aa52d576c1c66469f5cf2f2d231cd1e72dad3820.
+After196 manifestSHAd7c29b514412471513ef3f4e66cefb679ce1df3b3668d20cd81e472018c21d8b.
+588 ownCI and merge-push44179243713 SUCCESS; native failure remains separate.
+NEXT static original watering contract/actual195-196 offline compatibility,
+repair only responsible layer then resume47, NOT fresh replay/rollback/re-watering.
+This overnight block ONLY closes out now: no new Main/build/provider experiment.
+Stage5/570/569/formal remain OPEN; no changed metrics or completion claim.
+
+## Latest257 Exit0 / 258 Running From Actual Summer1
+
+Main25612 TERMINAL exit0,13 iterations135-147/8primary+5save/6verified/274rows.
+Native save Spring28->Summer1, actual4files8649500bytes fingerprint93b008dc0a3e9935f9cc5078ce7967a606d01084466460dcae53f92fc89c3d5c independently Capture-checked.
+Actual AFTER147 source9788cf69dd26918adbd1a98e829ab8fefff121bbc0541cb272b2db3f63c6d9c6,
+tick83853/Summer1/600/FarmHouse/2407g. Report last_state5b626125 is BEFORE147.
+Social/objective complete=false; normal exit is NOT completeTeacher/formal.
+Original report preserved outsideGit block257-global-daily-continuation/completed-main-report.json,
+SHA477ac418fa58c9660989ffad3ecca02b3888c0ae8c9a92de4cfde85526c73c22.
+Ledger remains413/sourcec095; no forced source rewrite or revision rollback.
+
+258 Main26432/start2026-11-17T21:13:44.5905774Z now RUNNING, held68289.
+External saved-entry launcher pins original257 session/exit/report/AFTER147/save,
+clones ALL original regularMain arguments unchanged; no new planner/executor.
+Same game12688/Backend26020/Product3356, no reload. Runtime8aa/frozen256 bins.
+Actual148 Teacher chose481/8tiles/4waves/minGross4800/cost640/minNet4160/lastDay53;
+NEW owner crop-teacher-managed-0148/owner. Plan != verified harvest/revenue.
+Original256/stop retention unchanged. Observe THIS Main, no old257 relaunch.
+PR588 MERGEDmain2ed7306b, final40d39b9f ownCI44175642214 SUCCESS:
+Core2835/1m01s,Backend4009/11m47s,zero failed-skipped. Source unchanged from8aa;
+316 scoped/237 governance overlap. Automated source review8aa nofindings,
+not an independent human review. Current258 accepted15, production unfinished.
+FullStage5 source/quantity/deadline/sharedcalendar/applicableDay0,570/569/formal OPEN.
+
 ## Latest256: Known Impossible Crop Window Deferred Upstream
 
 Ordinary Main6776 TERMINAL/exit2 after14s at iteration134, BEFORE native dispatch.

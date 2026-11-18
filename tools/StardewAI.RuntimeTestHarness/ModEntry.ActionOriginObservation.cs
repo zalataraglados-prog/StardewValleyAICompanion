@@ -11,6 +11,8 @@ public sealed partial class ModEntry
     private bool nativeObservationPatchesFailed;
 
     private static string? ObservationRequestRejection(TrainingExecutionRequest request) =>
+        request.ActionOriginWateringResources && !NativeWateringObservationContract.IsCompleteRequest(request)
+            ? "watering_observation_requires_original_water_and_complete_witness_tiers" :
         request.ActionOriginTillingResources && !NativeTillingObservationContract.IsCompleteRequest(request)
             ? "tilling_observation_requires_original_till_and_complete_witness_tiers" :
         request.ActionOriginDebrisState && !request.ActionOriginInventoryGraph ? "debris_state_requires_inventory_graph" :
@@ -19,7 +21,10 @@ public sealed partial class ModEntry
         request.ActionOriginInventoryPayload && !request.ActionOriginToolInputs ? "inventory_payload_requires_tool_inputs" :
         request.ActionOriginToolInputs && !request.ActionOriginSnapshotAnchor ? "tool_inputs_require_snapshot_anchor" :
         request.ActionOriginSnapshotAnchor && request.ActionOriginObservationScopeId is null ? "snapshot_anchor_requires_native_observation" :
-        request.ActionOriginObservationScopeId is null ? null : request.ActionOriginTillingResources
+        request.ActionOriginObservationScopeId is null ? null : request.ActionOriginWateringResources
+            ? NativeObservationScopePolicy.WateringRejection(request.ActionOriginObservationScopeId, request.ExecutionMode, request.OptionId,
+                new[] { request.RunId, request.QueueId, request.QueueItemId, request.RequestNonce, request.BeforeStateHash, request.SaveIsolationPath })
+            : request.ActionOriginTillingResources
             ? NativeObservationScopePolicy.TillingRejection(request.ActionOriginObservationScopeId, request.ExecutionMode, request.OptionId,
                 new[] { request.RunId, request.QueueId, request.QueueItemId, request.RequestNonce, request.BeforeStateHash, request.SaveIsolationPath })
             : NativeObservationScopePolicy.Rejection(request.ActionOriginObservationScopeId, request.ExecutionMode, request.OptionId,
@@ -29,6 +34,15 @@ public sealed partial class ModEntry
     {
         try
         {
+            if (pending.Request.ActionOriginWateringResources)
+            {
+                try { EnsureNativeWateringMetadataPatches(); }
+                catch (Exception error)
+                {
+                    pending.OutputObservationFailure = "watering_metadata_patch_installation_failed:" + error.GetType().Name;
+                    return;
+                }
+            }
             if (pending.Request.ActionOriginToolInputs)
             {
                 try { EnsureNativeToolInputPatches(); }

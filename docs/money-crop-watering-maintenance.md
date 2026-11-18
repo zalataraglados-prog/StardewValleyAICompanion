@@ -1,5 +1,42 @@
 # Original Crop Watering Maintenance Boundary
 
+## Selected Watering/Pickup Composition Leaf (260)
+
+The pure default below is preserved. `ProjectVerifiedWatering` extracts its
+existing crop/can/native-float-energy/pet-bowl checks without changing them.
+`VerifyObservedWateringResources` keeps original persistent-boundary readability
+and combines that view with `VerifyObservedPickupCore`. Raw stock/slots/capacity/
+house mirrors remain checked against raw frames; only the final unrelated-state
+comparison sees the independently verified primary-water view. No second stock
+engine, executor, shared-projector exception or implicit refill-mode expansion.
+
+This is currently an INTERNAL resource leaf, not automatic activation or a
+completed native observation/maintenance wire. Tests obtain the pickup summary
+from the existing strict pickup reader; synthetic primary-water fields isolate
+this leaf and do not prove WateringCan XML/native call metadata. Final96/96
+focused/adjacent tests include34new cases, zero pickup, old default acceptance/
+rejection, refill/blocked/bottomless/enchanted/efficient/float cases and rejection
+of unrelated graph/stock/mirror/funds/availability changes. Not native training.
+
+Real195/196 offline primary projection passes and leaves exactly inventory plus
+material graph. Missing historical observation is NOT reconstructed or accepted;
+operation47 remains pending. Next add purpose-scoped current-DLL WateringCan
+metadata/input observation and reuse the existing pickup XML kernel, then wire
+the SAME maintenance consumer. Keep pure default/refill dispatch unchanged and
+handle multi-cycle/partial blocks explicitly. Observed after metadata is not an
+independent prediction. No always-on XML/full snapshot capture or old-day replay.
+
+The261 producer/wire now exists, default-off; see
+[native metadata observation](native-watering-tool-metadata-observation.md).
+Independent metadata replay/XML adaptation and the maintenance/owner consumer
+remain the actual next work. A built producer is not a native outcome proof.
+
+The262 `ReadWateringResources` completes that local metadata replay/physical
+pickup composition (Core72/Backend138, native-format synthetic admissions).
+Its primary can before/after water is bound before the XML adapter runs once;
+the old pure/till paths remain strict. The maintenance/owner opt-in/source/recovery
+wire is NOW the remaining next work, not another resource kernel or executor.
+
 ## Scope And Existing Implementation
 
 PR528 accepted original route compilation/execution ownership on the existing
@@ -77,6 +114,25 @@ re-decompiled for this work; no wiki/example constants substitute for them.
   those deltas still require their original #236 attribution/settlement scope.
 
 ## Validation And Remaining Integration
+
+### Retained Compound-Effect Gap (2026-11-18, Block259)
+
+Actual196 first-step watering also collected one existing ground fiber: raw
+slot11 stack3->4, ground fiber1->0 and the exact material graph echo changed.
+The original pure guard rejects that extra transfer; its second step passes.
+Seven previous accepted maintenance operations replay through their ORIGINAL
+Preparation variants, including native-refill46 (zero applied watering tiles).
+Do not generalize the pure-batch assumption to that refill branch.
+
+This is a composition gap, not permission to suppress native pickup or weaken
+the old persistent projector. Reuse existing pickup/stock settlement and scoped
+observation in the current consumer. Preserve old pure/default semantics and
+distinguish native-effects-observed from independent resource verification.
+Actual47 did not capture ActionOriginObservation; diagnostic comparison views
+are NOT a replacement receipt or acceptance. Any developer-only supplemental
+recovery must remain separate from formal training evidence and requires the
+explicit decision currently requested from the owner. See CURRENT_WORK259 for
+retained hashes, the offline script and the precise continuation boundary.
 
 Tests invoke the actual original batch compiler and real backend/file-ledger
 services, with explicitly declared native-format outcome fixtures. Fixture-only

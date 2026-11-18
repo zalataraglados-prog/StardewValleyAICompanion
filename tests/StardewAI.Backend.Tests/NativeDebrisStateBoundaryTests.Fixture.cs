@@ -11,7 +11,7 @@ public sealed partial class NativeDebrisStateBoundaryTests
     private static NativeDebrisStateSummary Read(TrainingExecutionRequest request, ActionOriginObservationReceipt receipt) =>
         NativeOutputObservationBoundary.ReadDebrisState(request, receipt, 99, 111, "Farm", "123");
 
-    private static (TrainingExecutionRequest Request, ActionOriginObservationReceipt Receipt) Fixture()
+    internal static (TrainingExecutionRequest Request, ActionOriginObservationReceipt Receipt) Fixture()
     {
         var result = NativeInventoryGraphBoundaryTests.Fixture();
         result.Request.ActionOriginDebrisState = true;

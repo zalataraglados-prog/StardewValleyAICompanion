@@ -12,6 +12,9 @@ namespace StardewAI.RuntimePrimitives
         public static string? TillingRejection(string? scope, string executionMode, string optionId, IEnumerable<string> identities)
             => RejectionCore(scope, executionMode, optionId == "executor.till_soil", identities);
 
+        public static string? WateringRejection(string? scope, string executionMode, string optionId, IEnumerable<string> identities)
+            => RejectionCore(scope, executionMode, optionId == "executor.water_crop", identities);
+
         private static string? RejectionCore(string? scope, string executionMode, bool supportedOption, IEnumerable<string> identities)
         {
             if (scope is null) return null;

@@ -14,6 +14,7 @@ public sealed partial class ModEntry
         {
             inventoryPayloadBefore = CaptureInventoryPayload();
             if (request.ActionOriginTillingResources) tillingMetadataBefore = CaptureTillingToolMetadata();
+            if (request.ActionOriginWateringResources) wateringMetadataBefore = CaptureWateringToolMetadata();
         }
 
         private ActionOriginInventoryPayload? CaptureInventoryPayload()
