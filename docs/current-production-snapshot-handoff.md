@@ -1,5 +1,12 @@
 # Current Production Snapshot Handoff
 
+## Latest264: Foundation Merged / Native Probe Resource Exit
+
+- PR589 MERGED origin/main62f3b41c, tree identical to testeda1890562. Own CI44213900082 SUCCESS/Core2866/Backend4097/zero failed-skipped. Owner PR590's original CI44214305293 SUCCESS/Core2866/Backend4130; standard merge was refused because its base was behind. No admin bypass. Merge-base sync28715fe2 preserves the exact a72 tree407a7a27947110c6de9fa757b959b8bed2a0cfed; subsequent changes are closeout docs only. Latest push CI must be tracked separately before merging590.
+- Fresh264 Bridge/Harness builds both zero warnings/errors, explicitE path/new artifacts. One isolated E save/mods instance25976 (held90852) stopped BEFORE actions at1200MiB available-physical-memory guard. It is TERMINAL; session reports original_inputs_unchanged=true. No world-ready/native observation acceptance, no restart/re-water/reload of original12688, no formal training. Failed artifacts retained, not overwritten/retried by lowering the guard.
+- Idle C# compiler service shut down using dotnet's native command; only ~250MiB recovered, local free still ~2.8GiB. Server119 read-only preflight: total3729MiB/available1800MiB/swap499MiB, root9.3GiB available; no remote services changed/deployed.32GiB test-machine SSH target requested, unanswered. Native test remains open pending resources; this is not evidence of a water-action product failure.
+- Original12688/26020/3356 and47 remain retained. Supplemental developer-only recovery permission unanswered. Next: latest590CI/merge, then isolated real native observation/timing on a suitable machine and authorized old-tail treatment. Do not invent historical47 metadata, accept it silently or switch modules. Stage5 ->570 ->569/formalOPEN; weeklyUSED58/stop60. AGY accepted-idle, no new call.
+
 ## Latest263: Original Water Owner And Production Wire Tested Offline
 
 - Explicit default-off `--use-managed-watering-resources` selects future ordinary water operations only; `watering_resources` is pinned in the original intent and controls recovery. Old unmarked records and refill dispatch remain unchanged. No implicit global full capture.

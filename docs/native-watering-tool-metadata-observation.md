@@ -40,6 +40,13 @@ timing remains unverified, and historical47 remains unaccepted.
 
 ## Original Owner And Source Binding (263)
 
+264 runtime status: foundation PR589 merged after own CI success. One fully
+isolated native-instance attempt stopped at the available-memory guard BEFORE
+actions; it did not produce native observation acceptance or prove a product
+failure. The original held game/save/tail was not changed. Actual hook/timing
+verification remains OPEN pending a suitable test machine; do not weaken the
+guard, retrofit old47 or count fixture/CI proof as this missing native result.
+
 The selected variant reuses the existing native journal/source parser and original
 water applied-prefix/refill-control rules. It binds exact aggregate identity,
 status, facts, nonce, before/after content and isolated environment, including the
