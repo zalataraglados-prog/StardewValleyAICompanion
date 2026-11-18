@@ -14,7 +14,8 @@ public sealed partial class CropTeacherWateringMaintenance : ICropTeacherSupport
 
     private CropTeacherWateringMaintenance(string runRequestPath, string sourcePath, string ledgerPath,
         IReadOnlyCollection<string> commitmentIds, string commitmentId,
-        MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId, bool refillControl = false)
+        MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId, bool refillControl = false,
+        bool selectedWateringResources = false)
     {
         var comparer = CropTeacherSeedTransferNativeOutcome.PathComparer;
         var paths = new[] { runRequestPath, sourcePath, ledgerPath, transition.QueuePath, transition.BeforeSnapshotPath,
@@ -51,6 +52,11 @@ public sealed partial class CropTeacherWateringMaintenance : ICropTeacherSupport
         CompleteBatch = AppliedTileCount == tiles.Length;
         var stepPaths = CropTeacherNativeStepPaths.Read(transition, receipt, paths, "Crop watering");
         inputs = new(paths.Concat(stepPaths).Distinct(comparer).ToArray());
+        var retained = new Dictionary<string, string>(inputs.ReadHashes(), comparer);
+        var nativeRows = selectedWateringResources
+            ? CurrentTeacherFrontierSupport.Read<System.Text.Json.JsonElement>(transition.ExecutionReceiptPath, "watering raw receipt")
+                .GetProperty("step_results").EnumerateArray().ToArray() : null;
+        var nonces = new HashSet<string>(StringComparer.Ordinal);
         originalInputs.Validate();
         var current = before;
         for (var index = 0; index < receipt.StepResults.Length; index++)
@@ -61,15 +67,26 @@ public sealed partial class CropTeacherWateringMaintenance : ICropTeacherSupport
             MoneyRevenueCropNativeLifecycleProofBuilder.VerifyMaintenanceLocation(current, next, layout.LocationId);
             if (index < AppliedTileCount)
                 MoneyRevenueCropNativeLifecycleProofBuilder.VerifyWateringMaintenanceTile(current, next, layout.LocationId, tiles[index], crops[0]);
-            CropSeedResourceBoundary.VerifyWatering(current, next, layout.LocationId, tiles[index], index < AppliedTileCount);
+            if (selectedWateringResources)
+                VerifySelectedWateringStep(transition, queue, receipt.StepResults[index], nativeRows![index], index,
+                    current, next, layout.LocationId, tiles[index], nonces, retained);
+            else
+                CropSeedResourceBoundary.VerifyWatering(current, next, layout.LocationId, tiles[index], index < AppliedTileCount);
             current = next;
         }
         Require(EqualJson(current, after), "Crop watering maintenance terminal snapshot differs from its last native step.");
         AfterSnapshotPath = Path.GetFullPath(transition.AfterSnapshotPath);
         AppliedTiles = Array.AsReadOnly(tiles.Take(AppliedTileCount).ToArray());
-        rebind = new(after, source.Ledger, stepId, inputs.Validate, "Crop watering maintenance");
-        originalInputs.Validate();
+        SelectedWateringResourcesVerified = selectedWateringResources;
         inputs.Validate();
+        if (selectedWateringResources)
+        {
+            inputs = new(retained.Keys.ToArray());
+            Require(inputs.ReadHashes().All(pair => retained[pair.Key] == pair.Value), "Crop watering native inputs changed during retention.");
+        }
+        rebind = new(after, source.Ledger, stepId, ValidateInputsUnchanged, "Crop watering maintenance");
+        originalInputs.Validate();
+        ValidateInputsUnchanged();
     }
 
     public static CropTeacherWateringMaintenance Open(string runRequestPath, string sourcePath, string ledgerPath,
@@ -82,12 +99,22 @@ public sealed partial class CropTeacherWateringMaintenance : ICropTeacherSupport
         MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId) =>
         new(runRequestPath, sourcePath, ledgerPath, commitmentIds, commitmentId, transition, stepId, refillControl: true);
 
+    public static CropTeacherWateringMaintenance OpenWithObservedResourceEffects(string runRequestPath, string sourcePath,
+        string ledgerPath, IReadOnlyCollection<string> commitmentIds, string commitmentId,
+        MoneyRevenueCropNativeLifecycleTransitionRequest transition, string stepId)
+    {
+        var receipt = CurrentTeacherFrontierSupport.Read<QueueExecutionReceiptEnvelope>(transition.ExecutionReceiptPath, "selected watering kind");
+        return new(runRequestPath, sourcePath, ledgerPath, commitmentIds, commitmentId, transition, stepId,
+            refillControl: !receipt.Success && receipt.StepResults is [{ Status: "blocked" }], selectedWateringResources: true);
+    }
+
     public int AppliedTileCount { get; }
     public bool RefillControlVerified { get; }
     public bool RefillApproachVerified => refillTrace?.ResourceNeutralBoundaryVerified == true || RefillResourceEffectsVerified || RefillNativeEffectsObserved;
     public bool RefillNativeEffectsObserved => refillTrace?.NativeEngineEffectsObserved == true;
     public bool RefillResourceEffectsVerified => refillTrace?.SelectedResourceEffectsVerified == true;
     public bool CompleteBatch { get; }
+    public bool SelectedWateringResourcesVerified { get; }
     public IReadOnlyList<MoneyRevenueCropPlantingTile> AppliedTiles { get; }
     public string AfterSnapshotPath { get; }
     public bool NativeCropLifecycleVerified => false;
@@ -95,7 +122,8 @@ public sealed partial class CropTeacherWateringMaintenance : ICropTeacherSupport
     public StrategyCommitmentLedger BaseLedger => rebind.BaseLedger;
     public ReservationPortfolioCommitRequest RebindRequest => rebind.Request;
     public StrategyCommitmentLedger VerifyRebindReply(ReservationPortfolioCommitResult reply) => rebind.VerifyReply(reply);
-    public IReadOnlyDictionary<string, string> InputHashes => refillTrace?.InputHashes ?? inputs.ReadHashes();
-    public void ValidateInputsUnchanged() { inputs.Validate(); refillTrace?.ValidateInputsUnchanged(); }
+    public IReadOnlyDictionary<string, string> InputHashes => refillTrace?.InputHashes ?? inputs.ReadHashes()
+        .Concat(requestBlobHashes).ToDictionary(pair => pair.Key, pair => pair.Value, CropTeacherSeedTransferNativeOutcome.PathComparer);
+    public void ValidateInputsUnchanged() { inputs.Validate(); ValidateWateringRequestBlobs(); refillTrace?.ValidateInputsUnchanged(); }
 
 }

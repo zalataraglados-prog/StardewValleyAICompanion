@@ -12,6 +12,7 @@
 | 游戏状态、字段与制品证据 | [权威知识字典](authoritative-knowledge-dictionary.md) · [字段字典](stardewai-full-handoff/field-dictionary.md) · [制品布局](knowledge-artifact-layout.md) · [版本锁](../knowledge-artifacts.lock.json) · [原生证据账本](stardewai-full-handoff/evidence.md) |
 | 教师监督、数据和模型 | [Teacher／Student 合同](TEACHER_STUDENT_CONVERGENCE_CONTRACT_CN.md) · [独立成对监督](independent-teacher-pairwise-admission.md) · [Provider 要求](STUDENT_TEACHER_PROVIDER_INTERFACE_REQUIREMENTS_CN.md) |
 | 动作能力的当前机器口径 | [版本目录说明](../catalogs/vanilla-1.6.15/README.md) · [动作实现对账](../catalogs/vanilla-1.6.15/action-implementation-reconciliation.json) · [能力注册表](../src/StardewAI.Contracts/Capabilities/OptionCapabilityRegistrySource.cs) |
+| 原浇水owner、顺手拾取、观察来源及恢复 | [原维护入口](money-crop-watering-maintenance.md) · [按需原生观察与接线合同](native-watering-tool-metadata-observation.md) · [当前现场交接](current-production-snapshot-handoff.md) |
 | 怎么修改文档或移交工作 | [文档编辑与交接规范](DOCUMENTATION_MAINTENANCE_CN.md) |
 
 事实和流程分别按来源查。代码、同版本机器报告和原生工件用于核实实现与结果。当前状态和当前工作用于找运行事实和施工接续。R2、正式准入及产品路线合同用于确定各自范围内的规则。旧 `SHORT_HANDOFF`、审计、根目录证据账本及实验室初始说明用于历史追溯。总目录中的日期只用于导航。遇到冲突时，先核对原文件的适用范围和失效注释。

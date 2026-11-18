@@ -1,5 +1,20 @@
 # Owned Original Watering Execution
 
+## Current263 Explicit Resource Observation
+
+The original dispatch/recovery protocol now supports a default-off
+`--use-managed-watering-resources` selection. A future ordinary water operation
+pins `watering_resources` in its original intent; recovery uses that marker,
+not the current option. Unmarked history and refill approaches remain separate.
+The request copy enables the complete watering observation profile only for
+that original batch. Native journal/aggregate identity, primary effects,
+pickup/XML/stock and JSON/gzip retention compose through the existing owner.
+Production aggregation carries the explicit original preparation reference.
+
+Full offline owner+pickup/rebind/recovery/production/tamper regression passed.
+This is not native hook timing, historical47 recovery or formal training.
+See [the exact observation and source contract](native-watering-tool-metadata-observation.md).
+
 ## Scope And Accepted Parent
 
 PR530 accepted completed watering outcomes on the original persistent crop owner.

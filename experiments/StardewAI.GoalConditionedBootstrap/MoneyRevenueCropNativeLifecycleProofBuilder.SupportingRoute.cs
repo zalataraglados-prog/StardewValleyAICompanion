@@ -32,6 +32,13 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
 
     private static void ValidateQueueReceipt(LoadedTransition transition)
     {
+        if (transition.NativeWateringMaintenance is { } watering)
+        {
+            Require(transition.Request.NativeWateringPreparation is not null && watering.SelectedWateringResourcesVerified &&
+                watering.AppliedTileCount == transition.NativeAppliedItemCount,
+                "Native crop lifecycle lost its verified original watering receipt.");
+            return;
+        }
         if (transition.NativeWorkReceiptVerified)
         {
             // The explicit shared-source kernel already verified the original queue and progress policy.

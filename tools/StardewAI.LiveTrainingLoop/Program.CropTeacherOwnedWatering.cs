@@ -41,7 +41,8 @@ static partial class Program
             }
             await WriteJsonAsync(prefix + "-compiled-queue.json", compiled.Queue).ConfigureAwait(false);
             return new(step, compiled.ModelPlanPath, prefix + "-compiled-queue.json", receiptPath, afterPath, runtimeDirectory)
-                { IsRefillApproach = refill, UseSelectedRefillResourceEffects = selectedResources, UseNativeRefillOutcomeAuthority = nativeObserved };
+                { IsRefillApproach = refill, UseSelectedRefillResourceEffects = selectedResources, UseNativeRefillOutcomeAuthority = nativeObserved,
+                    UseObservedWateringResources = !refill && options.UseManagedWateringResources };
         }).ConfigureAwait(false);
     }
 

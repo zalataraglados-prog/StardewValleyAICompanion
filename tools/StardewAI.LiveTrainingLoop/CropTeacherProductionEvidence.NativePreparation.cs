@@ -19,7 +19,7 @@ internal static partial class CropTeacherProductionEvidence
         var record = inputs.Read<JsonObject>(recordPath);
         var control = record["maintenance_control_kind"]?.GetValue<string>();
         if (control is null) return transition;
-        if (control is not ("refill_approach" or "refill_approach_resources" or "refill_approach_native") ||
+        if (control is not ("refill_approach" or "refill_approach_resources" or "refill_approach_native" or "watering_resources") ||
             record["sequence"]?.GetValue<int>() != row.OwnerSequence ||
             record["operation_kind"]?.GetValue<string>() != row.OperationKind ||
             record["maintenance_execution_protocol"]?.GetValue<string>() != "original_loop.v1" ||
@@ -38,6 +38,9 @@ internal static partial class CropTeacherProductionEvidence
         if (commitments is not { Length: > 0 } || commitments.Distinct(StringComparer.Ordinal).Count() != commitments.Length ||
             !commitments.Contains(commitment, StringComparer.Ordinal) || string.IsNullOrWhiteSpace(Text("support_step_id")))
             throw new InvalidDataException("Native refill reference changed its covered commitments or step identity.");
+        if (control == "watering_resources")
+            return transition with { NativeWateringPreparation = new(Pinned(plan.RequestPath), Pinned(Text("before_ledger_path")),
+                commitments, commitment, Text("support_step_id"), Pinned(Text("original_model_action_path"))) };
         return transition with { NativeRefillPreparation = new(Pinned(plan.RequestPath), Pinned(Text("before_ledger_path")),
             commitments, commitment, Text("support_step_id"), Pinned(Text("original_model_action_path")),
             control == "refill_approach_native" ? "native_engine_observed" :

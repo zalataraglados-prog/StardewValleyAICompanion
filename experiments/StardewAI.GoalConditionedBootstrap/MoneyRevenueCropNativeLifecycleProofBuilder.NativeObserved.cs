@@ -8,6 +8,8 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
     {
         var transition = LoadTransition(request);
         transition = transition with { NativeObserved = true };
+        if (request.NativeWateringPreparation is not null)
+            return LoadNativeWateringPreparation(transition);
         if (request.NativeRefillPreparation is not null)
             return LoadNativePreparation(transition);
         if (IsNativeControl(transition))

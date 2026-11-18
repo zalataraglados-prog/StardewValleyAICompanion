@@ -31,7 +31,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         var checkpointResumes = request.CheckpointResumes!;
         Require(savedReadbacks || checkpointResumes.All(value => value.AcceptedSavedReadbacks is null),
             "Accepted saved readbacks require explicit lifecycle v10.");
-        Require(nativeObservedCapacity || request.Transitions.All(value => value.NativeRefillPreparation is null),
+        Require(nativeObservedCapacity || request.Transitions.All(value => value.NativeRefillPreparation is null && value.NativeWateringPreparation is null),
             "Native refill preparation references require explicit lifecycle v5.");
         Require(jointObserved || request.Transitions.All(value => value.NativeSharedSource is null && value.TransitionKind != SharedSourceReturnKind),
             "Shared native source references require explicit lifecycle v6.");
@@ -134,6 +134,16 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
                     contexts.Any(value => value.Commitment.CommitmentId == transition.Request.NativeRefillPreparation!.CommitmentId &&
                         value.Commitment.RequiredWateringTotalDays.Contains(transition.Request.TotalDay)),
                 "Native refill preparation changed its original crop-production obligation/day.");
+        foreach (var transition in transitions.Where(value => value.Request.NativeWateringPreparation is not null))
+        {
+            var reference = transition.Request.NativeWateringPreparation!;
+            var original = CurrentTeacherFrontierSupport.Read<MoneyRevenueCropNativeProductionRunPlanRequest>(
+                reference.RunRequestPath, "Native watering original run request");
+            Require(SamePath(original.CropProductionPlanPath, planPath) && contexts.Any(value =>
+                value.Commitment.CommitmentId == reference.CommitmentId &&
+                value.Commitment.RequiredWateringTotalDays.Contains(transition.Request.TotalDay)),
+                "Native watering reference changed its original crop-production obligation/day.");
+        }
         var checkpointResumeProofs = ValidateTransitionChainCore(
             transitions,
             sourceSnapshot,
@@ -164,6 +174,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
                 true)).ToArray();
         nativeFrames?.ValidateInputsUnchanged();
         foreach (var transition in transitions) transition.SharedInputGuard?.Invoke();
+        foreach (var transition in transitions) transition.NativeWateringMaintenance?.ValidateInputsUnchanged();
         return new MoneyRevenueCropNativeLifecycleProof
         {
             Status = "verified_native_crop_lifecycle",
@@ -221,6 +232,8 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
     private static LoadedTransition LoadTransitionCore(
         MoneyRevenueCropNativeLifecycleTransitionRequest request, bool allowSharedSource)
     {
+        Require(request.NativeWateringPreparation is null || request.NativeRefillPreparation is null && request.NativeSharedSource is null,
+            "Selected watering cannot also be a refill approach or shared-source return.");
         Require((request.TransitionKind is CropActionsKind or
                     CropIngressRouteKind or SleepIngressRouteKind or
                     DayRolloverKind || allowSharedSource && request.TransitionKind == SharedSourceReturnKind) &&
@@ -301,6 +314,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         }
 
         public int? NativeAppliedItemCount { get; init; }
+        public CropTeacherWateringMaintenance? NativeWateringMaintenance { get; init; }
         public bool NativeObserved { get; init; }
         public bool NativeNonProduction { get; init; }
         public bool NativeSharedSource { get; init; }
