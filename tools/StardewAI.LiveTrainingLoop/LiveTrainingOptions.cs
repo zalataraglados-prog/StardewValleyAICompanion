@@ -515,6 +515,10 @@ public sealed partial class LiveTrainingOptions
             {
                 options.UseManagedCropTeacher = true;
             }
+            else if (current == "--use-managed-watering-resources")
+            {
+                options.UseManagedWateringResources = true;
+            }
             else if (current == "--managed-crop-live-session")
             {
                 options.ManagedCropLiveSessionPath = ReadManagedCropResumeArgument(args, ref i);

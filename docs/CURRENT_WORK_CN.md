@@ -1,5 +1,15 @@
 # StardewAI 当前工作
 
+## 2026-11-18 原浇水owner的资源观察接线与组合恢复通过（263）
+
+- 新增默认关闭的`--use-managed-watering-resources`，仅为后续普通浇水操作写入`watering_resources`原始意图；补水接近仍走原分派。逐操作复制观察选项，不全局开启捕获；历史无marker记录不受新开关影响，恢复以原意图为准。没有新执行器、库存核或改写旧浇水规则。
+- 单一原native source reader增加显式浇水变体；旧入口仍只接受applied。新入口绑定原队列、请求journal、逐步状态/nonce/facts、隔离环境及Product或Runtime原端点，保留合法阻塞尾步和Product fresh-before与requested-before的区别。复用262完整资源入口；JSON和压缩请求分别留存，重新绑定前检查原件，未把gzip交给JSON解码器。
+- 原owner准入、执行请求、恢复、生产trace及lifecycle汇总贯通。新增`native_watering_preparation`显式引用原输入；同一已验证maintenance对象供汇总队列准入使用，不再错套planting-prefix验证器或重算同一资源证明。不将补水准备改叫作物产出。
+- 最终Backend定向/相邻549/549、1分21秒、无失败/跳过。组合场景实际经过**原owner＋一次浇水中的6单位拾取→账本接续→重新打开/恢复→生产引用→lifecycle队列准入**，并拒绝JSON或gzip事后改动；新测试33项，早期119/2等重叠结果不相加。开发中的失败来自新夹具的数量顺序、facts类型、tick位移、字段元数据及两处测试编译访问，不是放宽产品合同来消错。仅保留已有OwnedCooking可空警告。TRX SHA`84446024f8c16edd313efc60fa0d6cf51ecb08595bd4a7b7bfa2e97e26ef84b6`。
+- 新增scope/math两文件纳入真正的GameFreeGovernance清单，该模式定向67/67通过，TRX SHA`856387299d58c5720d3da10d68ff52362305d5077fed5a4e33a3dfb96e619b1d`。原生观察/资源层单独PR#589（a1890562）；owner层另开衔接PR，待各自CI而非把本地通过当远端通过。最终263产物冻结，后续源码构建另用新目录。
+- AGY同6515会话并发只读审查来源/逐步绑定/留存片段，119秒，非空无具体发现；控制者核实其上下文缺项，未新增“相同内容必须相同路径”的错误要求。暂评只读8/10，代码草稿仍7/10，accepted-idle；工具通道HOLD不变。累计3turn163552/差额76907为遥测，不是美元账单，交流与评价在仓库外water263。
+- **这是离线原生格式组合通过，不是原生hook安装/时序通过，也未接受历史47。** 原接受46、待47及E账本486三份原件SHA复核不变；未重启、重浇、回档、部署或启动正式训练。下一步为隔离的真实观察/时序验证及原现场缺证处理；开发专用补证问题未获答前不能擅自降级接受47。第5步→#570→#569、L1 19/19、根11/11、最小235及formal=false不变。周USED57%/到60%安全收尾；无新增issue更新。
+
 ## 2026-11-18 水壶元数据重放与原拾取XML组合入口通过（262）
 
 - `ReadWateringResources`组成原请求/原生回执/锚→已有观察/graph→一次原浇水主效应→逐工具一次实际输入重放→原拾取XML/物理材料图核。初始XML水量也绑定原can投影，不拿after值当预测。原pure/till默认、原执行器不改；实际Tool.Update保留未reset分支cursor/int溢出，不预设1/2次调用。阻塞补水可报告水源位置，applied才必须命中作物，blocked保持0作物信用。

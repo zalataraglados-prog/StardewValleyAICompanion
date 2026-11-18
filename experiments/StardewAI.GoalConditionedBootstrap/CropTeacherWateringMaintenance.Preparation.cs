@@ -21,14 +21,18 @@ public sealed partial class CropTeacherWateringMaintenance
         private readonly bool selectedRefillResources;
         private readonly bool nativeRefillExecution;
         private readonly bool nativeObservedRefillEffects;
+        private readonly bool selectedWateringResources;
 
         private Preparation(string runRequestPath, string sourcePath, string ledgerPath, IReadOnlyCollection<string> commitmentIds,
             string commitmentId, string stepId, string modelActionPath, string queuePath, bool refill = false,
-            bool selectedRefillResources = false, bool nativeRefillExecution = false, bool nativeObservedRefillEffects = false)
+            bool selectedRefillResources = false, bool nativeRefillExecution = false, bool nativeObservedRefillEffects = false,
+            bool selectedWateringResources = false)
         {
             this.selectedRefillResources = selectedRefillResources;
             this.nativeRefillExecution = nativeRefillExecution;
             this.nativeObservedRefillEffects = nativeObservedRefillEffects;
+            this.selectedWateringResources = selectedWateringResources;
+            Require(!selectedWateringResources || !refill, "Selected watering resources cannot replace a refill approach.");
             Require(!nativeObservedRefillEffects || refill && selectedRefillResources && nativeRefillExecution,
                 "Native observed refill requires an explicit native refill preparation.");
             var paths = new[] { runRequestPath, sourcePath, ledgerPath, modelActionPath, queuePath }.Select(Path.GetFullPath)
@@ -89,6 +93,10 @@ public sealed partial class CropTeacherWateringMaintenance
         public static Preparation OpenRefillApproach(string runRequestPath, string sourcePath, string ledgerPath,
             IReadOnlyCollection<string> commitmentIds, string commitmentId, string stepId, string modelPlanPath, string queuePath) =>
             new(runRequestPath, sourcePath, ledgerPath, commitmentIds, commitmentId, stepId, modelPlanPath, queuePath, refill: true);
+        public static Preparation OpenWithObservedResourceEffects(string runRequestPath, string sourcePath, string ledgerPath,
+            IReadOnlyCollection<string> commitmentIds, string commitmentId, string stepId, string modelActionPath, string queuePath) =>
+            new(runRequestPath, sourcePath, ledgerPath, commitmentIds, commitmentId, stepId, modelActionPath, queuePath,
+                selectedWateringResources: true);
         public static Preparation OpenRefillApproachWithSelectedResourceEffects(string runRequestPath, string sourcePath, string ledgerPath,
             IReadOnlyCollection<string> commitmentIds, string commitmentId, string stepId, string modelPlanPath, string queuePath) =>
             new(runRequestPath, sourcePath, ledgerPath, commitmentIds, commitmentId, stepId, modelPlanPath, queuePath,
@@ -110,6 +118,7 @@ public sealed partial class CropTeacherWateringMaintenance
                 refill: true, selectedRefillResources: true, nativeRefillExecution: true, nativeObservedRefillEffects: true);
         public bool UsesNativeRefillExecution => nativeRefillExecution;
         public bool UsesSelectedRefillResourceEffects => selectedRefillResources;
+        public bool UsesObservedWateringResources => selectedWateringResources;
         public string SourcePath { get; }
         public string QueuePath { get; }
         public int TotalDay { get; }
@@ -128,6 +137,9 @@ public sealed partial class CropTeacherWateringMaintenance
                 "Owned crop watering differs from its pinned original compilation/source.");
             if (refillApproach is not null)
                 return new CropTeacherWateringMaintenance(refillApproach, transition, stepId, selectedRefillResources, nativeRefillExecution, nativeObservedRefillEffects);
+            if (selectedWateringResources)
+                return CropTeacherWateringMaintenance.OpenWithObservedResourceEffects(runRequestPath, SourcePath, ledgerPath,
+                    commitmentIds, commitmentId, transition, stepId);
             var receipt = CurrentTeacherFrontierSupport.Read<QueueExecutionReceiptEnvelope>(transition.ExecutionReceiptPath, "original watering outcome kind");
             var result = !receipt.Success && receipt.StepResults is [{ Status: "blocked" }]
                 ? CropTeacherWateringMaintenance.OpenRefillControl(runRequestPath, SourcePath, ledgerPath, commitmentIds, commitmentId, transition, stepId)

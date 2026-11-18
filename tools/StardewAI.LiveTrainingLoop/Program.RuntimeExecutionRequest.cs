@@ -1590,6 +1590,11 @@ static partial class Program
         ApplyTextSignEditingRequestFields(
             executionRequest,
             item);
+        if (options.ObserveSelectedWateringResources)
+        {
+            NativeWateringExecutionObservation.Apply(options, executionRequest);
+            return executionRequest;
+        }
         if (options.ObserveSelectedTillingResources)
         {
             NativeTillingExecutionObservation.Apply(options, executionRequest);

@@ -31,7 +31,7 @@ internal sealed class CropTeacherRetainedInputs
 
     private static string LogicalHash(string path) => ContentAddressedJsonArtifactReader.ComputeLogicalSha256(path);
 
-    private static void RequireRegularInput(string path)
+    internal static void RequireRegularInput(string path)
     {
         for (string? current = path; current is not null; current = Path.GetDirectoryName(current))
             Require((File.GetAttributes(current) & FileAttributes.ReparsePoint) == 0,

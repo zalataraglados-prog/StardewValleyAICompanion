@@ -16,6 +16,8 @@ public sealed partial class LiveTrainingOptions
     public void ValidateManagedCropTeacherMode()
     {
         ValidatePreparedCropTerminalProduction();
+        if (UseManagedWateringResources && !UseManagedCropTeacher)
+            throw new ArgumentException("Managed watering resources require the original managed crop Teacher owner.");
         if (!UseManagedCropTeacher) return;
         if (!SkipTraining || !UseDailyPlan || !UseRuntimeTestHarnessExecutor || !UseProductExecutor || !RequireExecutorFeedback ||
             !EmitQueueExecutionReceipt || !RequireNativeSaveBoundary || string.IsNullOrWhiteSpace(SaveIsolationPath) ||

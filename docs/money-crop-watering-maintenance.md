@@ -1,5 +1,21 @@
 # Original Crop Watering Maintenance Boundary
 
+## Explicit Original Owner Resource Mode (263)
+
+`--use-managed-watering-resources` defaults OFF. Future ordinary water operations
+may pin `watering_resources`; recovery follows that original marker even if the
+current global option differs. Unmarked history remains pure watering. Original
+refill approaches and their permissions are unchanged.
+
+`Preparation.OpenWithObservedResourceEffects` verifies the same original compiler
+and crop obligation, then composes the existing water prefix/control validation
+with native source/aggregate binding and262 resource verification. All JSON and
+compressed request inputs are retained. Production aggregation carries an explicit
+`native_watering_preparation` reference and reuses the verified maintenance receipt,
+not a second resource/stock engine. Full offline owner/recovery/production and
+tamper checks passed; actual hook timing and historical47 recovery are NOT proved.
+See [the complete observation contract](native-watering-tool-metadata-observation.md).
+
 ## Selected Watering/Pickup Composition Leaf (260)
 
 The pure default below is preserved. `ProjectVerifiedWatering` extracts its

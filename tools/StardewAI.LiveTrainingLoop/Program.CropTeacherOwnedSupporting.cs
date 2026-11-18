@@ -37,6 +37,8 @@ static partial class Program
         // Compiler-internal candidates do not end this owner's frozen root queue.
         var executionOptions = options.WithOwnedSupportingQueueBoundary();
         if (tilling) executionOptions = executionOptions.WithSelectedTillingResources();
+        if (watering && operation.WateringStart!.UsesObservedWateringResources)
+            executionOptions = executionOptions.WithSelectedWateringResources();
         Task<JsonObject> Execute() => ExecuteRuntimeTestHarnessCoreAsync(http, executorHttp,
             executionOptions, iteration, start.SourcePath, before, queue, ReadString(before, "state_hash"), ReadString(queue, "queue_id"),
             operation.Record[clearance || tilling || terminal || watering || harvest ? "original_model_action_path" : "original_model_plan_path"]!.GetValue<string>(), string.Empty, start.QueuePath, start.SourcePath,

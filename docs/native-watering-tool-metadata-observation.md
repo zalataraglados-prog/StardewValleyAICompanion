@@ -1,10 +1,13 @@
 # Selected Watering Tool Metadata Observation
 
-## Current Scope (261 Producer, 262 Resource Consumer)
+## Current Scope (261 Producer, 262 Consumer, 263 Original Owner Wire)
 
 This is the purpose-scoped producer/wire for the selected watering/pickup
 resource consumer, not a second executor or a resource certificate. It is OFF
-by default. There is no automatic LiveTrainingLoop/owner activation yet.
+by default. `--use-managed-watering-resources` explicitly selects future ordinary
+watering operations in the original managed owner. Each selected operation pins
+`watering_resources`; private request-options copies activate observation only
+for that batch. Old unmarked operations and refill approaches are not converted.
 The pending historical operation47 has no such witness; this producer cannot
 retroactively create one. The primary/pickup resource leaf is documented in
 [watering maintenance](money-crop-watering-maintenance.md).
@@ -31,9 +34,29 @@ without asserting a completed water action or changing old executor behavior.
 Final Core72/72 and Backend138/138 passed;18new math and38complete-entry/negative
 cases include native-format6unit pickup chains, old stacks/new slots, tool XML,
 raw material graph and contradictory self-consistent after metadata. This is
-synthetic wire/contract proof, not actual native observation. Next is the original
-maintenance/owner opt-in/source/recovery wire; native installation/timing remains
-unverified, and historical47 remains unaccepted. No automatic activation.
+synthetic wire/contract proof, not actual native observation. The263 original
+maintenance/owner/source/recovery wire is now tested below; native installation/
+timing remains unverified, and historical47 remains unaccepted.
+
+## Original Owner And Source Binding (263)
+
+The selected variant reuses the existing native journal/source parser and original
+water applied-prefix/refill-control rules. It binds exact aggregate identity,
+status, facts, nonce, before/after content and isolated environment, including the
+original Product requested-before versus fresh-before distinction. Old parser
+entry points remain applied-only. Only this selected variant admits blocked water.
+
+JSON artifacts use the original logical/physical retainer; compressed requests
+are separately regular-file/hash pinned and checked at rebind/recovery. The new
+`native_watering_preparation` reference binds original plan, ledger, compilation
+and covered commitment. The lifecycle reuses its already verified maintenance
+object instead of calling a planting validator or repeating the resource proof.
+
+Final Backend549/549 covers the complete synthetic original owner+6-unit pickup,
+rebind, reopen/recovery, production reference, lifecycle queue admission and JSON/
+gzip mutation refusal, plus adjacent old pure/refill/till behavior. Core67/67
+passes actual governance mode with the new scope/math files explicitly registered.
+These counts overlap earlier runs. No native hook installation/timing claim.
 
 Inspected the actual E runtime1.6.15 DLL, SHA256
 `7f1e5b8e58d2758b78570ba771bbeb03d33522f62188bf6c32edf0cf626deaee`.
@@ -99,10 +122,9 @@ Harmony installation: normal completion, exception identity/failure marking and
 unscoped no-op passed. This is NOT an actual native hook-attachment/timing test.
 
 The262 resource consumer above completes that metadata replay/XML composition.
-The remaining successor enables this profile only through the original selected
-watering/maintenance/owner chain, binding the actual per-step native frame and
-retained inputs without repeating the already verified primary/resource work.
-Keep pure default
+The263 successor enables this profile explicitly through the original selected
+watering/maintenance/owner chain, binding each native frame and retained input.
+The remaining runtime successor verifies actual hook attachment/timing. Keep pure default
 and native-refill dispatch unchanged. Consider pickup need at selection, not
 always-on global capture. Do not replay days or modify old executors to fit a new
 consumer. Native attachment and real timing remain unverified until that focused

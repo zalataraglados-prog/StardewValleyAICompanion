@@ -1,5 +1,14 @@
 # Current Production Snapshot Handoff
 
+## Latest263: Original Water Owner And Production Wire Tested Offline
+
+- Explicit default-off `--use-managed-watering-resources` selects future ordinary water operations only; `watering_resources` is pinned in the original intent and controls recovery. Old unmarked records and refill dispatch remain unchanged. No implicit global full capture.
+- Original source parser adds one selected-water variant, preserving old applied-only behavior. It accepts the original legal blocked-water tail, permits Product fresh-before/requested-before drift under original flags, and binds each aggregate step/nonce/facts/environment to the native journal and frames. Existing262 resource verifier runs once; JSON and request gzip are retained separately.
+- Original owner -> rebind -> reopen/recovery -> production reference -> lifecycle queue admission passed with a6-unit pickup during watering. The lifecycle consumes the same verified maintenance object, not the planting-prefix verifier or a duplicate resource replay. JSON/gzip mutation is rejected.
+- Final Backend549/549 (1m21s), SHA84446024f8c16edd313efc60fa0d6cf51ecb08595bd4a7b7bfa2e97e26ef84b6. Core67/67 in actual governance mode, SHA856387299d58c5720d3da10d68ff52362305d5077fed5a4e33a3dfb96e619b1d. Earlier119/2/1 runs overlap. Fixture failures were repaired without changing product rules. Existing OwnedCooking warning only.
+- Observation/resource foundation is separate PR589 at a1890562; owner integration follows in a stacked PR. Remote CI is separate from local proof.263 artifacts frozen; new builds use a new root. AGY same session finished bounded no-tools source review119s/no findings, accepted-idle; file tools remainHOLD, no paid retry. See external water263/ASSESSMENT.md for scope/telemetry.
+- NO new native game/Harmony verification, historical47 acceptance, deploy/restart/re-water/reload or formal training. Accepted46/pending47/Eledger486 hashes unchanged. Developer-only supplement permission still unanswered. Next: focused isolated native observation/timing plus authorized treatment of the old missing witness; Stage5 ->570 ->569 remains open. WeeklyUSED57/stop60, no new issue updates.
+
 ## Latest262: Metadata Replay And Public Water Resource Entry Tested
 
 Original request/native/anchor + existing observation/graph + ONE primary-water
