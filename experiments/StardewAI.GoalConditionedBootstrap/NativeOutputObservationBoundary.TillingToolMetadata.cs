@@ -32,9 +32,9 @@ public static partial class NativeOutputObservationBoundary
         return ReadPickupInventoryCore(request, receipt, before, after, locationId, evidence, payload, metadata);
     }
 
-    private sealed record VerifiedTillingToolMetadata(int Slot, string Reference, int Sprite, int Swing, bool History)
+    private sealed record VerifiedTillingToolMetadata(int Slot, string Reference, int Sprite, int Swing, bool History) : IVerifiedPickupToolMetadata
     {
-        internal XElement ProjectExpected(NativeObservedInventoryPayloadSlot slot, XElement original)
+        public XElement ProjectExpected(NativeObservedInventoryPayloadSlot slot, XElement original)
         {
             if (slot.SlotIndex != Slot) return original;
             Require(slot.ItemReferenceId == Reference && slot.RuntimeType == "StardewValley.Tools.Hoe",

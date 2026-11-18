@@ -31,6 +31,12 @@ The261 producer/wire now exists, default-off; see
 Independent metadata replay/XML adaptation and the maintenance/owner consumer
 remain the actual next work. A built producer is not a native outcome proof.
 
+The262 `ReadWateringResources` completes that local metadata replay/physical
+pickup composition (Core72/Backend138, native-format synthetic admissions).
+Its primary can before/after water is bound before the XML adapter runs once;
+the old pure/till paths remain strict. The maintenance/owner opt-in/source/recovery
+wire is NOW the remaining next work, not another resource kernel or executor.
+
 ## Scope And Existing Implementation
 
 PR528 accepted original route compilation/execution ownership on the existing

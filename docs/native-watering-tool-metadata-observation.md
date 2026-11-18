@@ -1,6 +1,6 @@
 # Selected Watering Tool Metadata Observation
 
-## Current Scope (261)
+## Current Scope (261 Producer, 262 Resource Consumer)
 
 This is the purpose-scoped producer/wire for the selected watering/pickup
 resource consumer, not a second executor or a resource certificate. It is OFF
@@ -17,6 +17,23 @@ new fields are omitted from ordinary request/receipt JSON. This is request
 admission only, not proof that eventual metadata or resource effects are correct.
 
 ## Native Evidence
+
+The262 `ReadWateringResources` entry now consumes the producer through original
+raw resource/debris/graph readers and the original pickup slot/XML allocator.
+Primary water/crop/energy/bowl effects are computed ONCE before supplying the
+checked before/after water to metadata replay. A private slot-projection interface
+is shared with old till metadata; old default and till arithmetic are unchanged.
+Replay occurs ONCE per allocated tool using native Update inputs, unchecked
+endUsing increments and actual history-setter inputs, not observed after values.
+This also accepts zero-call scopes and blocked refill reports at a source tile
+without asserting a completed water action or changing old executor behavior.
+
+Final Core72/72 and Backend138/138 passed;18new math and38complete-entry/negative
+cases include native-format6unit pickup chains, old stacks/new slots, tool XML,
+raw material graph and contradictory self-consistent after metadata. This is
+synthetic wire/contract proof, not actual native observation. Next is the original
+maintenance/owner opt-in/source/recovery wire; native installation/timing remains
+unverified, and historical47 remains unaccepted. No automatic activation.
 
 Inspected the actual E runtime1.6.15 DLL, SHA256
 `7f1e5b8e58d2758b78570ba771bbeb03d33522f62188bf6c32edf0cf626deaee`.
@@ -81,11 +98,11 @@ An isolated callback probe loads the built library WITHOUT a game instance or
 Harmony installation: normal completion, exception identity/failure marking and
 unscoped no-op passed. This is NOT an actual native hook-attachment/timing test.
 
-Next, replay these raw native inputs into independently calculated metadata and
-use one slot-scoped XML adapter with the existing pickup kernel. Bind actual
-raw endpoints, actor/tool identities, complete calls and original snapshot anchor;
-compose with the260primary/pickup resource leaf. Then enable this profile only
-through the original selected watering/maintenance/owner chain. Keep pure default
+The262 resource consumer above completes that metadata replay/XML composition.
+The remaining successor enables this profile only through the original selected
+watering/maintenance/owner chain, binding the actual per-step native frame and
+retained inputs without repeating the already verified primary/resource work.
+Keep pure default
 and native-refill dispatch unchanged. Consider pickup need at selection, not
 always-on global capture. Do not replay days or modify old executors to fit a new
 consumer. Native attachment and real timing remain unverified until that focused

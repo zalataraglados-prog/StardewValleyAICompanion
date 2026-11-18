@@ -1,6 +1,33 @@
 # Current Production Snapshot Handoff
 
-## Latest261: Opt-In Water Metadata Producer, Not Consumer Acceptance
+## Latest262: Metadata Replay And Public Water Resource Entry Tested
+
+Original request/native/anchor + existing observation/graph + ONE primary-water
+projection + ONE actual metadata replay/tool + original pickup XML/stock kernel.
+Before XML water binds original can source, after independently predicted; no
+fixed cycle count, after-sprite shortcut, old pure/till/executor rewrite. Blocked
+refill may report source tile; only applied must hit crop, blocked gets0crop credit.
+
+Core72/TRX3658b67ce33beece3fcd222b47211f19e984ff07f127b2c38bd172aaa7edf579;
+Backend138/TRX0cd35b5d36ada7d0c2ef63335fd5b9d50b94ae276f46262f42a423e9de9bb2f2,
+zero failures/skips; new18math+38public/guard cases, native-format6unit admissions
+old stack/new slot + tools + graph (not zero-only). Initial1fixture10vs0baseline
+fixed; new warnings removed, old OwnedCooking retained. Harness0warnings/errors.
+Final262 artifacts FROZEN; next263/newdir. Not an actual native game test.
+
+AGY same6515session313s/331line3path draft accepted with controller corrections,
+coding7/10, not independent build. Bad hunk counts omitted27lines despite git
+--check; complete original bodies recovered first. Schema/repeated replay/
+baseline/nullability corrected.86645cumulative2turn/delta58969telemetry, not money;
+raw outsideGit agy-20261118/water262. Tool laneHOLD/other providers unchanged.
+
+NEXT original maintenance/owner opt-in, actual native-frame lineage and recovery.
+No automatic activation/deployment/native invocation or47acceptance; supplement
+question unanswered, do not fabricate missing old witness, reload or re-water.
+Same game12688/Backend26020/Product3356/ledger486 retained. Stage5->570->569/formal
+OPEN, weeklyUSED56%/stop60; all local exec/AGY/build/test handles terminal.
+
+## Historical261: Opt-In Water Metadata Producer, Not Consumer Acceptance
 
 Default-off complete selected-water scope, separate from old Move/Clear/Till;
 all held Tool endpoints and bounded actual Update/endUsing/inventory-history

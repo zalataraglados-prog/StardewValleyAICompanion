@@ -40,7 +40,7 @@ public sealed partial class ModEntry
                 }
                 return new()
                 {
-                    SchemaVersion = "native_watering_tool_metadata.v1", GameTick = Game1.ticks,
+                    SchemaVersion = NativeWateringObservationContract.MetadataSchemaVersion, GameTick = Game1.ticks,
                     ActorReferenceId = ReferenceIds.For(farmer), Tools = rows.ToArray()
                 };
             }

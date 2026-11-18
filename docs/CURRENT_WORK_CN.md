@@ -1,5 +1,13 @@
 # StardewAI 当前工作
 
+## 2026-11-18 水壶元数据重放与原拾取XML组合入口通过（262）
+
+- `ReadWateringResources`组成原请求/原生回执/锚→已有观察/graph→一次原浇水主效应→逐工具一次实际输入重放→原拾取XML/物理材料图核。初始XML水量也绑定原can投影，不拿after值当预测。原pure/till默认、原执行器不改；实际Tool.Update保留未reset分支cursor/int溢出，不预设1/2次调用。阻塞补水可报告水源位置，applied才必须命中作物，blocked保持0作物信用。
+- 最终Core72/72、Backend138/138、零失败/跳过，新增18项算式及38项完整入口/反例；包含6单位原生格式拾取入仓的旧堆叠/空槽与工具/XML/材料图组合，不是仅零拾取叶子。首轮1项是空槽夹具沿用10而非0入仓基线，已修夹具；新增nullable警告已清，剩原OwnedCooking警告。Harness构建0警告/0错误。
+- Core TRX SHA`3658b67ce33beece3fcd222b47211f19e984ff07f127b2c38bd172aaa7edf579`，Backend SHA`0cd35b5d36ada7d0c2ef63335fd5b9d50b94ae276f46262f42a423e9de9bb2f2`；旧137等重复范围不相加，最终262产物冻结，后继263新目录。详见[原生元数据组合合同](native-watering-tool-metadata-observation.md)。
+- AGY原6515会话并发给出3个新partial/331行，313秒，无工具权限。错误补丁头漏27行，控制器从原输出完整恢复并核对，再修schema、重复重放、初始水量链接及nullable；集成后暂评代码草稿7/10，accepted-idle，不是独立编译交付。累计2turn86645/本次差额58969为遥测，不是账单；原交流在仓库外water262。skill增加补丁计数/完整性检查，不只信git apply --check；无付费重试/提权。
+- **下一步：原maintenance/owner显式接线与来源/恢复合同，不重做资源核。** 未自动启用/部署/新开游戏，47仍未接受、缺历史观察不能伪造；补证许可未获答，不回档/重浇。原ledger486及256实例不动。第5步→#570→#569、formal=false及冻结指标不变，周USED56%/到60%安全收尾。
+
 ## 2026-11-18 水壶按需观察生产端及协议完成，元数据消费待接（261）
 
 - 为显式selected-water新增默认关闭且单人/原water选项/完整观察层限定的协议；与原till互斥，默认Move/Clear/Till不放宽。按需记录所有持有工具的原始元数据前后端点，以及有界`Tool.Update`、`Tool.endUsing`、库存历史setter实际输入/顺序/正常返回；不预测结果、不跳过原方法、不改执行器动作、无持续全量XML扫描。

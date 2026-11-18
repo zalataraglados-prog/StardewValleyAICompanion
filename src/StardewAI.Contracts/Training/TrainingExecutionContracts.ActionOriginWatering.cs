@@ -11,6 +11,8 @@ public sealed partial class TrainingExecutionRequest
 
 public static class NativeWateringObservationContract
 {
+    public const string MetadataSchemaVersion = "native_watering_tool_metadata.v1";
+
     public static bool IsCompleteRequest(TrainingExecutionRequest request) => request.ActionOriginWateringResources &&
         !request.ActionOriginTillingResources && request.ExecutionMode == "training_singleplayer" &&
         request.OptionId == "executor.water_crop" && request.SourcePlanningOptionId == "executor.water_crop" &&

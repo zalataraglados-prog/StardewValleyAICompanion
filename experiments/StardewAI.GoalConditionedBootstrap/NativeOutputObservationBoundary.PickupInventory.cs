@@ -37,7 +37,7 @@ public static partial class NativeOutputObservationBoundary
 
     private static NativePickupInventorySummary ReadPickupInventoryCore(TrainingExecutionRequest request,
         ActionOriginObservationReceipt receipt, SnapshotEnvelope before, SnapshotEnvelope after, string locationId,
-        NativeOutputResourceEvidence evidence, NativeInventoryPayloadSummary payload, VerifiedTillingToolMetadata? tilling)
+        NativeOutputResourceEvidence evidence, NativeInventoryPayloadSummary payload, IVerifiedPickupToolMetadata? metadata)
     {
         Require(payload.After.GameTick == after.GameTick,
             "pickup persisted endpoint is not anchored to the actual after-snapshot tick");
@@ -114,7 +114,7 @@ public static partial class NativeOutputObservationBoundary
                 "pickup changed the allocated physical slot, identity or exact native stack");
             SetPickupXmlStack(state.Xml, state.Count);
             var actual = ReadItemXml(next.Xml, next.Sha256, ref characters);
-            var expectedXml = tilling?.ProjectExpected(state.Header, state.Xml) ?? state.Xml;
+            var expectedXml = metadata?.ProjectExpected(state.Header, state.Xml) ?? state.Xml;
             Require(XNode.DeepEquals(expectedXml, actual), "pickup changed unexplained persisted inventory metadata");
             if (!first.IsEmpty) VerifyPickupRawRow(firstRows[index], nextRows[index], state.Count);
             var initial = first.Stack ?? 0;
