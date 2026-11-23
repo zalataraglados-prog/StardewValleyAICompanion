@@ -182,6 +182,7 @@ public sealed partial class ModEntry : Mod
                     pressed: false,
                     out _);
                 active.AttackButtonHeld = false;
+                ReleaseRockCrabShellInput(active);
                 if (active.ClearanceTool is not null)
                 {
                     TryApplySmapiButtonOverride(
@@ -375,6 +376,7 @@ public sealed partial class ModEntry : Mod
         }
 
         if (active.ManualMovement &&
+            !active.RockCrabShellHealthBefore.HasValue &&
             active.CombatIntent == TrainingCombatIntents.TargetDefeat &&
             active.Target.Health > 0)
         {
@@ -446,6 +448,11 @@ public sealed partial class ModEntry : Mod
         }
 
         if (TickCombatClearance(active, mine))
+        {
+            return;
+        }
+
+        if (TickRockCrabShellRecovery(active, releasedAttackThisTick))
         {
             return;
         }
@@ -835,6 +842,7 @@ public sealed partial class ModEntry : Mod
 
     private void CompleteCombatMonster(ActiveCombatMonster active, bool targetDefeated = true, string terminalVerificationReason = "native_fire_tool_defeated_target")
     {
+        ReleaseRockCrabShellInput(active);
         TryApplySmapiButtonOverride(
             HeavyHitterInputButton(active.Weapon),
             pressed: false,
@@ -944,6 +952,7 @@ public sealed partial class ModEntry : Mod
 
     private void CompleteCombatMonsterBlocked(ActiveCombatMonster active, string reason)
     {
+        ReleaseRockCrabShellInput(active);
         TryApplySmapiButtonOverride(
             HeavyHitterInputButton(active.Weapon),
             pressed: false,

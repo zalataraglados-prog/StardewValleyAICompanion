@@ -377,9 +377,24 @@
       "git_blob_oid": "13b39d93752a8ff863b663785d45914e2fabde10"
     },
     {
+      "path": "tools/StardewAI.RuntimeTestHarness/ModEntry.Mining.Combat.cs",
+      "sha256": "2238D6862C16642B3FD12F41B8288438DC90ABB3173FBF2575CB8A98BB201274",
+      "git_blob_oid": "c8891ea2c4bf86224ed14d8ec3f7f3ca2f908150"
+    },
+    {
+      "path": "tools/StardewAI.RuntimeTestHarness/ModEntry.Mining.Combat.RockCrab.cs",
+      "sha256": "EED730413FCF3B93FDFE1E951130506F6C9911E72B788053AD3B5F5D7A0C544C",
+      "git_blob_oid": "cea768910ff0883afe81f03b4840dff4bd71dd7c"
+    },
+    {
       "path": "tools/StardewAI.RuntimeTestHarness/ModEntry.MovementSleep.cs",
       "sha256": "F798343A77E320E2F5B828A37D3F26C4719AA5C44AE3CB89193644494123B8D8",
       "git_blob_oid": "b34f8713feeca94e5ad15877e213d7798915f2a5"
+    },
+    {
+      "path": "tools/StardewAI.RuntimeTestHarness/ModEntry.State.Combat.cs",
+      "sha256": "C5F677FEAF8A4819835B6EADF50410456D22DEB5DF73B9E9E2CC6A434851EB86",
+      "git_blob_oid": "5725584c4b4fd1acb5f884c3be96cdad2e6b3eb9"
     }
   ],
   "controller_files": [
@@ -435,8 +450,8 @@
     },
     {
       "path": "experiments/r2-lab-controller/Restart-IsolatedVerifiedDay.ps1",
-      "sha256": "ED191DB1778DB0CF91CE2CEF23EAD31141CE648F4BD74492F41B351870436D04",
-      "git_blob_oid": "a56762b0f112ca67423496bb9354446d16990e67"
+      "sha256": "87EA17606A61BD8D4B8C23399B46005E13EC45C25EEB9347EF457D251F630698",
+      "git_blob_oid": "d9620e670679fd0eebd72fc6f2f1cdca8c703a8f"
     },
     {
       "path": "experiments/r2-lab-controller/planner-prerequisite/Resolve-PrerequisiteRouteWithFarm.ps1",
@@ -450,6 +465,13 @@
   "selected_island_route_verified": false,
   "formal_training_authorized": false,
   "sha256_scope": "SHA-256 records original copied lab file bytes; Git may normalize line endings. git_blob_oid identifies the exact committed source content independently of checkout line endings.",
-  "updated_at": "2026-11-23T23:21:53.7242365+08:00",
-  "controller_revision_note": "Native save accepts Farm or FarmHouse, includes the existing planned profession option; the latter combined-loop path awaits its next native run. Mine probe binds an explicit expected total day. Restart can resume a verified stopped deployment before any live-session handle exists, with bounded DLL release retry."
+  "updated_at": "2026-11-23T23:57:45.0126367+08:00",
+  "controller_revision_note": "Restart now also requires retained stop evidence when starting again from the verified saved morning after intentionally discarding an unsaved failed mine experiment. Native shell-recovery verification is still pending.",
+  "latest_isolated_harness": {
+    "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\published\\crab-shell-runtime-20261123\\harness\\StardewAI.RuntimeTestHarness.dll",
+    "sha256": "D3F19E0B533D914DCD9570444AB55992082666A5757C1FA2C44BDACB772E6BFF",
+    "native_crab_recovery_verified": false,
+    "clean_main_fix_commit": "818a7c1ddc00ea5398b7eb3eb2dff81730e6bab3",
+    "clean_main_fix_pr": 594
+  }
 }

@@ -4,7 +4,9 @@ param(
     [Parameter(Mandatory)][ValidatePattern('^[a-z0-9-]+$')][string]$RuntimeAttempt,
     [Parameter(Mandatory)][string]$VerifiedSavePath,
     [Parameter(Mandatory)][string]$ReplacementHarnessDirectory,
-    [switch]$ContinueStoppedAttempt
+    [switch]$ContinueStoppedAttempt,
+    [switch]$FromStoppedSavedRun,
+    [string]$StoppedRunEvidencePath
 )
 
 $ErrorActionPreference = 'Stop'
@@ -13,19 +15,29 @@ $session = Get-Content -LiteralPath (Join-Path $prior 'live-session.json') -Raw 
 $startup = Get-Content -LiteralPath (Join-Path $prior 'startup.json') -Raw | ConvertFrom-Json
 $settings = Get-Content -LiteralPath (Join-Path $prior 'runtime-settings.json') -Raw | ConvertFrom-Json -AsHashtable
 $saved = Get-Content -LiteralPath $VerifiedSavePath -Raw | ConvertFrom-Json
+if ($ContinueStoppedAttempt -and $FromStoppedSavedRun) { throw 'Choose one stopped-run entry mode.' }
+$stoppedMode = $ContinueStoppedAttempt -or $FromStoppedSavedRun
 if (!$saved.native_save_boundary_verified -or !$saved.independent_saved_xml_verified -or $saved.run_id -cne $session.run_id -or
     $saved.save_id -cne 'ProofFarm' -or $saved.player_id -cne '319842636613009663') { throw 'Restart requires the independently accepted same-run native save.' }
 $main = Join-Path (Join-Path $session.save_root $session.slot) $session.slot
 $expected = @($saved.files | Where-Object name -ceq $session.slot)
 if ($expected.Count -ne 1 -or (Get-FileHash -LiteralPath $main).Hash -cne $expected[0].sha256) { throw 'The accepted actual main save changed.' }
-if (!$ContinueStoppedAttempt) {
+if ($FromStoppedSavedRun) {
+    $stopped = Get-Content -LiteralPath $StoppedRunEvidencePath -Raw | ConvertFrom-Json
+    $stoppedFrame = Get-Content -LiteralPath (Join-Path (Split-Path -Parent $StoppedRunEvidencePath) 'before-stop.json') -Raw | ConvertFrom-Json
+    if (!$stopped.unsaved_mine_progress_discarded -or $stopped.state_hash -cne $stoppedFrame.state_hash -or
+        $stoppedFrame.save_id.value -cne $saved.save_id -or $stoppedFrame.player_id.value -cne $saved.player_id -or
+        $stoppedFrame.state.environment.training_run_id.value -cne $session.run_id -or
+        $startup.source_main_sha256 -cne $expected[0].sha256) { throw 'Stopped experiment does not bind this same verified saved morning.' }
+}
+if (!$stoppedMode) {
     $fresh = Invoke-RestMethod -Uri $settings.STARDEWAI_BRIDGE_SNAPSHOT_URL -TimeoutSec 20
     if ($fresh.state_hash -cne $saved.after_state_hash -or $fresh.state.time.total_days.value -ne $saved.total_day -or
         $fresh.state.player.location_id.value -cne 'FarmHouse') { throw 'The live game moved beyond the accepted save; preserve it before restarting.' }
 }
 foreach ($row in $session.processes) {
     $process = Get-Process -Id $row.id -ErrorAction SilentlyContinue
-    if ($ContinueStoppedAttempt) {
+    if ($stoppedMode) {
         if ($process) { throw 'A prior service still exists; do not resume a stopped deployment.' }
     } elseif (!$process -or $process.Path -cne $row.exe -or $process.StartTime.ToUniversalTime() -ne [DateTimeOffset]::Parse($row.started).UtcDateTime) {
         throw 'Original service process identity changed.'
@@ -57,6 +69,7 @@ if ($ContinueStoppedAttempt) {
     }
     if (Get-NetTCPConnection -LocalPort 8765,8767,18413,18414 -State Listen -ErrorAction SilentlyContinue) { throw 'A native runtime endpoint is already owned.' }
 } else {
+    if ($FromStoppedSavedRun -and (Get-NetTCPConnection -LocalPort 8765,8767,18413,18414 -State Listen -ErrorAction SilentlyContinue)) { throw 'A native runtime endpoint is already owned.' }
     $next = New-Item -ItemType Directory -Path (Join-Path $RunDirectory $RuntimeAttempt)
     Copy-Item -LiteralPath $oldDll -Destination (Join-Path $next.FullName 'prior-harness.dll')
 }
@@ -66,12 +79,14 @@ foreach ($name in 'verified-adjacent-chest-entry.json','verified-farm-chest-entr
     # Historical access-tile receipts; storage still checks the fresh native graph.
     Copy-Item -LiteralPath (Join-Path $prior $name) -Destination (Join-Path $next.FullName $name)
 }
-[ordered]@{previous_session=(Join-Path $prior 'live-session.json');verified_save=$VerifiedSavePath;verified_save_sha256=(Get-FileHash -LiteralPath $VerifiedSavePath).Hash;main_save_sha256=$expected[0].sha256;old_harness_sha256=(Get-FileHash -LiteralPath $oldDll).Hash;replacement_harness=$newDll;replacement_harness_sha256=(Get-FileHash -LiteralPath $newDll).Hash} |
+[ordered]@{previous_session=(Join-Path $prior 'live-session.json');verified_save=$VerifiedSavePath;verified_save_sha256=(Get-FileHash -LiteralPath $VerifiedSavePath).Hash;main_save_sha256=$expected[0].sha256;old_harness_sha256=(Get-FileHash -LiteralPath $oldDll).Hash;replacement_harness=$newDll;replacement_harness_sha256=(Get-FileHash -LiteralPath $newDll).Hash;from_stopped_saved_run=[bool]$FromStoppedSavedRun;stopped_run_evidence=$StoppedRunEvidencePath} |
     ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $next.FullName 'restart-intent.json') -Encoding utf8
+if (!$FromStoppedSavedRun) {
 foreach ($role in 'product','backend','game') {
     $row = $session.processes | Where-Object role -ceq $role
     Stop-Process -Id $row.id
     Wait-Process -Id $row.id -Timeout 10 -ErrorAction SilentlyContinue
+}
 }
 }
 foreach ($copyAttempt in 1..10) {
