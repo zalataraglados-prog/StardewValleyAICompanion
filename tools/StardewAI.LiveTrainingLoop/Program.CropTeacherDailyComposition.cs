@@ -36,7 +36,7 @@ static partial class Program
     private static async Task<ComposedCropDispatch> ComposeCropTeacherDailyDispatchAsync(HttpClient http, LiveTrainingOptions options,
         int iteration, MoneyRevenueCropNativeProductionRunPlan plan, MoneyRevenueCropNativeProductionRunPlanRequest request,
         CropTeacherManagedSeedOwner owner, IReadOnlySet<string> preparedCommitmentIds, SnapshotEnvelope snapshot,
-        CropTeacherDailySelection? selection = null)
+        CropTeacherDailySelection? selection)
     {
         if (!options.UseDailyPlan || !options.UseJointDailyCalendar)
             throw new InvalidOperationException("Managed daily composition requires explicit joint daily-plan mode.");
@@ -56,7 +56,6 @@ static partial class Program
             progress.CompletedHarvestTileKeys, progress.CompletedDayBoundaryKeys, ledger);
         if (OriginalWateringRefillApproachPreemptsComposition(next, request, snapshot)) return new(null, true, selection);
         await IngestCropTeacherManagedSnapshotAsync(http, options, owner.CurrentSnapshotPath, artifacts, snapshot).ConfigureAwait(false);
-        selection = await RestoreCropTeacherDailySelectionAsync(owner, next.TotalDay, selection).ConfigureAwait(false);
         if (selection?.TotalDay == next.TotalDay)
         {
             var refreshed = await RefreshCropTeacherDailySelectionAsync(http, options, iteration, plan, request,
