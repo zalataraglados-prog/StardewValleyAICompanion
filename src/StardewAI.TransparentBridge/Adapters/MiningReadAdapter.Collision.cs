@@ -33,6 +33,7 @@ public sealed partial class MiningReadAdapter : ReadAdapterBase
         var staticRows = new string[height];
         var buriedItemDigRows = new string[height];
         var collisionMask = CollisionMask.All & ~CollisionMask.Farmers;
+        var passableTerrain = CollisionMask.TerrainFeatures | CollisionMask.Flooring;
         for (var y = 0; y < height; y++)
         {
             var row = new char[width];
@@ -41,7 +42,7 @@ public sealed partial class MiningReadAdapter : ReadAdapterBase
             for (var x = 0; x < width; x++)
             {
                 var tile = new Vector2(x, y);
-                var blocked = mine.IsTileBlockedBy(new Vector2(x, y), collisionMask, CollisionMask.None, useFarmerTile: true) ||
+                var blocked = mine.IsTileBlockedBy(tile, collisionMask, passableTerrain, useFarmerTile: true) ||
                     mine.farmers.Any(farmer => farmer != Game1.player && FarmerBlocksTile(farmer, x, y));
                 row[x] = blocked ? '1' : '0';
                 staticRow[x] = mine.isTilePassable(
