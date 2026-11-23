@@ -77,8 +77,9 @@ public sealed partial class CropTeacherManagedSeedOwner
     }
 
     private CropTeacherSharedSourceReturn OpenRecordedSharedSourceScope(JsonObject record, string sourcePath, string ledgerPath,
-        string[] covered, MoneyRevenueCropNativeLifecycleTransitionRequest transition)
+        string[] covered, MoneyRevenueCropNativeLifecycleTransitionRequest transition, string? originalBackendUrl = null)
     {
+        var backendUrl = originalBackendUrl ?? options.BackendUrl;
         var productYield = IsSharedTransferPreparation(record) && transition.ExecutorVersion == PolicyTrajectoryVersionPins.ProductExecutor;
         var inventoryLease = IsSharedTransferPreparation(record) &&
             record["shared_transfer_request"]?.Deserialize<ReservationPortfolioCommitRequest>(JsonOptions) is { } request &&
@@ -99,8 +100,8 @@ public sealed partial class CropTeacherManagedSeedOwner
             var path = SharedConsumptionReferencePath(record);
             var reference = Read<CropTeacherSharedConsumptionSettlementReference>(path);
             if (protocol is not null || record["original_transfer_preparation"] is not null || record["original_transfer_settlement"] is not null ||
-                record["original_consumption_settlement"] is not null || consumptionPreparation is null || consumptionPreparation.BackendUrl != options.BackendUrl ||
-                reference.Preparation != consumptionPreparation || reference.BackendUrl != options.BackendUrl)
+                record["original_consumption_settlement"] is not null || consumptionPreparation is null || consumptionPreparation.BackendUrl != backendUrl ||
+                reference.Preparation != consumptionPreparation || reference.BackendUrl != backendUrl)
                 throw new InvalidDataException("Shared cooking yield changed its original consumption preparation or settlement protocol.");
             return CropTeacherSharedSourceReturn.OpenAfterPreparedCookingConsumption(plan.RequestPath, sourcePath, ledgerPath,
                 covered, transition, Text(record, "support_step_id"), reference, path,
@@ -114,7 +115,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             var path = SharedTransferReferencePath(record);
             var reference = Read<CropTeacherSharedTransferSettlementReference>(path);
             if (protocol is not null || record["original_transfer_settlement"] is not null || yieldPreparation is null ||
-                yieldPreparation.BackendUrl != options.BackendUrl || reference.Preparation != yieldPreparation || reference.BackendUrl != options.BackendUrl)
+                yieldPreparation.BackendUrl != backendUrl || reference.Preparation != yieldPreparation || reference.BackendUrl != backendUrl)
                 throw new InvalidDataException("Shared transfer yield changed its original preparation or settlement protocol.");
             return inventoryLease
                 ? CropTeacherSharedSourceReturn.OpenAfterPreparedInventoryLeaseYield(plan.RequestPath, sourcePath, ledgerPath,
@@ -131,9 +132,9 @@ public sealed partial class CropTeacherManagedSeedOwner
         var transfer = record["original_transfer_settlement"]?.Deserialize<CropTeacherSharedTransferSettlementReference>(JsonOptions);
         var includePreparation = protocol == "settled_material_transfer.v2";
         if (protocol is not "settled_material_transfer.v1" and not "settled_material_transfer.v2" ||
-            transfer is null || transfer.BackendUrl != options.BackendUrl ||
+            transfer is null || transfer.BackendUrl != backendUrl ||
             includePreparation != (transfer.Preparation is not null) ||
-            transfer.Preparation is { } preparation && preparation.BackendUrl != options.BackendUrl ||
+            transfer.Preparation is { } preparation && preparation.BackendUrl != backendUrl ||
             record["shared_source_execution_protocol"] is not null)
             throw new InvalidDataException("Shared transfer return changed its original recorded protocol or backend.");
         if (includePreparation)

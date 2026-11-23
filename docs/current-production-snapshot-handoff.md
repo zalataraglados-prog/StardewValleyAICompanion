@@ -1,5 +1,24 @@
 # Current Production Snapshot Handoff
 
+## Latest272: Actual Accepted History Reopens and Exposes Both Source Segments
+
+The same production trace reader now reads the accepted parent prefix with the
+parent's original Backend/journal and sequence numbers, and the child with its
+own. DeveloperSavedBoundary explicitly anchors parent accepted save41, the
+loaded frame, manual review and original copied ledger marker; it is NOT a
+native saved-content readback. Do not flatten these sequences, include old42-47,
+or use this trace to issue strict production/terminal or training certificates.
+
+The first actual nonempty child reopen exposed premature legacy ID validation.
+The existing `saved-source:<sha>` IDs now derive before the original per-record
+index check; no original or child evidence rewrite, ordinary ID modes unchanged.
+Final142 focused/adjacent tests passed. The actual closed271 owner reopened
+read-only with41 parent transitions,9 child transitions and743 pinned sources,
+ending at accepted summer4 0c828950. Proof61b9710a97c75161c128d775aaa35c70e97adbff488e884f0a1c5727b6e4421a.
+No Backend/native dispatch, new save, old tail change, or training. Next resume
+Stage5 actual selected route/source/quantity/deadline/shared calendar/Day-0
+evidence per GLOBAL_DAILY_PLAN_CONTINUATION_CN.md; no replay of accepted summer3.
+
 ## Latest271: Native Copied Summer3 Day Closed, Saved Summer4
 
 Process-local hash-pinned MSYS2 Mesa llvmpipe on the existing game SDL passed a

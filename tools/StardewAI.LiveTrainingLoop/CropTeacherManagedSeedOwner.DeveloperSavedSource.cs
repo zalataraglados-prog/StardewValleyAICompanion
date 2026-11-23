@@ -9,8 +9,11 @@ namespace StardewAI.LiveTrainingLoop;
 public sealed partial class CropTeacherManagedSeedOwner
 {
     private sealed record DeveloperSavedSource(string SnapshotPath, string LedgerPath,
-        CropTeacherReloadProcessObservation Process, CropTeacherManagedPlanningProgress Progress,
-        IReadOnlyDictionary<string, string> InputHashes);
+        CropTeacherReloadProcessObservation Process, DeveloperParentProgress Parent, string ReviewPath,
+        string RebindRequestPath, string RebindReplyPath, IReadOnlyDictionary<string, string> InputHashes)
+    {
+        public CropTeacherManagedPlanningProgress Progress => Parent.Progress;
+    }
 
     private static DeveloperSavedSource ReadDeveloperSavedSource(CropTeacherManagedSeedOwnerOptions options,
         MoneyRevenueCropNativeProductionRunPlan plan, SnapshotEnvelope initial)
@@ -52,7 +55,8 @@ public sealed partial class CropTeacherManagedSeedOwner
             SnapshotInt(snapshot, "time", "total_days") != SnapshotInt(saved, "time", "total_days"))
             throw new InvalidDataException("Developer source changed the original saved actor/game/day.");
         CropTeacherOwnedSeedSupply.Read(snapshot, ledger, plan.CoveredCommitmentIds);
-        var review = Read<JsonObject>(Input("review_path"));
+        var reviewPath = Input("review_path");
+        var review = Read<JsonObject>(reviewPath);
         if (Text(review, "status") != "developer_saved_day_readback_accepted" ||
             review["source_sequence"]?.GetValue<int>() != document["parent_accepted_sequence"]?.GetValue<int>() ||
             review["copied_file_bytes_match"]?.GetValue<bool>() != true || review["manual_fork_review"]?.GetValue<bool>() != true ||
@@ -76,12 +80,14 @@ public sealed partial class CropTeacherManagedSeedOwner
             !DateTimeOffset.TryParse(snapshot.RealTimestamp, out var captured) || started > captured || captured > observed)
             throw new InvalidDataException("Developer source native process identity/time is invalid.");
         Pin(process.ExecutablePath, process.ExecutableSha256);
-        var request = Read<ReservationPortfolioCommitRequest>(Input("rebind_request_path"));
-        var reply = Read<ReservationPortfolioCommitResult>(Input("rebind_reply_path"));
+        var requestPath = Input("rebind_request_path");
+        var replyPath = Input("rebind_reply_path");
+        var request = Read<ReservationPortfolioCommitRequest>(requestPath);
+        var reply = Read<ReservationPortfolioCommitResult>(replyPath);
         var verified = CropTeacherDeveloperSavedSourceRebind.Verify(request, Read<StrategyCommitmentLedger>(parent.LedgerPath), snapshot, reply);
         StrategyLedgerEvidenceStore.RequireReconciledReadback(verified, ledger, snapshot, "Developer saved source");
         foreach (var (path, hash) in hashes)
             if (HashFile(path) != hash) throw new InvalidDataException("Developer source changed during admission.");
-        return new(snapshotPath, ledgerPath, process, parent.Progress, hashes);
+        return new(snapshotPath, ledgerPath, process, parent, reviewPath, requestPath, replyPath, hashes);
     }
 }

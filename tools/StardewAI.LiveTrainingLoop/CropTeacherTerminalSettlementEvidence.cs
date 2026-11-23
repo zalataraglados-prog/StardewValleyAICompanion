@@ -20,6 +20,7 @@ internal static partial class CropTeacherTerminalSettlementEvidence
         CropTeacherManagedProductionEvidence production, CropTeacherTerminalShippingTarget target,
         string output, Func<string, string, Task> write, bool readExisting)
     {
+        trace.RequireOriginalNativeProductionLineage();
         trace.ValidateInputsUnchanged();
         var artifacts = new CropSeedRuntimeArtifacts(trace.InputHashes);
         void Require(bool condition, string reason)

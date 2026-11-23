@@ -233,8 +233,8 @@ public sealed partial class CropTeacherManagedSeedOwner : IAsyncDisposable
                     throw new InvalidDataException("Managed crop owner does not match its retained original identity.");
             }
             else await write(headerPath, header.ToJsonString(JsonOptions)).ConfigureAwait(false);
-            var prefix = SupportStepPrefix(options, ledger, hashes[options.NativeRunPlanPath]);
-            if (savedSource is not null) prefix += "saved-source:" + hashes[options.DeveloperSavedSourcePath!] + ":";
+            var prefix = SupportStepPrefix(options, ledger, hashes[options.NativeRunPlanPath],
+                savedSource is null ? null : hashes[options.DeveloperSavedSourcePath!]);
             var owner = new CropTeacherManagedSeedOwner(options, plan, lease, write, hashes, HashFile(headerPath), ledger.SaveId, ledger.PlayerId, prefix);
             if (savedSource is not null)
             {

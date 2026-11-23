@@ -6,13 +6,16 @@ namespace StardewAI.LiveTrainingLoop;
 public sealed partial class CropTeacherManagedSeedOwner
 {
     private static string SupportStepPrefix(CropTeacherManagedSeedOwnerOptions options,
-        StrategyCommitmentLedger initialLedger, string originalPlanHash)
+        StrategyCommitmentLedger initialLedger, string originalPlanHash, string? developerSavedSourceHash)
     {
         var legacy = options.RunId + ":owned-seed:";
         var scoped = legacy + "plan:" + originalPlanHash + ":";
         var hasEarlierOwner = initialLedger.History.Any(row =>
             row.CommitmentId.StartsWith(legacy, StringComparison.Ordinal) ||
             row.SourceDecisionId.StartsWith(legacy, StringComparison.Ordinal));
+        // A saved fork has one deterministic namespace; LoadIndex checks each retained ID against it.
+        if (developerSavedSourceHash is not null)
+            return (hasEarlierOwner ? scoped : legacy) + "saved-source:" + developerSavedSourceHash + ":";
         var first = Path.Combine(options.EvidenceDirectory, "operation-000001-intent.json");
         if (File.Exists(first))
         {

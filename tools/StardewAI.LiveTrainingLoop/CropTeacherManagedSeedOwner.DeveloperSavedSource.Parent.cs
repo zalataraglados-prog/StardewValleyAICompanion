@@ -6,7 +6,9 @@ namespace StardewAI.LiveTrainingLoop;
 
 public sealed partial class CropTeacherManagedSeedOwner
 {
-    private sealed record DeveloperParentProgress(string SnapshotPath, string LedgerPath, CropTeacherManagedPlanningProgress Progress);
+    private sealed record DeveloperParentProgress(string SnapshotPath, string LedgerPath, string SaveBoundaryPath,
+        string Directory, string HeaderHash, string BackendUrl, string JournalDirectory, bool HasDeveloperSource,
+        IReadOnlyList<(int Sequence, string Path, string Hash)> History, CropTeacherManagedPlanningProgress Progress);
 
     private static DeveloperParentProgress ReadDeveloperParentProgress(JsonObject document, CropTeacherManagedSeedOwnerOptions options,
         Func<string, string?, string> pin)
@@ -29,6 +31,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         var previous = Text(document, "parent_header_sha256");
         var harvest = new HashSet<string>(StringComparer.Ordinal);
         var nights = new HashSet<string>(StringComparer.Ordinal);
+        var history = new List<(int Sequence, string Path, string Hash)>();
         JsonObject? last = null;
         // Reuse accepted small certificates; do not replay their historical snapshot graphs.
         for (var index = 1; index <= sequence; index++)
@@ -43,6 +46,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             var intent = pin(Path.Combine(directory, $"operation-{index:D6}-intent.json"), Text(accepted, "admission_sha256"));
             AddAcceptedPlanningProgress(accepted, intent, harvest, nights);
             previous = HashFile(path);
+            history.Add((index, path, previous));
             last = accepted;
         }
         if (last is null || Text(last, "operation_kind") != "overnight_control" || last["native_save_boundary_verified"]?.GetValue<bool>() != true ||
@@ -57,6 +61,8 @@ public sealed partial class CropTeacherManagedSeedOwner
             !SamePath(StoredPath(saved, "after_snapshot_path"), snapshot) ||
             saved["to_total_day"]?.GetValue<int>() != last["to_total_day"]?.GetValue<int>())
             throw new InvalidDataException("Developer parent save does not match its accepted source/day.");
-        return new(snapshot, ledger, new(harvest, nights));
+        return new(snapshot, ledger, savedPath, directory, Text(document, "parent_header_sha256"), Text(header, "backend_url"),
+            StoredPath(header, "portfolio_journal_directory"), header["developer_saved_source_path"] is not null,
+            history.AsReadOnly(), new(harvest, nights));
     }
 }

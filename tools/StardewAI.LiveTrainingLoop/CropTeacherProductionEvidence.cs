@@ -53,6 +53,7 @@ internal static partial class CropTeacherProductionEvidence
         IReadOnlyList<CropTeacherManagedSharedSourceReturn> shared, string output, Func<string, string, Task> write,
         bool retainSaleStock = false, bool transferredStock = false, bool inventoryEffects = false, bool appliedNativeWork = false)
     {
+        trace.RequireOriginalNativeProductionLineage();
         trace.ValidateInputsUnchanged();
         var (request, plan) = CropTeacherResumeLoader.ReadVerifiedPlan(trace.NativeRunPlanPath);
         var production = Read<MoneyRevenueCropProductionObligationPlan>(plan.CropProductionPlanPath);

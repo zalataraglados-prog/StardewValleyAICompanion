@@ -21,11 +21,11 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         internal string RequestPath => Path.Combine(Root, "request.json");
         internal string ReplyPath => Path.Combine(Root, "reply.json");
 
-        internal async Task Prepare()
+        internal async Task Prepare(Action<SnapshotEnvelope>? prepareLoaded = null)
         {
             Directory.CreateDirectory(Root);
             await using var owner = await Parent.Night.Open();
-            await Parent.CompleteNight(owner);
+            await Parent.CompleteNight(owner, prepareLoaded);
             var acceptedPath = Path.Combine(Parent.Night.Options.EvidenceDirectory, "operation-000003-accepted.json");
             var before = LifecycleRead<StrategyCommitmentLedger>(owner.CurrentLedgerPath);
             var request = new ReservationPortfolioCommitRequest
