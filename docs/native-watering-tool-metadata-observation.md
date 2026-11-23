@@ -35,12 +35,39 @@ Final Core72/72 and Backend138/138 passed;18new math and38complete-entry/negativ
 cases include native-format6unit pickup chains, old stacks/new slots, tool XML,
 raw material graph and contradictory self-consistent after metadata. This is
 synthetic wire/contract proof, not actual native observation. The263 original
-maintenance/owner/source/recovery wire is now tested below; native installation/
-timing remains unverified, and historical47 remains unaccepted.
+maintenance/owner/source/recovery wire is tested below; actual native samples
+are separately recorded in265. Historical47 remains unaccepted.
+
+## Current Native Samples (265)
+
+PR589/590 are merged at origin/main94e3abfe. Fresh264 builds use the same runtime
+source as a72fe1ad, with explicit E GamePath and separate artifacts. Isolated264c
+actually applied one water action;264g actually applied one water action while
+collecting one fiber(O)771 during the measured scope. Each captured two completed
+native calls, Update and endUsing. The public ReadWateringResources entry accepted
+the anchored raw endpoints, independently replayed metadata and checked physical
+inventory/material graph. No inventory-history setter invocation occurred here;
+do not promote two samples to proof of every native hook or timing case.
+
+External reports under resident-refill-20261108:
+
+- block264c-native-water/verification.json SHA256
+  c713c8fb9796450069a3238b5743b55775a6a95d7303c17f0f2ab45ecff3dfe2.
+- block264g-native-water-pickup/verification.json SHA256
+  cc43487334b94ad7b732ef9badede7b82f66e937b3d492fda9a4807a5da6f45d.
+
+Full raw capture and deep proof run in separate phases, with the NEW game exited
+before loading deep verification libraries. The1200MiB free-physical guard and
+raw data remain intact. Earlier resource exits, paused-debris/no-pickup,
+premature-pickup and out-of-map fixtures remain failed attempts, not coverage.
+All probes are terminal; original inputs unchanged. The263 owner composition is
+still offline proof, not a new actual managed day. Historical47 lacks its own
+observation and remains unaccepted; new samples cannot retrofit it. No formal
+training or old running-instance binary replacement is authorized by this proof.
 
 ## Original Owner And Source Binding (263)
 
-264 runtime status: foundation PR589 merged after own CI success. One fully
+Historical264 runtime status (superseded by265 above): PR589 merged. One fully
 isolated native-instance attempt stopped at the available-memory guard BEFORE
 actions; it did not produce native observation acceptance or prove a product
 failure. The original held game/save/tail was not changed. Actual hook/timing
@@ -63,7 +90,7 @@ Final Backend549/549 covers the complete synthetic original owner+6-unit pickup,
 rebind, reopen/recovery, production reference, lifecycle queue admission and JSON/
 gzip mutation refusal, plus adjacent old pure/refill/till behavior. Core67/67
 passes actual governance mode with the new scope/math files explicitly registered.
-These counts overlap earlier runs. No native hook installation/timing claim.
+These counts overlap earlier runs and make no native timing claim by themselves.
 
 Inspected the actual E runtime1.6.15 DLL, SHA256
 `7f1e5b8e58d2758b78570ba771bbeb03d33522f62188bf6c32edf0cf626deaee`.
@@ -131,8 +158,10 @@ unscoped no-op passed. This is NOT an actual native hook-attachment/timing test.
 The262 resource consumer above completes that metadata replay/XML composition.
 The263 successor enables this profile explicitly through the original selected
 watering/maintenance/owner chain, binding each native frame and retained input.
-The remaining runtime successor verifies actual hook attachment/timing. Keep pure default
-and native-refill dispatch unchanged. Consider pickup need at selection, not
-always-on global capture. Do not replay days or modify old executors to fit a new
-consumer. Native attachment and real timing remain unverified until that focused
-runtime check; no formal training, owner47 acceptance or production credit here.
+The265 samples above separately verify actual Update/endUsing attachment and
+timing in ordinary water and incidental-pickup scopes, not every hook branch.
+Keep pure default and native-refill dispatch unchanged. Consider pickup need at
+selection, not always-on global capture. Do not replay days or modify old
+executors to fit a new consumer. Next is authorized treatment of the historical
+missing witness and same-run continuation, not another blanket native gate.
+No formal training, owner47 acceptance or production credit follows here.

@@ -13,7 +13,10 @@ with native source/aggregate binding and262 resource verification. All JSON and
 compressed request inputs are retained. Production aggregation carries an explicit
 `native_watering_preparation` reference and reuses the verified maintenance receipt,
 not a second resource/stock engine. Full offline owner/recovery/production and
-tamper checks passed; actual hook timing and historical47 recovery are NOT proved.
+tamper checks passed. The265 isolated native samples additionally verify actual
+Update/endUsing timing for water and water+one-fiber pickup through the public
+resource consumer; they do NOT prove every hook path, a resumed native owner day
+or historical47 recovery. That old observation cannot be reconstructed here.
 See [the complete observation contract](native-watering-tool-metadata-observation.md).
 
 ## Selected Watering/Pickup Composition Leaf (260)
