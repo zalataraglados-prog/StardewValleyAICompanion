@@ -2588,8 +2588,14 @@ var report = new LiveTrainingLoopReport
     Prediction = lastPrediction
 };
 
-var reportPath = Path.Combine(options.RunDir, "live-training-loop-report.json");
-await File.WriteAllTextAsync(reportPath, JsonSerializer.Serialize(report, JsonOptions), Encoding.UTF8);
+var reportPath = Path.Combine(options.RunDir, options.StopAfterManagedCropSavedDay.HasValue
+    ? $"live-training-loop-report-managed-{nextArtifactIteration:D4}-{Guid.NewGuid():N}.json"
+    : "live-training-loop-report.json");
+var reportJson = JsonSerializer.Serialize(report, JsonOptions);
+if (options.StopAfterManagedCropSavedDay.HasValue)
+    await WritePortfolioJournalFileAsync(reportPath, reportJson);
+else
+    await File.WriteAllTextAsync(reportPath, reportJson, Encoding.UTF8);
 AppendProgress(options, verifiedTargetMet ? "complete" : "incomplete", attemptsStarted, lastStateHash, lastQueueId, "report=" + reportPath + " verified_actions=" + verifiedActions + " required_verified_actions=" + options.RequiredVerifiedActions + " max_attempts=" + options.MaxAttempts);
 
 Console.WriteLine(JsonSerializer.Serialize(new

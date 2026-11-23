@@ -97,6 +97,59 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         Assert.Contains("persistent resources differ", Assert.Throws<InvalidDataException>(() => OpenNativeLoad(f)).Message);
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData("other_version")]
+    [InlineData("other_season")]
+    [InlineData("other_object")]
+    [InlineData("unexpected_target")]
+    [InlineData("wrong_qualified_id")]
+    [InlineData("tile")]
+    [InlineData("stack")]
+    [InlineData("held_item")]
+    [InlineData("object_removed")]
+    public void SavedResourceReadback_NativeSummerWeedLoadOnlyIgnoresNativeIdChanges(string? fault)
+    {
+        var f = new SavedResourceFixture();
+        var season = fault == "other_season" ? "spring" : "summer";
+        JsonObject ObjectField(string id, bool after)
+        {
+            var row = new JsonObject
+            {
+                ["tile_x"] = after && fault == "tile" ? 8 : 7, ["tile_y"] = 7,
+                ["item_id"] = id, ["qualified_item_id"] = after && fault == "wrong_qualified_id" ? "(O)343" : "(O)" + id,
+                ["name"] = "Weeds", ["display_name"] = "Weeds", ["stack"] = after && fault == "stack" ? 2 : 1,
+                ["big_craftable"] = false, ["held_item"] = after && fault == "held_item" ? new JsonObject { ["item_id"] = "388" } : null
+            };
+            return new JsonObject
+            {
+                ["status"] = "available", ["value"] = after && fault == "object_removed" ? new JsonArray() : new JsonArray(row)
+            };
+        }
+
+        f.Before.GameVersion = f.After.GameVersion = fault == "other_version" ? "1.6.14" : "1.6.15";
+        foreach (var snapshot in new[] { f.Before, f.After })
+            ChangeState(snapshot, "time", time => time["season"]!["value"] = season);
+        ChangeState(f.Before, "farm", farm => farm["objects"] = ObjectField(fault == "other_object" ? "343" : "674", false));
+        ChangeState(f.After, "farm", farm => farm["objects"] = ObjectField(fault == "unexpected_target" ? "678" : "676", true));
+        f.Ledger.SourceStateHash = f.Before.StateHash;
+        f.Save();
+        var rawAfter = File.ReadAllBytes(f.AfterPath);
+        Assert.Throws<InvalidDataException>(() => f.Open());
+        if (fault is not null)
+        {
+            Assert.Contains(fault == "other_version" ? "saved-resource before snapshot is invalid" : "farm.objects",
+                Assert.Throws<InvalidDataException>(() => OpenNativeLoad(f)).Message);
+            return;
+        }
+
+        var readback = OpenNativeLoad(f);
+        Assert.True(readback.SnapshotResourceContentMatches);
+        Assert.False(readback.NativeReloadVerified);
+        Assert.False(readback.FormalProductTrainingAuthorized);
+        Assert.Equal(rawAfter, File.ReadAllBytes(f.AfterPath));
+    }
+
     private static CropTeacherSavedResourceReadback OpenNativeLoad(SavedResourceFixture f) =>
         CropTeacherSavedResourceReadback.OpenNativeLoad(f.BeforePath, f.AfterPath, f.LedgerPath, SavedResourceFixture.Step);
 
