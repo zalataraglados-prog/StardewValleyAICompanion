@@ -76,7 +76,7 @@ if (args.Length > 0 && args[0] is "recover-crop-shared-preparation" or "continue
 var continueLiveManagedOwner = args.Length > 0 && args[0] == "continue-live-crop-managed-owner";
 var continueManagedOwner = continueLiveManagedOwner || args.Length > 0 && args[0] == "continue-crop-managed-owner";
 if (continueManagedOwner) args = args.Skip(1).ToArray();
-var options = LiveTrainingOptions.Parse(args);
+var options = continueManagedOwner ? LiveTrainingOptions.ParseManagedContinuation(args) : LiveTrainingOptions.Parse(args);
 if (continueLiveManagedOwner) options.ValidateManagedCropTeacherLiveContinueMode();
 else if (continueManagedOwner) options.ValidateManagedCropTeacherContinueMode();
 else if (!string.IsNullOrWhiteSpace(options.ResumeManagedCropOwnerDirectory))
@@ -247,6 +247,8 @@ if (continueManagedOwner)
     activeCropTeacherRunPlan = continued.Source.RunPlan;
     developerSavedSourceTotalDay = continued.Source.DeveloperSavedSourceTotalDay;
     lastPlanningHandoffNativeRunPlanPath = continued.Source.NativeRunPlanPath;
+    if (options.StopAfterManagedCropSavedDay is { } targetDay)
+        ValidateManagedCropSavedDayRange(targetDay, continued.Source);
     AppendProgress(options, continueLiveManagedOwner ? "crop_teacher_managed_live_run_continued" : "crop_teacher_managed_run_continued", 0, continued.Restore.StateHash, string.Empty,
         "owner=" + options.ResumeManagedCropOwnerDirectory + " original_plan=" + continued.Source.NativeRunPlanPath +
         " next_artifact_iteration=" + nextArtifactIteration +
@@ -255,6 +257,14 @@ if (continueManagedOwner)
 
 for (var attemptOrdinal = 1; ; attemptOrdinal++)
 {
+    if (options.StopAfterManagedCropSavedDay is { } savedDay &&
+        cropTeacherManagedOwner.Current?.HasAcceptedOriginalSavedDay(savedDay) == true)
+    {
+        stopReason = "crop_teacher_managed_target_day_saved_owner_retained";
+        AppendProgress(options, "stopped", nextArtifactIteration + attemptOrdinal - 1, lastStateHash, lastQueueId,
+            stopReason + " from_total_day=" + savedDay);
+        break;
+    }
     cropTeacherManagedOwner.RequireLiveContinuation();
     var explicitPrimaryTargetMet =
         (options.RequiredVerifiedActions <= 0 ||
@@ -371,6 +381,13 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 options.SnapshotFile)
             : await http.GetStringAsync(options.BridgeSnapshotUrl);
         var beforeSnapshot = JsonNode.Parse(rawSnapshotJson)?.AsObject() ?? new JsonObject();
+        if (options.StopAfterManagedCropSavedDay is { } lastAllowedDay &&
+            ReadCropTeacherTotalDay(beforeSnapshot) > lastAllowedDay)
+        {
+            stopReason = "crop_teacher_managed_target_day_crossed_without_accepted_save";
+            AppendProgress(options, "stopped", iteration, ReadString(beforeSnapshot, "state_hash"), lastQueueId, stopReason);
+            break;
+        }
         if (attemptOrdinal == 1 && activeCropTeacherRunPlan is not null)
         {
             var resumeSnapshot = JsonSerializer.Deserialize<SnapshotEnvelope>(

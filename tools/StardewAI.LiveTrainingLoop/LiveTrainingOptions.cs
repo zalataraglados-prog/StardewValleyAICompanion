@@ -103,6 +103,7 @@ public sealed partial class LiveTrainingOptions
     public bool StopAfterObjectiveComplete { get; set; }
     public bool StopAfterSocialObjectiveComplete { get; set; }
     public bool StopAfterCropTeacherFirstDay { get; set; }
+    internal int? StopAfterManagedCropSavedDay { get; private set; }
     public bool ContinueAfterCropTeacherRun { get; set; }
     public bool StandaloneCollectionTeacher { get; set; }
     public bool UseStageOneCollectionTeacher =>
@@ -205,7 +206,11 @@ public sealed partial class LiveTrainingOptions
         }
     }
 
-    public static LiveTrainingOptions Parse(string[] args)
+    public static LiveTrainingOptions Parse(string[] args) => ParseCore(args, managedContinuation: false);
+
+    internal static LiveTrainingOptions ParseManagedContinuation(string[] args) => ParseCore(args, managedContinuation: true);
+
+    private static LiveTrainingOptions ParseCore(string[] args, bool managedContinuation)
     {
         var options = new LiveTrainingOptions();
         if (!args.Any(argument => argument is "--root" or "--run-id" or "--artifact-run-id" or "--manifest-path" or "--no-manifest"))
@@ -711,6 +716,14 @@ public sealed partial class LiveTrainingOptions
             {
                 options.StopAfterCropTeacherFirstDay = true;
             }
+            else if (current == "--stop-after-managed-crop-saved-day")
+            {
+                if (!managedContinuation || options.StopAfterManagedCropSavedDay.HasValue ||
+                    !int.TryParse(ReadManagedCropResumeArgument(args, ref i), out var savedDay) ||
+                    savedDay < 0 || savedDay == int.MaxValue)
+                    throw new ArgumentException(current + " requires one nonnegative total day on an explicit managed continuation.");
+                options.StopAfterManagedCropSavedDay = savedDay;
+            }
             else if (current == "--continue-after-crop-teacher-run")
             {
                 options.ContinueAfterCropTeacherRun = true;
@@ -754,6 +767,9 @@ public sealed partial class LiveTrainingOptions
 
         if (options.UseJointDailyCalendar && !options.UseDailyPlan)
             throw new ArgumentException("--joint-daily-calendar requires --use-daily-plan.");
+        if (options.StopAfterManagedCropSavedDay.HasValue &&
+            (options.StopAfterCropTeacherFirstDay || options.RequireGoldenWalnutSourceScheduleReady || options.RequireGourmandContinuationReady))
+            throw new ArgumentException("The managed saved-day limit cannot be combined with a first-day or walnut milestone target.");
         StandaloneCollectionTeacherMode.Validate(options);
         NativeOutputObservationMode.Validate(options);
         options.ValidateTeacherPreferenceMode();

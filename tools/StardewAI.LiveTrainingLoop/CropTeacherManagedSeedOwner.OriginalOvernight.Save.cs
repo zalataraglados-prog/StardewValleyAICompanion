@@ -6,6 +6,22 @@ namespace StardewAI.LiveTrainingLoop;
 
 public sealed partial class CropTeacherManagedSeedOwner
 {
+    internal bool HasAcceptedOriginalSavedDay(int totalDay)
+    {
+        if (lastAcceptedOperation?.Overnight?.FromTotalDay != totalDay) return false;
+        gate.Wait();
+        try
+        {
+            ValidateState();
+            return Pending is null && !HeadRecoveryRequired && lastAcceptedPath is not null &&
+                lastAcceptedOperation?.Overnight is { } overnight &&
+                overnight.FromTotalDay == totalDay && overnight.ToTotalDay == totalDay + 1 &&
+                SamePath(overnight.AfterSnapshotPath, headSnapshotPath) &&
+                Read<JsonObject>(lastAcceptedPath)["native_save_boundary_verified"]?.GetValue<bool>() == true;
+        }
+        finally { gate.Release(); }
+    }
+
     internal void ValidateOriginalOvernightSaveBinding(LiveTrainingOptions live)
     {
         var binding = options.NativeSaveBinding;

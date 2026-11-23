@@ -1,5 +1,26 @@
 # 夏3保存点的隔离开发恢复
 
+## 托管续跑的指定保存日上限（274）
+
+显式的 `continue-crop-managed-owner` 或 `continue-live-crop-managed-owner`
+可以使用 `--stop-after-managed-crop-saved-day <totalDay>`。它是控制器的可选
+停止点，不改变计划、旧首日开关、候选编译、执行器或保存证明。日期必须在原
+计划的剩余日之内。指定 41 表示允许完成 day 41（夏14），并在由同一个 owner
+接受 day 41→42 的原生保存后退出，不派发 day 42 的动作。
+
+未接受的睡眠、没有实际写盘的日期变化、已过去的日期或计划外日期不能记成
+通过。规划数据不被重写。预期有界停止由
+`crop_teacher_managed_target_day_saved_owner_retained` 报告，仍是完整循环尚未
+收尾的退出；首收和正式训练不由这个停止原因推导。发现日期越界且没有接受
+存档，记录 `crop_teacher_managed_target_day_crossed_without_accepted_save`。
+
+实际夏4保留快照（day 31）与原计划只读重放：41 被允许为目标，30、54
+均被拒绝。仓库外报告 `block274-saved-day-limit-real-inputs.json`，SHA-256
+`f71051fa63da2dd743c31bb13da8a633919e02e054d221e117d8c175e0eec3f0`。
+接口与原过夜相邻回归 68/68，零失败或跳过；包含真实写盘协议夹具的正例及
+未写盘负例，TRX SHA-256 `492343e4fa3be97a68fd0d289215cd28edf6bd1830445ad093fc171edf727b93`。
+此次没有启动游戏。继续夏4及以后仍需对应授权；不能把原夏3单日批准扩成多日。
+
 ## 272分段生产来源与已接受历史重开
 
 `ReadRetainedJointProductionTraceAsync`复用现有接受记录读取器。父段只读到原
