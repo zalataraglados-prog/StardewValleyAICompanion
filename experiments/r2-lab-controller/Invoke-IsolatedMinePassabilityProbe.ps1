@@ -1,6 +1,7 @@
 param(
     [Parameter(Mandatory)][string]$RunDirectory,
     [Parameter(Mandatory)][string]$RuntimeAttempt,
+    [Parameter(Mandatory)][int]$ExpectedTotalDay,
     [Parameter(Mandatory)][ValidatePattern('^[a-z0-9-]+$')][string]$Attempt
 )
 
@@ -15,7 +16,7 @@ $backend = $settings.ASPNETCORE_URLS
 $body = (Invoke-WebRequest -Uri $bridge -TimeoutSec 15).Content
 $before = $body | ConvertFrom-Json
 if ($before.save_id.value -cne 'ProofFarm' -or $before.player_id.value -cne '319842636613009663' -or
-    $before.state.time.total_days.value -ne 30 -or $before.state.mining.current_mine.value.mine_kind -cne 'ordinary_mines') {
+    $before.state.time.total_days.value -ne $ExpectedTotalDay -or $before.state.mining.current_mine.value.mine_kind -cne 'ordinary_mines') {
     throw 'Passability probe requires the same live ordinary mine source.'
 }
 [IO.File]::WriteAllText((Join-Path $folder 'before.json'), $body)

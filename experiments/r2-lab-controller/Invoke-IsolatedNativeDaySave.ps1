@@ -20,8 +20,8 @@ if ($settings.STARDEWAI_SAVE_ISOLATION_PATH -cne $session.save_root -or
 $body = (Invoke-WebRequest -Uri $settings.STARDEWAI_BRIDGE_SNAPSHOT_URL -TimeoutSec 20).Content
 $before = $body | ConvertFrom-Json
 if ($before.save_id.value -cne 'ProofFarm' -or $before.player_id.value -cne '319842636613009663' -or
-    $before.state.time.total_days.value -ne $ExpectedTotalDay -or $before.state.player.location_id.value -cne 'FarmHouse') {
-    throw 'Native save requires the expected same-player day in FarmHouse.'
+    $before.state.time.total_days.value -ne $ExpectedTotalDay -or $before.state.player.location_id.value -cnotin @('Farm','FarmHouse')) {
+    throw 'Native save requires the expected same-player day at home; the original recovery planner handles entering the house.'
 }
 $proof = New-Item -ItemType Directory -Path (Join-Path $RunDirectory $Attempt)
 [IO.File]::WriteAllText((Join-Path $proof.FullName 'before.json'), $body)
@@ -29,6 +29,8 @@ $slot = Join-Path $session.save_root $session.slot
 $beforeMain = (Get-FileHash -LiteralPath (Join-Path $slot $session.slot) -Algorithm SHA256).Hash
 $template = Join-Path $RunDirectory 'summer04-native-save-20261123\native-boundary-arguments.json'
 $arguments = [string[]](Get-Content -LiteralPath $template -Raw | ConvertFrom-Json)
+# Profession menus need their existing planned choice, rather than repeated sleep.
+$arguments[[Array]::IndexOf($arguments, '--daily-plan-candidate-options') + 1] = 'recovery.stabilize_day,skills.choose_profession'
 foreach ($binding in @{
     '--run-id' = $session.run_id
     '--save-isolation-path' = $session.save_root

@@ -425,18 +425,18 @@
     },
     {
       "path": "experiments/r2-lab-controller/Invoke-IsolatedMinePassabilityProbe.ps1",
-      "sha256": "C21CE4DDF309FB0DFAEB2052639413591421EB29D450ADA210BE215664933375",
-      "git_blob_oid": "02cd5765117953b6373766793bb9ee712f3bed69"
+      "sha256": "BAED53222B788FE31FA1DEDAE32418642C663C9EF0E0395920747601D2FE982A",
+      "git_blob_oid": "249c304e3f246a990be0236a4f9c48d5763c730a"
     },
     {
       "path": "experiments/r2-lab-controller/Invoke-IsolatedNativeDaySave.ps1",
-      "sha256": "4E2C068559937F84864CC9B3E92CB9A2D06487623084151BFC9A411BE93FB932",
-      "git_blob_oid": "989df6475bda561b16ffefbeeca91298a780738a"
+      "sha256": "556BC0C228B59DB770EAE0374D34CDB79AC39BC10659DF6246E4BDA34261EE8F",
+      "git_blob_oid": "f2cb47fe6497aebad51078e86292c22c73f368f1"
     },
     {
       "path": "experiments/r2-lab-controller/Restart-IsolatedVerifiedDay.ps1",
-      "sha256": "09CCB647D92D66DFD5FFE86B2FFFE28C5C745DB26ACDC1D030D0516B70C732E9",
-      "git_blob_oid": "72ee335b5bb338038c1aae3404013f28be62afde"
+      "sha256": "ED191DB1778DB0CF91CE2CEF23EAD31141CE648F4BD74492F41B351870436D04",
+      "git_blob_oid": "a56762b0f112ca67423496bb9354446d16990e67"
     },
     {
       "path": "experiments/r2-lab-controller/planner-prerequisite/Resolve-PrerequisiteRouteWithFarm.ps1",
@@ -449,5 +449,7 @@
   "raw_save_or_game_binaries_included": false,
   "selected_island_route_verified": false,
   "formal_training_authorized": false,
-  "sha256_scope": "SHA-256 records original copied lab file bytes; Git may normalize line endings. git_blob_oid identifies the exact committed source content independently of checkout line endings."
+  "sha256_scope": "SHA-256 records original copied lab file bytes; Git may normalize line endings. git_blob_oid identifies the exact committed source content independently of checkout line endings.",
+  "updated_at": "2026-11-23T23:21:53.7242365+08:00",
+  "controller_revision_note": "Native save accepts Farm or FarmHouse, includes the existing planned profession option; the latter combined-loop path awaits its next native run. Mine probe binds an explicit expected total day. Restart can resume a verified stopped deployment before any live-session handle exists, with bounded DLL release retry."
 }

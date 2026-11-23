@@ -3,7 +3,8 @@ param(
     [Parameter(Mandatory)][string]$PriorRuntimeAttempt,
     [Parameter(Mandatory)][ValidatePattern('^[a-z0-9-]+$')][string]$RuntimeAttempt,
     [Parameter(Mandatory)][string]$VerifiedSavePath,
-    [Parameter(Mandatory)][string]$ReplacementHarnessDirectory
+    [Parameter(Mandatory)][string]$ReplacementHarnessDirectory,
+    [switch]$ContinueStoppedAttempt
 )
 
 $ErrorActionPreference = 'Stop'
@@ -17,12 +18,16 @@ if (!$saved.native_save_boundary_verified -or !$saved.independent_saved_xml_veri
 $main = Join-Path (Join-Path $session.save_root $session.slot) $session.slot
 $expected = @($saved.files | Where-Object name -ceq $session.slot)
 if ($expected.Count -ne 1 -or (Get-FileHash -LiteralPath $main).Hash -cne $expected[0].sha256) { throw 'The accepted actual main save changed.' }
-$fresh = Invoke-RestMethod -Uri $settings.STARDEWAI_BRIDGE_SNAPSHOT_URL -TimeoutSec 20
-if ($fresh.state_hash -cne $saved.after_state_hash -or $fresh.state.time.total_days.value -ne $saved.total_day -or
-    $fresh.state.player.location_id.value -cne 'FarmHouse') { throw 'The live game moved beyond the accepted save; preserve it before restarting.' }
+if (!$ContinueStoppedAttempt) {
+    $fresh = Invoke-RestMethod -Uri $settings.STARDEWAI_BRIDGE_SNAPSHOT_URL -TimeoutSec 20
+    if ($fresh.state_hash -cne $saved.after_state_hash -or $fresh.state.time.total_days.value -ne $saved.total_day -or
+        $fresh.state.player.location_id.value -cne 'FarmHouse') { throw 'The live game moved beyond the accepted save; preserve it before restarting.' }
+}
 foreach ($row in $session.processes) {
-    $process = Get-Process -Id $row.id
-    if ($process.Path -cne $row.exe -or $process.StartTime.ToUniversalTime() -ne [DateTimeOffset]::Parse($row.started).UtcDateTime) {
+    $process = Get-Process -Id $row.id -ErrorAction SilentlyContinue
+    if ($ContinueStoppedAttempt) {
+        if ($process) { throw 'A prior service still exists; do not resume a stopped deployment.' }
+    } elseif (!$process -or $process.Path -cne $row.exe -or $process.StartTime.ToUniversalTime() -ne [DateTimeOffset]::Parse($row.started).UtcDateTime) {
         throw 'Original service process identity changed.'
     }
 }
@@ -38,10 +43,24 @@ foreach ($name in 'StardewAI.Contracts.dll', 'StardewAI.RuntimePrimitives.dll') 
 foreach ($role in 'backend','product') {
     if ((Get-FileHash -LiteralPath $startup.$role.path).Hash -cne $startup.$role.sha256) { throw 'A retained service build changed.' }
 }
-$next = New-Item -ItemType Directory -Path (Join-Path $RunDirectory $RuntimeAttempt)
 $oldDll = Join-Path $mod 'StardewAI.RuntimeTestHarness.dll'
 $newDll = Join-Path $ReplacementHarnessDirectory 'StardewAI.RuntimeTestHarness.dll'
-Copy-Item -LiteralPath $oldDll -Destination (Join-Path $next.FullName 'prior-harness.dll')
+if ($ContinueStoppedAttempt) {
+    $next = Get-Item -LiteralPath (Join-Path $RunDirectory $RuntimeAttempt)
+    if (Test-Path -LiteralPath (Join-Path $next.FullName 'live-session.json')) { throw 'This attempt already started services; inspect its exact handles instead.' }
+    $intent = Get-Content -LiteralPath (Join-Path $next.FullName 'restart-intent.json') -Raw | ConvertFrom-Json
+    if ($intent.previous_session -cne (Join-Path $prior 'live-session.json') -or
+        $intent.verified_save_sha256 -cne (Get-FileHash -LiteralPath $VerifiedSavePath).Hash -or
+        $intent.replacement_harness_sha256 -cne (Get-FileHash -LiteralPath $newDll).Hash -or
+        (Get-FileHash -LiteralPath $oldDll).Hash -cnotin @($intent.old_harness_sha256,$intent.replacement_harness_sha256)) {
+        throw 'Stopped deployment intent, accepted save or module content changed.'
+    }
+    if (Get-NetTCPConnection -LocalPort 8765,8767,18413,18414 -State Listen -ErrorAction SilentlyContinue) { throw 'A native runtime endpoint is already owned.' }
+} else {
+    $next = New-Item -ItemType Directory -Path (Join-Path $RunDirectory $RuntimeAttempt)
+    Copy-Item -LiteralPath $oldDll -Destination (Join-Path $next.FullName 'prior-harness.dll')
+}
+if (!$ContinueStoppedAttempt) {
 $settings | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $next.FullName 'runtime-settings.json') -Encoding utf8
 foreach ($name in 'verified-adjacent-chest-entry.json','verified-farm-chest-entry.json') {
     # Historical access-tile receipts; storage still checks the fresh native graph.
@@ -54,7 +73,11 @@ foreach ($role in 'product','backend','game') {
     Stop-Process -Id $row.id
     Wait-Process -Id $row.id -Timeout 10 -ErrorAction SilentlyContinue
 }
-Copy-Item -LiteralPath $newDll -Destination $oldDll -Force
+}
+foreach ($copyAttempt in 1..10) {
+    try { Copy-Item -LiteralPath $newDll -Destination $oldDll -Force; break }
+    catch [IO.IOException] { if ($copyAttempt -eq 10) { throw }; Start-Sleep -Milliseconds 250 }
+}
 if ((Get-FileHash -LiteralPath $oldDll).Hash -cne (Get-FileHash -LiteralPath $newDll).Hash) { throw 'Harness copy did not verify.' }
 foreach ($key in $settings.Keys) { [Environment]::SetEnvironmentVariable($key, $settings[$key], 'Process') }
 $backend = Start-Process -FilePath $dotnet -ArgumentList @($startup.backend.path) -WorkingDirectory (Split-Path -Parent $startup.backend.path) -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $next.FullName 'backend.stdout.log') -RedirectStandardError (Join-Path $next.FullName 'backend.stderr.log')
