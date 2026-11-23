@@ -8,358 +8,446 @@
   "source_files": [
     {
       "path": "experiments/StardewAI.GoalConditionedBootstrap/CropSeedResourceBoundary.HarvestCommunityCenter.cs",
-      "sha256": "BD382EA9D8A7771A55A3E0AFEE36DFE9CFDC7E737F07CC198D0C9BE3D5DD7D49"
+      "sha256": "BD382EA9D8A7771A55A3E0AFEE36DFE9CFDC7E737F07CC198D0C9BE3D5DD7D49",
+      "git_blob_oid": "088af48516b2c5feb289c03a9500bffc7245a3c2"
     },
     {
       "path": "experiments/StardewAI.GoalConditionedBootstrap/CropSeedResourceBoundary.HarvestQuests.cs",
-      "sha256": "286111392BB3A703529F5C0643AFCD6E28714BEDC387E11580636DDF66FD77AA"
+      "sha256": "286111392BB3A703529F5C0643AFCD6E28714BEDC387E11580636DDF66FD77AA",
+      "git_blob_oid": "c06c721a426cbf26ff8b14ca3034c489f6230534"
     },
     {
       "path": "experiments/StardewAI.GoalConditionedBootstrap/CropSeedResourceBoundary.HarvestResources.cs",
-      "sha256": "C33745C7E8DA6074B3C9850D22E71144D9B1E33FDEC101ED147015C9542CC917"
+      "sha256": "C33745C7E8DA6074B3C9850D22E71144D9B1E33FDEC101ED147015C9542CC917",
+      "git_blob_oid": "3e65764b24530b98e389f5f2041d3f5f1bf27700"
     },
     {
       "path": "experiments/StardewAI.GoalConditionedBootstrap/CropTeacherNativeVariantTerminalProof.cs",
-      "sha256": "D4863398CD6B33024515D05976A829FF462A98704A19D3E9179D894DCA6E164D"
+      "sha256": "D4863398CD6B33024515D05976A829FF462A98704A19D3E9179D894DCA6E164D",
+      "git_blob_oid": "6fd30082b6d61128e92bdc32c9b6487d6d0b35e8"
     },
     {
       "path": "experiments/StardewAI.GoalConditionedBootstrap/CropTeacherShippingBaseline.cs",
-      "sha256": "44FC0BB5223B41ECD7000BFB8D7598313A4AF3CF04B0B997F6A009CA639C6254"
+      "sha256": "44FC0BB5223B41ECD7000BFB8D7598313A4AF3CF04B0B997F6A009CA639C6254",
+      "git_blob_oid": "5b36411ae54ea9a89c2dbe16e2ea9b80012bfa9e"
     },
     {
       "path": "experiments/StardewAI.GoalConditionedBootstrap/CropTeacherTerminalShipping.Preparation.cs",
-      "sha256": "9C3416A134F6E89BCDAD5E383D2D75199645867F7C2B8FD1F04AD59E4192C1A4"
+      "sha256": "9C3416A134F6E89BCDAD5E383D2D75199645867F7C2B8FD1F04AD59E4192C1A4",
+      "git_blob_oid": "7346d33a1dfc9c18187e7473cb80bf9b11ddcc09"
     },
     {
       "path": "experiments/StardewAI.GoalConditionedBootstrap/CropTeacherTerminalShippingTarget.cs",
-      "sha256": "FDF56B4255D8AA2397C9CA0D00B687677A39C869401DB2F7341162BD90C94FF9"
+      "sha256": "FDF56B4255D8AA2397C9CA0D00B687677A39C869401DB2F7341162BD90C94FF9",
+      "git_blob_oid": "d413963f0ec0c9100055a10ea17299015229afe0"
     },
     {
       "path": "experiments/StardewAI.GoalConditionedBootstrap/FullShipmentRecoverySettlementBoundary.cs",
-      "sha256": "B47D27344E5F0AB172CDEA6BBBB044D949C93AEE901CBC2EB03373789294EF9F"
+      "sha256": "B47D27344E5F0AB172CDEA6BBBB044D949C93AEE901CBC2EB03373789294EF9F",
+      "git_blob_oid": "abe0cc11739cc1882126c008989cffa4f54ed97c"
     },
     {
       "path": "experiments/StardewAI.GoalConditionedBootstrap/FullShipmentRecoverySettlementBoundary.ExpectedResourceMutation.cs",
-      "sha256": "3F290EEA7AEB2B20120C634847E4269AFBFB87A671EDCC813414D53EC9DBDC6D"
+      "sha256": "3F290EEA7AEB2B20120C634847E4269AFBFB87A671EDCC813414D53EC9DBDC6D",
+      "git_blob_oid": "00e77a2f6e46d73cfb68f400adb5fe9e72869635"
     },
     {
       "path": "experiments/StardewAI.GoalConditionedBootstrap/MasterAnglerNativeCatchContracts.cs",
-      "sha256": "E29C01D05475F85333930E1E461A818F8D1C7526193B0E8FBB4592F9BC26D963"
+      "sha256": "E29C01D05475F85333930E1E461A818F8D1C7526193B0E8FBB4592F9BC26D963",
+      "git_blob_oid": "f662b0a9facdfa3efafd5d7b040b615adfbfc596"
     },
     {
       "path": "experiments/StardewAI.GoalConditionedBootstrap/MasterAnglerNativeCatchReceiptBuilder.cs",
-      "sha256": "279ACAD6418A742409CDC95C1C1D16C11D2F0313451E3A5AA6DCAAA274E14606"
+      "sha256": "279ACAD6418A742409CDC95C1C1D16C11D2F0313451E3A5AA6DCAAA274E14606",
+      "git_blob_oid": "a02e8fe43416bc27ed831f072b92a8b3b73e05eb"
     },
     {
       "path": "experiments/StardewAI.GoalConditionedBootstrap/MoneyRevenueCropDailyCapacityProofBuilder.NativeObserved.cs",
-      "sha256": "6C9F7BB626AC6850FAC10BE3AE5D424351529D01F8FE562BA895D22B8B5AA6C9"
+      "sha256": "6C9F7BB626AC6850FAC10BE3AE5D424351529D01F8FE562BA895D22B8B5AA6C9",
+      "git_blob_oid": "3b51ab1525197f9bd7fef18826e8813b94f756d9"
     },
     {
       "path": "experiments/StardewAI.GoalConditionedBootstrap/MoneyRevenueCropNativeLifecycleProofBuilder.NativeObserved.cs",
-      "sha256": "296227763BA50C31C0C95BCFC98D17211063B5C095D9DE3C55E7DFACA77A43B5"
+      "sha256": "296227763BA50C31C0C95BCFC98D17211063B5C095D9DE3C55E7DFACA77A43B5",
+      "git_blob_oid": "6e830e15406793556ffdafddc7770262e95de6c1"
     },
     {
       "path": "experiments/StardewAI.GoalConditionedBootstrap/MoneyRevenueCropNativeLifecycleProofBuilder.SupportingRoute.cs",
-      "sha256": "BDF88A9387279E37EC89A7B8B594345124411CF54F161B0DD61A16457985D17D"
+      "sha256": "BDF88A9387279E37EC89A7B8B594345124411CF54F161B0DD61A16457985D17D",
+      "git_blob_oid": "c194f98438303fa34103e2153333c1d9e5e928be"
     },
     {
       "path": "experiments/StardewAI.GoalConditionedBootstrap/MoneyRevenueCropProductionTeacherDecisionBuilder.Candidates.cs",
-      "sha256": "E2E597A234C718690E44E920ABF81621670D1A1E3FC23446B4672BF19AB76449"
+      "sha256": "E2E597A234C718690E44E920ABF81621670D1A1E3FC23446B4672BF19AB76449",
+      "git_blob_oid": "2662ff929f8c40b86bc0fcbc7bad82fa87dbec65"
     },
     {
       "path": "experiments/StardewAI.GoalConditionedBootstrap/NativeExecutionActionSourceReader.CropPrefix.cs",
-      "sha256": "DF7CE508A9ED5B96924530FEC2AB270FD0843293D05A9A01F98203DA2F5E138A"
+      "sha256": "DF7CE508A9ED5B96924530FEC2AB270FD0843293D05A9A01F98203DA2F5E138A",
+      "git_blob_oid": "d1478a234957af4a3fc248a3f8c3d2cff6b92e18"
     },
     {
       "path": "experiments/StardewAI.GoalConditionedBootstrap/NativeExecutionActionSourceReader.cs",
-      "sha256": "F4480B852906623C82EF4AB8535B7AF9E5051EFB15043814587381B1C121D2C4"
+      "sha256": "F4480B852906623C82EF4AB8535B7AF9E5051EFB15043814587381B1C121D2C4",
+      "git_blob_oid": "24aa97244b28f83c01442fac0ed6bb48a2388841"
     },
     {
       "path": "experiments/StardewAI.GoalConditionedBootstrap/NativeExecutionActionSourceReader.Sequential.cs",
-      "sha256": "640DB77E74F46D9FA5011F933C8C3FAECD4246868A1AC7189B9444D331B77EC8"
+      "sha256": "640DB77E74F46D9FA5011F933C8C3FAECD4246868A1AC7189B9444D331B77EC8",
+      "git_blob_oid": "708ac448bfe9f35f73fd6a1d2311facd1868d0f5"
     },
     {
       "path": "src/StardewAI.Backend/ActionQueueDispatchReadinessEndpoints.cs",
-      "sha256": "BE80325F8213535DB15D5C56E79B0FF2C7758C7054C044EC9B296D3E8D496341"
+      "sha256": "BE80325F8213535DB15D5C56E79B0FF2C7758C7054C044EC9B296D3E8D496341",
+      "git_blob_oid": "63daec2a283dedc4d20a42a776ad9cd6c963043e"
     },
     {
       "path": "src/StardewAI.Core/Execution/ActionQueueCompiler.ActionCompilation.cs",
-      "sha256": "515D83D9C1F93556ADC596090D8F6F008D860F8DD5EEC41FFBA8B1C8445601AB"
+      "sha256": "515D83D9C1F93556ADC596090D8F6F008D860F8DD5EEC41FFBA8B1C8445601AB",
+      "git_blob_oid": "6ec858216ded9d032863f7d10d89f0c6ae4b2fa8"
     },
     {
       "path": "src/StardewAI.Core/Execution/ActionQueueCompiler.Validation.General.cs",
-      "sha256": "634BC92E3A1BA4FA4418B9B186C78DFECAB8A43258F155ADEC48EDA9F79E0CA9"
+      "sha256": "634BC92E3A1BA4FA4418B9B186C78DFECAB8A43258F155ADEC48EDA9F79E0CA9",
+      "git_blob_oid": "16db9170b31dd0c78b083698227aa9085f767cd2"
     },
     {
       "path": "src/StardewAI.Core/Execution/ActionQueueCompiler.Validation.Interaction.cs",
-      "sha256": "5EF8E2EB99509B2C40AC9C52DD8B6824B8819EE45170684335B60D32B8724388"
+      "sha256": "5EF8E2EB99509B2C40AC9C52DD8B6824B8819EE45170684335B60D32B8724388",
+      "git_blob_oid": "ed11950715964aa936adfb2026adcba476edf759"
     },
     {
       "path": "src/StardewAI.Core/Execution/ActionQueueCompiler.Validation.ShopSelling.cs",
-      "sha256": "E68ED0C2DDC402012CBFD70FB74FEF6D93CACFC3D46ADD650FB597E72D9AA4CC"
+      "sha256": "E68ED0C2DDC402012CBFD70FB74FEF6D93CACFC3D46ADD650FB597E72D9AA4CC",
+      "git_blob_oid": "61b3b9f32aa5123d3743d546245a3fef2dd40ca5"
     },
     {
       "path": "src/StardewAI.Core/Execution/ActionQueueDispatchReadinessService.cs",
-      "sha256": "D896111C94D9D7883E71ED003B7B93CB2AE3093F10C07A4A89F7A83BB88329B5"
+      "sha256": "D896111C94D9D7883E71ED003B7B93CB2AE3093F10C07A4A89F7A83BB88329B5",
+      "git_blob_oid": "cc4be8716fddbfb6a1792da546dfd15c9b1f4070"
     },
     {
       "path": "src/StardewAI.Core/Infrastructure/JunimoNoteMenuCloseProjection.cs",
-      "sha256": "CB042AE0E5CE5DF3D9A0556167ABB3EF132E6E1324F6C303BB1B802680E7B7FD"
+      "sha256": "CB042AE0E5CE5DF3D9A0556167ABB3EF132E6E1324F6C303BB1B802680E7B7FD",
+      "git_blob_oid": "0845574a4388e1ece20cdd4100619b01b39cc7ec"
     },
     {
       "path": "src/StardewAI.Core/OptionRegistry/CandidateOptionAvailabilityEvaluator.EconomyShipping.cs",
-      "sha256": "DDC6B80D48E18F72016BDDF5C4C3EAFAC569C42D3B7CF18877B1F27547D8229F"
+      "sha256": "DDC6B80D48E18F72016BDDF5C4C3EAFAC569C42D3B7CF18877B1F27547D8229F",
+      "git_blob_oid": "c7733af04f89cc194355b1c0ac70cff746705a60"
     },
     {
       "path": "src/StardewAI.Core/OptionRegistry/CandidateOptionAvailabilityEvaluator.EventGates.cs",
-      "sha256": "280125F6FDC2FDD4BC5CD9C2B8BA6DEE4C47885E2409A282A457E34BE4162930"
+      "sha256": "280125F6FDC2FDD4BC5CD9C2B8BA6DEE4C47885E2409A282A457E34BE4162930",
+      "git_blob_oid": "c25f531bebdee52ef9ee9713bbc6f8b1840eb89a"
     },
     {
       "path": "src/StardewAI.Core/OptionRegistry/CandidateOptionAvailabilityEvaluator.Interaction.cs",
-      "sha256": "C72BDC254339E2B901C13B91B9CAD3A6BDDE5E9D5B5EE124229E51CA02616CA7"
+      "sha256": "C72BDC254339E2B901C13B91B9CAD3A6BDDE5E9D5B5EE124229E51CA02616CA7",
+      "git_blob_oid": "9e5aa30428821b8c154b6e0fb1fedfd3c57af2fe"
     },
     {
       "path": "src/StardewAI.Core/OptionRegistry/CandidateOptionAvailabilityEvaluator.SaleRouting.cs",
-      "sha256": "B1F266C2BB692A912D44D8A06E10D945D783F39D8274167DA4F8AD76AD4A3984"
+      "sha256": "B1F266C2BB692A912D44D8A06E10D945D783F39D8274167DA4F8AD76AD4A3984",
+      "git_blob_oid": "c51c74eb4cd4fca3ad3e0a64f747f4f5aba428f8"
     },
     {
       "path": "src/StardewAI.Core/OptionRegistry/CandidateOptionAvailabilityEvaluator.SaleStock.cs",
-      "sha256": "E108045B5E4B90FB74A58EC00C2056BEC169B2D6A8DE348775DC3D10D537B183"
+      "sha256": "E108045B5E4B90FB74A58EC00C2056BEC169B2D6A8DE348775DC3D10D537B183",
+      "git_blob_oid": "8d24c129123f28a2a81216d3824218b98606bef3"
     },
     {
       "path": "src/StardewAI.Core/OptionRegistry/OptionGovernanceCatalog.cs",
-      "sha256": "4DCCA862B92B616E1212F569DD1759F257AB1DFE03A0DDE2C42A2FA716BC5123"
+      "sha256": "4DCCA862B92B616E1212F569DD1759F257AB1DFE03A0DDE2C42A2FA716BC5123",
+      "git_blob_oid": "bd2848b6e78353bc26efdeca9d964cc0b12a2925"
     },
     {
       "path": "src/StardewAI.Core/Strategy/CommunityCenterShipmentProtection.cs",
-      "sha256": "3D4347A313DF7C65F1489744D20D77C292E3B369A72983C40BD2AFF680C10795"
+      "sha256": "3D4347A313DF7C65F1489744D20D77C292E3B369A72983C40BD2AFF680C10795",
+      "git_blob_oid": "79e8adebaa91f3f6eab15c9a26deefb18f9ee061"
     },
     {
       "path": "src/StardewAI.Core/Strategy/CropProductionObligationProjector.cs",
-      "sha256": "44D1A78DFF209DF11F0E93B0862064F46611AF82E3E8CEBA79AC4ECB90817894"
+      "sha256": "44D1A78DFF209DF11F0E93B0862064F46611AF82E3E8CEBA79AC4ECB90817894",
+      "git_blob_oid": "9c6dde44e3238dd89268d1c9e7de09886a80a631"
     },
     {
       "path": "src/StardewAI.Core/Training/DailyPlanCompiler.Dispatch.cs",
-      "sha256": "16614FB3B202D381A9FC16CCFA33049CCBEFBB0B97AD312107CFD672009D9700"
+      "sha256": "16614FB3B202D381A9FC16CCFA33049CCBEFBB0B97AD312107CFD672009D9700",
+      "git_blob_oid": "c4d080bf486dd75067d3086a8460f443616fb808"
     },
     {
       "path": "src/StardewAI.Core/Training/DailyPlanCompiler.ShopSelling.cs",
-      "sha256": "15E41DDE75C4A5038CA5E89EA06AF8B56E64B10EB1680C1543DC64E57C732477"
+      "sha256": "15E41DDE75C4A5038CA5E89EA06AF8B56E64B10EB1680C1543DC64E57C732477",
+      "git_blob_oid": "6b98e66ccdffc84f2acbe26213b3d8528cddc9ca"
     },
     {
       "path": "src/StardewAI.Core/Training/GrandpaDailySubgoalResolver.cs",
-      "sha256": "5A062FEDC3544D4BD23653DDB2FE8112E336660224BB90FAD3B298437B677EBA"
+      "sha256": "5A062FEDC3544D4BD23653DDB2FE8112E336660224BB90FAD3B298437B677EBA",
+      "git_blob_oid": "93a38785cebe653b32c0fa87bd0cbbee1730dc1f"
     },
     {
       "path": "src/StardewAI.RuntimePrimitives/NativeStorageAccess.cs",
-      "sha256": "50F13ABE4423742BC4D94E01C91E375F1E46572F58734DAA9942775745FAD549"
+      "sha256": "50F13ABE4423742BC4D94E01C91E375F1E46572F58734DAA9942775745FAD549",
+      "git_blob_oid": "2a87b49ee3a2b3269b700d0d29be7fef34197e17"
     },
     {
       "path": "src/StardewAI.TransparentBridge/Adapters/FarmReadAdapter.MaterialInventoryGraph.cs",
-      "sha256": "A241A1E73669536BE29E977C8D7FCD80CA8EC7E0046E46E6C0448A40371E4447"
+      "sha256": "A241A1E73669536BE29E977C8D7FCD80CA8EC7E0046E46E6C0448A40371E4447",
+      "git_blob_oid": "26851990a3a1ffcc9afc5368d6811b24cf5a078e"
     },
     {
       "path": "src/StardewAI.TransparentBridge/Adapters/MenuReadAdapter.cs",
-      "sha256": "6A0AD5846434647A53914A85F879E165547168E85B50152D4F8D6C17E43FA067"
+      "sha256": "6A0AD5846434647A53914A85F879E165547168E85B50152D4F8D6C17E43FA067",
+      "git_blob_oid": "ebfb544732acfea58cc067243b5aee24b33fb984"
     },
     {
       "path": "src/StardewAI.TransparentBridge/Adapters/MiningReadAdapter.Collision.cs",
-      "sha256": "EAA50FD5BEB1BE32D05182EF84E687038A3401F880E0CBCA5E654C0055C65C55"
+      "sha256": "EAA50FD5BEB1BE32D05182EF84E687038A3401F880E0CBCA5E654C0055C65C55",
+      "git_blob_oid": "2621413f73e522e015a4b0d1baeab903dd158970"
     },
     {
       "path": "tests/StardewAI.Backend.Tests/NativeCropHarvestCommunityCenterBoundaryTests.cs",
-      "sha256": "7504C91D64E4D9F3ECEB0F6522B225800F04194A82A5A9F5BE9A56802242C67B"
+      "sha256": "7504C91D64E4D9F3ECEB0F6522B225800F04194A82A5A9F5BE9A56802242C67B",
+      "git_blob_oid": "ef1b6575950c5da325b5e8bee328bc08f6ea627d"
     },
     {
       "path": "tests/StardewAI.Core.Tests/CropTeacherWateringRefillRecoveryPlannerTests.cs",
-      "sha256": "EEBF2DBAE3D15707BA6C3D748DEDA8ABDE856591F16A4A036F73AE35F3E83774"
+      "sha256": "EEBF2DBAE3D15707BA6C3D748DEDA8ABDE856591F16A4A036F73AE35F3E83774",
+      "git_blob_oid": "92bf3bf38a4a87176cf6347238deaf07013f2401"
     },
     {
       "path": "tests/StardewAI.Core.Tests/GrandpaDailySubgoalResolverTests.cs",
-      "sha256": "8C8A1E7DF4FE6282E57EA286BC3C32D6AED0731CC42FDA79D8F093E949796F5C"
+      "sha256": "8C8A1E7DF4FE6282E57EA286BC3C32D6AED0731CC42FDA79D8F093E949796F5C",
+      "git_blob_oid": "88c4ab2b7f8e2569d02f2583b79f5f27304e4bc5"
     },
     {
       "path": "tests/StardewAI.Core.Tests/LiveTrainingExecutionSnapshotProfileTests.cs",
-      "sha256": "931EE0AAECE32CCC803D1BAEC2635E5D1A09414845DB0064A1B55F15700A2E70"
+      "sha256": "931EE0AAECE32CCC803D1BAEC2635E5D1A09414845DB0064A1B55F15700A2E70",
+      "git_blob_oid": "cfb2597baada704314dad23a99619eec8204bad4"
     },
     {
       "path": "tests/StardewAI.Core.Tests/LiveTrainingLoopQueueReplanFilterTests.cs",
-      "sha256": "8A9954D7745F09AE23D3D6E98D70FADBA14FA9F1FE0BD9790C48BFBB4C98607E"
+      "sha256": "8A9954D7745F09AE23D3D6E98D70FADBA14FA9F1FE0BD9790C48BFBB4C98607E",
+      "git_blob_oid": "5ae361f4ac95fef141277c0d1ad9d87c1826d86e"
     },
     {
       "path": "tests/StardewAI.Core.Tests/NativeStorageAccessTests.cs",
-      "sha256": "32AAB53D9B9BE86F683B918C0D0F1AB5DB9B20D0AE4983942C7C25218A7A39AB"
+      "sha256": "32AAB53D9B9BE86F683B918C0D0F1AB5DB9B20D0AE4983942C7C25218A7A39AB",
+      "git_blob_oid": "1360c0c1e094a63d156054b6f8451c1791e79c2a"
     },
     {
       "path": "tests/StardewAI.Core.Tests/ShopSaleCompilationTests.cs",
-      "sha256": "59B082082A1ABA8350B659C0946AAA75545EFC48240C6156FD78066283A73A3C"
+      "sha256": "59B082082A1ABA8350B659C0946AAA75545EFC48240C6156FD78066283A73A3C",
+      "git_blob_oid": "9c7a2f28440dbb3c84c5b182222299d03d5af1f7"
     },
     {
       "path": "tests/StardewAI.Core.Tests/StageOneCollectionFallbackPolicyTests.cs",
-      "sha256": "F9002561D1A254AE00B4EDA9CE8710EBBA15160A6A8519220E702590EAC801EB"
+      "sha256": "F9002561D1A254AE00B4EDA9CE8710EBBA15160A6A8519220E702590EAC801EB",
+      "git_blob_oid": "29ab435bdedbfa290b5b7e5e4e9519d9e671ccd4"
     },
     {
       "path": "tests/StardewAI.Core.Tests/StageOneInventoryCapacityRecoveryTests.cs",
-      "sha256": "56B6BB1EE99867C3DC9E3D185D774CD73F3F02C3888E0E64E7721F4C40567BED"
+      "sha256": "56B6BB1EE99867C3DC9E3D185D774CD73F3F02C3888E0E64E7721F4C40567BED",
+      "git_blob_oid": "f271c270def8112e84db1e60bb6b51b80b95d85e"
     },
     {
       "path": "tests/StardewAI.Core.Tests/VerifierGateTests.cs",
-      "sha256": "858E6E3494212B95B18AEDE4998B56A29DFDD986A1673464AA2354A9192A9764"
+      "sha256": "858E6E3494212B95B18AEDE4998B56A29DFDD986A1673464AA2354A9192A9764",
+      "git_blob_oid": "db63649034b9f16096b4f40ca85a2b572ad5c010"
     },
     {
       "path": "tools/StardewAI.LiveTrainingLoop/CropTeacherManagedOwnerResume.cs",
-      "sha256": "8A1896577AA82CA52EBB5B6500E3E206363823CA967F127C3F0D35F12F7DBC8E"
+      "sha256": "8A1896577AA82CA52EBB5B6500E3E206363823CA967F127C3F0D35F12F7DBC8E",
+      "git_blob_oid": "728ac056ed8654dab754ab730524bb0fc67e5266"
     },
     {
       "path": "tools/StardewAI.LiveTrainingLoop/CropTeacherManagedSeedOwner.cs",
-      "sha256": "05F6C14EC4B8A69B15497B5155A039F11ABE782094242528FBD5FAC70B314633"
+      "sha256": "05F6C14EC4B8A69B15497B5155A039F11ABE782094242528FBD5FAC70B314633",
+      "git_blob_oid": "9532b5c069932d96fa2aef72cfc845f0c87513ae"
     },
     {
       "path": "tools/StardewAI.LiveTrainingLoop/CropTeacherManagedSeedOwner.Files.cs",
-      "sha256": "16BAB7E462B994436C9BA8532575ADD96ECFB4F728EA0B4B765B001341C99E5E"
+      "sha256": "16BAB7E462B994436C9BA8532575ADD96ECFB4F728EA0B4B765B001341C99E5E",
+      "git_blob_oid": "d2d7d8224a5b26e3524d84c30b343ef3f93a6d74"
     },
     {
       "path": "tools/StardewAI.LiveTrainingLoop/CropTeacherManagedSeedOwner.Index.cs",
-      "sha256": "C990C4DFD9FDABE13830F8CF4C78AD1669499EB69B18889929D4D94A972D3E6C"
+      "sha256": "C990C4DFD9FDABE13830F8CF4C78AD1669499EB69B18889929D4D94A972D3E6C",
+      "git_blob_oid": "c942de7f8fbe442480317bd301ef64360f9e98b1"
     },
     {
       "path": "tools/StardewAI.LiveTrainingLoop/CropTeacherManagedSeedOwner.PlanningProgress.cs",
-      "sha256": "9877AD5589CC0A8DEBE66584B745364EB2780BF9874E10AD2751090C2EAD7FA5"
+      "sha256": "9877AD5589CC0A8DEBE66584B745364EB2780BF9874E10AD2751090C2EAD7FA5",
+      "git_blob_oid": "7aee60af15f7c69829673847d797f050997c0b7b"
     },
     {
       "path": "tools/StardewAI.LiveTrainingLoop/CropTeacherManagedSeedOwner.ProductionTrace.cs",
-      "sha256": "C0D062D215BFAE6E5A93A3DEA56055A1FF00C19DF8800311A0350468866B9E06"
+      "sha256": "C0D062D215BFAE6E5A93A3DEA56055A1FF00C19DF8800311A0350468866B9E06",
+      "git_blob_oid": "9b3a79021e9a875b3878a5c2edf37b8a840168db"
     },
     {
       "path": "tools/StardewAI.LiveTrainingLoop/CropTeacherManagedSeedOwner.SavedPrefix.cs",
-      "sha256": "BA88C84EF067209E65B0FDD5EFED2F195B34BD3AB296A3E8EC2BD14ADB6DFC59"
+      "sha256": "BA88C84EF067209E65B0FDD5EFED2F195B34BD3AB296A3E8EC2BD14ADB6DFC59",
+      "git_blob_oid": "41a28c93751bee4296cad65afa3de7fa238fb4de"
     },
     {
       "path": "tools/StardewAI.LiveTrainingLoop/CropTeacherManagedSeedOwner.SupportingTransition.Recovery.cs",
-      "sha256": "29F6DF60DE78659CBD798F3360216BD65DE372102F129D814C1A867B6343F69D"
+      "sha256": "29F6DF60DE78659CBD798F3360216BD65DE372102F129D814C1A867B6343F69D",
+      "git_blob_oid": "0a1e8987e0ca2603662c27a6a471471fa8e13e8f"
     },
     {
       "path": "tools/StardewAI.LiveTrainingLoop/CropTeacherTerminalSettlementEvidence.cs",
-      "sha256": "4E8D4D001B02F446894FFB304D194DE377783676F28A5B73ABF44A1F2650745E"
+      "sha256": "4E8D4D001B02F446894FFB304D194DE377783676F28A5B73ABF44A1F2650745E",
+      "git_blob_oid": "dec4f8414cccc8b271eb6d2208415e9b9680349e"
     },
     {
       "path": "tools/StardewAI.LiveTrainingLoop/CropTeacherTerminalShippingSelection.cs",
-      "sha256": "7736349DF55666B6E342DAFAA94200EAB4DE3C63844748414B34FF16A5BE5B1C"
+      "sha256": "7736349DF55666B6E342DAFAA94200EAB4DE3C63844748414B34FF16A5BE5B1C",
+      "git_blob_oid": "c22bdd17909933ce3948f403fb4c3db927bc2549"
     },
     {
       "path": "tools/StardewAI.LiveTrainingLoop/CropTeacherWateringRefillRecoveryPlanner.cs",
-      "sha256": "CD9EA8DE794280A9AF30491AF41E180B8619D0FD7EEBEE0EAE7683EA3888377C"
+      "sha256": "CD9EA8DE794280A9AF30491AF41E180B8619D0FD7EEBEE0EAE7683EA3888377C",
+      "git_blob_oid": "91c5689d18528af3639f599eb56b68f266969db8"
     },
     {
       "path": "tools/StardewAI.LiveTrainingLoop/ExecutionSnapshotProfileSelector.cs",
-      "sha256": "FEF5E193FD8CB701F2C48BEB3DC563BF648F613B0D573FD5A81CF9C8505FFF20"
+      "sha256": "FEF5E193FD8CB701F2C48BEB3DC563BF648F613B0D573FD5A81CF9C8505FFF20",
+      "git_blob_oid": "3ddcb88750cf24e21f62765780ba57fa7ef4581c"
     },
     {
       "path": "tools/StardewAI.LiveTrainingLoop/LiveTrainingOptions.cs",
-      "sha256": "9DC398BA16C5FF6382F4EEB0824FC5CF7AFD0847163E4E4750B69E7DF08F2A2E"
+      "sha256": "9DC398BA16C5FF6382F4EEB0824FC5CF7AFD0847163E4E4750B69E7DF08F2A2E",
+      "git_blob_oid": "24b7bb4a4821649f71181577ce2af5e5b0890fda"
     },
     {
       "path": "tools/StardewAI.LiveTrainingLoop/LiveTrainingOptions.ManagedCropTeacher.cs",
-      "sha256": "E635A4195955A80B4DB60C5E1AE4597BE0CB9DEC79E8E808B6F49D8163FE9800"
+      "sha256": "E635A4195955A80B4DB60C5E1AE4597BE0CB9DEC79E8E808B6F49D8163FE9800",
+      "git_blob_oid": "1f9978e91575dd287cb82800031df3fa11f9f3eb"
     },
     {
       "path": "tools/StardewAI.LiveTrainingLoop/Program.CropTeacherControl.cs",
-      "sha256": "65EECDF9D2D9ACE949F9BB741E4D3B0D7391EBEB5898424506C4C6C24F6969F4"
+      "sha256": "65EECDF9D2D9ACE949F9BB741E4D3B0D7391EBEB5898424506C4C6C24F6969F4",
+      "git_blob_oid": "4089b1fc8adcb26940c1aa49907f68287fba596b"
     },
     {
       "path": "tools/StardewAI.LiveTrainingLoop/Program.CropTeacherDailyComposition.cs",
-      "sha256": "9682682E349203B6B445173AA79DB8837583336FE85F38C4805C7EDEEFBEB364"
+      "sha256": "9682682E349203B6B445173AA79DB8837583336FE85F38C4805C7EDEEFBEB364",
+      "git_blob_oid": "12f7ef2b410887869b5d7d9f43f1ad1910d2ba58"
     },
     {
       "path": "tools/StardewAI.LiveTrainingLoop/Program.cs",
-      "sha256": "9308607814AE089748851ABDF9EB09BF76867BB2C9C903F545BA9F69CB99EEB4"
+      "sha256": "9308607814AE089748851ABDF9EB09BF76867BB2C9C903F545BA9F69CB99EEB4",
+      "git_blob_oid": "f8a1ac4110f1e1f61f898abed4fe746ddee5a348"
     },
     {
       "path": "tools/StardewAI.LiveTrainingLoop/Program.DispatchReadiness.cs",
-      "sha256": "C060455D56DD198125C30AE1BCBC9026626F2195CCA70450581F602C166197DC"
+      "sha256": "C060455D56DD198125C30AE1BCBC9026626F2195CCA70450581F602C166197DC",
+      "git_blob_oid": "6a3ed00fd059bd6d392c77edc75a03253c21a23d"
     },
     {
       "path": "tools/StardewAI.LiveTrainingLoop/Program.StageOneCollectionTeacher.cs",
-      "sha256": "83970B1657E670670C73D450447422E6288BC0AF2C0ED55CA50352BB956283BD"
+      "sha256": "83970B1657E670670C73D450447422E6288BC0AF2C0ED55CA50352BB956283BD",
+      "git_blob_oid": "1044f2c29b40702d7ecfcf0c8bd20052ac2cbd28"
     },
     {
       "path": "tools/StardewAI.LiveTrainingLoop/StageOneCollectionFallbackPolicy.cs",
-      "sha256": "7BF78C943A45D2D5E26BFA3D2CE69573C0331FB43185403B657DAD84A41F5E92"
+      "sha256": "7BF78C943A45D2D5E26BFA3D2CE69573C0331FB43185403B657DAD84A41F5E92",
+      "git_blob_oid": "d64c178d68569a969b276fc92872fc3304fbbf1b"
     },
     {
       "path": "tools/StardewAI.LiveTrainingLoop/StageOneInventoryCapacityRecovery.cs",
-      "sha256": "EEC5B4EF58D625633F842BD4619BA149F4DF1D581A7DC3B2C49299D2820632B8"
+      "sha256": "EEC5B4EF58D625633F842BD4619BA149F4DF1D581A7DC3B2C49299D2820632B8",
+      "git_blob_oid": "8df70016861716e42e8a409122e861ab3137ceed"
     },
     {
       "path": "tools/StardewAI.RuntimeTestHarness/ModEntry.cs",
-      "sha256": "33D07703158ECE6739B4CC823E394161CFCB7F59815D7A726954341B93DCBDB8"
+      "sha256": "33D07703158ECE6739B4CC823E394161CFCB7F59815D7A726954341B93DCBDB8",
+      "git_blob_oid": "2ea1a306ef5dc7b71c115389815e38e82dde1c92"
     },
     {
       "path": "tools/StardewAI.RuntimeTestHarness/ModEntry.Farming.cs",
-      "sha256": "7EFA8D299068547D11215B5F2982C042A85C9542AF7A9344277708D5CA9E964F"
+      "sha256": "7EFA8D299068547D11215B5F2982C042A85C9542AF7A9344277708D5CA9E964F",
+      "git_blob_oid": "5067add3d9df35ea51e7aa79eefa44caace2fecc"
     },
     {
       "path": "tools/StardewAI.RuntimeTestHarness/ModEntry.MaterialTransfer.cs",
-      "sha256": "FA656FEF35E3EB94AA1EE77C6C67D0B379661026FFBC993A1B0D4A1D8FFF0D07"
+      "sha256": "FA656FEF35E3EB94AA1EE77C6C67D0B379661026FFBC993A1B0D4A1D8FFF0D07",
+      "git_blob_oid": "13b39d93752a8ff863b663785d45914e2fabde10"
     },
     {
       "path": "tools/StardewAI.RuntimeTestHarness/ModEntry.MovementSleep.cs",
-      "sha256": "F798343A77E320E2F5B828A37D3F26C4719AA5C44AE3CB89193644494123B8D8"
+      "sha256": "F798343A77E320E2F5B828A37D3F26C4719AA5C44AE3CB89193644494123B8D8",
+      "git_blob_oid": "b34f8713feeca94e5ad15877e213d7798915f2a5"
     }
   ],
   "controller_files": [
     {
       "path": "experiments/r2-lab-controller/Invoke-IsolatedRankedQueue.ps1",
-      "sha256": "156D30DE076E8D61400C354EF65DC9F29AEEE618837330A478406901859BF379"
+      "sha256": "156D30DE076E8D61400C354EF65DC9F29AEEE618837330A478406901859BF379",
+      "git_blob_oid": "cab81d6c79a9df75448318eebf1e9af148c6f96b"
     },
     {
       "path": "experiments/r2-lab-controller/Invoke-IsolatedMapApproach.ps1",
-      "sha256": "EA7D938F5732318B306312460B5C33C270427FE4BC5CFB61F5D4B4C556A61F78"
+      "sha256": "EA7D938F5732318B306312460B5C33C270427FE4BC5CFB61F5D4B4C556A61F78",
+      "git_blob_oid": "ced9a75a910d3ba7e955f1aec2857c5398722c91"
     },
     {
       "path": "experiments/r2-lab-controller/Invoke-IsolatedFishingWindow.ps1",
-      "sha256": "8F2833F930AA60DD4F48A9E72C41A6A20975C97EF5774270BE20A7F752918B51"
+      "sha256": "8F2833F930AA60DD4F48A9E72C41A6A20975C97EF5774270BE20A7F752918B51",
+      "git_blob_oid": "56a99d5c881b23c2e453fd88a5b74a85a5c54107"
     },
     {
       "path": "experiments/r2-lab-controller/Invoke-IsolatedCropCare.ps1",
-      "sha256": "FF2A6621E4F73261C46CB3B7D44443A46049F3CD11E35FFDE0DB06694060C877"
+      "sha256": "FF2A6621E4F73261C46CB3B7D44443A46049F3CD11E35FFDE0DB06694060C877",
+      "git_blob_oid": "0056ede7ce9a705e7282a2b0d501e29fdd9a8674"
     },
     {
       "path": "experiments/r2-lab-controller/Invoke-IsolatedChestBootstrap.ps1",
-      "sha256": "54F60D26525089003BA5CD2A0F39F06605A5D599DDDFCC07DFC0E2D383F3F037"
+      "sha256": "54F60D26525089003BA5CD2A0F39F06605A5D599DDDFCC07DFC0E2D383F3F037",
+      "git_blob_oid": "b180bc78341f7fdc5105ade30e4593fdcc2d7842"
     },
     {
       "path": "experiments/r2-lab-controller/Invoke-IsolatedChestWithdrawal.ps1",
-      "sha256": "9682ADC8CEDC45F62A8DD35AAE751BB0D822E0673D18105CF475D317E9A2363B"
+      "sha256": "9682ADC8CEDC45F62A8DD35AAE751BB0D822E0673D18105CF475D317E9A2363B",
+      "git_blob_oid": "d96e149dd45c7e0928579d6b8c065bee6b7f87e0"
     },
     {
       "path": "experiments/r2-lab-controller/Invoke-IsolatedLakeFishDonation.ps1",
-      "sha256": "30BFF414C1DC249406757C7FD8D81DD57EABE688759FBCBCD39422B409969DBF"
+      "sha256": "30BFF414C1DC249406757C7FD8D81DD57EABE688759FBCBCD39422B409969DBF",
+      "git_blob_oid": "129b21143f874a65097827c192b66722957f35cf"
     },
     {
       "path": "experiments/r2-lab-controller/Invoke-IsolatedOrdinaryMineCheckpoint.ps1",
-      "sha256": "7FBDD8C96B17337351C05294B022F5E309A7C2621CA9FC1BCA9DE8FCC5644C18"
+      "sha256": "7FBDD8C96B17337351C05294B022F5E309A7C2621CA9FC1BCA9DE8FCC5644C18",
+      "git_blob_oid": "cb9b2562939ee1688e97a896ac029179bb939b30"
     },
     {
       "path": "experiments/r2-lab-controller/Invoke-IsolatedMinePassabilityProbe.ps1",
-      "sha256": "C21CE4DDF309FB0DFAEB2052639413591421EB29D450ADA210BE215664933375"
+      "sha256": "C21CE4DDF309FB0DFAEB2052639413591421EB29D450ADA210BE215664933375",
+      "git_blob_oid": "02cd5765117953b6373766793bb9ee712f3bed69"
     },
     {
       "path": "experiments/r2-lab-controller/Invoke-IsolatedNativeDaySave.ps1",
-      "sha256": "4E2C068559937F84864CC9B3E92CB9A2D06487623084151BFC9A411BE93FB932"
+      "sha256": "4E2C068559937F84864CC9B3E92CB9A2D06487623084151BFC9A411BE93FB932",
+      "git_blob_oid": "989df6475bda561b16ffefbeeca91298a780738a"
     },
     {
       "path": "experiments/r2-lab-controller/Restart-IsolatedVerifiedDay.ps1",
-      "sha256": "09CCB647D92D66DFD5FFE86B2FFFE28C5C745DB26ACDC1D030D0516B70C732E9"
+      "sha256": "09CCB647D92D66DFD5FFE86B2FFFE28C5C745DB26ACDC1D030D0516B70C732E9",
+      "git_blob_oid": "72ee335b5bb338038c1aae3404013f28be62afde"
     },
     {
       "path": "experiments/r2-lab-controller/planner-prerequisite/Resolve-PrerequisiteRouteWithFarm.ps1",
-      "sha256": "AFE1AE1CD813F3799F480D988D768FFF4C4CED4470559A952D222CD8EF33C0C0"
+      "sha256": "AFE1AE1CD813F3799F480D988D768FFF4C4CED4470559A952D222CD8EF33C0C0",
+      "git_blob_oid": "0f045eab891ca1030abf655769e82292861139c5"
     }
   ],
   "execution_layout": "Controllers depend on the retained D-drive lab layout, pinned published binaries, authority dictionaries, and original receipts; these are not bundled.",
   "validation": "This snapshot contains the accumulated isolated experiment delta. Validation of individual fixes is recorded in PRs #592/#593 and the retained lab reports; no all-green or whole-snapshot production claim.",
   "raw_save_or_game_binaries_included": false,
   "selected_island_route_verified": false,
-  "formal_training_authorized": false
+  "formal_training_authorized": false,
+  "sha256_scope": "SHA-256 records original copied lab file bytes; Git may normalize line endings. git_blob_oid identifies the exact committed source content independently of checkout line endings."
 }
